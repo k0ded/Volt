@@ -9,6 +9,7 @@
 
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Images/ImageView.h>
 
 namespace Volt
 {
@@ -384,6 +385,11 @@ namespace Volt
 		m_commandBuffer->BindVertexBuffers(buffers, firstBinding);
 	}
 
+	void RenderContext::SetAccelerationStructure(WeakPtr<RHI::AccelerationStructure> accelerationStructure)
+	{
+		m_currentAccelerationStructure = accelerationStructure;
+	}
+
 	void RenderContext::SetConstant(const StringHash& name, const RenderGraphImageHandle& data, const int32_t mip, const int32_t layer)
 	{
 		VT_PROFILE_FUNCTION();
@@ -468,7 +474,7 @@ namespace Volt
 		}
 
 		auto descriptorTable = BindlessResourcesManager::Get().GetDescriptorTable();
-		m_commandBuffer->BindDescriptorTable(descriptorTable, m_sharedContext.GetRenderGraphConstantsBuffer(), m_currentPassNode.index, sizeof(RenderGraphConstants));
+		m_commandBuffer->BindDescriptorTable(descriptorTable, m_sharedContext.GetRenderGraphConstantsBuffer(), m_currentPassNode.index, sizeof(RenderGraphConstants), m_currentAccelerationStructure);
 
 		m_descriptorTableIsBound = true;
 	}
@@ -549,11 +555,11 @@ namespace Volt
 
 		if (uniform.type.baseType == RHI::ShaderUniformBaseType::Buffer)
 		{
-			VT_ENSURE(m_currentPassNode.ReadsResource(data) || m_currentPassNode.CreatesResource(data));
+			VT_ENSURE_MSG(m_currentPassNode.ReadsResource(data) || m_currentPassNode.CreatesResource(data), "Resource has not been marked for read or create!");
 		}
 		else if (uniform.type.baseType == RHI::ShaderUniformBaseType::RWBuffer)
 		{
-			VT_ENSURE(m_currentPassNode.WritesResource(data) || m_currentPassNode.CreatesResource(data));
+			VT_ENSURE_MSG(m_currentPassNode.WritesResource(data) || m_currentPassNode.CreatesResource(data), "Resource has not been marked for write or create!");
 		}
 #endif
 

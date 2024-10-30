@@ -23,6 +23,7 @@ namespace Volt
 	class Material;
 	class RenderGraph;
 	class MotionWeaver;
+	class RayTracingScene;
 
 	struct GPUSceneBuffers
 	{
@@ -46,10 +47,10 @@ namespace Volt
 
 		void InvalidateRenderObject(UUID64 renderObject);
 
-		const UUID64 Register(EntityID entityId, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex);
-		const UUID64 Register(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex);
+		const UUID64 AddInstance(EntityID entityId, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex);
+		const UUID64 AddInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex);
 
-		void Unregister(UUID64 id);
+		void RemoveInstance(UUID64 id);
 
 		VT_INLINE VT_NODISCARD const uint32_t GetRenderObjectCount() const { return static_cast<uint32_t>(m_renderObjects.size()); }
 		VT_INLINE VT_NODISCARD const uint32_t GetIndividualMeshCount() const { return m_currentIndividualMeshCount; }
@@ -76,11 +77,13 @@ namespace Volt
 		VT_NODISCARD const Vector<RenderObject>::const_iterator cbegin() const { return m_renderObjects.cbegin(); }
 		VT_NODISCARD const Vector<RenderObject>::const_iterator cend() const { return m_renderObjects.cend(); }
 
-		VT_INLINE VT_NODISCARD const RenderObject& GetRenderObjectAt(const size_t index) const { return m_renderObjects.at(index); }
+		VT_NODISCARD VT_INLINE const RenderObject& GetRenderObjectAt(const size_t index) const { return m_renderObjects.at(index); }
 		VT_NODISCARD const RenderObject& GetRenderObjectFromID(UUID64 id) const;
 
-		VT_INLINE VT_NODISCARD std::span<const GPUMesh> GetGPUMeshes() const { return m_gpuMeshes; }
-		VT_INLINE VT_NODISCARD std::span<const PrimitiveDrawData> GetPrimitiveDrawData() const { return m_primitiveDrawData; }
+		VT_NODISCARD VT_INLINE std::span<const GPUMesh> GetGPUMeshes() const { return m_gpuMeshes; }
+		VT_NODISCARD VT_INLINE std::span<const PrimitiveDrawData> GetPrimitiveDrawData() const { return m_primitiveDrawData; }
+		VT_NODISCARD VT_INLINE Ref<RayTracingScene> GetRayTracingScene() const { return m_rayTracingScene; }
+
 	private:
 		void UploadGPUMeshes(const Vector<GPUMesh>& gpuMeshes);
 		void UploadGPUMeshSDFs(const Vector<GPUMeshSDF>& sdfMeshes);
@@ -119,6 +122,8 @@ namespace Volt
 			UUID64 renderObjectId;
 			size_t index;
 		};
+
+		Ref<RayTracingScene> m_rayTracingScene;
 
 		Vector<UUID64> m_animatedRenderObjects;
 		Vector<RenderObject> m_renderObjects;

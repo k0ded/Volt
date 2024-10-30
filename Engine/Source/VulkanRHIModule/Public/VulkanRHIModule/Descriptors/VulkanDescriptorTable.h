@@ -53,7 +53,7 @@ namespace Volt::RHI
 		void BuildWriteDescriptors();
 		void InitializeInfoStructs();
 
-		void InitilizeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet);
+		void InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet);
 
 		WeakPtr<Shader> m_shader;
 		bool m_isDirty = false;

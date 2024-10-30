@@ -34,7 +34,7 @@ namespace Volt::RHI
 		void Update() override;
 		void PrepareForRender() override;
 
-		void Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride) override;
+		void Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure) override;
 
 	protected:
 		void* GetHandleImpl() const override;
@@ -46,7 +46,7 @@ namespace Volt::RHI
 		void PrepareHeapForRender();
 
 		VkDescriptorSet_T* GetOrAllocateConstantsSet();
-		void WriteConstantsSet(VkDescriptorSet_T* dstSet, WeakPtr<UniformBuffer> constantsBuffer);
+		void WriteConstantsSet(VkDescriptorSet_T* dstSet, WeakPtr<UniformBuffer> constantsBuffer, WeakPtr<AccelerationStructure> accelerationStructure);
 
 		VkDescriptorSet_T* GetCurrentMainDescriptorSet() const;
 

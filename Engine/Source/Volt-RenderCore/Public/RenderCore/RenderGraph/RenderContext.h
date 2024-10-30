@@ -194,6 +194,8 @@ namespace Volt
 		void BindVertexBuffers(const StackVector<WeakPtr<RHI::VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
 		void BindVertexBuffers(const StackVector<RenderGraphBufferHandle, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
 
+		void SetAccelerationStructure(WeakPtr<RHI::AccelerationStructure> accelerationStructure);
+
 		template<typename T>
 		void SetConstant(const StringHash& name, const T& data);
 
@@ -244,6 +246,7 @@ namespace Volt
 
 		WeakPtr<RHI::RenderPipeline> m_currentRenderPipeline;
 		WeakPtr<RHI::ComputePipeline> m_currentComputePipeline;
+		WeakPtr<RHI::AccelerationStructure> m_currentAccelerationStructure;
 
 		uint8_t m_passConstantsData[RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE];
 

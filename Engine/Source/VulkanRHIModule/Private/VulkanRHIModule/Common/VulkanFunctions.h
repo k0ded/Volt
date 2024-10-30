@@ -22,6 +22,13 @@ namespace Volt::RHI
 	inline PFN_vkCmdDrawMeshTasksIndirectEXT vkCmdDrawMeshTasksIndirectEXT;
 	inline PFN_vkCmdDrawMeshTasksIndirectCountEXT vkCmdDrawMeshTasksIndirectCountEXT;
 
+	// Ray tracing
+	inline PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR;
+	inline PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR;
+	inline PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR;
+	inline PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR;
+	inline PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR;
+
 	inline static void FindVulkanFunctions(VkInstance instance)
 	{
 		VT_GET_VULKAN_FUNCTION(vkSetDebugUtilsObjectNameEXT);
@@ -39,5 +46,12 @@ namespace Volt::RHI
 		VT_GET_VULKAN_FUNCTION(vkCmdDrawMeshTasksEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdDrawMeshTasksIndirectEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdDrawMeshTasksIndirectCountEXT);
+	
+		// Ray tracing
+		VT_GET_VULKAN_FUNCTION(vkCmdBuildAccelerationStructuresKHR);
+		VT_GET_VULKAN_FUNCTION(vkGetAccelerationStructureBuildSizesKHR);
+		VT_GET_VULKAN_FUNCTION(vkCreateAccelerationStructureKHR);
+		VT_GET_VULKAN_FUNCTION(vkGetAccelerationStructureDeviceAddressKHR);
+		VT_GET_VULKAN_FUNCTION(vkDestroyAccelerationStructureKHR);
 	}
 }

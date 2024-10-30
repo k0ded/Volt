@@ -1,11 +1,7 @@
 #include "Testing/RenderGraphTests/ClearCreatedRenderTargetTest.h"
 
-#include <Volt/Core/Application.h>
-
 #include <RenderCore/RenderGraph/RenderGraph.h>
-#include <RenderCore/RenderGraph/RenderContextUtils.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
-#include <RenderCore/Shader/ShaderMap.h>
 
 using namespace Volt;
 

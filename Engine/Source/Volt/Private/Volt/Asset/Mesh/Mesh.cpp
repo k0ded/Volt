@@ -1,21 +1,14 @@
 #include "vtpch.h"
-#include "Volt/Asset/Mesh/Mesh.h"
 
+#include "Volt/Asset/Mesh/Mesh.h"
 #include "Volt/Asset/Rendering/Material.h"
 #include "Volt/Rendering/Mesh/MeshCommon.h"
-
+#include "Volt/Rendering/RayTracing/RayTracingSceneGeometry.h"
 #include "Volt/Math/Math.h"
 #include "Volt/Utility/Algorithms.h"
-
 #include "Volt/SDF/SDFGenerator.h"
 
-#include <JobSystem/JobSystem.h>
-
-#include <RHIModule/Buffers/VertexBuffer.h>
-#include <RHIModule/Buffers/IndexBuffer.h>
-#include <RHIModule/Buffers/StorageBuffer.h>
-#include <RHIModule/Images/Image.h>
-#include <RHIModule/Images/ImageView.h>
+#include <RHIModule/Graphics/GraphicsContext.h>
 
 #include <meshoptimizer/meshoptimizer.h>
 
@@ -235,17 +228,24 @@ namespace Volt
 
 		const std::string meshName = !assetName.empty() ? " - " + assetName : "";
 
+		RHI::BufferUsage rayTracingFlags = RHI::BufferUsage::None;
+
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			rayTracingFlags |= RHI::BufferUsage::AccelerationStructureInput | RHI::BufferUsage::DeviceAddress;
+		}
+
 		// Index buffer
 		{
 			const auto& indices = m_indices;
-			m_indexBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(indices.size()), sizeof(uint32_t), "Index Buffer" + meshName, RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndexBuffer);
+			m_indexBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(indices.size()), sizeof(uint32_t), "Index Buffer" + meshName, RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndexBuffer | rayTracingFlags);
 			m_indexBuffer->GetResource()->SetData(indices.data(), indices.size() * sizeof(uint32_t));
 		}
 
 		// Vertex positions
 		{
 			const auto& vertexPositions = m_vertexContainer.positions;
-			m_vertexPositionsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexPositions.size()), sizeof(glm::vec3), "Vertex Positions" + meshName, RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::VertexBuffer);
+			m_vertexPositionsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexPositions.size()), sizeof(glm::vec3), "Vertex Positions" + meshName, RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::VertexBuffer | rayTracingFlags);
 			m_vertexPositionsBuffer->GetResource()->SetData(vertexPositions.data(), vertexPositions.size() * sizeof(glm::vec3));
 		}
 
@@ -386,27 +386,46 @@ namespace Volt
 
 		// Create SDF data
 		{
-			SDFGenerator sdfGenerator{};
-			auto res = sdfGenerator.Generate(*this);
+			//SDFGenerator sdfGenerator{};
+			//auto res = sdfGenerator.Generate(*this);
 		
-			m_gpuMeshSDFs.reserve(res.size());
+			//m_gpuMeshSDFs.reserve(res.size());
 
-			for (uint32_t i = 0; const auto& sdf : res)
+			//for (uint32_t i = 0; const auto& sdf : res)
+			//{
+			//	m_sdfTextures[i] = sdf.sdfTexture;
+			//	m_brickGrids[i] = sdf.brickGrid;
+			//	m_brickBuffers[i] = CreateRef<BindlessResource<RHI::StorageBuffer>>(sdf.sdfBricksBuffer);
+
+			//	auto& gpuSDF = m_gpuMeshSDFs.emplace_back();
+			//	gpuSDF.min = sdf.min;
+			//	gpuSDF.max = sdf.max;
+			//	gpuSDF.size = sdf.size; 
+			//	gpuSDF.sdfTexture = sdf.sdfTexture->GetResourceHandle();
+			//	gpuSDF.bricksBuffer = m_brickBuffers[i]->GetResourceHandle();
+			//	gpuSDF.brickCount = static_cast<uint32_t>(sdf.brickGrid.size());
+
+			//	i++;
+			//}
+		}
+
+		// Create RT data
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			RayTracingSceneGeometryCreateInfo info{};
+			info.indexBuffer = m_indexBuffer->GetResource();
+			info.vertexPositionsBuffer = m_vertexPositionsBuffer->GetResource();
+		
+			for (const auto& subMesh : m_subMeshes)
 			{
-				m_sdfTextures[i] = sdf.sdfTexture;
-				m_brickGrids[i] = sdf.brickGrid;
-				m_brickBuffers[i] = CreateRef<BindlessResource<RHI::StorageBuffer>>(sdf.sdfBricksBuffer);
-
-				auto& gpuSDF = m_gpuMeshSDFs.emplace_back();
-				gpuSDF.min = sdf.min;
-				gpuSDF.max = sdf.max;
-				gpuSDF.size = sdf.size; 
-				gpuSDF.sdfTexture = sdf.sdfTexture->GetResourceHandle();
-				gpuSDF.bricksBuffer = m_brickBuffers[i]->GetResourceHandle();
-				gpuSDF.brickCount = static_cast<uint32_t>(sdf.brickGrid.size());
-
-				i++;
+				auto& geometry = info.geometries.emplace_back();
+				geometry.indexCount = subMesh.indexCount;
+				geometry.indexOffset = subMesh.indexStartOffset;
+				geometry.vertexCount = subMesh.vertexCount;
+				geometry.vertexOffset = subMesh.vertexStartOffset;
 			}
+
+			m_rayTracingSceneGeometry = RayTracingSceneGeometry::Create(info);
 		}
 	}
 

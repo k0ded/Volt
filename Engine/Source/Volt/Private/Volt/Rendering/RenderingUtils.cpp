@@ -9,12 +9,11 @@
 
 namespace Volt::RenderingUtils
 {
-	RenderGraphResourceHandle GenerateIndirectArgs(RenderGraph& renderGraph, RenderGraphBufferHandle countBuffer, uint32_t groupSize, std::string_view argsBufferName)
+	RenderGraphBufferHandle GenerateIndirectArgs(RenderGraph& renderGraph, RenderGraphBufferHandle countBuffer, uint32_t groupSize, std::string_view argsBufferName)
 	{
 		struct Output
 		{
-			RenderGraphBufferHandle argsBufferHandle
-				;
+			RenderGraphBufferHandle argsBufferHandle;
 		};
 
 		RenderGraphBufferHandle outHandle;
@@ -44,7 +43,7 @@ namespace Volt::RenderingUtils
 		return outHandle;
 	}
 
-	RenderGraphResourceHandle GenerateIndirectArgsWrapped(RenderGraph& renderGraph, RenderGraphBufferHandle countBuffer, uint32_t groupSize, std::string_view argsBufferName)
+	RenderGraphBufferHandle GenerateIndirectArgsWrapped(RenderGraph& renderGraph, RenderGraphBufferHandle countBuffer, uint32_t groupSize, std::string_view argsBufferName)
 	{
 		struct Output
 		{

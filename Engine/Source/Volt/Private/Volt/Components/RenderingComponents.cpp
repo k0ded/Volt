@@ -95,7 +95,7 @@ namespace Volt
 				{
 				}
 
-				auto uuid = scene->GetRenderScene()->Register(entity.GetID(), weaveComponent.MotionWeaver, mesh, material, static_cast<uint32_t>(i));
+				auto uuid = scene->GetRenderScene()->AddInstance(entity.GetID(), weaveComponent.MotionWeaver, mesh, material, static_cast<uint32_t>(i));
 				weaveComponent.renderObjectIds.emplace_back(uuid);
 			}
 		}

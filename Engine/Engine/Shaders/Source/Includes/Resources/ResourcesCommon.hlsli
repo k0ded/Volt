@@ -10,10 +10,6 @@ struct RenderGraphConstants
 #define RENDER_GRAPH_CONSTANTS_BINDING b998
 ConstantBuffer<RenderGraphConstants> u_renderGraphConstants : register(RENDER_GRAPH_CONSTANTS_BINDING, space1);
 
-// Resource Handle Layout:
-// 8 bit resource type
-// 24 bit handle
-
 uint GetHandle(uint resourceHandle)
 {
     return resourceHandle & 0xFFFFFF;
@@ -112,13 +108,8 @@ struct SamplerStateHandle
 
 struct ResourceHandle
 {
-    uint handle;
+    uint handle : 24;
+    uint type : 8;
 };
 
 #include "DescriptorHeap.hlsli"
-
-//#if __VULKAN__
-//    #include "VulkanDescriptorHeap.hlsli"
-//#elif __D3D12__
-//    #include "D3D12DescriptorHeap.hlsli"
-//#endif

@@ -35,8 +35,10 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE const PhysicalDeviceProperties& GetProperties() const { return m_deviceProperties; }
 
 		inline const PhysicalDeviceQueueFamilyIndices& GetQueueFamilies() const { return m_queueFamilyIndices; }
+		inline const PhysicalDeviceProperties& GetDeviceProperties() const { return m_deviceProperties; }
+
 		const int32_t GetMemoryTypeIndex(const uint32_t reqMemoryTypeBits, const uint32_t requiredPropertyFlags);
-		const bool IsExtensionAvailiable(const char* extensionName) const;
+		const bool IsExtensionAvailable(const char* extensionName) const;
 		const bool AreDescriptorBuffersEnabled() const;
 		const bool AreMeshShadersEnabled() const;
 
@@ -46,7 +48,7 @@ namespace Volt::RHI
 	private:
 		void FetchMemoryProperties();
 		void FetchDeviceProperties();
-		void FetchAvailiableExtensions();
+		void FetchAvailableExtensions();
 
 		VkPhysicalDevice_T* m_physicalDevice = nullptr;
 

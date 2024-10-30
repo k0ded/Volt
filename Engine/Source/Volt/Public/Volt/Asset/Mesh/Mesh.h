@@ -1,16 +1,13 @@
 #pragma once
 
 #include "Volt/Asset/Mesh/SubMesh.h"
-
 #include "Volt/Asset/Rendering/MaterialTable.h"
 #include "Volt/Asset/AssetTypes.h"
 
 #include "Volt/Rendering/Vertex.h"
 #include "Volt/Rendering/BoundingStructures.h"
 #include "Volt/Rendering/Mesh/MeshCommon.h"
-
 #include "Volt/Rendering/GPUScene.h"
-
 #include "Volt/SDF/SDFGenerator.h"
 
 #include <RenderCore/Resources/BindlessResource.h>
@@ -31,6 +28,7 @@ namespace Volt
 	}
 
 	class Material;
+	class RayTracingSceneGeometry;
 
 	struct VertexContainer
 	{
@@ -111,6 +109,7 @@ namespace Volt
 		inline BindlessResourceRef<RHI::StorageBuffer> GetMeshletBuffer() const { return m_meshletsBuffer; }
 
 		VT_NODISCARD VT_INLINE const VertexContainer& GetVertexContainer() const { return m_vertexContainer; }
+		VT_NODISCARD VT_INLINE Ref<RayTracingSceneGeometry> GetRayTracingSceneGeometry() const { return m_rayTracingSceneGeometry; }
 
 		static AssetType GetStaticType() { return AssetTypes::Mesh; }
 		AssetType GetType() override { return GetStaticType(); }
@@ -146,6 +145,8 @@ namespace Volt
 		BindlessResourceRef<RHI::StorageBuffer> m_meshletDataBuffer;
 
 		BindlessResourceRef<RHI::StorageBuffer> m_vertexAnimationDataBuffer;
+
+		Ref<RayTracingSceneGeometry> m_rayTracingSceneGeometry;
 
 		BoundingSphere m_boundingSphere;
 		BoundingBox m_boundingBox;

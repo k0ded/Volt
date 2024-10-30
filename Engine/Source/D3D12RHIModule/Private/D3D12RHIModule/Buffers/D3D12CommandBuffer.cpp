@@ -662,10 +662,10 @@ namespace Volt::RHI
 		descriptorTable->AsRef<D3D12DescriptorTable>().SetRootParameters(*this);
 	}
 
-	void D3D12CommandBuffer::BindDescriptorTable(WeakPtr<BindlessDescriptorTable> descriptorTable, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride)
+	void D3D12CommandBuffer::BindDescriptorTable(WeakPtr<BindlessDescriptorTable> descriptorTable, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure)
 	{
 		VT_PROFILE_FUNCTION();
-		descriptorTable->AsRef<D3D12BindlessDescriptorTable>().Bind(*this, constantsBuffer, offsetIndex, stride);
+		descriptorTable->AsRef<D3D12BindlessDescriptorTable>().Bind(*this, constantsBuffer, offsetIndex, stride, accelerationStructure);
 		BindPipelineInternal();
 		descriptorTable->AsRef<D3D12BindlessDescriptorTable>().SetRootParameters(*this, constantsBuffer);
 	}
@@ -917,6 +917,10 @@ namespace Volt::RHI
 		{
 			m_commandListData.commandList->Barrier(static_cast<uint32_t>(barrierGroups.size()), barrierGroups.data());
 		}
+	}
+
+	void D3D12CommandBuffer::BuildAccelerationStructures(const Vector<AccelerationStructureBuildGeometryInfo>& buildInfos, const Vector<AccelerationStructureBuildRanges>& buildRanges)
+	{
 	}
 
 	void D3D12CommandBuffer::BeginMarker(std::string_view markerLabel, const std::array<float, 4>& markerColor)

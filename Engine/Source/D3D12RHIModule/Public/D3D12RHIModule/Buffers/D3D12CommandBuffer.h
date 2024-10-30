@@ -54,7 +54,7 @@ namespace Volt::RHI
 		void BindIndexBuffer(WeakPtr<StorageBuffer> indexBuffer) override;
 
 		void BindDescriptorTable(WeakPtr<DescriptorTable> descriptorTable) override;
-		void BindDescriptorTable(WeakPtr<BindlessDescriptorTable> descriptorTable, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride) override;
+		void BindDescriptorTable(WeakPtr<BindlessDescriptorTable> descriptorTable, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure) override;
 
 		void BeginRendering(const RenderingInfo& renderingInfo) override;
 		void EndRendering() override;
@@ -62,6 +62,8 @@ namespace Volt::RHI
 		void PushConstants(const void* data, const uint32_t size, const uint32_t offset) override;
 
 		void ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers) override;
+
+		void BuildAccelerationStructures(const Vector<AccelerationStructureBuildGeometryInfo>& buildInfos, const Vector<AccelerationStructureBuildRanges>& buildRanges) override;
 
 		void BeginMarker(std::string_view markerLabel, const std::array<float, 4>& markerColor) override;
 		void EndMarker() override;

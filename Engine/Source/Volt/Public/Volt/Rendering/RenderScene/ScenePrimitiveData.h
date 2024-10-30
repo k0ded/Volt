@@ -3,6 +3,7 @@
 #include "Volt/Asset/Rendering/MaterialTable.h"
 
 #include "Volt/Rendering/RenderObject.h"
+#include "Volt/Rendering/RayTracing/RayTracingInstance.h"
 
 #include <EntitySystem/EntityHelper.h>
 
@@ -39,6 +40,7 @@ namespace Volt
 		RenderScene* m_renderScene;
 
 		Vector<RenderObjectID> m_renderObjects;
+		RayTracingInstanceID m_rayTracingInstance = 0;
 
 		UUID64 m_meshChangedCallbackID = 0;
 	};

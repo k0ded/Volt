@@ -63,6 +63,12 @@ float3 ReconstructWorldPosition(in ViewData viewData, float2 texCoords, float pi
     return worldSpacePos.xyz;
 }
 
+float Distance2(float3 A, float3 B)
+{
+	float3 diff = B - A;
+	return dot(diff, diff);
+}
+
 //Frostbite accurate SRGB to linear conversion
 float3 SRGBToLinear(in float3 color)
 {

@@ -13,6 +13,7 @@ namespace Volt::RHI
 	class SamplerState;
 	class CommandBuffer;
 	class UniformBuffer;
+	class AccelerationStructure;
 
 	class VTRHI_API BindlessDescriptorTable : public RHIInterface
 	{
@@ -32,7 +33,7 @@ namespace Volt::RHI
 		virtual void Update() = 0;
 		virtual void PrepareForRender() = 0;
 
-		virtual void Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride) = 0;
+		virtual void Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure) = 0;
 
 		static RefPtr<BindlessDescriptorTable> Create(const uint64_t framesInFlight);
 

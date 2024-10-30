@@ -35,6 +35,8 @@
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
 #include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 
+#include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
+
 #include "VulkanRHIModule/ImGui/VulkanImGuiImplementation.h"
 
 namespace Volt::RHI
@@ -182,6 +184,11 @@ namespace Volt::RHI
 	RefPtr<ImGuiImplementation> VulkanRHIProxy::CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanImGuiImplementation>::Create(createInfo);
+	}
+
+	RefPtr<AccelerationStructure> VulkanRHIProxy::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
+	{
+		return RefPtr<VulkanAccelerationStructure>::Create(createInfo);
 	}
 
 	void VulkanRHIProxy::SetRHICallbackInfo(const RHICallbackInfo& callbackInfo)

@@ -22,18 +22,30 @@ namespace Volt::RHI
 
 		// Setup render graph constants descriptor set layout
 		{
-			VkDescriptorSetLayoutBinding binding{};
-			binding.binding = Globals::RENDER_GRAPH_CONSTANTS_BINDING;
-			binding.descriptorCount = 1;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-			binding.pImmutableSamplers = nullptr;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
+			Vector<VkDescriptorSetLayoutBinding> bindings;
+
+			VkDescriptorSetLayoutBinding& constantsBinding = bindings.emplace_back();
+			constantsBinding.binding = Globals::RENDER_GRAPH_CONSTANTS_BINDING;
+			constantsBinding.descriptorCount = 1;
+			constantsBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+			constantsBinding.pImmutableSamplers = nullptr;
+			constantsBinding.stageFlags = VK_SHADER_STAGE_ALL;
+
+			if (GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+			{
+				VkDescriptorSetLayoutBinding& rtBinding = bindings.emplace_back();
+				rtBinding.binding = Globals::ACCELERATION_STRUCTURE_BINDING;
+				rtBinding.descriptorCount = 1;
+				rtBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+				rtBinding.pImmutableSamplers = nullptr;
+				rtBinding.stageFlags = VK_SHADER_STAGE_ALL;
+			}
 
 			VkDescriptorSetLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 			info.pNext = nullptr;
-			info.bindingCount = 1;
-			info.pBindings = &binding;
+			info.bindingCount = static_cast<uint32_t>(bindings.size());
+			info.pBindings = bindings.data();
 			info.flags = 0;
 
 			VT_VK_CHECK(vkCreateDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), &info, nullptr, &s_renderGraphConstantsLayout));

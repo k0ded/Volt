@@ -4,6 +4,7 @@
 
 #include "Volt/Rendering/SceneRendererStructs.h"
 #include "Volt/Rendering/RendererStructs.h"
+#include "Volt/Rendering/RenderingTechniques/GIBS.h"
 
 // #TODO_Ivar: Maybe remove from here
 #include <RenderCore/RenderGraph/RenderGraph.h>
@@ -127,6 +128,8 @@ namespace Volt
 		void AddVisualizeSDFPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 		void AddVisualizeBricksPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 
+		void AddTestRTPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
+
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
 
 		bool m_enabled = false;
@@ -157,6 +160,8 @@ namespace Volt
 		///// TEMP /////
 		VisibilityVisualization m_visibilityVisualization = VisibilityVisualization::TriangleID;
 		////////////////
+		
+		GIBS m_gibs;
 
 		Ref<Scene> m_scene;
 		SceneEnvironment m_sceneEnvironment;

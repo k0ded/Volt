@@ -8,6 +8,7 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Memory/Allocation.h>
+#include <RHIModule/Images/ImageView.h>
 
 #include <RHIModule/Utility/ResourceUtility.h>
 

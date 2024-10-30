@@ -3,4 +3,4 @@ internal: true
 sources:
   - entryPoint: "main"
     shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/Utility/PrefixSum_cs.hlsl"
+    filePath: "Engine/Shaders/Source/Utility/PrefixSum.hlsl"

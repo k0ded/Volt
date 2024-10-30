@@ -34,6 +34,9 @@
 #include "D3D12RHIModule/Images/D3D12Image.h"
 
 #include "D3D12RHIModule/Synchronization/D3D12Semaphore.h"
+
+#include <RHIModule/RayTracing/AccelerationStructure.h>
+
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Synchronization/Event.h>
 
@@ -177,6 +180,11 @@ namespace Volt::RHI
 	RefPtr<Semaphore> D3D12RHIProxy::CreateSemaphore(const SemaphoreCreateInfo& createInfo) const
 	{
 		return RefPtr<D3D12Semaphore>::Create(createInfo);
+	}
+
+	RefPtr<AccelerationStructure> D3D12RHIProxy::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
+	{
+		return RefPtr<AccelerationStructure>();
 	}
 	
 	RefPtr<ImGuiImplementation> D3D12RHIProxy::CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const

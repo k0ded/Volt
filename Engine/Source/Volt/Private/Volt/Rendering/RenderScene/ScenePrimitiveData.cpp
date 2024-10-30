@@ -4,6 +4,9 @@
 
 #include "Volt/Rendering/RenderScene.h"
 #include "Volt/Rendering/Renderer.h"
+#include "Volt/Rendering/RayTracing/RayTracingScene.h"
+
+#include <RHIModule/Graphics/GraphicsContext.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -101,8 +104,13 @@ namespace Volt
 				material = Renderer::GetDefaultResources().defaultMaterial;
 			}
 
-			RenderObjectID renderObjectId = m_renderScene->Register(m_relatedEntity, m_primitiveMesh, material, static_cast<uint32_t>(i));
+			RenderObjectID renderObjectId = m_renderScene->AddInstance(m_relatedEntity, m_primitiveMesh, material, static_cast<uint32_t>(i));
 			m_renderObjects.emplace_back(renderObjectId);
+		}
+
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			m_rayTracingInstance = m_renderScene->GetRayTracingScene()->AddInstance(m_primitiveMesh, glm::mat4{ 1.f });
 		}
 	}
 
@@ -110,9 +118,14 @@ namespace Volt
 	{
 		VT_ENSURE(m_renderScene);
 
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			m_renderScene->GetRayTracingScene()->RemoveInstance(m_rayTracingInstance);
+		}
+
 		for (const auto& id : m_renderObjects)
 		{
-			m_renderScene->Unregister(id);
+			m_renderScene->RemoveInstance(id);
 		}
 
 		m_renderObjects.clear();

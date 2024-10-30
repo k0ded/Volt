@@ -116,7 +116,7 @@ namespace Volt::RHI
 		m_physicalDevice = selectedDevice;
 		m_queueFamilyIndices = Utility::FindQueueFamilyIndices(selectedDevice);
 
-		FetchAvailiableExtensions();
+		FetchAvailableExtensions();
 		FetchDeviceProperties();
 	}
 
@@ -143,7 +143,7 @@ namespace Volt::RHI
 		return -1;
 	}
 
-	const bool VulkanPhysicalGraphicsDevice::IsExtensionAvailiable(const char* extensionName) const
+	const bool VulkanPhysicalGraphicsDevice::IsExtensionAvailable(const char* extensionName) const
 	{
 		for (const auto& ext : m_availiableExtensions)
 		{
@@ -373,7 +373,7 @@ namespace Volt::RHI
 
 		// VK_EXT_mesh_shader
 		{
-			m_deviceProperties.meshShaderProperties.enabled = false; // IsExtensionAvailiable(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+			m_deviceProperties.meshShaderProperties.enabled = IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME);
 			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupTotalCount = meshShaderProperties.maxTaskWorkGroupTotalCount;
 			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupCount[0] = meshShaderProperties.maxTaskWorkGroupCount[0];
 			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupCount[1] = meshShaderProperties.maxTaskWorkGroupCount[1];
@@ -415,7 +415,7 @@ namespace Volt::RHI
 		FetchMemoryProperties();
 	}
 
-	void VulkanPhysicalGraphicsDevice::FetchAvailiableExtensions()
+	void VulkanPhysicalGraphicsDevice::FetchAvailableExtensions()
 	{
 		uint32_t extCount = 0;
 		VT_VK_CHECK(vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &extCount, nullptr));

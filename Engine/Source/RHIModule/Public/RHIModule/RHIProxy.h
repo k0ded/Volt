@@ -28,6 +28,9 @@ namespace Volt::RHI
 	class PhysicalGraphicsDevice;
 	class Swapchain;
 
+	class RayTracingSceneGeometry;
+	class AccelerationStructure;
+
 	class Allocator;
 	class DefaultAllocator;
 	class TransientAllocator;
@@ -68,6 +71,8 @@ namespace Volt::RHI
 	struct FenceCreateInfo;
 	struct SemaphoreCreateInfo;
 	struct ImGuiCreateInfo;
+	struct RayTracingSceneGeometryCreateInfo;
+	struct AccelerationStructureCreateInfo;
 
 	struct RHICallbackInfo
 	{
@@ -120,6 +125,8 @@ namespace Volt::RHI
 		virtual RefPtr<Semaphore> CreateSemaphore(const SemaphoreCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<ImGuiImplementation> CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const = 0;
+
+		virtual RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const = 0;
 
 		virtual void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) = 0;
 

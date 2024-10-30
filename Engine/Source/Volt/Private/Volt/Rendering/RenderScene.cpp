@@ -9,14 +9,16 @@
 #include "Volt/Scene/Entity.h"
 #include "Volt/Rendering/GPUScene.h"
 #include "Volt/Rendering/Renderer.h"
+#include "Volt/Rendering/RayTracing/RayTracingScene.h"
 #include "Volt/Rendering/Utility/ScatteredBufferUpload.h"
 
 #include "Volt/Animation/MotionWeaver.h"
 #include "Volt/Asset/Animation/Skeleton.h"
 
-#include <RHIModule/Buffers/StorageBuffer.h>
-
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
+#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Graphics/GraphicsContext.h>
 
 VT_DEFINE_LOG_CATEGORY(LogRenderScene);
 
@@ -69,6 +71,11 @@ namespace Volt
 				}
 			}
 		});
+
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			m_rayTracingScene = CreateRef<RayTracingScene>();
+		}
 	}
 
 	RenderScene::~RenderScene()
@@ -138,7 +145,7 @@ namespace Volt
 		}
 	}
 
-	const UUID64 RenderScene::Register(EntityID entityId, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex)
+	const UUID64 RenderScene::AddInstance(EntityID entityId, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex)
 	{
 		UUID64 newId = {};
 		auto& newObj = m_renderObjects.emplace_back();
@@ -172,7 +179,7 @@ namespace Volt
 		return newId;
 	}
 
-	const UUID64 RenderScene::Register(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex)
+	const UUID64 RenderScene::AddInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex)
 	{
 		UUID64 newId = {};
 		auto& newObj = m_renderObjects.emplace_back();
@@ -208,7 +215,7 @@ namespace Volt
 		return newId;
 	}
 
-	void RenderScene::Unregister(UUID64 id)
+	void RenderScene::RemoveInstance(UUID64 id)
 	{
 		VT_ENSURE(m_primitiveIndexFromRenderObjectID.contains(id));
 

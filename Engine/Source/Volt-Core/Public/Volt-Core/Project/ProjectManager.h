@@ -3,6 +3,7 @@
 #include "Volt-Core/Project/Project.h"
 #include "Volt-Core/Config.h"
 
+#include <LogModule/LogCategory.h>
 #include <SubSystem/SubSystem.h>
 #include <CoreUtilities/Core.h>
 

@@ -413,9 +413,12 @@ namespace Volt::RHI
 		IndexBuffer = BIT(4),
 		VertexBuffer = BIT(5),
 		IndirectBuffer = BIT(6),
-	
+		AccelerationStructure = BIT(7),
+		AccelerationStructureInput = BIT(8),
+		DeviceAddress = BIT(9),
+
 		// Vulkan only
-		DescriptorBuffer = BIT(7)
+		DescriptorBuffer = BIT(10)
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(BufferUsage);
@@ -558,6 +561,13 @@ namespace Volt::RHI
 		Image,
 		Buffer,
 		Global
+	};
+
+	enum class IndexType : uint8_t
+	{
+		None,
+		UInt16,
+		UInt32
 	};
 
 	static DeviceVendor VendorIDToVendor(uint32_t vendorID)

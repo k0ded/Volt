@@ -3,11 +3,12 @@
 #include "RHIModule/Core/RHIResource.h"
 #include "RHIModule/Memory/Allocator.h"
 
+#include "RHIModule/Images/ImageView.h"
+
 #include <CoreUtilities/Buffer/Buffer.h>
 
 namespace Volt::RHI
 {
-	class ImageView;
 	class Swapchain;
 
 	class VTRHI_API Image : public RHIResource

@@ -18,9 +18,10 @@
 #include "VulkanRHIModule/Images/VulkanImage.h"
 
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
-#include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 
 #include "VulkanRHIModule/Synchronization/VulkanEvent.h"
+
+#include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -37,6 +38,8 @@
 #include <RHIModule/Core/Profiling.h>
 #include <RHIModule/RHIProxy.h>
 #include <RHIModule/Synchronization/Fence.h>
+
+#include <RHIModule/RayTracing/AccelerationStructure.h>
 
 #include <CoreUtilities/EnumUtils.h>
 
@@ -631,10 +634,10 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanCommandBuffer::BindDescriptorTable(WeakPtr<BindlessDescriptorTable> descriptorTable, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride)
+	void VulkanCommandBuffer::BindDescriptorTable(WeakPtr<BindlessDescriptorTable> descriptorTable, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure)
 	{
 		VT_PROFILE_FUNCTION();
-		descriptorTable->AsRef<VulkanBindlessDescriptorTable>().Bind(*this, constantsBuffer, offsetIndex, stride);
+		descriptorTable->AsRef<VulkanBindlessDescriptorTable>().Bind(*this, constantsBuffer, offsetIndex, stride, accelerationStructure);
 	}
 
 	void VulkanCommandBuffer::BeginRendering(const RenderingInfo& renderingInfo)
@@ -875,6 +878,133 @@ namespace Volt::RHI
 		info.pImageMemoryBarriers = imageBarriers.data();
 
 		vkCmdPipelineBarrier2(m_commandBufferData.commandBuffer, &info);
+	}
+
+	void VulkanCommandBuffer::BuildAccelerationStructures(const Vector<AccelerationStructureBuildGeometryInfo>& buildInfos, const Vector<AccelerationStructureBuildRanges>& buildRanges)
+	{
+		Vector<VkAccelerationStructureGeometryKHR> geometries;
+		Vector<VkAccelerationStructureBuildGeometryInfoKHR> buildGeometries;
+
+		Vector<RefPtr<StorageBuffer>> scratchBuffers;
+
+		auto device = GraphicsContext::GetDevice();
+
+		for (const auto& buildInfo : buildInfos)
+		{
+			size_t offset = geometries.size();
+			Vector<uint32_t> primitiveCounts;
+
+			for (const auto& geometryInfo : buildInfo.geometries)
+			{
+				auto& vulkanGeometry = geometries.emplace_back();
+				vulkanGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+				vulkanGeometry.pNext = nullptr;
+				vulkanGeometry.geometryType = Utility::GetGeometryType(geometryInfo.geometryType);
+				vulkanGeometry.flags = Utility::GetGeometryFlags(geometryInfo.flags);
+			
+				if (geometryInfo.geometryType == AccelerationStructureGeometryType::Triangles)
+				{
+					VT_ENSURE(geometryInfo.indexBuffer && geometryInfo.vertexPositionsBuffer);
+
+					auto& triangles = vulkanGeometry.geometry.triangles;
+					triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+					triangles.pNext = nullptr;
+					triangles.vertexFormat = Utility::VoltToVulkanFormat(geometryInfo.vertexFormat);
+					triangles.vertexData.deviceAddress = geometryInfo.vertexPositionsBuffer->GetDeviceAddress();
+					triangles.vertexStride = geometryInfo.vertexStride;
+					triangles.maxVertex = geometryInfo.vertexCount;
+					triangles.indexType = Utility::VoltToVulkanIndexType(geometryInfo.indexType);
+					triangles.indexData.deviceAddress = geometryInfo.indexBuffer->GetDeviceAddress();
+					triangles.transformData.deviceAddress = 0;
+
+					primitiveCounts.emplace_back(geometryInfo.indexBuffer->GetCount() / 3u);
+				}
+				else if (geometryInfo.geometryType == AccelerationStructureGeometryType::Instances)
+				{
+					VT_ENSURE(geometryInfo.instancesBuffer);
+
+					auto& instances = vulkanGeometry.geometry.instances;
+					instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+					instances.pNext = nullptr;
+					instances.arrayOfPointers = VK_FALSE;
+					instances.data.deviceAddress = geometryInfo.instancesBuffer->GetDeviceAddress();
+
+					primitiveCounts.emplace_back(geometryInfo.instancesBuffer->GetCount());
+				}
+			}
+
+			auto& vulkanBuildInfo = buildGeometries.emplace_back();
+			vulkanBuildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+			vulkanBuildInfo.pNext = nullptr;
+			vulkanBuildInfo.type = Utility::GetAccelerationStructureType(buildInfo.type);
+			vulkanBuildInfo.flags = Utility::GetAccelerationStructureBuildFlags(buildInfo.flags);
+			vulkanBuildInfo.mode = Utility::GetAccelerationStructureBuildMode(buildInfo.mode);
+			vulkanBuildInfo.geometryCount = static_cast<uint32_t>(geometries.size() - offset);
+			vulkanBuildInfo.pGeometries = &geometries[offset];
+			vulkanBuildInfo.scratchData.deviceAddress = 0;
+
+			if (buildInfo.mode == AccelerationStructureBuildMode::Update)
+			{
+				VT_ENSURE(buildInfo.srcAccelerationStructure && buildInfo.dstAccelerationStructure);
+			}
+			else
+			{
+				VT_ENSURE(buildInfo.dstAccelerationStructure);
+			}
+			
+			if (buildInfo.srcAccelerationStructure)
+			{
+				vulkanBuildInfo.srcAccelerationStructure = buildInfo.srcAccelerationStructure->GetHandle<VkAccelerationStructureKHR>();
+			}
+
+			if (buildInfo.dstAccelerationStructure)
+			{
+				vulkanBuildInfo.dstAccelerationStructure = buildInfo.dstAccelerationStructure->GetHandle<VkAccelerationStructureKHR>();
+			}
+
+			VkAccelerationStructureBuildSizesInfoKHR buildSizes;
+			buildSizes.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+			buildSizes.pNext = nullptr;
+			buildSizes.accelerationStructureSize = 0;
+			buildSizes.updateScratchSize = 0;
+			buildSizes.buildScratchSize = 0;
+		
+			vkGetAccelerationStructureBuildSizesKHR(device->GetHandle<VkDevice>(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &vulkanBuildInfo, primitiveCounts.data(), &buildSizes);
+		
+			const VkDeviceSize scratchBufferSize = buildInfo.mode == AccelerationStructureBuildMode::Build ? buildSizes.buildScratchSize : buildSizes.updateScratchSize;
+
+			RefPtr<StorageBuffer> scratchBuffer = StorageBuffer::Create(1, scratchBufferSize, "AS Scratch Buffer", BufferUsage::StorageBuffer | BufferUsage::DeviceAddress);
+			scratchBuffers.push_back(scratchBuffer);
+
+			vulkanBuildInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress();
+		}
+
+		Vector<VkAccelerationStructureBuildRangeInfoKHR> vulkanBuildRanges;
+		Vector<VkAccelerationStructureBuildRangeInfoKHR*> vulkanBuildRangesPtrs;
+
+		for (const auto& buildRange : buildRanges)
+		{
+			for (const auto& range : buildRange.GetRanges())
+			{
+				auto& vulkanRange = vulkanBuildRanges.emplace_back();
+				vulkanRange.firstVertex = range.firstVertex;
+				vulkanRange.primitiveCount = range.primitiveCount;
+				vulkanRange.primitiveOffset = range.primitiveOffset;
+				vulkanRange.transformOffset = range.transformOffset;
+			}
+		}
+
+		size_t offset = 0;
+
+		for (const auto& buildRange : buildRanges)
+		{
+			auto*& rangePtr = vulkanBuildRangesPtrs.emplace_back();
+			rangePtr = &vulkanBuildRanges[offset];
+
+			offset += buildRange.GetRanges().size();
+		}
+
+		vkCmdBuildAccelerationStructuresKHR(m_commandBufferData.commandBuffer, static_cast<uint32_t>(buildGeometries.size()), buildGeometries.data(), vulkanBuildRangesPtrs.data());
 	}
 
 	void VulkanCommandBuffer::BeginMarker(std::string_view markerLabel, const std::array<float, 4>& markerColor)

@@ -17,6 +17,8 @@
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Memory/MemoryUtility.h>
+#include <RHIModule/RayTracing/AccelerationStructure.h>
+#include <RHIModule/Globals.h>
 
 #include <CoreUtilities/ComparisonHelpers.h>
 
@@ -144,7 +146,7 @@ namespace Volt::RHI
 		return GetCurrentMainDescriptorSet();
 	}
 
-	void VulkanBindlessDescriptorTable::Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride)
+	void VulkanBindlessDescriptorTable::Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure)
 	{
 		VT_PROFILE_FUNCTION();
 		VulkanCommandBuffer& vulkanCommandBuffer = commandBuffer.AsRef<VulkanCommandBuffer>();
@@ -172,7 +174,7 @@ namespace Volt::RHI
 		std::array<VkDescriptorSet, 2> descriptorSets = { GetCurrentMainDescriptorSet(), hasConstantsSet ? GetOrAllocateConstantsSet() : nullptr };
 		if (hasConstantsSet)
 		{
-			WriteConstantsSet(descriptorSets[1], constantsBuffer);
+			WriteConstantsSet(descriptorSets[1], constantsBuffer, accelerationStructure);
 		}
 
 		vkCmdBindDescriptorSets(vulkanCommandBuffer.GetHandle<VkCommandBuffer>(), bindPoint, vulkanCommandBuffer.GetCurrentPipelineLayout(), 0, descriptorSetCount, descriptorSets.data(), hasConstantsSet ? 1 : 0, &offset);
@@ -217,6 +219,7 @@ namespace Volt::RHI
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10000 },
 			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10000 },
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10000 },
+			{ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 } 
 		};
 
 		VkDescriptorPoolCreateInfo poolInfo{};
@@ -371,7 +374,7 @@ namespace Volt::RHI
 		return resultSet;
 	}
 
-	void VulkanBindlessDescriptorTable::WriteConstantsSet(VkDescriptorSet_T* dstSet, WeakPtr<UniformBuffer> constantsBuffer)
+	void VulkanBindlessDescriptorTable::WriteConstantsSet(VkDescriptorSet_T* dstSet, WeakPtr<UniformBuffer> constantsBuffer, WeakPtr<AccelerationStructure> accelerationStructure)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -385,18 +388,41 @@ namespace Volt::RHI
 		bufferInfo.range = constantsBuffer->GetSize();
 		bufferInfo.offset = 0;
 
-		VkWriteDescriptorSet descriptorWrite{};
+		StackVector<VkWriteDescriptorSet, 2> writeDescriptors;
+
+		VkWriteDescriptorSet& descriptorWrite = writeDescriptors.EmplaceBack();
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrite.pNext = nullptr;
 		descriptorWrite.descriptorCount = 1;
 		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.dstBinding = 998;
+		descriptorWrite.dstBinding = Globals::RENDER_GRAPH_CONSTANTS_BINDING;
 		descriptorWrite.dstSet = dstSet;
 		descriptorWrite.pBufferInfo = &bufferInfo;
 
+		VkAccelerationStructureKHR accelerationStructureHandle;
+		VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo;
+
+		if (GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing && accelerationStructure)
+		{
+			accelerationStructureInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+			accelerationStructureInfo.pNext = nullptr;
+			accelerationStructureInfo.accelerationStructureCount = 1;
+
+			accelerationStructureHandle = accelerationStructure->GetHandle<VkAccelerationStructureKHR>();
+			accelerationStructureInfo.pAccelerationStructures = &accelerationStructureHandle;
+
+			VkWriteDescriptorSet& asWriteDescriptor = writeDescriptors.EmplaceBack();
+			asWriteDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			asWriteDescriptor.pNext = &accelerationStructureInfo;
+			asWriteDescriptor.dstSet = dstSet;
+			asWriteDescriptor.dstBinding = Globals::ACCELERATION_STRUCTURE_BINDING;
+			asWriteDescriptor.descriptorCount = 1;
+			asWriteDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		}
+
 		auto vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();
-		vkUpdateDescriptorSets(vkDevice, 1, &descriptorWrite, 0, nullptr);
+		vkUpdateDescriptorSets(vkDevice, static_cast<uint32_t>(writeDescriptors.Size()), writeDescriptors.Data(), 0, nullptr);
 	}
 
 	VkDescriptorSet_T* VulkanBindlessDescriptorTable::GetCurrentMainDescriptorSet() const

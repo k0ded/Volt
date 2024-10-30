@@ -5,6 +5,7 @@
 #include "Volt/Rendering/RenderScene.h"
 #include "Volt/Rendering/RendererCommon.h"
 #include "Volt/Rendering/Renderer.h"
+#include "Volt/Rendering/RayTracing/RayTracingScene.h"
 
 #include "Volt/Rendering/RenderingTechniques/PrefixSumTechnique.h"
 #include "Volt/Rendering/RenderingTechniques/GTAOTechnique.h"
@@ -162,12 +163,16 @@ namespace Volt
 			AddSkyboxPass(renderGraph, rgBlackboard);
 			AddShadingPass(renderGraph, rgBlackboard);
 
+			//m_gibs.Render(renderGraph, rgBlackboard);
+
 			if (m_visualizationMode == VisualizationMode::VisualizeMeshSDF)
 			{
 				AddVisualizeSDFPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 			}
 
 			//AddVisualizeBricksPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
+
+			//AddTestRTPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 
 			AddFinalCopyPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 			AddFXAAPass(renderGraph, rgBlackboard, rgBlackboard.Get<FinalCopyData>().output);
@@ -1174,6 +1179,32 @@ namespace Volt
 			}
 
 			context.EndRendering();
+		});
+	}
+
+	void SceneRenderer::AddTestRTPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage)
+	{
+		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
+
+		renderGraph.AddPass("RT Test Pass",
+		[&](RenderGraph::Builder& builder)
+		{
+			builder.WriteResource(dstImage);
+
+			builder.ReadResource(uniformBuffers.viewDataBuffer);
+
+			builder.SetIsComputePass();
+			builder.SetHasSideEffect();
+		},
+		[=](RenderContext& context) 
+		{
+			auto pipeline = ShaderMap::GetComputePipeline("RG_RayTracingShaderTest");
+			context.BindPipeline(pipeline);
+			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
+			context.SetConstant("outputTexture"_sh, dstImage);
+			context.SetAccelerationStructure(m_scene->GetRenderScene()->GetRayTracingScene()->GetAccelerationStructure());
+
+			context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1u);
 		});
 	}
 

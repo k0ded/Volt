@@ -22,6 +22,8 @@
 // Fallthrough
 #define VT_FALLTHROUGH [[fallthrough]]
 
+#define VT_UNREACHABLE __assume(0)
+
 #if defined(_MSC_VER)
 #define VT_DISABLE_WARNING(w) \
 	__pragma(warning(push)) \

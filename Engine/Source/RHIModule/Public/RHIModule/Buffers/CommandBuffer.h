@@ -2,16 +2,15 @@
 
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
-#include "RHIModule/Images/ImageView.h"
 
 #include "RHIModule/Descriptors/BindlessDescriptorTable.h"
 #include "RHIModule/Descriptors/DescriptorTable.h"
 
+#include "RHIModule/RayTracing/RayTracingCommon.h"
+
 #include <CoreUtilities/Pointers/WeakPtr.h>
 #include <CoreUtilities/Containers/StackVector.h>
 #include <CoreUtilities/Containers/Vector.h>
-
-#include <span>
 
 namespace Volt::RHI
 {
@@ -28,6 +27,8 @@ namespace Volt::RHI
 
 	class Event;
 	class Fence;
+
+	class AccelerationStructure;
 
 	enum class CommandBufferLevel
 	{
@@ -76,7 +77,7 @@ namespace Volt::RHI
 		virtual void BindIndexBuffer(WeakPtr<StorageBuffer> indexBuffer) = 0;
 
 		virtual void BindDescriptorTable(WeakPtr<DescriptorTable> descriptorTable) = 0;
-		virtual void BindDescriptorTable(WeakPtr<BindlessDescriptorTable> descriptorTable, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride) = 0;
+		virtual void BindDescriptorTable(WeakPtr<BindlessDescriptorTable> descriptorTable, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure = nullptr) = 0;
 
 		virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
 		virtual void EndRendering() = 0;
@@ -84,6 +85,8 @@ namespace Volt::RHI
 		virtual void PushConstants(const void* data, const uint32_t size, const uint32_t offset) = 0;
 
 		virtual void ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers) = 0;
+
+		virtual void BuildAccelerationStructures(const Vector<AccelerationStructureBuildGeometryInfo>& buildInfos, const Vector<AccelerationStructureBuildRanges>& buildRanges) = 0;
 
 		virtual void BeginMarker(std::string_view markerLabel, const std::array<float, 4>& markerColor) = 0;
 		virtual void EndMarker() = 0;

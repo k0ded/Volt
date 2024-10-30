@@ -319,7 +319,7 @@ namespace Volt::RHI
 			for (const auto& [binding, data] : bindings)
 			{
 				auto& writeDescriptor = m_descriptorWrites.emplace_back();
-				InitilizeWriteDescriptor(writeDescriptor, binding, static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER), m_descriptorSets[set]);
+				InitializeWriteDescriptor(writeDescriptor, binding, static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER), m_descriptorSets[set]);
 				m_writeDescriptorsMapping[set][binding] = static_cast<uint32_t>(m_descriptorWrites.size() - 1);
 			}
 		}
@@ -329,7 +329,7 @@ namespace Volt::RHI
 			for (const auto& [binding, data] : bindings)
 			{
 				auto& writeDescriptor = m_descriptorWrites.emplace_back();
-				InitilizeWriteDescriptor(writeDescriptor, binding, static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER), m_descriptorSets[set]);
+				InitializeWriteDescriptor(writeDescriptor, binding, static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER), m_descriptorSets[set]);
 				m_writeDescriptorsMapping[set][binding] = static_cast<uint32_t>(m_descriptorWrites.size() - 1);
 			}
 		}
@@ -339,7 +339,7 @@ namespace Volt::RHI
 			for (const auto& [binding, data] : bindings)
 			{
 				auto& writeDescriptor = m_descriptorWrites.emplace_back();
-				InitilizeWriteDescriptor(writeDescriptor, binding, static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE), m_descriptorSets[set]);
+				InitializeWriteDescriptor(writeDescriptor, binding, static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE), m_descriptorSets[set]);
 				m_writeDescriptorsMapping[set][binding] = static_cast<uint32_t>(m_descriptorWrites.size() - 1);
 			}
 		}
@@ -349,7 +349,7 @@ namespace Volt::RHI
 			for (const auto& [binding, data] : bindings)
 			{
 				auto& writeDescriptor = m_descriptorWrites.emplace_back();
-				InitilizeWriteDescriptor(writeDescriptor, binding, static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE), m_descriptorSets[set]);
+				InitializeWriteDescriptor(writeDescriptor, binding, static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE), m_descriptorSets[set]);
 				m_writeDescriptorsMapping[set][binding] = static_cast<uint32_t>(m_descriptorWrites.size() - 1);
 			}
 		}
@@ -359,7 +359,7 @@ namespace Volt::RHI
 			for (const auto& [binding, data] : bindings)
 			{
 				auto& writeDescriptor = m_descriptorWrites.emplace_back();
-				InitilizeWriteDescriptor(writeDescriptor, binding, static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_SAMPLER), m_descriptorSets[set]);
+				InitializeWriteDescriptor(writeDescriptor, binding, static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_SAMPLER), m_descriptorSets[set]);
 				m_writeDescriptorsMapping[set][binding] = static_cast<uint32_t>(m_descriptorWrites.size() - 1);
 			}
 		}
@@ -388,7 +388,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanDescriptorTable::InitilizeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet)
+	void VulkanDescriptorTable::InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet)
 	{
 		writeDescriptor.sType = static_cast<uint32_t>(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
 		writeDescriptor.pNext = nullptr;

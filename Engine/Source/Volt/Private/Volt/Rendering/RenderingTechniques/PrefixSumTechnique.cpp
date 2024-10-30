@@ -39,28 +39,28 @@ namespace Volt
 
 		auto pipeline = ShaderMap::GetComputePipeline("PrefixSum");
 
-		RenderGraphBufferHandle stateBuffer = RenderGraphNullHandle();
-		{
-			const auto desc = RGUtils::CreateBufferDesc<State>(std::max(groupCount, 1u), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GPU, "State Buffer");
-			stateBuffer = m_renderGraph.CreateBuffer(desc);
-			RGUtils::ClearBuffer(m_renderGraph, stateBuffer, 0, "Clear State Buffer");
-		}
+		RenderGraphBufferHandle counterBuffer = m_renderGraph.CreateBuffer(RGUtils::CreateBufferDescGPU<uint32_t>(1, "PrefixSum.CounterBuffer"));
+		RenderGraphBufferHandle stateBuffer = m_renderGraph.CreateBuffer(RGUtils::CreateBufferDescGPU<State>(std::max(groupCount, 1u), "PrefixSum.StateBuffer"));
+			
+		RGUtils::ClearBuffer(m_renderGraph, stateBuffer, 0);
+		RGUtils::ClearBuffer(m_renderGraph, counterBuffer, 0);
 
-		m_renderGraph.AddPass<PrefixSumData>("Prefix Sum",
-		[&](RenderGraph::Builder& builder, PrefixSumData& data)
+		m_renderGraph.AddPass("Prefix Sum",
+		[&](RenderGraph::Builder& builder)
 		{
-			data.stateBuffer = stateBuffer;
-			builder.WriteResource(stateBuffer);
 			builder.ReadResource(inputBuffer);
+			builder.WriteResource(stateBuffer);
+			builder.WriteResource(counterBuffer);
 			builder.WriteResource(outputBuffer);
 			builder.SetIsComputePass();
 		},
-		[pipeline, groupCount, inputBuffer, outputBuffer, valueCount](const PrefixSumData& data, RenderContext& context)
+		[=](RenderContext& context)
 		{
 			context.BindPipeline(pipeline);
 			context.SetConstant("inputValues"_sh, inputBuffer);
 			context.SetConstant("outputValues"_sh, outputBuffer);
-			context.SetConstant("stateBuffer"_sh, data.stateBuffer);
+			context.SetConstant("state"_sh, stateBuffer);
+			context.SetConstant("counterBuffer"_sh, counterBuffer);
 			context.SetConstant("valueCount"_sh, valueCount);
 
 			context.Dispatch(groupCount, 1, 1);

@@ -15,8 +15,13 @@ namespace vt
     void InterlockedAdd(in vt::RWTypedBuffer<T> buffer, in uint index, in uint value)
     {
         RWStructuredBuffer<T> structuredBuffer = DESCRIPTOR_HEAP(RWTypedBufferHandle<T>, buffer.handle);
+        InterlockedAdd(structuredBuffer[index], value);
+    }
 
-        uint tempVal;
-        InterlockedAdd(structuredBuffer[index], value, tempVal);
+    template<typename T>
+    void InterlockedAdd(in vt::RWTex2D<T> texture, in uint2 pixel, in uint value)
+    {
+        RWTexture2D<T> tex = DESCRIPTOR_HEAP(RWTexture2DHandle<T>, texture.handle);
+        InterlockedAdd(tex[pixel], value);
     }
 }
