@@ -1,13 +1,9 @@
 #pragma once
 #include "Circuit/Config.h"
-#include "Circuit/Window/CircuitWindow.h"
 
 #include <EventSystem/EventListener.h>
-
 #include <WindowModule/WindowHandle.h>
 
-#include <vector>
-#include <memory>
 #include <map>
 
 
@@ -20,6 +16,10 @@ namespace Volt
 
 namespace Circuit
 {
+	class CircuitInputHandler;
+	class CircuitWindow;
+
+
 	class CircuitManager : Volt::EventListener
 	{
 	public:
@@ -30,6 +30,8 @@ namespace Circuit
 		CIRCUIT_API static void Initialize();
 
 		CIRCUIT_API void Update();
+
+		CIRCUIT_API Vector<Weak<CircuitWindow>> GetWindows();
 
 		//CIRCUIT_API CircuitWindow& OpenWindow(OpenWindowParams& params);  
 	private:
@@ -46,6 +48,8 @@ namespace Circuit
 		int32_t TestingRawDelegates(float aParameter);
 
 	private:
-		std::map<Volt::WindowHandle, Scope<CircuitWindow>> m_windows;
+		std::map<Volt::WindowHandle, Ref<CircuitWindow>> m_windows;
+
+		Scope<CircuitInputHandler> InputHandler;
 	};
 }

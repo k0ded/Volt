@@ -6,8 +6,11 @@
 #include "Circuit/Widgets/SliderWidget.h"
 #include "Circuit/Widgets/TextWidget.h"
 #include "Circuit/Widgets/ButtonWidget.h"
+#include "Circuit/Widgets/WindowWidget.h"
 
 #include "Circuit/Widgets/Layout/LayoutWidget.h"
+
+#include "Circuit/CircuitInputHandler.h"
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Events/WindowEvents.h>
@@ -39,19 +42,22 @@ namespace Circuit
 	{
 		VT_PROFILE_FUNCTION();
 		RegisterEventListeners();
-
 		RegisterWindow(Volt::WindowManager::Get().GetMainWindowHandle());
 
-		Ref<LayoutWidget> layout = CreateWidget(LayoutWidget).Orientation(LayoutOrientation::Horizontal);
+		InputHandler = CreateScope<CircuitInputHandler>();
+		InputHandler->Init();
+
+		/*Ref<LayoutWidget> layout = CreateWidget(LayoutWidget).Orientation(LayoutOrientation::Horizontal);
 
 		layout->AddFlexibleSlice(CreateWidget(TextWidget).Text("One"));
 		layout->AddFlexibleSlice(CreateWidget(TextWidget).Text("Two"));
 		layout->AddFixedSlice(CreateWidget(TextWidget).Text("Three"), 200);
 		layout->AddFixedSlice(CreateWidget(TextWidget).Text("Four"), 200);
-		
+		*/
 
 		m_windows[Volt::WindowManager::Get().GetMainWindowHandle()]->SetWidget(
-			layout
+			CreateWidget(ButtonWidget)
+			.Size({ 50, 20 })
 		);
 
 
@@ -105,6 +111,16 @@ namespace Circuit
 
 	void CircuitManager::Update()
 	{
+	}
+
+	CIRCUIT_API Vector<Weak<CircuitWindow>> CircuitManager::GetWindows()
+	{
+		Vector<Weak<CircuitWindow>> windows;
+		for (auto& [windowHandle, window] : m_windows)
+		{
+			windows.push_back(window);
+		}
+		return windows;
 	}
 
 	//CircuitWindow& CircuitManager::OpenWindow(OpenWindowParams& params)

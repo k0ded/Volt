@@ -417,7 +417,7 @@ namespace Volt
 			m_isMinimized = false;
 		}
 
-		WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
+		//WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
 
 		MainUpdate();
 

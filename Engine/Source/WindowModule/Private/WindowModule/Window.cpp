@@ -179,7 +179,7 @@ namespace Volt
 					break;
 				}
 			}
-		});		
+		});
 
 		glfwSetCharCallback(m_window, [](GLFWwindow* window, uint32_t key)
 		{
@@ -393,21 +393,18 @@ namespace Volt
 		m_data.Width = aWidth;
 		m_data.Height = aHeight;
 
-		/*if (Application::Get().IsRuntime())
+		if (m_data.WindowMode == WindowMode::Windowed)
 		{
-			if (m_data.windowMode == WindowMode::Windowed)
-			{
-				glfwSetWindowSize(m_window, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight));
-			}
-			else if (m_data.windowMode == WindowMode::Fullscreen)
-			{
-				glfwSetWindowMonitor(m_window, glfwGetPrimaryMonitor(), 0, 0, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight), GLFW_DONT_CARE);
-			}
-			else
-			{
-				return;
-			}
-		}*/
+			glfwSetWindowSize(m_window, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight));
+		}
+		else if (m_data.WindowMode == WindowMode::Fullscreen)
+		{
+			glfwSetWindowMonitor(m_window, glfwGetPrimaryMonitor(), 0, 0, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight), GLFW_DONT_CARE);
+		}
+		else
+		{
+			return;
+		}
 
 		m_swapchain->Resize(aWidth, aHeight, m_data.VSync);
 	}

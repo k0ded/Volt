@@ -1,5 +1,6 @@
 #pragma once
 #include "Circuit/Widgets/Widget.h"
+#include "Circuit/Widgets/CompoundWidget.h"
 
 #include <CoreUtilities/Containers/Vector.h>
 
@@ -10,7 +11,7 @@ namespace Circuit
 		Horizontal,
 		Vertical,
 	};
-	class CIRCUIT_API LayoutWidget : public Circuit::Widget
+	class CIRCUIT_API LayoutWidget : public Circuit::CompoundWidget
 	{
 	public:
 		CIRCUIT_BEGIN_ARGS(LayoutWidget)
@@ -30,11 +31,13 @@ namespace Circuit
 
 		void AddFlexibleSlice(Ref<Widget> contentWidget);
 
+		virtual bool IsHittestInvisible() const override { return true; };
+
 	private:
 
 		struct Slice
 		{
-			Ref<Widget> widget;
+			Weak<Widget> widget;
 			float size = -1; //for fixed size, if < 0 is flexible slice
 		};
 		Vector<Slice> m_slices;

@@ -23,13 +23,15 @@ namespace Circuit
 
 		CIRCUIT_API Volt::WindowHandle GetWindowHandle() const;
 
-		CIRCUIT_API glm::u16vec2 GetWindowSize() const;
+		CIRCUIT_API glm::u32vec2 GetPosition() const;
+		CIRCUIT_API glm::u32vec2 GetSize() const;
 		CIRCUIT_API void Resize(const glm::vec2& size);
 
 		CIRCUIT_API std::vector<CircuitDrawCommand> GetDrawCommands();
 
 		//takes ownership of the widget
 		CIRCUIT_API void SetWidget(Ref<Widget> widget);
+		CIRCUIT_API Weak<Widget> GetWidget() { return m_widget; };
 
 
 		void OnRender();

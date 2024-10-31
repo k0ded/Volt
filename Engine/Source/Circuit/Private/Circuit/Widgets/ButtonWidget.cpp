@@ -8,7 +8,6 @@
 
 Circuit::ButtonWidget::ButtonWidget()
 {
-	RegisterEventListeners();
 }
 
 Circuit::ButtonWidget::~ButtonWidget()
@@ -19,6 +18,8 @@ void Circuit::ButtonWidget::Build(const Arguments& args)
 {
 	m_hovered = false;
 	m_pressed = false;
+	m_minSize = args._MinSize;
+	m_size = args._Size;
 }
 
 void Circuit::ButtonWidget::OnPaint(CircuitPainter& painter)
@@ -36,45 +37,32 @@ void Circuit::ButtonWidget::OnPaint(CircuitPainter& painter)
 	{
 		buttonColor = &hoveredColor;
 	}
-	
-	painter.AddRect(GetX(), GetY(), 50, 50, *buttonColor);
-}
-
-void Circuit::ButtonWidget::RegisterEventListeners()
-{
-	RegisterListener<Volt::MouseMovedEvent>(VT_BIND_EVENT_FN(ButtonWidget::OnMouseMoved));
-	RegisterListener<Volt::MouseButtonPressedEvent>(VT_BIND_EVENT_FN(ButtonWidget::OnMouseButtonPressed));
-	RegisterListener<Volt::MouseButtonReleasedEvent>(VT_BIND_EVENT_FN(ButtonWidget::OnMouseButtonReleased));
-}
-
-bool Circuit::ButtonWidget::OnMouseMoved(Volt::MouseMovedEvent& e)
-{
-	m_hovered = GetBounds().IsPointInside(Volt::Input::GetMousePosition());
-
-	//if we leave the button while it is pressed, depress it
-	if (m_pressed && !m_hovered)
+	glm::vec2 size = m_size;
+	//if we have an invalid size, autosize instead
+	if (size.x < 0 || size.y < 0)
 	{
-		m_pressed = false;
+		size = glm::vec2(glm::max(painter.GetAllotedArea().GetSize().x, m_minSize.x), glm::max(painter.GetAllotedArea().GetSize().y, m_minSize.y));
 	}
-	return false;
+	painter.AddRect(0, 0, size.x, size.y, *buttonColor);
 }
 
-bool Circuit::ButtonWidget::OnMouseButtonPressed(Volt::MouseButtonPressedEvent& e)
+void Circuit::ButtonWidget::OnBeginHover()
 {
-	if (m_hovered)
-	{
-		m_pressed = true;
-	}
-	return false;
+	m_hovered = true;
 }
 
-bool Circuit::ButtonWidget::OnMouseButtonReleased(Volt::MouseButtonReleasedEvent& e)
+void Circuit::ButtonWidget::OnEndHover()
 {
-	if (m_hovered && m_pressed)
-	{
-		//execute the thing
-		m_pressed = false;
-	}
+	m_hovered = false;
+	m_pressed = false;
+}
 
-	return false;
+void Circuit::ButtonWidget::OnPressed()
+{
+	m_pressed = true;
+}
+
+void Circuit::ButtonWidget::OnReleased()
+{
+	m_pressed = false;
 }

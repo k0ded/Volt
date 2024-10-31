@@ -60,8 +60,8 @@ namespace Circuit
 	{
 		VT_PROFILE_FUNCTION();
 
-		if (m_targetCircuitWindow.GetWindowSize().x < 0 ||
-			m_targetCircuitWindow.GetWindowSize().y < 0)
+		if (m_targetCircuitWindow.GetSize().x < 0 ||
+			m_targetCircuitWindow.GetSize().y < 0)
 		{
 			VT_LOG(Error, "Window size must be non-zero");
 			return;

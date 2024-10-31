@@ -20,7 +20,13 @@ namespace Circuit
 		return m_windowHandle;
 	}
 
-	glm::u16vec2 CircuitWindow::GetWindowSize() const
+	CIRCUIT_API glm::u32vec2 CircuitWindow::GetPosition() const
+	{
+		Volt::Window& window = Volt::WindowManager::Get().GetWindow(m_windowHandle);
+		return { window.GetPosition().first, window.GetPosition().second };
+	}
+
+	glm::u32vec2 CircuitWindow::GetSize() const
 	{
 		Volt::Window& window = Volt::WindowManager::Get().GetWindow(m_windowHandle);
 		return { window.GetWidth(), window.GetHeight() };
@@ -32,7 +38,7 @@ namespace Circuit
 
 	std::vector<CircuitDrawCommand> CircuitWindow::GetDrawCommands()
 	{
-		CircuitPainter painter;
+		CircuitPainter painter(glm::vec2(0,0), glm::vec2(GetSize().x, GetSize().y));
 		if (m_widget)
 		{
 			m_widget->OnPaint(painter);

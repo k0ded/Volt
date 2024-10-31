@@ -18,10 +18,12 @@ Circuit::TextWidget::~TextWidget()
 void Circuit::TextWidget::Build(const Arguments& args)
 {
 	m_text = args._Text;
+	m_size = args._Size;
+	m_color = args._Color;
 }
 
 void Circuit::TextWidget::OnPaint(CircuitPainter& painter)
 {
 	const glm::vec2 painterPos = painter.GetAllotedArea().GetPosition();
-	painter.AddText(painterPos.x, painterPos.y, m_text, m_font, 100.f, CircuitColor(100, 100, 50), 45.f);
+	painter.AddText(painterPos.x, painterPos.y, m_text.Get(), m_font, std::numeric_limits<float>().max(), CircuitColor(100, 100, 50), m_size);
 }

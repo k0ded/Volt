@@ -15,6 +15,11 @@ namespace Circuit
 		glm::vec2 offsetPosition = { 0,0 };
 		for (Slice& slice : m_slices)
 		{
+			if (slice.widget.IsExpired())
+			{
+				continue;
+			}
+
 			glm::vec2 sizeOffset = { 0,0 };
 			if (slice.size < 0)
 			{
@@ -54,12 +59,16 @@ namespace Circuit
 		Slice& newSlice = m_slices.emplace_back();
 		newSlice.widget = contentWidget;
 		newSlice.size = static_cast<float>(size);
+
+		AddChildWidget(contentWidget);
 	}
 
 	void LayoutWidget::AddFlexibleSlice(Ref<Widget> contentWidget)
 	{
 		Slice& newSlice = m_slices.emplace_back();
 		newSlice.widget = contentWidget;
+
+		AddChildWidget(contentWidget);
 	}
 
 

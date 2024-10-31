@@ -34,6 +34,11 @@
 	Volt::Attribute<AttrType> _##AttrName
 
 #define CIRCUIT_ATTRIBUTE_FUNCTION(AttrType, AttrName)\
+	WidgetArgumentsType& ##AttrName(const AttrType& attribute)\
+	{\
+		_##AttrName = Volt::Attribute<AttrType>(attribute);\
+		return static_cast<WidgetArgumentsType*>(this)->Me(); \
+	}\
 	WidgetArgumentsType& ##AttrName(Volt::Attribute<AttrType> attribute)\
 	{\
 		_##AttrName = std::move(attribute);\
