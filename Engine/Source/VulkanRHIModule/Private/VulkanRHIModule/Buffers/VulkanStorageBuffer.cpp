@@ -45,11 +45,51 @@ namespace Volt::RHI
 
 	void VulkanStorageBuffer::ResizeWithCount(const uint32_t count)
 	{
+		auto oldAllocation = m_allocation;
+		auto oldSize = m_byteSize;
+
 		m_count = count;
 		const uint64_t newSize = m_count * m_elementSize;
 
-		Invalidate(newSize);
+		// We don't need to do a full recreate if the current buffer can hold the requested count.
+		if (newSize <= m_allocation->GetSize())
+		{
+			return;
+		}
+
+		Release();
+
+		m_byteSize = std::max(newSize, Memory::GetMinBufferAllocationSize());
+
+		const VkDeviceSize bufferSize = m_byteSize;
+		m_allocation = m_allocator->CreateBuffer(bufferSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::TransferSrc | BufferUsage::StorageBuffer, m_memoryUsage);
+
 		SetName(m_name);
+
+		// Copy old data to new buffer
+		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+
+		commandBuffer->Begin();
+
+		ResourceBarrierInfo barrierInfo{};
+		barrierInfo.type = BarrierType::Global;
+		barrierInfo.globalBarrier().srcStage = BarrierStage::All;
+		barrierInfo.globalBarrier().dstStage = BarrierStage::Copy;
+		barrierInfo.globalBarrier().srcAccess = BarrierAccess::None;
+		barrierInfo.globalBarrier().dstAccess = BarrierAccess::CopyDest | BarrierAccess::CopySource;
+
+		commandBuffer->ResourceBarrier({ barrierInfo });
+		commandBuffer->CopyBufferRegion(oldAllocation, 0, m_allocation, 0, oldSize);
+
+		barrierInfo.globalBarrier().srcStage = BarrierStage::Copy;
+		barrierInfo.globalBarrier().dstStage = BarrierStage::All;
+		barrierInfo.globalBarrier().srcAccess = BarrierAccess::CopyDest | BarrierAccess::CopySource;
+		barrierInfo.globalBarrier().dstAccess = BarrierAccess::None;
+
+		commandBuffer->ResourceBarrier({ barrierInfo });
+
+		commandBuffer->End();
+		commandBuffer->Execute();
 	}
 
 	const size_t VulkanStorageBuffer::GetByteSize() const
@@ -209,7 +249,7 @@ namespace Volt::RHI
 		m_byteSize = std::max(byteSize, Memory::GetMinBufferAllocationSize());
 
 		const VkDeviceSize bufferSize = m_byteSize;
-		m_allocation = m_allocator->CreateBuffer(bufferSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::StorageBuffer, m_memoryUsage);
+		m_allocation = m_allocator->CreateBuffer(bufferSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::TransferSrc | BufferUsage::StorageBuffer, m_memoryUsage);
 	}
 
 	void VulkanStorageBuffer::Release()
