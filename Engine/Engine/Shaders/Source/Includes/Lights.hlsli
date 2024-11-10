@@ -13,6 +13,7 @@ struct DirectionalLight
     float intensity;
 
     uint castShadows;
+    float angularRadius;
 
     float cascadeDistances[DIRECTIONAL_SHADOW_CASCADE_COUNT];
     float4x4 viewProjections[DIRECTIONAL_SHADOW_CASCADE_COUNT];
@@ -33,7 +34,7 @@ struct PointLight
 struct SpotLight
 {
     float3 position;
-    float angleAttenuation;
+    float lightAngleScale;
     
     float3 color;
     float intensity;
@@ -41,7 +42,7 @@ struct SpotLight
     float3 direction;
     float range;
     
-    float angle;
+    float lightAngleOffset;
     float falloff;
     float2 padding;
 };

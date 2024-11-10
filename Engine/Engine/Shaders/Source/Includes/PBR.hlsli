@@ -6,6 +6,7 @@
 #include "ShadowMapping.hlsli"
 #include "Lights.hlsli"
 
+#include "../PBR/BRDF.hlsli"
 
 struct PBRConstants
 {
@@ -160,6 +161,15 @@ float3 CalculatePointLights(float3 dirToCamera, float3 baseReflectivity, uint po
 {
     float3 output = 0.f;
 
+    BRDFInput brdfInput;
+    brdfInput.V = dirToCamera;
+    brdfInput.N = m_pbrInput.normal;
+    brdfInput.diffuseColor = CalculateDiffuseColor(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
+    brdfInput.f0 = CalculateF0(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
+    brdfInput.f90 = CalculateF90(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
+    brdfInput.roughness = m_pbrInput.roughness;
+    brdfInput.metalness = m_pbrInput.metallic;
+
     for (int i = 0; i < pointLightCount; i++)
     {
         int lightIndex = GetLightBufferIndex(m_pbrConstants.visiblePointLights, m_viewData.tileCountX, i, m_pbrInput.tileId);
@@ -168,7 +178,7 @@ float3 CalculatePointLights(float3 dirToCamera, float3 baseReflectivity, uint po
             break;
         }
 
-        output += CalculatePointLight(m_pbrConstants.pointLights.Load(i), dirToCamera, baseReflectivity);
+        output += CalculatePointLight2(m_pbrConstants.pointLights.Load(i), brdfInput, m_pbrInput.worldPosition); //CalculatePointLight(m_pbrConstants.pointLights.Load(i), dirToCamera, baseReflectivity);
     }
     
     return output;
@@ -176,43 +186,58 @@ float3 CalculatePointLights(float3 dirToCamera, float3 baseReflectivity, uint po
 
 float3 CalculateSpotLight(in SpotLight light, float3 dirToCamera, float3 baseReflectivity)
 {
-    const float3 Li = normalize(light.position - m_pbrInput.worldPosition);
-    const float lightDistance = length(light.position - m_pbrInput.worldPosition);
-    const float NdotV = max(dot(m_pbrInput.normal, dirToCamera), EPSILON);
+    //const float3 Li = normalize(light.position - m_pbrInput.worldPosition);
+    //const float lightDistance = length(light.position - m_pbrInput.worldPosition);
+    //const float NdotV = max(dot(m_pbrInput.normal, dirToCamera), EPSILON);
+    //
+    //const float cutoff = cos(light.angle * 0.5f);
+    //const float scos = max(dot(Li, light.direction), cutoff);
+    //const float rim = (1.f - scos) / (1.f - cutoff);
+    //
+    //float attenuation = clamp(1.f - (lightDistance * lightDistance) / (light.range * light.range), 0.f, 1.f);
+    //attenuation *= lerp(attenuation, 1.f, light.falloff);
+    //attenuation *= 1.f - pow(max(rim, 0.001f), light.angleAttenuation);
+    //
+    //const float3 Lradiance = light.color * max(light.intensity, 0.f) * attenuation;
+    //const float3 Lh = normalize(Li + dirToCamera);
+    //
+    //const float cosLi = max(0.f, dot(m_pbrInput.normal, Li));
+    //const float cosLh = max(0.f, dot(m_pbrInput.normal, Lh));
+    //
+    //const float3 F = FresnelSchlickRoughness(baseReflectivity, max(0.f, dot(Lh, dirToCamera)), m_pbrInput.roughness);
+    //const float D = DistributionGGX(cosLh * cosLh, m_pbrInput.roughness);
+    //const float G = GaSchlickGGX(cosLi, NdotV, m_pbrInput.roughness);
+    //
+    //const float3 diffuseBRDF = CalculateDiffuse(F);
+    //const float3 specularBRDF = CalculateSpecular(cosLi, NdotV, F, D, G);
     
-    const float cutoff = cos(light.angle * 0.5f);
-    const float scos = max(dot(Li, light.direction), cutoff);
-    const float rim = (1.f - scos) / (1.f - cutoff);
-    
-    float attenuation = clamp(1.f - (lightDistance * lightDistance) / (light.range * light.range), 0.f, 1.f);
-    attenuation *= lerp(attenuation, 1.f, light.falloff);
-    attenuation *= 1.f - pow(max(rim, 0.001f), light.angleAttenuation);
-    
-    const float3 Lradiance = light.color * max(light.intensity, 0.f) * attenuation;
-    const float3 Lh = normalize(Li + dirToCamera);
-
-    const float cosLi = max(0.f, dot(m_pbrInput.normal, Li));
-    const float cosLh = max(0.f, dot(m_pbrInput.normal, Lh));
-
-    const float3 F = FresnelSchlickRoughness(baseReflectivity, max(0.f, dot(Lh, dirToCamera)), m_pbrInput.roughness);
-    const float D = DistributionGGX(cosLh * cosLh, m_pbrInput.roughness);
-    const float G = GaSchlickGGX(cosLi, NdotV, m_pbrInput.roughness);
-    
-    const float3 diffuseBRDF = CalculateDiffuse(F);
-    const float3 specularBRDF = CalculateSpecular(cosLi, NdotV, F, D, G);
-    
-    return (diffuseBRDF + specularBRDF) * Lradiance * cosLi;
+    return 0.f; //(diffuseBRDF + specularBRDF) * Lradiance * cosLi;
 }
 
 float3 CalculateSpotLights(float3 dirToCamera, float3 baseReflectivity, uint spotLightCount)
 {
     float3 output = 0.f;
+
+    BRDFInput brdfInput; 
+    brdfInput.V = dirToCamera;
+    brdfInput.N = m_pbrInput.normal;
+    brdfInput.diffuseColor = CalculateDiffuseColor(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
+    brdfInput.f0 = CalculateF0(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
+    brdfInput.f90 = CalculateF90(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
+    brdfInput.roughness = m_pbrInput.roughness;
+    brdfInput.metalness = m_pbrInput.metallic;
+
     for (uint i = 0; i < spotLightCount; i++)
     {
-        output += CalculateSpotLight(m_pbrConstants.spotLights.Load(i), dirToCamera, baseReflectivity);
+        output += CalculateSpotLight2(m_pbrConstants.spotLights.Load(i), brdfInput, m_pbrInput.worldPosition);
     }
     
-    return output;
+    return output; 
+}
+
+float CalculateExposure(float ev100)
+{
+    return 1.f / (pow(2.f, ev100) * 1.2f);
 }
 
 float3 CalculatePBR(in PBRInput input, in PBRConstants constants)
@@ -228,14 +253,23 @@ float3 CalculatePBR(in PBRInput input, in PBRConstants constants)
     
     float3 lightOutput = 0.f;
      
+    BRDFInput brdfInput; 
+    brdfInput.V = dirToCamera;
+    brdfInput.N = m_pbrInput.normal;
+    brdfInput.diffuseColor = CalculateDiffuseColor(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
+    brdfInput.f0 = CalculateF0(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
+    brdfInput.f90 = CalculateF90(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
+    brdfInput.roughness = m_pbrInput.roughness;
+    brdfInput.metalness = m_pbrInput.metallic;
+
     // Skylight
     {
-        lightOutput += CalculateSkyAmbiance(dirToCamera, baseReflectivity) * input.ao; 
+        //lightOutput += CalculateSkyAmbiance(dirToCamera, baseReflectivity) * input.ao; 
     }
     
     // Directional Light
     {
-        lightOutput += CalculateDirectionalLight(constants.directionalLight.Load(), dirToCamera, baseReflectivity);
+        lightOutput += CalculateDirectionalLight2(constants.directionalLight.Load(), brdfInput, m_pbrInput.worldPosition);
     }
     
     // Point lights
@@ -248,6 +282,6 @@ float3 CalculatePBR(in PBRInput input, in PBRConstants constants)
         lightOutput += CalculateSpotLights(dirToCamera, baseReflectivity, m_viewData.spotLightCount);
     }
     
-    const float3 compositeLighting = lightOutput + m_pbrInput.emissive;
+    const float3 compositeLighting = lightOutput * CalculateExposure(5) + m_pbrInput.emissive;
     return compositeLighting;
 }

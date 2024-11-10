@@ -76,7 +76,7 @@ namespace Volt
 	struct SpotLightData
 	{
 		glm::vec3 position;
-		float angleAttenuation;
+		float lightAngleScale;
 
 		glm::vec3 color;
 		float intensity;
@@ -84,7 +84,7 @@ namespace Volt
 		glm::vec3 direction;
 		float range;
 
-		float angle;
+		float lightAngleOffset;
 		float falloff;
 		glm::vec2 padding;
 	};

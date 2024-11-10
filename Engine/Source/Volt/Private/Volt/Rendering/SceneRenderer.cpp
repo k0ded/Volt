@@ -387,8 +387,8 @@ namespace Volt
 				data.position = entity.GetPosition();
 				data.radius = comp.radius;
 				data.color = comp.color;
-				data.intensity = comp.intensity;
-				data.falloff = comp.falloff;
+				data.intensity = comp.intensity * 100.f / 4 * glm::pi<float>(); // Convert from lm to cd, as we use CM we need to adjust the intensity, to match the units
+				data.falloff = glm::clamp(comp.falloff, 0.f, 1.f);
 			});
 
 			const auto desc = RGUtils::CreateBufferDesc<PointLightData>(1, RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "Point light Data");
@@ -413,15 +413,18 @@ namespace Volt
 
 				auto entity = m_scene->GetEntityFromID(idComp.id);
 
+				const float cosInnerAngle = glm::cos(glm::radians(comp.innerAngle));
+				const float cosOuterAngle = glm::cos(glm::radians(comp.outerAngle));
+
 				auto& data = spotLights.emplace_back();
 				data.position = entity.GetPosition();
 				data.color = comp.color;
 				data.falloff = comp.falloff;
-				data.intensity = comp.intensity;
-				data.angleAttenuation = comp.angleAttenuation;
+				data.intensity = comp.intensity * 100.f / glm::pi<float>(); // Note: Not actually physically accurate, but easier to work with. As we use CM we need to adjust the intensity, to match the units
 				data.direction = entity.GetForward() * -1.f;
 				data.range = comp.range;
-				data.angle = glm::radians(comp.angle);
+				data.lightAngleScale = 1.f / glm::max((cosInnerAngle - cosOuterAngle), 0.001f);
+				data.lightAngleOffset = -cosOuterAngle * data.lightAngleScale;
 			});
 
 			const auto desc = RGUtils::CreateBufferDesc<SpotLightData>(1, RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "Spot light Data");
