@@ -1,0 +1,6 @@
+name: "IntegrateDiffuseCube"
+internal: true
+sources:
+  - entryPoint: "main"
+    shaderStage: "cs"
+    filePath: "Engine/Shaders/Source/PBR/IntegrateDiffuseCube.hlsl"

@@ -51,8 +51,8 @@ namespace Volt
 	{
 		CreateMainRenderTarget(specification.initialResolution.x, specification.initialResolution.y);
 
-		m_sceneEnvironment.radianceMap = Renderer::GetDefaultResources().blackCubeTexture;
-		m_sceneEnvironment.irradianceMap = Renderer::GetDefaultResources().blackCubeTexture;
+		m_sceneEnvironment.specular = Renderer::GetDefaultResources().blackCubeTexture;
+		m_sceneEnvironment.diffuse = Renderer::GetDefaultResources().blackCubeTexture;
 
 		m_skyboxMesh = ShapeLibrary::GetCube();
 	}
@@ -443,7 +443,7 @@ namespace Volt
 		{
 			auto& imageData = blackboard.Add<ExternalImagesData>();
 			imageData.black1x1Cube = renderGraph.AddExternalImage(Renderer::GetDefaultResources().blackCubeTexture);
-			imageData.BRDFLuT = renderGraph.AddExternalImage(Renderer::GetDefaultResources().BRDFLuT);
+			imageData.BRDFLuT = renderGraph.AddExternalImage(Renderer::GetDefaultResources().DFGLuT);
 		}
 
 		// GPU Scene
@@ -476,8 +476,8 @@ namespace Volt
 			const auto& imageData = blackboard.Get<ExternalImagesData>();
 
 			auto& environmentTexturesData = blackboard.Add<EnvironmentTexturesData>();
-			environmentTexturesData.irradiance = m_sceneEnvironment.irradianceMap ? renderGraph.AddExternalImage(m_sceneEnvironment.irradianceMap) : imageData.black1x1Cube;
-			environmentTexturesData.radiance = m_sceneEnvironment.radianceMap ? renderGraph.AddExternalImage(m_sceneEnvironment.radianceMap) : imageData.black1x1Cube;
+			environmentTexturesData.irradiance = m_sceneEnvironment.diffuse ? renderGraph.AddExternalImage(m_sceneEnvironment.diffuse) : imageData.black1x1Cube;
+			environmentTexturesData.radiance = m_sceneEnvironment.specular ? renderGraph.AddExternalImage(m_sceneEnvironment.specular) : imageData.black1x1Cube;
 		}
 	}
 

@@ -1,6 +1,7 @@
 #include "Resources.hlsli"
 #include "Structures.hlsli"
 #include "Vertex.hlsli"
+#include "../Exposure.hlsli"
 
 struct Constants
 {
@@ -32,6 +33,6 @@ Output main(Input input)
     float3 result = constants.environmentTexture.SampleLevel(constants.linearSampler, input.samplePosition / 100.f, constants.lod) * constants.intensity;
     
     Output output;
-    output.output = result;
+    output.output =  CalculateExposure(5.f) * result;
     return output;
 }

@@ -12,6 +12,8 @@
 
 #include "RenderCore/Resources/BindlessResourcesManager.h"
 
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
@@ -30,6 +32,8 @@
 
 namespace Volt
 {
+	static ConsoleVariable<int32_t> s_forcePerPassWaitBarrier("r.RenderGraph.ForcePerPassWaitBarrier", 0, "Whether to insert a full wait dependency between each pass (debug purposes only).");
+
 	namespace Utility
 	{
 		inline void SetupForcedState(const RenderGraphResourceState forcedState, Ref<RenderGraphResourceNodeBase> resource, RHI::ResourceState& outState)
@@ -596,6 +600,15 @@ namespace Volt
 					resourceState.currentState = newState;
 					resourceState.isWriteState = false;
 					resourceState.previousUsage = pass;
+				}
+
+				if (s_forcePerPassWaitBarrier.GetValue())
+				{
+					auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Global);
+					newBarrier.globalBarrier().srcStage = RHI::BarrierStage::All;
+					newBarrier.globalBarrier().srcAccess = RHI::BarrierAccess::AllRead | RHI::BarrierAccess::AllWrite;
+					newBarrier.globalBarrier().dstStage = RHI::BarrierStage::All;
+					newBarrier.globalBarrier().dstAccess = RHI::BarrierAccess::AllRead | RHI::BarrierAccess::AllWrite;
 				}
 			}
 

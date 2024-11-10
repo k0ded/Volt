@@ -1,8 +1,5 @@
 #pragma once
 
-#include "Lights.hlsli"
-#include "ShadowMapping.hlsli"
-
 struct BRDFParameters
 {
     float NdotL;
@@ -31,6 +28,7 @@ struct BRDFInput
 };
 
 static const float3 m_F0 = 0.04f;
+static const float PI = 3.14159265359;
 
 float V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 {
@@ -53,7 +51,7 @@ float3 F_Schlick(float3 F0, float3 F90, float u)
     return F0 + (F90 - F0) * pow(1.f - u, 5.f);
 }
 
-float Frostbite_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
+float Fr_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
 {
     float energyBias = lerp(0.f, 0.5f, linearRoughness);
     float energyFactor = lerp(1.f, 1.f / 1.51f, linearRoughness);
@@ -68,7 +66,7 @@ float Frostbite_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linea
 
 float3 DiffuseBRDF(BRDFParameters pbrInput)
 {
-    float Fd = Frostbite_DisneyDiffuse(pbrInput.NdotV, pbrInput.NdotL, pbrInput.LdotH, pbrInput.roughness) / PI;
+    float Fd = Fr_DisneyDiffuse(pbrInput.NdotV, pbrInput.NdotL, pbrInput.LdotH, pbrInput.roughness) / PI;
     return Fd * pbrInput.diffuseColor;
 }
 
@@ -193,108 +191,4 @@ float3 BRDF(BRDFInput input, float3 D, float3 L)
     }
 
     return Fd + Fr;
-}
-
-float SmoothDistanceAttenuation(float squaredDistance, float invSqrAttRadius)
-{
-    float factor = squaredDistance * invSqrAttRadius;
-    float smoothFactor = saturate(1.f - factor * factor);
-    return smoothFactor * smoothFactor;
-}
-
-float GetDistanceAttenuation(float3 unormalizedLightVector, float invSqrAttRadius)
-{
-    float sqrDist = dot(unormalizedLightVector, unormalizedLightVector);
-    float attenuation = 1.f / max(sqrDist, 1.f);
-    attenuation *= SmoothDistanceAttenuation(sqrDist, invSqrAttRadius);
-
-    return attenuation;
-}
-
-float GetAngleAttenuation(float3 normalizedLightVector, float3 lightDirection, float lightAngleScale, float lightAngleOffset)
-{
-    float cd = dot(lightDirection, normalizedLightVector);
-    float attenuation = saturate(cd * lightAngleScale + lightAngleOffset);
-    attenuation *= attenuation;
-
-    return attenuation;
-}
-
-float3 CalculatePointLight2(in PointLight light, in BRDFInput brdfInput, float3 worldPosition)
-{
-    float3 unormalizedLightVector = light.position - worldPosition;
-    float3 L = normalize(unormalizedLightVector);
-    float invSqrRadius = 1.f / (light.radius * light.radius);
-
-    float attenuation = GetDistanceAttenuation(unormalizedLightVector, invSqrRadius);
-
-    return BRDF(brdfInput, L) * light.color * light.intensity * attenuation;   
-}
-
-float3 CalculateSpotLight2(in SpotLight light, in BRDFInput brdfInput, float3 worldPosition)
-{
-    float3 unormalizedLightVector = light.position - worldPosition;
-    float3 L = normalize(unormalizedLightVector);
-    float invSqrRadius = 1.f / (light.range * light.range);
-    
-    float attenuation = 1.f;
-    attenuation *= GetDistanceAttenuation(unormalizedLightVector, invSqrRadius);
-    attenuation *= GetAngleAttenuation(L, normalize(light.direction), light.lightAngleScale, light.lightAngleOffset);
-    
-    return BRDF(brdfInput, L) * light.color * attenuation * light.intensity;   
-} 
-
-float CalculateDirectionalShadow2(in DirectionalLight light)
-{
-    //const uint cascadeIndex = GetCascadeIndexFromWorldPosition(light, m_pbrInput.worldPosition, m_viewData.view);
-    //const float3 shadowMapCoords = GetShadowMapCoords(light.viewProjections[cascadeIndex], m_pbrInput.worldPosition);
-    //const float result = CalculateDirectionalShadow_Hard(light, m_shadowSampler, m_pbrConstants.directionalShadowMap, m_pbrInput.normal, cascadeIndex, shadowMapCoords);
-    return 1;
-} 
-
-float3 CalculateDirectionalLight2(in DirectionalLight light, in BRDFInput brdfInput, float3 worldPosition)
-{
-    float3 D = normalize(light.direction.xyz);
-    float r = sin(light.angularRadius);
-    float d = cos(light.angularRadius);
-
-    float DdotV = dot(D, brdfInput.V);
-    float3 S = brdfInput.V - DdotV * D;
-    float3 L = DdotV < d ? normalize(d * D * normalize(S) * r) : brdfInput.V;
-
-    float illuminance = light.intensity * saturate(dot(brdfInput.N, D));
-
-    return BRDF(brdfInput, D, L) * light.color * illuminance;
-} 
-
-float3 GetSpecularDominantDirection(float3 N, float3 R, float roughness)
-{
-    float smoothness = saturate(1.f - roughness);
-    float lerpFactor = smoothness * (sqrt(smoothness) + roughness);
-
-    return lerp(N, R, lerpFactor);
-}
-
-float3 GetDiffuseDominantDirection(float3 N, float3 V, float NdotV, float roughness)
-{
-    float a = 1.02341f * roughness - 1.51174f;
-    float b = -0.511705f * roughness + 0.755868f;
-    
-    float lerpFactor = saturate((NdotV * a + b) * roughness);
-    return lerp(N, V, lerpFactor);
-}
-
-float3 CalculateSkyAmbiance2(in BRDFInput brdfInput, vt::TexCube<float3> irradiance, vt::TexCube<float3> radiance, TextureSampler linearSampler)
-{
-    float NdotV = saturate(dot(brdfInput.N, brdfInput.V));
-    float    
-
-    float3 diffuse = 0.f;
-
-    {
-        float3 dominantN = GetDiffuseDominantDirection(brdfInput.N, brdfInput.V, NdotV, brdfInput.roughness);
-        float3 diffuseLighting = irradiance.SampleLevel(linearSampler, dominantN, 0.f);
-
-            
-    }
 }

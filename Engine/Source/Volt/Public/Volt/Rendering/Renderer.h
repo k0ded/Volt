@@ -31,6 +31,7 @@ namespace Volt
 		Ref<Material> defaultMaterial;
 
 		RefPtr<RHI::Image> BRDFLuT;
+		RefPtr<RHI::Image> DFGLuT;
 		RefPtr<RHI::Image> blackCubeTexture;
 
 		VT_INLINE void Clear()
@@ -93,6 +94,7 @@ namespace Volt
 		BindlessResourceRef<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateCreateInfo& samplerInfo);
 		void CreateDefaultResources();
 		void GenerateBRDFLuT();
+		void GenerateDFGLuT();
 		void LoadShaders();
 
 		inline static Renderer* s_instance = nullptr;

@@ -32,6 +32,7 @@ namespace Volt
 			shaderCompilerInfo.includeDirectories =
 			{
 				ProjectManager::GetEngineShaderIncludeDirectory(),
+				ProjectManager::GetEngineShaderDirectory(),
 				ProjectManager::GetAssetsDirectory()
 			};
 

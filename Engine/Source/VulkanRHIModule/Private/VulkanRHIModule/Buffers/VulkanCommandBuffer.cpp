@@ -240,6 +240,16 @@ namespace Volt::RHI
 				result |= VK_ACCESS_2_VIDEO_DECODE_WRITE_BIT_KHR;
 			}
 
+			if (EnumValueContainsFlag(barrierAccess, BarrierAccess::AllRead))
+			{
+				result |= VK_ACCESS_2_MEMORY_READ_BIT;
+			}
+
+			if (EnumValueContainsFlag(barrierAccess, BarrierAccess::AllWrite))
+			{
+				result |= VK_ACCESS_2_MEMORY_WRITE_BIT;
+			}
+
 			return result;
 		}
 
