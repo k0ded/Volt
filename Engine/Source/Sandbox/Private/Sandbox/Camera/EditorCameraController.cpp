@@ -40,7 +40,7 @@ void EditorCameraController::Focus(const glm::vec3& focusPoint)
 		m_focalDistance -= m_focalDistance - m_minFocalDistance;
 	}
 	m_position = m_focalPoint - m_camera->GetForward() * m_focalDistance;
-	m_camera->SetPosition(m_focalPoint);
+	m_camera->SetPosition(m_position);
 }
 
 void EditorCameraController::SetControllable(bool controllable)
@@ -64,7 +64,7 @@ bool EditorCameraController::OnMousePressedEvent(Volt::MouseButtonPressedEvent& 
 {
 	m_lastMousePosition = Volt::Input::GetMousePosition();
 
-	if (m_isControllable)
+	if (m_isControllable && e.GetMouseButton() == Volt::InputCode::Mouse_RB)
 	{
 		m_isEnabled = true;
 	}
@@ -74,7 +74,7 @@ bool EditorCameraController::OnMousePressedEvent(Volt::MouseButtonPressedEvent& 
 
 bool EditorCameraController::OnMouseReleasedEvent(Volt::MouseButtonReleasedEvent& e)
 {
-	if (m_isControllable)
+	if ((m_isControllable || m_isEnabled) && e.GetMouseButton() == Volt::InputCode::Mouse_RB)
 	{
 		EnableMouse();
 		m_isEnabled = false;
@@ -131,7 +131,7 @@ void EditorCameraController::RegisterEventListeners()
 
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(EditorCameraController::OnUpdateEvent), isEnabled);
 	RegisterListener<Volt::MouseScrolledEvent>(VT_BIND_EVENT_FN(EditorCameraController::OnMouseScrolled), isEnabled);
-	RegisterListener<Volt::MouseButtonPressedEvent>(VT_BIND_EVENT_FN(EditorCameraController::OnMousePressedEvent), isControllable);
+	RegisterListener<Volt::MouseButtonPressedEvent>(VT_BIND_EVENT_FN(EditorCameraController::OnMousePressedEvent));
 	RegisterListener<Volt::MouseButtonReleasedEvent>(VT_BIND_EVENT_FN(EditorCameraController::OnMouseReleasedEvent), isEnabled);
 }
 
@@ -144,7 +144,7 @@ bool EditorCameraController::OnUpdateEvent(Volt::AppUpdateEvent& e)
 	m_yawDelta = 0.f;
 	m_positionDelta = 0.f;
 
-	if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_RB) && !Volt::Input::IsMouseButtonDown(Volt::InputCode::Alt))
+	if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_RB) && !Volt::Input::IsKeyDown(Volt::InputCode::LeftAlt))
 	{
 		m_cameraMode = Mode::Fly;
 
