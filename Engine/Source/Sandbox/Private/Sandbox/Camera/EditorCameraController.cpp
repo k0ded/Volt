@@ -64,7 +64,7 @@ bool EditorCameraController::OnMousePressedEvent(Volt::MouseButtonPressedEvent& 
 {
 	m_lastMousePosition = Volt::Input::GetMousePosition();
 
-	if (m_isControllable && e.GetMouseButton() == Volt::InputCode::Mouse_RB)
+	if (m_isControllable)
 	{
 		m_isEnabled = true;
 	}
@@ -74,7 +74,7 @@ bool EditorCameraController::OnMousePressedEvent(Volt::MouseButtonPressedEvent& 
 
 bool EditorCameraController::OnMouseReleasedEvent(Volt::MouseButtonReleasedEvent& e)
 {
-	if ((m_isControllable || m_isEnabled) && e.GetMouseButton() == Volt::InputCode::Mouse_RB)
+	if ((m_isControllable || m_isEnabled))
 	{
 		EnableMouse();
 		m_isEnabled = false;
