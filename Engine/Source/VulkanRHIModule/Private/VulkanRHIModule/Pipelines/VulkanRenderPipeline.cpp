@@ -316,6 +316,11 @@ namespace Volt::RHI
 		return m_createInfo.shader;
 	}
 
+	bool VulkanRenderPipeline::IsValid() const
+	{
+		return m_pipeline != nullptr;
+	}
+
 	void* VulkanRenderPipeline::GetHandleImpl() const
 	{
 		return m_pipeline;

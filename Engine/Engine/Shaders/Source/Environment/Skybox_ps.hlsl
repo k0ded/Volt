@@ -1,7 +1,7 @@
 #include "Resources.hlsli"
 #include "Structures.hlsli"
 #include "Vertex.hlsli"
-#include "../Exposure.hlsli"
+#include "Exposure/Exposure.hlsli"
 
 struct Constants
 {

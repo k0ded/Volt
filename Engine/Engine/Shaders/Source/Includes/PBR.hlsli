@@ -5,7 +5,7 @@
 #include "Resources.hlsli"
 #include "ShadowMapping.hlsli"
 #include "Lights.hlsli"
-#include "../Exposure.hlsli"
+#include "Exposure/Exposure.hlsli"
 
 #include "../PBR/LightEvaluation.hlsli"
 

@@ -440,6 +440,7 @@ namespace Volt
 
 	void Scene::MarkEntityAsEdited(const Entity& entity)
 	{
+		VT_ENSURE_MSG(entity.IsValid(), "Entity is not valid! Only valid entities can be marked as edited!");
 		m_entityScene.MarkEntityAsEdited(m_entityScene.GetEntityHelperFromEntityID(entity.GetID()));
 	}
 

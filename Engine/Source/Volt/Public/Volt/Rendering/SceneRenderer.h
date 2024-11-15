@@ -138,6 +138,7 @@ namespace Volt
 		RefPtr<RHI::Image> m_objectIDImage;
 		RefPtr<RHI::Image> m_previousDepthImage;
 		RefPtr<RHI::Image> m_previousColorImage;
+		RefPtr<RHI::Image> m_averageLuminanceImage;
 
 		Ref<Mesh> m_skyboxMesh;
 

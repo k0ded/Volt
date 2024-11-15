@@ -15,8 +15,9 @@ namespace Volt::RHI
 		~D3D12RenderPipeline() override;
 
 		void Invalidate() override;
-
 		RefPtr<Shader> GetShader() const override;
+		bool IsValid() const override;
+
 		VT_NODISCARD VT_INLINE Topology GetTopology() const { return m_createInfo.topology; }
 
 	protected:

@@ -60,7 +60,7 @@ namespace vt
     {
         ResourceHandle handle;
         
-        T Load(in int3 location)
+        T Load(in int2 location)
         {
             RWTexture2D<T> texture = DESCRIPTOR_HEAP(RWTexture2DHandle<T>, handle);
             return texture.Load(location);

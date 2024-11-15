@@ -13,6 +13,7 @@
 #include "Volt/Rendering/RenderingTechniques/LightCullingTechnique.h"
 #include "Volt/Rendering/RenderingTechniques/TAATechnique.h"
 #include "Volt/Rendering/RenderingTechniques/VelocityTechnique.h"
+#include "Volt/Rendering/RenderingTechniques/AutoExposureTechnique.h"
 #include "Volt/Rendering/RenderingTechniques/CullingTechnique.h"
 
 #include "Volt/Rendering/ShapeLibrary.h"
@@ -50,6 +51,16 @@ namespace Volt
 		: m_scene(specification.scene), m_commandBufferSet(Renderer::GetFramesInFlight())
 	{
 		CreateMainRenderTarget(specification.initialResolution.x, specification.initialResolution.y);
+
+		RHI::ImageSpecification spec{};
+		spec.width = 1;
+		spec.height = 1;
+		spec.usage = RHI::ImageUsage::Storage;
+		spec.generateMips = false;
+		spec.format = RHI::PixelFormat::R16_SFLOAT;
+		spec.debugName = "AutoExposure.AverageLuminance";
+
+		m_averageLuminanceImage = RHI::Image::Create(spec);
 
 		m_sceneEnvironment.specular = Renderer::GetDefaultResources().blackCubeTexture;
 		m_sceneEnvironment.diffuse = Renderer::GetDefaultResources().blackCubeTexture;
@@ -173,6 +184,9 @@ namespace Volt
 			//AddVisualizeBricksPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 
 			//AddTestRTPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
+
+			AutoExposureTechnique autoExposureTechnique(renderGraph, rgBlackboard);
+			autoExposureTechnique.Execute(rgBlackboard.Get<ShadingOutputData>().colorOutput, renderGraph.AddExternalImage(m_averageLuminanceImage), 1.f / 60.f);
 
 			AddFinalCopyPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 			AddFXAAPass(renderGraph, rgBlackboard, rgBlackboard.Get<FinalCopyData>().output);

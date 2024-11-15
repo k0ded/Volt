@@ -17,6 +17,7 @@ namespace Volt::RHI
 		
 		void Invalidate() override;
 		RefPtr<Shader> GetShader() const override;
+		bool IsValid() const override;
 
 		inline VkPipelineLayout_T* GetPipelineLayout() const { return m_pipelineLayout; }
 

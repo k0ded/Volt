@@ -232,6 +232,7 @@ namespace Volt
 		// Validation
 		void InitializeCurrentPipelineConstantsValidation();
 		void ValidateCurrentPipelineConstants();
+		void ValidatePipelineConstant(const RHI::ShaderRenderGraphConstantsData& constantsData, const RHI::ShaderUniformType& uniformType, const StringHash& constantName);
 
 		// Internal state
 		const RHI::ShaderRenderGraphConstantsData& GetRenderGraphConstantsData();
@@ -262,15 +263,9 @@ namespace Volt
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
+		ValidatePipelineConstant(constantsData, TryGetTypeFromType<T>(), name);
 
 		const auto& uniform = constantsData.uniforms.at(name);
-
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		VT_ENSURE(uniform.type == TryGetTypeFromType<T>());
-		m_boundPipelineData.uniformHasBeenSetMap[name] = true;
-#endif
-
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &data, sizeof(T));
 	}
 
@@ -281,15 +276,9 @@ namespace Volt
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
+		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
 
 		const auto& uniform = constantsData.uniforms.at(name);
-
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		VT_ENSURE(uniform.type == TryGetTypeFromType<F>());
-		m_boundPipelineData.uniformHasBeenSetMap[name] = true;
-#endif
-
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, data.data(), data.size() * sizeof(F));
 	}
 
@@ -300,15 +289,9 @@ namespace Volt
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
+		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
 
 		const auto& uniform = constantsData.uniforms.at(name);
-
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		VT_ENSURE(uniform.type == TryGetTypeFromType<F>());
-		m_boundPipelineData.uniformHasBeenSetMap[name] = true;
-#endif
-
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, data.data(), COUNT * sizeof(F));
 	}
 }

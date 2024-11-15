@@ -122,7 +122,7 @@ namespace Volt::RHI
 			return size;
 		}
 
-		inline bool operator==(const ShaderUniformType& rhs)
+		inline bool operator==(const ShaderUniformType& rhs) const
 		{
 			return baseType == rhs.baseType && vecsize == rhs.vecsize && columns == rhs.columns;
 		}
