@@ -73,9 +73,9 @@ namespace Volt
 		RenderGraphExecutionThread::WaitForFinishedExecution();
 	}
 
-	void SceneRenderer::OnRenderEditor(Ref<Camera> camera)
+	void SceneRenderer::OnRenderEditor(Ref<Camera> camera, float timestep)
 	{
-		OnRender(camera);
+		OnRender(camera, timestep);
 	}
 
 	void SceneRenderer::Resize(const uint32_t width, const uint32_t height)
@@ -96,7 +96,7 @@ namespace Volt
 		return m_objectIDImage;
 	}
 
-	void SceneRenderer::OnRender(Ref<Camera> camera)
+	void SceneRenderer::OnRender(Ref<Camera> camera, float timestep)
 	{
 		VT_PROFILE_FUNCTION();
 

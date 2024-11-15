@@ -38,7 +38,7 @@ namespace Volt
 		WINDOWMODULE_API void Release();
 
 		WINDOWMODULE_API void BeginFrame();
-		WINDOWMODULE_API void Render();
+		WINDOWMODULE_API void Render(float timestep);
 		WINDOWMODULE_API void Present();
 
 		WINDOWMODULE_API void Resize(uint32_t aWidth, uint32_t aHeight);

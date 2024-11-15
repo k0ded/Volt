@@ -365,9 +365,9 @@ namespace Volt
 		EventSystem::DispatchEvent(beginFrameEvent);
 	}
 
-	void Window::Render()
+	void Window::Render(float timestep)
 	{
-		WindowRenderEvent renderEvent;
+		WindowRenderEvent renderEvent(timestep);
 		EventSystem::DispatchEvent(renderEvent);
 	}
 

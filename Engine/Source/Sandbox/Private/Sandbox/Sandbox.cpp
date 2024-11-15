@@ -712,7 +712,7 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 	return false;
 }
 
-void Sandbox::RenderGameView()
+void Sandbox::RenderGameView(float timestep)
 {
 	if (!m_gameViewPanel->IsOpen() || !m_gameSceneRenderer)
 	{
@@ -750,7 +750,7 @@ void Sandbox::RenderGameView()
 			camera->SetPosition(cameraEntity.GetPosition());
 			camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
 
-			m_gameSceneRenderer->OnRenderEditor(camera);
+			m_gameSceneRenderer->OnRenderEditor(camera, timestep);
 			break;
 		}
 	}
@@ -771,7 +771,7 @@ bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
 		case SceneState::Play:
 		case SceneState::Pause:
 		case SceneState::Simulating:
-			m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera());
+			m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera(), e.GetTimestep());
 			break;
 	}
 
@@ -780,7 +780,7 @@ bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
 		TransitionToNewScene();
 	}
 
-	RenderGameView();
+	RenderGameView(e.GetTimestep());
 
 	return false;
 }

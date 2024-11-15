@@ -115,9 +115,15 @@ namespace Volt
 	class WINDOWMODULE_API WindowRenderEvent : public Event
 	{
 	public:
-		WindowRenderEvent() = default;
+		WindowRenderEvent(float timestep)
+			: m_timestep(timestep)
+		{ }
+
+		VT_INLINE float GetTimestep() const { return m_timestep; }
 
 		EVENT_CLASS(WindowRenderEvent, "{9775E1B6-2478-43FB-918D-C0B686AB328B}"_guid);
+	private:
+		float m_timestep;
 	};
 
 	class WINDOWMODULE_API WindowDragDropEvent : public Event

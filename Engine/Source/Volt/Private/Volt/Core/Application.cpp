@@ -287,10 +287,10 @@ namespace Volt
 			AppPreRenderEvent preRenderEvent;
 			EventSystem::DispatchEvent(preRenderEvent);
 
-			AppRenderEvent renderEvent;
+			AppRenderEvent renderEvent(m_currentDeltaTime);
 			EventSystem::DispatchEvent(renderEvent);
 
-			m_windowManager->Render();
+			m_windowManager->Render(m_currentDeltaTime);
 		}
 
 		{

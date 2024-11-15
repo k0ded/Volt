@@ -80,7 +80,7 @@ bool MeshPreviewPanel::OnRenderEvent(Volt::WindowRenderEvent& e)
 	//	mySceneRenderer->SubmitOutlineMesh(myCurrentMesh, (uint32_t)mySelectedSubMesh, { 1.f });
 	//}
 
-	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera());
+	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera(), e.GetTimestep());
 	return false;
 }
 

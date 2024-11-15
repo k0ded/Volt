@@ -116,7 +116,7 @@ bool ParticleEmitterEditor::SavePreset(const std::filesystem::path& indata)
 
 bool ParticleEmitterEditor::OnRenderEvent(Volt::WindowRenderEvent& e)
 {
-	myPreviewRenderer->OnRenderEditor(myCameraController->GetCamera());
+	myPreviewRenderer->OnRenderEditor(myCameraController->GetCamera(), e.GetTimestep());
 	return false;
 }
 

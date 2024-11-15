@@ -72,7 +72,7 @@ namespace Volt
 		SceneRenderer(const SceneRendererSpecification& specification);
 		~SceneRenderer();
 
-		void OnRenderEditor(Ref<Camera> camera);
+		void OnRenderEditor(Ref<Camera> camera, float timestep);
 
 		void Resize(const uint32_t width, const uint32_t height);
 		inline void SetShadingMode(ShadingMode shadingMode) { m_shadingMode = shadingMode; }
@@ -92,7 +92,7 @@ namespace Volt
 		const uint64_t GetFrameTotalGPUAllocationSize() const;
 
 	private:
-		void OnRender(Ref<Camera> camera);
+		void OnRender(Ref<Camera> camera, float timestep);
 
 		void BuildMeshPass(RenderGraph::Builder& builder, RenderGraphBlackboard& blackboard);
 		void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard);
