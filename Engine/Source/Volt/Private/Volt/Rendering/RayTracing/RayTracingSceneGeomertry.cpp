@@ -25,7 +25,7 @@ namespace Volt
 			asGeometry.indexBuffer = createInfo.indexBuffer;
 		}
 
-		asCreateInfo.flags = RHI::AccelerationStructureBuildFlags::None;
+		asCreateInfo.flags = RHI::AccelerationStructureBuildFlags::PreferFastTrace;
 		asCreateInfo.type = RHI::AccelerationStructureType::BottomLevel;
 
 		m_accelerationStructure = RHI::AccelerationStructure::Create(asCreateInfo);
@@ -38,7 +38,7 @@ namespace Volt
 		buildGeometryInfo.srcAccelerationStructure = nullptr;
 		buildGeometryInfo.dstAccelerationStructure = m_accelerationStructure;
 		buildGeometryInfo.type = RHI::AccelerationStructureType::BottomLevel;
-		buildGeometryInfo.flags = RHI::AccelerationStructureBuildFlags::None;
+		buildGeometryInfo.flags = RHI::AccelerationStructureBuildFlags::PreferFastTrace;
 		buildGeometryInfo.mode = RHI::AccelerationStructureBuildMode::Build;
 
 		RHI::AccelerationStructureBuildRanges buildRanges{};

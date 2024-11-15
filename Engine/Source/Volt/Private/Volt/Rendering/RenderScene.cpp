@@ -74,7 +74,7 @@ namespace Volt
 
 		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
 		{
-			m_rayTracingScene = CreateRef<RayTracingScene>();
+			m_rayTracingScene = CreateRef<RayTracingScene>(m_scene);
 		}
 	}
 
@@ -139,6 +139,8 @@ namespace Volt
 		{
 			m_invalidSDFPrimitiveDataIndices.emplace_back(renderObject, m_sdfPrimitiveIndexFromRenderObjectID.at(renderObject));
 		}
+
+		m_rayTracingScene->Build();
 	}
 
 	const UUID64 RenderScene::AddInstance(EntityID entityId, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex)

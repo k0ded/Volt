@@ -1,13 +1,20 @@
 #include "vtpch.h"
 
-#include <RHIModule/Buffers/CommandBuffer.h>
-
 #include "Volt/Rendering/RayTracing/RayTracingScene.h"
 #include "Volt/Rendering/RayTracing/RayTracingSceneGeometry.h"
 #include "Volt/Asset/Mesh/Mesh.h"
+#include "Volt/Scene/Scene.h"
+#include "Volt/Scene/Entity.h"
+
+#include <RHIModule/Buffers/CommandBuffer.h>
 
 namespace Volt
 {
+	RayTracingScene::RayTracingScene(Scene* scene)
+		: m_scene(scene)
+	{
+	}
+
 	void RayTracingScene::Build()
 	{
 		Vector<RHI::AccelerationStructureInstance> instances;
@@ -15,8 +22,14 @@ namespace Volt
 
 		for (const auto& instance : m_instances)
 		{
+			auto entity = m_scene->GetEntityFromID(instance.entityId);
+			if (!entity)
+			{
+				continue;
+			}
+
 			auto& rtInstance = instances.emplace_back();
-			rtInstance.transform = instance.transform;
+			rtInstance.transform = glm::transpose(entity.GetTransform());
 			rtInstance.instanceCustomIndex = 0;
 			rtInstance.mask = 0xFF;
 			rtInstance.instanceShaderBindingTableRecordOffset = 0;
@@ -24,8 +37,15 @@ namespace Volt
 			rtInstance.accelerationStructureReference = instance.mesh->GetRayTracingSceneGeometry()->GetAccelerationStructureDeviceAddress();
 		}
 
-		m_instancesBuffer = RHI::StorageBuffer::Create(static_cast<uint32_t>(instances.size()), sizeof(RHI::AccelerationStructureInstance), "Ray Tracing Scene TLAS", RHI::BufferUsage::DeviceAddress | RHI::BufferUsage::AccelerationStructureInput);
+		m_instancesBuffer = RHI::StorageBuffer::Create(static_cast<uint32_t>(instances.size()), sizeof(RHI::AccelerationStructureInstance), "Ray Tracing Scene TLAS", RHI::BufferUsage::DeviceAddress | RHI::BufferUsage::AccelerationStructureInput, RHI::MemoryUsage::CPUToGPU);
 	
+		// Copy data to buffer
+		{
+			RHI::AccelerationStructureInstance* mappedInstances = m_instancesBuffer->Map<RHI::AccelerationStructureInstance>();
+			memcpy(mappedInstances, instances.data(), sizeof(RHI::AccelerationStructureInstance) * instances.size());
+			m_instancesBuffer->Unmap();
+		}
+
 		RHI::AccelerationStructureCreateInfo asCreateInfo;
 		asCreateInfo.type = RHI::AccelerationStructureType::TopLevel;
 		asCreateInfo.flags = RHI::AccelerationStructureBuildFlags::PreferFastTrace;
@@ -50,7 +70,7 @@ namespace Volt
 
 		RHI::AccelerationStructureBuildRanges buildRanges{};
 		auto& buildRange = buildRanges.AddRange();
-		buildRange.primitiveCount = 1;
+		buildRange.primitiveCount = static_cast<uint32_t>(instances.size());
 		buildRange.primitiveOffset = 0;
 		buildRange.firstVertex = 0;
 		buildRange.transformOffset = 0;
@@ -61,15 +81,15 @@ namespace Volt
 		commandBuffer->ExecuteAndWait();
 	}
 	
-	RayTracingInstanceID RayTracingScene::AddInstance(Ref<Mesh> mesh, const glm::mat4& transform)
+	RayTracingInstanceID RayTracingScene::AddInstance(Ref<Mesh> mesh, EntityID entityId)
 	{
 		auto& instance = m_instances.emplace_back();
 
+		instance.entityId = entityId;
 		instance.mesh = mesh;
-		instance.transform = transform;
 		instance.id = {};
 
-		//Build();
+		Build();
 
 		return instance.id;
 	}

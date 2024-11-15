@@ -98,6 +98,8 @@ namespace Volt::RHI
 		buildGeometryInfo.pGeometries = geometries.data();
 		buildGeometryInfo.ppGeometries = nullptr;
 		buildGeometryInfo.scratchData.deviceAddress = 0;
+		buildGeometryInfo.srcAccelerationStructure = nullptr;
+		buildGeometryInfo.dstAccelerationStructure = nullptr;
 
 		VkAccelerationStructureBuildSizesInfoKHR buildSizes;
 		buildSizes.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
