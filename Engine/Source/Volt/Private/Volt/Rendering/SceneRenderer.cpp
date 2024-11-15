@@ -186,9 +186,9 @@ namespace Volt
 			//AddTestRTPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 
 			AutoExposureTechnique autoExposureTechnique(renderGraph, rgBlackboard);
-			autoExposureTechnique.Execute(rgBlackboard.Get<ShadingOutputData>().colorOutput, renderGraph.AddExternalImage(m_averageLuminanceImage), 1.f / 60.f);
+			autoExposureTechnique.Execute(rgBlackboard.Get<ShadingOutputData>().colorOutput, renderGraph.AddExternalImage(m_averageLuminanceImage), timestep);
 
-			AddFinalCopyPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
+			AddTonemapPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 			AddFXAAPass(renderGraph, rgBlackboard, rgBlackboard.Get<FinalCopyData>().output);
 		}
 		else
@@ -207,6 +207,8 @@ namespace Volt
 
 		renderGraph.Compile();
 		renderGraph.Execute();
+
+		m_frameIndex++;
 	}
 
 	void SceneRenderer::Invalidate()
@@ -344,9 +346,10 @@ namespace Volt
 				const glm::vec3 dir = glm::rotate(entity.GetRotation(), { 0.f, 0.f, 1.f }) * -1.f;
 
 				data.color = dirLightComp.color;
-				data.intensity = dirLightComp.intensity;
-				data.direction = { dir, 0.f };
+				data.intensity = glm::max(dirLightComp.intensity, 0.f);
+				data.direction = dir;
 				data.castShadows = static_cast<uint32_t>(dirLightComp.castShadows);
+				data.angularRadius = glm::radians(dirLightComp.sunRadius);
 
 				if (dirLightComp.castShadows)
 				{
@@ -457,7 +460,12 @@ namespace Volt
 		{
 			auto& imageData = blackboard.Add<ExternalImagesData>();
 			imageData.black1x1Cube = renderGraph.AddExternalImage(Renderer::GetDefaultResources().blackCubeTexture);
-			imageData.BRDFLuT = renderGraph.AddExternalImage(Renderer::GetDefaultResources().DFGLuT);
+			imageData.DFGLuT = renderGraph.AddExternalImage(Renderer::GetDefaultResources().DFGLuT);
+		}
+
+		// Blue Noise
+		{
+			blackboard.Add<BlueNoiseTextures>() = BlueNoise::GetBlueNoiseTextures(renderGraph);
 		}
 
 		// GPU Scene
@@ -485,6 +493,8 @@ namespace Volt
 				}
 
 				m_sceneEnvironment = skylightComp.currentSceneEnvironment;
+				m_sceneEnvironment.intensity = skylightComp.intensity;
+				m_sceneEnvironment.lod = skylightComp.lod;
 			});
 
 			const auto& imageData = blackboard.Get<ExternalImagesData>();
@@ -905,8 +915,8 @@ namespace Volt
 			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
 			context.SetConstant("environmentTexture"_sh, environmentTexturesData.radiance);
 			context.SetConstant("linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle());
-			context.SetConstant("lod"_sh, 0.f);
-			context.SetConstant("intensity"_sh, 1.f);
+			context.SetConstant("lod"_sh, m_sceneEnvironment.lod);
+			context.SetConstant("intensity"_sh, m_sceneEnvironment.intensity);
 
 			context.BindIndexBuffer(indexBufferHandle);
 			context.DrawIndexed(static_cast<uint32_t>(m_skyboxMesh->GetIndexCount()), 1, 0, 0, 0);
@@ -941,7 +951,7 @@ namespace Volt
 			// PBR Constants
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
 			builder.ReadResource(uniformBuffers.directionalLightBuffer);
-			builder.ReadResource(externalImages.BRDFLuT);
+			builder.ReadResource(externalImages.DFGLuT);
 			builder.ReadResource(environmentTexturesData.irradiance);
 			builder.ReadResource(environmentTexturesData.radiance);
 			builder.ReadResource(lightBuffers.pointLightsBuffer);
@@ -974,14 +984,17 @@ namespace Volt
 			context.SetConstant("pbrConstants.linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle());
 			context.SetConstant("pbrConstants.pointLinearClampSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>()->GetResourceHandle());
 			context.SetConstant("pbrConstants.shadowSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>()->GetResourceHandle());
-			context.SetConstant("pbrConstants.BRDFLuT"_sh, externalImages.BRDFLuT);
-			context.SetConstant("pbrConstants.environmentIrradiance"_sh, environmentTexturesData.irradiance);
-			context.SetConstant("pbrConstants.environmentRadiance"_sh, environmentTexturesData.radiance);
+			context.SetConstant("pbrConstants.DFGLuT"_sh, externalImages.DFGLuT);
 			context.SetConstant("pbrConstants.pointLights"_sh, lightBuffers.pointLightsBuffer);
 			context.SetConstant("pbrConstants.spotLights"_sh, lightBuffers.spotLightsBuffer);
 			context.SetConstant("pbrConstants.visiblePointLights"_sh, lightCullingData.visiblePointLightsBuffer);
 			context.SetConstant("pbrConstants.visibleSpotLights"_sh, lightCullingData.visibleSpotLightsBuffer);
 			context.SetConstant("pbrConstants.directionalShadowMap"_sh, dirShadowData.shadowTexture);
+
+			context.SetConstant("skyLight.irradiance"_sh, environmentTexturesData.irradiance);
+			context.SetConstant("skyLight.radiance"_sh, environmentTexturesData.radiance);
+			context.SetConstant("skyLight.lod"_sh, m_sceneEnvironment.lod);
+			context.SetConstant("skyLight.intensity"_sh, m_sceneEnvironment.intensity);
 
 			context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1u);
 		});
@@ -990,6 +1003,7 @@ namespace Volt
 	void SceneRenderer::AddFXAAPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage)
 	{
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
+		const auto& blueNoiseTextures = blackboard.Get<BlueNoiseTextures>();
 
 		blackboard.Add<FXAAOutputData>() = renderGraph.AddPass<FXAAOutputData>("FXAA Pass",
 		[&](RenderGraph::Builder& builder, FXAAOutputData& data)
@@ -999,6 +1013,8 @@ namespace Volt
 			builder.WriteResource(data.output);
 			builder.ReadResource(srcImage);
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
+
+			BlueNoise::Build(builder, blueNoiseTextures);
 		},
 		[=](const FXAAOutputData& data, RenderContext& context)
 		{
@@ -1016,24 +1032,33 @@ namespace Volt
 				context.SetConstant("sceneColor"_sh, srcImage);
 				context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
 				context.SetConstant("linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle());
+				context.SetConstant("frameIndex"_sh, m_frameIndex);
+			
+				BlueNoise::Setup(context, blueNoiseTextures);
 			});
 
 			context.EndRendering();
 		});
 	}
 
-	void SceneRenderer::AddFinalCopyPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage)
+	void SceneRenderer::AddTonemapPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage)
 	{
-		blackboard.Add<FinalCopyData>() = renderGraph.AddPass<FinalCopyData>("Final Copy",
+		constexpr float MiddleGray = 0.18f;
+		constexpr float WhitePoint = 1.1f;
+
+		RenderGraphImageHandle averageLuminanceImage = renderGraph.AddExternalImage(m_averageLuminanceImage);
+
+		blackboard.Add<FinalCopyData>() = renderGraph.AddPass<FinalCopyData>("Tonemapping Pass",
 		[&](RenderGraph::Builder& builder, FinalCopyData& data)
 		{
 			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "Final Copy Output");
+				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "Tonemap.Output");
 				data.output = builder.CreateImage(desc);
 			}
 
 			builder.WriteResource(data.output);
 			builder.ReadResource(srcImage);
+			builder.ReadResource(averageLuminanceImage);
 			builder.SetHasSideEffect();
 		},
 		[=](const FinalCopyData& data, RenderContext& context)
@@ -1041,7 +1066,7 @@ namespace Volt
 			RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { data.output });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo;
-			pipelineInfo.shader = ShaderMap::Get("FinalCopy");
+			pipelineInfo.shader = ShaderMap::Get("Tonemap");
 			pipelineInfo.depthMode = RHI::DepthMode::None;
 			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
@@ -1050,6 +1075,9 @@ namespace Volt
 			RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context)
 			{
 				context.SetConstant("finalColor"_sh, srcImage);
+				context.SetConstant("averageLuminance"_sh, averageLuminanceImage);
+				context.SetConstant("middleGray"_sh, MiddleGray);
+				context.SetConstant("whitePoint"_sh, WhitePoint * WhitePoint);
 			});
 
 			context.EndRendering();
@@ -1232,7 +1260,7 @@ namespace Volt
 		spec.height = height;
 		spec.usage = RHI::ImageUsage::AttachmentStorage;
 		spec.generateMips = false;
-		spec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
+		spec.format = RHI::PixelFormat::R8G8B8A8_UNORM;
 		spec.debugName = "Final Image";
 
 		m_outputImage = RHI::Image::Create(spec);

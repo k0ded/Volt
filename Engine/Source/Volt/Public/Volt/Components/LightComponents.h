@@ -102,6 +102,7 @@ namespace Volt
 		float intensity = 1.f;
 		glm::vec3 color = { 1.f, 1.f, 1.f };
 		float lightSize = 1.f;
+		float sunRadius = 10.f;
 		bool softShadows = true;
 		bool castShadows = true;
 
@@ -112,6 +113,7 @@ namespace Volt
 			reflect.AddMember(&DirectionalLightComponent::intensity, "intensity", "Intensity", "", 1.f);
 			reflect.AddMember(&DirectionalLightComponent::color, "color", "Color", "", glm::vec3{ 1.f }, ComponentMemberFlag::Color3);
 			reflect.AddMember(&DirectionalLightComponent::lightSize, "lightSize", "Light Size", "", 1.f);
+			reflect.AddMember(&DirectionalLightComponent::sunRadius, "sunRadius", "Sun Radius", "", 10.f);
 			reflect.AddMember(&DirectionalLightComponent::softShadows, "softShadows", "Soft Shadows", "", true);
 			reflect.AddMember(&DirectionalLightComponent::castShadows, "castShadows", "Cast Shadows", "", true);
 		}

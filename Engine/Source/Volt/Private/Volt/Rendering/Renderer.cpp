@@ -121,11 +121,14 @@ namespace Volt
 #endif
 
 		CreateDefaultResources();
+		m_blueNoise = CreateScope<BlueNoise>();
 	}
 
 	void Renderer::Shutdown()
 	{
 		RenderGraphExecutionThread::Shutdown();
+
+		m_blueNoise.reset();
 
 		m_defaultResources.Clear();
 		m_samplers.clear();
@@ -174,7 +177,7 @@ namespace Volt
 		}
 
 		constexpr uint32_t CUBE_MAP_SIZE = 2048;
-		constexpr uint32_t DIFFUSE_MAP_SIZE = 32;
+		constexpr uint32_t DIFFUSE_MAP_SIZE = 256;
 		constexpr uint32_t CONVERSION_THREAD_GROUP_SIZE = 32;
 
 		RefPtr<RHI::Image> environmentRaw;
@@ -469,56 +472,12 @@ namespace Volt
 			m_defaultResources.blackCubeTexture = RHI::Image::Create(imageSpec, PIXEL_DATA);
 		}
 
-		GenerateBRDFLuT();
 		GenerateDFGLuT();
 
 		// Default material
 		{
 			m_defaultResources.defaultMaterial = AssetManager::CreateMemoryAsset<Material>("DefaultMaterial", ShaderMap::GetComputePipeline("OpaqueDefault"));
 		}
-	}
-	
-	void Renderer::GenerateBRDFLuT()
-	{
-		constexpr uint32_t BRDFSize = 512;
-
-		RHI::ImageSpecification spec{};
-		spec.format = RHI::PixelFormat::R16G16_SFLOAT;
-		spec.usage = RHI::ImageUsage::AttachmentStorage;
-		spec.width = BRDFSize;
-		spec.height = BRDFSize;
-		spec.debugName = "BRDFLut";
-
-		m_defaultResources.BRDFLuT = RHI::Image::Create(spec);
-
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-
-		RenderGraph renderGraph{ commandBuffer };
-		RenderGraphImageHandle targetImageHandle = renderGraph.AddExternalImage(m_defaultResources.BRDFLuT);
-
-		renderGraph.AddPass("BRDF Pass", 
-		[&](RenderGraph::Builder& builder) 
-		{
-			builder.WriteResource(targetImageHandle);
-			builder.SetHasSideEffect();
-		},
-		[=](RenderContext& context) 
-		{
-			RenderingInfo renderingInfo = context.CreateRenderingInfo(BRDFSize, BRDFSize, { targetImageHandle });
-
-			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get("GenerateBRDF");
-			pipelineInfo.cullMode = RHI::CullMode::None;
-
-			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
-			
-			context.BeginRendering(renderingInfo);
-			RCUtils::DrawFullscreenTriangle(context, pipeline);
-			context.EndRendering();
-		});
-
-		renderGraph.Compile();
-		renderGraph.ExecuteImmediateAndWait();
 	}
 
 	void Renderer::GenerateDFGLuT()

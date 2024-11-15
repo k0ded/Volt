@@ -15,6 +15,4 @@ namespace Volt
 		Vector<Ref<Asset>> ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const override;
 		SourceAssetFileInformation GetSourceFileInformation(const std::filesystem::path& filepath) const override;
 	};
-
-	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".dds" }), DDSTextureSourceImporter);
 }

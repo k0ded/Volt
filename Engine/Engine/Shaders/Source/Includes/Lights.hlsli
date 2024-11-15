@@ -8,12 +8,13 @@
 
 struct DirectionalLight
 {
-    float4 direction;
+    float3 direction;
+    float angularRadius;
+
     float3 color;
     float intensity;
 
     uint castShadows;
-    float angularRadius;
 
     float cascadeDistances[DIRECTIONAL_SHADOW_CASCADE_COUNT];
     float4x4 viewProjections[DIRECTIONAL_SHADOW_CASCADE_COUNT];
@@ -45,6 +46,15 @@ struct SpotLight
     float lightAngleOffset;
     float falloff;
     float2 padding;
+};
+
+struct SkyLight
+{
+    vt::TexCube<float3> irradiance;
+    vt::TexCube<float3> radiance;
+
+    float lod;
+    float intensity;
 };
 
 int GetLightBufferIndex(vt::TypedBuffer<int> lightIndexBuffer, uint tileCountX, int i, uint2 tileId)

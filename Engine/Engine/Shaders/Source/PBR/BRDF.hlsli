@@ -144,6 +144,8 @@ float3 BRDF(BRDFInput input, float3 D, float3 L)
     float3 Fd = 0.f;
     float3 Fr = 0.f;
 
+    input.roughness = max(input.roughness, 0.05f);
+
     // Diffuse
     {
         float3 H = normalize(input.V + D);

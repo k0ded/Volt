@@ -55,27 +55,38 @@ float3 CalculateSpotLight2(in SpotLight light, in BRDFInput brdfInput, float3 wo
 } 
 
 ///// ----- Directional light ----- /////
-float CalculateDirectionalShadow2(in DirectionalLight light)
+float CalculateDirectionalShadow2(in DirectionalLight light, in DirectionalShadowMappingInfo shadowMappingInfo, float3 normal, float3 worldPosition)
 {
-    //const uint cascadeIndex = GetCascadeIndexFromWorldPosition(light, m_pbrInput.worldPosition, m_viewData.view);
-    //const float3 shadowMapCoords = GetShadowMapCoords(light.viewProjections[cascadeIndex], m_pbrInput.worldPosition);
-    //const float result = CalculateDirectionalShadow_Hard(light, m_shadowSampler, m_pbrConstants.directionalShadowMap, m_pbrInput.normal, cascadeIndex, shadowMapCoords);
-    return 1;
-} 
+    const uint cascadeIndex = GetCascadeIndexFromWorldPosition(light, worldPosition, shadowMappingInfo.viewMatrix);
+    const float3 shadowMapCoords = GetShadowMapCoords(light.viewProjections[cascadeIndex], worldPosition);
+    const float result = CalculateDirectionalShadow_Hard(light, shadowMappingInfo.shadowSampler, shadowMappingInfo.shadowMap, normal, cascadeIndex, shadowMapCoords);
+    return result; 
+}
 
-float3 CalculateDirectionalLight2(in DirectionalLight light, in BRDFInput brdfInput, float3 worldPosition)
+float3 CalculateDirectionalLight2(in DirectionalLight light, in DirectionalShadowMappingInfo shadowMappingInfo, in BRDFInput brdfInput, float3 worldPosition)
 {
     float3 D = normalize(light.direction.xyz);
     float r = sin(light.angularRadius);
     float d = cos(light.angularRadius);
 
-    float DdotV = dot(D, brdfInput.V);
-    float3 S = brdfInput.V - DdotV * D;
-    float3 L = DdotV < d ? normalize(d * D * normalize(S) * r) : brdfInput.V;
+    float3 R = reflect(-brdfInput.V, brdfInput.N);
 
-    float illuminance = light.intensity * saturate(dot(brdfInput.N, D));
+    float DdotR = dot(D, R);
+    float3 S = R - DdotR * D;
+    float3 L = DdotR < d ? normalize(d * D + normalize(S) * r) : R;
 
-    return BRDF(brdfInput, D, L) * light.color * illuminance;
+    const float NdotD = saturate(dot(brdfInput.N, D));
+
+    float illuminance = light.intensity * NdotD;
+
+    float shadow = 0.f;
+
+    if (light.castShadows)
+    {
+        shadow = CalculateDirectionalShadow2(light, shadowMappingInfo, brdfInput.N, worldPosition);
+    }
+
+    return BRDF(brdfInput, D, L) * light.color * illuminance * shadow;
 } 
 
 ///// ----- IBL ----- /////
@@ -104,7 +115,7 @@ float LinearRoughnessToMipLevel(float linearRoughness, float mipCount)
 
 static const float DFGTextureSize = 512.f;
 
-float3 CalculateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::TexCube<float3> irradiance, vt::TexCube<float3> radiance, vt::TextureSampler linearSampler)
+float3 CalculateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::TextureSampler linearSampler, in SkyLight skyLight)
 {
     float NdotV = saturate(dot(brdfInput.N, brdfInput.V));
     float3 DFG = DFGLuT.SampleLevel(linearSampler, float2(NdotV, brdfInput.roughness), 0.f).xyz;
@@ -115,7 +126,7 @@ float3 CalculateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::TexCub
     // Diffuse IBL
     {
         float3 dominantN = GetDiffuseDominantDirection(brdfInput.N, brdfInput.V, NdotV, brdfInput.roughness);
-        float3 diffuseLighting = irradiance.SampleLevel(linearSampler, dominantN, 0.f);
+        float3 diffuseLighting = skyLight.irradiance.SampleLevel(linearSampler, dominantN, skyLight.lod);
 
         diffuse = diffuseLighting * DFG.z;
     }
@@ -128,14 +139,14 @@ float3 CalculateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::TexCub
         // #TODO_Ivar: This is quite slow 
         uint radianceTextureLevels;
         uint width, height;
-        radiance.GetDimensions(0, width, height, radianceTextureLevels);
+        skyLight.radiance.GetDimensions(0, width, height, radianceTextureLevels);
 
         NdotV = max(NdotV, 0.5f / DFGTextureSize);
         float mipLevel = LinearRoughnessToMipLevel(brdfInput.roughness, radianceTextureLevels);
-        float3 preLD = radiance.SampleLevel(linearSampler, dominantR, mipLevel);
+        float3 preLD = skyLight.radiance.SampleLevel(linearSampler, dominantR, mipLevel);
 
-        specular = preLD; //* (brdfInput.f0 * DFG.x + brdfInput.f90 * DFG.y);
+        specular = preLD * (brdfInput.f0 * DFG.x + brdfInput.f90 * DFG.y);
     }
 
-    return specular;
+    return (diffuse + specular) * skyLight.intensity;
 }

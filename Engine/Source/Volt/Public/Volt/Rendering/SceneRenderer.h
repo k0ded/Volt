@@ -123,7 +123,7 @@ namespace Volt
 		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddFXAAPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
 
-		void AddFinalCopyPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
+		void AddTonemapPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
 
 		void AddVisualizeSDFPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 		void AddVisualizeBricksPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
@@ -149,6 +149,8 @@ namespace Volt
 
 		uint32_t m_resizeWidth = 1280;
 		uint32_t m_resizeHeight = 1280;
+			
+		uint32_t m_frameIndex = 0;
 
 		ShadingMode m_shadingMode = ShadingMode::Shaded;
 		VisualizationMode m_visualizationMode = VisualizationMode::None;

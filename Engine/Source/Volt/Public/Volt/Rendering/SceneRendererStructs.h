@@ -33,7 +33,7 @@ namespace Volt
 	struct ExternalImagesData
 	{
 		RenderGraphImageHandle black1x1Cube;
-		RenderGraphImageHandle BRDFLuT;
+		RenderGraphImageHandle DFGLuT;
 	};
 
 	struct EnvironmentTexturesData

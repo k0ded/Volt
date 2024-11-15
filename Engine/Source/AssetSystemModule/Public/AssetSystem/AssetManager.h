@@ -119,6 +119,9 @@ namespace Volt
 		template<typename T>
 		static Ref<T> QueueAsset(AssetHandle handle);
 
+		template<typename T>
+		static Ref<T> QueueAsset(const std::filesystem::path& filepath);
+
 		template<typename T, typename... Args>
 		static Ref<T> CreateAsset(const std::filesystem::path& targetDir, const std::string& name, Args&&... args);
 
@@ -305,6 +308,12 @@ namespace Volt
 		Get().QueueAssetInternal(handle, asset);
 
 		return std::reinterpret_pointer_cast<T>(asset);
+	}
+
+	template<typename T>
+	inline Ref<T> AssetManager::QueueAsset(const std::filesystem::path& filepath)
+	{
+		return QueueAsset<T>(GetAssetHandleFromFilePath(filepath));
 	}
 
 	template<typename T, typename ...Args>

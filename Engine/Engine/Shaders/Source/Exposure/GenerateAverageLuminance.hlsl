@@ -35,7 +35,7 @@ void GenerateAverageLuminanceCS(uint groupIndex : SV_GroupIndex)
             m_groupHistogram[groupIndex] += m_groupHistogram[groupIndex + cutoff];
         }
 
-        GroupMemoryBarrier();
+        GroupMemoryBarrierWithGroupSync();
     }
 
     if (groupIndex == 0)

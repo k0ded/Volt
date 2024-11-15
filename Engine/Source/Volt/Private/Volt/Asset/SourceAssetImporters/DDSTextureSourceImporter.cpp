@@ -18,6 +18,8 @@ VT_DEFINE_LOG_CATEGORY(LogDDSTextureSourceImporter);
 
 namespace Volt
 {
+	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".dds", ".DDS" }), DDSTextureSourceImporter);
+
 	inline std::string GetDDSError(tdl::Result code, const std::filesystem::path& filepath)
 	{
 		switch (code)
@@ -38,6 +40,9 @@ namespace Volt
 	{
 		switch (format)
 		{
+			case tdl::DDSFile::DXGIFormat::R8_UNorm: return RHI::PixelFormat::R8_UNORM;
+			case tdl::DDSFile::DXGIFormat::R8_SNorm: return RHI::PixelFormat::R8_SNORM;
+
 			case tdl::DDSFile::DXGIFormat::R32G32B32A32_Float: return RHI::PixelFormat::R32G32B32A32_SFLOAT;
 			case tdl::DDSFile::DXGIFormat::R16G16B16A16_Float: return RHI::PixelFormat::R16G16B16A16_SFLOAT;
 
