@@ -542,6 +542,8 @@ namespace Volt
 		newEntity.GetComponent<RelationshipComponent>().children = newChildren;
 		newEntity.GetComponent<RelationshipComponent>().parent = parent ? parent.GetID() : Entity::NullID();
 
+		scene->InvalidateEntityTransform(newEntity.GetID());
+
 		return newEntity;
 	}
 
