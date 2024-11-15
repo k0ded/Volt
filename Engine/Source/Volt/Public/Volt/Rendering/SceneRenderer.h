@@ -72,7 +72,7 @@ namespace Volt
 		SceneRenderer(const SceneRendererSpecification& specification);
 		~SceneRenderer();
 
-		void OnRenderEditor(Ref<Camera> camera);
+		void OnRenderEditor(Ref<Camera> camera, float timestep);
 
 		void Resize(const uint32_t width, const uint32_t height);
 		inline void SetShadingMode(ShadingMode shadingMode) { m_shadingMode = shadingMode; }
@@ -92,7 +92,7 @@ namespace Volt
 		const uint64_t GetFrameTotalGPUAllocationSize() const;
 
 	private:
-		void OnRender(Ref<Camera> camera);
+		void OnRender(Ref<Camera> camera, float timestep);
 
 		void BuildMeshPass(RenderGraph::Builder& builder, RenderGraphBlackboard& blackboard);
 		void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard);
@@ -123,7 +123,7 @@ namespace Volt
 		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddFXAAPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
 
-		void AddFinalCopyPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
+		void AddTonemapPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
 
 		void AddVisualizeSDFPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 		void AddVisualizeBricksPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
@@ -138,6 +138,7 @@ namespace Volt
 		RefPtr<RHI::Image> m_objectIDImage;
 		RefPtr<RHI::Image> m_previousDepthImage;
 		RefPtr<RHI::Image> m_previousColorImage;
+		RefPtr<RHI::Image> m_averageLuminanceImage;
 
 		Ref<Mesh> m_skyboxMesh;
 
@@ -148,6 +149,8 @@ namespace Volt
 
 		uint32_t m_resizeWidth = 1280;
 		uint32_t m_resizeHeight = 1280;
+			
+		uint32_t m_frameIndex = 0;
 
 		ShadingMode m_shadingMode = ShadingMode::Shaded;
 		VisualizationMode m_visualizationMode = VisualizationMode::None;

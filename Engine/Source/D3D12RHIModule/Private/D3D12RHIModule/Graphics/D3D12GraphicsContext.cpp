@@ -170,7 +170,9 @@ namespace Volt::RHI
 
 	void D3D12GraphicsContext::InitializeDebugLayer()
 	{
-		VT_D3D12_CHECK(D3D12GetDebugInterface(IID_PPV_ARGS(&m_debugInterface)));
-		m_debugInterface->EnableDebugLayer();
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_debugInterface))))
+		{
+			m_debugInterface->EnableDebugLayer();
+		}
 	}
 }

@@ -235,4 +235,9 @@ namespace Volt::RHI
 	{
 		return m_createInfo.shader;
 	}
+
+	bool D3D12RenderPipeline::IsValid() const
+	{
+		return m_pipeline != nullptr;
+	}
 }

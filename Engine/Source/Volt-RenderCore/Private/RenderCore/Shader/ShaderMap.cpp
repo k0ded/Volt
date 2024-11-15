@@ -119,7 +119,10 @@ namespace Volt
 
 		if (s_instance->m_computePipelineCache.contains(hash))
 		{
-			return s_instance->m_computePipelineCache.at(hash);
+			auto pipeline = s_instance->m_computePipelineCache.at(hash);
+			VT_ENSURE(pipeline->IsValid());
+
+			return pipeline;
 		}
 
 		auto shader = Get(name);
@@ -128,6 +131,7 @@ namespace Volt
 		RefPtr<RHI::ComputePipeline> pipeline = RHI::ComputePipeline::Create(shader, useGlobalResouces);
 		s_instance->m_computePipelineCache[hash] = pipeline;
 
+		VT_ENSURE(pipeline->IsValid());
 		return pipeline;
 	}
 
@@ -141,12 +145,16 @@ namespace Volt
 		
 		if (s_instance->m_renderPipelineCache.contains(hash))
 		{
-			return s_instance->m_renderPipelineCache.at(hash);
+			auto pipeline = s_instance->m_renderPipelineCache.at(hash);
+			VT_ENSURE(pipeline->IsValid());
+
+			return pipeline;
 		}
 
 		RefPtr<RHI::RenderPipeline> pipeline = RHI::RenderPipeline::Create(pipelineInfo);
 		s_instance->m_renderPipelineCache[hash] = pipeline;
 
+		VT_ENSURE(pipeline->IsValid());
 		return pipeline;
 	}
 }

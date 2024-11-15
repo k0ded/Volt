@@ -3,6 +3,14 @@
 #include "Structures.hlsli"
 #include "Lights.hlsli"
 
+struct DirectionalShadowMappingInfo
+{
+    vt::Tex2DArray<float> shadowMap;
+    vt::TextureSampler shadowSampler;
+
+    float4x4 viewMatrix;
+};
+
 static const float3 m_cascadeColors[DIRECTIONAL_SHADOW_CASCADE_COUNT] = 
 {
     float3(1.f, 0.f, 0.f),

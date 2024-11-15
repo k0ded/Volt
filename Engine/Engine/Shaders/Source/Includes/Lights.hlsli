@@ -8,7 +8,9 @@
 
 struct DirectionalLight
 {
-    float4 direction;
+    float3 direction;
+    float angularRadius;
+
     float3 color;
     float intensity;
 
@@ -33,7 +35,7 @@ struct PointLight
 struct SpotLight
 {
     float3 position;
-    float angleAttenuation;
+    float lightAngleScale;
     
     float3 color;
     float intensity;
@@ -41,9 +43,18 @@ struct SpotLight
     float3 direction;
     float range;
     
-    float angle;
+    float lightAngleOffset;
     float falloff;
     float2 padding;
+};
+
+struct SkyLight
+{
+    vt::TexCube<float3> irradiance;
+    vt::TexCube<float3> radiance;
+
+    float lod;
+    float intensity;
 };
 
 int GetLightBufferIndex(vt::TypedBuffer<int> lightIndexBuffer, uint tileCountX, int i, uint2 tileId)

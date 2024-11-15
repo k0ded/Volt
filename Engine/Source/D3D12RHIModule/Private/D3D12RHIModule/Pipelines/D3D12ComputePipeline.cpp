@@ -40,6 +40,11 @@ namespace Volt::RHI
 		return m_shader;
 	}
 
+	bool D3D12ComputePipeline::IsValid() const
+	{
+		return m_pipeline != nullptr;
+	}
+
 	void* D3D12ComputePipeline::GetHandleImpl() const
 	{
 		return m_pipeline.Get();

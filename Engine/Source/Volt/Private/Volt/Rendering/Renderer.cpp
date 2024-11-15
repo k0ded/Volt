@@ -121,11 +121,14 @@ namespace Volt
 #endif
 
 		CreateDefaultResources();
+		m_blueNoise = CreateScope<BlueNoise>();
 	}
 
 	void Renderer::Shutdown()
 	{
 		RenderGraphExecutionThread::Shutdown();
+
+		m_blueNoise.reset();
 
 		m_defaultResources.Clear();
 		m_samplers.clear();
@@ -173,13 +176,13 @@ namespace Volt
 			return {};
 		}
 
-		constexpr uint32_t CUBE_MAP_SIZE = 1024;
-		constexpr uint32_t IRRADIANCE_MAP_SIZE = 32;
+		constexpr uint32_t CUBE_MAP_SIZE = 2048;
+		constexpr uint32_t DIFFUSE_MAP_SIZE = 256;
 		constexpr uint32_t CONVERSION_THREAD_GROUP_SIZE = 32;
 
-		RefPtr<RHI::Image> environmentUnfiltered;
-		RefPtr<RHI::Image> environmentFiltered;
-		RefPtr<RHI::Image> irradianceMap;
+		RefPtr<RHI::Image> environmentRaw;
+		RefPtr<RHI::Image> environmentSpecular;
+		RefPtr<RHI::Image> environmentDiffuse;
 
 		auto linearSampler = GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>();
 
@@ -196,7 +199,7 @@ namespace Volt
 			imageSpec.layers = 6;
 			imageSpec.isCubeMap = true;
 
-			environmentUnfiltered = RHI::Image::Create(imageSpec);
+			environmentRaw = RHI::Image::Create(imageSpec);
 
 			{
 				RHI::ResourceBarrierInfo barrierInfo{};
@@ -207,7 +210,7 @@ namespace Volt
 				barrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
 				barrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
 				barrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
-				barrierInfo.imageBarrier().resource = environmentUnfiltered;
+				barrierInfo.imageBarrier().resource = environmentRaw;
 				commandBuffer->ResourceBarrier({ barrierInfo });
 			}
 
@@ -217,7 +220,7 @@ namespace Volt
 			tableInfo.shader = conversionPipeline->GetShader();
 
 			RefPtr<RHI::DescriptorTable> descriptorTable = RHI::DescriptorTable::Create(tableInfo);
-			descriptorTable->SetImageView("o_output", environmentUnfiltered->GetArrayView(), 0);
+			descriptorTable->SetImageView("o_output", environmentRaw->GetArrayView(), 0);
 			descriptorTable->SetImageView("u_equirectangularMap", environmentTexture->GetImage()->GetView(), 0);
 			descriptorTable->SetSamplerState("u_linearSampler", linearSampler->GetResource(), 0);
 
@@ -236,7 +239,7 @@ namespace Volt
 				imageBarrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
 				imageBarrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
 				imageBarrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
-				imageBarrierInfo.imageBarrier().resource = environmentUnfiltered;
+				imageBarrierInfo.imageBarrier().resource = environmentRaw;
 
 				RHI::ResourceBarrierInfo barrierInfo{};
 				barrierInfo.type = RHI::BarrierType::Global;
@@ -248,7 +251,7 @@ namespace Volt
 			}
 		}
 
-		// Filtered
+		// Specular
 		{
 			RHI::ImageSpecification imageSpec{};
 			imageSpec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
@@ -258,13 +261,13 @@ namespace Volt
 			imageSpec.layers = 6;
 			imageSpec.isCubeMap = true;
 			imageSpec.mips = RHI::Utility::CalculateMipCount(CUBE_MAP_SIZE, CUBE_MAP_SIZE);
-			imageSpec.debugName = "Environment - Radiance";
+			imageSpec.debugName = "Environment - Specular";
 
-			environmentFiltered = RHI::Image::Create(imageSpec);
+			environmentSpecular = RHI::Image::Create(imageSpec);
 
 			for (uint32_t i = 0; i < imageSpec.mips; i++)
 			{
-				environmentFiltered->GetArrayView(i);
+				environmentSpecular->GetArrayView(i);
 			}
 
 			{
@@ -276,11 +279,11 @@ namespace Volt
 				barrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
 				barrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
 				barrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
-				barrierInfo.imageBarrier().resource = environmentFiltered;
+				barrierInfo.imageBarrier().resource = environmentSpecular;
 				commandBuffer->ResourceBarrier({ barrierInfo });
 			}
 
-			auto pipeline = ShaderMap::GetComputePipeline("EnvironmentMipFilter", false);
+			auto pipeline = ShaderMap::GetComputePipeline("IntegrateSpecularCube", false);
 			RHI::DescriptorTableCreateInfo tableInfo{};
 			tableInfo.shader = pipeline->GetShader();
 
@@ -288,26 +291,24 @@ namespace Volt
 			for (uint32_t i = 0; i < imageSpec.mips; i++)
 			{
 				descriptorTables.emplace_back(RHI::DescriptorTable::Create(tableInfo));
-				descriptorTables.back()->SetImageView("u_input", environmentUnfiltered->GetView(), 0);
+				descriptorTables.back()->SetImageView("u_input", environmentRaw->GetView(), 0);
 				descriptorTables.back()->SetSamplerState("u_linearSampler", linearSampler->GetResource(), 0);
 			}
 
 			struct Constants
 			{
-				float roughness;
+				uint32_t mipIndex;
+				uint32_t mipCount;
 			} constants;
 
-			const float deltaRoughness = 1.f / glm::max(static_cast<float>(imageSpec.mips) - 1.f, 1.f);
 			for (uint32_t i = 0, size = CUBE_MAP_SIZE; i < imageSpec.mips; i++, size /= 2)
 			{
 				const uint32_t numGroups = glm::max(1u, Math::DivideRoundUp(size, 32u));
 
-				float roughness = i * deltaRoughness;
-				roughness = glm::max(roughness, 0.05f);
+				constants.mipIndex = i;
+				constants.mipCount = imageSpec.mips;
 
-				constants.roughness = roughness;
-
-				descriptorTables[i]->SetImageView("o_output", environmentFiltered->GetArrayView(i), 0);
+				descriptorTables[i]->SetImageView("o_output", environmentSpecular->GetArrayView(i), 0);
 
 				commandBuffer->BindPipeline(pipeline);
 				commandBuffer->BindDescriptorTable(descriptorTables[i]);
@@ -324,25 +325,25 @@ namespace Volt
 				imageBarrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
 				imageBarrierInfo.imageBarrier().subResource.levelCount = 1;
 				imageBarrierInfo.imageBarrier().subResource.baseMipLevel = i;
-				imageBarrierInfo.imageBarrier().resource = environmentFiltered;
+				imageBarrierInfo.imageBarrier().resource = environmentSpecular;
 
 				commandBuffer->ResourceBarrier({ imageBarrierInfo });
 			}
 		}
 
-		// Irradiance
+		// Diffuse
 		{
 			RHI::ImageSpecification imageSpec{};
 			imageSpec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
-			imageSpec.width = IRRADIANCE_MAP_SIZE;
-			imageSpec.height = IRRADIANCE_MAP_SIZE;
+			imageSpec.width = DIFFUSE_MAP_SIZE;
+			imageSpec.height = DIFFUSE_MAP_SIZE;
 			imageSpec.usage = RHI::ImageUsage::Storage;
 			imageSpec.layers = 6;
 			imageSpec.isCubeMap = true;
-			imageSpec.mips = RHI::Utility::CalculateMipCount(IRRADIANCE_MAP_SIZE, IRRADIANCE_MAP_SIZE);
-			imageSpec.debugName = "Environment - Irradiance";
+			imageSpec.mips = RHI::Utility::CalculateMipCount(DIFFUSE_MAP_SIZE, DIFFUSE_MAP_SIZE);
+			imageSpec.debugName = "Environment - Diffuse";
 
-			irradianceMap = RHI::Image::Create(imageSpec);
+			environmentDiffuse = RHI::Image::Create(imageSpec);
 		
 			{
 				RHI::ResourceBarrierInfo barrierInfo{};
@@ -353,23 +354,23 @@ namespace Volt
 				barrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
 				barrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
 				barrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
-				barrierInfo.imageBarrier().resource = irradianceMap;
+				barrierInfo.imageBarrier().resource = environmentDiffuse;
 				commandBuffer->ResourceBarrier({ barrierInfo });
 			}
 
-			auto pipeline = ShaderMap::GetComputePipeline("EnvironmentIrradiance", false);
+			auto pipeline = ShaderMap::GetComputePipeline("IntegrateDiffuseCube", false);
 			RHI::DescriptorTableCreateInfo tableInfo{};
 			tableInfo.shader = pipeline->GetShader();
 
 			RefPtr<RHI::DescriptorTable> descriptorTable = RHI::DescriptorTable::Create(tableInfo);
-			descriptorTable->SetImageView("o_output", irradianceMap->GetArrayView(), 0);
-			descriptorTable->SetImageView("u_input", environmentFiltered->GetView(), 0);
+			descriptorTable->SetImageView("o_output", environmentDiffuse->GetArrayView(), 0);
+			descriptorTable->SetImageView("u_input", environmentRaw->GetView(), 0);
 			descriptorTable->SetSamplerState("u_linearSampler", linearSampler->GetResource(), 0);
 
 			commandBuffer->BindPipeline(pipeline);
 			commandBuffer->BindDescriptorTable(descriptorTable);
 
-			const uint32_t groupCount = Math::DivideRoundUp(IRRADIANCE_MAP_SIZE, CONVERSION_THREAD_GROUP_SIZE);
+			const uint32_t groupCount = Math::DivideRoundUp(DIFFUSE_MAP_SIZE, CONVERSION_THREAD_GROUP_SIZE);
 			commandBuffer->Dispatch(groupCount, groupCount, 6);
 
 			{
@@ -381,7 +382,7 @@ namespace Volt
 				imageBarrierInfo.imageBarrier().dstStage = RHI::BarrierStage::PixelShader | RHI::BarrierStage::ComputeShader;
 				imageBarrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
 				imageBarrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
-				imageBarrierInfo.imageBarrier().resource = irradianceMap;
+				imageBarrierInfo.imageBarrier().resource = environmentDiffuse;
 
 				commandBuffer->ResourceBarrier({ imageBarrierInfo });
 			}
@@ -391,11 +392,11 @@ namespace Volt
 		commandBuffer->End();
 		commandBuffer->ExecuteAndWait();
 
-		irradianceMap->GenerateMips();
+		environmentDiffuse->GenerateMips();
 
 		SceneEnvironment result{};
-		result.irradianceMap = irradianceMap;
-		result.radianceMap = environmentFiltered;
+		result.diffuse = environmentDiffuse;
+		result.specular = environmentSpecular;
 
 		return result;
 	}
@@ -471,48 +472,48 @@ namespace Volt
 			m_defaultResources.blackCubeTexture = RHI::Image::Create(imageSpec, PIXEL_DATA);
 		}
 
-		GenerateBRDFLuT();
+		GenerateDFGLuT();
 
 		// Default material
 		{
 			m_defaultResources.defaultMaterial = AssetManager::CreateMemoryAsset<Material>("DefaultMaterial", ShaderMap::GetComputePipeline("OpaqueDefault"));
 		}
 	}
-	
-	void Renderer::GenerateBRDFLuT()
+
+	void Renderer::GenerateDFGLuT()
 	{
-		constexpr uint32_t BRDFSize = 512;
+		constexpr uint32_t DFGSize = 512;
 
 		RHI::ImageSpecification spec{};
-		spec.format = RHI::PixelFormat::R16G16_SFLOAT;
+		spec.format = RHI::PixelFormat::R16G16B16A16_SFLOAT;
 		spec.usage = RHI::ImageUsage::AttachmentStorage;
-		spec.width = BRDFSize;
-		spec.height = BRDFSize;
-		spec.debugName = "BRDFLut";
+		spec.width = DFGSize;
+		spec.height = DFGSize;
+		spec.debugName = "DFGLuT";
 
-		m_defaultResources.BRDFLuT = RHI::Image::Create(spec);
+		m_defaultResources.DFGLuT = RHI::Image::Create(spec);
 
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 
 		RenderGraph renderGraph{ commandBuffer };
-		RenderGraphImageHandle targetImageHandle = renderGraph.AddExternalImage(m_defaultResources.BRDFLuT);
+		RenderGraphImageHandle targetImageHandle = renderGraph.AddExternalImage(m_defaultResources.DFGLuT);
 
-		renderGraph.AddPass("BRDF Pass", 
-		[&](RenderGraph::Builder& builder) 
+		renderGraph.AddPass("Pre integrate DFG Pass",
+		[&](RenderGraph::Builder& builder)
 		{
 			builder.WriteResource(targetImageHandle);
 			builder.SetHasSideEffect();
 		},
-		[=](RenderContext& context) 
+		[=](RenderContext& context)
 		{
-			RenderingInfo renderingInfo = context.CreateRenderingInfo(BRDFSize, BRDFSize, { targetImageHandle });
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(DFGSize, DFGSize, { targetImageHandle });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get("GenerateBRDF");
+			pipelineInfo.shader = ShaderMap::Get("GeneratePreIntegratedDFG");
 			pipelineInfo.cullMode = RHI::CullMode::None;
 
 			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
-			
+
 			context.BeginRendering(renderingInfo);
 			RCUtils::DrawFullscreenTriangle(context, pipeline);
 			context.EndRendering();

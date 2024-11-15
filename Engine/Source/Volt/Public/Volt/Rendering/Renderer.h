@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Volt/Rendering/RendererStructs.h"
+#include "Volt/Rendering/BlueNoise.h"
 
 #include <AssetSystem/AssetHandle.h>
 #include <RenderCore/Resources/BindlessResource.h>
@@ -30,13 +31,12 @@ namespace Volt
 		Ref<Texture2D> whiteTexture;
 		Ref<Material> defaultMaterial;
 
-		RefPtr<RHI::Image> BRDFLuT;
+		RefPtr<RHI::Image> DFGLuT;
 		RefPtr<RHI::Image> blackCubeTexture;
 
 		VT_INLINE void Clear()
 		{
 			whiteTexture = nullptr;
-			BRDFLuT = nullptr;
 			blackCubeTexture = nullptr;
 			defaultMaterial = nullptr;
 		}
@@ -92,7 +92,7 @@ namespace Volt
 
 		BindlessResourceRef<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateCreateInfo& samplerInfo);
 		void CreateDefaultResources();
-		void GenerateBRDFLuT();
+		void GenerateDFGLuT();
 		void LoadShaders();
 
 		inline static Renderer* s_instance = nullptr;
@@ -101,6 +101,7 @@ namespace Volt
 
 		Scope<ShaderMap> m_shaderMap;
 		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
+		Scope<BlueNoise> m_blueNoise;
 
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
 		Scope<ShaderRuntimeValidator> m_shaderValidator;

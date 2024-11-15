@@ -16,6 +16,7 @@ namespace Volt::RHI
 
 		void Invalidate() override;
 		RefPtr<Shader> GetShader() const override;
+		bool IsValid() const override;
 
 	protected:
 		void* GetHandleImpl() const override;

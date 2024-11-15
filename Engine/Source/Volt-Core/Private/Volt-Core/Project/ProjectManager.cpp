@@ -142,6 +142,11 @@ namespace Volt
 		return "Engine/Shaders/Source/Includes";
 	}
 
+	const std::filesystem::path ProjectManager::GetEngineShaderDirectory()
+	{
+		return "Engine/Shaders/Source/";
+	}
+
 	const std::filesystem::path ProjectManager::GetAssetsDirectory()
 	{
 		return s_instance->m_currentProject->isDeprecated ? "./" : s_instance->m_currentProject->rootDirectory / s_instance->m_currentProject->assetsDirectory;

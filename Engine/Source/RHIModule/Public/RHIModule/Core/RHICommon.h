@@ -529,7 +529,9 @@ namespace Volt::RHI
 		VideoEncodeRead = BIT(13),
 		VideoEncodeWrite = BIT(14),
 		VideoDecodeRead = BIT(15),
-		VideoDecodeWrite = BIT(16)
+		VideoDecodeWrite = BIT(16),
+		AllRead = BIT(17),
+		AllWrite = BIT(18)
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(BarrierAccess);

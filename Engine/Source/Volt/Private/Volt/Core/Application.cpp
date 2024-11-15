@@ -7,10 +7,8 @@
 #include "Volt/Rendering/Renderer.h"
 #include "Volt/Scene/SceneManager.h"
 #include "Volt/Physics/Physics.h"
-#include "Volt/Utility/Noise.h"
 #include "Volt/Utility/UIUtility.h"
 
-#include <Volt-Core/DynamicLibraryManager.h>
 #include <Volt-Core/PluginSystem/PluginRegistry.h>
 #include <Volt-Core/PluginSystem/PluginSystem.h>
 
@@ -30,7 +28,6 @@
 #include <LogModule/Log.h>
 
 #include <InputModule/Events/KeyboardEvents.h>
-#include <InputModule/Input.h>
 
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
@@ -287,10 +284,10 @@ namespace Volt
 			AppPreRenderEvent preRenderEvent;
 			EventSystem::DispatchEvent(preRenderEvent);
 
-			AppRenderEvent renderEvent;
+			AppRenderEvent renderEvent(m_currentDeltaTime);
 			EventSystem::DispatchEvent(renderEvent);
 
-			m_windowManager->Render();
+			m_windowManager->Render(m_currentDeltaTime);
 		}
 
 		{

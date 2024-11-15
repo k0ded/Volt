@@ -504,6 +504,22 @@ namespace Volt
 #endif
 	}
 
+	void RenderContext::ValidatePipelineConstant(const RHI::ShaderRenderGraphConstantsData& constantsData, const RHI::ShaderUniformType& uniformType, const StringHash& constantName)
+	{
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
+		if (!constantsData.uniforms.contains(constantName))
+		{
+			VT_LOGC(Error, LogRenderCore, "A constant with name '{}' is not defined in the shader!", constantName.string);
+			VT_ENSURE(false);
+		}
+
+		const auto& uniform = constantsData.uniforms.at(constantName);
+
+		VT_ENSURE(uniform.type == uniformType);
+		m_boundPipelineData.uniformHasBeenSetMap[constantName] = true;
+#endif
+	}
+
 	const RHI::ShaderRenderGraphConstantsData& RenderContext::GetRenderGraphConstantsData()
 	{
 		VT_PROFILE_FUNCTION();

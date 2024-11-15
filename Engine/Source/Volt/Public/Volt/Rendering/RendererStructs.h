@@ -8,8 +8,8 @@ namespace Volt
 {
 	struct SceneEnvironment
 	{
-		RefPtr<RHI::Image> irradianceMap;
-		RefPtr<RHI::Image> radianceMap;
+		RefPtr<RHI::Image> diffuse;
+		RefPtr<RHI::Image> specular;
 
 		float lod = 0.f;
 		float intensity = 1.f;

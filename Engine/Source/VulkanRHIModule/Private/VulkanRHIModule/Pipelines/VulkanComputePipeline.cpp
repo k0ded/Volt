@@ -108,6 +108,11 @@ namespace Volt::RHI
 		return m_shader;
 	}
 
+	bool VulkanComputePipeline::IsValid() const
+	{
+		return m_pipeline != nullptr;
+	}
+
 	void* VulkanComputePipeline::GetHandleImpl() const
 	{
 		return m_pipeline;
