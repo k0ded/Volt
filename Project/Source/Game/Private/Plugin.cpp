@@ -31,22 +31,22 @@ void PlayerSystem(PlayerEntity entity, float deltaTime)
 {
 	constexpr float speed = 100.f;
 
-	if (Volt::Input::IsButtonDown(Volt::InputCode::W))
+	if (Volt::Input::IsKeyDown(Volt::InputCode::W))
 	{
 		entity.SetPosition(entity.GetPosition() + entity.GetForward() * speed * deltaTime);
 	}
 
-	if (Volt::Input::IsButtonDown(Volt::InputCode::S))
+	if (Volt::Input::IsKeyDown(Volt::InputCode::S))
 	{
 		entity.SetPosition(entity.GetPosition() - entity.GetForward() * speed * deltaTime);
 	}
 
-	if (Volt::Input::IsButtonDown(Volt::InputCode::A))
+	if (Volt::Input::IsKeyDown(Volt::InputCode::A))
 	{
 		entity.SetPosition(entity.GetPosition() - entity.GetRight() * speed * deltaTime);
 	}
 
-	if (Volt::Input::IsButtonDown(Volt::InputCode::D))
+	if (Volt::Input::IsKeyDown(Volt::InputCode::D))
 	{
 		entity.SetPosition(entity.GetPosition() + entity.GetRight() * speed * deltaTime);
 	}
