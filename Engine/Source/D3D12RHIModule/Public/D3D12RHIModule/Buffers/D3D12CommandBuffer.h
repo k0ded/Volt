@@ -25,6 +25,7 @@ namespace Volt::RHI
 		void Flush(RefPtr<Fence> fence) override;
 		void Execute() override;
 		void ExecuteAndWait() override;
+		void ExecuteWithFence(RefPtr<Fence> fence) override;
 		void WaitForFence() override;
 		void SetEvent(WeakPtr<Event> event) override;
 

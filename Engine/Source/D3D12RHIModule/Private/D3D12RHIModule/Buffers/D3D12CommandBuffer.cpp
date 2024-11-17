@@ -402,6 +402,10 @@ namespace Volt::RHI
 		m_commandListData.fence->Wait();
 	}
 
+	void D3D12CommandBuffer::ExecuteWithFence(RefPtr<Fence> fence)
+	{
+	}
+
 	void D3D12CommandBuffer::WaitForFence()
 	{
 		VT_PROFILE_FUNCTION();

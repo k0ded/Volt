@@ -70,6 +70,8 @@ namespace Volt
 		{
 			m_renderScene->InvalidateRenderObject(id);
 		}
+
+		m_renderScene->GetRayTracingScene()->InvalidateInstance(m_rayTracingInstance);
 	}
 
 	void ScenePrimitiveData::CreateScenePrimitives()

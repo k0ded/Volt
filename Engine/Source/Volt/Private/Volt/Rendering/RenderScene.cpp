@@ -126,6 +126,8 @@ namespace Volt
 			bonesBuffer->GetResource()->SetData(m_animationBufferStorage.data(), m_animationBufferStorage.size() * sizeof(glm::mat4));
 			m_animationBufferStorage.clear();
 		}
+
+		m_rayTracingScene->Update();
 	}
 
 	void RenderScene::InvalidateRenderObject(UUID64 renderObject)
@@ -139,8 +141,6 @@ namespace Volt
 		{
 			m_invalidSDFPrimitiveDataIndices.emplace_back(renderObject, m_sdfPrimitiveIndexFromRenderObjectID.at(renderObject));
 		}
-
-		m_rayTracingScene->Build();
 	}
 
 	const UUID64 RenderScene::AddInstance(EntityID entityId, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex)

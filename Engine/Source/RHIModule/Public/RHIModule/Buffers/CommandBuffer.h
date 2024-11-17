@@ -51,6 +51,7 @@ namespace Volt::RHI
 		virtual void Flush(RefPtr<Fence> fence) = 0;
 		virtual void Execute() = 0;
 		virtual void ExecuteAndWait() = 0;
+		virtual void ExecuteWithFence(RefPtr<Fence> fence) = 0;
 		virtual void WaitForFence() = 0;
 
 		virtual void SetEvent(WeakPtr<Event> event) = 0;

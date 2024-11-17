@@ -370,28 +370,12 @@ namespace Volt::RHI
 
 	void VulkanCommandBuffer::Flush(RefPtr<Fence> fence)
 	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_commandBufferLevel == CommandBufferLevel::Primary);
-
 		// End the current command buffer
 		End();
 
-		// Execute current command buffer and use the supplied fence
-		{
-			auto device = GraphicsContext::GetDevice();
+		ExecuteWithFence(fence);
 
-			DeviceQueueExecuteInfo execInfo{};
-			execInfo.commandBuffers = { this };
-			execInfo.fence = fence;
-			device->GetDeviceQueue(m_queueType)->Execute(execInfo);
-		}
-
-		// Now we destroy the current command buffer and create a new one.
-		// #TODO_Ivar: Investigate the overhead of creating a new command buffer every frame.
-		Release(fence);
-		Invalidate();
-
-		// And lastly we restart the command buffer
+		// Begin the newly created command buffer
 		Begin();
 	}
 
@@ -410,6 +394,27 @@ namespace Volt::RHI
 		m_fence->WaitUntilSignaled();
 
 		FetchTimestampResults();
+	}
+
+	void VulkanCommandBuffer::ExecuteWithFence(RefPtr<Fence> fence)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE(m_commandBufferLevel == CommandBufferLevel::Primary);
+
+		// Execute current command buffer and use the supplied fence
+		{
+			auto device = GraphicsContext::GetDevice();
+
+			DeviceQueueExecuteInfo execInfo{};
+			execInfo.commandBuffers = { this };
+			execInfo.fence = fence;
+			device->GetDeviceQueue(m_queueType)->Execute(execInfo);
+		}
+
+		// Now we destroy the current command buffer and create a new one.
+		// #TODO_Ivar: Investigate the overhead of creating a new command buffer every frame.
+		Release(fence);
+		Invalidate();
 	}
 
 	void VulkanCommandBuffer::WaitForFence()
