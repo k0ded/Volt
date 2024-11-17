@@ -44,13 +44,20 @@ namespace Volt
 			rtInstance.accelerationStructureReference = instance.mesh->GetRayTracingSceneGeometry()->GetAccelerationStructureDeviceAddress();
 		}
 
-		m_instancesBuffer = RHI::StorageBuffer::Create(static_cast<uint32_t>(instances.size()), sizeof(RHI::AccelerationStructureInstance), "Ray Tracing Scene TLAS", RHI::BufferUsage::DeviceAddress | RHI::BufferUsage::AccelerationStructureInput, RHI::MemoryUsage::CPUToGPU);
-	
+		if (!m_instancesBuffer)
+		{
+			m_instancesBuffer = CreateRef<GrowingGPUBuffer>(static_cast<uint32_t>(instances.size()), sizeof(RHI::AccelerationStructureInstance), "Ray Tracing Scene TLAS", RHI::BufferUsage::DeviceAddress | RHI::BufferUsage::AccelerationStructureInput, RHI::MemoryUsage::CPUToGPU);
+		}
+		else
+		{
+			m_instancesBuffer->GrowIfRequired(instances.size());
+		}
+
 		// Copy data to buffer
 		{
-			RHI::AccelerationStructureInstance* mappedInstances = m_instancesBuffer->Map<RHI::AccelerationStructureInstance>();
+			RHI::AccelerationStructureInstance* mappedInstances = m_instancesBuffer->GetResource()->Map<RHI::AccelerationStructureInstance>();
 			memcpy(mappedInstances, instances.data(), sizeof(RHI::AccelerationStructureInstance) * instances.size());
-			m_instancesBuffer->Unmap();
+			m_instancesBuffer->GetResource()->Unmap();
 		}
 
 		RHI::AccelerationStructureCreateInfo asCreateInfo;
@@ -60,7 +67,7 @@ namespace Volt
 		auto& asInstances = asCreateInfo.geometries.emplace_back();
 		asInstances.geometryType = RHI::AccelerationStructureGeometryType::Instances;
 		asInstances.flags = RHI::AccelerationStructureGeometryFlags::Opaque;
-		asInstances.instancesBuffer = m_instancesBuffer;
+		asInstances.instancesBuffer = m_instancesBuffer->GetResource();
 
 		m_accelerationStructure = RHI::AccelerationStructure::Create(asCreateInfo);
 
@@ -121,9 +128,9 @@ namespace Volt
 
 		// Copy data to buffer
 		{
-			RHI::AccelerationStructureInstance* mappedInstances = m_instancesBuffer->Map<RHI::AccelerationStructureInstance>();
+			RHI::AccelerationStructureInstance* mappedInstances = m_instancesBuffer->GetResource()->Map<RHI::AccelerationStructureInstance>();
 			memcpy(mappedInstances, instances.data(), sizeof(RHI::AccelerationStructureInstance) * instances.size());
-			m_instancesBuffer->Unmap();
+			m_instancesBuffer->GetResource()->Unmap();
 		}
 
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
@@ -139,7 +146,7 @@ namespace Volt
 		auto& instancesGeometry = buildGeometryInfo.geometries.emplace_back();
 		instancesGeometry.geometryType = RHI::AccelerationStructureGeometryType::Instances;
 		instancesGeometry.flags = RHI::AccelerationStructureGeometryFlags::Opaque;
-		instancesGeometry.instancesBuffer = m_instancesBuffer;
+		instancesGeometry.instancesBuffer = m_instancesBuffer->GetResource();
 
 		RHI::AccelerationStructureBuildRanges buildRanges{};
 		auto& buildRange = buildRanges.AddRange();

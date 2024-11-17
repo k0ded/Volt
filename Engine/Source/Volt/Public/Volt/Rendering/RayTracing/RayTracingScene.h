@@ -2,6 +2,8 @@
 
 #include "Volt/Rendering/RayTracing/RayTracingInstance.h"
 
+#include <RenderCore/Resources/GrowingGPUBuffer.h>
+
 #include <EntitySystem/EntityID.h>
 
 #include <RHIModule/RayTracing/AccelerationStructure.h>
@@ -49,7 +51,7 @@ namespace Volt
 		};
 
 		RefPtr<RHI::AccelerationStructure> m_accelerationStructure;
-		RefPtr<RHI::StorageBuffer> m_instancesBuffer;
+		Ref<GrowingGPUBuffer> m_instancesBuffer;
 
 		RefPtr<RHI::Fence> m_updateFence;
 		RefPtr<RHI::Fence> m_buildFence;
