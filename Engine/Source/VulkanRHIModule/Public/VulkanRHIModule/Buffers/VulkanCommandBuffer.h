@@ -45,11 +45,14 @@ namespace Volt::RHI
 		void DispatchMeshTasksIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) override;
 		void DispatchMeshTasksIndirectCount(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, WeakPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) override;
 
+		void TraceRays(WeakPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth) override;
+
 		void SetViewports(const StackVector<Viewport, MAX_VIEWPORT_COUNT>& viewports) override;
 		void SetScissors(const StackVector<Rect2D, MAX_VIEWPORT_COUNT>& scissors) override;
 
 		void BindPipeline(WeakPtr<RenderPipeline> pipeline) override;
 		void BindPipeline(WeakPtr<ComputePipeline> pipeline) override;
+		void BindPipeline(WeakPtr<RayTracingPipeline> pipeline) override;
 		void BindVertexBuffers(const StackVector<WeakPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) override;
 		void BindVertexBuffers(const StackVector<WeakPtr<StorageBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) override;
 		void BindIndexBuffer(WeakPtr<IndexBuffer> indexBuffer) override;
@@ -112,6 +115,8 @@ namespace Volt::RHI
 		void BeginPrimaryInternal();
 		void BeginSecondaryInternal();
 
+		void ClearCurrentPipeline();
+
 		VkPipelineLayout_T* GetCurrentPipelineLayout();
 
 		struct CommandBufferData
@@ -140,6 +145,7 @@ namespace Volt::RHI
 		// Internal state
 		WeakPtr<RenderPipeline> m_currentRenderPipeline;
 		WeakPtr<ComputePipeline> m_currentComputePipeline;
+		WeakPtr<RayTracingPipeline> m_currentRayTracingPipeline;
 
 		// Secondary command buffer
 		CommandBufferLevel m_commandBufferLevel = CommandBufferLevel::Primary;

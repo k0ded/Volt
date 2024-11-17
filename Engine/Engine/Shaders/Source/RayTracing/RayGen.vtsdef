@@ -1,0 +1,6 @@
+name: "RayGen"
+internal: true
+sources:
+  - entryPoint: "main"
+    shaderStage: "rgen"
+    filePath: "Engine/Shaders/Source/RayTracing/RayGen.hlsl"

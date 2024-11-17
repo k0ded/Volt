@@ -181,6 +181,8 @@ namespace Volt
 		void Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ);
 		void DispatchIndirect(RenderGraphBufferHandle commandsBuffer, const size_t offset);
 
+		void TraceRays(RefPtr<RHI::ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth);
+
 		void DrawIndirectCount(RenderGraphBufferHandle commandsBuffer, const size_t offset, RenderGraphBufferHandle countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride);
 		void DrawIndexedIndirect(RenderGraphBufferHandle commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride);
 		void DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance);
@@ -188,6 +190,7 @@ namespace Volt
 
 		void BindPipeline(WeakPtr<RHI::RenderPipeline> pipeline);
 		void BindPipeline(WeakPtr<RHI::ComputePipeline> pipeline);
+		void BindPipeline(WeakPtr<RHI::RayTracingPipeline> pipeline);
 
 		void BindIndexBuffer(RenderGraphBufferHandle indexBuffer);
 		void BindIndexBuffer(WeakPtr<RHI::IndexBuffer> indexBuffer);
@@ -236,6 +239,7 @@ namespace Volt
 
 		// Internal state
 		const RHI::ShaderRenderGraphConstantsData& GetRenderGraphConstantsData();
+		void ClearCurrentPipeline();
 
 		bool m_descriptorTableIsBound = false; // This needs to be checked in every call that uses resources
 
@@ -247,6 +251,8 @@ namespace Volt
 
 		WeakPtr<RHI::RenderPipeline> m_currentRenderPipeline;
 		WeakPtr<RHI::ComputePipeline> m_currentComputePipeline;
+		WeakPtr<RHI::RayTracingPipeline> m_currentRayTracingPipeline;
+
 		WeakPtr<RHI::AccelerationStructure> m_currentAccelerationStructure;
 
 		uint8_t m_passConstantsData[RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE];

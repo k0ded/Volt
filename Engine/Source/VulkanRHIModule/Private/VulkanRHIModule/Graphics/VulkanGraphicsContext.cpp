@@ -215,10 +215,10 @@ namespace Volt::RHI
 #ifdef VT_ENABLE_VALIDATION
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 		Utility::PopulateDebugMessengerInfo(debugCreateInfo);
-
+		
 		VkValidationFeaturesEXT validationFeatures{};
 		Utility::PopulateValidationFeaturesInfo(validationFeatures, debugCreateInfo);
-
+		
 		createInfo.pNext = &validationFeatures;
 		createInfo.enabledLayerCount = static_cast<uint32_t>(s_validationLayers.size());
 		createInfo.ppEnabledLayerNames = s_validationLayers.data();

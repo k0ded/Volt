@@ -125,6 +125,51 @@ namespace Volt::RHI
 		return m_resources.constantsBuffer.IsValid();
 	}
 
+	ShaderType VulkanShader::GetShaderType() const
+	{
+		if (m_pipelineStageInfo.contains(ShaderStage::Vertex) ||
+			m_pipelineStageInfo.contains(ShaderStage::Pixel) ||
+			m_pipelineStageInfo.contains(ShaderStage::Mesh) ||
+			m_pipelineStageInfo.contains(ShaderStage::Amplification) ||
+			m_pipelineStageInfo.contains(ShaderStage::Domain) ||
+			m_pipelineStageInfo.contains(ShaderStage::Hull) ||
+			m_pipelineStageInfo.contains(ShaderStage::Geometry))
+		{
+			return ShaderType::Rasterization;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::Compute))
+		{
+			return ShaderType::Compute;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::RayGen))
+		{
+			return ShaderType::RayGen;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::Miss))
+		{
+			return ShaderType::RayMiss;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::AnyHit))
+		{
+			return ShaderType::RayAnyHit;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::ClosestHit))
+		{
+			return ShaderType::RayClosestHit;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::Intersection))
+		{
+			return ShaderType::RayIntersection;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::Callable))
+		{
+			return ShaderType::RayCallable;
+		}
+
+		VT_ASSERT(false);
+		return ShaderType::Rasterization;
+	}
+
 	void* VulkanShader::GetHandleImpl() const
 	{
 		return nullptr;

@@ -1602,6 +1602,11 @@ namespace Volt
 		m_pass->isComputePass = true;
 	}
 
+	void RenderGraph::Builder::SetIsRayTracingPass()
+	{
+		m_pass->isComputePass = true;
+	}
+
 	void RenderGraph::Builder::SetHasSideEffect()
 	{
 		m_pass->hasSideEffect = true;

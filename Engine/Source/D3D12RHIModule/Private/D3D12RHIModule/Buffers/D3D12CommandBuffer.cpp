@@ -80,7 +80,7 @@ namespace Volt::RHI
 				result |= D3D12_BARRIER_SYNC_COMPUTE_SHADING;
 			}
 
-			if (EnumValueContainsFlag(barrierStage, BarrierStage::RayTracing))
+			if (EnumValueContainsFlag(barrierStage, BarrierStage::RayTracingShader))
 			{
 				result |= D3D12_BARRIER_SYNC_RAYTRACING;
 			}
@@ -522,6 +522,10 @@ namespace Volt::RHI
 		m_commandListData.commandList->ExecuteIndirect(signature.Get(), maxDrawCount, commandsBuffer->GetHandle<ID3D12Resource*>(), offset, countBuffer->GetHandle<ID3D12Resource*>(), countBufferOffset);
 	}
 
+	void D3D12CommandBuffer::TraceRays(WeakPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth)
+	{
+	}
+
 	void D3D12CommandBuffer::Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
 	{
 		VT_PROFILE_FUNCTION();
@@ -594,6 +598,11 @@ namespace Volt::RHI
 
 		m_currentComputePipeline = pipeline;
 		m_pipelineNeedsToBeBound = true;
+	}
+
+	void D3D12CommandBuffer::BindPipeline(WeakPtr<RayTracingPipeline> pipeline)
+	{
+
 	}
 
 	void D3D12CommandBuffer::BindVertexBuffers(const StackVector<WeakPtr<VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)

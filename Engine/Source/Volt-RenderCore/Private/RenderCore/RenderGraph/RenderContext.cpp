@@ -173,6 +173,10 @@ namespace Volt
 		{
 			shouldPushConstants = m_currentComputePipeline->GetShader()->HasConstants();
 		}
+		else if (m_currentRayTracingPipeline)
+		{
+		
+		}
 
 		if (shouldPushConstants)
 		{
@@ -245,6 +249,16 @@ namespace Volt
 		m_commandBuffer->DispatchIndirect(cmdsBuffer, offset);
 	}
 
+	void RenderContext::TraceRays(RefPtr<RHI::ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth)
+	{
+		VT_PROFILE_FUNCTION();
+
+		BindDescriptorTableIfRequired();
+		ValidateCurrentPipelineConstants();
+
+		m_commandBuffer->TraceRays(shaderBindingTable, width, height, depth);
+	}
+
 	void RenderContext::DrawIndirectCount(RenderGraphBufferHandle commandsBuffer, const size_t offset, RenderGraphBufferHandle countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
@@ -308,13 +322,8 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_currentComputePipeline.Reset();
-
-		if (!pipeline)
-		{
-			m_currentRenderPipeline.Reset();
-			return;
-		}
+		ClearCurrentPipeline();
+		VT_ENSURE(pipeline);
 
 		m_currentRenderPipeline = pipeline;
 		m_commandBuffer->BindPipeline(pipeline);
@@ -328,15 +337,22 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_currentRenderPipeline.Reset();
-
-		if (!pipeline)
-		{
-			m_currentComputePipeline.Reset();
-			return;
-		}
+		ClearCurrentPipeline();
+		VT_ENSURE(pipeline);
 
 		m_currentComputePipeline = pipeline;
+		m_commandBuffer->BindPipeline(pipeline);
+
+		m_descriptorTableIsBound = false;
+
+		InitializeCurrentPipelineConstantsValidation();
+	}
+
+	void RenderContext::BindPipeline(WeakPtr<RHI::RayTracingPipeline> pipeline)
+	{
+		VT_PROFILE_FUNCTION();
+
+		m_currentRayTracingPipeline = pipeline;
 		m_commandBuffer->BindPipeline(pipeline);
 
 		m_descriptorTableIsBound = false;
@@ -393,7 +409,7 @@ namespace Volt
 	void RenderContext::SetConstant(const StringHash& name, const RenderGraphImageHandle& data, const int32_t mip, const int32_t layer)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		VT_ENSURE(constantsData.uniforms.contains(name));
@@ -452,7 +468,7 @@ namespace Volt
 	void RenderContext::BindDescriptorTableIfRequired()
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentComputePipeline || m_currentRenderPipeline);
+		VT_ENSURE(m_currentComputePipeline || m_currentRenderPipeline || m_currentRayTracingPipeline);
 
 		if (m_descriptorTableIsBound)
 		{
@@ -482,7 +498,7 @@ namespace Volt
 	void RenderContext::InitializeCurrentPipelineConstantsValidation()
 	{
 #ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		VT_ASSERT_MSG(m_currentRenderPipeline || m_currentComputePipeline, "A pipeline must be bound!");
+		VT_ASSERT_MSG(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline, "A pipeline must be bound!");
 
 		m_boundPipelineData.uniformHasBeenSetMap.clear();
 
@@ -527,17 +543,28 @@ namespace Volt
 		{
 			return m_currentRenderPipeline->GetShader()->GetResources().renderGraphConstantsData;
 		}
-		else
+		else if (m_currentComputePipeline)
 		{
 			return m_currentComputePipeline->GetShader()->GetResources().renderGraphConstantsData;
 		}
+		else
+		{
+			return m_currentRayTracingPipeline->GetRenderGraphConstants();
+		}
+	}
+
+	void RenderContext::ClearCurrentPipeline()
+	{
+		m_currentRenderPipeline.Reset();
+		m_currentComputePipeline.Reset();
+		m_currentRayTracingPipeline.Reset();
 	}
 
 	template<>
 	inline void RenderContext::SetConstant(const StringHash& name, const ResourceHandle& data)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		VT_ENSURE(constantsData.uniforms.contains(name));
@@ -556,7 +583,7 @@ namespace Volt
 	inline void RenderContext::SetConstant(const StringHash& name, const RenderGraphBufferHandle& data)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		VT_ENSURE(constantsData.uniforms.contains(name));
@@ -590,7 +617,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		VT_ENSURE(constantsData.uniforms.contains(name));

@@ -156,6 +156,11 @@ namespace Volt::RHI
 	{
 		return RefPtr<D3D12ComputePipeline>::Create(shader, useGlobalResources);
 	}
+
+	RefPtr<RayTracingPipeline> D3D12RHIProxy::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
+	{
+		return RefPtr<RayTracingPipeline>();
+	}
 	
 	RefPtr<Shader> D3D12RHIProxy::CreateShader(const ShaderSpecification& specification) const
 	{
@@ -185,6 +190,11 @@ namespace Volt::RHI
 	RefPtr<AccelerationStructure> D3D12RHIProxy::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
 	{
 		return RefPtr<AccelerationStructure>();
+	}
+
+	RefPtr<ShaderBindingTable> D3D12RHIProxy::CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const
+	{
+		return RefPtr<ShaderBindingTable>();
 	}
 	
 	RefPtr<ImGuiImplementation> D3D12RHIProxy::CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const

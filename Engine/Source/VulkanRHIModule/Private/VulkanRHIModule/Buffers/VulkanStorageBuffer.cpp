@@ -167,6 +167,7 @@ namespace Volt::RHI
 		stagingAllocation->Unmap();
 
 		ResourceBarrierInfo barrier{};
+		barrier.type = BarrierType::Buffer;
 		barrier.bufferBarrier().srcStage = BarrierStage::All;
 		barrier.bufferBarrier().srcAccess = BarrierAccess::None;
 		barrier.bufferBarrier().dstStage = BarrierStage::Copy;

@@ -183,7 +183,7 @@ namespace Volt
 
 			//AddVisualizeBricksPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 
-			//AddTestRTPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
+			AddTestRTPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 
 			AutoExposureTechnique autoExposureTechnique(renderGraph, rgBlackboard);
 			autoExposureTechnique.Execute(rgBlackboard.Get<ShadingOutputData>().colorOutput, renderGraph.AddExternalImage(m_averageLuminanceImage), timestep);
@@ -968,6 +968,9 @@ namespace Volt
 		{
 			auto pipeline = ShaderMap::GetComputePipeline("Shading");
 			context.BindPipeline(pipeline);
+
+			context.SetAccelerationStructure(m_scene->GetRenderScene()->GetRayTracingScene()->GetAccelerationStructure());
+
 			context.SetConstant("output"_sh, shadingOutputData.colorOutput);
 			context.SetConstant("albedo"_sh, gbufferData.albedo);
 			context.SetConstant("normals"_sh, gbufferData.normals);
@@ -1238,18 +1241,29 @@ namespace Volt
 
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
 
-			builder.SetIsComputePass();
+			//builder.SetIsComputePass();
+			builder.SetIsRayTracingPass();
+
 			builder.SetHasSideEffect();
 		},
 		[=](RenderContext& context) 
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("RG_RayTracingShaderTest");
+			RHI::RayTracingPipelineCreateInfo pipelineInfo;
+			pipelineInfo.rayGenTable.emplace_back(ShaderMap::Get("RayGen"));
+			pipelineInfo.missTable.emplace_back(ShaderMap::Get("Miss"));
+			pipelineInfo.closestHitTable.emplace_back(ShaderMap::Get("ClosestHit"));
+
+			auto pipeline = ShaderMap::GetRayTracingPipeline(pipelineInfo);
+			auto sbt = ShaderMap::GetShaderBindingTable(pipeline);
+
 			context.BindPipeline(pipeline);
 			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
 			context.SetConstant("outputTexture"_sh, dstImage);
 			context.SetAccelerationStructure(m_scene->GetRenderScene()->GetRayTracingScene()->GetAccelerationStructure());
+			
+			context.TraceRays(sbt, m_width, m_height, 1);
 
-			context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1u);
+			//context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1u);
 		});
 	}
 

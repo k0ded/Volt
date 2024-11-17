@@ -8,10 +8,11 @@
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Images/ImageUtility.h>
 
 #include <RHIModule/RHIProxy.h>
+
+#include <CoreUtilities/Time/ScopedTimer.h>
 
 #include <vulkan/vulkan.h>
 
@@ -85,6 +86,8 @@ namespace Volt::RHI
 	void VulkanRenderPipeline::Invalidate()
 	{
 		Release();
+
+		ScopedTimer scopedTimer{};
 
 		if (m_createInfo.enablePrimitiveRestart)
 		{
@@ -309,6 +312,8 @@ namespace Volt::RHI
 
 			VT_VK_CHECK(vkCreateGraphicsPipelines(device->GetHandle<VkDevice>(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
 		}
+
+		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Render Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
 	}
 
 	RefPtr<Shader> VulkanRenderPipeline::GetShader() const

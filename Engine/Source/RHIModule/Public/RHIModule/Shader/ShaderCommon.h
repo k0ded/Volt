@@ -24,6 +24,7 @@ namespace Volt::RHI
 		ClosestHit = 0x00000400,
 		Miss = 0x00000800,
 		Intersection = 0x00001000,
+		Callable = 0x00002000,
 
 		Amplification = 0x00000040,
 		Mesh = 0x00000080,

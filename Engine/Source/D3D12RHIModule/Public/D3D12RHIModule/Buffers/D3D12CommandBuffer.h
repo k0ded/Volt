@@ -39,6 +39,8 @@ namespace Volt::RHI
 		void DispatchMeshTasksIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) override;
 		void DispatchMeshTasksIndirectCount(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, WeakPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) override;
 
+		void TraceRays(WeakPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth) override;
+
 		void Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ) override;
 		void DispatchIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset) override;
 
@@ -47,6 +49,7 @@ namespace Volt::RHI
 
 		void BindPipeline(WeakPtr<RenderPipeline> pipeline) override;
 		void BindPipeline(WeakPtr<ComputePipeline> pipeline) override;
+		void BindPipeline(WeakPtr<RayTracingPipeline> pipeline) override;
 
 		void BindVertexBuffers(const StackVector<WeakPtr<VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) override;
 		void BindVertexBuffers(const StackVector<WeakPtr<StorageBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) override;

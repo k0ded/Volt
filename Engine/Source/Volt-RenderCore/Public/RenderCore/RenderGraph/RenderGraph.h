@@ -80,6 +80,7 @@ namespace Volt
 
 			void SetHasSideEffect();
 			void SetIsComputePass();
+			void SetIsRayTracingPass();
 
 			void ReadResource(RenderGraphResourceHandle handle, RenderGraphResourceState forceState = RenderGraphResourceState::None);
 			void WriteResource(RenderGraphResourceHandle handle, RenderGraphResourceState forceState = RenderGraphResourceState::None);

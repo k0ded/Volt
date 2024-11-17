@@ -27,6 +27,7 @@
 
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
+#include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Shader/VulkanShaderCompiler.h"
@@ -36,6 +37,7 @@
 #include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
+#include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
 
 #include "VulkanRHIModule/ImGui/VulkanImGuiImplementation.h"
 
@@ -156,6 +158,11 @@ namespace Volt::RHI
 		return RefPtr<VulkanComputePipeline>::Create(shader, useGlobalResources);
 	}
 
+	RefPtr<RayTracingPipeline> VulkanRHIProxy::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
+	{
+		return RefPtr<VulkanRayTracingPipeline>::Create(createInfo);
+	}
+
 	RefPtr<Shader> VulkanRHIProxy::CreateShader(const ShaderSpecification& specification) const
 	{
 		return RefPtr<VulkanShader>::Create(specification);
@@ -189,6 +196,11 @@ namespace Volt::RHI
 	RefPtr<AccelerationStructure> VulkanRHIProxy::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanAccelerationStructure>::Create(createInfo);
+	}
+
+	RefPtr<ShaderBindingTable> VulkanRHIProxy::CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const
+	{
+		return RefPtr<VulkanShaderBindingTable>::Create(pipeline);
 	}
 
 	void VulkanRHIProxy::SetRHICallbackInfo(const RHICallbackInfo& callbackInfo)

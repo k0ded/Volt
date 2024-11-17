@@ -31,6 +31,7 @@ namespace Volt::RHI
 		ShaderDataBuffer GetConstantsBuffer() const override;
 		VT_NODISCARD bool HasConstants() const override;
 		const ShaderResourceBinding& GetResourceBindingFromName(std::string_view name) const override;
+		ShaderType GetShaderType() const override;
 
 		VT_NODISCARD VT_INLINE const std::unordered_map<ShaderStage, Vector<uint32_t>>& GetShaderStageData() const { return m_shaderStageData; }
 		VT_NODISCARD VT_INLINE ComPtr<ID3D12RootSignature> GetRootSignature() const { return m_rootSignature; }

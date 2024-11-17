@@ -7,9 +7,10 @@
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Graphics/GraphicsDevice.h>
 
 #include <RHIModule/RHIProxy.h>
+
+#include <CoreUtilities/Time/ScopedTimer.h>
 
 #include <vulkan/vulkan.h>
 
@@ -29,6 +30,8 @@ namespace Volt::RHI
 	void VulkanComputePipeline::Invalidate()
 	{
 		Release();
+
+		ScopedTimer scopedTimer{};
 
 		VT_ENSURE(m_shader);
 
@@ -70,9 +73,9 @@ namespace Volt::RHI
 
 		// Create Pipeline
 		{
-			if (!vulkanShader.GetPipelineStageInfos().contains(ShaderStage::Compute))
+			if (vulkanShader.GetShaderType() != ShaderType::Compute)
 			{
-				VT_LOGC(Error, LogVulkanRHI, "Invalid shader supplied to pipeline!");
+				VT_LOGC(Error, LogVulkanRHI, "Non compute shader supplied to compute pipeline!");
 				return;
 			}
 
@@ -101,6 +104,8 @@ namespace Volt::RHI
 
 			VT_VK_CHECK(vkCreateComputePipelines(device->GetHandle<VkDevice>(), nullptr, 1, &info, nullptr, &m_pipeline));
 		}
+
+		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Compute Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
 	}
 
 	RefPtr<Shader> VulkanComputePipeline::GetShader() const

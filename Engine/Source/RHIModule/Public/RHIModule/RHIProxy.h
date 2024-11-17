@@ -30,6 +30,7 @@ namespace Volt::RHI
 
 	class RayTracingSceneGeometry;
 	class AccelerationStructure;
+	class ShaderBindingTable;
 
 	class Allocator;
 	class DefaultAllocator;
@@ -42,6 +43,7 @@ namespace Volt::RHI
 
 	class RenderPipeline;
 	class ComputePipeline;
+	class RayTracingPipeline;
 
 	class Shader;
 	class ShaderCompiler;
@@ -65,6 +67,7 @@ namespace Volt::RHI
 	struct SamplerStateCreateInfo;
 	struct TransientHeapCreateInfo;
 	struct RenderPipelineCreateInfo;
+	struct RayTracingPipelineCreateInfo;
 	struct ShaderSpecification;
 	struct ShaderCompilerCreateInfo;
 	struct EventCreateInfo;
@@ -116,6 +119,7 @@ namespace Volt::RHI
 
 		virtual RefPtr<RenderPipeline> CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const = 0;
 		virtual RefPtr<ComputePipeline> CreateComputePipeline(RefPtr<Shader> shader, bool useGlobalResources) const = 0;
+		virtual RefPtr<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<Shader> CreateShader(const ShaderSpecification& specification) const = 0;
 		virtual RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const = 0;
@@ -127,6 +131,7 @@ namespace Volt::RHI
 		virtual RefPtr<ImGuiImplementation> CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const = 0;
+		virtual RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const = 0;
 
 		virtual void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) = 0;
 

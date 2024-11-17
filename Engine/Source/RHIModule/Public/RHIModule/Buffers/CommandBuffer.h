@@ -6,7 +6,10 @@
 #include "RHIModule/Descriptors/BindlessDescriptorTable.h"
 #include "RHIModule/Descriptors/DescriptorTable.h"
 
+#include "RHIModule/Pipelines/RayTracingPipeline.h"
+
 #include "RHIModule/RayTracing/RayTracingCommon.h"
+#include "RHIModule/RayTracing/ShaderBindingTable.h"
 
 #include <CoreUtilities/Pointers/WeakPtr.h>
 #include <CoreUtilities/Containers/StackVector.h>
@@ -16,7 +19,7 @@ namespace Volt::RHI
 {
 	class RenderPipeline;
 	class ComputePipeline;
-
+	
 	class VertexBuffer;
 	class IndexBuffer;
 
@@ -66,11 +69,14 @@ namespace Volt::RHI
 		virtual void DispatchMeshTasksIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) = 0;
 		virtual void DispatchMeshTasksIndirectCount(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, WeakPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
 
+		virtual void TraceRays(WeakPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth) = 0;
+
 		virtual void SetViewports(const StackVector<Viewport, MAX_VIEWPORT_COUNT>& viewports) = 0;
 		virtual void SetScissors(const StackVector<Rect2D, MAX_VIEWPORT_COUNT>& scissors) = 0;
 
 		virtual void BindPipeline(WeakPtr<RenderPipeline> pipeline) = 0;
 		virtual void BindPipeline(WeakPtr<ComputePipeline> pipeline) = 0;
+		virtual void BindPipeline(WeakPtr<RayTracingPipeline> pipeline) = 0;
 		virtual void BindVertexBuffers(const StackVector<WeakPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) = 0;
 		virtual void BindVertexBuffers(const StackVector<WeakPtr<StorageBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) = 0;
 		virtual void BindIndexBuffer(WeakPtr<IndexBuffer> indexBuffer) = 0;

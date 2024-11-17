@@ -416,9 +416,10 @@ namespace Volt::RHI
 		AccelerationStructure = BIT(7),
 		AccelerationStructureInput = BIT(8),
 		DeviceAddress = BIT(9),
+		ShaderBindingTable = BIT(10),
 
 		// Vulkan only
-		DescriptorBuffer = BIT(10)
+		DescriptorBuffer = BIT(11)
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(BufferUsage);
@@ -494,7 +495,7 @@ namespace Volt::RHI
 		DepthStencil = BIT(4),
 		RenderTarget = BIT(5),
 		ComputeShader = BIT(6),
-		RayTracing = BIT(7),
+		RayTracingShader = BIT(7),
 		Copy = BIT(8),
 		Resolve = BIT(9),
 		DrawIndirect = BIT(10),
@@ -505,7 +506,7 @@ namespace Volt::RHI
 		VertexInput = BIT(15),
 
 		MeshShader = BIT(16),
-		AmplificationShader = BIT(17)
+		AmplificationShader = BIT(17),
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(BarrierStage);
@@ -531,7 +532,11 @@ namespace Volt::RHI
 		VideoDecodeRead = BIT(15),
 		VideoDecodeWrite = BIT(16),
 		AllRead = BIT(17),
-		AllWrite = BIT(18)
+		AllWrite = BIT(18),
+
+		AccelerationStructureRead = BIT(19),
+		AccelerationStructureWrite = BIT(20),
+		ShaderBindingTableRead = BIT(21)
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(BarrierAccess);

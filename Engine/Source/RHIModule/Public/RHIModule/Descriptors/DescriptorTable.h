@@ -3,8 +3,6 @@
 #include "RHIModule/Core/RHIInterface.h"
 #include <CoreUtilities/Pointers/WeakPtr.h>
 
-
-
 namespace Volt::RHI
 {
 	class Shader;
