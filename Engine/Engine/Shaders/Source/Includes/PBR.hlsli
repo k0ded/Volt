@@ -4,6 +4,7 @@
 #include "Resources.hlsli"
 #include "ShadowMapping.hlsli"
 #include "Lights.hlsli"
+#include "RayTracing.hlsli"
 #include "Exposure/Exposure.hlsli"
 
 #include "PBR/LightEvaluation.hlsli"
@@ -69,11 +70,11 @@ float3 CalculatePointLights(float3 dirToCamera, uint pointLightCount)
     {
         int lightIndex = GetLightBufferIndex(m_pbrConstants.visiblePointLights, m_viewData.tileCountX, i, m_pbrInput.tileId);
         if (lightIndex == -1)
-        {
-            break;
+        { 
+            break; 
         }
 
-        output += CalculatePointLight2(m_pbrConstants.pointLights.Load(i), brdfInput, m_pbrInput.worldPosition); //CalculatePointLight(m_pbrConstants.pointLights.Load(i), dirToCamera, baseReflectivity);
+        output += CalculatePointLight(m_pbrConstants.pointLights.Load(i), brdfInput, m_pbrInput.worldPosition);
     }
     
     return output;
@@ -94,14 +95,14 @@ float3 CalculateSpotLights(float3 dirToCamera, uint spotLightCount)
 
     for (uint i = 0; i < spotLightCount; i++)
     {
-        output += CalculateSpotLight2(m_pbrConstants.spotLights.Load(i), brdfInput, m_pbrInput.worldPosition);
+        output += CalculateSpotLight(m_pbrConstants.spotLights.Load(i), brdfInput, m_pbrInput.worldPosition);
     }
     
     return output; 
 }
 
 float3 CalculatePBR(in PBRInput input, in PBRConstants constants)
-{
+{ 
     m_pbrInput = input;
     m_pbrConstants = constants;
     
@@ -132,7 +133,7 @@ float3 CalculatePBR(in PBRInput input, in PBRConstants constants)
         shadowMappingInfo.shadowSampler = m_pbrConstants.shadowSampler;
         shadowMappingInfo.viewMatrix = m_viewData.view;
 
-        lightOutput += CalculateDirectionalLight2(constants.directionalLight.Load(), shadowMappingInfo, brdfInput, m_pbrInput.worldPosition);
+        lightOutput += CalculateDirectionalLight(constants.directionalLight.Load(), shadowMappingInfo, brdfInput, m_pbrInput.worldPosition);
     }
     
     // Point lights

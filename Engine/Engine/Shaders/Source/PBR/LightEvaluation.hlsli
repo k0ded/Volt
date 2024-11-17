@@ -30,7 +30,7 @@ float GetAngleAttenuation(float3 normalizedLightVector, float3 lightDirection, f
     return attenuation;
 }
 
-float3 CalculatePointLight2(in PointLight light, in BRDFInput brdfInput, float3 worldPosition)
+float3 CalculatePointLight(in PointLight light, in BRDFInput brdfInput, float3 worldPosition)
 {
     float3 unormalizedLightVector = light.position - worldPosition;
     float3 L = normalize(unormalizedLightVector);
@@ -41,7 +41,7 @@ float3 CalculatePointLight2(in PointLight light, in BRDFInput brdfInput, float3 
     return BRDF(brdfInput, L) * light.color * light.intensity * attenuation;   
 }
 
-float3 CalculateSpotLight2(in SpotLight light, in BRDFInput brdfInput, float3 worldPosition)
+float3 CalculateSpotLight(in SpotLight light, in BRDFInput brdfInput, float3 worldPosition)
 {
     float3 unormalizedLightVector = light.position - worldPosition;
     float3 L = normalize(unormalizedLightVector);
@@ -55,7 +55,7 @@ float3 CalculateSpotLight2(in SpotLight light, in BRDFInput brdfInput, float3 wo
 } 
 
 ///// ----- Directional light ----- /////
-float CalculateDirectionalShadow2(in DirectionalLight light, in DirectionalShadowMappingInfo shadowMappingInfo, float3 normal, float3 worldPosition)
+float CalculateDirectionalShadow(in DirectionalLight light, in DirectionalShadowMappingInfo shadowMappingInfo, float3 normal, float3 worldPosition)
 {
     const uint cascadeIndex = GetCascadeIndexFromWorldPosition(light, worldPosition, shadowMappingInfo.viewMatrix);
     const float3 shadowMapCoords = GetShadowMapCoords(light.viewProjections[cascadeIndex], worldPosition);
@@ -63,7 +63,25 @@ float CalculateDirectionalShadow2(in DirectionalLight light, in DirectionalShado
     return result; 
 }
 
-float3 CalculateDirectionalLight2(in DirectionalLight light, in DirectionalShadowMappingInfo shadowMappingInfo, in BRDFInput brdfInput, float3 worldPosition)
+float RayTraceDirectionalShadow_Hard(float3 lightDirection, float3 normal, float3 worldPosition)
+{
+    RayQuery<RAY_FLAG_FORCE_OPAQUE | 
+         RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES |
+         RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH> query;
+
+	RayDesc rayDesc;
+    rayDesc.Origin = worldPosition + normal * 5.f;
+    rayDesc.Direction = lightDirection;
+    rayDesc.TMin = 0.1f;
+    rayDesc.TMax = 10000.f;
+
+    query.TraceRayInline(g_accelerationStructure, RAY_FLAG_NONE, 0xFF, rayDesc);
+	query.Proceed();
+
+    return query.CommittedStatus() == COMMITTED_TRIANGLE_HIT ? 0.f : 1.f;
+}
+
+float3 CalculateDirectionalLight(in DirectionalLight light, in DirectionalShadowMappingInfo shadowMappingInfo, in BRDFInput brdfInput, float3 worldPosition)
 {
     float3 D = normalize(light.direction.xyz);
     float r = sin(light.angularRadius);
@@ -83,7 +101,7 @@ float3 CalculateDirectionalLight2(in DirectionalLight light, in DirectionalShado
 
     if (light.castShadows)
     {
-        shadow = CalculateDirectionalShadow2(light, shadowMappingInfo, brdfInput.N, worldPosition);
+        shadow = RayTraceDirectionalShadow_Hard(D, brdfInput.N, worldPosition); //CalculateDirectionalShadow(light, shadowMappingInfo, brdfInput.N, worldPosition);
     }
 
     return BRDF(brdfInput, D, L) * light.color * illuminance * shadow;
