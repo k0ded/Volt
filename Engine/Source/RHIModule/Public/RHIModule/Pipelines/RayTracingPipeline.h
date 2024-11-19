@@ -24,6 +24,7 @@ namespace Volt::RHI
 	public:
 		virtual void Invalidate() = 0;
 		virtual bool IsValid() const = 0;
+		virtual bool IsShaderInPipeline(RefPtr<Shader> shader) const = 0;
 		virtual const ShaderRenderGraphConstantsData& GetRenderGraphConstants() const = 0;
 
 		static RefPtr<RayTracingPipeline> Create(const RayTracingPipelineCreateInfo& createInfo);

@@ -266,7 +266,7 @@ namespace Volt
 	inline void RenderContext::SetConstant(const StringHash& name, const T& data)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<T>(), name);
@@ -279,7 +279,7 @@ namespace Volt
 	inline void RenderContext::SetConstant(const StringHash& name, const Vector<F>& data)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
@@ -292,7 +292,7 @@ namespace Volt
 	inline void RenderContext::SetConstant(const StringHash& name, const std::array<F, COUNT>& data)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);

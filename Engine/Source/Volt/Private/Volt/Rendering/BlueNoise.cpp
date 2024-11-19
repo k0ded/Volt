@@ -26,12 +26,14 @@ namespace Volt
 	void BlueNoise::Build(RenderGraph::Builder& builder, const BlueNoiseTextures& blueNoiseTextures)
 	{
 		builder.ReadResource(blueNoiseTextures.blueNoiseScalarTexture);
+		builder.ReadResource(blueNoiseTextures.blueNoiseVec2Texture);
 		builder.ReadResource(blueNoiseTextures.blueNoiseRGBATexture);
 	}
 
 	void BlueNoise::Setup(RenderContext& renderContext, const BlueNoiseTextures& blueNoiseTextures)
 	{
 		renderContext.SetConstant("blueNoiseData.blueNoiseScalarTexture"_sh, blueNoiseTextures.blueNoiseScalarTexture);
+		renderContext.SetConstant("blueNoiseData.blueNoiseVec2Texture"_sh, blueNoiseTextures.blueNoiseVec2Texture);
 		renderContext.SetConstant("blueNoiseData.blueNoiseRGBATexture"_sh, blueNoiseTextures.blueNoiseRGBATexture);
 		renderContext.SetConstant("blueNoiseData.pointWrapSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
 		renderContext.SetConstant("blueNoiseData.moduloMasks"_sh, s_blueNoiseData.moduloMasks);
@@ -42,6 +44,7 @@ namespace Volt
 	{
 		BlueNoiseTextures result;
 		result.blueNoiseRGBATexture = renderGraph.AddExternalImage(s_blueNoiseData.rgbaBlueNoise->GetImage());
+		result.blueNoiseVec2Texture = renderGraph.AddExternalImage(s_blueNoiseData.vec2BlueNoise->GetImage());
 		result.blueNoiseScalarTexture = renderGraph.AddExternalImage(s_blueNoiseData.scalarBlueNoise->GetImage());
 
 		return result;
@@ -51,6 +54,7 @@ namespace Volt
 	{
 		// Spatiotemporal
 		s_blueNoiseData.scalarBlueNoise = AssetManager::GetAsset<Texture2D>("Engine/Textures/STBlueNoise_scalar_128x128x64.vtasset");
+		s_blueNoiseData.vec2BlueNoise = AssetManager::GetAsset<Texture2D>("Engine/Textures/STBlueNoise_vec2_128x128x64.vtasset");
 
 		const uint32_t width = s_blueNoiseData.scalarBlueNoise->GetWidth();
 		const uint32_t height = s_blueNoiseData.scalarBlueNoise->GetHeight();

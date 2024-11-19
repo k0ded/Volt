@@ -1,0 +1,6 @@
+name: "MissShadow"
+internal: true
+sources:
+  - entryPoint: "main"
+    shaderStage: "rmiss"
+    filePath: "Engine/Shaders/Source/RayTracing/MissShadow.hlsl"

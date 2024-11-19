@@ -59,6 +59,8 @@ namespace Volt
 			Roughness = 4,
 			Emissive = 5,
 			AO = 6,
+
+			PathTracing = 7
 		};
 
 		enum class VisualizationMode : uint32_t
@@ -128,7 +130,7 @@ namespace Volt
 		void AddVisualizeSDFPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 		void AddVisualizeBricksPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 
-		void AddTestRTPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
+		void AddPathTracingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
 

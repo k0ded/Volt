@@ -27,7 +27,8 @@ void RendererSettingsPanel::UpdateMainContent()
 		"Metalness",
 		"Roughness",
 		"Emissive",
-		"AO"
+		"AO",
+		"PathTracing"
 	};
 
 	int32_t currentValue = static_cast<int32_t>(m_sceneRenderer->GetShadingMode());

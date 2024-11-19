@@ -112,7 +112,7 @@ namespace Volt
 
 		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
 		{
-			m_rayTracingInstance = m_renderScene->GetRayTracingScene()->AddInstance(m_primitiveMesh, m_relatedEntity);
+			m_rayTracingInstance = m_renderScene->GetRayTracingScene()->AddInstance(m_primitiveMesh, m_relatedEntity, m_renderScene->GetPrimitiveIndexFromID(m_renderObjects.front()));
 		}
 	}
 

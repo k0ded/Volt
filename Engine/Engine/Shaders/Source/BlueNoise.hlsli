@@ -3,6 +3,7 @@
 struct BlueNoiseData
 {
     vt::Tex2D<float> blueNoiseScalarTexture;
+    vt::Tex2D<float4> blueNoiseVec2Texture;
     vt::Tex2D<float4> blueNoiseRGBATexture;
     vt::TextureSampler pointWrapSampler;
     uint3 moduloMasks;
@@ -16,6 +17,15 @@ float BlueNoiseScalar(uint2 pixelCoord, uint frameIndex, in BlueNoiseData blueNo
     uint3 wrappedPixelCoord = uint3(pixelCoord, frameIndex) & blueNoiseData.moduloMasks;
     uint3 texCoords = uint3(wrappedPixelCoord.x, wrappedPixelCoord.z * blueNoiseData.dimensions.y + wrappedPixelCoord.y, 0);
     return blueNoiseData.blueNoiseScalarTexture.Load(texCoords);
+}
+
+// Spatiotemporal Blue Noise LuT based on "Spatiotemporal Blue Noise Masks" [Wolfe et al 2022] and 
+// https://developer.nvidia.com/blog/rendering-in-real-time-with-spatiotemporal-blue-noise-textures-part-1/
+float2 BlueNoiseVec2(uint2 pixelCoord, uint frameIndex, in BlueNoiseData blueNoiseData)
+{
+    uint3 wrappedPixelCoord = uint3(pixelCoord, frameIndex) & blueNoiseData.moduloMasks;
+    uint3 texCoords = uint3(wrappedPixelCoord.x, wrappedPixelCoord.z * blueNoiseData.dimensions.y + wrappedPixelCoord.y, 0);
+    return blueNoiseData.blueNoiseVec2Texture.Load(texCoords).rg;
 }
 
 float4 BlueNoiseRGBA(uint2 pixelCoord, uint frameIndex, in BlueNoiseData blueNoiseData)

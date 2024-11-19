@@ -27,6 +27,7 @@ namespace Volt::RHI
 
 		void Invalidate() override;
 		bool IsValid() const override;
+		bool IsShaderInPipeline(RefPtr<Shader> shader) const override;
 		const ShaderRenderGraphConstantsData& GetRenderGraphConstants() const override;
 
 		VT_NODISCARD VT_INLINE const RayTracingShaderData& GetRayGenData() const { return m_rayGenData; }

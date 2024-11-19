@@ -12,6 +12,7 @@ namespace Volt
 	struct RayTracingInstance
 	{
 		RayTracingInstanceID id;
+		uint32_t renderScenePrimitiveIndex;
 		
 		EntityID entityId;
 		Ref<Mesh> mesh;

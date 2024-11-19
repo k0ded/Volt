@@ -1,5 +1,7 @@
 #pragma once
 
+#include "MathConstants.hlsli"
+
 struct BRDFParameters
 {
     float NdotL;
@@ -28,7 +30,6 @@ struct BRDFInput
 };
 
 static const float3 m_F0 = 0.04f;
-static const float PI = 3.14159265359;
 
 float V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 {

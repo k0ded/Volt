@@ -1,0 +1,6 @@
+name: "PathTracing"
+internal: true
+sources:
+  - entryPoint: "main"
+    shaderStage: "cs"
+    filePath: "Engine/Shaders/Source/RayTracing/PathTracing.hlsl"

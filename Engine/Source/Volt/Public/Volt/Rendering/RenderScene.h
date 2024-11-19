@@ -66,6 +66,7 @@ namespace Volt
 		VT_NODISCARD const uint32_t GetMeshID(Weak<Mesh> mesh, uint32_t subMeshIndex) const;
 		VT_NODISCARD const uint32_t GetMaterialIndex(Weak<Material> material) const;
 		VT_NODISCARD const uint32_t GetMeshIndex(Weak<Mesh> mesh) const;
+		VT_NODISCARD const uint32_t GetPrimitiveIndexFromID(UUID64 primitiveId) const;
 
 		VT_INLINE VT_NODISCARD const GPUSceneBuffers GetGPUSceneBuffers() const { return m_buffers; }
 

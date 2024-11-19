@@ -5,9 +5,14 @@
 namespace Volt::RHI
 {
 	class RayTracingPipeline;
+	class Shader;
+
 	class VTRHI_API ShaderBindingTable : public RHIInterface
 	{
 	public:
+		virtual void Invalidate() = 0;
+		virtual bool IsShaderInTable(RefPtr<Shader> shader) const = 0;
+
 		static RefPtr<ShaderBindingTable> Create(RefPtr<RayTracingPipeline> pipeline);
 
 	protected:

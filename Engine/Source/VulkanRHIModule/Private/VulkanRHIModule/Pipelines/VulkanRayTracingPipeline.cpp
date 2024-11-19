@@ -271,6 +271,59 @@ namespace Volt::RHI
 		return m_pipeline != nullptr;
 	}
 
+	bool VulkanRayTracingPipeline::IsShaderInPipeline(RefPtr<Shader> shader) const
+	{
+		for (const auto& s : m_createInfo.rayGenTable)
+		{
+			if (s == shader)
+			{
+				return true;
+			}
+		}
+
+		for (const auto& s : m_createInfo.missTable)
+		{
+			if (s == shader)
+			{
+				return true;
+			}
+		}
+
+		for (const auto& s : m_createInfo.closestHitTable)
+		{
+			if (s == shader)
+			{
+				return true;
+			}
+		}
+
+		for (const auto& s : m_createInfo.anyHitTable)
+		{
+			if (s == shader)
+			{
+				return true;
+			}
+		}
+
+		for (const auto& s : m_createInfo.intersectionTable)
+		{
+			if (s == shader)
+			{
+				return true;
+			}
+		}
+
+		for (const auto& s : m_createInfo.callableTable)
+		{
+			if (s == shader)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	const ShaderRenderGraphConstantsData& VulkanRayTracingPipeline::GetRenderGraphConstants() const
 	{
 		return m_rayGenData.shaders.front()->GetResources().renderGraphConstantsData;

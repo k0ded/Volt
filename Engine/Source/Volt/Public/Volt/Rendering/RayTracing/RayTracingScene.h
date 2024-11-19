@@ -26,7 +26,7 @@ namespace Volt
 		void RebuildAccelerationStructure();
 		void UpdateAccelerationStructure();
 		
-		RayTracingInstanceID AddInstance(Ref<Mesh> mesh, EntityID entityId);
+		RayTracingInstanceID AddInstance(Ref<Mesh> mesh, EntityID entityId, uint32_t renderScenePrimitiveId);
 		void RemoveInstance(RayTracingInstanceID instanceId);
 		void InvalidateInstance(RayTracingInstanceID instanceId);
 

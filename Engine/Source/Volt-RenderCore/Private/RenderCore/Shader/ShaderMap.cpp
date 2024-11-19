@@ -7,6 +7,7 @@
 
 #include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Time/ScopedTimer.h>
+#include <CoreUtilities/ComparisonHelpers.h>
 
 namespace Volt
 {
@@ -110,7 +111,7 @@ namespace Volt
 
 		if (reloaded)
 		{
-			if (shader->GetSourceEntries().size() == 1)
+			if (shader->GetShaderType() == RHI::ShaderType::Compute)
 			{
 				for (const auto& [hash, pipeline] : s_instance->m_computePipelineCache)
 				{
@@ -120,13 +121,31 @@ namespace Volt
 					}
 				}
 			}
-			else
+			else if (shader->GetShaderType() == RHI::ShaderType::Rasterization)
 			{
 				for (const auto& [hash, pipeline] : s_instance->m_renderPipelineCache)
 				{
 					if (pipeline->GetShader() == shader)
 					{
 						pipeline->Invalidate();
+					}
+				}
+			}
+			else
+			{
+				for (const auto& [hash, pipeline] : s_instance->m_rayTracingPipelineCache)
+				{
+					if (pipeline->IsShaderInPipeline(shader))
+					{
+						pipeline->Invalidate();
+					}
+				}
+
+				for (const auto& [hash, sbt] : s_instance->m_shaderBindingTableCache)
+				{
+					if (sbt->IsShaderInTable(shader))
+					{
+						sbt->Invalidate();
 					}
 				}
 			}

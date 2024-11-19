@@ -172,7 +172,15 @@ namespace Volt
 			RenderMaterials(renderGraph, rgBlackboard);
 
 			AddSkyboxPass(renderGraph, rgBlackboard);
-			AddShadingPass(renderGraph, rgBlackboard);
+
+			if (m_shadingMode != ShadingMode::PathTracing)
+			{
+				AddShadingPass(renderGraph, rgBlackboard);
+			}
+			else
+			{
+				AddPathTracingPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
+			}
 
 			//m_gibs.Render(renderGraph, rgBlackboard);
 
@@ -182,8 +190,6 @@ namespace Volt
 			}
 
 			//AddVisualizeBricksPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
-
-			AddTestRTPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 
 			AutoExposureTechnique autoExposureTechnique(renderGraph, rgBlackboard);
 			autoExposureTechnique.Execute(rgBlackboard.Get<ShadingOutputData>().colorOutput, renderGraph.AddExternalImage(m_averageLuminanceImage), timestep);
@@ -1230,9 +1236,11 @@ namespace Volt
 		});
 	}
 
-	void SceneRenderer::AddTestRTPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage)
+	void SceneRenderer::AddPathTracingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage)
 	{
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
+		const auto& gpuSceneData = blackboard.Get<GPUSceneData>();
+		const auto& blueNoiseTextures = blackboard.Get<BlueNoiseTextures>();
 
 		renderGraph.AddPass("RT Test Pass",
 		[&](RenderGraph::Builder& builder)
@@ -1240,30 +1248,38 @@ namespace Volt
 			builder.WriteResource(dstImage);
 
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
+			builder.ReadResource(uniformBuffers.directionalLightBuffer);
 
-			//builder.SetIsComputePass();
+			GPUSceneData::SetupInputs(builder, gpuSceneData);
+			BlueNoise::Build(builder, blueNoiseTextures);
+
 			builder.SetIsRayTracingPass();
-
 			builder.SetHasSideEffect();
 		},
-		[=](RenderContext& context) 
+		[=](RenderContext& context)
 		{
 			RHI::RayTracingPipelineCreateInfo pipelineInfo;
 			pipelineInfo.rayGenTable.emplace_back(ShaderMap::Get("RayGen"));
 			pipelineInfo.missTable.emplace_back(ShaderMap::Get("Miss"));
+			pipelineInfo.missTable.emplace_back(ShaderMap::Get("MissShadow"));
 			pipelineInfo.closestHitTable.emplace_back(ShaderMap::Get("ClosestHit"));
+			pipelineInfo.closestHitTable.emplace_back(ShaderMap::Get("ClosestHitShadow"));
 
 			auto pipeline = ShaderMap::GetRayTracingPipeline(pipelineInfo);
 			auto sbt = ShaderMap::GetShaderBindingTable(pipeline);
 
 			context.BindPipeline(pipeline);
+
+			GPUSceneData::SetupConstants(context, gpuSceneData);
+			BlueNoise::Setup(context, blueNoiseTextures);
+
 			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
 			context.SetConstant("outputTexture"_sh, dstImage);
+			context.SetConstant("frameIndex"_sh, m_frameIndex);
+			context.SetConstant("directionalLight"_sh, uniformBuffers.directionalLightBuffer);
 			context.SetAccelerationStructure(m_scene->GetRenderScene()->GetRayTracingScene()->GetAccelerationStructure());
-			
-			context.TraceRays(sbt, m_width, m_height, 1);
 
-			//context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1u);
+			context.TraceRays(sbt, m_width, m_height, 1);
 		});
 	}
 

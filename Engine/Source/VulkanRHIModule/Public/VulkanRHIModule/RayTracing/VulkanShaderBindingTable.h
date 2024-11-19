@@ -11,6 +11,9 @@ namespace Volt::RHI
 		VulkanShaderBindingTable(RefPtr<RayTracingPipeline> pipeline);
 		~VulkanShaderBindingTable() override;
 
+		void Invalidate() override;
+		bool IsShaderInTable(RefPtr<Shader> shader) const override;
+
 		VT_NODISCARD VT_INLINE RefPtr<StorageBuffer> GetRayGenTable() const { return m_rayGenBindingTable; }
 		VT_NODISCARD VT_INLINE RefPtr<StorageBuffer> GetMissTable() const { return m_missBindingTable; }
 		VT_NODISCARD VT_INLINE RefPtr<StorageBuffer> GetHitGroupTable() const { return m_hitGroupBindingTable; }
@@ -21,7 +24,6 @@ namespace Volt::RHI
 
 	private:
 		void Release();
-		void Invalidate();
 
 		RefPtr<RayTracingPipeline> m_pipeline;
 		

@@ -302,6 +302,12 @@ namespace Volt
 		return std::numeric_limits<uint32_t>::max();
 	}
 
+	VT_NODISCARD const uint32_t RenderScene::GetPrimitiveIndexFromID(UUID64 primitiveId) const
+	{
+		VT_ENSURE(m_primitiveIndexFromRenderObjectID.contains(primitiveId));
+		return m_primitiveIndexFromRenderObjectID.at(primitiveId);
+	}
+
 	const RenderObject& RenderScene::GetRenderObjectFromID(UUID64 id) const
 	{
 		auto it = std::find_if(m_renderObjects.begin(), m_renderObjects.end(), [id](const auto& renderObject)

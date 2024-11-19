@@ -16,6 +16,7 @@ namespace Volt
 	{
 		Ref<Texture2D> scalarBlueNoise;
 		Ref<Texture2D> rgbaBlueNoise;
+		Ref<Texture2D> vec2BlueNoise;
 		glm::uvec3 moduloMasks;
 		glm::uvec3 dimensions;
 	};
@@ -23,6 +24,7 @@ namespace Volt
 	struct BlueNoiseTextures
 	{
 		RenderGraphImageHandle blueNoiseScalarTexture;
+		RenderGraphImageHandle blueNoiseVec2Texture;
 		RenderGraphImageHandle blueNoiseRGBATexture;
 	};
 

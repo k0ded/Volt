@@ -37,7 +37,7 @@ namespace Volt
 
 			auto& rtInstance = instances.emplace_back();
 			rtInstance.transform = glm::transpose(entity.GetTransform());
-			rtInstance.instanceCustomIndex = 0;
+			rtInstance.instanceCustomIndex = instance.renderScenePrimitiveIndex;
 			rtInstance.mask = 0xFF;
 			rtInstance.instanceShaderBindingTableRecordOffset = 0;
 			rtInstance.flags = (uint32_t)RHI::AccelerationStructureGeometryInstanceFlags::None;
@@ -119,7 +119,7 @@ namespace Volt
 
 			auto& rtInstance = instances.emplace_back();
 			rtInstance.transform = glm::transpose(entity.GetTransform());
-			rtInstance.instanceCustomIndex = 0;
+			rtInstance.instanceCustomIndex = instance.renderScenePrimitiveIndex;
 			rtInstance.mask = 0xFF;
 			rtInstance.instanceShaderBindingTableRecordOffset = 0;
 			rtInstance.flags = (uint32_t)RHI::AccelerationStructureGeometryInstanceFlags::None;
@@ -202,11 +202,12 @@ namespace Volt
 		m_buildFence->WaitUntilSignaled();
 	}
 	
-	RayTracingInstanceID RayTracingScene::AddInstance(Ref<Mesh> mesh, EntityID entityId)
+	RayTracingInstanceID RayTracingScene::AddInstance(Ref<Mesh> mesh, EntityID entityId, uint32_t renderScenePrimitiveIndex)
 	{
 		auto& instance = m_instances.emplace_back();
 
 		instance.entityId = entityId;
+		instance.renderScenePrimitiveIndex = renderScenePrimitiveIndex;
 		instance.mesh = mesh;
 		instance.id = {};
 
