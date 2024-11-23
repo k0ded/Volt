@@ -254,7 +254,10 @@ namespace Volt::RHI
 			return;
 		}
 
-		m_allocator->DestroyBuffer(m_allocation);
+		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]() 
+		{
+			allocator->DestroyBuffer(allocation);
+		});
 		m_allocation = nullptr;
 	}
 }
