@@ -15,7 +15,7 @@ namespace Volt::RHI
 	class D3D12ImageAllocation final : public Allocation
 	{
 	public:
-		D3D12ImageAllocation(const size_t hash);
+		D3D12ImageAllocation(const size_t hash, const std::string& name);
 		~D3D12ImageAllocation() override = default;
 
 		void Unmap() override;
@@ -23,6 +23,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -32,6 +33,8 @@ namespace Volt::RHI
 		friend class D3D12DefaultAllocator;
 
 		void* GetHandleImpl() const override;
+
+		std::string m_name;
 
 		ID3D12Resource* m_resource = nullptr;
 		D3D12MA::Allocation* m_allocation = nullptr;
@@ -42,7 +45,7 @@ namespace Volt::RHI
 	class D3D12BufferAllocation final : public Allocation
 	{
 	public:
-		D3D12BufferAllocation(const size_t hash);
+		D3D12BufferAllocation(const size_t hash, const std::string& name);
 		~D3D12BufferAllocation() override = default;
 
 		void Unmap() override;
@@ -50,6 +53,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -60,6 +64,8 @@ namespace Volt::RHI
 
 		void* GetHandleImpl() const override;
 
+		std::string m_name;
+
 		ID3D12Resource* m_resource = nullptr;
 		D3D12MA::Allocation* m_allocation = nullptr;
 		size_t m_allocationHash = 0;
@@ -69,7 +75,7 @@ namespace Volt::RHI
 	class D3D12TransientBufferAllocation : public Allocation
 	{
 	public:
-		D3D12TransientBufferAllocation(const size_t hash);
+		D3D12TransientBufferAllocation(const size_t hash, const std::string& name);
 		~D3D12TransientBufferAllocation() override = default;
 
 		void Unmap() override;
@@ -77,6 +83,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -86,6 +93,8 @@ namespace Volt::RHI
 
 	private:
 		friend class D3D12TransientHeap;
+
+		std::string m_name;
 
 		ID3D12Resource* m_resource = nullptr;
 		size_t m_allocationHash = 0;
@@ -98,7 +107,7 @@ namespace Volt::RHI
 	class D3D12TransientImageAllocation : public Allocation
 	{
 	public:
-		D3D12TransientImageAllocation(const size_t hash);
+		D3D12TransientImageAllocation(const size_t hash, const std::string& name);
 		~D3D12TransientImageAllocation() override = default;
 
 		void Unmap() override;
@@ -106,6 +115,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -115,6 +125,8 @@ namespace Volt::RHI
 
 	private:
 		friend class D3D12TransientHeap;
+
+		std::string m_name;
 
 		ID3D12Resource* m_resource = nullptr;
 		size_t m_allocationHash = 0;

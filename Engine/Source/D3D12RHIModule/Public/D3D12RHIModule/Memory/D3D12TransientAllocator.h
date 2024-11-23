@@ -13,11 +13,14 @@ namespace Volt::RHI
 		D3D12TransientAllocator();
 		~D3D12TransientAllocator() override;
 
-		RefPtr<Allocation> CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage) override;
-		RefPtr<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) override;
+		Handle<Allocation> CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) override;
+		Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) override;
 
-		void DestroyBuffer(RefPtr<Allocation> allocation) override;
-		void DestroyImage(RefPtr<Allocation> allocation) override;
+		void DestroyBuffer(Handle<Allocation> allocation) override;
+		void DestroyImage(Handle<Allocation> allocation) override;
+
+		Vector<Handle<Allocation>> GetActiveBufferAllocations() const override;
+		Vector<Handle<Allocation>> GetActiveImageAllocations() const override;
 
 		void Update() override;
 
@@ -29,12 +32,12 @@ namespace Volt::RHI
 
 		void CreateDefaultHeaps();
 
-		void DestroyBufferInternal(RefPtr<Allocation> allocation);
-		void DestroyImageInternal(RefPtr<Allocation> allocation);
+		void DestroyBufferInternal(Handle<Allocation> allocation);
+		void DestroyImageInternal(Handle<Allocation> allocation);
 
 		// There are called if their parent heap has been destroyed for some reason
-		void DestroyOrphanBuffer(RefPtr<Allocation> allocation);
-		void DestroyOrphanImage(RefPtr<Allocation> allocation);
+		void DestroyOrphanBuffer(Handle<Allocation> allocation);
+		void DestroyOrphanImage(Handle<Allocation> allocation);
 
 		VT_NODISCARD RefPtr<TransientHeap> CreateNewImageHeap();
 		VT_NODISCARD RefPtr<TransientHeap> CreateNewBufferHeap();

@@ -32,7 +32,7 @@ namespace Volt::RHI
 		m_imageHeaps.clear();
 	}
 
-	RefPtr<Allocation> D3D12TransientAllocator::CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage)
+	Handle<Allocation> D3D12TransientAllocator::CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -48,13 +48,13 @@ namespace Volt::RHI
 		info.memoryUsage = memoryUsage;
 		info.hash = hash;
 
-		RefPtr<Allocation> result;
+		Handle<Allocation> result;
 
 		for (const auto& heap : m_bufferHeaps)
 		{
 			if (heap->IsAllocationSupported(size, TransientHeapFlags::AllowBuffers))
 			{
-				result = heap->CreateBuffer(info);
+				result = heap->CreateBuffer(info, name);
 				break;
 			}
 		}
@@ -65,7 +65,7 @@ namespace Volt::RHI
 			auto heap = CreateNewBufferHeap();
 			if (heap->IsAllocationSupported(size, TransientHeapFlags::AllowBuffers))
 			{
-				result = heap->CreateBuffer(info);
+				result = heap->CreateBuffer(info, name);
 			}
 		}
 
@@ -77,7 +77,7 @@ namespace Volt::RHI
 		return result;
 	}
 	
-	RefPtr<Allocation> D3D12TransientAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> D3D12TransientAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -94,13 +94,13 @@ namespace Volt::RHI
 		info.size = Utility::Align(memoryRequirement.size, memoryRequirement.alignment);
 		info.hash = hash;
 
-		RefPtr<Allocation> result;
+		Handle<Allocation> result;
 
 		for (const auto& heap : m_imageHeaps)
 		{
 			if (heap->IsAllocationSupported(info.size, TransientHeapFlags::AllowTextures))
 			{
-				result = heap->CreateImage(info);
+				result = heap->CreateImage(info, imageSpecification.debugName);
 				break;
 			}
 		}
@@ -111,7 +111,7 @@ namespace Volt::RHI
 			auto heap = CreateNewImageHeap();
 			if (heap->IsAllocationSupported(info.size, TransientHeapFlags::AllowTextures))
 			{
-				result = heap->CreateImage(info);
+				result = heap->CreateImage(info, imageSpecification.debugName);
 			}
 		}
 
@@ -123,14 +123,24 @@ namespace Volt::RHI
 		return result;
 	}
 	
-	void D3D12TransientAllocator::DestroyBuffer(RefPtr<Allocation> allocation)
+	void D3D12TransientAllocator::DestroyBuffer(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueBufferAllocationForRemoval(allocation);
 	}
 	
-	void D3D12TransientAllocator::DestroyImage(RefPtr<Allocation> allocation)
+	void D3D12TransientAllocator::DestroyImage(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueImageAllocationForRemoval(allocation);
+	}
+
+	Vector<Handle<Allocation>> D3D12TransientAllocator::GetActiveBufferAllocations() const
+	{
+		return Vector<Handle<Allocation>>();
+	}
+
+	Vector<Handle<Allocation>> D3D12TransientAllocator::GetActiveImageAllocations() const
+	{
+		return Vector<Handle<Allocation>>();
 	}
 	
 	void D3D12TransientAllocator::Update()
@@ -172,7 +182,7 @@ namespace Volt::RHI
 		}
 	}
 	
-	void D3D12TransientAllocator::DestroyBufferInternal(RefPtr<Allocation> allocation)
+	void D3D12TransientAllocator::DestroyBufferInternal(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -198,7 +208,7 @@ namespace Volt::RHI
 		}
 	}
 	
-	void D3D12TransientAllocator::DestroyImageInternal(RefPtr<Allocation> allocation)
+	void D3D12TransientAllocator::DestroyImageInternal(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -225,12 +235,12 @@ namespace Volt::RHI
 	}
 	
 	// #TODO_Ivar: These functions will probably cause issues due to the ComPtrs
-	void D3D12TransientAllocator::DestroyOrphanBuffer(RefPtr<Allocation> allocation)
+	void D3D12TransientAllocator::DestroyOrphanBuffer(Handle<Allocation> allocation)
 	{
 		allocation->GetResourceHandle<ID3D12Resource*>()->Release();
 	}
 	
-	void D3D12TransientAllocator::DestroyOrphanImage(RefPtr<Allocation> allocation)
+	void D3D12TransientAllocator::DestroyOrphanImage(Handle<Allocation> allocation)
 	{
 		allocation->GetResourceHandle<ID3D12Resource*>()->Release();
 	}

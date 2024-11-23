@@ -62,7 +62,7 @@ namespace Volt::RHI
 		m_byteSize = std::max(newSize, Memory::GetMinBufferAllocationSize());
 
 		const VkDeviceSize bufferSize = m_byteSize;
-		m_allocation = m_allocator->CreateBuffer(bufferSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::TransferSrc | BufferUsage::StorageBuffer, m_memoryUsage);
+		m_allocation = m_allocator->CreateBuffer(bufferSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::TransferSrc | BufferUsage::StorageBuffer, m_memoryUsage, m_name);
 
 		SetName(m_name);
 
@@ -107,7 +107,7 @@ namespace Volt::RHI
 		return m_count;
 	}
 
-	WeakPtr<Allocation> VulkanStorageBuffer::GetAllocation() const
+	Handle<Allocation> VulkanStorageBuffer::GetAllocation() const
 	{
 		return m_allocation;
 	}
@@ -119,7 +119,7 @@ namespace Volt::RHI
 
 	void VulkanStorageBuffer::SetData(const void* data, const size_t size)
 	{
-		RefPtr<Allocation> stagingAllocation = m_allocator->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU);
+		Handle<Allocation> stagingAllocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU, "Staging Alloc");
 
 		void* mappedPtr = stagingAllocation->Map<void>();
 		memcpy_s(mappedPtr, size, data, size);
@@ -152,15 +152,12 @@ namespace Volt::RHI
 		cmdBuffer->End();
 		cmdBuffer->Execute();
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = stagingAllocation]()
-		{
-			allocator->DestroyBuffer(allocation);
-		});
+		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAllocation);
 	}
 
 	void VulkanStorageBuffer::SetData(RefPtr<CommandBuffer> commandBuffer, const void* data, const size_t size)
 	{
-		RefPtr<Allocation> stagingAllocation = m_allocator->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU);
+		Handle<Allocation> stagingAllocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU, "Staging Alloc");
 
 		void* mappedPtr = stagingAllocation->Map<void>();
 		memcpy_s(mappedPtr, m_byteSize, data, size);
@@ -187,10 +184,7 @@ namespace Volt::RHI
 
 		commandBuffer->ResourceBarrier({ barrier });
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = stagingAllocation]()
-		{
-			allocator->DestroyBuffer(allocation);
-		});
+		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAllocation);
 	}
 
 	RefPtr<BufferView> VulkanStorageBuffer::GetView()
@@ -250,7 +244,7 @@ namespace Volt::RHI
 		m_byteSize = std::max(byteSize, Memory::GetMinBufferAllocationSize());
 
 		const VkDeviceSize bufferSize = m_byteSize;
-		m_allocation = m_allocator->CreateBuffer(bufferSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::TransferSrc | BufferUsage::StorageBuffer, m_memoryUsage);
+		m_allocation = m_allocator->CreateBuffer(bufferSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::TransferSrc | BufferUsage::StorageBuffer, m_memoryUsage, m_name);
 	}
 
 	void VulkanStorageBuffer::Release()
@@ -260,11 +254,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]()
-		{
-			allocator->DestroyBuffer(allocation);
-		});
-
+		m_allocator->DestroyBuffer(m_allocation);
 		m_allocation = nullptr;
 	}
 }

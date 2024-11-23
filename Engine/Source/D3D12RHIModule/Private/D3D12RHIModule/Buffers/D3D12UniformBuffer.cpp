@@ -15,7 +15,7 @@ namespace Volt::RHI
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
-		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(size * count, BufferUsage::UniformBuffer, MemoryUsage::CPUToGPU);
+		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(size * count, BufferUsage::UniformBuffer, MemoryUsage::CPUToGPU, std::string(name));
 
 		if (data)
 		{

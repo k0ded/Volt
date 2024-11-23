@@ -87,6 +87,11 @@ void Sandbox::CreateDeleteWatch()
 {
 	m_fileWatcher->AddCallback(efsw::Actions::Delete, [&](const std::filesystem::path newPath, const std::filesystem::path oldPath)
 	{
+		if (newPath.extension() == ".tmp" || newPath.extension() == ".TMP")
+		{
+			return;
+		}
+
 		std::scoped_lock lock(m_fileWatcherMutex);
 		m_fileChangeQueue.emplace_back([newPath, oldPath]()
 		{

@@ -244,7 +244,7 @@ namespace Volt::RHI
 		const VkPipelineBindPoint bindPoint = vulkanCommandBuffer.m_currentRenderPipeline ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
 
 		{
-			void* buff = m_descriptorBuffer->Map<void*>();
+			void* buff = m_descriptorBuffer->Map<void>();
 
 			memcpy(buff, m_hostDescriptorBuffer.As<void>(), m_accumulatedSize);
 
@@ -298,7 +298,7 @@ namespace Volt::RHI
 		}
 
 		const uint64_t accumulatedSize = std::accumulate(m_descriptorSetLayoutSizes.begin(), m_descriptorSetLayoutSizes.end(), uint64_t(0));
-		m_descriptorBuffer = GraphicsContext::GetDefaultAllocator()->CreateBuffer(accumulatedSize, BufferUsage::DescriptorBuffer, MemoryUsage::CPUToGPU);
+		m_descriptorBuffer = GraphicsContext::GetDefaultAllocator()->CreateBuffer(accumulatedSize, BufferUsage::DescriptorBuffer, MemoryUsage::CPUToGPU, "Descriptor Buffer");
 		m_hostDescriptorBuffer.Resize(accumulatedSize);
 
 		m_accumulatedSize = accumulatedSize;

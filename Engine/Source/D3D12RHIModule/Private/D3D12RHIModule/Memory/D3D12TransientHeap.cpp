@@ -33,7 +33,7 @@ namespace Volt::RHI
 		}
 	}
 	
-	RefPtr<Allocation> D3D12TransientHeap::CreateBuffer(const TransientBufferCreateInfo& createInfo)
+	Handle<Allocation> D3D12TransientHeap::CreateBuffer(const TransientBufferCreateInfo& createInfo, const std::string& name)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE((m_createInfo.flags & TransientHeapFlags::AllowBuffers) != TransientHeapFlags::None);
@@ -70,7 +70,7 @@ namespace Volt::RHI
 		ID3D12Resource* resource = nullptr;
 		device->CreatePlacedResource2(static_cast<ID3D12Heap*>(page.handle), blockAlloc.offset, &resourceDesc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr, VT_D3D12_ID(resource));
 
-		RefPtr<D3D12TransientBufferAllocation> bufferAlloc = RefPtr<D3D12TransientBufferAllocation>::Create(createInfo.hash);
+		Handle<D3D12TransientBufferAllocation> bufferAlloc = m_bufferAllocationArena.Allocate(createInfo.hash, name);
 		bufferAlloc->m_resource = resource;
 		bufferAlloc->m_allocationBlock = blockAlloc;
 		bufferAlloc->m_heapId = m_heapId;
@@ -79,7 +79,7 @@ namespace Volt::RHI
 		return bufferAlloc;
 	}
 	
-	RefPtr<Allocation> D3D12TransientHeap::CreateImage(const TransientImageCreateInfo& createInfo)
+	Handle<Allocation> D3D12TransientHeap::CreateImage(const TransientImageCreateInfo& createInfo, const std::string& name)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE((m_createInfo.flags & TransientHeapFlags::AllowTextures) != TransientHeapFlags::None);
@@ -123,7 +123,7 @@ namespace Volt::RHI
 		ID3D12Resource* resource = nullptr;
 		device->CreatePlacedResource2(static_cast<ID3D12Heap*>(page.handle), blockAlloc.offset, &resourceDesc, initialLayout, nullptr, 0, nullptr, VT_D3D12_ID(resource));
 
-		RefPtr<D3D12TransientImageAllocation> imageAlloc = RefPtr<D3D12TransientImageAllocation>::Create(createInfo.hash);
+		Handle<D3D12TransientImageAllocation> imageAlloc = m_imageAllocationArena.Allocate(createInfo.hash, name);
 		imageAlloc->m_resource = resource;
 		imageAlloc->m_allocationBlock = blockAlloc;
 		imageAlloc->m_heapId = m_heapId;
@@ -132,11 +132,11 @@ namespace Volt::RHI
 		return imageAlloc;
 	}
 	
-	void D3D12TransientHeap::ForfeitBuffer(RefPtr<Allocation> allocation)
+	void D3D12TransientHeap::ForfeitBuffer(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
-		RefPtr<D3D12TransientBufferAllocation> bufferAlloc = allocation.As<D3D12TransientBufferAllocation>();
+		Handle<D3D12TransientBufferAllocation> bufferAlloc = allocation.As<D3D12TransientBufferAllocation>();
 		if (!bufferAlloc)
 		{
 			return;
@@ -147,13 +147,15 @@ namespace Volt::RHI
 		bufferAlloc->m_resource->Release();
 		AllocationBlock allocBlock = bufferAlloc->m_allocationBlock;
 		ForfeitAllocationBlock(allocBlock);
+
+		m_bufferAllocationArena.Free(bufferAlloc.GetRaw());
 	}
 	
-	void D3D12TransientHeap::ForfeitImage(RefPtr<Allocation> allocation)
+	void D3D12TransientHeap::ForfeitImage(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
-		RefPtr<D3D12TransientImageAllocation> imageAlloc = allocation.As<D3D12TransientImageAllocation>();
+		Handle<D3D12TransientImageAllocation> imageAlloc = allocation.As<D3D12TransientImageAllocation>();
 		if (!imageAlloc)
 		{
 			return;
@@ -168,6 +170,8 @@ namespace Volt::RHI
 
 		AllocationBlock allocBlock = imageAlloc->m_allocationBlock;
 		ForfeitAllocationBlock(allocBlock);
+
+		m_imageAllocationArena.Free(imageAlloc.GetRaw());
 	}
 	
 	const bool D3D12TransientHeap::IsAllocationSupported(const uint64_t size, TransientHeapFlags heapFlags) const

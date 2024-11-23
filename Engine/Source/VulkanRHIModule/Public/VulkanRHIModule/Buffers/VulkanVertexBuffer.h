@@ -4,6 +4,8 @@
 
 #include <RHIModule/Buffers/VertexBuffer.h>
 
+#include <CoreUtilities/Allocators/Handle.h>
+
 namespace Volt::RHI
 {
 	class Allocation;
@@ -29,7 +31,7 @@ namespace Volt::RHI
 		void Invalidate(const void* data, const uint32_t size);
 
 		std::string m_name;
-		RefPtr<Allocation> m_allocation;
+		Handle<Allocation> m_allocation;
 		uint32_t m_stride = 0;
 	};
 }

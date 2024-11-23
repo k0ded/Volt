@@ -1217,7 +1217,7 @@ namespace Volt::RHI
 		vkCmdUpdateBuffer(m_commandBufferData.commandBuffer, vkBuffer.GetHandle<VkBuffer>(), dstOffset, dataSize, data);
 	}
 
-	void VulkanCommandBuffer::CopyBufferRegion(WeakPtr<Allocation> srcResource, const size_t srcOffset, WeakPtr<Allocation> dstResource, const size_t dstOffset, const size_t size)
+	void VulkanCommandBuffer::CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1229,7 +1229,7 @@ namespace Volt::RHI
 		vkCmdCopyBuffer(m_commandBufferData.commandBuffer, srcResource->GetResourceHandle<VkBuffer>(), dstResource->GetResourceHandle<VkBuffer>(), 1, &copy);
 	}
 
-	void VulkanCommandBuffer::CopyBufferToImage(WeakPtr<Allocation> srcBuffer, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
+	void VulkanCommandBuffer::CopyBufferToImage(Handle<Allocation> srcBuffer, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1254,7 +1254,7 @@ namespace Volt::RHI
 		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, srcBuffer->GetResourceHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), 1, &region);
 	}
 
-	void VulkanCommandBuffer::CopyImageToBuffer(WeakPtr<Image> srcImage, WeakPtr<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
+	void VulkanCommandBuffer::CopyImageToBuffer(WeakPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1329,7 +1329,7 @@ namespace Volt::RHI
 		vkCmdCopyImage2(m_commandBufferData.commandBuffer, &cpyInfo);
 	}
 
-	void VulkanCommandBuffer::UploadTextureData(WeakPtr<Image> dstImage, const ImageCopyData& copyData)
+	void VulkanCommandBuffer::UploadTextureData(WeakPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1338,10 +1338,7 @@ namespace Volt::RHI
 		Vector<VkBufferImageCopy> copyRegions;
 		copyRegions.reserve(copyData.copySubData.size());
 
-		const uint64_t stagingSize = Utility::CalculateStagingBufferSize(copyData);
-		RefPtr<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingSize, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU);
-
-		uint8_t* stagingPtr = stagingAlloc->Map<uint8_t>();
+		uint8_t* stagingPtr = stagingAllocation->Map<uint8_t>();
 
 		uint64_t offset = 0;
 		for (const auto& subData : copyData.copySubData)
@@ -1359,14 +1356,14 @@ namespace Volt::RHI
 			newRegion.imageOffset = { 0, 0, 0 };
 			newRegion.imageExtent = { subData.width, subData.height, subData.depth };
 
-			memcpy_s(&stagingPtr[offset], stagingSize, subData.data, subData.slicePitch);
+			memcpy_s(&stagingPtr[offset], stagingAllocation->GetSize(), subData.data, subData.slicePitch);
 			offset += subData.slicePitch;
 		}
 
-		stagingAlloc->Unmap();
+		stagingAllocation->Unmap();
 
 		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage);
-		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, stagingAlloc->GetResourceHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
+		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, stagingAllocation->GetResourceHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
 	}
 
 	const QueueType VulkanCommandBuffer::GetQueueType() const

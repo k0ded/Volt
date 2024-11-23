@@ -30,7 +30,7 @@ namespace Volt::RHI
 		VT_D3D12_DELETE(m_allocator);
 	}
 
-	RefPtr<Allocation> D3D12DefaultAllocator::CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage)
+	Handle<Allocation> D3D12DefaultAllocator::CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -80,19 +80,15 @@ namespace Volt::RHI
 			allocDesc.Flags = D3D12MA::ALLOCATION_FLAG_COMMITTED;
 		}
 
-		RefPtr<D3D12BufferAllocation> allocation = RefPtr<D3D12BufferAllocation>::Create(hash);
+		Handle<D3D12BufferAllocation> allocation = m_bufferAllocationArena.Allocate(hash, name);
 		VT_D3D12_CHECK(m_allocator->CreateResource(&allocDesc, &resourceDesc, Utility::GetResourceStateFromUsage(usage), nullptr, &allocation->m_allocation, IID_PPV_ARGS(&allocation->m_resource)));
 
 		allocation->m_size = size;
 
-		{
-			std::scoped_lock lock{ m_bufferAllocationMutex };
-			m_activeBufferAllocations.push_back(allocation);
-		}
 		return allocation;
 	}
 
-	RefPtr<Allocation> D3D12DefaultAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> D3D12DefaultAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -127,27 +123,32 @@ namespace Volt::RHI
 			allocDesc.Flags = D3D12MA::ALLOCATION_FLAG_COMMITTED;
 		}
 
-		RefPtr<D3D12ImageAllocation> allocation = RefPtr<D3D12ImageAllocation>::Create(hash);
+		Handle<D3D12ImageAllocation> allocation = m_imageAllocationArena.Allocate(hash, imageSpecification.debugName);
 		VT_D3D12_CHECK(m_allocator->CreateResource2(&allocDesc, &resourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, &allocation->m_allocation, IID_PPV_ARGS(&allocation->m_resource)));
 
 		allocation->m_size = allocation->m_allocation->GetSize();
 
-		{
-			std::scoped_lock lock{ m_imageAllocationMutex };
-			m_activeImageAllocations.push_back(allocation);
-		}
-
 		return allocation;
 	}
 
-	void D3D12DefaultAllocator::DestroyBuffer(RefPtr<Allocation> allocation)
+	void D3D12DefaultAllocator::DestroyBuffer(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueBufferAllocationForRemoval(allocation);
 	}
 
-	void D3D12DefaultAllocator::DestroyImage(RefPtr<Allocation> allocation)
+	void D3D12DefaultAllocator::DestroyImage(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueImageAllocationForRemoval(allocation);
+	}
+
+	Vector<Handle<Allocation>> D3D12DefaultAllocator::GetActiveBufferAllocations() const
+	{
+		return Vector<Handle<Allocation>>();
+	}
+
+	Vector<Handle<Allocation>> D3D12DefaultAllocator::GetActiveImageAllocations() const
+	{
+		return Vector<Handle<Allocation>>();
 	}
 
 	void D3D12DefaultAllocator::Update()
@@ -170,29 +171,21 @@ namespace Volt::RHI
 		return m_allocator;
 	}
 
-	void D3D12DefaultAllocator::DestroyBufferInternal(RefPtr<Allocation> allocation)
+	void D3D12DefaultAllocator::DestroyBufferInternal(Handle<Allocation> allocation)
 	{
-		const D3D12ImageAllocation& imageAlloc = allocation->AsRef<D3D12ImageAllocation>();
-		imageAlloc.m_allocation->Release();
-		imageAlloc.m_resource->Release();
+		auto bufferAlloc = allocation.As<D3D12BufferAllocation>();
+		bufferAlloc->m_allocation->Release();
+		bufferAlloc->m_resource->Release();
 
-		std::scoped_lock lock{ m_bufferAllocationMutex };
-		if (const auto it = std::ranges::find(m_activeBufferAllocations, allocation); it != m_activeBufferAllocations.end())
-		{
-			m_activeBufferAllocations.erase(it);
-		}
+		m_bufferAllocationArena.Free(bufferAlloc.GetRaw());
 	}
 
-	void D3D12DefaultAllocator::DestroyImageInternal(RefPtr<Allocation> allocation)
+	void D3D12DefaultAllocator::DestroyImageInternal(Handle<Allocation> allocation)
 	{
-		const D3D12BufferAllocation& imageAlloc = allocation->AsRef<D3D12BufferAllocation>();
-		imageAlloc.m_allocation->Release();
-		imageAlloc.m_resource->Release();
+		auto imageAlloc = allocation.As<D3D12ImageAllocation>();
+		imageAlloc->m_allocation->Release();
+		imageAlloc->m_resource->Release();
 
-		std::scoped_lock lock{ m_imageAllocationMutex };
-		if (const auto it = std::ranges::find(m_activeImageAllocations, allocation); it != m_activeImageAllocations.end())
-		{
-			m_activeImageAllocations.erase(it);
-		}
+		m_imageAllocationArena.Free(imageAlloc.GetRaw());
 	}
 }

@@ -39,6 +39,7 @@
 #include "Sandbox/Window/AnimationEditorPanel.h"
 #include "Sandbox/Window/GameUIEditorPanel.h"
 #include "Sandbox/Window/MotionWeaveDatabasePanel.h"
+#include "Sandbox/Window/RenderResourcesPanel.h"
 #include "Sandbox/VertexPainting/VertexPainterPanel.h"
 
 #include "Sandbox/Modals/MeshImportModal.h"
@@ -101,7 +102,7 @@ void Sandbox::OnAttach()
 	NodeEditorHelpers::Initialize();
 	IONodeGraphEditorHelpers::Initialize();
 
-	Volt::WindowManager::Get().GetMainWindow().Maximize();
+	//Volt::WindowManager::Get().GetMainWindow().Maximize();
 
 	m_editorCameraController = CreateRef<EditorCameraController>(60.f, 1.f, 100000.f);
 
@@ -183,6 +184,7 @@ void Sandbox::RegisterPanels()
 
 	EditorLibrary::Register<SceneSettingsPanel>("", m_runtimeScene);
 	EditorLibrary::Register<WorldEnginePanel>("", m_runtimeScene);
+	EditorLibrary::Register<RenderResourcesPanel>("");
 	EditorLibrary::Register<GameUIEditorPanel>("UI");
 
 	m_navigationPanel = EditorLibrary::Register<NavigationPanel>("Advanced", m_runtimeScene);

@@ -42,6 +42,8 @@ Volt::Application* Volt::CreateApplication(const std::filesystem::path& appPath)
 	info.enableImGui = true;
 	info.UseTitlebar = true;
 	info.UseCustomTitlebar = true;
+	info.width = 1600;
+	info.height = 900;
 	SandboxApp* app;
 	Create(app, info);
 

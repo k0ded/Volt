@@ -12,7 +12,7 @@ namespace Volt::RHI
 	class VulkanImageAllocation final : public Allocation
 	{
 	public:
-		VulkanImageAllocation(const size_t hash);
+		VulkanImageAllocation(const size_t hash, const std::string& name);
 		~VulkanImageAllocation() override = default;
 
 		void Unmap() override;
@@ -20,6 +20,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -29,6 +30,8 @@ namespace Volt::RHI
 		friend class VulkanDefaultAllocator;
 
 		void* GetHandleImpl() const override;
+
+		std::string m_name;
 
 		VkImage_T* m_resource = nullptr;
 		VmaAllocation_T* m_allocation = nullptr;
@@ -39,7 +42,7 @@ namespace Volt::RHI
 	class VulkanBufferAllocation final : public Allocation
 	{
 	public:
-		VulkanBufferAllocation(const size_t hash);
+		VulkanBufferAllocation(const size_t hash, const std::string& name);
 		~VulkanBufferAllocation() override = default;
 
 		void Unmap() override;
@@ -47,6 +50,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -57,6 +61,8 @@ namespace Volt::RHI
 
 		void* GetHandleImpl() const override;
 
+		std::string m_name;
+
 		VkBuffer_T* m_resource = nullptr;
 		VmaAllocation_T* m_allocation = nullptr;
 		size_t m_allocationHash = 0;
@@ -66,7 +72,7 @@ namespace Volt::RHI
 	class VulkanTransientBufferAllocation : public Allocation
 	{
 	public:
-		VulkanTransientBufferAllocation(const size_t hash);
+		VulkanTransientBufferAllocation(const size_t hash, const std::string& name);
 		~VulkanTransientBufferAllocation() override = default;
 
 		void Unmap() override;
@@ -74,6 +80,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -83,6 +90,8 @@ namespace Volt::RHI
 
 	private:
 		friend class VulkanTransientHeap;
+
+		std::string m_name;
 
 		VkBuffer_T* m_resource = nullptr;
 		VkDeviceMemory_T* m_memoryHandle = nullptr;
@@ -96,7 +105,7 @@ namespace Volt::RHI
 	class VulkanTransientImageAllocation : public Allocation
 	{
 	public:
-		VulkanTransientImageAllocation(const size_t hash);
+		VulkanTransientImageAllocation(const size_t hash, const std::string& name);
 		~VulkanTransientImageAllocation() override = default;
 
 		void Unmap() override;
@@ -104,6 +113,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
 		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
 		void* GetResourceHandleInternal() const override;
@@ -113,6 +123,8 @@ namespace Volt::RHI
 
 	private:
 		friend class VulkanTransientHeap;
+
+		std::string m_name;
 
 		VkImage_T* m_resource = nullptr;
 		VkDeviceMemory_T* m_memoryHandle = nullptr;

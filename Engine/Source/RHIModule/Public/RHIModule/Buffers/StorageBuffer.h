@@ -19,7 +19,7 @@ namespace Volt::RHI
 
 		virtual const uint64_t GetElementSize() const = 0;
 		virtual const uint32_t GetCount() const = 0;
-		virtual WeakPtr<Allocation> GetAllocation() const = 0;
+		virtual Handle<Allocation> GetAllocation() const = 0;
 
 		virtual void Unmap() = 0;
 		virtual void SetData(const void* data, const size_t size) = 0;

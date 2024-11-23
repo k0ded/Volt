@@ -171,6 +171,11 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		if (m_frameOperations.empty())
+		{
+			return;
+		}
+
 		bool shouldPerformFullRebuild = false;
 
 		for (const auto& operation : m_frameOperations)

@@ -38,7 +38,7 @@ namespace Volt::RHI
 		}
 	};
 
-	class VTRHI_API Allocation : public RHIInterface
+	class VTRHI_API Allocation
 	{
 	public:
 		virtual ~Allocation() = default;
@@ -50,15 +50,17 @@ namespace Volt::RHI
 		constexpr T* Map();
 
 		virtual void Unmap() = 0;
-		[[nodiscard]] virtual const UUID64 GetHeapID() const = 0;
-		[[nodiscard]] virtual const uint64_t GetDeviceAddress() const = 0;
-		[[nodiscard]] virtual const size_t GetHash() const = 0;
-		[[nodiscard]] virtual const uint64_t GetSize() const = 0;
+		VT_NODISCARD virtual const UUID64 GetHeapID() const = 0;
+		VT_NODISCARD virtual const uint64_t GetDeviceAddress() const = 0;
+		VT_NODISCARD virtual const size_t GetHash() const = 0;
+		VT_NODISCARD virtual const uint64_t GetSize() const = 0;
+		VT_NODISCARD virtual std::string_view GetName() const = 0;
 
 	protected:
 		friend class Allocator;
 
 		virtual void* GetResourceHandleInternal() const = 0;
+		virtual void* GetHandleImpl() const = 0;
 		virtual void* MapInternal() = 0;
 
 		Allocation() = default;

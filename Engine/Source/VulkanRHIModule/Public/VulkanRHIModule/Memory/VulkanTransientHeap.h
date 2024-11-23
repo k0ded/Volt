@@ -1,9 +1,11 @@
 #pragma once
 
-#include "VulkanRHIModule/Core.h"
+#include "VulkanRHIModule/Memory/VulkanAllocation.h"
 
 #include <RHIModule/Memory/TransientHeap.h>
 #include <RHIModule/Memory/Allocation.h>
+
+#include <CoreUtilities/Allocators/ArenaAllocator.h>
 
 struct VkDeviceMemory_T;
 struct VkImageCreateInfo;
@@ -16,11 +18,11 @@ namespace Volt::RHI
 		VulkanTransientHeap(const TransientHeapCreateInfo& info);
 		~VulkanTransientHeap() override;
 
-		RefPtr<Allocation> CreateBuffer(const TransientBufferCreateInfo& createInfo) override;
-		RefPtr<Allocation> CreateImage(const TransientImageCreateInfo& createInfo) override;
+		Handle<Allocation> CreateBuffer(const TransientBufferCreateInfo& createInfo, const std::string& name) override;
+		Handle<Allocation> CreateImage(const TransientImageCreateInfo& createInfo, const std::string& name) override;
 			
-		void ForfeitBuffer(RefPtr<Allocation> allocation) override;
-		void ForfeitImage(RefPtr<Allocation> allocation) override;
+		void ForfeitBuffer(Handle<Allocation> allocation) override;
+		void ForfeitImage(Handle<Allocation> allocation) override;
 
 		const bool IsAllocationSupported(const uint64_t size, TransientHeapFlags heapFlags) const override;
 		const UUID64 GetHeapID() const override;
@@ -44,5 +46,8 @@ namespace Volt::RHI
 	
 		std::mutex m_allocationMutex;
 		UUID64 m_heapId;
+
+		ArenaAllocator<VulkanTransientBufferAllocation, 200> m_bufferAllocationArena;
+		ArenaAllocator<VulkanTransientImageAllocation, 200> m_imageAllocationArena;
 	};
 }

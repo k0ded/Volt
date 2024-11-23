@@ -80,12 +80,12 @@ namespace Volt::RHI
 		void ClearBuffer(WeakPtr<StorageBuffer> buffer, const uint32_t value) override;
 
 		void UpdateBuffer(WeakPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data) override;
-		void CopyBufferRegion(WeakPtr<Allocation> srcResource, const size_t srcOffset, WeakPtr<Allocation> dstResource, const size_t dstOffset, const size_t size) override;
-		void CopyBufferToImage(WeakPtr<Allocation> srcBuffer, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip /* = 0 */) override;
-		void CopyImageToBuffer(WeakPtr<Image> srcImage, WeakPtr<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) override;
+		void CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size) override;
+		void CopyBufferToImage(Handle<Allocation> srcBuffer, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip /* = 0 */) override;
+		void CopyImageToBuffer(WeakPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) override;
 		void CopyImage(WeakPtr<Image> srcImage, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth) override;
 
-		void UploadTextureData(WeakPtr<Image> dstImage, const ImageCopyData& copyData) override;
+		void UploadTextureData(WeakPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData) override;
 
 		RefPtr<Semaphore> GetSemaphore() const { return m_commandListData.fence; }
 

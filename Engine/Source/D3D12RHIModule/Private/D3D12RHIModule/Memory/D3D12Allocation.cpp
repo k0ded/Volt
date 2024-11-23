@@ -3,9 +3,10 @@
 
 namespace Volt::RHI
 {
-	D3D12ImageAllocation::D3D12ImageAllocation(const size_t hash)
+	D3D12ImageAllocation::D3D12ImageAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash),
+		m_name(name)
 	{
-		m_allocationHash = hash;
 	}
 	
 	void D3D12ImageAllocation::Unmap()
@@ -35,9 +36,10 @@ namespace Volt::RHI
 		return m_allocation;
 	}
 
-	D3D12BufferAllocation::D3D12BufferAllocation(const size_t hash)
+	D3D12BufferAllocation::D3D12BufferAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash),
+		m_name(name)
 	{
-		m_allocationHash = hash;
 	}
 
 	void D3D12BufferAllocation::Unmap()
@@ -67,8 +69,9 @@ namespace Volt::RHI
 		return m_allocation;
 	}
 
-	D3D12TransientBufferAllocation::D3D12TransientBufferAllocation(const size_t hash)
-		: m_allocationHash(hash)
+	D3D12TransientBufferAllocation::D3D12TransientBufferAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash), 
+		m_name(name)
 	{
 	}
 	
@@ -99,8 +102,9 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	D3D12TransientImageAllocation::D3D12TransientImageAllocation(const size_t hash)
-		: m_allocationHash(hash)
+	D3D12TransientImageAllocation::D3D12TransientImageAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash),
+		m_name(name)
 	{
 	}
 

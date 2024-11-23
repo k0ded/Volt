@@ -24,7 +24,7 @@ namespace Volt::RHI
 		const uint64_t alignedSize = Utility::Align(size, deviceProperties.limits.minUniformBufferOffsetAlignment);
 
 		const VkDeviceSize bufferSize = alignedSize * count;
-		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferSize, BufferUsage::UniformBuffer, MemoryUsage::CPUToGPU);
+		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferSize, BufferUsage::UniformBuffer, MemoryUsage::CPUToGPU, m_name);
 
 		if (data)
 		{

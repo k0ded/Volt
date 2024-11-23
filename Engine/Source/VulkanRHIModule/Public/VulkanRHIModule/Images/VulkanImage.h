@@ -58,7 +58,7 @@ namespace Volt::RHI
 		ImageSpecification m_specification;
 		SwapchainImageData m_swapchainImageData;
 
-		RefPtr<Allocation> m_allocation;
+		Handle<Allocation> m_allocation;
 		WeakPtr<Allocator> m_allocator;
 
 		bool m_hasGeneratedMips = false;

@@ -18,7 +18,7 @@ namespace Volt::RHI
 
 		const uint64_t GetElementSize() const override;
 		const uint32_t GetCount() const override;
-		WeakPtr<Allocation> GetAllocation() const override;
+		Handle<Allocation> GetAllocation() const override;
 
 		void Unmap() override;
 		void SetData(const void* data, const size_t size) override;
@@ -49,7 +49,7 @@ namespace Volt::RHI
 		std::string m_name;
 
 		RefPtr<BufferView> m_view;
-		RefPtr<Allocation> m_allocation;
+		Handle<Allocation> m_allocation;
 		WeakPtr<Allocator> m_allocator;
 
 		BufferUsage m_bufferUsage = BufferUsage::StorageBuffer;

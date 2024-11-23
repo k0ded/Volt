@@ -1,7 +1,11 @@
 #pragma once
 
+#include "D3D12RHIModule/Memory/D3D12Allocation.h"
+
 #include <RHIModule/Memory/Allocator.h>
 #include <RHIModule/Memory/AllocationCache.h>
+
+#include <CoreUtilities/Allocators/ArenaAllocator.h>
 
 namespace D3D12MA
 {
@@ -16,11 +20,14 @@ namespace Volt::RHI
 		D3D12DefaultAllocator();
 		~D3D12DefaultAllocator() override;
 
-		RefPtr<Allocation> CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage) override;
-		RefPtr<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) override;
+		Handle<Allocation> CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) override;
+		Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) override;
 
-		void DestroyBuffer(RefPtr<Allocation> allocation) override;
-		void DestroyImage(RefPtr<Allocation> allocation) override;
+		void DestroyBuffer(Handle<Allocation> allocation) override;
+		void DestroyImage(Handle<Allocation> allocation) override;
+
+		Vector<Handle<Allocation>> GetActiveBufferAllocations() const override;
+		Vector<Handle<Allocation>> GetActiveImageAllocations() const override;
 
 		void Update() override;
 
@@ -28,17 +35,17 @@ namespace Volt::RHI
 		void* GetHandleImpl() const override;
 
 	private:
-		void DestroyBufferInternal(RefPtr<Allocation> allocation);
-		void DestroyImageInternal(RefPtr<Allocation> allocation);
+		void DestroyBufferInternal(Handle<Allocation> allocation);
+		void DestroyImageInternal(Handle<Allocation> allocation);
 
 		D3D12MA::Allocator* m_allocator;
 
 		AllocationCache m_allocationCache{};
 
-		Vector<RefPtr<Allocation>> m_activeImageAllocations;
-		Vector<RefPtr<Allocation>> m_activeBufferAllocations;
-
 		std::mutex m_bufferAllocationMutex;
 		std::mutex m_imageAllocationMutex;
+
+		ArenaAllocator<D3D12BufferAllocation, 5000> m_bufferAllocationArena;
+		ArenaAllocator<D3D12ImageAllocation, 5000> m_imageAllocationArena;
 	};
 }

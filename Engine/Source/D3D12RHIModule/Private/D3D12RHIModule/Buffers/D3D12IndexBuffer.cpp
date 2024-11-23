@@ -68,7 +68,7 @@ namespace Volt::RHI
 	
 	void D3D12IndexBuffer::SetData(const void* data, const uint32_t size)
 	{
-		RefPtr<Allocation> stagingAllocation;
+		Handle<Allocation> stagingAllocation;
 
 		uint64_t bufferSize = size;
 
@@ -86,7 +86,7 @@ namespace Volt::RHI
 
 		if (data)
 		{
-			stagingAllocation = allocator->CreateBuffer(bufferSize, BufferUsage::TransferSrc, MemoryUsage::CPU);
+			stagingAllocation = allocator->CreateBuffer(bufferSize, BufferUsage::TransferSrc, MemoryUsage::CPU, "Staging Alloc");
 
 			// Copy to staging buffer
 			{
@@ -98,7 +98,7 @@ namespace Volt::RHI
 
 		// Create GPU buffer
 		{
-			m_allocation = allocator->CreateBuffer(bufferSize, BufferUsage::IndexBuffer | BufferUsage::TransferDst);
+			m_allocation = allocator->CreateBuffer(bufferSize, BufferUsage::IndexBuffer | BufferUsage::TransferDst, MemoryUsage::GPU, m_name);
 		}
 
 		if (data)

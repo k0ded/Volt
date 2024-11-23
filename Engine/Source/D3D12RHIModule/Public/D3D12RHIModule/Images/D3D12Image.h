@@ -57,7 +57,7 @@ namespace Volt::RHI
 		ImageSpecification m_specification;
 		SwapchainImageData m_swapchainImageData;
 
-		RefPtr<Allocation> m_allocation;
+		Handle<Allocation> m_allocation;
 		RefPtr<Allocator> m_allocator;
 
 		bool m_isSwapchainImage = false;

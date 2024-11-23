@@ -1010,18 +1010,18 @@ namespace Volt::RHI
 	{
 	}
 
-	void D3D12CommandBuffer::CopyBufferRegion(WeakPtr<Allocation> srcResource, const size_t srcOffset, WeakPtr<Allocation> dstResource, const size_t dstOffset, const size_t size)
+	void D3D12CommandBuffer::CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size)
 	{
 		VT_PROFILE_FUNCTION();
 
 		m_commandListData.commandList->CopyBufferRegion(dstResource->GetResourceHandle<ID3D12Resource*>(), dstOffset, srcResource->GetResourceHandle<ID3D12Resource*>(), srcOffset, size);
 	}
 
-	void D3D12CommandBuffer::CopyBufferToImage(WeakPtr<Allocation> srcBuffer, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
+	void D3D12CommandBuffer::CopyBufferToImage(Handle<Allocation> srcBuffer, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
 	{
 	}
 
-	void D3D12CommandBuffer::CopyImageToBuffer(WeakPtr<Image> srcImage, WeakPtr<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
+	void D3D12CommandBuffer::CopyImageToBuffer(WeakPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
 	{
 	}
 
@@ -1029,7 +1029,7 @@ namespace Volt::RHI
 	{
 	}
 
-	void D3D12CommandBuffer::UploadTextureData(WeakPtr<Image> dstImage, const ImageCopyData& copyData)
+	void D3D12CommandBuffer::UploadTextureData(WeakPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData)
 	{
 		Vector<D3D12_SUBRESOURCE_DATA> subResources;
 		subResources.reserve(copyData.copySubData.size());
@@ -1045,14 +1045,7 @@ namespace Volt::RHI
 		ID3D12Resource* d3d12Image = dstImage->GetHandle<ID3D12Resource*>();
 
 		const uint32_t subResourceCount = static_cast<uint32_t>(subResources.size());
-		const uint64_t requiredSize = GetRequiredIntermediateSize(d3d12Image, 0, subResourceCount);
-		RefPtr<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(requiredSize, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU);
-		UpdateSubresources(m_commandListData.commandList.Get(), d3d12Image, stagingAlloc->GetResourceHandle<ID3D12Resource*>(), 0, 0, subResourceCount, subResources.data());
-
-		RHIProxy::GetInstance().DestroyResource([stagingAlloc]()
-		{
-			GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
-		});
+		UpdateSubresources(m_commandListData.commandList.Get(), d3d12Image, stagingAllocation->GetResourceHandle<ID3D12Resource*>(), 0, 0, subResourceCount, subResources.data());
 	}
 
 	const QueueType D3D12CommandBuffer::GetQueueType() const

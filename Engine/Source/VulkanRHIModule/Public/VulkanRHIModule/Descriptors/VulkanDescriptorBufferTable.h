@@ -3,10 +3,10 @@
 #include "VulkanRHIModule/Core.h"
 
 #include <RHIModule/Descriptors/DescriptorTable.h>
+
 #include <CoreUtilities/Buffer/Buffer.h>
 #include <CoreUtilities/Pointers/WeakPtr.h>
-
-
+#include <CoreUtilities/Allocators/Handle.h>
 
 namespace Volt::RHI
 {
@@ -26,6 +26,7 @@ namespace Volt::RHI
 	};
 
 	class Allocation;
+
 	class VulkanDescriptorBufferTable : public DescriptorTable
 	{
 	public:
@@ -58,7 +59,7 @@ namespace Volt::RHI
 		uint32_t m_descriptorBufferCount = 0;
 		uint64_t m_accumulatedSize = 0;
 
-		RefPtr<Allocation> m_descriptorBuffer;
+		Handle<Allocation> m_descriptorBuffer;
 		Buffer m_hostDescriptorBuffer;
 		DescriptorTypeOffsets m_descriptorTypeOffsets{};
 

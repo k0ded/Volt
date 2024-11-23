@@ -5,6 +5,7 @@
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Memory/VulkanAllocation.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
+#include "VulkanRHIModule/Common/VulkanCommon.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -43,18 +44,20 @@ namespace Volt::RHI
 		}
 	}
 
-	RefPtr<Allocation> VulkanTransientHeap::CreateBuffer(const TransientBufferCreateInfo& createInfo)
+	Handle<Allocation> VulkanTransientHeap::CreateBuffer(const TransientBufferCreateInfo& createInfo, const std::string& name)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE((m_createInfo.flags & TransientHeapFlags::AllowBuffers) != TransientHeapFlags::None);
 
 		auto device = GraphicsContext::GetDevice();
 
-		auto [pageIndex, blockAlloc] = FindNextAvailableBlock(createInfo.size);
+		const uint64_t alignedSize = Utility::Align(createInfo.size, m_memoryRequirements.alignment);
+
+		auto [pageIndex, blockAlloc] = FindNextAvailableBlock(alignedSize);
 
 		if (blockAlloc.size == 0)
 		{
-			VT_LOGC(Error, LogVulkanRHI, "Unable to find available allocation block for buffer allocation of size {0}!", createInfo.size);
+			VT_LOGC(Error, LogVulkanRHI, "Unable to find available allocation block for buffer allocation of size {0}!", alignedSize);
 			return nullptr;
 		}
 
@@ -64,7 +67,7 @@ namespace Volt::RHI
 		bufferInfo.pQueueFamilyIndices = nullptr;
 		bufferInfo.queueFamilyIndexCount = 0;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		bufferInfo.size = createInfo.size;
+		bufferInfo.size = alignedSize;
 		bufferInfo.usage = Utility::GetVkBufferUsageFlags(createInfo.usage);
 
 		if (GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled())
@@ -78,17 +81,17 @@ namespace Volt::RHI
 		vkCreateBuffer(device->GetHandle<VkDevice>(), &bufferInfo, nullptr, &buffer);
 		vkBindBufferMemory(device->GetHandle<VkDevice>(), buffer, static_cast<VkDeviceMemory>(page.handle), blockAlloc.offset);
 
-		RefPtr<VulkanTransientBufferAllocation> bufferAlloc = RefPtr<VulkanTransientBufferAllocation>::Create(createInfo.hash);
+		Handle<VulkanTransientBufferAllocation> bufferAlloc = m_bufferAllocationArena.Allocate(createInfo.hash, name);
 		bufferAlloc->m_memoryHandle = static_cast<VkDeviceMemory>(page.handle);
 		bufferAlloc->m_resource = buffer;
 		bufferAlloc->m_allocationBlock = blockAlloc;
 		bufferAlloc->m_heapId = m_heapId;
-		bufferAlloc->m_size = createInfo.size;
+		bufferAlloc->m_size = alignedSize;
 
 		return bufferAlloc;
 	}
 
-	RefPtr<Allocation> VulkanTransientHeap::CreateImage(const TransientImageCreateInfo& createInfo)
+	Handle<Allocation> VulkanTransientHeap::CreateImage(const TransientImageCreateInfo& createInfo, const std::string& name)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE((m_createInfo.flags & TransientHeapFlags::AllowTextures) != TransientHeapFlags::None);
@@ -120,7 +123,7 @@ namespace Volt::RHI
 			vkBindImageMemory(device->GetHandle<VkDevice>(), image, static_cast<VkDeviceMemory>(page.handle), blockAlloc.offset);
 		}
 
-		RefPtr<VulkanTransientImageAllocation> imageAlloc = RefPtr<VulkanTransientImageAllocation>::Create(createInfo.hash);
+		Handle<VulkanTransientImageAllocation> imageAlloc = m_imageAllocationArena.Allocate(createInfo.hash, name);
 		imageAlloc->m_memoryHandle = static_cast<VkDeviceMemory>(page.handle);
 		imageAlloc->m_resource = image;
 		imageAlloc->m_allocationBlock = blockAlloc;
@@ -130,11 +133,11 @@ namespace Volt::RHI
 		return imageAlloc;
 	}
 
-	void VulkanTransientHeap::ForfeitBuffer(RefPtr<Allocation> allocation)
+	void VulkanTransientHeap::ForfeitBuffer(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
-		RefPtr<VulkanTransientBufferAllocation> bufferAlloc = allocation.As<VulkanTransientBufferAllocation>();
+		Handle<VulkanTransientBufferAllocation> bufferAlloc = allocation.As<VulkanTransientBufferAllocation>();
 		if (!bufferAlloc)
 		{
 			return;
@@ -146,13 +149,15 @@ namespace Volt::RHI
 
 		AllocationBlock allocBlock = bufferAlloc->m_allocationBlock;
 		ForfeitAllocationBlock(allocBlock);
+
+		m_bufferAllocationArena.Free(bufferAlloc.GetRaw());
 	}
 
-	void VulkanTransientHeap::ForfeitImage(RefPtr<Allocation> allocation)
+	void VulkanTransientHeap::ForfeitImage(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
-		RefPtr<VulkanTransientImageAllocation> imageAlloc = allocation.As<VulkanTransientImageAllocation>();
+		Handle<VulkanTransientImageAllocation> imageAlloc = allocation.As<VulkanTransientImageAllocation>();
 		if (!imageAlloc)
 		{
 			return;
@@ -167,6 +172,8 @@ namespace Volt::RHI
 
 		AllocationBlock allocBlock = imageAlloc->m_allocationBlock;
 		ForfeitAllocationBlock(allocBlock);
+
+		m_imageAllocationArena.Free(imageAlloc.GetRaw());
 	}
 
 	const bool VulkanTransientHeap::IsAllocationSupported(const uint64_t size, TransientHeapFlags heapFlags) const
@@ -374,7 +381,13 @@ namespace Volt::RHI
 
 		m_memoryRequirements.size = Utility::Align(m_memoryRequirements.size, m_memoryRequirements.alignment);
 
-		int32_t memoryTypeIndex = physicalDevice.GetMemoryTypeIndex(m_memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		VkMemoryPropertyFlags memoryFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+		if ((m_createInfo.flags & TransientHeapFlags::AllowMappable) != TransientHeapFlags::None)
+		{
+			memoryFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+		}
+
+		int32_t memoryTypeIndex = physicalDevice.GetMemoryTypeIndex(m_memoryRequirements.memoryTypeBits, memoryFlags);
 		if (memoryTypeIndex == -1)
 		{
 			VT_LOGC(Error, LogVulkanRHI, "Unable to find memory type index from bits {0}!", m_memoryRequirements.memoryTypeBits);
@@ -403,7 +416,7 @@ namespace Volt::RHI
 			m_pageAllocations[i].alignment = m_memoryRequirements.alignment;
 
 			VkDeviceMemory tempHandle = nullptr;
-			vkAllocateMemory(device->GetHandle<VkDevice>(), &allocInfo, nullptr, &tempHandle);
+			VT_VK_CHECK(vkAllocateMemory(device->GetHandle<VkDevice>(), &allocInfo, nullptr, &tempHandle));
 
 			if (RHI::vkSetDebugUtilsObjectNameEXT)
 			{
@@ -495,7 +508,7 @@ namespace Volt::RHI
 			m_pageAllocations[i].alignment = m_memoryRequirements.alignment;
 
 			VkDeviceMemory tempHandle = nullptr;
-			vkAllocateMemory(device->GetHandle<VkDevice>(), &allocInfo, nullptr, &tempHandle);
+			VT_VK_CHECK(vkAllocateMemory(device->GetHandle<VkDevice>(), &allocInfo, nullptr, &tempHandle));
 		
 			if (RHI::vkSetDebugUtilsObjectNameEXT)
 			{
