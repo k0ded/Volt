@@ -86,19 +86,19 @@ struct FastLZCompressor : public dtTileCacheCompressor
 	}
 };
 
-struct LinearAllocator : public dtTileCacheAlloc
+struct DtLinearAllocator : public dtTileCacheAlloc
 {
 	unsigned char* buffer;
 	size_t capacity;
 	size_t top;
 	size_t high;
 
-	LinearAllocator(const size_t cap) : buffer(0), capacity(0), top(0), high(0)
+	DtLinearAllocator(const size_t cap) : buffer(0), capacity(0), top(0), high(0)
 	{
 		resize(cap);
 	}
 
-	~LinearAllocator()
+	~DtLinearAllocator()
 	{
 		dtFree(buffer);
 	}
@@ -383,7 +383,7 @@ RecastBuilder::RecastBuilder(RecastBuildSettings& buildSettings) :
 
 	m_ctx = CreateRef<RecastBuildContext>();
 
-	m_talloc = CreateRef<LinearAllocator>(32000);
+	m_talloc = CreateRef<DtLinearAllocator>(32000);
 	m_tcomp = CreateRef<FastLZCompressor>();
 	m_tmproc = CreateRef<MeshProcess>();
 }

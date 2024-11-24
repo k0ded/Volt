@@ -6,6 +6,8 @@
 #include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
 #include "RenderCore/RenderGraph/RenderContext.h"
 #include "RenderCore/RenderGraph/SharedRenderContext.h"
+#include "RenderCore/RenderGraph/RenderGraphPassAllocator.h"
+
 #include "RenderCore/TransientResourceSystem/TransientResourceSystem.h" 
 
 #include "RenderCore/Debug/ShaderRuntimeValidator.h"
@@ -68,7 +70,7 @@ namespace Volt
 		class VTRC_API Builder
 		{
 		public:
-			Builder(RenderGraph& renderGraph, Ref<RenderGraphPassNodeBase> pass);
+			Builder(RenderGraph& renderGraph, Handle<RenderGraphPassNodeBase> pass);
 
 			RenderGraphImageHandle CreateImage(const RenderGraphImageDesc& textureDesc, RenderGraphResourceState forceState = RenderGraphResourceState::None);
 			RenderGraphBufferHandle CreateBuffer(const RenderGraphBufferDesc& bufferDesc, RenderGraphResourceState forceState = RenderGraphResourceState::None);
@@ -87,7 +89,7 @@ namespace Volt
 		
 		private:
 			RenderGraph& m_renderGraph;
-			Weak<RenderGraphPassNodeBase> m_pass;
+			Handle<RenderGraphPassNodeBase> m_pass;
 		};
 
 		void Compile();
@@ -97,13 +99,15 @@ namespace Volt
 		void ExecuteImmediate();
 		void ExecuteImmediateAndWait();
 
-		template<typename T>
-		T& AddPass(const std::string& name, std::function<void(Builder&, T&)> createFunc, std::function<void(const T&, RenderContext&)>&& executeFunc);
-		void AddPass(const std::string& name, std::function<void(Builder&)> createFunc, std::function<void(RenderContext&)>&& executeFunc);
+		template<typename T, typename CreateFunc, typename ExecFunc>
+		T& AddPass(const std::string& name, CreateFunc&& createFunc, ExecFunc&& executeFunc);
 
-		void AddMappedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, std::string_view name);
-		void AddMappedBufferUpload(RenderGraphUniformBufferHandle bufferHandle, const void* data, const size_t size, std::string_view name);
-		void AddStagedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, std::string_view name);
+		template<typename CreateFunc, typename ExecFunc>
+		void AddPass(const std::string& name, CreateFunc&& createFunc, ExecFunc&& executeFunc);
+
+		void AddMappedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name);
+		void AddMappedBufferUpload(RenderGraphUniformBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name);
+		void AddStagedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name);
 
 		void AddResourceBarrier(RenderGraphResourceHandle resourceHandle, const RenderGraphBarrierInfo& barrierInfo);
 		
@@ -264,8 +268,9 @@ namespace Volt
 		Vector<BufferExtractionInfo> m_bufferExtractions;
 
 		Vector<Vector<MarkerFunction>> m_standaloneMarkers; // Pass -> Markers
-		Vector<Ref<RenderGraphPassNodeBase>> m_passNodes;
 		Vector<Ref<RenderGraphResourceNodeBase>> m_resourceNodes;
+
+		Vector<Handle<RenderGraphPassNodeBase>> m_passNodes;
 
 		StandaloneBarriers m_standaloneBarriers;
 
@@ -283,8 +288,9 @@ namespace Volt
 
 		ThreadSafeVector<ResourceHandle> m_registeredResources;
 
-		uint32_t m_passIndex = 0;
 		uint32_t m_resourceIndex = 0;
+
+		RenderGraphPassAllocator m_passAllocator;
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::StorageBuffer> m_perPassConstantsBuffer;
@@ -304,17 +310,14 @@ namespace Volt
 		TotalAllocatedSizeCallback m_totalAllocatedSizeCallback;
 	};
 
-	template<typename T>
-	inline T& RenderGraph::AddPass(const std::string& name, std::function<void(Builder&, T&)> createFunc, std::function<void(const T&, RenderContext&)>&& executeFunc)
+	template<typename T, typename CreateFunc, typename ExecFunc>
+	inline T& RenderGraph::AddPass(const std::string& name, CreateFunc&& createFunc, ExecFunc&& executeFunc)
 	{
 		static_assert(sizeof(executeFunc) <= 512 && "Execution function must not be larger than 512 bytes!");
-		
-		Ref<RenderGraphPassNode<T>> newNode = CreateRef<RenderGraphPassNode<T>>();
-		newNode->name = name;
-		newNode->executeFunction = executeFunc;
-		newNode->index = m_passIndex++;
 
-		m_passNodes.push_back(newNode);
+		Handle<RenderGraphPassNode<T>> newNode = m_passAllocator.AllocatePass<T>(name, std::forward<ExecFunc>(executeFunc));
+		
+		m_passNodes.emplace_back(newNode);
 		m_standaloneMarkers.emplace_back();
 
 		m_currentlyInBuilder = true;
@@ -325,5 +328,30 @@ namespace Volt
 		m_currentlyInBuilder = false;
 
 		return newNode->data;
+	}
+
+	template<typename CreateFunc, typename ExecFunc>
+	inline void RenderGraph::AddPass(const std::string& name, CreateFunc&& createFunc, ExecFunc&& executeFunc)
+	{
+		static_assert(sizeof(executeFunc) <= 1024 && "Execution function must not be larger than 512 bytes!");
+
+		struct Empty {};
+
+		auto proxyExecuteFunc = [executeFunc](const Empty&, RenderContext& context)
+		{
+			executeFunc(context);
+		};
+
+		Handle<RenderGraphPassNode<Empty>> newNode = m_passAllocator.AllocatePass<Empty>(name, std::move(proxyExecuteFunc));
+
+		m_passNodes.emplace_back(newNode);
+		m_standaloneMarkers.emplace_back();
+
+		m_currentlyInBuilder = true;
+		Builder builder{ *this, newNode };
+		createFunc(builder);
+
+		AddRuntimeShaderValidationBuffers(builder);
+		m_currentlyInBuilder = false;
 	}
 }

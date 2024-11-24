@@ -45,8 +45,10 @@ namespace Volt
 		Vector<RenderGraphPassResourceAccess> resourceWrites;
 		Vector<RenderGraphPassResourceAccess> resourceCreates;
 
+		void* passAllocationStartPtr = nullptr;
+
 		virtual ~RenderGraphPassNodeBase() = default;
-		virtual void Execute(RenderGraph& frameGraph, RenderContext& context) = 0;
+		virtual const void* GetDataPointer() const = 0;
 
 		const bool ReadsResource(RenderGraphResourceHandle handle) const;
 		const bool WritesResource(RenderGraphResourceHandle handle) const;
@@ -71,14 +73,12 @@ namespace Volt
 	struct RenderGraphPassNode : public RenderGraphPassNodeBase
 	{
 		T data{};
-		std::function<void(const T& data, RenderContext& context)> executeFunction;
 
 		~RenderGraphPassNode() override = default;
 
-		void Execute(RenderGraph& renderGraph, RenderContext& context) override
+		const void* GetDataPointer() const override
 		{
-			RenderGraphPassResources resources{ renderGraph, *this };
-			executeFunction(data, context);
+			return &data;
 		}
 	};
 }

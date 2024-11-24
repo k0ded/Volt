@@ -156,7 +156,7 @@ namespace Volt
 		m_registeredExternalResources(std::move(other.m_registeredExternalResources)),
 		m_temporaryAllocations(std::move(other.m_temporaryAllocations)),
 		m_registeredResources(std::move(other.m_registeredResources)),
-		m_passIndex(other.m_passIndex),
+		m_passAllocator(std::move(other.m_passAllocator)),
 		m_resourceIndex(other.m_resourceIndex),
 		m_commandBuffer(other.m_commandBuffer),
 		m_perPassConstantsBuffer(other.m_perPassConstantsBuffer),
@@ -189,7 +189,7 @@ namespace Volt
 		m_registeredExternalResources = std::move(other.m_registeredExternalResources);
 		m_temporaryAllocations = std::move(other.m_temporaryAllocations);
 		m_registeredResources = std::move(other.m_registeredResources);
-		m_passIndex = other.m_passIndex;
+		m_passAllocator = std::move(other.m_passAllocator);
 		m_resourceIndex = other.m_resourceIndex;
 		m_commandBuffer = other.m_commandBuffer;
 		m_perPassConstantsBuffer = other.m_perPassConstantsBuffer;
@@ -259,7 +259,7 @@ namespace Volt
 		VT_ENSURE_MSG(markerCount % 2u == 0, "There must be a EndMarker for every BeginMarker!");
 #endif
 
-		m_compiledPasses.resize(m_passIndex);
+		m_compiledPasses.resize(m_passAllocator.GetNumPasses());
 
 		///// Calculate Ref Count //////
 		for (auto& pass : m_passNodes)
@@ -367,7 +367,7 @@ namespace Volt
 
 		struct ResourceState
 		{
-			Weak<RenderGraphPassNodeBase> previousUsage;
+			Handle<RenderGraphPassNodeBase> previousUsage;
 			RHI::ResourceState currentState;
 			bool isWriteState = false;
 		};
@@ -772,6 +772,7 @@ namespace Volt
 		Vector<PassExecutionRange> executionRanges;
 
 		// Setup execution ranges
+		if (0)
 		{
 			const size_t jobCount = m_passNodes.size() / MAX_PASSES_PER_JOB;
 			const size_t passRemainder = m_passNodes.size() - jobCount * MAX_PASSES_PER_JOB;
@@ -790,8 +791,12 @@ namespace Volt
 				executionRanges.back() = { rangeOffset, static_cast<uint16_t>(rangeOffset + passRemainder) };
 			}
 		}
+		else
+		{
+			executionRanges.emplace_back(0, static_cast<uint16_t>(m_passNodes.size()));
+		}
 
-		const bool executeLocally = m_passNodes.size() <= MAX_PASSES_PER_JOB;
+		const bool executeLocally = true; //m_passNodes.size() <= MAX_PASSES_PER_JOB;
 		const bool allowMultithreadedExecution = false;
 
 		Vector<RefPtr<RHI::CommandBuffer>> secondaryCommandBuffers;
@@ -820,7 +825,7 @@ namespace Volt
 				{
 					VT_PROFILE_SCOPE(passNode->name.data());
 					RenderContext renderContext(*this, *passNode, m_sharedRenderContext, rangeCmdBuffer);
-					passNode->Execute(*this, renderContext);
+					m_passAllocator.ExecutePass(passNode, renderContext);
 					renderContext.EndContext();
 				}
 
@@ -850,17 +855,17 @@ namespace Volt
 			RefPtr<RHI::CommandBuffer> rangeCmdBuffer = executeLocally ? m_commandBuffer : m_commandBuffer->CreateSecondaryCommandBuffer();
 			secondaryCommandBuffers[rangeIndex] = rangeCmdBuffer;
 
-			if (executeLocally || !allowMultithreadedExecution)
+			//if (executeLocally || !allowMultithreadedExecution)
 			{
 				executeRangeFunc(rangeCmdBuffer, first, last);
 			}
-			else
-			{
-				taskGraph.AddTask([&executeRangeFunc, rangeCmdBuffer, first, last]()
-				{
-					executeRangeFunc(rangeCmdBuffer, first, last);
-				});
-			}
+			//else
+			//{
+			//	taskGraph.AddTask([&executeRangeFunc, rangeCmdBuffer, first, last]()
+			//	{
+			//		executeRangeFunc(rangeCmdBuffer, first, last);
+			//	});
+			//}
 
 			rangeIndex++;
 		}
@@ -928,7 +933,7 @@ namespace Volt
 		// Pass constants
 		{
 			RenderGraphBufferDesc desc{};
-			desc.count = std::max(m_passIndex, 1u);
+			desc.count = std::max(m_passAllocator.GetNumPasses(), 1u);
 			desc.elementSize = RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE;
 			desc.usage = RHI::BufferUsage::StorageBuffer;
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
@@ -940,7 +945,7 @@ namespace Volt
 		// Render Graph constants
 		{
 			RenderGraphBufferDesc desc{};
-			desc.count = std::max(m_passIndex, 1u);
+			desc.count = std::max(m_passAllocator.GetNumPasses(), 1u);
 			desc.elementSize = sizeof(RenderContext::RenderGraphConstants);
 			desc.usage = RHI::BufferUsage::UniformBuffer;
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
@@ -1329,52 +1334,25 @@ namespace Volt
 		commandBuffer->ResourceBarrier(resultBarriers);
 	}
 
-	void RenderGraph::AddPass(const std::string& name, std::function<void(RenderGraph::Builder&)> createFunc, std::function<void(RenderContext&)>&& executeFunc)
-	{
-		static_assert(sizeof(executeFunc) <= 512 && "Execution function must not be larger than 512 bytes!");
-		struct Empty
-		{
-		};
-
-		Ref<RenderGraphPassNode<Empty>> newNode = CreateRef<RenderGraphPassNode<Empty>>();
-		newNode->name = name;
-		newNode->index = m_passIndex++;
-		newNode->executeFunction = [executeFunc](const Empty&, RenderContext& context)
-		{
-			executeFunc(context);
-		};
-
-		m_passNodes.push_back(newNode);
-		m_standaloneMarkers.emplace_back();
-
-		Builder builder{ *this, newNode };
-		createFunc(builder);
-
-		AddRuntimeShaderValidationBuffers(builder);
-	}
-
-	void RenderGraph::AddMappedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, std::string_view name)
+	void RenderGraph::AddMappedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name)
 	{
 		struct Empty
-		{
-		};
+		{};
 
 		uint8_t* tempData = new uint8_t[size];
 		memcpy_s(tempData, size, data, size);
 
-		Ref<RenderGraphPassNode<Empty>> newNode = CreateRef<RenderGraphPassNode<Empty>>();
-		newNode->name = name;
-		newNode->index = m_passIndex++;
+		auto executeFunction = [bufferHandle, tempData, size](const Empty&, RenderContext& context) 
+		{
+			context.MappedBufferUpload(bufferHandle, tempData, size);
+		};
+
+		Handle<RenderGraphPassNode<Empty>> newNode = m_passAllocator.AllocatePass<Empty>(name, std::move(executeFunction));
 
 		Builder tempBuilder{ *this, newNode };
 		tempBuilder.WriteResource(bufferHandle, RenderGraphResourceState::CopyDest);
 
 		AddRuntimeShaderValidationBuffers(tempBuilder);
-
-		newNode->executeFunction = [tempData, size, bufferHandle](const Empty&, RenderContext& context)
-		{
-			context.MappedBufferUpload(bufferHandle, tempData, size);
-		}; 
 
 		m_passNodes.push_back(newNode);
 		m_standaloneMarkers.emplace_back(); 
@@ -1382,24 +1360,19 @@ namespace Volt
 		m_temporaryAllocations.emplace_back(tempData);
 	}
 
-	void RenderGraph::AddMappedBufferUpload(RenderGraphUniformBufferHandle bufferHandle, const void* data, const size_t size, std::string_view name)
+	void RenderGraph::AddMappedBufferUpload(RenderGraphUniformBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name)
 	{
 		// #TODO_Ivar: Replace with correct functionality once uniform buffers are properly implemented.
 		AddMappedBufferUpload(*reinterpret_cast<RenderGraphBufferHandle*>(&bufferHandle), data, size, name);
 	}
 
-	void RenderGraph::AddStagedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, std::string_view name)
+	void RenderGraph::AddStagedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name)
 	{
 		struct Empty
-		{
-		};
+		{};
 
 		uint8_t* tempData = new uint8_t[size];
 		memcpy_s(tempData, size, data, size);
-
-		Ref<RenderGraphPassNode<Empty>> newNode = CreateRef<RenderGraphPassNode<Empty>>();
-		newNode->name = name;
-		newNode->index = m_passIndex++;
 
 		RenderGraphBufferDesc stagingDesc{};
 		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
@@ -1411,16 +1384,18 @@ namespace Volt
 		RenderGraphBufferHandle stagingBuffer = CreateBuffer(stagingDesc);
 		AddMappedBufferUpload(stagingBuffer, data, size, name);
 
+		auto executeFunction = [stagingBuffer, bufferHandle, size](const Empty&, RenderContext& context)
+		{
+			context.CopyBuffer(stagingBuffer, bufferHandle, size);
+		};
+
+		Handle<RenderGraphPassNode<Empty>> newNode = m_passAllocator.AllocatePass<Empty>(name, std::move(executeFunction));
+
 		Builder tempBuilder{ *this, newNode };
 		tempBuilder.WriteResource(bufferHandle, RenderGraphResourceState::CopyDest);
 		tempBuilder.ReadResource(stagingBuffer, RenderGraphResourceState::CopySource);
 
 		AddRuntimeShaderValidationBuffers(tempBuilder);
-
-		newNode->executeFunction = [size, bufferHandle, stagingBuffer](const Empty&, RenderContext& context)
-		{
-			context.CopyBuffer(stagingBuffer, bufferHandle, size);
-		};
 
 		m_passNodes.push_back(newNode);
 		m_standaloneMarkers.emplace_back();
@@ -1521,7 +1496,7 @@ namespace Volt
 
 	void RenderGraph::BeginMarker(const std::string& markerName, const glm::vec4& markerColor)
 	{
-		m_standaloneMarkers[m_passIndex - 1].emplace_back([markerName, markerColor](RefPtr<RHI::CommandBuffer> commandBuffer)
+		m_standaloneMarkers[m_passAllocator.GetNumPasses() - 1].emplace_back([markerName, markerColor](RefPtr<RHI::CommandBuffer> commandBuffer)
 		{
 			commandBuffer->BeginMarker(markerName, { markerColor.x, markerColor.y, markerColor.z, markerColor.w });
 		});
@@ -1529,7 +1504,7 @@ namespace Volt
 
 	void RenderGraph::EndMarker()
 	{
-		m_standaloneMarkers[m_passIndex - 1].emplace_back([](RefPtr<RHI::CommandBuffer> commandBuffer)
+		m_standaloneMarkers[m_passAllocator.GetNumPasses() - 1].emplace_back([](RefPtr<RHI::CommandBuffer> commandBuffer)
 		{
 			commandBuffer->EndMarker();
 		});
@@ -1540,7 +1515,7 @@ namespace Volt
 		m_totalAllocatedSizeCallback = std::move(callback);
 	}
 
-	RenderGraph::Builder::Builder(RenderGraph& renderGraph, Ref<RenderGraphPassNodeBase> pass)
+	RenderGraph::Builder::Builder(RenderGraph& renderGraph, Handle<RenderGraphPassNodeBase> pass)
 		: m_renderGraph(renderGraph), m_pass(pass)
 	{
 	}
