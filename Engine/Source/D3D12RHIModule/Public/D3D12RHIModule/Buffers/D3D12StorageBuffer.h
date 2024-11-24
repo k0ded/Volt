@@ -10,7 +10,7 @@ namespace Volt::RHI
 	class D3D12StorageBuffer : public StorageBuffer
 	{ 
 	public:
-		D3D12StorageBuffer(uint32_t count, uint64_t elementSize, std::string_view name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<Allocator> allocator = nullptr);
+		D3D12StorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<Allocator> allocator = nullptr);
 		~D3D12StorageBuffer() override;
 
 		void Resize(const uint64_t size) override;
@@ -27,7 +27,7 @@ namespace Volt::RHI
 		RefPtr<BufferView> GetView() override;
 
 		inline constexpr ResourceType GetType() const override { return ResourceType::StorageBuffer; }
-		void SetName(std::string_view name) override;
+		void SetName(const std::string& name) override;
 		std::string_view GetName() const override;
 		const uint64_t GetDeviceAddress() const override;
 		const uint64_t GetByteSize() const override;

@@ -357,7 +357,7 @@ namespace Volt::RHI
 		return Utility::CalculateMipCount(m_specification.width, m_specification.height);
 	}
 
-	void VulkanImage::SetName(std::string_view name)
+	void VulkanImage::SetName(const std::string& name)
 	{
 		if (Volt::RHI::vkSetDebugUtilsObjectNameEXT)
 		{
@@ -374,13 +374,13 @@ namespace Volt::RHI
 				nameInfo.objectHandle = (uint64_t)m_allocation->GetResourceHandle<VkImage>();
 			}
 
-			nameInfo.pObjectName = name.data();
+			nameInfo.pObjectName = name.c_str();
 
 			auto device = GraphicsContext::GetDevice();
 			Volt::RHI::vkSetDebugUtilsObjectNameEXT(device->GetHandle<VkDevice>(), &nameInfo);
 		}
 
-		m_specification.debugName = std::string(name);
+		m_specification.debugName = name;
 	}
 
 	std::string_view VulkanImage::GetName() const

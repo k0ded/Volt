@@ -16,8 +16,13 @@
 
 namespace Volt::RHI
 {
-	D3D12StorageBuffer::D3D12StorageBuffer(uint32_t count, uint64_t elementSize, std::string_view name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator)
-		: m_elementSize(elementSize), m_count(count), m_name(name), m_allocator(allocator), m_bufferUsage(bufferUsage), m_memoryUsage(memoryUsage)
+	D3D12StorageBuffer::D3D12StorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator)
+		: m_elementSize(elementSize), 
+		m_count(count), 
+		m_name(name), 
+		m_allocator(allocator), 
+		m_bufferUsage(bufferUsage), 
+		m_memoryUsage(memoryUsage)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
@@ -185,9 +190,9 @@ namespace Volt::RHI
 		return m_view;
 	}
 
-	void D3D12StorageBuffer::SetName(std::string_view name)
+	void D3D12StorageBuffer::SetName(const std::string& name)
 	{
-		m_name = std::string(name);
+		m_name = name;
 
 		if (!m_allocation)
 		{

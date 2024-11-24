@@ -36,7 +36,7 @@ namespace Volt::RHI
 		VT_INLINE const ImageAspect GetImageAspect() const override { return m_imageAspect; }
 
 		VT_INLINE ResourceType GetType() const override { return m_specification.imageType; }
-		void SetName(std::string_view name) override;
+		void SetName(const std::string& name) override;
 		std::string_view GetName() const override;
 		const uint64_t GetDeviceAddress() const override;
 		const uint64_t GetByteSize() const override;

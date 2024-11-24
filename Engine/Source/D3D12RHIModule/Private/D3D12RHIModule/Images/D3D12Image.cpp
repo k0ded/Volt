@@ -384,7 +384,7 @@ namespace Volt::RHI
 		return m_isSwapchainImage;
 	}
 
-	void D3D12Image::SetName(std::string_view name)
+	void D3D12Image::SetName(const std::string& name)
 	{
 		m_specification.debugName = name;
 

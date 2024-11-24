@@ -15,8 +15,8 @@
 
 namespace Volt::RHI
 {
-	VulkanUniformBuffer::VulkanUniformBuffer(const uint32_t size, const void* data, const uint32_t count, std::string_view name)
-		: m_size(size)
+	VulkanUniformBuffer::VulkanUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name)
+		: m_size(size), m_name(name)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
@@ -77,7 +77,7 @@ namespace Volt::RHI
 		m_allocation->Unmap();
 	}
 
-	void VulkanUniformBuffer::SetName(std::string_view name)
+	void VulkanUniformBuffer::SetName(const std::string& name)
 	{
 		if (Volt::RHI::vkSetDebugUtilsObjectNameEXT)
 		{
@@ -91,7 +91,7 @@ namespace Volt::RHI
 			Volt::RHI::vkSetDebugUtilsObjectNameEXT(device->GetHandle<VkDevice>(), &nameInfo);
 		}
 
-		m_name = std::string(name);
+		m_name = name;
 	}
 
 	std::string_view VulkanUniformBuffer::GetName() const

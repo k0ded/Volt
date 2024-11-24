@@ -39,9 +39,9 @@ namespace Volt::RHI
 		return m_count;
 	}
 	
-	void D3D12IndexBuffer::SetName(std::string_view name)
+	void D3D12IndexBuffer::SetName(const std::string& name)
 	{
-		m_name = std::string(name);
+		m_name = name;
 		std::wstring wName = Utility::ToWString(name);
 		m_allocation->GetResourceHandle<ID3D12Resource*>()->SetName(wName.c_str());
 	}

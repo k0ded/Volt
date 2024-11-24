@@ -15,7 +15,7 @@
 
 namespace Volt::RHI
 {
-	VulkanStorageBuffer::VulkanStorageBuffer(uint32_t count, uint64_t elementSize, std::string_view name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator)
+	VulkanStorageBuffer::VulkanStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator)
 		: m_elementSize(elementSize), m_count(count), m_name(name), m_allocator(allocator), m_bufferUsage(bufferUsage), m_memoryUsage(memoryUsage)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
@@ -201,7 +201,7 @@ namespace Volt::RHI
 		return m_view;
 	}
 
-	void VulkanStorageBuffer::SetName(std::string_view name)
+	void VulkanStorageBuffer::SetName(const std::string& name)
 	{
 		if (Volt::RHI::vkSetDebugUtilsObjectNameEXT)
 		{
@@ -215,7 +215,7 @@ namespace Volt::RHI
 			Volt::RHI::vkSetDebugUtilsObjectNameEXT(device->GetHandle<VkDevice>(), &nameInfo);
 		}
 
-		m_name = std::string(name);
+		m_name = name;
 	}
 
 	std::string_view VulkanStorageBuffer::GetName() const

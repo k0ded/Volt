@@ -24,7 +24,7 @@ namespace Volt::RHI
 		inline void SetData(const T& data);
 
 		// Note: Count is used to create a buffer of the correct size if using offsets into the uniform buffer
-		static RefPtr<UniformBuffer> Create(const uint32_t size, const void* data = nullptr, const uint32_t count = 1, std::string_view name = "");
+		static RefPtr<UniformBuffer> Create(const uint32_t size, const void* data = nullptr, const uint32_t count = 1, const std::string& name = "");
 
 	protected:
 		virtual void* MapInternal(const uint32_t index) = 0;
