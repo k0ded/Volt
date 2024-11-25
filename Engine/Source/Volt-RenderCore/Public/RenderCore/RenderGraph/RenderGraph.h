@@ -6,7 +6,7 @@
 #include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
 #include "RenderCore/RenderGraph/RenderContext.h"
 #include "RenderCore/RenderGraph/SharedRenderContext.h"
-#include "RenderCore/RenderGraph/RenderGraphPassAllocator.h"
+#include "RenderCore/RenderGraph/RenderGraphAllocators.h"
 
 #include "RenderCore/TransientResourceSystem/TransientResourceSystem.h" 
 
@@ -144,7 +144,8 @@ namespace Volt
 		friend class Builder;
 		friend class RenderGraphExecutionThread;
 		friend class RenderContext;
-		friend class RenderContext3;
+
+		using FrameTemporaryDataAllocator = LinearAllocator<5 * 1024 * 1024>;
 
 		struct Image2DExtractionInfo
 		{
@@ -268,8 +269,8 @@ namespace Volt
 		Vector<BufferExtractionInfo> m_bufferExtractions;
 
 		Vector<Vector<MarkerFunction>> m_standaloneMarkers; // Pass -> Markers
-		Vector<Ref<RenderGraphResourceNodeBase>> m_resourceNodes;
 
+		Vector<Handle<RenderGraphResourceNodeBase>> m_resourceNodes;
 		Vector<Handle<RenderGraphPassNodeBase>> m_passNodes;
 
 		StandaloneBarriers m_standaloneBarriers;
@@ -277,8 +278,6 @@ namespace Volt
 		Vector<CompiledRenderGraphPass> m_compiledPasses;
 		
 		vt::map<WeakPtr<RHI::RHIResource>, RenderGraphResourceHandle> m_registeredExternalResources;
-
-		Vector<uint8_t*> m_temporaryAllocations;
 
 		struct RegisteredImageView
 		{
@@ -288,9 +287,9 @@ namespace Volt
 
 		ThreadSafeVector<ResourceHandle> m_registeredResources;
 
-		uint32_t m_resourceIndex = 0;
-
 		RenderGraphPassAllocator m_passAllocator;
+		RenderGraphResourceNodeAllocator m_resourceNodeAllocator;
+		FrameTemporaryDataAllocator m_frameTemporaryDataAllocator;
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::StorageBuffer> m_perPassConstantsBuffer;

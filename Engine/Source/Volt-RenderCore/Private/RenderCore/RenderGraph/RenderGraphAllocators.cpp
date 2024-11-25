@@ -1,6 +1,6 @@
 #include "rcpch.h"
 
-#include "RenderCore/RenderGraph/RenderGraphPassAllocator.h"
+#include "RenderCore/RenderGraph/RenderGraphAllocators.h"
 
 namespace Volt
 {
@@ -69,5 +69,33 @@ namespace Volt
 		result.executionFunctionPtr = allocation;
 
 		return result;
+	}
+
+	RenderGraphResourceNodeAllocator::RenderGraphResourceNodeAllocator(const RenderGraphResourceNodeAllocator& other) noexcept
+		: m_allocator(other.m_allocator),
+		m_numResourceNodes(other.m_numResourceNodes)
+	{
+	}
+
+	RenderGraphResourceNodeAllocator::RenderGraphResourceNodeAllocator(RenderGraphResourceNodeAllocator&& other) noexcept
+		: m_allocator(std::move(other.m_allocator)),
+		m_numResourceNodes(std::move(other.m_numResourceNodes))
+	{
+	}
+
+	RenderGraphResourceNodeAllocator& RenderGraphResourceNodeAllocator::operator=(const RenderGraphResourceNodeAllocator& other) noexcept
+	{
+		m_allocator = other.m_allocator;
+		m_numResourceNodes = other.m_numResourceNodes;
+
+		return *this;
+	}
+
+	RenderGraphResourceNodeAllocator& RenderGraphResourceNodeAllocator::operator=(RenderGraphResourceNodeAllocator&& other) noexcept
+	{
+		m_allocator = std::move(other.m_allocator);
+		m_numResourceNodes = std::move(other.m_numResourceNodes);
+
+		return *this;
 	}
 }

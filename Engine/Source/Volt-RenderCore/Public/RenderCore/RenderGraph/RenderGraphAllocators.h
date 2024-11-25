@@ -67,4 +67,40 @@ namespace Volt
 
 		uint32_t m_numPasses = 0;
 	};
+
+	class VTRC_API RenderGraphResourceNodeAllocator
+	{
+	public:
+		RenderGraphResourceNodeAllocator() = default;
+		~RenderGraphResourceNodeAllocator() = default;
+
+		RenderGraphResourceNodeAllocator(const RenderGraphResourceNodeAllocator& other) noexcept;
+		RenderGraphResourceNodeAllocator(RenderGraphResourceNodeAllocator&& other) noexcept;
+		RenderGraphResourceNodeAllocator& operator=(const RenderGraphResourceNodeAllocator& other) noexcept;
+		RenderGraphResourceNodeAllocator& operator=(RenderGraphResourceNodeAllocator&& other) noexcept;
+
+		template<typename ResourceType>
+		Handle<RenderGraphResourceNode<ResourceType>> Allocate()
+		{
+			constexpr size_t allocationSize = sizeof(RenderGraphResourceNode<ResourceType>);
+
+			void* allocationPtr = m_allocator.Allocate(allocationSize);
+			RenderGraphResourceNode<ResourceType>* newNode = new (allocationPtr) RenderGraphResourceNode<ResourceType>();
+
+			newNode->handle = *reinterpret_cast<RenderGraphResourceHandle*>(&m_numResourceNodes);
+			m_numResourceNodes++;
+
+			return newNode;
+		}
+
+		VT_NODISCARD VT_INLINE uint32_t GetNumResourceNodes() const { return m_numResourceNodes; }
+		VT_NODISCARD VT_INLINE uint32_t GetAndIncrementHandle() { uint32_t value = m_numResourceNodes; m_numResourceNodes++; return value; }
+
+	private:
+		inline static constexpr size_t MaxResourceNodeAllocationSize = 512 * 1024;
+	
+		LinearAllocator<MaxResourceNodeAllocationSize> m_allocator;
+
+		uint32_t m_numResourceNodes = 0;
+	};
 }
