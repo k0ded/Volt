@@ -30,7 +30,7 @@ namespace Volt::RHI
 		void* MapInternal() override;
 
 	private:
-		friend class D3D12DefaultAllocator;
+		friend class D3D12DefaultGPUAllocator;
 
 		void* GetHandleImpl() const override;
 
@@ -60,7 +60,7 @@ namespace Volt::RHI
 		void* MapInternal() override;
 
 	private:
-		friend class D3D12DefaultAllocator;
+		friend class D3D12DefaultGPUAllocator;
 
 		void* GetHandleImpl() const override;
 

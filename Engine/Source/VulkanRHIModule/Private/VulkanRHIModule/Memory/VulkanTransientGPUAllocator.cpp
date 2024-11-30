@@ -1,5 +1,5 @@
 #include "vkpch.h"
-#include "VulkanRHIModule/Memory/VulkanTransientAllocator.h"
+#include "VulkanRHIModule/Memory/VulkanTransientGPUAllocator.h"
 
 #include "VulkanRHIModule/Memory/VulkanAllocation.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
@@ -16,12 +16,12 @@
 
 namespace Volt::RHI
 {
-	VulkanTransientAllocator::VulkanTransientAllocator()
+	VulkanTransientGPUAllocator::VulkanTransientGPUAllocator()
 	{
 		CreateDefaultHeaps();
 	}
 
-	VulkanTransientAllocator::~VulkanTransientAllocator()
+	VulkanTransientGPUAllocator::~VulkanTransientGPUAllocator()
 	{
 		for (const auto& imageAlloc : m_allocationCache.GetImageAllocations())
 		{
@@ -37,7 +37,7 @@ namespace Volt::RHI
 		m_imageHeaps.clear();
 	}
 
-	Handle<Allocation> VulkanTransientAllocator::CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
+	Handle<Allocation> VulkanTransientGPUAllocator::CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -88,7 +88,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	Handle<Allocation> VulkanTransientAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> VulkanTransientGPUAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -134,32 +134,32 @@ namespace Volt::RHI
 		return result;
 	}
 
-	void VulkanTransientAllocator::DestroyBuffer(Handle<Allocation> allocation)
+	void VulkanTransientGPUAllocator::DestroyBuffer(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueBufferAllocationForRemoval(allocation);
 	}
 
-	void VulkanTransientAllocator::DestroyImage(Handle<Allocation> allocation)
+	void VulkanTransientGPUAllocator::DestroyImage(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueImageAllocationForRemoval(allocation);
 	}
 
-	Vector<Handle<Allocation>> VulkanTransientAllocator::GetActiveBufferAllocations() const
+	Vector<Handle<Allocation>> VulkanTransientGPUAllocator::GetActiveBufferAllocations() const
 	{
 		return Vector<Handle<Allocation>>();
 	}
 
-	Vector<Handle<Allocation>> VulkanTransientAllocator::GetActiveImageAllocations() const
+	Vector<Handle<Allocation>> VulkanTransientGPUAllocator::GetActiveImageAllocations() const
 	{
 		return Vector<Handle<Allocation>>();
 	}
 
-	void* VulkanTransientAllocator::GetHandleImpl() const
+	void* VulkanTransientGPUAllocator::GetHandleImpl() const
 	{
 		return nullptr;
 	}
 
-	void VulkanTransientAllocator::CreateDefaultHeaps()
+	void VulkanTransientGPUAllocator::CreateDefaultHeaps()
 	{
 		// Buffer heap
 		{
@@ -178,7 +178,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanTransientAllocator::DestroyBufferInternal(Handle<Allocation> allocation)
+	void VulkanTransientGPUAllocator::DestroyBufferInternal(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -204,7 +204,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanTransientAllocator::DestroyImageInternal(Handle<Allocation> allocation)
+	void VulkanTransientGPUAllocator::DestroyImageInternal(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -230,19 +230,19 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanTransientAllocator::DestroyOrphanBuffer(Handle<Allocation> allocation)
+	void VulkanTransientGPUAllocator::DestroyOrphanBuffer(Handle<Allocation> allocation)
 	{
 		auto device = GraphicsContext::GetDevice();
 		vkDestroyBuffer(device->GetHandle<VkDevice>(), allocation->GetResourceHandle<VkBuffer>(), nullptr);
 	}
 
-	void VulkanTransientAllocator::DestroyOrphanImage(Handle<Allocation> allocation)
+	void VulkanTransientGPUAllocator::DestroyOrphanImage(Handle<Allocation> allocation)
 	{
 		auto device = GraphicsContext::GetDevice();
 		vkDestroyImage(device->GetHandle<VkDevice>(), allocation->GetResourceHandle<VkImage>(), nullptr);
 	}
 
-	RefPtr<TransientHeap> VulkanTransientAllocator::CreateNewImageHeap()
+	RefPtr<TransientHeap> VulkanTransientGPUAllocator::CreateNewImageHeap()
 	{
 		TransientHeapCreateInfo info{};
 		info.pageSize = HEAP_PAGE_SIZE;
@@ -254,7 +254,7 @@ namespace Volt::RHI
 		return heap;
 	}
 
-	RefPtr<TransientHeap> VulkanTransientAllocator::CreateNewBufferHeap(TransientHeapFlags heapFlags)
+	RefPtr<TransientHeap> VulkanTransientGPUAllocator::CreateNewBufferHeap(TransientHeapFlags heapFlags)
 	{
 		TransientHeapCreateInfo info{};
 		info.pageSize = HEAP_PAGE_SIZE;
@@ -266,7 +266,7 @@ namespace Volt::RHI
 		return heap;
 	}
 
-	void VulkanTransientAllocator::Update()
+	void VulkanTransientGPUAllocator::Update()
 	{
 		const auto allocationsToRemove = m_allocationCache.UpdateAndGetAllocationsToDestroy();
 

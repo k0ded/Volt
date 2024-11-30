@@ -71,7 +71,10 @@ namespace Volt
 			m_renderScene->InvalidateRenderObject(id);
 		}
 
-		m_renderScene->GetRayTracingScene()->InvalidateInstance(m_rayTracingInstance);
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			m_renderScene->GetRayTracingScene()->InvalidateInstance(m_rayTracingInstance);
+		}
 	}
 
 	void ScenePrimitiveData::CreateScenePrimitives()

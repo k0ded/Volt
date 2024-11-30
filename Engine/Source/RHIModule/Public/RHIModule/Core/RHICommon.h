@@ -2,9 +2,9 @@
 #include "RHIModule/Core/Core.h"
 
 #include <CoreUtilities/Containers/StackVector.h>
-#include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/Variant.h>
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 
 #include <array>
 #include <functional>
@@ -703,7 +703,7 @@ namespace Volt::RHI
 
 	struct AttachmentInfo
 	{
-		WeakPtr<ImageView> view;
+		RawPtr<ImageView> view;
 
 		ClearMode clearMode;
 
@@ -773,12 +773,12 @@ namespace Volt::RHI
 
 	struct ImageCopyData
 	{
-		Vector<ImageCopySubData> copySubData;
+		PagedVector<ImageCopySubData> copySubData;
 	};
 
 	struct ImageBarrier
 	{
-		WeakPtr<RHIResource> resource;
+		RawPtr<RHIResource> resource;
 
 		BarrierStage srcStage = BarrierStage::None;
 		BarrierStage dstStage = BarrierStage::None;
@@ -794,7 +794,7 @@ namespace Volt::RHI
 
 	struct BufferBarrier
 	{
-		WeakPtr<RHIResource> resource;
+		RawPtr<RHIResource> resource;
 
 		BarrierStage srcStage = BarrierStage::None;
 		BarrierStage dstStage = BarrierStage::None;

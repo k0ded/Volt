@@ -13,6 +13,7 @@
 #include <EventSystem/EventSystem.h>
 
 #include <CoreUtilities/Time/TimeUtility.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <ranges>
 

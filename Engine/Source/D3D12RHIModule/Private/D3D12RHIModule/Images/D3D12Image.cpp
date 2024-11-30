@@ -12,7 +12,7 @@
 
 namespace Volt::RHI
 {
-	D3D12Image::D3D12Image(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator)
+	D3D12Image::D3D12Image(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator)
 		: m_specification(specification), m_allocator(allocator)
 	{
 		if (!allocator)

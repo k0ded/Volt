@@ -96,7 +96,7 @@ namespace Volt
 			}
 		}
 
-		inline static void SetupBufferBarrier(RHI::BufferBarrier& bufferBarrier, WeakPtr<RHI::RHIResource> resource)
+		inline static void SetupBufferBarrier(RHI::BufferBarrier& bufferBarrier, RawPtr<RHI::RHIResource> resource)
 		{
 			bufferBarrier.resource = resource;
 			bufferBarrier.size = resource->GetByteSize();
@@ -981,7 +981,7 @@ namespace Volt
 #endif
 	}
 
-	void RenderGraph::PrintPassBarriers(const Vector<RHI::ResourceBarrierInfo>& barriers)
+	void RenderGraph::PrintPassBarriers(const PagedVector<RHI::ResourceBarrierInfo>& barriers)
 	{
 #ifdef VT_ENABLE_RENDERGRAPH_DEBUG_LOG
 		for (const auto& barrier : barriers)
@@ -1049,7 +1049,7 @@ namespace Volt
 		return Utility::UpcastHandle<RenderGraphUniformBufferHandle>(node->handle);
 	}
 
-	WeakPtr<RHI::ImageView> RenderGraph::GetImageView(const RenderGraphImageHandle resourceHandle)
+	RawPtr<RHI::ImageView> RenderGraph::GetImageView(const RenderGraphImageHandle resourceHandle)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1067,7 +1067,7 @@ namespace Volt
 		return view;
 	}
 
-	WeakPtr<RHI::Image> RenderGraph::GetImageRaw(const RenderGraphImageHandle resourceHandle)
+	RawPtr<RHI::Image> RenderGraph::GetImageRaw(const RenderGraphImageHandle resourceHandle)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1136,7 +1136,7 @@ namespace Volt
 		return handle;
 	}
 
-	WeakPtr<RHI::StorageBuffer> RenderGraph::GetBufferRaw(const RenderGraphBufferHandle resourceHandle)
+	RawPtr<RHI::StorageBuffer> RenderGraph::GetBufferRaw(const RenderGraphBufferHandle resourceHandle)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1151,7 +1151,7 @@ namespace Volt
 		return buffer;
 	}
 
-	WeakPtr<RHI::StorageBuffer> RenderGraph::GetUniformBufferRaw(const RenderGraphUniformBufferHandle resourceHandle)
+	RawPtr<RHI::StorageBuffer> RenderGraph::GetUniformBufferRaw(const RenderGraphUniformBufferHandle resourceHandle)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1189,7 +1189,7 @@ namespace Volt
 	}
 #endif
 
-	WeakPtr<RHI::RHIResource> RenderGraph::GetResourceRaw(const RenderGraphResourceHandle resourceHandle)
+	RawPtr<RHI::RHIResource> RenderGraph::GetResourceRaw(const RenderGraphResourceHandle resourceHandle)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1200,7 +1200,7 @@ namespace Volt
 
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle);
 
-		WeakPtr<RHI::RHIResource> result{};
+		RawPtr<RHI::RHIResource> result{};
 
 		switch (resourceNode->GetResourceType())
 		{
@@ -1272,7 +1272,7 @@ namespace Volt
 		return RefPtr<RHI::StorageBuffer>();
 	}
 
-	RenderGraphResourceHandle RenderGraph::TryGetRegisteredExternalResource(WeakPtr<RHI::RHIResource> resource)
+	RenderGraphResourceHandle RenderGraph::TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource)
 	{
 		if (m_registeredExternalResources.contains(resource))
 		{
@@ -1282,7 +1282,7 @@ namespace Volt
 		return RenderGraphNullHandle{};
 	}
 
-	void RenderGraph::RegisterExternalResource(WeakPtr<RHI::RHIResource> resource, RenderGraphResourceHandle handle)
+	void RenderGraph::RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RenderGraphResourceHandle handle)
 	{
 		m_registeredExternalResources[resource] = handle;
 	}

@@ -2,17 +2,17 @@
 
 #include "VulkanRHIModule/Core.h"
 
-#include <RHIModule/Memory/Allocator.h>
+#include <RHIModule/Memory/GPUAllocator.h>
 #include <RHIModule/Memory/AllocationCache.h>
 #include <RHIModule/Memory/TransientHeap.h>
 
 namespace Volt::RHI
 {
-	class VulkanTransientAllocator : public TransientAllocator
+	class VulkanTransientGPUAllocator : public TransientGPUAllocator
 	{
 	public:
-		VulkanTransientAllocator();
-		~VulkanTransientAllocator() override;
+		VulkanTransientGPUAllocator();
+		~VulkanTransientGPUAllocator() override;
 
 		Handle<Allocation> CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) override;
 		Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) override;

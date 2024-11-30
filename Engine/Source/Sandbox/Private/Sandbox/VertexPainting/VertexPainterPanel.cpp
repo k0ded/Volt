@@ -28,6 +28,8 @@
 #include <Sandbox/Utility/EditorLibrary.h>
 #include <Sandbox/Window/ViewportPanel.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 VertexPainterPanel::VertexPainterPanel(Ref<Volt::Scene>& in_scene, Ref<EditorCameraController>& in_cc)
 	: ex_scene(in_scene), ex_cameraController(in_cc), EditorWindow("Vertex Painting")
 {

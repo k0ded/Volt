@@ -15,6 +15,7 @@
 
 #include <CoreUtilities/StringHash.h>
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <glm/glm.hpp>
 #include <half/half.hpp>
@@ -188,16 +189,16 @@ namespace Volt
 		void DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance);
 		void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance);
 
-		void BindPipeline(WeakPtr<RHI::RenderPipeline> pipeline);
-		void BindPipeline(WeakPtr<RHI::ComputePipeline> pipeline);
-		void BindPipeline(WeakPtr<RHI::RayTracingPipeline> pipeline);
+		void BindPipeline(RawPtr<RHI::RenderPipeline> pipeline);
+		void BindPipeline(RawPtr<RHI::ComputePipeline> pipeline);
+		void BindPipeline(RawPtr<RHI::RayTracingPipeline> pipeline);
 
 		void BindIndexBuffer(RenderGraphBufferHandle indexBuffer);
-		void BindIndexBuffer(WeakPtr<RHI::IndexBuffer> indexBuffer);
-		void BindVertexBuffers(const StackVector<WeakPtr<RHI::VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
+		void BindIndexBuffer(RawPtr<RHI::IndexBuffer> indexBuffer);
+		void BindVertexBuffers(const StackVector<RawPtr<RHI::VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
 		void BindVertexBuffers(const StackVector<RenderGraphBufferHandle, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
 
-		void SetAccelerationStructure(WeakPtr<RHI::AccelerationStructure> accelerationStructure);
+		void SetAccelerationStructure(RawPtr<RHI::AccelerationStructure> accelerationStructure);
 
 		template<typename T>
 		void SetConstant(const StringHash& name, const T& data);
@@ -249,11 +250,11 @@ namespace Volt
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 
-		WeakPtr<RHI::RenderPipeline> m_currentRenderPipeline;
-		WeakPtr<RHI::ComputePipeline> m_currentComputePipeline;
-		WeakPtr<RHI::RayTracingPipeline> m_currentRayTracingPipeline;
+		RawPtr<RHI::RenderPipeline> m_currentRenderPipeline;
+		RawPtr<RHI::ComputePipeline> m_currentComputePipeline;
+		RawPtr<RHI::RayTracingPipeline> m_currentRayTracingPipeline;
 
-		WeakPtr<RHI::AccelerationStructure> m_currentAccelerationStructure;
+		RawPtr<RHI::AccelerationStructure> m_currentAccelerationStructure;
 
 		uint8_t m_passConstantsData[RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE];
 

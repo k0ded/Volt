@@ -15,7 +15,7 @@
 
 namespace Volt::RHI
 {
-	VulkanStorageBuffer::VulkanStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator)
+	VulkanStorageBuffer::VulkanStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator)
 		: m_elementSize(elementSize), m_count(count), m_name(name), m_allocator(allocator), m_bufferUsage(bufferUsage), m_memoryUsage(memoryUsage)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
@@ -136,7 +136,7 @@ namespace Volt::RHI
 		barrier.bufferBarrier().dstAccess = BarrierAccess::CopyDest;
 		barrier.bufferBarrier().offset = 0;
 		barrier.bufferBarrier().size = m_allocation->GetSize();
-		barrier.bufferBarrier().resource = WeakPtr<VulkanStorageBuffer>(this);
+		barrier.bufferBarrier().resource = RawPtr<VulkanStorageBuffer>(this);
 
 		cmdBuffer->ResourceBarrier({ barrier });
 
@@ -171,7 +171,7 @@ namespace Volt::RHI
 		barrier.bufferBarrier().dstAccess = BarrierAccess::CopyDest;
 		barrier.bufferBarrier().offset = 0;
 		barrier.bufferBarrier().size = size;
-		barrier.bufferBarrier().resource = WeakPtr<VulkanStorageBuffer>(this);
+		barrier.bufferBarrier().resource = RawPtr<VulkanStorageBuffer>(this);
 
 		commandBuffer->ResourceBarrier({ barrier });
 

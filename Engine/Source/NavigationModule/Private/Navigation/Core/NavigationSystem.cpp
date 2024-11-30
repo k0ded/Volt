@@ -14,6 +14,8 @@
 
 #include <AssetSystem/AssetManager.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt
 {
 	namespace AI

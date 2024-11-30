@@ -18,7 +18,7 @@ namespace Volt::RHI
 		RefPtr<IndexBuffer> CreateIndexBuffer(std::span<const uint32_t> indices) const override;
 		RefPtr<VertexBuffer> CreateVertexBuffer(const void* data, const uint32_t size, const uint32_t stride) const override;
 
-		RefPtr<StorageBuffer> CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator) const override;
+		RefPtr<StorageBuffer> CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const override;
 		RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const override;
 
 		RefPtr<DescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const override;
@@ -30,14 +30,14 @@ namespace Volt::RHI
 		RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const override;
 		RefPtr<Swapchain> CreateSwapchain(GLFWwindow* window) const override;
 
-		RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator) const override;
+		RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const override;
 		RefPtr<Image> CreateImage(const SwapchainImageSpecification& specification) const override;
 
 		RefPtr<ImageView> CreateImageView(const ImageViewSpecification& specification) const override;
 		RefPtr<SamplerState> CreateSamplerState(const SamplerStateCreateInfo& createInfo) const override;
 
-		RefPtr<DefaultAllocator> CreateDefaultAllocator() const override;
-		RefPtr<TransientAllocator> CreateTransientAllocator() const override;
+		RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const override;
+		RefPtr<TransientGPUAllocator> CreateTransientAllocator() const override;
 		RefPtr<TransientHeap> CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const override;
 
 		RefPtr<RenderPipeline> CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const override;

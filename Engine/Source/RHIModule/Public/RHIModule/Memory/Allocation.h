@@ -57,7 +57,7 @@ namespace Volt::RHI
 		VT_NODISCARD virtual std::string_view GetName() const = 0;
 
 	protected:
-		friend class Allocator;
+		friend class GPUAllocator;
 
 		virtual void* GetResourceHandleInternal() const = 0;
 		virtual void* GetHandleImpl() const = 0;

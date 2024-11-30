@@ -25,17 +25,17 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	ResourceHandle BindlessResourcesManager::RegisterBuffer(WeakPtr<RHI::StorageBuffer> storageBuffer)
+	ResourceHandle BindlessResourcesManager::RegisterBuffer(RawPtr<RHI::StorageBuffer> storageBuffer)
 	{
 		return m_bindlessDescriptorTable->RegisterBuffer(storageBuffer);
 	}
 
-	ResourceHandle BindlessResourcesManager::RegisterImageView(WeakPtr<RHI::ImageView> imageView)
+	ResourceHandle BindlessResourcesManager::RegisterImageView(RawPtr<RHI::ImageView> imageView)
 	{
 		return m_bindlessDescriptorTable->RegisterImageView(imageView);
 	}
 
-	ResourceHandle BindlessResourcesManager::RegisterSamplerState(WeakPtr<RHI::SamplerState> samplerState)
+	ResourceHandle BindlessResourcesManager::RegisterSamplerState(RawPtr<RHI::SamplerState> samplerState)
 	{
 		return m_bindlessDescriptorTable->RegisterSamplerState(samplerState);
 	}

@@ -1,17 +1,17 @@
 #pragma once
 
-#include <RHIModule/Memory/Allocator.h>
+#include <RHIModule/Memory/GPUAllocator.h>
 #include <RHIModule/Memory/AllocationCache.h>
 
 namespace Volt::RHI
 {
 	class TransientHeap;
 
-	class D3D12TransientAllocator : public TransientAllocator
+	class D3D12TransientGPUAllocator : public TransientGPUAllocator
 	{
 	public:
-		D3D12TransientAllocator();
-		~D3D12TransientAllocator() override;
+		D3D12TransientGPUAllocator();
+		~D3D12TransientGPUAllocator() override;
 
 		Handle<Allocation> CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) override;
 		Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) override;

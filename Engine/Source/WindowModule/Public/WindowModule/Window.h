@@ -10,7 +10,7 @@
 #include <RHIModule/Graphics/Swapchain.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 
 #include <functional>
 
@@ -81,7 +81,7 @@ namespace Volt
 		WINDOWMODULE_API inline void* GetHWND() const { return m_windowHandle; }
 
 		WINDOWMODULE_API inline const RHI::Swapchain& GetSwapchain() const { return *m_swapchain; }
-		WINDOWMODULE_API inline const WeakPtr<RHI::Swapchain> GetSwapchainPtr() const { return m_swapchain; }
+		WINDOWMODULE_API inline const RawPtr<RHI::Swapchain> GetSwapchainPtr() const { return m_swapchain; }
 
 		static Scope<Window> Create(const WindowProperties& aProperties = WindowProperties());
 

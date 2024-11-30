@@ -1,21 +1,23 @@
 #pragma once
 
+#include "CoreUtilities/Allocators/DefaultAllocator.h"
+
 #include <atomic>
 
-template<size_t MaxByteSize>
+template<size_t MaxByteSize, typename SecondaryAllocator = DefaultAllocator>
 class LinearAllocator
 {
 public:
 	LinearAllocator()
 	{ 
-		m_dataBuffer = new uint8_t[MaxByteSize];
+		m_dataBuffer = reinterpret_cast<uint8_t*>(SecondaryAllocator::Allocate(MaxByteSize, alignof(uint8_t)));
 	}
 
 	~LinearAllocator()
 	{
 		if (m_dataBuffer)
 		{
-			delete[] m_dataBuffer;
+			SecondaryAllocator::Free(m_dataBuffer, 0);
 		}
 	}
 

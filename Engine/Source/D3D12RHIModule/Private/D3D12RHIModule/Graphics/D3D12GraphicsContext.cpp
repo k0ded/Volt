@@ -3,7 +3,7 @@
 #include "D3D12RHIModule/Graphics/D3D12PhysicalGraphicsDevice.h"
 #include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 
-#include "D3D12RHIModule/Memory/D3D12DefaultAllocator.h"
+#include "D3D12RHIModule/Memory/D3D12DefaultGPUAllocator.h"
 #include "D3D12RHIModule/Descriptors/CPUDescriptorHeapManager.h"
 
 #include "D3D12RHIModule/Buffers/CommandSignatureCache.h"
@@ -48,12 +48,12 @@ namespace Volt::RHI
 		Shutdown();
 	}
 
-	RefPtr<Allocator> D3D12GraphicsContext::GetDefaultAllocatorImpl()
+	RefPtr<GPUAllocator> D3D12GraphicsContext::GetDefaultAllocatorImpl()
 	{
 		return m_defaultAllocator;
 	}
 
-	RefPtr<Allocator> D3D12GraphicsContext::GetTransientAllocatorImpl()
+	RefPtr<GPUAllocator> D3D12GraphicsContext::GetTransientAllocatorImpl()
 	{
 		return m_transientAllocator;
 	}
@@ -95,8 +95,8 @@ namespace Volt::RHI
 		InitializeAPIValidation();
 #endif
 
-		m_defaultAllocator = DefaultAllocator::Create();
-		m_transientAllocator = TransientAllocator::Create();
+		m_defaultAllocator = DefaultGPUAllocator::Create();
+		m_transientAllocator = TransientGPUAllocator::Create();
 		m_resourceStateTracker = RefPtr<ResourceStateTracker>::Create();
 		m_cpuDescriptorHeapManager = CreateScope<CPUDescriptorHeapManager>();
 		m_commandSignatureCache = CreateScope<CommandSignatureCache>();

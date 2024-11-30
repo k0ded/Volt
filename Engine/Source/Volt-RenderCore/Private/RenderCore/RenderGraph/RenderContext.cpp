@@ -318,7 +318,7 @@ namespace Volt
 		m_commandBuffer->Draw(vertexCount, instanceCount, firstVertex, firstInstance);
 	}
 
-	void RenderContext::BindPipeline(WeakPtr<RHI::RenderPipeline> pipeline)
+	void RenderContext::BindPipeline(RawPtr<RHI::RenderPipeline> pipeline)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -333,7 +333,7 @@ namespace Volt
 		InitializeCurrentPipelineConstantsValidation();
 	}
 
-	void RenderContext::BindPipeline(WeakPtr<RHI::ComputePipeline> pipeline)
+	void RenderContext::BindPipeline(RawPtr<RHI::ComputePipeline> pipeline)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -348,7 +348,7 @@ namespace Volt
 		InitializeCurrentPipelineConstantsValidation();
 	}
 
-	void RenderContext::BindPipeline(WeakPtr<RHI::RayTracingPipeline> pipeline)
+	void RenderContext::BindPipeline(RawPtr<RHI::RayTracingPipeline> pipeline)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -371,12 +371,12 @@ namespace Volt
 		m_commandBuffer->BindIndexBuffer(idxBuffer);
 	}
 
-	void RenderContext::BindIndexBuffer(WeakPtr<RHI::IndexBuffer> indexBuffer)
+	void RenderContext::BindIndexBuffer(RawPtr<RHI::IndexBuffer> indexBuffer)
 	{
 		m_commandBuffer->BindIndexBuffer(indexBuffer);
 	}
 
-	void RenderContext::BindVertexBuffers(const StackVector<WeakPtr<RHI::VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	void RenderContext::BindVertexBuffers(const StackVector<RawPtr<RHI::VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
 	{
 		m_commandBuffer->BindVertexBuffers(vertexBuffers, firstBinding);
 	}
@@ -392,7 +392,7 @@ namespace Volt
 			resourceAccess.ValidateResourceAccess(buffer);
 		}
 
-		StackVector<WeakPtr<RHI::StorageBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT> buffers{};
+		StackVector<RawPtr<RHI::StorageBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT> buffers{};
 		for (const auto& buffer : vertexBuffers)
 		{
 			buffers.EmplaceBack() = m_renderGraph.GetBufferRaw(buffer);
@@ -401,7 +401,7 @@ namespace Volt
 		m_commandBuffer->BindVertexBuffers(buffers, firstBinding);
 	}
 
-	void RenderContext::SetAccelerationStructure(WeakPtr<RHI::AccelerationStructure> accelerationStructure)
+	void RenderContext::SetAccelerationStructure(RawPtr<RHI::AccelerationStructure> accelerationStructure)
 	{
 		m_currentAccelerationStructure = accelerationStructure;
 	}

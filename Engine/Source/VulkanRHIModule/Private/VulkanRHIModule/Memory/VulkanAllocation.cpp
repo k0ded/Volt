@@ -5,7 +5,7 @@
 
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Memory/Allocator.h>
+#include <RHIModule/Memory/GPUAllocator.h>
 
 #include <vma/VulkanMemoryAllocator.h>
 

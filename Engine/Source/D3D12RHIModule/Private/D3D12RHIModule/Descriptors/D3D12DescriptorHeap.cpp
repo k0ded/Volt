@@ -5,6 +5,8 @@
 
 #include <RHIModule/RHIProxy.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt::RHI
 {
 	namespace Utility

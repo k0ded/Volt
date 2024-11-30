@@ -1,5 +1,5 @@
 #include "dxpch.h"
-#include "D3D12RHIModule/Memory/D3D12DefaultAllocator.h"
+#include "D3D12RHIModule/Memory/D3D12DefaultGPUAllocator.h"
 
 #include "D3D12RHIModule/Common/D3D12MemAlloc.h"
 #include "D3D12RHIModule/Common/D3D12Helpers.h"
@@ -8,11 +8,13 @@
 #include <RHIModule/Utility/HashUtility.h>
 #include <RHIModule/Images/ImageUtility.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 #include <CoreUtilities/EnumUtils.h>
 
 namespace Volt::RHI
 {
-	D3D12DefaultAllocator::D3D12DefaultAllocator()
+	D3D12DefaultGPUAllocator::D3D12DefaultGPUAllocator()
 	{
 		auto device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device2*>();
 		auto adapter = GraphicsContext::GetPhysicalDevice()->GetHandle<IDXGIAdapter4*>();
@@ -25,12 +27,12 @@ namespace Volt::RHI
 		VT_D3D12_CHECK(D3D12MA::CreateAllocator(&desc, &m_allocator));
 	}
 
-	D3D12DefaultAllocator::~D3D12DefaultAllocator()
+	D3D12DefaultGPUAllocator::~D3D12DefaultGPUAllocator()
 	{
 		VT_D3D12_DELETE(m_allocator);
 	}
 
-	Handle<Allocation> D3D12DefaultAllocator::CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
+	Handle<Allocation> D3D12DefaultGPUAllocator::CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -88,7 +90,7 @@ namespace Volt::RHI
 		return allocation;
 	}
 
-	Handle<Allocation> D3D12DefaultAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> D3D12DefaultGPUAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -131,27 +133,27 @@ namespace Volt::RHI
 		return allocation;
 	}
 
-	void D3D12DefaultAllocator::DestroyBuffer(Handle<Allocation> allocation)
+	void D3D12DefaultGPUAllocator::DestroyBuffer(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueBufferAllocationForRemoval(allocation);
 	}
 
-	void D3D12DefaultAllocator::DestroyImage(Handle<Allocation> allocation)
+	void D3D12DefaultGPUAllocator::DestroyImage(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueImageAllocationForRemoval(allocation);
 	}
 
-	Vector<Handle<Allocation>> D3D12DefaultAllocator::GetActiveBufferAllocations() const
+	Vector<Handle<Allocation>> D3D12DefaultGPUAllocator::GetActiveBufferAllocations() const
 	{
 		return Vector<Handle<Allocation>>();
 	}
 
-	Vector<Handle<Allocation>> D3D12DefaultAllocator::GetActiveImageAllocations() const
+	Vector<Handle<Allocation>> D3D12DefaultGPUAllocator::GetActiveImageAllocations() const
 	{
 		return Vector<Handle<Allocation>>();
 	}
 
-	void D3D12DefaultAllocator::Update()
+	void D3D12DefaultGPUAllocator::Update()
 	{
 		const auto allocationsToRemove = m_allocationCache.UpdateAndGetAllocationsToDestroy();
 
@@ -166,12 +168,12 @@ namespace Volt::RHI
 		}
 	}
 
-	void* D3D12DefaultAllocator::GetHandleImpl() const
+	void* D3D12DefaultGPUAllocator::GetHandleImpl() const
 	{
 		return m_allocator;
 	}
 
-	void D3D12DefaultAllocator::DestroyBufferInternal(Handle<Allocation> allocation)
+	void D3D12DefaultGPUAllocator::DestroyBufferInternal(Handle<Allocation> allocation)
 	{
 		auto bufferAlloc = allocation.As<D3D12BufferAllocation>();
 		bufferAlloc->m_allocation->Release();
@@ -180,7 +182,7 @@ namespace Volt::RHI
 		m_bufferAllocationArena.Free(bufferAlloc.GetRaw());
 	}
 
-	void D3D12DefaultAllocator::DestroyImageInternal(Handle<Allocation> allocation)
+	void D3D12DefaultGPUAllocator::DestroyImageInternal(Handle<Allocation> allocation)
 	{
 		auto imageAlloc = allocation.As<D3D12ImageAllocation>();
 		imageAlloc->m_allocation->Release();

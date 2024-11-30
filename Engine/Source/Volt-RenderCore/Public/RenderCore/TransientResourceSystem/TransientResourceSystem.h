@@ -2,7 +2,7 @@
 
 #include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
 
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 #include <CoreUtilities/Containers/ThreadSafeMap.h>
 
 namespace Volt
@@ -29,9 +29,9 @@ namespace Volt
 		TransientResourceSystem& operator=(const TransientResourceSystem& other);
 		TransientResourceSystem& operator=(TransientResourceSystem&& other);
 
-		WeakPtr<RHI::Image> AquireImage(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc);
-		WeakPtr<RHI::StorageBuffer> AquireBuffer(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc);
-		WeakPtr<RHI::UniformBuffer> AquireUniformBuffer(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc);
+		RawPtr<RHI::Image> AquireImage(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc);
+		RawPtr<RHI::StorageBuffer> AquireBuffer(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc);
+		RawPtr<RHI::UniformBuffer> AquireUniformBuffer(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc);
 
 		RefPtr<RHI::Image> AquireImageRef(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc);
 		RefPtr<RHI::StorageBuffer> AquireBufferRef(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc);

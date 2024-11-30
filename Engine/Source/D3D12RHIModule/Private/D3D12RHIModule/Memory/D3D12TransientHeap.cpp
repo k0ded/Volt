@@ -6,6 +6,8 @@
 
 #include <RHIModule/Memory/MemoryUtility.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt::RHI
 {
 	D3D12TransientHeap::D3D12TransientHeap(const TransientHeapCreateInfo& info)

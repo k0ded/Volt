@@ -20,8 +20,8 @@ namespace Volt::RHI
 		inline VkInstance_T* GetInstance() const { return m_instance; }
 
 	protected:
-		RefPtr<Allocator> GetDefaultAllocatorImpl() override;
-		RefPtr<Allocator> GetTransientAllocatorImpl() override;
+		RefPtr<GPUAllocator> GetDefaultAllocatorImpl() override;
+		RefPtr<GPUAllocator> GetTransientAllocatorImpl() override;
 		RefPtr<ResourceStateTracker> GetResourceStateTrackerImpl() override;
 
 		RefPtr<GraphicsDevice> GetGraphicsDevice() const override;
@@ -44,8 +44,8 @@ namespace Volt::RHI
 		RefPtr<PhysicalGraphicsDevice> m_physicalDevice;
 		RefPtr<ResourceStateTracker> m_resourceStateTracker;
 
-		RefPtr<Allocator> m_defaultAllocator;
-		RefPtr<Allocator> m_transientAllocator;
+		RefPtr<GPUAllocator> m_defaultAllocator;
+		RefPtr<GPUAllocator> m_transientAllocator;
 
 		GraphicsContextCreateInfo m_createInfo{};
 	};

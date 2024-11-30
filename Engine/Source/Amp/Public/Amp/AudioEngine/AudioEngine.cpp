@@ -5,6 +5,7 @@
 #include "fmod_errors.h"
 
 #include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 const float DISTANCEFACTOR = 100.0f;
 

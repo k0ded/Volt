@@ -8,12 +8,12 @@ struct VkImage_T;
 namespace Volt::RHI
 {
 	class Allocation;
-	class Allocator;
+	class GPUAllocator;
 
 	class VulkanImage final : public Image
 	{
 	public:
-		VulkanImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator);
+		VulkanImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator);
 		VulkanImage(const SwapchainImageSpecification& specification);
 		~VulkanImage() override;
 
@@ -59,7 +59,7 @@ namespace Volt::RHI
 		SwapchainImageData m_swapchainImageData;
 
 		Handle<Allocation> m_allocation;
-		WeakPtr<Allocator> m_allocator;
+		RawPtr<GPUAllocator> m_allocator;
 
 		bool m_hasGeneratedMips = false;
 		bool m_isSwapchainImage = false;

@@ -66,7 +66,7 @@ namespace Volt
 		QuadData quadData;
 		TextData textData;
 
-		WeakPtr<RHI::Image> currentRenderTarget;
+		RawPtr<RHI::Image> currentRenderTarget;
 		glm::mat4 currentProjection = { 1.f };
 		glm::mat4 currentView = { 1.f };
 

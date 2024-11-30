@@ -1,16 +1,16 @@
 #include "rhipch.h"
 
-#include "RHIModule/Memory/Allocator.h"
+#include "RHIModule/Memory/GPUAllocator.h"
 #include "RHIModule/RHIProxy.h"
 
 namespace Volt::RHI
 {
-	RefPtr<TransientAllocator> TransientAllocator::Create()
+	RefPtr<TransientGPUAllocator> TransientGPUAllocator::Create()
 	{
 		return RHIProxy::GetInstance().CreateTransientAllocator();
 	}
 
-	RefPtr<DefaultAllocator> DefaultAllocator::Create()
+	RefPtr<DefaultGPUAllocator> DefaultGPUAllocator::Create()
 	{
 		return RHIProxy::GetInstance().CreateDefaultAllocator();
 	}

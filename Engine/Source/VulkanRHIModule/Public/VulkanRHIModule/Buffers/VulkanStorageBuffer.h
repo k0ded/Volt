@@ -7,12 +7,12 @@
 namespace Volt::RHI
 {
 	class Allocation;
-	class Allocator;
+	class GPUAllocator;
 
 	class VulkanStorageBuffer : public StorageBuffer
 	{
 	public:
-		VulkanStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<Allocator> allocator = nullptr);
+		VulkanStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<GPUAllocator> allocator = nullptr);
 		~VulkanStorageBuffer() override;
 
 		void Resize(const uint64_t size) override;
@@ -50,7 +50,7 @@ namespace Volt::RHI
 
 		RefPtr<BufferView> m_view;
 		Handle<Allocation> m_allocation;
-		WeakPtr<Allocator> m_allocator;
+		RawPtr<GPUAllocator> m_allocator;
 
 		BufferUsage m_bufferUsage = BufferUsage::StorageBuffer;
 		MemoryUsage m_memoryUsage = MemoryUsage::GPU;

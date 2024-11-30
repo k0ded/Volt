@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<Image> Image::Create(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator)
+	RefPtr<Image> Image::Create(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator)
 	{
 		return RHIProxy::GetInstance().CreateImage(specification, data, allocator);
 	}

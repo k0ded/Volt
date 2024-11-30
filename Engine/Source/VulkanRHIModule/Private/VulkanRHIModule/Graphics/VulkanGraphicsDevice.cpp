@@ -39,7 +39,7 @@ namespace Volt::RHI
 	namespace Utility
 	{
 		template<typename T> 
-		T GetVulkanExtensionProperties(WeakPtr<PhysicalGraphicsDevice> device, VkStructureType type)
+		T GetVulkanExtensionProperties(RawPtr<PhysicalGraphicsDevice> device, VkStructureType type)
 		{
 			T resultProperties{};
 			resultProperties.sType = type;
@@ -53,7 +53,7 @@ namespace Volt::RHI
 			return resultProperties;
 		}
 
-		inline static void GetEnabledFeatures(WeakPtr<VulkanPhysicalGraphicsDevice> physicalDevice)
+		inline static void GetEnabledFeatures(RawPtr<VulkanPhysicalGraphicsDevice> physicalDevice)
 		{
 			s_enabledFeatures.vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 			s_enabledFeatures.vulkan11Features.pNext = nullptr;
@@ -210,7 +210,7 @@ namespace Volt::RHI
 			s_enabledFeatures.physicalDeviceFeatures.features.shaderInt16 = VK_TRUE; // #TODO_Ivar: does not work on older cards
 		}
 
-		inline static Vector<const char*> GetEnabledExtensions(WeakPtr<VulkanPhysicalGraphicsDevice> physicalDevice)
+		inline static Vector<const char*> GetEnabledExtensions(RawPtr<VulkanPhysicalGraphicsDevice> physicalDevice)
 		{
 			Vector<const char*> enabledExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
@@ -398,7 +398,7 @@ namespace Volt::RHI
 		return m_capabilities;
 	}
 
-	WeakPtr<VulkanPhysicalGraphicsDevice> VulkanGraphicsDevice::GetPhysicalDevice() const
+	RawPtr<VulkanPhysicalGraphicsDevice> VulkanGraphicsDevice::GetPhysicalDevice() const
 	{
 		return m_physicalDevice;
 	}

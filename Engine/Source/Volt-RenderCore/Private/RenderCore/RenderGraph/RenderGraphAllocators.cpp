@@ -4,34 +4,28 @@
 
 namespace Volt
 {
-	RenderGraphPassAllocator::RenderGraphPassAllocator(const RenderGraphPassAllocator& other) noexcept
-		: m_numPasses(other.m_numPasses),
-		m_passExecutionFunctionAllocator(other.m_passExecutionFunctionAllocator),
-		m_passNodeAllocator(other.m_passNodeAllocator)
+	RenderGraphPassAllocator::~RenderGraphPassAllocator()
 	{
+		for (auto& destructor : m_passDestructors)
+		{
+			destructor.Destroy();
+		}
 	}
-	
+
 	RenderGraphPassAllocator::RenderGraphPassAllocator(RenderGraphPassAllocator&& other) noexcept
 		: m_numPasses(std::move(other.m_numPasses)),
 		m_passExecutionFunctionAllocator(std::move(other.m_passExecutionFunctionAllocator)),
-		m_passNodeAllocator(std::move(other.m_passNodeAllocator))
+		m_passNodeAllocator(std::move(other.m_passNodeAllocator)),
+		m_passDestructors(std::move(other.m_passDestructors))
 	{
 	}
 
-	RenderGraphPassAllocator& RenderGraphPassAllocator::operator=(const RenderGraphPassAllocator& other) noexcept
-	{
-		m_numPasses = other.m_numPasses;
-		m_passExecutionFunctionAllocator = other.m_passExecutionFunctionAllocator;
-		m_passNodeAllocator = other.m_passNodeAllocator;
-
-		return *this;
-	}
-	
 	RenderGraphPassAllocator& RenderGraphPassAllocator::operator=(RenderGraphPassAllocator&& other) noexcept
 	{
 		m_numPasses = std::move(other.m_numPasses);
 		m_passExecutionFunctionAllocator = std::move(other.m_passExecutionFunctionAllocator);
 		m_passNodeAllocator = std::move(other.m_passNodeAllocator);
+		m_passDestructors = std::move(other.m_passDestructors);
 
 		return *this;
 	}
@@ -71,29 +65,25 @@ namespace Volt
 		return result;
 	}
 
-	RenderGraphResourceNodeAllocator::RenderGraphResourceNodeAllocator(const RenderGraphResourceNodeAllocator& other) noexcept
-		: m_allocator(other.m_allocator),
-		m_numResourceNodes(other.m_numResourceNodes)
+	RenderGraphResourceNodeAllocator::~RenderGraphResourceNodeAllocator()
 	{
+		for (auto& destructor : m_nodeDestructors)
+		{
+			destructor.Destroy();
+		}
 	}
 
 	RenderGraphResourceNodeAllocator::RenderGraphResourceNodeAllocator(RenderGraphResourceNodeAllocator&& other) noexcept
 		: m_allocator(std::move(other.m_allocator)),
+		m_nodeDestructors(std::move(other.m_nodeDestructors)),
 		m_numResourceNodes(std::move(other.m_numResourceNodes))
 	{
-	}
-
-	RenderGraphResourceNodeAllocator& RenderGraphResourceNodeAllocator::operator=(const RenderGraphResourceNodeAllocator& other) noexcept
-	{
-		m_allocator = other.m_allocator;
-		m_numResourceNodes = other.m_numResourceNodes;
-
-		return *this;
 	}
 
 	RenderGraphResourceNodeAllocator& RenderGraphResourceNodeAllocator::operator=(RenderGraphResourceNodeAllocator&& other) noexcept
 	{
 		m_allocator = std::move(other.m_allocator);
+		m_nodeDestructors = std::move(other.m_nodeDestructors);
 		m_numResourceNodes = std::move(other.m_numResourceNodes);
 
 		return *this;

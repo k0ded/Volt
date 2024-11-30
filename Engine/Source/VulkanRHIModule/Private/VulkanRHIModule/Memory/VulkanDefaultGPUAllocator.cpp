@@ -1,5 +1,5 @@
 #include "vkpch.h"
-#include "VulkanRHIModule/Memory/VulkanDefaultAllocator.h"
+#include "VulkanRHIModule/Memory/VulkanDefaultGPUAllocator.h"
 
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
@@ -19,7 +19,7 @@
 
 namespace Volt::RHI
 {
-	VulkanDefaultAllocator::VulkanDefaultAllocator()
+	VulkanDefaultGPUAllocator::VulkanDefaultGPUAllocator()
 	{
 		VmaAllocatorCreateInfo info{};
 		info.vulkanApiVersion = VK_API_VERSION_1_3;
@@ -36,7 +36,7 @@ namespace Volt::RHI
 		VT_VK_CHECK(vmaCreateAllocator(&info, &m_allocator));
 	}
 
-	VulkanDefaultAllocator::~VulkanDefaultAllocator()
+	VulkanDefaultGPUAllocator::~VulkanDefaultGPUAllocator()
 	{
 		auto activeImageAllocations = GetActiveImageAllocations();
 		for (const auto& alloc : activeImageAllocations)
@@ -53,7 +53,7 @@ namespace Volt::RHI
 		vmaDestroyAllocator(m_allocator);
 	}
 
-	Handle<Allocation> VulkanDefaultAllocator::CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
+	Handle<Allocation> VulkanDefaultGPUAllocator::CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(size > 0);
@@ -123,7 +123,7 @@ namespace Volt::RHI
 		return allocation;
 	}
 
-	Handle<Allocation> VulkanDefaultAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> VulkanDefaultGPUAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -187,17 +187,17 @@ namespace Volt::RHI
 		return allocation;
 	}
 
-	void VulkanDefaultAllocator::DestroyBuffer(Handle<Allocation> allocation)
+	void VulkanDefaultGPUAllocator::DestroyBuffer(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueBufferAllocationForRemoval(allocation);
 	}
 
-	void VulkanDefaultAllocator::DestroyImage(Handle<Allocation> allocation)
+	void VulkanDefaultGPUAllocator::DestroyImage(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueImageAllocationForRemoval(allocation);
 	}
 
-	Vector<Handle<Allocation>> VulkanDefaultAllocator::GetActiveBufferAllocations() const
+	Vector<Handle<Allocation>> VulkanDefaultGPUAllocator::GetActiveBufferAllocations() const
 	{
 		auto activeAllocations = m_bufferAllocationArena.GetActiveAllocations();
 
@@ -212,7 +212,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	Vector<Handle<Allocation>> VulkanDefaultAllocator::GetActiveImageAllocations() const
+	Vector<Handle<Allocation>> VulkanDefaultGPUAllocator::GetActiveImageAllocations() const
 	{
 		auto activeAllocations = m_imageAllocationArena.GetActiveAllocations();
 
@@ -227,7 +227,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	void VulkanDefaultAllocator::Update()
+	void VulkanDefaultGPUAllocator::Update()
 	{
 		const auto allocationsToRemove = m_allocationCache.UpdateAndGetAllocationsToDestroy();
 		
@@ -242,7 +242,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanDefaultAllocator::DestroyBufferInternal(Handle<Allocation> allocation)
+	void VulkanDefaultGPUAllocator::DestroyBufferInternal(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -252,7 +252,7 @@ namespace Volt::RHI
 		m_bufferAllocationArena.Free(bufferAlloc.GetRaw());
 	}
 
-	void VulkanDefaultAllocator::DestroyImageInternal(Handle<Allocation> allocation)
+	void VulkanDefaultGPUAllocator::DestroyImageInternal(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -262,7 +262,7 @@ namespace Volt::RHI
 		m_imageAllocationArena.Free(imageAlloc.GetRaw());
 	}
 
-	void* VulkanDefaultAllocator::GetHandleImpl() const
+	void* VulkanDefaultGPUAllocator::GetHandleImpl() const
 	{
 		return m_allocator;
 	}

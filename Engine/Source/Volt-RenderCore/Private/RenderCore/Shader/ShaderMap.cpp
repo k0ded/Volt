@@ -8,6 +8,7 @@
 #include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/ComparisonHelpers.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {

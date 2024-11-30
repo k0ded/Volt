@@ -11,10 +11,10 @@ namespace Volt::RHI
 	class Allocation;
 	class MemoryPool;
 
-	class VTRHI_API Allocator : public RHIInterface
+	class VTRHI_API GPUAllocator : public RHIInterface
 	{
 	public:
-		virtual ~Allocator() = default;
+		virtual ~GPUAllocator() = default;
 
 		virtual Handle<Allocation> CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) = 0;
 		virtual Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) = 0;
@@ -32,28 +32,28 @@ namespace Volt::RHI
 		virtual void Update() = 0;
 
 	protected:
-		Allocator() = default;
+		GPUAllocator() = default;
 	};
 
-	class VTRHI_API DefaultAllocator : public Allocator
+	class VTRHI_API DefaultGPUAllocator : public GPUAllocator
 	{
 	public:
-		virtual ~DefaultAllocator() override = default;
+		virtual ~DefaultGPUAllocator() override = default;
 
-		static RefPtr<DefaultAllocator> Create();
+		static RefPtr<DefaultGPUAllocator> Create();
 
 	protected:
-		DefaultAllocator() = default;
+		DefaultGPUAllocator() = default;
 	};
 
-	class VTRHI_API TransientAllocator : public Allocator
+	class VTRHI_API TransientGPUAllocator : public GPUAllocator
 	{
 	public:
-		virtual ~TransientAllocator() override = default;
+		virtual ~TransientGPUAllocator() override = default;
 
-		static RefPtr<TransientAllocator> Create();
+		static RefPtr<TransientGPUAllocator> Create();
 
 	protected:
-		TransientAllocator() = default;
+		TransientGPUAllocator() = default;
 	};
 }

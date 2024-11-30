@@ -20,9 +20,9 @@ namespace Volt
 		BindlessResourcesManager();
 		~BindlessResourcesManager();
 
-		ResourceHandle RegisterBuffer(WeakPtr<RHI::StorageBuffer> storageBuffer);
-		ResourceHandle RegisterImageView(WeakPtr<RHI::ImageView> image);
-		ResourceHandle RegisterSamplerState(WeakPtr<RHI::SamplerState> samplerState);
+		ResourceHandle RegisterBuffer(RawPtr<RHI::StorageBuffer> storageBuffer);
+		ResourceHandle RegisterImageView(RawPtr<RHI::ImageView> image);
+		ResourceHandle RegisterSamplerState(RawPtr<RHI::SamplerState> samplerState);
 
 		void UnregisterResource(ResourceHandle handle);
 		void MarkResourceAsDirty(ResourceHandle handle);

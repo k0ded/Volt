@@ -127,7 +127,10 @@ namespace Volt
 			m_animationBufferStorage.clear();
 		}
 
-		m_rayTracingScene->Update();
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			m_rayTracingScene->Update();
+		}
 	}
 
 	void RenderScene::InvalidateRenderObject(UUID64 renderObject)

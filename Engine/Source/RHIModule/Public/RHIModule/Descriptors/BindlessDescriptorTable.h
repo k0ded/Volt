@@ -4,7 +4,7 @@
 #include "RHIModule/Core/RHICommon.h"
 #include "RHIModule/Descriptors/ResourceHandle.h"
 
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 
 namespace Volt::RHI
 {
@@ -20,9 +20,9 @@ namespace Volt::RHI
 	public:
 		~BindlessDescriptorTable() override = default;
 
-		virtual ResourceHandle RegisterBuffer(WeakPtr<StorageBuffer> storageBuffer) = 0;
-		virtual ResourceHandle RegisterImageView(WeakPtr<ImageView> imageView) = 0;
-		virtual ResourceHandle RegisterSamplerState(WeakPtr<SamplerState> samplerState) = 0;
+		virtual ResourceHandle RegisterBuffer(RawPtr<StorageBuffer> storageBuffer) = 0;
+		virtual ResourceHandle RegisterImageView(RawPtr<ImageView> imageView) = 0;
+		virtual ResourceHandle RegisterSamplerState(RawPtr<SamplerState> samplerState) = 0;
 
 		virtual void UnregisterResource(ResourceHandle handle) = 0;
 		virtual void MarkResourceAsDirty(ResourceHandle handle) = 0;
@@ -33,7 +33,7 @@ namespace Volt::RHI
 		virtual void Update() = 0;
 		virtual void PrepareForRender() = 0;
 
-		virtual void Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure) = 0;
+		virtual void Bind(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) = 0;
 
 		static RefPtr<BindlessDescriptorTable> Create(const uint64_t framesInFlight);
 

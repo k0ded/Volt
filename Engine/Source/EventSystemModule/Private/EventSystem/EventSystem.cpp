@@ -3,6 +3,8 @@
 
 #include "EventSystem/EventListener.h"
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(EventSystem, PreEngine, -1);

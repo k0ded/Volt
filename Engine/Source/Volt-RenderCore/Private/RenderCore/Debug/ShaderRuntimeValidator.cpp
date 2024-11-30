@@ -13,6 +13,8 @@
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Graphics/Swapchain.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt
 {
 	constexpr uint32_t MAX_ERROR_COUNT = 1000;

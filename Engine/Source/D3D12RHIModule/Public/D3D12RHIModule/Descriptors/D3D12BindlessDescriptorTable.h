@@ -18,9 +18,9 @@ namespace Volt::RHI
 		D3D12BindlessDescriptorTable(const uint64_t framesInFlight);
 		~D3D12BindlessDescriptorTable() override;
 
-		ResourceHandle RegisterBuffer(WeakPtr<StorageBuffer> storageBuffer) override;
-		ResourceHandle RegisterImageView(WeakPtr<ImageView> imageView) override;
-		ResourceHandle RegisterSamplerState(WeakPtr<SamplerState> samplerState) override;
+		ResourceHandle RegisterBuffer(RawPtr<StorageBuffer> storageBuffer) override;
+		ResourceHandle RegisterImageView(RawPtr<ImageView> imageView) override;
+		ResourceHandle RegisterSamplerState(RawPtr<SamplerState> samplerState) override;
 
 		void UnregisterResource(ResourceHandle handle) override;
 		void MarkResourceAsDirty(ResourceHandle handle) override;
@@ -31,8 +31,8 @@ namespace Volt::RHI
 		void Update() override;
 		void PrepareForRender() override;
 
-		void Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure) override;
-		void SetRootParameters(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer);
+		void Bind(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) override;
+		void SetRootParameters(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer);
 
 	protected:
 		void* GetHandleImpl() const override;

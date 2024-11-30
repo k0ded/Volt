@@ -14,6 +14,9 @@ namespace Volt
 		using AssetCreateFunction = std::function<Ref<Asset>()>;
 
 		bool RegisterAssetType(VoltGUID typeGuid, const AssetCreateFunction& func);
+
+		void Clear();
+
 		VT_NODISCARD Ref<Asset> CreateAssetOfType(AssetType type) const;
 
 	private:

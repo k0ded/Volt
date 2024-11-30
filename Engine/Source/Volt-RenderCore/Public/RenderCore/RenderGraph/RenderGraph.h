@@ -16,6 +16,7 @@
 
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/Containers/ThreadSafeVector.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
 
 #include <string_view>
 #include <functional>
@@ -188,11 +189,11 @@ namespace Volt
 				}
 
 			private:
-				Vector<BarrierInfo> m_barriers;
+				PagedVector<BarrierInfo> m_barriers;
 			};
 
 			std::string_view name;
-			Vector<RenderGraphResourceHandle> surrenderableResources;
+			PagedVector<RenderGraphResourceHandle> surrenderableResources;
 			PassBarriers prePassBarriers;
 			PassBarriers postPassBarriers;
 
@@ -235,7 +236,7 @@ namespace Volt
 			VT_NODISCARD VT_INLINE bool HasPassBarriers(uint32_t passIndex) const { return m_passBarriers.contains(passIndex) && !m_passBarriers.at(passIndex).empty(); }
 
 		private:
-			vt::map<uint32_t, Vector<ResourceUsageInfo>> m_passBarriers;
+			vt::map<uint32_t, PagedVector<ResourceUsageInfo>> m_passBarriers;
 		};
 
 		void ExecuteInternal(bool waitForCompletedExecution, bool waitForSync);
@@ -247,37 +248,37 @@ namespace Volt
 		void InitializeRuntimeShaderValidator();
 		void AddRuntimeShaderValidationBuffers(Builder& builder);
 
-		void PrintPassBarriers(const Vector<RHI::ResourceBarrierInfo>& barriers);
+		void PrintPassBarriers(const PagedVector<RHI::ResourceBarrierInfo>& barriers);
 
-		WeakPtr<RHI::ImageView> GetImageView(const RenderGraphImageHandle resourceHandle);
-		WeakPtr<RHI::Image> GetImageRaw(const RenderGraphImageHandle resourceHandle);
-		WeakPtr<RHI::StorageBuffer> GetBufferRaw(const RenderGraphBufferHandle resourceHandle);
-		WeakPtr<RHI::StorageBuffer> GetUniformBufferRaw(const RenderGraphUniformBufferHandle resourceHandle);
-		WeakPtr<RHI::RHIResource> GetResourceRaw(const RenderGraphResourceHandle resourceHandle);
+		RawPtr<RHI::ImageView> GetImageView(const RenderGraphImageHandle resourceHandle);
+		RawPtr<RHI::Image> GetImageRaw(const RenderGraphImageHandle resourceHandle);
+		RawPtr<RHI::StorageBuffer> GetBufferRaw(const RenderGraphBufferHandle resourceHandle);
+		RawPtr<RHI::StorageBuffer> GetUniformBufferRaw(const RenderGraphUniformBufferHandle resourceHandle);
+		RawPtr<RHI::RHIResource> GetResourceRaw(const RenderGraphResourceHandle resourceHandle);
 
 		RefPtr<RHI::Image> GetImageRawRef(const RenderGraphImageHandle resourceHandle);
 		RefPtr<RHI::StorageBuffer> GetBufferRawRef(const RenderGraphBufferHandle resourceHandle);
 		RefPtr<RHI::StorageBuffer> GetUniformBufferRawRef(const RenderGraphUniformBufferHandle resourceHandle);
 
-		RenderGraphResourceHandle TryGetRegisteredExternalResource(WeakPtr<RHI::RHIResource> resource);
-		void RegisterExternalResource(WeakPtr<RHI::RHIResource> resource, RenderGraphResourceHandle handle);
+		RenderGraphResourceHandle TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource);
+		void RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RenderGraphResourceHandle handle);
 
 		void InsertBarriersIntoCommandBuffer(const CompiledRenderGraphPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
 		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer> commandBuffer);
 
-		Vector<Image2DExtractionInfo> m_imageExtractions;
-		Vector<BufferExtractionInfo> m_bufferExtractions;
+		PagedVector<Image2DExtractionInfo> m_imageExtractions;
+		PagedVector<BufferExtractionInfo> m_bufferExtractions;
 
-		Vector<Vector<MarkerFunction>> m_standaloneMarkers; // Pass -> Markers
+		PagedVector<PagedVector<MarkerFunction>> m_standaloneMarkers; // Pass -> Markers
 
-		Vector<Handle<RenderGraphResourceNodeBase>> m_resourceNodes;
-		Vector<Handle<RenderGraphPassNodeBase>> m_passNodes;
+		PagedVector<Handle<RenderGraphResourceNodeBase>> m_resourceNodes;
+		PagedVector<Handle<RenderGraphPassNodeBase>> m_passNodes;
 
 		StandaloneBarriers m_standaloneBarriers;
 
-		Vector<CompiledRenderGraphPass> m_compiledPasses;
+		PagedVector<CompiledRenderGraphPass> m_compiledPasses;
 		
-		vt::map<WeakPtr<RHI::RHIResource>, RenderGraphResourceHandle> m_registeredExternalResources;
+		vt::map<RawPtr<RHI::RHIResource>, RenderGraphResourceHandle> m_registeredExternalResources;
 
 		struct RegisteredImageView
 		{
@@ -285,7 +286,7 @@ namespace Volt
 			RHI::ImageViewType viewType;
 		};
 
-		ThreadSafeVector<ResourceHandle> m_registeredResources;
+		ThreadSafeVector<ResourceHandle, DefaultAllocator> m_registeredResources;
 
 		RenderGraphPassAllocator m_passAllocator;
 		RenderGraphResourceNodeAllocator m_resourceNodeAllocator;
@@ -293,7 +294,7 @@ namespace Volt
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::StorageBuffer> m_perPassConstantsBuffer;
-		WeakPtr<RHI::UniformBuffer> m_renderGraphConstantsBuffer;
+		RawPtr<RHI::UniformBuffer> m_renderGraphConstantsBuffer;
 
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
 		ShaderRuntimeValidator m_runtimeShaderValidator;

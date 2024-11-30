@@ -15,6 +15,8 @@
 
 #include <RHIModule/Utility/ResourceUtility.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt::RHI
 {
 	namespace Utility
@@ -43,6 +45,7 @@ namespace Volt::RHI
 	D3D12Swapchain::D3D12Swapchain(GLFWwindow* window)
 	{
 		m_windowHandle = window;
+		m_commandBuffers.resize(GetFramesInFlight());
 
 		for (uint32_t i = 0; i < GetFramesInFlight(); i++)
 		{

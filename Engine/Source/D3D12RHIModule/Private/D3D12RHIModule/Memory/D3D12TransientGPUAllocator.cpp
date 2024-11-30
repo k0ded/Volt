@@ -1,5 +1,5 @@
 #include "dxpch.h"
-#include "D3D12RHIModule/Memory/D3D12TransientAllocator.h"
+#include "D3D12RHIModule/Memory/D3D12TransientGPUAllocator.h"
 
 #include "D3D12RHIModule/Common/D3D12Helpers.h"
 
@@ -7,16 +7,18 @@
 #include <RHIModule/Utility/HashUtility.h>
 #include <RHIModule/Memory/MemoryUtility.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 #include <d3d12/d3d12.h>
 
 namespace Volt::RHI
 {
-	D3D12TransientAllocator::D3D12TransientAllocator()
+	D3D12TransientGPUAllocator::D3D12TransientGPUAllocator()
 	{
 		CreateDefaultHeaps();
 	}
 
-	D3D12TransientAllocator::~D3D12TransientAllocator()
+	D3D12TransientGPUAllocator::~D3D12TransientGPUAllocator()
 	{
 		for (const auto& imageAlloc : m_allocationCache.GetImageAllocations())
 		{
@@ -32,7 +34,7 @@ namespace Volt::RHI
 		m_imageHeaps.clear();
 	}
 
-	Handle<Allocation> D3D12TransientAllocator::CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
+	Handle<Allocation> D3D12TransientGPUAllocator::CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -77,7 +79,7 @@ namespace Volt::RHI
 		return result;
 	}
 	
-	Handle<Allocation> D3D12TransientAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> D3D12TransientGPUAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -123,27 +125,27 @@ namespace Volt::RHI
 		return result;
 	}
 	
-	void D3D12TransientAllocator::DestroyBuffer(Handle<Allocation> allocation)
+	void D3D12TransientGPUAllocator::DestroyBuffer(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueBufferAllocationForRemoval(allocation);
 	}
 	
-	void D3D12TransientAllocator::DestroyImage(Handle<Allocation> allocation)
+	void D3D12TransientGPUAllocator::DestroyImage(Handle<Allocation> allocation)
 	{
 		m_allocationCache.QueueImageAllocationForRemoval(allocation);
 	}
 
-	Vector<Handle<Allocation>> D3D12TransientAllocator::GetActiveBufferAllocations() const
+	Vector<Handle<Allocation>> D3D12TransientGPUAllocator::GetActiveBufferAllocations() const
 	{
 		return Vector<Handle<Allocation>>();
 	}
 
-	Vector<Handle<Allocation>> D3D12TransientAllocator::GetActiveImageAllocations() const
+	Vector<Handle<Allocation>> D3D12TransientGPUAllocator::GetActiveImageAllocations() const
 	{
 		return Vector<Handle<Allocation>>();
 	}
 	
-	void D3D12TransientAllocator::Update()
+	void D3D12TransientGPUAllocator::Update()
 	{
 		const auto allocationsToRemove = m_allocationCache.UpdateAndGetAllocationsToDestroy();
 
@@ -158,12 +160,12 @@ namespace Volt::RHI
 		}
 	}
 	
-	void* D3D12TransientAllocator::GetHandleImpl() const
+	void* D3D12TransientGPUAllocator::GetHandleImpl() const
 	{
 		return nullptr;
 	}
 	
-	void D3D12TransientAllocator::CreateDefaultHeaps()
+	void D3D12TransientGPUAllocator::CreateDefaultHeaps()
 	{
 		// Buffer heap
 		{
@@ -182,7 +184,7 @@ namespace Volt::RHI
 		}
 	}
 	
-	void D3D12TransientAllocator::DestroyBufferInternal(Handle<Allocation> allocation)
+	void D3D12TransientGPUAllocator::DestroyBufferInternal(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -208,7 +210,7 @@ namespace Volt::RHI
 		}
 	}
 	
-	void D3D12TransientAllocator::DestroyImageInternal(Handle<Allocation> allocation)
+	void D3D12TransientGPUAllocator::DestroyImageInternal(Handle<Allocation> allocation)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -235,17 +237,17 @@ namespace Volt::RHI
 	}
 	
 	// #TODO_Ivar: These functions will probably cause issues due to the ComPtrs
-	void D3D12TransientAllocator::DestroyOrphanBuffer(Handle<Allocation> allocation)
+	void D3D12TransientGPUAllocator::DestroyOrphanBuffer(Handle<Allocation> allocation)
 	{
 		allocation->GetResourceHandle<ID3D12Resource*>()->Release();
 	}
 	
-	void D3D12TransientAllocator::DestroyOrphanImage(Handle<Allocation> allocation)
+	void D3D12TransientGPUAllocator::DestroyOrphanImage(Handle<Allocation> allocation)
 	{
 		allocation->GetResourceHandle<ID3D12Resource*>()->Release();
 	}
 
-	RefPtr<TransientHeap> D3D12TransientAllocator::CreateNewImageHeap()
+	RefPtr<TransientHeap> D3D12TransientGPUAllocator::CreateNewImageHeap()
 	{
 		TransientHeapCreateInfo info{};
 		info.pageSize = HEAP_PAGE_SIZE;
@@ -257,7 +259,7 @@ namespace Volt::RHI
 		return heap;
 	}
 
-	RefPtr<TransientHeap> D3D12TransientAllocator::CreateNewBufferHeap()
+	RefPtr<TransientHeap> D3D12TransientGPUAllocator::CreateNewBufferHeap()
 	{
 		TransientHeapCreateInfo info{};
 		info.pageSize = HEAP_PAGE_SIZE;

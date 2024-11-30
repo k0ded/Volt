@@ -41,9 +41,9 @@ namespace Volt
 		bool isCulled = false;
 		bool hasSideEffect = false;
 
-		Vector<RenderGraphPassResourceAccess> resourceReads;
-		Vector<RenderGraphPassResourceAccess> resourceWrites;
-		Vector<RenderGraphPassResourceAccess> resourceCreates;
+		PagedVector<RenderGraphPassResourceAccess> resourceReads;
+		PagedVector<RenderGraphPassResourceAccess> resourceWrites;
+		PagedVector<RenderGraphPassResourceAccess> resourceCreates;
 
 		void* passAllocationStartPtr = nullptr;
 

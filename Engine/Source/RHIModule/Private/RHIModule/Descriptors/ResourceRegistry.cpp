@@ -36,7 +36,7 @@ namespace Volt::RHI
 		m_dirtyResources.at(m_frameIndex).clear();
 	}
 
-	ResourceHandle ResourceRegistry::RegisterResource(WeakPtr<RHI::RHIInterface> resource, RHI::ImageUsage imageUsage, uint32_t userData)
+	ResourceHandle ResourceRegistry::RegisterResource(RawPtr<RHI::RHIInterface> resource, RHI::ImageUsage imageUsage, uint32_t userData)
 	{
 		std::scoped_lock lock{ m_mutex };
 
@@ -126,7 +126,7 @@ namespace Volt::RHI
 		});
 	}
 
-	ResourceHandle ResourceRegistry::GetResourceHandle(WeakPtr<RHI::RHIInterface> resource)
+	ResourceHandle ResourceRegistry::GetResourceHandle(RawPtr<RHI::RHIInterface> resource)
 	{
 		return m_resourceHashToHandle.at(resource.GetHash());
 	}

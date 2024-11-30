@@ -21,8 +21,8 @@
 #include "VulkanRHIModule/Images/VulkanImageView.h"
 #include "VulkanRHIModule/Images/VulkanSamplerState.h"
 
-#include "VulkanRHIModule/Memory/VulkanDefaultAllocator.h"
-#include "VulkanRHIModule/Memory/VulkanTransientAllocator.h"
+#include "VulkanRHIModule/Memory/VulkanDefaultGPUAllocator.h"
+#include "VulkanRHIModule/Memory/VulkanTransientGPUAllocator.h"
 #include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
 
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
@@ -68,7 +68,7 @@ namespace Volt::RHI
 		return RefPtr<VulkanVertexBuffer>::Create(data, size, stride);
 	}
 
-	RefPtr<StorageBuffer> VulkanRHIProxy::CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator) const
+	RefPtr<StorageBuffer> VulkanRHIProxy::CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<VulkanStorageBuffer>::Create(count, elementSize, name, bufferUsage, memoryUsage, allocator);
 	}
@@ -113,7 +113,7 @@ namespace Volt::RHI
 		return RefPtr<VulkanSwapchain>::Create(window);
 	}
 
-	RefPtr<Image> VulkanRHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator) const
+	RefPtr<Image> VulkanRHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<VulkanImage>::Create(specification, data, allocator);
 	}
@@ -133,14 +133,14 @@ namespace Volt::RHI
 		return RefPtr<VulkanSamplerState>::Create(createInfo);
 	}
 
-	RefPtr<DefaultAllocator> VulkanRHIProxy::CreateDefaultAllocator() const
+	RefPtr<DefaultGPUAllocator> VulkanRHIProxy::CreateDefaultAllocator() const
 	{
-		return RefPtr<VulkanDefaultAllocator>::Create();
+		return RefPtr<VulkanDefaultGPUAllocator>::Create();
 	}
 
-	RefPtr<TransientAllocator> VulkanRHIProxy::CreateTransientAllocator() const
+	RefPtr<TransientGPUAllocator> VulkanRHIProxy::CreateTransientAllocator() const
 	{
-		return RefPtr<VulkanTransientAllocator>::Create();
+		return RefPtr<VulkanTransientGPUAllocator>::Create();
 	}
 
 	RefPtr<TransientHeap> VulkanRHIProxy::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const

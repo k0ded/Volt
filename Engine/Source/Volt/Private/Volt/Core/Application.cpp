@@ -15,6 +15,7 @@
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetSerializerRegistry.h>
 
 #include <RHIModule/ImGui/ImGuiImplementation.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -38,6 +39,7 @@
 
 #include <CoreUtilities/ThreadUtilities.h>
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/Allocator.h>
 
 namespace Volt
 {
@@ -81,6 +83,8 @@ namespace Volt
 	{
 		VT_ASSERT_MSG(!s_instance, "Application already exists!");
 		s_instance = this;
+
+		g_heapAllocator = CreateScope<PagedHeapAllocator>();
 
 		FileSystem::Initialize();
 
@@ -214,6 +218,8 @@ namespace Volt
 		Amp::WWiseEngine::Get().TermWwise();
 
 		m_assetManager = nullptr;
+		g_assetSerializerRegistry.Clear();
+		g_assetFactory.Clear();
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
@@ -233,6 +239,8 @@ namespace Volt
 		FileSystem::Shutdown();
 
 		m_subSystemManager = nullptr;
+
+		g_heapAllocator.reset();
 		s_instance = nullptr;
 	}
 

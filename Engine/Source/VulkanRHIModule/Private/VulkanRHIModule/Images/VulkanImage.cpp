@@ -18,7 +18,7 @@
 
 namespace Volt::RHI
 {
-	VulkanImage::VulkanImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator)
+	VulkanImage::VulkanImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator)
 		: m_specification(specification), m_allocator(allocator)
 	{
 		if (!allocator)

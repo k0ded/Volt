@@ -12,6 +12,8 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Images/Image.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt
 {
 	static ConsoleVariable<int32_t> s_enableMemoryAliasingCVar("r.enableMemoryAliasing", 0, "Control whether memory aliasing should be enabled");
@@ -54,17 +56,17 @@ namespace Volt
 		return *this;
 	}
 
-	WeakPtr<RHI::Image> TransientResourceSystem::AquireImage(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc)
+	RawPtr<RHI::Image> TransientResourceSystem::AquireImage(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc)
 	{
 		return AquireImageRef(resourceHandle, imageDesc);
 	}
 
-	WeakPtr<RHI::StorageBuffer> TransientResourceSystem::AquireBuffer(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
+	RawPtr<RHI::StorageBuffer> TransientResourceSystem::AquireBuffer(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
 	{
 		return AquireBufferRef(resourceHandle, bufferDesc);
 	}
 
-	WeakPtr<RHI::UniformBuffer> TransientResourceSystem::AquireUniformBuffer(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
+	RawPtr<RHI::UniformBuffer> TransientResourceSystem::AquireUniformBuffer(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
 	{
 		return AquireUniformBufferRef(resourceHandle, bufferDesc);
 	}

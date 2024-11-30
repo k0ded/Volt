@@ -15,7 +15,7 @@ namespace Volt::RHI
 		uint64_t timeSinceLastCompile = 0;
 	};
 
-	class VTRHI_API ShaderCache : public RefCounted
+	class VTRHI_API ShaderCache : public RefCounted<ShaderCache>
 	{
 	public:
 		ShaderCache(const ShaderCacheCreateInfo& cacheInfo);

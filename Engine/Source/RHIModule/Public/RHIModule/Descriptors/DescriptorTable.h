@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RHIModule/Core/RHIInterface.h"
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 
 namespace Volt::RHI
 {
@@ -22,13 +22,13 @@ namespace Volt::RHI
 	class VTRHI_API DescriptorTable : public RHIInterface
 	{
 	public:
-		virtual void SetImageView(WeakPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) = 0;
-		virtual void SetBufferView(WeakPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) = 0;
-		virtual void SetSamplerState(WeakPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) = 0;
+		virtual void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) = 0;
+		virtual void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) = 0;
+		virtual void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) = 0;
 
-		virtual void SetImageView(std::string_view name, WeakPtr<ImageView> view, uint32_t arrayIndex) = 0;
-		virtual void SetBufferView(std::string_view name, WeakPtr<BufferView> view, uint32_t arrayIndex) = 0;
-		virtual void SetSamplerState(std::string_view name, WeakPtr<SamplerState> samplerState, uint32_t arrayIndex) = 0;
+		virtual void SetImageView(std::string_view name, RawPtr<ImageView> view, uint32_t arrayIndex) = 0;
+		virtual void SetBufferView(std::string_view name, RawPtr<BufferView> view, uint32_t arrayIndex) = 0;
+		virtual void SetSamplerState(std::string_view name, RawPtr<SamplerState> samplerState, uint32_t arrayIndex) = 0;
 
 		virtual void PrepareForRender() = 0;
 

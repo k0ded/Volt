@@ -3,7 +3,7 @@
 #include "VulkanRHIModule/Core.h"
 #include "VulkanRHIModule/Memory/VulkanAllocation.h"
 
-#include <RHIModule/Memory/Allocator.h>
+#include <RHIModule/Memory/GPUAllocator.h>
 #include <RHIModule/Memory/AllocationCache.h>
 
 #include <CoreUtilities/Allocators/ArenaAllocator.h>
@@ -12,11 +12,11 @@ struct VmaAllocator_T;
 
 namespace Volt::RHI
 {
-	class VulkanDefaultAllocator : public DefaultAllocator
+	class VulkanDefaultGPUAllocator : public DefaultGPUAllocator
 	{
 	public:
-		VulkanDefaultAllocator();
-		~VulkanDefaultAllocator() override;
+		VulkanDefaultGPUAllocator();
+		~VulkanDefaultGPUAllocator() override;
 
 		Handle<Allocation> CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) override;
 		Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) override;

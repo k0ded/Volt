@@ -16,7 +16,7 @@
 
 namespace Volt::RHI
 {
-	D3D12StorageBuffer::D3D12StorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator)
+	D3D12StorageBuffer::D3D12StorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator)
 		: m_elementSize(elementSize), 
 		m_count(count), 
 		m_name(name), 

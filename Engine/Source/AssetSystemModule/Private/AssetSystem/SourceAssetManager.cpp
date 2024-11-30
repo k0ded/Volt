@@ -4,6 +4,7 @@
 #include "SourceAssetManager.h"
 
 #include <CoreUtilities/ThreadUtilities.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 VT_DEFINE_LOG_CATEGORY(LogSourceAssetManager);
 

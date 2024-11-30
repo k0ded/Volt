@@ -26,8 +26,8 @@
 #include "D3D12RHIModule/Pipelines/D3D12ComputePipeline.h"
 
 #include "D3D12RHIModule/Memory/D3D12TransientHeap.h"
-#include "D3D12RHIModule/Memory/D3D12TransientAllocator.h"
-#include "D3D12RHIModule/Memory/D3D12DefaultAllocator.h"
+#include "D3D12RHIModule/Memory/D3D12TransientGPUAllocator.h"
+#include "D3D12RHIModule/Memory/D3D12DefaultGPUAllocator.h"
 
 #include "D3D12RHIModule/Images/D3D12SamplerState.h"
 #include "D3D12RHIModule/Images/D3D12ImageView.h"
@@ -67,7 +67,7 @@ namespace Volt::RHI
 		return RefPtr<D3D12VertexBuffer>::Create(data, size, stride);
 	}
 	
-	RefPtr<StorageBuffer> D3D12RHIProxy::CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator) const
+	RefPtr<StorageBuffer> D3D12RHIProxy::CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<D3D12StorageBuffer>::Create(count, elementSize, name, bufferUsage, memoryUsage, allocator);
 	}
@@ -112,7 +112,7 @@ namespace Volt::RHI
 		return RefPtr<D3D12Swapchain>::Create(window);
 	}
 	
-	RefPtr<Image> D3D12RHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator) const
+	RefPtr<Image> D3D12RHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<D3D12Image>::Create(specification, data, allocator);
 	}
@@ -132,14 +132,14 @@ namespace Volt::RHI
 		return RefPtr<D3D12SamplerState>::Create(createInfo);
 	}
 	
-	RefPtr<DefaultAllocator> D3D12RHIProxy::CreateDefaultAllocator() const
+	RefPtr<DefaultGPUAllocator> D3D12RHIProxy::CreateDefaultAllocator() const
 	{
-		return RefPtr<D3D12DefaultAllocator>::Create();
+		return RefPtr<D3D12DefaultGPUAllocator>::Create();
 	}
 	
-	RefPtr<TransientAllocator> D3D12RHIProxy::CreateTransientAllocator() const
+	RefPtr<TransientGPUAllocator> D3D12RHIProxy::CreateTransientAllocator() const
 	{
-		return RefPtr<D3D12TransientAllocator>::Create();
+		return RefPtr<D3D12TransientGPUAllocator>::Create();
 	}
 	
 	RefPtr<TransientHeap> D3D12RHIProxy::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const

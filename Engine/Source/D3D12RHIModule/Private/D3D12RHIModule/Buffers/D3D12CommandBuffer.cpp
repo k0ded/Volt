@@ -29,6 +29,7 @@
 #include <RHIModule/RHIProxy.h>
 
 #include <CoreUtilities/EnumUtils.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <pix.h>
 
@@ -417,7 +418,7 @@ namespace Volt::RHI
 		m_commandListData.fence->Wait();
 	}
 
-	void D3D12CommandBuffer::SetEvent(WeakPtr<Event> event)
+	void D3D12CommandBuffer::SetEvent(RawPtr<Event> event)
 	{
 	}
 
@@ -443,7 +444,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
-	void D3D12CommandBuffer::DrawIndexedIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
+	void D3D12CommandBuffer::DrawIndexedIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -455,7 +456,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->ExecuteIndirect(signature.Get(), drawCount, commandsBuffer->GetHandle<ID3D12Resource*>(), offset, nullptr, 0);
 	}
 
-	void D3D12CommandBuffer::DrawIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
+	void D3D12CommandBuffer::DrawIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -467,7 +468,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->ExecuteIndirect(signature.Get(), drawCount, commandsBuffer->GetHandle<ID3D12Resource*>(), offset, nullptr, 0);
 	}
 
-	void D3D12CommandBuffer::DrawIndirectCount(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, WeakPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
+	void D3D12CommandBuffer::DrawIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -479,7 +480,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->ExecuteIndirect(signature.Get(), maxDrawCount, commandsBuffer->GetHandle<ID3D12Resource*>(), offset, countBuffer->GetHandle<ID3D12Resource*>(), countBufferOffset);
 	}
 
-	void D3D12CommandBuffer::DrawIndexedIndirectCount(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, WeakPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
+	void D3D12CommandBuffer::DrawIndexedIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -502,7 +503,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->DispatchMesh(groupCountX, groupCountY, groupCountZ);
 	}
 
-	void D3D12CommandBuffer::DispatchMeshTasksIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
+	void D3D12CommandBuffer::DispatchMeshTasksIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -514,7 +515,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->ExecuteIndirect(signature.Get(), drawCount, commandsBuffer->GetHandle<ID3D12Resource*>(), offset, nullptr, 0);
 	}
 
-	void D3D12CommandBuffer::DispatchMeshTasksIndirectCount(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, WeakPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
+	void D3D12CommandBuffer::DispatchMeshTasksIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -526,7 +527,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->ExecuteIndirect(signature.Get(), maxDrawCount, commandsBuffer->GetHandle<ID3D12Resource*>(), offset, countBuffer->GetHandle<ID3D12Resource*>(), countBufferOffset);
 	}
 
-	void D3D12CommandBuffer::TraceRays(WeakPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth)
+	void D3D12CommandBuffer::TraceRays(RawPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth)
 	{
 	}
 
@@ -546,7 +547,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->Dispatch(groupCountX, groupCountY, groupCountZ);
 	}
 
-	void D3D12CommandBuffer::DispatchIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset)
+	void D3D12CommandBuffer::DispatchIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -572,7 +573,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->RSSetScissorRects(static_cast<uint32_t>(scissors.Size()), reinterpret_cast<const D3D12_RECT*>(scissors.Data()));
 	}
 
-	void D3D12CommandBuffer::BindPipeline(WeakPtr<RenderPipeline> pipeline)
+	void D3D12CommandBuffer::BindPipeline(RawPtr<RenderPipeline> pipeline)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -588,7 +589,7 @@ namespace Volt::RHI
 		m_pipelineNeedsToBeBound = true;
 	}
 
-	void D3D12CommandBuffer::BindPipeline(WeakPtr<ComputePipeline> pipeline)
+	void D3D12CommandBuffer::BindPipeline(RawPtr<ComputePipeline> pipeline)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -604,12 +605,12 @@ namespace Volt::RHI
 		m_pipelineNeedsToBeBound = true;
 	}
 
-	void D3D12CommandBuffer::BindPipeline(WeakPtr<RayTracingPipeline> pipeline)
+	void D3D12CommandBuffer::BindPipeline(RawPtr<RayTracingPipeline> pipeline)
 	{
 
 	}
 
-	void D3D12CommandBuffer::BindVertexBuffers(const StackVector<WeakPtr<VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	void D3D12CommandBuffer::BindVertexBuffers(const StackVector<RawPtr<VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -626,7 +627,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->IASetVertexBuffers(firstBinding, static_cast<uint32_t>(views.Size()), views.Data());
 	}
 
-	void D3D12CommandBuffer::BindVertexBuffers(const StackVector<WeakPtr<StorageBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	void D3D12CommandBuffer::BindVertexBuffers(const StackVector<RawPtr<StorageBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -643,7 +644,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->IASetVertexBuffers(firstBinding, static_cast<uint32_t>(views.Size()), views.Data());
 	}
 
-	void D3D12CommandBuffer::BindIndexBuffer(WeakPtr<IndexBuffer> indexBuffer)
+	void D3D12CommandBuffer::BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -655,7 +656,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->IASetIndexBuffer(&view);
 	}
 
-	void D3D12CommandBuffer::BindIndexBuffer(WeakPtr<StorageBuffer> indexBuffer)
+	void D3D12CommandBuffer::BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -667,7 +668,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->IASetIndexBuffer(&view);
 	}
 
-	void D3D12CommandBuffer::BindDescriptorTable(WeakPtr<DescriptorTable> descriptorTable)
+	void D3D12CommandBuffer::BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable)
 	{
 		VT_PROFILE_FUNCTION();
 		descriptorTable->AsRef<D3D12DescriptorTable>().Bind(*this);
@@ -675,7 +676,7 @@ namespace Volt::RHI
 		descriptorTable->AsRef<D3D12DescriptorTable>().SetRootParameters(*this);
 	}
 
-	void D3D12CommandBuffer::BindDescriptorTable(WeakPtr<BindlessDescriptorTable> descriptorTable, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure)
+	void D3D12CommandBuffer::BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)
 	{
 		VT_PROFILE_FUNCTION();
 		descriptorTable->AsRef<D3D12BindlessDescriptorTable>().Bind(*this, constantsBuffer, offsetIndex, stride, accelerationStructure);
@@ -961,7 +962,7 @@ namespace Volt::RHI
 		return 0.0f;
 	}
 
-	void D3D12CommandBuffer::ClearImage(WeakPtr<Image> image, std::array<float, 4> clearColor)
+	void D3D12CommandBuffer::ClearImage(RawPtr<Image> image, std::array<float, 4> clearColor)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -984,7 +985,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void D3D12CommandBuffer::ClearBuffer(WeakPtr<StorageBuffer> buffer, const uint32_t value)
+	void D3D12CommandBuffer::ClearBuffer(RawPtr<StorageBuffer> buffer, const uint32_t value)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1006,7 +1007,7 @@ namespace Volt::RHI
 		m_commandListData.commandList->ClearUnorderedAccessViewUint(D3D12_GPU_DESCRIPTOR_HANDLE(tempDescriptor.GetGPUPointer()), D3D12_CPU_DESCRIPTOR_HANDLE(srcDescriptor.GetCPUPointer()), buffer->GetHandle<ID3D12Resource*>(), values, 0, nullptr);
 	}
 
-	void D3D12CommandBuffer::UpdateBuffer(WeakPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data)
+	void D3D12CommandBuffer::UpdateBuffer(RawPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data)
 	{
 	}
 
@@ -1017,19 +1018,19 @@ namespace Volt::RHI
 		m_commandListData.commandList->CopyBufferRegion(dstResource->GetResourceHandle<ID3D12Resource*>(), dstOffset, srcResource->GetResourceHandle<ID3D12Resource*>(), srcOffset, size);
 	}
 
-	void D3D12CommandBuffer::CopyBufferToImage(Handle<Allocation> srcBuffer, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
+	void D3D12CommandBuffer::CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
 	{
 	}
 
-	void D3D12CommandBuffer::CopyImageToBuffer(WeakPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
+	void D3D12CommandBuffer::CopyImageToBuffer(RawPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
 	{
 	}
 
-	void D3D12CommandBuffer::CopyImage(WeakPtr<Image> srcImage, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth)
+	void D3D12CommandBuffer::CopyImage(RawPtr<Image> srcImage, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth)
 	{
 	}
 
-	void D3D12CommandBuffer::UploadTextureData(WeakPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData)
+	void D3D12CommandBuffer::UploadTextureData(RawPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData)
 	{
 		Vector<D3D12_SUBRESOURCE_DATA> subResources;
 		subResources.reserve(copyData.copySubData.size());
@@ -1056,9 +1057,9 @@ namespace Volt::RHI
 	{
 		return CommandBufferLevel();
 	}
-	const WeakPtr<Fence> D3D12CommandBuffer::GetFence() const
+	const RawPtr<Fence> D3D12CommandBuffer::GetFence() const
 	{
-		return WeakPtr<Fence>();
+		return RawPtr<Fence>();
 	}
 	RefPtr<CommandBuffer> D3D12CommandBuffer::CreateSecondaryCommandBuffer() const
 	{

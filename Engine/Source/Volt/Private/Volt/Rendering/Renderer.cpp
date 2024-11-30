@@ -138,6 +138,12 @@ namespace Volt
 #endif
 
 		m_shaderMap = nullptr;
+
+		for (auto& resourceQueue : m_deletionQueue)
+		{
+			resourceQueue.Flush();
+		}
+
 		m_bindlessResourcesManager = nullptr;
 
 		for (auto& resourceQueue : m_deletionQueue)

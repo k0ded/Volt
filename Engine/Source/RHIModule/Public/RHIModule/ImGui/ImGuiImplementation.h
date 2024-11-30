@@ -17,7 +17,7 @@ namespace Volt::RHI
 	struct ImGuiCreateInfo
 	{
 		GLFWwindow* window = nullptr;
-		WeakPtr<Swapchain> swapchain;
+		RawPtr<Swapchain> swapchain;
 	};
 
 	class VTRHI_API ImGuiImplementation : public RHIInterface

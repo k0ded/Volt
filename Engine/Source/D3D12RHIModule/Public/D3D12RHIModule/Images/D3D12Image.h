@@ -9,7 +9,7 @@ namespace Volt::RHI
 	class D3D12Image final : public Image
 	{
 	public:
-		D3D12Image(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator);
+		D3D12Image(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator);
 		D3D12Image(const SwapchainImageSpecification& specification);
 
 		~D3D12Image() override;
@@ -58,7 +58,7 @@ namespace Volt::RHI
 		SwapchainImageData m_swapchainImageData;
 
 		Handle<Allocation> m_allocation;
-		RefPtr<Allocator> m_allocator;
+		RefPtr<GPUAllocator> m_allocator;
 
 		bool m_isSwapchainImage = false;
 

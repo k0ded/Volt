@@ -97,7 +97,7 @@ namespace Volt
 		m_passConstantsBuffer = BindlessResource<RHI::StorageBuffer>::CreateScopeFromResource(constantsBuffer);
 	}
 
-	void SharedRenderContext::SetRenderGraphConstantsBuffer(WeakPtr<RHI::UniformBuffer> constantsBuffer)
+	void SharedRenderContext::SetRenderGraphConstantsBuffer(RawPtr<RHI::UniformBuffer> constantsBuffer)
 	{
 		m_renderGraphConstantsBuffer = constantsBuffer;
 	}

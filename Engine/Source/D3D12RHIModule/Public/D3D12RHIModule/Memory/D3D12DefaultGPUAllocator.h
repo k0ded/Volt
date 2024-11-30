@@ -2,7 +2,7 @@
 
 #include "D3D12RHIModule/Memory/D3D12Allocation.h"
 
-#include <RHIModule/Memory/Allocator.h>
+#include <RHIModule/Memory/GPUAllocator.h>
 #include <RHIModule/Memory/AllocationCache.h>
 
 #include <CoreUtilities/Allocators/ArenaAllocator.h>
@@ -14,11 +14,11 @@ namespace D3D12MA
 
 namespace Volt::RHI
 {
-	class D3D12DefaultAllocator : public DefaultAllocator
+	class D3D12DefaultGPUAllocator : public DefaultGPUAllocator
 	{
 	public:
-		D3D12DefaultAllocator();
-		~D3D12DefaultAllocator() override;
+		D3D12DefaultGPUAllocator();
+		~D3D12DefaultGPUAllocator() override;
 
 		Handle<Allocation> CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) override;
 		Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) override;
