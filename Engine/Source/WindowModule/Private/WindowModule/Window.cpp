@@ -360,9 +360,9 @@ namespace Volt
 
 	void Window::BeginFrame()
 	{
-		m_swapchain->BeginFrame();
 		WindowBeginFrameEvent beginFrameEvent;
 		EventSystem::DispatchEvent(beginFrameEvent);
+		m_swapchain->BeginFrame();
 	}
 
 	void Window::Render(float timestep)

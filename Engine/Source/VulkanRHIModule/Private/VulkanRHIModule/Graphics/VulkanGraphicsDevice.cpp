@@ -58,6 +58,7 @@ namespace Volt::RHI
 			s_enabledFeatures.vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 			s_enabledFeatures.vulkan11Features.pNext = nullptr;
 			s_enabledFeatures.vulkan11Features.shaderDrawParameters = VK_TRUE;
+			s_enabledFeatures.vulkan11Features.multiview = VK_TRUE;
 
 			s_enabledFeatures.vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 			s_enabledFeatures.vulkan12Features.pNext = &s_enabledFeatures.vulkan11Features;
@@ -206,6 +207,7 @@ namespace Volt::RHI
 			s_enabledFeatures.physicalDeviceFeatures.features.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
 			s_enabledFeatures.physicalDeviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
 			s_enabledFeatures.physicalDeviceFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
+			s_enabledFeatures.physicalDeviceFeatures.features.sampleRateShading = VK_TRUE;
 
 			s_enabledFeatures.physicalDeviceFeatures.features.shaderInt16 = VK_TRUE; // #TODO_Ivar: does not work on older cards
 		}

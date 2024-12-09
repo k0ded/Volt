@@ -64,6 +64,7 @@ namespace Volt
 			}
 
 			SetValue(other);
+			return GetValue();
 		}
 
 	private:

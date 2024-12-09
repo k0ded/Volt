@@ -6,6 +6,8 @@
 #include <CoreUtilities/Pointers/RawPtr.h>
 
 #include <span>
+#include <CoreUtilities/Weak.h>
+#include <CoreUtilities/Core.h>
 
 struct GLFWwindow;
 
@@ -54,6 +56,8 @@ namespace Volt::RHI
 
 	class ImGuiImplementation;
 	class ResourceStateTracker;
+
+	class FrameCapture;
 
 	struct BufferViewSpecification;
 	struct DescriptorTableCreateInfo;
@@ -138,11 +142,16 @@ namespace Volt::RHI
 		virtual void DestroyResource(std::function<void()>&& function) = 0;
 		virtual void RequestApplicationClose() = 0;
 
+		void SetFrameCapture(Ref<FrameCapture> frameCapture);
+
 		static RHIProxy& GetInstance() { return *s_instance; }
+		static Weak<FrameCapture> GetFrameCapture();
 
 	protected:
 		inline static RHIProxy* s_instance = nullptr;
 
 		RHIProxy();
+
+		Ref<FrameCapture> m_frameCapture;
 	};
 }

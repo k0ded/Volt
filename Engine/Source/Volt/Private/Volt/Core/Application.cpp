@@ -19,6 +19,7 @@
 
 #include <RHIModule/ImGui/ImGuiImplementation.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/FrameCapture.h>
 
 #include <VulkanRHIModule/VulkanRHIProxy.h>
 #include <D3D12RHIModule/D3D12RHIProxy.h>
@@ -195,6 +196,8 @@ namespace Volt
 
 		m_pluginSystem->InitializePlugins();
 		m_eventListener = CreateScope<ApplicationEventListener>(*this);
+
+		SetupFrameCapture();
 	}
 
 	Application::~Application()
@@ -370,6 +373,15 @@ namespace Volt
 		}
 
 		m_graphicsContext = RHI::GraphicsContext::Create(cinfo);
+	}
+
+	void Application::SetupFrameCapture()
+	{
+		if (RHI::RHIProxy::GetInstance().GetFrameCapture())
+		{
+			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetFlags(RHI::FrameCaptureFlags::DisableOverlay);
+			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetCaptureFileTargetFilePath(ProjectManager::GetProjectDirectory() / ("Volt-" + ProjectManager::GetProject().name));
+		}
 	}
 
 	bool Application::OnAppUpdateEvent(AppUpdateEvent&)
