@@ -30,6 +30,26 @@ namespace Volt::PhysXUtilities
 		return physx::PxTransform(ToPhysXVector(position), ToPhysXQuat(rotation));
 	}
 
+	inline glm::vec3 FromPhysXVector(const physx::PxVec3& vector)
+	{
+		return *(glm::vec3*)&vector;
+	}
+
+	inline glm::vec3 FromPhysXVector(const physx::PxExtendedVec3& vector)
+	{
+		return { (float)vector.x, (float)vector.y, (float)vector.z };
+	}
+
+	inline glm::vec4 FromPhysXVector(const physx::PxVec4& vector)
+	{
+		return *(glm::vec4*)&vector;
+	}
+
+	inline glm::quat FromPhysXQuat(const physx::PxQuat& quat)
+	{
+		return { quat.w, quat.x, quat.y, quat.z };
+	}
+
 	inline glm::mat4 FromPhysXTransform(const physx::PxTransform& transform)
 	{
 		glm::quat rotation = FromPhysXQuat(transform.q);
@@ -40,26 +60,6 @@ namespace Volt::PhysXUtilities
 	inline glm::mat4 FromPhysXMatrix(const physx::PxMat44& matrix)
 	{
 		return *(glm::mat4*)&matrix;
-	}
-
-	inline glm::vec3 FromPhysXVector(const physx::PxVec3& vector)
-	{
-		return *(glm::vec3*)&vector;
-	}
-
-	inline glm::vec3 FromPhysXVector(const physx::PxExtendedVec3& vector)
-	{
-		return { (float)vector.x, (float)vector.y, (float)vector.z };
-	}
-	
-	inline glm::vec4 FromPhysXVector(const physx::PxVec4& vector)
-	{
-		return *(glm::vec4*)&vector;
-	}
-
-	inline glm::quat FromPhysXQuat(const physx::PxQuat& quat)
-	{
-		return { quat.w, quat.x, quat.y, quat.z };
 	}
 
 	inline physx::PxBroadPhaseType::Enum ToPhysXBroadphase(BroadphaseType type)

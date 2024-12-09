@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PhysicsInterface/PhysicsTypes.h"
+#include "PhysicsInterface/PhysicsHandleType.h"
 
 #include <glm/glm.hpp>
 

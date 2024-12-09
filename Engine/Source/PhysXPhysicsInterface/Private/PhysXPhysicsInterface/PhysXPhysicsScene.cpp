@@ -153,11 +153,29 @@ namespace Volt
 	
 	bool PhysXPhysicsScene::LineCast(const glm::vec3& origin, const glm::vec3& destination, RayCastHit& outHit, uint32_t layerMask)
 	{
-		return false;
+		physx::PxRaycastBuffer hitInfo{};
+
+		const glm::vec3 direction = glm::normalize(destination - origin);
+		const float distance = glm::distance(destination, origin);
+
+		bool result = m_physXScene->raycast(PhysXUtilities::ToPhysXVector(origin), PhysXUtilities::ToPhysXVector(direction), distance, hitInfo);
+
+		if (result)
+		{
+			PhysicsIDType* actor = reinterpret_cast<PhysicsIDType*>(hitInfo.block.actor->userData);
+			outHit.actorId = actor->GetID();
+			outHit.position = PhysXUtilities::FromPhysXVector(hitInfo.block.position);
+			outHit.normal = PhysXUtilities::FromPhysXVector(hitInfo.block.normal);
+			outHit.distance = hitInfo.block.distance;
+		}
+
+		return result;
 	}
 	
 	bool PhysXPhysicsScene::OverlapBox(const glm::vec3& origin, const glm::vec3& halfSize, Vector<PhysicsActorID>& outUserData, uint32_t layerMask)
 	{
+
+
 		return false;
 	}
 	

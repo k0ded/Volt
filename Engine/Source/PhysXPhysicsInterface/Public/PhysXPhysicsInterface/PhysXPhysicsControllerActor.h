@@ -6,6 +6,7 @@ namespace physx
 {
 	class PxController;
 	class PxControllerManager;
+	class PxCapsuleController;
 }
 
 namespace Volt

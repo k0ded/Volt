@@ -8,6 +8,8 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 
+#include <functional>
+
 namespace Volt
 {
 	using PhysicsSceneAdvancedCallback = std::function<void(const Vector<Ref<PhysicsActor>>)>;

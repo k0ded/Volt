@@ -1,8 +1,10 @@
 #pragma once
 
+#include "PhysicsInterface/Config.h"
+
 namespace Volt
 {
-	class PhysicsSubStepper
+	class VTPI_API PhysicsSubStepper
 	{
 	public:
 		PhysicsSubStepper(float subStepSize);

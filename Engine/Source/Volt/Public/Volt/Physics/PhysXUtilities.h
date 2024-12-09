@@ -9,15 +9,16 @@ namespace Volt
 {
 	namespace PhysXUtilities
 	{
-		physx::PxTransform ToPhysXTransform(const glm::mat4& transform);
-		physx::PxTransform ToPhysXTransform(const glm::vec3& position, const glm::quat& rotation);
-		physx::PxMat44 ToPhysXMatrix(const glm::mat4& mat);
-
 		const physx::PxVec3& ToPhysXVector(const glm::vec3& vec);
 		const physx::PxVec4& ToPhysXVector(const glm::vec4& vec);
 		const physx::PxExtendedVec3 ToPhysXVectorExtended(const glm::vec3& vec);
 
 		physx::PxQuat ToPhysXQuat(const glm::quat& quat);
+
+		physx::PxTransform ToPhysXTransform(const glm::mat4& transform);
+		physx::PxTransform ToPhysXTransform(const glm::vec3& position, const glm::quat& rotation);
+		physx::PxMat44 ToPhysXMatrix(const glm::mat4& mat);
+
 		physx::PxFilterData CreateFilterDataFromLayer(uint32_t layerId, CollisionDetectionType collisionDetection);
 
 		glm::mat4 FromPhysXTransform(const physx::PxTransform& transform);
