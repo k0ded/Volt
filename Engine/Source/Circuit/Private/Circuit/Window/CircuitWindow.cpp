@@ -38,12 +38,14 @@ namespace Circuit
 
 	std::vector<CircuitDrawCommand> CircuitWindow::GetDrawCommands()
 	{
-		CircuitPainter painter(glm::vec2(0,0), glm::vec2(GetSize().x, GetSize().y));
+		CircuitPainter basePainter(/*shouldCalculateBounds*/true);
 		if (m_widget)
 		{
-			m_widget->OnPaint(painter);
+			const Volt::Rect windowBounds = Volt::Rect(0.f, 0.f, static_cast<float>(GetSize().x), static_cast<float>(GetSize().y));
+			m_widget->OnLayout(windowBounds.GetSize());
+			basePainter.AddWidget(m_widget, windowBounds);
 		}
-		return painter.GetCommands();
+		return basePainter.GetCommands();
 	}
 
 	void CircuitWindow::SetWidget(Ref<Widget> widget)

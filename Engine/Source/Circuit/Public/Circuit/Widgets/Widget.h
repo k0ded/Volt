@@ -29,14 +29,16 @@ namespace Circuit
 		void BuildBaseArgs(const CircuitBaseArgs& baseArgs);
 
 		virtual void OnPaint(CircuitPainter& painter);
+		//AllotedSize on specific axis will be -1 if it depends on the child widget for that size
+		//Returns the size of the widget if placed in the given alloted area
+		virtual glm::vec2 OnLayout(const glm::vec2& allotedSize) { return glm::vec2(0, 0); };
 
-		virtual void CalculateBounds();
-		virtual Volt::Rect GetBounds();
+		Volt::Rect GetBounds() { return m_bounds; }
 
 		void RequestRebuild();
 
-		const std::vector<Ref<Widget>>& GetChildren() const { return m_Children; }
-
+		virtual bool HasChildren() const { return false; }
+		virtual const Vector<std::shared_ptr<Widget>>* GetChildren() const { return nullptr;}
 		bool IsRenderPrimitive() const;
 		RenderPrimitiveType GetRenderPrimitiveType() const;
 
@@ -59,11 +61,7 @@ namespace Circuit
 
 		Weak<Widget> m_parentWidget;
 	private:
-		Volt::Rect m_bounds;
-
-		std::vector<Ref<Widget>> m_Children;
-
-
+		Volt::Rect m_bounds = Volt::Rect(0,0,0,0);
 
 		float m_LocalXPosition = 0;
 		float m_LocalYPosition = 0;
@@ -71,11 +69,4 @@ namespace Circuit
 
 
 	};
-
-	template<class WidgetType>
-	inline Ref<WidgetType>& Widget::AddChildWidget(Ref<WidgetType> Widget)
-	{
-		m_Children.push_back(Widget);
-		return Widget;
-	}
 }

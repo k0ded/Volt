@@ -16,7 +16,9 @@ namespace Circuit
 		CIRCUIT_END_ARGS();
 
 		void Build(const Arguments& args);
-		
+
+		virtual bool IsHittestInvisible() const override { return false; };
+
 	private:
 		Ref<LayoutWidget> BuildTitlebar();
 		Ref<Widget> m_content;

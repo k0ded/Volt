@@ -11,22 +11,20 @@ namespace Volt
 
 namespace Circuit
 {
+	class Widget;
 	class CircuitPainter
 	{
 	public:
-		CircuitPainter();
-		CircuitPainter(const Volt::Rect& allotedArea);
-		CircuitPainter(const glm::vec2& position, const glm::vec2& size);
+		CircuitPainter(bool shouldCalculateBounds) : m_calculateBounds(shouldCalculateBounds) {};
 
-		CircuitPainter(CircuitPainter* basePainter, const Volt::Rect& allotedArea);
-		CircuitPainter(CircuitPainter* basePainter, const glm::vec2& position, const glm::vec2& size);
 
 		~CircuitPainter() = default;
 
 		const Volt::Rect& GetAllotedArea() const;
 
-		CircuitPainter CreateSubPainter(const Volt::Rect& allotedArea);
-		CircuitPainter CreateSubPainter(const glm::vec2& position, const glm::vec2& size);
+		VT_INLINE void AddWidget(Ref<Widget> widget, float x, float y, float width, float height) { AddWidget(widget,Volt::Rect(x, y, width, height)); }
+		VT_INLINE void AddWidget(Ref<Widget> widget, const glm::vec2& position, const glm::vec2& size){AddWidget(widget, Volt::Rect(position, size));}
+		void AddWidget(Ref<Widget> widget, const Volt::Rect& allotedArea);
 
 		void AddRect(float x, float y, float width, float height, CircuitColor color, float rotation = 0, float scale = 1);
 		void AddCircle(float x, float y, float radius, CircuitColor color, float scale = 1);
@@ -34,11 +32,19 @@ namespace Circuit
 
 		std::vector<CircuitDrawCommand> GetCommands();
 	private:
+		CircuitPainter(CircuitPainter* basePainter, const Volt::Rect& allotedArea) :
+			m_allottedArea(allotedArea),
+			m_basePainter(basePainter)
+		{};
+		VT_INLINE CircuitPainter CreateSubPainter(const Volt::Rect& allotedArea){	return CircuitPainter(m_basePainter ? m_basePainter : this, allotedArea); }
+
 		std::vector<CircuitDrawCommand> m_drawCommands;
 
 		Volt::Rect m_allottedArea;
 
 		CircuitPainter* m_basePainter = nullptr;
+
+		bool m_calculateBounds = false;
 
 	};
 }

@@ -17,7 +17,9 @@ namespace Circuit
 		TextWidget();
 		virtual ~TextWidget();
 
-		CIRCUIT_BEGIN_ARGS(TextWidget)
+		CIRCUIT_BEGIN_ARGS(TextWidget): 
+			_Size(21.f),
+			_Color(0xffffffff)
 		{
 		};
 		CIRCUIT_ATTRIBUTE(std::string, Text);
@@ -28,6 +30,7 @@ namespace Circuit
 
 		void Build(const Arguments& args);
 
+		virtual glm::vec2 OnLayout(const glm::vec2& allotedSize) override;
 		virtual void OnPaint(CircuitPainter& painter) override;
 
 		virtual bool IsHittestInvisible() const { return true; };

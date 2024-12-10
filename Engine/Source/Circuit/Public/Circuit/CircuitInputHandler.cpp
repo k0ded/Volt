@@ -57,7 +57,12 @@ namespace Circuit
 				continue;
 			}
 
-			for (Ref<Widget> child : checkingWidget->GetChildren())
+			if (!checkingWidget->HasChildren())
+			{
+				continue;
+			}
+
+			for (Ref<Widget> child : *checkingWidget->GetChildren())
 			{
 				if (child->GetBounds().IsPointInside(mouseRelativeToWindow))
 				{

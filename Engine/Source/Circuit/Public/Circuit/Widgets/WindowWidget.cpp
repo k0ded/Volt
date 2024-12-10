@@ -5,6 +5,8 @@
 #include "Circuit/Widgets/ButtonWidget.h"
 #include "TextWidget.h"
 
+#include "Circuit/CircuitPainter.h"
+
 namespace Circuit
 {
 	void WindowWidget::Build(const Arguments& args)
@@ -13,15 +15,17 @@ namespace Circuit
 
 		auto layout = CreateWidget(LayoutWidget).Orientation(LayoutOrientation::Vertical);
 
-		
+
 		layout->AddFixedSlice(BuildTitlebar(), 100);
 
-		layout->AddFlexibleSlice(m_content);
+		if (m_content)
+		{
+			layout->AddFlexibleSlice(m_content);
+		}
 
-		/*SetChildWidget(
-			layout
-		);*/
+		AddChildWidget(layout);
 	}
+
 	std::shared_ptr<LayoutWidget> WindowWidget::BuildTitlebar()
 	{
 		//Window titlebar
@@ -31,9 +35,13 @@ namespace Circuit
 			.Text("WINDOW TITLE!")
 			.Size(21.f)
 		);
-		titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget));
-		titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget));
-		titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget));
+
+		titlebar->AddFixedSlice(CreateWidget(TextWidget).Text(" "), 10);
+		titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget).Content(CreateWidget(TextWidget).Text("_").Size(30)));
+		titlebar->AddFixedSlice(CreateWidget(TextWidget).Text(" "), 10);
+		titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget).Content(CreateWidget(TextWidget).Text("O").Size(30)));
+		titlebar->AddFixedSlice(CreateWidget(TextWidget).Text(" "), 10);
+		titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget).Content(CreateWidget(TextWidget).Text("X").Size(30)));
 
 		return titlebar;
 	}

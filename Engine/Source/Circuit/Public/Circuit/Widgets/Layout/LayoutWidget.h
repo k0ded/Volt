@@ -25,6 +25,7 @@ namespace Circuit
 
 		void Build(const Arguments& args);
 
+		virtual glm::vec2 OnLayout(const glm::vec2& allotedSize) override;
 		virtual void OnPaint(CircuitPainter& painter) override;
 
 		void AddFixedSlice(Ref<Widget> widget, float size);
@@ -38,7 +39,8 @@ namespace Circuit
 		struct Slice
 		{
 			Weak<Widget> widget;
-			float size = -1; //for fixed size, if < 0 is flexible slice
+			float size = -1; // for flexible slots, this will be set in OnLayout
+			bool isFlexible;
 		};
 		Vector<Slice> m_slices;
 

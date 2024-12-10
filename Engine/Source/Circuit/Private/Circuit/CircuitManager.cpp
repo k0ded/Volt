@@ -56,8 +56,7 @@ namespace Circuit
 		*/
 
 		m_windows[Volt::WindowManager::Get().GetMainWindowHandle()]->SetWidget(
-			CreateWidget(ButtonWidget)
-			.Size({ 50, 20 })
+			CreateWidget(WindowWidget)
 		);
 
 

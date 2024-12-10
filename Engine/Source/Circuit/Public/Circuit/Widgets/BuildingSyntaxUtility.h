@@ -108,7 +108,6 @@ struct CircuitDeclare
 		VT_PROFILE_SCOPE("Build Circuit Widget");
 		m_Widget->BuildBaseArgs(args);
 		m_Widget->Build(args);
-		m_Widget->CalculateBounds();
 		return m_Widget;
 	}
 	Ref<WidgetType> m_Widget;

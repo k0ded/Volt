@@ -16,10 +16,45 @@ Circuit::ButtonWidget::~ButtonWidget()
 
 void Circuit::ButtonWidget::Build(const Arguments& args)
 {
+	m_content = args._Content;
+
+	if (m_content)
+	{
+		AddChildWidget(m_content);
+	}
+
 	m_hovered = false;
 	m_pressed = false;
 	m_minSize = args._MinSize;
-	m_size = args._Size;
+}
+
+glm::vec2 Circuit::ButtonWidget::OnLayout(const glm::vec2& allotedSize)
+{
+	glm::vec2 result;
+
+	if (m_content)
+	{
+		result = m_content->OnLayout(allotedSize);
+	}
+	else
+	{
+		//if we dont have content, take the whole area given
+		result = allotedSize;
+
+		//but if we are given a flexible area, shrink to min size
+		if (result.x == -1)
+		{
+			result.x  = m_minSize.x;
+		}
+
+		if (result.y == -1)
+		{
+			result.y = m_minSize.y;
+		}
+	}
+
+	m_size = result;
+	return result;
 }
 
 void Circuit::ButtonWidget::OnPaint(CircuitPainter& painter)
@@ -37,13 +72,12 @@ void Circuit::ButtonWidget::OnPaint(CircuitPainter& painter)
 	{
 		buttonColor = &hoveredColor;
 	}
-	glm::vec2 size = m_size;
-	//if we have an invalid size, autosize instead
-	if (size.x < 0 || size.y < 0)
+	painter.AddRect(0, 0, m_size.x, m_size.y, *buttonColor);
+
+	if (m_content)
 	{
-		size = glm::vec2(glm::max(painter.GetAllotedArea().GetSize().x, m_minSize.x), glm::max(painter.GetAllotedArea().GetSize().y, m_minSize.y));
+		painter.AddWidget(m_content, 0, 0, m_size.x, m_size.y);
 	}
-	painter.AddRect(0, 0, size.x, size.y, *buttonColor);
 }
 
 void Circuit::ButtonWidget::OnBeginHover()

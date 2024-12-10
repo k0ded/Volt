@@ -106,11 +106,11 @@ namespace Circuit
 			return false;
 		}
 
-		if (GetBounds().IsPointInside(Volt::Input::GetMousePosition()))
+		/*if (GetBounds().IsPointInside(Volt::Input::GetMousePosition()))
 		{
 			m_dragging = true;
 			SetValueAccordingToMousePos();
-		}
+		}*/
 
 		return false;
 	}
@@ -132,14 +132,14 @@ namespace Circuit
 	void SliderWidget::SetValueAccordingToMousePos()
 	{
 		const glm::vec2 mousePos = Volt::Input::GetMousePosition();
-		float clamped = GetBounds().ClampInsideX(mousePos.x);
+		//float clamped = GetBounds().ClampInsideX(mousePos.x);
 
-		const glm::vec2 topLeft = GetBounds().GetPosition();
-		const glm::vec2 bottomRight = GetBounds().GetBottomRight();
+		//const glm::vec2 topLeft = GetBounds().GetPosition();
+		//const glm::vec2 bottomRight = GetBounds().GetBottomRight();
 
 		// Calculate the normalized value (0 to 1)
-		float valueNormalized = (clamped - topLeft.x) / (bottomRight.x - topLeft.x);
+		//float valueNormalized = (clamped - topLeft.x) / (bottomRight.x - topLeft.x);
 
-		m_onValueChanged.ExecuteIfBound(m_minValue + valueNormalized * (m_maxValue - m_minValue));
+		//m_onValueChanged.ExecuteIfBound(m_minValue + valueNormalized * (m_maxValue - m_minValue));
 	}
 }

@@ -8,11 +8,21 @@ namespace Circuit
 	{
 		m_orientation = args._Orientation;
 	}
-	void LayoutWidget::OnPaint(CircuitPainter& painter)
+	glm::vec2 LayoutWidget::OnLayout(const glm::vec2& allotedSize)
 	{
-		const Volt::Rect& basePainterArea = painter.GetAllotedArea();
+		glm::vec2 returnSize = glm::zero<glm::vec2>();
+		switch (m_orientation)
+		{
+			case Circuit::LayoutOrientation::Horizontal:
+				returnSize.y = 0;//highest slice
+				returnSize.x = 0;//all slices widths together
+				break;
+			case Circuit::LayoutOrientation::Vertical:
+				returnSize.x = 0;//widest slice
+				returnSize.y = 0;//all slices heights together
+				break;
+		}
 
-		glm::vec2 offsetPosition = { 0,0 };
 		for (Slice& slice : m_slices)
 		{
 			if (slice.widget.IsExpired())
@@ -20,37 +30,93 @@ namespace Circuit
 				continue;
 			}
 
-			glm::vec2 sizeOffset = { 0,0 };
-			if (slice.size < 0)
+
+			//determine what size we are giving the widget in the slice
+			glm::vec2 sliceSize = { 0,0 };
+			float orientationSize = 0;
+			if (slice.isFlexible)
 			{
-				if (m_orientation == LayoutOrientation::Horizontal)
-				{
-					sizeOffset.x = slice.widget->GetBounds().GetSize().x;
-				}
-				else if (m_orientation == LayoutOrientation::Vertical)
-				{
-					sizeOffset.y = slice.widget->GetBounds().GetSize().y;
-				}
+				orientationSize = -1;
 			}
 			else
 			{
-				if (m_orientation == LayoutOrientation::Horizontal)
-				{
-					sizeOffset.x = slice.size;
-				}
-				else if (m_orientation == LayoutOrientation::Vertical)
-				{
-					sizeOffset.y = slice.size;
-				}
+				orientationSize = slice.size;
 			}
 
-			const glm::vec2 position = basePainterArea.GetPosition() + offsetPosition;
-			const glm::vec2 size = basePainterArea.GetSize() + sizeOffset;
+			switch (m_orientation)
+			{
+				case Circuit::LayoutOrientation::Horizontal:
+					sliceSize.x = orientationSize;
+					sliceSize.y = allotedSize.y;
+					break;
+				case Circuit::LayoutOrientation::Vertical:
+					sliceSize.y = orientationSize;
+					sliceSize.x = allotedSize.x;
+					break;
+			}
+			//
 
-			offsetPosition += size;
+			const glm::vec2 widgetSize = slice.widget->OnLayout(sliceSize);
 
-			CircuitPainter subPainter = painter.CreateSubPainter(position, size);
-			slice.widget->OnPaint(subPainter);
+
+			if (sliceSize.x == -1)
+			{
+				sliceSize.x = widgetSize.x;
+			}
+
+			if (sliceSize.y == -1)
+			{
+				sliceSize.y = widgetSize.y;
+			}
+
+
+			switch (m_orientation)
+			{
+				case LayoutOrientation::Horizontal:
+					returnSize.x += sliceSize.x; // all slices widths summed
+					returnSize.y = glm::max(sliceSize.y, returnSize.y); // the tallest slice
+
+					if (slice.isFlexible)
+					{
+						slice.size = sliceSize.x;
+					}
+					break;
+
+				case LayoutOrientation::Vertical:
+					returnSize.y += sliceSize.y; // all slices heights summed
+					returnSize.x = glm::max(sliceSize.x, returnSize.x); // the widest slice
+
+					if (slice.isFlexible)
+					{
+						slice.size = sliceSize.y;
+					}
+					break;
+			}
+		}
+
+		return returnSize;
+	}
+	void LayoutWidget::OnPaint(CircuitPainter& painter)
+	{
+		float offset = 0;
+		for (Slice& slice : m_slices)
+		{
+			if (slice.widget.IsExpired())
+			{
+				continue;
+			}
+
+			switch (m_orientation)
+			{
+				case Circuit::LayoutOrientation::Horizontal:
+					painter.AddWidget(slice.widget, offset, 0, slice.size, painter.GetAllotedArea().GetSize().y);
+					break;
+				case Circuit::LayoutOrientation::Vertical:
+					painter.AddWidget(slice.widget, 0, offset, painter.GetAllotedArea().GetSize().x, slice.size);
+					break;
+			}
+
+			offset += slice.size;
 		}
 	}
 	void LayoutWidget::AddFixedSlice(Ref<Widget> contentWidget, float size)
@@ -59,6 +125,7 @@ namespace Circuit
 		Slice& newSlice = m_slices.emplace_back();
 		newSlice.widget = contentWidget;
 		newSlice.size = static_cast<float>(size);
+		newSlice.isFlexible = false;
 
 		AddChildWidget(contentWidget);
 	}
@@ -67,6 +134,7 @@ namespace Circuit
 	{
 		Slice& newSlice = m_slices.emplace_back();
 		newSlice.widget = contentWidget;
+		newSlice.isFlexible = true;
 
 		AddChildWidget(contentWidget);
 	}

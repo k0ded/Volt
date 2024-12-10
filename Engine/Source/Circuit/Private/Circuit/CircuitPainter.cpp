@@ -1,6 +1,8 @@
 #include "circuitpch.h"
 #include "CircuitPainter.h"
 
+#include "Circuit/Widgets/Widget.h"
+
 #include <Volt-Assets/Assets/Font.h>
 #include <Volt-Assets/Assets/MSDFData.h>
 
@@ -8,45 +10,43 @@
 
 namespace Circuit
 {
-	CircuitPainter::CircuitPainter()
-	{
-	}
-
-	CircuitPainter::CircuitPainter(const Volt::Rect& allotedArea)
-		:m_allottedArea(allotedArea)
-	{
-	}
-
-	CircuitPainter::CircuitPainter(const glm::vec2& position, const glm::vec2& size)
-		:m_allottedArea(position, size)
-	{
-	}
-
-	CircuitPainter::CircuitPainter(CircuitPainter* basePainter, const Volt::Rect& allotedArea)
-		:m_allottedArea(allotedArea),
-		m_basePainter(basePainter)
-	{
-	}
-
-	CircuitPainter::CircuitPainter(CircuitPainter* basePainter, const glm::vec2& position, const glm::vec2& size)
-		:m_allottedArea(position, size),
-		m_basePainter(basePainter)
-	{
-	}
 
 	const Volt::Rect& CircuitPainter::GetAllotedArea() const
 	{
 		return m_allottedArea;
 	}
 
-	CircuitPainter CircuitPainter::CreateSubPainter(const Volt::Rect& allotedArea)
+	void CircuitPainter::AddWidget(Ref<Widget> widget, const Volt::Rect& allotedArea)
 	{
-		return CircuitPainter(m_basePainter ? m_basePainter : this, allotedArea);
-	}
+		Volt::Rect subAllotedArea = Volt::Rect(allotedArea.GetPosition() + m_allottedArea.GetPosition(), allotedArea.GetSize());
+		CircuitPainter subPainter = CreateSubPainter(subAllotedArea);
+		widget->OnPaint(subPainter);
 
-	CircuitPainter CircuitPainter::CreateSubPainter(const glm::vec2& position, const glm::vec2& size)
-	{
-		return CircuitPainter(m_basePainter ? m_basePainter : this, position, size);
+		if (m_calculateBounds)
+		{
+			std::vector<CircuitDrawCommand> commands = subPainter.GetCommands();
+
+			Volt::Rect bounds = Volt::Rect(allotedArea.GetPosition(), glm::vec2(0.f, 0.f));
+
+			for (CircuitDrawCommand& command : commands)
+			{
+				switch (command.type)
+				{
+					case CircuitPrimitiveType::Rect:
+						bounds.MergeRectIntoThis(Volt::Rect(command.pixelPos, command.radiusHalfSize * 2.f));
+						break;
+
+					case CircuitPrimitiveType::Circle:
+						bounds.MergeRectIntoThis(Volt::Rect(command.pixelPos - glm::vec2(command.radiusHalfSize.x), command.radiusHalfSize.x * 2.f));
+						break;
+					case CircuitPrimitiveType::TextCharacter:
+						bounds.MergeRectIntoThis(Volt::Rect(command.minMaxPx.x, command.minMaxPx.y, glm::abs(command.minMaxPx.z - command.minMaxPx.x), glm::abs(command.minMaxPx.w - command.minMaxPx.y)));
+						break;
+				}
+			}
+
+			//widget->SetBounds(bounds);
+		}
 	}
 
 	void CircuitPainter::AddRect(float x, float y, float width, float height, CircuitColor color, float rotation, float scale)
@@ -54,8 +54,8 @@ namespace Circuit
 		CircuitDrawCommand command;
 		command.type = CircuitPrimitiveType::Rect;
 
-		command.pixelPos.x = x;
-		command.pixelPos.y = y;
+		command.pixelPos.x = x + m_allottedArea.GetPosition().x;
+		command.pixelPos.y = y + m_allottedArea.GetPosition().y;
 
 		command.radiusHalfSize.x = width / 2;
 		command.radiusHalfSize.y = height / 2;
@@ -78,8 +78,8 @@ namespace Circuit
 	{
 		CircuitDrawCommand command;
 		command.type = CircuitPrimitiveType::Circle;
-		command.pixelPos.x = x;
-		command.pixelPos.y = y;
+		command.pixelPos.x = x + m_allottedArea.GetPosition().x;
+		command.pixelPos.y = y + m_allottedArea.GetPosition().y;
 
 		command.radiusHalfSize.x = radius;
 
@@ -96,8 +96,11 @@ namespace Circuit
 		drawCommandsToAppendTo->push_back(command);
 	}
 
-	void CircuitPainter::AddText(float x, float y, const std::string& text, Ref<Volt::Font> font, float maxWidth, CircuitColor color, float scale)
+	void CircuitPainter::AddText(float inX, float inY, const std::string& text, Ref<Volt::Font> font, float maxWidth, CircuitColor color, float scale)
 	{
+		const float x = inX +m_allottedArea.GetPosition().x;
+		const float y = inY +m_allottedArea.GetPosition().y;
+
 		if (text.empty())
 		{
 			return;
@@ -248,5 +251,4 @@ namespace Circuit
 	{
 		return m_drawCommands;
 	}
-
 }
