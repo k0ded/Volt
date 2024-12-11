@@ -33,7 +33,7 @@ struct Constants
     vt::RWTex2D<float4> output;
     
     vt::Tex2D<float4> albedo;
-    vt::Tex2D<float4> normals;
+    vt::Tex2D<float3> normals;
     vt::Tex2D<float2> material;
     vt::Tex2D<float3> emissive;
     vt::Tex2D<uint> aoTexture;
@@ -82,7 +82,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     const float metallic = material.x;
     const float roughness = material.y;
     const float3 emissive = constants.emissive.Load(int3(threadId.xy, 0));
-    const float3 normal = normalize(constants.normals.Load(int3(threadId.xy, 0)).xyz * 2.f - 1.f);
+    const float3 normal = normalize(constants.normals.Load(int3(threadId.xy, 0)) * 2.f - 1.f);
     const float ao = CalculateAO(constants.aoTexture, threadId.xy);    
 
     const float pixelDepth = constants.depthTexture.Load(int3(threadId.xy, 0));

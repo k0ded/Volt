@@ -29,7 +29,7 @@ namespace Volt::RHI
 		RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const override;
 		RefPtr<GraphicsDevice> CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo) const override;
 		RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const override;
-		RefPtr<Swapchain> CreateSwapchain(GLFWwindow* window) const override;
+		RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const override;
 
 		RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const override;
 		RefPtr<Image> CreateImage(const SwapchainImageSpecification& specification) const override;

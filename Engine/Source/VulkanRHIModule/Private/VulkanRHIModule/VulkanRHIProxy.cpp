@@ -108,9 +108,9 @@ namespace Volt::RHI
 		return RefPtr<VulkanPhysicalGraphicsDevice>::Create(createInfo);
 	}
 
-	RefPtr<Swapchain> VulkanRHIProxy::CreateSwapchain(GLFWwindow* window) const
+	RefPtr<Swapchain> VulkanRHIProxy::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanSwapchain>::Create(window);
+		return RefPtr<VulkanSwapchain>::Create(createInfo);
 	}
 
 	RefPtr<Image> VulkanRHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const

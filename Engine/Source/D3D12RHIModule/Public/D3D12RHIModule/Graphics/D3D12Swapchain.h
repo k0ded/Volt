@@ -20,7 +20,7 @@ namespace Volt::RHI
 	class D3D12Swapchain final : public Swapchain
 	{
 	public:
-		D3D12Swapchain(GLFWwindow* window);
+		D3D12Swapchain(const SwapchainCreateInfo& createInfo);
 		~D3D12Swapchain() override;
 	
 		void BeginFrame() override;
@@ -33,6 +33,7 @@ namespace Volt::RHI
 		VT_NODISCARD const uint32_t GetFramesInFlight() const override;
 		VT_NODISCARD RefPtr<Image> GetCurrentImage() const override;
 		VT_NODISCARD const PixelFormat GetFormat() const override;
+		VT_NODISCARD bool IsHDREnabled() const override;
 
 		VT_NODISCARD ComPtr<ID3D12Resource> GetImageAtIndex(const uint32_t index) const { return m_perImageData.at(index).resource; }
 	protected:

@@ -80,6 +80,7 @@ namespace Volt::RHI
 	struct ImGuiCreateInfo;
 	struct RayTracingSceneGeometryCreateInfo;
 	struct AccelerationStructureCreateInfo;
+	struct SwapchainCreateInfo;
 
 	struct RHICallbackInfo
 	{
@@ -109,7 +110,7 @@ namespace Volt::RHI
 		virtual RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const = 0;
 		virtual RefPtr<GraphicsDevice> CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo) const = 0;
 		virtual RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const = 0;
-		virtual RefPtr<Swapchain> CreateSwapchain(GLFWwindow* window) const = 0;
+		virtual RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const = 0;
 		virtual RefPtr<Image> CreateImage(const SwapchainImageSpecification& specification) const = 0;

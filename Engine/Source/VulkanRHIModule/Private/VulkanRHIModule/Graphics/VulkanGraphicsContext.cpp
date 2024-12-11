@@ -280,6 +280,7 @@ namespace Volt::RHI
 		extensions = glfwGetRequiredInstanceExtensions(&extensionCount);
 		Vector<const char*> extensionsVector{ extensions, extensions + extensionCount };
 		extensionsVector.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		extensionsVector.push_back(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
 
 		return extensionsVector;
 	}

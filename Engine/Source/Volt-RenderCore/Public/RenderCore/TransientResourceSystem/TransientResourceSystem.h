@@ -24,10 +24,10 @@ namespace Volt
 		TransientResourceSystem();
 		~TransientResourceSystem();
 
-		TransientResourceSystem(const TransientResourceSystem& other);
-		TransientResourceSystem(TransientResourceSystem&& other);
-		TransientResourceSystem& operator=(const TransientResourceSystem& other);
-		TransientResourceSystem& operator=(TransientResourceSystem&& other);
+		TransientResourceSystem(const TransientResourceSystem& other) noexcept;
+		TransientResourceSystem(TransientResourceSystem&& other) noexcept;
+		TransientResourceSystem& operator=(const TransientResourceSystem& other) noexcept;
+		TransientResourceSystem& operator=(TransientResourceSystem&& other) noexcept;
 
 		RawPtr<RHI::Image> AquireImage(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc);
 		RawPtr<RHI::StorageBuffer> AquireBuffer(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc);

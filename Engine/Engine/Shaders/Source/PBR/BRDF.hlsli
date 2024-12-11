@@ -8,6 +8,7 @@ struct BRDFParameters
     float NdotV;
     float NdotH;
     float LdotH;
+    float LdotV;
     float roughness;
     float metalness;
     float3 f0;
@@ -52,7 +53,7 @@ float3 F_Schlick(float3 F0, float3 F90, float u)
     return F0 + (F90 - F0) * pow(1.f - u, 5.f);
 }
 
-float Fr_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
+float3 Fr_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness, float3 diffuseColor)
 {
     float energyBias = lerp(0.f, 0.5f, linearRoughness);
     float energyFactor = lerp(1.f, 1.f / 1.51f, linearRoughness);
@@ -62,13 +63,25 @@ float Fr_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughn
     float lightScatter = F_Schlick(F0, Fd90, NdotL).r;
     float viewScatter = F_Schlick(F0, Fd90, NdotV).r;
 
-    return lightScatter * viewScatter * energyFactor;
+    return diffuseColor * ( lightScatter * viewScatter * energyFactor / PI);
+}
+
+float3 OrenNayarDiffuse(float LdotV, float NdotL, float NdotV, float alphaRoughness, float3 diffuseColor)
+{
+    float s = LdotV - NdotL * NdotV;
+    float t = lerp(1.f, max(NdotL, NdotV), step(0.f, s));
+
+    float sigma2 = alphaRoughness;
+    float A = 1.f + sigma2 * (1.f / (sigma2 + 0.13f) + 0.5f / (sigma2 + 0.33f));
+    float B = 0.45f * sigma2 / (sigma2 + 0.09f);
+
+    return diffuseColor * max(0.f, NdotL) * (A + B * s / t) / PI;
 }
 
 float3 DiffuseBRDF(BRDFParameters pbrInput)
 {
-    float Fd = Fr_DisneyDiffuse(pbrInput.NdotV, pbrInput.NdotL, pbrInput.LdotH, pbrInput.roughness) / PI;
-    return Fd * pbrInput.diffuseColor;
+    return OrenNayarDiffuse(pbrInput.LdotV, pbrInput.NdotL, pbrInput.NdotV, pbrInput.alphaRoughness, pbrInput.diffuseColor);
+    //return  Fr_DisneyDiffuse(pbrInput.NdotV, pbrInput.NdotL, pbrInput.LdotH, pbrInput.roughness, pbrInput.diffuseColor);
 }
 
 float3 SpecularBRDF(BRDFParameters pbrInput)
@@ -115,6 +128,7 @@ float3 BRDF(BRDFInput input, float3 L)
     float LdotH = saturate(dot(L, H));
     float NdotH = saturate(dot(input.N, H));
     float NdotL = saturate(dot(input.N, L));
+    float LdotV = saturate(dot(L, input.V));
 
     input.roughness = max(input.roughness, 0.05f);
 
@@ -123,6 +137,7 @@ float3 BRDF(BRDFInput input, float3 L)
     pbrInput.NdotV = NdotV;
     pbrInput.NdotH = NdotH;
     pbrInput.LdotH = LdotH;
+    pbrInput.LdotV = LdotV;
     pbrInput.roughness = input.roughness;
     pbrInput.alphaRoughness = input.roughness * input.roughness;
     pbrInput.metalness = input.metalness;
@@ -153,12 +168,14 @@ float3 BRDF(BRDFInput input, float3 D, float3 L)
         float LdotH = saturate(dot(D, H));
         float NdotH = saturate(dot(input.N, H));
         float NdotL = saturate(dot(input.N, D));
+        float LdotV = saturate(dot(D, input.V));
 
         BRDFParameters brdfParams;
         brdfParams.NdotL = NdotL;
         brdfParams.NdotV = NdotV;
         brdfParams.NdotH = NdotH;
         brdfParams.LdotH = LdotH;
+        brdfParams.LdotV = LdotV;
         brdfParams.roughness = input.roughness;
         brdfParams.alphaRoughness = input.roughness * input.roughness;
         brdfParams.metalness = input.metalness;
@@ -176,12 +193,14 @@ float3 BRDF(BRDFInput input, float3 D, float3 L)
         float LdotH = saturate(dot(L, H));
         float NdotH = saturate(dot(input.N, H));
         float NdotL = saturate(dot(input.N, L));
+        float LdotV = saturate(dot(L, input.V));
 
         BRDFParameters brdfParams;
         brdfParams.NdotL = NdotL;
         brdfParams.NdotV = NdotV;
         brdfParams.NdotH = NdotH;
         brdfParams.LdotH = LdotH;
+        brdfParams.LdotV = LdotV;
         brdfParams.roughness = input.roughness;
         brdfParams.alphaRoughness = input.roughness * input.roughness;
         brdfParams.metalness = input.metalness;

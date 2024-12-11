@@ -146,7 +146,7 @@ float4 IntegrateDFGOnly(float3 V, float roughness)
         if (NdotL > 0.f)
         {
             float LdotH2 = saturate(dot(L, normalize(V + L)));
-            accumulated.z += Fr_DisneyDiffuse(NdotV, NdotL, LdotH2, linearRoughness);
+            accumulated.z += Fr_DisneyDiffuse(NdotV, NdotL, LdotH2, linearRoughness, 1.f).x;
         }
 
         accumulated.w += ImportanceSampleGGX_D(u, N, tangentX, tangentY, roughness);

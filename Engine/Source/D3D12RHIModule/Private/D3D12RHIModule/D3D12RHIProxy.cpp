@@ -107,9 +107,9 @@ namespace Volt::RHI
 		return RefPtr<D3D12PhysicalGraphicsDevice>::Create(createInfo);
 	}
 	
-	RefPtr<Swapchain> D3D12RHIProxy::CreateSwapchain(GLFWwindow* window) const
+	RefPtr<Swapchain> D3D12RHIProxy::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
 	{
-		return RefPtr<D3D12Swapchain>::Create(window);
+		return RefPtr<D3D12Swapchain>::Create(createInfo);
 	}
 	
 	RefPtr<Image> D3D12RHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const

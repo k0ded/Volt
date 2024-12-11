@@ -123,7 +123,7 @@ float3 CalculatePBR(in PBRInput input, in PBRConstants constants)
 
     // Skylight
     {
-        lightOutput += CalculateIBL(brdfInput, constants.DFGLuT, constants.linearSampler, constants.skyLight) * input.ao; 
+        //lightOutput += CalculateIBL(brdfInput, constants.DFGLuT, constants.linearSampler, constants.skyLight) * input.ao; 
     }
     
     // Directional Light

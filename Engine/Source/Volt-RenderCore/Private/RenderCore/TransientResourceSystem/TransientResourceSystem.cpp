@@ -28,19 +28,19 @@ namespace Volt
 		m_allocatedResources.clear(); 
 	}
 
-	TransientResourceSystem::TransientResourceSystem(const TransientResourceSystem& other)
+	TransientResourceSystem::TransientResourceSystem(const TransientResourceSystem& other) noexcept
 	{
 		m_allocatedResources = other.m_allocatedResources;
 		m_surrenderedResources = other.m_surrenderedResources;
 	}
 
-	TransientResourceSystem::TransientResourceSystem(TransientResourceSystem&& other)
+	TransientResourceSystem::TransientResourceSystem(TransientResourceSystem&& other) noexcept
 	{
 		m_allocatedResources = std::move(other.m_allocatedResources);
 		m_surrenderedResources = std::move(other.m_surrenderedResources);
 	}
 
-	TransientResourceSystem& TransientResourceSystem::operator=(const TransientResourceSystem& other)
+	TransientResourceSystem& TransientResourceSystem::operator=(const TransientResourceSystem& other) noexcept
 	{
 		m_allocatedResources = other.m_allocatedResources;
 		m_surrenderedResources = other.m_surrenderedResources;
@@ -48,7 +48,7 @@ namespace Volt
 		return *this;
 	}
 
-	TransientResourceSystem& TransientResourceSystem::operator=(TransientResourceSystem&& other)
+	TransientResourceSystem& TransientResourceSystem::operator=(TransientResourceSystem&& other) noexcept
 	{
 		m_allocatedResources = std::move(other.m_allocatedResources);
 		m_surrenderedResources = std::move(other.m_surrenderedResources);

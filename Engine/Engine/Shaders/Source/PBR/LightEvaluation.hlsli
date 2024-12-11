@@ -101,7 +101,7 @@ float3 CalculateDirectionalLight(in DirectionalLight light, in DirectionalShadow
 
     if (light.castShadows)
     {
-        shadow = RayTraceDirectionalShadow_Hard(D, brdfInput.N, worldPosition); //CalculateDirectionalShadow(light, shadowMappingInfo, brdfInput.N, worldPosition);
+        shadow = CalculateDirectionalShadow(light, shadowMappingInfo, brdfInput.N, worldPosition);
     }
 
     return BRDF(brdfInput, D, L) * light.color * illuminance * shadow;

@@ -108,7 +108,11 @@ namespace Volt
 
 		if (!m_hasBeenInitialized)
 		{
-			m_swapchain = RHI::Swapchain::Create(m_window);
+			RHI::SwapchainCreateInfo createInfo{};
+			createInfo.platformWindow = m_window;
+			createInfo.useHDRIfAvailable = false;
+
+			m_swapchain = RHI::Swapchain::Create(createInfo);
 			m_swapchain->Resize(m_data.Width, m_data.Height, m_data.VSync);
 			m_hasBeenInitialized = true;
 		}

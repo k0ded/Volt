@@ -21,7 +21,7 @@ struct Constants
     vt::UniformBuffer<ViewData> viewData;
     
     vt::RWTex2D<float4> albedo;
-    vt::RWTex2D<float4> normals;
+    vt::RWTex2D<float3> normals;
     vt::RWTex2D<float2> material;
     vt::RWTex2D<float3> emissive;
     
@@ -135,7 +135,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     albedo.xyz = SRGBToLinear(albedo.xyz);
     
     constants.albedo.Store(pixelPosition, albedo);
-    constants.normals.Store(pixelPosition, float4(resultNormal * 0.5f + 0.5f, 0.f));
+    constants.normals.Store(pixelPosition, resultNormal * 0.5f + 0.5f);
     constants.material.Store(pixelPosition, float2(evaluatedMaterial.metallic, evaluatedMaterial.roughness));
     constants.emissive.Store(pixelPosition, evaluatedMaterial.emissive);
 }
