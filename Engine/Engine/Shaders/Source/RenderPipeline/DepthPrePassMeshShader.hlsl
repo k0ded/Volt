@@ -5,6 +5,8 @@
 struct VertexOutput
 {
     float4 position : SV_Position;
+    float4 currentPosition : CURRENT_POSITION;
+    float4 prevPosition : PREV_POSITION;
     float3 normal : NORMAL;
 };
 
@@ -20,6 +22,7 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
     const ViewData viewData = constants.viewData.Load();
 
     const PrimitiveDrawData drawData = constants.gpuScene.primitiveDrawDataBuffer.Load(payload.drawId);    
+    const PrimitiveDrawData prevDrawData = constants.gpuScene.prevPrimitiveDrawDataBuffer.Load(payload.drawId);
     const GPUMesh mesh = constants.gpuScene.meshesBuffer.Load(drawData.meshId);
 
     uint meshletIndex = payload.meshletIndices[groupId];
@@ -47,10 +50,13 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
 
         const float3 skinnedPosition = mul(skinningMatrix, float4(mesh.vertexPositionsBuffer.Load(vertexIndex), 1.f)).xyz;
         const float4 position = TransformClipPosition(mul(viewData.viewProjection, float4(drawData.transform.GetWorldPosition(skinnedPosition), 1.f)));
+        const float4 prevPosition = TransformClipPosition(mul(viewData.prevViewProjection, float4(prevDrawData.transform.GetWorldPosition(skinnedPosition), 1.f)));
 
         SetupCullingPositions(groupThreadId, position, viewData.renderSize);
 
         vertices[groupThreadId].position = position;
+        vertices[groupThreadId].prevPosition = prevPosition;
+        vertices[groupThreadId].currentPosition = position;
         vertices[groupThreadId].normal = normalize(mul(cameraNormalRotation, drawData.transform.RotateVector(GetNormal(mesh, vertexIndex))));
     }
 
@@ -67,13 +73,21 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
 
 struct ColorOutput
 {
-    [[vt::rgba16f]] float4 normal : SV_Target;
+    [[vt::rgba16f]] float4 normal : SV_Target0;
+    [[vt::rg16f]] float2 velocity : SV_Target1;
     [[vt::d32f]];
 };
 
 ColorOutput MainPS(VertexOutput input)
 {
+    const Constants constants = GetConstants<Constants>();
+    const ViewData viewData = constants.viewData.Load();
+
+    float3 currentPosNDC = input.currentPosition.xyz / input.currentPosition.w;
+    float3 previousPosNDC = input.prevPosition.xyz / input.prevPosition.w;
+
     ColorOutput output;
+    output.velocity = ((previousPosNDC.xy - viewData.prevFrameJitter) - (currentPosNDC.xy - viewData.currentFrameJitter)) * 0.5f;
     output.normal = float4(normalize(input.normal), 1.f);
     return output;
 }

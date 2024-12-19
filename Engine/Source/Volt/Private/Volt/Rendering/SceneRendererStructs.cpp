@@ -9,6 +9,7 @@ namespace Volt
 		builder.ReadResource(data.sdfMeshesBuffer);
 		builder.ReadResource(data.materialsBuffer);
 		builder.ReadResource(data.primitiveDrawDataBuffer);
+		builder.ReadResource(data.prevPrimitiveDrawDataBuffer);
 		builder.ReadResource(data.sdfPrimitiveDrawDataBuffer);
 		builder.ReadResource(data.bonesBuffer);
 		builder.ReadResource(data.validPrimitiveDrawDatasBuffer);
@@ -20,6 +21,7 @@ namespace Volt
 		context.SetConstant("gpuScene.sdfMeshesBuffer"_sh, data.sdfMeshesBuffer);
 		context.SetConstant("gpuScene.materialsBuffer"_sh, data.materialsBuffer);
 		context.SetConstant("gpuScene.primitiveDrawDataBuffer"_sh, data.primitiveDrawDataBuffer);
+		context.SetConstant("gpuScene.prevPrimitiveDrawDataBuffer"_sh, data.prevPrimitiveDrawDataBuffer);
 		context.SetConstant("gpuScene.sdfPrimitiveDrawDataBuffer"_sh, data.sdfPrimitiveDrawDataBuffer);
 		context.SetConstant("gpuScene.bonesBuffer"_sh, data.bonesBuffer);
 		context.SetConstant("gpuScene.validPrimitiveDrawDatasBuffer"_sh, data.validPrimitiveDrawDatasBuffer);

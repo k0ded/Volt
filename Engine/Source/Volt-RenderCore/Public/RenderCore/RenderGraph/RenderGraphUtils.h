@@ -37,6 +37,7 @@ namespace Volt::RGUtils
 		return { ResourceType::Image3D, format, width, height, depth, usage, name };
 	}
 
-	extern VTRC_API void ClearImage(RenderGraph& renderGraph, RenderGraphImageHandle image, const glm::vec4& clearColor, std::string_view passName = "");
-	extern VTRC_API void ClearBuffer(RenderGraph& renderGraph, RenderGraphBufferHandle buffer, const uint32_t clearValue, std::string_view passName = "");
+	extern VTRC_API void ClearImage(RenderGraph& renderGraph, RenderGraphImageHandle image, const glm::vec4& clearColor, const std::string& passName = "");
+	extern VTRC_API void ClearBuffer(RenderGraph& renderGraph, RenderGraphBufferHandle buffer, const uint32_t clearValue, const std::string& passName = "");
+	extern VTRC_API void CopyBuffer(RenderGraph& renderGraph, RenderGraphBufferHandle srcBuffer, RenderGraphBufferHandle dstBuffer, size_t copySize, const std::string& passName = "");
 }

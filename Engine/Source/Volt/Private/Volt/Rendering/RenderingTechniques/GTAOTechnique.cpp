@@ -2,6 +2,7 @@
 #include "Volt/Rendering/RenderingTechniques/GTAOTechnique.h"
 
 #include "Volt/Rendering/Renderer.h"
+#include "Volt/Rendering/RendererCommon.h"
 #include "Volt/Rendering/Camera/Camera.h"
 
 #include "Volt/Math/Math.h"
@@ -48,11 +49,11 @@ namespace Volt
 		}
 	}
 
-	GTAOOutput GTAOTechnique::Execute(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
+	GTAOOutput GTAOTechnique::Execute(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)
 	{
 		renderGraph.BeginMarker("GTAO", { 0.f, 1.f, 0.f, 1.f });
 
-		AddPrefilterDepthPass(renderGraph, blackboard);
+		AddPrefilterDepthPass(renderGraph, blackboard, camera);
 		AddMainPass(renderGraph, blackboard);
 		GTAOOutput result = AddDenoisePass(renderGraph, blackboard);
 
@@ -61,16 +62,16 @@ namespace Volt
 		return result;
 	}
 
-	void GTAOTechnique::AddPrefilterDepthPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
+	void GTAOTechnique::AddPrefilterDepthPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)
 	{
 		constexpr uint32_t GTAO_PREFILTERED_DEPTH_MIP_COUNT = 5;
 
-		const auto& renderData = blackboard.Get<RenderData>();
+		const auto& renderData = blackboard.Get<ViewUniformBuffer>();
 
 		m_constants.ViewportSize = renderData.renderSize;
 		m_constants.ViewportPixelSize = { 1.f / static_cast<float>(renderData.renderSize.x), 1.f / static_cast<float>(renderData.renderSize.y) };
 
-		const auto& projectionMatrix = renderData.camera->GetProjection();
+		const auto& projectionMatrix = camera->GetProjection();
 		
 		float depthLinearizeMul = (-projectionMatrix[3][2]);
 		float depthLinearizeAdd = (projectionMatrix[2][2]);
@@ -91,7 +92,7 @@ namespace Volt
 		m_constants.NDCToViewAdd = { m_constants.CameraTanHalfFOV.x * -1.f, m_constants.CameraTanHalfFOV.y * 1.f };
 		m_constants.NDCToViewMul_x_PixelSize = { m_constants.NDCToViewMul.x * m_constants.ViewportPixelSize.x, m_constants.NDCToViewMul.y * m_constants.ViewportPixelSize.y };
 
-		const auto& preDepthData = blackboard.Get<PreDepthData>();
+		const auto& preDepthData = blackboard.Get<DepthPrePass>();
 
 		blackboard.Add<PrefilterDepthData>() = renderGraph.AddPass<PrefilterDepthData>("GTAO Prefilter Depth Pass",
 		[&](RenderGraph::Builder& builder, PrefilterDepthData& data) 
@@ -153,7 +154,7 @@ namespace Volt
 	void GTAOTechnique::AddMainPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 	{
 		const auto& prefilterDepthData = blackboard.Get<PrefilterDepthData>();
-		const auto& preDepthData = blackboard.Get<PreDepthData>();
+		const auto& preDepthData = blackboard.Get<DepthPrePass>();
 
 		const glm::uvec2 renderSize = m_constants.ViewportSize;
 

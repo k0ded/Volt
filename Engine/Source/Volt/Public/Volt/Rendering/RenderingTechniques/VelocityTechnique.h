@@ -18,10 +18,10 @@ namespace Volt
 	public:
 		VelocityTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 
-		RenderGraphResourceHandle Execute();
+		RenderGraphResourceHandle Execute(Ref<Camera> camera);
 
 	private:
-		RenderGraphResourceHandle ExecuteReprojectVelocity();
+		RenderGraphResourceHandle ExecuteReprojectVelocity(Ref<Camera> camera);
 
 		RenderGraph& m_renderGraph;
 		RenderGraphBlackboard& m_blackboard;

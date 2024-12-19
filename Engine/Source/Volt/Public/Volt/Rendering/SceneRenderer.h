@@ -5,6 +5,7 @@
 #include "Volt/Rendering/SceneRendererStructs.h"
 #include "Volt/Rendering/RendererStructs.h"
 #include "Volt/Rendering/RenderingTechniques/GIBS.h"
+#include "Volt/Rendering/RenderingTechniques/TAATechnique.h"
 
 // #TODO_Ivar: Maybe remove from here
 #include <RenderCore/RenderGraph/RenderGraph.h>
@@ -71,6 +72,12 @@ namespace Volt
 			VisualizeMeshSDF = 3
 		};
 
+		enum class AntiAliasingMethod : uint8_t
+		{
+			FXAA,
+			TAA
+		};
+
 		SceneRenderer(const SceneRendererSpecification& specification);
 		~SceneRenderer();
 
@@ -99,7 +106,7 @@ namespace Volt
 		void BuildMeshPass(RenderGraph::Builder& builder, RenderGraphBlackboard& blackboard);
 		void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard);
 
-		void SetupFrameData(RenderGraphBlackboard& blackboard, Ref<Camera> camera);
+		void SetupFrameData(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
 
 		///// Passes //////
 		void UploadUniformBuffers(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
@@ -107,9 +114,13 @@ namespace Volt
 
 		void AddExternalResources(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 
+		void ExecuteGBufferGenerationPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void ExecutePostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, float timestep);
+
 		void AddMainCullingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddPreDepthPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddObjectIDPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void AddGTAOPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
 		void AddVisibilityBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 
 		void AddClearGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
@@ -138,7 +149,6 @@ namespace Volt
 
 		RefPtr<RHI::Image> m_outputImage;
 		RefPtr<RHI::Image> m_objectIDImage;
-		RefPtr<RHI::Image> m_previousDepthImage;
 		RefPtr<RHI::Image> m_previousColorImage;
 		RefPtr<RHI::Image> m_averageLuminanceImage;
 
@@ -154,8 +164,14 @@ namespace Volt
 			
 		uint32_t m_frameIndex = 0;
 
+		glm::mat4 m_prevViewProjection = 1.f;
+		glm::vec2 m_currentJitter = 0.f;
+		glm::vec2 m_prevJitter = 0.f;
+
 		ShadingMode m_shadingMode = ShadingMode::Shaded;
 		VisualizationMode m_visualizationMode = VisualizationMode::None;
+		AntiAliasingMethod m_antiAliasingMethod = AntiAliasingMethod::TAA;
+
 		PreviousFrameData m_previousFrameData;
 
 		RHI::CommandBufferSet m_commandBufferSet;
@@ -167,6 +183,7 @@ namespace Volt
 		////////////////
 		
 		GIBS m_gibs;
+		TAANoise m_taaNoise;
 
 		Ref<Scene> m_scene;
 		SceneEnvironment m_sceneEnvironment;

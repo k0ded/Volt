@@ -33,6 +33,7 @@ namespace Volt
 		Ref<GrowingGPUBuffer> sdfMeshesBuffer;
 		Ref<GrowingGPUBuffer> materialsBuffer;
 		Ref<GrowingGPUBuffer> primitiveDrawDataBuffer;
+		Ref<GrowingGPUBuffer> prevPrimitiveDrawDataBuffer;
 		Ref<GrowingGPUBuffer> sdfPrimitiveDrawDataBuffer;
 		Ref<GrowingGPUBuffer> bonesBuffer;
 
@@ -46,6 +47,7 @@ namespace Volt
 		~RenderScene();
 
 		void Update(RenderGraph& renderGraph);
+		void EndFrame(RenderGraph& renderGraph);
 
 		void InvalidateRenderObject(UUID64 renderObject);
 
@@ -84,12 +86,6 @@ namespace Volt
 		VT_NODISCARD VT_INLINE Ref<RayTracingScene> GetRayTracingScene() const { return m_rayTracingScene; }
 
 	private:
-		void UploadGPUMeshes(const Vector<GPUMesh>& gpuMeshes);
-		void UploadGPUMeshSDFs(const Vector<GPUMeshSDF>& sdfMeshes);
-		void UploadPrimitiveDrawData(const Vector<PrimitiveDrawData>& primitiveDrawData);
-		void UploadSDFPrimitiveDrawData(const Vector<SDFPrimitiveDrawData>& primitiveDrawData);
-
-		void UploadGPUMaterials();
 		void BuildGPUMaterial(Weak<Material> material, GPUMaterial& gpuMaterial);
 
 		void BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderObject& renderObject);

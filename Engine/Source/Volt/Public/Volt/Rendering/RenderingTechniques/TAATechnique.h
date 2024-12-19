@@ -16,7 +16,19 @@ namespace Volt
 	struct TAAData
 	{
 		RenderGraphImageHandle taaOutput;
+		RenderGraphImageHandle accumulationOutput;
 		RenderGraphImageHandle previousColor;
+	};
+
+	struct TAANoise
+	{
+		TAANoise();
+
+		glm::vec2 Get(uint32_t frameIndex, const glm::uvec2& renderSize);
+
+		inline static float s_haltonX[8];
+		inline static float s_haltonY[8];
+		inline static bool s_initialized = false;
 	};
 
 	class TAATechnique

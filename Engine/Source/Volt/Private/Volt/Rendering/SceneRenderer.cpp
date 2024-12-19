@@ -11,8 +11,8 @@
 #include "Volt/Rendering/RenderingTechniques/GTAOTechnique.h"
 #include "Volt/Rendering/RenderingTechniques/DirectionalShadowTechnique.h"
 #include "Volt/Rendering/RenderingTechniques/LightCullingTechnique.h"
-#include "Volt/Rendering/RenderingTechniques/TAATechnique.h"
 #include "Volt/Rendering/RenderingTechniques/VelocityTechnique.h"
+#include "Volt/Rendering/RenderingTechniques/ScreenSpaceReflections.h"
 #include "Volt/Rendering/RenderingTechniques/AutoExposureTechnique.h"
 #include "Volt/Rendering/RenderingTechniques/CullingTechnique.h"
 
@@ -30,6 +30,7 @@
 #include "Volt/Components/RenderingComponents.h"
 
 #include "Volt/Utility/ShadowMappingUtility.h"
+#include "Volt/Utility/Noise.h"
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
@@ -111,96 +112,78 @@ namespace Volt
 			m_shouldResize = false;
 		}
 
-		RenderGraphBlackboard rgBlackboard{};
+		RenderGraphBlackboard blackboard{};
 		RenderGraph renderGraph{ m_commandBufferSet.IncrementAndGetCommandBuffer() };
 
 		renderGraph.SetTotalAllocatedSizeCallback([&](const uint64_t totalSize)
 		{
 			m_frameTotalGPUAllocation = totalSize;
 		});
+		
+		if (m_antiAliasingMethod == AntiAliasingMethod::TAA)
+		{
+			m_prevJitter = m_currentJitter;
+			m_currentJitter = m_taaNoise.Get(m_frameIndex, glm::uvec2(m_width, m_height));
+			camera->SetSubpixelOffset(m_currentJitter);
+		}
 
 		m_scene->GetRenderScene()->Update(renderGraph);
 
-		SetupFrameData(rgBlackboard, camera);
-		AddExternalResources(renderGraph, rgBlackboard);
+		SetupFrameData(renderGraph, blackboard, camera);
 
-		UploadUniformBuffers(renderGraph, rgBlackboard, camera);
-		UploadLightBuffers(renderGraph, rgBlackboard);
+		UploadUniformBuffers(renderGraph, blackboard, camera);
+		UploadLightBuffers(renderGraph, blackboard);
 
 		const auto renderScene = m_scene->GetRenderScene();
 		const uint32_t drawCount = renderScene->GetDrawCount();
 
 		if (drawCount > 0)
 		{
-			AddMainCullingPass(renderGraph, rgBlackboard);
-			AddPreDepthPass(renderGraph, rgBlackboard);
-			AddObjectIDPass(renderGraph, rgBlackboard);
+			AddMainCullingPass(renderGraph, blackboard);
+			AddDepthPrePass(renderGraph, blackboard);
+			AddObjectIDPass(renderGraph, blackboard);
+			AddGTAOPass(renderGraph, blackboard, camera);
 
-			GTAOSettings tempSettings{};
-			tempSettings.radius = 50.f;
-			tempSettings.radiusMultiplier = 1.457f;
-			tempSettings.falloffRange = 0.615f;
-			tempSettings.finalValuePower = 2.2f;
+			DirectionalShadowTechnique dirShadowTechnique{ renderGraph, blackboard };
+			blackboard.Add<DirectionalShadowData>() = dirShadowTechnique.Execute(camera, m_scene->GetRenderScene());
 
-			GTAOTechnique gtaoTechnique{ 0 /*m_frameIndex*/, tempSettings };
-			rgBlackboard.Add<GTAOOutput>() = gtaoTechnique.Execute(renderGraph, rgBlackboard);
+			LightCullingTechnique lightCulling{ renderGraph, blackboard };
+			blackboard.Add<LightCullingData>() = lightCulling.Execute();
 
-			DirectionalShadowTechnique dirShadowTechnique{ renderGraph, rgBlackboard };
-			rgBlackboard.Add<DirectionalShadowData>() = dirShadowTechnique.Execute(camera, m_scene->GetRenderScene());
-
-			AddVisibilityBufferPass(renderGraph, rgBlackboard);
-			AddGenerateMaterialCountsPass(renderGraph, rgBlackboard);
-
-			LightCullingTechnique lightCulling{ renderGraph, rgBlackboard };
-			rgBlackboard.Add<LightCullingData>() = lightCulling.Execute();
-
-			PrefixSumTechnique prefixSum{ renderGraph };
-			prefixSum.Execute(rgBlackboard.Get<MaterialCountData>().materialCountBuffer, rgBlackboard.Get<MaterialCountData>().materialStartBuffer, m_scene->GetRenderScene()->GetIndividualMaterialCount());
-
-			AddCollectMaterialPixelsPass(renderGraph, rgBlackboard);
-			AddGenerateMaterialIndirectArgsPass(renderGraph, rgBlackboard);
-
-			////For every material -> run compute shading shader using indirect args
-			auto& gbufferData = rgBlackboard.Add<GBufferData>();
-
-			gbufferData.albedo = renderGraph.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::R8G8B8A8_UNORM>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "GBuffer - Albedo"));
-			gbufferData.normals = renderGraph.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::A2B10G10R10_UNORM_PACK32>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "GBuffer - Normals"));
-			gbufferData.material = renderGraph.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::R8G8_UNORM>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "GBuffer - Material"));
-			gbufferData.emissive = renderGraph.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "GBuffer - Emissive"));
-
-			AddClearGBufferPass(renderGraph, rgBlackboard);
-			RenderMaterials(renderGraph, rgBlackboard);
-
-			AddSkyboxPass(renderGraph, rgBlackboard);
+			ExecuteGBufferGenerationPasses(renderGraph, blackboard);
+			AddSkyboxPass(renderGraph, blackboard);
 
 			if (m_shadingMode != ShadingMode::PathTracing)
 			{
-				AddShadingPass(renderGraph, rgBlackboard);
+				AddShadingPass(renderGraph, blackboard);
 			}
 			else
 			{
-				AddPathTracingPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
+				AddPathTracingPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
 			}
 
-			//m_gibs.Render(renderGraph, rgBlackboard);
+			//m_gibs.Render(renderGraph, blackboard, m_frameIndex);
+			//m_ddgi.Render(renderGraph, rgBlackboard, m_scene->GetRenderScene());
 
 			if (m_visualizationMode == VisualizationMode::VisualizeMeshSDF)
 			{
-				AddVisualizeSDFPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
+				AddVisualizeSDFPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
 			}
 
 			//AddVisualizeBricksPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
 
-			AutoExposureTechnique autoExposureTechnique(renderGraph, rgBlackboard);
-			autoExposureTechnique.Execute(rgBlackboard.Get<ShadingOutputData>().colorOutput, renderGraph.AddExternalImage(m_averageLuminanceImage), timestep);
+			//ScreenSpaceReflections ssr(renderGraph, rgBlackboard);
+			//ssr.Execute(rgBlackboard.Get<ShadingOutputData>().colorOutput);
 
-			AddTonemapPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
-			AddFXAAPass(renderGraph, rgBlackboard, rgBlackboard.Get<FinalCopyData>().output);
+			blackboard.Add<FinalOutput>().colorOutput = blackboard.Get<ShadingOutputData>().colorOutput;
+			ExecutePostProcessingPasses(renderGraph, blackboard, timestep);
 		}
 		else
 		{
 			RGUtils::ClearImage(renderGraph, renderGraph.AddExternalImage(m_outputImage), { 0.1f, 0.1f, 0.1f, 1.f });
 		}
+
+		m_scene->GetRenderScene()->EndFrame(renderGraph);
 
 		{
 			RenderGraphBarrierInfo barrier{};
@@ -254,16 +237,10 @@ namespace Volt
 		context.SetConstant("taskCommands"_sh, drawCullingData.taskCommandsBuffer);
 	}
 
-	void SceneRenderer::SetupFrameData(RenderGraphBlackboard& blackboard, Ref<Camera> camera)
+	void SceneRenderer::SetupFrameData(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)
 	{
-		// Render data
-		{
-			auto& data = blackboard.Add<RenderData>();
-			data.camera = camera;
-			data.renderSize = { m_width, m_height };
-		}
-
 		blackboard.Add<PreviousFrameData>() = m_previousFrameData;
+		AddExternalResources(renderGraph, blackboard);
 	}
 
 	void SceneRenderer::UploadUniformBuffers(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)
@@ -272,39 +249,46 @@ namespace Volt
 
 		// View data
 		{
-			const auto desc = RGUtils::CreateBufferDesc<ViewData>(1, RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "View Data");
+			const auto desc = RGUtils::CreateBufferDesc<ViewUniformBuffer>(1, RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "View Data");
 			buffersData.viewDataBuffer = renderGraph.CreateUniformBuffer(desc);
 
-			ViewData viewData{};
+			ViewUniformBuffer viewUniformBuffer{};
 
 			// Camera
-			viewData.projection = camera->GetProjection();
-			viewData.view = camera->GetView();
-			viewData.inverseView = glm::inverse(viewData.view);
-			viewData.inverseProjection = glm::inverse(viewData.projection);
-			viewData.viewProjection = viewData.projection * viewData.view;
-			viewData.inverseViewProjection = glm::inverse(viewData.viewProjection);
-			viewData.cameraPosition = glm::vec4(camera->GetPosition(), 1.f);
-			viewData.nearPlane = camera->GetNearPlane();
-			viewData.farPlane = camera->GetFarPlane();
+			viewUniformBuffer.projection = camera->GetProjection();
+			viewUniformBuffer.view = camera->GetView();
+			viewUniformBuffer.inverseView = glm::inverse(viewUniformBuffer.view);
+			viewUniformBuffer.inverseProjection = glm::inverse(viewUniformBuffer.projection);
+			viewUniformBuffer.viewProjection = viewUniformBuffer.projection * viewUniformBuffer.view;
+			viewUniformBuffer.inverseViewProjection = glm::inverse(viewUniformBuffer.viewProjection);
+			viewUniformBuffer.prevViewProjection = m_prevViewProjection;
+			viewUniformBuffer.cameraPosition = glm::vec4(camera->GetPosition(), 1.f);
+			viewUniformBuffer.nearPlane = camera->GetNearPlane();
+			viewUniformBuffer.farPlane = camera->GetFarPlane();
 
-			float depthLinearizeMul = (-viewData.projection[3][2]);
-			float depthLinearizeAdd = (viewData.projection[2][2]);
+			viewUniformBuffer.frameIndex = m_frameIndex;
+			viewUniformBuffer.currentFrameJitter = glm::vec2(m_currentJitter.x, -m_currentJitter.y);
+			viewUniformBuffer.prevFrameJitter = glm::vec2(m_prevJitter.x, -m_prevJitter.y);
+
+			m_prevViewProjection = viewUniformBuffer.viewProjection;
+
+			float depthLinearizeMul = (-viewUniformBuffer.projection[3][2]);
+			float depthLinearizeAdd = (viewUniformBuffer.projection[2][2]);
 
 			if (depthLinearizeMul * depthLinearizeAdd < 0.f)
 			{
 				depthLinearizeAdd = -depthLinearizeAdd;
 			}
 
-			viewData.depthUnpackConsts = { depthLinearizeMul, depthLinearizeAdd };
-			viewData.cullingFrustum = camera->GetFrustumCullingInfo();
+			viewUniformBuffer.depthUnpackConsts = { depthLinearizeMul, depthLinearizeAdd };
+			viewUniformBuffer.cullingFrustum = camera->GetFrustumCullingInfo();
 
 			// Light Culling
-			viewData.tileCountX = Math::DivideRoundUp(m_width, LightCullingTechnique::TILE_SIZE);
+			viewUniformBuffer.tileCountX = Math::DivideRoundUp(m_width, LightCullingTechnique::TILE_SIZE);
 
 			// Render Target
-			viewData.renderSize = { m_width, m_height };
-			viewData.invRenderSize = { 1.f / static_cast<float>(m_width), 1.f / static_cast<float>(m_height) };
+			viewUniformBuffer.renderSize = { m_width, m_height };
+			viewUniformBuffer.invRenderSize = { 1.f / static_cast<float>(m_width), 1.f / static_cast<float>(m_height) };
 
 			m_scene->ForEachWithComponents<const PointLightComponent, const IDComponent, const TransformComponent>([&](entt::entity entityId, const PointLightComponent& comp, const IDComponent& idComp, const TransformComponent& transComp)
 			{
@@ -313,7 +297,7 @@ namespace Volt
 					return;
 				}
 
-				viewData.pointLightCount++;
+				viewUniformBuffer.pointLightCount++;
 			});
 
 			m_scene->ForEachWithComponents<const SpotLightComponent, const IDComponent, const TransformComponent>([&](entt::entity entityId, const SpotLightComponent& comp, const IDComponent& idComp, const TransformComponent& transComp)
@@ -323,21 +307,21 @@ namespace Volt
 					return;
 				}
 
-				viewData.spotLightCount++;
+				viewUniformBuffer.spotLightCount++;
 			});
 
-			renderGraph.AddMappedBufferUpload(buffersData.viewDataBuffer, &viewData, sizeof(ViewData), "Upload view data");
+			renderGraph.AddMappedBufferUpload(buffersData.viewDataBuffer, &viewUniformBuffer, sizeof(ViewUniformBuffer), "Upload view Uniform Buffer");
 
-			blackboard.Add<ViewData>() = viewData;
+			blackboard.Add<ViewUniformBuffer>() = viewUniformBuffer;
 		}
 
 		// Directional light
 		{
-			const auto desc = RGUtils::CreateBufferDesc<DirectionalLightData>(1, RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "Directional Light Data");
+			const auto desc = RGUtils::CreateBufferDesc<DirectionalLightUniformBuffer>(1, RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "Directional Light Uniform Buffer");
 			buffersData.directionalLightBuffer = renderGraph.CreateUniformBuffer(desc);
 
 			DirectionalLightInfo& lightInfo = blackboard.Add<DirectionalLightInfo>();
-			DirectionalLightData& data = lightInfo.data;
+			DirectionalLightUniformBuffer& data = lightInfo.data;
 
 			data.intensity = 0.f;
 
@@ -385,7 +369,7 @@ namespace Volt
 				}
 			});
 
-			renderGraph.AddMappedBufferUpload(buffersData.directionalLightBuffer, &data, sizeof(DirectionalLightData), "Upload directional light data");
+			renderGraph.AddMappedBufferUpload(buffersData.directionalLightBuffer, &data, sizeof(DirectionalLightUniformBuffer), "Upload directional light data");
 		}
 	}
 
@@ -483,6 +467,7 @@ namespace Volt
 			bufferData.sdfMeshesBuffer = renderGraph.AddExternalBuffer(gpuScene.sdfMeshesBuffer->GetResource());
 			bufferData.materialsBuffer = renderGraph.AddExternalBuffer(gpuScene.materialsBuffer->GetResource());
 			bufferData.primitiveDrawDataBuffer = renderGraph.AddExternalBuffer(gpuScene.primitiveDrawDataBuffer->GetResource());
+			bufferData.prevPrimitiveDrawDataBuffer = renderGraph.AddExternalBuffer(gpuScene.prevPrimitiveDrawDataBuffer->GetResource());
 			bufferData.sdfPrimitiveDrawDataBuffer = renderGraph.AddExternalBuffer(gpuScene.sdfPrimitiveDrawDataBuffer->GetResource());
 			bufferData.bonesBuffer = renderGraph.AddExternalBuffer(gpuScene.bonesBuffer->GetResource());
 			bufferData.validPrimitiveDrawDatasBuffer = renderGraph.AddExternalBuffer(gpuScene.validPrimitiveDrawDatasBuffer->GetResource());
@@ -511,9 +496,60 @@ namespace Volt
 		}
 	}
 
+	void SceneRenderer::ExecuteGBufferGenerationPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
+	{
+		renderGraph.BeginMarker("Generate GBuffer");
+
+		AddVisibilityBufferPass(renderGraph, blackboard);
+		AddGenerateMaterialCountsPass(renderGraph, blackboard);
+
+		PrefixSumTechnique prefixSum{ renderGraph };
+		prefixSum.Execute(blackboard.Get<MaterialCountData>().materialCountBuffer, blackboard.Get<MaterialCountData>().materialStartBuffer, m_scene->GetRenderScene()->GetIndividualMaterialCount());
+
+		AddCollectMaterialPixelsPass(renderGraph, blackboard);
+		AddGenerateMaterialIndirectArgsPass(renderGraph, blackboard);
+
+		//For every material -> run compute shading shader using indirect args
+		auto& gbufferData = blackboard.Add<GBufferData>();
+
+		gbufferData.albedo = renderGraph.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::R8G8B8A8_UNORM>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "GBuffer.Albedo"));
+		gbufferData.normals = renderGraph.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "GBuffer.Normals"));
+		gbufferData.material = renderGraph.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::R8G8_UNORM>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "GBuffer.Material"));
+		gbufferData.emissive = renderGraph.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "GBuffer.Emissive"));
+
+		AddClearGBufferPass(renderGraph, blackboard);
+		RenderMaterials(renderGraph, blackboard);
+
+		renderGraph.EndMarker();
+	}
+
+	void SceneRenderer::ExecutePostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, float timestep)
+	{
+		renderGraph.BeginMarker("Post Processing");
+
+		AutoExposureTechnique autoExposureTechnique(renderGraph, blackboard);
+		autoExposureTechnique.Execute(blackboard.Get<FinalOutput>().colorOutput, renderGraph.AddExternalImage(m_averageLuminanceImage), timestep);
+
+		if (m_antiAliasingMethod == AntiAliasingMethod::TAA)
+		{
+			TAATechnique taaTechnique(renderGraph, blackboard);
+			TAAData taaData = taaTechnique.Execute(m_previousColorImage, blackboard.Get<DepthPrePass>().velocity);
+			renderGraph.EnqueueImageExtraction(taaData.accumulationOutput, m_previousColorImage);
+			blackboard.Get<FinalOutput>().colorOutput = taaData.taaOutput;
+		}
+		else
+		{
+			AddFXAAPass(renderGraph, blackboard, blackboard.Get<FinalOutput>().colorOutput);
+			blackboard.Get<FinalOutput>().colorOutput = blackboard.Get<FXAAOutputData>().output;
+		}
+
+		AddTonemapPass(renderGraph, blackboard, blackboard.Get<FinalOutput>().colorOutput);
+		renderGraph.EndMarker();
+	}
+
 	void SceneRenderer::AddMainCullingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 	{
-		const auto& viewData = blackboard.Get<ViewData>();
+		const auto& viewData = blackboard.Get<ViewUniformBuffer>();
 		const auto renderScene = m_scene->GetRenderScene();
 
 		CullingTechnique cullingTechnique{ renderGraph, blackboard };
@@ -529,35 +565,39 @@ namespace Volt
 		blackboard.Add<DrawCullingData>() = cullingTechnique.Execute(info);
 	}
 
-	void SceneRenderer::AddPreDepthPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
+	void SceneRenderer::AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 	{
 		const auto& drawCullingData = blackboard.Get<DrawCullingData>();
 
-		blackboard.Add<PreDepthData>() = renderGraph.AddPass<PreDepthData>("Pre Depth Pass",
-		[&](RenderGraph::Builder& builder, PreDepthData& data)
+		blackboard.Add<DepthPrePass>() = renderGraph.AddPass<DepthPrePass>("Depth Pre Pass",
+		[&](RenderGraph::Builder& builder, DepthPrePass& data)
 		{
 			RenderGraphImageDesc desc{};
 			desc.width = m_width;
 			desc.height = m_height;
 			desc.format = RHI::PixelFormat::D32_SFLOAT;
 			desc.usage = RHI::ImageUsage::Attachment;
-			desc.name = "PreDepth";
+			desc.name = "DepthPrePass.Depth";
 			data.depth = builder.CreateImage(desc);
 
 			desc.format = RHI::PixelFormat::R16G16B16A16_SFLOAT;
-			desc.name = "View Normals";
+			desc.name = "DepthPrePass.ViewNormals";
 			data.normals = builder.CreateImage(desc);
+
+			desc.format = RHI::PixelFormat::R16G16_SFLOAT;
+			desc.name = "DepthPrePass.Velocity";
+			data.velocity = builder.CreateImage(desc);
 
 			BuildMeshPass(builder, blackboard);
 
 			builder.SetHasSideEffect();
 		},
-		[=](const PreDepthData& data, RenderContext& context)
+		[=](const DepthPrePass& data, RenderContext& context)
 		{
-			RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { data.normals, data.depth });
+			RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { data.normals, data.velocity, data.depth });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get("PreDepthMeshShader");
+			pipelineInfo.shader = ShaderMap::Get("DepthPrePassMeshShader");
 
 			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
@@ -578,7 +618,7 @@ namespace Volt
 			RenderGraphImageHandle objectIdHandle;
 		};
 
-		const auto preDepthHandle = blackboard.Get<PreDepthData>().depth;
+		const auto preDepthHandle = blackboard.Get<DepthPrePass>().depth;
 		const auto& drawCullingData = blackboard.Get<DrawCullingData>();
 
 		Data& data = renderGraph.AddPass<Data>("Object ID Pass",
@@ -614,9 +654,21 @@ namespace Volt
 		renderGraph.EnqueueImageExtraction(data.objectIdHandle, m_objectIDImage);
 	}
 
+	void SceneRenderer::AddGTAOPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)
+	{
+		GTAOSettings tempSettings{};
+		tempSettings.radius = 50.f;
+		tempSettings.radiusMultiplier = 1.457f;
+		tempSettings.falloffRange = 0.615f;
+		tempSettings.finalValuePower = 2.2f;
+
+		GTAOTechnique gtaoTechnique{ 0 /*m_frameIndex*/, tempSettings };
+		blackboard.Add<GTAOOutput>() = gtaoTechnique.Execute(renderGraph, blackboard, camera);
+	}
+
 	void SceneRenderer::AddVisibilityBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 	{
-		const auto preDepthHandle = blackboard.Get<PreDepthData>().depth;
+		const auto preDepthHandle = blackboard.Get<DepthPrePass>().depth;
 		const auto& drawCullingData = blackboard.Get<DrawCullingData>();
 
 		blackboard.Add<VisibilityBufferData>() = renderGraph.AddPass<VisibilityBufferData>("Visibility Buffer",
@@ -941,7 +993,7 @@ namespace Volt
 		const auto& gtaoOutput = blackboard.Get<GTAOOutput>();
 
 		const auto& gbufferData = blackboard.Get<GBufferData>();
-		const auto& preDepthData = blackboard.Get<PreDepthData>();
+		const auto& preDepthData = blackboard.Get<DepthPrePass>();
 		const auto& dirShadowData = blackboard.Get<DirectionalShadowData>();
 
 		renderGraph.AddPass("Shading Pass",
@@ -975,7 +1027,7 @@ namespace Volt
 			auto pipeline = ShaderMap::GetComputePipeline("Shading");
 			context.BindPipeline(pipeline);
 
-			context.SetAccelerationStructure(m_scene->GetRenderScene()->GetRayTracingScene()->GetAccelerationStructure());
+			//context.SetAccelerationStructure(m_scene->GetRenderScene()->GetRayTracingScene()->GetAccelerationStructure());
 
 			context.SetConstant("output"_sh, shadingOutputData.colorOutput);
 			context.SetConstant("albedo"_sh, gbufferData.albedo);
@@ -1012,18 +1064,18 @@ namespace Volt
 	void SceneRenderer::AddFXAAPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage)
 	{
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
-		const auto& blueNoiseTextures = blackboard.Get<BlueNoiseTextures>();
 
 		blackboard.Add<FXAAOutputData>() = renderGraph.AddPass<FXAAOutputData>("FXAA Pass",
 		[&](RenderGraph::Builder& builder, FXAAOutputData& data)
 		{
-			data.output = builder.AddExternalImage(m_outputImage);
+			{
+				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "FXAA.Output");
+				data.output = builder.CreateImage(desc);
+			}
 
-			builder.WriteResource(data.output);
 			builder.ReadResource(srcImage);
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
 
-			BlueNoise::Build(builder, blueNoiseTextures);
 		},
 		[=](const FXAAOutputData& data, RenderContext& context)
 		{
@@ -1041,9 +1093,6 @@ namespace Volt
 				context.SetConstant("sceneColor"_sh, srcImage);
 				context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
 				context.SetConstant("linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle());
-				context.SetConstant("frameIndex"_sh, m_frameIndex);
-			
-				BlueNoise::Setup(context, blueNoiseTextures);
 			});
 
 			context.EndRendering();
@@ -1057,17 +1106,19 @@ namespace Volt
 
 		RenderGraphImageHandle averageLuminanceImage = renderGraph.AddExternalImage(m_averageLuminanceImage);
 
+		const auto& blueNoiseTextures = blackboard.Get<BlueNoiseTextures>();
+
 		blackboard.Add<FinalCopyData>() = renderGraph.AddPass<FinalCopyData>("Tonemapping Pass",
 		[&](RenderGraph::Builder& builder, FinalCopyData& data)
 		{
-			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "Tonemap.Output");
-				data.output = builder.CreateImage(desc);
-			}
+			data.output = builder.AddExternalImage(m_outputImage);
 
 			builder.WriteResource(data.output);
 			builder.ReadResource(srcImage);
 			builder.ReadResource(averageLuminanceImage);
+
+			BlueNoise::Build(builder, blueNoiseTextures);
+
 			builder.SetHasSideEffect();
 		},
 		[=](const FinalCopyData& data, RenderContext& context)
@@ -1087,6 +1138,9 @@ namespace Volt
 				context.SetConstant("averageLuminance"_sh, averageLuminanceImage);
 				context.SetConstant("middleGray"_sh, MiddleGray);
 				context.SetConstant("whitePoint"_sh, WhitePoint * WhitePoint);
+				context.SetConstant("frameIndex"_sh, m_frameIndex);
+
+				BlueNoise::Setup(context, blueNoiseTextures);
 			});
 
 			context.EndRendering();
@@ -1145,7 +1199,7 @@ namespace Volt
 		const auto& mesh = m_scene->GetRenderScene()->GetRenderObjectAt(0).mesh;
 		const auto& brickGrid = mesh->GetBrickGrid(0);
 
-		const auto& viewData = blackboard.Get<ViewData>();
+		const auto& viewData = blackboard.Get<ViewUniformBuffer>();
 
 		struct PassData
 		{

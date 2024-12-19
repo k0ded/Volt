@@ -37,7 +37,7 @@ bool EditorLibrary::OpenAsset(Ref<Volt::Asset> asset)
 	}
 
 	const AssetType type = asset->GetType();
-	auto it = std::find_if(s_editors.begin(), s_editors.end(), [type](const auto& lhs) { return lhs.assetType == type; });
+	auto it = std::find_if(s_editors.begin(), s_editors.end(), [type](const auto& lhs) { return lhs.assetType->GetGUID() == type->GetGUID(); });
 	if (it == s_editors.end())
 	{
 		return false;
@@ -50,7 +50,7 @@ bool EditorLibrary::OpenAsset(Ref<Volt::Asset> asset)
 
 Ref<EditorWindow> EditorLibrary::Get(AssetType type)
 {
-	auto it = std::find_if(s_editors.begin(), s_editors.end(), [type](const auto& lhs) { return lhs.assetType == type; });
+	auto it = std::find_if(s_editors.begin(), s_editors.end(), [type](const auto& lhs) { return lhs.assetType->GetGUID() == type->GetGUID(); });
 	if (it == s_editors.end())
 	{
 		VT_LOG(Error, "Editor for asset not registered!");

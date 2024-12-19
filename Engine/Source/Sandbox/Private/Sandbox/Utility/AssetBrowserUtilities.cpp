@@ -2,6 +2,7 @@
 
 #include "Sandbox/Utility/AssetBrowserUtilities.h"
 #include "Sandbox/Window/AssetBrowser/AssetItem.h"
+#include "Sandbox/Window/AssetBrowser/AssetBrowserSelectionManager.h"
 #include "Sandbox/UISystems/ModalSystem.h"
 #include "Sandbox/Modals/MeshImportModal.h"
 #include "Sandbox/Modals/TextureImportModal.h"
@@ -80,7 +81,7 @@ namespace AssetBrowser
 		return bgColor;
 	}
 
-	bool AssetBrowserUtilities::RenderAssetTypePopup(AssetItem* item)
+	bool AssetBrowserUtilities::RenderAssetTypePopup(AssetItem* item, SelectionManager* selectionManager)
 	{
 		const auto& functions = GetPopupRenderFunctions();
 		if (!functions.contains(item->type))
@@ -88,7 +89,7 @@ namespace AssetBrowser
 			return false;
 		}
 
-		functions.at(item->type)(item);
+		functions.at(item->type)(item, selectionManager);
 		return true;
 	}
 
@@ -114,13 +115,13 @@ namespace AssetBrowser
 		}
 	}
 
-	const std::unordered_map<AssetType, std::function<void(AssetItem*)>>& AssetBrowserUtilities::GetPopupRenderFunctions()
+	const std::unordered_map<AssetType, std::function<void(AssetItem*, SelectionManager*)>>& AssetBrowserUtilities::GetPopupRenderFunctions()
 	{
-		static std::unordered_map<AssetType, std::function<void(AssetItem*)>> renderFunctions;
+		static std::unordered_map<AssetType, std::function<void(AssetItem*, SelectionManager*)>> renderFunctions;
 
 		if (renderFunctions.empty())
 		{
-			renderFunctions[AssetTypes::ShaderDefinition] = [](AssetItem* item)
+			renderFunctions[AssetTypes::ShaderDefinition] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
 				if (ImGui::MenuItem("Recompile Shader"))
 				{
@@ -137,17 +138,32 @@ namespace AssetBrowser
 				}
 			};
 
-			renderFunctions[AssetTypes::MeshSource] = [](AssetItem* item)
+			renderFunctions[AssetTypes::MeshSource] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
 				if (ImGui::MenuItem("Import"))
 				{
+					Vector<std::filesystem::path> importFilePaths;
+					importFilePaths.emplace_back(item->path);
+
+					for (const Item* selectedItem : selectionManager->GetSelectedItems())
+					{
+						if (!selectedItem->isDirectory && selectedItem != item)
+						{
+							const AssetItem* selectedAssetItem = reinterpret_cast<const AssetItem*>(selectedItem);
+							if (selectedAssetItem->type == AssetTypes::MeshSource)
+							{
+								importFilePaths.emplace_back(selectedAssetItem->path);
+							}
+						}
+					}
+
 					auto& modal = ModalSystem::GetModal<MeshImportModal>(Sandbox::Get().GetMeshImportModalID());
-					modal.SetImportMeshes({ item->path });
+					modal.SetImportMeshes(importFilePaths);
 					modal.Open();
 				}
 			};
 
-			renderFunctions[AssetTypes::Mesh] = [](AssetItem* item)
+			renderFunctions[AssetTypes::Mesh] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
 				if (ImGui::MenuItem("Export Mesh"))
 				{
@@ -156,7 +172,7 @@ namespace AssetBrowser
 				}
 			};
 
-			renderFunctions[AssetTypes::Animation] = [](AssetItem* item)
+			renderFunctions[AssetTypes::Animation] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
 				if (ImGui::MenuItem("Reimport"))
 				{
@@ -165,11 +181,11 @@ namespace AssetBrowser
 				}
 			};
 
-			renderFunctions[AssetTypes::Skeleton] = [](AssetItem* item)
+			renderFunctions[AssetTypes::Skeleton] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
 			};
 
-			renderFunctions[AssetTypes::Prefab] = [](AssetItem* item)
+			renderFunctions[AssetTypes::Prefab] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
 				if (ImGui::MenuItem("Export Meshes"))
 				{
@@ -178,17 +194,32 @@ namespace AssetBrowser
 				}
 			};
 
-			renderFunctions[AssetTypes::TextureSource] = [](AssetItem* item)
+			renderFunctions[AssetTypes::TextureSource] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
 				if (ImGui::MenuItem("Import"))
 				{
+					Vector<std::filesystem::path> importFilePaths;
+					importFilePaths.emplace_back(item->path);
+
+					for (const Item* selectedItem : selectionManager->GetSelectedItems())
+					{
+						if (!selectedItem->isDirectory && selectedItem != item)
+						{
+							const AssetItem* selectedAssetItem = reinterpret_cast<const AssetItem*>(selectedItem);
+							if (selectedAssetItem->type == AssetTypes::TextureSource)
+							{
+								importFilePaths.emplace_back(selectedAssetItem->path);
+							}
+						}
+					}
+
 					auto& modal = ModalSystem::GetModal<TextureImportModal>(Sandbox::Get().GetTextureImportModalID());
-					modal.SetImportTextures({ item->path });
+					modal.SetImportTextures(importFilePaths);
 					modal.Open();
 				}
 			};
 
-			renderFunctions[AssetTypes::Texture] = [](AssetItem* item)
+			renderFunctions[AssetTypes::Texture] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
 				if (ImGui::MenuItem("Generate Mips"))
 				{

@@ -16,6 +16,7 @@ namespace Volt
 			static_assert(sizeof(T) < 1024 && "Blackboard data is not allowed to be greater than 1024 bytes!");
 
 			auto typeIndex = std::type_index{ typeid(T) };
+			VT_ENSURE(!m_blackboard.contains(typeIndex));
 
 			m_blackboard[typeIndex] = T{};
 			return std::any_cast<T&>(m_blackboard.at(typeIndex));

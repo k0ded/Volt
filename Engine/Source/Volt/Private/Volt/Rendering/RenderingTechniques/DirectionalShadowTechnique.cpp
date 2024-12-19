@@ -45,14 +45,14 @@ namespace Volt
 			imageDesc.width = dirShadowData.renderSize.x;
 			imageDesc.height = dirShadowData.renderSize.y;
 			imageDesc.usage = RHI::ImageUsage::Attachment;
-			imageDesc.layers = DirectionalLightData::CASCADE_COUNT;
+			imageDesc.layers = DirectionalLightUniformBuffer::CASCADE_COUNT;
 			imageDesc.isCubeMap = false;
 			imageDesc.name = "Directional Light Shadow";
 
 			dirShadowData.shadowTexture = m_renderGraph.CreateImage(imageDesc);
 		}
 
-		for (uint32_t i = 0; i < DirectionalLightData::CASCADE_COUNT; i++)
+		for (uint32_t i = 0; i < DirectionalLightUniformBuffer::CASCADE_COUNT; i++)
 		{
 			CullingTechnique::Info cullingInfo{};
 			cullingInfo.type = CullingTechnique::Type::Orthographic;
@@ -81,7 +81,7 @@ namespace Volt
 			[=](RenderContext& context)
 			{
 				RenderingInfo info = context.CreateRenderingInfo(dirShadowData.renderSize.x, dirShadowData.renderSize.y, { dirShadowData.shadowTexture });
-				info.renderingInfo.layerCount = DirectionalLightData::CASCADE_COUNT;
+				info.renderingInfo.layerCount = DirectionalLightUniformBuffer::CASCADE_COUNT;
 				info.renderingInfo.depthAttachmentInfo.SetClearColor(1.f, 1.f, 1.f, 1.f);
 				if (i != 0)
 				{

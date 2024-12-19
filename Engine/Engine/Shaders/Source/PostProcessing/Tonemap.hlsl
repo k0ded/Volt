@@ -1,7 +1,9 @@
 #include "Vertex.hlsli"
 #include "Resources.hlsli"
-#include "ACES.hlsli"
 #include "Utility.hlsli"
+
+#include "Noise.hlsli"
+#include "BlueNoise.hlsli"
 
 struct Constants
 {
@@ -9,11 +11,14 @@ struct Constants
 	vt::Tex2D<float> averageLuminance;
 	float middleGray;
 	float whitePoint;
+
+	uint frameIndex;
+    BlueNoiseData blueNoiseData;
 };
 
 struct Output
 {
-    [[vt::r11f_g11f_b10f]] float3 output : SV_Target0;
+    [[vt::rgba8]] float4 output : SV_Target0;
 };
 
 // From https://github.com/bkaradzic/bgfx/blob/master/examples/common/shaderlib.sh
@@ -86,10 +91,12 @@ Output main(FullscreenTriangleVertex input)
 	
 	float lp = Yxy.x * constants.middleGray / (max(luminance, 0.0001f));
 	Yxy.x = Reinhard2(lp, constants.whitePoint);
-
+	
 	pixelColor = ConvertYxy2RGB(Yxy);
 
+    float3 dither = RemapPDFTriUnity(BlueNoiseRGBA(input.position.xy, constants.frameIndex, constants.blueNoiseData).rgb) / 254.f;
+
     Output output;
-    output.output = LinearToSRGB(pixelColor);
+    output.output = float4(LinearToSRGB(pixelColor) + dither, 1.f);
     return output;
 }

@@ -2,6 +2,7 @@
 #include "Volt/Rendering/RenderingTechniques/AutoExposureTechnique.h"
 
 #include "Volt/Rendering/SceneRendererStructs.h"
+#include "Volt/Rendering/RendererCommon.h"
 #include "Volt/Math/Math.h"
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
@@ -17,13 +18,17 @@ namespace Volt
 
 	void AutoExposureTechnique::Execute(RenderGraphImageHandle srcRenderTarget, RenderGraphImageHandle averageLuminanceTarget, float deltaTime)
 	{
+		m_renderGraph.BeginMarker("Auto Exposure");
+
 		RenderGraphBufferHandle histogramBuffer = GenerateLuminanceHistogram(srcRenderTarget);
 		GenerateAverageLuminance(histogramBuffer, averageLuminanceTarget, deltaTime);
+	
+		m_renderGraph.EndMarker();
 	}
 
 	RenderGraphBufferHandle AutoExposureTechnique::GenerateLuminanceHistogram(RenderGraphImageHandle srcRenderTarget)
 	{
-		const auto& renderData = m_blackboard.Get<RenderData>();
+		const auto& viewUniformBuffer = m_blackboard.Get<ViewUniformBuffer>();
 
 		struct Data
 		{
@@ -52,14 +57,14 @@ namespace Volt
 			context.BindPipeline(pipeline);
 			context.SetConstant("inputColor"_sh, srcRenderTarget);
 			context.SetConstant("outHistogram"_sh, data.histogramBuffer);
-			context.SetConstant("renderTargetSize"_sh, renderData.renderSize);
+			context.SetConstant("renderTargetSize"_sh, viewUniformBuffer.renderSize);
 			context.SetConstant("minLogLum"_sh, MinLogLuminance);
 			context.SetConstant("inverseLogLumRange"_sh, InvLogLuminanceRange);
 		
 			constexpr uint32_t ThreadGroupSize = 16;
 
-			const uint32_t tileCountX = Math::DivideRoundUp(renderData.renderSize.x, ThreadGroupSize);
-			const uint32_t tileCountY = Math::DivideRoundUp(renderData.renderSize.y, ThreadGroupSize);
+			const uint32_t tileCountX = Math::DivideRoundUp(viewUniformBuffer.renderSize.x, ThreadGroupSize);
+			const uint32_t tileCountY = Math::DivideRoundUp(viewUniformBuffer.renderSize.y, ThreadGroupSize);
 		
 			context.Dispatch(tileCountX, tileCountY, 1u);
 		});
@@ -69,7 +74,7 @@ namespace Volt
 
 	void AutoExposureTechnique::GenerateAverageLuminance(RenderGraphBufferHandle histogramBuffer, RenderGraphImageHandle averageLuminanceTarget, float deltaTime)
 	{
-		const auto& renderData = m_blackboard.Get<RenderData>();
+		const auto& viewUniformBuffer = m_blackboard.Get<ViewUniformBuffer>();
 
 		m_renderGraph.AddPass("Generate Average Luminance",
 		[&](RenderGraph::Builder& builder) 
@@ -87,7 +92,7 @@ namespace Volt
 			context.BindPipeline(pipeline);
 			context.SetConstant("outAverageLuminance"_sh, averageLuminanceTarget);
 			context.SetConstant("histogramBuffer"_sh, histogramBuffer);
-			context.SetConstant("totalPixelCount"_sh, renderData.renderSize.x * renderData.renderSize.y);
+			context.SetConstant("totalPixelCount"_sh, viewUniformBuffer.renderSize.x * viewUniformBuffer.renderSize.y);
 			context.SetConstant("logLumRange"_sh, 12.f);
 			context.SetConstant("minLogLum"_sh, -10.f);
 			context.SetConstant("blendFactor"_sh, 1.f - exp(-deltaTime * 1.1f));

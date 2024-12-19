@@ -37,6 +37,10 @@ void main(uint groupThreadId : SV_GroupThreadID)
     // We need to use the raw buffer here.
     globallycoherent RWStructuredBuffer<State> stateBuffer = ResourceDescriptorHeap[constants.state.handle.handle + 1];
 
+    const uint WaveSize = WaveGetLaneCount();
+    const uint WaveIndex = groupThreadId.x / WaveSize;
+    const uint LaneIndex = WaveGetLaneIndex();
+
     if (groupThreadId == 0)
     {
         constants.counterBuffer.InterlockedAdd(0, 1, m_partitionIndex);
@@ -45,21 +49,19 @@ void main(uint groupThreadId : SV_GroupThreadID)
 
     GroupMemoryBarrierWithGroupSync();
 
-    const uint WAVE_SIZE = WaveGetLaneCount();
-    const uint WAVE_INDEX = groupThreadId.x / WAVE_SIZE;
-    const uint LANE_INDEX = WaveGetLaneIndex();
+    uint partitionIndex = m_partitionIndex;
 
-    const uint localValueIndex = WAVE_SIZE * WAVE_INDEX + LANE_INDEX;
-    const uint valueIndex = TG_SIZE * m_partitionIndex + localValueIndex;
+    const uint localValueIndex = WaveSize * WaveIndex + LaneIndex;
+    const uint valueIndex = TG_SIZE * partitionIndex + localValueIndex;
 
     if (valueIndex >= constants.valueCount)
     {
         return;
     }
 
-    const uint maxLocalIndex = constants.valueCount - TG_SIZE * m_partitionIndex - 1;
+    const uint maxLocalIndex = constants.valueCount - TG_SIZE * partitionIndex - 1;
 
-    const bool isLastLaneInWave = groupThreadId == (WAVE_INDEX * WAVE_SIZE) + WAVE_SIZE - 1;
+    const bool isLastLaneInWave = groupThreadId == (WaveIndex * WaveSize) + WaveSize - 1 || WaveIndex == (maxLocalIndex / WaveSize);
     const bool isLastActiveGroupThread = groupThreadId == maxLocalIndex || groupThreadId == TG_SIZE - 1;
     
     uint value = constants.inputValues.Load(valueIndex);
@@ -68,7 +70,7 @@ void main(uint groupThreadId : SV_GroupThreadID)
     // Store the per wave prefix sum for the entire thread group.
     if (isLastLaneInWave)
     {
-        m_wavePrefixSums[WAVE_INDEX] = lanePrefixSum + value;
+        m_wavePrefixSums[WaveIndex] = lanePrefixSum + value;
     }
 
     GroupMemoryBarrierWithGroupSync();
@@ -86,17 +88,17 @@ void main(uint groupThreadId : SV_GroupThreadID)
     GroupMemoryBarrierWithGroupSync();
 
     uint laneAggregate = lanePrefixSum;
-    if (WAVE_INDEX > 0)
+    if (WaveIndex > 0)
     {
-        laneAggregate += m_wavePrefixSums[WAVE_INDEX - 1];
+        laneAggregate += m_wavePrefixSums[WaveIndex - 1];
     }
 
     if (isLastActiveGroupThread)
     {
-        stateBuffer[m_partitionIndex].aggregate = laneAggregate + value;
-        if (m_partitionIndex == 0)
+        stateBuffer[partitionIndex].aggregate = laneAggregate + value;
+        if (partitionIndex == 0)
         {
-            stateBuffer[m_partitionIndex].prefix = laneAggregate;
+            stateBuffer[partitionIndex].prefix = laneAggregate;
         }
     }
 
@@ -105,19 +107,19 @@ void main(uint groupThreadId : SV_GroupThreadID)
     if (isLastActiveGroupThread)
     {
         uint state = STATE_AGG_READY;
-        if (m_partitionIndex == 0)
+        if (partitionIndex == 0)
         {
             state = STATE_PRE_READY;
         }
 
-        stateBuffer[m_partitionIndex].state = state;
+        stateBuffer[partitionIndex].state = state;
     }
     
     uint exclusivePrefix = 0;
 
-    if (m_partitionIndex > 0)
+    if (partitionIndex > 0)
     {
-        int lookBackIndex = m_partitionIndex - 1;
+        int lookBackIndex = partitionIndex - 1;
 
         uint otherValueIndex = 0;
         uint otherAggregate = 0;    
@@ -199,14 +201,14 @@ void main(uint groupThreadId : SV_GroupThreadID)
         if (isLastActiveGroupThread)
         {
             m_partitionPrefix = exclusivePrefix;
-            stateBuffer[m_partitionIndex].prefix = exclusivePrefix + m_wavePrefixSums[WAVE_INDEX];
+            stateBuffer[partitionIndex].prefix = exclusivePrefix + m_wavePrefixSums[WaveIndex];
         }
 
         DeviceMemoryBarrier();
         
         if (isLastActiveGroupThread)                                                                                                                                                                                  
         {
-            stateBuffer[m_partitionIndex].state = STATE_PRE_READY;
+            stateBuffer[partitionIndex].state = STATE_PRE_READY;
         }
     }
 

@@ -5,9 +5,9 @@
 
 namespace Volt::RGUtils
 {
-	void ClearImage(RenderGraph& renderGraph, RenderGraphImageHandle image, const glm::vec4& clearColor, std::string_view passName)
+	void ClearImage(RenderGraph& renderGraph, RenderGraphImageHandle image, const glm::vec4& clearColor, const std::string& passName)
 	{
-		renderGraph.AddPass(passName.empty() ? "Clear Image Pass" : std::string(passName),
+		renderGraph.AddPass(passName.empty() ? "Clear Image Pass" : passName,
 		[&](RenderGraph::Builder& builder)
 		{
 			builder.WriteResource(image, RenderGraphResourceState::Clear);
@@ -18,9 +18,9 @@ namespace Volt::RGUtils
 		});
 	}
 
-	void ClearBuffer(RenderGraph& renderGraph, RenderGraphBufferHandle buffer, const uint32_t clearValue, std::string_view passName)
+	void ClearBuffer(RenderGraph& renderGraph, RenderGraphBufferHandle buffer, const uint32_t clearValue, const std::string& passName)
 	{
-		renderGraph.AddPass(passName.empty() ? "Clear Buffer Pass" : std::string(passName),
+		renderGraph.AddPass(passName.empty() ? "Clear Buffer Pass" : passName,
 		[&](RenderGraph::Builder& builder)
 		{
 			builder.WriteResource(buffer, RenderGraphResourceState::Clear);
@@ -28,6 +28,20 @@ namespace Volt::RGUtils
 		[=](RenderContext& context) 
 		{
 			context.ClearBuffer(buffer, clearValue);
+		});
+	}
+
+	void CopyBuffer(RenderGraph& renderGraph, RenderGraphBufferHandle srcBuffer, RenderGraphBufferHandle dstBuffer, size_t copySize, const std::string& passName)
+	{
+		renderGraph.AddPass(passName.empty() ? "Copy Buffer Pass" : passName,
+		[&](RenderGraph::Builder& builder) 
+		{
+			builder.ReadResource(srcBuffer, RenderGraphResourceState::CopySource);
+			builder.WriteResource(dstBuffer, RenderGraphResourceState::CopyDest);
+		},
+		[=](RenderContext& context) 
+		{
+			context.CopyBuffer(srcBuffer, dstBuffer, copySize);
 		});
 	}
 }

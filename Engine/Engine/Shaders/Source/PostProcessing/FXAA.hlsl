@@ -3,23 +3,16 @@
 #include "Structures.hlsli"
 #include "Utility.hlsli"
 
-#include "Noise.hlsli"
-#include "BlueNoise.hlsli"
-
 struct Constants
 {
     vt::Tex2D<float3> sceneColor;
     vt::UniformBuffer<ViewData> viewData;
-
     vt::TextureSampler linearSampler;
-    uint frameIndex;
-
-    BlueNoiseData blueNoiseData;
 };
 
 struct Output
 {
-    [[vt::rgba8]] float4 color : SV_Target0;
+    [[vt::r11f_g11f_b10f]] float3 color : SV_Target0;
 };
 
 float RGBToLuma(float3 rgb)
@@ -62,12 +55,10 @@ Output MainPS(FullscreenTriangleVertex input)
 
     float lumaRange = lumaMax - lumaMin;
 
-    float3 dither = RemapPDFTriUnity(BlueNoiseRGBA(input.position.xy, constants.frameIndex, constants.blueNoiseData).rgb) / 254.f;
-
     if (lumaRange < max(EDGE_THRESHOLD_MIN, lumaMax * EDGE_THRESHOLD_MAX))
     {
         Output output;
-        output.color = float4(colorCenter + dither, 1.f);
+        output.color = colorCenter;
         return output;
     }
 
@@ -217,8 +208,7 @@ Output MainPS(FullscreenTriangleVertex input)
 
     float3 finalColor = sceneColor.Sample(linearSampler, finalUv);
     
-
     Output output;
-    output.color = float4(finalColor + dither, 1.f);
+    output.color = finalColor;
     return output;
 }

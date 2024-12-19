@@ -807,7 +807,7 @@ namespace Volt
 
 				if (passNode->IsCulled())
 				{
-					//InsertStandaloneMarkersIntoCommandBuffer(passNode->index, rangeCmdBuffer);
+					InsertStandaloneMarkersIntoCommandBuffer(passNode->index, rangeCmdBuffer);
 					InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, rangeCmdBuffer);
 					continue;
 				}
@@ -827,7 +827,7 @@ namespace Volt
 
 				rangeCmdBuffer->EndMarker();
 
-				//InsertStandaloneMarkersIntoCommandBuffer(passNode->index, rangeCmdBuffer);
+				InsertStandaloneMarkersIntoCommandBuffer(passNode->index, rangeCmdBuffer);
 
 				for (const auto& resourceHandle : compiledPass.surrenderableResources)
 				{

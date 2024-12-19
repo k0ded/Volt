@@ -33,6 +33,7 @@ namespace Volt
 		m_buffers.sdfMeshesBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMeshSDF), "SDF GPU Meshes");
 		m_buffers.materialsBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMaterial), "GPU Materials");
 		m_buffers.primitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(PrimitiveDrawData), "Primitive Draw Data");
+		m_buffers.prevPrimitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(PrimitiveDrawData), "Prev Primitive Draw Data");
 		m_buffers.sdfPrimitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(SDFPrimitiveDrawData), "SDF Primitive Draw Data");
 		m_buffers.bonesBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(glm::mat4), "GPU Bones");
 		m_buffers.validPrimitiveDrawDatasBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "Compacted Valid Primitive Draw Datas");
@@ -131,6 +132,17 @@ namespace Volt
 		{
 			m_rayTracingScene->Update();
 		}
+	}
+
+	void RenderScene::EndFrame(RenderGraph& renderGraph)
+	{
+		m_buffers.prevPrimitiveDrawDataBuffer->GrowIfRequired(m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount());
+	
+		RGUtils::CopyBuffer(renderGraph,
+			renderGraph.AddExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource()),
+			renderGraph.AddExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource()),
+			m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize(),
+			"Copy PrimitiveDrawData");
 	}
 
 	void RenderScene::InvalidateRenderObject(UUID64 renderObject)
@@ -325,52 +337,6 @@ namespace Volt
 		}
 
 		return *it;
-	}
-
-	void RenderScene::UploadGPUMeshes(const Vector<GPUMesh>& gpuMeshes)
-	{
-		auto meshesBuffer = m_buffers.meshesBuffer;
-		meshesBuffer->GrowIfRequired(gpuMeshes.size());
-		meshesBuffer->GetResource()->SetData(gpuMeshes.data(), sizeof(GPUMesh) * gpuMeshes.size());
-	}
-
-	void RenderScene::UploadGPUMeshSDFs(const Vector<GPUMeshSDF>& sdfMeshes)
-	{
-		auto sdfMeshesBuffer = m_buffers.sdfMeshesBuffer;
-		sdfMeshesBuffer->GrowIfRequired(sdfMeshes.size());
-		sdfMeshesBuffer->GetResource()->SetData(sdfMeshes.data(), sizeof(GPUMeshSDF) * sdfMeshes.size());
-	}
-
-	void RenderScene::UploadPrimitiveDrawData(const Vector<PrimitiveDrawData>& primitiveDrawData)
-	{
-		auto drawDataBuffer = m_buffers.primitiveDrawDataBuffer;
-		drawDataBuffer->GrowIfRequired(primitiveDrawData.size());
-		drawDataBuffer->GetResource()->SetData(primitiveDrawData.data(), sizeof(PrimitiveDrawData) * primitiveDrawData.size());
-	}
-
-	void RenderScene::UploadSDFPrimitiveDrawData(const Vector<SDFPrimitiveDrawData>& primitiveDrawData)
-	{
-		auto drawDataBuffer = m_buffers.sdfPrimitiveDrawDataBuffer;
-		drawDataBuffer->GrowIfRequired(primitiveDrawData.size());
-		drawDataBuffer->GetResource()->SetData(primitiveDrawData.data(), sizeof(SDFPrimitiveDrawData) * primitiveDrawData.size());
-	}
-
-	void RenderScene::UploadGPUMaterials()
-	{
-		auto materialsBuffer = m_buffers.materialsBuffer;
-		materialsBuffer->GrowIfRequired(m_individualMaterials.size());
-
-		Vector<GPUMaterial> gpuMaterials;
-
-		for (const auto& material : m_individualMaterials)
-		{
-			m_materialIndexFromAssetHandle[material->handle] = gpuMaterials.size();
-
-			GPUMaterial& gpuMat = gpuMaterials.emplace_back();
-			BuildGPUMaterial(material, gpuMat);
-		}
-
-		materialsBuffer->GetResource()->SetData(gpuMaterials.data(), sizeof(GPUMaterial) * gpuMaterials.size());
 	}
 
 	void RenderScene::BuildGPUMaterial(Weak<Material> material, GPUMaterial& gpuMaterial)

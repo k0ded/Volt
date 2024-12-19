@@ -313,7 +313,7 @@ namespace Volt
 	template<typename T, typename CreateFunc, typename ExecFunc>
 	inline T& RenderGraph::AddPass(const std::string& name, CreateFunc&& createFunc, ExecFunc&& executeFunc)
 	{
-		static_assert(sizeof(executeFunc) <= 512 && "Execution function must not be larger than 512 bytes!");
+		static_assert(sizeof(executeFunc) <= 1024 && "Execution function must not be larger than 1024 bytes!");
 
 		Handle<RenderGraphPassNode<T>> newNode = m_passAllocator.AllocatePass<T>(name, std::forward<ExecFunc>(executeFunc));
 		
@@ -333,7 +333,7 @@ namespace Volt
 	template<typename CreateFunc, typename ExecFunc>
 	inline void RenderGraph::AddPass(const std::string& name, CreateFunc&& createFunc, ExecFunc&& executeFunc)
 	{
-		static_assert(sizeof(executeFunc) <= 1024 && "Execution function must not be larger than 512 bytes!");
+		static_assert(sizeof(executeFunc) <= 1024 && "Execution function must not be larger than 1024 bytes!");
 
 		struct Empty {};
 

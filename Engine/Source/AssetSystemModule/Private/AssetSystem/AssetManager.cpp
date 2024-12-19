@@ -843,9 +843,11 @@ namespace Volt
 		if (ExistsInRegistry(cleanPath))
 		{
 #ifndef VT_DIST
-			ReadLock lock{ m_assetRegistryMutex };
-			const auto& metadata = GetMetadataFromFilePath(cleanPath);
-			VT_ENSURE_MSG(metadata.type == type, "Asset types does not match!");
+			{
+				ReadLock lock{ m_assetRegistryMutex };
+				const auto& metadata = GetMetadataFromFilePath(cleanPath);
+				VT_ENSURE_MSG(metadata.type == type, "Asset types does not match!");
+			}
 #endif
 
 			return GetAssetHandleFromFilePath(cleanPath);

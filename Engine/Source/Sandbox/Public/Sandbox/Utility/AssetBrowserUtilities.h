@@ -15,6 +15,8 @@ namespace Volt
 namespace AssetBrowser
 {
 	class AssetItem;
+	class SelectionManager;
+
 	class AssetBrowserUtilities
 	{
 	public:
@@ -33,9 +35,8 @@ namespace AssetBrowser
 
 		static Vector<Ref<Volt::Mesh>> GetMeshesExport() { return meshesToExport; };
 		static void ResetMeshExport() { meshesToExport.clear(); };
-		static bool RenderAssetTypePopup(AssetItem* item);
+		static bool RenderAssetTypePopup(AssetItem* item, SelectionManager* selectionManager);
 		
-
 	private:
 		AssetBrowserUtilities() = delete;
 		static void SetMeshExport(AssetItem* item);
@@ -44,6 +45,6 @@ namespace AssetBrowser
 
 		inline static Vector<Ref<Volt::Mesh>> meshesToExport;
 
-		static const std::unordered_map<AssetType, std::function<void(AssetItem*)>>& GetPopupRenderFunctions();
+		static const std::unordered_map<AssetType, std::function<void(AssetItem*, SelectionManager*)>>& GetPopupRenderFunctions();
 	};
 }

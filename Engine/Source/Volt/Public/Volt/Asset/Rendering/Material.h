@@ -72,6 +72,4 @@ namespace Volt
 		std::atomic_bool m_isDirty = false;
 		VoltGUID m_materialGUID;
 	};
-
-	VT_REGISTER_ASSET_FACTORY(AssetTypes::Material, Material);
 }
