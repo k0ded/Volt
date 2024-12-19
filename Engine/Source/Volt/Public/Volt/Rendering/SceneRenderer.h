@@ -7,6 +7,7 @@
 #include "Volt/Rendering/RenderingTechniques/GIBS.h"
 #include "Volt/Rendering/RenderingTechniques/TAATechnique.h"
 
+#include <RenderCore/RenderGraph/RenderGraphDebugger.h>
 // #TODO_Ivar: Maybe remove from here
 #include <RenderCore/RenderGraph/RenderGraph.h>
 
@@ -89,6 +90,8 @@ namespace Volt
 
 		inline void SetVisualizationMode(VisualizationMode visMode) { m_visualizationMode = visMode; }
 		inline VisualizationMode GetVisualizationMode() const { return m_visualizationMode; }
+
+		inline const RenderGraphDebugger& GetRenderGraphDebugger() const { return m_renderGraphDebugger; }
 
 		RefPtr<RHI::Image> GetFinalImage();
 		RefPtr<RHI::Image> GetObjectIDImage();

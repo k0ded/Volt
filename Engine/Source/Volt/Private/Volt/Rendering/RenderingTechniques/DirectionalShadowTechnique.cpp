@@ -76,7 +76,6 @@ namespace Volt
 				builder.ReadResource(uniformBuffers.directionalLightBuffer);
 				builder.ReadResource(cullingData.countCommandBuffer, RenderGraphResourceState::IndirectArgument);
 				builder.ReadResource(cullingData.taskCommandsBuffer);
-				builder.SetHasSideEffect();
 			},
 			[=](RenderContext& context)
 			{

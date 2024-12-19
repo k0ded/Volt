@@ -138,6 +138,9 @@ namespace Volt
 	RenderGraph::RenderGraph(RefPtr<RHI::CommandBuffer> commandBuffer)
 		: m_commandBuffer(commandBuffer)
 	{
+		RHI::FenceCreateInfo createInfo{};
+		m_executionFence = RHI::Fence::Create(createInfo);
+
 		InitializeRuntimeShaderValidator();
 	}
 
@@ -159,6 +162,7 @@ namespace Volt
 		m_passAllocator(std::move(other.m_passAllocator)),
 		m_resourceNodeAllocator(std::move(other.m_resourceNodeAllocator)),
 		m_commandBuffer(other.m_commandBuffer),
+		m_executionFence(other.m_executionFence),
 		m_perPassConstantsBuffer(other.m_perPassConstantsBuffer),
 		m_renderGraphConstantsBuffer(other.m_renderGraphConstantsBuffer),
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
@@ -192,6 +196,7 @@ namespace Volt
 		m_passAllocator = std::move(other.m_passAllocator);
 		m_resourceNodeAllocator = std::move(other.m_resourceNodeAllocator);
 		m_commandBuffer = other.m_commandBuffer;
+		m_executionFence = other.m_executionFence;
 		m_perPassConstantsBuffer = other.m_perPassConstantsBuffer;
 		m_renderGraphConstantsBuffer = other.m_renderGraphConstantsBuffer;
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
@@ -880,13 +885,11 @@ namespace Volt
 			m_commandBuffer->End();
 		}
 
+		m_commandBuffer->ExecuteWithFence(m_executionFence);
+
 		if (waitForSync)
 		{
-			m_commandBuffer->ExecuteAndWait();
-		}
-		else
-		{
-			m_commandBuffer->Execute();
+			m_executionFence->WaitUntilSignaled();
 		}
 
 		if (m_totalAllocatedSizeCallback)
@@ -926,7 +929,7 @@ namespace Volt
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			desc.name = "Render Graph Per Pass Constants";
 
-			m_perPassConstantsBuffer = m_transientResourceSystem.AquireBufferRef(Utility::GetValueAsHandle<RenderGraphBufferHandle>(m_resourceNodeAllocator.GetAndIncrementHandle()), desc);
+			m_perPassConstantsBuffer = m_transientResourceSystem.AcquireBufferRef(Utility::GetValueAsHandle<RenderGraphBufferHandle>(m_resourceNodeAllocator.GetAndIncrementHandle()), desc);
 		}
 
 		// Render Graph constants
@@ -938,7 +941,7 @@ namespace Volt
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			desc.name = "Render Graph Constants";
 
-			m_renderGraphConstantsBuffer = m_transientResourceSystem.AquireUniformBuffer(Utility::GetValueAsHandle<RenderGraphUniformBufferHandle>(m_resourceNodeAllocator.GetAndIncrementHandle()), desc);
+			m_renderGraphConstantsBuffer = m_transientResourceSystem.AcquireUniformBuffer(Utility::GetValueAsHandle<RenderGraphUniformBufferHandle>(m_resourceNodeAllocator.GetAndIncrementHandle()), desc);
 		}
 	}
 
@@ -951,7 +954,10 @@ namespace Volt
 				continue;
 			}
 
-			auto rawImage = GetImageRawRef(imageExtractionData.resourceHandle);
+			const auto& resourceNode = m_resourceNodes.at(imageExtractionData.resourceHandle);
+			const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
+
+			auto rawImage = m_transientResourceSystem.GetImageIfExists(imageExtractionData.resourceHandle, imageDesc.description);
 			*imageExtractionData.outImagePtr = rawImage;
 		}
 
@@ -962,7 +968,10 @@ namespace Volt
 				continue;
 			}
 
-			auto rawBuffer = GetBufferRawRef(bufferExtractionData.resourceHandle);
+			const auto& resourceNode = m_resourceNodes.at(bufferExtractionData.resourceHandle);
+			const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
+
+			auto rawBuffer = m_transientResourceSystem.GetBufferIfExists(bufferExtractionData.resourceHandle, bufferDesc.description);
 			*bufferExtractionData.outBufferPtr = rawBuffer;
 		}
 	}
@@ -1056,7 +1065,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
 
-		auto image = m_transientResourceSystem.AquireImage(resourceHandle, imageDesc.description);
+		auto image = m_transientResourceSystem.AcquireImage(resourceHandle, imageDesc.description);
 		auto view = image->GetView();
 
 		if (!view->IsSwapchainView())
@@ -1074,7 +1083,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
 
-		auto image = m_transientResourceSystem.AquireImage(resourceHandle, imageDesc.description);
+		auto image = m_transientResourceSystem.AcquireImage(resourceHandle, imageDesc.description);
 		auto view = image->GetView();
 
 		// #TODO_Ivar: Move this section to it's own function
@@ -1093,7 +1102,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
 
-		auto image = m_transientResourceSystem.AquireImage(resourceHandle, imageDesc.description);
+		auto image = m_transientResourceSystem.AcquireImage(resourceHandle, imageDesc.description);
 		auto view = image->GetView(mip, layer);
 
 		VT_ENSURE(!view->IsSwapchainView());
@@ -1111,7 +1120,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
 
-		auto image = m_transientResourceSystem.AquireImage(resourceHandle, imageDesc.description);
+		auto image = m_transientResourceSystem.AcquireImage(resourceHandle, imageDesc.description);
 		auto view = image->GetArrayView(mip);
 
 		VT_ENSURE(!view->IsSwapchainView());
@@ -1129,7 +1138,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
 
-		auto buffer = m_transientResourceSystem.AquireBuffer(resourceHandle, bufferDesc.description);
+		auto buffer = m_transientResourceSystem.AcquireBuffer(resourceHandle, bufferDesc.description);
 		auto handle = BindlessResourcesManager::Get().RegisterBuffer(buffer);
 
 		m_registeredResources.emplace_back(handle);
@@ -1143,7 +1152,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
 
-		auto buffer = m_transientResourceSystem.AquireBuffer(resourceHandle, bufferDesc.description);
+		auto buffer = m_transientResourceSystem.AcquireBuffer(resourceHandle, bufferDesc.description);
 		auto handle = BindlessResourcesManager::Get().RegisterBuffer(buffer);
 
 		m_registeredResources.emplace_back(handle);
@@ -1158,7 +1167,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
 
-		auto buffer = m_transientResourceSystem.AquireBuffer(*reinterpret_cast<const RenderGraphBufferHandle*>(&resourceHandle), bufferDesc.description);
+		auto buffer = m_transientResourceSystem.AcquireBuffer(*reinterpret_cast<const RenderGraphBufferHandle*>(&resourceHandle), bufferDesc.description);
 		auto handle = BindlessResourcesManager::Get().RegisterBuffer(buffer);
 
 		m_registeredResources.emplace_back(handle);
@@ -1174,7 +1183,7 @@ namespace Volt
 		const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphUniformBuffer>>().resourceInfo;
 
 		// #TODO_Ivar: Remove cast once we switch to actually using uniform buffers.
-		auto buffer = m_transientResourceSystem.AquireBuffer(*reinterpret_cast<const RenderGraphBufferHandle*>(&resourceHandle), bufferDesc.description);
+		auto buffer = m_transientResourceSystem.AcquireBuffer(*reinterpret_cast<const RenderGraphBufferHandle*>(&resourceHandle), bufferDesc.description);
 		auto handle = BindlessResourcesManager::Get().RegisterBuffer(buffer);
 
 		m_registeredResources.emplace_back(handle);
@@ -1208,7 +1217,7 @@ namespace Volt
 			case ResourceType::Image3D:
 			{
 				const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
-				result = m_transientResourceSystem.AquireImage(Utility::UpcastHandle<RenderGraphImageHandle>(resourceHandle), imageDesc.description);
+				result = m_transientResourceSystem.AcquireImage(Utility::UpcastHandle<RenderGraphImageHandle>(resourceHandle), imageDesc.description);
 
 				break;
 			}
@@ -1216,7 +1225,7 @@ namespace Volt
 			case ResourceType::Buffer:
 			{
 				const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
-				result = m_transientResourceSystem.AquireBuffer(Utility::UpcastHandle<RenderGraphBufferHandle>(resourceHandle), bufferDesc.description);
+				result = m_transientResourceSystem.AcquireBuffer(Utility::UpcastHandle<RenderGraphBufferHandle>(resourceHandle), bufferDesc.description);
 
 				break;
 			}
@@ -1224,7 +1233,7 @@ namespace Volt
 			case ResourceType::UniformBuffer:
 			{
 				const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphUniformBuffer>>().resourceInfo;
-				result = m_transientResourceSystem.AquireBuffer(Utility::UpcastHandle<RenderGraphBufferHandle>(resourceHandle), bufferDesc.description); // #TODO_Ivar: Switch once we start using actual uniform buffers
+				result = m_transientResourceSystem.AcquireBuffer(Utility::UpcastHandle<RenderGraphBufferHandle>(resourceHandle), bufferDesc.description); // #TODO_Ivar: Switch once we start using actual uniform buffers
 
 				break;
 			}
@@ -1240,7 +1249,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle);
 		const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
 
-		auto image = m_transientResourceSystem.AquireImageRef(resourceHandle, imageDesc.description);
+		auto image = m_transientResourceSystem.AcquireImageRef(resourceHandle, imageDesc.description);
 		auto view = image->GetView();
 
 		// #TODO_Ivar: Move this section to it's own function
@@ -1259,7 +1268,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle);
 		const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
 
-		auto buffer = m_transientResourceSystem.AquireBufferRef(resourceHandle, bufferDesc.description);
+		auto buffer = m_transientResourceSystem.AcquireBufferRef(resourceHandle, bufferDesc.description);
 		auto handle = BindlessResourcesManager::Get().RegisterBuffer(buffer);
 
 		m_registeredResources.emplace_back(handle);

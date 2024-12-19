@@ -58,7 +58,6 @@ namespace Volt
 
 			builder.WriteResource(countCmdBufferHandle);
 
-			builder.SetHasSideEffect();
 			builder.SetIsComputePass();
 		},
 		[=](const DrawCullingData& data, RenderContext& context) 
@@ -93,8 +92,6 @@ namespace Volt
 			builder.WriteResource(data.countCommandBuffer);
 			builder.WriteResource(data.taskCommandsBuffer);
 			builder.SetIsComputePass();
-
-			builder.SetHasSideEffect();
 		},
 		[=](RenderContext& context)
 		{

@@ -145,6 +145,7 @@ namespace Volt
 		friend class Builder;
 		friend class RenderGraphExecutionThread;
 		friend class RenderContext;
+		friend class RenderGraphDebugger;
 
 		using FrameTemporaryDataAllocator = LinearAllocator<5 * 1024 * 1024>;
 
@@ -293,6 +294,7 @@ namespace Volt
 		FrameTemporaryDataAllocator m_frameTemporaryDataAllocator;
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
+		RefPtr<RHI::Fence> m_executionFence;
 		RefPtr<RHI::StorageBuffer> m_perPassConstantsBuffer;
 		RawPtr<RHI::UniformBuffer> m_renderGraphConstantsBuffer;
 

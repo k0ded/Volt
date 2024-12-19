@@ -48,7 +48,6 @@ namespace Volt
 			builder.ReadResource(srcRenderTarget);
 
 			builder.SetIsComputePass();
-			builder.SetHasSideEffect();
 		},
 		[=](const Data& data, RenderContext& context) 
 		{
@@ -83,7 +82,6 @@ namespace Volt
 			builder.WriteResource(averageLuminanceTarget);
 
 			builder.SetIsComputePass();
-			builder.SetHasSideEffect();
 		},
 		[=](RenderContext& context)
 		{

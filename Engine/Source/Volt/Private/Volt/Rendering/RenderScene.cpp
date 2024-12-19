@@ -595,7 +595,6 @@ namespace Volt
 			builder.WriteResource(validPrimitiveDrawDataHandle);
 			builder.ReadResource(primitiveDrawDataHandle);
 
-			builder.SetHasSideEffect();
 			builder.SetIsComputePass();
 		},
 		[=](RenderContext& context)

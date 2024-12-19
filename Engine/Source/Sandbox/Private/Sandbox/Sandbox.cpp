@@ -40,6 +40,7 @@
 #include "Sandbox/Window/GameUIEditorPanel.h"
 #include "Sandbox/Window/MotionWeaveDatabasePanel.h"
 #include "Sandbox/Window/RenderResourcesPanel.h"
+#include "Sandbox/Window/RenderGraphDebuggerPanel.h"
 #include "Sandbox/VertexPainting/VertexPainterPanel.h"
 
 #include "Sandbox/Modals/MeshImportModal.h"
@@ -180,6 +181,7 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::Register<EditorSettingsPanel>("", UserSettingsManager::GetSettings());
 	EditorLibrary::Register<PhysicsPanel>("Physics");
 	EditorLibrary::Register<RendererSettingsPanel>("Advanced", m_sceneRenderer);
+	EditorLibrary::Register<RenderGraphDebuggerPanel>("Advanced", m_sceneRenderer);
 	EditorLibrary::Register<VertexPainterPanel>("", m_runtimeScene, m_editorCameraController);
 
 	EditorLibrary::Register<SceneSettingsPanel>("", m_runtimeScene);

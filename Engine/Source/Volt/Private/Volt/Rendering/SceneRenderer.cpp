@@ -11,7 +11,6 @@
 #include "Volt/Rendering/RenderingTechniques/GTAOTechnique.h"
 #include "Volt/Rendering/RenderingTechniques/DirectionalShadowTechnique.h"
 #include "Volt/Rendering/RenderingTechniques/LightCullingTechnique.h"
-#include "Volt/Rendering/RenderingTechniques/VelocityTechnique.h"
 #include "Volt/Rendering/RenderingTechniques/ScreenSpaceReflections.h"
 #include "Volt/Rendering/RenderingTechniques/AutoExposureTechnique.h"
 #include "Volt/Rendering/RenderingTechniques/CullingTechnique.h"
@@ -193,6 +192,8 @@ namespace Volt
 
 			renderGraph.AddResourceBarrier(renderGraph.AddExternalImage(m_outputImage), barrier);
 		}
+
+		m_renderGraphDebugger.ProcessRenderGraph(renderGraph);
 
 		renderGraph.Compile();
 		renderGraph.Execute();
@@ -589,8 +590,6 @@ namespace Volt
 			data.velocity = builder.CreateImage(desc);
 
 			BuildMeshPass(builder, blackboard);
-
-			builder.SetHasSideEffect();
 		},
 		[=](const DepthPrePass& data, RenderContext& context)
 		{
@@ -662,7 +661,7 @@ namespace Volt
 		tempSettings.falloffRange = 0.615f;
 		tempSettings.finalValuePower = 2.2f;
 
-		GTAOTechnique gtaoTechnique{ 0 /*m_frameIndex*/, tempSettings };
+		GTAOTechnique gtaoTechnique{ m_antiAliasingMethod == AntiAliasingMethod::TAA ? m_frameIndex : 0, tempSettings };
 		blackboard.Add<GTAOOutput>() = gtaoTechnique.Execute(renderGraph, blackboard, camera);
 	}
 
@@ -678,7 +677,6 @@ namespace Volt
 			builder.WriteResource(preDepthHandle);
 
 			BuildMeshPass(builder, blackboard);
-			builder.SetHasSideEffect();
 		},
 		[=](const VisibilityBufferData& data, RenderContext& context)
 		{
@@ -1020,7 +1018,6 @@ namespace Volt
 			builder.ReadResource(gtaoOutput.outputImage);
 
 			builder.SetIsComputePass();
-			builder.SetHasSideEffect();
 		},
 		[=](RenderContext& context)
 		{
@@ -1118,7 +1115,6 @@ namespace Volt
 			builder.ReadResource(averageLuminanceImage);
 
 			BlueNoise::Build(builder, blueNoiseTextures);
-
 			builder.SetHasSideEffect();
 		},
 		[=](const FinalCopyData& data, RenderContext& context)
