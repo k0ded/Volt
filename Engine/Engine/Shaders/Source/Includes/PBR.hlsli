@@ -53,7 +53,7 @@ static PBRInput m_pbrInput;
 static PBRConstants m_pbrConstants;
 static ViewData m_viewData;
 
-float3 CalculatePointLights(float3 dirToCamera, uint pointLightCount)
+float3 EvaluatePointLights(float3 dirToCamera, uint pointLightCount)
 {
     float3 output = 0.f;
 
@@ -80,7 +80,7 @@ float3 CalculatePointLights(float3 dirToCamera, uint pointLightCount)
     return output;
 }
 
-float3 CalculateSpotLights(float3 dirToCamera, uint spotLightCount)
+float3 EvaluateSpotLights(float3 dirToCamera, uint spotLightCount)
 {
     float3 output = 0.f;
 
@@ -101,7 +101,7 @@ float3 CalculateSpotLights(float3 dirToCamera, uint spotLightCount)
     return output; 
 }
 
-float3 CalculatePBR(in PBRInput input, in PBRConstants constants)
+float3 EvaluatePBR(in PBRInput input, in PBRConstants constants)
 { 
     m_pbrInput = input;
     m_pbrConstants = constants;
@@ -133,17 +133,17 @@ float3 CalculatePBR(in PBRInput input, in PBRConstants constants)
         shadowMappingInfo.shadowSampler = m_pbrConstants.shadowSampler;
         shadowMappingInfo.viewMatrix = m_viewData.view;
 
-        lightOutput += CalculateDirectionalLight(constants.directionalLight.Load(), shadowMappingInfo, brdfInput, m_pbrInput.worldPosition);
+        lightOutput += EvaluateDirectionalLight(constants.directionalLight.Load(), shadowMappingInfo, brdfInput, m_pbrInput.worldPosition);
     }
     
     // Point lights
     {
-        lightOutput += CalculatePointLights(dirToCamera, m_viewData.pointLightCount);
+        lightOutput += EvaluatePointLights(dirToCamera, m_viewData.pointLightCount);
     }
     
     // Spot lights
     {
-        lightOutput += CalculateSpotLights(dirToCamera, m_viewData.spotLightCount);
+        lightOutput += EvaluateSpotLights(dirToCamera, m_viewData.spotLightCount);
     }
     
     const float3 compositeLighting = lightOutput + m_pbrInput.emissive;

@@ -81,7 +81,7 @@ float RayTraceDirectionalShadow_Hard(float3 lightDirection, float3 normal, float
     return query.CommittedStatus() == COMMITTED_TRIANGLE_HIT ? 0.f : 1.f;
 }
 
-float3 CalculateDirectionalLight(in DirectionalLight light, in DirectionalShadowMappingInfo shadowMappingInfo, in BRDFInput brdfInput, float3 worldPosition)
+float3 EvaluateDirectionalLight(in DirectionalLight light, in DirectionalShadowMappingInfo shadowMappingInfo, in BRDFInput brdfInput, float3 worldPosition)
 {
     float3 D = normalize(light.direction.xyz);
     float r = sin(light.angularRadius);

@@ -41,7 +41,7 @@ float TraceShadowRay(float3 dirToLight, float3 worldPosition)
     return payload.visibility;
 }
 
-float3 CalculateDirectionalLight(in DirectionalLight light, in BRDFInput brdfInput, float3 worldPosition)
+float3 EvaluateDirectionalLight(in DirectionalLight light, in BRDFInput brdfInput, float3 worldPosition)
 {
     float3 D = normalize(light.direction.xyz);
 
@@ -130,7 +130,7 @@ void main(inout Payload p, in Attributes attribs)
     brdfInput.roughness = roughness;
     brdfInput.metalness = metallic;
     
-    p.radiance = CalculateDirectionalLight(constants.directionalLight.Load(), brdfInput, worldPosition) + ambiance;
+    p.radiance = EvaluateDirectionalLight(constants.directionalLight.Load(), brdfInput, worldPosition) + ambiance;
     p.rayDirection = DiffuseReflection(normal, p.rngState);
     p.rayOrigin = OffsetPositionAlongNormal(worldPosition, normal);
     p.miss = false;

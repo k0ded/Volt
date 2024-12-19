@@ -104,7 +104,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     {
         case ShadingMode::Shaded:
         {
-            outputColor = CalculatePBR(pbrInput, constants.pbrConstants);
+            outputColor = EvaluatePBR(pbrInput, constants.pbrConstants);
             break;
         }
 
@@ -134,7 +134,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
 
         case ShadingMode::Emissive:
         {
-            outputColor = emissive;
+            outputColor = emissive; 
             break;
         }
 

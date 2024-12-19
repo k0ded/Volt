@@ -178,6 +178,7 @@ namespace Volt
 		PreviousFrameData m_previousFrameData;
 
 		RHI::CommandBufferSet m_commandBufferSet;
+		RenderGraphDebugger m_renderGraphDebugger;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;
 
