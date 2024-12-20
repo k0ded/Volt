@@ -23,10 +23,6 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
     const GPUMesh mesh = constants.gpuScene.meshesBuffer.Load(drawData.meshId);
 
     uint meshletIndex = payload.meshletIndices[groupId];
-    if (meshletIndex >= mesh.meshletCount)
-    {
-        return;
-    }
 
     const Meshlet meshlet = mesh.meshletsBuffer.Load(mesh.meshletStartOffset + meshletIndex);
     const uint vertexCount = meshlet.GetVertexCount();
