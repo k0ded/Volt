@@ -599,6 +599,7 @@ namespace Volt
 			{
 				const FbxLayerElementUV* const inputTexCoords = layer0->GetUVSets().GetFirst();
 				outVertices[i].texCoords = FbxUtility::ToVec2(inputTexCoords->GetDirectArray().GetAt(fatIndices[i].elements[ElementType::UV]));
+				outVertices[i].texCoords.y = 1.f - outVertices[i].texCoords.y;
 			}
 
 			if (jointVertexLinks)
