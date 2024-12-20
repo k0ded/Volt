@@ -27,6 +27,7 @@ namespace Volt
 	struct ExternalImagesData
 	{
 		RenderGraphImageHandle black1x1Cube;
+		RenderGraphImageHandle white1x1;
 		RenderGraphImageHandle DFGLuT;
 	};
 

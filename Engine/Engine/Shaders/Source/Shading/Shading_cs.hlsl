@@ -8,26 +8,6 @@
 
 #include "PBR.hlsli"
 
-namespace ShadingMode
-{
-    static const uint Shaded = 0;
-    static const uint Albedo = 1;
-    static const uint Normals = 2;
-    static const uint Metalness = 3;
-    static const uint Roughness = 4;
-    static const uint Emissive = 5;
-    static const uint AO = 6;
-
-    static const uint VisualizeCascades = 7;
-    static const uint VisualizeLightComplexity = 8;
-}
-
-namespace VisualizationMode
-{
-    static const uint VisualizeCascades = 1;
-    static const uint VisualizeLightComplexity = 2;
-}
-
 struct Constants
 {
     vt::RWTex2D<float4> output;
@@ -38,9 +18,6 @@ struct Constants
     vt::Tex2D<float3> emissive;
     vt::Tex2D<uint> aoTexture;
     vt::Tex2D<float> depthTexture;
-
-    uint shadingMode;
-    uint visualizationMode;
 
     PBRConstants pbrConstants;
 };
@@ -98,73 +75,25 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     pbrInput.ao = ao;
     pbrInput.tileId = threadId.xy / LIGHT_CULLING_TILE_SIZE;
     
-    float3 outputColor = 1.f;
-    
-    switch (constants.shadingMode)
-    {
-        case ShadingMode::Shaded:
-        {
-            outputColor = EvaluatePBR(pbrInput, constants.pbrConstants);
-            break;
-        }
+    float3 outputColor = EvaluatePBR(pbrInput, constants.pbrConstants);
 
-        case ShadingMode::Albedo:
-        {
-            outputColor = albedo.rgb;
-            break;
-        }
-
-        case ShadingMode::Normals:
-        {
-            outputColor = normal * 0.5f + 0.5f;
-            break;
-        }
-
-        case ShadingMode::Metalness:
-        {
-            outputColor = metallic;
-            break;
-        }
-
-        case ShadingMode::Roughness:
-        {
-            outputColor = roughness;
-            break;
-        }
-
-        case ShadingMode::Emissive:
-        {
-            outputColor = emissive; 
-            break;
-        }
-
-        case ShadingMode::AO:
-        {
-            outputColor = ao;
-            break;
-        }
-
-        default:
-            break;
-    };
-
-    switch (constants.visualizationMode)
-    {
-        case VisualizationMode::VisualizeCascades:
-        {
-            outputColor = outputColor * 0.2f + GetCascadeColorFromIndex(GetCascadeIndexFromWorldPosition(constants.pbrConstants.directionalLight.Load(), worldPosition, viewData.view)) * 0.5f;
-            break;
-        }
-
-        case VisualizationMode::VisualizeLightComplexity:
-        {
-            outputColor = outputColor * 0.2f + GetLightComplexityGradient(GetLightCount(constants.pbrConstants.visiblePointLights, viewData.tileCountX, pbrInput.tileId));
-            break;
-        }
-
-        default:
-            break;
-    };
+    //switch (constants.visualizationMode)
+    //{
+    //    case VisualizationMode::VisualizeCascades:
+    //    {
+    //        outputColor = outputColor * 0.2f + GetCascadeColorFromIndex(GetCascadeIndexFromWorldPosition(constants.pbrConstants.directionalLight.Load(), worldPosition, viewData.view)) * 0.5f;
+    //        break;
+    //    }
+    //
+    //    case VisualizationMode::VisualizeLightComplexity:
+    //    {
+    //        outputColor = outputColor * 0.2f + GetLightComplexityGradient(GetLightCount(constants.pbrConstants.visiblePointLights, viewData.tileCountX, pbrInput.tileId));
+    //        break;
+    //    }
+    //
+    //    default:
+    //        break;
+    //};
 
     constants.output.Store(threadId.xy, float4(outputColor, 1.f));
 }

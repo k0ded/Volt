@@ -16,6 +16,7 @@
 #include "Volt/Rendering/RenderingTechniques/CullingTechnique.h"
 
 #include "Volt/Rendering/ShapeLibrary.h"
+#include "Volt/Rendering/Texture/Texture2D.h"
 
 #include "Volt/Scene/Scene.h"
 #include "Volt/Scene/Entity.h"
@@ -119,7 +120,7 @@ namespace Volt
 			m_frameTotalGPUAllocation = totalSize;
 		});
 		
-		if (m_antiAliasingMethod == AntiAliasingMethod::TAA)
+		if (ShouldApplyJitter())
 		{
 			m_prevJitter = m_currentJitter;
 			m_currentJitter = m_taaNoise.Get(m_frameIndex, glm::uvec2(m_width, m_height));
@@ -152,30 +153,28 @@ namespace Volt
 			ExecuteGBufferGenerationPasses(renderGraph, blackboard);
 			AddSkyboxPass(renderGraph, blackboard);
 
-			if (m_shadingMode != ShadingMode::PathTracing)
+			AddShadingPass(renderGraph, blackboard);
+
+			if (m_visualizationMode == VisualizationMode::None)
 			{
-				AddShadingPass(renderGraph, blackboard);
+				if (false)
+				{
+					AddPathTracingPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
+				}
+
+				//m_gibs.Render(renderGraph, blackboard, m_frameIndex);
+				//m_ddgi.Render(renderGraph, rgBlackboard, m_scene->GetRenderScene());
+
+				//ScreenSpaceReflections ssr(renderGraph, rgBlackboard);
+				//ssr.Execute(rgBlackboard.Get<ShadingOutputData>().colorOutput);
+
+				blackboard.Add<FinalOutput>().colorOutput = blackboard.Get<ShadingOutputData>().colorOutput;
+				ExecutePostProcessingPasses(renderGraph, blackboard, timestep);
 			}
 			else
 			{
-				AddPathTracingPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
+				AddVisualizationPass(renderGraph, blackboard, renderGraph.AddExternalImage(m_outputImage));
 			}
-
-			//m_gibs.Render(renderGraph, blackboard, m_frameIndex);
-			//m_ddgi.Render(renderGraph, rgBlackboard, m_scene->GetRenderScene());
-
-			if (m_visualizationMode == VisualizationMode::VisualizeMeshSDF)
-			{
-				AddVisualizeSDFPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
-			}
-
-			//AddVisualizeBricksPass(renderGraph, rgBlackboard, rgBlackboard.Get<ShadingOutputData>().colorOutput);
-
-			//ScreenSpaceReflections ssr(renderGraph, rgBlackboard);
-			//ssr.Execute(rgBlackboard.Get<ShadingOutputData>().colorOutput);
-
-			blackboard.Add<FinalOutput>().colorOutput = blackboard.Get<ShadingOutputData>().colorOutput;
-			ExecutePostProcessingPasses(renderGraph, blackboard, timestep);
 		}
 		else
 		{
@@ -451,6 +450,7 @@ namespace Volt
 		{
 			auto& imageData = blackboard.Add<ExternalImagesData>();
 			imageData.black1x1Cube = renderGraph.AddExternalImage(Renderer::GetDefaultResources().blackCubeTexture);
+			imageData.white1x1 = renderGraph.AddExternalImage(Renderer::GetDefaultResources().whiteTexture->GetImage());
 			imageData.DFGLuT = renderGraph.AddExternalImage(Renderer::GetDefaultResources().DFGLuT);
 		}
 
@@ -544,7 +544,7 @@ namespace Volt
 			blackboard.Get<FinalOutput>().colorOutput = blackboard.Get<FXAAOutputData>().output;
 		}
 
-		AddTonemapPass(renderGraph, blackboard, blackboard.Get<FinalOutput>().colorOutput);
+		AddTonemappingPass(renderGraph, blackboard, blackboard.Get<FinalOutput>().colorOutput);
 		renderGraph.EndMarker();
 	}
 
@@ -661,7 +661,7 @@ namespace Volt
 		tempSettings.falloffRange = 0.615f;
 		tempSettings.finalValuePower = 2.2f;
 
-		GTAOTechnique gtaoTechnique{ m_antiAliasingMethod == AntiAliasingMethod::TAA ? m_frameIndex : 0, tempSettings };
+		GTAOTechnique gtaoTechnique{ ShouldApplyJitter() ? m_frameIndex : 0, tempSettings };
 		blackboard.Add<GTAOOutput>() = gtaoTechnique.Execute(renderGraph, blackboard, camera);
 	}
 
@@ -1033,8 +1033,6 @@ namespace Volt
 			context.SetConstant("emissive"_sh, gbufferData.emissive);
 			context.SetConstant("aoTexture"_sh, gtaoOutput.outputImage);
 			context.SetConstant("depthTexture"_sh, preDepthData.depth);
-			context.SetConstant("shadingMode"_sh, static_cast<uint32_t>(m_shadingMode));
-			context.SetConstant("visualizationMode"_sh, static_cast<uint32_t>(m_visualizationMode));
 
 			// PBR Constants
 			context.SetConstant("pbrConstants.viewData"_sh, uniformBuffers.viewDataBuffer);
@@ -1096,7 +1094,7 @@ namespace Volt
 		});
 	}
 
-	void SceneRenderer::AddTonemapPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage)
+	void SceneRenderer::AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage)
 	{
 		constexpr float MiddleGray = 0.18f;
 		constexpr float WhitePoint = 1.1f;
@@ -1143,147 +1141,112 @@ namespace Volt
 		});
 	}
 
-	void SceneRenderer::AddVisualizeSDFPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage)
+	void SceneRenderer::AddVisualizationPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage)
 	{
-		const auto& gpuSceneData = blackboard.Get<GPUSceneData>();
-		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
+		VisualizationMode visualizationMode = m_visualizationMode;
 
-		const uint32_t sdfPrimitiveCount = m_scene->GetRenderScene()->GetSDFPrimitiveCount();
-
-		renderGraph.AddPass("Visualize SDF",
-		[&](RenderGraph::Builder& builder)
+		if (IsMeshPassVisualizationMode())
 		{
-			GPUSceneData::SetupInputs(builder, gpuSceneData);
+			const auto& drawCullingData = blackboard.Get<DrawCullingData>();
 
-			builder.WriteResource(dstImage);
-			builder.ReadResource(uniformBuffers.viewDataBuffer);
-			builder.SetHasSideEffect();
-		},
-		[=](RenderContext& context)
-		{
-			RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { dstImage });
-			info.renderingInfo.colorAttachments.At(0).clearMode = RHI::ClearMode::Load;
-
-			RHI::RenderPipelineCreateInfo pipelineInfo;
-			pipelineInfo.shader = ShaderMap::Get("TraceMeshSDFBrick");
-			pipelineInfo.depthMode = RHI::DepthMode::None;
-			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
-
-			context.BeginRendering(info);
-
-			RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context)
+			struct Data
 			{
-				GPUSceneData::SetupConstants(context, gpuSceneData);
-				context.SetConstant("pointSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle());
-				context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-				context.SetConstant("primitiveCount"_sh, sdfPrimitiveCount);
+				RenderGraphImageHandle depthImage;
+			};
+
+			renderGraph.AddPass<Data>("Visualization Pass",
+			[&](RenderGraph::Builder& builder, Data& data)
+			{
+				data.depthImage = builder.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::D32_SFLOAT>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "Visualization.Depth"));
+				builder.WriteResource(dstImage);
+
+				BuildMeshPass(builder, blackboard);
+			},
+			[=](const Data& data, RenderContext& context)
+			{
+				RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { dstImage, data.depthImage });
+
+				RHI::RenderPipelineCreateInfo pipelineInfo{};
+				pipelineInfo.shader = ShaderMap::Get("VisualizationMeshShader");
+
+				auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+
+				context.BeginRendering(info);
+				context.BindPipeline(pipeline);
+
+				context.SetConstant("visualizationMode"_sh, static_cast<uint32_t>(visualizationMode));
+
+				SetupMeshPassConstants(context, blackboard);
+
+				context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
+				context.EndRendering();
 			});
-
-			context.EndRendering();
-		});
-	}
-
-	void SceneRenderer::AddVisualizeBricksPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage)
-	{
-		auto cubeMesh = ShapeLibrary::GetCube();
-
-		if (m_scene->GetRenderScene()->GetRenderObjectCount() < 1)
-		{
-			return;
 		}
-
-		const auto& mesh = m_scene->GetRenderScene()->GetRenderObjectAt(0).mesh;
-		const auto& brickGrid = mesh->GetBrickGrid(0);
-
-		const auto& viewData = blackboard.Get<ViewUniformBuffer>();
-
-		struct PassData
+		else
 		{
-			RenderGraphImageHandle depthHandle;
+			const auto& gBufferData = blackboard.Get<GBufferData>();
+			const auto& externalImages = blackboard.Get<ExternalImagesData>();
+			const auto& shadingOutput = blackboard.Get<ShadingOutputData>();
+			const auto& depthPrePass = blackboard.Get<DepthPrePass>();
+			const auto& gtaoOutput = blackboard.Get<GTAOOutput>();
 
-			RenderGraphBufferHandle vertexBuffer;
-			RenderGraphBufferHandle indexBuffer;
-		};
-
-		renderGraph.AddPass<PassData>("Visualize Bricks Pass",
-		[&](RenderGraph::Builder& builder, PassData& data) 
-		{
-			RenderGraphImageDesc desc{};
-			desc.width = m_width;
-			desc.height = m_height;
-			desc.format = RHI::PixelFormat::D32_SFLOAT;
-			desc.usage = RHI::ImageUsage::Attachment;
-			desc.name = "PreDepth";
-			data.depthHandle = builder.CreateImage(desc);
-
-			data.vertexBuffer = builder.AddExternalBuffer(cubeMesh->GetVertexPositionsBuffer()->GetResource());
-			data.indexBuffer = builder.AddExternalBuffer(cubeMesh->GetIndexBuffer()->GetResource());
-
-			builder.WriteResource(dstImage);
-
-			builder.ReadResource(data.vertexBuffer, RenderGraphResourceState::VertexBuffer);
-			builder.ReadResource(data.indexBuffer, RenderGraphResourceState::IndexBuffer);
-
-			builder.SetHasSideEffect();
-		},
-		[=](const PassData& data, RenderContext& context) 
-		{
-			RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { dstImage, data.depthHandle });
-			info.renderingInfo.colorAttachments.At(0).clearMode = RHI::ClearMode::Load;
-
-			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get("VisualizeBricks");
-
-			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
-
-			context.BeginRendering(info);
-			context.BindPipeline(pipeline);
-
-			context.BindVertexBuffers({ data.vertexBuffer }, 0);
-			context.BindIndexBuffer(data.indexBuffer);
-
-			context.SetConstant("viewProjection"_sh, viewData.viewProjection);
-
-			for (const auto& brick : brickGrid)
+			renderGraph.AddPass("Visualization Pass",
+			[=](RenderGraph::Builder& builder)
 			{
-				if (!brick.hasData)
+				builder.WriteResource(dstImage);
+				builder.ReadResource(externalImages.white1x1);
+
+				if (visualizationMode == VisualizationMode::BaseColor)
 				{
-					continue;
+					builder.ReadResource(gBufferData.albedo);
+				}
+				else if (visualizationMode == VisualizationMode::Metallic || visualizationMode == VisualizationMode::Roughness)
+				{
+					builder.ReadResource(gBufferData.material);
+				}
+				else if (visualizationMode == VisualizationMode::SceneColor)
+				{
+					builder.ReadResource(shadingOutput.colorOutput);
+				}
+				else if (visualizationMode == VisualizationMode::SceneDepth)
+				{
+					builder.ReadResource(depthPrePass.depth);
+				}
+				else if (visualizationMode == VisualizationMode::WorldNormal)
+				{
+					builder.ReadResource(gBufferData.normals);
+				}
+				else if (visualizationMode == VisualizationMode::AmbientOcclusion)
+				{
+					builder.ReadResource(gtaoOutput.outputImage);
+				}
+				else if (visualizationMode == VisualizationMode::Velocity)
+				{
+					builder.ReadResource(depthPrePass.velocity);
 				}
 
-				for (uint32_t index = 0; const auto& voxel : brick.data)
-				{
-					VT_UNUSED(voxel);
+				builder.SetIsComputePass();
+			},
+			[=](RenderContext& context)
+			{
+				auto pipeline = ShaderMap::GetComputePipeline("VisualizationFullscreenShader");
 
-					if (voxel > 0.001f)
-					{
-						index++;
-						continue;
-					}
+				context.BindPipeline(pipeline);
+				context.SetConstant("albedo"_sh, visualizationMode == VisualizationMode::BaseColor ? gBufferData.albedo : externalImages.white1x1);
+				context.SetConstant("material"_sh, visualizationMode == VisualizationMode::Metallic || visualizationMode == VisualizationMode::Roughness ? gBufferData.material : externalImages.white1x1);
+				context.SetConstant("sceneColor"_sh, visualizationMode == VisualizationMode::SceneColor ? shadingOutput.colorOutput : externalImages.white1x1);
+				context.SetConstant("sceneDepth"_sh, visualizationMode == VisualizationMode::SceneDepth ? depthPrePass.depth : externalImages.white1x1);
+				context.SetConstant("sceneNormal"_sh, visualizationMode == VisualizationMode::WorldNormal ? gBufferData.normals : externalImages.white1x1);
+				context.SetConstant("sceneAO"_sh, visualizationMode == VisualizationMode::AmbientOcclusion ? gtaoOutput.outputImage : externalImages.white1x1);
+				context.SetConstant("velocity"_sh, visualizationMode == VisualizationMode::Velocity ? depthPrePass.velocity : externalImages.white1x1);
 
-					struct PushData
-					{
-						glm::vec3 point;
-						glm::vec3 scale;
-						
-						float data;
-					} pushData;
+				context.SetConstant("rwOutput"_sh, dstImage);
+				context.SetConstant("renderSize"_sh, glm::uvec2(m_width, m_height));
+				context.SetConstant("visualizationMode"_sh, static_cast<uint32_t>(visualizationMode));
 
-					const auto voxelCoord = Math::Get3DCoordFrom1DIndex(index, 8u, 8u);
-
-					pushData.point = brick.min + glm::vec3{ voxelCoord[0], voxelCoord[1], voxelCoord[2] } * 5.f;
-					pushData.scale = 0.05f;
-					pushData.data = voxel;
-
-					context.PushConstants(&pushData, sizeof(PushData));
-					context.DrawIndexed(36, 1, 0, 0, 0);
-
-					index++;
-				}
-			}
-
-			context.EndRendering();
-		});
+				context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1u);
+			});
+		}
 	}
 
 	void SceneRenderer::AddPathTracingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage)
@@ -1344,5 +1307,16 @@ namespace Volt
 		spec.debugName = "Final Image";
 
 		m_outputImage = RHI::Image::Create(spec);
+	}
+
+	bool SceneRenderer::ShouldApplyJitter() const
+	{
+		return m_antiAliasingMethod == AntiAliasingMethod::TAA && m_visualizationMode == VisualizationMode::None;
+	}
+
+	bool SceneRenderer::IsMeshPassVisualizationMode() const
+	{
+		return m_visualizationMode == VisualizationMode::GeometryNormals ||
+			m_visualizationMode == VisualizationMode::UV;
 	}
 }

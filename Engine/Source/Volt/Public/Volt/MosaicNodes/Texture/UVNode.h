@@ -20,6 +20,6 @@ namespace Volt::MosaicNodes
 
 	private:
 		mutable bool m_evaluated = false;
-		mutable Mosaic::ResultInfo m_evaluatedResultInfo;
+		mutable std::string m_evaluatedVariableName;
 	};
 }
