@@ -27,7 +27,7 @@ namespace Volt::RHI
 		VT_INLINE const uint32_t GetWidth() const override { return m_specification.width; }
 		VT_INLINE const uint32_t GetHeight() const override { return m_specification.height; }
 		VT_INLINE const uint32_t GetDepth() const override { return m_specification.depth; }
-		VT_INLINE const uint32_t GetMipCount() const override { return m_specification.depth; }
+		VT_INLINE const uint32_t GetMipCount() const override { return m_specification.mips; }
 		VT_INLINE const uint32_t GetLayerCount() const override { return m_specification.layers; }
 		VT_INLINE const PixelFormat GetFormat() const override { return m_specification.format; }
 		VT_INLINE const ImageUsage GetUsage() const override { return m_specification.usage; }

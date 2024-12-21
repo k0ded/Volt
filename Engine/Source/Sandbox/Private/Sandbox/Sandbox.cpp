@@ -41,6 +41,7 @@
 #include "Sandbox/Window/MotionWeaveDatabasePanel.h"
 #include "Sandbox/Window/RenderResourcesPanel.h"
 #include "Sandbox/Window/RenderGraphDebuggerPanel.h"
+#include "Sandbox/Window/TextureViewerPanel.h"
 #include "Sandbox/VertexPainting/VertexPainterPanel.h"
 
 #include "Sandbox/Modals/MeshImportModal.h"
@@ -204,6 +205,7 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::RegisterWithType<MeshPreviewPanel>("", AssetTypes::Mesh);
 	EditorLibrary::RegisterWithType<ShaderEditorPanel>("Shader", AssetTypes::ShaderDefinition);
 	EditorLibrary::RegisterWithType<MotionWeaveDatabasePanel>("Animation", AssetTypes::MotionWeave);
+	EditorLibrary::RegisterWithType<TextureViewerPanel>("Advanced", AssetTypes::Texture);
 
 	EditorLibrary::Sort();
 

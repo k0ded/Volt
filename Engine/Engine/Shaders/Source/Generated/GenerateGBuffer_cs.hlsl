@@ -132,7 +132,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     float4 albedo = evaluatedMaterial.albedo;
 
     // #TODO_Ivar: This depends on the texture format
-    albedo.xyz = SRGBToLinear(albedo.xyz);
+    //albedo.xyz = SRGBToLinear(albedo.xyz);
     
     constants.albedo.Store(pixelPosition, albedo);
     constants.normals.Store(pixelPosition, resultNormal * 0.5f + 0.5f);
