@@ -19,6 +19,7 @@ struct VertexOutput
 {
     float4 position : SV_Position;
     float3 normal : NORMAL;
+    float3 tangent : TANGENT;
     float2 uv : TEXCOORD;
 };
 
@@ -109,9 +110,13 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
  
         const VertexMaterialData vertexMaterialData = mesh.vertexMaterialBuffer.Load(vertexIndex);
 
+        const float3 vertexNormal = GetNormal(mesh, vertexIndex);
+        const float3 vertexTangent = GetTangent(mesh, vertexIndex, vertexNormal);
+
         vertices[groupThreadId].position = position;
         vertices[groupThreadId].uv = vertexMaterialData.texCoords;
-        vertices[groupThreadId].normal = normalize(drawData.transform.RotateVector(GetNormal(mesh, vertexIndex)));
+        vertices[groupThreadId].normal = normalize(drawData.transform.RotateVector(vertexNormal));
+        vertices[groupThreadId].tangent = normalize(drawData.transform.RotateVector(vertexTangent));
     }
 
     GroupMemoryBarrierWithGroupSync();
@@ -146,6 +151,10 @@ ColorOutput MainPS(VertexOutput input)
     else if (constants.visualizationMode == VisualizationMode::GeometryNormals)
     {
         output.color.rgb = input.normal * 0.5f + 0.5f;
+    }
+    else if (constants.visualizationMode == VisualizationMode::GeometryTangents)
+    {
+        output.color.rgb = input.tangent * 0.5f + 0.5f;
     }
 
     return output;

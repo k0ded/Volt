@@ -1317,6 +1317,7 @@ namespace Volt
 	bool SceneRenderer::IsMeshPassVisualizationMode() const
 	{
 		return m_visualizationMode == VisualizationMode::GeometryNormals ||
-			m_visualizationMode == VisualizationMode::UV;
+			m_visualizationMode == VisualizationMode::UV ||
+			m_visualizationMode == VisualizationMode::GeometryTangents;
 	}
 }

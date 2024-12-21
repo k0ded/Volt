@@ -134,7 +134,6 @@ namespace Volt
 
 	SourceAssetFileInformation GLTFSourceImporter::GetSourceFileInformation(const std::filesystem::path& filepath) const
 	{
-		VT_ENSURE(false);
 		return SourceAssetFileInformation();
 	}
 
@@ -180,7 +179,8 @@ namespace Volt
 		return resultView;
 	}
 
-	GLTFView<uint32_t> GetIndexView(const tinygltf::Primitive& gltfPrimitive, const tinygltf::Model& gltfModel)
+	template<typename T>
+	GLTFView<T> GetIndexView(const tinygltf::Primitive& gltfPrimitive, const tinygltf::Model& gltfModel)
 	{
 		if (gltfPrimitive.indices == -1)
 		{
@@ -192,13 +192,63 @@ namespace Volt
 		const tinygltf::BufferView& view = gltfModel.bufferViews[accessor.bufferView];
 		const tinygltf::Buffer& buffer = gltfModel.buffers[view.buffer];
 
-		VT_ENSURE_MSG(accessor.componentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT, "Only 4 byte indices are currently supported!");
-
-		GLTFView<uint32_t> resultView;
-		resultView.ptr = reinterpret_cast<const uint32_t*>(&(buffer.data[accessor.byteOffset + view.byteOffset]));
+		GLTFView<T> resultView;
+		resultView.ptr = reinterpret_cast<const T*>(&(buffer.data[accessor.byteOffset + view.byteOffset]));
 		resultView.count = accessor.count;
 
 		return resultView;
+	}
+
+	void GetIndices(const tinygltf::Primitive& gltfPrimitive, const tinygltf::Model& gltfModel, Vector<uint32_t>& indices)
+	{
+		if (gltfPrimitive.indices == -1)
+		{
+			// Primitive doesn't have any index buffer
+			return;
+		}
+
+		auto convertIndices = [&]<typename T>()
+		{
+			GLTFView<T> indicesView = GetIndexView<T>(gltfPrimitive, gltfModel);
+
+			indices.resize_uninitialized(indicesView.count);
+
+			for (size_t i = 0; i < indicesView.count; i++)
+			{
+				indices[i] = static_cast<uint32_t>(indicesView.GetAt(i));
+			}
+		};
+
+		const tinygltf::Accessor& accessor = gltfModel.accessors[gltfPrimitive.indices];
+
+		if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_BYTE)
+		{
+			convertIndices.template operator()<int8_t>();
+		}
+		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
+		{
+			convertIndices.template operator()<uint8_t>();
+		}
+		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_SHORT)
+		{
+			convertIndices.template operator()<int16_t>();
+		}
+		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+		{
+			convertIndices.template operator()<uint16_t>();
+		}
+		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_INT)
+		{
+			convertIndices.template operator()<int32_t>();
+		}
+		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
+		{
+			convertIndices.template operator()<uint32_t>();
+		}
+		else
+		{
+			VT_ENSURE(false);
+		}
 	}
 
 	void GLTFSourceImporter::CreateVoltMeshFromGLTFMesh(const tinygltf::Mesh& gltfMesh, const tinygltf::Node& gltfNode, const tinygltf::Model& gltfModel, Ref<Mesh> destinationMesh, const Vector<Ref<Material>>& materials) const
@@ -225,17 +275,19 @@ namespace Volt
 		for (const tinygltf::Primitive& gltfPrimitive : gltfMesh.primitives)
 		{
 			GLTFView<glm::vec3> vertexPositions = GetAttributeViewFromName<glm::vec3>("POSITION", gltfPrimitive, gltfModel);
-			GLTFView<uint32_t> indices = GetIndexView(gltfPrimitive, gltfModel);
 
-			if (vertexPositions.Empty() || indices.Empty())
+			Vector<uint32_t> indexVector;
+			GetIndices(gltfPrimitive, gltfModel, indexVector);
+
+			if (vertexPositions.Empty() || indexVector.empty())
 			{
 				// We must have vertex positions and indices to create the mesh.
 				continue;
 			}
 
 			GLTFView<glm::vec3> vertexNormals = GetAttributeViewFromName<glm::vec3>("NORMAL", gltfPrimitive, gltfModel);
-			GLTFView<glm::vec3> vertexTangents = GetAttributeViewFromName<glm::vec3>("TANGENT", gltfPrimitive, gltfModel);
-			GLTFView<glm::vec2> vertexTexCoords = GetAttributeViewFromName<glm::vec2>("TEXCOORD", gltfPrimitive, gltfModel);
+			GLTFView<glm::vec4> vertexTangents = GetAttributeViewFromName<glm::vec4>("TANGENT", gltfPrimitive, gltfModel);
+			GLTFView<glm::vec2> vertexTexCoords = GetAttributeViewFromName<glm::vec2>("TEXCOORD_0", gltfPrimitive, gltfModel);
 		
 			VertexContainer vertexContainer{};
 			vertexContainer.Resize(vertexPositions.count);
@@ -253,21 +305,14 @@ namespace Volt
 					materialData.normal.x = uint8_t(octNormal.x * 255u);
 					materialData.normal.y = uint8_t(octNormal.y * 255u);
 					materialData.tangent = Utility::EncodeTangent(vertexNormals.GetAt(i), vertexTangents.GetAt(i));
+					materialData.tangentW = vertexTangents.GetAt(i).w;
 					materialData.texCoords.x = static_cast<half_float::half>(vertexTexCoords.GetAt(i).x);
 					materialData.texCoords.y = static_cast<half_float::half>(vertexTexCoords.GetAt(i).y);
 				}
 			}
 
-			Vector<uint32_t> indexVector;
-			indexVector.resize_uninitialized(indices.count);
-
-			for (size_t i = 0; i < indices.count; i++)
-			{
-				indexVector[i] = indices.GetAt(i);
-			}
-
 			auto& subMesh = destinationMesh->m_subMeshes.emplace_back();
-			subMesh.indexCount = static_cast<uint32_t>(indices.count);
+			subMesh.indexCount = static_cast<uint32_t>(indexVector.size());
 			subMesh.vertexCount = static_cast<uint32_t>(vertexPositions.count);
 			subMesh.indexStartOffset = static_cast<uint32_t>(destinationMesh->m_indices.size());
 			subMesh.vertexStartOffset = static_cast<uint32_t>(destinationMesh->m_vertexContainer.Size());

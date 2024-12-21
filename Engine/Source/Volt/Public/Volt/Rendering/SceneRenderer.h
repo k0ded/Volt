@@ -66,7 +66,8 @@ namespace Volt
 			GeometryNormals = 7,
 			AmbientOcclusion = 8,
 			Velocity = 9,
-			UV = 10
+			UV = 10,
+			GeometryTangents = 11
 		};
 
 		enum class AntiAliasingMethod : uint8_t

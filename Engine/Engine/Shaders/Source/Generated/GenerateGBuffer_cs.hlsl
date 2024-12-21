@@ -114,7 +114,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     
     const float3 normal = normalize(drawData.transform.RotateVector(normalize(InterpolateFloat3(derivatives, materialData.normals))));
     const float3 tangent = normalize(drawData.transform.RotateVector(normalize(InterpolateFloat3(derivatives, materialData.tangents))));
-    const float3x3 TBN = CalculateTBN(normal, tangent);
+    const float3x3 TBN = CalculateTBN(normal, tangent, materialData.tangentW);
     
     const GPUMaterial material = scene.materialsBuffer.Load(constants.materialId);
     

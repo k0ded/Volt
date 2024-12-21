@@ -31,7 +31,8 @@ void RendererSettingsPanel::UpdateMainContent()
 		"Geometry Normal",
 		"Ambient Occlusion",
 		"Velocity",
-		"UV"
+		"UV",
+		"Geometry Tangents"
 	};
 
 	UI::Header("Visualization");
