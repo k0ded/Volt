@@ -4,6 +4,7 @@
 #include "PhysicsInterface/PhysicsMaterial.h"
 #include "PhysicsInterface/PhysicsHandleType.h"
 #include "PhysicsInterface/PhysicsIDType.h"
+#include "PhysicsInterface/PhysicsLayer.h"
 
 #include <glm/glm.hpp>
 
@@ -35,6 +36,8 @@ namespace Volt
 	public:
 		virtual ~PhysicsControllerActor() {}
 
+		virtual void Release() = 0;
+
 		virtual void SetRadius(float radius) = 0;
 		virtual void SetHeight(float height) = 0;
 		virtual void SetPosition(const glm::vec3& position) = 0;
@@ -42,6 +45,7 @@ namespace Volt
 		virtual void SetAngularVelocity(const glm::vec3& velocity) = 0;
 		virtual void SetLinearVelocity(const glm::vec3& velocity) = 0;
 		virtual void SetGravity(float gravity) = 0;
+		virtual void AssignToPhysicsLayer(PhysicsLayerID layerId) = 0;
 
 		virtual float GetRadius() const = 0;
 		virtual float GetHeight() const = 0;

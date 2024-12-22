@@ -5,6 +5,7 @@
 #include "PhysicsInterface/PhysicsActor.h"
 #include "PhysicsInterface/PhysicsControllerActor.h"
 #include "PhysicsInterface/PhysicsHandleType.h"
+#include "PhysicsInterface/PhysicsLayer.h"
 
 #include <CoreUtilities/Containers/Vector.h>
 
@@ -45,8 +46,8 @@ namespace Volt
 		virtual bool RayCast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance, RayCastHit& outHit, uint32_t layerMask = 0) = 0;
 		virtual bool LineCast(const glm::vec3& origin, const glm::vec3& destination, RayCastHit& outHit, uint32_t layerMask = 0) = 0;
 		virtual bool OverlapBox(const glm::vec3& origin, const glm::vec3& halfSize, Vector<PhysicsActorID>& outUserData, uint32_t layerMask = 0) = 0;
-		virtual bool OverlapCapsule(const glm::vec3& origin, float radius, float halfHeight, Vector<PhysicsActorID>& outUserData, uint32_t layerMask = 0);
-		virtual bool OverlapSphere(const glm::vec3& origin, float radius, Vector<PhysicsActorID>& outUserData, uint32_t layerMask = 0);
+		virtual bool OverlapCapsule(const glm::vec3& origin, float radius, float halfHeight, Vector<PhysicsActorID>& outUserData, uint32_t layerMask = 0) = 0;
+		virtual bool OverlapSphere(const glm::vec3& origin, float radius, Vector<PhysicsActorID>& outUserData, uint32_t layerMask = 0) = 0;
 
 		virtual Ref<PhysicsActor> CreateActor(const PhysicsActorCreateInfo& createInfo) = 0;
 		virtual Ref<PhysicsActor> GetActor(PhysicsActorID actorId) const = 0;

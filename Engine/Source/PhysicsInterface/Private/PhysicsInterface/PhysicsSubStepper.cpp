@@ -4,6 +4,11 @@
 
 namespace Volt
 {
+	PhysicsSubStepper::PhysicsSubStepper(float subStepSize)
+		: m_subStepSize(subStepSize)
+	{
+	}
+
 	uint32_t PhysicsSubStepper::Advance(float timeStep)
 	{
 		SubStepStrategy(timeStep);

@@ -7,6 +7,9 @@ namespace physx
 {
 	class PxScene;
 	class PxControllerManager;
+	class PxGeometry;
+	class PxQueryFilterData;
+	class PxOverlapHit;
 }
 
 namespace Volt
@@ -36,14 +39,22 @@ namespace Volt
 		void RemoveControllerActor(PhysicsActorID actorId) override;
 
 	private:
+		inline static constexpr uint32_t MAX_OVERLAP_COLLIDERS = 10;
+
+		bool OverlapGeometry(const glm::vec3& origin, const physx::PxGeometry& geometry, std::array<physx::PxOverlapHit, MAX_OVERLAP_COLLIDERS>& buffer, uint32_t& count, const physx::PxQueryFilterData& filterData);
+
 		bool Advance(float timeStep);
 
 		PhysicsSceneCreateInfo m_createInfo;
 		PhysicsSubStepper m_subStepper;
 
 		vt::map<PhysicsActorID, Ref<PhysicsControllerActor>> m_controllerActors;
+		vt::map<PhysicsActorID, Ref<PhysicsActor>> m_actors;
 
 		physx::PxScene* m_physXScene = nullptr;
 		physx::PxControllerManager* m_controllerManager = nullptr;
+
+		bool m_isSimulating = false;
+		Vector<std::function<void()>> m_executionQueue;
 	};
 }

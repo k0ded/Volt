@@ -19,6 +19,7 @@ namespace Volt
 		void SetOffset(const glm::vec3& offset) override;
 		void SetScale(const glm::vec3& scale) override;
 		void SetHalfSize(const glm::vec3& halfSize) override;
+		void AssignToPhysicsLayer(PhysicsLayerID layerId) override;
 
 		inline Ref<PhysicsMaterial> GetPhysicalMaterial() const override { return m_createInfo.physicalMaterial; }
 		inline ColliderType GetColliderType() const override { return ColliderType::Sphere; }
@@ -47,6 +48,7 @@ namespace Volt
 		void SetOffset(const glm::vec3& offset) override;
 		void SetScale(const glm::vec3& scale) override;
 		void SetRadius(float radius) override;
+		void AssignToPhysicsLayer(PhysicsLayerID layerId) override;
 
 		inline Ref<PhysicsMaterial> GetPhysicalMaterial() const override { return m_createInfo.physicalMaterial; }
 		inline ColliderType GetColliderType() const override { return ColliderType::Sphere; }
@@ -76,6 +78,7 @@ namespace Volt
 		void SetScale(const glm::vec3& scale) override;
 		void SetRadius(float radius) override;
 		void SetHeight(float height) override;
+		void AssignToPhysicsLayer(PhysicsLayerID layerId) override;
 
 		inline Ref<PhysicsMaterial> GetPhysicalMaterial() const override { return m_createInfo.physicalMaterial; }
 		inline ColliderType GetColliderType() const override { return ColliderType::Sphere; }

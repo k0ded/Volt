@@ -1,6 +1,7 @@
 #pragma once
 
 #include <PhysicsInterface/PhysicsActor.h>
+
 #include <CoreUtilities/Containers/Map.h>
 
 namespace physx
@@ -15,6 +16,8 @@ namespace Volt
 	public:
 		PhysXPhysicsActor(const PhysicsActorCreateInfo& createInfo);
 		~PhysXPhysicsActor() override;
+
+		void Release() override;
 
 		bool IsDynamic() const override;
 		bool IsKinematic() const override;
@@ -33,7 +36,8 @@ namespace Volt
 		void SetRotation(const glm::quat& rotation, bool autoWake /* = true */) override;
 		void SetLockFlag(PhysicsActorLockFlags lockFlag, bool value, bool forceAwake /* = false */) override;
 		void SetLockFlags(PhysicsActorLockFlags lockFlags, bool forceAwake /* = false */) override;
-		void AssignToPhysicsLayer(uint32_t layerId) override;
+		void AssignToPhysicsLayer(PhysicsLayerID layerId) override;
+		PhysicsLayerID GetAssignedPhysicsLayerID() const override;
 
 		glm::vec3 GetLinearVelocity() const override;
 		glm::vec3 GetAngularVelocity() const override;
@@ -43,6 +47,7 @@ namespace Volt
 		glm::vec3 GetKinematicTargetPosition() const override;
 		glm::quat GetKinematicTargetRotation() const override;
 		PhysicsActorID GetID() const override;
+		CollisionDetectionType GetCollisionDetectionType() const override;
 
 		void AddForce(const glm::vec3& force, ForceMode forceMode) override;
 		void AddTorque(const glm::vec3& torque, ForceMode forceMode) override;
@@ -67,6 +72,7 @@ namespace Volt
 		PhysicsActorCreateInfo m_createInfo;
 		physx::PxRigidActor* m_rigidActor = nullptr;
 		PhysicsActorID m_actorId;
+		PhysicsLayerID m_layerId = 0;
 
 		vt::map<PhysicsColliderID, Ref<ColliderShape>> m_colliders;
 	};

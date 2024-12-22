@@ -2,6 +2,7 @@
 
 #include "PhysicsInterface/PhysicsTypes.h"
 #include "PhysicsInterface/PhysicsHandleType.h"
+#include "PhysicsInterface/PhysicsLayer.h"
 
 #include <glm/glm.hpp>
 
@@ -53,6 +54,7 @@ namespace Volt
 		virtual void SetIsTrigger(bool isTrigger) = 0;
 		virtual void SetOffset(const glm::vec3& offset) = 0;
 		virtual void SetScale(const glm::vec3& scale) = 0;
+		virtual void AssignToPhysicsLayer(PhysicsLayerID layerId) = 0;
 
 		virtual Ref<PhysicsMaterial> GetPhysicalMaterial() const = 0;
 		virtual ColliderType GetColliderType() const = 0;

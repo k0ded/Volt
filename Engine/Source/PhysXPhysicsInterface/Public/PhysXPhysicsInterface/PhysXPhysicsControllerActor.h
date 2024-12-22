@@ -14,8 +14,10 @@ namespace Volt
 	class PhysXPhysicsControllerActor : public PhysicsControllerActor
 	{
 	public:
-		PhysXPhysicsControllerActor(const PhysicsControllerActorCreateInfo& createInfo, float gravity, physx::PxControllerManager* controllerManager);
+		PhysXPhysicsControllerActor(const PhysicsControllerActorCreateInfo& createInfo, const glm::vec3& gravity, physx::PxControllerManager* controllerManager);
 		~PhysXPhysicsControllerActor() override;
+
+		void Release() override;
 
 		void SetRadius(float radius) override;
 		void SetHeight(float height) override;
@@ -24,6 +26,7 @@ namespace Volt
 		void SetAngularVelocity(const glm::vec3& velocity) override;
 		void SetLinearVelocity(const glm::vec3& velocity) override;
 		void SetGravity(float gravity) override;
+		void AssignToPhysicsLayer(PhysicsLayerID layerId) override;
 
 		float GetRadius() const override;
 		float GetHeight() const override;
@@ -52,6 +55,7 @@ namespace Volt
 		glm::vec3 m_frameMovement = 0.f;
 		uint32_t m_currentCollisionFlags = 0;
 		PhysicsActorID m_actorId;
+		PhysicsLayerID m_layerId = 0;
 
 		physx::PxCapsuleController* m_controller = nullptr;
 	};

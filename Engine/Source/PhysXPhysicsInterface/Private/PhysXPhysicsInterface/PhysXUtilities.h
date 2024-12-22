@@ -1,5 +1,7 @@
 #pragma once
 
+#include <PhysicsInterface/PhysicsLayerManager.h>
+
 #include <PhysX/PxPhysicsAPI.h>
 #include <glm/glm.hpp>
 
@@ -88,5 +90,17 @@ namespace Volt::PhysXUtilities
 		}
 
 		return physx::PxFrictionType::ePATCH;
+	}
+
+	inline physx::PxFilterData CreateFilterData(PhysicsLayerID layerId, CollisionDetectionType collisionDetectionType)
+	{
+		const PhysicsLayer& physicsLayer = g_physicsLayerManager.GetLayer(layerId);
+
+		physx::PxFilterData filterData{};
+		filterData.word0 = physicsLayer.bit;
+		filterData.word1 = physicsLayer.collidesWithBitMask;
+		filterData.word2 = static_cast<uint32_t>(collisionDetectionType);
+
+		return filterData;
 	}
 }

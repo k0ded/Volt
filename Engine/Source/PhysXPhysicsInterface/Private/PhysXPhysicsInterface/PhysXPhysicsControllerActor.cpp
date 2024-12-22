@@ -7,13 +7,18 @@
 
 namespace Volt
 {
-	PhysXPhysicsControllerActor::PhysXPhysicsControllerActor(const PhysicsControllerActorCreateInfo& createInfo, float gravity, physx::PxControllerManager* controllerManager)
-		: m_createInfo(createInfo), m_gravity(gravity)
+	PhysXPhysicsControllerActor::PhysXPhysicsControllerActor(const PhysicsControllerActorCreateInfo& createInfo, const glm::vec3& gravity, physx::PxControllerManager* controllerManager)
+		: m_createInfo(createInfo), m_gravity(gravity.y)
 	{
 		CreateActorFromCreateInfo(createInfo, controllerManager);
 	}
 
 	PhysXPhysicsControllerActor::~PhysXPhysicsControllerActor()
+	{
+		Release();
+	}
+
+	void PhysXPhysicsControllerActor::Release()
 	{
 		if (m_controller)
 		{
@@ -60,6 +65,28 @@ namespace Volt
 	void PhysXPhysicsControllerActor::SetGravity(float gravity)
 	{
 		m_gravity = gravity;
+	}
+
+	void PhysXPhysicsControllerActor::AssignToPhysicsLayer(PhysicsLayerID layerId)
+	{
+		if (m_layerId == layerId)
+		{
+			return;
+		}
+
+		const auto filterData = PhysXUtilities::CreateFilterData(layerId, CollisionDetectionType::Continuous);
+
+		const uint32_t shapeCount = m_controller->getActor()->getNbShapes();
+		Vector<physx::PxShape*> shapes(shapeCount);
+
+		m_controller->getActor()->getShapes(shapes.data(), shapeCount);
+		for (const auto& shape : shapes)
+		{
+			shape->setSimulationFilterData(filterData);
+			shape->setQueryFilterData(filterData);
+		}
+
+		m_layerId = layerId;
 	}
 	
 	float PhysXPhysicsControllerActor::GetRadius() const

@@ -15,6 +15,16 @@ namespace Volt
 
 	PhysXPhysicsActor::~PhysXPhysicsActor()
 	{
+		Release();
+	}
+
+	void PhysXPhysicsActor::Release()
+	{
+		for (const auto& [id, collider] : m_colliders)
+		{
+			RemoveCollider(id);
+		}
+
 		if (m_rigidActor)
 		{
 			m_rigidActor->release();
@@ -208,17 +218,24 @@ namespace Volt
 		}
 	}
 
-	void PhysXPhysicsActor::AssignToPhysicsLayer(uint32_t layerId)
+	void PhysXPhysicsActor::AssignToPhysicsLayer(PhysicsLayerID layerId)
 	{
-		//const auto data = PhysXUtilities::CreateFilterDataFromLayer(layerId, (CollisionDetectionType)m_rigidBodyData.m_collisionType);
-		//myFilterData = data;
+		if (m_layerId == layerId)
+		{
+			return;
+		}
 
-		//for (auto& collider : m_colliders)
-		//{
-		//	collider->SetFilterData(myFilterData);
-		//}
+		for (auto& [id, collider] : m_colliders)
+		{
+			collider->AssignToPhysicsLayer(layerId);
+		}
 
-		//myLayerId = layerId;
+		m_layerId = layerId;
+	}
+
+	PhysicsLayerID PhysXPhysicsActor::GetAssignedPhysicsLayerID() const
+	{
+		return m_layerId;
 	}
 	
 	glm::vec3 PhysXPhysicsActor::GetLinearVelocity() const
@@ -305,6 +322,11 @@ namespace Volt
 	PhysicsActorID PhysXPhysicsActor::GetID() const
 	{
 		return m_actorId;
+	}
+
+	CollisionDetectionType PhysXPhysicsActor::GetCollisionDetectionType() const
+	{
+		return m_createInfo.collisionDetectionType;
 	}
 	
 	void PhysXPhysicsActor::AddForce(const glm::vec3& force, ForceMode forceMode)
@@ -431,6 +453,6 @@ namespace Volt
 			m_rigidActor->setName(createInfo.debugName.c_str());
 		}
 
-		AssignToPhysicsLayer(createInfo.physicsLayerId);
+		AssignToPhysicsLayer(createInfo.layerId);
 	}
 }

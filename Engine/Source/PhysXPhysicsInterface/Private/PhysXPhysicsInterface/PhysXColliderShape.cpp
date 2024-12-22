@@ -4,6 +4,8 @@
 #include "PhysXPhysicsInterface/PhysXPhysicsMaterial.h"
 #include "PhysXPhysicsInterface/PhysXUtilities.h"
 
+#include <PhysicsInterface/PhysicsLayerManager.h>
+
 #include <PhysX/PxPhysicsAPI.h>
 
 namespace Volt
@@ -68,6 +70,14 @@ namespace Volt
 		const glm::vec3 scaledHalfSize = m_createInfo.halfSize * m_createInfo.scale;
 		physx::PxBoxGeometry geometry = physx::PxBoxGeometry(scaledHalfSize.x, scaledHalfSize.y, scaledHalfSize.z);
 		m_shape->setGeometry(geometry);
+	}
+
+	void PhysXBoxColliderShape::AssignToPhysicsLayer(PhysicsLayerID layerId)
+	{
+		const auto filterData = PhysXUtilities::CreateFilterData(layerId, m_createInfo.targetActor->GetCollisionDetectionType());
+
+		m_shape->setSimulationFilterData(filterData);
+		m_shape->setQueryFilterData(filterData);
 	}
 
 	void PhysXBoxColliderShape::DetachFromActor()
@@ -135,6 +145,14 @@ namespace Volt
 		const float maxScale = glm::max(m_createInfo.scale.x, glm::max(m_createInfo.scale.y, m_createInfo.scale.z));
 		physx::PxSphereGeometry geometry = physx::PxSphereGeometry(maxScale * m_createInfo.radius);
 		m_shape->setGeometry(geometry);
+	}
+
+	void PhysXSphereColliderShape::AssignToPhysicsLayer(PhysicsLayerID layerId)
+	{
+		const auto filterData = PhysXUtilities::CreateFilterData(layerId, m_createInfo.targetActor->GetCollisionDetectionType());
+
+		m_shape->setSimulationFilterData(filterData);
+		m_shape->setQueryFilterData(filterData);
 	}
 
 	void PhysXSphereColliderShape::DetachFromActor()
@@ -218,6 +236,14 @@ namespace Volt
 
 		physx::PxCapsuleGeometry geometry = physx::PxCapsuleGeometry(m_createInfo.radius * radiusScale, (m_createInfo.height / 2.f) * heightScale);
 		m_shape->setGeometry(geometry);
+	}
+
+	void PhysXCapsuleColliderShape::AssignToPhysicsLayer(PhysicsLayerID layerId)
+	{
+		const auto filterData = PhysXUtilities::CreateFilterData(layerId, m_createInfo.targetActor->GetCollisionDetectionType());
+
+		m_shape->setSimulationFilterData(filterData);
+		m_shape->setQueryFilterData(filterData);
 	}
 
 	void PhysXCapsuleColliderShape::DetachFromActor()

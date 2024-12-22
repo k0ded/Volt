@@ -3,6 +3,8 @@
 #include "PhysXPhysicsInterface/PhysXPhysicsScene.h"
 #include "PhysXPhysicsInterface/PhysXUtilities.h"
 #include "PhysXPhysicsInterface/PhysXPhysicsCore.h"
+#include "PhysXPhysicsInterface/PhysXPhysicsActor.h"
+#include "PhysXPhysicsInterface/PhysXPhysicsControllerActor.h"
 
 #include <PhysX/PxPhysicsAPI.h>
 
@@ -99,6 +101,8 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		m_isSimulating = true;
+
 		for (const auto& [id, actor] : m_controllerActors)
 		{
 			actor->Update(timestep);
@@ -123,6 +127,14 @@ namespace Volt
 				m_createInfo.physicsSceneAdvancedCallback(updatedActors);
 			}
 		}
+
+		m_isSimulating = false;
+
+		for (const auto& func : m_executionQueue)
+		{
+			func();
+		}
+		m_executionQueue.clear();
 
 		return advanced;
 	}
@@ -153,12 +165,19 @@ namespace Volt
 	
 	bool PhysXPhysicsScene::LineCast(const glm::vec3& origin, const glm::vec3& destination, RayCastHit& outHit, uint32_t layerMask)
 	{
+		physx::PxFilterData data{};
+		data.word0 = layerMask;
+
+		physx::PxQueryFilterData qFilterData;
+		qFilterData.flags = physx::PxQueryFlag::eDYNAMIC | physx::PxQueryFlag::eSTATIC;
+		qFilterData.data = data;
+
 		physx::PxRaycastBuffer hitInfo{};
 
 		const glm::vec3 direction = glm::normalize(destination - origin);
 		const float distance = glm::distance(destination, origin);
 
-		bool result = m_physXScene->raycast(PhysXUtilities::ToPhysXVector(origin), PhysXUtilities::ToPhysXVector(direction), distance, hitInfo);
+		bool result = m_physXScene->raycast(PhysXUtilities::ToPhysXVector(origin), PhysXUtilities::ToPhysXVector(direction), distance, hitInfo, physx::PxHitFlag::eDEFAULT, qFilterData);
 
 		if (result)
 		{
@@ -174,55 +193,194 @@ namespace Volt
 	
 	bool PhysXPhysicsScene::OverlapBox(const glm::vec3& origin, const glm::vec3& halfSize, Vector<PhysicsActorID>& outUserData, uint32_t layerMask)
 	{
+		physx::PxFilterData filterData{};
+		filterData.word0 = layerMask;
 
+		physx::PxQueryFilterData queryFilterData{};
+		queryFilterData.flags = physx::PxQueryFlag::eDYNAMIC | physx::PxQueryFlag::eSTATIC;
+		queryFilterData.data = filterData;
 
-		return false;
+		std::array<physx::PxOverlapHit, MAX_OVERLAP_COLLIDERS> overlapBuffer;
+		uint32_t overlapCount;
+
+		bool hit = OverlapGeometry(origin, physx::PxBoxGeometry(halfSize.x, halfSize.y, halfSize.z), overlapBuffer, overlapCount, queryFilterData);
+		if (!overlapBuffer.empty())
+		{
+			for (auto& overlap : overlapBuffer)
+			{
+				if (overlap.actor != nullptr)
+				{
+					auto actor = reinterpret_cast<PhysXPhysicsActor*>(overlap.actor->userData);
+					if (actor)
+					{
+						outUserData.emplace_back(actor->GetID());
+					}
+				}
+			}
+		}
+
+		return hit;
 	}
 	
 	bool PhysXPhysicsScene::OverlapCapsule(const glm::vec3& origin, float radius, float halfHeight, Vector<PhysicsActorID>& outUserData, uint32_t layerMask)
 	{
-		return false;
+		physx::PxFilterData filterData{};
+		filterData.word0 = layerMask;
+
+		physx::PxQueryFilterData queryFilterData{};
+		queryFilterData.flags = physx::PxQueryFlag::eDYNAMIC | physx::PxQueryFlag::eSTATIC;
+		queryFilterData.data = filterData;
+
+		std::array<physx::PxOverlapHit, MAX_OVERLAP_COLLIDERS> overlapBuffer;
+		uint32_t overlapCount;
+
+		bool hit = OverlapGeometry(origin, physx::PxCapsuleGeometry(radius, halfHeight), overlapBuffer, overlapCount, queryFilterData);
+		if (!overlapBuffer.empty())
+		{
+			for (auto& overlap : overlapBuffer)
+			{
+				if (overlap.actor != nullptr)
+				{
+					auto actor = reinterpret_cast<PhysXPhysicsActor*>(overlap.actor->userData);
+					if (actor)
+					{
+						outUserData.emplace_back(actor->GetID());
+					}
+				}
+			}
+		}
+
+		return hit;
 	}
 	
 	bool PhysXPhysicsScene::OverlapSphere(const glm::vec3& origin, float radius, Vector<PhysicsActorID>& outUserData, uint32_t layerMask)
 	{
-		return false;
+		physx::PxFilterData filterData{};
+
+		physx::PxQueryFilterData queryFilterData{};
+		queryFilterData.flags = physx::PxQueryFlag::eDYNAMIC | physx::PxQueryFlag::eSTATIC;
+		queryFilterData.data = filterData;
+
+		std::array<physx::PxOverlapHit, MAX_OVERLAP_COLLIDERS> overlapBuffer;
+		uint32_t overlapCount;
+
+		bool hit = OverlapGeometry(origin, physx::PxSphereGeometry(radius), overlapBuffer, overlapCount, queryFilterData);
+		if (!overlapBuffer.empty())
+		{
+			for (auto& overlap : overlapBuffer)
+			{
+				if (overlap.actor != nullptr)
+				{
+					auto actor = reinterpret_cast<PhysXPhysicsActor*>(overlap.actor->userData);
+					if (actor)
+					{
+						outUserData.emplace_back(actor->GetID());
+					}
+				}
+			}
+		}
+
+		return hit;
 	}
 	
 	Ref<PhysicsActor> PhysXPhysicsScene::CreateActor(const PhysicsActorCreateInfo& createInfo)
 	{
-		return Ref<PhysicsActor>();
+		Ref<PhysicsActor> actor = CreateRef<PhysXPhysicsActor>(createInfo);
+		m_actors[actor->GetID()] = actor;
+
+		auto createFunc = [this, actor]()
+		{
+			m_physXScene->addActor(*actor->GetHandle<physx::PxRigidActor*>());
+		};
+
+		if (m_isSimulating)
+		{
+			m_executionQueue.emplace_back(createFunc);
+		}
+		else
+		{
+			createFunc();
+		}
+
+		return actor;
 	}
 	
 	Ref<PhysicsActor> PhysXPhysicsScene::GetActor(PhysicsActorID actorId) const
 	{
-		return Ref<PhysicsActor>();
+		VT_ENSURE(m_actors.contains(actorId));
+		return m_actors.at(actorId);
 	}
 	
 	void PhysXPhysicsScene::RemoveActor(Ref<PhysicsActor> actor)
 	{
+		VT_ENSURE(m_actors.contains(actor->GetID()));
+
+		auto removeFunc = [this, actor]()
+		{
+			m_physXScene->removeActor(*actor->GetHandle<physx::PxRigidActor*>());
+			actor->Release();
+			m_actors.erase(actor->GetID());
+		};
+
+		if (m_isSimulating)
+		{
+			m_executionQueue.emplace_back(removeFunc);
+		}
+		else
+		{
+			removeFunc();
+		}
 	}
 	
 	void PhysXPhysicsScene::RemoveActor(PhysicsActorID actorId)
 	{
+		VT_ENSURE(m_actors.contains(actorId));
+		RemoveActor(m_actors.at(actorId));
 	}
 	
 	Ref<PhysicsControllerActor> PhysXPhysicsScene::CreateControllerActor(const PhysicsControllerActorCreateInfo& createInfo)
 	{
-		return Ref<PhysicsControllerActor>();
+		Ref<PhysicsControllerActor> controllerActor = CreateRef<PhysXPhysicsControllerActor>(createInfo, m_createInfo.gravity, m_controllerManager);
+		m_controllerActors[controllerActor->GetID()] = controllerActor;
+
+		return controllerActor;
 	}
 	
 	Ref<PhysicsControllerActor> PhysXPhysicsScene::GetControllerActor(PhysicsActorID actorId) const
 	{
-		return Ref<PhysicsControllerActor>();
+		VT_ENSURE(m_controllerActors.contains(actorId));
+		return m_controllerActors.at(actorId);
 	}
 	
 	void PhysXPhysicsScene::RemoveControllerActor(Ref<PhysicsControllerActor> actor)
 	{
+		VT_ENSURE(m_controllerActors.contains(actor->GetID()));
+		m_controllerActors.erase(actor->GetID());
+		actor->Release();
 	}
 	
 	void PhysXPhysicsScene::RemoveControllerActor(PhysicsActorID actorId)
 	{
+		VT_ENSURE(m_controllerActors.contains(actorId));
+		auto actor = m_controllerActors.at(actorId);
+		actor->Release();
+
+		m_controllerActors.erase(actorId);
+	}
+
+	bool PhysXPhysicsScene::OverlapGeometry(const glm::vec3& origin, const physx::PxGeometry& geometry, std::array<physx::PxOverlapHit, MAX_OVERLAP_COLLIDERS>& buffer, uint32_t& count, const physx::PxQueryFilterData& filterData)
+	{
+		physx::PxOverlapBuffer overlapBuffer(buffer.data(), MAX_OVERLAP_COLLIDERS);
+		physx::PxTransform pose = PhysXUtilities::ToPhysXTransform(origin, glm::identity<glm::quat>());
+
+		bool result = m_physXScene->overlap(geometry, pose, overlapBuffer, filterData);
+		if (result)
+		{
+			memcpy(buffer.data(), overlapBuffer.touches, overlapBuffer.nbTouches * sizeof(physx::PxOverlapHit));
+			count = overlapBuffer.nbTouches;
+		}
+
+		return result;
 	}
 
 	bool PhysXPhysicsScene::Advance(float timeStep)

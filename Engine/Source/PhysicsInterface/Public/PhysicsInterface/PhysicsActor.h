@@ -4,6 +4,7 @@
 #include "PhysicsInterface/ColliderShape.h"
 #include "PhysicsInterface/PhysicsHandleType.h"
 #include "PhysicsInterface/PhysicsIDType.h"
+#include "PhysicsInterface/PhysicsLayer.h"
 
 #include <glm/glm.hpp>
 
@@ -18,7 +19,7 @@ namespace Volt
 		CollisionDetectionType collisionDetectionType = CollisionDetectionType::Discrete;
 		PhysicsActorLockFlags lockFlags = PhysicsActorLockFlags::None;
 
-		uint32_t physicsLayerId = 0;
+		PhysicsLayerID layerId = 1;
 
 		float mass = 1.f;
 		float linearDrag = 0.01f;
@@ -34,6 +35,8 @@ namespace Volt
 	{
 	public:
 		virtual ~PhysicsActor() {}
+
+		virtual void Release() = 0;
 
 		virtual bool IsDynamic() const = 0;
 		virtual bool IsKinematic() const = 0;
@@ -52,7 +55,8 @@ namespace Volt
 		virtual void SetRotation(const glm::quat& rotation, bool autoWake = true) = 0;
 		virtual void SetLockFlag(PhysicsActorLockFlags lockFlag, bool value, bool forceAwake = false) = 0;
 		virtual void SetLockFlags(PhysicsActorLockFlags lockFlags, bool forceAwake = false) = 0;
-		virtual void AssignToPhysicsLayer(uint32_t layerId) = 0;
+		virtual void AssignToPhysicsLayer(PhysicsLayerID layerId) = 0;
+		virtual PhysicsLayerID GetAssignedPhysicsLayerID() const = 0;
 
 		virtual glm::vec3 GetLinearVelocity() const = 0;
 		virtual glm::vec3 GetAngularVelocity() const = 0;
@@ -61,6 +65,7 @@ namespace Volt
 		virtual float GetMass() const = 0;
 		virtual glm::vec3 GetKinematicTargetPosition() const = 0;
 		virtual glm::quat GetKinematicTargetRotation() const = 0;
+		virtual CollisionDetectionType GetCollisionDetectionType() const = 0;
 
 		virtual void AddForce(const glm::vec3& force, ForceMode forceMode) = 0;
 		virtual void AddTorque(const glm::vec3& torque, ForceMode forceMode) = 0;

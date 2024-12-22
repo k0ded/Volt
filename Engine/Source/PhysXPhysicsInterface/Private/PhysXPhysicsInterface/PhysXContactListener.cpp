@@ -4,6 +4,7 @@
 
 #include <PhysicsInterface/PhysicsActor.h>
 #include <PhysicsInterface/ContactListener.h>
+#include <PhysicsInterface/PhysicsLayerManager.h>
 
 namespace Volt
 {
@@ -85,6 +86,11 @@ namespace Volt
 			Ref<PhysicsActor> otherActor = reinterpret_cast<PhysicsActor*>(pairs[i].otherActor)->shared_from_this();
 		
 			if (!triggerActor || !otherActor)
+			{
+				continue;
+			}
+
+			if (!g_physicsLayerManager.AreLayersColliding(triggerActor->GetAssignedPhysicsLayerID(), otherActor->GetAssignedPhysicsLayerID()))
 			{
 				continue;
 			}
