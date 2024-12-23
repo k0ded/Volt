@@ -3,9 +3,6 @@
 
 #include "Volt/Components/CoreComponents.h"
 
-#include "Volt/Physics/Physics.h"
-#include "Volt/Physics/PhysicsScene.h"
-
 #include <CoreUtilities/StringUtility.h>
 
 #include <cassert>
@@ -289,12 +286,14 @@ namespace Volt
 
 	Ref<PhysicsActor> Entity::GetPhysicsActor() const
 	{
-		if (!Physics::GetScene())
-		{
-			return nullptr;
-		}
+		//if (!Physics::GetScene())
+		//{
+		//	return nullptr;
+		//}
 
-		return Physics::GetScene()->GetActor(*this);
+		//return Physics::GetScene()->GetActor(*this);
+
+		return nullptr;
 	}
 
 	Entity Entity::GetParent() const
@@ -585,32 +584,32 @@ namespace Volt
 
 	void Entity::UpdatePhysicsTranslation(bool updateThis)
 	{
-		if (updateThis && m_scene->IsPlaying() && (HasComponent<RigidbodyComponent>() || HasComponent<CharacterControllerComponent>()))
-		{
-			auto actor = Physics::GetScene()->GetActor(*this);
-			if (actor)
-			{
-				const glm::vec3 tempPosition = GetPosition();
-				actor->SetPosition(tempPosition, true, false);
-			}
-			else
-			{
-				auto cc = Physics::GetScene()->GetControllerActor(*this);
-				cc->SetFootPosition(GetPosition());
-			}
-		}
+		//if (updateThis && m_scene->IsPlaying() && (HasComponent<RigidbodyComponent>() || HasComponent<CharacterControllerComponent>()))
+		//{
+		//	auto actor = Physics::GetScene()->GetActor(*this);
+		//	if (actor)
+		//	{
+		//		const glm::vec3 tempPosition = GetPosition();
+		//		actor->SetPosition(tempPosition, true, false);
+		//	}
+		//	else
+		//	{
+		//		auto cc = Physics::GetScene()->GetControllerActor(*this);
+		//		cc->SetFootPosition(GetPosition());
+		//	}
+		//}
 	}
 
 	void Entity::UpdatePhysicsRotation(bool updateThis)
 	{
-		if (updateThis && m_scene->IsPlaying() && HasComponent<RigidbodyComponent>())
-		{
-			auto actor = Physics::GetScene()->GetActor(*this);
-			if (actor)
-			{
-				const glm::quat tempRotation = GetRotation();
-				actor->SetRotation(tempRotation, true, false);
-			}
-		}
+		//if (updateThis && m_scene->IsPlaying() && HasComponent<RigidbodyComponent>())
+		//{
+		//	auto actor = Physics::GetScene()->GetActor(*this);
+		//	if (actor)
+		//	{
+		//		const glm::quat tempRotation = GetRotation();
+		//		actor->SetRotation(tempRotation, true, false);
+		//	}
+		//}
 	}
 }

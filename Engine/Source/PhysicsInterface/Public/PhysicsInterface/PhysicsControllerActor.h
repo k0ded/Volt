@@ -23,7 +23,7 @@ namespace Volt
 		float radius = 50.f;
 		float height = 100.f;
 
-		uint32_t physicsLayer = 0;
+		uint32_t layerId = 0;
 		bool disableGravity = false;
 		PhysicsControllerActorNonWalkableMode nonWalkableMode = PhysicsControllerActorNonWalkableMode::PreventClimbing;
 		Ref<PhysicsMaterial> physicalMaterial;

@@ -24,4 +24,10 @@ namespace Volt
 	private:
 		Ref<ContactListener> m_contactListener;
 	};
+
+	class PhysXCharacterControllerContactListener : public physx::PxQueryFilterCallback
+	{
+	public:
+		physx::PxQueryHitType::Enum preFilter(const physx::PxFilterData& filterData, const physx::PxShape* shape, const physx::PxRigidActor* actor, physx::PxHitFlags& queryFlags) override;
+	};
 }

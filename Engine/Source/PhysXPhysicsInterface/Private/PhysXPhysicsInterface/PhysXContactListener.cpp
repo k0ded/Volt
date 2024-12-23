@@ -115,4 +115,20 @@ namespace Volt
 	void PhysXContactListener::onAdvance(const physx::PxRigidBody* const* bodyBuffer, const physx::PxTransform* poseBuffer, const physx::PxU32 count)
 	{
 	}
+
+	physx::PxQueryHitType::Enum PhysXCharacterControllerContactListener::preFilter(const physx::PxFilterData& filterData, const physx::PxShape* shape, const physx::PxRigidActor* actor, physx::PxHitFlags& queryFlags)
+	{
+		if ((filterData.word0 & shape->getQueryFilterData().word1) || (filterData.word1 & shape->getQueryFilterData().word0))
+		{
+			if (shape->getFlags().isSet(physx::PxShapeFlag::eTRIGGER_SHAPE))
+			{
+				return physx::PxQueryHitType::eTOUCH;
+			}
+			else
+			{
+				return physx::PxQueryHitType::eBLOCK;
+			}
+		}
+		return physx::PxQueryHitType::eNONE;
+	}
 }

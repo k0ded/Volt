@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Volt/Physics/PhysicsEnums.h"
 #include "Volt/Asset/AssetTypes.h"
 
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
+#include <PhysicsInterface/PhysicsTypes.h>
 
 #include <AssetSystem/Asset.h>
 
@@ -11,7 +11,7 @@ namespace Volt
 {
 	struct CharacterControllerComponent
 	{
-		ClimbingMode climbingMode = ClimbingMode::Normal;
+		PhysicsControllerActorNonWalkableMode climbingMode = PhysicsControllerActorNonWalkableMode::PreventClimbingAndForceSlide;
 
 		float slopeLimit = 20.f;
 		float invisibleWallHeight = 200.f;
@@ -22,9 +22,11 @@ namespace Volt
 		uint32_t layer = 0;
 		bool hasGravity = true;
 
+		PhysicsActorID actorId;
+
 		inline CharacterControllerComponent() = default;
 
-		inline CharacterControllerComponent(ClimbingMode aClimbingMode, float aSlopeLimit, float aInvisibleWallHeight, float aMaxJumpHeight,
+		inline CharacterControllerComponent(PhysicsControllerActorNonWalkableMode aClimbingMode, float aSlopeLimit, float aInvisibleWallHeight, float aMaxJumpHeight,
 			float aContactOffset, float aStepOffset, float aDensity, uint32_t aLayer, bool aHasGravity)
 			: climbingMode(aClimbingMode), slopeLimit(aSlopeLimit), invisibleWallHeight(aInvisibleWallHeight), maxJumpHeight(aMaxJumpHeight), contactOffset(aContactOffset),
 			stepOffset(aStepOffset), density(aDensity), layer(aLayer), hasGravity(aHasGravity)
@@ -36,7 +38,7 @@ namespace Volt
 		{
 			reflect.SetGUID("{DC5C002A-B72E-42A0-83FC-FFBE1FB2DEF2}"_guid);
 			reflect.SetLabel("Character Controller Component");
-			reflect.AddMember(&CharacterControllerComponent::climbingMode, "climbingMode", "Climbing Mode", "", ClimbingMode::Normal);
+			reflect.AddMember(&CharacterControllerComponent::climbingMode, "climbingMode", "Climbing Mode", "", PhysicsControllerActorNonWalkableMode::PreventClimbingAndForceSlide);
 			reflect.AddMember(&CharacterControllerComponent::slopeLimit, "slopeLimit", "Slope Limit", "", 20.f);
 			reflect.AddMember(&CharacterControllerComponent::invisibleWallHeight, "invisibleWallHeight", "Invisible Wall Height", "", 200.f);
 			reflect.AddMember(&CharacterControllerComponent::maxJumpHeight, "maxJumpHeight", "Max Jump Height", "", 100.f);
@@ -74,7 +76,7 @@ namespace Volt
 		bool isTrigger = false;
 		AssetHandle material = Asset::Null();
 
-		bool added = false;
+		PhysicsColliderID colliderId;
 
 		inline BoxColliderComponent(const glm::vec3& aHalfSize = { 50.f, 50.f, 50.f }, const glm::vec3& aOffset = { 0.f }, bool aIsTrigger = false, AssetHandle aMaterial = Asset::Null())
 			: halfSize(aHalfSize), offset(aOffset), isTrigger(aIsTrigger), material(aMaterial)
@@ -111,7 +113,7 @@ namespace Volt
 		bool isTrigger = false;
 		AssetHandle material = Asset::Null();
 
-		bool added = false;
+		PhysicsColliderID colliderId;
 
 		inline SphereColliderComponent(float aRadius = 50.f, const glm::vec3& aOffset = { 0.f }, bool aIsTrigger = false, AssetHandle aMaterial = Asset::Null())
 			: radius(aRadius), offset(aOffset), isTrigger(aIsTrigger), material(aMaterial)
@@ -149,7 +151,7 @@ namespace Volt
 		bool isTrigger = false;
 		AssetHandle material = Asset::Null();
 
-		bool added = false;
+		PhysicsColliderID colliderId;
 
 		inline CapsuleColliderComponent(float aRadius = 50.f, float aHeight = 50.f, const glm::vec3& aOffset = { 0.f }, bool aIsTrigger = false, AssetHandle aMaterial = Asset::Null())
 			: radius(aRadius), height(aHeight), offset(aOffset), isTrigger(aIsTrigger), material(aMaterial)
@@ -188,7 +190,7 @@ namespace Volt
 		bool isConvex = true;
 		bool isTrigger = false;
 
-		bool added = false;
+		PhysicsColliderID colliderId;
 
 		inline MeshColliderComponent(AssetHandle aColliderMesh = Asset::Null(), bool aIsConvex = false, bool aIsTrigger = false, AssetHandle aMaterial = Asset::Null(), int32_t aSubMeshIndex = -1)
 			: colliderMesh(aColliderMesh), material(aMaterial), subMeshIndex(aSubMeshIndex), isConvex(aIsConvex), isTrigger(aIsTrigger)

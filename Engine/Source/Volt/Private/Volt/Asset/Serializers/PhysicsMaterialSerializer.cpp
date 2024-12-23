@@ -1,8 +1,10 @@
 #include "vtpch.h"
 #include "Volt/Asset/Serializers/PhysicsMaterialSerializer.h"
+#include "Volt/Asset/PhysicsMaterialAsset.h"
 
 #include <AssetSystem/AssetManager.h>
-#include "Volt/Physics/PhysicsMaterial.h"
+
+#include <PhysicsInterface/PhysicsMaterial.h>
 
 namespace Volt
 {
@@ -15,15 +17,15 @@ namespace Volt
 
 	void PhysicsMaterialSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
 	{
-		Ref<PhysicsMaterial> material = std::reinterpret_pointer_cast<PhysicsMaterial>(asset);
+		Ref<PhysicsMaterialAsset> material = std::reinterpret_pointer_cast<PhysicsMaterialAsset>(asset);
 
 		BinaryStreamWriter streamWriter{};
 		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), streamWriter);
 
 		PhysicsMaterialSerializationData serializationData{};
-		serializationData.staticFriction = material->staticFriction;
-		serializationData.dynamicFriction = material->dynamicFriction;
-		serializationData.bounciness = material->bounciness;
+		serializationData.staticFriction = material->m_material->GetStaticFriction();
+		serializationData.dynamicFriction = material->m_material->GetDynamicFriction();
+		serializationData.bounciness = material->m_material->GetBounciness();
 
 		streamWriter.Write(serializationData);
 
@@ -58,9 +60,9 @@ namespace Volt
 		streamReader.Read(serializationData);
 
 		Ref<PhysicsMaterial> physicsMat = std::reinterpret_pointer_cast<PhysicsMaterial>(destinationAsset);
-		physicsMat->staticFriction = serializationData.staticFriction;
-		physicsMat->dynamicFriction = serializationData.dynamicFriction;
-		physicsMat->bounciness = serializationData.bounciness;
+		physicsMat->SetStaticFriction(serializationData.staticFriction);
+		physicsMat->SetDynamicFriction(serializationData.dynamicFriction);
+		physicsMat->SetBounciness(serializationData.bounciness);
 
 		return true;
 	}

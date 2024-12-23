@@ -48,6 +48,8 @@ namespace VoltSharpmake
 				conf.AddPrivateDependency(target, gameProjectType, DependencySetting.OnlyBuildOrder);
 			}
 
+			conf.AddPrivateDependency<PhysXPhysicsInterface>(target, DependencySetting.OnlyBuildOrder);
+
 			conf.IncludePaths.Add(
                 Path.Combine(Globals.ThirdPartyDirectory ,@"nlohmann/include"),
                 Path.Combine(Globals.ThirdPartyDirectory ,@"cpp-httplib/include")

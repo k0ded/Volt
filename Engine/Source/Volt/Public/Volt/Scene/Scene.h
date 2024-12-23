@@ -25,6 +25,7 @@ namespace Volt
 
 	class Entity;
 	class RenderScene;
+	class PhysicsScene;
 
 	struct SceneSettings
 	{
@@ -124,6 +125,7 @@ namespace Volt
 		friend class SceneSerializer;
 
 		void Initialize();
+		void CreatePhysicsScene();
 
 		void IsRecursiveChildOf(Entity mainParent, Entity currentEntity, bool& outChild);
 		void ConvertToWorldSpace(Entity entity);
@@ -150,6 +152,7 @@ namespace Volt
 
 		Ref<Vision> m_visionSystem; // Needs to be of ptr type because of include loop
 		Ref<RenderScene> m_renderScene;
+		Ref<PhysicsScene> m_physicsScene;
 	};
 
 	template<typename ...T>

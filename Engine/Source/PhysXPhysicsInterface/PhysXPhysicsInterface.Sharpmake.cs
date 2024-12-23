@@ -25,6 +25,8 @@ namespace VoltSharpmake
 
             conf.AddPublicDependency<LogModule>(target);
             conf.AddPublicDependency<PhysicsInterface>(target);
+
+			conf.EventPostBuild.Add(@"copy /Y " + "\"" + conf.TargetPath + "\\" + Name + ".dll\"" + " \"" + Globals.BinariesDirectory + "\"");
 		}
     }
 }

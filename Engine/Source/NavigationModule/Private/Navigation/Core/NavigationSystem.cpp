@@ -6,10 +6,10 @@
 #include <Volt/Scene/Entity.h>
 #include <Volt/Scene/Scene.h>
 
-#include <Volt/Physics/Physics.h>
-#include <Volt/Physics/PhysicsScene.h>
-#include <Volt/Physics/PhysicsActor.h>
-#include <Volt/Physics/PhysicsControllerActor.h>
+//#include <Volt/Physics/Physics.h>
+//#include <Volt/Physics/PhysicsScene.h>
+//#include <Volt/Physics/PhysicsActor.h>
+//#include <Volt/Physics/PhysicsControllerActor.h>
 #include <Volt/Components/PhysicsComponents.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -174,36 +174,36 @@ namespace Volt
 
 		void NavigationSystem::SyncDetourPosition(Volt::Entity entity, float deltaTime)
 		{
-			auto& crowd = myNavMesh->GetCrowd();
-			auto agent = crowd->GetAgent(entity);
-
-			if (entity.HasComponent<Volt::CharacterControllerComponent>())
-			{
-				auto physicsScene = Physics::GetScene();
-
-				if (!physicsScene)
-				{
-					VT_LOG(Error, "No valid physics scene found!");
-				}
-				else
-				{
-					auto actorController = physicsScene->GetControllerActor(entity);
-
-					if (actorController)
-					{
-						//actorController->SetFootPosition(*(glm::vec3*)&agent->npos);
-						actorController->Move(*(glm::vec3*)&agent->vel * deltaTime);
-					}
-					else
-					{
-						VT_LOG(Error, "No valid actor controller found for entity {0}!", entity.GetID());
-					}
-				}
-			}
-			else
-			{
-				entity.SetPosition(*(glm::vec3*)&agent->npos);
-			}
+			//auto& crowd = myNavMesh->GetCrowd();
+			//auto agent = crowd->GetAgent(entity);
+			//
+			//if (entity.HasComponent<Volt::CharacterControllerComponent>())
+			//{
+			//	auto physicsScene = Physics::GetScene();
+			//
+			//	if (!physicsScene)
+			//	{
+			//		VT_LOG(Error, "No valid physics scene found!");
+			//	}
+			//	else
+			//	{
+			//		auto actorController = physicsScene->GetControllerActor(entity);
+			//
+			//		if (actorController)
+			//		{
+			//			//actorController->SetFootPosition(*(glm::vec3*)&agent->npos);
+			//			actorController->Move(*(glm::vec3*)&agent->vel * deltaTime);
+			//		}
+			//		else
+			//		{
+			//			VT_LOG(Error, "No valid actor controller found for entity {0}!", entity.GetID());
+			//		}
+			//	}
+			//}
+			//else
+			//{
+			//	entity.SetPosition(*(glm::vec3*)&agent->npos);
+			//}
 		}
 
 		void NavigationSystem::InitAgents()

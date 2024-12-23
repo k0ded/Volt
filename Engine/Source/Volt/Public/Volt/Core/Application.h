@@ -66,6 +66,7 @@ namespace Volt
 	class EventSystem;
 	class Input;
 	class WindowManager;
+	class PhysicsSubSystem;
 
 	namespace RHI
 	{
@@ -162,6 +163,7 @@ namespace Volt
 		PluginRegistry* m_pluginRegistry = nullptr;
 		PluginSystem* m_pluginSystem = nullptr;
 		WindowManager* m_windowManager = nullptr;
+		PhysicsSubSystem* m_physicsSubSystem = nullptr;
 
 		Scope<SteamImplementation> m_steamImplementation;
 	};

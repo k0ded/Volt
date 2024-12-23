@@ -5,7 +5,6 @@
 #include "Volt/Asset/Rendering/ShaderDefinition.h"
 
 #include "Volt/Animation/BlendSpace.h"
-#include "Volt/Physics/PhysicsMaterial.h"
 #include "Volt/Rendering/Texture/Texture2D.h"
 #include "Volt/Utility/YAMLSerializationHelpers.h"
 
@@ -383,54 +382,6 @@ namespace Volt
 		asset = CreateRef<Font>();
 		std::reinterpret_pointer_cast<Font>(asset)->Initialize(filePath);
 		return true;
-	}
-
-	bool PhysicsMaterialImporter::Load(const AssetMetadata& metadata, Ref<Asset>& asset) const
-	{
-		asset = CreateRef<PhysicsMaterial>();
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
-
-		if (!std::filesystem::exists(filePath))
-		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
-			asset->SetFlag(AssetFlag::Missing, true);
-			return false;
-		}
-
-		YAMLFileStreamReader streamReader{};
-		if (!streamReader.OpenFile(filePath))
-		{
-			VT_LOG(Error, "Failed to open file: {0}!", metadata.filePath);
-			asset->SetFlag(AssetFlag::Invalid, true);
-			return false;
-		}
-
-		Ref<PhysicsMaterial> physicsMat = std::reinterpret_pointer_cast<PhysicsMaterial>(asset);
-
-		physicsMat->staticFriction = streamReader.ReadAtKey("staticFriction", 0.1f);
-		physicsMat->dynamicFriction = streamReader.ReadAtKey("dynamicFriction", 0.1f);
-		physicsMat->bounciness = streamReader.ReadAtKey("bounciness", 0.1f);
-
-		return false;
-	}
-
-	void PhysicsMaterialImporter::Save(const AssetMetadata& metadata, const Ref<Asset>& asset) const
-	{
-		Ref<PhysicsMaterial> material = std::reinterpret_pointer_cast<PhysicsMaterial>(asset);
-
-		YAMLFileStreamWriter streamWriter{ AssetManager::GetFilesystemPath(metadata.filePath) };
-
-		streamWriter.BeginMap();
-		streamWriter.BeginMapNamned("PhysicsMaterial");
-
-		streamWriter.SetKey("staticFriction", material->staticFriction);
-		streamWriter.SetKey("dynamicFriction", material->dynamicFriction);
-		streamWriter.SetKey("bounciness", material->bounciness);
-
-		streamWriter.EndMap();
-		streamWriter.EndMap();
-
-		streamWriter.WriteToDisk();
 	}
 
 	bool BlendSpaceImporter::Load(const AssetMetadata& metadata, Ref<Asset>& asset) const

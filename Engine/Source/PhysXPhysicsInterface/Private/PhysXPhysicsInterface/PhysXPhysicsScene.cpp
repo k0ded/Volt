@@ -368,6 +368,11 @@ namespace Volt
 		m_controllerActors.erase(actorId);
 	}
 
+	void* PhysXPhysicsScene::GetHandleImpl() const
+	{
+		return m_physXScene;
+	}
+
 	bool PhysXPhysicsScene::OverlapGeometry(const glm::vec3& origin, const physx::PxGeometry& geometry, std::array<physx::PxOverlapHit, MAX_OVERLAP_COLLIDERS>& buffer, uint32_t& count, const physx::PxQueryFilterData& filterData)
 	{
 		physx::PxOverlapBuffer overlapBuffer(buffer.data(), MAX_OVERLAP_COLLIDERS);

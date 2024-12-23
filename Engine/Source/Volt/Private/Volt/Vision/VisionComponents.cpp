@@ -7,9 +7,6 @@
 #include "Volt/Scene/Scene.h"
 #include "Volt/Scene/Entity.h"
 
-#include "Volt/Physics/Physics.h"
-#include "Volt/Physics/PhysicsScene.h"
-
 #include <InputModule/Input.h>
 #include <InputModule/Events/MouseEvents.h>
 
@@ -162,7 +159,7 @@ void Volt::VisionCameraComponent::TPSController(Entity& camEntity, float aDeltaT
 		if (isColliding)
 		{
 			//Temp Vars
-			Volt::RaycastHit hit;
+			//Volt::RaycastHit hit;
 
 			glm::vec3 rayDir;
 			glm::vec3 rayFromPos;
@@ -188,19 +185,19 @@ void Volt::VisionCameraComponent::TPSController(Entity& camEntity, float aDeltaT
 			//Raycast from target to offset to know if offset is inside wall and has to be moved
 			if (rayFocalPointEnt)
 			{
-				if (Volt::Physics::GetScene()->Raycast(rayFocalPointEnt.GetPosition(), glm::normalize(dirFromTargetToOffset), glm::length(dirFromTargetToOffset) + 25, &hit, mask))
-				{
-					rayTargetPoint = rayFocalPointEnt.GetPosition() + (glm::normalize(dirFromTargetToOffset) * hit.distance) - 25.f;
-					focalTargetPoint = rayTargetPoint;
-				}
+				//if (Volt::Physics::GetScene()->Raycast(rayFocalPointEnt.GetPosition(), glm::normalize(dirFromTargetToOffset), glm::length(dirFromTargetToOffset) + 25, &hit, mask))
+				//{
+				//	rayTargetPoint = rayFocalPointEnt.GetPosition() + (glm::normalize(dirFromTargetToOffset) * hit.distance) - 25.f;
+				//	focalTargetPoint = rayTargetPoint;
+				//}
 			}
 			else
 			{
-				if (Volt::Physics::GetScene()->Raycast(target.GetPosition(), glm::normalize(dirFromTargetToOffset), glm::length(dirFromTargetToOffset) + 25, &hit, mask))
-				{
-					rayTargetPoint = target.GetPosition() + (glm::normalize(dirFromTargetToOffset) * hit.distance) - 25.f;
-					focalTargetPoint = rayTargetPoint;
-				}
+				//if (Volt::Physics::GetScene()->Raycast(target.GetPosition(), glm::normalize(dirFromTargetToOffset), glm::length(dirFromTargetToOffset) + 25, &hit, mask))
+				//{
+				//	rayTargetPoint = target.GetPosition() + (glm::normalize(dirFromTargetToOffset) * hit.distance) - 25.f;
+				//	focalTargetPoint = rayTargetPoint;
+				//}
 			}
 
 
@@ -213,17 +210,17 @@ void Volt::VisionCameraComponent::TPSController(Entity& camEntity, float aDeltaT
 
 			if (mask == 0)
 			{
-				rayHit = Volt::Physics::GetScene()->Raycast(rayFromPos, normRayDir, myMaxFocalDist + collisionRadius, &hit);
+				//rayHit = Volt::Physics::GetScene()->Raycast(rayFromPos, normRayDir, myMaxFocalDist + collisionRadius, &hit);
 			}
 			else
 			{
-				rayHit = Volt::Physics::GetScene()->Raycast(rayFromPos, normRayDir, myMaxFocalDist + collisionRadius, &hit, mask);
+				//rayHit = Volt::Physics::GetScene()->Raycast(rayFromPos, normRayDir, myMaxFocalDist + collisionRadius, &hit, mask);
 			}
 
 			if (rayHit)
 			{
 				myCurrentLerpTime = 0.f;
-				myCurrentFocalDist = glm::length(normRayDir * hit.distance) - collisionRadius;
+				//myCurrentFocalDist = glm::length(normRayDir * hit.distance) - collisionRadius;
 				myLastHitFocalDist = myCurrentFocalDist;
 			}
 			else

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Volt/Physics/PhysicsEnums.h"
-
+#include <PhysicsInterface/PhysicsTypes.h>
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
 
 namespace Volt
@@ -10,7 +9,7 @@ namespace Volt
 	{
 		struct RigidbodyComponentInternal_BodyTypeUpdated
 		{
-			BodyType bodyType;
+			PhysicsBodyType bodyType;
 		};
 
 		struct RigidbodyComponentInternal_LayerIdUpdated
@@ -126,7 +125,7 @@ namespace Volt
 	struct RigidbodyComponent
 	{
 		// #TODO_Ivar: Make private
-		BodyType m_bodyType = BodyType::Static;
+		PhysicsBodyType m_bodyType = PhysicsBodyType::Static;
 		uint32_t m_layerId = 0;
 		float m_mass = 1.f;
 		float m_linearDrag = 0.01f;
@@ -137,14 +136,16 @@ namespace Volt
 		bool m_disableGravity = false;
 		bool m_isKinematic = false;
 
-		inline RigidbodyComponent(BodyType aBodyType = BodyType::Static, uint32_t aLayerId = 0, float aMass = 1.f, float aLinearDrag = 0.01f, uint32_t aLockFlags = 0,
+		PhysicsActorID actorId;
+
+		inline RigidbodyComponent(PhysicsBodyType aBodyType = PhysicsBodyType::Static, uint32_t aLayerId = 0, float aMass = 1.f, float aLinearDrag = 0.01f, uint32_t aLockFlags = 0,
 			float aAngularDrag = 0.05f, bool aDisableGravity = false, bool aIsKinematic = false, CollisionDetectionType aCollisionType = CollisionDetectionType::Discrete)
 			: m_bodyType(aBodyType), m_layerId(aLayerId), m_mass(aMass), m_linearDrag(aLinearDrag), m_lockFlags(aLockFlags), m_angularDrag(aAngularDrag), m_collisionType(aCollisionType),
 			m_disableGravity(aDisableGravity), m_isKinematic(aIsKinematic)
 		{
 		}
 
-		VT_NODISCARD VT_INLINE BodyType GetBodyType() const { return m_bodyType; }
+		VT_NODISCARD VT_INLINE PhysicsBodyType GetBodyType() const { return m_bodyType; }
 		VT_NODISCARD VT_INLINE uint32_t GetLayerId() const { return m_layerId; }
 		VT_NODISCARD VT_INLINE float GetMass() const { return m_mass; }
 		VT_NODISCARD VT_INLINE float GetLinearDrag() const { return m_linearDrag; }
@@ -154,7 +155,7 @@ namespace Volt
 		VT_NODISCARD VT_INLINE bool GetDisableGravity() const { return m_disableGravity; }
 		VT_NODISCARD VT_INLINE bool GetIsKinematic() const { return m_isKinematic; }
 
-		template<typename EntityType> void SetBodyType(EntityType& entity, BodyType bodyType);
+		template<typename EntityType> void SetBodyType(EntityType& entity, PhysicsBodyType bodyType);
 		template<typename EntityType> void SetLayerId(EntityType& entity, uint32_t layerId);
 		template<typename EntityType> void SetMass(EntityType& entity, float mass);
 		template<typename EntityType> void SetLinearDrag(EntityType& entity, float linearDrag);
@@ -177,7 +178,7 @@ namespace Volt
 		{
 			reflect.SetGUID("{460B7722-00C0-48BE-8B3E-B549BCC9269B}"_guid);
 			reflect.SetLabel("Rigidbody Component");
-			reflect.AddMember(&RigidbodyComponent::m_bodyType, "bodyType", "Body Type", "", BodyType::Static);
+			reflect.AddMember(&RigidbodyComponent::m_bodyType, "bodyType", "Body Type", "", PhysicsBodyType::Static);
 			reflect.AddMember(&RigidbodyComponent::m_layerId, "layerId", "Layer ID", "", 0);
 			reflect.AddMember(&RigidbodyComponent::m_mass, "mass", "Mass", "", 1.f);
 			reflect.AddMember(&RigidbodyComponent::m_linearDrag, "linearDrag", "Linear Drag", "", 0.01f);
@@ -220,7 +221,7 @@ namespace Volt
 	}
 
 	template<typename EntityType>
-	inline void RigidbodyComponent::SetBodyType(EntityType& entity, BodyType bodyType)
+	inline void RigidbodyComponent::SetBodyType(EntityType& entity, PhysicsBodyType bodyType)
 	{
 		m_bodyType = bodyType;
 		GetOrCreateComponent<Internal::RigidbodyComponentInternal_BodyTypeUpdated>(entity).bodyType = bodyType;

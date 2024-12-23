@@ -3,6 +3,8 @@
 #include "PhysXPhysicsInterface/PhysXPhysicsCore.h"
 #include "PhysXPhysicsInterface/PhysXDebugger.h"
 #include "PhysXPhysicsInterface/PhysXContactListener.h"
+#include "PhysXPhysicsInterface/PhysXPhysicsScene.h"
+#include "PhysXPhysicsInterface/PhysXPhysicsMaterial.h"
 
 #include <PhysX/PxPhysicsAPI.h>
 
@@ -115,6 +117,16 @@ namespace Volt
 		m_physXDebugger = nullptr;
 
 		s_instance = nullptr;
+	}
+
+	Ref<PhysicsScene> PhysXPhysicsCore::CreateScene(const PhysicsSceneCreateInfo& createInfo) const
+	{
+		return CreateRef<PhysXPhysicsScene>(createInfo);
+	}
+
+	Ref<PhysicsMaterial> PhysXPhysicsCore::CreateMaterial(const PhysicsMaterialCreateInfo& createInfo) const
+	{
+		return CreateRef<PhysXPhysicsMaterial>(createInfo);
 	}
 }
 

@@ -6,7 +6,6 @@
 #include "Volt/Steam/SteamImplementation.h"
 #include "Volt/Rendering/Renderer.h"
 #include "Volt/Scene/SceneManager.h"
-#include "Volt/Physics/Physics.h"
 #include "Volt/Utility/Noise.h"
 #include "Volt/Utility/UIUtility.h"
 
@@ -15,6 +14,7 @@
 #include <Volt-Core/PluginSystem/PluginSystem.h>
 
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
+#include <Volt-Physics/PhysicsSubSystem.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -134,10 +134,13 @@ namespace Volt
 		m_windowManager->CreateMainWindow(windowProperties);
 
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
+		m_physicsSubSystem = SubSystemManager::GetSubSystem<PhysicsSubSystem>();
+		auto core = m_physicsSubSystem->GetPhysicsCore();
+		VT_UNUSED(core);
 
-		Physics::LoadSettings();
-		Physics::Initialize();
-		Physics::LoadLayers();
+		//Physics::LoadSettings();
+		//Physics::Initialize();
+		//Physics::LoadLayers();
 
 		//Init AudioEngine
 		{
@@ -210,9 +213,9 @@ namespace Volt
 		m_imguiImplementation = nullptr;
 		SceneManager::Shutdown();
 
-		Physics::SaveLayers();
-		Physics::Shutdown();
-		Physics::SaveSettings();
+		//Physics::SaveLayers();
+		//Physics::Shutdown();
+		//Physics::SaveSettings();
 
 		Amp::WWiseEngine::Get().TermWwise();
 

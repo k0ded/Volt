@@ -18,11 +18,16 @@ namespace Volt
 	class PhysXDebugger;
 	class PhysXContactListener;
 
+	struct PhysicsMaterialCreateInfo;
+
 	class PhysXPhysicsCore : public PhysicsCore
 	{
 	public:
 		PhysXPhysicsCore(const PhysicsCoreCreateInfo& createInfo);
 		~PhysXPhysicsCore() override;
+
+		Ref<PhysicsScene> CreateScene(const PhysicsSceneCreateInfo& createInfo) const override;
+		Ref<PhysicsMaterial> CreateMaterial(const PhysicsMaterialCreateInfo& createInfo) const override;
 
 		VT_NODISCARD VT_INLINE physx::PxPhysics& GetCore() const { return *m_physics; }
 		VT_NODISCARD VT_INLINE physx::PxDefaultCpuDispatcher* GetCPUDispatcher() const { return m_defaultCPUDispatcher; }

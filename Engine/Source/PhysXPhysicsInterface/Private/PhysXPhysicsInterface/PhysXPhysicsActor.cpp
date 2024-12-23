@@ -355,6 +355,8 @@ namespace Volt
 	
 	PhysicsColliderID PhysXPhysicsActor::AddCollider(const BoxColliderCreateInfo& createInfo)
 	{
+		VT_ENSURE(createInfo.physicalMaterial && createInfo.targetActor);
+
 		PhysicsColliderID colliderId{};
 		m_colliders[colliderId] = CreateRef<PhysXBoxColliderShape>(createInfo);
 
@@ -363,6 +365,8 @@ namespace Volt
 	
 	PhysicsColliderID PhysXPhysicsActor::AddCollider(const SphereColliderCreateInfo& createInfo)
 	{
+		VT_ENSURE(createInfo.physicalMaterial && createInfo.targetActor);
+
 		PhysicsColliderID colliderId{};
 		m_colliders[colliderId] = CreateRef<PhysXSphereColliderShape>(createInfo);
 
@@ -371,6 +375,8 @@ namespace Volt
 	
 	PhysicsColliderID PhysXPhysicsActor::AddCollider(const CapsuleColliderCreateInfo& createInfo)
 	{
+		VT_ENSURE(createInfo.physicalMaterial && createInfo.targetActor);
+
 		PhysicsColliderID colliderId{};
 		m_colliders[colliderId] = CreateRef<PhysXCapsuleColliderShape>(createInfo);
 

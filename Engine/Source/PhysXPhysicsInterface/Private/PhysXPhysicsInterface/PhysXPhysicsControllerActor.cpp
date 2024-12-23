@@ -2,11 +2,14 @@
 
 #include "PhysXPhysicsInterface/PhysXPhysicsControllerActor.h"
 #include "PhysXPhysicsInterface/PhysXUtilities.h"
+#include "PhysXPhysicsInterface/PhysXContactListener.h"
 
 #include <PhysX/PxPhysicsAPI.h>
 
 namespace Volt
 {
+	static PhysXCharacterControllerContactListener s_contactListener;
+
 	PhysXPhysicsControllerActor::PhysXPhysicsControllerActor(const PhysicsControllerActorCreateInfo& createInfo, const glm::vec3& gravity, physx::PxControllerManager* controllerManager)
 		: m_createInfo(createInfo), m_gravity(gravity.y)
 	{
@@ -131,9 +134,12 @@ namespace Volt
 			m_gravityVelocity += m_gravity * deltaTime;
 		}
 
+		auto filterData = PhysXUtilities::CreateFilterData(m_layerId, CollisionDetectionType::Continuous);
+
 		physx::PxControllerFilters filters{};
-		//filters.mCCTFilterCallback = nullptr;
-		//filters.mFilterCallback = 
+		filters.mCCTFilterCallback = nullptr;
+		filters.mFilterCallback = &s_contactListener;
+		filters.mFilterData = &filterData;
 	
 		glm::vec3 finalVelocity = m_frameMovement - glm::vec3(0.f, 1.f, 0.f) * m_gravityVelocity * deltaTime;
 

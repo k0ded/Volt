@@ -101,7 +101,7 @@ void Sandbox::OnAttach()
 	NodeEditorHelpers::Initialize();
 	IONodeGraphEditorHelpers::Initialize();
 
-	Volt::WindowManager::Get().GetMainWindow().Maximize();
+	//Volt::WindowManager::Get().GetMainWindow().Maximize();
 
 	m_editorCameraController = CreateRef<EditorCameraController>(60.f, 1.f, 100000.f);
 

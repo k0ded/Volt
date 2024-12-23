@@ -57,13 +57,4 @@ namespace Volt
 		bool Load(const AssetMetadata& metadata, Ref<Asset>& asset) const override;
 		void Save(const AssetMetadata&, const Ref<Asset>&) const override {}
 	};
-
-	class PhysicsMaterialImporter : public AssetImporter
-	{
-	public:
-		~PhysicsMaterialImporter() override = default;
-
-		bool Load(const AssetMetadata& metadata, Ref<Asset>& asset) const override;
-		void Save(const AssetMetadata& metadata, const Ref<Asset>& asset) const override;
-	};
 }

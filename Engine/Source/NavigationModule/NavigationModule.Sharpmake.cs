@@ -29,7 +29,7 @@ namespace VoltSharpmake
             conf.AddPrivateDependency<EventSystemModule>(target);
             conf.AddPrivateDependency<MosaicModule>(target);
 
-            conf.AddPrivateDependency<PhysX>(target);
+			conf.AddPrivateDependency<PhysicsInterface>(target);
 
             conf.IncludePrivatePaths.Add(Path.Combine(Globals.RootDirectory, "Volt", "Public"));
         }

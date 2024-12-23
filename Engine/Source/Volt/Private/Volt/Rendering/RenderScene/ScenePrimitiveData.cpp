@@ -36,7 +36,10 @@ namespace Volt
 		}
 
 		m_primitiveMesh = AssetManager::QueueAsset<Mesh>(description.primitiveMesh);
-		VT_ENSURE(m_primitiveMesh);
+		if (!m_primitiveMesh)
+		{
+			return;
+		}
 
 		for (uint32_t index = 0; const auto& materialHandle : description.materials)
 		{

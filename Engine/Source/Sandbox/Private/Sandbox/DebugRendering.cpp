@@ -10,8 +10,6 @@
 #include <AssetSystem/AssetManager.h>
 #include <Volt/Asset/Rendering/Material.h>
 
-#include <Volt/Physics/MeshColliderCache.h>
-
 #include <Volt/Components/RenderingComponents.h>
 #include <Volt/Components/CoreComponents.h>
 #include <Volt/Components/LightComponents.h>

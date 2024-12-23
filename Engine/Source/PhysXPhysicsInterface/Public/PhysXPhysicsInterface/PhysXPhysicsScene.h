@@ -8,8 +8,8 @@ namespace physx
 	class PxScene;
 	class PxControllerManager;
 	class PxGeometry;
-	class PxQueryFilterData;
-	class PxOverlapHit;
+	struct PxQueryFilterData;
+	struct PxOverlapHit;
 }
 
 namespace Volt
@@ -37,6 +37,9 @@ namespace Volt
 		Ref<PhysicsControllerActor> GetControllerActor(PhysicsActorID actorId) const override;
 		void RemoveControllerActor(Ref<PhysicsControllerActor> actor) override;
 		void RemoveControllerActor(PhysicsActorID actorId) override;
+
+	protected:
+		void* GetHandleImpl() const override;
 
 	private:
 		inline static constexpr uint32_t MAX_OVERLAP_COLLIDERS = 10;

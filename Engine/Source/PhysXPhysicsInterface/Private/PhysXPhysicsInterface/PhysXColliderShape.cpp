@@ -20,13 +20,13 @@ namespace Volt
 		physx::PxMaterial* pxMaterial = createInfo.physicalMaterial->GetHandle<physx::PxMaterial*>();
 
 		m_shape = physx::PxRigidActorExt::createExclusiveShape(*pxRigidActor, geometry, *pxMaterial);
-		//m_shape->setSimulationFilterData(actor.GetFilterData());
-		//m_shape->setQueryFilterData(actor.GetFilterData());
 		m_shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !createInfo.isTrigger);
 		m_shape->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, !createInfo.isTrigger);
 		m_shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, createInfo.isTrigger);
 		m_shape->setLocalPose(PhysXUtilities::ToPhysXTransform(createInfo.offset, glm::identity<glm::quat>()));
 		m_shape->userData = this;
+
+		AssignToPhysicsLayer(createInfo.targetActor->GetAssignedPhysicsLayerID());
 	}
 	
 	PhysXBoxColliderShape::~PhysXBoxColliderShape()
@@ -95,13 +95,13 @@ namespace Volt
 		physx::PxMaterial* pxMaterial = createInfo.physicalMaterial->GetHandle<physx::PxMaterial*>();
 
 		m_shape = physx::PxRigidActorExt::createExclusiveShape(*pxRigidActor, geometry, *pxMaterial);
-		//m_shape->setSimulationFilterData(actor.GetFilterData());
-		//m_shape->setQueryFilterData(actor.GetFilterData());
 		m_shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !createInfo.isTrigger);
 		m_shape->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, !createInfo.isTrigger);
 		m_shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, createInfo.isTrigger);
 		m_shape->setLocalPose(PhysXUtilities::ToPhysXTransform(createInfo.offset, glm::vec3{ 0.f }));
 		m_shape->userData = this;
+
+		AssignToPhysicsLayer(createInfo.targetActor->GetAssignedPhysicsLayerID());
 	}
 	
 	PhysXSphereColliderShape::~PhysXSphereColliderShape()
@@ -171,13 +171,13 @@ namespace Volt
 		physx::PxMaterial* pxMaterial = createInfo.physicalMaterial->GetHandle<physx::PxMaterial*>();
 
 		m_shape = physx::PxRigidActorExt::createExclusiveShape(*pxRigidActor, geometry, *pxMaterial);
-		//m_shape->setSimulationFilterData(actor.GetFilterData());
-		//m_shape->setQueryFilterData(actor.GetFilterData());
 		m_shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !createInfo.isTrigger);
 		m_shape->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, !createInfo.isTrigger);
 		m_shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, createInfo.isTrigger);
 		m_shape->setLocalPose(PhysXUtilities::ToPhysXTransform(createInfo.offset, glm::vec3{ 0.f, glm::pi<float>() / 2.f, 0.f }));
 		m_shape->userData = this;
+
+		AssignToPhysicsLayer(createInfo.targetActor->GetAssignedPhysicsLayerID());
 	}
 	
 	PhysXCapsuleColliderShape::~PhysXCapsuleColliderShape()
