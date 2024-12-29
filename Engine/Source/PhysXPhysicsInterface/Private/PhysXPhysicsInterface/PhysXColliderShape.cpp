@@ -31,11 +31,7 @@ namespace Volt
 	
 	PhysXBoxColliderShape::~PhysXBoxColliderShape()
 	{
-		if (m_shape)
-		{
-			m_shape->release();
-		}
-
+		// Note: Release not required as detach decrements the ref counter
 		m_shape = nullptr;
 	}
 	
@@ -98,7 +94,7 @@ namespace Volt
 		m_shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !createInfo.isTrigger);
 		m_shape->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, !createInfo.isTrigger);
 		m_shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, createInfo.isTrigger);
-		m_shape->setLocalPose(PhysXUtilities::ToPhysXTransform(createInfo.offset, glm::vec3{ 0.f }));
+		m_shape->setLocalPose(PhysXUtilities::ToPhysXTransform(createInfo.offset, glm::identity<glm::quat>()));
 		m_shape->userData = this;
 
 		AssignToPhysicsLayer(createInfo.targetActor->GetAssignedPhysicsLayerID());
@@ -106,11 +102,7 @@ namespace Volt
 	
 	PhysXSphereColliderShape::~PhysXSphereColliderShape()
 	{
-		if (m_shape)
-		{
-			m_shape->release();
-		}
-
+		// Note: Release not required as detach decrements the ref counter
 		m_shape = nullptr;
 	}
 	
@@ -174,7 +166,7 @@ namespace Volt
 		m_shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, !createInfo.isTrigger);
 		m_shape->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, !createInfo.isTrigger);
 		m_shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, createInfo.isTrigger);
-		m_shape->setLocalPose(PhysXUtilities::ToPhysXTransform(createInfo.offset, glm::vec3{ 0.f, glm::pi<float>() / 2.f, 0.f }));
+		m_shape->setLocalPose(PhysXUtilities::ToPhysXTransform(createInfo.offset, glm::rotate(glm::identity<glm::quat>(), glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f))));
 		m_shape->userData = this;
 
 		AssignToPhysicsLayer(createInfo.targetActor->GetAssignedPhysicsLayerID());
@@ -182,11 +174,7 @@ namespace Volt
 	
 	PhysXCapsuleColliderShape::~PhysXCapsuleColliderShape()
 	{
-		if (m_shape)
-		{
-			m_shape->release();
-		}
-
+		// Note: Release not required as detach decrements the ref counter
 		m_shape = nullptr;
 	}
 	
@@ -202,7 +190,7 @@ namespace Volt
 	void PhysXCapsuleColliderShape::SetOffset(const glm::vec3& offset)
 	{
 		m_createInfo.offset = offset;
-		m_shape->setLocalPose(PhysXUtilities::ToPhysXTransform(m_createInfo.offset, glm::vec3{ 0.f, glm::pi<float>() / 2.f, 0.f }));
+		m_shape->setLocalPose(PhysXUtilities::ToPhysXTransform(m_createInfo.offset, glm::rotate(glm::identity<glm::quat>(), glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f))));
 	}
 	
 	void PhysXCapsuleColliderShape::SetScale(const glm::vec3& scale)

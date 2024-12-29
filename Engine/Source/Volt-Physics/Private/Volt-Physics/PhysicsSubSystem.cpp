@@ -4,6 +4,7 @@
 
 #include <Volt-Core/DynamicLibraryManager.h>
 
+#include <PhysicsInterface/PhysicsLayerManager.h>
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 
 namespace Volt
@@ -13,6 +14,7 @@ namespace Volt
 	void PhysicsSubSystem::Initialize()
 	{
 		LoadPhysicsInterface();
+		InitializePhysicsLayers();
 
 		PhysicsCoreCreateInfo coreCreateInfo{};
 		coreCreateInfo.allowDebugging = true;
@@ -45,5 +47,10 @@ namespace Volt
 
 		m_physicsCoreCreateFunc = reinterpret_cast<PFN_CreatePhysicsCore>(VT_GET_PROC_ADDRESS(libHandle, PHYSICS_CREATE_CORE_FUNC_NAME));
 		m_physicsCoreDestroyFunc = reinterpret_cast<PFN_DestroyPhysicsCore>(VT_GET_PROC_ADDRESS(libHandle, PHYSICS_DESTROY_CORE_FUNC_NAME));
+	}
+
+	void PhysicsSubSystem::InitializePhysicsLayers()
+	{
+		g_physicsLayerManager.AddLayer("Default");
 	}
 }

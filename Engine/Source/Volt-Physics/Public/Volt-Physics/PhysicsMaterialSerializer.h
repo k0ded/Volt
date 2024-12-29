@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Volt/Asset/AssetTypes.h"
+#include "Volt-Physics/PhysicsMaterialAsset.h"
 
 #include <AssetSystem/Serialization/AssetSerializer.h>
 #include <AssetSystem/AssetSerializerRegistry.h>

@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Volt-Physics/Config.h"
+#include "Volt-Physics/PhysicsEnumComponentDefinitions.h"
+
 #include <PhysicsInterface/PhysicsTypes.h>
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
 
@@ -121,7 +124,7 @@ namespace Volt
 		{
 		};
 	}
-	
+
 	struct RigidbodyComponent
 	{
 		// #TODO_Ivar: Make private
@@ -204,9 +207,9 @@ namespace Volt
 			::With<RigidbodyComponent>
 			::As<ECS::Type::Entity>;
 
-		static void OnCreate(PhysicsEntity entity);
-		static void OnDestroy(PhysicsEntity entity);
-		static void OnTransformChanged(PhysicsTransformEntity entity);
+		VTP_API static void OnCreate(PhysicsEntity entity);
+		VTP_API static void OnDestroy(PhysicsEntity entity);
+		VTP_API static void OnTransformChanged(PhysicsTransformEntity entity);
 	};
 
 	template<typename T, typename EntityType>
@@ -254,27 +257,27 @@ namespace Volt
 		m_lockFlags = lockFlags;
 		GetOrCreateComponent<Internal::RigidbodyComponentInternal_LockFlagsUpdated>(entity).lockFlags = lockFlags;
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::SetAngularDrag(EntityType& entity, float angularDrag)
 	{
 		m_angularDrag = angularDrag;
 		GetOrCreateComponent<Internal::RigidbodyComponentInternal_AngularDragUpdated>(entity).angularDrag = angularDrag;
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::SetCollisionDetectionType(EntityType& entity, CollisionDetectionType detectionType)
 	{
 		m_collisionType = detectionType;
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::SetDisableGravity(EntityType& entity, bool state)
 	{
 		m_disableGravity = state;
 		GetOrCreateComponent<Internal::RigidbodyComponentInternal_DisableGravityUpdated>(entity).disableGravity = state;
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::SetIsKinematic(EntityType& entity, bool state)
 	{
@@ -289,31 +292,31 @@ namespace Volt
 		comp.translation = translation;
 		comp.rotation = rotation;
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::SetLinearVelocity(EntityType& entity, const glm::vec3& velocity)
 	{
 		GetOrCreateComponent<Internal::RigidbodyComponentInternal_SetLinearVelocity>(entity).velocity = velocity;
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::SetAngularVelocity(EntityType& entity, const glm::vec3& velocity)
 	{
 		GetOrCreateComponent<Internal::RigidbodyComponentInternal_SetAngularVelocity>(entity).velocity = velocity;
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::SetMaxLinearVelocity(EntityType& entity, float velocity)
 	{
 		GetOrCreateComponent<Internal::RigidbodyComponentInternal_SetMaxLinearVelocity>(entity).velocity = velocity;
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::SetMaxAngularVelocity(EntityType& entity, float velocity)
 	{
 		GetOrCreateComponent<Internal::RigidbodyComponentInternal_SetMaxAngularVelocity>(entity).velocity = velocity;
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::AddForce(EntityType& entity, const glm::vec3& force, ForceMode forceMode)
 	{
@@ -334,7 +337,7 @@ namespace Volt
 			GetOrCreateComponent<Internal::RigidbodyComponentInternal_AddForce_Acceleration>(entity).force += force;
 		}
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::AddTorque(EntityType& entity, const glm::vec3& torque, ForceMode forceMode)
 	{
@@ -355,13 +358,13 @@ namespace Volt
 			GetOrCreateComponent<Internal::RigidbodyComponentInternal_AddTorque_Acceleration>(entity).torque += torque;
 		}
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::WakeUp(EntityType& entity)
 	{
 		GetOrCreateComponent<Internal::RigidbodyComponentInternal_WakeUp>(entity);
 	}
-	
+
 	template<typename EntityType>
 	inline void RigidbodyComponent::PutToSleep(EntityType& entity)
 	{

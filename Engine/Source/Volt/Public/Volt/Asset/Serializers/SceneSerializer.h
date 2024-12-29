@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Volt/Asset/AssetTypes.h"
+#include <Volt-Core/AssetTypes.h>
 #include "Volt/Scene/Entity.h"
 
 #include <AssetSystem/Serialization/AssetSerializer.h>

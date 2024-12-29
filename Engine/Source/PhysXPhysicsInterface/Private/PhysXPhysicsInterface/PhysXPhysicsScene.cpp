@@ -5,6 +5,7 @@
 #include "PhysXPhysicsInterface/PhysXPhysicsCore.h"
 #include "PhysXPhysicsInterface/PhysXPhysicsActor.h"
 #include "PhysXPhysicsInterface/PhysXPhysicsControllerActor.h"
+#include "PhysXPhysicsInterface/PhysXDebugger.h"
 
 #include <PhysX/PxPhysicsAPI.h>
 
@@ -39,12 +40,9 @@ namespace Volt
 	PhysXPhysicsScene::PhysXPhysicsScene(const PhysicsSceneCreateInfo& createInfo)
 		: m_createInfo(createInfo), m_subStepper(createInfo.fixedTimestep)
 	{
-		physx::PxTolerancesScale tolerances{};
-		tolerances.length = 100;
-		tolerances.speed = 1000;
-
-		physx::PxSceneDesc sceneDesc{ tolerances };
+		physx::PxSceneDesc sceneDesc{ PhysXPhysicsCore::GetInstance()->GetCore().getTolerancesScale() };
 		sceneDesc.flags |= physx::PxSceneFlag::eENABLE_CCD | physx::PxSceneFlag::eENABLE_PCM;
+		sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ENHANCED_DETERMINISM;
 		sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 
 		sceneDesc.gravity = PhysXUtilities::ToPhysXVector(createInfo.gravity);
@@ -63,6 +61,9 @@ namespace Volt
 		if (createInfo.debugType != DebugType::None)
 		{
 			m_physXScene->getScenePvdClient()->setScenePvdFlags(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS | physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES | physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS);
+			m_debugger = CreateScope<PhysXDebugger>(PhysXPhysicsCore::GetInstance()->GetFoundation());
+
+			m_debugger->StartDebugging(std::filesystem::current_path(), createInfo.debugType == DebugType::LiveDebug);
 		}
 
 		if (createInfo.broadphaseType != BroadphaseType::AutomaticBoxPrune)
@@ -82,6 +83,11 @@ namespace Volt
 
 	PhysXPhysicsScene::~PhysXPhysicsScene()
 	{
+		if (m_debugger)
+		{
+			m_debugger->StopDebugging();
+		}
+
 		if (m_controllerManager)
 		{
 			m_controllerManager->release();
@@ -124,7 +130,7 @@ namespace Volt
 					updatedActors[i] = actor->shared_from_this();
 				}
 
-				m_createInfo.physicsSceneAdvancedCallback(updatedActors);
+				m_createInfo.physicsSceneAdvancedCallback(updatedActors, m_createInfo.fixedTimestep);
 			}
 		}
 

@@ -14,6 +14,8 @@ namespace physx
 
 namespace Volt
 {
+	class PhysXDebugger;
+
 	class PhysXPhysicsScene : public PhysicsScene
 	{
 	public:
@@ -56,6 +58,8 @@ namespace Volt
 
 		physx::PxScene* m_physXScene = nullptr;
 		physx::PxControllerManager* m_controllerManager = nullptr;
+
+		Scope<PhysXDebugger> m_debugger;
 
 		bool m_isSimulating = false;
 		Vector<std::function<void()>> m_executionQueue;

@@ -4,11 +4,12 @@
 
 #include <Volt/Utility/UIUtility.h>
 #include <Volt/Core/Application.h>
-#include <Volt/Components/PhysicsComponents.h>
 #include <Volt/Vision/VisionTrigger.h>
 #include <Volt/Vision/Vision.h>
 
 #include <Volt/Rendering/Camera/Camera.h>
+
+#include <Volt-Physics/Components.h>
 
 #include <CoreUtilities/Random.h>
 

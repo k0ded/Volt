@@ -29,7 +29,10 @@ namespace Volt
 			result[i] = reinterpret_cast<PhysicsActor*>(actors[i]->userData)->shared_from_this();
 		}
 
-		m_contactListener->OnWake(result);
+		if (m_contactListener)
+		{
+			m_contactListener->OnWake(result);
+		}
 	}
 	
 	void PhysXContactListener::onSleep(physx::PxActor** actors, physx::PxU32 count)
@@ -41,7 +44,10 @@ namespace Volt
 			result[i] = reinterpret_cast<PhysicsActor*>(actors[i]->userData)->shared_from_this();
 		}
 
-		m_contactListener->OnSleep(result);
+		if (m_contactListener)
+		{
+			m_contactListener->OnSleep(result);
+		}
 	}
 	
 	void PhysXContactListener::onContact(const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs)
@@ -70,7 +76,10 @@ namespace Volt
 			header.contactType = PhysicsContactType::LostTouch;
 		}
 
-		m_contactListener->OnContact(header);
+		if (m_contactListener)
+		{
+			m_contactListener->OnContact(header);
+		}
 	}
 	
 	void PhysXContactListener::onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count)
@@ -108,7 +117,10 @@ namespace Volt
 				header.triggerType = PhysicsTriggerType::ExitTrigger;
 			}
 
-			m_contactListener->OnTrigger(header);
+			if (m_contactListener)
+			{
+				m_contactListener->OnTrigger(header);
+			}
 		}
 	}
 	

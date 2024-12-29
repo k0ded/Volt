@@ -6,8 +6,10 @@
 #include "Volt/Components/AudioComponents.h"
 #include "Volt/Components/LightComponents.h"
 #include "Volt/Components/RenderingComponents.h"
-#include "Volt/Physics/RigidbodyComponent.h"
-#include "Volt/Components/PhysicsComponents.h"
+
+#include <Volt-Physics/RigidbodyComponent.h>
+#include <Volt-Physics/Components.h>
+#include <Volt-Physics/EntityPhysicsScene.h>
 
 #include "Volt/Animation/AnimationManager.h"
 
@@ -20,8 +22,6 @@
 #include "Volt/Vision/Vision.h"
 
 #include <SubSystem/SubSystemManager.h>
-
-#include <Volt-Physics/PhysicsSubSystem.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -68,7 +68,7 @@ namespace Volt
 		m_entityScene.OnRuntimeEnd();
 		m_isPlaying = false;
 
-		m_physicsScene = nullptr;
+		m_entityPhysicsScene = nullptr;
 	}
 
 	void Scene::OnSimulationStart()
@@ -78,7 +78,7 @@ namespace Volt
 
 	void Scene::OnSimulationEnd()
 	{
-		m_physicsScene = nullptr;
+		m_entityPhysicsScene = nullptr;
 	}
 
 	void Scene::Update(float aDeltaTime)
@@ -89,7 +89,7 @@ namespace Volt
 		m_entityScene.Update(aDeltaTime);
 
 		AnimationManager::Update(aDeltaTime);
-		m_physicsScene->Simulate(aDeltaTime);
+		m_entityPhysicsScene->Update(aDeltaTime);
 		m_visionSystem->Update(aDeltaTime);
 
 		m_timeSinceStart += aDeltaTime;
@@ -127,7 +127,7 @@ namespace Volt
 
 	void Scene::UpdateSimulation(float aDeltaTime)
 	{
-		m_physicsScene->Simulate(aDeltaTime);
+		m_entityPhysicsScene->Update(aDeltaTime);
 		m_statistics.entityCount = m_entityScene.GetEntityAliveCount();
 	}
 
@@ -370,107 +370,7 @@ namespace Volt
 
 	void Scene::CreatePhysicsScene()
 	{
-		auto physicsCore = SubSystemManager::GetSubSystem<PhysicsSubSystem>()->GetPhysicsCore();
-
-		PhysicsSceneCreateInfo sceneCreateInfo{};
-		m_physicsScene = physicsCore->CreateScene(sceneCreateInfo);
-
-		auto& registry = m_entityScene.GetRegistry();
-
-		// Rigid bodies
-		{
-			auto view = registry.view<const TagComponent, RigidbodyComponent>();
-			view.each([&](const entt::entity id, const TagComponent& tag, RigidbodyComponent& rigidbody) 
-			{
-				auto entity = m_entityScene.GetEntityHelperFromEntityHandle(id);
-
-				PhysicsActorCreateInfo createInfo{};
-				createInfo.initialPosition = entity.GetPosition();
-				createInfo.initialRotation = entity.GetRotation();
-				createInfo.bodyType = rigidbody.GetBodyType();
-				createInfo.collisionDetectionType = rigidbody.GetCollisionDetectionType();
-				createInfo.lockFlags = static_cast<PhysicsActorLockFlags>(rigidbody.GetLockFlags());
-				createInfo.layerId = rigidbody.GetLayerId();
-				createInfo.mass = rigidbody.GetMass();
-				createInfo.linearDrag = rigidbody.GetLinearDrag();
-				createInfo.angularDrag = rigidbody.GetAngularDrag();
-				createInfo.debugName = tag.tag;
-
-				auto physicsActor = m_physicsScene->CreateActor(createInfo);
-
-				rigidbody.actorId = physicsActor->GetID();
-
-				if (entity.HasComponent<BoxColliderComponent>())
-				{
-					auto& boxComp = entity.GetComponent<BoxColliderComponent>();
-
-					BoxColliderCreateInfo colliderCreateInfo{};
-					colliderCreateInfo.halfSize = boxComp.halfSize;
-					colliderCreateInfo.isTrigger = boxComp.isTrigger;
-					colliderCreateInfo.offset = boxComp.offset;
-					colliderCreateInfo.scale = entity.GetScale();
-					colliderCreateInfo.targetActor = physicsActor.get();
-					colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
-
-					boxComp.colliderId = physicsActor->AddCollider(colliderCreateInfo);
-				}
-
-				if (entity.HasComponent<SphereColliderComponent>())
-				{
-					auto& sphereComp = entity.GetComponent<SphereColliderComponent>();
-
-					SphereColliderCreateInfo colliderCreateInfo{};
-					colliderCreateInfo.radius = sphereComp.radius;
-					colliderCreateInfo.isTrigger = sphereComp.isTrigger;
-					colliderCreateInfo.offset = sphereComp.offset;
-					colliderCreateInfo.scale = entity.GetScale();
-					colliderCreateInfo.targetActor = physicsActor.get();
-					colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
-
-					sphereComp.colliderId = physicsActor->AddCollider(colliderCreateInfo);
-				}
-
-				if (entity.HasComponent<CapsuleColliderComponent>())
-				{
-					auto& capsuleComp = entity.GetComponent<CapsuleColliderComponent>();
-
-					CapsuleColliderCreateInfo colliderCreateInfo{};
-					colliderCreateInfo.height = capsuleComp.height;
-					colliderCreateInfo.radius = capsuleComp.radius;
-					colliderCreateInfo.isTrigger = capsuleComp.isTrigger;
-					colliderCreateInfo.offset = capsuleComp.offset;
-					colliderCreateInfo.scale = entity.GetScale();
-					colliderCreateInfo.targetActor = physicsActor.get();
-					colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
-
-					capsuleComp.colliderId = physicsActor->AddCollider(colliderCreateInfo);
-				}
-			});
-		}
-
-		// Character controller
-		{
-			auto view = registry.view<const TagComponent, CharacterControllerComponent>();
-			view.each([&](const entt::entity id, const TagComponent& tag, CharacterControllerComponent& comp)
-			{
-				auto entity = m_entityScene.GetEntityHelperFromEntityHandle(id);
-
-				PhysicsControllerActorCreateInfo createInfo{};
-				createInfo.initialPosition = entity.GetPosition();
-				createInfo.slopeLimitDegrees = comp.slopeLimit;
-				createInfo.invisibleWallHeight = comp.invisibleWallHeight;
-				createInfo.maxJumpHeight = comp.maxJumpHeight;
-				createInfo.contactOffset = comp.contactOffset;
-				createInfo.stepOffset = comp.stepOffset;
-				createInfo.density = comp.density;
-				createInfo.layerId = comp.layer;
-				createInfo.disableGravity = !comp.hasGravity;
-				createInfo.nonWalkableMode = comp.climbingMode;
-				createInfo.debugName = tag.tag;
-
-				comp.actorId = m_physicsScene->CreateControllerActor(createInfo)->GetID();
-			});
-		}
+		m_entityPhysicsScene = CreateScope<EntityPhysicsScene>(m_entityScene);
 	}
 
 	bool Scene::IsRelatedTo(Entity entity, Entity otherEntity)

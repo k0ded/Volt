@@ -1,61 +1,15 @@
-#include "vtpch.h"
-#include "Volt/Components/PhysicsComponents.h"
+#include "vppch.h"
 
-#include "Volt/Scene/SceneManager.h"
-#include "Volt/Scene/Entity.h"
-
-#include "Volt/Physics/RigidbodyComponent.h"
+#include "Volt-Physics/Components.h"
 
 namespace Volt
 {
-	void RigidbodyComponent::OnCreate(PhysicsEntity entity)
-	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
-
-		//auto sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
-		//Physics::CreateActor(sceneEntity);
-	}
-
-	void RigidbodyComponent::OnDestroy(PhysicsEntity entity)
-	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
-
-		//auto sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
-		//auto actor = Physics::GetScene()->GetActor(sceneEntity);
-		//if (actor)
-		//{
-		//	Physics::GetScene()->RemoveActor(actor);
-		//}
-	}
-
-	void RigidbodyComponent::OnTransformChanged(PhysicsTransformEntity entity)
-	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
-
-		//auto sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
-		//auto actor = Physics::GetScene()->GetActor(sceneEntity);
-		//if (actor)
-		//{
-		//	actor->SetPosition(entity.GetPosition(), true, false);
-		//	actor->SetRotation(entity.GetRotation(), true, false);
-		//}
-	}
-
 	void CharacterControllerComponent::OnCreate(PhysicsEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//Entity sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
 		//Physics::CreateControllerActor(sceneEntity);
@@ -63,10 +17,10 @@ namespace Volt
 
 	void CharacterControllerComponent::OnDestroy(PhysicsEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//Entity sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
 		//auto actor = Physics::GetScene()->GetControllerActor(sceneEntity);
@@ -78,10 +32,10 @@ namespace Volt
 
 	void CharacterControllerComponent::OnTransformChanged(PhysicsTransformEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//Entity sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
 		//auto actor = Physics::GetScene()->GetControllerActor(sceneEntity);
@@ -93,10 +47,10 @@ namespace Volt
 
 	void BoxColliderComponent::OnCreate(PhysicsEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//auto& component = entity.GetComponent<BoxColliderComponent>();
 		//
@@ -111,10 +65,10 @@ namespace Volt
 
 	void BoxColliderComponent::OnDestroy(PhysicsEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//Entity sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
 		//auto actor = Physics::GetScene()->GetActor(sceneEntity);
@@ -127,10 +81,10 @@ namespace Volt
 
 	void SphereColliderComponent::OnCreate(PhysicsEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//auto& component = entity.GetComponent<SphereColliderComponent>();
 		//
@@ -145,10 +99,10 @@ namespace Volt
 
 	void SphereColliderComponent::OnDestroy(PhysicsEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//Entity sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
 		//auto actor = Physics::GetScene()->GetActor(sceneEntity);
@@ -161,10 +115,10 @@ namespace Volt
 
 	void CapsuleColliderComponent::OnCreate(PhysicsEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//auto& component = entity.GetComponent<CapsuleColliderComponent>();
 		//
@@ -179,10 +133,10 @@ namespace Volt
 
 	void CapsuleColliderComponent::OnDestroy(PhysicsEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//Entity sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
 		//auto actor = Physics::GetScene()->GetActor(sceneEntity);
@@ -195,10 +149,10 @@ namespace Volt
 
 	void MeshColliderComponent::OnCreate(PhysicsEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//auto& component = entity.GetComponent<MeshColliderComponent>();
 		//
@@ -213,10 +167,10 @@ namespace Volt
 
 	void MeshColliderComponent::OnDestroy(PhysicsEntity entity)
 	{
-		if (!SceneManager::IsPlaying())
-		{
-			return;
-		}
+		//if (!SceneManager::IsPlaying())
+		//{
+		//	return;
+		//}
 
 		//auto& component = entity.GetComponent<MeshColliderComponent>();
 		//

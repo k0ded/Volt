@@ -21,6 +21,7 @@ namespace Volt
 	
 	private:
 		void LoadPhysicsInterface();
+		void InitializePhysicsLayers();
 		
 		typedef PhysicsCore*(*PFN_CreatePhysicsCore)(const PhysicsCoreCreateInfo& createInfo);
 		typedef void(*PFN_DestroyPhysicsCore)(PhysicsCore* core);

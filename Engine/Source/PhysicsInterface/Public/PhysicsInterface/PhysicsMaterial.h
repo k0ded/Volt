@@ -8,7 +8,7 @@ namespace Volt
 	{
 		float staticFriction = 0.1f;
 		float dynamicFriction = 0.1f;
-		float bounciness = 1.f;
+		float bounciness = 0.3f;
 	};
 
 	class PhysicsMaterial : public PhysicsHandleType

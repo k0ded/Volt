@@ -15,7 +15,7 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
 
-            conf.SolutionFolder = "Engine";
+            conf.SolutionFolder = "Engine/Modules";
 
             conf.PrecompHeader = "nvpch.h";
             conf.PrecompSource = "nvpch.cpp";
@@ -25,9 +25,11 @@ namespace VoltSharpmake
             conf.AddPrivateDependency<LogModule>(target);
             conf.AddPrivateDependency<AssetSystemModule>(target);
             conf.AddPrivateDependency<EntitySystemModule>(target);
-            conf.AddPrivateDependency<VoltRenderCore>(target);
             conf.AddPrivateDependency<EventSystemModule>(target);
             conf.AddPrivateDependency<MosaicModule>(target);
+
+			conf.AddPrivateDependency<VoltRenderCore>(target);
+			conf.AddPrivateDependency<VoltCore>(target);
 
 			conf.AddPrivateDependency<PhysicsInterface>(target);
 

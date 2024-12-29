@@ -6,6 +6,8 @@
 #include "PhysicsInterface/PhysicsIDType.h"
 #include "PhysicsInterface/PhysicsLayer.h"
 
+#include <CoreUtilities/Math/TQS.h>
+
 #include <glm/glm.hpp>
 
 namespace Volt
@@ -65,6 +67,7 @@ namespace Volt
 		virtual float GetMass() const = 0;
 		virtual glm::vec3 GetKinematicTargetPosition() const = 0;
 		virtual glm::quat GetKinematicTargetRotation() const = 0;
+		virtual TQS GetTransform() const = 0;
 		virtual CollisionDetectionType GetCollisionDetectionType() const = 0;
 
 		virtual void AddForce(const glm::vec3& force, ForceMode forceMode) = 0;

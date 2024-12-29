@@ -30,6 +30,6 @@ namespace Volt
 		}
 
 		m_numSubSteps = std::min(static_cast<uint32_t>(m_accumulator / m_subStepSize), m_maxSubSteps);
-		m_accumulator -= static_cast<float>(m_numSubSteps * m_subStepSize);
+		m_accumulator -= static_cast<float>(m_numSubSteps) * m_subStepSize;
 	}
 }

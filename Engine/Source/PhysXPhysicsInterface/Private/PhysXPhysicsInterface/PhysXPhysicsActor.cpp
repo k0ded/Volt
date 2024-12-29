@@ -22,8 +22,9 @@ namespace Volt
 	{
 		for (const auto& [id, collider] : m_colliders)
 		{
-			RemoveCollider(id);
+			collider->DetachFromActor();
 		}
+		m_colliders.clear();
 
 		if (m_rigidActor)
 		{
@@ -328,6 +329,17 @@ namespace Volt
 	{
 		return m_createInfo.collisionDetectionType;
 	}
+
+	TQS PhysXPhysicsActor::GetTransform() const
+	{
+		physx::PxTransform actorPose = m_rigidActor->getGlobalPose();
+
+		TQS result;
+		result.translation = PhysXUtilities::FromPhysXVector(actorPose.p);
+		result.rotation = PhysXUtilities::FromPhysXQuat(actorPose.q);
+
+		return result;
+	}
 	
 	void PhysXPhysicsActor::AddForce(const glm::vec3& force, ForceMode forceMode)
 	{
@@ -360,6 +372,11 @@ namespace Volt
 		PhysicsColliderID colliderId{};
 		m_colliders[colliderId] = CreateRef<PhysXBoxColliderShape>(createInfo);
 
+		if (m_createInfo.bodyType == PhysicsBodyType::Dynamic)
+		{
+			SetMass(m_createInfo.mass);
+		}
+
 		return colliderId;
 	}
 	
@@ -370,6 +387,11 @@ namespace Volt
 		PhysicsColliderID colliderId{};
 		m_colliders[colliderId] = CreateRef<PhysXSphereColliderShape>(createInfo);
 
+		if (m_createInfo.bodyType == PhysicsBodyType::Dynamic)
+		{
+			SetMass(m_createInfo.mass);
+		}
+
 		return colliderId;
 	}
 	
@@ -379,6 +401,11 @@ namespace Volt
 
 		PhysicsColliderID colliderId{};
 		m_colliders[colliderId] = CreateRef<PhysXCapsuleColliderShape>(createInfo);
+
+		if (m_createInfo.bodyType == PhysicsBodyType::Dynamic)
+		{
+			SetMass(m_createInfo.mass);
+		}
 
 		return colliderId;
 	}

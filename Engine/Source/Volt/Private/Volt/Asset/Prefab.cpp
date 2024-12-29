@@ -2,8 +2,9 @@
 #include "Volt/Asset/Prefab.h"
 
 #include "Volt/Components/CoreComponents.h"
-#include "Volt/Components/PhysicsComponents.h"
-#include "Volt/Physics/RigidbodyComponent.h"
+
+#include <Volt-Physics/RigidbodyComponent.h>
+#include <Volt-Physics/Components.h>
 
 #include "Volt/Scene/Scene.h"
 

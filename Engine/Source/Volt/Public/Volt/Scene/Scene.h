@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Volt/Asset/AssetTypes.h"
+#include <Volt-Core/AssetTypes.h>
 
 #include "Volt/Particles/ParticleSystem.h"
 #include "Volt/Audio/AudioSystem.h"
@@ -25,7 +25,7 @@ namespace Volt
 
 	class Entity;
 	class RenderScene;
-	class PhysicsScene;
+	class EntityPhysicsScene;
 
 	struct SceneSettings
 	{
@@ -152,7 +152,7 @@ namespace Volt
 
 		Ref<Vision> m_visionSystem; // Needs to be of ptr type because of include loop
 		Ref<RenderScene> m_renderScene;
-		Ref<PhysicsScene> m_physicsScene;
+		Scope<EntityPhysicsScene> m_entityPhysicsScene;
 	};
 
 	template<typename ...T>

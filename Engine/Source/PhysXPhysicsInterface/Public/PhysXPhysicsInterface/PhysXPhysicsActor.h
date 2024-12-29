@@ -48,6 +48,7 @@ namespace Volt
 		glm::quat GetKinematicTargetRotation() const override;
 		PhysicsActorID GetID() const override;
 		CollisionDetectionType GetCollisionDetectionType() const override;
+		TQS GetTransform() const override;
 
 		void AddForce(const glm::vec3& force, ForceMode forceMode) override;
 		void AddTorque(const glm::vec3& torque, ForceMode forceMode) override;

@@ -1,5 +1,5 @@
-#include "vtpch.h"
-#include "Volt/Asset/AssetTypes.h"
+#include "vtcorepch.h"
+#include "Volt-Core/AssetTypes.h"
 
 VT_REGISTER_ASSET_TYPE(AnimatedCharacter);
 VT_REGISTER_ASSET_TYPE(Animation);
@@ -16,7 +16,6 @@ VT_REGISTER_ASSET_TYPE(Texture);
 VT_REGISTER_ASSET_TYPE(PostProcessingMaterial);
 VT_REGISTER_ASSET_TYPE(Timeline);
 VT_REGISTER_ASSET_TYPE(NavMesh);
-VT_REGISTER_ASSET_TYPE(PhysicsMaterial);
 VT_REGISTER_ASSET_TYPE(NetContract);
 VT_REGISTER_ASSET_TYPE(TextureSource);
 VT_REGISTER_ASSET_TYPE(ShaderDefinition);

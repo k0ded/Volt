@@ -1,6 +1,9 @@
 #pragma once
 
-#include "Volt/Asset/AssetTypes.h"
+#include "Volt-Physics/PhysicsMaterialAsset.h"
+#include "Volt-Physics/Config.h"
+
+#include <Volt-Core/AssetTypes.h>
 
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
 #include <PhysicsInterface/PhysicsTypes.h>
@@ -30,9 +33,9 @@ namespace Volt
 			float aContactOffset, float aStepOffset, float aDensity, uint32_t aLayer, bool aHasGravity)
 			: climbingMode(aClimbingMode), slopeLimit(aSlopeLimit), invisibleWallHeight(aInvisibleWallHeight), maxJumpHeight(aMaxJumpHeight), contactOffset(aContactOffset),
 			stepOffset(aStepOffset), density(aDensity), layer(aLayer), hasGravity(aHasGravity)
-		{ 
+		{
 			layer = aLayer;
-		} 
+		}
 
 		static void ReflectType(TypeDesc<CharacterControllerComponent>& reflect)
 		{
@@ -64,9 +67,9 @@ namespace Volt
 			::With<CharacterControllerComponent>
 			::As<ECS::Type::Entity>;
 
-		static void OnCreate(PhysicsEntity entity);
-		static void OnDestroy(PhysicsEntity entity);
-		static void OnTransformChanged(PhysicsTransformEntity entity);
+		VTP_API static void OnCreate(PhysicsEntity entity);
+		VTP_API static void OnDestroy(PhysicsEntity entity);
+		VTP_API static void OnTransformChanged(PhysicsTransformEntity entity);
 	};
 
 	struct BoxColliderComponent
@@ -102,8 +105,8 @@ namespace Volt
 			::Write<BoxColliderComponent>
 			::As<ECS::Type::Entity>;
 
-		static void OnCreate(PhysicsEntity entity);
-		static void OnDestroy(PhysicsEntity entity);
+		VTP_API static void OnCreate(PhysicsEntity entity);
+		VTP_API static void OnDestroy(PhysicsEntity entity);
 	};
 
 	struct SphereColliderComponent
@@ -133,14 +136,14 @@ namespace Volt
 		}
 
 		REGISTER_COMPONENT(SphereColliderComponent);
-	
+
 	private:
 		using PhysicsEntity = ECS::Access
 			::Write<SphereColliderComponent>
 			::As<ECS::Type::Entity>;
 
-		static void OnCreate(PhysicsEntity entity);
-		static void OnDestroy(PhysicsEntity entity);
+		VTP_API static void OnCreate(PhysicsEntity entity);
+		VTP_API static void OnDestroy(PhysicsEntity entity);
 	};
 
 	struct CapsuleColliderComponent
@@ -178,8 +181,8 @@ namespace Volt
 			::Write<CapsuleColliderComponent>
 			::As<ECS::Type::Entity>;
 
-		static void OnCreate(PhysicsEntity entity);
-		static void OnDestroy(PhysicsEntity entity);
+		VTP_API static void OnCreate(PhysicsEntity entity);
+		VTP_API static void OnDestroy(PhysicsEntity entity);
 	};
 
 	struct MeshColliderComponent
@@ -217,7 +220,7 @@ namespace Volt
 			::Write<MeshColliderComponent>
 			::As<ECS::Type::Entity>;
 
-		static void OnCreate(PhysicsEntity entity);
-		static void OnDestroy(PhysicsEntity entity);
+		VTP_API static void OnCreate(PhysicsEntity entity);
+		VTP_API static void OnDestroy(PhysicsEntity entity);
 	};
 }

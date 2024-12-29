@@ -1,6 +1,6 @@
-#include "vtpch.h"
-#include "Volt/Asset/Serializers/PhysicsMaterialSerializer.h"
-#include "Volt/Asset/PhysicsMaterialAsset.h"
+#include "vppch.h"
+#include "Volt-Physics/PhysicsMaterialSerializer.h"
+#include "Volt-Physics/PhysicsMaterialAsset.h"
 
 #include <AssetSystem/AssetManager.h>
 

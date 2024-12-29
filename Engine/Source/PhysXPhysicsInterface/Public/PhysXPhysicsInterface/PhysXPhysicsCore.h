@@ -30,6 +30,7 @@ namespace Volt
 		Ref<PhysicsMaterial> CreateMaterial(const PhysicsMaterialCreateInfo& createInfo) const override;
 
 		VT_NODISCARD VT_INLINE physx::PxPhysics& GetCore() const { return *m_physics; }
+		VT_NODISCARD VT_INLINE physx::PxFoundation& GetFoundation() const { return *m_foundation; }
 		VT_NODISCARD VT_INLINE physx::PxDefaultCpuDispatcher* GetCPUDispatcher() const { return m_defaultCPUDispatcher; }
 		VT_NODISCARD VT_INLINE PhysXContactListener& GetContactListener() const { return *m_physXContactListener; }
 
