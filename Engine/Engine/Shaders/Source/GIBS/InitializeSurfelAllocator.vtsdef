@@ -1,0 +1,6 @@
+name: "InitializeSurfelAllocator"
+internal: true
+sources:
+  - entryPoint: "InitializeSurfelAllocatorCS"
+    shaderStage: "cs"
+    filePath: "Engine/Shaders/Source/GIBS/InitializeSurfelAllocator.hlsl"

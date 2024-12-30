@@ -1,5 +1,12 @@
 #pragma once
 
+enum SurfelAllocator
+{
+    Counter = 0,
+    StackPointer = 1,
+    ValidSurfelCounter = 2
+};
+
 struct Surfel
 {
     float3 worldPosition;
@@ -12,6 +19,12 @@ struct SurfelGridCell
 {
     uint surfelCount;
     uint cellIndirectOffset;
+};
+
+struct CellIndexInfo
+{
+    int cellIndex : 24;
+    int isValid : 8;
 };
 
 static const int2 m_cellNeighbours[] =
@@ -31,27 +44,35 @@ static const uint CellNeighbourCount = 8;
 static const float SurfelCellSize = 100.f;
 static const uint SurfelGridSize = 100;
 
-uint2 GetCellCoordinate(uint cellIndex)
+int2 GetCellCoordinate(uint cellIndex)
 {
     uint cellX = cellIndex % SurfelGridSize;
     uint cellY = cellIndex / SurfelGridSize;
     
-    return uint2(cellX, cellY);
+    return int2(cellX, cellY);
 }
 
-uint GetCellIndexFromCoordinate(uint2 cellCoordinate)
+CellIndexInfo GetCellIndexFromCellCoordinates(uint2 cellCoordinate)
 {
-    return cellCoordinate.y * SurfelGridSize + cellCoordinate.x;
+    CellIndexInfo result;
+    result.cellIndex = cellCoordinate.y * SurfelGridSize + cellCoordinate.x;
+    result.isValid = result.cellIndex >= 0 && result.cellIndex < SurfelGridSize * SurfelGridSize;
+    
+    return result;
 }
 
-uint GetCellIndexFromWorldPosition(float3 position)
+int2 GetCellCoordinatesFromWorldPosition(float3 position)
 {
     const float halfSize = (SurfelGridSize * SurfelCellSize) / 2.f;
+    const float invSurfelCellSize = 1.f / SurfelCellSize;
 
-    uint cellX = (uint)(floor((position.x + halfSize) / SurfelCellSize));
-    uint cellY = (uint)(floor((position.z + halfSize) / SurfelCellSize));
+    uint cellX = (uint)(floor((position.x + halfSize) * invSurfelCellSize));
+    uint cellY = (uint)(floor((position.z + halfSize) * invSurfelCellSize));
 
-    return cellY * SurfelGridSize + cellX;
+    cellX = clamp(cellX, 0, SurfelGridSize);
+    cellY = clamp(cellY, 0, SurfelGridSize);
+
+    return int2(cellX, cellY);
 }
 
 bool IsSurfelIntersectingCell(in Surfel surfel, uint2 cellCoordinate)

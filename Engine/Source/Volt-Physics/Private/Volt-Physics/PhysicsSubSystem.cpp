@@ -11,15 +11,29 @@ namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(PhysicsSubSystem, Engine, 0);
 
+	PhysicsSubSystem::PhysicsSubSystem()
+		: m_physicsModulePath(std::filesystem::absolute("Binaries\\PhysXPhysicsInterface.dll"))
+	{
+	}
+
 	void PhysicsSubSystem::Initialize()
 	{
-		LoadPhysicsInterface();
-		InitializePhysicsLayers();
+		bool initialized = LoadPhysicsInterface();
+		if (initialized)
+		{
+			InitializePhysicsLayers();
 
-		PhysicsCoreCreateInfo coreCreateInfo{};
-		coreCreateInfo.allowDebugging = true;
+			PhysicsCoreCreateInfo coreCreateInfo{};
+			coreCreateInfo.allowDebugging = true;
 
-		m_physicsCore = m_physicsCoreCreateFunc(coreCreateInfo);
+			m_physicsCore = m_physicsCoreCreateFunc(coreCreateInfo);
+
+			VT_LOGC(Info, LogVoltPhysics, "Successfully initialized Physics SubSystem!");
+		}
+		else
+		{
+			VT_LOGC(Error, LogVoltPhysics, "Failed to initialize Physics SubSystem");
+		}
 	}
 
 	void PhysicsSubSystem::Shutdown()
@@ -28,6 +42,8 @@ namespace Volt
 		{
 			m_physicsCoreDestroyFunc(m_physicsCore);
 			m_physicsCore = nullptr;
+
+			DynamicLibraryManager::Get().UnloadDynamicLibrary(m_physicsModulePath);
 		}
 	}
 
@@ -36,17 +52,19 @@ namespace Volt
 		return m_physicsCore;
 	}
 
-	void PhysicsSubSystem::LoadPhysicsInterface()
+	bool PhysicsSubSystem::LoadPhysicsInterface()
 	{
 		bool externallyLoaded;
-		DLLHandle libHandle = DynamicLibraryManager::Get().LoadDynamicLibrary(std::filesystem::absolute("Binaries\\PhysXPhysicsInterface.dll"), externallyLoaded);
+		DLLHandle libHandle = DynamicLibraryManager::Get().LoadDynamicLibrary(m_physicsModulePath, externallyLoaded);
 		if (libHandle == nullptr)
 		{
-			return;
+			return false;
 		}
 
 		m_physicsCoreCreateFunc = reinterpret_cast<PFN_CreatePhysicsCore>(VT_GET_PROC_ADDRESS(libHandle, PHYSICS_CREATE_CORE_FUNC_NAME));
 		m_physicsCoreDestroyFunc = reinterpret_cast<PFN_DestroyPhysicsCore>(VT_GET_PROC_ADDRESS(libHandle, PHYSICS_DESTROY_CORE_FUNC_NAME));
+	
+		return true;
 	}
 
 	void PhysicsSubSystem::InitializePhysicsLayers()

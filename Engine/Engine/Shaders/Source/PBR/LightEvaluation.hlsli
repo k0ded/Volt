@@ -97,11 +97,11 @@ float3 EvaluateDirectionalLight(in DirectionalLight light, in DirectionalShadowM
 
     float illuminance = light.intensity * NdotD;
 
-    float shadow = 0.f;
+    float shadow = 1.f;
 
     if (light.castShadows)
     {
-        shadow = CalculateDirectionalShadow(light, shadowMappingInfo, brdfInput.N, worldPosition);
+        shadow = 1.f; //CalculateDirectionalShadow(light, shadowMappingInfo, brdfInput.N, worldPosition);
     }
 
     return BRDF(brdfInput, D, L) * light.color * illuminance * shadow;

@@ -68,3 +68,54 @@ float2 UniformSampleDiskConcentric( float2 e )
 	float3 result = ConcentricDiskSamplingHelper(e);
 	return result.xy * result.z; // uniform sampling
 }
+
+// Replace these
+float3 EquiAreaSphericalMapping(float2 UV)
+{
+	UV = 2 * UV - 1;
+	float D = 1 - (abs(UV.x) + abs(UV.y));
+	float R = 1 - abs(D);
+	// Branch to avoid dividing by 0.
+	// Only happens with (0.5, 0.5), usually occurs in odd number resolutions which use the very central texel
+	float Phi = R == 0 ? 0 : (PI / 4) * ((abs(UV.y) - abs(UV.x)) / R + 1);
+	float F = R * sqrt(2 - R * R);
+	return float3(
+		F * sign(UV.x) * abs(cos(Phi)),
+		F * sign(UV.y) * abs(sin(Phi)),
+		sign(D) * (1 - R * R)
+	);
+}
+
+float2 InverseEquiAreaSphericalMapping(float3 Direction)
+{
+	// Most use cases of this func generate Direction by diffing two positions and thus unnormalized
+	Direction = normalize(Direction);
+	
+	float3 AbsDir = abs(Direction);
+	float R = sqrt(1 - AbsDir.z);
+	float Epsilon = 5.42101086243e-20; // 2^-64 (this avoids 0/0 without changing the rest of the mapping)
+	float x = min(AbsDir.x, AbsDir.y) / (max(AbsDir.x, AbsDir.y) + Epsilon);
+
+	// Coefficients for 6th degree minimax approximation of atan(x)*2/pi, x=[0,1].
+	const float t1 = 0.406758566246788489601959989e-5f;
+	const float t2 = 0.636226545274016134946890922156f;
+	const float t3 = 0.61572017898280213493197203466e-2f;
+	const float t4 = -0.247333733281268944196501420480f;
+	const float t5 = 0.881770664775316294736387951347e-1f;
+	const float t6 = 0.419038818029165735901852432784e-1f;
+	const float t7 = -0.251390972343483509333252996350e-1f;
+
+	// Polynomial approximation of atan(x)*2/pi
+	float Phi = t6 + t7 * x;
+	Phi = t5 + Phi * x;
+	Phi = t4 + Phi * x;
+	Phi = t3 + Phi * x;
+	Phi = t2 + Phi * x;
+	Phi = t1 + Phi * x;
+
+	Phi = (AbsDir.x < AbsDir.y) ? 1 - Phi : Phi;
+	float2 UV = float2(R - Phi * R, Phi * R);
+	UV = (Direction.z < 0) ? 1 - UV.yx : UV;
+	UV = asfloat(asuint(UV) ^ (asuint(Direction.xy) & 0x80000000u));
+	return UV * 0.5 + 0.5;
+}

@@ -21,7 +21,7 @@ struct Constants
 
     PBRConstants pbrConstants;
 };
-
+ 
 float CalculateAO(vt::Tex2D<uint> aoTex, uint2 pixelCoord)
 {
 #define XE_GTAO_OCCLUSION_TERM_SCALE (1.5f)      // for packing in UNORM (because raw, pre-denoised occlusion term can overshoot 1 but will later average out to 1)
@@ -77,7 +77,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     
     float3 outputColor = EvaluatePBR(pbrInput, constants.pbrConstants);
 
-    //switch (constants.visualizationMode)
+    //switch (constants.visualizationMode) 
     //{
     //    case VisualizationMode::VisualizeCascades:
     //    {

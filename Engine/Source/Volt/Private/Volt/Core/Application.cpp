@@ -7,7 +7,6 @@
 #include "Volt/Rendering/Renderer.h"
 #include "Volt/Scene/SceneManager.h"
 #include "Volt/Utility/Noise.h"
-#include "Volt/Physics/Physics.h"
 #include "Volt/Utility/UIUtility.h"
 
 #include <Volt-Core/PluginSystem/PluginRegistry.h>

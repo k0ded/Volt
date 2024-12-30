@@ -40,6 +40,8 @@ namespace Volt
 		void RemoveControllerActor(Ref<PhysicsControllerActor> actor) override;
 		void RemoveControllerActor(PhysicsActorID actorId) override;
 
+		PhysicsSceneStatistics GetStatistics() const override;
+
 	protected:
 		void* GetHandleImpl() const override;
 

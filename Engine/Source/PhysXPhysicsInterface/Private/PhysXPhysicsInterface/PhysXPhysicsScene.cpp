@@ -9,6 +9,8 @@
 
 #include <PhysX/PxPhysicsAPI.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt
 {
 	inline physx::PxFilterFlags FilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0, physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1, physx::PxPairFlags& pairFlags, const void*, physx::PxU32)
@@ -372,6 +374,15 @@ namespace Volt
 		actor->Release();
 
 		m_controllerActors.erase(actorId);
+	}
+
+	PhysicsSceneStatistics PhysXPhysicsScene::GetStatistics() const
+	{
+		PhysicsSceneStatistics result;
+		result.actorCount = static_cast<uint32_t>(m_actors.size());
+		result.controllerActorCount = static_cast<uint32_t>(m_controllerActors.size());
+	
+		return result;
 	}
 
 	void* PhysXPhysicsScene::GetHandleImpl() const

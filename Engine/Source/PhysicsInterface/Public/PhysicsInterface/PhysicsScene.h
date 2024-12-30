@@ -36,6 +36,12 @@ namespace Volt
 		PhysicsSceneAdvancedCallback physicsSceneAdvancedCallback;
 	};
 
+	struct PhysicsSceneStatistics
+	{
+		uint32_t actorCount;
+		uint32_t controllerActorCount;
+	};
+
 	class PhysicsScene : public PhysicsHandleType
 	{
 	public:
@@ -58,5 +64,7 @@ namespace Volt
 		virtual Ref<PhysicsControllerActor> GetControllerActor(PhysicsActorID actorId) const = 0;
 		virtual void RemoveControllerActor(Ref<PhysicsControllerActor> actor) = 0;
 		virtual void RemoveControllerActor(PhysicsActorID actorId) = 0;
+
+		virtual PhysicsSceneStatistics GetStatistics() const = 0;
 	};
 }

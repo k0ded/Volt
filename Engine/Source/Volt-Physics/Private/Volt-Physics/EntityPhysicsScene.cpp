@@ -10,6 +10,8 @@
 
 #include <SubSystem/SubSystemManager.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt
 {
 	EntityPhysicsScene::EntityPhysicsScene(EntityScene& entityScene)
@@ -112,6 +114,11 @@ namespace Volt
 				m_entityToPhysicsControllerActor[entity.GetID()] = comp.actorId;
 			});
 		}
+
+		{
+			const auto stats = m_physicsScene->GetStatistics();
+			VT_LOGC(Trace, LogVoltPhysics, "Created Physics Scene with {} actors and {} controller actors.", stats.actorCount, stats.controllerActorCount);
+		}
 	}
 
 	EntityPhysicsScene::~EntityPhysicsScene()
@@ -125,6 +132,8 @@ namespace Volt
 		{
 			m_entityScene.UnregisterEntityDestroyedCallback(m_entityDestroyedCallbackID);
 		}
+
+		VT_LOGC(Trace, LogVoltPhysics, "Destroyed Physics Scene.");
 	}
 
 	void EntityPhysicsScene::Update(float deltaTime)

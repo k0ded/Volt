@@ -15,7 +15,7 @@ namespace Volt
 	class GIBS
 	{
 	public:
-		void Render(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void Render(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, uint32_t frameIndex);
 
 		bool m_allocate = true;
 
@@ -23,8 +23,8 @@ namespace Volt
 		void AllocateBuffers();
 
 		RefPtr<RHI::StorageBuffer> m_surfelsBuffer;
-		RefPtr<RHI::StorageBuffer> m_surfelsAllocatorBuffer;
+		RefPtr<RHI::StorageBuffer> m_surfelAllocatorBuffer;
 		RefPtr<RHI::StorageBuffer> m_surfelGridBuffer;
-
+		RefPtr<RHI::StorageBuffer> m_allocatedSurfelsBuffer;
 	};
 }
