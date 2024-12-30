@@ -4,7 +4,7 @@
 #include "Volt/Components/CoreComponents.h"
 
 #include <Volt-Physics/RigidbodyComponent.h>
-#include <Volt-Physics/Components.h>
+#include <Volt-Physics/CharacterControllerComponent.h>
 
 #include "Volt/Scene/Scene.h"
 

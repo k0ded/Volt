@@ -9,7 +9,7 @@
 
 #include <Volt/Rendering/Camera/Camera.h>
 
-#include <Volt-Physics/Components.h>
+#include <Volt-Physics/ColliderComponents.h>
 
 #include <CoreUtilities/Random.h>
 

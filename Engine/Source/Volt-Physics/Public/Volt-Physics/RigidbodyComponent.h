@@ -190,26 +190,9 @@ namespace Volt
 			reflect.AddMember(&RigidbodyComponent::m_collisionType, "collisionType", "Collision Type", "", CollisionDetectionType::Discrete);
 			reflect.AddMember(&RigidbodyComponent::m_disableGravity, "disableGravity", "Disable Gravity", "", false);
 			reflect.AddMember(&RigidbodyComponent::m_isKinematic, "isKinematic", "Is Kinematic", "", false);
-			reflect.SetOnCreateCallback(&RigidbodyComponent::OnCreate);
-			reflect.SetOnDestroyCallback(&RigidbodyComponent::OnDestroy);
-			reflect.SetOnTransformChangedCallback(&RigidbodyComponent::OnTransformChanged);
 		}
 
 		REGISTER_COMPONENT(RigidbodyComponent);
-
-	private:
-		using PhysicsEntity = ECS::Access
-			::Read<RigidbodyComponent>
-			::As<ECS::Type::Entity>;
-
-		using PhysicsTransformEntity = ECS::Access
-			::Read<TransformComponent>
-			::With<RigidbodyComponent>
-			::As<ECS::Type::Entity>;
-
-		VTP_API static void OnCreate(PhysicsEntity entity);
-		VTP_API static void OnDestroy(PhysicsEntity entity);
-		VTP_API static void OnTransformChanged(PhysicsTransformEntity entity);
 	};
 
 	template<typename T, typename EntityType>

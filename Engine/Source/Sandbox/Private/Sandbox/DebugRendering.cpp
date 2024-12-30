@@ -18,7 +18,7 @@
 
 #include <Volt/Rendering/SceneRenderer.h>
 
-#include <Volt-Physics/Components.h>
+#include <Volt-Physics/ColliderComponents.h>
 
 #include <AssetSystem/AssetManager.h>
 

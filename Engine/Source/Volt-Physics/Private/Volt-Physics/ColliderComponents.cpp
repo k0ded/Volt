@@ -1,50 +1,9 @@
 #include "vppch.h"
 
-#include "Volt-Physics/Components.h"
+#include "Volt-Physics/ColliderComponents.h"
 
 namespace Volt
 {
-	void CharacterControllerComponent::OnCreate(PhysicsEntity entity)
-	{
-		//if (!SceneManager::IsPlaying())
-		//{
-		//	return;
-		//}
-
-		//Entity sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
-		//Physics::CreateControllerActor(sceneEntity);
-	}
-
-	void CharacterControllerComponent::OnDestroy(PhysicsEntity entity)
-	{
-		//if (!SceneManager::IsPlaying())
-		//{
-		//	return;
-		//}
-
-		//Entity sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
-		//auto actor = Physics::GetScene()->GetControllerActor(sceneEntity);
-		//if (actor)
-		//{
-		//	Physics::GetScene()->RemoveControllerActor(actor);
-		//}
-	}
-
-	void CharacterControllerComponent::OnTransformChanged(PhysicsTransformEntity entity)
-	{
-		//if (!SceneManager::IsPlaying())
-		//{
-		//	return;
-		//}
-
-		//Entity sceneEntity = SceneManager::GetActiveScene()->GetSceneEntityFromScriptingEntity(entity);
-		//auto actor = Physics::GetScene()->GetControllerActor(sceneEntity);
-		//if (actor)
-		//{
-		//	actor->SetFootPosition(entity.GetPosition());
-		//}
-	}
-
 	void BoxColliderComponent::OnCreate(PhysicsEntity entity)
 	{
 		//if (!SceneManager::IsPlaying())

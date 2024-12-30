@@ -8,7 +8,6 @@
 #include "Volt/Components/RenderingComponents.h"
 
 #include <Volt-Physics/RigidbodyComponent.h>
-#include <Volt-Physics/Components.h>
 #include <Volt-Physics/EntityPhysicsScene.h>
 
 #include "Volt/Animation/AnimationManager.h"
