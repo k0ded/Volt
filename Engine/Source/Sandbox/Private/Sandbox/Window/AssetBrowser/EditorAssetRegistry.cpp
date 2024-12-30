@@ -13,8 +13,6 @@
 
 #include "Volt/Scene/Scene.h"
 
-#include "Volt/Physics/PhysicsMaterial.h"
-
 #include <AssetSystem/AssetManager.h>
 
 #define ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandleVarName) [](Volt::AssetHandle aAssetHandleVarName)->Vector<std::pair<std::string, std::string>>
@@ -168,19 +166,19 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 			})
 	},
 	{
-		AssetTypes::PhysicsMaterial,
-		EditorAssetData(
-			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
-			{
-				auto asset = Volt::AssetManager::GetAsset<Volt::PhysicsMaterial>(aAssetHandle);
-				Vector<std::pair<std::string, std::string>> data =
-				{
-					std::make_pair("Static Friction", std::to_string(asset->staticFriction)),
-					std::make_pair("Dynamic Friction", std::to_string(asset->dynamicFriction)),
-					std::make_pair("Bounciness", std::to_string(asset->bounciness)),
-				};
-				return data;
-			})
+		//AssetTypes::PhysicsMaterial,
+		//EditorAssetData(
+		//	ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
+		//	{
+		//		auto asset = Volt::AssetManager::GetAsset<Volt::PhysicsMaterial>(aAssetHandle);
+		//		Vector<std::pair<std::string, std::string>> data =
+		//		{
+		//			std::make_pair("Static Friction", std::to_string(asset->staticFriction)),
+		//			std::make_pair("Dynamic Friction", std::to_string(asset->dynamicFriction)),
+		//			std::make_pair("Bounciness", std::to_string(asset->bounciness)),
+		//		};
+		//		return data;
+		//	})
 	}
 };
 

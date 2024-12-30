@@ -7,20 +7,20 @@
 
 #include <Volt/Core/Application.h>
 
-#include <AssetSystem/AssetManager.h>
 #include <Volt/Asset/Rendering/Material.h>
-
-#include <Volt/Physics/MeshColliderCache.h>
 
 #include <Volt/Components/RenderingComponents.h>
 #include <Volt/Components/CoreComponents.h>
 #include <Volt/Components/LightComponents.h>
-#include <Volt/Components/PhysicsComponents.h>
 
 #include <Volt/Rendering/DebugRenderer.h>
 #include <Volt/Rendering/Camera/Camera.h>
 
 #include <Volt/Rendering/SceneRenderer.h>
+
+#include <Volt-Physics/ColliderComponents.h>
+
+#include <AssetSystem/AssetManager.h>
 
 #include <NavigationEditor/Tools/NavMeshDebugDrawer.h>
 #include <NavigationEditor/Builder/RecastBuilder.h>

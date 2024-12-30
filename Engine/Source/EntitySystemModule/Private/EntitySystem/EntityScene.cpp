@@ -274,6 +274,44 @@ namespace Volt
 		return invalidatedEntities;
 	}
 
+	UUID64 EntityScene::RegisterTransformChangedCallback(TransformChangedCallbackFunc&& callback)
+	{
+		UUID64 uuid{};
+		m_transformChangedCallbacks[uuid] = std::move(callback);
+		return uuid;
+	}
+
+	void EntityScene::UnregisterTransformChangedCallback(UUID64 id)
+	{
+		if (m_transformChangedCallbacks.contains(id))
+		{
+			m_transformChangedCallbacks.erase(id);
+		}
+		else
+		{
+			VT_LOGC(Warning, LogEntitySystem, "Trying to unregister callback with ID {}, but that ID is not registered!", id);
+		}
+	}
+
+	UUID64 EntityScene::RegisterEntityDestroyedCallback(EntityDestroyedCallbackFunc&& callback)
+	{
+		UUID64 uuid{};
+		m_entityDestroyedCallbacks[uuid] = std::move(callback);
+		return uuid;
+	}
+
+	void EntityScene::UnregisterEntityDestroyedCallback(UUID64 id)
+	{
+		if (m_entityDestroyedCallbacks.contains(id))
+		{
+			m_entityDestroyedCallbacks.erase(id);
+		}
+		else
+		{
+			VT_LOGC(Warning, LogEntitySystem, "Trying to unregister callback with ID {}, but that ID is not registered!", id);
+		}
+	}
+
 	bool EntityScene::IsEntityValid(EntityID entityId) const
 	{
 		return m_registry.valid(m_entityRegistry.GetHandleFromID(entityId));

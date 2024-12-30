@@ -8,7 +8,7 @@
 #include <EntitySystem/Scripting/CommonComponent.h>
 #include <EntitySystem/Scripting/CoreComponents.h>
 
-#include <Volt/Asset/AssetTypes.h>
+#include <Volt-Core/AssetTypes.h>
 
 #include <glm/glm.hpp>
 

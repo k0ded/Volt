@@ -5,11 +5,10 @@
 #include <AssetSystem/AssetManager.h>
 #include <Volt/Utility/MeshExporterUtilities.h>
 
-#include <Volt/Components/PhysicsComponents.h>
 #include <Volt/Components/NavigationComponents.h>
 
 #include <Volt/Rendering/DebugRenderer.h>
-#include <Volt/Physics/MeshColliderCache.h>
+//#include <Volt/Physics/MeshColliderCache.h>
 
 #include <Sandbox/Utility/EditorUtilities.h>
 #include <Sandbox/UserSettingsManager.h>

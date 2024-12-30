@@ -16,7 +16,7 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
 
-            conf.SolutionFolder = "Engine";
+            conf.SolutionFolder = "Engine/Modules";
 
             conf.PrecompHeader = "sspch.h";
             conf.PrecompSource = "sspch.cpp";

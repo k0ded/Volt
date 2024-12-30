@@ -7,10 +7,10 @@
 #include "Volt/Components/LightComponents.h"
 #include "Volt/Components/RenderingComponents.h"
 
-#include "Volt/Animation/AnimationManager.h"
+#include <Volt-Physics/RigidbodyComponent.h>
+#include <Volt-Physics/EntityPhysicsScene.h>
 
-#include "Volt/Physics/Physics.h"
-#include "Volt/Physics/PhysicsScene.h"
+#include "Volt/Animation/AnimationManager.h"
 
 #include "Volt/Math/Math.h"
 
@@ -19,6 +19,8 @@
 #include "Volt/Rendering/Camera/Camera.h"
 
 #include "Volt/Vision/Vision.h"
+
+#include <SubSystem/SubSystemManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -51,8 +53,7 @@ namespace Volt
 
 	void Scene::OnRuntimeStart()
 	{
-		Physics::CreateScene(this);
-		Physics::CreateActors(this);
+		CreatePhysicsScene();
 		AnimationManager::Reset();
 
 		m_isPlaying = true;
@@ -66,18 +67,17 @@ namespace Volt
 		m_entityScene.OnRuntimeEnd();
 		m_isPlaying = false;
 
-		Physics::DestroyScene();
+		m_entityPhysicsScene = nullptr;
 	}
 
 	void Scene::OnSimulationStart()
 	{
-		Physics::CreateScene(this);
-		Physics::CreateActors(this);
+		CreatePhysicsScene();
 	}
 
 	void Scene::OnSimulationEnd()
 	{
-		Physics::DestroyScene();
+		m_entityPhysicsScene = nullptr;
 	}
 
 	void Scene::Update(float aDeltaTime)
@@ -88,7 +88,7 @@ namespace Volt
 		m_entityScene.Update(aDeltaTime);
 
 		AnimationManager::Update(aDeltaTime);
-		Physics::GetScene()->Simulate(aDeltaTime);
+		m_entityPhysicsScene->Update(aDeltaTime);
 		m_visionSystem->Update(aDeltaTime);
 
 		m_timeSinceStart += aDeltaTime;
@@ -126,8 +126,7 @@ namespace Volt
 
 	void Scene::UpdateSimulation(float aDeltaTime)
 	{
-		Physics::GetScene()->Simulate(aDeltaTime);
-
+		m_entityPhysicsScene->Update(aDeltaTime);
 		m_statistics.entityCount = m_entityScene.GetEntityAliveCount();
 	}
 
@@ -366,6 +365,11 @@ namespace Volt
 		m_entityScene.SetRenderScene(m_renderScene.get());
 
 		m_worldEngine.Reset(this, 16, 4);
+	}
+
+	void Scene::CreatePhysicsScene()
+	{
+		m_entityPhysicsScene = CreateScope<EntityPhysicsScene>(m_entityScene);
 	}
 
 	bool Scene::IsRelatedTo(Entity entity, Entity otherEntity)

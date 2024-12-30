@@ -26,6 +26,8 @@
 #include <Volt/Utility/UIUtility.h>
 #include <Volt/Utility/PremadeCommands.h>
 
+#include <Volt-Physics/PhysicsMaterialAsset.h>
+
 #include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>

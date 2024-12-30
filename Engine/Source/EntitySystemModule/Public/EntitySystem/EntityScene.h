@@ -12,6 +12,9 @@ namespace Volt
 {
 	class RenderScene;
 
+	using TransformChangedCallbackFunc = std::function<void(EntityHelper entityHelper)>;
+	using EntityDestroyedCallbackFunc = std::function<void(EntityHelper entityHelper)>;
+
 	class VTES_API EntityScene
 	{
 	public:
@@ -36,6 +39,12 @@ namespace Volt
 		void ClearEditedEntities();
 
 		Vector<EntityID> InvalidateEntityTransform(EntityID entityId);
+
+		UUID64 RegisterTransformChangedCallback(TransformChangedCallbackFunc&& callback);
+		void UnregisterTransformChangedCallback(UUID64 id);
+
+		UUID64 RegisterEntityDestroyedCallback(EntityDestroyedCallbackFunc&& callback);
+		void UnregisterEntityDestroyedCallback(UUID64 id);
 
 		VT_NODISCARD bool IsEntityValid(EntityID entityId) const;
 		VT_NODISCARD TQS GetEntityWorldTQS(const EntityHelper& entityHelper) const;
@@ -69,6 +78,8 @@ namespace Volt
 		Scope<ScriptingEngine> m_scriptingEngine;
 		EntityRegistry m_entityRegistry;
 		mutable EntityTransformCache m_transformCache;
+		vt::map<UUID64, TransformChangedCallbackFunc> m_transformChangedCallbacks;
+		vt::map<UUID64, EntityDestroyedCallbackFunc> m_entityDestroyedCallbacks;
 
 		RenderScene* m_renderScene;
 	};
