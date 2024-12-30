@@ -206,6 +206,11 @@ namespace Volt::RHI
 		meshShaderProperties.pNext = firstChainPtr;
 		firstChainPtr = &meshShaderProperties;
 
+		VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
+		rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+		rayTracingPipelineProperties.pNext = firstChainPtr;
+		firstChainPtr = &rayTracingPipelineProperties;
+
 		VkPhysicalDeviceProperties2	deviceProperties{};
 		deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 		deviceProperties.pNext = firstChainPtr;
@@ -410,6 +415,18 @@ namespace Volt::RHI
 			m_deviceProperties.meshShaderProperties.prefersLocalInvocationPrimitiveOutput = meshShaderProperties.prefersLocalInvocationPrimitiveOutput;
 			m_deviceProperties.meshShaderProperties.prefersCompactVertexOutput = meshShaderProperties.prefersCompactVertexOutput;
 			m_deviceProperties.meshShaderProperties.prefersCompactPrimitiveOutput = meshShaderProperties.prefersCompactPrimitiveOutput;
+		}
+
+		// VK_KHR_ray_tracing_pipeline
+		{
+			m_deviceProperties.rayTracingPipelineProperties.shaderGroupHandleSize  = rayTracingPipelineProperties.shaderGroupHandleSize;
+			m_deviceProperties.rayTracingPipelineProperties.maxRayRecursionDepth = rayTracingPipelineProperties.maxRayRecursionDepth;
+			m_deviceProperties.rayTracingPipelineProperties.maxShaderGroupStride = rayTracingPipelineProperties.maxShaderGroupStride;
+			m_deviceProperties.rayTracingPipelineProperties.shaderGroupBaseAlignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
+			m_deviceProperties.rayTracingPipelineProperties.shaderGroupHandleCaptureReplaySize = rayTracingPipelineProperties.shaderGroupHandleCaptureReplaySize;
+			m_deviceProperties.rayTracingPipelineProperties.maxRayDispatchInvocationCount = rayTracingPipelineProperties.maxRayDispatchInvocationCount;
+			m_deviceProperties.rayTracingPipelineProperties.shaderGroupHandleAlignment = rayTracingPipelineProperties.shaderGroupHandleAlignment;
+			m_deviceProperties.rayTracingPipelineProperties.maxRayHitAttributeSize = rayTracingPipelineProperties.maxRayHitAttributeSize;
 		}
 
 		FetchMemoryProperties();

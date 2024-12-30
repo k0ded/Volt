@@ -48,9 +48,9 @@ namespace Volt::RHI
 		return m_stride;
 	}
 
-	void D3D12VertexBuffer::SetName(std::string_view name)
+	void D3D12VertexBuffer::SetName(const std::string& name)
 	{
-		m_name = std::string(name);
+		m_name = name;
 		std::wstring wName = Utility::ToWString(name);
 		m_allocation->GetResourceHandle<ID3D12Resource*>()->SetName(wName.c_str());
 	}
@@ -77,7 +77,7 @@ namespace Volt::RHI
 
 	void D3D12VertexBuffer::Invalidate(const void* data, const uint32_t size)
 	{
-		RefPtr<Allocation> stagingAllocation;
+		Handle<Allocation> stagingAllocation;
 
 		if (m_allocation)
 		{
@@ -93,7 +93,7 @@ namespace Volt::RHI
 
 		if (data != nullptr)
 		{
-			stagingAllocation = allocator->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPU);
+			stagingAllocation = allocator->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPU, "Staging Alloc");
 
 			// Copy to staging buffer
 			{
@@ -105,7 +105,7 @@ namespace Volt::RHI
 
 		// Create GPU buffer
 		{
-			m_allocation = allocator->CreateBuffer(size, BufferUsage::VertexBuffer | BufferUsage::TransferDst);
+			m_allocation = allocator->CreateBuffer(size, BufferUsage::VertexBuffer | BufferUsage::TransferDst, MemoryUsage::GPU, m_name);
 		}
 
 		if (data)

@@ -39,6 +39,9 @@
 #include "Sandbox/Window/AnimationEditorPanel.h"
 #include "Sandbox/Window/GameUIEditorPanel.h"
 #include "Sandbox/Window/MotionWeaveDatabasePanel.h"
+#include "Sandbox/Window/RenderResourcesPanel.h"
+#include "Sandbox/Window/RenderGraphDebuggerPanel.h"
+#include "Sandbox/Window/TextureViewerPanel.h"
 #include "Sandbox/VertexPainting/VertexPainterPanel.h"
 
 #include "Sandbox/Modals/MeshImportModal.h"
@@ -179,10 +182,12 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::Register<EditorSettingsPanel>("", UserSettingsManager::GetSettings());
 	EditorLibrary::Register<PhysicsPanel>("Physics");
 	EditorLibrary::Register<RendererSettingsPanel>("Advanced", m_sceneRenderer);
+	EditorLibrary::Register<RenderGraphDebuggerPanel>("Advanced", m_sceneRenderer);
 	EditorLibrary::Register<VertexPainterPanel>("", m_runtimeScene, m_editorCameraController);
 
 	EditorLibrary::Register<SceneSettingsPanel>("", m_runtimeScene);
 	EditorLibrary::Register<WorldEnginePanel>("", m_runtimeScene);
+	EditorLibrary::Register<RenderResourcesPanel>("");
 	EditorLibrary::Register<GameUIEditorPanel>("UI");
 
 	m_navigationPanel = EditorLibrary::Register<NavigationPanel>("Advanced", m_runtimeScene);
@@ -200,6 +205,7 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::RegisterWithType<MeshPreviewPanel>("", AssetTypes::Mesh);
 	EditorLibrary::RegisterWithType<ShaderEditorPanel>("Shader", AssetTypes::ShaderDefinition);
 	EditorLibrary::RegisterWithType<MotionWeaveDatabasePanel>("Animation", AssetTypes::MotionWeave);
+	EditorLibrary::RegisterWithType<TextureViewerPanel>("Advanced", AssetTypes::Texture);
 
 	EditorLibrary::Sort();
 
@@ -712,7 +718,7 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 	return false;
 }
 
-void Sandbox::RenderGameView()
+void Sandbox::RenderGameView(float timestep)
 {
 	if (!m_gameViewPanel->IsOpen() || !m_gameSceneRenderer)
 	{
@@ -750,7 +756,7 @@ void Sandbox::RenderGameView()
 			camera->SetPosition(cameraEntity.GetPosition());
 			camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
 
-			m_gameSceneRenderer->OnRenderEditor(camera);
+			m_gameSceneRenderer->OnRenderEditor(camera, timestep);
 			break;
 		}
 	}
@@ -771,7 +777,7 @@ bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
 		case SceneState::Play:
 		case SceneState::Pause:
 		case SceneState::Simulating:
-			m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera());
+			m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera(), e.GetTimestep());
 			break;
 	}
 
@@ -780,7 +786,7 @@ bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
 		TransitionToNewScene();
 	}
 
-	RenderGameView();
+	RenderGameView(e.GetTimestep());
 
 	return false;
 }

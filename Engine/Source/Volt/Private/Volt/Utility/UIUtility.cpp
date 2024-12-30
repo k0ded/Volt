@@ -16,14 +16,14 @@ inline static glm::vec4 ToNormalizedRGB(float r, float g, float b, float a = 255
 	return { r / 255.f, g / 255.f, b / 255.f, a / 255.f };
 }
 
-ImTextureID UI::GetTextureID(Ref<Volt::Texture2D> texture)
+ImTextureID UI::GetTextureID(Ref<Volt::Texture2D> texture, int32_t mipIndex)
 {
-	return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture->GetImage());
+	return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture->GetImage(), mipIndex);
 }
 
-ImTextureID UI::GetTextureID(RefPtr<Volt::RHI::Image> texture)
+ImTextureID UI::GetTextureID(RefPtr<Volt::RHI::Image> texture, int32_t mipIndex)
 {
-	return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture);
+	return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture, mipIndex);
 }
 
 void UI::Header(const std::string& text)

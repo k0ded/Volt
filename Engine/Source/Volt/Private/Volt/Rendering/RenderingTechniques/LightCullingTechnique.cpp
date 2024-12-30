@@ -2,6 +2,7 @@
 #include "Volt/Rendering/RenderingTechniques/LightCullingTechnique.h"
 
 #include "Volt/Rendering/SceneRendererStructs.h"
+#include "Volt/Rendering/RendererCommon.h"
 
 #include "Volt/Math/Math.h"
 
@@ -21,13 +22,13 @@ namespace Volt
 	{
 		const auto& uniformBuffers = m_blackboard.Get<UniformBuffersData>();
 		const auto& lightBuffers = m_blackboard.Get<LightBuffersData>();
-		const auto& preDepthData = m_blackboard.Get<PreDepthData>();
-		const auto& renderData = m_blackboard.Get<RenderData>();
+		const auto& preDepthData = m_blackboard.Get<DepthPrePass>();
+		const auto& viewUniformBuffer = m_blackboard.Get<ViewUniformBuffer>();
 
 		constexpr uint32_t MAX_LIGHT_COUNT_PER_TILE = 512;
 
-		const uint32_t tileCountX = Math::DivideRoundUp(renderData.renderSize.x, TILE_SIZE);
-		const uint32_t tileCountY = Math::DivideRoundUp(renderData.renderSize.y, TILE_SIZE);
+		const uint32_t tileCountX = Math::DivideRoundUp(viewUniformBuffer.renderSize.x, TILE_SIZE);
+		const uint32_t tileCountY = Math::DivideRoundUp(viewUniformBuffer.renderSize.y, TILE_SIZE);
 
 		LightCullingData& data = m_renderGraph.AddPass<LightCullingData>("Light Culling",
 		[&](RenderGraph::Builder& builder, LightCullingData& data) 

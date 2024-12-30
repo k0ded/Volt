@@ -40,13 +40,13 @@ float LinearizeDepth01(const float screenDepth, in const ViewData viewData)
     return (linearDepth - viewData.nearPlane) / (viewData.farPlane - viewData.nearPlane);
 }
 
-float3x3 CalculateTBN(float3 inNormal, float3 inTangent)
+float3x3 CalculateTBN(float3 inNormal, float3 inTangent, float tangentW)
 {
     const float3 normal = normalize(inNormal);
     const float3 tangent = normalize(inTangent);
-    const float3 bitangent = normalize(cross(normal, tangent));
+    const float3 binormal = normalize(cross(normal, tangent)) * tangentW;
     
-    return transpose(float3x3(tangent, bitangent, normal));
+    return transpose(float3x3(tangent, binormal, normal));
 }
 
 float3 ReconstructWorldPosition(in ViewData viewData, float2 texCoords, float pixelDepth)

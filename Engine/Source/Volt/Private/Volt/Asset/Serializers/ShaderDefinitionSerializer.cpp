@@ -47,17 +47,21 @@ namespace Volt
 			{
 				return RHI::ShaderStage::Miss;
 			}
-			else if (lowerString == "rchit")
+			else if (lowerString == "rclosesthit")
 			{
 				return RHI::ShaderStage::ClosestHit;
 			}
-			else if (lowerString == "rahit")
+			else if (lowerString == "ranyhit")
 			{
 				return RHI::ShaderStage::AnyHit;
 			}
-			else if (lowerString == "rinter")
+			else if (lowerString == "rintersection")
 			{
 				return RHI::ShaderStage::Intersection;
+			}
+			else if (lowerString == "rcallable")
+			{
+				return RHI::ShaderStage::Callable;
 			}
 			else if (lowerString == "as")
 			{
@@ -83,10 +87,10 @@ namespace Volt
 				case RHI::ShaderStage::Geometry: return "gs";
 				case RHI::ShaderStage::Compute: return "cs";
 				case RHI::ShaderStage::RayGen: return "rgen";
-				case RHI::ShaderStage::AnyHit: return "rahit";
-				case RHI::ShaderStage::ClosestHit: return "rchit";
+				case RHI::ShaderStage::AnyHit: return "ranyhit";
+				case RHI::ShaderStage::ClosestHit: return "rclosesthit";
 				case RHI::ShaderStage::Miss: return "rmiss";
-				case RHI::ShaderStage::Intersection: return "rinter";
+				case RHI::ShaderStage::Intersection: return "rintersection";
 				case RHI::ShaderStage::Amplification: return "as";
 				case RHI::ShaderStage::Mesh: return "ms";
 			}

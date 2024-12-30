@@ -52,6 +52,12 @@ public:
 		Get().LogMessage(severity, std::string(category.GetName()), message);
 	}
 
+	template<typename LogCategory, typename... Args>
+	static void LogUnformatted(LogVerbosity severity, const LogCategory& category, const std::string& message)
+	{
+		Get().LogMessage(severity, std::string(category.GetName()), message);
+	}
+
 	void SetLogOutputFilepath(const std::filesystem::path& path);
 	LogCallbackHandle RegisterCallback(const std::function<void(const LogCallbackData& callbackData)>& callback);
 	void UnregisterCallback(LogCallbackHandle handle);
@@ -80,6 +86,9 @@ private:
 
 #define VT_LOGC(verbosity, category, format, ...) ::Log::LogFormatted(LogVerbosity::verbosity, category, format, __VA_ARGS__)
 #define VT_LOG(verbosity, format, ...) ::Log::LogFormatted(LogVerbosity::verbosity, LogTemp, format, __VA_ARGS__)
+
+#define VT_LOGC_UNFORMATTED(verbosity, category, message) ::Log::LogUnformatted(LogVerbosity::verbosity, category, message)
+#define VT_LOG_UNFORMATTED(verbosity, message) ::Log::LogUnformatted(LogVerbosity::verbosity, LogTemp, message)
 
 // Special formatters
 namespace std

@@ -9,7 +9,7 @@ namespace Volt
 	class RenderScene;
 	class Camera;
 
-	struct DirectionalLightData;
+	struct DirectionalLightUniformBuffer;
 
 	class DirectionalShadowTechnique
 	{

@@ -166,5 +166,8 @@ namespace Math
 		return (z + maxX * maxY) + (y * maxX) + x;
 	}
 
-
+	VT_INLINE uint32_t FloorLog2(uint32_t value)
+	{
+		return static_cast<uint32_t>(std::floor(std::log2(static_cast<float>(value))));
+	}
 }

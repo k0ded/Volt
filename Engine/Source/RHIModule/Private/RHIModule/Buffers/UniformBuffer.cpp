@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<UniformBuffer> UniformBuffer::Create(const uint32_t size, const void* data, const uint32_t count, std::string_view name)
+	RefPtr<UniformBuffer> UniformBuffer::Create(const uint32_t size, const void* data, const uint32_t count, const std::string& name)
 	{
 		return RHIProxy::GetInstance().CreateUniformBuffer(size, data, count, name);
 	}

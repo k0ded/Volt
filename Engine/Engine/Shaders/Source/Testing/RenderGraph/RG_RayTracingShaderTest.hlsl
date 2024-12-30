@@ -1,7 +1,6 @@
 #include "Resources.hlsli"
 #include "Structures.hlsli"
-
-RaytracingAccelerationStructure u_accelerationStructure : register(t997, space1);
+#include "RayTracing.hlsli"
 
 struct Constants
 {
@@ -22,7 +21,8 @@ void main(uint2 threadId : SV_DispatchThreadID)
 	const float2 pixelCenter = float2(threadId.xy) + float2(0.5, 0.5);
 	const float2 inUV = pixelCenter * viewData.invRenderSize.xy;
 	float2 d = inUV * 2.0 - 1.0;
-	float4 target = mul(viewData.inverseProjection, float4(d.x, d.y, 1, 1));
+	
+	float4 target = mul(viewData.inverseProjection, float4(d.x, -d.y, 1, 1));
 
 	RayDesc rayDesc;
 	rayDesc.Origin = mul(viewData.inverseView, float4(0,0,0,1)).xyz;
@@ -30,7 +30,7 @@ void main(uint2 threadId : SV_DispatchThreadID)
 	rayDesc.TMin = 0.001;
 	rayDesc.TMax = 10000.0;
 
-    query.TraceRayInline(u_accelerationStructure, RAY_FLAG_NONE, 0xFF, rayDesc);
+    query.TraceRayInline(g_accelerationStructure, RAY_FLAG_NONE, 0xFF, rayDesc);
 
 	query.Proceed();
 

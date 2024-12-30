@@ -12,6 +12,7 @@
 #include <RHIModule/Utility/HashUtility.h>
 
 #include <CoreUtilities/EnumUtils.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt::RHI
 {
@@ -27,21 +28,21 @@ namespace Volt::RHI
 		Release();
 	}
 
-	void D3D12DescriptorTable::SetImageView(WeakPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex)
+	void D3D12DescriptorTable::SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex)
 	{
 		
 	}
 
-	void D3D12DescriptorTable::SetBufferView(WeakPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex)
+	void D3D12DescriptorTable::SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex)
 	{
 
 	}
 
-	void D3D12DescriptorTable::SetSamplerState(WeakPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex)
+	void D3D12DescriptorTable::SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex)
 	{
 	}
 
-	void D3D12DescriptorTable::SetImageView(std::string_view name, WeakPtr<ImageView> view, uint32_t arrayIndex)
+	void D3D12DescriptorTable::SetImageView(std::string_view name, RawPtr<ImageView> view, uint32_t arrayIndex)
 	{
 		const auto& binding = m_shader->GetResourceBindingFromName(name);
 		if (!binding.IsValid())
@@ -52,7 +53,7 @@ namespace Volt::RHI
 		SetImageView(view, binding.set, binding.binding, binding.registerType);
 	}
 
-	void D3D12DescriptorTable::SetBufferView(std::string_view name, WeakPtr<BufferView> view, uint32_t arrayIndex)
+	void D3D12DescriptorTable::SetBufferView(std::string_view name, RawPtr<BufferView> view, uint32_t arrayIndex)
 	{
 		const auto& binding = m_shader->GetResourceBindingFromName(name);
 		if (!binding.IsValid())
@@ -63,7 +64,7 @@ namespace Volt::RHI
 		SetBufferView(view, binding.set, binding.binding, binding.registerType);
 	}
 
-	void D3D12DescriptorTable::SetSamplerState(std::string_view name, WeakPtr<SamplerState> samplerState, uint32_t arrayIndex)
+	void D3D12DescriptorTable::SetSamplerState(std::string_view name, RawPtr<SamplerState> samplerState, uint32_t arrayIndex)
 	{
 		const auto& binding = m_shader->GetResourceBindingFromName(name);
 		if (!binding.IsValid())
@@ -181,7 +182,7 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	void D3D12DescriptorTable::SetImageView(WeakPtr<ImageView> imageView, uint32_t set, uint32_t binding, ShaderRegisterType registerType)
+	void D3D12DescriptorTable::SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, ShaderRegisterType registerType)
 	{
 		if (!m_allocatedDescriptorPointers[set].contains(binding))
 		{
@@ -216,7 +217,7 @@ namespace Volt::RHI
 		VT_ENSURE(descriptorCopy.srcPointer.IsValid());
 	}
 
-	void D3D12DescriptorTable::SetBufferView(WeakPtr<BufferView> bufferView, uint32_t set, uint32_t binding, ShaderRegisterType registerType)
+	void D3D12DescriptorTable::SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, ShaderRegisterType registerType)
 	{
 		if (!m_allocatedDescriptorPointers[set].contains(binding))
 		{
@@ -251,7 +252,7 @@ namespace Volt::RHI
 		VT_ENSURE(descriptorCopy.srcPointer.IsValid());
 	}
 
-	void D3D12DescriptorTable::SetSamplerState(WeakPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, ShaderRegisterType registerType)
+	void D3D12DescriptorTable::SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, ShaderRegisterType registerType)
 	{
 		if (!m_allocatedDescriptorPointers[set].contains(binding))
 		{

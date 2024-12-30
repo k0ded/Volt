@@ -18,7 +18,7 @@
 
 namespace Volt::RHI
 {
-	VulkanImage::VulkanImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator)
+	VulkanImage::VulkanImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator)
 		: m_specification(specification), m_allocator(allocator)
 	{
 		if (!allocator)
@@ -134,11 +134,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]()
-		{
-			allocator->DestroyImage(allocation);
-		});
-
+		m_allocator->DestroyImage(m_allocation);
 		m_allocation = nullptr;
 	}
 
@@ -361,7 +357,7 @@ namespace Volt::RHI
 		return Utility::CalculateMipCount(m_specification.width, m_specification.height);
 	}
 
-	void VulkanImage::SetName(std::string_view name)
+	void VulkanImage::SetName(const std::string& name)
 	{
 		if (Volt::RHI::vkSetDebugUtilsObjectNameEXT)
 		{
@@ -378,13 +374,13 @@ namespace Volt::RHI
 				nameInfo.objectHandle = (uint64_t)m_allocation->GetResourceHandle<VkImage>();
 			}
 
-			nameInfo.pObjectName = name.data();
+			nameInfo.pObjectName = name.c_str();
 
 			auto device = GraphicsContext::GetDevice();
 			Volt::RHI::vkSetDebugUtilsObjectNameEXT(device->GetHandle<VkDevice>(), &nameInfo);
 		}
 
-		m_specification.debugName = std::string(name);
+		m_specification.debugName = name;
 	}
 
 	std::string_view VulkanImage::GetName() const
@@ -419,7 +415,7 @@ namespace Volt::RHI
 		// #TODO_Ivar: Implement correct size for layer + mip
 		const VkDeviceSize bufferSize = m_specification.width * m_specification.height * Utility::GetByteSizePerPixelFromFormat(m_specification.format) * m_specification.layers;
 
-		RefPtr<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferSize, BufferUsage::TransferDst, MemoryUsage::GPUToCPU);
+		Handle<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferSize, BufferUsage::TransferDst, MemoryUsage::GPUToCPU, "Staging Alloc");
 
 		VkImageAspectFlags aspectFlags = Utility::IsDepthFormat(m_specification.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 		if (Utility::IsStencilFormat(m_specification.format))
@@ -543,7 +539,7 @@ namespace Volt::RHI
 		// #TODO_Ivar: Implement correct size for layer + mip
 		const VkDeviceSize bufferSize = m_specification.width * m_specification.height * Utility::GetByteSizePerPixelFromFormat(m_specification.format) * m_specification.layers;
 
-		RefPtr<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferSize, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU);
+		Handle<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferSize, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU, "Staging Alloc");
 
 		auto* stagingData = stagingAlloc->Map<void>();
 		memcpy_s(stagingData, bufferSize, data, bufferSize);

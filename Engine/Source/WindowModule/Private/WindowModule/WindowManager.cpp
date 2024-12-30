@@ -85,11 +85,11 @@ namespace Volt
 		}
 	}
 
-	void WindowManager::Render()
+	void WindowManager::Render(float timestep)
 	{
 		for (const auto& [handle, window] : m_windows)
 		{
-			window->Render();
+			window->Render(timestep);
 		}
 	}
 

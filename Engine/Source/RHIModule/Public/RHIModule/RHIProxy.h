@@ -2,10 +2,12 @@
 
 #include "RHIModule/Core/RHICommon.h"
 
-#include <CoreUtilities/Pointers/RefPtr.h>
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RefCounted.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 
 #include <span>
+#include <CoreUtilities/Weak.h>
+#include <CoreUtilities/Core.h>
 
 struct GLFWwindow;
 
@@ -30,10 +32,11 @@ namespace Volt::RHI
 
 	class RayTracingSceneGeometry;
 	class AccelerationStructure;
+	class ShaderBindingTable;
 
-	class Allocator;
-	class DefaultAllocator;
-	class TransientAllocator;
+	class GPUAllocator;
+	class DefaultGPUAllocator;
+	class TransientGPUAllocator;
 	class TransientHeap;
 
 	class Image;
@@ -42,6 +45,7 @@ namespace Volt::RHI
 
 	class RenderPipeline;
 	class ComputePipeline;
+	class RayTracingPipeline;
 
 	class Shader;
 	class ShaderCompiler;
@@ -52,6 +56,8 @@ namespace Volt::RHI
 
 	class ImGuiImplementation;
 	class ResourceStateTracker;
+
+	class FrameCapture;
 
 	struct BufferViewSpecification;
 	struct DescriptorTableCreateInfo;
@@ -65,6 +71,7 @@ namespace Volt::RHI
 	struct SamplerStateCreateInfo;
 	struct TransientHeapCreateInfo;
 	struct RenderPipelineCreateInfo;
+	struct RayTracingPipelineCreateInfo;
 	struct ShaderSpecification;
 	struct ShaderCompilerCreateInfo;
 	struct EventCreateInfo;
@@ -73,6 +80,7 @@ namespace Volt::RHI
 	struct ImGuiCreateInfo;
 	struct RayTracingSceneGeometryCreateInfo;
 	struct AccelerationStructureCreateInfo;
+	struct SwapchainCreateInfo;
 
 	struct RHICallbackInfo
 	{
@@ -80,7 +88,7 @@ namespace Volt::RHI
 		std::function<void()> requestCloseEventCallback;
 	};
 
-	class VTRHI_API RHIProxy : public RefCounted
+	class VTRHI_API RHIProxy : public RefCounted<RHIProxy>
 	{
 	public:
 		virtual ~RHIProxy();
@@ -92,8 +100,8 @@ namespace Volt::RHI
 		virtual RefPtr<IndexBuffer> CreateIndexBuffer(std::span<const uint32_t> indices) const = 0;
 		virtual RefPtr<VertexBuffer> CreateVertexBuffer(const void* data, const uint32_t size, const uint32_t stride) const = 0;
 
-		virtual RefPtr<StorageBuffer> CreateStorageBuffer(uint32_t count, uint64_t elementSize, std::string_view name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator) const = 0;
-		virtual RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, std::string_view name) const = 0;
+		virtual RefPtr<StorageBuffer> CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const = 0;
+		virtual RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const = 0;
 
 		virtual RefPtr<DescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const = 0;
 		virtual RefPtr<BindlessDescriptorTable> CreateBindlessDescriptorTable(const uint64_t framesInFlight) const = 0;
@@ -102,20 +110,21 @@ namespace Volt::RHI
 		virtual RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const = 0;
 		virtual RefPtr<GraphicsDevice> CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo) const = 0;
 		virtual RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const = 0;
-		virtual RefPtr<Swapchain> CreateSwapchain(GLFWwindow* window) const = 0;
+		virtual RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const = 0;
 
-		virtual RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator) const = 0;
+		virtual RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const = 0;
 		virtual RefPtr<Image> CreateImage(const SwapchainImageSpecification& specification) const = 0;
 
 		virtual RefPtr<ImageView> CreateImageView(const ImageViewSpecification& specification) const = 0;
 		virtual RefPtr<SamplerState> CreateSamplerState(const SamplerStateCreateInfo& createInfo) const = 0;
 
-		virtual RefPtr<DefaultAllocator> CreateDefaultAllocator() const = 0; 
-		virtual RefPtr<TransientAllocator> CreateTransientAllocator() const = 0;
+		virtual RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const = 0; 
+		virtual RefPtr<TransientGPUAllocator> CreateTransientAllocator() const = 0;
 		virtual RefPtr<TransientHeap> CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<RenderPipeline> CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const = 0;
 		virtual RefPtr<ComputePipeline> CreateComputePipeline(RefPtr<Shader> shader, bool useGlobalResources) const = 0;
+		virtual RefPtr<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<Shader> CreateShader(const ShaderSpecification& specification) const = 0;
 		virtual RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const = 0;
@@ -127,17 +136,23 @@ namespace Volt::RHI
 		virtual RefPtr<ImGuiImplementation> CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const = 0;
+		virtual RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const = 0;
 
 		virtual void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) = 0;
 
 		virtual void DestroyResource(std::function<void()>&& function) = 0;
 		virtual void RequestApplicationClose() = 0;
 
+		void SetFrameCapture(Ref<FrameCapture> frameCapture);
+
 		static RHIProxy& GetInstance() { return *s_instance; }
+		static Weak<FrameCapture> GetFrameCapture();
 
 	protected:
 		inline static RHIProxy* s_instance = nullptr;
 
 		RHIProxy();
+
+		Ref<FrameCapture> m_frameCapture;
 	};
 }

@@ -12,16 +12,16 @@
 namespace AssetBrowser
 {
 	Item::Item(SelectionManager* selectionManager, const std::filesystem::path& aPath)
-		: mySelectionManager(selectionManager), path(aPath)
+		: m_selectionManager(selectionManager), path(aPath)
 	{
-		myIsRenaming = false;
-		myLastRenaming = false;
+		m_isRenaming = false;
+		m_lastRenaming = false;
 	}
 	bool Item::Render()
 	{
-		if (myTypeName.empty())
+		if (m_typeName.empty())
 		{
-			myTypeName = GetTypeName();
+			m_typeName = GetTypeName();
 		}
 
 		bool reload = false;
@@ -29,7 +29,7 @@ namespace AssetBrowser
 		PushID();
 		const float thumbnailSize = GetThumbnailSize();
 		const RefPtr<Volt::RHI::Image> icon = GetIcon();
-		const bool isSelected = mySelectionManager->IsSelected(this);
+		const bool isSelected = m_selectionManager->IsSelected(this);
 
 		const ImVec2 itemSize = AssetBrowserUtilities::GetBrowserItemSize(thumbnailSize);
 		const float itemPadding = AssetBrowserUtilities::GetBrowserItemPadding();
@@ -62,7 +62,7 @@ namespace AssetBrowser
 							ImGui::TextUnformatted("Move:");
 
 							constexpr uint32_t maxShownPaths = 3;
-							for (uint32_t i = 0; const auto & selected : mySelectionManager->GetSelectedItems())
+							for (uint32_t i = 0; const auto & selected : m_selectionManager->GetSelectedItems())
 							{
 								if (i == maxShownPaths)
 								{
@@ -99,31 +99,31 @@ namespace AssetBrowser
 				{
 					UI::ScopedColor typeNameColor(ImGuiCol_Text, GetTypeNameColor(hovered, isSelected));
 					UI::ScopedFont typeFont(FontType::Regular_12);
-					UI::ShiftCursor(itemPadding / 2.f, itemHeightModifier - ImGui::CalcTextSize(myTypeName.c_str()).y - itemPadding * 2.f);
-					ImGui::TextUnformatted(myTypeName.c_str());
+					UI::ShiftCursor(itemPadding / 2.f, itemHeightModifier - ImGui::CalcTextSize(m_typeName.c_str()).y - itemPadding * 2.f);
+					ImGui::TextUnformatted(m_typeName.c_str());
 				}
 
 				ImGui::SetCursorPos(cursorPos);
 				UI::ShiftCursor(itemPadding / 2.f, 0.f);
 
-				if (myIsRenaming)
+				if (m_isRenaming)
 				{
 					const std::string renameId = "###renameId" + path.stem().string();
 					ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
 
 					UI::ScopedColor background{ ImGuiCol_FrameBg, { 0.1f, 0.1f, 0.1f, 0.1f } };
-					if (ImGui::InputTextString(renameId.c_str(), &myCurrentRenamingName, ImGuiInputTextFlags_EnterReturnsTrue))
+					if (ImGui::InputTextString(renameId.c_str(), &m_currentRenamingName, ImGuiInputTextFlags_EnterReturnsTrue))
 					{
-						if (Rename(myCurrentRenamingName))
+						if (Rename(m_currentRenamingName))
 						{
-							myIsRenaming = false;
+							m_isRenaming = false;
 							reload = true;
 							ImGui::PopItemWidth();
 							goto renderEnd;
 						}
 					}
 
-					if (myIsRenaming != myLastRenaming)
+					if (m_isRenaming != m_lastRenaming)
 					{
 						const ImGuiID widgetId = ImGui::GetCurrentWindow()->GetID(renameId.c_str());
 						ImGui::SetFocusID(widgetId, ImGui::GetCurrentWindow());
@@ -132,9 +132,9 @@ namespace AssetBrowser
 
 					if (!ImGui::IsItemFocused())
 					{
-						if (Rename(myCurrentRenamingName))
+						if (Rename(m_currentRenamingName))
 						{
-							myIsRenaming = false;
+							m_isRenaming = false;
 							reload = true;
 							ImGui::PopItemWidth();
 							goto renderEnd;
@@ -143,21 +143,21 @@ namespace AssetBrowser
 
 					if (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 					{
-						if (Rename(myCurrentRenamingName))
+						if (Rename(m_currentRenamingName))
 						{
-							myIsRenaming = false;
+							m_isRenaming = false;
 							reload = true;
 							ImGui::PopItemWidth();
 							goto renderEnd;
 						}
 					}
 
-					myLastRenaming = true;
+					m_lastRenaming = true;
 					ImGui::PopItemWidth();
 				}
 				else
 				{
-					myLastRenaming = false;
+					m_lastRenaming = false;
 					ImGui::TextWrapped("%s", path.stem().string().c_str());
 				}
 
@@ -167,29 +167,27 @@ namespace AssetBrowser
 					Open();
 				}
 
-
-
-				if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && hovered && !mySelectionManager->IsSelected(this))
+				if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && hovered && !m_selectionManager->IsSelected(this))
 				{
-					mySelectionManager->DeselectAll();
-					mySelectionManager->Select(this);
+					m_selectionManager->DeselectAll();
+					m_selectionManager->Select(this);
 				}
 
-				const bool mouseDown = mySelectionManager->IsAnySelected() ? ImGui::IsMouseReleased(ImGuiMouseButton_Left) : ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+				const bool mouseDown = m_selectionManager->IsAnySelected() ? ImGui::IsMouseReleased(ImGuiMouseButton_Left) : ImGui::IsMouseClicked(ImGuiMouseButton_Left);
 				if (mouseDown && hovered)
 				{
 					if (!Volt::Input::IsKeyDown(Volt::InputCode::LeftControl))
 					{
-						mySelectionManager->DeselectAll();
+						m_selectionManager->DeselectAll();
 					}
 
-					if (mySelectionManager->IsSelected(this))
+					if (m_selectionManager->IsSelected(this))
 					{
-						mySelectionManager->Deselect(this);
+						m_selectionManager->Deselect(this);
 					}
 					else
 					{
-						mySelectionManager->Select(this);
+						m_selectionManager->Select(this);
 					}
 				}
 
@@ -232,7 +230,7 @@ namespace AssetBrowser
 			ImGui::SameLine();
 
 			UI::PushFont(FontType::Regular_16);
-			ImGui::Text(("(" + myTypeName + ")").c_str());
+			ImGui::Text(("(" + m_typeName + ")").c_str());
 			UI::PopFont();
 
 			ImGui::Separator();
@@ -248,8 +246,8 @@ namespace AssetBrowser
 	}
 	void Item::StartRename()
 	{
-		myIsRenaming = true;
-		myCurrentRenamingName = path.stem().string();
+		m_isRenaming = true;
+		m_currentRenamingName = path.stem().string();
 	}
 	float Item::GetThumbnailSize() const
 	{

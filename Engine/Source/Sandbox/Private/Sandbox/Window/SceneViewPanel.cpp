@@ -25,6 +25,7 @@
 #include <WindowModule/Window.h>
 
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Utility
 {

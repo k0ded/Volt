@@ -12,6 +12,8 @@
 
 #include "RenderCore/Resources/BindlessResourcesManager.h"
 
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
@@ -30,9 +32,11 @@
 
 namespace Volt
 {
+	static ConsoleVariable<int32_t> s_forcePerPassWaitBarrier("r.RenderGraph.ForcePerPassWaitBarrier", 0, "Whether to insert a full wait dependency between each pass (debug purposes only).");
+
 	namespace Utility
 	{
-		inline void SetupForcedState(const RenderGraphResourceState forcedState, Ref<RenderGraphResourceNodeBase> resource, RHI::ResourceState& outState)
+		inline void SetupForcedState(const RenderGraphResourceState forcedState, Handle<RenderGraphResourceNodeBase> resource, RHI::ResourceState& outState)
 		{
 			if (forcedState == RenderGraphResourceState::IndirectArgument)
 			{
@@ -92,7 +96,7 @@ namespace Volt
 			}
 		}
 
-		inline static void SetupBufferBarrier(RHI::BufferBarrier& bufferBarrier, WeakPtr<RHI::RHIResource> resource)
+		inline static void SetupBufferBarrier(RHI::BufferBarrier& bufferBarrier, RawPtr<RHI::RHIResource> resource)
 		{
 			bufferBarrier.resource = resource;
 			bufferBarrier.size = resource->GetByteSize();
@@ -134,6 +138,9 @@ namespace Volt
 	RenderGraph::RenderGraph(RefPtr<RHI::CommandBuffer> commandBuffer)
 		: m_commandBuffer(commandBuffer)
 	{
+		RHI::FenceCreateInfo createInfo{};
+		m_executionFence = RHI::Fence::Create(createInfo);
+
 		InitializeRuntimeShaderValidator();
 	}
 
@@ -150,11 +157,12 @@ namespace Volt
 		m_standaloneBarriers(std::move(other.m_standaloneBarriers)),
 		m_compiledPasses(std::move(other.m_compiledPasses)),
 		m_registeredExternalResources(std::move(other.m_registeredExternalResources)),
-		m_temporaryAllocations(std::move(other.m_temporaryAllocations)),
+		m_frameTemporaryDataAllocator(std::move(other.m_frameTemporaryDataAllocator)),
 		m_registeredResources(std::move(other.m_registeredResources)),
-		m_passIndex(other.m_passIndex),
-		m_resourceIndex(other.m_resourceIndex),
+		m_passAllocator(std::move(other.m_passAllocator)),
+		m_resourceNodeAllocator(std::move(other.m_resourceNodeAllocator)),
 		m_commandBuffer(other.m_commandBuffer),
+		m_executionFence(other.m_executionFence),
 		m_perPassConstantsBuffer(other.m_perPassConstantsBuffer),
 		m_renderGraphConstantsBuffer(other.m_renderGraphConstantsBuffer),
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
@@ -183,11 +191,12 @@ namespace Volt
 		m_standaloneBarriers = std::move(other.m_standaloneBarriers);
 		m_compiledPasses = std::move(other.m_compiledPasses);
 		m_registeredExternalResources = std::move(other.m_registeredExternalResources);
-		m_temporaryAllocations = std::move(other.m_temporaryAllocations);
+		m_frameTemporaryDataAllocator = std::move(other.m_frameTemporaryDataAllocator);
 		m_registeredResources = std::move(other.m_registeredResources);
-		m_passIndex = other.m_passIndex;
-		m_resourceIndex = other.m_resourceIndex;
+		m_passAllocator = std::move(other.m_passAllocator);
+		m_resourceNodeAllocator = std::move(other.m_resourceNodeAllocator);
 		m_commandBuffer = other.m_commandBuffer;
+		m_executionFence = other.m_executionFence;
 		m_perPassConstantsBuffer = other.m_perPassConstantsBuffer;
 		m_renderGraphConstantsBuffer = other.m_renderGraphConstantsBuffer;
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
@@ -202,7 +211,7 @@ namespace Volt
 		return *this;
 	}
 
-	inline RHI::ResourceState GetWriteStateForRasterizedImage2D(Ref<RenderGraphResourceNodeBase> resourceNode)
+	inline RHI::ResourceState GetWriteStateForRasterizedImage2D(Handle<RenderGraphResourceNodeBase> resourceNode)
 	{
 		VT_ENSURE(resourceNode->GetResourceType() == ResourceType::Image2D);
 
@@ -255,7 +264,7 @@ namespace Volt
 		VT_ENSURE_MSG(markerCount % 2u == 0, "There must be a EndMarker for every BeginMarker!");
 #endif
 
-		m_compiledPasses.resize(m_passIndex);
+		m_compiledPasses.resize(m_passAllocator.GetNumPasses());
 
 		///// Calculate Ref Count //////
 		for (auto& pass : m_passNodes)
@@ -279,7 +288,7 @@ namespace Volt
 		}
 
 		///// Cull Passes /////
-		Vector<Weak<RenderGraphResourceNodeBase>> unreferencedResources{};
+		Vector<Handle<RenderGraphResourceNodeBase>> unreferencedResources{};
 		for (auto& node : m_resourceNodes)
 		{
 			if (node->refCount == 0)
@@ -290,7 +299,7 @@ namespace Volt
 
 		while (!unreferencedResources.empty())
 		{
-			Weak<RenderGraphResourceNodeBase> unreferencedNode = unreferencedResources.back();
+			Handle<RenderGraphResourceNodeBase> unreferencedNode = unreferencedResources.back();
 			unreferencedResources.pop_back();
 
 			if (unreferencedNode->isExternal || unreferencedNode->isGlobal)
@@ -363,7 +372,7 @@ namespace Volt
 
 		struct ResourceState
 		{
-			Weak<RenderGraphPassNodeBase> previousUsage;
+			Handle<RenderGraphPassNodeBase> previousUsage;
 			RHI::ResourceState currentState;
 			bool isWriteState = false;
 		};
@@ -597,6 +606,15 @@ namespace Volt
 					resourceState.isWriteState = false;
 					resourceState.previousUsage = pass;
 				}
+
+				if (s_forcePerPassWaitBarrier.GetValue())
+				{
+					auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Global);
+					newBarrier.globalBarrier().srcStage = RHI::BarrierStage::All;
+					newBarrier.globalBarrier().srcAccess = RHI::BarrierAccess::AllRead | RHI::BarrierAccess::AllWrite;
+					newBarrier.globalBarrier().dstStage = RHI::BarrierStage::All;
+					newBarrier.globalBarrier().dstAccess = RHI::BarrierAccess::AllRead | RHI::BarrierAccess::AllWrite;
+				}
 			}
 
 			// Handle standalone barriers
@@ -662,9 +680,7 @@ namespace Volt
 			return Utility::UpcastHandle<RenderGraphImageHandle>(registeredHandle);
 		}
 
-		RenderGraphImageHandle resourceHandle = Utility::GetValueAsHandle<RenderGraphImageHandle>(m_resourceIndex++);
-		Ref<RenderGraphResourceNode<RenderGraphImage>> node = CreateRef<RenderGraphResourceNode<RenderGraphImage>>();
-		node->handle = resourceHandle;
+		Handle<RenderGraphResourceNode<RenderGraphImage>> node = m_resourceNodeAllocator.Allocate<RenderGraphImage>();
 		node->isExternal = true;
 		node->resourceInfo.isExternal = true;
 
@@ -686,11 +702,11 @@ namespace Volt
 		}
 
 		m_resourceNodes.push_back(node);
-		m_transientResourceSystem.AddExternalResource(resourceHandle, image);
+		m_transientResourceSystem.AddExternalResource(node->handle, image);
 
-		RegisterExternalResource(image, resourceHandle);
+		RegisterExternalResource(image, node->handle);
 
-		return resourceHandle;
+		return Utility::UpcastHandle<RenderGraphImageHandle>(node->handle);
 	}
 
 	RenderGraphBufferHandle RenderGraph::AddExternalBuffer(RefPtr<RHI::StorageBuffer> buffer)
@@ -702,18 +718,16 @@ namespace Volt
 			return Utility::UpcastHandle<RenderGraphBufferHandle>(registeredHandle);
 		}
 
-		RenderGraphBufferHandle resourceHandle = Utility::GetValueAsHandle<RenderGraphBufferHandle>(m_resourceIndex++);
-		Ref<RenderGraphResourceNode<RenderGraphBuffer>> node = CreateRef<RenderGraphResourceNode<RenderGraphBuffer>>();
-		node->handle = resourceHandle;
+		Handle<RenderGraphResourceNode<RenderGraphBuffer>> node = m_resourceNodeAllocator.Allocate<RenderGraphBuffer>();
 		node->isExternal = true;
 		node->resourceInfo.isExternal = true;
 
 		m_resourceNodes.push_back(node);
-		m_transientResourceSystem.AddExternalResource(resourceHandle, buffer);
+		m_transientResourceSystem.AddExternalResource(node->handle, buffer);
 
-		RegisterExternalResource(buffer, resourceHandle);
+		RegisterExternalResource(buffer, node->handle);
 
-		return resourceHandle;
+		return Utility::UpcastHandle<RenderGraphBufferHandle>(node->handle);
 	}
 
 	RenderGraphUniformBufferHandle RenderGraph::AddExternalUniformBuffer(RefPtr<RHI::UniformBuffer> buffer)
@@ -725,18 +739,16 @@ namespace Volt
 			return Utility::UpcastHandle<RenderGraphUniformBufferHandle>(registeredHandle);
 		}
 
-		RenderGraphUniformBufferHandle resourceHandle = Utility::GetValueAsHandle<RenderGraphUniformBufferHandle>(m_resourceIndex++);
-		Ref<RenderGraphResourceNode<RenderGraphUniformBuffer>> node = CreateRef<RenderGraphResourceNode<RenderGraphUniformBuffer>>();
-		node->handle = resourceHandle;
+		Handle<RenderGraphResourceNode<RenderGraphUniformBuffer>> node = m_resourceNodeAllocator.Allocate<RenderGraphUniformBuffer>();
 		node->isExternal = true;
 		node->resourceInfo.isExternal = true;
 
 		m_resourceNodes.push_back(node);
-		m_transientResourceSystem.AddExternalResource(resourceHandle, buffer);
+		m_transientResourceSystem.AddExternalResource(node->handle, buffer);
 
-		RegisterExternalResource(buffer, resourceHandle);
+		RegisterExternalResource(buffer, node->handle);
 
-		return resourceHandle;
+		return Utility::UpcastHandle<RenderGraphUniformBufferHandle>(node->handle);
 	}
 
 	void RenderGraph::ExecuteInternal(bool waitForCompletedExecution, bool waitForSync)
@@ -759,6 +771,7 @@ namespace Volt
 		Vector<PassExecutionRange> executionRanges;
 
 		// Setup execution ranges
+		if (0)
 		{
 			const size_t jobCount = m_passNodes.size() / MAX_PASSES_PER_JOB;
 			const size_t passRemainder = m_passNodes.size() - jobCount * MAX_PASSES_PER_JOB;
@@ -777,8 +790,12 @@ namespace Volt
 				executionRanges.back() = { rangeOffset, static_cast<uint16_t>(rangeOffset + passRemainder) };
 			}
 		}
+		else
+		{
+			executionRanges.emplace_back(0, static_cast<uint16_t>(m_passNodes.size()));
+		}
 
-		const bool executeLocally = m_passNodes.size() <= MAX_PASSES_PER_JOB;
+		const bool executeLocally = true; //m_passNodes.size() <= MAX_PASSES_PER_JOB;
 		const bool allowMultithreadedExecution = false;
 
 		Vector<RefPtr<RHI::CommandBuffer>> secondaryCommandBuffers;
@@ -795,7 +812,7 @@ namespace Volt
 
 				if (passNode->IsCulled())
 				{
-					//InsertStandaloneMarkersIntoCommandBuffer(passNode->index, rangeCmdBuffer);
+					InsertStandaloneMarkersIntoCommandBuffer(passNode->index, rangeCmdBuffer);
 					InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, rangeCmdBuffer);
 					continue;
 				}
@@ -807,7 +824,7 @@ namespace Volt
 				{
 					VT_PROFILE_SCOPE(passNode->name.data());
 					RenderContext renderContext(*this, *passNode, m_sharedRenderContext, rangeCmdBuffer);
-					passNode->Execute(*this, renderContext);
+					m_passAllocator.ExecutePass(passNode, renderContext);
 					renderContext.EndContext();
 				}
 
@@ -815,7 +832,7 @@ namespace Volt
 
 				rangeCmdBuffer->EndMarker();
 
-				//InsertStandaloneMarkersIntoCommandBuffer(passNode->index, rangeCmdBuffer);
+				InsertStandaloneMarkersIntoCommandBuffer(passNode->index, rangeCmdBuffer);
 
 				for (const auto& resourceHandle : compiledPass.surrenderableResources)
 				{
@@ -837,17 +854,17 @@ namespace Volt
 			RefPtr<RHI::CommandBuffer> rangeCmdBuffer = executeLocally ? m_commandBuffer : m_commandBuffer->CreateSecondaryCommandBuffer();
 			secondaryCommandBuffers[rangeIndex] = rangeCmdBuffer;
 
-			if (executeLocally || !allowMultithreadedExecution)
+			//if (executeLocally || !allowMultithreadedExecution)
 			{
 				executeRangeFunc(rangeCmdBuffer, first, last);
 			}
-			else
-			{
-				taskGraph.AddTask([&executeRangeFunc, rangeCmdBuffer, first, last]()
-				{
-					executeRangeFunc(rangeCmdBuffer, first, last);
-				});
-			}
+			//else
+			//{
+			//	taskGraph.AddTask([&executeRangeFunc, rangeCmdBuffer, first, last]()
+			//	{
+			//		executeRangeFunc(rangeCmdBuffer, first, last);
+			//	});
+			//}
 
 			rangeIndex++;
 		}
@@ -868,13 +885,11 @@ namespace Volt
 			m_commandBuffer->End();
 		}
 
+		m_commandBuffer->ExecuteWithFence(m_executionFence);
+
 		if (waitForSync)
 		{
-			m_commandBuffer->ExecuteAndWait();
-		}
-		else
-		{
-			m_commandBuffer->Execute();
+			m_executionFence->WaitUntilSignaled();
 		}
 
 		if (m_totalAllocatedSizeCallback)
@@ -901,13 +916,6 @@ namespace Volt
 		{
 			BindlessResourcesManager::Get().UnregisterResource(handle);
 		}
-
-		for (const auto& alloc : m_temporaryAllocations)
-		{
-			delete[] alloc;
-		}
-
-		m_temporaryAllocations.clear();
 	}
 
 	void RenderGraph::AllocateConstantsBuffer()
@@ -915,25 +923,25 @@ namespace Volt
 		// Pass constants
 		{
 			RenderGraphBufferDesc desc{};
-			desc.count = std::max(m_passIndex, 1u);
+			desc.count = std::max(m_passAllocator.GetNumPasses(), 1u);
 			desc.elementSize = RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE;
 			desc.usage = RHI::BufferUsage::StorageBuffer;
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			desc.name = "Render Graph Per Pass Constants";
 
-			m_perPassConstantsBuffer = m_transientResourceSystem.AquireBufferRef(Utility::GetValueAsHandle<RenderGraphBufferHandle>(m_resourceIndex++), desc);
+			m_perPassConstantsBuffer = m_transientResourceSystem.AcquireBufferRef(Utility::GetValueAsHandle<RenderGraphBufferHandle>(m_resourceNodeAllocator.GetAndIncrementHandle()), desc);
 		}
 
 		// Render Graph constants
 		{
 			RenderGraphBufferDesc desc{};
-			desc.count = std::max(m_passIndex, 1u);
+			desc.count = std::max(m_passAllocator.GetNumPasses(), 1u);
 			desc.elementSize = sizeof(RenderContext::RenderGraphConstants);
 			desc.usage = RHI::BufferUsage::UniformBuffer;
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			desc.name = "Render Graph Constants";
 
-			m_renderGraphConstantsBuffer = m_transientResourceSystem.AquireUniformBuffer(Utility::GetValueAsHandle<RenderGraphUniformBufferHandle>(m_resourceIndex++), desc);
+			m_renderGraphConstantsBuffer = m_transientResourceSystem.AcquireUniformBuffer(Utility::GetValueAsHandle<RenderGraphUniformBufferHandle>(m_resourceNodeAllocator.GetAndIncrementHandle()), desc);
 		}
 	}
 
@@ -946,7 +954,10 @@ namespace Volt
 				continue;
 			}
 
-			auto rawImage = GetImageRawRef(imageExtractionData.resourceHandle);
+			const auto& resourceNode = m_resourceNodes.at(imageExtractionData.resourceHandle);
+			const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
+
+			auto rawImage = m_transientResourceSystem.GetImageIfExists(imageExtractionData.resourceHandle, imageDesc.description);
 			*imageExtractionData.outImagePtr = rawImage;
 		}
 
@@ -957,7 +968,10 @@ namespace Volt
 				continue;
 			}
 
-			auto rawBuffer = GetBufferRawRef(bufferExtractionData.resourceHandle);
+			const auto& resourceNode = m_resourceNodes.at(bufferExtractionData.resourceHandle);
+			const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
+
+			auto rawBuffer = m_transientResourceSystem.GetBufferIfExists(bufferExtractionData.resourceHandle, bufferDesc.description);
 			*bufferExtractionData.outBufferPtr = rawBuffer;
 		}
 	}
@@ -976,7 +990,7 @@ namespace Volt
 #endif
 	}
 
-	void RenderGraph::PrintPassBarriers(const Vector<RHI::ResourceBarrierInfo>& barriers)
+	void RenderGraph::PrintPassBarriers(const PagedVector<RHI::ResourceBarrierInfo>& barriers)
 	{
 #ifdef VT_ENABLE_RENDERGRAPH_DEBUG_LOG
 		for (const auto& barrier : barriers)
@@ -996,9 +1010,7 @@ namespace Volt
 	{
 		VT_ENSURE_MSG(textureDesc.width > 0 && textureDesc.height > 0 && textureDesc.depth > 0, "Width, height and depth must not be zero!");
 
-		RenderGraphImageHandle resourceHandle = Utility::GetValueAsHandle<RenderGraphImageHandle>(m_resourceIndex++);
-		Ref<RenderGraphResourceNode<RenderGraphImage>> node = CreateRef<RenderGraphResourceNode<RenderGraphImage>>();
-		node->handle = resourceHandle;
+		Handle<RenderGraphResourceNode<RenderGraphImage>> node = m_resourceNodeAllocator.Allocate<RenderGraphImage>();
 		node->resourceInfo.description = textureDesc;
 		node->isExternal = false;
 		node->isGlobal = !m_currentlyInBuilder;
@@ -1006,7 +1018,7 @@ namespace Volt
 
 		m_resourceNodes.push_back(node);
 
-		return resourceHandle;
+		return Utility::UpcastHandle<RenderGraphImageHandle>(node->handle);
 	}
 
 	RenderGraphBufferHandle RenderGraph::CreateBuffer(const RenderGraphBufferDesc& bufferDesc)
@@ -1014,9 +1026,7 @@ namespace Volt
 		VT_ENSURE_MSG(bufferDesc.elementSize > 0 && bufferDesc.count > 0, "Size must not be zero!");
 		VT_ENSURE_MSG(EnumValueContainsFlag(bufferDesc.usage, RHI::BufferUsage::StorageBuffer) || EnumValueContainsFlag(bufferDesc.usage, RHI::BufferUsage::IndexBuffer) || EnumValueContainsFlag(bufferDesc.usage, RHI::BufferUsage::VertexBuffer), "Usage flags should contain StorageBuffer, IndexBuffer or VertexBuffer!");
 
-		RenderGraphBufferHandle resourceHandle = Utility::GetValueAsHandle<RenderGraphBufferHandle>(m_resourceIndex++);
-		Ref<RenderGraphResourceNode<RenderGraphBuffer>> node = CreateRef<RenderGraphResourceNode<RenderGraphBuffer>>();
-		node->handle = resourceHandle;
+		Handle<RenderGraphResourceNode<RenderGraphBuffer>> node = m_resourceNodeAllocator.Allocate<RenderGraphBuffer>();
 		node->resourceInfo.description = bufferDesc;
 		node->isExternal = false;
 		node->isGlobal = !m_currentlyInBuilder;
@@ -1026,7 +1036,7 @@ namespace Volt
 
 		m_resourceNodes.push_back(node);
 
-		return resourceHandle;
+		return Utility::UpcastHandle<RenderGraphBufferHandle>(node->handle);
 	}
 
 	RenderGraphUniformBufferHandle RenderGraph::CreateUniformBuffer(const RenderGraphBufferDesc& bufferDesc)
@@ -1034,9 +1044,7 @@ namespace Volt
 		VT_ENSURE_MSG(bufferDesc.elementSize > 0 && bufferDesc.count > 0, "Size must not be zero!");
 		//VT_ENSURE_MSG(EnumValueContainsFlag(bufferDesc.usage, RHI::BufferUsage::UniformBuffer), "Usage flags should contain UniformBuffer!");
 
-		RenderGraphUniformBufferHandle resourceHandle = Utility::GetValueAsHandle<RenderGraphUniformBufferHandle>(m_resourceIndex++);
-		Ref<RenderGraphResourceNode<RenderGraphUniformBuffer>> node = CreateRef<RenderGraphResourceNode<RenderGraphUniformBuffer>>();
-		node->handle = resourceHandle;
+		Handle<RenderGraphResourceNode<RenderGraphUniformBuffer>> node = m_resourceNodeAllocator.Allocate<RenderGraphUniformBuffer>();
 		node->resourceInfo.description = bufferDesc;
 		node->isExternal = false;
 		node->isGlobal = !m_currentlyInBuilder;
@@ -1047,17 +1055,17 @@ namespace Volt
 
 		m_resourceNodes.push_back(node);
 
-		return resourceHandle;
+		return Utility::UpcastHandle<RenderGraphUniformBufferHandle>(node->handle);
 	}
 
-	WeakPtr<RHI::ImageView> RenderGraph::GetImageView(const RenderGraphImageHandle resourceHandle)
+	RawPtr<RHI::ImageView> RenderGraph::GetImageView(const RenderGraphImageHandle resourceHandle)
 	{
 		VT_PROFILE_FUNCTION();
 
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
 
-		auto image = m_transientResourceSystem.AquireImage(resourceHandle, imageDesc.description);
+		auto image = m_transientResourceSystem.AcquireImage(resourceHandle, imageDesc.description);
 		auto view = image->GetView();
 
 		if (!view->IsSwapchainView())
@@ -1068,14 +1076,14 @@ namespace Volt
 		return view;
 	}
 
-	WeakPtr<RHI::Image> RenderGraph::GetImageRaw(const RenderGraphImageHandle resourceHandle)
+	RawPtr<RHI::Image> RenderGraph::GetImageRaw(const RenderGraphImageHandle resourceHandle)
 	{
 		VT_PROFILE_FUNCTION();
 
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
 
-		auto image = m_transientResourceSystem.AquireImage(resourceHandle, imageDesc.description);
+		auto image = m_transientResourceSystem.AcquireImage(resourceHandle, imageDesc.description);
 		auto view = image->GetView();
 
 		// #TODO_Ivar: Move this section to it's own function
@@ -1094,7 +1102,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
 
-		auto image = m_transientResourceSystem.AquireImage(resourceHandle, imageDesc.description);
+		auto image = m_transientResourceSystem.AcquireImage(resourceHandle, imageDesc.description);
 		auto view = image->GetView(mip, layer);
 
 		VT_ENSURE(!view->IsSwapchainView());
@@ -1112,7 +1120,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
 
-		auto image = m_transientResourceSystem.AquireImage(resourceHandle, imageDesc.description);
+		auto image = m_transientResourceSystem.AcquireImage(resourceHandle, imageDesc.description);
 		auto view = image->GetArrayView(mip);
 
 		VT_ENSURE(!view->IsSwapchainView());
@@ -1130,21 +1138,21 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
 
-		auto buffer = m_transientResourceSystem.AquireBuffer(resourceHandle, bufferDesc.description);
+		auto buffer = m_transientResourceSystem.AcquireBuffer(resourceHandle, bufferDesc.description);
 		auto handle = BindlessResourcesManager::Get().RegisterBuffer(buffer);
 
 		m_registeredResources.emplace_back(handle);
 		return handle;
 	}
 
-	WeakPtr<RHI::StorageBuffer> RenderGraph::GetBufferRaw(const RenderGraphBufferHandle resourceHandle)
+	RawPtr<RHI::StorageBuffer> RenderGraph::GetBufferRaw(const RenderGraphBufferHandle resourceHandle)
 	{
 		VT_PROFILE_FUNCTION();
 
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
 
-		auto buffer = m_transientResourceSystem.AquireBuffer(resourceHandle, bufferDesc.description);
+		auto buffer = m_transientResourceSystem.AcquireBuffer(resourceHandle, bufferDesc.description);
 		auto handle = BindlessResourcesManager::Get().RegisterBuffer(buffer);
 
 		m_registeredResources.emplace_back(handle);
@@ -1152,14 +1160,14 @@ namespace Volt
 		return buffer;
 	}
 
-	WeakPtr<RHI::StorageBuffer> RenderGraph::GetUniformBufferRaw(const RenderGraphUniformBufferHandle resourceHandle)
+	RawPtr<RHI::StorageBuffer> RenderGraph::GetUniformBufferRaw(const RenderGraphUniformBufferHandle resourceHandle)
 	{
 		VT_PROFILE_FUNCTION();
 
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle.Get());
 		const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
 
-		auto buffer = m_transientResourceSystem.AquireBuffer(*reinterpret_cast<const RenderGraphBufferHandle*>(&resourceHandle), bufferDesc.description);
+		auto buffer = m_transientResourceSystem.AcquireBuffer(*reinterpret_cast<const RenderGraphBufferHandle*>(&resourceHandle), bufferDesc.description);
 		auto handle = BindlessResourcesManager::Get().RegisterBuffer(buffer);
 
 		m_registeredResources.emplace_back(handle);
@@ -1175,7 +1183,7 @@ namespace Volt
 		const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphUniformBuffer>>().resourceInfo;
 
 		// #TODO_Ivar: Remove cast once we switch to actually using uniform buffers.
-		auto buffer = m_transientResourceSystem.AquireBuffer(*reinterpret_cast<const RenderGraphBufferHandle*>(&resourceHandle), bufferDesc.description);
+		auto buffer = m_transientResourceSystem.AcquireBuffer(*reinterpret_cast<const RenderGraphBufferHandle*>(&resourceHandle), bufferDesc.description);
 		auto handle = BindlessResourcesManager::Get().RegisterBuffer(buffer);
 
 		m_registeredResources.emplace_back(handle);
@@ -1190,7 +1198,7 @@ namespace Volt
 	}
 #endif
 
-	WeakPtr<RHI::RHIResource> RenderGraph::GetResourceRaw(const RenderGraphResourceHandle resourceHandle)
+	RawPtr<RHI::RHIResource> RenderGraph::GetResourceRaw(const RenderGraphResourceHandle resourceHandle)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1201,7 +1209,7 @@ namespace Volt
 
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle);
 
-		WeakPtr<RHI::RHIResource> result{};
+		RawPtr<RHI::RHIResource> result{};
 
 		switch (resourceNode->GetResourceType())
 		{
@@ -1209,7 +1217,7 @@ namespace Volt
 			case ResourceType::Image3D:
 			{
 				const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
-				result = m_transientResourceSystem.AquireImage(Utility::UpcastHandle<RenderGraphImageHandle>(resourceHandle), imageDesc.description);
+				result = m_transientResourceSystem.AcquireImage(Utility::UpcastHandle<RenderGraphImageHandle>(resourceHandle), imageDesc.description);
 
 				break;
 			}
@@ -1217,7 +1225,7 @@ namespace Volt
 			case ResourceType::Buffer:
 			{
 				const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
-				result = m_transientResourceSystem.AquireBuffer(Utility::UpcastHandle<RenderGraphBufferHandle>(resourceHandle), bufferDesc.description);
+				result = m_transientResourceSystem.AcquireBuffer(Utility::UpcastHandle<RenderGraphBufferHandle>(resourceHandle), bufferDesc.description);
 
 				break;
 			}
@@ -1225,7 +1233,7 @@ namespace Volt
 			case ResourceType::UniformBuffer:
 			{
 				const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphUniformBuffer>>().resourceInfo;
-				result = m_transientResourceSystem.AquireBuffer(Utility::UpcastHandle<RenderGraphBufferHandle>(resourceHandle), bufferDesc.description); // #TODO_Ivar: Switch once we start using actual uniform buffers
+				result = m_transientResourceSystem.AcquireBuffer(Utility::UpcastHandle<RenderGraphBufferHandle>(resourceHandle), bufferDesc.description); // #TODO_Ivar: Switch once we start using actual uniform buffers
 
 				break;
 			}
@@ -1241,7 +1249,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle);
 		const auto& imageDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphImage>>().resourceInfo;
 
-		auto image = m_transientResourceSystem.AquireImageRef(resourceHandle, imageDesc.description);
+		auto image = m_transientResourceSystem.AcquireImageRef(resourceHandle, imageDesc.description);
 		auto view = image->GetView();
 
 		// #TODO_Ivar: Move this section to it's own function
@@ -1260,7 +1268,7 @@ namespace Volt
 		const auto& resourceNode = m_resourceNodes.at(resourceHandle);
 		const auto& bufferDesc = resourceNode->As<RenderGraphResourceNode<RenderGraphBuffer>>().resourceInfo;
 
-		auto buffer = m_transientResourceSystem.AquireBufferRef(resourceHandle, bufferDesc.description);
+		auto buffer = m_transientResourceSystem.AcquireBufferRef(resourceHandle, bufferDesc.description);
 		auto handle = BindlessResourcesManager::Get().RegisterBuffer(buffer);
 
 		m_registeredResources.emplace_back(handle);
@@ -1273,7 +1281,7 @@ namespace Volt
 		return RefPtr<RHI::StorageBuffer>();
 	}
 
-	RenderGraphResourceHandle RenderGraph::TryGetRegisteredExternalResource(WeakPtr<RHI::RHIResource> resource)
+	RenderGraphResourceHandle RenderGraph::TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource)
 	{
 		if (m_registeredExternalResources.contains(resource))
 		{
@@ -1283,7 +1291,7 @@ namespace Volt
 		return RenderGraphNullHandle{};
 	}
 
-	void RenderGraph::RegisterExternalResource(WeakPtr<RHI::RHIResource> resource, RenderGraphResourceHandle handle)
+	void RenderGraph::RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RenderGraphResourceHandle handle)
 	{
 		m_registeredExternalResources[resource] = handle;
 	}
@@ -1316,77 +1324,43 @@ namespace Volt
 		commandBuffer->ResourceBarrier(resultBarriers);
 	}
 
-	void RenderGraph::AddPass(const std::string& name, std::function<void(RenderGraph::Builder&)> createFunc, std::function<void(RenderContext&)>&& executeFunc)
-	{
-		static_assert(sizeof(executeFunc) <= 512 && "Execution function must not be larger than 512 bytes!");
-		struct Empty
-		{
-		};
-
-		Ref<RenderGraphPassNode<Empty>> newNode = CreateRef<RenderGraphPassNode<Empty>>();
-		newNode->name = name;
-		newNode->index = m_passIndex++;
-		newNode->executeFunction = [executeFunc](const Empty&, RenderContext& context)
-		{
-			executeFunc(context);
-		};
-
-		m_passNodes.push_back(newNode);
-		m_standaloneMarkers.emplace_back();
-
-		Builder builder{ *this, newNode };
-		createFunc(builder);
-
-		AddRuntimeShaderValidationBuffers(builder);
-	}
-
-	void RenderGraph::AddMappedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, std::string_view name)
+	void RenderGraph::AddMappedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name)
 	{
 		struct Empty
-		{
-		};
+		{};
 
-		uint8_t* tempData = new uint8_t[size];
+		uint8_t* tempData = reinterpret_cast<uint8_t*>(m_frameTemporaryDataAllocator.Allocate(size));
 		memcpy_s(tempData, size, data, size);
 
-		Ref<RenderGraphPassNode<Empty>> newNode = CreateRef<RenderGraphPassNode<Empty>>();
-		newNode->name = name;
-		newNode->index = m_passIndex++;
+		auto executeFunction = [bufferHandle, tempData, size](const Empty&, RenderContext& context) 
+		{
+			context.MappedBufferUpload(bufferHandle, tempData, size);
+		};
+
+		Handle<RenderGraphPassNode<Empty>> newNode = m_passAllocator.AllocatePass<Empty>(name, std::move(executeFunction));
 
 		Builder tempBuilder{ *this, newNode };
 		tempBuilder.WriteResource(bufferHandle, RenderGraphResourceState::CopyDest);
 
 		AddRuntimeShaderValidationBuffers(tempBuilder);
 
-		newNode->executeFunction = [tempData, size, bufferHandle](const Empty&, RenderContext& context)
-		{
-			context.MappedBufferUpload(bufferHandle, tempData, size);
-		}; 
-
 		m_passNodes.push_back(newNode);
 		m_standaloneMarkers.emplace_back(); 
-
-		m_temporaryAllocations.emplace_back(tempData);
 	}
 
-	void RenderGraph::AddMappedBufferUpload(RenderGraphUniformBufferHandle bufferHandle, const void* data, const size_t size, std::string_view name)
+	void RenderGraph::AddMappedBufferUpload(RenderGraphUniformBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name)
 	{
 		// #TODO_Ivar: Replace with correct functionality once uniform buffers are properly implemented.
 		AddMappedBufferUpload(*reinterpret_cast<RenderGraphBufferHandle*>(&bufferHandle), data, size, name);
 	}
 
-	void RenderGraph::AddStagedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, std::string_view name)
+	void RenderGraph::AddStagedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name)
 	{
 		struct Empty
-		{
-		};
+		{};
 
-		uint8_t* tempData = new uint8_t[size];
+		uint8_t* tempData = reinterpret_cast<uint8_t*>(m_frameTemporaryDataAllocator.Allocate(size));
 		memcpy_s(tempData, size, data, size);
-
-		Ref<RenderGraphPassNode<Empty>> newNode = CreateRef<RenderGraphPassNode<Empty>>();
-		newNode->name = name;
-		newNode->index = m_passIndex++;
 
 		RenderGraphBufferDesc stagingDesc{};
 		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
@@ -1398,21 +1372,21 @@ namespace Volt
 		RenderGraphBufferHandle stagingBuffer = CreateBuffer(stagingDesc);
 		AddMappedBufferUpload(stagingBuffer, data, size, name);
 
+		auto executeFunction = [stagingBuffer, bufferHandle, size](const Empty&, RenderContext& context)
+		{
+			context.CopyBuffer(stagingBuffer, bufferHandle, size);
+		};
+
+		Handle<RenderGraphPassNode<Empty>> newNode = m_passAllocator.AllocatePass<Empty>(name, std::move(executeFunction));
+
 		Builder tempBuilder{ *this, newNode };
 		tempBuilder.WriteResource(bufferHandle, RenderGraphResourceState::CopyDest);
 		tempBuilder.ReadResource(stagingBuffer, RenderGraphResourceState::CopySource);
 
 		AddRuntimeShaderValidationBuffers(tempBuilder);
 
-		newNode->executeFunction = [size, bufferHandle, stagingBuffer](const Empty&, RenderContext& context)
-		{
-			context.CopyBuffer(stagingBuffer, bufferHandle, size);
-		};
-
 		m_passNodes.push_back(newNode);
 		m_standaloneMarkers.emplace_back();
-
-		m_temporaryAllocations.emplace_back(tempData);
 	}
 
 	void RenderGraph::AddResourceBarrier(RenderGraphResourceHandle resourceHandle, const RenderGraphBarrierInfo& barrierInfo)
@@ -1508,7 +1482,7 @@ namespace Volt
 
 	void RenderGraph::BeginMarker(const std::string& markerName, const glm::vec4& markerColor)
 	{
-		m_standaloneMarkers[m_passIndex - 1].emplace_back([markerName, markerColor](RefPtr<RHI::CommandBuffer> commandBuffer)
+		m_standaloneMarkers[m_passAllocator.GetNumPasses() - 1].emplace_back([markerName, markerColor](RefPtr<RHI::CommandBuffer> commandBuffer)
 		{
 			commandBuffer->BeginMarker(markerName, { markerColor.x, markerColor.y, markerColor.z, markerColor.w });
 		});
@@ -1516,7 +1490,7 @@ namespace Volt
 
 	void RenderGraph::EndMarker()
 	{
-		m_standaloneMarkers[m_passIndex - 1].emplace_back([](RefPtr<RHI::CommandBuffer> commandBuffer)
+		m_standaloneMarkers[m_passAllocator.GetNumPasses() - 1].emplace_back([](RefPtr<RHI::CommandBuffer> commandBuffer)
 		{
 			commandBuffer->EndMarker();
 		});
@@ -1527,7 +1501,7 @@ namespace Volt
 		m_totalAllocatedSizeCallback = std::move(callback);
 	}
 
-	RenderGraph::Builder::Builder(RenderGraph& renderGraph, Ref<RenderGraphPassNodeBase> pass)
+	RenderGraph::Builder::Builder(RenderGraph& renderGraph, Handle<RenderGraphPassNodeBase> pass)
 		: m_renderGraph(renderGraph), m_pass(pass)
 	{
 	}
@@ -1585,6 +1559,11 @@ namespace Volt
 	}
 
 	void RenderGraph::Builder::SetIsComputePass()
+	{
+		m_pass->isComputePass = true;
+	}
+
+	void RenderGraph::Builder::SetIsRayTracingPass()
 	{
 		m_pass->isComputePass = true;
 	}

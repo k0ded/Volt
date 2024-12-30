@@ -12,7 +12,7 @@ struct Constants
 
     vt::UniformBuffer<ViewData> viewData;
     vt::Tex2D<float> depthTexture;
-    vt::Tex2D<float4> normalsTexture;
+    vt::Tex2D<float3> normalsTexture;
 
     uint maxSurfelCount;
     float cameraFov;

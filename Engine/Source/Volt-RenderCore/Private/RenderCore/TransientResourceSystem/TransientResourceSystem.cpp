@@ -12,6 +12,8 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Images/Image.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt
 {
 	static ConsoleVariable<int32_t> s_enableMemoryAliasingCVar("r.enableMemoryAliasing", 0, "Control whether memory aliasing should be enabled");
@@ -26,19 +28,19 @@ namespace Volt
 		m_allocatedResources.clear(); 
 	}
 
-	TransientResourceSystem::TransientResourceSystem(const TransientResourceSystem& other)
+	TransientResourceSystem::TransientResourceSystem(const TransientResourceSystem& other) noexcept
 	{
 		m_allocatedResources = other.m_allocatedResources;
 		m_surrenderedResources = other.m_surrenderedResources;
 	}
 
-	TransientResourceSystem::TransientResourceSystem(TransientResourceSystem&& other)
+	TransientResourceSystem::TransientResourceSystem(TransientResourceSystem&& other) noexcept
 	{
 		m_allocatedResources = std::move(other.m_allocatedResources);
 		m_surrenderedResources = std::move(other.m_surrenderedResources);
 	}
 
-	TransientResourceSystem& TransientResourceSystem::operator=(const TransientResourceSystem& other)
+	TransientResourceSystem& TransientResourceSystem::operator=(const TransientResourceSystem& other) noexcept
 	{
 		m_allocatedResources = other.m_allocatedResources;
 		m_surrenderedResources = other.m_surrenderedResources;
@@ -46,7 +48,7 @@ namespace Volt
 		return *this;
 	}
 
-	TransientResourceSystem& TransientResourceSystem::operator=(TransientResourceSystem&& other)
+	TransientResourceSystem& TransientResourceSystem::operator=(TransientResourceSystem&& other) noexcept
 	{
 		m_allocatedResources = std::move(other.m_allocatedResources);
 		m_surrenderedResources = std::move(other.m_surrenderedResources);
@@ -54,29 +56,31 @@ namespace Volt
 		return *this;
 	}
 
-	WeakPtr<RHI::Image> TransientResourceSystem::AquireImage(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc)
+	RawPtr<RHI::Image> TransientResourceSystem::AcquireImage(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc)
 	{
-		return AquireImageRef(resourceHandle, imageDesc);
+		return AcquireImageRef(resourceHandle, imageDesc);
 	}
 
-	WeakPtr<RHI::StorageBuffer> TransientResourceSystem::AquireBuffer(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
+	RawPtr<RHI::StorageBuffer> TransientResourceSystem::AcquireBuffer(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
 	{
-		return AquireBufferRef(resourceHandle, bufferDesc);
+		return AcquireBufferRef(resourceHandle, bufferDesc);
 	}
 
-	WeakPtr<RHI::UniformBuffer> TransientResourceSystem::AquireUniformBuffer(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
+	RawPtr<RHI::UniformBuffer> TransientResourceSystem::AcquireUniformBuffer(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
 	{
-		return AquireUniformBufferRef(resourceHandle, bufferDesc);
+		return AcquireUniformBufferRef(resourceHandle, bufferDesc);
 	}
 
-	RefPtr<RHI::Image> TransientResourceSystem::AquireImageRef(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc)
+	RefPtr<RHI::Image> TransientResourceSystem::AcquireImageRef(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc)
 	{
 		VT_PROFILE_FUNCTION();
 
-		std::scoped_lock lock{ m_allocatedResourcesMutex };
-		if (m_allocatedResources.contains(resourceHandle))
 		{
-			return m_allocatedResources.at(resourceHandle).resource.As<RHI::Image>();
+			std::scoped_lock lock{ m_allocatedResourcesMutex };
+			if (m_allocatedResources.contains(resourceHandle))
+			{
+				return m_allocatedResources.at(resourceHandle).resource.As<RHI::Image>();
+			}
 		}
 
 		//const size_t hash = Utility::GetHashFromImageDesc(imageDesc);
@@ -122,19 +126,24 @@ namespace Volt
 		info.resource = image;
 		info.isOriginal = true;
 
-		m_allocatedResources[resourceHandle] = info;
+		{
+			std::scoped_lock lock{ m_allocatedResourcesMutex };
+			m_allocatedResources[resourceHandle] = info;
+		}
 
 		return image;
 	}
 
-	RefPtr<RHI::StorageBuffer> TransientResourceSystem::AquireBufferRef(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
+	RefPtr<RHI::StorageBuffer> TransientResourceSystem::AcquireBufferRef(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
 	{
 		VT_PROFILE_FUNCTION();
 
-		std::scoped_lock lock{ m_allocatedResourcesMutex };
-		if (m_allocatedResources.contains(resourceHandle))
 		{
-			return m_allocatedResources.at(resourceHandle).resource.As<RHI::StorageBuffer>();
+			std::scoped_lock lock{ m_allocatedResourcesMutex };
+			if (m_allocatedResources.contains(resourceHandle))
+			{
+				return m_allocatedResources.at(resourceHandle).resource.As<RHI::StorageBuffer>();
+			}
 		}
 
 		//const size_t hash = Utility::GetHashFromBufferDesc(bufferDesc);
@@ -153,25 +162,32 @@ namespace Volt
 		//}
 
 		// #TODO_Ivar: Switch to transient allocations
-		RefPtr<RHI::StorageBuffer> buffer = RHI::StorageBuffer::Create(bufferDesc.count, bufferDesc.elementSize, bufferDesc.name, bufferDesc.usage, bufferDesc.memoryUsage);
+		auto allocator = RHI::GraphicsContext::GetDefaultAllocator(); //(bufferDesc.memoryUsage & RHI::MemoryUsage::CPUToGPU) != RHI::MemoryUsage::None ? RHI::GraphicsContext::GetDefaultAllocator() : RHI::GraphicsContext::GetTransientAllocator();
+
+		RefPtr<RHI::StorageBuffer> buffer = RHI::StorageBuffer::Create(bufferDesc.count, bufferDesc.elementSize, bufferDesc.name, bufferDesc.usage, bufferDesc.memoryUsage, allocator);
 
 		ResourceInfo info{};
 		info.resource = buffer;
 		info.isOriginal = true;
 
-		m_allocatedResources[resourceHandle] = info;
+		{
+			std::scoped_lock lock{ m_allocatedResourcesMutex };
+			m_allocatedResources[resourceHandle] = info;
+		}
 
 		return buffer;
 	}
 
-	RefPtr<RHI::UniformBuffer> TransientResourceSystem::AquireUniformBufferRef(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
+	RefPtr<RHI::UniformBuffer> TransientResourceSystem::AcquireUniformBufferRef(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc)
 	{
 		VT_PROFILE_FUNCTION();
 
-		std::scoped_lock lock{ m_allocatedResourcesMutex };
-		if (m_allocatedResources.contains(resourceHandle))
 		{
-			return m_allocatedResources.at(resourceHandle).resource;
+			std::scoped_lock lock{ m_allocatedResourcesMutex };
+			if (m_allocatedResources.contains(resourceHandle))
+			{
+				return m_allocatedResources.at(resourceHandle).resource;
+			}
 		}
 
 		RefPtr<RHI::UniformBuffer> buffer = RHI::UniformBuffer::Create(static_cast<uint32_t>(bufferDesc.elementSize), nullptr, bufferDesc.count, bufferDesc.name);
@@ -180,9 +196,44 @@ namespace Volt
 		info.resource = buffer;
 		info.isOriginal = true;
 
-		m_allocatedResources[resourceHandle] = info;
+		{
+			m_allocatedResources[resourceHandle] = info;
+		}
 
 		return buffer;
+	}
+
+	RefPtr<RHI::Image> TransientResourceSystem::GetImageIfExists(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc)
+	{
+		std::scoped_lock lock{ m_allocatedResourcesMutex };
+		if (m_allocatedResources.contains(resourceHandle))
+		{
+			return m_allocatedResources.at(resourceHandle).resource.As<RHI::Image>();
+		}
+
+		return nullptr;
+	}
+
+	RefPtr<RHI::StorageBuffer> TransientResourceSystem::GetBufferIfExists(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& imageDesc)
+	{
+		std::scoped_lock lock{ m_allocatedResourcesMutex };
+		if (m_allocatedResources.contains(resourceHandle))
+		{
+			return m_allocatedResources.at(resourceHandle).resource.As<RHI::StorageBuffer>();
+		}
+
+		return nullptr;
+	}
+
+	RefPtr<RHI::UniformBuffer> TransientResourceSystem::GetUniformBufferIfExists(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& imageDesc)
+	{
+		std::scoped_lock lock{ m_allocatedResourcesMutex };
+		if (m_allocatedResources.contains(resourceHandle))
+		{
+			return m_allocatedResources.at(resourceHandle).resource.As<RHI::UniformBuffer>();
+		}
+
+		return nullptr;
 	}
 
 	void TransientResourceSystem::SurrenderResource(RenderGraphResourceHandle originalResource, size_t hash)

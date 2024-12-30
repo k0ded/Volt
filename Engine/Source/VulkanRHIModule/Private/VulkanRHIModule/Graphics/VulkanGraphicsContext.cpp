@@ -10,7 +10,7 @@
 
 #include <RHIModule/Graphics/PhysicalGraphicsDevice.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
-#include <RHIModule/Memory/Allocator.h>
+#include <RHIModule/Memory/GPUAllocator.h>
 
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -119,12 +119,12 @@ namespace Volt::RHI
 		Shutdown();
 	}
 
-	RefPtr<Allocator> VulkanGraphicsContext::GetDefaultAllocatorImpl()
+	RefPtr<GPUAllocator> VulkanGraphicsContext::GetDefaultAllocatorImpl()
 	{
 		return m_defaultAllocator;
 	}
 
-	RefPtr<Allocator> VulkanGraphicsContext::GetTransientAllocatorImpl()
+	RefPtr<GPUAllocator> VulkanGraphicsContext::GetTransientAllocatorImpl()
 	{
 		return m_transientAllocator;
 	}
@@ -160,8 +160,8 @@ namespace Volt::RHI
 		m_graphicsDevice = GraphicsDevice::Create(graphicsDeviceInfo);
 	
 		m_resourceStateTracker = RefPtr<ResourceStateTracker>::Create();
-		m_defaultAllocator = DefaultAllocator::Create();
-		m_transientAllocator = TransientAllocator::Create();
+		m_defaultAllocator = DefaultGPUAllocator::Create();
+		m_transientAllocator = TransientGPUAllocator::Create();
 
 		VulkanBindlessDescriptorLayoutManager::CreateGlobalDescriptorLayout();
 	}
@@ -215,10 +215,10 @@ namespace Volt::RHI
 #ifdef VT_ENABLE_VALIDATION
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 		Utility::PopulateDebugMessengerInfo(debugCreateInfo);
-
+		
 		VkValidationFeaturesEXT validationFeatures{};
 		Utility::PopulateValidationFeaturesInfo(validationFeatures, debugCreateInfo);
-
+		
 		createInfo.pNext = &validationFeatures;
 		createInfo.enabledLayerCount = static_cast<uint32_t>(s_validationLayers.size());
 		createInfo.ppEnabledLayerNames = s_validationLayers.data();
@@ -280,6 +280,7 @@ namespace Volt::RHI
 		extensions = glfwGetRequiredInstanceExtensions(&extensionCount);
 		Vector<const char*> extensionsVector{ extensions, extensions + extensionCount };
 		extensionsVector.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		extensionsVector.push_back(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
 
 		return extensionsVector;
 	}

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RHIModule/Core/RHIResource.h"
-#include "RHIModule/Memory/Allocator.h"
+#include "RHIModule/Memory/GPUAllocator.h"
 #include "RHIModule/Buffers/BufferView.h"
 
 namespace Volt::RHI
@@ -19,20 +19,20 @@ namespace Volt::RHI
 
 		virtual const uint64_t GetElementSize() const = 0;
 		virtual const uint32_t GetCount() const = 0;
-		virtual WeakPtr<Allocation> GetAllocation() const = 0;
+		virtual Handle<Allocation> GetAllocation() const = 0;
 
 		virtual void Unmap() = 0;
 		virtual void SetData(const void* data, const size_t size) = 0;
 		virtual void SetData(RefPtr<CommandBuffer> commandBuffer, const void* data, const size_t size) = 0;
 
 		virtual RefPtr<BufferView> GetView() = 0;
-
+		 
 		template<typename T>
 		T* Map();
 
 		template<typename T>
-		static RefPtr<StorageBuffer> Create(uint32_t count, std::string_view name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<Allocator> allocator = nullptr);
-		static RefPtr<StorageBuffer> Create(uint32_t count, uint64_t elementSize, std::string_view name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<Allocator> allocator = nullptr);
+		static RefPtr<StorageBuffer> Create(uint32_t count, const std::string& name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<GPUAllocator> allocator = nullptr);
+		static RefPtr<StorageBuffer> Create(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<GPUAllocator> allocator = nullptr);
 
 	protected:
 		virtual void* MapInternal() = 0;
@@ -47,7 +47,7 @@ namespace Volt::RHI
 	}
 
 	template<typename T>
-	inline RefPtr<StorageBuffer> StorageBuffer::Create(uint32_t count, std::string_view name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator)
+	inline RefPtr<StorageBuffer> StorageBuffer::Create(uint32_t count, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator)
 	{
 		return Create(count, sizeof(T), name, bufferUsage, memoryUsage, allocator);
 	}

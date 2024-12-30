@@ -15,6 +15,7 @@
 
 #include <CoreUtilities/StringHash.h>
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <glm/glm.hpp>
 #include <half/half.hpp>
@@ -181,20 +182,23 @@ namespace Volt
 		void Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ);
 		void DispatchIndirect(RenderGraphBufferHandle commandsBuffer, const size_t offset);
 
+		void TraceRays(RefPtr<RHI::ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth);
+
 		void DrawIndirectCount(RenderGraphBufferHandle commandsBuffer, const size_t offset, RenderGraphBufferHandle countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride);
 		void DrawIndexedIndirect(RenderGraphBufferHandle commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride);
 		void DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance);
 		void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance);
 
-		void BindPipeline(WeakPtr<RHI::RenderPipeline> pipeline);
-		void BindPipeline(WeakPtr<RHI::ComputePipeline> pipeline);
+		void BindPipeline(RawPtr<RHI::RenderPipeline> pipeline);
+		void BindPipeline(RawPtr<RHI::ComputePipeline> pipeline);
+		void BindPipeline(RawPtr<RHI::RayTracingPipeline> pipeline);
 
 		void BindIndexBuffer(RenderGraphBufferHandle indexBuffer);
-		void BindIndexBuffer(WeakPtr<RHI::IndexBuffer> indexBuffer);
-		void BindVertexBuffers(const StackVector<WeakPtr<RHI::VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
+		void BindIndexBuffer(RawPtr<RHI::IndexBuffer> indexBuffer);
+		void BindVertexBuffers(const StackVector<RawPtr<RHI::VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
 		void BindVertexBuffers(const StackVector<RenderGraphBufferHandle, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
 
-		void SetAccelerationStructure(WeakPtr<RHI::AccelerationStructure> accelerationStructure);
+		void SetAccelerationStructure(RawPtr<RHI::AccelerationStructure> accelerationStructure);
 
 		template<typename T>
 		void SetConstant(const StringHash& name, const T& data);
@@ -232,9 +236,11 @@ namespace Volt
 		// Validation
 		void InitializeCurrentPipelineConstantsValidation();
 		void ValidateCurrentPipelineConstants();
+		void ValidatePipelineConstant(const RHI::ShaderRenderGraphConstantsData& constantsData, const RHI::ShaderUniformType& uniformType, const StringHash& constantName);
 
 		// Internal state
 		const RHI::ShaderRenderGraphConstantsData& GetRenderGraphConstantsData();
+		void ClearCurrentPipeline();
 
 		bool m_descriptorTableIsBound = false; // This needs to be checked in every call that uses resources
 
@@ -244,9 +250,11 @@ namespace Volt
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 
-		WeakPtr<RHI::RenderPipeline> m_currentRenderPipeline;
-		WeakPtr<RHI::ComputePipeline> m_currentComputePipeline;
-		WeakPtr<RHI::AccelerationStructure> m_currentAccelerationStructure;
+		RawPtr<RHI::RenderPipeline> m_currentRenderPipeline;
+		RawPtr<RHI::ComputePipeline> m_currentComputePipeline;
+		RawPtr<RHI::RayTracingPipeline> m_currentRayTracingPipeline;
+
+		RawPtr<RHI::AccelerationStructure> m_currentAccelerationStructure;
 
 		uint8_t m_passConstantsData[RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE];
 
@@ -259,18 +267,12 @@ namespace Volt
 	inline void RenderContext::SetConstant(const StringHash& name, const T& data)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
+		ValidatePipelineConstant(constantsData, TryGetTypeFromType<T>(), name);
 
 		const auto& uniform = constantsData.uniforms.at(name);
-
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		VT_ENSURE(uniform.type == TryGetTypeFromType<T>());
-		m_boundPipelineData.uniformHasBeenSetMap[name] = true;
-#endif
-
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &data, sizeof(T));
 	}
 
@@ -278,18 +280,12 @@ namespace Volt
 	inline void RenderContext::SetConstant(const StringHash& name, const Vector<F>& data)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
+		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
 
 		const auto& uniform = constantsData.uniforms.at(name);
-
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		VT_ENSURE(uniform.type == TryGetTypeFromType<F>());
-		m_boundPipelineData.uniformHasBeenSetMap[name] = true;
-#endif
-
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, data.data(), data.size() * sizeof(F));
 	}
 
@@ -297,18 +293,12 @@ namespace Volt
 	inline void RenderContext::SetConstant(const StringHash& name, const std::array<F, COUNT>& data)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
+		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
 
 		const auto& uniform = constantsData.uniforms.at(name);
-
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		VT_ENSURE(uniform.type == TryGetTypeFromType<F>());
-		m_boundPipelineData.uniformHasBeenSetMap[name] = true;
-#endif
-
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, data.data(), COUNT * sizeof(F));
 	}
 }

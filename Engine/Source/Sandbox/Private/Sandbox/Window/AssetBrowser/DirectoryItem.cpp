@@ -26,7 +26,7 @@ namespace AssetBrowser
 
 		if (void* ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))// TODO: DIRECTORY UNIQUE CODE
 		{
-			for (const auto& item : mySelectionManager->GetSelectedItems())
+			for (const auto& item : m_selectionManager->GetSelectedItems())
 			{
 				if (item->isDirectory && item != this)
 				{
@@ -36,7 +36,7 @@ namespace AssetBrowser
 				}
 			}
 
-			for (const auto& item : mySelectionManager->GetSelectedItems())
+			for (const auto& item : m_selectionManager->GetSelectedItems())
 			{
 				if (!item->isDirectory && item != this && FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / item->path))
 				{
@@ -50,7 +50,7 @@ namespace AssetBrowser
 
 		if (void* ptr = UI::DragDropTarget("ASSET_BROWSER_FOLDER"))// TODO: DIRECTORY UNIQUE CODE
 		{
-			for (const auto& item : mySelectionManager->GetSelectedItems())
+			for (const auto& item : m_selectionManager->GetSelectedItems())
 			{
 				if (item->isDirectory && item != this)
 				{
@@ -60,7 +60,7 @@ namespace AssetBrowser
 				}
 			}
 
-			for (const auto& item : mySelectionManager->GetSelectedItems())
+			for (const auto& item : m_selectionManager->GetSelectedItems())
 			{
 				if (!item->isDirectory && item != this && FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / item->path))
 				{
@@ -115,10 +115,10 @@ namespace AssetBrowser
 		bool removed = false;
 
 
-		if (!mySelectionManager->IsSelected(this))
+		if (!m_selectionManager->IsSelected(this))
 		{
-			mySelectionManager->DeselectAll();
-			mySelectionManager->Select(this);
+			m_selectionManager->DeselectAll();
+			m_selectionManager->Select(this);
 		}
 
 		if (ImGui::MenuItem("Show in Explorer"))
@@ -149,10 +149,10 @@ namespace AssetBrowser
 	{
 		if (newName.empty()) { return false; }
 
-		const std::filesystem::path newDir = path.parent_path() / myCurrentRenamingName;
+		const std::filesystem::path newDir = path.parent_path() / m_currentRenamingName;
 		RecursivlyRenameAssets(this, newDir);
 
-		FileSystem::Rename(Volt::ProjectManager::GetRootDirectory() / path, myCurrentRenamingName);
+		FileSystem::Rename(Volt::ProjectManager::GetRootDirectory() / path, m_currentRenamingName);
 		return true;
 	}
 

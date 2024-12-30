@@ -1,7 +1,7 @@
 #pragma once
 
 #include <CoreUtilities/Pointers/RefPtr.h>
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 
 namespace Volt
 {

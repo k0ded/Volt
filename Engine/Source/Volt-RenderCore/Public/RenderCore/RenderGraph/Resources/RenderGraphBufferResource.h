@@ -14,7 +14,7 @@ namespace Volt
 		RHI::BufferUsage usage = RHI::BufferUsage::None;
 		RHI::MemoryUsage memoryUsage = RHI::MemoryUsage::GPU;
 
-		std::string_view name;
+		std::string name;
 	};
 
 	namespace Utility

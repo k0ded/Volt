@@ -114,7 +114,7 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	ImTextureID D3D12ImGuiImplementation::GetTextureID(RefPtr<Image> image) const
+	ImTextureID D3D12ImGuiImplementation::GetTextureID(RefPtr<Image> image, int32_t mipIndex) const
 	{
 		const size_t hash = std::hash<void*>()(image->GetHandle<void*>());
 
@@ -126,7 +126,7 @@ namespace Volt::RHI
 		}
 
 		D3D12DescriptorPointer resultDescriptor = m_descriptorHeap->Allocate();
-		D3D12DescriptorPointer srcDescriptor = image->GetView()->AsRef<D3D12ImageView>().GetSRVDescriptor();
+		D3D12DescriptorPointer srcDescriptor = image->GetView(mipIndex)->AsRef<D3D12ImageView>().GetSRVDescriptor();
 
 		ID3D12Device2* d3d12Device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device2*>();
 		d3d12Device->CopyDescriptorsSimple(1, D3D12_CPU_DESCRIPTOR_HANDLE(resultDescriptor.GetCPUPointer()), D3D12_CPU_DESCRIPTOR_HANDLE(srcDescriptor.GetCPUPointer()), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

@@ -4,7 +4,7 @@
 
 #include <RHIModule/Descriptors/ResourceHandle.h>
 
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 
 namespace Volt
 {
@@ -30,7 +30,7 @@ namespace Volt
 		void EndContext();
 
 		uint8_t* GetRenderGraphConstantsPointer(uint32_t passIndex);
-		VT_NODISCARD VT_INLINE WeakPtr<RHI::UniformBuffer> GetRenderGraphConstantsBuffer() const { return m_renderGraphConstantsBuffer; }
+		VT_NODISCARD VT_INLINE RawPtr<RHI::UniformBuffer> GetRenderGraphConstantsBuffer() const { return m_renderGraphConstantsBuffer; }
 
 		uint8_t* GetPassConstantsPointer(uint32_t passIndex);
 		ResourceHandle GetPassConstantsBufferResourceHandle() const;
@@ -39,7 +39,7 @@ namespace Volt
 		friend class RenderGraph;
 
 		void SetPerPassConstantsBuffer(RefPtr<RHI::StorageBuffer> constantsBuffer);
-		void SetRenderGraphConstantsBuffer(WeakPtr<RHI::UniformBuffer> constantsBuffer);
+		void SetRenderGraphConstantsBuffer(RawPtr<RHI::UniformBuffer> constantsBuffer);
 
 		bool m_isRenderGraphConstantsMapped = false;
 		uint8_t* m_mappedRenderGraphConstantsPointer = nullptr;
@@ -48,6 +48,6 @@ namespace Volt
 		uint8_t* m_mappedPassConstantsPointer = nullptr;
 
 		BindlessResourceScope<RHI::StorageBuffer> m_passConstantsBuffer;
-		WeakPtr<RHI::UniformBuffer> m_renderGraphConstantsBuffer;
+		RawPtr<RHI::UniformBuffer> m_renderGraphConstantsBuffer;
 	};
 }

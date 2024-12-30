@@ -16,6 +16,8 @@
 
 namespace Volt
 {
+	VT_REGISTER_ASSET_FACTORY(AssetTypes::Material, Material);
+
 	constexpr VoltGUID TEXTURE_NODE_GUID = "{DB60F69D-EFC5-4AA4-BF5A-C89D58942D3F}"_guid;
 
 	Material::Material()

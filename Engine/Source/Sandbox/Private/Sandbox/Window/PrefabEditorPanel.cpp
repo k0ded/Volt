@@ -70,7 +70,7 @@ void PrefabEditorPanel::OnClose()
 
 bool PrefabEditorPanel::OnRenderEvent(Volt::WindowRenderEvent& e)
 {
-	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera());
+	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera(), e.GetTimestep());
 	return false;
 }
 

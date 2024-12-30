@@ -53,6 +53,12 @@ float3 GetNormal(GPUMesh mesh, uint vertexIndex)
     return normalize(OctNormalDecode(octNormal));
 }
 
+float3 GetTangent(GPUMesh mesh, uint vertexIndex, float3 normal)
+{
+    const VertexMaterialData materialData = mesh.vertexMaterialBuffer.Load(vertexIndex);
+    return normalize(DecodeTangent(normal, materialData.tangent));
+}
+
 float4x4 GetSkinningMatrix(GPUMesh mesh, uint vertexIndex, uint objectBoneOffset, vt::TypedBuffer<float4x4> bonesBuffer)
 {
     VertexAnimationData animData = mesh.vertexAnimationInfoBuffer.Load(vertexIndex);

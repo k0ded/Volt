@@ -1,0 +1,6 @@
+name: "GenerateLuminanceHistogram"
+internal: true
+sources:
+  - entryPoint: "GenerateLuminanceHistogramCS"
+    shaderStage: "cs"
+    filePath: "Engine/Shaders/Source/Exposure/GenerateLuminanceHistogram.hlsl"

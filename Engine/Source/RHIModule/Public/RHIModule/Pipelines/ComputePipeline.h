@@ -11,6 +11,7 @@ namespace Volt::RHI
 	public:
 		virtual void Invalidate() = 0;
 		virtual RefPtr<Shader> GetShader() const = 0;
+		virtual bool IsValid() const = 0;
 
 		static RefPtr<ComputePipeline> Create(RefPtr<Shader> shader, bool useGlobalResources = true);
 

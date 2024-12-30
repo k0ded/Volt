@@ -3,6 +3,7 @@
 
 #include "Volt/Rendering/SceneRendererStructs.h"
 #include "Volt/Rendering/Renderer.h"
+#include "Volt/Rendering/RendererCommon.h"
 
 #include "Volt/Rendering/Texture/Texture2D.h"
 
@@ -24,14 +25,20 @@ namespace Volt
 	TAAData TAATechnique::Execute(RefPtr<RHI::Image> previousColor, RenderGraphImageHandle velocityTexture)
 	{
 		const auto& shadingData = m_blackboard.Get<ShadingOutputData>();
-		const auto& renderData = m_blackboard.Get<RenderData>();
+		const auto& depthPrePass = m_blackboard.Get<DepthPrePass>();
+		const auto& viewUniformBuffer = m_blackboard.Get<ViewUniformBuffer>();
 
-		TAAData& data = m_renderGraph.AddPass<TAAData>("TAA",
+		TAAData& data = m_renderGraph.AddPass<TAAData>("TAA Pass",
 		[&](RenderGraph::Builder& builder, TAAData& data) 
 		{
 			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(renderData.renderSize.x, renderData.renderSize.y, RHI::ImageUsage::AttachmentStorage, "TAA Output");
+				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, RHI::ImageUsage::AttachmentStorage, "TAA Output");
 				data.taaOutput = builder.CreateImage(desc);
+			}
+
+			{
+				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, RHI::ImageUsage::AttachmentStorage, "TAA Accumulation");
+				data.accumulationOutput = builder.CreateImage(desc);
 			}
 
 			if (!previousColor)
@@ -46,11 +53,12 @@ namespace Volt
 			builder.ReadResource(velocityTexture);
 			builder.ReadResource(data.previousColor);
 			builder.ReadResource(shadingData.colorOutput);
+			builder.ReadResource(depthPrePass.depth);
 
 		},
 		[=](const TAAData& data, RenderContext& context) 
 		{
-			RenderingInfo info = context.CreateRenderingInfo(renderData.renderSize.x, renderData.renderSize.y, { data.taaOutput });
+			RenderingInfo info = context.CreateRenderingInfo(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, { data.taaOutput, data.accumulationOutput });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo;
 			pipelineInfo.shader = ShaderMap::Get("TAAResolve");
@@ -63,13 +71,51 @@ namespace Volt
 			{
 				context.SetConstant("currentColor"_sh, shadingData.colorOutput);
 				context.SetConstant("previousColor"_sh, data.previousColor);
+				context.SetConstant("sceneDepth"_sh, depthPrePass.depth);
 				context.SetConstant("velocityTexture"_sh, velocityTexture);
-				context.SetConstant("pointSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
+				context.SetConstant("linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>()->GetResourceHandle());
+				context.SetConstant("renderSize"_sh, viewUniformBuffer.renderSize);
+				context.SetConstant("frameIndex"_sh, viewUniformBuffer.frameIndex);
+
 			});
 
 			context.EndRendering();
 		});
 
 		return data;
+	}
+
+	TAANoise::TAANoise()
+	{
+		if (!s_initialized)
+		{
+			auto halton = [](size_t index, size_t base)
+			{
+				float f = 1.0f;
+				float r = 0.0f;
+
+				while (index > 0)
+				{
+					f /= base;
+					r += f * (index % base);
+					index /= base;
+				}
+
+				return r;
+			};
+
+			for (size_t i = 0; i < 8; ++i)
+			{
+				s_haltonX[i] = halton(i + 1, 2) * 2.0f - 1.0f;
+				s_haltonY[i] = halton(i + 1, 3) * 2.0f - 1.0f;
+			}
+
+			s_initialized = true;
+		}
+	}
+
+	glm::vec2 TAANoise::Get(uint32_t frameIndex, const glm::uvec2& renderSize)
+	{
+		return { s_haltonX[frameIndex % 8] / static_cast<float>(renderSize.x), s_haltonY[frameIndex % 8] / static_cast<float>(renderSize.y) };
 	}
 }

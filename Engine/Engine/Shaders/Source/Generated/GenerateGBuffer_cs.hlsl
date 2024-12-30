@@ -21,7 +21,7 @@ struct Constants
     vt::UniformBuffer<ViewData> viewData;
     
     vt::RWTex2D<float4> albedo;
-    vt::RWTex2D<float4> normals;
+    vt::RWTex2D<float3> normals;
     vt::RWTex2D<float2> material;
     vt::RWTex2D<float3> emissive;
     
@@ -114,7 +114,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     
     const float3 normal = normalize(drawData.transform.RotateVector(normalize(InterpolateFloat3(derivatives, materialData.normals))));
     const float3 tangent = normalize(drawData.transform.RotateVector(normalize(InterpolateFloat3(derivatives, materialData.tangents))));
-    const float3x3 TBN = CalculateTBN(normal, tangent);
+    const float3x3 TBN = CalculateTBN(normal, tangent, materialData.tangentW);
     
     const GPUMaterial material = scene.materialsBuffer.Load(constants.materialId);
     
@@ -132,10 +132,10 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     float4 albedo = evaluatedMaterial.albedo;
 
     // #TODO_Ivar: This depends on the texture format
-    albedo.xyz = SRGBToLinear(albedo.xyz);
+    //albedo.xyz = SRGBToLinear(albedo.xyz);
     
     constants.albedo.Store(pixelPosition, albedo);
-    constants.normals.Store(pixelPosition, float4(resultNormal * 0.5f + 0.5f, 0.f));
+    constants.normals.Store(pixelPosition, resultNormal * 0.5f + 0.5f);
     constants.material.Store(pixelPosition, float2(evaluatedMaterial.metallic, evaluatedMaterial.roughness));
     constants.emissive.Store(pixelPosition, evaluatedMaterial.emissive);
 }

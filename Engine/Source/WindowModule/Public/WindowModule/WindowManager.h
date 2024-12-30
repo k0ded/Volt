@@ -36,7 +36,7 @@ namespace Volt
 		void DestroyWindow(const WindowHandle handle);
 
 		void BeginFrame();
-		void Render();
+		void Render(float timestep);
 		void Present();
 
 		WindowHandle GetMainWindowHandle() const;

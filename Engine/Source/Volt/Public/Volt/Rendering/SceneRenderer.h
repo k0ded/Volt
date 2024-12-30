@@ -5,6 +5,10 @@
 #include "Volt/Rendering/SceneRendererStructs.h"
 #include "Volt/Rendering/RendererStructs.h"
 #include "Volt/Rendering/RenderingTechniques/GIBS.h"
+#include "Volt/Rendering/RenderingTechniques/DDGI.h"
+#include "Volt/Rendering/RenderingTechniques/TAATechnique.h"
+
+#include <RenderCore/RenderGraph/RenderGraphDebugger.h>
 
 // #TODO_Ivar: Maybe remove from here
 #include <RenderCore/RenderGraph/RenderGraph.h>
@@ -50,36 +54,39 @@ namespace Volt
 	class SceneRenderer
 	{
 	public:
-		enum class ShadingMode : uint32_t
-		{
-			Shaded = 0,
-			Albedo = 1,
-			Normals = 2,
-			Metalness = 3,
-			Roughness = 4,
-			Emissive = 5,
-			AO = 6,
-		};
-
-		enum class VisualizationMode : uint32_t
+		enum class VisualizationMode : uint8_t
 		{
 			None = 0,
-			VisualizeCascades = 1,
-			VisualizeLightComplexity = 2,
-			VisualizeMeshSDF = 3
+			BaseColor = 1,
+			Metallic = 2,
+			Roughness = 3,
+			SceneColor = 4,
+			SceneDepth = 5,
+			WorldNormal = 6,
+			GeometryNormals = 7,
+			AmbientOcclusion = 8,
+			Velocity = 9,
+			UV = 10,
+			GeometryTangents = 11
+		};
+
+		enum class AntiAliasingMethod : uint8_t
+		{
+			FXAA,
+			TAA
 		};
 
 		SceneRenderer(const SceneRendererSpecification& specification);
 		~SceneRenderer();
 
-		void OnRenderEditor(Ref<Camera> camera);
+		void OnRenderEditor(Ref<Camera> camera, float timestep);
 
 		void Resize(const uint32_t width, const uint32_t height);
-		inline void SetShadingMode(ShadingMode shadingMode) { m_shadingMode = shadingMode; }
-		inline ShadingMode GetShadingMode() const { return m_shadingMode; }
 
-		inline void SetVisualizationMode(VisualizationMode visMode) { m_visualizationMode = visMode; }
-		inline VisualizationMode GetVisualizationMode() const { return m_visualizationMode; }
+		inline void SetVisualizationMode(VisualizationMode visualizationMode) { m_visualizationMode = visualizationMode; }
+		inline VisualizationMode GetVisualizationMode2() const { return m_visualizationMode; }
+
+		inline const RenderGraphDebugger& GetRenderGraphDebugger() const { return m_renderGraphDebugger; }
 
 		RefPtr<RHI::Image> GetFinalImage();
 		RefPtr<RHI::Image> GetObjectIDImage();
@@ -92,12 +99,12 @@ namespace Volt
 		const uint64_t GetFrameTotalGPUAllocationSize() const;
 
 	private:
-		void OnRender(Ref<Camera> camera);
+		void OnRender(Ref<Camera> camera, float timestep);
 
 		void BuildMeshPass(RenderGraph::Builder& builder, RenderGraphBlackboard& blackboard);
 		void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard);
 
-		void SetupFrameData(RenderGraphBlackboard& blackboard, Ref<Camera> camera);
+		void SetupFrameData(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
 
 		///// Passes //////
 		void UploadUniformBuffers(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
@@ -105,9 +112,13 @@ namespace Volt
 
 		void AddExternalResources(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 
+		void ExecuteGBufferGenerationPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void ExecutePostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, float timestep);
+
 		void AddMainCullingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddPreDepthPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddObjectIDPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void AddGTAOPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
 		void AddVisibilityBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 
 		void AddClearGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
@@ -123,21 +134,23 @@ namespace Volt
 		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddFXAAPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
 
-		void AddFinalCopyPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
+		void AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
 
-		void AddVisualizeSDFPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
-		void AddVisualizeBricksPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
+		void AddVisualizationPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 
-		void AddTestRTPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
+		void AddPathTracingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
+
+		bool ShouldApplyJitter() const;
+		bool IsMeshPassVisualizationMode() const;
 
 		bool m_enabled = false;
 
 		RefPtr<RHI::Image> m_outputImage;
 		RefPtr<RHI::Image> m_objectIDImage;
-		RefPtr<RHI::Image> m_previousDepthImage;
 		RefPtr<RHI::Image> m_previousColorImage;
+		RefPtr<RHI::Image> m_averageLuminanceImage;
 
 		Ref<Mesh> m_skyboxMesh;
 
@@ -148,12 +161,20 @@ namespace Volt
 
 		uint32_t m_resizeWidth = 1280;
 		uint32_t m_resizeHeight = 1280;
+			
+		uint32_t m_frameIndex = 0;
 
-		ShadingMode m_shadingMode = ShadingMode::Shaded;
+		glm::mat4 m_prevViewProjection = 1.f;
+		glm::vec2 m_currentJitter = 0.f;
+		glm::vec2 m_prevJitter = 0.f;
+
+		AntiAliasingMethod m_antiAliasingMethod = AntiAliasingMethod::TAA;
 		VisualizationMode m_visualizationMode = VisualizationMode::None;
+
 		PreviousFrameData m_previousFrameData;
 
 		RHI::CommandBufferSet m_commandBufferSet;
+		RenderGraphDebugger m_renderGraphDebugger;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;
 
@@ -162,6 +183,8 @@ namespace Volt
 		////////////////
 		
 		GIBS m_gibs;
+		DDGI m_ddgi;
+		TAANoise m_taaNoise;
 
 		Ref<Scene> m_scene;
 		SceneEnvironment m_sceneEnvironment;

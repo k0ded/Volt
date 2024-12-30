@@ -1,6 +1,7 @@
 #include "Resources.hlsli"
 #include "Structures.hlsli"
 #include "Vertex.hlsli"
+#include "Exposure/Exposure.hlsli"
 
 struct Constants
 {
@@ -29,7 +30,7 @@ Output main(Input input)
 {
     const Constants constants = GetConstants<Constants>();
 
-    float3 result = constants.environmentTexture.SampleLevel(constants.linearSampler, input.samplePosition / 100.f, constants.lod) * constants.intensity;
+    float3 result = constants.environmentTexture.SampleLevel(constants.linearSampler, input.samplePosition * 0.01f, constants.lod) * constants.intensity;
     
     Output output;
     output.output = result;

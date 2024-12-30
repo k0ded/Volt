@@ -10,6 +10,12 @@ struct GLFWwindow;
 
 namespace Volt::RHI
 {
+	struct SwapchainCreateInfo
+	{
+		void* platformWindow;
+		bool useHDRIfAvailable;
+	};
+
 	class VTRHI_API Swapchain : public RHIInterface
 	{
 	public:
@@ -26,8 +32,9 @@ namespace Volt::RHI
 		VT_NODISCARD virtual const uint32_t GetHeight() const = 0;
 		VT_NODISCARD virtual const uint32_t GetFramesInFlight() const = 0;
 		VT_NODISCARD virtual const PixelFormat GetFormat() const = 0;
+		VT_NODISCARD virtual bool IsHDREnabled() const = 0;
 
-		static RefPtr<Swapchain> Create(GLFWwindow* window);
+		static RefPtr<Swapchain> Create(const SwapchainCreateInfo& createInfo);
 
 	protected:
 		Swapchain() = default;

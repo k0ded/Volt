@@ -8,7 +8,7 @@ namespace Volt::RHI
 	class D3D12UniformBuffer : public UniformBuffer
 	{
 	public:
-		D3D12UniformBuffer(const uint32_t size, const void* data, const uint32_t count, std::string_view name);
+		D3D12UniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name);
 		~D3D12UniformBuffer() override;
 
 		RefPtr<BufferView> GetView() override;
@@ -17,7 +17,8 @@ namespace Volt::RHI
 		void Unmap() override;
 
 		inline constexpr ResourceType GetType() const override { return ResourceType::UniformBuffer; }
-		void SetName(std::string_view name) override;
+		
+		void SetName(const std::string& name) override;
 		std::string_view GetName() const override;
 		const uint64_t GetDeviceAddress() const override;
 		const uint64_t GetByteSize() const override;
@@ -28,7 +29,7 @@ namespace Volt::RHI
 
 	private:
 		std::string m_name;
-		RefPtr<Allocation> m_allocation;
+		Handle<Allocation> m_allocation;
 		uint32_t m_size = 0;
 	};
 }

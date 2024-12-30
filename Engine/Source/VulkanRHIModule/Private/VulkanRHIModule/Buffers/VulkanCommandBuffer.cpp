@@ -10,6 +10,7 @@
 
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
+#include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
@@ -22,6 +23,7 @@
 #include "VulkanRHIModule/Synchronization/VulkanEvent.h"
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
+#include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -103,7 +105,7 @@ namespace Volt::RHI
 				result |= VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
 			}
 
-			if (EnumValueContainsFlag(barrierStage, BarrierStage::RayTracing))
+			if (EnumValueContainsFlag(barrierStage, BarrierStage::RayTracingShader))
 			{
 				result |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
 			}
@@ -240,6 +242,31 @@ namespace Volt::RHI
 				result |= VK_ACCESS_2_VIDEO_DECODE_WRITE_BIT_KHR;
 			}
 
+			if (EnumValueContainsFlag(barrierAccess, BarrierAccess::AllRead))
+			{
+				result |= VK_ACCESS_2_MEMORY_READ_BIT;
+			}
+
+			if (EnumValueContainsFlag(barrierAccess, BarrierAccess::AllWrite))
+			{
+				result |= VK_ACCESS_2_MEMORY_WRITE_BIT;
+			}
+
+			if (EnumValueContainsFlag(barrierAccess, BarrierAccess::AccelerationStructureRead))
+			{
+				result |= VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+			}
+
+			if (EnumValueContainsFlag(barrierAccess, BarrierAccess::AccelerationStructureWrite))
+			{
+				result |= VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+			}
+
+			if (EnumValueContainsFlag(barrierAccess, BarrierAccess::ShaderBindingTableRead))
+			{
+				result |= VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+			}
+
 			return result;
 		}
 
@@ -343,28 +370,12 @@ namespace Volt::RHI
 
 	void VulkanCommandBuffer::Flush(RefPtr<Fence> fence)
 	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_commandBufferLevel == CommandBufferLevel::Primary);
-
 		// End the current command buffer
 		End();
 
-		// Execute current command buffer and use the supplied fence
-		{
-			auto device = GraphicsContext::GetDevice();
+		ExecuteWithFence(fence);
 
-			DeviceQueueExecuteInfo execInfo{};
-			execInfo.commandBuffers = { this };
-			execInfo.fence = fence;
-			device->GetDeviceQueue(m_queueType)->Execute(execInfo);
-		}
-
-		// Now we destroy the current command buffer and create a new one.
-		// #TODO_Ivar: Investigate the overhead of creating a new command buffer every frame.
-		Release(fence);
-		Invalidate();
-
-		// And lastly we restart the command buffer
+		// Begin the newly created command buffer
 		Begin();
 	}
 
@@ -385,13 +396,34 @@ namespace Volt::RHI
 		FetchTimestampResults();
 	}
 
+	void VulkanCommandBuffer::ExecuteWithFence(RefPtr<Fence> fence)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE(m_commandBufferLevel == CommandBufferLevel::Primary);
+
+		// Execute current command buffer and use the supplied fence
+		{
+			auto device = GraphicsContext::GetDevice();
+
+			DeviceQueueExecuteInfo execInfo{};
+			execInfo.commandBuffers = { this };
+			execInfo.fence = fence;
+			device->GetDeviceQueue(m_queueType)->Execute(execInfo);
+		}
+
+		// Now we destroy the current command buffer and create a new one.
+		// #TODO_Ivar: Investigate the overhead of creating a new command buffer every frame.
+		Release(fence);
+		Invalidate();
+	}
+
 	void VulkanCommandBuffer::WaitForFence()
 	{
 		VT_PROFILE_FUNCTION();
 		m_fence->WaitUntilSignaled();
 	}
 
-	void VulkanCommandBuffer::SetEvent(WeakPtr<Event> event)
+	void VulkanCommandBuffer::SetEvent(RawPtr<Event> event)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -426,7 +458,7 @@ namespace Volt::RHI
 		vkCmdDrawIndexed(m_commandBufferData.commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
-	void VulkanCommandBuffer::DrawIndexedIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
+	void VulkanCommandBuffer::DrawIndexedIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -437,7 +469,7 @@ namespace Volt::RHI
 		vkCmdDrawIndexedIndirect(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, drawCount, stride);
 	}
 
-	void VulkanCommandBuffer::DrawIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
+	void VulkanCommandBuffer::DrawIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -448,7 +480,7 @@ namespace Volt::RHI
 		vkCmdDrawIndirect(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, drawCount, stride);
 	}
 
-	void VulkanCommandBuffer::DrawIndexedIndirectCount(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, WeakPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
+	void VulkanCommandBuffer::DrawIndexedIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -459,7 +491,7 @@ namespace Volt::RHI
 		vkCmdDrawIndexedIndirectCount(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, countBuffer->GetHandle<VkBuffer>(), countBufferOffset, maxDrawCount, stride);
 	}
 
-	void VulkanCommandBuffer::DrawIndirectCount(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, WeakPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
+	void VulkanCommandBuffer::DrawIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -481,7 +513,7 @@ namespace Volt::RHI
 		vkCmdDispatch(m_commandBufferData.commandBuffer, groupCountX, groupCountY, groupCountZ);
 	}
 
-	void VulkanCommandBuffer::DispatchIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset)
+	void VulkanCommandBuffer::DispatchIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -503,7 +535,7 @@ namespace Volt::RHI
 		vkCmdDrawMeshTasksEXT(m_commandBufferData.commandBuffer, groupCountX, groupCountY, groupCountZ);
 	}
 
-	void VulkanCommandBuffer::DispatchMeshTasksIndirect(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
+	void VulkanCommandBuffer::DispatchMeshTasksIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -514,7 +546,7 @@ namespace Volt::RHI
 		vkCmdDrawMeshTasksIndirectEXT(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, drawCount, stride);
 	}
 
-	void VulkanCommandBuffer::DispatchMeshTasksIndirectCount(WeakPtr<StorageBuffer> commandsBuffer, const size_t offset, WeakPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
+	void VulkanCommandBuffer::DispatchMeshTasksIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -523,6 +555,48 @@ namespace Volt::RHI
 #endif
 
 		vkCmdDrawMeshTasksIndirectCountEXT(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, countBuffer->GetHandle<VkBuffer>(), countBufferOffset, maxDrawCount, stride);
+	}
+
+	void VulkanCommandBuffer::TraceRays(RawPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth)
+	{
+		VT_PROFILE_FUNCTION();
+
+#ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
+		VT_ENSURE(m_currentRayTracingPipeline != nullptr);
+#endif
+
+		const auto& rayTracingPipelineProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetDeviceProperties().rayTracingPipelineProperties;
+
+		auto GetStridedDeviceAddressRegion = [&rayTracingPipelineProperties](const VulkanRayTracingPipeline::RayTracingShaderData& data, RefPtr<StorageBuffer> bindingTable)
+		{
+			VkStridedDeviceAddressRegionKHR result
+			{
+				.deviceAddress = 0,
+				.stride = 0,
+				.size = 0
+			};
+
+			if (data.shaderHandles.empty() || !bindingTable)
+			{
+				return result;
+			}
+
+			result.deviceAddress = bindingTable->GetDeviceAddress();
+			result.stride = rayTracingPipelineProperties.shaderGroupHandleSize;
+			result.size = static_cast<uint32_t>(data.shaderHandles.size());
+
+			return result;
+		};
+
+		VulkanRayTracingPipeline& vulkanPipeline = m_currentRayTracingPipeline->AsRef<VulkanRayTracingPipeline>();
+		VulkanShaderBindingTable& vulkanSBT = shaderBindingTable->AsRef<VulkanShaderBindingTable>();
+
+		VkStridedDeviceAddressRegionKHR rayGenTable = GetStridedDeviceAddressRegion(vulkanPipeline.GetRayGenData(), vulkanSBT.GetRayGenTable());
+		VkStridedDeviceAddressRegionKHR missTable = GetStridedDeviceAddressRegion(vulkanPipeline.GetMissData(), vulkanSBT.GetMissTable());
+		VkStridedDeviceAddressRegionKHR hitGroupTable = GetStridedDeviceAddressRegion(vulkanPipeline.GetHitGroupData(), vulkanSBT.GetHitGroupTable());
+		VkStridedDeviceAddressRegionKHR callableTable = GetStridedDeviceAddressRegion(vulkanPipeline.GetCallableData(), vulkanSBT.GetCallableTable());
+
+		vkCmdTraceRaysKHR(m_commandBufferData.commandBuffer, &rayGenTable, &missTable, &hitGroupTable, &callableTable, width, height, depth);
 	}
 
 	void VulkanCommandBuffer::SetViewports(const StackVector<Viewport, MAX_VIEWPORT_COUNT>& viewports)
@@ -536,43 +610,43 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-
 		vkCmdSetScissor(m_commandBufferData.commandBuffer, 0, static_cast<uint32_t>(scissors.Size()), reinterpret_cast<const VkRect2D*>(scissors.Data()));
 	}
 
-	void VulkanCommandBuffer::BindPipeline(WeakPtr<RenderPipeline> pipeline)
+	void VulkanCommandBuffer::BindPipeline(RawPtr<RenderPipeline> pipeline)
 	{
 		VT_PROFILE_FUNCTION();
+		VT_ENSURE(pipeline);
 
-		m_currentComputePipeline.Reset();
-
-		if (!pipeline)
-		{
-			m_currentRenderPipeline.Reset();
-			return;
-		}
+		ClearCurrentPipeline();
 
 		m_currentRenderPipeline = pipeline;
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetHandle<VkPipeline>());
 	}
 
-	void VulkanCommandBuffer::BindPipeline(WeakPtr<ComputePipeline> pipeline)
+	void VulkanCommandBuffer::BindPipeline(RawPtr<ComputePipeline> pipeline)
 	{
 		VT_PROFILE_FUNCTION();
+		VT_ENSURE(pipeline);
 
-		m_currentRenderPipeline.Reset();
-
-		if (!pipeline)
-		{
-			m_currentComputePipeline.Reset();
-			return;
-		}
+		ClearCurrentPipeline();
 
 		m_currentComputePipeline = pipeline;
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->GetHandle<VkPipeline>());
 	}
 
-	void VulkanCommandBuffer::BindVertexBuffers(const StackVector<WeakPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	void VulkanCommandBuffer::BindPipeline(RawPtr<RayTracingPipeline> pipeline)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE(pipeline);
+
+		ClearCurrentPipeline();
+
+		m_currentRayTracingPipeline = pipeline;
+		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->GetHandle<VkPipeline>());
+	}
+
+	void VulkanCommandBuffer::BindVertexBuffers(const StackVector<RawPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -588,7 +662,7 @@ namespace Volt::RHI
 		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.Size()), vkBuffers.Data(), offsets.Data());
 	}
 
-	void VulkanCommandBuffer::BindVertexBuffers(const StackVector<WeakPtr<StorageBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	void VulkanCommandBuffer::BindVertexBuffers(const StackVector<RawPtr<StorageBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -604,7 +678,7 @@ namespace Volt::RHI
 		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.Size()), vkBuffers.Data(), offsets.Data());
 	}
 
-	void VulkanCommandBuffer::BindIndexBuffer(WeakPtr<IndexBuffer> indexBuffer)
+	void VulkanCommandBuffer::BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -612,7 +686,7 @@ namespace Volt::RHI
 		vkCmdBindIndexBuffer(m_commandBufferData.commandBuffer, indexBuffer->GetHandle<VkBuffer>(), offset, VK_INDEX_TYPE_UINT32);
 	}
 
-	void VulkanCommandBuffer::BindIndexBuffer(WeakPtr<StorageBuffer> indexBuffer)
+	void VulkanCommandBuffer::BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -620,7 +694,7 @@ namespace Volt::RHI
 		vkCmdBindIndexBuffer(m_commandBufferData.commandBuffer, indexBuffer->GetHandle<VkBuffer>(), offset, VK_INDEX_TYPE_UINT32);
 	}
 
-	void VulkanCommandBuffer::BindDescriptorTable(WeakPtr<DescriptorTable> descriptorTable)
+	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -634,7 +708,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanCommandBuffer::BindDescriptorTable(WeakPtr<BindlessDescriptorTable> descriptorTable, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure)
+	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)
 	{
 		VT_PROFILE_FUNCTION();
 		descriptorTable->AsRef<VulkanBindlessDescriptorTable>().Bind(*this, constantsBuffer, offsetIndex, stride, accelerationStructure);
@@ -703,7 +777,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 #ifndef VT_DIST
-		if (!m_currentRenderPipeline && !m_currentComputePipeline)
+		if (!m_currentRenderPipeline && !m_currentComputePipeline && !m_currentRayTracingPipeline)
 		{
 			VT_LOGC(Error, LogVulkanRHI, "Unable to push constants as no pipeline is currently bound!");
 		}
@@ -718,11 +792,15 @@ namespace Volt::RHI
 			pipelineLayout = vkPipeline.GetPipelineLayout();
 			stageFlags = static_cast<VkPipelineStageFlags>(vkPipeline.GetShader()->GetResources().constants.stageFlags);
 		}
-		else
+		else if (m_currentComputePipeline)
 		{
 			auto& vkPipeline = m_currentComputePipeline->AsRef<VulkanComputePipeline>();
 			pipelineLayout = vkPipeline.GetPipelineLayout();
 			stageFlags = static_cast<VkPipelineStageFlags>(vkPipeline.GetShader()->GetResources().constants.stageFlags);
+		}
+		else if (m_currentRayTracingPipeline)
+		{
+			VT_ENSURE(false);
 		}
 
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
@@ -1080,7 +1158,7 @@ namespace Volt::RHI
 		return m_executionTimes.at(timestampIndex / 2);
 	}
 
-	void VulkanCommandBuffer::ClearImage(WeakPtr<Image> image, std::array<float, 4> clearColor)
+	void VulkanCommandBuffer::ClearImage(RawPtr<Image> image, std::array<float, 4> clearColor)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1121,7 +1199,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanCommandBuffer::ClearBuffer(WeakPtr<StorageBuffer> buffer, const uint32_t value)
+	void VulkanCommandBuffer::ClearBuffer(RawPtr<StorageBuffer> buffer, const uint32_t value)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1129,7 +1207,7 @@ namespace Volt::RHI
 		vkCmdFillBuffer(m_commandBufferData.commandBuffer, vkBuffer.GetHandle<VkBuffer>(), 0, vkBuffer.GetByteSize(), value);
 	}
 
-	void VulkanCommandBuffer::UpdateBuffer(WeakPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data)
+	void VulkanCommandBuffer::UpdateBuffer(RawPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1139,7 +1217,7 @@ namespace Volt::RHI
 		vkCmdUpdateBuffer(m_commandBufferData.commandBuffer, vkBuffer.GetHandle<VkBuffer>(), dstOffset, dataSize, data);
 	}
 
-	void VulkanCommandBuffer::CopyBufferRegion(WeakPtr<Allocation> srcResource, const size_t srcOffset, WeakPtr<Allocation> dstResource, const size_t dstOffset, const size_t size)
+	void VulkanCommandBuffer::CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1151,7 +1229,7 @@ namespace Volt::RHI
 		vkCmdCopyBuffer(m_commandBufferData.commandBuffer, srcResource->GetResourceHandle<VkBuffer>(), dstResource->GetResourceHandle<VkBuffer>(), 1, &copy);
 	}
 
-	void VulkanCommandBuffer::CopyBufferToImage(WeakPtr<Allocation> srcBuffer, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
+	void VulkanCommandBuffer::CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1176,7 +1254,7 @@ namespace Volt::RHI
 		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, srcBuffer->GetResourceHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), 1, &region);
 	}
 
-	void VulkanCommandBuffer::CopyImageToBuffer(WeakPtr<Image> srcImage, WeakPtr<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
+	void VulkanCommandBuffer::CopyImageToBuffer(RawPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1202,7 +1280,7 @@ namespace Volt::RHI
 		vkCmdCopyImageToBuffer(m_commandBufferData.commandBuffer, srcImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), dstBuffer->GetResourceHandle<VkBuffer>(), 1, &region);
 	}
 
-	void VulkanCommandBuffer::CopyImage(WeakPtr<Image> srcImage, WeakPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth)
+	void VulkanCommandBuffer::CopyImage(RawPtr<Image> srcImage, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1251,7 +1329,7 @@ namespace Volt::RHI
 		vkCmdCopyImage2(m_commandBufferData.commandBuffer, &cpyInfo);
 	}
 
-	void VulkanCommandBuffer::UploadTextureData(WeakPtr<Image> dstImage, const ImageCopyData& copyData)
+	void VulkanCommandBuffer::UploadTextureData(RawPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1260,10 +1338,7 @@ namespace Volt::RHI
 		Vector<VkBufferImageCopy> copyRegions;
 		copyRegions.reserve(copyData.copySubData.size());
 
-		const uint64_t stagingSize = Utility::CalculateStagingBufferSize(copyData);
-		RefPtr<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingSize, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU);
-
-		uint8_t* stagingPtr = stagingAlloc->Map<uint8_t>();
+		uint8_t* stagingPtr = stagingAllocation->Map<uint8_t>();
 
 		uint64_t offset = 0;
 		for (const auto& subData : copyData.copySubData)
@@ -1281,14 +1356,14 @@ namespace Volt::RHI
 			newRegion.imageOffset = { 0, 0, 0 };
 			newRegion.imageExtent = { subData.width, subData.height, subData.depth };
 
-			memcpy_s(&stagingPtr[offset], stagingSize, subData.data, subData.slicePitch);
+			memcpy_s(&stagingPtr[offset], stagingAllocation->GetSize(), subData.data, subData.slicePitch);
 			offset += subData.slicePitch;
 		}
 
-		stagingAlloc->Unmap();
+		stagingAllocation->Unmap();
 
 		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage);
-		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, stagingAlloc->GetResourceHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
+		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, stagingAllocation->GetResourceHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
 	}
 
 	const QueueType VulkanCommandBuffer::GetQueueType() const
@@ -1301,7 +1376,7 @@ namespace Volt::RHI
 		return m_commandBufferLevel;
 	}
 
-	const WeakPtr<Fence> VulkanCommandBuffer::GetFence() const
+	const RawPtr<Fence> VulkanCommandBuffer::GetFence() const
 	{
 		return m_fence;
 	}
@@ -1510,6 +1585,13 @@ namespace Volt::RHI
 		VT_VK_CHECK(vkBeginCommandBuffer(m_commandBufferData.commandBuffer, &beginInfo));
 	}
 
+	void VulkanCommandBuffer::ClearCurrentPipeline()
+	{
+		m_currentRayTracingPipeline.Reset();
+		m_currentComputePipeline.Reset();
+		m_currentRenderPipeline.Reset();
+	}
+
 	VkPipelineLayout_T* VulkanCommandBuffer::GetCurrentPipelineLayout()
 	{
 		VkPipelineLayout pipelineLayout = nullptr;
@@ -1519,9 +1601,14 @@ namespace Volt::RHI
 			auto& vkPipeline = m_currentRenderPipeline->AsRef<VulkanRenderPipeline>();
 			pipelineLayout = vkPipeline.GetPipelineLayout();
 		}
-		else
+		else if (m_currentComputePipeline)
 		{
 			auto& vkPipeline = m_currentComputePipeline->AsRef<VulkanComputePipeline>();
+			pipelineLayout = vkPipeline.GetPipelineLayout();
+		}
+		else if (m_currentRayTracingPipeline)
+		{
+			auto& vkPipeline = m_currentRayTracingPipeline->AsRef<VulkanRayTracingPipeline>();
 			pipelineLayout = vkPipeline.GetPipelineLayout();
 		}
 

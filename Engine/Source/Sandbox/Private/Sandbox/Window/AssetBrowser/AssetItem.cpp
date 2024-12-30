@@ -62,10 +62,10 @@ namespace AssetBrowser
 	bool AssetItem::RenderRightClickPopup()
 	{
 		bool removed = false;
-		if (!mySelectionManager->IsSelected(this))
+		if (!m_selectionManager->IsSelected(this))
 		{
-			mySelectionManager->DeselectAll();
-			mySelectionManager->Select(this);
+			m_selectionManager->DeselectAll();
+			m_selectionManager->Select(this);
 		}
 
 		if (ImGui::MenuItem("Open Externally"))
@@ -85,7 +85,7 @@ namespace AssetBrowser
 
 		ImGui::Separator();
 
-		bool extraItemsRendered = AssetBrowserUtilities::RenderAssetTypePopup(this);
+		bool extraItemsRendered = AssetBrowserUtilities::RenderAssetTypePopup(this, m_selectionManager);
 
 		if (extraItemsRendered)
 		{

@@ -5,6 +5,8 @@
 #include "Volt/Rendering/RenderObject.h"
 
 #include <RenderCore/Resources/BindlessResource.h>
+#include <RenderCore/Resources/GrowingGPUBuffer.h>
+
 #include <CoreUtilities/Containers/Map.h>
 
 #include <span>
@@ -27,14 +29,15 @@ namespace Volt
 
 	struct GPUSceneBuffers
 	{
-		BindlessResourceRef<RHI::StorageBuffer> meshesBuffer;
-		BindlessResourceRef<RHI::StorageBuffer> sdfMeshesBuffer;
-		BindlessResourceRef<RHI::StorageBuffer> materialsBuffer;
-		BindlessResourceRef<RHI::StorageBuffer> primitiveDrawDataBuffer;
-		BindlessResourceRef<RHI::StorageBuffer> sdfPrimitiveDrawDataBuffer;
-		BindlessResourceRef<RHI::StorageBuffer> bonesBuffer;
+		Ref<GrowingGPUBuffer> meshesBuffer;
+		Ref<GrowingGPUBuffer> sdfMeshesBuffer;
+		Ref<GrowingGPUBuffer> materialsBuffer;
+		Ref<GrowingGPUBuffer> primitiveDrawDataBuffer;
+		Ref<GrowingGPUBuffer> prevPrimitiveDrawDataBuffer;
+		Ref<GrowingGPUBuffer> sdfPrimitiveDrawDataBuffer;
+		Ref<GrowingGPUBuffer> bonesBuffer;
 
-		BindlessResourceRef<RHI::StorageBuffer> validPrimitiveDrawDatasBuffer;
+		Ref<GrowingGPUBuffer> validPrimitiveDrawDatasBuffer;
 	};
 
 	class RenderScene
@@ -44,6 +47,7 @@ namespace Volt
 		~RenderScene();
 
 		void Update(RenderGraph& renderGraph);
+		void EndFrame(RenderGraph& renderGraph);
 
 		void InvalidateRenderObject(UUID64 renderObject);
 
@@ -64,12 +68,9 @@ namespace Volt
 		VT_NODISCARD const uint32_t GetMeshID(Weak<Mesh> mesh, uint32_t subMeshIndex) const;
 		VT_NODISCARD const uint32_t GetMaterialIndex(Weak<Material> material) const;
 		VT_NODISCARD const uint32_t GetMeshIndex(Weak<Mesh> mesh) const;
+		VT_NODISCARD const uint32_t GetPrimitiveIndexFromID(UUID64 primitiveId) const;
 
 		VT_INLINE VT_NODISCARD const GPUSceneBuffers GetGPUSceneBuffers() const { return m_buffers; }
-
-		VT_INLINE VT_NODISCARD const BindlessResource<RHI::StorageBuffer>& GetGPUMeshesBuffer() const { return *m_buffers.meshesBuffer; }
-		VT_INLINE VT_NODISCARD const BindlessResource<RHI::StorageBuffer>& GetGPUMaterialsBuffer() const { return *m_buffers.materialsBuffer; }
-		VT_INLINE VT_NODISCARD const BindlessResource<RHI::StorageBuffer>& GetPrimitiveDrawDataBuffer() const { return *m_buffers.primitiveDrawDataBuffer; }
 
 		VT_NODISCARD Vector<RenderObject>::iterator begin() { return m_renderObjects.begin(); }
 		VT_NODISCARD Vector<RenderObject>::iterator end() { return m_renderObjects.end(); }
@@ -85,12 +86,6 @@ namespace Volt
 		VT_NODISCARD VT_INLINE Ref<RayTracingScene> GetRayTracingScene() const { return m_rayTracingScene; }
 
 	private:
-		void UploadGPUMeshes(const Vector<GPUMesh>& gpuMeshes);
-		void UploadGPUMeshSDFs(const Vector<GPUMeshSDF>& sdfMeshes);
-		void UploadPrimitiveDrawData(const Vector<PrimitiveDrawData>& primitiveDrawData);
-		void UploadSDFPrimitiveDrawData(const Vector<SDFPrimitiveDrawData>& primitiveDrawData);
-
-		void UploadGPUMaterials();
 		void BuildGPUMaterial(Weak<Material> material, GPUMaterial& gpuMaterial);
 
 		void BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderObject& renderObject);

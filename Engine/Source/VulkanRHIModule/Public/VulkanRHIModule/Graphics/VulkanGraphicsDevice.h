@@ -22,7 +22,7 @@ namespace Volt::RHI
 		RefPtr<DeviceQueue> GetDeviceQueue(QueueType queueType) const override;
 		const GraphicsDeviceCapabilities& GetCapabilities() const override;
 
-		WeakPtr<VulkanPhysicalGraphicsDevice> GetPhysicalDevice() const;
+		RawPtr<VulkanPhysicalGraphicsDevice> GetPhysicalDevice() const;
 
 	protected:
 		void* GetHandleImpl() const override;
@@ -34,7 +34,7 @@ namespace Volt::RHI
 	
 		std::unordered_map<QueueType, RefPtr<DeviceQueue>> m_deviceQueues;
 
-		WeakPtr<VulkanPhysicalGraphicsDevice> m_physicalDevice;
+		RawPtr<VulkanPhysicalGraphicsDevice> m_physicalDevice;
 		GPUCrashTracker m_deviceCrashTracker{};
 
 		GraphicsDeviceCapabilities m_capabilities;

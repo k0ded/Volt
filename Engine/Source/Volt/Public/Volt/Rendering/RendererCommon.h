@@ -13,7 +13,7 @@ namespace Volt
 	};
 
 	///// Rendering Structures /////
-	struct ViewData
+	struct ViewUniformBuffer
 	{
 		// Camera
 		glm::mat4 view;
@@ -22,14 +22,18 @@ namespace Volt
 		glm::mat4 inverseProjection;
 		glm::mat4 viewProjection;
 		glm::mat4 inverseViewProjection;
+		glm::mat4 prevViewProjection;
 		glm::vec4 cameraPosition;
 		glm::vec4 cullingFrustum;
 		glm::vec2 depthUnpackConsts;
 		float nearPlane;
 		float farPlane;
 	
+		glm::vec2 currentFrameJitter;
+		glm::vec2 prevFrameJitter;
+
 		// Render Target
-		glm::vec2 renderSize;
+		glm::uvec2 renderSize;
 		glm::vec2 invRenderSize;
 
 		// Light Culling
@@ -38,13 +42,17 @@ namespace Volt
 		// Temp lights
 		uint32_t pointLightCount;
 		uint32_t spotLightCount;
+
+		uint32_t frameIndex;
 	};
 
-	struct DirectionalLightData
+	struct DirectionalLightUniformBuffer
 	{
 		inline static constexpr uint32_t CASCADE_COUNT = 4;
 
-		glm::vec4 direction;
+		glm::vec3 direction;
+		float angularRadius;
+
 		glm::vec3 color;
 		float intensity;
 
@@ -56,9 +64,9 @@ namespace Volt
 
 	struct DirectionalLightInfo
 	{
-		DirectionalLightData data;
-		glm::vec4 projectionBounds[DirectionalLightData::CASCADE_COUNT];
-		glm::mat4 views[DirectionalLightData::CASCADE_COUNT];
+		DirectionalLightUniformBuffer data;
+		glm::vec4 projectionBounds[DirectionalLightUniformBuffer::CASCADE_COUNT];
+		glm::mat4 views[DirectionalLightUniformBuffer::CASCADE_COUNT];
 	};
 
 	struct PointLightData
@@ -76,7 +84,7 @@ namespace Volt
 	struct SpotLightData
 	{
 		glm::vec3 position;
-		float angleAttenuation;
+		float lightAngleScale;
 
 		glm::vec3 color;
 		float intensity;
@@ -84,7 +92,7 @@ namespace Volt
 		glm::vec3 direction;
 		float range;
 
-		float angle;
+		float lightAngleOffset;
 		float falloff;
 		glm::vec2 padding;
 	};

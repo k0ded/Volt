@@ -73,6 +73,11 @@ namespace Volt
 		{
 			m_renderScene->InvalidateRenderObject(id);
 		}
+
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			m_renderScene->GetRayTracingScene()->InvalidateInstance(m_rayTracingInstance);
+		}
 	}
 
 	void ScenePrimitiveData::CreateScenePrimitives()
@@ -113,7 +118,7 @@ namespace Volt
 
 		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
 		{
-			m_rayTracingInstance = m_renderScene->GetRayTracingScene()->AddInstance(m_primitiveMesh, glm::mat4{ 1.f });
+			m_rayTracingInstance = m_renderScene->GetRayTracingScene()->AddInstance(m_primitiveMesh, m_relatedEntity, m_renderScene->GetPrimitiveIndexFromID(m_renderObjects.front()));
 		}
 	}
 

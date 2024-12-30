@@ -270,6 +270,11 @@ namespace Volt::RHI
 				result |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 			}
 
+			if ((usageFlags & BufferUsage::ShaderBindingTable) != BufferUsage::None)
+			{
+				result |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+			}
+
 			if ((usageFlags & BufferUsage::DescriptorBuffer) != BufferUsage::None)
 			{
 				result |= VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT; // #TODO_Ivar: This might cause issues

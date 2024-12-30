@@ -7,10 +7,10 @@
 
 namespace Volt::RHI
 {
-	class VTRHI_API RHIInterface : public RefCounted
+	class VTRHI_API RHIInterface : public RefCounted<RHIInterface>
 	{
 	public:
-		virtual ~RHIInterface() = default;
+		~RHIInterface() override = default;
 		VT_DELETE_COPY_MOVE(RHIInterface);
 
 		template<typename T>

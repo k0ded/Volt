@@ -18,7 +18,7 @@ namespace Volt::RHI
 		ImageUsage imageUsage;
 		uint32_t userData;
 
-		WeakPtr<RHIInterface> resource;
+		RawPtr<RHIInterface> resource;
 	};
 
 	class VTRHI_API ResourceRegistry
@@ -26,10 +26,10 @@ namespace Volt::RHI
 	public:
 		ResourceRegistry(uint32_t handleSize, uint64_t framesInFlight);
 
-		ResourceHandle RegisterResource(WeakPtr<RHIInterface> resource, ImageUsage imageUsage = ImageUsage::None, uint32_t userData = 0);
+		ResourceHandle RegisterResource(RawPtr<RHIInterface> resource, ImageUsage imageUsage = ImageUsage::None, uint32_t userData = 0);
 		void UnregisterResource(ResourceHandle handle);
 
-		ResourceHandle GetResourceHandle(WeakPtr<RHIInterface> resource);
+		ResourceHandle GetResourceHandle(RawPtr<RHIInterface> resource);
 
 		void Update();
 		void MarkAsDirty(ResourceHandle handle);

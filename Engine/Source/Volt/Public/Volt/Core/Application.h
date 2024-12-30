@@ -122,6 +122,7 @@ namespace Volt
 		void InitializeMainThread();
 		void MainUpdate();
 		void CreateGraphicsContext();
+		void SetupFrameCapture();
 
 		bool OnAppUpdateEvent(class AppUpdateEvent& e);
 		bool OnWindowCloseEvent(class WindowCloseEvent& e);

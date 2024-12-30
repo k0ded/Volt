@@ -1,12 +1,12 @@
 #include "Resources.hlsli"
 #include "Vertex.hlsli"
 #include "Structures.hlsli"
+#include "Utility.hlsli"
 
 struct Constants
 {
     vt::Tex2D<float3> sceneColor;
     vt::UniformBuffer<ViewData> viewData;
-
     vt::TextureSampler linearSampler;
 };
 

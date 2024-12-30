@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	void ResourceStateTracker::AddResource(WeakPtr<RHIResource> resource, BarrierStage initialStage, BarrierAccess initialAccess, ImageLayout initialLayout)
+	void ResourceStateTracker::AddResource(RawPtr<RHIResource> resource, BarrierStage initialStage, BarrierAccess initialAccess, ImageLayout initialLayout)
 	{
 		std::scoped_lock lock{ m_mutex };
 		VT_ENSURE(!m_resourceStates.contains(resource));
@@ -18,14 +18,14 @@ namespace Volt::RHI
 		m_resourceStates[resource] = state;
 	}
 	
-	void ResourceStateTracker::RemoveResource(WeakPtr<RHIResource> resource)
+	void ResourceStateTracker::RemoveResource(RawPtr<RHIResource> resource)
 	{
 		std::scoped_lock lock{ m_mutex };
 		VT_ENSURE(m_resourceStates.contains(resource));
 		m_resourceStates.erase(resource);
 	}
 	
-	void ResourceStateTracker::TransitionResource(WeakPtr<RHIResource> resource, BarrierStage dstStage, BarrierAccess dstAccess, ImageLayout dstLayout)
+	void ResourceStateTracker::TransitionResource(RawPtr<RHIResource> resource, BarrierStage dstStage, BarrierAccess dstAccess, ImageLayout dstLayout)
 	{
 		std::scoped_lock lock{ m_mutex };
 		VT_ENSURE(m_resourceStates.contains(resource));
@@ -36,7 +36,7 @@ namespace Volt::RHI
 		state.layout = dstLayout;
 	}
 	
-	const ResourceState& ResourceStateTracker::GetCurrentResourceState(WeakPtr<RHIResource> resource)
+	const ResourceState& ResourceStateTracker::GetCurrentResourceState(RawPtr<RHIResource> resource)
 	{
 		std::scoped_lock lock{ m_mutex };
 		VT_ENSURE(m_resourceStates.contains(resource));

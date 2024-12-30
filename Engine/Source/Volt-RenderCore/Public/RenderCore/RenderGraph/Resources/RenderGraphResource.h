@@ -5,6 +5,8 @@
 #include <RHIModule/Descriptors/ResourceHandle.h>
 #include <RHIModule/Core/RHICommon.h>
 
+#include <CoreUtilities/Allocators/Handle.h>
+
 namespace Volt
 {
 	namespace RHI
@@ -41,8 +43,8 @@ namespace Volt
 		uint32_t refCount = 0;
 		size_t hash = 0;
 
-		Weak<RenderGraphPassNodeBase> producer;
-		Weak<RenderGraphPassNodeBase> lastUsage;
+		Handle<RenderGraphPassNodeBase> producer;
+		Handle<RenderGraphPassNodeBase> lastUsage;
 
 		RenderGraphResourceHandle handle;
 

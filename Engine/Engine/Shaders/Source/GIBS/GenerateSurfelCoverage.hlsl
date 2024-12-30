@@ -17,7 +17,7 @@ struct GenerateSurfelCoverageConstants
 
     vt::UniformBuffer<ViewData> viewData;
     vt::Tex2D<float> depthTexture;
-    vt::Tex2D<float4> normalsTexture;
+    vt::Tex2D<float3> normalsTexture;
 };
 
 [numthreads(16, 16, 1)]

@@ -366,4 +366,45 @@ namespace Volt::RHI
 
 		return m_resources.bindings.at(nameStr);
 	}
+
+	ShaderType D3D12Shader::GetShaderType() const
+	{
+		if (m_shaderStageData.contains(ShaderStage::Vertex) ||
+			m_shaderStageData.contains(ShaderStage::Pixel) ||
+			m_shaderStageData.contains(ShaderStage::Mesh) ||
+			m_shaderStageData.contains(ShaderStage::Amplification) ||
+			m_shaderStageData.contains(ShaderStage::Domain) ||
+			m_shaderStageData.contains(ShaderStage::Hull) ||
+			m_shaderStageData.contains(ShaderStage::Geometry))
+		{
+			return ShaderType::Rasterization;
+		}
+		else if (m_shaderStageData.contains(ShaderStage::Compute))
+		{
+			return ShaderType::Compute;
+		}
+		else if (m_shaderStageData.contains(ShaderStage::RayGen))
+		{
+			return ShaderType::RayGen;
+		}
+		else if (m_shaderStageData.contains(ShaderStage::Miss))
+		{
+			return ShaderType::RayMiss;
+		}
+		else if (m_shaderStageData.contains(ShaderStage::AnyHit))
+		{
+			return ShaderType::RayAnyHit;
+		}
+		else if (m_shaderStageData.contains(ShaderStage::ClosestHit))
+		{
+			return ShaderType::RayClosestHit;
+		}
+		else if (m_shaderStageData.contains(ShaderStage::Intersection))
+		{
+			return ShaderType::RayIntersection;
+		}
+
+		VT_ASSERT(false);
+		return ShaderType::Rasterization;
+	}
 }

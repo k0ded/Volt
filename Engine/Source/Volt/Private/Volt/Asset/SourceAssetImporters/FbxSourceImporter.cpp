@@ -588,7 +588,7 @@ namespace Volt
 
 			if (hasTangents)
 			{
-				outVertices[i].tangent = FbxUtility::ToVec3(inputTangents->GetDirectArray().GetAt(fatIndices[i].elements[ElementType::Tangent]));
+				outVertices[i].tangent = FbxUtility::ToVec4(inputTangents->GetDirectArray().GetAt(fatIndices[i].elements[ElementType::Tangent]));
 			}
 			else
 			{
@@ -599,6 +599,7 @@ namespace Volt
 			{
 				const FbxLayerElementUV* const inputTexCoords = layer0->GetUVSets().GetFirst();
 				outVertices[i].texCoords = FbxUtility::ToVec2(inputTexCoords->GetDirectArray().GetAt(fatIndices[i].elements[ElementType::UV]));
+				outVertices[i].texCoords.y = 1.f - outVertices[i].texCoords.y;
 			}
 
 			if (jointVertexLinks)
@@ -733,6 +734,7 @@ namespace Volt
 				materialData.normal.x = uint8_t(octNormal.x * 255u);
 				materialData.normal.y = uint8_t(octNormal.y * 255u);
 				materialData.tangent = Utility::EncodeTangent(uniqueVertices[i].normal, uniqueVertices[i].tangent);
+				materialData.tangentW = uniqueVertices[i].tangent.w;
 				materialData.texCoords.x = static_cast<half_float::half>(uniqueVertices[i].texCoords.x);
 				materialData.texCoords.y = static_cast<half_float::half>(uniqueVertices[i].texCoords.y);
 			}

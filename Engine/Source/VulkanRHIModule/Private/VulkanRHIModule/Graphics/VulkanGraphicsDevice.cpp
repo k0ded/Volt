@@ -30,6 +30,8 @@ namespace Volt::RHI
 		VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptorTypeFeaturesEXT{};
 		VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeaturesKHR{};
 		VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeaturesKHR{};
+		VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeaturesKHR{};
+		VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR physicalDeviceRayTracingMaintenance1FeaturesKHR{};
 	};
 
 	static EnabledFeatures s_enabledFeatures{};
@@ -37,7 +39,7 @@ namespace Volt::RHI
 	namespace Utility
 	{
 		template<typename T> 
-		T GetVulkanExtensionProperties(WeakPtr<PhysicalGraphicsDevice> device, VkStructureType type)
+		T GetVulkanExtensionProperties(RawPtr<PhysicalGraphicsDevice> device, VkStructureType type)
 		{
 			T resultProperties{};
 			resultProperties.sType = type;
@@ -51,11 +53,12 @@ namespace Volt::RHI
 			return resultProperties;
 		}
 
-		inline static void GetEnabledFeatures(WeakPtr<VulkanPhysicalGraphicsDevice> physicalDevice)
+		inline static void GetEnabledFeatures(RawPtr<VulkanPhysicalGraphicsDevice> physicalDevice)
 		{
 			s_enabledFeatures.vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 			s_enabledFeatures.vulkan11Features.pNext = nullptr;
 			s_enabledFeatures.vulkan11Features.shaderDrawParameters = VK_TRUE;
+			s_enabledFeatures.vulkan11Features.multiview = VK_TRUE;
 
 			s_enabledFeatures.vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 			s_enabledFeatures.vulkan12Features.pNext = &s_enabledFeatures.vulkan11Features;
@@ -150,6 +153,29 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.rayQueryFeaturesKHR;
 			}
 
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+			{
+				s_enabledFeatures.rayTracingPipelineFeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+				s_enabledFeatures.rayTracingPipelineFeaturesKHR.pNext = chainEntryPoint;
+				s_enabledFeatures.rayTracingPipelineFeaturesKHR.rayTracingPipelineShaderGroupHandleCaptureReplay = VK_FALSE;
+				s_enabledFeatures.rayTracingPipelineFeaturesKHR.rayTracingPipelineShaderGroupHandleCaptureReplayMixed = VK_FALSE;
+				s_enabledFeatures.rayTracingPipelineFeaturesKHR.rayTracingPipelineTraceRaysIndirect = VK_FALSE;
+				s_enabledFeatures.rayTracingPipelineFeaturesKHR.rayTraversalPrimitiveCulling = VK_FALSE;
+				s_enabledFeatures.rayTracingPipelineFeaturesKHR.rayTracingPipeline = VK_TRUE;
+
+				chainEntryPoint = &s_enabledFeatures.rayTracingPipelineFeaturesKHR;
+			}
+
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME))
+			{
+				s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR;
+				s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR.pNext = chainEntryPoint;
+				s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR.rayTracingMaintenance1 = VK_TRUE;
+				s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR.rayTracingPipelineTraceRaysIndirect2 = VK_FALSE;
+			
+				chainEntryPoint = &s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR;
+			}
+
 #ifdef VT_ENABLE_NV_AFTERMATH
 			s_enabledFeatures.aftermathDiagInfo.sType = VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV;
 			s_enabledFeatures.aftermathDiagInfo.pNext = chainEntryPoint;
@@ -179,11 +205,14 @@ namespace Volt::RHI
 			s_enabledFeatures.physicalDeviceFeatures.features.shaderStorageBufferArrayDynamicIndexing = VK_TRUE;
 			s_enabledFeatures.physicalDeviceFeatures.features.shaderStorageImageArrayDynamicIndexing = VK_TRUE;
 			s_enabledFeatures.physicalDeviceFeatures.features.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
+			s_enabledFeatures.physicalDeviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
+			s_enabledFeatures.physicalDeviceFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
+			s_enabledFeatures.physicalDeviceFeatures.features.sampleRateShading = VK_TRUE;
 
 			s_enabledFeatures.physicalDeviceFeatures.features.shaderInt16 = VK_TRUE; // #TODO_Ivar: does not work on older cards
 		}
 
-		inline static Vector<const char*> GetEnabledExtensions(WeakPtr<VulkanPhysicalGraphicsDevice> physicalDevice)
+		inline static Vector<const char*> GetEnabledExtensions(RawPtr<VulkanPhysicalGraphicsDevice> physicalDevice)
 		{
 			Vector<const char*> enabledExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
@@ -200,6 +229,16 @@ namespace Volt::RHI
 			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME))
 			{
 				enabledExtensions.emplace_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+			}
+
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+			{
+				enabledExtensions.emplace_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+			}
+
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME))
+			{
+				enabledExtensions.emplace_back(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
 			}
 
 			if (physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && physicalDevice->IsExtensionAvailable(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME))
@@ -361,7 +400,7 @@ namespace Volt::RHI
 		return m_capabilities;
 	}
 
-	WeakPtr<VulkanPhysicalGraphicsDevice> VulkanGraphicsDevice::GetPhysicalDevice() const
+	RawPtr<VulkanPhysicalGraphicsDevice> VulkanGraphicsDevice::GetPhysicalDevice() const
 	{
 		return m_physicalDevice;
 	}

@@ -36,9 +36,9 @@ namespace Volt
 	struct SpotLightComponent
 	{
 		float intensity = 1.f;
-		float angle = 45.f;
+		float outerAngle = 45.f;
+		float innerAngle = 35.f;
 		float range = 100.f;
-		float angleAttenuation = 1.f;
 		float falloff = 1.f;
 		glm::vec3 color = { 1.f, 1.f, 1.f };
 		bool castShadows = false;
@@ -48,9 +48,9 @@ namespace Volt
 			reflect.SetGUID("{D35F915F-53E5-4E15-AE5B-769F4D79B6F8}"_guid);
 			reflect.SetLabel("Spot Light Component");
 			reflect.AddMember(&SpotLightComponent::intensity, "intensity", "Intensity", "", 1.f);
-			reflect.AddMember(&SpotLightComponent::angle, "angle", "Angle", "", 45.f);
+			reflect.AddMember(&SpotLightComponent::innerAngle, "innerAngle", "Inner Angle", "", 35.f);
+			reflect.AddMember(&SpotLightComponent::outerAngle, "outerAngle", "Outer Angle", "", 45.f);
 			reflect.AddMember(&SpotLightComponent::range, "range", "Range", "", 100.f);
-			reflect.AddMember(&SpotLightComponent::angleAttenuation, "angleAttenuation", "Angle Attenuation", "", 1.f);
 			reflect.AddMember(&SpotLightComponent::falloff, "falloff", "Falloff", "", 1.f);
 			reflect.AddMember(&SpotLightComponent::color, "color", "Color", "", glm::vec3{ 1.f }, ComponentMemberFlag::Color3);
 			reflect.AddMember(&SpotLightComponent::castShadows, "castShadows", "Cast Shadows", "", false);
@@ -102,6 +102,7 @@ namespace Volt
 		float intensity = 1.f;
 		glm::vec3 color = { 1.f, 1.f, 1.f };
 		float lightSize = 1.f;
+		float sunRadius = 10.f;
 		bool softShadows = true;
 		bool castShadows = true;
 
@@ -112,6 +113,7 @@ namespace Volt
 			reflect.AddMember(&DirectionalLightComponent::intensity, "intensity", "Intensity", "", 1.f);
 			reflect.AddMember(&DirectionalLightComponent::color, "color", "Color", "", glm::vec3{ 1.f }, ComponentMemberFlag::Color3);
 			reflect.AddMember(&DirectionalLightComponent::lightSize, "lightSize", "Light Size", "", 1.f);
+			reflect.AddMember(&DirectionalLightComponent::sunRadius, "sunRadius", "Sun Radius", "", 10.f);
 			reflect.AddMember(&DirectionalLightComponent::softShadows, "softShadows", "Soft Shadows", "", true);
 			reflect.AddMember(&DirectionalLightComponent::castShadows, "castShadows", "Cast Shadows", "", true);
 		}

@@ -3,7 +3,7 @@
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/VoltAssert.h>
 #include <CoreUtilities/Pointers/RefPtr.h>
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 
 #include <memory>
 #include <string>

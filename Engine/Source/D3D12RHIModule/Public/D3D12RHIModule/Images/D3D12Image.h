@@ -9,7 +9,7 @@ namespace Volt::RHI
 	class D3D12Image final : public Image
 	{
 	public:
-		D3D12Image(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator);
+		D3D12Image(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator);
 		D3D12Image(const SwapchainImageSpecification& specification);
 
 		~D3D12Image() override;
@@ -32,7 +32,7 @@ namespace Volt::RHI
 		const bool IsSwapchainImage() const override;
 
 		inline constexpr ResourceType GetType() const override { return m_specification.imageType; }
-		void SetName(std::string_view name) override;
+		void SetName(const std::string& name) override;
 		std::string_view GetName() const override;
 		const uint64_t GetDeviceAddress() const override;
 		const uint64_t GetByteSize() const override;
@@ -57,8 +57,8 @@ namespace Volt::RHI
 		ImageSpecification m_specification;
 		SwapchainImageData m_swapchainImageData;
 
-		RefPtr<Allocation> m_allocation;
-		RefPtr<Allocator> m_allocator;
+		Handle<Allocation> m_allocation;
+		RefPtr<GPUAllocator> m_allocator;
 
 		bool m_isSwapchainImage = false;
 

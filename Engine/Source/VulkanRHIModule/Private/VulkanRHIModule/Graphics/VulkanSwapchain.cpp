@@ -32,28 +32,72 @@ namespace Volt::RHI
 {
 	namespace Utility
 	{
-		inline static VkSurfaceFormatKHR ChooseSwapchainFormat(const std::span<VulkanSwapchain::SurfaceFormat> swapchainFormats)
+		inline static bool IsHDRColorSpace(ColorSpace colorSpace)
+		{
+			return colorSpace != ColorSpace::SRGB_NONLINEAR;
+		}
+
+		inline static uint32_t GetColorSpaceScore(ColorSpace colorSpace, bool useHDRIfAvailable)
+		{
+			uint32_t useHDR = uint32_t(useHDRIfAvailable);
+
+			switch (colorSpace)
+			{
+				case ColorSpace::SRGB_NONLINEAR: return 1;
+				case ColorSpace::DISPLAY_P3_NONLINEAR: return 2 * useHDR;
+				case ColorSpace::EXTENDED_SRGB_LINEAR: return 1 * useHDR;
+				case ColorSpace::DISPLAY_P3_LINEAR: return 2 * useHDR;
+				case ColorSpace::DCI_P3_NONLINEAR: return 2 * useHDR;
+				case ColorSpace::BT709_LINEAR: return 2 * useHDR;
+				case ColorSpace::BT709_NONLINEAR: return 2 * useHDR;
+				case ColorSpace::BT2020_LINEAR: return 2 * useHDR;
+				case ColorSpace::HDR10_ST2084: return 2 * useHDR;
+				case ColorSpace::DOLBYVISION: return 2 * useHDR;
+				case ColorSpace::HDR10_HLG: return 2 * useHDR;
+				case ColorSpace::ADOBERGB_LINEAR: return 2 * useHDR;
+				case ColorSpace::ADOBERGB_NONLINEAR: return 2 * useHDR;
+				case ColorSpace::PASS_THROUGH_EXT: return 2 * useHDR;
+				case ColorSpace::EXTENDED_SRGB_NONLINEAR: return 2 * useHDR;
+				case ColorSpace::DISPLAY_NATIVE_AMD: return 2 * useHDR;
+			}
+
+			return 0;
+		}
+
+		inline static uint32_t GetFormatScore(PixelFormat format, bool useHDRIfAvailable)
+		{
+			uint32_t useHDR = uint32_t(useHDRIfAvailable);
+
+			switch (format)
+			{
+				case PixelFormat::B8G8R8A8_UNORM: return 2;
+				case PixelFormat::B8G8R8A8_SRGB: return 1;
+				case PixelFormat::R8G8B8A8_UNORM: return 3;
+				case PixelFormat::R8G8B8A8_SRGB: return 2;
+				case PixelFormat::R16G16B16A16_SFLOAT: return 10 * useHDR;
+				case PixelFormat::A2B10G10R10_UNORM_PACK32: return 15 * useHDR;
+			}
+
+			return 0;
+		}
+
+		inline static VkSurfaceFormatKHR ChooseSwapchainFormat(const std::span<VulkanSwapchain::SurfaceFormat> swapchainFormats, bool useHDRIfAvailable)
 		{
 			VkSurfaceFormatKHR result{};
 
-			bool foundOptimal = false;
+			uint32_t bestScore = 0;
 
 			for (const auto& format : swapchainFormats)
 			{
-				if (format.format == PixelFormat::R8G8B8A8_UNORM && format.colorSpace == ColorSpace::SRGB_NONLINEAR)
+				uint32_t score = GetColorSpaceScore(format.colorSpace, useHDRIfAvailable) + GetFormatScore(format.format, useHDRIfAvailable);
+
+				if (score >= bestScore)
 				{
 					result.format = Utility::VoltToVulkanFormat(format.format);
 					result.colorSpace = Utility::VoltToVulkanColorSpace(format.colorSpace);
-					foundOptimal = true;
 
-					break;
+					bestScore = score;
 				}
-			}
-
-			if (!foundOptimal)
-			{
-				result.format = Utility::VoltToVulkanFormat(swapchainFormats.front().format);
-				result.colorSpace = Utility::VoltToVulkanColorSpace(swapchainFormats.front().colorSpace);
 			}
 
 			return result;
@@ -78,13 +122,14 @@ namespace Volt::RHI
 		}
 	}
 
-	VulkanSwapchain::VulkanSwapchain(GLFWwindow* glfwWindow)
+	VulkanSwapchain::VulkanSwapchain(const SwapchainCreateInfo& createInfo)
+		: m_createInfo(createInfo)
 	{
 		auto vulkanContext = GraphicsContext::Get().As<VulkanGraphicsContext>();
 		auto& vulkanPhysicalDevice = GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>();
 
 		VkInstance instance = vulkanContext->GetHandle<VkInstance>();
-		VT_VK_CHECK(glfwCreateWindowSurface(instance, glfwWindow, nullptr, &m_surface));
+		VT_VK_CHECK(glfwCreateWindowSurface(instance, reinterpret_cast<GLFWwindow*>(createInfo.platformWindow), nullptr, &m_surface));
 
 		const auto& queueFamilies = vulkanPhysicalDevice.GetQueueFamilies();
 
@@ -266,6 +311,11 @@ namespace Volt::RHI
 		return data.imageReference;
 	}
 
+	bool VulkanSwapchain::IsHDREnabled() const
+	{
+		return m_isHDREnabled;
+	}
+
 	void* VulkanSwapchain::GetHandleImpl() const
 	{
 		return m_swapchain;
@@ -343,7 +393,11 @@ namespace Volt::RHI
 
 	void VulkanSwapchain::CreateSwapchain(const uint32_t width, const uint32_t height, bool enableVSync)
 	{
-		const VkSurfaceFormatKHR surfaceFormat = Utility::ChooseSwapchainFormat(m_capabilities.surfaceFormats);
+		const VkSurfaceFormatKHR surfaceFormat = Utility::ChooseSwapchainFormat(m_capabilities.surfaceFormats, m_createInfo.useHDRIfAvailable);
+		if (surfaceFormat.colorSpace )
+		{
+		}
+
 		const VkPresentModeKHR presentMode = Utility::ChooseSwapchainPresentMode(enableVSync, m_capabilities.presentModes);
 
 		m_totalImageCount = m_capabilities.minImageCount + 1;

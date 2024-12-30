@@ -372,6 +372,7 @@ namespace Volt
 			gpuMesh.vertexAnimationInfoBuffer = m_vertexAnimationDataBuffer->GetResourceHandle();
 			gpuMesh.vertexBoneWeightsBuffer = m_vertexBoneWeightsBuffer ? m_vertexBoneWeightsBuffer->GetResourceHandle() : Resource::Invalid;
 			gpuMesh.vertexBoneInfluencesBuffer = m_vertexBoneInfluencesBuffer ? m_vertexBoneInfluencesBuffer->GetResourceHandle() : Resource::Invalid;
+			gpuMesh.indexBuffer = m_indexBuffer->GetResourceHandle();
 			gpuMesh.meshletsBuffer = m_meshletsBuffer->GetResourceHandle();
 			gpuMesh.meshletDataBuffer = m_meshletDataBuffer->GetResourceHandle();
 			gpuMesh.center = subMesh.transform * glm::vec4(m_subMeshBoundingSpheres.at(i).center, 1.f);

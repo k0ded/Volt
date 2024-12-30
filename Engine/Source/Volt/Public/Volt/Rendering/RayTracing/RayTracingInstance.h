@@ -1,8 +1,8 @@
 #pragma once
 
-#include <CoreUtilities/UUID.h>
+#include <EntitySystem/EntityID.h>
 
-#include <glm/glm.hpp>
+#include <CoreUtilities/UUID.h>
 
 namespace Volt
 {
@@ -12,8 +12,9 @@ namespace Volt
 	struct RayTracingInstance
 	{
 		RayTracingInstanceID id;
-
+		uint32_t renderScenePrimitiveIndex;
+		
+		EntityID entityId;
 		Ref<Mesh> mesh;
-		glm::mat4 transform;
 	};
 }

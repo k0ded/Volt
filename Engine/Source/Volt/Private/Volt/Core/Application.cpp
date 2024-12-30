@@ -7,9 +7,9 @@
 #include "Volt/Rendering/Renderer.h"
 #include "Volt/Scene/SceneManager.h"
 #include "Volt/Utility/Noise.h"
+#include "Volt/Physics/Physics.h"
 #include "Volt/Utility/UIUtility.h"
 
-#include <Volt-Core/DynamicLibraryManager.h>
 #include <Volt-Core/PluginSystem/PluginRegistry.h>
 #include <Volt-Core/PluginSystem/PluginSystem.h>
 
@@ -17,9 +17,11 @@
 #include <Volt-Physics/PhysicsSubSystem.h>
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetSerializerRegistry.h>
 
 #include <RHIModule/ImGui/ImGuiImplementation.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/FrameCapture.h>
 
 #include <VulkanRHIModule/VulkanRHIProxy.h>
 #include <D3D12RHIModule/D3D12RHIProxy.h>
@@ -30,7 +32,6 @@
 #include <LogModule/Log.h>
 
 #include <InputModule/Events/KeyboardEvents.h>
-#include <InputModule/Input.h>
 
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
@@ -41,6 +42,7 @@
 
 #include <CoreUtilities/ThreadUtilities.h>
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/Allocator.h>
 
 namespace Volt
 {
@@ -84,6 +86,8 @@ namespace Volt
 	{
 		VT_ASSERT_MSG(!s_instance, "Application already exists!");
 		s_instance = this;
+
+		g_heapAllocator = CreateScope<PagedHeapAllocator>();
 
 		FileSystem::Initialize();
 
@@ -197,6 +201,8 @@ namespace Volt
 
 		m_pluginSystem->InitializePlugins();
 		m_eventListener = CreateScope<ApplicationEventListener>(*this);
+
+		SetupFrameCapture();
 	}
 
 	Application::~Application()
@@ -220,6 +226,8 @@ namespace Volt
 		Amp::WWiseEngine::Get().TermWwise();
 
 		m_assetManager = nullptr;
+		g_assetSerializerRegistry.Clear();
+		g_assetFactory.Clear();
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
@@ -239,6 +247,8 @@ namespace Volt
 		FileSystem::Shutdown();
 
 		m_subSystemManager = nullptr;
+
+		g_heapAllocator.reset();
 		s_instance = nullptr;
 	}
 
@@ -290,10 +300,10 @@ namespace Volt
 			AppPreRenderEvent preRenderEvent;
 			EventSystem::DispatchEvent(preRenderEvent);
 
-			AppRenderEvent renderEvent;
+			AppRenderEvent renderEvent(m_currentDeltaTime);
 			EventSystem::DispatchEvent(renderEvent);
 
-			m_windowManager->Render();
+			m_windowManager->Render(m_currentDeltaTime);
 		}
 
 		{
@@ -368,6 +378,15 @@ namespace Volt
 		}
 
 		m_graphicsContext = RHI::GraphicsContext::Create(cinfo);
+	}
+
+	void Application::SetupFrameCapture()
+	{
+		if (RHI::RHIProxy::GetInstance().GetFrameCapture())
+		{
+			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetFlags(RHI::FrameCaptureFlags::DisableOverlay);
+			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetCaptureFileTargetFilePath(ProjectManager::GetProjectDirectory() / ("Volt-" + ProjectManager::GetProject().name));
+		}
 	}
 
 	bool Application::OnAppUpdateEvent(AppUpdateEvent&)

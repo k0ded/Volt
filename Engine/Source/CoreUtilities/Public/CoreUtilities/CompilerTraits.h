@@ -53,7 +53,7 @@
 
 // Min alignment
 #ifdef VT_PLATFORM_WINDOWS
-	#define MIN_PLATFORM_ALIGNMENT 16
+	#define MIN_PLATFORM_ALIGNMENT 16ull
 #else
 	#error "Not defined!"
 #endif

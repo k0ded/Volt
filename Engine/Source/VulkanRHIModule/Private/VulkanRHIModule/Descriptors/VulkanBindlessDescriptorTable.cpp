@@ -21,6 +21,7 @@
 #include <RHIModule/Globals.h>
 
 #include <CoreUtilities/ComparisonHelpers.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <vulkan/vulkan.h>
 
@@ -66,13 +67,13 @@ namespace Volt::RHI
 		Release();
 	}
 
-	ResourceHandle VulkanBindlessDescriptorTable::RegisterBuffer(WeakPtr<StorageBuffer> storageBuffer)
+	ResourceHandle VulkanBindlessDescriptorTable::RegisterBuffer(RawPtr<StorageBuffer> storageBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 		return m_mainRegistry.RegisterResource(storageBuffer, ImageUsage::None, static_cast<uint32_t>(ResourceType::StorageBuffer));
 	}
 
-	ResourceHandle VulkanBindlessDescriptorTable::RegisterImageView(WeakPtr<ImageView> imageView)
+	ResourceHandle VulkanBindlessDescriptorTable::RegisterImageView(RawPtr<ImageView> imageView)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -82,7 +83,7 @@ namespace Volt::RHI
 		return Resource::Invalid;
 	}
 
-	ResourceHandle VulkanBindlessDescriptorTable::RegisterSamplerState(WeakPtr<SamplerState> samplerState)
+	ResourceHandle VulkanBindlessDescriptorTable::RegisterSamplerState(RawPtr<SamplerState> samplerState)
 	{
 		VT_PROFILE_FUNCTION();
 		return m_samplerRegistry.RegisterResource(samplerState);
@@ -146,12 +147,12 @@ namespace Volt::RHI
 		return GetCurrentMainDescriptorSet();
 	}
 
-	void VulkanBindlessDescriptorTable::Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, WeakPtr<AccelerationStructure> accelerationStructure)
+	void VulkanBindlessDescriptorTable::Bind(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)
 	{
 		VT_PROFILE_FUNCTION();
 		VulkanCommandBuffer& vulkanCommandBuffer = commandBuffer.AsRef<VulkanCommandBuffer>();
 
-		VkPipelineBindPoint bindPoint;
+		VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		uint32_t descriptorSetCount = 0;
 
 		if (vulkanCommandBuffer.m_currentRenderPipeline)
@@ -159,10 +160,15 @@ namespace Volt::RHI
 			descriptorSetCount = vulkanCommandBuffer.m_currentRenderPipeline->GetShader()->GetResources().renderGraphConstantsData.IsValid() ? 2 : 1;
 			bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		}
-		else
+		else if (vulkanCommandBuffer.m_currentComputePipeline)
 		{
 			descriptorSetCount = vulkanCommandBuffer.m_currentComputePipeline->GetShader()->GetResources().renderGraphConstantsData.IsValid() ? 2 : 1;
 			bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+		}
+		else if (vulkanCommandBuffer.m_currentRayTracingPipeline)
+		{
+			descriptorSetCount = vulkanCommandBuffer.m_currentRayTracingPipeline->GetRenderGraphConstants().IsValid() ? 2 : 1;
+			bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
 		}
 
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
@@ -181,7 +187,7 @@ namespace Volt::RHI
 
 		if (hasConstantsSet)
 		{
-			WeakPtr<VulkanBindlessDescriptorTable> tablePtr = this;
+			RefPtr<VulkanBindlessDescriptorTable> tablePtr = CreateRefPtrFromThis();
 
 			RHIProxy::GetInstance().DestroyResource([tablePtr, descriptor = descriptorSets[1]]()
 			{
@@ -374,7 +380,7 @@ namespace Volt::RHI
 		return resultSet;
 	}
 
-	void VulkanBindlessDescriptorTable::WriteConstantsSet(VkDescriptorSet_T* dstSet, WeakPtr<UniformBuffer> constantsBuffer, WeakPtr<AccelerationStructure> accelerationStructure)
+	void VulkanBindlessDescriptorTable::WriteConstantsSet(VkDescriptorSet_T* dstSet, RawPtr<UniformBuffer> constantsBuffer, RawPtr<AccelerationStructure> accelerationStructure)
 	{
 		VT_PROFILE_FUNCTION();
 

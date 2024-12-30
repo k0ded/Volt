@@ -29,13 +29,14 @@ namespace Volt
 	RenderScene::RenderScene(Scene* sceneRef)
 		: m_scene(sceneRef)
 	{
-		m_buffers.meshesBuffer = BindlessResource<RHI::StorageBuffer>::CreateScope(5, sizeof(GPUMesh), "GPU Meshes", RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GPU);
-		m_buffers.sdfMeshesBuffer = BindlessResource<RHI::StorageBuffer>::CreateScope(5, sizeof(GPUMeshSDF), "SDF GPU Meshes", RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GPU);
-		m_buffers.materialsBuffer = BindlessResource<RHI::StorageBuffer>::CreateScope(5, sizeof(GPUMaterial), "GPU Materials", RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GPU);
-		m_buffers.primitiveDrawDataBuffer = BindlessResource<RHI::StorageBuffer>::CreateScope(5, sizeof(PrimitiveDrawData), "Primitive Draw Data", RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GPU);
-		m_buffers.sdfPrimitiveDrawDataBuffer = BindlessResource<RHI::StorageBuffer>::CreateScope(5, sizeof(SDFPrimitiveDrawData), "SDF Primitive Draw Data", RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GPU);
-		m_buffers.bonesBuffer = BindlessResource<RHI::StorageBuffer>::CreateScope(1, sizeof(glm::mat4), "GPU Bones", RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GPU);
-		m_buffers.validPrimitiveDrawDatasBuffer = BindlessResource<RHI::StorageBuffer>::CreateScope(1, sizeof(uint32_t), "Compacted Valid Primitive Draw Datas", RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GPU);
+		m_buffers.meshesBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMesh), "GPU Meshes");
+		m_buffers.sdfMeshesBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMeshSDF), "SDF GPU Meshes");
+		m_buffers.materialsBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMaterial), "GPU Materials");
+		m_buffers.primitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(PrimitiveDrawData), "Primitive Draw Data");
+		m_buffers.prevPrimitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(PrimitiveDrawData), "Prev Primitive Draw Data");
+		m_buffers.sdfPrimitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(SDFPrimitiveDrawData), "SDF Primitive Draw Data");
+		m_buffers.bonesBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(glm::mat4), "GPU Bones");
+		m_buffers.validPrimitiveDrawDatasBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "Compacted Valid Primitive Draw Datas");
 
 		// Setup invalid mesh
 		{
@@ -74,7 +75,7 @@ namespace Volt
 
 		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
 		{
-			m_rayTracingScene = CreateRef<RayTracingScene>();
+			m_rayTracingScene = CreateRef<RayTracingScene>(m_scene);
 		}
 	}
 
@@ -121,15 +122,27 @@ namespace Volt
 		{
 			auto bonesBuffer = m_buffers.bonesBuffer;
 
-			if (bonesBuffer->GetResource()->GetCount() < m_animationBufferStorage.size())
-			{
-				bonesBuffer->GetResource()->ResizeWithCount(static_cast<uint32_t>(m_animationBufferStorage.size()));
-				bonesBuffer->MarkAsDirty();
-			}
+			bonesBuffer->GrowIfRequired(m_animationBufferStorage.size());
 
 			bonesBuffer->GetResource()->SetData(m_animationBufferStorage.data(), m_animationBufferStorage.size() * sizeof(glm::mat4));
 			m_animationBufferStorage.clear();
 		}
+
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			m_rayTracingScene->Update();
+		}
+	}
+
+	void RenderScene::EndFrame(RenderGraph& renderGraph)
+	{
+		m_buffers.prevPrimitiveDrawDataBuffer->GrowIfRequired(m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount());
+	
+		RGUtils::CopyBuffer(renderGraph,
+			renderGraph.AddExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource()),
+			renderGraph.AddExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource()),
+			m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize(),
+			"Copy PrimitiveDrawData");
 	}
 
 	void RenderScene::InvalidateRenderObject(UUID64 renderObject)
@@ -304,6 +317,12 @@ namespace Volt
 		return std::numeric_limits<uint32_t>::max();
 	}
 
+	VT_NODISCARD const uint32_t RenderScene::GetPrimitiveIndexFromID(UUID64 primitiveId) const
+	{
+		VT_ENSURE(m_primitiveIndexFromRenderObjectID.contains(primitiveId));
+		return m_primitiveIndexFromRenderObjectID.at(primitiveId);
+	}
+
 	const RenderObject& RenderScene::GetRenderObjectFromID(UUID64 id) const
 	{
 		auto it = std::find_if(m_renderObjects.begin(), m_renderObjects.end(), [id](const auto& renderObject)
@@ -318,79 +337,6 @@ namespace Volt
 		}
 
 		return *it;
-	}
-
-	void RenderScene::UploadGPUMeshes(const Vector<GPUMesh>& gpuMeshes)
-	{
-		auto meshesBuffer = m_buffers.meshesBuffer;
-
-		if (meshesBuffer->GetResource()->GetCount() < static_cast<uint32_t>(gpuMeshes.size()))
-		{
-			meshesBuffer->GetResource()->ResizeWithCount(static_cast<uint32_t>(gpuMeshes.size()));
-			meshesBuffer->MarkAsDirty();
-		}
-		meshesBuffer->GetResource()->SetData(gpuMeshes.data(), sizeof(GPUMesh) * gpuMeshes.size());
-	}
-
-	void RenderScene::UploadGPUMeshSDFs(const Vector<GPUMeshSDF>& sdfMeshes)
-	{
-		auto sdfMeshesBuffer = m_buffers.sdfMeshesBuffer;
-
-		if (sdfMeshesBuffer->GetResource()->GetCount() < static_cast<uint32_t>(sdfMeshes.size()))
-		{
-			sdfMeshesBuffer->GetResource()->ResizeWithCount(static_cast<uint32_t>(sdfMeshes.size()));
-			sdfMeshesBuffer->MarkAsDirty();
-		}
-		sdfMeshesBuffer->GetResource()->SetData(sdfMeshes.data(), sizeof(GPUMeshSDF) * sdfMeshes.size());
-	}
-
-	void RenderScene::UploadPrimitiveDrawData(const Vector<PrimitiveDrawData>& primitiveDrawData)
-	{
-		auto drawDataBuffer = m_buffers.primitiveDrawDataBuffer;
-
-		if (drawDataBuffer->GetResource()->GetCount() < static_cast<uint32_t>(primitiveDrawData.size()))
-		{
-			drawDataBuffer->GetResource()->ResizeWithCount(static_cast<uint32_t>(primitiveDrawData.size()));
-			drawDataBuffer->MarkAsDirty();
-		}
-
-		drawDataBuffer->GetResource()->SetData(primitiveDrawData.data(), sizeof(PrimitiveDrawData) * primitiveDrawData.size());
-	}
-
-	void RenderScene::UploadSDFPrimitiveDrawData(const Vector<SDFPrimitiveDrawData>& primitiveDrawData)
-	{
-		auto drawDataBuffer = m_buffers.sdfPrimitiveDrawDataBuffer;
-
-		if (drawDataBuffer->GetResource()->GetCount() < static_cast<uint32_t>(primitiveDrawData.size()))
-		{
-			drawDataBuffer->GetResource()->ResizeWithCount(static_cast<uint32_t>(primitiveDrawData.size()));
-			drawDataBuffer->MarkAsDirty();
-		}
-
-		drawDataBuffer->GetResource()->SetData(primitiveDrawData.data(), sizeof(SDFPrimitiveDrawData) * primitiveDrawData.size());
-	}
-
-	void RenderScene::UploadGPUMaterials()
-	{
-		auto materialsBuffer = m_buffers.materialsBuffer;
-
-		if (materialsBuffer->GetResource()->GetCount() < static_cast<uint32_t>(m_individualMaterials.size()))
-		{
-			materialsBuffer->GetResource()->ResizeWithCount(static_cast<uint32_t>(m_individualMaterials.size()));
-			materialsBuffer->MarkAsDirty();
-		}
-
-		Vector<GPUMaterial> gpuMaterials;
-
-		for (const auto& material : m_individualMaterials)
-		{
-			m_materialIndexFromAssetHandle[material->handle] = gpuMaterials.size();
-
-			GPUMaterial& gpuMat = gpuMaterials.emplace_back();
-			BuildGPUMaterial(material, gpuMat);
-		}
-
-		materialsBuffer->GetResource()->SetData(gpuMaterials.data(), sizeof(GPUMaterial) * gpuMaterials.size());
 	}
 
 	void RenderScene::BuildGPUMaterial(Weak<Material> material, GPUMaterial& gpuMaterial)
@@ -513,12 +459,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		auto materialsBuffer = m_buffers.materialsBuffer;
-
-		if (materialsBuffer->GetResource()->GetCount() < static_cast<uint32_t>(m_individualMaterials.size()))
-		{
-			materialsBuffer->GetResource()->ResizeWithCount(static_cast<uint32_t>(m_individualMaterials.size()));
-			materialsBuffer->MarkAsDirty();
-		}
+		materialsBuffer->GrowIfRequired(m_individualMaterials.size());
 
 		for (const auto& material : m_individualMaterials)
 		{
@@ -543,7 +484,7 @@ namespace Volt
 				}
 			}
 
-			bufferUpload.UploadTo(renderGraph, *materialsBuffer);
+			bufferUpload.UploadTo(renderGraph, materialsBuffer->GetResource());
 			m_invalidMaterials.clear();
 		}
 	}
@@ -553,12 +494,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		auto meshesBuffer = m_buffers.meshesBuffer;
-
-		if (meshesBuffer->GetResource()->GetCount() < static_cast<uint32_t>(m_gpuMeshes.size()))
-		{
-			meshesBuffer->GetResource()->ResizeWithCount(static_cast<uint32_t>(m_gpuMeshes.size()));
-			meshesBuffer->MarkAsDirty();
-		}
+		meshesBuffer->GrowIfRequired(m_gpuMeshes.size());
 
 		if (!m_invalidMeshes.empty())
 		{
@@ -577,7 +513,7 @@ namespace Volt
 				}
 			}
 
-			bufferUpload.UploadTo(renderGraph, *meshesBuffer);
+			bufferUpload.UploadTo(renderGraph, meshesBuffer->GetResource());
 			m_invalidMeshes.clear();
 		}
 	}
@@ -587,12 +523,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		auto drawDataBuffer = m_buffers.primitiveDrawDataBuffer;
-
-		if (drawDataBuffer->GetResource()->GetCount() < static_cast<uint32_t>(m_primitiveDrawData.size()))
-		{
-			drawDataBuffer->GetResource()->ResizeWithCount(static_cast<uint32_t>(m_primitiveDrawData.size()));
-			drawDataBuffer->MarkAsDirty();
-		}
+		drawDataBuffer->GrowIfRequired(m_primitiveDrawData.size());
 
 		if (!m_invalidPrimitiveDataIndices.empty() || !m_removedPrimitiveDataIndices.empty())
 		{
@@ -621,10 +552,12 @@ namespace Volt
 				}
 			}
 
-			bufferUpload.UploadTo(renderGraph, *drawDataBuffer);
+			bufferUpload.UploadTo(renderGraph, drawDataBuffer->GetResource());
 			m_invalidPrimitiveDataIndices.clear();
 			m_removedPrimitiveDataIndices.clear();
 		}
+
+		m_buffers.sdfPrimitiveDrawDataBuffer->GrowIfRequired(m_sdfPrimitiveDrawData.size());
 
 		if (!m_invalidSDFPrimitiveDataIndices.empty())
 		{
@@ -637,7 +570,7 @@ namespace Volt
 				BuildSingleSDFPrimitiveDrawData(data, renderObject);
 			}
 
-			bufferUpload.UploadTo(renderGraph, *m_buffers.sdfPrimitiveDrawDataBuffer);
+			bufferUpload.UploadTo(renderGraph, m_buffers.sdfPrimitiveDrawDataBuffer->GetResource());
 			m_invalidSDFPrimitiveDataIndices.clear();
 		}
 	}
@@ -649,12 +582,7 @@ namespace Volt
 		auto validPrimitiveDrawDataBuffer = m_buffers.validPrimitiveDrawDatasBuffer;
 		
 		const uint32_t primitiveDrawDataCount = m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount();
-		
-		if (validPrimitiveDrawDataBuffer->GetResource()->GetCount() < primitiveDrawDataCount + 1)
-		{
-			validPrimitiveDrawDataBuffer->GetResource()->ResizeWithCount(primitiveDrawDataCount + 1);
-			validPrimitiveDrawDataBuffer->MarkAsDirty();
-		}
+		validPrimitiveDrawDataBuffer->GrowIfRequired(primitiveDrawDataCount + 1);
 
 		RenderGraphBufferHandle validPrimitiveDrawDataHandle = renderGraph.AddExternalBuffer(validPrimitiveDrawDataBuffer->GetResource());
 		RenderGraphBufferHandle primitiveDrawDataHandle = renderGraph.AddExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
@@ -667,7 +595,6 @@ namespace Volt
 			builder.WriteResource(validPrimitiveDrawDataHandle);
 			builder.ReadResource(primitiveDrawDataHandle);
 
-			builder.SetHasSideEffect();
 			builder.SetIsComputePass();
 		},
 		[=](RenderContext& context)

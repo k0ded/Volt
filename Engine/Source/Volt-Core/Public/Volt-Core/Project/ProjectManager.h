@@ -27,6 +27,7 @@ namespace Volt
 
 		static const std::filesystem::path GetEngineScriptsDirectory();
 		static const std::filesystem::path GetEngineShaderIncludeDirectory();
+		static const std::filesystem::path GetEngineShaderDirectory();
 		static const std::filesystem::path GetAssetsDirectory();
 		static const std::filesystem::path GetAudioBanksDirectory();
 		static const std::filesystem::path GetProjectDirectory();

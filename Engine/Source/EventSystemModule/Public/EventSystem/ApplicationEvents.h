@@ -53,8 +53,15 @@ namespace Volt
 	class AppRenderEvent : public Event
 	{
 	public:
-		AppRenderEvent() = default;
+		AppRenderEvent(float timestep)
+			: m_timestep(timestep)
+		{}
+
+		VT_INLINE float GetTimestep() { return m_timestep; }
 
 		EVENT_CLASS(AppRenderEvent, "{B38DBA07-ACAA-4334-8751-2570560D4490}"_guid);
+
+	private:
+		float m_timestep;
 	};
 }

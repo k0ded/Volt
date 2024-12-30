@@ -1214,7 +1214,7 @@ namespace Volt::RHI
 		{
 			return PixelFormat::D24_UNORM_S8_UINT;
 		}
-		else if (tempStr == "d32us8")
+		else if (tempStr == "d32fs8")
 		{
 			return PixelFormat::D32_SFLOAT_S8_UINT;
 		}

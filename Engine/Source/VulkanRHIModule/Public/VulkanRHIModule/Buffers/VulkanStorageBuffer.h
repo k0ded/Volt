@@ -7,12 +7,12 @@
 namespace Volt::RHI
 {
 	class Allocation;
-	class Allocator;
+	class GPUAllocator;
 
 	class VulkanStorageBuffer : public StorageBuffer
 	{
 	public:
-		VulkanStorageBuffer(uint32_t count, uint64_t elementSize, std::string_view name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<Allocator> allocator = nullptr);
+		VulkanStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<GPUAllocator> allocator = nullptr);
 		~VulkanStorageBuffer() override;
 
 		void Resize(const uint64_t size) override;
@@ -20,7 +20,7 @@ namespace Volt::RHI
 
 		const uint64_t GetElementSize() const override;
 		const uint32_t GetCount() const override;
-		WeakPtr<Allocation> GetAllocation() const override;
+		Handle<Allocation> GetAllocation() const override;
 
 		void Unmap() override;
 		void SetData(const void* data, const size_t size) override;
@@ -29,7 +29,7 @@ namespace Volt::RHI
 		RefPtr<BufferView> GetView() override;
 
 		inline constexpr ResourceType GetType() const override { return ResourceType::StorageBuffer; }
-		void SetName(std::string_view name) override;
+		void SetName(const std::string& name) override;
 		std::string_view GetName() const override;
 		const uint64_t GetDeviceAddress() const override;
 		const uint64_t GetByteSize() const override;
@@ -49,8 +49,8 @@ namespace Volt::RHI
 		std::string m_name;
 
 		RefPtr<BufferView> m_view;
-		RefPtr<Allocation> m_allocation;
-		WeakPtr<Allocator> m_allocator;
+		Handle<Allocation> m_allocation;
+		RawPtr<GPUAllocator> m_allocator;
 
 		BufferUsage m_bufferUsage = BufferUsage::StorageBuffer;
 		MemoryUsage m_memoryUsage = MemoryUsage::GPU;

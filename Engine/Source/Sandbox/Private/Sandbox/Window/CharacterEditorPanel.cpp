@@ -174,7 +174,7 @@ void CharacterEditorPanel::OnClose()
 
 bool CharacterEditorPanel::OnRenderEvent(Volt::WindowRenderEvent& e)
 {
-	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera());
+	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera(), e.GetTimestep());
 	return false;
 }
 

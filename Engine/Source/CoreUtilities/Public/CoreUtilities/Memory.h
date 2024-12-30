@@ -2,7 +2,6 @@
 
 #include "CoreUtilities/CompilerTraits.h"
 #include "CoreUtilities/GenericIterator.h"
-#include "CoreUtilities/Memory/HeapAllocator.h"
 
 #include <iterator>
 
@@ -16,22 +15,15 @@ namespace Internal
 
 	VT_NODISCARD VT_INLINE void* Allocate(size_t size, size_t alignment)
 	{
-		return HeapAllocator::AllocateUninitialized(size, alignment);
+		//return HeapAllocator2::AllocateUninitialized(size, alignment);
+		return nullptr;
 	}
 
 	VT_INLINE void Free(void* ptr)
 	{
-		HeapAllocator::FreeUninitialized(ptr);
-	}
-
-	VT_NODISCARD VT_INLINE void* StackAllocate(size_t size)
-	{
-		return VT_STACK_ALLOCATE(size);
-	}
-
-	VT_INLINE void StackFree(void* ptr)
-	{
-		VT_STACK_FREE(ptr);
+		
+		//HeapAllocator2::FreeUninitialized(ptr);
+		free(ptr);
 	}
 }
 

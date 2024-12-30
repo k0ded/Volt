@@ -18,12 +18,6 @@ namespace Volt
 		TriangleID = 2
 	};
 
-	struct RenderData
-	{
-		Ref<Camera> camera;
-		glm::uvec2 renderSize;
-	};
-
 	struct PreviousFrameData
 	{
 		glm::mat4 viewProjection = glm::identity<glm::mat4>();
@@ -33,7 +27,8 @@ namespace Volt
 	struct ExternalImagesData
 	{
 		RenderGraphImageHandle black1x1Cube;
-		RenderGraphImageHandle BRDFLuT;
+		RenderGraphImageHandle white1x1;
+		RenderGraphImageHandle DFGLuT;
 	};
 
 	struct EnvironmentTexturesData
@@ -54,6 +49,7 @@ namespace Volt
 		RenderGraphBufferHandle sdfMeshesBuffer;
 		RenderGraphBufferHandle materialsBuffer;
 		RenderGraphBufferHandle primitiveDrawDataBuffer;
+		RenderGraphBufferHandle prevPrimitiveDrawDataBuffer;
 		RenderGraphBufferHandle sdfPrimitiveDrawDataBuffer;
 		RenderGraphBufferHandle bonesBuffer;
 		RenderGraphBufferHandle validPrimitiveDrawDatasBuffer;
@@ -68,10 +64,11 @@ namespace Volt
 		RenderGraphBufferHandle spotLightsBuffer;
 	};
 
-	struct PreDepthData
+	struct DepthPrePass
 	{
 		RenderGraphImageHandle depth;
 		RenderGraphImageHandle normals;
+		RenderGraphImageHandle velocity;
 	};
 
 	struct DirectionalShadowData
@@ -111,6 +108,11 @@ namespace Volt
 	};
 
 	struct ShadingOutputData
+	{
+		RenderGraphImageHandle colorOutput;
+	};
+
+	struct FinalOutput
 	{
 		RenderGraphImageHandle colorOutput;
 	};

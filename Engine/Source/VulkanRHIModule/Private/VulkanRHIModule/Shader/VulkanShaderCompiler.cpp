@@ -284,7 +284,7 @@ namespace Volt::RHI
 				error = std::format("Failed to compile. Error: {}\n", result);
 				error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(compilationResult), sourceEntry.filePath.string()));
 
-				VT_LOGC(Error, LogVulkanRHI, error);
+				VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, error);
 
 				sourcePtr->Release();
 				compilationResult->Release();
@@ -304,7 +304,7 @@ namespace Volt::RHI
 			sourcePtr->Release();
 			compilationResult->Release();
 
-			VT_LOGC(Error, LogVulkanRHI, error);
+			VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, error);
 			return CompilationResult::Failure;
 		}
 

@@ -24,17 +24,17 @@ namespace Volt::RHI
 		ResourceStateTracker() = default;
 		~ResourceStateTracker() override = default;
 
-		void AddResource(WeakPtr<RHIResource> resource, BarrierStage initialStage, BarrierAccess initialAccess, ImageLayout initialLayout = ImageLayout::Undefined);
-		void RemoveResource(WeakPtr<RHIResource> resource);
+		void AddResource(RawPtr<RHIResource> resource, BarrierStage initialStage, BarrierAccess initialAccess, ImageLayout initialLayout = ImageLayout::Undefined);
+		void RemoveResource(RawPtr<RHIResource> resource);
 
-		void TransitionResource(WeakPtr<RHIResource> resource, BarrierStage dstStage, BarrierAccess dstAccess, ImageLayout dstLayout = ImageLayout::Undefined);
-		const ResourceState& GetCurrentResourceState(WeakPtr<RHIResource> resource);
+		void TransitionResource(RawPtr<RHIResource> resource, BarrierStage dstStage, BarrierAccess dstAccess, ImageLayout dstLayout = ImageLayout::Undefined);
+		const ResourceState& GetCurrentResourceState(RawPtr<RHIResource> resource);
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
 		std::mutex m_mutex;
-		vt::map<WeakPtr<RHIResource>, ResourceState> m_resourceStates;
+		vt::map<RawPtr<RHIResource>, ResourceState> m_resourceStates;
 	};
 }

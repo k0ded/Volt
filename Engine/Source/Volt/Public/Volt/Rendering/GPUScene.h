@@ -22,6 +22,7 @@ namespace Volt
 		ResourceHandle vertexMaterialBuffer;
 		ResourceHandle vertexAnimationInfoBuffer;
 		ResourceHandle vertexBoneInfluencesBuffer;
+		ResourceHandle indexBuffer;
 
 		ResourceHandle vertexBoneWeightsBuffer;
 		ResourceHandle meshletDataBuffer;

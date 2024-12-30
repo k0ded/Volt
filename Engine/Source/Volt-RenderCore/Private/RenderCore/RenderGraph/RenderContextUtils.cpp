@@ -5,7 +5,7 @@
 
 namespace Volt::RCUtils
 {
-	void DrawFullscreenTriangle(RenderContext& context, WeakPtr<RHI::RenderPipeline> pipeline, const std::function<void(RenderContext& context)>& setConstantsFunc)
+	void DrawFullscreenTriangle(RenderContext& context, RawPtr<RHI::RenderPipeline> pipeline, const std::function<void(RenderContext& context)>& setConstantsFunc)
 	{
 		context.BindPipeline(pipeline);
 

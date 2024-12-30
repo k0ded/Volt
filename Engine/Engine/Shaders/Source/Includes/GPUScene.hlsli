@@ -85,6 +85,7 @@ struct GPUMesh
     vt::TypedBuffer<VertexMaterialData> vertexMaterialBuffer;
     vt::TypedBuffer<VertexAnimationData> vertexAnimationInfoBuffer;
     vt::TypedBuffer<uint16_t> vertexBoneInfluencesBuffer;
+    vt::TypedBuffer<uint> indexBuffer;
 
     vt::TypedBuffer<float> vertexBoneWeightsBuffer; // Should be packed
     vt::TypedBuffer<uint> meshletDataBuffer;
@@ -146,6 +147,7 @@ struct GPUScene
     vt::TypedBuffer<GPUMeshSDF> sdfMeshesBuffer;
     vt::TypedBuffer<GPUMaterial> materialsBuffer;
     vt::TypedBuffer<PrimitiveDrawData> primitiveDrawDataBuffer;
+    vt::TypedBuffer<PrimitiveDrawData> prevPrimitiveDrawDataBuffer;
     vt::TypedBuffer<SDFPrimitiveDrawData> sdfPrimitiveDrawDataBuffer;
     vt::TypedBuffer<float4x4> bonesBuffer;
 

@@ -5,8 +5,8 @@
 
 namespace Volt::RHI
 {
-	RefPtr<Swapchain> Swapchain::Create(GLFWwindow* window)
+	RefPtr<Swapchain> Swapchain::Create(const SwapchainCreateInfo& createInfo)
 	{
-		return RHIProxy::GetInstance().CreateSwapchain(window);
+		return RHIProxy::GetInstance().CreateSwapchain(createInfo);
 	}
 }

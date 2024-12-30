@@ -9,6 +9,11 @@ namespace Volt
 {
 	namespace FbxUtility
 	{
+		glm::vec4 ToVec4(const FbxVector4& v)
+		{
+			return { v[0], v[1], v[2], v[3] };
+		}
+
 		glm::vec3 ToVec3(const FbxVector4& v)
 		{
 			return { v[0], v[1], v[2] };
@@ -91,7 +96,7 @@ namespace Volt
 		int32_t material;
 		glm::vec3 position;
 		glm::vec3 normal;
-		glm::vec3 tangent;
+		glm::vec4 tangent;
 		glm::vec2 texCoords;
 
 		glm::uvec4 influences;
@@ -113,6 +118,7 @@ namespace Volt
 			result = Math::HashCombine(result, std::hash<float>()(tangent.x));
 			result = Math::HashCombine(result, std::hash<float>()(tangent.y));
 			result = Math::HashCombine(result, std::hash<float>()(tangent.z));
+			result = Math::HashCombine(result, std::hash<float>()(tangent.w));
 
 			result = Math::HashCombine(result, std::hash<float>()(texCoords.x));
 			result = Math::HashCombine(result, std::hash<float>()(texCoords.y));

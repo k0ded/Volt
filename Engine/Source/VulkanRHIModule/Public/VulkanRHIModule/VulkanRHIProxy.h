@@ -19,8 +19,8 @@ namespace Volt::RHI
 		RefPtr<IndexBuffer> CreateIndexBuffer(std::span<const uint32_t> indices) const override;
 		RefPtr<VertexBuffer> CreateVertexBuffer(const void* data, const uint32_t size, const uint32_t stride) const override;
 
-		RefPtr<StorageBuffer> CreateStorageBuffer(uint32_t count, uint64_t elementSize, std::string_view name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator) const override;
-		RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, std::string_view name) const override;
+		RefPtr<StorageBuffer> CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const override;
+		RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const override;
 
 		RefPtr<DescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const override;
 		RefPtr<BindlessDescriptorTable> CreateBindlessDescriptorTable(const uint64_t framesInFlight) const override;
@@ -29,20 +29,21 @@ namespace Volt::RHI
 		RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const override;
 		RefPtr<GraphicsDevice> CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo) const override;
 		RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const override;
-		RefPtr<Swapchain> CreateSwapchain(GLFWwindow* window) const override;
+		RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const override;
 
-		RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator) const override;
+		RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const override;
 		RefPtr<Image> CreateImage(const SwapchainImageSpecification& specification) const override;
 
 		RefPtr<ImageView> CreateImageView(const ImageViewSpecification& specification) const override;
 		RefPtr<SamplerState> CreateSamplerState(const SamplerStateCreateInfo& createInfo) const override;
 
-		RefPtr<DefaultAllocator> CreateDefaultAllocator() const override;
-		RefPtr<TransientAllocator> CreateTransientAllocator() const override;
+		RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const override;
+		RefPtr<TransientGPUAllocator> CreateTransientAllocator() const override;
 		RefPtr<TransientHeap> CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const override;
 
 		RefPtr<RenderPipeline> CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const override;
 		RefPtr<ComputePipeline> CreateComputePipeline(RefPtr<Shader> shader, bool useGlobalResources) const override;
+		RefPtr<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const override;
 
 		RefPtr<Shader> CreateShader(const ShaderSpecification& specification) const override;
 		RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const override;
@@ -54,6 +55,7 @@ namespace Volt::RHI
 		RefPtr<ImGuiImplementation> CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const override;
 
 		RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const override;
+		RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const override;
 
 		void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) override;
 		void DestroyResource(std::function<void()>&& function) override;

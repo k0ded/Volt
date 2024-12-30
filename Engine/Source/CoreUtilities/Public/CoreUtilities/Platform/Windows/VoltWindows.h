@@ -16,6 +16,7 @@
 #endif
 
 #include <Windows.h>
+#include <shellapi.h>
 
 // We don't want to log to VS when in Dist.
 #ifdef VT_DIST

@@ -15,6 +15,8 @@
 
 #include <RHIModule/Utility/ResourceUtility.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt::RHI
 {
 	namespace Utility
@@ -40,9 +42,10 @@ namespace Volt::RHI
 		}
 	}
 
-	D3D12Swapchain::D3D12Swapchain(GLFWwindow* window)
+	D3D12Swapchain::D3D12Swapchain(const SwapchainCreateInfo& createInfo)
 	{
-		m_windowHandle = window;
+		m_windowHandle = reinterpret_cast<GLFWwindow*>(createInfo.platformWindow);
+		m_commandBuffers.resize(GetFramesInFlight());
 
 		for (uint32_t i = 0; i < GetFramesInFlight(); i++)
 		{
@@ -148,6 +151,11 @@ namespace Volt::RHI
 	const PixelFormat D3D12Swapchain::GetFormat() const
 	{
 		return PixelFormat::R8G8B8A8_UNORM;
+	}
+
+	VT_NODISCARD bool D3D12Swapchain::IsHDREnabled() const
+	{
+		return false;
 	}
 
 	void D3D12Swapchain::Invalidate(const uint32_t width, const uint32_t height, bool enableVSync)
