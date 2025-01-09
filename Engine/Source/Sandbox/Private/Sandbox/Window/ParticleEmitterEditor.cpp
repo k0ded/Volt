@@ -5,9 +5,10 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 
 #include <Volt/Asset/ParticlePreset.h>
-#include <Volt/Rendering/SceneRenderer.h>
-#include <Volt/Components/LightComponents.h>
-#include <Volt/Components/RenderingComponents.h>
+
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-Renderer/LightComponents.h>
+#include <Volt-Renderer/RenderingComponents.h>
 
 #include <Volt/Utility/UIUtility.h>
 
@@ -44,9 +45,9 @@ ParticleEmitterEditor::ParticleEmitterEditor()
 
 	// Scene Renderer
 	{
-		Volt::SceneRendererSpecification spec{};
+		Volt::SceneRendererCreateInfo spec{};
 		spec.debugName = "Particle System Editor";
-		spec.scene = myPreviewScene;
+		spec.renderScene = myPreviewScene->GetRenderScene();
 
 		//Volt::SceneRendererSettings settings{};
 		//settings.enableGrid = true;
@@ -290,7 +291,7 @@ bool ParticleEmitterEditor::DrawEditorPanel()
 				UI::Property("Camera speed", cameraSpeed);
 				myCameraController->SetTranslationSpeed(cameraSpeed);
 
-				EditorUtils::Property("Skybox", myPreviewScene->GetAllEntitiesWith<Volt::SkylightComponent>()[0].GetComponent<Volt::SkylightComponent>().environmentHandle, AssetTypes::Texture);
+				//EditorUtils::Property("Skybox", myPreviewScene->GetAllEntitiesWith<Volt::SkylightComponent>()[0].GetComponent<Volt::SkylightComponent>().environmentHandle, AssetTypes::Texture);
 				UI::EndProperties();
 			}
 		}

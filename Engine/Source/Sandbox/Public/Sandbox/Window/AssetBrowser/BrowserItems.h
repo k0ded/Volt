@@ -6,6 +6,11 @@
 
 #include <imgui.h>
 
+namespace Volt::RHI
+{
+	class Image;
+}
+
 namespace AssetBrowser
 {
 	class SelectionManager;

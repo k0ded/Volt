@@ -85,14 +85,14 @@ Output main(FullscreenTriangleVertex input)
 {
     const Constants constants = GetConstants<Constants>();
     float3 pixelColor = constants.finalColor.Load(int3(input.position.xy, 0));
-	float luminance = constants.averageLuminance.Load(int3(0, 0, 0));
-	
-	float3 Yxy = ConvertRGB2Yxy(pixelColor);
-	
-	float lp = Yxy.x * constants.middleGray / (max(luminance, 0.0001f));
-	Yxy.x = Reinhard2(lp, constants.whitePoint);
-	
-	pixelColor = ConvertYxy2RGB(Yxy);
+	//float luminance = constants.averageLuminance.Load(int3(0, 0, 0));
+	//
+	//float3 Yxy = ConvertRGB2Yxy(pixelColor);
+	//
+	//float lp = Yxy.x * constants.middleGray / (max(luminance, 0.0001f));
+	//Yxy.x = Reinhard2(lp, constants.whitePoint);
+	//
+	//pixelColor = ConvertYxy2RGB(Yxy);
 
     float3 dither = RemapPDFTriUnity(BlueNoiseRGBA(input.position.xy, constants.frameIndex, constants.blueNoiseData).rgb) / 254.f;
 

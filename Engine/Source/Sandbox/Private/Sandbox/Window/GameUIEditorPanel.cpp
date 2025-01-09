@@ -10,7 +10,7 @@
 #include <Volt/GameUI/UIWidget.h>
 #include <InputModule/InputCodes.h>
 
-#include <Volt/Rendering/UISceneRenderer.h>
+#include <Volt-Renderer/UISceneRenderer.h>
 
 #include <Volt/Utility/UIUtility.h>
 

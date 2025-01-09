@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt/Scene/Entity.h>
+#include <Volt-Scene/Entity.h>
 
 #include <glm/glm.hpp>
 #include <imgui.h>

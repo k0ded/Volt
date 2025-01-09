@@ -1,7 +1,7 @@
 #include "vtpch.h"
 #include "Volt/Components/AudioComponents.h"
 
-#include "Volt/Scene/SceneManager.h"
+#include "Volt-Scene/SceneManager.h"
 
 namespace Volt
 {

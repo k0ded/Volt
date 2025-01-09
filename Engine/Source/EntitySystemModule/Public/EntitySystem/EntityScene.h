@@ -3,6 +3,8 @@
 #include "EntitySystem/EntityTransformCache.h"
 #include "EntitySystem/EntityRegistry.h"
 
+#include <CoreUtilities/UUID.h>
+
 #include <entt.hpp>
 
 class ECSBuilder;

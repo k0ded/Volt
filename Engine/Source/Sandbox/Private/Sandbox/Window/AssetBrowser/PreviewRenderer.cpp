@@ -4,16 +4,17 @@
 #include "Sandbox/Window/AssetBrowser/AssetItem.h"
 
 #include <AssetSystem/AssetManager.h>
-#include <Volt/Asset/Rendering/Material.h>
-#include <Volt/Asset/Mesh/Mesh.h>
 
-#include <Volt/Scene/Scene.h>
+#include <Volt-Renderer/Material.h>
+#include <Volt-Renderer/Mesh/Mesh.h>
 
-#include <Volt/Rendering/SceneRenderer.h>
-#include <Volt/Rendering/Camera/Camera.h>
+#include <Volt-Scene/Scene.h>
 
-#include <Volt/Components/LightComponents.h>
-#include <Volt/Components/RenderingComponents.h>
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-Renderer/Camera/Camera.h>
+
+#include <Volt-Renderer/LightComponents.h>
+#include <Volt-Renderer/RenderingComponents.h>
 
 PreviewRenderer::PreviewRenderer()
 {
@@ -25,15 +26,15 @@ PreviewRenderer::PreviewRenderer()
 		auto skylightEntities = myPreviewScene->GetAllEntitiesWith<Volt::SkylightComponent>();
 
 		Volt::Entity ent = skylightEntities.front();
-		ent.GetComponent<Volt::SkylightComponent>().environmentHandle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Textures/HDRIs/defaultHDRI.hdr");
+		//ent.GetComponent<Volt::SkylightComponent>().environmentHandle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Textures/HDRIs/defaultHDRI.hdr");
 	}
 
 	myEntity = myPreviewScene->CreateEntity();
 	myEntity.AddComponent<Volt::MeshComponent>();
 
-	Volt::SceneRendererSpecification spec{};
+	Volt::SceneRendererCreateInfo spec{};
 	spec.initialResolution = { 256, 256 };
-	spec.scene = myPreviewScene;
+	spec.renderScene = myPreviewScene->GetRenderScene();
 
 	//Volt::SceneRendererSettings settings{};
 	//settings.enableSkybox = false;

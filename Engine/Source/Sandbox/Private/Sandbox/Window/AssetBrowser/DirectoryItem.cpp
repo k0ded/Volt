@@ -8,7 +8,7 @@
 #include "Sandbox/VersionControl/VersionControl.h"
 
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Rendering/Texture/Texture2D.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <CoreUtilities/FileSystem.h>
 

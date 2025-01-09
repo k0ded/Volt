@@ -7,17 +7,13 @@
 
 #include <Volt/Core/Application.h>
 
-#include <Volt/Asset/Rendering/Material.h>
+#include <Volt-Renderer/Material.h>
+#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-Renderer/LightComponents.h>
+#include <Volt-Renderer/Camera/Camera.h>
+#include <Volt-Renderer/SceneRenderer.h>
 
-#include <Volt/Components/RenderingComponents.h>
-#include <Volt/Components/CoreComponents.h>
-#include <Volt/Components/LightComponents.h>
-
-#include <Volt/Rendering/DebugRenderer.h>
-#include <Volt/Rendering/Camera/Camera.h>
-
-#include <Volt/Rendering/SceneRenderer.h>
-
+#include <Volt-Scene/Components/CoreComponents.h>
 #include <Volt-Physics/ColliderComponents.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -74,144 +70,144 @@ void Sandbox::RenderGizmos(Ref<Volt::Scene> scene, Ref<Volt::Camera> camera)
 	//auto& registry = scene->GetRegistry();
 	//Sandbox::Get().GetSceneRenderer()->SetHideStaticMeshes(settings.colliderViewMode == ColliderViewMode::AllHideMesh || settings.navMeshViewMode == NavMeshViewMode::Only);
 
-	if (settings.showEntityGizmos)
-	{
-		m_runtimeScene->ForEachWithComponents<const Volt::TransformComponent>([&](entt::entity id, const Volt::TransformComponent& transformComp)
-		{
-			Volt::Entity entity{ id, m_runtimeScene };
+	//if (settings.showEntityGizmos)
+	//{
+	//	m_runtimeScene->ForEachWithComponents<const Volt::TransformComponent>([&](entt::entity id, const Volt::TransformComponent& transformComp)
+	//	{
+	//		Volt::Entity entity{ id, m_runtimeScene };
 
-			if (entity.HasComponent<Volt::CameraComponent>() || entity.HasComponent<Volt::PointLightComponent>() || entity.HasComponent<Volt::SpotLightComponent>())
-			{
-				return;
-			}
+	//		if (entity.HasComponent<Volt::CameraComponent>() || entity.HasComponent<Volt::PointLightComponent>() || entity.HasComponent<Volt::SpotLightComponent>())
+	//		{
+	//			return;
+	//		}
 
-			if (!transformComp.visible)
-			{
-				return;
-			}
+	//		if (!transformComp.visible)
+	//		{
+	//			return;
+	//		}
 
-			glm::vec3 p = entity.GetPosition();
+	//		glm::vec3 p = entity.GetPosition();
 
-			const float maxDist = 5000.f * 5000.f;
-			const float lerpStartDist = 4000.f * 4000.f;
-			const float maxScale = 1.f;
-			const float minScale = 0.3f;
-			const float distance = glm::distance2(camera->GetPosition(), p);
+	//		const float maxDist = 5000.f * 5000.f;
+	//		const float lerpStartDist = 4000.f * 4000.f;
+	//		const float maxScale = 1.f;
+	//		const float minScale = 0.3f;
+	//		const float distance = glm::distance2(camera->GetPosition(), p);
 
-			float alpha = 1.f;
+	//		float alpha = 1.f;
 
-			if (distance >= lerpStartDist)
-			{
-				alpha = glm::mix(1.f, 0.f, (distance - lerpStartDist) / (maxDist - lerpStartDist));
-			}
+	//		if (distance >= lerpStartDist)
+	//		{
+	//			alpha = glm::mix(1.f, 0.f, (distance - lerpStartDist) / (maxDist - lerpStartDist));
+	//		}
 
-			if (distance < maxDist)
-			{
-				float scale = glm::max(glm::min(distance / maxDist * 2.f, maxScale), minScale);
-				Volt::DebugRenderer::DrawBillboard(EditorResources::GetEditorIcon(EditorIcon::EntityGizmo), p, scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, entity.GetID());
-			}
-		});
-	}
+	//		if (distance < maxDist)
+	//		{
+	//			float scale = glm::max(glm::min(distance / maxDist * 2.f, maxScale), minScale);
+	//			Volt::DebugRenderer::DrawBillboard(EditorResources::GetEditorIcon(EditorIcon::EntityGizmo), p, scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, entity.GetID());
+	//		}
+	//	});
+	//}
 
-	if (settings.showEntityGizmos || settings.showLightSpheres)
-	{
-		m_runtimeScene->ForEachWithComponents<const Volt::PointLightComponent, const Volt::TransformComponent>([&](entt::entity id, const Volt::PointLightComponent& lightComp, const Volt::TransformComponent& transformComp)
-		{
-			if (!transformComp.visible)
-			{
-				return;
-			}
+	//if (settings.showEntityGizmos || settings.showLightSpheres)
+	//{
+	//	m_runtimeScene->ForEachWithComponents<const Volt::PointLightComponent, const Volt::TransformComponent>([&](entt::entity id, const Volt::PointLightComponent& lightComp, const Volt::TransformComponent& transformComp)
+	//	{
+	//		if (!transformComp.visible)
+	//		{
+	//			return;
+	//		}
 
-			Volt::Entity entity{ id, m_runtimeScene.get() };
+	//		Volt::Entity entity{ id, m_runtimeScene.get() };
 
-			glm::vec3 p = entity.GetPosition();
+	//		glm::vec3 p = entity.GetPosition();
 
-			const float maxDist = 5000.f;
-			const float lerpStartDist = 4000.f;
-			const float maxScale = 1.f;
-			const float distance = glm::distance(camera->GetPosition(), p);
+	//		const float maxDist = 5000.f;
+	//		const float lerpStartDist = 4000.f;
+	//		const float maxScale = 1.f;
+	//		const float distance = glm::distance(camera->GetPosition(), p);
 
-			float alpha = 1.f;
+	//		float alpha = 1.f;
 
-			if (distance >= lerpStartDist)
-			{
-				alpha = glm::mix(1.f, 0.f, (distance - lerpStartDist) / (maxDist - lerpStartDist));
-			}
+	//		if (distance >= lerpStartDist)
+	//		{
+	//			alpha = glm::mix(1.f, 0.f, (distance - lerpStartDist) / (maxDist - lerpStartDist));
+	//		}
 
-			if (distance < maxDist)
-			{
-				float scale = glm::min(distance / maxDist, maxScale);
-				Volt::DebugRenderer::DrawBillboard(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), p, scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, entity.GetID());
-			}
-		});
+	//		if (distance < maxDist)
+	//		{
+	//			float scale = glm::min(distance / maxDist, maxScale);
+	//			Volt::DebugRenderer::DrawBillboard(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), p, scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, entity.GetID());
+	//		}
+	//	});
 
-		m_runtimeScene->ForEachWithComponents<const Volt::SpotLightComponent, const Volt::TransformComponent>([&](entt::entity id, const Volt::SpotLightComponent& lightComp, const Volt::TransformComponent& transformComp)
-		{
-			if (!transformComp.visible)
-			{
-				return;
-			}
+	//	m_runtimeScene->ForEachWithComponents<const Volt::SpotLightComponent, const Volt::TransformComponent>([&](entt::entity id, const Volt::SpotLightComponent& lightComp, const Volt::TransformComponent& transformComp)
+	//	{
+	//		if (!transformComp.visible)
+	//		{
+	//			return;
+	//		}
 
-			Volt::Entity entity{ id, m_runtimeScene.get() };
+	//		Volt::Entity entity{ id, m_runtimeScene.get() };
 
-			glm::vec3 p = entity.GetPosition();
+	//		glm::vec3 p = entity.GetPosition();
 
-			const float maxDist = 5000.f;
-			const float lerpStartDist = 4000.f;
-			const float maxScale = 1.f;
-			const float distance = glm::distance(camera->GetPosition(), p);
+	//		const float maxDist = 5000.f;
+	//		const float lerpStartDist = 4000.f;
+	//		const float maxScale = 1.f;
+	//		const float distance = glm::distance(camera->GetPosition(), p);
 
-			float alpha = 1.f;
+	//		float alpha = 1.f;
 
-			if (distance >= lerpStartDist)
-			{
-				alpha = glm::mix(1.f, 0.f, (distance - lerpStartDist) / (maxDist - lerpStartDist));
-			}
+	//		if (distance >= lerpStartDist)
+	//		{
+	//			alpha = glm::mix(1.f, 0.f, (distance - lerpStartDist) / (maxDist - lerpStartDist));
+	//		}
 
-			if (distance < maxDist)
-			{
-				float scale = glm::min(distance / maxDist, maxScale);
-				Volt::DebugRenderer::DrawBillboard(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), p, scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, entity.GetID());
-			}
-		});
+	//		if (distance < maxDist)
+	//		{
+	//			float scale = glm::min(distance / maxDist, maxScale);
+	//			Volt::DebugRenderer::DrawBillboard(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), p, scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, entity.GetID());
+	//		}
+	//	});
 
-		if (settings.showLightSpheres)
-		{
-			m_runtimeScene->ForEachWithComponents<const Volt::PointLightComponent>([&](entt::entity id, const Volt::PointLightComponent& comp)
-			{
-				Volt::Entity entity{ id, m_runtimeScene.get() };
-				Volt::DebugRenderer::DrawLineSphere(entity.GetPosition(), comp.radius);
-			});
-		}
+	//	if (settings.showLightSpheres)
+	//	{
+	//		m_runtimeScene->ForEachWithComponents<const Volt::PointLightComponent>([&](entt::entity id, const Volt::PointLightComponent& comp)
+	//		{
+	//			Volt::Entity entity{ id, m_runtimeScene.get() };
+	//			Volt::DebugRenderer::DrawLineSphere(entity.GetPosition(), comp.radius);
+	//		});
+	//	}
 
-		///// Sphere Bounds Visualization /////
-		if (settings.showBoundingSpheres)
-		{
-			m_runtimeScene->ForEachWithComponents<const Volt::MeshComponent>([&](entt::entity id, const Volt::MeshComponent& comp)
-			{
-				if (comp.GetHandle() == Volt::Asset::Null())
-				{
-					return;
-				}
+	//	///// Sphere Bounds Visualization /////
+	//	if (settings.showBoundingSpheres)
+	//	{
+	//		m_runtimeScene->ForEachWithComponents<const Volt::MeshComponent>([&](entt::entity id, const Volt::MeshComponent& comp)
+	//		{
+	//			if (comp.GetHandle() == Volt::Asset::Null())
+	//			{
+	//				return;
+	//			}
 
-				const auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(comp.GetHandle());
-				if (!mesh || !mesh->IsValid())
-				{
-					return;
-				}
+	//			const auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(comp.GetHandle());
+	//			if (!mesh || !mesh->IsValid())
+	//			{
+	//				return;
+	//			}
 
-				Volt::Entity entity{ id, m_runtimeScene.get() };
+	//			Volt::Entity entity{ id, m_runtimeScene.get() };
 
-				const auto& boundingSphere = mesh->GetBoundingSphere();
-				const auto transform = entity.GetTransform();
+	//			const auto& boundingSphere = mesh->GetBoundingSphere();
+	//			const auto transform = entity.GetTransform();
 
-				const glm::vec3 globalScale = { glm::length(transform[0]), glm::length(transform[1]), glm::length(transform[2]) };
-				const float maxScale = std::max(std::max(globalScale.x, globalScale.y), globalScale.z);
+	//			const glm::vec3 globalScale = { glm::length(transform[0]), glm::length(transform[1]), glm::length(transform[2]) };
+	//			const float maxScale = std::max(std::max(globalScale.x, globalScale.y), globalScale.z);
 
-				Volt::DebugRenderer::DrawLineSphere(entity.GetPosition() + boundingSphere.center, boundingSphere.radius * maxScale);
-			});
-		}
-	}
+	//			Volt::DebugRenderer::DrawLineSphere(entity.GetPosition() + boundingSphere.center, boundingSphere.radius * maxScale);
+	//		});
+	//	}
+	//}
 
 	///// Sphere Bounds Visualization /////
 	switch (settings.navMeshViewMode)
@@ -269,7 +265,7 @@ void Sandbox::RenderGizmos(Ref<Volt::Scene> scene, Ref<Volt::Camera> camera)
 			return;
 		}
 
-		Volt::DebugRenderer::DrawMesh(cameraMesh, material, entity.GetTransform());
+		//Volt::DebugRenderer::DrawMesh(cameraMesh, material, entity.GetTransform());
 
 		// Frustums
 		{
@@ -290,108 +286,108 @@ void Sandbox::RenderGizmos(Ref<Volt::Scene> scene, Ref<Volt::Camera> camera)
 		case ColliderViewMode::AllHideMesh:
 		case ColliderViewMode::All:
 		{
-			auto collisionMaterial = Volt::AssetManager::GetAsset<Volt::Material>("Editor/Materials/M_ColliderDebug.vtmat");
-			m_runtimeScene->ForEachWithComponents<const Volt::BoxColliderComponent>([&](entt::entity id, const Volt::BoxColliderComponent& collider)
-			{
-				Volt::Entity entity{ id, m_runtimeScene.get() };
+			//auto collisionMaterial = Volt::AssetManager::GetAsset<Volt::Material>("Editor/Materials/M_ColliderDebug.vtmat");
+			//m_runtimeScene->ForEachWithComponents<const Volt::BoxColliderComponent>([&](entt::entity id, const Volt::BoxColliderComponent& collider)
+			//{
+			//	Volt::Entity entity{ id, m_runtimeScene.get() };
 
-				auto cubeMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Cube_Mesh.vtasset");
+			//	auto cubeMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Cube_Mesh.vtasset");
 
-				const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), collider.halfSize * 2.f * 0.01f);
-				Volt::DebugRenderer::DrawMesh(cubeMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
-			});
+			//	const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), collider.halfSize * 2.f * 0.01f);
+			//	Volt::DebugRenderer::DrawMesh(cubeMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
+			//});
 
-			m_runtimeScene->ForEachWithComponents<const Volt::SphereColliderComponent>([&](entt::entity id, const Volt::SphereColliderComponent& collider)
-			{
-				Volt::Entity entity{ id, m_runtimeScene.get() };
+			//m_runtimeScene->ForEachWithComponents<const Volt::SphereColliderComponent>([&](entt::entity id, const Volt::SphereColliderComponent& collider)
+			//{
+			//	Volt::Entity entity{ id, m_runtimeScene.get() };
 
-				auto sphereMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Sphere.vtasset");
+			//	auto sphereMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Sphere.vtasset");
 
-				const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), { collider.radius * 2.f * 0.01f });
-				Volt::DebugRenderer::DrawMesh(sphereMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
-			});
+			//	const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), { collider.radius * 2.f * 0.01f });
+			//	Volt::DebugRenderer::DrawMesh(sphereMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
+			//});
 
-			m_runtimeScene->ForEachWithComponents<const Volt::CapsuleColliderComponent>([&](entt::entity id, const Volt::CapsuleColliderComponent& collider)
-			{
-				Volt::Entity entity{ id, m_runtimeScene.get() };
+			//m_runtimeScene->ForEachWithComponents<const Volt::CapsuleColliderComponent>([&](entt::entity id, const Volt::CapsuleColliderComponent& collider)
+			//{
+			//	Volt::Entity entity{ id, m_runtimeScene.get() };
 
-				const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), { collider.radius * 2.f * 0.01f, collider.height * 0.01f, collider.radius * 2.f * 0.01f });
-				auto capsuleMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Capsule.vtasset");
+			//	const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), { collider.radius * 2.f * 0.01f, collider.height * 0.01f, collider.radius * 2.f * 0.01f });
+			//	auto capsuleMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Capsule.vtasset");
 
-				Volt::DebugRenderer::DrawMesh(capsuleMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
-			});
+			//	Volt::DebugRenderer::DrawMesh(capsuleMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
+			//});
 
-			m_runtimeScene->ForEachWithComponents<const Volt::MeshColliderComponent>([&](entt::entity id, const Volt::MeshColliderComponent& collider)
-			{
-				Volt::Entity entity{ id, m_runtimeScene.get() };
+			//m_runtimeScene->ForEachWithComponents<const Volt::MeshColliderComponent>([&](entt::entity id, const Volt::MeshColliderComponent& collider)
+			//{
+			//	Volt::Entity entity{ id, m_runtimeScene.get() };
 
-				Ref<Volt::Mesh> debugMesh;
+			//	Ref<Volt::Mesh> debugMesh;
 
-				debugMesh = Volt::AssetManager::GetAsset<Volt::Mesh>(collider.colliderMesh);
+			//	debugMesh = Volt::AssetManager::GetAsset<Volt::Mesh>(collider.colliderMesh);
 
-				if (!debugMesh)
-				{
-					return;
-				}
+			//	if (!debugMesh)
+			//	{
+			//		return;
+			//	}
 
-				Volt::DebugRenderer::DrawMesh(debugMesh, collisionMaterial, entity.GetTransform(), entity.GetID());
-			});
+			//	Volt::DebugRenderer::DrawMesh(debugMesh, collisionMaterial, entity.GetTransform(), entity.GetID());
+			//});
 
 			break;
 		}
 
 		case ColliderViewMode::Selected:
 		{
-			auto collisionMaterial = Volt::AssetManager::GetAsset<Volt::Material>("Editor/Materials/M_ColliderDebug.vtmat");
+			//auto collisionMaterial = Volt::AssetManager::GetAsset<Volt::Material>("Editor/Materials/M_ColliderDebug.vtmat");
 
-			for (const auto& id : SelectionManager::GetSelectedEntities())
-			{
-				Volt::Entity entity = m_runtimeScene->GetEntityFromID(id);
+			//for (const auto& id : SelectionManager::GetSelectedEntities())
+			//{
+			//	Volt::Entity entity = m_runtimeScene->GetEntityFromID(id);
 
-				if (entity.HasComponent<Volt::BoxColliderComponent>())
-				{
-					const auto& collider = entity.GetComponent<Volt::BoxColliderComponent>();
-					auto cubeMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Cube_Mesh.vtasset");
+			//	if (entity.HasComponent<Volt::BoxColliderComponent>())
+			//	{
+			//		const auto& collider = entity.GetComponent<Volt::BoxColliderComponent>();
+			//		auto cubeMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Cube_Mesh.vtasset");
 
-					const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), collider.halfSize * 2.f * 0.01f);
-					Volt::DebugRenderer::DrawMesh(cubeMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
-				}
+			//		const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), collider.halfSize * 2.f * 0.01f);
+			//		Volt::DebugRenderer::DrawMesh(cubeMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
+			//	}
 
-				if (entity.HasComponent<Volt::SphereColliderComponent>())
-				{
-					const auto& collider = entity.GetComponent<Volt::SphereColliderComponent>();
-					auto sphereMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Sphere.vtasset");
+			//	if (entity.HasComponent<Volt::SphereColliderComponent>())
+			//	{
+			//		const auto& collider = entity.GetComponent<Volt::SphereColliderComponent>();
+			//		auto sphereMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Sphere.vtasset");
 
-					const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), { collider.radius * 2.f * 0.01f });
-					Volt::DebugRenderer::DrawMesh(sphereMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
-				}
+			//		const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), { collider.radius * 2.f * 0.01f });
+			//		Volt::DebugRenderer::DrawMesh(sphereMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
+			//	}
 
-				if (entity.HasComponent<Volt::CapsuleColliderComponent>())
-				{
-					const auto& collider = entity.GetComponent<Volt::CapsuleColliderComponent>();
+			//	if (entity.HasComponent<Volt::CapsuleColliderComponent>())
+			//	{
+			//		const auto& collider = entity.GetComponent<Volt::CapsuleColliderComponent>();
 
-					const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), { collider.radius * 2.f * 0.01f, collider.height * 0.01f, collider.radius * 2.f * 0.01f });
-					auto capsuleMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Capsule.vtasset");
+			//		const glm::mat4 colliderTransform = glm::translate(glm::mat4(1.f), collider.offset) * glm::scale(glm::mat4(1.f), { collider.radius * 2.f * 0.01f, collider.height * 0.01f, collider.radius * 2.f * 0.01f });
+			//		auto capsuleMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Capsule.vtasset");
 
-					Volt::DebugRenderer::DrawMesh(capsuleMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
-				}
+			//		Volt::DebugRenderer::DrawMesh(capsuleMesh, collisionMaterial, entity.GetTransform() * colliderTransform, entity.GetID());
+			//	}
 
-				if (entity.HasComponent<Volt::MeshColliderComponent>())
-				{
-					const auto& collider = entity.GetComponent<Volt::MeshColliderComponent>();
+			//	if (entity.HasComponent<Volt::MeshColliderComponent>())
+			//	{
+			//		const auto& collider = entity.GetComponent<Volt::MeshColliderComponent>();
 
-					Ref<Volt::Mesh> debugMesh;
+			//		Ref<Volt::Mesh> debugMesh;
 
-					debugMesh = Volt::AssetManager::GetAsset<Volt::Mesh>(collider.colliderMesh);
+			//		debugMesh = Volt::AssetManager::GetAsset<Volt::Mesh>(collider.colliderMesh);
 
-					if (!debugMesh)
-					{
-						return;
-					}
+			//		if (!debugMesh)
+			//		{
+			//			return;
+			//		}
 
-					Volt::DebugRenderer::DrawMesh(debugMesh, collisionMaterial, entity.GetTransform(), entity.GetID());
-				}
-			}
+			//		Volt::DebugRenderer::DrawMesh(debugMesh, collisionMaterial, entity.GetTransform(), entity.GetID());
+			//	}
+			//}
 
 			break;
 		}

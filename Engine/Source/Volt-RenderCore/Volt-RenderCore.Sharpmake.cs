@@ -25,7 +25,9 @@ namespace VoltSharpmake
             conf.AddPublicDependency<RHIModule>(target);
             conf.AddPublicDependency<JobSystemModule>(target);
 
-			conf.AddPrivateDependency<VoltCore>(target);
+			conf.AddPublicDependency<VoltCore>(target);
+			conf.AddPublicDependency<AssetSystemModule>(target);
+			conf.AddPublicDependency<yaml>(target);
 
             conf.IncludePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "half"));
         }

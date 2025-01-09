@@ -7,7 +7,6 @@
 
 #include <Volt/Components/NavigationComponents.h>
 
-#include <Volt/Rendering/DebugRenderer.h>
 //#include <Volt/Physics/MeshColliderCache.h>
 
 #include <Sandbox/Utility/EditorUtilities.h>

@@ -1,9 +1,10 @@
 #include "vtpch.h"
 
 #include "Volt/Asset/Text/Font.h"
-#include "Volt/Rendering/Texture/Texture2D.h"
-#include "Volt/Core/Application.h"
 #include "Volt/Asset/Text/MSDFData.h"
+#include "Volt/Core/Application.h"
+
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <AssetSystem/AssetManager.h>
 

@@ -1,8 +1,7 @@
 #include "sbpch.h"
 #include "Sandbox.h"
 
-#include <Volt/Asset/Rendering/ShaderDefinition.h>
-
+#include <RenderCore/Shader/ShaderDefinition.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <Volt/Utility/UIUtility.h>

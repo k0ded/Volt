@@ -30,36 +30,38 @@ float GetAngleAttenuation(float3 normalizedLightVector, float3 lightDirection, f
     return attenuation;
 }
 
-float3 CalculatePointLight(in PointLight light, in BRDFInput brdfInput, float3 worldPosition)
-{
+float3 EvaluatePointLight(in LightDrawData light, in BRDFInput brdfInput, float3 worldPosition)
+{ 
     float3 unormalizedLightVector = light.position - worldPosition;
     float3 L = normalize(unormalizedLightVector);
-    float invSqrRadius = 1.f / (light.radius * light.radius);
+    float invSqrRadius = 1.f / (light.lightSpecific.x * light.lightSpecific.x);
 
     float attenuation = GetDistanceAttenuation(unormalizedLightVector, invSqrRadius);
 
     return BRDF(brdfInput, L) * light.color * light.intensity * attenuation;   
 }
 
-float3 CalculateSpotLight(in SpotLight light, in BRDFInput brdfInput, float3 worldPosition)
+float3 EvaluateSpotLight(in LightDrawData light, in BRDFInput brdfInput, float3 worldPosition)
 {
     float3 unormalizedLightVector = light.position - worldPosition;
     float3 L = normalize(unormalizedLightVector);
-    float invSqrRadius = 1.f / (light.range * light.range);
+    float invSqrRadius = 1.f / (light.lightSpecific.x * light.lightSpecific.x);
     
     float attenuation = 1.f;
     attenuation *= GetDistanceAttenuation(unormalizedLightVector, invSqrRadius);
-    attenuation *= GetAngleAttenuation(L, normalize(light.direction), light.lightAngleScale, light.lightAngleOffset);
+    attenuation *= GetAngleAttenuation(L, normalize(light.direction), light.lightSpecific.z, light.lightSpecific.w);
     
     return BRDF(brdfInput, L) * light.color * attenuation * light.intensity;   
 } 
 
 ///// ----- Directional light ----- /////
-float CalculateDirectionalShadow(in DirectionalLight light, in DirectionalShadowMappingInfo shadowMappingInfo, float3 normal, float3 worldPosition)
+float EvaluateDirectionalShadow(in LightDrawData light, in DirectionalShadowMappingInfo shadowMappingInfo, float3 normal, float3 worldPosition)
 {
-    const uint cascadeIndex = GetCascadeIndexFromWorldPosition(light, worldPosition, shadowMappingInfo.viewMatrix);
-    const float3 shadowMapCoords = GetShadowMapCoords(light.viewProjections[cascadeIndex], worldPosition);
-    const float result = CalculateDirectionalShadow_Hard(light, shadowMappingInfo.shadowSampler, shadowMappingInfo.shadowMap, normal, cascadeIndex, shadowMapCoords);
+    DirectionalLightShadowData shadowData = shadowMappingInfo.directionalLightShadowData.Load();
+ 
+    const uint cascadeIndex = GetCascadeIndexFromWorldPosition(shadowData, worldPosition, shadowMappingInfo.viewMatrix);
+    const float3 shadowMapCoords = GetShadowMapCoords(shadowData.viewProjections[cascadeIndex], worldPosition);
+    const float result = EvaluateDirectionalShadow_Hard(light, shadowMappingInfo.shadowSampler, shadowMappingInfo.shadowMap, normal, cascadeIndex, shadowMapCoords);
     return result; 
 }
 
@@ -81,11 +83,11 @@ float RayTraceDirectionalShadow_Hard(float3 lightDirection, float3 normal, float
     return query.CommittedStatus() == COMMITTED_TRIANGLE_HIT ? 0.f : 1.f;
 }
 
-float3 EvaluateDirectionalLight(in DirectionalLight light, in DirectionalShadowMappingInfo shadowMappingInfo, in BRDFInput brdfInput, float3 worldPosition)
+float3 EvaluateDirectionalLight(in LightDrawData light, in DirectionalShadowMappingInfo shadowMappingInfo, in BRDFInput brdfInput, float3 worldPosition)
 {
     float3 D = normalize(light.direction.xyz);
-    float r = sin(light.angularRadius);
-    float d = cos(light.angularRadius);
+    float r = sin(light.lightSpecific.x);
+    float d = cos(light.lightSpecific.x);
 
     float3 R = reflect(-brdfInput.V, brdfInput.N);
 
@@ -99,9 +101,9 @@ float3 EvaluateDirectionalLight(in DirectionalLight light, in DirectionalShadowM
 
     float shadow = 1.f;
 
-    if (light.castShadows)
+    if (light.flags & LightFlags::LF_CastShadows)
     {
-        shadow = 1.f; //CalculateDirectionalShadow(light, shadowMappingInfo, brdfInput.N, worldPosition);
+        shadow = EvaluateDirectionalShadow(light, shadowMappingInfo, brdfInput.N, worldPosition);
     }
 
     return BRDF(brdfInput, D, L) * light.color * illuminance * shadow;
@@ -133,7 +135,7 @@ float LinearRoughnessToMipLevel(float linearRoughness, float mipCount)
 
 static const float DFGTextureSize = 512.f;
 
-float3 CalculateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::TextureSampler linearSampler, in SkyLight skyLight)
+float3 EvaluateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::TextureSampler linearSampler, in SkyLight skyLight, in LightDrawData light)
 {
     float NdotV = saturate(dot(brdfInput.N, brdfInput.V));
     float3 DFG = DFGLuT.SampleLevel(linearSampler, float2(NdotV, brdfInput.roughness), 0.f).xyz;
@@ -144,7 +146,7 @@ float3 CalculateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::Textur
     // Diffuse IBL
     {
         float3 dominantN = GetDiffuseDominantDirection(brdfInput.N, brdfInput.V, NdotV, brdfInput.roughness);
-        float3 diffuseLighting = skyLight.irradiance.SampleLevel(linearSampler, dominantN, skyLight.lod);
+        float3 diffuseLighting = skyLight.irradiance.SampleLevel(linearSampler, dominantN, light.lightSpecific.x);
 
         diffuse = diffuseLighting * DFG.z;
     }
@@ -166,5 +168,5 @@ float3 CalculateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::Textur
         specular = preLD * (brdfInput.f0 * DFG.x + brdfInput.f90 * DFG.y);
     }
 
-    return (diffuse + specular) * skyLight.intensity;
+    return (diffuse + specular) * light.intensity;
 }

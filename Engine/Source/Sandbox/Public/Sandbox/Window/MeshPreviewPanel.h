@@ -2,7 +2,7 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
-#include <Volt/Scene/Entity.h>
+#include <Volt-Scene/Entity.h>
 
 #include <EventSystem/ApplicationEvents.h>
 

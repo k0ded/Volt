@@ -4,8 +4,8 @@
 #include "Sandbox/EditorCommand.h"
 #include "Sandbox/Sandbox.h"
 
-#include <Volt/Scene/Entity.h>
-#include <Volt/Scene/Scene.h>
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Scene.h>
 
 
 #include <variant>

@@ -2,7 +2,8 @@
 #include "Window/WorldEnginePanel.h"
 
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Math/Math.h>
+
+#include <CoreUtilities/Math/Math.h>
 
 WorldEnginePanel::WorldEnginePanel(Ref<Volt::Scene>& editorScene)
 	: EditorWindow("World Engine"), m_editorScene(editorScene)

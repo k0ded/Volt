@@ -43,10 +43,7 @@ struct ViewData
     
     // Light Culling
     uint tileCountX;
-
-    // Temp lights
-    uint pointLightCount;
-    uint spotLightCount;
+    uint lightCount;
 
     uint frameIndex;
 };

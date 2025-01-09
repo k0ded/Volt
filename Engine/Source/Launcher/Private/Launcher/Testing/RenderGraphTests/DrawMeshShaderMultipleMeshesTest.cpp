@@ -1,7 +1,7 @@
 #include "Testing/RenderGraphTests/DrawMeshShaderMultipleMeshesTest.h"
 
-#include <Volt/Asset/Mesh/Mesh.h>
-#include <Volt/Rendering/Renderer.h>
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/Renderer.h>
 
 #include <AssetSystem/AssetManager.h>
 

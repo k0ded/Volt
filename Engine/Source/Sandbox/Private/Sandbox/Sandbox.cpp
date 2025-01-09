@@ -57,11 +57,13 @@
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
-#include <Volt/Scene/Entity.h>
-#include <Volt/Scene/Scene.h>
-#include <Volt/Scene/SceneManager.h>
-#include <Volt/Rendering/Camera/Camera.h>
-#include <Volt/Rendering/SceneRenderer.h>
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/SceneManager.h>
+
+#include <Volt-Renderer/Camera/Camera.h>
+#include <Volt-Renderer/SceneRenderer.h>
+
 #include <Volt/Utility/UIUtility.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -236,14 +238,14 @@ void Sandbox::SetupNewSceneData()
 
 	// Scene Renderers
 	{
-		Volt::SceneRendererSpecification spec{};
-		Volt::SceneRendererSpecification gameSpec{};
+		Volt::SceneRendererCreateInfo spec{};
+		Volt::SceneRendererCreateInfo gameSpec{};
 
 		spec.debugName = "Editor Viewport";
-		spec.scene = m_runtimeScene;
+		spec.renderScene = m_runtimeScene->GetRenderScene();
 
 		gameSpec.debugName = "Game Viewport";
-		gameSpec.scene = m_runtimeScene;
+		gameSpec.renderScene = m_runtimeScene->GetRenderScene();
 
 		if (m_sceneRenderer)
 		{

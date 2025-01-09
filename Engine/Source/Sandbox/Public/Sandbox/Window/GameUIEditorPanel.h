@@ -2,7 +2,7 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
-#include <Volt/Rendering/UISceneRenderer.h>
+#include <Volt-Renderer/UISceneRenderer.h>
 
 #include <InputModule/Events/MouseEvents.h>
 #include <WindowModule/Events/WindowEvents.h>

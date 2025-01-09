@@ -37,6 +37,7 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<VoltPhysics>(target);
 			conf.AddPublicDependency<VoltRenderCore>(target);
 			conf.AddPublicDependency<VoltCore>(target);
+			conf.AddPublicDependency<VoltScene>(target);
 
 			conf.AddPublicDependency<NavigationModule>(target);
             conf.AddPublicDependency<MosaicModule>(target);

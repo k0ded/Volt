@@ -9,10 +9,11 @@
 #include "Sandbox/Sandbox.h"
 
 #include <Volt/Asset/Prefab.h>
-#include <Volt/Components/RenderingComponents.h>
 #include <Volt/Utility/UIUtility.h>
 #include <Volt/Utility/MeshExporterUtilities.h>
-#include <Volt/Rendering/Texture/Texture2D.h>
+
+#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <AssetSystem/AssetManager.h>
 

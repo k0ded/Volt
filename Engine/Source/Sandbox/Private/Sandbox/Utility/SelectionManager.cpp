@@ -1,7 +1,10 @@
 #include "sbpch.h"
 #include "Utility/SelectionManager.h"
 
-#include <Volt/Scene/Entity.h>
+#include <EntitySystem/EntityID.h>
+
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/Entity.h>
 
 void SelectionManager::Initialize()
 {

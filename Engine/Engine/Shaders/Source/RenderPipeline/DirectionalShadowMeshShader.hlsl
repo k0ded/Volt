@@ -7,7 +7,7 @@
 struct Constants
 {
     GPUScene gpuScene;
-    vt::UniformBuffer<DirectionalLight> directionalLight;
+    vt::UniformBuffer<DirectionalLightShadowData> directionalLightShadowData;
     vt::TypedBuffer<MeshTaskCommand> taskCommands;
 
     float4x4 viewMatrix;
@@ -98,7 +98,7 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
             out primitives PrimitiveOutput primitives[NUM_MAX_OUT_TRIS])
 {
     const Constants constants = GetConstants<Constants>();
-    const DirectionalLight dirLight = constants.directionalLight.Load();
+    const DirectionalLightShadowData dirLight = constants.directionalLightShadowData.Load();
 
     const PrimitiveDrawData drawData = constants.gpuScene.primitiveDrawDataBuffer.Load(payload.drawId);    
     const GPUMesh mesh = constants.gpuScene.meshesBuffer.Load(drawData.meshId);

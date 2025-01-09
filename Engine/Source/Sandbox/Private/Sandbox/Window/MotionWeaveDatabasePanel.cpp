@@ -6,7 +6,7 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <Volt/Asset/Animation/MotionWeaveDatabase.h>
+#include <Volt-Animation/Assets/MotionWeaveDatabase.h>
 
 MotionWeaveDatabasePanel::MotionWeaveDatabasePanel()
 	: EditorWindow("Motion Weave Database")

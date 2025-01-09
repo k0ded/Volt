@@ -1,7 +1,8 @@
 #include "sbpch.h"
+
 #include "Camera/EditorCameraController.h"
 
-#include "Volt/Rendering/Camera/Camera.h"
+#include "Volt-Renderer/Camera/Camera.h"
 #include "Volt/Utility/UIUtility.h"
 
 #include <InputModule/Input.h>

@@ -7,7 +7,7 @@
 #include <Volt/Vision/VisionTrigger.h>
 #include <Volt/Vision/Vision.h>
 
-#include <Volt/Rendering/Camera/Camera.h>
+#include <Volt-Renderer/Camera/Camera.h>
 
 #include <Volt-Physics/ColliderComponents.h>
 

@@ -2,11 +2,10 @@
 
 #include "Volt/Asset/SourceAssetImporters/FbxSourceImporter.h"
 #include "Volt/Asset/SourceAssetImporters/FbxUtility.h"
-#include "Volt/Asset/Mesh/Mesh.h"
-#include "Volt/Asset/Rendering/Material.h"
-#include "Volt/Asset/Animation/Skeleton.h"
 
-#include "Volt/Rendering/Mesh/MeshCommon.h"
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/Material.h>
+#include <Volt-Animation/Assets/Skeleton.h>
 
 #include <AssetSystem/AssetManager.h>
 

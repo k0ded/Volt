@@ -5,8 +5,9 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 
 #include <Volt/Utility/UIUtility.h>
-
 #include <Volt/Asset/SourceAssetImporters/FbxSourceImporter.h>
+
+#include <Volt-Animation/Assets/Skeleton.h>
 
 #include <imgui.h>
 

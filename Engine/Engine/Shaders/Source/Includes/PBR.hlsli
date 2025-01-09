@@ -12,21 +12,17 @@
 struct PBRConstants
 {
     vt::UniformBuffer<ViewData> viewData;
+    vt::UniformBuffer<DirectionalLightShadowData> directionalLightShadowData;
     
-    vt::UniformBuffer<DirectionalLight> directionalLight;
-    vt::TypedBuffer<PointLight> pointLights;
-    vt::TypedBuffer<SpotLight> spotLights;
-
-    vt::TypedBuffer<int> visiblePointLights;
-    vt::TypedBuffer<int> visibleSpotLights;
+    vt::TypedBuffer<LightDrawData> lights;
+    vt::TypedBuffer<int> visibleLights;
     
     vt::TextureSampler linearSampler;
     vt::TextureSampler pointLinearClampSampler;
     vt::TextureSampler shadowSampler;
      
     vt::Tex2D<float4> DFGLuT;
-    vt::Tex2DArray<float> directionalShadowMap;
-
+    vt::Tex2DArray<float> directionalLightShadowMap;
     SkyLight skyLight;
 };
 
@@ -53,34 +49,7 @@ static PBRInput m_pbrInput;
 static PBRConstants m_pbrConstants;
 static ViewData m_viewData;
 
-float3 EvaluatePointLights(float3 dirToCamera, uint pointLightCount)
-{
-    float3 output = 0.f;
-
-    BRDFInput brdfInput;
-    brdfInput.V = dirToCamera;
-    brdfInput.N = m_pbrInput.normal;
-    brdfInput.diffuseColor = CalculateDiffuseColor(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
-    brdfInput.f0 = CalculateF0(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
-    brdfInput.f90 = CalculateF90(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
-    brdfInput.roughness = m_pbrInput.roughness;
-    brdfInput.metalness = m_pbrInput.metallic;
-
-    for (int i = 0; i < pointLightCount; i++)
-    {
-        int lightIndex = GetLightBufferIndex(m_pbrConstants.visiblePointLights, m_viewData.tileCountX, i, m_pbrInput.tileId);
-        if (lightIndex == -1)
-        { 
-            break; 
-        }
-
-        output += CalculatePointLight(m_pbrConstants.pointLights.Load(i), brdfInput, m_pbrInput.worldPosition);
-    }
-    
-    return output;
-}
-
-float3 EvaluateSpotLights(float3 dirToCamera, uint spotLightCount)
+float3 EvaluateLights(float3 dirToCamera, uint lightCount)
 {
     float3 output = 0.f;
 
@@ -93,12 +62,40 @@ float3 EvaluateSpotLights(float3 dirToCamera, uint spotLightCount)
     brdfInput.roughness = m_pbrInput.roughness;
     brdfInput.metalness = m_pbrInput.metallic;
 
-    for (uint i = 0; i < spotLightCount; i++)
+    for (uint i = 0; i < lightCount; i++)
     {
-        output += CalculateSpotLight(m_pbrConstants.spotLights.Load(i), brdfInput, m_pbrInput.worldPosition);
+        int lightIndex = GetLightBufferIndex(m_pbrConstants.visibleLights, m_viewData.tileCountX, i, m_pbrInput.tileId);
+        if (lightIndex == -1)
+        {
+            break;
+        }
+
+        LightDrawData light = m_pbrConstants.lights.Load(lightIndex);
+        if (light.lightType == SceneLightType::SLT_Point)
+        {
+            output += EvaluatePointLight(light, brdfInput, m_pbrInput.worldPosition);
+        }
+        else if (light.lightType == SceneLightType::SLT_Spot)
+        {
+            output += EvaluateSpotLight(light, brdfInput, m_pbrInput.worldPosition);
+        }
+        else if (light.lightType == SceneLightType::SLT_Directional)
+        {
+            DirectionalShadowMappingInfo shadowMappingInfo;
+            shadowMappingInfo.directionalLightShadowData = m_pbrConstants.directionalLightShadowData;
+            shadowMappingInfo.shadowSampler = m_pbrConstants.shadowSampler;
+            shadowMappingInfo.shadowMap = m_pbrConstants.directionalLightShadowMap;
+            shadowMappingInfo.viewMatrix = m_viewData.view;
+
+            output += EvaluateDirectionalLight(light, shadowMappingInfo, brdfInput, m_pbrInput.worldPosition);
+        }
+        else if (light.lightType == SceneLightType::SLT_Sky)
+        {
+            output += EvaluateIBL(brdfInput, m_pbrConstants.DFGLuT, m_pbrConstants.linearSampler, m_pbrConstants.skyLight, light);
+        }
     }
-    
-    return output; 
+
+    return output;
 }
 
 float3 EvaluatePBR(in PBRInput input, in PBRConstants constants)
@@ -121,31 +118,8 @@ float3 EvaluatePBR(in PBRInput input, in PBRConstants constants)
     brdfInput.roughness = m_pbrInput.roughness;
     brdfInput.metalness = m_pbrInput.metallic;
 
-    // Skylight
-    {
-        //lightOutput += CalculateIBL(brdfInput, constants.DFGLuT, constants.linearSampler, constants.skyLight) * input.ao; 
-    }
-    
-    // Directional Light
-    {
-        DirectionalShadowMappingInfo shadowMappingInfo;
-        shadowMappingInfo.shadowMap = m_pbrConstants.directionalShadowMap;
-        shadowMappingInfo.shadowSampler = m_pbrConstants.shadowSampler;
-        shadowMappingInfo.viewMatrix = m_viewData.view;
+    lightOutput += EvaluateLights(dirToCamera, m_viewData.lightCount);
 
-        lightOutput += EvaluateDirectionalLight(constants.directionalLight.Load(), shadowMappingInfo, brdfInput, m_pbrInput.worldPosition);
-    }
-    
-    // Point lights
-    {
-        lightOutput += EvaluatePointLights(dirToCamera, m_viewData.pointLightCount);
-    }
-    
-    // Spot lights
-    {
-        lightOutput += EvaluateSpotLights(dirToCamera, m_viewData.spotLightCount);
-    }
-    
     const float3 compositeLighting = lightOutput + m_pbrInput.emissive;
     return compositeLighting;
 }

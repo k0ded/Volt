@@ -15,15 +15,16 @@
 #include "Sandbox/EditorCommandStack.h"
 #include "Sandbox/Utility/Theme.h"
 
-#include <Volt/Asset/Mesh/Mesh.h>
 #include <Volt/Asset/ParticlePreset.h>
-#include <Volt/Rendering/SceneRenderer.h>
-#include <Volt/Rendering/Camera/Camera.h>
-#include <Volt/Components/CoreComponents.h>
-#include <Volt/Components/RenderingComponents.h>
-#include <Volt/Scene/Entity.h>
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Math/Math.h>
+
+#include <Volt-Scene/Components/CoreComponents.h>
+#include <Volt-Scene/Entity.h>
+
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-Renderer/Camera/Camera.h>
+#include <Volt-Renderer/RenderingComponents.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
@@ -33,6 +34,7 @@
 
 #include <RHIModule/Images/Image.h>
 
+#include <CoreUtilities/Math/Math.h>
 #include <CoreUtilities/FileSystem.h>
 
 ViewportPanel::ViewportPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::Scene>& editorScene, EditorCameraController* cameraController,

@@ -1,11 +1,11 @@
 #include "vtpch.h"
 #include "Volt/Vision/VisionComponents.h"
 
-#include <Volt/Components/CoreComponents.h>
-#include <Volt/Components/RenderingComponents.h>
+#include <Volt-Scene/Components/CoreComponents.h>
+#include <Volt-Renderer/RenderingComponents.h>
 
-#include "Volt/Scene/Scene.h"
-#include "Volt/Scene/Entity.h"
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/Entity.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/Events/MouseEvents.h>

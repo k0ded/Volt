@@ -2,7 +2,7 @@
 
 #include "Sandbox/Window/TextureViewerPanel.h"
 
-#include <Volt/Rendering/Texture/Texture2D.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <Volt/Utility/UIUtility.h>
 

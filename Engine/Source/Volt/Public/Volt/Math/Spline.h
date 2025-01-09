@@ -2,10 +2,11 @@
 #include <Volt/Core/Base.h>
 #include <glm/glm.hpp>
 
-#include <Volt/Scene/Scene.h>
-#include "Volt/Scene/Entity.h"
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/Entity.h>
+#include <Volt-Renderer/Mesh/Mesh.h>
+
 #include <AssetSystem/AssetManager.h>
-#include "Volt/Asset/Mesh/Mesh.h"
 
 class Spline
 {

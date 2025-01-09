@@ -30,6 +30,7 @@ namespace VoltSharpmake
 
 			conf.AddPrivateDependency<VoltRenderCore>(target);
 			conf.AddPrivateDependency<VoltCore>(target);
+			conf.AddPrivateDependency<VoltScene>(target);
 
 			conf.AddPrivateDependency<PhysicsInterface>(target);
 

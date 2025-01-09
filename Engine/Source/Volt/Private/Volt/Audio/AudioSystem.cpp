@@ -1,13 +1,12 @@
 #include "vtpch.h"
 #include "Volt/Audio/AudioSystem.h"
 
-#include "Volt/Scene/Scene.h"
-#include "Volt/Scene/Entity.h"
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Components/CoreComponents.h>
 
 #include <Volt/Components/AudioComponents.h>
-#include <Volt/Components/CoreComponents.h>
 
-#include <Volt/Rendering/DebugRenderer.h>
 #include <Amp/WwiseAudioManager/WwiseAudioManager.h>
 
 #include <glm/glm.hpp>

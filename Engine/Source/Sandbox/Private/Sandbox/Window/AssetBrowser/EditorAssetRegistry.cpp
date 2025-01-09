@@ -2,16 +2,16 @@
 
 #include "Window/AssetBrowser/EditorAssetRegistry.h"
 
-#include "Volt/Asset/Rendering/Material.h"
+#include "Volt-Renderer/Material.h"
 
-#include "Volt/Asset/Animation/Animation.h"
-#include "Volt/Asset/Animation/Skeleton.h"
-#include "Volt/Asset/Animation/AnimatedCharacter.h"
-#include "Volt/Asset/Mesh/Mesh.h"
+#include "Volt-Animation/Assets/Animation.h"
+#include "Volt-Animation/Assets/Skeleton.h"
+#include "Volt-Renderer/AnimatedCharacter.h"
 
-#include "Volt/Rendering/Texture/Texture2D.h"
+#include "Volt-Renderer/Mesh/Mesh.h"
+#include "Volt-Renderer/Texture/Texture2D.h"
 
-#include "Volt/Scene/Scene.h"
+#include "Volt-Scene/Scene.h"
 
 #include <AssetSystem/AssetManager.h>
 

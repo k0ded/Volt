@@ -15,13 +15,15 @@
 #include "Sandbox/UserSettingsManager.h"
 
 #include <Volt/Asset/Prefab.h>
-#include <Volt/Asset/Rendering/Material.h>
-#include <Volt/Asset/Animation/MotionWeaveDatabase.h>
 #include <Volt/Asset/ParticlePreset.h>
 
-#include <Volt/Animation/BlendSpace.h>
-#include <Volt/Components/CoreComponents.h>
-#include <Volt/Scene/Scene.h>
+#include <Volt-Renderer/Material.h>
+
+#include <Volt-Animation/Assets/MotionWeaveDatabase.h>
+#include <Volt-Animation/BlendSpace.h>
+
+#include <Volt-Scene/Components/CoreComponents.h>
+#include <Volt-Scene/Scene.h>
 #include <Volt/Utility/FileSystem.h>
 #include <Volt/Utility/UIUtility.h>
 #include <Volt/Utility/PremadeCommands.h>

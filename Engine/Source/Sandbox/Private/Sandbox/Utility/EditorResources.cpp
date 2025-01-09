@@ -1,11 +1,10 @@
 #include "sbpch.h"
 #include "Utility/EditorResources.h"
 
-#include <Volt/Asset/Mesh/Mesh.h>
-
-#include <Volt/Rendering/Renderer.h>
-#include <Volt/Rendering/ShapeLibrary.h>
-#include <Volt/Rendering/Texture/Texture2D.h>
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/ShapeLibrary.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <Volt/Asset/SourceAssetImporters/ImportConfigs.h>
 

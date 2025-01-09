@@ -1,11 +1,11 @@
 #pragma once
 
 #include <Volt/Core/Base.h>
-#include <Volt/Components/CoreComponents.h>
+#include <Volt-Scene/Components/CoreComponents.h>
+#include <Volt-Scene/Entity.h>
 
 #include <stack>
 #include "EditorCommand.h"
-#include "Volt/Scene/Entity.h"
 
 
 #include <tuple>

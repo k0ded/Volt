@@ -3,8 +3,8 @@
 
 #include "NavigationEditor/Tools/NavMeshDebugDrawer.h"
 
-#include <Volt/Scene/Entity.h>
-#include <Volt/Scene/Scene.h>
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Scene.h>
 
 //#include <Volt/Physics/Physics.h>
 //#include <Volt/Physics/PhysicsScene.h>

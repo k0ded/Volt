@@ -5,11 +5,12 @@
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/Theme.h"
 
-#include <Volt/Asset/Animation/Skeleton.h>
-#include <Volt/Asset/Animation/AnimatedCharacter.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
+#include <Volt-Renderer/AnimatedCharacter.h>
+#include <Volt-Renderer/Mesh/Mesh.h>
+
+#include <Volt-Animation/Assets/Skeleton.h>
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Rendering/Texture/Texture2D.h>
-#include <Volt/Asset/Mesh/Mesh.h>
 
 #include <CoreUtilities/FileSystem.h>
 

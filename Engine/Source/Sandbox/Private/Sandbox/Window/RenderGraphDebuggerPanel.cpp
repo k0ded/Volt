@@ -3,7 +3,7 @@
 
 #include <Volt/Utility/UIUtility.h>
 
-#include <Volt/Rendering/SceneRenderer.h>
+#include <Volt-Renderer/SceneRenderer.h>
 
 RenderGraphDebuggerPanel::RenderGraphDebuggerPanel(Ref<Volt::SceneRenderer>& sceneRenderer)
 	: EditorWindow("Render Graph Debugger"), m_sceneRenderer(sceneRenderer)

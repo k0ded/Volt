@@ -1,10 +1,12 @@
 #pragma once
 
-#include <imgui_internal.h>
 #include "Sandbox/Utility/EditorResources.h"
-#include "Volt/Rendering/Texture/Texture2D.h"
+
+#include "Volt-Renderer/Texture/Texture2D.h"
 
 #include <Volt/Utility/UIUtility.h>
+
+#include <imgui_internal.h>
 
 enum class IconType : ImU32
 {

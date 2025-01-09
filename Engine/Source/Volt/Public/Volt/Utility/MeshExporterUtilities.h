@@ -1,11 +1,8 @@
 #pragma once
 #include "Volt/Core/Base.h"
 
-#include "Volt/Asset/Mesh/Mesh.h"
-
-#include "Volt/Scene/Entity.h"
-
-
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Scene/Entity.h>
 
 namespace Volt
 {

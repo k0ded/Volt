@@ -2,8 +2,9 @@
 #include "Window/RendererSettingsPanel.h"
 
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Rendering/SceneRenderer.h>
-#include <Volt/Rendering/Renderer.h>
+
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-Renderer/Renderer.h>
 
 #include "Sandbox/Utility/EditorUtilities.h"
 

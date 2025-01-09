@@ -2,7 +2,7 @@
 
 #include "MemoryUtility.h"
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetType.h>
 
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Concepts.h>
@@ -345,13 +345,13 @@ namespace Volt
 		template<typename Type, typename DefaultValueT, typename TypeParent = T>
 		const ComponentMember& AddMember(Type TypeParent::* memberPtr, std::string_view name, std::string_view label, std::string_view description, const DefaultValueT& defaultValue)
 		{
-			return AddMember(memberPtr, name, label, description, defaultValue, AssetTypes::None);
+			return AddMember(memberPtr, name, label, description, defaultValue, ::AssetTypes::None);
 		}
 
 		template<typename Type, typename DefaultValueT, typename TypeParent = T>
 		const ComponentMember& AddMember(Type TypeParent::* memberPtr, std::string_view name, std::string_view label, std::string_view description, const DefaultValueT& defaultValue, ComponentMemberFlag flags)
 		{
-			return AddMember(memberPtr, name, label, description, defaultValue, AssetTypes::None, flags);
+			return AddMember(memberPtr, name, label, description, defaultValue, ::AssetTypes::None, flags);
 		}
 
 		template<typename Type, typename DefaultValueT, typename AssetTypeType, typename TypeParent = T>

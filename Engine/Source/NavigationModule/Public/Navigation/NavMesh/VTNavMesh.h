@@ -5,8 +5,8 @@
 #include "Navigation/NavMesh/DtNavMesh.h"
 #include "Navigation/Crowd/DtCrowd.h"
 
-#include <Volt/Asset/Mesh/Mesh.h>
-#include <Volt/Scene/Entity.h>
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Scene/Entity.h>
 #include <Volt/Components/NavigationComponents.h>
 
 #include <AssetSystem/Asset.h>

@@ -2,9 +2,9 @@
 #include "Window/EngineStatisticsPanel.h"
 
 #include <Volt/Core/Application.h>
-#include <Volt/Scene/Scene.h>
 
-#include <Volt/Rendering/SceneRenderer.h>
+#include <Volt-Scene/Scene.h>
+#include <Volt-Renderer/SceneRenderer.h>
 
 #include <Volt/Utility/UIUtility.h>
 

@@ -2,8 +2,9 @@
 
 #include "Volt/Asset/SourceAssetImporters/GLTFSourceImporter.h"
 #include "Volt/Asset/SourceAssetImporters/ImportConfigs.h"
-#include "Volt/Asset/Mesh/Mesh.h"
-#include "Volt/Asset/Rendering/Material.h"
+
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/Material.h>
 
 #include <AssetSystem/AssetManager.h>
 

@@ -4,6 +4,7 @@
 #include "Resources.hlsli"
 #include "BoundingVolumes.hlsli"
 #include "Transform.hlsli"
+#include "Lights.hlsli"
 
 #define MAX_LOD_COUNT 8
 
@@ -150,6 +151,7 @@ struct GPUScene
     vt::TypedBuffer<PrimitiveDrawData> prevPrimitiveDrawDataBuffer;
     vt::TypedBuffer<SDFPrimitiveDrawData> sdfPrimitiveDrawDataBuffer;
     vt::TypedBuffer<float4x4> bonesBuffer;
+    vt::TypedBuffer<LightDrawData> lightsBuffer;
 
     vt::TypedBuffer<uint> validPrimitiveDrawDatasBuffer;
 };

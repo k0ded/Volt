@@ -10,7 +10,7 @@
 
 struct Constants
 {
-    vt::RWTex2D<float4> output;
+    vt::RWTex2D<float4> output; 
     
     vt::Tex2D<float4> albedo;
     vt::Tex2D<float3> normals;
@@ -18,11 +18,11 @@ struct Constants
     vt::Tex2D<float3> emissive;
     vt::Tex2D<uint> aoTexture;
     vt::Tex2D<float> depthTexture;
-
+  
     PBRConstants pbrConstants;
-};
+}; 
  
-float CalculateAO(vt::Tex2D<uint> aoTex, uint2 pixelCoord)
+float CalculateAO(vt::Tex2D<uint> aoTex, uint2 pixelCoord) 
 {
 #define XE_GTAO_OCCLUSION_TERM_SCALE (1.5f)      // for packing in UNORM (because raw, pre-denoised occlusion term can overshoot 1 but will later average out to 1)
 
@@ -44,7 +44,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     {
         return;
     }
-    
+     
     const float4 albedo = constants.albedo.Load(int3(threadId.xy, 0));
     
     if (albedo.a < 0.5f)
@@ -74,7 +74,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     pbrInput.worldPosition = worldPosition;
     pbrInput.ao = ao;
     pbrInput.tileId = threadId.xy / LIGHT_CULLING_TILE_SIZE;
-    
+     
     float3 outputColor = EvaluatePBR(pbrInput, constants.pbrConstants);
 
     //switch (constants.visualizationMode) 

@@ -7,7 +7,7 @@
 #include "Sandbox/Utility/Theme.h"
 
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Asset/Rendering/Material.h>
+#include <Volt-Renderer/Material.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -719,7 +719,7 @@ void MosaicEditorPanel::DrawNodesPanel()
 
 		std::unordered_map<std::string, Vector<VoltGUID>> categorizedNodes;
 
-		for (const auto& [guid, info] : Mosaic::NodeRegistry::GetRegistry())
+		for (const auto& [guid, info] : GetMosaicNodeRegistry().GetRegistry())
 		{
 			categorizedNodes[info.category].emplace_back(guid);
 		}
@@ -744,7 +744,7 @@ void MosaicEditorPanel::DrawNodesPanel()
 					{
 						for (const auto& guid : nodeGuids)
 						{
-							const auto& nodeInfo = Mosaic::NodeRegistry::GetNodeInfo(guid);
+							const auto& nodeInfo = GetMosaicNodeRegistry().GetNodeInfo(guid);
 							
 							if (ImGui::MenuItem(nodeInfo.name.c_str()) && m_material)
 							{

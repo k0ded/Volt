@@ -4,8 +4,9 @@
 #include <AssetSystem/AssetManager.h>
 #include "Volt/Asset/Prefab.h"
 
-#include "Volt/Asset/Serializers/SceneSerializer.h"
 #include "Volt/Utility/YAMLSerializationHelpers.h"
+
+#include <Volt-Scene/SceneSerializer.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>

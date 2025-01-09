@@ -1,12 +1,11 @@
 #include "vtpch.h"
 #include "Volt/Asset/Prefab.h"
 
-#include "Volt/Components/CoreComponents.h"
+#include <Volt-Scene/Components/CoreComponents.h>
+#include <Volt-Scene/Scene.h>
 
 #include <Volt-Physics/RigidbodyComponent.h>
 #include <Volt-Physics/CharacterControllerComponent.h>
-
-#include "Volt/Scene/Scene.h"
 
 #include <AssetSystem/AssetManager.h>
 

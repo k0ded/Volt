@@ -1,8 +1,7 @@
 #include "nvpch.h"
 #include "NavigationEditor/Tools/NavMeshDebugDrawer.h"
 
-#include <Volt/Asset/Rendering/Material.h>
-#include <Volt/Rendering/DebugRenderer.h>
+#include <Volt-Renderer/Material.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -12,7 +11,7 @@
 
 void NavMeshLine::Draw()
 {
-	Volt::DebugRenderer::DrawLine(start, end, color);
+	//Volt::DebugRenderer::DrawLine(start, end, color);
 }
 
 void NavMeshDebugDrawer::Shutdown()
@@ -25,12 +24,12 @@ void NavMeshDebugDrawer::DrawNavMesh()
 	auto mesh = debugDrawCompiler.GetDebugMesh();
 	if (mesh)
 	{
-		Volt::DebugRenderer::DrawMesh(mesh, glm::mat4(1.f));
+		//Volt::DebugRenderer::DrawMesh(mesh, glm::mat4(1.f));
 
-		for (auto line : debugDrawCompiler.GetDebugLines())
-		{
-			line.Draw();
-		}
+		//for (auto line : debugDrawCompiler.GetDebugLines())
+		//{
+		//	line.Draw();
+		//}
 	}
 
 	// OLD
@@ -56,26 +55,26 @@ void NavMeshDebugDrawer::DrawNavMesh()
 
 void NavMeshDebugDrawer::DrawLinks(const Vector<Volt::AI::NavLinkConnection>& links)
 {
-	for (const auto& link : links)
-	{
-		Volt::DebugRenderer::DrawLineSphere(link.start, 100.f, glm::vec4(1.f, 1.f, 0.f, 1.f));
-		Volt::DebugRenderer::DrawLine(link.start, link.end, glm::vec4(1.f, 1.f, 0.f, 1.f));
-		Volt::DebugRenderer::DrawLineSphere(link.end, 100.f, glm::vec4(1.f, 1.f, 0.f, 1.f));
-	}
+	//for (const auto& link : links)
+	//{
+	//	Volt::DebugRenderer::DrawLineSphere(link.start, 100.f, glm::vec4(1.f, 1.f, 0.f, 1.f));
+	//	Volt::DebugRenderer::DrawLine(link.start, link.end, glm::vec4(1.f, 1.f, 0.f, 1.f));
+	//	Volt::DebugRenderer::DrawLineSphere(link.end, 100.f, glm::vec4(1.f, 1.f, 0.f, 1.f));
+	//}
 }
 
 void NavMeshDebugDrawer::DrawPath(const Vector<glm::vec3>& path)
 {
 	for (uint32_t i = 0; i < path.size(); i++)
 	{
-		if (i == path.size() - 1)
-		{
-			Volt::DebugRenderer::DrawLine(path[i], path[0], glm::vec4(1.f, 0.f, 0.f, 1.f));
-		}
-		else
-		{
-			Volt::DebugRenderer::DrawLine(path[i], path[i + 1], glm::vec4(1.f, 0.f, 0.f, 1.f));
-		}
+		//if (i == path.size() - 1)
+		//{
+		//	Volt::DebugRenderer::DrawLine(path[i], path[0], glm::vec4(1.f, 0.f, 0.f, 1.f));
+		//}
+		//else
+		//{
+		//	Volt::DebugRenderer::DrawLine(path[i], path[i + 1], glm::vec4(1.f, 0.f, 0.f, 1.f));
+		//}
 	}
 }
 

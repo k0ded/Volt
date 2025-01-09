@@ -1,9 +1,11 @@
 #pragma once
 
-#include <Volt/Scene/Entity.h>
-#include <Volt/Components/CoreComponents.h>
-#include <AssetSystem/AssetManager.h>
 #include <Volt/Utility/UIUtility.h>
+
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Components/CoreComponents.h>
+
+#include <AssetSystem/AssetManager.h>
 
 #include <glm/glm.hpp>
 #include <imgui.h>

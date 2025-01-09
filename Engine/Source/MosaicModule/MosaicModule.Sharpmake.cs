@@ -4,7 +4,7 @@ using System.IO;
 namespace VoltSharpmake
 {
     [Sharpmake.Generate]
-    public class MosaicModule : CommonVoltLibProject
+    public class MosaicModule : CommonVoltDllProject
     {
         public MosaicModule()
         {

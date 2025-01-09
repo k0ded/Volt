@@ -3,8 +3,8 @@
 #include "Sandbox/Window/EditorWindow.h"
 #include "Sandbox/Utility/Helpers.h"
 
-#include <Volt/Scene/Entity.h>
-#include <Volt/Scene/Scene.h>
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Scene.h>
 
 #include <InputModule/Events/KeyboardEvents.h>
 

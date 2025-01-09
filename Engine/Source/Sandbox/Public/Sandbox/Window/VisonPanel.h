@@ -3,10 +3,11 @@
 #include "Sandbox/Window/EditorWindow.h"
 #include "Sandbox/Camera/EditorCameraController.h"
 
-#include "Volt/Vision/VisionComponents.h"
-#include <Volt/Components/RenderingComponents.h>
+#include <Volt/Vision/VisionComponents.h>
 
-#include <Volt/Scene/Scene.h>
+#include <Volt-Renderer/RenderingComponents.h>
+
+#include <Volt-Scene/Scene.h>
 #include <Volt/Events/SceneEvents.h>
 
 class VisionPanel : public EditorWindow

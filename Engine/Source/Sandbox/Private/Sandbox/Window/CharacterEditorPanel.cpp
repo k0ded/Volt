@@ -5,16 +5,17 @@
 #include "Sandbox/Camera/EditorCameraController.h"
 #include "Sandbox/Utility/Theme.h"
 
-#include <Volt/Animation/AnimationManager.h>
-#include <Volt/Rendering/SceneRenderer.h>
-#include <Volt/Rendering/Texture/Texture2D.h>
-#include <Volt/Asset/Animation/AnimatedCharacter.h>
-#include <Volt/Asset/Animation/Animation.h>
-#include <Volt/Asset/Animation/Skeleton.h>
-#include <Volt/Asset/Mesh/Mesh.h>
-#include <Volt/Scene/Scene.h>
-#include <Volt/Scene/Entity.h>
-#include <Volt/Components/RenderingComponents.h>
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
+#include <Volt-Renderer/AnimatedCharacter.h>
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/RenderingComponents.h>
+
+#include <Volt-Animation/AnimationManager.h>
+#include <Volt-Animation/Assets/Animation.h>
+#include <Volt-Animation/Assets/Skeleton.h>
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/Entity.h>
 #include <Volt/Utility/UIUtility.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -142,7 +143,7 @@ void CharacterEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 			newEntity.AddComponent<Volt::MeshComponent>().handle = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Sphere.vtasset")->handle;
 			newEntity.SetScale(0.2f);
 
-			myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().attachedEntities[attachment.id].emplace_back(newEntity);
+			myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().attachedEntities[attachment.id].emplace_back(myScene->GetEntityHelperFromEntityID(newEntity.GetID()));
 		}
 	}
 	else
@@ -156,8 +157,8 @@ void CharacterEditorPanel::OnOpen()
 {
 	// Scene Renderer
 	{
-		Volt::SceneRendererSpecification spec{};
-		spec.scene = myScene;
+		Volt::SceneRendererCreateInfo spec{};
+		spec.renderScene = myScene->GetRenderScene();
 		spec.debugName = "Character Editor";
 
 		//Volt::SceneRendererSettings settings{};
@@ -886,7 +887,7 @@ void CharacterEditorPanel::AddJointAttachmentPopup()
 					newEntity.AddComponent<Volt::MeshComponent>().handle = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Sphere.vtasset")->handle;
 					newEntity.SetScale(0.2f);
 
-					myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().attachedEntities[newAttachment.id].emplace_back(newEntity);
+					myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().attachedEntities[newAttachment.id].emplace_back(myScene->GetEntityHelperFromEntityID(newEntity.GetID()));
 
 					ImGui::CloseCurrentPopup();
 				}

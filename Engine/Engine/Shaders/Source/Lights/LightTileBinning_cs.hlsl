@@ -7,24 +7,20 @@ struct Constants
 {
     vt::Tex2D<float> depthTexture;
     vt::UniformBuffer<ViewData> viewData;
-    
-    vt::TypedBuffer<PointLight> pointLights;
-    vt::TypedBuffer<SpotLight> spotLights;
+    vt::TypedBuffer<LightDrawData> lightsBuffer;
 
-    vt::RWTypedBuffer<int> visiblePointLightIndices;
-    vt::RWTypedBuffer<int> visibleSpotLightIndices;
+    vt::RWTypedBuffer<int> visibleLightIndices;
  
     uint2 tileCount;
 };
 
 groupshared uint m_minDepthInt;
 groupshared uint m_maxDepthInt;
-groupshared uint m_visiblePointLightCount;
-groupshared uint m_visibleSpotLightCount;
+groupshared uint m_visibleLightCount;
+
 groupshared float4 m_frustumPlanes[6];
 
-groupshared uint m_visiblePointLights[MAX_LIGHTS_PER_TILE];
-groupshared uint m_visibleSpotLights[MAX_LIGHTS_PER_TILE];
+groupshared uint m_visibleLights[MAX_LIGHTS_PER_TILE];
 
 [numthreads(LIGHT_CULLING_TILE_SIZE, LIGHT_CULLING_TILE_SIZE, 1)]
 void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : SV_GroupIndex, uint2 groupId : SV_GroupID)
@@ -38,8 +34,7 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
     {
         m_minDepthInt = UINT32_MAX;
         m_maxDepthInt = 0;
-        m_visiblePointLightCount = 0;
-        m_visibleSpotLightCount = 0;
+        m_visibleLightCount = 0;
     }
 
     GroupMemoryBarrierWithGroupSync();
@@ -88,70 +83,67 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
     // Cull lights
 
     const uint threadCount = LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE;
-    uint passCount = DivideRoundUp(viewData.pointLightCount, threadCount);
+    uint passCount = DivideRoundUp(viewData.lightCount, threadCount);
 
     for (uint i = 0; i < passCount; i++)
     {
         uint lightIndex = i * threadCount + groupThreadIndex;
-        if (lightIndex >= viewData.pointLightCount)
+        if (lightIndex >= viewData.lightCount)
         {
             break;
         }
 
-        const PointLight currentLight = constants.pointLights.Load(lightIndex);
-
-        const float4 position = float4(currentLight.position, 1.f);
-        const float radius = currentLight.radius * 1.2f; // We add some radius to remove some popping
+        const LightDrawData currentLight = constants.lightsBuffer.Load(lightIndex);
 
         float distance = 0.f;
 
-        [unroll]
-        for (uint j = 0; j < 6; j++)
+        if (currentLight.lightType == SceneLightType::SLT_Point)
         {
-            distance = dot(position, m_frustumPlanes[j]) + radius;
-            if (distance <= 0.f)
+            const float4 position = float4(currentLight.position, 1.f);
+            const float radius = currentLight.lightSpecific.x * 1.2f; // We add some radius to remove some popping
+
+            [unroll]
+            for (uint j = 0; j < 6; j++)
             {
-                // No intersection
-                break;
-            }        
-        }
+                distance = dot(position, m_frustumPlanes[j]) + radius;
+                if (distance <= 0.f)
+                {
+                    // No intersection
+                    break;
+                }        
+            }
 
-        if (distance > 0.f)
-        {
-            uint lightOffset;
-            InterlockedAdd(m_visiblePointLightCount, 1, lightOffset);
-            m_visiblePointLights[lightOffset] = lightIndex;
-        }
-    }
-
-    passCount = DivideRoundUp(viewData.spotLightCount, threadCount);
-    
-    for (uint i = 0; i < passCount; i++)
-    {
-        uint lightIndex = i * threadCount + groupThreadIndex;
-        if (lightIndex >= viewData.spotLightCount)
-        {
-            break;
-        }
-
-        const SpotLight light = constants.spotLights.Load(lightIndex);
-        float distance = 0.f;
-        
-        [unroll]
-        for (uint j = 0; j < 6; j++)
-        {
-            distance = dot(float4(light.position - light.direction * (light.range * 0.7f), 1.f), m_frustumPlanes[j]) + light.range * 1.3f;
-            if (distance <= 0.f)
+            if (distance > 0.f)
             {
-                break;
+                uint lightOffset;
+                InterlockedAdd(m_visibleLightCount, 1, lightOffset);
+                m_visibleLights[lightOffset] = lightIndex;
             }
         }
+        else if (currentLight.lightType == SceneLightType::SLT_Spot)
+        {
+            [unroll]
+            for (uint j = 0; j < 6; j++)
+            {
+                distance = dot(float4(currentLight.position - currentLight.direction * (currentLight.lightSpecific.x * 0.7f), 1.f), m_frustumPlanes[j]) + currentLight.lightSpecific.x * 1.3f;
+                if (distance <= 0.f)
+                {
+                    break;
+                }
+            }
 
-        if (distance > 0.f)
+            if (distance > 0.f)
+            {
+                uint lightOffset;
+                InterlockedAdd(m_visibleLightCount, 1, lightOffset);
+                m_visibleLights[lightOffset] = lightIndex;
+            }
+        }
+        else if (currentLight.lightType == SceneLightType::SLT_Directional || currentLight.lightType == SceneLightType::SLT_Sky)
         {
             uint lightOffset;
-            InterlockedAdd(m_visibleSpotLightCount, 1, lightOffset);
-            m_visibleSpotLights[lightOffset] = lightIndex;
+            InterlockedAdd(m_visibleLightCount, 1, lightOffset);
+            m_visibleLights[lightOffset] = lightIndex;
         }
     }
 
@@ -160,33 +152,14 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
     // Put light indices into bins
     const uint offsetInBuffer = tileIndex * MAX_LIGHTS_PER_TILE;
 
-    // Point Lights
+    const uint lightCount = m_visibleLightCount;
+    for (uint i = groupThreadIndex; i < lightCount; i += threadCount)
     {
-        const uint pointLightCount = m_visiblePointLightCount;
-
-        for (uint i = groupThreadIndex; i < pointLightCount; i += threadCount)
-        {
-            constants.visiblePointLightIndices.Store(offsetInBuffer + i, m_visiblePointLights[i]);
-        }
-
-        if (groupThreadIndex == 0 && m_visiblePointLightCount != MAX_LIGHTS_PER_TILE)
-        {
-            constants.visiblePointLightIndices.Store(offsetInBuffer + pointLightCount, -1);
-        }
+        constants.visibleLightIndices.Store(offsetInBuffer + i, m_visibleLights[i]);
     }
 
-    // Spot Lights
+    if (groupThreadIndex == 0 && m_visibleLightCount != MAX_LIGHTS_PER_TILE)
     {
-        const uint spotLightCount = m_visibleSpotLightCount;
-
-        for (uint i = groupThreadIndex; i < spotLightCount; i += threadCount)
-        {
-            constants.visibleSpotLightIndices.Store(offsetInBuffer + i, m_visibleSpotLights[i]);
-        }
-
-        if (groupThreadIndex == 0 && m_visiblePointLightCount != MAX_LIGHTS_PER_TILE)
-        {
-            constants.visibleSpotLightIndices.Store(offsetInBuffer + spotLightCount, -1);
-        }
+        constants.visibleLightIndices.Store(offsetInBuffer + lightCount, -1);
     }
 }
