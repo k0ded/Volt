@@ -479,6 +479,22 @@ namespace Volt
 			m_defaultResources.blackCubeTexture = RHI::Image::Create(imageSpec, PIXEL_DATA);
 		}
 
+		// Full black 1x1x1
+		{
+			constexpr uint32_t PIXEL_DATA = 0xffffffff;
+			
+			RHI::ImageSpecification imageSpec{};
+			imageSpec.format = RHI::PixelFormat::R8G8B8A8_UNORM;
+			imageSpec.usage = RHI::ImageUsage::Texture;
+			imageSpec.width = 1;
+			imageSpec.height = 1;
+			imageSpec.depth = 1;
+			imageSpec.debugName = "Black1x1x1";
+			imageSpec.imageType = RHI::ResourceType::Image3D;
+
+			m_defaultResources.black1x1x1 = RHI::Image::Create(imageSpec, &PIXEL_DATA);
+		}
+
 		GenerateDFGLuT();
 
 		// Default material

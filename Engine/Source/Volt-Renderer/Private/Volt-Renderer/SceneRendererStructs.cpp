@@ -3,7 +3,7 @@
 
 namespace Volt
 {
-	void GPUSceneData::SetupInputs(RenderGraph::Builder& builder, const GPUSceneData& data)
+	void GPUSceneData::Build(RenderGraph::Builder& builder, const GPUSceneData& data)
 	{
 		builder.ReadResource(data.meshesBuffer);
 		builder.ReadResource(data.sdfMeshesBuffer);
@@ -16,7 +16,7 @@ namespace Volt
 		builder.ReadResource(data.bonesBuffer);
 	}
 
-	void GPUSceneData::SetupConstants(RenderContext& context, const GPUSceneData& data)
+	void GPUSceneData::Setup(RenderContext& context, const GPUSceneData& data)
 	{
 		context.SetConstant("gpuScene.meshesBuffer"_sh, data.meshesBuffer);
 		context.SetConstant("gpuScene.sdfMeshesBuffer"_sh, data.sdfMeshesBuffer);

@@ -8,6 +8,8 @@
 
 #include "PBR.hlsli"
 
+#include "Volumetrics/Fog/VolumetricFogCommon.hlsli"
+
 struct Constants
 {
     vt::RWTex2D<float4> output; 
@@ -19,6 +21,10 @@ struct Constants
     vt::Tex2D<uint> aoTexture;
     vt::Tex2D<float> depthTexture;
   
+    vt::UniformBuffer<VolumetricFogParams> volumetricFogParams;
+    vt::Tex3D<float4> integratedFogVolume;
+    vt::TextureSampler pointSampler;
+
     PBRConstants pbrConstants;
 }; 
  
@@ -76,6 +82,9 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     pbrInput.tileId = threadId.xy / LIGHT_CULLING_TILE_SIZE;
      
     float3 outputColor = EvaluatePBR(pbrInput, constants.pbrConstants);
+
+    const VolumetricFogParams volumetricFogParams = constants.volumetricFogParams.Load();
+    //outputColor = ApplyVolumetricFog(texCoords, pixelDepth, outputColor, viewData, volumetricFogParams, constants.pointSampler, constants.integratedFogVolume);
 
     //switch (constants.visualizationMode) 
     //{

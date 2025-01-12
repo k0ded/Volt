@@ -192,6 +192,14 @@ namespace Volt
 		auto& component = entity.GetComponent<SkylightComponent>();
 		VT_ENSURE(component.m_sceneLightData);
 
+		{
+			auto envTextures = Renderer::GenerateEnvironmentTextures(component.environmentTextureHandle);
+			component.currentSceneEnvironment.diffuse = envTextures.diffuse;
+			component.currentSceneEnvironment.specular = envTextures.specular;
+
+			component.lastEnvironmentHandle = component.environmentTextureHandle;
+		}
+
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
 	}
 	
@@ -205,6 +213,8 @@ namespace Volt
 			auto envTextures = Renderer::GenerateEnvironmentTextures(component.environmentTextureHandle);
 			component.currentSceneEnvironment.diffuse = envTextures.diffuse;
 			component.currentSceneEnvironment.specular = envTextures.specular;
+
+			component.lastEnvironmentHandle = component.environmentTextureHandle;
 		}
 
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));

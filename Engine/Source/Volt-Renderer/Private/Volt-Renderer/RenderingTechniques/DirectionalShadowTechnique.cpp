@@ -70,7 +70,7 @@ namespace Volt
 			m_renderGraph.AddPass(std::format("Directional Light Shadow Cascade {}", i),
 			[&](RenderGraph::Builder& builder)
 			{
-				GPUSceneData::SetupInputs(builder, gpuSceneData);
+				GPUSceneData::Build(builder, gpuSceneData);
 				
 				builder.WriteResource(dirShadowData.shadowTexture);
 				builder.ReadResource(uniformBuffers.directionalLightShadowDataBuffer);
@@ -97,7 +97,7 @@ namespace Volt
 				context.BeginRendering(info);
 				context.BindPipeline(pipeline);
 
-				GPUSceneData::SetupConstants(context, gpuSceneData);
+				GPUSceneData::Setup(context, gpuSceneData);
 
 				context.SetConstant("directionalLightShadowData"_sh, uniformBuffers.directionalLightShadowDataBuffer);
 				context.SetConstant("taskCommands"_sh, cullingData.taskCommandsBuffer);

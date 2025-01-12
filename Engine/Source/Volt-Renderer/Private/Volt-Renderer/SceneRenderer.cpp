@@ -144,6 +144,8 @@ namespace Volt
 			LightCullingTechnique lightCulling{ renderGraph, blackboard };
 			blackboard.Add<LightCullingData>() = lightCulling.Execute();
 
+			blackboard.Add<VolumetricFogData>() = m_volumetricFog.Execute(renderGraph, blackboard);
+
 			ExecuteGBufferGenerationPasses(renderGraph, blackboard);
 			AddSkyboxPass(renderGraph, blackboard);
 			
@@ -214,7 +216,7 @@ namespace Volt
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
 		const auto& drawCullingData = blackboard.Get<DrawCullingData>();
 
-		GPUSceneData::SetupInputs(builder, blackboard.Get<GPUSceneData>());
+		GPUSceneData::Build(builder, blackboard.Get<GPUSceneData>());
 
 		builder.ReadResource(uniformBuffers.viewDataBuffer);
 		builder.ReadResource(drawCullingData.countCommandBuffer, RenderGraphResourceState::IndirectArgument);
@@ -226,7 +228,7 @@ namespace Volt
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
 		const auto& drawCullingData = blackboard.Get<DrawCullingData>();
 
-		GPUSceneData::SetupConstants(context, blackboard.Get<GPUSceneData>());
+		GPUSceneData::Setup(context, blackboard.Get<GPUSceneData>());
 		context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
 		context.SetConstant("taskCommands"_sh, drawCullingData.taskCommandsBuffer);
 	}
@@ -642,7 +644,7 @@ namespace Volt
 			builder.WriteResource(data.materialCountBuffer);
 			builder.ReadResource(visBufferData.visibility);
 
-			GPUSceneData::SetupInputs(builder, gpuSceneData);
+			GPUSceneData::Build(builder, gpuSceneData);
 
 			builder.SetIsComputePass();
 		},
@@ -652,7 +654,7 @@ namespace Volt
 
 			context.BindPipeline(pipeline);
 
-			GPUSceneData::SetupConstants(context, gpuSceneData);
+			GPUSceneData::Setup(context, gpuSceneData);
 
 			context.SetConstant("visibilityBuffer"_sh, visBufferData.visibility);
 			context.SetConstant("materialCountsBuffer"_sh, data.materialCountBuffer);
@@ -688,7 +690,7 @@ namespace Volt
 
 			builder.WriteResource(data.currentMaterialCountBuffer);
 
-			GPUSceneData::SetupInputs(builder, gpuSceneData);
+			GPUSceneData::Build(builder, gpuSceneData);
 
 			builder.ReadResource(visBufferData.visibility);
 			builder.ReadResource(matCountData.materialStartBuffer);
@@ -701,7 +703,7 @@ namespace Volt
 
 			context.BindPipeline(pipeline);
 
-			GPUSceneData::SetupConstants(context, gpuSceneData);
+			GPUSceneData::Setup(context, gpuSceneData);
 
 			context.SetConstant("visibilityBuffer"_sh, visBufferData.visibility);
 			context.SetConstant("materialStartBuffer"_sh, matCountData.materialStartBuffer);
@@ -782,7 +784,7 @@ namespace Volt
 			builder.ReadResource(matPixelsData.pixelCollectionBuffer);
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
 
-			GPUSceneData::SetupInputs(builder, gpuSceneData);
+			GPUSceneData::Build(builder, gpuSceneData);
 
 			builder.WriteResource(gbufferData.albedo);
 			builder.WriteResource(gbufferData.normals);
@@ -803,7 +805,7 @@ namespace Volt
 
 			context.BindPipeline(pipeline);
 
-			GPUSceneData::SetupConstants(context, gpuSceneData);
+			GPUSceneData::Setup(context, gpuSceneData);
 
 			context.SetConstant("visibilityBuffer"_sh, visBufferData.visibility);
 			context.SetConstant("materialCountBuffer"_sh, matCountData.materialCountBuffer);
@@ -828,6 +830,8 @@ namespace Volt
 	{
 		const auto& environmentTexturesData = blackboard.Get<EnvironmentTexturesData>();
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
+		const auto& volumetricFogData = blackboard.Get<VolumetricFogData>();
+		const auto& depthPrePass = blackboard.Get<DepthPrePass>();
 
 		RenderGraphBufferHandle meshVertexBufferHandle = renderGraph.AddExternalBuffer(m_skyboxMesh->GetVertexPositionsBuffer()->GetResource());
 		RenderGraphBufferHandle indexBufferHandle = renderGraph.AddExternalBuffer(m_skyboxMesh->GetIndexBuffer()->GetResource());
@@ -844,6 +848,9 @@ namespace Volt
 			builder.ReadResource(meshVertexBufferHandle, RenderGraphResourceState::VertexBuffer);
 			builder.ReadResource(indexBufferHandle, RenderGraphResourceState::IndexBuffer);
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
+			builder.ReadResource(depthPrePass.depth);
+			builder.ReadResource(volumetricFogData.fogParamsBuffer);
+			builder.ReadResource(volumetricFogData.integratedFogVolume);
 		},
 		[=](const ShadingOutputData& data, RenderContext& context)
 		{
@@ -868,6 +875,12 @@ namespace Volt
 			context.SetConstant("linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle());
 			context.SetConstant("lod"_sh, lod);
 			context.SetConstant("intensity"_sh, intensity);
+			context.SetConstant("sceneDepth"_sh, depthPrePass.depth);
+
+			// Volumetric fog
+			context.SetConstant("volumetricFogParams"_sh, volumetricFogData.fogParamsBuffer);
+			context.SetConstant("integratedFogVolume"_sh, volumetricFogData.integratedFogVolume);
+			context.SetConstant("pointSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
 
 			context.BindIndexBuffer(indexBufferHandle);
 			context.DrawIndexed(static_cast<uint32_t>(m_skyboxMesh->GetIndexCount()), 1, 0, 0, 0);
@@ -888,6 +901,7 @@ namespace Volt
 		const auto& gbufferData = blackboard.Get<GBufferData>();
 		const auto& preDepthData = blackboard.Get<DepthPrePass>();
 		const auto& dirShadowData = blackboard.Get<DirectionalShadowData>();
+		const auto& volumetricFogData = blackboard.Get<VolumetricFogData>();
 
 		renderGraph.AddPass("Shading Pass",
 		[&](RenderGraph::Builder& builder)
@@ -898,6 +912,8 @@ namespace Volt
 			builder.ReadResource(gbufferData.material);
 			builder.ReadResource(gbufferData.emissive);
 			builder.ReadResource(preDepthData.depth);
+			builder.ReadResource(volumetricFogData.fogParamsBuffer);
+			builder.ReadResource(volumetricFogData.integratedFogVolume);
 
 			// PBR Constants
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
@@ -917,7 +933,7 @@ namespace Volt
 			auto pipeline = ShaderMap::GetComputePipeline("Shading");
 			context.BindPipeline(pipeline);
 
-			//context.SetAccelerationStructure(m_scene->GetRenderScene()->GetRayTracingScene()->GetAccelerationStructure());
+			context.SetAccelerationStructure(m_renderScene->GetRayTracingScene()->GetAccelerationStructure());
 
 			context.SetConstant("output"_sh, shadingOutputData.colorOutput);
 			context.SetConstant("albedo"_sh, gbufferData.albedo);
@@ -926,6 +942,9 @@ namespace Volt
 			context.SetConstant("emissive"_sh, gbufferData.emissive);
 			context.SetConstant("aoTexture"_sh, gtaoOutput.outputImage);
 			context.SetConstant("depthTexture"_sh, preDepthData.depth);
+			context.SetConstant("volumetricFogParams"_sh, volumetricFogData.fogParamsBuffer);
+			context.SetConstant("integratedFogVolume"_sh, volumetricFogData.integratedFogVolume);
+			context.SetConstant("pointSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
 
 			// PBR Constants
 			context.SetConstant("pbrConstants.viewData"_sh, uniformBuffers.viewDataBuffer);
@@ -1152,7 +1171,7 @@ namespace Volt
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
 			builder.ReadResource(uniformBuffers.directionalLightShadowDataBuffer);
 
-			GPUSceneData::SetupInputs(builder, gpuSceneData);
+			GPUSceneData::Build(builder, gpuSceneData);
 			BlueNoise::Build(builder, blueNoiseTextures);
 
 			builder.SetIsRayTracingPass();
@@ -1172,7 +1191,7 @@ namespace Volt
 
 			context.BindPipeline(pipeline);
 
-			GPUSceneData::SetupConstants(context, gpuSceneData);
+			GPUSceneData::Setup(context, gpuSceneData);
 			BlueNoise::Setup(context, blueNoiseTextures);
 
 			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);

@@ -4,6 +4,8 @@
 #include "Lights.hlsli"
 #include "ShadowMapping.hlsli"
 
+#include "RayTracing.hlsli"
+
 ///// ----- Punctual lights ----- /////
 float SmoothDistanceAttenuation(float squaredDistance, float invSqrAttRadius)
 {
@@ -30,6 +32,24 @@ float GetAngleAttenuation(float3 normalizedLightVector, float3 lightDirection, f
     return attenuation;
 }
 
+float RT_EvaluatePointLightShadow(float3 lightDirection, float3 worldPosition, float distance)
+{
+    RayQuery<RAY_FLAG_FORCE_OPAQUE | 
+     RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES |
+     RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH> query;
+
+    RayDesc rayDesc;
+    rayDesc.Origin = worldPosition;
+    rayDesc.Direction = lightDirection;
+    rayDesc.TMin = 0.001f;
+    rayDesc.TMax = distance;
+
+    query.TraceRayInline(g_accelerationStructure, RAY_FLAG_NONE, 0xFF, rayDesc);
+    query.Proceed();
+
+    return query.CommittedStatus() == COMMITTED_TRIANGLE_HIT ? 0.f : 1.f;
+}
+
 float3 EvaluatePointLight(in LightDrawData light, in BRDFInput brdfInput, float3 worldPosition)
 { 
     float3 unormalizedLightVector = light.position - worldPosition;
@@ -38,7 +58,14 @@ float3 EvaluatePointLight(in LightDrawData light, in BRDFInput brdfInput, float3
 
     float attenuation = GetDistanceAttenuation(unormalizedLightVector, invSqrRadius);
 
-    return BRDF(brdfInput, L) * light.color * light.intensity * attenuation;   
+    float shadow = 1.f;
+
+    if (light.flags & LightFlags::LF_CastShadows)
+    {
+        shadow = RT_EvaluatePointLightShadow(L, worldPosition, length(unormalizedLightVector));
+    }
+
+    return BRDF(brdfInput, L) * light.color * light.intensity * attenuation * shadow;   
 }
 
 float3 EvaluateSpotLight(in LightDrawData light, in BRDFInput brdfInput, float3 worldPosition)
@@ -65,16 +92,16 @@ float EvaluateDirectionalShadow(in LightDrawData light, in DirectionalShadowMapp
     return result; 
 }
 
-float RayTraceDirectionalShadow_Hard(float3 lightDirection, float3 normal, float3 worldPosition)
+float RT_EvaluateDirectionalLightShadow(float3 lightDirection, float3 worldPosition)
 {
     RayQuery<RAY_FLAG_FORCE_OPAQUE | 
          RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES |
          RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH> query;
 
 	RayDesc rayDesc;
-    rayDesc.Origin = worldPosition + normal * 5.f;
+    rayDesc.Origin = worldPosition;
     rayDesc.Direction = lightDirection;
-    rayDesc.TMin = 0.1f;
+    rayDesc.TMin = 0.001f;
     rayDesc.TMax = 10000.f;
 
     query.TraceRayInline(g_accelerationStructure, RAY_FLAG_NONE, 0xFF, rayDesc);
@@ -103,7 +130,7 @@ float3 EvaluateDirectionalLight(in LightDrawData light, in DirectionalShadowMapp
 
     if (light.flags & LightFlags::LF_CastShadows)
     {
-        shadow = EvaluateDirectionalShadow(light, shadowMappingInfo, brdfInput.N, worldPosition);
+        shadow = RT_EvaluateDirectionalLightShadow(D, worldPosition);
     }
 
     return BRDF(brdfInput, D, L) * light.color * illuminance * shadow;

@@ -40,6 +40,12 @@ float LinearizeDepth01(const float screenDepth, in const ViewData viewData)
     return (linearDepth - viewData.nearPlane) / (viewData.farPlane - viewData.nearPlane);
 }
 
+// Converts from [near...far] to [0...1] in device space.
+float LinearDepthToDeviceDepth(float depth, float nearPlane, float farPlane)
+{
+    return 1.f - ((nearPlane * farPlane) / (depth * (nearPlane - farPlane)) - farPlane / (nearPlane - farPlane));
+}
+
 float3x3 CalculateTBN(float3 inNormal, float3 inTangent, float tangentW)
 {
     const float3 normal = normalize(inNormal);

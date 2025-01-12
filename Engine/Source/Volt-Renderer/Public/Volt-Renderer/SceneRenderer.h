@@ -4,6 +4,7 @@
 #include "Volt-Renderer/RenderingTechniques/GIBS.h"
 #include "Volt-Renderer/RenderingTechniques/DDGI.h"
 #include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
+#include "Volt-Renderer/RenderingTechniques/VolumetricFogTechnique.h"
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/Config.h"
 
@@ -184,6 +185,7 @@ namespace Volt
 		GIBS m_gibs;
 		DDGI m_ddgi;
 		TAANoise m_taaNoise;
+		VolumetricFogTechnique m_volumetricFog;
 
 		Ref<RenderScene> m_renderScene;
 		Renderer::EnvironmentTextures m_sceneEnvironment;

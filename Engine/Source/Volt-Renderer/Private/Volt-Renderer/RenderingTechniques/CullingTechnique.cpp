@@ -54,7 +54,7 @@ namespace Volt
 				data.taskCommandsBuffer = builder.CreateBuffer(desc);
 			}
 
-			GPUSceneData::SetupInputs(builder, gpuSceneData);
+			GPUSceneData::Build(builder, gpuSceneData);
 
 			builder.WriteResource(countCmdBufferHandle);
 
@@ -74,7 +74,7 @@ namespace Volt
 			context.SetConstant("farPlane"_sh, info.farPlane);
 			context.SetConstant("cullingType"_sh, static_cast<uint32_t>(info.type));
 
-			GPUSceneData::SetupConstants(context, gpuSceneData);
+			GPUSceneData::Setup(context, gpuSceneData);
 		
 			constexpr uint32_t workGroupSize = 64;
 

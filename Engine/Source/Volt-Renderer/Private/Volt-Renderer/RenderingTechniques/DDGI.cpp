@@ -46,7 +46,7 @@ namespace Volt
 			builder.WriteResource(probeIrradianceAtlasHandle);
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
 
-			GPUSceneData::SetupInputs(builder, gpuScene);
+			GPUSceneData::Build(builder, gpuScene);
 
 			builder.SetIsComputePass();
 			builder.SetHasSideEffect();
@@ -59,7 +59,7 @@ namespace Volt
 
 			context.SetAccelerationStructure(renderScene->GetRayTracingScene()->GetAccelerationStructure());
 
-			GPUSceneData::SetupConstants(context, gpuScene);
+			GPUSceneData::Setup(context, gpuScene);
 			
 			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
 			context.SetConstant("rwProbeIrradianceAtlas"_sh, probeIrradianceAtlasHandle);

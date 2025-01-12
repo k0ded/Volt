@@ -33,6 +33,7 @@ namespace Volt
 
 		RefPtr<RHI::Image> DFGLuT;
 		RefPtr<RHI::Image> blackCubeTexture;
+		RefPtr<RHI::Image> black1x1x1;
 
 		VT_INLINE void Clear()
 		{
