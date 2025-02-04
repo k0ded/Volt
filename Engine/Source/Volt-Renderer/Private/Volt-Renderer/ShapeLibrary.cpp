@@ -1,23 +1,21 @@
 #include "vrpch.h"
 
 #include "Volt-Renderer/ShapeLibrary.h"
-#include "Volt-Renderer/Material.h"
+#include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
-
-#include <AssetSystem/AssetManager.h>
 
 namespace Volt
 {
 	struct MeshData
 	{
-		AssetHandle cubeHandle = Asset::Null();
-		AssetHandle sphereHandle = Asset::Null();
+		Ref<Mesh> cubeMesh;
+		Ref<Mesh> sphereMesh;
 	};
 
 	static MeshData s_meshData;
 
 
-	static AssetHandle CreateCube()
+	static Ref<Mesh> CreateCube()
 	{
 		Vector<Vertex> vertices =
 		{
@@ -85,14 +83,12 @@ namespace Volt
 			23, 21, 22
 		};
 
-		Ref<Material> material = AssetManager::CreateMemoryAsset<Material>("Default");
-		material->Compile();
-
-		Ref<Mesh> mesh = AssetManager::CreateMemoryAsset<Mesh>("Cube", vertices, indices, material);
-		return mesh->handle;
+		Ref<RenderMaterial> material = Renderer::GetDefaultResources().defaultMaterial;
+		Ref<Mesh> mesh = CreateRef<Mesh>(vertices, indices, material);
+		return mesh;
 	}
 
-	static AssetHandle CreateSphere()
+	static Ref<Mesh> CreateSphere()
 	{
 		struct Triangle
 		{
@@ -199,30 +195,28 @@ namespace Volt
 			indices.emplace_back(tri.v3);
 		}
 
-		Ref<Material> material = AssetManager::CreateMemoryAsset<Material>("Default");
-		material->Compile();
-
-		Ref<Mesh> mesh = AssetManager::CreateMemoryAsset<Mesh>("Icosphere", vertices, indices, material);
-		return mesh->handle;
+		Ref<RenderMaterial> material = Renderer::GetDefaultResources().defaultMaterial;
+		Ref<Mesh> mesh = CreateRef<Mesh>(vertices, indices, material);
+		return mesh;
 	}
 
 	Ref<Mesh> ShapeLibrary::GetCube()
 	{
-		if (s_meshData.cubeHandle == Asset::Null())
+		if (!s_meshData.cubeMesh)
 		{
-			s_meshData.cubeHandle = CreateCube();
+			s_meshData.cubeMesh = CreateCube();
 		}
 
-		return AssetManager::GetAsset<Mesh>(s_meshData.cubeHandle);
+		return s_meshData.cubeMesh;
 	}
 
 	Ref<Mesh> ShapeLibrary::GetSphere()
 	{
-		if (s_meshData.sphereHandle == Asset::Null())
+		if (s_meshData.sphereMesh)
 		{
-			s_meshData.sphereHandle = CreateSphere();
+			s_meshData.sphereMesh = CreateSphere();
 		}
 
-		return AssetManager::GetAsset<Mesh>(s_meshData.sphereHandle);
+		return s_meshData.sphereMesh;
 	}
 }

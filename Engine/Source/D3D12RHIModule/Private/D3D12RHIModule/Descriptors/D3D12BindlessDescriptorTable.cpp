@@ -75,6 +75,11 @@ namespace Volt::RHI
 		m_samplerRegistry.MarkAsDirty(handle);
 	}
 
+	bool D3D12BindlessDescriptorTable::IsResourceValid(ResourceHandle handle) const
+	{
+		return m_mainRegistry.IsResourceRegistered(handle) || m_samplerRegistry.IsResourceRegistered(handle);
+	}
+
 	void D3D12BindlessDescriptorTable::Update()
 	{
 		VT_PROFILE_FUNCTION();

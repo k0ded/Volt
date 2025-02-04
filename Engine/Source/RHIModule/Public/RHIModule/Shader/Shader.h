@@ -62,6 +62,7 @@ namespace Volt::RHI
 		virtual bool HasConstants() const = 0;
 		virtual const ShaderResourceBinding& GetResourceBindingFromName(std::string_view name) const = 0;
 		virtual ShaderType GetShaderType() const = 0;
+		virtual size_t GetHash() const = 0;
 
 		static RefPtr<Shader> Create(const ShaderSpecification& createInfo);
 

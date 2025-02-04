@@ -50,7 +50,6 @@ namespace Volt
 		RenderGraphBufferHandle materialsBuffer;
 		RenderGraphBufferHandle primitiveDrawDataBuffer;
 		RenderGraphBufferHandle prevPrimitiveDrawDataBuffer;
-		RenderGraphBufferHandle sdfPrimitiveDrawDataBuffer;
 		RenderGraphBufferHandle bonesBuffer;
 		RenderGraphBufferHandle validPrimitiveDrawDatasBuffer;
 		RenderGraphBufferHandle lightsBuffer;

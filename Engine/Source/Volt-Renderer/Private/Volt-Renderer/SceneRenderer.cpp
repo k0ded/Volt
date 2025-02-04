@@ -23,9 +23,6 @@
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/Material.h"
 
-#include "Volt-Renderer/LightComponents.h"
-#include "Volt-Renderer/RenderingComponents.h"
-
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
@@ -365,7 +362,6 @@ namespace Volt
 			bufferData.materialsBuffer = renderGraph.AddExternalBuffer(gpuScene.materialsBuffer->GetResource());
 			bufferData.primitiveDrawDataBuffer = renderGraph.AddExternalBuffer(gpuScene.primitiveDrawDataBuffer->GetResource());
 			bufferData.prevPrimitiveDrawDataBuffer = renderGraph.AddExternalBuffer(gpuScene.prevPrimitiveDrawDataBuffer->GetResource());
-			bufferData.sdfPrimitiveDrawDataBuffer = renderGraph.AddExternalBuffer(gpuScene.sdfPrimitiveDrawDataBuffer->GetResource());
 			bufferData.validPrimitiveDrawDatasBuffer = renderGraph.AddExternalBuffer(gpuScene.validPrimitiveDrawDatasBuffer->GetResource());
 			bufferData.bonesBuffer = renderGraph.AddExternalBuffer(gpuScene.bonesBuffer->GetResource());
 			bufferData.lightsBuffer = renderGraph.AddExternalBuffer(gpuScene.lightsBuffer->GetResource());
@@ -796,7 +792,7 @@ namespace Volt
 		[=](RenderContext& context)
 		{
 			auto material = m_renderScene->GetMaterialFromID(materialId);
-			auto pipeline = material->GetComputePipeline();
+			auto pipeline = material->GetPipeline();
 
 			if (!pipeline)
 			{

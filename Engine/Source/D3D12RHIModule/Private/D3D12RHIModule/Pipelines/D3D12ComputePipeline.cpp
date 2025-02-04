@@ -1,7 +1,10 @@
 #include "dxpch.h"
-#include "D3D12RHIModule/Pipelines/D3D12ComputePipeline.h"
 
+#include "D3D12RHIModule/Pipelines/D3D12ComputePipeline.h"
 #include "D3D12RHIModule/Shader/D3D12Shader.h"
+
+#include <CoreUtilities/Math/Hash.h>
+
 
 namespace Volt::RHI
 {
@@ -33,6 +36,8 @@ namespace Volt::RHI
 
 		auto d3d12Device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device2*>();
 		VT_D3D12_CHECK(d3d12Device->CreateComputePipelineState(&pipelineDesc, VT_D3D12_ID(m_pipeline)));
+
+		GenerateHash();
 	}
 
 	RefPtr<Shader> D3D12ComputePipeline::GetShader() const
@@ -45,6 +50,11 @@ namespace Volt::RHI
 		return m_pipeline != nullptr;
 	}
 
+	size_t D3D12ComputePipeline::GetHash() const
+	{
+		return m_hash;
+	}
+
 	void* D3D12ComputePipeline::GetHandleImpl() const
 	{
 		return m_pipeline.Get();
@@ -53,5 +63,11 @@ namespace Volt::RHI
 	void D3D12ComputePipeline::Release()
 	{
 		m_pipeline = nullptr;
+	}
+
+	void D3D12ComputePipeline::GenerateHash()
+	{
+		m_hash = m_shader->GetHash();
+		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipeline.Get())));
 	}
 }

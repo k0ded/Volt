@@ -142,6 +142,11 @@ namespace Volt::RHI
 		m_activeDescriptorBufferInfos.clear();
 	}
 
+	bool VulkanBindlessDescriptorTable::IsResourceValid(ResourceHandle handle) const
+	{
+		return m_mainRegistry.IsResourceRegistered(handle) || m_samplerRegistry.IsResourceRegistered(handle);
+	}
+
 	void* VulkanBindlessDescriptorTable::GetHandleImpl() const
 	{
 		return GetCurrentMainDescriptorSet();

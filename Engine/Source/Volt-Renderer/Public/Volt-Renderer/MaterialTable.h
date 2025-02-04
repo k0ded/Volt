@@ -1,31 +1,31 @@
 #pragma once
 
 #include "Volt-Renderer/Config.h"
+#include "Volt-Renderer/RenderMaterial.h"
 
 #include <AssetSystem/AssetHandle.h>
 
 namespace Volt
 {
-	class Material;
-
 	class VTR_API MaterialTable
 	{
 	public:
-		void SetMaterial(AssetHandle material, uint32_t index);
-		AssetHandle GetMaterial(uint32_t index) const;
+		void CreateMaterial(uint32_t index);
+		void SetMaterial(Ref<RenderMaterial> material, uint32_t index);
+		Ref<RenderMaterial> GetMaterial(uint32_t index) const;
 
 		bool ContainsMaterialIndex(uint32_t index) const;
 
 		inline const bool IsValid() const { return !m_materials.empty(); }
 		inline const uint32_t GetSize() const { return static_cast<uint32_t>(m_materials.size()); }
 
-		Vector<AssetHandle>::iterator begin() { return m_materials.begin(); }
-		Vector<AssetHandle>::iterator end() { return m_materials.end(); }
+		Vector<Ref<RenderMaterial>>::iterator begin() { return m_materials.begin(); }
+		Vector<Ref<RenderMaterial>>::iterator end() { return m_materials.end(); }
 
-		const Vector<AssetHandle>::const_iterator begin() const { return m_materials.cbegin(); }
-		const Vector<AssetHandle>::const_iterator end() const { return m_materials.cend(); }
+		const Vector<Ref<RenderMaterial>>::const_iterator begin() const { return m_materials.cbegin(); }
+		const Vector<Ref<RenderMaterial>>::const_iterator end() const { return m_materials.cend(); }
 		
 	private:
-		Vector<AssetHandle> m_materials;
+		Vector<Ref<RenderMaterial>> m_materials;
 	};
 }

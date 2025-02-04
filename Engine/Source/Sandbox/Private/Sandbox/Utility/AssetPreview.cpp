@@ -4,8 +4,8 @@
 #include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Scene.h>
 
-#include <Volt-Renderer/LightComponents.h>
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/LightComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 #include <Volt-Renderer/Camera/Camera.h>
 

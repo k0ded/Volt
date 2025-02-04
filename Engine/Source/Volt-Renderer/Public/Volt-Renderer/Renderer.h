@@ -23,13 +23,15 @@ namespace Volt
 	}
 
 	class Texture2D;
-	class Material;
+	class RenderMaterial;
 	class ShaderRuntimeValidator;
+	class Mesh;
 
 	struct DefaultResources
 	{
 		Ref<Texture2D> whiteTexture;
-		Ref<Material> defaultMaterial;
+		Ref<RenderMaterial> defaultMaterial;
+		Ref<Mesh> defaultMesh;
 
 		RefPtr<RHI::Image> DFGLuT;
 		RefPtr<RHI::Image> blackCubeTexture;
@@ -38,8 +40,12 @@ namespace Volt
 		VT_INLINE void Clear()
 		{
 			whiteTexture = nullptr;
-			blackCubeTexture = nullptr;
 			defaultMaterial = nullptr;
+			defaultMesh = nullptr;
+
+			DFGLuT = nullptr;
+			blackCubeTexture = nullptr;
+			black1x1x1 = nullptr;
 		}
 	};
 

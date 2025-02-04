@@ -5,7 +5,9 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <Volt-Renderer/Material.h>
+#include <Volt-Assets/MeshAsset.h>
+#include <Volt-Assets/MaterialAsset.h>
+
 #include <Volt-Renderer/Mesh/Mesh.h>
 
 #include <Volt-Scene/Scene.h>
@@ -13,8 +15,8 @@
 #include <Volt-Renderer/SceneRenderer.h>
 #include <Volt-Renderer/Camera/Camera.h>
 
-#include <Volt-Renderer/LightComponents.h>
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/LightComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 PreviewRenderer::PreviewRenderer()
 {
@@ -94,7 +96,7 @@ void PreviewRenderer::RenderPreview(Weak<AssetBrowser::AssetItem> assetItem)
 
 bool PreviewRenderer::RenderMeshPreview(Weak<AssetBrowser::AssetItem> assetItem)
 {
-	Ref<Volt::Mesh> mesh = Volt::AssetManager::QueueAsset<Volt::Mesh>(assetItem->handle);
+	Ref<Volt::MeshAsset> mesh = Volt::AssetManager::QueueAsset<Volt::MeshAsset>(assetItem->handle);
 	if (!mesh || !mesh->IsValid())
 	{
 		return false;
@@ -106,7 +108,7 @@ bool PreviewRenderer::RenderMeshPreview(Weak<AssetBrowser::AssetItem> assetItem)
 	const glm::vec3 rotation = { glm::radians(30.f), glm::radians(135.f), 0.f };
 	myCamera->SetRotation(rotation);
 
-	const glm::vec3 position = mesh->GetBoundingSphere().center - myCamera->GetForward() * mesh->GetBoundingSphere().radius * 2.f;
+	const glm::vec3 position = mesh->GetMesh()->GetBoundingSphere().center - myCamera->GetForward() * mesh->GetMesh()->GetBoundingSphere().radius * 2.f;
 	myCamera->SetPosition(position);
 
 	//myPreviewRenderer->OnRenderEditor(myCamera);
@@ -116,13 +118,13 @@ bool PreviewRenderer::RenderMeshPreview(Weak<AssetBrowser::AssetItem> assetItem)
 
 bool PreviewRenderer::RenderMaterialPreview(Weak<AssetBrowser::AssetItem> assetItem)
 {
-	Ref<Volt::Material> material = Volt::AssetManager::QueueAsset<Volt::Material>(assetItem->handle);
+	Ref<Volt::MaterialAsset> material = Volt::AssetManager::QueueAsset<Volt::MaterialAsset>(assetItem->handle);
 	if (!material || !material->IsValid())
 	{
 		return false;
 	}
 
-	auto meshAsset = Volt::AssetManager::QueueAsset<Volt::Mesh>(Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Sphere.vtasset"));
+	auto meshAsset = Volt::AssetManager::QueueAsset<Volt::MeshAsset>(Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Sphere.vtasset"));
 	if (!meshAsset || !meshAsset->IsValid())
 	{
 		return false;

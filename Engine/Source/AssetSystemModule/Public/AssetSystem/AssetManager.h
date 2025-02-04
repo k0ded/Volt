@@ -67,8 +67,8 @@ namespace Volt
 
 		static void Update();
 
-		static UUID64 RegisterAssetChangedCallback(AssetType assetType, AssetChangedCallback&& callbackFunction);
-		static void UnregisterAssetChangedCallback(AssetType assetType, UUID64 id);
+		static UUID64 RegisterAssetUpdatedCallback(AssetType assetType, AssetChangedCallback&& callbackFunction);
+		static void UnregisterAssetUpdatedCallback(AssetType assetType, UUID64 id);
 
 		static void AddDependencyToAsset(AssetHandle handle, AssetHandle dependency);
 		static Vector<AssetHandle> GetAssetsDependentOn(AssetHandle handle);

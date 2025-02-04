@@ -5,11 +5,13 @@
 #include "Sandbox/Camera/EditorCameraController.h"
 #include "Sandbox/Utility/Theme.h"
 
+#include <Volt-Assets/MeshAsset.h>
+
 #include <Volt-Renderer/SceneRenderer.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 #include <Volt-Renderer/AnimatedCharacter.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <Volt-Animation/AnimationManager.h>
 #include <Volt-Animation/Assets/Animation.h>
@@ -59,7 +61,7 @@ void CharacterEditorPanel::UpdateMainContent()
 					myCurrentCharacter = Volt::AssetManager::GetAsset<Volt::AnimatedCharacter>(Volt::AssetManager::GetRelativePath(path));
 					if (myCurrentCharacter)
 					{
-						mySkinHandle = myCurrentCharacter->GetSkin()->handle;
+						//mySkinHandle = myCurrentCharacter->GetSkin()->handle;
 						mySkeletonHandle = myCurrentCharacter->GetSkeleton()->handle;
 					}
 					else
@@ -130,7 +132,7 @@ void CharacterEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 	{
 		if (myCurrentCharacter->GetSkin())
 		{
-			mySkinHandle = myCurrentCharacter->GetSkin()->handle;
+			//mySkinHandle = myCurrentCharacter->GetSkin()->handle;
 		}
 		if (myCurrentCharacter->GetSkeleton())
 		{
@@ -140,7 +142,7 @@ void CharacterEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 		for (const auto& attachment : myCurrentCharacter->GetJointAttachments())
 		{
 			auto newEntity = myScene->CreateEntity();
-			newEntity.AddComponent<Volt::MeshComponent>().handle = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Sphere.vtasset")->handle;
+			newEntity.AddComponent<Volt::MeshComponent>().handle = Volt::AssetManager::GetAsset<Volt::MeshAsset>("Engine/Meshes/Primitives/SM_Sphere.vtasset")->handle;
 			newEntity.SetScale(0.2f);
 
 			myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().attachedEntities[attachment.id].emplace_back(myScene->GetEntityHelperFromEntityID(newEntity.GetID()));
@@ -244,7 +246,7 @@ void CharacterEditorPanel::UpdateToolbar()
 			myCurrentCharacter = Volt::AssetManager::GetAsset<Volt::AnimatedCharacter>(characterPath);
 			if (myCurrentCharacter)
 			{
-				mySkinHandle = myCurrentCharacter->GetSkin()->handle;
+				//mySkinHandle = myCurrentCharacter->GetSkin()->handle;
 				mySkeletonHandle = myCurrentCharacter->GetSkeleton()->handle;
 			}
 			else
@@ -315,10 +317,10 @@ void CharacterEditorPanel::UpdateProperties()
 
 		if (EditorUtils::Property("Skin", mySkinHandle, AssetTypes::Mesh))
 		{
-			Ref<Volt::Mesh> skin = Volt::AssetManager::GetAsset<Volt::Mesh>(mySkinHandle);
+			Ref<Volt::MeshAsset> skin = Volt::AssetManager::GetAsset<Volt::MeshAsset>(mySkinHandle);
 			if (skin && skin->IsValid())
 			{
-				myCurrentCharacter->SetSkin(skin);
+				myCurrentCharacter->SetSkin(skin->GetMesh());
 			}
 		}
 
@@ -884,7 +886,7 @@ void CharacterEditorPanel::AddJointAttachmentPopup()
 					newAttachment.jointIndex = myCurrentCharacter->GetSkeleton()->GetJointIndexFromName(name);
 
 					auto newEntity = myScene->CreateEntity();
-					newEntity.AddComponent<Volt::MeshComponent>().handle = Volt::AssetManager::GetAsset<Volt::Mesh>("Engine/Meshes/Primitives/SM_Sphere.vtasset")->handle;
+					newEntity.AddComponent<Volt::MeshComponent>().handle = Volt::AssetManager::GetAsset<Volt::MeshAsset>("Engine/Meshes/Primitives/SM_Sphere.vtasset")->handle;
 					newEntity.SetScale(0.2f);
 
 					myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().attachedEntities[newAttachment.id].emplace_back(myScene->GetEntityHelperFromEntityID(newEntity.GetID()));

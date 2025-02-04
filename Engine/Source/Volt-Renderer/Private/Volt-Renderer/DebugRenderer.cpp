@@ -118,7 +118,7 @@ namespace Volt
 		//});
 	}
 
-	void DebugRenderer::DrawMesh(Ref<Mesh> mesh, Ref<Material> material, const glm::mat4& transform, uint32_t id)
+	void DebugRenderer::DrawMesh(Ref<Mesh> mesh, Ref<MaterialAsset> material, const glm::mat4& transform, uint32_t id)
 	{
 		//s_debugRenderData->functionQueue.emplace_back([mesh, transform, id, material](SceneRenderer::PerThreadData& data)
 		//{

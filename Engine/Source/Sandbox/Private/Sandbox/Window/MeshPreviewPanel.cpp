@@ -4,9 +4,11 @@
 #include "Sandbox/Camera/EditorCameraController.h"
 #include "Sandbox/Utility/EditorResources.h"
 
+#include <Volt-Assets/MeshAsset.h>
+
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/SceneRenderer.h>
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <Volt/Utility/UIUtility.h>
 #include <Volt-Scene/Scene.h>
@@ -46,7 +48,7 @@ void MeshPreviewPanel::OpenAsset(Ref<Volt::Asset> asset)
 	if (asset && asset->IsValid() && asset->GetType() == AssetTypes::Mesh)
 	{
 		myPreviewEntity.GetComponent<Volt::MeshComponent>().handle = asset->handle;
-		myCurrentMesh = std::reinterpret_pointer_cast<Volt::Mesh>(asset);
+		myCurrentMesh = std::reinterpret_pointer_cast<Volt::MeshAsset>(asset);
 		mySelectedSubMesh = -1;
 	}
 }
@@ -155,10 +157,10 @@ void MeshPreviewPanel::UpdateProperties()
 				UI::PushID();
 				if (UI::BeginProperties("subMeshProperties"))
 				{
-					auto currentMaterial = (int32_t)myCurrentMesh->GetSubMeshesMutable().at((uint32_t)mySelectedSubMesh).materialIndex;
+					auto currentMaterial = (int32_t)myCurrentMesh->GetMesh()->GetSubMeshesMutable().at((uint32_t)mySelectedSubMesh).materialIndex;
 					if (UI::ComboProperty("Sub Material", currentMaterial, subMaterialNames))
 					{
-						myCurrentMesh->GetSubMeshesMutable().at((uint32_t)mySelectedSubMesh).materialIndex = (uint32_t)currentMaterial;
+						myCurrentMesh->GetMesh()->GetSubMeshesMutable().at((uint32_t)mySelectedSubMesh).materialIndex = (uint32_t)currentMaterial;
 					}
 
 					UI::EndProperties();
@@ -198,7 +200,7 @@ void MeshPreviewPanel::UpdateToolbar()
 		const std::filesystem::path meshPath = FileSystem::OpenFileDialogue({ { "Mesh (*.vtasset)", "vtasset" } }, Volt::ProjectManager::GetAssetsDirectory());
 		if (!meshPath.empty() && FileSystem::Exists(meshPath))
 		{
-			myCurrentMesh = Volt::AssetManager::GetAsset<Volt::Mesh>(meshPath);
+			myCurrentMesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(meshPath);
 			myPreviewEntity.GetComponent<Volt::MeshComponent>().handle = myCurrentMesh->handle;
 			mySelectedSubMesh = -1;
 		}
@@ -217,7 +219,7 @@ void MeshPreviewPanel::UpdateMeshList()
 		return;
 	}
 
-	for (int32_t i = 0; const auto & subMesh : myCurrentMesh->GetSubMeshes())
+	for (int32_t i = 0; const auto & subMesh : myCurrentMesh->GetMesh()->GetSubMeshes())
 	{
 		std::string id = subMesh.name + "##subMesh" + std::to_string(i);
 

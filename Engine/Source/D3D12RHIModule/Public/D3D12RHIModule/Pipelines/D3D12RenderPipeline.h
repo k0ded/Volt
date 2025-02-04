@@ -17,6 +17,7 @@ namespace Volt::RHI
 		void Invalidate() override;
 		RefPtr<Shader> GetShader() const override;
 		bool IsValid() const override;
+		size_t GetHash() const override;
 
 		VT_NODISCARD VT_INLINE Topology GetTopology() const { return m_createInfo.topology; }
 
@@ -25,8 +26,10 @@ namespace Volt::RHI
 
 	private:
 		void Release();
+		void GenerateHash();
 
 		RenderPipelineCreateInfo m_createInfo;
 		ComPtr<ID3D12PipelineState> m_pipeline;
+		size_t m_hash = 0;
 	};
 }

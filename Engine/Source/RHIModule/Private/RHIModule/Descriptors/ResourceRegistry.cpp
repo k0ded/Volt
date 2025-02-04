@@ -36,6 +36,17 @@ namespace Volt::RHI
 		m_dirtyResources.at(m_frameIndex).clear();
 	}
 
+	bool ResourceRegistry::IsResourceRegistered(ResourceHandle handle) const
+	{
+		std::scoped_lock lock{ m_mutex };
+		auto it = std::ranges::find_if(m_resources, [handle](const RegisteredResource& resource) 
+		{ 
+			return resource.handle == handle;
+		});
+
+		return it != m_resources.end();
+	}
+
 	ResourceHandle ResourceRegistry::RegisterResource(RawPtr<RHI::RHIInterface> resource, RHI::ImageUsage imageUsage, uint32_t userData)
 	{
 		std::scoped_lock lock{ m_mutex };

@@ -18,6 +18,7 @@
 #include <Volt/Asset/ParticlePreset.h>
 
 #include <Volt-Renderer/Material.h>
+#include <Volt-Assets/MaterialAsset.h>
 
 #include <Volt-Animation/Assets/MotionWeaveDatabase.h>
 #include <Volt-Animation/BlendSpace.h>
@@ -1210,7 +1211,7 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 
 	if (type == AssetTypes::Material)
 	{
-		Ref<Volt::Material> material = Volt::AssetManager::CreateAsset<Volt::Material>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), tempName);
+		Ref<Volt::MaterialAsset> material = Volt::AssetManager::CreateAsset<Volt::MaterialAsset>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), tempName);
 		Volt::AssetManager::SaveAsset(material);
 
 		newAssetHandle = material->handle;

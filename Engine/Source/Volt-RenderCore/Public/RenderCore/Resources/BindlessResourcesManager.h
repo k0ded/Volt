@@ -33,6 +33,8 @@ namespace Volt
 		void Update();
 		void PrepareForRender();
 
+		bool IsResourceValid(ResourceHandle handle);
+
 		VT_NODISCARD VT_INLINE RefPtr<RHI::BindlessDescriptorTable> GetDescriptorTable() const { return m_bindlessDescriptorTable; }
 		VT_NODISCARD VT_INLINE static BindlessResourcesManager& Get() { return *s_instance; }
 

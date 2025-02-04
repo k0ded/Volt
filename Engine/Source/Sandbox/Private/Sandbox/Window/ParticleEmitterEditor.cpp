@@ -7,8 +7,8 @@
 #include <Volt/Asset/ParticlePreset.h>
 
 #include <Volt-Renderer/SceneRenderer.h>
-#include <Volt-Renderer/LightComponents.h>
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/LightComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <Volt/Utility/UIUtility.h>
 

@@ -13,8 +13,7 @@ namespace Volt
 {
 	class SceneRenderer;
 	class Scene;
-	class Mesh;
-	class Material;
+	class MeshAsset;
 }
 
 class EditorCameraController;
@@ -48,7 +47,7 @@ private:
 	glm::vec2 myViewportSize = { 1280.f, 720.f };
 
 	Volt::Entity myPreviewEntity;
-	Ref<Volt::Mesh> myCurrentMesh;
+	Ref<Volt::MeshAsset> myCurrentMesh;
 	Ref<Volt::Mesh> myCurrentPrefab;
 
 	const float myButtonSize = 22.f;

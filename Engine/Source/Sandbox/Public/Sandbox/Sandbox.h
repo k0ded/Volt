@@ -15,7 +15,6 @@ namespace Volt
 	class SceneRenderer;
 	class Scene;
 	class Mesh;
-	class Material;
 	class Camera;
 	class Texture2D;
 

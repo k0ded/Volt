@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Volt-Renderer/Config.h"
 #include "Volt-Renderer/MaterialTable.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
 #include "Volt-Renderer/RayTracing/RayTracingInstance.h"
@@ -17,11 +18,11 @@ namespace Volt
 
 	struct ScenePrimitiveDescription
 	{
-		AssetHandle primitiveMesh;
-		Vector<AssetHandle> materials;
+		Ref<Mesh> primitiveMesh;
+		Vector<Ref<RenderMaterial>> materials;
 	};
 
-	class ScenePrimitiveData
+	class VTR_API ScenePrimitiveData
 	{
 	public:
 		ScenePrimitiveData(const EntityID& entityId, RenderScene* renderScene);

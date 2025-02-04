@@ -18,13 +18,15 @@
 #include <Volt/Asset/ParticlePreset.h>
 #include <Volt/Utility/UIUtility.h>
 
+#include <Volt-Assets/MeshAsset.h>
+
 #include <Volt-Scene/Components/CoreComponents.h>
 #include <Volt-Scene/Entity.h>
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/SceneRenderer.h>
 #include <Volt-Renderer/Camera/Camera.h>
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
@@ -720,7 +722,7 @@ void ViewportPanel::CheckDragDrop()
 		EditorCommandStack::GetInstance().PushUndo(command);
 
 		auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
-		auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(handle);
+		auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(handle);
 		if (mesh)
 		{
 			meshComp.handle = mesh->handle;
@@ -748,14 +750,14 @@ void ViewportPanel::CheckDragDrop()
 
 		if (FileSystem::Exists(vtMeshPath))
 		{
-			Ref<Volt::Mesh> meshAsset = Volt::AssetManager::GetAsset<Volt::Mesh>(vtMeshPath);
+			Ref<Volt::MeshAsset> meshAsset = Volt::AssetManager::GetAsset<Volt::MeshAsset>(vtMeshPath);
 			if (meshAsset && meshAsset->IsValid())
 			{
 				resultHandle = meshAsset->handle;
 			}
 
 			auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
-			auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(resultHandle);
+			auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(resultHandle);
 			if (mesh)
 			{
 				meshComp.handle = mesh->handle;

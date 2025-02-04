@@ -9,8 +9,6 @@
 #include "Volt-Renderer/GPUScene.h"
 #include "Volt-Renderer/SDF/SDFGenerator.h"
 
-#include <Volt-Core/AssetTypes.h>
-
 #include <RenderCore/Resources/BindlessResource.h>
 
 #include <RHIModule/Buffers/StorageBuffer.h>
@@ -28,7 +26,7 @@ namespace Volt
 		class IndexBuffer;
 	}
 
-	class Material;
+	class RenderMaterial;
 	class RayTracingSceneGeometry;
 
 	struct VertexContainer
@@ -68,21 +66,25 @@ namespace Volt
 		}
 	};
 
-	class VTR_API Mesh : public Asset
+	class VTR_API Mesh
 	{
 	public:
 		Mesh() = default;
-		Mesh(Vector<Vertex> aVertices, Vector<uint32_t> aIndices, Ref<Material> aMaterial);
+		Mesh(Vector<Vertex> aVertices, Vector<uint32_t> aIndices, Ref<RenderMaterial> aMaterial);
 		Mesh(Vector<Vertex> aVertices, Vector<uint32_t> aIndices, const MaterialTable& materialTable, const Vector<SubMesh>& subMeshes);
-		~Mesh() override;
+		~Mesh();
 
 		void Construct();
 
+		VT_INLINE void SetName(const std::string& name) { m_name = name; }
+		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
+
 		inline const Vector<SubMesh>& GetSubMeshes() const { return m_subMeshes; }
 		inline Vector<SubMesh>& GetSubMeshesMutable() { return m_subMeshes; }
+		inline uint32_t GetNumSubMeshes() const { return static_cast<uint32_t>(m_subMeshes.size()); }
 
 		inline const MaterialTable& GetMaterialTable() const { return m_materialTable; }
-		void SetMaterial(Ref<Material> material, uint32_t index);
+		void SetMaterial(Ref<RenderMaterial> material, uint32_t index);
 
 		inline const size_t GetVertexCount() const { return m_vertexContainer.Size(); }
 		inline const size_t GetIndexCount() const { return m_indices.size(); }
@@ -111,10 +113,10 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE const VertexContainer& GetVertexContainer() const { return m_vertexContainer; }
 		VT_NODISCARD VT_INLINE Ref<RayTracingSceneGeometry> GetRayTracingSceneGeometry() const { return m_rayTracingSceneGeometry; }
-
-		static AssetType GetStaticType() { return AssetTypes::Mesh; }
-		AssetType GetType() override { return GetStaticType(); }
-		uint32_t GetVersion() const override { return 2; }
+		VT_NODISCARD VT_INLINE size_t GetHash() const { return m_hash; }
+		
+		VT_NODISCARD VT_INLINE bool DoMeshRequireUpdate() const { return m_isDirty; }
+		VT_INLINE void ClearStatus() { m_isDirty = false; }
 
 	private:
 		friend class MeshSerializer;
@@ -162,5 +164,9 @@ namespace Volt
 		glm::vec3 m_averageScale{ 1.f };
 		vt::map<uint32_t, BoundingSphere> m_subMeshBoundingSpheres;
 		vt::map<uint32_t, BoundingBox> m_subMeshBoundingBoxes;
+
+		bool m_isDirty = false;
+		size_t m_hash = 0;
+		std::string m_name;
 	};
 }

@@ -33,6 +33,7 @@ namespace Volt::RHI
 
 		void Update() override;
 		void PrepareForRender() override;
+		bool IsResourceValid(ResourceHandle handle) const override;
 
 		void Bind(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) override;
 

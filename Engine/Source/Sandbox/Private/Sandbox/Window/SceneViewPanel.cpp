@@ -14,9 +14,9 @@
 #include <Volt/Vision/VisionComponents.h>
 #include <Volt/ImGui/FontAwesome.h>
 
-#include <Volt-Renderer/Mesh/Mesh.h>
-#include <Volt-Renderer/RenderingComponents.h>
-#include <Volt-Renderer/LightComponents.h>
+#include <Volt-Assets/MeshAsset.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
+#include <Volt-CoreComponents/LightComponents.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
@@ -188,7 +188,7 @@ void SceneViewPanel::UpdateMainContent()
 			Volt::Entity newEntity = m_scene->CreateEntity();
 
 			auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
-			auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(handle);
+			auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(handle);
 			if (mesh)
 			{
 				meshComp.handle = mesh->handle;

@@ -9,7 +9,7 @@
 
 namespace Volt
 {
-	class Mesh;
+	class MeshAsset;
 }
 
 namespace AssetBrowser
@@ -33,7 +33,7 @@ namespace AssetBrowser
 
 		static const ImVec4 GetBackgroundColor(bool isHovered, bool isSeleted);
 
-		static Vector<Ref<Volt::Mesh>> GetMeshesExport() { return meshesToExport; };
+		static Vector<Ref<Volt::MeshAsset>> GetMeshesExport() { return meshesToExport; };
 		static void ResetMeshExport() { meshesToExport.clear(); };
 		static bool RenderAssetTypePopup(AssetItem* item, SelectionManager* selectionManager);
 		
@@ -43,7 +43,7 @@ namespace AssetBrowser
 
 		static constexpr float myItemHeightModifier = 90.f;
 
-		inline static Vector<Ref<Volt::Mesh>> meshesToExport;
+		inline static Vector<Ref<Volt::MeshAsset>> meshesToExport;
 
 		static const std::unordered_map<AssetType, std::function<void(AssetItem*, SelectionManager*)>>& GetPopupRenderFunctions();
 	};

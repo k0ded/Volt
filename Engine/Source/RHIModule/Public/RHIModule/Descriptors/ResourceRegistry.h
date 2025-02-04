@@ -34,6 +34,7 @@ namespace Volt::RHI
 		void Update();
 		void MarkAsDirty(ResourceHandle handle);
 		void ClearDirtyResources();
+		bool IsResourceRegistered(ResourceHandle handle) const;
 
 		VT_NODISCARD VT_INLINE std::mutex& GetMutex() { return m_mutex; }
 		VT_NODISCARD VT_INLINE std::span<const ResourceHandle> GetDirtyResources() const { return m_dirtyResources.at(m_frameIndex); }
@@ -54,6 +55,6 @@ namespace Volt::RHI
 		uint32_t m_handleSize;
 		uint64_t m_frameIndex = 0;
 		uint64_t m_framesInFlight = 0;
-		std::mutex m_mutex;
+		mutable std::mutex m_mutex;
 	};
 }

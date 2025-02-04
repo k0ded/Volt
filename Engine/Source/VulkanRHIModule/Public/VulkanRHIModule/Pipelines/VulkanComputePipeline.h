@@ -17,6 +17,7 @@ namespace Volt::RHI
 		void Invalidate() override;
 		RefPtr<Shader> GetShader() const override;
 		bool IsValid() const override;
+		size_t GetHash() const override;
 
 		inline VkPipelineLayout_T* GetPipelineLayout() const { return m_pipelineLayout; }
 
@@ -25,11 +26,14 @@ namespace Volt::RHI
 
 	private:
 		void Release();
+		void GenerateHash();
 
 		RefPtr<Shader> m_shader;
 		bool m_useGlobalResouces = false;
 
 		VkPipeline_T* m_pipeline = nullptr;
 		VkPipelineLayout_T* m_pipelineLayout = nullptr;
+	
+		size_t m_hash = 0;
 	};
 }

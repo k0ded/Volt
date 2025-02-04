@@ -27,6 +27,7 @@ namespace Volt::RHI
 
 		void UnregisterSamplerState(ResourceHandle handle) override;
 		void MarkSamplerStateAsDirty(ResourceHandle handle) override;
+		bool IsResourceValid(ResourceHandle handle) const override;
 
 		void Update() override;
 		void PrepareForRender() override;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Volt-Renderer/Config.h"
+
 #include <RHIModule/Images/Image.h>
 
 #include <EntitySystem/EntityID.h>
@@ -49,7 +51,7 @@ namespace Volt
 		bool castShadows;
 	};
 
-	class SceneLightData
+	class VTR_API SceneLightData
 	{
 	public:
 		SceneLightData(const EntityID& entityId, RenderScene* renderScene);

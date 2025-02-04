@@ -9,6 +9,11 @@
 #include <Volt/Utility/UIUtility.h>
 #include <Volt-Renderer/Material.h>
 
+#include <Volt-Assets/MaterialAsset.h>
+#include <Volt-Assets/MaterialCompilerSubSystem.h>
+
+#include <Volt-MaterialGraph/MaterialGraph.h>
+
 #include <AssetSystem/AssetManager.h>
 
 #include <Mosaic/MosaicGraph.h>
@@ -225,7 +230,7 @@ bool MosaicEditorPanel::SaveSettings(const std::string& data)
 		return false;
 	}
 
-	m_material->GetGraph().GetEditorState() = data;
+	m_material->GetMaterialGraph()->GetMosaicGraph().GetEditorState() = data;
 	return true;
 }
 
@@ -236,7 +241,7 @@ size_t MosaicEditorPanel::LoadSettings(std::string& data)
 		return 0;
 	}
 
-	data = m_material->GetGraph().GetEditorState();
+	data = m_material->GetMaterialGraph()->GetMosaicGraph().GetEditorState();
 	return data.size();
 }
 
@@ -247,7 +252,7 @@ bool MosaicEditorPanel::SaveNodeSettings(const UUID64 nodeId, const std::string&
 		return false;
 	}
 
-	auto& node = m_material->GetGraph().GetUnderlyingGraph().GetNodeFromID(nodeId);
+	auto& node = m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph().GetNodeFromID(nodeId);
 	if (!node.IsValid())
 	{
 		return false;
@@ -264,7 +269,7 @@ size_t MosaicEditorPanel::LoadNodeSettings(const UUID64 nodeId, std::string& dat
 		return 0;
 	}
 
-	const auto& node = m_material->GetGraph().GetUnderlyingGraph().GetNodeFromID(nodeId);
+	const auto& node = m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph().GetNodeFromID(nodeId);
 	if (!node.IsValid())
 	{
 		return 0;
@@ -277,7 +282,7 @@ size_t MosaicEditorPanel::LoadNodeSettings(const UUID64 nodeId, std::string& dat
 
 void MosaicEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 {
-	m_material = std::reinterpret_pointer_cast<Volt::Material>(asset);
+	m_material = std::reinterpret_pointer_cast<Volt::MaterialAsset>(asset);
 }
 
 void MosaicEditorPanel::OnClose()
@@ -315,7 +320,7 @@ const MosaicEditorPanel::IncompatiblePinReason MosaicEditorPanel::CanLinkPins(co
 
 Mosaic::Parameter& MosaicEditorPanel::GetParameterFromID(const UUID64 paramId)
 {
-	for (auto& node : m_material->GetGraph().GetUnderlyingGraph().GetNodes())
+	for (auto& node : m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph().GetNodes())
 	{
 		for (auto& param : node.nodeData->GetInputParameters())
 		{
@@ -450,7 +455,7 @@ void MosaicEditorPanel::DrawMenuBar()
 			if (ImGui::MenuItem("Create"))
 			{
 				std::filesystem::path path = FileSystem::SaveFileDialogue({{ "Mosaic Graph (*.vtmat)", "vtmat" }}, Volt::ProjectManager::GetAssetsDirectory());
-				m_material = Volt::AssetManager::CreateAsset<Volt::Material>(path.parent_path(), path.stem().string());
+				m_material = Volt::AssetManager::CreateAsset<Volt::MaterialAsset>(path.parent_path(), path.stem().string());
 				
 				Volt::AssetManager::SaveAsset(m_material);
 			}
@@ -463,12 +468,12 @@ void MosaicEditorPanel::DrawMenuBar()
 			if (ImGui::MenuItem("Load"))
 			{
 				std::filesystem::path path = FileSystem::OpenFileDialogue({ { "Mosaic Graph (*.vtmat)", "vtmat" }}, Volt::ProjectManager::GetAssetsDirectory());
-				m_material = Volt::AssetManager::GetAsset<Volt::Material>(path);
+				m_material = Volt::AssetManager::GetAsset<Volt::MaterialAsset>(path);
 			}
 
 			if (ImGui::MenuItem("Compile") && m_material)
 			{
-				m_material->Compile();
+				SubSystemManager::GetSubSystem<Volt::MaterialCompilerSubSystem>()->RequestMaterialCompilation(m_material);
 			}
 
 			ImGui::EndMenu();
@@ -591,7 +596,7 @@ void MosaicEditorPanel::DrawNodes()
 
 	utils::BlueprintNodeBuilder builder{ textureId, width, height };
 
-	auto& graph = m_material->GetGraph().GetUnderlyingGraph();
+	auto& graph = m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph();
 
 	for (const auto& node : graph.GetNodes())
 	{
@@ -631,7 +636,7 @@ void MosaicEditorPanel::DrawNodes()
 			UI::ScopedStyleFloat alphaStyle{ ImGuiStyleVar_Alpha, alpha };
 			builder.Input(ed::PinId(input.id));
 
-			const bool connected = Utility::IsParameterLinked(m_material->GetGraph(), input.id);
+			const bool connected = Utility::IsParameterLinked(m_material->GetMaterialGraph()->GetMosaicGraph(), input.id);
 			glm::vec4 color = Utility::GetColorFromTypeInfo(input.typeInfo);
 
 			Utility::DrawPinIcon(input, connected, ImColor{ color.x, color.y, color.z, color.w }, (int32_t)(alpha * 255.f));
@@ -663,7 +668,7 @@ void MosaicEditorPanel::DrawNodes()
 			UI::ScopedStyleFloat alphaStyle{ ImGuiStyleVar_Alpha, alpha };
 			builder.Output(ed::PinId(output.id));
 
-			const bool connected = Utility::IsParameterLinked(m_material->GetGraph(), output.id);
+			const bool connected = Utility::IsParameterLinked(m_material->GetMaterialGraph()->GetMosaicGraph(), output.id);
 			ImGui::Spring(0.f);
 
 			if (output.typeInfo.baseType != Mosaic::ValueBaseType::Dynamic && output.showAttribute)
@@ -696,7 +701,7 @@ void MosaicEditorPanel::DrawLinks()
 		return;
 	}
 
-	const auto& graph = m_material->GetGraph().GetUnderlyingGraph();
+	const auto& graph = m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph();
 
 	for (const auto& edge : graph.GetEdges())
 	{
@@ -748,7 +753,7 @@ void MosaicEditorPanel::DrawNodesPanel()
 							
 							if (ImGui::MenuItem(nodeInfo.name.c_str()) && m_material)
 							{
-								m_material->GetGraph().AddNode(guid);
+								m_material->GetMaterialGraph()->GetMosaicGraph().AddNode(guid);
 							}
 						}
 
@@ -812,14 +817,14 @@ void MosaicEditorPanel::OnBeginCreate()
 		{
 			auto& inputDirParam = startParam.direction == Mosaic::ParameterDirection::Input ? startParam : endParam;
 
-			Utility::ClearLinksFromParameter(m_material->GetGraph(), inputDirParam.id);
+			Utility::ClearLinksFromParameter(m_material->GetMaterialGraph()->GetMosaicGraph(), inputDirParam.id);
 
-			const auto startNode = Utility::GetNodeIdFromParameter(m_material->GetGraph(), startParam.id);
-			const auto endNode = Utility::GetNodeIdFromParameter(m_material->GetGraph(), endParam.id);
+			const auto startNode = Utility::GetNodeIdFromParameter(m_material->GetMaterialGraph()->GetMosaicGraph(), startParam.id);
+			const auto endNode = Utility::GetNodeIdFromParameter(m_material->GetMaterialGraph()->GetMosaicGraph(), endParam.id);
 
 			if (startNode != 0 && endNode != 0)
 			{
-				m_material->GetGraph().GetUnderlyingGraph().LinkNodes(startNode, endNode, CreateRef<Mosaic::MosaicEdge>(endParam.index, startParam.index));
+				m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph().LinkNodes(startNode, endNode, CreateRef<Mosaic::MosaicEdge>(endParam.index, startParam.index));
 			}
 		}
 	}
@@ -832,7 +837,7 @@ void MosaicEditorPanel::OnBeginDelete()
 	{
 		if (ed::AcceptDeletedItem())
 		{
-			m_material->GetGraph().GetUnderlyingGraph().RemoveEdge(linkId.Get());
+			m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph().RemoveEdge(linkId.Get());
 		}
 	}
 
@@ -841,7 +846,7 @@ void MosaicEditorPanel::OnBeginDelete()
 	{
 		if (ed::AcceptDeletedItem())
 		{
-			m_material->GetGraph().GetUnderlyingGraph().RemoveNode(nodeId.Get());
+			m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph().RemoveNode(nodeId.Get());
 		}
 	}
 }

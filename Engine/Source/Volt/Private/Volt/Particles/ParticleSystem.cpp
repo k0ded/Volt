@@ -8,7 +8,8 @@
 #include <Volt-Scene/Components/CoreComponents.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
-#include <Volt-Renderer/RenderingComponents.h>
+
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include "Volt/Asset/ParticlePreset.h"
 #include "Volt/Utility/YAMLSerializationHelpers.h"

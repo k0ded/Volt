@@ -126,7 +126,7 @@ struct VoltGUID
 		streamReader.Read(data.hiPart);
 	}
 
-	std::string ToString()
+	std::string ToString() const
 	{
 		return std::to_string(hiPart) + "-" + std::to_string(loPart);
 	}

@@ -15,7 +15,7 @@ struct MosaicEditorContext
 namespace Volt
 {
 	class Texture2D;
-	class Material;
+	class MaterialAsset;
 }
 
 namespace Mosaic
@@ -75,7 +75,7 @@ private:
 	MosaicEditorContext m_context;
 
 	Ref<Volt::Texture2D> m_headerTexture;
-	Ref<Volt::Material> m_material;
+	Ref<Volt::MaterialAsset> m_material;
 
 	UUID64 m_newLinkPinId = 0;
 	bool m_createNewNode = false;

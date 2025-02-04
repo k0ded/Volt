@@ -6,7 +6,8 @@ namespace Volt
 {
 	class Texture2D;
 	class Mesh;
-	class Material;
+	class MaterialAsset;
+
 	class DebugRenderer
 	{
 	public:
@@ -24,7 +25,7 @@ namespace Volt
 
 		static void DrawMesh(Ref<Mesh> mesh, const glm::vec3& position, const glm::vec3& rotation = { 0.f }, const glm::vec3& scale = { 1.f });
 		static void DrawMesh(Ref<Mesh> mesh, const glm::mat4& transform);
-		static void DrawMesh(Ref<Mesh> mesh, Ref<Material> material, const glm::mat4& transform, uint32_t id = 0);
+		static void DrawMesh(Ref<Mesh> mesh, Ref<MaterialAsset> material, const glm::mat4& transform, uint32_t id = 0);
 
 		static void DrawLineSphere(const glm::vec3& center, float radius, const glm::vec4& color = { 1.f });
 		static void DrawLineBox(const glm::vec3& min, const glm::vec3& max, const glm::vec4& color = { 1.f });

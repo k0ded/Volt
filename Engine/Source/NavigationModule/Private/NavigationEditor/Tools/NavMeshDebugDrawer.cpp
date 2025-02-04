@@ -1,6 +1,7 @@
 #include "nvpch.h"
 #include "NavigationEditor/Tools/NavMeshDebugDrawer.h"
 
+#include <Volt-Assets/MaterialAsset.h>
 #include <Volt-Renderer/Material.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -195,10 +196,10 @@ Ref<Volt::Mesh> NavMeshDrawCompiler::GetDebugMesh() const
 	if (myVertices.empty() || myIndices.empty()) { return nullptr; }
 
 	const auto path = Volt::AssetManager::GetRelativePath(NavMeshDebugDrawer::DebugMaterialPath);
-	auto material = Volt::AssetManager::GetAsset<Volt::Material>(path);
+	auto material = Volt::AssetManager::GetAsset<Volt::MaterialAsset>(path);
 
 	Volt::MaterialTable materialTable{};
-	materialTable.SetMaterial(material->handle, 0);
+	materialTable.SetMaterial(material->GetRenderMaterial(), 0);
 
 	return CreateRef<Volt::Mesh>(myVertices, myIndices, materialTable, mySubmeshes);
 }

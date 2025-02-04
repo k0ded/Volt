@@ -12,7 +12,9 @@
 #include <Volt/Utility/UIUtility.h>
 #include <Volt/Utility/MeshExporterUtilities.h>
 
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-Assets/MeshAsset.h>
+
+#include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -98,7 +100,7 @@ namespace AssetBrowser
 	{
 		if (item->type == AssetTypes::Mesh)
 		{
-			meshesToExport.emplace_back(Volt::AssetManager::GetAsset<Volt::Mesh>(item->handle));
+			meshesToExport.emplace_back(Volt::AssetManager::GetAsset<Volt::MeshAsset>(item->handle));
 		}
 		else if (item->type == AssetTypes::Prefab)
 		{
@@ -112,7 +114,7 @@ namespace AssetBrowser
 				meshEntities.emplace_back(ent);
 			}
 
-			meshesToExport = Volt::MeshExporterUtilities::GetMeshes(meshEntities);
+			//meshesToExport = Volt::MeshExporterUtilities::GetMeshes(meshEntities);
 		}
 	}
 

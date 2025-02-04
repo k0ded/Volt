@@ -2,7 +2,7 @@
 
 #include "Volt-Scene/Components/CoreComponents.h"
 
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-Renderer/Camera/Camera.h>
 
 #include <Volt-Animation/MotionWeaver.h>

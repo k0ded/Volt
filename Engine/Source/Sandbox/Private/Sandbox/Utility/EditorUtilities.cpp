@@ -5,6 +5,8 @@
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/Theme.h"
 
+#include <Volt-Assets/MeshAsset.h>
+
 #include <Volt-Renderer/Texture/Texture2D.h>
 #include <Volt-Renderer/AnimatedCharacter.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
@@ -226,7 +228,7 @@ bool EditorUtils::NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCh
 
 			if (aCharacterData.skinHandle != Volt::Asset::Null())
 			{
-				outCharacter->SetSkin(Volt::AssetManager::GetAsset<Volt::Mesh>(aCharacterData.skinHandle));
+				outCharacter->SetSkin(Volt::AssetManager::GetAsset<Volt::MeshAsset>(aCharacterData.skinHandle)->GetMesh());
 			}
 
 			Volt::AssetManager::Get().SaveAsset(outCharacter);

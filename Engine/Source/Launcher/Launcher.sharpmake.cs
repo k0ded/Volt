@@ -25,6 +25,8 @@ namespace VoltSharpmake
 			};
 
             conf.AddPublicDependency<Volt>(target);
+			conf.AddPublicDependency<VoltAssets>(target);
+			conf.AddPublicDependency<VoltRenderer>(target);
 
             conf.AddPublicDependency<imgui>(target);
             conf.AddPublicDependency<yaml>(target);

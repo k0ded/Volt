@@ -1,5 +1,7 @@
 #include "Testing/RenderGraphTests/DrawMeshShaderMultipleMeshesTest.h"
 
+#include <Volt-Assets/MeshAsset.h>
+
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/Renderer.h>
 
@@ -17,8 +19,8 @@ using namespace Volt;
 RG_DrawMeshShaderMultipleMeshesTest::RG_DrawMeshShaderMultipleMeshesTest()
 	: m_commandBufferSet(Renderer::GetFramesInFlight())
 {
-	m_cubeMesh = AssetManager::GetAsset<Mesh>("Engine/Meshes/Primitives/SM_Cube.vtasset");
-	m_sphereMesh = AssetManager::GetAsset<Mesh>("Engine/Meshes/Primitives/SM_Sphere.vtasset");
+	m_cubeMesh = AssetManager::GetAsset<MeshAsset>("Engine/Meshes/Primitives/SM_Cube.vtasset")->GetMesh();
+	m_sphereMesh = AssetManager::GetAsset<MeshAsset>("Engine/Meshes/Primitives/SM_Sphere.vtasset")->GetMesh();
 }
 
 RG_DrawMeshShaderMultipleMeshesTest::~RG_DrawMeshShaderMultipleMeshesTest()

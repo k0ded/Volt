@@ -8,8 +8,8 @@
 
 #include <Volt-Animation/AnimationManager.h>
 
-#include <Volt-Renderer/LightComponents.h>
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/LightComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-Renderer/RenderScene.h>
 #include <Volt-Renderer/Camera/Camera.h>
 

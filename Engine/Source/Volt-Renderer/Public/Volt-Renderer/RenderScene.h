@@ -21,7 +21,7 @@ namespace Volt
 	}
 
 	class EntityScene;
-	class Material;
+	class RenderMaterial;
 	class RenderGraph;
 	class MotionWeaver;
 	class RayTracingScene;
@@ -35,7 +35,6 @@ namespace Volt
 		Ref<GrowingGPUBuffer> materialsBuffer;
 		Ref<GrowingGPUBuffer> primitiveDrawDataBuffer;
 		Ref<GrowingGPUBuffer> prevPrimitiveDrawDataBuffer;
-		Ref<GrowingGPUBuffer> sdfPrimitiveDrawDataBuffer;
 		Ref<GrowingGPUBuffer> bonesBuffer;
 		Ref<GrowingGPUBuffer> lightsBuffer;
 
@@ -52,9 +51,11 @@ namespace Volt
 		void EndFrame(RenderGraph& renderGraph);
 
 		void InvalidatePrimitiveInstance(UUID64 renderObject);
+		void InvalidateMesh(Ref<Mesh> mesh);
+		void InvalidateMaterial(Ref<RenderMaterial> material);
 
-		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex);
-		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<Material> material, uint32_t subMeshIndex);
+		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
+		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
 		void RemovePrimitiveInstance(UUID64 id);
 
 		void InvalidateLightInstance(UUID64 id);
@@ -70,10 +71,10 @@ namespace Volt
 		VT_INLINE VT_NODISCARD const uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
 		VT_INLINE VT_NODISCARD const uint32_t GetSDFPrimitiveCount() const { return static_cast<uint32_t>(m_sdfPrimitiveDrawData.size()); }
 
-		VT_NODISCARD Weak<Material> GetMaterialFromID(const uint32_t materialId) const;
+		VT_NODISCARD Weak<RenderMaterial> GetMaterialFromID(const uint32_t materialId) const;
 
 		VT_NODISCARD const uint32_t GetMeshID(Weak<Mesh> mesh, uint32_t subMeshIndex) const;
-		VT_NODISCARD const uint32_t GetMaterialIndex(Weak<Material> material) const;
+		VT_NODISCARD const uint32_t GetMaterialIndex(Weak<RenderMaterial> material) const;
 		VT_NODISCARD const uint32_t GetMeshIndex(Weak<Mesh> mesh) const;
 		VT_NODISCARD const uint32_t GetPrimitiveIndexFromID(UUID64 primitiveId) const;
 
@@ -95,14 +96,14 @@ namespace Volt
 		VT_NODISCARD VT_INLINE Ref<RayTracingScene> GetRayTracingScene() const { return m_rayTracingScene; }
 
 	private:
-		void BuildGPUMaterial(Weak<Material> material, GPUMaterial& gpuMaterial);
+		void BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial);
 
 		void BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderPrimitiveData& renderPrimitive);
 		void BuildSingleSDFPrimitiveDrawData(SDFPrimitiveDrawData& primtiveDrawData, const RenderPrimitiveData& renderPrimitive);
 		void BuildSingleLightDrawData(LightDrawData& lightDrawData, RenderLightData& renderLight);
 
 		void TryAddMesh(Ref<Mesh> mesh);
-		void TryAddMaterial(Ref<Material> material);
+		void TryAddMaterial(Ref<RenderMaterial> material);
 
 		void UpdateInvalidMaterials(RenderGraph& renderGraph);
 		void UpdateInvalidMeshes(RenderGraph& renderGraph);
@@ -112,10 +113,11 @@ namespace Volt
 		void UpdateInvalidLights(RenderGraph& renderGraph);
 
 		VT_NODISCARD RenderLightData& GetLightDataFromID(UUID64 id);
+		VT_NODISCARD PrimitiveDrawData& GetPrimitiveDrawDataFromIndex(size_t index);
 
 		struct InvalidMaterial
 		{
-			Weak<Material> material;
+			Weak<RenderMaterial> material;
 			size_t index;
 		};
 
@@ -132,6 +134,38 @@ namespace Volt
 			size_t index;
 		};
 
+		class PrimitiveIndicesContainer
+		{
+		public:
+			size_t GetAvailableIndex(UUID64 id);
+			void FreeIndexWithID(UUID64 id);
+			void InvalidateIndexWithID(UUID64 id);
+
+			VT_INLINE size_t GetIndexFromID(UUID64 id) const { return m_primitiveIndexFromPrimitiveID.at(id); }
+			VT_INLINE PagedVector<size_t> GetAndClearRemovedIndices() 
+			{ 
+				PagedVector<size_t> tempVector = m_removedPrimitiveDataIndices; 
+				m_removedPrimitiveDataIndices.clear(); 
+				return tempVector; 
+			}
+
+			VT_INLINE PagedVector<InvalidDrawData> GetAndClearInvalidIndices() 
+			{ 
+				PagedVector<InvalidDrawData> tempVector = m_invalidPrimitiveDataIndices;
+				m_invalidPrimitiveDataIndices.clear();
+				return tempVector; 
+			}
+
+		private:
+			PagedVector<size_t> m_removedPrimitiveDataIndices;
+			PagedVector<size_t> m_freePrimitiveDataIndices;
+
+			PagedVector<InvalidDrawData> m_invalidPrimitiveDataIndices;
+			vt::map<UUID64, size_t> m_primitiveIndexFromPrimitiveID;
+
+			size_t m_nextIndex = 0;
+		};
+
 		Ref<RayTracingScene> m_rayTracingScene;
 
 		Vector<UUID64> m_animatedRenderObjects;
@@ -145,27 +179,20 @@ namespace Volt
 		Vector<InvalidMaterial> m_invalidMaterials;
 		Vector<InvalidMesh> m_invalidMeshes;
 
-		vt::map<AssetHandle, size_t> m_materialIndexFromAssetHandle;
-		vt::map<size_t, size_t> m_gpuMeshIndexFromMeshAssetHash;
+		vt::map<AssetHandle, size_t> m_materialIndexFromMaterialHash;
 		vt::map<size_t, uint32_t> m_meshSubMeshToGPUMeshIndex;
 		vt::map<size_t, uint32_t> m_meshSubMeshToGPUMeshSDFIndex;
 
 		Vector<Weak<Mesh>> m_individualMeshes;
-		Vector<Weak<Material>> m_individualMaterials;
+		Vector<Weak<RenderMaterial>> m_individualMaterials;
 		Vector<glm::mat4> m_animationBufferStorage;
+		std::mutex m_materialUpdateMutex;
+		std::mutex m_meshUpdateMutex;
 
 		// Scene Primitives
 		Vector<PrimitiveDrawData> m_primitiveDrawData;
 		Vector<SDFPrimitiveDrawData> m_sdfPrimitiveDrawData;
-
-		Vector<InvalidDrawData> m_invalidPrimitiveDataIndices;
-		Vector<InvalidDrawData> m_invalidSDFPrimitiveDataIndices;
-
-		Vector<size_t> m_removedPrimitiveDataIndices;
-		Vector<size_t> m_freePrimitiveDataIndices;
-
-		vt::map<UUID64, uint32_t> m_primitiveIndexFromPrimitiveID;
-		vt::map<UUID64, uint32_t> m_sdfPrimitiveIndexFromPrimitiveID;
+		PrimitiveIndicesContainer m_primitiveIndicesContainer;
 
 		// Scene Lights
 		Vector<LightDrawData> m_lightDrawData;
@@ -183,8 +210,5 @@ namespace Volt
 		uint32_t m_currentIndividualMeshCount = 0;
 		uint32_t m_currentBoneCount = 0;
 		uint32_t m_currentMeshletCount = 0;
-
-		UUID64 m_materialChangedCallbackID;
-		UUID64 m_meshChangedCallbackID;
 	};
 }

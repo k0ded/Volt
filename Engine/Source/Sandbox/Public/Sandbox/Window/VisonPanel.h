@@ -5,7 +5,7 @@
 
 #include <Volt/Vision/VisionComponents.h>
 
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <Volt-Scene/Scene.h>
 #include <Volt/Events/SceneEvents.h>

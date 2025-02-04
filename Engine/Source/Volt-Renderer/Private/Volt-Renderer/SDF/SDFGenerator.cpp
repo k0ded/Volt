@@ -54,7 +54,7 @@ namespace Volt
 		const uint32_t pointCountHeight = static_cast<uint32_t>(glm::ceil(height / VOXEL_SIZE));
 		const uint32_t pointCountDepth = static_cast<uint32_t>(glm::ceil(depth / VOXEL_SIZE));
 
-		const std::string meshName = !mesh.assetName.empty() ? " - " + mesh.assetName : "";
+		const std::string meshName = !mesh.GetName().empty() ? " - " + mesh.GetName(): "";
 
 		MeshSDF result;
 		result.size = { pointCountWidth, pointCountHeight, pointCountDepth };

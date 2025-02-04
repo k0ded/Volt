@@ -67,6 +67,17 @@ namespace Volt::RHI
 		m_shaderStageData.clear();
 	}
 
+	void D3D12Shader::GenerateHash()
+	{
+		m_hash = 0;
+
+		for (const auto& [stage, sourceInfo] : m_shaderSources)
+		{
+			m_hash = Math::HashCombine(m_hash, std::hash<uint32_t>()(static_cast<uint32_t>(stage)));
+			m_hash = Math::HashCombine(m_hash, std::hash<std::string>()(sourceInfo.source));
+		}
+	}
+
 	void D3D12Shader::CopyCompilationResults(const ShaderCompiler::CompilationResultData& compilationResult)
 	{
 		m_resources.outputFormats = compilationResult.outputFormats;
@@ -326,6 +337,8 @@ namespace Volt::RHI
 		CopyCompilationResults(compilationResult);
 		CreateRootSignature();
 
+		GenerateHash();
+
 		return true;
 	}
 
@@ -406,5 +419,10 @@ namespace Volt::RHI
 
 		VT_ASSERT(false);
 		return ShaderType::Rasterization;
+	}
+
+	size_t D3D12Shader::GetHash() const
+	{
+		return m_hash;
 	}
 }

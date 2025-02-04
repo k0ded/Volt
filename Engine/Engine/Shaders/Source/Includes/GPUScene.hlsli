@@ -149,7 +149,6 @@ struct GPUScene
     vt::TypedBuffer<GPUMaterial> materialsBuffer;
     vt::TypedBuffer<PrimitiveDrawData> primitiveDrawDataBuffer;
     vt::TypedBuffer<PrimitiveDrawData> prevPrimitiveDrawDataBuffer;
-    vt::TypedBuffer<SDFPrimitiveDrawData> sdfPrimitiveDrawDataBuffer;
     vt::TypedBuffer<float4x4> bonesBuffer;
     vt::TypedBuffer<LightDrawData> lightsBuffer;
 

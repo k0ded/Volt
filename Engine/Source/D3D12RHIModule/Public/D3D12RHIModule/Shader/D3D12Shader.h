@@ -32,6 +32,7 @@ namespace Volt::RHI
 		VT_NODISCARD bool HasConstants() const override;
 		const ShaderResourceBinding& GetResourceBindingFromName(std::string_view name) const override;
 		ShaderType GetShaderType() const override;
+		size_t GetHash() const override;
 
 		VT_NODISCARD VT_INLINE const std::unordered_map<ShaderStage, Vector<uint32_t>>& GetShaderStageData() const { return m_shaderStageData; }
 		VT_NODISCARD VT_INLINE ComPtr<ID3D12RootSignature> GetRootSignature() const { return m_rootSignature; }
@@ -47,6 +48,7 @@ namespace Volt::RHI
 	private:
 		void LoadShaderFromFiles();
 		void Release();
+		void GenerateHash();
 
 		void CopyCompilationResults(const ShaderCompiler::CompilationResultData& compilationResult);
 		void CreateRootSignature();
@@ -62,6 +64,7 @@ namespace Volt::RHI
 
 		ShaderSpecification m_specification;
 		ShaderResources m_resources;
+		size_t m_hash = 0;
 
 		uint32_t m_pushConstantsRootParamIndex = ~0u;
 		uint32_t m_renderGraphConstantsRootParamIndex = ~0u;

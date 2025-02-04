@@ -4,9 +4,11 @@
 #include "Sandbox/Camera/EditorCameraController.h"
 #include "Sandbox/Utility/EditorResources.h"
 
+#include <Volt-Assets/MeshAsset.h>
+
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/SceneRenderer.h>
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <Volt-Scene/Scene.h>
 
@@ -45,7 +47,7 @@ void PrefabEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 	if (asset && asset->IsValid() && asset->GetType() == AssetTypes::Mesh)
 	{
 		myPreviewEntity.GetComponent<Volt::MeshComponent>().handle = asset->handle;
-		myCurrentMesh = std::reinterpret_pointer_cast<Volt::Mesh>(asset);
+		myCurrentMesh = std::reinterpret_pointer_cast<Volt::MeshAsset>(asset);
 		mySelectedSubMesh = 0;
 	}
 }
@@ -149,7 +151,7 @@ void PrefabEditorPanel::UpdateToolbar()
 		const std::filesystem::path prefabPath = FileSystem::OpenFileDialogue({{ "Prefab (*.vtprefab)", "vtchr" }}, Volt::ProjectManager::GetAssetsDirectory());
 		if (!prefabPath.empty() && FileSystem::Exists(prefabPath))
 		{
-			myCurrentMesh = Volt::AssetManager::GetAsset<Volt::Mesh>(prefabPath);
+			myCurrentMesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(prefabPath);
 			myPreviewEntity.GetComponent<Volt::MeshComponent>().handle = myCurrentMesh->handle;
 			mySelectedSubMesh = 0;
 		}
@@ -168,7 +170,7 @@ void PrefabEditorPanel::UpdateMeshList()
 		return;
 	}
 
-	for (uint32_t i = 0; const auto & subMesh : myCurrentMesh->GetSubMeshes())
+	for (uint32_t i = 0; const auto & subMesh : myCurrentMesh->GetMesh()->GetSubMeshes())
 	{
 		std::string id = subMesh.name + "##subMesh" + std::to_string(i);
 

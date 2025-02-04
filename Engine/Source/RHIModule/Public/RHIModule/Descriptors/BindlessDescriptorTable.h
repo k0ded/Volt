@@ -32,6 +32,7 @@ namespace Volt::RHI
 
 		virtual void Update() = 0;
 		virtual void PrepareForRender() = 0;
+		virtual bool IsResourceValid(ResourceHandle handle) const = 0;
 
 		virtual void Bind(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) = 0;
 

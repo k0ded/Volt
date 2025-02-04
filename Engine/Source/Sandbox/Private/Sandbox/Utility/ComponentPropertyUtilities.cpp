@@ -8,7 +8,7 @@
 
 #include "Sandbox/UserSettingsManager.h"
 
-#include <Volt-Renderer/LightComponents.h>
+#include <Volt-CoreComponents/LightComponents.h>
 #include <Volt-Scene/Scene.h>
 
 #include <Volt/Utility/UIUtility.h>

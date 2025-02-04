@@ -2,7 +2,7 @@
 #include "Volt/Vision/VisionComponents.h"
 
 #include <Volt-Scene/Components/CoreComponents.h>
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <Volt-Scene/Scene.h>
 #include <Volt-Scene/Entity.h>

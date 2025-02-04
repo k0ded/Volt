@@ -49,7 +49,7 @@ namespace Volt
 		m_dependencyGraph = nullptr;
 	}
 
-	UUID64 AssetManager::RegisterAssetChangedCallback(AssetType assetType, AssetChangedCallback&& callbackFunction)
+	UUID64 AssetManager::RegisterAssetUpdatedCallback(AssetType assetType, AssetChangedCallback&& callbackFunction)
 	{
 		AssetManager& instance = Get();
 		std::scoped_lock lock{ instance.m_assetCallbackMutex };
@@ -60,7 +60,7 @@ namespace Volt
 		return id;
 	}
 
-	void AssetManager::UnregisterAssetChangedCallback(AssetType assetType, UUID64 id)
+	void AssetManager::UnregisterAssetUpdatedCallback(AssetType assetType, UUID64 id)
 	{
 		AssetManager& instance = Get();
 		std::scoped_lock lock{ instance.m_assetCallbackMutex };
@@ -1140,7 +1140,7 @@ namespace Volt
 
 		if (!GetAssetSerializerRegistry().HasSerializer(metadata.type))
 		{
-			VT_LOGC(Error, LogAssetSystem, "No importer for asset found!");
+			VT_LOGC(Warning, LogAssetSystem, "No importer for asset found!");
 			asset->SetFlag(AssetFlag::Invalid, true);
 			return;
 		}

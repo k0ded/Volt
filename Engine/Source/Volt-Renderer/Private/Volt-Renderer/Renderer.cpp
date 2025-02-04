@@ -2,7 +2,8 @@
 #include "Volt-Renderer/Renderer.h"
 
 #include "Volt-Renderer/Texture/Texture2D.h"
-#include "Volt-Renderer/Material.h"
+#include "Volt-Renderer/RenderMaterial.h"
+#include "Volt-Renderer/ShapeLibrary.h"
 
 #include <Volt-Core/Project/ProjectManager.h>
 
@@ -499,7 +500,12 @@ namespace Volt
 
 		// Default material
 		{
-			m_defaultResources.defaultMaterial = AssetManager::CreateMemoryAsset<Material>("DefaultMaterial", ShaderMap::GetComputePipeline("OpaqueDefault"));
+			m_defaultResources.defaultMaterial = CreateRef<RenderMaterial>("DefaultMaterial", ShaderMap::Get("OpaqueDefault"));
+		}
+
+		// Default mesh
+		{
+			m_defaultResources.defaultMesh = ShapeLibrary::GetCube();
 		}
 	}
 

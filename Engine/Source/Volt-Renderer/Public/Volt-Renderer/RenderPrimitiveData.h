@@ -9,7 +9,6 @@ namespace Volt
 {
 	class Mesh;
 	class MotionWeaver;
-	class Material;
 
 	using RenderPrimitiveID = UUID64;
 
@@ -20,7 +19,7 @@ namespace Volt
 	
 		Weak<Mesh> mesh;
 		Ref<MotionWeaver> motionWeaver;
-		Weak<Material> material;
+		Weak<RenderMaterial> material;
 
 		uint32_t subMeshIndex = 0;
 		uint32_t vertexBufferIndex = 0;

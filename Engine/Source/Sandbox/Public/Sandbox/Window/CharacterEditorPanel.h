@@ -16,7 +16,6 @@ namespace Volt
 	class ComputePipeline;
 	class Scene;
 	class SceneRenderer;
-	class Material;
 	class WindowRenderEvent;
 }
 

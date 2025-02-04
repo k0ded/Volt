@@ -69,4 +69,9 @@ namespace Volt
 	{
 		m_bindlessDescriptorTable->PrepareForRender();
 	}
+
+	bool BindlessResourcesManager::IsResourceValid(ResourceHandle handle)
+	{
+		return m_bindlessDescriptorTable->IsResourceValid(handle);
+	}
 }

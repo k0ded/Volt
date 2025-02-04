@@ -13,6 +13,7 @@
 #include <RHIModule/RHIProxy.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
+#include <CoreUtilities/Math/Hash.h>
 
 #include <vulkan/vulkan.h>
 
@@ -312,6 +313,7 @@ namespace Volt::RHI
 
 			VT_VK_CHECK(vkCreateGraphicsPipelines(device->GetHandle<VkDevice>(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
 		}
+		GenerateHash();
 
 		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Render Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
 	}
@@ -324,6 +326,11 @@ namespace Volt::RHI
 	bool VulkanRenderPipeline::IsValid() const
 	{
 		return m_pipeline != nullptr;
+	}
+
+	size_t VulkanRenderPipeline::GetHash() const
+	{
+		return m_hash;
 	}
 
 	void* VulkanRenderPipeline::GetHandleImpl() const
@@ -347,5 +354,13 @@ namespace Volt::RHI
 
 		m_pipelineLayout = nullptr;
 		m_pipeline = nullptr;
+	}
+
+	void VulkanRenderPipeline::GenerateHash()
+	{
+		m_hash = m_createInfo.shader->GetHash();
+
+		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipeline)));
+		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipelineLayout)));
 	}
 }

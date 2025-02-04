@@ -9,10 +9,12 @@
 #include <InputModule/Input.h>
 #include <AssetSystem/AssetManager.h>
 
+#include <Volt-Assets/MeshAsset.h>
+
 #include <Volt-Scene/Components/CoreComponents.h>
 
 #include <Volt-Renderer/Mesh/Mesh.h>
-#include <Volt-Renderer/RenderingComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-Renderer/Camera/Camera.h>
 
 #include <Volt-Scene/SceneManager.h>
@@ -79,17 +81,17 @@ bool VertexPainterPanel::BrushUpdate()
 			if (!currentEntity.HasComponent<Volt::MeshComponent>()) continue;
 
 			auto meshComponent = currentEntity.GetComponent<Volt::MeshComponent>();
-			auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(meshComponent.GetHandle());
+			auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(meshComponent.GetHandle());
 			//auto origin = ex_cameraController->GetCamera()->GetPosition() - currentEntity.GetPosition();
 			auto origin = ex_cameraController->GetCamera()->GetPosition();
 			auto localRayDir = rayDir;
 
-			auto vList = mesh->GetVertexContainer().positions;
-			auto iList = mesh->GetIndices();
+			auto vList = mesh->GetMesh()->GetVertexContainer().positions;
+			auto iList = mesh->GetMesh()->GetIndices();
 
 			auto entTransform = currentEntity.GetTransform();
 
-			for (auto& submesh : mesh->GetSubMeshes())
+			for (auto& submesh : mesh->GetMesh()->GetSubMeshes())
 			{
 				for (uint32_t index = submesh.vertexStartOffset; index < submesh.vertexStartOffset + submesh.vertexCount; index++)
 				{
@@ -375,7 +377,7 @@ void VertexPainterPanel::BillboardDraw()
 		if (paintedEnt.HasComponent<Volt::MeshComponent>())
 		{
 			auto meshComp = paintedEnt.GetComponent<Volt::MeshComponent>();
-			auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(meshComp.GetHandle());
+			auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(meshComp.GetHandle());
 
 			if (!mesh || !mesh->IsValid()) continue;
 			bool hasPainted = paintedEnt.HasComponent<Volt::VertexPaintedComponent>();
@@ -519,10 +521,10 @@ bool VertexPainterPanel::AddPainted(Volt::Entity entity)
 	if (!entity.HasComponent<Volt::MeshComponent>()) return false;
 	if (entity.HasComponent<Volt::VertexPaintedComponent>()) return true;
 
-	auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(entity.GetComponent<Volt::MeshComponent>().GetHandle());
+	auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(entity.GetComponent<Volt::MeshComponent>().GetHandle());
 	auto& vpComp = entity.AddComponent<Volt::VertexPaintedComponent>();
 
-	vpComp.vertexColors = Vector<uint32_t>(mesh->GetVertexContainer().Size(), Volt::Utility::PackUNormFloat4AsUInt({ 0.f, 0.f, 0.f, 1.f }));
+	vpComp.vertexColors = Vector<uint32_t>(mesh->GetMesh()->GetVertexContainer().Size(), Volt::Utility::PackUNormFloat4AsUInt({0.f, 0.f, 0.f, 1.f}));
 	vpComp.meshHandle = mesh->handle;
 
 	//for (auto& vertex : entity.GetComponent<Volt::VertexPaintedComponent>().vertecies)
@@ -542,7 +544,7 @@ void VertexPainterPanel::Paint(float color)
 		if (!paintedEnt.HasComponent<Volt::MeshComponent>()) continue;
 
 		auto meshComp = paintedEnt.GetComponent<Volt::MeshComponent>();
-		auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(meshComp.GetHandle());
+		auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(meshComp.GetHandle());
 
 		if (!mesh || !mesh->IsValid()) continue;
 
@@ -553,11 +555,11 @@ void VertexPainterPanel::Paint(float color)
 
 		if (!AddPainted(paintedEnt)) continue;
 		auto& vertecies = paintedEnt.GetComponent<Volt::VertexPaintedComponent>().vertexColors;
-		for (auto& submesh : mesh->GetSubMeshes())
+		for (auto& submesh : mesh->GetMesh()->GetSubMeshes())
 		{
 			for (uint32_t index = submesh.vertexStartOffset; index < submesh.vertexStartOffset + submesh.vertexCount; index++)
 			{
-				auto& vertex = mesh->GetVertexContainer().positions.at(index);
+				auto& vertex = mesh->GetMesh()->GetVertexContainer().positions.at(index);
 				auto vPos = glm::vec3(paintedEnt.GetTransform() * submesh.transform * glm::vec4(vertex, 1));
 				if (glm::distance2(vPos, m_brushPosition) < m_settings.billboardRange * m_settings.billboardRange)
 				{

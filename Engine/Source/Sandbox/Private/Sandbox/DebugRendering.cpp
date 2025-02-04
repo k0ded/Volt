@@ -7,9 +7,13 @@
 
 #include <Volt/Core/Application.h>
 
+#include <Volt-Assets/MeshAsset.h>
+#include <Volt-Assets/MaterialAsset.h>
+
+#include <Volt-CoreComponents/RenderingComponents.h>
+#include <Volt-CoreComponents/LightComponents.h>
+
 #include <Volt-Renderer/Material.h>
-#include <Volt-Renderer/RenderingComponents.h>
-#include <Volt-Renderer/LightComponents.h>
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
 
@@ -46,7 +50,7 @@ void Sandbox::RenderSelection(Ref<Volt::Camera> camera)
 		}
 
 		auto& meshComp = entity.GetComponent<Volt::MeshComponent>();
-		auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(meshComp.GetHandle());
+		auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(meshComp.GetHandle());
 		if (!mesh || !mesh->IsValid())
 		{
 			continue;
@@ -257,8 +261,8 @@ void Sandbox::RenderGizmos(Ref<Volt::Scene> scene, Ref<Volt::Camera> camera)
 			return;
 		}
 
-		const auto cameraMesh = Volt::AssetManager::GetAsset<Volt::Mesh>("Editor/Meshes/Gizmos/SM_Camera_Gizmo.vtasset");
-		const auto material = Volt::AssetManager::GetAsset<Volt::Material>("Editor/Materials/M_Camera_Gizmo.vtmat");
+		const auto cameraMesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>("Editor/Meshes/Gizmos/SM_Camera_Gizmo.vtasset");
+		const auto material = Volt::AssetManager::GetAsset<Volt::MaterialAsset>("Editor/Materials/M_Camera_Gizmo.vtmat");
 
 		if (!cameraMesh || !cameraMesh->IsValid() || !material || !material->IsValid())
 		{
