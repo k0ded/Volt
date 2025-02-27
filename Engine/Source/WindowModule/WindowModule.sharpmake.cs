@@ -16,7 +16,7 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
 
-            conf.SolutionFolder = "Engine";
+            conf.SolutionFolder = "Engine/Modules";
 
             conf.PrecompHeader = "windowpch.h";
             conf.PrecompSource = "windowpch.cpp";
@@ -27,6 +27,7 @@ namespace VoltSharpmake
             conf.AddPrivateDependency<EventSystemModule>(target);
             conf.AddPrivateDependency<RHIModule>(target);
             conf.AddPrivateDependency<LogModule>(target);
+			conf.AddPrivateDependency<SubSystemModule>(target);
         }
     }
 }

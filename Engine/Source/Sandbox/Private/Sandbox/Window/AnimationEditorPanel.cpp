@@ -2,8 +2,9 @@
 #include "Window/AnimationEditorPanel.h"
 
 #include <AssetSystem/AssetManager.h>
-#include <Volt/Asset/Animation/Animation.h>
 #include <Volt/Utility/UIUtility.h>
+
+#include <Volt-Animation/Assets/Animation.h>
 
 AnimationEditorPanel::AnimationEditorPanel()
 	: EditorWindow("Animation Editor", false)

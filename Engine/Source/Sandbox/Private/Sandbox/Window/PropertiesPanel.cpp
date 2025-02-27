@@ -10,14 +10,13 @@
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/EditorCommandStack.h"
 
-#include <Volt/Components/LightComponents.h>
+#include <Volt-CoreComponents/LightComponents.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 #include <InputModule/MouseButtonCodes.h>
 
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Utility/StringUtility.h>
 #include <Volt/Utility/PremadeCommands.h>
 
 PropertiesPanel::PropertiesPanel(Ref<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id)

@@ -2,26 +2,22 @@
 #include "Window/PrefabEditorPanel.h"
 
 #include "Sandbox/Camera/EditorCameraController.h"
-#include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/EditorResources.h"
 
-#include <AssetSystem/AssetManager.h>
-#include <Volt/Asset/Mesh/Mesh.h>
+#include <Volt-Assets/MeshAsset.h>
+
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
+
+#include <Volt-Scene/Scene.h>
 
 #include <Volt/Utility/UIUtility.h>
 
-#include <Volt/Scene/Scene.h>
-#include <Volt/Rendering/Texture/Texture2D.h>
-
-#include <Volt/Rendering/SceneRenderer.h>
-
-#include <Volt/Components/CoreComponents.h>
-#include <Volt/Components/RenderingComponents.h>
-#include <Volt/Components/LightComponents.h>
-#include <Volt/Asset/Mesh/MeshCompiler.h>
-
-#include <Volt/Project/ProjectManager.h>
+#include <AssetSystem/AssetManager.h>
 #include <WindowModule/Events/WindowEvents.h>
+
+#include <CoreUtilities/FileSystem.h>
 
 PrefabEditorPanel::PrefabEditorPanel()
 	: EditorWindow("Prefab Editor", true)
@@ -51,7 +47,7 @@ void PrefabEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 	if (asset && asset->IsValid() && asset->GetType() == AssetTypes::Mesh)
 	{
 		myPreviewEntity.GetComponent<Volt::MeshComponent>().handle = asset->handle;
-		myCurrentMesh = std::reinterpret_pointer_cast<Volt::Mesh>(asset);
+		myCurrentMesh = std::reinterpret_pointer_cast<Volt::MeshAsset>(asset);
 		mySelectedSubMesh = 0;
 	}
 }
@@ -60,9 +56,9 @@ void PrefabEditorPanel::OnOpen()
 {
 	// Scene Renderer
 	{
-		Volt::SceneRendererSpecification spec{};
+		Volt::SceneRendererCreateInfo spec{};
 		spec.debugName = "Prefab Editor";
-		spec.scene = myScene;
+		spec.renderScene = myScene->GetRenderScene();
 
 		//Volt::SceneRendererSettings settings{};
 		//settings.enableGrid = true;
@@ -78,7 +74,7 @@ void PrefabEditorPanel::OnClose()
 
 bool PrefabEditorPanel::OnRenderEvent(Volt::WindowRenderEvent& e)
 {
-	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera());
+	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera(), e.GetTimestep());
 	return false;
 }
 
@@ -98,7 +94,7 @@ void PrefabEditorPanel::UpdateViewport()
 	myPerspectiveBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
 
 	ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-	if (myViewportSize != (*(glm::vec2*)&viewportSize) && viewportSize.x > 0 && viewportSize.y > 0 && !Volt::Input::IsButtonDown(Volt::InputCode::Mouse_LB))
+	if (myViewportSize != (*(glm::vec2*)&viewportSize) && viewportSize.x > 0 && viewportSize.y > 0 && !Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_LB))
 	{
 		myViewportSize = { viewportSize.x, viewportSize.y };
 		mySceneRenderer->Resize((uint32_t)myViewportSize.x, (uint32_t)myViewportSize.y);
@@ -155,7 +151,7 @@ void PrefabEditorPanel::UpdateToolbar()
 		const std::filesystem::path prefabPath = FileSystem::OpenFileDialogue({{ "Prefab (*.vtprefab)", "vtchr" }}, Volt::ProjectManager::GetAssetsDirectory());
 		if (!prefabPath.empty() && FileSystem::Exists(prefabPath))
 		{
-			myCurrentMesh = Volt::AssetManager::GetAsset<Volt::Mesh>(prefabPath);
+			myCurrentMesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(prefabPath);
 			myPreviewEntity.GetComponent<Volt::MeshComponent>().handle = myCurrentMesh->handle;
 			mySelectedSubMesh = 0;
 		}
@@ -174,7 +170,7 @@ void PrefabEditorPanel::UpdateMeshList()
 		return;
 	}
 
-	for (uint32_t i = 0; const auto & subMesh : myCurrentMesh->GetSubMeshes())
+	for (uint32_t i = 0; const auto & subMesh : myCurrentMesh->GetMesh()->GetSubMeshes())
 	{
 		std::string id = subMesh.name + "##subMesh" + std::to_string(i);
 
@@ -212,12 +208,12 @@ void PrefabEditorPanel::SaveCurrentMesh()
 		return;
 	}
 
-	if (!Volt::MeshCompiler::TryCompile(myCurrentMesh, metadata.filePath, myCurrentMesh->GetMaterialTable()))
-	{
-		UI::Notify(NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}!", metadata.filePath.string()));
-	}
-	else
-	{
-		UI::Notify(NotificationType::Success, "Saved Mesh!", std::format("Mesh {0} was saved successfully", metadata.filePath.string()));
-	}
+	//if (!Volt::MeshCompiler::TryCompile(myCurrentMesh, metadata.filePath, myCurrentMesh->GetMaterialTable()))
+	//{
+	//	UI::Notify(NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}!", metadata.filePath.string()));
+	//}
+	//else
+	//{
+	//	UI::Notify(NotificationType::Success, "Saved Mesh!", std::format("Mesh {0} was saved successfully", metadata.filePath.string()));
+	//}
 }

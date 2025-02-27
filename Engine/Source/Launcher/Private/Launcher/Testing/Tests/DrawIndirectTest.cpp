@@ -1,8 +1,5 @@
 #include "Testing/Tests/DrawIndirectTest.h"
 
-#include <Volt/Core/Application.h>
-
-#include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Buffers/StorageBuffer.h>
 
 #include <RHIModule/Utility/ResourceUtility.h>

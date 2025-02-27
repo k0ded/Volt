@@ -17,25 +17,35 @@ namespace Volt::RHI
 
 	void VulkanBindlessDescriptorLayoutManager::CreateGlobalDescriptorLayout()
 	{
-		if (!TryCreateMutableDescriptorSetLayout(s_globalDescriptorSetLayout))
-		{
-			CreateMainDescriptorSet(s_globalDescriptorSetLayout);
-		}
+		TryCreateMutableDescriptorSetLayout(s_globalDescriptorSetLayout);
+		VT_ENSURE(s_globalDescriptorSetLayout);
 
 		// Setup render graph constants descriptor set layout
 		{
-			VkDescriptorSetLayoutBinding binding{};
-			binding.binding = Globals::RENDER_GRAPH_CONSTANTS_BINDING;
-			binding.descriptorCount = 1;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-			binding.pImmutableSamplers = nullptr;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
+			Vector<VkDescriptorSetLayoutBinding> bindings;
+
+			VkDescriptorSetLayoutBinding& constantsBinding = bindings.emplace_back();
+			constantsBinding.binding = Globals::RENDER_GRAPH_CONSTANTS_BINDING;
+			constantsBinding.descriptorCount = 1;
+			constantsBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+			constantsBinding.pImmutableSamplers = nullptr;
+			constantsBinding.stageFlags = VK_SHADER_STAGE_ALL;
+
+			if (GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+			{
+				VkDescriptorSetLayoutBinding& rtBinding = bindings.emplace_back();
+				rtBinding.binding = Globals::ACCELERATION_STRUCTURE_BINDING;
+				rtBinding.descriptorCount = 1;
+				rtBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+				rtBinding.pImmutableSamplers = nullptr;
+				rtBinding.stageFlags = VK_SHADER_STAGE_ALL;
+			}
 
 			VkDescriptorSetLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 			info.pNext = nullptr;
-			info.bindingCount = 1;
-			info.pBindings = &binding;
+			info.bindingCount = static_cast<uint32_t>(bindings.size());
+			info.pBindings = bindings.data();
 			info.flags = 0;
 
 			VT_VK_CHECK(vkCreateDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), &info, nullptr, &s_renderGraphConstantsLayout));
@@ -145,156 +155,5 @@ namespace Volt::RHI
 
 		VT_VK_CHECK(vkCreateDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), &createInfo, nullptr, &outDescriptorSetLayouts));
 		return true;
-	}
-
-	void VulkanBindlessDescriptorLayoutManager::CreateMainDescriptorSet(VkDescriptorSetLayout_T*& outDescriptorSetLayout)
-	{
-		Vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = TEXTURE1D_BINDING;
-			binding.descriptorCount = VulkanDefaults::IMAGE_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = TEXTURE2D_BINDING;
-			binding.descriptorCount = VulkanDefaults::IMAGE_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = TEXTURE2DARRAY_BINDING;
-			binding.descriptorCount = VulkanDefaults::IMAGE_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = TEXTURE3D_BINDING;
-			binding.descriptorCount = VulkanDefaults::IMAGE_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = TEXTURECUBE_BINDING;
-			binding.descriptorCount = VulkanDefaults::IMAGE_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = RWTEXTURE1D_BINDING;
-			binding.descriptorCount = VulkanDefaults::STORAGE_IMAGE_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = RWTEXTURE2D_BINDING;
-			binding.descriptorCount = VulkanDefaults::STORAGE_IMAGE_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = RWTEXTURE2DARRAY_BINDING;
-			binding.descriptorCount = VulkanDefaults::STORAGE_IMAGE_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = RWTEXTURE3D_BINDING;
-			binding.descriptorCount = VulkanDefaults::STORAGE_IMAGE_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = BYTEADDRESSBUFFER_BINDING;
-			binding.descriptorCount = VulkanDefaults::STORAGE_BUFFER_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = RWBYTEADDRESSBUFFER_BINDING;
-			binding.descriptorCount = VulkanDefaults::STORAGE_BUFFER_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = UNIFORMBUFFER_BINDING;
-			binding.descriptorCount = VulkanDefaults::STORAGE_BUFFER_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		{
-			auto& binding = descriptorSetLayoutBindings.emplace_back();
-			binding.binding = SAMPLERSTATE_BINDING;
-			binding.descriptorCount = VulkanDefaults::STORAGE_BUFFER_BINDLESS_TABLE_SIZE;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-		}
-
-		VkDescriptorSetLayoutCreateInfo info{};
-		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		info.pNext = nullptr;
-		info.bindingCount = static_cast<uint32_t>(descriptorSetLayoutBindings.size());
-		info.pBindings = descriptorSetLayoutBindings.data();
-		info.flags = 0;
-
-		const bool usingDescriptorBuffers = GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled();
-
-		if (usingDescriptorBuffers)
-		{
-			info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-		}
-
-		Vector<VkDescriptorBindingFlags> bindingFlags{};
-
-		VkDescriptorSetLayoutBindingFlagsCreateInfo extendedInfo{};
-		extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-		extendedInfo.bindingCount = info.bindingCount;
-
-		constexpr VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-
-		for (const auto& binding : descriptorSetLayoutBindings)
-		{
-			VT_UNUSED(binding);
-
-			auto& flags = bindingFlags.emplace_back();
-			flags = 0;
-
-			flags = bindlessFlags;
-			if (!usingDescriptorBuffers && binding.descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC && binding.descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
-			{
-				info.flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-				flags |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-			}
-		}
-
-		extendedInfo.pBindingFlags = bindingFlags.data();
-		info.pNext = &extendedInfo;
-
-		VT_VK_CHECK(vkCreateDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), &info, nullptr, &outDescriptorSetLayout));
 	}
 }

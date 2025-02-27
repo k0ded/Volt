@@ -6,6 +6,11 @@
 
 #include <imgui.h>
 
+namespace Volt::RHI
+{
+	class Image;
+}
+
 namespace AssetBrowser
 {
 	class SelectionManager;
@@ -37,11 +42,11 @@ namespace AssetBrowser
 
 		void DrawHoverInfo(std::string_view aInfoTitle, std::string_view aInfo);
 
-		SelectionManager* mySelectionManager;
-		bool myIsRenaming;
-		bool myLastRenaming;
-		std::string myCurrentRenamingName;
-		std::string myTypeName;
+		SelectionManager* m_selectionManager;
+		bool m_isRenaming;
+		bool m_lastRenaming;
+		std::string m_currentRenamingName;
+		std::string m_typeName;
 
 	private:
 		glm::vec4 GetTypeNameColor(bool aHoverFlag,bool aSelectedFlag) const;

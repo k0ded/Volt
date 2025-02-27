@@ -4,7 +4,7 @@
 
 #include <RHIModule/Descriptors/DescriptorTable.h>
 
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 #include <CoreUtilities/Containers/Vector.h>
 
 struct VkDescriptorPool_T;
@@ -26,13 +26,13 @@ namespace Volt::RHI
 		VulkanDescriptorTable(const DescriptorTableCreateInfo& createInfo);
 		~VulkanDescriptorTable() override;
 
-		void SetImageView(WeakPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0 ) override;
-		void SetBufferView(WeakPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
-		void SetSamplerState(WeakPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex /* = 0 */) override;
+		void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0 ) override;
+		void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
+		void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex /* = 0 */) override;
 
-		void SetImageView(std::string_view name, WeakPtr<ImageView> view, uint32_t arrayIndex = 0) override;
-		void SetBufferView(std::string_view name, WeakPtr<BufferView> view, uint32_t arrayIndex = 0) override;
-		void SetSamplerState(std::string_view name, WeakPtr<SamplerState> samplerState, uint32_t arrayIndex = 0) override;
+		void SetImageView(std::string_view name, RawPtr<ImageView> view, uint32_t arrayIndex = 0) override;
+		void SetBufferView(std::string_view name, RawPtr<BufferView> view, uint32_t arrayIndex = 0) override;
+		void SetSamplerState(std::string_view name, RawPtr<SamplerState> samplerState, uint32_t arrayIndex = 0) override;
 
 		void PrepareForRender() override;
 		void Bind(CommandBuffer& commandBuffer) override;
@@ -53,9 +53,9 @@ namespace Volt::RHI
 		void BuildWriteDescriptors();
 		void InitializeInfoStructs();
 
-		void InitilizeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet);
+		void InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet);
 
-		WeakPtr<Shader> m_shader;
+		RawPtr<Shader> m_shader;
 		bool m_isDirty = false;
 
 		Vector<DescriptorWrite> m_descriptorWrites;

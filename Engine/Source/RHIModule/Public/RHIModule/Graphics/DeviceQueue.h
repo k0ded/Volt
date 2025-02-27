@@ -11,10 +11,10 @@ namespace Volt::RHI
 
 	struct DeviceQueueExecuteInfo
 	{
-		Vector<WeakPtr<CommandBuffer>> commandBuffers;
-		Vector<WeakPtr<Semaphore>> signalSemaphores;
+		Vector<RawPtr<CommandBuffer>> commandBuffers;
+		Vector<RawPtr<Semaphore>> signalSemaphores;
 	
-		WeakPtr<Fence> fence;
+		RawPtr<Fence> fence;
 	};
 
 	class VTRHI_API DeviceQueue : public RHIInterface

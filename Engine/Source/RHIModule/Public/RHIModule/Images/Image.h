@@ -1,13 +1,14 @@
 #pragma once
 
 #include "RHIModule/Core/RHIResource.h"
-#include "RHIModule/Memory/Allocator.h"
+#include "RHIModule/Memory/GPUAllocator.h"
+
+#include "RHIModule/Images/ImageView.h"
 
 #include <CoreUtilities/Buffer/Buffer.h>
 
 namespace Volt::RHI
 {
-	class ImageView;
 	class Swapchain;
 
 	class VTRHI_API Image : public RHIResource
@@ -36,7 +37,7 @@ namespace Volt::RHI
 		template<typename T>
 		VT_INLINE T ReadPixel(uint32_t x, uint32_t y, uint32_t z);
 
-		static RefPtr<Image> Create(const ImageSpecification& specification, const void* data = nullptr, RefPtr<Allocator> allocator = nullptr);
+		static RefPtr<Image> Create(const ImageSpecification& specification, const void* data = nullptr, RefPtr<GPUAllocator> allocator = nullptr);
 		static RefPtr<Image> Create(const SwapchainImageSpecification& specification);
 
 	protected:

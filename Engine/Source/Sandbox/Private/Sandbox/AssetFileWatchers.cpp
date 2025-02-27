@@ -1,14 +1,7 @@
 #include "sbpch.h"
 #include "Sandbox.h"
 
-#include "Sandbox/Utility/EditorUtilities.h"
-#include "Sandbox/Utility/EditorLibrary.h"
-
-#include "Sandbox/Window/AssetBrowser/AssetBrowserPanel.h"
-
-#include <Volt/Project/ProjectManager.h>
-#include <Volt/Asset/Rendering/ShaderDefinition.h>
-
+#include <RenderCore/Shader/ShaderDefinition.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <Volt/Utility/UIUtility.h>
@@ -93,6 +86,11 @@ void Sandbox::CreateDeleteWatch()
 {
 	m_fileWatcher->AddCallback(efsw::Actions::Delete, [&](const std::filesystem::path newPath, const std::filesystem::path oldPath)
 	{
+		if (newPath.extension() == ".tmp" || newPath.extension() == ".TMP")
+		{
+			return;
+		}
+
 		std::scoped_lock lock(m_fileWatcherMutex);
 		m_fileChangeQueue.emplace_back([newPath, oldPath]()
 		{

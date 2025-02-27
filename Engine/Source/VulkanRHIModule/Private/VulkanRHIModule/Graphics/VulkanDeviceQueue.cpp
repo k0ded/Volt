@@ -9,6 +9,8 @@
 #include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 #include <vulkan/vulkan.h>
 
 namespace Volt::RHI

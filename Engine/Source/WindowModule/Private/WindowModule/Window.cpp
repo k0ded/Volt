@@ -108,7 +108,11 @@ namespace Volt
 
 		if (!m_hasBeenInitialized)
 		{
-			m_swapchain = RHI::Swapchain::Create(m_window);
+			RHI::SwapchainCreateInfo createInfo{};
+			createInfo.platformWindow = m_window;
+			createInfo.useHDRIfAvailable = false;
+
+			m_swapchain = RHI::Swapchain::Create(createInfo);
 			m_swapchain->Resize(m_data.Width, m_data.Height, m_data.VSync);
 			m_hasBeenInitialized = true;
 		}
@@ -231,10 +235,14 @@ namespace Volt
 			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth + 1), static_cast<int32_t>(createHeight + 1));
 			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth), static_cast<int32_t>(createHeight));
 		}
+
+		m_eventListener = CreateScope<WindowEventListener>(m_window);
 	}
 
 	void Window::Release()
 	{
+		m_eventListener.reset();
+
 		if (m_window)
 		{
 			glfwDestroyWindow(m_window);
@@ -358,14 +366,14 @@ namespace Volt
 
 	void Window::BeginFrame()
 	{
-		m_swapchain->BeginFrame();
 		WindowBeginFrameEvent beginFrameEvent;
 		EventSystem::DispatchEvent(beginFrameEvent);
+		m_swapchain->BeginFrame();
 	}
 
-	void Window::Render()
+	void Window::Render(float timestep)
 	{
-		WindowRenderEvent renderEvent;
+		WindowRenderEvent renderEvent(timestep);
 		EventSystem::DispatchEvent(renderEvent);
 	}
 
@@ -511,5 +519,15 @@ namespace Volt
 	Scope<Window> Window::Create(const WindowProperties& aProperties)
 	{
 		return CreateScope<Window>(aProperties);
+	}
+
+	Window::WindowEventListener::WindowEventListener(GLFWwindow* glfwWindow)
+		: m_window(glfwWindow)
+	{
+		RegisterListener<SetShowCursorEvent>([this](SetShowCursorEvent& event)
+		{
+			glfwSetInputMode(m_window, GLFW_CURSOR, event.ShouldShow() ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+			return false;
+		});
 	}
 }

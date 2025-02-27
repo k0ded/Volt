@@ -3,16 +3,25 @@
 #include "Matrix.hlsli"
 #include "Vertex.hlsli"
 
+#include "Volumetrics/Fog/VolumetricFogCommon.hlsli"
+
 struct Constants
 {
-    vt::UniformTypedBuffer<VertexPositionData> vertexPositions;
+    vt::TypedBuffer<VertexPositionData> vertexPositions;
     vt::UniformBuffer<ViewData> viewData;
 
-    vt::UniformTexCube<float3> environmentTexture;
+    vt::TexCube<float3> environmentTexture;
     vt::TextureSampler linearSampler;
 
     float lod;
     float intensity;
+
+    vt::Tex2D<float> sceneDepth;
+
+    // Volumetric Fog
+    vt::UniformBuffer<VolumetricFogParams> volumetricFogParams;
+    vt::Tex3D<float4> integratedFogVolume;
+    vt::TextureSampler pointSampler;
 };
 
 struct Output

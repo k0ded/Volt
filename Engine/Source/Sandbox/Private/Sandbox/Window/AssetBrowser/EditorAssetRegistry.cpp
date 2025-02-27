@@ -2,18 +2,17 @@
 
 #include "Window/AssetBrowser/EditorAssetRegistry.h"
 
-#include "Volt/Asset/Rendering/Material.h"
+#include <Volt-Assets/MeshAsset.h>
+#include <Volt-Assets/MaterialAsset.h>
 
-#include "Volt/Asset/Animation/Animation.h"
-#include "Volt/Asset/Animation/Skeleton.h"
-#include "Volt/Asset/Animation/AnimatedCharacter.h"
-#include "Volt/Asset/Mesh/Mesh.h"
+#include "Volt-Animation/Assets/Animation.h"
+#include "Volt-Animation/Assets/Skeleton.h"
+#include "Volt-Renderer/AnimatedCharacter.h"
 
-#include "Volt/Rendering/Texture/Texture2D.h"
+#include "Volt-Renderer/Mesh/Mesh.h"
+#include "Volt-Renderer/Texture/Texture2D.h"
 
-#include "Volt/Scene/Scene.h"
-
-#include "Volt/Physics/PhysicsMaterial.h"
+#include "Volt-Scene/Scene.h"
 
 #include <AssetSystem/AssetManager.h>
 
@@ -41,7 +40,7 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 		EditorAssetData(
 			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
 			{
-				auto asset = Volt::AssetManager::QueueAsset<Volt::Mesh>(aAssetHandle);
+				auto asset = Volt::AssetManager::QueueAsset<Volt::MeshAsset>(aAssetHandle);
 				if (!asset || !asset->IsValid())
 				{
 					return {};
@@ -62,10 +61,10 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 
 				Vector<std::pair<std::string, std::string>> data =
 				{
-					std::make_pair("Submesh Count", std::to_string(asset->GetSubMeshes().size())),
+					std::make_pair("Submesh Count", std::to_string(asset->GetMesh()->GetSubMeshes().size())),
 					
-					std::make_pair("Vertex Count", Utility::ToStringWithThousandSeparator(asset->GetVertexCount())),
-					std::make_pair("Index Count", Utility::ToStringWithThousandSeparator(asset->GetIndexCount())),
+					std::make_pair("Vertex Count", Utility::ToStringWithThousandSeparator(asset->GetMesh()->GetVertexCount())),
+					std::make_pair("Index Count", Utility::ToStringWithThousandSeparator(asset->GetMesh()->GetIndexCount())),
 					std::make_pair("Source Mesh Path", sourceMeshPath.string())
 				};
 				return data;
@@ -123,7 +122,7 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 		EditorAssetData(
 			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
 			{
-				auto asset = Volt::AssetManager::GetAsset<Volt::Material>(aAssetHandle);
+				auto asset = Volt::AssetManager::GetAsset<Volt::MaterialAsset>(aAssetHandle);
 				Vector<std::pair<std::string, std::string>> data =
 				{
 				};
@@ -155,8 +154,8 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				{
 					return Vector<std::pair<std::string, std::string>>();
 				}
-				const auto skeletonFilePath = Volt::AssetManager::GetFilePathFromAssetHandle(asset->GetSkeleton()->handle).string();
-				const auto meshFilePath = Volt::AssetManager::GetFilePathFromAssetHandle(asset->GetSkin()->handle).string();
+				const auto skeletonFilePath = "";//Volt::AssetManager::GetFilePathFromAssetHandle(asset->GetSkeleton()->handle).string();
+				const auto meshFilePath = ""; //Volt::AssetManager::GetFilePathFromAssetHandle(asset->GetSkin()->handle).string();
 
 				Vector<std::pair<std::string, std::string>> data =
 				{
@@ -168,19 +167,19 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 			})
 	},
 	{
-		AssetTypes::PhysicsMaterial,
-		EditorAssetData(
-			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
-			{
-				auto asset = Volt::AssetManager::GetAsset<Volt::PhysicsMaterial>(aAssetHandle);
-				Vector<std::pair<std::string, std::string>> data =
-				{
-					std::make_pair("Static Friction", std::to_string(asset->staticFriction)),
-					std::make_pair("Dynamic Friction", std::to_string(asset->dynamicFriction)),
-					std::make_pair("Bounciness", std::to_string(asset->bounciness)),
-				};
-				return data;
-			})
+		//AssetTypes::PhysicsMaterial,
+		//EditorAssetData(
+		//	ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
+		//	{
+		//		auto asset = Volt::AssetManager::GetAsset<Volt::PhysicsMaterial>(aAssetHandle);
+		//		Vector<std::pair<std::string, std::string>> data =
+		//		{
+		//			std::make_pair("Static Friction", std::to_string(asset->staticFriction)),
+		//			std::make_pair("Dynamic Friction", std::to_string(asset->dynamicFriction)),
+		//			std::make_pair("Bounciness", std::to_string(asset->bounciness)),
+		//		};
+		//		return data;
+		//	})
 	}
 };
 

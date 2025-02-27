@@ -10,12 +10,12 @@
 
 namespace Volt::RHI
 {
-	D3D12UniformBuffer::D3D12UniformBuffer(const uint32_t size, const void* data, const uint32_t count, std::string_view name)
+	D3D12UniformBuffer::D3D12UniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name)
 		: m_size(size)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
-		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(size * count, BufferUsage::UniformBuffer, MemoryUsage::CPUToGPU);
+		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(size * count, BufferUsage::UniformBuffer, MemoryUsage::CPUToGPU, name);
 
 		if (data)
 		{
@@ -67,9 +67,9 @@ namespace Volt::RHI
 		m_allocation->Unmap();
 	}
 
-	void D3D12UniformBuffer::SetName(std::string_view name)
+	void D3D12UniformBuffer::SetName(const std::string& name)
 	{
-		m_name = std::string(name);
+		m_name = name;
 		if (!m_allocation)
 		{
 			return;

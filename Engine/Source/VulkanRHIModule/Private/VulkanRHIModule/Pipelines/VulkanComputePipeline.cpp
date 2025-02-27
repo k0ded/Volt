@@ -7,9 +7,11 @@
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Graphics/GraphicsDevice.h>
 
 #include <RHIModule/RHIProxy.h>
+
+#include <CoreUtilities/Time/ScopedTimer.h>
+#include <CoreUtilities/Math/Hash.h>
 
 #include <vulkan/vulkan.h>
 
@@ -29,6 +31,8 @@ namespace Volt::RHI
 	void VulkanComputePipeline::Invalidate()
 	{
 		Release();
+
+		ScopedTimer scopedTimer{};
 
 		VT_ENSURE(m_shader);
 
@@ -70,9 +74,9 @@ namespace Volt::RHI
 
 		// Create Pipeline
 		{
-			if (!vulkanShader.GetPipelineStageInfos().contains(ShaderStage::Compute))
+			if (vulkanShader.GetShaderType() != ShaderType::Compute)
 			{
-				VT_LOGC(Error, LogVulkanRHI, "Invalid shader supplied to pipeline!");
+				VT_LOGC(Error, LogVulkanRHI, "Non compute shader supplied to compute pipeline!");
 				return;
 			}
 
@@ -101,11 +105,23 @@ namespace Volt::RHI
 
 			VT_VK_CHECK(vkCreateComputePipelines(device->GetHandle<VkDevice>(), nullptr, 1, &info, nullptr, &m_pipeline));
 		}
+		GenerateHash();
+		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Compute Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
 	}
 
 	RefPtr<Shader> VulkanComputePipeline::GetShader() const
 	{
 		return m_shader;
+	}
+
+	bool VulkanComputePipeline::IsValid() const
+	{
+		return m_pipeline != nullptr;
+	}
+
+	size_t VulkanComputePipeline::GetHash() const
+	{
+		return m_hash;
 	}
 
 	void* VulkanComputePipeline::GetHandleImpl() const
@@ -129,5 +145,13 @@ namespace Volt::RHI
 
 		m_pipeline = nullptr;
 		m_pipelineLayout = nullptr;
+	}
+
+	void VulkanComputePipeline::GenerateHash()
+	{
+		m_hash = m_shader->GetHash();
+
+		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipeline)));
+		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipelineLayout)));
 	}
 }

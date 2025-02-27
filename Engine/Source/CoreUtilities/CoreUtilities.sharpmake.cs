@@ -16,13 +16,14 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
 
-            conf.SolutionFolder = "Engine";
+            conf.SolutionFolder = "Engine/Modules";
 
             conf.PrecompHeader = "cupch.h";
             conf.PrecompSource = "cupch.cpp";
 
             conf.AddPublicDependency<glm>(target);
             conf.AddPublicDependency<tracy>(target);
+
             conf.IncludePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "unordered_dense\\include"));
 
             conf.AddPublicDependency<nfd_extended>(target);

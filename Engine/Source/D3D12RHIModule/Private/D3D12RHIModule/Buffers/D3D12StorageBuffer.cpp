@@ -16,8 +16,13 @@
 
 namespace Volt::RHI
 {
-	D3D12StorageBuffer::D3D12StorageBuffer(uint32_t count, uint64_t elementSize, std::string_view name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator)
-		: m_elementSize(elementSize), m_count(count), m_name(name), m_allocator(allocator), m_bufferUsage(bufferUsage), m_memoryUsage(memoryUsage)
+	D3D12StorageBuffer::D3D12StorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator)
+		: m_elementSize(elementSize), 
+		m_count(count), 
+		m_name(name), 
+		m_allocator(allocator), 
+		m_bufferUsage(bufferUsage), 
+		m_memoryUsage(memoryUsage)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
@@ -63,7 +68,7 @@ namespace Volt::RHI
 		return m_count;
 	}
 
-	WeakPtr<Allocation> D3D12StorageBuffer::GetAllocation() const
+	Handle<Allocation> D3D12StorageBuffer::GetAllocation() const
 	{
 		return m_allocation;
 	}
@@ -75,7 +80,7 @@ namespace Volt::RHI
 
 	void D3D12StorageBuffer::SetData(const void* data, const size_t size)
 	{
-		RefPtr<Allocation> stagingAllocation = m_allocator->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU);;
+		Handle<Allocation> stagingAllocation = m_allocator->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU, "Staging Alloc");
 
 		void* mappedPtr = stagingAllocation->Map<void>();
 		memcpy_s(mappedPtr, size, data, size);
@@ -125,7 +130,7 @@ namespace Volt::RHI
 
 	void D3D12StorageBuffer::SetData(RefPtr<CommandBuffer> commandBuffer, const void* data, const size_t size)
 	{
-		RefPtr<Allocation> stagingAllocation = m_allocator->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU);
+		Handle<Allocation> stagingAllocation = m_allocator->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU, "Staging Alloc");
 
 		void* mappedPtr = stagingAllocation->Map<void>();
 		memcpy_s(mappedPtr, m_byteSize, data, size);
@@ -185,9 +190,9 @@ namespace Volt::RHI
 		return m_view;
 	}
 
-	void D3D12StorageBuffer::SetName(std::string_view name)
+	void D3D12StorageBuffer::SetName(const std::string& name)
 	{
-		m_name = std::string(name);
+		m_name = name;
 
 		if (!m_allocation)
 		{
@@ -227,7 +232,7 @@ namespace Volt::RHI
 	{
 		Release();
 		m_byteSize = std::max(byteSize, Memory::GetMinBufferAllocationSize());
-		m_allocation = m_allocator->CreateBuffer(byteSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::StorageBuffer, m_memoryUsage);
+		m_allocation = m_allocator->CreateBuffer(byteSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::StorageBuffer, m_memoryUsage, m_name);
 	}
 
 	void D3D12StorageBuffer::Release()

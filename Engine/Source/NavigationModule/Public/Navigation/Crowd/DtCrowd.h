@@ -2,7 +2,7 @@
 
 #include "Navigation/NavMesh/DtNavMesh.h"
 
-#include <Volt/Scene/Entity.h>
+#include <Volt-Scene/Entity.h>
 #include <Volt/Components/NavigationComponents.h>
 
 #include <DetourCrowd.h>

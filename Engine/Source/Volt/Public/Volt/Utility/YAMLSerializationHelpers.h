@@ -1,8 +1,8 @@
 #pragma once
 
-#include <AssetSystem/Asset.h>
 #include "Volt/Asset/TimelinePreset.h"
-#include "Volt/Asset/Animation/AnimatedCharacter.h"
+
+#include <AssetSystem/Asset.h>
 
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/FileIO/SerializationHelpers.h>
@@ -14,40 +14,6 @@
 
 namespace YAML
 {
-	template<>
-	struct convert<Volt::EntityID>
-	{
-		static Node encode(const Volt::EntityID& rhs)
-		{
-			Node node;
-			node.push_back((uint32_t)rhs);
-			return node;
-		};
-
-		static bool decode(const Node& node, Volt::EntityID& v)
-		{
-			v = node.as<uint32_t>();
-			return true;
-		};
-	};
-
-	template<>
-	struct convert<entt::entity>
-	{
-		static Node encode(const entt::entity& rhs)
-		{
-			Node node;
-			node.push_back((uint32_t)rhs);
-			return node;
-		};
-
-		static bool decode(const Node& node, entt::entity& v)
-		{
-			v = static_cast<entt::entity>(node.as<uint32_t>());
-			return true;
-		};
-	};
-
 	template<>
 	struct convert<Volt::TrackType>
 	{
@@ -81,18 +47,6 @@ namespace YAML
 			return true;
 		};
 	};
-}
-
-inline YAML::Emitter& operator<<(YAML::Emitter& out, const Volt::AssetHandle& handle)
-{
-	out << static_cast<uint64_t>(handle);
-	return out;
-}
-
-inline YAML::Emitter& operator<<(YAML::Emitter& out, const entt::entity& handle)
-{
-	out << static_cast<uint32_t>(handle);
-	return out;
 }
 
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const Volt::TrackType& handle)

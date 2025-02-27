@@ -1,0 +1,6 @@
+name: "DDGIUpdateProbes"
+internal: true
+sources:
+  - entryPoint: "main"
+    shaderStage: "cs"
+    filePath: "Engine/Shaders/Source/DDGI/DDGIUpdateProbes.hlsl"

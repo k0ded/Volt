@@ -5,7 +5,8 @@
 #include "Sandbox/Utility/Theme.h"
 
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Asset/Animation/Skeleton.h>
+
+#include <Volt-Animation/Assets/Skeleton.h>
 
 SkeletonEditorPanel::SkeletonEditorPanel()
 	: EditorWindow("Skeleton Editor", false)

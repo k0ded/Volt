@@ -3,17 +3,17 @@
 
 #include "Volt/Core/Application.h"
 
-#include "Volt/Scene/Entity.h"
-#include "Volt/Scene/Scene.h"
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/Components/CoreComponents.h>
+
+#include <Volt-Renderer/Texture/Texture2D.h>
+
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include "Volt/Asset/ParticlePreset.h"
-#include "Volt/Rendering/Texture/Texture2D.h"
-
 #include "Volt/Utility/YAMLSerializationHelpers.h"
 #include "Volt/Utility/FileSystem.h"
-
-#include "Volt/Components/RenderingComponents.h"
-#include "Volt/Components/CoreComponents.h"
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/Asset.h>

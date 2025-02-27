@@ -1,7 +1,6 @@
 #include "sbpch.h"
-#include "sbpch.h"
-#include "Window/ViewportPanel.h"
 
+#include "Sandbox/Window/ViewportPanel.h"
 #include "Sandbox/Window/SceneViewPanel.h"
 #include "Sandbox/Window/GameViewPanel.h"
 #include "Sandbox/Camera/EditorCameraController.h"
@@ -11,43 +10,34 @@
 #include "Sandbox/Utility/EditorLibrary.h"
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/Sandbox.h"
-
 #include "Sandbox/UISystems/ModalSystem.h"
 #include "Sandbox/Modals/MeshImportModal.h"
-
 #include "Sandbox/EditorCommandStack.h"
-
 #include "Sandbox/Utility/Theme.h"
 
-#include <Volt/Asset/Mesh/Mesh.h>
 #include <Volt/Asset/ParticlePreset.h>
-#include <Volt/Asset/Prefab.h>
+#include <Volt/Utility/UIUtility.h>
+
+#include <Volt-Assets/MeshAsset.h>
+
+#include <Volt-Scene/Components/CoreComponents.h>
+#include <Volt-Scene/Entity.h>
+
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-Renderer/Camera/Camera.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
-#include <InputModule/MouseButtonCodes.h>
-
-#include <Volt/Rendering/SceneRenderer.h>
-#include <Volt/Rendering/Camera/Camera.h>
-
-#include <Volt/Components/CoreComponents.h>
-#include <Volt/Components/RenderingComponents.h>
-
-#include <Volt/Scene/Entity.h>
-#include <Volt/Scene/SceneManager.h>
-#include <Volt/Asset/Serializers/SceneSerializer.h>
-#include <Volt/Utility/UIUtility.h>
-
-#include <Volt/Utility/StringUtility.h>
-#include <Volt/Math/RayTriangle.h>
-#include <Volt/Math/Math.h>
 
 #include <EventSystem/EventSystem.h>
 #include <WindowModule/Events/WindowEvents.h>
 
 #include <RHIModule/Images/Image.h>
 
-#include <Navigation/Core/NavigationSystem.h>
+#include <CoreUtilities/Math/Math.h>
+#include <CoreUtilities/FileSystem.h>
 
 ViewportPanel::ViewportPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::Scene>& editorScene, EditorCameraController* cameraController,
 	SceneState& aSceneState)
@@ -111,8 +101,8 @@ void ViewportPanel::UpdateMainContent()
 		if (SelectionManager::IsAnySelected())
 		{
 			averageTransform = CalculateAverageTransform();
-			bool snap = Volt::Input::IsButtonDown(Volt::InputCode::LeftControl);
-			const bool duplicate = Volt::Input::IsButtonDown(Volt::InputCode::LeftAlt);
+			bool snap = Volt::Input::IsKeyDown(Volt::InputCode::LeftControl);
+			const bool duplicate = Volt::Input::IsKeyDown(Volt::InputCode::LeftAlt);
 
 			float snapValue = 0.5f;
 			if (m_gizmoOperation == ImGuizmo::ROTATE)
@@ -206,20 +196,20 @@ void ViewportPanel::UpdateMainContent()
 
 		m_editorCameraController->SetControllable(IsHovered() && !isUsing);
 	}
-	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered() && !ImGuizmo::IsOver() && !Volt::Input::IsButtonDown(Volt::InputCode::LeftAlt))
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered() && !ImGuizmo::IsOver() && !Volt::Input::IsKeyDown(Volt::InputCode::LeftAlt))
 	{
 		m_beganClick = true;
 		HandleSingleSelect();
 	}
 
-	if (m_beganClick && ImGui::IsMouseDragging(ImGuiMouseButton_Left) && !Volt::Input::IsButtonDown(Volt::InputCode::LeftControl) && !Volt::Input::IsButtonDown(Volt::InputCode::LeftShift))
+	if (m_beganClick && ImGui::IsMouseDragging(ImGuiMouseButton_Left) && !Volt::Input::IsKeyDown(Volt::InputCode::LeftControl) && !Volt::Input::IsKeyDown(Volt::InputCode::LeftShift))
 	{
 		m_startDragPos = ImGui::GetMousePos();
 		m_isDragging = true;
 		m_beganClick = false;
 	}
 
-	if (m_isDragging && Volt::Input::IsButtonDown(Volt::InputCode::LeftAlt))
+	if (m_isDragging && Volt::Input::IsKeyDown(Volt::InputCode::LeftAlt))
 	{
 		m_isDragging = false;
 	}
@@ -487,12 +477,12 @@ bool ViewportPanel::OnMousePressed(Volt::MouseButtonPressedEvent& e)
 
 bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 {
-	if (!IsHovered() || Volt::Input::IsButtonDown(Volt::InputCode::Mouse_RB) || ImGui::IsAnyItemActive())
+	if (!IsHovered() || Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_RB) || ImGui::IsAnyItemActive())
 	{
 		return false;
 	}
 
-	const bool ctrlPressed = Volt::Input::IsButtonDown(Volt::InputCode::LeftControl);
+	const bool ctrlPressed = Volt::Input::IsKeyDown(Volt::InputCode::LeftControl);
 
 	switch (e.GetKeyCode())
 	{
@@ -666,7 +656,7 @@ bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 
 bool ViewportPanel::OnMouseReleased(Volt::MouseButtonReleasedEvent& e)
 {
-	if (e.GetMouseButton() == Volt::InputCode::Mouse_LB && !Volt::Input::IsButtonDown(Volt::InputCode::LeftAlt) && GlobalEditorStates::dragStartedInAssetBrowser)
+	if (e.GetMouseButton() == Volt::InputCode::Mouse_LB && !Volt::Input::IsKeyDown(Volt::InputCode::LeftAlt) && GlobalEditorStates::dragStartedInAssetBrowser)
 	{
 		if (IsHovered())
 		{
@@ -732,7 +722,7 @@ void ViewportPanel::CheckDragDrop()
 		EditorCommandStack::GetInstance().PushUndo(command);
 
 		auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
-		auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(handle);
+		auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(handle);
 		if (mesh)
 		{
 			meshComp.handle = mesh->handle;
@@ -760,14 +750,14 @@ void ViewportPanel::CheckDragDrop()
 
 		if (FileSystem::Exists(vtMeshPath))
 		{
-			Ref<Volt::Mesh> meshAsset = Volt::AssetManager::GetAsset<Volt::Mesh>(vtMeshPath);
+			Ref<Volt::MeshAsset> meshAsset = Volt::AssetManager::GetAsset<Volt::MeshAsset>(vtMeshPath);
 			if (meshAsset && meshAsset->IsValid())
 			{
 				resultHandle = meshAsset->handle;
 			}
 
 			auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
-			auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(resultHandle);
+			auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(resultHandle);
 			if (mesh)
 			{
 				meshComp.handle = mesh->handle;
@@ -878,8 +868,8 @@ void ViewportPanel::HandleSingleSelect()
 		}
 
 		uint32_t pixelData = m_sceneRenderer->GetObjectIDImage()->ReadPixel<uint32_t>(static_cast<uint32_t>(mouseX * renderScale), static_cast<uint32_t>(mouseY * renderScale), 0u);
-		const bool multiSelect = Volt::Input::IsButtonDown(Volt::InputCode::LeftShift);
-		const bool deselect = Volt::Input::IsButtonDown(Volt::InputCode::LeftControl);
+		const bool multiSelect = Volt::Input::IsKeyDown(Volt::InputCode::LeftShift);
+		const bool deselect = Volt::Input::IsKeyDown(Volt::InputCode::LeftControl);
 
 		if (!multiSelect && !deselect)
 		{

@@ -12,7 +12,7 @@
 
 namespace Volt::RHI
 {
-	D3D12Image::D3D12Image(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator)
+	D3D12Image::D3D12Image(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator)
 		: m_specification(specification), m_allocator(allocator)
 	{
 		if (!allocator)
@@ -72,6 +72,9 @@ namespace Volt::RHI
 
 	void D3D12Image::InitializeWithData(const void* data)
 	{
+		const uint64_t requiredSize = GetRequiredIntermediateSize(GetHandle<ID3D12Resource*>(), 0, 1);
+		Handle<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(requiredSize, BufferUsage::StorageBuffer | BufferUsage::TransferSrc, MemoryUsage::CPUToGPU, "Staging Alloc");
+
 		RefPtr<CommandBuffer> cmdBuffer = CommandBuffer::Create();
 		cmdBuffer->Begin();
 
@@ -94,7 +97,7 @@ namespace Volt::RHI
 			cmdBuffer->ResourceBarrier({ barrier });
 		}
 
-		cmdBuffer->UploadTextureData(this, copyData);
+		cmdBuffer->UploadTextureData(this, stagingAlloc, copyData);
 
 		{
 			RHI::ResourceBarrierInfo barrier{};
@@ -111,6 +114,8 @@ namespace Volt::RHI
 
 		cmdBuffer->End();
 		cmdBuffer->Execute();
+
+		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
 	}
 
 	void D3D12Image::TransitionToLayout(ImageLayout targetLayout)
@@ -379,7 +384,7 @@ namespace Volt::RHI
 		return m_isSwapchainImage;
 	}
 
-	void D3D12Image::SetName(std::string_view name)
+	void D3D12Image::SetName(const std::string& name)
 	{
 		m_specification.debugName = name;
 

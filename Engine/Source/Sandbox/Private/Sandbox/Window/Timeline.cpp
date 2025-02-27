@@ -2,12 +2,11 @@
 #include "Window/Timeline.h"
 
 #include "Volt/Vision/VisionComponents.h"
-#include "Volt/Asset/Importers/AssetImporter.h"
 #include "Volt/Utility/UIUtility.h"
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
-#include "Volt/Rendering/Camera/Camera.h"
+#include "Volt-Renderer/Camera/Camera.h"
 
 Timeline::Timeline(Ref<Volt::Scene>& aScene, EditorCameraController* editorCamera)
 	:EditorWindow("Timeline", true), myCurrentScene(aScene), myEditorCamera(editorCamera)
@@ -237,7 +236,7 @@ void Timeline::SortTrack(Volt::Track& track)
 
 bool Timeline::CameraQuickshotKeyframe(Volt::KeyPressedEvent& e)
 {
-	if (!Volt::Input::IsButtonDown(Volt::InputCode::LeftControl))
+	if (!Volt::Input::IsKeyDown(Volt::InputCode::LeftControl))
 	{
 		return false;
 	}

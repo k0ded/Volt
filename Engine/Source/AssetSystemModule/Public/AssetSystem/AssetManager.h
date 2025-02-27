@@ -4,10 +4,11 @@
 
 #include <LogModule/Log.h>
 
+#include <SubSystem/SubSystem.h>
+
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/StringUtility.h>
 
-#include <map>
 #include <filesystem>
 #include <unordered_map>
 #include <shared_mutex>
@@ -20,6 +21,7 @@ namespace Volt
 	class AssetFactory;
 	class AssetSerializer;
 	class AssetDependencyGraph;
+
 	class VTAS_API AssetManager
 	{
 	public:
@@ -65,8 +67,8 @@ namespace Volt
 
 		static void Update();
 
-		static UUID64 RegisterAssetChangedCallback(AssetType assetType, AssetChangedCallback&& callbackFunction);
-		static void UnregisterAssetChangedCallback(AssetType assetType, UUID64 id);
+		static UUID64 RegisterAssetUpdatedCallback(AssetType assetType, AssetChangedCallback&& callbackFunction);
+		static void UnregisterAssetUpdatedCallback(AssetType assetType, UUID64 id);
 
 		static void AddDependencyToAsset(AssetHandle handle, AssetHandle dependency);
 		static Vector<AssetHandle> GetAssetsDependentOn(AssetHandle handle);
@@ -116,6 +118,9 @@ namespace Volt
 
 		template<typename T>
 		static Ref<T> QueueAsset(AssetHandle handle);
+
+		template<typename T>
+		static Ref<T> QueueAsset(const std::filesystem::path& filepath);
 
 		template<typename T, typename... Args>
 		static Ref<T> CreateAsset(const std::filesystem::path& targetDir, const std::string& name, Args&&... args);
@@ -303,6 +308,12 @@ namespace Volt
 		Get().QueueAssetInternal(handle, asset);
 
 		return std::reinterpret_pointer_cast<T>(asset);
+	}
+
+	template<typename T>
+	inline Ref<T> AssetManager::QueueAsset(const std::filesystem::path& filepath)
+	{
+		return QueueAsset<T>(GetAssetHandleFromFilePath(filepath));
 	}
 
 	template<typename T, typename ...Args>

@@ -6,7 +6,7 @@
 
 namespace Volt::RHI::ResourceUtility
 {
-	inline void InitializeBarrierSrcFromCurrentState(ImageBarrier& barrier, WeakPtr<RHIResource> resource)
+	inline void InitializeBarrierSrcFromCurrentState(ImageBarrier& barrier, RawPtr<RHIResource> resource)
 	{
 		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(resource);
 		barrier.srcStage = currentState.stage;
@@ -14,7 +14,7 @@ namespace Volt::RHI::ResourceUtility
 		barrier.srcLayout = currentState.layout;
 	}
 
-	inline void InitializeBarrierSrcFromCurrentState(BufferBarrier& barrier, WeakPtr<RHIResource> resource)
+	inline void InitializeBarrierSrcFromCurrentState(BufferBarrier& barrier, RawPtr<RHIResource> resource)
 	{
 		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(resource);
 		barrier.srcAccess = currentState.access;

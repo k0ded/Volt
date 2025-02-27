@@ -1,15 +1,13 @@
 #include "sbpch.h"
 #include "Utility/AssetPreview.h"
 
-#include <Volt/Scene/Entity.h>
-#include <Volt/Scene/Scene.h>
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Scene.h>
 
-#include <Volt/Components/LightComponents.h>
-#include <Volt/Components/RenderingComponents.h>
-#include <AssetSystem/AssetManager.h>
-
-#include <Volt/Rendering/Texture/Texture2D.h>
-#include <Volt/Rendering/Camera/Camera.h>
+#include <Volt-CoreComponents/LightComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
+#include <Volt-Renderer/Camera/Camera.h>
 
 #include <AssetSystem/AssetManager.h>
 

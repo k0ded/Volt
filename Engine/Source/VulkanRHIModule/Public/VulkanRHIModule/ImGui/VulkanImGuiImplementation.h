@@ -20,7 +20,7 @@ namespace Volt::RHI
 		VulkanImGuiImplementation(const ImGuiCreateInfo& createInfo);
 		~VulkanImGuiImplementation() override;
 
-		ImTextureID GetTextureID(RefPtr<Image> image) const override;
+		ImTextureID GetTextureID(RefPtr<Image> image, int32_t mipIndex) const override;
 		ImFont* AddFont(const std::filesystem::path& fontPath, float pixelSize) override;
 
 	protected:
@@ -37,7 +37,7 @@ namespace Volt::RHI
 		void ReleaseVulkanData();
 	
 		GLFWwindow* m_windowPtr = nullptr;
-		WeakPtr<Swapchain> m_swapchain;
+		RawPtr<Swapchain> m_swapchain;
 		VkDescriptorPool_T* m_descriptorPool;
 		
 		CommandBufferSet m_commandBufferSet;

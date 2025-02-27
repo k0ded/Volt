@@ -16,16 +16,20 @@ namespace Volt::RHI
 
 		void Invalidate() override;
 		RefPtr<Shader> GetShader() const override;
+		bool IsValid() const override;
+		size_t GetHash() const override;
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
 		void Release();
+		void GenerateHash();
 
 		ComPtr<ID3D12PipelineState> m_pipeline;
 
 		RefPtr<Shader> m_shader;
+		size_t m_hash = 0;
 		bool m_useGlobalResouces = false;
 	};
 }

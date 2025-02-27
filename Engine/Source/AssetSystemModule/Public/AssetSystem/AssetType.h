@@ -107,6 +107,12 @@ namespace AssetTypes \
 	extern exportKeyword Ref<typeName ## Type> typeName; \
 }
 
+#define VT_DECLARE_ASSET_TYPE_EXPORT(typeName, typeGuid, exportKeyword) \
+	VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(typeName, false, (Vector<std::string>{}), typeGuid, exportKeyword)
+
+#define VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(typeName, extensions, typeGuid, exportKeyword) \
+	VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(typeName, true, extensions, typeGuid, exportKeyword)
+
 #define VT_DECLARE_ASSET_TYPE(typeName, typeGuid) \
 	VT_DECLARE_ASSET_TYPE_IMPL(typeName, false, (Vector<std::string>{}), typeGuid)
 

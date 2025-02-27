@@ -1,0 +1,119 @@
+#include "vrpch.h"
+
+#include "Volt-Renderer/Material.h"
+#include "Volt-Renderer/RenderScene/ScenePrimitiveData.h"
+#include "Volt-Renderer/RenderScene.h"
+#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/RayTracing/RayTracingScene.h"
+
+#include <RHIModule/Graphics/GraphicsContext.h>
+
+#include <AssetSystem/AssetManager.h>
+
+VT_DEFINE_LOG_CATEGORY(LogScenePrimitiveData);
+
+namespace Volt
+{
+	ScenePrimitiveData::ScenePrimitiveData(const EntityID& relatedEntity, RenderScene* renderScene)
+		: m_relatedEntity(relatedEntity),
+		m_renderScene(renderScene)
+	{
+	}
+
+	ScenePrimitiveData::~ScenePrimitiveData()
+	{
+		DestroyScenePrimitives();
+	}
+
+	void ScenePrimitiveData::InitializeFromDescription(const ScenePrimitiveDescription& description)
+	{
+		VT_ENSURE(m_renderScene);
+		VT_ENSURE(description.primitiveMesh);
+	
+		if (!m_renderObjects.empty())
+		{
+			DestroyScenePrimitives();
+		}
+
+		for (uint32_t index = 0; const auto& renderMaterial : description.materials)
+		{
+			m_primitiveMaterialTable.SetMaterial(renderMaterial, index);
+		}
+
+		m_primitiveMesh = description.primitiveMesh;
+		CreateScenePrimitives();
+	}
+
+	void ScenePrimitiveData::Invalidate()
+	{
+		for (const auto& id : m_renderObjects)
+		{
+			m_renderScene->InvalidatePrimitiveInstance(id);
+		}
+
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			m_renderScene->GetRayTracingScene()->InvalidateInstance(m_rayTracingInstance);
+		}
+	}
+
+	void ScenePrimitiveData::CreateScenePrimitives()
+	{
+		VT_ENSURE(m_primitiveMesh);
+
+		const auto& meshMaterialTable = m_primitiveMesh->GetMaterialTable();
+
+		MaterialTable finalMaterialTable;
+		for (uint32_t i = 0; i < meshMaterialTable.GetSize(); i++)
+		{
+			if (m_primitiveMaterialTable.ContainsMaterialIndex(i))
+			{
+				finalMaterialTable.SetMaterial(m_primitiveMaterialTable.GetMaterial(i), i);
+			}
+			else
+			{
+				finalMaterialTable.SetMaterial(meshMaterialTable.GetMaterial(i), i);
+			}
+		}
+
+		const auto& subMeshes = m_primitiveMesh->GetSubMeshes();
+		for (size_t i = 0; i < subMeshes.size(); i++)
+		{
+			const uint32_t materialIndex = subMeshes.at(i).materialIndex;
+			VT_ENSURE(finalMaterialTable.ContainsMaterialIndex(materialIndex));
+
+			Ref<RenderMaterial> material = finalMaterialTable.GetMaterial(materialIndex);
+
+			if (!material)
+			{
+				VT_LOGC(Warning, LogScenePrimitiveData, "Mesh {} has an invalid material at index {}! Assigning a default material.", m_primitiveMesh->GetName(), materialIndex);
+				material = Renderer::GetDefaultResources().defaultMaterial;
+			}
+
+			RenderPrimitiveID renderObjectId = m_renderScene->AddPrimitiveInstance(m_relatedEntity, m_primitiveMesh, material, static_cast<uint32_t>(i));
+			m_renderObjects.emplace_back(renderObjectId);
+		}
+
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			m_rayTracingInstance = m_renderScene->GetRayTracingScene()->AddInstance(m_primitiveMesh, m_relatedEntity, m_renderScene->GetPrimitiveIndexFromID(m_renderObjects.front()));
+		}
+	}
+
+	void ScenePrimitiveData::DestroyScenePrimitives()
+	{
+		VT_ENSURE(m_renderScene);
+
+		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		{
+			m_renderScene->GetRayTracingScene()->RemoveInstance(m_rayTracingInstance);
+		}
+
+		for (const auto& id : m_renderObjects)
+		{
+			m_renderScene->RemovePrimitiveInstance(id);
+		}
+
+		m_renderObjects.clear();
+	}
+}

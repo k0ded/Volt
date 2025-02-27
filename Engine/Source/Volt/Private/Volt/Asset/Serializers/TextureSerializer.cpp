@@ -3,7 +3,7 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include "Volt/Rendering/Texture/Texture2D.h"
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <CoreUtilities/FileIO/BinaryStreamWriter.h>
 
@@ -90,7 +90,7 @@ namespace Volt
 			const size_t maxSize = image->GetWidth() * image->GetHeight() * RHI::Utility::GetByteSizePerPixelFromFormat(image->GetFormat());
 
 			RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-			RefPtr<RHI::Allocation> stagingBuffer = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(maxSize, RHI::BufferUsage::TransferDst, RHI::MemoryUsage::GPUToCPU);
+			Handle<RHI::Allocation> stagingBuffer = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(maxSize, RHI::BufferUsage::TransferDst, RHI::MemoryUsage::GPUToCPU, "Staging Buffer");
 
 			commandBuffer->Begin();
 
@@ -228,6 +228,8 @@ namespace Volt
 		TextureData texData{};
 		texData.SetupMips(textureHeader, textureDataBuffer);
 
+		uint64_t stagingAllocSize = 0;
+
 		RHI::ImageCopyData copyData{};
 		for (uint32_t mipIndex = 0; const auto& mipData : texData.mips)
 		{
@@ -243,8 +245,12 @@ namespace Volt
 			subData.subResource.layerCount = 1;
 			subData.subResource.levelCount = 1;
 
+			stagingAllocSize += subData.slicePitch;
+
 			mipIndex++;
 		}
+
+		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingAllocSize, RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CPUToGPU, "Staging Alloc");
 
 		commandBuffer->Begin();
 
@@ -261,7 +267,7 @@ namespace Volt
 			commandBuffer->ResourceBarrier({ barrier });
 		}
 
-		commandBuffer->UploadTextureData(image, copyData);
+		commandBuffer->UploadTextureData(image, stagingAlloc, copyData);
 
 		{
 			RHI::ResourceBarrierInfo barrier{};
@@ -279,6 +285,8 @@ namespace Volt
 		commandBuffer->End();
 		commandBuffer->Execute();
 		
+		RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
+
 		image->GenerateMips();
 
 		texture->SetImage(image);

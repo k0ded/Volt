@@ -1,8 +1,7 @@
 #include "vtpch.h"
 #include "Volt/Utility/UIUtility.h"
 
-#include "Volt/Rendering/Texture/Texture2D.h"
-#include "Volt/Project/ProjectManager.h"
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <RHIModule/ImGui/ImGuiImplementation.h>
 
@@ -17,14 +16,14 @@ inline static glm::vec4 ToNormalizedRGB(float r, float g, float b, float a = 255
 	return { r / 255.f, g / 255.f, b / 255.f, a / 255.f };
 }
 
-ImTextureID UI::GetTextureID(Ref<Volt::Texture2D> texture)
+ImTextureID UI::GetTextureID(Ref<Volt::Texture2D> texture, int32_t mipIndex)
 {
-	return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture->GetImage());
+	return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture->GetImage(), mipIndex);
 }
 
-ImTextureID UI::GetTextureID(RefPtr<Volt::RHI::Image> texture)
+ImTextureID UI::GetTextureID(RefPtr<Volt::RHI::Image> texture, int32_t mipIndex)
 {
-	return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture);
+	return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture, mipIndex);
 }
 
 void UI::Header(const std::string& text)
@@ -958,7 +957,7 @@ bool UI::PropertyAxisColor(const std::string& text, glm::vec3& value, float rese
 
 	if (ImGui::IsItemHovered())
 	{
-		if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_LB))
+		if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_LB))
 		{
 			changed = true;
 		}
@@ -989,7 +988,7 @@ bool UI::PropertyAxisColor(const std::string& text, glm::vec3& value, float rese
 
 	if (ImGui::IsItemHovered())
 	{
-		if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_LB))
+		if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_LB))
 		{
 			changed = true;
 		}
@@ -1020,7 +1019,7 @@ bool UI::PropertyAxisColor(const std::string& text, glm::vec3& value, float rese
 
 	if (ImGui::IsItemHovered())
 	{
-		if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_LB))
+		if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_LB))
 		{
 			changed = true;
 		}
@@ -1074,7 +1073,7 @@ bool UI::PropertyAxisColor(const std::string& text, glm::vec2& value, float rese
 
 	if (ImGui::IsItemHovered())
 	{
-		if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_LB))
+		if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_LB))
 		{
 			changed = true;
 		}
@@ -1105,7 +1104,7 @@ bool UI::PropertyAxisColor(const std::string& text, glm::vec2& value, float rese
 
 	if (ImGui::IsItemHovered())
 	{
-		if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_LB))
+		if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_LB))
 		{
 			changed = true;
 		}

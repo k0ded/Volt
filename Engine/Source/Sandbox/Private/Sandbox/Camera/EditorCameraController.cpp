@@ -1,21 +1,15 @@
 #include "sbpch.h"
+
 #include "Camera/EditorCameraController.h"
 
-#include "Volt/Core/Application.h"
-#include "Volt/Rendering/Camera/Camera.h"
-
+#include "Volt-Renderer/Camera/Camera.h"
+#include "Volt/Utility/UIUtility.h"
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
-#include <InputModule/MouseButtonCodes.h>
 
-#include "Volt/Utility/UIUtility.h"
-
-#include <Volt/Events/ApplicationEvents.h>
-#include <InputModule/Events/KeyboardEvents.h>
+#include <EventSystem/ApplicationEvents.h>
 #include <InputModule/Events/MouseEvents.h>
-
-#include <GLFW/glfw3.h>
 
 EditorCameraController::EditorCameraController(float fov, float nearPlane, float farPlane)
 	: m_fov(fov), m_nearPlane(nearPlane), m_farPlane(farPlane)
@@ -47,7 +41,7 @@ void EditorCameraController::Focus(const glm::vec3& focusPoint)
 		m_focalDistance -= m_focalDistance - m_minFocalDistance;
 	}
 	m_position = m_focalPoint - m_camera->GetForward() * m_focalDistance;
-	m_camera->SetPosition(m_focalPoint);
+	m_camera->SetPosition(m_position);
 }
 
 void EditorCameraController::SetControllable(bool controllable)
@@ -81,7 +75,7 @@ bool EditorCameraController::OnMousePressedEvent(Volt::MouseButtonPressedEvent& 
 
 bool EditorCameraController::OnMouseReleasedEvent(Volt::MouseButtonReleasedEvent& e)
 {
-	if (m_isControllable)
+	if ((m_isControllable || m_isEnabled))
 	{
 		EnableMouse();
 		m_isEnabled = false;
@@ -138,7 +132,7 @@ void EditorCameraController::RegisterEventListeners()
 
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(EditorCameraController::OnUpdateEvent), isEnabled);
 	RegisterListener<Volt::MouseScrolledEvent>(VT_BIND_EVENT_FN(EditorCameraController::OnMouseScrolled), isEnabled);
-	RegisterListener<Volt::MouseButtonPressedEvent>(VT_BIND_EVENT_FN(EditorCameraController::OnMousePressedEvent), isControllable);
+	RegisterListener<Volt::MouseButtonPressedEvent>(VT_BIND_EVENT_FN(EditorCameraController::OnMousePressedEvent));
 	RegisterListener<Volt::MouseButtonReleasedEvent>(VT_BIND_EVENT_FN(EditorCameraController::OnMouseReleasedEvent), isEnabled);
 }
 
@@ -151,7 +145,7 @@ bool EditorCameraController::OnUpdateEvent(Volt::AppUpdateEvent& e)
 	m_yawDelta = 0.f;
 	m_positionDelta = 0.f;
 
-	if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_RB) && !Volt::Input::IsButtonDown(Volt::InputCode::Alt))
+	if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_RB) && !Volt::Input::IsKeyDown(Volt::InputCode::LeftAlt))
 	{
 		m_cameraMode = Mode::Fly;
 
@@ -159,28 +153,28 @@ bool EditorCameraController::OnUpdateEvent(Volt::AppUpdateEvent& e)
 
 		const float yawSign = m_camera->GetUp().y < 0 ? -1.0f : 1.0f;
 
-		if (Volt::Input::IsButtonDown(Volt::InputCode::W))
+		if (Volt::Input::IsKeyDown(Volt::InputCode::W))
 		{
 			m_positionDelta += m_translationSpeed * m_camera->GetForward() * e.GetTimestep();
 		}
-		if (Volt::Input::IsButtonDown(Volt::InputCode::S))
+		if (Volt::Input::IsKeyDown(Volt::InputCode::S))
 		{
 			m_positionDelta -= m_translationSpeed * m_camera->GetForward() * e.GetTimestep();
 		}
-		if (Volt::Input::IsButtonDown(Volt::InputCode::A))
+		if (Volt::Input::IsKeyDown(Volt::InputCode::A))
 		{
 			m_positionDelta -= m_translationSpeed * m_camera->GetRight() * e.GetTimestep();
 		}
-		if (Volt::Input::IsButtonDown(Volt::InputCode::D))
+		if (Volt::Input::IsKeyDown(Volt::InputCode::D))
 		{
 			m_positionDelta += m_translationSpeed * m_camera->GetRight() * e.GetTimestep();
 		}
 
-		if (Volt::Input::IsButtonDown(Volt::InputCode::E))
+		if (Volt::Input::IsKeyDown(Volt::InputCode::E))
 		{
 			m_positionDelta += m_translationSpeed * e.GetTimestep() * glm::vec3{ 0.f, yawSign, 0.f };
 		}
-		if (Volt::Input::IsButtonDown(Volt::InputCode::Q))
+		if (Volt::Input::IsKeyDown(Volt::InputCode::Q))
 		{
 			m_positionDelta -= m_translationSpeed * e.GetTimestep() * glm::vec3{ 0.f, yawSign, 0.f };
 		}
@@ -193,22 +187,22 @@ bool EditorCameraController::OnUpdateEvent(Volt::AppUpdateEvent& e)
 		m_focalDistance = glm::distance(m_focalPoint, m_position);
 		m_focalPoint = m_position + m_camera->GetForward() * m_focalDistance;
 	}
-	else if (Volt::Input::IsButtonDown(Volt::InputCode::LeftAlt))
+	else if (Volt::Input::IsKeyDown(Volt::InputCode::LeftAlt))
 	{
 		m_cameraMode = Mode::ArcBall;
 
-		if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_LB))
+		if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_LB))
 		{
 			DisableMouse();
 			ArcBall(deltaPos);
 		}
-		else if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_MB))
+		else if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_MB))
 		{
 			DisableMouse();
 			m_focalPoint += -1.f * m_camera->GetRight() * deltaPos.x;
 			m_focalPoint += m_camera->GetUp() * deltaPos.y;
 		}
-		else if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_RB))
+		else if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_RB))
 		{
 			DisableMouse();
 			ArcZoom((deltaPos.x + deltaPos.y) * m_sensitivity);
@@ -247,7 +241,7 @@ bool EditorCameraController::OnUpdateEvent(Volt::AppUpdateEvent& e)
 
 bool EditorCameraController::OnMouseScrolled(Volt::MouseScrolledEvent& e)
 {
-	if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_RB))
+	if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_RB))
 	{
 		m_translationSpeed += e.GetYOffset() * m_scrollTranslationSpeed;
 		m_translationSpeed = std::min(m_translationSpeed, m_maxTranslationSpeed);

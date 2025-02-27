@@ -1,8 +1,8 @@
 #include "sbpch.h"
 #include "Window/BlendSpaceEditorPanel.h"
 
-#include <Volt/Animation/BlendSpace.h>
-#include <Volt/Asset/Animation/Animation.h>
+#include <Volt-Animation/BlendSpace.h>
+#include <Volt-Animation/Assets/Animation.h>
 
 #include <Volt/Utility/UIUtility.h>
 

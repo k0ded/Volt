@@ -14,18 +14,18 @@
 
 struct Constants
 {
-    vt::UniformTex2D<uint2> visibilityBuffer;
-    vt::UniformTypedBuffer<uint> materialCountBuffer;
-    vt::UniformTypedBuffer<uint> materialStartBuffer;
-    vt::UniformTypedBuffer<uint2> pixelCollection;
+    vt::Tex2D<uint2> visibilityBuffer;
+    vt::TypedBuffer<uint> materialCountBuffer;
+    vt::TypedBuffer<uint> materialStartBuffer;
+    vt::TypedBuffer<uint2> pixelCollection;
     
     GPUScene gpuScene;
     vt::UniformBuffer<ViewData> viewData;
     
-    vt::UniformRWTex2D<float4> albedo;
-    vt::UniformRWTex2D<float4> normals;
-    vt::UniformRWTex2D<float2> material;
-    vt::UniformRWTex2D<float3> emissive;
+    vt::RWTex2D<float4> albedo;
+    vt::RWTex2D<float4> normals;
+    vt::RWTex2D<float2> material;
+    vt::RWTex2D<float3> emissive;
     
     uint materialId;
     
@@ -129,7 +129,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
 
     const float3 normal = normalize(drawData.transform.RotateVector(normalize(InterpolateFloat3(derivatives, materialData.normals))));
     const float3 tangent = normalize(drawData.transform.RotateVector(normalize(InterpolateFloat3(derivatives, materialData.tangents))));
-    const float3x3 TBN = CalculateTBN(normal, tangent);
+    const float3x3 TBN = CalculateTBN(normal, tangent, materialData.tangentW);
     
     const GPUMaterial material = scene.materialsBuffer.Load(constants.materialId);
     

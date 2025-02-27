@@ -1,15 +1,11 @@
 #include "vtpch.h"
 #include "Volt/Audio/AudioSystem.h"
 
-#include "Volt/Scene/Scene.h"
-#include "Volt/Scene/Entity.h"
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Components/CoreComponents.h>
 
 #include <Volt/Components/AudioComponents.h>
-#include <Volt/Components/CoreComponents.h>
-
-#include <Volt/Rendering/DebugRenderer.h>
-#include <Volt/Physics/Physics.h>
-#include <Volt/Physics/PhysicsScene.h>
 
 #include <Amp/WwiseAudioManager/WwiseAudioManager.h>
 
@@ -196,17 +192,17 @@ void Volt::AudioSystem::UpdateAudioListeners(entt::registry& registry, Weak<Scen
 
 int Volt::AudioSystem::CastRay(const glm::vec3& posA, const glm::vec3& posB, bool debug)
 {
-	RaycastHit hit;
-	if (Physics::GetScene()->Linecast(posA, posB, &hit, 1))
-	{
-		if (debug) DebugRenderer::DrawLine(posA, posB, { 1,0,0,1 });
-		return 1;
-	}
-	else
-	{
-		if (debug) DebugRenderer::DrawLine(posA, posB, { 0,0,1,1 });
-		return 0;
-	}
-
+	//RaycastHit hit;
+	//if (Physics::GetScene()->Linecast(posA, posB, &hit, 1))
+	//{
+	//	if (debug) DebugRenderer::DrawLine(posA, posB, { 1,0,0,1 });
+	//	return 1;
+	//}
+	//else
+	//{
+	//	if (debug) DebugRenderer::DrawLine(posA, posB, { 0,0,1,1 });
+	//	return 0;
+	//}
+	return 0;
 }
 

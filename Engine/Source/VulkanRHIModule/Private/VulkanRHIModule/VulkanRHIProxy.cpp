@@ -21,12 +21,13 @@
 #include "VulkanRHIModule/Images/VulkanImageView.h"
 #include "VulkanRHIModule/Images/VulkanSamplerState.h"
 
-#include "VulkanRHIModule/Memory/VulkanDefaultAllocator.h"
-#include "VulkanRHIModule/Memory/VulkanTransientAllocator.h"
+#include "VulkanRHIModule/Memory/VulkanDefaultGPUAllocator.h"
+#include "VulkanRHIModule/Memory/VulkanTransientGPUAllocator.h"
 #include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
 
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
+#include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Shader/VulkanShaderCompiler.h"
@@ -34,6 +35,9 @@
 #include "VulkanRHIModule/Synchronization/VulkanEvent.h"
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
 #include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
+
+#include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
+#include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
 
 #include "VulkanRHIModule/ImGui/VulkanImGuiImplementation.h"
 
@@ -64,12 +68,12 @@ namespace Volt::RHI
 		return RefPtr<VulkanVertexBuffer>::Create(data, size, stride);
 	}
 
-	RefPtr<StorageBuffer> VulkanRHIProxy::CreateStorageBuffer(uint32_t count, uint64_t elementSize, std::string_view name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator) const
+	RefPtr<StorageBuffer> VulkanRHIProxy::CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<VulkanStorageBuffer>::Create(count, elementSize, name, bufferUsage, memoryUsage, allocator);
 	}
 
-	RefPtr<UniformBuffer> VulkanRHIProxy::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, std::string_view name) const
+	RefPtr<UniformBuffer> VulkanRHIProxy::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const
 	{
 		return RefPtr<VulkanUniformBuffer>::Create(size, data, count, name);
 	}
@@ -104,12 +108,12 @@ namespace Volt::RHI
 		return RefPtr<VulkanPhysicalGraphicsDevice>::Create(createInfo);
 	}
 
-	RefPtr<Swapchain> VulkanRHIProxy::CreateSwapchain(GLFWwindow* window) const
+	RefPtr<Swapchain> VulkanRHIProxy::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanSwapchain>::Create(window);
+		return RefPtr<VulkanSwapchain>::Create(createInfo);
 	}
 
-	RefPtr<Image> VulkanRHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator) const
+	RefPtr<Image> VulkanRHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<VulkanImage>::Create(specification, data, allocator);
 	}
@@ -129,14 +133,14 @@ namespace Volt::RHI
 		return RefPtr<VulkanSamplerState>::Create(createInfo);
 	}
 
-	RefPtr<DefaultAllocator> VulkanRHIProxy::CreateDefaultAllocator() const
+	RefPtr<DefaultGPUAllocator> VulkanRHIProxy::CreateDefaultAllocator() const
 	{
-		return RefPtr<VulkanDefaultAllocator>::Create();
+		return RefPtr<VulkanDefaultGPUAllocator>::Create();
 	}
 
-	RefPtr<TransientAllocator> VulkanRHIProxy::CreateTransientAllocator() const
+	RefPtr<TransientGPUAllocator> VulkanRHIProxy::CreateTransientAllocator() const
 	{
-		return RefPtr<VulkanTransientAllocator>::Create();
+		return RefPtr<VulkanTransientGPUAllocator>::Create();
 	}
 
 	RefPtr<TransientHeap> VulkanRHIProxy::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const
@@ -152,6 +156,11 @@ namespace Volt::RHI
 	RefPtr<ComputePipeline> VulkanRHIProxy::CreateComputePipeline(RefPtr<Shader> shader, bool useGlobalResources) const
 	{
 		return RefPtr<VulkanComputePipeline>::Create(shader, useGlobalResources);
+	}
+
+	RefPtr<RayTracingPipeline> VulkanRHIProxy::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
+	{
+		return RefPtr<VulkanRayTracingPipeline>::Create(createInfo);
 	}
 
 	RefPtr<Shader> VulkanRHIProxy::CreateShader(const ShaderSpecification& specification) const
@@ -182,6 +191,16 @@ namespace Volt::RHI
 	RefPtr<ImGuiImplementation> VulkanRHIProxy::CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanImGuiImplementation>::Create(createInfo);
+	}
+
+	RefPtr<AccelerationStructure> VulkanRHIProxy::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
+	{
+		return RefPtr<VulkanAccelerationStructure>::Create(createInfo);
+	}
+
+	RefPtr<ShaderBindingTable> VulkanRHIProxy::CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const
+	{
+		return RefPtr<VulkanShaderBindingTable>::Create(pipeline);
 	}
 
 	void VulkanRHIProxy::SetRHICallbackInfo(const RHICallbackInfo& callbackInfo)

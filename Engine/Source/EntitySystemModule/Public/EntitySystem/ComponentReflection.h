@@ -2,7 +2,7 @@
 
 #include "MemoryUtility.h"
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetType.h>
 
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Concepts.h>
@@ -160,10 +160,17 @@ namespace Volt
 	class IEnumTypeDesc : public CommonTypeDesc<ValueType::Enum>
 	{
 	public:
+		struct UnderlyingTypeInfo
+		{
+			size_t size;
+			bool isSigned;
+		};
+
 		~IEnumTypeDesc() override = default;
 
 		[[nodiscard]] virtual const Vector<EnumConstant>& GetConstants() const = 0;
 		[[nodiscard]] virtual const Vector<std::string> GetConstantNames() const = 0;
+		[[nodiscard]] virtual UnderlyingTypeInfo GetUnderlyingTypeInfo() const = 0;
 	};
 
 	class IArrayTypeDesc : public CommonTypeDesc<ValueType::Array>
@@ -338,13 +345,13 @@ namespace Volt
 		template<typename Type, typename DefaultValueT, typename TypeParent = T>
 		const ComponentMember& AddMember(Type TypeParent::* memberPtr, std::string_view name, std::string_view label, std::string_view description, const DefaultValueT& defaultValue)
 		{
-			return AddMember(memberPtr, name, label, description, defaultValue, AssetTypes::None);
+			return AddMember(memberPtr, name, label, description, defaultValue, ::AssetTypes::None);
 		}
 
 		template<typename Type, typename DefaultValueT, typename TypeParent = T>
 		const ComponentMember& AddMember(Type TypeParent::* memberPtr, std::string_view name, std::string_view label, std::string_view description, const DefaultValueT& defaultValue, ComponentMemberFlag flags)
 		{
-			return AddMember(memberPtr, name, label, description, defaultValue, AssetTypes::None, flags);
+			return AddMember(memberPtr, name, label, description, defaultValue, ::AssetTypes::None, flags);
 		}
 
 		template<typename Type, typename DefaultValueT, typename AssetTypeType, typename TypeParent = T>
@@ -501,6 +508,7 @@ namespace Volt
 		[[nodiscard]] inline const std::string_view GetLabel() const override { return m_enumLabel; }
 		[[nodiscard]] inline const std::string_view GetDescription() const override { return m_enumDescription; }
 		[[nodiscard]] inline const Vector<EnumConstant>& GetConstants() const override { return m_constants; }
+		[[nodiscard]] inline UnderlyingTypeInfo GetUnderlyingTypeInfo() const override { return UnderlyingTypeInfo{ sizeof(std::underlying_type_t<T>), std::is_signed_v<std::underlying_type_t<T>> }; }
 		[[nodiscard]] const Vector<std::string> GetConstantNames() const override;
 
 	private:

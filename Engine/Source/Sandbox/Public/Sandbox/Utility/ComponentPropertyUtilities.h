@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt/Scene/Entity.h>
+#include <Volt-Scene/Entity.h>
 
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>

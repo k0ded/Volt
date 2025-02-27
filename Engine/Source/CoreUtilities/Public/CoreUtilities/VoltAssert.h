@@ -43,3 +43,11 @@ VTCOREUTIL_API void AssertionFailure(std::string_view expression);
 #define VT_ENSURE(expression)
 #define VT_ENSURE_MSG(expression, message)
 #endif
+
+#ifdef VT_ENABLE_CHECKS
+	#define VT_CHECK(expression) VT_ENSURE(expression)
+	#define VT_CHECK_MSG(expression, message) VT_ENSURE_MSG(expression, message)
+#else
+	#define VT_CHECK(expression) expression
+	#define VT_CHECK_MSG(expression, message) expression
+#endif

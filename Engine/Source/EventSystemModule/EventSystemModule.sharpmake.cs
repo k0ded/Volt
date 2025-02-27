@@ -15,10 +15,12 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
 
-            conf.SolutionFolder = "Engine";
+            conf.SolutionFolder = "Engine/Modules";
 
             conf.PrecompHeader = "eventpch.h";
             conf.PrecompSource = "eventpch.cpp";
+
+			conf.AddPublicDependency<SubSystemModule>(target);
         }
     }
 }

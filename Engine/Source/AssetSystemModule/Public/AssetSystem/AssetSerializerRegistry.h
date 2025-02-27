@@ -11,6 +11,8 @@ class VTAS_API AssetSerializerRegistry
 public:
 	bool RegisterAssetSerializer(VoltGUID typeGuid, Ref<Volt::AssetSerializer> serializer);
 
+	void Clear();
+
 	Volt::AssetSerializer& GetSerializer(AssetType type) const;
 	VT_INLINE bool HasSerializer(AssetType type) const { return m_serializers.contains(type->GetGUID()); }
 

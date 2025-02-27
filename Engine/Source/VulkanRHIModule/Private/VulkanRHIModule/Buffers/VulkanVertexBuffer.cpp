@@ -23,16 +23,13 @@ namespace Volt::RHI
 	VulkanVertexBuffer::~VulkanVertexBuffer()
 	{
 		GraphicsContext::GetResourceStateTracker()->RemoveResource(this);
+	
 		if (!m_allocation)
 		{
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocation = m_allocation]()
-		{
-			GraphicsContext::GetDefaultAllocator()->DestroyBuffer(allocation);
-		});
-
+		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(m_allocation);
 		m_allocation = nullptr;
 	}
 
@@ -46,7 +43,7 @@ namespace Volt::RHI
 		return m_stride;
 	}
 
-	void VulkanVertexBuffer::SetName(std::string_view name)
+	void VulkanVertexBuffer::SetName(const std::string& name)
 	{
 		if (Volt::RHI::vkSetDebugUtilsObjectNameEXT)
 		{
@@ -54,13 +51,13 @@ namespace Volt::RHI
 			nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
 			nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
 			nameInfo.objectHandle = (uint64_t)m_allocation->GetResourceHandle<VkBuffer>();
-			nameInfo.pObjectName = name.data();
+			nameInfo.pObjectName = name.c_str();
 
 			auto device = GraphicsContext::GetDevice();
 			Volt::RHI::vkSetDebugUtilsObjectNameEXT(device->GetHandle<VkDevice>(), &nameInfo);
 		}
 
-		m_name = std::string(name);
+		m_name = name;
 	}
 
 	std::string_view VulkanVertexBuffer::GetName() const
@@ -87,15 +84,11 @@ namespace Volt::RHI
 	{
 		VkDeviceSize bufferSize = size;
 	
-		RefPtr<Allocation> stagingAllocation;
+		Handle<Allocation> stagingAllocation;
 
 		if (m_allocation)
 		{
-			RHIProxy::GetInstance().DestroyResource([allocation = m_allocation]()
-			{
-				GraphicsContext::GetDefaultAllocator()->DestroyBuffer(allocation);
-			});
-
+			GraphicsContext::GetDefaultAllocator()->DestroyBuffer(m_allocation);
 			m_allocation = nullptr;
 		}
 
@@ -103,7 +96,7 @@ namespace Volt::RHI
 
 		if (data != nullptr)
 		{
-			stagingAllocation = allocator->CreateBuffer(bufferSize, BufferUsage::TransferSrc, MemoryUsage::CPU);
+			stagingAllocation = allocator->CreateBuffer(bufferSize, BufferUsage::TransferSrc, MemoryUsage::CPU, "Staging Alloc");
 
 			// Copy to staging buffer
 			{
@@ -115,7 +108,7 @@ namespace Volt::RHI
 
 		// Create GPU buffer
 		{
-			m_allocation = allocator->CreateBuffer(bufferSize, BufferUsage::VertexBuffer | BufferUsage::TransferDst);
+			m_allocation = allocator->CreateBuffer(bufferSize, BufferUsage::VertexBuffer | BufferUsage::TransferDst, MemoryUsage::GPU, m_name);
 		}
 
 		if (data)

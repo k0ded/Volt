@@ -7,10 +7,9 @@
 #include <AssetSystem/AssetManager.h>
 #include "Volt/Core/Application.h"
 
-#include "Volt/Scene/Scene.h"
-#include "Volt/Scene/Entity.h"
-
-#include "Volt/Components/CoreComponents.h"
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/Components/CoreComponents.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/MouseButtonCodes.h>
@@ -25,7 +24,7 @@
 namespace Volt::RHI
 {
 	class Texture2D;
-	class Image2D;
+	class Image;
 }
 
 namespace Volt
@@ -193,8 +192,8 @@ public:
 	private:
 	};
 
-	static ImTextureID GetTextureID(RefPtr<Volt::RHI::Image> texture);
-	static ImTextureID GetTextureID(Ref<Volt::Texture2D> texture);
+	static ImTextureID GetTextureID(RefPtr<Volt::RHI::Image> texture, int32_t mipIndex = -1);
+	static ImTextureID GetTextureID(Ref<Volt::Texture2D> texture, int32_t mipIndex = -1);
 
 	static void Header(const std::string& text);
 

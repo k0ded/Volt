@@ -205,6 +205,17 @@ namespace Volt::RHI
 			return VK_SAMPLER_MIPMAP_MODE_LINEAR;
 		}
 
+		inline constexpr VkIndexType VoltToVulkanIndexType(IndexType indexType)
+		{
+			switch (indexType)
+			{
+				case IndexType::UInt16: return VK_INDEX_TYPE_UINT16;
+				case IndexType::UInt32: return VK_INDEX_TYPE_UINT32;
+			}
+
+			return VK_INDEX_TYPE_NONE_KHR;
+		}
+
 		inline static VkBufferUsageFlags GetVkBufferUsageFlags(BufferUsage usageFlags)
 		{
 			VkBufferUsageFlags result = 0;
@@ -242,6 +253,26 @@ namespace Volt::RHI
 			if ((usageFlags & BufferUsage::IndirectBuffer) != BufferUsage::None)
 			{
 				result |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+			}
+
+			if ((usageFlags & BufferUsage::AccelerationStructure) != BufferUsage::None)
+			{
+				result |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+			}
+
+			if ((usageFlags & BufferUsage::AccelerationStructureInput) != BufferUsage::None)
+			{
+				result |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+			}
+
+			if ((usageFlags & BufferUsage::DeviceAddress) != BufferUsage::None)
+			{
+				result |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+			}
+
+			if ((usageFlags & BufferUsage::ShaderBindingTable) != BufferUsage::None)
+			{
+				result |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
 			}
 
 			if ((usageFlags & BufferUsage::DescriptorBuffer) != BufferUsage::None)

@@ -28,7 +28,6 @@ namespace VoltSharpmake
             conf.AddPublicDependency<EntitySystemModule>(target);
             conf.AddPublicDependency<EventSystemModule>(target);
             conf.AddPublicDependency<RHIModule>(target);
-            conf.AddPublicDependency<RenderCoreModule>(target);
             conf.AddPublicDependency<WindowModule>(target);
             conf.AddPublicDependency<InputModule>(target);
 			conf.AddPublicDependency<VoltAssets>(target);
@@ -36,7 +35,14 @@ namespace VoltSharpmake
             conf.AddPublicDependency<VulkanRHIModule>(target);
             conf.AddPublicDependency<D3D12RHIModule>(target);
 
-            conf.AddPublicDependency<NavigationModule>(target);
+			conf.AddPublicDependency<VoltPhysics>(target);
+			conf.AddPublicDependency<VoltRenderCore>(target);
+			conf.AddPublicDependency<VoltCore>(target);
+			conf.AddPublicDependency<VoltScene>(target);
+			conf.AddPublicDependency<VoltAssets>(target);
+			conf.AddPublicDependency<VoltCoreComponents>(target);
+
+			conf.AddPublicDependency<NavigationModule>(target);
             conf.AddPublicDependency<MosaicModule>(target);
             conf.AddPublicDependency<Amp>(target);
 
@@ -54,9 +60,9 @@ namespace VoltSharpmake
             conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "tinyddsloader"));
         }
 
-		public override void ConfigureRelease(Configuration conf, CommonTarget target)
+		public override void ConfigureDevelopment(Configuration conf, CommonTarget target)
 		{
-			base.ConfigureRelease(conf, target);
+			base.ConfigureDevelopment(conf, target);
 
 			conf.AdditionalCompilerOptions.Add("/bigobj");
 		}

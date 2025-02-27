@@ -1,11 +1,11 @@
 #include "Testing/RenderGraphTests/DrawMeshShaderMeshTest.h"
 
-#include <Volt/Core/Application.h>
-#include <Volt/Asset/Mesh/Mesh.h>
-#include <Volt/Rendering/Renderer.h>
+#include <Volt-Assets/MeshAsset.h>
+
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/Renderer.h>
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
-#include <RenderCore/RenderGraph/RenderContextUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -18,7 +18,7 @@ using namespace Volt;
 RG_DrawMeshShaderMeshTest::RG_DrawMeshShaderMeshTest()
 	: m_commandBufferSet(Renderer::GetFramesInFlight())
 {
-	m_mesh = AssetManager::GetAsset<Mesh>("Engine/Meshes/Primitives/SM_Cube.vtasset");
+	m_mesh = AssetManager::GetAsset<MeshAsset>("Engine/Meshes/Primitives/SM_Cube.vtasset")->GetMesh();
 }
 
 RG_DrawMeshShaderMeshTest::~RG_DrawMeshShaderMeshTest()

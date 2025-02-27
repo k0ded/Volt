@@ -34,7 +34,7 @@ namespace Volt::RHI
 		
 		inline constexpr static uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
-		VulkanSwapchain(GLFWwindow* glfwWindow);
+		VulkanSwapchain(const SwapchainCreateInfo& createInfo);
 		~VulkanSwapchain() override;
 
 		void BeginFrame() override;
@@ -47,6 +47,7 @@ namespace Volt::RHI
 		const uint32_t GetFramesInFlight() const override;
 		const PixelFormat GetFormat() const override;
 		RefPtr<Image> GetCurrentImage() const override;
+		bool IsHDREnabled() const override;
 
 		inline VkImage_T* GetImageAtIndex(const uint32_t index) const { return m_perImageData.at(index).image; }
 
@@ -71,6 +72,7 @@ namespace Volt::RHI
 		uint32_t m_height = 720;
 
 		bool m_vSyncEnabled = false;
+		bool m_isHDREnabled = false;
 		bool m_swapchainNeedsRebuild = false;
 
 		uint32_t m_totalImageCount = 0;
@@ -100,6 +102,7 @@ namespace Volt::RHI
 		};
 
 		SwapchainCapabilities m_capabilities{};
+		SwapchainCreateInfo m_createInfo{};
 
 		Vector<RefPtr<CommandBuffer>> m_commandBuffers;
 		Vector<PerFrameInFlightData> m_perFrameInFlightData{};

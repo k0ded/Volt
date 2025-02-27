@@ -29,6 +29,7 @@ namespace VoltSharpmake
 
             conf.AddPublicDependency<Volt>(target);
 
+			conf.AddPublicDependency<VoltAssets>(target);
             conf.AddPublicDependency<Circuit>(target);
 
             conf.AddPublicDependency<ImGuizmo>(target);
@@ -49,6 +50,8 @@ namespace VoltSharpmake
 			{
 				conf.AddPrivateDependency(target, gameProjectType, DependencySetting.OnlyBuildOrder);
 			}
+
+			conf.AddPrivateDependency<PhysXPhysicsInterface>(target, DependencySetting.OnlyBuildOrder);
 
 			conf.IncludePaths.Add(
                 Path.Combine(Globals.ThirdPartyDirectory ,@"nlohmann/include"),

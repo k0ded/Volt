@@ -1,10 +1,11 @@
 #include "vtpch.h"
 #include "Volt/Asset/Prefab.h"
 
-#include "Volt/Components/CoreComponents.h"
-#include "Volt/Components/PhysicsComponents.h"
+#include <Volt-Scene/Components/CoreComponents.h>
+#include <Volt-Scene/Scene.h>
 
-#include "Volt/Scene/Scene.h"
+#include <Volt-Physics/RigidbodyComponent.h>
+#include <Volt-Physics/CharacterControllerComponent.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -184,7 +185,7 @@ namespace Volt
 			}
 
 			const auto& srcComp = prefabEntity.GetComponent<RigidbodyComponent>();
-			entity.AddComponent<RigidbodyComponent>(srcComp.bodyType, srcComp.layerId, srcComp.mass, srcComp.linearDrag, srcComp.lockFlags, srcComp.angularDrag, srcComp.disableGravity, srcComp.isKinematic, srcComp.collisionType);
+			entity.AddComponent<RigidbodyComponent>(srcComp.m_bodyType, srcComp.m_layerId, srcComp.m_mass, srcComp.m_linearDrag, srcComp.m_lockFlags, srcComp.m_angularDrag, srcComp.m_disableGravity, srcComp.m_isKinematic, srcComp.m_collisionType);
 		}
 
 		if (prefabEntity.HasComponent<CharacterControllerComponent>())

@@ -4,22 +4,19 @@
 #include "Sandbox/Camera/EditorCameraController.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include "Volt/Particles/ParticleSystem.h"
 #include <Volt/Asset/ParticlePreset.h>
 
-#include <Volt/Rendering/SceneRenderer.h>
-
-#include <Volt/Components/LightComponents.h>
-#include <Volt/Components/RenderingComponents.h>
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-CoreComponents/LightComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
 #include <WindowModule/Events/WindowEvents.h>
 
-#include <random>
+#include <CoreUtilities/FileSystem.h>
 
 ParticleEmitterEditor::ParticleEmitterEditor()
 	: EditorWindow("Particle Editor")
@@ -48,9 +45,9 @@ ParticleEmitterEditor::ParticleEmitterEditor()
 
 	// Scene Renderer
 	{
-		Volt::SceneRendererSpecification spec{};
+		Volt::SceneRendererCreateInfo spec{};
 		spec.debugName = "Particle System Editor";
-		spec.scene = myPreviewScene;
+		spec.renderScene = myPreviewScene->GetRenderScene();
 
 		//Volt::SceneRendererSettings settings{};
 		//settings.enableGrid = true;
@@ -120,7 +117,7 @@ bool ParticleEmitterEditor::SavePreset(const std::filesystem::path& indata)
 
 bool ParticleEmitterEditor::OnRenderEvent(Volt::WindowRenderEvent& e)
 {
-	myPreviewRenderer->OnRenderEditor(myCameraController->GetCamera());
+	myPreviewRenderer->OnRenderEditor(myCameraController->GetCamera(), e.GetTimestep());
 	return false;
 }
 
@@ -294,7 +291,7 @@ bool ParticleEmitterEditor::DrawEditorPanel()
 				UI::Property("Camera speed", cameraSpeed);
 				myCameraController->SetTranslationSpeed(cameraSpeed);
 
-				EditorUtils::Property("Skybox", myPreviewScene->GetAllEntitiesWith<Volt::SkylightComponent>()[0].GetComponent<Volt::SkylightComponent>().environmentHandle, AssetTypes::Texture);
+				//EditorUtils::Property("Skybox", myPreviewScene->GetAllEntitiesWith<Volt::SkylightComponent>()[0].GetComponent<Volt::SkylightComponent>().environmentHandle, AssetTypes::Texture);
 				UI::EndProperties();
 			}
 		}

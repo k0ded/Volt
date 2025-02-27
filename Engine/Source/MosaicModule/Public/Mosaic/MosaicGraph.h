@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mosaic/FormatterExtension.h"
+#include "Mosaic/Config.h"
 
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/Containers/Graph.h>
@@ -13,7 +14,7 @@ namespace Mosaic
 	class MosaicNode;
 	class MosaicEdge;
 
-	class MosaicGraph
+	class VTMOSAIC_API MosaicGraph
 	{
 	public:
 		MosaicGraph();

@@ -20,17 +20,23 @@ namespace Volt::RHI
 		void WaitForIdle();
 
 		RefPtr<DeviceQueue> GetDeviceQueue(QueueType queueType) const override;
-		WeakPtr<VulkanPhysicalGraphicsDevice> GetPhysicalDevice() const;
+		const GraphicsDeviceCapabilities& GetCapabilities() const override;
+
+		RawPtr<VulkanPhysicalGraphicsDevice> GetPhysicalDevice() const;
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
+		void InitializeCapabilities();
+
 		VkDevice_T* m_device = nullptr;
 	
 		std::unordered_map<QueueType, RefPtr<DeviceQueue>> m_deviceQueues;
 
-		WeakPtr<VulkanPhysicalGraphicsDevice> m_physicalDevice;
+		RawPtr<VulkanPhysicalGraphicsDevice> m_physicalDevice;
 		GPUCrashTracker m_deviceCrashTracker{};
+
+		GraphicsDeviceCapabilities m_capabilities;
 	};
 }

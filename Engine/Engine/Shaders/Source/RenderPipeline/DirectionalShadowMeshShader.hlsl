@@ -7,8 +7,8 @@
 struct Constants
 {
     GPUScene gpuScene;
-    vt::UniformBuffer<DirectionalLight> directionalLight;
-    vt::UniformTypedBuffer<MeshTaskCommand> taskCommands;
+    vt::UniformBuffer<DirectionalLightShadowData> directionalLightShadowData;
+    vt::TypedBuffer<MeshTaskCommand> taskCommands;
 
     float4x4 viewMatrix;
     float4 cullingFrustum;
@@ -42,7 +42,7 @@ void MainAS(uint groupThreadId : SV_GroupThreadID, uint2 groupId : SV_GroupID)
 
     bool visible = false;
 
-    if (groupThreadId < command.taskCount)
+    if (groupThreadId < command.taskCount && meshletIndex < mesh.meshletCount)
     {
         const Meshlet meshlet = mesh.meshletsBuffer.Load(mesh.meshletStartOffset + meshletIndex);       
         
@@ -98,16 +98,12 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
             out primitives PrimitiveOutput primitives[NUM_MAX_OUT_TRIS])
 {
     const Constants constants = GetConstants<Constants>();
-    const DirectionalLight dirLight = constants.directionalLight.Load();
+    const DirectionalLightShadowData dirLight = constants.directionalLightShadowData.Load();
 
     const PrimitiveDrawData drawData = constants.gpuScene.primitiveDrawDataBuffer.Load(payload.drawId);    
     const GPUMesh mesh = constants.gpuScene.meshesBuffer.Load(drawData.meshId);
 
     uint meshletIndex = payload.meshletIndices[groupId];
-    if (meshletIndex >= mesh.meshletCount)
-    {
-        return;
-    }
 
     const Meshlet meshlet = mesh.meshletsBuffer.Load(mesh.meshletStartOffset + meshletIndex);
     const uint vertexCount = meshlet.GetVertexCount();

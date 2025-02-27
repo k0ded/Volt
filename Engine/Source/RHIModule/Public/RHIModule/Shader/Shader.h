@@ -6,16 +6,24 @@
 #include "RHIModule/Shader/BufferLayout.h"
 #include "RHIModule/Shader/ShaderCommon.h"
 
-#include <CoreUtilities/StringHash.h>
-
-
-#include <filesystem>
 #include <map>
 #include <set>
 
 namespace Volt::RHI
 {
-	struct VTRHI_API ShaderResources
+	enum class ShaderType : uint8_t
+	{
+		Rasterization,
+		Compute,
+		RayGen,
+		RayMiss,
+		RayAnyHit,
+		RayClosestHit,
+		RayIntersection,
+		RayCallable
+	};
+
+	struct ShaderResources
 	{
 		std::map<uint32_t, std::map<uint32_t, ShaderConstantBuffer>> uniformBuffers;
 		std::map<uint32_t, std::map<uint32_t, ShaderStorageBuffer>> storageBuffers;
@@ -53,6 +61,8 @@ namespace Volt::RHI
 		virtual ShaderDataBuffer GetConstantsBuffer() const = 0;
 		virtual bool HasConstants() const = 0;
 		virtual const ShaderResourceBinding& GetResourceBindingFromName(std::string_view name) const = 0;
+		virtual ShaderType GetShaderType() const = 0;
+		virtual size_t GetHash() const = 0;
 
 		static RefPtr<Shader> Create(const ShaderSpecification& createInfo);
 

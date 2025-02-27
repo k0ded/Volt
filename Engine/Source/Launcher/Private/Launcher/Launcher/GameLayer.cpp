@@ -1,30 +1,18 @@
 #include "Launcher/GameLayer.h"
 
-#include <Volt/Scene/Scene.h>
-#include <Volt/Scene/SceneManager.h>
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/SceneManager.h>
 
-#include <AssetSystem/AssetManager.h>
-
-#include <Volt/Rendering/SceneRenderer.h>
-
-#include <Navigation/Core/NavigationSystem.h>
+#include <Volt-Renderer/SceneRenderer.h>
 
 #include <Volt/Core/Application.h>
-#include <Volt/Project/ProjectManager.h>
+#include <Volt-Core/Project/ProjectManager.h>
 
-#include <InputModule/InputCodes.h>
-
-#include <LogModule/Log.h>
+#include <AssetSystem/AssetManager.h>
+#include <Navigation/Core/NavigationSystem.h>
 
 #include <WindowModule/Events/WindowEvents.h>
-#include <WindowModule/WindowManager.h>
-#include <WindowModule/Window.h>
-
-#include <InputModule/Events/KeyboardEvents.h>
-
 #include <EventSystem/EventSystem.h>
-
-#include <yaml-cpp/yaml.h>
 
 void GameLayer::OnAttach()
 {
@@ -203,9 +191,9 @@ void GameLayer::TrySceneTransition()
 
 	// Scene Renderer
 	{
-		Volt::SceneRendererSpecification spec{};
+		Volt::SceneRendererCreateInfo spec{};
 		spec.debugName = "Main Renderer";
-		spec.scene = m_scene;
+		spec.renderScene = m_scene->GetRenderScene();
 		spec.initialResolution = { m_lastWidth, m_lastHeight };
 
 		//Volt::SceneRendererSettings settings = mySceneRenderer->GetSettings();

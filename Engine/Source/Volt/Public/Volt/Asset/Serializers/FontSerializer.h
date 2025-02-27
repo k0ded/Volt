@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Volt-Assets/Assets/Font.h"
-#include "Volt-Assets/Config.h"
+#include <Volt-Core/AssetTypes.h>
 
 #include <AssetSystem/Serialization/AssetSerializer.h>
 #include <AssetSystem/AssetSerializerRegistry.h>

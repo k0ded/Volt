@@ -8,8 +8,8 @@
 
 #include "Sandbox/UserSettingsManager.h"
 
-#include <Volt/Components/LightComponents.h>
-#include <Volt/Scene/Scene.h>
+#include <Volt-CoreComponents/LightComponents.h>
+#include <Volt-Scene/Scene.h>
 
 #include <Volt/Utility/UIUtility.h>
 #include <Volt/Utility/PremadeCommands.h>
@@ -337,10 +337,39 @@ bool ComponentPropertyUtility::DrawComponentEnum(Weak<Volt::Scene> scene, Volt::
 	uint8_t* bytePtr = reinterpret_cast<uint8_t*>(data);
 	const auto& constants = enumType->GetConstants();
 
-	int32_t& currentValue = *reinterpret_cast<int32_t*>(&bytePtr[offset + member.offset]);
+	const Volt::IEnumTypeDesc::UnderlyingTypeInfo typeInfo = enumType->GetUnderlyingTypeInfo();
+	VT_ENSURE(typeInfo.size <= 4);
+
+	int32_t currentValue = 0;
+
+	if (typeInfo.size == 1 && !typeInfo.isSigned)
+	{
+		currentValue = static_cast<int32_t>(*reinterpret_cast<uint8_t*>(&bytePtr[offset]));
+	}
+	else if (typeInfo.size == 1 && typeInfo.isSigned)
+	{
+		currentValue = static_cast<int32_t>(*reinterpret_cast<int8_t*>(&bytePtr[offset]));
+	}
+	else if (typeInfo.size == 2 && !typeInfo.isSigned)
+	{
+		currentValue = static_cast<int32_t>(*reinterpret_cast<uint16_t*>(&bytePtr[offset]));
+	}
+	else if (typeInfo.size == 2 && typeInfo.isSigned)
+	{
+		currentValue = static_cast<int32_t>(*reinterpret_cast<int16_t*>(&bytePtr[offset]));
+	}
+	else if (typeInfo.size == 4 && !typeInfo.isSigned)
+	{
+		currentValue = static_cast<int32_t>(*reinterpret_cast<uint32_t*>(&bytePtr[offset]));
+	}
+	else if (typeInfo.size == 4 && typeInfo.isSigned)
+	{
+		currentValue = *reinterpret_cast<int32_t*>(&bytePtr[offset]);
+	}
+
 	int32_t currentIndex = 0;
 
-	std::unordered_map<int32_t, int32_t> indexToValueMap;
+	vt::map<int32_t, int32_t> indexToValueMap;
 	Vector<std::string> constantNames;
 
 	for (uint32_t index = 0; const auto & constant : constants)
@@ -357,16 +386,47 @@ bool ComponentPropertyUtility::DrawComponentEnum(Weak<Volt::Scene> scene, Volt::
 		index++;
 	}
 
+	int32_t initialValue = currentValue;
+	bool changed = false;
+
 	if (UI::ComboProperty(std::string(member.label), currentValue, constantNames))
 	{
 		currentValue = indexToValueMap.at(currentValue);
 		AddLocalChangeToEntity(entity, member.ownerTypeDesc->GetGUID(), member.name);
 		EditorUtils::MarkEntityAsEdited(entity);
 
-		return true;
+		changed = true;
 	}
 
-	return false;
+	if (initialValue != currentValue)
+	{
+		if (typeInfo.size == 1 && !typeInfo.isSigned)
+		{
+			*reinterpret_cast<uint8_t*>(&bytePtr[offset]) = static_cast<uint8_t>(currentValue);
+		}
+		else if (typeInfo.size == 1 && typeInfo.isSigned)
+		{
+			*reinterpret_cast<int8_t*>(&bytePtr[offset]) = static_cast<int8_t>(currentValue);
+		}
+		else if (typeInfo.size == 2 && !typeInfo.isSigned)
+		{
+			*reinterpret_cast<uint16_t*>(&bytePtr[offset]) = static_cast<uint16_t>(currentValue);
+		}
+		else if (typeInfo.size == 2 && typeInfo.isSigned)
+		{
+			*reinterpret_cast<int16_t*>(&bytePtr[offset]) = static_cast<int16_t>(currentValue);
+		}
+		else if (typeInfo.size == 4 && !typeInfo.isSigned)
+		{
+			*reinterpret_cast<uint32_t*>(&bytePtr[offset]) = static_cast<uint32_t>(currentValue);
+		}
+		else if (typeInfo.size == 4 && typeInfo.isSigned)
+		{
+			*reinterpret_cast<int32_t*>(&bytePtr[offset]) = static_cast<int32_t>(currentValue);
+		}
+	}
+
+	return changed;
 }
 
 bool ComponentPropertyUtility::DrawComponentArray(Weak<Volt::Scene> scene, Volt::Entity entity, const Volt::ComponentMember& member, const Volt::IArrayTypeDesc* arrayDesc, void* data, const size_t offset)

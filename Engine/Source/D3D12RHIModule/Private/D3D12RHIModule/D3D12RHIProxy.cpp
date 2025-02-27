@@ -26,14 +26,17 @@
 #include "D3D12RHIModule/Pipelines/D3D12ComputePipeline.h"
 
 #include "D3D12RHIModule/Memory/D3D12TransientHeap.h"
-#include "D3D12RHIModule/Memory/D3D12TransientAllocator.h"
-#include "D3D12RHIModule/Memory/D3D12DefaultAllocator.h"
+#include "D3D12RHIModule/Memory/D3D12TransientGPUAllocator.h"
+#include "D3D12RHIModule/Memory/D3D12DefaultGPUAllocator.h"
 
 #include "D3D12RHIModule/Images/D3D12SamplerState.h"
 #include "D3D12RHIModule/Images/D3D12ImageView.h"
 #include "D3D12RHIModule/Images/D3D12Image.h"
 
 #include "D3D12RHIModule/Synchronization/D3D12Semaphore.h"
+
+#include <RHIModule/RayTracing/AccelerationStructure.h>
+
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Synchronization/Event.h>
 
@@ -64,12 +67,12 @@ namespace Volt::RHI
 		return RefPtr<D3D12VertexBuffer>::Create(data, size, stride);
 	}
 	
-	RefPtr<StorageBuffer> D3D12RHIProxy::CreateStorageBuffer(uint32_t count, uint64_t elementSize, std::string_view name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<Allocator> allocator) const
+	RefPtr<StorageBuffer> D3D12RHIProxy::CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<D3D12StorageBuffer>::Create(count, elementSize, name, bufferUsage, memoryUsage, allocator);
 	}
 
-	RefPtr<UniformBuffer> D3D12RHIProxy::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, std::string_view name) const
+	RefPtr<UniformBuffer> D3D12RHIProxy::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const
 	{
 		return RefPtr<D3D12UniformBuffer>::Create(size, data, count, name);
 	}
@@ -104,12 +107,12 @@ namespace Volt::RHI
 		return RefPtr<D3D12PhysicalGraphicsDevice>::Create(createInfo);
 	}
 	
-	RefPtr<Swapchain> D3D12RHIProxy::CreateSwapchain(GLFWwindow* window) const
+	RefPtr<Swapchain> D3D12RHIProxy::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
 	{
-		return RefPtr<D3D12Swapchain>::Create(window);
+		return RefPtr<D3D12Swapchain>::Create(createInfo);
 	}
 	
-	RefPtr<Image> D3D12RHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator) const
+	RefPtr<Image> D3D12RHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<D3D12Image>::Create(specification, data, allocator);
 	}
@@ -129,14 +132,14 @@ namespace Volt::RHI
 		return RefPtr<D3D12SamplerState>::Create(createInfo);
 	}
 	
-	RefPtr<DefaultAllocator> D3D12RHIProxy::CreateDefaultAllocator() const
+	RefPtr<DefaultGPUAllocator> D3D12RHIProxy::CreateDefaultAllocator() const
 	{
-		return RefPtr<D3D12DefaultAllocator>::Create();
+		return RefPtr<D3D12DefaultGPUAllocator>::Create();
 	}
 	
-	RefPtr<TransientAllocator> D3D12RHIProxy::CreateTransientAllocator() const
+	RefPtr<TransientGPUAllocator> D3D12RHIProxy::CreateTransientAllocator() const
 	{
-		return RefPtr<D3D12TransientAllocator>::Create();
+		return RefPtr<D3D12TransientGPUAllocator>::Create();
 	}
 	
 	RefPtr<TransientHeap> D3D12RHIProxy::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const
@@ -152,6 +155,11 @@ namespace Volt::RHI
 	RefPtr<ComputePipeline> D3D12RHIProxy::CreateComputePipeline(RefPtr<Shader> shader, bool useGlobalResources) const
 	{
 		return RefPtr<D3D12ComputePipeline>::Create(shader, useGlobalResources);
+	}
+
+	RefPtr<RayTracingPipeline> D3D12RHIProxy::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
+	{
+		return RefPtr<RayTracingPipeline>();
 	}
 	
 	RefPtr<Shader> D3D12RHIProxy::CreateShader(const ShaderSpecification& specification) const
@@ -177,6 +185,16 @@ namespace Volt::RHI
 	RefPtr<Semaphore> D3D12RHIProxy::CreateSemaphore(const SemaphoreCreateInfo& createInfo) const
 	{
 		return RefPtr<D3D12Semaphore>::Create(createInfo);
+	}
+
+	RefPtr<AccelerationStructure> D3D12RHIProxy::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
+	{
+		return RefPtr<AccelerationStructure>();
+	}
+
+	RefPtr<ShaderBindingTable> D3D12RHIProxy::CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const
+	{
+		return RefPtr<ShaderBindingTable>();
 	}
 	
 	RefPtr<ImGuiImplementation> D3D12RHIProxy::CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const

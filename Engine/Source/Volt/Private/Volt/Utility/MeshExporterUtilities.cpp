@@ -1,14 +1,17 @@
 #include "vtpch.h"
 #include "Volt/Utility/MeshExporterUtilities.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <Volt-Assets/MeshAsset.h>
+#include <Volt-Assets/MaterialAsset.h>
 
-#include "Volt/Components/RenderingComponents.h"
-#include "Volt/Components/CoreComponents.h"
+#include <Volt-CoreComponents/RenderingComponents.h>
+#include <Volt-Scene/Components/CoreComponents.h>
+
+#include <AssetSystem/AssetManager.h>
 
 namespace Volt
 {
-	Ref<Volt::Mesh> MeshExporterUtilities::CombineMeshes(Ref<Volt::Scene> scene, const Vector<entt::entity>& entities, Ref<Volt::Material> material, float unitModifier)
+	Ref<Volt::Mesh> MeshExporterUtilities::CombineMeshes(Ref<Volt::Scene> scene, const Vector<entt::entity>& entities, Ref<Volt::MaterialAsset> material, float unitModifier)
 	{
 		Vector<Volt::Vertex> v;
 		Vector<uint32_t> i;
@@ -17,14 +20,14 @@ namespace Volt
 		{
 			auto entity = Volt::Entity(entities[entIndex], scene.get());
 
-			auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(entity.GetComponent<Volt::MeshComponent>().GetHandle());
+			auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(entity.GetComponent<Volt::MeshComponent>().GetHandle());
 
-			auto vertexContainer = mesh->GetVertexContainer();
-			auto indices = mesh->GetIndices();
+			auto vertexContainer = mesh->GetMesh()->GetVertexContainer();
+			auto indices = mesh->GetMesh()->GetIndices();
 
 			Vector<Vertex> vertices;
 
-			for (const auto& submesh : mesh->GetSubMeshes())
+			for (const auto& submesh : mesh->GetMesh()->GetSubMeshes())
 			{
 				vertices.reserve(vertices.size() + submesh.vertexCount);
 
@@ -52,10 +55,10 @@ namespace Volt
 			i.insert(i.end(), indices.begin(), indices.end());
 		}
 
-		return (!v.empty()) ? CreateRef<Volt::Mesh>(v, i, material) : nullptr;
+		return (!v.empty()) ? CreateRef<Volt::Mesh>(v, i, material->GetRenderMaterial()) : nullptr;
 	}
 
-	Ref<Volt::Mesh> MeshExporterUtilities::CombineMeshes(const Vector<Ref<Volt::Mesh>>& meshes, const Vector<glm::mat4>& transforms, Ref<Volt::Material> material)
+	Ref<Volt::Mesh> MeshExporterUtilities::CombineMeshes(const Vector<Ref<Volt::Mesh>>& meshes, const Vector<glm::mat4>& transforms, Ref<Volt::MaterialAsset> material)
 	{
 		Vector<Volt::Vertex> v;
 		Vector<uint32_t> i;
@@ -95,7 +98,7 @@ namespace Volt
 			i.insert(i.end(), indices.begin(), indices.end());
 		}
 
-		return (!v.empty()) ? CreateRef<Volt::Mesh>(v, i, material) : nullptr;
+		return (!v.empty()) ? CreateRef<Volt::Mesh>(v, i, material->GetRenderMaterial()) : nullptr;
 	}
 
 	Vector<Ref<Volt::Mesh>> MeshExporterUtilities::GetMeshes(const Vector<Volt::Entity>& entities)
@@ -108,11 +111,11 @@ namespace Volt
 			{
 				auto handle = entities[entIndex].GetComponent<Volt::MeshComponent>().GetHandle();
 				auto transform = entities[entIndex].GetComponent<Volt::TransformComponent>();
-				auto asset = Volt::AssetManager::GetAsset<Volt::Mesh>(handle);
+				auto asset = Volt::AssetManager::GetAsset<Volt::MeshAsset>(handle);
 
 				if (asset)
 				{
-					Ref<Volt::Mesh> mesh = CreateRef<Volt::Mesh>(*asset);
+					Ref<Volt::Mesh> mesh = CreateRef<Volt::Mesh>(*asset->GetMesh());
 
 					for (auto& vert : mesh->m_vertexContainer.positions)
 					{

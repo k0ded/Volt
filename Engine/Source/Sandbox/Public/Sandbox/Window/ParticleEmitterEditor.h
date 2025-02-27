@@ -2,18 +2,17 @@
 #include "Sandbox/Window/EditorWindow.h"
 
 #include <Volt/Core/Base.h>
-#include <Volt/Scene/Scene.h>
-#include <Volt/Events/ApplicationEvents.h>
+#include <Volt-Scene/Scene.h>
 #include <Volt/Particles/Particle.h>
 
-
+#include <EventSystem/ApplicationEvents.h>
 
 namespace Volt
 {
 	class ParticlePreset;
-	class Material;
 	class SceneRenderer;
 	class WindowRenderEvent;
+	class MaterialAsset;
 }
 
 class EditorCameraController;
@@ -64,7 +63,7 @@ private:
 
 	Ref<Volt::Scene> myPreviewScene;
 	Ref<Volt::SceneRenderer> myPreviewRenderer;
-	Ref<Volt::Material> myGridMaterial;
+	Ref<Volt::MaterialAsset> myGridMaterial;
 
 	Ref<EditorCameraController> myCameraController;
 

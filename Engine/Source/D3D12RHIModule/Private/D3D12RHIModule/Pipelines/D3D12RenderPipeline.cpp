@@ -6,6 +6,8 @@
 
 #include <RHIModule/Images/ImageUtility.h>
 
+#include <CoreUtilities/Math/Hash.h>
+
 #include <dxsc/dxcapi.h>
 
 namespace Volt::RHI
@@ -74,6 +76,12 @@ namespace Volt::RHI
 	void D3D12RenderPipeline::Release()
 	{
 		m_pipeline = nullptr;
+	}
+
+	void D3D12RenderPipeline::GenerateHash()
+	{
+		m_hash = m_createInfo.shader->GetHash();
+		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipeline.Get())));
 	}
 
 	void D3D12RenderPipeline::Invalidate()
@@ -229,10 +237,22 @@ namespace Volt::RHI
 
 		auto d3d12Device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device2*>();
 		VT_D3D12_CHECK(d3d12Device->CreateGraphicsPipelineState(&pipelineStateDesc, VT_D3D12_ID(m_pipeline)));
+
+		GenerateHash();
 	}
 
 	RefPtr<Shader> D3D12RenderPipeline::GetShader() const
 	{
 		return m_createInfo.shader;
+	}
+
+	bool D3D12RenderPipeline::IsValid() const
+	{
+		return m_pipeline != nullptr;
+	}
+
+	size_t D3D12RenderPipeline::GetHash() const
+	{
+		return m_hash;
 	}
 }

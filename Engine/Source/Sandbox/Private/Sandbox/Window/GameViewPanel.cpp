@@ -8,21 +8,19 @@
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/Sandbox.h"
 
-#include <Volt/Asset/Mesh/Mesh.h>
 #include <Volt/Asset/ParticlePreset.h>
 #include <Volt/Asset/Prefab.h>
+
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-Renderer/Camera/Camera.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 #include <InputModule/MouseButtonCodes.h>
 
-#include <Volt/Rendering/SceneRenderer.h>
-#include <Volt/Rendering/Camera/Camera.h>
-
-#include <Volt/Scene/Entity.h>
+#include <Volt-Scene/Entity.h>
 #include <Volt/Utility/UIUtility.h>
-
-#include <Volt/Utility/StringUtility.h>
 
 #include <InputModule/Events/KeyboardEvents.h>
 
@@ -70,9 +68,9 @@ void GameViewPanel::UpdateMainContent()
 
 void GameViewPanel::OnOpen()
 {
-	Volt::SceneRendererSpecification spec{};
+	Volt::SceneRendererCreateInfo spec{};
 	spec.debugName = "Game Viewport";
-	spec.scene = m_editorScene;
+	spec.renderScene = m_editorScene->GetRenderScene();
 	m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
 }
 
@@ -123,7 +121,7 @@ bool GameViewPanel::OnMousePressed(Volt::MouseButtonPressedEvent& e)
 
 bool GameViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 {
-	if (!IsHovered() || Volt::Input::IsButtonDown(Volt::InputCode::Mouse_RB) || ImGui::IsAnyItemActive())
+	if (!IsHovered() || Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_RB) || ImGui::IsAnyItemActive())
 	{
 		return false;
 	}

@@ -1,15 +1,12 @@
 #pragma once
 
+#include "Mosaic/Config.h"
 
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/VoltGUID.h>
 
 #include <unordered_map>
 #include <functional>
-
-#define UNPACK(...) __VA_ARGS__
-#define REGISTER_NODE(nodeType) inline static bool nodeType ## _node_registered = Mosaic::NodeRegistry::RegisterNode<nodeType>()
-#define REGISTER_NODE_TEMPLATE(varName, nodeType) inline static bool varName ## _node_registered = Mosaic::NodeRegistry::RegisterNode<UNPACK nodeType>()
 
 namespace Mosaic
 {
@@ -23,17 +20,17 @@ namespace Mosaic
 		std::string category;
 	};
 
-	class NodeRegistry
+	class VTMOSAIC_API NodeRegistry
 	{
 	public:
 		template<typename T>
-		inline static const bool RegisterNode()
+		inline bool RegisterNode()
 		{
 			// Instantiate node to get GUID
 			Ref<T> tempNode = CreateRef<T>(nullptr);
 			const VoltGUID guid = tempNode->GetGUID();
 
-			if (s_registry.contains(guid))
+			if (m_registry.contains(guid))
 			{	
 				return false;
 			}
@@ -46,24 +43,31 @@ namespace Mosaic
 				return CreateRef<T>(ownerGraph);
 			};
 
-			s_registry[guid] = nodeInfo;
+			m_registry[guid] = nodeInfo;
 			return true;
 		}
 
-		inline static Ref<MosaicNode> CreateNode(const VoltGUID guid, MosaicGraph* ownerGraph)
+		inline Ref<MosaicNode> CreateNode(const VoltGUID guid, MosaicGraph* ownerGraph)
 		{
-			if (!s_registry.contains(guid))
-			{
-				return nullptr;
-			}
-
-			return s_registry.at(guid).createFunction(ownerGraph);
+			VT_ENSURE(m_registry.contains(guid));
+			return m_registry.at(guid).createFunction(ownerGraph);
 		}
 
-		inline static const auto& GetRegistry() { return s_registry; }
-		inline static const auto& GetNodeInfo(const VoltGUID guid) { return s_registry.at(guid); }
+		inline const auto& GetRegistry() { return m_registry; }
+		inline const auto& GetNodeInfo(const VoltGUID guid) { return m_registry.at(guid); }
 
 	private:
-		inline static std::unordered_map<VoltGUID, NodeInfo> s_registry;
+		std::unordered_map<VoltGUID, NodeInfo> m_registry;
 	};
 }
+
+extern VTMOSAIC_API Mosaic::NodeRegistry g_mosaicNodeRegistry;
+
+VT_INLINE Mosaic::NodeRegistry& GetMosaicNodeRegistry()
+{
+	return g_mosaicNodeRegistry;
+}
+
+#define UNPACK(...) __VA_ARGS__
+#define REGISTER_NODE(nodeType) inline static bool nodeType ## _node_registered = GetMosaicNodeRegistry().RegisterNode<nodeType>()
+#define REGISTER_NODE_TEMPLATE(varName, nodeType) inline static bool varName ## _node_registered = GetMosaicNodeRegistry().RegisterNode<UNPACK nodeType>()

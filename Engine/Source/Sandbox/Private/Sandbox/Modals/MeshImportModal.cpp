@@ -5,15 +5,9 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 
 #include <Volt/Utility/UIUtility.h>
-
-#include <Volt/Project/ProjectManager.h>
-
-#include <Volt/Asset/Mesh/MeshSource.h>
-#include <Volt/Asset/Mesh/Mesh.h>
-#include <Volt/Asset/Rendering/Material.h>
-#include <Volt/Asset/Animation/Skeleton.h>
-
 #include <Volt/Asset/SourceAssetImporters/FbxSourceImporter.h>
+
+#include <Volt-Animation/Assets/Skeleton.h>
 
 #include <imgui.h>
 

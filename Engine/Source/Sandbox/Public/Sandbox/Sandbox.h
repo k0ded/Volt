@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Sandbox/Utility/Helpers.h"
-#include "Sandbox/VersionControl/VersionControl.h"
 #include "Sandbox/FileWatcher/FileWatcher.h"
 #include "Sandbox/GameBuilder.h"
 
@@ -13,14 +11,12 @@
 #include <EventSystem/EventListener.h>
 
 #include <imgui.h>
-#include <ImGuizmo.h>
 
 namespace Volt
 {
 	class SceneRenderer;
 	class Scene;
 	class Mesh;
-	class Material;
 	class Camera;
 	class Texture2D;
 
@@ -138,7 +134,7 @@ private:
 	float DrawTitlebar();
 	void DrawMenuBar();
 	
-	void RenderGameView();
+	void RenderGameView(float timestep);
 	///////////////
 
 	///// Debug Rendering /////

@@ -29,7 +29,7 @@
 #include "RecastDebugDraw.h"
 #include "DetourNavMesh.h"
 
-#include <Volt/Rendering/Mesh/MeshCommon.h>
+#include <Volt-Renderer/Mesh/MeshCommon.h>
 
 inline static bool intersectSegmentTriangle(const float* sp, const float* sq,
 									 const float* a, const float* b, const float* c,

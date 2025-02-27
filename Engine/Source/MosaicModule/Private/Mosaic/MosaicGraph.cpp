@@ -53,8 +53,8 @@ namespace Mosaic
 		constexpr VoltGUID Color4ConstantGUID = "{C032E7D5-D545-4DEF-8EC4-6A3980BC41B2}"_guid;
 		constexpr VoltGUID PBROutputNodeGUID = "{343B2C0A-C4E3-41BB-8629-F9939795AC76}"_guid;
 
-		auto colorConstantNode = graph->m_graph.AddNode(NodeRegistry::CreateNode(Color4ConstantGUID, graph.get()));
-		auto pbrOutputNode = graph->m_graph.AddNode(NodeRegistry::CreateNode(PBROutputNodeGUID, graph.get()));
+		auto colorConstantNode = graph->m_graph.AddNode(GetMosaicNodeRegistry().CreateNode(Color4ConstantGUID, graph.get()));
+		auto pbrOutputNode = graph->m_graph.AddNode(GetMosaicNodeRegistry().CreateNode(PBROutputNodeGUID, graph.get()));
 
 		graph->m_graph.LinkNodes(colorConstantNode, pbrOutputNode, CreateRef<MosaicEdge>(0, 0));
 
@@ -63,12 +63,12 @@ namespace Mosaic
 
 	void MosaicGraph::AddNode(const UUID64 uuid, const VoltGUID guid)
 	{
-		m_graph.AddNode(uuid, NodeRegistry::CreateNode(guid, this));
+		m_graph.AddNode(uuid, GetMosaicNodeRegistry().CreateNode(guid, this));
 	}
 
 	void MosaicGraph::AddNode(const VoltGUID guid)
 	{
-		m_graph.AddNode(NodeRegistry::CreateNode(guid, this));
+		m_graph.AddNode(GetMosaicNodeRegistry().CreateNode(guid, this));
 	}
 
 	uint32_t MosaicGraph::GetNextVariableIndex()

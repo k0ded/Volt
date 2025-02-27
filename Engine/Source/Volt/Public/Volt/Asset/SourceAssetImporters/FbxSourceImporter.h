@@ -16,7 +16,7 @@ namespace fbxsdk
 
 namespace Volt
 {
-	class Material;
+	class MaterialAsset;
 	class Mesh;
 	class Skeleton;
 	class Animation;
@@ -39,7 +39,7 @@ namespace Volt
 
 		using JointVertexLinkMap = std::unordered_multimap<uint32_t, JointLink>;
 
-		void CreateVoltMeshFromFbxMesh(const fbxsdk::FbxMesh& fbxMesh, Ref<Mesh> destinationMesh, const Vector<Ref<Material>>& materials, const JointVertexLinkMap* jointVertexLinks) const;
+		void CreateVoltMeshFromFbxMesh(const fbxsdk::FbxMesh& fbxMesh, Ref<Mesh> destinationMesh, const Vector<Ref<MaterialAsset>>& materials, const JointVertexLinkMap* jointVertexLinks) const;
 		void CreateVoltSkeletonFromFbxSkeleton(const FbxSkeletonContainer& fbxSkeleton, Ref<Skeleton> destinationSkeleton) const;
 
 		void FindJointVertexLinksAndSetupSkeleton(const fbxsdk::FbxMesh& fbxMesh, FbxSkeletonContainer& inOutSkeleton, JointVertexLinkMap& outVertexLinks) const;

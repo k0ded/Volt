@@ -1,7 +1,5 @@
 #include "Testing/RenderGraphTests/DrawTriangleTest.h"
 
-#include <Volt/Core/Application.h>
-
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderContextUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>

@@ -22,7 +22,8 @@ namespace VoltSharpmake
         [Configure]
         public virtual void ConfigureAll(Configuration conf, CommonTarget target)
         {
-            conf.Output = Configuration.OutputType.None;
+            conf.Output = Configuration.OutputType.DotNetClassLibrary;
+			conf.IsExcludedFromBuild = true;
 
             conf.ProjectFileName = "[project.Name]";
             // Sets where the project file (csproj) will be saved

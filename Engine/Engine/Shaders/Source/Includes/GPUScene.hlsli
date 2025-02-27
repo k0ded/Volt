@@ -4,6 +4,7 @@
 #include "Resources.hlsli"
 #include "BoundingVolumes.hlsli"
 #include "Transform.hlsli"
+#include "Lights.hlsli"
 
 #define MAX_LOD_COUNT 8
 
@@ -85,6 +86,7 @@ struct GPUMesh
     vt::TypedBuffer<VertexMaterialData> vertexMaterialBuffer;
     vt::TypedBuffer<VertexAnimationData> vertexAnimationInfoBuffer;
     vt::TypedBuffer<uint16_t> vertexBoneInfluencesBuffer;
+    vt::TypedBuffer<uint> indexBuffer;
 
     vt::TypedBuffer<float> vertexBoneWeightsBuffer; // Should be packed
     vt::TypedBuffer<uint> meshletDataBuffer;
@@ -142,12 +144,13 @@ struct SDFPrimitiveDrawData
 
 struct GPUScene
 {
-    vt::UniformTypedBuffer<GPUMesh> meshesBuffer;
-    vt::UniformTypedBuffer<GPUMeshSDF> sdfMeshesBuffer;
-    vt::UniformTypedBuffer<GPUMaterial> materialsBuffer;
-    vt::UniformTypedBuffer<PrimitiveDrawData> primitiveDrawDataBuffer;
-    vt::UniformTypedBuffer<SDFPrimitiveDrawData> sdfPrimitiveDrawDataBuffer;
-    vt::UniformTypedBuffer<float4x4> bonesBuffer;
+    vt::TypedBuffer<GPUMesh> meshesBuffer;
+    vt::TypedBuffer<GPUMeshSDF> sdfMeshesBuffer;
+    vt::TypedBuffer<GPUMaterial> materialsBuffer;
+    vt::TypedBuffer<PrimitiveDrawData> primitiveDrawDataBuffer;
+    vt::TypedBuffer<PrimitiveDrawData> prevPrimitiveDrawDataBuffer;
+    vt::TypedBuffer<float4x4> bonesBuffer;
+    vt::TypedBuffer<LightDrawData> lightsBuffer;
 
-    vt::UniformTypedBuffer<uint> validPrimitiveDrawDatasBuffer;
+    vt::TypedBuffer<uint> validPrimitiveDrawDatasBuffer;
 };

@@ -3,10 +3,10 @@
 #include "VulkanRHIModule/Core.h"
 
 #include <RHIModule/Descriptors/DescriptorTable.h>
+
 #include <CoreUtilities/Buffer/Buffer.h>
-#include <CoreUtilities/Pointers/WeakPtr.h>
-
-
+#include <CoreUtilities/Pointers/RawPtr.h>
+#include <CoreUtilities/Allocators/Handle.h>
 
 namespace Volt::RHI
 {
@@ -26,19 +26,20 @@ namespace Volt::RHI
 	};
 
 	class Allocation;
+
 	class VulkanDescriptorBufferTable : public DescriptorTable
 	{
 	public:
 		VulkanDescriptorBufferTable(const DescriptorTableCreateInfo& createInfo);
 		~VulkanDescriptorBufferTable() override;
 
-		void SetImageView(WeakPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
-		void SetBufferView(WeakPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
-		void SetSamplerState(WeakPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex /* = 0 */) override;
+		void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
+		void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
+		void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex /* = 0 */) override;
 
-		void SetImageView(std::string_view name, WeakPtr<ImageView> view, uint32_t arrayIndex = 0) override;
-		void SetBufferView(std::string_view name, WeakPtr<BufferView> view, uint32_t arrayIndex = 0) override;
-		void SetSamplerState(std::string_view name, WeakPtr<SamplerState> samplerState, uint32_t arrayIndex = 0) override;
+		void SetImageView(std::string_view name, RawPtr<ImageView> view, uint32_t arrayIndex = 0) override;
+		void SetBufferView(std::string_view name, RawPtr<BufferView> view, uint32_t arrayIndex = 0) override;
+		void SetSamplerState(std::string_view name, RawPtr<SamplerState> samplerState, uint32_t arrayIndex = 0) override;
 
 		void PrepareForRender() override;
 
@@ -54,11 +55,11 @@ namespace Volt::RHI
 
 		void CalculateDescriptorOffsets();
 
-		WeakPtr<Shader> m_shader;
+		RawPtr<Shader> m_shader;
 		uint32_t m_descriptorBufferCount = 0;
 		uint64_t m_accumulatedSize = 0;
 
-		RefPtr<Allocation> m_descriptorBuffer;
+		Handle<Allocation> m_descriptorBuffer;
 		Buffer m_hostDescriptorBuffer;
 		DescriptorTypeOffsets m_descriptorTypeOffsets{};
 

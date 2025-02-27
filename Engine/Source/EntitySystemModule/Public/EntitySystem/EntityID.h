@@ -2,6 +2,8 @@
 
 #include "EntitySystem/Config.h"
 
+#include <yaml-cpp/yaml.h>
+
 class BinaryStreamReader;
 class BinaryStreamWriter;
 
@@ -54,5 +56,25 @@ namespace std
 			return formatter<string>::format(
 			  std::format("{}", id.Get()), ctx);
 		}
+	};
+}
+
+namespace YAML
+{
+	template<>
+	struct convert<Volt::EntityID>
+	{
+		static Node encode(const Volt::EntityID& rhs)
+		{
+			Node node;
+			node.push_back((uint32_t)rhs);
+			return node;
+		};
+
+		static bool decode(const Node& node, Volt::EntityID& v)
+		{
+			v = node.as<uint32_t>();
+			return true;
+		};
 	};
 }

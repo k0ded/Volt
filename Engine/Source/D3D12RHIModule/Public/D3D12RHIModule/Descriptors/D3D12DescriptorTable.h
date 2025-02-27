@@ -18,13 +18,13 @@ namespace Volt::RHI
 		D3D12DescriptorTable(const DescriptorTableCreateInfo& createInfo);
 		~D3D12DescriptorTable() override;
 
-		void SetImageView(WeakPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
-		void SetBufferView(WeakPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
-		void SetSamplerState(WeakPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex /* = 0 */) override;
+		void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
+		void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
+		void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex /* = 0 */) override;
 
-		void SetImageView(std::string_view name, WeakPtr<ImageView> view, uint32_t arrayIndex = 0) override;
-		void SetBufferView(std::string_view name, WeakPtr<BufferView> view, uint32_t arrayIndex = 0) override;
-		void SetSamplerState(std::string_view name, WeakPtr<SamplerState> samplerState, uint32_t arrayIndex = 0) override;
+		void SetImageView(std::string_view name, RawPtr<ImageView> view, uint32_t arrayIndex = 0) override;
+		void SetBufferView(std::string_view name, RawPtr<BufferView> view, uint32_t arrayIndex = 0) override;
+		void SetSamplerState(std::string_view name, RawPtr<SamplerState> samplerState, uint32_t arrayIndex = 0) override;
 
 		void PrepareForRender() override;
 		void Bind(CommandBuffer& commandBuffer) override;
@@ -34,9 +34,9 @@ namespace Volt::RHI
 		void* GetHandleImpl() const override;
 
 	private:
-		void SetImageView(WeakPtr<ImageView> imageView, uint32_t set, uint32_t binding, ShaderRegisterType registerType);
-		void SetBufferView(WeakPtr<BufferView> bufferView, uint32_t set, uint32_t binding, ShaderRegisterType registerType);
-		void SetSamplerState(WeakPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, ShaderRegisterType registerType);
+		void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, ShaderRegisterType registerType);
+		void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, ShaderRegisterType registerType);
+		void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, ShaderRegisterType registerType);
 
 		void Invalidate();
 		void Release();
@@ -44,7 +44,7 @@ namespace Volt::RHI
 		void CreateDescriptorHeaps(uint32_t mainDescriptorCount, uint32_t samplerDescriptorCount);
 		void AllocateDescriptors();
 
-		WeakPtr<Shader> m_shader;
+		RawPtr<Shader> m_shader;
 		bool m_isDirty = false;
 		bool m_isComputeTable = false;
 		uint32_t m_descriptorTableRootParamStartIndex = 0;

@@ -21,7 +21,7 @@
 
 #include "ChunkyTriMesh.h"
 
-#include <Volt/Asset/Mesh/Mesh.h>
+#include <Volt-Renderer/Mesh/Mesh.h>
 
 static const int MAX_CONVEXVOL_PTS = 12;
 struct ConvexVolume

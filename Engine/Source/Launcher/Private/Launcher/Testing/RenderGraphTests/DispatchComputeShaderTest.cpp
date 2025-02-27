@@ -1,11 +1,10 @@
 #include "Testing/RenderGraphTests/DispatchComputeShaderTest.h"
 
-#include <Volt/Core/Application.h>
-
 #include <RenderCore/RenderGraph/RenderGraph.h>
-#include <RenderCore/RenderGraph/RenderContextUtils.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
+
+#include <CoreUtilities/Math/Math.h>
 
 using namespace Volt;
 
@@ -37,7 +36,7 @@ bool RG_DispatchComputeShaderTest::RunTest()
 		builder.SetHasSideEffect();
 		builder.SetIsComputePass();
 	},
-	[=](const Data& data, RenderContext& context) 
+	[=](const Data& data, RenderContext& context)
 	{
 		auto pipeline = ShaderMap::GetComputePipeline("RG_DispatchComputeShaderTest");
 

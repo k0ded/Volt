@@ -17,8 +17,11 @@
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Memory/MemoryUtility.h>
+#include <RHIModule/RayTracing/AccelerationStructure.h>
+#include <RHIModule/Globals.h>
 
 #include <CoreUtilities/ComparisonHelpers.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <vulkan/vulkan.h>
 
@@ -51,11 +54,8 @@ namespace Volt::RHI
 	}
 
 	VulkanBindlessDescriptorTable::VulkanBindlessDescriptorTable(uint64_t framesInFlight)
-		: m_image2DRegistry(1, framesInFlight), m_image2DArrayRegistry(1, framesInFlight), m_image3DRegistry(1, framesInFlight), m_imageCubeRegistry(1, framesInFlight),
-		m_bufferRegistry(1, framesInFlight), m_samplerRegistry(1, framesInFlight), m_framesInFlight(framesInFlight), m_heapRegistry(2, framesInFlight)
+		: m_mainRegistry(2, framesInFlight), m_samplerRegistry(1, framesInFlight), m_framesInFlight(framesInFlight)
 	{
-		m_useHeapRegistry = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->IsExtensionAvailiable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-
 		m_activeDescriptorWrites.reserve(100);
 		m_mainDescriptorSets.resize(framesInFlight, nullptr);
 
@@ -67,103 +67,38 @@ namespace Volt::RHI
 		Release();
 	}
 
-	ResourceHandle VulkanBindlessDescriptorTable::RegisterBuffer(WeakPtr<StorageBuffer> storageBuffer)
+	ResourceHandle VulkanBindlessDescriptorTable::RegisterBuffer(RawPtr<StorageBuffer> storageBuffer)
 	{
 		VT_PROFILE_FUNCTION();
-		if (m_useHeapRegistry)
-		{
-			return m_heapRegistry.RegisterResource(storageBuffer, ImageUsage::None, static_cast<uint32_t>(ResourceType::StorageBuffer));
-		}
-		else
-		{
-			return m_bufferRegistry.RegisterResource(storageBuffer);
-		}
+		return m_mainRegistry.RegisterResource(storageBuffer, ImageUsage::None, static_cast<uint32_t>(ResourceType::StorageBuffer));
 	}
 
-	ResourceHandle VulkanBindlessDescriptorTable::RegisterImageView(WeakPtr<ImageView> imageView)
+	ResourceHandle VulkanBindlessDescriptorTable::RegisterImageView(RawPtr<ImageView> imageView)
 	{
 		VT_PROFILE_FUNCTION();
 
-
-		if (m_useHeapRegistry)
-		{
-			// Image1D in this case means any type if image.
-			return m_heapRegistry.RegisterResource(imageView, imageView->GetImageUsage(), static_cast<uint32_t>(ResourceType::Image1D));
-		}
-		else
-		{
-			const auto viewType = imageView->GetViewType();
-
-			if (viewType == RHI::ImageViewType::View2D)
-			{
-				return m_image2DRegistry.RegisterResource(imageView, imageView->GetImageUsage());
-			}
-			else if (viewType == RHI::ImageViewType::View2DArray)
-			{
-				return m_image2DArrayRegistry.RegisterResource(imageView, imageView->GetImageUsage());
-			}
-			else if (viewType == RHI::ImageViewType::ViewCube)
-			{
-				return m_imageCubeRegistry.RegisterResource(imageView, imageView->GetImageUsage());
-			}
-			else if (viewType == ImageViewType::View3D)
-			{
-				return m_image3DRegistry.RegisterResource(imageView, imageView->GetImageUsage());
-			}
-
-		}
+		return m_mainRegistry.RegisterResource(imageView, imageView->GetImageUsage(), static_cast<uint32_t>(ResourceType::Image1D));
 
 		VT_ENSURE(false);
 		return Resource::Invalid;
 	}
 
-	ResourceHandle VulkanBindlessDescriptorTable::RegisterSamplerState(WeakPtr<SamplerState> samplerState)
+	ResourceHandle VulkanBindlessDescriptorTable::RegisterSamplerState(RawPtr<SamplerState> samplerState)
 	{
 		VT_PROFILE_FUNCTION();
 		return m_samplerRegistry.RegisterResource(samplerState);
 	}
 
-	void VulkanBindlessDescriptorTable::UnregisterBuffer(ResourceHandle handle)
+	void VulkanBindlessDescriptorTable::UnregisterResource(ResourceHandle handle)
 	{
 		VT_PROFILE_FUNCTION();
-		if (m_useHeapRegistry)
-		{
-			m_heapRegistry.UnregisterResource(handle);
-		}
-		else
-		{
-			m_bufferRegistry.UnregisterResource(handle);
-		}
+		m_mainRegistry.UnregisterResource(handle);
 	}
 
-	void VulkanBindlessDescriptorTable::UnregisterImageView(ResourceHandle handle, ImageViewType viewType)
+	void VulkanBindlessDescriptorTable::MarkResourceAsDirty(ResourceHandle handle)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(viewType == RHI::ImageViewType::View2D || viewType == RHI::ImageViewType::View2DArray || viewType == RHI::ImageViewType::ViewCube || viewType == ImageViewType::View3D);
-
-		if (m_useHeapRegistry)
-		{
-			m_heapRegistry.UnregisterResource(handle);
-		}
-		else
-		{
-			if (viewType == RHI::ImageViewType::View2D)
-			{
-				m_image2DRegistry.UnregisterResource(handle);
-			}
-			else if (viewType == RHI::ImageViewType::View2DArray)
-			{
-				m_image2DArrayRegistry.UnregisterResource(handle);
-			}
-			else if (viewType == RHI::ImageViewType::ViewCube)
-			{
-				m_imageCubeRegistry.UnregisterResource(handle);
-			}
-			else if (viewType == ImageViewType::View3D)
-			{
-				m_image3DRegistry.UnregisterResource(handle);
-			}
-		}
+		m_mainRegistry.MarkAsDirty(handle);
 	}
 
 	void VulkanBindlessDescriptorTable::UnregisterSamplerState(ResourceHandle handle)
@@ -172,99 +107,26 @@ namespace Volt::RHI
 		m_samplerRegistry.UnregisterResource(handle);
 	}
 
-	void VulkanBindlessDescriptorTable::MarkBufferAsDirty(ResourceHandle handle)
-	{
-		VT_PROFILE_FUNCTION();
-		if (m_useHeapRegistry)
-		{
-			m_heapRegistry.MarkAsDirty(handle);
-		}
-		else
-		{
-			m_bufferRegistry.MarkAsDirty(handle);
-		}
-	}
-
-	void VulkanBindlessDescriptorTable::MarkImageViewAsDirty(ResourceHandle handle, RHI::ImageViewType viewType)
-	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(viewType == RHI::ImageViewType::View2D || viewType == RHI::ImageViewType::View2DArray || viewType == RHI::ImageViewType::ViewCube);
-
-		if (m_useHeapRegistry)
-		{
-			m_heapRegistry.MarkAsDirty(handle);
-		}
-		else
-		{
-			if (viewType == RHI::ImageViewType::View2D)
-			{
-				m_image2DRegistry.MarkAsDirty(handle);
-			}
-			else if (viewType == RHI::ImageViewType::View2DArray)
-			{
-				m_image2DArrayRegistry.MarkAsDirty(handle);
-			}
-			else if (viewType == RHI::ImageViewType::ViewCube)
-			{
-				m_imageCubeRegistry.MarkAsDirty(handle);
-			}
-			else if (viewType == RHI::ImageViewType::View3D)
-			{
-				m_image3DRegistry.MarkAsDirty(handle);
-			}
-		}
-	}
-
 	void VulkanBindlessDescriptorTable::MarkSamplerStateAsDirty(ResourceHandle handle)
 	{
 		VT_PROFILE_FUNCTION();
 		m_samplerRegistry.MarkAsDirty(handle);
 	}
 
-	ResourceHandle VulkanBindlessDescriptorTable::GetBufferHandle(WeakPtr<RHI::StorageBuffer> storageBuffer)
-	{
-		if (m_useHeapRegistry)
-		{
-			return m_heapRegistry.GetResourceHandle(storageBuffer);
-		}
-		else
-		{
-			return m_bufferRegistry.GetResourceHandle(storageBuffer);
-		}
-	}
-
 	void VulkanBindlessDescriptorTable::Update()
 	{
 		VT_PROFILE_FUNCTION();
 
-		if (m_useHeapRegistry)
-		{
-			m_heapRegistry.Update();
-		}
-		else
-		{
-			m_image2DRegistry.Update();
-			m_image2DArrayRegistry.Update();
-			m_imageCubeRegistry.Update();
-			m_image3DRegistry.Update();
-			m_samplerRegistry.Update();
-			m_bufferRegistry.Update();
-		}
+		m_mainRegistry.Update();
+		m_samplerRegistry.Update();
 
 		m_frameIndex = (m_frameIndex + 1) % m_framesInFlight;
 	}
 
 	void VulkanBindlessDescriptorTable::PrepareForRender()
 	{
-		if (m_useHeapRegistry)
-		{
-			PrepareHeapForRender();
-		}
-		else
-		{
-			PrepareDefaultForRender();
-		}
-			
+		PrepareHeapForRender();
+
 		if (m_activeDescriptorWrites.empty())
 		{
 			return;
@@ -280,17 +142,22 @@ namespace Volt::RHI
 		m_activeDescriptorBufferInfos.clear();
 	}
 
+	bool VulkanBindlessDescriptorTable::IsResourceValid(ResourceHandle handle) const
+	{
+		return m_mainRegistry.IsResourceRegistered(handle) || m_samplerRegistry.IsResourceRegistered(handle);
+	}
+
 	void* VulkanBindlessDescriptorTable::GetHandleImpl() const
 	{
 		return GetCurrentMainDescriptorSet();
 	}
 
-	void VulkanBindlessDescriptorTable::Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride)
+	void VulkanBindlessDescriptorTable::Bind(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)
 	{
 		VT_PROFILE_FUNCTION();
 		VulkanCommandBuffer& vulkanCommandBuffer = commandBuffer.AsRef<VulkanCommandBuffer>();
 
-		VkPipelineBindPoint bindPoint;
+		VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		uint32_t descriptorSetCount = 0;
 
 		if (vulkanCommandBuffer.m_currentRenderPipeline)
@@ -298,10 +165,15 @@ namespace Volt::RHI
 			descriptorSetCount = vulkanCommandBuffer.m_currentRenderPipeline->GetShader()->GetResources().renderGraphConstantsData.IsValid() ? 2 : 1;
 			bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		}
-		else
+		else if (vulkanCommandBuffer.m_currentComputePipeline)
 		{
 			descriptorSetCount = vulkanCommandBuffer.m_currentComputePipeline->GetShader()->GetResources().renderGraphConstantsData.IsValid() ? 2 : 1;
 			bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+		}
+		else if (vulkanCommandBuffer.m_currentRayTracingPipeline)
+		{
+			descriptorSetCount = vulkanCommandBuffer.m_currentRayTracingPipeline->GetRenderGraphConstants().IsValid() ? 2 : 1;
+			bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
 		}
 
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
@@ -313,14 +185,14 @@ namespace Volt::RHI
 		std::array<VkDescriptorSet, 2> descriptorSets = { GetCurrentMainDescriptorSet(), hasConstantsSet ? GetOrAllocateConstantsSet() : nullptr };
 		if (hasConstantsSet)
 		{
-			WriteConstantsSet(descriptorSets[1], constantsBuffer);
+			WriteConstantsSet(descriptorSets[1], constantsBuffer, accelerationStructure);
 		}
 
 		vkCmdBindDescriptorSets(vulkanCommandBuffer.GetHandle<VkCommandBuffer>(), bindPoint, vulkanCommandBuffer.GetCurrentPipelineLayout(), 0, descriptorSetCount, descriptorSets.data(), hasConstantsSet ? 1 : 0, &offset);
 
 		if (hasConstantsSet)
 		{
-			WeakPtr<VulkanBindlessDescriptorTable> tablePtr = this;
+			RefPtr<VulkanBindlessDescriptorTable> tablePtr = CreateRefPtrFromThis();
 
 			RHIProxy::GetInstance().DestroyResource([tablePtr, descriptor = descriptorSets[1]]()
 			{
@@ -339,7 +211,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]() 
+		RHIProxy::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), descriptorPool, nullptr);
@@ -358,6 +230,7 @@ namespace Volt::RHI
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10000 },
 			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10000 },
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10000 },
+			{ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 } 
 		};
 
 		VkDescriptorPoolCreateInfo poolInfo{};
@@ -388,19 +261,19 @@ namespace Volt::RHI
 	void VulkanBindlessDescriptorTable::PrepareHeapForRender()
 	{
 		VT_PROFILE_FUNCTION();
-		
+
 		// Main heap
 		{
-			std::scoped_lock lock{ m_heapRegistry.GetMutex() };
-			for (const auto& resourceHandle : m_heapRegistry.GetDirtyResources())
+			std::scoped_lock lock{ m_mainRegistry.GetMutex() };
+			for (const auto& resourceHandle : m_mainRegistry.GetDirtyResources())
 			{
-				const auto& resourceData = m_heapRegistry.GetResource(resourceHandle);
+				const auto& resourceData = m_mainRegistry.GetResource(resourceHandle);
 				const ResourceType resourceType = static_cast<ResourceType>(resourceData.userData);
 
 				if (resourceType == ResourceType::StorageBuffer)
 				{
 					auto storageBuffer = resourceData.resource.As<RHI::StorageBuffer>();
-					
+
 					DescriptorBufferInfo& bufferInfo = m_activeDescriptorBufferInfos.emplace_back();
 					bufferInfo.range = storageBuffer->GetByteSize();
 					bufferInfo.offset = 0;
@@ -458,7 +331,7 @@ namespace Volt::RHI
 				}
 			}
 
-			m_heapRegistry.ClearDirtyResources();
+			m_mainRegistry.ClearDirtyResources();
 		}
 
 		// Samplers
@@ -474,200 +347,6 @@ namespace Volt::RHI
 
 				auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
 				Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::SAMPLERS_BINDING, VK_DESCRIPTOR_TYPE_SAMPLER, GetCurrentMainDescriptorSet(), resourceHandle.Get());
-				descriptorWrite.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageInfo);
-			}
-			m_samplerRegistry.ClearDirtyResources();
-		}
-	}
-
-	void VulkanBindlessDescriptorTable::PrepareDefaultForRender()
-	{
-		VT_PROFILE_FUNCTION();
-
-		// Buffers
-		{
-			std::scoped_lock lock{ m_bufferRegistry.GetMutex() };
-			for (const auto& resourceHandle : m_bufferRegistry.GetDirtyResources())
-			{
-				const auto& resourceData = m_bufferRegistry.GetResource(resourceHandle);
-				auto storageBuffer = resourceData.resource.As<RHI::StorageBuffer>();
-
-				DescriptorBufferInfo& bufferInfo = m_activeDescriptorBufferInfos.emplace_back();
-				bufferInfo.range = storageBuffer->GetByteSize();
-				bufferInfo.offset = 0;
-				bufferInfo.buffer = storageBuffer->GetHandle<VkBuffer>();
-
-				// Read Only
-				{
-					auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
-					Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::BYTEADDRESSBUFFER_BINDING, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, GetCurrentMainDescriptorSet(), resourceHandle.Get());
-					descriptorWrite.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(&bufferInfo);
-				}
-
-				// Read-Write
-				{
-					auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
-					Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::RWBYTEADDRESSBUFFER_BINDING, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, GetCurrentMainDescriptorSet(), resourceHandle.Get());
-					descriptorWrite.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(&bufferInfo);
-				}
-			}
-			m_bufferRegistry.ClearDirtyResources();
-		}
-
-		// Image2D
-		{
-			std::scoped_lock lock{ m_image2DRegistry.GetMutex() };
-			for (const auto& resourceHandle : m_image2DRegistry.GetDirtyResources())
-			{
-				const auto& resourceData = m_image2DRegistry.GetResource(resourceHandle);
-				VT_ENSURE(resourceData.imageUsage != RHI::ImageUsage::None);
-
-				const auto imageView = resourceData.resource.As<RHI::ImageView>();
-
-				DescriptorImageInfo baseImageInfo{};
-				baseImageInfo.sampler = nullptr;
-				baseImageInfo.imageView = imageView->GetHandle<VkImageView>();
-
-				// Read Only
-				{
-					baseImageInfo.imageLayout = static_cast<uint32_t>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-					auto& imageInfo = m_activeDescriptorImageInfos.emplace_back(baseImageInfo);
-
-					auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
-					Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::TEXTURE2D_BINDING, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, GetCurrentMainDescriptorSet(), resourceHandle.Get());
-					descriptorWrite.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageInfo);
-				}
-
-				// Read-Write
-				if (resourceData.imageUsage == RHI::ImageUsage::Storage || resourceData.imageUsage == RHI::ImageUsage::AttachmentStorage)
-				{
-					baseImageInfo.imageLayout = static_cast<uint32_t>(VK_IMAGE_LAYOUT_GENERAL);
-					auto& imageInfo = m_activeDescriptorImageInfos.emplace_back(baseImageInfo);
-
-					auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
-					Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::RWTEXTURE2D_BINDING, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, GetCurrentMainDescriptorSet(), resourceHandle.Get());
-					descriptorWrite.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageInfo);
-				}
-			}
-			m_image2DRegistry.ClearDirtyResources();
-		}
-
-		// Image2DArray
-		{
-			std::scoped_lock lock{ m_image2DArrayRegistry.GetMutex() };
-			for (const auto& resourceHandle : m_image2DArrayRegistry.GetDirtyResources())
-			{
-				const auto& resourceData = m_image2DArrayRegistry.GetResource(resourceHandle);
-				VT_ENSURE(resourceData.imageUsage != RHI::ImageUsage::None);
-
-				const auto imageView = resourceData.resource.As<RHI::ImageView>();
-
-				DescriptorImageInfo baseImageInfo{};
-				baseImageInfo.sampler = nullptr;
-				baseImageInfo.imageView = imageView->GetHandle<VkImageView>();
-
-				// Read Only
-				{
-					baseImageInfo.imageLayout = static_cast<uint32_t>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-					auto& imageInfo = m_activeDescriptorImageInfos.emplace_back(baseImageInfo);
-
-					auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
-					Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::TEXTURE2DARRAY_BINDING, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, GetCurrentMainDescriptorSet(), resourceHandle.Get());
-					descriptorWrite.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageInfo);
-				}
-
-				// Read-Write
-				if (resourceData.imageUsage == RHI::ImageUsage::Storage || resourceData.imageUsage == RHI::ImageUsage::AttachmentStorage)
-				{
-					baseImageInfo.imageLayout = static_cast<uint32_t>(VK_IMAGE_LAYOUT_GENERAL);
-					auto& imageInfo = m_activeDescriptorImageInfos.emplace_back(baseImageInfo);
-
-					auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
-					Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::RWTEXTURE2DARRAY_BINDING, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, GetCurrentMainDescriptorSet(), resourceHandle.Get());
-					descriptorWrite.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageInfo);
-				}
-			}
-			m_image2DArrayRegistry.ClearDirtyResources();
-		}
-
-		// ImageCube
-		{
-			std::scoped_lock lock{ m_imageCubeRegistry.GetMutex() };
-			for (const auto& resourceHandle : m_imageCubeRegistry.GetDirtyResources())
-			{
-				const auto& resourceData = m_imageCubeRegistry.GetResource(resourceHandle);
-				VT_ENSURE(resourceData.imageUsage != RHI::ImageUsage::None);
-
-				const auto imageView = resourceData.resource.As<RHI::ImageView>();
-
-				DescriptorImageInfo baseImageInfo{};
-				baseImageInfo.sampler = nullptr;
-				baseImageInfo.imageView = imageView->GetHandle<VkImageView>();
-
-				// Read Only
-				{
-					baseImageInfo.imageLayout = static_cast<uint32_t>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-					auto& imageInfo = m_activeDescriptorImageInfos.emplace_back(baseImageInfo);
-
-					auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
-					Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::TEXTURECUBE_BINDING, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, GetCurrentMainDescriptorSet(), resourceHandle.Get());
-					descriptorWrite.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageInfo);
-				}
-			}
-			m_imageCubeRegistry.ClearDirtyResources();
-		}
-
-		// Image3D
-		{
-			std::scoped_lock lock{ m_image3DRegistry.GetMutex() };
-			for (const auto& resourceHandle : m_image3DRegistry.GetDirtyResources())
-			{
-				const auto& resourceData = m_image3DRegistry.GetResource(resourceHandle);
-				VT_ENSURE(resourceData.imageUsage != RHI::ImageUsage::None);
-
-				const auto imageView = resourceData.resource.As<RHI::ImageView>();
-
-				DescriptorImageInfo baseImageInfo{};
-				baseImageInfo.sampler = nullptr;
-				baseImageInfo.imageView = imageView->GetHandle<VkImageView>();
-
-				// Read Only
-				{
-					baseImageInfo.imageLayout = static_cast<uint32_t>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-					auto& imageInfo = m_activeDescriptorImageInfos.emplace_back(baseImageInfo);
-
-					auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
-					Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::TEXTURE3D_BINDING, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, GetCurrentMainDescriptorSet(), resourceHandle.Get());
-					descriptorWrite.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageInfo);
-				}
-
-				// Read-Write
-				if (resourceData.imageUsage == RHI::ImageUsage::Storage || resourceData.imageUsage == RHI::ImageUsage::AttachmentStorage)
-				{
-					baseImageInfo.imageLayout = static_cast<uint32_t>(VK_IMAGE_LAYOUT_GENERAL);
-					auto& imageInfo = m_activeDescriptorImageInfos.emplace_back(baseImageInfo);
-
-					auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
-					Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::RWTEXTURE3D_BINDING, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, GetCurrentMainDescriptorSet(), resourceHandle.Get());
-					descriptorWrite.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageInfo);
-				}
-			}
-			m_image3DRegistry.ClearDirtyResources();
-		}
-
-		// Samplers
-		{
-			std::scoped_lock lock{ m_samplerRegistry.GetMutex() };
-			for (const auto& resourceHandle : m_samplerRegistry.GetDirtyResources())
-			{
-				const auto& resourceData = m_samplerRegistry.GetResource(resourceHandle);
-				const auto samplerState = resourceData.resource.As<RHI::SamplerState>();
-
-				DescriptorImageInfo& imageInfo = m_activeDescriptorImageInfos.emplace_back();
-				imageInfo.sampler = samplerState->GetHandle<VkSampler>();
-
-				auto& descriptorWrite = m_activeDescriptorWrites.emplace_back();
-				Utility::InitializeDescriptorWrite(descriptorWrite, VulkanBindlessDescriptorLayoutManager::SAMPLERSTATE_BINDING, VK_DESCRIPTOR_TYPE_SAMPLER, GetCurrentMainDescriptorSet(), resourceHandle.Get());
 				descriptorWrite.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageInfo);
 			}
 			m_samplerRegistry.ClearDirtyResources();
@@ -706,7 +385,7 @@ namespace Volt::RHI
 		return resultSet;
 	}
 
-	void VulkanBindlessDescriptorTable::WriteConstantsSet(VkDescriptorSet_T* dstSet, WeakPtr<UniformBuffer> constantsBuffer)
+	void VulkanBindlessDescriptorTable::WriteConstantsSet(VkDescriptorSet_T* dstSet, RawPtr<UniformBuffer> constantsBuffer, RawPtr<AccelerationStructure> accelerationStructure)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -720,18 +399,41 @@ namespace Volt::RHI
 		bufferInfo.range = constantsBuffer->GetSize();
 		bufferInfo.offset = 0;
 
-		VkWriteDescriptorSet descriptorWrite{};
+		StackVector<VkWriteDescriptorSet, 2> writeDescriptors;
+
+		VkWriteDescriptorSet& descriptorWrite = writeDescriptors.EmplaceBack();
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrite.pNext = nullptr;
 		descriptorWrite.descriptorCount = 1;
 		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.dstBinding = 998;
+		descriptorWrite.dstBinding = Globals::RENDER_GRAPH_CONSTANTS_BINDING;
 		descriptorWrite.dstSet = dstSet;
 		descriptorWrite.pBufferInfo = &bufferInfo;
 
+		VkAccelerationStructureKHR accelerationStructureHandle;
+		VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo;
+
+		if (GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing && accelerationStructure)
+		{
+			accelerationStructureInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+			accelerationStructureInfo.pNext = nullptr;
+			accelerationStructureInfo.accelerationStructureCount = 1;
+
+			accelerationStructureHandle = accelerationStructure->GetHandle<VkAccelerationStructureKHR>();
+			accelerationStructureInfo.pAccelerationStructures = &accelerationStructureHandle;
+
+			VkWriteDescriptorSet& asWriteDescriptor = writeDescriptors.EmplaceBack();
+			asWriteDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			asWriteDescriptor.pNext = &accelerationStructureInfo;
+			asWriteDescriptor.dstSet = dstSet;
+			asWriteDescriptor.dstBinding = Globals::ACCELERATION_STRUCTURE_BINDING;
+			asWriteDescriptor.descriptorCount = 1;
+			asWriteDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		}
+
 		auto vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();
-		vkUpdateDescriptorSets(vkDevice, 1, &descriptorWrite, 0, nullptr);
+		vkUpdateDescriptorSets(vkDevice, static_cast<uint32_t>(writeDescriptors.Size()), writeDescriptors.Data(), 0, nullptr);
 	}
 
 	VkDescriptorSet_T* VulkanBindlessDescriptorTable::GetCurrentMainDescriptorSet() const

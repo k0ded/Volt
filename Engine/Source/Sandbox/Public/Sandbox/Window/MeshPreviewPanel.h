@@ -2,15 +2,15 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
-#include <Volt/Events/ApplicationEvents.h>
-#include <Volt/Scene/Entity.h>
+#include <Volt-Scene/Entity.h>
+
+#include <EventSystem/ApplicationEvents.h>
 
 namespace Volt
 {
 	class SceneRenderer;
 	class Scene;
-	class Mesh;
-	class Material;
+	class MeshAsset;
 	class WindowRenderEvent;
 }
 
@@ -45,7 +45,7 @@ private:
 	glm::vec2 myViewportSize = { 1280.f, 720.f };
 
 	Volt::Entity myPreviewEntity;
-	Ref<Volt::Mesh> myCurrentMesh;
+	Ref<Volt::MeshAsset> myCurrentMesh;
 
 	const float myButtonSize = 22.f;
 	int32_t mySelectedSubMesh = -1;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mosaic/Parameter.h"
+#include "Mosaic/Config.h"
 
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/VoltGUID.h>
@@ -10,8 +11,6 @@
 #include <CoreUtilities/FileIO/YAMLStreamReader.h>
 
 #include <glm/glm.hpp>
-
-
 
 namespace Mosaic
 {
@@ -33,7 +32,7 @@ namespace Mosaic
 
 	class MosaicGraph;
 
-	class MosaicNode
+	class VTMOSAIC_API MosaicNode
 	{
 	public:
 		MosaicNode(MosaicGraph* ownerGraph);

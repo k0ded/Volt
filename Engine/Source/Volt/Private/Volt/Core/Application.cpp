@@ -1,31 +1,30 @@
 #include "vtpch.h"
+
 #include "Volt/Core/Application.h"
+#include "Volt-Core/Layer/Layer.h"
 
-#include <AssetSystem/AssetManager.h>
-
-#include <InputModule/Input.h>
-
-#include "Volt/Core/Layer/Layer.h"
-#include "Volt/Core/DynamicLibraryManager.h"
 #include "Volt/Steam/SteamImplementation.h"
-
-#include "Volt/Rendering/Renderer.h"
-
-#include "Volt/Project/ProjectManager.h"
-#include "Volt/Scene/SceneManager.h"
-
-#include "Volt/PluginSystem/PluginRegistry.h"
-#include "Volt/PluginSystem/PluginSystem.h"
-
-#include "Volt/Physics/Physics.h"
-
 #include "Volt/Utility/Noise.h"
 #include "Volt/Utility/UIUtility.h"
 
+#include <Volt-Renderer/Renderer.h>
+
+#include <Volt-Scene/SceneManager.h>
+
+#include <Volt-Core/PluginSystem/PluginRegistry.h>
+#include <Volt-Core/PluginSystem/PluginSystem.h>
+
+#include <Volt-Physics/PhysicsSubSystem.h>
+
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
+
+#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetSerializerRegistry.h>
+#include <AssetSystem/AssetFactory.h>
 
 #include <RHIModule/ImGui/ImGuiImplementation.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/FrameCapture.h>
 
 #include <VulkanRHIModule/VulkanRHIProxy.h>
 #include <D3D12RHIModule/D3D12RHIProxy.h>
@@ -33,31 +32,20 @@
 #include <Amp/WWiseEngine/WWiseEngine.h>
 #include <Navigation/Core/NavigationSystem.h>
 
-#include <CoreUtilities/FileSystem.h>
 #include <LogModule/Log.h>
 
 #include <InputModule/Events/KeyboardEvents.h>
-#include <InputModule/Events/MouseEvents.h>
 
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
 
 #include <EventSystem/EventSystem.h>
+#include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/ThreadUtilities.h>
-
-#include <EntitySystem/Scripting/ECSEventDispatcher.h>
-#include <Volt/Physics/PhysicsEvents.h>
-
-using TestEntity = ECS::Access
-	::Write<Volt::TransformComponent>
-	::As<ECS::Type::Entity>;
-
-void SystemCallback(Volt::OnCollisionEnterEvent& event)
-{
-
-}
+#include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/Allocator.h>
 
 namespace Volt
 {
@@ -102,23 +90,30 @@ namespace Volt
 		VT_ASSERT_MSG(!s_instance, "Application already exists!");
 		s_instance = this;
 
-		m_eventSystem = CreateScope<EventSystem>();
+		g_heapAllocator = CreateScope<PagedHeapAllocator>();
 
-		m_log = CreateScope<Log>();
-		m_log->SetLogOutputFilepath(m_info.projectPath.parent_path() / "Log/Log.txt");
+		FileSystem::Initialize();
 
-		m_input = CreateScope<Input>();
+		m_subSystemManager = CreateScope<SubSystemManager>();
+		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
 
-		m_jobSystem = CreateScope<JobSystem>();
-		m_dynamicLibraryManager = CreateScope<DynamicLibraryManager>();
-		m_pluginRegistry = CreateScope<PluginRegistry>();
-		m_pluginSystem = CreateScope<PluginSystem>(*m_pluginRegistry);
+		m_pluginSystem = SubSystemManager::GetSubSystem<PluginSystem>();
+		m_pluginRegistry = SubSystemManager::GetSubSystem<PluginRegistry>();
+		m_projectManager = SubSystemManager::GetSubSystem<ProjectManager>();
 
-		Noise::Initialize();
-
-		ProjectManager::LoadProject(m_info.projectPath, *m_pluginRegistry);
+		m_pluginSystem->SetPluginRegistry(m_pluginRegistry);
+		m_projectManager->LoadProject(m_info.projectPath, *m_pluginRegistry);
 		m_pluginRegistry->BuildPluginDependencies();
 		m_pluginSystem->LoadPlugins(ProjectManager::GetProject());
+
+		// This is required because glfwInit must be called before setting up graphics device
+		WindowManager::InitializeGLFW();
+		CreateGraphicsContext();
+
+		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineDirectory());
+		m_sourceAssetManager = CreateScope<SourceAssetManager>();
+
+		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 
 		WindowProperties windowProperties{};
 		windowProperties.Width = info.width;
@@ -143,24 +138,16 @@ namespace Volt
 			windowProperties.UseTitlebar = true;
 		}
 
-		// This is required because glfwInit must be called before setting up graphics device
-		WindowManager::InitializeGLFW();
-		CreateGraphicsContext();
-		WindowManager::Initialize(windowProperties);
+		m_windowManager->CreateMainWindow(windowProperties);
 
-		FileSystem::Initialize();
-		
-		Renderer::PreInitialize();
-		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineDirectory());
-		m_sourceAssetManager = CreateScope<SourceAssetManager>();
-		Renderer::Initialize();
+		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
+		m_physicsSubSystem = SubSystemManager::GetSubSystem<PhysicsSubSystem>();
+		auto core = m_physicsSubSystem->GetPhysicsCore();
+		VT_UNUSED(core);
 
-		//UIRenderer::Initialize();
-		//DebugRenderer::Initialize();
-
-		Physics::LoadSettings();
-		Physics::Initialize();
-		Physics::LoadLayers();
+		//Physics::LoadSettings();
+		//Physics::Initialize();
+		//Physics::LoadLayers();
 
 		//Init AudioEngine
 		{
@@ -217,6 +204,8 @@ namespace Volt
 
 		m_pluginSystem->InitializePlugins();
 		m_eventListener = CreateScope<ApplicationEventListener>(*this);
+
+		SetupFrameCapture();
 	}
 
 	Application::~Application()
@@ -226,38 +215,43 @@ namespace Volt
 
 		m_scriptingSystem = nullptr;
 
+		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PostEngine);
+
 		m_navigationSystem = nullptr;
 		m_layerStack.Clear();
 		m_imguiImplementation = nullptr;
 		SceneManager::Shutdown();
 
-		Physics::SaveLayers();
-		Physics::Shutdown();
-		Physics::SaveSettings();
-
-		//DebugRenderer::Shutdown();
-		//UIRenderer::Shutdown();
+		//Physics::SaveLayers();
+		//Physics::Shutdown();
+		//Physics::SaveSettings();
 
 		Amp::WWiseEngine::Get().TermWwise();
 
 		m_assetManager = nullptr;
+		g_assetSerializerRegistry.Clear();
+		g_assetFactory.Clear();
 
-		Renderer::Shutdown();
+		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
-		FileSystem::Shutdown();
-		WindowManager::Shutdown();
+		m_windowManager->DestroyMainWindow();
+
 		m_graphicsContext = nullptr;
-		WindowManager::ShutdownGLFW();
-		
 		m_rhiProxy = nullptr;
+		WindowManager::ShutdownGLFW();
 
 		m_pluginSystem->UnloadPlugins();
 		m_pluginSystem = nullptr;
 		m_pluginRegistry = nullptr;
-		m_jobSystem = nullptr;
-		m_input = nullptr;
-		m_log = nullptr;
-		m_eventSystem = nullptr;
+		m_projectManager = nullptr;
+
+		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
+		 
+		FileSystem::Shutdown();
+
+		m_subSystemManager = nullptr;
+
+		g_heapAllocator.reset();
 		s_instance = nullptr;
 	}
 
@@ -306,13 +300,18 @@ namespace Volt
 		{
 			VT_PROFILE_SCOPE("Application::Render");
 
-			Renderer::Flush();
-			WindowManager::Get().Render();
-			Renderer::Update();
+			AppPreRenderEvent preRenderEvent;
+			EventSystem::DispatchEvent(preRenderEvent);
+
+			AppRenderEvent renderEvent(m_currentDeltaTime);
+			EventSystem::DispatchEvent(renderEvent);
+
+			m_windowManager->Render(m_currentDeltaTime);
 		}
 
 		{
 			VT_PROFILE_SCOPE("Application::Update");
+
 			AppUpdateEvent updateEvent(m_currentDeltaTime);
 			EventSystem::DispatchEvent(updateEvent);
 
@@ -322,11 +321,6 @@ namespace Volt
 		{
 			VT_PROFILE_SCOPE("Application::UpdateAudio");
 			Amp::WWiseEngine::Get().Update();
-		}
-
-		{
-			VT_PROFILE_SCOPE("Application::RunMainThreadJobs");
-			m_jobSystem->ExecuteMainThreadJobs();
 		}
 
 		if (m_info.enableImGui)
@@ -347,16 +341,14 @@ namespace Volt
 			RenderGraphExecutionThread::WaitForFinishedExecution();
 		}
 
-		Renderer::EndOfFrameUpdate();
-
-		{
-			WindowManager::Get().Present();
-		}
-
 		{
 			VT_PROFILE_SCOPE("Application::PostFrameUpdate");
 			AppPostFrameUpdateEvent postFrameUpdateEvent{ m_currentDeltaTime };
 			EventSystem::DispatchEvent(postFrameUpdateEvent);
+		}
+
+		{
+			WindowManager::Get().Present();
 		}
 
 		m_frameTimer.Accumulate();
@@ -389,6 +381,15 @@ namespace Volt
 		}
 
 		m_graphicsContext = RHI::GraphicsContext::Create(cinfo);
+	}
+
+	void Application::SetupFrameCapture()
+	{
+		if (RHI::RHIProxy::GetInstance().GetFrameCapture())
+		{
+			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetFlags(RHI::FrameCaptureFlags::DisableOverlay);
+			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetCaptureFileTargetFilePath(ProjectManager::GetProjectDirectory() / ("Volt-" + ProjectManager::GetProject().name));
+		}
 	}
 
 	bool Application::OnAppUpdateEvent(AppUpdateEvent&)

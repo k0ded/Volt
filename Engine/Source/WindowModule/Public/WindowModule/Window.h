@@ -5,10 +5,12 @@
 
 #include "WindowModule/Config.h"
 
+#include <EventSystem/EventListener.h>
+
 #include <RHIModule/Graphics/Swapchain.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
-#include <CoreUtilities/Pointers/WeakPtr.h>
+#include <CoreUtilities/Pointers/RawPtr.h>
 
 #include <functional>
 
@@ -36,7 +38,7 @@ namespace Volt
 		WINDOWMODULE_API void Release();
 
 		WINDOWMODULE_API void BeginFrame();
-		WINDOWMODULE_API void Render();
+		WINDOWMODULE_API void Render(float timestep);
 		WINDOWMODULE_API void Present();
 
 		WINDOWMODULE_API void Resize(uint32_t aWidth, uint32_t aHeight);
@@ -79,11 +81,21 @@ namespace Volt
 		WINDOWMODULE_API inline void* GetHWND() const { return m_windowHandle; }
 
 		WINDOWMODULE_API inline const RHI::Swapchain& GetSwapchain() const { return *m_swapchain; }
-		WINDOWMODULE_API inline const WeakPtr<RHI::Swapchain> GetSwapchainPtr() const { return m_swapchain; }
+		WINDOWMODULE_API inline const RawPtr<RHI::Swapchain> GetSwapchainPtr() const { return m_swapchain; }
 
 		static Scope<Window> Create(const WindowProperties& aProperties = WindowProperties());
 
 	private:
+		class WindowEventListener : public EventListener
+		{
+		public:
+			WindowEventListener(GLFWwindow* glfwWindow);
+			~WindowEventListener() override = default;
+
+		private:
+			GLFWwindow* m_window = nullptr;
+		};
+
 		GLFWwindow* m_window = nullptr;
 		void* m_windowHandle = nullptr;
 		bool m_hasBeenInitialized = false;
@@ -109,6 +121,7 @@ namespace Volt
 		uint32_t m_viewportWidth = 0;
 		uint32_t m_viewportHeight = 0;
 
+		Scope<WindowEventListener> m_eventListener;
 		WindowProperties m_properties;
 		std::unordered_map<std::filesystem::path, GLFWcursor*> m_cursors;
 	};

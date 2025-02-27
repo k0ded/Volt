@@ -116,7 +116,7 @@ namespace Volt::RHI
 		m_physicalDevice = selectedDevice;
 		m_queueFamilyIndices = Utility::FindQueueFamilyIndices(selectedDevice);
 
-		FetchAvailiableExtensions();
+		FetchAvailableExtensions();
 		FetchDeviceProperties();
 	}
 
@@ -143,7 +143,7 @@ namespace Volt::RHI
 		return -1;
 	}
 
-	const bool VulkanPhysicalGraphicsDevice::IsExtensionAvailiable(const char* extensionName) const
+	const bool VulkanPhysicalGraphicsDevice::IsExtensionAvailable(const char* extensionName) const
 	{
 		for (const auto& ext : m_availiableExtensions)
 		{
@@ -205,6 +205,11 @@ namespace Volt::RHI
 		meshShaderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
 		meshShaderProperties.pNext = firstChainPtr;
 		firstChainPtr = &meshShaderProperties;
+
+		VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
+		rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+		rayTracingPipelineProperties.pNext = firstChainPtr;
+		firstChainPtr = &rayTracingPipelineProperties;
 
 		VkPhysicalDeviceProperties2	deviceProperties{};
 		deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -373,7 +378,7 @@ namespace Volt::RHI
 
 		// VK_EXT_mesh_shader
 		{
-			m_deviceProperties.meshShaderProperties.enabled = false; // IsExtensionAvailiable(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+			m_deviceProperties.meshShaderProperties.enabled = IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME);
 			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupTotalCount = meshShaderProperties.maxTaskWorkGroupTotalCount;
 			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupCount[0] = meshShaderProperties.maxTaskWorkGroupCount[0];
 			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupCount[1] = meshShaderProperties.maxTaskWorkGroupCount[1];
@@ -412,10 +417,22 @@ namespace Volt::RHI
 			m_deviceProperties.meshShaderProperties.prefersCompactPrimitiveOutput = meshShaderProperties.prefersCompactPrimitiveOutput;
 		}
 
+		// VK_KHR_ray_tracing_pipeline
+		{
+			m_deviceProperties.rayTracingPipelineProperties.shaderGroupHandleSize  = rayTracingPipelineProperties.shaderGroupHandleSize;
+			m_deviceProperties.rayTracingPipelineProperties.maxRayRecursionDepth = rayTracingPipelineProperties.maxRayRecursionDepth;
+			m_deviceProperties.rayTracingPipelineProperties.maxShaderGroupStride = rayTracingPipelineProperties.maxShaderGroupStride;
+			m_deviceProperties.rayTracingPipelineProperties.shaderGroupBaseAlignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
+			m_deviceProperties.rayTracingPipelineProperties.shaderGroupHandleCaptureReplaySize = rayTracingPipelineProperties.shaderGroupHandleCaptureReplaySize;
+			m_deviceProperties.rayTracingPipelineProperties.maxRayDispatchInvocationCount = rayTracingPipelineProperties.maxRayDispatchInvocationCount;
+			m_deviceProperties.rayTracingPipelineProperties.shaderGroupHandleAlignment = rayTracingPipelineProperties.shaderGroupHandleAlignment;
+			m_deviceProperties.rayTracingPipelineProperties.maxRayHitAttributeSize = rayTracingPipelineProperties.maxRayHitAttributeSize;
+		}
+
 		FetchMemoryProperties();
 	}
 
-	void VulkanPhysicalGraphicsDevice::FetchAvailiableExtensions()
+	void VulkanPhysicalGraphicsDevice::FetchAvailableExtensions()
 	{
 		uint32_t extCount = 0;
 		VT_VK_CHECK(vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &extCount, nullptr));

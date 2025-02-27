@@ -22,6 +22,8 @@
 // Fallthrough
 #define VT_FALLTHROUGH [[fallthrough]]
 
+#define VT_UNREACHABLE __assume(0)
+
 #if defined(_MSC_VER)
 #define VT_DISABLE_WARNING(w) \
 	__pragma(warning(push)) \
@@ -51,7 +53,7 @@
 
 // Min alignment
 #ifdef VT_PLATFORM_WINDOWS
-	#define MIN_PLATFORM_ALIGNMENT 16
+	#define MIN_PLATFORM_ALIGNMENT 16ull
 #else
 	#error "Not defined!"
 #endif

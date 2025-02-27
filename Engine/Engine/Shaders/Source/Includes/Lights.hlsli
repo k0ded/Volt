@@ -6,47 +6,52 @@
 
 #define DIRECTIONAL_SHADOW_CASCADE_COUNT 4
 
-struct DirectionalLight
+struct SkyLight
 {
-    float4 direction;
-    float3 color;
+    vt::TexCube<float3> irradiance;
+    vt::TexCube<float3> radiance;
+};
+
+enum SceneLightType
+{
+    SLT_Directional = 0,
+	SLT_Point = 1,
+	SLT_Spot = 2,
+	SLT_Sky = 3
+};
+
+enum LightFlags
+{
+    LF_None = 0,
+    LF_Invalid = 1 << 0,
+    LF_CastShadows = 1 << 1
+};
+
+struct LightDrawData
+{
+    SceneLightType lightType;
+    float3 position;
+
+    LightFlags flags;
+    float3 direction;
+
     float intensity;
+    float3 color;
 
-    uint castShadows;
+	// Point: .x=radius, .y=falloff
+	// Spot: .x=range, .y=falloff, .z=lightAngleScale .w=lightAngleOffset
+	// Dir: .x=angularRadius
+    // Sky: x=LOD
+    float4 lightSpecific;
+};
 
+struct DirectionalLightShadowData
+{
     float cascadeDistances[DIRECTIONAL_SHADOW_CASCADE_COUNT];
     float4x4 viewProjections[DIRECTIONAL_SHADOW_CASCADE_COUNT];
 };
 
-struct PointLight
-{
-    float3 position;
-    float radius;
-    
-    float3 color;
-    float intensity;
-    
-    float falloff;
-    float3 padding;
-};
-
-struct SpotLight
-{
-    float3 position;
-    float angleAttenuation;
-    
-    float3 color;
-    float intensity;
-    
-    float3 direction;
-    float range;
-    
-    float angle;
-    float falloff;
-    float2 padding;
-};
-
-int GetLightBufferIndex(vt::UniformTypedBuffer<int> lightIndexBuffer, uint tileCountX, int i, uint2 tileId)
+int GetLightBufferIndex(vt::TypedBuffer<int> lightIndexBuffer, uint tileCountX, int i, uint2 tileId)
 {
     const uint index = tileId.y * tileCountX + tileId.x;
     const uint offset = index * MAX_LIGHTS_PER_TILE;
@@ -54,7 +59,7 @@ int GetLightBufferIndex(vt::UniformTypedBuffer<int> lightIndexBuffer, uint tileC
     return lightIndexBuffer.Load(offset + i);
 }
 
-int GetLightCount(vt::UniformTypedBuffer<int> lightIndexBuffer, uint tileCountX, uint2 tileId)
+int GetLightCount(vt::TypedBuffer<int> lightIndexBuffer, uint tileCountX, uint2 tileId)
 {
     int result = 0;
     for (int i = 0; i < MAX_LIGHTS_PER_TILE; i++)

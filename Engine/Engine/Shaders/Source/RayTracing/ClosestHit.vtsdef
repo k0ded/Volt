@@ -1,0 +1,6 @@
+name: "ClosestHit"
+internal: true
+sources:
+  - entryPoint: "main"
+    shaderStage: "rclosesthit"
+    filePath: "Engine/Shaders/Source/RayTracing/ClosestHit.hlsl"

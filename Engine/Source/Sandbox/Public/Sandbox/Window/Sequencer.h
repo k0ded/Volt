@@ -1,6 +1,6 @@
 #pragma once
 #include "Sandbox/Window/EditorWindow.h"
-#include <Volt/Scene/Scene.h>
+#include <Volt-Scene/Scene.h>
 
 struct KeyFrame
 {

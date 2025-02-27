@@ -4,7 +4,7 @@ using System.IO;
 namespace VoltSharpmake
 {
     [Sharpmake.Generate]
-    public class MosaicModule : CommonVoltLibProject
+    public class MosaicModule : CommonVoltDllProject
     {
         public MosaicModule()
         {
@@ -15,7 +15,7 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
 
-            conf.SolutionFolder = "Engine";
+            conf.SolutionFolder = "Engine/Modules";
 
             conf.PrecompHeader = "mcpch.h";
             conf.PrecompSource = "mcpch.cpp";

@@ -1,8 +1,7 @@
 #include "vtpch.h"
 #include "Volt/Math/Spline.h"
-#include "Volt/Rendering/DebugRenderer.h"
 
-#include "Volt/Components/CoreComponents.h"
+#include <Volt-Scene/Components/CoreComponents.h>
 
 Spline::Spline(Ref<Volt::Scene>& aScene, int aAmoutOfCubes)
 	:myCurrentScene(aScene)
@@ -24,24 +23,25 @@ Vector<glm::vec3> Spline::GetPointsInSegment(int index)
 
 void Spline::UpdateSpline()
 {
-	if (myBezierePoints.size() != 0)
-	{
-		for (int i = 0; i < GetNumSegments(); i++)
-		{
-			Vector<glm::vec3> points = GetPointsInSegment(i);
-			float offset = 1.f / myBezierePoints[i].size();
-			for (int n = 0; n < myBezierePoints[i].size(); n++)
-			{
-				glm::vec3 bezPos = CubicLerp(points[0], points[1], points[2], points[3], offset * n);
-				myBezierePoints[i][n].GetComponent<Volt::TransformComponent>().position = bezPos;
+	// #TODO_Scene
+	//if (myBezierePoints.size() != 0)
+	//{
+	//	for (int i = 0; i < GetNumSegments(); i++)
+	//	{
+	//		Vector<glm::vec3> points = GetPointsInSegment(i);
+	//		float offset = 1.f / myBezierePoints[i].size();
+	//		for (int n = 0; n < myBezierePoints[i].size(); n++)
+	//		{
+	//			glm::vec3 bezPos = CubicLerp(points[0], points[1], points[2], points[3], offset * n);
+	//			myBezierePoints[i][n].GetComponent<Volt::TransformComponent>().position = bezPos;
 
-				if (n + 1 < myBezierePoints[i].size())
-				{
-					Volt::DebugRenderer::DrawLine(myBezierePoints[i][n].GetPosition(), myBezierePoints[i][n + 1].GetPosition(), { 1,0,0,1 });
-				}
-			}
-		}
-	}
+	//			if (n + 1 < myBezierePoints[i].size())
+	//			{
+	//				Volt::DebugRenderer::DrawLine(myBezierePoints[i][n].GetPosition(), myBezierePoints[i][n + 1].GetPosition(), { 1,0,0,1 });
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 void Spline::InitSpline()

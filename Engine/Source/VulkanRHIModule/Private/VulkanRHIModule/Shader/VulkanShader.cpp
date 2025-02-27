@@ -11,6 +11,8 @@
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Globals.h>
 
+#include <CoreUtilities/Math/Hash.h>
+
 #include <spirv_cross/spirv_glsl.hpp>
 #include <spirv-tools/libspirv.h>
 
@@ -79,6 +81,7 @@ namespace Volt::RHI
 		}
 
 		LoadAndCreateShaders(compilationResult.shaderData);
+		GenerateHash();
 
 		CreateDescriptorSetLayouts();
 		CalculateDescriptorPoolSizes(compilationResult);
@@ -123,6 +126,56 @@ namespace Volt::RHI
 	bool VulkanShader::HasConstants() const
 	{
 		return m_resources.constantsBuffer.IsValid();
+	}
+
+	ShaderType VulkanShader::GetShaderType() const
+	{
+		if (m_pipelineStageInfo.contains(ShaderStage::Vertex) ||
+			m_pipelineStageInfo.contains(ShaderStage::Pixel) ||
+			m_pipelineStageInfo.contains(ShaderStage::Mesh) ||
+			m_pipelineStageInfo.contains(ShaderStage::Amplification) ||
+			m_pipelineStageInfo.contains(ShaderStage::Domain) ||
+			m_pipelineStageInfo.contains(ShaderStage::Hull) ||
+			m_pipelineStageInfo.contains(ShaderStage::Geometry))
+		{
+			return ShaderType::Rasterization;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::Compute))
+		{
+			return ShaderType::Compute;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::RayGen))
+		{
+			return ShaderType::RayGen;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::Miss))
+		{
+			return ShaderType::RayMiss;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::AnyHit))
+		{
+			return ShaderType::RayAnyHit;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::ClosestHit))
+		{
+			return ShaderType::RayClosestHit;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::Intersection))
+		{
+			return ShaderType::RayIntersection;
+		}
+		else if (m_pipelineStageInfo.contains(ShaderStage::Callable))
+		{
+			return ShaderType::RayCallable;
+		}
+
+		VT_ASSERT(false);
+		return ShaderType::Rasterization;
+	}
+
+	size_t VulkanShader::GetHash() const
+	{
+		return m_hash;
 	}
 
 	void* VulkanShader::GetHandleImpl() const
@@ -470,5 +523,16 @@ namespace Volt::RHI
 		m_resources.storageImages = compilationResult.storageImages;
 		m_resources.images = compilationResult.images;
 		m_resources.samplers = compilationResult.samplers;
+	}
+
+	void VulkanShader::GenerateHash()
+	{
+		m_hash = 0;
+	
+		for (const auto& [stage, sourceInfo] : m_shaderSources)
+		{
+			m_hash = Math::HashCombine(m_hash, std::hash<uint32_t>()(static_cast<uint32_t>(stage)));
+			m_hash = Math::HashCombine(m_hash, std::hash<std::string>()(sourceInfo.source));
+		}
 	}
 }

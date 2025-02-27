@@ -96,11 +96,11 @@ namespace VoltSharpmake
         }
 
         [ConfigurePriority(ConfigurePriorities.Optimization)]
-        [Configure(Optimization.Release)]
-        public virtual void ConfigureRelease(Configuration conf, CommonTarget target)
+        [Configure(Optimization.Development)]
+        public virtual void ConfigureDevelopment(Configuration conf, CommonTarget target)
         {
             conf.DefaultOption = Options.DefaultTarget.Release;
-            conf.Defines.Add("VT_RELEASE");
+            conf.Defines.Add("VT_DEVELOPMENT");
 
             conf.Defines.Add("VT_ENABLE_ASSERTS");
             conf.Defines.Add("VT_ENABLE_VALIDATION");
@@ -109,7 +109,9 @@ namespace VoltSharpmake
             conf.Defines.Add("NDEBUG");
 
             conf.Options.Add(Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
-        }
+			conf.Options.Add(Options.Vc.Compiler.Inline.OnlyInline);
+			conf.Options.Add(Options.Vc.Compiler.Optimization.MinimizeSize);
+		}
 
         [ConfigurePriority(ConfigurePriorities.Optimization)]
         [Configure(Optimization.Dist)]
@@ -368,10 +370,10 @@ namespace VoltSharpmake
 				conf.EventPostBuild.Add(@"copy /Y " + "\"" + conf.TargetPath + "\\" + Name + ".pdb\"" + " \"" + Globals.BinariesDirectory + "\"");
 			}
 
-            string UpperProjectName = Name.ToUpper();
+			string UpperProjectName = Name.ToUpper();
 			UpperProjectName = UpperProjectName.Replace('-', '_');
 
-            conf.Defines.Add(UpperProjectName + "_DLL_EXPORT");
+			conf.Defines.Add(UpperProjectName + "_DLL_EXPORT");
             conf.ExportDefines.Add(UpperProjectName + "_DLL_IMPORT");
         }
     }

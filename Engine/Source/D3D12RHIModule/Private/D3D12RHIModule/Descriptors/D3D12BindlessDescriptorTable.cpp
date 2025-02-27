@@ -17,6 +17,7 @@
 #include <RHIModule/Shader/Shader.h>
 
 #include <CoreUtilities/EnumUtils.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt::RHI
 {
@@ -34,51 +35,38 @@ namespace Volt::RHI
 		Release();
 	}
 
-	ResourceHandle D3D12BindlessDescriptorTable::RegisterBuffer(WeakPtr<StorageBuffer> storageBuffer)
+	ResourceHandle D3D12BindlessDescriptorTable::RegisterBuffer(RawPtr<StorageBuffer> storageBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 		return m_mainRegistry.RegisterResource(storageBuffer, ImageUsage::None, static_cast<uint32_t>(ResourceType::StorageBuffer));
 	}
 
-	ResourceHandle D3D12BindlessDescriptorTable::RegisterImageView(WeakPtr<ImageView> imageView)
+	ResourceHandle D3D12BindlessDescriptorTable::RegisterImageView(RawPtr<ImageView> imageView)
 	{
 		VT_PROFILE_FUNCTION();
 		return m_mainRegistry.RegisterResource(imageView, imageView->GetImageUsage(), static_cast<uint32_t>(ResourceType::Image2D));
 	}
 
-	ResourceHandle D3D12BindlessDescriptorTable::RegisterSamplerState(WeakPtr<SamplerState> samplerState)
+	ResourceHandle D3D12BindlessDescriptorTable::RegisterSamplerState(RawPtr<SamplerState> samplerState)
 	{
 		VT_PROFILE_FUNCTION();
 		return m_samplerRegistry.RegisterResource(samplerState);
 	}
 
-	void D3D12BindlessDescriptorTable::UnregisterBuffer(ResourceHandle handle)
+	void D3D12BindlessDescriptorTable::UnregisterResource(ResourceHandle handle)
 	{
 		VT_PROFILE_FUNCTION();
 		m_mainRegistry.UnregisterResource(handle);
 	}
 
-	void D3D12BindlessDescriptorTable::UnregisterImageView(ResourceHandle handle, ImageViewType viewType)
+	void D3D12BindlessDescriptorTable::MarkResourceAsDirty(ResourceHandle handle)
 	{
-		VT_PROFILE_FUNCTION();
-		m_mainRegistry.UnregisterResource(handle);
+		m_mainRegistry.MarkAsDirty(handle);
 	}
 
 	void D3D12BindlessDescriptorTable::UnregisterSamplerState(ResourceHandle handle)
 	{
 		m_samplerRegistry.UnregisterResource(handle);
-	}
-
-	void D3D12BindlessDescriptorTable::MarkBufferAsDirty(ResourceHandle handle)
-	{
-		VT_PROFILE_FUNCTION();
-		m_mainRegistry.MarkAsDirty(handle);
-	}
-
-	void D3D12BindlessDescriptorTable::MarkImageViewAsDirty(ResourceHandle handle, RHI::ImageViewType viewType)
-	{
-		VT_PROFILE_FUNCTION();
-		m_mainRegistry.MarkAsDirty(handle);
 	}
 
 	void D3D12BindlessDescriptorTable::MarkSamplerStateAsDirty(ResourceHandle handle)
@@ -87,10 +75,9 @@ namespace Volt::RHI
 		m_samplerRegistry.MarkAsDirty(handle);
 	}
 
-	ResourceHandle D3D12BindlessDescriptorTable::GetBufferHandle(WeakPtr<RHI::StorageBuffer> storageBuffer)
+	bool D3D12BindlessDescriptorTable::IsResourceValid(ResourceHandle handle) const
 	{
-		VT_PROFILE_FUNCTION();
-		return m_mainRegistry.GetResourceHandle(storageBuffer);
+		return m_mainRegistry.IsResourceRegistered(handle) || m_samplerRegistry.IsResourceRegistered(handle);
 	}
 
 	void D3D12BindlessDescriptorTable::Update()
@@ -271,7 +258,7 @@ namespace Volt::RHI
 		m_activeSamplerDescriptorCopies.clear();
 	}
 
-	void D3D12BindlessDescriptorTable::Bind(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride)
+	void D3D12BindlessDescriptorTable::Bind(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)
 	{
 		ID3D12GraphicsCommandList* cmdList = commandBuffer.GetHandle<ID3D12GraphicsCommandList*>();
 		ID3D12DescriptorHeap* heaps[2] = { m_mainHeap->GetHeap().Get(), m_samplerHeap->GetHeap().Get() };
@@ -282,7 +269,7 @@ namespace Volt::RHI
 		m_offsetStride = stride;
 	}
 
-	void D3D12BindlessDescriptorTable::SetRootParameters(CommandBuffer& commandBuffer, WeakPtr<UniformBuffer> constantsBuffer)
+	void D3D12BindlessDescriptorTable::SetRootParameters(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer)
 	{
 		D3D12CommandBuffer& d3d12CommandBuffer = commandBuffer.AsRef<D3D12CommandBuffer>();
 		ID3D12GraphicsCommandList* cmdList = commandBuffer.GetHandle<ID3D12GraphicsCommandList*>();

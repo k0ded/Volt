@@ -18,7 +18,7 @@ void MainAS(uint groupThreadId : SV_GroupThreadID, uint2 groupId : SV_GroupID)
 
     bool visible = false;
 
-    if (groupThreadId < command.taskCount)
+    if (groupThreadId < command.taskCount && meshletIndex < mesh.meshletCount)
     {
         const Meshlet meshlet = mesh.meshletsBuffer.Load(mesh.meshletStartOffset + meshletIndex);       
         const ViewData viewData = constants.viewData.Load(); 

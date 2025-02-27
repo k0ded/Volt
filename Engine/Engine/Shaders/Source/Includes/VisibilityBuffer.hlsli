@@ -8,6 +8,7 @@ struct MaterialData
     float2 texCoords[3];
     float3 normals[3];
     float3 tangents[3]; 
+    float tangentW;
 };
 
 struct PositionData
@@ -51,8 +52,10 @@ MaterialData LoadVertexMaterialData(vt::TypedBuffer<VertexMaterialData> buffer, 
     result.normals[2] = DecodeNormal(material2.normal);
 
     result.tangents[0] = DecodeTangent(result.normals[0], material0.tangent);
-    result.tangents[1] = DecodeTangent(result.normals[1], material0.tangent);
-    result.tangents[2] = DecodeTangent(result.normals[2], material0.tangent);
+    result.tangents[1] = DecodeTangent(result.normals[1], material1.tangent);
+    result.tangents[2] = DecodeTangent(result.normals[2], material2.tangent);
+
+    result.tangentW = material0.tangentW;
 
     return result;
 }

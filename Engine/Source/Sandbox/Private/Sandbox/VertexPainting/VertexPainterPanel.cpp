@@ -1,32 +1,34 @@
 #include "sbpch.h"
 #include "VertexPainting/VertexPainterPanel.h"
 
+#include "Sandbox/Utility/SelectionManager.h"
+#include "Sandbox/Utility/EditorResources.h"
+#include "Sandbox/Utility/EditorLibrary.h"
+#include "Sandbox/Window/ViewportPanel.h"
+
 #include <InputModule/Input.h>
 #include <AssetSystem/AssetManager.h>
-#include <Volt/Asset/Mesh/Mesh.h>
-#include <Volt/Rendering/DebugRenderer.h>
 
-#include <Volt/Components/CoreComponents.h>
-#include <Volt/Components/RenderingComponents.h>
+#include <Volt-Assets/MeshAsset.h>
 
-#include <Volt/Rendering/Camera/Camera.h>
+#include <Volt-Scene/Components/CoreComponents.h>
+
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
+#include <Volt-Renderer/Camera/Camera.h>
+
+#include <Volt-Scene/SceneManager.h>
+
+#include <Volt/Math/RayTriangle.h>
+#include <Volt/Utility/PackUtility.h>
+#include <Volt/Utility/UIUtility.h>
 
 #include <EventSystem/Event.h>
 
-#include <Volt/Core/Base.h>
-#include "Sandbox/Utility/SelectionManager.h"
-
-#include <Volt/Utility/UIUtility.h>
-#include "Sandbox/Utility/EditorResources.h"
-
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
-#include <Volt/Scene/SceneManager.h>
-#include <Volt/Math/RayTriangle.h>
-#include <Volt/Utility/PackUtility.h>
 
-#include <Sandbox/Utility/EditorLibrary.h>
-#include <Sandbox/Window/ViewportPanel.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 VertexPainterPanel::VertexPainterPanel(Ref<Volt::Scene>& in_scene, Ref<EditorCameraController>& in_cc)
 	: ex_scene(in_scene), ex_cameraController(in_cc), EditorWindow("Vertex Painting")
@@ -45,11 +47,11 @@ void VertexPainterPanel::UpdateMainContent()
 	BillboardDraw();
 
 	BrushUpdate();
-	if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_LB) && Volt::Input::IsButtonDown(Volt::InputCode::LeftShift)) Paint(m_settings.paintColor);
-	else if (Volt::Input::IsButtonDown(Volt::InputCode::Mouse_LB) && Volt::Input::IsButtonDown(Volt::InputCode::LeftControl)) Paint(m_settings.eraseColor);
+	if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_LB) && Volt::Input::IsKeyDown(Volt::InputCode::LeftShift)) Paint(m_settings.paintColor);
+	else if (Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_LB) && Volt::Input::IsKeyDown(Volt::InputCode::LeftControl)) Paint(m_settings.eraseColor);
 
-	Volt::DebugRenderer::DrawLine(ray.pos + ray.dir * 10.f, m_brushPosition, { 1,0,0,1 });
-	Volt::DebugRenderer::DrawBillboard(m_brushPosition, { 0.1f,0.1f,0.1f }, { 0,1,0,1 });
+	//Volt::DebugRenderer::DrawLine(ray.pos + ray.dir * 10.f, m_brushPosition, { 1,0,0,1 });
+	//Volt::DebugRenderer::DrawBillboard(m_brushPosition, { 0.1f,0.1f,0.1f }, { 0,1,0,1 });
 }
 
 bool VertexPainterPanel::OnViewportResizeEvent(Volt::ViewportResizeEvent& e)
@@ -79,17 +81,17 @@ bool VertexPainterPanel::BrushUpdate()
 			if (!currentEntity.HasComponent<Volt::MeshComponent>()) continue;
 
 			auto meshComponent = currentEntity.GetComponent<Volt::MeshComponent>();
-			auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(meshComponent.GetHandle());
+			auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(meshComponent.GetHandle());
 			//auto origin = ex_cameraController->GetCamera()->GetPosition() - currentEntity.GetPosition();
 			auto origin = ex_cameraController->GetCamera()->GetPosition();
 			auto localRayDir = rayDir;
 
-			auto vList = mesh->GetVertexContainer().positions;
-			auto iList = mesh->GetIndices();
+			auto vList = mesh->GetMesh()->GetVertexContainer().positions;
+			auto iList = mesh->GetMesh()->GetIndices();
 
 			auto entTransform = currentEntity.GetTransform();
 
-			for (auto& submesh : mesh->GetSubMeshes())
+			for (auto& submesh : mesh->GetMesh()->GetSubMeshes())
 			{
 				for (uint32_t index = submesh.vertexStartOffset; index < submesh.vertexStartOffset + submesh.vertexCount; index++)
 				{
@@ -375,7 +377,7 @@ void VertexPainterPanel::BillboardDraw()
 		if (paintedEnt.HasComponent<Volt::MeshComponent>())
 		{
 			auto meshComp = paintedEnt.GetComponent<Volt::MeshComponent>();
-			auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(meshComp.GetHandle());
+			auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(meshComp.GetHandle());
 
 			if (!mesh || !mesh->IsValid()) continue;
 			bool hasPainted = paintedEnt.HasComponent<Volt::VertexPaintedComponent>();
@@ -391,119 +393,119 @@ void VertexPainterPanel::BillboardDraw()
 				}
 			}
 
-			for (auto& submesh : mesh->GetSubMeshes())
-			{
-				for (uint32_t index = submesh.vertexStartOffset; index < submesh.vertexStartOffset + submesh.vertexCount; index++)
-				{
-					auto& vertex = mesh->GetVertexContainer().positions.at(index);
+			//for (auto& submesh : mesh->GetSubMeshes())
+			//{
+			//	for (uint32_t index = submesh.vertexStartOffset; index < submesh.vertexStartOffset + submesh.vertexCount; index++)
+			//	{
+			//		auto& vertex = mesh->GetVertexContainer().positions.at(index);
 
-					glm::vec4 vertexColor = hasPainted ? Volt::Utility::UnpackUIntToUNormFloat4(paintedEnt.GetComponent<Volt::VertexPaintedComponent>().vertexColors[index]) : 0.f;
+			//		glm::vec4 vertexColor = hasPainted ? Volt::Utility::UnpackUIntToUNormFloat4(paintedEnt.GetComponent<Volt::VertexPaintedComponent>().vertexColors[index]) : 0.f;
 
-					auto vPos = glm::vec3(paintedEnt.GetTransform() * submesh.transform * glm::vec4(vertex, 1));
-					if (!m_settings.isSelecting && glm::distance2(vPos, m_brushPosition) < m_settings.billboardRange * m_settings.billboardRange)
-					{
-						switch (m_settings.view)
-						{
-							case Settings::eView::RED:
-								if (Volt::Input::IsButtonDown(Volt::InputCode::LeftShift))
-									Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { m_settings.paintColor, 0, 0, 1 });
-								else if (Volt::Input::IsButtonDown(Volt::InputCode::LeftControl))
-									Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { m_settings.eraseColor, 0, 0, 1 });
-								else
-									Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { vertexColor.x, 0, 0, 1 });
-								break;
-							case Settings::eView::GREEN:
-								if (Volt::Input::IsButtonDown(Volt::InputCode::LeftShift))
-									Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 1, m_settings.paintColor, 0, 1 });
-								else if (Volt::Input::IsButtonDown(Volt::InputCode::LeftControl))
-									Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 1, m_settings.eraseColor, 0, 1 });
-								else
-									Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 0, vertexColor.y, 0, 1 });
-								break;
-							case Settings::eView::BLUE:
-								if (Volt::Input::IsButtonDown(Volt::InputCode::LeftShift))
-									Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 1, 1, m_settings.paintColor, 1 });
-								else if (Volt::Input::IsButtonDown(Volt::InputCode::LeftControl))
-									Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 1, 1, m_settings.eraseColor,1 });
-								else
-									Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 0, 0, vertexColor.z, 1 });
+			//		auto vPos = glm::vec3(paintedEnt.GetTransform() * submesh.transform * glm::vec4(vertex, 1));
+			//		if (!m_settings.isSelecting && glm::distance2(vPos, m_brushPosition) < m_settings.billboardRange * m_settings.billboardRange)
+			//		{
+			//			switch (m_settings.view)
+			//			{
+			//				case Settings::eView::RED:
+			//					if (Volt::Input::IsKeyDown(Volt::InputCode::LeftShift))
+			//						Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { m_settings.paintColor, 0, 0, 1 });
+			//					else if (Volt::Input::IsKeyDown(Volt::InputCode::LeftControl))
+			//						Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { m_settings.eraseColor, 0, 0, 1 });
+			//					else
+			//						Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { vertexColor.x, 0, 0, 1 });
+			//					break;
+			//				case Settings::eView::GREEN:
+			//					if (Volt::Input::IsKeyDown(Volt::InputCode::LeftShift))
+			//						Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 1, m_settings.paintColor, 0, 1 });
+			//					else if (Volt::Input::IsKeyDown(Volt::InputCode::LeftControl))
+			//						Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 1, m_settings.eraseColor, 0, 1 });
+			//					else
+			//						Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 0, vertexColor.y, 0, 1 });
+			//					break;
+			//				case Settings::eView::BLUE:
+			//					if (Volt::Input::IsKeyDown(Volt::InputCode::LeftShift))
+			//						Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 1, 1, m_settings.paintColor, 1 });
+			//					else if (Volt::Input::IsKeyDown(Volt::InputCode::LeftControl))
+			//						Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 1, 1, m_settings.eraseColor,1 });
+			//					else
+			//						Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 0, 0, vertexColor.z, 1 });
 
-								break;
-							case Settings::eView::ALPHA:
-							{
-								glm::vec4 alphaColor = { vertexColor.w, vertexColor.w, vertexColor.w, 1 };
-								if (Volt::Input::IsButtonDown(Volt::InputCode::LeftShift))
-									alphaColor = { m_settings.paintColor, m_settings.paintColor, m_settings.paintColor,1 };
-								else if (Volt::Input::IsButtonDown(Volt::InputCode::LeftControl))
-									alphaColor = { m_settings.eraseColor, m_settings.eraseColor, m_settings.eraseColor,1 };
+			//					break;
+			//				case Settings::eView::ALPHA:
+			//				{
+			//					glm::vec4 alphaColor = { vertexColor.w, vertexColor.w, vertexColor.w, 1 };
+			//					if (Volt::Input::IsKeyDown(Volt::InputCode::LeftShift))
+			//						alphaColor = { m_settings.paintColor, m_settings.paintColor, m_settings.paintColor,1 };
+			//					else if (Volt::Input::IsKeyDown(Volt::InputCode::LeftControl))
+			//						alphaColor = { m_settings.eraseColor, m_settings.eraseColor, m_settings.eraseColor,1 };
 
-								Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, alphaColor);
-							} break;
-							case Settings::eView::ALL:
-							{
+			//					Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, alphaColor);
+			//				} break;
+			//				case Settings::eView::ALL:
+			//				{
 
-								glm::vec4 drawColor;
+			//					glm::vec4 drawColor;
 
-								if (Volt::Input::IsButtonDown(Volt::InputCode::LeftShift))
-								{
-									drawColor =
-									{
-										m_settings.paintRedChannel ? m_settings.paintColor : 0,
-										m_settings.paintGreenChannel ? m_settings.paintColor : 0,
-										m_settings.paintBlueChannel ? m_settings.paintColor : 0,
-										1
-									};
-								}
-								else if (Volt::Input::IsButtonDown(Volt::InputCode::LeftControl))
-								{
-									drawColor =
-									{
-										m_settings.paintRedChannel ? m_settings.eraseColor : 0,
-										m_settings.paintGreenChannel ? m_settings.eraseColor : 0,
-										m_settings.paintBlueChannel ? m_settings.eraseColor : 0,
-										1
-									};
-								}
-								else
-								{
-									drawColor = { vertexColor.x,vertexColor.y,vertexColor.z,1 };
-								}
-								Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, drawColor);
+			//					if (Volt::Input::IsKeyDown(Volt::InputCode::LeftShift))
+			//					{
+			//						drawColor =
+			//						{
+			//							m_settings.paintRedChannel ? m_settings.paintColor : 0,
+			//							m_settings.paintGreenChannel ? m_settings.paintColor : 0,
+			//							m_settings.paintBlueChannel ? m_settings.paintColor : 0,
+			//							1
+			//						};
+			//					}
+			//					else if (Volt::Input::IsKeyDown(Volt::InputCode::LeftControl))
+			//					{
+			//						drawColor =
+			//						{
+			//							m_settings.paintRedChannel ? m_settings.eraseColor : 0,
+			//							m_settings.paintGreenChannel ? m_settings.eraseColor : 0,
+			//							m_settings.paintBlueChannel ? m_settings.eraseColor : 0,
+			//							1
+			//						};
+			//					}
+			//					else
+			//					{
+			//						drawColor = { vertexColor.x,vertexColor.y,vertexColor.z,1 };
+			//					}
+			//					Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, drawColor);
 
-								break;
-							}
-							default:
-								break;
-						}
-					}
-					else
-					{
-						switch (m_settings.view)
-						{
-							case Settings::eView::RED:
-								Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { vertexColor.x, 0, 0, m_settings.billboardAlpha });
-								break;
-							case Settings::eView::GREEN:
-								Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 0, vertexColor.y, 0, m_settings.billboardAlpha });
-								break;
-							case Settings::eView::BLUE:
-								Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 0, 0, vertexColor.z, m_settings.billboardAlpha });
-								break;
-							case Settings::eView::ALPHA:
-							{
-								// #mmax: broken, it no workie, do later, maybe
-								glm::vec4 alphaColor = { vertexColor.w, vertexColor.w, vertexColor.w, m_settings.billboardAlpha };
-								Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, alphaColor);
-							} break;
-							case Settings::eView::ALL:
-								Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { vertexColor.x, vertexColor.y, vertexColor.z, m_settings.billboardAlpha });
-								break;
-							default:
-								break;
-						}
-					}
-				}
-			}
+			//					break;
+			//				}
+			//				default:
+			//					break;
+			//			}
+			//		}
+			//		else
+			//		{
+			//			switch (m_settings.view)
+			//			{
+			//				case Settings::eView::RED:
+			//					Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { vertexColor.x, 0, 0, m_settings.billboardAlpha });
+			//					break;
+			//				case Settings::eView::GREEN:
+			//					Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 0, vertexColor.y, 0, m_settings.billboardAlpha });
+			//					break;
+			//				case Settings::eView::BLUE:
+			//					Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { 0, 0, vertexColor.z, m_settings.billboardAlpha });
+			//					break;
+			//				case Settings::eView::ALPHA:
+			//				{
+			//					// #mmax: broken, it no workie, do later, maybe
+			//					glm::vec4 alphaColor = { vertexColor.w, vertexColor.w, vertexColor.w, m_settings.billboardAlpha };
+			//					Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, alphaColor);
+			//				} break;
+			//				case Settings::eView::ALL:
+			//					Volt::DebugRenderer::DrawBillboard(vPos, { .1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar,.1f * m_settings.billboadScalar }, { vertexColor.x, vertexColor.y, vertexColor.z, m_settings.billboardAlpha });
+			//					break;
+			//				default:
+			//					break;
+			//			}
+			//		}
+			//	}
+			//}
 		}
 	}
 }
@@ -519,10 +521,10 @@ bool VertexPainterPanel::AddPainted(Volt::Entity entity)
 	if (!entity.HasComponent<Volt::MeshComponent>()) return false;
 	if (entity.HasComponent<Volt::VertexPaintedComponent>()) return true;
 
-	auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(entity.GetComponent<Volt::MeshComponent>().GetHandle());
+	auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(entity.GetComponent<Volt::MeshComponent>().GetHandle());
 	auto& vpComp = entity.AddComponent<Volt::VertexPaintedComponent>();
 
-	vpComp.vertexColors = Vector<uint32_t>(mesh->GetVertexContainer().Size(), Volt::Utility::PackUNormFloat4AsUInt({ 0.f, 0.f, 0.f, 1.f }));
+	vpComp.vertexColors = Vector<uint32_t>(mesh->GetMesh()->GetVertexContainer().Size(), Volt::Utility::PackUNormFloat4AsUInt({0.f, 0.f, 0.f, 1.f}));
 	vpComp.meshHandle = mesh->handle;
 
 	//for (auto& vertex : entity.GetComponent<Volt::VertexPaintedComponent>().vertecies)
@@ -542,7 +544,7 @@ void VertexPainterPanel::Paint(float color)
 		if (!paintedEnt.HasComponent<Volt::MeshComponent>()) continue;
 
 		auto meshComp = paintedEnt.GetComponent<Volt::MeshComponent>();
-		auto mesh = Volt::AssetManager::GetAsset<Volt::Mesh>(meshComp.GetHandle());
+		auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(meshComp.GetHandle());
 
 		if (!mesh || !mesh->IsValid()) continue;
 
@@ -553,11 +555,11 @@ void VertexPainterPanel::Paint(float color)
 
 		if (!AddPainted(paintedEnt)) continue;
 		auto& vertecies = paintedEnt.GetComponent<Volt::VertexPaintedComponent>().vertexColors;
-		for (auto& submesh : mesh->GetSubMeshes())
+		for (auto& submesh : mesh->GetMesh()->GetSubMeshes())
 		{
 			for (uint32_t index = submesh.vertexStartOffset; index < submesh.vertexStartOffset + submesh.vertexCount; index++)
 			{
-				auto& vertex = mesh->GetVertexContainer().positions.at(index);
+				auto& vertex = mesh->GetMesh()->GetVertexContainer().positions.at(index);
 				auto vPos = glm::vec3(paintedEnt.GetTransform() * submesh.transform * glm::vec4(vertex, 1));
 				if (glm::distance2(vPos, m_brushPosition) < m_settings.billboardRange * m_settings.billboardRange)
 				{

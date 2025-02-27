@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Volt/Scene/Entity.h"
+#include "Volt-Scene/Entity.h"
 
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>

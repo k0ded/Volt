@@ -3,6 +3,8 @@
 
 #include "Amp/Config.h"
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Amp
 {
 	void AudioManager::Init(InitInsturct aSetUpInstruction)

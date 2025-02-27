@@ -2,8 +2,9 @@
 #include "Window/RendererSettingsPanel.h"
 
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Rendering/SceneRenderer.h>
-#include <Volt/Rendering/Renderer.h>
+
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-Renderer/Renderer.h>
 
 #include "Sandbox/Utility/EditorUtilities.h"
 
@@ -19,32 +20,25 @@ void RendererSettingsPanel::UpdateMainContent()
 		m_sceneRenderer->Invalidate();
 	}
 
-	static const Vector<std::string> shadingStrings =
-	{
-		"Shaded",
-		"Albedo",
-		"Normals",
-		"Metalness",
-		"Roughness",
-		"Emissive",
-		"AO"
-	};
-
-	int32_t currentValue = static_cast<int32_t>(m_sceneRenderer->GetShadingMode());
-	if (UI::Combo("Shading Mode", currentValue, shadingStrings))
-	{
-		m_sceneRenderer->SetShadingMode(static_cast<Volt::SceneRenderer::ShadingMode>(currentValue));
-	}
-
 	static const Vector<std::string> visualizationStrings =
 	{
 		"None",
-		"VisualizeCascades",
-		"VisualizeLightComplexity",
-		"VisualizeMeshSDF"
+		"Base Color",
+		"Metallic",
+		"Roughness",
+		"Scene Color",
+		"Scene Depth",
+		"World Normal",
+		"Geometry Normal",
+		"Ambient Occlusion",
+		"Velocity",
+		"UV",
+		"Geometry Tangents"
 	};
 
-	currentValue = static_cast<int32_t>(m_sceneRenderer->GetVisualizationMode());
+	UI::Header("Visualization");
+
+	int32_t currentValue = static_cast<int32_t>(m_sceneRenderer->GetVisualizationMode2());
 	if (UI::Combo("Visualization Mode", currentValue, visualizationStrings))
 	{
 		m_sceneRenderer->SetVisualizationMode(static_cast<Volt::SceneRenderer::VisualizationMode>(currentValue));

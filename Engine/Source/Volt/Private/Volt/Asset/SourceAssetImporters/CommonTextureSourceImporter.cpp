@@ -2,7 +2,7 @@
 #include "Volt/Asset/SourceAssetImporters/CommonTextureSourceImporter.h"
 #include "Volt/Asset/SourceAssetImporters/ImportConfigs.h"
 
-#include "Volt/Rendering/Texture/Texture2D.h"
+#include "Volt-Renderer/Texture/Texture2D.h"
 
 #include <AssetSystem/AssetManager.h>
 

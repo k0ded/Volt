@@ -1,0 +1,6 @@
+name: "VolumetricFogLightScattering"
+internal: true
+sources:
+  - entryPoint: "MainCS"
+    shaderStage: "cs"
+    filePath: "Engine/Shaders/Source/Volumetrics/Fog/VolumetricFogLightScattering.hlsl"

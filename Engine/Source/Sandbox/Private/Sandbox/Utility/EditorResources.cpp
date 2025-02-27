@@ -1,11 +1,12 @@
 #include "sbpch.h"
 #include "Utility/EditorResources.h"
 
-#include <Volt/Asset/Mesh/Mesh.h>
+#include <Volt-Assets/MeshAsset.h>
 
-#include <Volt/Rendering/Renderer.h>
-#include <Volt/Rendering/ShapeLibrary.h>
-#include <Volt/Rendering/Texture/Texture2D.h>
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/ShapeLibrary.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <Volt/Asset/SourceAssetImporters/ImportConfigs.h>
 
@@ -169,10 +170,16 @@ void EditorResources::TryLoadIcon(const std::filesystem::path& path, Ref<Volt::T
 
 Ref<Volt::Mesh> EditorResources::TryLoadMesh(const std::filesystem::path& path)
 {
-	Ref<Volt::Mesh> mesh = Volt::AssetManager::QueueAsset<Volt::Mesh>(Volt::AssetManager::GetAssetHandleFromFilePath(path));
-	if (!mesh)
+	Ref<Volt::MeshAsset> meshAsset = Volt::AssetManager::QueueAsset<Volt::MeshAsset>(Volt::AssetManager::GetAssetHandleFromFilePath(path));
+	Ref<Volt::Mesh> mesh;
+
+	if (!meshAsset)
 	{
 		mesh = Volt::ShapeLibrary::GetCube();
+	}
+	else
+	{
+		mesh = meshAsset->GetMesh();
 	}
 
 	return mesh;

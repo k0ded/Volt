@@ -1,15 +1,14 @@
-#include "vtapch.h"
+#include "vtpch.h"
 
-#include "Volt-Assets/Assets/Font.h"
-#include "Volt-Assets/Assets/MSDFData.h"
+#include "Volt/Asset/Text/Font.h"
+#include "Volt/Asset/Text/MSDFData.h"
+#include "Volt/Core/Application.h"
 
-#include <RenderCore/Resources/BindlessResourcesManager.h>
-
-#include <RHIModule/Images/ImageView.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <LogModule/Log.h>
 
+#include <CoreUtilities/Buffer/Buffer.h>
 #include <CoreUtilities/FileSystem.h>
 
 namespace Volt

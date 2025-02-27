@@ -15,7 +15,7 @@ enum PartitionType
 	PARTITION_LAYERS,
 };
 
-struct LinearAllocator;
+struct DtLinearAllocator;
 struct FastLZCompressor;
 struct MeshProcess;
 struct TileCacheData;
@@ -70,7 +70,7 @@ private:
 	rcPolyMeshDetail* m_dmesh;
 
 	// TileCache
-	Ref<LinearAllocator> m_talloc;
+	Ref<DtLinearAllocator> m_talloc;
 	Ref<FastLZCompressor> m_tcomp;
 	Ref<MeshProcess> m_tmproc;
 

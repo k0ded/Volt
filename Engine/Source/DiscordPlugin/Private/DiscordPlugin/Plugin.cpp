@@ -2,7 +2,7 @@
 
 #include "DiscordPlugin/DiscordManager.h"
 
-#include <Volt/Events/ApplicationEvents.h>
+#include <EventSystem/ApplicationEvents.h>
 
 #include <LogModule/Log.h>
 

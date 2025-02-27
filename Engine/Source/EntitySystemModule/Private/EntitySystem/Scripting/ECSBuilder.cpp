@@ -1,6 +1,8 @@
 #include "espch.h"
 #include "Scripting/ECSBuilder.h"
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 #include <queue>
 
 ECSBuilder::ECSBuilder(ScriptingEngine& scriptingEngine)

@@ -39,6 +39,9 @@
 #include "Sandbox/Window/AnimationEditorPanel.h"
 #include "Sandbox/Window/GameUIEditorPanel.h"
 #include "Sandbox/Window/MotionWeaveDatabasePanel.h"
+#include "Sandbox/Window/RenderResourcesPanel.h"
+#include "Sandbox/Window/RenderGraphDebuggerPanel.h"
+#include "Sandbox/Window/TextureViewerPanel.h"
 #include "Sandbox/VertexPainting/VertexPainterPanel.h"
 
 #include "Sandbox/Modals/MeshImportModal.h"
@@ -51,30 +54,19 @@
 
 #include "Sandbox/UserSettingsManager.h"
 
-#include <Volt/Core/Application.h>
-
-#include <AssetSystem/AssetManager.h>
-
-#include <Volt/Components/CoreComponents.h>
-#include <Volt/Components/LightComponents.h>
-
-#include <Volt/Scene/Entity.h>
-#include <Volt/Scene/Scene.h>
-#include <Volt/Scene/SceneManager.h>
-
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
-#include <Volt/Rendering/Camera/Camera.h>
+#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/SceneManager.h>
 
-#include <Volt/Rendering/SceneRenderer.h>
+#include <Volt-Renderer/Camera/Camera.h>
+#include <Volt-Renderer/SceneRenderer.h>
 
-#include <Volt/Utility/FileSystem.h>
 #include <Volt/Utility/UIUtility.h>
 
-#include <Volt/Project/ProjectManager.h>
-
-#include <Volt/Events/ApplicationEvents.h>
+#include <AssetSystem/AssetManager.h>
 
 //#include <DiscordPlugin/Plugin.h>
 //#include <DiscordPlugin/DiscordManagerInterface.h>
@@ -88,8 +80,9 @@
 #include <RHIModule/Images/Image.h>
 
 #include <EventSystem/EventSystem.h>
+#include <EventSystem/ApplicationEvents.h>
 
-#include <imgui.h>
+#include <CoreUtilities/FileSystem.h>
 
 #include "Circuit/Widgets/SliderWidget.h"
 
@@ -118,19 +111,6 @@ void Sandbox::OnAttach()
 	}
 
 	Circuit::CircuitManager::Initialize();
-	//Circuit::OpenWindowParams params;
-	//params.title = "Test Circuit Window";
-	//params.startWidth = 600;
-	//params.startHeight = 400;
-	//Circuit::CircuitWindow& window = Circuit::CircuitManager::Get().OpenWindow(params);
-
-	//window.SetWidget(CreateWidget(Circuit::SliderWidget)
-	//	.X(100)
-	//	.Y(100)
-	//	.Max(100)
-	//	.Min(0)
-	//	.Value(50.f));
-
 	EditorResources::Initialize();
 	//VersionControl::Initialize(VersionControlSystem::Perforce);
 
@@ -215,10 +195,12 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::Register<EditorSettingsPanel>("", UserSettingsManager::GetSettings());
 	EditorLibrary::Register<PhysicsPanel>("Physics");
 	EditorLibrary::Register<RendererSettingsPanel>("Advanced", m_sceneRenderer);
+	EditorLibrary::Register<RenderGraphDebuggerPanel>("Advanced", m_sceneRenderer);
 	EditorLibrary::Register<VertexPainterPanel>("", m_runtimeScene, m_editorCameraController);
 
 	EditorLibrary::Register<SceneSettingsPanel>("", m_runtimeScene);
 	EditorLibrary::Register<WorldEnginePanel>("", m_runtimeScene);
+	EditorLibrary::Register<RenderResourcesPanel>("");
 	EditorLibrary::Register<GameUIEditorPanel>("UI");
 
 	m_navigationPanel = EditorLibrary::Register<NavigationPanel>("Advanced", m_runtimeScene);
@@ -236,6 +218,7 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::RegisterWithType<MeshPreviewPanel>("", AssetTypes::Mesh);
 	EditorLibrary::RegisterWithType<ShaderEditorPanel>("Shader", AssetTypes::ShaderDefinition);
 	EditorLibrary::RegisterWithType<MotionWeaveDatabasePanel>("Animation", AssetTypes::MotionWeave);
+	EditorLibrary::RegisterWithType<TextureViewerPanel>("Advanced", AssetTypes::Texture);
 
 	EditorLibrary::Sort();
 
@@ -266,14 +249,14 @@ void Sandbox::SetupNewSceneData()
 
 	// Scene Renderers
 	{
-		Volt::SceneRendererSpecification spec{};
-		Volt::SceneRendererSpecification gameSpec{};
+		Volt::SceneRendererCreateInfo spec{};
+		Volt::SceneRendererCreateInfo gameSpec{};
 
 		spec.debugName = "Editor Viewport";
-		spec.scene = m_runtimeScene;
+		spec.renderScene = m_runtimeScene->GetRenderScene();
 
 		gameSpec.debugName = "Game Viewport";
-		gameSpec.scene = m_runtimeScene;
+		gameSpec.renderScene = m_runtimeScene->GetRenderScene();
 
 		if (m_sceneRenderer)
 		{
@@ -789,7 +772,7 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 	return false;
 }
 
-void Sandbox::RenderGameView()
+void Sandbox::RenderGameView(float timestep)
 {
 	if (!m_gameViewPanel->IsOpen() || !m_gameSceneRenderer)
 	{
@@ -827,7 +810,7 @@ void Sandbox::RenderGameView()
 			camera->SetPosition(cameraEntity.GetPosition());
 			camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
 
-			m_gameSceneRenderer->OnRenderEditor(camera);
+			m_gameSceneRenderer->OnRenderEditor(camera, timestep);
 			break;
 		}
 	}
@@ -863,7 +846,7 @@ bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
 		case SceneState::Play:
 		case SceneState::Pause:
 		case SceneState::Simulating:
-			m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera());
+			m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera(), e.GetTimestep());
 			break;
 	}*/
 
@@ -873,14 +856,15 @@ bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
 	}
 
 	//RenderGameView();
+	RenderGameView(e.GetTimestep());
 
 	return false;
 }
 
 bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 {
-	const bool ctrlPressed = Volt::Input::IsButtonDown(Volt::InputCode::LeftControl);
-	const bool shiftPressed = Volt::Input::IsButtonDown(Volt::InputCode::LeftShift);
+	const bool ctrlPressed = Volt::Input::IsKeyDown(Volt::InputCode::LeftControl);
+	const bool shiftPressed = Volt::Input::IsKeyDown(Volt::InputCode::LeftShift);
 
 	switch (e.GetKeyCode())
 	{

@@ -3,6 +3,8 @@
 #include "VulkanRHIModule/Core.h"
 #include <RHIModule/Buffers/IndexBuffer.h>
 
+#include <CoreUtilities/Allocators/Handle.h>
+
 namespace Volt::RHI
 {
 	class Allocation;
@@ -14,7 +16,7 @@ namespace Volt::RHI
 
 		const uint32_t GetCount() const override;
 		inline constexpr ResourceType GetType() const override { return ResourceType::IndexBuffer; }
-		void SetName(std::string_view name) override;
+		void SetName(const std::string& name) override;
 		std::string_view GetName() const override;
 		const uint64_t GetDeviceAddress() const override;
 		const uint64_t GetByteSize() const override;
@@ -27,7 +29,7 @@ namespace Volt::RHI
 
 		std::string m_name;
 
-		RefPtr<Allocation> m_allocation;
+		Handle<Allocation> m_allocation;
 		uint32_t m_count = 0;
 	};
 }

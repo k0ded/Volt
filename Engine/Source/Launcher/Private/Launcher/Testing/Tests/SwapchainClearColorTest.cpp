@@ -1,7 +1,6 @@
 #include "Testing/Tests/SwapchainClearColorTest.h"
 
-#include <Volt/Core/Application.h>
-#include <Volt/Rendering/Renderer.h>
+#include <Volt-Renderer/Renderer.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>

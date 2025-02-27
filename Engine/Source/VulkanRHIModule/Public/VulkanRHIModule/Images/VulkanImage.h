@@ -8,12 +8,12 @@ struct VkImage_T;
 namespace Volt::RHI
 {
 	class Allocation;
-	class Allocator;
+	class GPUAllocator;
 
 	class VulkanImage final : public Image
 	{
 	public:
-		VulkanImage(const ImageSpecification& specification, const void* data, RefPtr<Allocator> allocator);
+		VulkanImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator);
 		VulkanImage(const SwapchainImageSpecification& specification);
 		~VulkanImage() override;
 
@@ -27,7 +27,7 @@ namespace Volt::RHI
 		VT_INLINE const uint32_t GetWidth() const override { return m_specification.width; }
 		VT_INLINE const uint32_t GetHeight() const override { return m_specification.height; }
 		VT_INLINE const uint32_t GetDepth() const override { return m_specification.depth; }
-		VT_INLINE const uint32_t GetMipCount() const override { return m_specification.depth; }
+		VT_INLINE const uint32_t GetMipCount() const override { return m_specification.mips; }
 		VT_INLINE const uint32_t GetLayerCount() const override { return m_specification.layers; }
 		VT_INLINE const PixelFormat GetFormat() const override { return m_specification.format; }
 		VT_INLINE const ImageUsage GetUsage() const override { return m_specification.usage; }
@@ -36,7 +36,7 @@ namespace Volt::RHI
 		VT_INLINE const ImageAspect GetImageAspect() const override { return m_imageAspect; }
 
 		VT_INLINE ResourceType GetType() const override { return m_specification.imageType; }
-		void SetName(std::string_view name) override;
+		void SetName(const std::string& name) override;
 		std::string_view GetName() const override;
 		const uint64_t GetDeviceAddress() const override;
 		const uint64_t GetByteSize() const override;
@@ -58,8 +58,8 @@ namespace Volt::RHI
 		ImageSpecification m_specification;
 		SwapchainImageData m_swapchainImageData;
 
-		RefPtr<Allocation> m_allocation;
-		WeakPtr<Allocator> m_allocator;
+		Handle<Allocation> m_allocation;
+		RawPtr<GPUAllocator> m_allocator;
 
 		bool m_hasGeneratedMips = false;
 		bool m_isSwapchainImage = false;

@@ -3,17 +3,17 @@
 
 #include "Sandbox/Utility/Theme.h"
 
-#include <Volt/Project/ProjectManager.h>
-
 #include <Volt/Core/Application.h>
-#include <Volt/Events/ApplicationEvents.h>
 #include <Volt/Utility/UIUtility.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
 
 #include <EventSystem/EventSystem.h>
+#include <EventSystem/ApplicationEvents.h>
 
 #include <imgui.h>
 
@@ -61,7 +61,6 @@ void ProjectUpgradeLayer::DrawUpgradeUI()
 		}
 
 		Volt::ProjectManager::OnProjectUpgraded();
-		Volt::ProjectManager::SerializeProject();
 
 		Volt::WindowCloseEvent loadEvent{};
 		Volt::EventSystem::DispatchEvent(loadEvent);

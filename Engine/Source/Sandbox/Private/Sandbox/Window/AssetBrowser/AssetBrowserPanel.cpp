@@ -2,11 +2,9 @@
 #include "Window/AssetBrowser/AssetBrowserPanel.h"
 
 #include "Sandbox/Utility/EditorResources.h"
-#include "Sandbox/Utility/EditorLibrary.h"
 
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/GlobalEditorStates.h"
-#include "Sandbox/Utility/AssetBrowserUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 
 #include "Sandbox/Window/AssetBrowser/AssetItem.h"
@@ -17,29 +15,23 @@
 #include "Sandbox/UserSettingsManager.h"
 
 #include <Volt/Asset/Prefab.h>
-#include <Volt/Asset/Mesh/MeshCompiler.h>
-#include <Volt/Asset/Rendering/Material.h>
-#include <Volt/Asset/Animation/Skeleton.h>
-#include <Volt/Asset/Animation/Animation.h>
-#include <Volt/Asset/Animation/AnimatedCharacter.h>
-#include <Volt/Asset/Animation/MotionWeaveDatabase.h>
 #include <Volt/Asset/ParticlePreset.h>
 
-#include <Volt/Animation/BlendSpace.h>
+#include <Volt-Renderer/Material.h>
+#include <Volt-Assets/MaterialAsset.h>
 
-#include <Volt/Components/CoreComponents.h>
-#include <Volt/Scene/Scene.h>
-#include <Volt/Project/ProjectManager.h>
+#include <Volt-Animation/Assets/MotionWeaveDatabase.h>
+#include <Volt-Animation/BlendSpace.h>
 
-#include <Volt/Rendering/Texture/Texture2D.h>
-
+#include <Volt-Scene/Components/CoreComponents.h>
+#include <Volt-Scene/Scene.h>
 #include <Volt/Utility/FileSystem.h>
 #include <Volt/Utility/UIUtility.h>
-#include <Volt/Utility/YAMLSerializationHelpers.h>
 #include <Volt/Utility/PremadeCommands.h>
 
+#include <Volt-Physics/PhysicsMaterialAsset.h>
+
 #include <AssetSystem/AssetManager.h>
-#include <RenderCore/Shader/ShaderMap.h>
 
 #include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>
 
@@ -53,8 +45,6 @@
 #include <InputModule/InputCodes.h>
 #include <InputModule/Events/KeyboardEvents.h>
 #include <InputModule/Events/MouseEvents.h>
-
-#include <yaml-cpp/yaml.h>
 
 #undef CreateDirectory
 
@@ -1221,7 +1211,7 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 
 	if (type == AssetTypes::Material)
 	{
-		Ref<Volt::Material> material = Volt::AssetManager::CreateAsset<Volt::Material>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), tempName);
+		Ref<Volt::MaterialAsset> material = Volt::AssetManager::CreateAsset<Volt::MaterialAsset>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), tempName);
 		Volt::AssetManager::SaveAsset(material);
 
 		newAssetHandle = material->handle;

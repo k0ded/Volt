@@ -5,15 +5,16 @@
 
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Memory/Allocator.h>
+#include <RHIModule/Memory/GPUAllocator.h>
 
 #include <vma/VulkanMemoryAllocator.h>
 
 namespace Volt::RHI
 {
-	VulkanImageAllocation::VulkanImageAllocation(const size_t hash)
+	VulkanImageAllocation::VulkanImageAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash),
+		m_name(name)
 	{
-		m_allocationHash = hash;
 	}
 
 	void VulkanImageAllocation::Unmap()
@@ -43,9 +44,10 @@ namespace Volt::RHI
 		return m_allocation;
 	}
 
-	VulkanBufferAllocation::VulkanBufferAllocation(const size_t hash)
+	VulkanBufferAllocation::VulkanBufferAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash),
+		m_name(name)
 	{
-		m_allocationHash = hash;
 	}
 
 	void VulkanBufferAllocation::Unmap()
@@ -79,9 +81,10 @@ namespace Volt::RHI
 		return m_allocation;
 	}
 
-	VulkanTransientBufferAllocation::VulkanTransientBufferAllocation(const size_t hash)
+	VulkanTransientBufferAllocation::VulkanTransientBufferAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash),
+		m_name(name)
 	{
-		m_allocationHash = hash;
 	}
 
 	void VulkanTransientBufferAllocation::Unmap()
@@ -119,9 +122,10 @@ namespace Volt::RHI
 		return m_memoryHandle;
 	}
 	
-	VulkanTransientImageAllocation::VulkanTransientImageAllocation(const size_t hash)
+	VulkanTransientImageAllocation::VulkanTransientImageAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash),
+		m_name(name)
 	{
-		m_allocationHash = hash;
 	}
 
 	void VulkanTransientImageAllocation::Unmap()

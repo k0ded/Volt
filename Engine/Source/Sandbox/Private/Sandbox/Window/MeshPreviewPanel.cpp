@@ -2,26 +2,21 @@
 #include "Window/MeshPreviewPanel.h"
 
 #include "Sandbox/Camera/EditorCameraController.h"
-#include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/EditorResources.h"
 
-#include <Volt/Asset/Rendering/Material.h>
-#include <Volt/Asset/Mesh/Mesh.h>
+#include <Volt-Assets/MeshAsset.h>
+
+#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <Volt/Utility/UIUtility.h>
-
-#include <Volt/Scene/Scene.h>
-#include <Volt/Rendering/Texture/Texture2D.h>
-#include <Volt/Rendering/SceneRenderer.h>
-
-#include <Volt/Components/RenderingComponents.h>
-#include <Volt/Components/LightComponents.h>
-#include <Volt/Asset/Mesh/MeshCompiler.h>
-
-#include <Volt/Project/ProjectManager.h>
+#include <Volt-Scene/Scene.h>
 
 #include <AssetSystem/AssetManager.h>
 #include <WindowModule/Events/WindowEvents.h>
+
+#include <CoreUtilities/FileSystem.h>
 
 MeshPreviewPanel::MeshPreviewPanel()
 	: EditorWindow("Mesh Preview", true)
@@ -53,7 +48,7 @@ void MeshPreviewPanel::OpenAsset(Ref<Volt::Asset> asset)
 	if (asset && asset->IsValid() && asset->GetType() == AssetTypes::Mesh)
 	{
 		myPreviewEntity.GetComponent<Volt::MeshComponent>().handle = asset->handle;
-		myCurrentMesh = std::reinterpret_pointer_cast<Volt::Mesh>(asset);
+		myCurrentMesh = std::reinterpret_pointer_cast<Volt::MeshAsset>(asset);
 		mySelectedSubMesh = -1;
 	}
 }
@@ -62,9 +57,9 @@ void MeshPreviewPanel::OnOpen()
 {
 	// Scene Renderer
 	{
-		Volt::SceneRendererSpecification spec{};
+		Volt::SceneRendererCreateInfo spec{};
 		spec.debugName = "Mesh Preview";
-		spec.scene = myScene;
+		spec.renderScene = myScene->GetRenderScene();
 
 		//Volt::SceneRendererSettings settings{};
 		//settings.enableGrid = true;
@@ -88,7 +83,7 @@ bool MeshPreviewPanel::OnRenderEvent(Volt::WindowRenderEvent& e)
 	//	mySceneRenderer->SubmitOutlineMesh(myCurrentMesh, (uint32_t)mySelectedSubMesh, { 1.f });
 	//}
 
-	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera());
+	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera(), e.GetTimestep());
 	return false;
 }
 
@@ -108,7 +103,7 @@ void MeshPreviewPanel::UpdateViewport()
 	myPerspectiveBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
 
 	ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-	if (myViewportSize != (*(glm::vec2*)&viewportSize) && viewportSize.x > 0 && viewportSize.y > 0 && !Volt::Input::IsButtonDown(Volt::InputCode::Mouse_LB))
+	if (myViewportSize != (*(glm::vec2*)&viewportSize) && viewportSize.x > 0 && viewportSize.y > 0 && !Volt::Input::IsMouseButtonDown(Volt::InputCode::Mouse_LB))
 	{
 		myViewportSize = { viewportSize.x, viewportSize.y };
 		mySceneRenderer->Resize((uint32_t)myViewportSize.x, (uint32_t)myViewportSize.y);
@@ -162,10 +157,10 @@ void MeshPreviewPanel::UpdateProperties()
 				UI::PushID();
 				if (UI::BeginProperties("subMeshProperties"))
 				{
-					auto currentMaterial = (int32_t)myCurrentMesh->GetSubMeshesMutable().at((uint32_t)mySelectedSubMesh).materialIndex;
+					auto currentMaterial = (int32_t)myCurrentMesh->GetMesh()->GetSubMeshesMutable().at((uint32_t)mySelectedSubMesh).materialIndex;
 					if (UI::ComboProperty("Sub Material", currentMaterial, subMaterialNames))
 					{
-						myCurrentMesh->GetSubMeshesMutable().at((uint32_t)mySelectedSubMesh).materialIndex = (uint32_t)currentMaterial;
+						myCurrentMesh->GetMesh()->GetSubMeshesMutable().at((uint32_t)mySelectedSubMesh).materialIndex = (uint32_t)currentMaterial;
 					}
 
 					UI::EndProperties();
@@ -205,7 +200,7 @@ void MeshPreviewPanel::UpdateToolbar()
 		const std::filesystem::path meshPath = FileSystem::OpenFileDialogue({ { "Mesh (*.vtasset)", "vtasset" } }, Volt::ProjectManager::GetAssetsDirectory());
 		if (!meshPath.empty() && FileSystem::Exists(meshPath))
 		{
-			myCurrentMesh = Volt::AssetManager::GetAsset<Volt::Mesh>(meshPath);
+			myCurrentMesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(meshPath);
 			myPreviewEntity.GetComponent<Volt::MeshComponent>().handle = myCurrentMesh->handle;
 			mySelectedSubMesh = -1;
 		}
@@ -224,7 +219,7 @@ void MeshPreviewPanel::UpdateMeshList()
 		return;
 	}
 
-	for (int32_t i = 0; const auto & subMesh : myCurrentMesh->GetSubMeshes())
+	for (int32_t i = 0; const auto & subMesh : myCurrentMesh->GetMesh()->GetSubMeshes())
 	{
 		std::string id = subMesh.name + "##subMesh" + std::to_string(i);
 
@@ -265,12 +260,12 @@ void MeshPreviewPanel::SaveCurrentMesh()
 		return;
 	}
 
-	if (!Volt::MeshCompiler::TryCompile(myCurrentMesh, currentMeshMeta.filePath, myCurrentMesh->GetMaterialTable()))
-	{
-		UI::Notify(NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}!", currentMeshMeta.filePath.string()));
-	}
-	else
-	{
-		UI::Notify(NotificationType::Success, "Saved Mesh!", std::format("Mesh {0} was saved successfully", currentMeshMeta.filePath.string()));
-	}
+	//if (!Volt::MeshCompiler::TryCompile(myCurrentMesh, currentMeshMeta.filePath, myCurrentMesh->GetMaterialTable()))
+	//{
+	//	UI::Notify(NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}!", currentMeshMeta.filePath.string()));
+	//}
+	//else
+	//{
+	//	UI::Notify(NotificationType::Success, "Saved Mesh!", std::format("Mesh {0} was saved successfully", currentMeshMeta.filePath.string()));
+	//}
 }
