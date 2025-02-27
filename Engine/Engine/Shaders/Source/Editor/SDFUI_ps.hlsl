@@ -36,6 +36,7 @@ struct UICommand
 struct Constants
 {
     vt::TypedBuffer<UICommand> commands;
+    vt::TextureSampler linearSampler;
     uint commandCount;
     uint2 renderSize;
 };

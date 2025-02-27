@@ -855,8 +855,7 @@ bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
 		TransitionToNewScene();
 	}
 
-	//RenderGameView();
-	RenderGameView(e.GetTimestep());
+	//RenderGameView(e.GetTimestep());
 
 	return false;
 }
