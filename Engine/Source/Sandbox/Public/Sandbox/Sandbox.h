@@ -5,8 +5,9 @@
 
 #include <Circuit/Rendering/CircuitRenderer.h>
 
-#include <Volt/Scene/Entity.h>
-#include <Volt/Core/Layer/Layer.h>
+#include <Volt-Scene/Entity.h>
+
+#include <Volt-Core/Layer/Layer.h>
 
 #include <EventSystem/EventListener.h>
 

@@ -20,3 +20,5 @@
 #include <cassert>
 
 #include <glm/glm.hpp>
+
+#include <CoreUtilities/Profiling/Profiling.h>

@@ -28,6 +28,8 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<VoltCore>(target);
 			conf.AddPublicDependency<VoltRenderer>(target);
 			conf.AddPublicDependency<VoltMaterialGraph>(target);
+
+			conf.AddPublicDependency<msdf_atlas_gen>(target);
 		}
     }
 }

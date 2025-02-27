@@ -22,7 +22,7 @@ namespace VoltSharpmake
 
 
 			conf.AddPublicDependency<RHIModule>(target);
-			conf.AddPublicDependency<RenderCoreModule>(target);
+			conf.AddPublicDependency<VoltRenderCore>(target);
 			conf.AddPublicDependency<WindowModule>(target);
 			conf.AddPublicDependency<LogModule>(target);
 			conf.AddPublicDependency<EventSystemModule>(target);

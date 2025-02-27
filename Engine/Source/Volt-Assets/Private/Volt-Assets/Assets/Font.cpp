@@ -1,10 +1,12 @@
-#include "vtpch.h"
+#include "vtassetspch.h"
 
-#include "Volt/Asset/Text/Font.h"
-#include "Volt/Asset/Text/MSDFData.h"
-#include "Volt/Core/Application.h"
+#include "Assets/MSDFData.h"
+
+#include "Assets/Font.h"
 
 #include <Volt-Renderer/Texture/Texture2D.h>
+
+#include <RenderCore/Resources/BindlessResourcesManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -107,7 +109,7 @@ namespace Volt
 	{
 		if (m_atlas)
 		{
-			BindlessResourcesManager::Get().UnregisterImageView(m_atlasResourceHandle, RHI::ImageViewType::View2D);
+			BindlessResourcesManager::Get().UnregisterResource(m_atlasResourceHandle);
 		}
 		delete m_msdfData;
 	}
