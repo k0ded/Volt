@@ -28,7 +28,8 @@ namespace Volt
 	{
 		CompilationJob job;
 		job.material = materialAsset;
-		m_queue->push(job);
+		m_queue.push(job);
+		m_wakeCondition.notify_all();
 	}
 
 	void MaterialCompilerSubSystem::RunWorker()
@@ -36,7 +37,7 @@ namespace Volt
 		while (m_isRunning)
 		{
 			CompilationJob job;
-			while (m_queue->try_pop(job))
+			while (m_queue.try_pop(job))
 			{
 				ExecuteJob(job);
 			}

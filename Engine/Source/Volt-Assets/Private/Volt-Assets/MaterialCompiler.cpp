@@ -9,10 +9,18 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
+#include <CoreUtilities/Time/ScopedTimer.h>
+
+VT_DEFINE_LOG_CATEGORY(LogMaterialCompiler);
+
 namespace Volt
 {
 	void MaterialCompiler::CompileMaterial(Ref<MaterialAsset> materialAsset)
 	{
+		VT_LOGC(Trace, LogMaterialCompiler, "Started compilation of material {}", materialAsset->assetName);
+
+		ScopedTimer timer;
+
 		constexpr const char* REPLACE_STRING = "GENERATED_SHADER";
 		constexpr const char* BASE_OUTPUT_PATH = "Generated\\Materials";
 		constexpr const char* BASE_SHADER_PATH = "Engine\\Shaders\\Source\\Generated\\GenerateGBuffer_cs.hlsl";
@@ -58,5 +66,7 @@ namespace Volt
 
 		// Create new pipeline based on compiled shader
 		materialAsset->GetRenderMaterial()->Invalidate(outShaderPath);
+
+		VT_LOGC(Trace, LogMaterialCompiler, "Compiled material {} in {} seconds!", materialAsset->assetName, timer.GetTime<Time::Seconds>());
 	}
 }

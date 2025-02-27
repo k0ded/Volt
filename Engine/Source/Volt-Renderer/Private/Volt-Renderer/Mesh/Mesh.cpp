@@ -261,8 +261,11 @@ namespace Volt
 		// Vertex animation info
 		{
 			const auto& vertexAnimationInfo = m_vertexContainer.animationInfo;
-			m_vertexAnimationInfoBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexAnimationInfo.size()), sizeof(VertexAnimationInfo), meshName + "VertexAnimationInfo");
-			m_vertexAnimationInfoBuffer->GetResource()->SetData(vertexAnimationInfo.data(), vertexAnimationInfo.size() * sizeof(VertexAnimationInfo));
+			if (!vertexAnimationInfo.empty())
+			{
+				m_vertexAnimationInfoBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexAnimationInfo.size()), sizeof(VertexAnimationInfo), meshName + "VertexAnimationInfo");
+				m_vertexAnimationInfoBuffer->GetResource()->SetData(vertexAnimationInfo.data(), vertexAnimationInfo.size() * sizeof(VertexAnimationInfo));
+			}
 		}
 
 		// Vertex animation data

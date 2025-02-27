@@ -2,8 +2,6 @@
 
 #include <Volt-Core/Plugin/Plugin.h>
 
-#include <EntitySystem/ComponentRegistry.h>
-
 class PLUGIN_API GamePlugin : public Volt::Plugin
 {
 public:
@@ -23,14 +21,3 @@ private:
 };
 
 VT_REGISTER_PLUGIN(GamePlugin);
-
-struct PlayerComponent
-{
-	static void ReflectType(Volt::TypeDesc<PlayerComponent>& reflect)
-	{
-		reflect.SetGUID("{4B5BD076-EEDD-4054-93E5-8F673BBC3DE7}"_guid);
-		reflect.SetLabel("Player Component");
-	}
-
-	REGISTER_COMPONENT(PlayerComponent);
-};

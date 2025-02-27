@@ -158,14 +158,14 @@ namespace Volt::MosaicNodes
 
 		VT_INLINE void RenderCustomWidget() override
 		{
-			//if constexpr (VECTOR_SIZE == 3)
-			//{
-			//	ImGui::ColorEdit3("##colorEdit3", glm::value_ptr(GetOutputParameter(0).Get<ValueType>()));
-			//}
-			//else
-			//{
-			//	ImGui::ColorEdit4("##colorEdit4", glm::value_ptr(GetOutputParameter(0).Get<ValueType>()));
-			//}
+			if constexpr (VECTOR_SIZE == 3)
+			{
+				ImGui::ColorEdit3("##colorEdit3", glm::value_ptr(GetOutputParameter(0).Get<ValueType>()));
+			}
+			else
+			{
+				ImGui::ColorEdit4("##colorEdit4", glm::value_ptr(GetOutputParameter(0).Get<ValueType>()));
+			}
 		}
 
 	private:

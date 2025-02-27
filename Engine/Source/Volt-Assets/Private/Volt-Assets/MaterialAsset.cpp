@@ -12,7 +12,8 @@ namespace Volt
 {
 	MaterialAsset::MaterialAsset()
 	{
-
+		m_graph = CreateRef<MaterialGraph>();
+		m_renderMaterial = CreateRef<RenderMaterial>(assetName);
 	}
 
 	void MaterialAsset::OnDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state)

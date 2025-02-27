@@ -26,6 +26,7 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<AssetSystemModule>(target);
 			conf.AddPublicDependency<RHIModule>(target);
 			conf.AddPublicDependency<yaml>(target);
+			conf.AddPrivateDependency<imgui>(target);
 		}
     }
 }

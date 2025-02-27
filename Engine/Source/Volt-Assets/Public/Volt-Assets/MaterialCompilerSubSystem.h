@@ -33,6 +33,6 @@ namespace Volt
 		std::mutex m_wakeMutex;
 		
 		Scope<std::thread> m_workerThread;
-		Scope<ThreadSafeQueue<CompilationJob>> m_queue;
+		ThreadSafeQueue<CompilationJob> m_queue;
 	};
 }

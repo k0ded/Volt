@@ -4,6 +4,7 @@
 #include "Volt-Assets/MaterialAsset.h"
 
 #include <Volt-MaterialGraph/MaterialGraph.h>
+#include <Volt-Renderer/RenderMaterial.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -139,15 +140,16 @@ namespace Volt
 			return false;
 		}
 
-		Ref<MaterialAsset> mosaicAsset = std::reinterpret_pointer_cast<MaterialAsset>(destinationAsset);
-		mosaicAsset->m_graph = CreateScope<MaterialGraph>();
+		Ref<MaterialAsset> materialAsset = std::reinterpret_pointer_cast<MaterialAsset>(destinationAsset);
+		materialAsset->m_graph = CreateRef<MaterialGraph>();
+		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(materialAsset->assetName);
 
 		streamReader.EnterScope("MosaicGraph");
 
-		mosaicAsset->m_graph->m_materialGUID = streamReader.ReadAtKey("guid", VoltGUID::Null());
-		mosaicAsset->m_graph->m_graph->GetEditorState() = streamReader.ReadAtKey("state", std::string(""));
+		materialAsset->m_graph->m_materialGUID = streamReader.ReadAtKey("guid", VoltGUID::Null());
+		materialAsset->m_graph->m_graph->GetEditorState() = streamReader.ReadAtKey("state", std::string(""));
 
-		auto& underlyingGraph = mosaicAsset->m_graph->m_graph->GetUnderlyingGraph();
+		auto& underlyingGraph = materialAsset->m_graph->m_graph->GetUnderlyingGraph();
 
 		streamReader.ForEach("Nodes", [&]()
 		{
@@ -155,7 +157,7 @@ namespace Volt
 			const VoltGUID guid = streamReader.ReadAtKey("guid", VoltGUID::Null());
 			const std::string state = streamReader.ReadAtKey("state", std::string());
 
-			mosaicAsset->m_graph->m_graph->AddNode(nodeId, guid);
+			materialAsset->m_graph->m_graph->AddNode(nodeId, guid);
 			auto& node = underlyingGraph.GetNodeFromID(nodeId);
 
 			node.nodeData->GetEditorState() = state;
@@ -206,7 +208,7 @@ namespace Volt
 		std::string logStr = std::format("Loaded material {0} with textures: \n", (uint64_t)metadata.handle);
 
 		// #TODO_Ivar: This should probably happen automatically while deserializing the texture nodes
-		for (const auto tex : mosaicAsset->m_graph->GetTextureHandles())
+		for (const auto tex : materialAsset->m_graph->GetTextureHandles())
 		{
 			logStr += std::format("		- {0}\n", (uint64_t)tex);
 			AssetManager::AddDependencyToAsset(metadata.handle, tex);

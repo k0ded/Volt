@@ -37,6 +37,7 @@ namespace Volt
 		std::filesystem::path filePath;
 	};
 
+	// #TODO_Ivar: Change name to be getter / setter, also add virtual functions when name changes.
 	class Asset
 	{
 	public:

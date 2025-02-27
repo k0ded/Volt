@@ -1,7 +1,7 @@
 #include "vtpch.h"
 
 #include "Volt/Core/Application.h"
-#include "Volt-Core/Layer/Layer.h"
+#include "Volt/ImGuiSubSystem.h"
 
 #include "Volt/Steam/SteamImplementation.h"
 #include "Volt/Utility/Noise.h"
@@ -13,6 +13,7 @@
 
 #include <Volt-Core/PluginSystem/PluginRegistry.h>
 #include <Volt-Core/PluginSystem/PluginSystem.h>
+#include <Volt-Core/Layer/Layer.h>
 
 #include <Volt-Physics/PhysicsSubSystem.h>
 
@@ -142,8 +143,6 @@ namespace Volt
 
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
 		m_physicsSubSystem = SubSystemManager::GetSubSystem<PhysicsSubSystem>();
-		auto core = m_physicsSubSystem->GetPhysicsCore();
-		VT_UNUSED(core);
 
 		//Physics::LoadSettings();
 		//Physics::Initialize();
@@ -165,32 +164,6 @@ namespace Volt
 			}
 		}
 
-		if (info.enableImGui)
-		{
-			auto& window = WindowManager::Get().GetMainWindow();
-
-			RHI::ImGuiCreateInfo createInfo{};
-			createInfo.swapchain = window.GetSwapchainPtr();
-			createInfo.window = window.GetNativeWindow();
-
-			m_imguiImplementation = RHI::ImGuiImplementation::Create(createInfo);
-			auto defaultFont = m_imguiImplementation->AddFont("Engine/Fonts/Inter/inter-regular.ttf", 16.f);
-
-			UI::SetFont(FontType::Regular_12, m_imguiImplementation->AddFont("Engine/Fonts/Inter/inter-regular.ttf", 12.f));
-			UI::SetFont(FontType::Regular_16, defaultFont);
-			UI::SetFont(FontType::Regular_17, m_imguiImplementation->AddFont("Engine/Fonts/Inter/inter-regular.ttf", 17.f));
-			UI::SetFont(FontType::Regular_20, m_imguiImplementation->AddFont("Engine/Fonts/Inter/inter-regular.ttf", 20.f));
-
-			UI::SetFont(FontType::Bold_12, m_imguiImplementation->AddFont("Engine/Fonts/Inter/inter-bold.ttf", 12.f));
-			UI::SetFont(FontType::Bold_16, m_imguiImplementation->AddFont("Engine/Fonts/Inter/inter-bold.ttf", 16.f));
-			UI::SetFont(FontType::Bold_17, m_imguiImplementation->AddFont("Engine/Fonts/Inter/inter-bold.ttf", 17.f));
-			UI::SetFont(FontType::Bold_20, m_imguiImplementation->AddFont("Engine/Fonts/Inter/inter-bold.ttf", 20.f));
-			UI::SetFont(FontType::Bold_90, m_imguiImplementation->AddFont("Engine/Fonts/Inter/inter-bold.ttf", 90.f));
-
-			m_imguiImplementation->SetDefaultFont(defaultFont);
-			ImGui::SetCurrentContext(m_imguiImplementation->GetContext());
-		}
-
 		m_navigationSystem = CreateScope<Volt::AI::NavigationSystem>();
 
 		// Extras
@@ -199,6 +172,11 @@ namespace Volt
 		{
 			m_steamImplementation = SteamImplementation::Create();
 		}
+
+		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PostEngine);
+
+		m_imguiSubSystem = SubSystemManager::GetSubSystem<ImGuiSubSystem>();
+		m_imguiSubSystem->SetupContext();
 
 		m_scriptingSystem = CreateScope<ScriptingSystem>();
 
@@ -219,7 +197,6 @@ namespace Volt
 
 		m_navigationSystem = nullptr;
 		m_layerStack.Clear();
-		m_imguiImplementation = nullptr;
 		SceneManager::Shutdown();
 
 		//Physics::SaveLayers();
@@ -327,14 +304,14 @@ namespace Volt
 		{
 			VT_PROFILE_SCOPE("Application::ImGui");
 
-			m_imguiImplementation->Begin();
+			m_imguiSubSystem->Begin();
 
 			AppImGuiUpdateEvent imguiEvent{};
 			EventSystem::DispatchEvent(imguiEvent);
 
 			// #TODO_Ivar: HACK! Will keep this here for now. We need to make sure that the scene renderer output image is ready. 
 			RenderGraphExecutionThread::WaitForFinishedExecution();
-			m_imguiImplementation->End();
+			m_imguiSubSystem->End();
 		}
 		else
 		{

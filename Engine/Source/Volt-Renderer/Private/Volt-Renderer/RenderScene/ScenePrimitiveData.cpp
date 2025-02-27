@@ -66,7 +66,7 @@ namespace Volt
 		MaterialTable finalMaterialTable;
 		for (uint32_t i = 0; i < meshMaterialTable.GetSize(); i++)
 		{
-			if (m_primitiveMaterialTable.ContainsMaterialIndex(i))
+			if (m_primitiveMaterialTable.ContainsMaterialIndex(i) && m_primitiveMaterialTable.GetMaterial(i))
 			{
 				finalMaterialTable.SetMaterial(m_primitiveMaterialTable.GetMaterial(i), i);
 			}

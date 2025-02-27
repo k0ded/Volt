@@ -67,6 +67,7 @@ namespace Volt
 	class Input;
 	class WindowManager;
 	class PhysicsSubSystem;
+	class ImGuiSubSystem;
 
 	namespace RHI
 	{
@@ -152,7 +153,6 @@ namespace Volt
 
 		Scope<ApplicationEventListener> m_eventListener;
 
-		RefPtr<RHI::ImGuiImplementation> m_imguiImplementation;
 		RefPtr<RHI::GraphicsContext> m_graphicsContext;
 		RefPtr<RHI::RHIProxy> m_rhiProxy;
 
@@ -165,6 +165,7 @@ namespace Volt
 		PluginSystem* m_pluginSystem = nullptr;
 		WindowManager* m_windowManager = nullptr;
 		PhysicsSubSystem* m_physicsSubSystem = nullptr;
+		ImGuiSubSystem* m_imguiSubSystem = nullptr;
 
 		Scope<SteamImplementation> m_steamImplementation;
 	};
