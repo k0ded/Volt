@@ -2,11 +2,17 @@
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
+#include <RenderCore/RenderGraph/ShaderParameterStruct.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <CoreUtilities/Math/Math.h>
 
 using namespace Volt;
+
+BEGIN_SHADER_PARAMETER_STRUCT(DispatchComputeShaderParameters)
+	SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, OutputBuffer)
+	SHADER_PARAMETER(uint32_t, InitialValue)
+END_SHADER_PARAMETER_STRUCT()
 
 RG_DispatchComputeShaderTest::RG_DispatchComputeShaderTest()
 {
@@ -42,8 +48,11 @@ bool RG_DispatchComputeShaderTest::RunTest()
 
 		context.BindPipeline(pipeline);
 
-		context.SetConstant("outputBuffer"_sh, data.bufferHandle);
-		context.SetConstant("initialValue"_sh, 1u);
+		DispatchComputeShaderParameters parameters;
+		parameters.InitialValue = 1u;
+		parameters.OutputBuffer = data.bufferHandle;
+
+		context.SetParameters(parameters);
 
 		context.Dispatch(1, 1, 1);
 

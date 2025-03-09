@@ -2,15 +2,11 @@
 
 #define GROUP_SIZE 32
 
-struct Constants
-{
-    vt::RWTypedBuffer<uint> outputBuffer;
-    uint initialValue;
-};
+vt::RWTypedBuffer<uint> OutputBuffer;
+uint InitialValue;
 
 [numthreads(GROUP_SIZE, 1, 1)]
 void main(uint threadId : SV_DispatchThreadID)
 { 
-    const Constants constants = GetConstants<Constants>();
-    constants.outputBuffer.Store(threadId, constants.initialValue + threadId);
+    OutputBuffer.Store(threadId, InitialValue + threadId);
 } 

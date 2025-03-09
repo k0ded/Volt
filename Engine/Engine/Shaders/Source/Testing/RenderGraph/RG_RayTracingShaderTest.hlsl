@@ -2,17 +2,13 @@
 #include "Structures.hlsli"
 #include "RayTracing.hlsli"
 
-struct Constants
-{
-    vt::UniformBuffer<ViewData> viewData;
-    vt::RWTex2D<float4> outputTexture;
-};
+vt::UniformBuffer<ViewData> View;
+vt::RWTex2D<float4> OutputTexture;
 
 [numthreads(8, 8, 1)]
 void main(uint2 threadId : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-	const ViewData viewData = constants.viewData.Load();    
+	const ViewData viewData = View.Load();    
 
     RayQuery<RAY_FLAG_FORCE_OPAQUE | 
              RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES |
@@ -36,10 +32,10 @@ void main(uint2 threadId : SV_DispatchThreadID)
 
 	if (query.CommittedStatus() == COMMITTED_TRIANGLE_HIT)
 	{
-		constants.outputTexture.Store(threadId, float4(0.f, 1.f, 0.f, 1.f));
+		OutputTexture.Store(threadId, float4(0.f, 1.f, 0.f, 1.f));
 	}
 	else
 	{
-		constants.outputTexture.Store(threadId, 0.f);
+		OutputTexture.Store(threadId, 0.f);
 	}
 }

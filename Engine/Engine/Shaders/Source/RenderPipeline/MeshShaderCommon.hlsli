@@ -19,14 +19,9 @@ struct DefaultPrimitiveOutput
     bool cullPrimitive : SV_CullPrimitive;
 };
 
-#ifndef OVERRIDE_DEFAULT_CONSTANTS
-struct Constants
-{
-    GPUScene gpuScene;
-    vt::UniformBuffer<ViewData> viewData;
-    vt::TypedBuffer<MeshTaskCommand> taskCommands;
-};
-#endif
+GPUScene GPUSceneData;
+vt::UniformBuffer<ViewData> View;
+vt::TypedBuffer<MeshTaskCommand> TaskCommands;
 
 float4 TransformClipPosition(float4 position)
 {

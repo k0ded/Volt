@@ -7,22 +7,18 @@
 
 #include "PathTracingCommon.hlsli"
 
-struct Constants
-{
-    vt::UniformBuffer<ViewData> viewData;
-    vt::UniformBuffer<DirectionalLight> directionalLight;
-    vt::RWTex2D<float4> outputTexture;
-	uint frameIndex;
+vt::UniformBuffer<ViewData> View;
+vt::UniformBuffer<DirectionalLight> DirectionalLight;
+vt::RWTex2D<float4> RWOutputTexture;
+uint FrameIndex;
 
-    GPUScene gpuScene;
-    BlueNoiseData blueNoiseData;
-};
+GPUScene GPUSceneData;
+BlueNoiseData BlueNoise;
 
 [shader("raygeneration")]
 void main()
 {
-    const Constants constants = GetConstants<Constants>();
-	const ViewData viewData = constants.viewData.Load();    
+	const ViewData viewData = View.Load();    
 
 	uint3 launchID = DispatchRaysIndex();
 	uint3 launchSize = DispatchRaysDimensions();
@@ -71,5 +67,5 @@ void main()
 		}
 	}
 
-	constants.outputTexture.Store(launchID.xy, float4(summedPixelColor / float(SampleCount), 0.0));
+	RWOutputTexture.Store(launchID.xy, float4(summedPixelColor / float(SampleCount), 0.0));
 }

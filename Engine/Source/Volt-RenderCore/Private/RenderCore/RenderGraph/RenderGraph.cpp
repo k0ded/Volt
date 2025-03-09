@@ -163,7 +163,6 @@ namespace Volt
 		m_resourceNodeAllocator(std::move(other.m_resourceNodeAllocator)),
 		m_commandBuffer(other.m_commandBuffer),
 		m_executionFence(other.m_executionFence),
-		m_perPassConstantsBuffer(other.m_perPassConstantsBuffer),
 		m_renderGraphConstantsBuffer(other.m_renderGraphConstantsBuffer),
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
 		m_runtimeShaderValidator(std::move(other.m_runtimeShaderValidator)),
@@ -197,7 +196,6 @@ namespace Volt
 		m_resourceNodeAllocator = std::move(other.m_resourceNodeAllocator);
 		m_commandBuffer = other.m_commandBuffer;
 		m_executionFence = other.m_executionFence;
-		m_perPassConstantsBuffer = other.m_perPassConstantsBuffer;
 		m_renderGraphConstantsBuffer = other.m_renderGraphConstantsBuffer;
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
 		m_runtimeShaderValidator = std::move(other.m_runtimeShaderValidator);
@@ -765,7 +763,6 @@ namespace Volt
 
 		AllocateConstantsBuffer();
 
-		m_sharedRenderContext.SetPerPassConstantsBuffer(m_perPassConstantsBuffer);
 		m_sharedRenderContext.SetRenderGraphConstantsBuffer(m_renderGraphConstantsBuffer);
 
 		Vector<PassExecutionRange> executionRanges;
@@ -920,23 +917,11 @@ namespace Volt
 
 	void RenderGraph::AllocateConstantsBuffer()
 	{
-		// Pass constants
-		{
-			RenderGraphBufferDesc desc{};
-			desc.count = std::max(m_passAllocator.GetNumPasses(), 1u);
-			desc.elementSize = RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE;
-			desc.usage = RHI::BufferUsage::StorageBuffer;
-			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
-			desc.name = "Render Graph Per Pass Constants";
-
-			m_perPassConstantsBuffer = m_transientResourceSystem.AcquireBufferRef(Utility::GetValueAsHandle<RenderGraphBufferHandle>(m_resourceNodeAllocator.GetAndIncrementHandle()), desc);
-		}
-
 		// Render Graph constants
 		{
 			RenderGraphBufferDesc desc{};
 			desc.count = std::max(m_passAllocator.GetNumPasses(), 1u);
-			desc.elementSize = sizeof(RenderContext::RenderGraphConstants);
+			desc.elementSize = RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE;
 			desc.usage = RHI::BufferUsage::UniformBuffer;
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			desc.name = "Render Graph Constants";

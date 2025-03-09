@@ -4,30 +4,25 @@
 
 #include "Atomics.hlsli"
 
-struct Constants
-{
-    vt::RWTypedBuffer<uint> validPrimitiveDrawData;
-    vt::TypedBuffer<PrimitiveDrawData> primitiveDrawData;
+vt::RWTypedBuffer<uint> RWValidPrimitiveDrawData;
+vt::TypedBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;
 
-    uint primitiveDrawDataCount;
-};
+uint PrimitiveDrawDataCount;
 
 [numthreads(64, 1, 1)]
 void MainCS(uint dispatchThreadId : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-
-    if (dispatchThreadId >= constants.primitiveDrawDataCount)
+    if (dispatchThreadId >= PrimitiveDrawDataCount)
     {
         return;
     }
 
-    const PrimitiveDrawData primitiveDrawData = constants.primitiveDrawData.Load(dispatchThreadId);
+    const PrimitiveDrawData primitiveDrawData = PrimitiveDrawDataBuffer.Load(dispatchThreadId);
     
     if (IsBitSet(primitiveDrawData.flags, PrimitiveFlags::Valid))
     {
         uint index;
-        vt::InterlockedAdd(constants.validPrimitiveDrawData, 0, 1, index);
-        constants.validPrimitiveDrawData.Store(index + 1, dispatchThreadId);
+        vt::InterlockedAdd(RWValidPrimitiveDrawData, 0, 1, index);
+        RWValidPrimitiveDrawData.Store(index + 1, dispatchThreadId);
     }
 };

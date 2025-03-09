@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Volt-Renderer/SceneRendererStructs.h"
-#include "Volt-Renderer/RenderingTechniques/GIBS.h"
 #include "Volt-Renderer/RenderingTechniques/DDGI.h"
 #include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
 #include "Volt-Renderer/RenderingTechniques/VolumetricFogTechnique.h"
@@ -182,7 +181,6 @@ namespace Volt
 		VisibilityVisualization m_visibilityVisualization = VisibilityVisualization::TriangleID;
 		////////////////
 		
-		GIBS m_gibs;
 		DDGI m_ddgi;
 		TAANoise m_taaNoise;
 		VolumetricFogTechnique m_volumetricFog;

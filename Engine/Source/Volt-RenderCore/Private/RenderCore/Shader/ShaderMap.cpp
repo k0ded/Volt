@@ -100,102 +100,69 @@ namespace Volt
 
 	bool ShaderMap::ReloadShaderByName(const std::string& name)
 	{
-		if (!s_instance->m_shaderMap.contains(name))
-		{
-			return false;
-		}
+		// #TODO_Ivar: Reimplement
 
-		auto shader = s_instance->m_shaderMap.at(name);
-		bool reloaded = shader->Reload(true);
-	
-		// #TODO_Ivar: Hack for finding out if it's a compute shader or not
+		//if (!s_instance->m_shaderMap.contains(name))
+		//{
+		//	return false;
+		//}
+		//
+		//auto shader = s_instance->m_shaderMap.at(name);
+		//bool reloaded = shader->Reload(true);
+		//
+		//// #TODO_Ivar: Hack for finding out if it's a compute shader or not
+		//
+		//if (reloaded)
+		//{
+		//	if (shader->GetShaderType() == RHI::ShaderType::Compute)
+		//	{
+		//		for (const auto& [hash, pipeline] : s_instance->m_computePipelineCache)
+		//		{
+		//			if (pipeline->GetShader() == shader)
+		//			{
+		//				pipeline->Invalidate();
+		//			}
+		//		}
+		//	}
+		//	else if (shader->GetShaderType() == RHI::ShaderType::Rasterization)
+		//	{
+		//		for (const auto& [hash, pipeline] : s_instance->m_renderPipelineCache)
+		//		{
+		//			if (pipeline->GetShader() == shader)
+		//			{
+		//				pipeline->Invalidate();
+		//			}
+		//		}
+		//	}
+		//	else
+		//	{
+		//		for (const auto& [hash, pipeline] : s_instance->m_rayTracingPipelineCache)
+		//		{
+		//			if (pipeline->IsShaderInPipeline(shader))
+		//			{
+		//				pipeline->Invalidate();
+		//			}
+		//		}
+		//
+		//		for (const auto& [hash, sbt] : s_instance->m_shaderBindingTableCache)
+		//		{
+		//			if (sbt->IsShaderInTable(shader))
+		//			{
+		//				sbt->Invalidate();
+		//			}
+		//		}
+		//	}
+		//}
+		//
+		//return reloaded;
 
-		if (reloaded)
-		{
-			if (shader->GetShaderType() == RHI::ShaderType::Compute)
-			{
-				for (const auto& [hash, pipeline] : s_instance->m_computePipelineCache)
-				{
-					if (pipeline->GetShader() == shader)
-					{
-						pipeline->Invalidate();
-					}
-				}
-			}
-			else if (shader->GetShaderType() == RHI::ShaderType::Rasterization)
-			{
-				for (const auto& [hash, pipeline] : s_instance->m_renderPipelineCache)
-				{
-					if (pipeline->GetShader() == shader)
-					{
-						pipeline->Invalidate();
-					}
-				}
-			}
-			else
-			{
-				for (const auto& [hash, pipeline] : s_instance->m_rayTracingPipelineCache)
-				{
-					if (pipeline->IsShaderInPipeline(shader))
-					{
-						pipeline->Invalidate();
-					}
-				}
-
-				for (const auto& [hash, sbt] : s_instance->m_shaderBindingTableCache)
-				{
-					if (sbt->IsShaderInTable(shader))
-					{
-						sbt->Invalidate();
-					}
-				}
-			}
-		}
-
-		return reloaded;
+		return false;
 	}
 
-	void ShaderMap::RegisterShader(const std::string& name, RefPtr<RHI::Shader> shader)
+	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader)
 	{
 		std::scoped_lock lock{ s_instance->m_registerMutex };
-		s_instance->m_shaderMap[name] = shader;
-	}
-
-	RefPtr<RHI::Shader> ShaderMap::Get(const std::string& name)
-	{
-		VT_PROFILE_FUNCTION();
-
-		if (!s_instance->m_shaderMap.contains(name))
-		{
-			return nullptr;
-		}
-
-		return s_instance->m_shaderMap.at(name);
-	}
-
-	RefPtr<RHI::ComputePipeline> ShaderMap::GetComputePipeline(const std::string& name, bool useGlobalResouces)
-	{
-		VT_PROFILE_FUNCTION();
-
-		std::scoped_lock lock{ s_instance->m_computeCacheMutex };
-		const size_t hash = Utility::GetComputeShaderHash(name);
-
-		if (s_instance->m_computePipelineCache.contains(hash))
-		{
-			auto pipeline = s_instance->m_computePipelineCache.at(hash);
-			VT_ENSURE(pipeline->IsValid());
-
-			return pipeline;
-		}
-
-		auto shader = Get(name);
-		VT_ENSURE(shader);
-
-		RefPtr<RHI::ComputePipeline> pipeline = RHI::ComputePipeline::Create(shader, useGlobalResouces);
-		s_instance->m_computePipelineCache[hash] = pipeline;
-
-		VT_ENSURE(pipeline->IsValid());
-		return pipeline;
+		s_instance->m_shaderMap[typeIndex] = shader;
 	}
 
 	RefPtr<RHI::RenderPipeline> ShaderMap::GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo)
@@ -256,5 +223,27 @@ namespace Volt
 		s_instance->m_shaderBindingTableCache[hash] = sbt;
 
 		return sbt;
+	}
+
+	RefPtr<RHI::ComputePipeline> ShaderMap::GetComputePipeline(RefPtr<RHI::Shader> shader, bool useGlobalResouces)
+	{
+		VT_PROFILE_FUNCTION();
+
+		std::scoped_lock lock{ s_instance->m_computeCacheMutex };
+		const size_t hash = shader->GetHash();
+
+		if (s_instance->m_computePipelineCache.contains(hash))
+		{
+			auto pipeline = s_instance->m_computePipelineCache.at(hash);
+			VT_ENSURE(pipeline->IsValid());
+
+			return pipeline;
+		}
+
+		RefPtr<RHI::ComputePipeline> pipeline = RHI::ComputePipeline::Create(shader, useGlobalResouces);
+		s_instance->m_computePipelineCache[hash] = pipeline;
+
+		VT_ENSURE(pipeline->IsValid());
+		return pipeline;
 	}
 }

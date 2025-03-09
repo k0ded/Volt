@@ -1,6 +1,0 @@
-name: "UpdateSurfels"
-internal: true
-sources:
-  - entryPoint: "UpdateSurfels"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/GIBS/UpdateSurfels.hlsl"

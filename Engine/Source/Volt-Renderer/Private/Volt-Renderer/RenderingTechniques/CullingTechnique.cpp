@@ -6,6 +6,7 @@
 
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
@@ -13,6 +14,38 @@
 
 namespace Volt
 {
+	struct DrawCallCullCS
+	{
+		BEGIN_SHADER_DEFINITION(DrawCallCullCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DrawCallCull.hlsl", "MainCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, CountBuffer)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<MeshTaskCommand>, TaskCommands)
+			SHADER_PARAMETER_STRUCT(GPUSceneData, GPUSceneData)
+			SHADER_PARAMETER(glm::mat4, ViewMatrix)
+			SHADER_PARAMETER(float4, CullingFrustum)
+			SHADER_PARAMETER(float, NearPlane)
+			SHADER_PARAMETER(float, FarPlane)
+			SHADER_PARAMETER(uint, CullingTypeInt)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(DrawCallCullCS)
+
+	struct TaskSubmitSetupCS
+	{
+		BEGIN_SHADER_DEFINITION(TaskSubmitSetupCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/TaskSubmitSetup.hlsl", "MainCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, CountCommandBuffer)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<MeshTaskCommand>, TaskCommands)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(TaskSubmitSetupCS)
+
 	CullingTechnique::CullingTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 		: m_renderGraph(renderGraph), m_blackboard(blackboard)
 	{
@@ -54,7 +87,7 @@ namespace Volt
 				data.taskCommandsBuffer = builder.CreateBuffer(desc);
 			}
 
-			GPUSceneData::Build(builder, gpuSceneData);
+			BuildGPUSceneData(builder, gpuSceneData);
 
 			builder.WriteResource(countCmdBufferHandle);
 
@@ -62,22 +95,23 @@ namespace Volt
 		},
 		[=](const DrawCullingData& data, RenderContext& context) 
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("DrawCallCull");
+			auto pipeline = ShaderMap::GetComputePipeline<DrawCallCullCS>();
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("countBuffer"_sh, data.countCommandBuffer);
-			context.SetConstant("taskCommands"_sh, data.taskCommandsBuffer);
 
-			context.SetConstant("viewMatrix"_sh, info.viewMatrix);
-			context.SetConstant("cullingFrustum"_sh, info.cullingFrustum);
-			context.SetConstant("nearPlane"_sh, info.nearPlane);
-			context.SetConstant("farPlane"_sh, info.farPlane);
-			context.SetConstant("cullingType"_sh, static_cast<uint32_t>(info.type));
+			DrawCallCullCS::Parameters parameters;
+			parameters.CountBuffer = data.countCommandBuffer;
+			parameters.TaskCommands = data.taskCommandsBuffer;
+			parameters.ViewMatrix = info.viewMatrix;
+			parameters.CullingFrustum = info.cullingFrustum;
+			parameters.NearPlane = info.nearPlane;
+			parameters.FarPlane = info.farPlane;
+			parameters.CullingTypeInt = static_cast<uint32_t>(info.type);
+			parameters.GPUSceneData = gpuSceneData;
 
-			GPUSceneData::Setup(context, gpuSceneData);
-		
 			constexpr uint32_t workGroupSize = 64;
 
+			context.SetParameters(parameters);
 			context.Dispatch(Math::DivideRoundUp(info.drawCommandCount, workGroupSize), 1, 1);
 		});
 
@@ -95,11 +129,14 @@ namespace Volt
 		},
 		[=](RenderContext& context)
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("TaskSubmitSetup");
+			auto pipeline = ShaderMap::GetComputePipeline<TaskSubmitSetupCS>();
+
+			TaskSubmitSetupCS::Parameters parameters;
+			parameters.CountCommandBuffer = data.countCommandBuffer;
+			parameters.TaskCommands = data.taskCommandsBuffer;
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("countCommandBuffer"_sh, data.countCommandBuffer);
-			context.SetConstant("taskCommands"_sh, data.taskCommandsBuffer);
+			context.SetParameters(parameters);
 			context.Dispatch(1, 1, 1);
 		});
 	}

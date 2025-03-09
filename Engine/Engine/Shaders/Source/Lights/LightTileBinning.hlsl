@@ -3,16 +3,13 @@
 #include "Utility.hlsli"
 #include "Lights.hlsli"
 
-struct Constants
-{
-    vt::Tex2D<float> depthTexture;
-    vt::UniformBuffer<ViewData> viewData;
-    vt::TypedBuffer<LightDrawData> lightsBuffer;
+vt::Tex2D<float> DepthTexture;
+vt::UniformBuffer<ViewData> View;
+vt::TypedBuffer<LightDrawData> LightsBuffer;
 
-    vt::RWTypedBuffer<int> visibleLightIndices;
- 
-    uint2 tileCount;
-};
+vt::RWTypedBuffer<int> RWVisibleLightIndices;
+
+uint2 TileCount;
 
 groupshared uint m_minDepthInt;
 groupshared uint m_maxDepthInt;
@@ -25,10 +22,9 @@ groupshared uint m_visibleLights[MAX_LIGHTS_PER_TILE];
 [numthreads(LIGHT_CULLING_TILE_SIZE, LIGHT_CULLING_TILE_SIZE, 1)]
 void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : SV_GroupIndex, uint2 groupId : SV_GroupID)
 {
-    const Constants constants = GetConstants<Constants>();
-    const ViewData viewData = constants.viewData.Load();
+    const ViewData viewData = View.Load();
 
-    const uint tileIndex = groupId.y * constants.tileCount.x + groupId.x;
+    const uint tileIndex = groupId.y * TileCount.x + groupId.x;
 
     if (groupThreadIndex == 0)
     {
@@ -40,7 +36,7 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
     GroupMemoryBarrierWithGroupSync();
 
     // Find max and min depth in current tile
-    const float pixelDepthValue = LinearizeDepth(constants.depthTexture.Load(int3(dispatchThreadId, 0)), viewData);
+    const float pixelDepthValue = LinearizeDepth(DepthTexture.Load(int3(dispatchThreadId, 0)), viewData);
     const uint depthInt = asuint(pixelDepthValue);
     
     InterlockedMin(m_minDepthInt, depthInt);
@@ -54,8 +50,8 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
         const float minDepth = asfloat(m_minDepthInt);
         const float maxDepth = asfloat(m_maxDepthInt);
 
-        const float2 negativeStep = (2.f * (float2)groupId / (float2)constants.tileCount);
-        const float2 positiveStep = (2.f * (float2)(groupId + 1.f) / (float2)constants.tileCount);
+        const float2 negativeStep = (2.f * (float2)groupId / (float2)TileCount);
+        const float2 positiveStep = (2.f * (float2)(groupId + 1.f) / (float2)TileCount);
 
         m_frustumPlanes[0] = float4(1.f, 0.f, 0.f, 1.f - negativeStep.x); // Left
         m_frustumPlanes[1] = float4(-1.f, 0.f, 0.f, -1.f + positiveStep.x); // Right
@@ -93,7 +89,7 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
             break;
         }
 
-        const LightDrawData currentLight = constants.lightsBuffer.Load(lightIndex);
+        const LightDrawData currentLight = LightsBuffer.Load(lightIndex);
 
         float distance = 0.f;
 
@@ -155,11 +151,11 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
     const uint lightCount = m_visibleLightCount;
     for (uint i = groupThreadIndex; i < lightCount; i += threadCount)
     {
-        constants.visibleLightIndices.Store(offsetInBuffer + i, m_visibleLights[i]);
+        RWVisibleLightIndices.Store(offsetInBuffer + i, m_visibleLights[i]);
     }
 
     if (groupThreadIndex == 0 && m_visibleLightCount != MAX_LIGHTS_PER_TILE)
     {
-        constants.visibleLightIndices.Store(offsetInBuffer + lightCount, -1);
+        RWVisibleLightIndices.Store(offsetInBuffer + lightCount, -1);
     }
 }

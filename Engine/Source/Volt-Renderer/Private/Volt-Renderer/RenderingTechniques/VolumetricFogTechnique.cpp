@@ -10,6 +10,7 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <CoreUtilities/Math/Math.h>
@@ -17,6 +18,95 @@
 namespace Volt
 {
 	static constexpr uint32_t VolumeSize = 128;
+
+	struct VolumetricFogInjectExtinctionScatteringCS
+	{
+		BEGIN_SHADER_DEFINITION(VolumetricFogInjectExtinctionScatteringCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Volumetrics/Fog/VolumetricFogInjectExtinctionScattering.hlsl", "MainCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex3D<float4>, RWScatteringExtinction)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<VolumetricFogParams>, VolumetricFogParamsData)
+			SHADER_PARAMETER(float, HeightFogDensity)
+			SHADER_PARAMETER(float, HeightFogFalloff)
+			SHADER_PARAMETER(float3, HeightFogColor)
+			SHADER_PARAMETER_STRUCT(BlueNoiseShaderParameters, BlueNoise)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(VolumetricFogInjectExtinctionScatteringCS)
+
+	struct VolumetricFogLightScatteringCS
+	{
+		BEGIN_SHADER_DEFINITION(VolumetricFogLightScatteringCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Volumetrics/Fog/VolumetricFogLightScattering.hlsl", "MainCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex3D<float4>, RWLightScattering)
+			SHADER_PARAMETER_IMAGE(vt::Tex3D<float4>, ScatteringExtinction)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<VolumetricFogParams>, VolumetricFogParamsData)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<DirectionalLightShadowData>, DirectionalLightShadow)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<LightDrawData>, Lights)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<int>, VisibleLights)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointSampler)
+			SHADER_PARAMETER_STRUCT(BlueNoiseShaderParameters, BlueNoise)
+			SHADER_PARAMETER(float, PhaseAnisotropy)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(VolumetricFogLightScatteringCS)
+
+	struct VolumetricFogIntegrateCS
+	{
+		BEGIN_SHADER_DEFINITION(VolumetricFogLightScatteringCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Volumetrics/Fog/VolumetricFogIntegrate.hlsl", "MainCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex3D<float4>, RWIntegratedVolume)
+			SHADER_PARAMETER_IMAGE(vt::Tex3D<float4>, LightScattering)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<VolumetricFogParams>, VolumetricFogParamsData)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointSampler)
+			SHADER_PARAMETER_STRUCT(BlueNoiseShaderParameters, BlueNoise)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(VolumetricFogIntegrateCS)
+
+	struct VolumetricFogSpatialFilterCS
+	{
+		BEGIN_SHADER_DEFINITION(VolumetricFogSpatialFilterCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Volumetrics/Fog/VolumetricFogSpatialFilter.hlsl", "MainCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex3D<float4>, RWSpatialFilteredScattering)
+			SHADER_PARAMETER_IMAGE(vt::Tex3D<float4>, LightScattering)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointSampler)
+			SHADER_PARAMETER(int3, FroxelVolumeDimensions)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(VolumetricFogSpatialFilterCS)
+
+	struct VolumetricFogTemporalFilterCS
+	{
+		BEGIN_SHADER_DEFINITION(VolumetricFogTemporalFilterCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Volumetrics/Fog/VolumetricFogTemporalFilter.hlsl", "MainCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex3D<float4>, RWLightScattering)
+			SHADER_PARAMETER_IMAGE(vt::Tex3D<float4>, PrevLightScattering)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<VolumetricFogParams>, VolumetricFogParamsData)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointSampler)
+			SHADER_PARAMETER(float, Alpha)
+			SHADER_PARAMETER_STRUCT(BlueNoiseShaderParameters, BlueNoise)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(VolumetricFogTemporalFilterCS)
 
 	struct VolumetricFogParams
 	{
@@ -85,17 +175,20 @@ namespace Volt
 		}, 
 		[=](const Data& data, RenderContext& context) 
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("VolumetricFogInjectExtinctionScattering");
+			auto pipeline = ShaderMap::GetComputePipeline<VolumetricFogInjectExtinctionScatteringCS>();
+
+			VolumetricFogInjectExtinctionScatteringCS::Parameters parameters;
+			parameters.RWScatteringExtinction = data.scatteringExtinctionImage;
+			parameters.View = uniformBuffers.viewDataBuffer;
+			parameters.VolumetricFogParamsData = volumetricFogParamsBuffer;
+			parameters.HeightFogDensity = 0.1f;
+			parameters.HeightFogFalloff = 1.f;
+			parameters.HeightFogColor = 0.5f;
+
+			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("rwScatteringExtinction"_sh, data.scatteringExtinctionImage);
-			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-			context.SetConstant("volumetricFogParams"_sh, volumetricFogParamsBuffer);
-			context.SetConstant("heightFogDensity"_sh, 0.1f);
-			context.SetConstant("heightFogFalloff"_sh, 1.f);
-			context.SetConstant("heightFogColor"_sh, glm::vec3(0.5f, 0.5f, 0.5f));
-		
-			BlueNoise::Setup(context, blueNoiseTextures);
+			context.SetParameters(parameters);
 
 			context.Dispatch(Math::DivideRoundUp(VolumeSize, 8u), Math::DivideRoundUp(VolumeSize, 8u), VolumeSize);
 		});
@@ -133,21 +226,23 @@ namespace Volt
 		},
 		[=](const Data& data, RenderContext& context) 
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("VolumetricFogLightScattering");
+			auto pipeline = ShaderMap::GetComputePipeline<VolumetricFogLightScatteringCS>();
+
+			VolumetricFogLightScatteringCS::Parameters parameters;
+			parameters.RWLightScattering = data.lightScatteringImage;
+			parameters.ScatteringExtinction = scatteringExtinctionImage;
+			parameters.View = uniformBuffers.viewDataBuffer;
+			parameters.VolumetricFogParamsData = volumetricFogParamsBuffer;
+			parameters.DirectionalLightShadow = uniformBuffers.directionalLightShadowDataBuffer;
+			parameters.Lights = gpuSceneData.lightsBuffer;
+			parameters.VisibleLights = lightCullingData.visibleLightsBuffer;
+			parameters.PointSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle();
+			parameters.PhaseAnisotropy = 0.2f;
+
+			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("rwLightScattering"_sh, data.lightScatteringImage);
-			context.SetConstant("scatteringExtinction"_sh, scatteringExtinctionImage);
-			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-			context.SetConstant("volumetricFogParams"_sh, volumetricFogParamsBuffer);
-			context.SetConstant("directionalLightShadowData"_sh, uniformBuffers.directionalLightShadowDataBuffer);
-			context.SetConstant("visibleLights"_sh, lightCullingData.visibleLightsBuffer);
-			context.SetConstant("pointSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
-			context.SetConstant("phaseAnisotropy"_sh, 0.2f);
-			context.SetConstant("lights"_sh, gpuSceneData.lightsBuffer);
-
-			BlueNoise::Setup(context, blueNoiseTextures);
-
+			context.SetParameters(parameters);
 			context.Dispatch(Math::DivideRoundUp(VolumeSize, 8u), Math::DivideRoundUp(VolumeSize, 8u), VolumeSize);
 		});
 
@@ -162,6 +257,7 @@ namespace Volt
 		};
 
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
+		const auto& blueNoiseTextures = blackboard.Get<BlueNoiseTextures>();
 
 		auto& data = renderGraph.AddPass<Data>("Integration",
 		[&](RenderGraph::Builder& builder, Data& data)
@@ -173,19 +269,25 @@ namespace Volt
 			builder.ReadResource(uniformBuffers.directionalLightShadowDataBuffer);
 			builder.ReadResource(lightScatteringImage);
 
+			BlueNoise::Build(builder, blueNoiseTextures);
+
 			builder.SetIsComputePass();
 		},
 		[=](const Data& data, RenderContext& context)
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("VolumetricFogIntegrate");
+			auto pipeline = ShaderMap::GetComputePipeline<VolumetricFogIntegrateCS>();
+
+			VolumetricFogIntegrateCS::Parameters parameters;
+			parameters.RWIntegratedVolume = data.integrationImage;
+			parameters.LightScattering = lightScatteringImage;
+			parameters.View = uniformBuffers.viewDataBuffer;
+			parameters.VolumetricFogParamsData = volumetricFogParamsBuffer;
+			parameters.PointSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle();
+
+			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("rwIntegratedVolume"_sh, data.integrationImage);
-			context.SetConstant("lightScattering"_sh, lightScatteringImage);
-			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-			context.SetConstant("volumetricFogParams"_sh, volumetricFogParamsBuffer);
-			context.SetConstant("pointSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
-
+			context.SetParameters(parameters);
 			context.Dispatch(Math::DivideRoundUp(VolumeSize, 8u), Math::DivideRoundUp(VolumeSize, 8u), 1);
 		});
 	
@@ -209,14 +311,16 @@ namespace Volt
 		},
 		[=](const Data& data, RenderContext& context) 
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("VolumetricFogSpatialFilter");
+			auto pipeline = ShaderMap::GetComputePipeline<VolumetricFogSpatialFilterCS>();
+
+			VolumetricFogSpatialFilterCS::Parameters parameters;
+			parameters.RWSpatialFilteredScattering = data.filteredImage;
+			parameters.LightScattering = lightScatteringImage;
+			parameters.PointSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle();
+			parameters.FroxelVolumeDimensions = VolumeSize;
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("rwSpatialFilteredScattering"_sh, data.filteredImage);
-			context.SetConstant("lightScattering"_sh, lightScatteringImage);
-			context.SetConstant("pointSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
-			context.SetConstant("froxelVolumeDimensions"_sh, glm::ivec3(VolumeSize));
-
+			context.SetParameters(parameters);
 			context.Dispatch(Math::DivideRoundUp(VolumeSize, 8u), Math::DivideRoundUp(VolumeSize, 8u), VolumeSize);
 		});
 
@@ -231,6 +335,7 @@ namespace Volt
 		};
 
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
+		const auto& blueNoiseTextures = blackboard.Get<BlueNoiseTextures>();
 
 		renderGraph.AddPass<Data>("TemporalFilter",
 		[&](RenderGraph::Builder& builder, Data& data) 
@@ -242,20 +347,26 @@ namespace Volt
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
 			builder.ReadResource(volumetricFogParamsBuffer);
 
+			BlueNoise::Build(builder, blueNoiseTextures);
+
 			builder.SetIsComputePass();
 		},
 		[=](const Data& data, RenderContext& context) 
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("VolumetricFogTemporalFilter");
+			auto pipeline = ShaderMap::GetComputePipeline<VolumetricFogTemporalFilterCS>();
+
+			VolumetricFogTemporalFilterCS::Parameters parameters;
+			parameters.RWLightScattering = lightScatteringImage;
+			parameters.PrevLightScattering = data.prevLightScatteringImage;
+			parameters.View = uniformBuffers.viewDataBuffer;
+			parameters.VolumetricFogParamsData = volumetricFogParamsBuffer;
+			parameters.Alpha = 0.3f;
+			parameters.PointSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle();
+
+			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("rwLightScattering"_sh, lightScatteringImage);
-			context.SetConstant("prevLightScattering"_sh, data.prevLightScatteringImage);
-			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-			context.SetConstant("volumetricFogParams"_sh, volumetricFogParamsBuffer);
-			context.SetConstant("alpha"_sh, 0.3f);
-			context.SetConstant("pointSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
-
+			context.SetParameters(parameters);
 			context.Dispatch(Math::DivideRoundUp(VolumeSize, 8u), Math::DivideRoundUp(VolumeSize, 8u), VolumeSize);
 		});
 

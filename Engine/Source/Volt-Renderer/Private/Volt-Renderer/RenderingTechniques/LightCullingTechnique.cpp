@@ -7,12 +7,29 @@
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <CoreUtilities/Math/Math.h>
 
 namespace Volt
 {
+	struct LightTileBinningCS
+	{
+		BEGIN_SHADER_DEFINITION(LightTileBinningCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Lights/LightTileBinning.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, DepthTexture)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<LightDrawData>, LightsBuffer)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<int>, RWVisibleLightIndices)
+			SHADER_PARAMETER(uint2, TileCount)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(LightTileBinningCS)
+
 	LightCullingTechnique::LightCullingTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 		: m_renderGraph(renderGraph), m_blackboard(blackboard)
 	{
@@ -46,15 +63,17 @@ namespace Volt
 		},
 		[=](const LightCullingData& data, RenderContext& context) 
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("LightTileBinning");
+			auto pipeline = ShaderMap::GetComputePipeline<LightTileBinningCS>();
+
+			LightTileBinningCS::Parameters parameters;
+			parameters.DepthTexture = preDepthData.depth;
+			parameters.View = uniformBuffers.viewDataBuffer;
+			parameters.LightsBuffer = gpuSceneData.lightsBuffer;
+			parameters.RWVisibleLightIndices = data.visibleLightsBuffer;
+			parameters.TileCount = glm::uvec2{ tileCountX, tileCountY };
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("depthTexture"_sh, preDepthData.depth);
-			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-			context.SetConstant("lightsBuffer"_sh, gpuSceneData.lightsBuffer);
-			context.SetConstant("visibleLightIndices"_sh, data.visibleLightsBuffer);
-			context.SetConstant("tileCount"_sh, glm::uvec2{ tileCountX, tileCountY });
-		
+			context.SetParameters(parameters);
 			context.Dispatch(tileCountX, tileCountY, 1u);
 		});
 

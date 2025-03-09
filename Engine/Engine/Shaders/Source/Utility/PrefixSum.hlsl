@@ -15,14 +15,11 @@ struct State
     uint state;
 };
 
-struct Constants
-{
-    vt::TypedBuffer<uint> inputValues;
-    vt::RWTypedBuffer<uint> outputValues;
-    vt::RWTypedBuffer<State, true> state;
-    vt::RWRawByteBuffer counterBuffer;
-    uint valueCount;
-};
+vt::TypedBuffer<uint> InputValues;
+vt::RWTypedBuffer<uint> OutputValues;
+vt::RWTypedBuffer<State, true> StateBuffer;
+vt::RWRawByteBuffer CounterBuffer;
+uint ValueCount;
 
 groupshared uint m_wavePrefixSums[TG_WAVE_COUNT];
 groupshared uint m_partitionIndex;
@@ -32,10 +29,8 @@ groupshared uint m_partitionPrefix;
 [numthreads(TG_SIZE, 1, 1)]
 void main(uint groupThreadId : SV_GroupThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-    
     // We need to use the raw buffer here.
-    globallycoherent RWStructuredBuffer<State> stateBuffer = ResourceDescriptorHeap[constants.state.handle.handle + 1];
+    globallycoherent RWStructuredBuffer<State> stateBuffer = ResourceDescriptorHeap[StateBuffer.handle.handle + 1];
 
     const uint WaveSize = WaveGetLaneCount();
     const uint WaveIndex = groupThreadId.x / WaveSize;
@@ -43,7 +38,7 @@ void main(uint groupThreadId : SV_GroupThreadID)
 
     if (groupThreadId == 0)
     {
-        constants.counterBuffer.InterlockedAdd(0, 1, m_partitionIndex);
+        CounterBuffer.InterlockedAdd(0, 1, m_partitionIndex);
         m_partitionPrefix = 0;
     }
 
@@ -54,17 +49,17 @@ void main(uint groupThreadId : SV_GroupThreadID)
     const uint localValueIndex = WaveSize * WaveIndex + LaneIndex;
     const uint valueIndex = TG_SIZE * partitionIndex + localValueIndex;
 
-    if (valueIndex >= constants.valueCount)
+    if (valueIndex >= ValueCount)
     {
         return;
     }
 
-    const uint maxLocalIndex = constants.valueCount - TG_SIZE * partitionIndex - 1;
+    const uint maxLocalIndex = ValueCount - TG_SIZE * partitionIndex - 1;
 
     const bool isLastLaneInWave = groupThreadId == (WaveIndex * WaveSize) + WaveSize - 1 || WaveIndex == (maxLocalIndex / WaveSize);
     const bool isLastActiveGroupThread = groupThreadId == maxLocalIndex || groupThreadId == TG_SIZE - 1;
     
-    uint value = constants.inputValues.Load(valueIndex);
+    uint value = InputValues.Load(valueIndex);
     uint lanePrefixSum = WavePrefixSum(value);
 
     // Store the per wave prefix sum for the entire thread group.
@@ -161,7 +156,7 @@ void main(uint groupThreadId : SV_GroupThreadID)
 
             if (isLastActiveGroupThread)
             {
-                uint otherValue = constants.inputValues.Load(lookBackIndex * TG_SIZE + otherValueIndex);
+                uint otherValue = InputValues.Load(lookBackIndex * TG_SIZE + otherValueIndex);
                 
                 if (otherValueIndex == 0)
                 {
@@ -214,5 +209,5 @@ void main(uint groupThreadId : SV_GroupThreadID)
 
     GroupMemoryBarrierWithGroupSync();
 
-    constants.outputValues.Store(valueIndex, m_partitionPrefix + laneAggregate);
+    OutputValues.Store(valueIndex, m_partitionPrefix + laneAggregate);
 }

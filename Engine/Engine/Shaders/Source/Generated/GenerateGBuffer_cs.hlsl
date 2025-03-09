@@ -10,25 +10,23 @@
 #include "Barycentrics.hlsli"
 #include "VisibilityBuffer.hlsli"
 
-struct Constants
-{
-    vt::Tex2D<uint2> visibilityBuffer;
-    vt::TypedBuffer<uint> materialCountBuffer;
-    vt::TypedBuffer<uint> materialStartBuffer;
-    vt::TypedBuffer<uint2> pixelCollection;
-    
-    GPUScene gpuScene;
-    vt::UniformBuffer<ViewData> viewData;
-    
-    vt::RWTex2D<float4> albedo;
-    vt::RWTex2D<float3> normals;
-    vt::RWTex2D<float2> material;
-    vt::RWTex2D<float3> emissive;
-    
-    uint materialId;
-    
-    float2 viewSize; // Move to buffer
-};
+vt::Tex2D<uint2> VisibilityBuffer;
+vt::TypedBuffer<uint> MaterialCountBuffer;
+vt::TypedBuffer<uint> MaterialStartBuffer;
+vt::TypedBuffer<uint2> PixelCollection;
+
+GPUScene GPUSceneData;
+
+vt::UniformBuffer<ViewData> View;
+
+vt::RWTex2D<float4> Albedo;
+vt::RWTex2D<float3> Normals;
+vt::RWTex2D<float2> Material;
+vt::RWTex2D<float3> Emissive;
+
+uint MaterialId;
+
+float2 ViewSize; // Move to buffer
 
 struct MaterialEvaluationData
 {
@@ -63,12 +61,10 @@ EvaluatedMaterial EvaluateMaterial(in GPUMaterial material, in MaterialEvaluatio
 [numthreads(256, 1, 1)]
 void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_GroupIndex)
 {
-    const Constants constants = GetConstants<Constants>();
-    const GPUScene scene = constants.gpuScene;
-    const ViewData viewData = constants.viewData.Load();
+    const ViewData viewData = View.Load();
     
-    uint materialCount = constants.materialCountBuffer.Load(constants.materialId);
-    uint materialStart = constants.materialStartBuffer.Load(constants.materialId);
+    uint materialCount = MaterialCountBuffer.Load(MaterialId);
+    uint materialStart = MaterialStartBuffer.Load(MaterialId);
     
     const uint pixelIndex = materialStart + threadId.x;
     
@@ -77,15 +73,15 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
         return;
     }
     
-    const float2 pixelPosition = constants.pixelCollection.Load(pixelIndex) + 0.5f;
-    const uint2 visibilityValues = constants.visibilityBuffer.Load(int3(pixelPosition, 0));
+    const float2 pixelPosition = PixelCollection.Load(pixelIndex) + 0.5f;
+    const uint2 visibilityValues = VisibilityBuffer.Load(int3(pixelPosition, 0));
     
     const uint objectId = visibilityValues.x;
     const uint triangleId = UnpackTriangleID(visibilityValues.y);
     const uint meshletId = UnpackMeshletID(visibilityValues.y);
     
-    const PrimitiveDrawData drawData = scene.primitiveDrawDataBuffer.Load(objectId);
-    const GPUMesh mesh = scene.meshesBuffer.Load(drawData.meshId);
+    const PrimitiveDrawData drawData = GPUSceneData.primitiveDrawDataBuffer.Load(objectId);
+    const GPUMesh mesh = GPUSceneData.meshesBuffer.Load(drawData.meshId);
     const Meshlet meshlet = mesh.meshletsBuffer.Load(mesh.meshletStartOffset + meshletId);
 
     const uint3 meshletTriIndices = UnpackPrimitive(mesh.meshletDataBuffer.Load(meshlet.dataOffset + meshlet.GetVertexCount() + triangleId)); 
@@ -106,9 +102,9 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
         mul(viewData.projection, mul(viewData.view, worldPositions[2]))
     };
 
-    const float2 screenPos = float2((pixelPosition.x / constants.viewSize.x) * 2.f - 1.f, -(pixelPosition.y / constants.viewSize.y) * 2.f + 1.f);
+    const float2 screenPos = float2((pixelPosition.x / ViewSize.x) * 2.f - 1.f, -(pixelPosition.y / ViewSize.y) * 2.f + 1.f);
 
-    const PartialDerivatives derivatives = CalculateDerivatives(clipPositions, screenPos, constants.viewSize);
+    const PartialDerivatives derivatives = CalculateDerivatives(clipPositions, screenPos, ViewSize);
     const MaterialData materialData = LoadVertexMaterialData(mesh.vertexMaterialBuffer, triIndices);    
     const UVGradient uvGradient = CalculateUVGradient(derivatives, materialData.texCoords);
     
@@ -116,7 +112,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     const float3 tangent = normalize(drawData.transform.RotateVector(normalize(InterpolateFloat3(derivatives, materialData.tangents))));
     const float3x3 TBN = CalculateTBN(normal, tangent, materialData.tangentW);
     
-    const GPUMaterial material = scene.materialsBuffer.Load(constants.materialId);
+    const GPUMaterial material = GPUSceneData.materialsBuffer.Load(MaterialId);
     
     MaterialEvaluationData evalData;
     evalData.texCoords = uvGradient.uv;
@@ -134,8 +130,8 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     // #TODO_Ivar: This depends on the texture format
     //albedo.xyz = SRGBToLinear(albedo.xyz);
     
-    constants.albedo.Store(pixelPosition, albedo);
-    constants.normals.Store(pixelPosition, resultNormal * 0.5f + 0.5f);
-    constants.material.Store(pixelPosition, float2(evaluatedMaterial.metallic, evaluatedMaterial.roughness));
-    constants.emissive.Store(pixelPosition, evaluatedMaterial.emissive);
+    Albedo.Store(pixelPosition, albedo);
+    Normals.Store(pixelPosition, resultNormal * 0.5f + 0.5f);
+    Material.Store(pixelPosition, float2(evaluatedMaterial.metallic, evaluatedMaterial.roughness));
+    Emissive.Store(pixelPosition, evaluatedMaterial.emissive);
 }

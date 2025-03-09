@@ -1,10 +1,7 @@
 #include "Resources.hlsli"
 #include "../UI/UIVertex.hlsli"
 
-struct Constants
-{
-    float4x4 viewProjection;
-};
+float4x4 ViewProjection;
 
 struct VSOutput
 {
@@ -15,10 +12,8 @@ struct VSOutput
 
 VSOutput MainVS(in UIVertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-    
     VSOutput output;
-    output.position = mul(constants.viewProjection, input.position);
+    output.position = mul(ViewProjection, input.position);
     output.texCoords = input.texCoords;
     output.widgetId = input.widgetId;
 

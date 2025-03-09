@@ -14,15 +14,11 @@ struct Vertex
     float3 tangent : TANGENT;
 };
 
-struct Constants
-{
-    vt::UniformBuffer<ViewData> viewData;
-};
+vt::UniformBuffer<ViewData> View;
 
 Output main(in Vertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-    const ViewData viewData = constants.viewData.Load();
+    const ViewData viewData = View.Load();
     
     float4 worldPosition = float4(input.position, 1.f);
     

@@ -10,12 +10,31 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/Resources/RenderGraphTextureResource.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <RHIModule/Pipelines/RenderPipeline.h>
 
 namespace Volt
 {
+	struct DirectionalShadowMSPS
+	{
+		BEGIN_SHADER_DEFINITION(DirectionalShadowMSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DirectionalShadowMeshShader.hlsl", "MainAS", RHI::ShaderStage::Amplification)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DirectionalShadowMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DirectionalShadowMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<DirectionalLightShadowData>, DirectionalLightShadow)
+			SHADER_PARAMETER(float4x4, ViewMatrix)
+			SHADER_PARAMETER(float4, CullingFrustum)
+			SHADER_PARAMETER(uint2, RenderSize)
+			SHADER_PARAMETER_STRUCT_INCLUDE(MeshShaderCommonParameters, Common)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(DirectionalShadowMSPS)
+
 	DirectionalShadowTechnique::DirectionalShadowTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 		: m_renderGraph(renderGraph), m_blackboard(blackboard)
 	{
@@ -70,10 +89,11 @@ namespace Volt
 			m_renderGraph.AddPass(std::format("Directional Light Shadow Cascade {}", i),
 			[&](RenderGraph::Builder& builder)
 			{
-				GPUSceneData::Build(builder, gpuSceneData);
+				BuildGPUSceneData(builder, gpuSceneData);
 				
 				builder.WriteResource(dirShadowData.shadowTexture);
 				builder.ReadResource(uniformBuffers.directionalLightShadowDataBuffer);
+				builder.ReadResource(uniformBuffers.viewDataBuffer);
 				builder.ReadResource(cullingData.countCommandBuffer, RenderGraphResourceState::IndirectArgument);
 				builder.ReadResource(cullingData.taskCommandsBuffer);
 			},
@@ -88,7 +108,7 @@ namespace Volt
 				}
 
 				RHI::RenderPipelineCreateInfo pipelineInfo{};
-				pipelineInfo.shader = ShaderMap::Get("DirectionalShadowMeshShader");
+				pipelineInfo.shader = ShaderMap::Get<DirectionalShadowMSPS>();
 				pipelineInfo.depthCompareOperator = RHI::CompareOperator::LessEqual;
 				pipelineInfo.cullMode = RHI::CullMode::Back;
 
@@ -97,13 +117,14 @@ namespace Volt
 				context.BeginRendering(info);
 				context.BindPipeline(pipeline);
 
-				GPUSceneData::Setup(context, gpuSceneData);
-
-				context.SetConstant("directionalLightShadowData"_sh, uniformBuffers.directionalLightShadowDataBuffer);
-				context.SetConstant("taskCommands"_sh, cullingData.taskCommandsBuffer);
-				context.SetConstant("viewMatrix"_sh, cullingInfo.viewMatrix);
-				context.SetConstant("cullingFrustum"_sh, cullingInfo.cullingFrustum);
-				context.SetConstant("renderSize"_sh, dirShadowData.renderSize);
+				DirectionalShadowMSPS::Parameters parameters;
+				parameters.Common.TaskCommands = cullingData.taskCommandsBuffer;
+				parameters.Common.GPUSceneData = gpuSceneData;
+				parameters.Common.View = uniformBuffers.viewDataBuffer;
+				parameters.DirectionalLightShadow = uniformBuffers.directionalLightShadowDataBuffer;
+				parameters.ViewMatrix = cullingInfo.viewMatrix;
+				parameters.CullingFrustum = cullingInfo.cullingFrustum;
+				parameters.RenderSize = dirShadowData.renderSize;
 
 				struct PushConstant
 				{
@@ -112,6 +133,7 @@ namespace Volt
 
 				PushConstant pushConstants{ i };
 				context.PushConstants(&pushConstants, sizeof(PushConstant));
+				context.SetParameters(parameters);
 				context.DispatchMeshTasksIndirect(cullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 
 				context.EndRendering();

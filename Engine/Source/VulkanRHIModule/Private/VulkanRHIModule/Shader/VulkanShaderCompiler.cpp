@@ -9,6 +9,7 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Shader/ShaderPreProcessor.h>
 #include <RHIModule/Shader/ShaderCache.h>
+#include <RHIModule/Globals.h>
 
 #include <CoreUtilities/StringUtility.h>
 
@@ -112,7 +113,7 @@ namespace Volt::RHI
 		}
 
 		ReflectAllStages(specification, result);
-		m_shaderCache->CacheShader(specification, result);
+		//m_shaderCache->CacheShader(specification, result);
 
 		return result;
 	}
@@ -170,6 +171,8 @@ namespace Volt::RHI
 		}
 
 		const std::wstring wEntryPoint = ::Utility::ToWString(sourceEntry.entryPoint);
+		const std::wstring renderGraphConstantsBinding = std::to_wstring(Globals::RENDER_GRAPH_CONSTANTS_BINDING);
+		const std::wstring renderGraphConstantsSpace = std::to_wstring(Globals::RENDER_GRAPH_CONSTANTS_SPACE);
 
 		Vector<const wchar_t*> arguments =
 		{
@@ -182,10 +185,10 @@ namespace Volt::RHI
 			L"-fspv-target-env=vulkan1.3",
 			L"-HV",
 			L"2021",
-			L"-D",
-			L"__VULKAN__ ",
+			L"-D", L"__VULKAN__ ",
 			L"-enable-16bit-types",
 			L"-fvk-use-dx-layout",
+			L"-fvk-bind-globals", renderGraphConstantsBinding.c_str(), renderGraphConstantsSpace.c_str(),
 
 			DXC_ARG_PACK_MATRIX_COLUMN_MAJOR
 		};
@@ -323,6 +326,198 @@ namespace Volt::RHI
 		}
 	}
 
+	bool IsResourceStructType(const std::string& typeName)
+	{
+		// Buffers
+		if (typeName == "TextureSampler") return true;
+		else if (typeName == "RWRawByteBuffer") return true;
+		else if (typeName == "RawByteBuffer") return true;
+		else if (typeName == "UniformBuffer") return true;
+		else if (typeName == "RWTypedBuffer") return true;
+		else if (typeName == "TypedBuffer") return true;
+
+		// Texture2D
+		else if (typeName == "RWTex2D") return true;
+		else if (typeName == "Tex2D") return true;
+
+		// Texture2DArray
+		else if (typeName == "RWTex2DArray") return true;
+		else if (typeName == "Tex2DArray") return true;
+
+		// TextureCube
+		else if (typeName == "TexCube") return true;
+
+		// Texture3D
+		else if (typeName == "RWTex3D") return true;
+		else if (typeName == "Tex3D") return true;
+
+		else return false;
+	}
+
+	ShaderUniformBaseType GetBaseTypeFromSPIRBaseType(spirv_cross::SPIRType::BaseType baseType)
+	{
+		switch (baseType)
+		{
+			case spirv_cross::SPIRType::Boolean: return ShaderUniformBaseType::Bool;
+			case spirv_cross::SPIRType::Short: return ShaderUniformBaseType::Short;
+			case spirv_cross::SPIRType::UShort: return ShaderUniformBaseType::UShort;
+			case spirv_cross::SPIRType::Int: return ShaderUniformBaseType::Int;
+			case spirv_cross::SPIRType::UInt: return ShaderUniformBaseType::UInt;
+			case spirv_cross::SPIRType::Int64: return ShaderUniformBaseType::Int64;
+			case spirv_cross::SPIRType::UInt64: return ShaderUniformBaseType::UInt64;
+			case spirv_cross::SPIRType::Half: return ShaderUniformBaseType::Half;
+			case spirv_cross::SPIRType::Float: return ShaderUniformBaseType::Float;
+			case spirv_cross::SPIRType::Double: return ShaderUniformBaseType::Double;
+		}
+
+		VT_ENSURE_MSG(false, "Invalid type!");
+
+		return ShaderUniformBaseType::Bool;
+	}
+
+	ShaderUniformType GetShaderUniformTypeFromSPIRType(spirv_cross::Compiler& compiler, const spirv_cross::TypeID& spirvTypeID)
+	{
+		ShaderUniformType resultType{};
+
+		const spirv_cross::SPIRType& spirvType = compiler.get_type(spirvTypeID);
+
+		if (spirvType.basetype == spirv_cross::SPIRType::BaseType::Struct)
+		{
+			const std::string& typeName = compiler.get_name(spirvTypeID);
+
+			// Buffers
+			if (typeName == "TextureSampler")
+			{
+				resultType.baseType = ShaderUniformBaseType::Sampler;
+			}
+			else if (typeName == "RWRawByteBuffer")
+			{
+				resultType.baseType = ShaderUniformBaseType::RWBuffer;
+			}
+			else if (typeName == "RawByteBuffer")
+			{
+				resultType.baseType = ShaderUniformBaseType::Buffer;
+			}
+			else if (typeName == "UniformBuffer")
+			{
+				resultType.baseType = ShaderUniformBaseType::UniformBuffer;
+			}
+			else if (typeName == "RWTypedBuffer")
+			{
+				resultType.baseType = ShaderUniformBaseType::RWBuffer;
+			}
+			else if (typeName == "TypedBuffer")
+			{
+				resultType.baseType = ShaderUniformBaseType::Buffer;
+			}
+
+			// Texture2D
+			else if (typeName == "RWTex2D")
+			{
+				resultType.baseType = ShaderUniformBaseType::RWTexture2D;
+			}
+			else if (typeName == "Tex2D")
+			{
+				resultType.baseType = ShaderUniformBaseType::Texture2D;
+			}
+
+			// Texture2DArray
+			else if (typeName == "RWTex2DArray")
+			{
+				resultType.baseType = ShaderUniformBaseType::RWTexture2DArray;
+			}
+			else if (typeName == "Tex2DArray")
+			{
+				resultType.baseType = ShaderUniformBaseType::Texture2DArray;
+			}
+
+			// TextureCube
+			else if (typeName == "TexCube")
+			{
+				// #TODO_Ivar: Why is this Texture2D original implementation?
+				resultType.baseType = ShaderUniformBaseType::TextureCube;
+			}
+
+			// Texture3D
+			else if (typeName == "RWTex3D")
+			{
+				resultType.baseType = ShaderUniformBaseType::RWTexture3D;
+			}
+			else if (typeName == "Tex3D")
+			{
+				resultType.baseType = ShaderUniformBaseType::Texture3D;
+			}
+			else
+			{
+				VT_ENSURE_MSG(false, "Unknown type!");
+			}
+		}
+		else
+		{
+			resultType.baseType = GetBaseTypeFromSPIRBaseType(spirvType.basetype);
+			resultType.columns = spirvType.columns;
+			resultType.vecsize = spirvType.vecsize;
+		}
+
+		return resultType;
+	}
+
+	void ReflectGlobalsStruct(spirv_cross::Compiler& compiler, const spirv_cross::TypeID& spirvTypeID, const std::string& parentMemberName, size_t offset, ShaderCompiler::CompilationResultData& inOutData)
+	{
+		const spirv_cross::SPIRType& structType = compiler.get_type(spirvTypeID);
+
+		for (size_t m = 0; m < structType.member_types.size(); ++m)
+		{
+			const auto& spirvMemberTypeID = structType.member_types[m];
+			const spirv_cross::SPIRType& memberType = compiler.get_type(spirvMemberTypeID);
+			const std::string& memberTypeName = compiler.get_name(spirvMemberTypeID);
+
+			const std::string memberName = compiler.get_member_name(spirvTypeID, static_cast<uint32_t>(m));
+			const std::string uniformName = !parentMemberName.empty() ? parentMemberName + "." + memberName : memberName;
+			const uint32_t memberOffset = compiler.type_struct_member_offset(structType, static_cast<uint32_t>(m));
+
+			if (memberType.basetype == spirv_cross::SPIRType::BaseType::Struct && !IsResourceStructType(memberTypeName))
+			{
+				ReflectGlobalsStruct(compiler, spirvMemberTypeID, uniformName, offset + memberOffset, inOutData);
+			}
+			else
+			{
+				ShaderUniformType uniformType = GetShaderUniformTypeFromSPIRType(compiler, spirvMemberTypeID);
+				inOutData.renderGraphConstants.uniforms[StringHash::Construct(uniformName)] = ShaderUniform(uniformType, uniformType.GetSize(), offset + memberOffset);
+			}
+		}
+	}
+
+	void ReflectGlobals(spirv_cross::Compiler& compiler, const spirv_cross::Resource& globalsBufferResource, ShaderCompiler::CompilationResultData& inOutData)
+	{
+		const auto& globalsBufferType = compiler.get_type(globalsBufferResource.base_type_id);
+
+		inOutData.renderGraphConstants.size = compiler.get_declared_struct_size(globalsBufferType);;
+		inOutData.renderGraphConstants.uniforms.clear();
+		
+
+		for (size_t i = 0; i < globalsBufferType.member_types.size(); ++i)
+		{
+			std::string memberName = compiler.get_member_name(globalsBufferResource.base_type_id, static_cast<uint32_t>(i));
+
+			// If the type is a non resource struct type, we need to propagate the members out.
+			const auto& spirvTypeID = globalsBufferType.member_types[i];
+			const spirv_cross::SPIRType& memberType = compiler.get_type(spirvTypeID);
+			const std::string& memberTypeName = compiler.get_name(spirvTypeID);
+			const uint32_t memberOffset = compiler.type_struct_member_offset(globalsBufferType, static_cast<uint32_t>(i));
+
+			if (memberType.basetype == spirv_cross::SPIRType::BaseType::Struct && !IsResourceStructType(memberTypeName))
+			{
+				ReflectGlobalsStruct(compiler, spirvTypeID, memberName, memberOffset, inOutData);
+			}
+			else
+			{
+				ShaderUniformType uniformType = GetShaderUniformTypeFromSPIRType(compiler, spirvTypeID);
+				inOutData.renderGraphConstants.uniforms[StringHash::Construct(memberName)] = ShaderUniform(uniformType, uniformType.GetSize(), memberOffset);
+			}
+		}
+	}
+
 	void VulkanShaderCompiler::ReflectStage(ShaderStage stage, const Specification& specification, CompilationResultData& inOutData)
 	{
 		spirv_cross::Compiler compiler{ inOutData.shaderData[stage].data(), inOutData.shaderData[stage].size() };
@@ -346,7 +541,7 @@ namespace Volt::RHI
 
 			if (name == "$Globals")
 			{
-				VT_LOGC(Error, LogVulkanRHI, "Shader {0} seems to have incorrectly defined global variables!", specification.shaderSourceInfo.at(stage).sourceEntry.filePath.string());
+				ReflectGlobals(compiler, ubo, inOutData);
 				continue;
 			}
 
@@ -520,7 +715,7 @@ namespace Volt::RHI
 			filepath.c_str(),
 			L"-P", // Preproccess
 			L"-D", L"__HLSL__",
-			L"-D", L"__VULKAN__"
+			L"-D", L"__VULKAN__",
 		};
 
 		if ((m_flags & ShaderCompilerFlags::WarningsAsErrors) != ShaderCompilerFlags::None)

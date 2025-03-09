@@ -2,7 +2,7 @@
 
 #include "ResourceType.hlsli"
 
-#ifdef ENABLE_RUNTIME_VALIDATION
+#if 0 //ENABLE_RUNTIME_VALIDATION
 
 #include "ShaderRuntimeValidator.hlsli"
 
@@ -137,10 +137,3 @@ struct ResourceDescriptorHeapInternal
 static ResourceDescriptorHeapInternal g_descriptorHeap;
 
 #define DESCRIPTOR_HEAP(handleType, handle) g_descriptorHeap[(handleType)handle]
-
-template<typename T>
-T GetConstants()
-{
-    ByteAddressBuffer constantsBuffer = ResourceDescriptorHeap[u_renderGraphConstants.constantsBufferIndex];
-    return constantsBuffer.Load<T>(u_renderGraphConstants.constantsOffset);
-}

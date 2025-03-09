@@ -4,11 +4,29 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 
 #include <CoreUtilities/Math/Math.h>
 
 namespace Volt
 {
+	struct PrefixSumCS
+	{
+		BEGIN_SHADER_DEFINITION(PrefixSumCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/PrefixSum.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, InputValues)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, OutputValues)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<StateBuffer>, StateBuffer)
+			SHADER_PARAMETER_BUFFER(vt::RWRawByteBuffer, CounterBuffer)
+			SHADER_PARAMETER(uint32_t, ValueCount)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+
+	REGISTER_SHADER(PrefixSumCS)
+
 	PrefixSumTechnique::PrefixSumTechnique(RenderGraph& rg)
 		: m_renderGraph(rg)
 	{
@@ -32,7 +50,7 @@ namespace Volt
 
 		const uint32_t groupCount = Math::DivideRoundUp(valueCount, TG_SIZE);
 
-		auto pipeline = ShaderMap::GetComputePipeline("PrefixSum");
+		auto pipeline = ShaderMap::GetComputePipeline<PrefixSumCS>();
 
 		RenderGraphBufferHandle counterBuffer = m_renderGraph.CreateBuffer(RGUtils::CreateBufferDescGPU<uint32_t>(1, "PrefixSum.CounterBuffer"));
 		RenderGraphBufferHandle stateBuffer = m_renderGraph.CreateBuffer(RGUtils::CreateBufferDescGPU<State>(std::max(groupCount, 1u), "PrefixSum.StateBuffer"));
@@ -52,12 +70,15 @@ namespace Volt
 		[=](RenderContext& context)
 		{
 			context.BindPipeline(pipeline);
-			context.SetConstant("inputValues"_sh, inputBuffer);
-			context.SetConstant("outputValues"_sh, outputBuffer);
-			context.SetConstant("state"_sh, stateBuffer);
-			context.SetConstant("counterBuffer"_sh, counterBuffer);
-			context.SetConstant("valueCount"_sh, valueCount);
 
+			PrefixSumCS::Parameters parameters;
+			parameters.InputValues = inputBuffer;
+			parameters.OutputValues = outputBuffer;
+			parameters.StateBuffer = stateBuffer;
+			parameters.CounterBuffer = counterBuffer;
+			parameters.ValueCount = valueCount;
+
+			context.SetParameters(parameters);
 			context.Dispatch(groupCount, 1, 1);
 		});
 	}

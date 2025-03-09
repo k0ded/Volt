@@ -73,14 +73,14 @@ bool RG_DrawMeshShaderMeshTest::RunTest()
 		context.BeginRendering(renderingInfo);
 		context.BindPipeline(pipeline);
 
-		context.SetConstant("viewProjection"_sh, viewProj);
+		context.SetConstant("ViewProjection"_sh, viewProj);
 
-		context.SetConstant("vertexPositionsBuffer"_sh, data.vertexPositionBuffer);
-		context.SetConstant("meshletsBuffer"_sh, data.meshletsBuffer);
-		context.SetConstant("meshletDataBuffer"_sh, data.meshletDataBuffer);
+		context.SetConstant("VertexPositionsBuffer"_sh, data.vertexPositionBuffer);
+		context.SetConstant("MeshletsBuffer"_sh, data.meshletsBuffer);
+		context.SetConstant("MeshletDataBuffer"_sh, data.meshletDataBuffer);
 
-		context.SetConstant("meshletStartOffset"_sh, gpuMesh.meshletStartOffset);
-		context.SetConstant("vertexOffset"_sh, gpuMesh.vertexStartOffset);
+		context.SetConstant("MeshletStartOffset"_sh, gpuMesh.meshletStartOffset);
+		context.SetConstant("VertexOffset"_sh, gpuMesh.vertexStartOffset);
 
 		context.DispatchMeshTasks(gpuMesh.meshletCount, 1, 1);
 		context.EndRendering();

@@ -21,7 +21,7 @@ namespace Volt
 
 	void RenderContext::EndContext()
 	{
-		uint8_t* passConstantsPtr = m_sharedContext.GetPassConstantsPointer(m_currentPassNode.index);
+		uint8_t* passConstantsPtr = m_sharedContext.GetRenderGraphConstantsPointer(m_currentPassNode.index);
 		memcpy_s(passConstantsPtr, RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE, m_passConstantsData, RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE);
 	}
 
@@ -475,22 +475,8 @@ namespace Volt
 			return;
 		}
 
-		// Set render graph constants
-		{
-			RenderGraphConstants renderGraphConstants;
-			renderGraphConstants.constatsBufferIndex = m_sharedContext.GetPassConstantsBufferResourceHandle();
-			renderGraphConstants.constantsOffset = m_currentPassNode.index * RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE;
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-			renderGraphConstants.shaderValidationBuffer = m_renderGraph.GetRuntimeShaderValidationErrorBuffer();
-#endif
-			{
-				uint8_t* constantsPtr = m_sharedContext.GetRenderGraphConstantsPointer(m_currentPassNode.index);
-				memcpy_s(constantsPtr, sizeof(RenderGraphConstants), &renderGraphConstants, sizeof(RenderGraphConstants));
-			}
-		}
-
 		auto descriptorTable = BindlessResourcesManager::Get().GetDescriptorTable();
-		m_commandBuffer->BindDescriptorTable(descriptorTable, m_sharedContext.GetRenderGraphConstantsBuffer(), m_currentPassNode.index, sizeof(RenderGraphConstants), m_currentAccelerationStructure);
+		m_commandBuffer->BindDescriptorTable(descriptorTable, m_sharedContext.GetRenderGraphConstantsBuffer(), m_currentPassNode.index, RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE, m_currentAccelerationStructure);
 
 		m_descriptorTableIsBound = true;
 	}
@@ -525,8 +511,7 @@ namespace Volt
 #ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 		if (!constantsData.uniforms.contains(constantName))
 		{
-			VT_LOGC(Error, LogRenderCore, "A constant with name '{}' is not defined in the shader!", constantName.string);
-			VT_ENSURE(false);
+			return;
 		}
 
 		const auto& uniform = constantsData.uniforms.at(constantName);
@@ -586,7 +571,10 @@ namespace Volt
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
+		if (!constantsData.uniforms.contains(name))
+		{
+			return;
+		}
 
 		const auto& uniform = constantsData.uniforms.at(name);
 

@@ -2,6 +2,7 @@
 
 #include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
+#include "RenderCore/RenderGraph/ShaderParameterStruct.h"
 #include "RenderCore/Config.h"
 
 #include <RHIModule/Descriptors/ResourceHandle.h>
@@ -145,16 +146,12 @@ namespace Volt
 		RHI::RenderingInfo renderingInfo{};
 	};
 
+	template<typename T>
+	concept ShaderParameterStruct = std::is_base_of_v<ShaderParameterStructBase, T>;
+
 	class VTRC_API RenderContext
 	{
 	public:
-		struct RenderGraphConstants
-		{
-			ResourceHandle constatsBufferIndex;
-			ResourceHandle shaderValidationBuffer;
-			uint32_t constantsOffset;
-		};
-
 		RenderContext(RenderGraph& renderGraph, RenderGraphPassNodeBase& currentPassNode, SharedRenderContext& sharedContext, RefPtr<RHI::CommandBuffer> commandBuffer);
 
 		void EndContext();
@@ -220,6 +217,9 @@ namespace Volt
 		template<typename F, size_t COUNT>
 		void SetConstant(const StringHash& name, const std::array<F, COUNT>& data);
 
+		template<ShaderParameterStruct T>
+		void SetParameters(const T& parameters);
+
 	private:
 		friend class RenderGraph;
 
@@ -272,6 +272,11 @@ namespace Volt
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<T>(), name);
 
+		if (!constantsData.uniforms.contains(name))
+		{
+			return;
+		}
+
 		const auto& uniform = constantsData.uniforms.at(name);
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &data, sizeof(T));
 	}
@@ -284,6 +289,11 @@ namespace Volt
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
+
+		if (!constantsData.uniforms.contains(name))
+		{
+			return;
+		}
 
 		const auto& uniform = constantsData.uniforms.at(name);
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, data.data(), data.size() * sizeof(F));
@@ -298,7 +308,21 @@ namespace Volt
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
 
+		if (!constantsData.uniforms.contains(name))
+		{
+			return;
+		}
+
 		const auto& uniform = constantsData.uniforms.at(name);
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, data.data(), COUNT * sizeof(F));
+	}
+
+	template<ShaderParameterStruct T>
+	inline void RenderContext::SetParameters(const T& parameters)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
+
+		T::zzInternal_SetMembers(*this, parameters);
 	}
 }

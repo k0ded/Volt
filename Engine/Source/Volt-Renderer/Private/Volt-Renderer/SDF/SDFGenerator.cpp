@@ -9,6 +9,7 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/Resources/RenderGraphTextureResource.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <CoreUtilities/Containers/Vector.h>
@@ -19,6 +20,22 @@
 
 namespace Volt
 {
+	struct MeshSDFAllocatorCS
+	{
+		BEGIN_SHADER_DEFINITION(MeshSDFAllocatorCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/SDF/MeshSDFAllocator.hlsl", "MainCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<GPUSDFBrick>, RWBricks)
+			SHADER_PARAMETER_IMAGE(vt::RWTex3D<float>, RWBrickTexture)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<float>, BrickData)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<BrickInfo>, BrickInfoData)
+			SHADER_PARAMETER(uint, BrickTextureSize)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(MeshSDFAllocatorCS)
+
 	SDFGenerator::SDFGenerator()
 	{
 	}
@@ -286,16 +303,18 @@ namespace Volt
 			},
 			[=](RenderContext& context)
 			{
-				auto pipeline = ShaderMap::GetComputePipeline("MeshSDFAllocator");
+				auto pipeline = ShaderMap::GetComputePipeline<MeshSDFAllocatorCS>();
 
 				context.BindPipeline(pipeline);
 
-				context.SetConstant("brickTexture"_sh, textureHandle);
-				context.SetConstant("bricks"_sh, sdfBricksBufferHandle);
-				context.SetConstant("brickData"_sh, dataBufferHandle);
-				context.SetConstant("brickInfo"_sh, brickInfoBufferHandle);
-				context.SetConstant("brickTextureSize"_sh, size);
+				MeshSDFAllocatorCS::Parameters parameters;
+				parameters.RWBrickTexture = textureHandle;
+				parameters.RWBricks = sdfBricksBufferHandle;
+				parameters.BrickData = dataBufferHandle;
+				parameters.BrickInfoData = brickInfoBufferHandle;
+				parameters.BrickTextureSize = size;
 
+				context.SetParameters(parameters);
 				context.Dispatch(static_cast<uint32_t>(brickGrid.size()), 1, 1);
 			});
 

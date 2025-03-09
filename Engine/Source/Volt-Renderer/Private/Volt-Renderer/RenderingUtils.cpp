@@ -5,10 +5,53 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/RenderGraph/RenderContextUtils.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
+#include <RenderCore/RenderGraph/ShaderParameterStruct.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 
 namespace Volt::RenderingUtils
 {
+	struct GenerateIndirectArgsCS
+	{
+		BEGIN_SHADER_DEFINITION(GenerateIndirectArgsCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Indirect/GenerateIndirectArgs_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, RWIndirectArgs)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, CountBuffer)
+			SHADER_PARAMETER(uint, ThreadGroupSize)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GenerateIndirectArgsCS)
+
+	struct GenerateIndirectArgsWrappedCS
+	{
+		BEGIN_SHADER_DEFINITION(GenerateIndirectArgsWrappedCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Indirect/GenerateIndirectArgsWrapped_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, RWIndirectArgs)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, CountBuffer)
+			SHADER_PARAMETER(uint, GroupSize)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GenerateIndirectArgsWrappedCS)
+
+	struct CopyImageVSPS
+	{
+		BEGIN_SHADER_DEFINITION(CopyImageVSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/CopyImage_ps.hlsl", "main", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+	
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float3>, Color)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(CopyImageVSPS)
+
 	RenderGraphBufferHandle GenerateIndirectArgs(RenderGraph& renderGraph, RenderGraphBufferHandle countBuffer, uint32_t groupSize, const std::string& argsBufferName)
 	{
 		struct Output
@@ -30,13 +73,15 @@ namespace Volt::RenderingUtils
 		},
 		[=](const Output& data, RenderContext& context)
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("GenerateIndirectArgs");
+			auto pipeline = ShaderMap::GetComputePipeline<GenerateIndirectArgsCS>();
+
+			GenerateIndirectArgsCS::Parameters parameters;
+			parameters.RWIndirectArgs = data.argsBufferHandle;
+			parameters.CountBuffer = countBuffer;
+			parameters.ThreadGroupSize = groupSize;
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("indirectArgs"_sh, data.argsBufferHandle);
-			context.SetConstant("countBuffer"_sh, countBuffer);
-			context.SetConstant("threadGroupSize"_sh, groupSize);
-
+			context.SetParameters(parameters);
 			context.Dispatch(1, 1, 1);
 		});
 
@@ -61,13 +106,15 @@ namespace Volt::RenderingUtils
 		},
 		[=](const Output& data, RenderContext& context)
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("GenerateIndirectArgsWrapped");
+			auto pipeline = ShaderMap::GetComputePipeline<GenerateIndirectArgsWrappedCS>();
+
+			GenerateIndirectArgsWrappedCS::Parameters parameters;
+			parameters.RWIndirectArgs = data.argsBufferHandle;
+			parameters.CountBuffer = countBuffer;
+			parameters.GroupSize = groupSize;
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("indirectArgs"_sh, data.argsBufferHandle);
-			context.SetConstant("countBuffer"_sh, countBuffer);
-			context.SetConstant("groupSize"_sh, groupSize);
-
+			context.SetParameters(parameters);
 			context.Dispatch(1, 1, 1);
 		});
 
@@ -87,7 +134,7 @@ namespace Volt::RenderingUtils
 			RenderingInfo info = context.CreateRenderingInfo(renderSize.x, renderSize.y, { destinationImage });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo;
-			pipelineInfo.shader = ShaderMap::Get("CopyImage");
+			pipelineInfo.shader = ShaderMap::Get<CopyImageVSPS>();
 			pipelineInfo.depthMode = RHI::DepthMode::None;
 			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 		

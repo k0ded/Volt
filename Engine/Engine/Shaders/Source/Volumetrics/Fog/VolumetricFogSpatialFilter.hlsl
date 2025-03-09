@@ -1,13 +1,10 @@
 #include "Resources.hlsli"
 
-struct Constants
-{
-    vt::RWTex3D<float4> rwSpatialFilteredScattering;
-    vt::Tex3D<float4> lightScattering;
-    vt::TextureSampler pointSampler;
+vt::RWTex3D<float4> RWSpatialFilteredScattering;
+vt::Tex3D<float4> LightScattering;
+vt::TextureSampler PointSampler;
 
-    int3 froxelVolumeDimensions;
-};
+int3 FroxelVolumeDimensions;
 
 float GaussianFilter(float radius, float sigma)
 {
@@ -21,10 +18,8 @@ static const int Radius = 2;
 [numthreads(8, 8, 1)]
 void MainCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-    
-    const float3 rcpFroxelDimensions = 1.f / float3(constants.froxelVolumeDimensions);
-    float4 scatteringExinction = constants.lightScattering.SampleLevel(constants.pointSampler, float3(dispatchThreadID) * rcpFroxelDimensions, 0.f);
+    const float3 rcpFroxelDimensions = 1.f / float3(FroxelVolumeDimensions);
+    float4 scatteringExinction = LightScattering.SampleLevel(PointSampler, float3(dispatchThreadID) * rcpFroxelDimensions, 0.f);
 
     float accumulatedWeight = 0.f;
     float4 accumulatedScatteringExtinction = 0.f;
@@ -35,10 +30,10 @@ void MainCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         {
             int3 coord = dispatchThreadID + int3(i, j, 0);
 
-            if (all(coord > 0) && all(coord < constants.froxelVolumeDimensions))
+            if (all(coord > 0) && all(coord < FroxelVolumeDimensions))
             {
                 const float weight = GaussianFilter(length(int2(i, j)), SigmaFilter);
-                const float4 sample = constants.lightScattering.SampleLevel(constants.pointSampler, float3(coord) * rcpFroxelDimensions, 0.f);
+                const float4 sample = LightScattering.SampleLevel(PointSampler, float3(coord) * rcpFroxelDimensions, 0.f);
                 accumulatedScatteringExtinction += sample * weight;
                 accumulatedWeight += weight;
             }
@@ -46,5 +41,5 @@ void MainCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     }
 
     scatteringExinction = accumulatedScatteringExtinction / max(accumulatedWeight, 0.00001f);
-    constants.rwSpatialFilteredScattering.Store(dispatchThreadID, scatteringExinction);
+    RWSpatialFilteredScattering.Store(dispatchThreadID, scatteringExinction);
 }

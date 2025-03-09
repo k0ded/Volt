@@ -5,24 +5,21 @@
 
 #include "Volumetrics/Fog/VolumetricFogCommon.hlsli"
 
-struct Constants
-{
-    vt::TypedBuffer<VertexPositionData> vertexPositions;
-    vt::UniformBuffer<ViewData> viewData;
+vt::TypedBuffer<VertexPositionData> VertexPositions;
+vt::UniformBuffer<ViewData> View;
 
-    vt::TexCube<float3> environmentTexture;
-    vt::TextureSampler linearSampler;
+vt::TexCube<float3> EnvironmentTexture;
+vt::TextureSampler LinearSampler;
 
-    float lod;
-    float intensity;
+float LOD;
+float Intensity;
 
-    vt::Tex2D<float> sceneDepth;
+vt::Tex2D<float> SceneDepth;
 
-    // Volumetric Fog
-    vt::UniformBuffer<VolumetricFogParams> volumetricFogParams;
-    vt::Tex3D<float4> integratedFogVolume;
-    vt::TextureSampler pointSampler;
-};
+// Volumetric Fog
+vt::UniformBuffer<VolumetricFogParams> VolumetricFogParamsData;
+vt::Tex3D<float4> IntegratedFogVolume;
+vt::TextureSampler PointSampler;
 
 struct Output
 {
@@ -32,10 +29,9 @@ struct Output
 
 Output main(in uint vertexId : SV_VertexID)
 {
-    const Constants constants = GetConstants<Constants>();
-    const ViewData viewData = constants.viewData.Load();
+    const ViewData viewData = View.Load();
 
-    const VertexPositionData vertexPosition = constants.vertexPositions.Load(vertexId);
+    const VertexPositionData vertexPosition = VertexPositions.Load(vertexId);
 
     const float3x3 view = (float3x3)viewData.view;
     float4x4 viewRotation = IDENTITY_MATRIX;

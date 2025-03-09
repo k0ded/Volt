@@ -38,6 +38,7 @@ namespace Volt
 
 		void Initialize();
 		void Shutdown();
+		void Clear();
 
 		void Unload(AssetHandle assetHandle);
 

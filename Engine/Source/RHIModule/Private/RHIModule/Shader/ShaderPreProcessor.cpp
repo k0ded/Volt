@@ -189,8 +189,6 @@ namespace Volt::RHI
 
 	bool ShaderPreProcessor::PreProcessShaderSource(const PreProcessorData& data, PreProcessorResult& outResult)
 	{
-		GenerateConstantsInformation(data, outResult);
-
 		switch (data.shaderStage)
 		{
 			case ShaderStage::Pixel: return PreProcessPixelSource(data, outResult); break;
@@ -440,95 +438,6 @@ namespace Volt::RHI
 		outResult.vertexLayout = inputElements;
 
 		return true;
-	}
-
-	bool ShaderPreProcessor::GenerateConstantsInformation(const PreProcessorData& data, PreProcessorResult& outResult)
-	{
-		constexpr const char* CONSTANTS_FUNC = "GetConstants<";
-		constexpr uint32_t CONSTANTS_FUNC_LENGTH = 13;
-
-		std::string processedSource = data.shaderSource;
-		const size_t getConstantsFuncOffset = processedSource.find(CONSTANTS_FUNC);
-		if (getConstantsFuncOffset == std::string::npos)
-		{
-			return false;
-		}
-
-		const std::string constantsStructName = processedSource.substr(getConstantsFuncOffset + CONSTANTS_FUNC_LENGTH, processedSource.find_first_of('>', getConstantsFuncOffset) - getConstantsFuncOffset - CONSTANTS_FUNC_LENGTH);
-
-		GetConstantsInformationFromMemberStructRecursive(constantsStructName, "", data, outResult);
-
-		return true;
-	}
-
-	void ShaderPreProcessor::GetConstantsInformationFromMemberStructRecursive(const std::string& memberType, const std::string& parentMemberName, const PreProcessorData& data, PreProcessorResult& outResult)
-	{
-		std::string processedSource = data.shaderSource;
-		
-		size_t constantsStructDefOffset = processedSource.find("struct " + memberType);
-		if (constantsStructDefOffset == std::string::npos)
-		{
-			return;
-		}
-
-		constantsStructDefOffset = processedSource.find_first_of("{", constantsStructDefOffset);
-
-		// Find end point of struct
-		uint32_t scopeDepth = 1;
-		size_t offset = constantsStructDefOffset;
-
-		while (scopeDepth > 0)
-		{
-			const size_t scopeEndPos = processedSource.find("}", offset + 1);
-			const std::string scopeSubStr = processedSource.substr(offset + 1, scopeEndPos + 1 - offset);
-
-			if (scopeSubStr.find("{") != std::string::npos)
-			{
-				scopeDepth++;
-			}
-			else
-			{
-				scopeDepth--;
-			}
-
-			offset = scopeEndPos;
-		}
-
-		const std::string constantsStructDef = processedSource.substr(constantsStructDefOffset, offset - constantsStructDefOffset + 1);
-		size_t currentMemberStartPos = constantsStructDef.find_first_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-		while (currentMemberStartPos != std::string::npos)
-		{
-			size_t currentMemberEndPos = constantsStructDef.find_first_of(";", currentMemberStartPos);
-			const std::string memberSubStr = constantsStructDef.substr(currentMemberStartPos, currentMemberEndPos - currentMemberStartPos);
-
-			const size_t spaceCharPos = memberSubStr.find_last_of(' ');
-			const size_t firstNamePos = memberSubStr.find_first_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", spaceCharPos);
-
-			const std::string typeStr = memberSubStr.substr(0, spaceCharPos);
-			const std::string nameStr = memberSubStr.substr(firstNamePos, memberSubStr.size() - firstNamePos);
-
-			ShaderUniformType elementType{};
-
-			if (!Utility::IsDefaultType(typeStr) && !Utility::IsResourceType(typeStr))
-			{
-				GetConstantsInformationFromMemberStructRecursive(typeStr, nameStr, data, outResult);
-			}
-			else
-			{
-				elementType = FindUniformTypeFromString(typeStr);
-			}
-
-			if (elementType.baseType != ShaderUniformBaseType::Invalid)
-			{
-				const size_t typeSize = elementType.GetSize();
-
-				const std::string uniformName = !parentMemberName.empty() ? parentMemberName + "." + nameStr : nameStr;
-				outResult.renderGraphConstants.uniforms[StringHash::Construct(uniformName)] = ShaderUniform(elementType, typeSize, outResult.renderGraphConstants.size);
-				outResult.renderGraphConstants.size += typeSize;
-			}
-
-			currentMemberStartPos = constantsStructDef.find_first_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", currentMemberEndPos);
-		}
 	}
 
 	void ShaderPreProcessor::ErasePreProcessData(PreProcessorResult& outResult)

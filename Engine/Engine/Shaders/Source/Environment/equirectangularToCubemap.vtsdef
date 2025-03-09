@@ -1,6 +1,0 @@
-name: "EquirectangularToCubemap"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/Environment/EquirectangularToCubemap_cs.hlsl"

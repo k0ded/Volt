@@ -3,12 +3,9 @@
 #include "Structures.hlsli"
 #include "Utility.hlsli"
 
-struct Constants
-{
-    vt::Tex2D<float3> sceneColor;
-    vt::UniformBuffer<ViewData> viewData;
-    vt::TextureSampler linearSampler;
-};
+vt::Tex2D<float3> SceneColor;
+vt::UniformBuffer<ViewData> View;
+vt::TextureSampler LinearSampler;
 
 struct Output
 {
@@ -32,11 +29,10 @@ static const uint ITERATIONS = 12;
 
 Output MainPS(FullscreenTriangleVertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-    const ViewData viewData = constants.viewData.Load();
+    const ViewData viewData = View.Load();
     
-    vt::Tex2D<float3> sceneColor = constants.sceneColor;
-    vt::TextureSampler linearSampler = constants.linearSampler;
+    vt::Tex2D<float3> sceneColor = SceneColor;
+    vt::TextureSampler linearSampler = LinearSampler;
 
     float3 colorCenter = sceneColor.Sample(linearSampler, input.uv);
 

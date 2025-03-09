@@ -644,6 +644,20 @@ namespace Volt
 		}
 	}
 
+	struct CompactValidDrawCallCS
+	{
+		BEGIN_SHADER_DEFINITION(CompactValidDrawCallCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/CompactValidDrawCalls.hlsl", "MainCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, RWValidPrimitiveDrawData)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<PrimitiveDrawData>, PrimitiveDrawDataBuffer)
+			SHADER_PARAMETER(uint32_t, PrimitiveDrawDataCount)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(CompactValidDrawCallCS)
+
 	void RenderScene::CompactValidPrimitiveDrawDatas(RenderGraph& renderGraph)
 	{
 		// We need to make sure that the buffer is one larger than the count, because
@@ -668,15 +682,17 @@ namespace Volt
 		},
 		[=](RenderContext& context)
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("CompactValidDrawCalls");
+			auto pipeline = ShaderMap::GetComputePipeline<CompactValidDrawCallCS>();
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("validPrimitiveDrawData"_sh, validPrimitiveDrawDataHandle);
-			context.SetConstant("primitiveDrawData"_sh, primitiveDrawDataHandle);
-			context.SetConstant("primitiveDrawDataCount"_sh, primitiveDrawDataCount);
+
+			CompactValidDrawCallCS::Parameters parameters;
+			parameters.RWValidPrimitiveDrawData = validPrimitiveDrawDataHandle;
+			parameters.PrimitiveDrawDataBuffer = primitiveDrawDataHandle;
+			parameters.PrimitiveDrawDataCount = primitiveDrawDataCount;
 
 			constexpr uint32_t workGroupCount = 64;
-
+			context.SetParameters(parameters);
 			context.Dispatch(Math::DivideRoundUp(primitiveDrawDataCount, workGroupCount), 1, 1);
 		});
 	}

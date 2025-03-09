@@ -1,17 +1,17 @@
 #pragma once
 
-enum VisualizationMode
+enum EVisualizationMode
 {
-	None = 0,
-	BaseColor = 1,
-	Metallic = 2,
-	Roughness = 3,
-	SceneColor = 4,
-	SceneDepth = 5,
-	WorldNormal = 6,
-	GeometryNormals = 7,
-	AmbientOcclusion = 8,
-	Velocity = 9,
-	UV = 10,
-	GeometryTangents = 11
+	ERM_None = 0,
+	ERM_BaseColor = 1,
+	ERM_Metallic = 2,
+	ERM_Roughness = 3,
+	ERM_SceneColor = 4,
+	ERM_SceneDepth = 5,
+	ERM_WorldNormal = 6,
+	ERM_GeometryNormals = 7,
+	ERM_AmbientOcclusion = 8,
+	ERM_Velocity = 9,
+	ERM_UV = 10,
+	ERM_GeometryTangents = 11
 };

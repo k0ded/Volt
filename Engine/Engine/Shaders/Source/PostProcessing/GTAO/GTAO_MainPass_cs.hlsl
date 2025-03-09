@@ -2,18 +2,13 @@
 #include "XeGTAO.hlsli"
 #include "Resources.hlsli"
 
-struct Constants
-{
-    vt::RWTex2D<uint> aoTerm;
-    vt::RWTex2D<float> edges;
-    
-    vt::Tex2D<float> srcDepth;
-    vt::Tex2D<float4> viewspaceNormals;
-    vt::TextureSampler pointClampSampler;
-    uint3 padding;
-    
-    GTAOConstants constants;
-};
+vt::RWTex2D<uint> AOTerm;
+vt::RWTex2D<float> Edges;
+
+vt::Tex2D<float> SrcDepth;
+vt::Tex2D<float4> ViewspaceNormals;
+vt::TextureSampler PointClampSampler;
+GTAOConstants Constants;
 
 // Engine-specific screen & temporal noise loader
 lpfloat2 SpatioTemporalNoise(uint2 pixCoord, uint temporalIndex)    // without TAA, temporalIndex is always 0
@@ -45,21 +40,13 @@ lpfloat3 LoadNormal(int2 pos, Texture2D<float4> viewspaceNormals)
 [numthreads(16, 16, 1)]
 void main(uint2 dispatchThreadID : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-    
-    RWTexture2D<uint> aoTerm = constants.aoTerm.Get();
-    RWTexture2D<float> edges = constants.edges.Get();
-    
-    Texture2D<float> srcDepth = constants.srcDepth.Get();
-    Texture2D<float4> viewspaceNormals = constants.viewspaceNormals.Get();
-    
     //if (u_quality == 0) // Low
     //{
     //    XeGTAO_MainPass(dispatchThreadID, 1, 2, SpatioTemporalNoise(dispatchThreadID, u_pushConstants.NoiseIndex), LoadNormal(dispatchThreadID), u_pushConstants, u_srcDepth, u_pointSamplerClamp, o_aoTerm, o_edges);
     //}
     //else if (u_quality == 1) // Medium
     {
-        XeGTAO_MainPass(dispatchThreadID, 2, 2, SpatioTemporalNoise(dispatchThreadID, constants.constants.NoiseIndex), LoadNormal(dispatchThreadID, viewspaceNormals), constants.constants, srcDepth, constants.pointClampSampler.Get(), aoTerm, edges);
+        XeGTAO_MainPass(dispatchThreadID, 2, 2, SpatioTemporalNoise(dispatchThreadID, Constants.NoiseIndex), LoadNormal(dispatchThreadID, ViewspaceNormals.Get()), Constants, SrcDepth.Get(), PointClampSampler.Get(), AOTerm.Get(), Edges.Get());
     }
     //else if (u_quality == 2) // High
     //{

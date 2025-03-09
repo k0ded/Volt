@@ -1,10 +1,7 @@
 #include "Vertex.hlsli"
 #include "Resources.hlsli"
 
-struct Constants
-{
-    vt::Tex2D<float3> color;
-};
+vt::Tex2D<float3> Color;
 
 struct Output
 {
@@ -13,8 +10,7 @@ struct Output
 
 Output main(FullscreenTriangleVertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-    const float3 color = constants.color.Load(int3(input.position.xy, 0));
+    const float3 color = Color.Load(int3(input.position.xy, 0));
 
     Output output;
     output.output = color;

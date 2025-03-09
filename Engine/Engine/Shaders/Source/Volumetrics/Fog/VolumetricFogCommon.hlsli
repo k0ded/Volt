@@ -38,12 +38,12 @@ float LinearDepthToExponentialUVDepth(float nearPlane, float farPlane, float lin
     return max(log2(linearDepth) * scale + bias, 0.f) / float(numSlices);
 }
 
-float3 GetWorldPositionFromFroxelCoord(int3 froxelCoord, in VolumetricFogParams fogParams, in BlueNoiseData blueNoiseData, in ViewData viewData)
+float3 GetWorldPositionFromFroxelCoord(int3 froxelCoord, in VolumetricFogParams fogParams, in ViewData viewData)
 {
     float2 uv = GetUVFromFroxelCoord(froxelCoord.xy + 0.5f + viewData.currentFrameJitter * fogParams.temporalReprojectionJitterScale, fogParams.froxelVolumeDimensions.x, fogParams.froxelVolumeDimensions.y);
 
     float linearDepth = float(froxelCoord.z) / float(fogParams.froxelVolumeDimensions.z);
-    float volumeJitter = BlueNoiseScalar(froxelCoord.xy, viewData.frameIndex, blueNoiseData);
+    float volumeJitter = BlueNoiseScalar(froxelCoord.xy, viewData.frameIndex);
     float exponentialDepth = SliceToExponentialDepthJittered(fogParams.froxelNearPlane, fogParams.froxelFarPlane, volumeJitter, froxelCoord.z, fogParams.froxelVolumeDimensions.z);
 
     float rawDepth = LinearDepthToDeviceDepth(exponentialDepth, fogParams.froxelNearPlane, fogParams.froxelFarPlane);

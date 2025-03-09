@@ -7,12 +7,46 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <CoreUtilities/Math/Math.h>
 
 namespace Volt
 {
+	struct GenerateLuminanceHistogramCS
+	{
+		BEGIN_SHADER_DEFINITION(GenerateLuminanceHistogramCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Exposure/GenerateLuminanceHistogram.hlsl", "GenerateLuminanceHistogramCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float3>, InputColor)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, RWHistogram)
+			SHADER_PARAMETER(uint2, RenderTargetSize)
+			SHADER_PARAMETER(float, MinLogLum)
+			SHADER_PARAMETER(float, InverseLogLumRange)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GenerateLuminanceHistogramCS)
+
+	struct GenerateAverageLuminanceCS
+	{
+		BEGIN_SHADER_DEFINITION(GenerateAverageLuminanceCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Exposure/GenerateAverageLuminance.hlsl", "GenerateAverageLuminanceCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWAverageLuminance)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, RWHistogramBuffer)
+			SHADER_PARAMETER(uint, TotalPixelCount)
+			SHADER_PARAMETER(float, LogLumRange)
+			SHADER_PARAMETER(float, MinLogLum)
+			SHADER_PARAMETER(float, BlendFactor)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GenerateAverageLuminanceCS)
+
 	AutoExposureTechnique::AutoExposureTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 		: m_renderGraph(renderGraph), m_blackboard(blackboard)
 	{}
@@ -52,14 +86,17 @@ namespace Volt
 		},
 		[=](const Data& data, RenderContext& context) 
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("GenerateLuminanceHistogram");
+			auto pipeline = ShaderMap::GetComputePipeline<GenerateLuminanceHistogramCS>();
+
+			GenerateLuminanceHistogramCS::Parameters parameters;
+			parameters.InputColor = srcRenderTarget;
+			parameters.RWHistogram = data.histogramBuffer;
+			parameters.RenderTargetSize = viewUniformBuffer.renderSize;
+			parameters.MinLogLum = MinLogLuminance;
+			parameters.InverseLogLumRange = InvLogLuminanceRange;
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("inputColor"_sh, srcRenderTarget);
-			context.SetConstant("outHistogram"_sh, data.histogramBuffer);
-			context.SetConstant("renderTargetSize"_sh, viewUniformBuffer.renderSize);
-			context.SetConstant("minLogLum"_sh, MinLogLuminance);
-			context.SetConstant("inverseLogLumRange"_sh, InvLogLuminanceRange);
+			context.SetParameters(parameters);
 		
 			constexpr uint32_t ThreadGroupSize = 16;
 
@@ -86,16 +123,18 @@ namespace Volt
 		},
 		[=](RenderContext& context)
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("GenerateAverageLuminance");
+			auto pipeline = ShaderMap::GetComputePipeline<GenerateAverageLuminanceCS>();
+
+			GenerateAverageLuminanceCS::Parameters parameters;
+			parameters.RWAverageLuminance = averageLuminanceTarget;
+			parameters.RWHistogramBuffer = histogramBuffer;
+			parameters.TotalPixelCount = viewUniformBuffer.renderSize.x * viewUniformBuffer.renderSize.y;
+			parameters.LogLumRange = 12.f;
+			parameters.MinLogLum = -10.f;
+			parameters.BlendFactor = 1.f - exp(-deltaTime * 1.1f);
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("outAverageLuminance"_sh, averageLuminanceTarget);
-			context.SetConstant("histogramBuffer"_sh, histogramBuffer);
-			context.SetConstant("totalPixelCount"_sh, viewUniformBuffer.renderSize.x * viewUniformBuffer.renderSize.y);
-			context.SetConstant("logLumRange"_sh, 12.f);
-			context.SetConstant("minLogLum"_sh, -10.f);
-			context.SetConstant("blendFactor"_sh, 1.f - exp(-deltaTime * 1.1f));
-
+			context.SetParameters(parameters);
 			context.Dispatch(1, 1, 1);
 		});
 	}

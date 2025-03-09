@@ -10,28 +10,30 @@ struct BlueNoiseData
     uint3 dimensions;
 };
 
+BlueNoiseData BlueNoise;
+
 // Spatiotemporal Blue Noise LuT based on "Spatiotemporal Blue Noise Masks" [Wolfe et al 2022] and 
 // https://developer.nvidia.com/blog/rendering-in-real-time-with-spatiotemporal-blue-noise-textures-part-1/
-float BlueNoiseScalar(uint2 pixelCoord, uint frameIndex, in BlueNoiseData blueNoiseData)
+float BlueNoiseScalar(uint2 pixelCoord, uint frameIndex)
 {
-    uint3 wrappedPixelCoord = uint3(pixelCoord, frameIndex) & blueNoiseData.moduloMasks;
-    uint3 texCoords = uint3(wrappedPixelCoord.x, wrappedPixelCoord.z * blueNoiseData.dimensions.y + wrappedPixelCoord.y, 0);
-    return blueNoiseData.blueNoiseScalarTexture.Load(texCoords);
+    uint3 wrappedPixelCoord = uint3(pixelCoord, frameIndex) & BlueNoise.moduloMasks;
+    uint3 texCoords = uint3(wrappedPixelCoord.x, wrappedPixelCoord.z * BlueNoise.dimensions.y + wrappedPixelCoord.y, 0);
+    return BlueNoise.blueNoiseScalarTexture.Load(texCoords);
 }
 
 // Spatiotemporal Blue Noise LuT based on "Spatiotemporal Blue Noise Masks" [Wolfe et al 2022] and 
 // https://developer.nvidia.com/blog/rendering-in-real-time-with-spatiotemporal-blue-noise-textures-part-1/
-float2 BlueNoiseVec2(uint2 pixelCoord, uint frameIndex, in BlueNoiseData blueNoiseData)
+float2 BlueNoiseVec2(uint2 pixelCoord, uint frameIndex)
 {
-    uint3 wrappedPixelCoord = uint3(pixelCoord, frameIndex) & blueNoiseData.moduloMasks;
-    uint3 texCoords = uint3(wrappedPixelCoord.x, wrappedPixelCoord.z * blueNoiseData.dimensions.y + wrappedPixelCoord.y, 0);
-    return blueNoiseData.blueNoiseVec2Texture.Load(texCoords).rg;
+    uint3 wrappedPixelCoord = uint3(pixelCoord, frameIndex) & BlueNoise.moduloMasks;
+    uint3 texCoords = uint3(wrappedPixelCoord.x, wrappedPixelCoord.z * BlueNoise.dimensions.y + wrappedPixelCoord.y, 0);
+    return BlueNoise.blueNoiseVec2Texture.Load(texCoords).rg;
 }
 
-float4 BlueNoiseRGBA(uint2 pixelCoord, uint frameIndex, in BlueNoiseData blueNoiseData)
+float4 BlueNoiseRGBA(uint2 pixelCoord, uint frameIndex)
 {
     const float2 TextureSize = 512;
 
     pixelCoord += frameIndex;
-    return blueNoiseData.blueNoiseRGBATexture.SampleLevel(blueNoiseData.pointWrapSampler, float2(pixelCoord) / TextureSize, 0.f);
+    return BlueNoise.blueNoiseRGBATexture.SampleLevel(BlueNoise.pointWrapSampler, float2(pixelCoord) / TextureSize, 0.f);
 }

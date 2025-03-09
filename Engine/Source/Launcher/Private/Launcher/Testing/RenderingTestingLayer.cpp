@@ -35,7 +35,7 @@ void RenderingTestingLayer::OnAttach()
 	//m_renderingTests.emplace_back(CreateScope<DrawIndirectTest>());
 	//m_renderingTests.emplace_back(CreateScope<PushConstantsTest>());
 
-	m_renderingTests.emplace_back(CreateScope<RG_DrawTriangleTest>());
+	//m_renderingTests.emplace_back(CreateScope<RG_DrawTriangleTest>());
 	//m_renderingTests.emplace_back(CreateScope<RG_ClearCreatedRenderTargetTest>());
 	//m_renderingTests.emplace_back(CreateScope<RG_DispatchComputeShaderTest>());
 	//m_renderingTests.emplace_back(CreateScope<RG_DrawMeshShaderTriangleTest>());

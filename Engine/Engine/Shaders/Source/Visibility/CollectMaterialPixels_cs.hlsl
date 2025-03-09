@@ -5,45 +5,40 @@
 
 #include "Atomics.hlsli"
 
-struct Constants
-{
-    GPUScene gpuScene;
+GPUScene GPUSceneData;
 
-    vt::Tex2D<uint2> visibilityBuffer;
-    vt::TypedBuffer<uint> materialStartBuffer;
-    
-    vt::RWTypedBuffer<uint> currentMaterialCountBuffer;
-    vt::RWTypedBuffer<uint2> pixelCollectionBuffer;
+vt::Tex2D<uint2> VisibilityBuffer;
+vt::TypedBuffer<uint> MaterialStartBuffer;
 
-    uint2 renderSize;
-};
+vt::RWTypedBuffer<uint> CurrentMaterialCountBuffer;
+vt::RWTypedBuffer<uint2> PixelCollectionBuffer;
+
+uint2 RenderSize;
 
 [numthreads(8, 8, 1)]
 void main(uint3 threadId : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-    
-    if (any(threadId.xy >= constants.renderSize))
+    if (any(threadId.xy >= RenderSize))
     {
         return;
     }
     
-    const uint2 pixelValue = constants.visibilityBuffer.Load(int3(threadId.xy, 0));
+    const uint2 pixelValue = VisibilityBuffer.Load(int3(threadId.xy, 0));
     
     if (pixelValue.x == UINT32_MAX)
     {
         return;
     }
     
-    const PrimitiveDrawData objectData = constants.gpuScene.primitiveDrawDataBuffer.Load(pixelValue.x);
+    const PrimitiveDrawData objectData = GPUSceneData.primitiveDrawDataBuffer.Load(pixelValue.x);
     if (objectData.materialId == UINT32_MAX)
     {
         return;
     }
     
-    uint materialStartIndex = constants.materialStartBuffer.Load(objectData.materialId);
+    uint materialStartIndex = MaterialStartBuffer.Load(objectData.materialId);
 
     uint currentIndex;
-    vt::InterlockedAdd(constants.currentMaterialCountBuffer, objectData.materialId, 1, currentIndex);    
-    constants.pixelCollectionBuffer.Store(materialStartIndex + currentIndex, threadId.xy);
+    vt::InterlockedAdd(CurrentMaterialCountBuffer, objectData.materialId, 1, currentIndex);    
+    PixelCollectionBuffer.Store(materialStartIndex + currentIndex, threadId.xy);
 }
