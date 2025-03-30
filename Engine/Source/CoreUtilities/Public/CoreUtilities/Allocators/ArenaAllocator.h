@@ -16,12 +16,29 @@ public:
 
 	~ArenaAllocator()
 	{
+		auto activeAllocations = GetActiveAllocations();
+
+		for (const auto& alloc : activeAllocations)
+		{
+			Free(alloc);
+		}
+
 		delete[] m_dataBuffer;
 	}
 
-	size_t GetNumAllocations() const
+	VT_NODISCARD size_t GetNumAllocations() const
 	{
 		return m_nextIndex - m_availableIndices.size();
+	}
+
+	VT_NODISCARD bool HasAvailableSlots() const
+	{
+		return !m_availableIndices.empty() || m_nextIndex < MaxCount;
+	}
+
+	VT_NODISCARD bool IsEmpty() const
+	{
+		return GetNumAllocations() == 0;
 	}
 
 	template<typename... Args>
@@ -29,13 +46,10 @@ public:
 	{
 		size_t newIndex = std::numeric_limits<size_t>::max();
 
+		if (!m_availableIndices.empty())
 		{
-			std::scoped_lock lock{ m_mutex };
-			if (!m_availableIndices.empty())
-			{
-				newIndex = m_availableIndices.back();
-				m_availableIndices.pop_back();
-			}
+			newIndex = m_availableIndices.back();
+			m_availableIndices.pop_back();
 		}
 
 		if (newIndex == std::numeric_limits<size_t>::max())
@@ -50,14 +64,28 @@ public:
 
 	void Free(Type* allocation)
 	{
+		VT_ENSURE(IsPointerWithinArena(allocation));
+
 		std::ptrdiff_t allocationIndex = allocation - reinterpret_cast<Type*>(m_dataBuffer);
-		VT_ENSURE(allocationIndex < MaxCount);
 		allocation->~Type();
 
+		m_availableIndices.emplace_back(allocationIndex);
+	}
+
+	bool IsPointerWithinArena(Type* ptr)
+	{
+		if (reinterpret_cast<uint8_t*>(ptr) < m_dataBuffer)
 		{
-			std::scoped_lock lock{ m_mutex };
-			m_availableIndices.emplace_back(allocationIndex);
+			return false;
 		}
+
+		std::ptrdiff_t allocationIndex = ptr - reinterpret_cast<Type*>(m_dataBuffer);
+		if (allocationIndex >= MaxCount)
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	// Note: This is a slow operation!
@@ -78,10 +106,9 @@ public:
 	}
 
 private:
-	std::mutex m_mutex;
 	Vector<size_t> m_availableIndices;
 
 	uint8_t* m_dataBuffer = nullptr;
-	std::atomic_size_t m_nextIndex = 0;
+	size_t m_nextIndex = 0;
 };
 

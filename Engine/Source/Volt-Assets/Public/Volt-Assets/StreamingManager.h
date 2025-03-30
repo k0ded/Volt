@@ -11,6 +11,7 @@
 
 #include <CoreUtilities/UUID.h>
 #include <CoreUtilities/Containers/VectorVariants.h>
+#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
 
 #include <unordered_set>
 #include <functional>
@@ -48,6 +49,31 @@ namespace Volt
 		UUID64 m_assetUpdatedCallback = 0;
 	};
 
+	class VTASSETS_API StreamingInstanceMap
+	{
+	public:
+		struct StreamingInstance
+		{
+			EntityID entityId;
+			AssetHandle meshHandle;
+			Vector<AssetHandle> materialHandles;
+			Ref<ScenePrimitiveData> primitiveData;
+		};
+
+		StreamingInstance& Add(StreamingInstanceID id);
+		void Erase(StreamingInstanceID id);
+
+		StreamingInstance& Get(StreamingInstanceID id);
+		const StreamingInstance& Get(StreamingInstanceID id) const;
+
+		bool Contains(StreamingInstanceID id) const;
+
+	private:
+		vt::map<StreamingInstanceID, StreamingInstance*> m_streamingInstances;
+		PagedArenaAllocator<StreamingInstance, 1024> m_instanceAllocator;
+		mutable std::mutex m_mutex;
+	};
+
 	class VTASSETS_API StreamingManager : public SubSystem
 	{
 	public:
@@ -64,17 +90,9 @@ namespace Volt
 		VT_DECLARE_SUBSYSTEM("{B8DF0EF0-A0CC-453D-A4AF-9C8D156F332E}"_guid);
 
 	private:
-		struct StreamingInstance
-		{
-			EntityID entityId;
-			AssetHandle meshHandle;
-			Vector<AssetHandle> materialHandles;
-			Ref<ScenePrimitiveData> primitiveData;
-		};
+		void InitializeScenePrimitiveFromInstance(const StreamingInstanceMap::StreamingInstance& instance);
 
-		void InitializeScenePrimitiveFromInstance(const StreamingInstance& instance);
-
-		vt::map<StreamingInstanceID, StreamingInstance> m_streamingInstances;
+		StreamingInstanceMap m_streamingInstances;
 		StreamingInstanceAssetReferenceCounter m_meshReferenceCounter;
 		StreamingInstanceAssetReferenceCounter m_materialReferenceCounter;
 

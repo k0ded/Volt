@@ -30,7 +30,7 @@ namespace Volt
 			{
 				for (const auto& instanceId : streamingInstances)
 				{
-					const auto& instance = m_streamingInstances.at(instanceId);
+					const auto& instance = m_streamingInstances.Get(instanceId);
 					InitializeScenePrimitiveFromInstance(instance);
 				}
 			}
@@ -46,13 +46,11 @@ namespace Volt
 	{
 		StreamingInstanceID newId;
 
-		StreamingInstance instance;
+		StreamingInstanceMap::StreamingInstance& instance = m_streamingInstances.Add(newId);
 		instance.entityId = description.entityId;
 		instance.meshHandle = description.meshHandle;
 		instance.materialHandles = description.materialHandles;
 		instance.primitiveData = description.primitiveData;
-
-		m_streamingInstances[newId] = instance;
 
 		for (const auto& materialHandle : description.materialHandles)
 		{
@@ -61,14 +59,14 @@ namespace Volt
 
 		m_meshReferenceCounter.AddReference(description.meshHandle, newId);
 
-		InitializeScenePrimitiveFromInstance(m_streamingInstances.at(newId));
+		InitializeScenePrimitiveFromInstance(m_streamingInstances.Get(newId));
 
 		return newId;
 	}
 
 	void StreamingManager::RemoveInstance(StreamingInstanceID instanceId)
 	{
-		const auto& instance = m_streamingInstances.at(instanceId);
+		const auto& instance = m_streamingInstances.Get(instanceId);
 
 		m_meshReferenceCounter.RemoveReference(instance.meshHandle, instanceId);
 
@@ -77,25 +75,27 @@ namespace Volt
 			m_meshReferenceCounter.RemoveReference(materialHandle, instanceId);
 		}
 
-		if (m_streamingInstances.contains(instanceId))
+		if (m_streamingInstances.Contains(instanceId))
 		{
-			m_streamingInstances.erase(instanceId);
+			m_streamingInstances.Erase(instanceId);
 		}
 	}
 
 	void StreamingManager::InvalidateInstance(StreamingInstanceID instanceId, const StreamingInstanceDescription& description)
 	{
-		if (!m_streamingInstances.contains(instanceId))
+		if (!m_streamingInstances.Contains(instanceId))
 		{
 			return;
 		}
 
-		for (const auto& materialHandle : m_streamingInstances[instanceId].materialHandles)
+		auto& streamingInstance = m_streamingInstances.Get(instanceId);
+
+		for (const auto& materialHandle : streamingInstance.materialHandles)
 		{
 			m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
 		}
 
-		m_meshReferenceCounter.RemoveReference(m_streamingInstances[instanceId].meshHandle, instanceId);
+		m_meshReferenceCounter.RemoveReference(streamingInstance.meshHandle, instanceId);
 
 		for (const auto& materialHandle : description.materialHandles)
 		{
@@ -104,13 +104,13 @@ namespace Volt
 
 		m_meshReferenceCounter.AddReference(description.meshHandle, instanceId);
 
-		m_streamingInstances[instanceId].meshHandle = description.meshHandle;
-		m_streamingInstances[instanceId].materialHandles = description.materialHandles;
+		streamingInstance.meshHandle = description.meshHandle;
+		streamingInstance.materialHandles = description.materialHandles;
 
-		InitializeScenePrimitiveFromInstance(m_streamingInstances[instanceId]);
+		InitializeScenePrimitiveFromInstance(streamingInstance);
 	}
 
-	void StreamingManager::InitializeScenePrimitiveFromInstance(const StreamingInstance& instance)
+	void StreamingManager::InitializeScenePrimitiveFromInstance(const StreamingInstanceMap::StreamingInstance& instance)
 	{
 		Ref<MeshAsset> meshAsset = AssetManager::QueueAsset<MeshAsset>(instance.meshHandle);
 		Ref<Mesh> mesh;
@@ -195,5 +195,43 @@ namespace Volt
 	void StreamingInstanceAssetReferenceCounter::SetAssetUpdatedCallback(AssetUpdatedFunc callbackFunc)
 	{
 		m_callbackFunction = callbackFunc;
+	}
+
+	StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Get(StreamingInstanceID id)
+	{
+		VT_ENSURE(m_streamingInstances.contains(id));
+		std::scoped_lock lock(m_mutex);
+		return *m_streamingInstances.at(id);
+	}
+	const StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Get(StreamingInstanceID id) const
+	{
+		VT_ENSURE(m_streamingInstances.contains(id));
+		std::scoped_lock lock(m_mutex);
+		return *m_streamingInstances.at(id);
+	}
+
+	bool StreamingInstanceMap::Contains(StreamingInstanceID id) const
+	{
+		std::scoped_lock lock(m_mutex);
+		return m_streamingInstances.contains(id);
+	}
+
+	StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Add(StreamingInstanceID id)
+	{
+		std::scoped_lock lock(m_mutex);
+		StreamingInstance* newInstance = m_instanceAllocator.Allocate();
+		m_streamingInstances[id] = newInstance;
+
+		return *newInstance;
+	}
+
+	void StreamingInstanceMap::Erase(StreamingInstanceID id)
+	{
+		std::scoped_lock lock(m_mutex);
+
+		StreamingInstance* instance = m_streamingInstances.at(id);
+		m_streamingInstances.erase(id);
+
+		m_instanceAllocator.Free(instance);
 	}
 }
