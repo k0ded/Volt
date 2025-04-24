@@ -73,7 +73,7 @@ namespace Volt
 			parameters.TileCount = glm::uvec2{ tileCountX, tileCountY };
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<LightTileBinningCS>(parameters);
 			context.Dispatch(tileCountX, tileCountY, 1u);
 		});
 

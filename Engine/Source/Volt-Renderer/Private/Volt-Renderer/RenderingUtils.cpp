@@ -81,7 +81,7 @@ namespace Volt::RenderingUtils
 			parameters.ThreadGroupSize = groupSize;
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<GenerateIndirectArgsCS>(parameters);
 			context.Dispatch(1, 1, 1);
 		});
 
@@ -114,7 +114,7 @@ namespace Volt::RenderingUtils
 			parameters.GroupSize = groupSize;
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<GenerateIndirectArgsWrappedCS>(parameters);
 			context.Dispatch(1, 1, 1);
 		});
 

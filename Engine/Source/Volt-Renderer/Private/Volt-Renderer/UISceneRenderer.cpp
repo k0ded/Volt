@@ -157,7 +157,7 @@ namespace Volt
 
 				RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context)
 				{
-					context.SetParameters(parameters);
+					context.SetParameters<UI2DGridVSPS>(parameters);
 				});
 
 				context.EndRendering();
@@ -199,7 +199,7 @@ namespace Volt
 				UIWidgetIDVSPS::Parameters parameters;
 				parameters.ViewProjection = projectionMatrix;
 
-				context.SetParameters(parameters);
+				context.SetParameters<UIWidgetIDVSPS>(parameters);
 				context.DrawIndexed(renderingData.indexCount, 1, 0, 0, 0);
 				context.EndRendering();
 			});
@@ -240,7 +240,7 @@ namespace Volt
 				context.BindIndexBuffer(renderingData.indexBuffer);
 				context.BindVertexBuffers({ renderingData.vertexBuffer }, 0);
 
-				context.SetParameters(parameters);
+				context.SetParameters<UIMainVSPS>(parameters);
 				context.DrawIndexed(renderingData.indexCount, 1, 0, 0, 0);
 				context.EndRendering();
 			});

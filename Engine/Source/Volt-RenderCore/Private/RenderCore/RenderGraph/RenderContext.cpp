@@ -624,6 +624,15 @@ namespace Volt
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &resourceHandle, sizeof(ResourceHandle));
 	}
 
+	void RenderContext::SetConstant(const ShaderParameterMetadata& metadata, const void* data)
+	{
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
+		m_boundPipelineData.uniformHasBeenSetMap[metadata.hashedName] = true;
+#endif
+
+		memcpy_s(&m_passConstantsData[metadata.reflectedOffset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - metadata.reflectedOffset, data, metadata.structSize);
+	}
+
 	void RenderContext::Flush(RefPtr<RHI::Fence> fence)
 	{
 		VT_PROFILE_FUNCTION();
@@ -648,5 +657,29 @@ namespace Volt
 
 		VT_ENSURE_MSG(width > 0 && height > 0 && depth > 0, "Width, height and depth must be greater than zero!");
 		m_commandBuffer->CopyImage(srcImage, dstImage, width, height, depth);
+	}
+
+	void RenderContext::SetParameter(const ShaderParameterMetadata& parameterMetadata, const void* parameterData)
+	{
+		if (parameterMetadata.parameterType == ShaderParameterType::Image)
+		{
+			SetConstant(parameterMetadata.hashedName, *reinterpret_cast<const RenderGraphImageHandle*>(parameterData));
+		}
+		else if (parameterMetadata.parameterType == ShaderParameterType::Buffer)
+		{
+			SetConstant(parameterMetadata.hashedName, *reinterpret_cast<const RenderGraphBufferHandle*>(parameterData));
+		}
+		else if (parameterMetadata.parameterType == ShaderParameterType::UniformBuffer)
+		{
+			SetConstant(parameterMetadata.hashedName, *reinterpret_cast<const RenderGraphUniformBufferHandle*>(parameterData));
+		}
+		else if (parameterMetadata.parameterType == ShaderParameterType::Sampler)
+		{
+			SetConstant(parameterMetadata.hashedName, *reinterpret_cast<const ResourceHandle*>(parameterData));
+		}
+		else
+		{
+			SetConstant(parameterMetadata, parameterData);
+		}
 	}
 }

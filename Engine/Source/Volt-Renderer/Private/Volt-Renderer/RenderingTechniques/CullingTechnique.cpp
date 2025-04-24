@@ -111,7 +111,7 @@ namespace Volt
 
 			constexpr uint32_t workGroupSize = 64;
 
-			context.SetParameters(parameters);
+			context.SetParameters<DrawCallCullCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(info.drawCommandCount, workGroupSize), 1, 1);
 		});
 
@@ -136,7 +136,7 @@ namespace Volt
 			parameters.TaskCommands = data.taskCommandsBuffer;
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<TaskSubmitSetupCS>(parameters);
 			context.Dispatch(1, 1, 1);
 		});
 	}

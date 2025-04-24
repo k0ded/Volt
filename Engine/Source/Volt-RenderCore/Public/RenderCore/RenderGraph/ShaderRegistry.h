@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RenderCore/Config.h"
+#include "RenderCore/RenderGraph/ShaderParameterStruct.h"
 
 #include <RHIModule/Shader/Shader.h>
 
@@ -13,6 +14,15 @@
 
 namespace Volt
 {
+	template<typename T>
+	concept HasSetupParametersFunc = requires
+	{
+		{ T::zzInternal_ProcessMembers };
+	};
+
+	template<typename T>
+	concept HasParametersStruct = requires { typename T::Parameters; };
+
 	template <std::size_t Index = 0, typename Func, typename... Stages>
 	constexpr void ShaderStageIterator(const std::tuple<Stages...>& stages, Func&& func)
 	{
@@ -22,6 +32,8 @@ namespace Volt
 			ShaderStageIterator<Index + 1>(stages, std::forward<Func>(func));
 		}
 	}
+
+	struct ShaderRenderGraphConstantsData;
 
 	class VTRC_API ShaderRegistry
 	{
@@ -36,6 +48,7 @@ namespace Volt
 		struct ShaderRegistrationInfo
 		{
 			Vector<ShaderStageInfo> stageInfos;
+			Vector<ShaderParameterMetadata> parameterMetadata;
 			std::string_view name;
 		};
 
@@ -51,7 +64,7 @@ namespace Volt
 
 			ShaderStageIterator(shaderStages, [&](const auto& stageInfo)
 			{
-				// There will always be an initial entry which is empty.
+				// There will always be an initial entry which is empty. 
 				if (stageInfo.stage != RHI::ShaderStage::None)
 				{
 					registrationInfo.stageInfos.emplace_back(stageInfo.filePath.GetView().data(), stageInfo.entryPoint.GetView().data(), stageInfo.stage);
@@ -60,12 +73,25 @@ namespace Volt
 
 			registrationInfo.name = T::shaderName;
 
+			if constexpr (HasParametersStruct<T>)
+			{
+				if constexpr (HasSetupParametersFunc<typename T::Parameters>)
+				{
+					T::Parameters::zzInternal_ProcessMembers(registrationInfo.parameterMetadata);
+				}
+			}
+
 			return true;
 		}
 
 		VT_INLINE VT_NODISCARD const vt::map<TypeTraits::TypeIndex, ShaderRegistrationInfo>& GetRegisteredShaders() const { return m_shaderRegistrationInfo; }
+		VT_INLINE VT_NODISCARD const ShaderRegistrationInfo& GetShaderRegistrationInfo(const TypeTraits::TypeIndex typeIndex) const { return m_shaderRegistrationInfo.at(typeIndex); }
 
 	private:
+		friend class ShaderSubSystem;
+
+		void CorrectShaderParameterMetadataOffsets(TypeTraits::TypeIndex typeIndex, const RHI::ShaderRenderGraphConstantsData& reflectedConstants);
+
 		vt::map<TypeTraits::TypeIndex, ShaderRegistrationInfo> m_shaderRegistrationInfo;
 	};
 }

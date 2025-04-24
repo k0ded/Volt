@@ -692,7 +692,7 @@ namespace Volt
 			parameters.PrimitiveDrawDataCount = primitiveDrawDataCount;
 
 			constexpr uint32_t workGroupCount = 64;
-			context.SetParameters(parameters);
+			context.SetParameters<CompactValidDrawCallCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(primitiveDrawDataCount, workGroupCount), 1, 1);
 		});
 	}

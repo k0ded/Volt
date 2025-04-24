@@ -179,7 +179,7 @@ namespace Volt
 			parameters.Constants = data.constants;
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<GTAODepthPrefilterCS>(parameters);
 
 			const uint32_t dispatchX = Math::DivideRoundUp(renderData.renderSize.x, 16u);
 			const uint32_t dispatchY = Math::DivideRoundUp(renderData.renderSize.y, 16u);
@@ -228,7 +228,7 @@ namespace Volt
 			parameters.Constants = prefilterDepthData.constants;
 			
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<GTAOMainPassCS>(parameters);
 
 			const uint32_t dispatchX = Math::DivideRoundUp(renderSize.x, 16u);
 			const uint32_t dispatchY = Math::DivideRoundUp(renderSize.y, 16u);
@@ -275,7 +275,7 @@ namespace Volt
 			parameters.Constants = prefilterDepthData.constants;
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<GTAODenoiseCS>(parameters);
 		
 			const uint32_t dispatchX = Math::DivideRoundUp(renderSize.x, 8u);
 			const uint32_t dispatchY = Math::DivideRoundUp(renderSize.y, 8u);

@@ -98,7 +98,7 @@ namespace Volt
 
 			RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context) 
 			{
-				context.SetParameters(parameters);
+				context.SetParameters<TAAResolveVSPS>(parameters);
 			});
 
 			context.EndRendering();

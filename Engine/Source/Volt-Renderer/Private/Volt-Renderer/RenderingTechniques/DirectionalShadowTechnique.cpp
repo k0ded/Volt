@@ -133,7 +133,7 @@ namespace Volt
 
 				PushConstant pushConstants{ i };
 				context.PushConstants(&pushConstants, sizeof(PushConstant));
-				context.SetParameters(parameters);
+				context.SetParameters<DirectionalShadowMSPS>(parameters);
 				context.DispatchMeshTasksIndirect(cullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 
 				context.EndRendering();

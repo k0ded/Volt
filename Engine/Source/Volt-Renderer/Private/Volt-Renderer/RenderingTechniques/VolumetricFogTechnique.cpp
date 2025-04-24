@@ -188,7 +188,7 @@ namespace Volt
 			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<VolumetricFogInjectExtinctionScatteringCS>(parameters);
 
 			context.Dispatch(Math::DivideRoundUp(VolumeSize, 8u), Math::DivideRoundUp(VolumeSize, 8u), VolumeSize);
 		});
@@ -242,7 +242,7 @@ namespace Volt
 			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<VolumetricFogLightScatteringCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(VolumeSize, 8u), Math::DivideRoundUp(VolumeSize, 8u), VolumeSize);
 		});
 
@@ -287,7 +287,7 @@ namespace Volt
 			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<VolumetricFogIntegrateCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(VolumeSize, 8u), Math::DivideRoundUp(VolumeSize, 8u), 1);
 		});
 	
@@ -320,7 +320,7 @@ namespace Volt
 			parameters.FroxelVolumeDimensions = VolumeSize;
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<VolumetricFogSpatialFilterCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(VolumeSize, 8u), Math::DivideRoundUp(VolumeSize, 8u), VolumeSize);
 		});
 
@@ -366,7 +366,7 @@ namespace Volt
 			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<VolumetricFogTemporalFilterCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(VolumeSize, 8u), Math::DivideRoundUp(VolumeSize, 8u), VolumeSize);
 		});
 

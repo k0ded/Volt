@@ -24,6 +24,9 @@ namespace Volt
 		void Shutdown() override;
 
 		VT_DECLARE_SUBSYSTEM("{B017EA3B-6D55-46B8-BEDE-A299C3580B4E}"_guid);
+	
+		void CorrectShaderParameterMetadata(RefPtr<RHI::Shader> shader, TypeTraits::TypeIndex typeIndex);
+
 	private:
 		void LoadRegisteredShaders();
 

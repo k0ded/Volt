@@ -42,21 +42,6 @@
 
 namespace Volt
 {
-	BEGIN_SHADER_PARAMETER_STRUCT(GenerateGBufferParameters)
-		SHADER_PARAMETER_IMAGE(vt::Tex2D<uint2>, VisibilityBuffer)
-		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, MaterialCountBuffer)
-		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, MaterialStartBuffer)
-		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint2>, PixelCollection)
-		SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
-		SHADER_PARAMETER_IMAGE(vt::RWTex2D<float4>, Albedo)
-		SHADER_PARAMETER_IMAGE(vt::RWTex2D<float3>, Normals)
-		SHADER_PARAMETER_IMAGE(vt::RWTex2D<float2>, Material)
-		SHADER_PARAMETER_IMAGE(vt::RWTex2D<float3>, Emissive)
-		SHADER_PARAMETER(uint, MaterialId)
-		SHADER_PARAMETER(float2, ViewSize)
-		SHADER_PARAMETER_STRUCT(GPUSceneData, GPUSceneData)
-	END_SHADER_PARAMETER_STRUCT()
-
 	BEGIN_SHADER_PARAMETER_STRUCT(PathTracingParameters)
 		SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
 		SHADER_PARAMETER_IMAGE(vt::RWTex2D<float4>, RWOutputTexture)
@@ -86,6 +71,29 @@ namespace Volt
 		SHADER_PARAMETER_IMAGE(vt::Tex2DArray<float>, directionalLightShadowMap)
 		SHADER_PARAMETER_STRUCT(SkyLight, skyLight)
 	END_SHADER_PARAMETER_STRUCT()
+
+	struct MaterialShaderTemp
+	{
+		BEGIN_SHADER_DEFINITION(MaterialShaderTemp)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Defaults/OpaqueDefault_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<uint2>, VisibilityBuffer)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, MaterialCountBuffer)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, MaterialStartBuffer)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint2>, PixelCollection)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float4>, Albedo)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float3>, Normals)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float2>, Material)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float3>, Emissive)
+			SHADER_PARAMETER(uint, MaterialId)
+			SHADER_PARAMETER(float2, ViewSize)
+			SHADER_PARAMETER_STRUCT(GPUSceneData, GPUSceneData)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(MaterialShaderTemp)
 
 	struct DepthPrePassMSPS
 	{
@@ -270,7 +278,7 @@ namespace Volt
 
 	struct VisualizationFullscreenCS
 	{
-		BEGIN_SHADER_DEFINITION(ShadingCS)
+		BEGIN_SHADER_DEFINITION(VisualizationMS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationFullscreenShader.hlsl", "MainCS", RHI::ShaderStage::Compute)
 		END_SHADER_DEFINITION()
 
@@ -469,18 +477,29 @@ namespace Volt
 		builder.ReadResource(drawCullingData.taskCommandsBuffer);
 	}
 
-	void SceneRenderer::SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard)
+	void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard, MeshShaderCommonParameters& parameters)
 	{
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
 		const auto& drawCullingData = blackboard.Get<DrawCullingData>();
-
-		MeshShaderCommonParameters parameters;
+	
 		parameters.GPUSceneData = blackboard.Get<GPUSceneData>();
 		parameters.TaskCommands = drawCullingData.taskCommandsBuffer;
 		parameters.View = uniformBuffers.viewDataBuffer;
-
-		context.SetParameters(parameters);
 	}
+
+	//template<typename ShaderType>
+	//void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard)
+	//{
+	//	const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
+	//	const auto& drawCullingData = blackboard.Get<DrawCullingData>();
+	//
+	//	MeshShaderCommonParameters parameters;
+	//	parameters.GPUSceneData = blackboard.Get<GPUSceneData>();
+	//	parameters.TaskCommands = drawCullingData.taskCommandsBuffer;
+	//	parameters.View = uniformBuffers.viewDataBuffer;
+	//
+	//	context.SetParameters<ShaderType>(parameters);
+	//}
 
 	void SceneRenderer::SetupFrameData(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)
 	{
@@ -749,8 +768,10 @@ namespace Volt
 			context.BeginRendering(info);
 			context.BindPipeline(pipeline);
 
-			SetupMeshPassConstants(context, blackboard);
+			DepthPrePassMSPS::Parameters parameters;
+			SetupMeshPassConstants(context, blackboard, parameters.Common);
 
+			context.SetParameters<DepthPrePassMSPS>(parameters);
 			context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 			context.EndRendering();
 		});
@@ -790,7 +811,10 @@ namespace Volt
 			context.BeginRendering(info);
 			context.BindPipeline(pipeline);
 
-			SetupMeshPassConstants(context, blackboard);
+			ObjectIDMSPS::Parameters parameters;
+			SetupMeshPassConstants(context, blackboard, parameters.Common);
+
+			context.SetParameters<ObjectIDMSPS>(parameters);
 
 			context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 			context.EndRendering();
@@ -840,7 +864,10 @@ namespace Volt
 			context.BeginRendering(info);
 			context.BindPipeline(pipeline);
 
-			SetupMeshPassConstants(context, blackboard);
+			VisibilityBufferMSPS::Parameters parameters;
+			SetupMeshPassConstants(context, blackboard, parameters.Common);
+
+			context.SetParameters<VisibilityBufferMSPS>(parameters);
 
 			context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 			context.EndRendering();
@@ -908,7 +935,7 @@ namespace Volt
 			parameters.RenderSize = glm::uvec2(m_width, m_height);
 			parameters.GPUSceneData = gpuSceneData;
 
-			context.SetParameters(parameters);
+			context.SetParameters<GenerateMaterialCountCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1);
 		});
 	}
@@ -960,7 +987,7 @@ namespace Volt
 			parameters.RenderSize = glm::uvec2(m_width, m_height);
 			parameters.GPUSceneData = gpuSceneData;
 
-			context.SetParameters(parameters);
+			context.SetParameters<CollectMaterialPixelsCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1);
 		});
 	}
@@ -996,7 +1023,7 @@ namespace Volt
 			parameters.MaterialCount = materialCount;
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<GenerateMaterialIndirectArgsCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(materialCount, 32u), 1, 1);
 		});
 	}
@@ -1052,12 +1079,12 @@ namespace Volt
 
 			if (!pipeline)
 			{
-				pipeline = ShaderMap::GetComputePipeline<OpaqueDefaultMaterialCS>();
+				pipeline = ShaderMap::GetComputePipeline<MaterialShaderTemp>();
 			}
 
 			context.BindPipeline(pipeline);
 
-			GenerateGBufferParameters parameters;
+			MaterialShaderTemp::Parameters parameters;
 			parameters.VisibilityBuffer = visBufferData.visibility;
 			parameters.MaterialCountBuffer = matCountData.materialCountBuffer;
 			parameters.MaterialStartBuffer = matCountData.materialStartBuffer;
@@ -1071,7 +1098,7 @@ namespace Volt
 			parameters.ViewSize = glm::vec2(m_width, m_height);
 			parameters.GPUSceneData = gpuSceneData;
 
-			context.SetParameters(parameters);
+			context.SetParameters<MaterialShaderTemp>(parameters);
 			context.DispatchIndirect(indirectArgsData.materialIndirectArgsBuffer, sizeof(RHI::IndirectDispatchCommand) * materialId); // Should be offset with material ID
 		});
 	}
@@ -1135,7 +1162,7 @@ namespace Volt
 
 			context.BeginRendering(info);
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<SkyboxVSPS>(parameters);
 			context.BindIndexBuffer(indexBufferHandle);
 			context.DrawIndexed(static_cast<uint32_t>(m_skyboxMesh->GetIndexCount()), 1, 0, 0, 0);
 			context.EndRendering();
@@ -1218,7 +1245,7 @@ namespace Volt
 
 			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
-			context.SetParameters(parameters);
+			context.SetParameters<ShadingCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1u);
 		});
 	}
@@ -1257,7 +1284,7 @@ namespace Volt
 
 			RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context)
 			{
-				context.SetParameters(parameters);
+				context.SetParameters<FXAAVSPS>(parameters);
 			});
 
 			context.EndRendering();
@@ -1306,7 +1333,7 @@ namespace Volt
 
 			RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context)
 			{
-				context.SetParameters(parameters);
+				context.SetParameters<TonemapVSPS>(parameters);
 			});
 
 			context.EndRendering();
@@ -1352,7 +1379,7 @@ namespace Volt
 
 				context.BeginRendering(info);
 				context.BindPipeline(pipeline);
-				context.SetParameters(parameters);
+				context.SetParameters<VisualizationMS>(parameters);
 				context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 				context.EndRendering();
 			});
@@ -1419,7 +1446,7 @@ namespace Volt
 				parameters.VisualizationModeInt = static_cast<uint32_t>(visualizationMode);
 
 				context.BindPipeline(pipeline);
-				context.SetParameters(parameters);
+				context.SetParameters<VisualizationFullscreenCS>(parameters);
 				context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1u);
 			});
 		}
@@ -1464,7 +1491,7 @@ namespace Volt
 			parameters.RWOutputTexture = dstImage;
 			parameters.GPUSceneData = gpuSceneData;
 			
-			context.SetParameters(parameters);
+			//context.SetParameters(parameters);
 			context.SetAccelerationStructure(m_renderScene->GetRayTracingScene()->GetAccelerationStructure());
 			context.TraceRays(sbt, m_width, m_height, 1);
 		});

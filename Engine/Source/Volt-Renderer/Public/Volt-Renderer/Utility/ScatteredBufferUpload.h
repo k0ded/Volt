@@ -143,7 +143,7 @@ namespace Volt
 			parameters.CopyCount = data.dataCount;
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<ScatterUploadCS>(parameters);
 			context.Dispatch(groupSize, 1, 1);
 		});
 	}

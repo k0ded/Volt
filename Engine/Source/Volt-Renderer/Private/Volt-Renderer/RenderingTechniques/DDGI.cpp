@@ -85,7 +85,7 @@ namespace Volt
 			parameters.ProbeResolution = static_cast<uint32_t>(s_ddgiProbeResolution.GetValue());
 			parameters.GPUSceneData = gpuScene;
 
-			context.SetParameters(parameters);
+			context.SetParameters<DDGIUpdateProbesCS>(parameters);
 			context.Dispatch(1, 1, 1);
 		});
 	}

@@ -102,7 +102,6 @@ namespace Volt
 		void OnRender(Ref<Camera> camera, float timestep);
 
 		void BuildMeshPass(RenderGraph::Builder& builder, RenderGraphBlackboard& blackboard);
-		void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard);
 
 		void SetupFrameData(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
 

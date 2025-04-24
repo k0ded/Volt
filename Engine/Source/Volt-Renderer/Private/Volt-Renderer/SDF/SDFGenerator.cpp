@@ -314,7 +314,7 @@ namespace Volt
 				parameters.BrickInfoData = brickInfoBufferHandle;
 				parameters.BrickTextureSize = size;
 
-				context.SetParameters(parameters);
+				context.SetParameters<MeshSDFAllocatorCS>(parameters);
 				context.Dispatch(static_cast<uint32_t>(brickGrid.size()), 1, 1);
 			});
 

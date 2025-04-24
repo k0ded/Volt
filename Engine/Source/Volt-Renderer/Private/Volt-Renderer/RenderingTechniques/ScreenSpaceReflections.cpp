@@ -73,7 +73,7 @@ namespace Volt
 			parameters.RWOutput = sceneColor;
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<SSRCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(width, 8u), Math::DivideRoundUp(height, 8u), 1u);
 		});
 	}

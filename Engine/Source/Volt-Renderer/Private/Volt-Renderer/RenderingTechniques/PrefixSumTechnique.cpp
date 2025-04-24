@@ -78,7 +78,7 @@ namespace Volt
 			parameters.CounterBuffer = counterBuffer;
 			parameters.ValueCount = valueCount;
 
-			context.SetParameters(parameters);
+			context.SetParameters<PrefixSumCS>(parameters);
 			context.Dispatch(groupCount, 1, 1);
 		});
 	}

@@ -81,11 +81,17 @@ namespace Volt
 				specification.forceCompile = false;
 
 				RefPtr<RHI::Shader> shader = RHI::Shader::Create(specification);
+				ShaderSubSystem::CorrectShaderParameterMetadata(shader, typeIndex);
 				ShaderMap::RegisterShader(typeIndex, shader);
 			});
 		}
 
 		taskGraph.ExecuteAndWait();
 		VT_LOGC(Info, LogRender, "Shader compilation finished in {} seconds!", timer.GetTime<Time::Seconds>());
+	}
+
+	void ShaderSubSystem::CorrectShaderParameterMetadata(RefPtr<RHI::Shader> shader, TypeTraits::TypeIndex typeIndex)
+	{
+		GetShaderRegistry().CorrectShaderParameterMetadataOffsets(typeIndex, shader->GetResources().renderGraphConstantsData);
 	}
 }

@@ -96,7 +96,7 @@ namespace Volt
 			parameters.InverseLogLumRange = InvLogLuminanceRange;
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<GenerateLuminanceHistogramCS>(parameters);
 		
 			constexpr uint32_t ThreadGroupSize = 16;
 
@@ -134,7 +134,7 @@ namespace Volt
 			parameters.BlendFactor = 1.f - exp(-deltaTime * 1.1f);
 
 			context.BindPipeline(pipeline);
-			context.SetParameters(parameters);
+			context.SetParameters<GenerateAverageLuminanceCS>(parameters);
 			context.Dispatch(1, 1, 1);
 		});
 	}
