@@ -26,6 +26,7 @@ public:
 private:
 	bool OnKeyPressedEvent(Volt::KeyPressedEvent& e);
 
+	void DrawSceneName();
 	void DrawEntity(Volt::Entity entity, const std::string& filter);
 	void CreatePrefabAndSetupEntities(Volt::Entity entity);
 	void UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity srcEntity);

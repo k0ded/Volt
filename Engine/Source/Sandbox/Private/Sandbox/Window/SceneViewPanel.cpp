@@ -70,6 +70,9 @@ void SceneViewPanel::UpdateMainContent()
 		UI::ScopedStyleFloat2 padd{ ImGuiStyleVar_FramePadding, { 4.f, 4.f } };
 		UI::ScopedStyleFloat2 padd1{ ImGuiStyleVar_CellPadding, { 4.f, 0.f } };
 
+
+		DrawSceneName();
+
 		const auto flags = ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoPadInnerX;
 
 		const uint32_t columnCount = m_showEntityUUIDs ? 3 : 2;
@@ -302,6 +305,19 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 	}
 
 	return false;
+}
+
+void SceneViewPanel::DrawSceneName()
+{
+	ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x / 2.f) - (ImGui::CalcTextSize(m_scene->GetName().c_str()).x / 2.f));
+	ImGui::Text("%s", m_scene->GetName().c_str());
+
+	std::string tooltipText = Volt::AssetManager::GetFilePathFromAssetHandle(m_scene->handle).string();
+	if (tooltipText.empty())
+	{
+		tooltipText = "Scene has not yet been saved to a file, it has no path.";
+	}
+	UI::SimpleToolTip(tooltipText);
 }
 
 void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
