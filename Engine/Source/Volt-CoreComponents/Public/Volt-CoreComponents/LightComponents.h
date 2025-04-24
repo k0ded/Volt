@@ -219,6 +219,8 @@ namespace Volt
 			reflect.SetOnCreateCallback(&SkylightComponent::OnCreate);
 		}
 
+		VTCC_API void UpdateSceneLightData(bool force = false);
+
 		REGISTER_COMPONENT(SkylightComponent);
 
 	private:

@@ -281,7 +281,9 @@ namespace Volt
 			// Skylight
 			{
 				auto ent = newScene->CreateEntity("Skylight");
-				ent.AddComponent<SkylightComponent>();
+				SkylightComponent& skyComp = ent.AddComponent<SkylightComponent>();
+				skyComp.environmentTextureHandle = AssetManager::GetAssetHandleFromFilePath("Engine/Textures/HDRIs/defaultHDRI.vtasset");
+				skyComp.UpdateSceneLightData(true);
 			}
 
 			// Camera

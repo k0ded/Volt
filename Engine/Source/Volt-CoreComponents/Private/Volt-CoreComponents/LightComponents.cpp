@@ -107,13 +107,13 @@ namespace Volt
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
-	
+
 	void SpotLightComponent::OnDestroy(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SpotLightComponent>();
 		component.m_sceneLightData = nullptr;
 	}
-	
+
 	void SpotLightComponent::OnTransformChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SpotLightComponent>();
@@ -121,7 +121,7 @@ namespace Volt
 
 		component.m_sceneLightData->Invalidate();
 	}
-	
+
 	void SpotLightComponent::OnComponentCopied(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SpotLightComponent>();
@@ -144,7 +144,7 @@ namespace Volt
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
-	
+
 	void DirectionalLightComponent::OnDestroy(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<DirectionalLightComponent>();
@@ -158,7 +158,7 @@ namespace Volt
 
 		component.m_sceneLightData->Invalidate();
 	}
-	
+
 	void DirectionalLightComponent::OnComponentCopied(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<DirectionalLightComponent>();
@@ -166,7 +166,7 @@ namespace Volt
 
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
-	
+
 	void DirectionalLightComponent::OnMemberChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<DirectionalLightComponent>();
@@ -175,49 +175,45 @@ namespace Volt
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
 
+	VTCC_API void SkylightComponent::UpdateSceneLightData(bool force)
+	{
+		VT_ENSURE(m_sceneLightData);
+
+		if (force || lastEnvironmentHandle != environmentTextureHandle)
+		{
+			auto envTextures = Renderer::GenerateEnvironmentTextures(environmentTextureHandle);
+			currentSceneEnvironment.diffuse = envTextures.diffuse;
+			currentSceneEnvironment.specular = envTextures.specular;
+
+			lastEnvironmentHandle = environmentTextureHandle;
+		}
+
+		m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(*this));
+	}
+
 	void SkylightComponent::OnCreate(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
 	}
-	
+
 	void SkylightComponent::OnDestroy(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
 		component.m_sceneLightData = nullptr;
 	}
-	
+
 	void SkylightComponent::OnComponentCopied(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
-		VT_ENSURE(component.m_sceneLightData);
-
-		{
-			auto envTextures = Renderer::GenerateEnvironmentTextures(component.environmentTextureHandle);
-			component.currentSceneEnvironment.diffuse = envTextures.diffuse;
-			component.currentSceneEnvironment.specular = envTextures.specular;
-
-			component.lastEnvironmentHandle = component.environmentTextureHandle;
-		}
-
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
+		component.UpdateSceneLightData(/*force*/ true);
 	}
-	
+
 	void SkylightComponent::OnMemberChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
-		VT_ENSURE(component.m_sceneLightData);
 
-		if (component.lastEnvironmentHandle != component.environmentTextureHandle)
-		{
-			auto envTextures = Renderer::GenerateEnvironmentTextures(component.environmentTextureHandle);
-			component.currentSceneEnvironment.diffuse = envTextures.diffuse;
-			component.currentSceneEnvironment.specular = envTextures.specular;
-
-			component.lastEnvironmentHandle = component.environmentTextureHandle;
-		}
-
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
+		component.UpdateSceneLightData(/*force*/ false);
 	}
 }
