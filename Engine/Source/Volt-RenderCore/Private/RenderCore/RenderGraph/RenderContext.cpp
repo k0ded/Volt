@@ -663,7 +663,8 @@ namespace Volt
 	{
 		if (parameterMetadata.parameterType == ShaderParameterType::Image)
 		{
-			SetConstant(parameterMetadata.hashedName, *reinterpret_cast<const RenderGraphImageHandle*>(parameterData));
+			const RenderGraphImageAccess& imageAccess = *reinterpret_cast<const RenderGraphImageAccess*>(parameterData);
+			SetConstant(parameterMetadata.hashedName, imageAccess.handle, imageAccess.mip, imageAccess.layer);
 		}
 		else if (parameterMetadata.parameterType == ShaderParameterType::Buffer)
 		{

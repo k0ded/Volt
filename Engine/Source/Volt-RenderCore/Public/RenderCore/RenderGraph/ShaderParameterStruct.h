@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RenderCore/RenderGraph/ShaderTypes.h"
+#include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
 
 #include <CoreUtilities/StringHash.h>
 
@@ -28,6 +29,18 @@ namespace Volt
 		uint32_t structSize;
 		uint32_t parentStructOffset; 
 		uint32_t reflectedOffset;
+	};
+
+	struct RenderGraphImageAccess
+	{
+		RenderGraphImageAccess() = default;
+		RenderGraphImageAccess(RenderGraphImageHandle inHandle, int32_t inMip = -1, int32_t inLayer = -1)
+			: handle(inHandle), mip(inMip), layer(inLayer)
+		{}
+
+		RenderGraphImageHandle handle = RenderGraphNullHandle();
+		int32_t layer = -1;
+		int32_t mip = -1;
 	};
 }
 
@@ -91,32 +104,12 @@ public: \
 	RenderGraphBufferHandle paramName = RenderGraphNullHandle(); \
 	SHADER_PARAMETER_COMMON_INTERNAL(RenderGraphBufferHandle, paramName, ShaderParameterType::Buffer)
 
+// The image access works with RenderGraphImageHandle as its type, because the handle is the first variable in the struct.
 #define SHADER_PARAMETER_IMAGE(type, paramName) \
 	MemberID##paramName; \
 public: \
-	RenderGraphImageHandle paramName = RenderGraphNullHandle(); \
+	RenderGraphImageAccess paramName; \
 	SHADER_PARAMETER_COMMON_INTERNAL(RenderGraphImageHandle, paramName, ShaderParameterType::Image)
-
-#define SHADER_PARAMETER_IMAGE_MIP(type, paramName, mip) \
-	MemberID##paramName; \
-public: \
-	RenderGraphImageHandle paramName = RenderGraphNullHandle(); \
-private: \
-	struct NextMemberID##paramName {}; \
-	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata>& outMetadata, uint32_t parentStructOffset = 0, const std::string& parentName = "") \
-	{ \
-		auto& paramMetadata = outMetadata.emplace_back(); \
-		paramMetadata.name = parentName.empty() ? #paramName : parentName + "." + #paramName; \
-		paramMetadata.hashedName = StringHash::Construct(paramMetadata.name); \
-		paramMetadata.parameterType = ShaderParameterType::Image; \
-		paramMetadata.structSize = sizeof(RenderGraphImageHandle); \
-		paramMetadata.structOffset = offsetof(CurrentStruct, paramName); \
-		paramMetadata.parentStructOffset = parentStructOffset; \
-		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata>&, uint32_t, const std::string&); \
-		prevFunc = ProcessMember; \
-		return (FuncPtr)prevFunc; \
-	} \
-	typedef NextMemberID##paramName
 
 #define SHADER_PARAMETER_UNIFORM_BUFFER(type, paramName) \
 	MemberID##paramName; \

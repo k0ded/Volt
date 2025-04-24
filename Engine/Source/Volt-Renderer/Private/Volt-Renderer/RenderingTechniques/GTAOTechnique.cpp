@@ -21,11 +21,11 @@ namespace Volt
 		END_SHADER_DEFINITION()
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_IMAGE_MIP(vt::RWTex2D<float>, RWDepthMIP0, 0)
-			SHADER_PARAMETER_IMAGE_MIP(vt::RWTex2D<float>, RWDepthMIP1, 1)
-			SHADER_PARAMETER_IMAGE_MIP(vt::RWTex2D<float>, RWDepthMIP2, 2)
-			SHADER_PARAMETER_IMAGE_MIP(vt::RWTex2D<float>, RWDepthMIP3, 3)
-			SHADER_PARAMETER_IMAGE_MIP(vt::RWTex2D<float>, RWDepthMIP4, 4)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP0)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP1)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP2)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP3)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP4)
 			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, SourceDepth)
 			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointClampSampler)
 			SHADER_PARAMETER_STRUCT(GTAOTechnique::GTAOConstants, Constants)
@@ -169,11 +169,11 @@ namespace Volt
 			auto pointClampSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureWrap::Clamp>();
 
 			GTAODepthPrefilterCS::Parameters parameters;
-			parameters.RWDepthMIP0 = data.prefilteredDepth;
-			parameters.RWDepthMIP1 = data.prefilteredDepth;
-			parameters.RWDepthMIP2 = data.prefilteredDepth;
-			parameters.RWDepthMIP3 = data.prefilteredDepth;
-			parameters.RWDepthMIP4 = data.prefilteredDepth;
+			parameters.RWDepthMIP0 = RenderGraphImageAccess(data.prefilteredDepth, 0);
+			parameters.RWDepthMIP1 = RenderGraphImageAccess(data.prefilteredDepth, 1);
+			parameters.RWDepthMIP2 = RenderGraphImageAccess(data.prefilteredDepth, 2);
+			parameters.RWDepthMIP3 = RenderGraphImageAccess(data.prefilteredDepth, 3);
+			parameters.RWDepthMIP4 = RenderGraphImageAccess(data.prefilteredDepth, 4);
 			parameters.SourceDepth = preDepthData.depth;
 			parameters.PointClampSampler = pointClampSampler->GetResourceHandle();
 			parameters.Constants = data.constants;
