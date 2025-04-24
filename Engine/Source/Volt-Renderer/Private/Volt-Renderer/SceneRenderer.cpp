@@ -32,6 +32,7 @@
 #include <RenderCore/RenderGraph/RenderContextUtils.h>
 #include <RenderCore/RenderGraph/GPUReadbackBuffer.h>
 #include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/DefaultShaders.h>
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Shader/Shader.h>
@@ -41,6 +42,262 @@
 
 namespace Volt
 {
+	BEGIN_SHADER_PARAMETER_STRUCT(PathTracingParameters)
+		SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+		SHADER_PARAMETER_IMAGE(vt::RWTex2D<float4>, RWOutputTexture)
+		SHADER_PARAMETER_STRUCT(GPUSceneData, GPUSceneData)
+	END_SHADER_PARAMETER_STRUCT()
+
+	BEGIN_SHADER_PARAMETER_STRUCT(VolumentricFogParameters)
+		SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<VolumetricFogParams>, VolumetricFogParamsData)
+		SHADER_PARAMETER_IMAGE(vt::Tex3D<float4>, IntegratedFogVolume)
+		SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointSampler)
+	END_SHADER_PARAMETER_STRUCT()
+
+	BEGIN_SHADER_PARAMETER_STRUCT(SkyLight)
+		SHADER_PARAMETER_IMAGE(vt::TexCube<float3>, irradiance)
+		SHADER_PARAMETER_IMAGE(vt::TexCube<float3>, radiance)
+	END_SHADER_PARAMETER_STRUCT()
+
+	BEGIN_SHADER_PARAMETER_STRUCT(PBRConstants)
+		SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, viewData)
+		SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<DirectionalLightShadowData>, directionalLightShadowData)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<LightDrawData>, lights)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, visibleLights)
+		SHADER_PARAMETER_SAMPLER(vt::TextureSampler, linearSampler)
+		SHADER_PARAMETER_SAMPLER(vt::TextureSampler, pointLinearClampSampler)
+		SHADER_PARAMETER_SAMPLER(vt::TextureSampler, shadowSampler)
+		SHADER_PARAMETER_IMAGE(vt::Tex2D<float4>, DFGLuT)
+		SHADER_PARAMETER_IMAGE(vt::Tex2DArray<float>, directionalLightShadowMap)
+		SHADER_PARAMETER_STRUCT(SkyLight, skyLight)
+	END_SHADER_PARAMETER_STRUCT()
+
+	struct MaterialShaderTemp
+	{
+		BEGIN_SHADER_DEFINITION(MaterialShaderTemp)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Defaults/OpaqueDefault_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<uint2>, VisibilityBuffer)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, MaterialCountBuffer)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, MaterialStartBuffer)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint2>, PixelCollection)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float4>, Albedo)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float3>, Normals)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float2>, Material)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float3>, Emissive)
+			SHADER_PARAMETER(uint, MaterialId)
+			SHADER_PARAMETER(float2, ViewSize)
+			SHADER_PARAMETER_STRUCT(GPUSceneData, GPUSceneData)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(MaterialShaderTemp)
+
+	struct DepthPrePassMSPS
+	{
+		BEGIN_SHADER_DEFINITION(DepthPrePassMSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DepthPrePassMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DepthPrePassMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_STRUCT_INCLUDE(MeshShaderCommonParameters, Common)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(DepthPrePassMSPS)
+
+	struct ObjectIDMSPS
+	{
+		BEGIN_SHADER_DEFINITION(ObjectIDMSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_STRUCT_INCLUDE(MeshShaderCommonParameters, Common)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(ObjectIDMSPS)
+
+	struct VisibilityBufferMSPS
+	{
+		BEGIN_SHADER_DEFINITION(VisibilityBufferMSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisibilityBufferMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisibilityBufferMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_STRUCT_INCLUDE(MeshShaderCommonParameters, Common)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(VisibilityBufferMSPS)
+
+	struct GenerateMaterialCountCS
+	{
+		BEGIN_SHADER_DEFINITION(GenerateMaterialCountCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Visibility/GenerateMaterialCount_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<uint2>, VisibilityBuffer)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, MaterialCountsBuffer)
+			SHADER_PARAMETER(uint2, RenderSize)
+			SHADER_PARAMETER_STRUCT(GPUSceneData, GPUSceneData)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GenerateMaterialCountCS)
+
+	struct CollectMaterialPixelsCS
+	{
+		BEGIN_SHADER_DEFINITION(CollectMaterialPixelsCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Visibility/CollectMaterialPixels_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<uint2>, VisibilityBuffer)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, MaterialStartBuffer)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, CurrentMaterialCountBuffer)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint2>, PixelCollectionBuffer)
+			SHADER_PARAMETER(uint2, RenderSize)
+			SHADER_PARAMETER_STRUCT(GPUSceneData, GPUSceneData)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(CollectMaterialPixelsCS)
+
+	struct GenerateMaterialIndirectArgsCS
+	{
+		BEGIN_SHADER_DEFINITION(GenerateMaterialIndirectArgsCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Visibility/GenerateMaterialIndirectArgs_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, MaterialCounts)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, RWIndirectArgsBuffer)
+			SHADER_PARAMETER(uint, MaterialCount)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GenerateMaterialIndirectArgsCS)
+
+	struct SkyboxVSPS
+	{
+		BEGIN_SHADER_DEFINITION(SkyboxVSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Environment/Skybox_vs.hlsl", "main", RHI::ShaderStage::Vertex)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Environment/Skybox_ps.hlsl", "main", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+	
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<VertexPositionData>, VertexPositions)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+			SHADER_PARAMETER_IMAGE(vt::TexCube<float3>, EnvironmentTexture)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, LinearSampler)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, SceneDepth)
+			SHADER_PARAMETER(float, LOD)
+			SHADER_PARAMETER(float, Intensity)
+
+			SHADER_PARAMETER_STRUCT_INCLUDE(VolumentricFogParameters, VolumetricFogParams)
+			SHADER_PARAMETER_STRUCT(BlueNoiseShaderParameters, BlueNoise)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(SkyboxVSPS)
+
+	struct ShadingCS
+	{
+		BEGIN_SHADER_DEFINITION(ShadingCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Shading/Shading_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float4>, RWOutput)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float4>, Albedo)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float3>, Normals)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float2>, Material)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float3>, Emissive)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<uint>, AOTexture)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, DepthTexture)
+
+			SHADER_PARAMETER_STRUCT_INCLUDE(VolumentricFogParameters, VolumetricFogParams)
+			SHADER_PARAMETER_STRUCT(PBRConstants, PBRConstantsData)
+			SHADER_PARAMETER_STRUCT(BlueNoiseShaderParameters, BlueNoise)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(ShadingCS)
+
+	struct FXAAVSPS
+	{
+		BEGIN_SHADER_DEFINITION(FXAAVSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/FXAA.hlsl", "main", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float3>, SceneColor)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, LinearSampler)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(FXAAVSPS)
+
+	struct TonemapVSPS
+	{
+		BEGIN_SHADER_DEFINITION(TonemapVSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/Tonemap.hlsl", "main", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float3>, FinalColor)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, AverageLuminance)
+			SHADER_PARAMETER(float, MiddleGray)
+			SHADER_PARAMETER(float, WhitePoint)
+			SHADER_PARAMETER(uint, FrameIndex)
+
+			SHADER_PARAMETER_STRUCT(BlueNoiseShaderParameters, BlueNoise)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(TonemapVSPS)
+
+	struct VisualizationMS
+	{
+		BEGIN_SHADER_DEFINITION(VisualizationMS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationMeshShader.hlsl", "MainAS", RHI::ShaderStage::Amplification)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER(uint, VisualizationModeInt)
+			SHADER_PARAMETER_STRUCT_INCLUDE(MeshShaderCommonParameters, Common)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(VisualizationMS)
+
+	struct VisualizationFullscreenCS
+	{
+		BEGIN_SHADER_DEFINITION(VisualizationMS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationFullscreenShader.hlsl", "MainCS", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float4>, RWOutput)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float4>, Albedo)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float2>, Material)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float3>, SceneColor)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, SceneDepth)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float3>, SceneNormal)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<uint>, SceneAO)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float2>, Velocity)
+
+			SHADER_PARAMETER(uint2, RenderSize)
+			SHADER_PARAMETER(uint, VisualizationModeInt)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(VisualizationFullscreenCS)
+
 	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)
 		: m_renderScene(specification.renderScene), m_commandBufferSet(Renderer::GetFramesInFlight())
 	{
@@ -213,22 +470,36 @@ namespace Volt
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
 		const auto& drawCullingData = blackboard.Get<DrawCullingData>();
 
-		GPUSceneData::Build(builder, blackboard.Get<GPUSceneData>());
+		BuildGPUSceneData(builder, blackboard.Get<GPUSceneData>());
 
 		builder.ReadResource(uniformBuffers.viewDataBuffer);
 		builder.ReadResource(drawCullingData.countCommandBuffer, RenderGraphResourceState::IndirectArgument);
 		builder.ReadResource(drawCullingData.taskCommandsBuffer);
 	}
 
-	void SceneRenderer::SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard)
+	void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard, MeshShaderCommonParameters& parameters)
 	{
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
 		const auto& drawCullingData = blackboard.Get<DrawCullingData>();
-
-		GPUSceneData::Setup(context, blackboard.Get<GPUSceneData>());
-		context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-		context.SetConstant("taskCommands"_sh, drawCullingData.taskCommandsBuffer);
+	
+		parameters.GPUSceneData = blackboard.Get<GPUSceneData>();
+		parameters.TaskCommands = drawCullingData.taskCommandsBuffer;
+		parameters.View = uniformBuffers.viewDataBuffer;
 	}
+
+	//template<typename ShaderType>
+	//void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard)
+	//{
+	//	const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
+	//	const auto& drawCullingData = blackboard.Get<DrawCullingData>();
+	//
+	//	MeshShaderCommonParameters parameters;
+	//	parameters.GPUSceneData = blackboard.Get<GPUSceneData>();
+	//	parameters.TaskCommands = drawCullingData.taskCommandsBuffer;
+	//	parameters.View = uniformBuffers.viewDataBuffer;
+	//
+	//	context.SetParameters<ShaderType>(parameters);
+	//}
 
 	void SceneRenderer::SetupFrameData(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)
 	{
@@ -490,15 +761,17 @@ namespace Volt
 			RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { data.normals, data.velocity, data.depth });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get("DepthPrePassMeshShader");
+			pipelineInfo.shader = ShaderMap::Get<DepthPrePassMSPS>();
 
 			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
 			context.BeginRendering(info);
 			context.BindPipeline(pipeline);
 
-			SetupMeshPassConstants(context, blackboard);
+			DepthPrePassMSPS::Parameters parameters;
+			SetupMeshPassConstants(context, blackboard, parameters.Common);
 
+			context.SetParameters<DepthPrePassMSPS>(parameters);
 			context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 			context.EndRendering();
 		});
@@ -529,7 +802,7 @@ namespace Volt
 			info.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get("ObjectIDMeshShader");
+			pipelineInfo.shader = ShaderMap::Get<ObjectIDMSPS>();
 			pipelineInfo.depthCompareOperator = RHI::CompareOperator::Equal;
 			pipelineInfo.depthMode = RHI::DepthMode::Read;
 
@@ -538,7 +811,10 @@ namespace Volt
 			context.BeginRendering(info);
 			context.BindPipeline(pipeline);
 
-			SetupMeshPassConstants(context, blackboard);
+			ObjectIDMSPS::Parameters parameters;
+			SetupMeshPassConstants(context, blackboard, parameters.Common);
+
+			context.SetParameters<ObjectIDMSPS>(parameters);
 
 			context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 			context.EndRendering();
@@ -579,7 +855,7 @@ namespace Volt
 			info.renderingInfo.colorAttachments.At(0).SetClearColor(std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max());
 
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get("VisibilityBufferMeshShader");
+			pipelineInfo.shader = ShaderMap::Get<VisibilityBufferMSPS>();
 			pipelineInfo.depthCompareOperator = RHI::CompareOperator::Equal;
 			pipelineInfo.depthMode = RHI::DepthMode::Read;
 
@@ -588,7 +864,10 @@ namespace Volt
 			context.BeginRendering(info);
 			context.BindPipeline(pipeline);
 
-			SetupMeshPassConstants(context, blackboard);
+			VisibilityBufferMSPS::Parameters parameters;
+			SetupMeshPassConstants(context, blackboard, parameters.Common);
+
+			context.SetParameters<VisibilityBufferMSPS>(parameters);
 
 			context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 			context.EndRendering();
@@ -640,22 +919,23 @@ namespace Volt
 			builder.WriteResource(data.materialCountBuffer);
 			builder.ReadResource(visBufferData.visibility);
 
-			GPUSceneData::Build(builder, gpuSceneData);
+			BuildGPUSceneData(builder, gpuSceneData);
 
 			builder.SetIsComputePass();
 		},
 		[=](const MaterialCountData& data, RenderContext& context)
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("GenerateMaterialCount");
+			auto pipeline = ShaderMap::GetComputePipeline<GenerateMaterialCountCS>();
 
 			context.BindPipeline(pipeline);
 
-			GPUSceneData::Setup(context, gpuSceneData);
+			GenerateMaterialCountCS::Parameters parameters;
+			parameters.VisibilityBuffer = visBufferData.visibility;
+			parameters.MaterialCountsBuffer = data.materialCountBuffer;
+			parameters.RenderSize = glm::uvec2(m_width, m_height);
+			parameters.GPUSceneData = gpuSceneData;
 
-			context.SetConstant("visibilityBuffer"_sh, visBufferData.visibility);
-			context.SetConstant("materialCountsBuffer"_sh, data.materialCountBuffer);
-			context.SetConstant("renderSize"_sh, glm::uvec2{ m_width, m_height });
-
+			context.SetParameters<GenerateMaterialCountCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1);
 		});
 	}
@@ -686,7 +966,7 @@ namespace Volt
 
 			builder.WriteResource(data.currentMaterialCountBuffer);
 
-			GPUSceneData::Build(builder, gpuSceneData);
+			BuildGPUSceneData(builder, gpuSceneData);
 
 			builder.ReadResource(visBufferData.visibility);
 			builder.ReadResource(matCountData.materialStartBuffer);
@@ -695,18 +975,19 @@ namespace Volt
 		},
 		[=](const MaterialPixelsData& data, RenderContext& context)
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("CollectMaterialPixels");
+			auto pipeline = ShaderMap::GetComputePipeline<CollectMaterialPixelsCS>();
 
 			context.BindPipeline(pipeline);
 
-			GPUSceneData::Setup(context, gpuSceneData);
+			CollectMaterialPixelsCS::Parameters parameters;
+			parameters.VisibilityBuffer = visBufferData.visibility;
+			parameters.MaterialStartBuffer = matCountData.materialStartBuffer;
+			parameters.CurrentMaterialCountBuffer = data.currentMaterialCountBuffer;
+			parameters.PixelCollectionBuffer = data.pixelCollectionBuffer;
+			parameters.RenderSize = glm::uvec2(m_width, m_height);
+			parameters.GPUSceneData = gpuSceneData;
 
-			context.SetConstant("visibilityBuffer"_sh, visBufferData.visibility);
-			context.SetConstant("materialStartBuffer"_sh, matCountData.materialStartBuffer);
-			context.SetConstant("currentMaterialCountBuffer"_sh, data.currentMaterialCountBuffer);
-			context.SetConstant("pixelCollectionBuffer"_sh, data.pixelCollectionBuffer);
-			context.SetConstant("renderSize"_sh, glm::uvec2{ m_width, m_height });
-
+			context.SetParameters<CollectMaterialPixelsCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1);
 		});
 	}
@@ -734,13 +1015,15 @@ namespace Volt
 		{
 			const uint32_t materialCount = m_renderScene->GetIndividualMaterialCount();
 
-			auto pipeline = ShaderMap::GetComputePipeline("GenerateMaterialIndirectArgs");
+			auto pipeline = ShaderMap::GetComputePipeline<GenerateMaterialIndirectArgsCS>();
+
+			GenerateMaterialIndirectArgsCS::Parameters parameters;
+			parameters.MaterialCounts = matCountData.materialCountBuffer;
+			parameters.RWIndirectArgsBuffer = data.materialIndirectArgsBuffer;
+			parameters.MaterialCount = materialCount;
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("materialCounts"_sh, matCountData.materialCountBuffer);
-			context.SetConstant("indirectArgsBuffer"_sh, data.materialIndirectArgsBuffer);
-			context.SetConstant("materialCount"_sh, materialCount);
-
+			context.SetParameters<GenerateMaterialIndirectArgsCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(materialCount, 32u), 1, 1);
 		});
 	}
@@ -780,7 +1063,7 @@ namespace Volt
 			builder.ReadResource(matPixelsData.pixelCollectionBuffer);
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
 
-			GPUSceneData::Build(builder, gpuSceneData);
+			BuildGPUSceneData(builder, gpuSceneData);
 
 			builder.WriteResource(gbufferData.albedo);
 			builder.WriteResource(gbufferData.normals);
@@ -796,28 +1079,26 @@ namespace Volt
 
 			if (!pipeline)
 			{
-				pipeline = ShaderMap::GetComputePipeline("OpaqueDefault");
+				pipeline = ShaderMap::GetComputePipeline<MaterialShaderTemp>();
 			}
 
 			context.BindPipeline(pipeline);
 
-			GPUSceneData::Setup(context, gpuSceneData);
+			MaterialShaderTemp::Parameters parameters;
+			parameters.VisibilityBuffer = visBufferData.visibility;
+			parameters.MaterialCountBuffer = matCountData.materialCountBuffer;
+			parameters.MaterialStartBuffer = matCountData.materialStartBuffer;
+			parameters.PixelCollection = matPixelsData.pixelCollectionBuffer;
+			parameters.View = uniformBuffers.viewDataBuffer;
+			parameters.Albedo = gbufferData.albedo;
+			parameters.Normals = gbufferData.normals;
+			parameters.Material = gbufferData.material;
+			parameters.Emissive = gbufferData.emissive;
+			parameters.MaterialId = materialId;
+			parameters.ViewSize = glm::vec2(m_width, m_height);
+			parameters.GPUSceneData = gpuSceneData;
 
-			context.SetConstant("visibilityBuffer"_sh, visBufferData.visibility);
-			context.SetConstant("materialCountBuffer"_sh, matCountData.materialCountBuffer);
-			context.SetConstant("materialStartBuffer"_sh, matCountData.materialStartBuffer);
-			context.SetConstant("pixelCollection"_sh, matPixelsData.pixelCollectionBuffer);
-
-			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-
-			context.SetConstant("albedo"_sh, gbufferData.albedo);
-			context.SetConstant("normals"_sh, gbufferData.normals);
-			context.SetConstant("material"_sh, gbufferData.material);
-			context.SetConstant("emissive"_sh, gbufferData.emissive);
-			context.SetConstant("materialId"_sh, materialId);
-
-			context.SetConstant("viewSize"_sh, glm::vec2(m_width, m_height));
-
+			context.SetParameters<MaterialShaderTemp>(parameters);
 			context.DispatchIndirect(indirectArgsData.materialIndirectArgsBuffer, sizeof(RHI::IndirectDispatchCommand) * materialId); // Should be offset with material ID
 		});
 	}
@@ -828,6 +1109,7 @@ namespace Volt
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
 		const auto& volumetricFogData = blackboard.Get<VolumetricFogData>();
 		const auto& depthPrePass = blackboard.Get<DepthPrePass>();
+		const auto& blueNoiseTextures = blackboard.Get<BlueNoiseTextures>();
 
 		RenderGraphBufferHandle meshVertexBufferHandle = renderGraph.AddExternalBuffer(m_skyboxMesh->GetVertexPositionsBuffer()->GetResource());
 		RenderGraphBufferHandle indexBufferHandle = renderGraph.AddExternalBuffer(m_skyboxMesh->GetIndexBuffer()->GetResource());
@@ -847,37 +1129,40 @@ namespace Volt
 			builder.ReadResource(depthPrePass.depth);
 			builder.ReadResource(volumetricFogData.fogParamsBuffer);
 			builder.ReadResource(volumetricFogData.integratedFogVolume);
+
+			BlueNoise::Build(builder, blueNoiseTextures);
 		},
 		[=](const ShadingOutputData& data, RenderContext& context)
 		{
 			RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { data.colorOutput });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get("Skybox");
+			pipelineInfo.shader = ShaderMap::Get<SkyboxVSPS>();
 			pipelineInfo.cullMode = RHI::CullMode::None;
 			pipelineInfo.depthMode = RHI::DepthMode::None;
 
 			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
-			context.BeginRendering(info);
-			context.BindPipeline(pipeline);
-
 			const float lod = 0.f;
 			const float intensity = 1.f;
 
-			context.SetConstant("vertexPositions"_sh, meshVertexBufferHandle);
-			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-			context.SetConstant("environmentTexture"_sh, environmentTexturesData.radiance);
-			context.SetConstant("linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle());
-			context.SetConstant("lod"_sh, lod);
-			context.SetConstant("intensity"_sh, intensity);
-			context.SetConstant("sceneDepth"_sh, depthPrePass.depth);
+			SkyboxVSPS::Parameters parameters;
+			parameters.VertexPositions = meshVertexBufferHandle;
+			parameters.View = uniformBuffers.viewDataBuffer;
+			parameters.EnvironmentTexture = environmentTexturesData.radiance;
+			parameters.LinearSampler = Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle();
+			parameters.SceneDepth = depthPrePass.depth;
+			parameters.LOD = lod;
+			parameters.Intensity = intensity;
+			parameters.VolumetricFogParams.VolumetricFogParamsData = volumetricFogData.fogParamsBuffer;
+			parameters.VolumetricFogParams.IntegratedFogVolume = volumetricFogData.integratedFogVolume;
+			parameters.VolumetricFogParams.PointSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle();
 
-			// Volumetric fog
-			context.SetConstant("volumetricFogParams"_sh, volumetricFogData.fogParamsBuffer);
-			context.SetConstant("integratedFogVolume"_sh, volumetricFogData.integratedFogVolume);
-			context.SetConstant("pointSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
+			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
+			context.BeginRendering(info);
+			context.BindPipeline(pipeline);
+			context.SetParameters<SkyboxVSPS>(parameters);
 			context.BindIndexBuffer(indexBufferHandle);
 			context.DrawIndexed(static_cast<uint32_t>(m_skyboxMesh->GetIndexCount()), 1, 0, 0, 0);
 			context.EndRendering();
@@ -898,6 +1183,7 @@ namespace Volt
 		const auto& preDepthData = blackboard.Get<DepthPrePass>();
 		const auto& dirShadowData = blackboard.Get<DirectionalShadowData>();
 		const auto& volumetricFogData = blackboard.Get<VolumetricFogData>();
+		const auto& blueNoiseTextures = blackboard.Get<BlueNoiseTextures>();
 
 		renderGraph.AddPass("Shading Pass",
 		[&](RenderGraph::Builder& builder)
@@ -922,40 +1208,44 @@ namespace Volt
 			builder.ReadResource(dirShadowData.shadowTexture);
 			builder.ReadResource(gtaoOutput.outputImage);
 
+			BlueNoise::Build(builder, blueNoiseTextures);
+
 			builder.SetIsComputePass();
 		},
 		[=](RenderContext& context)
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("Shading");
+			auto pipeline = ShaderMap::GetComputePipeline<ShadingCS>();
 			context.BindPipeline(pipeline);
 
 			context.SetAccelerationStructure(m_renderScene->GetRayTracingScene()->GetAccelerationStructure());
 
-			context.SetConstant("output"_sh, shadingOutputData.colorOutput);
-			context.SetConstant("albedo"_sh, gbufferData.albedo);
-			context.SetConstant("normals"_sh, gbufferData.normals);
-			context.SetConstant("material"_sh, gbufferData.material);
-			context.SetConstant("emissive"_sh, gbufferData.emissive);
-			context.SetConstant("aoTexture"_sh, gtaoOutput.outputImage);
-			context.SetConstant("depthTexture"_sh, preDepthData.depth);
-			context.SetConstant("volumetricFogParams"_sh, volumetricFogData.fogParamsBuffer);
-			context.SetConstant("integratedFogVolume"_sh, volumetricFogData.integratedFogVolume);
-			context.SetConstant("pointSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
+			ShadingCS::Parameters parameters;
+			parameters.RWOutput = shadingOutputData.colorOutput;
+			parameters.Albedo = gbufferData.albedo;
+			parameters.Normals = gbufferData.normals;
+			parameters.Material = gbufferData.material;
+			parameters.Emissive = gbufferData.emissive;
+			parameters.AOTexture = gtaoOutput.outputImage;
+			parameters.DepthTexture = preDepthData.depth;
+			parameters.VolumetricFogParams.VolumetricFogParamsData = volumetricFogData.fogParamsBuffer;
+			parameters.VolumetricFogParams.IntegratedFogVolume = volumetricFogData.integratedFogVolume;
+			parameters.VolumetricFogParams.PointSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle();
 
-			// PBR Constants
-			context.SetConstant("pbrConstants.viewData"_sh, uniformBuffers.viewDataBuffer);
-			context.SetConstant("pbrConstants.directionalLightShadowData"_sh, uniformBuffers.directionalLightShadowDataBuffer);
-			context.SetConstant("pbrConstants.linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle());
-			context.SetConstant("pbrConstants.pointLinearClampSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>()->GetResourceHandle());
-			context.SetConstant("pbrConstants.shadowSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>()->GetResourceHandle());
-			context.SetConstant("pbrConstants.DFGLuT"_sh, externalImages.DFGLuT);
-			context.SetConstant("pbrConstants.lights"_sh, gpuScene.lightsBuffer);
-			context.SetConstant("pbrConstants.visibleLights"_sh, lightCullingData.visibleLightsBuffer);
-			context.SetConstant("pbrConstants.directionalLightShadowMap"_sh, dirShadowData.shadowTexture);
+			parameters.PBRConstantsData.viewData = uniformBuffers.viewDataBuffer;
+			parameters.PBRConstantsData.directionalLightShadowData = uniformBuffers.directionalLightShadowDataBuffer;
+			parameters.PBRConstantsData.linearSampler = Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle();
+			parameters.PBRConstantsData.pointLinearClampSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>()->GetResourceHandle();
+			parameters.PBRConstantsData.shadowSampler = Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>()->GetResourceHandle();
+			parameters.PBRConstantsData.DFGLuT = externalImages.DFGLuT;
+			parameters.PBRConstantsData.lights = gpuScene.lightsBuffer;
+			parameters.PBRConstantsData.visibleLights = lightCullingData.visibleLightsBuffer;
+			parameters.PBRConstantsData.directionalLightShadowMap = dirShadowData.shadowTexture;
+			parameters.PBRConstantsData.skyLight.irradiance = environmentTexturesData.irradiance;
+			parameters.PBRConstantsData.skyLight.radiance = environmentTexturesData.radiance;
 
-			context.SetConstant("skyLight.irradiance"_sh, environmentTexturesData.irradiance);
-			context.SetConstant("skyLight.radiance"_sh, environmentTexturesData.radiance);
+			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
 
+			context.SetParameters<ShadingCS>(parameters);
 			context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1u);
 		});
 	}
@@ -981,17 +1271,20 @@ namespace Volt
 			RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { data.output });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo;
-			pipelineInfo.shader = ShaderMap::Get("FXAA");
+			pipelineInfo.shader = ShaderMap::Get<FXAAVSPS>();
 			pipelineInfo.depthMode = RHI::DepthMode::None;
 			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
 			context.BeginRendering(info);
 
+			FXAAVSPS::Parameters parameters;
+			parameters.SceneColor = srcImage;
+			parameters.View = uniformBuffers.viewDataBuffer;
+			parameters.LinearSampler = Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle();
+
 			RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context)
 			{
-				context.SetConstant("sceneColor"_sh, srcImage);
-				context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-				context.SetConstant("linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle());
+				context.SetParameters<FXAAVSPS>(parameters);
 			});
 
 			context.EndRendering();
@@ -1024,21 +1317,23 @@ namespace Volt
 			RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { data.output });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo;
-			pipelineInfo.shader = ShaderMap::Get("Tonemap");
+			pipelineInfo.shader = ShaderMap::Get<TonemapVSPS>();
 			pipelineInfo.depthMode = RHI::DepthMode::None;
 			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
 			context.BeginRendering(info);
 
+			TonemapVSPS::Parameters parameters;
+			parameters.FinalColor = srcImage;
+			parameters.AverageLuminance = averageLuminanceImage;
+			parameters.MiddleGray = MiddleGray;
+			parameters.WhitePoint = WhitePoint * WhitePoint;
+			parameters.FrameIndex = m_frameIndex;
+			BlueNoise::Setup(parameters.BlueNoise, blueNoiseTextures);
+
 			RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context)
 			{
-				context.SetConstant("finalColor"_sh, srcImage);
-				context.SetConstant("averageLuminance"_sh, averageLuminanceImage);
-				context.SetConstant("middleGray"_sh, MiddleGray);
-				context.SetConstant("whitePoint"_sh, WhitePoint * WhitePoint);
-				context.SetConstant("frameIndex"_sh, m_frameIndex);
-
-				BlueNoise::Setup(context, blueNoiseTextures);
+				context.SetParameters<TonemapVSPS>(parameters);
 			});
 
 			context.EndRendering();
@@ -1052,6 +1347,7 @@ namespace Volt
 		if (IsMeshPassVisualizationMode())
 		{
 			const auto& drawCullingData = blackboard.Get<DrawCullingData>();
+			const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
 
 			struct Data
 			{
@@ -1071,17 +1367,19 @@ namespace Volt
 				RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { dstImage, data.depthImage });
 
 				RHI::RenderPipelineCreateInfo pipelineInfo{};
-				pipelineInfo.shader = ShaderMap::Get("VisualizationMeshShader");
+				pipelineInfo.shader = ShaderMap::Get<VisualizationMS>();
 
 				auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+				
+				VisualizationMS::Parameters parameters;
+				parameters.VisualizationModeInt = static_cast<uint32_t>(visualizationMode);
+				parameters.Common.GPUSceneData = blackboard.Get<GPUSceneData>();
+				parameters.Common.TaskCommands = drawCullingData.taskCommandsBuffer;
+				parameters.Common.View = uniformBuffers.viewDataBuffer;
 
 				context.BeginRendering(info);
 				context.BindPipeline(pipeline);
-
-				context.SetConstant("visualizationMode"_sh, static_cast<uint32_t>(visualizationMode));
-
-				SetupMeshPassConstants(context, blackboard);
-
+				context.SetParameters<VisualizationMS>(parameters);
 				context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 				context.EndRendering();
 			});
@@ -1133,21 +1431,22 @@ namespace Volt
 			},
 			[=](RenderContext& context)
 			{
-				auto pipeline = ShaderMap::GetComputePipeline("VisualizationFullscreenShader");
+				auto pipeline = ShaderMap::GetComputePipeline<VisualizationFullscreenCS>();
+
+				VisualizationFullscreenCS::Parameters parameters;
+				parameters.Albedo = visualizationMode == VisualizationMode::BaseColor ? gBufferData.albedo : externalImages.white1x1;
+				parameters.Material = visualizationMode == VisualizationMode::Metallic || visualizationMode == VisualizationMode::Roughness ? gBufferData.material : externalImages.white1x1;
+				parameters.SceneColor = visualizationMode == VisualizationMode::SceneColor ? shadingOutput.colorOutput : externalImages.white1x1;
+				parameters.SceneDepth = visualizationMode == VisualizationMode::SceneDepth ? depthPrePass.depth : externalImages.white1x1;
+				parameters.SceneNormal = visualizationMode == VisualizationMode::WorldNormal ? gBufferData.normals : externalImages.white1x1;
+				parameters.SceneAO = visualizationMode == VisualizationMode::AmbientOcclusion ? gtaoOutput.outputImage : externalImages.white1x1;
+				parameters.Velocity = visualizationMode == VisualizationMode::Velocity ? depthPrePass.velocity : externalImages.white1x1;
+				parameters.RWOutput = dstImage;
+				parameters.RenderSize = glm::uvec2(m_width, m_height);
+				parameters.VisualizationModeInt = static_cast<uint32_t>(visualizationMode);
 
 				context.BindPipeline(pipeline);
-				context.SetConstant("albedo"_sh, visualizationMode == VisualizationMode::BaseColor ? gBufferData.albedo : externalImages.white1x1);
-				context.SetConstant("material"_sh, visualizationMode == VisualizationMode::Metallic || visualizationMode == VisualizationMode::Roughness ? gBufferData.material : externalImages.white1x1);
-				context.SetConstant("sceneColor"_sh, visualizationMode == VisualizationMode::SceneColor ? shadingOutput.colorOutput : externalImages.white1x1);
-				context.SetConstant("sceneDepth"_sh, visualizationMode == VisualizationMode::SceneDepth ? depthPrePass.depth : externalImages.white1x1);
-				context.SetConstant("sceneNormal"_sh, visualizationMode == VisualizationMode::WorldNormal ? gBufferData.normals : externalImages.white1x1);
-				context.SetConstant("sceneAO"_sh, visualizationMode == VisualizationMode::AmbientOcclusion ? gtaoOutput.outputImage : externalImages.white1x1);
-				context.SetConstant("velocity"_sh, visualizationMode == VisualizationMode::Velocity ? depthPrePass.velocity : externalImages.white1x1);
-
-				context.SetConstant("rwOutput"_sh, dstImage);
-				context.SetConstant("renderSize"_sh, glm::uvec2(m_width, m_height));
-				context.SetConstant("visualizationMode"_sh, static_cast<uint32_t>(visualizationMode));
-
+				context.SetParameters<VisualizationFullscreenCS>(parameters);
 				context.Dispatch(Math::DivideRoundUp(m_width, 8u), Math::DivideRoundUp(m_height, 8u), 1u);
 			});
 		}
@@ -1167,7 +1466,7 @@ namespace Volt
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
 			builder.ReadResource(uniformBuffers.directionalLightShadowDataBuffer);
 
-			GPUSceneData::Build(builder, gpuSceneData);
+			BuildGPUSceneData(builder, gpuSceneData);
 			BlueNoise::Build(builder, blueNoiseTextures);
 
 			builder.SetIsRayTracingPass();
@@ -1176,26 +1475,24 @@ namespace Volt
 		[=](RenderContext& context)
 		{
 			RHI::RayTracingPipelineCreateInfo pipelineInfo;
-			pipelineInfo.rayGenTable.emplace_back(ShaderMap::Get("RayGen"));
-			pipelineInfo.missTable.emplace_back(ShaderMap::Get("Miss"));
-			pipelineInfo.missTable.emplace_back(ShaderMap::Get("MissShadow"));
-			pipelineInfo.closestHitTable.emplace_back(ShaderMap::Get("ClosestHit"));
-			pipelineInfo.closestHitTable.emplace_back(ShaderMap::Get("ClosestHitShadow"));
+			//pipelineInfo.rayGenTable.emplace_back(ShaderMap::Get("RayGen"));
+			//pipelineInfo.missTable.emplace_back(ShaderMap::Get("Miss"));
+			//pipelineInfo.missTable.emplace_back(ShaderMap::Get("MissShadow"));
+			//pipelineInfo.closestHitTable.emplace_back(ShaderMap::Get("ClosestHit"));
+			//pipelineInfo.closestHitTable.emplace_back(ShaderMap::Get("ClosestHitShadow"));
 
 			auto pipeline = ShaderMap::GetRayTracingPipeline(pipelineInfo);
 			auto sbt = ShaderMap::GetShaderBindingTable(pipeline);
 
 			context.BindPipeline(pipeline);
 
-			GPUSceneData::Setup(context, gpuSceneData);
-			BlueNoise::Setup(context, blueNoiseTextures);
-
-			context.SetConstant("viewData"_sh, uniformBuffers.viewDataBuffer);
-			context.SetConstant("outputTexture"_sh, dstImage);
-			context.SetConstant("frameIndex"_sh, m_frameIndex);
-			context.SetConstant("directionalLight"_sh, uniformBuffers.directionalLightShadowDataBuffer);
+			PathTracingParameters parameters;
+			parameters.View = uniformBuffers.viewDataBuffer;
+			parameters.RWOutputTexture = dstImage;
+			parameters.GPUSceneData = gpuSceneData;
+			
+			//context.SetParameters(parameters);
 			context.SetAccelerationStructure(m_renderScene->GetRayTracingScene()->GetAccelerationStructure());
-
 			context.TraceRays(sbt, m_width, m_height, 1);
 		});
 	}

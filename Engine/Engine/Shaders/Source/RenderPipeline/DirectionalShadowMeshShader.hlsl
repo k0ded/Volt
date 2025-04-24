@@ -3,20 +3,12 @@
 #include "GPUScene.hlsli"
 #include "Lights.hlsli"
 #include "Structures.hlsli"
-
-struct Constants
-{
-    GPUScene gpuScene;
-    vt::UniformBuffer<DirectionalLightShadowData> directionalLightShadowData;
-    vt::TypedBuffer<MeshTaskCommand> taskCommands;
-
-    float4x4 viewMatrix;
-    float4 cullingFrustum;
-    uint2 renderSize;
-};
-
-#define OVERRIDE_DEFAULT_CONSTANTS
 #include "MeshShaderCommon.hlsli"
+
+vt::UniformBuffer<DirectionalLightShadowData> DirectionalLightShadow;
+float4x4 ViewMatrix;
+float4 CullingFrustum;
+uint2 RenderSize;
 
 struct PerDrawData
 {
@@ -30,13 +22,11 @@ groupshared MeshAmplificationPayload m_payload;
 [numthreads(NUM_AS_THREADS, 1, 1)]
 void MainAS(uint groupThreadId : SV_GroupThreadID, uint2 groupId : SV_GroupID)
 {
-    const Constants constants = GetConstants<Constants>();
-
     const uint taskIndex = groupId.x * NUM_AS_THREADS + groupId.y;
 
-    const MeshTaskCommand command = constants.taskCommands.Load(taskIndex);
-    const PrimitiveDrawData drawData = constants.gpuScene.primitiveDrawDataBuffer.Load(command.drawId);    
-    const GPUMesh mesh = constants.gpuScene.meshesBuffer.Load(drawData.meshId);
+    const MeshTaskCommand command = TaskCommands.Load(taskIndex);
+    const PrimitiveDrawData drawData = GPUSceneData.primitiveDrawDataBuffer.Load(command.drawId);    
+    const GPUMesh mesh = GPUSceneData.meshesBuffer.Load(drawData.meshId);
 
     const uint meshletIndex = command.meshletOffset + groupThreadId;
 
@@ -47,7 +37,7 @@ void MainAS(uint groupThreadId : SV_GroupThreadID, uint2 groupId : SV_GroupID)
         const Meshlet meshlet = mesh.meshletsBuffer.Load(mesh.meshletStartOffset + meshletIndex);       
         
         const float3 center = drawData.transform.GetWorldPosition(meshlet.boundingSphereCenter);
-        const float3 viewCenter = mul(constants.viewMatrix, float4(center, 1.f)).xyz;
+        const float3 viewCenter = mul(ViewMatrix, float4(center, 1.f)).xyz;
         const float radius = meshlet.boundingSphereRadius * max(drawData.transform.scale.x, max(drawData.transform.scale.y, drawData.transform.scale.z));
         
         const float3 coneAxis = drawData.transform.RotateVector(meshlet.GetConeAxis());
@@ -97,11 +87,10 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
             out vertices VertexOutput vertices[NUM_MAX_OUT_VERTS],
             out primitives PrimitiveOutput primitives[NUM_MAX_OUT_TRIS])
 {
-    const Constants constants = GetConstants<Constants>();
-    const DirectionalLightShadowData dirLight = constants.directionalLightShadowData.Load();
+    const DirectionalLightShadowData dirLight = DirectionalLightShadow.Load();
 
-    const PrimitiveDrawData drawData = constants.gpuScene.primitiveDrawDataBuffer.Load(payload.drawId);    
-    const GPUMesh mesh = constants.gpuScene.meshesBuffer.Load(drawData.meshId);
+    const PrimitiveDrawData drawData = GPUSceneData.primitiveDrawDataBuffer.Load(payload.drawId);    
+    const GPUMesh mesh = GPUSceneData.meshesBuffer.Load(drawData.meshId);
 
     uint meshletIndex = payload.meshletIndices[groupId];
 
@@ -117,13 +106,13 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
         float4x4 skinningMatrix = IDENTITY_MATRIX;
         if (drawData.isAnimated)
         {
-            skinningMatrix = GetSkinningMatrix(mesh, vertexIndex, drawData.boneOffset, constants.gpuScene.bonesBuffer);
+            skinningMatrix = GetSkinningMatrix(mesh, vertexIndex, drawData.boneOffset, GPUSceneData.bonesBuffer);
         }
 
         const float3 skinnedPosition = mul(skinningMatrix, float4(mesh.vertexPositionsBuffer.Load(vertexIndex), 1.f)).xyz;
         const float4 position = mul(dirLight.viewProjections[u_perDrawData.viewIndex], float4(drawData.transform.GetWorldPosition(skinnedPosition), 1.f));
 
-        SetupCullingPositions(groupThreadId, position, constants.renderSize);
+        SetupCullingPositions(groupThreadId, position, RenderSize);
 
         vertices[groupThreadId].position = TransformClipPosition(position);
     }

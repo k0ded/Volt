@@ -1,24 +1,19 @@
 #include "Resources.hlsli"
 
-struct Constants
-{
-    vt::RWTypedBuffer<uint> dstBuffer;
-    vt::TypedBuffer<uint> srcBuffer;
+vt::RWTypedBuffer<uint> DstBuffer;
+vt::TypedBuffer<uint> SrcBuffer;
 
-    uint typeSizeInUINT;
-    uint copyCount;
-};
+uint TypeSizeInUINT;
+uint CopyCount;
 
 [numthreads(64, 1, 1)]
 void main(uint dispatchThreadId : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-
     // Every thread copies one UINT
-    uint copyIndex = dispatchThreadId / constants.typeSizeInUINT;
+    uint copyIndex = dispatchThreadId / TypeSizeInUINT;
 
-    if (copyIndex < constants.copyCount)
+    if (copyIndex < CopyCount)
     {
-        constants.dstBuffer.Store(dispatchThreadId, constants.srcBuffer.Load(dispatchThreadId));    
+        DstBuffer.Store(dispatchThreadId, SrcBuffer.Load(dispatchThreadId));    
     }
 }

@@ -1,11 +1,18 @@
 #include "rcpch.h"
 
 #include "RenderCore/Shader/ShaderSubSystem.h"
+#include "RenderCore/RenderGraph/ShaderRegistry.h"
 
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Shader/ShaderCache.h>
+
+#include <JobSystem/TaskGraph.h>
+
+#include <CoreUtilities/Time/ScopedTimer.h>
+
+VT_DEFINE_LOG_CATEGORY(LogShaderSubSystem);
 
 namespace Volt
 {
@@ -38,11 +45,53 @@ namespace Volt
 
 			m_shaderCompiler = RHI::ShaderCompiler::Create(shaderCompilerInfo);
 		}
+
+		m_shaderMap = CreateScope<ShaderMap>();
+		LoadRegisteredShaders();
 	}
 
 	void ShaderSubSystem::Shutdown()
 	{
 		m_shaderCompiler = nullptr;
 		m_shaderCache = nullptr;
+	}
+
+	void ShaderSubSystem::LoadRegisteredShaders()
+	{
+		const auto& registeredShaders = GetShaderRegistry().GetRegisteredShaders();
+
+		TaskGraph taskGraph{};
+		ScopedTimer timer{};
+
+		for (const auto& [typeIndex, registrationInfo] : registeredShaders)
+		{
+			taskGraph.AddTask([=]() 
+			{
+				RHI::ShaderSpecification specification;
+				specification.name = registrationInfo.name;
+
+				for (const auto& stageInfo : registrationInfo.stageInfos)
+				{
+					auto& sourceEntry = specification.sourceEntries.emplace_back();
+					sourceEntry.entryPoint = stageInfo.entryPoint;
+					sourceEntry.filePath = stageInfo.filePath;
+					sourceEntry.shaderStage = stageInfo.shaderStage;
+				}
+
+				specification.forceCompile = false;
+
+				RefPtr<RHI::Shader> shader = RHI::Shader::Create(specification);
+				ShaderSubSystem::CorrectShaderParameterMetadata(shader, typeIndex);
+				ShaderMap::RegisterShader(typeIndex, shader);
+			});
+		}
+
+		taskGraph.ExecuteAndWait();
+		VT_LOGC(Info, LogRender, "Shader compilation finished in {} seconds!", timer.GetTime<Time::Seconds>());
+	}
+
+	void ShaderSubSystem::CorrectShaderParameterMetadata(RefPtr<RHI::Shader> shader, TypeTraits::TypeIndex typeIndex)
+	{
+		GetShaderRegistry().CorrectShaderParameterMetadataOffsets(typeIndex, shader->GetResources().renderGraphConstantsData);
 	}
 }

@@ -10,24 +10,21 @@
 
 #include "Volumetrics/Fog/VolumetricFogCommon.hlsli"
 
-struct Constants
-{
-    vt::RWTex2D<float4> output; 
-    
-    vt::Tex2D<float4> albedo;
-    vt::Tex2D<float3> normals;
-    vt::Tex2D<float2> material;
-    vt::Tex2D<float3> emissive;
-    vt::Tex2D<uint> aoTexture;
-    vt::Tex2D<float> depthTexture;
-  
-    vt::UniformBuffer<VolumetricFogParams> volumetricFogParams;
-    vt::Tex3D<float4> integratedFogVolume;
-    vt::TextureSampler pointSampler;
+vt::RWTex2D<float4> RWOutput; 
 
-    PBRConstants pbrConstants;
-}; 
- 
+vt::Tex2D<float4> Albedo;
+vt::Tex2D<float3> Normals;
+vt::Tex2D<float2> Material;
+vt::Tex2D<float3> Emissive;
+vt::Tex2D<uint> AOTexture;
+vt::Tex2D<float> DepthTexture;
+
+vt::UniformBuffer<VolumetricFogParams> VolumetricFogParamsData;
+vt::Tex3D<float4> IntegratedFogVolume;
+vt::TextureSampler PointSampler;
+
+PBRConstants PBRConstantsData;
+
 float CalculateAO(vt::Tex2D<uint> aoTex, uint2 pixelCoord) 
 {
 #define XE_GTAO_OCCLUSION_TERM_SCALE (1.5f)      // for packing in UNORM (because raw, pre-denoised occlusion term can overshoot 1 but will later average out to 1)
@@ -41,8 +38,7 @@ float CalculateAO(vt::Tex2D<uint> aoTex, uint2 pixelCoord)
 [numthreads(8, 8, 1)]
 void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_GroupIndex)
 {
-    const Constants constants = GetConstants<Constants>();
-    const ViewData viewData = constants.pbrConstants.viewData.Load();
+    const ViewData viewData = PBRConstantsData.viewData.Load();
 
     uint2 size = viewData.renderSize;
     
@@ -51,7 +47,7 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
         return;
     }
      
-    const float4 albedo = constants.albedo.Load(int3(threadId.xy, 0));
+    const float4 albedo = Albedo.Load(int3(threadId.xy, 0));
     
     if (albedo.a < 0.5f)
     {
@@ -60,15 +56,15 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     
     const float2 texCoords = float2(float(threadId.x) * viewData.invRenderSize.x, 1.f - float(threadId.y) * viewData.invRenderSize.y);
     
-    const float2 material = constants.material.Load(int3(threadId.xy, 0));
+    const float2 material = Material.Load(int3(threadId.xy, 0));
     
     const float metallic = material.x;
     const float roughness = material.y;
-    const float3 emissive = constants.emissive.Load(int3(threadId.xy, 0));
-    const float3 normal = normalize(constants.normals.Load(int3(threadId.xy, 0)) * 2.f - 1.f);
-    const float ao = CalculateAO(constants.aoTexture, threadId.xy);    
+    const float3 emissive = Emissive.Load(int3(threadId.xy, 0));
+    const float3 normal = normalize(Normals.Load(int3(threadId.xy, 0)) * 2.f - 1.f);
+    const float ao = CalculateAO(AOTexture, threadId.xy);    
 
-    const float pixelDepth = constants.depthTexture.Load(int3(threadId.xy, 0));
+    const float pixelDepth = DepthTexture.Load(int3(threadId.xy, 0));
     const float3 worldPosition = ReconstructWorldPosition(viewData, texCoords, pixelDepth);
     
     PBRInput pbrInput;
@@ -81,9 +77,9 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     pbrInput.ao = ao;
     pbrInput.tileId = threadId.xy / LIGHT_CULLING_TILE_SIZE;
      
-    float3 outputColor = EvaluatePBR(pbrInput, constants.pbrConstants);
+    float3 outputColor = EvaluatePBR(pbrInput, PBRConstantsData);
 
-    const VolumetricFogParams volumetricFogParams = constants.volumetricFogParams.Load();
+    const VolumetricFogParams volumetricFogParams = VolumetricFogParamsData.Load();
     //outputColor = ApplyVolumetricFog(texCoords, pixelDepth, outputColor, viewData, volumetricFogParams, constants.pointSampler, constants.integratedFogVolume);
 
     //switch (constants.visualizationMode) 
@@ -104,5 +100,5 @@ void main(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_Group
     //        break;
     //};
 
-    constants.output.Store(threadId.xy, float4(outputColor, 1.f));
+    RWOutput.Store(threadId.xy, float4(outputColor, 1.f));
 }

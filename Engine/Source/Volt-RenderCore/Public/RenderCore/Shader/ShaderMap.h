@@ -10,8 +10,8 @@
 #include <RHIModule/Shader/Shader.h>
 
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/TypeTraits/TypeIndex.h>
 
-#include <unordered_map>
 #include <string>
 
 namespace Volt
@@ -31,24 +31,39 @@ namespace Volt
 		static void ReloadAll();
 		static bool ReloadShaderByName(const std::string& name);
 
-		static void RegisterShader(const std::string& name, RefPtr<RHI::Shader> shader);
+		static void RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader);
 
-		static RefPtr<RHI::Shader> Get(const std::string& name);
-		static RefPtr<RHI::ComputePipeline> GetComputePipeline(const std::string& name, bool useGlobalResouces = true);
 		static RefPtr<RHI::RenderPipeline> GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo);
-
 		static RefPtr<RHI::RayTracingPipeline> GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo);
 		static RefPtr<RHI::ShaderBindingTable> GetShaderBindingTable(RefPtr<RHI::RayTracingPipeline> pipeline);
+
+		template<typename T>
+		static RefPtr<RHI::Shader> Get()
+		{
+			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
+			VT_ENSURE(s_instance->m_shaderMap.contains(typeIndex));
+
+			return s_instance->m_shaderMap.at(typeIndex);
+		}
+
+		template<typename T>
+		static RefPtr<RHI::ComputePipeline> GetComputePipeline(bool useGlobalResouces = true)
+		{
+			return GetComputePipeline(Get<T>(), useGlobalResouces);
+		}
 
 	private:
 		inline static ShaderMap* s_instance = nullptr;
 
-		vt::map<std::string, RefPtr<RHI::Shader>> m_shaderMap;
+		static RefPtr<RHI::ComputePipeline> GetComputePipeline(RefPtr<RHI::Shader> shader, bool useGlobalResouces = true);
+
+		vt::map<TypeTraits::TypeIndex, RefPtr<RHI::Shader>> m_shaderMap;
 		vt::map<size_t, RefPtr<RHI::ComputePipeline>> m_computePipelineCache;
 		vt::map<size_t, RefPtr<RHI::RenderPipeline>> m_renderPipelineCache;
 
 		vt::map<size_t, RefPtr<RHI::RayTracingPipeline>> m_rayTracingPipelineCache;
 		vt::map<size_t, RefPtr<RHI::ShaderBindingTable>> m_shaderBindingTableCache;
+
 
 		std::mutex m_registerMutex;
 		std::mutex m_computeCacheMutex;

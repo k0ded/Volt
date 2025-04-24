@@ -1,6 +1,0 @@
-name: "GenerateSurfelCellCounts"
-internal: true
-sources:
-  - entryPoint: "GenerateSurfelCellCounts"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/GIBS/GenerateSurfelCellCounts.hlsl"

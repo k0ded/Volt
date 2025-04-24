@@ -295,7 +295,6 @@ namespace Volt
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::Fence> m_executionFence;
-		RefPtr<RHI::StorageBuffer> m_perPassConstantsBuffer;
 		RawPtr<RHI::UniformBuffer> m_renderGraphConstantsBuffer;
 
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION

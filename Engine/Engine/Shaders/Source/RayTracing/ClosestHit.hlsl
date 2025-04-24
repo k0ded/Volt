@@ -16,16 +16,13 @@ struct Attributes
   float2 bary;
 };
 
-struct Constants
-{
-    vt::UniformBuffer<ViewData> viewData;
-    vt::UniformBuffer<DirectionalLight> directionalLight;
-    vt::RWTex2D<float4> outputTexture;
-    uint frameIndex;
+ vt::UniformBuffer<ViewData> View;
+ vt::UniformBuffer<DirectionalLight> DirectionalLight;
+ vt::RWTex2D<float4> OutputTexture;
+ uint FrameIndex;
 
-    GPUScene gpuScene;
-    BlueNoiseData blueNoiseData;
-};
+ GPUScene GPUSceneData;
+ BlueNoiseData BlueNoise;
 
 float TraceShadowRay(float3 dirToLight, float3 worldPosition)
 {
@@ -97,13 +94,10 @@ float3 DiffuseReflection(float3 normal, inout uint rngState)
 [shader("closesthit")]
 void main(inout Payload p, in Attributes attribs)
 {
-    const Constants constants = GetConstants<Constants>();
-    const GPUScene gpuScene = constants.gpuScene;
- 
     const uint primitiveIndex = PrimitiveIndex();
 
-    const PrimitiveDrawData primitiveDrawData = gpuScene.primitiveDrawDataBuffer.Load(InstanceID());
-    const GPUMesh mesh = gpuScene.meshesBuffer.Load(primitiveDrawData.meshId);
+    const PrimitiveDrawData primitiveDrawData = GPUSceneData.primitiveDrawDataBuffer.Load(InstanceID());
+    const GPUMesh mesh = GPUSceneData.meshesBuffer.Load(primitiveDrawData.meshId);
 
     const uint3 triIndices = uint3(mesh.indexBuffer.Load(primitiveIndex * 3), mesh.indexBuffer.Load(primitiveIndex * 3 + 1), mesh.indexBuffer.Load(primitiveIndex * 3 + 2));
     const float3 barycentricCoords = float3(1.0f - attribs.bary.x - attribs.bary.y, attribs.bary.x, attribs.bary.y);
@@ -130,7 +124,7 @@ void main(inout Payload p, in Attributes attribs)
     brdfInput.roughness = roughness;
     brdfInput.metalness = metallic;
     
-    p.radiance = EvaluateDirectionalLight(constants.directionalLight.Load(), brdfInput, worldPosition) + ambiance;
+    p.radiance = EvaluateDirectionalLight(DirectionalLight.Load(), brdfInput, worldPosition) + ambiance;
     p.rayDirection = DiffuseReflection(normal, p.rngState);
     p.rayOrigin = OffsetPositionAlongNormal(worldPosition, normal);
     p.miss = false;

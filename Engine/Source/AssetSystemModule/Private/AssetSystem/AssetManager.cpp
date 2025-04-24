@@ -42,11 +42,16 @@ namespace Volt
 
 	void AssetManager::Shutdown()
 	{
-		m_assetCache.clear();
-		m_memoryAssets.clear();
+		Clear();
 		m_assetRegistry.clear();
 
 		m_dependencyGraph = nullptr;
+	}
+
+	void AssetManager::Clear()
+	{
+		m_assetCache.clear();
+		m_memoryAssets.clear();
 	}
 
 	UUID64 AssetManager::RegisterAssetUpdatedCallback(AssetType assetType, AssetChangedCallback&& callbackFunction)

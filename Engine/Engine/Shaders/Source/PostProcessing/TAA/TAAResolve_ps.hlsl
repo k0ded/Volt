@@ -1,18 +1,15 @@
 #include "Vertex.hlsli"
 #include "Resources.hlsli"
 
-struct Constants
-{
-    vt::Tex2D<float3> currentColor;
-    vt::Tex2D<float3> previousColor;
-    vt::Tex2D<float> sceneDepth;
+vt::Tex2D<float3> CurrentColor;
+vt::Tex2D<float3> PreviousColor;
+vt::Tex2D<float> SceneDepth;
 
-    vt::Tex2D<float2> velocityTexture;
+vt::Tex2D<float2> VelocityTexture;
 
-    vt::TextureSampler linearSampler;
-    uint2 renderSize;
-    uint frameIndex;
-};
+vt::TextureSampler LinearSampler;
+uint2 RenderSize;
+uint FrameIndex;
 
 struct Output
 {
@@ -144,8 +141,6 @@ float Luminance(float3 color)
 
 Output main(FullscreenTriangleVertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-
     float3 sourceSampleTotal = 0.f;
     float sourceSampleWeight = 0.f;
     
@@ -163,9 +158,9 @@ Output main(FullscreenTriangleVertex input)
         for (int y = -1; y <= 1; ++y)
         {
             int2 pixelPosition = input.position.xy + int2(x, y);
-            pixelPosition = clamp(pixelPosition, 0, constants.renderSize - 1);
+            pixelPosition = clamp(pixelPosition, 0, RenderSize - 1);
     
-            float3 neighbour = max(0.f, constants.currentColor.Load(int3(pixelPosition, 0)));
+            float3 neighbour = max(0.f, CurrentColor.Load(int3(pixelPosition, 0)));
             float subSampleDistance = length(float2(x, y));
             float subSampleWeight = FilterMitchell(subSampleDistance);
     
@@ -178,7 +173,7 @@ Output main(FullscreenTriangleVertex input)
             m1 += neighbour;
             m2 += neighbour * neighbour;
     
-            float currentDepth = constants.sceneDepth.Load(int3(pixelPosition, 0));
+            float currentDepth = SceneDepth.Load(int3(pixelPosition, 0));
             if (currentDepth > closestDepth)
             {
                 closestDepth = currentDepth;
@@ -189,10 +184,10 @@ Output main(FullscreenTriangleVertex input)
 
     float3 sourceSample = sourceSampleTotal / sourceSampleWeight;
 
-    float2 motionVector = constants.velocityTexture.Load(int3(closestDepthPixelPosition, 0));
+    float2 motionVector = VelocityTexture.Load(int3(closestDepthPixelPosition, 0));
     float2 historyTexCoord = input.uv + motionVector;
     
-    if (any(historyTexCoord != saturate(historyTexCoord)) || constants.frameIndex == 0)
+    if (any(historyTexCoord != saturate(historyTexCoord)) || FrameIndex == 0)
     {
         Output output;
         output.output = sourceSample;
@@ -200,7 +195,7 @@ Output main(FullscreenTriangleVertex input)
         return output;
     }
     
-    float3 historySample = SampleTextureCatmullRom(constants.previousColor, constants.linearSampler, historyTexCoord, float2(constants.renderSize));
+    float3 historySample = SampleTextureCatmullRom(PreviousColor, LinearSampler, historyTexCoord, float2(RenderSize));
     
     const float oneOverSampleCount = 1.f / 9.f;
     const float gamma = 1.f;

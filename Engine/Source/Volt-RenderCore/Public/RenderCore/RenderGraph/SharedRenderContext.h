@@ -32,22 +32,14 @@ namespace Volt
 		uint8_t* GetRenderGraphConstantsPointer(uint32_t passIndex);
 		VT_NODISCARD VT_INLINE RawPtr<RHI::UniformBuffer> GetRenderGraphConstantsBuffer() const { return m_renderGraphConstantsBuffer; }
 
-		uint8_t* GetPassConstantsPointer(uint32_t passIndex);
-		ResourceHandle GetPassConstantsBufferResourceHandle() const;
-
 	private:
 		friend class RenderGraph;
 
-		void SetPerPassConstantsBuffer(RefPtr<RHI::StorageBuffer> constantsBuffer);
 		void SetRenderGraphConstantsBuffer(RawPtr<RHI::UniformBuffer> constantsBuffer);
 
 		bool m_isRenderGraphConstantsMapped = false;
 		uint8_t* m_mappedRenderGraphConstantsPointer = nullptr;
 
-		bool m_isPassConstantsMapped = false;
-		uint8_t* m_mappedPassConstantsPointer = nullptr;
-
-		BindlessResourceScope<RHI::StorageBuffer> m_passConstantsBuffer;
 		RawPtr<RHI::UniformBuffer> m_renderGraphConstantsBuffer;
 	};
 }

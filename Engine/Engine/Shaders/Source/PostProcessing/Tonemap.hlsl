@@ -5,16 +5,12 @@
 #include "Noise.hlsli"
 #include "BlueNoise.hlsli"
 
-struct Constants
-{
-    vt::Tex2D<float3> finalColor;
-	vt::Tex2D<float> averageLuminance;
-	float middleGray;
-	float whitePoint;
+vt::Tex2D<float3> FinalColor;
+vt::Tex2D<float> AverageLuminance;
+float MiddleGray;
+float WhitePoint;
 
-	uint frameIndex;
-    BlueNoiseData blueNoiseData;
-};
+uint FrameIndex;
 
 struct Output
 {
@@ -83,8 +79,7 @@ float Reinhard2(float x, float whiteSqr)
 
 Output main(FullscreenTriangleVertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-    float3 pixelColor = constants.finalColor.Load(int3(input.position.xy, 0));
+    float3 pixelColor = FinalColor.Load(int3(input.position.xy, 0));
 	//float luminance = constants.averageLuminance.Load(int3(0, 0, 0));
 	//
 	//float3 Yxy = ConvertRGB2Yxy(pixelColor);
@@ -94,7 +89,7 @@ Output main(FullscreenTriangleVertex input)
 	//
 	//pixelColor = ConvertYxy2RGB(Yxy);
 
-    float3 dither = RemapPDFTriUnity(BlueNoiseRGBA(input.position.xy, constants.frameIndex, constants.blueNoiseData).rgb) / 254.f;
+    float3 dither = RemapPDFTriUnity(BlueNoiseRGBA(input.position.xy, FrameIndex).rgb) / 254.f;
 
     Output output;
     output.output = float4(LinearToSRGB(pixelColor) + dither, 1.f);

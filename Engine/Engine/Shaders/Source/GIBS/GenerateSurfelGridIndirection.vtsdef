@@ -1,6 +1,0 @@
-name: "GenerateSurfelGridIndirection"
-internal: true
-sources:
-  - entryPoint: "GenerateSurfelGridIndirection"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/GIBS/GenerateSurfelGridIndirection.hlsl"

@@ -10,21 +10,18 @@
 
 #include "VisualizationCommon.hlsli"
 
-struct Constants
-{
-    vt::RWTex2D<float4> rwOutput;
-    
-    vt::Tex2D<float4> albedo;
-    vt::Tex2D<float2> material;
-    vt::Tex2D<float3> sceneColor;
-    vt::Tex2D<float> sceneDepth;
-    vt::Tex2D<float3> sceneNormal;
-    vt::Tex2D<uint> sceneAO;
-    vt::Tex2D<float2> velocity;
-    
-    uint2 renderSize;
-    uint visualizationMode;
-};
+vt::RWTex2D<float4> RWOutput;
+
+vt::Tex2D<float4> Albedo;
+vt::Tex2D<float2> Material;
+vt::Tex2D<float3> SceneColor;
+vt::Tex2D<float> SceneDepth;
+vt::Tex2D<float3> SceneNormal;
+vt::Tex2D<uint> SceneAO;
+vt::Tex2D<float2> Velocity;
+
+uint2 RenderSize;
+uint VisualizationModeInt;
 
 float CalculateAO(vt::Tex2D<uint> aoTex, uint2 pixelCoord)
 {
@@ -39,54 +36,50 @@ float CalculateAO(vt::Tex2D<uint> aoTex, uint2 pixelCoord)
 [numthreads(8, 8, 1)]
 void MainCS(uint3 threadId : SV_DispatchThreadID, uint groupThreadIndex : SV_GroupIndex)
 {
-    const Constants constants = GetConstants<Constants>();
-    
-    uint2 size = constants.renderSize;
-    
-    if (any(threadId.xy >= size))
+    if (any(threadId.xy >= RenderSize))
     {
         return;
     }
 
     float3 finalColor = 0.f;
 
-    if (constants.visualizationMode == VisualizationMode::BaseColor)
+    if (VisualizationModeInt == EVisualizationMode::ERM_BaseColor)
     {
-        finalColor = constants.albedo.Load(int3(threadId.xy, 0)).rgb;
+        finalColor = Albedo.Load(int3(threadId.xy, 0)).rgb;
     }
-    else if (constants.visualizationMode == VisualizationMode::Metallic)
+    else if (VisualizationModeInt == EVisualizationMode::ERM_Metallic)
     {
-        float2 material = constants.material.Load(int3(threadId.xy, 0));
+        float2 material = Material.Load(int3(threadId.xy, 0));
         finalColor = material.xxx;
     }
-    else if (constants.visualizationMode == VisualizationMode::Roughness)
+    else if (VisualizationModeInt == EVisualizationMode::ERM_Roughness)
     {
-        float2 material = constants.material.Load(int3(threadId.xy, 0));
+        float2 material = Material.Load(int3(threadId.xy, 0));
         finalColor = material.yyy;
     }
-    else if (constants.visualizationMode == VisualizationMode::SceneColor)
+    else if (VisualizationModeInt == EVisualizationMode::ERM_SceneColor)
     {
-        finalColor = constants.sceneColor.Load(int3(threadId.xy, 0));
+        finalColor = SceneColor.Load(int3(threadId.xy, 0));
     }
-    else if (constants.visualizationMode == VisualizationMode::SceneDepth)
+    else if (VisualizationModeInt == EVisualizationMode::ERM_SceneDepth)
     {
-        float depth = constants.sceneDepth.Load(int3(threadId.xy, 0));
+        float depth = SceneDepth.Load(int3(threadId.xy, 0));
         finalColor = depth.xxx;
     }
-    else if (constants.visualizationMode == VisualizationMode::WorldNormal)
+    else if (VisualizationModeInt == EVisualizationMode::ERM_WorldNormal)
     {
-        finalColor = constants.sceneNormal.Load(int3(threadId.xy, 0));
+        finalColor = SceneNormal.Load(int3(threadId.xy, 0));
     }
-    else if (constants.visualizationMode == VisualizationMode::AmbientOcclusion)
+    else if (VisualizationModeInt == EVisualizationMode::ERM_AmbientOcclusion)
     {
-        const float ao = CalculateAO(constants.sceneAO, threadId.xy);    
+        const float ao = CalculateAO(SceneAO, threadId.xy);    
         finalColor = ao.xxx;
     }
-    else if (constants.visualizationMode == VisualizationMode::Velocity)
+    else if (VisualizationModeInt == EVisualizationMode::ERM_Velocity)
     {
-        const float2 velocity = constants.velocity.Load(int3(threadId.xy, 0));
+        const float2 velocity = Velocity.Load(int3(threadId.xy, 0));
         finalColor.rg = velocity;
     }
 
-    constants.rwOutput.Store(threadId.xy, float4(finalColor, 1.f));
+    RWOutput.Store(threadId.xy, float4(finalColor, 1.f));
 }

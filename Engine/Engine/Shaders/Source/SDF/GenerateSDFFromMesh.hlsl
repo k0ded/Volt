@@ -1,21 +1,18 @@
 #include "Resources.hlsli"
 #include "Utility.hlsli"
 
-struct Constants
-{
-	vt::RWTex3D<float> outSDFTexture;
-    vt::TypedBuffer<float3> vertexPositions;
-    vt::TypedBuffer<uint> indexBuffer;
+vt::RWTex3D<float> RWSDFTexture;
+vt::TypedBuffer<float3> VertexPositions;
+vt::TypedBuffer<uint> IndexBuffer;
 
-    uint indexCount;
-    uint indexStartOffset;
-    uint vertexStartOffset;
+uint IndexCount;
+uint IndexStartOffset;
+uint VertexStartOffset;
 
-	float3 bbMin;
+float3 BBMin;
 
-    float voxelSize;
-    uint3 size;
-};
+float VoxelSize;
+uint3 Size;
 
 float PointToTriangleDistance(float3 p, float3 tv0, float3 tv1, float3 tv2)
 {
@@ -125,30 +122,28 @@ float SignedDistance(float3 p, float3 tv0, float3 tv1, float3 tv2)
 [numthreads(8, 8, 8)]
 void MainCS(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-    
-    if (any(dispatchThreadId >= constants.size))
+    if (any(dispatchThreadId >= Size))
     {
         return;
     }
 
-    const float3 pointPos = float3(dispatchThreadId.x * constants.voxelSize, dispatchThreadId.y * constants.voxelSize, dispatchThreadId.z * constants.voxelSize) + constants.bbMin;
+    const float3 pointPos = float3(dispatchThreadId.x * VoxelSize, dispatchThreadId.y * VoxelSize, dispatchThreadId.z * VoxelSize) + BBMin;
 
-    for (uint index = constants.indexStartOffset; index < constants.indexStartOffset + constants.indexCount; index += 3)
+    for (uint index = IndexStartOffset; index < IndexStartOffset + IndexCount; index += 3)
     {
-        const uint idx0 = constants.indexBuffer.Load(index + 0) + constants.vertexStartOffset;
-        const uint idx1 = constants.indexBuffer.Load(index + 1) + constants.vertexStartOffset;
-        const uint idx2 = constants.indexBuffer.Load(index + 2) + constants.vertexStartOffset;
+        const uint idx0 = IndexBuffer.Load(index + 0) + VertexStartOffset;
+        const uint idx1 = IndexBuffer.Load(index + 1) + VertexStartOffset;
+        const uint idx2 = IndexBuffer.Load(index + 2) + VertexStartOffset;
     
-        const float3 v0 = constants.vertexPositions.Load(idx0);
-        const float3 v1 = constants.vertexPositions.Load(idx1);
-        const float3 v2 = constants.vertexPositions.Load(idx2);
+        const float3 v0 = VertexPositions.Load(idx0);
+        const float3 v1 = VertexPositions.Load(idx1);
+        const float3 v2 = VertexPositions.Load(idx2);
 
         const float distance = SignedDistance(pointPos, v0, v1, v2);
 
-		if (abs(distance) < abs(constants.outSDFTexture.Load(dispatchThreadId)))
+		if (abs(distance) < abs(RWSDFTexture.Load(dispatchThreadId)))
 		{
-			constants.outSDFTexture.Store(dispatchThreadId, distance);
+			RWSDFTexture.Store(dispatchThreadId, distance);
 		}
     }
 }

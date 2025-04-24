@@ -13,11 +13,12 @@
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderContextUtils.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Debug/ShaderRuntimeValidator.h>
 #include <RenderCore/Resources/BindlessResourcesManager.h>
 #include <RenderCore/Shader/ShaderMap.h>
-#include <RenderCore/Shader/ShaderDefinition.h>
-#include <RenderCore/Shader/ShaderSourceAsset.h>
+#include <RenderCore/Shader/DefaultShaders.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Graphics/Swapchain.h>
@@ -39,6 +40,39 @@
 namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(Renderer, Engine, 3);
+
+	struct EquirectangularToCubemapCS
+	{
+		BEGIN_SHADER_DEFINITION(EquirectangularToCubemapCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Environment/EquirectangularToCubemap.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+	};
+	REGISTER_SHADER(EquirectangularToCubemapCS)
+
+	struct IntegrateSpecularCubeCS
+	{
+		BEGIN_SHADER_DEFINITION(IntegrateSpecularCubeCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PBR/IntegrateSpecularCube.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+	};
+	REGISTER_SHADER(IntegrateSpecularCubeCS)
+
+	struct IntegrateDiffuseCubeCS
+	{
+		BEGIN_SHADER_DEFINITION(IntegrateDiffuseCubeCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PBR/IntegrateDiffuseCube.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+	};
+	REGISTER_SHADER(IntegrateDiffuseCubeCS)
+
+	struct GeneratePreIntegratedDFG
+	{
+		BEGIN_SHADER_DEFINITION(GeneratePreIntegratedDFG)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PBR/GeneratePreIntegratedDFG.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+	};
+	REGISTER_SHADER(GeneratePreIntegratedDFG)
 
 	namespace Utility
 	{
@@ -68,7 +102,6 @@ namespace Volt
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
 			shaderValidator = nullptr;
 #endif
-			shaderMap = nullptr;
 			bindlessResourcesManager = nullptr;
 
 			for (auto& resourceQueue : deletionQueue)
@@ -77,7 +110,6 @@ namespace Volt
 			}
 		}
 
-		Scope<ShaderMap> shaderMap;
 		Scope<BindlessResourcesManager> bindlessResourcesManager;
 
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
@@ -112,9 +144,6 @@ namespace Volt
 		{
 			m_bindlessResourcesManager = CreateScope<BindlessResourcesManager>();
 		}
-
-		m_shaderMap = CreateScope<ShaderMap>();
-		LoadShaders();
 
 		RenderGraphExecutionThread::Initialize(RenderGraphExecutionThread::ExecutionMode::Multithreaded);
 
@@ -222,7 +251,7 @@ namespace Volt
 				commandBuffer->ResourceBarrier({ barrierInfo });
 			}
 
-			auto conversionPipeline = ShaderMap::GetComputePipeline("EquirectangularToCubemap", false);
+			auto conversionPipeline = ShaderMap::GetComputePipeline<EquirectangularToCubemapCS>(false);
 
 			RHI::DescriptorTableCreateInfo tableInfo{};
 			tableInfo.shader = conversionPipeline->GetShader();
@@ -291,7 +320,7 @@ namespace Volt
 				commandBuffer->ResourceBarrier({ barrierInfo });
 			}
 
-			auto pipeline = ShaderMap::GetComputePipeline("IntegrateSpecularCube", false);
+			auto pipeline = ShaderMap::GetComputePipeline<IntegrateSpecularCubeCS>(false);
 			RHI::DescriptorTableCreateInfo tableInfo{};
 			tableInfo.shader = pipeline->GetShader();
 
@@ -366,7 +395,7 @@ namespace Volt
 				commandBuffer->ResourceBarrier({ barrierInfo });
 			}
 
-			auto pipeline = ShaderMap::GetComputePipeline("IntegrateDiffuseCube", false);
+			auto pipeline = ShaderMap::GetComputePipeline<IntegrateDiffuseCubeCS>(false);
 			RHI::DescriptorTableCreateInfo tableInfo{};
 			tableInfo.shader = pipeline->GetShader();
 
@@ -500,7 +529,7 @@ namespace Volt
 
 		// Default material
 		{
-			m_defaultResources.defaultMaterial = CreateRef<RenderMaterial>("DefaultMaterial", ShaderMap::Get("OpaqueDefault"));
+			m_defaultResources.defaultMaterial = CreateRef<RenderMaterial>("DefaultMaterial", ShaderMap::Get<OpaqueDefaultMaterialCS>());
 		}
 
 		// Default mesh
@@ -538,7 +567,7 @@ namespace Volt
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(DFGSize, DFGSize, { targetImageHandle });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get("GeneratePreIntegratedDFG");
+			pipelineInfo.shader = ShaderMap::Get<GeneratePreIntegratedDFG>();
 			pipelineInfo.cullMode = RHI::CullMode::None;
 
 			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
@@ -607,89 +636,5 @@ namespace Volt
 		}
 
 		return resultIncludes;
-	}
-
-	void Renderer::LoadShaders()
-	{
-		const Vector<std::filesystem::path> searchPaths =
-		{
-			ProjectManager::GetEngineDirectory() / "Engine" / "Shaders",
-			ProjectManager::GetAssetsDirectory()
-		};
-
-		ScopedTimer timer{};
-
-		VT_LOGC(Info, LogRender, "Starting shader import!");
-
-		// Add source files to asset registry and setup dependencies
-		for (const auto& searchPath : searchPaths)
-		{
-			for (const auto& path : std::filesystem::recursive_directory_iterator(searchPath))
-			{
-				const auto relPath = AssetManager::GetRelativePath(path.path());
-				const auto extStr = relPath.extension().string();
-
-				if (extStr != ShaderSourceAsset::Extension && extStr != ShaderSourceAsset::ExtensionInclude)
-				{
-					continue;
-				}
-
-				AssetHandle shaderHandle = AssetManager::Get().GetOrAddAssetToRegistry(relPath, AssetTypes::ShaderSource);
-				if (shaderHandle == Asset::Null())
-				{
-					continue;
-				}
-
-				const auto includes = FindShaderIncludes(relPath);
-				for (const auto include : includes)
-				{
-					const auto relIncludePath = AssetManager::GetRelativePath(include);
-
-					AssetHandle includeHandle = AssetManager::Get().GetOrAddAssetToRegistry(relIncludePath, AssetTypes::ShaderSource);
-					if (includeHandle != Asset::Null())
-					{
-						AssetManager::AddDependencyToAsset(shaderHandle, includeHandle);
-					}
-				}
-			}
-		}
-
-		TaskGraph taskGraph{};
-
-		for (const auto& searchPath : searchPaths)
-		{
-			for (const auto& path : std::filesystem::recursive_directory_iterator(searchPath))
-			{
-				const auto relPath = AssetManager::GetRelativePath(path.path());
-				if (relPath.extension().string() != ShaderDefinition::Extension)
-				{
-					continue;
-				}
-
-				AssetHandle defHandle = AssetManager::Get().GetOrAddAssetToRegistry(relPath, AssetTypes::ShaderDefinition);
-				Ref<ShaderDefinition> shaderDef = AssetManager::GetAsset<ShaderDefinition>(defHandle);
-
-				for (const auto& sourceEntry : shaderDef->GetSourceEntries())
-				{
-					AssetManager::AddDependencyToAsset(defHandle, AssetManager::GetAssetHandleFromFilePath(sourceEntry.filePath));
-				}
-
-				taskGraph.AddTask([&, def = shaderDef]()
-				{
-					RHI::ShaderSpecification specification;
-					specification.name = def->GetName();
-					specification.sourceEntries = def->GetSourceEntries();
-					specification.permutations = def->GetPermutations();
-					specification.forceCompile = false;
-
-					RefPtr<RHI::Shader> shader = RHI::Shader::Create(specification);
-					ShaderMap::RegisterShader(std::string(def->GetName()), shader);
-				});
-			}
-		}
-
-		taskGraph.ExecuteAndWait();
-
-		VT_LOGC(Info, LogRender, "Shader import finished in {} seconds!", timer.GetTime<Time::Seconds>());
 	}
 }

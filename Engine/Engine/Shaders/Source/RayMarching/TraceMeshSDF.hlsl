@@ -5,15 +5,10 @@
 
 #include "Structures.hlsli"
 
-struct Constants
-{
-    GPUScene gpuScene;
-    vt::UniformBuffer<ViewData> viewData;
-
-    vt::TextureSampler pointSampler;
-    
-    uint primitiveCount;
-};
+GPUScene GPUSceneData;
+vt::UniformBuffer<ViewData> View;
+vt::TextureSampler PointSampler;
+uint PrimitiveCount;
 
 struct Output
 {
@@ -79,8 +74,7 @@ float TraceSDFPrimitive(SDFPrimitiveDrawData sdfPrimitive, GPUMeshSDF sdfMesh, v
 
 Output MainPS(FullscreenTriangleVertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-    const ViewData viewData = constants.viewData.Load();
+    const ViewData viewData = View.Load();
 
     const float2 pixelPos = input.position.xy;
     
@@ -96,12 +90,12 @@ Output MainPS(FullscreenTriangleVertex input)
     float result = 100000.f;
     bool hasHit = false;
 
-    for (uint i = 0; i < constants.primitiveCount; ++i)
+    for (uint i = 0; i < PrimitiveCount; ++i)
     {
-        const SDFPrimitiveDrawData sdfPrimitive = constants.gpuScene.sdfPrimitiveDrawDataBuffer.Load(i);   
-        const GPUMeshSDF sdfMesh = constants.gpuScene.sdfMeshesBuffer.Load(sdfPrimitive.meshSDFId);
+        const SDFPrimitiveDrawData sdfPrimitive = GPUSceneData.sdfPrimitiveDrawDataBuffer.Load(i);   
+        const GPUMeshSDF sdfMesh = GPUSceneData.sdfMeshesBuffer.Load(sdfPrimitive.meshSDFId);
 
-        float intersectionRes = TraceSDFPrimitive(sdfPrimitive, sdfMesh, constants.pointSampler, ray);
+        float intersectionRes = TraceSDFPrimitive(sdfPrimitive, sdfMesh, PointSampler, ray);
         if (intersectionRes > 0.f)
         {
             result = min(intersectionRes, result);

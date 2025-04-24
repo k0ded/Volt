@@ -18,12 +18,11 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
             out vertices VertexOutput vertices[NUM_MAX_OUT_VERTS],
             out primitives DefaultPrimitiveOutput primitives[NUM_MAX_OUT_TRIS])
 {
-    const Constants constants = GetConstants<Constants>();
-    const ViewData viewData = constants.viewData.Load();
+    const ViewData viewData = View.Load();
 
-    const PrimitiveDrawData drawData = constants.gpuScene.primitiveDrawDataBuffer.Load(payload.drawId);    
-    const PrimitiveDrawData prevDrawData = constants.gpuScene.prevPrimitiveDrawDataBuffer.Load(payload.drawId);
-    const GPUMesh mesh = constants.gpuScene.meshesBuffer.Load(drawData.meshId);
+    const PrimitiveDrawData drawData = GPUSceneData.primitiveDrawDataBuffer.Load(payload.drawId);    
+    const PrimitiveDrawData prevDrawData = GPUSceneData.prevPrimitiveDrawDataBuffer.Load(payload.drawId);
+    const GPUMesh mesh = GPUSceneData.meshesBuffer.Load(drawData.meshId);
 
     uint meshletIndex = payload.meshletIndices[groupId];
 
@@ -41,7 +40,7 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
         float4x4 skinningMatrix = IDENTITY_MATRIX;
         if (drawData.isAnimated)
         {
-            skinningMatrix = GetSkinningMatrix(mesh, vertexIndex, drawData.boneOffset, constants.gpuScene.bonesBuffer);
+            skinningMatrix = GetSkinningMatrix(mesh, vertexIndex, drawData.boneOffset, GPUSceneData.bonesBuffer);
         }
 
         const float3 skinnedPosition = mul(skinningMatrix, float4(mesh.vertexPositionsBuffer.Load(vertexIndex), 1.f)).xyz;
@@ -76,8 +75,7 @@ struct ColorOutput
 
 ColorOutput MainPS(VertexOutput input)
 {
-    const Constants constants = GetConstants<Constants>();
-    const ViewData viewData = constants.viewData.Load();
+    const ViewData viewData = View.Load();
 
     float3 currentPosNDC = input.currentPosition.xyz / input.currentPosition.w;
     float3 previousPosNDC = input.prevPosition.xyz / input.prevPosition.w;

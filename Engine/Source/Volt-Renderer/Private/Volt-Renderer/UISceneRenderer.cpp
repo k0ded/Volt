@@ -15,10 +15,52 @@
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/RenderGraph/RenderContextUtils.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 namespace Volt
 {
+	struct UI2DGridVSPS
+	{
+		BEGIN_SHADER_DEFINITION(UI2DGridVSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/2DGrid_ps.hlsl", "main", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER(float4x4, InverseViewProjection)
+			SHADER_PARAMETER(float, Scale)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(UI2DGridVSPS)
+
+	struct UIWidgetIDVSPS
+	{
+		BEGIN_SHADER_DEFINITION(UIWidgetIDVSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/UIWidgetID.hlsl", "MainVS", RHI::ShaderStage::Vertex)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/UIWidgetID.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER(float4x4, ViewProjection)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(UIWidgetIDVSPS)
+
+	struct UIMainVSPS
+	{
+		BEGIN_SHADER_DEFINITION(UIMainVSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/UI/UIMain_vs.hlsl", "main", RHI::ShaderStage::Vertex)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/UI/UIMain_ps.hlsl", "main", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER(float4x4, ViewProjection)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, LinearSampler)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(UIMainVSPS)
+
 	struct UIRenderingData
 	{
 		RenderGraphBufferHandle vertexBuffer;
@@ -103,16 +145,19 @@ namespace Volt
 				RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), { targetImageHandle });
 
 				RHI::RenderPipelineCreateInfo pipelineInfo{};
-				pipelineInfo.shader = ShaderMap::Get("2DGrid");
+				pipelineInfo.shader = ShaderMap::Get<UI2DGridVSPS>();
 
 				auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
+				UI2DGridVSPS::Parameters parameters;
+				parameters.Scale = 1.f;
+				parameters.InverseViewProjection = glm::inverse(projectionMatrix);
+
 				context.BeginRendering(renderingInfo);
 
-				RCUtils::DrawFullscreenTriangle(context, pipeline, [projectionMatrix](RenderContext& context)
+				RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context)
 				{
-					context.SetConstant("scale"_sh, 1.f);
-					context.SetConstant("inverseViewProjection"_sh, glm::inverse(projectionMatrix));
+					context.SetParameters<UI2DGridVSPS>(parameters);
 				});
 
 				context.EndRendering();
@@ -141,7 +186,7 @@ namespace Volt
 				RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), { data.widgetIDImage, data.depthImage });
 				
 				RHI::RenderPipelineCreateInfo pipelineInfo{};
-				pipelineInfo.shader = ShaderMap::Get("UIWidgetID");
+				pipelineInfo.shader = ShaderMap::Get<UIWidgetIDVSPS>();
 				
 				auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
@@ -151,8 +196,10 @@ namespace Volt
 				context.BindIndexBuffer(renderingData.indexBuffer);
 				context.BindVertexBuffers({ renderingData.vertexBuffer }, 0);
 
-				context.SetConstant("viewProjection"_sh, projectionMatrix);
+				UIWidgetIDVSPS::Parameters parameters;
+				parameters.ViewProjection = projectionMatrix;
 
+				context.SetParameters<UIWidgetIDVSPS>(parameters);
 				context.DrawIndexed(renderingData.indexCount, 1, 0, 0, 0);
 				context.EndRendering();
 			});
@@ -179,7 +226,11 @@ namespace Volt
 				renderingInfo.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
 
 				RHI::RenderPipelineCreateInfo pipelineInfo{};
-				pipelineInfo.shader = ShaderMap::Get("UIMain");
+				pipelineInfo.shader = ShaderMap::Get<UIMainVSPS>();
+
+				UIMainVSPS::Parameters parameters;
+				parameters.ViewProjection = projectionMatrix;
+				parameters.LinearSampler = Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle();
 
 				auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
@@ -189,9 +240,7 @@ namespace Volt
 				context.BindIndexBuffer(renderingData.indexBuffer);
 				context.BindVertexBuffers({ renderingData.vertexBuffer }, 0);
 
-				context.SetConstant("viewProjection"_sh, projectionMatrix);
-				context.SetConstant("linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>()->GetResourceHandle());
-
+				context.SetParameters<UIMainVSPS>(parameters);
 				context.DrawIndexed(renderingData.indexCount, 1, 0, 0, 0);
 				context.EndRendering();
 			});

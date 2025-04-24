@@ -3,6 +3,7 @@
 #include <RenderCore/Resources/BindlessResource.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <CoreUtilities/Math/Math.h>
@@ -11,6 +12,21 @@
 
 namespace Volt
 {
+	struct ScatterUploadCS
+	{
+		BEGIN_SHADER_DEFINITION(ScatterUploadCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/ScatterUpload_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, DstBuffer)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, SrcBuffer)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, ScatterIndices)
+			SHADER_PARAMETER(uint32_t, TypeSizeInUINT)
+			SHADER_PARAMETER(uint32_t, CopyCount)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+
 	namespace RHI
 	{
 		class StorageBuffer;
@@ -117,14 +133,17 @@ namespace Volt
 
 			const uint32_t groupSize = Math::DivideRoundUp(static_cast<uint32_t>(sizeInUINT * data.dataCount), 64u);
 
-			auto pipeline = ShaderMap::GetComputePipeline("ScatterUpload");
+			auto pipeline = ShaderMap::GetComputePipeline<ScatterUploadCS>();
+
+			ScatterUploadCS::Parameters parameters;
+			parameters.DstBuffer = data.dstBuffer;
+			parameters.SrcBuffer = data.srcBuffer;
+			parameters.ScatterIndices = data.indicesBuffer;
+			parameters.TypeSizeInUINT = static_cast<uint32_t>(sizeInUINT);
+			parameters.CopyCount = data.dataCount;
 
 			context.BindPipeline(pipeline);
-			context.SetConstant("dstBuffer"_sh, data.dstBuffer);
-			context.SetConstant("srcBuffer"_sh, data.srcBuffer);
-			context.SetConstant("scatterIndices"_sh, data.indicesBuffer);
-			context.SetConstant("typeSizeInUINT"_sh, static_cast<uint32_t>(sizeInUINT));
-			context.SetConstant("copyCount"_sh, data.dataCount);
+			context.SetParameters<ScatterUploadCS>(parameters);
 			context.Dispatch(groupSize, 1, 1);
 		});
 	}

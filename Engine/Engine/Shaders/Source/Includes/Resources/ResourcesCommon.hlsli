@@ -1,15 +1,5 @@
 #pragma once
 
-struct RenderGraphConstants 
-{
-    uint constantsBufferIndex;
-    uint shaderValidationBuffer;
-    uint constantsOffset;
-};
-
-#define RENDER_GRAPH_CONSTANTS_BINDING b998
-ConstantBuffer<RenderGraphConstants> u_renderGraphConstants : register(RENDER_GRAPH_CONSTANTS_BINDING, space1);
-
 uint GetHandle(uint resourceHandle)
 {
     return resourceHandle & 0xFFFFFF;

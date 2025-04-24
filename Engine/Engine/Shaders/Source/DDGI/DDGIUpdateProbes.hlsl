@@ -7,25 +7,20 @@
 
 #include "MonteCarlo.hlsli"
 
-struct Constants
-{
-    vt::UniformBuffer<ViewData> viewData;
-    vt::RWTex2D<float3> rwProbeIrradianceAtlas;
+ vt::UniformBuffer<ViewData> View;
+ vt::RWTex2D<float3> RWProbeIrradianceAtlas;
 
-    GPUScene gpuScene;
+ GPUScene GPUSceneData;
 
-    float probeSpacing;
-    uint probeGridSize;
-    uint probeResolution;
-};
+ float ProbeSpacing;
+ uint ProbeGridSize;
+ uint ProbeResolution;
 
 [numthreads(64, 1, 1)]
 void main(uint groupThreadId : SV_GroupThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
- 
-    uint2 probeCoords = uint2(groupThreadId % constants.probeResolution, groupThreadId / constants.probeResolution);
-    float2 probeUv = float2(probeCoords) / float(constants.probeResolution);
+    uint2 probeCoords = uint2(groupThreadId % ProbeResolution, groupThreadId / ProbeResolution);
+    float2 probeUv = float2(probeCoords) / float(ProbeResolution);
 
     float3 traceDirection = EquiAreaSphericalMapping(probeUv);
 
@@ -42,6 +37,6 @@ void main(uint groupThreadId : SV_GroupThreadID)
     
     if (query.CommittedStatus() == COMMITTED_TRIANGLE_HIT)
     {
-        constants.rwProbeIrradianceAtlas.Store(probeCoords, 1.f);
+        RWProbeIrradianceAtlas.Store(probeCoords, 1.f);
     }
 }

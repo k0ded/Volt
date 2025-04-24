@@ -1,17 +1,14 @@
 #include "Resources.hlsli"
 #include "Structures.hlsli"
 
-struct Constants
-{
-    vt::Tex2D<float3> sceneNormals;
-    vt::Tex2D<float> sceneDepth;
-    vt::Tex2D<float2> sceneMaterial;
+vt::Tex2D<float3> SceneNormals;
+vt::Tex2D<float> SceneDepth;
+vt::Tex2D<float2> SceneMaterial;
 
-    vt::TextureSampler pointSampler;
-    vt::UniformBuffer<ViewData> viewData;
+vt::TextureSampler PointSampler;
+vt::UniformBuffer<ViewData> View;
 
-    vt::RWTex2D<float3> rwOutput;
-};
+vt::RWTex2D<float3> RWOutput;
 
 float3 ReconstructViewPosition(float2 texCoord, float depth, in float4x4 invProjMat)
 {
@@ -63,31 +60,30 @@ float2 ScreenSpaceRayMarch(float3 viewPos, float3 rayDir, vt::Tex2D<float> scene
 [numthreads(8, 8, 1)]
 void SSRCS(uint2 dispatchThreadId : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-    const ViewData viewData = constants.viewData.Load();    
+    const ViewData viewData = View.Load();    
 
     float2 texCoords = (float2(dispatchThreadId) + 0.5f) * viewData.invRenderSize;
     texCoords.y = 1.f - texCoords.y;
 
-    float3 pixelNormal = constants.sceneNormals.SampleLevel(constants.pointSampler, texCoords, 0.f) * 2.f - 1.f;
+    float3 pixelNormal = SceneNormals.SampleLevel(PointSampler, texCoords, 0.f) * 2.f - 1.f;
     pixelNormal = mul(float4(pixelNormal, 0.f), viewData.inverseView).xyz;
 
-    float pixelDepth = constants.sceneDepth.SampleLevel(constants.pointSampler, texCoords, 0.f);
-    float pixelRoughness = constants.sceneMaterial.SampleLevel(constants.pointSampler, texCoords, 0.f).g;
+    float pixelDepth = SceneDepth.SampleLevel(PointSampler, texCoords, 0.f);
+    float pixelRoughness = SceneMaterial.SampleLevel(PointSampler, texCoords, 0.f).g;
 
     if (pixelDepth > 0.f && pixelRoughness < 0.5f)
     {
         float3 viewPos = ReconstructViewPosition(texCoords, pixelDepth, viewData.inverseProjection);
         float3 reflectionDir = ComputeReflectionDirection(viewPos, pixelNormal);
         
-        float2 reflectionTexCoord = ScreenSpaceRayMarch(viewPos, reflectionDir, constants.sceneDepth, constants.pointSampler, viewData.projection, viewData.inverseProjection);
+        float2 reflectionTexCoord = ScreenSpaceRayMarch(viewPos, reflectionDir, SceneDepth, PointSampler, viewData.projection, viewData.inverseProjection);
 
         if (all(reflectionTexCoord >= 0.f) && all(reflectionTexCoord.y >= 0.f))
         {
             reflectionTexCoord.y = 1.f - reflectionTexCoord.y;
 
-            float3 reflectedColor = constants.rwOutput.Load(reflectionTexCoord * viewData.renderSize);
-            constants.rwOutput.Store(texCoords * viewData.renderSize, reflectedColor); 
+            float3 reflectedColor = RWOutput.Load(reflectionTexCoord * viewData.renderSize);
+            RWOutput.Store(texCoords * viewData.renderSize, reflectedColor); 
         }
     }
 }

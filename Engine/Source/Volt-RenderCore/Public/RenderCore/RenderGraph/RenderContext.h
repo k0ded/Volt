@@ -2,6 +2,8 @@
 
 #include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
+#include "RenderCore/RenderGraph/ShaderParameterStruct.h"
+#include "RenderCore/RenderGraph/ShaderRegistry.h"
 #include "RenderCore/Config.h"
 
 #include <RHIModule/Descriptors/ResourceHandle.h>
@@ -16,6 +18,7 @@
 #include <CoreUtilities/StringHash.h>
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/TypeTraits/TypeIndex.h>
 
 #include <glm/glm.hpp>
 #include <half/half.hpp>
@@ -145,16 +148,12 @@ namespace Volt
 		RHI::RenderingInfo renderingInfo{};
 	};
 
+	template<typename T>
+	concept ShaderParameterStruct = std::is_base_of_v<ShaderParameterStructBase, T>;
+
 	class VTRC_API RenderContext
 	{
 	public:
-		struct RenderGraphConstants
-		{
-			ResourceHandle constatsBufferIndex;
-			ResourceHandle shaderValidationBuffer;
-			uint32_t constantsOffset;
-		};
-
 		RenderContext(RenderGraph& renderGraph, RenderGraphPassNodeBase& currentPassNode, SharedRenderContext& sharedContext, RefPtr<RHI::CommandBuffer> commandBuffer);
 
 		void EndContext();
@@ -220,6 +219,9 @@ namespace Volt
 		template<typename F, size_t COUNT>
 		void SetConstant(const StringHash& name, const std::array<F, COUNT>& data);
 
+		template<typename ShaderType, ShaderParameterStruct T>
+		void SetParameters(const T& parameters);
+
 	private:
 		friend class RenderGraph;
 
@@ -232,6 +234,9 @@ namespace Volt
 
 		void Flush(RefPtr<RHI::Fence> fence);
 		void CopyImage(RenderGraphImageHandle src, RenderGraphImageHandle dst, const uint32_t width, const uint32_t height, const uint32_t depth);
+
+		void SetParameter(const ShaderParameterMetadata& parameterMetadata, const void* parameterData);
+		void SetConstant(const ShaderParameterMetadata& parameterMetadata, const void* data);
 
 		// Validation
 		void InitializeCurrentPipelineConstantsValidation();
@@ -272,6 +277,11 @@ namespace Volt
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<T>(), name);
 
+		if (!constantsData.uniforms.contains(name))
+		{
+			return;
+		}
+
 		const auto& uniform = constantsData.uniforms.at(name);
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &data, sizeof(T));
 	}
@@ -284,6 +294,11 @@ namespace Volt
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
+
+		if (!constantsData.uniforms.contains(name))
+		{
+			return;
+		}
 
 		const auto& uniform = constantsData.uniforms.at(name);
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, data.data(), data.size() * sizeof(F));
@@ -298,7 +313,39 @@ namespace Volt
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
 
+		if (!constantsData.uniforms.contains(name))
+		{
+			return;
+		}
+
 		const auto& uniform = constantsData.uniforms.at(name);
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, data.data(), COUNT * sizeof(F));
+	}
+
+	template<typename ShaderType, ShaderParameterStruct T>
+	inline void RenderContext::SetParameters(const T& parameters)
+	{
+		static_assert(std::is_same_v<typename ShaderType::Parameters, T>);
+
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
+
+		const auto typeIndex = TypeTraits::TypeIndex::FromType<ShaderType>();
+		auto& reg = g_shaderRegistry;
+		const auto& shaderRegistrationInfo = reg.GetShaderRegistrationInfo(typeIndex);
+
+		const uint8_t* parametersDataPtr = reinterpret_cast<const uint8_t*>(&parameters);
+
+		for (const auto& parameter : shaderRegistrationInfo.parameterMetadata)
+		{
+			if (parameter.reflectedOffset != std::numeric_limits<uint32_t>::max())
+			{
+				SetParameter(parameter, &parametersDataPtr[parameter.parentStructOffset + parameter.structOffset]);
+			}
+		}
+
+		//Vector<ShaderParameterMetadata> temp;
+		//
+		//T::zzInternal_SetMembers(*this, parameters, temp);
 	}
 }

@@ -17,13 +17,10 @@ struct ObjectHitInfo
 	float3 worldNormal;
 };
 
-struct Constants
-{
-    vt::UniformBuffer<ViewData> viewData;
-    vt::RWTex2D<float4> outputTexture;
+vt::UniformBuffer<ViewData> View;
+vt::RWTex2D<float4> RWOutputTexture;
 
-    GPUScene gpuScene;
-};
+GPUScene GPUSceneData;
 
 float3 SkyColor(float3 direction)
 {
@@ -80,8 +77,7 @@ float StepAndOutputRNGFloat(inout uint rngState)
 [numthreads(8, 8, 1)]
 void main(uint2 threadId : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-	const ViewData viewData = constants.viewData.Load(); 
+	const ViewData viewData = View.Load(); 
 
 	if (any(threadId >= uint2(viewData.renderSize)))
 	{
@@ -121,7 +117,7 @@ void main(uint2 threadId : SV_DispatchThreadID)
 
 			if (query.CommittedStatus() == COMMITTED_TRIANGLE_HIT)
 			{
-				ObjectHitInfo objectHitInfo = GetObjectHitInfo(constants.gpuScene, query.CommittedTriangleBarycentrics(), query.CommittedInstanceID(), query.CommittedPrimitiveIndex());
+				ObjectHitInfo objectHitInfo = GetObjectHitInfo(GPUSceneData, query.CommittedTriangleBarycentrics(), query.CommittedInstanceID(), query.CommittedPrimitiveIndex());
 				accumulatedRayColor *= objectHitInfo.color;				
 				
 				objectHitInfo.worldNormal = faceforward(objectHitInfo.worldNormal, rayDirection, objectHitInfo.worldNormal);
@@ -144,5 +140,5 @@ void main(uint2 threadId : SV_DispatchThreadID)
 		}
 	}
 
-	constants.outputTexture.Store(threadId, float4(summedPixelColor / float(SampleCount), 1.f));
+	RWOutputTexture.Store(threadId, float4(summedPixelColor / float(SampleCount), 1.f));
 }

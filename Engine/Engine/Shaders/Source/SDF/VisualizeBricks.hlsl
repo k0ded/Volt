@@ -11,10 +11,7 @@ struct VSOut
     float4 position : SV_Position;
 };
 
-struct Constants
-{
-    float4x4 viewProjection;
-};
+float4x4 ViewProjection;
 
 struct PushConstants
 {
@@ -28,10 +25,8 @@ PUSH_CONSTANT(PushConstants, u_pushConstants);
 
 VSOut MainVS(in Vertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-
     VSOut result;
-    result.position = mul(constants.viewProjection, float4(input.position * u_pushConstants.scale + u_pushConstants.position, 1.f));
+    result.position = mul(ViewProjection, float4(input.position * u_pushConstants.scale + u_pushConstants.position, 1.f));
 
     return result;
 }
@@ -44,8 +39,6 @@ struct ColorOutput
 
 ColorOutput MainPS(VSOut input)
 {
-    const Constants constants = GetConstants<Constants>();
-    
     ColorOutput result;
     result.output = float3(1.f, 1.f, 0.f);
     

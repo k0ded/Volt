@@ -106,7 +106,6 @@ namespace Volt
 		BindlessResourceRef<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateCreateInfo& samplerInfo);
 		void CreateDefaultResources();
 		void GenerateDFGLuT();
-		void LoadShaders();
 
 		inline static Renderer* s_instance = nullptr;
 

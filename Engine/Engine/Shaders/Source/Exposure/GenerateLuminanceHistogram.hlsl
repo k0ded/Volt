@@ -5,15 +5,12 @@
 
 static const float3 RGBToLum = float3(0.2125f, 0.7154f, 0.0721f);
 
-struct Constants
-{
-    vt::Tex2D<float3> inputColor;
-    vt::RWTypedBuffer<uint> outHistogram;
+vt::Tex2D<float3> InputColor;
+vt::RWTypedBuffer<uint> RWHistogram;
 
-    uint2 renderTargetSize;
-    float minLogLum;
-    float inverseLogLumRange;
-};
+uint2 RenderTargetSize;
+float MinLogLum;
+float InverseLogLumRange;
 
 groupshared uint m_groupHistogram[THREAD_GROUP_SIZE * THREAD_GROUP_SIZE];
 
@@ -34,23 +31,21 @@ uint GetBinIndexFromColor(float3 color, float minLogLum, float inverseLogLumRang
 [numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
 void GenerateLuminanceHistogramCS(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
 {
-    const Constants constants = GetConstants<Constants>();
-
     const uint groupThreadIndex = groupIndex;
 
     m_groupHistogram[groupThreadIndex] = 0;
 
     GroupMemoryBarrierWithGroupSync();
 
-    if (all(dispatchThreadId < constants.renderTargetSize))
+    if (all(dispatchThreadId < RenderTargetSize))
     {
-        float3 color = constants.inputColor.Load(int3(dispatchThreadId, 0));
-        uint binIndex = GetBinIndexFromColor(color, constants.minLogLum, constants.inverseLogLumRange);
+        float3 color = InputColor.Load(int3(dispatchThreadId, 0));
+        uint binIndex = GetBinIndexFromColor(color, MinLogLum, InverseLogLumRange);
         
         InterlockedAdd(m_groupHistogram[binIndex], 1);
     }
 
     GroupMemoryBarrierWithGroupSync();
 
-    InterlockedAdd(constants.outHistogram, groupThreadIndex, m_groupHistogram[groupThreadIndex]);
+    InterlockedAdd(RWHistogram, groupThreadIndex, m_groupHistogram[groupThreadIndex]);
 }

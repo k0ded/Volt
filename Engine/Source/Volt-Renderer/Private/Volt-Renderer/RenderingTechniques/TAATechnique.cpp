@@ -11,12 +11,32 @@
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/RenderGraph/RenderContextUtils.h>
+#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <RHIModule/Pipelines/RenderPipeline.h>
 
 namespace Volt
 {
+	struct TAAResolveVSPS
+	{
+		BEGIN_SHADER_DEFINITION(TAAResolveVSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/TAA/TAAResolve_ps.hlsl", "main", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float3>, CurrentColor)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float3>, PreviousColor)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, SceneDepth)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float2>, VelocityTexture)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, LinearSampler)
+			SHADER_PARAMETER(uint2, RenderSize)
+			SHADER_PARAMETER(uint, FrameIndex)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(TAAResolveVSPS)
+
 	TAATechnique::TAATechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 		: m_renderGraph(renderGraph), m_blackboard(blackboard)
 	{
@@ -61,22 +81,24 @@ namespace Volt
 			RenderingInfo info = context.CreateRenderingInfo(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, { data.taaOutput, data.accumulationOutput });
 
 			RHI::RenderPipelineCreateInfo pipelineInfo;
-			pipelineInfo.shader = ShaderMap::Get("TAAResolve");
+			pipelineInfo.shader = ShaderMap::Get<TAAResolveVSPS>();
 			pipelineInfo.depthMode = RHI::DepthMode::None;
 			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+
+			TAAResolveVSPS::Parameters parameters;
+			parameters.CurrentColor = shadingData.colorOutput;
+			parameters.PreviousColor = data.previousColor;
+			parameters.SceneDepth = depthPrePass.depth;
+			parameters.VelocityTexture = velocityTexture;
+			parameters.LinearSampler = Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>()->GetResourceHandle();
+			parameters.RenderSize = viewUniformBuffer.renderSize;
+			parameters.FrameIndex = viewUniformBuffer.frameIndex;
 
 			context.BeginRendering(info);
 
 			RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context) 
 			{
-				context.SetConstant("currentColor"_sh, shadingData.colorOutput);
-				context.SetConstant("previousColor"_sh, data.previousColor);
-				context.SetConstant("sceneDepth"_sh, depthPrePass.depth);
-				context.SetConstant("velocityTexture"_sh, velocityTexture);
-				context.SetConstant("linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>()->GetResourceHandle());
-				context.SetConstant("renderSize"_sh, viewUniformBuffer.renderSize);
-				context.SetConstant("frameIndex"_sh, viewUniformBuffer.frameIndex);
-
+				context.SetParameters<TAAResolveVSPS>(parameters);
 			});
 
 			context.EndRendering();

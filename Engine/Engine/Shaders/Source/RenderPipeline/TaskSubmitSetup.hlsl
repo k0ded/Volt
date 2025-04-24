@@ -1,27 +1,22 @@
 #include "Resources.hlsli"
 #include "Structures.hlsli"
 
-struct Constants
-{
-    vt::RWTypedBuffer<uint> countCommandBuffer;
-    vt::RWTypedBuffer<MeshTaskCommand> taskCommands;
-};
+vt::RWTypedBuffer<uint> CountCommandBuffer;
+vt::RWTypedBuffer<MeshTaskCommand> TaskCommands;
 
 [numthreads(32, 1, 1)]
 void MainCS(uint groupThreadId : SV_GroupThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-
-    uint commandCount = constants.countCommandBuffer.Load(0);
+    uint commandCount = CountCommandBuffer.Load(0);
     
     if (groupThreadId == 0)
     {
         //constants.countCommandBuffer.Store(1, min(commandCount, 65535));
         //constants.countCommandBuffer.Store(2, 1);
         //constants.countCommandBuffer.Store(3, 1);
-        constants.countCommandBuffer.Store(1, min((commandCount + 31) / 32, 65535));
-        constants.countCommandBuffer.Store(2, 32);
-        constants.countCommandBuffer.Store(3, 1);
+        CountCommandBuffer.Store(1, min((commandCount + 31) / 32, 65535));
+        CountCommandBuffer.Store(2, 32);
+        CountCommandBuffer.Store(3, 1);
     }
 
     uint boundary = (commandCount + 31) & ~31;
@@ -30,6 +25,6 @@ void MainCS(uint groupThreadId : SV_GroupThreadID)
     
     if (commandCount + groupThreadId < boundary)
     {
-        constants.taskCommands.Store(commandCount + groupThreadId, dummyCommand);
+        TaskCommands.Store(commandCount + groupThreadId, dummyCommand);
     }
 }

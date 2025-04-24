@@ -1,6 +1,0 @@
-name: "GenerateSurfelCoverage"
-internal: true
-sources:
-  - entryPoint: "GenerateSurfelCoverage"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/GIBS/GenerateSurfelCoverage.hlsl"

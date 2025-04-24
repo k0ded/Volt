@@ -21,7 +21,7 @@ namespace Volt
 
 	void RenderContext::EndContext()
 	{
-		uint8_t* passConstantsPtr = m_sharedContext.GetPassConstantsPointer(m_currentPassNode.index);
+		uint8_t* passConstantsPtr = m_sharedContext.GetRenderGraphConstantsPointer(m_currentPassNode.index);
 		memcpy_s(passConstantsPtr, RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE, m_passConstantsData, RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE);
 	}
 
@@ -475,22 +475,8 @@ namespace Volt
 			return;
 		}
 
-		// Set render graph constants
-		{
-			RenderGraphConstants renderGraphConstants;
-			renderGraphConstants.constatsBufferIndex = m_sharedContext.GetPassConstantsBufferResourceHandle();
-			renderGraphConstants.constantsOffset = m_currentPassNode.index * RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE;
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-			renderGraphConstants.shaderValidationBuffer = m_renderGraph.GetRuntimeShaderValidationErrorBuffer();
-#endif
-			{
-				uint8_t* constantsPtr = m_sharedContext.GetRenderGraphConstantsPointer(m_currentPassNode.index);
-				memcpy_s(constantsPtr, sizeof(RenderGraphConstants), &renderGraphConstants, sizeof(RenderGraphConstants));
-			}
-		}
-
 		auto descriptorTable = BindlessResourcesManager::Get().GetDescriptorTable();
-		m_commandBuffer->BindDescriptorTable(descriptorTable, m_sharedContext.GetRenderGraphConstantsBuffer(), m_currentPassNode.index, sizeof(RenderGraphConstants), m_currentAccelerationStructure);
+		m_commandBuffer->BindDescriptorTable(descriptorTable, m_sharedContext.GetRenderGraphConstantsBuffer(), m_currentPassNode.index, RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE, m_currentAccelerationStructure);
 
 		m_descriptorTableIsBound = true;
 	}
@@ -525,8 +511,7 @@ namespace Volt
 #ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 		if (!constantsData.uniforms.contains(constantName))
 		{
-			VT_LOGC(Error, LogRenderCore, "A constant with name '{}' is not defined in the shader!", constantName.string);
-			VT_ENSURE(false);
+			return;
 		}
 
 		const auto& uniform = constantsData.uniforms.at(constantName);
@@ -586,7 +571,10 @@ namespace Volt
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
 		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
+		if (!constantsData.uniforms.contains(name))
+		{
+			return;
+		}
 
 		const auto& uniform = constantsData.uniforms.at(name);
 
@@ -636,6 +624,15 @@ namespace Volt
 		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &resourceHandle, sizeof(ResourceHandle));
 	}
 
+	void RenderContext::SetConstant(const ShaderParameterMetadata& metadata, const void* data)
+	{
+#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
+		m_boundPipelineData.uniformHasBeenSetMap[metadata.hashedName] = true;
+#endif
+
+		memcpy_s(&m_passConstantsData[metadata.reflectedOffset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - metadata.reflectedOffset, data, metadata.structSize);
+	}
+
 	void RenderContext::Flush(RefPtr<RHI::Fence> fence)
 	{
 		VT_PROFILE_FUNCTION();
@@ -660,5 +657,30 @@ namespace Volt
 
 		VT_ENSURE_MSG(width > 0 && height > 0 && depth > 0, "Width, height and depth must be greater than zero!");
 		m_commandBuffer->CopyImage(srcImage, dstImage, width, height, depth);
+	}
+
+	void RenderContext::SetParameter(const ShaderParameterMetadata& parameterMetadata, const void* parameterData)
+	{
+		if (parameterMetadata.parameterType == ShaderParameterType::Image)
+		{
+			const RenderGraphImageAccess& imageAccess = *reinterpret_cast<const RenderGraphImageAccess*>(parameterData);
+			SetConstant(parameterMetadata.hashedName, imageAccess.handle, imageAccess.mip, imageAccess.layer);
+		}
+		else if (parameterMetadata.parameterType == ShaderParameterType::Buffer)
+		{
+			SetConstant(parameterMetadata.hashedName, *reinterpret_cast<const RenderGraphBufferHandle*>(parameterData));
+		}
+		else if (parameterMetadata.parameterType == ShaderParameterType::UniformBuffer)
+		{
+			SetConstant(parameterMetadata.hashedName, *reinterpret_cast<const RenderGraphUniformBufferHandle*>(parameterData));
+		}
+		else if (parameterMetadata.parameterType == ShaderParameterType::Sampler)
+		{
+			SetConstant(parameterMetadata.hashedName, *reinterpret_cast<const ResourceHandle*>(parameterData));
+		}
+		else
+		{
+			SetConstant(parameterMetadata, parameterData);
+		}
 	}
 }

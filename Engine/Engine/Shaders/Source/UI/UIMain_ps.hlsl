@@ -1,11 +1,8 @@
 #include "Resources.hlsli"
 #include "CommonBuffers.hlsli"
 
-struct Constants
-{
-    float4x4 viewProjection;
-    vt::TextureSampler linearSampler;
-};
+float4x4 ViewProjection;
+vt::TextureSampler LinearSampler;
 
 struct Output
 {
@@ -23,12 +20,10 @@ struct Input
 
 Output main(Input input)
 {
-    const Constants constants = GetConstants<Constants>();
-
     vt::Tex2D<float4> texture = (vt::Tex2D<float4>)input.imageHandle;
 
     Output output;
-    output.color = texture.Sample(constants.linearSampler, input.texCoords);
+    output.color = texture.Sample(LinearSampler, input.texCoords);
     output.color.rgb *= input.color.rgb;
     output.color.a = input.color.a;
 

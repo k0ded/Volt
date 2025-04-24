@@ -31,14 +31,14 @@ namespace Volt
 		builder.ReadResource(blueNoiseTextures.blueNoiseRGBATexture);
 	}
 
-	void BlueNoise::Setup(RenderContext& renderContext, const BlueNoiseTextures& blueNoiseTextures)
+	void BlueNoise::Setup(BlueNoiseShaderParameters& parameters, const BlueNoiseTextures& blueNoiseTextures)
 	{
-		renderContext.SetConstant("blueNoiseData.blueNoiseScalarTexture"_sh, blueNoiseTextures.blueNoiseScalarTexture);
-		renderContext.SetConstant("blueNoiseData.blueNoiseVec2Texture"_sh, blueNoiseTextures.blueNoiseVec2Texture);
-		renderContext.SetConstant("blueNoiseData.blueNoiseRGBATexture"_sh, blueNoiseTextures.blueNoiseRGBATexture);
-		renderContext.SetConstant("blueNoiseData.pointWrapSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle());
-		renderContext.SetConstant("blueNoiseData.moduloMasks"_sh, s_blueNoiseData.moduloMasks);
-		renderContext.SetConstant("blueNoiseData.dimensions"_sh, s_blueNoiseData.dimensions);
+		parameters.blueNoiseScalarTexture = blueNoiseTextures.blueNoiseScalarTexture;
+		parameters.blueNoiseVec2Texture = blueNoiseTextures.blueNoiseVec2Texture;
+		parameters.blueNoiseRGBATexture = blueNoiseTextures.blueNoiseRGBATexture;
+		parameters.pointWrapSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle();
+		parameters.moduloMasks = s_blueNoiseData.moduloMasks;
+		parameters.dimensions = s_blueNoiseData.dimensions;
 	}
 
 	BlueNoiseTextures BlueNoise::GetBlueNoiseTextures(RenderGraph& renderGraph)

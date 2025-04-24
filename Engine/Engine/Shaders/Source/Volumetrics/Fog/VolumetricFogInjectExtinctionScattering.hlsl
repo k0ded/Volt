@@ -2,18 +2,13 @@
 
 #include "VolumetricFogCommon.hlsli"
 
-struct Constants
-{
-    vt::RWTex3D<float4> rwScatteringExtinction;
-    vt::UniformBuffer<ViewData> viewData;
-    vt::UniformBuffer<VolumetricFogParams> volumetricFogParams;
+vt::RWTex3D<float4> RWScatteringExtinction;
+vt::UniformBuffer<ViewData> View;
+vt::UniformBuffer<VolumetricFogParams> VolumetricFogParamsData;
 
-    float heightFogDensity;
-    float heightFogFalloff;
-    float3 heightFogColor;
-
-    BlueNoiseData blueNoiseData;
-};
+float HeightFogDensity;
+float HeightFogFalloff;
+float3 HeightFogColor;
 
 float4 EvaluateScatteringAndExtinctionFromColorDensity(float3 color, float density, float scatteringFactor)
 {
@@ -24,17 +19,15 @@ float4 EvaluateScatteringAndExtinctionFromColorDensity(float3 color, float densi
 [numthreads(8, 8, 1)]
 void MainCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
+    const VolumetricFogParams volumetricFogParams = VolumetricFogParamsData.Load();
+    const ViewData viewData = View.Load();
 
-    const VolumetricFogParams volumetricFogParams = constants.volumetricFogParams.Load();
-    const ViewData viewData = constants.viewData.Load();
-
-    float3 worldPosition = GetWorldPositionFromFroxelCoord(dispatchThreadID, volumetricFogParams, constants.blueNoiseData, viewData);
+    float3 worldPosition = GetWorldPositionFromFroxelCoord(dispatchThreadID, volumetricFogParams, viewData);
 
     float4 scatteringExtinction = 0.f;
 
-    float heightFog = constants.heightFogDensity * exp(-constants.heightFogFalloff * max(worldPosition.y, 0.f));
-    scatteringExtinction += EvaluateScatteringAndExtinctionFromColorDensity(constants.heightFogColor, heightFog, volumetricFogParams.scatteringFactor);
+    float heightFog = HeightFogDensity * exp(-HeightFogFalloff * max(worldPosition.y, 0.f));
+    scatteringExtinction += EvaluateScatteringAndExtinctionFromColorDensity(HeightFogColor, heightFog, volumetricFogParams.scatteringFactor);
 
-    constants.rwScatteringExtinction.Store(dispatchThreadID, scatteringExtinction);
+    RWScatteringExtinction.Store(dispatchThreadID, scatteringExtinction);
 }

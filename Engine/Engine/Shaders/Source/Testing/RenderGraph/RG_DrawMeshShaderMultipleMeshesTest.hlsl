@@ -2,13 +2,10 @@
 #include "GPUScene.hlsli"
 #include "PushConstant.hlsli"
 
-struct Constants
-{
-    float4x4 viewProjection;
+float4x4 ViewProjection;
 
-    vt::TypedBuffer<GPUMesh> gpuMeshesBuffer;
-    vt::TypedBuffer<float4x4> transformsBuffer;
-};
+vt::TypedBuffer<GPUMesh> GPUMeshesBuffer;
+vt::TypedBuffer<float4x4> TransformsBuffer;
 
 struct PerDrawData
 {
@@ -34,12 +31,10 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
             out indices uint3 tris[64],
             out vertices VertexOutput vertices[64])
 {
-    const Constants constants = GetConstants<Constants>();
-    
-    const GPUMesh mesh = constants.gpuMeshesBuffer.Load(u_perDrawData.drawIndex);
+    const GPUMesh mesh = GPUMeshesBuffer.Load(u_perDrawData.drawIndex);
     const Meshlet meshlet = mesh.meshletsBuffer.Load(mesh.meshletStartOffset + groupId);
 
-    const float4x4 transform = constants.transformsBuffer.Load(u_perDrawData.drawIndex);
+    const float4x4 transform = TransformsBuffer.Load(u_perDrawData.drawIndex);
 
     const uint vertexCount = meshlet.GetVertexCount();
     const uint triCount = meshlet.GetTriangleCount();
@@ -59,7 +54,7 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
     if (groupThreadId < vertexCount)
     {
         const uint vertexIndex = mesh.meshletDataBuffer[vertexOffset + groupThreadId] + mesh.vertexStartOffset;
-        vertices[groupThreadId].position = mul(constants.viewProjection, mul(constants.transformsBuffer.Load(u_perDrawData.drawIndex), float4(mesh.vertexPositionsBuffer.Load(vertexIndex), 1.f)));
+        vertices[groupThreadId].position = mul(ViewProjection, mul(TransformsBuffer.Load(u_perDrawData.drawIndex), float4(mesh.vertexPositionsBuffer.Load(vertexIndex), 1.f)));
     }
 }
 

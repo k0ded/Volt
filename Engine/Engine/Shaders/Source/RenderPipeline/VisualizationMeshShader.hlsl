@@ -1,19 +1,10 @@
 #include "PushConstant.hlsli"
 
-#define OVERRIDE_DEFAULT_CONSTANTS
-
 #include "MeshShaderCommon.hlsli"
 #include "MeshShaderCullCommon.hlsli"
 #include "VisualizationCommon.hlsli"
 
-struct VisConstants
-{
-    GPUScene gpuScene;
-    vt::UniformBuffer<ViewData> viewData;
-    vt::TypedBuffer<MeshTaskCommand> taskCommands;
-
-    uint visualizationMode; 
-};
+uint VisualizationModeInt; 
 
 struct VertexOutput
 {
@@ -28,13 +19,11 @@ groupshared MeshAmplificationPayload m_payload;
 [numthreads(NUM_AS_THREADS, 1, 1)]
 void MainAS(uint groupThreadId : SV_GroupThreadID, uint2 groupId : SV_GroupID)
 {
-    const VisConstants constants = GetConstants<VisConstants>();
- 
     const uint taskIndex = groupId.x * NUM_AS_THREADS + groupId.y;
 
-    const MeshTaskCommand command = constants.taskCommands.Load(taskIndex);
-    const PrimitiveDrawData drawData = constants.gpuScene.primitiveDrawDataBuffer.Load(command.drawId);    
-    const GPUMesh mesh = constants.gpuScene.meshesBuffer.Load(drawData.meshId);
+    const MeshTaskCommand command = TaskCommands.Load(taskIndex);
+    const PrimitiveDrawData drawData = GPUSceneData.primitiveDrawDataBuffer.Load(command.drawId);    
+    const GPUMesh mesh = GPUSceneData.meshesBuffer.Load(drawData.meshId);
 
     const uint meshletIndex = command.meshletOffset + groupThreadId;
  
@@ -43,7 +32,7 @@ void MainAS(uint groupThreadId : SV_GroupThreadID, uint2 groupId : SV_GroupID)
     if (groupThreadId < command.taskCount && meshletIndex < mesh.meshletCount)
     {
         const Meshlet meshlet = mesh.meshletsBuffer.Load(mesh.meshletStartOffset + meshletIndex);       
-        const ViewData viewData = constants.viewData.Load(); 
+        const ViewData viewData = View.Load(); 
         
         const float3 center = drawData.transform.GetWorldPosition(meshlet.boundingSphereCenter);
         const float3 viewCenter = mul(viewData.view, float4(center, 1.f)).xyz;
@@ -76,11 +65,10 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
             out vertices VertexOutput vertices[NUM_MAX_OUT_VERTS],
             out primitives DefaultPrimitiveOutput primitives[NUM_MAX_OUT_TRIS])
 {
-    const VisConstants constants = GetConstants<VisConstants>();
-    const ViewData viewData = constants.viewData.Load();
+    const ViewData viewData = View.Load();
 
-    const PrimitiveDrawData drawData = constants.gpuScene.primitiveDrawDataBuffer.Load(payload.drawId);    
-    const GPUMesh mesh = constants.gpuScene.meshesBuffer.Load(drawData.meshId);
+    const PrimitiveDrawData drawData = GPUSceneData.primitiveDrawDataBuffer.Load(payload.drawId);    
+    const GPUMesh mesh = GPUSceneData.meshesBuffer.Load(drawData.meshId);
 
     uint meshletIndex = payload.meshletIndices[groupId];
 
@@ -98,7 +86,7 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
         float4x4 skinningMatrix = IDENTITY_MATRIX;
         if (drawData.isAnimated)
         {
-            skinningMatrix = GetSkinningMatrix(mesh, vertexIndex, drawData.boneOffset, constants.gpuScene.bonesBuffer);
+            skinningMatrix = GetSkinningMatrix(mesh, vertexIndex, drawData.boneOffset, GPUSceneData.bonesBuffer);
         }
 
         const float3 vertexPosition = mesh.vertexPositionsBuffer.Load(vertexIndex);
@@ -138,21 +126,19 @@ struct ColorOutput
 
 ColorOutput MainPS(VertexOutput input)
 {
-    const VisConstants constants = GetConstants<VisConstants>();
-
     ColorOutput output;
     output.color = 1.f;
 
-    if (constants.visualizationMode == VisualizationMode::UV)
+    if (VisualizationModeInt == EVisualizationMode::ERM_UV)
     {
         output.color.rg = input.uv;
         output.color.b = 0.f;
     }
-    else if (constants.visualizationMode == VisualizationMode::GeometryNormals)
+    else if (VisualizationModeInt == EVisualizationMode::ERM_GeometryNormals)
     {
         output.color.rgb = input.normal * 0.5f + 0.5f;
     }
-    else if (constants.visualizationMode == VisualizationMode::GeometryTangents)
+    else if (VisualizationModeInt == EVisualizationMode::ERM_GeometryTangents)
     {
         output.color.rgb = input.tangent * 0.5f + 0.5f;
     }

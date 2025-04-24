@@ -1,30 +1,25 @@
 #include "Defines.hlsli"
 #include "Resources.hlsli"
 
-struct Constants
-{
-    vt::RWTypedBuffer<uint> dstBuffer;
-    vt::TypedBuffer<uint> srcBuffer;
-    vt::TypedBuffer<uint> scatterIndices;
+vt::RWTypedBuffer<uint> DstBuffer;
+vt::TypedBuffer<uint> SrcBuffer;
+vt::TypedBuffer<uint> ScatterIndices;
 
-    uint typeSizeInUINT;
-    uint copyCount;
-};
+uint TypeSizeInUINT;
+uint CopyCount;
 
 [numthreads(64, 1, 1)]
 void main(uint dispatchThreadId : SV_DispatchThreadID)
 {
-    const Constants constants = GetConstants<Constants>();
-
     // Every thread copies one UINT
-    uint scatterIndex = dispatchThreadId / constants.typeSizeInUINT;
-    uint scatterOffset = dispatchThreadId - scatterIndex * constants.typeSizeInUINT;
+    uint scatterIndex = dispatchThreadId / TypeSizeInUINT;
+    uint scatterOffset = dispatchThreadId - scatterIndex * TypeSizeInUINT;
 
-    if (scatterIndex < constants.copyCount)
+    if (scatterIndex < CopyCount)
     {
-        const uint dstIndex = constants.scatterIndices.Load(scatterIndex) * constants.typeSizeInUINT + scatterOffset;
+        const uint dstIndex = ScatterIndices.Load(scatterIndex) * TypeSizeInUINT + scatterOffset;
         const uint srcIndex = dispatchThreadId;
 
-        constants.dstBuffer.Store(dstIndex, constants.srcBuffer.Load(srcIndex));    
+        DstBuffer.Store(dstIndex, SrcBuffer.Load(srcIndex));    
     }
 }

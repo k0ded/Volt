@@ -205,11 +205,13 @@ namespace Volt
 
 		Amp::WWiseEngine::Get().TermWwise();
 
+		m_assetManager->Clear();
+
+		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
+
 		m_assetManager = nullptr;
 		g_assetSerializerRegistry.Clear();
 		g_assetFactory.Clear();
-
-		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
 		m_windowManager->DestroyMainWindow();
 

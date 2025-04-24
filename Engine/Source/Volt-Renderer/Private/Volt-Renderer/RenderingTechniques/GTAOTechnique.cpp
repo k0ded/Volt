@@ -14,6 +14,58 @@
 
 namespace Volt
 {
+	struct GTAODepthPrefilterCS
+	{
+		BEGIN_SHADER_DEFINITION(GTAODepthPrefilterCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/GTAO/GTAO_DepthPrefilter_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP0)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP1)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP2)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP3)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP4)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, SourceDepth)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointClampSampler)
+			SHADER_PARAMETER_STRUCT(GTAOTechnique::GTAOConstants, Constants)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GTAODepthPrefilterCS)
+
+	struct GTAOMainPassCS
+	{
+		BEGIN_SHADER_DEFINITION(GTAOMainPassCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/GTAO/GTAO_MainPass_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<uint>, AOTerm)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, Edges)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, SrcDepth)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float4>, ViewspaceNormals)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointClampSampler)
+			SHADER_PARAMETER_STRUCT(GTAOTechnique::GTAOConstants, Constants)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GTAOMainPassCS)
+
+	struct GTAODenoiseCS
+	{
+		BEGIN_SHADER_DEFINITION(GTAODenoiseCS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/GTAO/GTAO_Denoise_cs.hlsl", "main", RHI::ShaderStage::Compute)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_IMAGE(vt::RWTex2D<uint>, RWFinalAOTerm)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<uint>, AOTerm)
+			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, Edges)
+			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointClampSampler)
+			SHADER_PARAMETER_STRUCT(GTAOTechnique::GTAOConstants, Constants)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GTAODenoiseCS)
+
 	struct PrefilterDepthData
 	{
 		RenderGraphImageHandle prefilteredDepth;
@@ -113,36 +165,21 @@ namespace Volt
 		},
 		[=](const PrefilterDepthData& data, RenderContext& context) 
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("GTAODepthPrefilter");
+			auto pipeline = ShaderMap::GetComputePipeline<GTAODepthPrefilterCS>();
 			auto pointClampSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureWrap::Clamp>();
 
+			GTAODepthPrefilterCS::Parameters parameters;
+			parameters.RWDepthMIP0 = RenderGraphImageAccess(data.prefilteredDepth, 0);
+			parameters.RWDepthMIP1 = RenderGraphImageAccess(data.prefilteredDepth, 1);
+			parameters.RWDepthMIP2 = RenderGraphImageAccess(data.prefilteredDepth, 2);
+			parameters.RWDepthMIP3 = RenderGraphImageAccess(data.prefilteredDepth, 3);
+			parameters.RWDepthMIP4 = RenderGraphImageAccess(data.prefilteredDepth, 4);
+			parameters.SourceDepth = preDepthData.depth;
+			parameters.PointClampSampler = pointClampSampler->GetResourceHandle();
+			parameters.Constants = data.constants;
+
 			context.BindPipeline(pipeline);
-			context.SetConstant("outDepthMIP0"_sh, data.prefilteredDepth, 0);
-			context.SetConstant("outDepthMIP1"_sh, data.prefilteredDepth, 1);
-			context.SetConstant("outDepthMIP2"_sh, data.prefilteredDepth, 2);
-			context.SetConstant("outDepthMIP3"_sh, data.prefilteredDepth, 3);
-			context.SetConstant("outDepthMIP4"_sh, data.prefilteredDepth, 4);
-			context.SetConstant("sourceDepth"_sh, preDepthData.depth);
-			context.SetConstant("padding"_sh, 0u);
-			context.SetConstant("pointClampSampler"_sh, pointClampSampler->GetResourceHandle());
-			context.SetConstant("constants.ViewportSize"_sh, data.constants.ViewportSize);
-			context.SetConstant("constants.ViewportPixelSize"_sh, data.constants.ViewportPixelSize);
-			context.SetConstant("constants.DepthUnpackConsts"_sh, data.constants.DepthUnpackConsts);
-			context.SetConstant("constants.CameraTanHalfFOV"_sh, data.constants.CameraTanHalfFOV);
-			context.SetConstant("constants.NDCToViewMul"_sh, data.constants.NDCToViewMul);
-			context.SetConstant("constants.NDCToViewAdd"_sh, data.constants.NDCToViewAdd);
-			context.SetConstant("constants.NDCToViewMul_x_PixelSize"_sh, data.constants.NDCToViewMul_x_PixelSize);
-			context.SetConstant("constants.EffectRadius"_sh, data.constants.EffectRadius);
-			context.SetConstant("constants.EffectFalloffRange"_sh, data.constants.EffectFalloffRange);
-			context.SetConstant("constants.RadiusMultiplier"_sh, data.constants.RadiusMultiplier);
-			context.SetConstant("constants.Padding0"_sh, data.constants.Padding0);
-			context.SetConstant("constants.FinalValuePower"_sh, data.constants.FinalValuePower);
-			context.SetConstant("constants.DenoiseBlurBeta"_sh, data.constants.DenoiseBlurBeta);
-			context.SetConstant("constants.SampleDistributionPower"_sh, data.constants.SampleDistributionPower);
-			context.SetConstant("constants.ThinOccluderCompensation"_sh, data.constants.ThinOccluderCompensation);
-			context.SetConstant("constants.DepthMIPSamplingOffset"_sh, data.constants.DepthMIPSamplingOffset);
-			context.SetConstant("constants.NoiseIndex"_sh, data.constants.NoiseIndex);
-			context.SetConstant("constants.Padding0"_sh, 0.f);
+			context.SetParameters<GTAODepthPrefilterCS>(parameters);
 
 			const uint32_t dispatchX = Math::DivideRoundUp(renderData.renderSize.x, 16u);
 			const uint32_t dispatchY = Math::DivideRoundUp(renderData.renderSize.y, 16u);
@@ -179,34 +216,19 @@ namespace Volt
 		},
 		[=](const GTAOData& data, RenderContext& context) 
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("GTAOMainPass");
+			auto pipeline = ShaderMap::GetComputePipeline<GTAOMainPassCS>();
 			auto pointClampSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureWrap::Clamp>();
 
+			GTAOMainPassCS::Parameters parameters;
+			parameters.AOTerm = data.aoOutput;
+			parameters.Edges = data.edgesOutput;
+			parameters.SrcDepth = prefilterDepthData.prefilteredDepth;
+			parameters.ViewspaceNormals = preDepthData.normals;
+			parameters.PointClampSampler = pointClampSampler->GetResourceHandle();
+			parameters.Constants = prefilterDepthData.constants;
+			
 			context.BindPipeline(pipeline);
-			context.SetConstant("aoTerm"_sh, data.aoOutput);
-			context.SetConstant("edges"_sh, data.edgesOutput);
-			context.SetConstant("srcDepth"_sh, prefilterDepthData.prefilteredDepth);
-			context.SetConstant("viewspaceNormals"_sh, preDepthData.normals);
-			context.SetConstant("pointClampSampler"_sh, pointClampSampler->GetResourceHandle());
-			context.SetConstant("padding"_sh, glm::uvec3(0));
-			context.SetConstant("constants.ViewportSize"_sh, prefilterDepthData.constants.ViewportSize);
-			context.SetConstant("constants.ViewportPixelSize"_sh, prefilterDepthData.constants.ViewportPixelSize);
-			context.SetConstant("constants.DepthUnpackConsts"_sh, prefilterDepthData.constants.DepthUnpackConsts);
-			context.SetConstant("constants.CameraTanHalfFOV"_sh, prefilterDepthData.constants.CameraTanHalfFOV);
-			context.SetConstant("constants.NDCToViewMul"_sh, prefilterDepthData.constants.NDCToViewMul);
-			context.SetConstant("constants.NDCToViewAdd"_sh, prefilterDepthData.constants.NDCToViewAdd);
-			context.SetConstant("constants.NDCToViewMul_x_PixelSize"_sh, prefilterDepthData.constants.NDCToViewMul_x_PixelSize);
-			context.SetConstant("constants.EffectRadius"_sh, prefilterDepthData.constants.EffectRadius);
-			context.SetConstant("constants.EffectFalloffRange"_sh, prefilterDepthData.constants.EffectFalloffRange);
-			context.SetConstant("constants.RadiusMultiplier"_sh, prefilterDepthData.constants.RadiusMultiplier);
-			context.SetConstant("constants.Padding0"_sh, prefilterDepthData.constants.Padding0);
-			context.SetConstant("constants.FinalValuePower"_sh, prefilterDepthData.constants.FinalValuePower);
-			context.SetConstant("constants.DenoiseBlurBeta"_sh, prefilterDepthData.constants.DenoiseBlurBeta);
-			context.SetConstant("constants.SampleDistributionPower"_sh, prefilterDepthData.constants.SampleDistributionPower);
-			context.SetConstant("constants.ThinOccluderCompensation"_sh, prefilterDepthData.constants.ThinOccluderCompensation);
-			context.SetConstant("constants.DepthMIPSamplingOffset"_sh, prefilterDepthData.constants.DepthMIPSamplingOffset);
-			context.SetConstant("constants.NoiseIndex"_sh, prefilterDepthData.constants.NoiseIndex);
-			context.SetConstant("constants.Padding0"_sh, 0.f);
+			context.SetParameters<GTAOMainPassCS>(parameters);
 
 			const uint32_t dispatchX = Math::DivideRoundUp(renderSize.x, 16u);
 			const uint32_t dispatchY = Math::DivideRoundUp(renderSize.y, 16u);
@@ -242,32 +264,18 @@ namespace Volt
 		},
 		[=](const GTAOOutput& data, RenderContext& context)
 		{
-			auto pipeline = ShaderMap::GetComputePipeline("GTAODenoise");
+			auto pipeline = ShaderMap::GetComputePipeline<GTAODenoiseCS>();
 			auto pointClampSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureWrap::Clamp>();
 		
+			GTAODenoiseCS::Parameters parameters;
+			parameters.RWFinalAOTerm = data.outputImage;
+			parameters.AOTerm = gtaoData.aoOutput;
+			parameters.Edges = gtaoData.edgesOutput;
+			parameters.PointClampSampler = pointClampSampler->GetResourceHandle();
+			parameters.Constants = prefilterDepthData.constants;
+
 			context.BindPipeline(pipeline);
-			context.SetConstant("finalAOTerm"_sh, data.outputImage);
-			context.SetConstant("aoTerm"_sh, gtaoData.aoOutput);
-			context.SetConstant("edges"_sh, gtaoData.edgesOutput);
-			context.SetConstant("pointClampSampler"_sh, pointClampSampler->GetResourceHandle());
-			context.SetConstant("constants.ViewportSize"_sh, prefilterDepthData.constants.ViewportSize);
-			context.SetConstant("constants.ViewportPixelSize"_sh, prefilterDepthData.constants.ViewportPixelSize);
-			context.SetConstant("constants.DepthUnpackConsts"_sh, prefilterDepthData.constants.DepthUnpackConsts);
-			context.SetConstant("constants.CameraTanHalfFOV"_sh, prefilterDepthData.constants.CameraTanHalfFOV);
-			context.SetConstant("constants.NDCToViewMul"_sh, prefilterDepthData.constants.NDCToViewMul);
-			context.SetConstant("constants.NDCToViewAdd"_sh, prefilterDepthData.constants.NDCToViewAdd);
-			context.SetConstant("constants.NDCToViewMul_x_PixelSize"_sh, prefilterDepthData.constants.NDCToViewMul_x_PixelSize);
-			context.SetConstant("constants.EffectRadius"_sh, prefilterDepthData.constants.EffectRadius);
-			context.SetConstant("constants.EffectFalloffRange"_sh, prefilterDepthData.constants.EffectFalloffRange);
-			context.SetConstant("constants.RadiusMultiplier"_sh, prefilterDepthData.constants.RadiusMultiplier);
-			context.SetConstant("constants.Padding0"_sh, prefilterDepthData.constants.Padding0);
-			context.SetConstant("constants.FinalValuePower"_sh, prefilterDepthData.constants.FinalValuePower);
-			context.SetConstant("constants.DenoiseBlurBeta"_sh, prefilterDepthData.constants.DenoiseBlurBeta);
-			context.SetConstant("constants.SampleDistributionPower"_sh, prefilterDepthData.constants.SampleDistributionPower);
-			context.SetConstant("constants.ThinOccluderCompensation"_sh, prefilterDepthData.constants.ThinOccluderCompensation);
-			context.SetConstant("constants.DepthMIPSamplingOffset"_sh, prefilterDepthData.constants.DepthMIPSamplingOffset);
-			context.SetConstant("constants.NoiseIndex"_sh, prefilterDepthData.constants.NoiseIndex);
-			context.SetConstant("constants.Padding0"_sh, 0.f);
+			context.SetParameters<GTAODenoiseCS>(parameters);
 		
 			const uint32_t dispatchX = Math::DivideRoundUp(renderSize.x, 8u);
 			const uint32_t dispatchY = Math::DivideRoundUp(renderSize.y, 8u);

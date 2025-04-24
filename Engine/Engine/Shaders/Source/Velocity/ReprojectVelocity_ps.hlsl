@@ -1,17 +1,14 @@
 #include "Vertex.hlsli"
 #include "Resources.hlsli"
 
-struct Constants
-{
-    float4x4 inverseViewProjection;
-    float4x4 previousViewProjection;        
-    float2 renderSize;
-    float2 invRenderSize;
-    float2 jitterOffset;
+float4x4 InverseViewProjection;
+float4x4 PreviousViewProjection;        
+float2 RenderSize;
+float2 InvRenderSize;
+float2 JitterOffset;
 
-    vt::Tex2D<float> depthTexture;
-    vt::TextureSampler pointSampler;
-};
+vt::Tex2D<float> DepthTexture;
+vt::TextureSampler PointSampler;
 
 struct Output
 {
@@ -20,9 +17,7 @@ struct Output
 
 Output main(FullscreenTriangleVertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-
-    const float pixelDepth = constants.depthTexture.Sample(constants.pointSampler, input.uv);
+    const float pixelDepth = DepthTexture.Sample(PointSampler, input.uv);
     
     if (pixelDepth < 0.00001f)
     {
@@ -36,10 +31,10 @@ Output main(FullscreenTriangleVertex input)
     const float y = input.uv.y * 2.f - 1.f;
 
     const float4 projectedPos = float4(x, y, pixelDepth, 1.f);
-    float4 worldPos = mul(constants.inverseViewProjection, projectedPos);
+    float4 worldPos = mul(InverseViewProjection, projectedPos);
     worldPos.xyz /= worldPos.w;
 
-    const float4 reprojectedPos = mul(constants.previousViewProjection, float4(worldPos.xyz, 1.f));
+    const float4 reprojectedPos = mul(PreviousViewProjection, float4(worldPos.xyz, 1.f));
     const float2 reprojectedNDCPos = reprojectedPos.xy / reprojectedPos.w;
     const float2 reprojectedUV = reprojectedNDCPos * 0.5f + 0.5f;
 
