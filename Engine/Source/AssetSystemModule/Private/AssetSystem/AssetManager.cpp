@@ -318,6 +318,12 @@ namespace Volt
 			return;
 		}
 
+		if (targetFilePath.extension() != ".vtasset")
+		{
+			VT_LOGC(Error, LogAssetSystem, "Invalid extension for asset {0}! Expected extension '.vtasset' but recieved a path with extension '{1}'",asset->handle, targetFilePath.extension().string());
+			return;
+		}
+
 		// If the asset already exists in the registry, we only update the file path
 		if (!instance.m_assetRegistry.contains(asset->handle))
 		{
@@ -342,6 +348,7 @@ namespace Volt
 
 			if (metadata.isMemoryAsset)
 			{
+				VT_LOGC(Warning, LogAssetSystem, "Memory Asset with handle {0} is a memory asset and should not be in the asset registry!", asset->handle);
 				return;
 			}
 
