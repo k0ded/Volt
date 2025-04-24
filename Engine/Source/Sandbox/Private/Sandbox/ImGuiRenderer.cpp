@@ -760,7 +760,7 @@ void Sandbox::SaveSceneAsModal()
 				std::filesystem::create_directories(Volt::ProjectManager::GetRootDirectory() / destPath);
 			}
 
-			const auto relPath = Volt::AssetManager::Get().GetRelativePath(destPath.string() + "\\" + m_saveSceneData.name + ".vtscene");
+			const auto relPath = Volt::AssetManager::Get().GetRelativePath(destPath.string() + "\\" + m_saveSceneData.name + ".vtasset");
 
 			//myRuntimeScene->CopyTo(myRuntimeScene);
 			m_runtimeScene->handle = {};
