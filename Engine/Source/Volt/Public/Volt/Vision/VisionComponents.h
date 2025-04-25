@@ -94,7 +94,7 @@ namespace Volt
 			reflect.SetLabel("Vision Camera Component");
 			reflect.AddMember(&VisionCameraComponent::blendTime, "blendTime", "Blend Time", "", 1.f, ComponentMemberFlag::DoNotShow);
 			reflect.AddMember(&VisionCameraComponent::fieldOfView, "fieldOfView", "Field Of View", "", 60.f, ComponentMemberFlag::DoNotShow);
-			reflect.AddMember(&VisionCameraComponent::layerMasks, "layerMasks", "Layer Masks", "", Vector<uint32_t>(), ComponentMemberFlag::DoNotShow);
+			reflect.AddMember(&VisionCameraComponent::layerMasks, "layerMasks", "Layer Masks", "", 0u, ComponentMemberFlag::DoNotShow);
 			reflect.AddMember(&VisionCameraComponent::cameraType, "cameraType", "Camera Type", "", eCameraType::Free, ComponentMemberFlag::DoNotShow);
 			reflect.AddMember(&VisionCameraComponent::blendType, "blendType", "Blend Type", "", eBlendType::None, ComponentMemberFlag::DoNotShow);
 			reflect.AddMember(&VisionCameraComponent::damping, "damping", "Damping", "", 0.f, ComponentMemberFlag::DoNotShow);

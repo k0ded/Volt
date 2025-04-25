@@ -53,7 +53,7 @@ namespace Volt
 			reflect.AddMember(&PrefabComponent::prefabEntity, "prefabEntity", "Prefab Entity", "", EntityID(0));
 			reflect.AddMember(&PrefabComponent::sceneRootEntity, "sceneRootEntity", "Scene Root Entity", "", EntityID(0));
 			reflect.AddMember(&PrefabComponent::version, "version", "Version", "", 0);
-			reflect.AddMember(&PrefabComponent::componentLocalChanges, "componentLocalChanges", "Component Local Changes", "", Vector<PrefabComponentLocalChange>{});
+			reflect.AddMember(&PrefabComponent::componentLocalChanges, "componentLocalChanges", "Component Local Changes", "", PrefabComponentLocalChange());
 		}
 
 		REGISTER_COMPONENT(PrefabComponent);

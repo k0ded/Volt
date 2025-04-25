@@ -38,6 +38,7 @@ namespace Mosaic
 		inline const Graph<Ref<MosaicNode>, Ref<MosaicEdge>>& GetUnderlyingGraph() const { return m_graph; }
 
 		const std::string Compile() const;
+		void Clear();
 
 		static Scope<MosaicGraph> CreateDefaultGraph();
 

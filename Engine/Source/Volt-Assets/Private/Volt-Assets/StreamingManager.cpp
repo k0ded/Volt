@@ -35,6 +35,18 @@ namespace Volt
 				}
 			}
 		});
+
+		m_materialReferenceCounter.SetAssetUpdatedCallback([&](AssetHandle meshHandle, const std::unordered_set<StreamingInstanceID>& streamingInstances, AssetChangedState state)
+		{
+			if (state == AssetChangedState::Updated)
+			{
+				for (const auto& instanceId : streamingInstances)
+				{
+					const auto& instance = m_streamingInstances.Get(instanceId);
+					InitializeScenePrimitiveFromInstance(instance);
+				}
+			}
+		});
 	}
 
 	StreamingManager::~StreamingManager()
@@ -129,6 +141,11 @@ namespace Volt
 
 		for (const auto& materialHandle : instance.materialHandles)
 		{
+			if (materialHandle == Asset::Null())
+			{
+				continue;
+			}
+
 			Ref<MaterialAsset> materialAsset = AssetManager::QueueAsset<MaterialAsset>(materialHandle);
 			Ref<RenderMaterial> renderMaterial;
 			
@@ -167,6 +184,7 @@ namespace Volt
 	{
 		m_assetUpdatedCallback = AssetManager::RegisterAssetUpdatedCallback(assetType, [&](AssetHandle assetHandle, AssetChangedState state)
 		{
+			std::scoped_lock lock{ m_streamingInstancesMapMutex };
 			if (m_callbackFunction && m_streamingInstancesFromAssetHandle.contains(assetHandle))
 			{
 				m_callbackFunction(assetHandle, m_streamingInstancesFromAssetHandle[assetHandle], state);
@@ -181,11 +199,14 @@ namespace Volt
 
 	void StreamingInstanceAssetReferenceCounter::AddReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
 	{
+		std::scoped_lock lock{ m_streamingInstancesMapMutex };
 		m_streamingInstancesFromAssetHandle[assetHandle].emplace(instanceId);
 	}
 	
 	void StreamingInstanceAssetReferenceCounter::RemoveReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
 	{
+		std::scoped_lock lock{ m_streamingInstancesMapMutex };
+
 		VT_ENSURE(m_streamingInstancesFromAssetHandle.contains(assetHandle));
 		VT_ENSURE(m_streamingInstancesFromAssetHandle.at(assetHandle).contains(instanceId));
 	

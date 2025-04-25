@@ -2,6 +2,7 @@
 
 #include "Volt-Assets/Serializers/MaterialSerializer.h"
 #include "Volt-Assets/MaterialAsset.h"
+#include "Volt-Assets/MaterialCompilerSubSystem.h"
 
 #include <Volt-MaterialGraph/MaterialGraph.h>
 #include <Volt-Renderer/RenderMaterial.h>
@@ -10,6 +11,8 @@
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicNode.h>
+
+#include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
@@ -143,6 +146,7 @@ namespace Volt
 		Ref<MaterialAsset> materialAsset = std::reinterpret_pointer_cast<MaterialAsset>(destinationAsset);
 		materialAsset->m_graph = CreateRef<MaterialGraph>();
 		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(materialAsset->assetName);
+		materialAsset->m_graph->m_graph->Clear();
 
 		streamReader.EnterScope("MosaicGraph");
 
@@ -213,6 +217,8 @@ namespace Volt
 			logStr += std::format("		- {0}\n", (uint64_t)tex);
 			AssetManager::AddDependencyToAsset(metadata.handle, tex);
 		}
+
+		SubSystemManager::GetSubSystem<Volt::MaterialCompilerSubSystem>()->RequestMaterialCompilation(materialAsset);
 
 		VT_LOG(Trace, logStr);
 		return true;

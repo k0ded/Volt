@@ -38,7 +38,7 @@ namespace Volt
 			reflect.SetGUID("{45D008BE-65C9-4D6F-A0C6-377F7B384E47}"_guid);
 			reflect.SetLabel("Mesh Component");
 			reflect.AddMember(&MeshComponent::handle, "handle", "Mesh", "", Asset::Null(), AssetTypes::Mesh);
-			reflect.AddMember(&MeshComponent::materials, "materials", "Materials", "", Vector<AssetHandle>{}, AssetTypes::Material);
+			reflect.AddMember(&MeshComponent::materials, "materials", "Materials", "", Asset::Null(), AssetTypes::Material);
 			reflect.SetOnMemberChangedCallback(&MeshComponent::OnMemberChanged);
 			reflect.SetOnComponentCopiedCallback(&MeshComponent::OnComponentCopied);
 			reflect.SetOnDestroyCallback(&MeshComponent::OnDestroy);

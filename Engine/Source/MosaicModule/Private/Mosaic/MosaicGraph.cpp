@@ -46,6 +46,11 @@ namespace Mosaic
 		return outShaderCode;
 	}
 
+	void MosaicGraph::Clear()
+	{
+		m_graph.Clear();
+	}
+
 	Scope<MosaicGraph> MosaicGraph::CreateDefaultGraph()
 	{
 		Scope<MosaicGraph> graph = CreateScope<MosaicGraph>();

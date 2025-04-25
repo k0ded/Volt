@@ -115,7 +115,7 @@ namespace Volt
 			reflect.SetLabel("Relationship Component");
 			reflect.SetHidden();
 			reflect.AddMember(&RelationshipComponent::parent, "parent", "Parent", "", EntityID(0));
-			reflect.AddMember(&RelationshipComponent::children, "children", "Children", "", Vector<EntityID>{});
+			reflect.AddMember(&RelationshipComponent::children, "children", "Children", "", EntityID(0));
 		}
 
 		REGISTER_COMPONENT(RelationshipComponent);

@@ -489,7 +489,7 @@ bool ComponentPropertyUtility::DrawComponentArray(Weak<Volt::Scene> scene, Volt:
 
 		if (ImGui::Button((std::string("Add##add_") + std::string(member.label)).c_str()))
 		{
-			arrayDesc->EmplaceBack(arrayPtr, nullptr);
+			arrayDesc->EmplaceBack(arrayPtr, member.defaultValue->Get());
 			AddLocalChangeToEntity(entity, member.ownerTypeDesc->GetGUID(), member.name);
 
 			EditorUtils::MarkEntityAsEdited(entity);

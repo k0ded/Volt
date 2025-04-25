@@ -43,6 +43,7 @@ namespace Volt
 		void SetAssetUpdatedCallback(AssetUpdatedFunc callbackFunc);
 
 	private:
+		std::mutex m_streamingInstancesMapMutex;
 		vt::map<AssetHandle, std::unordered_set<StreamingInstanceID>> m_streamingInstancesFromAssetHandle;
 		AssetUpdatedFunc m_callbackFunction;
 		AssetType m_assetType;

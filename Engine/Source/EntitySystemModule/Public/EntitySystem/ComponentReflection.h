@@ -28,8 +28,18 @@ namespace Volt
 	template<typename T, class ENABLE = void> class TypeDesc;
 	template<typename T> constexpr bool IsReflectedType();
 	template<typename T> constexpr bool IsArrayType();
-
 	template<typename T> const TypeDesc<T>* GetTypeDesc();
+
+	template<typename T> struct ArrayTraits
+	{
+		typedef void element_type;
+		static const bool is_array = false;
+	};
+
+	template<typename T> struct IsClassType
+	{
+		static const bool value = std::is_class<T>::value && !std::is_enum<T>::value && !ArrayTraits<T>::is_array;
+	};
 
 	template<typename T> inline constexpr auto ReflectType(TypeDesc<T>& desc) -> decltype(T::ReflectType(std::declval<TypeDesc<T>&>()), void())
 	{
@@ -198,6 +208,8 @@ namespace Volt
 	class ArrayTypeDesc : public IArrayTypeDesc
 	{
 	public:
+		using ElementType = ELEMENT_TYPE;
+
 		~ArrayTypeDesc() override = default;
 
 		void SetLabel(std::string_view name);
@@ -381,6 +393,11 @@ namespace Volt
 
 			if constexpr (IsArrayType<Type>() || IsReflectedType<Type>())
 			{
+				if constexpr (IsArrayType<Type>())
+				{
+					static_assert(std::is_same_v<DefaultValueT, typename ArrayTraits<Type>::element_type>, "In array types, the default type is expected to be of the element type!");
+				}
+
 				m_members.emplace_back(offset, name, label, description, AssetTypeType::element_type::guid, flags, GetTypeDesc<Type>(), this, TypeTraits::TypeIndex::FromType<Type>(), CreateScope<DefaultValueType<DefaultValueT>>(defaultValue), copyFunction);
 			}
 			else
@@ -702,17 +719,6 @@ namespace Volt
 	}
 
 	// Helpers
-	template<typename T> struct ArrayTraits
-	{
-		typedef void element_type;
-		static const bool is_array = false;
-	};
-
-	template<typename T> struct IsClassType
-	{
-		static const bool value = std::is_class<T>::value && !std::is_enum<T>::value && !ArrayTraits<T>::is_array;
-	};
-
 	template<typename T> class TypeDesc<T, typename std::enable_if<std::is_enum<T>::value>::type> : public EnumTypeDesc<T>
 	{
 	public:
