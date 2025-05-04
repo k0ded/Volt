@@ -13,7 +13,7 @@ void AssertionFailure(const char* expression)
 {
 #if defined(VT_ENABLE_ASSERTS) || defined(VT_ENABLE_ENSURES)
 	#ifdef VT_PLATFORM_WINDOWS
-	printf("%s\n", expression);
+	printf("ASSERTION FAILURE: %s\n", expression);
 	if (::IsDebuggerPresent())
 	{
 		OutputDebugStringA(expression);

@@ -19,11 +19,7 @@ Engine/MonoDebugger.log
 Engine/Log
 Engine/Binaries
 
-Volt/ProjectTemplate/Intermediates/
-Volt/ProjectTemplate/Binaries
-Volt/ProjectTemplate/.vs/
-Volt/ProjectTemplate/*.csproj
-Volt/ProjectTemplate/*.sln
+SideProjects/VoltLauncher/App/Data.yaml
 
 Project/Intermediates/
 Project/Binaries
