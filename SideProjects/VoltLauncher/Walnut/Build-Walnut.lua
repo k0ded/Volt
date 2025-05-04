@@ -41,7 +41,7 @@ project "Walnut"
 
    filter "system:windows"
       systemversion "latest"
-      defines { "WL_PLATFORM_WINDOWS" }
+      defines { "WL_PLATFORM_WINDOWS", "NOMINMAX"}
 
    filter "configurations:Debug"
       defines { "WL_DEBUG" }
