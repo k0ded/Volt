@@ -10,6 +10,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	spec.CustomTitlebar = true;
 	spec.Width = 1280;
 	spec.Height = 720;
+	spec.IconPath = "Icons/icon_volt_launcher.png";
 
 	Walnut::Application* app = new Walnut::Application(spec);
 	std::shared_ptr<LauncherLayer> exampleLayer = std::make_shared<LauncherLayer>();
