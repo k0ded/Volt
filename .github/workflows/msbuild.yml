@@ -36,7 +36,7 @@ jobs:
 
     - name: Run Setup
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: ./Setup.bat
+      run: python ./Scripts/data/Setup.py -s
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
