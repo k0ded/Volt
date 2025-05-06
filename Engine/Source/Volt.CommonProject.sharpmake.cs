@@ -38,8 +38,16 @@ namespace VoltSharpmake
             if (target.DevEnv != DevEnv.xcode)
                 conf.ProjectFileName += "_[target.DevEnv]";
 
-            conf.IntermediatePath = Path.Combine(Globals.EngineTempDirectory, @"obj\[target.DirectoryName]\[project.Name]");
-			conf.TargetPath = Util.SimplifyPath(Path.Combine(Globals.EngineOutputDirectory, @"[target.DirectoryName]\[project.Name]"));
+			conf.IntermediatePath = Path.Combine(Globals.EngineTempDirectory, @"obj\[target.DirectoryName]\[project.Name]");
+
+			if (Globals.ShouldBuildEngine)
+			{
+				conf.TargetPath = Util.SimplifyPath(Path.Combine(Globals.EngineOutputDirectory, @"[target.DirectoryName]\[project.Name]"));
+			}
+			else
+			{
+				conf.TargetPath = Util.SimplifyPath(Globals.BinariesDirectory);
+			}
 
 			if (Globals.ProjectTargetDirectory != null)
 			{
