@@ -95,6 +95,18 @@ namespace FileSystem
 		return std::filesystem::create_directories(path);
 	}
 
+	bool FilePathIsOnlyExtension(const std::filesystem::path& path)
+	{
+		const std::string filename = path.filename().string();
+
+		if (!filename.empty())
+		{
+			return filename[0] == '.' && filename.find_first_of('.', 1) == std::string::npos;
+		}
+
+		return false;
+	}
+
 	bool ShowDirectoryInExplorer(const std::filesystem::path& dir)
 	{
 		auto absolutePath = std::filesystem::canonical(dir);
