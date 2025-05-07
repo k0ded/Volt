@@ -9,12 +9,17 @@
 #include <Volt-Renderer/Mesh/Mesh.h>
 
 #include <Volt-Core/AssetTypes.h>
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <AssetSystem/AssetManager.h>
+
+VT_DEFINE_LOG_CATEGORY(LogStreamingManager);
 
 namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(StreamingManager, Engine, 0);
+
+	static ConsoleVariable<int32_t> s_logStreamingManagerUpdates("r.StreamingManager.LogUpdates", 0, "Whether or not to log Streaming Manager updates");
 
 	StreamingManager::StreamingManager()
 		: m_meshReferenceCounter(AssetTypes::Mesh),
@@ -71,14 +76,23 @@ namespace Volt
 
 		m_meshReferenceCounter.AddReference(description.meshHandle, newId);
 
-		InitializeScenePrimitiveFromInstance(m_streamingInstances.Get(newId));
+		if (s_logStreamingManagerUpdates.GetValue())
+		{
+			VT_LOGC(Trace, LogStreamingManager, "Added a new instance linked to entity {} with mesh {} and gave it ID {}", description.entityId, description.meshHandle, newId);
+		}
 
+		InitializeScenePrimitiveFromInstance(m_streamingInstances.Get(newId));
 		return newId;
 	}
 
 	void StreamingManager::RemoveInstance(StreamingInstanceID instanceId)
 	{
 		const auto& instance = m_streamingInstances.Get(instanceId);
+
+		if (s_logStreamingManagerUpdates.GetValue())
+		{
+			VT_LOGC(Trace, LogStreamingManager, "Removed instance with ID {} which has mesh {}", instanceId, instance.entityId);
+		}
 
 		m_meshReferenceCounter.RemoveReference(instance.meshHandle, instanceId);
 
@@ -120,6 +134,11 @@ namespace Volt
 		streamingInstance.materialHandles = description.materialHandles;
 
 		InitializeScenePrimitiveFromInstance(streamingInstance);
+
+		if (s_logStreamingManagerUpdates.GetValue())
+		{
+			VT_LOGC(Trace, LogStreamingManager, "Invalidated instance with ID {} linked to entity {} and has mesh {}", instanceId, streamingInstance.entityId, streamingInstance.meshHandle);
+		}
 	}
 
 	void StreamingManager::InitializeScenePrimitiveFromInstance(const StreamingInstanceMap::StreamingInstance& instance)
