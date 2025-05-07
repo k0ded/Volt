@@ -52,8 +52,8 @@ jobs:
 
     - name: Sync VoltFPSGame Workspace To Latest Revision
       run: |
-        p4 sync VoltFPSGame_Fabian-Server_main\.p4ignore
-        p4 sync VoltFPSGame_Fabian-Server_main\Engine\...
+        p4 sync C:\VoltFPSGame_Fabian-Server_main\.p4ignore
+        p4 sync C:\VoltFPSGame_Fabian-Server_main\Engine\...
         
     - name: Copy Files To VoltFPSGame Workspace 
       run: |
