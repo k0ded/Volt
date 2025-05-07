@@ -14,7 +14,7 @@ using namespace Volt;
 DrawIndirectTest::DrawIndirectTest()
 {
 	RHI::RenderPipelineCreateInfo pipelineInfo{};
-	pipelineInfo.shader = ShaderMap::Get("DrawIndirectTest");
+	//pipelineInfo.shader = ShaderMap::Get("DrawIndirectTest");
 	m_renderPipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
 	//m_descriptorTable = RHI::DescriptorTable::Create({ m_renderPipeline->GetShader(), false });

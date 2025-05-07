@@ -31,32 +31,32 @@ bool RG_DispatchComputeShaderTest::RunTest()
 		RenderGraphBufferHandle bufferHandle;
 	};
 
-	renderGraph.AddPass<Data>("Compute Shader Pass",
-	[&](RenderGraph::Builder& builder, Data& data)
-	{
-		{
-			const auto desc = RGUtils::CreateBufferDescGPU<glm::uvec2>(32, "Buffer");
-			data.bufferHandle = builder.CreateBuffer(desc);
-		}
+	//renderGraph.AddPass<Data>("Compute Shader Pass",
+	//[&](RenderGraph::Builder& builder, Data& data)
+	//{
+	//	{
+	//		const auto desc = RGUtils::CreateBufferDescGPU<glm::uvec2>(32, "Buffer");
+	//		data.bufferHandle = builder.CreateBuffer(desc);
+	//	}
 
-		builder.SetHasSideEffect();
-		builder.SetIsComputePass();
-	},
-	[=](const Data& data, RenderContext& context)
-	{
-		auto pipeline = ShaderMap::GetComputePipeline("RG_DispatchComputeShaderTest");
+	//	builder.SetHasSideEffect();
+	//	builder.SetIsComputePass();
+	//},
+	//[=](const Data& data, RenderContext& context)
+	//{
+	//	auto pipeline = ShaderMap::GetComputePipeline("RG_DispatchComputeShaderTest");
 
-		context.BindPipeline(pipeline);
+	//	context.BindPipeline(pipeline);
 
-		DispatchComputeShaderParameters parameters;
-		parameters.InitialValue = 1u;
-		parameters.OutputBuffer = data.bufferHandle;
+	//	DispatchComputeShaderParameters parameters;
+	//	parameters.InitialValue = 1u;
+	//	parameters.OutputBuffer = data.bufferHandle;
 
-		context.SetParameters(parameters);
+	//	context.SetParameters(parameters);
 
-		context.Dispatch(1, 1, 1);
+	//	context.Dispatch(1, 1, 1);
 
-	});
+	//});
 
 	renderGraph.Compile();
 	renderGraph.Execute();

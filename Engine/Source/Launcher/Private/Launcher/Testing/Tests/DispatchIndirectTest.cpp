@@ -11,8 +11,8 @@ constexpr uint32_t GROUP_SIZE = 32;
 
 DispatchIndirectTest::DispatchIndirectTest()
 {
-	m_writeCommandPipeline = ShaderMap::GetComputePipeline("DispatchIndirectTest_WriteCommand", false);
-	m_indirectDispatchPipeline = ShaderMap::GetComputePipeline("DispatchIndirectTest_Dispatch", false);
+	//m_writeCommandPipeline = ShaderMap::GetComputePipeline("DispatchIndirectTest_WriteCommand", false);
+	//m_indirectDispatchPipeline = ShaderMap::GetComputePipeline("DispatchIndirectTest_Dispatch", false);
 
 	m_writeCommandTable = RHI::DescriptorTable::Create({ m_writeCommandPipeline->GetShader() });
 	m_indirectDispatchTable = RHI::DescriptorTable::Create({ m_indirectDispatchPipeline->GetShader() });

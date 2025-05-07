@@ -1,9 +1,15 @@
 #include "Log.h"
 
 #include <spdlog/spdlog.h>
+#include <spdlog/async.h>
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/msvc_sink.h>
+
+#include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/FileSystem.h>
 
 VT_REGISTER_SUBSYSTEM(Log, PreEngine, 1);
 
@@ -12,32 +18,41 @@ Log::Log()
 	VT_ENSURE(s_instance == nullptr);
 	s_instance = this;
 
+	spdlog::init_thread_pool(8192, 1);
 	spdlog::set_pattern("%^[%T] %n: %v%$");
 
-	m_logger = spdlog::stdout_color_mt("VOLT");
+	std::vector<spdlog::sink_ptr> sinks;
+
+#ifndef VT_DIST
+	sinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+#endif
+
+	// Get the path of the Engine directory from the system environment and put the logs in there.
+	const std::string logDirectory = Utility::ReplaceCharacter(FileSystem::GetEnvironmentVariableValue("VOLT_PATH"), '\\', '/') + "/Log/";
+	if (!FileSystem::Exists(logDirectory))
+	{
+		FileSystem::CreateDirectories(logDirectory);
+	}
+
+	sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDirectory + "Log.txt"));
+
+	if (::IsDebuggerPresent())
+	{
+		sinks.emplace_back(std::make_shared<spdlog::sinks::msvc_sink_mt>());
+	}
+
+	m_logger = std::make_shared<spdlog::async_logger>("VOLT", sinks.begin(), sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
+	spdlog::register_logger(m_logger);
+
 	m_logger->set_level(spdlog::level::trace);
 }
 
 Log::~Log()
 {
-	m_rotatingFileSink = nullptr;
+	spdlog::shutdown();
+
 	m_logger = nullptr;
-
 	s_instance = nullptr;
-}
-
-void Log::SetLogOutputFilepath(const std::filesystem::path& path)
-{
-	auto max_size = 1048576 * 5;
-	auto max_files = 3;
-
-	if (!std::filesystem::exists(path.parent_path()))
-	{
-		std::filesystem::create_directories(path.parent_path());
-	}
-
-	m_rotatingFileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(path.string(), max_size, max_files, false);
-	m_logger->sinks().emplace_back(m_rotatingFileSink);
 }
 
 LogCallbackHandle Log::RegisterCallback(const std::function<void(const LogCallbackData& callbackData)>& callback)

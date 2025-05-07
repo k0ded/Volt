@@ -8,7 +8,7 @@ using namespace Volt;
 
 PushConstantsTest::PushConstantsTest()
 {
-	m_computePipeline = ShaderMap::GetComputePipeline("PushConstantsTest", false);
+	//m_computePipeline = ShaderMap::GetComputePipeline("PushConstantsTest", false);
 
 	RHI::DescriptorTableCreateInfo tableInfo{};
 	tableInfo.shader = m_computePipeline->GetShader();

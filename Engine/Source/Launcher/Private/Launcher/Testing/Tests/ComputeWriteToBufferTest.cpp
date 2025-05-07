@@ -10,7 +10,7 @@ constexpr uint32_t GROUP_SIZE = 32;
 
 ComputeWriteToBufferTest::ComputeWriteToBufferTest()
 {
-	m_computePipeline = ShaderMap::GetComputePipeline("ComputeWriteToBufferTest", false);
+	//m_computePipeline = ShaderMap::GetComputePipeline("ComputeWriteToBufferTest", false);
 
 	RHI::DescriptorTableCreateInfo tableInfo{};
 	tableInfo.shader = m_computePipeline->GetShader();

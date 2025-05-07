@@ -131,37 +131,37 @@ namespace VoltSharpmake
 
             conf.Options.Add(Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
 		}
-        #endregion
-        ////////////////////////////////////////////////////////////////////////
+		#endregion
+		////////////////////////////////////////////////////////////////////////
 
-        ////////////////////////////////////////////////////////////////////////
-        #region Blobs and unitys
-        //[Configure(Blob.FastBuildUnitys)]
-        //[ConfigurePriority(ConfigurePriorities.Blobbing)]
-        //public virtual void FastBuildUnitys(Configuration conf, CommonTarget target)
-        //{
-        //    conf.FastBuildBlobbed = true;
-        //    conf.FastBuildUnityPath = Path.Combine(Globals.TmpDirectory, @"unity\[project.Name]");
-        //    conf.IncludeBlobbedSourceFiles = false;
-        //    conf.IsBlobbed = false;
-        //}
+		////////////////////////////////////////////////////////////////////////
+		#region Blobs and unitys
+		//[Configure(Blob.FastBuildUnitys)]
+		//[ConfigurePriority(ConfigurePriorities.Blobbing)]
+		//public virtual void FastBuildUnitys(Configuration conf, CommonTarget target)
+		//{
+		//    conf.FastBuildBlobbed = true;
+		//    conf.FastBuildUnityPath = Path.Combine(Globals.TmpDirectory, @"unity\[project.Name]");
+		//    conf.IncludeBlobbedSourceFiles = false;
+		//    conf.IsBlobbed = false;
+		//}
 
-        //[Configure(Blob.NoBlob)]
-        //[ConfigurePriority(ConfigurePriorities.Blobbing)]
-        //public virtual void BlobNoBlob(Configuration conf, CommonTarget target)
-        //{
-        //    conf.FastBuildBlobbed = false;
-        //    conf.IsBlobbed = false;
+		//[Configure(Blob.NoBlob)]
+		//[ConfigurePriority(ConfigurePriorities.Blobbing)]
+		//public virtual void BlobNoBlob(Configuration conf, CommonTarget target)
+		//{
+		//    conf.FastBuildBlobbed = false;
+		//    conf.IsBlobbed = false;
 
-        //    if (conf.IsFastBuild)
-        //        conf.ProjectName += "_NoBlob";
-        //}
-        #endregion
-        ////////////////////////////////////////////////////////////////////////
+		//    if (conf.IsFastBuild)
+		//        conf.ProjectName += "_NoBlob";
+		//}
+		#endregion
+		////////////////////////////////////////////////////////////////////////
 
-        ////////////////////////////////////////////////////////////////////////
-        #region Build system
-        [ConfigurePriority(ConfigurePriorities.BuildSystem)]
+		////////////////////////////////////////////////////////////////////////
+		#region Build system
+		[ConfigurePriority(ConfigurePriorities.BuildSystem)]
         [Configure(BuildSystem.MSBuild)]
         public virtual void ConfigureMSBuild(Configuration conf, CommonTarget target)
         {
@@ -177,10 +177,9 @@ namespace VoltSharpmake
         [Configure(Compiler.MSVC)]
         public virtual void ConfigureMSVC(Configuration conf, CommonTarget target)
         {
-			if (target.Optimization == Optimization.Dist)
-			{
-				conf.AdditionalCompilerOptimizeOptions.Add("/O2");
-			}
+            //conf.AdditionalCompilerOptions.Add("/dynamicdeopt");
+			//conf.AdditionalLinkerOptions.Add("/dynamicdeopt");
+			//conf.AdditionalLibrarianOptions.Add("/dynamicdeopt");
 		}
 
         [ConfigurePriority(ConfigurePriorities.Compiler)]
