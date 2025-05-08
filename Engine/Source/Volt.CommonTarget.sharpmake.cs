@@ -140,7 +140,7 @@ namespace VoltSharpmake
 				Optimization.Debug | Optimization.Development | Optimization.Dist,
                 Blob.NoBlob,
                 BuildSystem.MSBuild,
-                DotNetFramework.net6_0
+                DotNetFramework.v4_8
             );
 
             return new[] { defaultTarget };
