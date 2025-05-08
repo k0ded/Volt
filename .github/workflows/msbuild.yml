@@ -57,7 +57,6 @@ jobs:
         
     - name: Copy Files To VoltFPSGame Workspace 
       run: |
-        Get-ChildItem -path C:\P4ROOT\actions-runner\_work\Volt\Volt\Engine -exclude Intermediate | Copy-Item -Destination C:\VoltFPSGame_Fabian-Server_main\engine -Force
         C:\Scripts\Copy-LibsWithStructure.ps1
         
     - name: Upload To VoltFPSGame Perforce
