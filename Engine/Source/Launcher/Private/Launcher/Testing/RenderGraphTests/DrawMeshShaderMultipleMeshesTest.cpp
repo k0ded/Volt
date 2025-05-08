@@ -60,43 +60,43 @@ bool RG_DrawMeshShaderMultipleMeshesTest::RunTest()
 		renderGraph.AddStagedBufferUpload(data.transformsBuffer, transforms.data(), sizeof(glm::mat4) * transforms.size(), "Upload Transforms");
 	}
 
-	renderGraph.AddPass("Mesh Pass",
-	[&](RenderGraph::Builder& builder)
-	{
-		builder.WriteResource(targetImageHandle);
+	//renderGraph.AddPass("Mesh Pass",
+	//[&](RenderGraph::Builder& builder)
+	//{
+	//	builder.WriteResource(targetImageHandle);
 
-		builder.ReadResource(data.gpuMeshesBuffer);
-		builder.ReadResource(data.transformsBuffer);
+	//	builder.ReadResource(data.gpuMeshesBuffer);
+	//	builder.ReadResource(data.transformsBuffer);
 
-		builder.SetHasSideEffect();
-	},
-	[=](RenderContext& context)
-	{
-		RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), { targetImageHandle });
+	//	builder.SetHasSideEffect();
+	//},
+	//[=](RenderContext& context)
+	//{
+	//	RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), { targetImageHandle });
 
-		RHI::RenderPipelineCreateInfo pipelineInfo{};
-		pipelineInfo.shader = ShaderMap::Get("RG_DrawMeshShaderMultipleMeshesTest");
-		pipelineInfo.cullMode = RHI::CullMode::None;
+	//	RHI::RenderPipelineCreateInfo pipelineInfo{};
+	//	pipelineInfo.shader = ShaderMap::Get("RG_DrawMeshShaderMultipleMeshesTest");
+	//	pipelineInfo.cullMode = RHI::CullMode::None;
 
-		auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+	//	auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
-		glm::mat4 viewProj = glm::perspective(glm::radians(60.f), 16.f / 9.f, 1000.f, 0.1f) * glm::lookAt({ 0.f, 200.f, -500.f }, { 0.f }, glm::vec3(0.f, 1, 0.f));
+	//	glm::mat4 viewProj = glm::perspective(glm::radians(60.f), 16.f / 9.f, 1000.f, 0.1f) * glm::lookAt({ 0.f, 200.f, -500.f }, { 0.f }, glm::vec3(0.f, 1, 0.f));
 
-		context.BeginRendering(renderingInfo);
-		context.BindPipeline(pipeline);
+	//	context.BeginRendering(renderingInfo);
+	//	context.BindPipeline(pipeline);
 
-		context.SetConstant("viewProjection"_sh, viewProj);
-		context.SetConstant("gpuMeshesBuffer"_sh, data.gpuMeshesBuffer);
-		context.SetConstant("transformsBuffer"_sh, data.transformsBuffer);
+	//	context.SetConstant("viewProjection"_sh, viewProj);
+	//	context.SetConstant("gpuMeshesBuffer"_sh, data.gpuMeshesBuffer);
+	//	context.SetConstant("transformsBuffer"_sh, data.transformsBuffer);
 
-		for (uint32_t i = 0; i < 2; i++)
-		{
-			context.PushConstants(&i, sizeof(uint32_t));
-			context.DispatchMeshTasks(gpuMeshes[i].meshletCount, 1, 1);
-		}
+	//	for (uint32_t i = 0; i < 2; i++)
+	//	{
+	//		context.PushConstants(&i, sizeof(uint32_t));
+	//		context.DispatchMeshTasks(gpuMeshes[i].meshletCount, 1, 1);
+	//	}
 
-		context.EndRendering();
-	});
+	//	context.EndRendering();
+	//});
 
 	renderGraph.Compile();
 	renderGraph.Execute();

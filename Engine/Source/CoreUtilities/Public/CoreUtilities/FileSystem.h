@@ -24,7 +24,8 @@ namespace FileSystem
 	extern VTCOREUTIL_API bool Move(const std::filesystem::path& filepath, const std::filesystem::path& dstDir);
 	extern VTCOREUTIL_API bool MoveDirectory(const std::filesystem::path& srcDir, const std::filesystem::path& dstDir);
 	extern VTCOREUTIL_API bool CreateDirectories(const std::filesystem::path& path);
-	
+	extern VTCOREUTIL_API bool FilePathIsOnlyExtension(const std::filesystem::path& path);
+
 	extern VTCOREUTIL_API bool ShowDirectoryInExplorer(const std::filesystem::path& dir);
 	extern VTCOREUTIL_API bool ShowFileInExplorer(const std::filesystem::path& filepath);
 	extern VTCOREUTIL_API bool OpenFileExternally(const std::filesystem::path& filepath);

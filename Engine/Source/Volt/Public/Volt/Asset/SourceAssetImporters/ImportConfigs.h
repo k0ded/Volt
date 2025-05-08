@@ -1,7 +1,8 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include <AssetSystem/SourceAssetImportConfig.h>
 
+#include <glm/glm.hpp>
 #include <filesystem>
 
 namespace Volt
@@ -22,10 +23,8 @@ namespace Volt
 		OverwriteHard // Overwrite with hard normals
 	};
 
-	struct MeshSourceImportConfig
+	struct MeshSourceImportConfig : public SourceAssetImportConfig
 	{
-		std::filesystem::path destinationDirectory;
-		std::string destinationFilename;
 		std::string password;
 
 		glm::vec3 translation = 0.f;
@@ -46,13 +45,9 @@ namespace Volt
 		bool generateTangents = true;
 	};
 
-	struct TextureSourceImportConfig
+	struct TextureSourceImportConfig : public SourceAssetImportConfig
 	{
-		std::filesystem::path destinationDirectory;
-		std::string destinationFilename;
-
 		bool importMipMaps = true;
 		bool generateMipMaps = true;
-		bool createAsMemoryAsset = false;
 	};
 }

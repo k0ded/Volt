@@ -2,10 +2,8 @@
 .idea/
 .vscode/
 .idea/
-bin/
-bin-int/
-Intermediate/
 
+Engine/Intermediate/
 Engine/Source/SharpmakeProject/obj
 Engine/Source/SharpmakeProject/bin
 Engine/Source/SharpmakeProject/output
@@ -21,7 +19,7 @@ Engine/Binaries
 
 SideProjects/VoltLauncher/App/Data.yaml
 
-Project/Intermediates/
+Project/Intermediate/
 Project/Binaries
 Project/.vs/
 Project/*.csproj
@@ -29,6 +27,7 @@ Project/*.sln
 Project/Log
 Project/Cache
 Project/Generated
+
 
 *.sln
 *.vcxproj

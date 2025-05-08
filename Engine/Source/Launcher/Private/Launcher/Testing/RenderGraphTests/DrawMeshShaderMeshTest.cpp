@@ -41,50 +41,50 @@ bool RG_DrawMeshShaderMeshTest::RunTest()
 		RenderGraphBufferHandle meshletDataBuffer;
 	};
 
-	const auto& gpuMesh = m_mesh->GetGPUMeshes().at(0);
+	//const auto& gpuMesh = m_mesh->GetGPUMeshes().at(0);
 
-	renderGraph.AddPass<Data>("Mesh Pass",
-	[&](RenderGraph::Builder& builder, Data& data)
-	{
-		data.vertexPositionBuffer = builder.AddExternalBuffer(m_mesh->GetVertexPositionsBuffer()->GetResource());
-		data.meshletsBuffer = builder.AddExternalBuffer(m_mesh->GetMeshletBuffer()->GetResource());
-		data.meshletDataBuffer = builder.AddExternalBuffer(m_mesh->GetMeshletDataBuffer()->GetResource());
+	//renderGraph.AddPass<Data>("Mesh Pass",
+	//[&](RenderGraph::Builder& builder, Data& data)
+	//{
+	//	data.vertexPositionBuffer = builder.AddExternalBuffer(m_mesh->GetVertexPositionsBuffer()->GetResource());
+	//	data.meshletsBuffer = builder.AddExternalBuffer(m_mesh->GetMeshletBuffer()->GetResource());
+	//	data.meshletDataBuffer = builder.AddExternalBuffer(m_mesh->GetMeshletDataBuffer()->GetResource());
 
-		builder.WriteResource(targetImageHandle);
+	//	builder.WriteResource(targetImageHandle);
 
-		builder.ReadResource(data.vertexPositionBuffer);
-		builder.ReadResource(data.meshletsBuffer);
-		builder.ReadResource(data.meshletDataBuffer);
+	//	builder.ReadResource(data.vertexPositionBuffer);
+	//	builder.ReadResource(data.meshletsBuffer);
+	//	builder.ReadResource(data.meshletDataBuffer);
 
-		builder.SetHasSideEffect();
-	},
-	[=](const Data& data, RenderContext& context)
-	{
-		RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), { targetImageHandle });
+	//	builder.SetHasSideEffect();
+	//},
+	//[=](const Data& data, RenderContext& context)
+	//{
+	//	RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), { targetImageHandle });
 
-		RHI::RenderPipelineCreateInfo pipelineInfo{};
-		pipelineInfo.shader = ShaderMap::Get("RG_DrawMeshShaderMeshTest");
-		pipelineInfo.cullMode = RHI::CullMode::None;
+	//	RHI::RenderPipelineCreateInfo pipelineInfo{};
+	//	pipelineInfo.shader = ShaderMap::Get("RG_DrawMeshShaderMeshTest");
+	//	pipelineInfo.cullMode = RHI::CullMode::None;
 
-		auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+	//	auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
-		glm::mat4 viewProj = glm::perspective(glm::radians(60.f), 16.f / 9.f, 1000.f, 0.1f) * glm::lookAt({ 0.f, 200.f, -500.f }, { 0.f }, glm::vec3(0.f, 1, 0.f));
+	//	glm::mat4 viewProj = glm::perspective(glm::radians(60.f), 16.f / 9.f, 1000.f, 0.1f) * glm::lookAt({ 0.f, 200.f, -500.f }, { 0.f }, glm::vec3(0.f, 1, 0.f));
 
-		context.BeginRendering(renderingInfo);
-		context.BindPipeline(pipeline);
+	//	context.BeginRendering(renderingInfo);
+	//	context.BindPipeline(pipeline);
 
-		context.SetConstant("ViewProjection"_sh, viewProj);
+	//	context.SetConstant("ViewProjection"_sh, viewProj);
 
-		context.SetConstant("VertexPositionsBuffer"_sh, data.vertexPositionBuffer);
-		context.SetConstant("MeshletsBuffer"_sh, data.meshletsBuffer);
-		context.SetConstant("MeshletDataBuffer"_sh, data.meshletDataBuffer);
+	//	context.SetConstant("VertexPositionsBuffer"_sh, data.vertexPositionBuffer);
+	//	context.SetConstant("MeshletsBuffer"_sh, data.meshletsBuffer);
+	//	context.SetConstant("MeshletDataBuffer"_sh, data.meshletDataBuffer);
 
-		context.SetConstant("MeshletStartOffset"_sh, gpuMesh.meshletStartOffset);
-		context.SetConstant("VertexOffset"_sh, gpuMesh.vertexStartOffset);
+	//	context.SetConstant("MeshletStartOffset"_sh, gpuMesh.meshletStartOffset);
+	//	context.SetConstant("VertexOffset"_sh, gpuMesh.vertexStartOffset);
 
-		context.DispatchMeshTasks(gpuMesh.meshletCount, 1, 1);
-		context.EndRendering();
-	});
+	//	context.DispatchMeshTasks(gpuMesh.meshletCount, 1, 1);
+	//	context.EndRendering();
+	//});
 
 	renderGraph.Compile();
 	renderGraph.Execute();

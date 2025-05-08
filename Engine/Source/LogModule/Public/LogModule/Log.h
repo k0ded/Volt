@@ -18,15 +18,7 @@
 
 namespace spdlog
 {
-	class logger;
-
-	namespace sinks
-	{
-		template<typename Mutex>
-		class rotating_file_sink;
-
-		using rotating_file_sink_mt = rotating_file_sink<std::mutex>;
-	}
+	class async_logger;
 }
 
 struct LogCallbackData
@@ -58,7 +50,6 @@ public:
 		Get().LogMessage(severity, std::string(category.GetName()), message);
 	}
 
-	void SetLogOutputFilepath(const std::filesystem::path& path);
 	LogCallbackHandle RegisterCallback(const std::function<void(const LogCallbackData& callbackData)>& callback);
 	void UnregisterCallback(LogCallbackHandle handle);
 
@@ -71,8 +62,7 @@ private:
 
 	inline static Log* s_instance = nullptr;
 
-	std::shared_ptr<spdlog::logger> m_logger;
-	std::shared_ptr<spdlog::sinks::rotating_file_sink_mt> m_rotatingFileSink;
+	std::shared_ptr<spdlog::async_logger> m_logger;
 
 	struct CallbackData
 	{

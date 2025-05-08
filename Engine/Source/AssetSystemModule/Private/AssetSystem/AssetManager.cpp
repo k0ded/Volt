@@ -311,71 +311,82 @@ namespace Volt
 	{
 		auto& instance = Get();
 
-		if (!GetAssetSerializerRegistry().HasSerializer(asset->GetType()))
-		{
-			VT_LOGC(Error, LogAssetSystem, "No exporter for asset {0} found!", asset->handle);
-			return;
-		}
-
 		if (!asset->IsValid())
 		{
-			VT_LOGC(Error, LogAssetSystem, "Unable to save invalid asset {0}!", asset->handle);
+			const std::string assetName = asset->assetName.empty() ? "NULL" : asset->assetName;
+			VT_LOGC(Error, LogAssetSystem, "Asset {} with handle {} is not valid, and not saveable!", assetName, asset->handle);
+
 			return;
 		}
 
-		if (targetFilePath.extension() != ".vtasset")
+		if (FileSystem::FilePathIsOnlyExtension(targetFilePath) || targetFilePath.stem().empty())
 		{
-			VT_LOGC(Error, LogAssetSystem, "Invalid extension for asset {0}! Expected extension '.vtasset' but recieved a path with extension '{1}'",asset->handle, targetFilePath.extension().string());
+			VT_LOGC(Error, LogAssetSystem, "No filename was provided while trying to save asset {} with handle {}!", asset->assetName, asset->handle);
 			return;
 		}
 
-		// If the asset already exists in the registry, we only update the file path
-		if (!instance.m_assetRegistry.contains(asset->handle))
+		if (IsMemoryAsset(asset->handle))
 		{
-			AssetMetadata& metaData = instance.m_assetRegistry[asset->handle];
-			metaData.filePath = GetCleanAssetFilePath(targetFilePath);
-			metaData.handle = asset->handle;
-			metaData.isLoaded = true;
-			metaData.type = asset->GetType();
+			asset->assetName = targetFilePath.stem().string();
 		}
 		else
 		{
-			WriteLock lock{ instance.m_assetRegistryMutex };
-			AssetMetadata& metaData = instance.m_assetRegistry[asset->handle];
-			metaData.filePath = GetCleanAssetFilePath(targetFilePath);
-		}
+			const std::string assetName = asset->assetName.empty() ? "NULL" : asset->assetName;
 
-		AssetMetadata metadata = s_nullMetadata;
-
-		{
-			ReadLock lock{ instance.m_assetRegistryMutex };
-			metadata = GetMetadataFromHandle(asset->handle);
-
-			if (metadata.isMemoryAsset)
+			if (targetFilePath.extension() != ".vtasset")
 			{
-				VT_LOGC(Warning, LogAssetSystem, "Memory Asset with handle {0} is a memory asset and should not be in the asset registry!", asset->handle);
+				VT_LOGC(Error, LogAssetSystem, "Invalid extension for asset {} with handle {}! Expected extension '.vtasset' but recieved a path with extension '{}'", assetName, asset->handle, targetFilePath.extension().string());
 				return;
 			}
 
-			asset->assetName = metadata.filePath.stem().string();
-		}
-
-		{
-#ifndef VT_DIST
-			ScopedTimer timer{};
-#endif
-			GetAssetSerializerRegistry().GetSerializer(metadata.type).Serialize(metadata, asset);
-
-#ifndef VT_DIST
-			VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", metadata.handle, metadata.filePath, timer.GetTime<Time::Seconds>());
-#endif
-		}
-
-		{
-			WriteLock lock{ instance.m_assetCacheMutex };
-			if (!instance.m_assetCache.contains(asset->handle))
+			if (!GetAssetSerializerRegistry().HasSerializer(asset->GetType()))
 			{
-				instance.m_assetCache.emplace(asset->handle, asset);
+				VT_LOGC(Error, LogAssetSystem, "No exporter for asset {} with handle {} and type {} does not exist!", assetName, asset->handle, asset->GetType()->GetName());
+				return;
+			}
+
+			// If the asset already exists in the registry, we only update the file path
+			if (!instance.m_assetRegistry.contains(asset->handle))
+			{
+				AssetMetadata& metaData = instance.m_assetRegistry[asset->handle];
+				metaData.filePath = GetCleanAssetFilePath(targetFilePath);
+				metaData.handle = asset->handle;
+				metaData.isLoaded = true;
+				metaData.type = asset->GetType();
+			}
+			else
+			{
+				WriteLock lock{ instance.m_assetRegistryMutex };
+				AssetMetadata& metaData = instance.m_assetRegistry[asset->handle];
+				metaData.filePath = GetCleanAssetFilePath(targetFilePath);
+			}
+
+			AssetMetadata metadata = s_nullMetadata;
+
+			{
+				ReadLock lock{ instance.m_assetRegistryMutex };
+				metadata = GetMetadataFromHandle(asset->handle);
+
+				asset->assetName = metadata.filePath.stem().string();
+			}
+
+			{
+#ifndef VT_DIST
+				ScopedTimer timer{};
+#endif
+				GetAssetSerializerRegistry().GetSerializer(metadata.type).Serialize(metadata, asset);
+
+#ifndef VT_DIST
+				VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", metadata.handle, metadata.filePath, timer.GetTime<Time::Seconds>());
+#endif
+			}
+
+			{
+				WriteLock lock{ instance.m_assetCacheMutex };
+				if (!instance.m_assetCache.contains(asset->handle))
+				{
+					instance.m_assetCache.emplace(asset->handle, asset);
+				}
 			}
 		}
 	}

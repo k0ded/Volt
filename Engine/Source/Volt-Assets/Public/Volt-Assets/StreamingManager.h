@@ -16,6 +16,8 @@
 #include <unordered_set>
 #include <functional>
 
+VT_DECLARE_LOG_CATEGORY(LogStreamingManager, LogVerbosity::Trace);
+
 namespace Volt
 {
 	class ScenePrimitiveData;

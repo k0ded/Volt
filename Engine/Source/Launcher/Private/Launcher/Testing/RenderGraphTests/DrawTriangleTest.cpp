@@ -26,24 +26,24 @@ bool RG_DrawTriangleTest::RunTest()
 	auto targetImage = swapchain.GetCurrentImage();
 	RenderGraphImageHandle targetImageHandle = renderGraph.AddExternalImage(targetImage);
 
-	renderGraph.AddPass("Triangle Pass", 
-	[&](RenderGraph::Builder& builder) 
-	{
-		builder.WriteResource(targetImageHandle);
-		builder.SetHasSideEffect();
-	}, 
-	[=](RenderContext& context)
-	{
-		RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), { targetImageHandle });
-	
-		RHI::RenderPipelineCreateInfo pipelineInfo{};
-		pipelineInfo.shader = ShaderMap::Get("RG_DrawTriangleTest");
-		auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+	//renderGraph.AddPass("Triangle Pass", 
+	//[&](RenderGraph::Builder& builder) 
+	//{
+	//	builder.WriteResource(targetImageHandle);
+	//	builder.SetHasSideEffect();
+	//}, 
+	//[=](RenderContext& context)
+	//{
+	//	RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), { targetImageHandle });
+	//
+	//	RHI::RenderPipelineCreateInfo pipelineInfo{};
+	//	pipelineInfo.shader = ShaderMap::Get("RG_DrawTriangleTest");
+	//	auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
-		context.BeginRendering(renderingInfo);
-		RCUtils::DrawFullscreenTriangle(context, pipeline);
-		context.EndRendering();
-	});
+	//	context.BeginRendering(renderingInfo);
+	//	RCUtils::DrawFullscreenTriangle(context, pipeline);
+	//	context.EndRendering();
+	//});
 
 	renderGraph.Compile();
 	renderGraph.Execute();

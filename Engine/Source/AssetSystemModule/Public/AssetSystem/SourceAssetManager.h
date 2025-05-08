@@ -5,6 +5,7 @@
 #include "AssetSystem/SourceAssetImporterRegistry.h"
 #include "AssetSystem/SourceAssetImporter.h"
 #include "AssetSystem/AssetManager.h"
+#include "AssetSystem/SourceAssetImportConfig.h"
 
 #include <JobSystem/JobPromise.h>
 #include <CoreUtilities/Containers/Vector.h>
@@ -26,6 +27,8 @@ namespace Volt
 		template<typename ConfigType>
 		static JobFuture<Vector<Ref<Asset>>> ImportSourceAsset(const std::filesystem::path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
 		{
+			static_assert(std::is_base_of_v<SourceAssetImportConfig, ConfigType>);
+
 			VT_ENSURE(s_instance);
 			VT_ENSURE(!filepath.empty());
 
@@ -36,12 +39,14 @@ namespace Volt
 				return importer.Import(AssetManager::GetFilesystemPath(filepath), config, userData);
 			};
 
-			return s_instance->ImportSourceAssetInternal(std::move(importFunc), filepath);
+			return s_instance->ImportSourceAssetInternal(std::move(importFunc), config, filepath);
 		}
 
 		template<typename ConfigType>
 		static void ImportSourceAsset(const std::filesystem::path& filepath, const ConfigType& config, const ImportedCallbackFunc& importedCallback, const SourceAssetUserImportData& userData = {})
 		{
+			static_assert(std::is_base_of_v<SourceAssetImportConfig, ConfigType>);
+
 			VT_ENSURE(s_instance);
 			VT_ENSURE(importedCallback);
 			VT_ENSURE(!filepath.empty());
@@ -53,7 +58,7 @@ namespace Volt
 				return importer.Import(AssetManager::GetFilesystemPath(filepath), config, userData);
 			};
 
-			s_instance->ImportSourceAssetInternal(std::move(importFunc), importedCallback, filepath);
+			s_instance->ImportSourceAssetInternal(std::move(importFunc), importedCallback, config, filepath);
 		}
 
 		static SourceAssetFileInformation GetSourceAssetFileInformation(const std::filesystem::path& filepath);
@@ -69,8 +74,8 @@ namespace Volt
 			std::string debugString;
 		};
 
-		JobFuture<Vector<Ref<Asset>>> ImportSourceAssetInternal(ImportJobFunc&& importFunc, const std::filesystem::path& filepath);
-		void ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const std::filesystem::path& filepath);
+		JobFuture<Vector<Ref<Asset>>> ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
+		void ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
 
 		ThreadSafeQueue<ImportJob>& GetOrCreateQueue(const std::string& extension);
 		void RunAssetImportWorker();

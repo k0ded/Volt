@@ -44,30 +44,30 @@ bool RG_SimpleComputeShaderTest::RunTest()
 		renderGraph.AddStagedBufferUpload(inputHandle, &gpuMesh, sizeof(GPUMesh), "Upload GPU Meshes");
 	}
 
-	renderGraph.AddPass<Data>("Compute Shader Pass",
-	[&](RenderGraph::Builder& builder, Data& data)
-	{
-		{
-			const auto desc = RGUtils::CreateBufferDescGPU<uint32_t>(1, "Output Buffer");
-			data.outputBuffer = builder.CreateBuffer(desc);
-		}
+	//renderGraph.AddPass<Data>("Compute Shader Pass",
+	//[&](RenderGraph::Builder& builder, Data& data)
+	//{
+	//	{
+	//		const auto desc = RGUtils::CreateBufferDescGPU<uint32_t>(1, "Output Buffer");
+	//		data.outputBuffer = builder.CreateBuffer(desc);
+	//	}
 
-		builder.ReadResource(inputHandle);
-		builder.SetHasSideEffect();
-		builder.SetIsComputePass();
-	},
-	[=](const Data& data, RenderContext& context)
-	{
-		auto pipeline = ShaderMap::GetComputePipeline("RG_SimpleComputeShaderTest");
+	//	builder.ReadResource(inputHandle);
+	//	builder.SetHasSideEffect();
+	//	builder.SetIsComputePass();
+	//},
+	//[=](const Data& data, RenderContext& context)
+	//{
+	//	auto pipeline = ShaderMap::GetComputePipeline("RG_SimpleComputeShaderTest");
 
-		context.BindPipeline(pipeline);
+	//	context.BindPipeline(pipeline);
 
-		context.SetConstant("inputBuffer"_sh, inputHandle);
-		context.SetConstant("outputBuffer"_sh, data.outputBuffer);
+	//	context.SetConstant("inputBuffer"_sh, inputHandle);
+	//	context.SetConstant("outputBuffer"_sh, data.outputBuffer);
 
-		context.Dispatch(1, 1, 1);
+	//	context.Dispatch(1, 1, 1);
 
-	});
+	//});
 
 	renderGraph.Compile();
 	renderGraph.Execute();

@@ -44,7 +44,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	JobFuture<Vector<Ref<Asset>>> SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const std::filesystem::path& filepath)
+	JobFuture<Vector<Ref<Asset>>> SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath)
 	{
 		const std::string extension = filepath.extension().string();
 
@@ -55,19 +55,29 @@ namespace Volt
 		}
 
 		auto resultPromise = CreateRef<JobPromise<Vector<Ref<Asset>>>>();
-		JobID importJobId = JobSystem::CreateJob([this, extension, importFunc, resultPromise]()
+		JobID importJobId = JobSystem::CreateJob([this, extension, importFunc, resultPromise, importConfig]()
 		{
 			VT_PROFILE_SCOPE("Import Asset Job");
 
 			auto result = importFunc();
 
-			for (const auto asset : result)
+			if (importConfig.createAsMemoryAsset)
 			{
-				std::filesystem::path filePath = AssetManager::GetFilePathFromAssetHandle(asset->handle);
-				filePath = GetNonExistingFilePath(filePath.parent_path(), filePath.stem().string());
-				AssetManager::SaveAssetAs(asset, filePath);
+				for (const auto asset : result)
+				{
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} with handle {} was imported!", asset->assetName, asset->handle);
+				}
+			}
+			else
+			{
+				for (const auto asset : result)
+				{
+					std::filesystem::path filePath = AssetManager::GetFilePathFromAssetHandle(asset->handle);
+					filePath = GetNonExistingFilePath(filePath.parent_path(), filePath.stem().string());
+					AssetManager::SaveAssetAs(asset, filePath);
 
-				VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->assetName, filePath);
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->assetName, filePath);
+				}
 			}
 
 			resultPromise->SetValue(result);
@@ -91,7 +101,7 @@ namespace Volt
 		return resultPromise->GetFuture();
 	}
 
-	void SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const std::filesystem::path& filepath)
+	void SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath)
 	{
 		const std::string extension = filepath.extension().string();
 
@@ -101,19 +111,29 @@ namespace Volt
 			return;
 		}
 
-		JobID importJobId = JobSystem::CreateJob([this, extension, importFunc, importedCallback]()
+		JobID importJobId = JobSystem::CreateJob([this, extension, importFunc, importedCallback, importConfig]()
 		{
 			VT_PROFILE_SCOPE("Import Asset Job");
 
 			auto result = importFunc();
 
-			for (const auto asset : result)
+			if (importConfig.createAsMemoryAsset)
 			{
-				std::filesystem::path filePath = AssetManager::GetFilePathFromAssetHandle(asset->handle);
-				filePath = GetNonExistingFilePath(filePath.parent_path(), filePath.stem().string());
-				AssetManager::SaveAssetAs(asset, filePath);
+				for (const auto asset : result)
+				{
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} with handle {} was imported!", asset->assetName, asset->handle);
+				}
+			}
+			else
+			{
+				for (const auto asset : result)
+				{
+					std::filesystem::path filePath = AssetManager::GetFilePathFromAssetHandle(asset->handle);
+					filePath = GetNonExistingFilePath(filePath.parent_path(), filePath.stem().string());
+					AssetManager::SaveAssetAs(asset, filePath);
 
-				VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->assetName, filePath);
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->assetName, filePath);
+				}
 			}
 
 			*m_isImporterInUseMap[extension] = false;

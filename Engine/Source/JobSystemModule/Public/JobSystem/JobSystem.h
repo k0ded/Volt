@@ -2,6 +2,7 @@
 
 #include "JobSystem/Job.h"
 #include "JobSystem/JobQueueLocking.h"
+#include "JobSystem/JobQueue.h"
 #include "JobSystem/JobAllocator.h"
 
 #include <SubSystem/SubSystem.h>
@@ -52,6 +53,7 @@ namespace Volt
 			//Vector<JobQueue> jobQueues;
 			Vector<JobQueueLocking> jobQueues;
 			JobQueueLocking mainThreadQueue;
+			//JobQueue mainThreadQueue;
 		};
 
 		struct AllocatedJob
