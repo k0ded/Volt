@@ -940,6 +940,7 @@ namespace Volt
 		for (uint32_t i = 0; i < static_cast<uint32_t>(materials.size()); i++)
 		{
 			voltMesh->m_mesh->m_materialTable.SetMaterial(materials[i]->GetRenderMaterial(), i);
+			voltMesh->m_materials.emplace(i, materials[i]->handle);
 		}
 
 		voltMesh->FinalizeDeserialization();
@@ -995,6 +996,7 @@ namespace Volt
 		for (uint32_t i = 0; i < static_cast<uint32_t>(materials.size()); i++)
 		{
 			voltMesh->m_mesh->m_materialTable.SetMaterial(materials[i]->GetRenderMaterial(), i);
+			voltMesh->m_materials.emplace(i, materials[i]->handle);
 		}
 
 		voltMesh->FinalizeDeserialization();

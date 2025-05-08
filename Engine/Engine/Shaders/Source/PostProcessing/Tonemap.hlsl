@@ -92,6 +92,6 @@ Output main(FullscreenTriangleVertex input)
     float3 dither = RemapPDFTriUnity(BlueNoiseRGBA(input.position.xy, FrameIndex).rgb) / 254.f;
 
     Output output;
-    output.output = float4(LinearToSRGB(pixelColor) + dither, 1.f);
+    output.output = float4(LinearToSRGB(pixelColor + dither) , 1.f);
     return output;
-}
+} 
