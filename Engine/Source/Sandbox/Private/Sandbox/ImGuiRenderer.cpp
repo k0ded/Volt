@@ -579,7 +579,7 @@ void Sandbox::DrawMenuBar()
 
 		if (ImGui::BeginMenu("Tools"))
 		{
-			if (ImGui::BeginMenu("Maya"))
+			/*if (ImGui::BeginMenu("Maya"))
 			{
 				if (ImGui::MenuItem("Install Maya tools..."))
 				{
@@ -587,17 +587,17 @@ void Sandbox::DrawMenuBar()
 				}
 
 				ImGui::EndMenu();
-			}
+			}*/
 
-			if (ImGui::BeginMenu("Asset Browser"))
-			{
-				//if (ImGui::MenuItem("Open new Asset Browser"))
-				//{
-				//	EditorLibrary::Register<AssetBrowserPanel>(myRuntimeScene, "##Secondary" + std::to_string(myAssetBrowserCount++));
-				//}
+			//if (ImGui::BeginMenu("Asset Browser"))
+			//{
+			//	//if (ImGui::MenuItem("Open new Asset Browser"))
+			//	//{
+			//	//	EditorLibrary::Register<AssetBrowserPanel>(myRuntimeScene, "##Secondary" + std::to_string(myAssetBrowserCount++));
+			//	//}
 
-				ImGui::EndMenu();
-			}
+			//	ImGui::EndMenu();
+			//}
 
 			std::map<std::string, Vector<Ref<EditorWindow>>> categorizedEditors;
 			Vector<Ref<EditorWindow>> uncategorizedEditors;
@@ -620,20 +620,9 @@ void Sandbox::DrawMenuBar()
 				{
 					for (const auto& editor : editors)
 					{
-						bool open = editor->IsOpen();
-
 						if (ImGui::MenuItem(editor->GetTitle().c_str(), ""))
 						{
-							open = !open;
-
-							if (open)
-							{
-								editor->Open();
-							}
-							else
-							{
-								editor->Close();
-							}
+							editor->Open();
 						}
 					}
 					ImGui::EndMenu();

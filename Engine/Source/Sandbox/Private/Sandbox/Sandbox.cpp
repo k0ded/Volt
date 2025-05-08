@@ -175,16 +175,30 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::Register<CurveGraphPanel>("Advanced");
 #endif
 
-	EditorLibrary::Register<PropertiesPanel>("Level Editor", m_runtimeScene, m_sceneRenderer, m_sceneState, "");
-	EditorLibrary::Register<LogPanel>("Advanced");
-	EditorLibrary::Register<SceneViewPanel>("Level Editor", m_runtimeScene, "");
 	EditorLibrary::Register<AssetRegistryPanel>("Advanced");
-	EditorLibrary::Register<VisionPanel>("", m_runtimeScene, m_editorCameraController.get());
-	EditorLibrary::Register<EngineStatisticsPanel>("Advanced", m_runtimeScene, m_sceneRenderer, m_gameSceneRenderer);
-	EditorLibrary::Register<EditorSettingsPanel>("", UserSettingsManager::GetSettings());
-	EditorLibrary::Register<PhysicsPanel>("Physics");
+	EditorLibrary::Register<LogPanel>("Advanced");
 	EditorLibrary::Register<RendererSettingsPanel>("Advanced", m_sceneRenderer);
 	EditorLibrary::Register<RenderGraphDebuggerPanel>("Advanced", m_sceneRenderer);
+	m_navigationPanel = EditorLibrary::Register<NavigationPanel>("Advanced", m_runtimeScene);
+	EditorLibrary::Register<EngineStatisticsPanel>("Advanced", m_runtimeScene, m_sceneRenderer, m_gameSceneRenderer);
+	EditorLibrary::RegisterWithType<TextureViewerPanel>("Advanced", AssetTypes::Texture);
+
+	//EditorLibrary::RegisterWithType<CharacterEditorPanel>("Animation", AssetTypes::AnimatedCharacter); // we dont have animated characters anymore
+	EditorLibrary::RegisterWithType<SkeletonEditorPanel>("Animation", AssetTypes::Skeleton);
+	EditorLibrary::RegisterWithType<AnimationEditorPanel>("Animation", AssetTypes::Animation);
+	EditorLibrary::RegisterWithType<BlendSpaceEditorPanel>("Animation", AssetTypes::BlendSpace);
+	//EditorLibrary::RegisterWithType<MotionWeaveDatabasePanel>("Animation", AssetTypes::MotionWeave); // motion weave not working yet
+
+	m_assetBrowserPanel = EditorLibrary::Register<AssetBrowserPanel>("Asset Browser", m_runtimeScene, "##Main");
+
+	EditorLibrary::Register<PropertiesPanel>("Level Editor", m_runtimeScene, m_sceneRenderer, m_sceneState, "");
+	EditorLibrary::Register<SceneViewPanel>("Level Editor", m_runtimeScene, "");
+	m_viewportPanel = EditorLibrary::Register<ViewportPanel>("Level Editor", m_sceneRenderer, m_runtimeScene, m_editorCameraController.get(), m_sceneState);
+	m_gameViewPanel = EditorLibrary::Register<GameViewPanel>("Level Editor", m_gameSceneRenderer, m_runtimeScene, m_sceneState);
+
+	EditorLibrary::Register<VisionPanel>("", m_runtimeScene, m_editorCameraController.get());
+	EditorLibrary::Register<EditorSettingsPanel>("", UserSettingsManager::GetSettings());
+	EditorLibrary::Register<PhysicsPanel>("Physics");
 	EditorLibrary::Register<VertexPainterPanel>("", m_runtimeScene, m_editorCameraController);
 
 	EditorLibrary::Register<SceneSettingsPanel>("", m_runtimeScene);
@@ -192,22 +206,13 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::Register<RenderResourcesPanel>("");
 	EditorLibrary::Register<GameUIEditorPanel>("UI");
 
-	m_navigationPanel = EditorLibrary::Register<NavigationPanel>("Advanced", m_runtimeScene);
-	m_viewportPanel = EditorLibrary::Register<ViewportPanel>("Level Editor", m_sceneRenderer, m_runtimeScene, m_editorCameraController.get(), m_sceneState);
-	m_gameViewPanel = EditorLibrary::Register<GameViewPanel>("Level Editor", m_gameSceneRenderer, m_runtimeScene, m_sceneState);
-	m_assetBrowserPanel = EditorLibrary::Register<AssetBrowserPanel>("", m_runtimeScene, "##Main");
+
 
 	EditorLibrary::RegisterWithType<MosaicEditorPanel>("", AssetTypes::Material);
-	EditorLibrary::RegisterWithType<CharacterEditorPanel>("Animation", AssetTypes::AnimatedCharacter);
 	//EditorLibrary::RegisterWithType<MaterialEditorPanel>("", , myRuntimeScene);
-	EditorLibrary::RegisterWithType<SkeletonEditorPanel>("Animation", AssetTypes::Skeleton);
-	EditorLibrary::RegisterWithType<AnimationEditorPanel>("Animation", AssetTypes::Animation);
-	EditorLibrary::RegisterWithType<ParticleEmitterEditor>("", AssetTypes::ParticlePreset);
-	EditorLibrary::RegisterWithType<BlendSpaceEditorPanel>("Animation", AssetTypes::BlendSpace);
-	EditorLibrary::RegisterWithType<MeshPreviewPanel>("", AssetTypes::Mesh);
-	EditorLibrary::RegisterWithType<ShaderEditorPanel>("Shader", AssetTypes::ShaderDefinition);
-	EditorLibrary::RegisterWithType<MotionWeaveDatabasePanel>("Animation", AssetTypes::MotionWeave);
-	EditorLibrary::RegisterWithType<TextureViewerPanel>("Advanced", AssetTypes::Texture);
+	//EditorLibrary::RegisterWithType<ParticleEmitterEditor>("", AssetTypes::ParticlePreset); // did not work
+	//EditorLibrary::RegisterWithType<MeshPreviewPanel>("", AssetTypes::Mesh); //did not work
+	//EditorLibrary::RegisterWithType<ShaderEditorPanel>("Shader", AssetTypes::ShaderDefinition); //not in use / does not work
 
 	EditorLibrary::Sort();
 
