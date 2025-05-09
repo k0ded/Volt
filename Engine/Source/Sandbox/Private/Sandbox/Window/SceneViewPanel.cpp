@@ -157,6 +157,12 @@ void SceneViewPanel::UpdateMainContent()
 						Volt::EntityID id = *(((Volt::EntityID*)payload->Data) + i);
 						Volt::Entity child = m_scene->GetEntityFromID(id);
 
+						//if the dropped entity doesnt have a parent, no need to unparent it again
+						if (!child.HasParent())
+						{
+							continue;
+						}
+
 						Ref<ParentChildData> data = CreateRef<ParentChildData>();
 						data->myParent = child.GetParent();
 						data->myChild = child;
@@ -164,12 +170,15 @@ void SceneViewPanel::UpdateMainContent()
 
 						EditorUtils::MarkEntityAsEdited(child);
 						EditorUtils::MarkEntityAsEdited(child.GetParent());
-
 						m_scene->UnparentEntity(child);
 					}
 
-					Ref<ParentingCommand> command = CreateRef<ParentingCommand>(undoData, ParentingAction::Unparent);
-					EditorCommandStack::PushUndo(command);
+					//undo data can be empty when trying to unchild an entity with no parent
+					if (!undoData.empty())
+					{
+						Ref<ParentingCommand> command = CreateRef<ParentingCommand>(undoData, ParentingAction::Unparent);
+						EditorCommandStack::PushUndo(command);
+					}
 				}
 
 				ImGui::EndDragDropTarget();
