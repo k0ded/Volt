@@ -228,8 +228,12 @@ namespace Volt
 			children.erase(it);
 		}
 
+		//we need to convert to world space before removing the parent because it takes the parent transform into account
 		ConvertToWorldSpace(entity);
 		entity.GetComponent<RelationshipComponent>().parent = Entity::NullID();
+
+		//we have to invalidate the transform here even though ConvertToWorldSpace already does it since it takes the parent into account
+		InvalidateEntityTransform(entity.GetID());
 	}
 
 	void Scene::InvalidateEntityTransform(const EntityID& entityId)
