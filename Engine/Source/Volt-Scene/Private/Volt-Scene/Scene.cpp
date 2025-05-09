@@ -274,8 +274,7 @@ namespace Volt
 				ent.SetTag("Directional Light");
 				ent.AddComponent<DirectionalLightComponent>();
 
-				auto& trans = ent.GetComponent<TransformComponent>();
-				trans.rotation = glm::quat{ glm::vec3{ glm::radians(120.f), 0.f, 0.f } };
+				ent.SetRotation(glm::quat{ glm::vec3{ glm::radians(120.f), 0.f, 0.f } });
 			}
 
 			// Skylight
