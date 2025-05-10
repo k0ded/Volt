@@ -3,6 +3,11 @@
 #include <Volt/Core/Base.h>
 #include <Volt-Scene/Components/CoreComponents.h>
 #include <Volt-Scene/Entity.h>
+#include <Volt-Scene/SceneSerializer.h>
+
+#include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
+#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
+
 
 #include <stack>
 #include "EditorCommand.h"
@@ -74,8 +79,7 @@ struct GizmoCommand : EditorCommand
 		myPreviousPositionValue(aGizmoData.previousPositionValue),
 		myPreviousRotationValue(aGizmoData.previousRotationValue),
 		myPreviousScaleValue(aGizmoData.previousScaleValue), myID(aGizmoData.id), myScene(aGizmoData.scene)
-	{
-	}
+	{}
 	void Execute() override {}
 
 	void Undo() override
@@ -122,7 +126,7 @@ struct GizmoCommand : EditorCommand
 		*myPositionAdress = myPreviousPositionValue;
 		*myRotationAdress = myPreviousRotationValue;
 		*myScaleAdress = myPreviousScaleValue;
-	
+
 		if (myScene)
 		{
 			myScene->InvalidateEntityTransform(myID);
@@ -145,8 +149,7 @@ struct MultiGizmoCommand : EditorCommand
 {
 	MultiGizmoCommand(Weak<Volt::Scene> scene, const Vector<std::pair<Volt::EntityID, Volt::TransformComponent>>& entities)
 		: myPreviousTransforms(entities), myScene(scene)
-	{
-	}
+	{}
 
 	void Execute() override {}
 
@@ -213,21 +216,51 @@ enum class ObjectStateAction
 
 struct ObjectStateCommand : EditorCommand
 {
-	ObjectStateCommand(Vector<Volt::Entity> anEntityList, ObjectStateAction anAction) :
-		myEntities(anEntityList), myAction(anAction)
+	ObjectStateCommand(Vector<Volt::Entity> entityList, ObjectStateAction action) :
+		m_Action(action)
 	{
-		if (anAction == ObjectStateAction::Delete)
+		VT_ENSURE(entityList.size() > 0);
+		m_TargetScene = entityList[0].GetScene();
+
+		m_EntityIDs.reserve(entityList.size());
+		for (Volt::Entity& entity : entityList)
 		{
-			CopyDataToRegistry();
+			m_EntityIDs.push_back(entity.GetID());
+
+			//if the action is delete, we need to save the data so that we can recreate the actor later
+			if (action == ObjectStateAction::Delete)
+			{
+				SerializeEntityToDataList(entity);
+			}
 		}
 	}
 
-	ObjectStateCommand(Volt::Entity anEntity, ObjectStateAction anAction) :
-		myAction(anAction)
+	ObjectStateCommand(Volt::Entity entity, ObjectStateAction action) :
+		m_Action(action)
 	{
-		Vector<Volt::Entity> list;
-		list.push_back(anEntity);
-		myEntities = list;
+		m_EntityIDs.push_back(entity.GetID());
+
+		m_TargetScene = entity.GetScene();
+
+		//if the action is delete, we need to save the data so that we can recreate the actor later
+		if (action == ObjectStateAction::Delete)
+		{
+			SerializeEntityToDataList(entity);
+		}
+	}
+
+	ObjectStateCommand(Vector<Volt::EntityID> entityIDs, Weak<Volt::Scene> targetScene, ObjectStateAction action) :
+		m_EntityIDs(entityIDs), m_TargetScene(targetScene), m_Action(action)
+	{
+		//if the action is delete, we need to save the data so that we can recreate the actor later
+		if (m_Action == ObjectStateAction::Delete)
+		{
+			for (Volt::EntityID& id : m_EntityIDs)
+			{
+				Volt::Entity entity = m_TargetScene->GetEntityFromID(id);
+				SerializeEntityToDataList(entity);
+			}
+		}
 	}
 
 	void Execute() override
@@ -235,69 +268,88 @@ struct ObjectStateCommand : EditorCommand
 
 	void Undo() override
 	{
-		if (myAction == ObjectStateAction::Create)
+		if (m_Action == ObjectStateAction::Create)
 		{
-			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(myEntities, ObjectStateAction::Delete);
-
+			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(m_EntityIDs, m_TargetScene, ObjectStateAction::Delete);
 			EditorCommandStack::PushRedo(command);
 
-			for (int i = 0; i < myEntities.size(); i++)
+			for (Volt::EntityID& id : m_EntityIDs)
 			{
-				myEntities[i].GetScene()->DestroyEntity(myEntities[i]);
+				Volt::Entity entity = m_TargetScene->GetEntityFromID(id);
+				m_TargetScene->DestroyEntity(entity);
 			}
 		}
-		else if (myAction == ObjectStateAction::Delete)
+		else if (m_Action == ObjectStateAction::Delete)
 		{
-			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(myEntities, ObjectStateAction::Create);
-			EditorCommandStack::PushRedo(command);
+			CreateEntitiesFromDataList();
 
-			for (int i = 0; i < myEntities.size(); i++)
-			{
-				// #TODO_Ivar: Reimplement
-				//myEntities[i].GetScene()->GetRegistry().AddEntity(myEntities[i].GetId());
-				//myEntities[i].Copy(myRegistry, myEntities[i].GetScene()->GetRegistry(), myEntities[i].GetScene()->GetScriptFieldCache(), myEntities[i].GetScene()->GetScriptFieldCache(), myEntities[i].GetId(), myEntities[i].GetId());
-			}
+			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(m_EntityIDs, m_TargetScene, ObjectStateAction::Create);
+			EditorCommandStack::PushRedo(command);
 		}
 	}
 
 	void Redo() override
 	{
-		if (myAction == ObjectStateAction::Create)
-		{
-			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(myEntities, ObjectStateAction::Delete);
+		//treat the Redo as an Undo
 
+		if (m_Action == ObjectStateAction::Create)
+		{
+			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(m_EntityIDs, m_TargetScene, ObjectStateAction::Delete);
 			EditorCommandStack::PushUndo(command, true);
 
-			for (int i = 0; i < myEntities.size(); i++)
+			for (Volt::EntityID& id : m_EntityIDs)
 			{
-				myEntities[i].GetScene()->DestroyEntity(myEntities[i]);
+				Volt::Entity entity = m_TargetScene->GetEntityFromID(id);
+				m_TargetScene->DestroyEntity(entity);
 			}
 		}
-		else if (myAction == ObjectStateAction::Delete)
+		else if (m_Action == ObjectStateAction::Delete)
 		{
-			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(myEntities, ObjectStateAction::Create);
+			CreateEntitiesFromDataList();
+
+			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(m_EntityIDs, m_TargetScene, ObjectStateAction::Create);
 			EditorCommandStack::PushUndo(command, true);
 
-			for (int i = 0; i < myEntities.size(); i++)
-			{
-				//myEntities[i].GetScene()->GetRegistry().AddEntity(myEntities[i].GetId());
-				//myEntities[i].Copy(myRegistry, myEntities[i].GetScene()->GetRegistry(), myEntities[i].GetScene()->GetScriptFieldCache(), myEntities[i].GetScene()->GetScriptFieldCache(), myEntities[i].GetId(), myEntities[i].GetId());
-			}
 		}
 	}
 
 private:
-	void CopyDataToRegistry()
+	void SerializeEntityToDataList(Volt::Entity entity)
 	{
-		for (int i = 0; i < myEntities.size(); i++)
+		YAMLMemoryStreamWriter writer{};
+
+		Volt::AssetMetadata fakeMetadata;
+		fakeMetadata.filePath = "Metadata Created By ObjectStateCommand.";
+		Volt::SceneSerializer::Get().SerializeEntity(entity.GetHandle(), fakeMetadata, entity.GetScene(), writer);
+
+		m_EntitiesDataList.push_back(writer.WriteAndGetBuffer());
+
+		writer.WriteAndGetBuffer();
+	}
+
+	void CreateEntitiesFromDataList()
+	{
+		for (Buffer& buffer : m_EntitiesDataList)
 		{
-			//Volt::Entity::Copy(myEntities[i].GetScene()->GetRegistry(), myRegistry, myEntities[i].GetScene()->GetScriptFieldCache(), myEntities[i].GetScene()->GetScriptFieldCache(), myEntities[i].GetId(), myEntities[i].GetId());
+			YAMLMemoryStreamReader reader;
+			reader.ConsumeBuffer(buffer);
+			Volt::AssetMetadata fakeMetadata;
+			fakeMetadata.filePath = "Metadata Created By ObjectStateCommand.";
+			Volt::SceneSerializer::Get().DeserializeEntity(m_TargetScene, fakeMetadata, reader);
+		}
+
+		//have to invalidate the transform after spawning the entity
+		//todo: make it so we dont need to manually invalidate
+		for (Volt::EntityID& id : m_EntityIDs)
+		{
+			m_TargetScene->InvalidateEntityTransform(id);
 		}
 	}
 
-	//Wire::Registry myRegistry;
-	Vector<Volt::Entity> myEntities;
-	ObjectStateAction myAction;
+	Weak<Volt::Scene> m_TargetScene;
+	Vector<Volt::EntityID> m_EntityIDs;
+	Vector<Buffer> m_EntitiesDataList;
+	ObjectStateAction m_Action;
 };
 
 enum class ParentingAction
