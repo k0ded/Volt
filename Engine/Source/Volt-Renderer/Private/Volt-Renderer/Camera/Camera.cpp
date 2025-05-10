@@ -11,10 +11,12 @@ namespace Volt
 		if (reverse)
 		{
 			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), aspect, m_farPlane, m_nearPlane);
+			m_nonReversedProjectionMatrix = glm::perspective(glm::radians(m_fieldOfView), aspect, m_nearPlane, m_farPlane);
 		}
 		else
 		{
 			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), aspect, m_nearPlane, m_farPlane);
+			m_nonReversedProjectionMatrix = m_projectionMatrix;
 		}
 		m_viewMatrix = glm::mat4(1.f);
 		m_isOrthographic = false;
@@ -26,6 +28,7 @@ namespace Volt
 		: m_nearPlane(nearPlane), m_farPlane(farPlane), m_left(left), m_right(right), m_bottom(bottom), m_top(top)
 	{
 		m_projectionMatrix = glm::ortho(left, right, bottom, top, nearPlane, farPlane);
+		m_nonReversedProjectionMatrix = m_projectionMatrix;
 		m_viewMatrix = glm::mat4(1.f);
 		m_isOrthographic = true;
 
@@ -42,10 +45,12 @@ namespace Volt
 		if (m_reversed)
 		{
 			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), m_aspecRatio, m_farPlane, m_nearPlane);
+			m_nonReversedProjectionMatrix = glm::perspective(glm::radians(m_fieldOfView), aspect, m_nearPlane, m_farPlane);
 		}
 		else
 		{
 			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), aspect, m_nearPlane, m_farPlane);
+			m_nonReversedProjectionMatrix = m_projectionMatrix;
 		}
 
 		m_isOrthographic = false;
@@ -64,15 +69,18 @@ namespace Volt
 		if (m_reversed)
 		{
 			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), m_aspecRatio, m_farPlane, m_nearPlane);
+			m_nonReversedProjectionMatrix = glm::perspective(glm::radians(m_fieldOfView), m_aspecRatio, m_nearPlane, m_farPlane);
 		}
 		else
 		{
 			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), m_aspecRatio, m_nearPlane, m_farPlane);
+			m_nonReversedProjectionMatrix = m_projectionMatrix;
 		}
 
 		if (glm::all(glm::notEqual(m_subpixelOffset, { 0.f })))
 		{
-			m_projectionMatrix = glm::translate(glm::mat4{ 1.f }, { offset.x, offset.y, 0.f })* m_projectionMatrix;
+			m_projectionMatrix = glm::translate(glm::mat4{ 1.f }, { offset.x, offset.y, 0.f }) * m_projectionMatrix;
+			m_nonReversedProjectionMatrix = glm::translate(glm::mat4{ 1.f }, { offset.x, offset.y, 0.f }) * m_nonReversedProjectionMatrix;
 		}
 	}
 
@@ -190,6 +198,7 @@ namespace Volt
 	void Camera::SetOrthographicProjection(float left, float right, float bottom, float top)
 	{
 		m_projectionMatrix = glm::ortho(left, right, bottom, top, m_nearPlane, m_farPlane);
+		m_nonReversedProjectionMatrix = m_projectionMatrix;
 		m_isOrthographic = true;
 
 		m_left = left;

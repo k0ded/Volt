@@ -113,7 +113,7 @@ namespace Volt::RHI
 		}
 
 		ReflectAllStages(specification, result);
-		//m_shaderCache->CacheShader(specification, result);
+		m_shaderCache->CacheShader(specification, result);
 
 		return result;
 	}
@@ -313,6 +313,8 @@ namespace Volt::RHI
 
 		sourcePtr->Release();
 		compilationResult->Release();
+
+		VT_LOGC(Info, LogVulkanRHI, "Successfully compiled shader {}!", sourceEntry.filePath);
 
 		return CompilationResult::Success;
 	}

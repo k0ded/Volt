@@ -425,4 +425,9 @@ namespace Volt::RHI
 	{
 		return m_hash;
 	}
+
+	bool D3D12Shader::IsValid() const
+	{
+		return true;
+	}
 }

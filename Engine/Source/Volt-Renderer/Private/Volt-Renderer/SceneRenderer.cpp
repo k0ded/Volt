@@ -21,7 +21,6 @@
 #include "Volt-Renderer/ShadowMappingUtility.h"
 
 #include "Volt-Renderer/Mesh/Mesh.h"
-#include "Volt-Renderer/Material.h"
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
@@ -33,6 +32,7 @@
 #include <RenderCore/RenderGraph/GPUReadbackBuffer.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/DefaultShaders.h>
+#include <RenderCore/DefaultBlendStates.h>
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Shader/Shader.h>
@@ -298,6 +298,20 @@ namespace Volt
 	};
 	REGISTER_SHADER(VisualizationFullscreenCS)
 
+	struct EditorGridVSPS
+	{
+		BEGIN_SHADER_DEFINITION(EditorGridVSPS)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridVS", RHI::ShaderStage::Vertex)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridPS", RHI::ShaderStage::Pixel)
+		END_SHADER_DEFINITION()
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+			SHADER_PARAMETER(glm::mat4, NonReversedInverseProjection)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(EditorGridVSPS)
+
 	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)
 		: m_renderScene(specification.renderScene), m_commandBufferSet(Renderer::GetFramesInFlight())
 	{
@@ -412,12 +426,8 @@ namespace Volt
 					AddPathTracingPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
 				}
 			
-				//m_gibs.Render(renderGraph, blackboard, m_frameIndex);
-				//m_ddgi.Render(renderGraph, rgBlackboard, m_scene->GetRenderScene());
-			
-				//ScreenSpaceReflections ssr(renderGraph, rgBlackboard);
-				//ssr.Execute(rgBlackboard.Get<ShadingOutputData>().colorOutput);
-			
+				AddGridPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput, camera);
+
 				blackboard.Add<FinalOutput>().colorOutput = blackboard.Get<ShadingOutputData>().colorOutput;
 				ExecutePostProcessingPasses(renderGraph, blackboard, timestep);
 			}
@@ -429,7 +439,9 @@ namespace Volt
 		else
 		{
 			RGUtils::ClearImage(renderGraph, renderGraph.AddExternalImage(m_outputImage), { 0.1f, 0.1f, 0.1f, 1.f });
+			AddGridPass(renderGraph, blackboard, renderGraph.AddExternalImage(m_outputImage), camera);
 		}
+
 
 		m_renderScene->EndFrame(renderGraph);
 
@@ -1118,7 +1130,7 @@ namespace Volt
 		[&](RenderGraph::Builder& builder, ShadingOutputData& data)
 		{
 			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "Shading Output");
+				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::R16G16B16A16_SFLOAT>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "Shading Output");
 				data.colorOutput = builder.CreateImage(desc);
 			}
 
@@ -1494,6 +1506,43 @@ namespace Volt
 			//context.SetParameters(parameters);
 			context.SetAccelerationStructure(m_renderScene->GetRayTracingScene()->GetAccelerationStructure());
 			context.TraceRays(sbt, m_width, m_height, 1);
+		});
+	}
+
+	void SceneRenderer::AddGridPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage, Ref<Camera> camera)
+	{
+		const auto& depthPrePass = blackboard.Get<DepthPrePass>();
+		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
+		const auto& viewUniformBuffer = blackboard.Get<ViewUniformBuffer>();
+
+		renderGraph.AddPass("Editor Grid",
+		[&](RenderGraph::Builder& builder) 
+		{
+			builder.WriteResource(dstImage);
+			builder.WriteResource(depthPrePass.depth);
+			builder.ReadResource(uniformBuffers.viewDataBuffer);
+		},
+		[=](RenderContext& context) 
+		{
+			RenderingInfo info = context.CreateRenderingInfo(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, { dstImage, depthPrePass.depth });
+			info.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
+			info.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
+
+			RHI::RenderPipelineCreateInfo pipelineInfo;
+			pipelineInfo.shader = ShaderMap::Get<EditorGridVSPS>();
+			pipelineInfo.attachmentBlendStates[0] = DefaultBlendStates::Alpha();
+
+			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+
+			EditorGridVSPS::Parameters parameters;
+			parameters.View = uniformBuffers.viewDataBuffer;
+			parameters.NonReversedInverseProjection = glm::inverse(camera->GetNonReversedProjection());
+
+			context.BeginRendering(info);
+			context.BindPipeline(pipeline);
+			context.SetParameters<EditorGridVSPS>(parameters);
+			context.Draw(3, 1, 0, 0);
+			context.EndRendering();
 		});
 	}
 

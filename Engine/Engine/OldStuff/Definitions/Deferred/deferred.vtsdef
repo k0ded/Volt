@@ -1,6 +1,0 @@
-name: "Illum"
-internal: false
-paths:
-  - "Engine/Shaders/Source/HLSL/Deferred/GBufferGeneration_vs.hlsl"
-  - "Engine/Shaders/Source/HLSL/Deferred/GBufferGeneration_ps.hlsl"
-inputTextures:

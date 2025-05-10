@@ -1,4 +1,0 @@
-name: "BloomDownsample"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/PostProcessing/Bloom/BloomDownsample_cs.hlsl"

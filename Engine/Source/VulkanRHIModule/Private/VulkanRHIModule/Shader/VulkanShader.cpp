@@ -85,6 +85,10 @@ namespace Volt::RHI
 
 		CreateDescriptorSetLayouts();
 		CalculateDescriptorPoolSizes(compilationResult);
+
+		// Will always be true after first successfull compilation.
+		m_hasCompiledAndValidBinaries = true;
+
 		return true;
 	}
 
@@ -534,5 +538,10 @@ namespace Volt::RHI
 			m_hash = Math::HashCombine(m_hash, std::hash<uint32_t>()(static_cast<uint32_t>(stage)));
 			m_hash = Math::HashCombine(m_hash, std::hash<std::string>()(sourceInfo.source));
 		}
+	}
+
+	bool VulkanShader::IsValid() const
+	{
+		return m_hasCompiledAndValidBinaries;
 	}
 }

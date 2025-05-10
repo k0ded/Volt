@@ -29,7 +29,7 @@ struct Input
 
 struct Output
 {
-    [[vt::r11f_g11f_b10f]] float3 output : SV_Target0;
+    [[vt::rgba16f]] float4 output : SV_Target0;
 };
 
 Output main(Input input)
@@ -48,6 +48,6 @@ Output main(Input input)
     //result = ApplyVolumetricFog(screenUV, 0.00001f, result, viewData, fogParams, constants.pointSampler, constants.integratedFogVolume);
 
     Output output;
-    output.output = result;
+    output.output = float4(result, 1.f);
     return output;
 }

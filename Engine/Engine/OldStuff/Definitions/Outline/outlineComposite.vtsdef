@@ -1,4 +1,0 @@
-name: "OutlineComposite"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/Outline/OutlineComposite_cs.hlsl"

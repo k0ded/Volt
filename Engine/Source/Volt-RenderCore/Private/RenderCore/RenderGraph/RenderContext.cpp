@@ -324,6 +324,8 @@ namespace Volt
 
 		ClearCurrentPipeline();
 		VT_ENSURE(pipeline);
+		VT_ENSURE(pipeline->GetShader());
+		VT_ENSURE_MSG(pipeline->GetShader()->IsValid(), "Shader in pipeline is not valid!");
 
 		m_currentRenderPipeline = pipeline;
 		m_commandBuffer->BindPipeline(pipeline);
@@ -339,6 +341,8 @@ namespace Volt
 
 		ClearCurrentPipeline();
 		VT_ENSURE(pipeline);
+		VT_ENSURE(pipeline->GetShader());
+		VT_ENSURE(pipeline->GetShader()->IsValid());
 
 		m_currentComputePipeline = pipeline;
 		m_commandBuffer->BindPipeline(pipeline);
@@ -351,6 +355,8 @@ namespace Volt
 	void RenderContext::BindPipeline(RawPtr<RHI::RayTracingPipeline> pipeline)
 	{
 		VT_PROFILE_FUNCTION();
+
+		VT_ENSURE(pipeline);
 
 		m_currentRayTracingPipeline = pipeline;
 		m_commandBuffer->BindPipeline(pipeline);

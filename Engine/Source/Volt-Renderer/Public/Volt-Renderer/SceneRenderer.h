@@ -135,8 +135,10 @@ namespace Volt
 		void AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
 
 		void AddVisualizationPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
-
 		void AddPathTracingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
+
+		// Editor passes, should be moved to some other place.
+		void AddGridPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage, Ref<Camera> camera);
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
 

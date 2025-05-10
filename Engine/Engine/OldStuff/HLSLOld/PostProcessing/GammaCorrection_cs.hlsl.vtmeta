@@ -1,6 +1,0 @@
-Metadata:
-  assetHandle: 6593565594344882447
-  filePath: Engine/Shaders/Source/HLSL/PostProcessing/GammaCorrection_cs.hlsl
-  type: 128
-  Dependencies:
-    []

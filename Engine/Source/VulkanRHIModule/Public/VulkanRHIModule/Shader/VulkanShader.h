@@ -31,6 +31,7 @@ namespace Volt::RHI
 		VT_NODISCARD bool HasConstants() const override;
 		ShaderType GetShaderType() const override;
 		size_t GetHash() const override;
+		bool IsValid() const override;
 
 		inline const Vector<std::pair<uint32_t, uint32_t>>& GetDescriptorPoolSizes() const { return m_descriptorPoolSizes; }
 		inline const Vector<VkDescriptorSetLayout_T*>& GetDescriptorSetLayouts() const { return m_descriptorSetLayouts; }
@@ -68,5 +69,6 @@ namespace Volt::RHI
 		ShaderSpecification m_specification;
 		ShaderResources m_resources;
 		size_t m_hash = 0;
+		bool m_hasCompiledAndValidBinaries = false;
 	};
 }

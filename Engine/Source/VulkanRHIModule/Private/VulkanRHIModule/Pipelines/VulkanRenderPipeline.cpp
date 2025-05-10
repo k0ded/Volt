@@ -176,7 +176,7 @@ namespace Volt::RHI
 			blendInfo.blendConstants[3] = 0.f;
 
 			Vector<VkPipelineColorBlendAttachmentState> blendAttachments{};
-			for (const auto& outputFormat : shaderResources.outputFormats)
+			for (size_t index = 0; const auto& outputFormat : shaderResources.outputFormats)
 			{
 				if (Utility::IsDepthFormat(outputFormat) || Utility::IsStencilFormat(outputFormat))
 				{
@@ -185,7 +185,15 @@ namespace Volt::RHI
 
 				VkPipelineColorBlendAttachmentState& blendAttachment = blendAttachments.emplace_back();
 				blendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-				blendAttachment.blendEnable = VK_FALSE;
+				blendAttachment.blendEnable = m_createInfo.attachmentBlendStates[index].enabled;
+				blendAttachment.srcColorBlendFactor = Utility::VoltToVulkanBlendFactor(m_createInfo.attachmentBlendStates[index].srcColorBlend);
+				blendAttachment.srcAlphaBlendFactor = Utility::VoltToVulkanBlendFactor(m_createInfo.attachmentBlendStates[index].srcAlphaBlend);
+				blendAttachment.dstColorBlendFactor = Utility::VoltToVulkanBlendFactor(m_createInfo.attachmentBlendStates[index].dstColorBlend);
+				blendAttachment.dstAlphaBlendFactor = Utility::VoltToVulkanBlendFactor(m_createInfo.attachmentBlendStates[index].dstAlphaBlend);
+				blendAttachment.colorBlendOp = Utility::VoltToVulkanBlendOp(m_createInfo.attachmentBlendStates[index].colorBlendOp);
+				blendAttachment.alphaBlendOp = Utility::VoltToVulkanBlendOp(m_createInfo.attachmentBlendStates[index].colorBlendOp);
+
+				index++;
 			}
 
 			// #TODO_Ivar: Add blend attachments

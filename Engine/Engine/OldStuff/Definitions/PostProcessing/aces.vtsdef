@@ -1,4 +1,0 @@
-name: "ACES"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/PostProcessing/ACES_cs.hlsl"

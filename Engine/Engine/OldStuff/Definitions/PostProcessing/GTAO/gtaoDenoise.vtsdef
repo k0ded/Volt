@@ -1,4 +1,0 @@
-name: "GTAODenoise"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/PostProcessing/GTAO/GTAO_Denoise_cs.hlsl"

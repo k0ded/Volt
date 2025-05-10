@@ -1,6 +1,0 @@
-Metadata:
-  assetHandle: 6243039209105748206
-  filePath: Engine/Shaders/Definitions/Compute/depthReduction.vtsdef
-  type: 64
-  Dependencies:
-    - 18167008216203469594

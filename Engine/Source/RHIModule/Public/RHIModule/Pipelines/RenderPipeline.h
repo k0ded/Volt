@@ -3,9 +3,22 @@
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
 
+#include <CoreUtilities/Containers/Array.h>
+
 namespace Volt::RHI
 {
 	class Shader;
+
+	struct AttachmentBlendState
+	{
+		bool enabled = false;
+		AttachmentBlendFactor srcColorBlend = AttachmentBlendFactor::One;
+		AttachmentBlendFactor dstColorBlend = AttachmentBlendFactor::One;
+		AttachmentBlendOp colorBlendOp = AttachmentBlendOp::Add;
+		AttachmentBlendFactor srcAlphaBlend = AttachmentBlendFactor::One;
+		AttachmentBlendFactor dstAlphaBlend = AttachmentBlendFactor::One;
+		AttachmentBlendOp alphaBlendOp = AttachmentBlendOp::Add;
+	};
 
 	struct RenderPipelineCreateInfo
 	{
@@ -18,6 +31,7 @@ namespace Volt::RHI
 		CompareOperator depthCompareOperator = CompareOperator::GreaterEqual;
 		bool enablePrimitiveRestart = false;
 
+		Array<AttachmentBlendState, MAX_ATTACHMENT_COUNT> attachmentBlendStates;
 		std::string name;
 	};
 
