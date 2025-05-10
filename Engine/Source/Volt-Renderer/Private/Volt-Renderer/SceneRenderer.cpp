@@ -95,12 +95,12 @@ namespace Volt
 	};
 	REGISTER_SHADER(MaterialShaderTemp)
 
-	struct DepthPrePassMSPS
+		struct DepthPrePassMSPS
 	{
 		BEGIN_SHADER_DEFINITION(DepthPrePassMSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DepthPrePassMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DepthPrePassMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DepthPrePassMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DepthPrePassMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
 		END_SHADER_DEFINITION()
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
@@ -109,12 +109,12 @@ namespace Volt
 	};
 	REGISTER_SHADER(DepthPrePassMSPS)
 
-	struct ObjectIDMSPS
+		struct ObjectIDMSPS
 	{
 		BEGIN_SHADER_DEFINITION(ObjectIDMSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
 		END_SHADER_DEFINITION()
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
@@ -123,12 +123,12 @@ namespace Volt
 	};
 	REGISTER_SHADER(ObjectIDMSPS)
 
-	struct VisibilityBufferMSPS
+		struct VisibilityBufferMSPS
 	{
 		BEGIN_SHADER_DEFINITION(VisibilityBufferMSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisibilityBufferMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisibilityBufferMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisibilityBufferMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisibilityBufferMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
 		END_SHADER_DEFINITION()
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
@@ -137,7 +137,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(VisibilityBufferMSPS)
 
-	struct GenerateMaterialCountCS
+		struct GenerateMaterialCountCS
 	{
 		BEGIN_SHADER_DEFINITION(GenerateMaterialCountCS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Visibility/GenerateMaterialCount_cs.hlsl", "main", RHI::ShaderStage::Compute)
@@ -152,7 +152,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(GenerateMaterialCountCS)
 
-	struct CollectMaterialPixelsCS
+		struct CollectMaterialPixelsCS
 	{
 		BEGIN_SHADER_DEFINITION(CollectMaterialPixelsCS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Visibility/CollectMaterialPixels_cs.hlsl", "main", RHI::ShaderStage::Compute)
@@ -169,7 +169,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(CollectMaterialPixelsCS)
 
-	struct GenerateMaterialIndirectArgsCS
+		struct GenerateMaterialIndirectArgsCS
 	{
 		BEGIN_SHADER_DEFINITION(GenerateMaterialIndirectArgsCS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Visibility/GenerateMaterialIndirectArgs_cs.hlsl", "main", RHI::ShaderStage::Compute)
@@ -183,13 +183,13 @@ namespace Volt
 	};
 	REGISTER_SHADER(GenerateMaterialIndirectArgsCS)
 
-	struct SkyboxVSPS
+		struct SkyboxVSPS
 	{
 		BEGIN_SHADER_DEFINITION(SkyboxVSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Environment/Skybox_vs.hlsl", "main", RHI::ShaderStage::Vertex)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Environment/Skybox_ps.hlsl", "main", RHI::ShaderStage::Pixel)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/Environment/Skybox_ps.hlsl", "main", RHI::ShaderStage::Pixel)
 		END_SHADER_DEFINITION()
-	
+
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<VertexPositionData>, VertexPositions)
 			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
@@ -205,7 +205,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(SkyboxVSPS)
 
-	struct ShadingCS
+		struct ShadingCS
 	{
 		BEGIN_SHADER_DEFINITION(ShadingCS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Shading/Shading_cs.hlsl", "main", RHI::ShaderStage::Compute)
@@ -227,11 +227,11 @@ namespace Volt
 	};
 	REGISTER_SHADER(ShadingCS)
 
-	struct FXAAVSPS
+		struct FXAAVSPS
 	{
 		BEGIN_SHADER_DEFINITION(FXAAVSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/FXAA.hlsl", "main", RHI::ShaderStage::Pixel)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/FXAA.hlsl", "main", RHI::ShaderStage::Pixel)
 		END_SHADER_DEFINITION()
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
@@ -242,7 +242,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(FXAAVSPS)
 
-	struct TonemapVSPS
+		struct TonemapVSPS
 	{
 		BEGIN_SHADER_DEFINITION(TonemapVSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
@@ -261,12 +261,12 @@ namespace Volt
 	};
 	REGISTER_SHADER(TonemapVSPS)
 
-	struct VisualizationMS
+		struct VisualizationMS
 	{
 		BEGIN_SHADER_DEFINITION(VisualizationMS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationMeshShader.hlsl", "MainAS", RHI::ShaderStage::Amplification)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
 		END_SHADER_DEFINITION()
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
@@ -276,7 +276,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(VisualizationMS)
 
-	struct VisualizationFullscreenCS
+		struct VisualizationFullscreenCS
 	{
 		BEGIN_SHADER_DEFINITION(VisualizationMS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationFullscreenShader.hlsl", "MainCS", RHI::ShaderStage::Compute)
@@ -298,11 +298,11 @@ namespace Volt
 	};
 	REGISTER_SHADER(VisualizationFullscreenCS)
 
-	struct EditorGridVSPS
+		struct EditorGridVSPS
 	{
 		BEGIN_SHADER_DEFINITION(EditorGridVSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridVS", RHI::ShaderStage::Vertex)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridPS", RHI::ShaderStage::Pixel)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridPS", RHI::ShaderStage::Pixel)
 		END_SHADER_DEFINITION()
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
@@ -312,7 +312,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(EditorGridVSPS)
 
-	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)
+		SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)
 		: m_renderScene(specification.renderScene), m_commandBufferSet(Renderer::GetFramesInFlight())
 	{
 		CreateMainRenderTarget(specification.initialResolution.x, specification.initialResolution.y);
@@ -383,7 +383,7 @@ namespace Volt
 		{
 			m_frameTotalGPUAllocation = totalSize;
 		});
-		
+
 		if (ShouldApplyJitter())
 		{
 			m_prevJitter = m_currentJitter;
@@ -397,51 +397,39 @@ namespace Volt
 
 		UploadUniformBuffers(renderGraph, blackboard, camera);
 
-		const uint32_t drawCount = m_renderScene->GetDrawCount();
+		AddMainCullingPass(renderGraph, blackboard);
+		AddDepthPrePass(renderGraph, blackboard);
+		AddObjectIDPass(renderGraph, blackboard);
+		AddGTAOPass(renderGraph, blackboard, camera);
 
-		if (drawCount > 0)
+		DirectionalShadowTechnique dirShadowTechnique{ renderGraph, blackboard };
+		blackboard.Add<DirectionalShadowData>() = dirShadowTechnique.Execute(camera, m_renderScene);
+
+		LightCullingTechnique lightCulling{ renderGraph, blackboard };
+		blackboard.Add<LightCullingData>() = lightCulling.Execute();
+
+		blackboard.Add<VolumetricFogData>() = m_volumetricFog.Execute(renderGraph, blackboard);
+
+		ExecuteGBufferGenerationPasses(renderGraph, blackboard);
+		AddSkyboxPass(renderGraph, blackboard);
+		AddShadingPass(renderGraph, blackboard);
+
+		if (m_visualizationMode == VisualizationMode::None)
 		{
-			AddMainCullingPass(renderGraph, blackboard);
-			AddDepthPrePass(renderGraph, blackboard);
-			AddObjectIDPass(renderGraph, blackboard);
-			AddGTAOPass(renderGraph, blackboard, camera);
-
-			DirectionalShadowTechnique dirShadowTechnique{ renderGraph, blackboard };
-			blackboard.Add<DirectionalShadowData>() = dirShadowTechnique.Execute(camera, m_renderScene);
-
-			LightCullingTechnique lightCulling{ renderGraph, blackboard };
-			blackboard.Add<LightCullingData>() = lightCulling.Execute();
-
-			blackboard.Add<VolumetricFogData>() = m_volumetricFog.Execute(renderGraph, blackboard);
-
-			ExecuteGBufferGenerationPasses(renderGraph, blackboard);
-			AddSkyboxPass(renderGraph, blackboard);
-			
-			AddShadingPass(renderGraph, blackboard);
-			
-			if (m_visualizationMode == VisualizationMode::None)
+			if (false)
 			{
-				if (false)
-				{
-					AddPathTracingPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
-				}
-			
-				AddGridPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput, camera);
+				AddPathTracingPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
+			}
 
-				blackboard.Add<FinalOutput>().colorOutput = blackboard.Get<ShadingOutputData>().colorOutput;
-				ExecutePostProcessingPasses(renderGraph, blackboard, timestep);
-			}
-			else
-			{
-				AddVisualizationPass(renderGraph, blackboard, renderGraph.AddExternalImage(m_outputImage));
-			}
+			AddGridPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput, camera);
+
+			blackboard.Add<FinalOutput>().colorOutput = blackboard.Get<ShadingOutputData>().colorOutput;
+			ExecutePostProcessingPasses(renderGraph, blackboard, timestep);
 		}
 		else
 		{
-			RGUtils::ClearImage(renderGraph, renderGraph.AddExternalImage(m_outputImage), { 0.1f, 0.1f, 0.1f, 1.f });
-			AddGridPass(renderGraph, blackboard, renderGraph.AddExternalImage(m_outputImage), camera);
+			AddVisualizationPass(renderGraph, blackboard, renderGraph.AddExternalImage(m_outputImage));
 		}
-
 
 		m_renderScene->EndFrame(renderGraph);
 
@@ -493,7 +481,7 @@ namespace Volt
 	{
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
 		const auto& drawCullingData = blackboard.Get<DrawCullingData>();
-	
+
 		parameters.GPUSceneData = blackboard.Get<GPUSceneData>();
 		parameters.TaskCommands = drawCullingData.taskCommandsBuffer;
 		parameters.View = uniformBuffers.viewDataBuffer;
@@ -651,11 +639,11 @@ namespace Volt
 		}
 
 		const auto& imageData = blackboard.Get<ExternalImagesData>();
-		
+
 		auto& environmentTexturesData = blackboard.Add<EnvironmentTexturesData>();
 		environmentTexturesData.irradiance = imageData.black1x1Cube;
 		environmentTexturesData.radiance = imageData.black1x1Cube;
-	
+
 		for (const auto& light : m_renderScene->GetRenderLightData())
 		{
 			if (light.description.lightType == SceneLightType::Sky)
@@ -1382,7 +1370,7 @@ namespace Volt
 				pipelineInfo.shader = ShaderMap::Get<VisualizationMS>();
 
 				auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
-				
+
 				VisualizationMS::Parameters parameters;
 				parameters.VisualizationModeInt = static_cast<uint32_t>(visualizationMode);
 				parameters.Common.GPUSceneData = blackboard.Get<GPUSceneData>();
@@ -1502,7 +1490,7 @@ namespace Volt
 			parameters.View = uniformBuffers.viewDataBuffer;
 			parameters.RWOutputTexture = dstImage;
 			parameters.GPUSceneData = gpuSceneData;
-			
+
 			//context.SetParameters(parameters);
 			context.SetAccelerationStructure(m_renderScene->GetRayTracingScene()->GetAccelerationStructure());
 			context.TraceRays(sbt, m_width, m_height, 1);
@@ -1516,13 +1504,13 @@ namespace Volt
 		const auto& viewUniformBuffer = blackboard.Get<ViewUniformBuffer>();
 
 		renderGraph.AddPass("Editor Grid",
-		[&](RenderGraph::Builder& builder) 
+		[&](RenderGraph::Builder& builder)
 		{
 			builder.WriteResource(dstImage);
 			builder.WriteResource(depthPrePass.depth);
 			builder.ReadResource(uniformBuffers.viewDataBuffer);
 		},
-		[=](RenderContext& context) 
+		[=](RenderContext& context)
 		{
 			RenderingInfo info = context.CreateRenderingInfo(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, { dstImage, depthPrePass.depth });
 			info.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
