@@ -37,9 +37,9 @@ struct SceneSettings
 	bool fullscreenOnPlay = false;
 	bool gridEnabled = false;
 
-	float gridSnapValue = 0.f;
-	float rotationSnapValue = 0.f;
-	float scaleSnapValue = 0.f;
+	float gridSnapValue = 1;
+	float rotationSnapValue = 1;
+	float scaleSnapValue = 1;
 
 	bool showLightSpheres = true;
 	bool showEntityGizmos = true;

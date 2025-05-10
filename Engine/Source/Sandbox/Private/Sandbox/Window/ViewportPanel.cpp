@@ -816,7 +816,7 @@ void ViewportPanel::UpdateCreatedEntityPosition()
 
 	const auto& settings = UserSettingsManager::GetSettings();
 
-	if (settings.sceneSettings.snapToGrid)
+	if (settings.sceneSettings.snapToGrid && settings.sceneSettings.gridSnapValue > 0)
 	{
 		targetPos.x = std::round(targetPos.x / settings.sceneSettings.gridSnapValue) * settings.sceneSettings.gridSnapValue;
 		targetPos.z = std::round(targetPos.z / settings.sceneSettings.gridSnapValue) * settings.sceneSettings.gridSnapValue;
