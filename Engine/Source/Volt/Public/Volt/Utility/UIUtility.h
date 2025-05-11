@@ -19,7 +19,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
-#include <imgui_notify.h>
+
+#include <RHIModule/ImGui/ImGuiNotifications.h>
 
 namespace Volt::RHI
 {
@@ -197,7 +198,7 @@ public:
 
 	static void Header(const std::string& text);
 
-	static ImGuiToastType ToastTypeFromNotificationType(NotificationType type);
+	static Volt::RHI::ImGuiNotificationType ImGuiNotificationTypeFromNotificationType(NotificationType type);
 
 	static void ShiftCursor(float x, float y);
 

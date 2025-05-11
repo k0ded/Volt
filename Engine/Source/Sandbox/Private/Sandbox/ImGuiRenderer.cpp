@@ -850,7 +850,7 @@ void Sandbox::RenderProgressBar(float progress)
 	constexpr auto windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing;
 
 	ImGui::SetNextWindowBgAlpha(1.f);
-	ImGui::SetNextWindowPos(ImVec2(vp_size.x - NOTIFY_PADDING_X, 100.f), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+	ImGui::SetNextWindowPos(ImVec2(vp_size.x - 20.f, 100.f), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
 	ImGui::Begin("##progressBar", nullptr, windowFlags);
 
 	{

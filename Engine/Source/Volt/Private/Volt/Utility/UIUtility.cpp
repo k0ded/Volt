@@ -32,15 +32,15 @@ void UI::Header(const std::string& text)
 	ImGui::TextUnformatted(text.c_str());
 }
 
-ImGuiToastType UI::ToastTypeFromNotificationType(NotificationType type)
+Volt::RHI::ImGuiNotificationType UI::ImGuiNotificationTypeFromNotificationType(NotificationType type)
 {
 	switch (type)
 	{
-		case NotificationType::Info: return ImGuiToastType_Info;
-		case NotificationType::Warning: return ImGuiToastType_Warning;
-		case NotificationType::Error: return ImGuiToastType_Error;
-		case NotificationType::Success: return ImGuiToastType_Success;
-		default: return ImGuiToastType_None;
+		case NotificationType::Info: return Volt::RHI::ImGuiNotificationType::Info;
+		case NotificationType::Warning: return Volt::RHI::ImGuiNotificationType::Warning;
+		case NotificationType::Error: return Volt::RHI::ImGuiNotificationType::Error;
+		case NotificationType::Success: return Volt::RHI::ImGuiNotificationType::Success;
+		default: return Volt::RHI::ImGuiNotificationType::None;
 	}
 }
 
@@ -270,8 +270,7 @@ void UI::BeginPropertyRow()
 }
 
 void UI::EndPropertyRow()
-{
-}
+{}
 
 bool UI::IsItemHovered(const float itemWidth)
 {
@@ -789,11 +788,13 @@ void* UI::DragDropTarget(std::initializer_list<std::string> types, ImGuiDragDrop
 
 void UI::Notify(NotificationType type, const std::string& title, const std::string& content, int32_t duration)
 {
-	ImGuiToast toast{ ToastTypeFromNotificationType(type), duration };
-	toast.set_title(title.c_str());
-	toast.set_content(content.c_str());
+	Volt::RHI::ImGuiNotificationInfo info;
+	info.type = ImGuiNotificationTypeFromNotificationType(type);
+	info.dismissTime = duration;
+	info.title = title.c_str();
+	info.message = content.c_str();
 
-	ImGui::InsertNotification(toast);
+	Volt::RHI::ImGuiNotifications::InsertNotification(info);
 }
 
 void UI::OpenModal(const std::string& name, ImGuiPopupFlags flags)
@@ -865,7 +866,7 @@ bool UI::ComboProperty(const std::string& text, int& currentItem, const Vector<s
 	Vector<const char*> items;
 	std::for_each(strItems.begin(), strItems.end(), [&](const std::string& string) { items.emplace_back(string.c_str()); });
 
-	changed = DrawItem((width == 0.f) ? ImGui::GetColumnWidth() : width, [&]() 
+	changed = DrawItem((width == 0.f) ? ImGui::GetColumnWidth() : width, [&]()
 	{
 		return ImGui::Combo(id.c_str(), &currentItem, items.data(), (int32_t)items.size());
 	});

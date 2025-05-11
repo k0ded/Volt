@@ -6,9 +6,9 @@
 #include "RHIModule/Core/Profiling.h"
 #include "RHIModule/RHIProxy.h"
 
+#include "RHIModule/ImGui/ImGuiNotifications.h"
+
 #include <imgui.h>
-//#include <imgui_notify.h>
-#include <tahoma.h>
 
 namespace Volt::RHI
 {
@@ -180,11 +180,7 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f); // Round borders
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(43.f / 255.f, 43.f / 255.f, 43.f / 255.f, 100.f / 255.f)); // Background color
-		//ImGui::RenderNotifications(); // <-- Here we render all notifications
-		ImGui::PopStyleVar(1); // Don't forget to Pop()
-		ImGui::PopStyleColor(1);
+		ImGuiNotifications::RenderNotifications();
 
 		if (m_defaultFont)
 		{

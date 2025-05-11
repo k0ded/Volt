@@ -6,6 +6,8 @@
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
+#include <RHIModule/ImGui/FontAwesome.h>
+
 #include "Volt-Renderer/Camera/Camera.h"
 
 Timeline::Timeline(Ref<Volt::Scene>& aScene, EditorCameraController* editorCamera)
@@ -572,14 +574,14 @@ void Timeline::UpdateTimelineTracks()
 	myTrackWindowSize = ImGui::GetContentRegionAvail();
 	myTrackWindowPos = ImGui::GetCursorScreenPos();
 
-	if (ImGui::Button(ICON_FA_PLAY, ImVec2(30, 30)))
+	if (ImGui::Button(VT_ICON_FA_PLAY, ImVec2(30, 30)))
 	{
 		OnPlay();
 	}
 
 	ImGui::SameLine();
 
-	if (ImGui::Button(ICON_FA_STOP, ImVec2(30, 30)))
+	if (ImGui::Button(VT_ICON_FA_STOP, ImVec2(30, 30)))
 	{
 		OnStop();
 	}
@@ -601,7 +603,7 @@ void Timeline::UpdateTimelineTracks()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button(ICON_FA_RECORD_VINYL, ImVec2(30, myTimelineSize.y)))
+	if (ImGui::Button(VT_ICON_FA_RECORD_VINYL, ImVec2(30, myTimelineSize.y)))
 	{
 		myPreviewOn = !myPreviewOn;
 	}
