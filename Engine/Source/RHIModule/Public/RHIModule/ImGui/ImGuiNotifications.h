@@ -1,5 +1,6 @@
-#include "RHIModule/Core/Core.h"
+#pragma once
 
+#include "RHIModule/Core/Core.h"
 #include <functional>
 
 enum class ImGuiToastType : uint8_t;
