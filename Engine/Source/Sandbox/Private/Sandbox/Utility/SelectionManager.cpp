@@ -11,6 +11,16 @@ void SelectionManager::Initialize()
 	m_entities[SelectionContext::Scene] = Vector<Volt::EntityID>();
 }
 
+void SelectionManager::Shutdown()
+{
+	m_callbacks.clear();
+}
+
+void SelectionManager::RegisterSelectionChangedCallback(const SelectionChangedCallback& func)
+{
+	m_callbacks.emplace_back(func);
+}
+
 bool SelectionManager::Select(Volt::EntityID entity, SelectionContext context)
 {
 	if (m_locked)
@@ -24,6 +34,12 @@ bool SelectionManager::Select(Volt::EntityID entity, SelectionContext context)
 	}
 
 	m_entities.at(context).emplace_back(entity);
+
+	for (const auto& func : m_callbacks)
+	{
+		func(m_entities.at(context), context);
+	}
+
 	return true;
 }
 
@@ -41,6 +57,12 @@ bool SelectionManager::Deselect(Volt::EntityID entity, SelectionContext context)
 	}
 
 	m_entities.at(context).erase(it);
+
+	for (const auto& func : m_callbacks)
+	{
+		func(m_entities.at(context), context);
+	}
+
 	return true;
 }
 
@@ -54,6 +76,11 @@ void SelectionManager::DeselectAll(SelectionContext context)
 	m_firstSelectedRow = -1;
 	m_lastSelectedRow = -1;
 	m_entities.at(context).clear();
+
+	for (const auto& func : m_callbacks)
+	{
+		func(m_entities.at(context), context);
+	}
 }
 
 bool SelectionManager::IsAnySelected(SelectionContext context)

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <cstring>
+
 namespace StringAlgorithm
 {
 	template<typename T>

@@ -22,7 +22,12 @@ enum class SelectionContext
 class SelectionManager
 {
 public:
+	using SelectionChangedCallback = std::function<void(const Vector<Volt::EntityID>&, SelectionContext)>;
+
 	static void Initialize();
+	static void Shutdown();
+
+	static void RegisterSelectionChangedCallback(const SelectionChangedCallback& func);
 
 	static bool Select(Volt::EntityID entity, SelectionContext context = SelectionContext::Scene);
 	static bool Deselect(Volt::EntityID entity, SelectionContext context = SelectionContext::Scene);
@@ -51,4 +56,5 @@ private:
 	inline static int32_t m_lastSelectedRow = -1;
 	inline static bool m_locked = false;
 	inline static std::unordered_map<SelectionContext, Vector<Volt::EntityID>> m_entities;
+	inline static Vector<SelectionChangedCallback> m_callbacks;
 };

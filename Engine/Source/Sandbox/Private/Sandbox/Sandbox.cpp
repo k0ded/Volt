@@ -106,6 +106,14 @@ void Sandbox::OnAttach()
 	NodeEditorHelpers::Initialize();
 	IONodeGraphEditorHelpers::Initialize();
 
+	SelectionManager::RegisterSelectionChangedCallback([&](const Vector<Volt::EntityID>& entities, SelectionContext context) 
+	{
+		if (context == SelectionContext::Scene && m_sceneRenderer)
+		{
+			m_sceneRenderer->UpdateSelection(entities);
+		}
+	});
+
 	//Volt::WindowManager::Get().GetMainWindow().Maximize();
 
 	m_editorCameraController = CreateRef<EditorCameraController>(60.f, 1.f, 100000.f);
@@ -309,6 +317,7 @@ void Sandbox::OnDetach()
 
 	NodeEditorHelpers::Shutdown();
 	VersionControl::Shutdown();
+	SelectionManager::Shutdown();
 }
 
 void Sandbox::OnScenePlay()

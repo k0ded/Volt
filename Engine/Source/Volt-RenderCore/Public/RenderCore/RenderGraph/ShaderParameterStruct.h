@@ -3,6 +3,8 @@
 #include "RenderCore/RenderGraph/ShaderTypes.h"
 #include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
 
+#include <RHIModule/Descriptors/ResourceHandle.h>
+
 #include <CoreUtilities/StringHash.h>
 
 #include <string>

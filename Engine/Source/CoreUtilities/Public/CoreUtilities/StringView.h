@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StringAlgorithm.h"
+#include "VoltAssert.h"
 
 #include <intsafe.h>
 #include <limits.h>

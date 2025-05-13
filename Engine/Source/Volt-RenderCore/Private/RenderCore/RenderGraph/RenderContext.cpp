@@ -497,7 +497,10 @@ namespace Volt
 		const auto& currentConstants = GetRenderGraphConstantsData();
 		for (const auto& constant : currentConstants.uniforms)
 		{
-			m_boundPipelineData.uniformHasBeenSetMap[constant.first] = false;
+			if (!constant.second.type.IsArithmeticType())
+			{
+				m_boundPipelineData.uniformHasBeenSetMap[constant.first] = false;
+			}
 		}
 #endif
 	}

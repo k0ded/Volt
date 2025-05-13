@@ -14,6 +14,8 @@
 #include "Volt-Renderer/RenderingTechniques/ScreenSpaceReflections.h"
 #include "Volt-Renderer/RenderingTechniques/AutoExposureTechnique.h"
 #include "Volt-Renderer/RenderingTechniques/CullingTechnique.h"
+#include "Volt-Renderer/RenderingTechniques/OutlineTechnique.h"
+#include "Volt-Renderer/Utility/ScatteredBufferUpload.h"
 
 #include "Volt-Renderer/ShapeLibrary.h"
 #include "Volt-Renderer/Texture/Texture2D.h"
@@ -95,12 +97,12 @@ namespace Volt
 	};
 	REGISTER_SHADER(MaterialShaderTemp)
 
-		struct DepthPrePassMSPS
+	struct DepthPrePassMSPS
 	{
 		BEGIN_SHADER_DEFINITION(DepthPrePassMSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DepthPrePassMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DepthPrePassMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DepthPrePassMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/DepthPrePassMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
 		END_SHADER_DEFINITION()
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
@@ -109,12 +111,12 @@ namespace Volt
 	};
 	REGISTER_SHADER(DepthPrePassMSPS)
 
-		struct ObjectIDMSPS
+	struct ObjectIDMSPS
 	{
 		BEGIN_SHADER_DEFINITION(ObjectIDMSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
 		END_SHADER_DEFINITION()
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
@@ -123,12 +125,12 @@ namespace Volt
 	};
 	REGISTER_SHADER(ObjectIDMSPS)
 
-		struct VisibilityBufferMSPS
+	struct VisibilityBufferMSPS
 	{
 		BEGIN_SHADER_DEFINITION(VisibilityBufferMSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisibilityBufferMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisibilityBufferMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisibilityBufferMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisibilityBufferMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
 		END_SHADER_DEFINITION()
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
@@ -137,7 +139,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(VisibilityBufferMSPS)
 
-		struct GenerateMaterialCountCS
+	struct GenerateMaterialCountCS
 	{
 		BEGIN_SHADER_DEFINITION(GenerateMaterialCountCS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Visibility/GenerateMaterialCount_cs.hlsl", "main", RHI::ShaderStage::Compute)
@@ -152,7 +154,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(GenerateMaterialCountCS)
 
-		struct CollectMaterialPixelsCS
+	struct CollectMaterialPixelsCS
 	{
 		BEGIN_SHADER_DEFINITION(CollectMaterialPixelsCS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Visibility/CollectMaterialPixels_cs.hlsl", "main", RHI::ShaderStage::Compute)
@@ -169,7 +171,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(CollectMaterialPixelsCS)
 
-		struct GenerateMaterialIndirectArgsCS
+	struct GenerateMaterialIndirectArgsCS
 	{
 		BEGIN_SHADER_DEFINITION(GenerateMaterialIndirectArgsCS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Visibility/GenerateMaterialIndirectArgs_cs.hlsl", "main", RHI::ShaderStage::Compute)
@@ -183,7 +185,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(GenerateMaterialIndirectArgsCS)
 
-		struct SkyboxVSPS
+	struct SkyboxVSPS
 	{
 		BEGIN_SHADER_DEFINITION(SkyboxVSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Environment/Skybox_vs.hlsl", "main", RHI::ShaderStage::Vertex)
@@ -205,7 +207,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(SkyboxVSPS)
 
-		struct ShadingCS
+	struct ShadingCS
 	{
 		BEGIN_SHADER_DEFINITION(ShadingCS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Shading/Shading_cs.hlsl", "main", RHI::ShaderStage::Compute)
@@ -227,7 +229,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(ShadingCS)
 
-		struct FXAAVSPS
+	struct FXAAVSPS
 	{
 		BEGIN_SHADER_DEFINITION(FXAAVSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
@@ -242,7 +244,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(FXAAVSPS)
 
-		struct TonemapVSPS
+	struct TonemapVSPS
 	{
 		BEGIN_SHADER_DEFINITION(TonemapVSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
@@ -261,7 +263,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(TonemapVSPS)
 
-		struct VisualizationMS
+	struct VisualizationMS
 	{
 		BEGIN_SHADER_DEFINITION(VisualizationMS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationMeshShader.hlsl", "MainAS", RHI::ShaderStage::Amplification)
@@ -276,7 +278,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(VisualizationMS)
 
-		struct VisualizationFullscreenCS
+	struct VisualizationFullscreenCS
 	{
 		BEGIN_SHADER_DEFINITION(VisualizationMS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/VisualizationFullscreenShader.hlsl", "MainCS", RHI::ShaderStage::Compute)
@@ -298,7 +300,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(VisualizationFullscreenCS)
 
-		struct EditorGridVSPS
+	struct EditorGridVSPS
 	{
 		BEGIN_SHADER_DEFINITION(EditorGridVSPS)
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridVS", RHI::ShaderStage::Vertex)
@@ -312,7 +314,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(EditorGridVSPS)
 
-		SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)
+	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)
 		: m_renderScene(specification.renderScene), m_commandBufferSet(Renderer::GetFramesInFlight())
 	{
 		CreateMainRenderTarget(specification.initialResolution.x, specification.initialResolution.y);
@@ -331,6 +333,8 @@ namespace Volt
 		m_sceneEnvironment.diffuse = Renderer::GetDefaultResources().blackCubeTexture;
 
 		m_skyboxMesh = ShapeLibrary::GetCube();
+	
+		m_selectedPrimitivesMaskBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "SelectedPrimitivesMask");
 	}
 
 	SceneRenderer::~SceneRenderer()
@@ -422,6 +426,7 @@ namespace Volt
 			}
 
 			AddGridPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput, camera);
+			AddOutlinePass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
 
 			blackboard.Add<FinalOutput>().colorOutput = blackboard.Get<ShadingOutputData>().colorOutput;
 			ExecutePostProcessingPasses(renderGraph, blackboard, timestep);
@@ -465,6 +470,12 @@ namespace Volt
 		return m_frameTotalGPUAllocation.load();
 	}
 
+	void SceneRenderer::UpdateSelection(const Vector<EntityID>& entityIds)
+	{
+		m_selectedEntityIds = entityIds;
+		m_selectionDirty = true;
+	}
+
 	void SceneRenderer::BuildMeshPass(RenderGraph::Builder& builder, RenderGraphBlackboard& blackboard)
 	{
 		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
@@ -486,20 +497,6 @@ namespace Volt
 		parameters.TaskCommands = drawCullingData.taskCommandsBuffer;
 		parameters.View = uniformBuffers.viewDataBuffer;
 	}
-
-	//template<typename ShaderType>
-	//void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard)
-	//{
-	//	const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
-	//	const auto& drawCullingData = blackboard.Get<DrawCullingData>();
-	//
-	//	MeshShaderCommonParameters parameters;
-	//	parameters.GPUSceneData = blackboard.Get<GPUSceneData>();
-	//	parameters.TaskCommands = drawCullingData.taskCommandsBuffer;
-	//	parameters.View = uniformBuffers.viewDataBuffer;
-	//
-	//	context.SetParameters<ShaderType>(parameters);
-	//}
 
 	void SceneRenderer::SetupFrameData(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)
 	{
@@ -1532,6 +1529,75 @@ namespace Volt
 			context.Draw(3, 1, 0, 0);
 			context.EndRendering();
 		});
+	}
+
+	void SceneRenderer::AddOutlinePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage)
+	{
+		if (m_selectedEntityIds.empty())
+		{
+			return;
+		}
+
+		if (m_selectionDirty)
+		{
+			PagedVector<uint32_t> selectedPrimitives;
+
+			for (const auto& entityId : m_selectedEntityIds)
+			{
+				selectedPrimitives.append(m_renderScene->GetPrimitiveIndicesFromEntityID(entityId));
+			}
+
+			const uint32_t numPrimitiveEntries = static_cast<uint32_t>(m_renderScene->GetMaxPrimitiveIndex()) / 32u;
+			m_selectedPrimitivesMaskBuffer->GrowIfRequired(numPrimitiveEntries);
+
+			RenderGraphBufferHandle selectedPrimitivesMask = renderGraph.AddExternalBuffer(m_selectedPrimitivesMaskBuffer->GetResource());
+
+			// Clear to zero to make sure that no previously selected primitives are shown as selected.
+			RGUtils::ClearBuffer(renderGraph, selectedPrimitivesMask, 0u);
+
+			if (!selectedPrimitives.empty())
+			{
+				std::sort(selectedPrimitives.begin(), selectedPrimitives.end());
+
+				uint32_t numValuesToUpdate = 0;
+
+				for (int32_t prevMaskIndex = -1; const uint32_t primitiveIndex : selectedPrimitives)
+				{
+					const int32_t maskIndex = static_cast<int32_t>(primitiveIndex / 32u);
+					if (maskIndex != prevMaskIndex)
+					{
+						numValuesToUpdate++;
+						prevMaskIndex = maskIndex;
+					}
+				}
+
+				ScatteredBufferUpload<uint32_t> bufferUpload{ numValuesToUpdate };
+				
+				uint32_t* currentMask = nullptr;
+				for (int32_t prevMaskIndex = -1; const uint32_t primitiveIndex : selectedPrimitives)
+				{
+					const int32_t maskIndex = static_cast<int32_t>(primitiveIndex / 32);
+					const uint32_t bitIndex = primitiveIndex % 32;
+					if (maskIndex != prevMaskIndex)
+					{
+						currentMask = &bufferUpload.AddUploadItem(maskIndex);
+						prevMaskIndex = maskIndex;
+					}
+
+					if (currentMask)
+					{
+						(*currentMask) |= (1u << bitIndex);
+					}
+				}
+
+				bufferUpload.UploadTo(renderGraph, m_selectedPrimitivesMaskBuffer->GetResource());
+			}
+
+			m_selectionDirty = false;
+		}
+
+		OutlineTechnique outlineTechnique{ renderGraph, blackboard };
+		outlineTechnique.Execute(renderGraph.AddExternalBuffer(m_selectedPrimitivesMaskBuffer->GetResource()), dstImage, *m_renderScene);
 	}
 
 	void SceneRenderer::CreateMainRenderTarget(const uint32_t width, const uint32_t height)

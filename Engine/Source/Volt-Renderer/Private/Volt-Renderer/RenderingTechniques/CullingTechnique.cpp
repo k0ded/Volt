@@ -23,12 +23,14 @@ namespace Volt
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, CountBuffer)
 			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<MeshTaskCommand>, TaskCommands)
+			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, MaskBuffer)
 			SHADER_PARAMETER_STRUCT(GPUSceneData, GPUSceneData)
 			SHADER_PARAMETER(glm::mat4, ViewMatrix)
 			SHADER_PARAMETER(float4, CullingFrustum)
 			SHADER_PARAMETER(float, NearPlane)
 			SHADER_PARAMETER(float, FarPlane)
 			SHADER_PARAMETER(uint, CullingTypeInt)
+			SHADER_PARAMETER(uint, UseMask)
 		END_SHADER_PARAMETER_STRUCT()
 	};
 	REGISTER_SHADER(DrawCallCullCS)
@@ -87,10 +89,20 @@ namespace Volt
 				data.taskCommandsBuffer = builder.CreateBuffer(desc);
 			}
 
+			if (info.entityMaskBuffer == RenderGraphNullHandle())
+			{
+				const auto desc = RGUtils::CreateBufferDescGPU<int32_t>(1, "DummyBuffer");
+				data.maskBuffer = builder.CreateBuffer(desc);
+			}
+			else
+			{
+				data.maskBuffer = info.entityMaskBuffer;
+				builder.ReadResource(data.maskBuffer);
+			}
+
 			BuildGPUSceneData(builder, gpuSceneData);
 
 			builder.WriteResource(countCmdBufferHandle);
-
 			builder.SetIsComputePass();
 		},
 		[=](const DrawCullingData& data, RenderContext& context) 
@@ -102,11 +114,13 @@ namespace Volt
 			DrawCallCullCS::Parameters parameters;
 			parameters.CountBuffer = data.countCommandBuffer;
 			parameters.TaskCommands = data.taskCommandsBuffer;
+			parameters.MaskBuffer = data.maskBuffer;
 			parameters.ViewMatrix = info.viewMatrix;
 			parameters.CullingFrustum = info.cullingFrustum;
 			parameters.NearPlane = info.nearPlane;
 			parameters.FarPlane = info.farPlane;
 			parameters.CullingTypeInt = static_cast<uint32_t>(info.type);
+			parameters.UseMask = info.entityMaskBuffer != RenderGraphNullHandle();
 			parameters.GPUSceneData = gpuSceneData;
 
 			constexpr uint32_t workGroupSize = 64;
