@@ -224,20 +224,21 @@ namespace Volt::RHI
 
 		constexpr VkDescriptorPoolSize poolSizes[] =
 		{
-			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_SAMPLER, 200000 },
 			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 10000 },
 			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 10000 },
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10000 },
 			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10000 },
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10000 },
-			{ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 } 
+			{ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 },
+			{ VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 200000 }
 		};
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 		poolInfo.maxSets = 100'000;
-		poolInfo.poolSizeCount = 6;
+		poolInfo.poolSizeCount = 8;
 		poolInfo.pPoolSizes = poolSizes;
 
 		auto vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();

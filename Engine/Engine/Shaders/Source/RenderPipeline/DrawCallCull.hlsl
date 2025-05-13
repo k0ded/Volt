@@ -16,6 +16,8 @@ namespace CullingType
 vt::RWTypedBuffer<uint> CountBuffer;
 vt::RWTypedBuffer<MeshTaskCommand> TaskCommands;
 
+vt::TypedBuffer<uint> MaskBuffer;
+
 GPUScene GPUSceneData;
 
 float4x4 ViewMatrix;
@@ -24,6 +26,7 @@ float NearPlane;
 float FarPlane;
 
 uint CullingTypeInt;
+uint UseMask;
 
 [numthreads(64, 1, 1)]
 void MainCS(uint dispatchThreadId : SV_DispatchThreadID)
@@ -44,6 +47,15 @@ void MainCS(uint dispatchThreadId : SV_DispatchThreadID)
     const float radius = mesh.boundingSphere.radius * max(drawData.transform.scale.x, max(drawData.transform.scale.y, drawData.transform.scale.z));
 
     bool visible = true;
+
+    if (UseMask)
+    {
+        const uint maskIndex = primitiveDrawDataIndex / 32u; // 32 indices per uint
+        const uint bitIndex = primitiveDrawDataIndex % 32u;
+
+        const uint mask = MaskBuffer.Load(maskIndex);
+        visible = mask & (1u << bitIndex);
+    }
 
     if (CullingTypeInt == CullingType::Perspective)
     {

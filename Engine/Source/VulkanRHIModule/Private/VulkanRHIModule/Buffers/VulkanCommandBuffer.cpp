@@ -55,6 +55,8 @@
 
 #endif
 
+#include <CoreUtilities/MemoryUtility.h>
+
 #include <vulkan/vulkan.h>
 
 namespace Volt::RHI
@@ -1049,12 +1051,15 @@ namespace Volt::RHI
 		
 			vkGetAccelerationStructureBuildSizesKHR(device->GetHandle<VkDevice>(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &vulkanBuildInfo, primitiveCounts.data(), &buildSizes);
 		
-			const VkDeviceSize scratchBufferSize = buildInfo.mode == AccelerationStructureBuildMode::Build ? buildSizes.buildScratchSize : buildSizes.updateScratchSize;
+			// #TODO_Ivar: Probably should not get this every time. Maybe these properties should be moved to a private global variable?
+			const auto& accelerationStructureProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetDeviceProperties().accelerationStructureProperties;
+
+			const VkDeviceSize scratchBufferSize = (buildInfo.mode == AccelerationStructureBuildMode::Build ? buildSizes.buildScratchSize : buildSizes.updateScratchSize) + accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment;
 
 			RefPtr<StorageBuffer> scratchBuffer = StorageBuffer::Create(1, scratchBufferSize, "AS Scratch Buffer", BufferUsage::StorageBuffer | BufferUsage::DeviceAddress);
 			scratchBuffers.push_back(scratchBuffer);
 
-			vulkanBuildInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress();
+			vulkanBuildInfo.scratchData.deviceAddress = ::Utility::Align(scratchBuffer->GetDeviceAddress(), accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment);
 		}
 
 		Vector<VkAccelerationStructureBuildRangeInfoKHR> vulkanBuildRanges;

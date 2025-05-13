@@ -10,6 +10,7 @@ namespace Volt
 	{
 		RenderGraphBufferHandle countCommandBuffer;
 		RenderGraphBufferHandle taskCommandsBuffer;
+		RenderGraphBufferHandle maskBuffer;
 	};
 
 	class RenderGraph;
@@ -34,6 +35,8 @@ namespace Volt
 
 			uint32_t drawCommandCount;
 			uint32_t meshletCount;
+
+			RenderGraphBufferHandle entityMaskBuffer = RenderGraphNullHandle();
 		};
 
 		CullingTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);

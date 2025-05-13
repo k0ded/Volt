@@ -211,6 +211,11 @@ namespace Volt::RHI
 		rayTracingPipelineProperties.pNext = firstChainPtr;
 		firstChainPtr = &rayTracingPipelineProperties;
 
+		VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
+		accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+		accelerationStructureProperties.pNext = firstChainPtr;
+		firstChainPtr = &accelerationStructureProperties;
+
 		VkPhysicalDeviceProperties2	deviceProperties{};
 		deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 		deviceProperties.pNext = firstChainPtr;
@@ -427,6 +432,18 @@ namespace Volt::RHI
 			m_deviceProperties.rayTracingPipelineProperties.maxRayDispatchInvocationCount = rayTracingPipelineProperties.maxRayDispatchInvocationCount;
 			m_deviceProperties.rayTracingPipelineProperties.shaderGroupHandleAlignment = rayTracingPipelineProperties.shaderGroupHandleAlignment;
 			m_deviceProperties.rayTracingPipelineProperties.maxRayHitAttributeSize = rayTracingPipelineProperties.maxRayHitAttributeSize;
+		}
+
+		// VK_KHR_acceleration_structure
+		{
+			m_deviceProperties.accelerationStructureProperties.maxGeometryCount = accelerationStructureProperties.maxGeometryCount;
+			m_deviceProperties.accelerationStructureProperties.maxInstanceCount = accelerationStructureProperties.maxInstanceCount;
+			m_deviceProperties.accelerationStructureProperties.maxPrimitiveCount = accelerationStructureProperties.maxPrimitiveCount;
+			m_deviceProperties.accelerationStructureProperties.maxPerStageDescriptorAccelerationStructures = accelerationStructureProperties.maxPerStageDescriptorAccelerationStructures;
+			m_deviceProperties.accelerationStructureProperties.maxPerStageDescriptorUpdateAfterBindAccelerationStructures = accelerationStructureProperties.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
+			m_deviceProperties.accelerationStructureProperties.maxDescriptorSetAccelerationStructures = accelerationStructureProperties.maxDescriptorSetAccelerationStructures;
+			m_deviceProperties.accelerationStructureProperties.maxDescriptorSetUpdateAfterBindAccelerationStructures = accelerationStructureProperties.maxDescriptorSetUpdateAfterBindAccelerationStructures;
+			m_deviceProperties.accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment = accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment;
 		}
 
 		FetchMemoryProperties();

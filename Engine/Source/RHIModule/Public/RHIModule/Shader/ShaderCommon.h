@@ -128,6 +128,26 @@ namespace Volt::RHI
 			return baseType == rhs.baseType && vecsize == rhs.vecsize && columns == rhs.columns;
 		}
 
+		inline bool IsArithmeticType() const
+		{
+			switch (baseType)
+			{
+				case ShaderUniformBaseType::Bool:
+				case ShaderUniformBaseType::Short:
+				case ShaderUniformBaseType::UShort:
+				case ShaderUniformBaseType::UInt:
+				case ShaderUniformBaseType::Int:
+				case ShaderUniformBaseType::Int64:
+				case ShaderUniformBaseType::UInt64:
+				case ShaderUniformBaseType::Double:
+				case ShaderUniformBaseType::Float:
+				case ShaderUniformBaseType::Half:
+					return true;
+			}
+
+			return false;
+		}
+
 		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderUniformType& data)
 		{
 			streamWriter.Write(data.baseType);

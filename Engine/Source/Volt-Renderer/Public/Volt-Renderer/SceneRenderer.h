@@ -14,6 +14,10 @@
 
 #include <RHIModule/Buffers/CommandBufferSet.h>
 
+// #TODO_Ivar: Temporary until outline pass is moved out from here.
+#include <EntitySystem/EntityID.h>
+#include <RenderCore/Resources/GrowingGPUBuffer.h>
+
 namespace Volt
 {
 	namespace RHI
@@ -98,6 +102,9 @@ namespace Volt
 
 		const uint64_t GetFrameTotalGPUAllocationSize() const;
 
+		// #TODO_Ivar: Editor passes, should be moved to some other place.
+		void UpdateSelection(const Vector<EntityID>& entityIds);
+
 	private:
 		void OnRender(Ref<Camera> camera, float timestep);
 
@@ -137,8 +144,9 @@ namespace Volt
 		void AddVisualizationPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 		void AddPathTracingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 
-		// Editor passes, should be moved to some other place.
+		// #TODO_Ivar: Editor passes, should be moved to some other place.
 		void AddGridPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage, Ref<Camera> camera);
+		void AddOutlinePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
 
@@ -188,5 +196,9 @@ namespace Volt
 
 		Ref<RenderScene> m_renderScene;
 		Renderer::EnvironmentTextures m_sceneEnvironment;
+
+		Vector<EntityID> m_selectedEntityIds;
+		bool m_selectionDirty = false;
+		Ref<GrowingGPUBuffer> m_selectedPrimitivesMaskBuffer;
 	};
 }

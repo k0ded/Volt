@@ -63,13 +63,14 @@ namespace Volt
 		UUID64 AddLightInstance(EntityID entityId, const SceneLightDescription& description);
 		void RemoveLightInstance(UUID64 id);
 
-		VT_INLINE VT_NODISCARD const uint32_t GetRenderObjectCount() const { return static_cast<uint32_t>(m_renderPrimitives.size()); }
-		VT_INLINE VT_NODISCARD const uint32_t GetIndividualMeshCount() const { return m_currentIndividualMeshCount; }
-		VT_INLINE VT_NODISCARD const uint32_t GetIndividualMaterialCount() const { return static_cast<uint32_t>(m_individualMaterials.size()); }
-		VT_INLINE VT_NODISCARD const uint32_t GetMeshletCount() const { return m_currentMeshletCount; }
-		VT_INLINE VT_NODISCARD const uint32_t GetDrawCount() const { return m_renderPrimitives.empty() ? 0u : static_cast<uint32_t>(m_primitiveDrawData.size()); }
-		VT_INLINE VT_NODISCARD const uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
-		VT_INLINE VT_NODISCARD const uint32_t GetSDFPrimitiveCount() const { return static_cast<uint32_t>(m_sdfPrimitiveDrawData.size()); }
+		VT_INLINE VT_NODISCARD uint32_t GetRenderObjectCount() const { return static_cast<uint32_t>(m_renderPrimitives.size()); }
+		VT_INLINE VT_NODISCARD uint32_t GetIndividualMeshCount() const { return m_currentIndividualMeshCount; }
+		VT_INLINE VT_NODISCARD uint32_t GetIndividualMaterialCount() const { return static_cast<uint32_t>(m_individualMaterials.size()); }
+		VT_INLINE VT_NODISCARD uint32_t GetMeshletCount() const { return m_currentMeshletCount; }
+		VT_INLINE VT_NODISCARD uint32_t GetDrawCount() const { return m_renderPrimitives.empty() ? 0u : static_cast<uint32_t>(m_primitiveDrawData.size()); }
+		VT_INLINE VT_NODISCARD uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
+		VT_INLINE VT_NODISCARD uint32_t GetSDFPrimitiveCount() const { return static_cast<uint32_t>(m_sdfPrimitiveDrawData.size()); }
+		VT_INLINE VT_NODISCARD size_t GetMaxPrimitiveIndex() const { return m_primitiveIndicesContainer.GetMaxIndex(); }
 
 		VT_NODISCARD Weak<RenderMaterial> GetMaterialFromID(const uint32_t materialId) const;
 
@@ -90,6 +91,7 @@ namespace Volt
 
 		VT_NODISCARD const RenderPrimitiveData& GetPrimitiveDataFromID(UUID64 id) const;
 		VT_NODISCARD const RenderLightData& GetLightDataFromID(UUID64 id) const;
+		VT_NODISCARD PagedVector<uint32_t> GetPrimitiveIndicesFromEntityID(EntityID entityId) const;
 
 		VT_NODISCARD VT_INLINE std::span<const GPUMesh> GetGPUMeshes() const { return m_gpuMeshes; }
 		VT_NODISCARD VT_INLINE std::span<const PrimitiveDrawData> GetPrimitiveDrawData() const { return m_primitiveDrawData; }
@@ -142,6 +144,8 @@ namespace Volt
 			void InvalidateIndexWithID(UUID64 id);
 
 			VT_INLINE size_t GetIndexFromID(UUID64 id) const { return m_primitiveIndexFromPrimitiveID.at(id); }
+			VT_INLINE size_t GetMaxIndex() const { return m_nextIndex; }
+
 			VT_INLINE PagedVector<size_t> GetAndClearRemovedIndices() 
 			{ 
 				PagedVector<size_t> tempVector = m_removedPrimitiveDataIndices; 

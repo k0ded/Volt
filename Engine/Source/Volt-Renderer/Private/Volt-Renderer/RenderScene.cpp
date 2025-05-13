@@ -371,6 +371,21 @@ namespace Volt
 		return *it;
 	}
 
+	VT_NODISCARD PagedVector<uint32_t> RenderScene::GetPrimitiveIndicesFromEntityID(EntityID entityId) const
+	{
+		PagedVector<uint32_t> result;
+
+		for (const auto& primitive : m_renderPrimitives)
+		{
+			if (primitive.entityId == entityId)
+			{
+				result.emplace_back(static_cast<uint32_t>(m_primitiveIndicesContainer.GetIndexFromID(primitive.id)));
+			}
+		}
+
+		return result;
+	}
+
 	void RenderScene::BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial)
 	{
 		gpuMaterial.textureCount = 0;
