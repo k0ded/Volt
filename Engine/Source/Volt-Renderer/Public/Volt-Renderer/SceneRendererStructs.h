@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Volt-Renderer/Config.h"
+
 #include <RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 
@@ -60,7 +62,7 @@ namespace Volt
 		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<MeshTaskCommand>, TaskCommands)
 	END_SHADER_PARAMETER_STRUCT()
 
-	void BuildGPUSceneData(RenderGraph::Builder& builder, const GPUSceneData& data);
+	void VTR_API BuildGPUSceneData(RenderGraph::Builder& builder, const GPUSceneData& data);
 
 	struct LightBuffersData
 	{

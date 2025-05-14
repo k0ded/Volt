@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Volt-Renderer/Config.h"
+
 #include <RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h>
 
 #include <glm/glm.hpp>
@@ -16,7 +18,7 @@ namespace Volt
 	class RenderGraph;
 	class RenderGraphBlackboard;
 
-	class CullingTechnique
+	class VTR_API CullingTechnique
 	{
 	public:
 		enum class Type : uint32_t

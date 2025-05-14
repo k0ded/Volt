@@ -13,7 +13,7 @@ uint FrameIndex;
 
 struct Output
 {
-    [[vt::r11f_g11f_b10f]] float3 output : SV_Target0;
+    [[vt::rgba16f]] float4 output : SV_Target0;
     [[vt::r11f_g11f_b10f]] float3 accumulation : SV_Target1;
 };
 
@@ -190,7 +190,7 @@ Output main(FullscreenTriangleVertex input)
     if (any(historyTexCoord != saturate(historyTexCoord)) || FrameIndex == 0)
     {
         Output output;
-        output.output = sourceSample;
+        output.output = float4(sourceSample, 1.f);
         output.accumulation = sourceSample;
         return output;
     }
@@ -221,7 +221,7 @@ Output main(FullscreenTriangleVertex input)
     float3 result = (sourceSample * sourceWeight + historySample * historyWeight) / max(sourceWeight + historyWeight, FLT_EPS);
     
     Output output;
-    output.output = result;
+    output.output = float4(result, 1.f);
     output.accumulation = result;
 
     return output;

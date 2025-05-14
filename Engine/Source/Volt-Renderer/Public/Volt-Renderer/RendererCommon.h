@@ -22,6 +22,7 @@ namespace Volt
 		glm::mat4 viewProjection;
 		glm::mat4 inverseViewProjection;
 		glm::mat4 prevViewProjection;
+		glm::mat4 nonJitteredViewProjection;
 		glm::vec4 cameraPosition;
 		glm::vec4 cullingFrustum;
 		glm::vec2 depthUnpackConsts;

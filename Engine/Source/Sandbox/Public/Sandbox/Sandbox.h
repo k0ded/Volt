@@ -45,6 +45,8 @@ class AssetBrowserPanel;
 class EditorWindow;
 class EditorCameraController;
 
+class OutlineSceneRendererExtension;
+
 class Sandbox : public Volt::Layer, public Volt::EventListener
 {
 public:
@@ -141,6 +143,8 @@ private:
 
 	Ref<Volt::SceneRenderer> m_sceneRenderer;
 	Ref<Volt::SceneRenderer> m_gameSceneRenderer;
+
+	Ref<OutlineSceneRendererExtension> m_outlineSceneRendererExtension;
 
 	///// File watcher /////
 	Ref<FileWatcher> m_fileWatcher;

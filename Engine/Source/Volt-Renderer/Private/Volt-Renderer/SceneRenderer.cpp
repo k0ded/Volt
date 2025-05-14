@@ -14,7 +14,6 @@
 #include "Volt-Renderer/RenderingTechniques/ScreenSpaceReflections.h"
 #include "Volt-Renderer/RenderingTechniques/AutoExposureTechnique.h"
 #include "Volt-Renderer/RenderingTechniques/CullingTechnique.h"
-#include "Volt-Renderer/RenderingTechniques/OutlineTechnique.h"
 #include "Volt-Renderer/Utility/ScatteredBufferUpload.h"
 
 #include "Volt-Renderer/ShapeLibrary.h"
@@ -300,20 +299,6 @@ namespace Volt
 	};
 	REGISTER_SHADER(VisualizationFullscreenCS)
 
-	struct EditorGridVSPS
-	{
-		BEGIN_SHADER_DEFINITION(EditorGridVSPS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridVS", RHI::ShaderStage::Vertex)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridPS", RHI::ShaderStage::Pixel)
-		END_SHADER_DEFINITION()
-
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
-			SHADER_PARAMETER(glm::mat4, NonReversedInverseProjection)
-		END_SHADER_PARAMETER_STRUCT()
-	};
-	REGISTER_SHADER(EditorGridVSPS)
-
 	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)
 		: m_renderScene(specification.renderScene), m_commandBufferSet(Renderer::GetFramesInFlight())
 	{
@@ -333,8 +318,6 @@ namespace Volt
 		m_sceneEnvironment.diffuse = Renderer::GetDefaultResources().blackCubeTexture;
 
 		m_skyboxMesh = ShapeLibrary::GetCube();
-	
-		m_selectedPrimitivesMaskBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "SelectedPrimitivesMask");
 	}
 
 	SceneRenderer::~SceneRenderer()
@@ -425,11 +408,11 @@ namespace Volt
 				AddPathTracingPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
 			}
 
-			AddGridPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput, camera);
-			AddOutlinePass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
+			//AddGridPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput, camera);
+			//AddOutlinePass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
 
 			blackboard.Add<FinalOutput>().colorOutput = blackboard.Get<ShadingOutputData>().colorOutput;
-			ExecutePostProcessingPasses(renderGraph, blackboard, timestep);
+			ExecutePostProcessingPasses(renderGraph, blackboard, timestep, camera);
 		}
 		else
 		{
@@ -468,12 +451,6 @@ namespace Volt
 	const uint64_t SceneRenderer::GetFrameTotalGPUAllocationSize() const
 	{
 		return m_frameTotalGPUAllocation.load();
-	}
-
-	void SceneRenderer::UpdateSelection(const Vector<EntityID>& entityIds)
-	{
-		m_selectedEntityIds = entityIds;
-		m_selectionDirty = true;
 	}
 
 	void SceneRenderer::BuildMeshPass(RenderGraph::Builder& builder, RenderGraphBlackboard& blackboard)
@@ -523,6 +500,7 @@ namespace Volt
 			viewUniformBuffer.viewProjection = viewUniformBuffer.projection * viewUniformBuffer.view;
 			viewUniformBuffer.inverseViewProjection = glm::inverse(viewUniformBuffer.viewProjection);
 			viewUniformBuffer.prevViewProjection = m_prevViewProjection;
+			viewUniformBuffer.nonJitteredViewProjection = camera->GetNonJitteredProjection() * viewUniformBuffer.view;
 			viewUniformBuffer.cameraPosition = glm::vec4(camera->GetPosition(), 1.f);
 			viewUniformBuffer.nearPlane = camera->GetNearPlane();
 			viewUniformBuffer.farPlane = camera->GetFarPlane();
@@ -687,7 +665,7 @@ namespace Volt
 		renderGraph.EndMarker();
 	}
 
-	void SceneRenderer::ExecutePostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, float timestep)
+	void SceneRenderer::ExecutePostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, float timestep, Ref<Camera> camera)
 	{
 		renderGraph.BeginMarker("Post Processing");
 
@@ -706,9 +684,19 @@ namespace Volt
 			AddFXAAPass(renderGraph, blackboard, blackboard.Get<FinalOutput>().colorOutput);
 			blackboard.Get<FinalOutput>().colorOutput = blackboard.Get<FXAAOutputData>().output;
 		}
-
-		AddTonemappingPass(renderGraph, blackboard, blackboard.Get<FinalOutput>().colorOutput);
 		renderGraph.EndMarker();
+
+		RenderGraphImageHandle lastImage = blackboard.Get<FinalOutput>().colorOutput;
+
+		if (m_sceneRendererExtensions.contains(SceneRendererExtensionStage::PostPostProcessing))
+		{
+			for (const auto& ext : m_sceneRendererExtensions.at(SceneRendererExtensionStage::PostPostProcessing))
+			{
+				lastImage = ext->OnRender(renderGraph, blackboard, camera, lastImage);
+			}
+		}
+
+		AddTonemappingPass(renderGraph, blackboard, lastImage);
 	}
 
 	void SceneRenderer::AddMainCullingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
@@ -1255,7 +1243,7 @@ namespace Volt
 		[&](RenderGraph::Builder& builder, FXAAOutputData& data)
 		{
 			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "FXAA.Output");
+				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::R16G16B16A16_SFLOAT>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "FXAA.Output");
 				data.output = builder.CreateImage(desc);
 			}
 
@@ -1492,112 +1480,6 @@ namespace Volt
 			context.SetAccelerationStructure(m_renderScene->GetRayTracingScene()->GetAccelerationStructure());
 			context.TraceRays(sbt, m_width, m_height, 1);
 		});
-	}
-
-	void SceneRenderer::AddGridPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage, Ref<Camera> camera)
-	{
-		const auto& depthPrePass = blackboard.Get<DepthPrePass>();
-		const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
-		const auto& viewUniformBuffer = blackboard.Get<ViewUniformBuffer>();
-
-		renderGraph.AddPass("Editor Grid",
-		[&](RenderGraph::Builder& builder)
-		{
-			builder.WriteResource(dstImage);
-			builder.WriteResource(depthPrePass.depth);
-			builder.ReadResource(uniformBuffers.viewDataBuffer);
-		},
-		[=](RenderContext& context)
-		{
-			RenderingInfo info = context.CreateRenderingInfo(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, { dstImage, depthPrePass.depth });
-			info.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
-			info.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
-
-			RHI::RenderPipelineCreateInfo pipelineInfo;
-			pipelineInfo.shader = ShaderMap::Get<EditorGridVSPS>();
-			pipelineInfo.attachmentBlendStates[0] = DefaultBlendStates::Alpha();
-
-			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
-
-			EditorGridVSPS::Parameters parameters;
-			parameters.View = uniformBuffers.viewDataBuffer;
-			parameters.NonReversedInverseProjection = glm::inverse(camera->GetNonReversedProjection());
-
-			context.BeginRendering(info);
-			context.BindPipeline(pipeline);
-			context.SetParameters<EditorGridVSPS>(parameters);
-			context.Draw(3, 1, 0, 0);
-			context.EndRendering();
-		});
-	}
-
-	void SceneRenderer::AddOutlinePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage)
-	{
-		if (m_selectedEntityIds.empty())
-		{
-			return;
-		}
-
-		if (m_selectionDirty)
-		{
-			PagedVector<uint32_t> selectedPrimitives;
-
-			for (const auto& entityId : m_selectedEntityIds)
-			{
-				selectedPrimitives.append(m_renderScene->GetPrimitiveIndicesFromEntityID(entityId));
-			}
-
-			const uint32_t numPrimitiveEntries = static_cast<uint32_t>(m_renderScene->GetMaxPrimitiveIndex()) / 32u;
-			m_selectedPrimitivesMaskBuffer->GrowIfRequired(numPrimitiveEntries);
-
-			RenderGraphBufferHandle selectedPrimitivesMask = renderGraph.AddExternalBuffer(m_selectedPrimitivesMaskBuffer->GetResource());
-
-			// Clear to zero to make sure that no previously selected primitives are shown as selected.
-			RGUtils::ClearBuffer(renderGraph, selectedPrimitivesMask, 0u);
-
-			if (!selectedPrimitives.empty())
-			{
-				std::sort(selectedPrimitives.begin(), selectedPrimitives.end());
-
-				uint32_t numValuesToUpdate = 0;
-
-				for (int32_t prevMaskIndex = -1; const uint32_t primitiveIndex : selectedPrimitives)
-				{
-					const int32_t maskIndex = static_cast<int32_t>(primitiveIndex / 32u);
-					if (maskIndex != prevMaskIndex)
-					{
-						numValuesToUpdate++;
-						prevMaskIndex = maskIndex;
-					}
-				}
-
-				ScatteredBufferUpload<uint32_t> bufferUpload{ numValuesToUpdate };
-				
-				uint32_t* currentMask = nullptr;
-				for (int32_t prevMaskIndex = -1; const uint32_t primitiveIndex : selectedPrimitives)
-				{
-					const int32_t maskIndex = static_cast<int32_t>(primitiveIndex / 32);
-					const uint32_t bitIndex = primitiveIndex % 32;
-					if (maskIndex != prevMaskIndex)
-					{
-						currentMask = &bufferUpload.AddUploadItem(maskIndex);
-						prevMaskIndex = maskIndex;
-					}
-
-					if (currentMask)
-					{
-						(*currentMask) |= (1u << bitIndex);
-					}
-				}
-
-				bufferUpload.UploadTo(renderGraph, m_selectedPrimitivesMaskBuffer->GetResource());
-			}
-
-			m_selectionDirty = false;
-		}
-
-		OutlineTechnique outlineTechnique{ renderGraph, blackboard };
-		outlineTechnique.Execute(renderGraph.AddExternalBuffer(m_selectedPrimitivesMaskBuffer->GetResource()), dstImage, *m_renderScene);
 	}
 
 	void SceneRenderer::CreateMainRenderTarget(const uint32_t width, const uint32_t height)
