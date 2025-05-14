@@ -94,7 +94,6 @@ namespace Volt
 		inline const RenderGraphDebugger& GetRenderGraphDebugger() const { return m_renderGraphDebugger; }
 
 		RefPtr<RHI::Image> GetFinalImage();
-		RefPtr<RHI::Image> GetObjectIDImage();
 
 		// #TODO_Ivar: TEMP, Should not be public!
 		void Invalidate();
@@ -123,7 +122,6 @@ namespace Volt
 
 		void AddMainCullingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddObjectIDPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddGTAOPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
 		void AddVisibilityBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 
@@ -153,7 +151,6 @@ namespace Volt
 		bool m_enabled = false;
 
 		RefPtr<RHI::Image> m_outputImage;
-		RefPtr<RHI::Image> m_objectIDImage;
 		RefPtr<RHI::Image> m_previousColorImage;
 		RefPtr<RHI::Image> m_averageLuminanceImage;
 

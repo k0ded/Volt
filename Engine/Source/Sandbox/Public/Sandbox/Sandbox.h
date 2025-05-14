@@ -46,6 +46,7 @@ class EditorWindow;
 class EditorCameraController;
 
 class OutlineSceneRendererExtension;
+class ObjectIDSceneRendererExtension;
 
 class Sandbox : public Volt::Layer, public Volt::EventListener
 {
@@ -72,6 +73,8 @@ public:
 	
 	VT_NODISCARD VT_INLINE UUID64 GetMeshImportModalID() const { return m_meshImportModal; }
 	VT_NODISCARD VT_INLINE UUID64 GetTextureImportModalID() const { return m_textureImportModal; }
+
+	VT_NODISCARD VT_INLINE Ref<ObjectIDSceneRendererExtension> GetObjectIDSceneRendererExtension() const { return m_objectIDSceneRendererExtension; }
 
 	void NewScene();
 	void OpenScene();
@@ -145,6 +148,7 @@ private:
 	Ref<Volt::SceneRenderer> m_gameSceneRenderer;
 
 	Ref<OutlineSceneRendererExtension> m_outlineSceneRendererExtension;
+	Ref<ObjectIDSceneRendererExtension> m_objectIDSceneRendererExtension;
 
 	///// File watcher /////
 	Ref<FileWatcher> m_fileWatcher;

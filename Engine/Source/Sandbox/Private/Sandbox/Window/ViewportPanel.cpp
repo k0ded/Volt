@@ -15,6 +15,8 @@
 #include "Sandbox/EditorCommandStack.h"
 #include "Sandbox/Utility/Theme.h"
 
+#include "Sandbox/SceneRendererExtensions/ObjectIDSceneRendererExtension.h"
+
 #include <Volt/Asset/ParticlePreset.h>
 #include <Volt/Utility/UIUtility.h>
 
@@ -196,7 +198,14 @@ void ViewportPanel::UpdateMainContent()
 
 		m_editorCameraController->SetControllable(IsHovered() && !isUsing);
 	}
-	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered() && !ImGuizmo::IsOver() && !Volt::Input::IsKeyDown(Volt::InputCode::LeftAlt))
+
+	const bool hasTriedToSelect =
+		ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
+		ImGui::IsWindowHovered() &&
+		(!ImGuizmo::IsOver() || !SelectionManager::IsAnySelected()) &&
+		!Volt::Input::IsKeyDown(Volt::InputCode::LeftAlt);
+
+	if (hasTriedToSelect)
 	{
 		m_beganClick = true;
 		HandleSingleSelect();
@@ -862,12 +871,14 @@ void ViewportPanel::HandleSingleSelect()
 	{
 		//const auto renderScale = m_sceneRenderer->GetSettings().renderScale;
 		const float renderScale = 1.f;
-		if (!m_sceneRenderer->GetObjectIDImage())
+		const auto ext = Sandbox::Get().GetObjectIDSceneRendererExtension();
+
+		if (!ext || !ext->GetIDImage())
 		{
 			return;
 		}
 
-		uint32_t pixelData = m_sceneRenderer->GetObjectIDImage()->ReadPixel<uint32_t>(static_cast<uint32_t>(mouseX * renderScale), static_cast<uint32_t>(mouseY * renderScale), 0u);
+		uint32_t pixelData = ext->GetIDImage()->ReadPixel<uint32_t>(static_cast<uint32_t>(mouseX * renderScale), static_cast<uint32_t>(mouseY * renderScale), 0u);
 		const bool multiSelect = Volt::Input::IsKeyDown(Volt::InputCode::LeftShift);
 		const bool deselect = Volt::Input::IsKeyDown(Volt::InputCode::LeftControl);
 

@@ -343,11 +343,6 @@ namespace Volt
 		return m_outputImage;
 	}
 
-	RefPtr<RHI::Image> SceneRenderer::GetObjectIDImage()
-	{
-		return m_objectIDImage;
-	}
-
 	void SceneRenderer::OnRender(Ref<Camera> camera, float timestep)
 	{
 		VT_PROFILE_FUNCTION();
@@ -386,7 +381,6 @@ namespace Volt
 
 		AddMainCullingPass(renderGraph, blackboard);
 		AddDepthPrePass(renderGraph, blackboard);
-		AddObjectIDPass(renderGraph, blackboard);
 		AddGTAOPass(renderGraph, blackboard, camera);
 
 		DirectionalShadowTechnique dirShadowTechnique{ renderGraph, blackboard };
@@ -396,6 +390,15 @@ namespace Volt
 		blackboard.Add<LightCullingData>() = lightCulling.Execute();
 
 		blackboard.Add<VolumetricFogData>() = m_volumetricFog.Execute(renderGraph, blackboard);
+
+		if (m_sceneRendererExtensions.contains(SceneRendererExtensionStage::PreGBuffer))
+		{
+			for (const auto& ext : m_sceneRendererExtensions.at(SceneRendererExtensionStage::PreGBuffer))
+			{
+				// There is no output image yet
+				ext->OnRender(renderGraph, blackboard, camera, RenderGraphNullHandle());
+			}
+		}
 
 		ExecuteGBufferGenerationPasses(renderGraph, blackboard);
 		AddSkyboxPass(renderGraph, blackboard);
@@ -407,9 +410,6 @@ namespace Volt
 			{
 				AddPathTracingPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
 			}
-
-			//AddGridPass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput, camera);
-			//AddOutlinePass(renderGraph, blackboard, blackboard.Get<ShadingOutputData>().colorOutput);
 
 			blackboard.Add<FinalOutput>().colorOutput = blackboard.Get<ShadingOutputData>().colorOutput;
 			ExecutePostProcessingPasses(renderGraph, blackboard, timestep, camera);
@@ -760,52 +760,6 @@ namespace Volt
 			context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 			context.EndRendering();
 		});
-	}
-
-	void SceneRenderer::AddObjectIDPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
-	{
-		struct Data
-		{
-			RenderGraphImageHandle objectIdHandle;
-		};
-
-		const auto preDepthHandle = blackboard.Get<DepthPrePass>().depth;
-		const auto& drawCullingData = blackboard.Get<DrawCullingData>();
-
-		Data& data = renderGraph.AddPass<Data>("Object ID Pass",
-		[&](RenderGraph::Builder& builder, Data& data)
-		{
-			data.objectIdHandle = builder.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::R32_UINT>(m_width, m_height, RHI::ImageUsage::AttachmentStorage, "Entity ID"));
-			builder.WriteResource(preDepthHandle);
-
-			BuildMeshPass(builder, blackboard);
-			builder.SetHasSideEffect();
-		},
-		[=](const Data& data, RenderContext& context)
-		{
-			RenderingInfo info = context.CreateRenderingInfo(m_width, m_height, { data.objectIdHandle, preDepthHandle });
-			info.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
-
-			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get<ObjectIDMSPS>();
-			pipelineInfo.depthCompareOperator = RHI::CompareOperator::Equal;
-			pipelineInfo.depthMode = RHI::DepthMode::Read;
-
-			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
-
-			context.BeginRendering(info);
-			context.BindPipeline(pipeline);
-
-			ObjectIDMSPS::Parameters parameters;
-			SetupMeshPassConstants(context, blackboard, parameters.Common);
-
-			context.SetParameters<ObjectIDMSPS>(parameters);
-
-			context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
-			context.EndRendering();
-		});
-
-		renderGraph.EnqueueImageExtraction(data.objectIdHandle, m_objectIDImage);
 	}
 
 	void SceneRenderer::AddGTAOPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)

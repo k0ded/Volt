@@ -9,9 +9,10 @@ namespace Volt
 	class RenderScene;
 	class Camera;
 
-	enum class SceneRendererExtensionStage
+	enum class SceneRendererExtensionStage : uint32_t
 	{
-		PostPostProcessing
+		PreGBuffer = 0,
+		PostPostProcessing = 1
 	};
 
 	class SceneRendererExtension

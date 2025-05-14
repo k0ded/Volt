@@ -21,8 +21,8 @@ struct OutlineGeometryMSPS
 {
 	BEGIN_SHADER_DEFINITION(OutlineGeometryMSPS)
 		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
-	DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/Outline/OutlineGeometry.hlsl", "MainMS", RHI::ShaderStage::Mesh)
-	DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/Outline/OutlineGeometry.hlsl", "MainPS", RHI::ShaderStage::Pixel)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/Outline/OutlineGeometry.hlsl", "MainMS", RHI::ShaderStage::Mesh)
+		DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/Outline/OutlineGeometry.hlsl", "MainPS", RHI::ShaderStage::Pixel)
 	END_SHADER_DEFINITION()
 
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)

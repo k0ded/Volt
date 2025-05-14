@@ -46,6 +46,7 @@
 
 #include "Sandbox/SceneRendererExtensions/GridSceneRendererExtension.h"
 #include "Sandbox/SceneRendererExtensions/OutlineSceneRendererExtension.h"
+#include "Sandbox/SceneRendererExtensions/ObjectIDSceneRendererExtension.h"
 
 #include "Sandbox/Modals/MeshImportModal.h"
 #include "Sandbox/Modals/TextureImportModal.h"
@@ -276,6 +277,7 @@ void Sandbox::SetupNewSceneData()
 		m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
 		m_sceneRenderer->AddExtension<GridSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
 		m_outlineSceneRendererExtension = m_sceneRenderer->AddExtension<OutlineSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
+		m_objectIDSceneRendererExtension = m_sceneRenderer->AddExtension<ObjectIDSceneRendererExtension>(Volt::SceneRendererExtensionStage::PreGBuffer);
 
 		m_gameSceneRenderer = CreateRef<Volt::SceneRenderer>(gameSpec);
 	}
