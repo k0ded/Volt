@@ -98,7 +98,7 @@ namespace Volt
 
 		for (const auto& materialHandle : instance.materialHandles)
 		{
-			m_meshReferenceCounter.RemoveReference(materialHandle, instanceId);
+			m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
 		}
 
 		if (m_streamingInstances.Contains(instanceId))

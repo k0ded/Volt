@@ -1016,7 +1016,7 @@ namespace Volt
 			auto material = m_renderScene->GetMaterialFromID(materialId);
 			auto pipeline = material->GetPipeline();
 
-			if (!pipeline)
+			if (!pipeline || !pipeline->IsValid())
 			{
 				pipeline = ShaderMap::GetComputePipeline<MaterialShaderTemp>();
 			}
