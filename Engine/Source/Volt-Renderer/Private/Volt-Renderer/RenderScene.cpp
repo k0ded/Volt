@@ -140,9 +140,9 @@ namespace Volt
 	{
 		std::scoped_lock lock{ m_materialUpdateMutex };
 		const size_t hash = material->GetHash();
-		if (m_materialIndexFromMaterialHash.contains(hash))
+		if (m_gpuMaterialIndexFromMaterialHash.contains(hash))
 		{
-			m_invalidMaterials.emplace_back(material, m_materialIndexFromMaterialHash.at(hash));
+			m_invalidMaterials.emplace_back(material, m_gpuMaterialIndexFromMaterialHash.at(hash));
 		}
 	}
 
@@ -503,7 +503,7 @@ namespace Volt
 		size_t currentIndex = m_gpuMeshes.size();
 
 		std::scoped_lock lock{ m_meshUpdateMutex };
-		for (uint32_t subMeshIndex = 0; const auto & gpuMesh : mesh->GetGPUMeshes())
+		for (uint32_t subMeshIndex = 0; const auto& gpuMesh : mesh->GetGPUMeshes())
 		{
 			m_gpuMeshes.emplace_back(gpuMesh);
 
@@ -513,6 +513,11 @@ namespace Volt
 
 			currentIndex++;
 			subMeshIndex++;
+		}
+
+		if (s_logRenderSceneUpdatedCVar.GetValue())
+		{
+			VT_LOGC(Trace, LogRenderScene, "Mesh {} was added to render scene!", mesh->GetName());
 		}
 	}
 
@@ -526,14 +531,20 @@ namespace Volt
 			return;
 		}
 
-		m_individualMaterials.emplace_back(material);
-		m_materialIndexFromMaterialHash[material->GetHash()] = m_gpuMaterials.size();
+		const size_t gpuMaterialIndex = m_gpuMaterials.size();
 
 		GPUMaterial& gpuMaterial = m_gpuMaterials.emplace_back();
 		BuildGPUMaterial(material, gpuMaterial);
 
 		std::scoped_lock lock{ m_materialUpdateMutex };
-		m_invalidMaterials.emplace_back(material, m_materialIndexFromMaterialHash[material->GetHash()]);
+		m_individualMaterials.emplace_back(material);
+		m_gpuMaterialIndexFromMaterialHash[material->GetHash()] = gpuMaterialIndex;
+		m_invalidMaterials.emplace_back(material, gpuMaterialIndex);
+	
+		if (s_logRenderSceneUpdatedCVar.GetValue())
+		{
+			VT_LOGC(Trace, LogRenderScene, "Material {} was added to render scene!", material->GetName());
+		}
 	}
 
 	void RenderScene::UpdateInvalidMaterials(RenderGraph& renderGraph)
@@ -548,7 +559,7 @@ namespace Volt
 		{
 			if (material->DoMaterialRequireUpdate())
 			{
-				m_invalidMaterials.emplace_back(material, m_materialIndexFromMaterialHash.at(material->GetHash()));
+				m_invalidMaterials.emplace_back(material, m_gpuMaterialIndexFromMaterialHash.at(material->GetHash()));
 				material->ClearStatus();
 			}
 		}
