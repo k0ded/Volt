@@ -111,7 +111,7 @@ namespace VoltSharpmake
             conf.Defines.Add("VT_DEVELOPMENT");
 
             conf.Defines.Add("VT_ENABLE_ASSERTS");
-            conf.Defines.Add("VT_ENABLE_VALIDATION");
+            //conf.Defines.Add("VT_ENABLE_VALIDATION");
             conf.Defines.Add("VT_ENABLE_PROFILING");
 
             conf.Defines.Add("NDEBUG");
