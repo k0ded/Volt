@@ -3,7 +3,8 @@
 #include "AssetSystem/SourceAssetImporter.h"
 #include "SourceAssetManager.h"
 
-#include <CoreUtilities/ThreadUtilities.h>
+#include <Volt-Platforms/Platform.h>
+
 #include <CoreUtilities/Profiling/Profiling.h>
 
 VT_DEFINE_LOG_CATEGORY(LogSourceAssetManager);
@@ -30,8 +31,8 @@ namespace Volt
 		s_instance = this;
 
 		m_assetImporterWorkerThread = CreateScope<std::thread>(std::bind(&SourceAssetManager::RunAssetImportWorker, this));
-		Thread::SetThreadName(m_assetImporterWorkerThread->native_handle(), "AssetImporterWorker");
-		Thread::SetThreadPriority(m_assetImporterWorkerThread->native_handle(), ThreadPriority::Low);
+		PlatformThread::SetThreadName(m_assetImporterWorkerThread->native_handle(), "AssetImporterWorker");
+		PlatformThread::SetThreadPriority(m_assetImporterWorkerThread->native_handle(), ThreadPriority::Low);
 	}
 
 	SourceAssetManager::~SourceAssetManager()

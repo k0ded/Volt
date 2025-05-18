@@ -46,7 +46,10 @@ namespace Volt
 
 	void WindowManager::DestroyMainWindow()
 	{
-		DestroyWindow(m_mainWindowHandle);
+		if (m_mainWindowHandle != 0)
+		{
+			DestroyWindow(m_mainWindowHandle);
+		}
 	}
 
 	WindowManager& WindowManager::Get()

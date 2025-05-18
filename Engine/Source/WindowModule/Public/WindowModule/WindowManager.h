@@ -44,6 +44,8 @@ namespace Volt
 		Window& GetMainWindow() const;
 		Window& GetWindow(const WindowHandle handle) const;
 
+		VT_NODISCARD VT_INLINE bool HasMainWindow() const { return m_mainWindowHandle != 0; }
+
 		static WindowManager& Get();
 
 		VT_DECLARE_SUBSYSTEM("{DD8C1066-AA16-40C6-929D-282F15D11AC2}"_guid);
@@ -51,7 +53,7 @@ namespace Volt
 	private:
 		inline static WindowManager* s_instance = nullptr;
 
-		WindowHandle m_mainWindowHandle;
+		WindowHandle m_mainWindowHandle = 0;
 		std::unordered_map<WindowHandle, Scope<Window>> m_windows;
 	};
 }

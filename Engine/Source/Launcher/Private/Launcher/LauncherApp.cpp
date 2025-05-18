@@ -2,14 +2,13 @@
 
 #include "Testing/RenderingTestingLayer.h"
 
-#include <Volt/EntryPoint.h>
 #include <Volt/Core/Application.h>
 
 class LauncherApp : public Volt::Application
 {
 public:
-	LauncherApp(const Volt::ApplicationInfo& appInfo)
-		: Volt::Application(appInfo)
+	LauncherApp(const Volt::ApplicationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
+		: Volt::Application(appInfo, commandLineBuilder)
 	{
 		//GameLayer* testing = new GameLayer();
 		//PushLayer(testing);
@@ -20,11 +19,11 @@ public:
 private:
 };
 
-Volt::Application* Volt::CreateApplication(const std::filesystem::path& appPath)
+bool g_useCrashHandling = true;
+Volt::Application* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
 {
 	Volt::ApplicationInfo info{};
 	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
-	info.projectPath = appPath;
 	info.useVSync = false;
 	info.enableSteam = false;
 	info.enableImGui = false;
@@ -32,5 +31,5 @@ Volt::Application* Volt::CreateApplication(const std::filesystem::path& appPath)
 	info.width = 1600;
 	info.height = 900;
 
-	return new LauncherApp(info);
+	return new LauncherApp(info, commandLineBuilder);
 }

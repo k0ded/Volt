@@ -138,7 +138,7 @@ namespace Volt
 
 	void Renderer::Initialize()
 	{
-		m_deletionQueue.resize(WindowManager::Get().GetMainWindow().GetSwapchain().GetFramesInFlight());
+		m_deletionQueue.resize(RHI::Swapchain::FramesInFlight);
 
 		// Bindless resources manager
 		{
@@ -164,6 +164,8 @@ namespace Volt
 		m_defaultResources.Clear();
 		m_samplers.clear();
 
+		ShapeLibrary::Shutdown();
+
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
 		m_shaderValidator = nullptr;
 #endif
@@ -185,7 +187,7 @@ namespace Volt
 
 	const uint32_t Renderer::GetFramesInFlight()
 	{
-		return WindowManager::Get().GetMainWindow().GetSwapchain().GetFramesInFlight();
+		return RHI::Swapchain::FramesInFlight;
 	}
 
 	void Renderer::DestroyResource(std::function<void()>&& function)
@@ -196,7 +198,7 @@ namespace Volt
 			return;
 		}
 
-		const uint32_t currentFrame = WindowManager::Get().GetMainWindow().GetSwapchain().GetCurrentFrame();
+		const uint32_t currentFrame = s_instance->m_frameIndex % RHI::Swapchain::FramesInFlight;
 		s_instance->m_deletionQueue.at(currentFrame).Push(std::move(function));
 	}
 
@@ -457,12 +459,13 @@ namespace Volt
 		}
 #endif
 
+		m_frameIndex++;
 		return false;
 	}
 
 	bool Renderer::OnPreRenderEvent(AppPreRenderEvent& event)
 	{
-		const uint32_t currentFrame = WindowManager::Get().GetMainWindow().GetSwapchain().GetCurrentFrame();
+		const uint32_t currentFrame = m_frameIndex % RHI::Swapchain::FramesInFlight;
 
 		m_deletionQueue.at(currentFrame).Flush();
 		m_bindlessResourcesManager->Update();

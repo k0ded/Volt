@@ -17,6 +17,7 @@
 #include <EntitySystem/Scripting/ScriptingSystem.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/CommandLineBuilder.h>
 
 namespace Amp
 {
@@ -44,7 +45,6 @@ namespace Volt
 		std::string title;
 		std::filesystem::path iconPath;
 		std::filesystem::path cursorPath;
-		std::filesystem::path projectPath;
 		WindowMode windowMode;
 		uint32_t width;
 		uint32_t height;
@@ -52,8 +52,9 @@ namespace Volt
 		bool enableImGui = true;
 		bool enableSteam = false;
 		bool isRuntime = false;
-		bool UseTitlebar = true;
-		bool UseCustomTitlebar = false;
+		bool useTitlebar = true;
+		bool useCustomTitlebar = false;
+		bool createMainWindow = true;
 
 		Version version = VT_VERSION;
 	};
@@ -96,13 +97,16 @@ namespace Volt
 	class Application
 	{
 	public:
-		Application(const ApplicationInfo& info = ApplicationInfo());
+		Application(const ApplicationInfo& info, const CommandLineBuilder& commandLineBuilder);
 		virtual ~Application();
 
 		void Run();
+		void Quit();
 
 		void PushLayer(Layer* layer);
 		void PopLayer(Layer* layer);
+
+		void LaunchMainWindow();
 
 		inline static Application& Get() { return *s_instance; }
 
@@ -116,6 +120,9 @@ namespace Volt
 
 		AI::NavigationSystem& GetNavigationSystem() { return *m_navigationSystem; }
 		SteamImplementation& GetSteam() { return *m_steamImplementation; }
+
+		const CommandLineBuilder& GetCommandLineBuilder() const { return m_commandLineBuilder; }
+		const MultiTimer& GetFrameTimer() const { return m_frameTimer; }
 
 	private:
 		friend class ApplicationEventListener;
@@ -136,6 +143,7 @@ namespace Volt
 		bool m_isRunning = false;
 		bool m_isMinimized = false;
 		bool m_hasSentMouseMovedEvent = false;
+		bool m_skipPresentThisFrame = false;
 
 		float m_currentDeltaTime = 0.f;
 		float m_lastTotalTime = 0.f;
@@ -147,18 +155,16 @@ namespace Volt
 		LayerStack m_layerStack;
 		MultiTimer m_frameTimer;
 
-		Scope<SubSystemManager> m_subSystemManager;
-
-		Scope<ScriptingSystem> m_scriptingSystem;
-
-		Scope<ApplicationEventListener> m_eventListener;
-
 		RefPtr<RHI::GraphicsContext> m_graphicsContext;
 		RefPtr<RHI::RHIProxy> m_rhiProxy;
 
 		Scope<AssetManager> m_assetManager;
 		Scope<SourceAssetManager> m_sourceAssetManager;
 		Scope<AI::NavigationSystem> m_navigationSystem;
+		Scope<SubSystemManager> m_subSystemManager;
+		Scope<ScriptingSystem> m_scriptingSystem;
+		Scope<ApplicationEventListener> m_eventListener;
+		Scope<SteamImplementation> m_steamImplementation;
 
 		ProjectManager* m_projectManager = nullptr;
 		PluginRegistry* m_pluginRegistry = nullptr;
@@ -167,8 +173,7 @@ namespace Volt
 		PhysicsSubSystem* m_physicsSubSystem = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
 
-		Scope<SteamImplementation> m_steamImplementation;
-	};
 
-	static Application* CreateApplication(const std::filesystem::path& appPath);
+		const CommandLineBuilder m_commandLineBuilder;
+	};
 }

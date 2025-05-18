@@ -9,6 +9,8 @@
 
 #include "Volt/Utility/UIUtility.h"
 
+VT_DEFINE_LOG_CATEGORY(LogImGuiSubSystem);
+
 namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(ImGuiSubSystem, PostEngine, -1);
@@ -17,6 +19,18 @@ namespace Volt
 
 	void ImGuiSubSystem::Initialize()
 	{
+
+	} 
+
+	void ImGuiSubSystem::Shutdown()
+	{
+		m_imguiImplementation = nullptr;
+	}
+
+	void ImGuiSubSystem::InitializeImGui()
+	{
+		VT_LOGC(Trace, LogImGuiSubSystem, "Initializing ImGuiSubSystem!");
+
 		if (s_imguiEnabled.GetValue())
 		{
 			auto& window = WindowManager::Get().GetMainWindow();
@@ -41,11 +55,7 @@ namespace Volt
 
 			m_imguiImplementation->SetDefaultFont(defaultFont);
 		}
-	}
-
-	void ImGuiSubSystem::Shutdown()
-	{
-		m_imguiImplementation = nullptr;
+		VT_LOGC(Trace, LogImGuiSubSystem, "ImGuiSubSystem initialized!");
 	}
 
 	void ImGuiSubSystem::SetupContext()
@@ -58,11 +68,17 @@ namespace Volt
 
 	void ImGuiSubSystem::Begin()
 	{
-		m_imguiImplementation->Begin();
+		if (m_imguiImplementation)
+		{
+			m_imguiImplementation->Begin();
+		}
 	}
 
 	void ImGuiSubSystem::End()
 	{
-		m_imguiImplementation->End();
+		if (m_imguiImplementation)
+		{
+			m_imguiImplementation->End();
+		}
 	}
 }

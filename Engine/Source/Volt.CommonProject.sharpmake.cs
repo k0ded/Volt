@@ -319,6 +319,7 @@ namespace VoltSharpmake
 
             conf.Output = Configuration.OutputType.Exe;
 			conf.Options.Add(new Sharpmake.Options.Vc.Linker.DisableSpecificWarnings("4075"));
+			conf.Options.Add(Options.Vc.Linker.SubSystem.Windows);
 
 			if (target.Platform == Platform.win64)
             {
@@ -330,8 +331,6 @@ namespace VoltSharpmake
 		public override void ConfigureDist(Configuration conf, CommonTarget target)
 		{
 			base.ConfigureDist(conf, target);
-
-			conf.Options.Add(Options.Vc.Linker.SubSystem.Windows);
 		}
 	}
 

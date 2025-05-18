@@ -56,8 +56,15 @@ namespace Volt
 		pluginRegistry.FindAndRegisterPluginsInDirectory(m_currentProject->rootDirectory / "Plugins");
 		pluginRegistry.FindAndRegisterPluginsInDirectory(m_currentEngineDirectory / "Plugins");
 
-		VT_LOGC(Info, LogProject, "Loading project {0}", projectPath);
-		DeserializeProject(pluginRegistry);
+		if (!projectPath.empty())
+		{
+			VT_LOGC(Info, LogProject, "Loading project {0}", projectPath);
+			DeserializeProject(pluginRegistry);
+		}
+		else
+		{
+			VT_LOGC(Warning, LogProject, "No project filepath provided, not loading any project!");
+		}
 
 		std::filesystem::current_path(m_currentEngineDirectory);
 	}

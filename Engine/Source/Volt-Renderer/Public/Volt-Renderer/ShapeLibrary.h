@@ -10,6 +10,8 @@ namespace Volt
 	class VTR_API ShapeLibrary
 	{
 	public:
+		static void Shutdown();
+
 		static Ref<Mesh> GetCube();
 		static Ref<Mesh> GetSphere();
 

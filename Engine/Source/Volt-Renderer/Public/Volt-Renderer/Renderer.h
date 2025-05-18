@@ -121,5 +121,7 @@ namespace Volt
 
 		Vector<FunctionQueue> m_deletionQueue;
 		vt::map<size_t, BindlessResourceRef<RHI::SamplerState>> m_samplers;
+
+		uint32_t m_frameIndex = 0;
 	};
 }

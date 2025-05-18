@@ -43,6 +43,7 @@ namespace VoltSharpmake
             conf.AddPublicDependency<glm>(target);
 
             conf.AddPrivateDependency<esfw>(target);
+			conf.AddPrivateDependency<VoltEntryPoint>(target);
 
 			Type gameProjectType = Type.GetType("VoltSharpmake.Game");
 			if (gameProjectType != null)

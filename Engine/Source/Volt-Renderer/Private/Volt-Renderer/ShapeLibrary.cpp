@@ -200,6 +200,11 @@ namespace Volt
 		return mesh;
 	}
 
+	void ShapeLibrary::Shutdown()
+	{
+		s_meshData = {};
+	}
+
 	Ref<Mesh> ShapeLibrary::GetCube()
 	{
 		if (!s_meshData.cubeMesh)

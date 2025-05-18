@@ -7,6 +7,7 @@ namespace Volt
 		: m_resetTime(resetTimeMilli)
 	{
 		m_timeAtLastAccumulation = std::chrono::steady_clock::now();
+		m_timeAtLastUpdate = std::chrono::steady_clock::now();
 	}
 
 	void MultiTimer::Accumulate()
@@ -29,8 +30,18 @@ namespace Volt
 		}
 	}
 
-	const float MultiTimer::GetTime() const
+	void MultiTimer::Update()
+	{
+		m_timeAtLastUpdate = std::chrono::steady_clock::now();
+	}
+
+	float MultiTimer::GetTime() const
 	{
 		return std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::steady_clock::now() - m_timeAtLastAccumulation).count();
+	}
+
+	float MultiTimer::GetDeltaTime() const
+	{
+		return std::chrono::duration<float, std::chrono::seconds::period>(std::chrono::steady_clock::now() - m_timeAtLastUpdate).count();
 	}
 }

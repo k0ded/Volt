@@ -2,14 +2,14 @@
 
 #include "Volt-MaterialGraph/MaterialGraph.h"
 
-#include <CoreUtilities/GUIDUtilities.h>
+#include <Volt-Platforms/Platform.h>
 
 namespace Volt
 {
     MaterialGraph::MaterialGraph()
     {
 		m_graph = Mosaic::MosaicGraph::CreateDefaultGraph();
-		m_materialGUID = GUIDUtilities::GenerateGUID();
+		m_materialGUID = PlatformMisc::GenerateGUID();
     }
 
 	Vector<AssetHandle> MaterialGraph::GetTextureHandles() const

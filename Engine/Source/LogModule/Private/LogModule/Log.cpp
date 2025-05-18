@@ -23,9 +23,9 @@ Log::Log()
 
 	std::vector<spdlog::sink_ptr> sinks;
 
-#ifndef VT_DIST
-	sinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-#endif
+//#ifndef VT_DIST
+//	sinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+//#endif
 
 	// Get the path of the Engine directory from the system environment and put the logs in there.
 	const std::string logDirectory = Utility::ReplaceCharacter(FileSystem::GetEnvironmentVariableValue("VOLT_PATH"), '\\', '/') + "/Log/";

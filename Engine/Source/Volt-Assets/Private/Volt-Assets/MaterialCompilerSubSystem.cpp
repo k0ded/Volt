@@ -3,7 +3,7 @@
 #include "Volt-Assets/MaterialCompilerSubSystem.h"
 #include "Volt-Assets/MaterialCompiler.h"
 
-#include <CoreUtilities/ThreadUtilities.h>
+#include <Volt-Platforms/Platform.h>
 
 namespace Volt
 {
@@ -12,8 +12,8 @@ namespace Volt
 	void MaterialCompilerSubSystem::Initialize()
 	{
 		m_workerThread = CreateScope<std::thread>(std::bind(&MaterialCompilerSubSystem::RunWorker, this));
-		Thread::SetThreadName(m_workerThread->native_handle(), "MaterialCompilerWorker");
-		Thread::SetThreadPriority(m_workerThread->native_handle(), ThreadPriority::Low);
+		PlatformThread::SetThreadName(m_workerThread->native_handle(), "MaterialCompilerWorker");
+		PlatformThread::SetThreadPriority(m_workerThread->native_handle(), ThreadPriority::Low);
 	}
 
 	void MaterialCompilerSubSystem::Shutdown()

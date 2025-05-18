@@ -1,10 +1,10 @@
 #include "jspch.h"
 #include "JobSystem.h"
 
+#include <Volt-Platforms/Platform.h>
+
 #include <EventSystem/ApplicationEvents.h>
 
-#include <CoreUtilities/ThreadUtilities.h>
-#include <CoreUtilities/Atomic.h>
 #include <CoreUtilities/Random.h>
 
 namespace Volt
@@ -137,11 +137,11 @@ namespace Volt
 			auto& worker = m_workerThreads.emplace_back(std::bind(&JobSystem::SpawnWorker, this, i));
 
 			const uint64_t core = i + 2;
-			Thread::AssignThreadToCore(worker.native_handle(), 1ull << core);
-			Thread::SetThreadPriority(worker.native_handle(), ThreadPriority::High);
+			PlatformThread::AssignThreadToCore(worker.native_handle(), 1ull << core);
+			PlatformThread::SetThreadPriority(worker.native_handle(), ThreadPriority::High);
 
 			std::string threadName = std::format("Volt::Worker {}", i);
-			Thread::SetThreadName(worker.native_handle(), threadName);
+			PlatformThread::SetThreadName(worker.native_handle(), threadName);
 		}
 	}
 
@@ -173,7 +173,7 @@ namespace Volt
 		if (parentJob != INVALID_JOB_ID)
 		{
 			Job* parentJobPtr = m_allocator.GetJobFromID(parentJob);
-			Atomic::InterlockedIncrement(&parentJobPtr->unfinishedJobs);
+			PlatformAtomics::InterlockedIncrement(&parentJobPtr->unfinishedJobs);
 			newJob->parentJob = parentJob;
 		}
 
@@ -232,7 +232,7 @@ namespace Volt
 
 	void JobSystem::FinishJob(Job* job, JobAllocator& allocator)
 	{
-		const long unfinishedJobs = Atomic::InterlockedDecrement(&job->unfinishedJobs);
+		const long unfinishedJobs = PlatformAtomics::InterlockedDecrement(&job->unfinishedJobs);
 		if (unfinishedJobs == 0)
 		{
 			if (job->parentJob != INVALID_JOB_ID)

@@ -17,6 +17,8 @@
 
 #include <Volt-Physics/PhysicsSubSystem.h>
 
+#include <Volt-Platforms/Platform.h>
+
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -44,7 +46,6 @@
 #include <EventSystem/EventSystem.h>
 #include <EventSystem/ApplicationEvents.h>
 
-#include <CoreUtilities/ThreadUtilities.h>
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Allocator.h>
 
@@ -85,8 +86,8 @@ namespace Volt
 		return m_application.OnKeyPressedEvent(e);
 	}
 
-	Application::Application(const ApplicationInfo& info)
-		: m_frameTimer(100), m_info(info)
+	Application::Application(const ApplicationInfo& info, const CommandLineBuilder& commandLineBuilder)
+		: m_frameTimer(100), m_info(info), m_commandLineBuilder(commandLineBuilder)
 	{
 		VT_ASSERT_MSG(!s_instance, "Application already exists!");
 		s_instance = this;
@@ -103,7 +104,14 @@ namespace Volt
 		m_projectManager = SubSystemManager::GetSubSystem<ProjectManager>();
 
 		m_pluginSystem->SetPluginRegistry(m_pluginRegistry);
-		m_projectManager->LoadProject(m_info.projectPath, *m_pluginRegistry);
+
+		std::filesystem::path projectFilepath;
+		if (m_commandLineBuilder.IsArgDefined("project"))
+		{
+			projectFilepath = m_commandLineBuilder.GetArgValue("project");
+		}
+
+		m_projectManager->LoadProject(projectFilepath, *m_pluginRegistry);
 		m_pluginRegistry->BuildPluginDependencies();
 		m_pluginSystem->LoadPlugins(ProjectManager::GetProject());
 
@@ -116,52 +124,51 @@ namespace Volt
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 
-		WindowProperties windowProperties{};
-		windowProperties.Width = info.width;
-		windowProperties.Height = info.height;
-		windowProperties.VSync = info.useVSync;
-		windowProperties.Title = info.title;
-		windowProperties.WindowMode = info.windowMode;
-		windowProperties.IconPath = info.iconPath;
-		windowProperties.CursorPath = info.cursorPath;
-		windowProperties.UseTitlebar = info.UseTitlebar;
-		windowProperties.UseCustomTitlebar = info.UseCustomTitlebar;
-
-		if (m_info.isRuntime)
+		if (m_info.createMainWindow)
 		{
-			windowProperties.Title = ProjectManager::GetProject().name;
-			windowProperties.CursorPath = ProjectManager::GetProject().cursorFilepath;
-			windowProperties.IconPath = ProjectManager::GetProject().iconFilepath;
-		}
+			WindowProperties windowProperties{};
+			windowProperties.Width = info.width;
+			windowProperties.Height = info.height;
+			windowProperties.VSync = info.useVSync;
+			windowProperties.Title = info.title;
+			windowProperties.WindowMode = info.windowMode;
+			windowProperties.IconPath = info.iconPath;
+			windowProperties.CursorPath = info.cursorPath;
+			windowProperties.UseTitlebar = info.useTitlebar;
+			windowProperties.UseCustomTitlebar = info.useCustomTitlebar;
 
-		if (ProjectManager::GetProject().isDeprecated)
-		{
-			windowProperties.UseTitlebar = true;
-		}
+			if (m_info.isRuntime)
+			{
+				windowProperties.Title = ProjectManager::GetProject().name;
+				windowProperties.CursorPath = ProjectManager::GetProject().cursorFilepath;
+				windowProperties.IconPath = ProjectManager::GetProject().iconFilepath;
+			}
 
-		m_windowManager->CreateMainWindow(windowProperties);
+			if (ProjectManager::GetProject().isDeprecated)
+			{
+				windowProperties.UseTitlebar = true;
+			}
+
+			m_windowManager->CreateMainWindow(windowProperties);
+		}
 
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
 		m_physicsSubSystem = SubSystemManager::GetSubSystem<PhysicsSubSystem>();
 
-		//Physics::LoadSettings();
-		//Physics::Initialize();
-		//Physics::LoadLayers();
-
 		//Init AudioEngine
 		{
-			std::filesystem::path defaultPath = ProjectManager::GetAudioBanksDirectory();
-			Amp::WWiseEngine::Get().InitWWise(defaultPath.c_str());
-			if (FileSystem::Exists(defaultPath))
-			{
-				for (auto bankFile : std::filesystem::directory_iterator(ProjectManager::GetAudioBanksDirectory()))
-				{
-					if (bankFile.path().extension() == L".bnk")
-					{
-						Amp::WWiseEngine::Get().LoadBank(bankFile.path().filename().string().c_str());
-					}
-				}
-			}
+			//std::filesystem::path defaultPath = ProjectManager::GetAudioBanksDirectory();
+			//Amp::WWiseEngine::Get().InitWWise(defaultPath.c_str());
+			//if (FileSystem::Exists(defaultPath))
+			//{
+			//	for (auto bankFile : std::filesystem::directory_iterator(ProjectManager::GetAudioBanksDirectory()))
+			//	{
+			//		if (bankFile.path().extension() == L".bnk")
+			//		{
+			//			Amp::WWiseEngine::Get().LoadBank(bankFile.path().filename().string().c_str());
+			//		}
+			//	}
+			//}
 		}
 
 		m_navigationSystem = CreateScope<Volt::AI::NavigationSystem>();
@@ -176,6 +183,12 @@ namespace Volt
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PostEngine);
 
 		m_imguiSubSystem = SubSystemManager::GetSubSystem<ImGuiSubSystem>();
+		// Make sure that the main window exits, it is required to initialize ImGui.
+		if (m_info.createMainWindow && m_info.enableImGui)
+		{
+			m_imguiSubSystem->InitializeImGui();
+		}
+
 		m_imguiSubSystem->SetupContext();
 
 		m_scriptingSystem = CreateScope<ScriptingSystem>();
@@ -199,11 +212,7 @@ namespace Volt
 		m_layerStack.Clear();
 		SceneManager::Shutdown();
 
-		//Physics::SaveLayers();
-		//Physics::Shutdown();
-		//Physics::SaveSettings();
-
-		Amp::WWiseEngine::Get().TermWwise();
+		//Amp::WWiseEngine::Get().TermWwise();
 
 		m_assetManager->Clear();
 
@@ -249,6 +258,11 @@ namespace Volt
 		}
 	}
 
+	void Application::Quit()
+	{
+		m_isRunning = false;
+	}
+
 	void Application::PushLayer(Layer* layer)
 	{
 		m_layerStack.PushLayer(layer);
@@ -259,9 +273,47 @@ namespace Volt
 		m_layerStack.PopLayer(layer);
 	}
 
+	void Application::LaunchMainWindow()
+	{
+		if (!m_info.createMainWindow && !m_windowManager->HasMainWindow())
+		{
+			WindowProperties windowProperties{};
+			windowProperties.Width = m_info.width;
+			windowProperties.Height = m_info.height;
+			windowProperties.VSync = m_info.useVSync;
+			windowProperties.Title = m_info.title;
+			windowProperties.WindowMode = m_info.windowMode;
+			windowProperties.IconPath = m_info.iconPath;
+			windowProperties.CursorPath = m_info.cursorPath;
+			windowProperties.UseTitlebar = m_info.useTitlebar;
+			windowProperties.UseCustomTitlebar = m_info.useCustomTitlebar;
+
+			if (m_info.isRuntime)
+			{
+				windowProperties.Title = ProjectManager::GetProject().name;
+				windowProperties.CursorPath = ProjectManager::GetProject().cursorFilepath;
+				windowProperties.IconPath = ProjectManager::GetProject().iconFilepath;
+			}
+
+			if (ProjectManager::GetProject().isDeprecated)
+			{
+				windowProperties.UseTitlebar = true;
+			}
+
+			m_windowManager->CreateMainWindow(windowProperties);
+
+			if (m_imguiSubSystem)
+			{
+				m_imguiSubSystem->InitializeImGui();
+			}
+
+			m_skipPresentThisFrame = true;
+		}
+	}
+
 	void Application::InitializeMainThread()
 	{
-		Thread::AssignThreadToCore(Thread::GetCurrentThreadHandle(), 0);
+		PlatformThread::AssignThreadToCore(PlatformThread::GetCurrentThreadHandle(), 0);
 	}
 
 	void Application::MainUpdate()
@@ -272,9 +324,8 @@ namespace Volt
 
 		WindowManager::Get().BeginFrame();
 
-		const float time = WindowManager::Get().GetMainWindow().GetTime();
-		m_currentDeltaTime = time - m_lastTotalTime;
-		m_lastTotalTime = time;
+		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
+		m_frameTimer.Update();
 
 		{
 			VT_PROFILE_SCOPE("Application::Render");
@@ -291,18 +342,18 @@ namespace Volt
 		{
 			VT_PROFILE_SCOPE("Application::Update");
 
-			AppUpdateEvent updateEvent(m_currentDeltaTime);
+			AppUpdateEvent updateEvent(m_currentDeltaTime); 
 			EventSystem::DispatchEvent(updateEvent);
 
 			AssetManager::Update();
 		}
 
 		{
-			VT_PROFILE_SCOPE("Application::UpdateAudio");
-			Amp::WWiseEngine::Get().Update();
+			//VT_PROFILE_SCOPE("Application::UpdateAudio");
+			//Amp::WWiseEngine::Get().Update();
 		}
 
-		if (m_info.enableImGui)
+		if (m_info.enableImGui && m_imguiSubSystem->IsInitialized())
 		{
 			VT_PROFILE_SCOPE("Application::ImGui");
 
@@ -326,9 +377,11 @@ namespace Volt
 			EventSystem::DispatchEvent(postFrameUpdateEvent);
 		}
 
+		if (!m_skipPresentThisFrame)
 		{
 			WindowManager::Get().Present();
 		}
+		m_skipPresentThisFrame = false;
 
 		m_frameTimer.Accumulate();
 	}

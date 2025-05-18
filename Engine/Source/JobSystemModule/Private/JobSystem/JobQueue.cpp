@@ -1,7 +1,7 @@
 #include "jspch.h"
 #include "JobQueue.h"
 
-#include <CoreUtilities/Atomic.h>
+#include <Volt-Platforms/Platform.h>
 
 namespace Volt
 {
@@ -27,7 +27,7 @@ namespace Volt
 	Job* JobQueue::Pop()
 	{        
 		long b = m_bottom - 1;
-		Atomic::InterlockedExchange(&m_bottom, b);
+		PlatformAtomics::InterlockedExchange(&m_bottom, b);
 
 		long t = m_top;
 		if (t <= b)
@@ -38,7 +38,7 @@ namespace Volt
 				return job;
 			}
 
-			if (Atomic::InterlockedCompareExchange(&m_top, t + 1, t) != t)
+			if (PlatformAtomics::InterlockedCompareExchange(&m_top, t + 1, t) != t)
 			{
 				job = nullptr;
 			}
@@ -66,7 +66,7 @@ namespace Volt
 		{
 			Job* job = m_jobQueue[t & MASK];
 
-			if (Atomic::InterlockedCompareExchange(&m_top, t + 1, t) != t)
+			if (PlatformAtomics::InterlockedCompareExchange(&m_top, t + 1, t) != t)
 			{
 				return nullptr;
 			}

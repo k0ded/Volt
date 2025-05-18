@@ -17,6 +17,7 @@
 
 #include <Windows.h>
 #include <shellapi.h>
+#include <minidumpapiset.h>
 
 // We don't want to log to VS when in Dist.
 #ifdef VT_DIST

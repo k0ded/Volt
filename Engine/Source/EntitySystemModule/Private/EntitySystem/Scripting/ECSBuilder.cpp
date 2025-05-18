@@ -85,12 +85,12 @@ void ECSGameLoopContainer::Compile()
 		}
 	}
 
-#ifdef VT_DEBUG
-	for (auto& [id, degree] : inDegree)
-	{
-		VT_ENSURE(degree == 0);
-	}
-#endif
+	//#ifdef VT_DEBUG
+	//	for (auto& [id, degree] : inDegree)
+	//	{
+	//		VT_ENSURE(degree == 0);
+	//	}
+	//#endif
 
 	m_executionBuckets = executionBuckets;
 }

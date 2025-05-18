@@ -4,13 +4,14 @@
 #include "RenderCore/RenderGraph/RenderGraph.h"
 #include "RenderCore/Resources/BindlessResourcesManager.h"
 
+#include <Volt-Platforms/Platform.h>
+
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Graphics/DeviceQueue.h>
 
 #include <RHIModule/Graphics/Swapchain.h>
 
-#include <CoreUtilities/ThreadUtilities.h>
 #include <CoreUtilities/Containers/FunctionQueue.h>
 #include <CoreUtilities/Containers/ThreadSafeQueue.h>
 
@@ -89,8 +90,8 @@ namespace Volt
 	void RenderGraphExecutionThread::InitializeThread()
 	{
 		s_data->executionThread = CreateScope<std::thread>(&RenderGraphExecutionThread::RT_ExecuteGraphs);
-		Thread::SetThreadName(s_data->executionThread->native_handle(), "RenderGraphExecutionThread");
-		Thread::AssignThreadToCore(s_data->executionThread->native_handle(), 1ull << 1ull);
+		PlatformThread::SetThreadName(s_data->executionThread->native_handle(), "RenderGraphExecutionThread");
+		PlatformThread::AssignThreadToCore(s_data->executionThread->native_handle(), 1ull << 1ull);
 	}
 
 	void RenderGraphExecutionThread::ShutdownThread()

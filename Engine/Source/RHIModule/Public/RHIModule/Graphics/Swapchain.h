@@ -36,6 +36,8 @@ namespace Volt::RHI
 
 		static RefPtr<Swapchain> Create(const SwapchainCreateInfo& createInfo);
 
+		static constexpr uint32_t FramesInFlight = 3;
+
 	protected:
 		Swapchain() = default;
 	};
