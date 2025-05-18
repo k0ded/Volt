@@ -5,6 +5,7 @@
 #include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
 #include "Volt-Renderer/RenderingTechniques/VolumetricFogTechnique.h"
 #include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/SceneRendererExtension.h"
 #include "Volt-Renderer/Config.h"
 
 #include <RenderCore/RenderGraph/RenderGraphDebugger.h>
@@ -93,7 +94,6 @@ namespace Volt
 		inline const RenderGraphDebugger& GetRenderGraphDebugger() const { return m_renderGraphDebugger; }
 
 		RefPtr<RHI::Image> GetFinalImage();
-		RefPtr<RHI::Image> GetObjectIDImage();
 
 		// #TODO_Ivar: TEMP, Should not be public!
 		void Invalidate();
@@ -102,8 +102,8 @@ namespace Volt
 
 		const uint64_t GetFrameTotalGPUAllocationSize() const;
 
-		// #TODO_Ivar: Editor passes, should be moved to some other place.
-		void UpdateSelection(const Vector<EntityID>& entityIds);
+		template<typename T>
+		Ref<T> AddExtension(SceneRendererExtensionStage stage);
 
 	private:
 		void OnRender(Ref<Camera> camera, float timestep);
@@ -118,11 +118,10 @@ namespace Volt
 		void AddExternalResources(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 
 		void ExecuteGBufferGenerationPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void ExecutePostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, float timestep);
+		void ExecutePostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, float timestep, Ref<Camera> camera);
 
 		void AddMainCullingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddObjectIDPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddGTAOPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
 		void AddVisibilityBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 
@@ -144,10 +143,6 @@ namespace Volt
 		void AddVisualizationPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 		void AddPathTracingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
 
-		// #TODO_Ivar: Editor passes, should be moved to some other place.
-		void AddGridPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage, Ref<Camera> camera);
-		void AddOutlinePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
-
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
 
 		bool ShouldApplyJitter() const;
@@ -156,7 +151,6 @@ namespace Volt
 		bool m_enabled = false;
 
 		RefPtr<RHI::Image> m_outputImage;
-		RefPtr<RHI::Image> m_objectIDImage;
 		RefPtr<RHI::Image> m_previousColorImage;
 		RefPtr<RHI::Image> m_averageLuminanceImage;
 
@@ -197,8 +191,17 @@ namespace Volt
 		Ref<RenderScene> m_renderScene;
 		Renderer::EnvironmentTextures m_sceneEnvironment;
 
-		Vector<EntityID> m_selectedEntityIds;
-		bool m_selectionDirty = false;
-		Ref<GrowingGPUBuffer> m_selectedPrimitivesMaskBuffer;
+		// Extensions
+		vt::map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>> m_sceneRendererExtensions;
 	};
+
+	template<typename T>
+	Ref<T> SceneRenderer::AddExtension(SceneRendererExtensionStage stage)
+	{
+		static_assert(std::is_base_of_v<SceneRendererExtension, T>);
+
+		Ref<T> instance = CreateRef<T>(m_renderScene);
+		m_sceneRendererExtensions[stage].emplace_back(instance);
+		return instance;
+	}
 }

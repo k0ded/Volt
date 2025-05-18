@@ -39,7 +39,7 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
         }
 
         const float3 skinnedPosition = mul(skinningMatrix, float4(mesh.vertexPositionsBuffer.Load(vertexIndex), 1.f)).xyz;
-        const float4 position = TransformClipPosition(mul(viewData.viewProjection, float4(drawData.transform.GetWorldPosition(skinnedPosition), 1.f)));
+        const float4 position = TransformClipPosition(mul(viewData.nonJitteredViewProjection, float4(drawData.transform.GetWorldPosition(skinnedPosition), 1.f)));
 
         SetupCullingPositions(groupThreadId, position, viewData.renderSize);
 

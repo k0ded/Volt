@@ -9,7 +9,7 @@ vt::TextureSampler LinearSampler;
 
 struct Output
 {
-    [[vt::r11f_g11f_b10f]] float3 color : SV_Target0;
+    [[vt::rgba16f]] float4 color : SV_Target0;
 };
 
 float RGBToLuma(float3 rgb)
@@ -205,6 +205,6 @@ Output MainPS(FullscreenTriangleVertex input)
     float3 finalColor = sceneColor.Sample(linearSampler, finalUv);
     
     Output output;
-    output.color = finalColor;
+    output.color = float4(finalColor, 1.f);
     return output;
 }

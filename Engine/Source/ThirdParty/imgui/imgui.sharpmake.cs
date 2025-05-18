@@ -33,6 +33,7 @@ namespace VoltSharpmake
                 "imgui_bezier.h"
             );
 
+            conf.ExportDefines.Add("IMGUI_DISABLE_OBSOLETE_KEYIO");
             conf.IncludePaths.Add("[project.RootPath]/[project.Name]");
         }
     }

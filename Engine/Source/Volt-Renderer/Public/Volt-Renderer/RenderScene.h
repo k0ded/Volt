@@ -183,7 +183,7 @@ namespace Volt
 		Vector<InvalidMaterial> m_invalidMaterials;
 		Vector<InvalidMesh> m_invalidMeshes;
 
-		vt::map<AssetHandle, size_t> m_materialIndexFromMaterialHash;
+		vt::map<size_t, size_t> m_gpuMaterialIndexFromMaterialHash;
 		vt::map<size_t, uint32_t> m_meshSubMeshToGPUMeshIndex;
 		vt::map<size_t, uint32_t> m_meshSubMeshToGPUMeshSDFIndex;
 

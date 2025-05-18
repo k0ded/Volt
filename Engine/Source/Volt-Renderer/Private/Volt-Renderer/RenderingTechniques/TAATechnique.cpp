@@ -52,7 +52,7 @@ namespace Volt
 		[&](RenderGraph::Builder& builder, TAAData& data) 
 		{
 			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, RHI::ImageUsage::AttachmentStorage, "TAA Output");
+				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::R16G16B16A16_SFLOAT>(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, RHI::ImageUsage::AttachmentStorage, "TAA Output");
 				data.taaOutput = builder.CreateImage(desc);
 			}
 
