@@ -18,11 +18,18 @@ namespace Volt::RHI
 	{
 		GLFWwindow* window = nullptr;
 		RawPtr<Swapchain> swapchain;
+		bool enableViewports = true;
 	};
 
 	class VTRHI_API ImGuiImplementation : public RHIInterface
 	{
 	public:
+		struct FontInfo
+		{
+			std::filesystem::path filepath;
+			float pixelSize;
+		};
+
 		virtual ~ImGuiImplementation();
 
 		VT_DELETE_COPY_MOVE(ImGuiImplementation);
@@ -35,12 +42,13 @@ namespace Volt::RHI
 
 		virtual ImTextureID GetTextureID(RefPtr<Image> image, int32_t mipIndex = -1) const = 0;
 		virtual ImFont* AddFont(const std::filesystem::path& fontPath, float pixelSize) = 0;
+		virtual Vector<ImFont*> AddFonts(const Vector<FontInfo>& fontInfos) = 0;
 
 		static RefPtr<ImGuiImplementation> Create(const ImGuiCreateInfo& createInfo);
 		static ImGuiImplementation& Get();
 
 	protected:
-		ImGuiImplementation();
+		ImGuiImplementation(ImGuiCreateInfo createInfo);
 
 		void Initialize();
 
@@ -53,5 +61,6 @@ namespace Volt::RHI
 	private:
 		inline static ImGuiImplementation* s_instance = nullptr;
 		ImFont* m_defaultFont = nullptr;
+		ImGuiCreateInfo m_createInfo;
 	};
 }

@@ -19,6 +19,7 @@ namespace Volt::RHI
 		
 		ImTextureID GetTextureID(RefPtr<Image> image, int32_t mipIndex) const override;
 		ImFont* AddFont(const std::filesystem::path& fontPath, float pixelSize) override;
+		Vector<ImFont*> AddFonts(const Vector<FontInfo>& fontInfos) override;
 
 	protected:
 		void BeginAPI() override;

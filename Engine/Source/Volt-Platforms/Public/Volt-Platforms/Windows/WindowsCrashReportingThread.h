@@ -4,6 +4,7 @@
 
 #include "Volt-Platforms/Config.h"
 #include "Volt-Platforms/ProcessHandle.h"
+#include "Volt-Platforms/CrashContext.h"
 
 #include <thread>
 #include <condition_variable>
@@ -47,6 +48,8 @@ namespace Volt
 		_EXCEPTION_POINTERS* m_exceptionInfo = nullptr;
 		unsigned long m_crashingThread = 0;
 		void* m_crashingThreadHandle = nullptr;
+		std::string m_crashingThreadStackTrace;
+		CrashContext* m_crashContext = nullptr;
 	};
 }
 #endif

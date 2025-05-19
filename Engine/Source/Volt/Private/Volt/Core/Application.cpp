@@ -186,10 +186,9 @@ namespace Volt
 		// Make sure that the main window exits, it is required to initialize ImGui.
 		if (m_info.createMainWindow && m_info.enableImGui)
 		{
-			m_imguiSubSystem->InitializeImGui();
+			m_imguiSubSystem->InitializeImGui(m_info.enableImGuiViewports);
+			m_imguiSubSystem->SetupContext();
 		}
-
-		m_imguiSubSystem->SetupContext();
 
 		m_scriptingSystem = CreateScope<ScriptingSystem>();
 
@@ -304,7 +303,8 @@ namespace Volt
 
 			if (m_imguiSubSystem)
 			{
-				m_imguiSubSystem->InitializeImGui();
+				m_imguiSubSystem->InitializeImGui(m_info.enableImGuiViewports);
+				m_imguiSubSystem->SetupContext();
 			}
 
 			m_skipPresentThisFrame = true;
@@ -353,7 +353,7 @@ namespace Volt
 			//Amp::WWiseEngine::Get().Update();
 		}
 
-		if (m_info.enableImGui && m_imguiSubSystem->IsInitialized())
+		if (m_info.enableImGui && m_imguiSubSystem->IsInitialized() && !m_skipPresentThisFrame)
 		{
 			VT_PROFILE_SCOPE("Application::ImGui");
 

@@ -8,6 +8,7 @@
 
 namespace Volt
 {
+	class CrashContext;
 	class CrashReportClientLayer : public Volt::Layer, public Volt::EventListener
 	{
 	public:
@@ -19,6 +20,7 @@ namespace Volt
 
 	private:
 		bool OnUpdateEvent(Volt::AppUpdateEvent& e);
+		bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
 		bool HasMonitoredProcessCrashed();
 
 		ProcessHandle m_monitoredProcessHandle;
@@ -26,5 +28,8 @@ namespace Volt
 		void* m_monitoredWritePipe = nullptr;
 
 		bool m_isDisplayingCrash = false;
+		std::string m_crashMessage;
+
+		Scope<CrashContext> m_crashContext;
 	};
 }

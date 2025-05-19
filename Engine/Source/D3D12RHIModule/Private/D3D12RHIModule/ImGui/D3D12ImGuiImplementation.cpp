@@ -14,7 +14,7 @@
 namespace Volt::RHI
 {
 	D3D12ImGuiImplementation::D3D12ImGuiImplementation(const ImGuiCreateInfo& createInfo)
-		: m_framesInFlight(createInfo.swapchain->GetFramesInFlight())
+		: m_framesInFlight(createInfo.swapchain->GetFramesInFlight()), ImGuiImplementation(createInfo)
 	{
 		m_info = createInfo;
 		m_descriptorCache.resize(m_framesInFlight);
@@ -139,5 +139,19 @@ namespace Volt::RHI
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		return io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), pixelSize);
+	}
+
+	Vector<ImFont*> D3D12ImGuiImplementation::AddFonts(const Vector<FontInfo>& fontInfos)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		Vector<ImFont*> resultFonts;
+
+		for (const auto& fontInfo : fontInfos)
+		{
+			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontInfo.filepath.string().c_str(), fontInfo.pixelSize);
+		}
+
+		return resultFonts;
 	}
 }

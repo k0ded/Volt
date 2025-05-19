@@ -15,8 +15,8 @@ public:
 	void Free(void* pointer, size_t alignment);
 
 private:
-	// A page is 128 MB to allow most allocations to fit, otherwise they will be custom fit
-	inline static constexpr size_t PageSize = 128 * 1024 * 1024;
+	// A page is 64 MB to allow most allocations to fit, otherwise they will be custom fit
+	inline static constexpr size_t PageSize = 64 * 1024 * 1024;
 
 	struct AllocationHeader
 	{

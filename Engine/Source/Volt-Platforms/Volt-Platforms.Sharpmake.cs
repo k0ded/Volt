@@ -17,6 +17,7 @@ namespace VoltSharpmake
             base.ConfigureAll(conf, target);
 
             conf.SolutionFolder = "Engine";
+			conf.AddPublicDependency<cpptrace>(target);
 		}
 
 		public override void ConfigureWin64(Configuration conf, CommonTarget target)

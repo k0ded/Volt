@@ -8,7 +8,10 @@
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/CommandLineBuilder.h>
 
+#include <cpptrace/cpptrace.hpp>
+
 #include <filesystem>
+#include <sstream>
 
 namespace Volt
 {
@@ -22,6 +25,8 @@ namespace Volt
 			PlatformThread::SetThreadPriority(m_thread.native_handle(), ThreadPriority::Low);
 
 			LaunchCrashReportClient();
+
+			m_crashContext = new CrashContext();
 		}
 	}
 
@@ -33,20 +38,29 @@ namespace Volt
 			m_conditionVariable.notify_one();
 
 			m_thread.join();
+
+			delete m_crashContext;
 		}
 	}
 
 	void WindowsCrashReportingThread::NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo)
 	{
-		m_exceptionInfo = exceptionInfo;
-		m_crashingThread = GetCurrentThreadId();
-		m_crashingThreadHandle = GetCurrentThread();
+		if (m_isEnabled)
+		{
+			m_exceptionInfo = exceptionInfo;
+			m_crashingThread = GetCurrentThreadId();
+			m_crashingThreadHandle = GetCurrentThread();
 
-		m_hasCrashed = true;
-		m_conditionVariable.notify_one();
+			std::ostringstream strStream;
+			cpptrace::generate_trace().print(strStream);
+			m_crashingThreadStackTrace = strStream.str();
 
-		std::unique_lock lock{ m_mutex };
-		m_crashingThreadConditionVariable.wait(lock);
+			m_hasCrashed = true;
+			m_conditionVariable.notify_one();
+
+			std::unique_lock lock{ m_mutex };
+			m_crashingThreadConditionVariable.wait(lock);
+		}
 	}
 
 	void WindowsCrashReportingThread::RunThread()
@@ -59,7 +73,7 @@ namespace Volt
 			if (m_hasCrashed)
 			{
 				HandleCrash();
-				GenerateAndSerializeMiniDump();
+				//GenerateAndSerializeMiniDump();
 				m_crashingThreadConditionVariable.notify_one();
 				break;
 			}
@@ -125,8 +139,17 @@ namespace Volt
 
 	void WindowsCrashReportingThread::HandleCrash()
 	{
-		const std::string str = "Crashed!";
-		PlatformProcess::WritePipe(m_crashReporterWritePipe, reinterpret_cast<const uint8_t*>(str.c_str()), static_cast<uint32_t>(str.size()));
+		m_crashContext->platformCrashContext = m_exceptionInfo;
+		m_crashContext->crashingThreadId = m_crashingThread;
+
+		memcpy_s(m_crashContext->stackTrace, CrashContext::MAX_STACK_TRACE_SIZE, m_crashingThreadStackTrace.data(), m_crashingThreadStackTrace.size());
+
+		const uint8_t* dataPtr = reinterpret_cast<uint8_t*>(m_crashContext);
+		const size_t dataSize = sizeof(CrashContext);
+
+		m_crashContext->stackTraceSize = static_cast<uint32_t>(m_crashingThreadStackTrace.size());
+
+		PlatformProcess::WritePipe(m_crashReporterWritePipe, dataPtr, static_cast<uint32_t>(dataSize));
 	}
 }
 #endif

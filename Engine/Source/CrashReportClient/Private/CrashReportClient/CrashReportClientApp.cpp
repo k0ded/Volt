@@ -28,6 +28,7 @@ Volt::Application* CreateApplication(const Volt::CommandLineBuilder& commandLine
 	appInfo.width = 512;
 	appInfo.height = 512;
 	appInfo.createMainWindow = false;
+	appInfo.enableImGuiViewports = false;
 
 	return new CrashReportClientApp(appInfo, commandLineBuilder);
 }

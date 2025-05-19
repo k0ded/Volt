@@ -33,7 +33,8 @@ namespace Volt::RHI
 		return userIniPath;
 	}
 
-	ImGuiImplementation::ImGuiImplementation()
+	ImGuiImplementation::ImGuiImplementation(ImGuiCreateInfo createInfo)
+		: m_createInfo(createInfo)
 	{
 		s_instance = this;
 	}
@@ -46,7 +47,12 @@ namespace Volt::RHI
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+		if (m_createInfo.enableViewports)
+		{
+			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		}
+
 		io.ConfigWindowsMoveFromTitleBarOnly = true;
 
 		ImFontConfig fontCfg;

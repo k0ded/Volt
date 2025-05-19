@@ -14,7 +14,7 @@ namespace Volt
 		void Initialize() override;
 		void Shutdown() override;
 
-		void InitializeImGui();
+		void InitializeImGui(bool enableViewports = true);
 
 		void SetupContext();
 

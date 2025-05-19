@@ -55,7 +55,8 @@ namespace Volt::RHI
 	}
 
 	VulkanImGuiImplementation::VulkanImGuiImplementation(const ImGuiCreateInfo& createInfo)
-		: m_swapchain(createInfo.swapchain), m_windowPtr(createInfo.window), m_commandBufferSet(createInfo.swapchain->GetFramesInFlight())
+		: m_swapchain(createInfo.swapchain), m_windowPtr(createInfo.window), m_commandBufferSet(createInfo.swapchain->GetFramesInFlight()),
+		ImGuiImplementation(createInfo)
 	{
 	}
 
@@ -243,5 +244,31 @@ namespace Volt::RHI
 
 		vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), m_descriptorPool, nullptr);
 		ImGui_ImplVulkan_Shutdown();
+	}
+
+	Vector<ImFont*> VulkanImGuiImplementation::AddFonts(const Vector<FontInfo>& fontInfos)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		
+		Vector<ImFont*> resultFonts;
+
+		for (const auto& fontInfo : fontInfos)
+		{
+			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontInfo.filepath.string().c_str(), fontInfo.pixelSize);
+			MergeIconsWithLatestFont(fontInfo.pixelSize);
+		}
+
+		// Create font
+		{
+			RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+			commandBuffer->Begin();
+			ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->GetHandle<VkCommandBuffer>());
+			commandBuffer->End();
+			commandBuffer->ExecuteAndWait();
+
+			ImGui_ImplVulkan_DestroyFontUploadObjects();
+		}
+
+		return resultFonts;
 	}
 }

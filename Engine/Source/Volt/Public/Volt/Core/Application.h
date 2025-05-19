@@ -50,6 +50,7 @@ namespace Volt
 		uint32_t height;
 		bool useVSync = true;
 		bool enableImGui = true;
+		bool enableImGuiViewports = true;
 		bool enableSteam = false;
 		bool isRuntime = false;
 		bool useTitlebar = true;
