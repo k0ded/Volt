@@ -19,7 +19,7 @@ class ECSGameLoopContainer
 public:
 	ECSGameLoopContainer() = default;
 
-	void VTES_API Execute(Volt::EntityScene& scene, float deltaTime);
+	void VTES_API Execute(Volt::EntityScene& scene);
 	void VTES_API Compile();
 
 	template<typename Ret, typename... Args>

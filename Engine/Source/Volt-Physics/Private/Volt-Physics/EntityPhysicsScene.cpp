@@ -71,6 +71,7 @@ namespace Volt
 				entity.SetRotation(transform.rotation);
 			}
 
+			m_entityScene.FixedUpdate(timestep);
 			m_isHandlingPhysicsUpdate = false;
 		};
 

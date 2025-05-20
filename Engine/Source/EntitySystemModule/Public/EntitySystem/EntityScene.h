@@ -59,6 +59,7 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_registry; }
 		VT_NODISCARD VT_INLINE const entt::registry& GetRegistry() const { return m_registry; }
+		VT_NODISCARD VT_INLINE const ScriptingEngine& GetSciptingEngine() const { return *m_scriptingEngine; }
 
 		// #TODO_Ivar: Hack until we can figure out a proper structure
 		VT_NODISCARD VT_INLINE RenderScene* GetRenderScene() const { return m_renderScene; }

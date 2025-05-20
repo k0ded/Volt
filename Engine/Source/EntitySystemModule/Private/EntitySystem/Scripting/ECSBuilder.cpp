@@ -100,7 +100,7 @@ ECSGameLoopContainer& ECSBuilder::GetGameLoop(GameLoop gameLoopType)
 	return m_gameLoops[gameLoopType];
 }
 
-void ECSGameLoopContainer::Execute(Volt::EntityScene& scene, float deltaTime)
+void ECSGameLoopContainer::Execute(Volt::EntityScene& scene)
 {
 	VT_PROFILE_FUNCTION();
 
@@ -108,7 +108,7 @@ void ECSGameLoopContainer::Execute(Volt::EntityScene& scene, float deltaTime)
 	{
 		for (const auto& id : ids)
 		{
-			m_registeredSystems[id].Execute(scene, deltaTime);
+			m_registeredSystems[id].Execute(scene);
 		}
 	}
 }

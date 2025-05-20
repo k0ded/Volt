@@ -46,7 +46,6 @@ namespace Volt
 		void OnSimulationEnd();
 
 		void Update(float aDeltaTime);
-		void FixedUpdate(float aDeltaTime);
 		void UpdateEditor(float aDeltaTime);
 		void UpdateSimulation(float aDeltaTime);
 

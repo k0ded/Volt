@@ -30,8 +30,8 @@ public:
 	inline T* As(size_t offset = 0) const;
 
 private:
-	Ref<uint8_t[]> myData = nullptr;
-	size_t mySize = 0;
+	Ref<uint8_t[]> m_data = nullptr;
+	size_t m_size = 0;
 };
 
 inline Buffer::Buffer(size_t aSize)
@@ -45,8 +45,8 @@ inline Buffer::~Buffer()
 
 inline void Buffer::Release()
 {
-	myData.reset();
-	mySize = 0;
+	m_data.reset();
+	m_size = 0;
 }
 
 inline void Buffer::Allocate(size_t aSize)
@@ -57,35 +57,35 @@ inline void Buffer::Allocate(size_t aSize)
 	}
 
 	Release();
-	myData = Ref<uint8_t[]>(new uint8_t[aSize]{0}, [](uint8_t* p)
+	m_data = Ref<uint8_t[]>(new uint8_t[aSize]{0}, [](uint8_t* p)
 	{
 		delete[] p;
 	});
 
-	mySize = aSize;
+	m_size = aSize;
 }
 
 inline void Buffer::Clear()
 {
-	memset(myData.get(), 0, mySize);
+	memset(m_data.get(), 0, m_size);
 }
 
 inline void Buffer::Resize(size_t aSize)
 {
-	if (mySize < aSize)
+	if (m_size < aSize)
 	{
 		Ref<uint8_t[]> newBuffer = Ref<uint8_t[]>(new uint8_t[aSize]{ 0 }, [](uint8_t* p)
 		{
 			delete[] p;
 		});
 
-		if (myData)
+		if (m_data)
 		{
-			memcpy_s(newBuffer.get(), aSize, myData.get(), mySize);
+			memcpy_s(newBuffer.get(), aSize, m_data.get(), m_size);
 		}
 
-		mySize = aSize;
-		myData = newBuffer;
+		m_size = aSize;
+		m_data = newBuffer;
 	}
 }
 
@@ -96,18 +96,18 @@ inline void Buffer::Copy(const void* aSrcData, size_t aSize, size_t aOffset)
 		return;
 	}
 
-	assert(aOffset + aSize <= mySize && "Cannot copy into buffer of lesser size!");
-	memcpy_s(myData.get() + aOffset, mySize, aSrcData, aSize);
+	assert(aOffset + aSize <= m_size && "Cannot copy into buffer of lesser size!");
+	memcpy_s(m_data.get() + aOffset, m_size, aSrcData, aSize);
 }
 
 inline const bool Buffer::IsValid() const
 {
-	return myData != nullptr;
+	return m_data != nullptr;
 }
 
 inline const size_t Buffer::GetSize() const
 {
-	return mySize;
+	return m_size;
 }
 
 inline bool Buffer::WriteToFile(Buffer buffer, const std::filesystem::path& targetPath)
@@ -118,7 +118,7 @@ inline bool Buffer::WriteToFile(Buffer buffer, const std::filesystem::path& targ
 		return false;
 	}
 
-	file.write(reinterpret_cast<char*>(buffer.myData.get()), buffer.mySize);
+	file.write(reinterpret_cast<char*>(buffer.m_data.get()), buffer.m_size);
 	file.close();
 
 	return true;
@@ -153,5 +153,5 @@ inline Buffer Buffer::ReadFromFile(const std::filesystem::path& targetPath)
 template<typename T>
 inline T* Buffer::As(size_t offset) const
 {
-	return reinterpret_cast<T*>(myData.get() + offset);
+	return reinterpret_cast<T*>(m_data.get() + offset);
 }

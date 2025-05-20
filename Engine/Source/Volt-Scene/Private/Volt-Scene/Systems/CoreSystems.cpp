@@ -10,6 +10,7 @@
 #include <EntitySystem/Scripting/CommonComponent.h>
 #include <EntitySystem/Scripting/ECSBuilder.h>
 #include <EntitySystem/Scripting/ECSSystemRegistry.h>
+#include <EntitySystem/Scripting/CoreEnvironments.h>
 
 namespace Volt
 {
@@ -17,9 +18,9 @@ namespace Volt
 		::Write<CommonComponent>
 		::As<ECS::Type::Entity>;
 
-	void CommonSystem(CommonEntity entity, float deltaTime)
+	void CommonSystem(CommonEntity entity, const env::VariableUpdate& variableUpdate)
 	{
-		entity.GetComponent<CommonComponent>().timeSinceCreation += deltaTime;
+		entity.GetComponent<CommonComponent>().timeSinceCreation += variableUpdate.deltaTime;
 	}
 
 	using CameraEntity = ECS::Access
@@ -27,7 +28,7 @@ namespace Volt
 		::Read<TransformComponent>
 		::As<ECS::Type::Entity>;
 
-	void CameraSystem(CameraEntity entity, float deltaTime)
+	void CameraSystem(CameraEntity entity)
 	{
 		const auto& transform = entity.GetComponent<const TransformComponent>();
 
@@ -48,12 +49,12 @@ namespace Volt
 		::With<MeshComponent>
 		::As<ECS::Type::Entity>;
 
-	void MotionWeaveSystem(MotionWeaveEntity entity, float deltaTime)
+	void MotionWeaveSystem(MotionWeaveEntity entity, const env::VariableUpdate& variableUpdate)
 	{
 		auto& weaveComponent = entity.GetComponent<MotionWeaveComponent>();
 		if (weaveComponent.MotionWeaver)
 		{
-			weaveComponent.MotionWeaver->Update(deltaTime);
+			weaveComponent.MotionWeaver->Update(variableUpdate.deltaTime);
 		}
 	}
 

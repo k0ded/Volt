@@ -92,11 +92,6 @@ namespace Volt
 		m_currentDeltaTime = aDeltaTime;
 	}
 
-	void Scene::FixedUpdate(float aDeltaTime)
-	{
-		m_entityScene.FixedUpdate(aDeltaTime);
-	}
-
 	void Scene::UpdateEditor(float aDeltaTime)
 	{
 		VT_PROFILE_FUNCTION();

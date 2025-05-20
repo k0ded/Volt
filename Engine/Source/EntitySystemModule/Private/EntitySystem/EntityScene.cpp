@@ -9,6 +9,7 @@
 #include "EntitySystem/Scripting/ECSSystemRegistry.h"
 #include "EntitySystem/Scripting/ECSBuilder.h"
 #include "EntitySystem/Scripting/ScriptingEngine.h"
+#include "EntitySystem/Scripting/CoreEnvironments.h"
 
 #include <EventSystem/EventSystem.h>
 
@@ -55,13 +56,19 @@ namespace Volt
 	void EntityScene::Update(float deltaTime)
 	{
 		VT_PROFILE_FUNCTION();
-		m_ecsBuilder->GetGameLoop(GameLoop::Variable).Execute(*this, deltaTime);
+		auto& variableUpdateEnv = m_scriptingEngine->GetMutableECSEnvironmentOfType<env::VariableUpdate>();
+		variableUpdateEnv.deltaTime = deltaTime;
+
+		m_ecsBuilder->GetGameLoop(GameLoop::Variable).Execute(*this);
 	}
 
 	void EntityScene::FixedUpdate(float deltaTime)
 	{
 		VT_PROFILE_FUNCTION();
-		m_ecsBuilder->GetGameLoop(GameLoop::Fixed).Execute(*this, deltaTime);
+		auto& fixedUpdateEnv = m_scriptingEngine->GetMutableECSEnvironmentOfType<env::FixedUpdate>();
+		fixedUpdateEnv.deltaTime = deltaTime;
+
+		m_ecsBuilder->GetGameLoop(GameLoop::Fixed).Execute(*this);
 	}
 
 	void EntityScene::SortScene()
