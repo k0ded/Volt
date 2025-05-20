@@ -63,8 +63,8 @@ class Vulkan:
             print(Fore.RED + "Vulkan SDK not installed! Installing!")
             Vulkan.InstallVulkan()
 
-        elif(vulkanPath.find("1.3.") == -1):
-            print(Fore.RED + "Correct Vulkan version not found! Installing 1.3.xxx")
+        elif(vulkanPath.find("1.3.") == -1 and vulkanPath.find("1.4.") == -1):
+            print(Fore.RED + "Correct Vulkan version not found! Installing latest!")
             Vulkan.InstallVulkan()
 
         else:
