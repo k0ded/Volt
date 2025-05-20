@@ -56,7 +56,7 @@ namespace Volt
 	void EntityScene::Update(float deltaTime)
 	{
 		VT_PROFILE_FUNCTION();
-		auto& variableUpdateEnv = m_scriptingEngine->GetMutableECSEnvironmentOfType<env::VariableUpdate>();
+		auto& variableUpdateEnv = m_scriptingEngine->GetECSEnvironmentOfType<env::VariableUpdate>();
 		variableUpdateEnv.deltaTime = deltaTime;
 
 		m_ecsBuilder->GetGameLoop(GameLoop::Variable).Execute(*this);
@@ -65,7 +65,7 @@ namespace Volt
 	void EntityScene::FixedUpdate(float deltaTime)
 	{
 		VT_PROFILE_FUNCTION();
-		auto& fixedUpdateEnv = m_scriptingEngine->GetMutableECSEnvironmentOfType<env::FixedUpdate>();
+		auto& fixedUpdateEnv = m_scriptingEngine->GetECSEnvironmentOfType<env::FixedUpdate>();
 		fixedUpdateEnv.deltaTime = deltaTime;
 
 		m_ecsBuilder->GetGameLoop(GameLoop::Fixed).Execute(*this);

@@ -57,7 +57,7 @@ private:
 };
 
 template<typename T>
-concept IsECSEnvironmentCandidate = std::is_lvalue_reference_v<T> && std::is_const_v<std::remove_reference_t<T>> && std::is_class_v<std::remove_const_t<std::remove_reference_t<T>>>;
+concept IsECSEnvironmentCandidate = std::is_lvalue_reference_v<T> && std::is_class_v<std::remove_const_t<std::remove_reference_t<T>>>;
 
 template<typename T>
 concept IsECSEntityOrQuery = requires

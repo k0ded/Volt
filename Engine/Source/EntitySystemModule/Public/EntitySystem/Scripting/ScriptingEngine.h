@@ -29,7 +29,7 @@ public:
 	}
 
 	template<typename T>
-	T& GetMutableECSEnvironmentOfType()
+	T& GetECSEnvironmentOfType()
 	{
 		constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
 		void* dataPtr = GetECSEnvironmentOfTypeInternal(typeIndex);
