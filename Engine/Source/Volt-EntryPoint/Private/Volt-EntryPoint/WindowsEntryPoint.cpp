@@ -5,6 +5,7 @@
 #include <CoreUtilities/CommandLineBuilder.h>
 
 #include <cstdint>
+#include <iostream>
 
 // Needs to be defined in the application creating code.
 extern bool g_useCrashHandling;
@@ -19,9 +20,9 @@ namespace Volt
 
 	CrashReportingThread g_crashReportingThread(g_useCrashHandling && ShouldHandleApplicationCrashes());
 
-	void ReportApplicationCrash(LPEXCEPTION_POINTERS exceptionInfo)
+	void ReportApplicationCrash(LPEXCEPTION_POINTERS exceptionInfo, const Volt::CommandLineBuilder& commandLineBuilder)
 	{
-		g_crashReportingThread.NotifyCrash(exceptionInfo);
+		g_crashReportingThread.NotifyCrash(exceptionInfo, commandLineBuilder);
 	}
 
 	int32_t Main(const CommandLineBuilder& commandLineBuilder)
@@ -44,7 +45,7 @@ namespace Volt
 			{
 				result = Main(commandLineBuilder);
 			}
-			__except (ReportApplicationCrash(GetExceptionInformation()), EXCEPTION_CONTINUE_SEARCH)
+			__except (ReportApplicationCrash(GetExceptionInformation(), commandLineBuilder), EXCEPTION_CONTINUE_SEARCH)
 			{
 			}
 		}

@@ -2,7 +2,7 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 
-#include <json.h>
+#include <nlohmann/json.hpp>
 
 #include <optional>
 

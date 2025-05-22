@@ -4,6 +4,8 @@
 
 #include "Volt-Platforms/Platform.h"
 
+#include <LogModule/Log.h>
+
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/CommandLineBuilder.h>
@@ -15,6 +17,22 @@
 
 namespace Volt
 {
+	inline std::string GetTimestampString()
+	{
+		auto currentTime = std::time(nullptr);
+		tm timeInfo;
+
+		const auto localTimeError = localtime_s(&timeInfo, &currentTime);
+		if (localTimeError != 0)
+		{
+			return "NULL";
+		}
+
+		std::ostringstream sstream;
+		sstream << std::put_time(&timeInfo, "%Y-%m-%d_%H-%M");
+		return sstream.str();
+	}
+
 	WindowsCrashReportingThread::WindowsCrashReportingThread(bool isEnabled)
 		: m_isEnabled(isEnabled)
 	{
@@ -43,7 +61,7 @@ namespace Volt
 		}
 	}
 
-	void WindowsCrashReportingThread::NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo)
+	void WindowsCrashReportingThread::NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo, const CommandLineBuilder& commandLineBuilder)
 	{
 		if (m_isEnabled)
 		{
@@ -51,9 +69,19 @@ namespace Volt
 			m_crashingThread = GetCurrentThreadId();
 			m_crashingThreadHandle = GetCurrentThread();
 
+			// Get timestamp
+			m_crashTimestamp = GetTimestampString();
+
+			// Create stack trace
 			std::ostringstream strStream;
 			cpptrace::generate_trace().print(strStream);
 			m_crashingThreadStackTrace = strStream.str();
+
+			// Command line for restarting.
+			m_crashCommandLine = commandLineBuilder.GetAsString();
+
+			// Flush logs to disk
+			Log::Get().Flush();
 
 			m_hasCrashed = true;
 			m_conditionVariable.notify_one();
@@ -142,12 +170,21 @@ namespace Volt
 		m_crashContext->platformCrashContext = m_exceptionInfo;
 		m_crashContext->crashingThreadId = m_crashingThread;
 
+		// Stack trace
 		memcpy_s(m_crashContext->stackTrace, CrashContext::MAX_STACK_TRACE_SIZE, m_crashingThreadStackTrace.data(), m_crashingThreadStackTrace.size());
+
+		// User name
+		const std::string activeUser = PlatformMisc::GetCurrentUserName();
+		memcpy_s(m_crashContext->userName, CrashContext::MAX_USER_NAME_SIZE, activeUser.data(), activeUser.size());
+
+		// Timestamp
+		memcpy_s(m_crashContext->timestamp, CrashContext::MAX_TIMESTAMP_SIZE, m_crashTimestamp.data(), m_crashTimestamp.size());
+
+		// Command line
+		memcpy_s(m_crashContext->commandLine, CrashContext::MAX_COMMAND_LINE_SIZE, m_crashCommandLine.data(), m_crashCommandLine.size());
 
 		const uint8_t* dataPtr = reinterpret_cast<uint8_t*>(m_crashContext);
 		const size_t dataSize = sizeof(CrashContext);
-
-		m_crashContext->stackTraceSize = static_cast<uint32_t>(m_crashingThreadStackTrace.size());
 
 		PlatformProcess::WritePipe(m_crashReporterWritePipe, dataPtr, static_cast<uint32_t>(dataSize));
 	}

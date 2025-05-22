@@ -18,6 +18,7 @@ namespace Volt
 		static std::string GetSystemErrorMessage(int32_t error);
 		static bool IsDebuggerPresent();
 		static VoltGUID GenerateGUID();
+		static std::string GetCurrentUserName();
 	};
 }
 

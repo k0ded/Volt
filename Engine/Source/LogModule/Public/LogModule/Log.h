@@ -53,6 +53,9 @@ public:
 	LogCallbackHandle RegisterCallback(const std::function<void(const LogCallbackData& callbackData)>& callback);
 	void UnregisterCallback(LogCallbackHandle handle);
 
+	void Flush();
+	void EnableLogging(bool enable);
+
 	VT_NODISCARD VT_INLINE static Log& Get() { return *s_instance; }
 
 	VT_DECLARE_SUBSYSTEM("{AA12B0EC-2224-4A5E-A274-F6FBEE00B546}"_guid)
@@ -72,6 +75,7 @@ private:
 
 	std::mutex m_callbackMutex;
 	Vector<CallbackData> m_callbacks;
+	bool m_isEnabled = true;
 };
 
 #define VT_LOGC(verbosity, category, format, ...) ::Log::LogFormatted(LogVerbosity::verbosity, category, format, __VA_ARGS__)

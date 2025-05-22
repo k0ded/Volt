@@ -23,15 +23,12 @@ namespace VoltSharpmake
 
             conf.AddPublicDependency<glm>(target);
             conf.AddPublicDependency<tracy>(target);
+			conf.AddPublicDependency<nfd_extended>(target);
+			conf.AddPublicDependency<yaml>(target);
+			conf.AddPublicDependency<nlohmann>(target);
+			conf.AddPublicDependency<zlib>(target);
 
-            conf.IncludePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "unordered_dense\\include"));
-
-            conf.AddPublicDependency<nfd_extended>(target);
-            conf.AddPublicDependency<yaml>(target);
-            conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "zlib\\include"));
-            
-            string targetOptimization = target.Optimization.ToString();
-            conf.LibraryFiles.Add(Path.Combine(Globals.ThirdPartyDirectory, "zlib\\lib\\" + targetOptimization) + "\\libz-static.lib");
+			conf.IncludePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "unordered_dense\\include"));
         }
     }
 }

@@ -13,13 +13,15 @@ struct _EXCEPTION_POINTERS;
 
 namespace Volt
 {
+	class CommandLineBuilder;
+
 	class VTPL_API WindowsCrashReportingThread
 	{
 	public:
 		WindowsCrashReportingThread(bool isEnabled);
 		~WindowsCrashReportingThread();
 
-		void NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo);
+		void NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo, const CommandLineBuilder& commandLineBuilder);
 
 	private:
 		void RunThread();
@@ -48,7 +50,10 @@ namespace Volt
 		_EXCEPTION_POINTERS* m_exceptionInfo = nullptr;
 		unsigned long m_crashingThread = 0;
 		void* m_crashingThreadHandle = nullptr;
+		
 		std::string m_crashingThreadStackTrace;
+		std::string m_crashCommandLine;
+		std::string m_crashTimestamp;
 		CrashContext* m_crashContext = nullptr;
 	};
 }

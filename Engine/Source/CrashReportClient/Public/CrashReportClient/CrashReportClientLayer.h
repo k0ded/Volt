@@ -23,12 +23,19 @@ namespace Volt
 		bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
 		bool HasMonitoredProcessCrashed();
 
+		void SendCrashReport();
+		void RestartEngineAfterCrash();
+
 		ProcessHandle m_monitoredProcessHandle;
 		void* m_monitoredReadPipe = nullptr;
 		void* m_monitoredWritePipe = nullptr;
 
 		bool m_isDisplayingCrash = false;
 		std::string m_crashMessage;
+
+		std::string m_connectionURL;
+		std::string m_connectionUsername;
+		std::string m_connectionPassword;
 
 		Scope<CrashContext> m_crashContext;
 	};

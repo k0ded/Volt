@@ -56,6 +56,7 @@ namespace Volt
 		bool useTitlebar = true;
 		bool useCustomTitlebar = false;
 		bool createMainWindow = true;
+		bool enableLogging = true;
 
 		Version version = VT_VERSION;
 	};
@@ -173,7 +174,7 @@ namespace Volt
 		WindowManager* m_windowManager = nullptr;
 		PhysicsSubSystem* m_physicsSubSystem = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
-
+		Log* m_logSubSystem = nullptr;
 
 		const CommandLineBuilder m_commandLineBuilder;
 	};

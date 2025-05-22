@@ -99,6 +99,9 @@ namespace Volt
 		m_subSystemManager = CreateScope<SubSystemManager>();
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
 
+		m_logSubSystem = SubSystemManager::GetSubSystem<Log>();
+		m_logSubSystem->EnableLogging(m_info.enableLogging);
+
 		m_pluginSystem = SubSystemManager::GetSubSystem<PluginSystem>();
 		m_pluginRegistry = SubSystemManager::GetSubSystem<PluginRegistry>();
 		m_projectManager = SubSystemManager::GetSubSystem<ProjectManager>();

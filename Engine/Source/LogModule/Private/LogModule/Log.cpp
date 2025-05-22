@@ -23,10 +23,6 @@ Log::Log()
 
 	std::vector<spdlog::sink_ptr> sinks;
 
-//#ifndef VT_DIST
-//	sinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-//#endif
-
 	// Get the path of the Engine directory from the system environment and put the logs in there.
 	const std::string logDirectory = Utility::ReplaceCharacter(FileSystem::GetEnvironmentVariableValue("VOLT_PATH"), '\\', '/') + "/Log/";
 	if (!FileSystem::Exists(logDirectory))
@@ -34,7 +30,7 @@ Log::Log()
 		FileSystem::CreateDirectories(logDirectory);
 	}
 
-	sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDirectory + "Log.txt"));
+	sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDirectory + "Log.txt", true));
 
 	if (::IsDebuggerPresent())
 	{
@@ -49,6 +45,8 @@ Log::Log()
 
 Log::~Log()
 {
+	Flush();
+
 	spdlog::shutdown();
 
 	m_logger = nullptr;
@@ -76,8 +74,26 @@ void Log::UnregisterCallback(LogCallbackHandle handle)
 	}
 }
 
+void Log::Flush()
+{
+	if (m_logger && m_isEnabled)
+	{
+		m_logger->flush();
+	}
+}
+
+void Log::EnableLogging(bool enable)
+{
+	m_isEnabled = enable;
+}
+
 void Log::LogMessage(LogVerbosity severity, const std::string& category, const std::string& message)
 {
+	if (!m_isEnabled)
+	{
+		return;
+	}
+
 	std::string finalString = category.empty() ? "" : "[" + category + "]: ";
 	finalString += message;
 
