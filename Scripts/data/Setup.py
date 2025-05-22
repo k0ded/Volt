@@ -26,6 +26,7 @@ import colorama
 from colorama import Fore
 from SetupSharpmake import Sharpmake
 from SetupVulkan import Vulkan
+from SetupRegistryKeys import SetupRegistryKeys
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
@@ -44,11 +45,8 @@ if not args.server:
 print("")
 Sharpmake.CheckSharpmake()
 
-if not args.server:
-        os.chdir('../Engine/Setup')
-        subprocess.call("VoltSetup.exe")
-        os.chdir('../../Scripts')
-
 sys.stdout.write(Fore.WHITE)
+
+SetupRegistryKeys.Setup()
 
 GenerateProjects(args.project)

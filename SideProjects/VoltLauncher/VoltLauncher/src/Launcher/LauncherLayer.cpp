@@ -132,18 +132,6 @@ namespace Utility
 
 	void RunSetup(const std::filesystem::path& engineDir)
 	{
-		if (FileSystem::HasEnvironmentVariable("VOLT_PATH"))
-		{
-			if (FileSystem::GetEnvVariable("VOLT_PATH") != engineDir.string())
-			{
-				FileSystem::SetEnvVariable("VOLT_PATH", engineDir.string());
-			}
-		}
-		else
-		{
-			FileSystem::SetEnvVariable("VOLT_PATH", engineDir.string());
-		}
-
 		const std::string sandboxLaunchCommand = engineDir.string() + "\\Binaries\\Sandbox.exe %1";
 
 		FileSystem::SetRegistryValue(R"(Software\Classes\.vtproj)", "Volt.Sandbox");
@@ -151,6 +139,8 @@ namespace Utility
 		FileSystem::SetRegistryValue(R"(Software\Classes\.vtproj\PerceivedType)", "text");
 		FileSystem::SetRegistryValue(R"(Software\Classes\Volt.Sandbox)", "Volt Sandbox");
 		FileSystem::SetRegistryValue(R"(Software\Classes\Volt.Sandbox\Shell\Open\Command)", sandboxLaunchCommand);
+		FileSystem::SetRegistryValue(R"(Software\Classes\Volt.Sandbox)", "Volt Sandbox");
+		FileSystem::SetRegistryValue(R"(Software\Classes\Volt.Sandbox)", "EngineDirectory", engineDir.string());
 
 		SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
 	}

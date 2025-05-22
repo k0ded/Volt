@@ -19,6 +19,9 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
             
+            //Sharpmake project, special case since it isnt a CommonProject
+            conf.AddProject<SharpmakeProject>(target, true);
+
             foreach (Type projectType in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsSubclassOf(typeof(CommonProject))))
 			{
 				conf.AddProject(projectType, target);

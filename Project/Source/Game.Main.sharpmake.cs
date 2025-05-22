@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using Sharpmake;
 
-[module: Sharpmake.Include("%VOLT_PATH%/Source/Volt.CommonProject.sharpmake.cs")]
-[module: Sharpmake.Include("%VOLT_PATH%/Source/Volt.CommonSolution.sharpmake.cs")]
-[module: Sharpmake.Include("%VOLT_PATH%/Source/Volt.CommonTarget.sharpmake.cs")]
-[module: Sharpmake.Include("%VOLT_PATH%/Source/Volt.Globals.sharpmake.cs")]
-[module: Sharpmake.Include("%VOLT_PATH%/Source/*/*.sharpmake.cs")]
-[module: Sharpmake.Include("%VOLT_PATH%/Source/ThirdParty/*/*.sharpmake.cs")]
-[module: Sharpmake.Include("%VOLT_PATH%/Source/ThirdParty/*/*/*.sharpmake.cs")]
+[module: Sharpmake.Include("%VOLT_PATH_TEMP%/Source/Volt.CommonProject.sharpmake.cs")]
+[module: Sharpmake.Include("%VOLT_PATH_TEMP%/Source/Volt.CommonSolution.sharpmake.cs")]
+[module: Sharpmake.Include("%VOLT_PATH_TEMP%/Source/Volt.CommonTarget.sharpmake.cs")]
+[module: Sharpmake.Include("%VOLT_PATH_TEMP%/Source/Volt.Globals.sharpmake.cs")]
+[module: Sharpmake.Include("%VOLT_PATH_TEMP%/Source/*/*.sharpmake.cs")]
+[module: Sharpmake.Include("%VOLT_PATH_TEMP%/Source/ThirdParty/*/*.sharpmake.cs")]
+[module: Sharpmake.Include("%VOLT_PATH_TEMP%/Source/ThirdParty/*/*/*.sharpmake.cs")]
 [module: Sharpmake.Include("Game.*.sharpmake.cs")]
 [module: Sharpmake.Include("*/*.sharpmake.cs")]
 
@@ -23,7 +23,7 @@ namespace VoltSharpmake
     {
         private static void ConfigureGlobals()
         {
-            string absoluteEngineRootPath = Environment.GetEnvironmentVariable("VOLT_PATH");
+            string absoluteEngineRootPath = Environment.GetEnvironmentVariable("VOLT_PATH_TEMP");
             Debug.Assert(absoluteEngineRootPath != null);
 
             FileInfo fileInfo = Util.GetCurrentSharpmakeFileInfo();

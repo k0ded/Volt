@@ -1,15 +1,15 @@
 @echo off
-REM Enable delayed variable expansion
-setlocal enabledelayedexpansion
 
-REM Change directory to Sharpmake
-pushd Sharpmake
+REM Check if Python is installed
+where /q python
+IF ERRORLEVEL 1 (
+	where /q py
+	IF ERRORLEVEL 1 (
+		ECHO Python is missing.
+		exit /b 1
+	)
+	call py Setup.py
+	exit /b 1
+)
 
-REM Call the Sharpmake application with the processed arguments
-call Sharpmake.Application.exe /sources('../Game.Main.sharpmake.cs')
-
-REM Return to the original directory
-popd
-
-REM Pause to view any messages
-PAUSE
+call python Scripts/GenerateProjects.py

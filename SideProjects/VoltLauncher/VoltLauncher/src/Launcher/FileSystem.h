@@ -17,6 +17,7 @@ public:
 
 	static bool SetEnvVariable(const std::string& key, const std::string& value);
 	static bool SetRegistryValue(const std::string& key, const std::string& value);
+	static bool SetRegistryValue(const std::string& key, const std::string& valueName, const std::string& value);
 
 	static void StartProcess(const std::filesystem::path& processName, const std::wstring& commandLine = L"");
 

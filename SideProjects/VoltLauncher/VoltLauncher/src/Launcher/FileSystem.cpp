@@ -120,6 +120,54 @@ bool FileSystem::SetRegistryValue(const std::string& key, const std::string& val
 	return true;
 }
 
+bool FileSystem::SetRegistryValue(const std::string& key, const std::string& valueName, const std::string& value)
+{
+	HKEY hkey;
+
+	char valueCurrent[1000];
+	DWORD type;
+	DWORD size = sizeof(valueCurrent);
+
+	int rc = RegGetValueA(HKEY_CURRENT_USER, key.c_str(), nullptr, RRF_RT_ANY, &type, valueCurrent, &size);
+
+	bool notFound = rc == ERROR_FILE_NOT_FOUND;
+
+	if (rc != ERROR_SUCCESS && !notFound)
+	{
+		// Error ?
+	}
+
+	if (!notFound)
+	{
+		if (type != REG_SZ)
+		{
+			// Error ?
+		}
+
+		if (strcmp(valueCurrent, value.c_str()) == 0)
+		{
+			return true;
+		}
+	}
+
+	DWORD disposition;
+	rc = RegCreateKeyExA(HKEY_CURRENT_USER, key.c_str(), 0, 0, 0, KEY_ALL_ACCESS, nullptr, &hkey, &disposition);
+	if (rc != ERROR_SUCCESS)
+	{
+		return false;
+	}
+
+	rc = RegSetValueExA(hkey, valueName.c_str(), 0, REG_SZ, (BYTE*)value.c_str(), strlen(value.c_str()) + 1);
+	if (rc != ERROR_SUCCESS)
+	{
+		return false;
+	}
+
+	RegCloseKey(hkey);
+
+	return true;
+}
+
 void FileSystem::StartProcess(const std::filesystem::path& processName, const std::wstring& commandLine)
 {
 	std::wstring processDir = processName.parent_path().wstring();
