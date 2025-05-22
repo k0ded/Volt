@@ -46,5 +46,6 @@ namespace FileSystem
 	extern VTCOREUTIL_API bool RunCommand(const std::string& aCommand);
 
 	extern VTCOREUTIL_API void Initialize();
+	extern VTCOREUTIL_API void InitializeWorkingDirectory(bool isRuntime);
 	extern VTCOREUTIL_API void Shutdown();
 }

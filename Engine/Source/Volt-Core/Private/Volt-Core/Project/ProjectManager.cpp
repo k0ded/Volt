@@ -49,9 +49,8 @@ namespace Volt
 			}
 		}
 
-		std::string fixedString = Utility::ReplaceCharacter(FileSystem::GetEnvironmentVariableValue("VOLT_PATH"), '\\', '/');
-
-		m_currentEngineDirectory = fixedString;
+		// Correct working directory should have been setup at this point.
+		m_currentEngineDirectory = std::filesystem::current_path();
 
 		pluginRegistry.FindAndRegisterPluginsInDirectory(m_currentProject->rootDirectory / "Plugins");
 		pluginRegistry.FindAndRegisterPluginsInDirectory(m_currentEngineDirectory / "Plugins");
@@ -65,8 +64,6 @@ namespace Volt
 		{
 			VT_LOGC(Warning, LogProject, "No project filepath provided, not loading any project!");
 		}
-
-		std::filesystem::current_path(m_currentEngineDirectory);
 	}
 
 	void ProjectManager::SerializeProject()

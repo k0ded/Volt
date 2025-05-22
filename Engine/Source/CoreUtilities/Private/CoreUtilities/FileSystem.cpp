@@ -430,6 +430,27 @@ namespace FileSystem
 		NFD::Init();
 	}
 
+	void InitializeWorkingDirectory(bool isRuntime)
+	{
+		// We don't need to do anything if we are in the "runtime" aka game launcher.
+		if (!isRuntime)
+		{
+			const std::filesystem::path currentDirectory = std::filesystem::current_path();
+			
+			// Make sure that the working directory isn't already correct with some hopefully correct checks
+			if (currentDirectory.stem() == "Engine" && std::filesystem::exists(currentDirectory / "Binaries"))
+			{
+				return;
+			}
+
+			// We assume that we currently are in the "Binaries" directory
+			VT_ASSERT(currentDirectory.stem() == "Binaries");
+
+			// Then our new working directory is just our parent directory, which hopefully is correct.
+			std::filesystem::current_path(currentDirectory.parent_path());
+		}
+	}
+
 	void Shutdown()
 	{
 		NFD::Quit();

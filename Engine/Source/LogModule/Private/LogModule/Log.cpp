@@ -23,14 +23,13 @@ Log::Log()
 
 	std::vector<spdlog::sink_ptr> sinks;
 
-	// Get the path of the Engine directory from the system environment and put the logs in there.
-	const std::string logDirectory = Utility::ReplaceCharacter(FileSystem::GetEnvironmentVariableValue("VOLT_PATH"), '\\', '/') + "/Log/";
+	const std::filesystem::path logDirectory = std::filesystem::current_path() / "Log";
 	if (!FileSystem::Exists(logDirectory))
 	{
 		FileSystem::CreateDirectories(logDirectory);
 	}
 
-	sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDirectory + "Log.txt", true));
+	sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDirectory.string() + "/Log.txt", true));
 
 	if (::IsDebuggerPresent())
 	{
