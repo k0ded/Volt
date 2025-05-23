@@ -192,10 +192,54 @@ namespace Volt
 		// Command line
 		memcpy_s(m_crashContext->commandLine, CrashContext::MAX_COMMAND_LINE_SIZE, m_crashCommandLine.data(), m_crashCommandLine.size());
 
+		const std::string errorString = CreateExceptionString();
+		memcpy_s(m_crashContext->errorString, CrashContext::MAX_ERROR_STRING_SIZE, errorString.data(), errorString.size());
+
 		const uint8_t* dataPtr = reinterpret_cast<uint8_t*>(m_crashContext);
 		const size_t dataSize = sizeof(CrashContext);
 
 		PlatformProcess::WritePipe(m_crashReporterWritePipe, dataPtr, static_cast<uint32_t>(dataSize));
 	}
+
+	std::string WindowsCrashReportingThread::CreateExceptionString()
+	{
+		std::string errorString = "Unhandled Exception: ";
+
+#define HANDLE_CASE(value) case value: errorString += #value; break
+
+		switch (m_exceptionInfo->ExceptionRecord->ExceptionCode)
+		{
+			case EXCEPTION_ACCESS_VIOLATION:
+			{
+				errorString += "EXCEPTION_ACCESS_VIOLATION ";
+				if (m_exceptionInfo->ExceptionRecord->ExceptionInformation[0] == 0)
+				{
+					errorString += "reading address ";
+				}
+				else if (m_exceptionInfo->ExceptionRecord->ExceptionInformation[0] == 1)
+				{
+					errorString += "writing address ";
+				}
+				errorString += std::format("{}", m_exceptionInfo->ExceptionRecord->ExceptionInformation[1]);
+				break;
+			}
+
+			HANDLE_CASE(EXCEPTION_ARRAY_BOUNDS_EXCEEDED);
+			HANDLE_CASE(EXCEPTION_DATATYPE_MISALIGNMENT);
+			HANDLE_CASE(EXCEPTION_FLT_DENORMAL_OPERAND);
+			HANDLE_CASE(EXCEPTION_FLT_DIVIDE_BY_ZERO);
+			HANDLE_CASE(EXCEPTION_FLT_INVALID_OPERATION);
+			HANDLE_CASE(EXCEPTION_ILLEGAL_INSTRUCTION);
+			HANDLE_CASE(EXCEPTION_INT_DIVIDE_BY_ZERO);
+			HANDLE_CASE(EXCEPTION_PRIV_INSTRUCTION);
+			HANDLE_CASE(EXCEPTION_STACK_OVERFLOW);
+
+			default:
+				errorString += std::format("{}", m_exceptionInfo->ExceptionRecord->ExceptionCode);
+		}
+
+		return errorString;
+	}
+
 }
 #endif

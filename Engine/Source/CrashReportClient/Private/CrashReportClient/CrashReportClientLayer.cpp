@@ -181,6 +181,7 @@ namespace Volt
 		j["log"] = logStr.str();
 		j["stackTrace"] = std::string(m_crashContext->stackTrace);
 		j["message"] = m_crashMessage;
+		j["error"] = std::string(m_crashContext->errorString);
 
 		std::stringstream sstream;
 		sstream << j;

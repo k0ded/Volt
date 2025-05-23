@@ -28,6 +28,7 @@ namespace Volt
 		void LaunchCrashReportClient();
 		bool GenerateAndSerializeMiniDump();
 		void HandleCrash();
+		std::string CreateExceptionString();
 
 		std::thread m_thread;
 		std::atomic_bool m_isRunning = true;

@@ -10,6 +10,7 @@ namespace Volt
 		static constexpr uint32_t MAX_USER_NAME_SIZE = 1024;
 		static constexpr uint32_t MAX_TIMESTAMP_SIZE = 256;
 		static constexpr uint32_t MAX_COMMAND_LINE_SIZE = 1024;
+		static constexpr uint32_t MAX_ERROR_STRING_SIZE = 512;
 
 		void* platformCrashContext;
 		uint32_t crashingThreadId;
@@ -17,5 +18,6 @@ namespace Volt
 		char userName[MAX_USER_NAME_SIZE];
 		char timestamp[MAX_TIMESTAMP_SIZE];
 		char commandLine[MAX_COMMAND_LINE_SIZE];
+		char errorString[MAX_ERROR_STRING_SIZE];
 	};
 }
