@@ -81,7 +81,10 @@ namespace Volt
 			m_crashCommandLine = commandLineBuilder.GetAsString();
 
 			// Flush logs to disk
-			Log::Get().Flush();
+			if (Log::IsInitialized())
+			{
+				Log::Get().Flush();
+			}
 
 			m_hasCrashed = true;
 			m_conditionVariable.notify_one();
@@ -110,7 +113,13 @@ namespace Volt
 
 	void WindowsCrashReportingThread::LaunchCrashReportClient()
 	{
-		const auto crashReportClientFilepath = std::filesystem::current_path() / "Binaries\\CrashReportClient.exe";
+		// As we at this point might be inside the binaries directory, we must also check if the crash reporter lies in the current directory.
+		auto crashReportClientFilepath = std::filesystem::current_path() / "Binaries\\CrashReportClient.exe";
+		if (!FileSystem::Exists(crashReportClientFilepath))
+		{
+			crashReportClientFilepath = std::filesystem::current_path() / "CrashReportClient.exe";
+		}
+
 		if (FileSystem::Exists(crashReportClientFilepath))
 		{
 			void *pipeChildInRead, *pipeChildInWrite, *pipeChildOutRead, *pipeChildOutWrite;

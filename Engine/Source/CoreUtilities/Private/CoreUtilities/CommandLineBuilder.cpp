@@ -18,9 +18,15 @@ namespace Volt
 	{
 		m_arguments.clear();
 
-		// We skip the first argument as it will be the executable filepath.
-		for (int32_t i = 1; i < numArgs; ++i)
+		for (int32_t i = 0; i < numArgs; ++i)
 		{
+			if (i == 0)
+			{
+				// First argument will always be the executable filepath
+				m_executableFilepath = Utility::ToString(argList[i]);
+				continue;
+			}
+
 			// The standard format for arguments are: -<argname>=<argvalue>. The value is not required, and will be interpreted as a toggle if no value is supplied.
 			std::string argStr = Utility::ToString(argList[i]);
 

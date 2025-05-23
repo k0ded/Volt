@@ -57,6 +57,7 @@ public:
 	void EnableLogging(bool enable);
 
 	VT_NODISCARD VT_INLINE static Log& Get() { return *s_instance; }
+	VT_NODISCARD VT_INLINE static bool IsInitialized() { return s_instance != nullptr; }
 
 	VT_DECLARE_SUBSYSTEM("{AA12B0EC-2224-4A5E-A274-F6FBEE00B546}"_guid)
 

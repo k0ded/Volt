@@ -13,6 +13,11 @@ struct FileFilter
 
 #undef SetEnvironmentVariable
 
+namespace Volt
+{
+	class CommandLineBuilder;
+}
+
 namespace FileSystem
 {
 	extern VTCOREUTIL_API bool IsWriteable(const std::filesystem::path& path);
@@ -46,6 +51,6 @@ namespace FileSystem
 	extern VTCOREUTIL_API bool RunCommand(const std::string& aCommand);
 
 	extern VTCOREUTIL_API void Initialize();
-	extern VTCOREUTIL_API void InitializeWorkingDirectory(bool isRuntime);
+	extern VTCOREUTIL_API void InitializeWorkingDirectory(bool isRuntime, const Volt::CommandLineBuilder& commandLineBuilder);
 	extern VTCOREUTIL_API void Shutdown();
 }

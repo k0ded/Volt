@@ -10,9 +10,10 @@ namespace VoltSharpmake
         public Sandbox()
         {
             Name = "Sandbox";
-        }
+			SourceFiles.Add("Sandbox.rc");
+		}
 
-        public override void ConfigureAll(Configuration conf, CommonTarget target)
+		public override void ConfigureAll(Configuration conf, CommonTarget target)
         {
             base.ConfigureAll(conf, target);
 
@@ -57,6 +58,7 @@ namespace VoltSharpmake
                 Path.Combine(Globals.ThirdPartyDirectory ,@"nlohmann/include"),
                 Path.Combine(Globals.ThirdPartyDirectory ,@"cpp-httplib/include")
                 );
+
 
             conf.AdditionalDebuggerCommands = Path.Combine(Globals.VtProjectDirectory, @"Project.vtproj");
 

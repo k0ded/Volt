@@ -22,8 +22,10 @@ namespace Volt
 		VT_NODISCARD VT_INLINE size_t GetNumArgs() const { return m_arguments.size(); }
 		VT_NODISCARD VT_INLINE bool IsArgDefined(const std::string& argKey) const { return m_arguments.contains(argKey); }
 		VT_NODISCARD VT_INLINE const std::string& GetArgValue(const std::string& argKey) const { return m_arguments.at(argKey); }
+		VT_NODISCARD VT_INLINE const std::string& GetExecutableFilepath() const { return m_executableFilepath; }
 
 	private:
+		std::string m_executableFilepath;
 		vt::map<std::string, std::string> m_arguments;
 	};
 }

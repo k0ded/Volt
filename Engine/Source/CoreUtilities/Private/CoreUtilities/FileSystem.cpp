@@ -7,6 +7,8 @@
 #include <shlobj_core.h>
 #include <Lmcons.h>
 
+#include <CoreUtilities/CommandLineBuilder.h>
+
 namespace FileSystem
 {
 	bool IsWriteable(const std::filesystem::path& path)
@@ -430,7 +432,7 @@ namespace FileSystem
 		NFD::Init();
 	}
 
-	void InitializeWorkingDirectory(bool isRuntime)
+	void InitializeWorkingDirectory(bool isRuntime, const Volt::CommandLineBuilder& commandLineBuilder)
 	{
 		// We don't need to do anything if we are in the "runtime" aka game launcher.
 		if (!isRuntime)
@@ -443,11 +445,14 @@ namespace FileSystem
 				return;
 			}
 
+			std::filesystem::path executableFilepath = commandLineBuilder.GetExecutableFilepath();
+			std::filesystem::path binariesFilepath = executableFilepath.parent_path();
+
 			// We assume that we currently are in the "Binaries" directory
-			VT_ASSERT(currentDirectory.stem() == "Binaries");
+			VT_ASSERT(binariesFilepath.stem() == "Binaries");
 
 			// Then our new working directory is just our parent directory, which hopefully is correct.
-			std::filesystem::current_path(currentDirectory.parent_path());
+			std::filesystem::current_path(binariesFilepath.parent_path());
 		}
 	}
 

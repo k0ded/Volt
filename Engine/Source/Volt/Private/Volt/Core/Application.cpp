@@ -95,7 +95,7 @@ namespace Volt
 		g_heapAllocator = CreateScope<PagedHeapAllocator>();
 
 		FileSystem::Initialize();
-		FileSystem::InitializeWorkingDirectory(info.isRuntime);
+		FileSystem::InitializeWorkingDirectory(info.isRuntime, commandLineBuilder);
 
 		m_subSystemManager = CreateScope<SubSystemManager>();
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
