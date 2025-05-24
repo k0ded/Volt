@@ -389,7 +389,6 @@ namespace Volt
 	void Application::CreateGraphicsContext()
 	{
 		RHI::RHICallbackInfo callbackInfo{};
-		callbackInfo.resourceManagementInfo.resourceDeletionCallback = Renderer::DestroyResource;
 		callbackInfo.requestCloseEventCallback = []()
 		{
 			WindowCloseEvent closeEvent{};

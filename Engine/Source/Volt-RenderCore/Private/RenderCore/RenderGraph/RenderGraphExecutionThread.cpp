@@ -12,7 +12,6 @@
 
 #include <RHIModule/Graphics/Swapchain.h>
 
-#include <CoreUtilities/Containers/FunctionQueue.h>
 #include <CoreUtilities/Containers/ThreadSafeQueue.h>
 
 namespace Volt

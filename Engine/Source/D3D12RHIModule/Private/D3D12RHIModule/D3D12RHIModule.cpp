@@ -45,6 +45,7 @@ namespace Volt::RHI
 	D3D12RHIModule::D3D12RHIModule()
 	{
 		s_instance = this;
+		m_resourceDeletionQueue.SetSize(RHI::Swapchain::FramesInFlight);
 	}
 	
 	RefPtr<BufferView> D3D12RHIModule::CreateBufferView(const BufferViewSpecification& specification) const
@@ -209,14 +210,8 @@ namespace Volt::RHI
 
 	void D3D12RHIModule::DestroyResource(std::function<void()>&& function)
 	{
-		if (m_callbackInfo.resourceManagementInfo.resourceDeletionCallback)
-		{
-			m_callbackInfo.resourceManagementInfo.resourceDeletionCallback(std::move(function));
-		}
-		else
-		{
-			function();
-		}
+		const uint32_t queueIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
+		m_resourceDeletionQueue.EnqueueResourceDeletion(queueIndex, std::move(function));
 	}
 
 	void D3D12RHIModule::RequestApplicationClose()
@@ -225,6 +220,22 @@ namespace Volt::RHI
 		{
 			m_callbackInfo.requestCloseEventCallback();
 		}
+	}
+
+	void D3D12RHIModule::Update()
+	{
+		GraphicsContext::GetDefaultAllocator()->Update();
+		GraphicsContext::GetTransientAllocator()->Update();
+
+		const uint32_t queueIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
+		m_resourceDeletionQueue.FlushQueue(queueIndex);
+
+		m_frameIndex++;
+	}
+
+	void D3D12RHIModule::FlushResourceDeletionQueue()
+	{
+		m_resourceDeletionQueue.FlushAll();
 	}
 }
 

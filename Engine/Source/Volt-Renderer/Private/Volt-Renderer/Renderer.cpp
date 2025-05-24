@@ -92,36 +92,6 @@ namespace Volt
 		}
 	}
 
-	struct RendererData
-	{
-		~RendererData()
-		{
-			defaultResources.Clear();
-			samplers.clear();
-
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-			shaderValidator = nullptr;
-#endif
-			bindlessResourcesManager = nullptr;
-
-			for (auto& resourceQueue : deletionQueue)
-			{
-				resourceQueue.Flush();
-			}
-		}
-
-		Scope<BindlessResourcesManager> bindlessResourcesManager;
-
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		Scope<ShaderRuntimeValidator> shaderValidator;
-#endif
-
-		Vector<FunctionQueue> deletionQueue;
-		std::unordered_map<size_t, BindlessResourceRef<RHI::SamplerState>> samplers;
-
-		DefaultResources defaultResources;
-	};
-
 	Renderer::Renderer()
 	{
 		VT_ASSERT(!s_instance);
@@ -138,8 +108,6 @@ namespace Volt
 
 	void Renderer::Initialize()
 	{
-		m_deletionQueue.resize(RHI::Swapchain::FramesInFlight);
-
 		// Bindless resources manager
 		{
 			m_bindlessResourcesManager = CreateScope<BindlessResourcesManager>();
@@ -171,35 +139,12 @@ namespace Volt
 #endif
 
 		m_shaderMap = nullptr;
-
-		for (auto& resourceQueue : m_deletionQueue)
-		{
-			resourceQueue.Flush();
-		}
-
 		m_bindlessResourcesManager = nullptr;
-
-		for (auto& resourceQueue : m_deletionQueue)
-		{
-			resourceQueue.Flush();
-		}
 	}
 
 	const uint32_t Renderer::GetFramesInFlight()
 	{
 		return RHI::Swapchain::FramesInFlight;
-	}
-
-	void Renderer::DestroyResource(std::function<void()>&& function)
-	{
-		if (!s_instance)
-		{
-			function();
-			return;
-		}
-
-		const uint32_t currentFrame = s_instance->m_frameIndex % RHI::Swapchain::FramesInFlight;
-		s_instance->m_deletionQueue.at(currentFrame).Push(std::move(function));
 	}
 
 	const DefaultResources& Renderer::GetDefaultResources()
@@ -465,11 +410,7 @@ namespace Volt
 
 	bool Renderer::OnPreRenderEvent(AppPreRenderEvent& event)
 	{
-		const uint32_t currentFrame = m_frameIndex % RHI::Swapchain::FramesInFlight;
-
-		m_deletionQueue.at(currentFrame).Flush();
 		m_bindlessResourcesManager->Update();
-
 		return false;
 	}
 

@@ -46,6 +46,7 @@ namespace Volt::RHI
 	VulkanRHIModule::VulkanRHIModule()
 	{
 		s_instance = this;
+		m_resourceDeletionQueue.SetSize(RHI::Swapchain::FramesInFlight);
 	}
 
 	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewSpecification& specification) const
@@ -210,14 +211,8 @@ namespace Volt::RHI
 
 	void VulkanRHIModule::DestroyResource(std::function<void()>&& function)
 	{
-		if (m_callbackInfo.resourceManagementInfo.resourceDeletionCallback)
-		{
-			m_callbackInfo.resourceManagementInfo.resourceDeletionCallback(std::move(function));
-		}
-		else
-		{
-			function();
-		}
+		const uint32_t queueIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
+		m_resourceDeletionQueue.EnqueueResourceDeletion(queueIndex, std::move(function));
 	}
 
 	void VulkanRHIModule::RequestApplicationClose()
@@ -226,6 +221,22 @@ namespace Volt::RHI
 		{
 			m_callbackInfo.requestCloseEventCallback();
 		}
+	}
+
+	void VulkanRHIModule::Update()
+	{
+		GraphicsContext::GetDefaultAllocator()->Update();
+		GraphicsContext::GetTransientAllocator()->Update();
+
+		const uint32_t queueIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
+		m_resourceDeletionQueue.FlushQueue(queueIndex);
+
+		m_frameIndex++;
+	}
+
+	void VulkanRHIModule::FlushResourceDeletionQueue()
+	{
+		m_resourceDeletionQueue.FlushAll();
 	}
 }
 

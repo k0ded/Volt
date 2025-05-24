@@ -622,11 +622,6 @@ namespace Volt::RHI
 
 	// --- structures --- \\
 
-	struct ResourceManagementInfo
-	{
-		std::function<void(std::function<void()>&&)> resourceDeletionCallback;
-	};
-
 	struct MemoryRequirement
 	{
 		uint64_t size = 0;

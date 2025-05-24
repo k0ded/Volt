@@ -12,8 +12,6 @@
 #include <SubSystem/SubSystem.h>
 #include <EventSystem/EventListener.h>
 
-#include <CoreUtilities/Containers/FunctionQueue.h>
-
 namespace Volt
 {
 	namespace RHI
@@ -74,7 +72,6 @@ namespace Volt
 		void Shutdown() override;
 
 		static const uint32_t GetFramesInFlight();
-		static void DestroyResource(std::function<void()>&& function);
 
 		static const DefaultResources& GetDefaultResources();
 		static EnvironmentTextures GenerateEnvironmentTextures(AssetHandle baseTextureHandle);
@@ -119,7 +116,6 @@ namespace Volt
 		Scope<ShaderRuntimeValidator> m_shaderValidator;
 #endif
 
-		Vector<FunctionQueue> m_deletionQueue;
 		vt::map<size_t, BindlessResourceRef<RHI::SamplerState>> m_samplers;
 
 		uint32_t m_frameIndex = 0;

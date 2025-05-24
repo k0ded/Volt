@@ -1,7 +1,9 @@
 #pragma once
 
 #include "D3D12RHIModule/Core.h"
+
 #include <RHIModule/RHIModule.h>
+#include <RHIModule/ResourceDeletionQueue.h>
 
 namespace Volt::RHI
 {
@@ -59,9 +61,13 @@ namespace Volt::RHI
 		void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) override;
 		void DestroyResource(std::function<void()>&& function) override;
 		void RequestApplicationClose() override;
+		void Update() override;
+		void FlushResourceDeletionQueue() override;
 
 	private:
 		RHICallbackInfo m_callbackInfo;
+		ResourceDeletionQueue m_resourceDeletionQueue;
+		uint32_t m_frameIndex = 0;
 	};
 }
 

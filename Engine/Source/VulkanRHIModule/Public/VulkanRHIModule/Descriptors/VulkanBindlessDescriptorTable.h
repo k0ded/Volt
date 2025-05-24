@@ -5,7 +5,6 @@
 #include <RHIModule/Descriptors/BindlessDescriptorTable.h>
 #include <RHIModule/Descriptors/ResourceRegistry.h>
 
-#include <CoreUtilities/Containers/FunctionQueue.h>
 #include <CoreUtilities/Containers/ThreadSafeVector.h>
 
 #include <list>

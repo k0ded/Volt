@@ -84,7 +84,6 @@ namespace Volt::RHI
 
 	struct RHICallbackInfo
 	{
-		ResourceManagementInfo resourceManagementInfo;
 		std::function<void()> requestCloseEventCallback;
 	};
 
@@ -142,6 +141,8 @@ namespace Volt::RHI
 
 		virtual void DestroyResource(std::function<void()>&& function) = 0;
 		virtual void RequestApplicationClose() = 0;
+		virtual void Update() = 0;
+		virtual void FlushResourceDeletionQueue() = 0;
 
 		void SetFrameCapture(Ref<FrameCapture> frameCapture);
 

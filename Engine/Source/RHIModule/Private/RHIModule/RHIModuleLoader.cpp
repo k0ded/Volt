@@ -3,12 +3,19 @@
 
 #include "RHIModule/Graphics/GraphicsContext.h"
 
+#include <EventSystem/ApplicationEvents.h>
+
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 #include <CoreUtilities/StringUtility.h>
 
 namespace Volt::RHI
 {
 	VT_REGISTER_SUBSYSTEM(RHIModuleLoader, PreEngine, 2);
+
+	RHIModuleLoader::RHIModuleLoader()
+	{
+		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(RHIModuleLoader::OnPreRenderEvent));
+	}
 
 	void RHIModuleLoader::LoadRHI(RHI::GraphicsAPI api, const RHI::RHICallbackInfo& callbackInfo)
 	{
@@ -53,5 +60,26 @@ namespace Volt::RHI
 
 		m_rhiModule->SetRHICallbackInfo(callbackInfo);
 		m_graphicsContext = RHI::GraphicsContext::Create(createInfo);
+	}
+
+	void RHIModuleLoader::Shutdown()
+	{
+		if (m_rhiModuleHandle && m_rhiModule)
+		{
+			m_rhiModule->FlushResourceDeletionQueue();
+			m_graphicsContext = nullptr;
+		
+			PFN_DestroyRHIModule destroyFunc = reinterpret_cast<PFN_DestroyRHIModule>(VT_GET_PROC_ADDRESS(m_rhiModuleHandle, RHI_DESTROY_FUNC_NAME));
+			VT_ENSURE_MSG(destroyFunc != nullptr, "Could not find DestroyRHIModule in RHI module!");
+
+			destroyFunc(m_rhiModule);
+			m_rhiModule = nullptr;
+		}
+	}
+
+	bool RHIModuleLoader::OnPreRenderEvent(AppPreRenderEvent& event)
+	{
+		m_rhiModule->Update();
+		return false;
 	}
 }
