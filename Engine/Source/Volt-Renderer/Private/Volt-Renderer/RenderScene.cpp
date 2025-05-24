@@ -19,7 +19,7 @@
 #include <AssetSystem/AssetManager.h>
 
 #include <RHIModule/Buffers/StorageBuffer.h>
-#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/RHICapabilities.h>
 
 #include <ranges>
 
@@ -47,7 +47,7 @@ namespace Volt
 			memset(&mesh, 0, sizeof(GPUMesh));
 		}
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (g_rhiCapabilities.rayTracing.supportsRayTracing)
 		{
 			m_rayTracingScene = CreateRef<RayTracingScene>(m_scene);
 		}
@@ -101,7 +101,7 @@ namespace Volt
 			m_animationBufferStorage.clear();
 		}
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (g_rhiCapabilities.rayTracing.supportsRayTracing)
 		{
 			m_rayTracingScene->Update();
 		}

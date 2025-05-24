@@ -7,6 +7,7 @@
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Globals.h>
+#include <RHIModule/RHICapabilities.h>
 
 #include <vulkan/vulkan.h>
 
@@ -31,7 +32,7 @@ namespace Volt::RHI
 			constantsBinding.pImmutableSamplers = nullptr;
 			constantsBinding.stageFlags = VK_SHADER_STAGE_ALL;
 
-			if (GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+			if (g_rhiCapabilities.rayTracing.supportsRayTracing)
 			{
 				VkDescriptorSetLayoutBinding& rtBinding = bindings.emplace_back();
 				rtBinding.binding = Globals::ACCELERATION_STRUCTURE_BINDING;

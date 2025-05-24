@@ -31,7 +31,6 @@ namespace Volt::RHI
 		~D3D12GraphicsDevice() override;
 
 		RefPtr<DeviceQueue> GetDeviceQueue(QueueType queueType) const override;
-		const GraphicsDeviceCapabilities& GetCapabilities() const override;
 
 		VT_NODISCARD VT_INLINE const Properties& GetDeviceProperties() const { return m_properties; }
 		VT_NODISCARD VT_INLINE const Capabilities& GetDeviceCapabilities() const { return m_capabilities; }
@@ -48,7 +47,6 @@ namespace Volt::RHI
 
 		Properties m_properties;
 		Capabilities m_capabilities;
-		GraphicsDeviceCapabilities m_deviceCapabilities;
 
 		std::unordered_map<QueueType, RefPtr<DeviceQueue>> m_deviceQueues;
 		ComPtr<ID3D12Device10> m_device;

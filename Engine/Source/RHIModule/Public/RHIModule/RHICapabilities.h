@@ -1,18 +1,18 @@
 #pragma once
 
-#include <cstdint>
+#include "RHIModule/Core/Core.h"
 
 namespace Volt::RHI
 {
-	struct ComputeDimensions
+	struct RHICapabilities
 	{
-		uint32_t x = 0;
-		uint32_t y = 0;
-		uint32_t z = 0;
-	};
+		struct ComputeDimensions
+		{
+			uint32_t x = 0;
+			uint32_t y = 0;
+			uint32_t z = 0;
+		};
 
-	struct GraphicsDeviceCapabilities
-	{
 		uint32_t max2DTextureDimensions = 2048;
 		uint64_t maxBufferDimensions = (1 << 27);
 		uint32_t max3DTextureDimensions = 2048;
@@ -27,7 +27,7 @@ namespace Volt::RHI
 			bool supportsRayTracing = false;
 			bool supportsInlineRaytracing = false;
 			bool supportsRaytracingShaders = false;
-		
+
 			uint32_t accelerationStructureAlignment = 0;
 			uint32_t scratchBufferAlignment = 0;
 			uint32_t shaderTableAlignment = 0;
@@ -39,7 +39,9 @@ namespace Volt::RHI
 
 		bool supportsNative16BitOperations = false;
 		bool supportsMeshShaders = false;
+		bool supportsBindless = false;
 
 		ComputeDimensions maxDispatchThreadGroupsPerDimension;
 	};
 }
+extern VTRHI_API Volt::RHI::RHICapabilities g_rhiCapabilities;
