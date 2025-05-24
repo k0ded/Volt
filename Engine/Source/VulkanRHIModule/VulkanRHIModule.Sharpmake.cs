@@ -31,11 +31,17 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<DXC>(target);
 
 			string vulkanSDKPath = Path.Combine(Environment.GetEnvironmentVariable("VULKAN_SDK"), "Include");
-			conf.IncludePrivatePaths.Add(vulkanSDKPath);
+			if (vulkanSDKPath != null)
+			{
+				conf.IncludePrivatePaths.Add(vulkanSDKPath);
+			}
 
 			string vulkanSDKLibPath = Path.Combine(Environment.GetEnvironmentVariable("VULKAN_SDK"), "Lib");
-			conf.LibraryPaths.Add(vulkanSDKLibPath);
-			conf.LibraryFiles.Add("vulkan-1.lib");
+			if (vulkanSDKLibPath != null)
+			{
+				conf.LibraryPaths.Add(vulkanSDKLibPath);
+				conf.LibraryFiles.Add("vulkan-1.lib");
+			}
 		}
 
 		public override void ConfigureDebug(Configuration conf, CommonTarget target)
