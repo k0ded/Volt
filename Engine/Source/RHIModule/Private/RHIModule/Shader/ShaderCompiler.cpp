@@ -1,7 +1,7 @@
 #include "rhipch.h"
 #include "RHIModule/Shader/ShaderCompiler.h"
 
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
@@ -32,6 +32,6 @@ namespace Volt::RHI
 
 	RefPtr<ShaderCompiler> ShaderCompiler::Create(const ShaderCompilerCreateInfo& createInfo)
 	{
-		return RHIProxy::GetInstance().CreateShaderCompiler(createInfo);
+		return RHIModule::GetInstance().CreateShaderCompiler(createInfo);
 	}
 }

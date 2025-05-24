@@ -10,7 +10,7 @@
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <vulkan/vulkan.h>
 
@@ -28,7 +28,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([handle = m_handle]() 
+		RHIModule::GetInstance().DestroyResource([handle = m_handle]() 
 		{
 			GraphicsContext::GetDevice()->As<VulkanGraphicsDevice>()->WaitForIdle(); // #TODO_Ivar: Should not be called.
 			vkDestroyAccelerationStructureKHR(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), handle, nullptr);

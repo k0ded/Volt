@@ -6,7 +6,7 @@
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Images/SamplerState.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt
 {

@@ -6,7 +6,7 @@
 
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Images/ImageUtility.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <RHIModule/Utility/ResourceUtility.h>
 
@@ -216,7 +216,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]()
+		RHIModule::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]()
 		{
 			allocator->DestroyImage(allocation);
 		});

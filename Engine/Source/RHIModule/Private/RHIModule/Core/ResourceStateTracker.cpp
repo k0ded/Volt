@@ -1,7 +1,7 @@
 #include "rhipch.h"
 #include "RHIModule/Core/ResourceStateTracker.h"
 
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {

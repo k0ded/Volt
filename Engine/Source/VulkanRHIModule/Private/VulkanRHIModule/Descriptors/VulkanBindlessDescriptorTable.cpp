@@ -6,7 +6,7 @@
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 
 #include <RHIModule/Buffers/StorageBuffer.h>
@@ -194,7 +194,7 @@ namespace Volt::RHI
 		{
 			RefPtr<VulkanBindlessDescriptorTable> tablePtr = CreateRefPtrFromThis();
 
-			RHIProxy::GetInstance().DestroyResource([tablePtr, descriptor = descriptorSets[1]]()
+			RHIModule::GetInstance().DestroyResource([tablePtr, descriptor = descriptorSets[1]]()
 			{
 				if (tablePtr)
 				{
@@ -211,7 +211,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]()
+		RHIModule::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), descriptorPool, nullptr);

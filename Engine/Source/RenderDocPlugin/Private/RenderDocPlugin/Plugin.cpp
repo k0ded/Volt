@@ -4,7 +4,7 @@
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 #include <WindowModule/Events/WindowEvents.h>
 
 #include <CoreUtilities/DynamicLibraryHelpers.h>
@@ -47,7 +47,7 @@ void RenderDocPlugin::Initialize()
 	if (m_renderDocAPI)
 	{
 		m_frameCapture = CreateRef<RenderDocFrameCapture>(m_renderDocAPI);
-		Volt::RHI::RHIProxy::GetInstance().SetFrameCapture(m_frameCapture);
+		Volt::RHI::RHIModule::GetInstance().SetFrameCapture(m_frameCapture);
 
 		m_eventListener = CreateScope<RenderDocEventListener>();
 		m_eventListener->RegisterListeners(m_frameCapture);

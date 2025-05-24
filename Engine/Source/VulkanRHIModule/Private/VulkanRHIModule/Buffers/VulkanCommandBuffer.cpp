@@ -38,7 +38,7 @@
 
 #include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Core/Profiling.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 #include <RHIModule/Synchronization/Fence.h>
 
 #include <RHIModule/RayTracing/AccelerationStructure.h>
@@ -1488,7 +1488,7 @@ namespace Volt::RHI
 		}
 
 		VkFence fencePtr = waitFence->GetHandle<VkFence>();
-		RHIProxy::GetInstance().DestroyResource([fence = fencePtr, commandPool = m_commandBufferData.commandPool, timestampPool = m_timestampQueryPool, level = m_commandBufferLevel]()
+		RHIModule::GetInstance().DestroyResource([fence = fencePtr, commandPool = m_commandBufferData.commandPool, timestampPool = m_timestampQueryPool, level = m_commandBufferLevel]()
 		{
 			auto device = GraphicsContext::GetDevice();
 		

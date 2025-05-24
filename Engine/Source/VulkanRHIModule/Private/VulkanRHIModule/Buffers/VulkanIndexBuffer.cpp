@@ -9,7 +9,7 @@
 #include <RHIModule/Graphics/GraphicsDevice.h>
 
 #include <RHIModule/Memory/Allocation.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt::RHI
 {

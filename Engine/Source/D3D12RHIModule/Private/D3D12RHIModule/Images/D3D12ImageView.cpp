@@ -8,7 +8,7 @@
 #include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 #include "D3D12RHIModule/Common/D3D12Helpers.h"
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt::RHI
 {
@@ -45,7 +45,7 @@ namespace Volt::RHI
 
 	D3D12ImageView::~D3D12ImageView()
 	{
-		RHIProxy::GetInstance().DestroyResource([srvDescriptor = m_srvDescriptor, uavDescriptor = m_uavDescriptor]()
+		RHIModule::GetInstance().DestroyResource([srvDescriptor = m_srvDescriptor, uavDescriptor = m_uavDescriptor]()
 		{
 			if (srvDescriptor.IsValid())
 			{

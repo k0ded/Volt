@@ -13,7 +13,7 @@
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Images/SamplerState.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -298,7 +298,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]()
+		RHIModule::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), descriptorPool, nullptr);

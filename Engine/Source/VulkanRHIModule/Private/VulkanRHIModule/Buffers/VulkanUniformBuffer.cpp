@@ -11,7 +11,7 @@
 
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Memory/MemoryUtility.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt::RHI
 {
@@ -43,7 +43,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocation = m_allocation]() 
+		RHIModule::GetInstance().DestroyResource([allocation = m_allocation]() 
 		{
 			GraphicsContext::GetDefaultAllocator()->DestroyBuffer(allocation);
 		});

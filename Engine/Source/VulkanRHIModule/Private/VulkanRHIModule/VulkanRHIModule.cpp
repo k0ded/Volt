@@ -1,5 +1,5 @@
 #include "vkpch.h"
-#include "VulkanRHIProxy.h"
+#include "VulkanRHIModule.h"
 
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
@@ -43,172 +43,172 @@
 
 namespace Volt::RHI
 {
-	VulkanRHIProxy::VulkanRHIProxy()
+	VulkanRHIModule::VulkanRHIModule()
 	{
 		s_instance = this;
 	}
 
-	RefPtr<BufferView> VulkanRHIProxy::CreateBufferView(const BufferViewSpecification& specification) const
+	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewSpecification& specification) const
 	{
 		return RefPtr<VulkanBufferView>::Create(specification);
 	}
 
-	RefPtr<CommandBuffer> VulkanRHIProxy::CreateCommandBuffer(QueueType queueType) const
+	RefPtr<CommandBuffer> VulkanRHIModule::CreateCommandBuffer(QueueType queueType) const
 	{
 		return RefPtr<VulkanCommandBuffer>::Create(queueType);
 	}
 
-	RefPtr<IndexBuffer> VulkanRHIProxy::CreateIndexBuffer(std::span<const uint32_t> indices) const
+	RefPtr<IndexBuffer> VulkanRHIModule::CreateIndexBuffer(std::span<const uint32_t> indices) const
 	{
 		return RefPtr<VulkanIndexBuffer>::Create(indices);
 	}
 
-	RefPtr<VertexBuffer> VulkanRHIProxy::CreateVertexBuffer(const void* data, const uint32_t size, const uint32_t stride) const
+	RefPtr<VertexBuffer> VulkanRHIModule::CreateVertexBuffer(const void* data, const uint32_t size, const uint32_t stride) const
 	{
 		return RefPtr<VulkanVertexBuffer>::Create(data, size, stride);
 	}
 
-	RefPtr<StorageBuffer> VulkanRHIProxy::CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const
+	RefPtr<StorageBuffer> VulkanRHIModule::CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<VulkanStorageBuffer>::Create(count, elementSize, name, bufferUsage, memoryUsage, allocator);
 	}
 
-	RefPtr<UniformBuffer> VulkanRHIProxy::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const
+	RefPtr<UniformBuffer> VulkanRHIModule::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const
 	{
 		return RefPtr<VulkanUniformBuffer>::Create(size, data, count, name);
 	}
 
-	RefPtr<DescriptorTable> VulkanRHIProxy::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const
+	RefPtr<DescriptorTable> VulkanRHIModule::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanDescriptorTable>::Create(createInfo);
 	}
 
-	RefPtr<BindlessDescriptorTable> VulkanRHIProxy::CreateBindlessDescriptorTable(const uint64_t framesInFlight) const
+	RefPtr<BindlessDescriptorTable> VulkanRHIModule::CreateBindlessDescriptorTable(const uint64_t framesInFlight) const
 	{
 		return RefPtr<VulkanBindlessDescriptorTable>::Create(framesInFlight);
 	}
 
-	RefPtr<DeviceQueue> VulkanRHIProxy::CreateDeviceQueue(const DeviceQueueCreateInfo& createInfo) const
+	RefPtr<DeviceQueue> VulkanRHIModule::CreateDeviceQueue(const DeviceQueueCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanDeviceQueue>::Create(createInfo);
 	}
 
-	RefPtr<GraphicsContext> VulkanRHIProxy::CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const
+	RefPtr<GraphicsContext> VulkanRHIModule::CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanGraphicsContext>::Create(createInfo);
 	}
 
-	RefPtr<GraphicsDevice> VulkanRHIProxy::CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo) const
+	RefPtr<GraphicsDevice> VulkanRHIModule::CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanGraphicsDevice>::Create(createInfo);
 	}
 
-	RefPtr<PhysicalGraphicsDevice> VulkanRHIProxy::CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const
+	RefPtr<PhysicalGraphicsDevice> VulkanRHIModule::CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanPhysicalGraphicsDevice>::Create(createInfo);
 	}
 
-	RefPtr<Swapchain> VulkanRHIProxy::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
+	RefPtr<Swapchain> VulkanRHIModule::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanSwapchain>::Create(createInfo);
 	}
 
-	RefPtr<Image> VulkanRHIProxy::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const
+	RefPtr<Image> VulkanRHIModule::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<VulkanImage>::Create(specification, data, allocator);
 	}
 
-	RefPtr<Image> VulkanRHIProxy::CreateImage(const SwapchainImageSpecification& specification) const
+	RefPtr<Image> VulkanRHIModule::CreateImage(const SwapchainImageSpecification& specification) const
 	{
 		return RefPtr<VulkanImage>::Create(specification);
 	}
 
-	RefPtr<ImageView> VulkanRHIProxy::CreateImageView(const ImageViewSpecification& specification) const
+	RefPtr<ImageView> VulkanRHIModule::CreateImageView(const ImageViewSpecification& specification) const
 	{
 		return RefPtr<VulkanImageView>::Create(specification);
 	}
 
-	RefPtr<SamplerState> VulkanRHIProxy::CreateSamplerState(const SamplerStateCreateInfo& createInfo) const
+	RefPtr<SamplerState> VulkanRHIModule::CreateSamplerState(const SamplerStateCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanSamplerState>::Create(createInfo);
 	}
 
-	RefPtr<DefaultGPUAllocator> VulkanRHIProxy::CreateDefaultAllocator() const
+	RefPtr<DefaultGPUAllocator> VulkanRHIModule::CreateDefaultAllocator() const
 	{
 		return RefPtr<VulkanDefaultGPUAllocator>::Create();
 	}
 
-	RefPtr<TransientGPUAllocator> VulkanRHIProxy::CreateTransientAllocator() const
+	RefPtr<TransientGPUAllocator> VulkanRHIModule::CreateTransientAllocator() const
 	{
 		return RefPtr<VulkanTransientGPUAllocator>::Create();
 	}
 
-	RefPtr<TransientHeap> VulkanRHIProxy::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const
+	RefPtr<TransientHeap> VulkanRHIModule::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanTransientHeap>::Create(createInfo);
 	}
 
-	RefPtr<RenderPipeline> VulkanRHIProxy::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
+	RefPtr<RenderPipeline> VulkanRHIModule::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanRenderPipeline>::Create(createInfo);
 	}
 
-	RefPtr<ComputePipeline> VulkanRHIProxy::CreateComputePipeline(RefPtr<Shader> shader, bool useGlobalResources) const
+	RefPtr<ComputePipeline> VulkanRHIModule::CreateComputePipeline(RefPtr<Shader> shader, bool useGlobalResources) const
 	{
 		return RefPtr<VulkanComputePipeline>::Create(shader, useGlobalResources);
 	}
 
-	RefPtr<RayTracingPipeline> VulkanRHIProxy::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
+	RefPtr<RayTracingPipeline> VulkanRHIModule::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanRayTracingPipeline>::Create(createInfo);
 	}
 
-	RefPtr<Shader> VulkanRHIProxy::CreateShader(const ShaderSpecification& specification) const
+	RefPtr<Shader> VulkanRHIModule::CreateShader(const ShaderSpecification& specification) const
 	{
 		return RefPtr<VulkanShader>::Create(specification);
 	}
 
-	RefPtr<ShaderCompiler> VulkanRHIProxy::CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const
+	RefPtr<ShaderCompiler> VulkanRHIModule::CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanShaderCompiler>::Create(createInfo);
 	}
 
-	RefPtr<Event> VulkanRHIProxy::CreateEvent(const EventCreateInfo& createInfo) const
+	RefPtr<Event> VulkanRHIModule::CreateEvent(const EventCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanEvent>::Create(createInfo);
 	}
 
-	RefPtr<Fence> VulkanRHIProxy::CreateFence(const FenceCreateInfo& createInfo) const
+	RefPtr<Fence> VulkanRHIModule::CreateFence(const FenceCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanFence>::Create(createInfo);
 	}
 
-	RefPtr<Semaphore> VulkanRHIProxy::CreateSemaphore(const SemaphoreCreateInfo& createInfo) const
+	RefPtr<Semaphore> VulkanRHIModule::CreateSemaphore(const SemaphoreCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanSemaphore>::Create(createInfo);
 	}
 
-	RefPtr<ImGuiImplementation> VulkanRHIProxy::CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const
+	RefPtr<ImGuiImplementation> VulkanRHIModule::CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanImGuiImplementation>::Create(createInfo);
 	}
 
-	RefPtr<AccelerationStructure> VulkanRHIProxy::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
+	RefPtr<AccelerationStructure> VulkanRHIModule::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanAccelerationStructure>::Create(createInfo);
 	}
 
-	RefPtr<ShaderBindingTable> VulkanRHIProxy::CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const
+	RefPtr<ShaderBindingTable> VulkanRHIModule::CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const
 	{
 		return RefPtr<VulkanShaderBindingTable>::Create(pipeline);
 	}
 
-	void VulkanRHIProxy::SetRHICallbackInfo(const RHICallbackInfo& callbackInfo)
+	void VulkanRHIModule::SetRHICallbackInfo(const RHICallbackInfo& callbackInfo)
 	{
 		m_callbackInfo = callbackInfo;
 	}
 
-	void VulkanRHIProxy::DestroyResource(std::function<void()>&& function)
+	void VulkanRHIModule::DestroyResource(std::function<void()>&& function)
 	{
 		if (m_callbackInfo.resourceManagementInfo.resourceDeletionCallback)
 		{
@@ -220,16 +220,21 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanRHIProxy::RequestApplicationClose()
+	void VulkanRHIModule::RequestApplicationClose()
 	{
 		if (m_callbackInfo.requestCloseEventCallback)
 		{
 			m_callbackInfo.requestCloseEventCallback();
 		}
 	}
+}
 
-	RefPtr<RHIProxy> CreateVulkanRHIProxy()
-	{
-		return RefPtr<VulkanRHIProxy>::Create();
-	}
+Volt::RHI::RHIModule* CreateRHIModule()
+{
+	return new Volt::RHI::VulkanRHIModule();
+}
+
+void DestroyRHIModule(Volt::RHI::RHIModule* rhiModule)
+{
+	delete reinterpret_cast<Volt::RHI::VulkanRHIModule*>(rhiModule);
 }

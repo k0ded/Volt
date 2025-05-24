@@ -1,15 +1,15 @@
 #pragma once
 
 #include "D3D12RHIModule/Core.h"
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt::RHI
 {
-	class D3D12RHIProxy : public RHIProxy
+	class D3D12RHIModule : public RHIModule
 	{
 	public:
-		D3D12RHIProxy();
-		~D3D12RHIProxy() override = default;
+		D3D12RHIModule();
+		~D3D12RHIModule() override = default;
 
 		RefPtr<BufferView> CreateBufferView(const BufferViewSpecification& specification) const override;
 
@@ -63,6 +63,10 @@ namespace Volt::RHI
 	private:
 		RHICallbackInfo m_callbackInfo;
 	};
+}
 
-	VTDX_API RefPtr<RHIProxy> CreateD3D12RHIProxy();
+extern "C" 
+{
+	VTDX_API Volt::RHI::RHIModule* CreateRHIModule();
+	VTDX_API void DestroyRHIModule(Volt::RHI::RHIModule* rhiModule);
 }

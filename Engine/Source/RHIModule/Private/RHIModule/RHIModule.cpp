@@ -1,24 +1,24 @@
 #include "rhipch.h"
-#include "RHIProxy.h"
+#include "RHIModule.h"
 
 namespace Volt::RHI
 {
-	RHIProxy::~RHIProxy()
+	RHIModule::~RHIModule()
 	{
 		s_instance->m_frameCapture = nullptr;
 	}
 
-	void RHIProxy::SetFrameCapture(Ref<FrameCapture> frameCapture)
+	void RHIModule::SetFrameCapture(Ref<FrameCapture> frameCapture)
 	{
 		m_frameCapture = frameCapture;
 	}
 
-	Weak<FrameCapture> RHIProxy::GetFrameCapture()
+	Weak<FrameCapture> RHIModule::GetFrameCapture()
 	{
 		return s_instance->m_frameCapture;
 	}
 
-	RHIProxy::RHIProxy()
+	RHIModule::RHIModule()
 	{
 		s_instance = this;
 	}

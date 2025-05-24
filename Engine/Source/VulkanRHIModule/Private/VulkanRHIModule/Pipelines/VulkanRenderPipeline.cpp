@@ -10,7 +10,7 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Images/ImageUtility.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Math/Hash.h>
@@ -353,7 +353,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([pipelineLayout = m_pipelineLayout, pipeline = m_pipeline]()
+		RHIModule::GetInstance().DestroyResource([pipelineLayout = m_pipelineLayout, pipeline = m_pipeline]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyPipelineLayout(device->GetHandle<VkDevice>(), pipelineLayout, nullptr);

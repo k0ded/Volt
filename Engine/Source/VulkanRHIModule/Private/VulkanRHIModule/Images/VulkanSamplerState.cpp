@@ -7,7 +7,7 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <vulkan/vulkan.h>
 
@@ -42,7 +42,7 @@ namespace Volt::RHI
 
 	VulkanSamplerState::~VulkanSamplerState()
 	{
-		RHIProxy::GetInstance().DestroyResource([sampler = m_sampler]() 
+		RHIModule::GetInstance().DestroyResource([sampler = m_sampler]() 
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroySampler(device->GetHandle<VkDevice>(), sampler, nullptr);

@@ -26,7 +26,7 @@
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Memory/MemoryUtility.h>
 #include <RHIModule/Images/ImageUtility.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/EnumUtils.h>
 #include <CoreUtilities/Profiling/Profiling.h>

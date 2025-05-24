@@ -22,7 +22,7 @@
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Memory/MemoryUtility.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt::RHI
 {
@@ -308,7 +308,7 @@ namespace Volt::RHI
 
 	void VulkanDescriptorBufferTable::Release()
 	{
-		RHIProxy::GetInstance().DestroyResource([descriptorBuffer = m_descriptorBuffer]()
+		RHIModule::GetInstance().DestroyResource([descriptorBuffer = m_descriptorBuffer]()
 		{
 			if (descriptorBuffer)
 			{

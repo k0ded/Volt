@@ -76,7 +76,8 @@ namespace Volt
 	{
 		class ImGuiImplementation;
 		class GraphicsContext;
-		class RHIProxy;
+		class RHIModule;
+		class RHIModuleLoader;
 	}
 
 	class Application;
@@ -157,9 +158,6 @@ namespace Volt
 		LayerStack m_layerStack;
 		MultiTimer m_frameTimer;
 
-		RefPtr<RHI::GraphicsContext> m_graphicsContext;
-		RefPtr<RHI::RHIProxy> m_rhiProxy;
-
 		Scope<AssetManager> m_assetManager;
 		Scope<SourceAssetManager> m_sourceAssetManager;
 		Scope<AI::NavigationSystem> m_navigationSystem;
@@ -172,9 +170,9 @@ namespace Volt
 		PluginRegistry* m_pluginRegistry = nullptr;
 		PluginSystem* m_pluginSystem = nullptr;
 		WindowManager* m_windowManager = nullptr;
-		PhysicsSubSystem* m_physicsSubSystem = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
 		Log* m_logSubSystem = nullptr;
+		RHI::RHIModuleLoader* m_rhiModuleLoader = nullptr;
 
 		const CommandLineBuilder m_commandLineBuilder;
 	};

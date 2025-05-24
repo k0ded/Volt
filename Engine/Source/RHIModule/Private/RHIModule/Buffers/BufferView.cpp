@@ -1,12 +1,12 @@
 #include "rhipch.h"
 
 #include "RHIModule/Buffers/BufferView.h"
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI 
 {
 	RefPtr<BufferView> BufferView::Create(const BufferViewSpecification& specification)
 	{
-		return RHIProxy::GetInstance().CreateBufferView(specification);
+		return RHIModule::GetInstance().CreateBufferView(specification);
 	}
 }

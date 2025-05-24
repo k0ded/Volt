@@ -1,7 +1,7 @@
 #include "rhipch.h"
 #include "RHIModule/Graphics/GraphicsContext.h"
 
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
@@ -18,7 +18,7 @@ namespace Volt::RHI
 	RefPtr<GraphicsContext> GraphicsContext::Create(const GraphicsContextCreateInfo& createInfo)
 	{
 		s_graphicsAPI = createInfo.graphicsApi;
-		return RHIProxy::GetInstance().CreateGraphicsContext(createInfo);
+		return RHIModule::GetInstance().CreateGraphicsContext(createInfo);
 	}
 
 	void GraphicsContext::Update()

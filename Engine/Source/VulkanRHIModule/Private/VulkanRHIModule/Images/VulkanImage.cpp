@@ -12,7 +12,7 @@
 
 #include <RHIModule/Utility/ResourceUtility.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <vulkan/vulkan.h>
 

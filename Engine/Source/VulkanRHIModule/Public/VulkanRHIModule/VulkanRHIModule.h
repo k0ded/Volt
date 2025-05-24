@@ -2,15 +2,15 @@
 
 #include "VulkanRHIModule/Core.h"
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt::RHI
 {
-	class VulkanRHIProxy : public RHIProxy
+	class VulkanRHIModule : public RHIModule
 	{
 	public:
-		VulkanRHIProxy();
-		~VulkanRHIProxy() override = default;
+		VulkanRHIModule();
+		~VulkanRHIModule() override = default;
 
 		RefPtr<BufferView> CreateBufferView(const BufferViewSpecification& specification) const override;
 
@@ -64,6 +64,10 @@ namespace Volt::RHI
 	private:
 		RHICallbackInfo m_callbackInfo;
 	};
+}
 
-	VTVK_API RefPtr<RHIProxy> CreateVulkanRHIProxy();
+extern "C"
+{
+	VTVK_API Volt::RHI::RHIModule* CreateRHIModule();
+	VTVK_API void DestroyRHIModule(Volt::RHI::RHIModule* rhiModule);
 }

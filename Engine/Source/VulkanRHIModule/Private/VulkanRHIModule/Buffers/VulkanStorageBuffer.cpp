@@ -11,7 +11,7 @@
 #include <RHIModule/Memory/MemoryCommon.h>
 #include <RHIModule/Memory/Allocation.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt::RHI
 {
@@ -254,7 +254,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]() 
+		RHIModule::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]() 
 		{
 			allocator->DestroyBuffer(allocation);
 		});

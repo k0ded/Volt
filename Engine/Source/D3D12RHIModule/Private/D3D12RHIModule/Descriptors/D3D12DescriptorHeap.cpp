@@ -3,7 +3,7 @@
 
 #include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -61,7 +61,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([descriptorHeap = m_descriptorHeap]() mutable
+		RHIModule::GetInstance().DestroyResource([descriptorHeap = m_descriptorHeap]() mutable
 		{
 			descriptorHeap = nullptr;
 		});

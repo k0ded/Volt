@@ -88,10 +88,10 @@ namespace Volt::RHI
 		std::function<void()> requestCloseEventCallback;
 	};
 
-	class VTRHI_API RHIProxy : public RefCounted<RHIProxy>
+	class VTRHI_API RHIModule
 	{
 	public:
-		virtual ~RHIProxy();
+		virtual ~RHIModule();
 
 		virtual RefPtr<BufferView> CreateBufferView(const BufferViewSpecification& specification) const = 0;
 
@@ -145,13 +145,13 @@ namespace Volt::RHI
 
 		void SetFrameCapture(Ref<FrameCapture> frameCapture);
 
-		static RHIProxy& GetInstance() { return *s_instance; }
+		static RHIModule& GetInstance() { return *s_instance; }
 		static Weak<FrameCapture> GetFrameCapture();
 
 	protected:
-		inline static RHIProxy* s_instance = nullptr;
+		inline static RHIModule* s_instance = nullptr;
 
-		RHIProxy();
+		RHIModule();
 
 		Ref<FrameCapture> m_frameCapture;
 	};
