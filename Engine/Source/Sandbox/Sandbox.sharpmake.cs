@@ -84,9 +84,15 @@ namespace VoltSharpmake
             conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\D3D12Core.pdb\"" + " \"" + conf.TargetPath + "\"");
             conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\d3d12SDKLayers.dll\"" + " \"" + conf.TargetPath + "\"");
             conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\d3d12SDKLayers.pdb\"" + " \"" + conf.TargetPath + "\"");
-        }
 
-        public override void ConfigureMSVC(Configuration conf, CommonTarget target)
+			// #TODO: Temporary fix.
+			conf.EventPostBuild.Add(@"copy /Y " + "\"" + Globals.BinariesDirectory + "\\libcrypto-1_1-x64.dll\"" + " \"" + conf.TargetPath + "\"");
+			conf.EventPostBuild.Add(@"copy /Y " + "\"" + Globals.BinariesDirectory + "\\libssl-1_1-x64.dll\"" + " \"" + conf.TargetPath + "\"");
+			conf.EventPostBuild.Add(@"copy /Y " + "\"" + Globals.BinariesDirectory + "\\libcrypto-3-x64.dll\"" + " \"" + conf.TargetPath + "\"");
+			conf.EventPostBuild.Add(@"copy /Y " + "\"" + Globals.BinariesDirectory + "\\libssl-3-x64.dll\"" + " \"" + conf.TargetPath + "\"");
+		}
+
+		public override void ConfigureMSVC(Configuration conf, CommonTarget target)
         {
             base.ConfigureMSVC(conf, target);
             conf.AdditionalLinkerOptions.Add(
