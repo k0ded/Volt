@@ -7,7 +7,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(MaterialCompilerSubSystem, PostEngine, 0);
+	VT_REGISTER_SUBSYSTEM(MaterialCompilerSubSystem, Default, PostEngine, 0);
 
 	void MaterialCompilerSubSystem::Initialize()
 	{

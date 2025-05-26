@@ -11,6 +11,8 @@
 #include "RHIModule/RayTracing/RayTracingCommon.h"
 #include "RHIModule/RayTracing/ShaderBindingTable.h"
 
+#include "RHIModule/Images/Image.h"
+
 #include <CoreUtilities/Pointers/RawPtr.h>
 #include <CoreUtilities/Containers/StackVector.h>
 #include <CoreUtilities/Containers/Vector.h>
@@ -24,7 +26,6 @@ namespace Volt::RHI
 	class VertexBuffer;
 	class IndexBuffer;
 
-	class Image;
 	class StorageBuffer;
 	class Allocation;
 	class Swapchain;

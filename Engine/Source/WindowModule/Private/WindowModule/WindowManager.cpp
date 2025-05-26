@@ -11,7 +11,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(WindowManager, PreEngine, 4);
+	VT_REGISTER_SUBSYSTEM(WindowManager, Minimal, PreEngine, 4);
 
 	inline static void GLFWErrorCallback(int error, const char* description)
 	{

@@ -11,7 +11,7 @@ class SubSystem;
 class SUBSYSTEMMODULE_API SubSystemManager
 {
 public:
-	SubSystemManager();
+	SubSystemManager(SubSystemInclusionLevel inclusionLevel = SubSystemInclusionLevel::Default);
 	~SubSystemManager();
 
 	SubSystemManager(const SubSystemManager&) = delete;
@@ -40,4 +40,5 @@ private:
 
 	vt::map <VoltGUID, Ref<SubSystem>> m_subSystemsMap;
 	vt::map<SubSystemInitializationStage, Vector<Ref<SubSystem>>> m_subSystems;
+	SubSystemInclusionLevel m_inclusionLevel;
 };

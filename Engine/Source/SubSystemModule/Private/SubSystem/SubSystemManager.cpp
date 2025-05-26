@@ -3,7 +3,8 @@
 #include "SubSystem/SubSystemManager.h"
 #include "SubSystem/SubSystem.h"
 
-SubSystemManager::SubSystemManager()
+SubSystemManager::SubSystemManager(SubSystemInclusionLevel inclusionLevel)
+	: m_inclusionLevel(inclusionLevel)
 {
 	VT_ASSERT(!s_instance);
 	s_instance = this;
@@ -28,7 +29,7 @@ void SubSystemManager::InitializeSubSystems(SubSystemInitializationStage initial
 
 	for (const auto& [guid, registeredSubSystem] : registeredSubSystems)
 	{
-		if (registeredSubSystem.initializationStage != initializationStage)
+		if (registeredSubSystem.initializationStage != initializationStage || registeredSubSystem.inclusionLevel > m_inclusionLevel)
 		{
 			continue;
 		}

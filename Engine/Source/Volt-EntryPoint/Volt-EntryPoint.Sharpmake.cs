@@ -20,6 +20,7 @@ namespace VoltSharpmake
 
 			conf.AddPrivateDependency<Volt>(target);
 			conf.AddPrivateDependency<VoltPlatforms>(target);
+			conf.AddPublicDependency<VoltApplication>(target);
 		}
-    }
+	}
 }

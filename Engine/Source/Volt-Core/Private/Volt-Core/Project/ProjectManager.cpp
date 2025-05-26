@@ -13,7 +13,7 @@ VT_DEFINE_LOG_CATEGORY(LogProject);
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(ProjectManager, PreEngine, 0);
+	VT_REGISTER_SUBSYSTEM(ProjectManager, Default, PreEngine, 0);
 
 	ProjectManager::ProjectManager()
 	{
@@ -139,16 +139,6 @@ namespace Volt
 	const std::filesystem::path ProjectManager::GetEngineScriptsDirectory()
 	{
 		return GetAssetsDirectory() / "Scripts/Internal";
-	}
-
-	const std::filesystem::path ProjectManager::GetEngineShaderIncludeDirectory()
-	{
-		return "Engine/Shaders/Source/Includes";
-	}
-
-	const std::filesystem::path ProjectManager::GetEngineShaderDirectory()
-	{
-		return "Engine/Shaders/Source/";
 	}
 
 	const std::filesystem::path ProjectManager::GetAssetsDirectory()

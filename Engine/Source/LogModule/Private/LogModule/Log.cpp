@@ -11,7 +11,7 @@
 #include <CoreUtilities/StringUtility.h>
 #include <CoreUtilities/FileSystem.h>
 
-VT_REGISTER_SUBSYSTEM(Log, PreEngine, 1);
+VT_REGISTER_SUBSYSTEM(Log, Minimal, PreEngine, 1);
 
 Log::Log()
 {

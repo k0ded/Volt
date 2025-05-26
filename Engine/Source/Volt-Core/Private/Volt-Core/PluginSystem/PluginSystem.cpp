@@ -10,7 +10,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(PluginSystem, PreEngine, 0);
+	VT_REGISTER_SUBSYSTEM(PluginSystem, Default, PreEngine, 0);
 
 	void PluginSystem::SetPluginRegistry(PluginRegistry* pluginRegistry)
 	{

@@ -14,6 +14,7 @@ struct RegisteredSubSystem
 	std::function<Ref<SubSystem>()> factoryFunction;
 	int32_t initializationOrder;
 	SubSystemInitializationStage initializationStage;
+	SubSystemInclusionLevel inclusionLevel;
 };
 
 class SUBSYSTEMMODULE_API SubSystemRegistry
@@ -26,7 +27,7 @@ public:
 	SubSystemRegistry& operator=(const SubSystemRegistry&) = delete;
 
 	template<typename T>
-	bool RegisterSubSystem(SubSystemInitializationStage initializationStage, int32_t initializationOrder)
+	bool RegisterSubSystem(SubSystemInclusionLevel inclusionLevel, SubSystemInitializationStage initializationStage, int32_t initializationOrder)
 	{
 		const VoltGUID guid = T::GetStaticSubSystemGUID();
 
@@ -38,6 +39,7 @@ public:
 		RegisteredSubSystem& registeredSubSystem = m_registeredSubSystems[guid];
 		registeredSubSystem.initializationOrder = initializationOrder;
 		registeredSubSystem.initializationStage = initializationStage;
+		registeredSubSystem.inclusionLevel = inclusionLevel;
 		registeredSubSystem.factoryFunction = []() 
 		{
 			return CreateRef<T>();
@@ -59,8 +61,8 @@ VT_INLINE SubSystemRegistry& GetSubSystemRegistry()
 	return g_subSystemRegistry;
 }
 
-#define VT_REGISTER_SUBSYSTEM(klass, initializationStage, initializationOrder) \
-	inline static bool SubSystemRegistry_ ## klass ## _Registered = GetSubSystemRegistry().RegisterSubSystem<klass>(SubSystemInitializationStage::initializationStage, initializationOrder)
+#define VT_REGISTER_SUBSYSTEM(klass, inclusionLevel, initializationStage, initializationOrder) \
+	inline static bool SubSystemRegistry_ ## klass ## _Registered = GetSubSystemRegistry().RegisterSubSystem<klass>(SubSystemInclusionLevel::inclusionLevel, SubSystemInitializationStage::initializationStage, initializationOrder)
 
 #define VT_DECLARE_SUBSYSTEM(guid) \
 	VT_NODISCARD VT_INLINE static constexpr VoltGUID GetStaticSubSystemGUID() \

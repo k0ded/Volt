@@ -8,6 +8,8 @@
 #include <Volt/Core/Application.h>
 #include <Volt-Core/Project/ProjectManager.h>
 
+#include <Volt-Application/UIApplication.h>
+
 class SandboxApp : public Volt::Application
 {
 public:
@@ -41,4 +43,9 @@ Volt::Application* CreateApplication(const Volt::CommandLineBuilder& commandLine
 	info.height = 900;
 
 	return new SandboxApp(info, commandLineBuilder);
+}
+
+Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder)
+{
+	return new Volt::UIApplication(commandLineBuilder);
 }
