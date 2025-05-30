@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RHIModule/Core/Core.h"
+#include "RHIModule/Shader/ShaderParameterMap.h"
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Shader/ShaderCommon.h"
 #include "RHIModule/Shader/ShaderPermutationConfig.h"
@@ -33,7 +34,7 @@ namespace Volt::RHI
 		virtual size_t GetHash() const = 0;
 		virtual ShaderStage GetShaderStage() const = 0;
 		virtual bool IsValid() const = 0;
-		virtual const ShaderBindings& GetBindings() const = 0;
+		virtual const ShaderParameterMap& GetParameterMap() const = 0;
 
 		static RefPtr<Shader2> Create(const ShaderCreateInfo& createInfo);
 

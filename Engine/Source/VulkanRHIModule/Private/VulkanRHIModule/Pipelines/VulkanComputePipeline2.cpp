@@ -37,14 +37,19 @@ namespace Volt::RHI
 		ScopedTimer scopedTimer{};
 
 		auto device = GraphicsContext::GetDevice();
+		VulkanShader2& vulkanShader = m_shader->AsRef<VulkanShader2>();
 
 		// Create descriptor set layouts
 		{
-			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
-			m_descriptorSetLayouts = descriptorSetLayoutBuilder.BuildFromShaderBindings(m_shader->GetBindings());
-			m_descriptorPoolSizes = descriptorSetLayoutBuilder.CalculateDescriptorPoolSizesFromBindings(m_shader->GetBindings());
+			const ShaderParameterMap& shaderParameterMap = m_shader->GetParameterMap();
 
-			m_pipelineBindings = m_shader->GetBindings();
+			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
+			DescriptorSetLayoutBuilder::DescriptorSets descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderParameterMap.GetResourceBindings());
+			m_descriptorSetLayouts = descriptorSets.descriptorSetLayouts;
+			m_pipelineLayoutDescriptorSetLayouts = descriptorSets.pipelineLayoutDescriptorSetLayouts;
+
+			m_descriptorPoolSizes = descriptorSetLayoutBuilder.CalculateDescriptorPoolSizesFromBindings(shaderParameterMap.GetResourceBindings());
+			m_shaderParameterMap = shaderParameterMap;
 		}
 
 		// Create pipeline layout
@@ -52,8 +57,8 @@ namespace Volt::RHI
 			VkPipelineLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			info.pNext = nullptr;
-			info.setLayoutCount = static_cast<uint32_t>(m_descriptorSetLayouts.size());
-			info.pSetLayouts = m_descriptorSetLayouts.data();
+			info.setLayoutCount = static_cast<uint32_t>(m_pipelineLayoutDescriptorSetLayouts.size());
+			info.pSetLayouts = m_pipelineLayoutDescriptorSetLayouts.data();
 			info.pushConstantRangeCount = 0;
 			info.pPushConstantRanges = nullptr;
 
@@ -62,7 +67,6 @@ namespace Volt::RHI
 
 		// Create pipeline
 		{
-			VulkanShader2& vulkanShader = m_shader->AsRef<VulkanShader2>();
 			const std::string entryPoint = vulkanShader.GetShaderSourceInfo().sourceEntry.entryPoint;
 
 			VkPipelineShaderStageCreateInfo stageInfo{};
@@ -115,7 +119,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_descriptorSetLayouts]()
+		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_pipelineLayoutDescriptorSetLayouts]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, nullptr);
@@ -138,5 +142,26 @@ namespace Volt::RHI
 
 		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipeline)));
 		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipelineLayout)));
+	}
+
+	const ShaderResourceBinding* VulkanComputePipeline2::GetResourceBindingFromName(const StringHash& name) const
+	{
+		const ShaderParameterMap::ResourceBindingsMap& resourceBindings = m_shaderParameterMap.GetResourceBindings();
+		if (resourceBindings.contains(name))
+		{
+			return &resourceBindings.at(name);
+		}
+
+		return nullptr;
+	}
+
+	RefPtr<Shader2> VulkanComputePipeline2::GetShader2() const
+	{
+		return m_shader;
+	}
+
+	const ShaderParameterMap& VulkanComputePipeline2::GetShaderParameterMap() const
+	{
+		return m_shaderParameterMap;
 	}
 }

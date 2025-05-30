@@ -7,6 +7,7 @@
 
 struct VkDescriptorPool_T;
 struct VkDescriptorSet_T;
+struct VkPipelineLayout_T;
 
 namespace Volt::RHI
 {
@@ -27,6 +28,11 @@ namespace Volt::RHI
 		void PrepareForRender() override;
 		void Bind(CommandBuffer& commandBuffer) override;
 
+		VkPipelineLayout_T* GetRelatedPipelineLayout() const;
+		uint32_t GetRelatedBindPoint() const;
+		
+		VT_NODISCARD VT_INLINE const vt::map<uint32_t, VkDescriptorSet_T*>& GetDescriptorSets() const { return m_descriptorSets; }
+
 	protected:
 		void Invalidate();
 		void Release();
@@ -45,13 +51,12 @@ namespace Volt::RHI
 
 		void BuildWriteDescriptors();
 		void InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet);
-		void InitializeInfoStructs();
 
 		DescriptorTableCreateInfo m_createInfo;
 		bool m_isDirty = false;
 
 		VkDescriptorPool_T* m_descriptorPool = nullptr;
-		Vector<VkDescriptorSet_T*> m_descriptorSets;
+		vt::map<uint32_t, VkDescriptorSet_T*> m_descriptorSets;
 
 		vt::map<uint32_t, vt::map<uint32_t, uint32_t>> m_writeDescriptorsMapping; // Set -> Binding
 		vt::map<uint32_t, vt::map<uint32_t, vt::map<uint32_t, DescriptorImageInfo>>> m_imageDescriptorInfos; // Set -> Binding -> Array Index

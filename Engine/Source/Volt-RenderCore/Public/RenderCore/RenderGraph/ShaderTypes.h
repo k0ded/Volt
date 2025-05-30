@@ -35,3 +35,21 @@ using float3 = glm::vec3;
 using float4 = glm::vec4;
 
 using float4x4 = glm::mat4x4;
+
+using SamplerState = void;
+using ByteAddressBuffer = void;
+using RWByteAddressBuffer = void;
+
+template<typename T> using Buffer2 = void;
+template<typename T> using RWBuffer = void;
+template<typename T> using StructuredBuffer = void;
+template<typename T> using RWStructuredBuffer = void;
+template<typename T> using ConstantBuffer = void;
+
+template<typename T> using Texture2D = void;
+template<typename T> using RWTexture2D = void;
+template<typename T> using TextureCube = void;
+template<typename T> using Texture2DArray = void;
+template<typename T> using RWTexture2DArray = void;
+template<typename T> using Texture3D = void;
+template<typename T> using RWTexture3D = void;

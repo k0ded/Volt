@@ -579,7 +579,6 @@ namespace Volt
 
 					const bool isBufferType = IsEqualToAny(resourceType, ResourceType::Buffer, ResourceType::UniformBuffer);
 
-
 					// Handle case 8
 					if (isBufferType)
 					{

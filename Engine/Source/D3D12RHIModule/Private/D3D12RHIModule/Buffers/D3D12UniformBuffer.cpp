@@ -42,9 +42,9 @@ namespace Volt::RHI
 		m_allocation = nullptr;
 	}
 
-	RefPtr<BufferView> D3D12UniformBuffer::GetView()
+	RefPtr<BufferView> D3D12UniformBuffer::GetView(const BufferViewDesc& desc)
 	{
-		BufferViewSpecification spec{};
+		BufferViewDesc spec{};
 		spec.bufferResource = this;
 
 		return BufferView::Create(spec);

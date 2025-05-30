@@ -1,13 +1,14 @@
 #pragma once
 
 #include "RHIModule/Core/RHIInterface.h"
+#include "RHIModule/Buffers/BufferView.h"
+
 #include <CoreUtilities/Pointers/RawPtr.h>
 
 namespace Volt::RHI
 {
 	class Shader;
 	class ImageView;
-	class BufferView;
 	class BufferViewSet;
 	class ComputePipeline;
 	class RenderPipeline;

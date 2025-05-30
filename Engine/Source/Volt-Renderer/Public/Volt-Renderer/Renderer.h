@@ -4,7 +4,9 @@
 #include "Volt-Renderer/Config.h"
 
 #include <AssetSystem/AssetHandle.h>
+
 #include <RenderCore/Resources/BindlessResource.h>
+#include <RenderCore/DescriptorTableCache.h>
 
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Core/RHICommon.h>
@@ -109,8 +111,9 @@ namespace Volt
 		DefaultResources m_defaultResources;
 
 		Scope<ShaderMap> m_shaderMap;
-		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
 		Scope<BlueNoise> m_blueNoise;
+		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
+		Scope<DescriptorTableCache> m_descriptorTableCache;
 
 #ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
 		Scope<ShaderRuntimeValidator> m_shaderValidator;

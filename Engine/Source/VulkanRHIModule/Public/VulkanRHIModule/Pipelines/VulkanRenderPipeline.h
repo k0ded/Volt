@@ -19,6 +19,8 @@ namespace Volt::RHI
 		RefPtr<Shader> GetShader() const override;
 		bool IsValid() const override;
 		size_t GetHash() const override;
+		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const override;
+		const Vector<ShaderParameterMap>& GetShaderParameterMaps() const override { static Vector<ShaderParameterMap> s; return s; }
 
 		inline VkPipelineLayout_T* GetPipelineLayout() const { return m_pipelineLayout; }
 

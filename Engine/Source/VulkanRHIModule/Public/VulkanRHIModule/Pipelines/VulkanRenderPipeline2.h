@@ -18,10 +18,11 @@ namespace Volt::RHI
 		RefPtr<Shader> GetShader() const override;
 		bool IsValid() const override;
 		size_t GetHash() const override;
+		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const override;
+		const Vector<ShaderParameterMap>& GetShaderParameterMaps() const override;
 
-		VT_NODISCARD VT_INLINE const Vector<VkDescriptorSetLayout_T*>& GetDescriptorSetLayouts() const { return m_descriptorSetLayouts; }
+		VT_NODISCARD VT_INLINE const vt::map<uint32_t, VkDescriptorSetLayout_T*>& GetDescriptorSetLayouts() const { return m_descriptorSetLayouts; }
 		VT_NODISCARD VT_INLINE const Vector<std::pair<uint32_t, uint32_t>>& GetDescriptorPoolSizes() const { return m_descriptorPoolSizes; }
-		VT_NODISCARD VT_INLINE const ShaderBindings& GetBindings() const { return m_pipelineBindings; }
 		VT_NODISCARD VT_INLINE VkPipelineLayout_T* GetPipelineLayout() const { return m_pipelineLayout; }
 
 	protected:
@@ -35,11 +36,13 @@ namespace Volt::RHI
 		RenderPipelineCreateInfo m_createInfo{};
 		size_t m_hash;
 
-		Vector<VkDescriptorSetLayout_T*> m_descriptorSetLayouts;
+		vt::map<uint32_t, VkDescriptorSetLayout_T*> m_descriptorSetLayouts;
+		Vector<VkDescriptorSetLayout_T*> m_pipelineLayoutDescriptorSetLayouts;
+
 		VkPipeline_T* m_pipeline = nullptr;
 		VkPipelineLayout_T* m_pipelineLayout = nullptr;
 
-		ShaderBindings m_pipelineBindings;
+		Vector<ShaderParameterMap> m_shaderParameterMaps;
 		Vector<std::pair<uint32_t, uint32_t>> m_descriptorPoolSizes;
 	};
 }

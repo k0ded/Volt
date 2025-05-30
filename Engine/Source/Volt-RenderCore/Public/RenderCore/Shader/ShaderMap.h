@@ -8,6 +8,7 @@
 #include <RHIModule/RayTracing/ShaderBindingTable.h>
 
 #include <RHIModule/Shader/Shader.h>
+#include <RHIModule/Shader/Shader2.h>
 
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
@@ -32,6 +33,7 @@ namespace Volt
 		static bool ReloadShaderByName(const std::string& name);
 
 		static void RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader);
+		static void RegisterShader2(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader2> shader);
 
 		static RefPtr<RHI::RenderPipeline> GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo);
 		static RefPtr<RHI::RayTracingPipeline> GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo);
@@ -47,6 +49,15 @@ namespace Volt
 		}
 
 		template<typename T>
+		static RefPtr<RHI::Shader2> Get2()
+		{
+			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
+			VT_ENSURE(s_instance->m_shaderMap2.contains(typeIndex));
+
+			return s_instance->m_shaderMap2.at(typeIndex);
+		}
+
+		template<typename T>
 		static RefPtr<RHI::ComputePipeline> GetComputePipeline(bool useGlobalResouces = true)
 		{
 			return GetComputePipeline(Get<T>(), useGlobalResouces);
@@ -58,6 +69,7 @@ namespace Volt
 		static RefPtr<RHI::ComputePipeline> GetComputePipeline(RefPtr<RHI::Shader> shader, bool useGlobalResouces = true);
 
 		vt::map<TypeTraits::TypeIndex, RefPtr<RHI::Shader>> m_shaderMap;
+		vt::map<TypeTraits::TypeIndex, RefPtr<RHI::Shader2>> m_shaderMap2;
 		vt::map<size_t, RefPtr<RHI::ComputePipeline>> m_computePipelineCache;
 		vt::map<size_t, RefPtr<RHI::RenderPipeline>> m_renderPipelineCache;
 

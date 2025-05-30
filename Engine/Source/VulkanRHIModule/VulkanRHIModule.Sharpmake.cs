@@ -29,6 +29,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<VulkanMemoryAllocator>(target);
 			conf.AddPrivateDependency<Aftermath>(target);
 			conf.AddPrivateDependency<DXC>(target);
+			conf.AddPrivateDependency<spirv_reflect>(target);
 
 			string vulkanSDKPath = Path.Combine(Environment.GetEnvironmentVariable("VULKAN_SDK"), "Include");
 			if (vulkanSDKPath != null)

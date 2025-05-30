@@ -165,6 +165,12 @@ namespace Volt
 		s_instance->m_shaderMap[typeIndex] = shader;
 	}
 
+	void ShaderMap::RegisterShader2(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader2> shader)
+	{
+		std::scoped_lock lock{ s_instance->m_registerMutex };
+		s_instance->m_shaderMap2[typeIndex] = shader;
+	}
+
 	RefPtr<RHI::RenderPipeline> ShaderMap::GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo)
 	{
 		VT_PROFILE_FUNCTION();

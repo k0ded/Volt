@@ -10,7 +10,7 @@
 
 namespace Volt::RHI
 {
-	D3D12BufferView::D3D12BufferView(const BufferViewSpecification& specification)
+	D3D12BufferView::D3D12BufferView(const BufferViewDesc& specification)
 		: m_resource(specification.bufferResource)
 	{
 		if (specification.bufferResource->GetType() == ResourceType::StorageBuffer)

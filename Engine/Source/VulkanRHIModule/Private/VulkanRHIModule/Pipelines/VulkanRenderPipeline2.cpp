@@ -130,16 +130,18 @@ namespace Volt::RHI
 
 		// Create descriptor set layouts
 		{
-			Vector<ShaderBindings> shaderBindings;
+			Vector<ShaderParameterMap::ResourceBindingsMap> shaderResourceBindings;
+
 			for (const auto shader : m_createInfo.shaders)
 			{
-				shaderBindings.emplace_back(shader->GetBindings());
+				auto& parameterMap = m_shaderParameterMaps.emplace_back(shader->GetParameterMap());
+				shaderResourceBindings.emplace_back(parameterMap.GetResourceBindings());
 			}
 
 			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
-			m_descriptorSetLayouts = descriptorSetLayoutBuilder.BuildFromShaderBindings(shaderBindings);
-
-			m_pipelineBindings = descriptorSetLayoutBuilder.GetMergedShaderBindings(shaderBindings);
+			DescriptorSetLayoutBuilder::DescriptorSets descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderResourceBindings);
+			m_descriptorSetLayouts = descriptorSets.descriptorSetLayouts;
+			m_pipelineLayoutDescriptorSetLayouts = descriptorSets.pipelineLayoutDescriptorSetLayouts;
 		}
 
 		// Create pipeline layout
@@ -147,8 +149,8 @@ namespace Volt::RHI
 			VkPipelineLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			info.pNext = nullptr;
-			info.setLayoutCount = static_cast<uint32_t>(m_descriptorSetLayouts.size());
-			info.pSetLayouts = m_descriptorSetLayouts.data();
+			info.setLayoutCount = static_cast<uint32_t>(m_pipelineLayoutDescriptorSetLayouts.size());
+			info.pSetLayouts = m_pipelineLayoutDescriptorSetLayouts.data();
 			info.pushConstantRangeCount = 0;
 			info.pPushConstantRanges = nullptr;
 
@@ -374,7 +376,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_descriptorSetLayouts]()
+		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_pipelineLayoutDescriptorSetLayouts]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, nullptr);
@@ -440,5 +442,30 @@ namespace Volt::RHI
 		{
 			VT_ENSURE(!foundVertexShader);
 		}
+	}
+
+	const ShaderResourceBinding* VulkanRenderPipeline2::GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const
+	{
+		for (const auto& parameterMap : m_shaderParameterMaps)
+		{
+			if (parameterMap.GetShaderStage() == shaderStage)
+			{
+				const ShaderParameterMap::ResourceBindingsMap& resourceBindingsMap = parameterMap.GetResourceBindings();
+				if (resourceBindingsMap.contains(name))
+				{
+					return &resourceBindingsMap.at(name);
+				}
+
+				// We can break here because there is only max one of each shader stage per pipeline
+				break;
+			}
+		}
+
+		return nullptr;
+	}
+
+	const Vector<ShaderParameterMap>& VulkanRenderPipeline2::GetShaderParameterMaps() const
+	{
+		return m_shaderParameterMaps;
 	}
 }

@@ -1071,4 +1071,10 @@ namespace Volt::RHI
 	void D3D12CommandBuffer::ExecuteSecondaryCommandBuffers(Vector<RefPtr<CommandBuffer>> commandBuffers) const
 	{
 	}
+
+	void D3D12CommandBuffer::BindDescriptorTable2(RawPtr<DescriptorTable> descriptorTable)
+	{
+
+	}
+
 }

@@ -5,6 +5,8 @@
 #include "RHIModule/Shader/BufferLayout.h"
 #include "RHIModule/Shader/ShaderCommon.h"
 #include "RHIModule/Shader/ShaderPermutationConfig.h"
+#include "RHIModule/Shader/ShaderParameterMap.h"
+
 #include "RHIModule/Core/RHICommon.h"
 
 #include <filesystem>
@@ -99,7 +101,7 @@ namespace Volt::RHI
 			// Common
 			ShaderUniforms shaderUniforms{};
 
-			std::map<std::string, ShaderResourceBinding> bindings;
+			vt::map<StringHash, ShaderResourceBinding> bindings;
 			std::map<uint32_t, std::map<uint32_t, ShaderConstantBuffer>> uniformBuffers;
 			std::map<uint32_t, std::map<uint32_t, ShaderStorageBuffer>> storageBuffers;
 			std::map<uint32_t, std::map<uint32_t, ShaderStorageImage>> storageImages;
@@ -107,6 +109,8 @@ namespace Volt::RHI
 			std::map<uint32_t, std::map<uint32_t, ShaderSampler>> samplers;
 
 			VT_NODISCARD VT_INLINE bool IsValid() const { return !shaderBinary.empty(); }
+
+			ShaderParameterMap shaderParameterMap;
 		};
 
 		struct Specification2

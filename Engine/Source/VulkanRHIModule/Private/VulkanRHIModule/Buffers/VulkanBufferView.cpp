@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	VulkanBufferView::VulkanBufferView(const BufferViewSpecification& specification)
+	VulkanBufferView::VulkanBufferView(const BufferViewDesc& specification)
 		: m_buffer(specification.bufferResource)
 	{
 	}

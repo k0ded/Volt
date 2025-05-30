@@ -23,7 +23,7 @@ namespace Volt::RHI
 			// Common
 			ShaderUniforms shaderUniforms{};
 
-			std::map<std::string, ShaderResourceBinding> bindings;
+			vt::map<StringHash, ShaderResourceBinding> bindings;
 		};
 
 		VulkanShader2(const ShaderCreateInfo& createInfo);
@@ -33,8 +33,8 @@ namespace Volt::RHI
 		size_t GetHash() const override;
 		bool IsValid() const override;
 		ShaderStage GetShaderStage() const override;
+		const ShaderParameterMap& GetParameterMap() const override { return m_shaderParameterMap; }
 
-		VT_NODISCARD VT_INLINE const ShaderBindings& GetBindings() const override { return m_bindings; }
 		VT_NODISCARD VT_INLINE const ShaderInfo& GetShaderInfo() const { return m_shaderInfo; }
 		VT_NODISCARD VT_INLINE const ShaderSourceInfo& GetShaderSourceInfo() const { return m_sourceInfo; }
 		VT_NODISCARD VT_INLINE VkShaderModule_T* GetShaderModule() const { return m_shaderModule; }
@@ -46,7 +46,9 @@ namespace Volt::RHI
 		void Release();
 		void LoadAndCompileShader();
 		void CreateShader(const Vector<uint32_t>& shaderBinary);
+		void GenerateHash();
 
+		ShaderParameterMap m_shaderParameterMap;
 		ShaderPermutationConfig m_permutationConfig;
 		ShaderSourceInfo m_sourceInfo;
 		ShaderBindings m_bindings;
@@ -54,5 +56,6 @@ namespace Volt::RHI
 
 		VkShaderModule_T* m_shaderModule = nullptr;
 		std::string m_name;
+		size_t m_hash = 0;
 	};
 }

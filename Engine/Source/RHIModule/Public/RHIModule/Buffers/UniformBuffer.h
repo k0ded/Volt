@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RHIModule/Core/RHIResource.h"
+#include "RHIModule/Buffers/BufferView.h"
 
 namespace Volt::RHI
 {
@@ -11,7 +12,7 @@ namespace Volt::RHI
 	public:
 		~UniformBuffer() override = default;
 
-		virtual RefPtr<BufferView> GetView() = 0;
+		virtual RefPtr<BufferView> GetView(const BufferViewDesc& desc = {}) = 0;
 		virtual const uint32_t GetSize() const = 0;
 		virtual void SetData(const void* data, const uint32_t size) = 0;
 		virtual void Unmap() = 0;

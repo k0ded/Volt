@@ -2,6 +2,7 @@
 
 #include "VulkanRHIModule/Core.h"
 #include <RHIModule/Pipelines/ComputePipeline.h>
+#include <RHIModule/Shader/ShaderParameterMap.h>
 
 struct VkPipeline_T;
 struct VkPipelineLayout_T;
@@ -16,8 +17,11 @@ namespace Volt::RHI
 
 		void Invalidate() override;
 		RefPtr<Shader> GetShader() const override;
+		RefPtr<Shader2> GetShader2() const override;
 		bool IsValid() const override;
 		size_t GetHash() const override;
+		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name) const override;
+		const ShaderParameterMap& GetShaderParameterMap() const override { static ShaderParameterMap s; return s; }
 
 		inline VkPipelineLayout_T* GetPipelineLayout() const { return m_pipelineLayout; }
 

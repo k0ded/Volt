@@ -2,6 +2,7 @@
 
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
+#include "VulkanRHIModule/Common/VulkanHelpers.h"
 
 #include <RHIModule/Globals.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -12,100 +13,45 @@
 
 namespace Volt::RHI
 {
-	Vector<VkDescriptorSetLayout_T*> DescriptorSetLayoutBuilder::BuildFromShaderBindings(const ShaderBindings& shaderBindings)
+	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindingsMap& resourceBindings)
 	{
-		vt::map<uint32_t, Vector<VkDescriptorSetLayoutBinding>> descriptorSetBindings;
+		std::map<uint32_t, Vector<VkDescriptorSetLayoutBinding>> descriptorSetBindings;
 
-		constexpr uint32_t UnboundedArraySize = 8192;
-
-		for (const auto [set, bindings] : shaderBindings.uniformBuffers)
+		for (const auto& [nameHash, binding] : resourceBindings)
 		{
-			for (const auto& [binding, data] : bindings)
+			auto& descriptorBinding = descriptorSetBindings[binding.set].emplace_back();
+			descriptorBinding.binding = binding.binding;
+			descriptorBinding.descriptorCount = 1;
+			descriptorBinding.pImmutableSamplers = nullptr;
+			descriptorBinding.descriptorCount = binding.arraySize;
+			descriptorBinding.stageFlags = Utility::VoltToVulkanShaderStage(binding.shaderStage);
+
+			if (binding.resourceType == ShaderResourceType::UniformBuffer)
 			{
-				auto& descriptorBinding = descriptorSetBindings[set].emplace_back();
-				descriptorBinding.binding = binding;
-				descriptorBinding.descriptorCount = 1;
-				descriptorBinding.descriptorType = binding == Globals::SHADER_GLOBALS_BINDING ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				descriptorBinding.stageFlags = static_cast<VkShaderStageFlags>(data.usageStages);
+				descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			}
-		}
-
-		for (const auto& [set, bindings] : shaderBindings.storageBuffers)
-		{
-			for (const auto& [binding, data] : bindings)
+			else if (binding.resourceType == ShaderResourceType::Sampler)
 			{
-				auto& descriptorBinding = descriptorSetBindings[set].emplace_back();
-				descriptorBinding.binding = binding;
-
-				if (data.arraySize == -1)
-				{
-					descriptorBinding.descriptorCount = UnboundedArraySize;
-				}
-				else
-				{
-					descriptorBinding.descriptorCount = static_cast<uint32_t>(data.arraySize);
-				}
-
-				descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-				descriptorBinding.stageFlags = static_cast<VkShaderStageFlags>(data.usageStages);
-			}
-		}
-
-		for (const auto& [set, bindings] : shaderBindings.storageImages)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				auto& descriptorBinding = descriptorSetBindings[set].emplace_back();
-				descriptorBinding.binding = binding;
-
-				if (data.arraySize == -1)
-				{
-					descriptorBinding.descriptorCount = UnboundedArraySize;
-				}
-				else
-				{
-					descriptorBinding.descriptorCount = static_cast<uint32_t>(data.arraySize);
-				}
-
-				descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-				descriptorBinding.stageFlags = static_cast<VkShaderStageFlags>(data.usageStages);
-			}
-		}
-
-		for (const auto& [set, bindings] : shaderBindings.images)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				auto& descriptorBinding = descriptorSetBindings[set].emplace_back();
-				descriptorBinding.binding = binding;
-
-				if (data.arraySize == -1)
-				{
-					descriptorBinding.descriptorCount = UnboundedArraySize;
-				}
-				else
-				{
-					descriptorBinding.descriptorCount = static_cast<uint32_t>(data.arraySize);
-				}
-
-				descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-				descriptorBinding.stageFlags = static_cast<VkShaderStageFlags>(data.usageStages);
-			}
-		}
-
-		for (const auto& [set, bindings] : shaderBindings.samplers)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				auto& descriptorBinding = descriptorSetBindings[set].emplace_back();
-				descriptorBinding.binding = binding;
-				descriptorBinding.descriptorCount = 1;
 				descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-				descriptorBinding.stageFlags = static_cast<VkShaderStageFlags>(data.usageStages);
+			}
+			else if (binding.resourceType == ShaderResourceType::Buffer)
+			{
+				descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			}
+			else if (binding.resourceType == ShaderResourceType::Texture)
+			{
+				if (binding.registerType == ShaderRegisterType::SRV)
+				{
+					descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+				}
+				else
+				{
+					descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+				}
 			}
 		}
 
-		Vector<VkDescriptorSetLayout> descriptorSetLayouts;
+		DescriptorSets result;
 
 		auto device = GraphicsContext::GetDevice();
 
@@ -123,7 +69,7 @@ namespace Volt::RHI
 				info.pBindings = nullptr;
 				info.flags = 0;
 
-				VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, nullptr, &descriptorSetLayouts.emplace_back()));
+				VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, nullptr, &result.pipelineLayoutDescriptorSetLayouts.emplace_back()));
 				lastSet++;
 			}
 
@@ -134,60 +80,38 @@ namespace Volt::RHI
 			info.pBindings = bindings.data();
 			info.flags = 0;
 
-			VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, nullptr, &descriptorSetLayouts.emplace_back()));
+			VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, nullptr, &result.pipelineLayoutDescriptorSetLayouts.emplace_back()));
 			lastSet = set;
+
+			result.descriptorSetLayouts[set] = result.pipelineLayoutDescriptorSetLayouts.back();
 		}
 
-		return descriptorSetLayouts;
+		return result;
 	}
 
-	void AppendBindings(ShaderBindings& outBindings, const ShaderBindings& shaderBindings)
+	void AppendBindings(ShaderParameterMap::ResourceBindingsMap& outBindings, const ShaderParameterMap::ResourceBindingsMap& shaderBindings)
 	{
-		for (const auto [set, bindings] : shaderBindings.uniformBuffers)
+		// Because multiple shader stages might have bindings with the same name, we need 
+		// to check for and handle duplicates. As the names does not matter here, we can replace them
+		// with temporary ones.
+		uint32_t duplicateIndex = 0;
+		for (const auto& [nameHash, binding] : shaderBindings)
 		{
-			for (const auto& [binding, data] : bindings)
-			{
-				outBindings.uniformBuffers[set][binding] = data;
-			}
-		}
+			StringHash newNameHash = nameHash;
 
-		for (const auto [set, bindings] : shaderBindings.storageBuffers)
-		{
-			for (const auto& [binding, data] : bindings)
+			if (outBindings.contains(nameHash))
 			{
-				outBindings.storageBuffers[set][binding] = data;
+				newNameHash = StringHash::Construct("Duplicate" + std::to_string(duplicateIndex++));
 			}
-		}
 
-		for (const auto [set, bindings] : shaderBindings.storageImages)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				outBindings.storageImages[set][binding] = data;
-			}
-		}
-
-		for (const auto [set, bindings] : shaderBindings.images)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				outBindings.images[set][binding] = data;
-			}
-		}
-
-		for (const auto [set, bindings] : shaderBindings.samplers)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				outBindings.samplers[set][binding] = data;
-			}
+			outBindings[newNameHash] = binding;
 		}
 	}
 
-	Vector<VkDescriptorSetLayout_T*> DescriptorSetLayoutBuilder::BuildFromShaderBindings(const Vector<ShaderBindings>& bindings)
+	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const Vector<ShaderParameterMap::ResourceBindingsMap>& bindings)
 	{
 		// With multiple shaders, we start by merging all resources.
-		ShaderBindings mergedShaderBindings;
+		ShaderParameterMap::ResourceBindingsMap mergedShaderBindings;
 
 		for (const auto& shaderBindings : bindings)
 		{
@@ -195,10 +119,10 @@ namespace Volt::RHI
 		}
 
 		// Now we create descriptor set layouts of the merged bindings.
-		return BuildFromShaderBindings(mergedShaderBindings);
+		return BuildFromShaderResourceBindings(mergedShaderBindings);
 	}
 
-	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const ShaderBindings& shaderBindings)
+	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const ShaderParameterMap::ResourceBindingsMap& resourceBindings)
 	{
 		uint32_t uboCount = 0;
 		uint32_t ssboCount = 0;
@@ -206,43 +130,30 @@ namespace Volt::RHI
 		uint32_t imageCount = 0;
 		uint32_t seperateSamplerCount = 0;
 
-		for (const auto& [set, bindings] : shaderBindings.uniformBuffers)
+		for (const auto& [nameHash, binding] : resourceBindings)
 		{
-			for (const auto& [binding, info] : bindings)
+			if (binding.resourceType == ShaderResourceType::UniformBuffer)
 			{
-				uboCount += info.usageCount;
+				uboCount += binding.arraySize;
 			}
-		}
-
-		for (const auto& [set, bindings] : shaderBindings.storageBuffers)
-		{
-			for (const auto& [binding, info] : bindings)
+			else if (binding.resourceType == ShaderResourceType::Sampler)
 			{
-				ssboCount += info.usageCount;
+				seperateSamplerCount += binding.arraySize;
 			}
-		}
-
-		for (const auto& [set, bindings] : shaderBindings.storageImages)
-		{
-			for (const auto& [binding, info] : bindings)
+			else if (binding.resourceType == ShaderResourceType::Buffer)
 			{
-				storageImageCount += info.usageCount;
+				ssboCount += binding.arraySize;
 			}
-		}
-
-		for (const auto& [set, bindings] : shaderBindings.images)
-		{
-			for (const auto& [binding, info] : bindings)
+			else if (binding.resourceType == ShaderResourceType::Texture)
 			{
-				imageCount += info.usageCount;
-			}
-		}
-
-		for (const auto& [set, bindings] : shaderBindings.samplers)
-		{
-			for (const auto& [binding, info] : bindings)
-			{
-				seperateSamplerCount += info.usageCount;
+				if (binding.registerType == ShaderRegisterType::SRV)
+				{
+					imageCount += binding.arraySize;
+				}
+				else
+				{
+					storageImageCount += binding.arraySize;
+				}
 			}
 		}
 
@@ -276,10 +187,10 @@ namespace Volt::RHI
 		return result;
 	}
 	
-	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const Vector<ShaderBindings>& shaderBindings)
+	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const Vector<ShaderParameterMap::ResourceBindingsMap>& shaderBindings)
 	{
 		// With multiple shaders, we start by merging all resources.
-		ShaderBindings mergedShaderBindings;
+		ShaderParameterMap::ResourceBindingsMap mergedShaderBindings;
 
 		for (const auto& bindings : shaderBindings)
 		{
@@ -288,17 +199,5 @@ namespace Volt::RHI
 
 		// Now we create descriptor set layouts of the merged bindings.
 		return CalculateDescriptorPoolSizesFromBindings(mergedShaderBindings);
-	}
-
-	ShaderBindings DescriptorSetLayoutBuilder::GetMergedShaderBindings(const Vector<ShaderBindings>& shaderBindings)
-	{
-		ShaderBindings mergedShaderBindings;
-
-		for (const auto& bindings : shaderBindings)
-		{
-			AppendBindings(mergedShaderBindings, bindings);
-		}
-
-		return mergedShaderBindings;
 	}
 }

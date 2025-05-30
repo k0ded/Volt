@@ -13,7 +13,7 @@ namespace Volt::RHI
 		D3D12RHIModule();
 		~D3D12RHIModule() override = default;
 
-		RefPtr<BufferView> CreateBufferView(const BufferViewSpecification& specification) const override;
+		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification) const override;
 
 		RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const override;
 

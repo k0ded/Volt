@@ -53,7 +53,7 @@ namespace Volt::RHI
 		m_resourceDeletionQueue.SetSize(RHI::Swapchain::FramesInFlight);
 	}
 
-	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewSpecification& specification) const
+	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification) const
 	{
 		return RefPtr<VulkanBufferView>::Create(specification);
 	}

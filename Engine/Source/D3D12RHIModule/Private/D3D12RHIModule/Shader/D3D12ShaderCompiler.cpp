@@ -436,7 +436,7 @@ namespace Volt::RHI
 			const uint32_t space = shaderInputBindDesc.Space;
 			const std::string name = shaderInputBindDesc.Name;
 
-			ShaderRegisterType registerType = ShaderRegisterType::Texture;
+			ShaderRegisterType registerType = ShaderRegisterType::SRV;
 
 			if (name == "$Globals")
 			{
@@ -450,7 +450,7 @@ namespace Volt::RHI
 				D3D12_SHADER_BUFFER_DESC cbDesc{};
 				reflectedCB->GetDesc(&cbDesc);
 
-				registerType = ShaderRegisterType::UniformBuffer;
+				registerType = ShaderRegisterType::CBV;
 
 				const size_t size = static_cast<size_t>(cbDesc.Size);
 
@@ -526,7 +526,7 @@ namespace Volt::RHI
 					}
 				}
 
-				registerType = buffer.isWrite ? ShaderRegisterType::UnorderedAccess : ShaderRegisterType::Texture;
+				registerType = buffer.isWrite ? ShaderRegisterType::UAV : ShaderRegisterType::SRV;
 			}
 			else if (shaderInputBindDesc.Type == D3D_SIT_UAV_RWTYPED && (shaderInputBindDesc.Dimension >= 2 && shaderInputBindDesc.Dimension <= 10)) // This is all the texutre types
 			{
@@ -534,7 +534,7 @@ namespace Volt::RHI
 				shaderImage.usageStages = shaderImage.usageStages | stage;
 				shaderImage.usageCount++;
 
-				registerType = ShaderRegisterType::UnorderedAccess;
+				registerType = ShaderRegisterType::UAV;
 
 				const bool firstEntry = !inOutData.storageImages[space].contains(binding);
 
@@ -556,7 +556,7 @@ namespace Volt::RHI
 				shaderImage.usageStages = shaderImage.usageStages | stage;
 				shaderImage.usageCount++;
 
-				registerType = ShaderRegisterType::Texture;
+				registerType = ShaderRegisterType::SRV;
 
 				const bool firstEntry = !inOutData.images[space].contains(binding);
 
@@ -592,7 +592,7 @@ namespace Volt::RHI
 			return false;
 		}
 
-		outData.bindings[name] = { set, binding, registerType };
+		outData.bindings[name] = { set, binding, 0, registerType };
 		return true;
 	}
 

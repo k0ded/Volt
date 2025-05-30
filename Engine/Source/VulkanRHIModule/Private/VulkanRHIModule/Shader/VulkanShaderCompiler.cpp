@@ -25,6 +25,8 @@
 #include <spirv_cross/spirv_glsl.hpp>
 #include <spirv-tools/libspirv.h>
 
+#include <spirv_reflect.h>
+
 #include <codecvt>
 #include <locale>
 
@@ -67,10 +69,54 @@ namespace Volt::RHI
 
 			return resultType;
 		}
+
+		inline static ShaderUniformType GetShaderUniformTypeFromSpvTypeDesc(SpvReflectTypeDescription* typeDesc)
+		{
+			ShaderUniformType resultType;
+
+			if (typeDesc->op == SpvOpTypeBool)
+			{
+				resultType.baseType = ShaderUniformBaseType::Bool;
+			}
+			else if (typeDesc->op == SpvOpTypeFloat)
+			{
+				if (typeDesc->traits.numeric.scalar.width == 16u)
+				{
+					resultType.baseType = ShaderUniformBaseType::Half;
+				}
+				else if (typeDesc->traits.numeric.scalar.width == 32u)
+				{
+					resultType.baseType = ShaderUniformBaseType::Float;
+				}
+				else if (typeDesc->traits.numeric.scalar.width == 64u)
+				{
+					resultType.baseType = ShaderUniformBaseType::Double;
+				}
+			}
+			else if (typeDesc->op == SpvOpTypeInt)
+			{
+				if (typeDesc->traits.numeric.scalar.width == 16u)
+				{
+					resultType.baseType = typeDesc->traits.numeric.scalar.signedness ? ShaderUniformBaseType::Short : ShaderUniformBaseType::UShort;
+				}
+				else if (typeDesc->traits.numeric.scalar.width == 32u)
+				{
+					resultType.baseType = typeDesc->traits.numeric.scalar.signedness ? ShaderUniformBaseType::Int : ShaderUniformBaseType::UInt;
+				}
+				else if (typeDesc->traits.numeric.scalar.width == 64u)
+				{
+					resultType.baseType = typeDesc->traits.numeric.scalar.signedness ? ShaderUniformBaseType::Int64 : ShaderUniformBaseType::UInt64;
+				}
+			}
+
+			resultType.vecsize = typeDesc->traits.numeric.vector.component_count;
+
+			return resultType;
+		}
 	}
 
 	VulkanShaderCompiler::VulkanShaderCompiler(const ShaderCompilerCreateInfo& createInfo)
-		: m_includeDirectories(createInfo.includeDirectories), m_macros(createInfo.initialMacros), m_flags(createInfo.flags), 
+		: m_includeDirectories(createInfo.includeDirectories), m_macros(createInfo.initialMacros), m_flags(createInfo.flags),
 		m_shaderCache(createInfo.shaderCache)
 	{
 		VT_LOGC(Trace, LogVulkanRHI, "Initializing VulkanShaderCompiler");
@@ -482,7 +528,7 @@ namespace Volt::RHI
 
 		inOutData.renderGraphConstants.size = compiler.get_declared_struct_size(globalsBufferType);;
 		inOutData.renderGraphConstants.uniforms.clear();
-		
+
 
 		for (size_t i = 0; i < globalsBufferType.member_types.size(); ++i)
 		{
@@ -502,62 +548,6 @@ namespace Volt::RHI
 			{
 				ShaderUniformType uniformType = GetShaderUniformTypeFromSPIRType(compiler, spirvTypeID);
 				inOutData.renderGraphConstants.uniforms[StringHash::Construct(memberName)] = ShaderUniform(uniformType, uniformType.GetSize(), memberOffset);
-			}
-		}
-	}
-
-	void ReflectGlobalsStruct2(spirv_cross::Compiler& compiler, const spirv_cross::TypeID& spirvTypeID, const std::string& parentMemberName, size_t offset, ShaderCompiler::CompilationResultData2& inOutData)
-	{
-		const spirv_cross::SPIRType& structType = compiler.get_type(spirvTypeID);
-
-		for (size_t m = 0; m < structType.member_types.size(); ++m)
-		{
-			const auto& spirvMemberTypeID = structType.member_types[m];
-			const spirv_cross::SPIRType& memberType = compiler.get_type(spirvMemberTypeID);
-			const std::string& memberTypeName = compiler.get_name(spirvMemberTypeID);
-
-			const std::string memberName = compiler.get_member_name(spirvTypeID, static_cast<uint32_t>(m));
-			const std::string uniformName = !parentMemberName.empty() ? parentMemberName + "." + memberName : memberName;
-			const uint32_t memberOffset = compiler.type_struct_member_offset(structType, static_cast<uint32_t>(m));
-
-			if (memberType.basetype == spirv_cross::SPIRType::BaseType::Struct && !IsResourceStructType(memberTypeName))
-			{
-				ReflectGlobalsStruct2(compiler, spirvMemberTypeID, uniformName, offset + memberOffset, inOutData);
-			}
-			else
-			{
-				ShaderUniformType uniformType = GetShaderUniformTypeFromSPIRType(compiler, spirvMemberTypeID);
-				inOutData.shaderUniforms.uniforms[StringHash::Construct(uniformName)] = ShaderUniform(uniformType, uniformType.GetSize(), offset + memberOffset);
-			}
-		}
-	}
-
-	void ReflectGlobals2(spirv_cross::Compiler& compiler, const spirv_cross::Resource& globalsBufferResource, ShaderCompiler::CompilationResultData2& inOutData)
-	{
-		const auto& globalsBufferType = compiler.get_type(globalsBufferResource.base_type_id);
-
-		inOutData.shaderUniforms.size = compiler.get_declared_struct_size(globalsBufferType);;
-		inOutData.shaderUniforms.uniforms.clear();
-
-
-		for (size_t i = 0; i < globalsBufferType.member_types.size(); ++i)
-		{
-			std::string memberName = compiler.get_member_name(globalsBufferResource.base_type_id, static_cast<uint32_t>(i));
-
-			// If the type is a non resource struct type, we need to propagate the members out.
-			const auto& spirvTypeID = globalsBufferType.member_types[i];
-			const spirv_cross::SPIRType& memberType = compiler.get_type(spirvTypeID);
-			const std::string& memberTypeName = compiler.get_name(spirvTypeID);
-			const uint32_t memberOffset = compiler.type_struct_member_offset(globalsBufferType, static_cast<uint32_t>(i));
-
-			if (memberType.basetype == spirv_cross::SPIRType::BaseType::Struct && !IsResourceStructType(memberTypeName))
-			{
-				ReflectGlobalsStruct2(compiler, spirvTypeID, memberName, memberOffset, inOutData);
-			}
-			else
-			{
-				ShaderUniformType uniformType = GetShaderUniformTypeFromSPIRType(compiler, spirvTypeID);
-				inOutData.shaderUniforms.uniforms[StringHash::Construct(memberName)] = ShaderUniform(uniformType, uniformType.GetSize(), memberOffset);
 			}
 		}
 	}
@@ -735,18 +725,7 @@ namespace Volt::RHI
 			return false;
 		}
 
-		outData.bindings[name] = { set, binding, ShaderRegisterType::UnorderedAccess };
-		return true;
-	}
-
-	bool VulkanShaderCompiler::TryAddShaderBinding(const std::string& name, uint32_t set, uint32_t binding, CompilationResultData2& outData)
-	{
-		if (outData.bindings.contains(name))
-		{
-			return false;
-		}
-
-		outData.bindings[name] = { set, binding, ShaderRegisterType::UnorderedAccess };
+		outData.bindings[name] = { set, binding, 0, ShaderRegisterType::UAV };
 		return true;
 	}
 
@@ -887,7 +866,7 @@ namespace Volt::RHI
 		const std::wstring wEntryPoint = ::Utility::ToWString(sourceEntry.entryPoint);
 		const std::wstring globalsBinding = std::to_wstring(Globals::SHADER_GLOBALS_BINDING);
 		const std::wstring globalsSpace = std::to_wstring(Globals::SHADER_GLOBALS_SPACE);
-	
+
 		Vector<const wchar_t*> arguments =
 		{
 			sourceEntry.filepath.c_str(),
@@ -1139,145 +1118,124 @@ namespace Volt::RHI
 
 	void VulkanShaderCompiler::ReflectShader(const Specification2& specification, CompilationResultData2& inOutData)
 	{
-		spirv_cross::Compiler compiler{ inOutData.shaderBinary.data(), inOutData.shaderBinary.size() };
-		const auto resources = compiler.get_shader_resources();
+		SpvReflectShaderModule spirvModule{};
+		SpvReflectResult result = spvReflectCreateShaderModule(inOutData.shaderBinary.size() * sizeof(uint32_t), inOutData.shaderBinary.data(), &spirvModule);
+		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
 
-		const ShaderStage shaderStage = specification.shaderSourceInfo.sourceEntry.shaderStage;
+		uint32_t count;
+		result = spvReflectEnumerateDescriptorSets(&spirvModule, &count, nullptr);
+		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
 
-		for (const auto& ubo : resources.uniform_buffers)
+		Vector<SpvReflectDescriptorSet*> sets(count);
+		result = spvReflectEnumerateDescriptorSets(&spirvModule, &count, sets.data());
+		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+
+		Vector<SpvReflectDescriptorBinding*> uniformBuffers;
+		Vector<SpvReflectDescriptorBinding*> storageBuffers;
+		Vector<SpvReflectDescriptorBinding*> storageImages;
+		Vector<SpvReflectDescriptorBinding*> images;
+		Vector<SpvReflectDescriptorBinding*> samplers;
+
+		for (size_t i = 0; i < sets.size(); ++i)
 		{
-			// Skip if buffer is unused
-			if (compiler.get_active_buffer_ranges(ubo.id).empty())
+			const SpvReflectDescriptorSet* spvSet = sets[0];
+
+			for (uint32_t binding = 0; binding < spvSet->binding_count; ++binding)
 			{
-				continue;
-			}
+				SpvReflectDescriptorBinding* spvBinding = spvSet->bindings[binding];
 
-			const auto& bufferType = compiler.get_type(ubo.base_type_id);
-
-			const size_t size = compiler.get_declared_struct_size(bufferType);
-			const uint32_t binding = compiler.get_decoration(ubo.id, spv::DecorationBinding);
-			const uint32_t set = compiler.get_decoration(ubo.id, spv::DecorationDescriptorSet);
-			const std::string& name = compiler.get_name(ubo.id);
-
-			TryAddShaderBinding(name, set, binding, inOutData);
-
-			if (name == "$Globals")
-			{
-				ReflectGlobals2(compiler, ubo, inOutData);
-				continue;
-			}
-
-			auto& buffer = inOutData.uniformBuffers[set][binding];
-			buffer.usageStages = shaderStage;
-			buffer.usageCount++;
-			buffer.size = size;
-		}
-
-		for (const auto& ssbo : resources.storage_buffers)
-		{
-			const auto& bufferBaseType = compiler.get_type(ssbo.base_type_id);
-			const auto& bufferType = compiler.get_type(ssbo.type_id);
-
-			const size_t size = compiler.get_declared_struct_size(bufferBaseType);
-			const uint32_t binding = compiler.get_decoration(ssbo.id, spv::DecorationBinding);
-			const uint32_t set = compiler.get_decoration(ssbo.id, spv::DecorationDescriptorSet);
-			const std::string& name = compiler.get_name(ssbo.id);
-
-			TryAddShaderBinding(name, set, binding, inOutData);
-
-			const bool firstEntry = !inOutData.storageBuffers[set].contains(binding);
-
-			auto& buffer = inOutData.storageBuffers[set][binding];
-			buffer.usageStages = shaderStage;
-			buffer.usageCount++;
-			buffer.size = size;
-
-			if (firstEntry && !bufferType.array.empty())
-			{
-				const int32_t arraySize = static_cast<int32_t>(bufferType.array[0]);
-
-				if (arraySize == 0)
+				if (spvBinding->accessed)
 				{
-					buffer.arraySize = -1;
-				}
-				else
-				{
-					buffer.arraySize = arraySize;
+					switch (spvBinding->resource_type)
+					{
+						case SPV_REFLECT_RESOURCE_FLAG_CBV: uniformBuffers.emplace_back(spvBinding); break;
+						case SPV_REFLECT_RESOURCE_FLAG_SAMPLER: samplers.emplace_back(spvBinding); break;
+						case SPV_REFLECT_RESOURCE_FLAG_SRV:
+						{
+							switch (spvBinding->descriptor_type)
+							{
+								case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE: images.emplace_back(spvBinding); break;
+								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER: storageBuffers.emplace_back(spvBinding); break;
+							}
+							break;
+						}
+
+						case SPV_REFLECT_RESOURCE_FLAG_UAV:
+						{
+							switch (spvBinding->descriptor_type)
+							{
+								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE: storageImages.emplace_back(spvBinding); break;
+								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER: storageBuffers.emplace_back(spvBinding); break;
+							}
+							break;
+						}
+					}
 				}
 			}
 		}
 
-		for (const auto& image : resources.storage_images)
+		Vector<SpvReflectDescriptorBinding*> allBindings;
+		allBindings.append(uniformBuffers);
+		allBindings.append(storageBuffers);
+		allBindings.append(storageImages);
+		allBindings.append(images);
+		allBindings.append(samplers);
+
+		// Change all descriptor set indices to be the same
+		// Because we always add uniform buffers first, the globals UB will always end up at binding index 0.
+		const ShaderStage currentShaderStage = specification.shaderSourceInfo.sourceEntry.shaderStage;
+		const uint32_t shaderStageDescriptorSetIndex = GetDescriptorSetIndexFromShaderStage(currentShaderStage);
+		for (uint32_t bindingIndex = 0; SpvReflectDescriptorBinding* binding : allBindings)
 		{
-			const uint32_t binding = compiler.get_decoration(image.id, spv::DecorationBinding);
-			const uint32_t set = compiler.get_decoration(image.id, spv::DecorationDescriptorSet);
-			const auto& imageType = compiler.get_type(image.type_id);
-			const std::string& name = compiler.get_name(image.id);
+			result = spvReflectChangeDescriptorBindingNumbers(&spirvModule, binding, bindingIndex, shaderStageDescriptorSetIndex);
+			VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
 
-			TryAddShaderBinding(name, set, binding, inOutData);
+			bindingIndex++;
+		}
 
-			const bool firstEntry = !inOutData.storageImages[set].contains(binding);
+		ShaderParameterMap& shaderParameterMap = inOutData.shaderParameterMap;
+		shaderParameterMap.SetShaderStage(currentShaderStage);
 
-			auto& shaderImage = inOutData.storageImages[set][binding];
-			shaderImage.usageStages = shaderStage;
-			shaderImage.usageCount++;
+		for (SpvReflectDescriptorBinding* uniformBuffer : uniformBuffers)
+		{
+			shaderParameterMap.AddUniformBuffer(uniformBuffer->name, uniformBuffer->set, uniformBuffer->binding, currentShaderStage);
 
-			if (firstEntry && !imageType.array.empty())
+			// If it's the globals uniform buffer we will extract the members
+			// as they are the shaders parameters.
+			if (std::string_view(uniformBuffer->name) == "$Globals")
 			{
-				const int32_t arraySize = static_cast<int32_t>(imageType.array[0]);
+				for (uint32_t memberIndex = 0; memberIndex < uniformBuffer->block.member_count; memberIndex++)
+				{
+					const SpvReflectBlockVariable& member = uniformBuffer->block.members[memberIndex];
+					const ShaderUniformType uniformType = Utility::GetShaderUniformTypeFromSpvTypeDesc(member.type_description);
 
-				if (arraySize == 0)
-				{
-					shaderImage.arraySize = -1;
-				}
-				else
-				{
-					shaderImage.arraySize = arraySize;
+					shaderParameterMap.AddParameter(member.name, uniformType, member.size, member.absolute_offset);
 				}
 			}
 		}
 
-		for (const auto& image : resources.separate_images)
+		for (SpvReflectDescriptorBinding* storageBuffer : storageBuffers)
 		{
-			const uint32_t binding = compiler.get_decoration(image.id, spv::DecorationBinding);
-			const uint32_t set = compiler.get_decoration(image.id, spv::DecorationDescriptorSet);
-			const auto& imageType = compiler.get_type(image.type_id);
-			const std::string& name = compiler.get_name(image.id);
-
-			TryAddShaderBinding(name, set, binding, inOutData);
-
-			const bool firstEntry = !inOutData.images[set].contains(binding);
-
-			auto& shaderImage = inOutData.images[set][binding];
-			shaderImage.usageStages = shaderStage;
-			shaderImage.usageCount++;
-
-			if (firstEntry && !imageType.array.empty())
-			{
-				const int32_t arraySize = static_cast<int32_t>(imageType.array[0]);
-
-				if (arraySize == 0)
-				{
-					shaderImage.arraySize = -1;
-				}
-				else
-				{
-					shaderImage.arraySize = arraySize;
-				}
-			}
+			shaderParameterMap.AddBufferSRV(storageBuffer->name, storageBuffer->set, storageBuffer->binding, currentShaderStage);
 		}
 
-		for (const auto& sampler : resources.separate_samplers)
+		for (SpvReflectDescriptorBinding* storageImage : storageImages)
 		{
-			const uint32_t binding = compiler.get_decoration(sampler.id, spv::DecorationBinding);
-			const uint32_t set = compiler.get_decoration(sampler.id, spv::DecorationDescriptorSet);
-			const std::string& name = compiler.get_name(sampler.id);
-
-			TryAddShaderBinding(name, set, binding, inOutData);
-
-			auto& shaderSampler = inOutData.samplers[set][binding];
-			shaderSampler.usageStages = shaderStage;
-			shaderSampler.usageCount++;
+			shaderParameterMap.AddTextureUAV(storageImage->name, storageImage->set, storageImage->binding, currentShaderStage);
 		}
+
+		for (SpvReflectDescriptorBinding* image : images)
+		{
+			shaderParameterMap.AddTextureSRV(image->name, image->set, image->binding, currentShaderStage);
+		}
+
+		for (SpvReflectDescriptorBinding* sampler : samplers)
+		{
+			shaderParameterMap.AddSampler(sampler->name, sampler->set, sampler->binding, currentShaderStage);
+		}
+
+		const uint32_t spirvSize = spvReflectGetCodeSize(&spirvModule);
+		inOutData.shaderBinary.resize(spirvSize / sizeof(uint32_t));
+		memcpy(inOutData.shaderBinary.data(), spvReflectGetCode(&spirvModule), spirvSize);
 	}
 }

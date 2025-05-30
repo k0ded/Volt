@@ -34,6 +34,7 @@ namespace Volt
 
 	private:
 		friend class RenderGraph;
+		friend class RenderGraph2;
 
 		void SetRenderGraphConstantsBuffer(RawPtr<RHI::UniformBuffer> constantsBuffer);
 

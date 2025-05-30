@@ -51,3 +51,6 @@ namespace Volt
 #define END_SHADER_DEFINITION() \
 	>; \
 	static constexpr auto GetStages() { return ShaderStages::stages; } 
+
+#define DECLARE_GLOBAL_SHADER(klass) \
+	inline static constexpr std::string_view shaderName = #klass; \

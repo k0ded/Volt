@@ -32,7 +32,7 @@ namespace Volt::RHI
 	
 	std::string_view VulkanShader2::GetName() const
 	{
-		return std::string_view();
+		return m_name;
 	}
 	
 	size_t VulkanShader2::GetHash() const
@@ -42,7 +42,7 @@ namespace Volt::RHI
 	
 	bool VulkanShader2::IsValid() const
 	{
-		return false;
+		return m_shaderModule != nullptr;
 	}
 	
 	ShaderStage VulkanShader2::GetShaderStage() const
@@ -52,7 +52,7 @@ namespace Volt::RHI
 	
 	void* VulkanShader2::GetHandleImpl() const
 	{
-		return nullptr;
+		return m_shaderModule;
 	}
 
 	void VulkanShader2::LoadAndCompileShader()
@@ -87,11 +87,14 @@ namespace Volt::RHI
 		m_bindings.images = compilationResult.images;
 		m_bindings.samplers = compilationResult.samplers;
 
+		m_shaderParameterMap = compilationResult.shaderParameterMap;
+
 		// Release old shader
 		Release();
 
 		// Create shader module
 		CreateShader(compilationResult.shaderBinary);
+		GenerateHash();
 	}
 
 	void VulkanShader2::Release()
@@ -113,5 +116,10 @@ namespace Volt::RHI
 
 		auto device = GraphicsContext::GetDevice();
 		VT_VK_CHECK(vkCreateShaderModule(device->GetHandle<VkDevice>(), &moduleInfo, nullptr, &m_shaderModule));
+	}
+
+	void VulkanShader2::GenerateHash()
+	{
+		m_hash = std::hash<const void*>()(m_shaderModule);
 	}
 }

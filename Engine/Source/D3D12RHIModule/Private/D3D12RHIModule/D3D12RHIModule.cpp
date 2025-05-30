@@ -48,7 +48,7 @@ namespace Volt::RHI
 		m_resourceDeletionQueue.SetSize(RHI::Swapchain::FramesInFlight);
 	}
 	
-	RefPtr<BufferView> D3D12RHIModule::CreateBufferView(const BufferViewSpecification& specification) const
+	RefPtr<BufferView> D3D12RHIModule::CreateBufferView(const BufferViewDesc& specification) const
 	{
 		return RefPtr<D3D12BufferView>::Create(specification);
 	}

@@ -366,4 +366,9 @@ namespace Volt::RHI
 		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipeline)));
 		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipelineLayout)));
 	}
+
+	const Volt::RHI::ShaderResourceBinding* VulkanRenderPipeline::GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const
+	{
+		return nullptr;
+	}
 }

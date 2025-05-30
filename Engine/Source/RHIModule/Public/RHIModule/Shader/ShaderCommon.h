@@ -35,6 +35,22 @@ namespace Volt::RHI
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(ShaderStage);
 
+	enum class ShaderRegisterType : uint8_t
+	{
+		CBV,
+		UAV,
+		SRV,
+		Sampler
+	};
+
+	enum class ShaderResourceType : uint8_t
+	{
+		UniformBuffer,
+		Buffer,
+		Texture,
+		Sampler
+	};
+
 	enum class ShaderUniformBaseType : uint8_t
 	{
 		Invalid,
@@ -68,14 +84,6 @@ namespace Volt::RHI
 		Texture3D,
 		RWTexture3D,
 
-		Sampler
-	};
-
-	enum class ShaderRegisterType : uint32_t
-	{
-		Texture = 0,
-		UniformBuffer,
-		UnorderedAccess,
 		Sampler
 	};
 
@@ -297,7 +305,10 @@ namespace Volt::RHI
 	{
 		uint32_t set = std::numeric_limits<uint32_t>::max();
 		uint32_t binding = std::numeric_limits<uint32_t>::max();
+		uint32_t arraySize = 1; // #TODO_Ivar: Not implemented.
 		ShaderRegisterType registerType;
+		ShaderResourceType resourceType;
+		ShaderStage shaderStage;
 
 		inline const bool IsValid() const { return set != std::numeric_limits<uint32_t>::max() && binding != std::numeric_limits<uint32_t>::max(); }
 
@@ -317,4 +328,23 @@ namespace Volt::RHI
 		ShaderSourceEntry sourceEntry;
 		std::string source;
 	};
+
+	inline static uint32_t GetDescriptorSetIndexFromShaderStage(ShaderStage shaderStage)
+	{
+		switch (shaderStage)
+		{
+			case ShaderStage::Vertex: return 0;
+			case ShaderStage::Amplification: return 1;
+			case ShaderStage::Mesh: return 2;
+			case ShaderStage::Pixel: return 3;
+			case ShaderStage::Compute: return 4;
+			case ShaderStage::RayGen: return 5;
+			case ShaderStage::Hull: return 6;
+			case ShaderStage::Domain: return 7;
+			case ShaderStage::Geometry: return 8;
+		}
+
+		VT_ASSERT(false);
+		return 0;
+	}
 }

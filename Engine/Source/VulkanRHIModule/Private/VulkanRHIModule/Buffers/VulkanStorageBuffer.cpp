@@ -194,7 +194,7 @@ namespace Volt::RHI
 			return m_view;
 		}
 
-		BufferViewSpecification spec{};
+		BufferViewDesc spec{};
 		spec.bufferResource = this;
 
 		m_view = BufferView::Create(spec);

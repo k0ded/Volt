@@ -27,6 +27,7 @@
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -109,9 +110,12 @@ namespace Volt
 	void Renderer::Initialize()
 	{
 		// Bindless resources manager
+		if (RHI::RHICanUseBindless())
 		{
 			m_bindlessResourcesManager = CreateScope<BindlessResourcesManager>();
 		}
+
+		m_descriptorTableCache = CreateScope<DescriptorTableCache>();
 
 		RenderGraphExecutionThread::Initialize(RenderGraphExecutionThread::ExecutionMode::Multithreaded);
 
@@ -139,6 +143,7 @@ namespace Volt
 #endif
 
 		m_shaderMap = nullptr;
+		m_descriptorTableCache = nullptr;
 		m_bindlessResourcesManager = nullptr;
 	}
 
@@ -410,7 +415,13 @@ namespace Volt
 
 	bool Renderer::OnPreRenderEvent(AppPreRenderEvent& event)
 	{
-		m_bindlessResourcesManager->Update();
+		if (RHI::RHICanUseBindless())
+		{
+			m_bindlessResourcesManager->Update();
+		}
+
+		m_descriptorTableCache->Update();
+
 		return false;
 	}
 

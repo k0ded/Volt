@@ -12,7 +12,7 @@ namespace Volt::RHI
 	public:
 		VulkanRHIModule();
 
-		RefPtr<BufferView> CreateBufferView(const BufferViewSpecification& specification) const override;
+		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification) const override;
 
 		RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const override;
 

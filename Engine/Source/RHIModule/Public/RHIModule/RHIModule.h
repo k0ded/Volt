@@ -60,7 +60,7 @@ namespace Volt::RHI
 
 	class FrameCapture;
 
-	struct BufferViewSpecification;
+	struct BufferViewDesc;
 	struct DescriptorTableCreateInfo;
 	struct DeviceQueueCreateInfo;
 	struct GraphicsContextCreateInfo;
@@ -94,7 +94,7 @@ namespace Volt::RHI
 	public:
 		virtual ~RHIModule();
 
-		virtual RefPtr<BufferView> CreateBufferView(const BufferViewSpecification& specification) const = 0;
+		virtual RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification) const = 0;
 
 		virtual RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const = 0;
 

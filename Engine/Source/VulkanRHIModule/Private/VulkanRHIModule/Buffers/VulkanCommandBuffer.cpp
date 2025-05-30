@@ -23,6 +23,7 @@
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
+#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable2.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -712,6 +713,23 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 		descriptorTable->AsRef<VulkanDescriptorTable>().Bind(*this);
+	}
+
+	void VulkanCommandBuffer::BindDescriptorTable2(RawPtr<DescriptorTable> descriptorTable)
+	{
+		VT_PROFILE_FUNCTION();
+
+		VulkanDescriptorTable2& vulkanTable = descriptorTable->AsRef<VulkanDescriptorTable2>();
+		vulkanTable.PrepareForRender();
+
+		const VkPipelineBindPoint bindPoint = static_cast<VkPipelineBindPoint>(vulkanTable.GetRelatedBindPoint());
+		const vt::map<uint32_t, VkDescriptorSet>& descriptorSets = vulkanTable.GetDescriptorSets();
+		VkPipelineLayout pipelineLayout = vulkanTable.GetRelatedPipelineLayout();
+
+		for (const auto& [setIndex, descriptorSet] : descriptorSets)
+		{
+			vkCmdBindDescriptorSets(m_commandBufferData.commandBuffer, bindPoint, pipelineLayout, setIndex, 1, &descriptorSet, 0, nullptr);
+		}
 	}
 
 	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)

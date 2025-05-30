@@ -51,12 +51,12 @@ namespace Volt::RHI
 		m_allocation = nullptr;
 	}
 
-	RefPtr<BufferView> VulkanUniformBuffer::GetView()
+	RefPtr<BufferView> VulkanUniformBuffer::GetView(const BufferViewDesc& desc)
 	{
-		BufferViewSpecification spec{};
-		spec.bufferResource = this;
+		BufferViewDesc descCopy = desc;
+		descCopy.bufferResource = this;
 
-		return BufferView::Create(spec);
+		return BufferView::Create(descCopy);
 	}
 
 	const uint32_t VulkanUniformBuffer::GetSize() const
