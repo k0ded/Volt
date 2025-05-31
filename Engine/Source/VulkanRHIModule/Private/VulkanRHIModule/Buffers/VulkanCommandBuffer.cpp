@@ -1,4 +1,4 @@
-#include "vkpch.h"
+ #include "vkpch.h"
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 
 #include "VulkanRHIModule/Common/VulkanCommon.h"
@@ -16,9 +16,8 @@
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
 
 #include "VulkanRHIModule/Images/VulkanImage.h"
-
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
-
+#include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 #include "VulkanRHIModule/Synchronization/VulkanEvent.h"
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
@@ -1185,63 +1184,103 @@ namespace Volt::RHI
 		return m_executionTimes.at(timestampIndex / 2);
 	}
 
-	void VulkanCommandBuffer::ClearImage(RawPtr<Image> image, std::array<float, 4> clearColor)
+	void VulkanCommandBuffer::ClearBufferView(RawPtr<BufferView> bufferView, const uint32_t clearValue)
 	{
 		VT_PROFILE_FUNCTION();
 
-		VulkanImage& vkImage = image->AsRef<VulkanImage>();
+		VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
+		const BufferViewDesc& viewDesc = vkBufferView.GetDesc();
 
-		VkImageAspectFlags imageAspect = static_cast<VkImageAspectFlags>(vkImage.GetImageAspect());
+		vkCmdFillBuffer(m_commandBufferData.commandBuffer, bufferView->GetHandle<VkBuffer>(), viewDesc.offset, viewDesc.size, clearValue);
+	}
 
-		VkImageSubresourceRange range{};
-		range.aspectMask = imageAspect;
-		range.baseArrayLayer = 0;
-		range.baseMipLevel = 0;
-		range.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		range.levelCount = VK_REMAINING_MIP_LEVELS;
+	void VulkanCommandBuffer::ClearBufferView(RawPtr<BufferView> bufferView, const float clearValue)
+	{
+		VT_PROFILE_FUNCTION();
+
+		VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
+		const BufferViewDesc& viewDesc = vkBufferView.GetDesc();
+
+		const uint32_t uintClearValue = std::bit_cast<uint32_t>(clearValue);
+		vkCmdFillBuffer(m_commandBufferData.commandBuffer, bufferView->GetHandle<VkBuffer>(), viewDesc.offset, viewDesc.size, uintClearValue);
+	}
+
+	void VulkanCommandBuffer::ClearImageView(RawPtr<ImageView> imageView, std::array<uint32_t, 4> clearValue)
+	{
+		VT_PROFILE_FUNCTION();
+
+		const ImageViewDesc& desc = imageView->GetDesc();
+		RawPtr<Image> image = desc.image->As<Image>();
+
+		VkImageSubresourceRange subResourceRange{};
+		subResourceRange.aspectMask = Utility::GetVkImageAspect(imageView->GetImageAspect());
+		subResourceRange.baseArrayLayer = desc.baseArrayLayer;
+		subResourceRange.baseMipLevel = desc.baseMipLevel;
+		subResourceRange.layerCount = desc.layerCount;
+		subResourceRange.levelCount = desc.mipCount;
 
 		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
 
-		// This is a bit of a hack due to the differences in clearing images between Vulkan and D3D12
 		const VkImageLayout layout = EnumValueContainsFlag(currentState.stage, BarrierStage::Clear) ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Utility::GetVkImageLayoutFromImageLayout(currentState.layout);
 
-		if (imageAspect & VK_IMAGE_ASPECT_COLOR_BIT)
+		if ((subResourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0)
 		{
 			VkClearColorValue vkClearColor{};
-			vkClearColor.float32[0] = clearColor[0];
-			vkClearColor.float32[1] = clearColor[1];
-			vkClearColor.float32[2] = clearColor[2];
-			vkClearColor.float32[3] = clearColor[3];
+			vkClearColor.uint32[0] = clearValue[0];
+			vkClearColor.uint32[1] = clearValue[1];
+			vkClearColor.uint32[2] = clearValue[2];
+			vkClearColor.uint32[3] = clearValue[3];
 
 
-			vkCmdClearColorImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &range);
+			vkCmdClearColorImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &subResourceRange);
 		}
 		else
 		{
 			VkClearDepthStencilValue vkClearColor{};
-			vkClearColor.depth = clearColor[0];
-			vkClearColor.stencil = static_cast<uint32_t>(clearColor[1]);
+			vkClearColor.depth = static_cast<float>(clearValue[0]);
+			vkClearColor.stencil = clearValue[1];
 
-			vkCmdClearDepthStencilImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &range);
+			vkCmdClearDepthStencilImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &subResourceRange);
 		}
 	}
 
-	void VulkanCommandBuffer::ClearBuffer(RawPtr<StorageBuffer> buffer, const uint32_t value)
+	void VulkanCommandBuffer::ClearImageView(RawPtr<ImageView> imageView, std::array<float, 4> clearValue)
 	{
 		VT_PROFILE_FUNCTION();
 
-		VulkanStorageBuffer& vkBuffer = buffer->AsRef<VulkanStorageBuffer>();
-		vkCmdFillBuffer(m_commandBufferData.commandBuffer, vkBuffer.GetHandle<VkBuffer>(), 0, vkBuffer.GetByteSize(), value);
-	}
+		const ImageViewDesc& desc = imageView->GetDesc();
+		RawPtr<Image> image = desc.image->As<Image>();
 
-	void VulkanCommandBuffer::UpdateBuffer(RawPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data)
-	{
-		VT_PROFILE_FUNCTION();
+		VkImageSubresourceRange subResourceRange{};
+		subResourceRange.aspectMask = Utility::GetVkImageAspect(imageView->GetImageAspect());
+		subResourceRange.baseArrayLayer = desc.baseArrayLayer;
+		subResourceRange.baseMipLevel = desc.baseMipLevel;
+		subResourceRange.layerCount = desc.layerCount;
+		subResourceRange.levelCount = desc.mipCount;
 
-		VT_ASSERT(dataSize <= 65536 && "Size must not exceed MAX_UPDATE_SIZE!");
+		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
 
-		VulkanStorageBuffer& vkBuffer = dstBuffer->AsRef<VulkanStorageBuffer>();
-		vkCmdUpdateBuffer(m_commandBufferData.commandBuffer, vkBuffer.GetHandle<VkBuffer>(), dstOffset, dataSize, data);
+		const VkImageLayout layout = EnumValueContainsFlag(currentState.stage, BarrierStage::Clear) ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Utility::GetVkImageLayoutFromImageLayout(currentState.layout);
+
+		if ((subResourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0)
+		{
+			VkClearColorValue vkClearColor{};
+			vkClearColor.float32[0] = clearValue[0];
+			vkClearColor.float32[1] = clearValue[1];
+			vkClearColor.float32[2] = clearValue[2];
+			vkClearColor.float32[3] = clearValue[3];
+
+
+			vkCmdClearColorImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &subResourceRange);
+		}
+		else
+		{
+			VkClearDepthStencilValue vkClearColor{};
+			vkClearColor.depth = clearValue[0];
+			vkClearColor.stencil = static_cast<uint32_t>(clearValue[1]);
+
+			vkCmdClearDepthStencilImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &subResourceRange);
+		}
 	}
 
 	void VulkanCommandBuffer::CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size)

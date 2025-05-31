@@ -2,7 +2,6 @@
 
 #include <RenderCore/RenderGraph2/RenderGraph2.h>
 #include <RenderCore/RenderGraph2/RenderContext2.h>
-#include <RenderCore/RenderGraph/RenderContextUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/GlobalShader.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
@@ -72,41 +71,12 @@ bool RG_DrawTriangleTest::RunTest()
 			context.BeginRendering(renderingInfo);
 			context.BindPipeline(s_renderPipeline);
 			context.SetParameters<DrawTriangleTestPS>(s_pixelShader, passParameters);
-			context.Draw(3, 0, 0, 0);
+			context.Draw(3, 1, 0, 0);
 			context.EndRendering();
 		});
 
 	renderGraph.Compile();
 	renderGraph.Execute();
-
-	//
-	//RenderGraph renderGraph{ m_commandBuffer };
-	//
-	//auto targetImage = swapchain.GetCurrentImage();
-	//RenderGraphImageHandle targetImageHandle = renderGraph.AddExternalImage(targetImage);
-	//
-	//renderGraph.AddPass("Triangle Pass", 
-	//[&](RenderGraph::Builder& builder) 
-	//{
-	//	builder.WriteResource(targetImageHandle);
-	//	builder.SetHasSideEffect();
-	//}, 
-	//[=](RenderContext& context)
-	//{
-	//	RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), { targetImageHandle });
-	//
-	//	RHI::RenderPipelineCreateInfo pipelineInfo{};
-	//	pipelineInfo.shaders = { ShaderMap::Get2<DrawTriangleTestVS>(), ShaderMap::Get2<DrawTriangleTestPS>() };
-	//
-	//	auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
-	//
-	//	context.BeginRendering(renderingInfo);
-	//	RCUtils::DrawFullscreenTriangle(context, pipeline);
-	//	context.EndRendering();
-	//});
-	//
-	//renderGraph.Compile();
-	//renderGraph.Execute();
 
 	return true;
 }

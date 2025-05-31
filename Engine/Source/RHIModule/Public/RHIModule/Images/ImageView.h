@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	struct ImageViewSpecification
+	struct ImageViewDesc
 	{
 		ImageViewType viewType = ImageViewType::View2D;
 
@@ -14,18 +14,19 @@ namespace Volt::RHI
 		uint32_t mipCount = 1;
 		uint32_t layerCount = 1;
 
-		RHIResource* image = nullptr;
+		RawPtr<RHIResource> image = nullptr;
 	};
 
 	class VTRHI_API ImageView : public RHIInterface
 	{
 	public:
-		static RefPtr<ImageView> Create(const ImageViewSpecification& specification);
+		static RefPtr<ImageView> Create(const ImageViewDesc& specification);
 
 		virtual const ImageAspect GetImageAspect() const = 0;
 		virtual const uint64_t GetDeviceAddress() const = 0;
 		virtual const ImageUsage GetImageUsage() const = 0;
 		virtual const ImageViewType GetViewType() const = 0;
+		virtual const ImageViewDesc& GetDesc() const = 0;
 		virtual const bool IsSwapchainView() const = 0;
 
 	protected:

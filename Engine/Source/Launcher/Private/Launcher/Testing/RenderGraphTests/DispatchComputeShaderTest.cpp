@@ -58,41 +58,5 @@ bool RG_DispatchComputeShaderTest::RunTest()
 	renderGraph.Compile();
 	renderGraph.Execute();
 
-	//struct Data
-	//{
-	//	RenderGraphBufferHandle bufferHandle;
-	//};
-	//
-	//DispatchComputeShaderTestCS::Parameters* passParameters = 
-	//
-	//renderGraph.AddPass<Data>("Compute Shader Pass",
-	//[&](RenderGraph::Builder& builder, Data& data)
-	//{
-	//	{
-	//		const auto desc = RGUtils::CreateBufferDescGPU<glm::uvec2>(32, "Buffer");
-	//		data.bufferHandle = builder.CreateBuffer(desc);
-	//	}
-	//
-	//	builder.SetHasSideEffect();
-	//	builder.SetIsComputePass();
-	//},
-	//[=](const Data& data, RenderContext& context)
-	//{
-	//	auto pipeline = ShaderMap::GetComputePipeline<DispatchComputeShaderTestCS>();
-	//
-	//	context.BindPipeline(pipeline);
-	//
-	//	DispatchComputeShaderTestCS::Parameters parameters;
-	//	parameters.InitialValue = 1u;
-	//	parameters.OutputBuffer = data.bufferHandle;
-	//
-	//	context.SetParameters<DispatchComputeShaderTestCS>(parameters);
-	//	context.Dispatch(1, 1, 1);
-	//
-	//});
-	//
-	//renderGraph.Compile();
-	//renderGraph.Execute();
-
 	return true;
 }

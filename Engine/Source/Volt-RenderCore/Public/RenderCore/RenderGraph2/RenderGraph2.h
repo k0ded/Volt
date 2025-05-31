@@ -26,6 +26,12 @@ namespace Volt
 		RenderGraph2(RefPtr<RHI::CommandBuffer> commandBuffer);
 		~RenderGraph2();
 
+		RenderGraph2(RenderGraph2&& other) noexcept;
+		RenderGraph2& operator=(RenderGraph2&& other) noexcept;
+
+		RenderGraph2(const RenderGraph2& other) = delete;
+		RenderGraph2& operator=(const RenderGraph2& other) = delete;
+
 		RGBufferRef CreateBuffer(const RGBufferDesc& desc);
 		RGTextureRef CreateTexture(const RGTextureDesc& desc);
 		RGUniformBufferRef CreateUniformBuffer(const RGUniformBufferDesc& desc);
@@ -54,10 +60,15 @@ namespace Volt
 		void AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc);
 
 		void Compile();
+
+		// NOTE: After calling Execute the RenderGraph object is no longer valid to use!
 		void Execute();
+		void ExecuteImmediate();
+		void ExecuteImmediateAndWait();
 
 	private:
 		friend class RenderContext2;
+		friend class RenderGraphExecutionThread;
 
 		class CompiledPass
 		{
@@ -122,8 +133,7 @@ namespace Volt
 
 		using ExternalResourceRegistry = vt::map<RawPtr<RHI::RHIResource>, RGResourceRef>;
 
-		void ExecuteInternal();
-		void AllocateShaderParametersBuffer();
+		void ExecuteInternal(bool waitForSync);
 
 		void InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
 
@@ -138,6 +148,7 @@ namespace Volt
 		RefPtr<RHI::ImageView> GetRHITextureRT(RGTextureRef texture);
 
 		RefPtr<RHI::RHIResource> GetRHIResource(RGResourceRef resource);
+		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
 
 		TransientResourceSystem2 m_transientResourceSystem;
 		ExternalResourceRegistry m_registeredExternalResources;
@@ -154,9 +165,6 @@ namespace Volt
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::Fence> m_executionFence;
-		RawPtr<RHI::UniformBuffer> m_shaderParametersUniformBuffer;
-
-		SharedRenderContext m_sharedRenderContext;
 	};
 
 	template<typename ParameterStruct, typename ExecFunc>

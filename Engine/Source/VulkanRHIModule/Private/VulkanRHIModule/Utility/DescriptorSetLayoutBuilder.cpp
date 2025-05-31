@@ -34,9 +34,20 @@ namespace Volt::RHI
 			{
 				descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 			}
-			else if (binding.resourceType == ShaderResourceType::Buffer)
+			else if (binding.resourceType == ShaderResourceType::StructuredBuffer)
 			{
 				descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			}
+			else if (binding.resourceType == ShaderResourceType::TexelBuffer)
+			{
+				if (binding.registerType == ShaderRegisterType::SRV)
+				{
+					descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+				}
+				else
+				{
+					descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+				}
 			}
 			else if (binding.resourceType == ShaderResourceType::Texture)
 			{
@@ -126,6 +137,8 @@ namespace Volt::RHI
 	{
 		uint32_t uboCount = 0;
 		uint32_t ssboCount = 0;
+		uint32_t uniformTexelBufferCount = 0;
+		uint32_t storageTexelBufferCount = 0;
 		uint32_t storageImageCount = 0;
 		uint32_t imageCount = 0;
 		uint32_t seperateSamplerCount = 0;
@@ -140,9 +153,20 @@ namespace Volt::RHI
 			{
 				seperateSamplerCount += binding.arraySize;
 			}
-			else if (binding.resourceType == ShaderResourceType::Buffer)
+			else if (binding.resourceType == ShaderResourceType::StructuredBuffer)
 			{
 				ssboCount += binding.arraySize;
+			}
+			else if (binding.resourceType == ShaderResourceType::TexelBuffer)
+			{
+				if (binding.registerType == ShaderRegisterType::SRV)
+				{
+					uniformTexelBufferCount += binding.arraySize;
+				}
+				else
+				{
+					storageTexelBufferCount += binding.arraySize;
+				}
 			}
 			else if (binding.resourceType == ShaderResourceType::Texture)
 			{
@@ -167,6 +191,16 @@ namespace Volt::RHI
 		if (ssboCount > 0)
 		{
 			result.emplace_back(static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER), ssboCount);
+		}
+
+		if (uniformTexelBufferCount > 0)
+		{
+			result.emplace_back(static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER), uniformTexelBufferCount);
+		}
+
+		if (storageTexelBufferCount > 0)
+		{
+			result.emplace_back(static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER), storageTexelBufferCount);
 		}
 
 		if (storageImageCount > 0)

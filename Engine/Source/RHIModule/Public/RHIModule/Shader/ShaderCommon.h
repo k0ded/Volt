@@ -46,7 +46,8 @@ namespace Volt::RHI
 	enum class ShaderResourceType : uint8_t
 	{
 		UniformBuffer,
-		Buffer,
+		StructuredBuffer,
+		TexelBuffer,
 		Texture,
 		Sampler
 	};

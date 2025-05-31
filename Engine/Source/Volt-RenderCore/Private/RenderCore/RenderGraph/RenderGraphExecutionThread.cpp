@@ -2,6 +2,7 @@
 #include "RenderCore/RenderGraph/RenderGraphExecutionThread.h"
 
 #include "RenderCore/RenderGraph/RenderGraph.h"
+#include "RenderCore/RenderGraph2/RenderGraph2.h"
 #include "RenderCore/Resources/BindlessResourcesManager.h"
 
 #include <Volt-Platforms/Platform.h>
@@ -16,6 +17,7 @@
 
 namespace Volt
 {
+	// #TODO_Ivar: Refactor to a non static class.
 	struct RenderGraphThreadData
 	{
 		Scope<std::thread> executionThread;
@@ -65,6 +67,22 @@ namespace Volt
 		auto execFunc = [rg = std::move(rgPtr)]() mutable
 		{
 			rg->ExecuteInternal(true, false);
+		};
+
+		s_data->executionQueue.push(std::move(execFunc));
+		s_data->executeVariable.notify_one();
+	}
+
+	void RenderGraphExecutionThread::ExecuteRenderGraph(RenderGraph2&& renderGraph)
+	{
+		VT_PROFILE_FUNCTION();
+
+		// We move construct the RenderGraph into a Ref ptr, to allow usage in a std::function
+		Ref<RenderGraph2> rgPtr = CreateRef<RenderGraph2>(std::move(renderGraph));
+
+		auto execFunc = [rg = std::move(rgPtr)]() mutable
+		{
+			rg->ExecuteInternal(false);
 		};
 
 		s_data->executionQueue.push(std::move(execFunc));

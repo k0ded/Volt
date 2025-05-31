@@ -393,7 +393,8 @@ namespace Volt::RHI
 					{
 						switch (binding.resourceType)
 						{
-							case ShaderResourceType::Buffer: descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
+							case ShaderResourceType::StructuredBuffer: descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
+							case ShaderResourceType::TexelBuffer: descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
 							case ShaderResourceType::Texture: descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; break;
 						}
 						break;
@@ -403,7 +404,8 @@ namespace Volt::RHI
 					{
 						switch (binding.resourceType)
 						{
-							case ShaderResourceType::Buffer: descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
+							case ShaderResourceType::StructuredBuffer: descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
+							case ShaderResourceType::TexelBuffer: descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
 							case ShaderResourceType::Texture: descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE; break;
 						}
 						break;

@@ -142,6 +142,7 @@ namespace Volt::RHI
 			DescriptorSetLayoutBuilder::DescriptorSets descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderResourceBindings);
 			m_descriptorSetLayouts = descriptorSets.descriptorSetLayouts;
 			m_pipelineLayoutDescriptorSetLayouts = descriptorSets.pipelineLayoutDescriptorSetLayouts;
+			m_descriptorPoolSizes = descriptorSetLayoutBuilder.CalculateDescriptorPoolSizesFromBindings(shaderResourceBindings);
 		}
 
 		// Create pipeline layout

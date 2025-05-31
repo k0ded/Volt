@@ -1132,6 +1132,8 @@ namespace Volt::RHI
 
 		Vector<SpvReflectDescriptorBinding*> uniformBuffers;
 		Vector<SpvReflectDescriptorBinding*> storageBuffers;
+		Vector<SpvReflectDescriptorBinding*> uniformTexelBuffers;
+		Vector<SpvReflectDescriptorBinding*> storageTexelBuffers;
 		Vector<SpvReflectDescriptorBinding*> storageImages;
 		Vector<SpvReflectDescriptorBinding*> images;
 		Vector<SpvReflectDescriptorBinding*> samplers;
@@ -1156,6 +1158,7 @@ namespace Volt::RHI
 							{
 								case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE: images.emplace_back(spvBinding); break;
 								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER: storageBuffers.emplace_back(spvBinding); break;
+								case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER: uniformTexelBuffers.emplace_back(spvBinding); break;
 							}
 							break;
 						}
@@ -1166,6 +1169,7 @@ namespace Volt::RHI
 							{
 								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE: storageImages.emplace_back(spvBinding); break;
 								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER: storageBuffers.emplace_back(spvBinding); break;
+								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: storageTexelBuffers.emplace_back(spvBinding); break;;
 							}
 							break;
 						}
@@ -1177,6 +1181,8 @@ namespace Volt::RHI
 		Vector<SpvReflectDescriptorBinding*> allBindings;
 		allBindings.append(uniformBuffers);
 		allBindings.append(storageBuffers);
+		allBindings.append(uniformTexelBuffers);
+		allBindings.append(storageTexelBuffers);
 		allBindings.append(storageImages);
 		allBindings.append(images);
 		allBindings.append(samplers);
@@ -1216,7 +1222,17 @@ namespace Volt::RHI
 
 		for (SpvReflectDescriptorBinding* storageBuffer : storageBuffers)
 		{
-			shaderParameterMap.AddBufferSRV(storageBuffer->name, storageBuffer->set, storageBuffer->binding, currentShaderStage);
+			shaderParameterMap.AddStructuredBufferSRV(storageBuffer->name, storageBuffer->set, storageBuffer->binding, currentShaderStage);
+		}
+
+		for (SpvReflectDescriptorBinding* uniformTexelBuffer : uniformTexelBuffers)
+		{
+			shaderParameterMap.AddTexelBufferSRV(uniformTexelBuffer->name, uniformTexelBuffer->set, uniformTexelBuffer->binding, currentShaderStage);
+		}
+
+		for (SpvReflectDescriptorBinding* storageTexelBuffer : storageTexelBuffers)
+		{
+			shaderParameterMap.AddTexelBufferUAV(storageTexelBuffer->name, storageTexelBuffer->set, storageTexelBuffer->binding, currentShaderStage);
 		}
 
 		for (SpvReflectDescriptorBinding* storageImage : storageImages)

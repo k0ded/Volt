@@ -12,8 +12,10 @@ namespace Volt::RHI
 
 		void AddUniformBuffer(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 		void AddSampler(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddBufferUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddBufferSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddStructuredBufferUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddStructuredBufferSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddTexelBufferUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddTexelBufferSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 		void AddTextureSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 		void AddTextureUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 

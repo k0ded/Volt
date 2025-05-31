@@ -255,7 +255,7 @@ namespace Volt::RHI
 			}
 		}
 
-		ImageViewSpecification spec{};
+		ImageViewDesc spec{};
 		spec.baseArrayLayer = (layer == -1) ? 0 : layer;
 		spec.baseMipLevel = (mip == -1) ? 0 : mip;
 		spec.layerCount = (layer == -1) ? m_specification.layers : 1;
@@ -325,7 +325,7 @@ namespace Volt::RHI
 			return m_arrayImageViews.at(mip);
 		}
 
-		ImageViewSpecification spec{};
+		ImageViewDesc spec{};
 		spec.baseArrayLayer = 0;
 		spec.baseMipLevel = (mip == -1) ? 0 : mip;
 		spec.layerCount = m_specification.layers;

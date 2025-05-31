@@ -128,7 +128,7 @@ namespace Volt::RHI
 		return RefPtr<VulkanImage>::Create(specification);
 	}
 
-	RefPtr<ImageView> VulkanRHIModule::CreateImageView(const ImageViewSpecification& specification) const
+	RefPtr<ImageView> VulkanRHIModule::CreateImageView(const ImageViewDesc& specification) const
 	{
 		return RefPtr<VulkanImageView>::Create(specification);
 	}

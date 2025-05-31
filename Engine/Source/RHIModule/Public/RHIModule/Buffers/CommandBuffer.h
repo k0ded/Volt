@@ -104,10 +104,12 @@ namespace Volt::RHI
 		virtual void EndTimestamp(uint32_t timestampIndex) = 0;
 		virtual const float GetExecutionTime(uint32_t timestampIndex) const = 0;
 
-		virtual void ClearImage(RawPtr<Image> image, std::array<float, 4> clearColor) = 0;
-		virtual void ClearBuffer(RawPtr<StorageBuffer> buffer, const uint32_t value) = 0;
+		virtual void ClearBufferView(RawPtr<BufferView> bufferView, const float clearValue) = 0;
+		virtual void ClearBufferView(RawPtr<BufferView> bufferView, const uint32_t clearValue) = 0;
 
-		virtual void UpdateBuffer(RawPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data) = 0;
+		virtual void ClearImageView(RawPtr<ImageView> imageView, std::array<float, 4> clearValue) = 0;
+		virtual void ClearImageView(RawPtr<ImageView> imageView, std::array<uint32_t, 4> clearValue) = 0;
+
 		virtual void CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size) = 0;
 		virtual void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip = 0) = 0;
 		virtual void CopyImageToBuffer(RawPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) = 0;

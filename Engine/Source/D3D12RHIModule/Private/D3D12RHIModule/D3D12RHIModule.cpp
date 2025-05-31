@@ -123,7 +123,7 @@ namespace Volt::RHI
 		return RefPtr<D3D12Image>::Create(specification);
 	}
 
-	RefPtr<ImageView> D3D12RHIModule::CreateImageView(const ImageViewSpecification& specification) const
+	RefPtr<ImageView> D3D12RHIModule::CreateImageView(const ImageViewDesc& specification) const
 	{
 		return RefPtr<D3D12ImageView>::Create(specification);
 	}

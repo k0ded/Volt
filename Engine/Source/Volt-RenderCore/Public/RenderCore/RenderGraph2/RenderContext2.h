@@ -25,19 +25,35 @@ namespace Volt
 	class VTRC_API RenderContext2
 	{
 	public:
-		RenderContext2(RenderGraph2& renderGraph, SharedRenderContext& sharedRenderContext, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer);
+		RenderContext2(RenderGraph2& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer);
 
 		void BeginRendering(const RenderingInfo2& renderingInfo);
 		void EndRendering();
 
 		const RenderingInfo2 CreateRenderingInfo(const uint32_t width, const uint32_t height, const ShaderParameterRenderTargetBindings& rtBindings);
 
-		void Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ);
+		void DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ);
+		void DispatchMeshTasksIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride);
+		void DispatchMeshTasksIndirectCount(RGBufferRef commandsBuffer, const size_t offset, RGBufferRef countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride);
 
+		void Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ);
+		void DispatchIndirect(RGBufferRef commandsBuffer, const size_t offset);
+
+		void DrawIndirectCount(RGBufferRef commandsBuffer, const size_t offset, RGBufferRef countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride);
+		void DrawIndexedIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride);
+		void DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance);
 		void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance);
+
+		void ClearUAV(RGTextureUAVRef textureUAV, const glm::uvec4& clearValues);
+		void ClearUAV(RGTextureUAVRef textureUAV, const glm::vec4& clearValues);
+		void ClearUAV(RGBufferUAVRef bufferUAV, const uint32_t clearValue);
+		void ClearUAV(RGBufferUAVRef bufferUAV, const float clearValue);
 
 		void BindPipeline(RefPtr<RHI::RenderPipeline> pipeline);
 		void BindPipeline(RefPtr<RHI::ComputePipeline> pipeline);
+
+		void BindIndexBuffer(RGBufferRef indexBuffer);
+		void BindVertexBuffers(const StackVector<RGBufferRef, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
 
 		template<typename ShaderType> 
 		void SetParameters(RefPtr<RHI::Shader2> shader,  const typename ShaderType::Parameters* parameters)
@@ -96,7 +112,6 @@ namespace Volt
 		PagedVector<PerStageShaderParameters> m_perStageShaderParameters;
 
 		RenderGraph2& m_renderGraph;
-		SharedRenderContext& m_sharedRenderContext;
 		RenderGraphPass* m_currentPass;
 	};
 }

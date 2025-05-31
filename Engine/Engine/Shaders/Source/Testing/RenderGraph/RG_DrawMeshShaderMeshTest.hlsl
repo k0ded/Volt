@@ -1,14 +1,13 @@
-#include "Resources.hlsli"
 #include "GPUScene.hlsli"
 
-float4x4 ViewProjection;
-
-vt::TypedBuffer<float3> VertexPositionsBuffer;
-vt::TypedBuffer<Meshlet> MeshletsBuffer;
-vt::TypedBuffer<uint> MeshletDataBuffer;
+StructuredBuffer<float3> VertexPositionsBuffer;
+StructuredBuffer<Meshlet> MeshletsBuffer;
+StructuredBuffer<uint> MeshletDataBuffer;
 
 uint MeshletStartOffset;
 uint VertexOffset;
+
+float4x4 ViewProjection;
 
 struct VertexOutput
 {
@@ -27,7 +26,7 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
             out indices uint3 tris[64],
             out vertices VertexOutput vertices[64])
 {
-    const Meshlet meshlet = MeshletsBuffer.Load(MeshletStartOffset + groupId);
+    const Meshlet meshlet = MeshletsBuffer[MeshletStartOffset + groupId];
 
     const uint vertexCount = meshlet.GetVertexCount();
     const uint triCount = meshlet.GetTriangleCount();
@@ -40,14 +39,14 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
 
     if (groupThreadId < triCount)
     {
-        const uint primitive = MeshletDataBuffer.Load(indexOffset + groupThreadId);
+        const uint primitive = MeshletDataBuffer[indexOffset + groupThreadId];
         tris[groupThreadId] = UnpackPrimitive(primitive);
     }
 
     if (groupThreadId < vertexCount)
     {
         const uint vertexIndex = MeshletDataBuffer[vertexOffset + groupThreadId] + VertexOffset;
-        vertices[groupThreadId].position = mul(ViewProjection, float4(VertexPositionsBuffer.Load(vertexIndex), 1.f));
+        vertices[groupThreadId].position = mul(ViewProjection, float4(VertexPositionsBuffer[vertexIndex], 1.f));
     }
 }
 

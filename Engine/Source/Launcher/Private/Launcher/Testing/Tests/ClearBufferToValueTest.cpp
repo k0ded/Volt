@@ -40,7 +40,7 @@ bool ClearBufferToValueTest::RunTest()
 			m_commandBuffer->ResourceBarrier({ barrier });
 		}
 
-		m_commandBuffer->ClearBuffer(m_buffer, i);
+		//m_commandBuffer->ClearBuffer(m_buffer, i);
 
 		{
 			RHI::ResourceBarrierInfo barrier{};

@@ -15,8 +15,8 @@
 
 namespace Volt::RHI
 {
-	VulkanImageView::VulkanImageView(const ImageViewSpecification& specification)
-		: m_specification(specification)
+	VulkanImageView::VulkanImageView(const ImageViewDesc& specification)
+		: m_desc(specification)
 	{
 		auto imageRes = specification.image;
 		auto image = imageRes->As<Image>();
@@ -72,7 +72,7 @@ namespace Volt::RHI
 
 	const uint64_t VulkanImageView::GetDeviceAddress() const
 	{
-		return m_specification.image->GetDeviceAddress();
+		return m_desc.image->GetDeviceAddress();
 	}
 
 	const ImageUsage VulkanImageView::GetImageUsage() const
@@ -82,7 +82,7 @@ namespace Volt::RHI
 
 	const ImageViewType VulkanImageView::GetViewType() const
 	{
-		return m_specification.viewType;
+		return m_desc.viewType;
 	}
 
 	const bool VulkanImageView::IsSwapchainView() const
@@ -93,5 +93,10 @@ namespace Volt::RHI
 	void* VulkanImageView::GetHandleImpl() const
 	{
 		return m_imageView;
+	}
+
+	const ImageViewDesc& VulkanImageView::GetDesc() const
+	{
+		return m_desc;
 	}
 }

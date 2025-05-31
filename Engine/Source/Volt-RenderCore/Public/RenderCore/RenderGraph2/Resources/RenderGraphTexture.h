@@ -9,7 +9,22 @@
 namespace Volt
 {
 	struct RGTextureDesc : public RHI::ImageSpecification
-	{};
+	{
+		template<RHI::PixelFormat PixelFormat>
+		static RGTextureDesc Create2D(const uint32_t width, const uint32_t height, RHI::ImageUsage usage, const std::string& name = "Texture")
+		{
+			VT_ASSERT_MSG(width > 0 && height > 0, "Width and height must not be zero!");
+			
+			RGTextureDesc resultDesc{};
+			resultDesc.width = width;
+			resultDesc.height = height;
+			resultDesc.usage = usage;
+			resultDesc.debugName = name;
+			resultDesc.imageType = RHI::ResourceType::Image2D;
+
+			return resultDesc;
+		}
+	};
 
 	class VTRC_API RGTexture : public RGResource
 	{

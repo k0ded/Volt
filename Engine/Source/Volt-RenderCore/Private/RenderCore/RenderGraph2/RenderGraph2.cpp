@@ -3,6 +3,7 @@
 #include "RenderCore/RenderGraph2/RenderGraph2.h"
 #include "RenderCore/RenderGraph2/RenderContext2.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
+#include "RenderCore/RenderGraph/RenderGraphExecutionThread.h"
 
 #include <RHIModule/Utility/ResourceUtility.h>
 #include <RHIModule/Images/ImageUtility.h>
@@ -99,6 +100,43 @@ namespace Volt
 
 	RenderGraph2::~RenderGraph2()
 	{
+	}
+
+	RenderGraph2::RenderGraph2(RenderGraph2&& other) noexcept
+		: m_transientResourceSystem(std::move(other.m_transientResourceSystem)),
+		m_registeredExternalResources(std::move(other.m_registeredExternalResources)),
+		m_resourceAllocator(std::move(other.m_resourceAllocator)),
+		m_resourceAccessorAllocator(std::move(other.m_resourceAccessorAllocator)),
+		m_passParametersAllocator(std::move(other.m_passParametersAllocator)),
+		m_passAllocator(std::move(other.m_passAllocator)),
+		m_passes(std::move(other.m_passes)),
+		m_resources(std::move(other.m_resources)),
+		m_compiledPasses(std::move(other.m_compiledPasses)),
+		m_commandBuffer(std::move(other.m_commandBuffer)),
+		m_executionFence(std::move(other.m_executionFence))
+	{
+	}
+
+	RenderGraph2& RenderGraph2::operator=(RenderGraph2&& other) noexcept
+	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
+		m_transientResourceSystem = std::move(other.m_transientResourceSystem);
+		m_registeredExternalResources = std::move(other.m_registeredExternalResources);
+		m_resourceAllocator = std::move(other.m_resourceAllocator);
+		m_resourceAccessorAllocator = std::move(other.m_resourceAccessorAllocator);
+		m_passParametersAllocator = std::move(other.m_passParametersAllocator);
+		m_passAllocator = std::move(other.m_passAllocator);
+		m_passes = std::move(other.m_passes);
+		m_resources = std::move(other.m_resources);
+		m_compiledPasses = std::move(other.m_compiledPasses);
+		m_commandBuffer = std::move(other.m_commandBuffer);
+		m_executionFence = std::move(other.m_executionFence);
+
+		return *this;
 	}
 
 	RGBuffer* RenderGraph2::CreateBuffer(const RGBufferDesc& desc)
@@ -653,16 +691,21 @@ namespace Volt
 
 	void RenderGraph2::Execute()
 	{
-		ExecuteInternal();
+		RenderGraphExecutionThread::ExecuteRenderGraph(std::move(*this));
 	}
 
-	void RenderGraph2::ExecuteInternal()
+	void RenderGraph2::ExecuteImmediate()
 	{
-		AllocateShaderParametersBuffer();
+		ExecuteInternal(false);
+	}
 
-		m_sharedRenderContext.SetRenderGraphConstantsBuffer(m_shaderParametersUniformBuffer);
-		m_sharedRenderContext.BeginContext();
+	void RenderGraph2::ExecuteImmediateAndWait()
+	{
+		ExecuteInternal(true);
+	}
 
+	void RenderGraph2::ExecuteInternal(bool waitForSync)
+	{
 		m_commandBuffer->Begin();
 		for (uint32_t passIndex = 0; auto pass : m_passes)
 		{
@@ -680,7 +723,7 @@ namespace Volt
 
 			{
 				VT_PROFILE_SCOPE(pass->name.data());
-				RenderContext2 renderContext(*this, m_sharedRenderContext, pass.GetRaw(), m_commandBuffer);
+				RenderContext2 renderContext(*this, pass.GetRaw(), m_commandBuffer);
 				m_passAllocator.ExecutePass(pass, renderContext);
 			}
 
@@ -697,21 +740,12 @@ namespace Volt
 			passIndex++;
 		}
 		m_commandBuffer->End();
-
-		m_sharedRenderContext.EndContext();
-
 		m_commandBuffer->ExecuteWithFence(m_executionFence);
-	}
 
-	void RenderGraph2::AllocateShaderParametersBuffer()
-	{
-		RGUniformBufferDesc desc{};
-		desc.count = std::max(m_passAllocator.GetNumPasses(), 1u);
-		desc.elementSize = RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE;
-		desc.name = "ShaderParameters";
-
-		RGUniformBufferRef uniformBuffer = CreateUniformBuffer(desc);
-		m_shaderParametersUniformBuffer = m_transientResourceSystem.AcquireUniformBuffer(uniformBuffer);
+		if (waitForSync)
+		{
+			m_executionFence->WaitUntilSignaled();
+		}
 	}
 
 	void RenderGraph2::InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer)
@@ -813,5 +847,10 @@ namespace Volt
 		}
 
 		return rhiResource;
+	}
+
+	RefPtr<RHI::StorageBuffer> RenderGraph2::GetRHIBuffer(RGBufferRef buffer)
+	{
+		return m_transientResourceSystem.AcquireBuffer(buffer);
 	}
 }

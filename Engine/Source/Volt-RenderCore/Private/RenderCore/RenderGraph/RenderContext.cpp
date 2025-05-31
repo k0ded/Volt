@@ -112,7 +112,7 @@ namespace Volt
 		resourceAccess.ValidateResourceAccess(handle);
 
 		const auto image = m_renderGraph.GetImageRaw(handle);
-		m_commandBuffer->ClearImage(image, { clearColor.x, clearColor.y, clearColor.z, clearColor.w });
+		//m_commandBuffer->ClearImage(image, { clearColor.x, clearColor.y, clearColor.z, clearColor.w });
 	}
 
 	void RenderContext::ClearBuffer(RenderGraphBufferHandle handle, uint32_t clearValue)
@@ -123,7 +123,7 @@ namespace Volt
 		resourceAccess.ValidateResourceAccess(handle);
 
 		const auto buffer = m_renderGraph.GetBufferRaw(handle);
-		m_commandBuffer->ClearBuffer(buffer, clearValue);
+		//m_commandBuffer->ClearBuffer(buffer, clearValue);
 	}
 
 	void RenderContext::CopyBuffer(RenderGraphBufferHandle src, RenderGraphBufferHandle dst, const size_t size)

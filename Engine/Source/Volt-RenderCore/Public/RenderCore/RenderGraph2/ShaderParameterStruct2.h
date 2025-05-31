@@ -58,8 +58,8 @@ namespace Volt
 		inline static constexpr const char* CurrentStructName = #structName; \
 		struct FirstMemberID {}; \
 		typedef void* FuncPtr; \
-		typedef FuncPtr (*MemberFunc)(FirstMemberID, Vector<Volt::ShaderParameterMetadata2>&); \
-		static FuncPtr ProcessMember(FirstMemberID, Vector<Volt::ShaderParameterMetadata2>&) \
+		typedef FuncPtr (*MemberFunc)(FirstMemberID, Vector<Volt::ShaderParameterMetadata2>&, uint32_t); \
+		static FuncPtr ProcessMember(FirstMemberID, Vector<Volt::ShaderParameterMetadata2>&, uint32_t) \
 		{ \
 			return nullptr; \
 		} \
@@ -68,14 +68,14 @@ namespace Volt
 #define END_SHADER_PARAMETER_STRUCT2() \
 		LastMemberID; \
 		public: \
-		static void zzInternal_ProcessMembers(Vector<Volt::ShaderParameterMetadata2>& outMetadata) \
+		static void zzInternal_ProcessMembers(Vector<Volt::ShaderParameterMetadata2>& outMetadata, uint32_t offset = 0) \
 		{ \
-			FuncPtr(*lastFunc)(LastMemberID, Vector<Volt::ShaderParameterMetadata2>&); \
+			FuncPtr(*lastFunc)(LastMemberID, Vector<Volt::ShaderParameterMetadata2>&, uint32_t); \
 			lastFunc = ProcessMember; \
 			FuncPtr ptr = (FuncPtr)lastFunc; \
 			do \
 			{ \
-				ptr = reinterpret_cast<MemberFunc>(ptr)(FirstMemberID(), outMetadata); \
+				ptr = reinterpret_cast<MemberFunc>(ptr)(FirstMemberID(), outMetadata, offset); \
 			} while (ptr != nullptr); \
 		} \
 	}; 
@@ -83,16 +83,16 @@ namespace Volt
 #define SHADER_PARAMETER_COMMON_INTERNAL2(type, paramName, paramType, resourceAccess) \
 private: \
 	struct NextMemberID##paramName {}; \
-	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata2>& outMetadata) \
+	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata2>& outMetadata, uint32_t offset) \
 	{ \
 		auto& paramMetadata = outMetadata.emplace_back(); \
 		paramMetadata.name = #paramName; \
 		paramMetadata.hashedName = StringHash::Construct(paramMetadata.name); \
 		paramMetadata.parameterType = paramType; \
 		paramMetadata.structSize = sizeof(type); \
-		paramMetadata.structOffset = offsetof(CurrentStruct, paramName); \
+		paramMetadata.structOffset = offset + offsetof(CurrentStruct, paramName); \
 		paramMetadata.resourceAccessType = resourceAccess; \
-		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata2>&); \
+		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata2>&, uint32_t); \
 		prevFunc = ProcessMember; \
 		return (FuncPtr)prevFunc; \
 	} \
@@ -152,10 +152,9 @@ public: \
 	type paramName; \
 private: \
 	struct NextMemberID##paramName {}; \
-	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata>& outMetadata) \
+	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata2>& outMetadata, uint32_t offset) \
 	{ \
-		type::zzInternal_ProcessMembers(outMetadata, offsetof(CurrentStruct, paramName)); \
-		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata>&); \
+		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata2>&, uint32_t); \
 		prevFunc = ProcessMember; \
 		return (FuncPtr)prevFunc; \
 	} \
@@ -167,10 +166,10 @@ public: \
 	type paramName; \
 private: \
 	struct NextMemberID##paramName {}; \
-	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata>& outMetadata) \
+	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata2>& outMetadata, uint32_t offset) \
 	{ \
 		type::zzInternal_ProcessMembers(outMetadata, offsetof(CurrentStruct, paramName)); \
-		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata>&); \
+		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata2>&, uint32_t); \
 		prevFunc = ProcessMember; \
 		return (FuncPtr)prevFunc; \
 	} \

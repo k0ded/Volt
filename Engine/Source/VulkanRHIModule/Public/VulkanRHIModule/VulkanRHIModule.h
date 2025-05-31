@@ -35,7 +35,7 @@ namespace Volt::RHI
 		RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const override;
 		RefPtr<Image> CreateImage(const SwapchainImageSpecification& specification) const override;
 
-		RefPtr<ImageView> CreateImageView(const ImageViewSpecification& specification) const override;
+		RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification) const override;
 		RefPtr<SamplerState> CreateSamplerState(const SamplerStateCreateInfo& createInfo) const override;
 
 		RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const override;

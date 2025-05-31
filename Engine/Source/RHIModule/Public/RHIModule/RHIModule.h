@@ -68,7 +68,7 @@ namespace Volt::RHI
 	struct PhysicalDeviceCreateInfo;
 	struct ImageSpecification;
 	struct SwapchainImageSpecification;
-	struct ImageViewSpecification;
+	struct ImageViewDesc;
 	struct SamplerStateCreateInfo;
 	struct TransientHeapCreateInfo;
 	struct RenderPipelineCreateInfo;
@@ -117,7 +117,7 @@ namespace Volt::RHI
 		virtual RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const = 0;
 		virtual RefPtr<Image> CreateImage(const SwapchainImageSpecification& specification) const = 0;
 
-		virtual RefPtr<ImageView> CreateImageView(const ImageViewSpecification& specification) const = 0;
+		virtual RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification) const = 0;
 		virtual RefPtr<SamplerState> CreateSamplerState(const SamplerStateCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const = 0; 

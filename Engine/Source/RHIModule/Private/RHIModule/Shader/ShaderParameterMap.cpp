@@ -23,23 +23,43 @@ namespace Volt::RHI
 		resourceBinding.shaderStage = shaderStage;
 	}
 	
-	void ShaderParameterMap::AddBufferUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	void ShaderParameterMap::AddStructuredBufferUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
 		resourceBinding.set = set;
 		resourceBinding.binding = binding;
 		resourceBinding.registerType = ShaderRegisterType::UAV;
-		resourceBinding.resourceType = ShaderResourceType::Buffer;
+		resourceBinding.resourceType = ShaderResourceType::StructuredBuffer;
 		resourceBinding.shaderStage = shaderStage;
 	}
 	
-	void ShaderParameterMap::AddBufferSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	void ShaderParameterMap::AddStructuredBufferSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
 		resourceBinding.set = set;
 		resourceBinding.binding = binding;
 		resourceBinding.registerType = ShaderRegisterType::SRV;
-		resourceBinding.resourceType = ShaderResourceType::Buffer;
+		resourceBinding.resourceType = ShaderResourceType::StructuredBuffer;
+		resourceBinding.shaderStage = shaderStage;
+	}
+
+	void ShaderParameterMap::AddTexelBufferUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	{
+		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
+		resourceBinding.set = set;
+		resourceBinding.binding = binding;
+		resourceBinding.registerType = ShaderRegisterType::UAV;
+		resourceBinding.resourceType = ShaderResourceType::TexelBuffer;
+		resourceBinding.shaderStage = shaderStage;
+	}
+
+	void ShaderParameterMap::AddTexelBufferSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	{
+		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
+		resourceBinding.set = set;
+		resourceBinding.binding = binding;
+		resourceBinding.registerType = ShaderRegisterType::SRV;
+		resourceBinding.resourceType = ShaderResourceType::TexelBuffer;
 		resourceBinding.shaderStage = shaderStage;
 	}
 	

@@ -35,12 +35,10 @@ static const float4 m_colors[3] = {
 [numthreads(1, 1, 1)]
 void MeshMain(out indices uint3 triangles[1], out vertices VertexOutput vertices[3], uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-    float4 offset = float4(0.f, 0.f, (float)dispatchThreadId.x, 0.f);
-
 	SetMeshOutputCounts(3, 1);
 	for (uint i = 0; i < 3; i++)
 	{
-		vertices[i].position = m_positions[i] + offset;	
+		vertices[i].position = m_positions[i];	
 		vertices[i].color = m_colors[i];
 	}
 
