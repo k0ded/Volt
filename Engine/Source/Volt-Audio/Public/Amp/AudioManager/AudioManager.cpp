@@ -1,5 +1,5 @@
-#include "amppch.h"
-#include "AudioManager/AudioManager.h"
+#include "vaudiopch.h"
+#include "Amp/AudioManager/AudioManager.h"
 
 #include "Amp/Config.h"
 

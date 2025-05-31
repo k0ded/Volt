@@ -22,8 +22,7 @@ written agreement between you and Audiokinetic Inc.
 // of the SDK documentation. 
 //
 //////////////////////////////////////////////////////////////////////
-#include "amppch.h"
-
+#include "vaudiopch.h"
 
 #include <AK/SoundEngine/Common/AkStreamMgrModule.h>
 #include <AK/Tools/Common/AkPlatformFuncs.h>
@@ -38,8 +37,8 @@ written agreement between you and Audiokinetic Inc.
 
 //#include "AkFileHelpers.h"
 
-#include "WWiseEngine/SoundEngine/Common/AkMultipleFileLocation.h"
-#include "WWiseEngine/SoundEngine/Common/AkGeneratedSoundBanksResolver.h"
+#include "Amp/WWiseEngine/SoundEngine/Common/AkMultipleFileLocation.h"
+#include "Amp/WWiseEngine/SoundEngine/Common/AkGeneratedSoundBanksResolver.h"
 
 #define MAX_NUMBER_STRING_SIZE      (10)    // 4G
 #define MAX_EXTENSION_SIZE          (4)     // .xxx

@@ -40,10 +40,10 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<VoltScene>(target);
 			conf.AddPublicDependency<VoltAssets>(target);
 			conf.AddPublicDependency<VoltCoreComponents>(target);
-
+            conf.AddPublicDependency<VoltAudio>(target);
+			
 			conf.AddPublicDependency<NavigationModule>(target);
             conf.AddPublicDependency<MosaicModule>(target);
-            conf.AddPublicDependency<Amp>(target);
 
             conf.AddPublicDependency<PhysX>(target);
             conf.AddPrivateDependency<meshoptimizer>(target);

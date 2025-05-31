@@ -42,9 +42,9 @@ written agreement between you and Audiokinetic Inc.
 //////////////////////////////////////////////////////////////////////
 
 //#include "../Common/stdafx.h"
-#include "amppch.h"
+#include "vaudiopch.h"
 
-#include "WWiseEngine/SoundEngine/Win32/AkDefaultIOHookBlocking.h"
+#include "Amp/WWiseEngine/SoundEngine/Win32/AkDefaultIOHookBlocking.h"
 #include <AK/SoundEngine/Platforms/Windows/AkFileHelpers.h>
 //#include "AkFileHelpers.h"
 

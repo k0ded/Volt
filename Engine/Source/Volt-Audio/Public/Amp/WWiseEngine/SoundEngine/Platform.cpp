@@ -15,9 +15,9 @@ written agreement between you and Audiokinetic Inc.
 // Platform.cpp
 /// \file 
 /// Contains definitions for functions declared in Platform.h
-#include "amppch.h"
-#include "WWiseEngine/SoundEngine/Common/stdafx.h"
-#include "WWiseEngine/SoundEngine/Platform.h"
+#include "vaudiopch.h"
+#include "Amp/WWiseEngine/SoundEngine/Common/stdafx.h"
+#include "Amp/WWiseEngine/SoundEngine/Platform.h"
 
 void ShortenPath(AkOSChar* io_Path)
 {

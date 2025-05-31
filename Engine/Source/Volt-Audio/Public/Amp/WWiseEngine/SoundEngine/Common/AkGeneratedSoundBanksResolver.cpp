@@ -12,9 +12,8 @@ written agreement between you and Audiokinetic Inc.
   Copyright (c) 2022 Audiokinetic Inc.
 *******************************************************************************/
 
-#include "amppch.h"
-
-#include "WWiseEngine/SoundEngine/Common/AkGeneratedSoundBanksResolver.h"
+#include "vaudiopch.h"
+#include "Amp/WWiseEngine/SoundEngine/Common/AkGeneratedSoundBanksResolver.h"
 
 #define ID_TO_STRING_FORMAT_BANK    AKTEXT("%u.bnk")
 #define ID_TO_STRING_FORMAT_WEM     AKTEXT("%u.wem")

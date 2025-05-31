@@ -1,8 +1,8 @@
-#include "amppch.h"
+#include "vaudiopch.h"
 #include <iostream>
 #include <thread>
 
-#include "WWiseEngine/WWiseEngine.h"
+#include "Amp/WWiseEngine/WWiseEngine.h"
 
 #include <AK/SoundEngine/Common/AkMemoryMgr.h>
 #include <AK/SoundEngine/Common/AkSoundEngine.h>

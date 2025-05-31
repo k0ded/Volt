@@ -14,4 +14,4 @@ written agreement between you and Audiokinetic Inc.
 
 // stdafx.cpp
 
-#include "amppch.h"
+#include "vaudiopch.h"

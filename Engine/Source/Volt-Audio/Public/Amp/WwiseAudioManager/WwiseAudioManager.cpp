@@ -1,4 +1,4 @@
-#include "amppch.h"
+#include "vaudiopch.h"
 #include <Amp/WwiseAudioManager/WwiseAudioManager.h>
 
 #include <Amp/WWiseEngine/WWiseEngine.h>

@@ -12,8 +12,8 @@ written agreement between you and Audiokinetic Inc.
   Copyright (c) 2022 Audiokinetic Inc.
 *******************************************************************************/
 
-#include "amppch.h"
-#include "WWiseEngine/SoundEngine/Common/AkJobWorkerMgr.h"
+#include "vaudiopch.h"
+#include "Amp/WWiseEngine/SoundEngine/Common/AkJobWorkerMgr.h"
 #include <AK/Tools/Common/AkFifoQueue.h>
 #include <AK/Tools/Common/AkInstrument.h>
 

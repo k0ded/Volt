@@ -32,8 +32,8 @@ written agreement between you and Audiokinetic Inc.
 //////////////////////////////////////////////////////////////////////
 
 
-#include "amppch.h"
-#include "WWiseEngine/SoundEngine/Common/AkFilePackageLUT.h"
+#include "vaudiopch.h"
+#include "Amp/WWiseEngine/SoundEngine/Common/AkFilePackageLUT.h"
 #include <AK/SoundEngine/Common/AkMemoryMgr.h>
 #include <AK/SoundEngine/Common/AkSoundEngine.h>	// For string hash.
 #include <AK/Tools/Common/AkPlatformFuncs.h>

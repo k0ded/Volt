@@ -4,12 +4,12 @@ using System.IO;
 namespace VoltSharpmake
 {
     [Sharpmake.Generate]
-    public class Amp : CommonVoltLibProject
+    public class VoltAudio : CommonVoltLibProject
     {
-        public Amp()
+        public VoltAudio()
         {
             AddTargets(CommonTarget.GetDefaultTargets());
-            Name = "Amp";
+            Name = "Volt-Audio";
         }
 
         public override void ConfigureAll(Configuration conf, CommonTarget target)
@@ -18,8 +18,8 @@ namespace VoltSharpmake
 
             conf.SolutionFolder = "Engine";
 
-            conf.PrecompHeader = "amppch.h";
-            conf.PrecompSource = "amppch.cpp";
+            conf.PrecompHeader = "vaudiopch.h";
+            conf.PrecompSource = "vaudiopch.cpp";
 
             conf.AddPublicDependency<LogModule>(target);
 

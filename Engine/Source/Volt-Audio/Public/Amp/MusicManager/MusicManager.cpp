@@ -1,5 +1,5 @@
-#include "amppch.h"
-#include "MusicManager/MusicManager.h"
+#include "vaudiopch.h"
+#include "Amp/MusicManager/MusicManager.h"
 
 bool Amp::MusicManager::CreateMusicInstance(std::string aPath)
 {
