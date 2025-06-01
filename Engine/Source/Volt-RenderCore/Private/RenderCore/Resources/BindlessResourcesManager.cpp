@@ -4,7 +4,7 @@
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/BufferView.h>
 #include <RHIModule/Images/ImageView.h>
-#include <RHIModule/Shader/Shader.h>
+#include <RHIModule/Shader/Shader2.h>
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/RHIModule.h>
 

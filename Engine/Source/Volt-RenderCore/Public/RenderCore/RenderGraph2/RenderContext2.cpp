@@ -20,6 +20,11 @@ namespace Volt
 
 	}
 
+	void RenderContext2::Flush(RefPtr<RHI::Fence> fence)
+	{
+		m_commandBuffer->Flush(fence);
+	}
+
 	void RenderContext2::BeginRendering(const RenderingInfo2& renderingInfo)
 	{
 		VT_PROFILE_FUNCTION();
@@ -218,6 +223,29 @@ namespace Volt
 		m_commandBuffer->BindVertexBuffers(rhiVertexBuffers, firstBinding);
 	}
 
+	void RenderContext2::CopyBufferRegion(RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size)
+	{
+		RefPtr<RHI::StorageBuffer> rhiSrcBuffer = m_renderGraph.GetRHIBuffer(src);
+		RefPtr<RHI::StorageBuffer> rhiDstBuffer = m_renderGraph.GetRHIBuffer(dst);
+
+		m_commandBuffer->CopyBufferRegion(rhiSrcBuffer->GetAllocation(), srcOffset, rhiDstBuffer->GetAllocation(), dstOffset, size);
+	}
+
+	void RenderContext2::CopyTexture(RGTextureRef src, RGTextureRef dst, const uint32_t width, const uint32_t height, const uint32_t depth)
+	{
+		RefPtr<RHI::Image> rhiSrcTexture = m_renderGraph.GetRHITexture(src);
+		RefPtr<RHI::Image> rhiDstTexture = m_renderGraph.GetRHITexture(dst);
+	
+		VT_ENSURE_MSG(width > 0 && height > 0 && depth > 0, "Width, height and depth must be greater than zero!");
+		m_commandBuffer->CopyImage(rhiSrcTexture, rhiDstTexture, width, height, depth);
+	}
+
+	void RenderContext2::UnmapBuffer(RGBufferUAVRef buffer)
+	{
+		RefPtr<RHI::StorageBuffer> rhiBuffer = m_renderGraph.GetRHIBuffer(reinterpret_cast<RGBufferRef>(buffer->GetResource()));
+		rhiBuffer->Unmap();
+	}
+
 	void RenderContext2::BindDescriptorTable()
 	{
 		VT_ENSURE(m_descriptorTable);
@@ -282,7 +310,7 @@ namespace Volt
 		}
 	}
 
-	void RenderContext2::SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata2& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext2::SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
 		VT_ENSURE(m_descriptorTable);
 
@@ -295,7 +323,7 @@ namespace Volt
 		}
 	}
 
-	void RenderContext2::SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata2& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext2::SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
 		VT_ENSURE(m_descriptorTable);
 
@@ -308,17 +336,17 @@ namespace Volt
 		}
 	}
 
-	void RenderContext2::SetTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata2& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext2::SetTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
 		VT_ENSURE(m_descriptorTable);
 	}
 
-	void RenderContext2::SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata2& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext2::SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
 		VT_ENSURE(m_descriptorTable);
 	}
 
-	void RenderContext2::SetShaderParameter(const void* data, const ShaderParameterMetadata2& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext2::SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
 		const RHI::ShaderUniform* shaderParameter = shaderParameterMap.GetParameterFromName(parameterMetadata.hashedName);
 		if (shaderParameter)
@@ -334,5 +362,11 @@ namespace Volt
 				}
 			}
 		}
+	}
+
+	void* RenderContext2::MapInternal(RGBufferUAVRef buffer)
+	{
+		RefPtr<RHI::StorageBuffer> rhiBuffer = m_renderGraph.GetRHIBuffer(reinterpret_cast<RGBufferRef>(buffer->GetResource()));
+		return rhiBuffer->Map<void>();
 	}
 }

@@ -2,7 +2,10 @@
 
 #include "Sandbox/SceneRendererExtensions/OutlineTechnique.h"
 
+#if 0
+#if 0
 #include <Volt-Renderer/RenderingTechniques/CullingTechnique.h>
+#endif
 #include <Volt-Renderer/SceneRendererStructs.h>
 #include <Volt-Renderer/RendererCommon.h>
 #include <Volt-Renderer/RenderScene.h>
@@ -16,6 +19,8 @@
 #include <RenderCore/Shader/ShaderMap.h>
 
 using namespace Volt;
+
+#if 0
 
 struct OutlineGeometryMSPS
 {
@@ -77,6 +82,8 @@ struct OutlineCompositeCS
 };
 REGISTER_SHADER(OutlineCompositeCS);
 
+#endif
+
 OutlineTechnique::OutlineTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 	: m_renderGraph(renderGraph), m_blackboard(blackboard)
 {
@@ -84,6 +91,7 @@ OutlineTechnique::OutlineTechnique(RenderGraph& renderGraph, RenderGraphBlackboa
 
 void OutlineTechnique::Execute(RenderGraphBufferHandle selectedPrimitivesMask, RenderGraphImageHandle dstImage, RenderScene& renderScene)
 {
+#if 0
 	const auto& viewData = m_blackboard.Get<ViewUniformBuffer>();
 
 	DrawCullingData cullingData;
@@ -116,10 +124,12 @@ void OutlineTechnique::Execute(RenderGraphBufferHandle selectedPrimitivesMask, R
 	}
 
 	AddOutlineCompositePass(dstImage, jumpFloodImage);
+#endif
 }
 
 RenderGraphImageHandle OutlineTechnique::AddDrawOutlineGeometryPass(const DrawCullingData& cullingData)
 {
+#if 0
 	struct Data
 	{
 		RenderGraphImageHandle color;
@@ -163,12 +173,14 @@ RenderGraphImageHandle OutlineTechnique::AddDrawOutlineGeometryPass(const DrawCu
 		context.DispatchMeshTasksIndirect(cullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
 		context.EndRendering();
 	});
-
 	return data.color;
+#endif
+	return {};
 }
 
 RenderGraphImageHandle OutlineTechnique::AddJumpFloodInitPass(RenderGraphImageHandle outlineGeometryImage)
 {
+#if 0
 	struct Data
 	{
 		RenderGraphImageHandle color;
@@ -204,11 +216,14 @@ RenderGraphImageHandle OutlineTechnique::AddJumpFloodInitPass(RenderGraphImageHa
 	});
 
 	return data.color;
+#endif
+	return{};
 }
 
 
 RenderGraphImageHandle OutlineTechnique::AddJumpFloodPass(RenderGraphImageHandle prevImage, int32_t step)
 {
+#if 0
 	struct Data
 	{
 		RenderGraphImageHandle color;
@@ -245,10 +260,13 @@ RenderGraphImageHandle OutlineTechnique::AddJumpFloodPass(RenderGraphImageHandle
 	});
 
 	return data.color;
+#endif
+	return {};
 }
 
 void OutlineTechnique::AddOutlineCompositePass(RenderGraphImageHandle dstImage, RenderGraphImageHandle jumpfloodOutput)
 {
+#if 0
 	const auto& viewData = m_blackboard.Get<ViewUniformBuffer>();
 
 	m_renderGraph.AddPass("OutlineCompositePass",
@@ -272,4 +290,6 @@ void OutlineTechnique::AddOutlineCompositePass(RenderGraphImageHandle dstImage, 
 		context.SetParameters<OutlineCompositeCS>(parameters);
 		context.Dispatch(Math::DivideRoundUp(viewData.renderSize.x, 8u), Math::DivideRoundUp(viewData.renderSize.y, 8u), 1u);
 	});
+#endif
 }
+#endif

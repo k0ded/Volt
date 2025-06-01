@@ -6,7 +6,6 @@
 
 namespace Volt
 {
-	class RenderGraph;
 	class RenderGraph2;
 
 	class VTRC_API RenderGraphExecutionThread
@@ -21,7 +20,6 @@ namespace Volt
 		static void Initialize(ExecutionMode executionMode);
 		static void Shutdown();
 
-		static void ExecuteRenderGraph(RenderGraph&& renderGraph);
 		static void ExecuteRenderGraph(RenderGraph2&& renderGraph);
 		static void WaitForFinishedExecution();
 

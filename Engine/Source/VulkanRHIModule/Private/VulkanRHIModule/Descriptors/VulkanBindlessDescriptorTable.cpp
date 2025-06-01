@@ -15,7 +15,6 @@
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
-#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Memory/MemoryUtility.h>
 #include <RHIModule/RayTracing/AccelerationStructure.h>
 #include <RHIModule/Globals.h>
@@ -155,6 +154,7 @@ namespace Volt::RHI
 
 	void VulkanBindlessDescriptorTable::Bind(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)
 	{
+#if 0
 		VT_PROFILE_FUNCTION();
 		VulkanCommandBuffer& vulkanCommandBuffer = commandBuffer.AsRef<VulkanCommandBuffer>();
 
@@ -203,6 +203,7 @@ namespace Volt::RHI
 				}
 			});
 		}
+#endif
 	}
 
 	void VulkanBindlessDescriptorTable::Release()

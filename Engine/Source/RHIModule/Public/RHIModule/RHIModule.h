@@ -104,7 +104,6 @@ namespace Volt::RHI
 		virtual RefPtr<StorageBuffer> CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const = 0;
 		virtual RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const = 0;
 
-		virtual RefPtr<DescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const = 0;
 		virtual RefPtr<DescriptorTable> CreateDescriptorTable2(const DescriptorTableCreateInfo& createInfo) const = 0;
 		virtual RefPtr<BindlessDescriptorTable> CreateBindlessDescriptorTable(const uint64_t framesInFlight) const = 0;
 
@@ -124,13 +123,10 @@ namespace Volt::RHI
 		virtual RefPtr<TransientGPUAllocator> CreateTransientAllocator() const = 0;
 		virtual RefPtr<TransientHeap> CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const = 0;
 
-		virtual RefPtr<RenderPipeline> CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const = 0;
 		virtual RefPtr<RenderPipeline> CreateRenderPipeline2(const RenderPipelineCreateInfo& createInfo) const = 0;
-		virtual RefPtr<ComputePipeline> CreateComputePipeline(RefPtr<Shader> shader, bool useGlobalResources) const = 0;
 		virtual RefPtr<ComputePipeline> CreateComputePipeline(RefPtr<Shader2> shader) const = 0;
 		virtual RefPtr<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const = 0;
 
-		virtual RefPtr<Shader> CreateShader(const ShaderSpecification& specification) const = 0;
 		virtual RefPtr<Shader2> CreateShader2(const ShaderCreateInfo& specification) const = 0;
 		virtual RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const = 0;
 

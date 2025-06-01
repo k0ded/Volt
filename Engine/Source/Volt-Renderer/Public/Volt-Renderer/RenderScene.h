@@ -22,7 +22,7 @@ namespace Volt
 
 	class EntityScene;
 	class RenderMaterial;
-	class RenderGraph;
+	class RenderGraph2;
 	class MotionWeaver;
 	class RayTracingScene;
 
@@ -47,8 +47,8 @@ namespace Volt
 		RenderScene(EntityScene* sceneRef);
 		~RenderScene();
 
-		void Update(RenderGraph& renderGraph);
-		void EndFrame(RenderGraph& renderGraph);
+		void Update(RenderGraph2& renderGraph);
+		void EndFrame(RenderGraph2& renderGraph);
 
 		void InvalidatePrimitiveInstance(UUID64 renderObject);
 		void InvalidateMesh(Ref<Mesh> mesh);
@@ -107,12 +107,12 @@ namespace Volt
 		void TryAddMesh(Ref<Mesh> mesh);
 		void TryAddMaterial(Ref<RenderMaterial> material);
 
-		void UpdateInvalidMaterials(RenderGraph& renderGraph);
-		void UpdateInvalidMeshes(RenderGraph& renderGraph);
-		void UpdateInvalidPrimitiveData(RenderGraph& renderGraph);
-		void CompactValidPrimitiveDrawDatas(RenderGraph& renderGraph);
+		void UpdateInvalidMaterials(RenderGraph2& renderGraph);
+		void UpdateInvalidMeshes(RenderGraph2& renderGraph);
+		void UpdateInvalidPrimitiveData(RenderGraph2& renderGraph);
+		void CompactValidPrimitiveDrawDatas(RenderGraph2& renderGraph);
 
-		void UpdateInvalidLights(RenderGraph& renderGraph);
+		void UpdateInvalidLights(RenderGraph2& renderGraph);
 
 		VT_NODISCARD RenderLightData& GetLightDataFromID(UUID64 id);
 		VT_NODISCARD PrimitiveDrawData& GetPrimitiveDrawDataFromIndex(size_t index);

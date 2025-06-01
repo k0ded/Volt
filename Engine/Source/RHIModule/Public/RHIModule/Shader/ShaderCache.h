@@ -11,7 +11,7 @@ namespace Volt::RHI
 
 	struct CachedShaderResult
 	{
-		ShaderCompiler::CompilationResultData data;
+		ShaderCompiler::CompilationResultData2 data;
 		uint64_t timeSinceLastCompile = 0;
 	};
 
@@ -21,11 +21,11 @@ namespace Volt::RHI
 		ShaderCache(const ShaderCacheCreateInfo& cacheInfo);
 		~ShaderCache();
 
-		CachedShaderResult TryGetCachedShader(const ShaderCompiler::Specification& shaderSpecification);
-		void CacheShader(const ShaderCompiler::Specification& shaderSpec, const ShaderCompiler::CompilationResultData& compilationResult);
+		CachedShaderResult TryGetCachedShader(const ShaderCompiler::Specification2& shaderSpecification);
+		void CacheShader(const ShaderCompiler::Specification2& shaderSpec, const ShaderCompiler::CompilationResultData2& compilationResult);
 
 	private:
-		std::filesystem::path GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const;
+		std::filesystem::path GetCachedFilePath(const ShaderCompiler::Specification2& shaderSpec) const;
 		ShaderCacheCreateInfo m_info;
 	};
 }

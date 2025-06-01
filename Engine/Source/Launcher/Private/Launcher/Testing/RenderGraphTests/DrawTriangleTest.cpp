@@ -15,8 +15,8 @@ struct DrawTriangleTestVS : public GlobalShader
 {
 	DECLARE_GLOBAL_SHADER(DrawTriangleTestVS)
 
-	BEGIN_SHADER_PARAMETER_STRUCT2(Parameters)
-	END_SHADER_PARAMETER_STRUCT2()
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+	END_SHADER_PARAMETER_STRUCT()
 };
 REGISTER_SHADER_2(DrawTriangleTestVS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DrawTriangleTest.hlsl", "MainVS", Vertex);
 
@@ -24,9 +24,9 @@ struct DrawTriangleTestPS : public GlobalShader
 {
 	DECLARE_GLOBAL_SHADER(DrawTriangleTestPS)
 
-	BEGIN_SHADER_PARAMETER_STRUCT2(Parameters)
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 		RG_RENDER_TARGETS()
-	END_SHADER_PARAMETER_STRUCT2()
+	END_SHADER_PARAMETER_STRUCT()
 };
 REGISTER_SHADER_2(DrawTriangleTestPS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DrawTriangleTest.hlsl", "MainPS", Pixel);
 

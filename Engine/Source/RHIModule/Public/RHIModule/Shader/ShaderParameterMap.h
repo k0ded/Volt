@@ -2,6 +2,9 @@
 
 #include "RHIModule/Shader/ShaderCommon.h"
 
+class BinaryStreamReader;
+class BinaryStreamWriter;
+
 namespace Volt::RHI
 {
 	class VTRHI_API ShaderParameterMap
@@ -30,6 +33,9 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE const ParameterMap& GetShaderParameters() const { return m_shaderParameters; }
 		VT_NODISCARD VT_INLINE ShaderStage GetShaderStage() const { return m_shaderStage; }
 		VT_NODISCARD VT_INLINE uint32_t GetShaderParametersSize() const { return m_shaderParameterSize; }
+
+		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderParameterMap& data);
+		static void Deserialize(BinaryStreamReader& streamReader, ShaderParameterMap& outData);
 
 	private:
 		ResourceBindingsMap m_resourceBindings;

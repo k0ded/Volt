@@ -8,11 +8,8 @@
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Graphics/VulkanSwapchain.h"
 
-#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
-#include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
 
 #include "VulkanRHIModule/Images/VulkanImage.h"
@@ -28,6 +25,9 @@
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Graphics/DeviceQueue.h>
 
+#include <RHIModule/Pipelines/ComputePipeline.h>
+#include <RHIModule/Pipelines/RenderPipeline.h>
+
 #include <RHIModule/Memory/Allocation.h>
 
 #include <RHIModule/Buffers/IndexBuffer.h>
@@ -35,7 +35,6 @@
 
 #include <RHIModule/Images/ImageView.h>
 
-#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Core/Profiling.h>
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/Synchronization/Fence.h>
@@ -708,12 +707,6 @@ namespace Volt::RHI
 		vkCmdBindIndexBuffer(m_commandBufferData.commandBuffer, indexBuffer->GetHandle<VkBuffer>(), offset, VK_INDEX_TYPE_UINT32);
 	}
 
-	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable)
-	{
-		VT_PROFILE_FUNCTION();
-		descriptorTable->AsRef<VulkanDescriptorTable>().Bind(*this);
-	}
-
 	void VulkanCommandBuffer::BindDescriptorTable2(RawPtr<DescriptorTable> descriptorTable)
 	{
 		VT_PROFILE_FUNCTION();
@@ -793,47 +786,6 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 		vkCmdEndRendering(m_commandBufferData.commandBuffer);
-	}
-
-	void VulkanCommandBuffer::PushConstants(const void* data, const uint32_t size, const uint32_t offset)
-	{
-		VT_PROFILE_FUNCTION();
-
-#ifndef VT_DIST
-		if (!m_currentRenderPipeline && !m_currentComputePipeline && !m_currentRayTracingPipeline)
-		{
-			VT_LOGC(Error, LogVulkanRHI, "Unable to push constants as no pipeline is currently bound!");
-		}
-#endif
-
-		VkPipelineLayout pipelineLayout = nullptr;
-		VkPipelineStageFlags stageFlags = 0;
-
-		if (m_currentRenderPipeline)
-		{
-			auto& vkPipeline = m_currentRenderPipeline->AsRef<VulkanRenderPipeline>();
-			pipelineLayout = vkPipeline.GetPipelineLayout();
-			stageFlags = static_cast<VkPipelineStageFlags>(vkPipeline.GetShader()->GetResources().constants.stageFlags);
-		}
-		else if (m_currentComputePipeline)
-		{
-			auto& vkPipeline = m_currentComputePipeline->AsRef<VulkanComputePipeline>();
-			pipelineLayout = vkPipeline.GetPipelineLayout();
-			stageFlags = static_cast<VkPipelineStageFlags>(vkPipeline.GetShader()->GetResources().constants.stageFlags);
-		}
-		else if (m_currentRayTracingPipeline)
-		{
-			VT_ENSURE(false);
-		}
-
-#ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		if (stageFlags == 0)
-		{
-			return;
-		}
-#endif
-
-		vkCmdPushConstants(m_commandBufferData.commandBuffer, pipelineLayout, stageFlags, offset, size, data);
 	}
 
 	void AddGlobalBarrier(const GlobalBarrier& barrierInfo, VkMemoryBarrier2& outBarrier)
@@ -1656,28 +1608,5 @@ namespace Volt::RHI
 		m_currentRayTracingPipeline.Reset();
 		m_currentComputePipeline.Reset();
 		m_currentRenderPipeline.Reset();
-	}
-
-	VkPipelineLayout_T* VulkanCommandBuffer::GetCurrentPipelineLayout()
-	{
-		VkPipelineLayout pipelineLayout = nullptr;
-
-		if (m_currentRenderPipeline)
-		{
-			auto& vkPipeline = m_currentRenderPipeline->AsRef<VulkanRenderPipeline>();
-			pipelineLayout = vkPipeline.GetPipelineLayout();
-		}
-		else if (m_currentComputePipeline)
-		{
-			auto& vkPipeline = m_currentComputePipeline->AsRef<VulkanComputePipeline>();
-			pipelineLayout = vkPipeline.GetPipelineLayout();
-		}
-		else if (m_currentRayTracingPipeline)
-		{
-			auto& vkPipeline = m_currentRayTracingPipeline->AsRef<VulkanRayTracingPipeline>();
-			pipelineLayout = vkPipeline.GetPipelineLayout();
-		}
-
-		return pipelineLayout;
 	}
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 #include <Volt-Renderer/SceneRendererExtension.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
@@ -25,3 +26,4 @@ public:
 private:
 	RefPtr<Volt::RHI::Image> m_objectIdImage;
 };
+#endif

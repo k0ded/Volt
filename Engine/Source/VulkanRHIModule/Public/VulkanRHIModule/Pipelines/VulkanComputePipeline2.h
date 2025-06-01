@@ -16,7 +16,6 @@ namespace Volt::RHI
 		~VulkanComputePipeline2() override;
 
 		void Invalidate() override;
-		RefPtr<Shader> GetShader() const override;
 		RefPtr<Shader2> GetShader2() const override;
 		bool IsValid() const override;
 		size_t GetHash() const override;

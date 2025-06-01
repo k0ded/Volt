@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 #include <Volt-Renderer/SceneRendererExtension.h>
 
 #include <EntitySystem/EntityID.h>
@@ -20,3 +21,4 @@ private:
 	Ref<Volt::GrowingGPUBuffer> m_selectedPrimitivesMaskBuffer;
 	bool m_isSelectionDirty = false;
 };
+#endif

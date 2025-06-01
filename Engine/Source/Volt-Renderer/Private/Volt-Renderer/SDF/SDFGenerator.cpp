@@ -6,35 +6,35 @@
 #include "Volt-Renderer/Mesh/SubMesh.h"
 #include "Volt-Renderer/GPUScene.h"
 
-#include <RenderCore/RenderGraph/RenderGraph.h>
-#include <RenderCore/RenderGraph/Resources/RenderGraphTextureResource.h>
-#include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
+#include <RenderCore/RenderGraph2/RenderGraph2.h>
+#include <RenderCore/RenderGraph2/RenderContext2.h>
+#include <RenderCore/RenderGraph2/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/GlobalShader.h>
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Containers/SparseBrickMap.h>
 #include <CoreUtilities/AABB.h>
 
+#include <span>
 #include <libacc/bvh_tree.h>
 
 namespace Volt
 {
-	struct MeshSDFAllocatorCS
+	struct MeshSDFAllocatorCS : public GlobalShader
 	{
-		BEGIN_SHADER_DEFINITION(MeshSDFAllocatorCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/SDF/MeshSDFAllocator.hlsl", "MainCS", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
+		DECLARE_GLOBAL_SHADER(MeshSDFAllocatorCS)
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<GPUSDFBrick>, RWBricks)
-			SHADER_PARAMETER_IMAGE(vt::RWTex3D<float>, RWBrickTexture)
-			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<float>, BrickData)
-			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<BrickInfo>, BrickInfoData)
+			SHADER_PARAMETER_BUFFER_UAV(RWStructuredBuffer<GPUSDFBrick>, RWBricks)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture3D<float>, RWBrickTexture)
+			SHADER_PARAMETER_BUFFER_SRV(Buffer<float>, BrickData)
+			SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<BrickInfo>, BrickInfoData)
 			SHADER_PARAMETER(uint, BrickTextureSize)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(MeshSDFAllocatorCS)
+	REGISTER_SHADER(MeshSDFAllocatorCS, "Engine/Shaders/Source/SDF/MeshSDFAllocator.hlsl", "MainCS", Compute);
 
 	SDFGenerator::SDFGenerator()
 	{
@@ -277,49 +277,32 @@ namespace Volt
 			result.sdfTexture = brickTexture;
 
 			RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-			RenderGraph renderGraph{ commandBuffer };
+			RenderGraph2 renderGraph{ commandBuffer };
 
-			RenderGraphBufferHandle dataBufferHandle = renderGraph.CreateBuffer(RGUtils::CreateBufferDesc<float>(brickData.size(), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "Brick Data"));
-			renderGraph.AddMappedBufferUpload(dataBufferHandle, brickData.data(), brickData.size() * sizeof(float), "Upload Brick Data");
+			RGBufferRef dataBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateMappableBufferDesc<float>(brickData.size(), RHI::BufferUsage::TexelBuffer, "Brick Data"));
+			RGBufferRef brickInfoBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateMappableBufferDesc<BrickInfo>(brickInfoData.size(), RHI::BufferUsage::StorageBuffer, "Brick Info"));
+			RGBufferRef sdfBricks = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDescGPU<GPUSDFBrick>(brickGrid.size(), "Brick Info"));
+			RGTextureRef texture = renderGraph.RegisterExternalTexture(brickTexture->GetResource());
 
-			RenderGraphBufferHandle brickInfoBufferHandle = renderGraph.CreateBuffer(RGUtils::CreateBufferDesc<BrickInfo>(brickInfoData.size(), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "Brick Info"));
-			renderGraph.AddMappedBufferUpload(brickInfoBufferHandle, brickInfoData.data(), brickInfoData.size() * sizeof(BrickInfo), "Upload Brick Info");
+			AddMappedBufferUpload(renderGraph, dataBuffer, brickData.data(), brickData.byte_size());
+			AddMappedBufferUpload(renderGraph, brickInfoBuffer, brickInfoData.data(), brickInfoData.byte_size());
 
-			RenderGraphBufferHandle sdfBricksBufferHandle = renderGraph.CreateBuffer(RGUtils::CreateBufferDesc<GPUSDFBrick>(brickGrid.size(), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GPU, "SDF Bricks"));
-			RenderGraphImageHandle textureHandle = renderGraph.AddExternalImage(brickTexture->GetResource());
+			MeshSDFAllocatorCS::Parameters* passParameters = renderGraph.AllocParameters<MeshSDFAllocatorCS::Parameters>();
+			passParameters->RWBricks = renderGraph.CreateUAV(sdfBricks);
+			passParameters->RWBrickTexture = renderGraph.CreateUAV(texture);
+			passParameters->BrickData = renderGraph.CreateSRV(dataBuffer);
+			passParameters->BrickInfoData = renderGraph.CreateSRV(brickInfoBuffer);
+			passParameters->BrickTextureSize = size;
 
-			RGUtils::ClearImage(renderGraph, textureHandle, { 1000.f }, "Clear SDF Image");
-
-			renderGraph.AddPass("Allocate Bricks",
-			[&](RenderGraph::Builder& builder)
-			{
-				builder.ReadResource(dataBufferHandle);
-				builder.ReadResource(brickInfoBufferHandle);
-				builder.WriteResource(textureHandle);
-				builder.WriteResource(sdfBricksBufferHandle);
-
-				builder.SetHasSideEffect();
-				builder.SetIsComputePass();
-			},
-			[=](RenderContext& context)
-			{
-				auto pipeline = ShaderMap::GetComputePipeline<MeshSDFAllocatorCS>();
-
-				context.BindPipeline(pipeline);
-
-				MeshSDFAllocatorCS::Parameters parameters;
-				parameters.RWBrickTexture = textureHandle;
-				parameters.RWBricks = sdfBricksBufferHandle;
-				parameters.BrickData = dataBufferHandle;
-				parameters.BrickInfoData = brickInfoBufferHandle;
-				parameters.BrickTextureSize = size;
-
-				context.SetParameters<MeshSDFAllocatorCS>(parameters);
-				context.Dispatch(static_cast<uint32_t>(brickGrid.size()), 1, 1);
-			});
+			auto shader = ShaderMap::Get2<MeshSDFAllocatorCS>();
+			ComputeShaderUtils::AddPass<MeshSDFAllocatorCS>(renderGraph,
+				"Allocate Bricks",
+				shader,
+				passParameters,
+				{ static_cast<uint32_t>(brickGrid.size()), 1, 1 });
 
 			RefPtr<RHI::StorageBuffer> targetSDFBrickBuffer;
-			renderGraph.EnqueueBufferExtraction(sdfBricksBufferHandle, targetSDFBrickBuffer);
+			renderGraph.EnqueueBufferExtraction(sdfBricks, &targetSDFBrickBuffer);
 
 			renderGraph.Compile();
 			renderGraph.ExecuteImmediateAndWait();

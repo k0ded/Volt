@@ -7,7 +7,6 @@
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/RHIModule.h>
-#include <RHIModule/Shader/Shader.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Math/Hash.h>
@@ -90,11 +89,6 @@ namespace Volt::RHI
 
 		GenerateHash();
 		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Compute Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
-	}
-	
-	RefPtr<Shader> VulkanComputePipeline2::GetShader() const
-	{
-		return nullptr;
 	}
 	
 	bool VulkanComputePipeline2::IsValid() const

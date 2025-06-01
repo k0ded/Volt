@@ -25,10 +25,24 @@ namespace Volt
 		}
 
 		template<typename T, typename CountType>
+		static RGBufferDesc CreateMappableBufferDesc(const CountType count, const RHI::BufferUsage usage, const std::string& name = "Buffer")
+		{
+			VT_ASSERT_MSG(count > 0, "Count must not be zero!");
+			return { .count = static_cast<uint32_t>(count), .elementSize = sizeof(T), .usage = usage, .memoryUsage = RHI::MemoryUsage::CPUToGPU, .name = name };
+		}
+
+		template<typename T, typename CountType>
 		static RGBufferDesc CreateBufferDescGPU(const CountType count, const std::string& name = "Buffer")
 		{
 			VT_ASSERT_MSG(count > 0, "Count must not be zero!");
 			return { .count = static_cast<uint32_t>(count), .elementSize = sizeof(T), .usage = RHI::BufferUsage::StorageBuffer, .memoryUsage = RHI::MemoryUsage::GPU, .name = name };
+		}
+
+		template<typename SizeType>
+		static RGBufferDesc CreateStagingDesc(const SizeType size, const std::string& name = "Buffer")
+		{
+			VT_ASSERT_MSG(size > 0, "Size must not be zero!");
+			return { .count = 1, .elementSize = static_cast<uint64_t>(size), .usage = RHI::BufferUsage::TransferSrc | RHI::BufferUsage::StorageBuffer, .memoryUsage = RHI::MemoryUsage::CPUToGPU, .name = name };
 		}
 	};
 

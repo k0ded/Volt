@@ -49,18 +49,11 @@ namespace VoltSharpmake
 		{
 			base.ConfigureDebug(conf, target);
 
-
 			string vulkanSDKPath = Path.Combine(Environment.GetEnvironmentVariable("VULKAN_SDK"), "Lib");
 			if (vulkanSDKPath != null)
 			{
 				conf.LibraryPaths.Add(vulkanSDKPath);
 			}
-
-			conf.LibraryFiles.Add("shaderc_sharedd.lib");
-			conf.LibraryFiles.Add("shaderc_utild.lib");
-			conf.LibraryFiles.Add("spirv-cross-cored.lib");
-			conf.LibraryFiles.Add("spirv-cross-glsld.lib");
-			conf.LibraryFiles.Add("SPIRV-Toolsd.lib");
 		}
 
 		public override void ConfigureDevelopment(Configuration conf, CommonTarget target)
@@ -72,12 +65,6 @@ namespace VoltSharpmake
 			{
 				conf.LibraryPaths.Add(vulkanSDKPath);
 			}
-
-			conf.LibraryFiles.Add("shaderc_shared.lib");
-			conf.LibraryFiles.Add("shaderc_util.lib");
-			conf.LibraryFiles.Add("spirv-cross-core.lib");
-			conf.LibraryFiles.Add("spirv-cross-glsl.lib");
-			conf.LibraryFiles.Add("SPIRV-Tools.lib");
 		}
 
 		public override void ConfigureDist(Configuration conf, CommonTarget target)
@@ -89,12 +76,6 @@ namespace VoltSharpmake
 			{
 				conf.LibraryPaths.Add(vulkanSDKPath);
 			}
-
-			conf.LibraryFiles.Add("shaderc_shared.lib");
-			conf.LibraryFiles.Add("shaderc_util.lib");
-			conf.LibraryFiles.Add("spirv-cross-core.lib");
-			conf.LibraryFiles.Add("spirv-cross-glsl.lib");
-			conf.LibraryFiles.Add("SPIRV-Tools.lib");
 		}
 
 		public override void ConfigureClangCl(Configuration conf, CommonTarget target)

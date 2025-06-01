@@ -5,31 +5,40 @@
 #include <Volt-Renderer/RendererCommon.h>
 #include <Volt-Renderer/Camera/Camera.h>
 
-#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph2/RenderGraph2.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
-#include <RenderCore/RenderGraph/ShaderParameterStruct.h>
+#include <RenderCore/RenderGraph2/ShaderParameterStruct2.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/DefaultBlendStates.h>
 
 using namespace Volt;
 
-struct EditorGridVSPS
+struct EditorGridVS : public GlobalShader
 {
-	BEGIN_SHADER_DEFINITION(EditorGridVSPS)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridVS", RHI::ShaderStage::Vertex)
-	DECLARE_SHADER_STAGE("Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridPS", RHI::ShaderStage::Pixel)
-	END_SHADER_DEFINITION()
+	DECLARE_GLOBAL_SHADER(EditorGridVS)
 
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-		SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
-		SHADER_PARAMETER(glm::mat4, NonReversedInverseProjection)
+		SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
+		SHADER_PARAMETER(float4x4, NonReversedInverseProjection)
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER(EditorGridVSPS);
+REGISTER_SHADER(EditorGridVS, "Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridVS", Vertex);
 
-RenderGraphImageHandle GridSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, Volt::RenderGraphImageHandle prevOutputImage)
+struct EditorGridPS : public GlobalShader
 {
+	DECLARE_GLOBAL_SHADER(EditorGridPS)
+
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+		SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
+		RG_RENDER_TARGETS()
+	END_SHADER_PARAMETER_STRUCT()
+};
+REGISTER_SHADER(EditorGridPS, "Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridPS", Pixel);
+
+RGTextureRef GridSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, Volt::RGTextureRef prevOutputImage)
+{
+#if 0
 	const auto& depthPrePass = blackboard.Get<DepthPrePass>();
 	const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
 	const auto& viewUniformBuffer = blackboard.Get<ViewUniformBuffer>();
@@ -63,6 +72,7 @@ RenderGraphImageHandle GridSceneRendererExtension::OnRender(Volt::RenderGraph& r
 		context.Draw(3, 1, 0, 0);
 		context.EndRendering();
 	});
+#endif
 
 	return prevOutputImage;
 }

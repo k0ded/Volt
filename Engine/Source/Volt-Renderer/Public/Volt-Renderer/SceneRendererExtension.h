@@ -1,6 +1,6 @@
 #pragma once
 
-#include <RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h>
+#include <RenderCore/RenderGraph2/Resources/ResourceDeclarations.h>
 
 namespace Volt
 {
@@ -23,7 +23,7 @@ namespace Volt
 		{ }
 
 		virtual ~SceneRendererExtension() = default;
-		virtual RenderGraphImageHandle OnRender(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, RenderGraphImageHandle prevOutputImage) = 0;
+		virtual RGTextureRef OnRender(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, RGTextureRef prevOutputImage) = 0;
 
 	protected:
 		Weak<RenderScene> m_renderScene;

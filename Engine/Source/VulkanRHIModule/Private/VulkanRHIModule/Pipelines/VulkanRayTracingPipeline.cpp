@@ -1,7 +1,7 @@
 #include <vkpch.h>
 
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
-#include "VulkanRHIModule/Shader/VulkanShader.h"
+#include "VulkanRHIModule/Shader/VulkanShader2.h"
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
@@ -31,6 +31,7 @@ namespace Volt::RHI
 	{
 		Release();
 
+#if 0
 		ScopedTimer scopedTimer{};
 
 		Vector<VkPipelineShaderStageCreateInfo> shaderStages;
@@ -39,19 +40,19 @@ namespace Volt::RHI
 
 		for (const auto& rayGenShader : m_createInfo.rayGenTable)
 		{
-			VT_ENSURE(rayGenShader->GetShaderType() == ShaderType::RayGen);
+			VT_ENSURE(rayGenShader->GetShaderStage() == ShaderStage::RayGen);
 			
-			VulkanShader& vulkanShader = rayGenShader->AsRef<VulkanShader>();
+			VulkanShader2& vulkanShader = rayGenShader->AsRef<VulkanShader2>();
 
 			VkPipelineShaderStageCreateInfo& shaderStage = shaderStages.emplace_back();
 			shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			shaderStage.pNext = nullptr;
-			shaderStage.module = vulkanShader.GetPipelineStageInfos().at(ShaderStage::RayGen).shaderModule;
+			//shaderStage.module = vulkanShader.GetPipelineStageInfos().at(ShaderStage::RayGen).shaderModule;
 			shaderStage.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
 
 			// Note: Should be okay to assume the first entry is the correct one,
 			// as only one ray tracing shader type should be defined in a shader.
-			shaderStage.pName = vulkanShader.GetSourceEntries().front().entryPoint.c_str();
+			//shaderStage.pName = vulkanShader.GetSourceEntries().front().entryPoint.c_str();
 
 			VkRayTracingShaderGroupCreateInfoKHR& shaderGroup = shaderGroups.emplace_back();
 			shaderGroup.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -67,19 +68,19 @@ namespace Volt::RHI
 
 		for (const auto& missShader : m_createInfo.missTable)
 		{
-			VT_ENSURE(missShader->GetShaderType() == ShaderType::RayMiss);
+			VT_ENSURE(missShader->GetShaderStage() == ShaderStage::Miss);
 
-			VulkanShader& vulkanShader = missShader->AsRef<VulkanShader>();
+			VulkanShader2& vulkanShader = missShader->AsRef<VulkanShader2>();
 
 			VkPipelineShaderStageCreateInfo& shaderStage = shaderStages.emplace_back();
 			shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			shaderStage.pNext = nullptr;
-			shaderStage.module = vulkanShader.GetPipelineStageInfos().at(ShaderStage::Miss).shaderModule;
+			//shaderStage.module = vulkanShader.GetPipelineStageInfos().at(ShaderStage::Miss).shaderModule;
 			shaderStage.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
 
 			// Note: Should be okay to assume the first entry is the correct one,
 			// as only one ray tracing shader type should be defined in a shader.
-			shaderStage.pName = vulkanShader.GetSourceEntries().front().entryPoint.c_str();
+			//shaderStage.pName = vulkanShader.GetSourceEntries().front().entryPoint.c_str();
 
 			VkRayTracingShaderGroupCreateInfoKHR& shaderGroup = shaderGroups.emplace_back();
 			shaderGroup.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -107,19 +108,19 @@ namespace Volt::RHI
 
 			// Closest Hit, always required
 			{
-				VT_ENSURE(closestHitShader->GetShaderType() == ShaderType::RayClosestHit);
+				VT_ENSURE(closestHitShader->GetShaderStage() == ShaderStage::ClosestHit);
 
-				VulkanShader& vulkanClosestHitShader = closestHitShader->AsRef<VulkanShader>();
+				VulkanShader2& vulkanClosestHitShader = closestHitShader->AsRef<VulkanShader2>();
 
 				VkPipelineShaderStageCreateInfo& shaderStage = shaderStages.emplace_back();
 				shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				shaderStage.pNext = nullptr;
-				shaderStage.module = vulkanClosestHitShader.GetPipelineStageInfos().at(ShaderStage::ClosestHit).shaderModule;
+				//shaderStage.module = vulkanClosestHitShader.GetPipelineStageInfos().at(ShaderStage::ClosestHit).shaderModule;
 				shaderStage.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 
 				// Note: Should be okay to assume the first entry is the correct one,
 				// as only one ray tracing shader type should be defined in a shader.
-				shaderStage.pName = vulkanClosestHitShader.GetSourceEntries().front().entryPoint.c_str();
+				//shaderStage.pName = vulkanClosestHitShader.GetSourceEntries().front().entryPoint.c_str();
 
 				hitShaderGroup.closestHitShader = static_cast<uint32_t>(shaderStages.size() - 1);
 
@@ -131,19 +132,19 @@ namespace Volt::RHI
 			{
 				const auto& anyHitShader = m_createInfo.anyHitTable.at(index);
 
-				VT_ENSURE(anyHitShader->GetShaderType() == ShaderType::RayAnyHit);
+				VT_ENSURE(anyHitShader->GetShaderStage() == ShaderStage::AnyHit);
 
-				VulkanShader& vulkanAnyHitShader = anyHitShader->AsRef<VulkanShader>();
+				VulkanShader2& vulkanAnyHitShader = anyHitShader->AsRef<VulkanShader2>();
 
 				VkPipelineShaderStageCreateInfo& shaderStage = shaderStages.emplace_back();
 				shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				shaderStage.pNext = nullptr;
-				shaderStage.module = vulkanAnyHitShader.GetPipelineStageInfos().at(ShaderStage::AnyHit).shaderModule;
+				//shaderStage.module = vulkanAnyHitShader.GetPipelineStageInfos().at(ShaderStage::AnyHit).shaderModule;
 				shaderStage.stage = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
 
 				// Note: Should be okay to assume the first entry is the correct one,
 				// as only one ray tracing shader type should be defined in a shader.
-				shaderStage.pName = vulkanAnyHitShader.GetSourceEntries().front().entryPoint.c_str();
+				//shaderStage.pName = vulkanAnyHitShader.GetSourceEntries().front().entryPoint.c_str();
 			
 				hitShaderGroup.anyHitShader = static_cast<uint32_t>(shaderStages.size() - 1);
 
@@ -155,9 +156,9 @@ namespace Volt::RHI
 			{
 				const auto& intersectionShader = m_createInfo.intersectionTable.at(index);
 
-				VT_ENSURE(intersectionShader->GetShaderType() == ShaderType::RayIntersection);
+				VT_ENSURE(intersectionShader->GetShaderStage() == ShaderStage::Intersection);
 
-				VulkanShader& vulkanAnyHitShader = intersectionShader->AsRef<VulkanShader>();
+				VulkanShader2& vulkanAnyHitShader = intersectionShader->AsRef<VulkanShader2>();
 
 				VkPipelineShaderStageCreateInfo& shaderStage = shaderStages.emplace_back();
 				shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -264,6 +265,7 @@ namespace Volt::RHI
 		}
 
 		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan RayTracing Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
+#endif
 	}
 
 	bool VulkanRayTracingPipeline::IsValid() const
@@ -271,7 +273,7 @@ namespace Volt::RHI
 		return m_pipeline != nullptr;
 	}
 
-	bool VulkanRayTracingPipeline::IsShaderInPipeline(RefPtr<Shader> shader) const
+	bool VulkanRayTracingPipeline::IsShaderInPipeline(RefPtr<Shader2> shader) const
 	{
 		for (const auto& s : m_createInfo.rayGenTable)
 		{
@@ -326,7 +328,9 @@ namespace Volt::RHI
 
 	const ShaderUniforms& VulkanRayTracingPipeline::GetRenderGraphConstants() const
 	{
-		return m_rayGenData.shaders.front()->GetResources().renderGraphConstantsData;
+		static ShaderUniforms s;
+
+		return s;//m_rayGenData.shaders.front()->GetResources().renderGraphConstantsData;
 	}
 
 	void* VulkanRayTracingPipeline::GetHandleImpl() const

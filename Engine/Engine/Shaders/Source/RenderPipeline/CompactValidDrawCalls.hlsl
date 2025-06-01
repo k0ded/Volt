@@ -1,11 +1,8 @@
-#include "Resources.hlsli"
 #include "GPUScene.hlsli"
 #include "Bitwise.hlsli"
 
-#include "Atomics.hlsli"
-
-vt::RWTypedBuffer<uint> RWValidPrimitiveDrawData;
-vt::TypedBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;
+RWBuffer<uint> RWValidPrimitiveDrawData;
+StructuredBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;
 
 uint PrimitiveDrawDataCount;
 
@@ -22,7 +19,7 @@ void MainCS(uint dispatchThreadId : SV_DispatchThreadID)
     if (IsBitSet(primitiveDrawData.flags, PrimitiveFlags::Valid))
     {
         uint index;
-        vt::InterlockedAdd(RWValidPrimitiveDrawData, 0, 1, index);
-        RWValidPrimitiveDrawData.Store(index + 1, dispatchThreadId);
+        InterlockedAdd(RWValidPrimitiveDrawData[0], 1, index);
+        RWValidPrimitiveDrawData[index + 1] = dispatchThreadId;
     }
 };

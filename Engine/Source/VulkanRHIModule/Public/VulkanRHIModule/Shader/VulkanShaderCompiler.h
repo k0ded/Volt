@@ -17,23 +17,12 @@ namespace Volt::RHI
 		~VulkanShaderCompiler() override;
 
 	protected:
-		CompilationResultData TryCompileImpl(const Specification& specification) override;
 		CompilationResultData2 TryCompileImpl2(const Specification2& specification) override;
 		void AddMacroImpl(const std::string& macroName) override;
 		void RemoveMacroImpl(std::string_view macroName) override;
 		void* GetHandleImpl() const override;
 
 	private:
-		bool PreprocessSource(const ShaderStage shaderStage, const std::filesystem::path& filepath, std::string& outSource);
-
-		CompilationResultData CompileAll(const Specification& specification);
-		CompilationResult CompileSingle(const ShaderStage shaderStage, const std::string& source, const ShaderSourceEntry& sourceEntry, const Specification& specification, CompilationResultData& outData);
-
-		void ReflectAllStages(const Specification& specification, CompilationResultData& inOutData);
-		void ReflectStage(ShaderStage stage, const Specification& specification, CompilationResultData& inOutData);
-
-		bool TryAddShaderBinding(const std::string& name, uint32_t set, uint32_t binding, CompilationResultData& outData);
-
 		CompilationResultData2 CompileShader(const Specification2& specification);
 		bool PreprocessSource2(const Specification2& specification, std::string& outProcessedSource);
 		void ReflectShader(const Specification2& specification, CompilationResultData2& inOutData);

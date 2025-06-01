@@ -8,7 +8,6 @@
 #include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
 
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorTable2.h"
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
 
@@ -26,13 +25,10 @@
 #include "VulkanRHIModule/Memory/VulkanTransientGPUAllocator.h"
 #include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
 
-#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline2.h"
-#include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanComputePipeline2.h"
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 
-#include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Shader/VulkanShader2.h"
 #include "VulkanRHIModule/Shader/VulkanShaderCompiler.h"
 
@@ -81,11 +77,6 @@ namespace Volt::RHI
 	RefPtr<UniformBuffer> VulkanRHIModule::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const
 	{
 		return RefPtr<VulkanUniformBuffer>::Create(size, data, count, name);
-	}
-
-	RefPtr<DescriptorTable> VulkanRHIModule::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const
-	{
-		return RefPtr<VulkanDescriptorTable>::Create(createInfo);
 	}
 
 	RefPtr<BindlessDescriptorTable> VulkanRHIModule::CreateBindlessDescriptorTable(const uint64_t framesInFlight) const
@@ -153,16 +144,6 @@ namespace Volt::RHI
 		return RefPtr<VulkanTransientHeap>::Create(createInfo);
 	}
 
-	RefPtr<RenderPipeline> VulkanRHIModule::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
-	{
-		return RefPtr<VulkanRenderPipeline>::Create(createInfo);
-	}
-
-	RefPtr<ComputePipeline> VulkanRHIModule::CreateComputePipeline(RefPtr<Shader> shader, bool useGlobalResources) const
-	{
-		return RefPtr<VulkanComputePipeline>::Create(shader, useGlobalResources);
-	}
-
 	RefPtr<Volt::RHI::ComputePipeline> VulkanRHIModule::CreateComputePipeline(RefPtr<Shader2> shader) const
 	{
 		return RefPtr<VulkanComputePipeline2>::Create(shader);
@@ -171,11 +152,6 @@ namespace Volt::RHI
 	RefPtr<RayTracingPipeline> VulkanRHIModule::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanRayTracingPipeline>::Create(createInfo);
-	}
-
-	RefPtr<Shader> VulkanRHIModule::CreateShader(const ShaderSpecification& specification) const
-	{
-		return RefPtr<VulkanShader>::Create(specification);
 	}
 
 	RefPtr<ShaderCompiler> VulkanRHIModule::CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const

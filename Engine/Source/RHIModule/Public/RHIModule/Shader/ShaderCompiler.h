@@ -13,7 +13,6 @@
 
 namespace Volt::RHI
 {
-	class Shader;
 	class ShaderCache;
 
 	enum class ShaderCompilerFlags : uint32_t
@@ -51,41 +50,6 @@ namespace Volt::RHI
 			Dist,
 		};
 
-		struct CompilationResultData
-		{
-			CompilationResult result = CompilationResult::Failure;
-			std::unordered_map<ShaderStage, Vector<uint32_t>> shaderData;
-
-			// Pixel Shader
-			Vector<RHI::PixelFormat> outputFormats;
-			
-			// Vertex Shader
-			RHI::BufferLayout vertexLayout;
-			RHI::BufferLayout instanceLayout;
-
-			// Common
-			ShaderUniforms renderGraphConstants{};
-			ShaderDataBuffer constantsBuffer{};
-			ShaderConstantData constants{};
-
-			std::unordered_map<std::string, ShaderResourceBinding> bindings;
-
-			std::map<uint32_t, std::map<uint32_t, ShaderConstantBuffer>> uniformBuffers;
-			std::map<uint32_t, std::map<uint32_t, ShaderStorageBuffer>> storageBuffers;
-			std::map<uint32_t, std::map<uint32_t, ShaderStorageImage>> storageImages;
-			std::map<uint32_t, std::map<uint32_t, ShaderImage>> images;
-			std::map<uint32_t, std::map<uint32_t, ShaderSampler>> samplers;
-
-			VT_NODISCARD VT_INLINE bool IsValid() const { return !shaderData.empty(); }
-		};
-
-		struct Specification
-		{
-			OptimizationLevel optimizationLevel = OptimizationLevel::Disable;
-			std::unordered_map<ShaderStage, ShaderSourceInfo> shaderSourceInfo;
-			bool forceCompile = false;
-		};
-
 		struct CompilationResultData2
 		{
 			CompilationResult result = CompilationResult::Failure;
@@ -99,18 +63,9 @@ namespace Volt::RHI
 			RHI::BufferLayout instanceLayout;
 
 			// Common
-			ShaderUniforms shaderUniforms{};
-
-			vt::map<StringHash, ShaderResourceBinding> bindings;
-			std::map<uint32_t, std::map<uint32_t, ShaderConstantBuffer>> uniformBuffers;
-			std::map<uint32_t, std::map<uint32_t, ShaderStorageBuffer>> storageBuffers;
-			std::map<uint32_t, std::map<uint32_t, ShaderStorageImage>> storageImages;
-			std::map<uint32_t, std::map<uint32_t, ShaderImage>> images;
-			std::map<uint32_t, std::map<uint32_t, ShaderSampler>> samplers;
+			ShaderParameterMap shaderParameterMap;
 
 			VT_NODISCARD VT_INLINE bool IsValid() const { return !shaderBinary.empty(); }
-
-			ShaderParameterMap shaderParameterMap;
 		};
 
 		struct Specification2
@@ -123,7 +78,6 @@ namespace Volt::RHI
 
 		virtual ~ShaderCompiler();
 
-		VT_NODISCARD static CompilationResultData TryCompile(const Specification& specification);
 		VT_NODISCARD static CompilationResultData2 TryCompile2(const Specification2& specification);
 		static void AddMacro(const std::string& macroName);
 		static void RemoveMacro(std::string_view macroName);
@@ -134,7 +88,6 @@ namespace Volt::RHI
 		ShaderCompiler();
 
 		// Should compile shader using shader source files, result is stored in shaders internal storage
-		virtual CompilationResultData TryCompileImpl(const Specification& specification) = 0;
 		virtual CompilationResultData2 TryCompileImpl2(const Specification2& specification) = 0;
 		virtual void AddMacroImpl(const std::string& macroName) = 0;
 		virtual void RemoveMacroImpl(std::string_view macroName) = 0;

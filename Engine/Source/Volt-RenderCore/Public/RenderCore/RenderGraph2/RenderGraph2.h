@@ -5,10 +5,12 @@
 #include "RenderCore/RenderGraph2/Resources/ResourceDeclarations.h"
 #include "RenderCore/RenderGraph2/RenderGraphAllocators2.h"
 #include "RenderCore/RenderGraph2/ShaderParameterStruct2.h"
-#include "RenderCore/RenderGraph/SharedRenderContext.h"
 #include "RenderCore/TransientResourceSystem/TransientResourceSystem2.h"
 
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Images/Image.h>
+#include <RHIModule/Synchronization/Fence.h>
+#include <RHIModule/Core/ResourceStateTracker.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
 #include <CoreUtilities/EnumUtils.h>
@@ -18,7 +20,11 @@ namespace Volt
 	namespace RHI
 	{
 		class CommandBuffer;
+		struct ResourceState;
 	}
+
+	class GPUReadbackBuffer;
+	class GPUReadbackTexture;
 
 	class VTRC_API RenderGraph2
 	{
@@ -50,10 +56,23 @@ namespace Volt
 		RGUniformBufferRef RegisterExternalUniformBuffer(RefPtr<RHI::UniformBuffer> uniformBuffer);
 		RGTextureRef RegisterExternalTexture(RefPtr<RHI::Image> texture);
 
+		Ref<GPUReadbackBuffer> EnqueueBufferReadback(RGBufferRef srcBuffer);
+		Ref<GPUReadbackTexture> EnqueueTextureReadback(RGTextureRef srcTexture);
+
+		void EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage);
+		void EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::StorageBuffer>* outBuffer);
+
+		void AddResourceBarrier(RGResourceRef resourceHandle, const RHI::ResourceState& barrierInfo);
+
 		template<typename T>
 		T* AllocParameters()
 		{
 			return m_passParametersAllocator.Allocate<T>();
+		}
+
+		void* AllocData(size_t size)
+		{
+			return m_temporaryDataAllocator.Allocate(size);
 		}
 
 		template<typename ParameterStruct, typename ExecFunc>
@@ -69,6 +88,19 @@ namespace Volt
 	private:
 		friend class RenderContext2;
 		friend class RenderGraphExecutionThread;
+
+		struct TextureExtractionInfo
+		{
+			RGTextureRef texture;
+			RefPtr<RHI::Image>* outImagePtr = nullptr;
+		};
+
+		struct BufferExtractionInfo
+		{
+			RGBufferRef buffer;
+			RefPtr<RHI::StorageBuffer>* outBufferPtr = nullptr;
+		};
+
 
 		class CompiledPass
 		{
@@ -121,19 +153,51 @@ namespace Volt
 				return prePassBarriers.GetBarrier(static_cast<size_t>(m_globalBarrierIndex)).globalBarrier();
 			}
 
+			inline RHI::GlobalBarrier& GetPostPassGlobalBarrier()
+			{
+				if (m_postPassGlobalBarrierIndex == -1)
+				{
+					m_postPassGlobalBarrierIndex = static_cast<int32_t>(postPassBarriers.GetBarrierCount());
+					auto& barrier = postPassBarriers.AddBarrier(RHI::BarrierType::Global);
+					return barrier.globalBarrier();
+				}
+
+				return postPassBarriers.GetBarrier(static_cast<size_t>(m_postPassGlobalBarrierIndex)).globalBarrier();
+			}
+
 			PassBarriers prePassBarriers;
 			PassBarriers postPassBarriers;
 
 		private:
 			int32_t m_globalBarrierIndex = -1;
+			int32_t m_postPassGlobalBarrierIndex = -1;
 
 			PagedVector<RGResourceRef> m_surrenderableResources;
 			std::string_view m_name;
 		};
 
+		class StandaloneBarriers
+		{
+		public:
+			struct ResourceUsageInfo
+			{
+				RGResourceRef resource;
+				RGResourceType type;
+				RHI::ResourceState newState;
+			};
+
+			VT_NODISCARD VT_INLINE ResourceUsageInfo& AddBarrier(uint32_t passIndex) { return m_passBarriers[passIndex].emplace_back(); }
+			VT_NODISCARD VT_INLINE std::span<const ResourceUsageInfo> GetPassBarriers(uint32_t passIndex) const { return m_passBarriers.at(passIndex); }
+			VT_NODISCARD VT_INLINE bool HasPassBarriers(uint32_t passIndex) const { return m_passBarriers.contains(passIndex) && !m_passBarriers.at(passIndex).empty(); }
+
+		private:
+			vt::map<uint32_t, PagedVector<ResourceUsageInfo>> m_passBarriers;
+		};
+
 		using ExternalResourceRegistry = vt::map<RawPtr<RHI::RHIResource>, RGResourceRef>;
 
 		void ExecuteInternal(bool waitForSync);
+		void ExtractResources();
 
 		void InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
 
@@ -149,15 +213,21 @@ namespace Volt
 
 		RefPtr<RHI::RHIResource> GetRHIResource(RGResourceRef resource);
 		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
+		RefPtr<RHI::Image> GetRHITexture(RGTextureRef texture);
 
 		TransientResourceSystem2 m_transientResourceSystem;
 		ExternalResourceRegistry m_registeredExternalResources;
+		StandaloneBarriers m_standaloneBarriers;
 
 		RenderGraphResourceAllocator2 m_resourceAllocator; // Allocator for actual resources (Buffers, Textures)
 		RenderGraphResourceAllocator2 m_resourceAccessorAllocator; // Allocator for resource accessors (SRVs, UAVs)
 		RenderGraphResourceAllocator2 m_passParametersAllocator; // Allocator for pass parameters
 		RenderGraphPassAllocator2 m_passAllocator; // Allocator for RenderGraph passes.
+		LinearAllocator<1 * 1024 * 1024> m_temporaryDataAllocator; // Allocator for temporary data that needs to live during the execution of the render graph.
 	
+		PagedVector<TextureExtractionInfo> m_textureExtractions;
+		PagedVector<BufferExtractionInfo> m_bufferExtractions;
+
 		PagedVector<Handle<RenderGraphPass>> m_passes;
 		PagedVector<RGResourceRef> m_resources;
 
@@ -176,7 +246,7 @@ namespace Volt
 		// Get all parameters accessed by shader.
 		// #TODO_Ivar: Add support for paged vector
 		// #TODO_Ivar: Consider caching these.
-		Vector<ShaderParameterMetadata2> parameterStructMetadata;
+		Vector<ShaderParameterMetadata> parameterStructMetadata;
 		ParameterStruct::zzInternal_ProcessMembers(parameterStructMetadata);
 
 		// We need to use const_cast here because the resource parameters need to be non-const pointers.
@@ -193,6 +263,7 @@ namespace Volt
 				case ShaderParameterType2::TextureSRV: newPass->AddResourceRead(*reinterpret_cast<RGTextureSRVRef*>(dataPtr)); break;
 				case ShaderParameterType2::TextureUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
 				case ShaderParameterType2::BufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGBufferRef*>(dataPtr), parameter.resourceAccessType); break;
+				case ShaderParameterType2::TextureAccess: newPass->AddResourceAccess(*reinterpret_cast<RGTextureRef*>(dataPtr), parameter.resourceAccessType); break;
 				case ShaderParameterType2::RenderTargets:
 				{
 					VT_ENSURE(!EnumValueContainsFlag(flags, RenderGraphPassFlags::Compute));

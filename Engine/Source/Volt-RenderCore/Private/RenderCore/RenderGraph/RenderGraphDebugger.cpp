@@ -1,13 +1,13 @@
 #include "rcpch.h"
 #include "RenderCore/RenderGraph/RenderGraphDebugger.h"
-#include "RenderCore/RenderGraph/RenderGraph.h"
 
 namespace Volt
 {
 	static ConsoleVariable<int32_t> s_enableRenderGraphDebugger("r.RenderGraph.EnableDebug", 0, "Whether or not RenderGraph debugging is enabled or not.");
 
-	void RenderGraphDebugger::ProcessRenderGraph(RenderGraph& renderGraph)
+	void RenderGraphDebugger::ProcessRenderGraph(RenderGraph2& renderGraph)
 	{
+#if 0
 		m_extractedImages.clear();
 		m_extractedBuffers.clear();
 
@@ -56,6 +56,7 @@ namespace Volt
 				renderGraph.EnqueueBufferExtraction(*reinterpret_cast<RenderGraphBufferHandle*>(&resourceNode->handle), m_extractedBuffers.emplace_back());
 			}
 		}
+#endif
 	}
 
 	void RenderGraphDebugger::WaitForFinishedExecution() const

@@ -1,7 +1,6 @@
 #include "vkpch.h"
 
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline2.h"
-#include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
@@ -348,11 +347,6 @@ namespace Volt::RHI
 
 		GenerateHash();
 		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Render Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
-	}
-
-	RefPtr<Shader> VulkanRenderPipeline2::GetShader() const
-	{
-		return RefPtr<Shader>();
 	}
 
 	bool VulkanRenderPipeline2::IsValid() const

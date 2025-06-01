@@ -14,7 +14,7 @@ static const float2 m_uvs[] =
     float2(2.f, 1.f)
 };
 
-FullscreenTriangleVertex main(const uint vertexIndex : SV_VertexID)
+FullscreenTriangleVertex MainVS(const uint vertexIndex : SV_VertexID)
 {
     FullscreenTriangleVertex output;
     output.position = m_positions[vertexIndex];

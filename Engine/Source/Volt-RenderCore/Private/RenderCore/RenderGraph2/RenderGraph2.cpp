@@ -4,6 +4,8 @@
 #include "RenderCore/RenderGraph2/RenderContext2.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
 #include "RenderCore/RenderGraph/RenderGraphExecutionThread.h"
+#include "RenderCore/RenderGraph/GPUReadbackBuffer.h"
+#include "RenderCore/RenderGraph/GPUReadbackTexture.h"
 
 #include <RHIModule/Utility/ResourceUtility.h>
 #include <RHIModule/Images/ImageUtility.h>
@@ -12,6 +14,8 @@
 #include <RHIModule/Buffers/UniformBuffer.h>
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/RHIFeatures.h>
+
+#include <JobSystem/JobSystem.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/EnumUtils.h>
@@ -89,6 +93,18 @@ namespace Volt
 			outState.access = RHI::BarrierAccess::VertexBuffer;
 			outState.stage = RHI::BarrierStage::VertexInput;
 		}
+		else if (accessType == RGResourceAccess::CopyDst)
+		{
+			outState.access = RHI::BarrierAccess::CopyDest;
+			outState.stage = RHI::BarrierStage::Copy;
+			outState.layout = RHI::ImageLayout::CopyDest;
+		}
+		else if (accessType == RGResourceAccess::CopySrc)
+		{
+			outState.access = RHI::BarrierAccess::CopySource;
+			outState.stage = RHI::BarrierStage::Copy;
+			outState.layout = RHI::ImageLayout::CopySource;
+		}
 	}
 
 	RenderGraph2::RenderGraph2(RefPtr<RHI::CommandBuffer> commandBuffer)
@@ -113,7 +129,10 @@ namespace Volt
 		m_resources(std::move(other.m_resources)),
 		m_compiledPasses(std::move(other.m_compiledPasses)),
 		m_commandBuffer(std::move(other.m_commandBuffer)),
-		m_executionFence(std::move(other.m_executionFence))
+		m_executionFence(std::move(other.m_executionFence)),
+		m_textureExtractions(std::move(other.m_textureExtractions)),
+		m_bufferExtractions(std::move(other.m_bufferExtractions)),
+		m_standaloneBarriers(std::move(other.m_standaloneBarriers))
 	{
 	}
 
@@ -135,6 +154,9 @@ namespace Volt
 		m_compiledPasses = std::move(other.m_compiledPasses);
 		m_commandBuffer = std::move(other.m_commandBuffer);
 		m_executionFence = std::move(other.m_executionFence);
+		m_textureExtractions = std::move(other.m_textureExtractions);
+		m_bufferExtractions = std::move(other.m_bufferExtractions);
+		m_standaloneBarriers = std::move(other.m_standaloneBarriers);
 
 		return *this;
 	}
@@ -289,6 +311,97 @@ namespace Volt
 		RegisterExternalResource(texture, textureResource);
 
 		return textureResource;
+	}
+
+	void RenderGraph2::EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage)
+	{
+		m_textureExtractions.emplace_back(texture, outImage);
+	}
+
+	void RenderGraph2::EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::StorageBuffer>* outBuffer)
+	{
+		m_bufferExtractions.emplace_back(buffer, outBuffer);
+	}
+
+	void RenderGraph2::AddResourceBarrier(RGResourceRef resource, const RHI::ResourceState& barrierInfo)
+	{
+		const uint32_t passIndex = m_passes.empty() ? 0u : static_cast<uint32_t>(m_passes.size() - 1);
+
+		auto& newBarrier = m_standaloneBarriers.AddBarrier(passIndex);
+		newBarrier.resource = resource;
+		newBarrier.type = resource->GetResourceType();
+		newBarrier.newState = barrierInfo;
+	}
+
+	BEGIN_SHADER_PARAMETER_STRUCT(ReadbackBufferParameters)
+		RG_BUFFER_ACCESS(SrcBuffer, RGResourceAccess::CopySrc)
+		RG_BUFFER_ACCESS(DstBuffer, RGResourceAccess::CopyDst)
+	END_SHADER_PARAMETER_STRUCT()
+
+	Ref<GPUReadbackBuffer> RenderGraph2::EnqueueBufferReadback(RGBufferRef srcBuffer)
+	{
+		const size_t dataSize = srcBuffer->GetDesc().elementSize * srcBuffer->GetDesc().count;
+
+		Ref<GPUReadbackBuffer> readbackBuffer = CreateRef<GPUReadbackBuffer>(dataSize);
+		RGBufferRef dstBuffer = RegisterExternalBuffer(readbackBuffer->GetBuffer());
+
+		RefPtr<RHI::Fence> fence = RHI::Fence::Create(RHI::FenceCreateInfo{ false });
+
+		ReadbackBufferParameters* parameters = AllocParameters<ReadbackBufferParameters>();
+		parameters->SrcBuffer = srcBuffer;
+		parameters->DstBuffer = dstBuffer;
+
+		AddPass("Readback Copy Pass",
+			RenderGraphPassFlags::None,
+			parameters,
+			[parameters, fence, dataSize, readbackBuffer](RenderContext2& context)
+		{
+			context.CopyBufferRegion(parameters->SrcBuffer, 0, parameters->DstBuffer, 0, dataSize);
+			context.Flush(fence);
+
+			JobSystem::CreateAndRunJob([fence, readbackBuffer]()
+			{
+				fence->WaitUntilSignaled();
+				readbackBuffer->m_isReady = true;
+			});
+		});
+
+		return readbackBuffer;
+	}
+
+	BEGIN_SHADER_PARAMETER_STRUCT(ReadbackTextureParameters)
+		RG_TEXTURE_ACCESS(SrcTexture, RGResourceAccess::CopySrc)
+		RG_TEXTURE_ACCESS(DstTexture, RGResourceAccess::CopyDst)
+	END_SHADER_PARAMETER_STRUCT()
+
+	Ref<GPUReadbackTexture> RenderGraph2::EnqueueTextureReadback(RGTextureRef srcTexture)
+	{
+		Ref<GPUReadbackTexture> readbackTexture = CreateRef<GPUReadbackTexture>(srcTexture->GetDesc());
+		RGTextureRef dstTexture = RegisterExternalTexture(readbackTexture->GetImage());
+
+		RefPtr<RHI::Fence> fence = RHI::Fence::Create(RHI::FenceCreateInfo{ false });
+
+		ReadbackTextureParameters* parameters = AllocParameters<ReadbackTextureParameters>();
+		parameters->SrcTexture = srcTexture;
+		parameters->DstTexture = dstTexture;
+
+		AddPass("Readback Copy Pass",
+			RenderGraphPassFlags::None,
+			parameters,
+			[parameters, fence, readbackTexture](RenderContext2& context)
+		{
+			const auto& desc = parameters->SrcTexture->GetDesc();
+			context.CopyTexture(parameters->SrcTexture, parameters->DstTexture, desc.width, desc.height, desc.depth);
+			context.Flush(fence);
+
+			JobSystem::CreateAndRunJob([fence, readbackTexture]()
+			{
+				fence->WaitUntilSignaled();
+				readbackTexture->m_isReady = true;
+			});
+		});
+
+		return readbackTexture;
 	}
 
 	void RenderGraph2::Compile()
@@ -686,6 +799,41 @@ namespace Volt
 					resourceState.previousUsage = pass;
 				}
 			}
+
+			// Handle standalone barriers
+			if (m_standaloneBarriers.HasPassBarriers(pass->passIndex))
+			{
+				for (const auto& barrier : m_standaloneBarriers.GetPassBarriers(pass->passIndex))
+				{
+					auto& resourceState = resourceStateTracker.GetState(barrier.resource);
+
+					const bool isSameLayoutType = IsEqualToAny(barrier.type, RGResourceType::Texture) ? barrier.newState.layout == resourceState.currentState.layout : true;
+					const bool isBufferType = IsEqualToAny(barrier.type, RGResourceType::Buffer, RGResourceType::UniformBuffer);
+
+					if (isBufferType || isSameLayoutType)
+					{
+						compiledPass.GetPostPassGlobalBarrier().srcAccess |= resourceState.currentState.access;
+						compiledPass.GetPostPassGlobalBarrier().srcStage |= resourceState.currentState.stage;
+						compiledPass.GetPostPassGlobalBarrier().dstAccess |= barrier.newState.access;
+						compiledPass.GetPostPassGlobalBarrier().dstStage |= barrier.newState.stage;
+					}
+					// It's not a buffer and the image needs to transition layout, handle case 9.
+					else
+					{
+						auto& newBarrier = compiledPass.postPassBarriers.AddBarrier(RHI::BarrierType::Image, barrier.resource);
+						newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
+						newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
+						newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
+						newBarrier.imageBarrier().dstAccess = barrier.newState.access;
+						newBarrier.imageBarrier().dstStage = barrier.newState.stage;
+						newBarrier.imageBarrier().dstLayout = barrier.newState.layout;
+					}
+
+					resourceState.currentState = barrier.newState;
+					resourceState.isWriteState = GetIsWriteFromAccessMask(barrier.newState.access);
+					resourceState.previousUsage = pass;
+				}
+			}
 		}
 	}
 
@@ -745,6 +893,31 @@ namespace Volt
 		if (waitForSync)
 		{
 			m_executionFence->WaitUntilSignaled();
+		}
+
+		ExtractResources();
+	}
+
+	void RenderGraph2::ExtractResources()
+	{
+		for (const auto& textureExtractionData : m_textureExtractions)
+		{
+			if (textureExtractionData.outImagePtr == nullptr)
+			{
+				continue;
+			}
+
+			*textureExtractionData.outImagePtr = m_transientResourceSystem.GetTextureIfExists(textureExtractionData.texture);
+		}
+
+		for (const auto& bufferExtractionData : m_bufferExtractions)
+		{
+			if (bufferExtractionData.outBufferPtr == nullptr)
+			{
+				continue;
+			}
+
+			*bufferExtractionData.outBufferPtr = m_transientResourceSystem.GetBufferIfExists(bufferExtractionData.buffer);
 		}
 	}
 
@@ -852,5 +1025,10 @@ namespace Volt
 	RefPtr<RHI::StorageBuffer> RenderGraph2::GetRHIBuffer(RGBufferRef buffer)
 	{
 		return m_transientResourceSystem.AcquireBuffer(buffer);
+	}
+
+	RefPtr<RHI::Image> RenderGraph2::GetRHITexture(RGTextureRef texture)
+	{
+		return m_transientResourceSystem.AcquireTexture(texture);
 	}
 }

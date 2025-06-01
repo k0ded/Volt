@@ -10,5 +10,5 @@ public:
 	{ }
 
 	~GridSceneRendererExtension() override = default;
-	Volt::RenderGraphImageHandle OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, Volt::RenderGraphImageHandle prevOutputImage) override;
+	Volt::RGTextureRef OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, Volt::RGTextureRef prevOutputImage) override;
 };

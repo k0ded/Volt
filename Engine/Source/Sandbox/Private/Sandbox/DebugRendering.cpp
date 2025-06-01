@@ -25,6 +25,8 @@
 #include <NavigationEditor/Tools/NavMeshDebugDrawer.h>
 #include <NavigationEditor/Builder/RecastBuilder.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 void Sandbox::RenderSelection(Ref<Volt::Camera> camera)
 {
 	VT_PROFILE_FUNCTION();

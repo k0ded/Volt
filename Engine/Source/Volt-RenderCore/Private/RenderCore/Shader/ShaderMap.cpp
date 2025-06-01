@@ -1,7 +1,6 @@
 #include "rcpch.h"
 #include "RenderCore/Shader/ShaderMap.h"
 
-#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
 
@@ -14,23 +13,6 @@ namespace Volt
 {
 	namespace Utility
 	{
-		inline static const size_t GetComputeShaderHash(const std::string& name)
-		{
-			return std::hash<std::string>()(name);
-		}
-
-		inline static const size_t GetRenderPipelineHash(const RHI::RenderPipelineCreateInfo& pipelineInfo)
-		{
-			size_t hash = std::hash<std::string_view>()(pipelineInfo.shader->GetName());
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.topology)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.cullMode)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.fillMode)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.depthMode)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.depthCompareOperator)));
-		
-			return hash;
-		}
-
 		inline const size_t GetRayTracingPipelineHash(const RHI::RayTracingPipelineCreateInfo& pipelineInfo)
 		{
 			size_t hash = 0;
@@ -81,9 +63,6 @@ namespace Volt
 
 	ShaderMap::~ShaderMap()
 	{
-		m_shaderMap.clear();
-		m_computePipelineCache.clear();
-		m_renderPipelineCache.clear();
 		m_rayTracingPipelineCache.clear();
 		m_shaderBindingTableCache.clear();
 
@@ -92,10 +71,7 @@ namespace Volt
 
 	void ShaderMap::ReloadAll()
 	{
-		for (const auto& [name, shader] : s_instance->m_shaderMap)
-		{
-			shader->Reload(true);
-		}
+
 	}
 
 	bool ShaderMap::ReloadShaderByName(const std::string& name)
@@ -159,41 +135,11 @@ namespace Volt
 		return false;
 	}
 
-	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader)
-	{
-		std::scoped_lock lock{ s_instance->m_registerMutex };
-		s_instance->m_shaderMap[typeIndex] = shader;
-	}
-
 	void ShaderMap::RegisterShader2(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader2> shader)
 	{
 		std::scoped_lock lock{ s_instance->m_registerMutex };
 		s_instance->m_shaderMap2[typeIndex] = shader;
 	}
-
-	RefPtr<RHI::RenderPipeline> ShaderMap::GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo)
-	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(pipelineInfo.shader);
-
-		std::scoped_lock lock{ s_instance->m_renderCacheMutex };
-		const size_t hash = Utility::GetRenderPipelineHash(pipelineInfo);
-		
-		if (s_instance->m_renderPipelineCache.contains(hash))
-		{
-			auto pipeline = s_instance->m_renderPipelineCache.at(hash);
-			VT_ENSURE(pipeline->IsValid());
-
-			return pipeline;
-		}
-
-		RefPtr<RHI::RenderPipeline> pipeline = RHI::RenderPipeline::Create(pipelineInfo);
-		s_instance->m_renderPipelineCache[hash] = pipeline;
-
-		VT_ENSURE(pipeline->IsValid());
-		return pipeline;
-	}
-
 	RefPtr<RHI::RayTracingPipeline> ShaderMap::GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo)
 	{
 		std::scoped_lock lock{ s_instance->m_rayTracingCacheMutex };
@@ -229,27 +175,5 @@ namespace Volt
 		s_instance->m_shaderBindingTableCache[hash] = sbt;
 
 		return sbt;
-	}
-
-	RefPtr<RHI::ComputePipeline> ShaderMap::GetComputePipeline(RefPtr<RHI::Shader> shader, bool useGlobalResouces)
-	{
-		VT_PROFILE_FUNCTION();
-
-		std::scoped_lock lock{ s_instance->m_computeCacheMutex };
-		const size_t hash = shader->GetHash();
-
-		if (s_instance->m_computePipelineCache.contains(hash))
-		{
-			auto pipeline = s_instance->m_computePipelineCache.at(hash);
-			VT_ENSURE(pipeline->IsValid());
-
-			return pipeline;
-		}
-
-		RefPtr<RHI::ComputePipeline> pipeline = RHI::ComputePipeline::Create(shader, useGlobalResouces);
-		s_instance->m_computePipelineCache[hash] = pipeline;
-
-		VT_ENSURE(pipeline->IsValid());
-		return pipeline;
 	}
 }

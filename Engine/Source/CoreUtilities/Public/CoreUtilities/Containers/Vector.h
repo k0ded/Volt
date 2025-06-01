@@ -68,6 +68,7 @@ public:
 
 	VT_NODISCARD constexpr bool empty() const noexcept;
 	VT_NODISCARD constexpr size_type size() const noexcept;
+	VT_NODISCARD constexpr size_type byte_size() const noexcept;
 	VT_NODISCARD constexpr size_type capacity() const noexcept;
 
 	constexpr void resize(size_type count, const value_type& value);
@@ -406,6 +407,12 @@ template<typename T, typename AllocatorType>
 inline constexpr Vector<T, AllocatorType>::size_type Vector<T, AllocatorType>::size() const noexcept
 {
 	return static_cast<size_type>(m_ptrEnd - m_ptrBegin);
+}
+
+template<typename T, typename AllocatorType>
+inline constexpr Vector<T, AllocatorType>::size_type Vector<T, AllocatorType>::byte_size() const noexcept
+{
+	return static_cast<size_type>((m_ptrEnd - m_ptrBegin) * sizeof(T)) ;
 }
 
 template<typename T, typename AllocatorType>

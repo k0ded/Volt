@@ -5,7 +5,7 @@ struct VertexMaterialData
     uint normal;
     float tangent;
     float tangentW;
-    float16_t2 texCoords;
+    uint texCoords;
 };
 
 struct VertexAnimationInfo

@@ -1,15 +1,14 @@
 #include "Defines.hlsli"
-#include "Resources.hlsli"
 
-vt::RWTypedBuffer<uint> DstBuffer;
-vt::TypedBuffer<uint> SrcBuffer;
-vt::TypedBuffer<uint> ScatterIndices;
+RWStructuredBuffer<uint> RWDstBuffer;
+StructuredBuffer<uint> SrcBuffer;
+Buffer<uint> ScatterIndices;
 
 uint TypeSizeInUINT;
 uint CopyCount;
 
 [numthreads(64, 1, 1)]
-void main(uint dispatchThreadId : SV_DispatchThreadID)
+void MainCS(uint dispatchThreadId : SV_DispatchThreadID)
 {
     // Every thread copies one UINT
     uint scatterIndex = dispatchThreadId / TypeSizeInUINT;
@@ -17,9 +16,9 @@ void main(uint dispatchThreadId : SV_DispatchThreadID)
 
     if (scatterIndex < CopyCount)
     {
-        const uint dstIndex = ScatterIndices.Load(scatterIndex) * TypeSizeInUINT + scatterOffset;
+        const uint dstIndex = ScatterIndices[scatterIndex] * TypeSizeInUINT + scatterOffset;
         const uint srcIndex = dispatchThreadId;
 
-        DstBuffer.Store(dstIndex, SrcBuffer.Load(srcIndex));    
+        RWDstBuffer[dstIndex] = SrcBuffer[SrcBuffer];
     }
 }

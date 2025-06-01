@@ -403,28 +403,29 @@ namespace Volt::RHI
 		X16 = 16
 	};
 
-	enum class BufferUsage : uint32_t
+	enum class BufferUsage : uint16_t
 	{
 		None = 0,
 		TransferSrc = BIT(0),
 		TransferDst = BIT(1),
 		UniformBuffer = BIT(2),
 		StorageBuffer = BIT(3),
-		IndexBuffer = BIT(4),
-		VertexBuffer = BIT(5),
-		IndirectBuffer = BIT(6),
-		AccelerationStructure = BIT(7),
-		AccelerationStructureInput = BIT(8),
-		DeviceAddress = BIT(9),
-		ShaderBindingTable = BIT(10),
+		TexelBuffer = BIT(4),
+		IndexBuffer = BIT(5),
+		VertexBuffer = BIT(6),
+		IndirectBuffer = BIT(7),
+		AccelerationStructure = BIT(8),
+		AccelerationStructureInput = BIT(9),
+		DeviceAddress = BIT(10),
+		ShaderBindingTable = BIT(11),
 
 		// Vulkan only
-		DescriptorBuffer = BIT(11)
+		DescriptorBuffer = BIT(12)
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(BufferUsage);
 
-	enum class MemoryUsage : uint32_t
+	enum class MemoryUsage : uint8_t
 	{
 		None = 0,
 		GPU = BIT(0),

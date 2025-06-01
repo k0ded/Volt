@@ -15,12 +15,12 @@ struct DispatchComputeShaderTestCS : public GlobalShader
 {
 	DECLARE_GLOBAL_SHADER(DispatchComputeShaderTestCS)
 
-	BEGIN_SHADER_PARAMETER_STRUCT2(Parameters)
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 		SHADER_PARAMETER_BUFFER_UAV(RWStructuredBuffer<uint>, OutputBuffer)
-		SHADER_PARAMETER2(uint32_t, InitialValue)
-	END_SHADER_PARAMETER_STRUCT2()
+		SHADER_PARAMETER(uint32_t, InitialValue)
+	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER_2(DispatchComputeShaderTestCS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DispatchComputeShaderTest.hlsl", "MainCS", Compute);
+REGISTER_SHADER(DispatchComputeShaderTestCS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DispatchComputeShaderTest.hlsl", "MainCS", Compute);
 
 static RefPtr<RHI::Shader2> s_shader;
 static RefPtr<RHI::ComputePipeline> s_pipeline;

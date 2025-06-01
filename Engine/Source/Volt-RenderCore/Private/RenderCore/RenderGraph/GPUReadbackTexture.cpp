@@ -1,13 +1,13 @@
 #include "rcpch.h"
-#include "RenderCore/RenderGraph/GPUReadbackImage.h"
+#include "RenderCore/RenderGraph/GPUReadbackTexture.h"
 
-#include "RenderCore/RenderGraph/Resources/RenderGraphTextureResource.h"
+#include "RenderCore/RenderGraph2/Resources/RenderGraphTexture.h"
 
 #include <RHIModule/Images/Image.h>
 
 namespace Volt
 {
-	GPUReadbackImage::GPUReadbackImage(const RenderGraphImageDesc& desc)
+	GPUReadbackTexture::GPUReadbackTexture(const RGTextureDesc& desc)
 	{
 		RHI::ImageSpecification spec{};
 		spec.width = desc.width;
@@ -18,7 +18,7 @@ namespace Volt
 
 		spec.format = desc.format;
 		spec.usage = desc.usage;
-		spec.debugName = desc.name;
+		spec.debugName = desc.debugName;
 		spec.isCubeMap = desc.isCubeMap;
 		spec.initializeImage = false;
 		spec.memoryUsage = RHI::MemoryUsage::GPUToCPU;

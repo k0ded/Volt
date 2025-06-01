@@ -12,7 +12,7 @@ namespace Volt::RHI
 	public:
 		struct RayTracingShaderData
 		{
-			Vector<RefPtr<Shader>> shaders;
+			Vector<RefPtr<Shader2>> shaders;
 			Vector<uint8_t> shaderHandles;
 
 			inline void Clear()
@@ -27,7 +27,7 @@ namespace Volt::RHI
 
 		void Invalidate() override;
 		bool IsValid() const override;
-		bool IsShaderInPipeline(RefPtr<Shader> shader) const override;
+		bool IsShaderInPipeline(RefPtr<Shader2> shader) const override;
 		const ShaderUniforms& GetRenderGraphConstants() const override;
 
 		VT_NODISCARD VT_INLINE const RayTracingShaderData& GetRayGenData() const { return m_rayGenData; }

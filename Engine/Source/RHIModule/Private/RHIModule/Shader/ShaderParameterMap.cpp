@@ -112,4 +112,20 @@ namespace Volt::RHI
 
 		return nullptr;
 	}
+
+	void ShaderParameterMap::Serialize(BinaryStreamWriter& streamWriter, const ShaderParameterMap& data)
+	{
+		streamWriter.Write(data.m_shaderParameterSize);
+		streamWriter.Write(data.m_shaderStage);
+		streamWriter.Write(data.m_resourceBindings);
+		streamWriter.Write(data.m_shaderParameters);
+	}
+	
+	void ShaderParameterMap::Deserialize(BinaryStreamReader& streamReader, ShaderParameterMap& outData)
+	{
+		streamReader.Read(outData.m_shaderParameterSize);
+		streamReader.Read(outData.m_shaderStage);
+		streamReader.Read(outData.m_resourceBindings);
+		streamReader.Read(outData.m_shaderParameters);
+	}
 }

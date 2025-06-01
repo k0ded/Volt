@@ -22,7 +22,7 @@ namespace Volt::RHI
 		m_sourceInfo.sourceEntry.shaderStage = createInfo.stage;
 		m_permutationConfig = createInfo.permutationConfig;
 
-		LoadAndCompileShader();
+		LoadAndCompileShader(createInfo.forceCompile);
 	}
 
 	VulkanShader2::~VulkanShader2()
@@ -55,7 +55,7 @@ namespace Volt::RHI
 		return m_shaderModule;
 	}
 
-	void VulkanShader2::LoadAndCompileShader()
+	void VulkanShader2::LoadAndCompileShader(bool forceCompile)
 	{
 		m_sourceInfo.source = Utility::ReadStringFromFile(m_sourceInfo.sourceEntry.filepath);
 	
@@ -66,7 +66,7 @@ namespace Volt::RHI
 		}
 
 		ShaderCompiler::Specification2 compileSpec;
-		compileSpec.forceCompile = false;
+		compileSpec.forceCompile = forceCompile;
 		compileSpec.shaderSourceInfo = m_sourceInfo;
 		compileSpec.permutationConfig = m_permutationConfig;
 
@@ -80,12 +80,6 @@ namespace Volt::RHI
 		m_shaderInfo.outputFormats = compilationResult.outputFormats;
 		m_shaderInfo.vertexLayout = compilationResult.vertexLayout;
 		m_shaderInfo.instanceLayout = compilationResult.instanceLayout;
-		m_shaderInfo.shaderUniforms = compilationResult.shaderUniforms;
-		m_shaderInfo.bindings = compilationResult.bindings;
-		m_bindings.uniformBuffers = compilationResult.uniformBuffers;
-		m_bindings.storageBuffers = compilationResult.storageBuffers;
-		m_bindings.images = compilationResult.images;
-		m_bindings.samplers = compilationResult.samplers;
 
 		m_shaderParameterMap = compilationResult.shaderParameterMap;
 
@@ -121,5 +115,10 @@ namespace Volt::RHI
 	void VulkanShader2::GenerateHash()
 	{
 		m_hash = std::hash<const void*>()(m_shaderModule);
+	}
+
+	void VulkanShader2::Reload(bool forceCompile /* = false */)
+	{
+		LoadAndCompileShader(forceCompile);
 	}
 }

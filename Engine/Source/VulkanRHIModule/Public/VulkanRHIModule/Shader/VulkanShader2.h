@@ -22,13 +22,12 @@ namespace Volt::RHI
 
 			// Common
 			ShaderUniforms shaderUniforms{};
-
-			vt::map<StringHash, ShaderResourceBinding> bindings;
 		};
 
 		VulkanShader2(const ShaderCreateInfo& createInfo);
 		~VulkanShader2() override;
 
+		void Reload(bool forceCompile /* = false */) override;
 		std::string_view GetName() const override;
 		size_t GetHash() const override;
 		bool IsValid() const override;
@@ -44,14 +43,13 @@ namespace Volt::RHI
 
 	private:
 		void Release();
-		void LoadAndCompileShader();
+		void LoadAndCompileShader(bool forceCompile);
 		void CreateShader(const Vector<uint32_t>& shaderBinary);
 		void GenerateHash();
 
 		ShaderParameterMap m_shaderParameterMap;
 		ShaderPermutationConfig m_permutationConfig;
 		ShaderSourceInfo m_sourceInfo;
-		ShaderBindings m_bindings;
 		ShaderInfo m_shaderInfo;
 
 		VkShaderModule_T* m_shaderModule = nullptr;

@@ -24,7 +24,6 @@ namespace Volt
 
 	class Texture2D;
 	class RenderMaterial;
-	class ShaderRuntimeValidator;
 	class Mesh;
 
 	struct DefaultResources
@@ -78,10 +77,6 @@ namespace Volt
 		static const DefaultResources& GetDefaultResources();
 		static EnvironmentTextures GenerateEnvironmentTextures(AssetHandle baseTextureHandle);
 
-#ifndef VT_DIST
-		static ShaderRuntimeValidator& GetRuntimeShaderValidator();
-#endif
-
 		template<RHI::TextureFilter min, RHI::TextureFilter mag, RHI::TextureFilter mip, RHI::TextureWrap wrapMode = RHI::TextureWrap::Repeat, RHI::AnisotropyLevel aniso = RHI::AnisotropyLevel::None, RHI::CompareOperator compareOperator = RHI::CompareOperator::None>
 		static BindlessResourceRef<RHI::SamplerState> GetSampler()
 		{
@@ -114,10 +109,6 @@ namespace Volt
 		Scope<BlueNoise> m_blueNoise;
 		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
 		Scope<DescriptorTableCache> m_descriptorTableCache;
-
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		Scope<ShaderRuntimeValidator> m_shaderValidator;
-#endif
 
 		vt::map<size_t, BindlessResourceRef<RHI::SamplerState>> m_samplers;
 

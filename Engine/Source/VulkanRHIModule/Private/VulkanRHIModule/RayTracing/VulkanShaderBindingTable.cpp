@@ -19,7 +19,7 @@ namespace Volt::RHI
 		Release();
 	}
 
-	bool VulkanShaderBindingTable::IsShaderInTable(RefPtr<Shader> shader) const
+	bool VulkanShaderBindingTable::IsShaderInTable(RefPtr<Shader2> shader) const
 	{
 		return m_pipeline->IsShaderInPipeline(shader);
 	}

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <RenderCore/Resources/BindlessResource.h>
-#include <RenderCore/RenderGraph/RenderGraph.h>
-#include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
+#include <RenderCore/RenderGraph2/RenderGraphUtils.h>
+#include <RenderCore/RenderGraph2/RenderGraph2.h>
+#include <RenderCore/RenderGraph2/RenderContext2.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <CoreUtilities/Math/Math.h>
@@ -12,16 +12,14 @@
 
 namespace Volt
 {
-	struct ScatterUploadCS
+	struct ScatterUploadCS : public GlobalShader
 	{
-		BEGIN_SHADER_DEFINITION(ScatterUploadCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/ScatterUpload_cs.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
+		DECLARE_GLOBAL_SHADER(ScatterUploadCS)
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, DstBuffer)
-			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, SrcBuffer)
-			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, ScatterIndices)
+			SHADER_PARAMETER_BUFFER_UAV(RWStructuredBuffer<uint>, RWDstBuffer)
+			SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<uint>, SrcBuffer)
+			SHADER_PARAMETER_BUFFER_SRV(Buffer<uint>, ScatterIndices)
 			SHADER_PARAMETER(uint32_t, TypeSizeInUINT)
 			SHADER_PARAMETER(uint32_t, CopyCount)
 		END_SHADER_PARAMETER_STRUCT()
@@ -31,8 +29,6 @@ namespace Volt
 	{
 		class StorageBuffer;
 	}
-
-	class RenderGraph;
 
 	template<typename T>
 	concept IsTrivial = std::is_trivially_copyable<T>::value && sizeof(T) % 4 == 0;
@@ -44,11 +40,10 @@ namespace Volt
 		ScatteredBufferUpload(const size_t uploadCount);
 
 		T& AddUploadItem(size_t bufferIndex);
-		void UploadTo(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer);
-		void UploadTo(RenderGraph& renderGraph, const BindlessResource<RHI::StorageBuffer>& dstBuffer);
+		void UploadTo(RenderGraph2& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer);
 
 	private:
-		void UploadToInternal(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer);
+		void UploadToInternal(RenderGraph2& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer);
 
 		Vector<T> m_data;
 		Vector<uint32_t> m_dataIndices;
@@ -72,79 +67,42 @@ namespace Volt
 	}
 
 	template<IsTrivial T>
-	inline void ScatteredBufferUpload<T>::UploadTo(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer)
+	inline void ScatteredBufferUpload<T>::UploadTo(RenderGraph2& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer)
 	{
 		UploadToInternal(renderGraph, dstBuffer);
 	}
 
 	template<IsTrivial T>
-	inline void ScatteredBufferUpload<T>::UploadTo(RenderGraph& renderGraph, const BindlessResource<RHI::StorageBuffer>& dstBuffer)
-	{
-		UploadToInternal(renderGraph, dstBuffer.GetResource());
-	}
-
-	template<IsTrivial T>
-	inline void ScatteredBufferUpload<T>::UploadToInternal(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer)
+	inline void ScatteredBufferUpload<T>::UploadToInternal(RenderGraph2& renderGraph, RefPtr<RHI::StorageBuffer> rhiDstBuffer)
 	{
 		if (m_currentIndex == 0)
 		{
 			return;
 		}
 
-		struct ResourceHandles
-		{
-			RenderGraphBufferHandle srcBuffer;
-			RenderGraphBufferHandle dstBuffer;
-			RenderGraphBufferHandle indicesBuffer;
+		constexpr uint32_t sizeInUINT = static_cast<uint32_t>(sizeof(T) / sizeof(uint32_t));
 
-			uint32_t dataCount = 0;
-		} data;
+		RGBufferRef srcBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<T>(m_data.size(), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "Src Data"));
+		RGBufferRef indicesBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(m_data.size(), RHI::BufferUsage::TexelBuffer, RHI::MemoryUsage::CPUToGPU, "Scatter Indices"));
+		RGBufferRef dstBuffer = renderGraph.RegisterExternalBuffer(rhiDstBuffer);
 
-		{
-			const auto desc = RGUtils::CreateBufferDesc<T>(m_data.size(), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "Src Data");
-			data.srcBuffer = renderGraph.CreateBuffer(desc);
-		}
+		AddMappedBufferUpload(renderGraph, srcBuffer, m_data.data(), sizeof(T) * m_data.size());
+		AddMappedBufferUpload(renderGraph, indicesBuffer, m_dataIndices.data(), sizeof(uint32_t) * m_dataIndices.size());
 
-		{
-			const auto desc = RGUtils::CreateBufferDesc<uint32_t>(m_data.size(), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "Scatter Indices");
-			data.indicesBuffer = renderGraph.CreateBuffer(desc);
-		}
+		ScatterUploadCS::Parameters* passParameters = renderGraph.AllocParameters<ScatterUploadCS::Parameters>();
+		passParameters->RWDstBuffer = renderGraph.CreateUAV(dstBuffer);
+		passParameters->SrcBuffer = renderGraph.CreateSRV(srcBuffer);
+		passParameters->ScatterIndices = renderGraph.CreateSRV(indicesBuffer);
+		passParameters->TypeSizeInUINT = static_cast<uint32_t>(sizeInUINT);
+		passParameters->CopyCount = static_cast<uint32_t>(m_data.size());
 
-		{
-			data.dstBuffer = renderGraph.AddExternalBuffer(dstBuffer);
-			data.dataCount = static_cast<uint32_t>(m_data.size());
-		}
+		const uint32_t groupSize = Math::DivideRoundUp(static_cast<uint32_t>(sizeInUINT * passParameters->CopyCount), 64u);
 
-		renderGraph.AddMappedBufferUpload(data.srcBuffer, m_data.data(), sizeof(T) * m_data.size(), "Upload Src Data");
-		renderGraph.AddMappedBufferUpload(data.indicesBuffer, m_dataIndices.data(), sizeof(uint32_t) * m_dataIndices.size(), "Upload Src Indices");
-
-		renderGraph.AddPass("Scatter Buffer Upload",
-		[&](RenderGraph::Builder& builder)
-		{
-			builder.WriteResource(data.dstBuffer);
-			builder.ReadResource(data.srcBuffer);
-			builder.ReadResource(data.indicesBuffer);
-
-			builder.SetIsComputePass();
-		},
-		[=](RenderContext& context)
-		{
-			constexpr uint32_t sizeInUINT = static_cast<uint32_t>(sizeof(T) / sizeof(uint32_t));
-
-			const uint32_t groupSize = Math::DivideRoundUp(static_cast<uint32_t>(sizeInUINT * data.dataCount), 64u);
-
-			auto pipeline = ShaderMap::GetComputePipeline<ScatterUploadCS>();
-
-			ScatterUploadCS::Parameters parameters;
-			parameters.DstBuffer = data.dstBuffer;
-			parameters.SrcBuffer = data.srcBuffer;
-			parameters.ScatterIndices = data.indicesBuffer;
-			parameters.TypeSizeInUINT = static_cast<uint32_t>(sizeInUINT);
-			parameters.CopyCount = data.dataCount;
-
-			context.BindPipeline(pipeline);
-			context.SetParameters<ScatterUploadCS>(parameters);
-			context.Dispatch(groupSize, 1, 1);
-		});
+		auto shader = ShaderMap::Get2<ScatterUploadCS>();
+		ComputeShaderUtils::AddPass<ScatterUploadCS>(renderGraph,
+			"Scatter Buffer Upload",
+			shader,
+			passParameters,
+			{ groupSize, 1, 1 });
 	}
 }

@@ -84,14 +84,11 @@ namespace Volt::RHI
 		virtual void BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer) = 0;
 		virtual void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) = 0;
 
-		virtual void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) = 0;
 		virtual void BindDescriptorTable2(RawPtr<DescriptorTable> descriptorTable) = 0;
 		virtual void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure = nullptr) = 0;
 
 		virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
 		virtual void EndRendering() = 0;
-
-		virtual void PushConstants(const void* data, const uint32_t size, const uint32_t offset) = 0;
 
 		virtual void ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers) = 0;
 

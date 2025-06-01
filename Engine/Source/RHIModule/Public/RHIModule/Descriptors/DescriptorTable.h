@@ -19,7 +19,6 @@ namespace Volt::RHI
 
 	struct DescriptorTableCreateInfo
 	{
-		RefPtr<Shader> shader;
 		RefPtr<ComputePipeline> computePipeline;
 		RefPtr<RenderPipeline> renderPipeline;
 	};
@@ -37,7 +36,6 @@ namespace Volt::RHI
 
 		virtual void PrepareForRender() = 0;
 
-		static RefPtr<DescriptorTable> Create(const DescriptorTableCreateInfo& specification);
 		static RefPtr<DescriptorTable> Create2(const DescriptorTableCreateInfo& specification);
 
 	protected:

@@ -22,14 +22,14 @@ struct DrawMeshTestMS : public GlobalShader
 {
 	DECLARE_GLOBAL_SHADER(DrawMeshTestMS)
 
-	BEGIN_SHADER_PARAMETER_STRUCT2(Parameters)
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<float3>, VertexPositionsBuffer)
 		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<Meshlet>, MeshletsBuffer)
 		SHADER_PARAMETER_BUFFER_SRV(Buffer<uint>, MeshletDataBuffer)
-		SHADER_PARAMETER2(uint, MeshletStartOffset)
-		SHADER_PARAMETER2(uint, VertexOffset)
-		SHADER_PARAMETER2(float4x4, ViewProjection)
-	END_SHADER_PARAMETER_STRUCT2()
+		SHADER_PARAMETER(uint, MeshletStartOffset)
+		SHADER_PARAMETER(uint, VertexOffset)
+		SHADER_PARAMETER(float4x4, ViewProjection)
+	END_SHADER_PARAMETER_STRUCT()
 };
 REGISTER_SHADER_2(DrawMeshTestMS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DrawMeshShaderMeshTest.hlsl", "MainMS", Mesh);
 
@@ -37,16 +37,16 @@ struct DrawMeshTestPS : public GlobalShader
 {
 	DECLARE_GLOBAL_SHADER(DrawTriangleTest2PS)
 
-	BEGIN_SHADER_PARAMETER_STRUCT2(Parameters)
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 		RG_RENDER_TARGETS()
-	END_SHADER_PARAMETER_STRUCT2()
+	END_SHADER_PARAMETER_STRUCT()
 };
 REGISTER_SHADER_2(DrawMeshTestPS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DrawMeshShaderMeshTest.hlsl", "MainPS", Pixel);
 
-BEGIN_SHADER_PARAMETER_STRUCT2(DrawMeshParameters)
-	SHADER_PARAMETER_STRUCT_INCLUDE2(DrawMeshTestMS::Parameters, MS)
-	SHADER_PARAMETER_STRUCT_INCLUDE2(DrawMeshTestPS::Parameters, PS)
-END_SHADER_PARAMETER_STRUCT2()
+BEGIN_SHADER_PARAMETER_STRUCT(DrawMeshParameters)
+	SHADER_PARAMETER_STRUCT_INCLUDE(DrawMeshTestMS::Parameters, MS)
+	SHADER_PARAMETER_STRUCT_INCLUDE(DrawMeshTestPS::Parameters, PS)
+END_SHADER_PARAMETER_STRUCT()
 
 static RefPtr<RHI::Shader2> s_meshShader;
 static RefPtr<RHI::Shader2> s_pixelShader;

@@ -1,4 +1,6 @@
 #include "sbpch.h"
+
+#if 0
 #include "Sandbox/SceneRendererExtensions/OutlineSceneRendererExtension.h"
 #include "Sandbox/SceneRendererExtensions/OutlineTechnique.h"
 
@@ -96,3 +98,4 @@ void OutlineSceneRendererExtension::UpdateSelection(const Vector<EntityID>& enti
 	m_selectedEntityIds = entityIds;
 	m_isSelectionDirty = true;
 }
+#endif

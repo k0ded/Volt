@@ -18,7 +18,9 @@ namespace Volt
 		None,
 		IndirectArg,
 		VertexBuffer,
-		IndexBuffer
+		IndexBuffer,
+		CopyDst,
+		CopySrc
 	};
 
 	class RGResource

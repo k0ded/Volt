@@ -57,14 +57,11 @@ namespace Volt::RHI
 		void BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer) override;
 		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) override;
 
-		void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) override;
 		void BindDescriptorTable2(RawPtr<DescriptorTable> descriptorTable) override;
 		void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) override;
 
 		void BeginRendering(const RenderingInfo& renderingInfo) override;
 		void EndRendering() override;
-
-		void PushConstants(const void* data, const uint32_t size, const uint32_t offset) override;
 
 		void ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers) override;
 

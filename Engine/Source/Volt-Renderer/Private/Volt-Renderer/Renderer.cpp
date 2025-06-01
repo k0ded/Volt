@@ -11,12 +11,12 @@
 #include <JobSystem/TaskGraph.h>
 
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
-#include <RenderCore/RenderGraph/RenderGraph.h>
-#include <RenderCore/RenderGraph/RenderContextUtils.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
-#include <RenderCore/Debug/ShaderRuntimeValidator.h>
+#include <RenderCore/RenderGraph2/RenderGraph2.h>
+#include <RenderCore/RenderGraph2/RenderContext2.h>
 #include <RenderCore/Resources/BindlessResourcesManager.h>
 #include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 
@@ -42,6 +42,8 @@ namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(Renderer, Engine, 3);
 
+	// #TODO_Ivar: Convert to render graph
+#if 0
 	struct EquirectangularToCubemapCS
 	{
 		BEGIN_SHADER_DEFINITION(EquirectangularToCubemapCS)
@@ -65,15 +67,17 @@ namespace Volt
 		END_SHADER_DEFINITION()
 	};
 	REGISTER_SHADER(IntegrateDiffuseCubeCS)
+#endif
 
-	struct GeneratePreIntegratedDFG
+	struct GeneratePreIntegratedDFGPS : public GlobalShader
 	{
-		BEGIN_SHADER_DEFINITION(GeneratePreIntegratedDFG)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PBR/GeneratePreIntegratedDFG.hlsl", "MainPS", RHI::ShaderStage::Pixel)
-		END_SHADER_DEFINITION()
+		DECLARE_GLOBAL_SHADER(GeneratePreIntegratedDFGPS)
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			RG_RENDER_TARGETS()
+		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(GeneratePreIntegratedDFG)
+	REGISTER_SHADER(GeneratePreIntegratedDFGPS, "Engine/Shaders/Source/PBR/GeneratePreIntegratedDFG.hlsl", "MainPS", Pixel);
 
 	namespace Utility
 	{
@@ -119,10 +123,6 @@ namespace Volt
 
 		RenderGraphExecutionThread::Initialize(RenderGraphExecutionThread::ExecutionMode::Multithreaded);
 
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		m_shaderValidator = CreateScope<ShaderRuntimeValidator>();
-#endif
-
 		CreateDefaultResources();
 		m_blueNoise = CreateScope<BlueNoise>();
 	}
@@ -137,10 +137,6 @@ namespace Volt
 		m_samplers.clear();
 
 		ShapeLibrary::Shutdown();
-
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		m_shaderValidator = nullptr;
-#endif
 
 		m_shaderMap = nullptr;
 		m_descriptorTableCache = nullptr;
@@ -159,6 +155,8 @@ namespace Volt
 
 	Renderer::EnvironmentTextures Renderer::GenerateEnvironmentTextures(AssetHandle baseTextureHandle)
 	{
+		// #TODO_Ivar: Convert to render graph.
+#if 0
 		Ref<Texture2D> environmentTexture = AssetManager::GetAsset<Texture2D>(baseTextureHandle);
 		if (!environmentTexture || !environmentTexture->IsValid())
 		{
@@ -388,27 +386,12 @@ namespace Volt
 		result.specular = environmentSpecular;
 
 		return result;
-	}
-
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-	ShaderRuntimeValidator& Renderer::GetRuntimeShaderValidator()
-	{
-		return *s_instance->m_shaderValidator;
-	}
 #endif
+		return {};
+	}
 
 	bool Renderer::OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event)
 	{
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		//s_rendererData->shaderValidator->ReadbackErrorBuffer();
-
-		const auto& frameErrors = m_shaderValidator->GetValidationErrors();
-		for (const auto& error : frameErrors)
-		{
-			VT_LOGC(Error, LogRender, error);
-		}
-#endif
-
 		m_frameIndex++;
 		return false;
 	}
@@ -484,7 +467,9 @@ namespace Volt
 
 		// Default material
 		{
+#if 0
 			m_defaultResources.defaultMaterial = CreateRef<RenderMaterial>("DefaultMaterial", ShaderMap::Get<OpaqueDefaultMaterialCS>());
+#endif
 		}
 
 		// Default mesh
@@ -508,27 +493,29 @@ namespace Volt
 
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 
-		RenderGraph renderGraph{ commandBuffer };
-		RenderGraphImageHandle targetImageHandle = renderGraph.AddExternalImage(m_defaultResources.DFGLuT);
+		RenderGraph2 renderGraph{ commandBuffer };
+
+		GeneratePreIntegratedDFGPS::Parameters* passParameters = renderGraph.AllocParameters<GeneratePreIntegratedDFGPS::Parameters>();
+		passParameters->renderTargets.renderTargets[0] = renderGraph.RegisterExternalTexture(m_defaultResources.DFGLuT);
+
+		RefPtr<RHI::Shader2> vertexShader = ShaderMap::Get2<FullscreenTriangleVS>();
+		RefPtr<RHI::Shader2> pixelShader = ShaderMap::Get2<GeneratePreIntegratedDFGPS>();
 
 		renderGraph.AddPass("Pre integrate DFG Pass",
-		[&](RenderGraph::Builder& builder)
+			RenderGraphPassFlags::None,
+			passParameters,
+			[passParameters, vertexShader, pixelShader](RenderContext2& context) 
 		{
-			builder.WriteResource(targetImageHandle);
-			builder.SetHasSideEffect();
-		},
-		[=](RenderContext& context)
-		{
-			RenderingInfo renderingInfo = context.CreateRenderingInfo(DFGSize, DFGSize, { targetImageHandle });
-
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get<GeneratePreIntegratedDFG>();
+			pipelineInfo.shaders = { vertexShader, pixelShader };
 			pipelineInfo.cullMode = RHI::CullMode::None;
 
-			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
 
+			RenderingInfo2 renderingInfo = context.CreateRenderingInfo(DFGSize, DFGSize, passParameters->renderTargets);
 			context.BeginRendering(renderingInfo);
-			RCUtils::DrawFullscreenTriangle(context, pipeline);
+			context.BindPipeline(pipeline);
+			context.Draw(3, 1, 0, 0);
 			context.EndRendering();
 		});
 

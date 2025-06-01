@@ -9,18 +9,18 @@ namespace Volt
 		class Image;
 	}
 
-	struct RenderGraphImageDesc;
+	struct RGTextureDesc;
 
-	class GPUReadbackImage
+	class GPUReadbackTexture
 	{
 	public:
-		GPUReadbackImage(const RenderGraphImageDesc& desc);
+		GPUReadbackTexture(const RGTextureDesc& desc);
 
 		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetImage() const { return m_image; }
 		VT_NODISCARD VT_INLINE bool IsReady() const { return m_isReady.load(); }
 
 	private:
-		friend class RenderGraph;
+		friend class RenderGraph2;
 
 		std::atomic_bool m_isReady = false;
 		RefPtr<RHI::Image> m_image;

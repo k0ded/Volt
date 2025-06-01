@@ -19,7 +19,7 @@ namespace Volt
 		VT_NODISCARD VT_INLINE bool IsReady() const { return m_isReady.load(); }
 
 	private:
-		friend class RenderGraph;
+		friend class RenderGraph2;
 
 		std::atomic_bool m_isReady = false;
 		RefPtr<RHI::StorageBuffer> m_buffer;

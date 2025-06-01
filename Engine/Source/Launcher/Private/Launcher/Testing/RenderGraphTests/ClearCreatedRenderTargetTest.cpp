@@ -5,9 +5,9 @@
 
 using namespace Volt;
 
-BEGIN_SHADER_PARAMETER_STRUCT2(ClearParameters)
+BEGIN_SHADER_PARAMETER_STRUCT(ClearParameters)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<uint>, texture)
-END_SHADER_PARAMETER_STRUCT2()
+END_SHADER_PARAMETER_STRUCT()
 
 RG_ClearCreatedRenderTargetTest::RG_ClearCreatedRenderTargetTest()
 {

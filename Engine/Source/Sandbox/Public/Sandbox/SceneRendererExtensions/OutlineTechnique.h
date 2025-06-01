@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 #include <RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h>
 
 namespace Volt
@@ -25,3 +26,4 @@ private:
 	Volt::RenderGraph& m_renderGraph;
 	Volt::RenderGraphBlackboard& m_blackboard;
 };
+#endif

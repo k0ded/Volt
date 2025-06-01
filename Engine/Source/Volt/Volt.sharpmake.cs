@@ -22,6 +22,7 @@ namespace VoltSharpmake
 
             conf.PrecompHeader = "vtpch.h";
             conf.PrecompSource = "vtpch.cpp";
+			conf.IsExcludedFromBuild = true;
 
             conf.AddPublicDependency<LogModule>(target);
             conf.AddPublicDependency<AssetSystemModule>(target);
@@ -32,7 +33,7 @@ namespace VoltSharpmake
             conf.AddPublicDependency<InputModule>(target);
 
             conf.AddPublicDependency<VulkanRHIModule>(target, DependencySetting.OnlyBuildOrder);
-            conf.AddPublicDependency<D3D12RHIModule>(target, DependencySetting.OnlyBuildOrder);
+            //conf.AddPublicDependency<D3D12RHIModule>(target, DependencySetting.OnlyBuildOrder);
 
 			conf.AddPublicDependency<VoltPhysics>(target);
 			conf.AddPublicDependency<VoltRenderCore>(target);
