@@ -1070,6 +1070,19 @@ void SceneViewPanel::DrawMainRightClickPopup()
 		{
 			if (ImGui::BeginMenu(VT_ICON_FA_CUBES " Primitives"))
 			{
+				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Blockout Cube"))
+				{
+					auto ent = m_scene->CreateEntity();
+					auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
+					meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_BlockoutCube.vtasset");
+					Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(m_scene->GetEntityHelperFromEntityID(ent.GetID())));
+
+					ent.SetTag("New Cube");
+
+					SelectionManager::DeselectAll();
+					SelectionManager::Select(ent.GetID());
+				}
+
 				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Cube"))
 				{
 					auto ent = m_scene->CreateEntity();
