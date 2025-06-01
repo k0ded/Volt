@@ -12,7 +12,13 @@
 #include <Volt-Renderer/Mesh/Mesh.h>
 
 #include <Volt-Animation/Assets/Skeleton.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
+
+#include <Volt-Scene/Entity.h>
+
+#include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/FileSystem.h>
 
@@ -201,10 +207,11 @@ bool EditorUtils::NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCh
 
 		if (UI::BeginProperties("NewCharacter"))
 		{
-			UI::Property("Name", aCharacterData.name);
+			//todo_fabian: reimplement
+			/*UI::Property("Name", aCharacterData.name);
 			EditorUtils::Property("Skeleton", aCharacterData.skeletonHandle, AssetTypes::Skeleton);
 			EditorUtils::Property("Skin", aCharacterData.skinHandle, AssetTypes::Mesh);
-			UI::PropertyDirectory("Destination", aCharacterData.destination);
+			UI::PropertyDirectory("Destination", aCharacterData.destination);*/
 
 			UI::EndProperties();
 		}

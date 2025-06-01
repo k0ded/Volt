@@ -3,8 +3,6 @@
 #include "Sandbox/Window/EditorWindow.h"
 #include "NavigationEditor/Builder/RecastBuilder.h"
 
-#include <Volt/Core/Application.h>
-
 #include <EventSystem/ApplicationEvents.h>
 
 #include <Sandbox/UserSettingsManager.h>
@@ -12,10 +10,7 @@
 class NavigationPanel : public EditorWindow
 {
 public:
-	NavigationPanel(Ref<Volt::Scene>& currentScene)
-		: EditorWindow("Navigation Settings"), myBuildSettings(UserSettingsManager::GetSettings().navmeshBuildSettings), myBuilder(myBuildSettings), myScene(currentScene), myNavigationSystem(Volt::Application::Get().GetNavigationSystem())
-	{
-	}
+	NavigationPanel(Ref<Volt::Scene>& currentScene);
 
 	void UpdateMainContent() override;
 	void Bake();

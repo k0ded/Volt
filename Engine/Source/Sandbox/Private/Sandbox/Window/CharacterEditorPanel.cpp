@@ -11,6 +11,7 @@
 #include <Volt-Renderer/Texture/Texture2D.h>
 #include <Volt-Renderer/AnimatedCharacter.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
+
 #include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <Volt-Animation/AnimationManager.h>
@@ -18,7 +19,9 @@
 #include <Volt-Animation/Assets/Skeleton.h>
 #include <Volt-Scene/Scene.h>
 #include <Volt-Scene/Entity.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 #include <WindowModule/Events/WindowEvents.h>
@@ -308,8 +311,8 @@ void CharacterEditorPanel::UpdateProperties()
 		ImGui::End();
 		return;
 	}
-
-	if (UI::BeginProperties("CharProperties"))
+	//todo_fabian: reimplement
+	/*if (UI::BeginProperties("CharProperties"))
 	{
 		auto& charComp = myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>();
 
@@ -335,7 +338,7 @@ void CharacterEditorPanel::UpdateProperties()
 
 
 		UI::EndProperties();
-	}
+	}*/
 	ImGui::End();
 }
 
@@ -778,13 +781,14 @@ void CharacterEditorPanel::UpdateJointAttachmentViewPanel()
 			std::string rightClickId = "offsetRightclick" + std::to_string(index);
 			if (ImGui::BeginPopupContextItem(rightClickId.c_str(), ImGuiPopupFlags_MouseButtonRight))
 			{
-				UI::BeginProperties("OFFSET");
+				//todo_fabian: reimplement
+				/*UI::BeginProperties("OFFSET");
 				ImGui::Text("OFFSET");
 
 				UI::Property("Pos", attachment.positionOffset);
 				UI::Property("Rot", attachment.rotationOffset);
 
-				UI::EndProperties();
+				UI::EndProperties();*/
 				ImGui::EndPopup();
 			}
 
@@ -815,11 +819,12 @@ void CharacterEditorPanel::AddAnimationEventModal()
 	if (UI::BeginModal("Add Animation Event", ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		UI::PushID();
-		if (UI::BeginProperties("animEvent"))
+		//todo_fabian: reimplement
+		/*if (UI::BeginProperties("animEvent"))
 		{
 			UI::Property("Name", myAddAnimEventData.name);
 			UI::EndProperties();
-		}
+		}*/
 		UI::PopID();
 
 		if (ImGui::Button("Cancel"))

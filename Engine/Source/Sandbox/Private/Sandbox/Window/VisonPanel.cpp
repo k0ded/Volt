@@ -2,7 +2,7 @@
 
 #include "Window/VisonPanel.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 #include <Volt/Core/Application.h>
 #include <Volt/Vision/VisionTrigger.h>
 #include <Volt/Vision/Vision.h>
@@ -91,6 +91,7 @@ void VisionPanel::UpdateCameraProperties()
 
 	Volt::Entity selectedCam = myVisionCams[mySelectedCamera];
 	auto& baseCamComp = selectedCam.GetComponent<Volt::CameraComponent>();
+	baseCamComp;
 	auto& visionCamComp = selectedCam.GetComponent<Volt::VisionCameraComponent>();
 
 	std::string labelName = "Cam: " + selectedCam.GetComponent<Volt::TagComponent>().tag + " [" + std::to_string(mySelectedCamera) + "]";;
@@ -112,7 +113,8 @@ void VisionPanel::UpdateCameraProperties()
 	ImGui::Separator();
 
 	ImGui::LabelText("", "Core Settings");
-	if (UI::BeginProperties("Core Settings"))
+	//todo_fabian: reimplement
+	/*if (UI::BeginProperties("Core Settings"))
 	{
 		{
 			const Volt::IEnumTypeDesc* camTypeDesc = Volt::GetTypeDesc<Volt::eCameraType>();
@@ -146,12 +148,13 @@ void VisionPanel::UpdateCameraProperties()
 		ImGui::DragFloat("##Fov", &baseCamComp.fieldOfView);
 
 		UI::EndProperties();
-	}
+	}*/
 
 	ImGui::Separator();
 
 	ImGui::LabelText("", "Transform");
-	if (UI::BeginProperties("Transform"))
+	//todo_fabian: reimplement
+	/*if (UI::BeginProperties("Transform"))
 	{
 		if (UI::PropertyEntity("Follow", myCurrentScene, visionCamComp.followId, "Camera follows this entity"))
 		{
@@ -186,13 +189,14 @@ void VisionPanel::UpdateCameraProperties()
 		}
 
 		UI::EndProperties();
-	}
+	}*/
 
 	ImGui::Separator();
 
 	ImGui::LabelText("", "Controller");
 
-	if (UI::BeginProperties("Controller"))
+	//todo_fabian: reimplement
+	/*if (UI::BeginProperties("Controller"))
 	{
 		if (visionCamComp.cameraType == Volt::eCameraType::FirstPerson || visionCamComp.cameraType == Volt::eCameraType::ThirdPerson)
 		{
@@ -200,7 +204,7 @@ void VisionPanel::UpdateCameraProperties()
 			UI::Property("Focal Distance", visionCamComp.focalDistance);
 		}
 		UI::EndProperties();
-	}
+	}*/
 
 	if (visionCamComp.cameraType == Volt::eCameraType::ThirdPerson)
 	{
@@ -208,7 +212,8 @@ void VisionPanel::UpdateCameraProperties()
 
 		ImGui::LabelText("", "Collision");
 
-		if (UI::BeginProperties("Collision"))
+		//todo_fabian: reimplement
+		/*if (UI::BeginProperties("Collision"))
 		{
 			UI::Property("Use Collision", visionCamComp.isColliding);
 			if (visionCamComp.isColliding)
@@ -241,7 +246,7 @@ void VisionPanel::UpdateCameraProperties()
 				}
 			}
 			UI::EndProperties();
-		}
+		}*/
 	}
 
 	UI::PopID();

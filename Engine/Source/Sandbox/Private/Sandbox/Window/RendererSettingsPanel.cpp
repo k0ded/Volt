@@ -1,7 +1,7 @@
 #include "sbpch.h"
 #include "Window/RendererSettingsPanel.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Renderer/SceneRenderer.h>
 #include <Volt-Renderer/Renderer.h>

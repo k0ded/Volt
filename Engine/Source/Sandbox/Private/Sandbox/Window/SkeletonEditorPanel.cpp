@@ -4,7 +4,9 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <AssetSystem/AssetManager.h>
 
 #include <Volt-Animation/Assets/Skeleton.h>
 
@@ -76,13 +78,14 @@ void SkeletonEditorPanel::UpdateMainContent()
 			{
 				ImGui::SetWindowSize({ 100.f, 100.f });
 
-				UI::BeginProperties("OFFSET");
+				//todo_fabian: reimplement
+				/*UI::BeginProperties("OFFSET");
 				ImGui::Text("OFFSET");
 
 				UI::Property("Pos", attachment.positionOffset);
 				UI::Property("Rot", attachment.rotationOffset);
 
-				UI::EndProperties();
+				UI::EndProperties();*/
 				ImGui::EndPopup();
 			}
 

@@ -20,7 +20,7 @@
 #include <InputModule/MouseButtonCodes.h>
 
 #include <Volt-Scene/Entity.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <InputModule/Events/KeyboardEvents.h>
 

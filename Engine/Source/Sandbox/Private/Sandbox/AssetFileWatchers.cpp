@@ -4,7 +4,12 @@
 #include <RenderCore/Shader/ShaderDefinition.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
+
+#include <AssetSystem/AssetManager.h>
+
 
 void Sandbox::CreateModifiedWatch()
 {

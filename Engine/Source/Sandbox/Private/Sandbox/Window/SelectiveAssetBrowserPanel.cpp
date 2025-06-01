@@ -5,7 +5,7 @@
 
 #include <Volt/Utility/FileSystem.h>
 #include <AssetSystem/AssetManager.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 static uint32_t s_assetBrowserCount;
 

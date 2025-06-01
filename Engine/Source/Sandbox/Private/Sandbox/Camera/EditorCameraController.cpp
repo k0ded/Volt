@@ -3,13 +3,14 @@
 #include "Camera/EditorCameraController.h"
 
 #include "Volt-Renderer/Camera/Camera.h"
-#include "Volt/Utility/UIUtility.h"
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
 #include <EventSystem/ApplicationEvents.h>
 #include <InputModule/Events/MouseEvents.h>
+
+#include <Volt-Application/UI/UIUtility.h>
 
 EditorCameraController::EditorCameraController(float fov, float nearPlane, float farPlane)
 	: m_fov(fov), m_nearPlane(nearPlane), m_farPlane(farPlane)

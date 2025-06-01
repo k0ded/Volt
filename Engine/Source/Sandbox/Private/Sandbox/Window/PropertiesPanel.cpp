@@ -16,7 +16,7 @@
 #include <InputModule/InputCodes.h>
 #include <InputModule/MouseButtonCodes.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 #include <Volt/Utility/PremadeCommands.h>
 
 PropertiesPanel::PropertiesPanel(Ref<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id)

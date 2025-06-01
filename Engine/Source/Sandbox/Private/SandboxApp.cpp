@@ -30,7 +30,8 @@ public:
 };
 
 bool g_useCrashHandling = true;
-Volt::Application* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
+
+Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder)
 {
 	Volt::ApplicationInfo info{};
 	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
@@ -43,9 +44,4 @@ Volt::Application* CreateApplication(const Volt::CommandLineBuilder& commandLine
 	info.height = 900;
 
 	return new SandboxApp(info, commandLineBuilder);
-}
-
-Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder)
-{
-	return new Volt::UIApplication(commandLineBuilder);
 }

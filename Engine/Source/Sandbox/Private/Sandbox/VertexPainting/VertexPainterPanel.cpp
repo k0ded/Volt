@@ -21,7 +21,7 @@
 
 #include <Volt/Math/RayTriangle.h>
 #include <Volt/Utility/PackUtility.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <EventSystem/Event.h>
 
@@ -277,14 +277,15 @@ void VertexPainterPanel::PanelDraw()
 			m_settings.view = (Settings::eView)selectedView;
 		}
 
-		if (UI::BeginProperties("Vertex View Settings"))
+		//todo_fabian: reimplement
+		/*if (UI::BeginProperties("Vertex View Settings"))
 		{
 			UI::Property("Brush Size", m_settings.billboardRange, 0, 0, "Range from brush that Vertices are drawn");
 			UI::PropertyDragFloat("Vertex Scalar", m_settings.billboadScalar, 0.1f, 0.1f, 10, "Vertex size");
 			UI::PropertyDragFloat("Vertex Alpha", m_settings.billboardAlpha, 0.1f, 0.0f, 1.0f, "Vertex alpha outside of painting area");
 
 			UI::EndProperties();
-		}
+		}*/
 
 		/*if (ImGui::Button("Default##vpResetView", { ImGui::GetContentRegionAvail().x, 0 }))
 		{
@@ -297,7 +298,8 @@ void VertexPainterPanel::PanelDraw()
 		ImGui::SameLine();
 		ImGui::TextUnformatted("Channels");
 		ImGui::Separator();
-		if (UI::BeginProperties("Color Painting Channels"))
+		//todo_fabian: reimplement
+		/*if (UI::BeginProperties("Color Painting Channels"))
 		{
 			UI::Property("Red", m_settings.paintRedChannel);
 			UI::Property("Green", m_settings.paintGreenChannel);
@@ -305,7 +307,7 @@ void VertexPainterPanel::PanelDraw()
 			UI::Property("Alpha", m_settings.paintAlphaChannel);
 
 			UI::EndProperties();
-		}
+		}*/
 
 		ImGui::EndTable();
 	}
@@ -313,16 +315,17 @@ void VertexPainterPanel::PanelDraw()
 
 	if (ImGui::CollapsingHeader("Painting"))
 	{
-		if (UI::BeginProperties("Brush Settings"))
-		{
-			//UI::Property("Brush Size", m_settings.brushRadius);
-			UI::Property("Ignore Intencity", m_settings.ignoreIntencity);
-			UI::PropertyDragFloat("Intensity", m_settings.intensity, 0.1f, 0, 0, "Value increment step per second");
-			UI::PropertyDragFloat("Paint Color", m_settings.paintColor, 0.05f, 0, 1, "Target channel color when painting (SHIFT)");
-			UI::PropertyDragFloat("Erase Color", m_settings.eraseColor, 0.05f, 0, 1, "Target channel color when erasing (CTRL)");
+		//todo_fabian: reimplement
+		//if (UI::BeginProperties("Brush Settings"))
+		//{
+		//	//UI::Property("Brush Size", m_settings.brushRadius);
+		//	UI::Property("Ignore Intencity", m_settings.ignoreIntencity);
+		//	UI::PropertyDragFloat("Intensity", m_settings.intensity, 0.1f, 0, 0, "Value increment step per second");
+		//	UI::PropertyDragFloat("Paint Color", m_settings.paintColor, 0.05f, 0, 1, "Target channel color when painting (SHIFT)");
+		//	UI::PropertyDragFloat("Erase Color", m_settings.eraseColor, 0.05f, 0, 1, "Target channel color when erasing (CTRL)");
 
-			UI::EndProperties();
-		}
+		//	UI::EndProperties();
+		//}
 	}
 
 	if (ImGui::CollapsingHeader("Material Management"))

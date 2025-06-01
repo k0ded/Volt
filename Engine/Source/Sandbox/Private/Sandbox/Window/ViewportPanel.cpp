@@ -18,7 +18,7 @@
 #include "Sandbox/SceneRendererExtensions/ObjectIDSceneRendererExtension.h"
 
 #include <Volt/Asset/ParticlePreset.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Assets/MeshAsset.h>
 
@@ -32,6 +32,8 @@
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
+
+#include <AssetSystem/AssetManager.h>
 
 #include <EventSystem/EventSystem.h>
 #include <WindowModule/Events/WindowEvents.h>

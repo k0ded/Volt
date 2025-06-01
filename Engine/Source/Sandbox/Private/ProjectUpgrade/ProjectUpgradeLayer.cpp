@@ -3,8 +3,8 @@
 
 #include "Sandbox/Utility/Theme.h"
 
-#include <Volt/Core/Application.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/BaseApplication.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
 
@@ -39,7 +39,7 @@ void ProjectUpgradeLayer::DrawUpgradeUI()
 	ImGui::Text("The current project is not the same version as the engine!");
 	ImGui::Text("Would you like to upgrade?");
 
-	const Volt::Version engineVersion = Volt::Application::Get().GetInfo().version;
+	const Volt::Version engineVersion = Volt::BaseApplication::Get().GetCreateInfo().version;
 	const Volt::Version projectVersion = Volt::ProjectManager::GetProject().engineVersion;
 
 	if (ImGui::Button("Yes"))

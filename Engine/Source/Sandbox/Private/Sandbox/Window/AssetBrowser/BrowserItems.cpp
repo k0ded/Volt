@@ -6,8 +6,10 @@
 #include "Sandbox/Utility/AssetBrowserUtilities.h"
 #include "Sandbox/UserSettingsManager.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
 #include <InputModule/InputCodes.h>
+#include <InputModule/Input.h>
 
 namespace AssetBrowser
 {

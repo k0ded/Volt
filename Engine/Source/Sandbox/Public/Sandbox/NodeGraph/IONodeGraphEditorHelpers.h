@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Components/CoreComponents.h>

@@ -4,7 +4,7 @@
 
 #include "Volt-Renderer/Texture/Texture2D.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <imgui_internal.h>
 

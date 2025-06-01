@@ -47,6 +47,7 @@ namespace Volt::RHI
 		static RefPtr<ImGuiImplementation> Create(const ImGuiCreateInfo& createInfo);
 		static ImGuiImplementation& Get();
 
+
 	protected:
 		ImGuiImplementation(ImGuiCreateInfo createInfo);
 
@@ -59,8 +60,11 @@ namespace Volt::RHI
 		virtual void ShutdownAPI() {}
 
 	private:
+		void CreateContext();
 		inline static ImGuiImplementation* s_instance = nullptr;
 		ImFont* m_defaultFont = nullptr;
 		ImGuiCreateInfo m_createInfo;
+
+		ImGuiContext* m_context = nullptr;
 	};
 }

@@ -10,7 +10,7 @@
 
 #include <Volt/Core/Application.h>
 #include <Volt/Utility/PremadeCommands.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <EventSystem/EventSystem.h>
 
@@ -720,13 +720,14 @@ void Sandbox::SaveSceneAsModal()
 	if (UI::BeginModal("Save As"))
 	{
 		UI::PushID();
-		if (UI::BeginProperties("saveSceneAs"))
+		//todo_fabian: reimplement
+		/*if (UI::BeginProperties("saveSceneAs"))
 		{
 			UI::Property("Name", m_saveSceneData.name);
 			UI::PropertyDirectory("Destination", m_saveSceneData.destinationPath);
 
 			UI::EndProperties();
-		}
+		}*/
 		UI::PopID();
 
 		ImGui::PushItemWidth(80.f);
@@ -784,7 +785,8 @@ void Sandbox::BuildGameModal()
 	if (UI::BeginModal("Build", ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		UI::PushID();
-		if (UI::BeginProperties("buildData"))
+		//todo_fabian: reimplement
+		/*if (UI::BeginProperties("buildData"))
 		{
 			UI::PropertyDirectory("Build Path", m_buildInfo.buildDirectory);
 
@@ -796,7 +798,7 @@ void Sandbox::BuildGameModal()
 			}
 
 			UI::EndProperties();
-		}
+		}*/
 		UI::PopID();
 
 		if (ImGui::Button("Add Scene"))

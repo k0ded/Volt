@@ -23,11 +23,16 @@ namespace VoltSharpmake
 
 			conf.AddPublicDependency<LogModule>(target);
 			conf.AddPublicDependency<VoltCore>(target);
+			conf.AddPublicDependency<InputModule>(target);
 
 			conf.AddPublicDependency<VulkanRHIModule>(target);
 			conf.AddPublicDependency<D3D12RHIModule>(target);
 
 			conf.AddPublicDependency<VoltRenderer>(target);
+
+			conf.AddPublicDependency<NavigationModule>(target);
+
+			conf.AddPublicDependency<imgui>(target);
 		}
     }
 }

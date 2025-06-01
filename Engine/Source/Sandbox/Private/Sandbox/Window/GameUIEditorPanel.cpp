@@ -8,11 +8,13 @@
 #include <Volt/GameUI/UIScene.h>
 #include <Volt/GameUI/UIComponents.h>
 #include <Volt/GameUI/UIWidget.h>
+
 #include <InputModule/InputCodes.h>
+#include <InputModule/Input.h>
 
 #include <Volt-Renderer/UISceneRenderer.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 GameUIEditorPanel::GameUIEditorPanel()
 	: EditorWindow("Game UI Editor", true)
@@ -239,18 +241,20 @@ void GameUIEditorPanel::UpdateDetails()
 		{
 			if (selectedWidget.HasComponent<Volt::UITagComponent>())
 			{
-				auto& comp = selectedWidget.GetComponent<Volt::UITagComponent>();
-				if (UI::BeginProperties("Tag"))
+				//todo_fabian: reimplement
+				//auto& comp = selectedWidget.GetComponent<Volt::UITagComponent>();
+				/*if (UI::BeginProperties("Tag"))
 				{
 					UI::Property("Tag", comp.tag);
 					UI::EndProperties();
-				}
+				}*/
 			}
 
 			if (selectedWidget.HasComponent<Volt::UITransformComponent>() && UI::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				auto& comp = selectedWidget.GetComponent<Volt::UITransformComponent>();
-				if (UI::BeginProperties("Transform"))
+				//todo_fabian: reimplement
+				//auto& comp = selectedWidget.GetComponent<Volt::UITransformComponent>();
+				/*if (UI::BeginProperties("Transform"))
 				{
 					UI::PropertyAxisColor("Position", comp.position);
 					UI::PropertyAxisColor("Size", comp.size, 100.f);
@@ -258,20 +262,21 @@ void GameUIEditorPanel::UpdateDetails()
 					UI::Property("Rotation", comp.rotation);
 					UI::Property("Z Order", comp.zOrder);
 					UI::EndProperties();
-				}
+				}*/
 			}
 
 			if (selectedWidget.HasComponent<Volt::UIImageComponent>() && UI::CollapsingHeader("Image", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				auto& comp = selectedWidget.GetComponent<Volt::UIImageComponent>();
-				if (UI::BeginProperties("Image"))
+				//todo_fabian: reimplement
+				//auto& comp = selectedWidget.GetComponent<Volt::UIImageComponent>();
+				/*if (UI::BeginProperties("Image"))
 				{
 					EditorUtils::Property("Image", comp.imageHandle, AssetTypes::Texture);
 					UI::PropertyColor("Tint", comp.tint);
 					UI::Property("Alpha", comp.alpha);
 
 					UI::EndProperties();
-				}
+				}*/
 			}
 		}
 		ImGui::EndChild();

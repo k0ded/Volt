@@ -5,9 +5,11 @@
 
 #include <Volt/Asset/SourceAssetImporters/FbxSourceImporter.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <CoreUtilities/StringUtility.h>
+
+#include <AssetSystem/SourceAssetManager.h>
 
 
 TextureImportModal::TextureImportModal(const std::string& strId)
@@ -27,8 +29,9 @@ void TextureImportModal::DrawModalContent()
 	{
 		if (UI::BeginProperties("textureOptions"))
 		{
-			UI::Property("Import Mip Maps", m_importOptions.importMipMaps);
-			UI::Property("Generate Mip Maps", m_importOptions.generateMipMaps, "If import mip maps is enabled, but none were found, mip maps will be generated");
+			//todo_fabian: reimplement
+			/*UI::Property("Import Mip Maps", m_importOptions.importMipMaps);
+			UI::Property("Generate Mip Maps", m_importOptions.generateMipMaps, "If import mip maps is enabled, but none were found, mip maps will be generated");*/
 
 			UI::EndProperties();
 		}

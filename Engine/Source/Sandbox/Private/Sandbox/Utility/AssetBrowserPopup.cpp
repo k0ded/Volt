@@ -7,7 +7,7 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Profiling/Profiling.h>

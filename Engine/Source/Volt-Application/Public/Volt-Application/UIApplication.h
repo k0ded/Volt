@@ -1,7 +1,10 @@
 #pragma once
 
-#include "Volt-Application/BaseApplication.h"
 #include "Volt-Application/Config.h"
+#include "Volt-Application/BaseApplication.h"
+#include "Volt-Application/ApplicationLayerStack.h"
+
+#include <Volt-Core/MultiTimer.h>
 
 #include <SubSystem/SubSystemManager.h>
 
@@ -9,6 +12,9 @@
 
 namespace Volt
 {
+	class ImGuiSubSystem;
+	class WindowManager;
+
 	namespace RHI
 	{
 		class ImGuiImplementation;
@@ -30,15 +36,26 @@ namespace Volt
 		void PushLayer(ApplicationLayer* layer) override;
 		void PopLayer(ApplicationLayer* layer) override;
 
+	protected:
+		void LaunchMainWindow() override;
 	private:
 		void CreateGraphicsContext();
 		void MainUpdate();
+
+		const ApplicationCreationInfo m_info;
+
+		ApplicationLayerStack m_layerStack;
+		MultiTimer m_frameTimer;
 
 		RefPtr<RHI::GraphicsContext> m_graphicsContext;
 		RefPtr<RHI::RHIProxy> m_rhiProxy;
 
 		Scope<SubSystemManager> m_subSystemManager;
 
+		WindowManager* m_windowManager = nullptr;
+		ImGuiSubSystem* m_imguiSubSystem = nullptr;
+
 		bool m_isRunning = false;
+		float m_currentDeltaTime = 0.f;
 	};
 }

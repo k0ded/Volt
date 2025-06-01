@@ -3,7 +3,7 @@
 #include "Sandbox/Window/AssetRegistryPanel.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <AssetSystem/AssetManager.h>
 #include <CoreUtilities/FileSystem.h>
@@ -126,7 +126,8 @@ void AssetRegistryPanel::AddNewModal()
 		static std::filesystem::path assetPath = "";
 		static Volt::AssetHandle assetHandle = 0;
 
-		UI::Property("Asset", assetPath);
+		//todo_fabian: reimplement
+		//UI::Property("Asset", assetPath);
 		ImGui::InputScalar("Handle", ImGuiDataType_U64, &assetHandle);
 
 		if (ImGui::Button("Add"))

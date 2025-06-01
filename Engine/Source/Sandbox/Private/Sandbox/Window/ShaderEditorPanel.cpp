@@ -3,7 +3,7 @@
 
 #include "Sandbox/Utility/EditorResources.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 ShaderEditorPanel::ShaderEditorPanel()
 	: EditorWindow("Shader Editor", true)

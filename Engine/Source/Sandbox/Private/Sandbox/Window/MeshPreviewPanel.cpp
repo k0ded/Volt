@@ -10,11 +10,17 @@
 #include <Volt-Renderer/SceneRenderer.h>
 #include <Volt-CoreComponents/RenderingComponents.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
 #include <Volt-Scene/Scene.h>
 
+#include <Volt-Core/Project/ProjectManager.h>
+
 #include <AssetSystem/AssetManager.h>
+
 #include <WindowModule/Events/WindowEvents.h>
+
+#include <InputModule/Input.h>
 
 #include <CoreUtilities/FileSystem.h>
 

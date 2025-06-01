@@ -7,7 +7,7 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 
 #include <Volt/Core/Application.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 #include <imgui_stdlib.h>
 
 #include <WindowModule/WindowManager.h>
@@ -98,14 +98,15 @@ void EditorSettingsPanel::DrawVersionControl()
 	auto& versionControlSettings = m_editorSettings.versionControlSettings;
 
 	UI::PushID();
-	if (UI::BeginProperties())
+	//todo_fabian: reimplement
+	/*if (UI::BeginProperties())
 	{
 		UI::Property("Host", versionControlSettings.server);
 		UI::Property("User", versionControlSettings.user);
 		UI::PropertyPassword("Password", versionControlSettings.password);
 
 		UI::EndProperties();
-	}
+	}*/
 
 	{
 		UI::ScopedColor buttonColor(ImGuiCol_Button, { 0.313f, 0.313f, 0.313f, 1.f });
@@ -178,37 +179,40 @@ void EditorSettingsPanel::DrawVersionControl()
 
 void EditorSettingsPanel::DrawExternalTools()
 {
-	auto& externalToolsSettings = m_editorSettings.externalToolsSettings;
 
 	UI::PushID();
-	if (UI::BeginProperties())
+	//todo_fabian: reimplement
+	//auto& externalToolsSettings = m_editorSettings.externalToolsSettings;
+	/*if (UI::BeginProperties())
 	{
 		UI::Property("External Script Editor", externalToolsSettings.customExternalScriptEditor);
 
 		UI::EndProperties();
-	}
+	}*/
 	UI::PopID();
 }
 
 void EditorSettingsPanel::DrawStyleSettings()
 {
-	float currentWindowOpacity = Volt::WindowManager::Get().GetMainWindow().GetOpacity();
+	//todo_fabian: reimplement
+	//float currentWindowOpacity = Volt::WindowManager::Get().GetMainWindow().GetOpacity();
 
-	UI::PushID();
-	if (UI::BeginProperties())
+	//UI::PushID();
+	/*if (UI::BeginProperties())
 	{
 		if (UI::Property("Window Opacity", currentWindowOpacity, 0.f, 1.f))
 		{
 			Volt::WindowManager::Get().GetMainWindow().SetOpacity(currentWindowOpacity);
 		}
 		UI::EndProperties();
-	}
-	UI::PopID();
+	}*/
+	//UI::PopID();
 }
 
 void EditorSettingsPanel::DrawEditorSettings()
 {
-	auto& sceneSettings = m_editorSettings.sceneSettings;
+	//todo_fabian: reimplement
+	/*auto& sceneSettings = m_editorSettings.sceneSettings;
 
 	UI::PushID();
 	if (UI::BeginProperties())
@@ -217,5 +221,5 @@ void EditorSettingsPanel::DrawEditorSettings()
 
 		UI::EndProperties();
 	}
-	UI::PopID();
+	UI::PopID();*/
 }

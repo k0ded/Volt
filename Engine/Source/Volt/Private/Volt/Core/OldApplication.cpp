@@ -1,11 +1,11 @@
 #include "vtpch.h"
-
-#include "Volt/Core/Application.h"
-#include "Volt/ImGuiSubSystem.h"
+#include "Volt/Core/OldApplication.h"
 
 #include "Volt/Steam/SteamImplementation.h"
 #include "Volt/Utility/Noise.h"
-#include "Volt/Utility/UIUtility.h"
+
+//#include <Volt-Application/ImGuiSubsystem.h>
+//#include <Volt-Application/UIUtility.h>
 
 #include <Volt-Renderer/Renderer.h>
 
@@ -186,13 +186,13 @@ namespace Volt
 
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PostEngine);
 
-		m_imguiSubSystem = SubSystemManager::GetSubSystem<ImGuiSubSystem>();
-		// Make sure that the main window exits, it is required to initialize ImGui.
-		if (m_info.createMainWindow && m_info.enableImGui)
-		{
-			m_imguiSubSystem->InitializeImGui(m_info.enableImGuiViewports);
-			m_imguiSubSystem->SetupContext();
-		}
+		//m_imguiSubSystem = SubSystemManager::GetSubSystem<ImGuiSubSystem>();
+		//// Make sure that the main window exits, it is required to initialize ImGui.
+		//if (m_info.createMainWindow && m_info.enableImGui)
+		//{
+		//	m_imguiSubSystem->InitializeImGui(m_info.enableImGuiViewports);
+		//	m_imguiSubSystem->SetupContext();
+		//}
 
 		m_scriptingSystem = CreateScope<ScriptingSystem>();
 
@@ -201,6 +201,7 @@ namespace Volt
 
 		SetupFrameCapture();
 	}
+
 
 	Application::~Application()
 	{
@@ -307,8 +308,8 @@ namespace Volt
 
 			if (m_imguiSubSystem)
 			{
-				m_imguiSubSystem->InitializeImGui(m_info.enableImGuiViewports);
-				m_imguiSubSystem->SetupContext();
+				/*m_imguiSubSystem->InitializeImGui(m_info.enableImGuiViewports);
+				m_imguiSubSystem->SetupContext();*/
 			}
 
 			m_skipPresentThisFrame = true;
@@ -357,23 +358,23 @@ namespace Volt
 			//Amp::WWiseEngine::Get().Update();
 		}
 
-		if (m_info.enableImGui && m_imguiSubSystem->IsInitialized() && !m_skipPresentThisFrame)
-		{
-			VT_PROFILE_SCOPE("Application::ImGui");
+		//if (m_info.enableImGui && m_imguiSubSystem->IsInitialized() && !m_skipPresentThisFrame)
+		//{
+		//	VT_PROFILE_SCOPE("Application::ImGui");
 
-			m_imguiSubSystem->Begin();
+		//	m_imguiSubSystem->Begin();
 
-			AppImGuiUpdateEvent imguiEvent{};
-			EventSystem::DispatchEvent(imguiEvent);
+		//	AppImGuiUpdateEvent imguiEvent{};
+		//	EventSystem::DispatchEvent(imguiEvent);
 
-			// #TODO_Ivar: HACK! Will keep this here for now. We need to make sure that the scene renderer output image is ready. 
-			RenderGraphExecutionThread::WaitForFinishedExecution();
-			m_imguiSubSystem->End();
-		}
-		else
-		{
-			RenderGraphExecutionThread::WaitForFinishedExecution();
-		}
+		//	// #TODO_Ivar: HACK! Will keep this here for now. We need to make sure that the scene renderer output image is ready. 
+		//	RenderGraphExecutionThread::WaitForFinishedExecution();
+		//	m_imguiSubSystem->End();
+		//}
+		//else
+		//{
+		//	RenderGraphExecutionThread::WaitForFinishedExecution();
+		//}
 
 		{
 			VT_PROFILE_SCOPE("Application::PostFrameUpdate");

@@ -4,7 +4,7 @@
 #include "Sandbox/Modals/ConvertToWorldEngineModal.h"
 #include "Sandbox/UISystems/ModalSystem.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 SceneSettingsPanel::SceneSettingsPanel(Ref<Volt::Scene>& editorScene)
 	: EditorWindow("Scene Settings"), m_editorScene(editorScene)
@@ -15,7 +15,8 @@ SceneSettingsPanel::SceneSettingsPanel(Ref<Volt::Scene>& editorScene)
 
 void SceneSettingsPanel::UpdateMainContent()
 {
-	auto& sceneSettings = m_editorScene->GetSceneSettingsMutable();
+	//todo_fabian: reimplement
+	/*auto& sceneSettings = m_editorScene->GetSceneSettingsMutable();
 
 	if (UI::BeginProperties("sceneSettings"))
 	{
@@ -26,5 +27,5 @@ void SceneSettingsPanel::UpdateMainContent()
 		}
 
 		UI::EndProperties();
-	}
+	}*/
 }

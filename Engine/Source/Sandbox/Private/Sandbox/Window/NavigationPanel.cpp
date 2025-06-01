@@ -7,10 +7,16 @@
 
 #include <Volt/Components/NavigationComponents.h>
 
+#include <Volt-Application/Application.h>
 //#include <Volt/Physics/MeshColliderCache.h>
 
 #include <Sandbox/Utility/EditorUtilities.h>
 #include <Sandbox/UserSettingsManager.h>
+
+NavigationPanel::NavigationPanel(Ref<Volt::Scene>& currentScene)
+	: EditorWindow("Navigation Settings"), myBuildSettings(UserSettingsManager::GetSettings().navmeshBuildSettings), myBuilder(myBuildSettings), myScene(currentScene), myNavigationSystem(Volt::Application::Get().GetNavigationSystem())
+{}
+
 
 void NavigationPanel::UpdateMainContent()
 {
@@ -166,7 +172,7 @@ void NavigationPanel::CompileNavLinks()
 {
 	myBuilder.ClearNavLinkConnections();
 
-	myScene->ForEachWithComponents<const Volt::NavLinkComponent>([&](const entt::entity id, const Volt::NavLinkComponent& comp) 
+	myScene->ForEachWithComponents<const Volt::NavLinkComponent>([&](const entt::entity id, const Volt::NavLinkComponent& comp)
 	{
 		Volt::Entity entity = { id, myScene };
 		Volt::AI::NavLinkConnection link;

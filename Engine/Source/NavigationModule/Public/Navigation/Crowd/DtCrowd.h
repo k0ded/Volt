@@ -2,13 +2,13 @@
 
 #include "Navigation/NavMesh/DtNavMesh.h"
 
-#include <Volt-Scene/Entity.h>
-#include <Volt/Components/NavigationComponents.h>
+#include <EntitySystem/EntityID.h>
 
 #include <DetourCrowd.h>
 
 namespace Volt
 {
+	class Entity;
 	namespace AI
 	{
 		class DtCrowd

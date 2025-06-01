@@ -2,13 +2,16 @@
 #include "Window/Timeline.h"
 
 #include "Volt/Vision/VisionComponents.h"
-#include "Volt/Utility/UIUtility.h"
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
+#include <Volt-Application/UI/UIUtility.h>
+
 #include <RHIModule/ImGui/FontAwesome.h>
 
-#include "Volt-Renderer/Camera/Camera.h"
+#include <AssetSystem/AssetManager.h>
+
+#include <Volt-Renderer/Camera/Camera.h>
 
 Timeline::Timeline(Ref<Volt::Scene>& aScene, EditorCameraController* editorCamera)
 	:EditorWindow("Timeline", true), myCurrentScene(aScene), myEditorCamera(editorCamera)
@@ -346,7 +349,8 @@ void Timeline::DrawEntityTracks(ImDrawList& drawlist, int trackIndex)
 
 	if (myTimelinePreset->myTracks[trackIndex].trackType == Volt::TrackType::T_Animation)
 	{
-		UI::PropertyEntity(myCurrentScene, myTimelinePreset->myTracks[trackIndex].targetEntity, myTrackWindowSize.x - recordButtonWidth - ImGui::GetStyle().ItemSpacing.x, nullptr);
+		//todo_fabian: reimplement
+		//UI::PropertyEntity(myCurrentScene, myTimelinePreset->myTracks[trackIndex].targetEntity, myTrackWindowSize.x - recordButtonWidth - ImGui::GetStyle().ItemSpacing.x, nullptr);
 	}
 	else
 	{

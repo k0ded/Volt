@@ -2,8 +2,8 @@
 
 #include <Volt-Platforms/Platform.h>
 
-#include <Volt/Core/Application.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/BaseApplication.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
 
@@ -26,7 +26,7 @@ namespace Volt
 		RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(CrashReportClientLayer::OnUpdateEvent));
 		RegisterListener<Volt::AppImGuiUpdateEvent>(VT_BIND_EVENT_FN(CrashReportClientLayer::OnImGuiUpdateEvent));
 
-		const CommandLineBuilder& commandLineBuilder = Application::Get().GetCommandLineBuilder();
+		const CommandLineBuilder& commandLineBuilder = BaseApplication::Get().GetCommandLineBuilder();
 
 		if (commandLineBuilder.IsArgDefined("monitorprocess"))
 		{
@@ -66,13 +66,13 @@ namespace Volt
 	{
 		if ((!m_monitoredProcessHandle.IsValid() || !PlatformProcess::IsProcRunning(m_monitoredProcessHandle)) && !m_isDisplayingCrash)
 		{
-			Application::Get().Quit();
+			BaseApplication::Get().Quit();
 		}
 
 		if (!m_isDisplayingCrash)
 		{
 			const float appTargetDeltaTime = 1.f / 10.f;
-			const float currentDeltaTime = Application::Get().GetFrameTimer().GetDeltaTime();
+			const float currentDeltaTime = e.GetTimestep();
 			const float timeToSleep = std::clamp(appTargetDeltaTime - currentDeltaTime, 0.f, 1.f);
 			PlatformThread::Sleep<Time::Seconds>(timeToSleep);
 		}
@@ -109,7 +109,7 @@ namespace Volt
 				UI::ScopedButtonColor color{ DefaultButton };
 				if (ImGui::Button("Close without sending"))
 				{
-					Application::Get().Quit();
+					BaseApplication::Get().Quit();
 				}
 			}
 
@@ -121,7 +121,7 @@ namespace Volt
 				{
 					SendCrashReport();
 
-					Application::Get().Quit();
+					BaseApplication::Get().Quit();
 				}
 			}
 
@@ -134,7 +134,7 @@ namespace Volt
 					SendCrashReport();
 					RestartEngineAfterCrash();
 
-					Application::Get().Quit();
+					BaseApplication::Get().Quit();
 				}
 			}
 
@@ -154,7 +154,7 @@ namespace Volt
 				memcpy_s(m_crashContext.get(), sizeof(CrashContext), data.data(), data.size());
 			}
 
-			Application::Get().LaunchMainWindow();
+			BaseApplication::Get().LaunchMainWindow();
 			m_isDisplayingCrash = true;
 			return true;
 		}

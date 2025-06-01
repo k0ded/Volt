@@ -9,14 +9,19 @@
 
 #include <Volt/Asset/Prefab.h>
 #include <Volt/Asset/ParticlePreset.h>
-#include <Volt/Utility/UIUtility.h>
-#include <Volt-Scene/Components/CoreComponents.h>
 #include <Volt/Vision/VisionComponents.h>
 #include <Volt/ImGui/FontAwesome.h>
 
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-Scene/Components/CoreComponents.h>
+
 #include <Volt-Assets/MeshAsset.h>
+
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>

@@ -9,9 +9,11 @@
 #include "Sandbox/UserSettingsManager.h"
 
 #include <Volt-CoreComponents/LightComponents.h>
-#include <Volt-Scene/Scene.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/Components/CoreComponents.h>
+
+#include <Volt-Application/UI/UIUtility.h>
 #include <Volt/Utility/PremadeCommands.h>
 
 #include <EntitySystem/ComponentRegistry.h>
@@ -23,8 +25,10 @@ void RegisterPropertyType(std::unordered_map<TypeTraits::TypeIndex, std::functio
 {
 	outFunctionMap[TypeTraits::TypeIndex::FromType<T>()] = [](std::string_view label, void* data, const size_t offset) -> bool
 	{
-		uint8_t* bytePtr = reinterpret_cast<uint8_t*>(data); 
-		return UI::Property(std::string(label), *reinterpret_cast<T*>(&bytePtr[offset]));
+		//todo_fabian: reimplement
+		//uint8_t* bytePtr = reinterpret_cast<uint8_t*>(data); 
+		//return UI::Property(std::string(label), *reinterpret_cast<T*>(&bytePtr[offset]));
+		return false;
 	};
 }
 
@@ -215,39 +219,40 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Weak<Volt::Scene> scen
 		return false;
 	}
 
-	if ((member.flags & Volt::ComponentMemberFlag::Color3) != Volt::ComponentMemberFlag::None)
-	{
-		if (UI::PropertyColor(std::string(member.label), *reinterpret_cast<glm::vec3*>(&bytePtr[offset + member.offset])))
-		{
-			AddLocalChangeToEntity(entity, member.ownerTypeDesc->GetGUID(), member.name);
-			return true;
-		}
+	//todo_fabian: reimplement
+	//if ((member.flags & Volt::ComponentMemberFlag::Color3) != Volt::ComponentMemberFlag::None)
+	//{
+	//	if (UI::PropertyColor(std::string(member.label), *reinterpret_cast<glm::vec3*>(&bytePtr[offset + member.offset])))
+	//	{
+	//		AddLocalChangeToEntity(entity, member.ownerTypeDesc->GetGUID(), member.name);
+	//		return true;
+	//	}
 
-		return false;
-	}
+	//	return false;
+	//}
 
-	if ((member.flags & Volt::ComponentMemberFlag::Color4) != Volt::ComponentMemberFlag::None)
-	{
-		if (UI::PropertyColor(std::string(member.label), *reinterpret_cast<glm::vec4*>(&bytePtr[offset + member.offset])))
-		{
-			AddLocalChangeToEntity(entity, member.ownerTypeDesc->GetGUID(), member.name);
-			return true;
-		}
+	//if ((member.flags & Volt::ComponentMemberFlag::Color4) != Volt::ComponentMemberFlag::None)
+	//{
+	//	if (UI::PropertyColor(std::string(member.label), *reinterpret_cast<glm::vec4*>(&bytePtr[offset + member.offset])))
+	//	{
+	//		AddLocalChangeToEntity(entity, member.ownerTypeDesc->GetGUID(), member.name);
+	//		return true;
+	//	}
 
-		return false;
-	}
+	//	return false;
+	//}
 
-	// Special case for entities
-	if (member.typeIndex == TypeTraits::TypeIndex::FromType<Volt::EntityID>())
-	{
-		if (UI::PropertyEntity(std::string(member.label), scene, *reinterpret_cast<Volt::EntityID*>(&bytePtr[offset + member.offset])))
-		{
-			AddLocalChangeToEntity(entity, member.ownerTypeDesc->GetGUID(), member.name);
-			return true;
-		}
+	//// Special case for entities
+	//if (member.typeIndex == TypeTraits::TypeIndex::FromType<Volt::EntityID>())
+	//{
+	//	if (UI::PropertyEntity(std::string(member.label), scene, *reinterpret_cast<Volt::EntityID*>(&bytePtr[offset + member.offset])))
+	//	{
+	//		AddLocalChangeToEntity(entity, member.ownerTypeDesc->GetGUID(), member.name);
+	//		return true;
+	//	}
 
-		return false;
-	}
+	//	return false;
+	//}
 
 	if (!s_propertyFunctions.contains(member.typeIndex))
 	{
@@ -279,42 +284,43 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Weak<Volt::Scene>
 		return false;
 	}
 
-	if ((arrayMember.flags & Volt::ComponentMemberFlag::Color3) != Volt::ComponentMemberFlag::None)
-	{
-		if (UI::PropertyColor(label, *reinterpret_cast<glm::vec3*>(elementData)))
-		{
-			AddLocalChangeToEntity(entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
-			EditorUtils::MarkEntityAsEdited(entity);
-		
-			return true;
-		}
-		return false;
-	}
+	//todo_fabian: reimplement
+	//if ((arrayMember.flags & Volt::ComponentMemberFlag::Color3) != Volt::ComponentMemberFlag::None)
+	//{
+	//	if (UI::PropertyColor(label, *reinterpret_cast<glm::vec3*>(elementData)))
+	//	{
+	//		AddLocalChangeToEntity(entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
+	//		EditorUtils::MarkEntityAsEdited(entity);
+	//	
+	//		return true;
+	//	}
+	//	return false;
+	//}
 
-	if ((arrayMember.flags & Volt::ComponentMemberFlag::Color4) != Volt::ComponentMemberFlag::None)
-	{
-		if (UI::PropertyColor(label, *reinterpret_cast<glm::vec4*>(elementData)))
-		{
-			AddLocalChangeToEntity(entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
-			EditorUtils::MarkEntityAsEdited(entity);
-			
-			return true;
-		}
-		return false;
-	}
+	//if ((arrayMember.flags & Volt::ComponentMemberFlag::Color4) != Volt::ComponentMemberFlag::None)
+	//{
+	//	if (UI::PropertyColor(label, *reinterpret_cast<glm::vec4*>(elementData)))
+	//	{
+	//		AddLocalChangeToEntity(entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
+	//		EditorUtils::MarkEntityAsEdited(entity);
+	//		
+	//		return true;
+	//	}
+	//	return false;
+	//}
 
-	// Special case for entities
-	if (arrayMember.typeIndex == TypeTraits::TypeIndex::FromType<Volt::EntityID>())
-	{
-		if (UI::PropertyEntity(label, scene, *reinterpret_cast<Volt::EntityID*>(elementData)))
-		{
-			AddLocalChangeToEntity(entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
-			EditorUtils::MarkEntityAsEdited(entity);
-		
-			return true;
-		}
-		return false;
-	}
+	//// Special case for entities
+	//if (arrayMember.typeIndex == TypeTraits::TypeIndex::FromType<Volt::EntityID>())
+	//{
+	//	if (UI::PropertyEntity(label, scene, *reinterpret_cast<Volt::EntityID*>(elementData)))
+	//	{
+	//		AddLocalChangeToEntity(entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
+	//		EditorUtils::MarkEntityAsEdited(entity);
+	//	
+	//		return true;
+	//	}
+	//	return false;
+	//}
 
 	if (!s_propertyFunctions.contains(typeIndex))
 	{

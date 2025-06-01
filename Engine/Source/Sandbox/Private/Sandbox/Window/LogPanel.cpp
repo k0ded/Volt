@@ -1,7 +1,7 @@
 #include "sbpch.h"
 #include "Window/LogPanel.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 

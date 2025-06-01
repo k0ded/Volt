@@ -1,7 +1,6 @@
 #pragma once
 
-#include <Volt/Core/Base.h>
-
+#include <CoreUtilities/Core.h>
 #include <CoreUtilities/Containers/Vector.h>
 
 #include <glm/glm.hpp>

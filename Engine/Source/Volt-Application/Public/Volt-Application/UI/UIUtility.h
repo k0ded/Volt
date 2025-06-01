@@ -1,18 +1,18 @@
 #pragma once
 
-#include "Volt/Core/Base.h"
-#include "Volt/Utility/FileSystem.h"
-#include "Volt/Utility/ImGuiExtension.h"
+#include "Volt-Application/Config.h"
+#include "Volt-Application/UI/ImGuiExtension.h"
 
-#include <AssetSystem/AssetManager.h>
-#include "Volt/Core/Application.h"
-
-#include <Volt-Scene/Entity.h>
-#include <Volt-Scene/Scene.h>
-#include <Volt-Scene/Components/CoreComponents.h>
-
-#include <InputModule/Input.h>
-#include <InputModule/MouseButtonCodes.h>
+//
+//#include <AssetSystem/AssetManager.h>
+//#include "Volt/Core/Application.h"
+//
+//#include <Volt-Scene/Entity.h>
+//#include <Volt-Scene/Scene.h>
+//#include <Volt-Scene/Components/CoreComponents.h>
+//
+//#include <InputModule/Input.h>
+//#include <InputModule/MouseButtonCodes.h>
 
 #include <glm/glm.hpp>
 
@@ -21,6 +21,10 @@
 #include <imgui_stdlib.h>
 
 #include <RHIModule/ImGui/ImGuiNotifications.h>
+
+#include <CoreUtilities/Pointers/RefPtr.h>
+
+#include <filesystem>
 
 namespace Volt::RHI
 {
@@ -54,7 +58,7 @@ enum class FontType
 	Bold_90
 };
 
-class UI
+class VTAPP_API UI
 {
 public:
 	struct Button
@@ -270,99 +274,99 @@ public:
 	static bool PropertyAxisColor(const std::string& text, glm::vec3& value, float resetValue = 0.f);
 	static bool PropertyAxisColor(const std::string& text, glm::vec2& value, float resetValue = 0.f);
 	
-	static bool PropertyEntity(const std::string& text, Weak<Volt::Scene> scene, Volt::EntityID& value, const std::string& toolTip = "");
-	static bool PropertyEntity(Weak<Volt::Scene> scene, Volt::EntityID& value, const float width, const std::string& toolTip = "");
+	//static bool PropertyEntity(const std::string& text, Weak<Volt::Scene> scene, Volt::EntityID& value, const std::string& toolTip = "");
+	//static bool PropertyEntity(Weak<Volt::Scene> scene, Volt::EntityID& value, const float width, const std::string& toolTip = "");
 
-	static bool PropertyDragFloat(const std::string& text, float& value, float increment, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
-	static bool PropertyTextBox(const std::string& text, const std::string& value, bool readOnly = false, const std::string& toolTip = "");
-	static bool PropertyPassword(const std::string& text, std::string& value, bool readOnly = false, const std::string& toolTip = "");
-	static bool PropertyMultiline(const std::string& text, std::string& value, bool readOnly = false, const std::string& toolTip = "");
-	static bool PropertyDirectory(const std::string& text, std::filesystem::path& path, const std::string& toolTip = "");
+	//static bool PropertyDragFloat(const std::string& text, float& value, float increment, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
+	//static bool PropertyTextBox(const std::string& text, const std::string& value, bool readOnly = false, const std::string& toolTip = "");
+	//static bool PropertyPassword(const std::string& text, std::string& value, bool readOnly = false, const std::string& toolTip = "");
+	//static bool PropertyMultiline(const std::string& text, std::string& value, bool readOnly = false, const std::string& toolTip = "");
+	//static bool PropertyDirectory(const std::string& text, std::filesystem::path& path, const std::string& toolTip = "");
 
-	static bool PropertyColor(const std::string& text, glm::vec4& value, const std::string& toolTip = "");
-	static bool PropertyColor(const std::string& text, glm::vec3& value, const std::string& toolTip = "");
+	//static bool PropertyColor(const std::string& text, glm::vec4& value, const std::string& toolTip = "");
+	//static bool PropertyColor(const std::string& text, glm::vec3& value, const std::string& toolTip = "");
 
-	static bool Property(const std::string& text, bool& value, const std::string& toolTip = "");
-	
-	static bool Property(const std::string& text, int32_t& value, const std::string& toolTip = "");
-	static bool Property(const std::string& text, uint32_t& value, const std::string& toolTip = "");
-	static bool Property(const std::string& text, int16_t& value, const std::string& toolTip = "");
-	static bool Property(const std::string& text, uint16_t& value, const std::string& toolTip = "");
-	static bool Property(const std::string& text, int8_t& value, const std::string& toolTip = "");
-	static bool Property(const std::string& text, uint8_t& value, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, bool& value, const std::string& toolTip = "");
+	//
+	//static bool Property(const std::string& text, int32_t& value, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, uint32_t& value, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, int16_t& value, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, uint16_t& value, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, int8_t& value, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, uint8_t& value, const std::string& toolTip = "");
 
-	static bool Property(const std::string& text, double& value, const std::string& toolTip = "");
-	static bool Property(const std::string& text, float& value, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, double& value, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, float& value, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
 
-	static bool Property(const std::string& text, glm::vec2& value, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
-	static bool Property(const std::string& text, glm::vec3& value, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
-	static bool Property(const std::string& text, glm::vec4& value, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
-	
-	static bool Property(const std::string& text, glm::uvec2& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
-	static bool Property(const std::string& text, glm::uvec3& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
-	static bool Property(const std::string& text, glm::uvec4& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, glm::vec2& value, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, glm::vec3& value, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, glm::vec4& value, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
+	//
+	//static bool Property(const std::string& text, glm::uvec2& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, glm::uvec3& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, glm::uvec4& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
 
-	static bool Property(const std::string& text, glm::ivec2& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
-	static bool Property(const std::string& text, glm::ivec3& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
-	static bool Property(const std::string& text, glm::ivec4& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, glm::ivec2& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, glm::ivec3& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, glm::ivec4& value, uint32_t min = 0, uint32_t max = 0, const std::string& toolTip = "");
 
-	static bool Property(const std::string& text, glm::quat& value, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, glm::quat& value, const std::string& toolTip = "");
 
-	static bool Property(const std::string& text, const std::string& value, bool readOnly = false, const std::string& toolTip = "");
-	static bool Property(const std::string& text, std::string& value, bool readOnly = false, const std::string& toolTip = "");
-	static bool Property(const std::string& text, std::filesystem::path& path, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, const std::string& value, bool readOnly = false, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, std::string& value, bool readOnly = false, const std::string& toolTip = "");
+	//static bool Property(const std::string& text, std::filesystem::path& path, const std::string& toolTip = "");
 
-	template<typename T>
-	static bool Property(const std::string& text, Ref<T>& asset, const std::string& toolTip = "")
-	{
-		bool changed = false;
+	//template<typename T>
+	//static bool Property(const std::string& text, Ref<T>& asset, const std::string& toolTip = "")
+	//{
+	//	bool changed = false;
 
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(text.c_str());
-		SimpleToolTip(toolTip);
+	//	ImGui::TableNextColumn();
+	//	ImGui::TextUnformatted(text.c_str());
+	//	SimpleToolTip(toolTip);
 
-		ImGui::TableNextColumn();
+	//	ImGui::TableNextColumn();
 
-		ImGui::PushItemWidth(ImGui::GetColumnWidth() - 20.f);
+	//	ImGui::PushItemWidth(ImGui::GetColumnWidth() - 20.f);
 
-		std::string assetFileName = "Null";
+	//	std::string assetFileName = "Null";
 
-		if (asset)
-		{
-			assetFileName = asset->path.filename().string();
-		}
+	//	if (asset)
+	//	{
+	//		assetFileName = asset->path.filename().string();
+	//	}
 
-		std::string textId = "##" + std::to_string(s_stackId++);
-		ImGui::InputTextString(textId.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
-		ImGui::PopItemWidth();
+	//	std::string textId = "##" + std::to_string(s_stackId++);
+	//	ImGui::InputTextString(textId.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
+	//	ImGui::PopItemWidth();
 
-		if (auto ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))
-		{
-			Volt::AssetHandle newHandle = *(Volt::AssetHandle*)ptr;
-			Ref<T> newAsset = Volt::AssetManager::GetAsset<T>(newHandle);
-			if (newAsset)
-			{
-				asset = newAsset;
-			}
-			else
-			{
-				asset = nullptr;
-			}
+	//	if (auto ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))
+	//	{
+	//		Volt::AssetHandle newHandle = *(Volt::AssetHandle*)ptr;
+	//		Ref<T> newAsset = Volt::AssetManager::GetAsset<T>(newHandle);
+	//		if (newAsset)
+	//		{
+	//			asset = newAsset;
+	//		}
+	//		else
+	//		{
+	//			asset = nullptr;
+	//		}
 
-			changed = true;
-		}
+	//		changed = true;
+	//	}
 
-		ImGui::SameLine();
+	//	ImGui::SameLine();
 
-		std::string buttonId = "X##" + std::to_string(s_stackId++);
-		if (ImGui::Button(buttonId.c_str()))
-		{
-			asset = nullptr;
-			changed = true;
-		}
+	//	std::string buttonId = "X##" + std::to_string(s_stackId++);
+	//	if (ImGui::Button(buttonId.c_str()))
+	//	{
+	//		asset = nullptr;
+	//		changed = true;
+	//	}
 
-		return changed;
-	}
+	//	return changed;
+	//}
 
 	inline static void SetFont(FontType type, ImFont* font)
 	{

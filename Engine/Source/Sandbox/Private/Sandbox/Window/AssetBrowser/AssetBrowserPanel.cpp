@@ -26,7 +26,7 @@
 #include <Volt-Scene/Components/CoreComponents.h>
 #include <Volt-Scene/Scene.h>
 #include <Volt/Utility/FileSystem.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 #include <Volt/Utility/PremadeCommands.h>
 
 #include <Volt-Physics/PhysicsMaterialAsset.h>
@@ -1288,7 +1288,8 @@ void AssetBrowserPanel::CreateNewShaderModal()
 		constexpr int32_t POST_PROCESSING_SHADER = 3;
 		constexpr int32_t DECAL_SHADER = 4;
 
-		if (UI::BeginProperties("shaderProp"))
+		//todo_fabian: reimplement
+		/*if (UI::BeginProperties("shaderProp"))
 		{
 			UI::Property("Name", myNewShaderData.name);
 
@@ -1317,7 +1318,7 @@ void AssetBrowserPanel::CreateNewShaderModal()
 			}
 
 			UI::EndProperties();
-		}
+		}*/
 
 		if (ImGui::Button("Create"))
 		{
@@ -1500,12 +1501,13 @@ void AssetBrowserPanel::CreateNewMotionWeaveDatabaseModal()
 {
 	if (UI::BeginModal("New MotionWeaveDatabase##assetBrowser"))
 	{
-		if (UI::BeginProperties("motionWeaveProp"))
+		//todo_fabian: reimplement
+		/*if (UI::BeginProperties("motionWeaveProp"))
 		{
 			UI::Property("Name", m_NewMotionWeaveDatabaseData.name);
 			EditorUtils::Property("Skeleton", m_NewMotionWeaveDatabaseData.skeleton, AssetTypes::Skeleton);
 			UI::EndProperties();
-		}
+		}*/
 		
 		bool canCreate = m_NewMotionWeaveDatabaseData.skeleton != Volt::Asset::Null() && !m_NewMotionWeaveDatabaseData.name.empty();
 		

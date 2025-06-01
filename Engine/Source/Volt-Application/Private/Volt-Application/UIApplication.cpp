@@ -1,6 +1,7 @@
 #include "vtapppch.h"
 
 #include "Volt-Application/UIApplication.h"
+#include "Volt-Application/UI/ImGuiSubSystem.h"
 
 #include <Volt-Renderer/Renderer.h>
 
@@ -8,10 +9,14 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <VulkanRHIModule/VulkanRHIProxy.h>
 #include <D3D12RHIModule/D3D12RHIProxy.h>
+#include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 
 #include <CoreUtilities/Allocator.h>
 #include <CoreUtilities/Allocators/PagedHeapAllocator.h>
 #include <CoreUtilities/FileSystem.h>
+
+#include <EventSystem/EventSystem.h>
+#include <EventSystem/ApplicationEvents.h>
 
 namespace Volt
 {
@@ -19,7 +24,7 @@ namespace Volt
 		: BaseApplication(commandLineBuilder, createInfo)
 	{
 		g_heapAllocator = CreateScope<PagedHeapAllocator>();
-	
+
 		FileSystem::Initialize();
 		FileSystem::InitializeWorkingDirectory(createInfo.isRuntime, commandLineBuilder);
 
@@ -30,10 +35,25 @@ namespace Volt
 		WindowManager::InitializeGLFW();
 		CreateGraphicsContext();
 
+		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
+
+		if (m_appCreateInfo.createMainWindow)
+		{
+			LaunchMainWindow();
+		}
+
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PostEngine);
+
+		m_imguiSubSystem = SubSystemManager::GetSubSystem<ImGuiSubSystem>();
+		// Make sure that the main window exits, it is required to initialize ImGui.
+		if (m_appCreateInfo.createMainWindow && m_appCreateInfo.enableImGui)
+		{
+			m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
+			m_imguiSubSystem->SetupContext();
+		}
 	}
-	
+
 	UIApplication::~UIApplication()
 	{
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PostEngine);
@@ -51,7 +71,7 @@ namespace Volt
 
 		g_heapAllocator.reset();
 	}
-	
+
 	void UIApplication::Run()
 	{
 		VT_PROFILE_THREAD("Main");
@@ -60,7 +80,10 @@ namespace Volt
 
 		while (m_isRunning)
 		{
+			VT_PROFILE_FRAME("Frame");
+			MainUpdate();
 
+			//m_frameIndex++;
 		}
 	}
 
@@ -71,11 +94,37 @@ namespace Volt
 
 	void UIApplication::PushLayer(ApplicationLayer* layer)
 	{
+		m_layerStack.PushLayer(layer);
 	}
 
 	void UIApplication::PopLayer(ApplicationLayer* layer)
 	{
+		m_layerStack.PopLayer(layer);
+	}
 
+	void UIApplication::LaunchMainWindow()
+	{
+		if (!m_windowManager->HasMainWindow())
+		{
+			WindowProperties windowProperties{};
+			windowProperties.Width = m_appCreateInfo.width;
+			windowProperties.Height = m_appCreateInfo.height;
+			windowProperties.VSync = m_appCreateInfo.useVSync;
+			windowProperties.Title = m_appCreateInfo.title;
+			windowProperties.WindowMode = m_appCreateInfo.windowMode;
+			windowProperties.IconPath = m_appCreateInfo.iconPath;
+			windowProperties.CursorPath = m_appCreateInfo.cursorPath;
+			windowProperties.UseTitlebar = m_appCreateInfo.useTitlebar;
+			windowProperties.UseCustomTitlebar = m_appCreateInfo.useCustomTitlebar;
+
+			m_windowManager->CreateMainWindow(windowProperties);
+
+			if (m_imguiSubSystem)
+			{
+				m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
+				m_imguiSubSystem->SetupContext();
+			}
+		}
 	}
 
 	void UIApplication::CreateGraphicsContext()
@@ -109,8 +158,62 @@ namespace Volt
 
 	void UIApplication::MainUpdate()
 	{
+		RHI::GraphicsContext::Update();
+
 		WindowManager::Get().BeginFrame();
 
-		WindowManager::Get().Present();
+		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
+		m_frameTimer.Update();
+
+		{
+			VT_PROFILE_SCOPE("Application::Render");
+
+			AppPreRenderEvent preRenderEvent;
+			EventSystem::DispatchEvent(preRenderEvent);
+
+			AppRenderEvent renderEvent(m_currentDeltaTime);
+			EventSystem::DispatchEvent(renderEvent);
+
+			m_windowManager->Render(m_currentDeltaTime);
+		}
+
+		{
+			VT_PROFILE_SCOPE("Application::Update");
+
+			AppUpdateEvent updateEvent(m_currentDeltaTime);
+			EventSystem::DispatchEvent(updateEvent);
+		}
+
+		if (m_info.enableImGui && m_imguiSubSystem->IsInitialized() /*&& !m_skipPresentThisFrame*/)
+		{
+			VT_PROFILE_SCOPE("Application::ImGui");
+
+			m_imguiSubSystem->Begin();
+
+			AppImGuiUpdateEvent imguiEvent{};
+			EventSystem::DispatchEvent(imguiEvent);
+
+			// #TODO_Ivar: HACK! Will keep this here for now. We need to make sure that the scene renderer output image is ready. 
+			RenderGraphExecutionThread::WaitForFinishedExecution();
+			m_imguiSubSystem->End();
+		}
+		else
+		{
+			RenderGraphExecutionThread::WaitForFinishedExecution();
+		}
+
+		{
+			VT_PROFILE_SCOPE("Application::PostFrameUpdate");
+			AppPostFrameUpdateEvent postFrameUpdateEvent{ m_currentDeltaTime };
+			EventSystem::DispatchEvent(postFrameUpdateEvent);
+		}
+
+		//if (!m_skipPresentThisFrame)
+		{
+			WindowManager::Get().Present();
+		}
+		//m_skipPresentThisFrame = false;
+
+		m_frameTimer.Accumulate();
 	}
 }

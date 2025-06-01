@@ -2,7 +2,7 @@
 #include "Window/AnimationEditorPanel.h"
 
 #include <AssetSystem/AssetManager.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Animation/Assets/Animation.h>
 
@@ -172,11 +172,12 @@ void AnimationEditorPanel::AddAnimationEventModal()
 	if (UI::BeginModal("Create Animation Event", ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		UI::PushID();
-		if (UI::BeginProperties("animEvent"))
+		//todo_fabian: reimplement
+		/*if (UI::BeginProperties("animEvent"))
 		{
 			UI::Property("Name", m_addAnimEventData.name);
 			UI::EndProperties();
-		}
+		}*/
 		UI::PopID();
 
 		if (ImGui::Button("Cancel"))

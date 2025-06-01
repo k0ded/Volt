@@ -68,7 +68,7 @@
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <AssetSystem/AssetManager.h>
 

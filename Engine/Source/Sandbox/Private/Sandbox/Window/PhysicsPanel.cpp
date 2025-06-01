@@ -1,7 +1,7 @@
 #include "sbpch.h"
 #include "Window/PhysicsPanel.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 PhysicsPanel::PhysicsPanel()
 	: EditorWindow("Physics Panel")

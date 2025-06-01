@@ -12,7 +12,11 @@
 
 #include <Volt-Scene/Scene.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
+
+#include <InputModule/Input.h>
 
 #include <AssetSystem/AssetManager.h>
 #include <WindowModule/Events/WindowEvents.h>

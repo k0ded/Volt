@@ -1,7 +1,7 @@
 #include "sbpch.h"
 #include "Window/WorldEnginePanel.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <CoreUtilities/Math/Math.h>
 
@@ -14,7 +14,8 @@ void WorldEnginePanel::UpdateMainContent()
 {
 	auto& worldEngine = m_editorScene->GetWorldEngineMutable();
 
-	if (UI::BeginProperties("worldEngineSettings"))
+	//todo_fabian: reimplement
+	/*if (UI::BeginProperties("worldEngineSettings"))
 	{
 		if (UI::Property("Cell Size", worldEngine.GetSettingsMutable().cellSize))
 		{
@@ -27,7 +28,7 @@ void WorldEnginePanel::UpdateMainContent()
 		}
 
 		UI::EndProperties();
-	}
+	}*/
 
 	ImGui::Text("Cells");
 

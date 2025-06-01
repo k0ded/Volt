@@ -1,7 +1,7 @@
 #include <Volt-Platforms/Platform.h>
 #include <Volt-Application/BaseApplication.h>
 
-#include <Volt/Core/Application.h>
+#include <Volt-Application/Application.h>
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/CommandLineBuilder.h>
@@ -30,7 +30,6 @@ namespace Volt
 
 	int32_t Main(const CommandLineBuilder& commandLineBuilder)
 	{
-		//Application* app = CreateApplication(commandLineBuilder);
 		BaseApplication* app = CreateApplicationBase(commandLineBuilder);
 		app->Run();
 

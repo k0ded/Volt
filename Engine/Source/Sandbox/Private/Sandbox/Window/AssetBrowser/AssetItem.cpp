@@ -20,7 +20,7 @@
 #include <Volt/Utility/PremadeCommands.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 namespace AssetBrowser
 {
