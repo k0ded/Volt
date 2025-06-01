@@ -1,6 +1,6 @@
 #pragma once
 
-#include <RHIModule/Shader/Shader2.h>
+#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Core/RHICommon.h>
 #include <RHIModule/Shader/BufferLayout.h>
 
@@ -8,7 +8,7 @@ struct VkShaderModule_T;
 
 namespace Volt::RHI
 {
-	class VulkanShader2 final : public Shader2
+	class VulkanShader final : public Shader
 	{
 	public:
 		struct ShaderInfo
@@ -24,8 +24,8 @@ namespace Volt::RHI
 			ShaderUniforms shaderUniforms{};
 		};
 
-		VulkanShader2(const ShaderCreateInfo& createInfo);
-		~VulkanShader2() override;
+		VulkanShader(const ShaderCreateInfo& createInfo);
+		~VulkanShader() override;
 
 		void Reload(bool forceCompile /* = false */) override;
 		std::string_view GetName() const override;

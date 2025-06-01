@@ -8,11 +8,11 @@ struct VkPipelineLayout_T;
 
 namespace Volt::RHI
 {
-	class VulkanRenderPipeline2 : public RenderPipeline
+	class VulkanRenderPipeline : public RenderPipeline
 	{
 	public:
-		VulkanRenderPipeline2(const RenderPipelineCreateInfo& createInfo);
-		~VulkanRenderPipeline2() override;
+		VulkanRenderPipeline(const RenderPipelineCreateInfo& createInfo);
+		~VulkanRenderPipeline() override;
 
 		void Invalidate() override;
 		bool IsValid() const override;

@@ -1,9 +1,9 @@
 #include "rcpch.h"
 
-#include "RenderCore/RenderGraph2/RenderGraph2.h"
-#include "RenderCore/RenderGraph2/RenderContext2.h"
-#include "RenderCore/RenderGraph2/RenderGraphUtils.h"
-#include "RenderCore/RenderGraph2/ShaderParameterStruct2.h"
+#include "RenderCore/RenderGraph/RenderGraph.h"
+#include "RenderCore/RenderGraph/RenderContext.h"
+#include "RenderCore/RenderGraph/RenderGraphUtils.h"
+#include "RenderCore/RenderGraph/ShaderParameterStruct.h"
 
 namespace Volt
 {
@@ -12,7 +12,7 @@ namespace Volt
 		RG_BUFFER_ACCESS(CopyDst, RGResourceAccess::CopyDst)
 	END_SHADER_PARAMETER_STRUCT()
 
-	void AddCopyBufferPass(RenderGraph2& renderGraph, RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size, const std::string& passName)
+	void AddCopyBufferPass(RenderGraph& renderGraph, RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size, const std::string& passName)
 	{
 		CopyBufferParameters* parameters = renderGraph.AllocParameters<CopyBufferParameters>();
 		parameters->CopySrc = src;
@@ -21,7 +21,7 @@ namespace Volt
 		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::None,
 			parameters,
-			[parameters, srcOffset, dstOffset, size](RenderContext2& context) 
+			[parameters, srcOffset, dstOffset, size](RenderContext& context) 
 		{
 			context.CopyBufferRegion(parameters->CopySrc, srcOffset, parameters->CopyDst, dstOffset, size);
 		});
@@ -31,7 +31,7 @@ namespace Volt
 		SHADER_PARAMETER_BUFFER_UAV(RGBufferUAV, RWBuffer)
 	END_SHADER_PARAMETER_STRUCT()
 
-	void AddMappedBufferUpload(RenderGraph2& renderGraph, RGBufferRef dst, const void* data, const size_t dataSize)
+	void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferRef dst, const void* data, const size_t dataSize)
 	{
 		void* tempData = renderGraph.AllocData(dataSize);
 		memcpy_s(tempData, dataSize, data, dataSize);
@@ -42,7 +42,7 @@ namespace Volt
 		renderGraph.AddPass("Mapped Upload",
 			RenderGraphPassFlags::Compute,
 			stagingParameters,
-			[stagingParameters, tempData, dataSize](RenderContext2& context)
+			[stagingParameters, tempData, dataSize](RenderContext& context)
 		{
 			uint8_t* mappedPtr = context.MapBuffer<uint8_t>(stagingParameters->RWBuffer);
 			memcpy_s(mappedPtr, dataSize, tempData, dataSize);
@@ -54,7 +54,7 @@ namespace Volt
 		SHADER_PARAMETER_BUFFER_UAV(RWBuffer<uint>, RWBuffer)
 	END_SHADER_PARAMETER_STRUCT()
 
-	void AddClearUAVPass(RenderGraph2& renderGraph, RGBufferUAVRef bufferUAV, const uint32_t clearValue)
+	void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const uint32_t clearValue)
 	{
 		ClearBufferUAVParameters* parameters = renderGraph.AllocParameters<ClearBufferUAVParameters>();
 		parameters->RWBuffer = bufferUAV;
@@ -62,13 +62,13 @@ namespace Volt
 		renderGraph.AddPass("Clear Buffer UAV",
 			RenderGraphPassFlags::Compute,
 			parameters,
-			[parameters, clearValue](RenderContext2& context) 
+			[parameters, clearValue](RenderContext& context) 
 		{
 			context.ClearUAV(parameters->RWBuffer, clearValue);
 		});
 	}
 
-	void AddClearUAVPass(RenderGraph2& renderGraph, RGBufferUAVRef bufferUAV, const float clearValue)
+	void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const float clearValue)
 	{
 		ClearBufferUAVParameters* parameters = renderGraph.AllocParameters<ClearBufferUAVParameters>();
 		parameters->RWBuffer = bufferUAV;
@@ -76,7 +76,7 @@ namespace Volt
 		renderGraph.AddPass("Clear Buffer UAV",
 			RenderGraphPassFlags::Compute,
 			parameters,
-			[parameters, clearValue](RenderContext2& context)
+			[parameters, clearValue](RenderContext& context)
 		{
 			context.ClearUAV(parameters->RWBuffer, clearValue);
 		});

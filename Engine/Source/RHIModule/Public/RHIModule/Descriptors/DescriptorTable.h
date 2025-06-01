@@ -36,7 +36,7 @@ namespace Volt::RHI
 
 		virtual void PrepareForRender() = 0;
 
-		static RefPtr<DescriptorTable> Create2(const DescriptorTableCreateInfo& specification);
+		static RefPtr<DescriptorTable> Create(const DescriptorTableCreateInfo& specification);
 
 	protected:
 		virtual void Bind(CommandBuffer& commandBuffer) = 0;

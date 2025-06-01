@@ -135,7 +135,7 @@ namespace Volt
 		return false;
 	}
 
-	void ShaderMap::RegisterShader2(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader2> shader)
+	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader)
 	{
 		std::scoped_lock lock{ s_instance->m_registerMutex };
 		s_instance->m_shaderMap2[typeIndex] = shader;

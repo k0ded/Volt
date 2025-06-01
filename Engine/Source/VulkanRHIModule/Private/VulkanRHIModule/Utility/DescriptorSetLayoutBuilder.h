@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanRHIModule/Shader/VulkanShader2.h"
+#include "VulkanRHIModule/Shader/VulkanShader.h"
 
 struct VkDescriptorSetLayout_T;
 

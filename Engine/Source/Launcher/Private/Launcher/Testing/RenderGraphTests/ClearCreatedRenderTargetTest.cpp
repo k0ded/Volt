@@ -1,7 +1,7 @@
 #include "Testing/RenderGraphTests/ClearCreatedRenderTargetTest.h"
 
-#include <RenderCore/RenderGraph2/RenderGraph2.h>
-#include <RenderCore/RenderGraph2/RenderContext2.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
 
 using namespace Volt;
 
@@ -19,7 +19,7 @@ RG_ClearCreatedRenderTargetTest::~RG_ClearCreatedRenderTargetTest()
 
 bool RG_ClearCreatedRenderTargetTest::RunTest()
 {
-	RenderGraph2 renderGraph{ m_commandBuffer };
+	RenderGraph renderGraph{ m_commandBuffer };
 
 	RGTextureRef testTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_SFLOAT>(1280, 720, RHI::ImageUsage::AttachmentStorage, "TestTexture"));
 
@@ -29,7 +29,7 @@ bool RG_ClearCreatedRenderTargetTest::RunTest()
 	renderGraph.AddPass("Clear Pass",
 		RenderGraphPassFlags::NeverCull | RenderGraphPassFlags::Compute,
 		clearParameters,
-		[clearParameters](RenderContext2& context) 
+		[clearParameters](RenderContext& context) 
 	{
 		context.ClearUAV(clearParameters->texture, glm::vec4{ 0.f, 0.f, 0.f, 1.f });
 	});

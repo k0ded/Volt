@@ -1,7 +1,7 @@
 #pragma once
 
-#include "RenderCore/RenderGraph2/Resources/ResourceDeclarations.h"
-#include "RenderCore/RenderGraph2/Resources/RenderGraphResource.h"
+#include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
+#include "RenderCore/RenderGraph/Resources/RenderGraphResource.h"
 
 #include <CoreUtilities/Containers/VectorVariants.h>
 

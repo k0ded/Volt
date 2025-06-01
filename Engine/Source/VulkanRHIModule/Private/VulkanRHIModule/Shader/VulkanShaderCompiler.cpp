@@ -130,7 +130,7 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	ShaderCompiler::CompilationResultData2 VulkanShaderCompiler::TryCompileImpl2(const Specification2& specification)
+	ShaderCompiler::CompilationResultData VulkanShaderCompiler::TryCompileImpl2(const Specification& specification)
 	{
 		if (!specification.forceCompile)
 		{
@@ -147,7 +147,7 @@ namespace Volt::RHI
 			return {};
 		}
 
-		CompilationResultData2 result = CompileShader(specification);
+		CompilationResultData result = CompileShader(specification);
 		if (result.result != ShaderCompiler::CompilationResult::Success)
 		{
 			const auto cachedResult = m_shaderCache->TryGetCachedShader(specification);
@@ -160,9 +160,9 @@ namespace Volt::RHI
 		return result;
 	}
 
-	ShaderCompiler::CompilationResultData2 VulkanShaderCompiler::CompileShader(const Specification2& specification)
+	ShaderCompiler::CompilationResultData VulkanShaderCompiler::CompileShader(const Specification& specification)
 	{
-		CompilationResultData2 result;
+		CompilationResultData result;
 
 		const ShaderSourceEntry& sourceEntry = specification.shaderSourceInfo.sourceEntry;
 		std::string processedSource = specification.shaderSourceInfo.source;
@@ -324,7 +324,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	bool VulkanShaderCompiler::PreprocessSource2(const Specification2& specification, std::string& outProcessedSource)
+	bool VulkanShaderCompiler::PreprocessSource2(const Specification& specification, std::string& outProcessedSource)
 	{
 		Vector<std::wstring> wIncludeDirs;
 		Vector<const wchar_t*> wcIncludeDirs;
@@ -426,7 +426,7 @@ namespace Volt::RHI
 		return !failed;
 	}
 
-	void VulkanShaderCompiler::ReflectShader(const Specification2& specification, CompilationResultData2& inOutData)
+	void VulkanShaderCompiler::ReflectShader(const Specification& specification, CompilationResultData& inOutData)
 	{
 		SpvReflectShaderModule spirvModule{};
 		SpvReflectResult result = spvReflectCreateShaderModule(inOutData.shaderBinary.size() * sizeof(uint32_t), inOutData.shaderBinary.data(), &spirvModule);

@@ -1,6 +1,6 @@
 #include "vkpch.h"
 
-#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline2.h"
+#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
@@ -66,13 +66,13 @@ namespace Volt::RHI
 		return result;
 	}
 
-	inline VertexAttributeData CreateVertexLayoutFromShaders(const Vector<RefPtr<Shader2>>& shaders)
+	inline VertexAttributeData CreateVertexLayoutFromShaders(const Vector<RefPtr<Shader>>& shaders)
 	{
 		// We will pick the first shader that contains a vertex layout (should only be one anyways)
 		for (const auto shader : shaders)
 		{
-			VulkanShader2& vulkanShader = shader->AsRef<VulkanShader2>();
-			const VulkanShader2::ShaderInfo& shaderInfo = vulkanShader.GetShaderInfo();
+			VulkanShader& vulkanShader = shader->AsRef<VulkanShader>();
+			const VulkanShader::ShaderInfo& shaderInfo = vulkanShader.GetShaderInfo();
 
 			if (shaderInfo.vertexLayout.IsValid())
 			{
@@ -84,14 +84,14 @@ namespace Volt::RHI
 		return {};
 	}
 
-	inline Vector<PixelFormat> GetOutputFormatsFromShaders(const Vector<RefPtr<Shader2>>& shaders)
+	inline Vector<PixelFormat> GetOutputFormatsFromShaders(const Vector<RefPtr<Shader>>& shaders)
 	{
 		// We will pick the first pixel shader, there should only be one.
 		for (const auto shader : shaders)
 		{
 			if (shader->GetShaderStage() == ShaderStage::Pixel)
 			{
-				VulkanShader2& vulkanShader = shader->AsRef<VulkanShader2>();
+				VulkanShader& vulkanShader = shader->AsRef<VulkanShader>();
 				return vulkanShader.GetShaderInfo().outputFormats;
 			}
 		}
@@ -101,18 +101,18 @@ namespace Volt::RHI
 		return { PixelFormat::D32_SFLOAT };
 	}
 
-	VulkanRenderPipeline2::VulkanRenderPipeline2(const RenderPipelineCreateInfo& createInfo)
+	VulkanRenderPipeline::VulkanRenderPipeline(const RenderPipelineCreateInfo& createInfo)
 		: m_createInfo(createInfo)
 	{
 		Invalidate();
 	}
 
-	VulkanRenderPipeline2::~VulkanRenderPipeline2()
+	VulkanRenderPipeline::~VulkanRenderPipeline()
 	{
 		Release();
 	}
 
-	void VulkanRenderPipeline2::Invalidate()
+	void VulkanRenderPipeline::Invalidate()
 	{
 		Release();
 
@@ -314,7 +314,7 @@ namespace Volt::RHI
 
 			for (const auto shader : m_createInfo.shaders)
 			{
-				VulkanShader2& vulkanShader = shader->AsRef<VulkanShader2>();
+				VulkanShader& vulkanShader = shader->AsRef<VulkanShader>();
 
 				auto& newStageInfo = pipelineStageInfos.emplace_back();
 				newStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -349,22 +349,22 @@ namespace Volt::RHI
 		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Render Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
 	}
 
-	bool VulkanRenderPipeline2::IsValid() const
+	bool VulkanRenderPipeline::IsValid() const
 	{
 		return m_pipeline != nullptr;
 	}
 
-	size_t VulkanRenderPipeline2::GetHash() const
+	size_t VulkanRenderPipeline::GetHash() const
 	{
 		return m_hash;
 	}
 
-	void* VulkanRenderPipeline2::GetHandleImpl() const
+	void* VulkanRenderPipeline::GetHandleImpl() const
 	{
 		return m_pipeline;
 	}
 
-	void VulkanRenderPipeline2::Release()
+	void VulkanRenderPipeline::Release()
 	{
 		if (!m_pipeline)
 		{
@@ -388,7 +388,7 @@ namespace Volt::RHI
 		m_descriptorSetLayouts.clear();
 	}
 
-	void VulkanRenderPipeline2::GenerateHash()
+	void VulkanRenderPipeline::GenerateHash()
 	{
 		m_hash = 0;
 		for (const auto& shader : m_createInfo.shaders)
@@ -400,7 +400,7 @@ namespace Volt::RHI
 		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipelineLayout)));
 	}
 
-	void VulkanRenderPipeline2::VerifyShaderStages()
+	void VulkanRenderPipeline::VerifyShaderStages()
 	{
 		bool foundVertexShader = false;
 		bool foundMeshShader = false;
@@ -439,7 +439,7 @@ namespace Volt::RHI
 		}
 	}
 
-	const ShaderResourceBinding* VulkanRenderPipeline2::GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const
+	const ShaderResourceBinding* VulkanRenderPipeline::GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const
 	{
 		for (const auto& parameterMap : m_shaderParameterMaps)
 		{
@@ -459,7 +459,7 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	const Vector<ShaderParameterMap>& VulkanRenderPipeline2::GetShaderParameterMaps() const
+	const Vector<ShaderParameterMap>& VulkanRenderPipeline::GetShaderParameterMaps() const
 	{
 		return m_shaderParameterMaps;
 	}

@@ -9,7 +9,7 @@ namespace Volt
 {
 	namespace Utility
 	{
-		inline static const size_t GetComputeShaderHash(RefPtr<RHI::Shader2> shader)
+		inline static const size_t GetComputeShaderHash(RefPtr<RHI::Shader> shader)
 		{
 			return shader->GetHash();
 		}
@@ -73,14 +73,14 @@ namespace Volt
 			return pipeline;
 		}
 
-		RefPtr<RHI::RenderPipeline> pipeline = RHI::RenderPipeline::Create2(pipelineInfo);
+		RefPtr<RHI::RenderPipeline> pipeline = RHI::RenderPipeline::Create(pipelineInfo);
 		s_instance->m_renderPipelineCache[hash] = pipeline;
 
 		VT_ENSURE(pipeline->IsValid());
 		return pipeline;
 	}
 
-	RefPtr<RHI::ComputePipeline> PipelineStateCache::GetComputePipeline(RefPtr<RHI::Shader2> computeShader)
+	RefPtr<RHI::ComputePipeline> PipelineStateCache::GetComputePipeline(RefPtr<RHI::Shader> computeShader)
 	{
 		VT_PROFILE_FUNCTION();
 

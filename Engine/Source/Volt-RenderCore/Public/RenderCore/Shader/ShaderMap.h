@@ -7,7 +7,7 @@
 #include <RHIModule/Pipelines/RayTracingPipeline.h>
 #include <RHIModule/RayTracing/ShaderBindingTable.h>
 
-#include <RHIModule/Shader/Shader2.h>
+#include <RHIModule/Shader/Shader.h>
 
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
@@ -31,13 +31,13 @@ namespace Volt
 		static void ReloadAll();
 		static bool ReloadShaderByName(const std::string& name);
 
-		static void RegisterShader2(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader2> shader);
+		static void RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader);
 
 		static RefPtr<RHI::RayTracingPipeline> GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo);
 		static RefPtr<RHI::ShaderBindingTable> GetShaderBindingTable(RefPtr<RHI::RayTracingPipeline> pipeline);
 
 		template<typename T>
-		static RefPtr<RHI::Shader2> Get2()
+		static RefPtr<RHI::Shader> Get()
 		{
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
 			VT_ENSURE(s_instance->m_shaderMap2.contains(typeIndex));
@@ -48,7 +48,7 @@ namespace Volt
 	private:
 		inline static ShaderMap* s_instance = nullptr;
 
-		vt::map<TypeTraits::TypeIndex, RefPtr<RHI::Shader2>> m_shaderMap2;
+		vt::map<TypeTraits::TypeIndex, RefPtr<RHI::Shader>> m_shaderMap2;
 
 		vt::map<size_t, RefPtr<RHI::RayTracingPipeline>> m_rayTracingPipelineCache;
 		vt::map<size_t, RefPtr<RHI::ShaderBindingTable>> m_shaderBindingTableCache;

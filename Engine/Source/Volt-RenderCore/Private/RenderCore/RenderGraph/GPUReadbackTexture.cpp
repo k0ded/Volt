@@ -1,7 +1,7 @@
 #include "rcpch.h"
 #include "RenderCore/RenderGraph/GPUReadbackTexture.h"
 
-#include "RenderCore/RenderGraph2/Resources/RenderGraphTexture.h"
+#include "RenderCore/RenderGraph/Resources/RenderGraphTexture.h"
 
 #include <RHIModule/Images/Image.h>
 

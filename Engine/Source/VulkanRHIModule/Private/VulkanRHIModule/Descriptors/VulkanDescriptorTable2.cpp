@@ -1,8 +1,8 @@
 #include "vkpch.h"
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorTable2.h"
-#include "VulkanRHIModule/Pipelines/VulkanComputePipeline2.h"
-#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline2.h"
+#include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
+#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
@@ -220,11 +220,11 @@ namespace Volt::RHI
 		VkPipelineLayout pipelineLayout = nullptr;
 		if (m_createInfo.computePipeline)
 		{
-			pipelineLayout = m_createInfo.computePipeline->AsRef<VulkanComputePipeline2>().GetPipelineLayout();
+			pipelineLayout = m_createInfo.computePipeline->AsRef<VulkanComputePipeline>().GetPipelineLayout();
 		}
 		else
 		{
-			pipelineLayout = m_createInfo.renderPipeline->AsRef<VulkanRenderPipeline2>().GetPipelineLayout();
+			pipelineLayout = m_createInfo.renderPipeline->AsRef<VulkanRenderPipeline>().GetPipelineLayout();
 		}
 
 		for (const auto& [setIndex, descriptorSet] : m_descriptorSets)
@@ -265,7 +265,7 @@ namespace Volt::RHI
 
 	void VulkanDescriptorTable2::CreateFromComputePipeline()
 	{
-		VulkanComputePipeline2& vulkanPipeline = m_createInfo.computePipeline->AsRef<VulkanComputePipeline2>();
+		VulkanComputePipeline& vulkanPipeline = m_createInfo.computePipeline->AsRef<VulkanComputePipeline>();
 
 		const auto& descriptorPoolSizes = vulkanPipeline.GetDescriptorPoolSizes();
 		const auto& descriptorSetLayouts = vulkanPipeline.GetDescriptorSetLayouts();
@@ -311,7 +311,7 @@ namespace Volt::RHI
 
 	void VulkanDescriptorTable2::CreateFromRenderPipeline()
 	{
-		VulkanRenderPipeline2& vulkanPipeline = m_createInfo.renderPipeline->AsRef<VulkanRenderPipeline2>();
+		VulkanRenderPipeline& vulkanPipeline = m_createInfo.renderPipeline->AsRef<VulkanRenderPipeline>();
 
 		const auto& descriptorPoolSizes = vulkanPipeline.GetDescriptorPoolSizes();
 		const auto& descriptorSetLayouts = vulkanPipeline.GetDescriptorSetLayouts();
@@ -433,11 +433,11 @@ namespace Volt::RHI
 	{
 		if (m_createInfo.computePipeline)
 		{
-			return m_createInfo.computePipeline->AsRef<VulkanComputePipeline2>().GetPipelineLayout();
+			return m_createInfo.computePipeline->AsRef<VulkanComputePipeline>().GetPipelineLayout();
 		}
 		else
 		{
-			return m_createInfo.renderPipeline->AsRef<VulkanRenderPipeline2>().GetPipelineLayout();
+			return m_createInfo.renderPipeline->AsRef<VulkanRenderPipeline>().GetPipelineLayout();
 		}
 	}
 

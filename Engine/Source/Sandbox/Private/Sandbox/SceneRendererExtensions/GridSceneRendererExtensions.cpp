@@ -5,9 +5,9 @@
 #include <Volt-Renderer/RendererCommon.h>
 #include <Volt-Renderer/Camera/Camera.h>
 
-#include <RenderCore/RenderGraph2/RenderGraph2.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
-#include <RenderCore/RenderGraph2/ShaderParameterStruct2.h>
+#include <RenderCore/RenderGraph/ShaderParameterStruct.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/DefaultBlendStates.h>

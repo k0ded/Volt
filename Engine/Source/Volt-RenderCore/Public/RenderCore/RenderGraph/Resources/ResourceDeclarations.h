@@ -1,8 +1,8 @@
 #pragma once
 
-#include "RenderCore/RenderGraph2/Resources/RenderGraphBuffer.h"
-#include "RenderCore/RenderGraph2/Resources/RenderGraphTexture.h"
-#include "RenderCore/RenderGraph2/Resources/RenderGraphUniformBuffer.h"
+#include "RenderCore/RenderGraph/Resources/RenderGraphBuffer.h"
+#include "RenderCore/RenderGraph/Resources/RenderGraphTexture.h"
+#include "RenderCore/RenderGraph/Resources/RenderGraphUniformBuffer.h"
 
 namespace Volt
 {

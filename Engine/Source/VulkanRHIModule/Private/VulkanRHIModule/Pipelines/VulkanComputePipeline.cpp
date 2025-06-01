@@ -1,8 +1,8 @@
 #include "vkpch.h"
 
-#include "VulkanRHIModule/Pipelines/VulkanComputePipeline2.h"
+#include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
-#include "VulkanRHIModule/Shader/VulkanShader2.h"
+#include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -15,18 +15,18 @@
 
 namespace Volt::RHI
 {
-	VulkanComputePipeline2::VulkanComputePipeline2(RefPtr<Shader2> shader)
+	VulkanComputePipeline::VulkanComputePipeline(RefPtr<Shader> shader)
 		: m_shader(shader)
 	{
 		Invalidate();
 	}
 
-	VulkanComputePipeline2::~VulkanComputePipeline2()
+	VulkanComputePipeline::~VulkanComputePipeline()
 	{
 		Release();
 	}
 	
-	void VulkanComputePipeline2::Invalidate()
+	void VulkanComputePipeline::Invalidate()
 	{
 		Release();
 		
@@ -36,7 +36,7 @@ namespace Volt::RHI
 		ScopedTimer scopedTimer{};
 
 		auto device = GraphicsContext::GetDevice();
-		VulkanShader2& vulkanShader = m_shader->AsRef<VulkanShader2>();
+		VulkanShader& vulkanShader = m_shader->AsRef<VulkanShader>();
 
 		// Create descriptor set layouts
 		{
@@ -91,22 +91,22 @@ namespace Volt::RHI
 		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Compute Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
 	}
 	
-	bool VulkanComputePipeline2::IsValid() const
+	bool VulkanComputePipeline::IsValid() const
 	{
 		return m_pipeline != nullptr;
 	}
 	
-	size_t VulkanComputePipeline2::GetHash() const
+	size_t VulkanComputePipeline::GetHash() const
 	{
 		return m_hash;
 	}
 	
-	void* VulkanComputePipeline2::GetHandleImpl() const
+	void* VulkanComputePipeline::GetHandleImpl() const
 	{
 		return m_pipeline;
 	}
 	
-	void VulkanComputePipeline2::Release()
+	void VulkanComputePipeline::Release()
 	{
 		if (!m_pipeline)
 		{
@@ -130,7 +130,7 @@ namespace Volt::RHI
 		m_descriptorSetLayouts.clear();
 	}
 
-	void VulkanComputePipeline2::GenerateHash()
+	void VulkanComputePipeline::GenerateHash()
 	{
 		m_hash = m_shader->GetHash();
 
@@ -138,7 +138,7 @@ namespace Volt::RHI
 		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipelineLayout)));
 	}
 
-	const ShaderResourceBinding* VulkanComputePipeline2::GetResourceBindingFromName(const StringHash& name) const
+	const ShaderResourceBinding* VulkanComputePipeline::GetResourceBindingFromName(const StringHash& name) const
 	{
 		const ShaderParameterMap::ResourceBindingsMap& resourceBindings = m_shaderParameterMap.GetResourceBindings();
 		if (resourceBindings.contains(name))
@@ -149,12 +149,12 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	RefPtr<Shader2> VulkanComputePipeline2::GetShader2() const
+	RefPtr<Shader> VulkanComputePipeline::GetShader2() const
 	{
 		return m_shader;
 	}
 
-	const ShaderParameterMap& VulkanComputePipeline2::GetShaderParameterMap() const
+	const ShaderParameterMap& VulkanComputePipeline::GetShaderParameterMap() const
 	{
 		return m_shaderParameterMap;
 	}

@@ -1,9 +1,9 @@
 #include "Testing/RenderGraphTests/DispatchComputeShaderTest.h"
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
-#include <RenderCore/RenderGraph2/RenderGraph2.h>
-#include <RenderCore/RenderGraph2/RenderContext2.h>
-#include <RenderCore/RenderGraph2/ShaderParameterStruct2.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
+#include <RenderCore/RenderGraph/ShaderParameterStruct2.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/GlobalShader.h>
 
@@ -22,7 +22,7 @@ struct DispatchComputeShaderTestCS : public GlobalShader
 };
 REGISTER_SHADER(DispatchComputeShaderTestCS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DispatchComputeShaderTest.hlsl", "MainCS", Compute);
 
-static RefPtr<RHI::Shader2> s_shader;
+static RefPtr<RHI::Shader> s_shader;
 static RefPtr<RHI::ComputePipeline> s_pipeline;
 
 RG_DispatchComputeShaderTest::RG_DispatchComputeShaderTest()
@@ -37,7 +37,7 @@ RG_DispatchComputeShaderTest::~RG_DispatchComputeShaderTest()
 
 bool RG_DispatchComputeShaderTest::RunTest()
 {
-	RenderGraph2 renderGraph{ m_commandBuffer };
+	RenderGraph renderGraph{ m_commandBuffer };
 
 	RGBufferRef dataBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDescGPU<glm::uvec2>(32));
 
@@ -48,7 +48,7 @@ bool RG_DispatchComputeShaderTest::RunTest()
 	renderGraph.AddPass("Test", 
 		RenderGraphPassFlags::Compute | RenderGraphPassFlags::NeverCull,
 		passParameters, 
-		[passParameters](RenderContext2& context) 
+		[passParameters](RenderContext& context) 
 		{
 			context.BindPipeline(s_pipeline);
 			context.SetParameters<DispatchComputeShaderTestCS>(s_shader, passParameters);

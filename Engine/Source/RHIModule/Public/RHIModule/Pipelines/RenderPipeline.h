@@ -2,7 +2,7 @@
 
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
-#include "RHIModule/Shader/Shader2.h"
+#include "RHIModule/Shader/Shader.h"
 
 #include <CoreUtilities/Containers/Array.h>
 
@@ -21,7 +21,7 @@ namespace Volt::RHI
 
 	struct RenderPipelineCreateInfo
 	{
-		Vector<RefPtr<Shader2>> shaders;
+		Vector<RefPtr<Shader>> shaders;
 
 		Topology topology = Topology::TriangleList;
 		CullMode cullMode = CullMode::Back;
@@ -43,7 +43,7 @@ namespace Volt::RHI
 		virtual const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const = 0;
 		virtual const Vector<ShaderParameterMap>& GetShaderParameterMaps() const = 0;
 
-		static RefPtr<RenderPipeline> Create2(const RenderPipelineCreateInfo& createInfo);
+		static RefPtr<RenderPipeline> Create(const RenderPipelineCreateInfo& createInfo);
 
 	protected:
 		RenderPipeline() = default;

@@ -40,7 +40,7 @@ namespace Volt
 		{
 			RHI::DescriptorTableCreateInfo createInfo{};
 			createInfo.computePipeline = pipeline;
-			descriptorTable = RHI::DescriptorTable::Create2(createInfo);
+			descriptorTable = RHI::DescriptorTable::Create(createInfo);
 		}
 
 		const uint32_t cacheIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
@@ -69,7 +69,7 @@ namespace Volt
 		{
 			RHI::DescriptorTableCreateInfo createInfo{};
 			createInfo.renderPipeline = pipeline;
-			descriptorTable = RHI::DescriptorTable::Create2(createInfo);
+			descriptorTable = RHI::DescriptorTable::Create(createInfo);
 		}
 
 		const uint32_t cacheIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;

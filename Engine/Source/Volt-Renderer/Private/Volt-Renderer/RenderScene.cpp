@@ -59,7 +59,7 @@ namespace Volt
 	{
 	}
 
-	void RenderScene::Update(RenderGraph2& renderGraph)
+	void RenderScene::Update(RenderGraph& renderGraph)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -109,7 +109,7 @@ namespace Volt
 		}
 	}
 
-	void RenderScene::EndFrame(RenderGraph2& renderGraph)
+	void RenderScene::EndFrame(RenderGraph& renderGraph)
 	{
 		m_buffers.prevPrimitiveDrawDataBuffer->GrowIfRequired(m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount());
 
@@ -553,7 +553,7 @@ namespace Volt
 		}
 	}
 
-	void RenderScene::UpdateInvalidMaterials(RenderGraph2& renderGraph)
+	void RenderScene::UpdateInvalidMaterials(RenderGraph& renderGraph)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -590,7 +590,7 @@ namespace Volt
 		}
 	}
 
-	void RenderScene::UpdateInvalidMeshes(RenderGraph2& renderGraph)
+	void RenderScene::UpdateInvalidMeshes(RenderGraph& renderGraph)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -635,7 +635,7 @@ namespace Volt
 		}
 	}
 
-	void RenderScene::UpdateInvalidPrimitiveData(RenderGraph2& renderGraph)
+	void RenderScene::UpdateInvalidPrimitiveData(RenderGraph& renderGraph)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -687,7 +687,7 @@ namespace Volt
 	};
 	REGISTER_SHADER(CompactValidDrawCallCS, "Engine/Shaders/Source/RenderPipeline/CompactValidDrawCalls.hlsl", "MainCS", Compute);
 
-	void RenderScene::CompactValidPrimitiveDrawDatas(RenderGraph2& renderGraph)
+	void RenderScene::CompactValidPrimitiveDrawDatas(RenderGraph& renderGraph)
 	{
 		// We need to make sure that the buffer is one larger than the count, because
 		// the first index is used for the count.
@@ -708,7 +708,7 @@ namespace Volt
 
 		constexpr uint32_t workGroupCount = 64;
 
-		auto shader = ShaderMap::Get2<CompactValidDrawCallCS>();
+		auto shader = ShaderMap::Get<CompactValidDrawCallCS>();
 		ComputeShaderUtils::AddPass<CompactValidDrawCallCS>(renderGraph,
 			"Compact Valid Primitive Draw Datas",
 			shader,
@@ -716,7 +716,7 @@ namespace Volt
 			{ Math::DivideRoundUp(primitiveDrawDataCount, workGroupCount), 1, 1 });
 	}
 
-	void RenderScene::UpdateInvalidLights(RenderGraph2& renderGraph)
+	void RenderScene::UpdateInvalidLights(RenderGraph& renderGraph)
 	{
 		VT_PROFILE_FUNCTION();
 

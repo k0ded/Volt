@@ -1,7 +1,7 @@
 #include "vrpch.h"
 #include "RenderMaterial.h"
 
-#include <RHIModule/Shader/Shader2.h>
+#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
 
 #include <CoreUtilities/Math/Hash.h>
@@ -14,7 +14,7 @@ namespace Volt
 		GenerateHash();
 	}
 
-	RenderMaterial::RenderMaterial(const std::string& name, RefPtr<RHI::Shader2> shader)
+	RenderMaterial::RenderMaterial(const std::string& name, RefPtr<RHI::Shader> shader)
 		: m_name(name)
 	{
 		VT_ENSURE(shader);
@@ -59,7 +59,7 @@ namespace Volt
 			shaderSpecification.sourceFilepath = filepath;
 			shaderSpecification.forceCompile = true;
 
-			m_shader = RHI::Shader2::Create(shaderSpecification);
+			m_shader = RHI::Shader::Create(shaderSpecification);
 		}
 		else
 		{

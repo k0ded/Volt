@@ -19,22 +19,22 @@ DrawIndirectTest::DrawIndirectTest()
 	createInfo.sourceFilepath = "Engine/Shaders/Source/Testing/DrawIndirectTest.hlsl";
 	createInfo.stage = RHI::ShaderStage::Vertex;
 
-	RefPtr<RHI::Shader2> shaderVS = RHI::Shader2::Create(createInfo);
+	RefPtr<RHI::Shader> shaderVS = RHI::Shader::Create(createInfo);
 
 	createInfo.entryPoint = "MainPS";
 	createInfo.stage = RHI::ShaderStage::Pixel;
-	RefPtr<RHI::Shader2> shaderPS = RHI::Shader2::Create(createInfo);
+	RefPtr<RHI::Shader> shaderPS = RHI::Shader::Create(createInfo);
 
 	RHI::RenderPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.shaders = { shaderVS, shaderPS };
 	//pipelineInfo.shader = ShaderMap::Get("DrawIndirectTest");
 	//m_renderPipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
 
-	m_renderPipeline = RHI::RenderPipeline::Create2(pipelineInfo);
+	m_renderPipeline = RHI::RenderPipeline::Create(pipelineInfo);
 
 	RHI::DescriptorTableCreateInfo tableInfo{};
 	tableInfo.renderPipeline = m_renderPipeline;
-	m_descriptorTable = RHI::DescriptorTable::Create2(tableInfo);
+	m_descriptorTable = RHI::DescriptorTable::Create(tableInfo);
 
 	//m_descriptorTable = RHI::DescriptorTable::Create({ m_renderPipeline->GetShader(), false });
 	m_commandsBuffer = RHI::StorageBuffer::Create<RHI::IndirectDrawCommand>(1, "Commands Buffer", RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndirectBuffer, RHI::MemoryUsage::CPUToGPU);

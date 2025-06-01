@@ -25,11 +25,11 @@
 #include "VulkanRHIModule/Memory/VulkanTransientGPUAllocator.h"
 #include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
 
-#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline2.h"
-#include "VulkanRHIModule/Pipelines/VulkanComputePipeline2.h"
+#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
+#include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 
-#include "VulkanRHIModule/Shader/VulkanShader2.h"
+#include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Shader/VulkanShaderCompiler.h"
 
 #include "VulkanRHIModule/Synchronization/VulkanEvent.h"
@@ -144,9 +144,9 @@ namespace Volt::RHI
 		return RefPtr<VulkanTransientHeap>::Create(createInfo);
 	}
 
-	RefPtr<Volt::RHI::ComputePipeline> VulkanRHIModule::CreateComputePipeline(RefPtr<Shader2> shader) const
+	RefPtr<Volt::RHI::ComputePipeline> VulkanRHIModule::CreateComputePipeline(RefPtr<Shader> shader) const
 	{
-		return RefPtr<VulkanComputePipeline2>::Create(shader);
+		return RefPtr<VulkanComputePipeline>::Create(shader);
 	}
 
 	RefPtr<RayTracingPipeline> VulkanRHIModule::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
@@ -224,17 +224,17 @@ namespace Volt::RHI
 		m_resourceDeletionQueue.FlushAll();
 	}
 
-	RefPtr<Shader2> VulkanRHIModule::CreateShader2(const ShaderCreateInfo& specification) const
+	RefPtr<Shader> VulkanRHIModule::CreateShader(const ShaderCreateInfo& specification) const
 	{
-		return RefPtr<VulkanShader2>::Create(specification);
+		return RefPtr<VulkanShader>::Create(specification);
 	}
 
-	RefPtr<RenderPipeline> VulkanRHIModule::CreateRenderPipeline2(const RenderPipelineCreateInfo& createInfo) const
+	RefPtr<RenderPipeline> VulkanRHIModule::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanRenderPipeline2>::Create(createInfo);
+		return RefPtr<VulkanRenderPipeline>::Create(createInfo);
 	}
 
-	RefPtr<DescriptorTable> VulkanRHIModule::CreateDescriptorTable2(const DescriptorTableCreateInfo& createInfo) const
+	RefPtr<DescriptorTable> VulkanRHIModule::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanDescriptorTable2>::Create(createInfo);
 	}

@@ -1,6 +1,6 @@
 #include "rcpch.h"
 
-#include "RenderCore/TransientResourceSystem/TransientResourceSystem2.h"
+#include "RenderCore/TransientResourceSystem/TransientResourceSystem.h"
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Buffers/StorageBuffer.h>
@@ -11,28 +11,28 @@
 
 namespace Volt
 {
-	TransientResourceSystem2::TransientResourceSystem2()
+	TransientResourceSystem::TransientResourceSystem()
 	{
 	}
-	TransientResourceSystem2::~TransientResourceSystem2()
+	TransientResourceSystem::~TransientResourceSystem()
 	{
 		std::scoped_lock lock{ m_allocatedResourcesMutex };
 		m_allocatedResources.clear();
 	}
 	
-	TransientResourceSystem2::TransientResourceSystem2(const TransientResourceSystem2& other) noexcept
+	TransientResourceSystem::TransientResourceSystem(const TransientResourceSystem& other) noexcept
 	{
 		m_allocatedResources = other.m_allocatedResources;
 		m_surrenderedResources = other.m_surrenderedResources;
 	}
 	
-	TransientResourceSystem2::TransientResourceSystem2(TransientResourceSystem2&& other) noexcept
+	TransientResourceSystem::TransientResourceSystem(TransientResourceSystem&& other) noexcept
 	{
 		m_allocatedResources = std::move(other.m_allocatedResources);
 		m_surrenderedResources = std::move(other.m_surrenderedResources);
 	}
 
-	TransientResourceSystem2& TransientResourceSystem2::operator=(const TransientResourceSystem2& other) noexcept
+	TransientResourceSystem& TransientResourceSystem::operator=(const TransientResourceSystem& other) noexcept
 	{
 		m_allocatedResources = other.m_allocatedResources;
 		m_surrenderedResources = other.m_surrenderedResources;
@@ -40,7 +40,7 @@ namespace Volt
 		return *this;
 	}
 	
-	TransientResourceSystem2& TransientResourceSystem2::operator=(TransientResourceSystem2&& other) noexcept
+	TransientResourceSystem& TransientResourceSystem::operator=(TransientResourceSystem&& other) noexcept
 	{
 		m_allocatedResources = std::move(other.m_allocatedResources);
 		m_surrenderedResources = std::move(other.m_surrenderedResources);
@@ -48,7 +48,7 @@ namespace Volt
 		return *this;
 	}
 	
-	RefPtr<RHI::Image> TransientResourceSystem2::AcquireTexture(RGTextureRef resource)
+	RefPtr<RHI::Image> TransientResourceSystem::AcquireTexture(RGTextureRef resource)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -74,7 +74,7 @@ namespace Volt
 		return image;
 	}
 	
-	RefPtr<RHI::StorageBuffer> TransientResourceSystem2::AcquireBuffer(RGBufferRef resource)
+	RefPtr<RHI::StorageBuffer> TransientResourceSystem::AcquireBuffer(RGBufferRef resource)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -105,7 +105,7 @@ namespace Volt
 		return buffer;
 	}
 	
-	RefPtr<RHI::UniformBuffer> TransientResourceSystem2::AcquireUniformBuffer(RGUniformBufferRef resource)
+	RefPtr<RHI::UniformBuffer> TransientResourceSystem::AcquireUniformBuffer(RGUniformBufferRef resource)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -131,7 +131,7 @@ namespace Volt
 		return buffer;
 	}
 	
-	RefPtr<RHI::Image> TransientResourceSystem2::GetTextureIfExists(RGTextureRef resource)
+	RefPtr<RHI::Image> TransientResourceSystem::GetTextureIfExists(RGTextureRef resource)
 	{
 		std::scoped_lock lock{ m_allocatedResourcesMutex };
 		if (m_allocatedResources.contains(resource))
@@ -142,7 +142,7 @@ namespace Volt
 		return nullptr;
 	}
 	
-	RefPtr<RHI::StorageBuffer> TransientResourceSystem2::GetBufferIfExists(RGBufferRef resource)
+	RefPtr<RHI::StorageBuffer> TransientResourceSystem::GetBufferIfExists(RGBufferRef resource)
 	{
 		std::scoped_lock lock{ m_allocatedResourcesMutex };
 		if (m_allocatedResources.contains(resource))
@@ -153,7 +153,7 @@ namespace Volt
 		return nullptr;
 	}
 	
-	RefPtr<RHI::UniformBuffer> TransientResourceSystem2::GetUniformBufferIfExists(RGUniformBufferRef resource)
+	RefPtr<RHI::UniformBuffer> TransientResourceSystem::GetUniformBufferIfExists(RGUniformBufferRef resource)
 	{
 		std::scoped_lock lock{ m_allocatedResourcesMutex };
 		if (m_allocatedResources.contains(resource))
@@ -164,13 +164,13 @@ namespace Volt
 		return nullptr;
 	}
 	
-	void TransientResourceSystem2::SurrenderResource(RGResourceRef originalResource, size_t hash)
+	void TransientResourceSystem::SurrenderResource(RGResourceRef originalResource, size_t hash)
 	{
 		std::scoped_lock lock{ m_surrenderedResourcesMutex };
 		m_surrenderedResources[hash].emplace_back(originalResource);
 	}
 	
-	void TransientResourceSystem2::AddExternalResource(RGResourceRef resource, RefPtr<RHI::RHIResource> rhiResource)
+	void TransientResourceSystem::AddExternalResource(RGResourceRef resource, RefPtr<RHI::RHIResource> rhiResource)
 	{
 		ResourceInfo info{};
 		info.resource = rhiResource;
@@ -180,7 +180,7 @@ namespace Volt
 		m_allocatedResources[resource] = info;
 	}
 	
-	const uint64_t TransientResourceSystem2::GetTotalAllocatedSize() const
+	const uint64_t TransientResourceSystem::GetTotalAllocatedSize() const
 	{
 		std::scoped_lock lock{ m_allocatedResourcesMutex };
 		uint64_t result = 0;

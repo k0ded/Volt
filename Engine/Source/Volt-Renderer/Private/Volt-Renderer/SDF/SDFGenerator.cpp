@@ -7,9 +7,9 @@
 #include "Volt-Renderer/GPUScene.h"
 
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
-#include <RenderCore/RenderGraph2/RenderGraph2.h>
-#include <RenderCore/RenderGraph2/RenderContext2.h>
-#include <RenderCore/RenderGraph2/RenderGraphUtils.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
+#include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/GlobalShader.h>
 
@@ -277,7 +277,7 @@ namespace Volt
 			result.sdfTexture = brickTexture;
 
 			RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-			RenderGraph2 renderGraph{ commandBuffer };
+			RenderGraph renderGraph{ commandBuffer };
 
 			RGBufferRef dataBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateMappableBufferDesc<float>(brickData.size(), RHI::BufferUsage::TexelBuffer, "Brick Data"));
 			RGBufferRef brickInfoBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateMappableBufferDesc<BrickInfo>(brickInfoData.size(), RHI::BufferUsage::StorageBuffer, "Brick Info"));
@@ -294,7 +294,7 @@ namespace Volt
 			passParameters->BrickInfoData = renderGraph.CreateSRV(brickInfoBuffer);
 			passParameters->BrickTextureSize = size;
 
-			auto shader = ShaderMap::Get2<MeshSDFAllocatorCS>();
+			auto shader = ShaderMap::Get<MeshSDFAllocatorCS>();
 			ComputeShaderUtils::AddPass<MeshSDFAllocatorCS>(renderGraph,
 				"Allocate Bricks",
 				shader,

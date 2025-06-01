@@ -1,6 +1,6 @@
 #include "rcpch.h"
 
-#include "RenderCore/RenderGraph2/Resources/RenderGraphUniformBuffer.h"
+#include "RenderCore/RenderGraph/Resources/RenderGraphUniformBuffer.h"
 
 namespace Volt
 {

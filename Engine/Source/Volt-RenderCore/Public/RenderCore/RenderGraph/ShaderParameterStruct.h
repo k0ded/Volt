@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RenderCore/RenderGraph/ShaderTypes.h"
-#include "RenderCore/RenderGraph2/Resources/ResourceDeclarations.h"
+#include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 
 #include <RHIModule/Shader/ShaderCommon.h>
 
@@ -13,7 +13,7 @@ namespace Volt
 {
 	struct ShaderParameterStructBase {};
 
-	enum class ShaderParameterType2 : uint8_t
+	enum class ShaderParameterType : uint8_t
 	{
 		BufferSRV,
 		BufferUAV,
@@ -31,7 +31,7 @@ namespace Volt
 	{
 		std::string name;
 		StringHash hashedName;
-		ShaderParameterType2 parameterType;
+		ShaderParameterType parameterType;
 		RGResourceAccess resourceAccessType;
 		uint32_t structOffset;
 		uint32_t structSize;
@@ -102,55 +102,55 @@ private: \
 	MemberID##paramName; \
 public: \
 	Volt::RGBufferRef paramName; \
-	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGBufferRef, paramName, Volt::ShaderParameterType2::BufferAccess, access)
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGBufferRef, paramName, Volt::ShaderParameterType::BufferAccess, access)
 
 #define RG_TEXTURE_ACCESS(paramName, access) \
 	MemberID##paramName; \
 public: \
 	Volt::RGTextureRef paramName; \
-	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureRef, paramName, Volt::ShaderParameterType2::TextureAccess, access)
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureRef, paramName, Volt::ShaderParameterType::TextureAccess, access)
 
 #define RG_RENDER_TARGETS() \
 	MemberIDrenderTargets; \
 public: \
 	Volt::ShaderParameterRenderTargetBindings renderTargets; \
-	SHADER_PARAMETER_COMMON_INTERNAL(Volt::ShaderParameterRenderTargetBindings, renderTargets, Volt::ShaderParameterType2::RenderTargets, Volt::RGResourceAccess::None)
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::ShaderParameterRenderTargetBindings, renderTargets, Volt::ShaderParameterType::RenderTargets, Volt::RGResourceAccess::None)
 
 #define SHADER_PARAMETER(type, paramName) \
 	MemberID##paramName; \
 public: \
 	type paramName; \
-	SHADER_PARAMETER_COMMON_INTERNAL(type, paramName, Volt::ShaderParameterType2::Parameter, Volt::RGResourceAccess::None)
+	SHADER_PARAMETER_COMMON_INTERNAL(type, paramName, Volt::ShaderParameterType::Parameter, Volt::RGResourceAccess::None)
 
 #define SHADER_PARAMETER_BUFFER_SRV(type, paramName) \
 	MemberID##paramName; \
 public: \
 	Volt::RGBufferSRVRef paramName = nullptr; \
-	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGBufferSRVRef, paramName, Volt::ShaderParameterType2::BufferSRV, Volt::RGResourceAccess::None)
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGBufferSRVRef, paramName, Volt::ShaderParameterType::BufferSRV, Volt::RGResourceAccess::None)
 
 #define SHADER_PARAMETER_BUFFER_UAV(type, paramName) \
 	MemberID##paramName; \
 public: \
 	Volt::RGBufferUAVRef paramName = nullptr; \
-	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGBufferUAVRef, paramName, Volt::ShaderParameterType2::BufferUAV, Volt::RGResourceAccess::None)
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGBufferUAVRef, paramName, Volt::ShaderParameterType::BufferUAV, Volt::RGResourceAccess::None)
 
 #define SHADER_PARAMETER_TEXTURE_SRV(type, paramName) \
 	MemberID##paramName; \
 public: \
 	Volt::RGTextureSRVRef paramName = nullptr; \
-	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureSRVRef, paramName, Volt::ShaderParameterType2::TextureSRV, Volt::RGResourceAccess::None)
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureSRVRef, paramName, Volt::ShaderParameterType::TextureSRV, Volt::RGResourceAccess::None)
 
 #define SHADER_PARAMETER_TEXTURE_UAV(type, paramName) \
 	MemberID##paramName; \
 public: \
 	Volt::RGTextureUAVRef paramName = nullptr; \
-	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureUAVRef, paramName, Volt::ShaderParameterType2::TextureUAV, Volt::RGResourceAccess::None)
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureUAVRef, paramName, Volt::ShaderParameterType::TextureUAV, Volt::RGResourceAccess::None)
 
 #define SHADER_PARAMETER_UNIFORM_BUFFER(type, paramName) \
 	MemberID##paramName; \
 public: \
 	Volt::RGUniformBufferRef paramName = nullptr; \
-	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGUniformBufferRef, paramName, Volt::ShaderParameterType2::UniformBuffer, Volt::RGResourceAccess::None)
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGUniformBufferRef, paramName, Volt::ShaderParameterType::UniformBuffer, Volt::RGResourceAccess::None)
 
 #define SHADER_PARAMETER_STRUCT(type, paramName) \
 	MemberID##paramName; \

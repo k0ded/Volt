@@ -19,11 +19,11 @@ namespace Volt
 		class StorageBuffer;
 	}
 
-	class RenderGraph2;
+	class RenderGraph;
 	class VTRC_API RenderGraphDebugger
 	{
 	public:
-		void ProcessRenderGraph(RenderGraph2& renderGraph);
+		void ProcessRenderGraph(RenderGraph& renderGraph);
 		void WaitForFinishedExecution() const;
 
 		VT_NODISCARD VT_INLINE const Vector<RefPtr<RHI::Image>>& GetImages() const { return m_extractedImages; }

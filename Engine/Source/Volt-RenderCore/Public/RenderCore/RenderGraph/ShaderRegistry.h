@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RenderCore/Config.h"
-#include "RenderCore/RenderGraph2/ShaderParameterStruct2.h"
+#include "RenderCore/RenderGraph/ShaderParameterStruct.h"
 #include "RenderCore/Shader/GlobalShader.h"
 
 #include <LogModule/LogCategory.h>

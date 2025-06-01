@@ -1,7 +1,7 @@
 #include "Testing/RenderGraphTests/DrawTriangleTest.h"
 
-#include <RenderCore/RenderGraph2/RenderGraph2.h>
-#include <RenderCore/RenderGraph2/RenderContext2.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/GlobalShader.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
@@ -30,8 +30,8 @@ struct DrawTriangleTestPS : public GlobalShader
 };
 REGISTER_SHADER_2(DrawTriangleTestPS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DrawTriangleTest.hlsl", "MainPS", Pixel);
 
-static RefPtr<RHI::Shader2> s_vertexShader;
-static RefPtr<RHI::Shader2> s_pixelShader;
+static RefPtr<RHI::Shader> s_vertexShader;
+static RefPtr<RHI::Shader> s_pixelShader;
 static RefPtr<RHI::RenderPipeline> s_renderPipeline;
 
 RG_DrawTriangleTest::RG_DrawTriangleTest()
@@ -42,7 +42,7 @@ RG_DrawTriangleTest::RG_DrawTriangleTest()
 	RHI::RenderPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.shaders = { s_vertexShader, s_pixelShader };
 
-	s_renderPipeline = RHI::RenderPipeline::Create2(pipelineInfo);
+	s_renderPipeline = RHI::RenderPipeline::Create(pipelineInfo);
 }
 
 RG_DrawTriangleTest::~RG_DrawTriangleTest()
@@ -53,7 +53,7 @@ bool RG_DrawTriangleTest::RunTest()
 {
 	auto& swapchain = Volt::WindowManager::Get().GetMainWindow().GetSwapchain();
 
-	RenderGraph2 renderGraph{ m_commandBuffer };
+	RenderGraph renderGraph{ m_commandBuffer };
 
 	auto targetImage = swapchain.GetCurrentImage();
 	RGTextureRef swapchainTexture = renderGraph.RegisterExternalTexture(targetImage);
@@ -64,7 +64,7 @@ bool RG_DrawTriangleTest::RunTest()
 	renderGraph.AddPass("Triangle Pass",
 		RenderGraphPassFlags::NeverCull,
 		passParameters,
-		[passParameters, targetImage](RenderContext2& context) 
+		[passParameters, targetImage](RenderContext& context) 
 		{
 			RenderingInfo2 renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), passParameters->renderTargets);
 

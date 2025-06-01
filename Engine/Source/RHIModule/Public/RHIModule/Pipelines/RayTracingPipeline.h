@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RHIModule/Core/RHIInterface.h"
-#include "RHIModule/Shader/Shader2.h"
+#include "RHIModule/Shader/Shader.h"
 
 #include <CoreUtilities/Containers/Vector.h>
 
@@ -9,12 +9,12 @@ namespace Volt::RHI
 { 
 	struct RayTracingPipelineCreateInfo
 	{
-		Vector<RefPtr<Shader2>> rayGenTable;
-		Vector<RefPtr<Shader2>> missTable;
-		Vector<RefPtr<Shader2>> closestHitTable;
-		Vector<RefPtr<Shader2>> anyHitTable;
-		Vector<RefPtr<Shader2>> intersectionTable;
-		Vector<RefPtr<Shader2>> callableTable;
+		Vector<RefPtr<Shader>> rayGenTable;
+		Vector<RefPtr<Shader>> missTable;
+		Vector<RefPtr<Shader>> closestHitTable;
+		Vector<RefPtr<Shader>> anyHitTable;
+		Vector<RefPtr<Shader>> intersectionTable;
+		Vector<RefPtr<Shader>> callableTable;
 	};
 
 	struct ShaderUniforms;
@@ -24,7 +24,7 @@ namespace Volt::RHI
 	public:
 		virtual void Invalidate() = 0;
 		virtual bool IsValid() const = 0;
-		virtual bool IsShaderInPipeline(RefPtr<Shader2> shader) const = 0;
+		virtual bool IsShaderInPipeline(RefPtr<Shader> shader) const = 0;
 		virtual const ShaderUniforms& GetRenderGraphConstants() const = 0;
 
 		static RefPtr<RayTracingPipeline> Create(const RayTracingPipelineCreateInfo& createInfo);

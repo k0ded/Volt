@@ -6,7 +6,7 @@
 
 namespace Volt::RHI
 {
-	class Shader2;
+	class Shader;
 	class ShaderParameterMap;
 	struct ShaderResourceBinding;
 
@@ -14,13 +14,13 @@ namespace Volt::RHI
 	{
 	public:
 		virtual void Invalidate() = 0;
-		virtual RefPtr<Shader2> GetShader2() const = 0;
+		virtual RefPtr<Shader> GetShader2() const = 0;
 		virtual bool IsValid() const = 0;
 		virtual size_t GetHash() const = 0;
 		virtual const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name) const = 0;
 		virtual const ShaderParameterMap& GetShaderParameterMap() const = 0;
 
-		static RefPtr<ComputePipeline> Create(RefPtr<Shader2> shader);
+		static RefPtr<ComputePipeline> Create(RefPtr<Shader> shader);
 
 	protected:
 		ComputePipeline() = default;

@@ -5,8 +5,8 @@
 
 namespace Volt::RHI
 {
-	RefPtr<RenderPipeline> RenderPipeline::Create2(const RenderPipelineCreateInfo& createInfo)
+	RefPtr<RenderPipeline> RenderPipeline::Create(const RenderPipelineCreateInfo& createInfo)
 	{
-		return RHIModule::GetInstance().CreateRenderPipeline2(createInfo);
+		return RHIModule::GetInstance().CreateRenderPipeline(createInfo);
 	}
 }

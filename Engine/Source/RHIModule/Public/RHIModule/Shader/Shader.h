@@ -19,7 +19,7 @@ namespace Volt::RHI
 		ShaderPermutationConfig permutationConfig;
 	};
 
-	class VTRHI_API Shader2 : public RHIInterface
+	class VTRHI_API Shader : public RHIInterface
 	{
 	public:
 		virtual void Reload(bool forceCompile = false) = 0;
@@ -29,10 +29,10 @@ namespace Volt::RHI
 		virtual const ShaderParameterMap& GetParameterMap() const = 0;
 		virtual bool IsValid() const = 0;
 
-		static RefPtr<Shader2> Create(const ShaderCreateInfo& createInfo);
+		static RefPtr<Shader> Create(const ShaderCreateInfo& createInfo);
 
 	protected:
-		Shader2() = default;
-		virtual ~Shader2() = default;
+		Shader() = default;
+		virtual ~Shader() = default;
 	};
 }

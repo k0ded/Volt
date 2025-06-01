@@ -1,9 +1,9 @@
 #pragma once
 
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
-#include <RenderCore/RenderGraph2/RenderGraphUtils.h>
-#include <RenderCore/RenderGraph2/RenderGraph2.h>
-#include <RenderCore/RenderGraph2/RenderContext2.h>
+#include <RenderCore/RenderGraph/RenderGraphUtils.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <CoreUtilities/Math/Math.h>
@@ -40,10 +40,10 @@ namespace Volt
 		ScatteredBufferUpload(const size_t uploadCount);
 
 		T& AddUploadItem(size_t bufferIndex);
-		void UploadTo(RenderGraph2& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer);
+		void UploadTo(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer);
 
 	private:
-		void UploadToInternal(RenderGraph2& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer);
+		void UploadToInternal(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer);
 
 		Vector<T> m_data;
 		Vector<uint32_t> m_dataIndices;
@@ -67,13 +67,13 @@ namespace Volt
 	}
 
 	template<IsTrivial T>
-	inline void ScatteredBufferUpload<T>::UploadTo(RenderGraph2& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer)
+	inline void ScatteredBufferUpload<T>::UploadTo(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer)
 	{
 		UploadToInternal(renderGraph, dstBuffer);
 	}
 
 	template<IsTrivial T>
-	inline void ScatteredBufferUpload<T>::UploadToInternal(RenderGraph2& renderGraph, RefPtr<RHI::StorageBuffer> rhiDstBuffer)
+	inline void ScatteredBufferUpload<T>::UploadToInternal(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> rhiDstBuffer)
 	{
 		if (m_currentIndex == 0)
 		{
@@ -98,7 +98,7 @@ namespace Volt
 
 		const uint32_t groupSize = Math::DivideRoundUp(static_cast<uint32_t>(sizeInUINT * passParameters->CopyCount), 64u);
 
-		auto shader = ShaderMap::Get2<ScatterUploadCS>();
+		auto shader = ShaderMap::Get<ScatterUploadCS>();
 		ComputeShaderUtils::AddPass<ScatterUploadCS>(renderGraph,
 			"Scatter Buffer Upload",
 			shader,

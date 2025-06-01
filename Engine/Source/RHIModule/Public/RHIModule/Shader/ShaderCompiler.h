@@ -50,7 +50,7 @@ namespace Volt::RHI
 			Dist,
 		};
 
-		struct CompilationResultData2
+		struct CompilationResultData
 		{
 			CompilationResult result = CompilationResult::Failure;
 			Vector<uint32_t> shaderBinary;
@@ -68,7 +68,7 @@ namespace Volt::RHI
 			VT_NODISCARD VT_INLINE bool IsValid() const { return !shaderBinary.empty(); }
 		};
 
-		struct Specification2
+		struct Specification
 		{
 			ShaderSourceInfo shaderSourceInfo;
 			ShaderPermutationConfig permutationConfig;
@@ -78,7 +78,7 @@ namespace Volt::RHI
 
 		virtual ~ShaderCompiler();
 
-		VT_NODISCARD static CompilationResultData2 TryCompile2(const Specification2& specification);
+		VT_NODISCARD static CompilationResultData TryCompile2(const Specification& specification);
 		static void AddMacro(const std::string& macroName);
 		static void RemoveMacro(std::string_view macroName);
 		
@@ -88,7 +88,7 @@ namespace Volt::RHI
 		ShaderCompiler();
 
 		// Should compile shader using shader source files, result is stored in shaders internal storage
-		virtual CompilationResultData2 TryCompileImpl2(const Specification2& specification) = 0;
+		virtual CompilationResultData TryCompileImpl2(const Specification& specification) = 0;
 		virtual void AddMacroImpl(const std::string& macroName) = 0;
 		virtual void RemoveMacroImpl(std::string_view macroName) = 0;
 

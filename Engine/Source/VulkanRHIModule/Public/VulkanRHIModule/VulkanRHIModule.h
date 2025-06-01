@@ -22,7 +22,7 @@ namespace Volt::RHI
 		RefPtr<StorageBuffer> CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const override;
 		RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const override;
 
-		RefPtr<DescriptorTable> CreateDescriptorTable2(const DescriptorTableCreateInfo& createInfo) const override;
+		RefPtr<DescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const override;
 		RefPtr<BindlessDescriptorTable> CreateBindlessDescriptorTable(const uint64_t framesInFlight) const override;
 
 		RefPtr<DeviceQueue> CreateDeviceQueue(const DeviceQueueCreateInfo& createInfo) const override;
@@ -41,11 +41,11 @@ namespace Volt::RHI
 		RefPtr<TransientGPUAllocator> CreateTransientAllocator() const override;
 		RefPtr<TransientHeap> CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const override;
 
-		RefPtr<RenderPipeline> CreateRenderPipeline2(const RenderPipelineCreateInfo& createInfo) const override;
-		RefPtr<ComputePipeline> CreateComputePipeline(RefPtr<Shader2> shader) const override;
+		RefPtr<RenderPipeline> CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const override;
+		RefPtr<ComputePipeline> CreateComputePipeline(RefPtr<Shader> shader) const override;
 		RefPtr<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const override;
 
-		RefPtr<Shader2> CreateShader2(const ShaderCreateInfo& specification) const override;
+		RefPtr<Shader> CreateShader(const ShaderCreateInfo& specification) const override;
 		RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const override;
 
 		RefPtr<Event> CreateEvent(const EventCreateInfo& createInfo) const override;

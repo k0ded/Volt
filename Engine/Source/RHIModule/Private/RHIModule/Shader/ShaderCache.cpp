@@ -63,7 +63,7 @@ namespace Volt::RHI
 	{
 	}
 
-	CachedShaderResult ShaderCache::TryGetCachedShader(const ShaderCompiler::Specification2& shaderSpecification)
+	CachedShaderResult ShaderCache::TryGetCachedShader(const ShaderCompiler::Specification& shaderSpecification)
 	{
 		uint64_t lastWriteTime = std::max(lastWriteTime, TimeUtility::GetLastWriteTime(shaderSpecification.shaderSourceInfo.sourceEntry.filepath));
 
@@ -96,7 +96,7 @@ namespace Volt::RHI
 		result.timeSinceLastCompile = cachedHeader.timeSinceLastCompile;
 		result.data.result = ShaderCompiler::CompilationResult::Success;
 
-		ShaderCompiler::CompilationResultData2& resultData = result.data;
+		ShaderCompiler::CompilationResultData& resultData = result.data;
 
 		streamReader.Read(resultData.outputFormats);
 		
@@ -108,7 +108,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	void ShaderCache::CacheShader(const ShaderCompiler::Specification2& shaderSpec, const ShaderCompiler::CompilationResultData2& compilationResult)
+	void ShaderCache::CacheShader(const ShaderCompiler::Specification& shaderSpec, const ShaderCompiler::CompilationResultData& compilationResult)
 	{
 		BinaryStreamWriter streamWriter{};
 
@@ -135,7 +135,7 @@ namespace Volt::RHI
 		streamWriter.WriteToDisk(GetCachedFilePath(shaderSpec), false, 0);
 	}
 
-	std::filesystem::path ShaderCache::GetCachedFilePath(const ShaderCompiler::Specification2& shaderSpec) const
+	std::filesystem::path ShaderCache::GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const
 	{
 		const size_t hash = Math::HashCombine(std::hash<std::filesystem::path>()(shaderSpec.shaderSourceInfo.sourceEntry.filepath), std::hash<std::string>()(shaderSpec.shaderSourceInfo.sourceEntry.entryPoint));
 

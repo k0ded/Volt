@@ -12,7 +12,7 @@
 
 namespace Volt
 {
-	class RenderGraph2;
+	class RenderGraph;
 	class SharedRenderContext;
 	class RenderGraphPass;
 
@@ -23,10 +23,10 @@ namespace Volt
 		RHI::RenderingInfo renderingInfo{};
 	};
 
-	class VTRC_API RenderContext2
+	class VTRC_API RenderContext
 	{
 	public:
-		RenderContext2(RenderGraph2& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer);
+		RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer);
 
 		void Flush(RefPtr<RHI::Fence> fence);
 
@@ -66,7 +66,7 @@ namespace Volt
 		void UnmapBuffer(RGBufferUAVRef buffer);
 
 		template<typename ShaderType> 
-		void SetParameters(RefPtr<RHI::Shader2> shader, const typename ShaderType::Parameters* parameters);
+		void SetParameters(RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* parameters);
 
 	private:
 		struct PerStageShaderParameters
@@ -96,18 +96,18 @@ namespace Volt
 		// #TODO_Ivar: Move to an inline allocator
 		PagedVector<PerStageShaderParameters> m_perStageShaderParameters;
 
-		RenderGraph2& m_renderGraph;
+		RenderGraph& m_renderGraph;
 		RenderGraphPass* m_currentPass;
 	};
 
 	template<typename T>
-	T* RenderContext2::MapBuffer(RGBufferUAVRef buffer)
+	T* RenderContext::MapBuffer(RGBufferUAVRef buffer)
 	{
 		return reinterpret_cast<T*>(MapInternal(buffer));
 	}
 
 	template<typename ShaderType>
-	void RenderContext2::SetParameters(RefPtr<RHI::Shader2> shader, const typename ShaderType::Parameters* parameters)
+	void RenderContext::SetParameters(RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* parameters)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
@@ -127,11 +127,11 @@ namespace Volt
 
 			switch (parameter.parameterType)
 			{
-				case ShaderParameterType2::BufferSRV: SetBufferSRVParameter(*reinterpret_cast<RGBufferSRVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType2::BufferUAV: SetBufferUAVParameter(*reinterpret_cast<RGBufferUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType2::TextureSRV: SetTextureSRVParameter(*reinterpret_cast<RGTextureSRVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType2::TextureUAV: SetTextureUAVParameter(*reinterpret_cast<RGTextureUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType2::Parameter: SetShaderParameter(parameterDataPtr, parameter, shaderParameterMap); break;
+				case ShaderParameterType::BufferSRV: SetBufferSRVParameter(*reinterpret_cast<RGBufferSRVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
+				case ShaderParameterType::BufferUAV: SetBufferUAVParameter(*reinterpret_cast<RGBufferUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
+				case ShaderParameterType::TextureSRV: SetTextureSRVParameter(*reinterpret_cast<RGTextureSRVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
+				case ShaderParameterType::TextureUAV: SetTextureUAVParameter(*reinterpret_cast<RGTextureUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
+				case ShaderParameterType::Parameter: SetShaderParameter(parameterDataPtr, parameter, shaderParameterMap); break;
 			}
 		}
 	}

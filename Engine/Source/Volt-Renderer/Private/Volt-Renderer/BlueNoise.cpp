@@ -4,7 +4,7 @@
 #include "Volt-Renderer/Texture/Texture2D.h"
 #include "Volt-Renderer/Renderer.h"
 
-#include <RenderCore/RenderGraph2/RenderGraph2.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -34,7 +34,7 @@ namespace Volt
 		parameters.dimensions = s_blueNoiseData.dimensions;
 	}
 
-	BlueNoiseTextures BlueNoise::GetBlueNoiseTextures(RenderGraph2& renderGraph)
+	BlueNoiseTextures BlueNoise::GetBlueNoiseTextures(RenderGraph& renderGraph)
 	{
 		BlueNoiseTextures result;
 		//result.blueNoiseRGBATexture = renderGraph.RegisterExternalTexture(s_blueNoiseData.rgbaBlueNoise->GetImage());

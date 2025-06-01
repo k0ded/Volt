@@ -3,7 +3,7 @@
 #include "Volt-Renderer/Config.h"
 
 #include <RHIModule/Pipelines/ComputePipeline.h>
-#include <RHIModule/Shader/Shader2.h>
+#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Descriptors/ResourceHandle.h>
 
 #include <CoreUtilities/Containers/VectorVariants.h>
@@ -36,7 +36,7 @@ namespace Volt
 	{
 	public:
 		RenderMaterial(const std::string& name);
-		RenderMaterial(const std::string& name, RefPtr<RHI::Shader2> shader);
+		RenderMaterial(const std::string& name, RefPtr<RHI::Shader> shader);
 
 		VT_NODISCARD VT_INLINE const PagedVector<RenderTexture>& GetTextures() const { return m_textures; }
 
@@ -59,7 +59,7 @@ namespace Volt
 		PagedVector<RenderTexture> m_textures;
 
 		RefPtr<RHI::ComputePipeline> m_pipeline;
-		RefPtr<RHI::Shader2> m_shader;
+		RefPtr<RHI::Shader> m_shader;
 
 		std::string m_name;
 		size_t m_hash = 0;

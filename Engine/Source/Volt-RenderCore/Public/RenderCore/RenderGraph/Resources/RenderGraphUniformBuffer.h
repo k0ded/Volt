@@ -2,7 +2,7 @@
 
 #include "RenderCore/Config.h"
 
-#include "RenderCore/RenderGraph2/Resources/RenderGraphResource.h"
+#include "RenderCore/RenderGraph/Resources/RenderGraphResource.h"
 
 namespace Volt
 {

@@ -1,7 +1,7 @@
 #include "rcpch.h"
 #include "RenderCore/RenderGraph/RenderGraphExecutionThread.h"
 
-#include "RenderCore/RenderGraph2/RenderGraph2.h"
+#include "RenderCore/RenderGraph/RenderGraph.h"
 #include "RenderCore/Resources/BindlessResourcesManager.h"
 
 #include <Volt-Platforms/Platform.h>
@@ -57,12 +57,12 @@ namespace Volt
 		s_data = nullptr;
 	}
 
-	void RenderGraphExecutionThread::ExecuteRenderGraph(RenderGraph2&& renderGraph)
+	void RenderGraphExecutionThread::ExecuteRenderGraph(RenderGraph&& renderGraph)
 	{
 		VT_PROFILE_FUNCTION();
 
 		// We move construct the RenderGraph into a Ref ptr, to allow usage in a std::function
-		Ref<RenderGraph2> rgPtr = CreateRef<RenderGraph2>(std::move(renderGraph));
+		Ref<RenderGraph> rgPtr = CreateRef<RenderGraph>(std::move(renderGraph));
 
 		auto execFunc = [rg = std::move(rgPtr)]() mutable
 		{

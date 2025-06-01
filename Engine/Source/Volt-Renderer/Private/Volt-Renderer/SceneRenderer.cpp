@@ -19,7 +19,7 @@
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 #include <RenderCore/RenderGraph/GPUReadbackBuffer.h>
-#include <RenderCore/RenderGraph2/RenderGraph2.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/DefaultBlendStates.h>
@@ -90,7 +90,7 @@ namespace Volt
 			m_shouldResize = false;
 		}
 
-		RenderGraph2 renderGraph{ m_commandBufferSet.IncrementAndGetCommandBuffer() };
+		RenderGraph renderGraph{ m_commandBufferSet.IncrementAndGetCommandBuffer() };
 
 		//m_renderScene->Update(renderGraph);
 

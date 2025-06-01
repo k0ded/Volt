@@ -2,7 +2,7 @@
 
 #include "RHIModule/Core/RHICommon.h"
 #include "RHIModule/Shader/BufferLayout.h"
-#include "RHIModule/Shader/Shader2.h"
+#include "RHIModule/Shader/Shader.h"
 
 namespace Volt::RHI
 {

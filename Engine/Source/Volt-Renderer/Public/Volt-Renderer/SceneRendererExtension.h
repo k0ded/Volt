@@ -1,6 +1,6 @@
 #pragma once
 
-#include <RenderCore/RenderGraph2/Resources/ResourceDeclarations.h>
+#include <RenderCore/RenderGraph/Resources/ResourceDeclarations.h>
 
 namespace Volt
 {

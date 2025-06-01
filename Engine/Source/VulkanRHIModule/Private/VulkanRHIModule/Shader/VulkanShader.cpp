@@ -1,6 +1,6 @@
 #include "vkpch.h"
 
-#include "VulkanRHIModule/Shader/VulkanShader2.h"
+#include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
 #include <RHIModule/Shader/ShaderUtility.h>
@@ -11,7 +11,7 @@
 
 namespace Volt::RHI
 {
-	VulkanShader2::VulkanShader2(const ShaderCreateInfo& createInfo)
+	VulkanShader::VulkanShader(const ShaderCreateInfo& createInfo)
 		: m_name(createInfo.name)
 	{
 		VT_ENSURE(!createInfo.sourceFilepath.empty());
@@ -25,37 +25,37 @@ namespace Volt::RHI
 		LoadAndCompileShader(createInfo.forceCompile);
 	}
 
-	VulkanShader2::~VulkanShader2()
+	VulkanShader::~VulkanShader()
 	{
 		Release();
 	}
 	
-	std::string_view VulkanShader2::GetName() const
+	std::string_view VulkanShader::GetName() const
 	{
 		return m_name;
 	}
 	
-	size_t VulkanShader2::GetHash() const
+	size_t VulkanShader::GetHash() const
 	{
 		return size_t();
 	}
 	
-	bool VulkanShader2::IsValid() const
+	bool VulkanShader::IsValid() const
 	{
 		return m_shaderModule != nullptr;
 	}
 	
-	ShaderStage VulkanShader2::GetShaderStage() const
+	ShaderStage VulkanShader::GetShaderStage() const
 	{
 		return m_sourceInfo.sourceEntry.shaderStage;
 	}
 	
-	void* VulkanShader2::GetHandleImpl() const
+	void* VulkanShader::GetHandleImpl() const
 	{
 		return m_shaderModule;
 	}
 
-	void VulkanShader2::LoadAndCompileShader(bool forceCompile)
+	void VulkanShader::LoadAndCompileShader(bool forceCompile)
 	{
 		m_sourceInfo.source = Utility::ReadStringFromFile(m_sourceInfo.sourceEntry.filepath);
 	
@@ -65,12 +65,12 @@ namespace Volt::RHI
 			return;
 		}
 
-		ShaderCompiler::Specification2 compileSpec;
+		ShaderCompiler::Specification compileSpec;
 		compileSpec.forceCompile = forceCompile;
 		compileSpec.shaderSourceInfo = m_sourceInfo;
 		compileSpec.permutationConfig = m_permutationConfig;
 
-		const ShaderCompiler::CompilationResultData2 compilationResult = ShaderCompiler::TryCompile2(compileSpec);
+		const ShaderCompiler::CompilationResultData compilationResult = ShaderCompiler::TryCompile2(compileSpec);
 		if (compilationResult.result != ShaderCompiler::CompilationResult::Success)
 		{
 			// #TODO_Ivar: Handle
@@ -91,7 +91,7 @@ namespace Volt::RHI
 		GenerateHash();
 	}
 
-	void VulkanShader2::Release()
+	void VulkanShader::Release()
 	{
 		if (m_shaderModule)
 		{
@@ -101,7 +101,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanShader2::CreateShader(const Vector<uint32_t>& shaderBinary)
+	void VulkanShader::CreateShader(const Vector<uint32_t>& shaderBinary)
 	{
 		VkShaderModuleCreateInfo moduleInfo{};
 		moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -112,12 +112,12 @@ namespace Volt::RHI
 		VT_VK_CHECK(vkCreateShaderModule(device->GetHandle<VkDevice>(), &moduleInfo, nullptr, &m_shaderModule));
 	}
 
-	void VulkanShader2::GenerateHash()
+	void VulkanShader::GenerateHash()
 	{
 		m_hash = std::hash<const void*>()(m_shaderModule);
 	}
 
-	void VulkanShader2::Reload(bool forceCompile /* = false */)
+	void VulkanShader::Reload(bool forceCompile /* = false */)
 	{
 		LoadAndCompileShader(forceCompile);
 	}

@@ -12,8 +12,8 @@
 
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
-#include <RenderCore/RenderGraph2/RenderGraph2.h>
-#include <RenderCore/RenderGraph2/RenderContext2.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/Resources/BindlessResourcesManager.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
@@ -493,18 +493,18 @@ namespace Volt
 
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 
-		RenderGraph2 renderGraph{ commandBuffer };
+		RenderGraph renderGraph{ commandBuffer };
 
 		GeneratePreIntegratedDFGPS::Parameters* passParameters = renderGraph.AllocParameters<GeneratePreIntegratedDFGPS::Parameters>();
 		passParameters->renderTargets.renderTargets[0] = renderGraph.RegisterExternalTexture(m_defaultResources.DFGLuT);
 
-		RefPtr<RHI::Shader2> vertexShader = ShaderMap::Get2<FullscreenTriangleVS>();
-		RefPtr<RHI::Shader2> pixelShader = ShaderMap::Get2<GeneratePreIntegratedDFGPS>();
+		RefPtr<RHI::Shader> vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
+		RefPtr<RHI::Shader> pixelShader = ShaderMap::Get<GeneratePreIntegratedDFGPS>();
 
 		renderGraph.AddPass("Pre integrate DFG Pass",
 			RenderGraphPassFlags::None,
 			passParameters,
-			[passParameters, vertexShader, pixelShader](RenderContext2& context) 
+			[passParameters, vertexShader, pixelShader](RenderContext& context) 
 		{
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
 			pipelineInfo.shaders = { vertexShader, pixelShader };

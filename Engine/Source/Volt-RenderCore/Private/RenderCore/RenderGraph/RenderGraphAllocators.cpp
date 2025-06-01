@@ -1,10 +1,10 @@
 #include "rcpch.h"
 
-#include "RenderCore/RenderGraph2/RenderGraphAllocators2.h"
+#include "RenderCore/RenderGraph/RenderGraphAllocators.h"
 
 namespace Volt
 {
-	RenderGraphResourceAllocator2::~RenderGraphResourceAllocator2()
+	RenderGraphResourceAllocator::~RenderGraphResourceAllocator()
 	{
 		for (auto& destructor : m_nodeDestructors)
 		{
@@ -12,13 +12,13 @@ namespace Volt
 		}
 	}
 
-	RenderGraphResourceAllocator2::RenderGraphResourceAllocator2(RenderGraphResourceAllocator2&& other) noexcept
+	RenderGraphResourceAllocator::RenderGraphResourceAllocator(RenderGraphResourceAllocator&& other) noexcept
 		: m_allocator(std::move(other.m_allocator)),
 		m_nodeDestructors(std::move(other.m_nodeDestructors))
 	{
 	}
 	
-	RenderGraphResourceAllocator2& RenderGraphResourceAllocator2::operator=(RenderGraphResourceAllocator2&& other) noexcept
+	RenderGraphResourceAllocator& RenderGraphResourceAllocator::operator=(RenderGraphResourceAllocator&& other) noexcept
 	{
 		m_allocator = std::move(other.m_allocator);
 		m_nodeDestructors = std::move(other.m_nodeDestructors);
@@ -26,7 +26,7 @@ namespace Volt
 		return *this;
 	}
 
-	RenderGraphPassAllocator2::~RenderGraphPassAllocator2()
+	RenderGraphPassAllocator::~RenderGraphPassAllocator()
 	{
 		for (auto& destructor : m_passDestructors)
 		{
@@ -34,7 +34,7 @@ namespace Volt
 		}
 	}
 
-	RenderGraphPassAllocator2::RenderGraphPassAllocator2(RenderGraphPassAllocator2&& other) noexcept
+	RenderGraphPassAllocator::RenderGraphPassAllocator(RenderGraphPassAllocator&& other) noexcept
 		: m_numPasses(std::move(other.m_numPasses)),
 		m_passExecutionFunctionAllocator(std::move(other.m_passExecutionFunctionAllocator)),
 		m_passNodeAllocator(std::move(other.m_passNodeAllocator)),
@@ -42,7 +42,7 @@ namespace Volt
 	{
 	}
 
-	RenderGraphPassAllocator2& RenderGraphPassAllocator2::operator=(RenderGraphPassAllocator2&& other) noexcept
+	RenderGraphPassAllocator& RenderGraphPassAllocator::operator=(RenderGraphPassAllocator&& other) noexcept
 	{
 		m_numPasses = std::move(other.m_numPasses);
 		m_passExecutionFunctionAllocator = std::move(other.m_passExecutionFunctionAllocator);
@@ -52,7 +52,7 @@ namespace Volt
 		return *this;
 	}
 
-	RenderGraphPassAllocator2::PassAllocation RenderGraphPassAllocator2::AllocatePass(PassExecFunc execWrapperFunc, size_t execFuncSize)
+	RenderGraphPassAllocator::PassAllocation RenderGraphPassAllocator::AllocatePass(PassExecFunc execWrapperFunc, size_t execFuncSize)
 	{
 		const size_t totalAllocationSize = sizeof(PassExecFunc) + execFuncSize + sizeof(execFuncSize);
 
@@ -72,7 +72,7 @@ namespace Volt
 		return result;
 	}
 
-	void RenderGraphPassAllocator2::ExecutePass(Handle<RenderGraphPass> pass, RenderContext2& renderContext)
+	void RenderGraphPassAllocator::ExecutePass(Handle<RenderGraphPass> pass, RenderContext& renderContext)
 	{
 		uint8_t* passAllocationPtr = reinterpret_cast<uint8_t*>(pass->passAllocationStartPtr);
 

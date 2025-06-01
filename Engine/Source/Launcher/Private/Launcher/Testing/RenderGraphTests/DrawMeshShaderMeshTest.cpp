@@ -5,8 +5,8 @@
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/Renderer.h>
 
-#include <RenderCore/RenderGraph2/RenderGraph2.h>
-#include <RenderCore/RenderGraph2/RenderContext2.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/GlobalShader.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
@@ -48,8 +48,8 @@ BEGIN_SHADER_PARAMETER_STRUCT(DrawMeshParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(DrawMeshTestPS::Parameters, PS)
 END_SHADER_PARAMETER_STRUCT()
 
-static RefPtr<RHI::Shader2> s_meshShader;
-static RefPtr<RHI::Shader2> s_pixelShader;
+static RefPtr<RHI::Shader> s_meshShader;
+static RefPtr<RHI::Shader> s_pixelShader;
 static RefPtr<RHI::RenderPipeline> s_renderPipeline;
 
 RG_DrawMeshShaderMeshTest::RG_DrawMeshShaderMeshTest()
@@ -61,7 +61,7 @@ RG_DrawMeshShaderMeshTest::RG_DrawMeshShaderMeshTest()
 	RHI::RenderPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.shaders = { s_meshShader, s_pixelShader };
 
-	s_renderPipeline = RHI::RenderPipeline::Create2(pipelineInfo);
+	s_renderPipeline = RHI::RenderPipeline::Create(pipelineInfo);
 
 	m_mesh = AssetManager::GetAsset<MeshAsset>("Engine/Meshes/Primitives/SM_Cube.vtasset")->GetMesh();
 }
@@ -76,7 +76,7 @@ bool RG_DrawMeshShaderMeshTest::RunTest()
 	const auto& gpuMesh = m_mesh->GetGPUMeshes().at(0);
 	const glm::mat4 viewProj = glm::perspective(glm::radians(60.f), 16.f / 9.f, 1000.f, 0.1f) * glm::lookAt({ 0.f, 200.f, -500.f }, { 0.f }, glm::vec3(0.f, 1, 0.f));
 
-	RenderGraph2 renderGraph{ m_commandBuffer };
+	RenderGraph renderGraph{ m_commandBuffer };
 
 	auto targetImage = swapchain.GetCurrentImage();
 	RGTextureRef swapchainTexture = renderGraph.RegisterExternalTexture(targetImage);
@@ -97,7 +97,7 @@ bool RG_DrawMeshShaderMeshTest::RunTest()
 	renderGraph.AddPass("Draw Mesh Pass",
 		RenderGraphPassFlags::None,
 		passParameters,
-		[passParameters, targetImage, gpuMesh](RenderContext2& context)
+		[passParameters, targetImage, gpuMesh](RenderContext& context)
 	{
 		RenderingInfo2 renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), passParameters->PS.renderTargets);
 

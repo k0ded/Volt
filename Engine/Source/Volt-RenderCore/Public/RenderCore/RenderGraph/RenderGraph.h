@@ -2,10 +2,10 @@
 
 #include "RenderCore/Config.h"
 
-#include "RenderCore/RenderGraph2/Resources/ResourceDeclarations.h"
-#include "RenderCore/RenderGraph2/RenderGraphAllocators2.h"
-#include "RenderCore/RenderGraph2/ShaderParameterStruct2.h"
-#include "RenderCore/TransientResourceSystem/TransientResourceSystem2.h"
+#include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
+#include "RenderCore/RenderGraph/RenderGraphAllocators.h"
+#include "RenderCore/RenderGraph/ShaderParameterStruct.h"
+#include "RenderCore/TransientResourceSystem/TransientResourceSystem.h"
 
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Images/Image.h>
@@ -26,17 +26,17 @@ namespace Volt
 	class GPUReadbackBuffer;
 	class GPUReadbackTexture;
 
-	class VTRC_API RenderGraph2
+	class VTRC_API RenderGraph
 	{
 	public:
-		RenderGraph2(RefPtr<RHI::CommandBuffer> commandBuffer);
-		~RenderGraph2();
+		RenderGraph(RefPtr<RHI::CommandBuffer> commandBuffer);
+		~RenderGraph();
 
-		RenderGraph2(RenderGraph2&& other) noexcept;
-		RenderGraph2& operator=(RenderGraph2&& other) noexcept;
+		RenderGraph(RenderGraph&& other) noexcept;
+		RenderGraph& operator=(RenderGraph&& other) noexcept;
 
-		RenderGraph2(const RenderGraph2& other) = delete;
-		RenderGraph2& operator=(const RenderGraph2& other) = delete;
+		RenderGraph(const RenderGraph& other) = delete;
+		RenderGraph& operator=(const RenderGraph& other) = delete;
 
 		RGBufferRef CreateBuffer(const RGBufferDesc& desc);
 		RGTextureRef CreateTexture(const RGTextureDesc& desc);
@@ -86,7 +86,7 @@ namespace Volt
 		void ExecuteImmediateAndWait();
 
 	private:
-		friend class RenderContext2;
+		friend class RenderContext;
 		friend class RenderGraphExecutionThread;
 
 		struct TextureExtractionInfo
@@ -215,14 +215,14 @@ namespace Volt
 		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
 		RefPtr<RHI::Image> GetRHITexture(RGTextureRef texture);
 
-		TransientResourceSystem2 m_transientResourceSystem;
+		TransientResourceSystem m_transientResourceSystem;
 		ExternalResourceRegistry m_registeredExternalResources;
 		StandaloneBarriers m_standaloneBarriers;
 
-		RenderGraphResourceAllocator2 m_resourceAllocator; // Allocator for actual resources (Buffers, Textures)
-		RenderGraphResourceAllocator2 m_resourceAccessorAllocator; // Allocator for resource accessors (SRVs, UAVs)
-		RenderGraphResourceAllocator2 m_passParametersAllocator; // Allocator for pass parameters
-		RenderGraphPassAllocator2 m_passAllocator; // Allocator for RenderGraph passes.
+		RenderGraphResourceAllocator m_resourceAllocator; // Allocator for actual resources (Buffers, Textures)
+		RenderGraphResourceAllocator m_resourceAccessorAllocator; // Allocator for resource accessors (SRVs, UAVs)
+		RenderGraphResourceAllocator m_passParametersAllocator; // Allocator for pass parameters
+		RenderGraphPassAllocator m_passAllocator; // Allocator for RenderGraph passes.
 		LinearAllocator<1 * 1024 * 1024> m_temporaryDataAllocator; // Allocator for temporary data that needs to live during the execution of the render graph.
 	
 		PagedVector<TextureExtractionInfo> m_textureExtractions;
@@ -238,7 +238,7 @@ namespace Volt
 	};
 
 	template<typename ParameterStruct, typename ExecFunc>
-	void RenderGraph2::AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc)
+	void RenderGraph::AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc)
 	{
 		Handle<RenderGraphPass> newPass = m_passAllocator.AllocatePass(name, std::forward<ExecFunc>(executeFunc));
 		newPass->flags = flags;
@@ -258,13 +258,13 @@ namespace Volt
 
 			switch (parameter.parameterType)
 			{
-				case ShaderParameterType2::BufferSRV: newPass->AddResourceRead(*reinterpret_cast<RGBufferSRVRef*>(dataPtr)); break;
-				case ShaderParameterType2::BufferUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
-				case ShaderParameterType2::TextureSRV: newPass->AddResourceRead(*reinterpret_cast<RGTextureSRVRef*>(dataPtr)); break;
-				case ShaderParameterType2::TextureUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
-				case ShaderParameterType2::BufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGBufferRef*>(dataPtr), parameter.resourceAccessType); break;
-				case ShaderParameterType2::TextureAccess: newPass->AddResourceAccess(*reinterpret_cast<RGTextureRef*>(dataPtr), parameter.resourceAccessType); break;
-				case ShaderParameterType2::RenderTargets:
+				case ShaderParameterType::BufferSRV: newPass->AddResourceRead(*reinterpret_cast<RGBufferSRVRef*>(dataPtr)); break;
+				case ShaderParameterType::BufferUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
+				case ShaderParameterType::TextureSRV: newPass->AddResourceRead(*reinterpret_cast<RGTextureSRVRef*>(dataPtr)); break;
+				case ShaderParameterType::TextureUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
+				case ShaderParameterType::BufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGBufferRef*>(dataPtr), parameter.resourceAccessType); break;
+				case ShaderParameterType::TextureAccess: newPass->AddResourceAccess(*reinterpret_cast<RGTextureRef*>(dataPtr), parameter.resourceAccessType); break;
+				case ShaderParameterType::RenderTargets:
 				{
 					VT_ENSURE(!EnumValueContainsFlag(flags, RenderGraphPassFlags::Compute));
 

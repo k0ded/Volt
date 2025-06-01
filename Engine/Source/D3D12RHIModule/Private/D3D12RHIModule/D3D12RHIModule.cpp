@@ -158,7 +158,7 @@ namespace Volt::RHI
 		return RefPtr<D3D12ComputePipeline>::Create(shader, useGlobalResources);
 	}
 
-	RefPtr<ComputePipeline> D3D12RHIModule::CreateComputePipeline(RefPtr<Shader2> shader) const
+	RefPtr<ComputePipeline> D3D12RHIModule::CreateComputePipeline(RefPtr<Shader> shader) const
 	{
 		return nullptr;
 	}
@@ -243,17 +243,17 @@ namespace Volt::RHI
 		m_resourceDeletionQueue.FlushAll();
 	}
 
-	RefPtr<Shader2> D3D12RHIModule::CreateShader2(const ShaderCreateInfo& specification) const
+	RefPtr<Shader> D3D12RHIModule::CreateShader(const ShaderCreateInfo& specification) const
 	{
 		return nullptr;
 	}
 
-	RefPtr<RenderPipeline> D3D12RHIModule::CreateRenderPipeline2(const RenderPipelineCreateInfo& createInfo) const
+	RefPtr<RenderPipeline> D3D12RHIModule::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
 	{
 		return nullptr;
 	}
 
-	RefPtr<DescriptorTable> D3D12RHIModule::CreateDescriptorTable2(const DescriptorTableCreateInfo& createInfo) const
+	RefPtr<DescriptorTable> D3D12RHIModule::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const
 	{
 		return nullptr;
 	}

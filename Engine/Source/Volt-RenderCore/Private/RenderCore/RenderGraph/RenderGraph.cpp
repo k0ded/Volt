@@ -1,7 +1,7 @@
 #include "rcpch.h"
 
-#include "RenderCore/RenderGraph2/RenderGraph2.h"
-#include "RenderCore/RenderGraph2/RenderContext2.h"
+#include "RenderCore/RenderGraph/RenderGraph.h"
+#include "RenderCore/RenderGraph/RenderContext.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
 #include "RenderCore/RenderGraph/RenderGraphExecutionThread.h"
 #include "RenderCore/RenderGraph/GPUReadbackBuffer.h"
@@ -107,18 +107,18 @@ namespace Volt
 		}
 	}
 
-	RenderGraph2::RenderGraph2(RefPtr<RHI::CommandBuffer> commandBuffer)
+	RenderGraph::RenderGraph(RefPtr<RHI::CommandBuffer> commandBuffer)
 		: m_commandBuffer(commandBuffer)
 	{
 		RHI::FenceCreateInfo createInfo{};
 		m_executionFence = RHI::Fence::Create(createInfo);
 	}
 
-	RenderGraph2::~RenderGraph2()
+	RenderGraph::~RenderGraph()
 	{
 	}
 
-	RenderGraph2::RenderGraph2(RenderGraph2&& other) noexcept
+	RenderGraph::RenderGraph(RenderGraph&& other) noexcept
 		: m_transientResourceSystem(std::move(other.m_transientResourceSystem)),
 		m_registeredExternalResources(std::move(other.m_registeredExternalResources)),
 		m_resourceAllocator(std::move(other.m_resourceAllocator)),
@@ -136,7 +136,7 @@ namespace Volt
 	{
 	}
 
-	RenderGraph2& RenderGraph2::operator=(RenderGraph2&& other) noexcept
+	RenderGraph& RenderGraph::operator=(RenderGraph&& other) noexcept
 	{
 		if (this == &other)
 		{
@@ -161,7 +161,7 @@ namespace Volt
 		return *this;
 	}
 
-	RGBuffer* RenderGraph2::CreateBuffer(const RGBufferDesc& desc)
+	RGBuffer* RenderGraph::CreateBuffer(const RGBufferDesc& desc)
 	{
 		RGBufferRef buffer = m_resourceAllocator.Allocate<RGBuffer>(desc);
 		m_resources.emplace_back(buffer);
@@ -169,7 +169,7 @@ namespace Volt
 		return buffer;
 	}
 
-	RGTexture* RenderGraph2::CreateTexture(const RGTextureDesc& desc)
+	RGTexture* RenderGraph::CreateTexture(const RGTextureDesc& desc)
 	{
 		RGTextureRef texture = m_resourceAllocator.Allocate<RGTexture>(desc);
 		m_resources.emplace_back(texture);
@@ -177,7 +177,7 @@ namespace Volt
 		return texture;
 	}
 
-	RGUniformBufferRef RenderGraph2::CreateUniformBuffer(const RGUniformBufferDesc& desc)
+	RGUniformBufferRef RenderGraph::CreateUniformBuffer(const RGUniformBufferDesc& desc)
 	{
 		RGUniformBufferRef uniformBuffer = m_resourceAllocator.Allocate<RGUniformBuffer>(desc);
 		m_resources.emplace_back(uniformBuffer);
@@ -185,55 +185,55 @@ namespace Volt
 		return uniformBuffer;
 	}
 
-	RGBufferSRVRef RenderGraph2::CreateSRV(const RGBufferSRVDesc& desc)
+	RGBufferSRVRef RenderGraph::CreateSRV(const RGBufferSRVDesc& desc)
 	{
 		return m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
 	}
 	
-	RGBufferUAVRef RenderGraph2::CreateUAV(const RGBufferUAVDesc& desc)
+	RGBufferUAVRef RenderGraph::CreateUAV(const RGBufferUAVDesc& desc)
 	{
 		return m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
 	}
 
-	RGBufferSRVRef RenderGraph2::CreateSRV(RGBufferRef buffer)
+	RGBufferSRVRef RenderGraph::CreateSRV(RGBufferRef buffer)
 	{
 		RGBufferSRVDesc desc{};
 		desc.bufferResource = buffer;
 		return m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
 	}
 
-	RGBufferUAVRef RenderGraph2::CreateUAV(RGBufferRef buffer)
+	RGBufferUAVRef RenderGraph::CreateUAV(RGBufferRef buffer)
 	{
 		RGBufferUAVDesc desc{};
 		desc.bufferResource = buffer;
 		return m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
 	}
 	
-	RGTextureSRVRef RenderGraph2::CreateSRV(const RGTextureSRVDesc& desc)
+	RGTextureSRVRef RenderGraph::CreateSRV(const RGTextureSRVDesc& desc)
 	{
 		return m_resourceAccessorAllocator.Allocate<RGTextureSRV>(desc);
 	}
 	
-	RGTextureUAVRef RenderGraph2::CreateUAV(const RGTextureUAVDesc& desc)
+	RGTextureUAVRef RenderGraph::CreateUAV(const RGTextureUAVDesc& desc)
 	{
 		return m_resourceAccessorAllocator.Allocate<RGTextureUAV>(desc);
 	}
 
-	RGTextureSRVRef RenderGraph2::CreateSRV(RGTextureRef texture)
+	RGTextureSRVRef RenderGraph::CreateSRV(RGTextureRef texture)
 	{
 		RGTextureSRVDesc desc{};
 		desc.textureResource = texture;
 		return m_resourceAccessorAllocator.Allocate<RGTextureSRV>(desc);
 	}
 
-	RGTextureUAVRef RenderGraph2::CreateUAV(RGTextureRef texture)
+	RGTextureUAVRef RenderGraph::CreateUAV(RGTextureRef texture)
 	{
 		RGTextureUAVDesc desc{};
 		desc.textureResource = texture;
 		return m_resourceAccessorAllocator.Allocate<RGTextureUAV>(desc);
 	}
 
-	RGBufferRef RenderGraph2::RegisterExternalBuffer(RefPtr<RHI::StorageBuffer> buffer)
+	RGBufferRef RenderGraph::RegisterExternalBuffer(RefPtr<RHI::StorageBuffer> buffer)
 	{
 		VT_ENSURE(buffer);
 
@@ -258,7 +258,7 @@ namespace Volt
 		return bufferResource;
 	}
 
-	RGUniformBufferRef RenderGraph2::RegisterExternalUniformBuffer(RefPtr<RHI::UniformBuffer> uniformBuffer)
+	RGUniformBufferRef RenderGraph::RegisterExternalUniformBuffer(RefPtr<RHI::UniformBuffer> uniformBuffer)
 	{
 		VT_ENSURE(uniformBuffer);
 
@@ -282,7 +282,7 @@ namespace Volt
 		return bufferResource;
 	}
 
-	RGTextureRef RenderGraph2::RegisterExternalTexture(RefPtr<RHI::Image> texture)
+	RGTextureRef RenderGraph::RegisterExternalTexture(RefPtr<RHI::Image> texture)
 	{
 		VT_ENSURE(texture);
 
@@ -313,17 +313,17 @@ namespace Volt
 		return textureResource;
 	}
 
-	void RenderGraph2::EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage)
+	void RenderGraph::EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage)
 	{
 		m_textureExtractions.emplace_back(texture, outImage);
 	}
 
-	void RenderGraph2::EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::StorageBuffer>* outBuffer)
+	void RenderGraph::EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::StorageBuffer>* outBuffer)
 	{
 		m_bufferExtractions.emplace_back(buffer, outBuffer);
 	}
 
-	void RenderGraph2::AddResourceBarrier(RGResourceRef resource, const RHI::ResourceState& barrierInfo)
+	void RenderGraph::AddResourceBarrier(RGResourceRef resource, const RHI::ResourceState& barrierInfo)
 	{
 		const uint32_t passIndex = m_passes.empty() ? 0u : static_cast<uint32_t>(m_passes.size() - 1);
 
@@ -338,7 +338,7 @@ namespace Volt
 		RG_BUFFER_ACCESS(DstBuffer, RGResourceAccess::CopyDst)
 	END_SHADER_PARAMETER_STRUCT()
 
-	Ref<GPUReadbackBuffer> RenderGraph2::EnqueueBufferReadback(RGBufferRef srcBuffer)
+	Ref<GPUReadbackBuffer> RenderGraph::EnqueueBufferReadback(RGBufferRef srcBuffer)
 	{
 		const size_t dataSize = srcBuffer->GetDesc().elementSize * srcBuffer->GetDesc().count;
 
@@ -354,7 +354,7 @@ namespace Volt
 		AddPass("Readback Copy Pass",
 			RenderGraphPassFlags::None,
 			parameters,
-			[parameters, fence, dataSize, readbackBuffer](RenderContext2& context)
+			[parameters, fence, dataSize, readbackBuffer](RenderContext& context)
 		{
 			context.CopyBufferRegion(parameters->SrcBuffer, 0, parameters->DstBuffer, 0, dataSize);
 			context.Flush(fence);
@@ -374,7 +374,7 @@ namespace Volt
 		RG_TEXTURE_ACCESS(DstTexture, RGResourceAccess::CopyDst)
 	END_SHADER_PARAMETER_STRUCT()
 
-	Ref<GPUReadbackTexture> RenderGraph2::EnqueueTextureReadback(RGTextureRef srcTexture)
+	Ref<GPUReadbackTexture> RenderGraph::EnqueueTextureReadback(RGTextureRef srcTexture)
 	{
 		Ref<GPUReadbackTexture> readbackTexture = CreateRef<GPUReadbackTexture>(srcTexture->GetDesc());
 		RGTextureRef dstTexture = RegisterExternalTexture(readbackTexture->GetImage());
@@ -388,7 +388,7 @@ namespace Volt
 		AddPass("Readback Copy Pass",
 			RenderGraphPassFlags::None,
 			parameters,
-			[parameters, fence, readbackTexture](RenderContext2& context)
+			[parameters, fence, readbackTexture](RenderContext& context)
 		{
 			const auto& desc = parameters->SrcTexture->GetDesc();
 			context.CopyTexture(parameters->SrcTexture, parameters->DstTexture, desc.width, desc.height, desc.depth);
@@ -404,7 +404,7 @@ namespace Volt
 		return readbackTexture;
 	}
 
-	void RenderGraph2::Compile()
+	void RenderGraph::Compile()
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -837,22 +837,22 @@ namespace Volt
 		}
 	}
 
-	void RenderGraph2::Execute()
+	void RenderGraph::Execute()
 	{
 		RenderGraphExecutionThread::ExecuteRenderGraph(std::move(*this));
 	}
 
-	void RenderGraph2::ExecuteImmediate()
+	void RenderGraph::ExecuteImmediate()
 	{
 		ExecuteInternal(false);
 	}
 
-	void RenderGraph2::ExecuteImmediateAndWait()
+	void RenderGraph::ExecuteImmediateAndWait()
 	{
 		ExecuteInternal(true);
 	}
 
-	void RenderGraph2::ExecuteInternal(bool waitForSync)
+	void RenderGraph::ExecuteInternal(bool waitForSync)
 	{
 		m_commandBuffer->Begin();
 		for (uint32_t passIndex = 0; auto pass : m_passes)
@@ -871,7 +871,7 @@ namespace Volt
 
 			{
 				VT_PROFILE_SCOPE(pass->name.data());
-				RenderContext2 renderContext(*this, pass.GetRaw(), m_commandBuffer);
+				RenderContext renderContext(*this, pass.GetRaw(), m_commandBuffer);
 				m_passAllocator.ExecutePass(pass, renderContext);
 			}
 
@@ -898,7 +898,7 @@ namespace Volt
 		ExtractResources();
 	}
 
-	void RenderGraph2::ExtractResources()
+	void RenderGraph::ExtractResources()
 	{
 		for (const auto& textureExtractionData : m_textureExtractions)
 		{
@@ -921,7 +921,7 @@ namespace Volt
 		}
 	}
 
-	void RenderGraph2::InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer)
+	void RenderGraph::InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer)
 	{
 		if (passBarriers.Empty())
 		{
@@ -949,7 +949,7 @@ namespace Volt
 		commandBuffer->ResourceBarrier(resultBarriers);
 	}
 
-	RGResourceRef RenderGraph2::TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource)
+	RGResourceRef RenderGraph::TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource)
 	{
 		if (m_registeredExternalResources.contains(resource))
 		{
@@ -959,42 +959,42 @@ namespace Volt
 		return nullptr;
 	}
 	
-	void RenderGraph2::RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RGResourceRef handle)
+	void RenderGraph::RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RGResourceRef handle)
 	{
 		m_registeredExternalResources[resource] = handle;
 	}
 
-	RefPtr<RHI::BufferView> RenderGraph2::GetRHIBufferSRV(RGBufferSRVRef bufferSRV)
+	RefPtr<RHI::BufferView> RenderGraph::GetRHIBufferSRV(RGBufferSRVRef bufferSRV)
 	{
 		RefPtr<RHI::StorageBuffer> rhiBuffer = m_transientResourceSystem.AcquireBuffer(reinterpret_cast<RGBufferRef>(bufferSRV->GetResource()));
 		return rhiBuffer->GetView();
 	}
 	
-	RefPtr<RHI::BufferView> RenderGraph2::GetRHIBufferUAV(RGBufferUAVRef bufferUAV)
+	RefPtr<RHI::BufferView> RenderGraph::GetRHIBufferUAV(RGBufferUAVRef bufferUAV)
 	{
 		RefPtr<RHI::StorageBuffer> rhiBuffer = m_transientResourceSystem.AcquireBuffer(reinterpret_cast<RGBufferRef>(bufferUAV->GetResource()));
 		return rhiBuffer->GetView();
 	}
 
-	RefPtr<RHI::ImageView> RenderGraph2::GetRHITextureSRV(RGTextureSRVRef textureSRV)
+	RefPtr<RHI::ImageView> RenderGraph::GetRHITextureSRV(RGTextureSRVRef textureSRV)
 	{
 		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(reinterpret_cast<RGTextureRef>(textureSRV->GetResource()));
 		return rhiImage->GetView();
 	}
 
-	RefPtr<RHI::ImageView> RenderGraph2::GetRHITextureUAV(RGTextureUAVRef textureUAV)
+	RefPtr<RHI::ImageView> RenderGraph::GetRHITextureUAV(RGTextureUAVRef textureUAV)
 	{
 		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(reinterpret_cast<RGTextureRef>(textureUAV->GetResource()));
 		return rhiImage->GetView();
 	}
 
-	RefPtr<Volt::RHI::ImageView> RenderGraph2::GetRHITextureRT(RGTextureRef texture)
+	RefPtr<Volt::RHI::ImageView> RenderGraph::GetRHITextureRT(RGTextureRef texture)
 	{
 		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(texture);
 		return rhiImage->GetView();
 	}
 
-	RefPtr<Volt::RHI::RHIResource> RenderGraph2::GetRHIResource(RGResourceRef resource)
+	RefPtr<Volt::RHI::RHIResource> RenderGraph::GetRHIResource(RGResourceRef resource)
 	{
 		RefPtr<Volt::RHI::RHIResource> rhiResource;
 
@@ -1022,12 +1022,12 @@ namespace Volt
 		return rhiResource;
 	}
 
-	RefPtr<RHI::StorageBuffer> RenderGraph2::GetRHIBuffer(RGBufferRef buffer)
+	RefPtr<RHI::StorageBuffer> RenderGraph::GetRHIBuffer(RGBufferRef buffer)
 	{
 		return m_transientResourceSystem.AcquireBuffer(buffer);
 	}
 
-	RefPtr<RHI::Image> RenderGraph2::GetRHITexture(RGTextureRef texture)
+	RefPtr<RHI::Image> RenderGraph::GetRHITexture(RGTextureRef texture)
 	{
 		return m_transientResourceSystem.AcquireTexture(texture);
 	}

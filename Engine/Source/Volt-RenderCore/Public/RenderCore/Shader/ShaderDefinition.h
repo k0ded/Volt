@@ -6,7 +6,7 @@
 
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>
-#include <RHIModule/Shader/Shader2.h>
+#include <RHIModule/Shader/Shader.h>
 
 namespace Volt
 {

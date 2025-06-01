@@ -11,7 +11,7 @@ namespace Volt
 	}
 
 	class Texture2D;
-	class RenderGraph2;
+	class RenderGraph;
 
 	struct BlueNoiseData
 	{
@@ -46,7 +46,7 @@ namespace Volt
 
 		static void Setup(BlueNoiseShaderParameters& parameters, const BlueNoiseTextures& blueNoiseTextures);
 		
-		static BlueNoiseTextures GetBlueNoiseTextures(RenderGraph2& renderGraph);
+		static BlueNoiseTextures GetBlueNoiseTextures(RenderGraph& renderGraph);
 
 	private:
 		void LoadBlueNoiseTextures();

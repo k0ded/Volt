@@ -1,7 +1,7 @@
 #pragma once
 
 #include <RHIModule/Pipelines/ComputePipeline.h>
-#include <RHIModule/Shader/Shader2.h>
+#include <RHIModule/Shader/Shader.h>
 
 struct VkDescriptorSetLayout_T;
 struct VkPipeline_T;
@@ -9,14 +9,14 @@ struct VkPipelineLayout_T;
 
 namespace Volt::RHI
 {
-	class VulkanComputePipeline2 : public ComputePipeline
+	class VulkanComputePipeline : public ComputePipeline
 	{
 	public:
-		VulkanComputePipeline2(RefPtr<Shader2> shader);
-		~VulkanComputePipeline2() override;
+		VulkanComputePipeline(RefPtr<Shader> shader);
+		~VulkanComputePipeline() override;
 
 		void Invalidate() override;
-		RefPtr<Shader2> GetShader2() const override;
+		RefPtr<Shader> GetShader2() const override;
 		bool IsValid() const override;
 		size_t GetHash() const override;
 		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name) const override;
@@ -33,7 +33,7 @@ namespace Volt::RHI
 		void Release();
 		void GenerateHash();
 
-		RefPtr<Shader2> m_shader;
+		RefPtr<Shader> m_shader;
 		size_t m_hash;
 
 		vt::map<uint32_t, VkDescriptorSetLayout_T*> m_descriptorSetLayouts;

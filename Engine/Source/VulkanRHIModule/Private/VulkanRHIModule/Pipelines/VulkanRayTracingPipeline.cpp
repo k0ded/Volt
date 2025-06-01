@@ -1,7 +1,7 @@
 #include <vkpch.h>
 
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
-#include "VulkanRHIModule/Shader/VulkanShader2.h"
+#include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
@@ -273,7 +273,7 @@ namespace Volt::RHI
 		return m_pipeline != nullptr;
 	}
 
-	bool VulkanRayTracingPipeline::IsShaderInPipeline(RefPtr<Shader2> shader) const
+	bool VulkanRayTracingPipeline::IsShaderInPipeline(RefPtr<Shader> shader) const
 	{
 		for (const auto& s : m_createInfo.rayGenTable)
 		{

@@ -596,7 +596,7 @@ namespace Volt::RHI
 		return true;
 	}
 
-	Volt::RHI::ShaderCompiler::CompilationResultData2 D3D12ShaderCompiler::TryCompileImpl2(const Specification2& specification)
+	Volt::RHI::ShaderCompiler::CompilationResultData D3D12ShaderCompiler::TryCompileImpl2(const Specification& specification)
 	{
 		return { };
 	}

@@ -2,7 +2,7 @@
 
 #include "RenderCore/Config.h"
 
-#include "RenderCore/RenderGraph2/RenderGraphPass.h"
+#include "RenderCore/RenderGraph/RenderGraphPass.h"
 
 #include <CoreUtilities/Allocators/Handle.h>
 #include <CoreUtilities/Allocators/LinearAllocator.h>
@@ -13,18 +13,18 @@
 
 namespace Volt
 {
-	class RenderContext2;
+	class RenderContext;
 
-	class VTRC_API RenderGraphResourceAllocator2
+	class VTRC_API RenderGraphResourceAllocator
 	{
 	public:
-		RenderGraphResourceAllocator2() = default;
-		~RenderGraphResourceAllocator2();
+		RenderGraphResourceAllocator() = default;
+		~RenderGraphResourceAllocator();
 
-		RenderGraphResourceAllocator2(const RenderGraphResourceAllocator2& other) noexcept = delete;
-		RenderGraphResourceAllocator2(RenderGraphResourceAllocator2&& other) noexcept;
-		RenderGraphResourceAllocator2& operator=(const RenderGraphResourceAllocator2& other) noexcept = delete;
-		RenderGraphResourceAllocator2& operator=(RenderGraphResourceAllocator2&& other) noexcept;
+		RenderGraphResourceAllocator(const RenderGraphResourceAllocator& other) noexcept = delete;
+		RenderGraphResourceAllocator(RenderGraphResourceAllocator&& other) noexcept;
+		RenderGraphResourceAllocator& operator=(const RenderGraphResourceAllocator& other) noexcept = delete;
+		RenderGraphResourceAllocator& operator=(RenderGraphResourceAllocator&& other) noexcept;
 
 		template<typename ResourceType, typename... Args>
 		ResourceType* Allocate(Args&&... args)
@@ -46,24 +46,24 @@ namespace Volt
 		Vector<DestructorHelper> m_nodeDestructors;
 	};
 	
-	class VTRC_API RenderGraphPassAllocator2
+	class VTRC_API RenderGraphPassAllocator
 	{
 	public:
-		RenderGraphPassAllocator2() = default;
-		~RenderGraphPassAllocator2();
+		RenderGraphPassAllocator() = default;
+		~RenderGraphPassAllocator();
 
-		RenderGraphPassAllocator2(const RenderGraphPassAllocator2& other) noexcept = delete;
-		RenderGraphPassAllocator2(RenderGraphPassAllocator2&& other) noexcept;
-		RenderGraphPassAllocator2& operator=(const RenderGraphPassAllocator2& other) noexcept = delete;
-		RenderGraphPassAllocator2& operator=(RenderGraphPassAllocator2&& other) noexcept;
+		RenderGraphPassAllocator(const RenderGraphPassAllocator& other) noexcept = delete;
+		RenderGraphPassAllocator(RenderGraphPassAllocator&& other) noexcept;
+		RenderGraphPassAllocator& operator=(const RenderGraphPassAllocator& other) noexcept = delete;
+		RenderGraphPassAllocator& operator=(RenderGraphPassAllocator&& other) noexcept;
 
-		typedef void(*PassExecFunc)(void*, RenderContext2&);
+		typedef void(*PassExecFunc)(void*, RenderContext&);
 
 		template<typename ExecFunc>
 		Handle<RenderGraphPass> AllocatePass(const std::string& name, ExecFunc&& execFunc)
 		{
 			// Lmabda that will execute the pass
-			auto passExecWrapperFunc = [](void* funcDataPtr, RenderContext2& renderContext)
+			auto passExecWrapperFunc = [](void* funcDataPtr, RenderContext& renderContext)
 			{
 				auto funcPtr = reinterpret_cast<ExecFunc*>(funcDataPtr);
 				(*funcPtr)(renderContext);
@@ -89,7 +89,7 @@ namespace Volt
 			return passNode;
 		}
 
-		void ExecutePass(Handle<RenderGraphPass> pass, RenderContext2& renderContext);
+		void ExecutePass(Handle<RenderGraphPass> pass, RenderContext& renderContext);
 
 		VT_NODISCARD VT_INLINE uint32_t GetNumPasses() const { return m_numPasses; }
 

@@ -4,7 +4,7 @@
 
 #include <RHIModule/Buffers/StorageBuffer.h>
 
-#include <RHIModule/Shader/Shader2.h>
+#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
 
 using namespace Volt;
@@ -19,14 +19,14 @@ ComputeWriteToBufferTest::ComputeWriteToBufferTest()
 	createInfo.sourceFilepath = "Engine/Shaders/Source/Testing/ComputeWriteToBufferTest_cs.hlsl";
 	createInfo.stage = RHI::ShaderStage::Compute;
 
-	RefPtr<RHI::Shader2> shader = RHI::Shader2::Create(createInfo);
+	RefPtr<RHI::Shader> shader = RHI::Shader::Create(createInfo);
 
 	m_computePipeline = RHI::ComputePipeline::Create(shader);
 
 	RHI::DescriptorTableCreateInfo tableInfo{};
 	tableInfo.computePipeline = m_computePipeline;
 
-	m_descriptorTable = RHI::DescriptorTable::Create2(tableInfo);
+	m_descriptorTable = RHI::DescriptorTable::Create(tableInfo);
 	m_buffer = RHI::StorageBuffer::Create<uint32_t>(GROUP_SIZE, "Write Buffer", RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::GPU);
 	m_readbackBuffer = RHI::StorageBuffer::Create<uint32_t>(GROUP_SIZE, "Readback Buffer", RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferDst, RHI::MemoryUsage::GPUToCPU);
 }

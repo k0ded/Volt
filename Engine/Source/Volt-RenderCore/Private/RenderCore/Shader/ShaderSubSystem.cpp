@@ -7,7 +7,7 @@
 
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Shader/ShaderCache.h>
-#include <RHIModule/Shader/Shader2.h>
+#include <RHIModule/Shader/Shader.h>
 
 #include <JobSystem/TaskGraph.h>
 
@@ -75,8 +75,8 @@ namespace Volt
 				createInfo.sourceFilepath = registrationInfo.stageInfos.filePath;
 				createInfo.stage = registrationInfo.stageInfos.shaderStage;
 
-				RefPtr<RHI::Shader2> shader = RHI::Shader2::Create(createInfo);
-				ShaderMap::RegisterShader2(typeIndex, shader);
+				RefPtr<RHI::Shader> shader = RHI::Shader::Create(createInfo);
+				ShaderMap::RegisterShader(typeIndex, shader);
 			});
 		}
 

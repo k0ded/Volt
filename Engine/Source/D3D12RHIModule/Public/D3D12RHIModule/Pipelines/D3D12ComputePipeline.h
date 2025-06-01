@@ -3,7 +3,7 @@
 #include "D3D12RHIModule/Common/ComPtr.h"
 
 #include <RHIModule/Pipelines/ComputePipeline.h>
-#include <RHIModule/Shader/Shader2.h>
+#include <RHIModule/Shader/Shader.h>
 
 struct ID3D12PipelineState;
 
@@ -17,7 +17,7 @@ namespace Volt::RHI
 
 		void Invalidate() override;
 		RefPtr<Shader> GetShader() const override;
-		RefPtr<Shader2> GetShader2() const override { return nullptr; }
+		RefPtr<Shader> GetShader2() const override { return nullptr; }
 		bool IsValid() const override;
 		size_t GetHash() const override;
 		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name) const override { return nullptr; }

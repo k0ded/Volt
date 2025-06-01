@@ -12,7 +12,7 @@ namespace Volt::RHI
 		~VulkanShaderBindingTable() override;
 
 		void Invalidate() override;
-		bool IsShaderInTable(RefPtr<Shader2> shader) const override;
+		bool IsShaderInTable(RefPtr<Shader> shader) const override;
 
 		VT_NODISCARD VT_INLINE RefPtr<StorageBuffer> GetRayGenTable() const { return m_rayGenBindingTable; }
 		VT_NODISCARD VT_INLINE RefPtr<StorageBuffer> GetMissTable() const { return m_missBindingTable; }

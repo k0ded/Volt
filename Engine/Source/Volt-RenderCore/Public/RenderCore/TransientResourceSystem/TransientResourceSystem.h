@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderCore/RenderGraph2/Resources/ResourceDeclarations.h"
+#include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 
 #include <CoreUtilities/Pointers/RawPtr.h>
 #include <CoreUtilities/Containers/ThreadSafeMap.h>
@@ -15,16 +15,16 @@ namespace Volt
 		class RHIResource;
 	}
 
-	class TransientResourceSystem2
+	class TransientResourceSystem
 	{
 	public:
-		TransientResourceSystem2();
-		~TransientResourceSystem2();
+		TransientResourceSystem();
+		~TransientResourceSystem();
 
-		TransientResourceSystem2(const TransientResourceSystem2& other) noexcept;
-		TransientResourceSystem2(TransientResourceSystem2&& other) noexcept;
-		TransientResourceSystem2& operator=(const TransientResourceSystem2& other) noexcept;
-		TransientResourceSystem2& operator=(TransientResourceSystem2&& other) noexcept;
+		TransientResourceSystem(const TransientResourceSystem& other) noexcept;
+		TransientResourceSystem(TransientResourceSystem&& other) noexcept;
+		TransientResourceSystem& operator=(const TransientResourceSystem& other) noexcept;
+		TransientResourceSystem& operator=(TransientResourceSystem&& other) noexcept;
 
 		RefPtr<RHI::Image> AcquireTexture(RGTextureRef resource);
 		RefPtr<RHI::StorageBuffer> AcquireBuffer(RGBufferRef resource);
