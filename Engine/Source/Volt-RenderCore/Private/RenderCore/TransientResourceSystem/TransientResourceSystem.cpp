@@ -90,7 +90,7 @@ namespace Volt
 		auto allocator = RHI::GraphicsContext::GetDefaultAllocator(); //(bufferDesc.memoryUsage & RHI::MemoryUsage::CPUToGPU) != RHI::MemoryUsage::None ? RHI::GraphicsContext::GetDefaultAllocator() : RHI::GraphicsContext::GetTransientAllocator();
 
 		const RGBufferDesc& desc = resource->GetDesc();
-		RefPtr<RHI::StorageBuffer> buffer = RHI::StorageBuffer::Create(desc.count, desc.elementSize, desc.name, desc.usage, desc.memoryUsage, allocator);
+		RefPtr<RHI::StorageBuffer> buffer = RHI::StorageBuffer::Create(desc, allocator);
 
 		ResourceInfo info{};
 		info.resource = buffer;

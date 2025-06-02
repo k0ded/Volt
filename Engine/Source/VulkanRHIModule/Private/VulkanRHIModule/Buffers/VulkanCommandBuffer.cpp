@@ -19,7 +19,7 @@
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable2.h"
+#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -711,7 +711,7 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		VulkanDescriptorTable2& vulkanTable = descriptorTable->AsRef<VulkanDescriptorTable2>();
+		VulkanDescriptorTable& vulkanTable = descriptorTable->AsRef<VulkanDescriptorTable>();
 		vulkanTable.PrepareForRender();
 
 		const VkPipelineBindPoint bindPoint = static_cast<VkPipelineBindPoint>(vulkanTable.GetRelatedBindPoint());
@@ -1029,7 +1029,13 @@ namespace Volt::RHI
 
 			const VkDeviceSize scratchBufferSize = (buildInfo.mode == AccelerationStructureBuildMode::Build ? buildSizes.buildScratchSize : buildSizes.updateScratchSize) + accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment;
 
-			RefPtr<StorageBuffer> scratchBuffer = StorageBuffer::Create(1, scratchBufferSize, "AS Scratch Buffer", BufferUsage::StorageBuffer | BufferUsage::DeviceAddress);
+			BufferDesc scratchBufferDesc{};
+			scratchBufferDesc.count = 1;
+			scratchBufferDesc.elementSize = scratchBufferSize;
+			scratchBufferDesc.usage = BufferUsage::StorageBuffer | BufferUsage::DeviceAddress;
+			scratchBufferDesc.debugName = "AS Scratch Buffer";
+
+			RefPtr<StorageBuffer> scratchBuffer = StorageBuffer::Create(scratchBufferDesc);
 			scratchBuffers.push_back(scratchBuffer);
 
 			vulkanBuildInfo.scratchData.deviceAddress = ::Utility::Align(scratchBuffer->GetDeviceAddress(), accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment);

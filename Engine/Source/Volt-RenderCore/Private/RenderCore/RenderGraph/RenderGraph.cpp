@@ -187,16 +187,20 @@ namespace Volt
 
 	RGBufferSRVRef RenderGraph::CreateSRV(const RGBufferSRVDesc& desc)
 	{
+		VT_ENSURE_MSG(!desc.bufferResource->GetDesc().isTexelBufferDesc, "Buffer format has to be provided if the buffer is a texel buffer!");
 		return m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
 	}
 	
 	RGBufferUAVRef RenderGraph::CreateUAV(const RGBufferUAVDesc& desc)
 	{
+		VT_ENSURE_MSG(!desc.bufferResource->GetDesc().isTexelBufferDesc, "Buffer format has to be provided if the buffer is a texel buffer!");
 		return m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
 	}
 
 	RGBufferSRVRef RenderGraph::CreateSRV(RGBufferRef buffer)
 	{
+		VT_ENSURE_MSG(!buffer->GetDesc().isTexelBufferDesc, "Buffer format has to be provided if the buffer is a texel buffer!");
+
 		RGBufferSRVDesc desc{};
 		desc.bufferResource = buffer;
 		return m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
@@ -204,8 +208,30 @@ namespace Volt
 
 	RGBufferUAVRef RenderGraph::CreateUAV(RGBufferRef buffer)
 	{
+		VT_ENSURE_MSG(!buffer->GetDesc().isTexelBufferDesc, "Buffer format has to be provided if the buffer is a texel buffer!");
+
 		RGBufferUAVDesc desc{};
 		desc.bufferResource = buffer;
+		return m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
+	}
+
+	RGBufferSRVRef RenderGraph::CreateSRV(RGBufferRef buffer, RHI::PixelFormat format)
+	{
+		VT_ENSURE_MSG(buffer->GetDesc().isTexelBufferDesc, "Buffer must have been created as a texel buffer!");
+
+		RGBufferSRVDesc desc{};
+		desc.bufferResource = buffer;
+		desc.format = format;
+		return m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
+	}
+
+	RGBufferUAVRef RenderGraph::CreateUAV(RGBufferRef buffer, RHI::PixelFormat format)
+	{
+		VT_ENSURE_MSG(buffer->GetDesc().isTexelBufferDesc, "Buffer must have been created as a texel buffer!");
+
+		RGBufferUAVDesc desc{};
+		desc.bufferResource = buffer;
+		desc.format = format;
 		return m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
 	}
 	
@@ -242,12 +268,17 @@ namespace Volt
 			return reinterpret_cast<RGBufferRef>(resource);
 		}
 
-		RGBufferDesc desc{};
-		desc.name = buffer->GetName();
-		desc.count = buffer->GetCount();
-		desc.elementSize = buffer->GetElementSize();
+		const RHI::BufferDesc& rhiDesc = buffer->GetDesc();
+		
+		RGBufferDesc rgDesc;
+		rgDesc.count = rhiDesc.count;
+		rgDesc.elementSize = rhiDesc.elementSize;
+		rgDesc.memoryUsage = rhiDesc.memoryUsage;
+		rgDesc.usage = rhiDesc.usage;
+		rgDesc.debugName = rhiDesc.debugName;
+		rgDesc.isTexelBufferDesc = EnumValueContainsFlag(rhiDesc.usage, RHI::BufferUsage::TexelBuffer);
 
-		RGBufferRef bufferResource = m_resourceAllocator.Allocate<RGBuffer>(desc);
+		RGBufferRef bufferResource = m_resourceAllocator.Allocate<RGBuffer>(rgDesc);
 		bufferResource->isExternal = true;
 
 		m_resources.emplace_back(bufferResource);
@@ -967,13 +998,21 @@ namespace Volt
 	RefPtr<RHI::BufferView> RenderGraph::GetRHIBufferSRV(RGBufferSRVRef bufferSRV)
 	{
 		RefPtr<RHI::StorageBuffer> rhiBuffer = m_transientResourceSystem.AcquireBuffer(reinterpret_cast<RGBufferRef>(bufferSRV->GetResource()));
-		return rhiBuffer->GetView();
+
+		RHI::BufferViewDesc desc{};
+		desc.bufferFormat = bufferSRV->GetDesc().format;
+
+		return rhiBuffer->GetView(desc);
 	}
 	
 	RefPtr<RHI::BufferView> RenderGraph::GetRHIBufferUAV(RGBufferUAVRef bufferUAV)
 	{
 		RefPtr<RHI::StorageBuffer> rhiBuffer = m_transientResourceSystem.AcquireBuffer(reinterpret_cast<RGBufferRef>(bufferUAV->GetResource()));
-		return rhiBuffer->GetView();
+
+		RHI::BufferViewDesc desc{};
+		desc.bufferFormat = bufferUAV->GetDesc().format;
+
+		return rhiBuffer->GetView(desc);
 	}
 
 	RefPtr<RHI::ImageView> RenderGraph::GetRHITextureSRV(RGTextureSRVRef textureSRV)

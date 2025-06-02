@@ -1,6 +1,6 @@
 #include "vkpch.h"
 
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable2.h"
+#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 #include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
@@ -34,7 +34,7 @@ namespace Volt::RHI
 		}
 	}
 
-	VulkanDescriptorTable2::VulkanDescriptorTable2(const DescriptorTableCreateInfo& createInfo)
+	VulkanDescriptorTable::VulkanDescriptorTable(const DescriptorTableCreateInfo& createInfo)
 		: m_createInfo(createInfo)
 	{
 		VT_ENSURE(m_createInfo.computePipeline || m_createInfo.renderPipeline);
@@ -42,12 +42,12 @@ namespace Volt::RHI
 		Invalidate();
 	}
 
-	VulkanDescriptorTable2::~VulkanDescriptorTable2()
+	VulkanDescriptorTable::~VulkanDescriptorTable()
 	{
 		Release();
 	}
 	
-	void VulkanDescriptorTable2::SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex)
+	void VulkanDescriptorTable::SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex)
 	{
 		// Make sure set and binding is actually used in the pipeline.
 		if (!m_writeDescriptorsMapping.contains(set) || !m_writeDescriptorsMapping.at(set).contains(binding))
@@ -88,7 +88,7 @@ namespace Volt::RHI
 		imageDescriptor.imageLayout = Utility::GetImageLayoutFromDescriptorType(static_cast<VkDescriptorType>(m_activeDescriptorWrites.at(writeDescriptorIndex).descriptorType));
 	}
 	
-	void VulkanDescriptorTable2::SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex)
+	void VulkanDescriptorTable::SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex)
 	{
 		// Make sure set and binding is actually used in the pipeline.
 		if (!m_writeDescriptorsMapping.contains(set) || !m_writeDescriptorsMapping.at(set).contains(binding))
@@ -100,13 +100,29 @@ namespace Volt::RHI
 		m_isDirty = true;
 
 		VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
+		const bool isTexelBufferView = vkBufferView.IsTexelBufferView();
 
-		auto& bufferDescriptor = m_bufferDescriptorInfos[set][binding][arrayIndex];
-		bufferDescriptor.buffer = vkBufferView.GetHandle<VkBuffer>();
-		bufferDescriptor.range = vkBufferView.GetDesc().size;
-		bufferDescriptor.offset = vkBufferView.GetDesc().offset;
+		DescriptorBufferInfo* bufferDescriptorPtr = nullptr;
+		VkBufferView* vkTexelBufferView = nullptr;
 
-		VT_ENSURE(bufferDescriptor.buffer);
+		if (!isTexelBufferView)
+		{
+			auto& bufferDescriptor = m_bufferDescriptorInfos[set][binding][arrayIndex];
+			bufferDescriptor.buffer = vkBufferView.GetHandle<VkBuffer>();
+			bufferDescriptor.range = vkBufferView.GetDesc().size;
+			bufferDescriptor.offset = vkBufferView.GetDesc().offset;
+		
+			bufferDescriptorPtr = &bufferDescriptor;
+
+			VT_ENSURE(bufferDescriptor.buffer);
+		}
+		else
+		{
+			auto& view = m_texelBufferViews[set][binding][arrayIndex];
+			view = vkBufferView.GetTexelBufferView();
+
+			vkTexelBufferView = &view;
+		}
 
 		// Create a new active descriptor write, or use a cached one.
 		if (m_activeDescriptorWritesMapping[set][binding][arrayIndex].value == DefaultInvalid::INVALID_VALUE)
@@ -115,7 +131,15 @@ namespace Volt::RHI
 
 			DescriptorWrite& writeDescriptorCopy = m_activeDescriptorWrites.emplace_back() = m_descriptorWrites.at(writeDescriptorIndex);
 			writeDescriptorCopy.dstArrayElement = arrayIndex;
-			writeDescriptorCopy.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(&bufferDescriptor);
+
+			if (!isTexelBufferView)
+			{
+				writeDescriptorCopy.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(bufferDescriptorPtr);
+			}
+			else
+			{
+				writeDescriptorCopy.pTexelBufferView = vkTexelBufferView;
+			}
 
 			const uint32_t activeWriteDescriptorIndex = static_cast<uint32_t>(m_activeDescriptorWrites.size() - 1);
 			m_activeDescriptorWritesMapping[set][binding][arrayIndex].value = activeWriteDescriptorIndex;
@@ -125,11 +149,18 @@ namespace Volt::RHI
 			const uint32_t writeDescriptorIndex = m_activeDescriptorWritesMapping[set][binding][arrayIndex].value;
 			auto& activeDescriptorWrite = m_activeDescriptorWrites.at(writeDescriptorIndex);
 
-			activeDescriptorWrite.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(&bufferDescriptor);
+			if (!isTexelBufferView)
+			{
+				activeDescriptorWrite.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(bufferDescriptorPtr);
+			}
+			else
+			{
+				activeDescriptorWrite.pTexelBufferView = vkTexelBufferView;
+			}
 		}
 	}
 	
-	void VulkanDescriptorTable2::SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex)
+	void VulkanDescriptorTable::SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex)
 	{
 		// Make sure set and binding is actually used in the pipeline.
 		if (!m_writeDescriptorsMapping.contains(set) || !m_writeDescriptorsMapping.at(set).contains(binding))
@@ -165,19 +196,19 @@ namespace Volt::RHI
 		}
 	}
 	
-	void VulkanDescriptorTable2::SetImageView(std::string_view name, RawPtr<ImageView> view, uint32_t arrayIndex)
+	void VulkanDescriptorTable::SetImageView(std::string_view name, RawPtr<ImageView> view, uint32_t arrayIndex)
 	{
 	}
 	
-	void VulkanDescriptorTable2::SetBufferView(std::string_view name, RawPtr<BufferView> view, uint32_t arrayIndex)
+	void VulkanDescriptorTable::SetBufferView(std::string_view name, RawPtr<BufferView> view, uint32_t arrayIndex)
 	{
 	}
 	
-	void VulkanDescriptorTable2::SetSamplerState(std::string_view name, RawPtr<SamplerState> samplerState, uint32_t arrayIndex)
+	void VulkanDescriptorTable::SetSamplerState(std::string_view name, RawPtr<SamplerState> samplerState, uint32_t arrayIndex)
 	{
 	}
 	
-	void VulkanDescriptorTable2::PrepareForRender()
+	void VulkanDescriptorTable::PrepareForRender()
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -202,7 +233,7 @@ namespace Volt::RHI
 		m_isDirty = false;
 	}
 	
-	void VulkanDescriptorTable2::Bind(CommandBuffer& commandBuffer)
+	void VulkanDescriptorTable::Bind(CommandBuffer& commandBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -233,7 +264,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanDescriptorTable2::Invalidate()
+	void VulkanDescriptorTable::Invalidate()
 	{
 		Release();
 	
@@ -247,7 +278,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanDescriptorTable2::Release()
+	void VulkanDescriptorTable::Release()
 	{
 		if (!m_descriptorPool)
 		{
@@ -263,7 +294,7 @@ namespace Volt::RHI
 		m_descriptorPool = nullptr;
 	}
 
-	void VulkanDescriptorTable2::CreateFromComputePipeline()
+	void VulkanDescriptorTable::CreateFromComputePipeline()
 	{
 		VulkanComputePipeline& vulkanPipeline = m_createInfo.computePipeline->AsRef<VulkanComputePipeline>();
 
@@ -309,7 +340,7 @@ namespace Volt::RHI
 		BuildWriteDescriptors();
 	}
 
-	void VulkanDescriptorTable2::CreateFromRenderPipeline()
+	void VulkanDescriptorTable::CreateFromRenderPipeline()
 	{
 		VulkanRenderPipeline& vulkanPipeline = m_createInfo.renderPipeline->AsRef<VulkanRenderPipeline>();
 
@@ -355,12 +386,12 @@ namespace Volt::RHI
 		BuildWriteDescriptors();
 	}
 	
-	void* VulkanDescriptorTable2::GetHandleImpl() const
+	void* VulkanDescriptorTable::GetHandleImpl() const
 	{
 		return nullptr;
 	}
 
-	void VulkanDescriptorTable2::BuildWriteDescriptors()
+	void VulkanDescriptorTable::BuildWriteDescriptors()
 	{
 		m_descriptorWrites.clear();
 		m_activeDescriptorWrites.clear();
@@ -418,7 +449,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanDescriptorTable2::InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet)
+	void VulkanDescriptorTable::InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet)
 	{
 		writeDescriptor.sType = static_cast<uint32_t>(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
 		writeDescriptor.pNext = nullptr;
@@ -429,7 +460,7 @@ namespace Volt::RHI
 		writeDescriptor.dstSet = dstDescriptorSet;
 	}
 
-	VkPipelineLayout_T* VulkanDescriptorTable2::GetRelatedPipelineLayout() const
+	VkPipelineLayout_T* VulkanDescriptorTable::GetRelatedPipelineLayout() const
 	{
 		if (m_createInfo.computePipeline)
 		{
@@ -441,7 +472,7 @@ namespace Volt::RHI
 		}
 	}
 
-	uint32_t VulkanDescriptorTable2::GetRelatedBindPoint() const
+	uint32_t VulkanDescriptorTable::GetRelatedBindPoint() const
 	{
 		const VkPipelineBindPoint bindPoint = m_createInfo.computePipeline ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
 		return bindPoint;

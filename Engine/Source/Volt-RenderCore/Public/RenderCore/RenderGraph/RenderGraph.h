@@ -46,6 +46,8 @@ namespace Volt
 		RGBufferUAVRef CreateUAV(const RGBufferUAVDesc& desc);
 		RGBufferSRVRef CreateSRV(RGBufferRef buffer);
 		RGBufferUAVRef CreateUAV(RGBufferRef buffer);
+		RGBufferSRVRef CreateSRV(RGBufferRef buffer, RHI::PixelFormat format);
+		RGBufferUAVRef CreateUAV(RGBufferRef buffer, RHI::PixelFormat format);
 
 		RGTextureSRVRef CreateSRV(const RGTextureSRVDesc& desc);
 		RGTextureUAVRef CreateUAV(const RGTextureUAVDesc& desc);

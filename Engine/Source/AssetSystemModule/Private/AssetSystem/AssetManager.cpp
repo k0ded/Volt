@@ -834,8 +834,7 @@ namespace Volt
 
 #ifndef VT_DIST
 		{
-			ReadLock lock{ m_assetRegistryMutex };
-			const auto& metadata = GetMetadataFromFilePath(cleanFilePath);
+			const auto metadata = GetMetadataFromFilePath(cleanFilePath);
 
 			VT_ENSURE(!metadata.IsValid());
 			if (metadata.IsValid())
@@ -866,8 +865,7 @@ namespace Volt
 		{
 #ifndef VT_DIST
 			{
-				ReadLock lock{ m_assetRegistryMutex };
-				const auto& metadata = GetMetadataFromFilePath(cleanPath);
+				const auto metadata = GetMetadataFromFilePath(cleanPath);
 				VT_ENSURE_MSG(metadata.type == type, "Asset types does not match!");
 			}
 #endif

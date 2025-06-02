@@ -8,7 +8,7 @@
 #include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
 
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable2.h"
+#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
 
 #include "VulkanRHIModule/Graphics/VulkanDeviceQueue.h"
@@ -69,9 +69,9 @@ namespace Volt::RHI
 		return RefPtr<VulkanVertexBuffer>::Create(data, size, stride);
 	}
 
-	RefPtr<StorageBuffer> VulkanRHIModule::CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const
+	RefPtr<StorageBuffer> VulkanRHIModule::CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const
 	{
-		return RefPtr<VulkanStorageBuffer>::Create(count, elementSize, name, bufferUsage, memoryUsage, allocator);
+		return RefPtr<VulkanStorageBuffer>::Create(desc, allocator);
 	}
 
 	RefPtr<UniformBuffer> VulkanRHIModule::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const
@@ -236,7 +236,7 @@ namespace Volt::RHI
 
 	RefPtr<DescriptorTable> VulkanRHIModule::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const
 	{
-		return RefPtr<VulkanDescriptorTable2>::Create(createInfo);
+		return RefPtr<VulkanDescriptorTable>::Create(createInfo);
 	}
 }
 

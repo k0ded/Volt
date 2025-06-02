@@ -31,13 +31,13 @@ namespace Volt
 		SHADER_PARAMETER_BUFFER_UAV(RGBufferUAV, RWBuffer)
 	END_SHADER_PARAMETER_STRUCT()
 
-	void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferRef dst, const void* data, const size_t dataSize)
+	void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize)
 	{
 		void* tempData = renderGraph.AllocData(dataSize);
 		memcpy_s(tempData, dataSize, data, dataSize);
 
 		MappedBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<MappedBufferUploadParameters>();
-		stagingParameters->RWBuffer = renderGraph.CreateUAV(dst);
+		stagingParameters->RWBuffer = dstUAV;
 
 		renderGraph.AddPass("Mapped Upload",
 			RenderGraphPassFlags::Compute,

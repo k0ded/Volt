@@ -4,6 +4,8 @@
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
 
+#include "RHIModule/Buffers/BufferDesc.h"
+
 #include <CoreUtilities/Allocators/Handle.h>
 
 namespace Volt::RHI
@@ -11,12 +13,14 @@ namespace Volt::RHI
 	class Allocation;
 	class MemoryPool;
 
+	struct BufferDesc;
+
 	class VTRHI_API GPUAllocator : public RHIInterface
 	{
 	public:
 		virtual ~GPUAllocator() = default;
 
-		virtual Handle<Allocation> CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) = 0;
+		virtual Handle<Allocation> CreateBuffer(const BufferDesc& desc) = 0;
 		virtual Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) = 0;
 
 		virtual void DestroyBuffer(Handle<Allocation> allocation) = 0;

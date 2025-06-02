@@ -4,5 +4,5 @@
 
 namespace Volt
 {
-	REGISTER_SHADER(ScatterUploadCS, "Engine/Shaders/Source/Utility/ScatterUpload_cs.hlsl", "MainCS", Compute);
+	REGISTER_SHADER(ScatterUploadCS, "Engine/Shaders/Source/Utility/ScatterUpload.hlsl", "MainCS", Compute);
 }

@@ -41,7 +41,7 @@ namespace Volt
 		m_buffers.prevPrimitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(PrimitiveDrawData), "Prev Primitive Draw Data");
 		m_buffers.bonesBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(glm::mat4), "GPU Bones");
 		m_buffers.lightsBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(LightDrawData), "Lights");
-		m_buffers.validPrimitiveDrawDatasBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "Compacted Valid Primitive Draw Datas");
+		m_buffers.validPrimitiveDrawDatasBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "Compacted Valid Primitive Draw Datas", RHI::BufferUsage::TexelBuffer);
 
 		// Setup invalid mesh
 		{
@@ -699,10 +699,10 @@ namespace Volt
 		RGBufferRef validPrimitiveDrawData = renderGraph.RegisterExternalBuffer(validPrimitiveDrawDataBuffer->GetResource());
 		RGBufferRef primitiveDrawData = renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
 
-		AddClearUAVPass(renderGraph, renderGraph.CreateUAV(validPrimitiveDrawData), 0u);
+		AddClearUAVPass(renderGraph, renderGraph.CreateUAV(validPrimitiveDrawData, RHI::PixelFormat::R32_UINT), 0u);
 
 		CompactValidDrawCallCS::Parameters* passParameters = renderGraph.AllocParameters<CompactValidDrawCallCS::Parameters>();
-		passParameters->RWValidPrimitiveDrawData = renderGraph.CreateUAV(validPrimitiveDrawData);
+		passParameters->RWValidPrimitiveDrawData = renderGraph.CreateUAV(validPrimitiveDrawData, RHI::PixelFormat::R32_UINT);
 		passParameters->PrimitiveDrawDataBuffer = renderGraph.CreateSRV(primitiveDrawData);
 		passParameters->PrimitiveDrawDataCount = primitiveDrawDataCount;
 

@@ -82,17 +82,17 @@ namespace Volt
 
 		constexpr uint32_t sizeInUINT = static_cast<uint32_t>(sizeof(T) / sizeof(uint32_t));
 
-		RGBufferRef srcBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<T>(m_data.size(), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CPUToGPU, "Src Data"));
-		RGBufferRef indicesBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(m_data.size(), RHI::BufferUsage::TexelBuffer, RHI::MemoryUsage::CPUToGPU, "Scatter Indices"));
+		RGBufferRef srcBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateMappableBufferDesc<T>(m_data.size(), RHI::BufferUsage::StorageBuffer, "Src Data"));
+		RGBufferRef indicesBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(m_data.size(), "Scatter Indices", RHI::MemoryUsage::CPUToGPU));
 		RGBufferRef dstBuffer = renderGraph.RegisterExternalBuffer(rhiDstBuffer);
 
-		AddMappedBufferUpload(renderGraph, srcBuffer, m_data.data(), sizeof(T) * m_data.size());
-		AddMappedBufferUpload(renderGraph, indicesBuffer, m_dataIndices.data(), sizeof(uint32_t) * m_dataIndices.size());
+		AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(srcBuffer), m_data.data(), sizeof(T) * m_data.size());
+		AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(indicesBuffer, RHI::PixelFormat::R32_UINT), m_dataIndices.data(), sizeof(uint32_t) * m_dataIndices.size());
 
 		ScatterUploadCS::Parameters* passParameters = renderGraph.AllocParameters<ScatterUploadCS::Parameters>();
 		passParameters->RWDstBuffer = renderGraph.CreateUAV(dstBuffer);
 		passParameters->SrcBuffer = renderGraph.CreateSRV(srcBuffer);
-		passParameters->ScatterIndices = renderGraph.CreateSRV(indicesBuffer);
+		passParameters->ScatterIndices = renderGraph.CreateSRV(indicesBuffer, RHI::PixelFormat::R32_UINT);
 		passParameters->TypeSizeInUINT = static_cast<uint32_t>(sizeInUINT);
 		passParameters->CopyCount = static_cast<uint32_t>(m_data.size());
 

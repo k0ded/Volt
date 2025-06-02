@@ -8,14 +8,15 @@
 struct VkDescriptorPool_T;
 struct VkDescriptorSet_T;
 struct VkPipelineLayout_T;
+struct VkBufferView_T;
 
 namespace Volt::RHI
 {
-	class VulkanDescriptorTable2 : public DescriptorTable
+	class VulkanDescriptorTable : public DescriptorTable
 	{
 	public:
-		VulkanDescriptorTable2(const DescriptorTableCreateInfo& createInfo);
-		~VulkanDescriptorTable2() override;
+		VulkanDescriptorTable(const DescriptorTableCreateInfo& createInfo);
+		~VulkanDescriptorTable() override;
 
 		void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
 		void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
@@ -61,6 +62,7 @@ namespace Volt::RHI
 		vt::map<uint32_t, vt::map<uint32_t, uint32_t>> m_writeDescriptorsMapping; // Set -> Binding
 		vt::map<uint32_t, vt::map<uint32_t, vt::map<uint32_t, DescriptorImageInfo>>> m_imageDescriptorInfos; // Set -> Binding -> Array Index
 		vt::map<uint32_t, vt::map<uint32_t, vt::map<uint32_t, DescriptorBufferInfo>>> m_bufferDescriptorInfos; // Set -> Binding -> Array Index
+		vt::map<uint32_t, vt::map<uint32_t, vt::map<uint32_t, VkBufferView>>> m_texelBufferViews;
 		vt::map<uint32_t, vt::map<uint32_t, vt::map<uint32_t, DefaultInvalid>>> m_activeDescriptorWritesMapping; // Set -> Binding -> ArrayIndex 
 
 		Vector<DescriptorWrite> m_descriptorWrites;

@@ -231,7 +231,7 @@ namespace Volt::RHI
 	void D3D12StorageBuffer::Invalidate(const size_t byteSize)
 	{
 		Release();
-		m_byteSize = std::max(byteSize, Memory::GetMinBufferAllocationSize());
+		m_byteSize = byteSize;
 		m_allocation = m_allocator->CreateBuffer(byteSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::StorageBuffer, m_memoryUsage, m_name);
 	}
 

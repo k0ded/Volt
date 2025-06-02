@@ -415,7 +415,14 @@ namespace Volt::RHI
 		// #TODO_Ivar: Implement correct size for layer + mip
 		const VkDeviceSize bufferSize = m_specification.width * m_specification.height * Utility::GetByteSizePerPixelFromFormat(m_specification.format) * m_specification.layers;
 
-		Handle<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferSize, BufferUsage::TransferDst, MemoryUsage::GPUToCPU, "Staging Alloc");
+		BufferDesc stagingDesc{};
+		stagingDesc.count = 1;
+		stagingDesc.elementSize = bufferSize;
+		stagingDesc.usage = BufferUsage::TransferDst;
+		stagingDesc.memoryUsage = MemoryUsage::GPUToCPU;
+		stagingDesc.debugName = "Staging Alloc";
+
+		Handle<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
 		VkImageAspectFlags aspectFlags = Utility::IsDepthFormat(m_specification.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 		if (Utility::IsStencilFormat(m_specification.format))
@@ -539,7 +546,14 @@ namespace Volt::RHI
 		// #TODO_Ivar: Implement correct size for layer + mip
 		const VkDeviceSize bufferSize = m_specification.width * m_specification.height * Utility::GetByteSizePerPixelFromFormat(m_specification.format) * m_specification.layers;
 
-		Handle<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferSize, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU, "Staging Alloc");
+		BufferDesc stagingDesc{};
+		stagingDesc.count = 1;
+		stagingDesc.elementSize = bufferSize;
+		stagingDesc.usage = BufferUsage::TransferSrc;
+		stagingDesc.memoryUsage = MemoryUsage::CPUToGPU;
+		stagingDesc.debugName = "Staging Alloc";
+
+		Handle<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
 		auto* stagingData = stagingAlloc->Map<void>();
 		memcpy_s(stagingData, bufferSize, data, bufferSize);

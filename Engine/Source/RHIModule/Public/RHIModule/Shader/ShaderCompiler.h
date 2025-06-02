@@ -78,7 +78,7 @@ namespace Volt::RHI
 
 		virtual ~ShaderCompiler();
 
-		VT_NODISCARD static CompilationResultData TryCompile2(const Specification& specification);
+		VT_NODISCARD static CompilationResultData TryCompile(const Specification& specification);
 		static void AddMacro(const std::string& macroName);
 		static void RemoveMacro(std::string_view macroName);
 		
@@ -88,7 +88,7 @@ namespace Volt::RHI
 		ShaderCompiler();
 
 		// Should compile shader using shader source files, result is stored in shaders internal storage
-		virtual CompilationResultData TryCompileImpl2(const Specification& specification) = 0;
+		virtual CompilationResultData TryCompileImpl(const Specification& specification) = 0;
 		virtual void AddMacroImpl(const std::string& macroName) = 0;
 		virtual void RemoveMacroImpl(std::string_view macroName) = 0;
 

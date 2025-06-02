@@ -37,7 +37,7 @@ namespace Volt::RHI
 	
 	size_t VulkanShader::GetHash() const
 	{
-		return size_t();
+		return m_hash;
 	}
 	
 	bool VulkanShader::IsValid() const
@@ -61,7 +61,8 @@ namespace Volt::RHI
 	
 		if (m_sourceInfo.source.empty())
 		{
-			// #TODO_Ivar: Handle this gracefully in some way.
+			VT_LOGC(Error, LogVulkanRHI, "Filepath for shader {} not found!", m_name);
+			VT_ENSURE(false);
 			return;
 		}
 
@@ -70,7 +71,7 @@ namespace Volt::RHI
 		compileSpec.shaderSourceInfo = m_sourceInfo;
 		compileSpec.permutationConfig = m_permutationConfig;
 
-		const ShaderCompiler::CompilationResultData compilationResult = ShaderCompiler::TryCompile2(compileSpec);
+		const ShaderCompiler::CompilationResultData compilationResult = ShaderCompiler::TryCompile(compileSpec);
 		if (compilationResult.result != ShaderCompiler::CompilationResult::Success)
 		{
 			// #TODO_Ivar: Handle

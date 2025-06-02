@@ -149,7 +149,14 @@ namespace Volt
 			stagingAllocSize += subData.slicePitch;
 		}
 
-		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingAllocSize, RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CPUToGPU, "Staging Alloc");
+		RHI::BufferDesc stagingDesc{};
+		stagingDesc.count = 1;
+		stagingDesc.elementSize = stagingAllocSize;
+		stagingDesc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc;
+		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
+		stagingDesc.debugName = "Staging Alloc";
+
+		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
 		commandBuffer->Begin();
 

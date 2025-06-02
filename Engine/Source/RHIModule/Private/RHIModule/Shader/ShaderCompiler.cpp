@@ -30,8 +30,8 @@ namespace Volt::RHI
 		return RHIModule::GetInstance().CreateShaderCompiler(createInfo);
 	}
 
-	ShaderCompiler::CompilationResultData ShaderCompiler::TryCompile2(const Specification& specification)
+	ShaderCompiler::CompilationResultData ShaderCompiler::TryCompile(const Specification& specification)
 	{
-		return s_instance->TryCompileImpl2(specification);
+		return s_instance->TryCompileImpl(specification);
 	}
 }

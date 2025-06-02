@@ -130,7 +130,7 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	ShaderCompiler::CompilationResultData VulkanShaderCompiler::TryCompileImpl2(const Specification& specification)
+	ShaderCompiler::CompilationResultData VulkanShaderCompiler::TryCompileImpl(const Specification& specification)
 	{
 		if (!specification.forceCompile)
 		{
@@ -167,7 +167,7 @@ namespace Volt::RHI
 		const ShaderSourceEntry& sourceEntry = specification.shaderSourceInfo.sourceEntry;
 		std::string processedSource = specification.shaderSourceInfo.source;
 
-		if (!PreprocessSource2(specification, processedSource))
+		if (!PreprocessSource(specification, processedSource))
 		{
 			result.result = ShaderCompiler::CompilationResult::PreprocessFailed;
 			return result;
@@ -324,7 +324,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	bool VulkanShaderCompiler::PreprocessSource2(const Specification& specification, std::string& outProcessedSource)
+	bool VulkanShaderCompiler::PreprocessSource(const Specification& specification, std::string& outProcessedSource)
 	{
 		Vector<std::wstring> wIncludeDirs;
 		Vector<const wchar_t*> wcIncludeDirs;

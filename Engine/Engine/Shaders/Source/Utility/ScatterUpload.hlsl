@@ -19,6 +19,6 @@ void MainCS(uint dispatchThreadId : SV_DispatchThreadID)
         const uint dstIndex = ScatterIndices[scatterIndex] * TypeSizeInUINT + scatterOffset;
         const uint srcIndex = dispatchThreadId;
 
-        RWDstBuffer[dstIndex] = SrcBuffer[SrcBuffer];
+        RWDstBuffer[dstIndex] = SrcBuffer[srcIndex];
     }
 }

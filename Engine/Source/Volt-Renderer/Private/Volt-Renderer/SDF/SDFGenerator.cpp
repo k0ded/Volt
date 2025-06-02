@@ -284,8 +284,8 @@ namespace Volt
 			RGBufferRef sdfBricks = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDescGPU<GPUSDFBrick>(brickGrid.size(), "Brick Info"));
 			RGTextureRef texture = renderGraph.RegisterExternalTexture(brickTexture->GetResource());
 
-			AddMappedBufferUpload(renderGraph, dataBuffer, brickData.data(), brickData.byte_size());
-			AddMappedBufferUpload(renderGraph, brickInfoBuffer, brickInfoData.data(), brickInfoData.byte_size());
+			AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(dataBuffer, RHI::PixelFormat::R32_SFLOAT), brickData.data(), brickData.byte_size());
+			AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(brickInfoBuffer), brickInfoData.data(), brickInfoData.byte_size());
 
 			MeshSDFAllocatorCS::Parameters* passParameters = renderGraph.AllocParameters<MeshSDFAllocatorCS::Parameters>();
 			passParameters->RWBricks = renderGraph.CreateUAV(sdfBricks);

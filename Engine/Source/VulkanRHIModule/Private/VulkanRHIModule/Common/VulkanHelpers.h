@@ -284,6 +284,11 @@ namespace Volt::RHI
 				result |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 			}
 
+			if ((usageFlags & BufferUsage::TexelBuffer) != BufferUsage::None)
+			{
+				result |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+			}
+
 			if ((usageFlags & BufferUsage::IndexBuffer) != BufferUsage::None)
 			{
 				result |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;

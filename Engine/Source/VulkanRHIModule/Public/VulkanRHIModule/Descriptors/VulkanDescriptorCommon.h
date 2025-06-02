@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <vulkan/vulkan.h>
+
 struct VkDescriptorSet_T;
 struct VkBufferView_T;
 
@@ -23,9 +25,9 @@ namespace Volt::RHI
 		uint32_t dstArrayElement = 0;
 		uint32_t descriptorCount = 0;
 		uint32_t descriptorType = 0;
-		const VkDescriptorImageInfo* pImageInfo;
-		const VkDescriptorBufferInfo* pBufferInfo;
-		const VkBufferView_T* pTexelBufferView;
+		const VkDescriptorImageInfo* pImageInfo = nullptr;
+		const VkDescriptorBufferInfo* pBufferInfo = nullptr;
+		const VkBufferView* pTexelBufferView = nullptr;
 	};
 
 	struct DescriptorImageInfo

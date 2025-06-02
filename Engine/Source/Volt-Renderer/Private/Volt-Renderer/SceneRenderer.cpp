@@ -92,7 +92,7 @@ namespace Volt
 
 		RenderGraph renderGraph{ m_commandBufferSet.IncrementAndGetCommandBuffer() };
 
-		//m_renderScene->Update(renderGraph);
+		m_renderScene->Update(renderGraph);
 
 		//m_renderScene->EndFrame(renderGraph);
 
