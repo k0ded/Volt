@@ -12,6 +12,7 @@ namespace Volt
 
 	extern VTRC_API void AddCopyBufferPass(RenderGraph& renderGraph, RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size, const std::string& passName = "Copy Buffer");
 	extern VTRC_API void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize);
+	extern VTRC_API void AddMappedBufferUpload(RenderGraph& renderGraph, RGUniformBufferRef dstUAV, const void* data, const size_t dataSize);
 	extern VTRC_API void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const uint32_t clearValue);
 	extern VTRC_API void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const float clearValue);
 

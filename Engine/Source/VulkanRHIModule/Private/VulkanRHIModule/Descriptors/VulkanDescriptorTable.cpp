@@ -196,18 +196,6 @@ namespace Volt::RHI
 		}
 	}
 	
-	void VulkanDescriptorTable::SetImageView(std::string_view name, RawPtr<ImageView> view, uint32_t arrayIndex)
-	{
-	}
-	
-	void VulkanDescriptorTable::SetBufferView(std::string_view name, RawPtr<BufferView> view, uint32_t arrayIndex)
-	{
-	}
-	
-	void VulkanDescriptorTable::SetSamplerState(std::string_view name, RawPtr<SamplerState> samplerState, uint32_t arrayIndex)
-	{
-	}
-	
 	void VulkanDescriptorTable::PrepareForRender()
 	{
 		VT_PROFILE_FUNCTION();

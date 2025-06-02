@@ -215,6 +215,7 @@ namespace Volt
 
 		RefPtr<RHI::RHIResource> GetRHIResource(RGResourceRef resource);
 		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
+		RefPtr<RHI::UniformBuffer> GetRHIUniformBuffer(RGUniformBufferRef uniformBuffer);
 		RefPtr<RHI::Image> GetRHITexture(RGTextureRef texture);
 
 		TransientResourceSystem m_transientResourceSystem;

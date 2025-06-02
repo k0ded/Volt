@@ -1066,6 +1066,11 @@ namespace Volt
 		return m_transientResourceSystem.AcquireBuffer(buffer);
 	}
 
+	RefPtr<RHI::UniformBuffer> RenderGraph::GetRHIUniformBuffer(RGUniformBufferRef uniformBuffer)
+	{
+		return m_transientResourceSystem.AcquireUniformBuffer(uniformBuffer);
+	}
+
 	RefPtr<RHI::Image> RenderGraph::GetRHITexture(RGTextureRef texture)
 	{
 		return m_transientResourceSystem.AcquireTexture(texture);

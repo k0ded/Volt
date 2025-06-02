@@ -113,7 +113,7 @@ namespace Volt
 			std::scoped_lock lock{ m_allocatedResourcesMutex };
 			if (m_allocatedResources.contains(resource))
 			{
-				return m_allocatedResources.at(resource).resource;
+				return m_allocatedResources.at(resource).resource.As<RHI::UniformBuffer>();
 			}
 		}
 
@@ -125,6 +125,7 @@ namespace Volt
 		info.isOriginal = true;
 
 		{
+			std::scoped_lock lock{ m_allocatedResourcesMutex };
 			m_allocatedResources[resource] = info;
 		}
 

@@ -22,6 +22,7 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/DefaultShaders.h>
+#include <RenderCore/Shader/BatchedShaderParameters.h>
 #include <RenderCore/DefaultBlendStates.h>
 
 #include <RHIModule/Images/Image.h>
@@ -75,6 +76,11 @@ namespace Volt
 		return m_outputImage;
 	}
 
+	BEGIN_SHADER_PARAMETER_STRUCT(DrawMeshesParameters)
+		SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
+		RG_RENDER_TARGETS()
+	END_SHADER_PARAMETER_STRUCT()
+
 	void SceneRenderer::OnRender(Ref<Camera> camera, float timestep)
 	{
 		VT_PROFILE_FUNCTION();
@@ -92,9 +98,40 @@ namespace Volt
 
 		RenderGraph renderGraph{ m_commandBufferSet.IncrementAndGetCommandBuffer() };
 
+		m_meshRenderer.BuildRenderCommands(m_renderScene);
+
+		{
+			const uint32_t width = m_outputImage->GetWidth();
+			const uint32_t height = m_outputImage->GetHeight();
+
+			RGTextureRef targetTexture = renderGraph.RegisterExternalTexture(m_outputImage);
+			RGTextureRef depthTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(width, height, RHI::ImageUsage::AttachmentStorage, "SceneDepth"));
+		
+			DrawMeshesParameters* passParameters = renderGraph.AllocParameters<DrawMeshesParameters>();
+			passParameters->View = CreateViewUniformBuffer(renderGraph, camera);
+			passParameters->renderTargets.renderTargets[0] = targetTexture;
+			passParameters->renderTargets.depthTarget = depthTexture;
+
+			renderGraph.AddPass("Mesh Pass",
+				RenderGraphPassFlags::None,
+				passParameters,
+				[passParameters, targetTexture, width, height, &meshRenderer = m_meshRenderer](RenderContext& context)
+			{
+				BatchedShaderParameters batchedShaderParameters;
+
+
+				RenderingInfo2 renderingInfo = context.CreateRenderingInfo(width, height, passParameters->renderTargets);
+				context.BeginRendering(renderingInfo);
+
+				meshRenderer.Render(context, batchedShaderParameters);
+
+				context.EndRendering();
+			});
+		}
+
 		m_renderScene->Update(renderGraph);
 
-		//m_renderScene->EndFrame(renderGraph);
+		m_renderScene->EndFrame(renderGraph);
 
 		{
 			RHI::ResourceState barrier{};
@@ -139,6 +176,58 @@ namespace Volt
 		spec.debugName = "Final Image";
 
 		m_outputImage = RHI::Image::Create(spec);
+	}
+
+	RGUniformBufferRef SceneRenderer::CreateViewUniformBuffer(RenderGraph& renderGraph, Ref<Camera> camera)
+	{
+		// View data
+		{
+			RGUniformBufferRef uniformBuffer = renderGraph.CreateUniformBuffer(RGUniformBufferDesc::Create<ViewUniformBuffer>("View"));
+
+			ViewUniformBuffer viewUniformBuffer{};
+
+			// Camera
+			viewUniformBuffer.projection = camera->GetProjection();
+			viewUniformBuffer.view = camera->GetView();
+			viewUniformBuffer.inverseView = glm::inverse(viewUniformBuffer.view);
+			viewUniformBuffer.inverseProjection = glm::inverse(viewUniformBuffer.projection);
+			viewUniformBuffer.viewProjection = viewUniformBuffer.projection * viewUniformBuffer.view;
+			viewUniformBuffer.inverseViewProjection = glm::inverse(viewUniformBuffer.viewProjection);
+			viewUniformBuffer.prevViewProjection = m_prevViewProjection;
+			viewUniformBuffer.nonJitteredViewProjection = camera->GetNonJitteredProjection() * viewUniformBuffer.view;
+			viewUniformBuffer.cameraPosition = glm::vec4(camera->GetPosition(), 1.f);
+			viewUniformBuffer.nearPlane = camera->GetNearPlane();
+			viewUniformBuffer.farPlane = camera->GetFarPlane();
+
+			viewUniformBuffer.frameIndex = m_frameIndex;
+			viewUniformBuffer.currentFrameJitter = glm::vec2(m_currentJitter.x, -m_currentJitter.y);
+			viewUniformBuffer.prevFrameJitter = glm::vec2(m_prevJitter.x, -m_prevJitter.y);
+
+			m_prevViewProjection = viewUniformBuffer.viewProjection;
+
+			float depthLinearizeMul = (-viewUniformBuffer.projection[3][2]);
+			float depthLinearizeAdd = (viewUniformBuffer.projection[2][2]);
+
+			if (depthLinearizeMul * depthLinearizeAdd < 0.f)
+			{
+				depthLinearizeAdd = -depthLinearizeAdd;
+			}
+
+			viewUniformBuffer.depthUnpackConsts = { depthLinearizeMul, depthLinearizeAdd };
+			viewUniformBuffer.cullingFrustum = camera->GetFrustumCullingInfo();
+
+			// Light Culling
+			//viewUniformBuffer.tileCountX = Math::DivideRoundUp(m_width, LightCullingTechnique::TILE_SIZE);
+			viewUniformBuffer.lightCount = m_renderScene->GetLightCount();
+
+			// Render Target
+			viewUniformBuffer.renderSize = { m_width, m_height };
+			viewUniformBuffer.invRenderSize = { 1.f / static_cast<float>(m_width), 1.f / static_cast<float>(m_height) };
+
+			AddMappedBufferUpload(renderGraph, uniformBuffer, &viewUniformBuffer, sizeof(ViewUniformBuffer));
+
+			return uniformBuffer;
+		}
 	}
 
 	bool SceneRenderer::ShouldApplyJitter() const

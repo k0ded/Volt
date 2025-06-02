@@ -18,7 +18,7 @@ struct DrawTriangleTestVS : public GlobalShader
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER_2(DrawTriangleTestVS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DrawTriangleTest.hlsl", "MainVS", Vertex);
+REGISTER_SHADER(DrawTriangleTestVS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DrawTriangleTest.hlsl", "MainVS", Vertex);
 
 struct DrawTriangleTestPS : public GlobalShader
 {
@@ -28,7 +28,7 @@ struct DrawTriangleTestPS : public GlobalShader
 		RG_RENDER_TARGETS()
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER_2(DrawTriangleTestPS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DrawTriangleTest.hlsl", "MainPS", Pixel);
+REGISTER_SHADER(DrawTriangleTestPS, "Engine/Shaders/Source/Testing/RenderGraph/RG_DrawTriangleTest.hlsl", "MainPS", Pixel);
 
 static RefPtr<RHI::Shader> s_vertexShader;
 static RefPtr<RHI::Shader> s_pixelShader;
@@ -36,8 +36,8 @@ static RefPtr<RHI::RenderPipeline> s_renderPipeline;
 
 RG_DrawTriangleTest::RG_DrawTriangleTest()
 {
-	s_vertexShader = ShaderMap::Get2<DrawTriangleTestVS>();
-	s_pixelShader = ShaderMap::Get2<DrawTriangleTestPS>();
+	s_vertexShader = ShaderMap::Get<DrawTriangleTestVS>();
+	s_pixelShader = ShaderMap::Get<DrawTriangleTestPS>();
 
 	RHI::RenderPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.shaders = { s_vertexShader, s_pixelShader };

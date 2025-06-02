@@ -22,10 +22,6 @@ namespace Volt::RHI
 		void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
 		void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex /* = 0 */) override;
 
-		void SetImageView(std::string_view name, RawPtr<ImageView> view, uint32_t arrayIndex = 0) override;
-		void SetBufferView(std::string_view name, RawPtr<BufferView> view, uint32_t arrayIndex = 0) override;
-		void SetSamplerState(std::string_view name, RawPtr<SamplerState> samplerState, uint32_t arrayIndex = 0) override;
-
 		void PrepareForRender() override;
 		void Bind(CommandBuffer& commandBuffer) override;
 

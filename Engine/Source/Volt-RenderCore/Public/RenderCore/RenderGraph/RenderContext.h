@@ -61,12 +61,15 @@ namespace Volt
 		void CopyBufferRegion(RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size);
 		void CopyTexture(RGTextureRef src, RGTextureRef dst, const uint32_t width, const uint32_t height, const uint32_t depth);
 
-		template<typename T>
-		T* MapBuffer(RGBufferUAVRef buffer);
-		void UnmapBuffer(RGBufferUAVRef buffer);
+		template<typename T> T* MapBuffer(RGBufferUAVRef buffer);
+		template<typename T> T* MapBuffer(RGUniformBufferRef buffer);
 
-		template<typename ShaderType> 
-		void SetParameters(RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* parameters);
+		void UnmapBuffer(RGBufferUAVRef buffer);
+		void UnmapBuffer(RGUniformBufferRef buffer);
+
+		template<typename ShaderType> void SetParameters(RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* parameters);
+
+		RefPtr<RHI::CommandBuffer> GetRHICommandBuffer();
 
 	private:
 		struct PerStageShaderParameters
@@ -83,10 +86,12 @@ namespace Volt
 		void SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 
 		void SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 
 		void* MapInternal(RGBufferUAVRef buffer);
+		void* MapInternal(RGUniformBufferRef buffer);
 
 		RawPtr<RHI::RenderPipeline> m_currentRenderPipeline;
 		RawPtr<RHI::ComputePipeline> m_currentComputePipeline;
@@ -102,6 +107,12 @@ namespace Volt
 
 	template<typename T>
 	T* RenderContext::MapBuffer(RGBufferUAVRef buffer)
+	{
+		return reinterpret_cast<T*>(MapInternal(buffer));
+	}
+
+	template<typename T>
+	T* RenderContext::MapBuffer(RGUniformBufferRef buffer)
 	{
 		return reinterpret_cast<T*>(MapInternal(buffer));
 	}
@@ -131,6 +142,7 @@ namespace Volt
 				case ShaderParameterType::BufferUAV: SetBufferUAVParameter(*reinterpret_cast<RGBufferUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::TextureSRV: SetTextureSRVParameter(*reinterpret_cast<RGTextureSRVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::TextureUAV: SetTextureUAVParameter(*reinterpret_cast<RGTextureUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
+				case ShaderParameterType::UniformBuffer: SetUniformBufferParameter(*reinterpret_cast<RGUniformBufferRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::Parameter: SetShaderParameter(parameterDataPtr, parameter, shaderParameterMap); break;
 			}
 		}

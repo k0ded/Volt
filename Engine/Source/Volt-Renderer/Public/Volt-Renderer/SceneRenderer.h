@@ -4,6 +4,7 @@
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/SceneRendererExtension.h"
 #include "Volt-Renderer/Config.h"
+#include "Volt-Renderer/Mesh/MeshRenderer.h"
 
 #include <RenderCore/RenderGraph/RenderGraphDebugger.h>
 
@@ -99,6 +100,8 @@ namespace Volt
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
 
+		RGUniformBufferRef CreateViewUniformBuffer(RenderGraph& renderGraph, Ref<Camera> camera);
+
 		bool ShouldApplyJitter() const;
 		bool IsMeshPassVisualizationMode() const;
 
@@ -140,6 +143,7 @@ namespace Volt
 		
 		Ref<RenderScene> m_renderScene;
 		Renderer::EnvironmentTextures m_sceneEnvironment;
+		MeshRenderer m_meshRenderer;
 
 		// Extensions
 		vt::map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>> m_sceneRendererExtensions;

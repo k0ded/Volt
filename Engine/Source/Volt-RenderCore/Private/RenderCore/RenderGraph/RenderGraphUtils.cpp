@@ -50,6 +50,29 @@ namespace Volt
 		});
 	}
 
+	BEGIN_SHADER_PARAMETER_STRUCT(MappedUniformBufferUploadParameters)
+		SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<uint>, UniformBuffer)
+	END_SHADER_PARAMETER_STRUCT()
+
+	void AddMappedBufferUpload(RenderGraph& renderGraph, RGUniformBufferRef dstUAV, const void* data, const size_t dataSize)
+	{
+		void* tempData = renderGraph.AllocData(dataSize);
+		memcpy_s(tempData, dataSize, data, dataSize);
+
+		MappedUniformBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<MappedUniformBufferUploadParameters>();
+		stagingParameters->UniformBuffer = dstUAV;
+
+		renderGraph.AddPass("Mapped Upload",
+			RenderGraphPassFlags::Compute,
+			stagingParameters,
+			[stagingParameters, tempData, dataSize](RenderContext& context)
+		{
+			uint8_t* mappedPtr = context.MapBuffer<uint8_t>(stagingParameters->UniformBuffer);
+			memcpy_s(mappedPtr, dataSize, tempData, dataSize);
+			context.UnmapBuffer(stagingParameters->UniformBuffer);
+		});
+	}
+
 	BEGIN_SHADER_PARAMETER_STRUCT(ClearBufferUAVParameters)
 		SHADER_PARAMETER_BUFFER_UAV(RWBuffer<uint>, RWBuffer)
 	END_SHADER_PARAMETER_STRUCT()
