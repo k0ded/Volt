@@ -98,7 +98,7 @@ namespace Volt::RHI
 
 			void* chainEntryPoint = &s_enabledFeatures.vulkan13Features;
 
-			if (physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME) && g_rhiCapabilities.useMeshShaders)
 			{
 				s_enabledFeatures.meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
 				s_enabledFeatures.meshShaderFeaturesEXT.meshShader = VK_TRUE;
@@ -119,7 +119,7 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.deviceRobustness2FeaturesEXT;
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME) && g_rhiCapabilities.useBindless)
 			{
 				s_enabledFeatures.mutableDescriptorTypeFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT;
 				s_enabledFeatures.mutableDescriptorTypeFeaturesEXT.pNext = chainEntryPoint;
@@ -128,7 +128,7 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.mutableDescriptorTypeFeaturesEXT;
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
 			{
 				s_enabledFeatures.accelerationStructureFeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
 				s_enabledFeatures.accelerationStructureFeaturesKHR.pNext = chainEntryPoint;
@@ -144,7 +144,7 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.accelerationStructureFeaturesKHR;
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
 			{
 				s_enabledFeatures.rayQueryFeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 				s_enabledFeatures.rayQueryFeaturesKHR.pNext = chainEntryPoint;
@@ -152,7 +152,7 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.rayQueryFeaturesKHR;
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
 			{
 				s_enabledFeatures.rayTracingPipelineFeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
 				s_enabledFeatures.rayTracingPipelineFeaturesKHR.pNext = chainEntryPoint;
@@ -165,7 +165,7 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.rayTracingPipelineFeaturesKHR;
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
 			{
 				s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR;
 				s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR.pNext = chainEntryPoint;
@@ -215,7 +215,7 @@ namespace Volt::RHI
 		{
 			Vector<const char*> enabledExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
-			if (physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME) && g_rhiCapabilities.useMeshShaders)
 			{
 				enabledExtensions.emplace_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
 			}
@@ -225,22 +225,22 @@ namespace Volt::RHI
 				enabledExtensions.emplace_back(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
 			{
 				enabledExtensions.emplace_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
 			{
 				enabledExtensions.emplace_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
 			{
 				enabledExtensions.emplace_back(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && physicalDevice->IsExtensionAvailable(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && physicalDevice->IsExtensionAvailable(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) && g_rhiCapabilities.useRayTracing)
 			{
 				enabledExtensions.emplace_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 				enabledExtensions.emplace_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
@@ -270,7 +270,7 @@ namespace Volt::RHI
 				enabledExtensions.emplace_back(VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME);
 			}
 
-			if (physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME))
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME) && g_rhiCapabilities.useBindless)
 			{
 				enabledExtensions.emplace_back(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
 			}
@@ -284,6 +284,8 @@ namespace Volt::RHI
 	VulkanGraphicsDevice::VulkanGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo)
 	{
 		m_physicalDevice = createInfo.physicalDevice.As<VulkanPhysicalGraphicsDevice>();
+
+		InitializeCapabilities();
 
 		VulkanPhysicalGraphicsDevice& physicalDevicePtr = m_physicalDevice->AsRef<VulkanPhysicalGraphicsDevice>();
 		const auto& queueFamilies = physicalDevicePtr.GetQueueFamilies();
@@ -332,8 +334,8 @@ namespace Volt::RHI
 			deviceInfo.ppEnabledLayerNames = &s_validationLayer;
 #endif
 
-			VT_ENSURE_MSG(m_physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME), "Mesh Shader support is required!");
-			VT_ENSURE_MSG(m_physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME), "Mutable descriptor type support is required!");
+			//VT_ENSURE_MSG(m_physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME), "Mesh Shader support is required!");
+			//VT_ENSURE_MSG(m_physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME), "Mutable descriptor type support is required!");
 
 			const auto enabledExtensions = Utility::GetEnabledExtensions(m_physicalDevice);
 			Utility::GetEnabledFeatures(m_physicalDevice);
@@ -348,8 +350,6 @@ namespace Volt::RHI
 
 			VT_VK_CHECK(vkCreateDevice(physicalDevicePtr.GetHandle<VkPhysicalDevice>(), &deviceInfo, nullptr, &m_device));
 		}
-
-		InitializeCapabilities();
 
 		m_deviceQueues[QueueType::Graphics] = RefPtr<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Graphics });
 		m_deviceQueues[QueueType::TransferCopy] = RefPtr<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::TransferCopy });
@@ -431,6 +431,7 @@ namespace Volt::RHI
 
 		g_rhiCapabilities.supportsMeshShaders = m_physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME);
 		g_rhiCapabilities.supportsBindless = m_physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+		g_rhiCapabilities.supportsNative16BitOperations = true;
 		g_rhiCapabilities.maxDispatchThreadGroupsPerDimension.x = deviceProperties.limits.maxComputeWorkGroupCount[0];
 		g_rhiCapabilities.maxDispatchThreadGroupsPerDimension.y = deviceProperties.limits.maxComputeWorkGroupCount[1];
 		g_rhiCapabilities.maxDispatchThreadGroupsPerDimension.z = deviceProperties.limits.maxComputeWorkGroupCount[2];

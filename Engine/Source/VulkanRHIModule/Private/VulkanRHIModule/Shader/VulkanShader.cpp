@@ -192,7 +192,7 @@ namespace Volt::RHI
 		for (const auto& entry : m_specification.sourceEntries)
 		{
 			const ShaderStage stage = entry.shaderStage;
-			std::string source = Utility::ReadStringFromFile(entry.filePath);
+			std::string source = Utility::ReadStringFromFile(entry.filepath);
 
 			if (source.empty())
 			{
@@ -201,7 +201,7 @@ namespace Volt::RHI
 
 			if (m_shaderSources.contains(stage))
 			{
-				VT_LOGC(Error, LogVulkanRHI, "Multiple shaders of same stage defined in file {0}!", entry.filePath.string().c_str());
+				VT_LOGC(Error, LogVulkanRHI, "Multiple shaders of same stage defined in file {0}!", entry.filepath.string().c_str());
 				continue;
 			}
 
@@ -279,7 +279,7 @@ namespace Volt::RHI
 				auto& descriptorBinding = descriptorSetBindings[set].emplace_back();
 				descriptorBinding.binding = binding;
 				descriptorBinding.descriptorCount = 1;
-				descriptorBinding.descriptorType = binding == Globals::RENDER_GRAPH_CONSTANTS_BINDING ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				descriptorBinding.descriptorType = binding == Globals::SHADER_GLOBALS_BINDING ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 				descriptorBinding.stageFlags = static_cast<VkShaderStageFlags>(data.usageStages);
 			}
 		}
@@ -366,8 +366,6 @@ namespace Volt::RHI
 
 		auto device = GraphicsContext::GetDevice();
 
-		const bool usingDescriptorBuffers = GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled();
-
 		int32_t lastSet = -1;
 		for (const auto& [set, bindings] : descriptorSetBindings)
 		{
@@ -380,11 +378,6 @@ namespace Volt::RHI
 				info.pBindings = nullptr;
 				info.flags = 0;
 
-				if (usingDescriptorBuffers)
-				{
-					info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-				}
-
 				VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, nullptr, &m_nullPaddedDescriptorSetLayouts.emplace_back()));
 				lastSet++;
 			}
@@ -395,11 +388,6 @@ namespace Volt::RHI
 			info.bindingCount = static_cast<uint32_t>(bindings.size());
 			info.pBindings = bindings.data();
 			info.flags = 0;
-
-			if (usingDescriptorBuffers)
-			{
-				info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-			}
 
 			Vector<VkDescriptorBindingFlags> bindingFlags{};
 
@@ -415,7 +403,7 @@ namespace Volt::RHI
 				if (isBindlessMap[set][binding.binding].value)
 				{
 					flags = bindlessFlags;
-					if (!usingDescriptorBuffers && binding.descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC && binding.descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
+					if (binding.descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC && binding.descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
 					{
 						info.flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 						flags |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;

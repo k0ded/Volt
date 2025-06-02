@@ -6,7 +6,7 @@
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
 
-#include <RHIModule/RHICapabilities.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -51,7 +51,7 @@ namespace Volt
 			m_renderScene->InvalidatePrimitiveInstance(id);
 		}
 
-		if (g_rhiCapabilities.rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
 			m_renderScene->GetRayTracingScene()->InvalidateInstance(m_rayTracingInstance);
 		}
@@ -94,7 +94,7 @@ namespace Volt
 			m_renderObjects.emplace_back(renderObjectId);
 		}
 
-		if (g_rhiCapabilities.rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
 			m_rayTracingInstance = m_renderScene->GetRayTracingScene()->AddInstance(m_primitiveMesh, m_relatedEntity, m_renderScene->GetPrimitiveIndexFromID(m_renderObjects.front()));
 		}
@@ -104,7 +104,7 @@ namespace Volt
 	{
 		VT_ENSURE(m_renderScene);
 
-		if (g_rhiCapabilities.rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
 			m_renderScene->GetRayTracingScene()->RemoveInstance(m_rayTracingInstance);
 		}

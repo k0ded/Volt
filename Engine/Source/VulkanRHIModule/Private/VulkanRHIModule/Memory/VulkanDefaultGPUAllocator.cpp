@@ -28,11 +28,6 @@ namespace Volt::RHI
 		info.instance = GraphicsContext::Get().GetHandle<VkInstance>();
 		info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
-		if (GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled())
-		{
-			info.flags |= VMA_ALLOCATOR_CREATE_EXT_DESCRIPTOR_BUFFER_BIT;
-		}
-
 		VT_VK_CHECK(vmaCreateAllocator(&info, &m_allocator));
 	}
 
@@ -76,11 +71,6 @@ namespace Volt::RHI
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; 
 		bufferInfo.size = size;
 		bufferInfo.usage = Utility::GetVkBufferUsageFlags(usage);
-
-		if (GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled())
-		{
-			bufferInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-		}
 
 		VmaMemoryUsage usageFlags = VMA_MEMORY_USAGE_AUTO;
 		VmaAllocationCreateFlags createFlags = 0;

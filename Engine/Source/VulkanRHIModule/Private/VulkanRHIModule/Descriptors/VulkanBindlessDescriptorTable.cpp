@@ -19,7 +19,7 @@
 #include <RHIModule/Memory/MemoryUtility.h>
 #include <RHIModule/RayTracing/AccelerationStructure.h>
 #include <RHIModule/Globals.h>
-#include <RHIModule/RHICapabilities.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <CoreUtilities/ComparisonHelpers.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -409,14 +409,14 @@ namespace Volt::RHI
 		descriptorWrite.descriptorCount = 1;
 		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.dstBinding = Globals::RENDER_GRAPH_CONSTANTS_BINDING;
+		descriptorWrite.dstBinding = Globals::SHADER_GLOBALS_BINDING;
 		descriptorWrite.dstSet = dstSet;
 		descriptorWrite.pBufferInfo = &bufferInfo;
 
 		VkAccelerationStructureKHR accelerationStructureHandle;
 		VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo;
 
-		if (g_rhiCapabilities.rayTracing.supportsRayTracing && accelerationStructure)
+		if (RHI::RHICanUseRayTracing() && accelerationStructure)
 		{
 			accelerationStructureInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 			accelerationStructureInfo.pNext = nullptr;

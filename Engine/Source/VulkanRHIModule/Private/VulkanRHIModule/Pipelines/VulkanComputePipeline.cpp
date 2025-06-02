@@ -98,11 +98,6 @@ namespace Volt::RHI
 			info.basePipelineHandle = nullptr;
 			info.basePipelineIndex = 0;
 
-			if (GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled())
-			{
-				info.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-			}
-
 			VT_VK_CHECK(vkCreateComputePipelines(device->GetHandle<VkDevice>(), nullptr, 1, &info, nullptr, &m_pipeline));
 		}
 		GenerateHash();

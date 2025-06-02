@@ -10,7 +10,7 @@
 
 #include <Volt-Core/Algorithms.h>
 
-#include <RHIModule/RHICapabilities.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <CoreUtilities/Math/Math.h>
 
@@ -232,7 +232,7 @@ namespace Volt
 
 		RHI::BufferUsage rayTracingFlags = RHI::BufferUsage::None;
 
-		if (g_rhiCapabilities.rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
 			rayTracingFlags |= RHI::BufferUsage::AccelerationStructureInput | RHI::BufferUsage::DeviceAddress;
 		}
@@ -416,7 +416,7 @@ namespace Volt
 		}
 
 		// Create RT data
-		if (g_rhiCapabilities.rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
 			RayTracingSceneGeometryCreateInfo info{};
 			info.indexBuffer = m_indexBuffer->GetResource();

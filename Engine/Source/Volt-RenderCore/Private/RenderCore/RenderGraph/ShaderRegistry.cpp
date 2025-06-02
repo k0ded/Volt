@@ -8,7 +8,7 @@ Volt::ShaderRegistry g_shaderRegistry;
 
 namespace Volt
 {
-	void ShaderRegistry::CorrectShaderParameterMetadataOffsets(TypeTraits::TypeIndex typeIndex, const RHI::ShaderRenderGraphConstantsData& reflectedConstants)
+	void ShaderRegistry::CorrectShaderParameterMetadataOffsets(TypeTraits::TypeIndex typeIndex, const RHI::ShaderUniforms& reflectedConstants)
 	{
 		auto& registrationInfo = m_shaderRegistrationInfo.at(typeIndex);
 

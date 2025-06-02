@@ -145,7 +145,6 @@ namespace Volt::RHI
 
 		VT_ENSURE(description.sampler);
 
-
 		if (m_activeDescriptorWritesMapping[set][binding][arrayIndex].value == DefaultInvalid::INVALID_VALUE)
 		{
 			const uint32_t writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];

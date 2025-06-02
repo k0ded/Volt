@@ -74,7 +74,7 @@ namespace Volt
 				{
 					auto& sourceEntry = specification.sourceEntries.emplace_back();
 					sourceEntry.entryPoint = stageInfo.entryPoint;
-					sourceEntry.filePath = stageInfo.filePath;
+					sourceEntry.filepath = stageInfo.filePath;
 					sourceEntry.shaderStage = stageInfo.shaderStage;
 				}
 

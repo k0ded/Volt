@@ -39,8 +39,6 @@ namespace Volt::RHI
 
 		const int32_t GetMemoryTypeIndex(const uint32_t reqMemoryTypeBits, const uint32_t requiredPropertyFlags);
 		const bool IsExtensionAvailable(const char* extensionName) const;
-		const bool AreDescriptorBuffersEnabled() const;
-		const bool AreMeshShadersEnabled() const;
 
 	protected:
 		void* GetHandleImpl() const override;

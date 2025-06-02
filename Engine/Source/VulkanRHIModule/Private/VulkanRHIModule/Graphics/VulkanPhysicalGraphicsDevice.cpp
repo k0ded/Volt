@@ -156,16 +156,6 @@ namespace Volt::RHI
 		return false;
 	}
 
-	const bool VulkanPhysicalGraphicsDevice::AreDescriptorBuffersEnabled() const
-	{
-		return m_deviceProperties.descriptorBufferProperties.enabled;
-	}
-
-	const bool VulkanPhysicalGraphicsDevice::AreMeshShadersEnabled() const
-	{
-		return m_deviceProperties.meshShaderProperties.enabled;
-	}
-
 	void* VulkanPhysicalGraphicsDevice::GetHandleImpl() const
 	{
 		return m_physicalDevice;

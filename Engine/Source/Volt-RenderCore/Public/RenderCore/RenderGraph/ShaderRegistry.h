@@ -33,7 +33,7 @@ namespace Volt
 		}
 	}
 
-	struct ShaderRenderGraphConstantsData;
+	struct ShaderUniforms;
 
 	class VTRC_API ShaderRegistry
 	{
@@ -90,7 +90,7 @@ namespace Volt
 	private:
 		friend class ShaderSubSystem;
 
-		void CorrectShaderParameterMetadataOffsets(TypeTraits::TypeIndex typeIndex, const RHI::ShaderRenderGraphConstantsData& reflectedConstants);
+		void CorrectShaderParameterMetadataOffsets(TypeTraits::TypeIndex typeIndex, const RHI::ShaderUniforms& reflectedConstants);
 
 		vt::map<TypeTraits::TypeIndex, ShaderRegistrationInfo> m_shaderRegistrationInfo;
 	};

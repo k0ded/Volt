@@ -17,7 +17,7 @@ namespace Volt::RHI
 		Vector<RefPtr<Shader>> callableTable;
 	};
 
-	struct ShaderRenderGraphConstantsData;
+	struct ShaderUniforms;
 
 	class VTRHI_API RayTracingPipeline : public RHIInterface
 	{
@@ -25,7 +25,7 @@ namespace Volt::RHI
 		virtual void Invalidate() = 0;
 		virtual bool IsValid() const = 0;
 		virtual bool IsShaderInPipeline(RefPtr<Shader> shader) const = 0;
-		virtual const ShaderRenderGraphConstantsData& GetRenderGraphConstants() const = 0;
+		virtual const ShaderUniforms& GetRenderGraphConstants() const = 0;
 
 		static RefPtr<RayTracingPipeline> Create(const RayTracingPipelineCreateInfo& createInfo);
 

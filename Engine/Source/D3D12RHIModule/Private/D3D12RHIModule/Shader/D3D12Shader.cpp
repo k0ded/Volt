@@ -42,7 +42,7 @@ namespace Volt::RHI
 		for (const auto& entry : m_specification.sourceEntries)
 		{
 			const ShaderStage stage = entry.shaderStage;
-			std::string source = Utility::ReadStringFromFile(entry.filePath);
+			std::string source = Utility::ReadStringFromFile(entry.filepath);
 
 			if (source.empty())
 			{
@@ -51,7 +51,7 @@ namespace Volt::RHI
 
 			if (m_shaderSources.contains(stage))
 			{
-				VT_LOGC(Error, LogD3D12RHI, "Multiple shaders of same stage defined in file {0}!", entry.filePath.string().c_str());
+				VT_LOGC(Error, LogD3D12RHI, "Multiple shaders of same stage defined in file {0}!", entry.filepath.string().c_str());
 				continue;
 			}
 
@@ -192,15 +192,15 @@ namespace Volt::RHI
 		{
 			for (const auto& [binding, buffer] : bindings)
 			{
-				if (binding == Globals::RENDER_GRAPH_CONSTANTS_BINDING)
+				if (binding == Globals::SHADER_GLOBALS_BINDING)
 				{
 					m_renderGraphConstantsRootParamIndex = static_cast<uint32_t>(rootParameters.size());
 
 					auto& param = rootParameters.emplace_back();
 					param.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 					param.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-					param.Descriptor.RegisterSpace = Globals::RENDER_GRAPH_CONSTANTS_SPACE;
-					param.Descriptor.ShaderRegister = Globals::RENDER_GRAPH_CONSTANTS_BINDING;
+					param.Descriptor.RegisterSpace = Globals::SHADER_GLOBALS_SPACE;
+					param.Descriptor.ShaderRegister = Globals::SHADER_GLOBALS_BINDING;
 				}
 				else
 				{

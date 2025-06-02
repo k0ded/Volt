@@ -1,15 +1,12 @@
 #include "vkpch.h"
-#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
 
+#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline2.h"
 #include "VulkanRHIModule/Shader/VulkanShader.h"
-#include "VulkanRHIModule/Common/VulkanHelpers.h"
+#include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
-#include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
-#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
+#include "VulkanRHIModule/Common/VulkanHelpers.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Images/ImageUtility.h>
-
 #include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
@@ -25,66 +22,98 @@ namespace Volt::RHI
 		Vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	};
 
-	namespace Utility
+	inline VertexAttributeData CreateVertexLayout(const BufferLayout& vertexLayout, const BufferLayout& instanceLayout)
 	{
-		static VertexAttributeData CreateVertexLayout(const BufferLayout& vertexLayout, const BufferLayout& instanceLayout)
+		VT_ASSERT(!vertexLayout.GetElements().empty());
+
+		VertexAttributeData result{};
+
+		VkVertexInputBindingDescription& bindingDesc = result.bindingDescriptions.emplace_back();
+		bindingDesc.binding = 0;
+		bindingDesc.stride = vertexLayout.GetStride();
+		bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		uint32_t attributeIndex = 0;
+		for (const auto& element : vertexLayout.GetElements())
 		{
-			VT_ASSERT(!vertexLayout.GetElements().empty());
+			VkVertexInputAttributeDescription& desc = result.attributeDescriptions.emplace_back();
+			desc.binding = 0;
+			desc.location = attributeIndex;
+			desc.format = Utility::VoltToVulkanElementFormat(element.type);
+			desc.offset = static_cast<uint32_t>(element.offset);
 
-			VertexAttributeData result{};
+			attributeIndex++;
+		}
 
-			VkVertexInputBindingDescription& bindingDesc = result.bindingDescriptions.emplace_back();
-			bindingDesc.binding = 0;
-			bindingDesc.stride = vertexLayout.GetStride();
-			bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		if (instanceLayout.IsValid())
+		{
+			VkVertexInputBindingDescription& instanceBindingDesc = result.bindingDescriptions.emplace_back();
+			instanceBindingDesc.binding = 1;
+			instanceBindingDesc.stride = instanceLayout.GetStride();
+			instanceBindingDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-			uint32_t attributeIndex = 0;
-			for (const auto& element : vertexLayout.GetElements())
+			for (const auto& element : instanceLayout.GetElements())
 			{
 				VkVertexInputAttributeDescription& desc = result.attributeDescriptions.emplace_back();
-				desc.binding = 0;
+				desc.binding = 1;
 				desc.location = attributeIndex;
-				desc.format = VoltToVulkanElementFormat(element.type);
+				desc.format = Utility::VoltToVulkanElementFormat(element.type);
 				desc.offset = static_cast<uint32_t>(element.offset);
 
 				attributeIndex++;
 			}
-
-			if (instanceLayout.IsValid())
-			{
-				VkVertexInputBindingDescription& instanceBindingDesc = result.bindingDescriptions.emplace_back();
-				instanceBindingDesc.binding = 1;
-				instanceBindingDesc.stride = instanceLayout.GetStride();
-				instanceBindingDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
-			
-				for (const auto& element : instanceLayout.GetElements())
-				{
-					VkVertexInputAttributeDescription& desc = result.attributeDescriptions.emplace_back();
-					desc.binding = 1;
-					desc.location = attributeIndex;
-					desc.format = VoltToVulkanElementFormat(element.type);
-					desc.offset = static_cast<uint32_t>(element.offset);
-
-					attributeIndex++;
-				}
-			}
-
-			return result;
 		}
+
+		return result;
 	}
 
-	VulkanRenderPipeline::VulkanRenderPipeline(const RenderPipelineCreateInfo& createInfo)
+	inline VertexAttributeData CreateVertexLayoutFromShaders(const Vector<RefPtr<Shader2>>& shaders)
+	{
+		// We will pick the first shader that contains a vertex layout (should only be one anyways)
+		for (const auto shader : shaders)
+		{
+			VulkanShader2& vulkanShader = shader->AsRef<VulkanShader2>();
+			const VulkanShader2::ShaderInfo& shaderInfo = vulkanShader.GetShaderInfo();
+
+			if (shaderInfo.vertexLayout.IsValid())
+			{
+				return CreateVertexLayout(shaderInfo.vertexLayout, shaderInfo.instanceLayout);
+			}
+		}
+
+		// We allow no vertex layout
+		return {};
+	}
+
+	inline Vector<PixelFormat> GetOutputFormatsFromShaders(const Vector<RefPtr<Shader2>>& shaders)
+	{
+		// We will pick the first pixel shader, there should only be one.
+		for (const auto shader : shaders)
+		{
+			if (shader->GetShaderStage() == ShaderStage::Pixel)
+			{
+				VulkanShader2& vulkanShader = shader->AsRef<VulkanShader2>();
+				return vulkanShader.GetShaderInfo().outputFormats;
+			}
+		}
+
+		// No pixel shader is a valid case, for depth only shaders for example.
+		// For now we assume that if no pixel shader exists, the output format is D32
+		return { PixelFormat::D32_SFLOAT };
+	}
+
+	VulkanRenderPipeline2::VulkanRenderPipeline2(const RenderPipelineCreateInfo& createInfo)
 		: m_createInfo(createInfo)
 	{
 		Invalidate();
 	}
 
-	VulkanRenderPipeline::~VulkanRenderPipeline()
+	VulkanRenderPipeline2::~VulkanRenderPipeline2()
 	{
 		Release();
 	}
 
-	void VulkanRenderPipeline::Invalidate()
+	void VulkanRenderPipeline2::Invalidate()
 	{
 		Release();
 
@@ -95,47 +124,48 @@ namespace Volt::RHI
 			VT_ENSURE(m_createInfo.topology != Topology::TriangleList && m_createInfo.topology != Topology::LineList && m_createInfo.topology != Topology::PatchList && m_createInfo.topology != Topology::PointList);
 		}
 
+		VerifyShaderStages();
+
 		auto device = GraphicsContext::GetDevice();
-		const auto& shaderResources = m_createInfo.shader->GetResources();
-		VulkanShader& vulkanShader = m_createInfo.shader->AsRef<VulkanShader>();
 
-		VertexAttributeData vertexAttrData{};
-
-		if (shaderResources.vertexLayout.IsValid())
+		// Create descriptor set layouts
 		{
-			vertexAttrData = Utility::CreateVertexLayout(shaderResources.vertexLayout, shaderResources.instanceLayout);
+			Vector<ShaderBindings> shaderBindings;
+			for (const auto shader : m_createInfo.shaders)
+			{
+				shaderBindings.emplace_back(shader->GetBindings());
+			}
+
+			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
+			m_descriptorSetLayouts = descriptorSetLayoutBuilder.BuildFromShaderBindings(shaderBindings);
+
+			m_pipelineBindings = descriptorSetLayoutBuilder.GetMergedShaderBindings(shaderBindings);
 		}
 
 		// Create pipeline layout
 		{
-			VkPushConstantRange pushConstantRange{};
-			pushConstantRange.size = shaderResources.constants.size;
-			pushConstantRange.offset = shaderResources.constants.offset;
-			pushConstantRange.stageFlags = static_cast<VkShaderStageFlags>(shaderResources.constants.stageFlags);
-
-			VT_ASSERT(pushConstantRange.size <= 128 && "Push constant range must be less or equal to 128 bytes to support all platforms!");
-
-			const auto descriptorSetLayouts = VulkanBindlessDescriptorLayoutManager::GetGlobalDescriptorSetLayouts();
-
 			VkPipelineLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			info.setLayoutCount = shaderResources.renderGraphConstantsData.IsValid() ? 2 : 1;
-			info.pSetLayouts = descriptorSetLayouts.data();
-			info.pushConstantRangeCount = shaderResources.constants.size > 0 ? 1 : 0;
-			info.pPushConstantRanges = &pushConstantRange;
+			info.pNext = nullptr;
+			info.setLayoutCount = static_cast<uint32_t>(m_descriptorSetLayouts.size());
+			info.pSetLayouts = m_descriptorSetLayouts.data();
+			info.pushConstantRangeCount = 0;
+			info.pPushConstantRanges = nullptr;
 
 			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, nullptr, &m_pipelineLayout));
 		}
 
-		// Create Pipeline
+		// Create pipeline
 		{
+			VertexAttributeData vertexAttributes = CreateVertexLayoutFromShaders(m_createInfo.shaders);
+
 			VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 			vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-			vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexAttrData.bindingDescriptions.size());
-			vertexInputInfo.pVertexBindingDescriptions = vertexAttrData.bindingDescriptions.data();
+			vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexAttributes.bindingDescriptions.size());
+			vertexInputInfo.pVertexBindingDescriptions = vertexAttributes.bindingDescriptions.data();
 
-			vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttrData.attributeDescriptions.size());
-			vertexInputInfo.pVertexAttributeDescriptions = vertexAttrData.attributeDescriptions.data();
+			vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.attributeDescriptions.size());
+			vertexInputInfo.pVertexAttributeDescriptions = vertexAttributes.attributeDescriptions.data();
 
 			VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
 			inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -176,7 +206,9 @@ namespace Volt::RHI
 			blendInfo.blendConstants[3] = 0.f;
 
 			Vector<VkPipelineColorBlendAttachmentState> blendAttachments{};
-			for (size_t index = 0; const auto& outputFormat : shaderResources.outputFormats)
+
+			const Vector<PixelFormat> shaderOutputFormats = GetOutputFormatsFromShaders(m_createInfo.shaders);
+			for (size_t index = 0; const auto& outputFormat : shaderOutputFormats)
 			{
 				if (Utility::IsDepthFormat(outputFormat) || Utility::IsStencilFormat(outputFormat))
 				{
@@ -253,7 +285,7 @@ namespace Volt::RHI
 			PixelFormat depthFormat = PixelFormat::UNDEFINED;
 			PixelFormat stencilFormat = PixelFormat::UNDEFINED;
 
-			for (const auto& format : shaderResources.outputFormats)
+			for (const auto& format : shaderOutputFormats)
 			{
 				if (Utility::IsDepthFormat(format))
 				{
@@ -278,22 +310,16 @@ namespace Volt::RHI
 
 			Vector<VkPipelineShaderStageCreateInfo> pipelineStageInfos{};
 
-			for (const auto& [stage, stageInfo] : vulkanShader.GetPipelineStageInfos())
+			for (const auto shader : m_createInfo.shaders)
 			{
+				VulkanShader2& vulkanShader = shader->AsRef<VulkanShader2>();
+
 				auto& newStageInfo = pipelineStageInfos.emplace_back();
 				newStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-				newStageInfo.stage = Utility::VoltToVulkanShaderStage(stage);
-				newStageInfo.module = stageInfo.shaderModule;
-				newStageInfo.pName = "main";
-
-				for (const auto& entry : vulkanShader.GetSourceEntries())
-				{
-					if (entry.shaderStage == stage)
-					{
-						newStageInfo.pName = entry.entryPoint.c_str();
-						break;
-					}
-				}
+				newStageInfo.pNext = nullptr;
+				newStageInfo.stage = Utility::VoltToVulkanShaderStage(shader->GetShaderStage());
+				newStageInfo.module = vulkanShader.GetShaderModule();
+				newStageInfo.pName = vulkanShader.GetShaderSourceInfo().sourceEntry.entryPoint.c_str();
 			}
 
 			VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -316,54 +342,103 @@ namespace Volt::RHI
 
 			VT_VK_CHECK(vkCreateGraphicsPipelines(device->GetHandle<VkDevice>(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
 		}
-		GenerateHash();
 
+		GenerateHash();
 		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Render Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
 	}
 
-	RefPtr<Shader> VulkanRenderPipeline::GetShader() const
+	RefPtr<Shader> VulkanRenderPipeline2::GetShader() const
 	{
-		return m_createInfo.shader;
+		return RefPtr<Shader>();
 	}
 
-	bool VulkanRenderPipeline::IsValid() const
+	bool VulkanRenderPipeline2::IsValid() const
 	{
 		return m_pipeline != nullptr;
 	}
 
-	size_t VulkanRenderPipeline::GetHash() const
+	size_t VulkanRenderPipeline2::GetHash() const
 	{
 		return m_hash;
 	}
 
-	void* VulkanRenderPipeline::GetHandleImpl() const
+	void* VulkanRenderPipeline2::GetHandleImpl() const
 	{
 		return m_pipeline;
 	}
 
-	void VulkanRenderPipeline::Release()
+	void VulkanRenderPipeline2::Release()
 	{
-		if (m_pipeline == nullptr)
+		if (!m_pipeline)
 		{
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([pipelineLayout = m_pipelineLayout, pipeline = m_pipeline]()
+		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_descriptorSetLayouts]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyPipelineLayout(device->GetHandle<VkDevice>(), pipelineLayout, nullptr);
 			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, nullptr);
+			vkDestroyPipelineLayout(device->GetHandle<VkDevice>(), pipelineLayout, nullptr);
+
+			for (const auto& descriptorSetLayout : descriptorSetLayouts)
+			{
+				vkDestroyDescriptorSetLayout(device->GetHandle<VkDevice>(), descriptorSetLayout, nullptr);
+			}
 		});
 
-		m_pipelineLayout = nullptr;
 		m_pipeline = nullptr;
+		m_pipelineLayout = nullptr;
+		m_descriptorSetLayouts.clear();
 	}
 
-	void VulkanRenderPipeline::GenerateHash()
+	void VulkanRenderPipeline2::GenerateHash()
 	{
-		m_hash = m_createInfo.shader->GetHash();
+		m_hash = 0;
+		for (const auto& shader : m_createInfo.shaders)
+		{
+			m_hash = Math::HashCombine(m_hash, shader->GetHash());
+		}
 
 		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipeline)));
 		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipelineLayout)));
+	}
+
+	void VulkanRenderPipeline2::VerifyShaderStages()
+	{
+		bool foundVertexShader = false;
+		bool foundMeshShader = false;
+		bool foundAmplificationShader = false;
+		bool foundPixelShader = false;
+
+		for (const auto& shader : m_createInfo.shaders)
+		{
+			switch (shader->GetShaderStage())
+			{
+				case ShaderStage::Vertex: VT_ENSURE(!foundVertexShader); foundVertexShader = true; break;
+				case ShaderStage::Mesh: VT_ENSURE(!foundMeshShader); foundMeshShader = true; break;
+				case ShaderStage::Amplification: VT_ENSURE(!foundAmplificationShader); foundAmplificationShader = true; break;
+				case ShaderStage::Pixel: VT_ENSURE(!foundPixelShader); foundPixelShader = true; break;
+			}
+		}
+
+		if (foundPixelShader)
+		{
+			VT_ENSURE(foundVertexShader || foundMeshShader);
+		}
+
+		if (foundAmplificationShader)
+		{
+			VT_ENSURE(foundMeshShader && !foundVertexShader);
+		}
+
+		if (foundVertexShader)
+		{
+			VT_ENSURE(!foundAmplificationShader && !foundMeshShader);
+		}
+
+		if (foundMeshShader)
+		{
+			VT_ENSURE(!foundVertexShader);
+		}
 	}
 }

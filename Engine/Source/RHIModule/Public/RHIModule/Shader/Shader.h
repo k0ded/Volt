@@ -36,7 +36,7 @@ namespace Volt::RHI
 
 		ShaderConstantData constants{};
 		ShaderDataBuffer constantsBuffer{};
-		ShaderRenderGraphConstantsData renderGraphConstantsData{};
+		ShaderUniforms renderGraphConstantsData{};
 		BufferLayout vertexLayout{};
 		BufferLayout instanceLayout{};
 	

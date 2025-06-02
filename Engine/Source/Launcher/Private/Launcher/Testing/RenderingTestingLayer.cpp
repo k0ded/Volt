@@ -29,7 +29,7 @@ void RenderingTestingLayer::OnAttach()
 
 	//m_renderingTests.emplace_back(CreateScope<SwapchainClearColorTest>());
 	//m_renderingTests.emplace_back(CreateScope<ComputeWriteToBufferTest>());
-	//m_renderingTests.emplace_back(CreateScope<ComputeWriteToBufferTest>());
+	m_renderingTests.emplace_back(CreateScope<ComputeWriteToBufferTest>());
 	//m_renderingTests.emplace_back(CreateScope<ClearBufferToValueTest>());
 	//m_renderingTests.emplace_back(CreateScope<DispatchIndirectTest>());
 	//m_renderingTests.emplace_back(CreateScope<DrawIndirectTest>());

@@ -10,4 +10,10 @@ namespace Volt::RHI
 	{
 		return RHIModule::GetInstance().CreateComputePipeline(shader, useGlobalResources);
 	}
+
+	RefPtr<ComputePipeline> ComputePipeline::Create(RefPtr<Shader2> shader)
+	{
+		return RHIModule::GetInstance().CreateComputePipeline(shader);
+	}
+
 }

@@ -5,6 +5,7 @@
 namespace Volt::RHI
 {
 	class Shader;
+	class Shader2;
 
 	class VTRHI_API ComputePipeline : public RHIInterface
 	{
@@ -15,6 +16,7 @@ namespace Volt::RHI
 		virtual size_t GetHash() const = 0;
 
 		static RefPtr<ComputePipeline> Create(RefPtr<Shader> shader, bool useGlobalResources = true);
+		static RefPtr<ComputePipeline> Create(RefPtr<Shader2> shader);
 
 	protected:
 		ComputePipeline() = default;

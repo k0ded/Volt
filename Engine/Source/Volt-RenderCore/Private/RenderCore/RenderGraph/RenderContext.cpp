@@ -417,7 +417,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
+		const RHI::ShaderUniforms& constantsData = GetRenderGraphConstantsData();
 		VT_ENSURE(constantsData.uniforms.contains(name));
 
 		const auto& uniform = constantsData.uniforms.at(name);
@@ -515,7 +515,7 @@ namespace Volt
 #endif
 	}
 
-	void RenderContext::ValidatePipelineConstant(const RHI::ShaderRenderGraphConstantsData& constantsData, const RHI::ShaderUniformType& uniformType, const StringHash& constantName)
+	void RenderContext::ValidatePipelineConstant(const RHI::ShaderUniforms& constantsData, const RHI::ShaderUniformType& uniformType, const StringHash& constantName)
 	{
 #ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
 		if (!constantsData.uniforms.contains(constantName))
@@ -530,7 +530,7 @@ namespace Volt
 #endif
 	}
 
-	const RHI::ShaderRenderGraphConstantsData& RenderContext::GetRenderGraphConstantsData()
+	const RHI::ShaderUniforms& RenderContext::GetRenderGraphConstantsData()
 	{
 		VT_PROFILE_FUNCTION();
 		if (m_currentRenderPipeline)
@@ -560,7 +560,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
+		const RHI::ShaderUniforms& constantsData = GetRenderGraphConstantsData();
 		VT_ENSURE(constantsData.uniforms.contains(name));
 
 		const auto& uniform = constantsData.uniforms.at(name);
@@ -579,7 +579,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
+		const RHI::ShaderUniforms& constantsData = GetRenderGraphConstantsData();
 		if (!constantsData.uniforms.contains(name))
 		{
 			return;
@@ -616,7 +616,7 @@ namespace Volt
 
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
+		const RHI::ShaderUniforms& constantsData = GetRenderGraphConstantsData();
 		VT_ENSURE(constantsData.uniforms.contains(name));
 
 		const auto& uniform = constantsData.uniforms.at(name);

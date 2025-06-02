@@ -13,9 +13,28 @@ using namespace Volt;
 
 DrawIndirectTest::DrawIndirectTest()
 {
+	RHI::ShaderCreateInfo createInfo;
+	createInfo.entryPoint = "MainVS";
+	createInfo.name = "Test";
+	createInfo.sourceFilepath = "Engine/Shaders/Source/Testing/DrawIndirectTest.hlsl";
+	createInfo.stage = RHI::ShaderStage::Vertex;
+
+	RefPtr<RHI::Shader2> shaderVS = RHI::Shader2::Create(createInfo);
+
+	createInfo.entryPoint = "MainPS";
+	createInfo.stage = RHI::ShaderStage::Pixel;
+	RefPtr<RHI::Shader2> shaderPS = RHI::Shader2::Create(createInfo);
+
 	RHI::RenderPipelineCreateInfo pipelineInfo{};
+	pipelineInfo.shaders = { shaderVS, shaderPS };
 	//pipelineInfo.shader = ShaderMap::Get("DrawIndirectTest");
-	m_renderPipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+	//m_renderPipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+
+	m_renderPipeline = RHI::RenderPipeline::Create2(pipelineInfo);
+
+	RHI::DescriptorTableCreateInfo tableInfo{};
+	tableInfo.renderPipeline = m_renderPipeline;
+	m_descriptorTable = RHI::DescriptorTable::Create2(tableInfo);
 
 	//m_descriptorTable = RHI::DescriptorTable::Create({ m_renderPipeline->GetShader(), false });
 	m_commandsBuffer = RHI::StorageBuffer::Create<RHI::IndirectDrawCommand>(1, "Commands Buffer", RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndirectBuffer, RHI::MemoryUsage::CPUToGPU);
@@ -78,7 +97,7 @@ bool DrawIndirectTest::RunTest()
 	m_commandBuffer->SetScissors({ renderingInfo.renderArea });
 	m_commandBuffer->SetViewports({ viewport });
 
-	//m_commandBuffer->BindDescriptorTable(m_descriptorTable);
+	m_commandBuffer->BindDescriptorTable(m_descriptorTable);
 	m_commandBuffer->BindPipeline(m_renderPipeline);
 	m_commandBuffer->DrawIndirect(m_commandsBuffer, 0, 1, sizeof(RHI::IndirectDrawCommand));
 	m_commandBuffer->EndRendering();

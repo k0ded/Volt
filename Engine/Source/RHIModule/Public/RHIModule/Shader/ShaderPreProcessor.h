@@ -13,7 +13,6 @@ namespace Volt::RHI
 		Vector<PixelFormat> outputFormats;
 		BufferLayout vertexLayout;
 		BufferLayout instanceLayout;
-		ShaderRenderGraphConstantsData renderGraphConstants;
 	};
 
 	struct PreProcessorData

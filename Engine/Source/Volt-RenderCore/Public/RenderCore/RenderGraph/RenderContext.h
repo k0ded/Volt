@@ -241,10 +241,10 @@ namespace Volt
 		// Validation
 		void InitializeCurrentPipelineConstantsValidation();
 		void ValidateCurrentPipelineConstants();
-		void ValidatePipelineConstant(const RHI::ShaderRenderGraphConstantsData& constantsData, const RHI::ShaderUniformType& uniformType, const StringHash& constantName);
+		void ValidatePipelineConstant(const RHI::ShaderUniforms& constantsData, const RHI::ShaderUniformType& uniformType, const StringHash& constantName);
 
 		// Internal state
-		const RHI::ShaderRenderGraphConstantsData& GetRenderGraphConstantsData();
+		const RHI::ShaderUniforms& GetRenderGraphConstantsData();
 		void ClearCurrentPipeline();
 
 		bool m_descriptorTableIsBound = false; // This needs to be checked in every call that uses resources
@@ -274,7 +274,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
+		const RHI::ShaderUniforms& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<T>(), name);
 
 		if (!constantsData.uniforms.contains(name))
@@ -292,7 +292,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
+		const RHI::ShaderUniforms& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
 
 		if (!constantsData.uniforms.contains(name))
@@ -310,7 +310,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
+		const RHI::ShaderUniforms& constantsData = GetRenderGraphConstantsData();
 		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
 
 		if (!constantsData.uniforms.contains(name))

@@ -9,4 +9,9 @@ namespace Volt::RHI
 	{
 		return RHIModule::GetInstance().CreateDescriptorTable(specification);
 	}
+
+	RefPtr<DescriptorTable> DescriptorTable::Create2(const DescriptorTableCreateInfo& specification)
+	{
+		return RHIModule::GetInstance().CreateDescriptorTable2(specification);
+	}
 }

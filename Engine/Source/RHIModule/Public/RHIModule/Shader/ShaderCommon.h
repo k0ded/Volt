@@ -235,20 +235,20 @@ namespace Volt::RHI
 		static void Deserialize(BinaryStreamReader& streamReader, ShaderConstantData& outData);
 	};
 
-	struct VTRHI_API ShaderRenderGraphConstantsData
+	struct VTRHI_API ShaderUniforms
 	{
 		VT_NODISCARD VT_INLINE bool IsValid() const { return !uniforms.empty() && size > 0; }
 
 		std::unordered_map<StringHash, ShaderUniform> uniforms;
 		size_t size = 0;
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderRenderGraphConstantsData& data)
+		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderUniforms& data)
 		{
 			streamWriter.Write(data.uniforms);
 			streamWriter.Write(data.size);
 		}
 
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderRenderGraphConstantsData& outData)
+		static void Deserialize(BinaryStreamReader& streamReader, ShaderUniforms& outData)
 		{
 			streamReader.Read(outData.uniforms);
 			streamReader.Read(outData.size);
@@ -309,7 +309,7 @@ namespace Volt::RHI
 	{
 		std::string entryPoint = "main";
 		RHI::ShaderStage shaderStage;
-		std::filesystem::path filePath;
+		std::filesystem::path filepath;
 	};
 
 	struct ShaderSourceInfo

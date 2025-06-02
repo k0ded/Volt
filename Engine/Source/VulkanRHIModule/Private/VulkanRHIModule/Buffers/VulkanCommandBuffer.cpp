@@ -14,7 +14,6 @@
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorBufferTable.h"
 
 #include "VulkanRHIModule/Images/VulkanImage.h"
 
@@ -40,6 +39,7 @@
 #include <RHIModule/Core/Profiling.h>
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/Synchronization/Fence.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <RHIModule/RayTracing/AccelerationStructure.h>
 
@@ -66,6 +66,18 @@ namespace Volt::RHI
 		const VkPipelineStageFlags2 GetStageFromBarrierStage(const BarrierStage barrierStage)
 		{
 			VkPipelineStageFlags2 result = VK_PIPELINE_STAGE_2_NONE;
+
+#ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
+			if (EnumValueContainsFlag(barrierStage, BarrierStage::MeshShader) || EnumValueContainsFlag(barrierStage, BarrierStage::AmplificationShader))
+			{
+				VT_ENSURE(RHICanUseMeshShaders());
+			}
+
+			if (EnumValueContainsFlag(barrierStage, BarrierStage::RayTracingShader))
+			{
+				VT_ENSURE(RHICanUseRayTracing());
+			}
+#endif
 
 			if (EnumValueContainsFlag(barrierStage, BarrierStage::All))
 			{
@@ -699,15 +711,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable)
 	{
 		VT_PROFILE_FUNCTION();
-
-		if (GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled())
-		{
-			descriptorTable->AsRef<VulkanDescriptorBufferTable>().Bind(*this);
-		}
-		else
-		{
-			descriptorTable->AsRef<VulkanDescriptorTable>().Bind(*this);
-		}
+		descriptorTable->AsRef<VulkanDescriptorTable>().Bind(*this);
 	}
 
 	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)

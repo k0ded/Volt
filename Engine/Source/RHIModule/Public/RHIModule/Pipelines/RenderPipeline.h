@@ -2,6 +2,7 @@
 
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
+#include "RHIModule/Shader/Shader2.h"
 
 #include <CoreUtilities/Containers/Array.h>
 
@@ -23,6 +24,7 @@ namespace Volt::RHI
 	struct RenderPipelineCreateInfo
 	{
 		RefPtr<Shader> shader;
+		Vector<RefPtr<Shader2>> shaders;
 
 		Topology topology = Topology::TriangleList;
 		CullMode cullMode = CullMode::Back;
@@ -44,6 +46,7 @@ namespace Volt::RHI
 		virtual size_t GetHash() const = 0;
 
 		static RefPtr<RenderPipeline> Create(const RenderPipelineCreateInfo& createInfo);
+		static RefPtr<RenderPipeline> Create2(const RenderPipelineCreateInfo& createInfo);
 
 	protected:
 		RenderPipeline() = default;

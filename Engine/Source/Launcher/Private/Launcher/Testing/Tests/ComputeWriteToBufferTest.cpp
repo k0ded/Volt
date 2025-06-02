@@ -4,18 +4,29 @@
 
 #include <RHIModule/Buffers/StorageBuffer.h>
 
+#include <RHIModule/Shader/Shader2.h>
+#include <RHIModule/Pipelines/ComputePipeline.h>
+
 using namespace Volt;
 
 constexpr uint32_t GROUP_SIZE = 32;
 
 ComputeWriteToBufferTest::ComputeWriteToBufferTest()
 {
-	//m_computePipeline = ShaderMap::GetComputePipeline("ComputeWriteToBufferTest", false);
+	RHI::ShaderCreateInfo createInfo;
+	createInfo.entryPoint = "main";
+	createInfo.name = "Test";
+	createInfo.sourceFilepath = "Engine/Shaders/Source/Testing/ComputeWriteToBufferTest_cs.hlsl";
+	createInfo.stage = RHI::ShaderStage::Compute;
+
+	RefPtr<RHI::Shader2> shader = RHI::Shader2::Create(createInfo);
+
+	m_computePipeline = RHI::ComputePipeline::Create(shader);
 
 	RHI::DescriptorTableCreateInfo tableInfo{};
-	tableInfo.shader = m_computePipeline->GetShader();
+	tableInfo.computePipeline = m_computePipeline;
 
-	m_descriptorTable = RHI::DescriptorTable::Create(tableInfo);
+	m_descriptorTable = RHI::DescriptorTable::Create2(tableInfo);
 	m_buffer = RHI::StorageBuffer::Create<uint32_t>(GROUP_SIZE, "Write Buffer", RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::GPU);
 	m_readbackBuffer = RHI::StorageBuffer::Create<uint32_t>(GROUP_SIZE, "Readback Buffer", RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferDst, RHI::MemoryUsage::GPUToCPU);
 }
@@ -28,7 +39,7 @@ ComputeWriteToBufferTest::~ComputeWriteToBufferTest()
 
 bool ComputeWriteToBufferTest::RunTest()
 {
-	m_descriptorTable->SetBufferView("u_outputBuffer", m_buffer->GetView(), 0);
+	m_descriptorTable->SetBufferView(m_buffer->GetView(), 0, 0);
 
 	m_commandBuffer->Begin();
 	m_commandBuffer->BeginMarker("ComputeWriteToBufferTest", { 1.f, 1.f, 1.f, 1.f });
