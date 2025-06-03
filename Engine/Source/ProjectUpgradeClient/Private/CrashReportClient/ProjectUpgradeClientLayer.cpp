@@ -17,12 +17,6 @@ namespace Volt
 	{
 		RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(ProjectUpgradeClientLayer::OnUpdateEvent));
 		RegisterListener<Volt::AppImGuiUpdateEvent>(VT_BIND_EVENT_FN(ProjectUpgradeClientLayer::OnImGuiUpdateEvent));
-
-		ImGuiSubSystem* imguiSubSystem = SubSystemManager::GetSubSystem<ImGuiSubSystem>();
-		if (imguiSubSystem)
-		{
-			imguiSubSystem->SetupContext();
-		}
 	}
 
 	void ProjectUpgradeClientLayer::OnDetach()

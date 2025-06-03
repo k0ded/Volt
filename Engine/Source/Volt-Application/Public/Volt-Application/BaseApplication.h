@@ -46,14 +46,16 @@ namespace Volt
 	{
 	public:
 		BaseApplication(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& appCreateInfo = {});
+		virtual ~BaseApplication();
 
-		virtual ~BaseApplication() = default;
 		virtual void Run() = 0;
 		virtual void Quit() = 0;
 		virtual void PushLayer(ApplicationLayer* layer) = 0;
 		virtual void PopLayer(ApplicationLayer* layer) = 0;
 		virtual void LaunchMainWindow() = 0;
 
+		bool IsRuntime() { return m_appCreateInfo.isRuntime; }
+		bool IsLoggingEnabled() { return m_appCreateInfo.enableLogging; }
 		const ApplicationCreationInfo& GetCreateInfo() { return m_appCreateInfo; }
 		const CommandLineBuilder& GetCommandLineBuilder() const { return m_commandLineBuilder; }
 	protected:

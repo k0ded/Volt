@@ -1,7 +1,7 @@
 #include "sbpch.h"
 #include "Window/EngineStatisticsPanel.h"
 
-#include <Volt/Core/Application.h>
+#include <Volt-Application/Application.h>
 
 #include <Volt-Scene/Scene.h>
 #include <Volt-Renderer/SceneRenderer.h>

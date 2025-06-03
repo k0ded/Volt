@@ -3,9 +3,10 @@
 #include "Window/VisonPanel.h"
 
 #include <Volt-Application/UI/UIUtility.h>
-#include <Volt/Core/Application.h>
 #include <Volt/Vision/VisionTrigger.h>
 #include <Volt/Vision/Vision.h>
+
+#include <Volt-Application/Application.h>
 
 #include <Volt-Renderer/Camera/Camera.h>
 

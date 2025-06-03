@@ -6,6 +6,9 @@
 #include <Volt-Renderer/Renderer.h>
 
 #include <WindowModule/WindowManager.h>
+#include <WindowModule/Window.h>
+#include <WindowModule/Events/WindowEvents.h>
+
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <VulkanRHIModule/VulkanRHIProxy.h>
 #include <D3D12RHIModule/D3D12RHIProxy.h>
@@ -20,6 +23,35 @@
 
 namespace Volt
 {
+	UIApplicationEventListener::UIApplicationEventListener(UIApplication& application)
+		: m_application(application)
+	{
+		RegisterListener<AppUpdateEvent>(VT_BIND_EVENT_FN(UIApplicationEventListener::OnAppUpdateEvent));
+		RegisterListener<WindowCloseEvent>(VT_BIND_EVENT_FN(UIApplicationEventListener::OnWindowCloseEvent));
+		RegisterListener<WindowResizeEvent>(VT_BIND_EVENT_FN(UIApplicationEventListener::OnWindowResizeEvent));
+		RegisterListener<ViewportResizeEvent>(VT_BIND_EVENT_FN(UIApplicationEventListener::OnViewportResizeEvent));
+	}
+
+	bool UIApplicationEventListener::OnAppUpdateEvent(AppUpdateEvent& e)
+	{
+		return m_application.OnAppUpdateEvent(e);
+	}
+
+	bool UIApplicationEventListener::OnWindowCloseEvent(WindowCloseEvent& e)
+	{
+		return m_application.OnWindowCloseEvent(e);
+	}
+
+	bool UIApplicationEventListener::OnWindowResizeEvent(WindowResizeEvent& e)
+	{
+		return m_application.OnWindowResizeEvent(e);
+	}
+
+	bool UIApplicationEventListener::OnViewportResizeEvent(ViewportResizeEvent& e)
+	{
+		return m_application.OnViewportResizeEvent(e);
+	}
+
 	UIApplication::UIApplication(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
 		: BaseApplication(commandLineBuilder, createInfo)
 	{
@@ -52,12 +84,21 @@ namespace Volt
 			m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
 			m_imguiSubSystem->SetupContext();
 		}
+
+		m_eventListener = CreateScope<UIApplicationEventListener>(*this);
 	}
 
 	UIApplication::~UIApplication()
 	{
+		m_eventListener = nullptr;
+
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PostEngine);
+
+		m_layerStack.Clear();
+
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
+
+		m_windowManager->DestroyMainWindow();
 
 		m_graphicsContext = nullptr;
 		m_rhiProxy = nullptr;
@@ -65,9 +106,9 @@ namespace Volt
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
 
-		m_subSystemManager = nullptr;
-
 		FileSystem::Shutdown();
+
+		m_subSystemManager = nullptr;
 
 		g_heapAllocator.reset();
 	}
@@ -144,11 +185,11 @@ namespace Volt
 		{
 			RHI::RHICallbackInfo callbackInfo{};
 			callbackInfo.resourceManagementInfo.resourceDeletionCallback = Renderer::DestroyResource;
-			//callbackInfo.requestCloseEventCallback = []()
-			//{
-			//	WindowCloseEvent closeEvent{};
-			//	EventSystem::DispatchEvent(closeEvent);
-			//};
+			callbackInfo.requestCloseEventCallback = []()
+			{
+				WindowCloseEvent closeEvent{};
+				EventSystem::DispatchEvent(closeEvent);
+			};
 
 			m_rhiProxy->SetRHICallbackInfo(callbackInfo);
 		}
@@ -216,4 +257,30 @@ namespace Volt
 
 		m_frameTimer.Accumulate();
 	}
+
+	bool UIApplication::OnAppUpdateEvent(class AppUpdateEvent& e)
+	{
+		return false;
+	}
+
+	bool UIApplication::OnWindowCloseEvent(class WindowCloseEvent& e)
+	{
+		m_isRunning = false;
+		return false;
+	}
+
+	bool UIApplication::OnWindowResizeEvent(class WindowResizeEvent& e)
+	{
+		WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
+
+		MainUpdate();
+		return false;
+	}
+
+	bool UIApplication::OnViewportResizeEvent(class ViewportResizeEvent& e)
+	{
+		WindowManager::Get().GetMainWindow().SetViewportSize(e.GetWidth(), e.GetHeight());
+		return false;
+	}
+	
 }

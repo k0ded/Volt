@@ -155,11 +155,16 @@ namespace Volt
 		//m_blueNoise = CreateScope<BlueNoise>();
 	}
 
+	void Renderer::CreateBlueNoise()
+	{
+		m_blueNoise = CreateScope<BlueNoise>();
+	}
+
 	void Renderer::Shutdown()
 	{
 		RenderGraphExecutionThread::Shutdown();
 
-		//m_blueNoise.reset();
+		m_blueNoise.reset();
 
 		m_defaultResources.Clear();
 		m_samplers.clear();

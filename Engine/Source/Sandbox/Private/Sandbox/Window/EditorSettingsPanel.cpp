@@ -6,7 +6,6 @@
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include <Volt/Core/Application.h>
 #include <Volt-Application/UI/UIUtility.h>
 #include <imgui_stdlib.h>
 

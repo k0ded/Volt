@@ -1,6 +1,5 @@
 #pragma once
-
-#include <Volt-Core/Layer/Layer.h>
+#include <Volt-Application/ApplicationLayer.h>
 
 #include <EventSystem/EventListener.h>
 
@@ -9,7 +8,7 @@ namespace Volt
 	class AppImGuiUpdateEvent;
 }
 
-class ProjectUpgradeLayer : public Volt::Layer, public Volt::EventListener
+class ProjectUpgradeLayer : public Volt::ApplicationLayer, public Volt::EventListener
 {
 public:
 	ProjectUpgradeLayer();

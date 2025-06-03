@@ -13,7 +13,6 @@
 
 #include <Volt-Core/PluginSystem/PluginRegistry.h>
 #include <Volt-Core/PluginSystem/PluginSystem.h>
-#include <Volt-Core/Layer/Layer.h>
 
 #include <Volt-Physics/PhysicsSubSystem.h>
 
@@ -203,49 +202,49 @@ namespace Volt
 	}
 
 
-	Application::~Application()
-	{
-		m_eventListener = nullptr;
-		m_pluginSystem->ShutdownPlugins();
+	//Application::~Application()
+	//{
+	//	m_eventListener = nullptr;
+	//	m_pluginSystem->ShutdownPlugins();
 
-		m_scriptingSystem = nullptr;
+	//	m_scriptingSystem = nullptr;
 
-		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PostEngine);
+	//	m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PostEngine);
 
-		m_navigationSystem = nullptr;
-		m_layerStack.Clear();
-		SceneManager::Shutdown();
+	//	m_navigationSystem = nullptr;
+	//	//m_layerStack.Clear();
+	//	SceneManager::Shutdown();
 
-		//Amp::WWiseEngine::Get().TermWwise();
+	//	//Amp::WWiseEngine::Get().TermWwise();
 
-		m_assetManager->Clear();
+	//	m_assetManager->Clear();
 
-		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
+	//	m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
-		m_assetManager = nullptr;
-		g_assetSerializerRegistry.Clear();
-		g_assetFactory.Clear();
+	//	m_assetManager = nullptr;
+	//	g_assetSerializerRegistry.Clear();
+	//	g_assetFactory.Clear();
 
-		m_windowManager->DestroyMainWindow();
+	//	m_windowManager->DestroyMainWindow();
 
-		m_graphicsContext = nullptr;
-		m_rhiProxy = nullptr;
-		WindowManager::ShutdownGLFW();
+	//	m_graphicsContext = nullptr;
+	//	m_rhiProxy = nullptr;
+	//	WindowManager::ShutdownGLFW();
 
-		m_pluginSystem->UnloadPlugins();
-		m_pluginSystem = nullptr;
-		m_pluginRegistry = nullptr;
-		m_projectManager = nullptr;
+	//	m_pluginSystem->UnloadPlugins();
+	//	m_pluginSystem = nullptr;
+	//	m_pluginRegistry = nullptr;
+	//	m_projectManager = nullptr;
 
-		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
-		 
-		FileSystem::Shutdown();
+	//	m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
+	//	 
+	//	FileSystem::Shutdown();
 
-		m_subSystemManager = nullptr;
+	//	m_subSystemManager = nullptr;
 
-		g_heapAllocator.reset();
-		s_instance = nullptr;
-	}
+	//	g_heapAllocator.reset();
+	//	s_instance = nullptr;
+	//}
 
 	void Application::Run()
 	{
@@ -267,7 +266,7 @@ namespace Volt
 		m_isRunning = false;
 	}
 
-	void Application::PushLayer(Layer* layer)
+	/*void Application::PushLayer(Layer* layer)
 	{
 		m_layerStack.PushLayer(layer);
 	}
@@ -275,7 +274,7 @@ namespace Volt
 	void Application::PopLayer(Layer* layer)
 	{
 		m_layerStack.PopLayer(layer);
-	}
+	}*/
 
 	void Application::LaunchMainWindow()
 	{
@@ -344,14 +343,14 @@ namespace Volt
 			m_windowManager->Render(m_currentDeltaTime);
 		}
 
-		{
+		/*{
 			VT_PROFILE_SCOPE("Application::Update");
 
 			AppUpdateEvent updateEvent(m_currentDeltaTime); 
 			EventSystem::DispatchEvent(updateEvent);
 
 			AssetManager::Update();
-		}
+		}*/
 
 		{
 			//VT_PROFILE_SCOPE("Application::UpdateAudio");

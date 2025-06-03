@@ -5,16 +5,15 @@
 
 #include <Volt/EntryPoint.h>
 
-#include <Volt/Core/Application.h>
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <Volt-Application/UIApplication.h>
+#include <Volt-Application/Application.h>
 
 class SandboxApp : public Volt::Application
 {
 public:
-	SandboxApp(const Volt::ApplicationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
-		: Volt::Application(appInfo, commandLineBuilder)
+	SandboxApp( const Volt::CommandLineBuilder& commandLineBuilder, const Volt::ApplicationCreationInfo& appInfo)
+		: Volt::Application(commandLineBuilder, appInfo)
 	{
 		if (Volt::ProjectManager::GetProject().isDeprecated)
 		{
@@ -33,15 +32,14 @@ bool g_useCrashHandling = true;
 
 Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder)
 {
-	Volt::ApplicationInfo info{};
+	Volt::ApplicationCreationInfo info{};
 	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
 	info.useVSync = false;
-	info.enableSteam = false;
 	info.enableImGui = true;
 	info.useTitlebar = true;
 	info.useCustomTitlebar = true;
 	info.width = 1600;
 	info.height = 900;
 
-	return new SandboxApp(info, commandLineBuilder);
+	return new SandboxApp(commandLineBuilder, info);
 }

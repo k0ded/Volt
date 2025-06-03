@@ -11,6 +11,6 @@ namespace Volt
 
 	void TempMaterialGraphSubSystem::Initialize()
 	{
-		ImGui::SetCurrentContext(RHI::ImGuiImplementation::Get().GetContext());
+		//ImGui::SetCurrentContext(RHI::ImGuiImplementation::Get().GetContext());
 	}
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Volt-Core/Layer/LayerStack.h"
+//#include "Volt-Core/Layer/LayerStack.h"
 #include "Volt-Core/MultiTimer.h"
 
 #include "Volt-Core/Version.h"
@@ -100,13 +100,13 @@ namespace Volt
 	{
 	public:
 		Application(const ApplicationInfo& info, const CommandLineBuilder& commandLineBuilder);
-		virtual ~Application();
+		//virtual ~Application();
 
 		void Run();
 		void Quit();
 
-		void PushLayer(Layer* layer);
-		void PopLayer(Layer* layer);
+		//void PushLayer(Layer* layer);
+		//void PopLayer(Layer* layer);
 
 		void LaunchMainWindow();
 
@@ -154,7 +154,7 @@ namespace Volt
 
 		ApplicationInfo m_info;
 
-		LayerStack m_layerStack;
+		//LayerStack m_layerStack;
 		MultiTimer m_frameTimer;
 
 		RefPtr<RHI::GraphicsContext> m_graphicsContext;

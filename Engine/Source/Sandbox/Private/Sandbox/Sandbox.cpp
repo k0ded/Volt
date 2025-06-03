@@ -69,6 +69,11 @@
 #include <Volt-Renderer/SceneRenderer.h>
 
 #include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/ImGuiSubSystem.h>
+
+#include <SubSystem/SubSystemManager.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -88,6 +93,7 @@
 
 #include <CoreUtilities/FileSystem.h>
 
+
 Sandbox::Sandbox()
 {
 	VT_ASSERT_MSG(!s_instance, "Sandbox already exists!");
@@ -101,6 +107,12 @@ Sandbox::~Sandbox()
 
 void Sandbox::OnAttach()
 {
+	Volt::ImGuiSubSystem* imguiSubSystem = SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>();
+	if (imguiSubSystem)
+	{
+		imguiSubSystem->SetupContext();
+	}
+
 	RegisterEventListeners();
 
 	SelectionManager::Initialize();
@@ -110,7 +122,7 @@ void Sandbox::OnAttach()
 	NodeEditorHelpers::Initialize();
 	IONodeGraphEditorHelpers::Initialize();
 
-	SelectionManager::RegisterSelectionChangedCallback([&](const Vector<Volt::EntityID>& entities, SelectionContext context) 
+	SelectionManager::RegisterSelectionChangedCallback([&](const Vector<Volt::EntityID>& entities, SelectionContext context)
 	{
 		if (context == SelectionContext::Scene && m_outlineSceneRendererExtension)
 		{
@@ -484,7 +496,8 @@ bool Sandbox::LoadScene(Volt::OnSceneTransitionEvent& e)
 
 bool Sandbox::CheckForUpdateNavMesh(Volt::Entity entity)
 {
-	for (auto child : entity.GetChildren())
+	// todo: reimplement when making navmesh
+	/*for (auto child : entity.GetChildren())
 	{
 		if (CheckForUpdateNavMesh(child))
 		{
@@ -492,7 +505,8 @@ bool Sandbox::CheckForUpdateNavMesh(Volt::Entity entity)
 		}
 	}
 
-	return (entity.HasComponent<Volt::NavMeshComponent>() || entity.HasComponent<Volt::NavLinkComponent>()) && UserSettingsManager::GetSettings().navmeshBuildSettings.useAutoBaking;
+	return (entity.HasComponent<Volt::NavMeshComponent>() || entity.HasComponent<Volt::NavLinkComponent>()) && UserSettingsManager::GetSettings().navmeshBuildSettings.useAutoBaking;*/
+	return false;
 }
 
 void Sandbox::BakeNavMesh()
@@ -615,7 +629,7 @@ void Sandbox::RegisterEventListeners()
 	RegisterListener<Volt::ViewportResizeEvent>(VT_BIND_EVENT_FN(Sandbox::OnViewportResizeEvent), isInitializedPred);
 	RegisterListener<Volt::OnSceneLoadedEvent>(VT_BIND_EVENT_FN(Sandbox::OnSceneLoadedEvent), isInitializedPred);
 	RegisterListener<Volt::OnSceneTransitionEvent>(VT_BIND_EVENT_FN(Sandbox::LoadScene), isInitializedPred);
-	
+
 	RegisterListener<Volt::WindowTitlebarHittestEvent>([&](Volt::WindowTitlebarHittestEvent& e)
 	{
 		e.SetHit(m_titlebarHovered);
@@ -905,7 +919,7 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 			break;
 		}
 
-		case Volt::InputCode::Spacebar :
+		case Volt::InputCode::Spacebar:
 		{
 			if (ctrlPressed)
 			{
@@ -980,7 +994,7 @@ bool Sandbox::OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e)
 	Volt::EventSystem::DispatchEvent(e2);
 
 	auto scene = e.GetScene();
-	
+
 	/*DiscordPlugin::GetInstance().GetManager().SetState(scene->GetName());
 	DiscordPlugin::GetInstance().GetManager().SetPartySize(m_runtimeScene->GetActiveLayer() + 1);
 	DiscordPlugin::GetInstance().GetManager().SetMaxPartySize(static_cast<int32_t>(m_runtimeScene->GetLayers().size()));

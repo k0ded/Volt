@@ -8,6 +8,11 @@ namespace Volt
 	Volt::BaseApplication::BaseApplication(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& appCreateInfo)
 		: m_appCreateInfo(appCreateInfo), m_commandLineBuilder(commandLineBuilder)
 	{
+		VT_ASSERT_MSG(!s_instance, "Application already exists!");
 		s_instance = this;
+	}
+	BaseApplication::~BaseApplication()
+	{
+		s_instance = nullptr;
 	}
 }

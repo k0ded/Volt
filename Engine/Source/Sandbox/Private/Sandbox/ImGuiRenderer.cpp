@@ -8,7 +8,6 @@
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/UserSettingsManager.h"
 
-#include <Volt/Core/Application.h>
 #include <Volt/Utility/PremadeCommands.h>
 #include <Volt-Application/UI/UIUtility.h>
 

@@ -16,7 +16,11 @@
 #include <AssetSystem/SourceAssetManager.h>
 #include <Navigation/Core/NavigationSystem.h>
 
+#include <RHIModule/RHIProxy.h>
+#include <RHIModule/Graphics/GraphicsContext.h>
 
+
+class Log;
 namespace Volt
 {
 	class PluginRegistry;
@@ -30,19 +34,15 @@ namespace Volt
 	class ApplicationEventListener;
 	class ProjectManager;
 	class ProjectManager;
-	class Log;
 
 	namespace RHI
 	{
 		class ImGuiImplementation;
-		class GraphicsContext;
-		class RHIProxy;
 	}
-
 
 	class Application;
 
-	class ApplicationEventListener : public EventListener
+	class VTAPP_API ApplicationEventListener : public EventListener
 	{
 	public:
 		ApplicationEventListener(Application& application);
@@ -52,7 +52,6 @@ namespace Volt
 		bool OnWindowCloseEvent(class WindowCloseEvent& e);
 		bool OnWindowResizeEvent(class WindowResizeEvent& e);
 		bool OnViewportResizeEvent(class ViewportResizeEvent& e);
-		bool OnKeyPressedEvent(class KeyPressedEvent& e);
 
 		Application& m_application;
 	};
@@ -69,22 +68,24 @@ namespace Volt
 		void PushLayer(ApplicationLayer* layer) override;
 		void PopLayer(ApplicationLayer* layer) override;
 
-		inline static Application& Get() { return reinterpret_cast<Application&>(Get()); }
+		inline static Application& Get() { return reinterpret_cast<Application&>(BaseApplication::Get()); }
 
 		AI::NavigationSystem& GetNavigationSystem() { return *m_navigationSystem; }
+		inline const float GetAverageFrameTime() const { return m_frameTimer.GetAverageTime(); }
+		inline const float GetMaxFrameTime() const { return m_frameTimer.GetMaxFrameTime(); }
 	protected:
 		void LaunchMainWindow() override;
 	private:
 		friend class ApplicationEventListener;
 
-		void CreateGraphicsContext();
 		void MainUpdate();
+		void CreateGraphicsContext();
+		void SetupFrameCapture();
 
 		bool OnAppUpdateEvent(class AppUpdateEvent& e);
 		bool OnWindowCloseEvent(class WindowCloseEvent& e);
 		bool OnWindowResizeEvent(class WindowResizeEvent& e);
 		bool OnViewportResizeEvent(class ViewportResizeEvent& e);
-		bool OnKeyPressedEvent(class KeyPressedEvent& e);
 
 		ApplicationLayerStack m_layerStack;
 		MultiTimer m_frameTimer;
@@ -103,10 +104,10 @@ namespace Volt
 		PluginRegistry* m_pluginRegistry = nullptr;
 		PluginSystem* m_pluginSystem = nullptr;
 		WindowManager* m_windowManager = nullptr;
-		PhysicsSubSystem* m_physicsSubSystem = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
 		Log* m_logSubSystem = nullptr;
 
+		bool m_skipPresentThisFrame = false;
 		bool m_isRunning = false;
 		float m_currentDeltaTime = 0.f;
 	};

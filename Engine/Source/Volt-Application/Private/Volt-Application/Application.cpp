@@ -1,12 +1,35 @@
 #include "vtapppch.h"
 #include "Volt-Application/Application.h"
+#include "Volt-Application/UI/ImGuiSubSystem.h"
 
 #include <WindowModule/Events/WindowEvents.h>
+#include <WindowModule/WindowManager.h>
+#include <WindowModule/Window.h>
+
 #include <InputModule/Events/KeyboardEvents.h>
-#include <EventSystem/ApplicationEvents.h>
 #include <SubSystem/SubSystemManager.h>
+#include <LogModule/Log.h>	
+
+#include <EventSystem/ApplicationEvents.h>
+#include <EventSystem/EventSystem.h>
 
 #include <Volt-Core/PluginSystem/PluginSystem.h>
+#include <Volt-Core/PluginSystem/PluginRegistry.h>
+#include <Volt-Core/Project/ProjectManager.h>
+
+#include <Volt-Renderer/Renderer.h>
+
+#include <AssetSystem/AssetSerializerRegistry.h>
+#include <AssetSystem/AssetFactory.h>
+
+#include <CoreUtilities/Allocator.h>
+#include <CoreUtilities/FileSystem.h>
+
+#include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
+#include <RHIModule/FrameCapture.h>
+#include <VulkanRHIModule/VulkanRHIProxy.h>
+#include <D3D12RHIModule/D3D12RHIProxy.h>
+
 
 namespace Volt
 {
@@ -17,7 +40,6 @@ namespace Volt
 		RegisterListener<WindowCloseEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnWindowCloseEvent));
 		RegisterListener<WindowResizeEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnWindowResizeEvent));
 		RegisterListener<ViewportResizeEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnViewportResizeEvent));
-		RegisterListener<KeyPressedEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnKeyPressedEvent));
 	}
 
 	bool ApplicationEventListener::OnAppUpdateEvent(AppUpdateEvent& e)
@@ -40,62 +62,335 @@ namespace Volt
 		return m_application.OnViewportResizeEvent(e);
 	}
 
-	bool ApplicationEventListener::OnKeyPressedEvent(KeyPressedEvent& e)
-	{
-		return m_application.OnKeyPressedEvent(e);
-	}
-
 	Application::Application(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
 		: BaseApplication(commandLineBuilder, createInfo)
-	{}
+	{
+		g_heapAllocator = CreateScope<PagedHeapAllocator>();
+
+		FileSystem::Initialize();
+		FileSystem::InitializeWorkingDirectory(IsRuntime(), commandLineBuilder);
+
+		m_subSystemManager = CreateScope<SubSystemManager>();
+		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
+
+		m_logSubSystem = SubSystemManager::GetSubSystem<Log>();
+		m_logSubSystem->EnableLogging(IsLoggingEnabled());
+
+		m_pluginSystem = SubSystemManager::GetSubSystem<PluginSystem>();
+		m_pluginRegistry = SubSystemManager::GetSubSystem<PluginRegistry>();
+		m_projectManager = SubSystemManager::GetSubSystem<ProjectManager>();
+
+		m_pluginSystem->SetPluginRegistry(m_pluginRegistry);
+
+		std::filesystem::path projectFilepath;
+		if (m_commandLineBuilder.IsArgDefined("project"))
+		{
+			projectFilepath = m_commandLineBuilder.GetArgValue("project");
+		}
+
+		m_projectManager->LoadProject(projectFilepath, *m_pluginRegistry);
+		m_pluginRegistry->BuildPluginDependencies();
+		m_pluginSystem->LoadPlugins(ProjectManager::GetProject());
+
+		// This is required because glfwInit must be called before setting up graphics device
+		WindowManager::InitializeGLFW();
+		CreateGraphicsContext();
+
+		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineDirectory());
+		m_sourceAssetManager = CreateScope<SourceAssetManager>();
+
+		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
+
+		if (m_appCreateInfo.createMainWindow)
+		{
+			LaunchMainWindow();
+		}
+
+		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
+
+		//TODO: this is a hack because we dont have access to the AssetManager in all application types
+		Renderer* rendererSubsystem = SubSystemManager::GetSubSystem<Renderer>();
+		rendererSubsystem->CreateBlueNoise();
+
+		//Init AudioEngine
+		{
+			//std::filesystem::path defaultPath = ProjectManager::GetAudioBanksDirectory();
+			//Amp::WWiseEngine::Get().InitWWise(defaultPath.c_str());
+			//if (FileSystem::Exists(defaultPath))
+			//{
+			//	for (auto bankFile : std::filesystem::directory_iterator(ProjectManager::GetAudioBanksDirectory()))
+			//	{
+			//		if (bankFile.path().extension() == L".bnk")
+			//		{
+			//			Amp::WWiseEngine::Get().LoadBank(bankFile.path().filename().string().c_str());
+			//		}
+			//	}
+			//}
+		}
+
+		m_navigationSystem = CreateScope<Volt::AI::NavigationSystem>();
+
+		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PostEngine);
+
+		m_imguiSubSystem = SubSystemManager::GetSubSystem<ImGuiSubSystem>();
+		// Make sure that the main window exits, it is required to initialize ImGui.
+		if (m_appCreateInfo.createMainWindow && m_appCreateInfo.enableImGui)
+		{
+			m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
+			m_imguiSubSystem->SetupContext();
+		}
+
+		m_scriptingSystem = CreateScope<ScriptingSystem>();
+
+		m_pluginSystem->InitializePlugins();
+		m_eventListener = CreateScope<ApplicationEventListener>(*this);
+
+		SetupFrameCapture();
+	}
 
 	Application::~Application()
 	{
-		//m_eventListener = nullptr;
-		//m_pluginSystem->ShutdownPlugins();
+		m_eventListener = nullptr;
+		m_pluginSystem->ShutdownPlugins();
 
-		//m_scriptingSystem = nullptr;
+		m_scriptingSystem = nullptr;
 
-		//m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PostEngine);
+		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PostEngine);
 
-		//m_navigationSystem = nullptr;
-		//m_layerStack.Clear();
+		m_navigationSystem = nullptr;
+		m_layerStack.Clear();
+
+		//todo_fabian: reimplement, we dont want to add Volt-Scene as a dependency to Volt-Application
 		//SceneManager::Shutdown();
 
-		////Amp::WWiseEngine::Get().TermWwise();
+		//Amp::WWiseEngine::Get().TermWwise();
 
-		//m_assetManager->Clear();
+		m_assetManager->Clear();
 
-		//m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
+		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
-		//m_assetManager = nullptr;
-		//g_assetSerializerRegistry.Clear();
-		//g_assetFactory.Clear();
+		m_assetManager = nullptr;
+		g_assetSerializerRegistry.Clear();
+		g_assetFactory.Clear();
 
-		//m_windowManager->DestroyMainWindow();
+		m_windowManager->DestroyMainWindow();
 
-		//m_graphicsContext = nullptr;
-		//m_rhiProxy = nullptr;
-		//WindowManager::ShutdownGLFW();
+		m_graphicsContext = nullptr;
+		m_rhiProxy = nullptr;
+		WindowManager::ShutdownGLFW();
 
-		//m_pluginSystem->UnloadPlugins();
-		//m_pluginSystem = nullptr;
-		//m_pluginRegistry = nullptr;
-		//m_projectManager = nullptr;
+		m_pluginSystem->UnloadPlugins();
+		m_pluginSystem = nullptr;
+		m_pluginRegistry = nullptr;
+		m_projectManager = nullptr;
 
-		//m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
+		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
 
-		//FileSystem::Shutdown();
+		FileSystem::Shutdown();
 
-		//m_subSystemManager = nullptr;
+		m_subSystemManager = nullptr;
 
-		//g_heapAllocator.reset();
-		//s_instance = nullptr;
+		g_heapAllocator.reset();
+	}
+
+	void Application::Run()
+	{
+		VT_PROFILE_THREAD("Main");
+
+		m_isRunning = true;
+
+		while (m_isRunning)
+		{
+			VT_PROFILE_FRAME("Frame");
+			MainUpdate();
+
+			//m_frameIndex++;
+		}
+	}
+
+	void Application::Quit()
+	{
+		m_isRunning = false;
 	}
 
 	void Application::PushLayer(ApplicationLayer* layer)
-	{}
+	{
+		m_layerStack.PushLayer(layer);
+	}
 
 	void Volt::Application::PopLayer(ApplicationLayer* layer)
-	{}
+	{
+		m_layerStack.PopLayer(layer);
+	}
+
+	void Application::LaunchMainWindow()
+	{
+		if (!m_windowManager->HasMainWindow())
+		{
+			WindowProperties windowProperties{};
+			windowProperties.Width = m_appCreateInfo.width;
+			windowProperties.Height = m_appCreateInfo.height;
+			windowProperties.VSync = m_appCreateInfo.useVSync;
+			windowProperties.Title = m_appCreateInfo.title;
+			windowProperties.WindowMode = m_appCreateInfo.windowMode;
+			windowProperties.IconPath = m_appCreateInfo.iconPath;
+			windowProperties.CursorPath = m_appCreateInfo.cursorPath;
+			windowProperties.UseTitlebar = m_appCreateInfo.useTitlebar;
+			windowProperties.UseCustomTitlebar = m_appCreateInfo.useCustomTitlebar;
+
+			if (m_appCreateInfo.isRuntime)
+			{
+				windowProperties.Title = ProjectManager::GetProject().name;
+				windowProperties.CursorPath = ProjectManager::GetProject().cursorFilepath;
+				windowProperties.IconPath = ProjectManager::GetProject().iconFilepath;
+			}
+
+			m_windowManager->CreateMainWindow(windowProperties);
+
+			if (m_imguiSubSystem && m_appCreateInfo.enableImGui)
+			{
+				// Make sure that the main window exits, it is required to initialize ImGui.
+				m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
+				m_imguiSubSystem->SetupContext();
+			}
+
+			//if we are already running, we have to skip a frame so that we dont start trying to render witout beginning rendering
+			if (m_isRunning)
+			{
+				m_skipPresentThisFrame = true;
+			}
+		}
+	}
+
+	void Application::MainUpdate()
+	{
+		RHI::GraphicsContext::Update();
+
+		WindowManager::Get().BeginFrame();
+
+		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
+		m_frameTimer.Update();
+
+		{
+			VT_PROFILE_SCOPE("Application::Render");
+
+			AppPreRenderEvent preRenderEvent;
+			EventSystem::DispatchEvent(preRenderEvent);
+
+			AppRenderEvent renderEvent(m_currentDeltaTime);
+			EventSystem::DispatchEvent(renderEvent);
+
+			m_windowManager->Render(m_currentDeltaTime);
+		}
+
+		{
+			VT_PROFILE_SCOPE("Application::Update");
+
+			AppUpdateEvent updateEvent(m_currentDeltaTime);
+			EventSystem::DispatchEvent(updateEvent);
+
+			AssetManager::Update();
+		}
+
+		{
+			//VT_PROFILE_SCOPE("Application::UpdateAudio");
+			//Amp::WWiseEngine::Get().Update();
+		}
+
+		if (m_appCreateInfo.enableImGui && m_imguiSubSystem->IsInitialized() && !m_skipPresentThisFrame)
+		{
+			VT_PROFILE_SCOPE("Application::ImGui");
+
+			m_imguiSubSystem->Begin();
+
+			AppImGuiUpdateEvent imguiEvent{};
+			EventSystem::DispatchEvent(imguiEvent);
+
+			// #TODO_Ivar: HACK! Will keep this here for now. We need to make sure that the scene renderer output image is ready. 
+			RenderGraphExecutionThread::WaitForFinishedExecution();
+			m_imguiSubSystem->End();
+		}
+		else
+		{
+			RenderGraphExecutionThread::WaitForFinishedExecution();
+		}
+
+		{
+			VT_PROFILE_SCOPE("Application::PostFrameUpdate");
+			AppPostFrameUpdateEvent postFrameUpdateEvent{ m_currentDeltaTime };
+			EventSystem::DispatchEvent(postFrameUpdateEvent);
+		}
+
+		if (!m_skipPresentThisFrame)
+		{
+			WindowManager::Get().Present();
+		}
+		m_skipPresentThisFrame = false;
+
+		m_frameTimer.Accumulate();
+	}
+
+	void Application::CreateGraphicsContext()
+	{
+		RHI::GraphicsContextCreateInfo cinfo{};
+		cinfo.graphicsApi = RHI::GraphicsAPI::Vulkan;
+
+		if (cinfo.graphicsApi == RHI::GraphicsAPI::Vulkan)
+		{
+			m_rhiProxy = RHI::CreateVulkanRHIProxy();
+		}
+		else if (cinfo.graphicsApi == RHI::GraphicsAPI::D3D12)
+		{
+			m_rhiProxy = RHI::CreateD3D12RHIProxy();
+		}
+
+		{
+			RHI::RHICallbackInfo callbackInfo{};
+			callbackInfo.resourceManagementInfo.resourceDeletionCallback = Renderer::DestroyResource;
+			callbackInfo.requestCloseEventCallback = []()
+			{
+				WindowCloseEvent closeEvent{};
+				EventSystem::DispatchEvent(closeEvent);
+			};
+
+			m_rhiProxy->SetRHICallbackInfo(callbackInfo);
+		}
+
+		m_graphicsContext = RHI::GraphicsContext::Create(cinfo);
+	}
+
+	void Application::SetupFrameCapture()
+	{
+		if (RHI::RHIProxy::GetInstance().GetFrameCapture())
+		{
+			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetFlags(RHI::FrameCaptureFlags::DisableOverlay);
+			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetCaptureFileTargetFilePath(ProjectManager::GetProjectDirectory() / ("Volt-" + ProjectManager::GetProject().name));
+		}
+	}
+
+
+	bool Application::OnAppUpdateEvent(class AppUpdateEvent& e)
+	{
+		return false;
+	}
+
+	bool Application::OnWindowCloseEvent(class WindowCloseEvent& e)
+	{
+		m_isRunning = false;
+		return false;
+	}
+
+	bool Application::OnWindowResizeEvent(class WindowResizeEvent& e)
+	{
+		WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
+
+		MainUpdate();
+		return false;
+	}
+
+	bool Application::OnViewportResizeEvent(class ViewportResizeEvent& e)
+	{
+		WindowManager::Get().GetMainWindow().SetViewportSize(e.GetWidth(), e.GetHeight());
+		return false;
+	}
 }

@@ -8,6 +8,8 @@
 
 #include <SubSystem/SubSystemManager.h>
 
+#include <EventSystem/EventListener.h>
+
 #include <CoreUtilities/Pointers/RefPtr.h>
 
 namespace Volt
@@ -21,6 +23,21 @@ namespace Volt
 		class GraphicsContext;
 		class RHIProxy;
 	}
+
+	class UIApplication;
+	class VTAPP_API UIApplicationEventListener : public EventListener
+	{
+	public:
+		UIApplicationEventListener(UIApplication& application);
+
+	private:
+		bool OnAppUpdateEvent(class AppUpdateEvent& e);
+		bool OnWindowCloseEvent(class WindowCloseEvent& e);
+		bool OnWindowResizeEvent(class WindowResizeEvent& e);
+		bool OnViewportResizeEvent(class ViewportResizeEvent& e);
+
+		UIApplication& m_application;
+	};
 
 	// A application type that should be used for UI only applictions,
 	// does not provide game systems such as physics, ...
@@ -39,8 +56,15 @@ namespace Volt
 	protected:
 		void LaunchMainWindow() override;
 	private:
+		friend class UIApplicationEventListener;
+
 		void CreateGraphicsContext();
 		void MainUpdate();
+
+		bool OnAppUpdateEvent(class AppUpdateEvent& e);
+		bool OnWindowCloseEvent(class WindowCloseEvent& e);
+		bool OnWindowResizeEvent(class WindowResizeEvent& e);
+		bool OnViewportResizeEvent(class ViewportResizeEvent& e);
 
 		const ApplicationCreationInfo m_info;
 
@@ -51,6 +75,7 @@ namespace Volt
 		RefPtr<RHI::RHIProxy> m_rhiProxy;
 
 		Scope<SubSystemManager> m_subSystemManager;
+		Scope<UIApplicationEventListener> m_eventListener;
 
 		WindowManager* m_windowManager = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
