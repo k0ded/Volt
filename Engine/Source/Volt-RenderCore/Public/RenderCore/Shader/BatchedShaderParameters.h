@@ -11,6 +11,11 @@
 
 namespace Volt
 {
+	namespace RHI
+	{
+		class ShaderParameterMap;
+	}
+
 	class VTRC_API BatchedShaderParameterAllocator
 	{
 	public:
@@ -28,17 +33,18 @@ namespace Volt
 
 	struct BatchedShaderParameter
 	{
-		BatchedShaderParameter(const RHI::ShaderResourceBinding* inResourceBinding)
-			: resourceBinding(inResourceBinding)
+		BatchedShaderParameter(const StringHash inBindingName, const RHI::ShaderResourceType inResourceType)
+			: bindingName(inBindingName), resourceType(inResourceType)
 		{ }
 
-		const RHI::ShaderResourceBinding* const resourceBinding;
+		const StringHash bindingName;
+		const RHI::ShaderResourceType resourceType;
 	};
 
 	struct BatchedBufferShaderParameter : public BatchedShaderParameter
 	{
-		BatchedBufferShaderParameter(const RHI::ShaderResourceBinding* inResourceBinding, RefPtr<RHI::BufferView> inBufferView)
-			: BatchedShaderParameter(inResourceBinding), bufferView(inBufferView)
+		BatchedBufferShaderParameter(const StringHash inBindingName, const RHI::ShaderResourceType inResourceType, RefPtr<RHI::BufferView> inBufferView)
+			: BatchedShaderParameter(inBindingName, inResourceType), bufferView(inBufferView)
 		{ }
 
 		RefPtr<RHI::BufferView> bufferView;
@@ -46,8 +52,8 @@ namespace Volt
 
 	struct BatchedTextureShaderParameter : public BatchedShaderParameter
 	{
-		BatchedTextureShaderParameter(const RHI::ShaderResourceBinding* inResourceBinding, RefPtr<RHI::ImageView> inImageView)
-			: BatchedShaderParameter(inResourceBinding), imageView(inImageView)
+		BatchedTextureShaderParameter(const StringHash inBindingName, const RHI::ShaderResourceType inResourceType, RefPtr<RHI::ImageView> inImageView)
+			: BatchedShaderParameter(inBindingName, inResourceType), imageView(inImageView)
 		{ }
 
 		RefPtr<RHI::ImageView> imageView;
@@ -56,9 +62,9 @@ namespace Volt
 	class VTRC_API BatchedShaderParameters
 	{
 	public:
-		void AddBufferParameter(const RHI::ShaderResourceBinding* resourceBinding, RefPtr<RHI::BufferView> bufferView);
-		void AddTextureParameter(const RHI::ShaderResourceBinding* resourceBinding, RefPtr<RHI::ImageView> imageView);
-		void BindParametersToDescriptorTable(RefPtr<RHI::DescriptorTable> descriptorTable) const;
+		void AddBufferParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::BufferView> bufferView);
+		void AddTextureParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::ImageView> imageView);
+		void BindParametersToDescriptorTable(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable) const;
 
 	private:
 		// #TODO_Ivar: Switch to inline allocator

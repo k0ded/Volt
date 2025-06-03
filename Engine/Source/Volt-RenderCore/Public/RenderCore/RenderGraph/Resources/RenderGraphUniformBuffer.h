@@ -36,4 +36,19 @@ namespace Volt
 	private:
 		RGUniformBufferDesc m_desc;
 	};
+
+	using RGUniformBufferRef = RGUniformBuffer*;
+
+	class VTRC_API RGUniformBufferSRV : public RGResourceSRV
+	{
+	public:
+		RGUniformBufferSRV(RGUniformBufferRef uniformBuffer);
+		~RGUniformBufferSRV() override = default;
+
+		RGResourceRef GetResource() const override { return m_resource; }
+
+	private:
+		RGUniformBufferRef m_resource;
+	};
+
 }

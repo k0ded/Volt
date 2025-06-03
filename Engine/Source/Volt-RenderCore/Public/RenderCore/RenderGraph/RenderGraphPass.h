@@ -36,6 +36,7 @@ namespace Volt
 
 		VT_INLINE void AddResourceRead(RGBufferSRVRef bufferSRV) { m_resourceReads.emplace_back(bufferSRV); }
 		VT_INLINE void AddResourceRead(RGTextureSRVRef textureSRV) { m_resourceReads.emplace_back(textureSRV); }
+		VT_INLINE void AddResourceRead(RGUniformBufferSRVRef uniformBufferSRV) { m_resourceReads.emplace_back(uniformBufferSRV); }
 
 		VT_INLINE void AddResourceWrite(RGBufferUAVRef bufferUAV) { m_resourceWrites.emplace_back(bufferUAV); }
 		VT_INLINE void AddResourceWrite(RGTextureUAVRef textureUAV) { m_resourceWrites.emplace_back(textureUAV); }
@@ -44,6 +45,7 @@ namespace Volt
 
 		VT_INLINE void AddResourceAccess(RGBufferRef buffer, RGResourceAccess accessType) { m_resourceAccesses.emplace_back(buffer, accessType); }
 		VT_INLINE void AddResourceAccess(RGTextureRef texture, RGResourceAccess accessType) { m_resourceAccesses.emplace_back(texture, accessType); }
+		VT_INLINE void AddResourceAccess(RGUniformBufferRef uniformBuffer, RGResourceAccess accessType) { m_resourceAccesses.emplace_back(uniformBuffer, accessType); }
 
 		VT_NODISCARD VT_INLINE const PagedVector<RGResourceSRVRef>& GetResourceReads() const { return m_resourceReads; }
 		VT_NODISCARD VT_INLINE const PagedVector<RGResourceUAVRef>& GetResourceWrites() const { return m_resourceWrites; }

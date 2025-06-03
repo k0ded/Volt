@@ -218,6 +218,10 @@ namespace Volt
 		RefPtr<RHI::UniformBuffer> GetRHIUniformBuffer(RGUniformBufferRef uniformBuffer);
 		RefPtr<RHI::Image> GetRHITexture(RGTextureRef texture);
 
+		// Private because we don't need to create a uniform buffer SRV
+		// outside of the Render Graph.
+		RGUniformBufferSRVRef CreateSRV(RGUniformBufferRef uniformBuffer);
+
 		TransientResourceSystem m_transientResourceSystem;
 		ExternalResourceRegistry m_registeredExternalResources;
 		StandaloneBarriers m_standaloneBarriers;
@@ -247,7 +251,7 @@ namespace Volt
 		newPass->flags = flags;
 
 		// Get all parameters accessed by shader.
-		// #TODO_Ivar: Add support for paged vector
+		// #TODO_Ivar: Add support for paged vector, or inline allocator
 		// #TODO_Ivar: Consider caching these.
 		Vector<ShaderParameterMetadata> parameterStructMetadata;
 		ParameterStruct::zzInternal_ProcessMembers(parameterStructMetadata);
@@ -265,8 +269,10 @@ namespace Volt
 				case ShaderParameterType::BufferUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
 				case ShaderParameterType::TextureSRV: newPass->AddResourceRead(*reinterpret_cast<RGTextureSRVRef*>(dataPtr)); break;
 				case ShaderParameterType::TextureUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
+				case ShaderParameterType::UniformBuffer: newPass->AddResourceRead(CreateSRV(*reinterpret_cast<RGUniformBufferRef*>(dataPtr))); break;
 				case ShaderParameterType::BufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGBufferRef*>(dataPtr), parameter.resourceAccessType); break;
 				case ShaderParameterType::TextureAccess: newPass->AddResourceAccess(*reinterpret_cast<RGTextureRef*>(dataPtr), parameter.resourceAccessType); break;
+				case ShaderParameterType::UniformBufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGUniformBufferRef*>(dataPtr), parameter.resourceAccessType); break;
 				case ShaderParameterType::RenderTargets:
 				{
 					VT_ENSURE(!EnumValueContainsFlag(flags, RenderGraphPassFlags::Compute));

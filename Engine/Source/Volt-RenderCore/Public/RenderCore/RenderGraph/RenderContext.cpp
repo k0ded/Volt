@@ -4,6 +4,7 @@
 #include "RenderCore/RenderGraph/RenderGraph.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
 #include "RenderCore/DescriptorTableCache.h"
+#include "RenderCore/Shader/BatchedShaderParameters.h"
 
 #include <RHIModule/Buffers/UniformBuffer.h>
 #include <RHIModule/Buffers/StorageBuffer.h>
@@ -350,13 +351,27 @@ namespace Volt
 	void RenderContext::SetTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
 		VT_ENSURE(m_descriptorTable);
-		VT_ENSURE(false);
+	
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding)
+		{
+			RefPtr<RHI::ImageView> imageView = m_renderGraph.GetRHITextureSRV(textureSRV);
+
+			m_descriptorTable->SetImageView(imageView, resourceBinding->set, resourceBinding->binding);
+		}
 	}
 
 	void RenderContext::SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
 		VT_ENSURE(m_descriptorTable);
-		VT_ENSURE(false);
+
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding)
+		{
+			RefPtr<RHI::ImageView> imageView = m_renderGraph.GetRHITextureUAV(textureUAV);
+
+			m_descriptorTable->SetImageView(imageView, resourceBinding->set, resourceBinding->binding);
+		}
 	}
 
 	void RenderContext::SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
@@ -389,6 +404,38 @@ namespace Volt
 				}
 			}
 		}
+	}
+
+	void RenderContext::CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	{
+		RefPtr<RHI::BufferView> bufferView = m_renderGraph.GetRHIBufferSRV(bufferSRV);
+		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::StructuredBuffer, bufferView);
+	}
+
+	void RenderContext::CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	{
+		RefPtr<RHI::BufferView> bufferView = m_renderGraph.GetRHIBufferUAV(bufferUAV);
+		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::StructuredBuffer, bufferView);
+	}
+
+	void RenderContext::CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	{
+		RefPtr<RHI::ImageView> imageView = m_renderGraph.GetRHITextureSRV(textureSRV);
+		batchedShaderParameters.AddTextureParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::Texture, imageView);
+	}
+
+	void RenderContext::CollectTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	{
+		RefPtr<RHI::ImageView> imageView = m_renderGraph.GetRHITextureUAV(textureUAV);
+		batchedShaderParameters.AddTextureParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::Texture, imageView);
+	}
+
+	void RenderContext::CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	{
+		RefPtr<RHI::UniformBuffer> rhiUniformBuffer = m_renderGraph.GetRHIUniformBuffer(uniformBuffer);
+		RefPtr<RHI::BufferView> bufferView = rhiUniformBuffer->GetView();
+
+		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::UniformBuffer, bufferView);
 	}
 
 	void* RenderContext::MapInternal(RGBufferUAVRef buffer)

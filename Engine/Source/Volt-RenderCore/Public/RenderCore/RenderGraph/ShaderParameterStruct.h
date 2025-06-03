@@ -24,6 +24,7 @@ namespace Volt
 		Parameter,
 		BufferAccess,
 		TextureAccess,
+		UniformBufferAccess,
 		RenderTargets
 	};
 
@@ -109,6 +110,12 @@ public: \
 public: \
 	Volt::RGTextureRef paramName; \
 	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureRef, paramName, Volt::ShaderParameterType::TextureAccess, access)
+
+#define RG_UNIFORM_BUFFER_ACCESS(paramName, access) \
+	MemberID##paramName; \
+public: \
+	Volt::RGUniformBufferRef paramName; \
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGUniformBufferRef, paramName, Volt::ShaderParameterType::UniformBufferAccess, access)
 
 #define RG_RENDER_TARGETS() \
 	MemberIDrenderTargets; \

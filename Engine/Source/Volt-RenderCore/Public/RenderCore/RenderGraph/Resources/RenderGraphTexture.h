@@ -21,6 +21,7 @@ namespace Volt
 			resultDesc.usage = usage;
 			resultDesc.debugName = name;
 			resultDesc.imageType = RHI::ResourceType::Image2D;
+			resultDesc.format = PixelFormat;
 
 			return resultDesc;
 		}

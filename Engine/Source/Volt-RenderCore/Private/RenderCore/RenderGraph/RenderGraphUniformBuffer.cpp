@@ -14,4 +14,10 @@ namespace Volt
 	{
 		return RGResourceType::UniformBuffer;
 	}
+
+	RGUniformBufferSRV::RGUniformBufferSRV(RGUniformBufferRef uniformBuffer)
+		: m_resource(uniformBuffer)
+	{
+
+	}
 }

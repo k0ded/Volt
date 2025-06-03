@@ -5,6 +5,10 @@
 #include "RenderCore/RenderGraph/RenderGraphUtils.h"
 #include "RenderCore/RenderGraph/ShaderParameterStruct.h"
 
+#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Graphics/GraphicsDevice.h>
+#include <RHIModule/Graphics/DeviceQueue.h>
+
 namespace Volt
 {
 	BEGIN_SHADER_PARAMETER_STRUCT(CopyBufferParameters)
@@ -51,25 +55,25 @@ namespace Volt
 	}
 
 	BEGIN_SHADER_PARAMETER_STRUCT(MappedUniformBufferUploadParameters)
-		SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<uint>, UniformBuffer)
+		RG_UNIFORM_BUFFER_ACCESS(CopyDst, RGResourceAccess::CopyDst)
 	END_SHADER_PARAMETER_STRUCT()
 
-	void AddMappedBufferUpload(RenderGraph& renderGraph, RGUniformBufferRef dstUAV, const void* data, const size_t dataSize)
+	void AddMappedBufferUpload(RenderGraph& renderGraph, RGUniformBufferRef dstUniformBuffer, const void* data, const size_t dataSize)
 	{
 		void* tempData = renderGraph.AllocData(dataSize);
 		memcpy_s(tempData, dataSize, data, dataSize);
 
 		MappedUniformBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<MappedUniformBufferUploadParameters>();
-		stagingParameters->UniformBuffer = dstUAV;
+		stagingParameters->CopyDst = dstUniformBuffer;
 
 		renderGraph.AddPass("Mapped Upload",
-			RenderGraphPassFlags::Compute,
+			RenderGraphPassFlags::None,
 			stagingParameters,
 			[stagingParameters, tempData, dataSize](RenderContext& context)
 		{
-			uint8_t* mappedPtr = context.MapBuffer<uint8_t>(stagingParameters->UniformBuffer);
+			uint8_t* mappedPtr = context.MapBuffer<uint8_t>(stagingParameters->CopyDst);
 			memcpy_s(mappedPtr, dataSize, tempData, dataSize);
-			context.UnmapBuffer(stagingParameters->UniformBuffer);
+			context.UnmapBuffer(stagingParameters->CopyDst);
 		});
 	}
 

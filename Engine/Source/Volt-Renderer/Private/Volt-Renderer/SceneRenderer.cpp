@@ -118,7 +118,7 @@ namespace Volt
 				[passParameters, targetTexture, width, height, &meshRenderer = m_meshRenderer](RenderContext& context)
 			{
 				BatchedShaderParameters batchedShaderParameters;
-
+				context.CollectParameters(passParameters, batchedShaderParameters);
 
 				RenderingInfo2 renderingInfo = context.CreateRenderingInfo(width, height, passParameters->renderTargets);
 				context.BeginRendering(renderingInfo);

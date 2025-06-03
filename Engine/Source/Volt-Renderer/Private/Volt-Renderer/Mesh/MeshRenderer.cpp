@@ -55,10 +55,10 @@ namespace Volt
 	void MeshRenderer::Render(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters)
 	{
 		RefPtr<RHI::CommandBuffer> commandBuffer = renderContext.GetRHICommandBuffer();
-	
+
 		for (const RenderCommand& cmd : m_renderCommands)
 		{
-			batchedShaderParameters.BindParametersToDescriptorTable(cmd.descriptorTable);
+			batchedShaderParameters.BindParametersToDescriptorTable(cmd.renderPipeline->GetShaderParameterMaps(), cmd.descriptorTable);
 
 			commandBuffer->BindPipeline(cmd.renderPipeline);
 			commandBuffer->BindDescriptorTable(cmd.descriptorTable);

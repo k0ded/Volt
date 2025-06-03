@@ -15,6 +15,7 @@ namespace Volt
 	class RenderGraph;
 	class SharedRenderContext;
 	class RenderGraphPass;
+	class BatchedShaderParameters;
 
 	struct RenderingInfo2
 	{
@@ -68,6 +69,7 @@ namespace Volt
 		void UnmapBuffer(RGUniformBufferRef buffer);
 
 		template<typename ShaderType> void SetParameters(RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* parameters);
+		template<typename ParameterStruct> void CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters);
 
 		RefPtr<RHI::CommandBuffer> GetRHICommandBuffer();
 
@@ -87,8 +89,13 @@ namespace Volt
 		void SetTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
-
 		void SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
+
+		void CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
+		void CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
+		void CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
+		void CollectTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
+		void CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
 
 		void* MapInternal(RGBufferUAVRef buffer);
 		void* MapInternal(RGUniformBufferRef buffer);
@@ -144,6 +151,30 @@ namespace Volt
 				case ShaderParameterType::TextureUAV: SetTextureUAVParameter(*reinterpret_cast<RGTextureUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::UniformBuffer: SetUniformBufferParameter(*reinterpret_cast<RGUniformBufferRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::Parameter: SetShaderParameter(parameterDataPtr, parameter, shaderParameterMap); break;
+			}
+		}
+	}
+
+	template<typename ParameterStruct>
+	void RenderContext::CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters)
+	{
+		Vector<ShaderParameterMetadata> parameterStructMetadata;
+		ParameterStruct::zzInternal_ProcessMembers(parameterStructMetadata);
+
+		// We need to use const_cast here because the resource parameters need to be non-const pointers.
+		uint8_t* parametersStructBytePtr = reinterpret_cast<uint8_t*>(const_cast<ParameterStruct*>(parameters));
+
+		for (const auto& parameter : parameterStructMetadata)
+		{
+			uint8_t* parameterDataPtr = &parametersStructBytePtr[parameter.structOffset];
+
+			switch (parameter.parameterType)
+			{
+				case ShaderParameterType::BufferSRV: CollectBufferSRVParameter(*reinterpret_cast<RGBufferSRVRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
+				case ShaderParameterType::BufferUAV: CollectBufferUAVParameter(*reinterpret_cast<RGBufferUAVRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
+				case ShaderParameterType::TextureSRV: CollectTextureSRVParameter(*reinterpret_cast<RGTextureSRVRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
+				case ShaderParameterType::TextureUAV: CollectTextureUAVParameter(*reinterpret_cast<RGTextureUAVRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
+				case ShaderParameterType::UniformBuffer: CollectUniformBufferParameter(*reinterpret_cast<RGUniformBufferRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
 			}
 		}
 	}
