@@ -64,9 +64,16 @@ namespace VoltSharpmake
 
             conf.Defines.Add("CPPHTTPLIB_OPENSSL_SUPPORT");
 
-        }
+			string subFolder = "Release";
+			if (target.Optimization == Optimization.Debug)
+			{
+				subFolder = "Debug";
+			}
 
-        public override void ConfigureWin64(Configuration conf, CommonTarget target)
+			conf.EventPostBuild.Add(@"copy /Y " + "\"" + Path.Combine(Globals.ThirdPartyDirectory, "mimalloc", "bin", subFolder) + "\\mimalloc-redirect.dll\"" + " \"" + conf.TargetPath + "\"");
+		}
+
+		public override void ConfigureWin64(Configuration conf, CommonTarget target)
         {
             base.ConfigureWin64(conf, target);
 

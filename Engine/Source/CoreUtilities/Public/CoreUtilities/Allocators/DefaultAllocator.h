@@ -2,6 +2,8 @@
 
 #include "CoreUtilities/Config.h"
 
+#include "CoreUtilities/Allocators/HeapAllocator.h"
+
 class VTCOREUTIL_API DefaultAllocator
 {
 public:
@@ -9,5 +11,7 @@ public:
 	static void Free(void* pointer, size_t alignment);
 
 private:
+	inline static HeapAllocator s_allocator;
+
 	DefaultAllocator() = delete;
 };

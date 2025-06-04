@@ -22,7 +22,6 @@ namespace VoltSharpmake
 
             conf.PrecompHeader = "vtpch.h";
             conf.PrecompSource = "vtpch.cpp";
-			conf.IsExcludedFromBuild = true;
 
             conf.AddPublicDependency<LogModule>(target);
             conf.AddPublicDependency<AssetSystemModule>(target);

@@ -45,7 +45,6 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/Allocator.h>
 
 namespace Volt
 {
@@ -89,8 +88,6 @@ namespace Volt
 	{
 		VT_ASSERT_MSG(!s_instance, "Application already exists!");
 		s_instance = this;
-
-		g_heapAllocator = CreateScope<PagedHeapAllocator>();
 
 		FileSystem::Initialize();
 		FileSystem::InitializeWorkingDirectory(info.isRuntime, commandLineBuilder);
@@ -238,7 +235,6 @@ namespace Volt
 
 		m_subSystemManager = nullptr;
 
-		g_heapAllocator.reset();
 		s_instance = nullptr;
 	}
 

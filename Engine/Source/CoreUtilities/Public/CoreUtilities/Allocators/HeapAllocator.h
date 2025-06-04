@@ -2,12 +2,12 @@
 
 #include "CoreUtilities/Config.h"
 
+#include <unordered_set>
+
 class VTCOREUTIL_API HeapAllocator
 {
 public:
-	static void* Allocate(size_t size, size_t alignment);
-	static void Free(void* pointer, size_t alignment);
-
-private:
-	HeapAllocator() = delete;
+	HeapAllocator();
+	void* Allocate(size_t size, size_t alignment);
+	void Free(void* pointer);
 };
