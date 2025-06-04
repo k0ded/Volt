@@ -28,6 +28,8 @@ namespace VoltSharpmake
 			conf.TargetPath = @"[project.RootPath]\bin\" + libSubFolder;
 			conf.TargetLibraryPath = @"[project.RootPath]\bin\" + libSubFolder;
 			conf.Output = Configuration.OutputType.Dll;
+
+			conf.TargetCopyFiles.Add(Path.Combine(Globals.ThirdPartyDirectory, "mimalloc", "bin", libSubFolder) + "\\mimalloc-redirect.dll");
 		}
 	}
 }

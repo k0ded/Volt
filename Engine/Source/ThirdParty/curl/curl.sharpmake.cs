@@ -28,6 +28,11 @@ namespace VoltSharpmake
 
 			string binPath = @"[project.RootPath]\lib\";
 			conf.EventPostBuild.Add(@"copy /Y " + "\"" + binPath + "\\" + "libcurl" + ".dll\"" + " \"" + Globals.BinariesDirectory + "\"");
+
+			conf.TargetCopyFiles.Add(Globals.BinariesDirectory + "\\libcrypto-1_1-x64.dll");
+			conf.TargetCopyFiles.Add(Globals.BinariesDirectory + "\\libssl-1_1-x64.dll");
+			conf.TargetCopyFiles.Add(Globals.BinariesDirectory + "\\libcrypto-3-x64.dll");
+			conf.TargetCopyFiles.Add(Globals.BinariesDirectory + "\\libssl-3-x64.dll");
 		}
 	}
 }
