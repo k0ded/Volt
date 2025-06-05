@@ -935,6 +935,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		m_commandBuffer->Begin();
+		m_commandBuffer->BeginMarker("RenderGraph::Execute", { 1.f, 1.f, 1.f, 1.f });
 		for (uint32_t passIndex = 0; auto pass : m_passes)
 		{
 			const CompiledPass& compiledPass = m_compiledPasses.at(passIndex);
@@ -967,6 +968,7 @@ namespace Volt
 
 			passIndex++;
 		}
+		m_commandBuffer->EndMarker();
 		m_commandBuffer->End();
 		m_commandBuffer->ExecuteWithFence(m_executionFence);
 

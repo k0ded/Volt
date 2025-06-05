@@ -82,7 +82,9 @@ namespace Volt::RHI
 		{
 			RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
 			commandBuffer->Begin();
+			commandBuffer->BeginMarker("Draw ImGui", { 1.f, 1.f, 1.f, 1.f });
 			ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->GetHandle<VkCommandBuffer>());
+			commandBuffer->EndMarker();
 			commandBuffer->End();
 			commandBuffer->ExecuteAndWait();
 
