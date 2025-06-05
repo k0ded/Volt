@@ -46,7 +46,7 @@ namespace Volt::RHI
 		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
 		commandBuffer->Begin();
 
-		Vector<ResourceBarrierInfo> barriers{};
+		BarrierVector barriers{};
 
 		// RayGen
 		{

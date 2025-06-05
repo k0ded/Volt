@@ -57,6 +57,7 @@ void* HeapAllocator::Allocate(size_t size, size_t alignment)
 #endif
 	}
 
+	VT_PROFILE_ALLOC(resultPtr, size);
 	return resultPtr;
 }
 
@@ -72,4 +73,6 @@ void HeapAllocator::Free(void* pointer)
 #else
 	_aligned_free(pointer);
 #endif
+
+	VT_PROFILE_FREE(pointer);
 }

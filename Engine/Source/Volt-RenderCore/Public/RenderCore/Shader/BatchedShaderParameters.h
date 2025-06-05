@@ -8,6 +8,7 @@
 #include <RHIModule/Descriptors/DescriptorTable.h>
 
 #include <CoreUtilities/Allocators/LinearAllocator.h>
+#include <CoreUtilities/Allocators//InlineAllocator.h>
 
 namespace Volt
 {
@@ -67,8 +68,9 @@ namespace Volt
 		void BindParametersToDescriptorTable(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable) const;
 
 	private:
-		// #TODO_Ivar: Switch to inline allocator
-		PagedVector<BatchedShaderParameter*> m_parameters;
+		inline static constexpr size_t NumMaxShaderParameters = 64;
+
+		Vector<BatchedShaderParameter*, InlineAllocator<BatchedShaderParameter*, NumMaxShaderParameters>> m_parameters;
 		BatchedShaderParameterAllocator m_allocator;
 	};
 }

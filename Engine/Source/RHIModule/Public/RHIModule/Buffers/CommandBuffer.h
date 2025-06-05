@@ -18,6 +18,7 @@
 #include <CoreUtilities/Containers/StackVector.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Allocators/Handle.h>
+#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt::RHI
 {
@@ -39,6 +40,8 @@ namespace Volt::RHI
 		Primary,
 		Secondary
 	};
+
+	using BarrierVector = Vector<ResourceBarrierInfo, InlineAllocator<ResourceBarrierInfo, 32>>;
 
 	class VTRHI_API CommandBuffer : public RHIInterface
 	{
@@ -90,7 +93,7 @@ namespace Volt::RHI
 		virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
 		virtual void EndRendering() = 0;
 
-		virtual void ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers) = 0;
+		virtual void ResourceBarrier(const BarrierVector& resourceBarriers) = 0;
 
 		virtual void BuildAccelerationStructures(const Vector<AccelerationStructureBuildGeometryInfo>& buildInfos, const Vector<AccelerationStructureBuildRanges>& buildRanges) = 0;
 

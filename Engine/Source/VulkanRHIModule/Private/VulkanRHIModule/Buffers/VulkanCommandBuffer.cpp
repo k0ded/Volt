@@ -895,13 +895,17 @@ namespace Volt::RHI
 		GraphicsContext::GetResourceStateTracker()->TransitionResource(barrierInfo.resource, barrierInfo.dstStage, barrierInfo.dstAccess, barrierInfo.dstLayout);
 	}
 
-	void VulkanCommandBuffer::ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers)
+	void VulkanCommandBuffer::ResourceBarrier(const BarrierVector& resourceBarriers)
 	{
 		VT_PROFILE_FUNCTION();
 
-		Vector<VkImageMemoryBarrier2> imageBarriers{};
-		Vector<VkBufferMemoryBarrier2> bufferBarriers{};
-		Vector<VkMemoryBarrier2> memoryBarriers{};
+		using ImageBarrierVector = Vector<VkImageMemoryBarrier2, InlineAllocator<VkImageMemoryBarrier2, 16>>;
+		using BufferBarrierVector = Vector<VkBufferMemoryBarrier2, InlineAllocator<VkBufferMemoryBarrier2, 16>>;
+		using GlobalBarrierVector = Vector<VkMemoryBarrier2, InlineAllocator<VkMemoryBarrier2, 16>>;
+
+		ImageBarrierVector imageBarriers{};
+		BufferBarrierVector bufferBarriers{};
+		GlobalBarrierVector memoryBarriers{};
 
 		for (const auto& resourceBarrier : resourceBarriers)
 		{

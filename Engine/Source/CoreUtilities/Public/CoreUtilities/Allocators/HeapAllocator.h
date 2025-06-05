@@ -2,8 +2,6 @@
 
 #include "CoreUtilities/Config.h"
 
-#include <unordered_set>
-
 class VTCOREUTIL_API HeapAllocator
 {
 public:

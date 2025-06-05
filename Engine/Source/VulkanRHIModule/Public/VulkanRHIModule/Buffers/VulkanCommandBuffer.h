@@ -65,7 +65,7 @@ namespace Volt::RHI
 		void BeginRendering(const RenderingInfo& renderingInfo) override;
 		void EndRendering() override;
 
-		void ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers) override;
+		void ResourceBarrier(const BarrierVector& resourceBarriers) override;
 
 		void BuildAccelerationStructures(const Vector<AccelerationStructureBuildGeometryInfo>& buildInfos, const Vector<AccelerationStructureBuildRanges>& buildRanges) override;
 

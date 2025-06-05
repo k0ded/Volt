@@ -1014,7 +1014,7 @@ namespace Volt
 			return;
 		}
 
-		Vector<RHI::ResourceBarrierInfo> resultBarriers;
+		RHI::BarrierVector resultBarriers;
 		resultBarriers.reserve(passBarriers.GetBarrierCount());
 
 		for (const auto& passBarrier : passBarriers.GetBarriers())

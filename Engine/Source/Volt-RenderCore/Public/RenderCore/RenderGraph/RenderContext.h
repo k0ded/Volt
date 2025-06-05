@@ -9,6 +9,7 @@
 #include <RHIModule/Buffers/UniformBuffer.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt
 {
@@ -105,8 +106,7 @@ namespace Volt
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::DescriptorTable> m_descriptorTable;
 
-		// #TODO_Ivar: Move to an inline allocator
-		PagedVector<PerStageShaderParameters> m_perStageShaderParameters;
+		Vector<PerStageShaderParameters, InlineAllocator<PerStageShaderParameters, 16>> m_perStageShaderParameters;
 
 		RenderGraph& m_renderGraph;
 		RenderGraphPass* m_currentPass;
