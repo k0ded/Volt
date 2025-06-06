@@ -32,7 +32,9 @@
 #include <VulkanRHIModule/VulkanRHIProxy.h>
 #include <D3D12RHIModule/D3D12RHIProxy.h>
 
-#include <Amp/WWiseEngine/WWiseEngine.h>
+#include "Volt-Audio/AudioSystem/IAudioSystem.h"
+#include "Volt-Audio/AudioSystem/AudioSystemFactory.h"
+
 #include <Navigation/Core/NavigationSystem.h>
 
 #include <LogModule/Log.h>
@@ -159,20 +161,10 @@ namespace Volt
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
 		m_physicsSubSystem = SubSystemManager::GetSubSystem<PhysicsSubSystem>();
 
-		//Init AudioEngine
+		//Init AudioSystem
 		{
-			//std::filesystem::path defaultPath = ProjectManager::GetAudioBanksDirectory();
-			//Amp::WWiseEngine::Get().InitWWise(defaultPath.c_str());
-			//if (FileSystem::Exists(defaultPath))
-			//{
-			//	for (auto bankFile : std::filesystem::directory_iterator(ProjectManager::GetAudioBanksDirectory()))
-			//	{
-			//		if (bankFile.path().extension() == L".bnk")
-			//		{
-			//			Amp::WWiseEngine::Get().LoadBank(bankFile.path().filename().string().c_str());
-			//		}
-			//	}
-			//}
+			//TODO: Read .conf file to create other types of audio solutions and a headless mode
+			m_audioSystem = Audio::AudioSystemFactory::Create(Audio::AudioBackend::WWISE);
 		}
 
 		m_navigationSystem = CreateScope<Volt::AI::NavigationSystem>();
@@ -215,7 +207,7 @@ namespace Volt
 		m_layerStack.Clear();
 		SceneManager::Shutdown();
 
-		//Amp::WWiseEngine::Get().TermWwise();
+		m_audioSystem->Release();
 
 		m_assetManager->Clear();
 
@@ -353,8 +345,8 @@ namespace Volt
 		}
 
 		{
-			//VT_PROFILE_SCOPE("Application::UpdateAudio");
-			//Amp::WWiseEngine::Get().Update();
+			VT_PROFILE_SCOPE("Application::UpdateAudio");
+			m_audioSystem->Update();
 		}
 
 		if (m_info.enableImGui && m_imguiSubSystem->IsInitialized() && !m_skipPresentThisFrame)

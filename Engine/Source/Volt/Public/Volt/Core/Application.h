@@ -19,13 +19,6 @@
 #include <CoreUtilities/Pointers/RefPtr.h>
 #include <CoreUtilities/CommandLineBuilder.h>
 
-namespace Amp
-{
-	class AudioManager;
-
-	enum class WindowMode : uint32_t;
-}
-
 class Log;
 
 namespace Volt
@@ -33,6 +26,11 @@ namespace Volt
 	namespace AI
 	{
 		class NavigationSystem;
+	}
+
+	namespace Audio
+	{
+		class IAudioSystem;
 	}
 
 	struct ApplicationInfo
@@ -126,6 +124,8 @@ namespace Volt
 		const CommandLineBuilder& GetCommandLineBuilder() const { return m_commandLineBuilder; }
 		const MultiTimer& GetFrameTimer() const { return m_frameTimer; }
 
+		Audio::IAudioSystem& GetAudioSystem() { return *m_audioSystem; }
+
 	private:
 		friend class ApplicationEventListener;
 
@@ -167,6 +167,7 @@ namespace Volt
 		Scope<ScriptingSystem> m_scriptingSystem;
 		Scope<ApplicationEventListener> m_eventListener;
 		Scope<SteamImplementation> m_steamImplementation;
+		Scope<Audio::IAudioSystem> m_audioSystem;
 
 		ProjectManager* m_projectManager = nullptr;
 		PluginRegistry* m_pluginRegistry = nullptr;
