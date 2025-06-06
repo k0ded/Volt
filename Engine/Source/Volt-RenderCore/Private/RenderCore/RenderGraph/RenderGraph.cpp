@@ -110,6 +110,8 @@ namespace Volt
 	RenderGraph::RenderGraph(RefPtr<RHI::CommandBuffer> commandBuffer)
 		: m_commandBuffer(commandBuffer)
 	{
+		VT_PROFILE_FUNCTION();
+
 		RHI::FenceCreateInfo createInfo{};
 		m_executionFence = RHI::Fence::Create(createInfo);
 	}
@@ -491,7 +493,7 @@ namespace Volt
 		///// Calculate Ref Count //////
 		for (auto pass : m_passes)
 		{
-			pass->refCount = static_cast<uint32_t>(pass->GetResourceWrites().size() + pass->GetResourceRenderTargetAccesses().size());
+			pass->refCount = static_cast<uint32_t>(pass->GetResourceWrites().size());
 
 			for (auto resource : pass->GetResourceReads())
 			{
@@ -514,6 +516,32 @@ namespace Volt
 				{
 					resource->producer = pass;
 					resource->isProduced = true;
+
+					// If this pass is the render targets producer, we need to increase the ref count of the pass.
+					pass->refCount++;
+				}
+				else if (resource->producer != pass)
+				{
+					// We add a reference if we are not the producer 
+					// of this resource, because we can then consider it being a "read"
+					resource->AddRef();
+				}
+			}
+
+			for (auto resourceAccess : pass->GetResourceAccesses())
+			{
+				// Copy Dst can be seen as a "produce" operation, as it puts data
+				// into the resource.
+				if (resourceAccess.accessType == RGResourceAccess::CopyDst)
+				{
+					if (!resourceAccess.resource->producer)
+					{
+						resourceAccess.resource->producer = pass;
+						resourceAccess.resource->isProduced = true;
+					}
+
+					// We need to increase the ref count of the pass as well.
+					pass->refCount++;
 				}
 			}
 		}
@@ -562,6 +590,18 @@ namespace Volt
 					if (resource->GetRefCount() == 0)
 					{
 						unreferencedResources.emplace_back(resource);
+					}
+				}
+
+				for (auto resource : producer->GetResourceRenderTargetAccesses())
+				{
+					if (producer != resource->producer)
+					{
+						resource->DecRef();
+						if (resource->GetRefCount() == 0)
+						{
+							unreferencedResources.emplace_back(resource);
+						}
 					}
 				}
 
@@ -936,9 +976,9 @@ namespace Volt
 
 		m_commandBuffer->Begin();
 		m_commandBuffer->BeginMarker("RenderGraph::Execute", { 1.f, 1.f, 1.f, 1.f });
-		for (uint32_t passIndex = 0; auto pass : m_passes)
+		for (auto pass : m_passes)
 		{
-			const CompiledPass& compiledPass = m_compiledPasses.at(passIndex);
+			const CompiledPass& compiledPass = m_compiledPasses.at(pass->passIndex);
 
 			if (pass->isCulled)
 			{
@@ -965,8 +1005,6 @@ namespace Volt
 				// #TODO_Ivar: This doesn't work correctly yet.
 				m_transientResourceSystem.SurrenderResource(resource, 0);
 			}
-
-			passIndex++;
 		}
 		m_commandBuffer->EndMarker();
 		m_commandBuffer->End();

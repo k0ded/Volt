@@ -14,24 +14,7 @@
 
 namespace Volt
 {
-	struct MeshTestVS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(MeshTestVS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
-		END_SHADER_PARAMETER_STRUCT()
-	};
-	REGISTER_SHADER(MeshTestVS, "Engine/Shaders/Source/RenderPipelineLegacy/DepthPrePass.hlsl", "MainVS", Vertex);
-
-	struct MeshTestPS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(MeshTestPS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-		END_SHADER_PARAMETER_STRUCT()
-	};
-	REGISTER_SHADER(MeshTestPS, "Engine/Shaders/Source/RenderPipelineLegacy/DepthPrePass.hlsl", "MainPS", Pixel);
-
-	void MeshRenderer::BuildRenderCommands(Ref<RenderScene> renderScene)
+	void MeshRenderer::BuildRenderCommands(Ref<RenderScene> renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -44,7 +27,7 @@ namespace Volt
 			size_t subMeshHash;
 			size_t renderPipelineHash;
 		
-			RefPtr<RHI::StorageBuffer> vertexBuffer;
+			MeshBatch::VertexBufferVector vertexBuffers;
 			RefPtr<RHI::StorageBuffer> indexBuffer;
 			RefPtr<RHI::RenderPipeline> renderPipeline;
 		};
@@ -52,23 +35,47 @@ namespace Volt
 		Vector<RenderCommandExt> renderCommandExts;
 		renderCommandExts.reserve(renderScene->GetRenderObjectCount());
 
-		// First get all commands, their info and the requried hashes for sorting.
+		const RHI::ShaderInfo& vertexShaderInfo = vertexShader->GetShaderInfo();
+
+		// First get all commands, their info and the required hashes for sorting.
 		for (const RenderPrimitiveData& renderPrimitive : *renderScene)
 		{
 			const SubMesh& subMesh = renderPrimitive.mesh->GetSubMeshes().at(renderPrimitive.subMeshIndex);
 
 			auto& newCommand = renderCommandExts.emplace_back();
-			newCommand.vertexBuffer = renderPrimitive.mesh->GetVertexPositionsBuffer()->GetResource();
 			newCommand.indexBuffer = renderPrimitive.mesh->GetIndexBuffer()->GetResource();
 			newCommand.indexCount = subMesh.indexCount;
 			newCommand.firstIndex = subMesh.indexStartOffset;
 			newCommand.vertexOffset = subMesh.vertexStartOffset;
+			newCommand.primitiveIndex = renderScene->GetPrimitiveIndexFromID(renderPrimitive.id);
+
+			for (const auto& [index, layout] : vertexShaderInfo.vertexLayout)
+			{
+				if (index == 0)
+				{
+					newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexPositionsBuffer()->GetResource());
+				}
+				else if (index == 1)
+				{
+					newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexMaterialBuffer()->GetResource());
+				}
+				else if (index == 2)
+				{
+					newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexAnimationInfoBuffer()->GetResource());
+				}
+			}
 
 			RHI::RenderPipelineCreateInfo renderPipelineInfo{};
-			renderPipelineInfo.shaders = { ShaderMap::Get<MeshTestVS>(), ShaderMap::Get<MeshTestPS>() };
+			renderPipelineInfo.shaders = { vertexShader, pixelShader };
 			newCommand.renderPipeline = PipelineStateCache::GetRenderPipeline(renderPipelineInfo);
 
-			newCommand.vertexIndexBufferHash = Math::HashCombine(newCommand.vertexBuffer.GetHash(), newCommand.indexBuffer.GetHash());
+			newCommand.vertexIndexBufferHash = newCommand.indexBuffer.GetHash();
+			
+			for (const auto& vertexBuffer : newCommand.vertexBuffers)
+			{
+				newCommand.vertexIndexBufferHash = Math::HashCombine(newCommand.vertexIndexBufferHash, vertexBuffer.GetHash());
+			}
+
 			newCommand.subMeshHash = subMesh.GetHash();
 			newCommand.renderPipelineHash = newCommand.renderPipeline->GetHash();
 		}
@@ -107,7 +114,7 @@ namespace Volt
 				currentMeshBatch->batchType = MeshBatchType::VertexIndexBuffer | MeshBatchType::RenderPipeline;
 				currentMeshBatch->first = 0;
 				currentMeshBatch->indexBuffer = renderCommandExt.indexBuffer;
-				currentMeshBatch->vertexBuffer = renderCommandExt.vertexBuffer;
+				currentMeshBatch->vertexBuffers = renderCommandExt.vertexBuffers;
 				currentMeshBatch->renderPipeline = renderCommandExt.renderPipeline;
 				currentMeshBatch->descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(renderCommandExt.renderPipeline);
 
@@ -140,7 +147,7 @@ namespace Volt
 				
 					if (EnumValueContainsFlag(batchType, MeshBatchType::VertexIndexBuffer))
 					{
-						currentMeshBatch->vertexBuffer = renderCommandExt.vertexBuffer;
+						currentMeshBatch->vertexBuffers = renderCommandExt.vertexBuffers;
 						currentMeshBatch->indexBuffer = renderCommandExt.indexBuffer;
 					}
 					
@@ -162,7 +169,7 @@ namespace Volt
 		}
 	}
 
-	void MeshRenderer::Render(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters)
+	void MeshRenderer::Render(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -180,7 +187,7 @@ namespace Volt
 
 			if (EnumValueContainsFlag(meshBatch.batchType, MeshBatchType::VertexIndexBuffer))
 			{
-				commandBuffer->BindVertexBuffers({ meshBatch.vertexBuffer }, 0);
+				commandBuffer->BindVertexBuffers(meshBatch.vertexBuffers, 0);
 				commandBuffer->BindIndexBuffer(meshBatch.indexBuffer);
 			}
 
@@ -188,7 +195,8 @@ namespace Volt
 			{
 				const RenderCommand& renderCommand = m_renderCommands.at(i);
 
-				commandBuffer->DrawIndexed(renderCommand.indexCount, 1, renderCommand.firstIndex, renderCommand.vertexOffset, 0);
+				// We use the firstInstance input to send the Primitive Index to the GPU.
+				commandBuffer->DrawIndexed(renderCommand.indexCount, 1, renderCommand.firstIndex, renderCommand.vertexOffset, renderCommand.primitiveIndex);
 			}
 		}
 	}

@@ -99,7 +99,7 @@ bool RG_DrawMeshShaderMeshTest::RunTest()
 		passParameters,
 		[passParameters, targetImage, gpuMesh](RenderContext& context)
 	{
-		RenderingInfo2 renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), passParameters->PS.renderTargets);
+		RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), passParameters->PS.renderTargets);
 
 		context.BeginRendering(renderingInfo);
 		context.BindPipeline(s_renderPipeline);

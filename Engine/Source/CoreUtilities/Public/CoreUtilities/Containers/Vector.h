@@ -11,10 +11,27 @@
 #include <initializer_list>
 #include <iterator>
 
+template<typename T, typename U>
+concept AllocatorIsTyped = requires {
+	typename T::template ForElementType<U>;
+};
+
+template<typename Allocator, typename T, bool = AllocatorIsTyped<Allocator, T>>
+struct GetAllocatorType
+{
+	using type = Allocator;
+};
+
+template<typename Allocator, typename T>
+struct GetAllocatorType<Allocator, T, true>
+{
+	using type = typename Allocator::template ForElementType<T>;
+};
+
 template<typename T, typename Allocator>
 struct VectorBase
 {
-	typedef Allocator allocator_type;
+	using allocator_type = GetAllocatorType<Allocator, T>::type;
 	typedef size_t size_type;
 	typedef ptrdiff_t difference_type;
 

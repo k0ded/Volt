@@ -258,7 +258,7 @@ namespace Volt
 			RHI::BufferDesc desc{};
 			desc.count = static_cast<uint32_t>(vertexPositions.size());
 			desc.elementSize = sizeof(glm::vec3);
-			desc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::VertexBuffer | rayTracingFlags;
+			desc.usage = RHI::BufferUsage::VertexBuffer | rayTracingFlags;
 			desc.debugName = meshName + "VertexPositions";
 
 			m_vertexPositionsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
@@ -273,6 +273,7 @@ namespace Volt
 			desc.count = static_cast<uint32_t>(vertexMaterialData.size());
 			desc.elementSize = sizeof(VertexMaterialData);
 			desc.debugName = meshName + "VertexMaterialData";
+			desc.usage = RHI::BufferUsage::VertexBuffer;
 
 			m_vertexMaterialBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 			m_vertexMaterialBuffer->GetResource()->SetData(vertexMaterialData.data(), vertexMaterialData.size() * sizeof(VertexMaterialData));

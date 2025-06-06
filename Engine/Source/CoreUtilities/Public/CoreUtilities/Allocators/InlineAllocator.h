@@ -4,25 +4,35 @@
 
 #include <cstdint>
 
-template<typename ValueType, size_t NumValues>
+template<size_t NumValues>
 class InlineAllocator
 {
 public:
-	void* Allocate(size_t size, size_t alignment);
-	void Free(void* pointer);
+	template<typename ValueType>
+	class ForElementType
+	{
+	public:
+		void* Allocate(size_t size, size_t alignment)
+		{
+			constexpr size_t TypeSize = sizeof(ValueType);
+			constexpr size_t BlockSize = TypeSize * NumValues;
 
-private:
-	uint8_t m_data[sizeof(ValueType) * NumValues];
+			uint8_t* dataPtr = &m_data[BlockSize * size_t(m_index)];
+			m_index == 0 ? m_index = 1 : m_index = 0;
+
+			return dataPtr;
+		}
+
+		void Free(void* pointer)
+		{
+
+		}
+
+	private:
+		// We allocate double the data to support reallocation.
+		// Not the best solution.
+		uint8_t m_data[sizeof(ValueType) * NumValues * 2];
+		uint8_t m_index = 0;
+	};
 };
 
-template<typename ValueType, size_t NumValues>
-inline void* InlineAllocator<ValueType, NumValues>::Allocate(size_t size, size_t alignment)
-{
-	VT_ENSURE(size < sizeof(ValueType) * NumValues);
-	return m_data;
-}
-
-template<typename ValueType, size_t NumValues>
-inline void InlineAllocator<ValueType, NumValues>::Free(void* pointer)
-{
-}

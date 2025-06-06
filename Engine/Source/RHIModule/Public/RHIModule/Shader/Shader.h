@@ -5,6 +5,8 @@
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Shader/ShaderCommon.h"
 #include "RHIModule/Shader/ShaderPermutationConfig.h"
+#include "RHIModule/Shader/BufferLayout.h"
+#include "RHIModule/Core/RHICommon.h"
 
 namespace Volt::RHI
 {
@@ -19,6 +21,16 @@ namespace Volt::RHI
 		ShaderPermutationConfig permutationConfig;
 	};
 
+	struct ShaderInfo
+	{
+		// Pixel Shader
+		Vector<PixelFormat> outputFormats;
+
+		// Vertex Shader
+		BufferLayoutMap vertexLayout;
+		BufferLayout instanceLayout;
+	};
+
 	class VTRHI_API Shader : public RHIInterface
 	{
 	public:
@@ -27,6 +39,7 @@ namespace Volt::RHI
 		virtual size_t GetHash() const = 0;
 		virtual ShaderStage GetShaderStage() const = 0;
 		virtual const ShaderParameterMap& GetParameterMap() const = 0;
+		virtual const ShaderInfo& GetShaderInfo() const = 0;
 		virtual bool IsValid() const = 0;
 
 		static RefPtr<Shader> Create(const ShaderCreateInfo& createInfo);

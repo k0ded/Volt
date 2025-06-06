@@ -11,7 +11,7 @@ namespace Volt::RHI
 		std::string preProcessedResult;
 	
 		Vector<PixelFormat> outputFormats;
-		BufferLayout vertexLayout;
+		BufferLayoutMap vertexLayout;
 		BufferLayout instanceLayout;
 	};
 

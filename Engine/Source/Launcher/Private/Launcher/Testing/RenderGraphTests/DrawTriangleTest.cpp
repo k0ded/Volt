@@ -66,7 +66,7 @@ bool RG_DrawTriangleTest::RunTest()
 		passParameters,
 		[passParameters, targetImage](RenderContext& context) 
 		{
-			RenderingInfo2 renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), passParameters->renderTargets);
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(targetImage->GetWidth(), targetImage->GetHeight(), passParameters->renderTargets);
 
 			context.BeginRendering(renderingInfo);
 			context.BindPipeline(s_renderPipeline);

@@ -111,6 +111,8 @@ namespace Volt
 
 	void RenderScene::EndFrame(RenderGraph& renderGraph)
 	{
+		VT_PROFILE_FUNCTION();
+
 		m_buffers.prevPrimitiveDrawDataBuffer->GrowIfRequired(m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount());
 
 		RGBufferRef srcPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
@@ -338,6 +340,15 @@ namespace Volt
 	const uint32_t RenderScene::GetPrimitiveIndexFromID(UUID64 primitiveId) const
 	{
 		return static_cast<uint32_t>(m_primitiveIndicesContainer.GetIndexFromID(primitiveId));
+	}
+
+	GPUSceneParameters RenderScene::GetGPUSceneParameters(RenderGraph& renderGraph) const
+	{
+		GPUSceneParameters result;
+		result.PrimitiveDrawDataBuffer = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource()));
+		result.PrevPrimitiveDrawDataBuffer = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource()));
+	
+		return result;
 	}
 
 	const RenderPrimitiveData& RenderScene::GetPrimitiveDataFromID(UUID64 id) const

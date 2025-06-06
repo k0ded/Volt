@@ -74,7 +74,7 @@ namespace Volt::RHI
 		const ShaderCompiler::CompilationResultData compilationResult = ShaderCompiler::TryCompile(compileSpec);
 		if (compilationResult.result != ShaderCompiler::CompilationResult::Success)
 		{
-			// #TODO_Ivar: Handle
+			VT_ENSURE(false);
 			return;
 		}
 

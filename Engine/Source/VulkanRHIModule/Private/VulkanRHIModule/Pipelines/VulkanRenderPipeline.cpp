@@ -21,27 +21,30 @@ namespace Volt::RHI
 		Vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	};
 
-	inline VertexAttributeData CreateVertexLayout(const BufferLayout& vertexLayout, const BufferLayout& instanceLayout)
+	inline VertexAttributeData CreateVertexLayout(const BufferLayoutMap& vertexLayoutMap, const BufferLayout& instanceLayout)
 	{
-		VT_ASSERT(!vertexLayout.GetElements().empty());
-
 		VertexAttributeData result{};
 
-		VkVertexInputBindingDescription& bindingDesc = result.bindingDescriptions.emplace_back();
-		bindingDesc.binding = 0;
-		bindingDesc.stride = vertexLayout.GetStride();
-		bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
+		uint32_t lastVertexBufferIndex = 0;
 		uint32_t attributeIndex = 0;
-		for (const auto& element : vertexLayout.GetElements())
-		{
-			VkVertexInputAttributeDescription& desc = result.attributeDescriptions.emplace_back();
-			desc.binding = 0;
-			desc.location = attributeIndex;
-			desc.format = Utility::VoltToVulkanElementFormat(element.type);
-			desc.offset = static_cast<uint32_t>(element.offset);
 
-			attributeIndex++;
+		for (const auto& [index, vertexLayout] : vertexLayoutMap)
+		{
+			VkVertexInputBindingDescription& bindingDesc = result.bindingDescriptions.emplace_back();
+			bindingDesc.binding = index;
+			bindingDesc.stride = vertexLayout.GetStride();
+			bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+			for (const auto& element : vertexLayout.GetElements())
+			{
+				VkVertexInputAttributeDescription& desc = result.attributeDescriptions.emplace_back();
+				desc.binding = index;
+				desc.location = attributeIndex++;
+				desc.format = Utility::VoltToVulkanElementFormat(element.type);
+				desc.offset = static_cast<uint32_t>(element.offset);
+			}
+
+			lastVertexBufferIndex = std::max(lastVertexBufferIndex, index);
 		}
 
 		if (instanceLayout.IsValid())
@@ -55,11 +58,9 @@ namespace Volt::RHI
 			{
 				VkVertexInputAttributeDescription& desc = result.attributeDescriptions.emplace_back();
 				desc.binding = 1;
-				desc.location = attributeIndex;
+				desc.location = attributeIndex++;
 				desc.format = Utility::VoltToVulkanElementFormat(element.type);
 				desc.offset = static_cast<uint32_t>(element.offset);
-
-				attributeIndex++;
 			}
 		}
 
@@ -71,12 +72,14 @@ namespace Volt::RHI
 		// We will pick the first shader that contains a vertex layout (should only be one anyways)
 		for (const auto shader : shaders)
 		{
-			VulkanShader& vulkanShader = shader->AsRef<VulkanShader>();
-			const VulkanShader::ShaderInfo& shaderInfo = vulkanShader.GetShaderInfo();
+			const ShaderInfo& shaderInfo = shader->GetShaderInfo();
 
-			if (shaderInfo.vertexLayout.IsValid())
+			if (!shaderInfo.vertexLayout.empty())
 			{
-				return CreateVertexLayout(shaderInfo.vertexLayout, shaderInfo.instanceLayout);
+				if (shaderInfo.vertexLayout.begin()->second.IsValid())
+				{
+					return CreateVertexLayout(shaderInfo.vertexLayout, shaderInfo.instanceLayout);
+				}
 			}
 		}
 

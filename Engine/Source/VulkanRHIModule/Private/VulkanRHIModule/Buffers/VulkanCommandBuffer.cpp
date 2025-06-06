@@ -679,20 +679,20 @@ namespace Volt::RHI
 		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.Size()), vkBuffers.Data(), offsets.Data());
 	}
 
-	void VulkanCommandBuffer::BindVertexBuffers(const StackVector<RawPtr<StorageBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	void VulkanCommandBuffer::BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding)
 	{
 		VT_PROFILE_FUNCTION();
 
-		StackVector<VkBuffer, MAX_VERTEX_BUFFER_COUNT> vkBuffers;
-		StackVector<VkDeviceSize, MAX_VERTEX_BUFFER_COUNT> offsets;
+		Vector<VkBuffer, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>> vkBuffers;
+		Vector<VkDeviceSize, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>> offsets;
 
-		for (size_t i = 0; i < vertexBuffers.Size(); i++)
+		for (size_t i = 0; i < vertexBuffers.size(); i++)
 		{
-			vkBuffers.EmplaceBack() = vertexBuffers[i]->GetHandle<VkBuffer>();
-			offsets.EmplaceBack(0u);
+			vkBuffers.emplace_back() = vertexBuffers[i]->GetHandle<VkBuffer>();
+			offsets.emplace_back(0u);
 		}
 
-		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.Size()), vkBuffers.Data(), offsets.Data());
+		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.size()), vkBuffers.data(), offsets.data());
 	}
 
 	void VulkanCommandBuffer::BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer)
@@ -899,9 +899,9 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		using ImageBarrierVector = Vector<VkImageMemoryBarrier2, InlineAllocator<VkImageMemoryBarrier2, 16>>;
-		using BufferBarrierVector = Vector<VkBufferMemoryBarrier2, InlineAllocator<VkBufferMemoryBarrier2, 16>>;
-		using GlobalBarrierVector = Vector<VkMemoryBarrier2, InlineAllocator<VkMemoryBarrier2, 16>>;
+		using ImageBarrierVector = Vector<VkImageMemoryBarrier2, InlineAllocator<16>>;
+		using BufferBarrierVector = Vector<VkBufferMemoryBarrier2, InlineAllocator<16>>;
+		using GlobalBarrierVector = Vector<VkMemoryBarrier2, InlineAllocator<16>>;
 
 		ImageBarrierVector imageBarriers{};
 		BufferBarrierVector bufferBarriers{};

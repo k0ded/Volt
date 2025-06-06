@@ -512,7 +512,7 @@ namespace Volt
 
 			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
 
-			RenderingInfo2 renderingInfo = context.CreateRenderingInfo(DFGSize, DFGSize, passParameters->renderTargets);
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(DFGSize, DFGSize, passParameters->renderTargets);
 			context.BeginRendering(renderingInfo);
 			context.BindPipeline(pipeline);
 			context.Draw(3, 1, 0, 0);

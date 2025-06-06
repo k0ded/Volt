@@ -103,7 +103,6 @@ namespace Volt
 			RefPtr<RHI::StorageBuffer>* outBufferPtr = nullptr;
 		};
 
-
 		class CompiledPass
 		{
 		public:

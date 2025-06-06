@@ -6,15 +6,12 @@
 #include "Volt-Renderer/RendererCommon.h"
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
-
 #include "Volt-Renderer/Utility/ScatteredBufferUpload.h"
-
 #include "Volt-Renderer/ShapeLibrary.h"
 #include "Volt-Renderer/Texture/Texture2D.h"
-
 #include "Volt-Renderer/ShadowMappingUtility.h"
-
 #include "Volt-Renderer/Mesh/Mesh.h"
+#include "Volt-Renderer/SceneRendererRenderGraphData.h"
 
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
@@ -76,11 +73,6 @@ namespace Volt
 		return m_outputImage;
 	}
 
-	BEGIN_SHADER_PARAMETER_STRUCT(DrawMeshesParameters)
-		SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
-		RG_RENDER_TARGETS()
-	END_SHADER_PARAMETER_STRUCT()
-
 	void SceneRenderer::OnRender(Ref<Camera> camera, float timestep)
 	{
 		VT_PROFILE_FUNCTION();
@@ -96,40 +88,17 @@ namespace Volt
 			m_shouldResize = false;
 		}
 
+		RenderGraphBlackboard blackboard;
 		RenderGraph renderGraph{ m_commandBufferSet.IncrementAndGetCommandBuffer() };
-
-		m_meshRenderer.BuildRenderCommands(m_renderScene);
-
-		{
-			const uint32_t width = m_outputImage->GetWidth();
-			const uint32_t height = m_outputImage->GetHeight();
-
-			RGTextureRef targetTexture = renderGraph.RegisterExternalTexture(m_outputImage);
-			RGTextureRef depthTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(width, height, RHI::ImageUsage::AttachmentStorage, "SceneDepth"));
-		
-			DrawMeshesParameters* passParameters = renderGraph.AllocParameters<DrawMeshesParameters>();
-			passParameters->View = CreateViewUniformBuffer(renderGraph, camera);
-			passParameters->renderTargets.renderTargets[0] = targetTexture;
-			passParameters->renderTargets.depthTarget = depthTexture;
-
-			renderGraph.AddPass("Mesh Pass",
-				RenderGraphPassFlags::None,
-				passParameters,
-				[passParameters, targetTexture, width, height, &meshRenderer = m_meshRenderer](RenderContext& context)
-			{
-				BatchedShaderParameters batchedShaderParameters;
-				context.CollectParameters(passParameters, batchedShaderParameters);
-
-				RenderingInfo2 renderingInfo = context.CreateRenderingInfo(width, height, passParameters->renderTargets);
-				context.BeginRendering(renderingInfo);
-
-				meshRenderer.Render(context, batchedShaderParameters);
-
-				context.EndRendering();
-			});
-		}
-
 		m_renderScene->Update(renderGraph);
+
+		RenderView renderView;
+		renderView.width = m_width;
+		renderView.height = m_height;
+		renderView.viewUniformBuffer = CreateViewUniformBuffer(renderGraph, camera);
+
+		AddDepthPrePass(renderGraph, blackboard, renderView);
+		AddGenerateGBufferPass(renderGraph, blackboard, renderView);
 
 		m_renderScene->EndFrame(renderGraph);
 
@@ -148,6 +117,127 @@ namespace Volt
 		renderGraph.Execute();
 
 		m_frameIndex++;
+	}
+
+	struct DepthPrePassVS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(DepthPrePassVS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
+			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(DepthPrePassVS, "Engine/Shaders/Source/RenderPipelineLegacy/DepthPrePass.hlsl", "MainVS", Vertex);
+
+	struct DepthPrePassPS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(DepthPrePassPS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
+			RG_RENDER_TARGETS()
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(DepthPrePassPS, "Engine/Shaders/Source/RenderPipelineLegacy/DepthPrePass.hlsl", "MainPS", Pixel);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(DepthPrePassParameters)
+		SHADER_PARAMETER_STRUCT_INCLUDE(DepthPrePassVS::Parameters, VS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(DepthPrePassPS::Parameters, PS)
+	END_SHADER_PARAMETER_STRUCT()
+
+	void SceneRenderer::AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	{
+		VT_PROFILE_FUNCTION();
+
+		MeshRenderer meshRenderer;
+		meshRenderer.BuildRenderCommands(m_renderScene, ShaderMap::Get<DepthPrePassVS>(), ShaderMap::Get<DepthPrePassPS>());
+
+		SceneTextures& sceneTextures = blackboard.Add<SceneTextures>();
+		sceneTextures.sceneVelocity = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "SceneVelocity"));
+		sceneTextures.sceneDepth = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "SceneDepth"));
+
+		DepthPrePassParameters* passParameters = renderGraph.AllocParameters<DepthPrePassParameters>();
+		passParameters->VS.View = view.viewUniformBuffer;
+		passParameters->VS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
+		passParameters->PS.View = view.viewUniformBuffer;
+		passParameters->PS.renderTargets.renderTargets[0] = sceneTextures.sceneVelocity;
+		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
+
+		renderGraph.AddPass("Depth Pre Pass",
+			RenderGraphPassFlags::None,
+			passParameters,
+			[passParameters, view, meshRenderer](RenderContext& context)
+		{
+			BatchedShaderParameters batchedShaderParameters;
+			context.CollectParameters(passParameters, batchedShaderParameters);
+
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
+			context.BeginRendering(renderingInfo);
+
+			meshRenderer.Render(context, batchedShaderParameters);
+
+			context.EndRendering();
+		});
+	}
+
+	struct GenerateGBufferVS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(GenerateGBufferVS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
+			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GenerateGBufferVS, "Engine/Shaders/Source/RenderPipelineLegacy/GenerateGBuffer.hlsl", "MainVS", Vertex);
+
+	struct GenerateGBufferPS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(GenerateGBufferPS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			RG_RENDER_TARGETS()
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GenerateGBufferPS, "Engine/Shaders/Source/RenderPipelineLegacy/GenerateGBuffer.hlsl", "MainPS", Pixel);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(GenerateGBufferParameters)
+		SHADER_PARAMETER_STRUCT_INCLUDE(GenerateGBufferVS::Parameters, VS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(GenerateGBufferPS::Parameters, PS)
+	END_SHADER_PARAMETER_STRUCT()
+
+	void SceneRenderer::AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	{
+		VT_PROFILE_FUNCTION();
+		
+		MeshRenderer meshRenderer;
+		meshRenderer.BuildRenderCommands(m_renderScene, ShaderMap::Get<GenerateGBufferVS>(), ShaderMap::Get<GenerateGBufferPS>());
+
+		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
+		sceneTextures.gBufferAlbedo = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferAlbedo"));
+		sceneTextures.gBufferNormals = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferNormals"));
+		sceneTextures.gBufferMaterial = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferMaterial"));
+
+		GenerateGBufferParameters* passParameters = renderGraph.AllocParameters<GenerateGBufferParameters>();
+		passParameters->VS.View = view.viewUniformBuffer;
+		passParameters->VS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
+		passParameters->PS.renderTargets.renderTargets[0] = sceneTextures.gBufferAlbedo;
+		passParameters->PS.renderTargets.renderTargets[1] = sceneTextures.gBufferNormals;
+		passParameters->PS.renderTargets.renderTargets[2] = sceneTextures.gBufferMaterial;
+		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
+
+		renderGraph.AddPass("Generate GBuffer",
+			RenderGraphPassFlags::NeverCull,
+			passParameters,
+			[passParameters, view, meshRenderer](RenderContext& context)
+		{
+			BatchedShaderParameters batchedShaderParameters;
+			context.CollectParameters(passParameters, batchedShaderParameters);
+
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
+			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
+
+			context.BeginRendering(renderingInfo);
+			meshRenderer.Render(context, batchedShaderParameters);
+			context.EndRendering();
+		});
 	}
 
 	void SceneRenderer::Invalidate()
@@ -180,6 +270,9 @@ namespace Volt
 
 	RGUniformBufferRef SceneRenderer::CreateViewUniformBuffer(RenderGraph& renderGraph, Ref<Camera> camera)
 	{
+		VT_PROFILE_FUNCTION();
+
+
 		// View data
 		{
 			RGUniformBufferRef uniformBuffer = renderGraph.CreateUniformBuffer(RGUniformBufferDesc::Create<ViewUniformBuffer>("View"));

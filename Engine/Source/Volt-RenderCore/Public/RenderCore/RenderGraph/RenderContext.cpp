@@ -26,7 +26,7 @@ namespace Volt
 		m_commandBuffer->Flush(fence);
 	}
 
-	void RenderContext::BeginRendering(const RenderingInfo2& renderingInfo)
+	void RenderContext::BeginRendering(const RenderingInfo& renderingInfo)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -42,7 +42,7 @@ namespace Volt
 		m_commandBuffer->EndRendering();
 	}
 
-	const RenderingInfo2 RenderContext::CreateRenderingInfo(const uint32_t width, const uint32_t height, const ShaderParameterRenderTargetBindings& rtBindings)
+	const RenderingInfo RenderContext::CreateRenderingInfo(const uint32_t width, const uint32_t height, const ShaderParameterRenderTargetBindings& rtBindings)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -85,7 +85,7 @@ namespace Volt
 		renderingInfo.depthAttachmentInfo = depthAttachment;
 		renderingInfo.renderArea = scissor;
 
-		RenderingInfo2 result{};
+		RenderingInfo result{};
 		result.renderingInfo = renderingInfo;
 		result.scissor = scissor;
 		result.viewport = viewport;
@@ -215,10 +215,10 @@ namespace Volt
 
 	void RenderContext::BindVertexBuffers(const StackVector<RGBufferRef, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
 	{
-		StackVector<RawPtr<RHI::StorageBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT> rhiVertexBuffers;
+		RHI::VertexBufferVector rhiVertexBuffers;
 		for (const RGBufferRef buffer : vertexBuffers)
 		{
-			rhiVertexBuffers.EmplaceBack() = m_renderGraph.GetRHIBuffer(buffer);
+			rhiVertexBuffers.emplace_back() = m_renderGraph.GetRHIBuffer(buffer);
 		}
 
 		m_commandBuffer->BindVertexBuffers(rhiVertexBuffers, firstBinding);

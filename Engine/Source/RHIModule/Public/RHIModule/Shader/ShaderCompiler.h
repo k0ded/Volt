@@ -56,11 +56,11 @@ namespace Volt::RHI
 			Vector<uint32_t> shaderBinary;
 
 			// Pixel Shader
-			Vector<RHI::PixelFormat> outputFormats;
+			Vector<PixelFormat> outputFormats;
 
 			// Vertex Shader
-			RHI::BufferLayout vertexLayout;
-			RHI::BufferLayout instanceLayout;
+			BufferLayoutMap vertexLayout;
+			BufferLayout instanceLayout;
 
 			// Common
 			ShaderParameterMap shaderParameterMap;

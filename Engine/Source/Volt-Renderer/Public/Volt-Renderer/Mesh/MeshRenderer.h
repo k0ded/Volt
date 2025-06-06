@@ -5,6 +5,7 @@
 #include <RHIModule/Descriptors/DescriptorTable.h>
 
 #include <CoreUtilities/Core.h>
+#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt
 {
@@ -23,13 +24,16 @@ namespace Volt
 	class MeshRenderer
 	{
 	public:
-		void BuildRenderCommands(Ref<RenderScene> renderScene);
-		void Render(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters);
+		// For now we pass a vertex and pixel shader in here, we might want to use vertex shaders specific to a material in the future.
+		void BuildRenderCommands(Ref<RenderScene> renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
+		void Render(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters) const;
 
 	private:
 		struct MeshBatch
 		{
-			RefPtr<RHI::StorageBuffer> vertexBuffer;
+			using VertexBufferVector = Vector<RefPtr<RHI::StorageBuffer>, InlineAllocator<32>>;
+
+			VertexBufferVector vertexBuffers;
 			RefPtr<RHI::StorageBuffer> indexBuffer;
 			RefPtr<RHI::RenderPipeline> renderPipeline;
 			RefPtr<RHI::DescriptorTable> descriptorTable;
@@ -45,6 +49,7 @@ namespace Volt
 			uint32_t indexCount;
 			uint32_t firstIndex;
 			uint32_t vertexOffset;
+			uint32_t primitiveIndex;
 		};
 
 		Vector<RenderCommand> m_renderCommands;

@@ -2,5 +2,6 @@
 
 struct Vertex
 {
-    float3 position : POSITION;
+    [[vt::inputIndex(0)]] float3 position : POSITION;
+    uint primtiveIndex : SV_InstanceID;
 };

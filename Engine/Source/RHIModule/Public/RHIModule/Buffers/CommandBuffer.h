@@ -41,7 +41,8 @@ namespace Volt::RHI
 		Secondary
 	};
 
-	using BarrierVector = Vector<ResourceBarrierInfo, InlineAllocator<ResourceBarrierInfo, 32>>;
+	using BarrierVector = Vector<ResourceBarrierInfo, InlineAllocator<32>>;
+	using VertexBufferVector = Vector<RefPtr<RHI::StorageBuffer>, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>>;
 
 	class VTRHI_API CommandBuffer : public RHIInterface
 	{
@@ -83,7 +84,7 @@ namespace Volt::RHI
 		virtual void BindPipeline(RawPtr<ComputePipeline> pipeline) = 0;
 		virtual void BindPipeline(RawPtr<RayTracingPipeline> pipeline) = 0;
 		virtual void BindVertexBuffers(const StackVector<RawPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) = 0;
-		virtual void BindVertexBuffers(const StackVector<RawPtr<StorageBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) = 0;
+		virtual void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) = 0;
 		virtual void BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer) = 0;
 		virtual void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) = 0;
 

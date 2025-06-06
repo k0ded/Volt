@@ -46,6 +46,14 @@ namespace Volt
 		Ref<RenderScene> renderScene;
 	};
 
+	struct RenderView
+	{
+		uint32_t width;
+		uint32_t height;
+
+		RGUniformBufferRef viewUniformBuffer;
+	};
+
 	class VTR_API SceneRenderer
 	{
 	public:
@@ -98,6 +106,11 @@ namespace Volt
 	private:
 		void OnRender(Ref<Camera> camera, float timestep);
 
+		///// Render Passes /////
+		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		/////////////////////////
+
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
 
 		RGUniformBufferRef CreateViewUniformBuffer(RenderGraph& renderGraph, Ref<Camera> camera);
@@ -143,7 +156,6 @@ namespace Volt
 		
 		Ref<RenderScene> m_renderScene;
 		Renderer::EnvironmentTextures m_sceneEnvironment;
-		MeshRenderer m_meshRenderer;
 
 		// Extensions
 		vt::map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>> m_sceneRendererExtensions;

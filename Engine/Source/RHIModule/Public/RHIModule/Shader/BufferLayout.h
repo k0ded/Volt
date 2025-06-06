@@ -14,9 +14,11 @@ namespace Volt::RHI
 		PerInstance
 	};
 
-	enum class ElementType : uint32_t
+	enum class ElementType : uint8_t
 	{
-		Bool = 0,
+		Invalid = 0,
+		
+		Bool,
 
 		Byte,
 		Byte2,
@@ -283,4 +285,6 @@ namespace Volt::RHI
 		Vector<BufferElement> m_elements;
 		uint32_t m_stride = 0;
 	};
+
+	using BufferLayoutMap = vt::map<uint32_t, BufferLayout>;
 }

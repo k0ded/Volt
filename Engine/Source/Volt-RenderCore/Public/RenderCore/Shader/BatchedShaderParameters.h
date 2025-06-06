@@ -70,7 +70,7 @@ namespace Volt
 	private:
 		inline static constexpr size_t NumMaxShaderParameters = 64;
 
-		Vector<BatchedShaderParameter*, InlineAllocator<BatchedShaderParameter*, NumMaxShaderParameters>> m_parameters;
+		Vector<BatchedShaderParameter*, InlineAllocator<NumMaxShaderParameters>> m_parameters;
 		BatchedShaderParameterAllocator m_allocator;
 	};
 }

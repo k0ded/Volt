@@ -18,7 +18,7 @@ namespace Volt
 	class RenderGraphPass;
 	class BatchedShaderParameters;
 
-	struct RenderingInfo2
+	struct RenderingInfo
 	{
 		RHI::Rect2D scissor{};
 		RHI::Viewport viewport{};
@@ -32,10 +32,10 @@ namespace Volt
 
 		void Flush(RefPtr<RHI::Fence> fence);
 
-		void BeginRendering(const RenderingInfo2& renderingInfo);
+		void BeginRendering(const RenderingInfo& renderingInfo);
 		void EndRendering();
 
-		const RenderingInfo2 CreateRenderingInfo(const uint32_t width, const uint32_t height, const ShaderParameterRenderTargetBindings& rtBindings);
+		const RenderingInfo CreateRenderingInfo(const uint32_t width, const uint32_t height, const ShaderParameterRenderTargetBindings& rtBindings);
 
 		void DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ);
 		void DispatchMeshTasksIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride);
@@ -106,7 +106,7 @@ namespace Volt
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::DescriptorTable> m_descriptorTable;
 
-		Vector<PerStageShaderParameters, InlineAllocator<PerStageShaderParameters, 16>> m_perStageShaderParameters;
+		Vector<PerStageShaderParameters, InlineAllocator<16>> m_perStageShaderParameters;
 
 		RenderGraph& m_renderGraph;
 		RenderGraphPass* m_currentPass;
