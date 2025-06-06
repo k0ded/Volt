@@ -113,12 +113,12 @@ namespace Volt::RHI
 		return RefPtr<D3D12Swapchain>::Create(createInfo);
 	}
 	
-	RefPtr<Image> D3D12RHIModule::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const
+	RefPtr<Image> D3D12RHIModule::CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<D3D12Image>::Create(specification, data, allocator);
 	}
 	
-	RefPtr<Image> D3D12RHIModule::CreateImage(const SwapchainImageSpecification& specification) const
+	RefPtr<Image> D3D12RHIModule::CreateImage(const SwapchainImageDesc& specification) const
 	{
 		return RefPtr<D3D12Image>::Create(specification);
 	}
@@ -128,7 +128,7 @@ namespace Volt::RHI
 		return RefPtr<D3D12ImageView>::Create(specification);
 	}
 	
-	RefPtr<SamplerState> D3D12RHIModule::CreateSamplerState(const SamplerStateCreateInfo& createInfo) const
+	RefPtr<SamplerState> D3D12RHIModule::CreateSamplerState(const SamplerStateDesc& createInfo) const
 	{
 		return RefPtr<D3D12SamplerState>::Create(createInfo);
 	}

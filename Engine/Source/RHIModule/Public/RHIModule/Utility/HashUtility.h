@@ -6,7 +6,7 @@
 
 namespace Volt::RHI::Utility
 {
-	inline static const size_t GetHashFromImageSpec(const ImageSpecification& spec, MemoryUsage memoryUsage)
+	inline static const size_t GetHashFromImageSpec(const ImageDesc& spec, MemoryUsage memoryUsage)
 	{
 		size_t hash = 0;
 		hash = std::hash<uint32_t>()(spec.width);
@@ -16,7 +16,6 @@ namespace Volt::RHI::Utility
 		hash = Math::HashCombine(hash, std::hash<uint32_t>()(spec.mips));
 		hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(spec.format)));
 		hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(spec.usage)));
-		hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(spec.anisoLevel)));
 		hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<bool>(spec.isCubeMap)));
 		hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(memoryUsage)));
 		hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(spec.imageType)));

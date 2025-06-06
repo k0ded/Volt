@@ -7,12 +7,15 @@ namespace Volt::RHI
 {
 	struct ImageViewDesc
 	{
+		inline static constexpr uint32_t LayerCountMax = std::numeric_limits<uint32_t>::max();
+		inline static constexpr uint32_t MipCountMax = std::numeric_limits<uint32_t>::max();
+
 		ImageViewType viewType = ImageViewType::View2D;
 
 		uint32_t baseMipLevel = 0;
 		uint32_t baseArrayLayer = 0;
-		uint32_t mipCount = 1;
-		uint32_t layerCount = 1;
+		uint32_t mipCount = MipCountMax;
+		uint32_t layerCount = LayerCountMax;
 
 		RawPtr<RHIResource> image = nullptr;
 	};

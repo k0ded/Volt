@@ -36,6 +36,7 @@
 #include <RHIModule/Images/ImageView.h>
 
 #include <RHIModule/Core/Profiling.h>
+#include <RHIModule/Core/RenderingInfo.h>
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/RHIFeatures.h>

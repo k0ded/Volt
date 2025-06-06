@@ -7,7 +7,7 @@
 
 namespace Volt::RHI::Utility
 {
-	const VkImageCreateInfo GetVkImageCreateInfo(const ImageSpecification& imageSpecification)
+	const VkImageCreateInfo GetVkImageCreateInfo(const ImageDesc& imageSpecification)
 	{
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

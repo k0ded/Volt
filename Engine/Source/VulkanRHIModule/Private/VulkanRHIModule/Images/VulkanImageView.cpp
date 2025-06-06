@@ -15,10 +15,10 @@
 
 namespace Volt::RHI
 {
-	VulkanImageView::VulkanImageView(const ImageViewDesc& specification)
-		: m_desc(specification)
+	VulkanImageView::VulkanImageView(const ImageViewDesc& desc)
+		: m_desc(desc)
 	{
-		auto imageRes = specification.image;
+		auto imageRes = desc.image;
 		auto image = imageRes->As<Image>();
 
 		m_format = image->GetFormat();
@@ -34,15 +34,15 @@ namespace Volt::RHI
 
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.viewType = Utility::VoltToVulkanViewType(specification.viewType);
+		viewInfo.viewType = Utility::VoltToVulkanViewType(desc.viewType);
 		viewInfo.format = Utility::VoltToVulkanFormat(m_format);
 		viewInfo.flags = 0;
 		viewInfo.subresourceRange = {};
 		viewInfo.subresourceRange.aspectMask = aspectMask;
-		viewInfo.subresourceRange.baseMipLevel = specification.baseMipLevel;
-		viewInfo.subresourceRange.baseArrayLayer = specification.baseArrayLayer;
-		viewInfo.subresourceRange.levelCount = specification.mipCount;
-		viewInfo.subresourceRange.layerCount = specification.layerCount;
+		viewInfo.subresourceRange.baseMipLevel = desc.baseMipLevel;
+		viewInfo.subresourceRange.baseArrayLayer = desc.baseArrayLayer;
+		viewInfo.subresourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? image->GetMipCount() : desc.mipCount;
+		viewInfo.subresourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? image->GetLayerCount() : desc.layerCount;
 		viewInfo.image = image->GetHandle<VkImage>();
 
 		auto device = GraphicsContext::GetDevice();

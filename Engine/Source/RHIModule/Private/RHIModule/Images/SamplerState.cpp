@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	RefPtr<SamplerState> SamplerState::Create(const SamplerStateCreateInfo& createInfo)
+	RefPtr<SamplerState> SamplerState::Create(const SamplerStateDesc& createInfo)
 	{
 		return RHIModule::GetInstance().CreateSamplerState(createInfo);
 	}

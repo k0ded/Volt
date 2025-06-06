@@ -11,7 +11,7 @@ namespace Volt::RHI
 	class VulkanSamplerState : public SamplerState
 	{
 	public:
-		VulkanSamplerState(const SamplerStateCreateInfo& createInfo);
+		VulkanSamplerState(const SamplerStateDesc& createInfo);
 		~VulkanSamplerState() override;
 
 	protected:

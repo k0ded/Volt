@@ -46,7 +46,6 @@ namespace Volt::RHI
 		uint64_t m_byteSize = 0;
 		BufferDesc m_desc;
 
-		RefPtr<BufferView> m_view;
 		Handle<Allocation> m_allocation;
 		RawPtr<GPUAllocator> m_allocator;
 	};

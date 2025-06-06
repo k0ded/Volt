@@ -13,7 +13,7 @@
 
 namespace Volt::RHI
 {
-	VulkanSamplerState::VulkanSamplerState(const SamplerStateCreateInfo& createInfo)
+	VulkanSamplerState::VulkanSamplerState(const SamplerStateDesc& createInfo)
 	{
 		VkSamplerCreateInfo info{};
 		info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

@@ -251,9 +251,7 @@ namespace Volt
 
 		// Get all parameters accessed by shader.
 		// #TODO_Ivar: Add support for paged vector, or inline allocator
-		// #TODO_Ivar: Consider caching these.
-		Vector<ShaderParameterMetadata> parameterStructMetadata;
-		ParameterStruct::zzInternal_ProcessMembers(parameterStructMetadata);
+		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
 
 		// We need to use const_cast here because the resource parameters need to be non-const pointers.
 		uint8_t* parametersStructBytePtr = reinterpret_cast<uint8_t*>(const_cast<ParameterStruct*>(parameters));

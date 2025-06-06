@@ -24,9 +24,11 @@ namespace Volt
 	{
 		RefPtr<RHI::DescriptorTable> descriptorTable;
 
-		if (m_descriptorTableCache.contains(pipeline->GetHash()))
+		const size_t pipelineHash = pipeline->GetHash();
+
+		if (m_descriptorTableCache.contains(pipelineHash))
 		{
-			auto& data = m_descriptorTableCache.at(pipeline->GetHash());
+			auto& data = m_descriptorTableCache.at(pipelineHash);
 
 			std::scoped_lock lock{ *data.mutex };
 			if (!data.descriptorTables.empty())
@@ -44,7 +46,7 @@ namespace Volt
 		}
 
 		const uint32_t cacheIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
-		m_activeDescriptorTables.at(cacheIndex).emplace_back(descriptorTable, pipeline->GetHash());
+		m_activeDescriptorTables.at(cacheIndex).emplace_back(descriptorTable, pipelineHash);
 
 		return descriptorTable;
 	}
@@ -53,9 +55,11 @@ namespace Volt
 	{
 		RefPtr<RHI::DescriptorTable> descriptorTable;
 
-		if (m_descriptorTableCache.contains(pipeline->GetHash()))
+		const size_t pipelineHash = pipeline->GetHash();
+
+		if (m_descriptorTableCache.contains(pipelineHash))
 		{
-			auto& data = m_descriptorTableCache.at(pipeline->GetHash());
+			auto& data = m_descriptorTableCache.at(pipelineHash);
 
 			std::scoped_lock lock{ *data.mutex };
 			if (!data.descriptorTables.empty())
@@ -73,14 +77,14 @@ namespace Volt
 		}
 
 		const uint32_t cacheIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
-		m_activeDescriptorTables.at(cacheIndex).emplace_back(descriptorTable, pipeline->GetHash());
+		m_activeDescriptorTables.at(cacheIndex).emplace_back(descriptorTable, pipelineHash);
 		
 		return descriptorTable;
 	}
 
 	void DescriptorTableCache::Update()
 	{
-		const uint32_t cacheIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
+		const uint32_t cacheIndex = ++m_frameIndex % RHI::Swapchain::FramesInFlight;
 
 		for (const auto& activeTable : m_activeDescriptorTables.at(cacheIndex))
 		{
@@ -96,7 +100,5 @@ namespace Volt
 		}
 
 		m_activeDescriptorTables.at(cacheIndex).clear();
-
-		m_frameIndex++;
 	}
 }

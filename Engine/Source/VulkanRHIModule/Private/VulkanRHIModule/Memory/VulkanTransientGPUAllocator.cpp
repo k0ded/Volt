@@ -90,7 +90,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	Handle<Allocation> VulkanTransientGPUAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> VulkanTransientGPUAllocator::CreateImage(const ImageDesc& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 

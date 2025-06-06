@@ -23,7 +23,6 @@ namespace Volt::RHI
 		void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex /* = 0 */) override;
 
 		void PrepareForRender() override;
-		void Bind(CommandBuffer& commandBuffer) override;
 
 		VkPipelineLayout_T* GetRelatedPipelineLayout() const;
 		uint32_t GetRelatedBindPoint() const;

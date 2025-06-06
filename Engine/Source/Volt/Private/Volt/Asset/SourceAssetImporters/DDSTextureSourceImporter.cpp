@@ -114,7 +114,7 @@ namespace Volt
 
 		// Create image
 		{
-			RHI::ImageSpecification specification{};
+			RHI::ImageDesc specification{};
 			specification.format = DDSToImageFormat(ddsFile.GetFormat());
 			specification.usage = RHI::ImageUsage::Texture;
 			specification.width = width;

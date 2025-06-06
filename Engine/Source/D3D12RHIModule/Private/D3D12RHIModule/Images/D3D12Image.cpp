@@ -12,7 +12,7 @@
 
 namespace Volt::RHI
 {
-	D3D12Image::D3D12Image(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator)
+	D3D12Image::D3D12Image(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator)
 		: m_specification(specification), m_allocator(allocator)
 	{
 		if (!allocator)
@@ -24,7 +24,7 @@ namespace Volt::RHI
 		SetName(specification.debugName);
 	}
 
-	D3D12Image::D3D12Image(const SwapchainImageSpecification& specification)
+	D3D12Image::D3D12Image(const SwapchainImageDesc& specification)
 		: m_isSwapchainImage(true)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
@@ -56,7 +56,7 @@ namespace Volt::RHI
 		return Buffer();
 	}
 
-	void D3D12Image::InvalidateSwapchainImage(const SwapchainImageSpecification& specification)
+	void D3D12Image::InvalidateSwapchainImage(const SwapchainImageDesc& specification)
 	{
 		const auto& d3d12Swapchain = specification.swapchain->AsRef<D3D12Swapchain>();
 

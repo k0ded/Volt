@@ -12,4 +12,17 @@ namespace Volt
 		RGTextureRef gBufferNormals;
 		RGTextureRef gBufferMaterial;
 	};
+
+	struct EnvironmentTextures
+	{
+		RGTextureRef irradiance;
+		RGTextureRef radiance;
+		RGTextureRef DFGLuT;
+	};
+
+	struct DefaultTextures
+	{
+		RGTextureRef black1x1Cube;
+		RGTextureRef white1x1;
+	};
 }

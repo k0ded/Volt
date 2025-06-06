@@ -220,37 +220,6 @@ namespace Volt::RHI
 
 		m_isDirty = false;
 	}
-	
-	void VulkanDescriptorTable::Bind(CommandBuffer& commandBuffer)
-	{
-		VT_PROFILE_FUNCTION();
-
-		// No descriptor sets, nothing to do.
-		if (m_descriptorSets.empty())
-		{
-			return;
-		}
-
-		VulkanCommandBuffer& vulkanCommandBuffer = commandBuffer.AsRef<VulkanCommandBuffer>();
-		const VkPipelineBindPoint bindPoint = m_createInfo.computePipeline ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-		PrepareForRender();
-
-		VkPipelineLayout pipelineLayout = nullptr;
-		if (m_createInfo.computePipeline)
-		{
-			pipelineLayout = m_createInfo.computePipeline->AsRef<VulkanComputePipeline>().GetPipelineLayout();
-		}
-		else
-		{
-			pipelineLayout = m_createInfo.renderPipeline->AsRef<VulkanRenderPipeline>().GetPipelineLayout();
-		}
-
-		for (const auto& [setIndex, descriptorSet] : m_descriptorSets)
-		{
-			vkCmdBindDescriptorSets(vulkanCommandBuffer.GetHandle<VkCommandBuffer>(), bindPoint, pipelineLayout, setIndex, 1, &descriptorSet, 0, nullptr);
-		}
-	}
 
 	void VulkanDescriptorTable::Invalidate()
 	{

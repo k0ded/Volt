@@ -19,6 +19,7 @@
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
+#include <RenderCore/RenderGraph/RenderGraphUtils.h>
 
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Graphics/Swapchain.h>
@@ -66,8 +67,34 @@ namespace Volt
 			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PBR/IntegrateDiffuseCube.hlsl", "main", RHI::ShaderStage::Compute)
 		END_SHADER_DEFINITION()
 	};
-	REGISTER_SHADER(IntegrateDiffuseCubeCS)
+	REGISTER_SHADER(IntegrateDiffuseCubeCS);
 #endif
+
+	struct EquirectangularToCubemapCS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(EquirectangularToCubemapCS)
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2DArray<float3>, RWOutput)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, EquirectangularMap)
+			SHADER_PARAMETER_SAMPLER(LinearSampler)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(EquirectangularToCubemapCS, "Engine/Shaders/Source/Environment/EquirectangularToCubemap.hlsl", "MainCS", Compute);
+
+	struct IntegrateSpecularCubeCS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(IntegrateSpecularCubeCS)
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2DArray<float3>, RWOutput)
+			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, Input)
+			SHADER_PARAMETER_SAMPLER(LinearSampler)
+			SHADER_PARAMETER(uint, MipIndex)
+			SHADER_PARAMETER(uint, MipCount)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(IntegrateSpecularCubeCS, "Engine/Shaders/Source/PBR/IntegrateSpecularCube.hlsl", "MainCS", Compute);
 
 	struct GeneratePreIntegratedDFGPS : public GlobalShader
 	{
@@ -81,7 +108,7 @@ namespace Volt
 
 	namespace Utility
 	{
-		inline static const size_t GetHashFromSamplerInfo(const RHI::SamplerStateCreateInfo& info)
+		inline static const size_t GetHashFromSamplerDesc(const RHI::SamplerStateDesc& info)
 		{
 			size_t hash = std::hash<uint32_t>()(static_cast<uint32_t>(info.minFilter));
 			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(info.magFilter)));
@@ -120,6 +147,7 @@ namespace Volt
 		}
 
 		m_descriptorTableCache = CreateScope<DescriptorTableCache>();
+		m_samplerStateCache = CreateScope<SamplerStateCache>();
 
 		RenderGraphExecutionThread::Initialize(RenderGraphExecutionThread::ExecutionMode::Multithreaded);
 
@@ -139,6 +167,7 @@ namespace Volt
 		ShapeLibrary::Shutdown();
 
 		m_shaderMap = nullptr;
+		m_samplerStateCache = nullptr;
 		m_descriptorTableCache = nullptr;
 		m_bindlessResourcesManager = nullptr;
 	}
@@ -155,6 +184,41 @@ namespace Volt
 
 	Renderer::EnvironmentTextures Renderer::GenerateEnvironmentTextures(AssetHandle baseTextureHandle)
 	{
+		Ref<Texture2D> environmentTexture = AssetManager::GetAsset<Texture2D>(baseTextureHandle);
+		if (!environmentTexture || !environmentTexture->IsValid())
+		{
+			return {};
+		}
+
+		constexpr uint32_t CubeMapSize = 2048;
+		//constexpr uint32_t DiffuseMapSize = 256;
+		constexpr uint32_t ConversionThreadGroupSize = 32;
+
+		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		RenderGraph renderGraph{ commandBuffer };
+
+		RGTextureRef environmentRaw = renderGraph.CreateTexture(RGTextureDesc::CreateCube<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(CubeMapSize, CubeMapSize, RHI::ImageUsage::Storage, "EquirectangularTexture"));
+
+		// Convert to equirectangular
+		{
+			EquirectangularToCubemapCS::Parameters* passParameters = renderGraph.AllocParameters<EquirectangularToCubemapCS::Parameters>();
+			passParameters->RWOutput = renderGraph.CreateUAV(environmentRaw);
+			passParameters->EquirectangularMap = renderGraph.CreateSRV(renderGraph.RegisterExternalTexture(environmentTexture->GetImage()));
+			passParameters->LinearSampler = SamplerStateCache::GetTrilinearSampler();
+
+			const uint32_t groupCount = Math::DivideRoundUp(CubeMapSize, ConversionThreadGroupSize);
+
+			auto shader = ShaderMap::Get<EquirectangularToCubemapCS>();
+			ComputeShaderUtils::AddPass<EquirectangularToCubemapCS>(renderGraph,
+				"Convert to Equirectangular",
+				shader,
+				passParameters,
+				{ groupCount, groupCount, 6 });
+		}
+
+
+
+
 		// #TODO_Ivar: Convert to render graph.
 #if 0
 		Ref<Texture2D> environmentTexture = AssetManager::GetAsset<Texture2D>(baseTextureHandle);
@@ -408,9 +472,9 @@ namespace Volt
 		return false;
 	}
 
-	BindlessResourceRef<RHI::SamplerState> Renderer::GetSamplerInternal(const RHI::SamplerStateCreateInfo& samplerInfo)
+	BindlessResourceRef<RHI::SamplerState> Renderer::GetSamplerInternal(const RHI::SamplerStateDesc& samplerInfo)
 	{
-		const size_t hash = Utility::GetHashFromSamplerInfo(samplerInfo);
+		const size_t hash = Utility::GetHashFromSamplerDesc(samplerInfo);
 		if (m_samplers.contains(hash))
 		{
 			return m_samplers.at(hash);
@@ -435,7 +499,7 @@ namespace Volt
 		{
 			constexpr uint32_t PIXEL_DATA[6] = { 0, 0, 0, 0, 0, 0 };
 
-			RHI::ImageSpecification imageSpec{};
+			RHI::ImageDesc imageSpec{};
 			imageSpec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
 			imageSpec.usage = RHI::ImageUsage::Texture;
 			imageSpec.width = 1;
@@ -451,7 +515,7 @@ namespace Volt
 		{
 			constexpr uint32_t PIXEL_DATA = 0xffffffff;
 			
-			RHI::ImageSpecification imageSpec{};
+			RHI::ImageDesc imageSpec{};
 			imageSpec.format = RHI::PixelFormat::R8G8B8A8_UNORM;
 			imageSpec.usage = RHI::ImageUsage::Texture;
 			imageSpec.width = 1;
@@ -482,7 +546,7 @@ namespace Volt
 	{
 		constexpr uint32_t DFGSize = 512;
 
-		RHI::ImageSpecification spec{};
+		RHI::ImageDesc spec{};
 		spec.format = RHI::PixelFormat::R16G16B16A16_SFLOAT;
 		spec.usage = RHI::ImageUsage::AttachmentStorage;
 		spec.width = DFGSize;

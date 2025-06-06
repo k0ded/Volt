@@ -34,7 +34,7 @@ namespace Volt
 	{
 		CreateMainRenderTarget(specification.initialResolution.x, specification.initialResolution.y);
 
-		RHI::ImageSpecification spec{};
+		RHI::ImageDesc spec{};
 		spec.width = 1;
 		spec.height = 1;
 		spec.usage = RHI::ImageUsage::Storage;
@@ -97,6 +97,8 @@ namespace Volt
 		renderView.height = m_height;
 		renderView.viewUniformBuffer = CreateViewUniformBuffer(renderGraph, camera);
 
+		AddDefaultTextures(renderGraph, blackboard);
+		AddEnvironmentTextures(renderGraph, blackboard);
 		AddDepthPrePass(renderGraph, blackboard, renderView);
 		AddGenerateGBufferPass(renderGraph, blackboard, renderView);
 
@@ -117,6 +119,40 @@ namespace Volt
 		renderGraph.Execute();
 
 		m_frameIndex++;
+	}
+
+	void SceneRenderer::AddDefaultTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
+	{
+		DefaultTextures& defaultTextures = blackboard.Add<DefaultTextures>();
+		defaultTextures.white1x1 = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().whiteTexture->GetImage());
+		defaultTextures.black1x1Cube = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+	}
+
+	void SceneRenderer::AddEnvironmentTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
+	{
+		const DefaultTextures& defaultTextures = blackboard.Get<DefaultTextures>();
+
+		EnvironmentTextures& environmentTextures = blackboard.Add<EnvironmentTextures>();
+		environmentTextures.irradiance = defaultTextures.black1x1Cube;
+		environmentTextures.radiance = defaultTextures.black1x1Cube;
+
+		for (const RenderLightData& light : m_renderScene->GetRenderLightData())
+		{
+			if (light.description.lightType == SceneLightType::Sky)
+			{
+				if (light.description.diffuseIBL)
+				{
+					environmentTextures.irradiance = renderGraph.RegisterExternalTexture(light.description.diffuseIBL);
+				}
+
+				if (light.description.specularIBL)
+				{
+					environmentTextures.radiance = renderGraph.RegisterExternalTexture(light.description.specularIBL);
+				}
+
+				break;
+			}
+		}
 	}
 
 	struct DepthPrePassVS : public GlobalShader
@@ -240,6 +276,11 @@ namespace Volt
 		});
 	}
 
+	void SceneRenderer::AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	{
+
+	}
+
 	void SceneRenderer::Invalidate()
 	{
 		VT_PROFILE_FUNCTION();
@@ -257,7 +298,7 @@ namespace Volt
 
 	void SceneRenderer::CreateMainRenderTarget(const uint32_t width, const uint32_t height)
 	{
-		RHI::ImageSpecification spec{};
+		RHI::ImageDesc spec{};
 		spec.width = width;
 		spec.height = height;
 		spec.usage = RHI::ImageUsage::AttachmentStorage;
@@ -271,7 +312,6 @@ namespace Volt
 	RGUniformBufferRef SceneRenderer::CreateViewUniformBuffer(RenderGraph& renderGraph, Ref<Camera> camera)
 	{
 		VT_PROFILE_FUNCTION();
-
 
 		// View data
 		{

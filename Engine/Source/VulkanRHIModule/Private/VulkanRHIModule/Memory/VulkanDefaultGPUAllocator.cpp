@@ -116,7 +116,7 @@ namespace Volt::RHI
 		return allocation;
 	}
 
-	Handle<Allocation> VulkanDefaultGPUAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> VulkanDefaultGPUAllocator::CreateImage(const ImageDesc& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 

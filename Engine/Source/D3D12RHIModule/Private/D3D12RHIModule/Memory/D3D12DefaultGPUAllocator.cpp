@@ -90,7 +90,7 @@ namespace Volt::RHI
 		return allocation;
 	}
 
-	Handle<Allocation> D3D12DefaultGPUAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> D3D12DefaultGPUAllocator::CreateImage(const ImageDesc& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 

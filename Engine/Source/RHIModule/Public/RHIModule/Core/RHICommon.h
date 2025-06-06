@@ -14,7 +14,6 @@ namespace Volt::RHI
 {
 	class PhysicalGraphicsDevice;
 	class GraphicsDevice;
-	class ImageView;
 	class RHIResource;
 	class Swapchain;
 
@@ -663,7 +662,7 @@ namespace Volt::RHI
 		QueueType queueType;
 	};
 
-	struct ImageSpecification
+	struct ImageDesc
 	{
 		uint32_t width = 1;
 		uint32_t height = 1;
@@ -677,7 +676,6 @@ namespace Volt::RHI
 
 		MemoryUsage memoryUsage = MemoryUsage::GPU;
 
-		AnisotropyLevel anisoLevel = AnisotropyLevel::None;
 		std::string debugName;
 
 		bool isCubeMap = false;
@@ -686,7 +684,7 @@ namespace Volt::RHI
 		bool initializeImage = true;
 	};
 
-	struct SwapchainImageSpecification
+	struct SwapchainImageDesc
 	{
 		Swapchain* swapchain = nullptr;
 		uint32_t imageIndex;
@@ -727,54 +725,6 @@ namespace Volt::RHI
 
 		float minDepth;
 		float maxDepth;
-	};
-
-	struct AttachmentInfo
-	{
-		RawPtr<ImageView> view;
-
-		ClearMode clearMode;
-
-		inline void SetClearColor(float r, float g, float b, float a) 
-		{ 
-			clearColor.float32[0] = r; 
-			clearColor.float32[1] = g; 
-			clearColor.float32[2] = b;
-			clearColor.float32[3] = a;
-		}
-
-		inline void SetClearColor(int32_t r, int32_t g, int32_t b, int32_t a)
-		{
-			clearColor.int32[0] = r;
-			clearColor.int32[1] = g;
-			clearColor.int32[2] = b;
-			clearColor.int32[3] = a;
-		}
-
-		inline void SetClearColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a)
-		{
-			clearColor.uint32[0] = r;
-			clearColor.uint32[1] = g;
-			clearColor.uint32[2] = b;
-			clearColor.uint32[3] = a;
-		}
-
-		union
-		{
-			float float32[4];
-			int32_t int32[4];
-			uint32_t uint32[4];
-
-		} clearColor;
-	};
-
-	struct RenderingInfo
-	{
-		StackVector<AttachmentInfo, MAX_COLOR_ATTACHMENT_COUNT> colorAttachments;
-		AttachmentInfo depthAttachmentInfo{};
-
-		Rect2D renderArea{};
-		uint32_t layerCount = 1;
 	};
 
 	constexpr uint32_t ALL_MIPS = std::numeric_limits<uint32_t>::max();

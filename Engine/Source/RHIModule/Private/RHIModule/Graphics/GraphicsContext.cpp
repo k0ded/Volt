@@ -20,10 +20,4 @@ namespace Volt::RHI
 		s_graphicsAPI = createInfo.graphicsApi;
 		return RHIModule::GetInstance().CreateGraphicsContext(createInfo);
 	}
-
-	void GraphicsContext::Update()
-	{
-		Get().GetDefaultAllocatorImpl()->Update();
-		Get().GetTransientAllocatorImpl()->Update();
-	}
 }

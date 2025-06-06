@@ -9,7 +9,7 @@ namespace Volt
 {
 	GPUReadbackTexture::GPUReadbackTexture(const RGTextureDesc& desc)
 	{
-		RHI::ImageSpecification spec{};
+		RHI::ImageDesc spec{};
 		spec.width = desc.width;
 		spec.height = desc.height;
 		spec.depth = desc.depth;

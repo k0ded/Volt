@@ -13,25 +13,6 @@
 
 namespace Volt
 {
-	template<typename T>
-	concept HasSetupParametersFunc = requires
-	{
-		{ T::zzInternal_ProcessMembers };
-	};
-
-	template<typename T>
-	concept HasParametersStruct = requires { typename T::Parameters; };
-
-	template <std::size_t Index = 0, typename Func, typename... Stages>
-	constexpr void ShaderStageIterator(const std::tuple<Stages...>& stages, Func&& func)
-	{
-		if constexpr (Index < sizeof...(Stages))
-		{
-			func(std::get<Index>(stages));
-			ShaderStageIterator<Index + 1>(stages, std::forward<Func>(func));
-		}
-	}
-
 	struct ShaderUniforms;
 
 	class VTRC_API ShaderRegistry
@@ -47,7 +28,6 @@ namespace Volt
 		struct ShaderRegistrationInfo
 		{
 			ShaderStageInfo stageInfos;
-			Vector<ShaderParameterMetadata> parameterMetadata;
 			std::string_view name;
 		};
 
@@ -65,14 +45,6 @@ namespace Volt
 			registrationInfo.stageInfos.filePath = filepath;
 			registrationInfo.stageInfos.shaderStage = shaderStage;
 			registrationInfo.stageInfos.entryPoint = entryPoint;
-
-			if constexpr (HasParametersStruct<T>)
-			{
-				if constexpr (HasSetupParametersFunc<typename T::Parameters>)
-				{
-					T::Parameters::zzInternal_ProcessMembers(registrationInfo.parameterMetadata);
-				}
-			}
 
 			return true;
 		}

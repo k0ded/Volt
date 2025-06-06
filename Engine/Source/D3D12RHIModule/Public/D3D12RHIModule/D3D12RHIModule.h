@@ -32,11 +32,11 @@ namespace Volt::RHI
 		RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const override;
 		RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const override;
 
-		RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const override;
-		RefPtr<Image> CreateImage(const SwapchainImageSpecification& specification) const override;
+		RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const override;
+		RefPtr<Image> CreateImage(const SwapchainImageDesc& specification) const override;
 
 		RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification) const override;
-		RefPtr<SamplerState> CreateSamplerState(const SamplerStateCreateInfo& createInfo) const override;
+		RefPtr<SamplerState> CreateSamplerState(const SamplerStateDesc& createInfo) const override;
 
 		RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const override;
 		RefPtr<TransientGPUAllocator> CreateTransientAllocator() const override;

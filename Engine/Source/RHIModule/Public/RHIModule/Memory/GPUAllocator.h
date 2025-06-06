@@ -21,7 +21,7 @@ namespace Volt::RHI
 		virtual ~GPUAllocator() = default;
 
 		virtual Handle<Allocation> CreateBuffer(const BufferDesc& desc) = 0;
-		virtual Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) = 0;
+		virtual Handle<Allocation> CreateImage(const ImageDesc& imageSpecification, MemoryUsage memoryUsage) = 0;
 
 		virtual void DestroyBuffer(Handle<Allocation> allocation) = 0;
 		virtual void DestroyImage(Handle<Allocation> allocation) = 0;

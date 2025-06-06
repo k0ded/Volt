@@ -61,7 +61,7 @@ namespace Volt
 		}
 
 		// Make sure that we do not initialize the image, as that is done for us in the render graph.
-		RHI::ImageSpecification specification = resource->GetDesc();
+		RHI::ImageDesc specification = resource->GetDesc();
 		specification.initializeImage = false;
 
 		RefPtr<RHI::Image> image = RHI::Image::Create(specification, nullptr, RHI::GraphicsContext::GetTransientAllocator());

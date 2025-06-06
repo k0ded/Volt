@@ -1116,16 +1116,111 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(reinterpret_cast<RGTextureRef>(textureSRV->GetResource()));
-		return rhiImage->GetView();
+		RGTextureRef texture = reinterpret_cast<RGTextureRef>(textureSRV->GetResource());
+		const RGTextureDesc& textureDesc = texture->GetDesc();
+		const RGTextureSRVDesc& srvDesc = textureSRV->GetDesc();
+
+		RHI::ImageViewDesc viewDesc{};
+		viewDesc.baseMipLevel = srvDesc.baseMipLevel;
+		viewDesc.baseArrayLayer = srvDesc.baseArrayLayer;
+		viewDesc.mipCount = srvDesc.mipCount;
+		viewDesc.layerCount = srvDesc.layerCount;
+
+		if (textureDesc.imageType == RHI::ResourceType::Image1D)
+		{
+			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
+			{
+				viewDesc.viewType = RHI::ImageViewType::View1D;
+			}
+			else
+			{
+				viewDesc.viewType = RHI::ImageViewType::View1DArray;
+			}
+		}
+		else if (textureDesc.imageType == RHI::ResourceType::Image2D)
+		{
+			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
+			{
+				viewDesc.viewType = RHI::ImageViewType::View2D;
+			}
+			else
+			{
+				if (textureDesc.isCubeMap)
+				{
+					viewDesc.viewType = RHI::ImageViewType::ViewCube;
+				}
+				else
+				{
+					viewDesc.viewType = RHI::ImageViewType::View2DArray;
+				}
+			}
+		}
+		else if (textureDesc.imageType == RHI::ResourceType::Image3D)
+		{
+			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
+			{
+				viewDesc.viewType = RHI::ImageViewType::View3D;
+			}
+			else
+			{
+				viewDesc.viewType = RHI::ImageViewType::View3DArray;
+			}
+		}
+
+		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(texture);
+		return rhiImage->GetView(viewDesc);
 	}
 
 	RefPtr<RHI::ImageView> RenderGraph::GetRHITextureUAV(RGTextureUAVRef textureUAV)
 	{
 		VT_PROFILE_FUNCTION();
 
-		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(reinterpret_cast<RGTextureRef>(textureUAV->GetResource()));
-		return rhiImage->GetView();
+		RGTextureRef texture = reinterpret_cast<RGTextureRef>(textureUAV->GetResource());
+		const RGTextureDesc& textureDesc = texture->GetDesc();
+		const RGTextureUAVDesc& uavDesc = textureUAV->GetDesc();
+
+		RHI::ImageViewDesc viewDesc{};
+		viewDesc.baseMipLevel = uavDesc.baseMipLevel;
+		viewDesc.baseArrayLayer = uavDesc.baseArrayLayer;
+		viewDesc.mipCount = uavDesc.mipCount;
+		viewDesc.layerCount = uavDesc.layerCount;
+
+		if (textureDesc.imageType == RHI::ResourceType::Image1D)
+		{
+			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
+			{
+				viewDesc.viewType = RHI::ImageViewType::View1D;
+			}
+			else
+			{
+				viewDesc.viewType = RHI::ImageViewType::View1DArray;
+			}
+		}
+		else if (textureDesc.imageType == RHI::ResourceType::Image2D)
+		{
+			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
+			{
+				viewDesc.viewType = RHI::ImageViewType::View2D;
+			}
+			else
+			{
+				viewDesc.viewType = RHI::ImageViewType::View2DArray;
+			}
+		}
+		else if (textureDesc.imageType == RHI::ResourceType::Image3D)
+		{
+			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
+			{
+				viewDesc.viewType = RHI::ImageViewType::View3D;
+			}
+			else
+			{
+				viewDesc.viewType = RHI::ImageViewType::View3DArray;
+			}
+		}
+
+		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(texture);
+		return rhiImage->GetView(viewDesc);
 	}
 
 	RefPtr<Volt::RHI::ImageView> RenderGraph::GetRHITextureRT(RGTextureRef texture)

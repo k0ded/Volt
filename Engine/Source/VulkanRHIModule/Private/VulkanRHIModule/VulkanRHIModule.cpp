@@ -109,12 +109,12 @@ namespace Volt::RHI
 		return RefPtr<VulkanSwapchain>::Create(createInfo);
 	}
 
-	RefPtr<Image> VulkanRHIModule::CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const
+	RefPtr<Image> VulkanRHIModule::CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const
 	{
 		return RefPtr<VulkanImage>::Create(specification, data, allocator);
 	}
 
-	RefPtr<Image> VulkanRHIModule::CreateImage(const SwapchainImageSpecification& specification) const
+	RefPtr<Image> VulkanRHIModule::CreateImage(const SwapchainImageDesc& specification) const
 	{
 		return RefPtr<VulkanImage>::Create(specification);
 	}
@@ -124,7 +124,7 @@ namespace Volt::RHI
 		return RefPtr<VulkanImageView>::Create(specification);
 	}
 
-	RefPtr<SamplerState> VulkanRHIModule::CreateSamplerState(const SamplerStateCreateInfo& createInfo) const
+	RefPtr<SamplerState> VulkanRHIModule::CreateSamplerState(const SamplerStateDesc& createInfo) const
 	{
 		return RefPtr<VulkanSamplerState>::Create(createInfo);
 	}
@@ -213,10 +213,8 @@ namespace Volt::RHI
 		GraphicsContext::GetDefaultAllocator()->Update();
 		GraphicsContext::GetTransientAllocator()->Update();
 
-		const uint32_t queueIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
+		const uint32_t queueIndex = ++m_frameIndex % RHI::Swapchain::FramesInFlight;
 		m_resourceDeletionQueue.FlushQueue(queueIndex);
-
-		m_frameIndex++;
 	}
 
 	void VulkanRHIModule::FlushResourceDeletionQueue()

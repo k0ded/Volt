@@ -7,6 +7,7 @@
 
 #include <RenderCore/Resources/BindlessResource.h>
 #include <RenderCore/DescriptorTableCache.h>
+#include <RenderCore/SamplerStateCache.h>
 
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Core/RHICommon.h>
@@ -19,7 +20,7 @@ namespace Volt
 	namespace RHI
 	{
 		class SamplerState;
-		struct SamplerStateCreateInfo;
+		struct SamplerStateDesc;
 	}
 
 	class Texture2D;
@@ -80,7 +81,7 @@ namespace Volt
 		template<RHI::TextureFilter min, RHI::TextureFilter mag, RHI::TextureFilter mip, RHI::TextureWrap wrapMode = RHI::TextureWrap::Repeat, RHI::AnisotropyLevel aniso = RHI::AnisotropyLevel::None, RHI::CompareOperator compareOperator = RHI::CompareOperator::None>
 		static BindlessResourceRef<RHI::SamplerState> GetSampler()
 		{
-			RHI::SamplerStateCreateInfo info{};
+			RHI::SamplerStateDesc info{};
 			info.minFilter = min;
 			info.magFilter = mag;
 			info.mipFilter = mip;
@@ -97,7 +98,7 @@ namespace Volt
 		bool OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event);
 		bool OnPreRenderEvent(AppPreRenderEvent& event);
 
-		BindlessResourceRef<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateCreateInfo& samplerInfo);
+		BindlessResourceRef<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateDesc& samplerInfo);
 		void CreateDefaultResources();
 		void GenerateDFGLuT();
 
@@ -109,6 +110,7 @@ namespace Volt
 		Scope<BlueNoise> m_blueNoise;
 		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
 		Scope<DescriptorTableCache> m_descriptorTableCache;
+		Scope<SamplerStateCache> m_samplerStateCache;
 
 		vt::map<size_t, BindlessResourceRef<RHI::SamplerState>> m_samplers;
 

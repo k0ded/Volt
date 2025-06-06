@@ -216,7 +216,7 @@ namespace Volt
 
 		// Create image
 		{
-			RHI::ImageSpecification specification{};
+			RHI::ImageDesc specification{};
 			specification.format = textureHeader.format;
 			specification.usage = RHI::ImageUsage::Texture;
 			specification.width = textureHeader.mips.front().width;

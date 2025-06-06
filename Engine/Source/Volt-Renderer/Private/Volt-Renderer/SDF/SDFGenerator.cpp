@@ -264,7 +264,7 @@ namespace Volt
 			const uint32_t size = static_cast<uint32_t>(std::ceil(std::pow(static_cast<double>(brickGrid.size()), 1.0 / 3.0))) * BRICK_SIZE;
 			result.size = size;
 
-			RHI::ImageSpecification imageSpec{};
+			RHI::ImageDesc imageSpec{};
 			imageSpec.width = size;
 			imageSpec.height = size;
 			imageSpec.depth = size;

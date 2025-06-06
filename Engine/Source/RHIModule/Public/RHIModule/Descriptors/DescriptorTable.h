@@ -35,8 +35,6 @@ namespace Volt::RHI
 		static RefPtr<DescriptorTable> Create(const DescriptorTableCreateInfo& specification);
 
 	protected:
-		virtual void Bind(CommandBuffer& commandBuffer) = 0;
-
 		DescriptorTable() = default;
 	};
 }

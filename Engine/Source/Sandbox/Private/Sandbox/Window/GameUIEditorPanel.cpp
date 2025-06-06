@@ -324,7 +324,7 @@ void GameUIEditorPanel::HandleSelection()
 
 void GameUIEditorPanel::CreateViewportImage(const uint32_t width, const uint32_t height)
 {
-	Volt::RHI::ImageSpecification spec{};
+	Volt::RHI::ImageDesc spec{};
 	spec.width = width;
 	spec.height = height;
 	spec.usage = Volt::RHI::ImageUsage::AttachmentStorage;

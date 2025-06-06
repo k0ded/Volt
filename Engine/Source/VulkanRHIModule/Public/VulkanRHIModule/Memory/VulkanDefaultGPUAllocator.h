@@ -19,7 +19,7 @@ namespace Volt::RHI
 		~VulkanDefaultGPUAllocator() override;
 
 		Handle<Allocation> CreateBuffer(const BufferDesc& desc) override;
-		Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) override;
+		Handle<Allocation> CreateImage(const ImageDesc& imageSpecification, MemoryUsage memoryUsage) override;
 
 		void DestroyBuffer(Handle<Allocation> allocation) override;
 		void DestroyImage(Handle<Allocation> allocation) override;

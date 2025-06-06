@@ -213,19 +213,13 @@ namespace Volt::RHI
 
 	RefPtr<BufferView> VulkanStorageBuffer::GetView(const BufferViewDesc& desc)
 	{
-		if (m_view)
-		{
-			return m_view;
-		}
-
 		BufferViewDesc tempDesc = desc;
 		tempDesc.bufferResource = this;
 		tempDesc.bufferFormat = desc.bufferFormat;
 		tempDesc.size = desc.size;
 		tempDesc.offset = desc.offset;
 
-		m_view = BufferView::Create(tempDesc);
-		return m_view;
+		return BufferView::Create(tempDesc);
 	}
 
 	void VulkanStorageBuffer::SetName(const std::string& name)

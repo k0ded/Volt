@@ -9,7 +9,7 @@ namespace Volt::RHI
 	class D3D12SamplerState : public SamplerState
 	{
 	public: 
-		D3D12SamplerState(const SamplerStateCreateInfo& createInfo);
+		D3D12SamplerState(const SamplerStateDesc& createInfo);
 		~D3D12SamplerState() override;
 
 	protected:

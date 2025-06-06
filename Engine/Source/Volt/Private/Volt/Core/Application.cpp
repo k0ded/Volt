@@ -316,8 +316,6 @@ namespace Volt
 	{
 		m_hasSentMouseMovedEvent = false;
 
-		RHI::GraphicsContext::Update();
-
 		WindowManager::Get().BeginFrame();
 
 		m_currentDeltaTime = m_frameTimer.GetDeltaTime();

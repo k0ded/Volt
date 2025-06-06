@@ -7,6 +7,7 @@
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
+#include <RHIModule/Core/RenderingInfo.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Allocators/InlineAllocator.h>
@@ -132,14 +133,13 @@ namespace Volt
 
 		using ShaderParametersType = typename ShaderType::Parameters;
 
-		constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<ShaderType>();
-		const auto& parameterRegistrationInfo = g_shaderRegistry.GetShaderRegistrationInfo(typeIndex);
+		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ShaderParametersType::GetShaderParameterMetadata();
 		const auto& shaderParameterMap = shader->GetParameterMap();
 
 		// We need to use const_cast here because the resource parameters need to be non-const pointers.
 		uint8_t* parametersDataPtr = reinterpret_cast<uint8_t*>(const_cast<ShaderParametersType*>(parameters));
 
-		for (const auto& parameter : parameterRegistrationInfo.parameterMetadata)
+		for (const auto& parameter : parameterStructMetadata)
 		{
 			uint8_t* parameterDataPtr = &parametersDataPtr[parameter.structOffset];
 
@@ -158,8 +158,7 @@ namespace Volt
 	template<typename ParameterStruct>
 	void RenderContext::CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters)
 	{
-		Vector<ShaderParameterMetadata> parameterStructMetadata;
-		ParameterStruct::zzInternal_ProcessMembers(parameterStructMetadata);
+		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
 
 		// We need to use const_cast here because the resource parameters need to be non-const pointers.
 		uint8_t* parametersStructBytePtr = reinterpret_cast<uint8_t*>(const_cast<ParameterStruct*>(parameters));

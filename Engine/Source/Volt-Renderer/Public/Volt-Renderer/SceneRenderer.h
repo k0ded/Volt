@@ -107,8 +107,11 @@ namespace Volt
 		void OnRender(Ref<Camera> camera, float timestep);
 
 		///// Render Passes /////
+		void AddDefaultTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void AddEnvironmentTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		/////////////////////////
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);

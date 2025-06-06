@@ -9,7 +9,7 @@
 
 namespace Volt::RHI
 {
-	D3D12SamplerState::D3D12SamplerState(const SamplerStateCreateInfo& createInfo)
+	D3D12SamplerState::D3D12SamplerState(const SamplerStateDesc& createInfo)
 	{
 		D3D12_SAMPLER_DESC samplerDesc{};
 		samplerDesc.Filter = Utility::VoltToD3D12Filter(createInfo.minFilter, createInfo.magFilter, createInfo.mipFilter, createInfo.compareOperator);

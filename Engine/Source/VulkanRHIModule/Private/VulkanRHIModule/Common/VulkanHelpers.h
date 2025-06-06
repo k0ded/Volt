@@ -9,7 +9,7 @@
 
 namespace Volt::RHI
 {
-	struct ImageSpecification;
+	struct ImageDesc;
 
 	namespace Utility
 	{
@@ -418,7 +418,7 @@ namespace Volt::RHI
 			return result;
 		}
 
-		const VkImageCreateInfo GetVkImageCreateInfo(const ImageSpecification& specification);
+		const VkImageCreateInfo GetVkImageCreateInfo(const ImageDesc& specification);
 		const MemoryRequirement GetImageRequirement(const VkImageCreateInfo& imageCreateInfo);
 
 		const ImageLayout GetImageLayoutFromVkImageLayout(VkImageLayout layout);

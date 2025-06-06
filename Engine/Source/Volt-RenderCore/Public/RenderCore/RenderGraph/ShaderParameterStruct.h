@@ -79,6 +79,19 @@ namespace Volt
 				ptr = reinterpret_cast<MemberFunc>(ptr)(FirstMemberID(), outMetadata, offset); \
 			} while (ptr != nullptr); \
 		} \
+		struct ShaderParameters \
+		{ \
+			ShaderParameters() \
+			{ \
+				zzInternal_ProcessMembers(parameterMetadata); \
+			} \
+			Vector<Volt::ShaderParameterMetadata> parameterMetadata; \
+		}; \
+		static const Vector<Volt::ShaderParameterMetadata>& GetShaderParameterMetadata() \
+		{ \
+			static ShaderParameters shaderParameters; \
+			return shaderParameters.parameterMetadata; \
+		} \
 	}; 
 
 #define SHADER_PARAMETER_COMMON_INTERNAL(type, paramName, paramType, resourceAccess) \
@@ -128,6 +141,12 @@ public: \
 public: \
 	type paramName; \
 	SHADER_PARAMETER_COMMON_INTERNAL(type, paramName, Volt::ShaderParameterType::Parameter, Volt::RGResourceAccess::None)
+
+#define SHADER_PARAMETER_SAMPLER(paramName) \
+	MemberID##paramName; \
+public: \
+	RefPtr<Volt::RHI::SamplerState> paramName; \
+	SHADER_PARAMETER_COMMON_INTERNAL(RefPtr<Volt::RHI::SamplerState>, paramName, Volt::ShaderParameterType::Sampler, Volt::RGResourceAccess::None)
 
 #define SHADER_PARAMETER_BUFFER_SRV(type, paramName) \
 	MemberID##paramName; \

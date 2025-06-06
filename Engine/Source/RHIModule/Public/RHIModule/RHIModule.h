@@ -66,10 +66,10 @@ namespace Volt::RHI
 	struct GraphicsContextCreateInfo;
 	struct GraphicsDeviceCreateInfo;
 	struct PhysicalDeviceCreateInfo;
-	struct ImageSpecification;
-	struct SwapchainImageSpecification;
+	struct ImageDesc;
+	struct SwapchainImageDesc;
 	struct ImageViewDesc;
-	struct SamplerStateCreateInfo;
+	struct SamplerStateDesc;
 	struct TransientHeapCreateInfo;
 	struct RenderPipelineCreateInfo;
 	struct RayTracingPipelineCreateInfo;
@@ -114,11 +114,11 @@ namespace Volt::RHI
 		virtual RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const = 0;
 		virtual RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const = 0;
 
-		virtual RefPtr<Image> CreateImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator) const = 0;
-		virtual RefPtr<Image> CreateImage(const SwapchainImageSpecification& specification) const = 0;
+		virtual RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const = 0;
+		virtual RefPtr<Image> CreateImage(const SwapchainImageDesc& specification) const = 0;
 
 		virtual RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification) const = 0;
-		virtual RefPtr<SamplerState> CreateSamplerState(const SamplerStateCreateInfo& createInfo) const = 0;
+		virtual RefPtr<SamplerState> CreateSamplerState(const SamplerStateDesc& createInfo) const = 0;
 
 		virtual RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const = 0; 
 		virtual RefPtr<TransientGPUAllocator> CreateTransientAllocator() const = 0;

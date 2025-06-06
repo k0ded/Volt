@@ -35,6 +35,8 @@ namespace Volt::RHI
 
 	class AccelerationStructure;
 
+	struct RenderingInfo;
+
 	enum class CommandBufferLevel
 	{
 		Primary,
