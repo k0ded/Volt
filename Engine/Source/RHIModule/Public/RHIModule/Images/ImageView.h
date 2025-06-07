@@ -7,8 +7,8 @@ namespace Volt::RHI
 {
 	struct ImageViewDesc
 	{
-		inline static constexpr uint32_t LayerCountMax = std::numeric_limits<uint32_t>::max();
-		inline static constexpr uint32_t MipCountMax = std::numeric_limits<uint32_t>::max();
+		inline static constexpr uint32_t LayerCountMax = 31;
+		inline static constexpr uint32_t MipCountMax = 31;
 
 		ImageViewType viewType = ImageViewType::View2D;
 

@@ -31,9 +31,15 @@ namespace Volt
 		~RGUniformBuffer() override = default;
 		RGResourceType GetResourceType() const override;
 
+		bool HasProducer(RGResourceUAV* uav) const override;
+		bool HasProducer() const override;
+		void AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav) override;
+		void AddProducer(Handle<RenderGraphPass> pass) override;
+
 		VT_NODISCARD VT_INLINE const RGUniformBufferDesc& GetDesc() const { return m_desc; }
 
 	private:
+		bool m_isProduced = false;
 		RGUniformBufferDesc m_desc;
 	};
 

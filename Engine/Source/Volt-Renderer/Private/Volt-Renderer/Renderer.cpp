@@ -96,6 +96,18 @@ namespace Volt
 	};
 	REGISTER_SHADER(IntegrateSpecularCubeCS, "Engine/Shaders/Source/PBR/IntegrateSpecularCube.hlsl", "MainCS", Compute);
 
+	struct IntegrateDiffuseCubeCS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(IntegrateDiffuseCubeCS)
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2DArray<float3>, RWOutput)
+			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, Input)
+			SHADER_PARAMETER_SAMPLER(LinearSampler)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(IntegrateDiffuseCubeCS, "Engine/Shaders/Source/PBR/IntegrateDiffuseCube.hlsl", "MainCS", Compute);
+
 	struct GeneratePreIntegratedDFGPS : public GlobalShader
 	{
 		DECLARE_GLOBAL_SHADER(GeneratePreIntegratedDFGPS)
@@ -190,8 +202,8 @@ namespace Volt
 			return {};
 		}
 
-		constexpr uint32_t CubeMapSize = 2048;
-		//constexpr uint32_t DiffuseMapSize = 256;
+		constexpr uint32_t CubeMapSize = 1024;
+		constexpr uint32_t DiffuseMapSize = 256;
 		constexpr uint32_t ConversionThreadGroupSize = 32;
 
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
@@ -216,242 +228,84 @@ namespace Volt
 				{ groupCount, groupCount, 6 });
 		}
 
-
-
-
-		// #TODO_Ivar: Convert to render graph.
-#if 0
-		Ref<Texture2D> environmentTexture = AssetManager::GetAsset<Texture2D>(baseTextureHandle);
-		if (!environmentTexture || !environmentTexture->IsValid())
-		{
-			return {};
-		}
-
-		constexpr uint32_t CUBE_MAP_SIZE = 2048;
-		constexpr uint32_t DIFFUSE_MAP_SIZE = 256;
-		constexpr uint32_t CONVERSION_THREAD_GROUP_SIZE = 32;
-
-		RefPtr<RHI::Image> environmentRaw;
-		RefPtr<RHI::Image> environmentSpecular;
-		RefPtr<RHI::Image> environmentDiffuse;
-
-		auto linearSampler = GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>();
-
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		commandBuffer->Begin();
-
-		// Unfiltered - Conversion
-		{
-			RHI::ImageSpecification imageSpec{};
-			imageSpec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
-			imageSpec.width = CUBE_MAP_SIZE;
-			imageSpec.height = CUBE_MAP_SIZE;
-			imageSpec.usage = RHI::ImageUsage::Storage;
-			imageSpec.layers = 6;
-			imageSpec.isCubeMap = true;
-
-			environmentRaw = RHI::Image::Create(imageSpec);
-
-			{
-				RHI::ResourceBarrierInfo barrierInfo{};
-				barrierInfo.type = RHI::BarrierType::Image;
-				barrierInfo.imageBarrier().srcStage = RHI::BarrierStage::None;
-				barrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::None;
-				barrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::Undefined;
-				barrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				barrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
-				barrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
-				barrierInfo.imageBarrier().resource = environmentRaw;
-				commandBuffer->ResourceBarrier({ barrierInfo });
-			}
-
-			auto conversionPipeline = ShaderMap::GetComputePipeline<EquirectangularToCubemapCS>(false);
-
-			RHI::DescriptorTableCreateInfo tableInfo{};
-			tableInfo.shader = conversionPipeline->GetShader();
-
-			RefPtr<RHI::DescriptorTable> descriptorTable = RHI::DescriptorTable::Create(tableInfo);
-			descriptorTable->SetImageView("o_output", environmentRaw->GetArrayView(), 0);
-			descriptorTable->SetImageView("u_equirectangularMap", environmentTexture->GetImage()->GetView(), 0);
-			descriptorTable->SetSamplerState("u_linearSampler", linearSampler->GetResource(), 0);
-
-			commandBuffer->BindPipeline(conversionPipeline);
-			commandBuffer->BindDescriptorTable(descriptorTable);
-
-			const uint32_t groupCount = Math::DivideRoundUp(CUBE_MAP_SIZE, CONVERSION_THREAD_GROUP_SIZE);
-			commandBuffer->Dispatch(groupCount, groupCount, 6);
-
-			{
-				RHI::ResourceBarrierInfo imageBarrierInfo{};
-				imageBarrierInfo.type = RHI::BarrierType::Image;
-				imageBarrierInfo.imageBarrier().srcStage = RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::ShaderWrite;
-				imageBarrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::ShaderWrite;
-				imageBarrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
-				imageBarrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
-				imageBarrierInfo.imageBarrier().resource = environmentRaw;
-
-				RHI::ResourceBarrierInfo barrierInfo{};
-				barrierInfo.type = RHI::BarrierType::Global;
-				barrierInfo.globalBarrier().srcAccess = RHI::BarrierAccess::ShaderWrite;
-				barrierInfo.globalBarrier().srcStage = RHI::BarrierStage::ComputeShader;
-				barrierInfo.globalBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
-				barrierInfo.globalBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				commandBuffer->ResourceBarrier({ barrierInfo, imageBarrierInfo });
-			}
-		}
-
 		// Specular
+		RGTextureDesc specularDesc{};
+		specularDesc.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
+		specularDesc.width = CubeMapSize;
+		specularDesc.height = CubeMapSize;
+		specularDesc.usage = RHI::ImageUsage::Storage;
+		specularDesc.layers = 6;
+		specularDesc.isCubeMap = true;
+		specularDesc.mips = RHI::Utility::CalculateMipCount(CubeMapSize, CubeMapSize);
+		specularDesc.debugName = "Environment - Specular";
+		
+		RGTextureRef environmentSpecular = renderGraph.CreateTexture(specularDesc);
 		{
-			RHI::ImageSpecification imageSpec{};
-			imageSpec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
-			imageSpec.width = CUBE_MAP_SIZE;
-			imageSpec.height = CUBE_MAP_SIZE;
-			imageSpec.usage = RHI::ImageUsage::Storage;
-			imageSpec.layers = 6;
-			imageSpec.isCubeMap = true;
-			imageSpec.mips = RHI::Utility::CalculateMipCount(CUBE_MAP_SIZE, CUBE_MAP_SIZE);
-			imageSpec.debugName = "Environment - Specular";
-
-			environmentSpecular = RHI::Image::Create(imageSpec);
-
-			for (uint32_t i = 0; i < imageSpec.mips; i++)
+			for (uint32_t i = 0, size = CubeMapSize; i < specularDesc.mips; ++i, size /= 2)
 			{
-				environmentSpecular->GetArrayView(i);
-			}
+				IntegrateSpecularCubeCS::Parameters* passParameters = renderGraph.AllocParameters<IntegrateSpecularCubeCS::Parameters>();
+				
+				RGTextureUAVDesc uavDesc{};
+				uavDesc.textureResource = environmentSpecular;
+				uavDesc.baseMipLevel = i;
+				uavDesc.mipCount = 1;
 
-			{
-				RHI::ResourceBarrierInfo barrierInfo{};
-				barrierInfo.type = RHI::BarrierType::Image;
-				barrierInfo.imageBarrier().srcStage = RHI::BarrierStage::None;
-				barrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::None;
-				barrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::Undefined;
-				barrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				barrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
-				barrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
-				barrierInfo.imageBarrier().resource = environmentSpecular;
-				commandBuffer->ResourceBarrier({ barrierInfo });
-			}
+				passParameters->RWOutput = renderGraph.CreateUAV(uavDesc);
+				passParameters->Input = renderGraph.CreateSRV(environmentRaw);
+				passParameters->LinearSampler = SamplerStateCache::GetTrilinearSampler();
+				passParameters->MipIndex = i;
+				passParameters->MipCount = specularDesc.mips;
 
-			auto pipeline = ShaderMap::GetComputePipeline<IntegrateSpecularCubeCS>(false);
-			RHI::DescriptorTableCreateInfo tableInfo{};
-			tableInfo.shader = pipeline->GetShader();
-
-			Vector<RefPtr<RHI::DescriptorTable>> descriptorTables;
-			for (uint32_t i = 0; i < imageSpec.mips; i++)
-			{
-				descriptorTables.emplace_back(RHI::DescriptorTable::Create(tableInfo));
-				descriptorTables.back()->SetImageView("u_input", environmentRaw->GetView(), 0);
-				descriptorTables.back()->SetSamplerState("u_linearSampler", linearSampler->GetResource(), 0);
-			}
-
-			struct Constants
-			{
-				uint32_t mipIndex;
-				uint32_t mipCount;
-			} constants;
-
-			for (uint32_t i = 0, size = CUBE_MAP_SIZE; i < imageSpec.mips; i++, size /= 2)
-			{
 				const uint32_t numGroups = glm::max(1u, Math::DivideRoundUp(size, 32u));
 
-				constants.mipIndex = i;
-				constants.mipCount = imageSpec.mips;
-
-				descriptorTables[i]->SetImageView("o_output", environmentSpecular->GetArrayView(i), 0);
-
-				commandBuffer->BindPipeline(pipeline);
-				commandBuffer->BindDescriptorTable(descriptorTables[i]);
-				commandBuffer->PushConstants(&constants, sizeof(Constants), 0);
-				commandBuffer->Dispatch(numGroups, numGroups, 6);
-
-				RHI::ResourceBarrierInfo imageBarrierInfo{};
-				imageBarrierInfo.type = RHI::BarrierType::Image;
-				imageBarrierInfo.imageBarrier().srcStage = RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::ShaderWrite;
-				imageBarrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::ShaderWrite;
-				imageBarrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
-				imageBarrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
-				imageBarrierInfo.imageBarrier().subResource.levelCount = 1;
-				imageBarrierInfo.imageBarrier().subResource.baseMipLevel = i;
-				imageBarrierInfo.imageBarrier().resource = environmentSpecular;
-
-				commandBuffer->ResourceBarrier({ imageBarrierInfo });
+				auto shader = ShaderMap::Get<IntegrateSpecularCubeCS>();
+				ComputeShaderUtils::AddPass<IntegrateSpecularCubeCS>(renderGraph,
+					"Integrate Specular",
+					shader,
+					passParameters,
+					{ numGroups, numGroups, 6 });
 			}
 		}
 
 		// Diffuse
+		RGTextureDesc diffuseDesc{};
+		diffuseDesc.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
+		diffuseDesc.width = DiffuseMapSize;
+		diffuseDesc.height = DiffuseMapSize;
+		diffuseDesc.usage = RHI::ImageUsage::Storage;
+		diffuseDesc.layers = 6;
+		diffuseDesc.isCubeMap = true;
+		diffuseDesc.mips = RHI::Utility::CalculateMipCount(DiffuseMapSize, DiffuseMapSize);
+		diffuseDesc.debugName = "Environment - Diffuse";
+
+		RGTextureRef environmentDiffuse = renderGraph.CreateTexture(diffuseDesc);
 		{
-			RHI::ImageSpecification imageSpec{};
-			imageSpec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
-			imageSpec.width = DIFFUSE_MAP_SIZE;
-			imageSpec.height = DIFFUSE_MAP_SIZE;
-			imageSpec.usage = RHI::ImageUsage::Storage;
-			imageSpec.layers = 6;
-			imageSpec.isCubeMap = true;
-			imageSpec.mips = RHI::Utility::CalculateMipCount(DIFFUSE_MAP_SIZE, DIFFUSE_MAP_SIZE);
-			imageSpec.debugName = "Environment - Diffuse";
+			IntegrateDiffuseCubeCS::Parameters* passParameters = renderGraph.AllocParameters<IntegrateDiffuseCubeCS::Parameters>();
+			passParameters->RWOutput = renderGraph.CreateUAV(environmentDiffuse);
+			passParameters->Input = renderGraph.CreateSRV(environmentRaw);
+			passParameters->LinearSampler = SamplerStateCache::GetTrilinearSampler();
 
-			environmentDiffuse = RHI::Image::Create(imageSpec);
-		
-			{
-				RHI::ResourceBarrierInfo barrierInfo{};
-				barrierInfo.type = RHI::BarrierType::Image;
-				barrierInfo.imageBarrier().srcStage = RHI::BarrierStage::None;
-				barrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::None;
-				barrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::Undefined;
-				barrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				barrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
-				barrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
-				barrierInfo.imageBarrier().resource = environmentDiffuse;
-				commandBuffer->ResourceBarrier({ barrierInfo });
-			}
+			const uint32_t groupCount = Math::DivideRoundUp(DiffuseMapSize, ConversionThreadGroupSize);
 
-			auto pipeline = ShaderMap::GetComputePipeline<IntegrateDiffuseCubeCS>(false);
-			RHI::DescriptorTableCreateInfo tableInfo{};
-			tableInfo.shader = pipeline->GetShader();
-
-			RefPtr<RHI::DescriptorTable> descriptorTable = RHI::DescriptorTable::Create(tableInfo);
-			descriptorTable->SetImageView("o_output", environmentDiffuse->GetArrayView(), 0);
-			descriptorTable->SetImageView("u_input", environmentRaw->GetView(), 0);
-			descriptorTable->SetSamplerState("u_linearSampler", linearSampler->GetResource(), 0);
-
-			commandBuffer->BindPipeline(pipeline);
-			commandBuffer->BindDescriptorTable(descriptorTable);
-
-			const uint32_t groupCount = Math::DivideRoundUp(DIFFUSE_MAP_SIZE, CONVERSION_THREAD_GROUP_SIZE);
-			commandBuffer->Dispatch(groupCount, groupCount, 6);
-
-			{
-				RHI::ResourceBarrierInfo imageBarrierInfo{};
-				imageBarrierInfo.type = RHI::BarrierType::Image;
-				imageBarrierInfo.imageBarrier().srcStage = RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::ShaderWrite;
-				imageBarrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::ShaderWrite;
-				imageBarrierInfo.imageBarrier().dstStage = RHI::BarrierStage::PixelShader | RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
-				imageBarrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
-				imageBarrierInfo.imageBarrier().resource = environmentDiffuse;
-
-				commandBuffer->ResourceBarrier({ imageBarrierInfo });
-			}
-
+			auto shader = ShaderMap::Get<IntegrateDiffuseCubeCS>();
+			ComputeShaderUtils::AddPass<IntegrateDiffuseCubeCS>(renderGraph,
+				"Integrate Diffuse",
+				shader,
+				passParameters,
+				{ groupCount, groupCount, 6 });
 		}
 
-		commandBuffer->End();
-		commandBuffer->ExecuteAndWait();
-
-		environmentDiffuse->GenerateMips();
-
 		EnvironmentTextures result{};
-		result.diffuse = environmentDiffuse;
-		result.specular = environmentSpecular;
+
+		renderGraph.EnqueueTextureExtraction(environmentSpecular, &result.specular);
+		renderGraph.EnqueueTextureExtraction(environmentDiffuse, &result.diffuse);
+
+		renderGraph.Compile();
+		renderGraph.ExecuteImmediateAndWait();
+
+		result.diffuse->GenerateMips();
 
 		return result;
-#endif
-		return {};
 	}
 
 	bool Renderer::OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event)

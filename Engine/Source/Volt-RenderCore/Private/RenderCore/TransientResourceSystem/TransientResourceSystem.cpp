@@ -64,7 +64,9 @@ namespace Volt
 		RHI::ImageDesc specification = resource->GetDesc();
 		specification.initializeImage = false;
 
-		RefPtr<RHI::Image> image = RHI::Image::Create(specification, nullptr, RHI::GraphicsContext::GetTransientAllocator());
+		// If the resource is going to be extracted we will not use the transient allocator.
+		RefPtr<RHI::GPUAllocator> allocator = (!resource->isExtracted) ? RHI::GraphicsContext::GetTransientAllocator() : nullptr;
+		RefPtr<RHI::Image> image = RHI::Image::Create(specification, nullptr, allocator);
 
 		ResourceInfo info{};
 		info.resource = image;

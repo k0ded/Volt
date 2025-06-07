@@ -389,11 +389,13 @@ namespace Volt
 
 	void RenderGraph::EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage)
 	{
+		texture->isExtracted = true;
 		m_textureExtractions.emplace_back(texture, outImage);
 	}
 
 	void RenderGraph::EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::StorageBuffer>* outBuffer)
 	{
+		buffer->isExtracted = true;
 		m_bufferExtractions.emplace_back(buffer, outBuffer);
 	}
 
@@ -503,24 +505,22 @@ namespace Volt
 			// Mark the first writer of a resource as it's producer
 			for (auto resource : pass->GetResourceWrites())
 			{
-				if (!resource->GetResource()->producer)
+				if (!resource->GetResource()->HasProducer(resource))
 				{
-					resource->GetResource()->producer = pass;
-					resource->GetResource()->isProduced = true;
+					resource->GetResource()->AddProducer(pass, resource);
 				}
 			}
 
 			for (auto resource : pass->GetResourceRenderTargetAccesses())
 			{
-				if (!resource->producer)
+				if (!resource->HasProducer())
 				{
-					resource->producer = pass;
-					resource->isProduced = true;
+					resource->AddProducer(pass);
 
 					// If this pass is the render targets producer, we need to increase the ref count of the pass.
 					pass->refCount++;
 				}
-				else if (resource->producer != pass)
+				else if (resource->IsProducer(pass))
 				{
 					// We add a reference if we are not the producer 
 					// of this resource, because we can then consider it being a "read"
@@ -534,10 +534,9 @@ namespace Volt
 				// into the resource.
 				if (resourceAccess.accessType == RGResourceAccess::CopyDst)
 				{
-					if (!resourceAccess.resource->producer)
+					if (!resourceAccess.resource->HasProducer())
 					{
-						resourceAccess.resource->producer = pass;
-						resourceAccess.resource->isProduced = true;
+						resourceAccess.resource->AddProducer(pass);
 					}
 
 					// We need to increase the ref count of the pass as well.
@@ -561,51 +560,53 @@ namespace Volt
 			RGResourceRef unreferencedResource = unreferencedResources.back();
 			unreferencedResources.pop_back();
 
-			if (unreferencedResource->isExternal)
+			// If the resource is external, or queued to be extracted, we will skip 
+			// the culling logic.
+			if (unreferencedResource->isExternal || unreferencedResource->isExtracted)
 			{
 				continue;
 			}
 
-			auto producer = unreferencedResource->producer;
-			VT_ENSURE_MSG(producer, "Node should always have a producer!");
-
-			// If the pass has been marked as never cull, we won't continue this iteration
-			if (EnumValueContainsFlag(producer->flags, RenderGraphPassFlags::NeverCull))
+			for (const Handle<RenderGraphPass> producer : unreferencedResource->producers)
 			{
-				continue;
-			}
-
-			VT_ENSURE_MSG(producer->refCount > 0, "Ref count cannot be zero at this time!");
-
-			// Decrease the reference counter on the producer, and then decrease the reference counter of it's resource reads.
-			// This might produce more unreferenced resources and continue the loop.
-			producer->refCount--;
-			if (producer->refCount == 0)
-			{
-				for (auto resourceAccess : producer->GetResourceReads())
+				// If the pass has been marked as never cull, we won't continue this iteration
+				if (EnumValueContainsFlag(producer->flags, RenderGraphPassFlags::NeverCull))
 				{
-					auto resource = resourceAccess->GetResource();
-					resource->DecRef();
-				
-					if (resource->GetRefCount() == 0)
-					{
-						unreferencedResources.emplace_back(resource);
-					}
+					continue;
 				}
 
-				for (auto resource : producer->GetResourceRenderTargetAccesses())
+				VT_ENSURE_MSG(producer->refCount > 0, "Ref count cannot be zero at this time!");
+
+				// Decrease the reference counter on the producer, and then decrease the reference counter of it's resource reads.
+				// This might produce more unreferenced resources and continue the loop.
+				producer->refCount--;
+				if (producer->refCount == 0)
 				{
-					if (producer != resource->producer)
+					for (auto resourceAccess : producer->GetResourceReads())
 					{
+						auto resource = resourceAccess->GetResource();
 						resource->DecRef();
+
 						if (resource->GetRefCount() == 0)
 						{
 							unreferencedResources.emplace_back(resource);
 						}
 					}
-				}
 
-				producer->isCulled = true;
+					for (auto resource : producer->GetResourceRenderTargetAccesses())
+					{
+						if (!resource->IsProducer(producer))
+						{
+							resource->DecRef();
+							if (resource->GetRefCount() == 0)
+							{
+								unreferencedResources.emplace_back(resource);
+							}
+						}
+					}
+
+					producer->isCulled = true;
+				}
 			}
 		}
 
@@ -726,7 +727,7 @@ namespace Volt
 					}
 
 					// Handle cases
-					if (pass != resource->producer)
+					if (!resource->IsFirstProducer(pass))
 					{
 						auto& resourceState = resourceStateTracker.GetState(resource);
 
@@ -792,7 +793,7 @@ namespace Volt
 
 					// If the pass is this resources producer, we handle it a little bit different because this will be the first entry
 					// in the resource state tracker.
-					if (resource->producer == pass)
+					if (resource->IsFirstProducer(pass))
 					{
 						auto& resourceState = resourceStateTracker.GetState(resource);
 						resourceState.currentState = newState;

@@ -388,6 +388,17 @@ namespace Volt
 		}
 	}
 
+	void RenderContext::SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		VT_ENSURE(m_descriptorTable);
+
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding)
+		{
+			m_descriptorTable->SetSamplerState(sampler, resourceBinding->set, resourceBinding->binding);
+		}
+	}
+
 	void RenderContext::SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
 		const RHI::ShaderUniform* shaderParameter = shaderParameterMap.GetParameterFromName(parameterMetadata.hashedName);
@@ -430,6 +441,11 @@ namespace Volt
 		batchedShaderParameters.AddTextureParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::Texture, imageView);
 	}
 
+	void RenderContext::CollectSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	{
+		batchedShaderParameters.AddSamplerParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::Sampler, sampler);
+	}
+
 	void RenderContext::CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
 	{
 		RefPtr<RHI::UniformBuffer> rhiUniformBuffer = m_renderGraph.GetRHIUniformBuffer(uniformBuffer);
@@ -449,5 +465,4 @@ namespace Volt
 		RefPtr<RHI::UniformBuffer> rhiBuffer = m_renderGraph.GetRHIUniformBuffer(buffer);
 		return rhiBuffer->Map<void>();
 	}
-
 }

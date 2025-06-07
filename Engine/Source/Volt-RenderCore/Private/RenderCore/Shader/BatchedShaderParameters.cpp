@@ -17,6 +17,12 @@ namespace Volt
 		m_parameters.emplace_back(parameter);
 	}
 
+	void BatchedShaderParameters::AddSamplerParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::SamplerState> sampler)
+	{
+		BatchedSamplerShaderParameter* parameter = m_allocator.Allocate<BatchedSamplerShaderParameter>(bindingName, resourceType, sampler);
+		m_parameters.emplace_back(parameter);
+	}
+
 	void BatchedShaderParameters::BindParametersToDescriptorTable(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable) const
 	{
 		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
@@ -44,6 +50,12 @@ namespace Volt
 							descriptorTable->SetBufferView(bufferParameter->bufferView, resourceBinding->set, resourceBinding->binding);
 
 							break;
+						}
+
+						case RHI::ShaderResourceType::Sampler:
+						{
+							const BatchedSamplerShaderParameter* samplerParameter = reinterpret_cast<const BatchedSamplerShaderParameter*>(parameter);
+							descriptorTable->SetSamplerState(samplerParameter->sampler, resourceBinding->set, resourceBinding->binding);
 						}
 					}
 				}

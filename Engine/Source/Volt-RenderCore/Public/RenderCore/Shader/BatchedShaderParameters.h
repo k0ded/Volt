@@ -5,6 +5,7 @@
 #include <RHIModule/Shader/ShaderCommon.h>
 #include <RHIModule/Buffers/BufferView.h>
 #include <RHIModule/Images/ImageView.h>
+#include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Descriptors/DescriptorTable.h>
 
 #include <CoreUtilities/Allocators/LinearAllocator.h>
@@ -60,11 +61,22 @@ namespace Volt
 		RefPtr<RHI::ImageView> imageView;
 	};
 
+	struct BatchedSamplerShaderParameter : public BatchedShaderParameter
+	{
+		BatchedSamplerShaderParameter(const StringHash inBindingName, const RHI::ShaderResourceType inResourceType, RefPtr<RHI::SamplerState> inSampler)
+			: BatchedShaderParameter(inBindingName, inResourceType), sampler(inSampler)
+		{
+		}
+
+		RefPtr<RHI::SamplerState> sampler;
+	};
+
 	class VTRC_API BatchedShaderParameters
 	{
 	public:
 		void AddBufferParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::BufferView> bufferView);
 		void AddTextureParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::ImageView> imageView);
+		void AddSamplerParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::SamplerState> sampler);
 		void BindParametersToDescriptorTable(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable) const;
 
 	private:

@@ -38,6 +38,7 @@ namespace Volt
 			resultDesc.usage = usage;
 			resultDesc.debugName = name;
 			resultDesc.imageType = RHI::ResourceType::Image2D;
+			resultDesc.format = PixelFormat;
 			resultDesc.layers = 6;
 			resultDesc.isCubeMap = true;
 
@@ -52,10 +53,18 @@ namespace Volt
 		~RGTexture() override = default;
 		RGResourceType GetResourceType() const override;
 
+		bool HasProducer(RGResourceUAV* uav) const override;
+		bool HasProducer() const override;
+		void AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav) override;
+		void AddProducer(Handle<RenderGraphPass> pass) override;
+
 		VT_NODISCARD VT_INLINE const RGTextureDesc& GetDesc() const { return m_desc; }
 	
 	private:
 		RGTextureDesc m_desc;
+
+		std::bitset<32> m_layersProduced;
+		std::bitset<32> m_mipsProduced;
 	};
 
 	using RGTextureRef = RGTexture*;
