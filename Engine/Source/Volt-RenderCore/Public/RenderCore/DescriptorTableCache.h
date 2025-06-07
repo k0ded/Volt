@@ -9,6 +9,29 @@
 
 namespace Volt
 {
+	class VTRC_API ActiveDescriptorTableCache
+	{
+	public:
+		struct ActiveDescriptorTable
+		{
+			RefPtr<RHI::DescriptorTable> descriptorTable;
+			size_t pipelineHash;
+		};
+
+		void AddDescriptorTable(RefPtr<RHI::DescriptorTable> descriptorTable, size_t pipelineHash);
+		Vector<ActiveDescriptorTable> UpdateAndGetInactiveDescriptorTables();
+
+	private:
+		struct ActiveDescriptorTableContainer
+		{
+			ActiveDescriptorTable activeDescriptorTable;
+			uint32_t framesAlive = 0;
+		};
+
+		std::mutex m_mutex;
+		Vector<ActiveDescriptorTableContainer> m_activeDescriptorTables;
+	};
+
 	class VTRC_API DescriptorTableCache
 	{
 	public:
@@ -29,16 +52,9 @@ namespace Volt
 			Ref<std::mutex> mutex;
 		};
 
-		struct ActiveDescriptorTable
-		{
-			RefPtr<RHI::DescriptorTable> descriptorTable;
-			size_t pipelineHash;
-		};
-
 		inline static DescriptorTableCache* s_instance = nullptr;
 
-		Vector<Vector<ActiveDescriptorTable>> m_activeDescriptorTables;
+		ActiveDescriptorTableCache m_activeDescriptorTableCache;
 		vt::map<size_t, DescriptorTableContainer> m_descriptorTableCache;
-		uint32_t m_frameIndex = 0;
 	};
 }

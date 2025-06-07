@@ -11,8 +11,6 @@ namespace Volt
 	{
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
-
-		m_activeDescriptorTables.resize(RHI::Swapchain::FramesInFlight);
 	}
 
 	DescriptorTableCache::~DescriptorTableCache()
@@ -45,8 +43,7 @@ namespace Volt
 			descriptorTable = RHI::DescriptorTable::Create(createInfo);
 		}
 
-		const uint32_t cacheIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
-		m_activeDescriptorTables.at(cacheIndex).emplace_back(descriptorTable, pipelineHash);
+		m_activeDescriptorTableCache.AddDescriptorTable(descriptorTable, pipelineHash);
 
 		return descriptorTable;
 	}
@@ -76,29 +73,64 @@ namespace Volt
 			descriptorTable = RHI::DescriptorTable::Create(createInfo);
 		}
 
-		const uint32_t cacheIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
-		m_activeDescriptorTables.at(cacheIndex).emplace_back(descriptorTable, pipelineHash);
+		m_activeDescriptorTableCache.AddDescriptorTable(descriptorTable, pipelineHash);
 		
 		return descriptorTable;
 	}
 
 	void DescriptorTableCache::Update()
 	{
-		const uint32_t cacheIndex = ++m_frameIndex % RHI::Swapchain::FramesInFlight;
+		Vector<ActiveDescriptorTableCache::ActiveDescriptorTable> inactiveDescriptorTables = m_activeDescriptorTableCache.UpdateAndGetInactiveDescriptorTables();
 
-		for (const auto& activeTable : m_activeDescriptorTables.at(cacheIndex))
+		for (const auto& inactiveTable : inactiveDescriptorTables)
 		{
-			if (!m_descriptorTableCache.contains(activeTable.pipelineHash))
+			if (!m_descriptorTableCache.contains(inactiveTable.pipelineHash))
 			{
-				m_descriptorTableCache[activeTable.pipelineHash].mutex = CreateRef<std::mutex>();
+				m_descriptorTableCache[inactiveTable.pipelineHash].mutex = CreateRef<std::mutex>();
 			}
 
-			auto& data = m_descriptorTableCache[activeTable.pipelineHash];
-			
+			auto& data = m_descriptorTableCache[inactiveTable.pipelineHash];
+
+			VT_ENSURE(inactiveTable.pipelineHash == inactiveTable.descriptorTable->GetHash());
+
 			std::scoped_lock lock{ *data.mutex };
-			data.descriptorTables.emplace_back(activeTable.descriptorTable);
+			data.descriptorTables.emplace_back(inactiveTable.descriptorTable);
+		}
+	}
+
+	void ActiveDescriptorTableCache::AddDescriptorTable(RefPtr<RHI::DescriptorTable> descriptorTable, size_t pipelineHash)
+	{
+		std::scoped_lock lock{ m_mutex };
+		auto& newActive = m_activeDescriptorTables.emplace_back();
+		newActive.activeDescriptorTable.descriptorTable = descriptorTable;
+		newActive.activeDescriptorTable.pipelineHash = pipelineHash;
+		newActive.framesAlive = 0;
+	}
+
+	Vector<ActiveDescriptorTableCache::ActiveDescriptorTable> ActiveDescriptorTableCache::UpdateAndGetInactiveDescriptorTables()
+	{
+		Vector<ActiveDescriptorTableCache::ActiveDescriptorTable> result{};
+
+		constexpr size_t FRAMES_ALIVE = 3;
+
+		{
+			std::scoped_lock lock{ m_mutex };
+			for (int32_t i = static_cast<int32_t>(m_activeDescriptorTables.size()) - 1; i >= 0; --i)
+			{
+				auto& activeDescriptorTable = m_activeDescriptorTables.at(i);
+				if (activeDescriptorTable.framesAlive >= FRAMES_ALIVE)
+				{
+					result.emplace_back(activeDescriptorTable.activeDescriptorTable);
+					m_activeDescriptorTables.erase_unsorted(m_activeDescriptorTables.begin() + i);
+				}
+				else
+				{
+					activeDescriptorTable.framesAlive++;
+				}
+			}
 		}
 
-		m_activeDescriptorTables.at(cacheIndex).clear();
+		return result;
 	}
+
 }

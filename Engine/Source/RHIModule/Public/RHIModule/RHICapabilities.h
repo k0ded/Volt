@@ -46,7 +46,7 @@ namespace Volt::RHI
 		// #TODO_Ivar: Move to some other place
 		bool useMeshShaders = true;
 		bool useBindless = true;
-		bool useRayTracing = true;
+		bool useRayTracing = false;
 	};
 }
 extern VTRHI_API Volt::RHI::RHICapabilities g_rhiCapabilities;

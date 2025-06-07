@@ -224,6 +224,8 @@ namespace Volt::RHI
 	void VulkanDescriptorTable::Invalidate()
 	{
 		Release();
+
+		VT_ENSURE(m_createInfo.computePipeline || m_createInfo.renderPipeline);
 	
 		if (m_createInfo.computePipeline)
 		{
@@ -433,5 +435,17 @@ namespace Volt::RHI
 	{
 		const VkPipelineBindPoint bindPoint = m_createInfo.computePipeline ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
 		return bindPoint;
+	}
+
+	size_t VulkanDescriptorTable::GetHash() const
+	{
+		if (m_createInfo.computePipeline)
+		{
+			return m_createInfo.computePipeline->GetHash();
+		}
+		else
+		{
+			return m_createInfo.renderPipeline->GetHash();
+		}
 	}
 }

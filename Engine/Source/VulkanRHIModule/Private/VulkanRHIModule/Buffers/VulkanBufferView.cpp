@@ -9,6 +9,7 @@
 #include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/EnumUtils.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <vulkan/vulkan.h>
 
@@ -17,6 +18,8 @@ namespace Volt::RHI
 	VulkanBufferView::VulkanBufferView(const BufferViewDesc& specification)
 		: m_buffer(specification.bufferResource)
 	{
+		VT_PROFILE_FUNCTION();
+
 		// If the resource is a storage buffer, we nned to check if it's
 		// a texel buffer, and create a VkBufferView if that's the case.
 		if (specification.bufferResource->GetType() == ResourceType::StorageBuffer)
