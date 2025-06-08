@@ -405,7 +405,8 @@ namespace Volt
 		for (const auto& texture : material->GetTextures())
 		{
 			gpuMaterial.textures[gpuMaterial.textureCount] = texture.GetResource();
-			gpuMaterial.samplers[gpuMaterial.textureCount] = Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::X16>()->GetResourceHandle();
+			// #TODO_Ivar: Bindless-support
+			//gpuMaterial.samplers[gpuMaterial.textureCount] = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::X16>()->GetResourceHandle();
 			gpuMaterial.textureCount++;
 		}
 	}

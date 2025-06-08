@@ -207,6 +207,8 @@ namespace Volt::RHI
 			s_enabledFeatures.physicalDeviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
 			s_enabledFeatures.physicalDeviceFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
 			s_enabledFeatures.physicalDeviceFeatures.features.sampleRateShading = VK_TRUE;
+			s_enabledFeatures.physicalDeviceFeatures.features.shaderStorageImageWriteWithoutFormat = VK_TRUE;
+			s_enabledFeatures.physicalDeviceFeatures.features.shaderStorageImageReadWithoutFormat = VK_TRUE;
 
 			s_enabledFeatures.physicalDeviceFeatures.features.shaderInt16 = VK_TRUE; // #TODO_Ivar: does not work on older cards
 		}

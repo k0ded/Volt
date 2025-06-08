@@ -2,9 +2,11 @@
 
 #include <CoreUtilities/Allocators/Handle.h>
 #include <CoreUtilities/Allocators/InlineAllocator.h>
+#include <CoreUtilities/Containers/Vector.h>
 
 // #TODO_Ivar: Switch to our own version.
 #include <bitset>
+#include <algorithm>
 
 namespace Volt
 {

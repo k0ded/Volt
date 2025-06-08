@@ -37,17 +37,12 @@ namespace Volt
 
 	struct ApplicationInfo
 	{
-		ApplicationInfo(const std::string& aTitle = "Volt", WindowMode aWindowMode = WindowMode::Windowed, uint32_t aWidth = 1280, uint32_t aHeight = 720, bool aUseVSync = true, bool aEnableImGui = true)
-			: title(aTitle), width(aWidth), height(aHeight), useVSync(aUseVSync), enableImGui(aEnableImGui), windowMode(aWindowMode)
-		{
-		}
-
-		std::string title;
+		std::string title = "Volt";
 		std::filesystem::path iconPath;
 		std::filesystem::path cursorPath;
-		WindowMode windowMode;
-		uint32_t width;
-		uint32_t height;
+		WindowMode windowMode = WindowMode::Windowed;
+		uint32_t width = 1280;
+		uint32_t height = 720;
 		bool useVSync = true;
 		bool enableImGui = true;
 		bool enableImGuiViewports = true;

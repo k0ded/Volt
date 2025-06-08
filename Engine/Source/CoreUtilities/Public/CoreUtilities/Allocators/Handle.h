@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreUtilities/Concepts.h>
+#include <CoreUtilities/CompilerTraits.h>
 
 template<typename Type>
 class Handle

@@ -375,6 +375,7 @@ namespace Volt
 		desc.usage = texture->GetUsage();
 		desc.imageType = desc.depth > 1 ? RHI::ResourceType::Image3D : RHI::ResourceType::Image2D;
 		desc.debugName = texture->GetName();
+		desc.isCubeMap = texture->GetDesc().isCubeMap;
 
 		RGTextureRef textureResource = m_resourceAllocator.Allocate<RGTexture>(desc);
 		textureResource->isExternal = true;
@@ -495,7 +496,7 @@ namespace Volt
 		///// Calculate Ref Count //////
 		for (auto pass : m_passes)
 		{
-			pass->refCount = static_cast<uint32_t>(pass->GetResourceWrites().size());
+			pass->refCount = 0; //static_cast<uint32_t>(pass->GetResourceWrites().size());
 
 			for (auto resource : pass->GetResourceReads())
 			{
@@ -508,6 +509,11 @@ namespace Volt
 				if (!resource->GetResource()->HasProducer(resource))
 				{
 					resource->GetResource()->AddProducer(pass, resource);
+					pass->refCount++;
+				}
+				else
+				{
+					resource->GetResource()->AddRef();
 				}
 			}
 
@@ -520,7 +526,7 @@ namespace Volt
 					// If this pass is the render targets producer, we need to increase the ref count of the pass.
 					pass->refCount++;
 				}
-				else if (resource->IsProducer(pass))
+				else if (!resource->IsProducer(pass))
 				{
 					// We add a reference if we are not the producer 
 					// of this resource, because we can then consider it being a "read"
@@ -546,6 +552,40 @@ namespace Volt
 		}
 
 		///// Cull Passes /////
+		for (auto pass : m_passes)
+		{
+			// If a pass has no references, it doesn't have any output.
+			// In this case all reads should have it's references removed.
+			// And then it should be marked as culled.
+			if (pass->refCount == 0)
+			{
+				for (auto resource : pass->GetResourceReads())
+				{
+					resource->GetResource()->DecRef();
+				}
+
+				// All non produced writes as well
+				for (auto resource : pass->GetResourceWrites())
+				{
+					if (!resource->GetResource()->IsProducer(pass))
+					{
+						resource->GetResource()->DecRef();
+					}
+				}
+
+				// And all non producer render target accesses
+				for (auto resource : pass->GetResourceRenderTargetAccesses())
+				{
+					if (!resource->IsProducer(pass))
+					{
+						resource->DecRef();
+					}
+				}
+
+				pass->isCulled = true;
+			}
+		}
+
 		PagedVector<RGResourceRef> unreferencedResources{};
 		for (auto node : m_resources)
 		{
@@ -675,11 +715,27 @@ namespace Volt
 
 			if (resourceType == RGResourceType::Texture)
 			{
-				resourceStateTracker.GetState(resource).currentState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetTextureIfExists(reinterpret_cast<RGTextureRef>(resource)));
+				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetTextureIfExists(reinterpret_cast<RGTextureRef>(resource)));
+				
+				ResourceState& currentState = resourceStateTracker.GetState(resource);
+				currentState.currentState = resourceState;
+
+				if (EnumValueContainsAnyFlag(resourceState.access, RHI::BarrierAccess::DepthStencilWrite, RHI::BarrierAccess::ShaderWrite))
+				{
+					currentState.isWriteState = true;
+				}
 			}
 			else if (resourceType == RGResourceType::Buffer)
 			{
-				resourceStateTracker.GetState(resource).currentState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetBufferIfExists(reinterpret_cast<RGBufferRef>(resource)));
+				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetBufferIfExists(reinterpret_cast<RGBufferRef>(resource)));
+
+				ResourceState& currentState = resourceStateTracker.GetState(resource);
+				currentState.currentState = resourceState;
+
+				if (EnumValueContainsAnyFlag(resourceState.access, RHI::BarrierAccess::ShaderWrite))
+				{
+					currentState.isWriteState = true;
+				}
 			}
 			else if (resourceType == RGResourceType::UniformBuffer)
 			{

@@ -102,6 +102,15 @@ namespace Volt
 		AddDepthPrePass(renderGraph, blackboard, renderView);
 		AddGenerateGBufferPass(renderGraph, blackboard, renderView);
 
+		// Create shading RT
+		{
+			SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
+			sceneTextures.sceneColor = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_SFLOAT>(renderView.width, renderView.height, RHI::ImageUsage::AttachmentStorage, "SceneColor"));
+		}
+
+		AddSkyboxPass(renderGraph, blackboard, renderView);
+		AddShadingPass(renderGraph, blackboard, renderView);
+
 		m_renderScene->EndFrame(renderGraph);
 
 		{
@@ -159,7 +168,7 @@ namespace Volt
 	{
 		DECLARE_GLOBAL_SHADER(DepthPrePassVS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
+			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
 			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
 		END_SHADER_PARAMETER_STRUCT()
 	};
@@ -169,7 +178,7 @@ namespace Volt
 	{
 		DECLARE_GLOBAL_SHADER(DepthPrePassPS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
+			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
 			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
 	};
@@ -260,7 +269,7 @@ namespace Volt
 		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
 
 		renderGraph.AddPass("Generate GBuffer",
-			RenderGraphPassFlags::NeverCull,
+			RenderGraphPassFlags::None,
 			passParameters,
 			[passParameters, view, meshRenderer](RenderContext& context)
 		{
@@ -276,9 +285,120 @@ namespace Volt
 		});
 	}
 
+	struct SkyboxVS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(SkyboxVS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
+			RG_BUFFER_ACCESS(VertexBuffer, RGResourceAccess::VertexBuffer)
+			RG_BUFFER_ACCESS(IndexBuffer, RGResourceAccess::IndexBuffer)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(SkyboxVS, "Engine/Shaders/Source/RenderPipelineLegacy/Skybox.hlsl", "MainVS", Vertex);
+
+	struct SkyboxPS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(SkyboxPS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, EnvironmentTexture)
+			SHADER_PARAMETER_SAMPLER(LinearSampler)
+			SHADER_PARAMETER(float, LOD)
+			SHADER_PARAMETER(float, Intensity)
+
+			RG_RENDER_TARGETS()
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(SkyboxPS, "Engine/Shaders/Source/RenderPipelineLegacy/Skybox.hlsl", "MainPS", Pixel);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(SkyboxParameters)
+		SHADER_PARAMETER_STRUCT_INCLUDE(SkyboxVS::Parameters, VS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(SkyboxPS::Parameters, PS)
+	END_SHADER_PARAMETER_STRUCT()
+
 	void SceneRenderer::AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
 	{
+		VT_PROFILE_FUNCTION();
+		
+		const EnvironmentTextures& environmentTextures = blackboard.Get<EnvironmentTextures>();
+		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 
+		SkyboxParameters* passParameters = renderGraph.AllocParameters<SkyboxParameters>();
+		passParameters->VS.View = view.viewUniformBuffer;
+		passParameters->VS.VertexBuffer = renderGraph.RegisterExternalBuffer(m_skyboxMesh->GetVertexPositionsBuffer()->GetResource());
+		passParameters->VS.IndexBuffer = renderGraph.RegisterExternalBuffer(m_skyboxMesh->GetIndexBuffer()->GetResource());
+		passParameters->PS.EnvironmentTexture = renderGraph.CreateSRV(environmentTextures.radiance);
+		passParameters->PS.LinearSampler = SamplerStateCache::GetTrilinearSampler();
+		passParameters->PS.LOD = 0.f;
+		passParameters->PS.Intensity = 1.f;
+		passParameters->PS.renderTargets.renderTargets[0] = sceneTextures.sceneColor;
+		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
+
+		const uint32_t indexCount = static_cast<uint32_t>(m_skyboxMesh->GetIndexCount());
+
+		auto vertexShader = ShaderMap::Get<SkyboxVS>();
+		auto pixelShader = ShaderMap::Get<SkyboxPS>();
+
+		renderGraph.AddPass("Skybox",
+			RenderGraphPassFlags::None,
+			passParameters,
+			[passParameters, view, vertexShader, pixelShader, indexCount] (RenderContext& context)
+		{
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
+			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
+
+			RHI::RenderPipelineCreateInfo pipelineInfo{};
+			pipelineInfo.shaders = { vertexShader, pixelShader };
+			pipelineInfo.cullMode = RHI::CullMode::None;
+			pipelineInfo.depthMode = RHI::DepthMode::None;
+
+			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+
+			context.BeginRendering(renderingInfo);
+			context.BindPipeline(pipeline);
+			context.BindVertexBuffers({ passParameters->VS.VertexBuffer }, 0);
+			context.BindIndexBuffer(passParameters->VS.IndexBuffer);
+			context.SetParameters<SkyboxVS>(vertexShader, &passParameters->VS);
+			context.SetParameters<SkyboxPS>(pixelShader, &passParameters->PS);
+			context.DrawIndexed(indexCount, 1, 0, 0, 0);
+			context.EndRendering();
+		});
+	}
+
+	struct RenderDeferredShadingCS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(RenderDeferredShadingCS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWSceneColor)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Albedo)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Normals)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float2>, Materials)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SceneDepth)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(RenderDeferredShadingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "MainCS", Compute);
+
+	void SceneRenderer::AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	{
+		VT_PROFILE_FUNCTION();
+
+		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
+
+		RenderDeferredShadingCS::Parameters* passParameters = renderGraph.AllocParameters<RenderDeferredShadingCS::Parameters>();
+		passParameters->View = view.viewUniformBuffer;
+		passParameters->RWSceneColor = renderGraph.CreateUAV(sceneTextures.sceneColor);
+		passParameters->Albedo = renderGraph.CreateSRV(sceneTextures.gBufferAlbedo);
+		passParameters->Normals = renderGraph.CreateSRV(sceneTextures.gBufferNormals);
+		passParameters->Materials = renderGraph.CreateSRV(sceneTextures.gBufferMaterial);
+		passParameters->SceneDepth = renderGraph.CreateSRV(sceneTextures.sceneDepth);
+
+		auto shader = ShaderMap::Get<RenderDeferredShadingCS>();
+		ComputeShaderUtils::AddPass<RenderDeferredShadingCS>(renderGraph,
+			"Render Deferred Shading",
+			shader,
+			passParameters,
+			RenderGraphPassFlags::None,
+			{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
 	}
 
 	void SceneRenderer::Invalidate()

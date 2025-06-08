@@ -142,8 +142,11 @@ namespace Volt::RHI
 			return;
 		}
 
+		const std::string markerName = std::format("Generate Mips {}", m_desc.debugName);
+
 		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
 		commandBuffer->Begin();
+		commandBuffer->BeginMarker(markerName, { 1.f, 1.f, 1.f, 1.f });
 
 		VkCommandBuffer vkCmdBuffer = commandBuffer->GetHandle<VkCommandBuffer>();
 
@@ -235,6 +238,7 @@ namespace Volt::RHI
 
 		vkCmdPipelineBarrier(vkCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
+		commandBuffer->EndMarker();
 		commandBuffer->End();
 		commandBuffer->ExecuteAndWait();
 

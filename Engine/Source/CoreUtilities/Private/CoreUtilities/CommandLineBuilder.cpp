@@ -9,6 +9,14 @@
 namespace Volt
 {
 
+	CommandLineBuilder::CommandLineBuilder(std::initializer_list<std::pair<std::string, std::string>> initializer)
+	{
+		for (const auto& pair : initializer)
+		{
+			m_arguments.insert(pair);
+		}
+	}
+
 	void CommandLineBuilder::AddArgument(const std::string& key, const std::string& value /*= ""*/)
 	{
 		m_arguments[key] = value;

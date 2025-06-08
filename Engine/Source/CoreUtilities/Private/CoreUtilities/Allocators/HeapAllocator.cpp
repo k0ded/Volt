@@ -4,12 +4,7 @@
 #include "CoreUtilities/Profiling/Profiling.h"
 #include "CoreUtilities/VoltAssert.h"
 
-// We opt out of using mimalloc in the debug configuration, as it ends up being very slow.
-#ifndef VT_DEBUG
 #define USE_MIMALLOC 1
-#else
-#define USE_MIMALLOC 0
-#endif
 
 #if USE_MIMALLOC
 #include <mimalloc.h>

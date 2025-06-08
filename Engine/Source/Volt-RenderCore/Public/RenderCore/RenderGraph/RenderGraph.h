@@ -87,7 +87,7 @@ namespace Volt
 		void ExecuteImmediate();
 		void ExecuteImmediateAndWait();
 
-	private:
+	protected:
 		friend class RenderContext;
 		friend class RenderGraphExecutionThread;
 

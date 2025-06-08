@@ -112,6 +112,7 @@ namespace Volt
 		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		/////////////////////////
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);

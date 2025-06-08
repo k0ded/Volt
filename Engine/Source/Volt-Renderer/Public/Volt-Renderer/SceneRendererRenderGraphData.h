@@ -11,6 +11,8 @@ namespace Volt
 		RGTextureRef gBufferAlbedo;
 		RGTextureRef gBufferNormals;
 		RGTextureRef gBufferMaterial;
+		
+		RGTextureRef sceneColor;
 	};
 
 	struct EnvironmentTextures

@@ -78,27 +78,12 @@ namespace Volt
 		static const DefaultResources& GetDefaultResources();
 		static EnvironmentTextures GenerateEnvironmentTextures(AssetHandle baseTextureHandle);
 
-		template<RHI::TextureFilter min, RHI::TextureFilter mag, RHI::TextureFilter mip, RHI::TextureWrap wrapMode = RHI::TextureWrap::Repeat, RHI::AnisotropyLevel aniso = RHI::AnisotropyLevel::None, RHI::CompareOperator compareOperator = RHI::CompareOperator::None>
-		static BindlessResourceRef<RHI::SamplerState> GetSampler()
-		{
-			RHI::SamplerStateDesc info{};
-			info.minFilter = min;
-			info.magFilter = mag;
-			info.mipFilter = mip;
-			info.wrapMode = wrapMode;
-			info.anisotropyLevel = aniso;
-			info.compareOperator = compareOperator;
-
-			return s_instance->GetSamplerInternal(info);
-		}
-
 		VT_DECLARE_SUBSYSTEM("{2E420D68-01AC-47D5-B7F4-F31F13D57ABF}"_guid);
 
 	private:
 		bool OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event);
 		bool OnPreRenderEvent(AppPreRenderEvent& event);
 
-		BindlessResourceRef<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateDesc& samplerInfo);
 		void CreateDefaultResources();
 		void GenerateDFGLuT();
 
@@ -111,8 +96,6 @@ namespace Volt
 		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
 		Scope<DescriptorTableCache> m_descriptorTableCache;
 		Scope<SamplerStateCache> m_samplerStateCache;
-
-		vt::map<size_t, BindlessResourceRef<RHI::SamplerState>> m_samplers;
 
 		uint32_t m_frameIndex = 0;
 	};

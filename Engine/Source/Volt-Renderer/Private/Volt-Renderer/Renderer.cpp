@@ -43,33 +43,6 @@ namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(Renderer, Engine, 3);
 
-	// #TODO_Ivar: Convert to render graph
-#if 0
-	struct EquirectangularToCubemapCS
-	{
-		BEGIN_SHADER_DEFINITION(EquirectangularToCubemapCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Environment/EquirectangularToCubemap.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
-	};
-	REGISTER_SHADER(EquirectangularToCubemapCS)
-
-	struct IntegrateSpecularCubeCS
-	{
-		BEGIN_SHADER_DEFINITION(IntegrateSpecularCubeCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PBR/IntegrateSpecularCube.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
-	};
-	REGISTER_SHADER(IntegrateSpecularCubeCS)
-
-	struct IntegrateDiffuseCubeCS
-	{
-		BEGIN_SHADER_DEFINITION(IntegrateDiffuseCubeCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PBR/IntegrateDiffuseCube.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
-	};
-	REGISTER_SHADER(IntegrateDiffuseCubeCS);
-#endif
-
 	struct EquirectangularToCubemapCS : public GlobalShader
 	{
 		DECLARE_GLOBAL_SHADER(EquirectangularToCubemapCS)
@@ -174,7 +147,6 @@ namespace Volt
 		m_blueNoise.reset();
 
 		m_defaultResources.Clear();
-		m_samplers.clear();
 
 		ShapeLibrary::Shutdown();
 
@@ -324,20 +296,6 @@ namespace Volt
 		m_descriptorTableCache->Update();
 
 		return false;
-	}
-
-	BindlessResourceRef<RHI::SamplerState> Renderer::GetSamplerInternal(const RHI::SamplerStateDesc& samplerInfo)
-	{
-		const size_t hash = Utility::GetHashFromSamplerDesc(samplerInfo);
-		if (m_samplers.contains(hash))
-		{
-			return m_samplers.at(hash);
-		}
-
-		BindlessResourceRef<RHI::SamplerState> samplerState = BindlessResource<RHI::SamplerState>::CreateRef(samplerInfo);
-		m_samplers[hash] = samplerState;
-
-		return samplerState;
 	}
 
 	void Renderer::CreateDefaultResources()

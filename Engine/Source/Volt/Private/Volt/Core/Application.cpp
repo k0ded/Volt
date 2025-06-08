@@ -217,8 +217,6 @@ namespace Volt
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
 		m_assetManager = nullptr;
-		g_assetSerializerRegistry.Clear();
-		g_assetFactory.Clear();
 
 		m_windowManager->DestroyMainWindow();
 
