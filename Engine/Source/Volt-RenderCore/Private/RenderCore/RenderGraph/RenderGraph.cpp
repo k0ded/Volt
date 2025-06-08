@@ -557,7 +557,7 @@ namespace Volt
 			// If a pass has no references, it doesn't have any output.
 			// In this case all reads should have it's references removed.
 			// And then it should be marked as culled.
-			if (pass->refCount == 0)
+			if (pass->refCount == 0 && !EnumValueContainsFlag(pass->flags, RenderGraphPassFlags::NeverCull))
 			{
 				for (auto resource : pass->GetResourceReads())
 				{

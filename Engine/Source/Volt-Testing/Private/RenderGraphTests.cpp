@@ -177,6 +177,34 @@ TEST_F(RenderGraphFixture, WriteAfterWriteIsCulled)
 	ExpectAllPassesToBeCulled(renderGraph.GetPasses());
 }
 
+TEST_F(RenderGraphFixture, WriteAfterWriteNeverCullIsNeverCulled)
+{
+	RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+	TestingRenderGraph renderGraph{ commandBuffer };
+
+	RGBufferRef writeBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
+
+	// Write pass
+	{
+		WriteSingleBufferParameters* passParameters = renderGraph.AllocParameters<WriteSingleBufferParameters>();
+		passParameters->RWBuffer = renderGraph.CreateUAV(writeBuffer, RHI::PixelFormat::R32_UINT);
+
+		AddComputePass(renderGraph, RenderGraphPassFlags::None, passParameters);
+	}
+
+	// Write pass
+	{
+		WriteSingleBufferParameters* passParameters = renderGraph.AllocParameters<WriteSingleBufferParameters>();
+		passParameters->RWBuffer = renderGraph.CreateUAV(writeBuffer, RHI::PixelFormat::R32_UINT);
+
+		AddComputePass(renderGraph, RenderGraphPassFlags::NeverCull, passParameters);
+	}
+
+	renderGraph.Compile();
+
+	ExpectAllPassesToBeActive(renderGraph.GetPasses());
+}
+
 TEST_F(RenderGraphFixture, MultipleProducerChainIsCulled)
 {
 	RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();

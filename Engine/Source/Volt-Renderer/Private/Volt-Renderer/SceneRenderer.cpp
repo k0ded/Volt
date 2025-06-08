@@ -397,7 +397,7 @@ namespace Volt
 			"Render Deferred Shading",
 			shader,
 			passParameters,
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::NeverCull,
 			{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
 	}
 

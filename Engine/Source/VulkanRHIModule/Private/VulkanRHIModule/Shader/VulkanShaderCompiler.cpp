@@ -134,11 +134,13 @@ namespace Volt::RHI
 	{
 		if (!specification.forceCompile)
 		{
+#if 0
 			const auto cachedResult = m_shaderCache->TryGetCachedShader(specification);
 			if (cachedResult.data.IsValid())
 			{
 				return cachedResult.data;
 			}
+#endif
 		}
 
 		if (specification.shaderSourceInfo.source.empty())
@@ -328,6 +330,10 @@ namespace Volt::RHI
 	{
 		Vector<std::wstring> wIncludeDirs;
 		Vector<const wchar_t*> wcIncludeDirs;
+
+		// Add platform include
+		constexpr std::string_view platformInclude = "#include \"Platforms/Vulkan/VulkanInterop.hlsli\"\n";
+		outProcessedSource.insert(outProcessedSource.begin(), platformInclude.begin(), platformInclude.end());
 
 		for (const auto& includeDir : m_includeDirectories)
 		{
@@ -563,5 +569,7 @@ namespace Volt::RHI
 		const uint32_t spirvSize = spvReflectGetCodeSize(&spirvModule);
 		inOutData.shaderBinary.resize(spirvSize / sizeof(uint32_t));
 		memcpy(inOutData.shaderBinary.data(), spvReflectGetCode(&spirvModule), spirvSize);
+
+		spvReflectDestroyShaderModule(&spirvModule);
 	}
 }
