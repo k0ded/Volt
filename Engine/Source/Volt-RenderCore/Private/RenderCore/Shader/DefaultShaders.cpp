@@ -1,5 +1,6 @@
 #include "rcpch.h"
 #include "RenderCore/Shader/DefaultShaders.h"
+#include "RenderCore/RenderGraph/ShaderRegistry.h"
 
 namespace Volt
 {

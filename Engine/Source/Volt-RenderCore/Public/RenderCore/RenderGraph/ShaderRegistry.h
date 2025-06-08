@@ -2,7 +2,6 @@
 
 #include "RenderCore/Config.h"
 #include "RenderCore/RenderGraph/ShaderParameterStruct.h"
-#include "RenderCore/Shader/GlobalShader.h"
 
 #include <LogModule/LogCategory.h>
 
@@ -52,6 +51,8 @@ namespace Volt
 		VT_INLINE VT_NODISCARD const vt::map<TypeTraits::TypeIndex, ShaderRegistrationInfo>& GetRegisteredShaders() const { return m_shaderRegistrationInfo; }
 		VT_INLINE VT_NODISCARD const ShaderRegistrationInfo& GetShaderRegistrationInfo(const TypeTraits::TypeIndex typeIndex) const { return m_shaderRegistrationInfo.at(typeIndex); }
 
+		static ShaderRegistry& Get();
+
 	private:
 		struct TypeIndexContainer
 		{
@@ -64,13 +65,6 @@ namespace Volt
  	};
 }
 
-extern VTRC_API Volt::ShaderRegistry g_shaderRegistry;
-
-VT_INLINE Volt::ShaderRegistry& GetShaderRegistry()
-{
-	return g_shaderRegistry;
-}
-
 #define REGISTER_SHADER(klass, filepath, entryPoint, shaderStage) \
-	inline static bool ShaderRegistry_## klass ## _Registered = GetShaderRegistry().RegisterShader<klass>(filepath, entryPoint, Volt::RHI::ShaderStage::shaderStage)
+	inline static bool ShaderRegistry_## klass ## _Registered = Volt::ShaderRegistry::Get().RegisterShader<klass>(filepath, entryPoint, Volt::RHI::ShaderStage::shaderStage)
 	

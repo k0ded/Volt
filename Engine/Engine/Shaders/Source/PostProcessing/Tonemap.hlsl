@@ -1,15 +1,14 @@
 #include "Vertex.hlsli"
-#include "Resources.hlsli"
 #include "Utility.hlsli"
 
 #include "Noise.hlsli"
 #include "BlueNoise.hlsli"
 
-vt::Tex2D<float3> FinalColor;
-vt::Tex2D<float> AverageLuminance;
+Texture2D<float3> FinalColor;
+//vt::Tex2D<float> AverageLuminance;
+
 float MiddleGray;
 float WhitePoint;
-
 uint FrameIndex;
 
 struct Output
@@ -77,7 +76,27 @@ float Reinhard2(float x, float whiteSqr)
 	return (x * (1.f + x / whiteSqr)) / (1.f + x);
 }
 
-Output main(FullscreenTriangleVertex input)
+float Luminance(float3 v)
+{
+    return dot(v, float3(0.2126f, 0.7152f, 0.0722f));
+}
+
+float3 UpdateLuminance(float3 color, float targetLuminance)
+{
+	float l = Luminance(color);
+	return color * (targetLuminance / l);
+}
+
+float3 ReinhardExtended(float3 v, float whitePoint)
+{
+	float lumOld = Luminance(v);
+	float numerator = lumOld * (1.f + (lumOld / (whitePoint)));
+	float lumNew = numerator / (1.f + lumOld);
+
+	return UpdateLuminance(v, lumNew);
+}
+
+Output MainPS(FullscreenTriangleVertex input)
 {
     float3 pixelColor = FinalColor.Load(int3(input.position.xy, 0));
 	//float luminance = constants.averageLuminance.Load(int3(0, 0, 0));
@@ -89,6 +108,7 @@ Output main(FullscreenTriangleVertex input)
 	//
 	//pixelColor = ConvertYxy2RGB(Yxy);
 
+	pixelColor = ReinhardExtended(pixelColor, WhitePoint);
     float3 dither = RemapPDFTriUnity(BlueNoiseRGBA(input.position.xy, FrameIndex).rgb) / 254.f;
 
     Output output;

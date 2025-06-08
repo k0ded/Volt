@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderCore/RenderGraph/ShaderRegistryMacros.h"
+#include "RenderCore/RenderGraph/ShaderParameterStruct.h"
 #include "RenderCore/Shader/GlobalShader.h"
 
 namespace Volt

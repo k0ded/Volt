@@ -1,13 +1,13 @@
 #include "Vertex.hlsli"
-#include "Resources.hlsli"
 
-vt::Tex2D<float3> CurrentColor;
-vt::Tex2D<float3> PreviousColor;
-vt::Tex2D<float> SceneDepth;
+Texture2D<float3> CurrentColor;
+Texture2D<float3> PreviousColor;
 
-vt::Tex2D<float2> VelocityTexture;
+Texture2D<float> SceneDepth;
+Texture2D<float2> SceneVelocity;
 
-vt::TextureSampler LinearSampler;
+SamplerState LinearSampler;
+
 uint2 RenderSize;
 uint FrameIndex;
 
@@ -42,7 +42,7 @@ float FilterMitchell(float x)
 
 // Samples a texture with Catmull-Rom filtering, using 9 texture fetches instead of 16.
 // See http://vec3.ca/bicubic-filtering-in-fewer-taps/ for more details
-float3 SampleTextureCatmullRom(in vt::Tex2D<float3> tex, in vt::TextureSampler linearSampler, in float2 uv, in float2 texSize)
+float3 SampleTextureCatmullRom(in Texture2D<float3> tex, in SamplerState linearSampler, in float2 uv, in float2 texSize)
 {
     // We're going to sample a a 4x4 grid of texels surrounding the target UV coordinate. We'll do this by rounding
     // down the sample location to get the exact center of our "starting" texel. The starting texel will be at
@@ -139,7 +139,7 @@ float Luminance(float3 color)
     return dot(color, float3(0.2127, 0.7152, 0.0722));
 }
 
-Output main(FullscreenTriangleVertex input)
+Output MainPS(FullscreenTriangleVertex input)
 {
     float3 sourceSampleTotal = 0.f;
     float sourceSampleWeight = 0.f;
@@ -184,7 +184,7 @@ Output main(FullscreenTriangleVertex input)
 
     float3 sourceSample = sourceSampleTotal / sourceSampleWeight;
 
-    float2 motionVector = VelocityTexture.Load(int3(closestDepthPixelPosition, 0));
+    float2 motionVector = SceneVelocity.Load(int3(closestDepthPixelPosition, 0));
     float2 historyTexCoord = input.uv + motionVector;
     
     if (any(historyTexCoord != saturate(historyTexCoord)) || FrameIndex == 0)

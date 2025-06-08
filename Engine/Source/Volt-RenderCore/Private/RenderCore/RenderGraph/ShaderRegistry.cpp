@@ -8,4 +8,8 @@ Volt::ShaderRegistry g_shaderRegistry;
 
 namespace Volt
 {
+	ShaderRegistry& ShaderRegistry::Get()
+	{
+		return g_shaderRegistry;
+	}
 }

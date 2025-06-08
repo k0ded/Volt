@@ -5,6 +5,7 @@
 #include "Volt-Renderer/SceneRendererExtension.h"
 #include "Volt-Renderer/Config.h"
 #include "Volt-Renderer/Mesh/MeshRenderer.h"
+#include "Volt-Renderer/RenderingTechniques/TAANoise.h"
 
 #include <RenderCore/RenderGraph/RenderGraphDebugger.h>
 
@@ -38,20 +39,14 @@ namespace Volt
 	class RenderGraph;
 	class RenderGraphBlackboard;
 
+	struct RenderView;
+
 	struct SceneRendererCreateInfo
 	{
 		std::string debugName;
 		glm::uvec2 initialResolution = { 1280, 720 };
 
 		Ref<RenderScene> renderScene;
-	};
-
-	struct RenderView
-	{
-		uint32_t width;
-		uint32_t height;
-
-		RGUniformBufferRef viewUniformBuffer;
 	};
 
 	class VTR_API SceneRenderer
@@ -113,6 +108,8 @@ namespace Volt
 		void AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		/////////////////////////
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
@@ -160,6 +157,7 @@ namespace Volt
 		
 		Ref<RenderScene> m_renderScene;
 		Renderer::EnvironmentTextures m_sceneEnvironment;
+		TAANoise m_taaNoise;
 
 		// Extensions
 		vt::map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>> m_sceneRendererExtensions;

@@ -135,6 +135,7 @@ namespace Volt
 		m_textureExtractions(std::move(other.m_textureExtractions)),
 		m_bufferExtractions(std::move(other.m_bufferExtractions)),
 		m_standaloneBarriers(std::move(other.m_standaloneBarriers)),
+		m_standaloneMarkers(std::move(other.m_standaloneMarkers)),
 		m_temporaryDataAllocator(std::move(other.m_temporaryDataAllocator))
 	{
 	}
@@ -160,6 +161,7 @@ namespace Volt
 		m_textureExtractions = std::move(other.m_textureExtractions);
 		m_bufferExtractions = std::move(other.m_bufferExtractions);
 		m_standaloneBarriers = std::move(other.m_standaloneBarriers);
+		m_standaloneMarkers = std::move(other.m_standaloneMarkers);
 		m_temporaryDataAllocator = std::move(other.m_temporaryDataAllocator);
 
 		return *this;
@@ -202,7 +204,7 @@ namespace Volt
 		VT_ENSURE_MSG(!desc.bufferResource->GetDesc().isTexelBufferDesc, "Buffer format has to be provided if the buffer is a texel buffer!");
 		return m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
 	}
-	
+
 	RGUniformBufferSRVRef RenderGraph::CreateSRV(RGUniformBufferRef uniformBuffer)
 	{
 		VT_PROFILE_FUNCTION();
@@ -263,14 +265,14 @@ namespace Volt
 		desc.format = format;
 		return m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
 	}
-	
+
 	RGTextureSRVRef RenderGraph::CreateSRV(const RGTextureSRVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 
 		return m_resourceAccessorAllocator.Allocate<RGTextureSRV>(desc);
 	}
-	
+
 	RGTextureUAVRef RenderGraph::CreateUAV(const RGTextureUAVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
@@ -308,7 +310,7 @@ namespace Volt
 		}
 
 		const RHI::BufferDesc& rhiDesc = buffer->GetDesc();
-		
+
 		RGBufferDesc rgDesc;
 		rgDesc.count = rhiDesc.count;
 		rgDesc.elementSize = rhiDesc.elementSize;
@@ -398,6 +400,16 @@ namespace Volt
 	{
 		buffer->isExtracted = true;
 		m_bufferExtractions.emplace_back(buffer, outBuffer);
+	}
+
+	void RenderGraph::BeginMarker(const std::string& markerName, const glm::vec4& markerColor /*= 1.f*/)
+	{
+		m_standaloneMarkers.BeginMarker(static_cast<uint32_t>(m_passes.size()), markerName, markerColor);
+	}
+
+	void RenderGraph::EndMarker()
+	{
+		m_standaloneMarkers.EndMarker(static_cast<uint32_t>(m_passes.size()));
 	}
 
 	void RenderGraph::AddResourceBarrier(RGResourceRef resource, const RHI::ResourceState& barrierInfo)
@@ -496,7 +508,7 @@ namespace Volt
 		///// Calculate Ref Count //////
 		for (auto pass : m_passes)
 		{
-			pass->refCount = 0; //static_cast<uint32_t>(pass->GetResourceWrites().size());
+			pass->refCount = static_cast<uint32_t>(pass->GetResourceWrites().size());
 
 			for (auto resource : pass->GetResourceReads())
 			{
@@ -509,7 +521,7 @@ namespace Volt
 				if (!resource->GetResource()->HasProducer(resource))
 				{
 					resource->GetResource()->AddProducer(pass, resource);
-					pass->refCount++;
+					//pass->refCount++;
 				}
 				else
 				{
@@ -700,7 +712,7 @@ namespace Volt
 			vt::map<RGResourceRef, ResourceState> resourceStates;
 
 		} resourceStateTracker;
-	
+
 		// Add all external resources to the resource state tracker
 		for (auto resource : m_resources)
 		{
@@ -716,7 +728,7 @@ namespace Volt
 			if (resourceType == RGResourceType::Texture)
 			{
 				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetTextureIfExists(reinterpret_cast<RGTextureRef>(resource)));
-				
+
 				ResourceState& currentState = resourceStateTracker.GetState(resource);
 				currentState.currentState = resourceState;
 
@@ -774,7 +786,7 @@ namespace Volt
 							newState.access = RHI::BarrierAccess::ShaderWrite;
 							newState.stage = RHI::BarrierStage::VertexShader | RHI::BarrierStage::PixelShader;
 							newState.layout = RHI::ImageLayout::ShaderWrite;
-						
+
 							if (RHI::RHICanUseMeshShaders())
 							{
 								newState.stage |= RHI::BarrierStage::MeshShader | RHI::BarrierStage::AmplificationShader;
@@ -870,7 +882,7 @@ namespace Volt
 
 					// We start by figuring out the state that we want to take the resource to.
 					RHI::ResourceState newState{};
-					
+
 					// When the resource is being read, the access and layout is the same
 					// for both compute and rasterization passes.
 					newState.access = RHI::BarrierAccess::ShaderRead;
@@ -883,7 +895,7 @@ namespace Volt
 					else
 					{
 						newState.stage = RHI::BarrierStage::VertexShader | RHI::BarrierStage::PixelShader;
-					
+
 						if (RHI::RHICanUseMeshShaders())
 						{
 							newState.stage |= RHI::BarrierStage::MeshShader | RHI::BarrierStage::AmplificationShader;
@@ -936,7 +948,7 @@ namespace Volt
 
 					RHI::ResourceState newState{};
 					SetupResourceStateFromAccess(resourceAccess.accessType, newState);
-					
+
 					// Handle cases
 					auto& resourceState = resourceStateTracker.GetState(resource);
 
@@ -1040,11 +1052,13 @@ namespace Volt
 			if (pass->isCulled)
 			{
 				InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, m_commandBuffer);
+				InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, m_commandBuffer);
 				continue;
 			}
 
+			InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, m_commandBuffer);
+			
 			m_commandBuffer->BeginMarker(pass->name, { 1.f, 1.f, 1.f, 1.f });
-
 			InsertBarriersIntoCommandBuffer(compiledPass.prePassBarriers, m_commandBuffer);
 
 			{
@@ -1054,7 +1068,6 @@ namespace Volt
 			}
 
 			InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, m_commandBuffer);
-
 			m_commandBuffer->EndMarker();
 
 			for (const RGResourceRef resource : compiledPass.GetSurrenderableResources())
@@ -1063,6 +1076,13 @@ namespace Volt
 				m_transientResourceSystem.SurrenderResource(resource, 0);
 			}
 		}
+
+		// Make sure markers added after the final pass also are added.
+		if (m_standaloneMarkers.PassHasMarkers(static_cast<uint32_t>(m_passes.size())))
+		{
+			InsertStandaloneMarkersIntoCommandBuffer(static_cast<uint32_t>(m_passes.size()), m_commandBuffer);
+		}
+
 		m_commandBuffer->EndMarker();
 		m_commandBuffer->End();
 		m_commandBuffer->ExecuteWithFence(m_executionFence);
@@ -1130,6 +1150,26 @@ namespace Volt
 		commandBuffer->ResourceBarrier(resultBarriers);
 	}
 
+	void RenderGraph::InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer)
+	{
+		VT_PROFILE_FUNCTION();
+
+		if (m_standaloneMarkers.PassHasMarkers(passIndex))
+		{
+			for (const StandaloneMarkers::MarkerInfo& markerInfo : m_standaloneMarkers.GetMarkersForPassIndex(passIndex))
+			{
+				if (!markerInfo.isEnd)
+				{
+					commandBuffer->BeginMarker(markerInfo.markerName, { markerInfo.markerColor.x, markerInfo.markerColor.y, markerInfo.markerColor.z, markerInfo.markerColor.w });
+				}
+				else
+				{
+					commandBuffer->EndMarker();
+				}
+			}
+		}
+	}
+
 	RGResourceRef RenderGraph::TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource)
 	{
 		if (m_registeredExternalResources.contains(resource))
@@ -1139,7 +1179,7 @@ namespace Volt
 
 		return nullptr;
 	}
-	
+
 	void RenderGraph::RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RGResourceRef handle)
 	{
 		m_registeredExternalResources[resource] = handle;
@@ -1156,7 +1196,7 @@ namespace Volt
 
 		return rhiBuffer->GetView(desc);
 	}
-	
+
 	RefPtr<RHI::BufferView> RenderGraph::GetRHIBufferUAV(RGBufferUAVRef bufferUAV)
 	{
 		VT_PROFILE_FUNCTION();
@@ -1337,5 +1377,19 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		return m_transientResourceSystem.AcquireTexture(texture);
+	}
+
+	void RenderGraph::StandaloneMarkers::BeginMarker(uint32_t passIndex, const std::string& markerName, const glm::vec4& color)
+	{
+		auto& newMarker = m_markers[passIndex].emplace_back();
+		newMarker.markerName = markerName;
+		newMarker.markerColor = color;
+		newMarker.isEnd = false;
+	}
+
+	void RenderGraph::StandaloneMarkers::EndMarker(uint32_t passIndex)
+	{
+		auto& newMarker = m_markers[passIndex].emplace_back();
+		newMarker.isEnd = true;
 	}
 }

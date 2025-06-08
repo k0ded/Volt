@@ -12,6 +12,9 @@
 #include "Volt-Renderer/ShadowMappingUtility.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/SceneRendererRenderGraphData.h"
+#include "Volt-Renderer/RenderView.h"
+
+#include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
 
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
@@ -90,12 +93,21 @@ namespace Volt
 
 		RenderGraphBlackboard blackboard;
 		RenderGraph renderGraph{ m_commandBufferSet.IncrementAndGetCommandBuffer() };
+
+		if (ShouldApplyJitter())
+		{
+			m_prevJitter = m_currentJitter;
+			m_currentJitter = m_taaNoise.Get(m_frameIndex, { m_width, m_height });
+			camera->SetSubpixelOffset(m_currentJitter);
+		}
+
 		m_renderScene->Update(renderGraph);
 
 		RenderView renderView;
 		renderView.width = m_width;
 		renderView.height = m_height;
 		renderView.viewUniformBuffer = CreateViewUniformBuffer(renderGraph, camera);
+		renderView.frameIndex = m_frameIndex;
 
 		AddDefaultTextures(renderGraph, blackboard);
 		AddEnvironmentTextures(renderGraph, blackboard);
@@ -110,6 +122,8 @@ namespace Volt
 
 		AddSkyboxPass(renderGraph, blackboard, renderView);
 		AddShadingPass(renderGraph, blackboard, renderView);
+
+		AddPostProcessingPasses(renderGraph, blackboard, renderView);
 
 		m_renderScene->EndFrame(renderGraph);
 
@@ -162,6 +176,80 @@ namespace Volt
 				break;
 			}
 		}
+	}
+
+	void SceneRenderer::AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	{
+		renderGraph.BeginMarker("Post Processing");
+
+		if (m_antiAliasingMethod == AntiAliasingMethod::TAA)
+		{
+			TAATechnique taaTechnique(renderGraph, blackboard);
+			TAATechnique::Output result = taaTechnique.Execute(view, m_previousColorImage);
+
+			renderGraph.EnqueueTextureExtraction(result.accumulation, &m_previousColorImage);
+		}
+
+		renderGraph.EndMarker();
+	
+		AddTonemappingPass(renderGraph, blackboard, view);
+	}
+
+	struct TonemapPS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(TonemapPS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float3>, FinalColor)
+			SHADER_PARAMETER(float, MiddleGray)
+			SHADER_PARAMETER(float, WhitePoint)
+			SHADER_PARAMETER(uint, FrameIndex)
+
+			RG_RENDER_TARGETS()
+			SHADER_PARAMETER_STRUCT_INCLUDE(BlueNoiseShaderParameters, BlueNoise)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(TonemapPS, "Engine/Shaders/Source/PostProcessing/Tonemap.hlsl", "MainPS", Pixel);
+
+	void SceneRenderer::AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	{
+		constexpr float MiddleGray = 0.18f;
+		constexpr float WhitePoint = 1.1f;
+
+		const SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
+
+		RGTextureRef targetTexture = renderGraph.RegisterExternalTexture(m_outputImage);
+
+		TonemapPS::Parameters* passParameters = renderGraph.AllocParameters<TonemapPS::Parameters>();
+		passParameters->FinalColor = renderGraph.CreateSRV(sceneTextures.sceneColor);
+		passParameters->MiddleGray = MiddleGray;
+		passParameters->WhitePoint = WhitePoint * WhitePoint;
+		passParameters->FrameIndex = view.frameIndex;
+		passParameters->BlueNoise = BlueNoise::GetBlueNoiseParameters(renderGraph);
+		passParameters->renderTargets.renderTargets[0] = targetTexture;
+
+		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
+		auto pixelShader = ShaderMap::Get<TonemapPS>();
+
+		renderGraph.AddPass("Tonemap",
+			RenderGraphPassFlags::None,
+			passParameters,
+			[passParameters, view, pixelShader, vertexShader](RenderContext& context)
+		{
+			RHI::RenderPipelineCreateInfo pipelineInfo{};
+			pipelineInfo.shaders = { vertexShader, pixelShader };
+			pipelineInfo.cullMode = RHI::CullMode::None;
+			pipelineInfo.depthMode = RHI::DepthMode::None;
+
+			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->renderTargets);
+
+			context.BeginRendering(renderingInfo);
+			context.BindPipeline(pipeline);
+			context.SetParameters<TonemapPS>(pixelShader, passParameters);
+			context.Draw(3, 1, 0, 0);
+			context.EndRendering();
+		});
 	}
 
 	struct DepthPrePassVS : public GlobalShader
@@ -343,15 +431,15 @@ namespace Volt
 			passParameters,
 			[passParameters, view, vertexShader, pixelShader, indexCount] (RenderContext& context)
 		{
-			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
-			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
-
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
 			pipelineInfo.shaders = { vertexShader, pixelShader };
 			pipelineInfo.cullMode = RHI::CullMode::None;
 			pipelineInfo.depthMode = RHI::DepthMode::None;
 
 			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
+			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
 			context.BeginRendering(renderingInfo);
 			context.BindPipeline(pipeline);
@@ -397,7 +485,7 @@ namespace Volt
 			"Render Deferred Shading",
 			shader,
 			passParameters,
-			RenderGraphPassFlags::NeverCull,
+			RenderGraphPassFlags::None,
 			{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
 	}
 
@@ -453,8 +541,8 @@ namespace Volt
 			viewUniformBuffer.farPlane = camera->GetFarPlane();
 
 			viewUniformBuffer.frameIndex = m_frameIndex;
-			viewUniformBuffer.currentFrameJitter = glm::vec2(m_currentJitter.x, -m_currentJitter.y);
-			viewUniformBuffer.prevFrameJitter = glm::vec2(m_prevJitter.x, -m_prevJitter.y);
+			viewUniformBuffer.currentFrameJitter = glm::vec2(m_currentJitter.x, m_currentJitter.y);
+			viewUniformBuffer.prevFrameJitter = glm::vec2(m_prevJitter.x, m_prevJitter.y);
 
 			m_prevViewProjection = viewUniformBuffer.viewProjection;
 

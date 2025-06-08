@@ -64,6 +64,9 @@ namespace Volt
 		void EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage);
 		void EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::StorageBuffer>* outBuffer);
 
+		void BeginMarker(const std::string& markerName, const glm::vec4& markerColor = 1.f);
+		void EndMarker();
+
 		void AddResourceBarrier(RGResourceRef resourceHandle, const RHI::ResourceState& barrierInfo);
 
 		template<typename T>
@@ -195,12 +198,33 @@ namespace Volt
 			vt::map<uint32_t, PagedVector<ResourceUsageInfo>> m_passBarriers;
 		};
 
+		class StandaloneMarkers
+		{
+		public:
+			struct MarkerInfo
+			{
+				std::string markerName;
+				glm::vec4 markerColor;
+				bool isEnd;
+			};
+
+			void BeginMarker(uint32_t passIndex, const std::string& markerName, const glm::vec4& color);
+			void EndMarker(uint32_t passIndex);
+
+			VT_NODISCARD VT_INLINE bool PassHasMarkers(uint32_t passIndex) const { return m_markers.contains(passIndex); }
+			VT_NODISCARD VT_INLINE const Vector<MarkerInfo>& GetMarkersForPassIndex(uint32_t passIndex) { return m_markers.at(passIndex); }
+
+		private:
+			vt::map<uint32_t, Vector<MarkerInfo>> m_markers;
+		};
+
 		using ExternalResourceRegistry = vt::map<RawPtr<RHI::RHIResource>, RGResourceRef>;
 
 		void ExecuteInternal(bool waitForSync);
 		void ExtractResources();
 
 		void InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
+		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer);
 
 		RGResourceRef TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource);
 		void RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RGResourceRef handle);
@@ -224,6 +248,7 @@ namespace Volt
 		TransientResourceSystem m_transientResourceSystem;
 		ExternalResourceRegistry m_registeredExternalResources;
 		StandaloneBarriers m_standaloneBarriers;
+		StandaloneMarkers m_standaloneMarkers;
 
 		RenderGraphResourceAllocator m_resourceAllocator; // Allocator for actual resources (Buffers, Textures)
 		RenderGraphResourceAllocator m_resourceAccessorAllocator; // Allocator for resource accessors (SRVs, UAVs)
@@ -241,7 +266,7 @@ namespace Volt
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::Fence> m_executionFence;
-	};
+	}; 
 
 	template<typename ParameterStruct, typename ExecFunc>
 	void RenderGraph::AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc)

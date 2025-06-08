@@ -8,7 +8,7 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/ShaderParameterStruct.h>
-#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
+#include <RenderCore/RenderGraph/ShaderRegistry.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/DefaultBlendStates.h>
 

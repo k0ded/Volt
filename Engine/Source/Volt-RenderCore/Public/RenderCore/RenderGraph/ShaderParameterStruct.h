@@ -2,8 +2,10 @@
 
 #include "RenderCore/RenderGraph/ShaderTypes.h"
 #include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
+#include "RenderCore/Shader/GlobalShader.h"
 
 #include <RHIModule/Shader/ShaderCommon.h>
+#include <RHIModule/Images/SamplerState.h>
 
 #include <CoreUtilities/StringHash.h>
 
