@@ -870,7 +870,6 @@ void ViewportPanel::HandleSingleSelect()
 	if (mouseX >= 0 && mouseY >= 0 && mouseX < (int32_t)perspectiveSize.x && mouseY < (int32_t)perspectiveSize.y)
 	{
 		//const auto renderScale = m_sceneRenderer->GetSettings().renderScale;
-#if 0
 		const float renderScale = 1.f;
 		const auto ext = Sandbox::Get().GetObjectIDSceneRendererExtension();
 
@@ -910,7 +909,6 @@ void ViewportPanel::HandleSingleSelect()
 				EditorLibrary::Get<SceneViewPanel>()->HighlightEntity(entity);
 			}
 		}
-#endif
 	}
 }
 

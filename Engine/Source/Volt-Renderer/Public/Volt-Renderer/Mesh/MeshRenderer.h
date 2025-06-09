@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Volt-Renderer/Config.h"
+
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Descriptors/DescriptorTable.h>
@@ -21,11 +23,11 @@ namespace Volt
 	};
 	VT_SETUP_ENUM_CLASS_OPERATORS(MeshBatchType);
 
-	class MeshRenderer
+	class VTR_API MeshRenderer
 	{
 	public:
 		// For now we pass a vertex and pixel shader in here, we might want to use vertex shaders specific to a material in the future.
-		void BuildRenderCommands(Ref<RenderScene> renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
+		void BuildRenderCommands(Ref<RenderScene> renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
 		void Render(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters) const;
 
 	private:

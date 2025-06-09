@@ -14,7 +14,7 @@
 
 namespace Volt
 {
-	void MeshRenderer::BuildRenderCommands(Ref<RenderScene> renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader)
+	void MeshRenderer::BuildRenderCommands(Ref<RenderScene> renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -65,7 +65,7 @@ namespace Volt
 				}
 			}
 
-			RHI::RenderPipelineCreateInfo renderPipelineInfo{};
+			RHI::RenderPipelineCreateInfo renderPipelineInfo = pipelineInfo;
 			renderPipelineInfo.shaders = { vertexShader, pixelShader };
 			newCommand.renderPipeline = PipelineStateCache::GetRenderPipeline(renderPipelineInfo);
 
@@ -149,12 +149,18 @@ namespace Volt
 					{
 						currentMeshBatch->vertexBuffers = renderCommandExt.vertexBuffers;
 						currentMeshBatch->indexBuffer = renderCommandExt.indexBuffer;
+
+						VT_ENSURE(!currentMeshBatch->vertexBuffers.empty());
+						VT_ENSURE(currentMeshBatch->indexBuffer);
 					}
 					
 					if (EnumValueContainsFlag(batchType, MeshBatchType::RenderPipeline))
 					{
 						currentMeshBatch->renderPipeline = renderCommandExt.renderPipeline;
 						currentMeshBatch->descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(renderCommandExt.renderPipeline);
+
+						VT_ENSURE(currentMeshBatch->renderPipeline);
+						VT_ENSURE(currentMeshBatch->descriptorTable);
 					}
 				}
 			}

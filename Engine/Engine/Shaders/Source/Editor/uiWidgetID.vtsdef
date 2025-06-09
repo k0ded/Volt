@@ -1,9 +1,0 @@
-name: "UIWidgetID"
-internal: true
-sources:
-  - entryPoint: "MainVS"
-    shaderStage: "vs"
-    filePath: "Engine/Shaders/Source/Editor/UIWidgetID.hlsl"
-  - entryPoint: "MainPS"
-    shaderStage: "ps"
-    filePath: "Engine/Shaders/Source/Editor/UIWidgetID.hlsl"

@@ -367,7 +367,17 @@ namespace Volt::RHI
 			return true;
 		}
 
-		const size_t inputStructLoc = processedSource.find("struct " + inputStruct);
+		// Find the correct declaration
+		size_t inputStructLoc = processedSource.find("struct " + inputStruct + " ");
+		if (inputStructLoc == std::string::npos)
+		{
+			inputStructLoc = processedSource.find("struct " + inputStruct + "\n");
+		}
+		if (inputStructLoc == std::string::npos)
+		{
+			inputStructLoc = processedSource.find("struct " + inputStruct + "\0");
+		}
+
 		const size_t openBracketLoc = processedSource.find_first_of('{', inputStructLoc);
 		const size_t closeBracketLoc = processedSource.find("};", inputStructLoc);
 
