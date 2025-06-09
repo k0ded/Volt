@@ -1,5 +1,3 @@
-#include "Defines.hlsli"
-
 RWStructuredBuffer<uint> RWDstBuffer;
 StructuredBuffer<uint> SrcBuffer;
 Buffer<uint> ScatterIndices;

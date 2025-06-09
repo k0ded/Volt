@@ -19,7 +19,6 @@ namespace Volt::RHI
 	{
 		None = BIT(0),
 		WarningsAsErrors = BIT(1),
-		EnableShaderValidator = BIT(2)
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(ShaderCompilerFlags);

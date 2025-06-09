@@ -99,6 +99,8 @@ namespace Volt
 		Ref<T> AddExtension(SceneRendererExtensionStage stage);
 
 	private:
+		using SceneRendererExtensionMap = vt::map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>>;
+
 		void OnRender(Ref<Camera> camera, float timestep);
 
 		///// Render Passes /////
@@ -160,7 +162,7 @@ namespace Volt
 		TAANoise m_taaNoise;
 
 		// Extensions
-		vt::map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>> m_sceneRendererExtensions;
+		SceneRendererExtensionMap m_sceneRendererExtensions;
 	};
 
 	template<typename T>

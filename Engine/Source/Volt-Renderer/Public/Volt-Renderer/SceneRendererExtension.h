@@ -7,7 +7,8 @@ namespace Volt
 	class RenderGraph;
 	class RenderGraphBlackboard;
 	class RenderScene;
-	class Camera;
+
+	struct RenderView;
 
 	enum class SceneRendererExtensionStage : uint32_t
 	{
@@ -23,7 +24,7 @@ namespace Volt
 		{ }
 
 		virtual ~SceneRendererExtension() = default;
-		virtual RGTextureRef OnRender(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, RGTextureRef prevOutputImage) = 0;
+		virtual RGTextureRef OnRender(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef prevOutputImage) = 0;
 
 	protected:
 		Weak<RenderScene> m_renderScene;

@@ -284,7 +284,7 @@ namespace Volt
 			{
 				RGUniformBufferDesc desc{};
 				desc.count = 1;
-				desc.elementSize = shaderParameterMap.GetShaderParametersSize();
+				desc.elementSize = std::max(shaderParameterMap.GetShaderParametersSize(), 1u);
 				desc.name = "ShaderParameters";
 
 				RGUniformBufferRef uniformBuffer = m_renderGraph.CreateUniformBuffer(desc);

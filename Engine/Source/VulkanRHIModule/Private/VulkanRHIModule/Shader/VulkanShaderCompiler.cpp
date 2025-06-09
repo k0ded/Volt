@@ -20,6 +20,7 @@
 #endif
 
 #include <dxsc/dxcapi.h>
+#include <dxsc/dxctools.h>
 
 #include <spirv_reflect.h>
 
@@ -43,6 +44,14 @@ namespace Volt::RHI
 			}
 
 			return output;
+		}
+
+		inline static const std::string GetErrorStringFromResult(IDxcOperationResult* result)
+		{
+			IDxcBlobEncoding* error;
+			result->GetErrorBuffer(&error);
+
+			return std::string(reinterpret_cast<const char*>(error->GetBufferPointer()), error->GetBufferSize());
 		}
 
 		inline static ShaderUniformType GetShaderUniformTypeFromSpvTypeDesc(SpvReflectTypeDescription* typeDesc)
@@ -97,12 +106,17 @@ namespace Volt::RHI
 		VT_LOGC(Trace, LogVulkanRHI, "Initializing VulkanShaderCompiler");
 		DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_hlslCompiler));
 		DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_hlslUtils));
+		DxcCreateInstance(CLSID_DxcRewriter, IID_PPV_ARGS(&m_hlslRewriter));
+
+		m_hlslRewriter->QueryInterface(&m_hlslRewriter2);
 	}
 
 	VulkanShaderCompiler::~VulkanShaderCompiler()
 	{
 		m_hlslUtils->Release();
 		m_hlslCompiler->Release();
+		m_hlslRewriter->Release();
+		m_hlslRewriter2->Release();
 
 		VT_LOGC(Trace, LogVulkanRHI, "Destroying VulkanShaderCompiler");
 	}
@@ -169,7 +183,7 @@ namespace Volt::RHI
 		const ShaderSourceEntry& sourceEntry = specification.shaderSourceInfo.sourceEntry;
 		std::string processedSource = specification.shaderSourceInfo.source;
 
-		if (!PreprocessSource(specification, processedSource))
+		if (!PreprocessSource(specification, processedSource, result))
 		{
 			result.result = ShaderCompiler::CompilationResult::PreprocessFailed;
 			return result;
@@ -234,72 +248,13 @@ namespace Volt::RHI
 			arguments.emplace_back(L"-fvk-invert-y");
 		}
 
-		// Custom pre processing
-		{
-			PreProcessorData processingData{};
-			processingData.shaderSource = processedSource;
-			processingData.shaderStage = shaderStage;
-			processingData.entryPoint = sourceEntry.entryPoint;
-
-			PreProcessorResult preProcessorResult{};
-			if (!ShaderPreProcessor::PreProcessShaderSource(processingData, preProcessorResult))
-			{
-				result.result = CompilationResult::PreprocessFailed;
-				return result;
-			}
-
-			if (shaderStage == ShaderStage::Pixel)
-			{
-				result.outputFormats = preProcessorResult.outputFormats;
-			}
-			else if (shaderStage == ShaderStage::Vertex)
-			{
-				result.vertexLayout = preProcessorResult.vertexLayout;
-				result.instanceLayout = preProcessorResult.instanceLayout;
-			}
-
-			processedSource = preProcessorResult.preProcessedResult;
-		}
-
 		// Compile
-		IDxcBlobEncoding* sourcePtr = nullptr;
-		m_hlslUtils->CreateBlob(processedSource.c_str(), static_cast<uint32_t>(processedSource.size()), CP_UTF8, &sourcePtr);
+		DxcCompilationResult compilationResult = InvokeCompilerWithArguments(arguments, sourceEntry.filepath, processedSource, nullptr);
 
-		DxcBuffer sourceBuffer{};
-		sourceBuffer.Ptr = sourcePtr->GetBufferPointer();
-		sourceBuffer.Size = sourcePtr->GetBufferSize();
-		sourceBuffer.Encoding = 0;
-
-		IDxcResult* compiledBinary = nullptr;
-		std::string error;
-
-		HRESULT compilationResult = m_hlslCompiler->Compile(&sourceBuffer, arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, IID_PPV_ARGS(&compiledBinary));
-
-		const bool failed = FAILED(compilationResult);
-		if (failed)
-		{
-			error = std::format("Failed to compile. Error: {}\n", compilationResult);
-			error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(compiledBinary), sourceEntry.filepath.string()));
-		}
-
-		if (error.empty())
+		if (compilationResult.succeded)
 		{
 			IDxcBlob* shaderResult = nullptr;
-			compiledBinary->GetResult(&shaderResult);
-
-			if (!shaderResult || shaderResult->GetBufferSize() == 0)
-			{
-				error = std::format("Failed to compile. Error: {}\n", compilationResult);
-				error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(compiledBinary), sourceEntry.filepath.string()));
-
-				VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, error);
-
-				sourcePtr->Release();
-				compiledBinary->Release();
-
-				result.result = CompilationResult::Failure;
-				return result;
-			}
+			compilationResult.dxcResult->GetResult(&shaderResult);
 
 			const size_t size = shaderResult->GetBufferSize();
 
@@ -308,26 +263,27 @@ namespace Volt::RHI
 
 			shaderResult->Release();
 			result.result = ShaderCompiler::CompilationResult::Success;
+
+			VT_LOGC(Info, LogVulkanRHI, "Successfully compiled shader {}!", sourceEntry.filepath);
 		}
 		else
 		{
-			sourcePtr->Release();
-			compiledBinary->Release();
-
-			VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, error);
+			VT_LOGC(Error, LogVulkanRHI, compilationResult.error);
 			result.result = ShaderCompiler::CompilationResult::Failure;
-			return result;
 		}
 
-		sourcePtr->Release();
-		compiledBinary->Release();
+		if (compilationResult.dxcResult)
+		{
+			compilationResult.dxcResult->Release();
+		}
 
-		VT_LOGC(Info, LogVulkanRHI, "Successfully compiled shader {}!", sourceEntry.filepath);
 		return result;
 	}
 
-	bool VulkanShaderCompiler::PreprocessSource(const Specification& specification, std::string& outProcessedSource)
+	bool VulkanShaderCompiler::PreprocessSource(const Specification& specification, std::string& outProcessedSource, CompilationResultData& compilationResult)
 	{
+		const ShaderSourceEntry& sourceEntry = specification.shaderSourceInfo.sourceEntry;
+
 		Vector<std::wstring> wIncludeDirs;
 		Vector<const wchar_t*> wcIncludeDirs;
 
@@ -345,10 +301,8 @@ namespace Volt::RHI
 			wcIncludeDirs.push_back(includeDir.c_str());
 		}
 
-		Vector<const wchar_t*> arguments =
+		Vector<const wchar_t*> definesAndIncludes =
 		{
-			specification.shaderSourceInfo.sourceEntry.filepath.c_str(),
-			L"-P", // Preprocess
 			L"-D", L"__HLSL__",
 			L"-D", L"__VULKAN__"
 		};
@@ -357,14 +311,14 @@ namespace Volt::RHI
 		Vector<std::wstring> permutationStrings = specification.permutationConfig.GetPermutationsWideStr();
 		for (const auto& permutationStr : permutationStrings)
 		{
-			arguments.push_back(L"-D");
-			arguments.push_back(permutationStr.c_str());
+			definesAndIncludes.push_back(L"-D");
+			definesAndIncludes.push_back(permutationStr.c_str());
 		}
 
 		// Append include dirs
 		for (const auto& includeDir : wcIncludeDirs)
 		{
-			arguments.push_back(includeDir);
+			definesAndIncludes.push_back(includeDir);
 		}
 
 		// Append global macros
@@ -374,62 +328,119 @@ namespace Volt::RHI
 			wMacros.push_back(::Utility::ToWString(macro));
 		}
 
-		if ((m_flags & ShaderCompilerFlags::EnableShaderValidator) != ShaderCompilerFlags::None)
-		{
-			wMacros.push_back(L"ENABLE_RUNTIME_VALIDATION");
-		}
-
 		for (const auto& macro : wMacros)
 		{
-			arguments.emplace_back(L"-D");
-			arguments.emplace_back(macro.c_str());
+			definesAndIncludes.emplace_back(L"-D");
+			definesAndIncludes.emplace_back(macro.c_str());
 		}
 
 		// Append compile flags
 		if ((m_flags & ShaderCompilerFlags::WarningsAsErrors) != ShaderCompilerFlags::None)
 		{
-			arguments.push_back(DXC_ARG_WARNINGS_ARE_ERRORS);
+			definesAndIncludes.push_back(DXC_ARG_WARNINGS_ARE_ERRORS);
 		}
 
-		IDxcBlobEncoding* sourcePtr = nullptr;
-		m_hlslUtils->CreateBlob(outProcessedSource.c_str(), static_cast<uint32_t>(outProcessedSource.size()), CP_UTF8, &sourcePtr);
+		bool succeded = false;
 
-		DxcBuffer sourceBuffer{};
-		sourceBuffer.Ptr = sourcePtr->GetBufferPointer();
-		sourceBuffer.Size = sourcePtr->GetBufferSize();
-		sourceBuffer.Encoding = 0;
-
-		const Scope<HLSLIncluder> includer = CreateScope<HLSLIncluder>();
-
-		IDxcResult* compilationResult = nullptr;
-		HRESULT result = m_hlslCompiler->Compile(&sourceBuffer, arguments.data(), static_cast<uint32_t>(arguments.size()), includer.get(), IID_PPV_ARGS(&compilationResult));
-
-		std::string error;
-		const bool failed = FAILED(result);
-
-		if (failed)
+		// Pre process source
 		{
-			error = std::format("Failed to compile. Error {0}\n", result);
-			error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(compilationResult), specification.shaderSourceInfo.sourceEntry.filepath.string()));
+			Vector<const wchar_t*> compilationArgs =
+			{
+				sourceEntry.filepath.c_str(),
+				L"-P", // Preprocess
+			};
+			compilationArgs.append(definesAndIncludes);
+
+			const Scope<HLSLIncluder> includer = CreateScope<HLSLIncluder>();
+			DxcCompilationResult preProcessingResult = InvokeCompilerWithArguments(compilationArgs, sourceEntry.filepath, outProcessedSource, includer.get());
+
+			if (preProcessingResult.succeded)
+			{
+				IDxcBlob* blob = nullptr;
+				preProcessingResult.dxcResult->GetResult(&blob);
+
+				outProcessedSource = reinterpret_cast<const char*>(blob->GetBufferPointer());
+				blob->Release();
+			}
+			else
+			{
+				VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, preProcessingResult.error);
+			}
+
+			if (preProcessingResult.dxcResult)
+			{
+				preProcessingResult.dxcResult->Release();
+			}
+
+			succeded = preProcessingResult.succeded;
 		}
 
-		if (error.empty())
+		// Custom pre processing
+		if (succeded)
 		{
-			IDxcBlob* compileResult = nullptr;
-			compilationResult->GetResult(&compileResult);
+			PreProcessorData processingData{};
+			processingData.shaderSource = outProcessedSource;
+			processingData.shaderStage = sourceEntry.shaderStage;
+			processingData.entryPoint = sourceEntry.entryPoint;
 
-			outProcessedSource = reinterpret_cast<const char*>(compileResult->GetBufferPointer());
-			compileResult->Release();
+			PreProcessorResult preProcessorResult{};
+			if (!ShaderPreProcessor::PreProcessShaderSource(processingData, preProcessorResult))
+			{
+				compilationResult.result = CompilationResult::PreprocessFailed;
+				succeded = false;
+			}
+
+			if (sourceEntry.shaderStage == ShaderStage::Pixel)
+			{
+				compilationResult.outputFormats = preProcessorResult.outputFormats;
+			}
+			else if (sourceEntry.shaderStage == ShaderStage::Vertex)
+			{
+				compilationResult.vertexLayout = preProcessorResult.vertexLayout;
+				compilationResult.instanceLayout = preProcessorResult.instanceLayout;
+			}
+
+			outProcessedSource = preProcessorResult.preProcessedResult;
 		}
-		else
+
+		// Rewrite source
+#if 0
+		if (succeded)
 		{
-			VT_LOGC(Error, LogVulkanRHI, error);
+			const std::wstring wEntryPoint = ::Utility::ToWString(sourceEntry.entryPoint);
+
+			Vector<const wchar_t*> rewriteArgs =
+			{
+				sourceEntry.filepath.c_str(),
+				L"-E",
+				wEntryPoint.c_str(),
+				L"-HV",
+				L"2021",
+				L"-remove-unused-globals"
+			};
+
+			// #TODO_Ivar: Reenable once DXR has support for it.
+			if (g_rhiCapabilities.supportsNative16BitOperations)
+			{
+				rewriteArgs.push_back(L"-enable-16bit-types");
+			}
+
+			RewriteResult rewriteResult = RewriteHLSL(rewriteArgs, sourceEntry.filepath, outProcessedSource);
+
+			if (rewriteResult.succeded)
+			{
+				outProcessedSource = rewriteResult.outSource;
+			}
+			else
+			{
+				VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, rewriteResult.error);
+			}
+
+			succeded = rewriteResult.succeded;
 		}
+#endif
 
-		sourcePtr->Release();
-		compilationResult->Release();
-
-		return !failed;
+		return succeded;
 	}
 
 	void VulkanShaderCompiler::ReflectShader(const Specification& specification, CompilationResultData& inOutData)
@@ -458,11 +469,22 @@ namespace Volt::RHI
 		{
 			const SpvReflectDescriptorSet* spvSet = sets[0];
 
+			// First find the globals UB, to make sure that it always gets binding 0
+			for (uint32_t binding = 0; binding < spvSet->binding_count; ++binding)
+			{
+				SpvReflectDescriptorBinding* spvBinding = spvSet->bindings[binding];
+				if (strcmp(spvBinding->name, "$Globals") == 0)
+				{
+					uniformBuffers.emplace_back(spvBinding);
+					break;
+				}
+			}
+
 			for (uint32_t binding = 0; binding < spvSet->binding_count; ++binding)
 			{
 				SpvReflectDescriptorBinding* spvBinding = spvSet->bindings[binding];
 
-				if (spvBinding->accessed)
+				if (spvBinding->accessed && strcmp(spvBinding->name, "$Globals") != 0)
 				{
 					switch (spvBinding->resource_type)
 					{
@@ -571,5 +593,89 @@ namespace Volt::RHI
 		memcpy(inOutData.shaderBinary.data(), spvReflectGetCode(&spirvModule), spirvSize);
 
 		spvReflectDestroyShaderModule(&spirvModule);
+	}
+
+	VulkanShaderCompiler::DxcCompilationResult VulkanShaderCompiler::InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source, HLSLIncluder* includer)
+	{
+		IDxcBlobEncoding* sourceBlob = nullptr;
+		// Use first null character as size, as the string might contain many, which is invalid.
+		size_t firstNullChar = source.find('\0');
+		if (firstNullChar == std::string::npos)
+		{
+			firstNullChar = source.size();
+		}
+
+		m_hlslUtils->CreateBlob(source.c_str(), static_cast<uint32_t>(firstNullChar), CP_UTF8, &sourceBlob);
+
+		DxcBuffer sourceBuffer{};
+		sourceBuffer.Ptr = sourceBlob->GetBufferPointer();
+		sourceBuffer.Size = sourceBlob->GetBufferSize();
+		sourceBuffer.Encoding = 0;
+
+		IDxcResult* dxcCompilationOutput = nullptr;
+		HRESULT hResult = m_hlslCompiler->Compile(&sourceBuffer, arguments.data(), static_cast<uint32_t>(arguments.size()), includer, IID_PPV_ARGS(&dxcCompilationOutput));
+
+		HRESULT hStatus;
+		dxcCompilationOutput->GetStatus(&hStatus);
+		 
+		const bool failed = FAILED(hResult) || FAILED(hStatus);
+
+		DxcCompilationResult result{};
+		result.dxcResult = dxcCompilationOutput;
+		result.succeded = !failed;
+
+		if (failed)
+		{
+			result.error = std::format("Failed to compile. Error: {}\n", hResult);
+			result.error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(dxcCompilationOutput), sourceFilepath.string()));
+		}
+
+		sourceBlob->Release();
+	
+		return result;
+	}
+
+  	VulkanShaderCompiler::RewriteResult VulkanShaderCompiler::RewriteHLSL(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source)
+	{
+		IDxcBlobEncoding* sourceBlob = nullptr;
+		// Use first null character as size, as the string might contain many, which is invalid.
+		size_t firstNullChar = source.find('\0');
+		if (firstNullChar == std::string::npos)
+		{
+			firstNullChar = source.size();
+		}
+
+		m_hlslUtils->CreateBlob(source.c_str(), static_cast<uint32_t>(firstNullChar), CP_UTF8, &sourceBlob);
+
+		IDxcOperationResult* rewriteResult = nullptr;
+		HRESULT hResult = m_hlslRewriter2->RewriteWithOptions(sourceBlob, sourceFilepath.c_str(), arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, 0, nullptr, &rewriteResult);
+
+		HRESULT hStatus;
+		rewriteResult->GetStatus(&hStatus);
+
+		const bool failed = FAILED(hResult) || FAILED(hStatus);
+
+		RewriteResult result;
+		result.succeded = !failed;
+
+		if (failed)
+		{
+			result.error = std::format("Failed to rewrite. Error: {}\n", hResult);
+			result.error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(rewriteResult), sourceFilepath.string()));
+		}
+		else
+		{
+			IDxcBlob* blob;
+			rewriteResult->GetResult(&blob);
+
+			result.outSource = std::string(reinterpret_cast<const char*>(blob->GetBufferPointer()), blob->GetBufferSize());
+			
+			blob->Release();
+		}
+
+		sourceBlob->Release();
+		rewriteResult->Release();
+
+		return result;
 	}
 }

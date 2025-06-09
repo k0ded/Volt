@@ -108,10 +108,21 @@ namespace Volt
 		renderView.height = m_height;
 		renderView.viewUniformBuffer = CreateViewUniformBuffer(renderGraph, camera);
 		renderView.frameIndex = m_frameIndex;
+		renderView.camera = camera;
 
 		AddDefaultTextures(renderGraph, blackboard);
 		AddEnvironmentTextures(renderGraph, blackboard);
 		AddDepthPrePass(renderGraph, blackboard, renderView);
+
+		if (m_sceneRendererExtensions.contains(SceneRendererExtensionStage::PreGBuffer))
+		{
+			for (const auto& ext : m_sceneRendererExtensions.at(SceneRendererExtensionStage::PreGBuffer))
+			{
+				// There is no output image yet
+				ext->OnRender(renderGraph, blackboard, renderView, nullptr);
+			}
+		}
+
 		AddGenerateGBufferPass(renderGraph, blackboard, renderView);
 
 		// Create shading RT
@@ -191,6 +202,16 @@ namespace Volt
 		}
 
 		renderGraph.EndMarker();
+
+		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
+
+		if (m_sceneRendererExtensions.contains(SceneRendererExtensionStage::PostPostProcessing))
+		{
+			for (const auto& ext : m_sceneRendererExtensions.at(SceneRendererExtensionStage::PostPostProcessing))
+			{
+				sceneTextures.sceneColor = ext->OnRender(renderGraph, blackboard, view, sceneTextures.sceneColor);
+			}
+		}
 	
 		AddTonemappingPass(renderGraph, blackboard, view);
 	}

@@ -1,6 +1,5 @@
 #pragma once
 
-#if 0
 #include <Volt-Renderer/SceneRendererExtension.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
@@ -19,11 +18,10 @@ public:
 
 	~ObjectIDSceneRendererExtension() override = default;
 
-	Volt::RenderGraphImageHandle OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, Volt::RenderGraphImageHandle prevOutputImage) override;
+	Volt::RGTextureRef OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage) override;
 
 	VT_INLINE VT_NODISCARD RefPtr<Volt::RHI::Image> GetIDImage() const { return m_objectIdImage; }
 
 private:
 	RefPtr<Volt::RHI::Image> m_objectIdImage;
 };
-#endif

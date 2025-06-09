@@ -1,6 +1,5 @@
 #include "sbpch.h"
 
-#if 0
 #include "Sandbox/SceneRendererExtensions/ObjectIDSceneRendererExtension.h"
 
 #include <Volt-Renderer/SceneRendererStructs.h>
@@ -35,7 +34,7 @@ struct ObjectIDMSPS
 REGISTER_SHADER(ObjectIDMSPS);
 #endif
 
-Volt::RenderGraphImageHandle ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, Volt::RenderGraphImageHandle prevOutputImage)
+Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage)
 {
 #if 0
 	struct Data
@@ -94,4 +93,3 @@ Volt::RenderGraphImageHandle ObjectIDSceneRendererExtension::OnRender(Volt::Rend
 #endif
 	return {};
 }
-#endif

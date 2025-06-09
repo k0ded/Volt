@@ -508,7 +508,7 @@ namespace Volt
 		///// Calculate Ref Count //////
 		for (auto pass : m_passes)
 		{
-			pass->refCount = static_cast<uint32_t>(pass->GetResourceWrites().size());
+			pass->refCount = static_cast<uint32_t>(pass->GetResourceWrites().size() + pass->GetResourceRenderTargetAccesses().size());
 
 			for (auto resource : pass->GetResourceReads())
 			{
@@ -536,7 +536,7 @@ namespace Volt
 					resource->AddProducer(pass);
 
 					// If this pass is the render targets producer, we need to increase the ref count of the pass.
-					pass->refCount++;
+					//pass->refCount++;
 				}
 				else if (!resource->IsProducer(pass))
 				{

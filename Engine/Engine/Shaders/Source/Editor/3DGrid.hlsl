@@ -1,5 +1,4 @@
 #include "Structures.hlsli"
-#include "Resources.hlsli"
 
 static const float4 m_positions[] =
 {
@@ -15,14 +14,12 @@ struct VSToPS
     float3 farPoint : FARPOINT;
 };
 
-vt::UniformBuffer<ViewData> View;
+ConstantBuffer<ViewData> View;
 float4x4 NonReversedInverseProjection;
 
 float3 UnprojectPoint(float x, float y, float z)
 {
-    ViewData view = View.Load();
-
-    float4 unprojectedPoint = mul(view.inverseView, mul(NonReversedInverseProjection, float4(x, y, z, 1.f)));
+    float4 unprojectedPoint = mul(View.inverseView, mul(NonReversedInverseProjection, float4(x, y, z, 1.f)));
     return unprojectedPoint.xyz / unprojectedPoint.w;
 } 
 
@@ -67,9 +64,9 @@ float4 EvaluateGrid(float3 position, float scale)
     return color;
 }
 
-float ComputeDepth(float3 position, in ViewData view)
+float ComputeDepth(float3 position)
 {
-    float4 clipPos = mul(view.viewProjection, float4(position, 1.f));
+    float4 clipPos = mul(View.viewProjection, float4(position, 1.f));
     return clipPos.z / clipPos.w;
 }
 
@@ -78,15 +75,13 @@ PSOutput GridPS(VSToPS input)
     const float t = -input.nearPoint.y / (input.farPoint.y - input.nearPoint.y);
     const float3 position = input.nearPoint + t * (input.farPoint - input.nearPoint);
 
-    ViewData view = View.Load();
-
-    const float linearDepth = mul(view.view, float4(position, 1.f)).z / view.farPlane;
+    const float linearDepth = mul(View.view, float4(position, 1.f)).z / View.farPlane;
     const float fade = max(0.f, (0.5f - linearDepth));
 
     PSOutput result;
     result.output = EvaluateGrid(position, 0.01f) * float(t > 0.f);
     result.output.a *= fade;
-    result.depth = ComputeDepth(position, view);
+    result.depth = ComputeDepth(position);
 
     return result;
 }

@@ -33,10 +33,6 @@ namespace Volt
 			shaderCompilerInfo.flags = RHI::ShaderCompilerFlags::WarningsAsErrors;
 			shaderCompilerInfo.shaderCache = m_shaderCache;
 
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-			shaderCompilerInfo.flags |= RHI::ShaderCompilerFlags::EnableShaderValidator;
-#endif
-
 			shaderCompilerInfo.includeDirectories =
 			{
 				ProjectManager::GetEngineShaderIncludeDirectory(),
@@ -60,7 +56,7 @@ namespace Volt
 
 	void ShaderSubSystem::LoadRegisteredShaders()
 	{
-		const auto& registeredShaders = GetShaderRegistry().GetRegisteredShaders();
+		const auto& registeredShaders = ShaderRegistry::Get().GetRegisteredShaders();
 
 		TaskGraph taskGraph{};
 		ScopedTimer timer{};
