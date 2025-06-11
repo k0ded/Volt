@@ -86,6 +86,7 @@ namespace Volt
 		VT_NODISCARD Vector<RenderPrimitiveData>::iterator end() { return m_renderPrimitives.end(); }
 
 		VT_NODISCARD VT_INLINE const Vector<RenderLightData>& GetRenderLightData() const { return m_renderLights; }
+		VT_NODISCARD VT_INLINE const Vector<RenderPrimitiveData>& GetRenderPrimitives() const { return m_renderPrimitives; }
 
 		VT_NODISCARD const Vector<RenderPrimitiveData>::const_iterator cbegin() const { return m_renderPrimitives.cbegin(); }
 		VT_NODISCARD const Vector<RenderPrimitiveData>::const_iterator cend() const { return m_renderPrimitives.cend(); }

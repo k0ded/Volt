@@ -111,7 +111,6 @@ void Sandbox::OnAttach()
 	NodeEditorHelpers::Initialize();
 	IONodeGraphEditorHelpers::Initialize();
 
-#if 0
 	SelectionManager::RegisterSelectionChangedCallback([&](const Vector<Volt::EntityID>& entities, SelectionContext context) 
 	{
 		if (context == SelectionContext::Scene && m_outlineSceneRendererExtension)
@@ -119,7 +118,6 @@ void Sandbox::OnAttach()
 			m_outlineSceneRendererExtension->UpdateSelection(entities);
 		}
 	});
-#endif
 
 	//Volt::WindowManager::Get().GetMainWindow().Maximize();
 
@@ -279,7 +277,7 @@ void Sandbox::SetupNewSceneData()
 
 		m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
 		m_sceneRenderer->AddExtension<GridSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
-		//m_outlineSceneRendererExtension = m_sceneRenderer->AddExtension<OutlineSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
+		m_outlineSceneRendererExtension = m_sceneRenderer->AddExtension<OutlineSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
 		m_objectIDSceneRendererExtension = m_sceneRenderer->AddExtension<ObjectIDSceneRendererExtension>(Volt::SceneRendererExtensionStage::PreGBuffer);
 
 		m_gameSceneRenderer = CreateRef<Volt::SceneRenderer>(gameSpec);

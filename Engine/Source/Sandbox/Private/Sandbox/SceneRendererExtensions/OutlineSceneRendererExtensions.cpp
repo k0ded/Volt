@@ -1,6 +1,5 @@
 #include "sbpch.h"
 
-#if 0
 #include "Sandbox/SceneRendererExtensions/OutlineSceneRendererExtension.h"
 #include "Sandbox/SceneRendererExtensions/OutlineTechnique.h"
 
@@ -19,11 +18,34 @@ using namespace Volt;
 OutlineSceneRendererExtension::OutlineSceneRendererExtension(Ref<Volt::RenderScene> renderScene)
 	: Volt::SceneRendererExtension(renderScene)
 {
-	m_selectedPrimitivesMaskBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "SelectedPrimitivesMask");
 }
 
-RenderGraphImageHandle OutlineSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, Volt::RenderGraphImageHandle prevOutputImage)
+Volt::RGTextureRef OutlineSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage)
 {
+	if (m_selectedEntityIds.empty())
+	{
+		return prevOutputImage;
+	}
+
+	if (m_isSelectionDirty)
+	{
+		m_selectedPrimitivesSet.clear();
+
+		for (const auto& entityId : m_selectedEntityIds)
+		{
+			m_selectedPrimitivesSet.insert(entityId);
+		}
+	}
+
+	auto filterFunc = [this](const RenderPrimitiveData& primitiveData)
+	{
+		return m_selectedPrimitivesSet.contains(primitiveData.entityId);
+	};
+
+	OutlineTechnique outlineTechnique{ renderGraph, blackboard };
+	outlineTechnique.Execute(prevOutputImage, *m_renderScene, view, filterFunc);
+
+#if 0
 	if (m_selectedEntityIds.empty())
 	{
 		return prevOutputImage;
@@ -89,7 +111,7 @@ RenderGraphImageHandle OutlineSceneRendererExtension::OnRender(Volt::RenderGraph
 
 	OutlineTechnique outlineTechnique{ renderGraph, blackboard };
 	outlineTechnique.Execute(renderGraph.AddExternalBuffer(m_selectedPrimitivesMaskBuffer->GetResource()), prevOutputImage, *m_renderScene);
-
+#endif
 	return prevOutputImage;
 }
 
@@ -98,4 +120,3 @@ void OutlineSceneRendererExtension::UpdateSelection(const Vector<EntityID>& enti
 	m_selectedEntityIds = entityIds;
 	m_isSelectionDirty = true;
 }
-#endif

@@ -14,6 +14,7 @@ namespace Volt
 	class RenderScene;
 	class RenderContext;
 	class BatchedShaderParameters;
+	struct RenderPrimitiveData;
 
 	enum class MeshBatchType : uint8_t
 	{
@@ -26,11 +27,23 @@ namespace Volt
 	class VTR_API MeshRenderer
 	{
 	public:
+		MeshRenderer() = default;
+		MeshRenderer(const MeshRenderer& other) noexcept;
+
+		using PrimitveFilterFunc = std::function<bool(const RenderPrimitiveData&)>;
+
 		// For now we pass a vertex and pixel shader in here, we might want to use vertex shaders specific to a material in the future.
 		void BuildRenderCommands(Ref<RenderScene> renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
+		void BuildRenderCommands(RenderScene& renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
+
+		void BuildRenderCommandsWithFilter(Ref<RenderScene> renderScene, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
+		void BuildRenderCommandsWithFilter(RenderScene& renderScene, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
+
 		void Render(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters) const;
 
 	private:
+		void BuildRenderCommandsInternal(RenderScene& renderScene, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
+
 		struct MeshBatch
 		{
 			using VertexBufferVector = Vector<RefPtr<RHI::StorageBuffer>, InlineAllocator<32>>;

@@ -20,22 +20,6 @@
 
 using namespace Volt;
 
-#if 0
-struct ObjectIDMSPS
-{
-	BEGIN_SHADER_DEFINITION(ObjectIDMSPS)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
-	END_SHADER_DEFINITION()
-
-	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-		SHADER_PARAMETER_STRUCT_INCLUDE(MeshShaderCommonParameters, Common)
-	END_SHADER_PARAMETER_STRUCT()
-};
-REGISTER_SHADER(ObjectIDMSPS);
-#endif
-
 struct ObjectIDVS : public GlobalShader
 {
 	DECLARE_GLOBAL_SHADER(ObjectIDVS)

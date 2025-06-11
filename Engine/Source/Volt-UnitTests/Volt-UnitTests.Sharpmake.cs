@@ -4,12 +4,12 @@ using System.IO;
 namespace VoltSharpmake
 {
     [Sharpmake.Generate]
-    public class VoltTesting : CommonVoltExeProject
+    public class VoltUnitTests : CommonVoltExeProject
     {
-        public VoltTesting() 
+        public VoltUnitTests() 
         {
             AddTargets(CommonTarget.GetDefaultTargets());
-            Name = "Volt-Testing";
+            Name = "Volt-UnitTests";
         }
 
         public override void ConfigureAll(Configuration conf, CommonTarget target)
@@ -22,13 +22,10 @@ namespace VoltSharpmake
 				LocalDebuggerCommandArguments = Globals.VtProjectFilePath
 			};
 
-			conf.SolutionFolder = "Testing";
+			conf.SolutionFolder = "Tests";
 			conf.Options.Add(Sharpmake.Options.Vc.Linker.SubSystem.Console);
 
 			conf.AddPublicDependency<gtest>(target);
-			conf.AddPublicDependency<VoltRenderCore>(target);
-			conf.AddPublicDependency<Volt>(target);
-			conf.AddPublicDependency<imgui>(target);
         }
     }
 }
