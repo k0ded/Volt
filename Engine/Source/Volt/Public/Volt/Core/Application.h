@@ -143,6 +143,11 @@ namespace Volt
 		bool m_hasSentMouseMovedEvent = false;
 		bool m_skipPresentThisFrame = false;
 
+		// This flag is a temporary fix for maximizing (as it happens mid frame).
+		// A proper fix is to create a queue system to the Event System
+		// that is dispached at the end of the frame.
+		bool m_isProcessingFrame = false;
+
 		float m_currentDeltaTime = 0.f;
 		float m_lastTotalTime = 0.f;
 

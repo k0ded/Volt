@@ -315,6 +315,7 @@ namespace Volt
 		m_hasSentMouseMovedEvent = false;
 
 		WindowManager::Get().BeginFrame();
+		m_isProcessingFrame = true;
 
 		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
 		m_frameTimer.Update();
@@ -368,6 +369,8 @@ namespace Volt
 			AppPostFrameUpdateEvent postFrameUpdateEvent{ m_currentDeltaTime };
 			EventSystem::DispatchEvent(postFrameUpdateEvent);
 		}
+
+		m_isProcessingFrame = false;
 
 		if (!m_skipPresentThisFrame)
 		{
@@ -427,7 +430,10 @@ namespace Volt
 
 		WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
 
-		MainUpdate();
+		if (!m_isProcessingFrame)
+		{
+			MainUpdate();
+		}
 
 		return false;
 	}
