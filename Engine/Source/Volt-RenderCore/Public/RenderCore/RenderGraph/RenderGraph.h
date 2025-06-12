@@ -106,6 +106,7 @@ namespace Volt
 			RefPtr<RHI::StorageBuffer>* outBufferPtr = nullptr;
 		};
 
+	public:
 		class CompiledPass
 		{
 		public:
@@ -113,6 +114,7 @@ namespace Volt
 			{
 				RHI::ResourceBarrierInfo barrier;
 				RGResourceRef resource = nullptr;
+				bool requiresExternalSrcState = false;
 			};
 
 			class PassBarriers
@@ -122,11 +124,12 @@ namespace Volt
 				VT_NODISCARD VT_INLINE size_t GetBarrierCount() const { return m_barriers.size(); }
 				VT_NODISCARD VT_INLINE bool Empty() const { return m_barriers.empty(); }
 
-				VT_NODISCARD VT_INLINE RHI::ResourceBarrierInfo& AddBarrier(RHI::BarrierType type, RGResourceRef resource = nullptr)
+				VT_NODISCARD VT_INLINE RHI::ResourceBarrierInfo& AddBarrier(RHI::BarrierType type, RGResourceRef resource = nullptr, bool requiresExternalSrcState = false)
 				{
 					auto& barrierInfo = m_barriers.emplace_back();
 					barrierInfo.barrier.type = type;
 					barrierInfo.resource = resource;
+					barrierInfo.requiresExternalSrcState = requiresExternalSrcState;
 					return barrierInfo.barrier;
 				}
 
@@ -179,6 +182,8 @@ namespace Volt
 			PagedVector<RGResourceRef> m_surrenderableResources;
 			std::string_view m_name;
 		};
+	
+	protected:
 
 		class StandaloneBarriers
 		{
@@ -218,10 +223,24 @@ namespace Volt
 			vt::map<uint32_t, Vector<MarkerInfo>> m_markers;
 		};
 
+		struct RGResourceState
+		{
+			Handle<RenderGraphPass> previousUsage;
+			RHI::ResourceState currentState;
+			bool isWriteState = false;
+		};
+
+		struct RGResourceStateTracker
+		{
+			inline RGResourceState& GetState(RGResourceRef resource) { return resourceStates[resource]; }
+			vt::map<RGResourceRef, RGResourceState> resourceStates;
+		};
+
 		using ExternalResourceRegistry = vt::map<RawPtr<RHI::RHIResource>, RGResourceRef>;
 
 		void ExecuteInternal(bool waitForSync);
 		void ExtractResources();
+		void TransitionExternalResources();
 
 		void InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
 		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer);
@@ -249,6 +268,7 @@ namespace Volt
 		ExternalResourceRegistry m_registeredExternalResources;
 		StandaloneBarriers m_standaloneBarriers;
 		StandaloneMarkers m_standaloneMarkers;
+		RGResourceStateTracker m_resourceStateTracker;
 
 		RenderGraphResourceAllocator m_resourceAllocator; // Allocator for actual resources (Buffers, Textures)
 		RenderGraphResourceAllocator m_resourceAccessorAllocator; // Allocator for resource accessors (SRVs, UAVs)

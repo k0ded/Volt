@@ -1,6 +1,0 @@
-name: "GenerateAverageLuminance"
-internal: true
-sources:
-  - entryPoint: "GenerateAverageLuminanceCS"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/Exposure/GenerateAverageLuminance.hlsl"

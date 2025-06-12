@@ -1,4 +1,4 @@
-#include "Vertex.hlsli"
+#include "Utility/FullscreenTriangleVertex.hlsli"
 
 Texture2D<float3> CurrentColor;
 Texture2D<float3> PreviousColor;

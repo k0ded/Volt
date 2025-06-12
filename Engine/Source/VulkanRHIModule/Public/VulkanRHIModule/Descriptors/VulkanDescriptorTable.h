@@ -18,9 +18,9 @@ namespace Volt::RHI
 		VulkanDescriptorTable(const DescriptorTableCreateInfo& createInfo);
 		~VulkanDescriptorTable() override;
 
-		void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
-		void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) override;
-		void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex /* = 0 */) override;
+		void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding) override;
+		void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding) override;
+		void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding) override;
 		size_t GetHash() const override;
 
 		void PrepareForRender() override;
@@ -46,6 +46,7 @@ namespace Volt::RHI
 			uint32_t value = INVALID_VALUE;
 		};
 
+		void BuildDescriptorInfos();
 		void BuildWriteDescriptors();
 		void InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet);
 
@@ -56,10 +57,10 @@ namespace Volt::RHI
 		vt::map<uint32_t, VkDescriptorSet_T*> m_descriptorSets;
 
 		vt::map<uint32_t, vt::map<uint32_t, uint32_t>> m_writeDescriptorsMapping; // Set -> Binding
-		vt::map<uint32_t, vt::map<uint32_t, vt::map<uint32_t, DescriptorImageInfo>>> m_imageDescriptorInfos; // Set -> Binding -> Array Index
-		vt::map<uint32_t, vt::map<uint32_t, vt::map<uint32_t, DescriptorBufferInfo>>> m_bufferDescriptorInfos; // Set -> Binding -> Array Index
-		vt::map<uint32_t, vt::map<uint32_t, vt::map<uint32_t, VkBufferView>>> m_texelBufferViews;
-		vt::map<uint32_t, vt::map<uint32_t, vt::map<uint32_t, DefaultInvalid>>> m_activeDescriptorWritesMapping; // Set -> Binding -> ArrayIndex 
+		vt::map<uint32_t, vt::map<uint32_t, DescriptorImageInfo>> m_imageDescriptorInfos; // Set -> Binding
+		vt::map<uint32_t, vt::map<uint32_t, DescriptorBufferInfo>> m_bufferDescriptorInfos; // Set -> Binding
+		vt::map<uint32_t, vt::map<uint32_t, VkBufferView>> m_texelBufferViews;
+		vt::map<uint32_t, vt::map<uint32_t, DefaultInvalid>> m_activeDescriptorWritesMapping; // Set -> Binding
 
 		Vector<DescriptorWrite> m_descriptorWrites;
 		Vector<DescriptorWrite> m_activeDescriptorWrites;

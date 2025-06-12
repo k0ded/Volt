@@ -22,6 +22,7 @@
 
 namespace Volt
 {
+#if 0
 	struct MeshSDFAllocatorCS : public GlobalShader
 	{
 		DECLARE_GLOBAL_SHADER(MeshSDFAllocatorCS)
@@ -35,6 +36,7 @@ namespace Volt
 		END_SHADER_PARAMETER_STRUCT()
 	};
 	REGISTER_SHADER(MeshSDFAllocatorCS, "Engine/Shaders/Source/SDF/MeshSDFAllocator.hlsl", "MainCS", Compute);
+#endif
 
 	SDFGenerator::SDFGenerator()
 	{
@@ -260,6 +262,7 @@ namespace Volt
 		}
 
 		// Create brick texture
+#if 0
 		{
 			const uint32_t size = static_cast<uint32_t>(std::ceil(std::pow(static_cast<double>(brickGrid.size()), 1.0 / 3.0))) * BRICK_SIZE;
 			result.size = size;
@@ -309,6 +312,7 @@ namespace Volt
 
 			result.sdfBricksBuffer = targetSDFBrickBuffer;
 		}
+#endif
 
 		return result;
 	}

@@ -136,7 +136,8 @@ namespace Volt
 		m_bufferExtractions(std::move(other.m_bufferExtractions)),
 		m_standaloneBarriers(std::move(other.m_standaloneBarriers)),
 		m_standaloneMarkers(std::move(other.m_standaloneMarkers)),
-		m_temporaryDataAllocator(std::move(other.m_temporaryDataAllocator))
+		m_temporaryDataAllocator(std::move(other.m_temporaryDataAllocator)),
+		m_resourceStateTracker(std::move(other.m_resourceStateTracker))
 	{
 	}
 
@@ -163,6 +164,7 @@ namespace Volt
 		m_standaloneBarriers = std::move(other.m_standaloneBarriers);
 		m_standaloneMarkers = std::move(other.m_standaloneMarkers);
 		m_temporaryDataAllocator = std::move(other.m_temporaryDataAllocator);
+		m_resourceStateTracker = std::move(other.m_resourceStateTracker);
 
 		return *this;
 	}
@@ -195,6 +197,35 @@ namespace Volt
 		m_resources.emplace_back(uniformBuffer);
 
 		return uniformBuffer;
+	}
+
+	void RenderGraph::TransitionExternalResources()
+	{
+		auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
+
+		for (const RGResourceRef resource : m_resources)
+		{
+			if (resource->isExternal)
+			{
+				RefPtr<RHI::RHIResource> rhiResource;
+
+				if (resource->GetResourceType() == RGResourceType::Texture)
+				{
+					rhiResource = m_transientResourceSystem.GetTextureIfExists(reinterpret_cast<RGTextureRef>(resource));
+				}
+				else if (resource->GetResourceType() == RGResourceType::Buffer)
+				{
+					rhiResource = m_transientResourceSystem.GetBufferIfExists(reinterpret_cast<RGBufferRef>(resource));
+				}
+				else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
+				{
+					rhiResource = m_transientResourceSystem.GetUniformBufferIfExists(reinterpret_cast<RGUniformBufferRef>(resource));
+				}
+
+				const RGResourceState& resourceState = m_resourceStateTracker.GetState(resource);
+				resourceTracker->TransitionResource(rhiResource, resourceState.currentState.stage, resourceState.currentState.access, resourceState.currentState.layout);
+			}
+		}
 	}
 
 	RGBufferSRVRef RenderGraph::CreateSRV(const RGBufferSRVDesc& desc)
@@ -699,20 +730,6 @@ namespace Volt
 			m_compiledPasses[passIndex].AddSurrenderableResource(resource);
 		}
 
-		struct ResourceState
-		{
-			Handle<RenderGraphPass> previousUsage;
-			RHI::ResourceState currentState;
-			bool isWriteState = false;
-		};
-
-		struct RGResourceStateTracker
-		{
-			inline ResourceState& GetState(RGResourceRef resource) { return resourceStates[resource]; }
-			vt::map<RGResourceRef, ResourceState> resourceStates;
-
-		} resourceStateTracker;
-
 		// Add all external resources to the resource state tracker
 		for (auto resource : m_resources)
 		{
@@ -729,10 +746,10 @@ namespace Volt
 			{
 				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetTextureIfExists(reinterpret_cast<RGTextureRef>(resource)));
 
-				ResourceState& currentState = resourceStateTracker.GetState(resource);
+				RGResourceState& currentState = m_resourceStateTracker.GetState(resource);
 				currentState.currentState = resourceState;
 
-				if (EnumValueContainsAnyFlag(resourceState.access, RHI::BarrierAccess::DepthStencilWrite, RHI::BarrierAccess::ShaderWrite))
+				if (EnumValueContainsAnyFlag(resourceState.access, RHI::BarrierAccess::DepthStencilWrite, RHI::BarrierAccess::ShaderWrite, RHI::BarrierAccess::RenderTarget))
 				{
 					currentState.isWriteState = true;
 				}
@@ -741,7 +758,7 @@ namespace Volt
 			{
 				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetBufferIfExists(reinterpret_cast<RGBufferRef>(resource)));
 
-				ResourceState& currentState = resourceStateTracker.GetState(resource);
+				RGResourceState& currentState = m_resourceStateTracker.GetState(resource);
 				currentState.currentState = resourceState;
 
 				if (EnumValueContainsAnyFlag(resourceState.access, RHI::BarrierAccess::ShaderWrite))
@@ -751,7 +768,7 @@ namespace Volt
 			}
 			else if (resourceType == RGResourceType::UniformBuffer)
 			{
-				resourceStateTracker.GetState(resource).currentState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetUniformBufferIfExists(reinterpret_cast<RGUniformBufferRef>(resource)));
+				m_resourceStateTracker.GetState(resource).currentState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetUniformBufferIfExists(reinterpret_cast<RGUniformBufferRef>(resource)));
 			}
 		}
 
@@ -797,7 +814,7 @@ namespace Volt
 					// Handle cases
 					if (!resource->IsFirstProducer(pass))
 					{
-						auto& resourceState = resourceStateTracker.GetState(resource);
+						auto& resourceState = m_resourceStateTracker.GetState(resource);
 
 						const bool isSameLayoutType = IsEqualToAny(resourceType, RGResourceType::Texture) ? newState.layout == resourceState.currentState.layout : true;
 						const bool isBufferType = IsEqualToAny(resourceType, RGResourceType::Buffer, RGResourceType::UniformBuffer);
@@ -813,7 +830,7 @@ namespace Volt
 						// It's not a buffer and the image needs to transition layout, handle case 9.
 						else
 						{
-							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource);
+							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, resource->isExternal);
 							newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
 							newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
 							newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
@@ -832,7 +849,7 @@ namespace Volt
 					{
 						VT_ENSURE(resourceType != RGResourceType::UniformBuffer);
 
-						auto& resourceState = resourceStateTracker.GetState(resource);
+						auto& resourceState = m_resourceStateTracker.GetState(resource);
 						resourceState.currentState = newState;
 						resourceState.previousUsage = pass;
 						resourceState.isWriteState = true;
@@ -859,11 +876,40 @@ namespace Volt
 					// to be setup accordingly.
 					RHI::ResourceState newState = GetWriteStateForRasterizedTexture(resource);
 
+					if (!resource->IsFirstProducer(pass))
+					{
+						auto& resourceState = m_resourceStateTracker.GetState(resource);
+
+						const bool isSameLayoutType = newState.layout == resourceState.currentState.layout;
+					
+						// If it's the same layout (read after read / write after write) then we only need a global barrier.
+						if (isSameLayoutType)
+						{
+							compiledPass.GetGlobalBarrier().srcAccess |= resourceState.currentState.access;
+							compiledPass.GetGlobalBarrier().srcStage |= resourceState.currentState.stage;
+							compiledPass.GetGlobalBarrier().dstAccess |= newState.access;
+							compiledPass.GetGlobalBarrier().dstStage |= newState.stage;
+						}
+						else
+						{
+							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, resource->isExternal);
+							newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
+							newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
+							newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
+							newBarrier.imageBarrier().dstAccess = newState.access;
+							newBarrier.imageBarrier().dstStage = newState.stage;
+							newBarrier.imageBarrier().dstLayout = newState.layout;
+						}
+
+						resourceState.currentState = newState;
+						resourceState.isWriteState = true;
+						resourceState.previousUsage = pass;
+					}
 					// If the pass is this resources producer, we handle it a little bit different because this will be the first entry
 					// in the resource state tracker.
-					if (resource->IsFirstProducer(pass))
+					else
 					{
-						auto& resourceState = resourceStateTracker.GetState(resource);
+						auto& resourceState = m_resourceStateTracker.GetState(resource);
 						resourceState.currentState = newState;
 						resourceState.previousUsage = pass;
 						resourceState.isWriteState = true;
@@ -903,7 +949,7 @@ namespace Volt
 					}
 
 					// Handle cases
-					auto& resourceState = resourceStateTracker.GetState(resource);
+					auto& resourceState = m_resourceStateTracker.GetState(resource);
 
 					// Handle case 1 and 3
 					if (!resourceState.isWriteState)
@@ -950,7 +996,7 @@ namespace Volt
 					SetupResourceStateFromAccess(resourceAccess.accessType, newState);
 
 					// Handle cases
-					auto& resourceState = resourceStateTracker.GetState(resource);
+					auto& resourceState = m_resourceStateTracker.GetState(resource);
 
 					// Handle case 1 and 3
 					if (!resourceState.isWriteState)
@@ -992,7 +1038,7 @@ namespace Volt
 			{
 				for (const auto& barrier : m_standaloneBarriers.GetPassBarriers(pass->passIndex))
 				{
-					auto& resourceState = resourceStateTracker.GetState(barrier.resource);
+					auto& resourceState = m_resourceStateTracker.GetState(barrier.resource);
 
 					const bool isSameLayoutType = IsEqualToAny(barrier.type, RGResourceType::Texture) ? barrier.newState.layout == resourceState.currentState.layout : true;
 					const bool isBufferType = IsEqualToAny(barrier.type, RGResourceType::Buffer, RGResourceType::UniformBuffer);
@@ -1092,12 +1138,15 @@ namespace Volt
 			m_executionFence->WaitUntilSignaled();
 		}
 
+		TransitionExternalResources();
 		ExtractResources();
 	}
 
 	void RenderGraph::ExtractResources()
 	{
 		VT_PROFILE_FUNCTION();
+
+		auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
 
 		for (const auto& textureExtractionData : m_textureExtractions)
 		{
@@ -1107,6 +1156,10 @@ namespace Volt
 			}
 
 			*textureExtractionData.outImagePtr = m_transientResourceSystem.GetTextureIfExists(textureExtractionData.texture);
+
+			// Update resource state of extracted texture
+			const RGResourceState& resourceState = m_resourceStateTracker.GetState(textureExtractionData.texture);
+			resourceTracker->TransitionResource(*textureExtractionData.outImagePtr, resourceState.currentState.stage, resourceState.currentState.access, resourceState.currentState.layout);
 		}
 
 		for (const auto& bufferExtractionData : m_bufferExtractions)
@@ -1117,6 +1170,10 @@ namespace Volt
 			}
 
 			*bufferExtractionData.outBufferPtr = m_transientResourceSystem.GetBufferIfExists(bufferExtractionData.buffer);
+
+			// Update resource state of extracted buffer
+			const RGResourceState& resourceState = m_resourceStateTracker.GetState(bufferExtractionData.buffer);
+			resourceTracker->TransitionResource(*bufferExtractionData.outBufferPtr, resourceState.currentState.stage, resourceState.currentState.access);
 		}
 	}
 

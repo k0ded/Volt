@@ -268,7 +268,7 @@ namespace Volt::RHI
 		}
 		else
 		{
-			VT_LOGC(Error, LogVulkanRHI, compilationResult.error);
+			VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, compilationResult.error);
 			result.result = ShaderCompiler::CompilationResult::Failure;
 		}
 

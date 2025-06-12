@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Structures.hlsli"
+#include "ViewData.hlsli"
 
 float3 GetRandomColor(uint _seed)
 {

@@ -144,6 +144,7 @@ namespace Volt::RHI
 
 		RefPtr<CommandBuffer> cmdBuffer = CommandBuffer::Create();
 		cmdBuffer->Begin();
+		cmdBuffer->BeginMarker(std::format("Updating data in {}", m_desc.debugName), {1.f, 1.f, 1.f, 1.f});
 
 		ResourceBarrierInfo barrier{};
 		barrier.type = BarrierType::Buffer;
@@ -166,6 +167,7 @@ namespace Volt::RHI
 
 		cmdBuffer->ResourceBarrier({ barrier });
 
+		cmdBuffer->EndMarker();
 		cmdBuffer->End();
 		cmdBuffer->Execute();
 

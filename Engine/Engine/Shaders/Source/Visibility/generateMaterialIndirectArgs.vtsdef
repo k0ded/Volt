@@ -1,6 +1,0 @@
-name: "GenerateMaterialIndirectArgs"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/Visibility/GenerateMaterialIndirectArgs_cs.hlsl"

@@ -1,4 +1,4 @@
-#include "Structures.hlsli"
+#include "ViewData.hlsli"
 
 VT_SPECIFY_FORMAT("rgba16f")
 RWTexture2D<float4> RWSceneColor;

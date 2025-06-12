@@ -2,6 +2,8 @@
 
 #include <RenderCore/Resources/BindlessResourcesManager.h>
 
+#include <RHIModule/RHIFeatures.h>
+
 #include <type_traits>
 
 namespace Volt
@@ -50,7 +52,7 @@ namespace Volt
 				m_resourceHandle = BindlessResourcesManager::Get().RegisterImageView(m_resource->GetView());
 			}
 
-			VT_ASSERT_MSG(m_resourceHandle != Resource::Invalid, "Resource type not implemented!");
+			VT_ASSERT_MSG(!RHI::RHICanUseBindless() || m_resourceHandle != Resource::Invalid, "Resource type not implemented!");
 		}
 
 		~BindlessResource()

@@ -1,6 +1,5 @@
 #include "ApplicationFixture.h"
-
-#include <RenderCore/RenderGraph/RenderGraph.h>
+#include "RenderGraph/RenderGraphCommon.h"
 
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Images/ImageUtility.h>
@@ -9,14 +8,8 @@ using namespace Volt;
 
 namespace IntegrationTests
 {
-	class RenderGraphFixture : public ApplicationFixture
+	class RenderGraphCullingFixture : public ApplicationFixture
 	{
-	};
-
-	class TestingRenderGraph : public RenderGraph
-	{
-	public:
-		VT_INLINE const Vector<Handle<RenderGraphPass>>& GetPasses() const { return m_passes; }
 	};
 
 	void ExpectAllPassesToBeCulled(const Vector<Handle<RenderGraphPass>>& passes)
@@ -35,48 +28,7 @@ namespace IntegrationTests
 		}
 	}
 
-	template<typename ParameterStruct>
-	void AddComputePass(RenderGraph& renderGraph, RenderGraphPassFlags flags, const ParameterStruct* passParameters)
-	{
-		renderGraph.AddPass("Compute Pass",
-			RenderGraphPassFlags::Compute | flags,
-			passParameters,
-			[](RenderContext& context)
-		{});
-	}
-
-	template<typename ParameterStruct>
-	void AddRasterPass(RenderGraph& renderGraph, RenderGraphPassFlags flags, const ParameterStruct* passParameters)
-	{
-		renderGraph.AddPass("Raster Pass",
-			flags,
-			passParameters,
-			[](RenderContext& context)
-		{});
-	}
-
-	BEGIN_SHADER_PARAMETER_STRUCT(WriteSingleBufferParameters)
-		SHADER_PARAMETER_BUFFER_UAV(RWBuffer<uint>, RWBuffer)
-	END_SHADER_PARAMETER_STRUCT()
-
-	BEGIN_SHADER_PARAMETER_STRUCT(ReadSingleBufferParameters)
-		SHADER_PARAMETER_BUFFER_SRV(Buffer<uint>, Buffer)
-	END_SHADER_PARAMETER_STRUCT()
-
-	BEGIN_SHADER_PARAMETER_STRUCT(WriteSingleTextureParameters)
-		SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWTexture)
-	END_SHADER_PARAMETER_STRUCT()
-
-	BEGIN_SHADER_PARAMETER_STRUCT(RenderTargetParameters)
-		RG_RENDER_TARGETS()
-	END_SHADER_PARAMETER_STRUCT()
-
-	BEGIN_SHADER_PARAMETER_STRUCT(RenderTargetWithSingleTextureReadParameters)
-		SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Texture)
-		RG_RENDER_TARGETS()
-	END_SHADER_PARAMETER_STRUCT()
-
-	TEST_F(RenderGraphFixture, PassIsCulled)
+	TEST_F(RenderGraphCullingFixture, PassIsCulled)
 	{
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 		TestingRenderGraph renderGraph{ commandBuffer };
@@ -93,7 +45,7 @@ namespace IntegrationTests
 		ExpectAllPassesToBeCulled(renderGraph.GetPasses());
 	}
 
-	TEST_F(RenderGraphFixture, PassIsNeverCulled)
+	TEST_F(RenderGraphCullingFixture, PassIsNeverCulled)
 	{
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 		TestingRenderGraph renderGraph{ commandBuffer };
@@ -110,7 +62,7 @@ namespace IntegrationTests
 		ExpectAllPassesToBeActive(renderGraph.GetPasses());
 	}
 
-	TEST_F(RenderGraphFixture, ExtractedResourceWriteIsNeverCulled)
+	TEST_F(RenderGraphCullingFixture, ExtractedResourceWriteIsNeverCulled)
 	{
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 		TestingRenderGraph renderGraph{ commandBuffer };
@@ -129,7 +81,7 @@ namespace IntegrationTests
 		ExpectAllPassesToBeActive(renderGraph.GetPasses());
 	}
 
-	TEST_F(RenderGraphFixture, ReadAfterWriteIsCulled)
+	TEST_F(RenderGraphCullingFixture, ReadAfterWriteIsCulled)
 	{
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 		TestingRenderGraph renderGraph{ commandBuffer };
@@ -190,7 +142,7 @@ namespace IntegrationTests
 	}
 #endif
 
-	TEST_F(RenderGraphFixture, WriteAfterWriteNeverCullIsNeverCulled)
+	TEST_F(RenderGraphCullingFixture, WriteAfterWriteNeverCullIsNeverCulled)
 	{
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 		TestingRenderGraph renderGraph{ commandBuffer };
@@ -218,7 +170,7 @@ namespace IntegrationTests
 		ExpectAllPassesToBeActive(renderGraph.GetPasses());
 	}
 
-	TEST_F(RenderGraphFixture, MultipleProducerChainIsCulled)
+	TEST_F(RenderGraphCullingFixture, MultipleProducerChainIsCulled)
 	{
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 		TestingRenderGraph renderGraph{ commandBuffer };
@@ -249,7 +201,7 @@ namespace IntegrationTests
 		ExpectAllPassesToBeCulled(renderGraph.GetPasses());
 	}
 
-	TEST_F(RenderGraphFixture, RasterPassWritesRasterOutputWithNeverCullFlagIsNeverCulled)
+	TEST_F(RenderGraphCullingFixture, RasterPassWritesRasterOutputWithNeverCullFlagIsNeverCulled)
 	{
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 		TestingRenderGraph renderGraph{ commandBuffer };
@@ -282,7 +234,7 @@ namespace IntegrationTests
 		ExpectAllPassesToBeActive(renderGraph.GetPasses());
 	}
 
-	TEST_F(RenderGraphFixture, RasterPassWithExtractUsingPreviousPassesResultIsNeverCulled)
+	TEST_F(RenderGraphCullingFixture, RasterPassWithExtractUsingPreviousPassesResultIsNeverCulled)
 	{
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 		TestingRenderGraph renderGraph{ commandBuffer };

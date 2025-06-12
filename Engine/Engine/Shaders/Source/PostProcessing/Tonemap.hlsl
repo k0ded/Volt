@@ -1,8 +1,9 @@
-#include "Vertex.hlsli"
-#include "Utility.hlsli"
+#include "Utility/Utility.hlsli"
 
 #include "Noise.hlsli"
 #include "BlueNoise.hlsli"
+
+#include "Utility/FullscreenTriangleVertex.hlsli"
 
 Texture2D<float3> FinalColor;
 //vt::Tex2D<float> AverageLuminance;

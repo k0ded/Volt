@@ -1,5 +1,5 @@
 #include "GPUScene.hlsli"
-#include "Bitwise.hlsli"
+#include "Utility/Bitwise.hlsli"
 
 RWBuffer<uint> RWValidPrimitiveDrawData;
 StructuredBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;

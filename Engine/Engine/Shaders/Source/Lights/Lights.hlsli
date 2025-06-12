@@ -8,8 +8,10 @@
 
 struct SkyLight
 {
+#if 0
     vt::TexCube<float3> irradiance;
     vt::TexCube<float3> radiance;
+#endif
 };
 
 enum SceneLightType
@@ -51,7 +53,7 @@ struct DirectionalLightShadowData
     float4x4 viewProjections[DIRECTIONAL_SHADOW_CASCADE_COUNT];
 };
 
-int GetLightBufferIndex(vt::TypedBuffer<int> lightIndexBuffer, uint tileCountX, int i, uint2 tileId)
+int GetLightBufferIndex(Buffer<int> lightIndexBuffer, uint tileCountX, int i, uint2 tileId)
 {
     const uint index = tileId.y * tileCountX + tileId.x;
     const uint offset = index * MAX_LIGHTS_PER_TILE;
@@ -59,7 +61,7 @@ int GetLightBufferIndex(vt::TypedBuffer<int> lightIndexBuffer, uint tileCountX, 
     return lightIndexBuffer.Load(offset + i);
 }
 
-int GetLightCount(vt::TypedBuffer<int> lightIndexBuffer, uint tileCountX, uint2 tileId)
+int GetLightCount(Buffer<int> lightIndexBuffer, uint tileCountX, uint2 tileId)
 {
     int result = 0;
     for (int i = 0; i < MAX_LIGHTS_PER_TILE; i++)

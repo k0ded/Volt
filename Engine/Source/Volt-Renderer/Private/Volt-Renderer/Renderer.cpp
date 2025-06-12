@@ -126,7 +126,8 @@ namespace Volt
 	void Renderer::Initialize()
 	{
 		// Bindless resources manager
-		if (RHI::RHICanUseBindless())
+		// This will be created even if bindless is not enabled.
+		// It just doesn't do anything.
 		{
 			m_bindlessResourcesManager = CreateScope<BindlessResourcesManager>();
 		}

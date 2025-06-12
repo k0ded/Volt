@@ -1,13 +1,12 @@
-#include "Resources.hlsli"
 #include "Common.hlsli"
 #include "Utility.hlsli"
 #include "Lights.hlsli"
 
-vt::Tex2D<float> DepthTexture;
-vt::UniformBuffer<ViewData> View;
-vt::TypedBuffer<LightDrawData> LightsBuffer;
+Texture2D<float> DepthTexture;
+StructuredBuffer<LightDrawData> LightsBuffer;
+ConstantBuffer<ViewData> View;
 
-vt::RWTypedBuffer<int> RWVisibleLightIndices;
+RWBuffer<int> RWVisibleLightIndices;
 
 uint2 TileCount;
 

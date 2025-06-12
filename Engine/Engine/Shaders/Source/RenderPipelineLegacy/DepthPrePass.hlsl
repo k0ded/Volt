@@ -1,7 +1,7 @@
 #include "Vertex.hlsli"
-#include "Structures.hlsli"
+#include "ViewData.hlsli"
 
-#include "GPUScene.hlsli"
+#include "RenderScene/GPUScene.hlsli"
 
 struct VSToPS
 {

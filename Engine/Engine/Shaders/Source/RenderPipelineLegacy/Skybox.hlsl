@@ -1,5 +1,5 @@
-#include "Structures.hlsli"
-#include "Matrix.hlsli"
+#include "ViewData.hlsli"
+#include "Utility/Matrix.hlsli"
 
 struct Vertex
 {

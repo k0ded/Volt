@@ -26,9 +26,9 @@ namespace Volt::RHI
 	class VTRHI_API DescriptorTable : public RHIInterface
 	{
 	public:
-		virtual void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) = 0;
-		virtual void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) = 0;
-		virtual void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding, uint32_t arrayIndex = 0) = 0;
+		virtual void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding) = 0;
+		virtual void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding) = 0;
+		virtual void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding) = 0;
 		virtual size_t GetHash() const = 0;
 
 		virtual void PrepareForRender() = 0;

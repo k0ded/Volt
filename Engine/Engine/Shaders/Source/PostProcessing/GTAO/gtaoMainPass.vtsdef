@@ -1,6 +1,0 @@
-name: "GTAOMainPass"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_MainPass_cs.hlsl"

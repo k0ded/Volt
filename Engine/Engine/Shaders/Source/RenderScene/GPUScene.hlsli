@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Vertex.hlsli"
-#include "Resources.hlsli"
-#include "BoundingVolumes.hlsli"
-#include "Transform.hlsli"
-#include "Lights.hlsli"
+#include "Utility/BoundingVolumes.hlsli"
+#include "Utility/Transform.hlsli"
+#include "Lights/Lights.hlsli"
 
 #define MAX_LOD_COUNT 8
+
+#define BINDLESS_ENABLED 0
 
 namespace PrimitiveFlags
 {
@@ -15,6 +15,7 @@ namespace PrimitiveFlags
     static const uint Invalid = 1 << 1;
 }
 
+#if BINDLESS_ENABLED
 struct GPUMaterial
 {
     vt::Tex2D<float4> textures[16];
@@ -24,6 +25,7 @@ struct GPUMaterial
     uint materialFlags;
     uint2 padding;
 };
+#endif
 
 struct VertexTriangleCount
 {
@@ -80,6 +82,7 @@ struct Meshlet
     }
 };
 
+#if BINDLESS_ENABLED
 struct GPUMesh
 {
     vt::TypedBuffer<float3> vertexPositionsBuffer;
@@ -118,6 +121,7 @@ struct GPUMeshSDF
     vt::TypedBuffer<GPUSDFBrick> bricksBuffer;
     uint brickCount;
 };
+#endif
 
 struct PrimitiveDrawData
 {
@@ -142,6 +146,7 @@ struct SDFPrimitiveDrawData
     uint primitiveId;
 };
 
+#if BINDLESS_ENABLED
 struct GPUScene
 {
     vt::TypedBuffer<GPUMesh> meshesBuffer;
@@ -154,3 +159,4 @@ struct GPUScene
 
     vt::TypedBuffer<uint> validPrimitiveDrawDatasBuffer;
 };
+#endif

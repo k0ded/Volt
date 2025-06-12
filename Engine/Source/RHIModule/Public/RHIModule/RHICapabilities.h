@@ -44,8 +44,8 @@ namespace Volt::RHI
 		ComputeDimensions maxDispatchThreadGroupsPerDimension;
 	
 		// #TODO_Ivar: Move to some other place
-		bool useMeshShaders = true;
-		bool useBindless = true;
+		bool useMeshShaders = false;
+		bool useBindless = false;
 		bool useRayTracing = false;
 	};
 }

@@ -1,6 +1,0 @@
-name: "GTAODepthPrefilter"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_DepthPrefilter_cs.hlsl"

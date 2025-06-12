@@ -1,4 +1,4 @@
-#include "Structures.hlsli"
+#include "ViewData.hlsli"
 
 static const float4 m_positions[] =
 {

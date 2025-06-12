@@ -1,6 +1,5 @@
-#include "Structures.hlsli"
-
-#include "GPUScene.hlsli"
+#include "RenderScene/GPUScene.hlsli"
+#include "ViewData.hlsli"
 
 struct Vertex
 {

@@ -1,4 +1,4 @@
-#include "Vertex.hlsli"
+#include "Utility/FullscreenTriangleVertex.hlsli"
 
 Texture2D<float4> InputColor;
 SamplerState PointSampler;

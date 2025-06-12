@@ -1,7 +1,6 @@
-#include "Structures.hlsli"
-
-#include "GPUScene.hlsli"
-#include "Packing.hlsli"
+#include "RenderScene/GPUScene.hlsli"
+#include "Utility/Packing.hlsli"
+#include "ViewData.hlsli"
 
 struct GBufferVertex
 {

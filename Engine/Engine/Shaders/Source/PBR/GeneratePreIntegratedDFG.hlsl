@@ -1,4 +1,4 @@
-#include "Vertex.hlsli"
+#include "Utility/FullscreenTriangleVertex.hlsli"
 #include "BRDF.hlsli"
 
 uint2 GetHammerslyPoint(uint num, uint bitCount)

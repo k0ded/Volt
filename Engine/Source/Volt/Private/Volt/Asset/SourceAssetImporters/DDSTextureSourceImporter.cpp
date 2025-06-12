@@ -109,6 +109,7 @@ namespace Volt
 
 		RefPtr<RHI::Image> image;
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		commandBuffer->BeginMarker(std::format("Import Texture {}", filepath.string()), { 1.f, 1.f, 1.f, 1.f });
 
 		const uint32_t mipLevelCount = importConfig.importMipMaps ? ddsFile.GetMipCount() : 1u;
 
@@ -188,6 +189,7 @@ namespace Volt
 			commandBuffer->ResourceBarrier({ barrier });
 		}
 
+		commandBuffer->EndMarker();
 		commandBuffer->End();
 		commandBuffer->Execute();
 

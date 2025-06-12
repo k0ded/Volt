@@ -1,4 +1,4 @@
-#include "Vertex.hlsli"
+#include "FullscreenTriangleVertex.hlsli"
 
 static const float4 m_positions[] =
 {
