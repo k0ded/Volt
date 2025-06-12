@@ -201,6 +201,8 @@ namespace Volt
 
 	void RenderGraph::TransitionExternalResources()
 	{
+		VT_PROFILE_FUNCTION();
+
 		auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
 
 		for (const RGResourceRef resource : m_resources)
@@ -830,7 +832,9 @@ namespace Volt
 						// It's not a buffer and the image needs to transition layout, handle case 9.
 						else
 						{
-							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, resource->isExternal);
+							const bool requireExternalSrcAccess = resource->isExternal && resourceState.previousUsage == nullptr;
+
+							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, requireExternalSrcAccess);
 							newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
 							newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
 							newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
@@ -892,7 +896,9 @@ namespace Volt
 						}
 						else
 						{
-							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, resource->isExternal);
+							const bool requireExternalSrcAccess = resource->isExternal && resourceState.previousUsage == nullptr;
+
+							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, requireExternalSrcAccess);
 							newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
 							newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
 							newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
@@ -971,7 +977,9 @@ namespace Volt
 					// If we reach this point, it's an image that needs a layout transition.
 					else
 					{
-						auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource);
+						const bool requireExternalSrcAccess = resource->isExternal && resourceState.previousUsage == nullptr;
+
+						auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, requireExternalSrcAccess);
 						newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
 						newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
 						newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
@@ -1018,7 +1026,9 @@ namespace Volt
 					// If we reach this point, it's an image that needs a layout transition.
 					else
 					{
-						auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource);
+						const bool requireExternalSrcAccess = resource->isExternal && resourceState.previousUsage == nullptr;
+
+						auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, requireExternalSrcAccess);
 						newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
 						newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
 						newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
@@ -1053,7 +1063,9 @@ namespace Volt
 					// It's not a buffer and the image needs to transition layout, handle case 9.
 					else
 					{
-						auto& newBarrier = compiledPass.postPassBarriers.AddBarrier(RHI::BarrierType::Image, barrier.resource);
+						const bool requireExternalSrcAccess = barrier.resource->isExternal && resourceState.previousUsage == nullptr;
+
+						auto& newBarrier = compiledPass.postPassBarriers.AddBarrier(RHI::BarrierType::Image, barrier.resource, requireExternalSrcAccess);
 						newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
 						newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
 						newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
@@ -1193,10 +1205,22 @@ namespace Volt
 		{
 			VT_ENSURE(passBarrier.barrier.type == RHI::BarrierType::Global || passBarrier.resource != nullptr);
 
+			auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
+
 			auto& barrier = resultBarriers.emplace_back(passBarrier.barrier);
 			if (barrier.type == RHI::BarrierType::Image)
 			{
-				barrier.imageBarrier().resource = GetRHIResource(passBarrier.resource);
+				auto resource = GetRHIResource(passBarrier.resource);
+
+				if (passBarrier.requiresExternalSrcState)
+				{
+					const RHI::ResourceState& prevResourceState = resourceTracker->GetCurrentResourceState(resource);
+					barrier.imageBarrier().srcStage = prevResourceState.stage;
+					barrier.imageBarrier().srcAccess = prevResourceState.access;
+					barrier.imageBarrier().srcLayout = prevResourceState.layout;
+				}
+
+				barrier.imageBarrier().resource = resource;
 			}
 			else if (barrier.type == RHI::BarrierType::Buffer)
 			{
