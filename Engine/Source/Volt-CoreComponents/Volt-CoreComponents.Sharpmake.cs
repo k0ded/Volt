@@ -25,6 +25,7 @@ namespace VoltSharpmake
 
 			conf.AddPublicDependency<VoltAssets>(target);
 			conf.AddPublicDependency<VoltRenderer>(target);
+			conf.AddPublicDependency<VoltAudio>(target);
 		}
     }
 }

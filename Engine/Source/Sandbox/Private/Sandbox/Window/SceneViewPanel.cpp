@@ -17,6 +17,7 @@
 #include <Volt-Assets/MeshAsset.h>
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
+#include <Volt-Audio/Components/AudioComponents.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
@@ -1252,6 +1253,31 @@ void SceneViewPanel::DrawMainRightClickPopup()
 				SelectionManager::DeselectAll();
 				SelectionManager::Select(ent.GetID());
 			}
+
+			if (ImGui::BeginMenu("Audio"))
+			{
+				if (ImGui::MenuItem("Audio Listener"))
+				{
+					auto ent = m_scene->CreateEntity();
+					ent.AddComponent<Volt::Audio::AudioListenerComponent>();
+					ent.SetTag("New Audio Listener");
+
+					SelectionManager::DeselectAll();
+					SelectionManager::Select(ent.GetID());
+				}
+				if (ImGui::MenuItem("Audio Source"))
+				{
+					auto ent = m_scene->CreateEntity();
+					ent.AddComponent<Volt::Audio::AudioSourceComponent>();
+					ent.SetTag("New Audio Source");
+
+					SelectionManager::DeselectAll();
+					SelectionManager::Select(ent.GetID());
+				}
+				ImGui::EndMenu();
+			}
+
+
 
 			ImGui::EndMenu();
 		}
