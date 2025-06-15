@@ -25,19 +25,19 @@ float4x4 ToFloat4x4(float4x3 transform)
 }
 
 // Returns a linear depth value between near plane and far plane
-float LinearizeDepth(const float screenDepth, in const ViewData viewData)
+float LinearizeDepth(const float screenDepth)
 {
-    float depthLinearizeMul = viewData.depthUnpackConsts.x;
-    float depthLinearizeAdd = viewData.depthUnpackConsts.y;
+    float depthLinearizeMul = View.depthUnpackConsts.x;
+    float depthLinearizeAdd = View.depthUnpackConsts.y;
     // Optimised version of "-cameraClipNear / (cameraClipFar - projDepth * (cameraClipFar - cameraClipNear)) * cameraClipFar"
     return depthLinearizeMul / (depthLinearizeAdd - screenDepth);
 }
 
 // Returns a linear depth value between near plane and far plane in range [0...1]
-float LinearizeDepth01(const float screenDepth, in const ViewData viewData)
+float LinearizeDepth01(const float screenDepth)
 {
-    const float linearDepth = LinearizeDepth(screenDepth, viewData);
-    return (linearDepth - viewData.nearPlane) / (viewData.farPlane - viewData.nearPlane);
+    const float linearDepth = LinearizeDepth(screenDepth);
+    return (linearDepth - View.nearPlane) / (View.farPlane - View.nearPlane);
 }
 
 // Converts from [near...far] to [0...1] in device space.
@@ -55,17 +55,17 @@ float3x3 CalculateTBN(float3 inNormal, float3 inTangent, float tangentW)
     return transpose(float3x3(tangent, binormal, normal));
 }
 
-float3 ReconstructWorldPosition(in ViewData viewData, float2 texCoords, float pixelDepth)
+float3 ReconstructWorldPosition(float2 texCoords, float pixelDepth)
 {
     float x = texCoords.x * 2.f - 1.f;
     float y = texCoords.y * 2.f - 1.f;
     
     const float4 projSpacePos = float4(x, y, pixelDepth, 1.f);
-    float4 viewSpacePos = mul(viewData.inverseProjection, projSpacePos);
+    float4 viewSpacePos = mul(View.inverseProjection, projSpacePos);
     
     viewSpacePos /= viewSpacePos.w;
     
-    const float4 worldSpacePos = mul(viewData.inverseView, viewSpacePos);
+    const float4 worldSpacePos = mul(View.inverseView, viewSpacePos);
     return worldSpacePos.xyz;
 }
 

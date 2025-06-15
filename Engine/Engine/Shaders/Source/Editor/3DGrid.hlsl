@@ -14,7 +14,6 @@ struct VSToPS
     float3 farPoint : FARPOINT;
 };
 
-ConstantBuffer<ViewData> View;
 float4x4 NonReversedInverseProjection;
 
 float3 UnprojectPoint(float x, float y, float z)

@@ -117,19 +117,19 @@ private: \
 #define RG_BUFFER_ACCESS(paramName, access) \
 	MemberID##paramName; \
 public: \
-	Volt::RGBufferRef paramName; \
+	Volt::RGBufferRef paramName = nullptr; \
 	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGBufferRef, paramName, Volt::ShaderParameterType::BufferAccess, access)
 
 #define RG_TEXTURE_ACCESS(paramName, access) \
 	MemberID##paramName; \
 public: \
-	Volt::RGTextureRef paramName; \
+	Volt::RGTextureRef paramName = nullptr; \
 	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureRef, paramName, Volt::ShaderParameterType::TextureAccess, access)
 
 #define RG_UNIFORM_BUFFER_ACCESS(paramName, access) \
 	MemberID##paramName; \
 public: \
-	Volt::RGUniformBufferRef paramName; \
+	Volt::RGUniformBufferRef paramName = nullptr; \
 	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGUniformBufferRef, paramName, Volt::ShaderParameterType::UniformBufferAccess, access)
 
 #define RG_RENDER_TARGETS() \

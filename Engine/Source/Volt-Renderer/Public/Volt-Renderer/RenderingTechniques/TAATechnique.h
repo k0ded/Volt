@@ -10,8 +10,6 @@ namespace Volt
 	class RenderGraphBlackboard;
 	struct RenderView;
 
-
-
 	class TAATechnique
 	{
 	public:

@@ -12,7 +12,6 @@ struct VSToPS
     float4 position : SV_Position;
 };
 
-ConstantBuffer<ViewData> View;
 StructuredBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;
 
 VSToPS MainVS(in Vertex input)

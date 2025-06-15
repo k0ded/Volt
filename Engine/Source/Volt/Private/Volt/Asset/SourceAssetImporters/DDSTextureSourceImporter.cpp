@@ -108,8 +108,6 @@ namespace Volt
 		const uint32_t height = imageData->m_height;
 
 		RefPtr<RHI::Image> image;
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		commandBuffer->BeginMarker(std::format("Import Texture {}", filepath.string()), { 1.f, 1.f, 1.f, 1.f });
 
 		const uint32_t mipLevelCount = importConfig.importMipMaps ? ddsFile.GetMipCount() : 1u;
 
@@ -159,7 +157,10 @@ namespace Volt
 
 		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
+		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+
 		commandBuffer->Begin();
+		commandBuffer->BeginMarker(std::format("Import Texture {}", filepath.string()), { 1.f, 1.f, 1.f, 1.f });
 
 		{
 			RHI::ResourceBarrierInfo barrier{};

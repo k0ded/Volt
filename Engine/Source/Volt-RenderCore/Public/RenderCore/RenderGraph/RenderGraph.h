@@ -311,7 +311,15 @@ namespace Volt
 				case ShaderParameterType::BufferUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
 				case ShaderParameterType::TextureSRV: newPass->AddResourceRead(*reinterpret_cast<RGTextureSRVRef*>(dataPtr)); break;
 				case ShaderParameterType::TextureUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
-				case ShaderParameterType::UniformBuffer: newPass->AddResourceRead(CreateSRV(*reinterpret_cast<RGUniformBufferRef*>(dataPtr))); break;
+				case ShaderParameterType::UniformBuffer:  
+				{
+					RGUniformBufferRef uniformBuffer = *reinterpret_cast<RGUniformBufferRef*>(dataPtr);
+
+					VT_ENSURE_MSG(uniformBuffer, "Uniform buffer must not be null!");
+
+					newPass->AddResourceRead(CreateSRV(uniformBuffer));
+					break;
+				}
 				case ShaderParameterType::BufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGBufferRef*>(dataPtr), parameter.resourceAccessType); break;
 				case ShaderParameterType::TextureAccess: newPass->AddResourceAccess(*reinterpret_cast<RGTextureRef*>(dataPtr), parameter.resourceAccessType); break;
 				case ShaderParameterType::UniformBufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGUniformBufferRef*>(dataPtr), parameter.resourceAccessType); break;

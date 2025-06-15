@@ -183,6 +183,8 @@ namespace Volt::RHI
 		size_t size = 0;
 		size_t offset = 0;
 
+		std::string name;
+
 		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderUniform& data)
 		{
 			streamWriter.Write(data.type);
@@ -306,10 +308,11 @@ namespace Volt::RHI
 	{
 		uint32_t set = std::numeric_limits<uint32_t>::max();
 		uint32_t binding = std::numeric_limits<uint32_t>::max();
-		uint32_t arraySize = 1; // #TODO_Ivar: Not implemented.
+		uint32_t arraySize = 1;
 		ShaderRegisterType registerType;
 		ShaderResourceType resourceType;
 		ShaderStage shaderStage;
+		std::string name;
 
 		inline const bool IsValid() const { return set != std::numeric_limits<uint32_t>::max() && binding != std::numeric_limits<uint32_t>::max(); }
 

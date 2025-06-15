@@ -1,10 +1,10 @@
-#include "Common.hlsli"
-#include "Utility.hlsli"
 #include "Lights.hlsli"
 
-Texture2D<float> DepthTexture;
-StructuredBuffer<LightDrawData> LightsBuffer;
-ConstantBuffer<ViewData> View;
+#include "Utility/Common.hlsli"
+#include "Utility/Utility.hlsli"
+
+Texture2D<float> SceneDepth;
+StructuredBuffer<LightDrawData> SceneLights;
 
 RWBuffer<int> RWVisibleLightIndices;
 
@@ -19,10 +19,8 @@ groupshared float4 m_frustumPlanes[6];
 groupshared uint m_visibleLights[MAX_LIGHTS_PER_TILE];
 
 [numthreads(LIGHT_CULLING_TILE_SIZE, LIGHT_CULLING_TILE_SIZE, 1)]
-void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : SV_GroupIndex, uint2 groupId : SV_GroupID)
+void MainCS(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : SV_GroupIndex, uint2 groupId : SV_GroupID)
 {
-    const ViewData viewData = View.Load();
-
     const uint tileIndex = groupId.y * TileCount.x + groupId.x;
 
     if (groupThreadIndex == 0)
@@ -35,7 +33,7 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
     GroupMemoryBarrierWithGroupSync();
 
     // Find max and min depth in current tile
-    const float pixelDepthValue = LinearizeDepth(DepthTexture.Load(int3(dispatchThreadId, 0)), viewData);
+    const float pixelDepthValue = LinearizeDepth(SceneDepth.Load(int3(dispatchThreadId, 0)));
     const uint depthInt = asuint(pixelDepthValue);
     
     InterlockedMin(m_minDepthInt, depthInt);
@@ -62,14 +60,14 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
         [unroll]
         for (uint i = 0; i < 4; i++)
         {
-            m_frustumPlanes[i] = mul(m_frustumPlanes[i], viewData.viewProjection);
+            m_frustumPlanes[i] = mul(m_frustumPlanes[i], View.viewProjection);
             m_frustumPlanes[i] /= length(m_frustumPlanes[i].xyz);
         }
 
-        m_frustumPlanes[4] = mul(m_frustumPlanes[4], viewData.view);
+        m_frustumPlanes[4] = mul(m_frustumPlanes[4], View.view);
         m_frustumPlanes[4] /= length(m_frustumPlanes[4].xyz);
 
-        m_frustumPlanes[5] = mul(m_frustumPlanes[5], viewData.view);
+        m_frustumPlanes[5] = mul(m_frustumPlanes[5], View.view);
         m_frustumPlanes[5] /= length(m_frustumPlanes[5].xyz);
     }
 
@@ -78,17 +76,17 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
     // Cull lights
 
     const uint threadCount = LIGHT_CULLING_TILE_SIZE * LIGHT_CULLING_TILE_SIZE;
-    uint passCount = DivideRoundUp(viewData.lightCount, threadCount);
+    uint passCount = DivideRoundUp(View.lightCount, threadCount);
 
     for (uint i = 0; i < passCount; i++)
     {
         uint lightIndex = i * threadCount + groupThreadIndex;
-        if (lightIndex >= viewData.lightCount)
+        if (lightIndex >= View.lightCount)
         {
             break;
         }
 
-        const LightDrawData currentLight = LightsBuffer.Load(lightIndex);
+        const LightDrawData currentLight = SceneLights[lightIndex];
 
         float distance = 0.f;
 
@@ -150,11 +148,11 @@ void main(uint2 dispatchThreadId : SV_DispatchThreadID, uint groupThreadIndex : 
     const uint lightCount = m_visibleLightCount;
     for (uint i = groupThreadIndex; i < lightCount; i += threadCount)
     {
-        RWVisibleLightIndices.Store(offsetInBuffer + i, m_visibleLights[i]);
+        RWVisibleLightIndices[offsetInBuffer + i] = m_visibleLights[i];
     }
 
     if (groupThreadIndex == 0 && m_visibleLightCount != MAX_LIGHTS_PER_TILE)
     {
-        RWVisibleLightIndices.Store(offsetInBuffer + lightCount, -1);
+        RWVisibleLightIndices[offsetInBuffer + lightCount] = -1;
     }
 }

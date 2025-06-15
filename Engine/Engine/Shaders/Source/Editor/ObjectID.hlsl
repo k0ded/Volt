@@ -13,7 +13,6 @@ struct VSToPS
     uint objectId : OBJECT_ID;
 };
 
-ConstantBuffer<ViewData> View;
 StructuredBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;
 
 VSToPS MainVS(in Vertex input)

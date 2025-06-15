@@ -129,5 +129,6 @@ namespace Volt
 	BEGIN_SHADER_PARAMETER_STRUCT(GPUSceneParameters)
 		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrimitiveDrawDataBuffer)
 		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrevPrimitiveDrawDataBuffer)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<LightDrawData>, SceneLights)
 	END_SHADER_PARAMETER_STRUCT()
 }

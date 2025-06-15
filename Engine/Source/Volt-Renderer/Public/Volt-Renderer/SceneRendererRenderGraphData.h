@@ -27,4 +27,9 @@ namespace Volt
 		RGTextureRef black1x1Cube;
 		RGTextureRef white1x1;
 	};
+
+	struct LightScene
+	{
+		RGBufferRef visibleLightIndices;
+	};
 }

@@ -12,8 +12,6 @@ struct VSToPS
     float3 samplePosision : SAMPLE_POSITION;
 };
 
-ConstantBuffer<ViewData> View;
-
 VSToPS MainVS(in Vertex input)
 {
     const float3x3 view = (float3x3)View.view;

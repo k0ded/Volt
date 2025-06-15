@@ -8,8 +8,6 @@ Texture2D<float4> Normals;
 Texture2D<float2> Material;
 Texture2D<float> SceneDepth;
 
-ConstantBuffer<ViewData> View;
-
 [numthreads(8, 8, 1)]
 void MainCS(uint2 threadId : SV_DispatchThreadID)
 {

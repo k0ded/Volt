@@ -87,6 +87,9 @@ namespace Volt
 		void BindDescriptorTable();
 		void AllocatePerStageShaderParameterBuffers();
 
+		template<typename ParameterStruct>
+		void VerifyShaderParameters(RefPtr<RHI::Shader> shader, const ParameterStruct* parameters);
+
 		void SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
@@ -136,6 +139,8 @@ namespace Volt
 
 		using ShaderParametersType = typename ShaderType::Parameters;
 
+		VerifyShaderParameters(shader, parameters);
+
 		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ShaderParametersType::GetShaderParameterMetadata();
 		const auto& shaderParameterMap = shader->GetParameterMap();
 
@@ -157,6 +162,7 @@ namespace Volt
 				case ShaderParameterType::Parameter: SetShaderParameter(parameterDataPtr, parameter, shaderParameterMap); break;
 			}
 		}
+
 	}
 
 	template<typename ParameterStruct>
@@ -180,6 +186,52 @@ namespace Volt
 				case ShaderParameterType::Sampler: CollectSamplerParameter(*reinterpret_cast<RefPtr<RHI::SamplerState>*>(parameterDataPtr), parameter, batchedShaderParameters); break;
 				case ShaderParameterType::UniformBuffer: CollectUniformBufferParameter(*reinterpret_cast<RGUniformBufferRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
 			}
+		}
+	}
+
+	template<typename ParameterStruct>
+	void RenderContext::VerifyShaderParameters(RefPtr<RHI::Shader> shader, const ParameterStruct* parameters)
+	{
+		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
+
+		const RHI::ShaderParameterMap& shaderParameterMap = shader->GetParameterMap();
+		const RHI::ShaderParameterMap::ResourceBindingsMap& resourceBindings = shaderParameterMap.GetResourceBindings();
+
+		struct Binding
+		{
+			std::string_view name;
+			bool value;
+		};
+
+		vt::map<StringHash, Binding> resourceBindingsFoundMap;
+		resourceBindingsFoundMap.reserve(resourceBindings.size());
+
+		for (const auto& [hashedName, binding] : resourceBindings)
+		{
+			if (hashedName != StringHash::Construct("$Globals"))
+			{
+				resourceBindingsFoundMap[hashedName].name = binding.name;
+				resourceBindingsFoundMap[hashedName].value = false;
+			}
+		}
+
+		for (const auto& parameter : parameterStructMetadata)
+		{
+			switch (parameter.parameterType)
+			{
+				case ShaderParameterType::BufferSRV:
+				case ShaderParameterType::BufferUAV:
+				case ShaderParameterType::TextureSRV:
+				case ShaderParameterType::TextureUAV:
+				case ShaderParameterType::UniformBuffer:
+				case ShaderParameterType::Sampler:
+					resourceBindingsFoundMap[parameter.hashedName].value = true;
+			}
+		}
+
+		for (const auto& [hashedName, binding] : resourceBindingsFoundMap)
+		{
+			VT_ENSURE_MSG(binding.value, std::format("Binding {} was not found in parameter struct!", binding.name));
 		}
 	}
 }

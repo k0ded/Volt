@@ -15,6 +15,7 @@
 #include "Volt-Renderer/RenderView.h"
 
 #include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
+#include "Volt-Renderer/RenderingTechniques/LightTileBinningTechnique.h"
 
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
@@ -109,10 +110,14 @@ namespace Volt
 		renderView.viewUniformBuffer = CreateViewUniformBuffer(renderGraph, camera);
 		renderView.frameIndex = m_frameIndex;
 		renderView.camera = camera;
+		renderView.renderScene = m_renderScene;
 
 		AddDefaultTextures(renderGraph, blackboard);
 		AddEnvironmentTextures(renderGraph, blackboard);
 		AddDepthPrePass(renderGraph, blackboard, renderView);
+
+		LightTileBinningTechnique tileBinningTechnique{ renderGraph, blackboard };
+		tileBinningTechnique.Execute(renderView);
 
 		if (m_sceneRendererExtensions.contains(SceneRendererExtensionStage::PreGBuffer))
 		{
@@ -478,11 +483,12 @@ namespace Volt
 		DECLARE_GLOBAL_SHADER(RenderDeferredShadingCS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
-			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWSceneColor)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Albedo)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Normals)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float2>, Materials)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SceneDepth)
+			SHADER_PARAMETER_BUFFER_SRV(Buffer<int>, VisibleLightIndices)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWSceneColor)
 		END_SHADER_PARAMETER_STRUCT()
 	};
 	REGISTER_SHADER(RenderDeferredShadingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "MainCS", Compute);
@@ -491,15 +497,17 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		const LightScene& lightScene = blackboard.Get<LightScene>();
 		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 
 		RenderDeferredShadingCS::Parameters* passParameters = renderGraph.AllocParameters<RenderDeferredShadingCS::Parameters>();
 		passParameters->View = view.viewUniformBuffer;
-		passParameters->RWSceneColor = renderGraph.CreateUAV(sceneTextures.sceneColor);
+		passParameters->VisibleLightIndices = renderGraph.CreateSRV(lightScene.visibleLightIndices, RHI::PixelFormat::R32_SINT);
 		passParameters->Albedo = renderGraph.CreateSRV(sceneTextures.gBufferAlbedo);
 		passParameters->Normals = renderGraph.CreateSRV(sceneTextures.gBufferNormals);
 		passParameters->Materials = renderGraph.CreateSRV(sceneTextures.gBufferMaterial);
 		passParameters->SceneDepth = renderGraph.CreateSRV(sceneTextures.sceneDepth);
+		passParameters->RWSceneColor = renderGraph.CreateUAV(sceneTextures.sceneColor);
 
 		auto shader = ShaderMap::Get<RenderDeferredShadingCS>();
 		ComputeShaderUtils::AddPass<RenderDeferredShadingCS>(renderGraph,
@@ -579,7 +587,7 @@ namespace Volt
 			viewUniformBuffer.cullingFrustum = camera->GetFrustumCullingInfo();
 
 			// Light Culling
-			//viewUniformBuffer.tileCountX = Math::DivideRoundUp(m_width, LightCullingTechnique::TILE_SIZE);
+			viewUniformBuffer.tileCountX = Math::DivideRoundUp(m_width, LightTileBinningTechnique::TILE_SIZE);
 			viewUniformBuffer.lightCount = m_renderScene->GetLightCount();
 
 			// Render Target

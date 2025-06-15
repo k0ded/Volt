@@ -10,7 +10,6 @@ struct VSToPS
     float4 prevPosition : PREV_POSITION;
 };
 
-ConstantBuffer<ViewData> View;
 StructuredBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;
 StructuredBuffer<PrimitiveDrawData> PrevPrimitiveDrawDataBuffer;
 

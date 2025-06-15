@@ -21,7 +21,6 @@ struct VSToPS
     float2 texCoords : TEXCOORD;
 };
 
-ConstantBuffer<ViewData> View;
 StructuredBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;
 
 float3 UnpackNormal(uint normal)

@@ -329,8 +329,9 @@ namespace Volt
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding)
 		{
-			RefPtr<RHI::BufferView> bufferView = m_renderGraph.GetRHIBufferSRV(bufferSRV);
+			VT_ENSURE_MSG(bufferSRV, "Buffer SRV must not be null!");
 
+			RefPtr<RHI::BufferView> bufferView = m_renderGraph.GetRHIBufferSRV(bufferSRV);
 			m_descriptorTable->SetBufferView(bufferView, resourceBinding->set, resourceBinding->binding);
 		}
 	}
@@ -342,8 +343,9 @@ namespace Volt
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding)
 		{
-			RefPtr<RHI::BufferView> bufferView = m_renderGraph.GetRHIBufferUAV(bufferUAV);
+			VT_ENSURE_MSG(bufferUAV, "Buffer UAV must not be null!");
 
+			RefPtr<RHI::BufferView> bufferView = m_renderGraph.GetRHIBufferUAV(bufferUAV);
 			m_descriptorTable->SetBufferView(bufferView, resourceBinding->set, resourceBinding->binding);
 		}
 	}
@@ -355,8 +357,9 @@ namespace Volt
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding)
 		{
-			RefPtr<RHI::ImageView> imageView = m_renderGraph.GetRHITextureSRV(textureSRV);
+			VT_ENSURE_MSG(textureSRV, "Texture SRV must not be null!");
 
+			RefPtr<RHI::ImageView> imageView = m_renderGraph.GetRHITextureSRV(textureSRV);
 			m_descriptorTable->SetImageView(imageView, resourceBinding->set, resourceBinding->binding);
 		}
 	}
@@ -368,8 +371,9 @@ namespace Volt
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding)
 		{
-			RefPtr<RHI::ImageView> imageView = m_renderGraph.GetRHITextureUAV(textureUAV);
+			VT_ENSURE_MSG(textureUAV, "Texture UAV must not be null!");
 
+			RefPtr<RHI::ImageView> imageView = m_renderGraph.GetRHITextureUAV(textureUAV);
 			m_descriptorTable->SetImageView(imageView, resourceBinding->set, resourceBinding->binding);
 		}
 	}
@@ -381,6 +385,8 @@ namespace Volt
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding)
 		{
+			VT_ENSURE_MSG(uniformBuffer, "Uniform buffer must not be null!");
+
 			RefPtr<RHI::UniformBuffer> rhiUniformBuffer = m_renderGraph.GetRHIUniformBuffer(uniformBuffer);
 			RefPtr<RHI::BufferView> bufferView = rhiUniformBuffer->GetView();
 

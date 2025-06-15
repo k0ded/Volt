@@ -3,7 +3,7 @@
 
 namespace Volt::RHI
 {
-	void ShaderParameterMap::AddUniformBuffer(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	void ShaderParameterMap::AddUniformBuffer(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
 		resourceBinding.set = set;
@@ -11,9 +11,10 @@ namespace Volt::RHI
 		resourceBinding.registerType = ShaderRegisterType::CBV;
 		resourceBinding.resourceType = ShaderResourceType::UniformBuffer;
 		resourceBinding.shaderStage = shaderStage;
+		resourceBinding.name = name;
 	}
 
-	void ShaderParameterMap::AddSampler(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	void ShaderParameterMap::AddSampler(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
 		resourceBinding.set = set;
@@ -21,9 +22,10 @@ namespace Volt::RHI
 		resourceBinding.registerType = ShaderRegisterType::Sampler;
 		resourceBinding.resourceType = ShaderResourceType::Sampler;
 		resourceBinding.shaderStage = shaderStage;
+		resourceBinding.name = name;
 	}
 	
-	void ShaderParameterMap::AddStructuredBufferUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	void ShaderParameterMap::AddStructuredBufferUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
 		resourceBinding.set = set;
@@ -31,9 +33,10 @@ namespace Volt::RHI
 		resourceBinding.registerType = ShaderRegisterType::UAV;
 		resourceBinding.resourceType = ShaderResourceType::StructuredBuffer;
 		resourceBinding.shaderStage = shaderStage;
+		resourceBinding.name = name;
 	}
 	
-	void ShaderParameterMap::AddStructuredBufferSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	void ShaderParameterMap::AddStructuredBufferSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
 		resourceBinding.set = set;
@@ -41,9 +44,10 @@ namespace Volt::RHI
 		resourceBinding.registerType = ShaderRegisterType::SRV;
 		resourceBinding.resourceType = ShaderResourceType::StructuredBuffer;
 		resourceBinding.shaderStage = shaderStage;
+		resourceBinding.name = name;
 	}
 
-	void ShaderParameterMap::AddTexelBufferUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	void ShaderParameterMap::AddTexelBufferUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
 		resourceBinding.set = set;
@@ -51,9 +55,10 @@ namespace Volt::RHI
 		resourceBinding.registerType = ShaderRegisterType::UAV;
 		resourceBinding.resourceType = ShaderResourceType::TexelBuffer;
 		resourceBinding.shaderStage = shaderStage;
+		resourceBinding.name = name;
 	}
 
-	void ShaderParameterMap::AddTexelBufferSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	void ShaderParameterMap::AddTexelBufferSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
 		resourceBinding.set = set;
@@ -61,9 +66,10 @@ namespace Volt::RHI
 		resourceBinding.registerType = ShaderRegisterType::SRV;
 		resourceBinding.resourceType = ShaderResourceType::TexelBuffer;
 		resourceBinding.shaderStage = shaderStage;
+		resourceBinding.name = name;
 	}
 	
-	void ShaderParameterMap::AddTextureSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	void ShaderParameterMap::AddTextureSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
 		resourceBinding.set = set;
@@ -71,9 +77,10 @@ namespace Volt::RHI
 		resourceBinding.registerType = ShaderRegisterType::SRV;
 		resourceBinding.resourceType = ShaderResourceType::Texture;
 		resourceBinding.shaderStage = shaderStage;
+		resourceBinding.name = name;
 	}
 	
-	void ShaderParameterMap::AddTextureUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	void ShaderParameterMap::AddTextureUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
 		resourceBinding.set = set;
@@ -81,14 +88,16 @@ namespace Volt::RHI
 		resourceBinding.registerType = ShaderRegisterType::UAV;
 		resourceBinding.resourceType = ShaderResourceType::Texture;
 		resourceBinding.shaderStage = shaderStage;
+		resourceBinding.name = name;
 	}
 
-	void ShaderParameterMap::AddParameter(std::string_view name, ShaderUniformType uniformType, uint32_t size, uint32_t offset)
+	void ShaderParameterMap::AddParameter(const std::string& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset)
 	{
 		auto& parameter = m_shaderParameters[StringHash::Construct(name)];
 		parameter.type = uniformType;
 		parameter.size = size;
 		parameter.offset = offset;
+		parameter.name = name;
 
 		m_shaderParameterSize = std::max(m_shaderParameterSize, offset + size);
 	}

@@ -30,3 +30,5 @@ struct ViewData
 
     uint frameIndex;
 };
+
+ConstantBuffer<ViewData> View;

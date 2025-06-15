@@ -13,16 +13,16 @@ namespace Volt::RHI
 		using ResourceBindingsMap = vt::map<StringHash, ShaderResourceBinding>;
 		using ParameterMap = vt::map<StringHash, ShaderUniform>;
 
-		void AddUniformBuffer(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddSampler(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddStructuredBufferUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddStructuredBufferSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddTexelBufferUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddTexelBufferSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddTextureSRV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
-		void AddTextureUAV(std::string_view name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddUniformBuffer(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddSampler(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddStructuredBufferUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddStructuredBufferSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddTexelBufferUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddTexelBufferSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddTextureSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddTextureUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 
-		void AddParameter(std::string_view name, ShaderUniformType uniformType, uint32_t size, uint32_t offset);
+		void AddParameter(const std::string& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset);
 
 		const ShaderUniform* GetParameterFromName(StringHash name) const;
 		const ShaderResourceBinding* GetResourceBindingFromName(StringHash name) const;

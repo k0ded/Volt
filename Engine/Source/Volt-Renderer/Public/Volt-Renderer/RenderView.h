@@ -5,6 +5,7 @@
 namespace Volt
 {
 	class Camera;
+	class RenderScene;
 
 	struct RenderView
 	{
@@ -13,6 +14,7 @@ namespace Volt
 		uint32_t frameIndex;
 
 		Ref<Camera> camera;
+		Weak<RenderScene> renderScene;
 
 		RGUniformBufferRef viewUniformBuffer;
 	};
