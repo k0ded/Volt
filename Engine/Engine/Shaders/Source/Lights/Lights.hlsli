@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ViewData.hlsli"
+
 // Culling
 #define MAX_LIGHTS_PER_TILE 512
 #define LIGHT_CULLING_TILE_SIZE 16
@@ -78,3 +80,12 @@ int GetLightCount(Buffer<int> lightIndexBuffer, uint tileCountX, uint2 tileId)
     return result;
 }
 
+Buffer<int> VisibleLightIndices;
+
+int GetLightBufferIndex(int i, uint2 tileId)
+{
+    const uint index = tileId.y * View.tileCountX + tileId.x;
+    const uint offset = index * MAX_LIGHTS_PER_TILE;
+
+    return VisibleLightIndices[offset + i];
+}

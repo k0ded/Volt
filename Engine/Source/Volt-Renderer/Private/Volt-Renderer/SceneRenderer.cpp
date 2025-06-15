@@ -483,12 +483,13 @@ namespace Volt
 		DECLARE_GLOBAL_SHADER(RenderDeferredShadingCS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
-			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Albedo)
-			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Normals)
-			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float2>, Materials)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, GBufferAlbedo)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, GBufferNormal)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float2>, GBufferMaterial)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SceneDepth)
 			SHADER_PARAMETER_BUFFER_SRV(Buffer<int>, VisibleLightIndices)
 			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWSceneColor)
+			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
 		END_SHADER_PARAMETER_STRUCT()
 	};
 	REGISTER_SHADER(RenderDeferredShadingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "MainCS", Compute);
@@ -503,10 +504,11 @@ namespace Volt
 		RenderDeferredShadingCS::Parameters* passParameters = renderGraph.AllocParameters<RenderDeferredShadingCS::Parameters>();
 		passParameters->View = view.viewUniformBuffer;
 		passParameters->VisibleLightIndices = renderGraph.CreateSRV(lightScene.visibleLightIndices, RHI::PixelFormat::R32_SINT);
-		passParameters->Albedo = renderGraph.CreateSRV(sceneTextures.gBufferAlbedo);
-		passParameters->Normals = renderGraph.CreateSRV(sceneTextures.gBufferNormals);
-		passParameters->Materials = renderGraph.CreateSRV(sceneTextures.gBufferMaterial);
+		passParameters->GBufferAlbedo = renderGraph.CreateSRV(sceneTextures.gBufferAlbedo);
+		passParameters->GBufferNormal = renderGraph.CreateSRV(sceneTextures.gBufferNormals);
+		passParameters->GBufferMaterial = renderGraph.CreateSRV(sceneTextures.gBufferMaterial);
 		passParameters->SceneDepth = renderGraph.CreateSRV(sceneTextures.sceneDepth);
+		passParameters->GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
 		passParameters->RWSceneColor = renderGraph.CreateUAV(sceneTextures.sceneColor);
 
 		auto shader = ShaderMap::Get<RenderDeferredShadingCS>();

@@ -168,6 +168,7 @@ namespace Volt
 	template<typename ParameterStruct>
 	void RenderContext::CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters)
 	{
+		VT_PROFILE_FUNCTION();
 		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
 
 		// We need to use const_cast here because the resource parameters need to be non-const pointers.
@@ -192,6 +193,8 @@ namespace Volt
 	template<typename ParameterStruct>
 	void RenderContext::VerifyShaderParameters(RefPtr<RHI::Shader> shader, const ParameterStruct* parameters)
 	{
+		VT_PROFILE_FUNCTION();
+
 		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
 
 		const RHI::ShaderParameterMap& shaderParameterMap = shader->GetParameterMap();

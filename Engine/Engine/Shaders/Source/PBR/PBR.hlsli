@@ -1,14 +1,8 @@
 #pragma once
 
-#include "Structures.hlsli"
-#include "Resources.hlsli"
-#include "ShadowMapping.hlsli"
-#include "Lights.hlsli"
-#include "RayTracing.hlsli"
-#include "Exposure/Exposure.hlsli"
-
 #include "PBR/LightEvaluation.hlsli"
 
+#if 0
 struct PBRConstants
 {
     vt::UniformBuffer<ViewData> viewData;
@@ -25,6 +19,9 @@ struct PBRConstants
     vt::Tex2DArray<float> directionalLightShadowMap;
     SkyLight skyLight;
 };
+#endif
+
+StructuredBuffer<LightDrawData> SceneLights;
 
 struct PBRInput
 {
@@ -46,8 +43,6 @@ struct LightOutput
 };
 
 static PBRInput m_pbrInput;
-static PBRConstants m_pbrConstants;
-static ViewData m_viewData;
 
 float3 EvaluateLights(float3 dirToCamera, uint lightCount)
 {
@@ -64,13 +59,13 @@ float3 EvaluateLights(float3 dirToCamera, uint lightCount)
 
     for (uint i = 0; i < lightCount; i++)
     {
-        int lightIndex = GetLightBufferIndex(m_pbrConstants.visibleLights, m_viewData.tileCountX, i, m_pbrInput.tileId);
+        int lightIndex = GetLightBufferIndex(i, m_pbrInput.tileId);
         if (lightIndex == -1)
         {
             break;
         }
 
-        LightDrawData light = m_pbrConstants.lights.Load(lightIndex);
+        const LightDrawData light = SceneLights[lightIndex];
         if (light.lightType == SceneLightType::SLT_Point)
         {
             output += EvaluatePointLight(light, brdfInput, m_pbrInput.worldPosition);
@@ -81,31 +76,22 @@ float3 EvaluateLights(float3 dirToCamera, uint lightCount)
         }
         else if (light.lightType == SceneLightType::SLT_Directional)
         {
-            DirectionalShadowMappingInfo shadowMappingInfo;
-            shadowMappingInfo.directionalLightShadowData = m_pbrConstants.directionalLightShadowData;
-            shadowMappingInfo.shadowSampler = m_pbrConstants.shadowSampler;
-            shadowMappingInfo.shadowMap = m_pbrConstants.directionalLightShadowMap;
-            shadowMappingInfo.viewMatrix = m_viewData.view;
-
-            output += EvaluateDirectionalLight(light, shadowMappingInfo, brdfInput, m_pbrInput.worldPosition);
+            output += EvaluateDirectionalLight(light, brdfInput, m_pbrInput.worldPosition);
         }
-        else if (light.lightType == SceneLightType::SLT_Sky)
-        {
-            output += EvaluateIBL(brdfInput, m_pbrConstants.DFGLuT, m_pbrConstants.linearSampler, m_pbrConstants.skyLight, light);
-        }
+        //else if (light.lightType == SceneLightType::SLT_Sky)
+        //{
+        //    output += EvaluateIBL(brdfInput, m_pbrConstants.DFGLuT, m_pbrConstants.linearSampler, m_pbrConstants.skyLight, light);
+        //}
     }
 
     return output;
 }
 
-float3 EvaluatePBR(in PBRInput input, in PBRConstants constants)
+float3 EvaluatePBR(in PBRInput input)
 { 
     m_pbrInput = input;
-    m_pbrConstants = constants;
-    
-    m_viewData = constants.viewData.Load();
 
-    const float3 dirToCamera = normalize(m_viewData.cameraPosition.xyz - m_pbrInput.worldPosition);
+    const float3 dirToCamera = normalize(View.cameraPosition.xyz - m_pbrInput.worldPosition);
     
     float3 lightOutput = 0.f;
      
@@ -118,7 +104,7 @@ float3 EvaluatePBR(in PBRInput input, in PBRConstants constants)
     brdfInput.roughness = m_pbrInput.roughness;
     brdfInput.metalness = m_pbrInput.metallic;
 
-    lightOutput += EvaluateLights(dirToCamera, m_viewData.lightCount);
+    lightOutput += EvaluateLights(dirToCamera, View.lightCount);
 
     const float3 compositeLighting = lightOutput + m_pbrInput.emissive;
     return compositeLighting;

@@ -45,7 +45,7 @@ VSToPS MainVS(in GBufferVertex input)
     VSToPS result;
     result.position = mul(View.viewProjection, float4(primitiveData.transform.GetWorldPosition(input.position), 1.f));
     result.texCoords = input.texCoords;
-    result.normal = normalize(mul(cameraNormalRotation, primitiveData.transform.RotateVector(UnpackNormal(input.normal))));
+    result.normal = primitiveData.transform.RotateVector(UnpackNormal(input.normal));
 
     return result;
 }

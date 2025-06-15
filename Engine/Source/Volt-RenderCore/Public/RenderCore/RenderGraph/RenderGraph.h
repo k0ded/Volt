@@ -14,6 +14,7 @@
 
 #include <CoreUtilities/Pointers/RefPtr.h>
 #include <CoreUtilities/EnumUtils.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
@@ -291,6 +292,8 @@ namespace Volt
 	template<typename ParameterStruct, typename ExecFunc>
 	void RenderGraph::AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc)
 	{
+		VT_PROFILE_FUNCTION();
+
 		Handle<RenderGraphPass> newPass = m_passAllocator.AllocatePass(name, std::forward<ExecFunc>(executeFunc));
 		newPass->flags = flags;
 
