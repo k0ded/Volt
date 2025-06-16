@@ -1,26 +1,37 @@
 #pragma once
 
+#include "RenderCore/Config.h"
+
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
 
-#include <typeindex>
-#include <any>
+#include <CoreUtilities/Allocators/LinearAllocator.h>
 
 namespace Volt
 {
-	class RenderGraphBlackboard
+	class VTRC_API RenderGraphBlackboard
 	{
 	public:
+		~RenderGraphBlackboard();
+
 		template<typename T>
 		inline T& Add()
 		{
-			static_assert(sizeof(T) < 1024 && "Blackboard data is not allowed to be greater than 1024 bytes!");
-
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
-			VT_ENSURE(!m_blackboard.contains(typeIndex));
+			VT_ENSURE(!m_typeInfos.contains(typeIndex));
 
-			m_blackboard[typeIndex] = T{};
-			return std::any_cast<T&>(m_blackboard.at(typeIndex));
+			void* newAllocation = Allocate(sizeof(T));
+			new (newAllocation) T();
+
+			auto destructor = [](void* ptr)
+			{
+				T* typePtr = reinterpret_cast<T*>(ptr);
+				typePtr->~T();
+			};
+
+			m_typeInfos[typeIndex] = { newAllocation, destructor };
+		
+			return *reinterpret_cast<T*>(newAllocation);
 		}
 
 		template<typename T>
@@ -28,8 +39,8 @@ namespace Volt
 		{
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
 
-			VT_ASSERT_MSG(m_blackboard.contains(typeIndex), "Blackboard does not contain type!");
-			return std::any_cast<T&>(m_blackboard.at(typeIndex));
+			VT_ENSURE_MSG(m_typeInfos.contains(typeIndex), "Blackboard does not contain type!");
+			return *reinterpret_cast<T*>(m_typeInfos.at(typeIndex).typePtr);
 		}
 
 		template<typename T>
@@ -37,18 +48,29 @@ namespace Volt
 		{
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
 
-			VT_ASSERT_MSG(m_blackboard.contains(typeIndex), "Blackboard does not contain type!");
-			return std::any_cast<const T&>(m_blackboard.at(typeIndex));
+			VT_ENSURE_MSG(m_typeInfos.contains(typeIndex), "Blackboard does not contain type!");
+			return *reinterpret_cast<const T*>(m_typeInfos.at(typeIndex).typePtr);
 		}
 
 		template<typename T>
 		inline const bool Contains() const
 		{
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
-			return m_blackboard.contains(typeIndex);
+			return m_typeInfos.contains(typeIndex);
 		}
 
 	private:
-		vt::map<TypeTraits::TypeIndex, std::any> m_blackboard;
+		struct TypeInfo
+		{
+			void* typePtr;
+			std::function<void(void* ptr)> typeDestructor;
+		};
+
+		void* Allocate(size_t size);
+
+		inline static constexpr size_t BlackboardSize = 2048;
+
+		LinearAllocator<BlackboardSize> m_allocator;
+		vt::map<TypeTraits::TypeIndex, TypeInfo> m_typeInfos;
 	};
 }
