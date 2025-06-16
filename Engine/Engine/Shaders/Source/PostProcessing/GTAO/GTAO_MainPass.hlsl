@@ -1,14 +1,16 @@
-#include "Defines.hlsli"
 #include "XeGTAO.hlsli"
-#include "Resources.hlsli"
 
-vt::RWTex2D<uint> AOTerm;
-vt::RWTex2D<float> Edges;
+RWTexture2D<uint> RWAOTerm;
 
-vt::Tex2D<float> SrcDepth;
-vt::Tex2D<float4> ViewspaceNormals;
-vt::TextureSampler PointClampSampler;
-GTAOConstants Constants;
+VT_SPECIFY_FORMAT("r8")
+RWTexture2D<float> RWEdges;
+
+Texture2D<float> SrcDepth;
+Texture2D<float4> GBufferNormal;
+SamplerState PointClampSampler;
+ConstantBuffer<GTAOConstants> Constants;
+
+float4x4 ViewMatrix;
 
 // Engine-specific screen & temporal noise loader
 lpfloat2 SpatioTemporalNoise(uint2 pixCoord, uint temporalIndex)    // without TAA, temporalIndex is always 0
@@ -31,14 +33,17 @@ lpfloat2 SpatioTemporalNoise(uint2 pixCoord, uint temporalIndex)    // without T
 }
 
 // Engine-specific normal map loader
-lpfloat3 LoadNormal(int2 pos, Texture2D<float4> viewspaceNormals)
+lpfloat3 LoadNormal(int2 pos)
 {
-    float4 viewNormals = viewspaceNormals.Load(int3(pos, 0));
-    return (lpfloat3) viewNormals.xyz;
+    float3x3 viewRotation = (float3x3)ViewMatrix;
+    float3 normal = GBufferNormal.Load(int3(pos, 0)).xyz;
+
+    float3 viewNormals = mul(viewRotation, (normal * 2.f - 1.f));
+    return (lpfloat3) viewNormals;
 }
 
 [numthreads(16, 16, 1)]
-void main(uint2 dispatchThreadID : SV_DispatchThreadID)
+void MainCS(uint2 dispatchThreadID : SV_DispatchThreadID)
 {
     //if (u_quality == 0) // Low
     //{
@@ -46,7 +51,7 @@ void main(uint2 dispatchThreadID : SV_DispatchThreadID)
     //}
     //else if (u_quality == 1) // Medium
     {
-        XeGTAO_MainPass(dispatchThreadID, 2, 2, SpatioTemporalNoise(dispatchThreadID, Constants.NoiseIndex), LoadNormal(dispatchThreadID, ViewspaceNormals.Get()), Constants, SrcDepth.Get(), PointClampSampler.Get(), AOTerm.Get(), Edges.Get());
+        XeGTAO_MainPass(dispatchThreadID, 2, 2, SpatioTemporalNoise(dispatchThreadID, Constants.NoiseIndex), LoadNormal(dispatchThreadID), Constants, SrcDepth, PointClampSampler, RWAOTerm, RWEdges);
     }
     //else if (u_quality == 2) // High
     //{

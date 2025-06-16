@@ -40,8 +40,6 @@ VSToPS MainVS(in GBufferVertex input)
 {
     const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[input.primtiveIndex];
 
-    const float3x3 cameraNormalRotation = (float3x3)View.view;
-
     VSToPS result;
     result.position = mul(View.viewProjection, float4(primitiveData.transform.GetWorldPosition(input.position), 1.f));
     result.texCoords = input.texCoords;

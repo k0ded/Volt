@@ -10,6 +10,17 @@ Texture2D<float4> GBufferAlbedo;
 Texture2D<float4> GBufferNormal;
 Texture2D<float2> GBufferMaterial;
 Texture2D<float> SceneDepth;
+Texture2D<uint> SceneAO;
+
+float CalculateAO(uint2 pixelCoord) 
+{
+#define XE_GTAO_OCCLUSION_TERM_SCALE (1.5f)      // for packing in UNORM (because raw, pre-denoised occlusion term can overshoot 1 but will later average out to 1)
+
+    const float ao = (SceneAO.Load(int3(pixelCoord, 0)).x >> 24) / 255.f;
+    float finalAO = min(ao * XE_GTAO_OCCLUSION_TERM_SCALE, 1.f);
+
+    return finalAO;
+}
 
 [numthreads(8, 8, 1)]
 void MainCS(uint2 threadId : SV_DispatchThreadID)
@@ -37,7 +48,7 @@ void MainCS(uint2 threadId : SV_DispatchThreadID)
         pbrInput.metallic = material.y;
         pbrInput.emissive = 0.f;
         pbrInput.worldPosition = worldPosition;
-        pbrInput.ao = 0.f;
+        pbrInput.ao = CalculateAO(threadId);
         pbrInput.tileId = threadId.xy / LIGHT_CULLING_TILE_SIZE;
 
         float3 outputColor = EvaluatePBR(pbrInput);

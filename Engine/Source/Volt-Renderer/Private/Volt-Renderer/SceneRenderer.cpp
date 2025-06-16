@@ -16,6 +16,7 @@
 
 #include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
 #include "Volt-Renderer/RenderingTechniques/LightTileBinningTechnique.h"
+#include "Volt-Renderer/RenderingTechniques/GTAOTechnique.h"
 
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
@@ -129,6 +130,10 @@ namespace Volt
 		}
 
 		AddGenerateGBufferPass(renderGraph, blackboard, renderView);
+
+		// Requires GBuffer normals.
+		GTAOTechnique gtaoTechnique{ renderGraph, blackboard };
+		gtaoTechnique.Execute(renderView);
 
 		// Create shading RT
 		{
@@ -487,6 +492,7 @@ namespace Volt
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, GBufferNormal)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float2>, GBufferMaterial)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SceneDepth)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<uint>, SceneAO)
 			SHADER_PARAMETER_BUFFER_SRV(Buffer<int>, VisibleLightIndices)
 			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWSceneColor)
 			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
@@ -508,6 +514,7 @@ namespace Volt
 		passParameters->GBufferNormal = renderGraph.CreateSRV(sceneTextures.gBufferNormals);
 		passParameters->GBufferMaterial = renderGraph.CreateSRV(sceneTextures.gBufferMaterial);
 		passParameters->SceneDepth = renderGraph.CreateSRV(sceneTextures.sceneDepth);
+		passParameters->SceneAO = renderGraph.CreateSRV(sceneTextures.sceneAO);
 		passParameters->GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
 		passParameters->RWSceneColor = renderGraph.CreateUAV(sceneTextures.sceneColor);
 
