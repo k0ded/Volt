@@ -158,7 +158,6 @@ namespace Volt
 		////////////////
 		
 		Ref<RenderScene> m_renderScene;
-		Renderer::EnvironmentTextures m_sceneEnvironment;
 		TAANoise m_taaNoise;
 
 		// Extensions

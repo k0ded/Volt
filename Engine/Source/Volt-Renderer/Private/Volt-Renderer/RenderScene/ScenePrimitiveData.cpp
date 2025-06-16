@@ -1,6 +1,5 @@
 #include "vrpch.h"
 
-#include "Volt-Renderer/Material.h"
 #include "Volt-Renderer/RenderScene/ScenePrimitiveData.h"
 #include "Volt-Renderer/RenderScene.h"
 #include "Volt-Renderer/Renderer.h"

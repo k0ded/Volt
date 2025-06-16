@@ -4,7 +4,6 @@
 #include "Volt-Assets/MeshAsset.h"
 
 #include "Volt-Renderer/Mesh/Mesh.h"
-#include "Volt-Renderer/Material.h"
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/Serialization/AssetSerializationCommon.h>

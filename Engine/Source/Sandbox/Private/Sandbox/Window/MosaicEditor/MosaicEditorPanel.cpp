@@ -7,7 +7,6 @@
 #include "Sandbox/Utility/Theme.h"
 
 #include <Volt/Utility/UIUtility.h>
-#include <Volt-Renderer/Material.h>
 
 #include <Volt-Assets/MaterialAsset.h>
 #include <Volt-Assets/MaterialCompilerSubSystem.h>

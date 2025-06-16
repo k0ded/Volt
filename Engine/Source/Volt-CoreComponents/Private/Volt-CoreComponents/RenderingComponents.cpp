@@ -8,7 +8,6 @@
 #include <Volt-Renderer/RenderScene.h>
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
-#include <Volt-Renderer/Material.h>
 
 #include <Volt-Animation/MotionWeaver.h>
 

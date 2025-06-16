@@ -13,7 +13,6 @@
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
 
-#include <Volt-Renderer/Material.h>
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
 

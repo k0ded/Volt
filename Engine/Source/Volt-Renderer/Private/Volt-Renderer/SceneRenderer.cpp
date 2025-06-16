@@ -48,10 +48,6 @@ namespace Volt
 		spec.debugName = "AutoExposure.AverageLuminance";
 
 		m_averageLuminanceImage = RHI::Image::Create(spec);
-
-		m_sceneEnvironment.specular = Renderer::GetDefaultResources().blackCubeTexture;
-		m_sceneEnvironment.diffuse = Renderer::GetDefaultResources().blackCubeTexture;
-
 		m_skyboxMesh = ShapeLibrary::GetCube();
 	}
 
