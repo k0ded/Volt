@@ -209,7 +209,7 @@ namespace Volt::RHI
 		appInfo.pEngineName = "Volt";
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_4;
+		appInfo.apiVersion = VK_API_VERSION_1_3;
 
 		const auto requiredExtensions = GetRequiredExtensions();
 
