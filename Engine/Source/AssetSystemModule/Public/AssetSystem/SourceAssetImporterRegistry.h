@@ -19,7 +19,7 @@ public:
 	
 
 private:
-	vt::map<std::string, Ref<Volt::SourceAssetImporter>> m_importers;
+	Map<std::string, Ref<Volt::SourceAssetImporter>> m_importers;
 };
 
 extern VTAS_API SourceAssetImporterRegistry g_sourceAssetImporterRegistry;

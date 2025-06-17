@@ -28,7 +28,7 @@ namespace Volt::RHI
 		VkPipelineLayout_T* GetRelatedPipelineLayout() const;
 		uint32_t GetRelatedBindPoint() const;
 		
-		VT_NODISCARD VT_INLINE const vt::map<uint32_t, VkDescriptorSet_T*>& GetDescriptorSets() const { return m_descriptorSets; }
+		VT_NODISCARD VT_INLINE const Map<uint32_t, VkDescriptorSet_T*>& GetDescriptorSets() const { return m_descriptorSets; }
 
 	protected:
 		void Invalidate();
@@ -54,13 +54,13 @@ namespace Volt::RHI
 		bool m_isDirty = false;
 
 		VkDescriptorPool_T* m_descriptorPool = nullptr;
-		vt::map<uint32_t, VkDescriptorSet_T*> m_descriptorSets;
+		Map<uint32_t, VkDescriptorSet_T*> m_descriptorSets;
 
-		vt::map<uint32_t, vt::map<uint32_t, uint32_t>> m_writeDescriptorsMapping; // Set -> Binding
-		vt::map<uint32_t, vt::map<uint32_t, DescriptorImageInfo>> m_imageDescriptorInfos; // Set -> Binding
-		vt::map<uint32_t, vt::map<uint32_t, DescriptorBufferInfo>> m_bufferDescriptorInfos; // Set -> Binding
-		vt::map<uint32_t, vt::map<uint32_t, VkBufferView>> m_texelBufferViews;
-		vt::map<uint32_t, vt::map<uint32_t, DefaultInvalid>> m_activeDescriptorWritesMapping; // Set -> Binding
+		Map<uint32_t, Map<uint32_t, uint32_t>> m_writeDescriptorsMapping; // Set -> Binding
+		Map<uint32_t, Map<uint32_t, DescriptorImageInfo>> m_imageDescriptorInfos; // Set -> Binding
+		Map<uint32_t, Map<uint32_t, DescriptorBufferInfo>> m_bufferDescriptorInfos; // Set -> Binding
+		Map<uint32_t, Map<uint32_t, VkBufferView>> m_texelBufferViews;
+		Map<uint32_t, Map<uint32_t, DefaultInvalid>> m_activeDescriptorWritesMapping; // Set -> Binding
 
 		Vector<DescriptorWrite> m_descriptorWrites;
 		Vector<DescriptorWrite> m_activeDescriptorWrites;

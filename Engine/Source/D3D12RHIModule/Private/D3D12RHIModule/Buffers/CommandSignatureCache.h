@@ -32,6 +32,6 @@ namespace Volt::RHI
 		inline static CommandSignatureCache* s_instance;
 
 		mutable std::mutex m_cacheMutex;
-		mutable vt::map<size_t, ComPtr<ID3D12CommandSignature>> m_signatureCache;
+		mutable Map<size_t, ComPtr<ID3D12CommandSignature>> m_signatureCache;
 	};
 }

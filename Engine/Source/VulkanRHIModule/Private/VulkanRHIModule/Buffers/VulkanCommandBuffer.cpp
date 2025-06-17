@@ -720,7 +720,7 @@ namespace Volt::RHI
 		vulkanTable.PrepareForRender();
 
 		const VkPipelineBindPoint bindPoint = static_cast<VkPipelineBindPoint>(vulkanTable.GetRelatedBindPoint());
-		const vt::map<uint32_t, VkDescriptorSet>& descriptorSets = vulkanTable.GetDescriptorSets();
+		const Map<uint32_t, VkDescriptorSet>& descriptorSets = vulkanTable.GetDescriptorSets();
 		VkPipelineLayout pipelineLayout = vulkanTable.GetRelatedPipelineLayout();
 
 		for (const auto& [setIndex, descriptorSet] : descriptorSets)

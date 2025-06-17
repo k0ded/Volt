@@ -85,7 +85,7 @@ private:
 	Ref<Volt::Texture2D> m_headerTexture;
 	Ref<Volt::MaterialAsset> m_material;
 
-	vt::map<VoltGUID, Ref<MosaicNodeExtension>> m_nodeExtensions;
+	Map<VoltGUID, Ref<MosaicNodeExtension>> m_nodeExtensions;
 
 	UUID64 m_newLinkPinId = 0;
 	bool m_createNewNode = false;

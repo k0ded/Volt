@@ -29,6 +29,6 @@ namespace Volt
 
 	private:
 		std::string m_executableFilepath;
-		vt::map<std::string, std::string> m_arguments;
+		Map<std::string, std::string> m_arguments;
 	};
 }

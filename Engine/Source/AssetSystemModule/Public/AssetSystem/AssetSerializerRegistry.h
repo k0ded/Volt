@@ -17,7 +17,7 @@ public:
 	static AssetSerializerRegistry& Get();
 
 private:
-	vt::map<VoltGUID, Ref<Volt::AssetSerializer>> m_serializers;
+	Map<VoltGUID, Ref<Volt::AssetSerializer>> m_serializers;
 };
 
 #define VT_REGISTER_ASSET_SERIALIZER(type, serializer) \

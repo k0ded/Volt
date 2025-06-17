@@ -76,7 +76,7 @@ namespace Volt::RHI
 		{
 			if (m_failureIsFatal)
 			{
-				VT_ENSURE(false);
+				VT_ENSURE_MSG(false, std::format("Shader {} failed to compile!", m_name));
 			}
 			return;
 		}

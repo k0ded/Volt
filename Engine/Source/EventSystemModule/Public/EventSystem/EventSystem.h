@@ -43,6 +43,6 @@ namespace Volt
 
 		void DispatchEventInternal(VoltGUID eventGUID, Event& e);
 
-		vt::map<VoltGUID, Vector<ListenerInfo>> m_registeredListeners;
+		Map<VoltGUID, Vector<ListenerInfo>> m_registeredListeners;
 	};
 }

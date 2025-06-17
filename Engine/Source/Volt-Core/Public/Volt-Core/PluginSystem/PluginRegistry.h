@@ -31,9 +31,9 @@ namespace Volt
 	private:
 		void DeserializePlugin(const std::filesystem::path& filepath);
 
-		vt::map<VoltGUID, PluginDefinition> m_registeredPlugins;
+		Map<VoltGUID, PluginDefinition> m_registeredPlugins;
 
 		Graph<VoltGUID, uint32_t> m_pluginDependencyGraph;
-		vt::map<VoltGUID, UUID64> m_guidToNodeId;
+		Map<VoltGUID, UUID64> m_guidToNodeId;
 	};
 }

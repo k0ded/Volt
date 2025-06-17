@@ -71,6 +71,6 @@ namespace Volt
 		inline static constexpr size_t BlackboardSize = 2048;
 
 		LinearAllocator<BlackboardSize> m_allocator;
-		vt::map<TypeTraits::TypeIndex, TypeInfo> m_typeInfos;
+		Map<TypeTraits::TypeIndex, TypeInfo> m_typeInfos;
 	};
 }

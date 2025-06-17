@@ -39,6 +39,6 @@ namespace Volt
 		RefPtr<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateDesc& samplerDesc);
 
 		std::mutex m_cacheMutex;
-		vt::map<size_t, RefPtr<RHI::SamplerState>> m_cache;
+		Map<size_t, RefPtr<RHI::SamplerState>> m_cache;
 	};
 }

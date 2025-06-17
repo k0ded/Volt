@@ -48,10 +48,10 @@ namespace Volt
 	private:
 		inline static ShaderMap* s_instance = nullptr;
 
-		vt::map<TypeTraits::TypeIndex, RefPtr<RHI::Shader>> m_shaderMap2;
+		Map<TypeTraits::TypeIndex, RefPtr<RHI::Shader>> m_shaderMap2;
 
-		vt::map<size_t, RefPtr<RHI::RayTracingPipeline>> m_rayTracingPipelineCache;
-		vt::map<size_t, RefPtr<RHI::ShaderBindingTable>> m_shaderBindingTableCache;
+		Map<size_t, RefPtr<RHI::RayTracingPipeline>> m_rayTracingPipelineCache;
+		Map<size_t, RefPtr<RHI::ShaderBindingTable>> m_shaderBindingTableCache;
 
 		std::mutex m_registerMutex;
 		std::mutex m_rayTracingCacheMutex;

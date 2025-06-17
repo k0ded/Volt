@@ -21,6 +21,62 @@
 #include <CoreUtilities/EnumUtils.h>
 #include <CoreUtilities/ComparisonHelpers.h>
 
+/*
+	These are the synchronization cases referenced and handeled in RenderGraph::Compile.
+
+	### Case 1:
+	
+	- If it’s an image resource AND the previous AND current usage are READ operations, no barrier is required.
+	
+	### Case 2:
+	
+	- If it’s an image resource AND the previous AND current usage are WRITE operations of the same type, a global barrier should be inserted.
+	
+	### Case 3:
+	
+	- If it’s a buffer resource AND the previous AND current usage are READ operations, no barrier is required.
+	
+	### Case 4:
+	
+	- If it’s a buffer resource AND the previous AND current usage are WRITE operations, a global barrier should be inserted.
+	
+	### Case 5:
+	
+	- If it’s a buffer resource AND the previous usage was a READ operation AND the current usage is a WRITE operation, a global barrier should be inserted.
+	
+	### Case 6:
+	
+	- If it’s a buffer resource AND the previous usage was a WRITE operation AND the current usage is a READ operation, a global barrier should be inserted.
+	
+	### Case 7: Resource A is created in render pass B
+	
+	If a resource is created in a render pass, we assume that the resource will be written to in the pass.
+	
+	- If it’s a depth resource AND it’s a rasterization pass -> transition to a DEPTH_WRITE state
+	- If it’s a depth resource AND it’s a compute pass -> transition to a SHADER_WRITE state
+	- If it’s a color resource AND it’s a rasterization pass -> transition to a COLOR_WRITE state
+	- If it’s a color resource AND it’s a compute pass -> transition to a SHADER_WRITE state
+	- If it’s a buffer resource -> transition to a SHADER_WRITE state
+	
+	### Case 8: Resource A is read in render pass B
+	
+	If a resource is marked as read in a render pass, the resource will be transitioned into a read state.
+	
+	- All resources will be transitioned into a SHADER_READ state
+	
+	### Case 9: Resource A is written to, but not created in render pass B
+	
+	If a resource is marked as write in a render pass, but not created in that render pass, the resource will be transitioned into a write state.
+	
+	- If it’s a depth resource AND it’s a rasterization pass -> transition to a DEPTH_WRITE state
+	- If it’s a depth resource AND it’s a compute pass -> transition to a SHADER_WRITE state
+	- If it’s a color resource AND it’s a rasterization pass -> transition to a COLOR_WRITE state
+	- If it’s a color resource AND it’s a compute pass -> transition to a SHADER_WRITE state
+	- If it’s a buffer resource -> transition to a SHADER_WRITE state
+	- If it’s a compute pass AND the previous pass was a compute write pass -> insert a memory barrier with the correct state.
+	- If it’s a compute pass AND the previous pass was a compute read pass -> insert a memory barrier with the correct state.
+*/
+
 namespace Volt
 {
 	inline RHI::ResourceState GetWriteStateForRasterizedTexture(RGResourceRef resource)
@@ -554,6 +610,7 @@ namespace Volt
 				if (!resource->GetResource()->HasProducer(resource))
 				{
 					resource->GetResource()->AddProducer(pass, resource);
+					// #TODO_Ivar: Leaves this here for now, reference: RenderGraphCullingTests::WriteAfterWrite
 					//pass->refCount++;
 				}
 				else
@@ -569,6 +626,7 @@ namespace Volt
 					resource->AddProducer(pass);
 
 					// If this pass is the render targets producer, we need to increase the ref count of the pass.
+					// #TODO_Ivar: Leaves this here for now, reference: RenderGraphCullingTests::WriteAfterWrite
 					//pass->refCount++;
 				}
 				else if (!resource->IsProducer(pass))

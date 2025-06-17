@@ -91,7 +91,7 @@ namespace Volt
 		const auto& vertexPositions = mesh.GetVertexContainer().positions;
 
 		Vector<SDFBrick> brickGrid;
-		vt::map<size_t, uint32_t> pointToBrickIndex;
+		Map<size_t, uint32_t> pointToBrickIndex;
 
 		constexpr uint32_t SAMPLE_COUNT = 4;
 		constexpr float MAX_TRACE_DISTANCE = 100000.f;

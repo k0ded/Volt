@@ -206,7 +206,7 @@ namespace Volt
 			bool value;
 		};
 
-		vt::map<StringHash, Binding> resourceBindingsFoundMap;
+		Map<StringHash, Binding> resourceBindingsFoundMap;
 		resourceBindingsFoundMap.reserve(resourceBindings.size());
 
 		for (const auto& [hashedName, binding] : resourceBindings)
@@ -232,9 +232,22 @@ namespace Volt
 			}
 		}
 
+		std::string errorMessage;
+		bool shouldError = false;
+
 		for (const auto& [hashedName, binding] : resourceBindingsFoundMap)
 		{
-			VT_ENSURE_MSG(binding.value, std::format("Binding {} was not found in parameter struct!", binding.name));
+			if (!binding.value)
+			{
+				shouldError = true;
+				errorMessage += std::format("{}\n", binding.name);
+			}
+		}
+
+		if (shouldError)
+		{
+			std::string error = std::format("Not all bindings were found in shader parameter struct!\n{}", errorMessage);
+			VT_ENSURE_MSG(false, error);
 		}
 	}
 }

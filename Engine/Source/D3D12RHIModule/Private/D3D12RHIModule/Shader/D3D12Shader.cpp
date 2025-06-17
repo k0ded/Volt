@@ -108,7 +108,7 @@ namespace Volt::RHI
 		range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 	}
 
-	inline DescriptorRangeInfo AddDescriptorToRange(vt::map<uint32_t, Vector<size_t>>& rangesMap, Vector<D3D12_DESCRIPTOR_RANGE>& ranges, uint32_t space, uint32_t binding, D3D12_DESCRIPTOR_RANGE_TYPE rangeType)
+	inline DescriptorRangeInfo AddDescriptorToRange(Map<uint32_t, Vector<size_t>>& rangesMap, Vector<D3D12_DESCRIPTOR_RANGE>& ranges, uint32_t space, uint32_t binding, D3D12_DESCRIPTOR_RANGE_TYPE rangeType)
 	{
 		if (rangesMap.contains(space))
 		{
@@ -144,7 +144,7 @@ namespace Volt::RHI
 		return { rangeIndex, 0 };
 	}
 
-	inline void SetupDescriptorOffsets(vt::map<uint32_t, Vector<size_t>>& rangesMap, Vector<D3D12_DESCRIPTOR_RANGE>& ranges)
+	inline void SetupDescriptorOffsets(Map<uint32_t, Vector<size_t>>& rangesMap, Vector<D3D12_DESCRIPTOR_RANGE>& ranges)
 	{
 		uint32_t descriptorCount = 0;
 		for (const auto& [space, rangeIndices] : rangesMap)
@@ -172,8 +172,8 @@ namespace Volt::RHI
 
 		Vector<D3D12_DESCRIPTOR_RANGE> descriptorRanges;
 		Vector<D3D12_DESCRIPTOR_RANGE> samplerRanges;
-		vt::map<uint32_t, Vector<size_t>> bindingToDescriptorRanges;
-		vt::map<uint32_t, Vector<size_t>> samplerBindingToDescriptorRanges;
+		Map<uint32_t, Vector<size_t>> bindingToDescriptorRanges;
+		Map<uint32_t, Vector<size_t>> samplerBindingToDescriptorRanges;
 
 		// Handle push constants / root constants
 		if (m_resources.constantsBuffer.IsValid())

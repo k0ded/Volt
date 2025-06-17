@@ -111,6 +111,6 @@ private:
 		Vector<ComponentAccess> componentAccesses;
 	};
 
-	vt::map<TypeTraits::TypeIndex, Vector<ECSEventListenerInfo>> m_registeredListeners;
+	Map<TypeTraits::TypeIndex, Vector<ECSEventListenerInfo>> m_registeredListeners;
 	bool m_isInRuntime = false;
 };

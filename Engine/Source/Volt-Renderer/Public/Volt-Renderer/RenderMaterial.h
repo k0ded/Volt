@@ -42,7 +42,7 @@ namespace Volt
 			std::string bindingName;
 		};
 
-		using TexturesMap = vt::map<uint32_t, TextureInfo>;
+		using TexturesMap = Map<uint32_t, TextureInfo>;
 
 		RenderMaterial(const std::string& name);
 		RenderMaterial(const std::string& name, RefPtr<RHI::Shader> shader);

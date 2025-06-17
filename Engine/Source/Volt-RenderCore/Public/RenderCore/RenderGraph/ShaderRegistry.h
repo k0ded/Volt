@@ -48,7 +48,7 @@ namespace Volt
 			return true;
 		}
 
-		VT_INLINE VT_NODISCARD const vt::map<TypeTraits::TypeIndex, ShaderRegistrationInfo>& GetRegisteredShaders() const { return m_shaderRegistrationInfo; }
+		VT_INLINE VT_NODISCARD const Map<TypeTraits::TypeIndex, ShaderRegistrationInfo>& GetRegisteredShaders() const { return m_shaderRegistrationInfo; }
 		VT_INLINE VT_NODISCARD const ShaderRegistrationInfo& GetShaderRegistrationInfo(const TypeTraits::TypeIndex typeIndex) const { return m_shaderRegistrationInfo.at(typeIndex); }
 
 		static ShaderRegistry& Get();
@@ -61,7 +61,7 @@ namespace Volt
 
 		friend class ShaderSubSystem;
 
-		vt::map<TypeTraits::TypeIndex, ShaderRegistrationInfo> m_shaderRegistrationInfo;
+		Map<TypeTraits::TypeIndex, ShaderRegistrationInfo> m_shaderRegistrationInfo;
  	};
 }
 

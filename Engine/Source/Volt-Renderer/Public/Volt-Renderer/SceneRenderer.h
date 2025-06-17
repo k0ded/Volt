@@ -99,7 +99,7 @@ namespace Volt
 		Ref<T> AddExtension(SceneRendererExtensionStage stage);
 
 	private:
-		using SceneRendererExtensionMap = vt::map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>>;
+		using SceneRendererExtensionMap = Map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>>;
 
 		void OnRender(Ref<Camera> camera, float timestep);
 

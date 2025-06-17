@@ -75,10 +75,10 @@ namespace IntegrationTests
 		}
 
 		bool ContainsPass(uint32_t passIndex) const { return m_barriers.contains(passIndex); }
-		const vt::map<RGResourceRef, RHI::ResourceBarrierInfo>& GetPassBarriers(uint32_t passIndex) const { return m_barriers.at(passIndex); }
+		const Map<RGResourceRef, RHI::ResourceBarrierInfo>& GetPassBarriers(uint32_t passIndex) const { return m_barriers.at(passIndex); }
 
 	private:
-		vt::map<uint32_t, vt::map<RGResourceRef, RHI::ResourceBarrierInfo>> m_barriers;
+		Map<uint32_t, Map<RGResourceRef, RHI::ResourceBarrierInfo>> m_barriers;
 	};
 
 	void VerifyGraphBarriers(const PagedVector<RenderGraph::CompiledPass>& compiledPasses, const ExpectedBarriersMap& expected)

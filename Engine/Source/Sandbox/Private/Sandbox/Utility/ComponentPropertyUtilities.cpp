@@ -369,7 +369,7 @@ bool ComponentPropertyUtility::DrawComponentEnum(Weak<Volt::Scene> scene, Volt::
 
 	int32_t currentIndex = 0;
 
-	vt::map<int32_t, int32_t> indexToValueMap;
+	Map<int32_t, int32_t> indexToValueMap;
 	Vector<std::string> constantNames;
 
 	for (uint32_t index = 0; const auto & constant : constants)

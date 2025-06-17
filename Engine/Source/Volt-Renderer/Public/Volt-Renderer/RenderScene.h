@@ -167,7 +167,7 @@ namespace Volt
 			PagedVector<size_t> m_freePrimitiveDataIndices;
 
 			PagedVector<InvalidDrawData> m_invalidPrimitiveDataIndices;
-			vt::map<UUID64, size_t> m_primitiveIndexFromPrimitiveID;
+			Map<UUID64, size_t> m_primitiveIndexFromPrimitiveID;
 
 			size_t m_nextIndex = 0;
 		};
@@ -185,9 +185,9 @@ namespace Volt
 		Vector<InvalidMaterial> m_invalidMaterials;
 		Vector<InvalidMesh> m_invalidMeshes;
 
-		vt::map<size_t, size_t> m_gpuMaterialIndexFromMaterialHash;
-		vt::map<size_t, uint32_t> m_meshSubMeshToGPUMeshIndex;
-		vt::map<size_t, uint32_t> m_meshSubMeshToGPUMeshSDFIndex;
+		Map<size_t, size_t> m_gpuMaterialIndexFromMaterialHash;
+		Map<size_t, uint32_t> m_meshSubMeshToGPUMeshIndex;
+		Map<size_t, uint32_t> m_meshSubMeshToGPUMeshSDFIndex;
 
 		Vector<Weak<Mesh>> m_individualMeshes;
 		Vector<Weak<RenderMaterial>> m_individualMaterials;
@@ -207,7 +207,7 @@ namespace Volt
 
 		Vector<InvalidDrawData> m_invalidLightDataIndices;
 
-		vt::map<UUID64, uint32_t> m_lightIndexFromLightID;
+		Map<UUID64, uint32_t> m_lightIndexFromLightID;
 
 		GPUSceneBuffers m_buffers;
 

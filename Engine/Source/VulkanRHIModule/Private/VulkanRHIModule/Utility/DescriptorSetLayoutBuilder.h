@@ -14,7 +14,7 @@ namespace Volt::RHI
 			// Used only for creation of the pipeline layout, because it requires the
 			// the descriptor set indices to be sequential, which might not be true.
 			Vector<VkDescriptorSetLayout_T*> pipelineLayoutDescriptorSetLayouts;
-			vt::map<uint32_t, VkDescriptorSetLayout_T*> descriptorSetLayouts;
+			Map<uint32_t, VkDescriptorSetLayout_T*> descriptorSetLayouts;
 		};
 
 		DescriptorSets BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindingsMap& resourceBindings);

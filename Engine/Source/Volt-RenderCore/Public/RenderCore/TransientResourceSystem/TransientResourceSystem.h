@@ -46,10 +46,10 @@ namespace Volt
 			bool isOriginal = false;
 		};
 
-		vt::map<RGResourceRef, ResourceInfo> m_allocatedResources;
+		Map<RGResourceRef, ResourceInfo> m_allocatedResources;
 		mutable std::mutex m_allocatedResourcesMutex;
 
-		vt::map<size_t, Vector<RGResourceRef>> m_surrenderedResources;
+		Map<size_t, Vector<RGResourceRef>> m_surrenderedResources;
 		mutable std::mutex m_surrenderedResourcesMutex;
 	};
 }

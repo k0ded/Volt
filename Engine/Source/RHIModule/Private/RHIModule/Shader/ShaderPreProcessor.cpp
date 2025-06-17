@@ -383,7 +383,7 @@ namespace Volt::RHI
 
 		std::string structSubStr = processedSource.substr(openBracketLoc, closeBracketLoc - openBracketLoc);
 
-		vt::map<uint32_t, Vector<BufferElement>> inputElementsMap{};
+		Map<uint32_t, Vector<BufferElement>> inputElementsMap{};
 		Vector<BufferElement> instanceInputElements{};
 
 		size_t currentInputSemiColLoc = structSubStr.find_first_of(';');

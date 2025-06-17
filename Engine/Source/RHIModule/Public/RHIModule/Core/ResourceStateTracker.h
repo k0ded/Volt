@@ -35,6 +35,6 @@ namespace Volt::RHI
 
 	private:
 		std::mutex m_mutex;
-		vt::map<RawPtr<RHIResource>, ResourceState> m_resourceStates;
+		Map<RawPtr<RHIResource>, ResourceState> m_resourceStates;
 	};
 }

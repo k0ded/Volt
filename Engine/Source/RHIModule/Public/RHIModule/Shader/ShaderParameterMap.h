@@ -10,8 +10,8 @@ namespace Volt::RHI
 	class VTRHI_API ShaderParameterMap
 	{
 	public:
-		using ResourceBindingsMap = vt::map<StringHash, ShaderResourceBinding>;
-		using ParameterMap = vt::map<StringHash, ShaderUniform>;
+		using ResourceBindingsMap = Map<StringHash, ShaderResourceBinding>;
+		using ParameterMap = Map<StringHash, ShaderUniform>;
 
 		void AddUniformBuffer(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 		void AddSampler(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);

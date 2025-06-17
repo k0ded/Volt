@@ -201,7 +201,7 @@ namespace Volt
 			VT_NODISCARD VT_INLINE bool HasPassBarriers(uint32_t passIndex) const { return m_passBarriers.contains(passIndex) && !m_passBarriers.at(passIndex).empty(); }
 
 		private:
-			vt::map<uint32_t, PagedVector<ResourceUsageInfo>> m_passBarriers;
+			Map<uint32_t, PagedVector<ResourceUsageInfo>> m_passBarriers;
 		};
 
 		class StandaloneMarkers
@@ -221,7 +221,7 @@ namespace Volt
 			VT_NODISCARD VT_INLINE const Vector<MarkerInfo>& GetMarkersForPassIndex(uint32_t passIndex) { return m_markers.at(passIndex); }
 
 		private:
-			vt::map<uint32_t, Vector<MarkerInfo>> m_markers;
+			Map<uint32_t, Vector<MarkerInfo>> m_markers;
 		};
 
 		struct RGResourceState
@@ -234,10 +234,10 @@ namespace Volt
 		struct RGResourceStateTracker
 		{
 			inline RGResourceState& GetState(RGResourceRef resource) { return resourceStates[resource]; }
-			vt::map<RGResourceRef, RGResourceState> resourceStates;
+			Map<RGResourceRef, RGResourceState> resourceStates;
 		};
 
-		using ExternalResourceRegistry = vt::map<RawPtr<RHI::RHIResource>, RGResourceRef>;
+		using ExternalResourceRegistry = Map<RawPtr<RHI::RHIResource>, RGResourceRef>;
 
 		void ExecuteInternal(bool waitForSync);
 		void ExtractResources();

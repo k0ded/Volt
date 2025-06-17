@@ -286,5 +286,5 @@ namespace Volt::RHI
 		uint32_t m_stride = 0;
 	};
 
-	using BufferLayoutMap = vt::map<uint32_t, BufferLayout>;
+	using BufferLayoutMap = Map<uint32_t, BufferLayout>;
 }

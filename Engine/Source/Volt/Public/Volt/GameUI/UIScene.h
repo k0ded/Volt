@@ -25,7 +25,7 @@ namespace Volt
 
 	private:
 		entt::registry m_registry;
-		vt::map<EntityID, entt::entity> m_uuidToEntityMap;
+		Map<EntityID, entt::entity> m_uuidToEntityMap;
 	};
 
 	template<typename ...T, typename F>

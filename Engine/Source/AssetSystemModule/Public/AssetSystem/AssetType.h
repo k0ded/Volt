@@ -41,10 +41,10 @@ public:
 
 	AssetType GetTypeFromGUID(const VoltGUID& guid) const;
 	AssetType GetTypeFromExtension(const std::string& extension) const;
-	VT_INLINE const vt::map<VoltGUID, AssetType>& GetTypeMap() const { return m_typeMap; }
+	VT_INLINE const Map<VoltGUID, AssetType>& GetTypeMap() const { return m_typeMap; }
 
 private:
-	vt::map<VoltGUID, AssetType> m_typeMap;
+	Map<VoltGUID, AssetType> m_typeMap;
 };
 
 extern VTAS_API AssetTypeRegistry g_assetTypeRegistry;

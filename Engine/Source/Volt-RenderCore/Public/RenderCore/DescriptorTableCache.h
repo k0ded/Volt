@@ -55,6 +55,6 @@ namespace Volt
 		inline static DescriptorTableCache* s_instance = nullptr;
 
 		ActiveDescriptorTableCache m_activeDescriptorTableCache;
-		vt::map<size_t, DescriptorTableContainer> m_descriptorTableCache;
+		Map<size_t, DescriptorTableContainer> m_descriptorTableCache;
 	};
 }

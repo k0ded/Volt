@@ -433,7 +433,7 @@ namespace Volt::RHI
 
 		g_rhiCapabilities.supportsMeshShaders = m_physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME);
 		g_rhiCapabilities.supportsBindless = m_physicalDevice->IsExtensionAvailable(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-		g_rhiCapabilities.supportsNative16BitOperations = true;
+		g_rhiCapabilities.supportsNative16BitOperations = false;
 		g_rhiCapabilities.maxDispatchThreadGroupsPerDimension.x = deviceProperties.limits.maxComputeWorkGroupCount[0];
 		g_rhiCapabilities.maxDispatchThreadGroupsPerDimension.y = deviceProperties.limits.maxComputeWorkGroupCount[1];
 		g_rhiCapabilities.maxDispatchThreadGroupsPerDimension.z = deviceProperties.limits.maxComputeWorkGroupCount[2];

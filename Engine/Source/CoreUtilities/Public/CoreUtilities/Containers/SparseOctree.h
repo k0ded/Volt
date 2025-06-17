@@ -52,7 +52,7 @@ public:
 		glm::vec3 max;
 
 		SONodeID parent = NullID;
-		vt::map<uint32_t, SONodeID> children;
+		Map<uint32_t, SONodeID> children;
 		Vector<OctreeData<T>> data;
 	};
 

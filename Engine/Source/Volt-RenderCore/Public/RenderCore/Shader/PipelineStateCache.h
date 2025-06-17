@@ -19,8 +19,8 @@ namespace Volt
 	private:
 		inline static PipelineStateCache* s_instance = nullptr;
 
-		vt::map<size_t, RefPtr<RHI::ComputePipeline>> m_computePipelineCache;
-		vt::map<size_t, RefPtr<RHI::RenderPipeline>> m_renderPipelineCache;
+		Map<size_t, RefPtr<RHI::ComputePipeline>> m_computePipelineCache;
+		Map<size_t, RefPtr<RHI::RenderPipeline>> m_renderPipelineCache;
 
 		std::mutex m_computePipelineCacheMutex;
 		std::mutex m_renderPipelineCacheMutex;
