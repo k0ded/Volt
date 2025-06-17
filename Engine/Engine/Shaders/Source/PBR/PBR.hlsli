@@ -44,7 +44,7 @@ struct LightOutput
 
 static PBRInput m_pbrInput;
 
-float3 EvaluateLights(float3 dirToCamera, uint lightCount)
+float3 EvaluateLights(float3 dirToCamera, float ao, uint lightCount)
 {
     float3 output = 0.f;
 
@@ -78,10 +78,10 @@ float3 EvaluateLights(float3 dirToCamera, uint lightCount)
         {
             output += EvaluateDirectionalLight(light, brdfInput, m_pbrInput.worldPosition);
         }
-        //else if (light.lightType == SceneLightType::SLT_Sky)
-        //{
-        //    output += EvaluateIBL(brdfInput, m_pbrConstants.DFGLuT, m_pbrConstants.linearSampler, m_pbrConstants.skyLight, light);
-        //}
+        else if (light.lightType == SceneLightType::SLT_Sky)
+        {
+            output += EvaluateIBL(brdfInput, light) * ao;
+        }
     }
 
     return output;
@@ -104,7 +104,7 @@ float3 EvaluatePBR(in PBRInput input)
     brdfInput.roughness = m_pbrInput.roughness;
     brdfInput.metalness = m_pbrInput.metallic;
 
-    lightOutput += EvaluateLights(dirToCamera, View.lightCount);
+    lightOutput += EvaluateLights(dirToCamera, m_pbrInput.ao, View.lightCount);
 
     const float3 compositeLighting = lightOutput + m_pbrInput.emissive;
     return compositeLighting;

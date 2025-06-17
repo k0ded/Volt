@@ -99,11 +99,15 @@ float LinearRoughnessToMipLevel(float linearRoughness, float mipCount)
 
 static const float DFGTextureSize = 512.f;
 
-#if 0
-float3 EvaluateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::TextureSampler linearSampler, in SkyLight skyLight, in LightDrawData light)
+Texture2D<float4> DFGLuT;
+TextureCube<float3> SkylightIrradiance;
+TextureCube<float3> SkylightRadiance;
+SamplerState LinearSampler;
+
+float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
 {
     float NdotV = saturate(dot(brdfInput.N, brdfInput.V));
-    float3 DFG = DFGLuT.SampleLevel(linearSampler, float2(NdotV, brdfInput.roughness), 0.f).xyz;
+    float3 DFG = DFGLuT.SampleLevel(LinearSampler, float2(NdotV, brdfInput.roughness), 0.f).xyz;
 
     float3 diffuse = 0.f;
     float3 specular = 0.f;
@@ -111,7 +115,7 @@ float3 EvaluateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::Texture
     // Diffuse IBL
     {
         float3 dominantN = GetDiffuseDominantDirection(brdfInput.N, brdfInput.V, NdotV, brdfInput.roughness);
-        float3 diffuseLighting = skyLight.irradiance.SampleLevel(linearSampler, dominantN, light.lightSpecific.x);
+        float3 diffuseLighting = SkylightIrradiance.SampleLevel(LinearSampler, dominantN, light.lightSpecific.x);
 
         diffuse = diffuseLighting * DFG.z;
     }
@@ -124,15 +128,14 @@ float3 EvaluateIBL(in BRDFInput brdfInput, vt::Tex2D<float4> DFGLuT, vt::Texture
         // #TODO_Ivar: This is quite slow 
         uint radianceTextureLevels;
         uint width, height;
-        skyLight.radiance.GetDimensions(0, width, height, radianceTextureLevels);
+        SkylightRadiance.GetDimensions(0, width, height, radianceTextureLevels);
 
         NdotV = max(NdotV, 0.5f / DFGTextureSize);
         float mipLevel = LinearRoughnessToMipLevel(brdfInput.roughness, radianceTextureLevels);
-        float3 preLD = skyLight.radiance.SampleLevel(linearSampler, dominantR, mipLevel);
+        float3 preLD = SkylightRadiance.SampleLevel(LinearSampler, dominantR, mipLevel);
 
         specular = preLD * (brdfInput.f0 * DFG.x + brdfInput.f90 * DFG.y);
     }
 
     return (diffuse + specular) * light.intensity;
 }
-#endif

@@ -175,6 +175,7 @@ namespace Volt
 		EnvironmentTextures& environmentTextures = blackboard.Add<EnvironmentTextures>();
 		environmentTextures.irradiance = defaultTextures.black1x1Cube;
 		environmentTextures.radiance = defaultTextures.black1x1Cube;
+		environmentTextures.DFGLuT = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().DFGLuT);
 
 		for (const RenderLightData& light : m_renderScene->GetRenderLightData())
 		{
@@ -492,6 +493,11 @@ namespace Volt
 			SHADER_PARAMETER_BUFFER_SRV(Buffer<int>, VisibleLightIndices)
 			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWSceneColor)
 			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
+
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, DFGLuT)
+			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightIrradiance)
+			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightRadiance)
+			SHADER_PARAMETER_SAMPLER(LinearSampler)
 		END_SHADER_PARAMETER_STRUCT()
 	};
 	REGISTER_SHADER(RenderDeferredShadingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "MainCS", Compute);
@@ -501,6 +507,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		const LightScene& lightScene = blackboard.Get<LightScene>();
+		const EnvironmentTextures& environmentTextures = blackboard.Get<EnvironmentTextures>();
 		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 
 		RenderDeferredShadingCS::Parameters* passParameters = renderGraph.AllocParameters<RenderDeferredShadingCS::Parameters>();
@@ -513,6 +520,11 @@ namespace Volt
 		passParameters->SceneAO = renderGraph.CreateSRV(sceneTextures.sceneAO);
 		passParameters->GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
 		passParameters->RWSceneColor = renderGraph.CreateUAV(sceneTextures.sceneColor);
+
+		passParameters->DFGLuT = renderGraph.CreateSRV(environmentTextures.DFGLuT);
+		passParameters->SkylightIrradiance = renderGraph.CreateSRV(environmentTextures.irradiance);
+		passParameters->SkylightRadiance = renderGraph.CreateSRV(environmentTextures.radiance);
+		passParameters->LinearSampler = SamplerStateCache::GetTrilinearSampler();
 
 		auto shader = ShaderMap::Get<RenderDeferredShadingCS>();
 		ComputeShaderUtils::AddPass<RenderDeferredShadingCS>(renderGraph,

@@ -372,6 +372,7 @@ namespace Volt
 	RGTextureSRVRef RenderGraph::CreateSRV(RGTextureRef texture)
 	{
 		VT_PROFILE_FUNCTION();
+		VT_ENSURE(texture);
 
 		RGTextureSRVDesc desc{};
 		desc.textureResource = texture;
@@ -381,6 +382,7 @@ namespace Volt
 	RGTextureUAVRef RenderGraph::CreateUAV(RGTextureRef texture)
 	{
 		VT_PROFILE_FUNCTION();
+		VT_ENSURE(texture);
 
 		RGTextureUAVDesc desc{};
 		desc.textureResource = texture;
@@ -390,7 +392,6 @@ namespace Volt
 	RGBufferRef RenderGraph::RegisterExternalBuffer(RefPtr<RHI::StorageBuffer> buffer)
 	{
 		VT_PROFILE_FUNCTION();
-
 		VT_ENSURE(buffer);
 
 		if (RGResourceRef resource = TryGetRegisteredExternalResource(buffer); resource != nullptr)
