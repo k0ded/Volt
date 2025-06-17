@@ -3,6 +3,7 @@
 
 #include "Sandbox/NodeGraph/NodeGraphEditorPinUtility.h"
 #include "Sandbox/NodeGraph/IONodeGraphEditorHelpers.h"
+#include "Sandbox/Window/MosaicEditor/MosaicNodeExtensions.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 
@@ -12,6 +13,8 @@
 #include <Volt-Assets/MaterialCompilerSubSystem.h>
 
 #include <Volt-MaterialGraph/MaterialGraph.h>
+#include <Volt-MaterialGraph/Nodes/ConstantNodes.h>
+#include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -196,6 +199,10 @@ MosaicEditorPanel::MosaicEditorPanel()
 	//mosaicGraph.m_graph.LinkNodes(constantNode, addNode, CreateRef<Mosaic::MosaicEdge>(0, 0));
 	//mosaicGraph.m_graph.LinkNodes(addNode, outputNode, CreateRef<Mosaic::MosaicEdge>(1, 0));
 	//mosaicGraph.m_graph.LinkNodes(sampleTextureNode, outputNode, CreateRef<Mosaic::MosaicEdge>(0, 5));
+
+	RegisterNodeExtension<ColorNodeExtension>(Volt::MosaicNodes::Color3Node::GetStaticGUID());
+	RegisterNodeExtension<ColorNodeExtension>(Volt::MosaicNodes::Color4Node::GetStaticGUID());
+	RegisterNodeExtension<SampleTextureNodeExtension>(Volt::MosaicNodes::SampleTextureNode::GetStaticGUID());
 
 	InitializeEditor();
 }
@@ -687,7 +694,10 @@ void MosaicEditorPanel::DrawNodes()
 
 		IONodeGraphEditorHelpers::EndAttributes();
 
-		node.nodeData->RenderCustomWidget();
+		if (m_nodeExtensions.contains(nodeData->GetGUID()))
+		{
+			m_nodeExtensions.at(nodeData->GetGUID())->Render(nodeData);
+		}
 
 		builder.End();
 	}

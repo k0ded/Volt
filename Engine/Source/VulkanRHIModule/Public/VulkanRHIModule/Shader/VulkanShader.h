@@ -42,5 +42,6 @@ namespace Volt::RHI
 		VkShaderModule_T* m_shaderModule = nullptr;
 		std::string m_name;
 		size_t m_hash = 0;
+		bool m_failureIsFatal;
 	};
 }

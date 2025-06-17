@@ -15,6 +15,7 @@ namespace Volt
 		static RefPtr<RHI::SamplerState> GetPointSampler();
 		static RefPtr<RHI::SamplerState> GetBilinearSampler();
 		static RefPtr<RHI::SamplerState> GetTrilinearSampler();
+		static RefPtr<RHI::SamplerState> GetAnisotropicSampler();
 
 		template<RHI::TextureFilter min, RHI::TextureFilter mag, RHI::TextureFilter mip, 
 				RHI::TextureWrap wrapMode = RHI::TextureWrap::Repeat, RHI::AnisotropyLevel aniso = RHI::AnisotropyLevel::None, 

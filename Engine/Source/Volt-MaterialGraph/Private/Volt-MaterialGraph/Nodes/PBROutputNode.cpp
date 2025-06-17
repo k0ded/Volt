@@ -3,6 +3,7 @@
 
 #include <Mosaic/FormatterExtension.h>
 #include <Mosaic/NodeRegistry.h>
+#include <Mosaic/MosaicShaderWriter.h>
 
 #include <glm/glm.hpp>
 
@@ -17,7 +18,7 @@ namespace Volt::MosaicNodes
 		AddInputParameter("Normal", Mosaic::ValueBaseType::Float, 3, glm::vec3(0.5f, 0.5f, 1.f), false);
 	}
 
-	const Mosaic::ResultInfo PBROutputNode::GetShaderCode(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const
+	const Mosaic::ResultInfo PBROutputNode::Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const
 	{
 		constexpr const char* nodeStr = "EvaluatedMaterial materialResult;\n"
 										"materialResult.Setup();\n"
@@ -42,13 +43,13 @@ namespace Volt::MosaicNodes
 			const uint32_t paramIndex = edge.metaDataType->GetParameterInputIndex();
 
 			const auto& node = underlyingNode.GetNodeFromID(edge.startNode);
-			const Mosaic::ResultInfo info = node.nodeData->GetShaderCode(node, edge.metaDataType->GetParameterOutputIndex(), appendableShaderString);
+			const Mosaic::ResultInfo info = node.nodeData->Compile(node, edge.metaDataType->GetParameterOutputIndex(), shaderWriter);
 		
 			paramStrings[paramIndex] = info.resultParamName;
 		}
 
 		std::string result = std::format(nodeStr, paramStrings[0], paramStrings[1], paramStrings[2], paramStrings[3], glm::vec3(0.f));
-		appendableShaderString.append(result);
+		shaderWriter.AppendCodeBlock(result);
 
 		Mosaic::ResultInfo resultInfo{};
 		resultInfo.resultParamName = "";

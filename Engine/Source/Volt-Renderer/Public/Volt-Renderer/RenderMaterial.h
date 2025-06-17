@@ -5,6 +5,7 @@
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Descriptors/ResourceHandle.h>
+#include <RHIModule/Images/Image.h>
 
 #include <CoreUtilities/Containers/VectorVariants.h>
 
@@ -16,39 +17,47 @@ namespace Volt
 	{
 	public:
 		RenderTexture() = default;
-		RenderTexture(ResourceHandle handle)
-			: m_resourceHandle(handle)
+		RenderTexture(RefPtr<RHI::Image> image)
+			: m_image(image)
 		{ }
 
-		VT_INLINE void SetResource(ResourceHandle handle) { m_resourceHandle = handle; }
-		VT_NODISCARD VT_INLINE ResourceHandle GetResource() const { return m_resourceHandle; }
+		VT_INLINE void SetResource(RefPtr<RHI::Image> image) { m_image = image; }
+		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetResource() const { return m_image; }
 		
 		VT_NODISCARD bool IsValid() const
 		{
-			return m_resourceHandle != Resource::Invalid;
+			return m_image != nullptr;
 		}
 
 	private:
-		ResourceHandle m_resourceHandle = Resource::Invalid;
+		RefPtr<RHI::Image> m_image;
 	};
 
 	class VTR_API RenderMaterial
 	{
 	public:
+		struct TextureInfo
+		{
+			RenderTexture texture;
+			std::string bindingName;
+		};
+
+		using TexturesMap = vt::map<uint32_t, TextureInfo>;
+
 		RenderMaterial(const std::string& name);
 		RenderMaterial(const std::string& name, RefPtr<RHI::Shader> shader);
 
-		VT_NODISCARD VT_INLINE const PagedVector<RenderTexture>& GetTextures() const { return m_textures; }
+		VT_NODISCARD VT_INLINE const TexturesMap& GetTextures() const { return m_textures; }
 
+		void AddTexture(uint32_t index, const std::string& name);
 		void SetTexture(uint32_t index, RenderTexture resource);
-		void SetTextures(const PagedVector<RenderTexture>& textures);
 
 		bool DoMaterialRequireUpdate() const;
 		void ClearStatus();
 
 		VT_NODISCARD VT_INLINE size_t GetHash() const { return m_hash; }
 		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
-		VT_NODISCARD VT_INLINE RefPtr<RHI::ComputePipeline> GetPipeline() const { return m_pipeline; }
+		VT_NODISCARD VT_INLINE RefPtr<RHI::Shader> GetPixelShader() const { return m_pixelShader; }
 
 	private:
 		friend class MaterialCompiler;
@@ -56,10 +65,9 @@ namespace Volt
 		void Invalidate(const std::filesystem::path& shaderFilepath);
 		void GenerateHash();
 
-		PagedVector<RenderTexture> m_textures;
+		TexturesMap m_textures;
 
-		RefPtr<RHI::ComputePipeline> m_pipeline;
-		RefPtr<RHI::Shader> m_shader;
+		RefPtr<RHI::Shader> m_pixelShader;
 
 		std::string m_name;
 		size_t m_hash = 0;

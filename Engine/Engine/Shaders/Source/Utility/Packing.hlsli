@@ -55,12 +55,12 @@ const float3 DecodeNormal(uint normalInt)
 {
     uint2 octIntNormal;
     
-    octIntNormal.x = (normalInt >> 0) & 0xFF;
+    octIntNormal.x = normalInt & 0xFF;
     octIntNormal.y = (normalInt >> 8) & 0xFF;
     
     float2 octNormal = 0.f;
-    octNormal.x = octIntNormal.x / 255.f;
-    octNormal.y = octIntNormal.y / 255.f;
+    octNormal.x = float(octIntNormal.x) / 255.f;
+    octNormal.y = float(octIntNormal.y) / 255.f;
     
     return OctNormalDecode(octNormal);
 }

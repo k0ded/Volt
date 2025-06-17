@@ -12,7 +12,7 @@
 namespace Volt::RHI
 {
 	VulkanShader::VulkanShader(const ShaderCreateInfo& createInfo)
-		: m_name(createInfo.name)
+		: m_name(createInfo.name), m_failureIsFatal(createInfo.failureIsFatal)
 	{
 		VT_ENSURE(!createInfo.sourceFilepath.empty());
 		VT_ENSURE(!createInfo.entryPoint.empty());
@@ -74,7 +74,10 @@ namespace Volt::RHI
 		const ShaderCompiler::CompilationResultData compilationResult = ShaderCompiler::TryCompile(compileSpec);
 		if (compilationResult.result != ShaderCompiler::CompilationResult::Success)
 		{
-			VT_ENSURE(false);
+			if (m_failureIsFatal)
+			{
+				VT_ENSURE(false);
+			}
 			return;
 		}
 

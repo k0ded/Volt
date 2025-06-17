@@ -33,8 +33,9 @@ namespace Volt
 		using PrimitveFilterFunc = std::function<bool(const RenderPrimitiveData&)>;
 
 		// For now we pass a vertex and pixel shader in here, we might want to use vertex shaders specific to a material in the future.
-		void BuildRenderCommands(Ref<RenderScene> renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
-		void BuildRenderCommands(RenderScene& renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
+		// A nullptr pixelShader will use the meshes material shader.
+		void BuildRenderCommands(Ref<RenderScene> renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader = nullptr, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
+		void BuildRenderCommands(RenderScene& renderScene, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader = nullptr, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
 
 		void BuildRenderCommandsWithFilter(Ref<RenderScene> renderScene, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
 		void BuildRenderCommandsWithFilter(RenderScene& renderScene, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});

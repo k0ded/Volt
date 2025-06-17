@@ -3,12 +3,15 @@
 #include "Volt-Renderer/Mesh/MeshRenderer.h"
 #include "Volt-Renderer/RenderScene.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
+#include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/Texture/Texture2D.h"
 
 #include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/DescriptorTableCache.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
+#include <RenderCore/Shader/DefaultShaders.h>
 
 #include <CoreUtilities/EnumUtils.h>
 
@@ -75,6 +78,46 @@ namespace Volt
 		}
 	}
 
+	void SetMaterialParametersInDescriptorTable(Weak<RenderMaterial> material, RefPtr<RHI::RenderPipeline> renderPipeline, RefPtr<RHI::DescriptorTable> descriptorTable)
+	{
+		const auto& materialTextures = material->GetTextures();
+
+		const Vector<RHI::ShaderParameterMap>& shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
+
+		for (const auto& [index, materialTexture] : materialTextures)
+		{
+			for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
+			{
+				const RHI::ShaderResourceBinding* resourceBinding = parameterMap.GetResourceBindingFromName(StringHash::Construct(materialTexture.bindingName));
+				if (resourceBinding)
+				{
+					auto image = materialTexture.texture.GetResource();
+
+					if (!image)
+					{
+						image = Renderer::GetDefaultResources().whiteTexture->GetImage();
+					}
+
+					descriptorTable->SetImageView(image->GetView(), resourceBinding->set, resourceBinding->binding);
+				}
+			}
+		}
+
+		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
+		{
+			const RHI::ShaderParameterMap::ResourceBindingsMap& bindingsMap = parameterMap.GetResourceBindings();
+			for (const auto& [hashedName, binding] : bindingsMap)
+			{
+				if (binding.resourceType == RHI::ShaderResourceType::Sampler)
+				{
+					RefPtr<RHI::SamplerState> sampler = SamplerStateCache::GetAnisotropicSampler();
+
+					descriptorTable->SetSamplerState(sampler, binding.set, binding.binding);
+				}
+			}
+		}
+	}
+
 	void MeshRenderer::BuildRenderCommandsInternal(RenderScene& renderScene, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo /*= {}*/)
 	{
 		VT_PROFILE_FUNCTION();
@@ -91,6 +134,7 @@ namespace Volt
 			MeshBatch::VertexBufferVector vertexBuffers;
 			RefPtr<RHI::StorageBuffer> indexBuffer;
 			RefPtr<RHI::RenderPipeline> renderPipeline;
+			Weak<RenderMaterial> renderMaterial;
 		};
 
 		Vector<RenderCommandExt> renderCommandExts;
@@ -132,8 +176,22 @@ namespace Volt
 			}
 
 			RHI::RenderPipelineCreateInfo renderPipelineInfo = pipelineInfo;
+
+			// No pixel shader means that we will use the materials shader.
+			if (!pixelShader)
+			{
+				pixelShader = renderPrimitive.material->GetPixelShader();
+			}
+
+			// If there still is no pixel shader, we will use the default one
+			if (!pixelShader)
+			{
+				pixelShader = ShaderMap::Get<OpaqueDefaultPixelPS>();
+			}
+
 			renderPipelineInfo.shaders = { vertexShader, pixelShader };
 			newCommand.renderPipeline = PipelineStateCache::GetRenderPipeline(renderPipelineInfo);
+			newCommand.renderMaterial = renderPrimitive.material;
 
 			newCommand.vertexIndexBufferHash = newCommand.indexBuffer.GetHash();
 
@@ -184,6 +242,8 @@ namespace Volt
 				currentMeshBatch->renderPipeline = renderCommandExt.renderPipeline;
 				currentMeshBatch->descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(renderCommandExt.renderPipeline);
 
+				SetMaterialParametersInDescriptorTable(renderCommandExt.renderMaterial, renderCommandExt.renderPipeline, currentMeshBatch->descriptorTable);
+
 				lastVertexIndexBufferHash = renderCommandExt.vertexIndexBufferHash;
 				lastRenderPipelineHash = renderCommandExt.renderPipelineHash;
 			}
@@ -213,20 +273,22 @@ namespace Volt
 
 					if (EnumValueContainsFlag(batchType, MeshBatchType::VertexIndexBuffer))
 					{
-						currentMeshBatch->vertexBuffers = renderCommandExt.vertexBuffers;
-						currentMeshBatch->indexBuffer = renderCommandExt.indexBuffer;
-
 						VT_ENSURE(!currentMeshBatch->vertexBuffers.empty());
 						VT_ENSURE(currentMeshBatch->indexBuffer);
+
+						currentMeshBatch->vertexBuffers = renderCommandExt.vertexBuffers;
+						currentMeshBatch->indexBuffer = renderCommandExt.indexBuffer;
 					}
 
 					if (EnumValueContainsFlag(batchType, MeshBatchType::RenderPipeline))
 					{
+						VT_ENSURE(currentMeshBatch->renderPipeline);
+						VT_ENSURE(currentMeshBatch->descriptorTable);
+
 						currentMeshBatch->renderPipeline = renderCommandExt.renderPipeline;
 						currentMeshBatch->descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(renderCommandExt.renderPipeline);
 
-						VT_ENSURE(currentMeshBatch->renderPipeline);
-						VT_ENSURE(currentMeshBatch->descriptorTable);
+						SetMaterialParametersInDescriptorTable(renderCommandExt.renderMaterial, renderCommandExt.renderPipeline, currentMeshBatch->descriptorTable);
 					}
 				}
 			}

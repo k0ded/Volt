@@ -4,10 +4,15 @@
 #include "Volt-Assets/MaterialAsset.h"
 
 #include <Volt-MaterialGraph/MaterialGraph.h>
+#include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
 #include <Volt-Renderer/RenderMaterial.h>
+#include <Volt-Renderer/Renderer.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
+
+#include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 
@@ -15,28 +20,11 @@ VT_DEFINE_LOG_CATEGORY(LogMaterialCompiler);
 
 namespace Volt
 {
-	void MaterialCompiler::CompileMaterial(Ref<MaterialAsset> materialAsset)
+	std::string ReadBaseFile()
 	{
-		VT_LOGC(Trace, LogMaterialCompiler, "Started compilation of material {}", materialAsset->assetName);
+		constexpr const char* BaseShaderPath = "Engine\\Shaders\\Source\\Template\\GenerateGBufferPixel.hlsl";
+		const auto baseShaderPath = ProjectManager::GetEngineDirectory() / BaseShaderPath;
 
-		ScopedTimer timer;
-
-		constexpr const char* REPLACE_STRING = "GENERATED_SHADER";
-		constexpr const char* BASE_OUTPUT_PATH = "Generated\\Materials";
-		constexpr const char* BASE_SHADER_PATH = "Engine\\Shaders\\Source\\Generated\\GenerateGBuffer_cs.hlsl";
-
-		constexpr size_t REPLACE_STRING_SIZE = 16;
-
-		const auto baseShaderPath = ProjectManager::GetEngineDirectory() / BASE_SHADER_PATH;
-		const std::string compilationResult = materialAsset->GetMaterialGraph()->GetMosaicGraph().Compile();
-
-		// #TODO_Ivar: Temporary barrier
-		if (compilationResult.empty())
-		{
-			return;
-		}
-
-		// Write shader file
 		std::ifstream input(baseShaderPath, std::ios::in | std::ios::binary);
 		VT_ASSERT_MSG(input.is_open(), "Could not open file!");
 
@@ -49,10 +37,59 @@ namespace Volt
 
 		input.close();
 
-		const size_t replaceOffset = resultShader.find(REPLACE_STRING);
-		resultShader.replace(replaceOffset, REPLACE_STRING_SIZE, compilationResult);
+		return resultShader;
+	}
 
-		const std::filesystem::path outShaderPath = ProjectManager::GetProjectDirectory() / BASE_OUTPUT_PATH / std::filesystem::path(materialAsset->assetName + "-" + materialAsset->GetMaterialGraph()->GetMaterialGUID().ToString() + ".hlsl");
+	inline void InsertTextureDeclarations(std::string& shaderString, const Mosaic::MosaicShaderWriter& shaderWriter)
+	{
+		constexpr const char* TextureDeclarationTag = "$(TextureDeclarations)";
+
+		const Vector<Mosaic::MosaicShaderWriter::TextureDeclaration>& textureDeclarations = shaderWriter.GetTextureDeclarations();
+
+		std::stringstream textureDeclarationStringStream;
+		for (const Mosaic::MosaicShaderWriter::TextureDeclaration& texture : textureDeclarations)
+		{
+			textureDeclarationStringStream << "Texture2D " << texture.name << ";\n";
+		}
+
+		auto textureDeclarationTagOffset = shaderString.find(TextureDeclarationTag);
+		const size_t tagLength = strlen(TextureDeclarationTag);
+
+		shaderString.replace(textureDeclarationTagOffset, tagLength, textureDeclarationStringStream.str());
+	}
+
+	inline void InsertMaterialEvaluation(std::string& shaderString, const Mosaic::MosaicShaderWriter& shaderWriter)
+	{
+		constexpr const char* EvaluateMaterialTag = "$(EvaluateMaterial)";
+		
+		auto evaluateMaterialTagOffset = shaderString.find(EvaluateMaterialTag);
+		const size_t tagLength = strlen(EvaluateMaterialTag);
+
+		shaderString.replace(evaluateMaterialTagOffset, tagLength, shaderWriter.GetAsString());
+	}
+
+	void MaterialCompiler::CompileMaterial(Ref<MaterialAsset> materialAsset)
+	{
+		VT_LOGC(Trace, LogMaterialCompiler, "Started compilation of material {}", materialAsset->assetName);
+
+		ScopedTimer timer;
+
+		constexpr const char* BaseOutputPath = "Generated\\Materials";
+
+		const Mosaic::MosaicShaderWriter compilationResult = materialAsset->GetMaterialGraph()->GetMosaicGraph().Compile();
+
+		// #TODO_Ivar: Temporary barrier
+		if (compilationResult.GetAsString().empty())
+		{
+			return;
+		}
+
+		// Write shader file
+		std::string shaderString = ReadBaseFile();
+		InsertTextureDeclarations(shaderString, compilationResult);
+		InsertMaterialEvaluation(shaderString, compilationResult);
+
+		const std::filesystem::path outShaderPath = ProjectManager::GetProjectDirectory() / BaseOutputPath / std::filesystem::path(materialAsset->assetName + "-" + materialAsset->GetMaterialGraph()->GetMaterialGUID().ToString() + ".hlsl");
 		if (!std::filesystem::exists(outShaderPath.parent_path()))
 		{
 			std::filesystem::create_directories(outShaderPath.parent_path());
@@ -61,8 +98,43 @@ namespace Volt
 		std::ofstream output(outShaderPath);
 		VT_ASSERT_MSG(output.is_open(), "Could not open file!");
 
-		output.write(resultShader.c_str(), resultShader.size());
+		output.write(shaderString.c_str(), shaderString.size());
 		output.close();
+
+		// Add textures
+		const Vector<Mosaic::MosaicShaderWriter::TextureDeclaration>& textureDeclarations = compilationResult.GetTextureDeclarations();
+
+		for (const Mosaic::MosaicShaderWriter::TextureDeclaration& texture : textureDeclarations)
+		{
+			materialAsset->GetRenderMaterial()->AddTexture(texture.index, texture.name);
+		}
+
+		// Set textures
+		// #TODO_Ivar: This is a temporary way of settings the textures.
+		const auto& nodes = materialAsset->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph().GetNodes();
+		for (const auto& node : nodes)
+		{
+			if (node.nodeData->GetGUID() == MosaicNodes::SampleTextureNode::GetStaticGUID())
+			{
+				Ref<MosaicNodes::SampleTextureNode> sampleTextureNode = std::reinterpret_pointer_cast<MosaicNodes::SampleTextureNode>(node.nodeData);
+				const auto textureInfo = sampleTextureNode->GetTextureInfo();
+			
+				RefPtr<RHI::Image> image;
+
+				Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(textureInfo.textureHandle);
+				if (texture && texture->IsValid())
+				{
+					image = texture->GetImage();
+				}
+				else
+				{
+					image = Renderer::GetDefaultResources().whiteTexture->GetImage();
+				}
+				
+
+				materialAsset->GetRenderMaterial()->SetTexture(textureInfo.textureIndex, RenderTexture(image));
+			}
+		}
 
 		// Create new pipeline based on compiled shader
 		materialAsset->GetRenderMaterial()->Invalidate(outShaderPath);

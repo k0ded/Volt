@@ -1,6 +1,7 @@
 #include "RenderScene/GPUScene.hlsli"
 #include "Utility/Packing.hlsli"
 #include "ViewData.hlsli"
+#include "GBufferCommon.hlsli"
 
 struct GBufferVertex
 {
@@ -14,51 +15,28 @@ struct GBufferVertex
     uint primtiveIndex : SV_InstanceID;    
 };
 
-struct VSToPS
-{
-    float4 position : SV_Position;
-    float3 normal : NORMAL;
-    float2 texCoords : TEXCOORD;
-};
-
 StructuredBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;
 
-float3 UnpackNormal(uint normal)
-{
-    uint2 octIntNormal;
-    octIntNormal.x = normal & 0xFF;
-    octIntNormal.y = (normal >> 8) & 0xFF;
-
-    float2 octNormal = 0.f;
-    octNormal.x = float(octIntNormal.x) / 255.f;
-    octNormal.y = float(octIntNormal.y) / 255.f;
-
-    return normalize(OctNormalDecode(octNormal));
-}
-
-VSToPS MainVS(in GBufferVertex input)
+GBufferPixelShaderInput MainVS(in GBufferVertex input)
 {
     const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[input.primtiveIndex];
 
-    VSToPS result;
+    const float3 normal = DecodeNormal(input.normal);
+    const float3 tangent = DecodeTangent(normal, input.tangent);
+
+    GBufferPixelShaderInput result;
     result.position = mul(View.viewProjection, float4(primitiveData.transform.GetWorldPosition(input.position), 1.f));
     result.texCoords = input.texCoords;
-    result.normal = primitiveData.transform.RotateVector(UnpackNormal(input.normal));
+    result.normal = normalize(primitiveData.transform.RotateVector(normal));
+    result.tangent = float4(normalize(primitiveData.transform.RotateVector(tangent)), input.tangentW);
+    result.primitiveIndex = input.primtiveIndex;
 
     return result;
 }
 
-struct PSOutput
+GBufferPixelShaderOutput MainPS(in GBufferPixelShaderInput input)
 {
-    [[vt::rgba8]] float4 albedo : SV_Target0;
-    [[vt::rgba16]] float4 normal : SV_Target1;
-    [[vt::rg8]] float2 material : SV_Target2;
-    [[vt::d32f]];
-};
-
-PSOutput MainPS(in VSToPS input)
-{
-    PSOutput result;
+    GBufferPixelShaderOutput result;
     result.albedo = float4(0.8f.xxx, 1.f);
     result.normal = float4(input.normal * 0.5f + 0.5f, 1.f);
     result.material = float2(0.8f, 0.f);

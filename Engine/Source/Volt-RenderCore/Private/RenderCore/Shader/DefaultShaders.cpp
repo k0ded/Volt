@@ -4,8 +4,6 @@
 
 namespace Volt
 {
-#if 0
-	REGISTER_SHADER(OpaqueDefaultMaterialCS)
-#endif
+	REGISTER_SHADER(OpaqueDefaultPixelPS, "Engine/Shaders/Source/RenderPipelineLegacy/OpaqueDefaultPixel.hlsl", "MainPS", Pixel);
 	REGISTER_SHADER(FullscreenTriangleVS, "Engine/Shaders/Source/Utility/FullscreenTriangle.hlsl", "MainVS", Vertex);
 }

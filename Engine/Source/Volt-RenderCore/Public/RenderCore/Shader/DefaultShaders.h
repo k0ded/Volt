@@ -5,17 +5,13 @@
 
 namespace Volt
 {
-#if 0
-	struct OpaqueDefaultMaterialCS
+	struct OpaqueDefaultPixelPS : public GlobalShader
 	{
-		BEGIN_SHADER_DEFINITION(OpaqueDefaultMaterialCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Defaults/OpaqueDefault_cs.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
-
+		DECLARE_GLOBAL_SHADER(OpaqueDefaultPixelPS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
 	};
-#endif
 
 	struct FullscreenTriangleVS : public GlobalShader
 	{

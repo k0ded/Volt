@@ -49,6 +49,12 @@ namespace Volt
 		return GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>();
 	}
 
+	RefPtr<RHI::SamplerState> SamplerStateCache::GetAnisotropicSampler()
+	{
+		return GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, 
+						RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::X16>();
+	}
+
 	RefPtr<RHI::SamplerState> SamplerStateCache::GetSamplerInternal(const RHI::SamplerStateDesc& samplerDesc)
 	{
 		const size_t samplerHash = Utility::GetHashFromSamplerDesc(samplerDesc);

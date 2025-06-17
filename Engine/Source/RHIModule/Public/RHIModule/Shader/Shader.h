@@ -17,6 +17,7 @@ namespace Volt::RHI
 		std::string entryPoint;
 		ShaderStage stage;
 		bool forceCompile;
+		bool failureIsFatal = true;
 
 		ShaderPermutationConfig permutationConfig;
 	};

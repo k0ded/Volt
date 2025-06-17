@@ -368,7 +368,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		
 		MeshRenderer meshRenderer;
-		meshRenderer.BuildRenderCommands(m_renderScene, ShaderMap::Get<GenerateGBufferVS>(), ShaderMap::Get<GenerateGBufferPS>());
+		meshRenderer.BuildRenderCommands(m_renderScene, ShaderMap::Get<GenerateGBufferVS>());
 
 		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 		sceneTextures.gBufferAlbedo = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferAlbedo"));

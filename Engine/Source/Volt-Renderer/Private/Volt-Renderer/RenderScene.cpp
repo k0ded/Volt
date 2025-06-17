@@ -401,14 +401,16 @@ namespace Volt
 	void RenderScene::BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial)
 	{
 		gpuMaterial.textureCount = 0;
-
+		
+		// #TODO_Ivar: Bindless-support
+#if 0
 		for (const auto& texture : material->GetTextures())
 		{
 			gpuMaterial.textures[gpuMaterial.textureCount] = texture.GetResource();
-			// #TODO_Ivar: Bindless-support
-			//gpuMaterial.samplers[gpuMaterial.textureCount] = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::X16>()->GetResourceHandle();
+			gpuMaterial.samplers[gpuMaterial.textureCount] = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::X16>()->GetResourceHandle();
 			gpuMaterial.textureCount++;
 		}
+#endif
 	}
 
 	void RenderScene::BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderPrimitiveData& renderObject)

@@ -3,6 +3,7 @@
 #include <Mosaic/MosaicNode.h>
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicHelpers.h>
+#include <Mosaic/MosaicShaderWriter.h>
 
 #include <Mosaic/FormatterExtension.h>
 
@@ -20,17 +21,18 @@ namespace Volt::MosaicNodes
 			AddOutputParameter("Value", BASE_TYPE, VECTOR_SIZE, DEFAULT_VALUE, true);
 		}
 
+		MOSAIC_NODE_DECLARE_GUID(GUID);
+
 		inline const std::string GetName() const override { return Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO) + " Constant"; }
 		inline const std::string GetCategory() const override { return "Constants"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
-		inline const VoltGUID GetGUID() const override { return GUID; }
 
 		inline void Reset() override
 		{
 			m_evaluated = false;
 		}
 
-		inline const Mosaic::ResultInfo GetShaderCode(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const override
+		inline const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override
 		{
 			constexpr const char* nodeStr = "const {0} {1} = {2}; \n";
 
@@ -45,7 +47,7 @@ namespace Volt::MosaicNodes
 
 			const std::string varName = m_graph->GetNextVariableName();
 			std::string result = std::format(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO), varName, GetOutputParameter(0).Get<ValueType>());
-			appendableShaderString.append(result);
+			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};
 			resultInfo.resultParamName = varName;
@@ -115,17 +117,18 @@ namespace Volt::MosaicNodes
 			}
 		}
 
+		MOSAIC_NODE_DECLARE_GUID(GUID);
+
 		VT_INLINE const std::string GetName() const override { return "Color" + std::to_string(VECTOR_SIZE); }
 		VT_INLINE const std::string GetCategory() const override { return "Constants"; }
 		VT_INLINE const glm::vec4 GetColor() const override { return 1.f; }
-		VT_INLINE const VoltGUID GetGUID() const override { return GUID; }
 
 		VT_INLINE void Reset() override
 		{
 			m_evaluated = false;
 		}
 
-		VT_INLINE const Mosaic::ResultInfo GetShaderCode(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const override
+		VT_INLINE const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override
 		{
 			constexpr const char* nodeStr = "const {0} {1} = {2}; \n";
 
@@ -142,7 +145,7 @@ namespace Volt::MosaicNodes
 
 			const std::string varName = m_graph->GetNextVariableName();
 			std::string result = std::format(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO), varName, GetOutputParameter(0).Get<ValueType>());
-			appendableShaderString.append(result);
+			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};
 			resultInfo.resultParamName = varName;
@@ -156,22 +159,13 @@ namespace Volt::MosaicNodes
 			return resultInfo;
 		}
 
-		VT_INLINE void RenderCustomWidget() override
-		{
-			if constexpr (VECTOR_SIZE == 3)
-			{
-				ImGui::ColorEdit3("##colorEdit3", glm::value_ptr(GetOutputParameter(0).Get<ValueType>()));
-			}
-			else
-			{
-				ImGui::ColorEdit4("##colorEdit4", glm::value_ptr(GetOutputParameter(0).Get<ValueType>()));
-			}
-		}
-
 	private:
 		inline static constexpr Mosaic::TypeInfo TYPE_INFO{ Mosaic::ValueBaseType::Float, VECTOR_SIZE };
 
 		mutable bool m_evaluated = false;
 		mutable std::string m_evaluatedVariableName;
 	};
+
+	using Color3Node = ColorNode<glm::vec3, 1.f, 3, "{A52F186F-07FD-4C77-80A2-436A509451FC}"_guid>;
+	using Color4Node = ColorNode<glm::vec4, 1.f, 4, "{C032E7D5-D545-4DEF-8EC4-6A3980BC41B2}"_guid>;
 }
