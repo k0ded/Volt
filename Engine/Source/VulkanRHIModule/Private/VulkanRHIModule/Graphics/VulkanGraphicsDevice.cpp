@@ -81,8 +81,8 @@ namespace Volt::RHI
 			s_enabledFeatures.vulkan12Features.bufferDeviceAddressCaptureReplay = VK_TRUE;
 			s_enabledFeatures.vulkan12Features.shaderBufferInt64Atomics = VK_TRUE;
 			s_enabledFeatures.vulkan12Features.shaderSharedInt64Atomics = VK_TRUE;
-			s_enabledFeatures.vulkan12Features.shaderFloat16 = VK_TRUE;
-			s_enabledFeatures.vulkan12Features.shaderInt8 = VK_TRUE;
+			s_enabledFeatures.vulkan12Features.shaderFloat16 = VK_FALSE;
+			s_enabledFeatures.vulkan12Features.shaderInt8 = VK_FALSE;
 			s_enabledFeatures.vulkan12Features.storageBuffer8BitAccess = VK_TRUE;
 			s_enabledFeatures.vulkan12Features.scalarBlockLayout = VK_TRUE;
 			s_enabledFeatures.vulkan12Features.shaderOutputLayer = VK_TRUE;
@@ -210,7 +210,7 @@ namespace Volt::RHI
 			s_enabledFeatures.physicalDeviceFeatures.features.shaderStorageImageWriteWithoutFormat = VK_TRUE;
 			s_enabledFeatures.physicalDeviceFeatures.features.shaderStorageImageReadWithoutFormat = VK_TRUE;
 
-			s_enabledFeatures.physicalDeviceFeatures.features.shaderInt16 = VK_TRUE; // #TODO_Ivar: does not work on older cards
+			s_enabledFeatures.physicalDeviceFeatures.features.shaderInt16 = VK_FALSE; // #TODO_Ivar: does not work on older cards
 		}
 
 		inline static Vector<const char*> GetEnabledExtensions(RawPtr<VulkanPhysicalGraphicsDevice> physicalDevice)
