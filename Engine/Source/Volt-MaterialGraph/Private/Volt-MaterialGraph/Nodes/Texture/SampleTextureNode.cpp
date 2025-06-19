@@ -8,6 +8,7 @@
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/NodeRegistry.h>
+#include <Mosaic/MosaicShaderWriter.h>
 
 namespace Volt::MosaicNodes
 {
@@ -72,30 +73,6 @@ namespace Volt::MosaicNodes
 		m_evaluated = false;
 	}
 
-	void SampleTextureNode::RenderCustomWidget()
-	{
-		//std::string assetFileName = "Null";
-		//
-		//const Ref<Volt::Asset> rawAsset = Volt::AssetManager::Get().GetAssetRaw(m_textureHandle);
-		//if (rawAsset)
-		//{
-		//	assetFileName = rawAsset->assetName;
-		//}
-		//
-		//const ImVec2 width = ImGui::CalcTextSize(assetFileName.c_str());
-		//ImGui::PushItemWidth(std::max(width.x, 20.f) + 5.f);
-		//
-		//const std::string id = "##" + std::to_string(UI::GetID());
-		//ImGui::InputTextString(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
-		//ImGui::PopItemWidth();
-		//
-		//if (auto ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))
-		//{
-		//	Volt::AssetHandle newHandle = *(Volt::AssetHandle*)ptr;
-		//	m_textureHandle = newHandle;
-		//}
-	}
-
 	void SampleTextureNode::SerializeCustom(YAMLStreamWriter& streamWriter) const
 	{
 		streamWriter.SetKey("textureHandle", m_textureHandle);
@@ -106,12 +83,10 @@ namespace Volt::MosaicNodes
 		m_textureHandle = streamReader.ReadAtKey("textureHandle", Asset::Null());
 	}
 
-	const Mosaic::ResultInfo SampleTextureNode::GetShaderCode(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const
+	const Mosaic::ResultInfo SampleTextureNode::Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const
 	{
-		constexpr const char* nodeStr = "vt::TextureSampler {} = material.samplers[{}]; \n"
-										"vt::Tex2D<float4> {} = material.textures[{}]; \n"
-										"const float2 {} = {}; \n"
-										"const float4 {} = {}.SampleGrad({}, {} * {}, evalData.texCoordsDX * {}.x, evalData.texCoordsDY * {}.y); \n";
+		constexpr const char* nodeStr = "const float2 {} = {}; \n"
+										"const float4 {} = {}.Sample({}, {} * {}); \n";
 
 		if (m_evaluated)
 		{
@@ -121,15 +96,13 @@ namespace Volt::MosaicNodes
 			return tempInfo;
 		}
 
-		const std::string texSamplerVarName = m_graph->GetNextVariableName();
-		const std::string textureVarName = m_graph->GetNextVariableName();
+		const std::string texSamplerVarName = "TextureSamplerState"; //m_graph->GetNextVariableName();
+		const std::string textureVarName = shaderWriter.AddTexture(m_textureIndex);
 		const std::string valueVarName = m_graph->GetNextVariableName();
 		const std::string tilingVarName = m_graph->GetNextVariableName();
 
 		std::string texCoordsVarName = "evalData.texCoords";
 		std::string tilingParamString = std::format("{}", GetInputParameter(1).Get<glm::vec2>());
-
-		const uint32_t index = m_textureIndex;
 
 		for (const auto& edgeId : underlyingNode.GetInputEdges())
 		{
@@ -137,7 +110,7 @@ namespace Volt::MosaicNodes
 			const uint32_t paramIndex = edge.metaDataType->GetParameterInputIndex();
 			const auto& node = underlyingNode.GetNodeFromID(edge.startNode);
 
-			const Mosaic::ResultInfo info = node.nodeData->GetShaderCode(node, edge.metaDataType->GetParameterOutputIndex(), appendableShaderString);
+			const Mosaic::ResultInfo info = node.nodeData->Compile(node, edge.metaDataType->GetParameterOutputIndex(), shaderWriter);
 
 			// UV
 			if (paramIndex == 0)
@@ -151,9 +124,8 @@ namespace Volt::MosaicNodes
 			}
 		}
 
-
-		std::string result = std::format(nodeStr, texSamplerVarName, index, textureVarName, index, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName, tilingVarName, tilingVarName);
-		appendableShaderString.append(result);
+		std::string result = std::format(nodeStr, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName);
+		shaderWriter.AppendCodeBlock(result);
 
 		Mosaic::ResultInfo resultInfo{};
 		resultInfo.resultParamName = valueVarName;

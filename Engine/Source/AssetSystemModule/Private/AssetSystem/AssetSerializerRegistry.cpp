@@ -9,13 +9,13 @@ bool AssetSerializerRegistry::RegisterAssetSerializer(VoltGUID typeGuid, Ref<Vol
 	return true;
 }
 
-void AssetSerializerRegistry::Clear()
-{
-	m_serializers.clear();
-}
-
 Volt::AssetSerializer& AssetSerializerRegistry::GetSerializer(AssetType type) const
 {
 	VT_ENSURE(m_serializers.contains(type->GetGUID()));
 	return *m_serializers.at(type->GetGUID());
+}
+
+AssetSerializerRegistry& AssetSerializerRegistry::Get()
+{
+	return g_assetSerializerRegistry;
 }

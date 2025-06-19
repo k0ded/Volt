@@ -8,7 +8,7 @@
 
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Memory/MemoryCommon.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <RHIModule/Utility/ResourceUtility.h>
 
@@ -122,7 +122,7 @@ namespace Volt::RHI
 		cmdBuffer->End();
 		cmdBuffer->Execute();
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = stagingAllocation]()
+		RHIModule::GetInstance().DestroyResource([allocator = m_allocator, allocation = stagingAllocation]()
 		{
 			allocator->DestroyBuffer(allocation);
 		});
@@ -170,7 +170,7 @@ namespace Volt::RHI
 			commandBuffer->ResourceBarrier({ barrier });
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = stagingAllocation]()
+		RHIModule::GetInstance().DestroyResource([allocator = m_allocator, allocation = stagingAllocation]()
 		{
 			allocator->DestroyBuffer(allocation);
 		});
@@ -183,7 +183,7 @@ namespace Volt::RHI
 			return m_view;
 		}
 
-		BufferViewSpecification spec{};
+		BufferViewDesc spec{};
 		spec.bufferResource = this;
 
 		m_view = BufferView::Create(spec);
@@ -231,7 +231,7 @@ namespace Volt::RHI
 	void D3D12StorageBuffer::Invalidate(const size_t byteSize)
 	{
 		Release();
-		m_byteSize = std::max(byteSize, Memory::GetMinBufferAllocationSize());
+		m_byteSize = byteSize;
 		m_allocation = m_allocator->CreateBuffer(byteSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::StorageBuffer, m_memoryUsage, m_name);
 	}
 
@@ -242,7 +242,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]()
+		RHIModule::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]()
 		{
 			allocator->DestroyBuffer(allocation);
 		});

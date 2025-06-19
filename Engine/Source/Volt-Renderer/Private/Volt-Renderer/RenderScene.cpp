@@ -1,13 +1,14 @@
 #include "vrpch.h"
 #include "Volt-Renderer/RenderScene.h"
 
-#include "Volt-Renderer/Material.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/GPUScene.h"
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
 #include "Volt-Renderer/Utility/ScatteredBufferUpload.h"
 #include "Volt-Renderer/Texture/Texture2D.h"
+
+#include <RenderCore/Shader/GlobalShader.h>
 
 #include <Volt-Animation/MotionWeaver.h>
 #include <Volt-Animation/Assets/Skeleton.h>
@@ -19,7 +20,7 @@
 #include <AssetSystem/AssetManager.h>
 
 #include <RHIModule/Buffers/StorageBuffer.h>
-#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <ranges>
 
@@ -39,7 +40,7 @@ namespace Volt
 		m_buffers.prevPrimitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(PrimitiveDrawData), "Prev Primitive Draw Data");
 		m_buffers.bonesBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(glm::mat4), "GPU Bones");
 		m_buffers.lightsBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(LightDrawData), "Lights");
-		m_buffers.validPrimitiveDrawDatasBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "Compacted Valid Primitive Draw Datas");
+		m_buffers.validPrimitiveDrawDatasBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "Compacted Valid Primitive Draw Datas", RHI::BufferUsage::TexelBuffer);
 
 		// Setup invalid mesh
 		{
@@ -47,7 +48,7 @@ namespace Volt
 			memset(&mesh, 0, sizeof(GPUMesh));
 		}
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
 			m_rayTracingScene = CreateRef<RayTracingScene>(m_scene);
 		}
@@ -101,7 +102,7 @@ namespace Volt
 			m_animationBufferStorage.clear();
 		}
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (m_rayTracingScene)
 		{
 			m_rayTracingScene->Update();
 		}
@@ -109,13 +110,14 @@ namespace Volt
 
 	void RenderScene::EndFrame(RenderGraph& renderGraph)
 	{
+		VT_PROFILE_FUNCTION();
+
 		m_buffers.prevPrimitiveDrawDataBuffer->GrowIfRequired(m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount());
 
-		RGUtils::CopyBuffer(renderGraph,
-			renderGraph.AddExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource()),
-			renderGraph.AddExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource()),
-			m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize(),
-			"Copy PrimitiveDrawData");
+		RGBufferRef srcPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
+		RGBufferRef dstPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource());
+
+		AddCopyBufferPass(renderGraph, srcPrimitiveData, 0, dstPrimitiveData, 0, m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize(), "Copy PrimitiveDrawData");
 	}
 
 	void RenderScene::InvalidatePrimitiveInstance(UUID64 renderObject)
@@ -339,6 +341,16 @@ namespace Volt
 		return static_cast<uint32_t>(m_primitiveIndicesContainer.GetIndexFromID(primitiveId));
 	}
 
+	GPUSceneParameters RenderScene::GetGPUSceneParameters(RenderGraph& renderGraph) const
+	{
+		GPUSceneParameters result;
+		result.PrimitiveDrawDataBuffer = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource()));
+		result.PrevPrimitiveDrawDataBuffer = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource()));
+		result.SceneLights = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.lightsBuffer->GetResource()));
+
+		return result;
+	}
+
 	const RenderPrimitiveData& RenderScene::GetPrimitiveDataFromID(UUID64 id) const
 	{
 		auto it = std::ranges::find_if(m_renderPrimitives, [id](const auto& renderObject)
@@ -389,13 +401,16 @@ namespace Volt
 	void RenderScene::BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial)
 	{
 		gpuMaterial.textureCount = 0;
-
+		
+		// #TODO_Ivar: Bindless-support
+#if 0
 		for (const auto& texture : material->GetTextures())
 		{
 			gpuMaterial.textures[gpuMaterial.textureCount] = texture.GetResource();
-			gpuMaterial.samplers[gpuMaterial.textureCount] = Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::X16>()->GetResourceHandle();
+			gpuMaterial.samplers[gpuMaterial.textureCount] = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::X16>()->GetResourceHandle();
 			gpuMaterial.textureCount++;
 		}
+#endif
 	}
 
 	void RenderScene::BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderPrimitiveData& renderObject)
@@ -524,6 +539,11 @@ namespace Volt
 	void RenderScene::TryAddMaterial(Ref<RenderMaterial> material)
 	{
 		VT_PROFILE_FUNCTION();
+
+		if (!material)
+		{
+			return;
+		}
 
 		auto it = std::find(m_individualMaterials.begin(), m_individualMaterials.end(), material);
 		if (it != m_individualMaterials.end())
@@ -670,19 +690,16 @@ namespace Volt
 		}
 	}
 
-	struct CompactValidDrawCallCS
+	struct CompactValidDrawCallCS : public GlobalShader
 	{
-		BEGIN_SHADER_DEFINITION(CompactValidDrawCallCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/CompactValidDrawCalls.hlsl", "MainCS", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
-
+		DECLARE_GLOBAL_SHADER(CompactValidDrawCallCS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_BUFFER(vt::RWTypedBuffer<uint>, RWValidPrimitiveDrawData)
-			SHADER_PARAMETER_BUFFER(vt::TypedBuffer<PrimitiveDrawData>, PrimitiveDrawDataBuffer)
+			SHADER_PARAMETER_BUFFER_UAV(RWBuffer<uint>, RWValidPrimitiveDrawData)
+			SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrimitiveDrawDataBuffer)
 			SHADER_PARAMETER(uint32_t, PrimitiveDrawDataCount)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(CompactValidDrawCallCS)
+	REGISTER_SHADER(CompactValidDrawCallCS, "Engine/Shaders/Source/RenderScene/CompactValidDrawCalls.hlsl", "MainCS", Compute);
 
 	void RenderScene::CompactValidPrimitiveDrawDatas(RenderGraph& renderGraph)
 	{
@@ -693,34 +710,24 @@ namespace Volt
 		const uint32_t primitiveDrawDataCount = m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount();
 		validPrimitiveDrawDataBuffer->GrowIfRequired(primitiveDrawDataCount + 1);
 
-		RenderGraphBufferHandle validPrimitiveDrawDataHandle = renderGraph.AddExternalBuffer(validPrimitiveDrawDataBuffer->GetResource());
-		RenderGraphBufferHandle primitiveDrawDataHandle = renderGraph.AddExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
+		RGBufferRef validPrimitiveDrawData = renderGraph.RegisterExternalBuffer(validPrimitiveDrawDataBuffer->GetResource());
+		RGBufferRef primitiveDrawData = renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
 
-		RGUtils::ClearBuffer(renderGraph, validPrimitiveDrawDataHandle, 0, "Clear Valid Primitive Draw Data Buffer");
+		AddClearUAVPass(renderGraph, renderGraph.CreateUAV(validPrimitiveDrawData, RHI::PixelFormat::R32_UINT), 0u);
 
-		renderGraph.AddPass("Compact Valid Primitive Draw Datas",
-		[&](RenderGraph::Builder& builder)
-		{
-			builder.WriteResource(validPrimitiveDrawDataHandle);
-			builder.ReadResource(primitiveDrawDataHandle);
+		CompactValidDrawCallCS::Parameters* passParameters = renderGraph.AllocParameters<CompactValidDrawCallCS::Parameters>();
+		passParameters->RWValidPrimitiveDrawData = renderGraph.CreateUAV(validPrimitiveDrawData, RHI::PixelFormat::R32_UINT);
+		passParameters->PrimitiveDrawDataBuffer = renderGraph.CreateSRV(primitiveDrawData);
+		passParameters->PrimitiveDrawDataCount = primitiveDrawDataCount;
 
-			builder.SetIsComputePass();
-		},
-		[=](RenderContext& context)
-		{
-			auto pipeline = ShaderMap::GetComputePipeline<CompactValidDrawCallCS>();
+		constexpr uint32_t workGroupCount = 64;
 
-			context.BindPipeline(pipeline);
-
-			CompactValidDrawCallCS::Parameters parameters;
-			parameters.RWValidPrimitiveDrawData = validPrimitiveDrawDataHandle;
-			parameters.PrimitiveDrawDataBuffer = primitiveDrawDataHandle;
-			parameters.PrimitiveDrawDataCount = primitiveDrawDataCount;
-
-			constexpr uint32_t workGroupCount = 64;
-			context.SetParameters<CompactValidDrawCallCS>(parameters);
-			context.Dispatch(Math::DivideRoundUp(primitiveDrawDataCount, workGroupCount), 1, 1);
-		});
+		auto shader = ShaderMap::Get<CompactValidDrawCallCS>();
+		ComputeShaderUtils::AddPass<CompactValidDrawCallCS>(renderGraph,
+			"Compact Valid Primitive Draw Datas",
+			shader,
+			passParameters,
+			{ Math::DivideRoundUp(primitiveDrawDataCount, workGroupCount), 1, 1 });
 	}
 
 	void RenderScene::UpdateInvalidLights(RenderGraph& renderGraph)

@@ -1,6 +1,0 @@
-name: "GenerateIndirectArgs"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/Indirect/GenerateIndirectArgs_cs.hlsl"

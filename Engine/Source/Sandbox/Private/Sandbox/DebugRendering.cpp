@@ -13,7 +13,6 @@
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
 
-#include <Volt-Renderer/Material.h>
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
 
@@ -24,6 +23,8 @@
 
 #include <NavigationEditor/Tools/NavMeshDebugDrawer.h>
 #include <NavigationEditor/Builder/RecastBuilder.h>
+
+#include <CoreUtilities/Profiling/Profiling.h>
 
 void Sandbox::RenderSelection(Ref<Volt::Camera> camera)
 {

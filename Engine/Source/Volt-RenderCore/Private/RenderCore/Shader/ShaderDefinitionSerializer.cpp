@@ -121,7 +121,7 @@ namespace Volt
 		{
 			yamlStreamWriter.BeginMap();
 			yamlStreamWriter.SetKey("entryPoint", entry.entryPoint);
-			yamlStreamWriter.SetKey("filePath", entry.filePath);
+			yamlStreamWriter.SetKey("filePath", entry.filepath);
 			yamlStreamWriter.SetKey("shaderStage", std::string(Utility::GetStringFromShaderStage(entry.shaderStage)));
 			yamlStreamWriter.EndMap();
 		}
@@ -172,7 +172,7 @@ namespace Volt
 		{
 			auto& entry = entries.emplace_back();
 			entry.entryPoint = yamlStreamReader.ReadAtKey("entryPoint", std::string("main"));
-			entry.filePath = yamlStreamReader.ReadAtKey("filePath", std::filesystem::path(""));
+			entry.filepath = yamlStreamReader.ReadAtKey("filePath", std::filesystem::path(""));
 			entry.shaderStage = Utility::GetShaderStageFromString(yamlStreamReader.ReadAtKey("shaderStage", std::string("")));
 		});
 

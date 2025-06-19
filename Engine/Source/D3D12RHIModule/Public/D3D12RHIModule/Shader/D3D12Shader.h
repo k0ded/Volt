@@ -59,7 +59,7 @@ namespace Volt::RHI
 		std::unordered_map<ShaderStage, Vector<uint32_t>> m_shaderStageData;
 		std::unordered_map<ShaderStage, ShaderSourceInfo> m_shaderSources;
 
-		vt::map<size_t, DescriptorRangeInfo> m_bindingToDescriptorRangeInfo; // Hash is space + binding + type
+		Map<size_t, DescriptorRangeInfo> m_bindingToDescriptorRangeInfo; // Hash is space + binding + type
 
 		ComPtr<ID3D12RootSignature> m_rootSignature;
 

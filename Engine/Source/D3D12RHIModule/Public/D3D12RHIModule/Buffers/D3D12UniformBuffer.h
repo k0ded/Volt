@@ -11,7 +11,7 @@ namespace Volt::RHI
 		D3D12UniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name);
 		~D3D12UniformBuffer() override;
 
-		RefPtr<BufferView> GetView() override;
+		RefPtr<BufferView> GetView(const BufferViewDesc& desc) override;
 		const uint32_t GetSize() const override;
 		void SetData(const void* data, const uint32_t size) override;
 		void Unmap() override;

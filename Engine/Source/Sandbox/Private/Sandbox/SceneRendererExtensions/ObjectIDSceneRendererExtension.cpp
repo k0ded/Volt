@@ -4,7 +4,11 @@
 
 #include <Volt-Renderer/SceneRendererStructs.h>
 #include <Volt-Renderer/RendererCommon.h>
-#include <Volt-Renderer/RenderingTechniques/CullingTechnique.h>
+#include <Volt-Renderer/GPUScene.h>
+#include <Volt-Renderer/Mesh/MeshRenderer.h>
+#include <Volt-Renderer/RenderView.h>
+#include <Volt-Renderer/RenderScene.h>
+#include <Volt-Renderer/SceneRendererRenderGraphData.h>
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
@@ -12,76 +16,69 @@
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/BatchedShaderParameters.h>
 
 using namespace Volt;
 
-struct ObjectIDMSPS
+struct ObjectIDVS : public GlobalShader
 {
-	BEGIN_SHADER_DEFINITION(ObjectIDMSPS)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/AmplificationCommon.hlsl", "MainAS", RHI::ShaderStage::Amplification)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainMS", RHI::ShaderStage::Mesh)
-		DECLARE_SHADER_STAGE("Engine/Shaders/Source/RenderPipeline/ObjectIDMeshShader.hlsl", "MainPS", RHI::ShaderStage::Pixel)
-	END_SHADER_DEFINITION()
-
+	DECLARE_GLOBAL_SHADER(ObjectIDVS)
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-		SHADER_PARAMETER_STRUCT_INCLUDE(MeshShaderCommonParameters, Common)
+		SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
+		SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER(ObjectIDMSPS);
+REGISTER_SHADER(ObjectIDVS, "Engine/Shaders/Source/Editor/ObjectID.hlsl", "MainVS", Vertex);
 
-Volt::RenderGraphImageHandle ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, Ref<Volt::Camera> camera, Volt::RenderGraphImageHandle prevOutputImage)
+struct ObjectIDPS : public GlobalShader
 {
-	struct Data
+	DECLARE_GLOBAL_SHADER(ObjectIDPS)
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+		RG_RENDER_TARGETS()
+	END_SHADER_PARAMETER_STRUCT()
+};
+REGISTER_SHADER(ObjectIDPS, "Engine/Shaders/Source/Editor/ObjectID.hlsl", "MainPS", Pixel);
+
+BEGIN_SHADER_PARAMETER_STRUCT(ObjectIDParameters)
+	SHADER_PARAMETER_STRUCT_INCLUDE(ObjectIDVS::Parameters, VS)
+	SHADER_PARAMETER_STRUCT_INCLUDE(ObjectIDPS::Parameters, PS)
+END_SHADER_PARAMETER_STRUCT()
+
+Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage)
+{
+	const SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
+
+	RHI::RenderPipelineCreateInfo pipelineInfo;
+	pipelineInfo.depthMode = RHI::DepthMode::Read;
+
+	MeshRenderer meshRenderer;
+	meshRenderer.BuildRenderCommands(m_renderScene, ShaderMap::Get<ObjectIDVS>(), ShaderMap::Get<ObjectIDPS>(), pipelineInfo);
+
+	RGTextureRef objectIdTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32_UINT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "ObjectID"));
+
+	ObjectIDParameters* passParameters = renderGraph.AllocParameters<ObjectIDParameters>();
+	passParameters->VS.View = view.viewUniformBuffer;
+	passParameters->VS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
+	passParameters->PS.renderTargets.renderTargets[0] = objectIdTexture;
+	passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
+
+	renderGraph.AddPass("Render Object ID",
+		RenderGraphPassFlags::None,
+		passParameters, 
+		[passParameters, view, meshRenderer](RenderContext& context)
 	{
-		RenderGraphImageHandle objectIdHandle;
-	};
+		BatchedShaderParameters batchedShaderParameters;
+		context.CollectParameters(passParameters, batchedShaderParameters);
 
-	const auto preDepthHandle = blackboard.Get<DepthPrePass>().depth;
-	const auto& drawCullingData = blackboard.Get<DrawCullingData>();
-	const auto& viewUniformBuffer = blackboard.Get<ViewUniformBuffer>();
-	const auto& uniformBuffers = blackboard.Get<UniformBuffersData>();
-	const auto& gpuSceneData = blackboard.Get<GPUSceneData>();
+		RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
+		renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
-	Data& data = renderGraph.AddPass<Data>("Object ID Pass",
-	[&](RenderGraph::Builder& builder, Data& data)
-	{
-		data.objectIdHandle = builder.CreateImage(RGUtils::CreateImage2DDesc<RHI::PixelFormat::R32_UINT>(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, RHI::ImageUsage::AttachmentStorage, "Entity ID"));
-		builder.WriteResource(preDepthHandle);
-
-		BuildGPUSceneData(builder, gpuSceneData);
-
-		builder.ReadResource(uniformBuffers.viewDataBuffer);
-		builder.ReadResource(drawCullingData.countCommandBuffer, RenderGraphResourceState::IndirectArgument);
-		builder.ReadResource(drawCullingData.taskCommandsBuffer);
-
-		builder.SetHasSideEffect();
-	},
-	[=](const Data& data, RenderContext& context)
-	{
-		RenderingInfo info = context.CreateRenderingInfo(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, { data.objectIdHandle, preDepthHandle });
-		info.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
-
-		RHI::RenderPipelineCreateInfo pipelineInfo{};
-		pipelineInfo.shader = ShaderMap::Get<ObjectIDMSPS>();
-		pipelineInfo.depthCompareOperator = RHI::CompareOperator::Equal;
-		pipelineInfo.depthMode = RHI::DepthMode::Read;
-
-		auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
-
-		context.BeginRendering(info);
-		context.BindPipeline(pipeline);
-
-		ObjectIDMSPS::Parameters parameters;
-		parameters.Common.GPUSceneData = gpuSceneData;
-		parameters.Common.TaskCommands = drawCullingData.taskCommandsBuffer;
-		parameters.Common.View = uniformBuffers.viewDataBuffer;
-
-		context.SetParameters<ObjectIDMSPS>(parameters);
-		context.DispatchMeshTasksIndirect(drawCullingData.countCommandBuffer, sizeof(uint32_t), 1, 0);
+		context.BeginRendering(renderingInfo);
+		meshRenderer.Render(context, batchedShaderParameters);
 		context.EndRendering();
 	});
 
-	renderGraph.EnqueueImageExtraction(data.objectIdHandle, m_objectIdImage);
+	renderGraph.EnqueueTextureExtraction(objectIdTexture, &m_objectIdImage);
 
 	return prevOutputImage;
 }

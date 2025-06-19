@@ -75,6 +75,6 @@ namespace Volt
 		PhysicsActorID m_actorId;
 		PhysicsLayerID m_layerId = 0;
 
-		vt::map<PhysicsColliderID, Ref<ColliderShape>> m_colliders;
+		Map<PhysicsColliderID, Ref<ColliderShape>> m_colliders;
 	};
 }

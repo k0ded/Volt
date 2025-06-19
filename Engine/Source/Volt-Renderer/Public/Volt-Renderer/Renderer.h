@@ -4,7 +4,10 @@
 #include "Volt-Renderer/Config.h"
 
 #include <AssetSystem/AssetHandle.h>
+
 #include <RenderCore/Resources/BindlessResource.h>
+#include <RenderCore/DescriptorTableCache.h>
+#include <RenderCore/SamplerStateCache.h>
 
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Core/RHICommon.h>
@@ -12,19 +15,16 @@
 #include <SubSystem/SubSystem.h>
 #include <EventSystem/EventListener.h>
 
-#include <CoreUtilities/Containers/FunctionQueue.h>
-
 namespace Volt
 {
 	namespace RHI
 	{
 		class SamplerState;
-		struct SamplerStateCreateInfo;
+		struct SamplerStateDesc;
 	}
 
 	class Texture2D;
 	class RenderMaterial;
-	class ShaderRuntimeValidator;
 	class Mesh;
 
 	struct DefaultResources
@@ -74,28 +74,9 @@ namespace Volt
 		void Shutdown() override;
 
 		static const uint32_t GetFramesInFlight();
-		static void DestroyResource(std::function<void()>&& function);
 
 		static const DefaultResources& GetDefaultResources();
 		static EnvironmentTextures GenerateEnvironmentTextures(AssetHandle baseTextureHandle);
-
-#ifndef VT_DIST
-		static ShaderRuntimeValidator& GetRuntimeShaderValidator();
-#endif
-
-		template<RHI::TextureFilter min, RHI::TextureFilter mag, RHI::TextureFilter mip, RHI::TextureWrap wrapMode = RHI::TextureWrap::Repeat, RHI::AnisotropyLevel aniso = RHI::AnisotropyLevel::None, RHI::CompareOperator compareOperator = RHI::CompareOperator::None>
-		static BindlessResourceRef<RHI::SamplerState> GetSampler()
-		{
-			RHI::SamplerStateCreateInfo info{};
-			info.minFilter = min;
-			info.magFilter = mag;
-			info.mipFilter = mip;
-			info.wrapMode = wrapMode;
-			info.anisotropyLevel = aniso;
-			info.compareOperator = compareOperator;
-
-			return s_instance->GetSamplerInternal(info);
-		}
 
 		VT_DECLARE_SUBSYSTEM("{2E420D68-01AC-47D5-B7F4-F31F13D57ABF}"_guid);
 
@@ -103,7 +84,6 @@ namespace Volt
 		bool OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event);
 		bool OnPreRenderEvent(AppPreRenderEvent& event);
 
-		BindlessResourceRef<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateCreateInfo& samplerInfo);
 		void CreateDefaultResources();
 		void GenerateDFGLuT();
 
@@ -112,15 +92,10 @@ namespace Volt
 		DefaultResources m_defaultResources;
 
 		Scope<ShaderMap> m_shaderMap;
-		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
 		Scope<BlueNoise> m_blueNoise;
-
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		Scope<ShaderRuntimeValidator> m_shaderValidator;
-#endif
-
-		Vector<FunctionQueue> m_deletionQueue;
-		vt::map<size_t, BindlessResourceRef<RHI::SamplerState>> m_samplers;
+		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
+		Scope<DescriptorTableCache> m_descriptorTableCache;
+		Scope<SamplerStateCache> m_samplerStateCache;
 
 		uint32_t m_frameIndex = 0;
 	};

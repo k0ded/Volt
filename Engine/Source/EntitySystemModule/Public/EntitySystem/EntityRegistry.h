@@ -29,8 +29,8 @@ namespace Volt
 		inline const std::set<EntityID>& GetRemovedEntities() const { return m_removedEntities; }
 
 	private:
-		vt::map<EntityID, entt::entity> m_entityMap;
-		vt::map<entt::entity, EntityID> m_handleMap;
+		Map<EntityID, entt::entity> m_entityMap;
+		Map<entt::entity, EntityID> m_handleMap;
 
 		std::set<EntityID> m_editedEntities;
 		std::set<EntityID> m_removedEntities;

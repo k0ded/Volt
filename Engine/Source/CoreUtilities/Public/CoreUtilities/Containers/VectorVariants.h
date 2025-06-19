@@ -4,4 +4,4 @@
 #include "CoreUtilities/Allocators/DefaultAllocator.h"
 
 template<typename T>
-using PagedVector = Vector<T, DefaultAllocator>;
+using PagedVector = Vector<T>;

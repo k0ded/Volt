@@ -67,8 +67,8 @@ namespace Volt
 
 		PluginRegistry* m_pluginRegistry = nullptr;
 
-		vt::map<std::filesystem::path, Ref<PluginFactory>> m_pluginFactories;
-		vt::map<VoltGUID, size_t> m_guidToIndexMap;
+		Map<std::filesystem::path, Ref<PluginFactory>> m_pluginFactories;
+		Map<VoltGUID, size_t> m_guidToIndexMap;
 
 		Vector<PluginContainer<Plugin>> m_loadedPlugins;
 	};

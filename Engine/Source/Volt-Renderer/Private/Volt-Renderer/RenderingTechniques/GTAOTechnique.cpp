@@ -1,289 +1,212 @@
 #include "vrpch.h"
 #include "Volt-Renderer/RenderingTechniques/GTAOTechnique.h"
-
-#include "Volt-Renderer/Renderer.h"
-#include "Volt-Renderer/RendererCommon.h"
 #include "Volt-Renderer/Camera/Camera.h"
+#include "Volt-Renderer/SceneRendererRenderGraphData.h"
+#include "Volt-Renderer/RenderView.h"
 
+#include <RenderCore/RenderGraph/ShaderRegistry.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/SamplerStateCache.h>
 
 #include <CoreUtilities/Math/Math.h>
 
 namespace Volt
 {
-	struct GTAODepthPrefilterCS
+	struct GTAODepthPrefilterCS : public GlobalShader
 	{
-		BEGIN_SHADER_DEFINITION(GTAODepthPrefilterCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/GTAO/GTAO_DepthPrefilter_cs.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
-
+		DECLARE_GLOBAL_SHADER(GTAODepthPrefilterCS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP0)
-			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP1)
-			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP2)
-			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP3)
-			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, RWDepthMIP4)
-			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, SourceDepth)
-			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointClampSampler)
-			SHADER_PARAMETER_STRUCT(GTAOTechnique::GTAOConstants, Constants)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float>, RWDepthMIP0)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float>, RWDepthMIP1)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float>, RWDepthMIP2)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float>, RWDepthMIP3)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float>, RWDepthMIP4)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SourceDepth)
+			SHADER_PARAMETER_SAMPLER(PointClampSampler)
+			SHADER_PARAMETER_UNIFORM_BUFFER(GTAOConstants, Constants)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(GTAODepthPrefilterCS)
+	REGISTER_SHADER(GTAODepthPrefilterCS, "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_DepthPrefilter.hlsl", "MainCS", Compute);
 
-	struct GTAOMainPassCS
+	struct GTAOMainPassCS : public GlobalShader
 	{
-		BEGIN_SHADER_DEFINITION(GTAOMainPassCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/GTAO/GTAO_MainPass_cs.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
-
+		DECLARE_GLOBAL_SHADER(GTAOMainPassCS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_IMAGE(vt::RWTex2D<uint>, AOTerm)
-			SHADER_PARAMETER_IMAGE(vt::RWTex2D<float>, Edges)
-			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, SrcDepth)
-			SHADER_PARAMETER_IMAGE(vt::Tex2D<float4>, ViewspaceNormals)
-			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointClampSampler)
-			SHADER_PARAMETER_STRUCT(GTAOTechnique::GTAOConstants, Constants)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<uint>, RWAOTerm)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float>, RWEdges)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SrcDepth)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, GBufferNormal)
+			SHADER_PARAMETER_SAMPLER(PointClampSampler)
+			SHADER_PARAMETER_UNIFORM_BUFFER(GTAOConstants, Constants)
+			SHADER_PARAMETER(float4x4, ViewMatrix)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(GTAOMainPassCS)
+	REGISTER_SHADER(GTAOMainPassCS, "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_MainPass.hlsl", "MainCS", Compute);
 
-	struct GTAODenoiseCS
+	struct GTAODenoiseCS : public GlobalShader
 	{
-		BEGIN_SHADER_DEFINITION(GTAODenoiseCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PostProcessing/GTAO/GTAO_Denoise_cs.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
-
+		DECLARE_GLOBAL_SHADER(GTAODenoiseCS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_IMAGE(vt::RWTex2D<uint>, RWFinalAOTerm)
-			SHADER_PARAMETER_IMAGE(vt::Tex2D<uint>, AOTerm)
-			SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, Edges)
-			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, PointClampSampler)
-			SHADER_PARAMETER_STRUCT(GTAOTechnique::GTAOConstants, Constants)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<uint>, RWFinalAOTerm)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<uint>, AOTerm)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, Edges)
+			SHADER_PARAMETER_SAMPLER(PointClampSampler)
+			SHADER_PARAMETER_UNIFORM_BUFFER(GTAOConstants, Constants)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(GTAODenoiseCS)
+	REGISTER_SHADER(GTAODenoiseCS, "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_Denoise.hlsl", "MainCS", Compute);
 
-	struct PrefilterDepthData
+	GTAOTechnique::GTAOTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
+		: m_renderGraph(renderGraph), m_blackboard(blackboard)
 	{
-		RenderGraphImageHandle prefilteredDepth;
-		GTAOTechnique::GTAOConstants constants{};
-	};
-
-	struct GTAOData
-	{
-		RenderGraphImageHandle aoOutput;
-		RenderGraphImageHandle edgesOutput;
-	};
-
-	GTAOTechnique::GTAOTechnique(uint64_t frameIndex, const GTAOSettings& settings)
-		: m_frameIndex(frameIndex)
-	{
-		// Setup constants
-		{
-			GTAOConstants constants{};
-
-			///// Settings /////
-			constants.EffectRadius = settings.radius;
-			constants.EffectFalloffRange = settings.falloffRange;
-			constants.DenoiseBlurBeta = 1.2f; // 1 denoise pass
-			constants.RadiusMultiplier = settings.radiusMultiplier;
-			constants.SampleDistributionPower = 2.f;
-			constants.ThinOccluderCompensation = 0.f;
-			constants.FinalValuePower = settings.finalValuePower;
-			constants.DepthMIPSamplingOffset = 3.3f;
-			constants.NoiseIndex = frameIndex % 64;
-			constants.Padding0 = 0;
-
-			m_constants = constants;
-		}
 	}
 
-	GTAOOutput GTAOTechnique::Execute(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)
+	void GTAOTechnique::Execute(const RenderView& view)
 	{
-		renderGraph.BeginMarker("GTAO", { 0.f, 1.f, 0.f, 1.f });
+		m_renderGraph.BeginMarker("GTAO");
 
-		AddPrefilterDepthPass(renderGraph, blackboard, camera);
-		AddMainPass(renderGraph, blackboard);
-		GTAOOutput result = AddDenoisePass(renderGraph, blackboard);
+		RGUniformBufferRef gtaoUniformBuffer = CreateUniformBuffer(view);
 
-		renderGraph.EndMarker();
+		RGTextureRef prefilteredDepth = AddPrefilterDepthPass(view, gtaoUniformBuffer);
+		MainPassOutput mainPassOutput = AddMainPass(view, gtaoUniformBuffer, prefilteredDepth);
+		AddDenoisePass(view, gtaoUniformBuffer, prefilteredDepth, mainPassOutput);
 
-		return result;
+		m_renderGraph.EndMarker();
 	}
 
-	void GTAOTechnique::AddPrefilterDepthPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera)
+	RGTextureRef GTAOTechnique::AddPrefilterDepthPass(const RenderView& view, RGUniformBufferRef gtaoConstants)
 	{
 		constexpr uint32_t GTAO_PREFILTERED_DEPTH_MIP_COUNT = 5;
 
-		const auto& renderData = blackboard.Get<ViewUniformBuffer>();
+		const SceneTextures& sceneTextures = m_blackboard.Get<SceneTextures>();
 
-		m_constants.ViewportSize = renderData.renderSize;
-		m_constants.ViewportPixelSize = { 1.f / static_cast<float>(renderData.renderSize.x), 1.f / static_cast<float>(renderData.renderSize.y) };
+		RGTextureDesc prefilteredDepthDesc = RGTextureDesc::Create2D<RHI::PixelFormat::R32_SFLOAT>(view.width, view.height, RHI::ImageUsage::Storage, "GTAO.PrefilteredDepth");
+		prefilteredDepthDesc.mips = GTAO_PREFILTERED_DEPTH_MIP_COUNT;
 
-		const auto& projectionMatrix = camera->GetProjection();
-		
+		RGTextureRef prefilteredDepth = m_renderGraph.CreateTexture(prefilteredDepthDesc);
+
+		GTAODepthPrefilterCS::Parameters* passParameters = m_renderGraph.AllocParameters<GTAODepthPrefilterCS::Parameters>();
+		passParameters->RWDepthMIP0 = m_renderGraph.CreateUAV(RGTextureUAVDesc{ .textureResource = prefilteredDepth, .baseMipLevel = 0, .mipCount = 1 });
+		passParameters->RWDepthMIP1 = m_renderGraph.CreateUAV(RGTextureUAVDesc{ .textureResource = prefilteredDepth, .baseMipLevel = 1, .mipCount = 1 });
+		passParameters->RWDepthMIP2 = m_renderGraph.CreateUAV(RGTextureUAVDesc{ .textureResource = prefilteredDepth, .baseMipLevel = 2, .mipCount = 1 });
+		passParameters->RWDepthMIP3 = m_renderGraph.CreateUAV(RGTextureUAVDesc{ .textureResource = prefilteredDepth, .baseMipLevel = 3, .mipCount = 1 });
+		passParameters->RWDepthMIP4 = m_renderGraph.CreateUAV(RGTextureUAVDesc{ .textureResource = prefilteredDepth, .baseMipLevel = 4, .mipCount = 1 });
+		passParameters->SourceDepth = m_renderGraph.CreateSRV(sceneTextures.sceneDepth);
+		passParameters->PointClampSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureWrap::Clamp>();
+		passParameters->Constants = gtaoConstants;
+
+		const uint32_t dispatchX = Math::DivideRoundUp(view.width, 16u);
+		const uint32_t dispatchY = Math::DivideRoundUp(view.height, 16u);
+
+		auto shader = ShaderMap::Get<GTAODepthPrefilterCS>();
+		ComputeShaderUtils::AddPass<GTAODepthPrefilterCS>(
+			m_renderGraph,
+			"GTAO.PrefilterDepth",
+			shader,
+			passParameters,
+			{ dispatchX, dispatchY, 1 });
+
+		return prefilteredDepth;
+	}
+
+	GTAOTechnique::MainPassOutput GTAOTechnique::AddMainPass(const RenderView& view, RGUniformBufferRef gtaoConstants, RGTextureRef prefilteredDepth)
+	{
+		const SceneTextures& sceneTextures = m_blackboard.Get<SceneTextures>();
+
+		RGTextureRef aoOutput = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32_UINT>(view.width, view.height, RHI::ImageUsage::Storage, "GTAO.AO"));
+		RGTextureRef edgesOutput = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8_UNORM>(view.width, view.height, RHI::ImageUsage::Storage, "GTAO.Edges"));
+
+		GTAOMainPassCS::Parameters* passParameters = m_renderGraph.AllocParameters<GTAOMainPassCS::Parameters>();
+		passParameters->RWAOTerm = m_renderGraph.CreateUAV(aoOutput);
+		passParameters->RWEdges = m_renderGraph.CreateUAV(edgesOutput);
+		passParameters->SrcDepth = m_renderGraph.CreateSRV(prefilteredDepth);
+		passParameters->GBufferNormal = m_renderGraph.CreateSRV(sceneTextures.gBufferNormals);
+		passParameters->ViewMatrix = view.camera->GetView();
+		passParameters->PointClampSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureWrap::Clamp>();
+		passParameters->Constants = gtaoConstants;
+
+		const uint32_t dispatchX = Math::DivideRoundUp(view.width, 16u);
+		const uint32_t dispatchY = Math::DivideRoundUp(view.height, 16u);
+
+		auto shader = ShaderMap::Get<GTAOMainPassCS>();
+		ComputeShaderUtils::AddPass<GTAOMainPassCS>(
+			m_renderGraph,
+			"GTAO.MainPass",
+			shader,
+			passParameters,
+			{ dispatchX, dispatchY, 1 });
+
+		return { aoOutput, edgesOutput };
+	}
+
+	void GTAOTechnique::AddDenoisePass(const RenderView& view, RGUniformBufferRef gtaoConstants, RGTextureRef prefilteredDepth, const MainPassOutput& mainPassOutput)
+	{
+		RGTextureRef finalAOTerm = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32_UINT>(view.width, view.height, RHI::ImageUsage::Storage, "GTAO.FinalAOTerm"));
+
+		GTAODenoiseCS::Parameters* passParameters = m_renderGraph.AllocParameters<GTAODenoiseCS::Parameters>();
+		passParameters->RWFinalAOTerm = m_renderGraph.CreateUAV(finalAOTerm);
+		passParameters->AOTerm = m_renderGraph.CreateSRV(mainPassOutput.aoTerm);
+		passParameters->Edges = m_renderGraph.CreateSRV(mainPassOutput.edges);
+		passParameters->PointClampSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureWrap::Clamp>();
+		passParameters->Constants = gtaoConstants;
+
+		const uint32_t dispatchX = Math::DivideRoundUp(view.width, 8u);
+		const uint32_t dispatchY = Math::DivideRoundUp(view.height, 8u);
+
+		auto shader = ShaderMap::Get<GTAODenoiseCS>();
+		ComputeShaderUtils::AddPass<GTAODenoiseCS>(
+			m_renderGraph,
+			"GTAO.Denoise",
+			shader,
+			passParameters,
+			{ dispatchX, dispatchY, 1 });
+
+		SceneTextures& sceneTextures = m_blackboard.Get<SceneTextures>();
+		sceneTextures.sceneAO = finalAOTerm;
+	}
+
+	RGUniformBufferRef GTAOTechnique::CreateUniformBuffer(const RenderView& view)
+	{
+		const auto& projectionMatrix = view.camera->GetProjection();
+
 		float depthLinearizeMul = (-projectionMatrix[3][2]);
 		float depthLinearizeAdd = (projectionMatrix[2][2]);
-		
+
 		// correct the handedness issue
 		if (depthLinearizeMul * depthLinearizeAdd < 0.f)
 		{
 			depthLinearizeAdd = -depthLinearizeAdd;
 		}
-		
-		m_constants.DepthUnpackConsts = { depthLinearizeMul, depthLinearizeAdd };
-		
+
 		const float tanHalfFovY = 1.f / (projectionMatrix[1][1]);
 		const float tanHalfFovX = 1.f / (projectionMatrix[0][0]);
-		
-		m_constants.CameraTanHalfFOV = { tanHalfFovX, tanHalfFovY };
-		m_constants.NDCToViewMul = { m_constants.CameraTanHalfFOV.x * 2.f, m_constants.CameraTanHalfFOV.y * -2.f };
-		m_constants.NDCToViewAdd = { m_constants.CameraTanHalfFOV.x * -1.f, m_constants.CameraTanHalfFOV.y * 1.f };
-		m_constants.NDCToViewMul_x_PixelSize = { m_constants.NDCToViewMul.x * m_constants.ViewportPixelSize.x, m_constants.NDCToViewMul.y * m_constants.ViewportPixelSize.y };
 
-		const auto& preDepthData = blackboard.Get<DepthPrePass>();
+		GTAOConstants gtaoConstants{};
+		gtaoConstants.EffectRadius = 50.f;
+		gtaoConstants.EffectFalloffRange = 0.615f;
+		gtaoConstants.RadiusMultiplier = 1.457f;
+		gtaoConstants.FinalValuePower = 2.2f;
+		gtaoConstants.DenoiseBlurBeta = 1.2f;
+		gtaoConstants.SampleDistributionPower = 2.f;
+		gtaoConstants.ThinOccluderCompensation = 0.f;
+		gtaoConstants.DepthMIPSamplingOffset = 3.3f;
+		gtaoConstants.NoiseIndex = view.frameIndex % 64;
+		gtaoConstants.ViewportSize = { view.width, view.height };
+		gtaoConstants.ViewportPixelSize = { 1.f / static_cast<float>(view.width), 1.f / static_cast<float>(view.height) };
+		gtaoConstants.DepthUnpackConsts = { depthLinearizeMul, depthLinearizeAdd };
+		gtaoConstants.CameraTanHalfFOV = { tanHalfFovX, tanHalfFovY };
+		gtaoConstants.NDCToViewMul = { gtaoConstants.CameraTanHalfFOV.x * 2.f, gtaoConstants.CameraTanHalfFOV.y * -2.f };
+		gtaoConstants.NDCToViewAdd = { gtaoConstants.CameraTanHalfFOV.x * -1.f, gtaoConstants.CameraTanHalfFOV.y * 1.f };
+		gtaoConstants.NDCToViewMul_x_PixelSize = { gtaoConstants.NDCToViewMul.x * gtaoConstants.ViewportPixelSize.x, gtaoConstants.NDCToViewMul.y * gtaoConstants.ViewportPixelSize.y };
 
-		blackboard.Add<PrefilterDepthData>() = renderGraph.AddPass<PrefilterDepthData>("GTAO Prefilter Depth Pass",
-		[&](RenderGraph::Builder& builder, PrefilterDepthData& data) 
-		{
-			RenderGraphImageDesc desc{};
-			desc.format = RHI::PixelFormat::R32_SFLOAT;
-			desc.width = renderData.renderSize.x;
-			desc.height = renderData.renderSize.y;
-			desc.usage = RHI::ImageUsage::Storage;
-			desc.mips = GTAO_PREFILTERED_DEPTH_MIP_COUNT;
-			desc.name = "GTAO Prefiltered Depth";
+		RGUniformBufferRef uniformBuffer = m_renderGraph.CreateUniformBuffer(RGUniformBufferDesc::Create<GTAOConstants>("GTAOConstants"));
 
-			data.prefilteredDepth = builder.CreateImage(desc);
-			data.constants = m_constants;
+		AddMappedBufferUpload(m_renderGraph, uniformBuffer, &gtaoConstants, sizeof(GTAOConstants));
 
-			builder.ReadResource(preDepthData.depth);
-			builder.SetIsComputePass();
-		},
-		[=](const PrefilterDepthData& data, RenderContext& context) 
-		{
-			auto pipeline = ShaderMap::GetComputePipeline<GTAODepthPrefilterCS>();
-			auto pointClampSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureWrap::Clamp>();
-
-			GTAODepthPrefilterCS::Parameters parameters;
-			parameters.RWDepthMIP0 = RenderGraphImageAccess(data.prefilteredDepth, 0);
-			parameters.RWDepthMIP1 = RenderGraphImageAccess(data.prefilteredDepth, 1);
-			parameters.RWDepthMIP2 = RenderGraphImageAccess(data.prefilteredDepth, 2);
-			parameters.RWDepthMIP3 = RenderGraphImageAccess(data.prefilteredDepth, 3);
-			parameters.RWDepthMIP4 = RenderGraphImageAccess(data.prefilteredDepth, 4);
-			parameters.SourceDepth = preDepthData.depth;
-			parameters.PointClampSampler = pointClampSampler->GetResourceHandle();
-			parameters.Constants = data.constants;
-
-			context.BindPipeline(pipeline);
-			context.SetParameters<GTAODepthPrefilterCS>(parameters);
-
-			const uint32_t dispatchX = Math::DivideRoundUp(renderData.renderSize.x, 16u);
-			const uint32_t dispatchY = Math::DivideRoundUp(renderData.renderSize.y, 16u);
-		
-			context.Dispatch(dispatchX, dispatchY, 1);
-		});
-	}
-
-	void GTAOTechnique::AddMainPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
-	{
-		const auto& prefilterDepthData = blackboard.Get<PrefilterDepthData>();
-		const auto& preDepthData = blackboard.Get<DepthPrePass>();
-
-		const glm::uvec2 renderSize = m_constants.ViewportSize;
-
-		blackboard.Add<GTAOData>() = renderGraph.AddPass<GTAOData>("GTAO Main Pass",
-		[&](RenderGraph::Builder& builder, GTAOData& data) 
-		{
-			// AO Texture
-			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::R32_UINT>(renderSize.x, renderSize.y, RHI::ImageUsage::Storage, "GTAO AO Output");
-				data.aoOutput = builder.CreateImage(desc);
-			}
-
-			// Edges Texture
-			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::R8_UNORM>(renderSize.x, renderSize.y, RHI::ImageUsage::Storage, "GTAO Edges Output");
-				data.edgesOutput = builder.CreateImage(desc);
-			}
-
-			builder.ReadResource(prefilterDepthData.prefilteredDepth);
-			builder.ReadResource(preDepthData.normals);
-			builder.SetIsComputePass();
-		},
-		[=](const GTAOData& data, RenderContext& context) 
-		{
-			auto pipeline = ShaderMap::GetComputePipeline<GTAOMainPassCS>();
-			auto pointClampSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureWrap::Clamp>();
-
-			GTAOMainPassCS::Parameters parameters;
-			parameters.AOTerm = data.aoOutput;
-			parameters.Edges = data.edgesOutput;
-			parameters.SrcDepth = prefilterDepthData.prefilteredDepth;
-			parameters.ViewspaceNormals = preDepthData.normals;
-			parameters.PointClampSampler = pointClampSampler->GetResourceHandle();
-			parameters.Constants = prefilterDepthData.constants;
-			
-			context.BindPipeline(pipeline);
-			context.SetParameters<GTAOMainPassCS>(parameters);
-
-			const uint32_t dispatchX = Math::DivideRoundUp(renderSize.x, 16u);
-			const uint32_t dispatchY = Math::DivideRoundUp(renderSize.y, 16u);
-
-			context.Dispatch(dispatchX, dispatchY, 1);
-		});
-	}
-
-	GTAOOutput GTAOTechnique::AddDenoisePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
-	{
-		const auto& gtaoData = blackboard.Get<GTAOData>();
-		const auto& prefilterDepthData = blackboard.Get<PrefilterDepthData>();
-
-		const glm::uvec2 renderSize = m_constants.ViewportSize;
-
-		GTAOOutput& output = renderGraph.AddPass<GTAOOutput>("GTAO Denoise Pass 0",
-		[&](RenderGraph::Builder& builder, GTAOOutput& data) 
-		{
-			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::R32_UINT>(renderSize.x, renderSize.y, RHI::ImageUsage::Storage, "GTAO Final Output");
-				data.outputImage = builder.CreateImage(desc);
-			}
-
-			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::R32_UINT>(renderSize.x, renderSize.y, RHI::ImageUsage::Storage, "GTAO Temp Image");
-				data.tempImage = builder.CreateImage(desc);
-			}
-
-			builder.ReadResource(gtaoData.aoOutput);
-			builder.ReadResource(gtaoData.edgesOutput);
-
-			builder.SetIsComputePass();
-		},
-		[=](const GTAOOutput& data, RenderContext& context)
-		{
-			auto pipeline = ShaderMap::GetComputePipeline<GTAODenoiseCS>();
-			auto pointClampSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureWrap::Clamp>();
-		
-			GTAODenoiseCS::Parameters parameters;
-			parameters.RWFinalAOTerm = data.outputImage;
-			parameters.AOTerm = gtaoData.aoOutput;
-			parameters.Edges = gtaoData.edgesOutput;
-			parameters.PointClampSampler = pointClampSampler->GetResourceHandle();
-			parameters.Constants = prefilterDepthData.constants;
-
-			context.BindPipeline(pipeline);
-			context.SetParameters<GTAODenoiseCS>(parameters);
-		
-			const uint32_t dispatchX = Math::DivideRoundUp(renderSize.x, 8u);
-			const uint32_t dispatchY = Math::DivideRoundUp(renderSize.y, 8u);
-
-			context.Dispatch(dispatchX, dispatchY, 1);
-		});
-
-		return output;
+		return uniformBuffer;
 	}
 }
-

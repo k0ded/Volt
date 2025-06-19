@@ -2,16 +2,11 @@
 
 #include "Volt-Renderer/Config.h"
 
-#include <RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h>
-#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <glm/glm.hpp>
 
 namespace Volt
 {
 	class Camera;
-	class RenderContext;
-	class RenderGraphPassResources;
-	class RenderGraph;
-	class RenderGraph::Builder;
 
 	enum class VisibilityVisualization
 	{
@@ -26,6 +21,7 @@ namespace Volt
 		glm::vec2 jitter = 0.f;
 	};
 
+#if 0
 	struct ExternalImagesData
 	{
 		RenderGraphImageHandle black1x1Cube;
@@ -152,4 +148,5 @@ namespace Volt
 		RenderGraphImageHandle outputTextureHandle;
 		RenderGraphImageHandle uiCommandsBufferHandle;
 	};
+#endif
 }

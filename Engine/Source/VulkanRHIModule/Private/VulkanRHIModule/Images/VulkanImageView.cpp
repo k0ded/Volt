@@ -9,16 +9,16 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <vulkan/vulkan.h>
 
 namespace Volt::RHI
 {
-	VulkanImageView::VulkanImageView(const ImageViewSpecification& specification)
-		: m_specification(specification)
+	VulkanImageView::VulkanImageView(const ImageViewDesc& desc)
+		: m_desc(desc)
 	{
-		auto imageRes = specification.image;
+		auto imageRes = desc.image;
 		auto image = imageRes->As<Image>();
 
 		m_format = image->GetFormat();
@@ -34,15 +34,15 @@ namespace Volt::RHI
 
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.viewType = Utility::VoltToVulkanViewType(specification.viewType);
+		viewInfo.viewType = Utility::VoltToVulkanViewType(desc.viewType);
 		viewInfo.format = Utility::VoltToVulkanFormat(m_format);
 		viewInfo.flags = 0;
 		viewInfo.subresourceRange = {};
 		viewInfo.subresourceRange.aspectMask = aspectMask;
-		viewInfo.subresourceRange.baseMipLevel = specification.baseMipLevel;
-		viewInfo.subresourceRange.baseArrayLayer = specification.baseArrayLayer;
-		viewInfo.subresourceRange.levelCount = specification.mipCount;
-		viewInfo.subresourceRange.layerCount = specification.layerCount;
+		viewInfo.subresourceRange.baseMipLevel = desc.baseMipLevel;
+		viewInfo.subresourceRange.baseArrayLayer = desc.baseArrayLayer;
+		viewInfo.subresourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? image->GetMipCount() : desc.mipCount;
+		viewInfo.subresourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? image->GetLayerCount() : desc.layerCount;
 		viewInfo.image = image->GetHandle<VkImage>();
 
 		auto device = GraphicsContext::GetDevice();
@@ -51,7 +51,7 @@ namespace Volt::RHI
 
 	VulkanImageView::~VulkanImageView()
 	{
-		RHIProxy::GetInstance().DestroyResource([imageView = m_imageView]()
+		RHIModule::GetInstance().DestroyResource([imageView = m_imageView]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyImageView(device->GetHandle<VkDevice>(), imageView, nullptr);
@@ -72,7 +72,7 @@ namespace Volt::RHI
 
 	const uint64_t VulkanImageView::GetDeviceAddress() const
 	{
-		return m_specification.image->GetDeviceAddress();
+		return m_desc.image->GetDeviceAddress();
 	}
 
 	const ImageUsage VulkanImageView::GetImageUsage() const
@@ -82,7 +82,7 @@ namespace Volt::RHI
 
 	const ImageViewType VulkanImageView::GetViewType() const
 	{
-		return m_specification.viewType;
+		return m_desc.viewType;
 	}
 
 	const bool VulkanImageView::IsSwapchainView() const
@@ -93,5 +93,10 @@ namespace Volt::RHI
 	void* VulkanImageView::GetHandleImpl() const
 	{
 		return m_imageView;
+	}
+
+	const ImageViewDesc& VulkanImageView::GetDesc() const
+	{
+		return m_desc;
 	}
 }

@@ -35,11 +35,6 @@ namespace Volt::RHI
 		return m_deviceQueues.at(queueType);
 	}
 
-	const GraphicsDeviceCapabilities& D3D12GraphicsDevice::GetCapabilities() const
-	{
-		return m_deviceCapabilities;
-	}
-
 	uint64_t D3D12GraphicsDevice::GetAndIncreaseFenceValue()
 	{
 		uint64_t value = m_currentFenceValue;

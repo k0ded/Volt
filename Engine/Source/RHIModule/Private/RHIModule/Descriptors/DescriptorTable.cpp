@@ -1,12 +1,12 @@
 #include "rhipch.h"
 
 #include "RHIModule/Descriptors/DescriptorTable.h"
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
 	RefPtr<DescriptorTable> DescriptorTable::Create(const DescriptorTableCreateInfo& specification)
 	{
-		return RHIProxy::GetInstance().CreateDescriptorTable(specification);
+		return RHIModule::GetInstance().CreateDescriptorTable(specification);
 	}
 }

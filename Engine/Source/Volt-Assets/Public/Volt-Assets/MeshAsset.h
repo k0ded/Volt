@@ -32,6 +32,6 @@ namespace Volt
 		void FinalizeDeserialization();
 
 		Ref<Mesh> m_mesh;
-		vt::map<uint32_t, AssetHandle> m_materials;
+		Map<uint32_t, AssetHandle> m_materials;
 	};
 }

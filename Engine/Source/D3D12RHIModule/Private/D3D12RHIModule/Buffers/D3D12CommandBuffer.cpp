@@ -26,7 +26,7 @@
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Memory/MemoryUtility.h>
 #include <RHIModule/Images/ImageUtility.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/EnumUtils.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -962,52 +962,19 @@ namespace Volt::RHI
 		return 0.0f;
 	}
 
-	void D3D12CommandBuffer::ClearImage(RawPtr<Image> image, std::array<float, 4> clearColor)
+	void D3D12CommandBuffer::ClearBufferView(RawPtr<BufferView> bufferView, const uint32_t clearValue)
 	{
-		VT_PROFILE_FUNCTION();
-
-		auto imageView = image->GetView();
-		auto& d3d12View = imageView->AsRef<D3D12ImageView>();
-
-		D3D12_RECT rect{};
-		rect.top = 0;
-		rect.left = 0;
-		rect.bottom = image->GetHeight();
-		rect.right = image->GetWidth();
-
-		if ((image->GetImageAspect() & ImageAspect::Depth) != ImageAspect::None)
-		{
-			m_commandListData.commandList->ClearDepthStencilView(D3D12_CPU_DESCRIPTOR_HANDLE(d3d12View.GetRTVDSVDescriptor().GetCPUPointer()), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, clearColor[0], static_cast<uint8_t>(clearColor[1]), 1, &rect);
-		}
-		else
-		{
-			m_commandListData.commandList->ClearRenderTargetView(D3D12_CPU_DESCRIPTOR_HANDLE(d3d12View.GetRTVDSVDescriptor().GetCPUPointer()), clearColor.data(), 1, &rect);
-		}
 	}
 
-	void D3D12CommandBuffer::ClearBuffer(RawPtr<StorageBuffer> buffer, const uint32_t value)
+	void D3D12CommandBuffer::ClearBufferView(RawPtr<BufferView> bufferView, const float clearValue)
 	{
-		VT_PROFILE_FUNCTION();
-
-		auto view = buffer->GetView().As<D3D12BufferView>();
-		ID3D12Device2* devicePtr = GraphicsContext::GetDevice()->GetHandle<ID3D12Device2*>();
-
-		D3D12DescriptorPointer srcDescriptor = view->GetUAVDescriptor();
-		VT_ENSURE(srcDescriptor.IsValid());
-
-		D3D12DescriptorPointer tempDescriptor = CreateTempDescriptorPointer();
-		VT_ENSURE(tempDescriptor.IsValid());
-
-		devicePtr->CopyDescriptorsSimple(1, D3D12_CPU_DESCRIPTOR_HANDLE(tempDescriptor.GetCPUPointer()), D3D12_CPU_DESCRIPTOR_HANDLE(srcDescriptor.GetCPUPointer()), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-		const uint32_t values[4] = { value, value, value, value };
-		ID3D12DescriptorHeap* heap = m_descriptorHeap->GetHeap().Get();
-
-		m_commandListData.commandList->SetDescriptorHeaps(1, &heap);
-		m_commandListData.commandList->ClearUnorderedAccessViewUint(D3D12_GPU_DESCRIPTOR_HANDLE(tempDescriptor.GetGPUPointer()), D3D12_CPU_DESCRIPTOR_HANDLE(srcDescriptor.GetCPUPointer()), buffer->GetHandle<ID3D12Resource*>(), values, 0, nullptr);
 	}
 
-	void D3D12CommandBuffer::UpdateBuffer(RawPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data)
+	void D3D12CommandBuffer::ClearImageView(RawPtr<ImageView> imageView, std::array<uint32_t, 4> clearValue)
+	{
+	}
+
+	void D3D12CommandBuffer::ClearImageView(RawPtr<ImageView> imageView, std::array<float, 4> clearValue)
 	{
 	}
 
@@ -1071,4 +1038,10 @@ namespace Volt::RHI
 	void D3D12CommandBuffer::ExecuteSecondaryCommandBuffers(Vector<RefPtr<CommandBuffer>> commandBuffers) const
 	{
 	}
+
+	void D3D12CommandBuffer::BindDescriptorTable2(RawPtr<DescriptorTable> descriptorTable)
+	{
+
+	}
+
 }

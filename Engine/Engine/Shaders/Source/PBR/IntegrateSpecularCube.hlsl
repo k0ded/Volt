@@ -1,16 +1,9 @@
-#include "PushConstant.hlsli"
+RWTexture2DArray<float3> RWOutput;
+TextureCube<float3> Input;
+SamplerState LinearSampler;
 
-RWTexture2DArray<float3> o_output;
-TextureCube<float3> u_input;
-SamplerState u_linearSampler;
-
-struct PushConstants
-{
-    uint mipIndex;
-    uint mipCount;
-};
-
-PUSH_CONSTANT(PushConstants, u_pushConstants);
+uint MipIndex;
+uint MipCount;
 
 static const float PI = 3.14159265359;
 
@@ -50,7 +43,7 @@ float D_GGX_Divide_Pi(float NdotH, float m)
 float3 IntegrateCubeLDOnly(float3 V, float3 N, float roughness)
 {
     const uint sampleCount = 32;
-    const uint cubeSize = 1u << (u_pushConstants.mipCount - 1);
+    const uint cubeSize = 1u << (MipCount - 1);
 
     float3 accBrdf = 0.f;
     float accBrdfWeight = 0.f;
@@ -72,7 +65,7 @@ float3 IntegrateCubeLDOnly(float3 V, float3 N, float roughness)
             float omegaP = 4.f * PI / (6.f * cubeSize * cubeSize) * 2.f;
             float mipLevel = 0.5f * log2(omegaS / omegaP);
 
-            float3 Li = u_input.SampleLevel(u_linearSampler, L, mipLevel);
+            float3 Li = Input.SampleLevel(LinearSampler, L, mipLevel);
 
             accBrdf += Li * NdotL;
             accBrdfWeight += NdotL;
@@ -87,7 +80,7 @@ float3 GetCubeMapTexCoord(uint3 dispatchId)
     uint2 texSize;
     uint elements;
 
-    o_output.GetDimensions(texSize.x, texSize.y, elements);
+    RWOutput.GetDimensions(texSize.x, texSize.y, elements);
 
     float2 ST = dispatchId.xy / float2(texSize.x, texSize.y);
     float2 UV = 2.f * float2(ST.x, 1.f - ST.y) - 1.f;
@@ -125,21 +118,21 @@ float CalculateRoughnessFromMipLevel(float mip, float mipCount)
 }
 
 [numthreads(32, 32, 1)]
-void main(uint3 dispatchId : SV_DispatchThreadID)
+void MainCS(uint3 dispatchId : SV_DispatchThreadID)
 {
     float3 N = GetCubeMapTexCoord(dispatchId);
-    float roughness = CalculateRoughnessFromMipLevel(u_pushConstants.mipIndex, u_pushConstants.mipCount);
+    float roughness = CalculateRoughnessFromMipLevel(MipIndex, MipCount);
 
     float3 color = 0.f;
 
-    if (u_pushConstants.mipIndex == 0)
+    if (MipIndex == 0)
     {
-        color = u_input.SampleLevel(u_linearSampler, N, 0.f);
+        color = Input.SampleLevel(LinearSampler, N, 0.f);
     }
     else   
     {
         color = IntegrateCubeLDOnly(normalize(N), normalize(N), roughness * roughness);
     }
 
-    o_output[dispatchId] = color;
+    RWOutput[dispatchId] = color;
 }

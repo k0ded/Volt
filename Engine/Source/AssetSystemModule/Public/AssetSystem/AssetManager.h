@@ -30,8 +30,8 @@ namespace Volt
 		using AssetCreateFunction = std::function<Ref<Asset>()>;
 		using AssetChangedCallback = std::function<void(AssetHandle assetHandle, AssetChangedState state)>;
 
-		using AssetRegistry = vt::map<AssetHandle, AssetMetadata>;
-		using AssetCache = vt::map<AssetHandle, Ref<Asset>>;
+		using AssetRegistry = Map<AssetHandle, AssetMetadata>;
+		using AssetCache = Map<AssetHandle, Ref<Asset>>;
 
 		AssetManager(const std::filesystem::path& projectDirectory, const std::filesystem::path& assetsDirectory, const std::filesystem::path& engineDirectory);
 		~AssetManager();

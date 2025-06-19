@@ -35,17 +35,12 @@ namespace Volt
 
 	struct ApplicationInfo
 	{
-		ApplicationInfo(const std::string& aTitle = "Volt", WindowMode aWindowMode = WindowMode::Windowed, uint32_t aWidth = 1280, uint32_t aHeight = 720, bool aUseVSync = true, bool aEnableImGui = true)
-			: title(aTitle), width(aWidth), height(aHeight), useVSync(aUseVSync), enableImGui(aEnableImGui), windowMode(aWindowMode)
-		{
-		}
-
-		std::string title;
+		std::string title = "Volt";
 		std::filesystem::path iconPath;
 		std::filesystem::path cursorPath;
-		WindowMode windowMode;
-		uint32_t width;
-		uint32_t height;
+		WindowMode windowMode = WindowMode::Windowed;
+		uint32_t width = 1280;
+		uint32_t height = 720;
 		bool useVSync = true;
 		bool enableImGui = true;
 		bool enableImGuiViewports = true;
@@ -74,7 +69,8 @@ namespace Volt
 	{
 		class ImGuiImplementation;
 		class GraphicsContext;
-		class RHIProxy;
+		class RHIModule;
+		class RHIModuleLoader;
 	}
 
 	class Application;
@@ -147,6 +143,11 @@ namespace Volt
 		bool m_hasSentMouseMovedEvent = false;
 		bool m_skipPresentThisFrame = false;
 
+		// This flag is a temporary fix for maximizing (as it happens mid frame).
+		// A proper fix is to create a queue system to the Event System
+		// that is dispached at the end of the frame.
+		bool m_isProcessingFrame = false;
+
 		float m_currentDeltaTime = 0.f;
 		float m_lastTotalTime = 0.f;
 
@@ -156,9 +157,6 @@ namespace Volt
 
 		LayerStack m_layerStack;
 		MultiTimer m_frameTimer;
-
-		RefPtr<RHI::GraphicsContext> m_graphicsContext;
-		RefPtr<RHI::RHIProxy> m_rhiProxy;
 
 		Scope<AssetManager> m_assetManager;
 		Scope<SourceAssetManager> m_sourceAssetManager;
@@ -173,9 +171,9 @@ namespace Volt
 		PluginRegistry* m_pluginRegistry = nullptr;
 		PluginSystem* m_pluginSystem = nullptr;
 		WindowManager* m_windowManager = nullptr;
-		PhysicsSubSystem* m_physicsSubSystem = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
 		Log* m_logSubSystem = nullptr;
+		RHI::RHIModuleLoader* m_rhiModuleLoader = nullptr;
 
 		const CommandLineBuilder m_commandLineBuilder;
 	};

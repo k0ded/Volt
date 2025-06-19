@@ -455,7 +455,7 @@ namespace Volt::RHI
 		{
 			m_perImageData[i].image = images.at(i);
 
-			SwapchainImageSpecification spec{};
+			SwapchainImageDesc spec{};
 			spec.swapchain = this;
 			spec.imageIndex = static_cast<uint32_t>(i);
 

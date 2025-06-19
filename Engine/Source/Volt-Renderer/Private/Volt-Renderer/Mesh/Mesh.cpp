@@ -10,7 +10,7 @@
 
 #include <Volt-Core/Algorithms.h>
 
-#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <CoreUtilities/Math/Math.h>
 
@@ -232,7 +232,7 @@ namespace Volt
 
 		RHI::BufferUsage rayTracingFlags = RHI::BufferUsage::None;
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
 			rayTracingFlags |= RHI::BufferUsage::AccelerationStructureInput | RHI::BufferUsage::DeviceAddress;
 		}
@@ -240,21 +240,42 @@ namespace Volt
 		// Index buffer
 		{
 			const auto& indices = m_indices;
-			m_indexBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(indices.size()), sizeof(uint32_t), meshName + "IndexBuffer", RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndexBuffer | rayTracingFlags);
+
+			RHI::BufferDesc desc{};
+			desc.count = static_cast<uint32_t>(indices.size());
+			desc.elementSize = sizeof(uint32_t);
+			desc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndexBuffer | rayTracingFlags;
+			desc.debugName = meshName + "IndexBuffer";
+
+			m_indexBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 			m_indexBuffer->GetResource()->SetData(indices.data(), indices.size() * sizeof(uint32_t));
 		}
 
 		// Vertex positions
 		{
 			const auto& vertexPositions = m_vertexContainer.positions;
-			m_vertexPositionsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexPositions.size()), sizeof(glm::vec3), meshName + "VertexPositions", RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::VertexBuffer | rayTracingFlags);
+
+			RHI::BufferDesc desc{};
+			desc.count = static_cast<uint32_t>(vertexPositions.size());
+			desc.elementSize = sizeof(glm::vec3);
+			desc.usage = RHI::BufferUsage::VertexBuffer | rayTracingFlags;
+			desc.debugName = meshName + "VertexPositions";
+
+			m_vertexPositionsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 			m_vertexPositionsBuffer->GetResource()->SetData(vertexPositions.data(), vertexPositions.size() * sizeof(glm::vec3));
 		}
 
 		// Vertex material data
 		{
 			const auto& vertexMaterialData = m_vertexContainer.materialData;
-			m_vertexMaterialBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexMaterialData.size()), sizeof(VertexMaterialData), meshName + "VertexMaterialData");
+
+			RHI::BufferDesc desc{};
+			desc.count = static_cast<uint32_t>(vertexMaterialData.size());
+			desc.elementSize = sizeof(VertexMaterialData);
+			desc.debugName = meshName + "VertexMaterialData";
+			desc.usage = RHI::BufferUsage::VertexBuffer;
+
+			m_vertexMaterialBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 			m_vertexMaterialBuffer->GetResource()->SetData(vertexMaterialData.data(), vertexMaterialData.size() * sizeof(VertexMaterialData));
 		}
 
@@ -263,7 +284,12 @@ namespace Volt
 			const auto& vertexAnimationInfo = m_vertexContainer.animationInfo;
 			if (!vertexAnimationInfo.empty())
 			{
-				m_vertexAnimationInfoBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexAnimationInfo.size()), sizeof(VertexAnimationInfo), meshName + "VertexAnimationInfo");
+				RHI::BufferDesc desc{};
+				desc.count = static_cast<uint32_t>(vertexAnimationInfo.size());
+				desc.elementSize = sizeof(VertexAnimationInfo);
+				desc.debugName = meshName + "VertexAnimationInfo";
+
+				m_vertexAnimationInfoBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 				m_vertexAnimationInfoBuffer->GetResource()->SetData(vertexAnimationInfo.data(), vertexAnimationInfo.size() * sizeof(VertexAnimationInfo));
 			}
 		}
@@ -271,16 +297,28 @@ namespace Volt
 		// Vertex animation data
 		{
 			const auto& vertexAnimationData = m_vertexContainer.animationData;
-			m_vertexAnimationDataBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexAnimationData.size()), sizeof(VertexAnimationData), meshName + "VertexAnimationData");
+		
+			RHI::BufferDesc desc{};
+			desc.count = static_cast<uint32_t>(vertexAnimationData.size());
+			desc.elementSize = sizeof(VertexAnimationData);
+			desc.debugName = meshName + "VertexAnimationData";
+			
+			m_vertexAnimationDataBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 			m_vertexAnimationDataBuffer->GetResource()->SetData(vertexAnimationData.data(), vertexAnimationData.size() * sizeof(VertexAnimationData));
 		}
 
 		// Vertex bone influences
 		{
 			const auto& vertexBoneInfluences = m_vertexContainer.boneInfluences;
+
+			RHI::BufferDesc desc{};
+			desc.count = static_cast<uint32_t>(vertexBoneInfluences.size());
+			desc.elementSize = sizeof(uint16_t);
+			desc.debugName = meshName + "VertexBoneInfluences";
+
 			if (!vertexBoneInfluences.empty())
 			{
-				m_vertexBoneInfluencesBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexBoneInfluences.size()), sizeof(uint16_t), meshName + "VertexBoneInfluences");
+				m_vertexBoneInfluencesBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 				m_vertexBoneInfluencesBuffer->GetResource()->SetData(vertexBoneInfluences.data(), vertexBoneInfluences.size() * sizeof(uint16_t));
 			}
 		}
@@ -288,22 +326,38 @@ namespace Volt
 		// Vertex bone weights
 		{
 			const auto& vertexBoneWeights = m_vertexContainer.boneWeights;
+
+			RHI::BufferDesc desc{};
+			desc.count = static_cast<uint32_t>(vertexBoneWeights.size());
+			desc.elementSize = sizeof(float);
+			desc.debugName = meshName + "VertexBoneWeights";
+
 			if (!vertexBoneWeights.empty())
 			{
-				m_vertexBoneWeightsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexBoneWeights.size()), sizeof(float), meshName + "VertexBoneWeights");
+				m_vertexBoneWeightsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 				m_vertexBoneWeightsBuffer->GetResource()->SetData(vertexBoneWeights.data(), vertexBoneWeights.size() * sizeof(float));
 			}
 		}
 
 		// Meshlet Data
 		{
-			m_meshletDataBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(m_meshletData.size()), sizeof(uint32_t), meshName + "MeshletData");
+			RHI::BufferDesc desc{};
+			desc.count = static_cast<uint32_t>(m_meshletData.size());
+			desc.elementSize = sizeof(uint32_t);
+			desc.debugName = meshName + "MeshletData";
+
+			m_meshletDataBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 			m_meshletDataBuffer->GetResource()->SetData(m_meshletData.data(), m_meshletData.size() * sizeof(uint32_t));
 		}
 
 		// Meshlets
 		{
-			m_meshletsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(m_meshlets.size()), sizeof(Meshlet), meshName + "Meshlets");
+			RHI::BufferDesc desc{};
+			desc.count = static_cast<uint32_t>(m_meshlets.size());
+			desc.elementSize = sizeof(Meshlet);
+			desc.debugName = meshName + "Meshlets";
+
+			m_meshletsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 			m_meshletsBuffer->GetResource()->SetData(m_meshlets.data(), m_meshlets.size() * sizeof(Meshlet));
 		}
 
@@ -416,7 +470,7 @@ namespace Volt
 		}
 
 		// Create RT data
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
 			RayTracingSceneGeometryCreateInfo info{};
 			info.indexBuffer = m_indexBuffer->GetResource();

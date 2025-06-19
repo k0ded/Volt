@@ -28,9 +28,7 @@
 #include <RHIModule/ImGui/ImGuiImplementation.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/FrameCapture.h>
-
-#include <VulkanRHIModule/VulkanRHIProxy.h>
-#include <D3D12RHIModule/D3D12RHIProxy.h>
+#include <RHIModule/RHIModuleLoader.h>
 
 #include "Volt-Audio/AudioSystem/IAudioSystem.h"
 #include "Volt-Audio/AudioSystem/AudioSystemFactory.h"
@@ -49,7 +47,6 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/Allocator.h>
 
 namespace Volt
 {
@@ -94,14 +91,13 @@ namespace Volt
 		VT_ASSERT_MSG(!s_instance, "Application already exists!");
 		s_instance = this;
 
-		g_heapAllocator = CreateScope<PagedHeapAllocator>();
-
 		FileSystem::Initialize();
 		FileSystem::InitializeWorkingDirectory(info.isRuntime, commandLineBuilder);
 
 		m_subSystemManager = CreateScope<SubSystemManager>();
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
 
+		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
 		m_logSubSystem = SubSystemManager::GetSubSystem<Log>();
 		m_logSubSystem->EnableLogging(m_info.enableLogging);
 
@@ -159,7 +155,6 @@ namespace Volt
 		}
 
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
-		m_physicsSubSystem = SubSystemManager::GetSubSystem<PhysicsSubSystem>();
 
 		//Init AudioSystem
 		{
@@ -214,13 +209,9 @@ namespace Volt
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
 		m_assetManager = nullptr;
-		g_assetSerializerRegistry.Clear();
-		g_assetFactory.Clear();
 
 		m_windowManager->DestroyMainWindow();
 
-		m_graphicsContext = nullptr;
-		m_rhiProxy = nullptr;
 		WindowManager::ShutdownGLFW();
 
 		m_pluginSystem->UnloadPlugins();
@@ -234,7 +225,6 @@ namespace Volt
 
 		m_subSystemManager = nullptr;
 
-		g_heapAllocator.reset();
 		s_instance = nullptr;
 	}
 
@@ -316,9 +306,8 @@ namespace Volt
 	{
 		m_hasSentMouseMovedEvent = false;
 
-		RHI::GraphicsContext::Update();
-
 		WindowManager::Get().BeginFrame();
+		m_isProcessingFrame = true;
 
 		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
 		m_frameTimer.Update();
@@ -373,6 +362,8 @@ namespace Volt
 			EventSystem::DispatchEvent(postFrameUpdateEvent);
 		}
 
+		m_isProcessingFrame = false;
+
 		if (!m_skipPresentThisFrame)
 		{
 			WindowManager::Get().Present();
@@ -384,39 +375,22 @@ namespace Volt
 
 	void Application::CreateGraphicsContext()
 	{
-		RHI::GraphicsContextCreateInfo cinfo{};
-		cinfo.graphicsApi = RHI::GraphicsAPI::Vulkan;
-
-		if (cinfo.graphicsApi == RHI::GraphicsAPI::Vulkan)
+		RHI::RHICallbackInfo callbackInfo{};
+		callbackInfo.requestCloseEventCallback = []()
 		{
-			m_rhiProxy = RHI::CreateVulkanRHIProxy();
-		}
-		else if (cinfo.graphicsApi == RHI::GraphicsAPI::D3D12)
-		{
-			m_rhiProxy = RHI::CreateD3D12RHIProxy();
-		}
+			WindowCloseEvent closeEvent{};
+			EventSystem::DispatchEvent(closeEvent);
+		};
 
-		{
-			RHI::RHICallbackInfo callbackInfo{};
-			callbackInfo.resourceManagementInfo.resourceDeletionCallback = Renderer::DestroyResource;
-			callbackInfo.requestCloseEventCallback = []()
-			{
-				WindowCloseEvent closeEvent{};
-				EventSystem::DispatchEvent(closeEvent);
-			};
-
-			m_rhiProxy->SetRHICallbackInfo(callbackInfo);
-		}
-
-		m_graphicsContext = RHI::GraphicsContext::Create(cinfo);
+		m_rhiModuleLoader->LoadRHI(RHI::GraphicsAPI::Vulkan, callbackInfo);
 	}
 
 	void Application::SetupFrameCapture()
 	{
-		if (RHI::RHIProxy::GetInstance().GetFrameCapture())
+		if (RHI::RHIModule::GetInstance().GetFrameCapture())
 		{
-			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetFlags(RHI::FrameCaptureFlags::DisableOverlay);
-			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetCaptureFileTargetFilePath(ProjectManager::GetProjectDirectory() / ("Volt-" + ProjectManager::GetProject().name));
+			RHI::RHIModule::GetInstance().GetFrameCapture()->SetFlags(RHI::FrameCaptureFlags::DisableOverlay);
+			RHI::RHIModule::GetInstance().GetFrameCapture()->SetCaptureFileTargetFilePath(ProjectManager::GetProjectDirectory() / ("Volt-" + ProjectManager::GetProject().name));
 		}
 	}
 
@@ -448,7 +422,10 @@ namespace Volt
 
 		WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
 
-		MainUpdate();
+		if (!m_isProcessingFrame)
+		{
+			MainUpdate();
+		}
 
 		return false;
 	}

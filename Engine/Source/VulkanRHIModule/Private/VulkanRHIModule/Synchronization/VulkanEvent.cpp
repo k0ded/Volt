@@ -8,7 +8,7 @@
 
 #include <RHIModule/Utility/ValidationTimer.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <vulkan/vulkan.h>
 
@@ -27,7 +27,7 @@ namespace Volt::RHI
 	
 	VulkanEvent::~VulkanEvent()
 	{
-		RHIProxy::GetInstance().DestroyResource([event = m_event]()
+		RHIModule::GetInstance().DestroyResource([event = m_event]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyEvent(device->GetHandle<VkDevice>(), event, nullptr);

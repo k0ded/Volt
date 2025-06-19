@@ -383,7 +383,7 @@ namespace Volt::RHI
 			return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		}
 
-		D3D12_RESOURCE_DESC1 GetD3D12ResourceDesc(const ImageSpecification& specification);
+		D3D12_RESOURCE_DESC1 GetD3D12ResourceDesc(const ImageDesc& specification);
 		MemoryRequirement GetMemoryRequirements(const D3D12_RESOURCE_DESC1& resourceDesc);
 	}
 }

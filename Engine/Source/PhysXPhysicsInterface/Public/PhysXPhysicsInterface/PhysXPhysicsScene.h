@@ -55,8 +55,8 @@ namespace Volt
 		PhysicsSceneCreateInfo m_createInfo;
 		PhysicsSubStepper m_subStepper;
 
-		vt::map<PhysicsActorID, Ref<PhysicsControllerActor>> m_controllerActors;
-		vt::map<PhysicsActorID, Ref<PhysicsActor>> m_actors;
+		Map<PhysicsActorID, Ref<PhysicsControllerActor>> m_controllerActors;
+		Map<PhysicsActorID, Ref<PhysicsActor>> m_actors;
 
 		physx::PxScene* m_physXScene = nullptr;
 		physx::PxControllerManager* m_controllerManager = nullptr;

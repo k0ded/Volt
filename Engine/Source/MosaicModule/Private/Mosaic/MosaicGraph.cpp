@@ -3,6 +3,7 @@
 
 #include "Mosaic/NodeRegistry.h"
 #include "Mosaic/MosaicNode.h"
+#include "Mosaic/MosaicShaderWriter.h"
 
 namespace Mosaic
 {
@@ -14,7 +15,7 @@ namespace Mosaic
 	{
 	}
 
-	const std::string MosaicGraph::Compile() const
+	const MosaicShaderWriter MosaicGraph::Compile() const
 	{
 		constexpr VoltGUID OUTPUT_GUID = "{343B2C0A-C4E3-41BB-8629-F9939795AC76}"_guid;
 
@@ -40,10 +41,10 @@ namespace Mosaic
 			return {};
 		}
 
-		std::string outShaderCode;
-		node.nodeData->GetShaderCode(node, 0, outShaderCode);
+		MosaicShaderWriter shaderWriter{};
+		node.nodeData->Compile(node, 0, shaderWriter);
 
-		return outShaderCode;
+		return shaderWriter;
 	}
 
 	void MosaicGraph::Clear()

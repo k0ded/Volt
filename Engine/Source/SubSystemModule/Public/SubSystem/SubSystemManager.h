@@ -38,6 +38,6 @@ private:
 		size_t index;
 	};
 
-	vt::map <VoltGUID, Ref<SubSystem>> m_subSystemsMap;
-	vt::map<SubSystemInitializationStage, Vector<Ref<SubSystem>>> m_subSystems;
+	Map <VoltGUID, Ref<SubSystem>> m_subSystemsMap;
+	Map<SubSystemInitializationStage, Vector<Ref<SubSystem>>> m_subSystems;
 };

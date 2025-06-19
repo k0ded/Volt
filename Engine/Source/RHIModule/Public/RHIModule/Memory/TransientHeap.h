@@ -41,7 +41,7 @@ namespace Volt::RHI
 
 	struct TransientImageCreateInfo
 	{
-		ImageSpecification imageSpecification;
+		ImageDesc imageSpecification;
 		uint64_t size = 0;
 		size_t hash = 0;
 	};

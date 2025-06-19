@@ -48,7 +48,7 @@ public:
 	void Read(std::unordered_map<Key, Value>& data);
 
 	template<typename Key, typename Value>
-	void Read(vt::map<Key, Value>& data);
+	void Read(Map<Key, Value>& data);
 
 	void Read(void* data);
 
@@ -285,7 +285,7 @@ inline void BinaryStreamReader::Read(std::unordered_map<Key, Value>& data)
 }
 
 template<typename Key, typename Value>
-inline void BinaryStreamReader::Read(vt::map<Key, Value>& data)
+inline void BinaryStreamReader::Read(Map<Key, Value>& data)
 {
 	TypeHeader serializedTypeHeader = ReadTypeHeader();
 

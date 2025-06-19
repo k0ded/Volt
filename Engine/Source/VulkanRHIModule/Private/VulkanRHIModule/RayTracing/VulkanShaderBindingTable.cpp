@@ -46,7 +46,7 @@ namespace Volt::RHI
 		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
 		commandBuffer->Begin();
 
-		Vector<ResourceBarrierInfo> barriers{};
+		BarrierVector barriers{};
 
 		// RayGen
 		{
@@ -54,7 +54,14 @@ namespace Volt::RHI
 
 			if (!rayGenData.shaderHandles.empty())
 			{
-				m_rayGenBindingTable = StorageBuffer::Create(static_cast<uint32_t>(rayGenData.shaderHandles.size()), sizeof(uint8_t), "RayGen SBT", BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress, MemoryUsage::GPU);
+				BufferDesc desc{};
+				desc.count = static_cast<uint32_t>(rayGenData.shaderHandles.size());
+				desc.elementSize = sizeof(uint8_t);
+				desc.debugName = "RayGen SBT";
+				desc.usage = BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress;
+				desc.memoryUsage = MemoryUsage::GPU;
+
+				m_rayGenBindingTable = StorageBuffer::Create(desc);
 				m_rayGenBindingTable->SetData(commandBuffer, rayGenData.shaderHandles.data(), rayGenData.shaderHandles.size() * sizeof(uint8_t));
 
 				auto& barrier = barriers.emplace_back();
@@ -75,7 +82,14 @@ namespace Volt::RHI
 
 			if (!missData.shaderHandles.empty())
 			{
-				m_missBindingTable = StorageBuffer::Create(static_cast<uint32_t>(missData.shaderHandles.size()), sizeof(uint8_t), "Miss SBT", BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress, MemoryUsage::GPU);
+				BufferDesc desc{};
+				desc.count = static_cast<uint32_t>(missData.shaderHandles.size());
+				desc.elementSize = sizeof(uint8_t);
+				desc.debugName = "RayGen SBT";
+				desc.usage = BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress;
+				desc.memoryUsage = MemoryUsage::GPU;
+
+				m_missBindingTable = StorageBuffer::Create(desc);
 				m_missBindingTable->SetData(commandBuffer, missData.shaderHandles.data(), missData.shaderHandles.size() * sizeof(uint8_t));
 
 				auto& barrier = barriers.emplace_back();
@@ -96,7 +110,14 @@ namespace Volt::RHI
 
 			if (!hitGroupData.shaderHandles.empty())
 			{
-				m_hitGroupBindingTable = StorageBuffer::Create(static_cast<uint32_t>(hitGroupData.shaderHandles.size()), sizeof(uint8_t), "Hit Group SBT", BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress, MemoryUsage::GPU);
+				BufferDesc desc{};
+				desc.count = static_cast<uint32_t>(hitGroupData.shaderHandles.size());
+				desc.elementSize = sizeof(uint8_t);
+				desc.debugName = "RayGen SBT";
+				desc.usage = BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress;
+				desc.memoryUsage = MemoryUsage::GPU;
+
+				m_hitGroupBindingTable = StorageBuffer::Create(desc);
 				m_hitGroupBindingTable->SetData(commandBuffer, hitGroupData.shaderHandles.data(), hitGroupData.shaderHandles.size() * sizeof(uint8_t));
 
 				auto& barrier = barriers.emplace_back();
@@ -117,7 +138,14 @@ namespace Volt::RHI
 
 			if (!callableData.shaderHandles.empty())
 			{
-				m_callableBindingTable = StorageBuffer::Create(static_cast<uint32_t>(callableData.shaderHandles.size()), sizeof(uint8_t), "Callable SBT", BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress, MemoryUsage::GPU);
+				BufferDesc desc{};
+				desc.count = static_cast<uint32_t>(callableData.shaderHandles.size());
+				desc.elementSize = sizeof(uint8_t);
+				desc.debugName = "RayGen SBT";
+				desc.usage = BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress;
+				desc.memoryUsage = MemoryUsage::GPU;
+
+				m_callableBindingTable = StorageBuffer::Create(desc);
 				m_callableBindingTable->SetData(commandBuffer, callableData.shaderHandles.data(), callableData.shaderHandles.size() * sizeof(uint8_t));
 
 				auto& barrier = barriers.emplace_back();

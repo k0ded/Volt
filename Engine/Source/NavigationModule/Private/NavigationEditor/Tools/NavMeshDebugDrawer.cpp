@@ -2,7 +2,6 @@
 #include "NavigationEditor/Tools/NavMeshDebugDrawer.h"
 
 #include <Volt-Assets/MaterialAsset.h>
-#include <Volt-Renderer/Material.h>
 
 #include <AssetSystem/AssetManager.h>
 

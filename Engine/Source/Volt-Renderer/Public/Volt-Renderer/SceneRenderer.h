@@ -1,22 +1,15 @@
 #pragma once
 
 #include "Volt-Renderer/SceneRendererStructs.h"
-#include "Volt-Renderer/RenderingTechniques/DDGI.h"
-#include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
-#include "Volt-Renderer/RenderingTechniques/VolumetricFogTechnique.h"
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/SceneRendererExtension.h"
 #include "Volt-Renderer/Config.h"
+#include "Volt-Renderer/Mesh/MeshRenderer.h"
+#include "Volt-Renderer/RenderingTechniques/TAANoise.h"
 
 #include <RenderCore/RenderGraph/RenderGraphDebugger.h>
 
-// #TODO_Ivar: Maybe remove from here
-#include <RenderCore/RenderGraph/RenderGraph.h>
-
 #include <RHIModule/Buffers/CommandBufferSet.h>
-
-// #TODO_Ivar: Temporary until outline pass is moved out from here.
-#include <EntitySystem/EntityID.h>
 #include <RenderCore/Resources/GrowingGPUBuffer.h>
 
 namespace Volt
@@ -46,7 +39,7 @@ namespace Volt
 	class RenderGraph;
 	class RenderGraphBlackboard;
 
-	class RenderGraph::Builder;
+	struct RenderView;
 
 	struct SceneRendererCreateInfo
 	{
@@ -106,44 +99,24 @@ namespace Volt
 		Ref<T> AddExtension(SceneRendererExtensionStage stage);
 
 	private:
+		using SceneRendererExtensionMap = Map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>>;
+
 		void OnRender(Ref<Camera> camera, float timestep);
 
-		void BuildMeshPass(RenderGraph::Builder& builder, RenderGraphBlackboard& blackboard);
-
-		void SetupFrameData(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
-
-		///// Passes //////
-		void UploadUniformBuffers(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
-
-		void AddExternalResources(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-
-		void ExecuteGBufferGenerationPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void ExecutePostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, float timestep, Ref<Camera> camera);
-
-		void AddMainCullingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddGTAOPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
-		void AddVisibilityBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-
-		void AddClearGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-
-		void AddGenerateMaterialCountsPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddCollectMaterialPixelsPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddGenerateMaterialIndirectArgsPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-
-		void RenderMaterials(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const uint32_t materialId);
-		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-
-		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddFXAAPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
-
-		void AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
-
-		void AddVisualizationPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
-		void AddPathTracingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
+		///// Render Passes /////
+		void AddDefaultTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void AddEnvironmentTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		/////////////////////////
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
+
+		RGUniformBufferRef CreateViewUniformBuffer(RenderGraph& renderGraph, Ref<Camera> camera);
 
 		bool ShouldApplyJitter() const;
 		bool IsMeshPassVisualizationMode() const;
@@ -184,15 +157,11 @@ namespace Volt
 		VisibilityVisualization m_visibilityVisualization = VisibilityVisualization::TriangleID;
 		////////////////
 		
-		DDGI m_ddgi;
-		TAANoise m_taaNoise;
-		VolumetricFogTechnique m_volumetricFog;
-
 		Ref<RenderScene> m_renderScene;
-		Renderer::EnvironmentTextures m_sceneEnvironment;
+		TAANoise m_taaNoise;
 
 		// Extensions
-		vt::map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>> m_sceneRendererExtensions;
+		SceneRendererExtensionMap m_sceneRendererExtensions;
 	};
 
 	template<typename T>

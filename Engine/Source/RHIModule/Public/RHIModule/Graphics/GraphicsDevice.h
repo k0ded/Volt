@@ -2,7 +2,6 @@
 
 #include "RHIModule/Core/RHICommon.h"
 #include "RHIModule/Core/RHIInterface.h"
-#include "RHIModule/Graphics/GraphicsDeviceCapabilities.h"
 
 namespace Volt::RHI
 {
@@ -16,8 +15,6 @@ namespace Volt::RHI
 		~GraphicsDevice() override = default;
 
 		virtual RefPtr<DeviceQueue> GetDeviceQueue(QueueType queueType) const = 0;
-		virtual const GraphicsDeviceCapabilities& GetCapabilities() const = 0;
-
 		static RefPtr<GraphicsDevice> Create(const GraphicsDeviceCreateInfo& deviceInfo);
 	
 	protected:

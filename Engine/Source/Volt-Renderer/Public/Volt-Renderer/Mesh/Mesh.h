@@ -154,16 +154,16 @@ namespace Volt
 		BoundingSphere m_boundingSphere;
 		BoundingBox m_boundingBox;
 
-		vt::map<uint32_t, BindlessResourceRef<RHI::Image>> m_sdfTextures;
-		vt::map<uint32_t, Vector<SDFBrick>> m_brickGrids;
-		vt::map<uint32_t, BindlessResourceRef<RHI::StorageBuffer>> m_brickBuffers;
+		Map<uint32_t, BindlessResourceRef<RHI::Image>> m_sdfTextures;
+		Map<uint32_t, Vector<SDFBrick>> m_brickGrids;
+		Map<uint32_t, BindlessResourceRef<RHI::StorageBuffer>> m_brickBuffers;
 
 		Vector<GPUMesh> m_gpuMeshes;
 		Vector<GPUMeshSDF> m_gpuMeshSDFs;
 
 		glm::vec3 m_averageScale{ 1.f };
-		vt::map<uint32_t, BoundingSphere> m_subMeshBoundingSpheres;
-		vt::map<uint32_t, BoundingBox> m_subMeshBoundingBoxes;
+		Map<uint32_t, BoundingSphere> m_subMeshBoundingSpheres;
+		Map<uint32_t, BoundingBox> m_subMeshBoundingBoxes;
 
 		bool m_isDirty = false;
 		size_t m_hash = 0;

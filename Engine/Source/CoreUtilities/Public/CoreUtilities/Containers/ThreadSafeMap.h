@@ -6,12 +6,12 @@
 #include <shared_mutex>
 
 template<typename Key, typename Value>
-class ThreadSafeMap : protected vt::map<Key, Value>
+class ThreadSafeMap : protected Map<Key, Value>
 {
 public:
 	using WriteLock = std::unique_lock<std::shared_mutex>;
 	using ReadLock = std::shared_lock<std::shared_mutex>;
-	using Map = vt::map<Key, Value>;
+	using Map = Map<Key, Value>;
 
 	VT_INLINE ThreadSafeMap()
 		: Map()

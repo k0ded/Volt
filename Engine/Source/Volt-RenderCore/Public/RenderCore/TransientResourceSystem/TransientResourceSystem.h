@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
+#include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 
 #include <CoreUtilities/Pointers/RawPtr.h>
 #include <CoreUtilities/Containers/ThreadSafeMap.h>
@@ -15,9 +15,6 @@ namespace Volt
 		class RHIResource;
 	}
 
-	struct RenderGraphImageDesc;
-	struct RenderGraphBufferDesc;
-
 	class TransientResourceSystem
 	{
 	public:
@@ -29,20 +26,16 @@ namespace Volt
 		TransientResourceSystem& operator=(const TransientResourceSystem& other) noexcept;
 		TransientResourceSystem& operator=(TransientResourceSystem&& other) noexcept;
 
-		RawPtr<RHI::Image> AcquireImage(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc);
-		RawPtr<RHI::StorageBuffer> AcquireBuffer(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc);
-		RawPtr<RHI::UniformBuffer> AcquireUniformBuffer(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc);
+		RefPtr<RHI::Image> AcquireTexture(RGTextureRef resource);
+		RefPtr<RHI::StorageBuffer> AcquireBuffer(RGBufferRef resource);
+		RefPtr<RHI::UniformBuffer> AcquireUniformBuffer(RGUniformBufferRef resource);
 
-		RefPtr<RHI::Image> AcquireImageRef(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc);
-		RefPtr<RHI::StorageBuffer> AcquireBufferRef(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc);
-		RefPtr<RHI::UniformBuffer> AcquireUniformBufferRef(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& bufferDesc);
+		RefPtr<RHI::Image> GetTextureIfExists(RGTextureRef resource);
+		RefPtr<RHI::StorageBuffer> GetBufferIfExists(RGBufferRef resource);
+		RefPtr<RHI::UniformBuffer> GetUniformBufferIfExists(RGUniformBufferRef resource);
 
-		RefPtr<RHI::Image> GetImageIfExists(RenderGraphImageHandle resourceHandle, const RenderGraphImageDesc& imageDesc);
-		RefPtr<RHI::StorageBuffer> GetBufferIfExists(RenderGraphBufferHandle resourceHandle, const RenderGraphBufferDesc& imageDesc);
-		RefPtr<RHI::UniformBuffer> GetUniformBufferIfExists(RenderGraphUniformBufferHandle resourceHandle, const RenderGraphBufferDesc& imageDesc);
-
-		void SurrenderResource(RenderGraphResourceHandle originalResource, size_t hash);
-		void AddExternalResource(RenderGraphResourceHandle resourceHandle, RefPtr<RHI::RHIResource> resource);
+		void SurrenderResource(RGResourceRef originalResource, size_t hash);
+		void AddExternalResource(RGResourceRef resource, RefPtr<RHI::RHIResource> rhiResource);
 
 		const uint64_t GetTotalAllocatedSize() const;
 
@@ -53,10 +46,10 @@ namespace Volt
 			bool isOriginal = false;
 		};
 
-		vt::map<RenderGraphResourceHandle, ResourceInfo> m_allocatedResources;
+		Map<RGResourceRef, ResourceInfo> m_allocatedResources;
 		mutable std::mutex m_allocatedResourcesMutex;
 
-		vt::map<size_t, Vector<RenderGraphResourceHandle>> m_surrenderedResources;
+		Map<size_t, Vector<RGResourceRef>> m_surrenderedResources;
 		mutable std::mutex m_surrenderedResourcesMutex;
 	};
 }

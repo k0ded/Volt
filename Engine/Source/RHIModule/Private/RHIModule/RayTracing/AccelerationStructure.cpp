@@ -1,12 +1,12 @@
 #include "rhipch.h"
 
 #include "RHIModule/RayTracing/AccelerationStructure.h"
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
 	RefPtr<AccelerationStructure> AccelerationStructure::Create(const AccelerationStructureCreateInfo& createInfo)
 	{
-		return RHIProxy::GetInstance().CreateAccelerationStructure(createInfo);
+		return RHIModule::GetInstance().CreateAccelerationStructure(createInfo);
 	}
 }

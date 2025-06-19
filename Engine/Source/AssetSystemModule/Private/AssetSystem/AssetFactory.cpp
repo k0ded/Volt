@@ -11,14 +11,14 @@ namespace Volt
 		return true;
 	}
 
-	void AssetFactory::Clear()
-	{
-		m_assetFactoryFunctions.clear();
-	}
-
 	Ref<Asset> AssetFactory::CreateAssetOfType(AssetType type) const
 	{
 		VT_ENSURE(m_assetFactoryFunctions.contains(type->GetGUID()));
 		return m_assetFactoryFunctions.at(type->GetGUID())();
+	}
+
+	Volt::AssetFactory& AssetFactory::Get()
+	{
+		return g_assetFactory;
 	}
 }

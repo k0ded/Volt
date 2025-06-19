@@ -87,6 +87,7 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 Sandbox::Sandbox()
 {

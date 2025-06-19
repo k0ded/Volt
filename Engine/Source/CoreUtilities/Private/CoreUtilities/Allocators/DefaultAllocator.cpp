@@ -1,14 +1,15 @@
 #include "cupch.h"
 #include "CoreUtilities/Allocators/DefaultAllocator.h"
 
-#include "CoreUtilities/Allocator.h"
+#include <CoreUtilities/Profiling/Profiling.h>
 
 void* DefaultAllocator::Allocate(size_t size, size_t alignment)
 {
-	return g_heapAllocator->Allocate(size, alignment);
+	VT_PROFILE_FUNCTION();
+	return s_allocator.Allocate(size, alignment);
 }
 
 void DefaultAllocator::Free(void* pointer, size_t alignment)
 {
-	g_heapAllocator->Free(pointer, alignment);
+	s_allocator.Free(pointer);
 }

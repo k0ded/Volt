@@ -23,7 +23,7 @@ public:
 
 	LinearAllocator(const LinearAllocator& other) noexcept
 	{
-		m_dataBuffer = new uint8_t[MaxByteSize];
+		m_dataBuffer = reinterpret_cast<uint8_t*>(SecondaryAllocator::Allocate(MaxByteSize, alignof(uint8_t)));
 
 		m_dataPointer.store(other.m_dataPointer.load());
 		memcpy(m_dataBuffer, other.m_dataBuffer, MaxByteSize);

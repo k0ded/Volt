@@ -1,16 +1,16 @@
 #include "rhipch.h"
 
 #include "RHIModule/Images/Image.h"
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
-	RefPtr<Image> Image::Create(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator)
+	RefPtr<Image> Image::Create(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator)
 	{
-		return RHIProxy::GetInstance().CreateImage(specification, data, allocator);
+		return RHIModule::GetInstance().CreateImage(specification, data, allocator);
 	}
-	RefPtr<Image> Image::Create(const SwapchainImageSpecification& specification)
+	RefPtr<Image> Image::Create(const SwapchainImageDesc& specification)
 	{
-		return RHIProxy::GetInstance().CreateImage(specification);
+		return RHIModule::GetInstance().CreateImage(specification);
 	}
 }

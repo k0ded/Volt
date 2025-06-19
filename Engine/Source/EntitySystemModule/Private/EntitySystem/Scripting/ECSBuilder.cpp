@@ -21,10 +21,10 @@ void ECSBuilder::Compile()
 void ECSGameLoopContainer::Compile()
 {
 	Vector<Vector<UUID64>> executionBuckets;
-	vt::map<UUID64, size_t> systemToBucketIndex;
+	Map<UUID64, size_t> systemToBucketIndex;
 
-	vt::map<UUID64, Vector<UUID64>> graph;
-	vt::map<UUID64, size_t> inDegree;
+	Map<UUID64, Vector<UUID64>> graph;
+	Map<UUID64, size_t> inDegree;
 
 	// Initialize graph and in degree
 	executionBuckets.push_back();

@@ -11,12 +11,14 @@
 #include <RHIModule/Memory/MemoryCommon.h>
 #include <RHIModule/Memory/Allocation.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
+
+#include <CoreUtilities/EnumUtils.h>
 
 namespace Volt::RHI
 {
-	VulkanStorageBuffer::VulkanStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator)
-		: m_elementSize(elementSize), m_count(count), m_name(name), m_allocator(allocator), m_bufferUsage(bufferUsage), m_memoryUsage(memoryUsage)
+	VulkanStorageBuffer::VulkanStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator)
+		: m_allocator(allocator), m_desc(desc)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
@@ -25,8 +27,17 @@ namespace Volt::RHI
 			m_allocator = GraphicsContext::GetDefaultAllocator();
 		}
 
-		Invalidate(m_elementSize * m_count);
-		SetName(m_name);
+		// Make sure that the desc contains either storage buffer or texel buffer.
+		if (!EnumValueContainsFlag(m_desc.usage, BufferUsage::StorageBuffer) && ! EnumValueContainsFlag(m_desc.usage, BufferUsage::TexelBuffer))
+		{
+			m_desc.usage |= BufferUsage::StorageBuffer;
+		}
+
+		// Make sure buffer always contains transfer source and transfer dest
+		m_desc.usage |= BufferUsage::TransferSrc | BufferUsage::TransferDst;
+
+		Invalidate(desc.elementSize * desc.count);
+		SetName(desc.debugName);
 	}
 
 	VulkanStorageBuffer::~VulkanStorageBuffer()
@@ -37,10 +48,10 @@ namespace Volt::RHI
 
 	void VulkanStorageBuffer::Resize(const uint64_t byteSize)
 	{
-		m_count = static_cast<uint32_t>(byteSize);
+		m_desc.count = static_cast<uint32_t>(byteSize / m_desc.elementSize);
 
 		Invalidate(byteSize);
-		SetName(m_name);
+		SetName(m_desc.debugName);
 	}
 
 	void VulkanStorageBuffer::ResizeWithCount(const uint32_t count)
@@ -48,8 +59,8 @@ namespace Volt::RHI
 		auto oldAllocation = m_allocation;
 		auto oldSize = m_byteSize;
 
-		m_count = count;
-		const uint64_t newSize = m_count * m_elementSize;
+		m_desc.count = count;
+		const uint64_t newSize = m_desc.count * m_desc.elementSize;
 
 		// We don't need to do a full recreate if the current buffer can hold the requested count.
 		if (newSize <= m_allocation->GetSize())
@@ -59,12 +70,11 @@ namespace Volt::RHI
 
 		Release();
 
-		m_byteSize = std::max(newSize, Memory::GetMinBufferAllocationSize());
+		m_byteSize = newSize;
 
-		const VkDeviceSize bufferSize = m_byteSize;
-		m_allocation = m_allocator->CreateBuffer(bufferSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::TransferSrc | BufferUsage::StorageBuffer, m_memoryUsage, m_name);
+		m_allocation = m_allocator->CreateBuffer(m_desc);
 
-		SetName(m_name);
+		SetName(m_desc.debugName);
 
 		// Copy old data to new buffer
 		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
@@ -99,12 +109,12 @@ namespace Volt::RHI
 
 	const size_t VulkanStorageBuffer::GetElementSize() const
 	{
-		return m_elementSize;
+		return m_desc.elementSize;
 	}
 
 	const uint32_t VulkanStorageBuffer::GetCount() const
 	{
-		return m_count;
+		return m_desc.count;
 	}
 
 	Handle<Allocation> VulkanStorageBuffer::GetAllocation() const
@@ -119,7 +129,14 @@ namespace Volt::RHI
 
 	void VulkanStorageBuffer::SetData(const void* data, const size_t size)
 	{
-		Handle<Allocation> stagingAllocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU, "Staging Alloc");
+		BufferDesc stagingDesc{};
+		stagingDesc.count = 1;
+		stagingDesc.elementSize = size;
+		stagingDesc.usage = BufferUsage::TransferSrc;
+		stagingDesc.memoryUsage = MemoryUsage::CPUToGPU;
+		stagingDesc.debugName = "Staging Alloc";
+
+		Handle<Allocation> stagingAllocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
 		void* mappedPtr = stagingAllocation->Map<void>();
 		memcpy_s(mappedPtr, size, data, size);
@@ -127,6 +144,7 @@ namespace Volt::RHI
 
 		RefPtr<CommandBuffer> cmdBuffer = CommandBuffer::Create();
 		cmdBuffer->Begin();
+		cmdBuffer->BeginMarker(std::format("Updating data in {}", m_desc.debugName), {1.f, 1.f, 1.f, 1.f});
 
 		ResourceBarrierInfo barrier{};
 		barrier.type = BarrierType::Buffer;
@@ -149,6 +167,7 @@ namespace Volt::RHI
 
 		cmdBuffer->ResourceBarrier({ barrier });
 
+		cmdBuffer->EndMarker();
 		cmdBuffer->End();
 		cmdBuffer->Execute();
 
@@ -157,7 +176,14 @@ namespace Volt::RHI
 
 	void VulkanStorageBuffer::SetData(RefPtr<CommandBuffer> commandBuffer, const void* data, const size_t size)
 	{
-		Handle<Allocation> stagingAllocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(size, BufferUsage::TransferSrc, MemoryUsage::CPUToGPU, "Staging Alloc");
+		BufferDesc stagingDesc{};
+		stagingDesc.count = 1;
+		stagingDesc.elementSize = size;
+		stagingDesc.usage = BufferUsage::TransferSrc;
+		stagingDesc.memoryUsage = MemoryUsage::CPUToGPU;
+		stagingDesc.debugName = "Staging Alloc";
+
+		Handle<Allocation> stagingAllocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
 		void* mappedPtr = stagingAllocation->Map<void>();
 		memcpy_s(mappedPtr, m_byteSize, data, size);
@@ -187,18 +213,15 @@ namespace Volt::RHI
 		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAllocation);
 	}
 
-	RefPtr<BufferView> VulkanStorageBuffer::GetView()
+	RefPtr<BufferView> VulkanStorageBuffer::GetView(const BufferViewDesc& desc)
 	{
-		if (m_view)
-		{
-			return m_view;
-		}
+		BufferViewDesc tempDesc = desc;
+		tempDesc.bufferResource = this;
+		tempDesc.bufferFormat = desc.bufferFormat;
+		tempDesc.size = desc.size;
+		tempDesc.offset = desc.offset;
 
-		BufferViewSpecification spec{};
-		spec.bufferResource = this;
-
-		m_view = BufferView::Create(spec);
-		return m_view;
+		return BufferView::Create(tempDesc);
 	}
 
 	void VulkanStorageBuffer::SetName(const std::string& name)
@@ -215,12 +238,12 @@ namespace Volt::RHI
 			Volt::RHI::vkSetDebugUtilsObjectNameEXT(device->GetHandle<VkDevice>(), &nameInfo);
 		}
 
-		m_name = name;
+		m_desc.debugName = name;
 	}
 
 	std::string_view VulkanStorageBuffer::GetName() const
 	{
-		return m_name;
+		return m_desc.debugName;
 	}
 
 	const uint64_t VulkanStorageBuffer::GetDeviceAddress() const
@@ -241,10 +264,8 @@ namespace Volt::RHI
 	void VulkanStorageBuffer::Invalidate(const uint64_t byteSize)
 	{
 		Release();
-		m_byteSize = std::max(byteSize, Memory::GetMinBufferAllocationSize());
-
-		const VkDeviceSize bufferSize = m_byteSize;
-		m_allocation = m_allocator->CreateBuffer(bufferSize, m_bufferUsage | BufferUsage::TransferDst | BufferUsage::TransferSrc | BufferUsage::StorageBuffer, m_memoryUsage, m_name);
+		m_byteSize = byteSize;
+		m_allocation = m_allocator->CreateBuffer(m_desc);
 	}
 
 	void VulkanStorageBuffer::Release()
@@ -254,10 +275,15 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]() 
+		RHIModule::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]() 
 		{
 			allocator->DestroyBuffer(allocation);
 		});
 		m_allocation = nullptr;
+	}
+
+	const BufferDesc& VulkanStorageBuffer::GetDesc() const
+	{
+		return m_desc;
 	}
 }

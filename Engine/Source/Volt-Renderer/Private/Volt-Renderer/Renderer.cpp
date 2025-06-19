@@ -11,14 +11,15 @@
 #include <JobSystem/TaskGraph.h>
 
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
-#include <RenderCore/RenderGraph/RenderGraph.h>
-#include <RenderCore/RenderGraph/RenderContextUtils.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
-#include <RenderCore/Debug/ShaderRuntimeValidator.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/Resources/BindlessResourcesManager.h>
 #include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
+#include <RenderCore/RenderGraph/RenderGraphUtils.h>
 
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Graphics/Swapchain.h>
@@ -27,6 +28,7 @@
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -41,42 +43,57 @@ namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(Renderer, Engine, 3);
 
-	struct EquirectangularToCubemapCS
+	struct EquirectangularToCubemapCS : public GlobalShader
 	{
-		BEGIN_SHADER_DEFINITION(EquirectangularToCubemapCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Environment/EquirectangularToCubemap.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
-	};
-	REGISTER_SHADER(EquirectangularToCubemapCS)
+		DECLARE_GLOBAL_SHADER(EquirectangularToCubemapCS)
 
-	struct IntegrateSpecularCubeCS
-	{
-		BEGIN_SHADER_DEFINITION(IntegrateSpecularCubeCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PBR/IntegrateSpecularCube.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2DArray<float3>, RWOutput)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, EquirectangularMap)
+			SHADER_PARAMETER_SAMPLER(LinearSampler)
+		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(IntegrateSpecularCubeCS)
+	REGISTER_SHADER(EquirectangularToCubemapCS, "Engine/Shaders/Source/Environment/EquirectangularToCubemap.hlsl", "MainCS", Compute);
 
-	struct IntegrateDiffuseCubeCS
+	struct IntegrateSpecularCubeCS : public GlobalShader
 	{
-		BEGIN_SHADER_DEFINITION(IntegrateDiffuseCubeCS)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PBR/IntegrateDiffuseCube.hlsl", "main", RHI::ShaderStage::Compute)
-		END_SHADER_DEFINITION()
-	};
-	REGISTER_SHADER(IntegrateDiffuseCubeCS)
+		DECLARE_GLOBAL_SHADER(IntegrateSpecularCubeCS)
 
-	struct GeneratePreIntegratedDFG
-	{
-		BEGIN_SHADER_DEFINITION(GeneratePreIntegratedDFG)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/Utility/FullscreenTriangle_vs.hlsl", "main", RHI::ShaderStage::Vertex)
-			DECLARE_SHADER_STAGE("Engine/Shaders/Source/PBR/GeneratePreIntegratedDFG.hlsl", "MainPS", RHI::ShaderStage::Pixel)
-		END_SHADER_DEFINITION()
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2DArray<float3>, RWOutput)
+			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, Input)
+			SHADER_PARAMETER_SAMPLER(LinearSampler)
+			SHADER_PARAMETER(uint, MipIndex)
+			SHADER_PARAMETER(uint, MipCount)
+		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(GeneratePreIntegratedDFG)
+	REGISTER_SHADER(IntegrateSpecularCubeCS, "Engine/Shaders/Source/PBR/IntegrateSpecularCube.hlsl", "MainCS", Compute);
+
+	struct IntegrateDiffuseCubeCS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(IntegrateDiffuseCubeCS)
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2DArray<float3>, RWOutput)
+			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, Input)
+			SHADER_PARAMETER_SAMPLER(LinearSampler)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(IntegrateDiffuseCubeCS, "Engine/Shaders/Source/PBR/IntegrateDiffuseCube.hlsl", "MainCS", Compute);
+
+	struct GeneratePreIntegratedDFGPS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(GeneratePreIntegratedDFGPS)
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			RG_RENDER_TARGETS()
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GeneratePreIntegratedDFGPS, "Engine/Shaders/Source/PBR/GeneratePreIntegratedDFG.hlsl", "MainPS", Pixel);
 
 	namespace Utility
 	{
-		inline static const size_t GetHashFromSamplerInfo(const RHI::SamplerStateCreateInfo& info)
+		inline static const size_t GetHashFromSamplerDesc(const RHI::SamplerStateDesc& info)
 		{
 			size_t hash = std::hash<uint32_t>()(static_cast<uint32_t>(info.minFilter));
 			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(info.magFilter)));
@@ -91,36 +108,6 @@ namespace Volt
 			return hash;
 		}
 	}
-
-	struct RendererData
-	{
-		~RendererData()
-		{
-			defaultResources.Clear();
-			samplers.clear();
-
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-			shaderValidator = nullptr;
-#endif
-			bindlessResourcesManager = nullptr;
-
-			for (auto& resourceQueue : deletionQueue)
-			{
-				resourceQueue.Flush();
-			}
-		}
-
-		Scope<BindlessResourcesManager> bindlessResourcesManager;
-
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		Scope<ShaderRuntimeValidator> shaderValidator;
-#endif
-
-		Vector<FunctionQueue> deletionQueue;
-		std::unordered_map<size_t, BindlessResourceRef<RHI::SamplerState>> samplers;
-
-		DefaultResources defaultResources;
-	};
 
 	Renderer::Renderer()
 	{
@@ -138,18 +125,17 @@ namespace Volt
 
 	void Renderer::Initialize()
 	{
-		m_deletionQueue.resize(RHI::Swapchain::FramesInFlight);
-
 		// Bindless resources manager
+		// This will be created even if bindless is not enabled.
+		// It just doesn't do anything.
 		{
 			m_bindlessResourcesManager = CreateScope<BindlessResourcesManager>();
 		}
 
-		RenderGraphExecutionThread::Initialize(RenderGraphExecutionThread::ExecutionMode::Multithreaded);
+		m_descriptorTableCache = CreateScope<DescriptorTableCache>();
+		m_samplerStateCache = CreateScope<SamplerStateCache>();
 
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		m_shaderValidator = CreateScope<ShaderRuntimeValidator>();
-#endif
+		RenderGraphExecutionThread::Initialize(RenderGraphExecutionThread::ExecutionMode::Multithreaded);
 
 		CreateDefaultResources();
 		m_blueNoise = CreateScope<BlueNoise>();
@@ -162,44 +148,18 @@ namespace Volt
 		m_blueNoise.reset();
 
 		m_defaultResources.Clear();
-		m_samplers.clear();
 
 		ShapeLibrary::Shutdown();
 
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		m_shaderValidator = nullptr;
-#endif
-
 		m_shaderMap = nullptr;
-
-		for (auto& resourceQueue : m_deletionQueue)
-		{
-			resourceQueue.Flush();
-		}
-
+		m_samplerStateCache = nullptr;
+		m_descriptorTableCache = nullptr;
 		m_bindlessResourcesManager = nullptr;
-
-		for (auto& resourceQueue : m_deletionQueue)
-		{
-			resourceQueue.Flush();
-		}
 	}
 
 	const uint32_t Renderer::GetFramesInFlight()
 	{
 		return RHI::Swapchain::FramesInFlight;
-	}
-
-	void Renderer::DestroyResource(std::function<void()>&& function)
-	{
-		if (!s_instance)
-		{
-			function();
-			return;
-		}
-
-		const uint32_t currentFrame = s_instance->m_frameIndex % RHI::Swapchain::FramesInFlight;
-		s_instance->m_deletionQueue.at(currentFrame).Push(std::move(function));
 	}
 
 	const DefaultResources& Renderer::GetDefaultResources()
@@ -215,276 +175,128 @@ namespace Volt
 			return {};
 		}
 
-		constexpr uint32_t CUBE_MAP_SIZE = 2048;
-		constexpr uint32_t DIFFUSE_MAP_SIZE = 256;
-		constexpr uint32_t CONVERSION_THREAD_GROUP_SIZE = 32;
-
-		RefPtr<RHI::Image> environmentRaw;
-		RefPtr<RHI::Image> environmentSpecular;
-		RefPtr<RHI::Image> environmentDiffuse;
-
-		auto linearSampler = GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear>();
+		constexpr uint32_t CubeMapSize = 1024;
+		constexpr uint32_t DiffuseMapSize = 256;
+		constexpr uint32_t ConversionThreadGroupSize = 32;
 
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		commandBuffer->Begin();
+		RenderGraph renderGraph{ commandBuffer };
 
-		// Unfiltered - Conversion
+		RGTextureRef environmentRaw = renderGraph.CreateTexture(RGTextureDesc::CreateCube<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(CubeMapSize, CubeMapSize, RHI::ImageUsage::Storage, "EquirectangularTexture"));
+
+		// Convert to equirectangular
 		{
-			RHI::ImageSpecification imageSpec{};
-			imageSpec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
-			imageSpec.width = CUBE_MAP_SIZE;
-			imageSpec.height = CUBE_MAP_SIZE;
-			imageSpec.usage = RHI::ImageUsage::Storage;
-			imageSpec.layers = 6;
-			imageSpec.isCubeMap = true;
+			EquirectangularToCubemapCS::Parameters* passParameters = renderGraph.AllocParameters<EquirectangularToCubemapCS::Parameters>();
+			passParameters->RWOutput = renderGraph.CreateUAV(environmentRaw);
+			passParameters->EquirectangularMap = renderGraph.CreateSRV(renderGraph.RegisterExternalTexture(environmentTexture->GetImage()));
+			passParameters->LinearSampler = SamplerStateCache::GetTrilinearSampler();
 
-			environmentRaw = RHI::Image::Create(imageSpec);
+			const uint32_t groupCount = Math::DivideRoundUp(CubeMapSize, ConversionThreadGroupSize);
 
-			{
-				RHI::ResourceBarrierInfo barrierInfo{};
-				barrierInfo.type = RHI::BarrierType::Image;
-				barrierInfo.imageBarrier().srcStage = RHI::BarrierStage::None;
-				barrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::None;
-				barrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::Undefined;
-				barrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				barrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
-				barrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
-				barrierInfo.imageBarrier().resource = environmentRaw;
-				commandBuffer->ResourceBarrier({ barrierInfo });
-			}
-
-			auto conversionPipeline = ShaderMap::GetComputePipeline<EquirectangularToCubemapCS>(false);
-
-			RHI::DescriptorTableCreateInfo tableInfo{};
-			tableInfo.shader = conversionPipeline->GetShader();
-
-			RefPtr<RHI::DescriptorTable> descriptorTable = RHI::DescriptorTable::Create(tableInfo);
-			descriptorTable->SetImageView("o_output", environmentRaw->GetArrayView(), 0);
-			descriptorTable->SetImageView("u_equirectangularMap", environmentTexture->GetImage()->GetView(), 0);
-			descriptorTable->SetSamplerState("u_linearSampler", linearSampler->GetResource(), 0);
-
-			commandBuffer->BindPipeline(conversionPipeline);
-			commandBuffer->BindDescriptorTable(descriptorTable);
-
-			const uint32_t groupCount = Math::DivideRoundUp(CUBE_MAP_SIZE, CONVERSION_THREAD_GROUP_SIZE);
-			commandBuffer->Dispatch(groupCount, groupCount, 6);
-
-			{
-				RHI::ResourceBarrierInfo imageBarrierInfo{};
-				imageBarrierInfo.type = RHI::BarrierType::Image;
-				imageBarrierInfo.imageBarrier().srcStage = RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::ShaderWrite;
-				imageBarrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::ShaderWrite;
-				imageBarrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
-				imageBarrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
-				imageBarrierInfo.imageBarrier().resource = environmentRaw;
-
-				RHI::ResourceBarrierInfo barrierInfo{};
-				barrierInfo.type = RHI::BarrierType::Global;
-				barrierInfo.globalBarrier().srcAccess = RHI::BarrierAccess::ShaderWrite;
-				barrierInfo.globalBarrier().srcStage = RHI::BarrierStage::ComputeShader;
-				barrierInfo.globalBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
-				barrierInfo.globalBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				commandBuffer->ResourceBarrier({ barrierInfo, imageBarrierInfo });
-			}
+			auto shader = ShaderMap::Get<EquirectangularToCubemapCS>();
+			ComputeShaderUtils::AddPass<EquirectangularToCubemapCS>(renderGraph,
+				"Convert to Equirectangular",
+				shader,
+				passParameters,
+				{ groupCount, groupCount, 6 });
 		}
 
 		// Specular
+		RGTextureDesc specularDesc{};
+		specularDesc.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
+		specularDesc.width = CubeMapSize;
+		specularDesc.height = CubeMapSize;
+		specularDesc.usage = RHI::ImageUsage::Storage;
+		specularDesc.layers = 6;
+		specularDesc.isCubeMap = true;
+		specularDesc.mips = RHI::Utility::CalculateMipCount(CubeMapSize, CubeMapSize);
+		specularDesc.debugName = "Environment - Specular";
+		
+		RGTextureRef environmentSpecular = renderGraph.CreateTexture(specularDesc);
 		{
-			RHI::ImageSpecification imageSpec{};
-			imageSpec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
-			imageSpec.width = CUBE_MAP_SIZE;
-			imageSpec.height = CUBE_MAP_SIZE;
-			imageSpec.usage = RHI::ImageUsage::Storage;
-			imageSpec.layers = 6;
-			imageSpec.isCubeMap = true;
-			imageSpec.mips = RHI::Utility::CalculateMipCount(CUBE_MAP_SIZE, CUBE_MAP_SIZE);
-			imageSpec.debugName = "Environment - Specular";
-
-			environmentSpecular = RHI::Image::Create(imageSpec);
-
-			for (uint32_t i = 0; i < imageSpec.mips; i++)
+			for (uint32_t i = 0, size = CubeMapSize; i < specularDesc.mips; ++i, size /= 2)
 			{
-				environmentSpecular->GetArrayView(i);
-			}
+				IntegrateSpecularCubeCS::Parameters* passParameters = renderGraph.AllocParameters<IntegrateSpecularCubeCS::Parameters>();
+				
+				RGTextureUAVDesc uavDesc{};
+				uavDesc.textureResource = environmentSpecular;
+				uavDesc.baseMipLevel = i;
+				uavDesc.mipCount = 1;
 
-			{
-				RHI::ResourceBarrierInfo barrierInfo{};
-				barrierInfo.type = RHI::BarrierType::Image;
-				barrierInfo.imageBarrier().srcStage = RHI::BarrierStage::None;
-				barrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::None;
-				barrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::Undefined;
-				barrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				barrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
-				barrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
-				barrierInfo.imageBarrier().resource = environmentSpecular;
-				commandBuffer->ResourceBarrier({ barrierInfo });
-			}
+				passParameters->RWOutput = renderGraph.CreateUAV(uavDesc);
+				passParameters->Input = renderGraph.CreateSRV(environmentRaw);
+				passParameters->LinearSampler = SamplerStateCache::GetTrilinearSampler();
+				passParameters->MipIndex = i;
+				passParameters->MipCount = specularDesc.mips;
 
-			auto pipeline = ShaderMap::GetComputePipeline<IntegrateSpecularCubeCS>(false);
-			RHI::DescriptorTableCreateInfo tableInfo{};
-			tableInfo.shader = pipeline->GetShader();
-
-			Vector<RefPtr<RHI::DescriptorTable>> descriptorTables;
-			for (uint32_t i = 0; i < imageSpec.mips; i++)
-			{
-				descriptorTables.emplace_back(RHI::DescriptorTable::Create(tableInfo));
-				descriptorTables.back()->SetImageView("u_input", environmentRaw->GetView(), 0);
-				descriptorTables.back()->SetSamplerState("u_linearSampler", linearSampler->GetResource(), 0);
-			}
-
-			struct Constants
-			{
-				uint32_t mipIndex;
-				uint32_t mipCount;
-			} constants;
-
-			for (uint32_t i = 0, size = CUBE_MAP_SIZE; i < imageSpec.mips; i++, size /= 2)
-			{
 				const uint32_t numGroups = glm::max(1u, Math::DivideRoundUp(size, 32u));
 
-				constants.mipIndex = i;
-				constants.mipCount = imageSpec.mips;
-
-				descriptorTables[i]->SetImageView("o_output", environmentSpecular->GetArrayView(i), 0);
-
-				commandBuffer->BindPipeline(pipeline);
-				commandBuffer->BindDescriptorTable(descriptorTables[i]);
-				commandBuffer->PushConstants(&constants, sizeof(Constants), 0);
-				commandBuffer->Dispatch(numGroups, numGroups, 6);
-
-				RHI::ResourceBarrierInfo imageBarrierInfo{};
-				imageBarrierInfo.type = RHI::BarrierType::Image;
-				imageBarrierInfo.imageBarrier().srcStage = RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::ShaderWrite;
-				imageBarrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::ShaderWrite;
-				imageBarrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
-				imageBarrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
-				imageBarrierInfo.imageBarrier().subResource.levelCount = 1;
-				imageBarrierInfo.imageBarrier().subResource.baseMipLevel = i;
-				imageBarrierInfo.imageBarrier().resource = environmentSpecular;
-
-				commandBuffer->ResourceBarrier({ imageBarrierInfo });
+				auto shader = ShaderMap::Get<IntegrateSpecularCubeCS>();
+				ComputeShaderUtils::AddPass<IntegrateSpecularCubeCS>(renderGraph,
+					"Integrate Specular",
+					shader,
+					passParameters,
+					{ numGroups, numGroups, 6 });
 			}
 		}
 
 		// Diffuse
+		RGTextureDesc diffuseDesc{};
+		diffuseDesc.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
+		diffuseDesc.width = DiffuseMapSize;
+		diffuseDesc.height = DiffuseMapSize;
+		diffuseDesc.usage = RHI::ImageUsage::Storage;
+		diffuseDesc.layers = 6;
+		diffuseDesc.isCubeMap = true;
+		diffuseDesc.mips = RHI::Utility::CalculateMipCount(DiffuseMapSize, DiffuseMapSize);
+		diffuseDesc.debugName = "Environment - Diffuse";
+
+		RGTextureRef environmentDiffuse = renderGraph.CreateTexture(diffuseDesc);
 		{
-			RHI::ImageSpecification imageSpec{};
-			imageSpec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
-			imageSpec.width = DIFFUSE_MAP_SIZE;
-			imageSpec.height = DIFFUSE_MAP_SIZE;
-			imageSpec.usage = RHI::ImageUsage::Storage;
-			imageSpec.layers = 6;
-			imageSpec.isCubeMap = true;
-			imageSpec.mips = RHI::Utility::CalculateMipCount(DIFFUSE_MAP_SIZE, DIFFUSE_MAP_SIZE);
-			imageSpec.debugName = "Environment - Diffuse";
+			IntegrateDiffuseCubeCS::Parameters* passParameters = renderGraph.AllocParameters<IntegrateDiffuseCubeCS::Parameters>();
+			passParameters->RWOutput = renderGraph.CreateUAV(environmentDiffuse);
+			passParameters->Input = renderGraph.CreateSRV(environmentRaw);
+			passParameters->LinearSampler = SamplerStateCache::GetTrilinearSampler();
 
-			environmentDiffuse = RHI::Image::Create(imageSpec);
-		
-			{
-				RHI::ResourceBarrierInfo barrierInfo{};
-				barrierInfo.type = RHI::BarrierType::Image;
-				barrierInfo.imageBarrier().srcStage = RHI::BarrierStage::None;
-				barrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::None;
-				barrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::Undefined;
-				barrierInfo.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				barrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
-				barrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
-				barrierInfo.imageBarrier().resource = environmentDiffuse;
-				commandBuffer->ResourceBarrier({ barrierInfo });
-			}
+			const uint32_t groupCount = Math::DivideRoundUp(DiffuseMapSize, ConversionThreadGroupSize);
 
-			auto pipeline = ShaderMap::GetComputePipeline<IntegrateDiffuseCubeCS>(false);
-			RHI::DescriptorTableCreateInfo tableInfo{};
-			tableInfo.shader = pipeline->GetShader();
-
-			RefPtr<RHI::DescriptorTable> descriptorTable = RHI::DescriptorTable::Create(tableInfo);
-			descriptorTable->SetImageView("o_output", environmentDiffuse->GetArrayView(), 0);
-			descriptorTable->SetImageView("u_input", environmentRaw->GetView(), 0);
-			descriptorTable->SetSamplerState("u_linearSampler", linearSampler->GetResource(), 0);
-
-			commandBuffer->BindPipeline(pipeline);
-			commandBuffer->BindDescriptorTable(descriptorTable);
-
-			const uint32_t groupCount = Math::DivideRoundUp(DIFFUSE_MAP_SIZE, CONVERSION_THREAD_GROUP_SIZE);
-			commandBuffer->Dispatch(groupCount, groupCount, 6);
-
-			{
-				RHI::ResourceBarrierInfo imageBarrierInfo{};
-				imageBarrierInfo.type = RHI::BarrierType::Image;
-				imageBarrierInfo.imageBarrier().srcStage = RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::ShaderWrite;
-				imageBarrierInfo.imageBarrier().srcLayout = RHI::ImageLayout::ShaderWrite;
-				imageBarrierInfo.imageBarrier().dstStage = RHI::BarrierStage::PixelShader | RHI::BarrierStage::ComputeShader;
-				imageBarrierInfo.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
-				imageBarrierInfo.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
-				imageBarrierInfo.imageBarrier().resource = environmentDiffuse;
-
-				commandBuffer->ResourceBarrier({ imageBarrierInfo });
-			}
-
+			auto shader = ShaderMap::Get<IntegrateDiffuseCubeCS>();
+			ComputeShaderUtils::AddPass<IntegrateDiffuseCubeCS>(renderGraph,
+				"Integrate Diffuse",
+				shader,
+				passParameters,
+				{ groupCount, groupCount, 6 });
 		}
 
-		commandBuffer->End();
-		commandBuffer->ExecuteAndWait();
-
-		environmentDiffuse->GenerateMips();
-
 		EnvironmentTextures result{};
-		result.diffuse = environmentDiffuse;
-		result.specular = environmentSpecular;
+
+		renderGraph.EnqueueTextureExtraction(environmentSpecular, &result.specular);
+		renderGraph.EnqueueTextureExtraction(environmentDiffuse, &result.diffuse);
+
+		renderGraph.Compile();
+		renderGraph.ExecuteImmediateAndWait();
+
+		result.diffuse->GenerateMips();
 
 		return result;
 	}
 
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-	ShaderRuntimeValidator& Renderer::GetRuntimeShaderValidator()
-	{
-		return *s_instance->m_shaderValidator;
-	}
-#endif
-
 	bool Renderer::OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event)
 	{
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		//s_rendererData->shaderValidator->ReadbackErrorBuffer();
-
-		const auto& frameErrors = m_shaderValidator->GetValidationErrors();
-		for (const auto& error : frameErrors)
-		{
-			VT_LOGC(Error, LogRender, error);
-		}
-#endif
-
 		m_frameIndex++;
 		return false;
 	}
 
 	bool Renderer::OnPreRenderEvent(AppPreRenderEvent& event)
 	{
-		const uint32_t currentFrame = m_frameIndex % RHI::Swapchain::FramesInFlight;
-
-		m_deletionQueue.at(currentFrame).Flush();
-		m_bindlessResourcesManager->Update();
-
-		return false;
-	}
-
-	BindlessResourceRef<RHI::SamplerState> Renderer::GetSamplerInternal(const RHI::SamplerStateCreateInfo& samplerInfo)
-	{
-		const size_t hash = Utility::GetHashFromSamplerInfo(samplerInfo);
-		if (m_samplers.contains(hash))
+		if (RHI::RHICanUseBindless())
 		{
-			return m_samplers.at(hash);
+			m_bindlessResourcesManager->Update();
 		}
 
-		BindlessResourceRef<RHI::SamplerState> samplerState = BindlessResource<RHI::SamplerState>::CreateRef(samplerInfo);
-		m_samplers[hash] = samplerState;
+		m_descriptorTableCache->Update();
 
-		return samplerState;
+		return false;
 	}
 
 	void Renderer::CreateDefaultResources()
@@ -500,7 +312,7 @@ namespace Volt
 		{
 			constexpr uint32_t PIXEL_DATA[6] = { 0, 0, 0, 0, 0, 0 };
 
-			RHI::ImageSpecification imageSpec{};
+			RHI::ImageDesc imageSpec{};
 			imageSpec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
 			imageSpec.usage = RHI::ImageUsage::Texture;
 			imageSpec.width = 1;
@@ -516,7 +328,7 @@ namespace Volt
 		{
 			constexpr uint32_t PIXEL_DATA = 0xffffffff;
 			
-			RHI::ImageSpecification imageSpec{};
+			RHI::ImageDesc imageSpec{};
 			imageSpec.format = RHI::PixelFormat::R8G8B8A8_UNORM;
 			imageSpec.usage = RHI::ImageUsage::Texture;
 			imageSpec.width = 1;
@@ -532,7 +344,7 @@ namespace Volt
 
 		// Default material
 		{
-			m_defaultResources.defaultMaterial = CreateRef<RenderMaterial>("DefaultMaterial", ShaderMap::Get<OpaqueDefaultMaterialCS>());
+			m_defaultResources.defaultMaterial = CreateRef<RenderMaterial>("DefaultMaterial", ShaderMap::Get<OpaqueDefaultPixelPS>());
 		}
 
 		// Default mesh
@@ -545,7 +357,7 @@ namespace Volt
 	{
 		constexpr uint32_t DFGSize = 512;
 
-		RHI::ImageSpecification spec{};
+		RHI::ImageDesc spec{};
 		spec.format = RHI::PixelFormat::R16G16B16A16_SFLOAT;
 		spec.usage = RHI::ImageUsage::AttachmentStorage;
 		spec.width = DFGSize;
@@ -557,26 +369,28 @@ namespace Volt
 		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 
 		RenderGraph renderGraph{ commandBuffer };
-		RenderGraphImageHandle targetImageHandle = renderGraph.AddExternalImage(m_defaultResources.DFGLuT);
+
+		GeneratePreIntegratedDFGPS::Parameters* passParameters = renderGraph.AllocParameters<GeneratePreIntegratedDFGPS::Parameters>();
+		passParameters->renderTargets.renderTargets[0] = renderGraph.RegisterExternalTexture(m_defaultResources.DFGLuT);
+
+		RefPtr<RHI::Shader> vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
+		RefPtr<RHI::Shader> pixelShader = ShaderMap::Get<GeneratePreIntegratedDFGPS>();
 
 		renderGraph.AddPass("Pre integrate DFG Pass",
-		[&](RenderGraph::Builder& builder)
+			RenderGraphPassFlags::None,
+			passParameters,
+			[passParameters, vertexShader, pixelShader](RenderContext& context) 
 		{
-			builder.WriteResource(targetImageHandle);
-			builder.SetHasSideEffect();
-		},
-		[=](RenderContext& context)
-		{
-			RenderingInfo renderingInfo = context.CreateRenderingInfo(DFGSize, DFGSize, { targetImageHandle });
-
 			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shader = ShaderMap::Get<GeneratePreIntegratedDFG>();
+			pipelineInfo.shaders = { vertexShader, pixelShader };
 			pipelineInfo.cullMode = RHI::CullMode::None;
 
-			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
 
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(DFGSize, DFGSize, passParameters->renderTargets);
 			context.BeginRendering(renderingInfo);
-			RCUtils::DrawFullscreenTriangle(context, pipeline);
+			context.BindPipeline(pipeline);
+			context.Draw(3, 1, 0, 0);
 			context.EndRendering();
 		});
 

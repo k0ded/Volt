@@ -6,7 +6,7 @@
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 
 #include <RHIModule/Buffers/StorageBuffer.h>
@@ -15,10 +15,10 @@
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
-#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Memory/MemoryUtility.h>
 #include <RHIModule/RayTracing/AccelerationStructure.h>
 #include <RHIModule/Globals.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <CoreUtilities/ComparisonHelpers.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -154,6 +154,7 @@ namespace Volt::RHI
 
 	void VulkanBindlessDescriptorTable::Bind(CommandBuffer& commandBuffer, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)
 	{
+#if 0
 		VT_PROFILE_FUNCTION();
 		VulkanCommandBuffer& vulkanCommandBuffer = commandBuffer.AsRef<VulkanCommandBuffer>();
 
@@ -194,7 +195,7 @@ namespace Volt::RHI
 		{
 			RefPtr<VulkanBindlessDescriptorTable> tablePtr = CreateRefPtrFromThis();
 
-			RHIProxy::GetInstance().DestroyResource([tablePtr, descriptor = descriptorSets[1]]()
+			RHIModule::GetInstance().DestroyResource([tablePtr, descriptor = descriptorSets[1]]()
 			{
 				if (tablePtr)
 				{
@@ -202,6 +203,7 @@ namespace Volt::RHI
 				}
 			});
 		}
+#endif
 	}
 
 	void VulkanBindlessDescriptorTable::Release()
@@ -211,7 +213,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]()
+		RHIModule::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), descriptorPool, nullptr);
@@ -408,14 +410,14 @@ namespace Volt::RHI
 		descriptorWrite.descriptorCount = 1;
 		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.dstBinding = Globals::RENDER_GRAPH_CONSTANTS_BINDING;
+		descriptorWrite.dstBinding = Globals::SHADER_GLOBALS_BINDING;
 		descriptorWrite.dstSet = dstSet;
 		descriptorWrite.pBufferInfo = &bufferInfo;
 
 		VkAccelerationStructureKHR accelerationStructureHandle;
 		VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo;
 
-		if (GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing && accelerationStructure)
+		if (RHI::RHICanUseRayTracing() && accelerationStructure)
 		{
 			accelerationStructureInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 			accelerationStructureInfo.pNext = nullptr;

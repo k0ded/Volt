@@ -1,84 +1,61 @@
 #pragma once
 
-#include "RenderCore/Config.h"
-
-#include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
+#include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 #include "RenderCore/RenderGraph/Resources/RenderGraphResource.h"
 
-#include <string_view>
+#include <CoreUtilities/Containers/VectorVariants.h>
 
+#include <string>
 
 namespace Volt
 {
-	class RenderGraph;
-	class RenderContext;
-
-	enum class RenderGraphResourceState
+	enum class RenderGraphPassFlags
 	{
 		None = 0,
-		IndirectArgument,
-		IndexBuffer,
-		VertexBuffer,
-		CopyDest,
-		CopySource,
-		Clear
+		NeverCull = BIT(0),
+		Compute = BIT(1)
 	};
 
-	struct RenderGraphPassResourceAccess
+	VT_SETUP_ENUM_CLASS_OPERATORS(RenderGraphPassFlags);
+
+	class RenderGraphPass
 	{ 
-		RenderGraphResourceState forcedState = RenderGraphResourceState::None;
-		RenderGraphResourceHandle handle;
-	};
+	public:
+		struct ResourceAccess
+		{
+			RGResourceRef resource;
+			RGResourceAccess accessType;
+		};
 
-	struct RenderGraphPassNodeBase
-	{
 		std::string name;
-		
-		uint32_t index = 0;
+		void* passAllocationStartPtr;
+		uint32_t passIndex = 0;
 		uint32_t refCount = 0;
-
-		bool isComputePass = false;
 		bool isCulled = false;
-		bool hasSideEffect = false;
+		RenderGraphPassFlags flags = RenderGraphPassFlags::None;
 
-		PagedVector<RenderGraphPassResourceAccess> resourceReads;
-		PagedVector<RenderGraphPassResourceAccess> resourceWrites;
-		PagedVector<RenderGraphPassResourceAccess> resourceCreates;
+		VT_INLINE void AddResourceRead(RGBufferSRVRef bufferSRV) { m_resourceReads.emplace_back(bufferSRV); }
+		VT_INLINE void AddResourceRead(RGTextureSRVRef textureSRV) { m_resourceReads.emplace_back(textureSRV); }
+		VT_INLINE void AddResourceRead(RGUniformBufferSRVRef uniformBufferSRV) { m_resourceReads.emplace_back(uniformBufferSRV); }
 
-		void* passAllocationStartPtr = nullptr;
+		VT_INLINE void AddResourceWrite(RGBufferUAVRef bufferUAV) { m_resourceWrites.emplace_back(bufferUAV); }
+		VT_INLINE void AddResourceWrite(RGTextureUAVRef textureUAV) { m_resourceWrites.emplace_back(textureUAV); }
 
-		virtual ~RenderGraphPassNodeBase() = default;
-		virtual const void* GetDataPointer() const = 0;
+		VT_INLINE void AddResourceRenderTargetAccess(RGTextureRef texture) { m_renderTargetAccesses.emplace_back(texture); }
 
-		const bool ReadsResource(RenderGraphResourceHandle handle) const;
-		const bool WritesResource(RenderGraphResourceHandle handle) const;
-		const bool CreatesResource(RenderGraphResourceHandle handle) const;
-		const bool IsCulled() const;
+		VT_INLINE void AddResourceAccess(RGBufferRef buffer, RGResourceAccess accessType) { m_resourceAccesses.emplace_back(buffer, accessType); }
+		VT_INLINE void AddResourceAccess(RGTextureRef texture, RGResourceAccess accessType) { m_resourceAccesses.emplace_back(texture, accessType); }
+		VT_INLINE void AddResourceAccess(RGUniformBufferRef uniformBuffer, RGResourceAccess accessType) { m_resourceAccesses.emplace_back(uniformBuffer, accessType); }
 
-#ifdef VT_DEBUG
-		const bool ReadsResource(ResourceHandle handle) const;
-		const bool WritesResource(ResourceHandle handle) const;
-		const bool CreatesResource(ResourceHandle handle) const;
-#endif
+		VT_NODISCARD VT_INLINE const PagedVector<RGResourceSRVRef>& GetResourceReads() const { return m_resourceReads; }
+		VT_NODISCARD VT_INLINE const PagedVector<RGResourceUAVRef>& GetResourceWrites() const { return m_resourceWrites; }
+		VT_NODISCARD VT_INLINE const PagedVector<ResourceAccess>& GetResourceAccesses() const { return m_resourceAccesses; }
+		VT_NODISCARD VT_INLINE const PagedVector<RGTextureRef>& GetResourceRenderTargetAccesses() const { return m_renderTargetAccesses; }
 
 	private:
-		friend class RenderGraphPassResources;
-
-#ifdef VT_DEBUG
-		std::unordered_map<ResourceHandle, RenderGraphResourceHandle> m_resourceHandleMapping;
-#endif
-	};
-
-	template<typename T>
-	struct RenderGraphPassNode : public RenderGraphPassNodeBase
-	{
-		T data{};
-
-		~RenderGraphPassNode() override = default;
-
-		const void* GetDataPointer() const override
-		{
-			return &data;
-		}
+		PagedVector<RGResourceSRVRef> m_resourceReads;
+		PagedVector<RGResourceUAVRef> m_resourceWrites;
+		PagedVector<RGTextureRef> m_renderTargetAccesses;
+		PagedVector<ResourceAccess> m_resourceAccesses;
 	};
 }

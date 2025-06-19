@@ -10,7 +10,7 @@ namespace Volt::RHI
 	class D3D12BufferView : public BufferView
 	{
 	public:
-		D3D12BufferView(const BufferViewSpecification& specification);
+		D3D12BufferView(const BufferViewDesc& specification);
 		~D3D12BufferView() override;
 
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;

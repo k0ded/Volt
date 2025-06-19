@@ -1,14 +1,12 @@
 #include "vkpch.h"
-#include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
 
+#include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
+#include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
-#include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
-#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
-
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Math/Hash.h>
@@ -17,8 +15,8 @@
 
 namespace Volt::RHI
 {
-	VulkanComputePipeline::VulkanComputePipeline(RefPtr<Shader> shader, bool useGlobalResources)
-		: m_shader(shader), m_useGlobalResouces(useGlobalResources)
+	VulkanComputePipeline::VulkanComputePipeline(RefPtr<Shader> shader)
+		: m_shader(shader)
 	{
 		Invalidate();
 	}
@@ -27,108 +25,87 @@ namespace Volt::RHI
 	{
 		Release();
 	}
-
+	
 	void VulkanComputePipeline::Invalidate()
 	{
 		Release();
-
+		
+		VT_ENSURE(m_shader);
+		VT_ENSURE(m_shader->GetShaderStage() == ShaderStage::Compute);
+		
 		ScopedTimer scopedTimer{};
 
-		VT_ENSURE(m_shader);
-
 		auto device = GraphicsContext::GetDevice();
-		const auto& shaderResources = m_shader->GetResources();
 		VulkanShader& vulkanShader = m_shader->AsRef<VulkanShader>();
 
-		const auto descriptorSetLayouts = VulkanBindlessDescriptorLayoutManager::GetGlobalDescriptorSetLayouts();
-
-		// Create Pipeline Layout
+		// Create descriptor set layouts
 		{
-			VkPushConstantRange pushConstantRange{};
-			pushConstantRange.size = shaderResources.constants.size;
-			pushConstantRange.offset = shaderResources.constants.offset;
-			pushConstantRange.stageFlags = static_cast<VkShaderStageFlags>(shaderResources.constants.stageFlags);
+			const ShaderParameterMap& shaderParameterMap = m_shader->GetParameterMap();
 
-			VT_ASSERT(pushConstantRange.size <= 128 && "Push constant range must be less or equal to 128 bytes to support all platforms!");
+			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
+			DescriptorSetLayoutBuilder::DescriptorSets descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderParameterMap.GetResourceBindings());
+			m_descriptorSetLayouts = descriptorSets.descriptorSetLayouts;
+			m_pipelineLayoutDescriptorSetLayouts = descriptorSets.pipelineLayoutDescriptorSetLayouts;
 
+			m_descriptorPoolSizes = descriptorSetLayoutBuilder.CalculateDescriptorPoolSizesFromBindings(shaderParameterMap.GetResourceBindings());
+			m_shaderParameterMap = shaderParameterMap;
+		}
+
+		// Create pipeline layout
+		{
 			VkPipelineLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			info.pNext = nullptr;
-
-			if (m_useGlobalResouces)
-			{
-				info.setLayoutCount = shaderResources.renderGraphConstantsData.IsValid() ? 2 : 1;
-				info.pSetLayouts = descriptorSetLayouts.data();
-			}
-			else
-			{
-				info.setLayoutCount = static_cast<uint32_t>(vulkanShader.GetDescriptorSetLayouts().size());
-				info.pSetLayouts = vulkanShader.GetDescriptorSetLayouts().data();
-			}
-
-			info.pushConstantRangeCount = shaderResources.constants.size > 0 ? 1 : 0;
-			info.pPushConstantRanges = &pushConstantRange;
+			info.setLayoutCount = static_cast<uint32_t>(m_pipelineLayoutDescriptorSetLayouts.size());
+			info.pSetLayouts = m_pipelineLayoutDescriptorSetLayouts.data();
+			info.pushConstantRangeCount = 0;
+			info.pPushConstantRanges = nullptr;
 
 			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, nullptr, &m_pipelineLayout));
 		}
 
-		// Create Pipeline
+		// Create pipeline
 		{
-			if (vulkanShader.GetShaderType() != ShaderType::Compute)
-			{
-				VT_LOGC(Error, LogVulkanRHI, "Non compute shader supplied to compute pipeline!");
-				return;
-			}
+			const std::string entryPoint = vulkanShader.GetShaderSourceInfo().sourceEntry.entryPoint;
 
-			const auto& firstStage = vulkanShader.GetPipelineStageInfos().at(ShaderStage::Compute);
-
-			VkPipelineShaderStageCreateInfo computeStageInfo{};
-			computeStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			computeStageInfo.pNext = nullptr;
-			computeStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-			computeStageInfo.module = firstStage.shaderModule;
-			computeStageInfo.pName = vulkanShader.GetSourceEntries().at(0).entryPoint.c_str();
+			VkPipelineShaderStageCreateInfo stageInfo{};
+			stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			stageInfo.pNext = nullptr;
+			stageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+			stageInfo.module = vulkanShader.GetShaderModule();
+			stageInfo.pName = entryPoint.c_str();
 
 			VkComputePipelineCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 			info.pNext = nullptr;
 			info.layout = m_pipelineLayout;
 			info.flags = 0;
-			info.stage = computeStageInfo;
+			info.stage = stageInfo;
 			info.basePipelineHandle = nullptr;
 			info.basePipelineIndex = 0;
 
-			if (GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled())
-			{
-				info.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-			}
-
 			VT_VK_CHECK(vkCreateComputePipelines(device->GetHandle<VkDevice>(), nullptr, 1, &info, nullptr, &m_pipeline));
 		}
+
 		GenerateHash();
 		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Compute Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
 	}
-
-	RefPtr<Shader> VulkanComputePipeline::GetShader() const
-	{
-		return m_shader;
-	}
-
+	
 	bool VulkanComputePipeline::IsValid() const
 	{
 		return m_pipeline != nullptr;
 	}
-
+	
 	size_t VulkanComputePipeline::GetHash() const
 	{
 		return m_hash;
 	}
-
+	
 	void* VulkanComputePipeline::GetHandleImpl() const
 	{
 		return m_pipeline;
 	}
-
+	
 	void VulkanComputePipeline::Release()
 	{
 		if (!m_pipeline)
@@ -136,15 +113,21 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout]()
+		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_pipelineLayoutDescriptorSetLayouts]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, nullptr);
 			vkDestroyPipelineLayout(device->GetHandle<VkDevice>(), pipelineLayout, nullptr);
+
+			for (const auto& descriptorSetLayout : descriptorSetLayouts)
+			{
+				vkDestroyDescriptorSetLayout(device->GetHandle<VkDevice>(), descriptorSetLayout, nullptr);
+			}
 		});
 
 		m_pipeline = nullptr;
 		m_pipelineLayout = nullptr;
+		m_descriptorSetLayouts.clear();
 	}
 
 	void VulkanComputePipeline::GenerateHash()
@@ -153,5 +136,26 @@ namespace Volt::RHI
 
 		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipeline)));
 		m_hash = Math::HashCombine(m_hash, std::hash<void*>()(static_cast<void*>(m_pipelineLayout)));
+	}
+
+	const ShaderResourceBinding* VulkanComputePipeline::GetResourceBindingFromName(const StringHash& name) const
+	{
+		const ShaderParameterMap::ResourceBindingsMap& resourceBindings = m_shaderParameterMap.GetResourceBindings();
+		if (resourceBindings.contains(name))
+		{
+			return &resourceBindings.at(name);
+		}
+
+		return nullptr;
+	}
+
+	RefPtr<Shader> VulkanComputePipeline::GetShader2() const
+	{
+		return m_shader;
+	}
+
+	const ShaderParameterMap& VulkanComputePipeline::GetShaderParameterMap() const
+	{
+		return m_shaderParameterMap;
 	}
 }

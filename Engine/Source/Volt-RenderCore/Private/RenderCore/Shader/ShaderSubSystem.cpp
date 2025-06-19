@@ -7,6 +7,7 @@
 
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Shader/ShaderCache.h>
+#include <RHIModule/Shader/Shader.h>
 
 #include <JobSystem/TaskGraph.h>
 
@@ -32,10 +33,6 @@ namespace Volt
 			shaderCompilerInfo.flags = RHI::ShaderCompilerFlags::WarningsAsErrors;
 			shaderCompilerInfo.shaderCache = m_shaderCache;
 
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-			shaderCompilerInfo.flags |= RHI::ShaderCompilerFlags::EnableShaderValidator;
-#endif
-
 			shaderCompilerInfo.includeDirectories =
 			{
 				ProjectManager::GetEngineShaderIncludeDirectory(),
@@ -47,6 +44,7 @@ namespace Volt
 		}
 
 		m_shaderMap = CreateScope<ShaderMap>();
+		m_pipelineStateCache = CreateScope<PipelineStateCache>();
 		LoadRegisteredShaders();
 	}
 
@@ -58,40 +56,27 @@ namespace Volt
 
 	void ShaderSubSystem::LoadRegisteredShaders()
 	{
-		const auto& registeredShaders = GetShaderRegistry().GetRegisteredShaders();
+		const auto& registeredShaders = ShaderRegistry::Get().GetRegisteredShaders();
 
 		TaskGraph taskGraph{};
 		ScopedTimer timer{};
 
 		for (const auto& [typeIndex, registrationInfo] : registeredShaders)
 		{
-			taskGraph.AddTask([=]() 
+			taskGraph.AddTask([=]()
 			{
-				RHI::ShaderSpecification specification;
-				specification.name = registrationInfo.name;
+				RHI::ShaderCreateInfo createInfo;
+				createInfo.name = registrationInfo.name;
+				createInfo.entryPoint = registrationInfo.stageInfos.entryPoint;
+				createInfo.sourceFilepath = registrationInfo.stageInfos.filePath;
+				createInfo.stage = registrationInfo.stageInfos.shaderStage;
 
-				for (const auto& stageInfo : registrationInfo.stageInfos)
-				{
-					auto& sourceEntry = specification.sourceEntries.emplace_back();
-					sourceEntry.entryPoint = stageInfo.entryPoint;
-					sourceEntry.filePath = stageInfo.filePath;
-					sourceEntry.shaderStage = stageInfo.shaderStage;
-				}
-
-				specification.forceCompile = false;
-
-				RefPtr<RHI::Shader> shader = RHI::Shader::Create(specification);
-				ShaderSubSystem::CorrectShaderParameterMetadata(shader, typeIndex);
+				RefPtr<RHI::Shader> shader = RHI::Shader::Create(createInfo);
 				ShaderMap::RegisterShader(typeIndex, shader);
 			});
 		}
 
 		taskGraph.ExecuteAndWait();
 		VT_LOGC(Info, LogRender, "Shader compilation finished in {} seconds!", timer.GetTime<Time::Seconds>());
-	}
-
-	void ShaderSubSystem::CorrectShaderParameterMetadata(RefPtr<RHI::Shader> shader, TypeTraits::TypeIndex typeIndex)
-	{
-		GetShaderRegistry().CorrectShaderParameterMetadataOffsets(typeIndex, shader->GetResources().renderGraphConstantsData);
 	}
 }

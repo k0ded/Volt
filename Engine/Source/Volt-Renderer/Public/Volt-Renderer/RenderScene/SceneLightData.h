@@ -12,7 +12,7 @@ namespace Volt
 {
 	class RenderScene;
 
-	enum class SceneLightType : uint32_t
+	enum class SceneLightType : uint8_t
 	{
 		Directional = 0,
 		Point,

@@ -35,6 +35,23 @@ namespace Volt::RHI
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(ShaderStage);
 
+	enum class ShaderRegisterType : uint8_t
+	{
+		CBV,
+		UAV,
+		SRV,
+		Sampler
+	};
+
+	enum class ShaderResourceType : uint8_t
+	{
+		UniformBuffer,
+		StructuredBuffer,
+		TexelBuffer,
+		Texture,
+		Sampler
+	};
+
 	enum class ShaderUniformBaseType : uint8_t
 	{
 		Invalid,
@@ -68,14 +85,6 @@ namespace Volt::RHI
 		Texture3D,
 		RWTexture3D,
 
-		Sampler
-	};
-
-	enum class ShaderRegisterType : uint32_t
-	{
-		Texture = 0,
-		UniformBuffer,
-		UnorderedAccess,
 		Sampler
 	};
 
@@ -174,6 +183,8 @@ namespace Volt::RHI
 		size_t size = 0;
 		size_t offset = 0;
 
+		std::string name;
+
 		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderUniform& data)
 		{
 			streamWriter.Write(data.type);
@@ -235,20 +246,20 @@ namespace Volt::RHI
 		static void Deserialize(BinaryStreamReader& streamReader, ShaderConstantData& outData);
 	};
 
-	struct VTRHI_API ShaderRenderGraphConstantsData
+	struct VTRHI_API ShaderUniforms
 	{
 		VT_NODISCARD VT_INLINE bool IsValid() const { return !uniforms.empty() && size > 0; }
 
 		std::unordered_map<StringHash, ShaderUniform> uniforms;
 		size_t size = 0;
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderRenderGraphConstantsData& data)
+		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderUniforms& data)
 		{
 			streamWriter.Write(data.uniforms);
 			streamWriter.Write(data.size);
 		}
 
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderRenderGraphConstantsData& outData)
+		static void Deserialize(BinaryStreamReader& streamReader, ShaderUniforms& outData)
 		{
 			streamReader.Read(outData.uniforms);
 			streamReader.Read(outData.size);
@@ -297,7 +308,11 @@ namespace Volt::RHI
 	{
 		uint32_t set = std::numeric_limits<uint32_t>::max();
 		uint32_t binding = std::numeric_limits<uint32_t>::max();
+		uint32_t arraySize = 1;
 		ShaderRegisterType registerType;
+		ShaderResourceType resourceType;
+		ShaderStage shaderStage;
+		std::string name;
 
 		inline const bool IsValid() const { return set != std::numeric_limits<uint32_t>::max() && binding != std::numeric_limits<uint32_t>::max(); }
 
@@ -309,7 +324,7 @@ namespace Volt::RHI
 	{
 		std::string entryPoint = "main";
 		RHI::ShaderStage shaderStage;
-		std::filesystem::path filePath;
+		std::filesystem::path filepath;
 	};
 
 	struct ShaderSourceInfo
@@ -317,4 +332,23 @@ namespace Volt::RHI
 		ShaderSourceEntry sourceEntry;
 		std::string source;
 	};
+
+	inline static uint32_t GetDescriptorSetIndexFromShaderStage(ShaderStage shaderStage)
+	{
+		switch (shaderStage)
+		{
+			case ShaderStage::Vertex: return 0;
+			case ShaderStage::Amplification: return 1;
+			case ShaderStage::Mesh: return 2;
+			case ShaderStage::Pixel: return 3;
+			case ShaderStage::Compute: return 4;
+			case ShaderStage::RayGen: return 5;
+			case ShaderStage::Hull: return 6;
+			case ShaderStage::Domain: return 7;
+			case ShaderStage::Geometry: return 8;
+		}
+
+		VT_ASSERT(false);
+		return 0;
+	}
 }

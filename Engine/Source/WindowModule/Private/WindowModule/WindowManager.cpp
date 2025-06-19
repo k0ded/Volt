@@ -13,6 +13,8 @@ namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(WindowManager, PreEngine, 4);
 
+	static bool s_glfwIsInitialized = false;
+
 	inline static void GLFWErrorCallback(int error, const char* description)
 	{
 		VT_LOGC(Error, LogWindowManagement, "GLFW Error ({0}): {1}", error, description);
@@ -122,10 +124,9 @@ namespace Volt
 	void WindowManager::InitializeGLFW()
 	{
 		VT_LOGC(Trace, LogWindowManagement, "Initializing GLFW");
-		static bool glfwIsInitialized = false;
-		if (!glfwIsInitialized)
+		if (!s_glfwIsInitialized)
 		{
-			glfwIsInitialized = true;
+			s_glfwIsInitialized = true;
 			if (!glfwInit())
 			{
 				VT_LOGC(Critical, LogWindowManagement, "Failed to initialize GLFW!");
@@ -139,5 +140,7 @@ namespace Volt
 	{
 		VT_LOGC(Trace, LogWindowManagement, "Shutting Down GLFW");
 		glfwTerminate();
+
+		s_glfwIsInitialized = false;
 	}
 }

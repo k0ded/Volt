@@ -81,8 +81,8 @@ namespace Volt
 		Scope<ScriptingEngine> m_scriptingEngine;
 		EntityRegistry m_entityRegistry;
 		mutable EntityTransformCache m_transformCache;
-		vt::map<UUID64, TransformChangedCallbackFunc> m_transformChangedCallbacks;
-		vt::map<UUID64, EntityDestroyedCallbackFunc> m_entityDestroyedCallbacks;
+		Map<UUID64, TransformChangedCallbackFunc> m_transformChangedCallbacks;
+		Map<UUID64, EntityDestroyedCallbackFunc> m_entityDestroyedCallbacks;
 
 		RenderScene* m_renderScene;
 	};

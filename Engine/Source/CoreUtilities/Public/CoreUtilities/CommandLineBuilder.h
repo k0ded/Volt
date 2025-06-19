@@ -13,6 +13,9 @@ namespace Volt
 	class VTCOREUTIL_API CommandLineBuilder
 	{
 	public:
+		CommandLineBuilder() = default;
+		CommandLineBuilder(std::initializer_list<std::pair<std::string, std::string>> initializer);
+
 		void AddArgument(const std::string& key, const std::string& value = "");
 		void BuildFromArgV(wchar_t** argList, int32_t numArgs);
 
@@ -26,6 +29,6 @@ namespace Volt
 
 	private:
 		std::string m_executableFilepath;
-		vt::map<std::string, std::string> m_arguments;
+		Map<std::string, std::string> m_arguments;
 	};
 }

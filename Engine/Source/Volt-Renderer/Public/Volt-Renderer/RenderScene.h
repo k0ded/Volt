@@ -80,11 +80,13 @@ namespace Volt
 		VT_NODISCARD const uint32_t GetPrimitiveIndexFromID(UUID64 primitiveId) const;
 
 		VT_INLINE VT_NODISCARD const GPUSceneBuffers GetGPUSceneBuffers() const { return m_buffers; }
+		VT_NODISCARD GPUSceneParameters GetGPUSceneParameters(RenderGraph& renderGraph) const;
 
 		VT_NODISCARD Vector<RenderPrimitiveData>::iterator begin() { return m_renderPrimitives.begin(); }
 		VT_NODISCARD Vector<RenderPrimitiveData>::iterator end() { return m_renderPrimitives.end(); }
 
 		VT_NODISCARD VT_INLINE const Vector<RenderLightData>& GetRenderLightData() const { return m_renderLights; }
+		VT_NODISCARD VT_INLINE const Vector<RenderPrimitiveData>& GetRenderPrimitives() const { return m_renderPrimitives; }
 
 		VT_NODISCARD const Vector<RenderPrimitiveData>::const_iterator cbegin() const { return m_renderPrimitives.cbegin(); }
 		VT_NODISCARD const Vector<RenderPrimitiveData>::const_iterator cend() const { return m_renderPrimitives.cend(); }
@@ -165,7 +167,7 @@ namespace Volt
 			PagedVector<size_t> m_freePrimitiveDataIndices;
 
 			PagedVector<InvalidDrawData> m_invalidPrimitiveDataIndices;
-			vt::map<UUID64, size_t> m_primitiveIndexFromPrimitiveID;
+			Map<UUID64, size_t> m_primitiveIndexFromPrimitiveID;
 
 			size_t m_nextIndex = 0;
 		};
@@ -183,9 +185,9 @@ namespace Volt
 		Vector<InvalidMaterial> m_invalidMaterials;
 		Vector<InvalidMesh> m_invalidMeshes;
 
-		vt::map<size_t, size_t> m_gpuMaterialIndexFromMaterialHash;
-		vt::map<size_t, uint32_t> m_meshSubMeshToGPUMeshIndex;
-		vt::map<size_t, uint32_t> m_meshSubMeshToGPUMeshSDFIndex;
+		Map<size_t, size_t> m_gpuMaterialIndexFromMaterialHash;
+		Map<size_t, uint32_t> m_meshSubMeshToGPUMeshIndex;
+		Map<size_t, uint32_t> m_meshSubMeshToGPUMeshSDFIndex;
 
 		Vector<Weak<Mesh>> m_individualMeshes;
 		Vector<Weak<RenderMaterial>> m_individualMaterials;
@@ -205,7 +207,7 @@ namespace Volt
 
 		Vector<InvalidDrawData> m_invalidLightDataIndices;
 
-		vt::map<UUID64, uint32_t> m_lightIndexFromLightID;
+		Map<UUID64, uint32_t> m_lightIndexFromLightID;
 
 		GPUSceneBuffers m_buffers;
 

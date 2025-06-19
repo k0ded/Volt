@@ -87,7 +87,7 @@ namespace Volt
 		std::condition_variable m_wakeCondition;
 		Scope<std::thread> m_assetImporterWorkerThread;
 
-		vt::map<std::string, Scope<std::atomic_bool>> m_isImporterInUseMap;
-		vt::map<std::string, Scope<ThreadSafeQueue<ImportJob>>> m_importQueues;
+		Map<std::string, Scope<std::atomic_bool>> m_isImporterInUseMap;
+		Map<std::string, Scope<ThreadSafeQueue<ImportJob>>> m_importQueues;
 	};
 }

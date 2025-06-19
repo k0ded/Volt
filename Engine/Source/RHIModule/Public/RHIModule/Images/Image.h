@@ -18,8 +18,7 @@ namespace Volt::RHI
 		virtual void Release() = 0;
 		virtual void GenerateMips() = 0;
 
-		virtual RefPtr<ImageView> GetView(const int32_t mip = -1, const int32_t layer = -1) = 0;
-		virtual RefPtr<ImageView> GetArrayView(const int32_t mip = -1) = 0;
+		virtual RefPtr<ImageView> GetView(const ImageViewDesc& desc = {}) = 0;
 
 		virtual const ImageAspect GetImageAspect() const = 0;
 
@@ -33,12 +32,13 @@ namespace Volt::RHI
 		virtual const ImageUsage GetUsage() const = 0;
 		virtual const uint32_t CalculateMipCount() const = 0;
 		virtual const bool IsSwapchainImage() const = 0;
+		virtual const ImageDesc& GetDesc() const = 0;
 
 		template<typename T>
 		VT_INLINE T ReadPixel(uint32_t x, uint32_t y, uint32_t z);
 
-		static RefPtr<Image> Create(const ImageSpecification& specification, const void* data = nullptr, RefPtr<GPUAllocator> allocator = nullptr);
-		static RefPtr<Image> Create(const SwapchainImageSpecification& specification);
+		static RefPtr<Image> Create(const ImageDesc& specification, const void* data = nullptr, RefPtr<GPUAllocator> allocator = nullptr);
+		static RefPtr<Image> Create(const SwapchainImageDesc& specification);
 
 	protected:
 		virtual Buffer ReadPixelInternal(const uint32_t x, const uint32_t y, const uint32_t z, const size_t stride) = 0;

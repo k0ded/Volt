@@ -1,0 +1,43 @@
+#include "rhipch.h"
+
+#include "RHIModule/ResourceDeletionQueue.h"
+
+#include <ranges>
+
+namespace Volt::RHI
+{
+	void ResourceDeletionQueue::EnqueueResourceDeletion(uint32_t index, FunctionType&& deletionFunc)
+	{
+		std::scoped_lock lock{ m_queueMutex };
+		m_queues.at(index).emplace_back(deletionFunc);
+	}
+
+	void ResourceDeletionQueue::FlushQueue(uint32_t index)
+	{
+		// Run through the list in reverse order to get FIFO behaviour
+		for (const auto& func : m_queues.at(index))
+		{
+			func();
+		}
+
+		m_queues.at(index).clear();
+	}
+
+	void ResourceDeletionQueue::SetSize(uint32_t size)
+	{
+		m_queues.resize(size);
+	}
+
+	ResourceDeletionQueue::ResourceDeletionQueue(const ResourceDeletionQueue& other)
+	{
+		m_queues = other.m_queues;
+	}
+
+	void ResourceDeletionQueue::FlushAll()
+	{
+		for (uint32_t i = 0; i < static_cast<uint32_t>(m_queues.size()); ++i)
+		{
+			FlushQueue(i);
+		}
+	}
+}

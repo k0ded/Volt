@@ -4,20 +4,21 @@
 
 #include "RHIModule/Shader/BufferLayout.h"
 #include "RHIModule/Shader/ShaderCommon.h"
+#include "RHIModule/Shader/ShaderPermutationConfig.h"
+#include "RHIModule/Shader/ShaderParameterMap.h"
+
 #include "RHIModule/Core/RHICommon.h"
 
 #include <filesystem>
 
 namespace Volt::RHI
 {
-	class Shader;
 	class ShaderCache;
 
 	enum class ShaderCompilerFlags : uint32_t
 	{
 		None = BIT(0),
 		WarningsAsErrors = BIT(1),
-		EnableShaderValidator = BIT(2)
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(ShaderCompilerFlags);
@@ -51,41 +52,32 @@ namespace Volt::RHI
 		struct CompilationResultData
 		{
 			CompilationResult result = CompilationResult::Failure;
-			std::unordered_map<ShaderStage, Vector<uint32_t>> shaderData;
+			Vector<uint32_t> shaderBinary;
 
 			// Pixel Shader
-			Vector<RHI::PixelFormat> outputFormats;
-			
+			Vector<PixelFormat> outputFormats;
+
 			// Vertex Shader
-			RHI::BufferLayout vertexLayout;
-			RHI::BufferLayout instanceLayout;
+			BufferLayoutMap vertexLayout;
+			BufferLayout instanceLayout;
 
 			// Common
-			ShaderRenderGraphConstantsData renderGraphConstants{};
-			ShaderDataBuffer constantsBuffer{};
-			ShaderConstantData constants{};
+			ShaderParameterMap shaderParameterMap;
 
-			std::unordered_map<std::string, ShaderResourceBinding> bindings;
-
-			std::map<uint32_t, std::map<uint32_t, ShaderConstantBuffer>> uniformBuffers;
-			std::map<uint32_t, std::map<uint32_t, ShaderStorageBuffer>> storageBuffers;
-			std::map<uint32_t, std::map<uint32_t, ShaderStorageImage>> storageImages;
-			std::map<uint32_t, std::map<uint32_t, ShaderImage>> images;
-			std::map<uint32_t, std::map<uint32_t, ShaderSampler>> samplers;
-
-			VT_NODISCARD VT_INLINE bool IsValid() const { return !shaderData.empty(); }
+			VT_NODISCARD VT_INLINE bool IsValid() const { return !shaderBinary.empty(); }
 		};
 
 		struct Specification
 		{
+			ShaderSourceInfo shaderSourceInfo;
+			ShaderPermutationConfig permutationConfig;
 			OptimizationLevel optimizationLevel = OptimizationLevel::Disable;
-			std::unordered_map<ShaderStage, ShaderSourceInfo> shaderSourceInfo;
-			bool forceCompile = false;
+			bool forceCompile;
 		};
 
 		virtual ~ShaderCompiler();
 
-		[[nodiscard]] static CompilationResultData TryCompile(const Specification& specification);
+		VT_NODISCARD static CompilationResultData TryCompile(const Specification& specification);
 		static void AddMacro(const std::string& macroName);
 		static void RemoveMacro(std::string_view macroName);
 		

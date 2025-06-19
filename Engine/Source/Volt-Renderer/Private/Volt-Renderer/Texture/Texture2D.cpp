@@ -11,7 +11,7 @@ namespace Volt
 
 	Texture2D::Texture2D(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data)
 	{
-		RHI::ImageSpecification imageSpec{};
+		RHI::ImageDesc imageSpec{};
 		imageSpec.format = format;
 		imageSpec.usage = RHI::ImageUsage::Texture;
 		imageSpec.width = static_cast<uint32_t>(width);

@@ -88,7 +88,15 @@ namespace Volt
 			const size_t maxSize = image->GetWidth() * image->GetHeight() * RHI::Utility::GetByteSizePerPixelFromFormat(image->GetFormat());
 
 			RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-			Handle<RHI::Allocation> stagingBuffer = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(maxSize, RHI::BufferUsage::TransferDst, RHI::MemoryUsage::GPUToCPU, "Staging Buffer");
+
+			RHI::BufferDesc stagingDesc{};
+			stagingDesc.count = 1;
+			stagingDesc.elementSize = maxSize;
+			stagingDesc.usage = RHI::BufferUsage::TransferDst;
+			stagingDesc.memoryUsage = RHI::MemoryUsage::GPUToCPU;
+			stagingDesc.debugName = "Staging Buffer";
+
+			Handle<RHI::Allocation> stagingBuffer = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
 			commandBuffer->Begin();
 
@@ -208,15 +216,15 @@ namespace Volt
 
 		// Create image
 		{
-			RHI::ImageSpecification specification{};
+			RHI::ImageDesc specification{};
 			specification.format = textureHeader.format;
 			specification.usage = RHI::ImageUsage::Texture;
 			specification.width = textureHeader.mips.front().width;
 			specification.height = textureHeader.mips.front().height;
 
 			// #TODO_Ivar: Remove and implement proper way of generating mips
-			//specification.mips = static_cast<uint32_t>(textureHeader.mips.size());
-			specification.mips = RHI::Utility::CalculateMipCount(specification.width, specification.height);
+			specification.mips = static_cast<uint32_t>(textureHeader.mips.size());
+			//specification.mips = RHI::Utility::CalculateMipCount(specification.width, specification.height);
 			specification.generateMips = false;
 			specification.debugName = filePath.stem().string();
 
@@ -248,7 +256,14 @@ namespace Volt
 			mipIndex++;
 		}
 
-		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingAllocSize, RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CPUToGPU, "Staging Alloc");
+		RHI::BufferDesc stagingDesc{};
+		stagingDesc.count = 1;
+		stagingDesc.elementSize = stagingAllocSize;
+		stagingDesc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc;
+		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
+		stagingDesc.debugName = "Staging Alloc";
+
+		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
 		commandBuffer->Begin();
 
@@ -284,8 +299,6 @@ namespace Volt
 		commandBuffer->Execute();
 		
 		RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
-
-		image->GenerateMips();
 
 		texture->SetImage(image);
 

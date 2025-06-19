@@ -12,11 +12,12 @@ namespace Volt::RHI
 	class VulkanStorageBuffer : public StorageBuffer
 	{
 	public:
-		VulkanStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage = BufferUsage::StorageBuffer, MemoryUsage memoryUsage = MemoryUsage::GPU, RefPtr<GPUAllocator> allocator = nullptr);
+		VulkanStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator = nullptr);
 		~VulkanStorageBuffer() override;
 
 		void Resize(const uint64_t size) override;
 		void ResizeWithCount(const uint32_t count) override;
+		const BufferDesc& GetDesc() const override;
 
 		const uint64_t GetElementSize() const override;
 		const uint32_t GetCount() const override;
@@ -26,7 +27,7 @@ namespace Volt::RHI
 		void SetData(const void* data, const size_t size) override;
 		void SetData(RefPtr<CommandBuffer> commandBuffer, const void* data, const size_t size) override;
 
-		RefPtr<BufferView> GetView() override;
+		RefPtr<BufferView> GetView(const BufferViewDesc& desc) override;
 
 		inline constexpr ResourceType GetType() const override { return ResourceType::StorageBuffer; }
 		void SetName(const std::string& name) override;
@@ -42,17 +43,10 @@ namespace Volt::RHI
 		void Invalidate(const uint64_t byteSize);
 		void Release();
 
-		uint64_t m_elementSize = 0;
 		uint64_t m_byteSize = 0;
-		uint32_t m_count = 0;
+		BufferDesc m_desc;
 
-		std::string m_name;
-
-		RefPtr<BufferView> m_view;
 		Handle<Allocation> m_allocation;
 		RawPtr<GPUAllocator> m_allocator;
-
-		BufferUsage m_bufferUsage = BufferUsage::StorageBuffer;
-		MemoryUsage m_memoryUsage = MemoryUsage::GPU;
 	};
 }

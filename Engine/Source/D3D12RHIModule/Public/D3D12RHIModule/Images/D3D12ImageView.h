@@ -9,7 +9,7 @@ namespace Volt::RHI
 	class D3D12ImageView final : public ImageView
 	{
 	public:
-		D3D12ImageView(const ImageViewSpecification specification);
+		D3D12ImageView(const ImageViewDesc specification);
 		~D3D12ImageView() override;
 		void* GetHandleImpl() const override;
 
@@ -17,6 +17,7 @@ namespace Volt::RHI
 		const uint64_t GetDeviceAddress() const override;
 		const ImageUsage GetImageUsage() const override;
 		const ImageViewType GetViewType() const override;
+		const ImageViewDesc& GetDesc() const override;
 		const bool IsSwapchainView() const override;
 
 		VT_NODISCARD VT_INLINE const D3D12DescriptorPointer& GetRTVDSVDescriptor() const { return m_rtvDsvDescriptor; }
@@ -29,7 +30,7 @@ namespace Volt::RHI
 		void CreateSRV();
 		void CreateUAV();
 
-		ImageViewSpecification m_specification;
+		ImageViewDesc m_desc;
 
 		D3D12ViewType m_viewUsage;
 		D3D12DescriptorPointer m_rtvDsvDescriptor;

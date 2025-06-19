@@ -31,8 +31,6 @@ namespace Volt::RHI
 
 		static RefPtr<GraphicsContext> Create(const GraphicsContextCreateInfo& createInfo);
 
-		static void Update();
-
 	protected:
 		virtual RefPtr<GPUAllocator> GetDefaultAllocatorImpl() = 0;
 		virtual RefPtr<GPUAllocator> GetTransientAllocatorImpl() = 0;

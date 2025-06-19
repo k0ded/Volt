@@ -11,19 +11,20 @@
 #include "RHIModule/RayTracing/RayTracingCommon.h"
 #include "RHIModule/RayTracing/ShaderBindingTable.h"
 
+#include <RHIModule/Buffers/IndexBuffer.h>
+#include <RHIModule/Buffers/VertexBuffer.h>
+
 #include <CoreUtilities/Pointers/RawPtr.h>
 #include <CoreUtilities/Containers/StackVector.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Allocators/Handle.h>
+#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt::RHI
 {
 	class RenderPipeline;
 	class ComputePipeline;
 	
-	class VertexBuffer;
-	class IndexBuffer;
-
 	class Image;
 	class StorageBuffer;
 	class Allocation;
@@ -34,11 +35,16 @@ namespace Volt::RHI
 
 	class AccelerationStructure;
 
+	struct RenderingInfo;
+
 	enum class CommandBufferLevel
 	{
 		Primary,
 		Secondary
 	};
+
+	using BarrierVector = Vector<ResourceBarrierInfo, InlineAllocator<32>>;
+	using VertexBufferVector = Vector<RefPtr<RHI::StorageBuffer>, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>>;
 
 	class VTRHI_API CommandBuffer : public RHIInterface
 	{
@@ -80,7 +86,7 @@ namespace Volt::RHI
 		virtual void BindPipeline(RawPtr<ComputePipeline> pipeline) = 0;
 		virtual void BindPipeline(RawPtr<RayTracingPipeline> pipeline) = 0;
 		virtual void BindVertexBuffers(const StackVector<RawPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) = 0;
-		virtual void BindVertexBuffers(const StackVector<RawPtr<StorageBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) = 0;
+		virtual void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) = 0;
 		virtual void BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer) = 0;
 		virtual void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) = 0;
 
@@ -90,9 +96,7 @@ namespace Volt::RHI
 		virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
 		virtual void EndRendering() = 0;
 
-		virtual void PushConstants(const void* data, const uint32_t size, const uint32_t offset) = 0;
-
-		virtual void ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers) = 0;
+		virtual void ResourceBarrier(const BarrierVector& resourceBarriers) = 0;
 
 		virtual void BuildAccelerationStructures(const Vector<AccelerationStructureBuildGeometryInfo>& buildInfos, const Vector<AccelerationStructureBuildRanges>& buildRanges) = 0;
 
@@ -103,10 +107,12 @@ namespace Volt::RHI
 		virtual void EndTimestamp(uint32_t timestampIndex) = 0;
 		virtual const float GetExecutionTime(uint32_t timestampIndex) const = 0;
 
-		virtual void ClearImage(RawPtr<Image> image, std::array<float, 4> clearColor) = 0;
-		virtual void ClearBuffer(RawPtr<StorageBuffer> buffer, const uint32_t value) = 0;
+		virtual void ClearBufferView(RawPtr<BufferView> bufferView, const float clearValue) = 0;
+		virtual void ClearBufferView(RawPtr<BufferView> bufferView, const uint32_t clearValue) = 0;
 
-		virtual void UpdateBuffer(RawPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data) = 0;
+		virtual void ClearImageView(RawPtr<ImageView> imageView, std::array<float, 4> clearValue) = 0;
+		virtual void ClearImageView(RawPtr<ImageView> imageView, std::array<uint32_t, 4> clearValue) = 0;
+
 		virtual void CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size) = 0;
 		virtual void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip = 0) = 0;
 		virtual void CopyImageToBuffer(RawPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) = 0;
