@@ -5,6 +5,7 @@
 
 #include <iterator>
 
+// Uninitialized Copy
 namespace Internal
 {
 	template<typename T>
@@ -13,23 +14,6 @@ namespace Internal
 		return reinterpret_cast<T*>(&const_cast<char&>(reinterpret_cast<const volatile char&>(value)));
 	}
 
-	VT_NODISCARD VT_INLINE void* Allocate(size_t size, size_t alignment)
-	{
-		//return HeapAllocator2::AllocateUninitialized(size, alignment);
-		return nullptr;
-	}
-
-	VT_INLINE void Free(void* ptr)
-	{
-		
-		//HeapAllocator2::FreeUninitialized(ptr);
-		free(ptr);
-	}
-}
-
-// Uninitialized Copy
-namespace Internal
-{
 	template<bool isTriviallyCopyable, bool isInputIteratorReferenceAddressable, bool areIteratorsContiguous>
 	struct UninitializedCopyImpl
 	{

@@ -22,6 +22,8 @@ namespace Volt
 
 	void JobSystem2::RunJob(Job2* job)
 	{
+		VT_PROFILE_FUNCTION();
+
 		VT_ENSURE(s_instance);
 
 		const uint32_t nextQueueToPush = s_instance->m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % s_instance->m_numWorkers;
@@ -32,7 +34,7 @@ namespace Volt
 	void JobSystem2::Initialize()
     {
 		m_isAlive = true;
-		const uint32_t hardwareConcurrency = std::thread::hardware_concurrency();
+		const uint32_t hardwareConcurrency = PlatformMisc::GetNumberOfPhysicalCores();
 		m_numWorkers = hardwareConcurrency;
 
 		m_workers.reserve(m_numWorkers);
@@ -50,6 +52,9 @@ namespace Volt
 			std::string threadName = std::format("Volt::Worker {}", i);
 			PlatformThread::SetThreadName(worker->thread.native_handle(), threadName);
 		}
+
+		// Notify all threads that they are allowed to run.
+		m_wakeCondition.notify_all();
     }
 
 	void JobSystem2::Shutdown()
@@ -69,12 +74,17 @@ namespace Volt
 
 	void JobSystem2::SpawnWorker(uint32_t workerId)
 	{
+		// Wait here for all threads to be created.
+		{
+			std::unique_lock<std::mutex> spawnLock(m_wakeMutex);
+			m_wakeCondition.wait(spawnLock);
+		}
+
 		while (m_isAlive.load(std::memory_order::relaxed))
 		{
-			Job2* jobPtr;
-			bool hasWork = m_workers.at(workerId)->workQueue.Pop(jobPtr);
+			Job2* jobPtr = TryGetJob(workerId);
 
-			if (hasWork)
+			if (jobPtr)
 			{
 				{
 					VT_PROFILE_SCOPE(jobPtr->GetName().data());
@@ -89,6 +99,30 @@ namespace Volt
 				m_wakeCondition.wait(lock);
 			}
 		}
+	}
+
+	Job2* JobSystem2::TryGetJob(uint32_t workerId)
+	{
+		auto& worker = m_workers.at(workerId);
+
+		Job2* job = nullptr;
+		if (!worker->workQueue.Pop(job))
+		{
+			uint32_t currentQueue = (workerId + 1) % m_numWorkers;
+
+			while (currentQueue != workerId)
+			{
+				auto& stealingQueue = m_workers.at(currentQueue)->workQueue;
+				if (stealingQueue.Pop(job))
+				{
+					return job;
+				}
+
+				currentQueue = (currentQueue + 1) % m_numWorkers;
+			}
+		}
+
+		return job;
 	}
 
 	JobSystem2::JobWorker* JobSystem2::AllocateWorker(uint32_t workerId)

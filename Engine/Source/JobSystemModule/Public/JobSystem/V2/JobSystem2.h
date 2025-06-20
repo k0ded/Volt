@@ -38,6 +38,7 @@ namespace Volt
 
 		void SpawnWorker(uint32_t workerId);
 
+		Job2* TryGetJob(uint32_t workerId);
 		JobWorker* AllocateWorker(uint32_t workerId);
 
 		inline static constexpr size_t NumMaxWorkers = 64;
