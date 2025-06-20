@@ -31,7 +31,7 @@ namespace VoltSharpmake
             conf.AddPublicDependency<WindowModule>(target);
             conf.AddPublicDependency<InputModule>(target);
 
-            conf.AddPublicDependency<VulkanRHIModule>(target, DependencySetting.OnlyBuildOrder);
+            conf.AddPublicDependency<VulkanRHIModule>(target);
             //conf.AddPublicDependency<D3D12RHIModule>(target, DependencySetting.OnlyBuildOrder);
 
 			conf.AddPublicDependency<VoltPhysics>(target);

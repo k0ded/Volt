@@ -81,7 +81,7 @@ namespace IntegrationTests
 		Map<uint32_t, Map<RGResourceRef, RHI::ResourceBarrierInfo>> m_barriers;
 	};
 
-	void VerifyGraphBarriers(const PagedVector<RenderGraph::CompiledPass>& compiledPasses, const ExpectedBarriersMap& expected)
+	void VerifyGraphBarriers(const Vector<RenderGraph::CompiledPass>& compiledPasses, const ExpectedBarriersMap& expected)
 	{
 		for (uint32_t index = 0; const auto& pass : compiledPasses)
 		{

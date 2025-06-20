@@ -47,15 +47,15 @@ namespace Volt
 		VT_INLINE void AddResourceAccess(RGTextureRef texture, RGResourceAccess accessType) { m_resourceAccesses.emplace_back(texture, accessType); }
 		VT_INLINE void AddResourceAccess(RGUniformBufferRef uniformBuffer, RGResourceAccess accessType) { m_resourceAccesses.emplace_back(uniformBuffer, accessType); }
 
-		VT_NODISCARD VT_INLINE const PagedVector<RGResourceSRVRef>& GetResourceReads() const { return m_resourceReads; }
-		VT_NODISCARD VT_INLINE const PagedVector<RGResourceUAVRef>& GetResourceWrites() const { return m_resourceWrites; }
-		VT_NODISCARD VT_INLINE const PagedVector<ResourceAccess>& GetResourceAccesses() const { return m_resourceAccesses; }
-		VT_NODISCARD VT_INLINE const PagedVector<RGTextureRef>& GetResourceRenderTargetAccesses() const { return m_renderTargetAccesses; }
+		VT_NODISCARD VT_INLINE const Vector<RGResourceSRVRef>& GetResourceReads() const { return m_resourceReads; }
+		VT_NODISCARD VT_INLINE const Vector<RGResourceUAVRef>& GetResourceWrites() const { return m_resourceWrites; }
+		VT_NODISCARD VT_INLINE const Vector<ResourceAccess>& GetResourceAccesses() const { return m_resourceAccesses; }
+		VT_NODISCARD VT_INLINE const Vector<RGTextureRef>& GetResourceRenderTargetAccesses() const { return m_renderTargetAccesses; }
 
 	private:
-		PagedVector<RGResourceSRVRef> m_resourceReads;
-		PagedVector<RGResourceUAVRef> m_resourceWrites;
-		PagedVector<RGTextureRef> m_renderTargetAccesses;
-		PagedVector<ResourceAccess> m_resourceAccesses;
+		Vector<RGResourceSRVRef> m_resourceReads;
+		Vector<RGResourceUAVRef> m_resourceWrites;
+		Vector<RGTextureRef> m_renderTargetAccesses;
+		Vector<ResourceAccess> m_resourceAccesses;
 	};
 }

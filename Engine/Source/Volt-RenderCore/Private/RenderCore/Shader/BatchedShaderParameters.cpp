@@ -62,4 +62,12 @@ namespace Volt
 			}
 		}
 	}
+
+	BatchedShaderParameterAllocator::~BatchedShaderParameterAllocator()
+	{
+		for (auto& destructor : m_destructors)
+		{
+			destructor.Destroy();
+		}
+	}
 }

@@ -7,8 +7,6 @@
 #include <RHIModule/Descriptors/ResourceHandle.h>
 #include <RHIModule/Images/Image.h>
 
-#include <CoreUtilities/Containers/VectorVariants.h>
-
 #include <filesystem>
 
 namespace Volt

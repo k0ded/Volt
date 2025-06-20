@@ -93,7 +93,7 @@ namespace Volt
 
 		VT_NODISCARD const RenderPrimitiveData& GetPrimitiveDataFromID(UUID64 id) const;
 		VT_NODISCARD const RenderLightData& GetLightDataFromID(UUID64 id) const;
-		VT_NODISCARD PagedVector<uint32_t> GetPrimitiveIndicesFromEntityID(EntityID entityId) const;
+		VT_NODISCARD Vector<uint32_t> GetPrimitiveIndicesFromEntityID(EntityID entityId) const;
 
 		VT_NODISCARD VT_INLINE std::span<const GPUMesh> GetGPUMeshes() const { return m_gpuMeshes; }
 		VT_NODISCARD VT_INLINE std::span<const PrimitiveDrawData> GetPrimitiveDrawData() const { return m_primitiveDrawData; }
@@ -148,25 +148,25 @@ namespace Volt
 			VT_INLINE size_t GetIndexFromID(UUID64 id) const { return m_primitiveIndexFromPrimitiveID.at(id); }
 			VT_INLINE size_t GetMaxIndex() const { return m_nextIndex; }
 
-			VT_INLINE PagedVector<size_t> GetAndClearRemovedIndices() 
+			VT_INLINE Vector<size_t> GetAndClearRemovedIndices() 
 			{ 
-				PagedVector<size_t> tempVector = m_removedPrimitiveDataIndices; 
+				Vector<size_t> tempVector = m_removedPrimitiveDataIndices; 
 				m_removedPrimitiveDataIndices.clear(); 
 				return tempVector; 
 			}
 
-			VT_INLINE PagedVector<InvalidDrawData> GetAndClearInvalidIndices() 
+			VT_INLINE Vector<InvalidDrawData> GetAndClearInvalidIndices() 
 			{ 
-				PagedVector<InvalidDrawData> tempVector = m_invalidPrimitiveDataIndices;
+				Vector<InvalidDrawData> tempVector = m_invalidPrimitiveDataIndices;
 				m_invalidPrimitiveDataIndices.clear();
 				return tempVector; 
 			}
 
 		private:
-			PagedVector<size_t> m_removedPrimitiveDataIndices;
-			PagedVector<size_t> m_freePrimitiveDataIndices;
+			Vector<size_t> m_removedPrimitiveDataIndices;
+			Vector<size_t> m_freePrimitiveDataIndices;
 
-			PagedVector<InvalidDrawData> m_invalidPrimitiveDataIndices;
+			Vector<InvalidDrawData> m_invalidPrimitiveDataIndices;
 			Map<UUID64, size_t> m_primitiveIndexFromPrimitiveID;
 
 			size_t m_nextIndex = 0;

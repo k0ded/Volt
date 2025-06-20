@@ -2,7 +2,6 @@
 #include "RHIModule/Core/Core.h"
 
 #include <CoreUtilities/Containers/StackVector.h>
-#include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/Variant.h>
 #include <CoreUtilities/Pointers/RawPtr.h>
 
@@ -751,7 +750,7 @@ namespace Volt::RHI
 
 	struct ImageCopyData
 	{
-		PagedVector<ImageCopySubData> copySubData;
+		Vector<ImageCopySubData> copySubData;
 	};
 
 	struct ImageBarrier

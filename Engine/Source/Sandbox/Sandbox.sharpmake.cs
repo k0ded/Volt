@@ -49,10 +49,10 @@ namespace VoltSharpmake
 			Type gameProjectType = Type.GetType("VoltSharpmake.Game");
 			if (gameProjectType != null)
 			{
-				conf.AddPrivateDependency(target, gameProjectType, DependencySetting.OnlyBuildOrder);
+				conf.AddPrivateDependency(target, gameProjectType);
 			}
 
-			conf.AddPrivateDependency<PhysXPhysicsInterface>(target, DependencySetting.OnlyBuildOrder);
+			conf.AddPrivateDependency<PhysXPhysicsInterface>(target);
 
 			conf.IncludePaths.Add(
                 Path.Combine(Globals.ThirdPartyDirectory ,@"nlohmann/include"),

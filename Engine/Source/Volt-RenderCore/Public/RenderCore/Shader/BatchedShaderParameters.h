@@ -10,6 +10,7 @@
 
 #include <CoreUtilities/Allocators/LinearAllocator.h>
 #include <CoreUtilities/Allocators//InlineAllocator.h>
+#include <CoreUtilities/DestructorHelper.h>
 
 namespace Volt
 {
@@ -21,16 +22,22 @@ namespace Volt
 	class VTRC_API BatchedShaderParameterAllocator
 	{
 	public:
+		~BatchedShaderParameterAllocator();
+
 		template<typename T, typename... Args>
 		T* Allocate(Args&&... args)
 		{
 			void* allocation = m_allocator.Allocate(sizeof(T));
-			return new (allocation) T(std::forward<Args>(args)...);
+			T* ptr = new (allocation) T(std::forward<Args>(args)...);
+		
+			m_destructors.emplace_back() = DestructorHelper::Create<T>(ptr);
+			return ptr;
 		}
 
 	private:
 		inline static constexpr size_t MaxBatchedShaderParameterSize = 1024;
 		LinearAllocator<MaxBatchedShaderParameterSize> m_allocator;
+		Vector<DestructorHelper> m_destructors;
 	};
 
 	struct BatchedShaderParameter

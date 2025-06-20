@@ -1,3 +1,4 @@
+using Sharpmake;
 using System;
 using System.IO;
 
@@ -44,6 +45,8 @@ namespace VoltSharpmake
 				conf.LibraryPaths.Add(vulkanSDKLibPath);
 				conf.LibraryFiles.Add("vulkan-1.lib");
 			}
+
+			conf.Options.Add(Options.Vc.Linker.IgnoreImportLibrary.Enable);
 		}
 
 		public override void ConfigureDebug(Configuration conf, CommonTarget target)

@@ -383,9 +383,9 @@ namespace Volt
 		return *it;
 	}
 
-	VT_NODISCARD PagedVector<uint32_t> RenderScene::GetPrimitiveIndicesFromEntityID(EntityID entityId) const
+	VT_NODISCARD Vector<uint32_t> RenderScene::GetPrimitiveIndicesFromEntityID(EntityID entityId) const
 	{
-		PagedVector<uint32_t> result;
+		Vector<uint32_t> result;
 
 		for (const auto& primitive : m_renderPrimitives)
 		{
@@ -656,8 +656,8 @@ namespace Volt
 		auto drawDataBuffer = m_buffers.primitiveDrawDataBuffer;
 		drawDataBuffer->GrowIfRequired(m_primitiveDrawData.size());
 
-		PagedVector<size_t> removedPrimitiveDataIndices = m_primitiveIndicesContainer.GetAndClearRemovedIndices();
-		PagedVector<InvalidDrawData> invalidPrimitiveDataIndices = m_primitiveIndicesContainer.GetAndClearInvalidIndices();
+		Vector<size_t> removedPrimitiveDataIndices = m_primitiveIndicesContainer.GetAndClearRemovedIndices();
+		Vector<InvalidDrawData> invalidPrimitiveDataIndices = m_primitiveIndicesContainer.GetAndClearInvalidIndices();
 
 		if (!invalidPrimitiveDataIndices.empty() || !removedPrimitiveDataIndices.empty())
 		{

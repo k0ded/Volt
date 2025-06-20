@@ -6,7 +6,7 @@ class TestingRenderGraph : public Volt::RenderGraph
 {
 public:
 	VT_INLINE const Vector<Handle<Volt::RenderGraphPass>>& GetPasses() const { return m_passes; }
-	VT_INLINE const PagedVector<CompiledPass>& GetCompiledPasses() const { return m_compiledPasses; }
+	VT_INLINE const Vector<CompiledPass>& GetCompiledPasses() const { return m_compiledPasses; }
 	VT_INLINE const uint32_t GetNumCompiledPasses() const { return static_cast<uint32_t>(m_compiledPasses.size()); }
 };
 

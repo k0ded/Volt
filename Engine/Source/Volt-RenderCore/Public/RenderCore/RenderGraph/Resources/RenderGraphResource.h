@@ -2,7 +2,7 @@
 
 #include <CoreUtilities/Allocators/Handle.h>
 #include <CoreUtilities/Allocators/InlineAllocator.h>
-#include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
 
 // #TODO_Ivar: Switch to our own version.
 #include <bitset>

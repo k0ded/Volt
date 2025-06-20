@@ -140,12 +140,12 @@ namespace Volt
 				}
 
 			private:
-				PagedVector<BarrierInfo> m_barriers;
+				Vector<BarrierInfo> m_barriers;
 			};
 
 			VT_INLINE void SetName(const std::string& name) { m_name = name; }
 			VT_INLINE void AddSurrenderableResource(RGResourceRef resource) { m_surrenderableResources.emplace_back(resource); }
-			VT_NODISCARD VT_INLINE const PagedVector<RGResourceRef>& GetSurrenderableResources() const { return m_surrenderableResources; }
+			VT_NODISCARD VT_INLINE const Vector<RGResourceRef>& GetSurrenderableResources() const { return m_surrenderableResources; }
 
 			// We only want maximum ONE global barrier per pass. As a single global barrier
 			// can represent multiple.
@@ -180,7 +180,7 @@ namespace Volt
 			int32_t m_globalBarrierIndex = -1;
 			int32_t m_postPassGlobalBarrierIndex = -1;
 
-			PagedVector<RGResourceRef> m_surrenderableResources;
+			Vector<RGResourceRef> m_surrenderableResources;
 			std::string_view m_name;
 		};
 	
@@ -201,7 +201,7 @@ namespace Volt
 			VT_NODISCARD VT_INLINE bool HasPassBarriers(uint32_t passIndex) const { return m_passBarriers.contains(passIndex) && !m_passBarriers.at(passIndex).empty(); }
 
 		private:
-			Map<uint32_t, PagedVector<ResourceUsageInfo>> m_passBarriers;
+			Map<uint32_t, Vector<ResourceUsageInfo>> m_passBarriers;
 		};
 
 		class StandaloneMarkers
@@ -277,13 +277,13 @@ namespace Volt
 		RenderGraphPassAllocator m_passAllocator; // Allocator for RenderGraph passes.
 		LinearAllocator<1 * 1024 * 1024> m_temporaryDataAllocator; // Allocator for temporary data that needs to live during the execution of the render graph.
 	
-		PagedVector<TextureExtractionInfo> m_textureExtractions;
-		PagedVector<BufferExtractionInfo> m_bufferExtractions;
+		Vector<TextureExtractionInfo> m_textureExtractions;
+		Vector<BufferExtractionInfo> m_bufferExtractions;
 
-		PagedVector<Handle<RenderGraphPass>> m_passes;
-		PagedVector<RGResourceRef> m_resources;
+		Vector<Handle<RenderGraphPass>> m_passes;
+		Vector<RGResourceRef> m_resources;
 
-		PagedVector<CompiledPass> m_compiledPasses;
+		Vector<CompiledPass> m_compiledPasses;
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::Fence> m_executionFence;

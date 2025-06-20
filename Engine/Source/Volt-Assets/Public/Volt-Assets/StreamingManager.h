@@ -10,7 +10,6 @@
 #include <SubSystem/SubSystem.h>
 
 #include <CoreUtilities/UUID.h>
-#include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/Allocators/PagedArenaAllocator.h>
 
 #include <unordered_set>

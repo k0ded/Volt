@@ -47,6 +47,9 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/Allocators/FrameStackAllocator.h>
+
+#include <JobSystem/V2/JobSystem2.h>
 
 namespace Volt
 {
@@ -237,9 +240,11 @@ namespace Volt
 		while (m_isRunning)
 		{
 			VT_PROFILE_FRAME("Frame");
+		
 			MainUpdate();
 
 			m_frameIndex++;
+			FrameStackAllocator::Get().ClearStack();
 		}
 	}
 
@@ -299,7 +304,7 @@ namespace Volt
 
 	void Application::InitializeMainThread()
 	{
-		PlatformThread::AssignThreadToCore(PlatformThread::GetCurrentThreadHandle(), 0);
+		//PlatformThread::AssignThreadToCore(PlatformThread::GetCurrentThreadHandle(), 0);
 	}
 
 	void Application::MainUpdate()

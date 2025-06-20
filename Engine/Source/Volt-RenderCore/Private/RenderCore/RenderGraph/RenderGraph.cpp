@@ -690,7 +690,7 @@ namespace Volt
 			}
 		}
 
-		PagedVector<RGResourceRef> unreferencedResources{};
+		Vector<RGResourceRef> unreferencedResources{};
 		for (auto node : m_resources)
 		{
 			if (node->GetRefCount() == 0)

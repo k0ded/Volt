@@ -32,6 +32,8 @@
 
 #include <CoreUtilities/Math/Math.h>
 
+#include <JobSystem/V2/JobSystem2.h>
+
 namespace Volt
 {
 	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)
@@ -159,7 +161,7 @@ namespace Volt
 		renderGraph.Execute();
 
 		m_frameIndex++;
-	}
+ 	}
 
 	void SceneRenderer::AddDefaultTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 	{
