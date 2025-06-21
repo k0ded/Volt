@@ -183,9 +183,6 @@ private:
 		// MPSC relaxed, MPMC aquire.
 		constexpr std::memory_order indexLoadOrder = ThisType::HasSinglePopper ? std::memory_order::relaxed : std::memory_order::acquire;
 	
-		// MPSC acquire, MPMC acq_rel
-		constexpr std::memory_order casOrder = ThisType::HasSinglePopper ? std::memory_order::acquire : std::memory_order::acq_rel;
-
 		uint64_t storedIndices = m_pushPopIndices.load(indexLoadOrder);
 
 		do 

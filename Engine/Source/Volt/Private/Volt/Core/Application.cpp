@@ -231,27 +231,6 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void CreateFakeWork()
-	{
-		VT_PROFILE_FUNCTION();
-
-		const uint32_t numJobs = 1000;
-
-		for (uint32_t i = 0; i < numJobs; ++i)
-		{
-			Job2* job = JobSystem2::CreateJob("FakeWork", []()
-			{
-				uint32_t a = 0;
-				while (a++ < 2048)
-				{
-					VT_UNUSED(a);
-				}
-			});
-		
-			JobSystem2::RunJob(job);
-		}
-	}
-
 	void Application::Run()
 	{
 		VT_PROFILE_THREAD("Main");
@@ -262,8 +241,6 @@ namespace Volt
 		{
 			VT_PROFILE_FRAME("Frame");
 		
-			CreateFakeWork();
-
 			MainUpdate();
 
 			m_frameIndex++;

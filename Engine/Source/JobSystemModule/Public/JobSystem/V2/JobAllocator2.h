@@ -5,50 +5,50 @@
 
 namespace Volt
 {
-	template<typename JobType, size_t NumMaxJobs>
+	template<typename Type, size_t Size>
 	class JobAllocator2
 	{
 	public:
 		JobAllocator2();
 
-		JobType* Allocate();
-		void Free(JobType* job);
+		Type* Allocate();
+		void Free(Type* job);
 
 	private:
-		std::atomic<uint32_t> m_numAllocatedJobs;
-		Array<JobType, NumMaxJobs> m_jobAllocator;
+		std::atomic<uint32_t> m_numAllocated;
+		Array<Type, Size> m_allocator;
 
-		AtomicStack<uint32_t, NumMaxJobs> m_availableJobStack;
+		AtomicStack<uint32_t, Size> m_availableStack;
 	};
 
-	template<typename JobType, size_t NumMaxJobs>
-	void JobAllocator2<JobType, NumMaxJobs>::Free(JobType* job)
+	template<typename Type, size_t Size>
+	void JobAllocator2<Type, Size>::Free(Type* valuePtr)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE_MSG(job >= &m_jobAllocator[0] && job < &m_jobAllocator[NumMaxJobs - 1], "Job does not belong to allocator!");
+		VT_ENSURE_MSG(valuePtr >= &m_allocator[0] && valuePtr < &m_allocator[Size - 1], "Job does not belong to allocator!");
 		
-		const uint32_t jobIndex = static_cast<uint32_t>(std::distance(m_jobAllocator.begin(), job));
-		m_availableJobStack.Push(jobIndex);
+		const uint32_t index = static_cast<uint32_t>(std::distance(m_allocator.begin(), valuePtr));
+		m_availableStack.Push(index);
 	}
 
-	template<typename JobType, size_t NumMaxJobs>
-	JobType* JobAllocator2<JobType, NumMaxJobs>::Allocate()
+	template<typename Type, size_t Size>
+	Type* JobAllocator2<Type, Size>::Allocate()
 	{
 		VT_PROFILE_FUNCTION();
 		uint32_t jobIndex;
 
-		// Try to get a job from the available job stack.
-		if (!m_availableJobStack.Pop(jobIndex))
+		// Try to get a value from the available stack.
+		if (!m_availableStack.Pop(jobIndex))
 		{
 			// Otherwise get a new one.
-			jobIndex = m_numAllocatedJobs.fetch_add(1, std::memory_order::relaxed);
+			jobIndex = m_numAllocated.fetch_add(1, std::memory_order::relaxed);
 		}
-	
-		return &m_jobAllocator[jobIndex];
+
+		return &m_allocator[jobIndex];
 	}
 
-	template<typename JobType, size_t NumMaxJobs>
-	JobAllocator2<JobType, NumMaxJobs>::JobAllocator2()
-		: m_numAllocatedJobs(0)
+	template<typename Type, size_t Size>
+	JobAllocator2<Type, Size>::JobAllocator2()
+		: m_numAllocated(0)
 	{}
 }

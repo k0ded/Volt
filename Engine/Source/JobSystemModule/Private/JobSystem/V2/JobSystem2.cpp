@@ -20,15 +20,84 @@ namespace Volt
 		s_instance = nullptr;
     }
 
+	JobCounter* JobSystem2::CreateCounter()
+	{
+		JobCounter* newCounter = s_instance->m_counterAllocator.Allocate();
+		newCounter->Reset();
+
+		return newCounter;
+	}
+
+	void JobSystem2::DestroyCounter(JobCounter* counter)
+	{
+		s_instance->m_counterAllocator.Free(counter);
+	}
+
 	void JobSystem2::RunJob(Job2* job)
 	{
 		VT_PROFILE_FUNCTION();
-
 		VT_ENSURE(s_instance);
 
 		const uint32_t nextQueueToPush = s_instance->m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % s_instance->m_numWorkers;
 		s_instance->m_workers.at(nextQueueToPush)->workQueue.Emplace(job);
 		s_instance->m_wakeCondition.notify_all();
+	}
+
+	void JobSystem2::RunJobs(std::span<Job2*> jobs)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE(s_instance);
+
+		const uint32_t numJobs = static_cast<uint32_t>(jobs.size());
+		const uint32_t numJobsPerWorker = numJobs / s_instance->m_numWorkers;
+		const uint32_t remainder = numJobs - numJobsPerWorker * s_instance->m_numWorkers;
+
+		for (uint32_t worker = 0; worker < s_instance->m_numWorkers; ++worker)
+		{
+			const uint32_t numJobsOnWorker = numJobsPerWorker + (worker == (s_instance->m_numWorkers - 1) ? remainder : 0);
+
+			// #TODO_Ivar: Replace with multiple emplace in work queue.
+			for (uint32_t index = 0; index < numJobsOnWorker; ++index)
+			{
+				const uint32_t jobIndex = numJobsPerWorker * worker + index;
+				s_instance->m_workers.at(worker)->workQueue.Emplace(jobs[jobIndex]);
+			}
+		}
+
+		s_instance->m_wakeCondition.notify_all();
+	}
+
+	void JobSystem2::WaitForCounter(JobCounter* counter)
+	{
+		VT_PROFILE_FUNCTION();
+
+		uint32_t workerId = 0;
+		if (s_instance->m_workerThreadIDToIndex.contains(std::this_thread::get_id()))
+		{
+			workerId = s_instance->m_workerThreadIDToIndex.at(std::this_thread::get_id());
+		}
+
+		while (!counter->IsCompleted())
+		{
+			Job2* jobPtr = s_instance->TryGetJob(workerId);
+			if (jobPtr)
+			{
+				{
+					VT_PROFILE_SCOPE(jobPtr->GetName().data());
+					jobPtr->Execute();
+				}
+
+				s_instance->FinishJob(jobPtr);
+			}
+		}
+	}
+
+	void JobSystem2::WaitForAndDestroyCounter(JobCounter*& counter)
+	{
+		WaitForCounter(counter);
+		DestroyCounter(counter);
+
+		counter = nullptr;
 	}
 
 	void JobSystem2::Initialize()
@@ -38,6 +107,7 @@ namespace Volt
 		m_numWorkers = hardwareConcurrency;
 
 		m_workers.reserve(m_numWorkers);
+		m_workerThreadIDToIndex.reserve(m_numWorkers);
 
 		for (uint32_t i = 0; i < hardwareConcurrency; ++i)
 		{
@@ -80,6 +150,8 @@ namespace Volt
 			m_wakeCondition.wait(spawnLock);
 		}
 
+		m_workerThreadIDToIndex[std::this_thread::get_id()] = workerId;
+
 		while (m_isAlive.load(std::memory_order::relaxed))
 		{
 			Job2* jobPtr = TryGetJob(workerId);
@@ -91,7 +163,7 @@ namespace Volt
 					jobPtr->Execute();
 				}
 
-				m_jobAllocator.Free(jobPtr);
+				FinishJob(jobPtr);
 			}
 			else
 			{
@@ -132,5 +204,19 @@ namespace Volt
 		JobWorker* worker = new(allocatedPtr) JobWorker();
 
 		return worker;
+	}
+
+	void JobSystem2::FinishJob(Job2* jobPtr)
+	{
+		JobCounter* counter = jobPtr->GetCounter();
+		int32_t oldCount = counter->Decrement();
+		if (oldCount == 1)
+		{
+			// Mark as freed by setting value to < 0.
+			counter->Decrement();
+			m_counterAllocator.Free(counter);
+		}
+
+		m_jobAllocator.Free(jobPtr);
 	}
 }
