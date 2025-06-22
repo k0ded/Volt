@@ -37,6 +37,7 @@ public:
 			uint64_t newHead = Pack(index, oldVersion + 1);
 			if (m_dataHead.compare_exchange_weak(oldHead, newHead))
 			{
+				m_size.fetch_add(1);
 				return true;
 			}
 		}
@@ -64,12 +65,15 @@ public:
 			{
 				outValue = std::move(m_stack[index].value);
 				FreeNode(index);
+				m_size.fetch_sub(1);
 				return true;
 			}
 		}
 
 		return false;
 	}
+
+	VT_NODISCARD VT_INLINE uint32_t Size() const { return m_size; }
 
 private:
 	struct Node
@@ -154,4 +158,5 @@ private:
 	alignas(CacheLineAlignment) Array<Node, N> m_stack;
 	alignas(CacheLineAlignment) std::atomic<uint64_t> m_dataHead;
 	alignas(CacheLineAlignment) std::atomic<uint64_t> m_freeHead;
+	alignas(CacheLineAlignment) std::atomic<uint32_t> m_size;
 };

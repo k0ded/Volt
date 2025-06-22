@@ -22,15 +22,12 @@ namespace Volt
 
 	JobCounter* JobSystem2::CreateCounter()
 	{
-		JobCounter* newCounter = s_instance->m_counterAllocator.Allocate();
-		newCounter->Reset();
-
-		return newCounter;
+		return s_instance->AllocateCounter();
 	}
 
 	void JobSystem2::DestroyCounter(JobCounter* counter)
 	{
-		s_instance->m_counterAllocator.Free(counter);
+		counter->DecRef();
 	}
 
 	void JobSystem2::RunJob(Job2* job)
@@ -38,9 +35,17 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(s_instance);
 
-		const uint32_t nextQueueToPush = s_instance->m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % s_instance->m_numWorkers;
-		s_instance->m_workers.at(nextQueueToPush)->workQueue.Emplace(job);
-		s_instance->m_wakeCondition.notify_all();
+		// Enqueue job if it's ready to run, otherwise push to waiting list.
+		if (job->GetWaitCounter()->IsCompleted())
+		{
+			const uint32_t nextQueueToPush = s_instance->m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % s_instance->m_numWorkers;
+			s_instance->m_workers.at(nextQueueToPush)->workQueue.Emplace(job);
+			s_instance->m_wakeCondition.notify_all();
+		}
+		else
+		{
+			s_instance->PushToWaitingList(job);
+		}
 	}
 
 	void JobSystem2::RunJobs(std::span<Job2*> jobs)
@@ -88,6 +93,10 @@ namespace Volt
 				}
 
 				s_instance->FinishJob(jobPtr);
+			}
+			else
+			{
+				s_instance->FlushWaitingList();
 			}
 		}
 	}
@@ -165,7 +174,7 @@ namespace Volt
 
 				FinishJob(jobPtr);
 			}
-			else
+			else if (!FlushWaitingList())
 			{
 				std::unique_lock<std::mutex> lock(m_wakeMutex);
 				m_wakeCondition.wait(lock);
@@ -209,14 +218,92 @@ namespace Volt
 	void JobSystem2::FinishJob(Job2* jobPtr)
 	{
 		JobCounter* counter = jobPtr->GetCounter();
+		JobCounter* waitCounter = jobPtr->GetWaitCounter();
+
 		int32_t oldCount = counter->Decrement();
 		if (oldCount == 1)
 		{
 			// Mark as freed by setting value to < 0.
 			counter->Decrement();
-			m_counterAllocator.Free(counter);
 		}
 
-		m_jobAllocator.Free(jobPtr);
+		counter->DecRef();
+		waitCounter->DecRef();
+		jobPtr->DecRef();
+	}
+
+	JobCounter* JobSystem2::AllocateCounter(bool initializeWithRef)
+	{
+		JobCounter* counter = m_counterAllocator.Allocate();
+
+		if (initializeWithRef)
+		{
+			counter->IncRef();
+		}
+
+		return counter;
+	}
+
+	Job2* JobSystem2::AllocateJob()
+	{
+		Job2* job = m_jobAllocator.Allocate();
+		job->IncRef();
+
+		return job;
+	}
+
+	void JobSystem2::FreeCounter(JobCounter* counter)
+	{
+		VT_ENSURE_MSG(counter->IsCompleted(), "Counter must be completed!");
+		counter->Reset();
+		m_counterAllocator.Free(counter);
+	}
+
+	void JobSystem2::FreeJob(Job2* job)
+	{
+		job->Reset();
+		m_jobAllocator.Free(job);
+	}
+
+	void JobSystem2::PushToWaitingList(Job2* job)
+	{
+		m_waitingList.Push(job);
+	}
+
+	bool JobSystem2::FlushWaitingList()
+	{
+		if (m_waitingList.Size() == 0)
+		{
+			return false;
+		}
+
+		// Use a lock here to make sure that only one thread flushes at a time.
+		std::scoped_lock lock{ m_waitingListMutex };
+
+		Vector<Job2*> nonReadyJobs;
+		nonReadyJobs.reserve(128);
+
+		bool anyJobRun = false;
+
+		Job2* jobPtr;
+		while (m_waitingList.Pop(jobPtr))
+		{
+			if (jobPtr->GetWaitCounter()->IsCompleted())
+			{
+				RunJob(jobPtr);
+				anyJobRun |= true;
+			}
+			else
+			{
+				nonReadyJobs.emplace_back(jobPtr);
+			}
+		}
+
+		for (auto job : nonReadyJobs)
+		{
+			m_waitingList.Push(job);
+		}
+
+		return anyJobRun;
 	}
 }

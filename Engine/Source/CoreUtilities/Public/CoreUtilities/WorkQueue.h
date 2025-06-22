@@ -112,6 +112,17 @@ public:
 		return static_cast<size_t>(m_capacity);
 	}
 
+	size_t Size() const
+	{
+		int32_t size = m_size.load(std::memory_order_relaxed);
+		return static_cast<size_t>(size & (~ThisType::SizeMask));
+	}
+
+	bool Empty() const
+	{
+		return Size() == 0;
+	}
+
 	void Allocate(const size_t capacity)
 	{
 		constexpr size_t alignment = std::max(CacheLineAlignment, alignof(DataType));

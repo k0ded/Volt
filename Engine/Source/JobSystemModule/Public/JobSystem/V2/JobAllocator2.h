@@ -35,16 +35,16 @@ namespace Volt
 	Type* JobAllocator2<Type, Size>::Allocate()
 	{
 		VT_PROFILE_FUNCTION();
-		uint32_t jobIndex;
+		uint32_t index;
 
 		// Try to get a value from the available stack.
-		if (!m_availableStack.Pop(jobIndex))
+		if (!m_availableStack.Pop(index))
 		{
 			// Otherwise get a new one.
-			jobIndex = m_numAllocated.fetch_add(1, std::memory_order::relaxed);
+			index = m_numAllocated.fetch_add(1, std::memory_order::relaxed);
 		}
 
-		return &m_allocator[jobIndex];
+		return &m_allocator[index];
 	}
 
 	template<typename Type, size_t Size>

@@ -21,6 +21,7 @@ namespace Volt
 
 		template<typename Func> static Job2* CreateJob(std::string_view jobName, Func&& func);
 		template<typename Func> static Job2* CreateJob(std::string_view jobName, JobCounter* associatedCounter, Func&& func);
+		template<typename Func> static Job2* CreateJobAsDependency(std::string_view jobName, Job2* dependantJob, Func&& func);
 
 		static JobCounter* CreateCounter();
 		static void DestroyCounter(JobCounter* counter);
@@ -34,6 +35,10 @@ namespace Volt
 		VT_DECLARE_SUBSYSTEM("{74BD3121-6E60-4372-8100-A1D4BA37EF54}"_guid)
 	
 	private:
+		// Used to implement ref counting.
+		friend class JobCounter;
+		friend class Job2;
+
 		struct JobWorker
 		{
 			std::thread thread;
@@ -50,6 +55,14 @@ namespace Volt
 
 		void FinishJob(Job2* jobPtr);
 
+		JobCounter* AllocateCounter(bool initializeWithRef = true);
+		Job2* AllocateJob();
+		void FreeCounter(JobCounter* counter);
+		void FreeJob(Job2 *job);
+
+		void PushToWaitingList(Job2* job);
+		bool FlushWaitingList();
+
 		inline static constexpr size_t NumMaxWorkers = 64;
 		inline static constexpr size_t NumMaxJobsPerQueue = 8192;
 		inline static JobSystem2* s_instance = nullptr;
@@ -58,6 +71,7 @@ namespace Volt
 		std::atomic<uint32_t> m_nextQueueToPush = 0;
 		std::condition_variable m_wakeCondition;
 		std::mutex m_wakeMutex;
+		std::mutex m_waitingListMutex;
 		uint32_t m_numWorkers = 0;
 
 		Vector<JobWorker*> m_workers;
@@ -67,14 +81,16 @@ namespace Volt
 
 		JobAllocator2<Job2, NumMaxJobsPerQueue> m_jobAllocator;
 		JobAllocator2<JobCounter, NumMaxJobsPerQueue> m_counterAllocator;
+		AtomicStack<Job2*, NumMaxJobsPerQueue> m_waitingList;
 	};
 
 	template<typename Func>
 	Job2* JobSystem2::CreateJob(std::string_view jobName, Func&& func)
 	{
-		JobCounter* newCounter = s_instance->m_counterAllocator.Allocate();
-		newCounter->Reset();
-		return CreateJob(jobName, newCounter, std::move(func));
+		// We skip adding a ref to the counter here because the
+		// the it's ref will be added later.
+		JobCounter* associatedCounter = s_instance->AllocateCounter(false);
+		return CreateJob(jobName, associatedCounter, std::move(func));
 	}
 
 	template<typename Func>
@@ -83,10 +99,22 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(associatedCounter->IsActive());
 
-		Job2* newJob = s_instance->m_jobAllocator.Allocate();
+		JobCounter* waitCounter = s_instance->AllocateCounter();
+
+		VT_ENSURE(waitCounter != associatedCounter);
+
+		Job2* newJob = s_instance->AllocateJob();
 		associatedCounter->Increment();
-		newJob->Create(jobName, associatedCounter, func);
+		associatedCounter->IncRef();
+
+		newJob->Create(jobName, associatedCounter, waitCounter, func);
 
 		return newJob;
+	}
+
+	template<typename Func>
+	Job2* JobSystem2::CreateJobAsDependency(std::string_view jobName, Job2* dependantJob, Func&& func)
+	{
+		return CreateJob(jobName, dependantJob->GetWaitCounter(), std::move(func));
 	}
 }
