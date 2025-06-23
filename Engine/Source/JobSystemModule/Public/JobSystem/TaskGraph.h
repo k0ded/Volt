@@ -1,16 +1,10 @@
 #pragma once
 
 #include "JobSystem/Config.h"
-
-#include "JobSystem/Job.h"
-
-#include <cstdint>
-#include <functional>
+#include "JobSystem/JobSystem.h"
 
 namespace Volt
 {
-	using TaskID = uint32_t;
-
 	class VTJS_API TaskGraph
 	{
 	public:
@@ -19,25 +13,27 @@ namespace Volt
 
 		VT_DELETE_COPY_MOVE(TaskGraph);
 
-		TaskID AddTask(const std::function<void()>& task);
-
-		void Barrier();
+		template<typename Func>
+		Job* AddTask(std::string_view name, Func&& func);
 
 		void Execute();
 		void ExecuteAndWait();
 		void Wait();
 
 	private:
-		struct TaskSubGraph
-		{
-			JobID parentJobId;
-			Vector<JobID> createdJobs;
-		};
-
-		void CreateNewSubGraph();
-
-		Vector<TaskSubGraph> m_subGraphs;
+		Vector<Job*> m_createdJobs;
+		
+		JobCounter* m_graphCounter = nullptr;
 		size_t m_predictedTaskCount;
 		bool m_executed = false;
 	};
+
+	template<typename Func>
+	Job* TaskGraph::AddTask(std::string_view name, Func&& func)
+	{
+		Job* job = JobSystem::CreateJob(name, m_graphCounter, std::move(func));
+		m_createdJobs.emplace_back(job);
+
+		return job;
+	}
 }

@@ -1,89 +1,139 @@
 #pragma once
 
-#include "JobSystem/Job.h"
-#include "JobSystem/JobQueueLocking.h"
-#include "JobSystem/JobQueue.h"
+#include "JobSystem/Config.h"
 #include "JobSystem/JobAllocator.h"
+#include "JobSystem/Job.h"
 
 #include <SubSystem/SubSystem.h>
 #include <EventSystem/EventListener.h>
 
-#include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/WorkQueue.h>
+#include <CoreUtilities/Allocators/LinearAllocator.h>
 
 namespace Volt
 {
-	struct JobGroup
-	{
-		long unfinishedJobs = 0;
-	};
-
 	class AppUpdateEvent;
+
 	class VTJS_API JobSystem : public SubSystem, EventListener
 	{
 	public:
 		JobSystem();
 		~JobSystem();
 
-		static JobID CreateJob(const std::function<void()>& task);
-		static JobID CreateJob(ExecutionPolicy executionPolicy, const std::function<void()>& task);
-		static JobID CreateAndRunJob(const std::function<void()>& task);
-		static JobID CreateAndRunJob(ExecutionPolicy executionPolicy, const std::function<void()>& task);
-		static JobID CreateJobAsChild(JobID parentJob, const std::function<void()>& task);
-		static JobID CreateJobAsChild(ExecutionPolicy executionPolicy, JobID parentJob, const std::function<void()>& task);
+		template<typename Func> static Job* CreateJob(std::string_view jobName, Func&& func);
+		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPolicy executionPolicy, Func&& func);
+		template<typename Func> static Job* CreateJob(std::string_view jobName, JobCounter* associatedCounter, Func&& func);
+		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func);
+		template<typename Func> static Job* CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func);
 
-		static void DestroyJob(JobID jobId);
+		static JobCounter* CreateCounter();
+		static void DestroyCounter(JobCounter* counter);
 
-		static void WaitForJob(JobID jobId);
-		static void RunJob(JobID jobId);
+		static void RunJob(Job* job);
+		static void RunJobs(std::span<Job*> jobs);
 
-		VT_DECLARE_SUBSYSTEM("{FBB8F365-99B3-416D-84EA-702BD4F56962}"_guid)
+		static void WaitForCounter(JobCounter* counter);
+		static void WaitForAndDestroyCounter(JobCounter*& counter);
 
+		VT_DECLARE_SUBSYSTEM("{74BD3121-6E60-4372-8100-A1D4BA37EF54}"_guid)
+	
 	private:
-		struct InternalState
+		// Used to implement ref counting.
+		friend class JobCounter;
+		friend class Job;
+
+		struct JobWorker
 		{
-			std::atomic_bool alive = true;
-			std::atomic_uint32_t nextQueueToPush = 0;
-			std::atomic_uint32_t nextJobGroupIndex = 0;
-			std::atomic_uint32_t aliveJobGroupCount = 0;
-			std::mutex wakeMutex;
-			std::condition_variable wakeCondition;
-			uint32_t workerCount = 0;
-
-			Vector<JobGroup> jobGroups;
-			//Vector<JobQueue> jobQueues;
-			Vector<JobQueueLocking> jobQueues;
-			JobQueueLocking mainThreadQueue;
-			//JobQueue mainThreadQueue;
+			std::thread thread;
+			WorkQueue<Job*, QueueThreadingPolicy::MPMC> workQueue;
 		};
-
-		struct AllocatedJob
-		{
-			Job* ptr;
-			JobID id;
-		};
-
-		inline static constexpr uint32_t MAX_JOB_GROUP_COUNT = 1024;
-
+		 
 		void Initialize() override;
 		void Shutdown() override;
 
 		bool OnUpdate(AppUpdateEvent& event);
-
 		void ExecuteMainThreadJobs();
 
-		AllocatedJob AllocateJobInternal(ExecutionPolicy executionPolicy, const std::function<void()>& task, JobID parentJob = INVALID_JOB_ID);
+		void SpawnWorker(uint32_t workerId);
 
 		Job* TryGetJob(uint32_t workerId);
-		void SpawnWorker(uint32_t workerId);
-		void ExecuteJob(Job* job);
-		void FinishJob(Job* job, JobAllocator& allocator);
+		JobWorker* AllocateWorker(uint32_t workerId);
 
-		bool HasCompletedJob(Job* job);
+		void FinishJob(Job* jobPtr);
 
+		JobCounter* AllocateCounter(bool initializeWithRef = true);
+		Job* AllocateJob();
+		void FreeCounter(JobCounter* counter);
+		void FreeJob(Job *job);
+
+		void PushToWaitingList(Job* job);
+		bool FlushWaitingList();
+
+		inline static constexpr size_t NumMaxWorkers = 64;
+		inline static constexpr size_t NumMaxJobsPerQueue = 8192;
 		inline static JobSystem* s_instance = nullptr;
 
-		InternalState m_internalState;
-		JobAllocator m_allocator;
-		Vector<std::thread> m_workerThreads;
+		std::atomic<bool> m_isAlive;
+		std::atomic<uint32_t> m_nextQueueToPush = 0;
+		std::condition_variable m_wakeCondition;
+		std::mutex m_wakeMutex;
+		std::mutex m_waitingListMutex;
+		uint32_t m_numWorkers = 0;
+
+		Vector<JobWorker*> m_workers;
+		WorkQueue<Job*, QueueThreadingPolicy::MPSC> m_mainThreadQueue;
+		Map<std::thread::id, uint32_t> m_workerThreadIDToIndex;
+
+		LinearAllocator<sizeof(JobWorker) * NumMaxWorkers> m_workerAllocator;
+
+		JobAllocator<Job, NumMaxJobsPerQueue> m_jobAllocator;
+		JobAllocator<JobCounter, NumMaxJobsPerQueue> m_counterAllocator;
+		AtomicStack<Job*, NumMaxJobsPerQueue> m_waitingList;
 	};
+
+	template<typename Func>
+	Job* JobSystem::CreateJob(std::string_view jobName, Func&& func)
+	{
+		return CreateJob(jobName, ExecutionPolicy::WorkerThread, std::move(func));
+	}
+
+	template<typename Func>
+	Job* JobSystem::CreateJob(std::string_view jobName, JobCounter* associatedCounter, Func&& func)
+	{
+		return CreateJob(jobName, ExecutionPolicy::WorkerThread, associatedCounter, std::move(func));
+	}
+
+	template<typename Func>
+	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPolicy executionPolicy, Func&& func)
+	{
+		// We skip adding a ref to the counter here because the
+		// the it's ref will be added later.
+		JobCounter* associatedCounter = s_instance->AllocateCounter(false);
+		return CreateJob(jobName, executionPolicy, associatedCounter, std::move(func));
+	}
+
+	template<typename Func>
+	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE(associatedCounter->IsActive());
+
+		JobCounter* waitCounter = s_instance->AllocateCounter();
+
+		VT_ENSURE(waitCounter != associatedCounter);
+
+		Job* newJob = s_instance->AllocateJob();
+		associatedCounter->Increment();
+		associatedCounter->IncRef();
+
+		newJob->Create(jobName, associatedCounter, waitCounter, executionPolicy, func);
+
+		return newJob;
+	}
+
+	template<typename Func>
+	Job* JobSystem::CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func)
+	{
+		return CreateJob(jobName, dependantJob->GetWaitCounter(), std::move(func));
+	}
 }

@@ -49,8 +49,6 @@
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Allocators/FrameStackAllocator.h>
 
-#include <JobSystem/V2/JobSystem2.h>
-
 namespace Volt
 {
 	ApplicationEventListener::ApplicationEventListener(Application& application)

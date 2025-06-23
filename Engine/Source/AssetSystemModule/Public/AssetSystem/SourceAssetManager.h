@@ -68,7 +68,7 @@ namespace Volt
 
 		struct ImportJob
 		{
-			JobID jobId;
+			JobRef job = nullptr;
 			Ref<JobPromise<Vector<Ref<Asset>>>> resultPromise;
 		
 			std::string debugString;

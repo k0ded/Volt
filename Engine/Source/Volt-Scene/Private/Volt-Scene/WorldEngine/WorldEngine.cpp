@@ -144,13 +144,14 @@ namespace Volt
 			return;
 		}
 
-		JobSystem::CreateAndRunJob([cellId, this]() 
+		JobRef job = JobSystem::CreateJob("Load Cell", [cellId, this]() 
 		{
 			auto& cell = GetCellFromID(cellId);
 
 			SceneSerializer::Get().LoadWorldCell(m_scene->shared_from_this(), cell);
 			cell.isLoaded = true;
 		});
+		JobSystem::RunJob(job);
 	}
 
 	WorldCellID WorldEngine::GetCellIDFromEntity(const Entity& entity) const

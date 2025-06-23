@@ -92,10 +92,8 @@ void Volt::ParticleSystem::Update(entt::registry& registry, Weak<Scene> scene, c
 
 	for (auto& [id, particleStorage] : m_particleStorage)
 	{
-		taskGraph.AddTask([&]() 
+		taskGraph.AddTask("Update Particle System", [&]()
 		{
-			VT_PROFILE_SCOPE("Update particle system");
-
 			Entity entity{ id, scene };
 			if (!entity)
 			{

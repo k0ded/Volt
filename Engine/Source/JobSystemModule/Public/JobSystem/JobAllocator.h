@@ -1,38 +1,54 @@
 #pragma once
 
-#include "JobSystem/Job.h"
-
-#include <CoreUtilities/Containers/Vector.h>
-
-#include <atomic>
+#include <CoreUtilities/Containers/AtomicStack.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
-	struct AllocatedJob
-	{
-		Job* job;
-		JobID id;
-	};
-
+	template<typename Type, size_t Size>
 	class JobAllocator
 	{
 	public:
 		JobAllocator();
 
-		AllocatedJob AllocateJob();
-		void FreeJob(JobID id);
-		void FreeJob(Job* job);
-		Job* GetJobFromID(JobID id);
+		Type* Allocate();
+		void Free(Type* job);
 
 	private:
-		inline static constexpr uint32_t MAX_JOB_COUNT = 8096;
-		
-		std::atomic_uint32_t m_jobAllocationIndex = 0;
-		std::atomic_uint32_t m_currentTailIndex = 0;
+		std::atomic<uint32_t> m_numAllocated;
+		Array<Type, Size> m_allocator;
 
-		Vector<Job> m_jobAllocator;
-
-		std::mutex m_freeJobsMutex;
-		Vector<JobID> m_freeJobs;
+		AtomicStack<uint32_t, Size> m_availableStack;
 	};
+
+	template<typename Type, size_t Size>
+	void JobAllocator<Type, Size>::Free(Type* valuePtr)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE_MSG(valuePtr >= &m_allocator[0] && valuePtr < &m_allocator[Size - 1], "Job does not belong to allocator!");
+		
+		const uint32_t index = static_cast<uint32_t>(std::distance(m_allocator.begin(), valuePtr));
+		m_availableStack.Push(index);
+	}
+
+	template<typename Type, size_t Size>
+	Type* JobAllocator<Type, Size>::Allocate()
+	{
+		VT_PROFILE_FUNCTION();
+		uint32_t index;
+
+		// Try to get a value from the available stack.
+		if (!m_availableStack.Pop(index))
+		{
+			// Otherwise get a new one.
+			index = m_numAllocated.fetch_add(1, std::memory_order::relaxed);
+		}
+
+		return &m_allocator[index];
+	}
+
+	template<typename Type, size_t Size>
+	JobAllocator<Type, Size>::JobAllocator()
+		: m_numAllocated(0)
+	{}
 }

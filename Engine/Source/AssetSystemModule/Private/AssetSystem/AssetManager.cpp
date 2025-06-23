@@ -6,9 +6,8 @@
 #include "AssetSystem/Serialization/AssetSerializer.h"
 #include "AssetSystem/AssetSerializerRegistry.h"
 
-#include <JobSystem/JobSystem.h>
-
 #include <JobSystem/TaskGraph.h>
+#include <JobSystem/JobSystem.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/FileSystem.h>
@@ -23,7 +22,7 @@ namespace Volt
 	{
 		VT_ASSERT_MSG(!s_instance, "AssetManager already exists!");
 		s_instance = this;
-	
+
 		Initialize();
 	}
 
@@ -192,11 +191,13 @@ namespace Volt
 		const auto projectAssetFiles = GetProjectAssetFiles();
 		const auto engineAssetFiles = GetEngineAssetFiles();
 
+		m_assetRegistry.reserve(projectAssetFiles.size() + engineAssetFiles.size());
+
 		TaskGraph taskGraph{};
 
 		for (auto file : engineAssetFiles)
 		{
-			taskGraph.AddTask([this, file]() 
+			taskGraph.AddTask("Deserialize Asset Metadata", [this, file]()
 			{
 				DeserializeAssetMetadata(file);
 			});
@@ -204,7 +205,7 @@ namespace Volt
 
 		for (auto file : projectAssetFiles)
 		{
-			taskGraph.AddTask([this, file]()
+			taskGraph.AddTask("Deserialize Asset Metadata", [this, file]()
 			{
 				DeserializeAssetMetadata(GetFilesystemPath(file));
 			});
@@ -222,6 +223,8 @@ namespace Volt
 
 	void AssetManager::DeserializeAssetMetadata(std::filesystem::path assetPath)
 	{
+		VT_PROFILE_FUNCTION();
+
 		constexpr size_t assetHeaderSize = SerializedAssetMetadata::HeaderSize;
 
 		BinaryStreamReader streamReader{ assetPath, assetHeaderSize };
@@ -1169,7 +1172,7 @@ namespace Volt
 
 		// If not, queue
 		{
-			JobSystem::CreateAndRunJob([this, metadata, handle = assetHandle]()
+			JobRef loadJob = JobSystem::CreateJob("Load Asset", [this, metadata, handle = assetHandle]()
 			{
 				Ref<Asset> asset;
 				{
@@ -1209,8 +1212,9 @@ namespace Volt
 
 				m_dependencyGraph->OnAssetChanged(handle, AssetChangedState::Updated);
 				QueueAssetChanged(asset->handle, AssetChangedState::Updated);
-
 			});
+
+			JobSystem::RunJob(loadJob);
 
 #ifndef VT_DIST
 			VT_LOGC(Trace, LogAssetSystem, "Queued asset {0} for loading!", metadata.filePath);

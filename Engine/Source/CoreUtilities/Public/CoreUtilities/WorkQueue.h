@@ -50,6 +50,8 @@ public:
 	template<typename... Args>
 	bool Emplace(Args&&... args)
 	{
+		VT_ENSURE(IsAllocated());
+
 		auto [numReserved, pushIndex, unwrappedIndex] = ReserveEmplaceSlot();
 		
 		if (numReserved == 0)
@@ -80,6 +82,8 @@ public:
 
 	bool Pop(DataType& outData)
 	{
+		VT_ENSURE(IsAllocated());
+
 		auto [numReserved, popIndex, unwrappedIndex] = ReservePopSlot();
 
 		if (numReserved == 0)
@@ -121,6 +125,11 @@ public:
 	bool Empty() const
 	{
 		return Size() == 0;
+	}
+
+	bool IsAllocated() const
+	{
+		return m_storagePtr != nullptr;
 	}
 
 	void Allocate(const size_t capacity)

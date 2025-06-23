@@ -12,7 +12,6 @@
 
 #include <EventSystem/EventListener.h>
 #include <WindowModule/WindowMode.h>
-#include <JobSystem/JobSystem.h>
 
 #include <EntitySystem/Scripting/ScriptingSystem.h>
 

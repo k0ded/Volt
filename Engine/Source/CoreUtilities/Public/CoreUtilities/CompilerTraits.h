@@ -84,3 +84,10 @@ inline void VTBaseUnused(const volatile T& x) { (void)x; }
 #else
 	#error "Not defined!"
 #endif
+
+// Thread Pause
+#ifdef VT_PLATFORM_WINDOWS
+	#define VT_PAUSE_THREAD() _mm_pause()
+#else
+	#error "Not defined!"
+#endif

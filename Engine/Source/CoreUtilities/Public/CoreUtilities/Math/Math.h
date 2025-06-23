@@ -4,6 +4,7 @@
 #include "CoreUtilities/Concepts.h"
 
 #include <type_traits>
+#include <concepts>
 
 #include <glm/glm.hpp>
 
@@ -207,5 +208,11 @@ namespace Math
 		bits = (bits & 0x3333333333333333ull) + ((bits >> 2) & 0x3333333333333333ull);
 		bits = (bits + (bits >> 4)) & 0x0f0f0f0f0f0f0f0full;
 		return (bits * 0x0101010101010101) >> 56;
+	}
+
+	template<typename T>
+	VT_INLINE constexpr T ModuloByPowerOfTwo(T value, T number)
+	{
+		return (number & (value - static_cast<T>(1)));
 	}
 }

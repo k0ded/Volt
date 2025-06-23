@@ -63,7 +63,7 @@ namespace Volt
 
 		for (const auto& [typeIndex, registrationInfo] : registeredShaders)
 		{
-			taskGraph.AddTask([=]()
+			taskGraph.AddTask("Load and Register Shader", [=]()
 			{
 				RHI::ShaderCreateInfo createInfo;
 				createInfo.name = registrationInfo.name;
@@ -71,7 +71,11 @@ namespace Volt
 				createInfo.sourceFilepath = registrationInfo.stageInfos.filePath;
 				createInfo.stage = registrationInfo.stageInfos.shaderStage;
 
-				RefPtr<RHI::Shader> shader = RHI::Shader::Create(createInfo);
+				RefPtr<RHI::Shader> shader;
+				{
+					VT_PROFILE_SCOPE("Create Shader");
+					shader = RHI::Shader::Create(createInfo);
+				}
 				ShaderMap::RegisterShader(typeIndex, shader);
 			});
 		}

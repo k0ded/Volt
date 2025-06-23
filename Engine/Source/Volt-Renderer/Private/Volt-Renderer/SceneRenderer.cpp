@@ -32,8 +32,6 @@
 
 #include <CoreUtilities/Math/Math.h>
 
-#include <JobSystem/V2/JobSystem2.h>
-
 namespace Volt
 {
 	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)

@@ -1,6 +1,6 @@
 #include "jspch.h"
-#include "JobSystem/V2/Job2.h"
-#include "JobSystem/V2/JobSystem2.h"
+#include "JobSystem/Job.h"
+#include "JobSystem/JobSystem.h"
 
 namespace Volt
 {
@@ -12,11 +12,11 @@ namespace Volt
 		if (oldCount == 1)
 		{
 			std::atomic_thread_fence(std::memory_order::release);
-			JobSystem2::s_instance->FreeCounter(this);
+			JobSystem::s_instance->FreeCounter(this);
 		}
 	}
 
-	void Job2::Execute()
+	void Job::Execute()
 	{
 		VT_ENSURE(m_allocated);
 
@@ -31,14 +31,14 @@ namespace Volt
 		}
 	}
 
-	void Job2::Reset()
+	void Job::Reset()
 	{
 		m_allocated = false;
 		m_counter = nullptr;
 		m_waitCounter = nullptr;
 	}
 
-	void Job2::DecRef()
+	void Job::DecRef()
 	{
 		const uint32_t oldCount = m_referenceCount.fetch_sub(1, std::memory_order::release);
 		VT_ASSERT(oldCount > 0);
@@ -46,7 +46,7 @@ namespace Volt
 		if (oldCount == 1)
 		{
 			std::atomic_thread_fence(std::memory_order::release);
-			JobSystem2::s_instance->FreeJob(this);
+			JobSystem::s_instance->FreeJob(this);
 		}
 	}
 }

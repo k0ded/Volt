@@ -3,8 +3,7 @@
 
 #include "zlib.h"
 
-
-
+#include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Containers/Vector.h>
 
 constexpr size_t COMPRESSION_ENCODING_HEADER_SIZE = sizeof(uint32_t) + sizeof(uint8_t) + sizeof(size_t);
@@ -13,6 +12,7 @@ constexpr uint32_t MAGIC = 5121;
 
 BinaryStreamReader::BinaryStreamReader(const std::filesystem::path& filePath)
 {
+	VT_PROFILE_FUNCTION();
 	std::ifstream stream(filePath, std::ios::in | std::ios::binary);
 	if (stream)
 	{
@@ -63,6 +63,7 @@ BinaryStreamReader::BinaryStreamReader(const std::filesystem::path& filePath)
 
 BinaryStreamReader::BinaryStreamReader(const std::filesystem::path& filePath, const size_t maxLoadSize)
 {
+	VT_PROFILE_FUNCTION();
 	size_t bytesToLoadCount = maxLoadSize;
 
 	std::ifstream stream(filePath, std::ios::in | std::ios::binary);
@@ -118,6 +119,7 @@ BinaryStreamReader::BinaryStreamReader(const std::filesystem::path& filePath, co
 
 void BinaryStreamReader::ReadData(void* outData, const TypeHeader& serializedTypeHeader, const TypeHeader& constructedTypeHeader)
 {
+	VT_PROFILE_FUNCTION();
 	VT_UNUSED(constructedTypeHeader);
 
 	memcpy_s(outData, serializedTypeHeader.totalTypeSize, &m_data[m_currentOffset], serializedTypeHeader.totalTypeSize);
@@ -126,6 +128,7 @@ void BinaryStreamReader::ReadData(void* outData, const TypeHeader& serializedTyp
 
 bool BinaryStreamReader::Decompress(size_t compressedDataOffset)
 {
+	VT_PROFILE_FUNCTION();
 	z_stream stream;
 	stream.zalloc = Z_NULL;
 	stream.zfree = Z_NULL;
@@ -209,6 +212,7 @@ bool BinaryStreamReader::IsStreamValid() const
 
 void BinaryStreamReader::Read(void* data)
 {
+	VT_PROFILE_FUNCTION();
 	TypeHeader typeHeader{};
 	TypeHeader serializedTypeHeader = ReadTypeHeader();
 	ReadData(data, serializedTypeHeader, typeHeader);
@@ -221,6 +225,7 @@ void BinaryStreamReader::ResetHead()
 
 TypeHeader BinaryStreamReader::ReadTypeHeader()
 {
+	VT_PROFILE_FUNCTION();
 	constexpr size_t typeHeaderSize = sizeof(TypeHeader);
 
 	TypeHeader result = *reinterpret_cast<TypeHeader*>(&m_data[m_currentOffset]);

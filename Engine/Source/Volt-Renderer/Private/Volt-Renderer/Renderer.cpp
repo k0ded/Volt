@@ -8,7 +8,6 @@
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <JobSystem/TaskGraph.h>
 
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
