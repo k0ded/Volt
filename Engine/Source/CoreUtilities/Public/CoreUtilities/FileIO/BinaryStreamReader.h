@@ -209,7 +209,7 @@ inline void BinaryStreamReader::Read(std::map<Key, Value>& data)
 		if constexpr (std::is_trivial_v<Key>)
 		{
 			TypeHeader keyTypeHeader{};
-			keyTypeHeader.totalTypeSize = sizeof(Value);
+			keyTypeHeader.totalTypeSize = sizeof(Key);
 
 			ReadData(&key, keyTypeHeader, keyTypeHeader);
 		}
@@ -251,6 +251,8 @@ inline void BinaryStreamReader::Read(std::unordered_map<Key, Value>& data)
 		if constexpr (std::is_trivial_v<Key>)
 		{
 			TypeHeader keyTypeHeader{};
+			keyTypeHeader.totalTypeSize = sizeof(Key);
+
 			ReadData(&key, keyTypeHeader, keyTypeHeader);
 		}
 		else if constexpr (std::is_same<Key, std::string>::value)
@@ -298,6 +300,8 @@ inline void BinaryStreamReader::Read(Map<Key, Value>& data)
 		if constexpr (std::is_trivial_v<Key>)
 		{
 			TypeHeader keyTypeHeader{};
+			keyTypeHeader.totalTypeSize = sizeof(Key);
+
 			ReadData(&key, keyTypeHeader, keyTypeHeader);
 		}
 		else if constexpr (std::is_same<Key, std::string>::value)

@@ -67,16 +67,22 @@ namespace Volt::RHI
 	{
 		streamWriter.Write(data.set);
 		streamWriter.Write(data.binding);
+		streamWriter.Write(data.arraySize);
 		streamWriter.Write(static_cast<uint8_t>(data.registerType));
 		streamWriter.Write(static_cast<uint8_t>(data.resourceType));
+		streamWriter.Write(static_cast<uint32_t>(data.shaderStage));
+		streamWriter.Write(data.name);
 	}
 
 	void ShaderResourceBinding::Deserialize(BinaryStreamReader& streamReader, ShaderResourceBinding& outData)
 	{
 		streamReader.Read(outData.set);
 		streamReader.Read(outData.binding);
+		streamReader.Read(outData.arraySize);
 		streamReader.Read(*reinterpret_cast<uint8_t*>(&outData.registerType));
 		streamReader.Read(*reinterpret_cast<uint8_t*>(&outData.resourceType));
+		streamReader.Read(*reinterpret_cast<uint32_t*>(&outData.shaderStage));
+		streamReader.Read(outData.name);
 	}
 }
 

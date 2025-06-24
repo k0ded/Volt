@@ -4,6 +4,7 @@
 #include "CoreUtilities/GenericIterator.h"
 
 #include <iterator>
+#include <memory>
 
 // Uninitialized Copy
 namespace Internal
@@ -105,7 +106,7 @@ namespace Internal
 	template<typename InputIterator, typename ForwardIterator>
 	inline ForwardIterator UninitializedMoveImpl(InputIterator begin, InputIterator end, ForwardIterator dest, std::true_type)
 	{
-		return std::copy(begin, end, dest);
+		return std::uninitialized_move(begin, end, dest);
 	}
 
 	template<typename InputIterator, typename ForwardIterator>

@@ -69,6 +69,7 @@ namespace Volt
 				createInfo.entryPoint = registrationInfo.stageInfos.entryPoint;
 				createInfo.sourceFilepath = registrationInfo.stageInfos.filePath;
 				createInfo.stage = registrationInfo.stageInfos.shaderStage;
+				createInfo.forceCompile = false;
 
 				RefPtr<RHI::Shader> shader;
 				{

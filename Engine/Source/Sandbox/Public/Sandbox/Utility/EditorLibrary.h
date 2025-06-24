@@ -3,6 +3,7 @@
 #include <AssetSystem/Asset.h>
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <unordered_map>
 #include <typeindex>
@@ -46,6 +47,8 @@ private:
 template<typename T, typename ...Args>
 inline Ref<T> EditorLibrary::RegisterWithType(const std::string& category, AssetType assetType, Args && ...args)
 {
+	VT_PROFILE_FUNCTION();
+
 	s_editors.emplace_back(assetType, typeid(T), category, CreateRef<T>(std::forward<Args>(args)...));
 	return std::reinterpret_pointer_cast<T>(s_editors.back().editorWindow);
 }
@@ -53,6 +56,8 @@ inline Ref<T> EditorLibrary::RegisterWithType(const std::string& category, Asset
 template<typename T, typename ...Args>
 inline Ref<T> EditorLibrary::Register(const std::string& category, Args && ...args)
 {
+	VT_PROFILE_FUNCTION();
+
 	s_editors.emplace_back(AssetTypes::None, typeid(T), category, CreateRef<T>(std::forward<Args>(args)...));
 	return std::reinterpret_pointer_cast<T>(s_editors.back().editorWindow);
 }

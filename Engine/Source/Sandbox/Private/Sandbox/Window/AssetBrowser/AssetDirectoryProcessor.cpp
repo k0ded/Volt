@@ -8,12 +8,16 @@
 
 #include <AssetSystem/AssetManager.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 AssetDirectoryProcessor::AssetDirectoryProcessor(Weak<AssetBrowser::SelectionManager> selectionManager, std::set<AssetType> assetMask)
 	: m_selectionManager(selectionManager), m_assetMask(assetMask)
 {}
 
 Ref<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(const std::filesystem::path& path, AssetData& meshToImportData)
 {
+	VT_PROFILE_FUNCTION();
+
 	struct AssetEntryData
 	{
 		std::filesystem::path path;

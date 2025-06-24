@@ -16,7 +16,7 @@ namespace Volt::RHI
 		std::filesystem::path sourceFilepath;
 		std::string entryPoint;
 		ShaderStage stage;
-		bool forceCompile;
+		bool forceCompile = false;
 		bool failureIsFatal = true;
 
 		ShaderPermutationConfig permutationConfig;

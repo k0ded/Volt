@@ -190,6 +190,7 @@ void Sandbox::CreateWatches()
 
 void Sandbox::RegisterPanels()
 {
+	VT_PROFILE_FUNCTION();
 	// Shelved Panels (So panel tab doesn't get cluttered up).
 #ifdef VT_DEBUG
 	EditorLibrary::RegisterWithType<PrefabEditorPanel>("", AssetTypes::Prefab);
