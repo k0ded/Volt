@@ -85,7 +85,7 @@ namespace Volt::MosaicNodes
 		//const ImVec2 width = ImGui::CalcTextSize(assetFileName.c_str());
 		//ImGui::PushItemWidth(std::max(width.x, 20.f) + 5.f);
 		//
-		//const std::string id = "##" + std::to_string(UI::GetID());
+		//const std::string id = "##" + std::to_string(UI::GetAndIncrementStackID());
 		//ImGui::InputTextString(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
 		//ImGui::PopItemWidth();
 		//

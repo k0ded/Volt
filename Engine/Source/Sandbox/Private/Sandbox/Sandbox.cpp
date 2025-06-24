@@ -317,6 +317,8 @@ void Sandbox::OnDetach()
 		OnSceneStop();
 	}
 
+	Volt::SceneManager::Shutdown();
+
 	UserSettingsManager::SaveUserSettings();
 	EditorLibrary::Clear();
 	EditorResources::Shutdown();
@@ -523,11 +525,11 @@ void Sandbox::SaveScene()
 			if (FileSystem::IsWriteable(Volt::AssetManager::GetFilesystemPath(m_runtimeScene->handle)))
 			{
 				Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
-				UI::Notify(NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
+				UI::Notify(UI::NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
 			}
 			else
 			{
-				UI::Notify(NotificationType::Error, "Unable to save scene!", std::format("Scene {0} was is not writeable!", m_runtimeScene->assetName));
+				UI::Notify(UI::NotificationType::Error, "Unable to save scene!", std::format("Scene {0} was is not writeable!", m_runtimeScene->assetName));
 			}
 		}
 		else
@@ -572,7 +574,7 @@ void Sandbox::InstallMayaTools()
 	const std::filesystem::path mayaPath = documentsPath / "maya";
 	if (!std::filesystem::exists(mayaPath))
 	{
-		UI::Notify(NotificationType::Error, "Failed to install Maya tools", "Unable to install Maya tools because no installation was found!");
+		UI::Notify(UI::NotificationType::Error, "Failed to install Maya tools", "Unable to install Maya tools because no installation was found!");
 		return;
 	}
 
@@ -615,7 +617,7 @@ void Sandbox::InstallMayaTools()
 		FileSystem::Copy("../Tools/MayaExporter/yaml", scriptsPath / "yaml");
 	}
 
-	UI::Notify(NotificationType::Success, "Successfully installed Maya tools!", "The Maya tools were successfully installed!");
+	UI::Notify(UI::NotificationType::Success, "Successfully installed Maya tools!", "The Maya tools were successfully installed!");
 }
 
 void Sandbox::RegisterEventListeners()
@@ -676,7 +678,7 @@ bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
 	{
 		if (!GameBuilder::IsBuilding())
 		{
-			UI::Notify(NotificationType::Success, "Build Finished!", std::format("Build finished successfully in {0} seconds!", GameBuilder::GetCurrentBuildTime()));
+			UI::Notify(UI::NotificationType::Success, "Build Finished!", std::format("Build finished successfully in {0} seconds!", GameBuilder::GetCurrentBuildTime()));
 			m_buildStarted = false;
 		}
 	}

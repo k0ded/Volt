@@ -132,11 +132,11 @@ namespace AssetBrowser
 					if (shader->Reload(true))
 					{
 						Volt::Renderer::ReloadShader(shader);
-						UI::Notify(NotificationType::Success, "Shader Compiled!", std::format("Shader {} compiled succesfully!", item->path.string()));
+						UI::Notify(UI::NotificationType::Success, "Shader Compiled!", std::format("Shader {} compiled succesfully!", item->path.string()));
 					}
 					else
 					{
-						UI::Notify(NotificationType::Error, "Shader Compilation Failed", std::format("Shader {} failed to compile!", item->path.string()));
+						UI::Notify(UI::NotificationType::Error, "Shader Compilation Failed", std::format("Shader {} failed to compile!", item->path.string()));
 					}*/
 				}
 			};

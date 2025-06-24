@@ -1084,7 +1084,7 @@ void AssetBrowserPanel::CreatePrefabAndSetupEntities(Volt::EntityID id)
 
 	if (entity.HasComponent<Volt::PrefabComponent>())
 	{
-		UI::Notify(NotificationType::Error, "Unable to create prefab!", "Cannot create prefab of existing prefab!");
+		UI::Notify(UI::NotificationType::Error, "Unable to create prefab!", "Cannot create prefab of existing prefab!");
 		return;
 	}
 
@@ -1288,8 +1288,7 @@ void AssetBrowserPanel::CreateNewShaderModal()
 		constexpr int32_t POST_PROCESSING_SHADER = 3;
 		constexpr int32_t DECAL_SHADER = 4;
 
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("shaderProp"))
+		if (UI::BeginProperties("shaderProp"))
 		{
 			UI::Property("Name", myNewShaderData.name);
 
@@ -1318,7 +1317,7 @@ void AssetBrowserPanel::CreateNewShaderModal()
 			}
 
 			UI::EndProperties();
-		}*/
+		}
 
 		if (ImGui::Button("Create"))
 		{
@@ -1501,13 +1500,12 @@ void AssetBrowserPanel::CreateNewMotionWeaveDatabaseModal()
 {
 	if (UI::BeginModal("New MotionWeaveDatabase##assetBrowser"))
 	{
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("motionWeaveProp"))
+		if (UI::BeginProperties("motionWeaveProp"))
 		{
 			UI::Property("Name", m_NewMotionWeaveDatabaseData.name);
 			EditorUtils::Property("Skeleton", m_NewMotionWeaveDatabaseData.skeleton, AssetTypes::Skeleton);
 			UI::EndProperties();
-		}*/
+		}
 		
 		bool canCreate = m_NewMotionWeaveDatabaseData.skeleton != Volt::Asset::Null() && !m_NewMotionWeaveDatabaseData.name.empty();
 		

@@ -87,9 +87,8 @@ void BlendSpaceEditorPanel::UpdateProperties()
 	}
 
 
-	//todo_fabian: reimplement
-	//auto& animations = const_cast<Vector<std::pair<glm::vec2, Volt::AssetHandle>>&>(myCurrentBlendSpace->GetAnimations());
-	/*if (UI::BeginProperties("animationValues"))
+	auto& animations = const_cast<Vector<std::pair<glm::vec2, Volt::AssetHandle>>&>(myCurrentBlendSpace->GetAnimations());
+	if (UI::BeginProperties("animationValues"))
 	{
 		for (auto& [value, anim] : animations)
 		{
@@ -105,6 +104,6 @@ void BlendSpaceEditorPanel::UpdateProperties()
 		}
 
 		UI::EndProperties();
-	}*/
+	}
 	ImGui::End();
 }

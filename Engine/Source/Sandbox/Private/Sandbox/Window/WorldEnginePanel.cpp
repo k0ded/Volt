@@ -14,8 +14,7 @@ void WorldEnginePanel::UpdateMainContent()
 {
 	auto& worldEngine = m_editorScene->GetWorldEngineMutable();
 
-	//todo_fabian: reimplement
-	/*if (UI::BeginProperties("worldEngineSettings"))
+ 	if (UI::BeginProperties("worldEngineSettings"))
 	{
 		if (UI::Property("Cell Size", worldEngine.GetSettingsMutable().cellSize))
 		{
@@ -28,7 +27,7 @@ void WorldEnginePanel::UpdateMainContent()
 		}
 
 		UI::EndProperties();
-	}*/
+	}
 
 	ImGui::Text("Cells");
 

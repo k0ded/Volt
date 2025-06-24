@@ -2,11 +2,13 @@
 
 #include "Volt-Application/UI/ImGuiSubSystem.h"
 #include "Volt-Application/UI/UIUtility.h"
+#include "Volt-Application/UI/UIFonts.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
+
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 
@@ -64,16 +66,16 @@ namespace Volt
 
 		auto imFonts = m_imguiImplementation->AddFonts(fontInfos);
 
-		UI::SetFont(FontType::Regular_16, imFonts[0]);
-		UI::SetFont(FontType::Regular_12, imFonts[1]);
-		UI::SetFont(FontType::Regular_17, imFonts[2]);
-		UI::SetFont(FontType::Regular_20, imFonts[3]);
+		UI::SetFont(UI::FontType::Regular_16, imFonts[0]);
+		UI::SetFont(UI::FontType::Regular_12, imFonts[1]);
+		UI::SetFont(UI::FontType::Regular_17, imFonts[2]);
+		UI::SetFont(UI::FontType::Regular_20, imFonts[3]);
 
-		UI::SetFont(FontType::Bold_12, imFonts[4]);
-		UI::SetFont(FontType::Bold_16, imFonts[5]);
-		UI::SetFont(FontType::Bold_17, imFonts[6]);
-		UI::SetFont(FontType::Bold_20, imFonts[7]);
-		UI::SetFont(FontType::Bold_90, imFonts[8]);
+		UI::SetFont(UI::FontType::Bold_12, imFonts[4]);
+		UI::SetFont(UI::FontType::Bold_16, imFonts[5]);
+		UI::SetFont(UI::FontType::Bold_17, imFonts[6]);
+		UI::SetFont(UI::FontType::Bold_20, imFonts[7]);
+		UI::SetFont(UI::FontType::Bold_90, imFonts[8]);
 
 		m_imguiImplementation->SetDefaultFont(imFonts[0]);
 		VT_LOGC(Trace, LogImGuiSubSystem, "ImGuiSubSystem initialized in {} seconds!", timer.GetTime<Time::Seconds>());

@@ -126,20 +126,19 @@ void AssetRegistryPanel::AddNewModal()
 		static std::filesystem::path assetPath = "";
 		static Volt::AssetHandle assetHandle = 0;
 
-		//todo_fabian: reimplement
-		//UI::Property("Asset", assetPath);
+		UI::Property("Asset", assetPath);
 		ImGui::InputScalar("Handle", ImGuiDataType_U64, &assetHandle);
 
 		if (ImGui::Button("Add"))
 		{
 			if (assetHandle && !assetPath.empty() && !Volt::AssetManager::Get().ExistsInRegistry(assetPath) && !Volt::AssetManager::Get().ExistsInRegistry(assetHandle))
 			{
-				UI::Notify(NotificationType::Success, "Assethandle registered!", "Successfully added assethandle.");
+				UI::Notify(UI::NotificationType::Success, "Assethandle registered!", "Successfully added assethandle.");
 				//Volt::AssetManager::Get().AddAssetToRegistry(assetPath, assetHandle);
 			}
 			else
 			{
-				UI::Notify(NotificationType::Error, "Failed registration!", "Asset already exists");
+				UI::Notify(UI::NotificationType::Error, "Failed registration!", "Asset already exists");
 			}
 			assetPath.clear();
 			assetHandle = 0;

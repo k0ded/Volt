@@ -2,6 +2,7 @@
 #include "Window/LogPanel.h"
 
 #include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/UIScopedHelpers.h>
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 

@@ -15,8 +15,7 @@ SceneSettingsPanel::SceneSettingsPanel(Ref<Volt::Scene>& editorScene)
 
 void SceneSettingsPanel::UpdateMainContent()
 {
-	//todo_fabian: reimplement
-	/*auto& sceneSettings = m_editorScene->GetSceneSettingsMutable();
+	auto& sceneSettings = m_editorScene->GetSceneSettingsMutable();
 
 	if (UI::BeginProperties("sceneSettings"))
 	{
@@ -27,5 +26,5 @@ void SceneSettingsPanel::UpdateMainContent()
 		}
 
 		UI::EndProperties();
-	}*/
+	}
 }

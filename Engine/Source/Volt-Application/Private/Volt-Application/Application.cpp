@@ -160,9 +160,6 @@ namespace Volt
 		m_navigationSystem = nullptr;
 		m_layerStack.Clear();
 
-		//todo_fabian: reimplement, we dont want to add Volt-Scene as a dependency to Volt-Application
-		//SceneManager::Shutdown();
-
 		//Amp::WWiseEngine::Get().TermWwise();
 
 		m_assetManager->Clear();

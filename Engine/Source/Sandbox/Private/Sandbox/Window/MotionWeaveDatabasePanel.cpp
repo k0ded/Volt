@@ -10,8 +10,7 @@
 
 MotionWeaveDatabasePanel::MotionWeaveDatabasePanel()
 	: EditorWindow("Motion Weave Database")
-{
-}
+{}
 
 void MotionWeaveDatabasePanel::UpdateMainContent()
 {
@@ -26,23 +25,26 @@ void MotionWeaveDatabasePanel::UpdateMainContent()
 	}
 	const auto& animHandles = m_Database->GetAnimationHandles();
 
-	UI::BeginProperties();
-	ImGui::BeginDisabled();
-	for (int i = 0; i < animHandles.size(); i++)
+	if (UI::BeginProperties())
 	{
-		const Volt::AssetHandle& animHandle = animHandles[i];
-		Volt::AssetHandle tempHandle = animHandle;
-		EditorUtils::Property("[" + std::to_string(i) + "]", tempHandle, AssetTypes::Animation);
-	}
-	ImGui::EndDisabled();
+
+		ImGui::BeginDisabled();
+		for (int i = 0; i < animHandles.size(); i++)
+		{
+			const Volt::AssetHandle& animHandle = animHandles[i];
+			Volt::AssetHandle tempHandle = animHandle;
+			EditorUtils::Property("[" + std::to_string(i) + "]", tempHandle, AssetTypes::Animation);
+		}
+		ImGui::EndDisabled();
 
 
-	Volt::AssetHandle tempHandle = Volt::Asset::Null();
-	if (EditorUtils::Property("Add Animation", tempHandle, AssetTypes::Animation))
-	{
-		m_Database->AddAnimation(tempHandle);
+		Volt::AssetHandle tempHandle = Volt::Asset::Null();
+		if (EditorUtils::Property("Add Animation", tempHandle, AssetTypes::Animation))
+		{
+			m_Database->AddAnimation(tempHandle);
+		}
+		UI::EndProperties();
 	}
-	UI::EndProperties();
 }
 
 void MotionWeaveDatabasePanel::UpdateContent()
@@ -56,9 +58,7 @@ void MotionWeaveDatabasePanel::OpenAsset(Ref<Volt::Asset> asset)
 }
 
 void MotionWeaveDatabasePanel::OnOpen()
-{
-}
+{}
 
 void MotionWeaveDatabasePanel::OnClose()
-{
-}
+{}

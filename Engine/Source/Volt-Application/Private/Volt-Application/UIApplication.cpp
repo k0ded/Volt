@@ -99,6 +99,9 @@ namespace Volt
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
 		m_windowManager->DestroyMainWindow();
+		{
+
+		}
 
 		m_graphicsContext = nullptr;
 		m_rhiProxy = nullptr;

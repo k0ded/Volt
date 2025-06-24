@@ -685,11 +685,11 @@ void Sandbox::DrawMenuBar()
 			{
 				if (Volt::PremadeCommands::RunBuildCSProjectCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor))
 				{
-					UI::Notify(NotificationType::Success, "Build succeeded!", "Successfully compiled Project.sln in DIST config!");
+					UI::Notify(UI::NotificationType::Success, "Build succeeded!", "Successfully compiled Project.sln in DIST config!");
 				}
 				else
 				{
-					UI::Notify(NotificationType::Error, "Build failed!", "Could not find visual studio build tools!");
+					UI::Notify(UI::NotificationType::Error, "Build failed!", "Could not find visual studio build tools!");
 				}
 			}
 
@@ -719,14 +719,13 @@ void Sandbox::SaveSceneAsModal()
 	if (UI::BeginModal("Save As"))
 	{
 		UI::PushID();
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("saveSceneAs"))
+		if (UI::BeginProperties("saveSceneAs"))
 		{
 			UI::Property("Name", m_saveSceneData.name);
 			UI::PropertyDirectory("Destination", m_saveSceneData.destinationPath);
 
 			UI::EndProperties();
-		}*/
+		}
 		UI::PopID();
 
 		ImGui::PushItemWidth(80.f);
@@ -736,7 +735,7 @@ void Sandbox::SaveSceneAsModal()
 			{
 				ImGui::CloseCurrentPopup();
 
-				UI::Notify(NotificationType::Error, "Unable to save scene!", "A scene with no name cannot be saved!");
+				UI::Notify(UI::NotificationType::Error, "Unable to save scene!", "A scene with no name cannot be saved!");
 
 				ImGui::PopItemWidth();
 				UI::EndModal();
@@ -756,7 +755,7 @@ void Sandbox::SaveSceneAsModal()
 
 			Volt::AssetManager::SaveAssetAs(m_runtimeScene, relPath);
 
-			UI::Notify(NotificationType::Success, "Successfully saved scene!", std::format("Scene {0} was saved successfully!", m_saveSceneData.name));
+			UI::Notify(UI::NotificationType::Success, "Successfully saved scene!", std::format("Scene {0} was saved successfully!", m_saveSceneData.name));
 
 			SetupNewSceneData();
 			ImGui::CloseCurrentPopup();
@@ -784,8 +783,7 @@ void Sandbox::BuildGameModal()
 	if (UI::BeginModal("Build", ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		UI::PushID();
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("buildData"))
+		if (UI::BeginProperties("buildData"))
 		{
 			UI::PropertyDirectory("Build Path", m_buildInfo.buildDirectory);
 
@@ -797,7 +795,7 @@ void Sandbox::BuildGameModal()
 			}
 
 			UI::EndProperties();
-		}*/
+		}
 		UI::PopID();
 
 		if (ImGui::Button("Add Scene"))
@@ -816,11 +814,11 @@ void Sandbox::BuildGameModal()
 			{
 				if (Volt::PremadeCommands::RunBuildCSProjectCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor))
 				{
-					UI::Notify(NotificationType::Success, "Compilation succeeded!", "Successfully compiled Project solution in DIST config!");
+					UI::Notify(UI::NotificationType::Success, "Compilation succeeded!", "Successfully compiled Project solution in DIST config!");
 				}
 				else
 				{
-					UI::Notify(NotificationType::Error, "Compilation failed!", "Build has been aborted!");
+					UI::Notify(UI::NotificationType::Error, "Compilation failed!", "Build has been aborted!");
 					abort = true;
 				}
 			}

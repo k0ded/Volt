@@ -2,6 +2,8 @@
 #include "Window/Timeline.h"
 
 #include "Volt/Vision/VisionComponents.h"
+
+#include "Sandbox/Utility/UIPropertiesExtension.h"
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
@@ -250,13 +252,13 @@ bool Timeline::CameraQuickshotKeyframe(Volt::KeyPressedEvent& e)
 
 	if (mySelectedTrack == nullptr)
 	{
-		UI::Notify(NotificationType::Error, "Timeline", "No track selected to record!");
+		UI::Notify(UI::NotificationType::Error, "Timeline", "No track selected to record!");
 		return false;
 	}
 
 	if (mySelectedTrack->targetEntity == Volt::Entity::NullID())
 	{
-		UI::Notify(NotificationType::Error, "Timeline", "No entity in selected track!");
+		UI::Notify(UI::NotificationType::Error, "Timeline", "No entity in selected track!");
 		return false;
 	}
 
@@ -282,13 +284,13 @@ void Timeline::AddKeyframe()
 {
 	if (mySelectedTrack == nullptr)
 	{
-		UI::Notify(NotificationType::Error, "Timeline", "No track selected to record!");
+		UI::Notify(UI::NotificationType::Error, "Timeline", "No track selected to record!");
 		return;
 	}
 
 	if (mySelectedTrack->targetEntity == Volt::Entity::NullID())
 	{
-		UI::Notify(NotificationType::Error, "Timeline", "No entity in selected track!");
+		UI::Notify(UI::NotificationType::Error, "Timeline", "No entity in selected track!");
 		return;
 	}
 
@@ -314,14 +316,14 @@ void Timeline::AddClip(Volt::EntityID entityId)
 {
 	if (mySelectedTrack == nullptr)
 	{
-		UI::Notify(NotificationType::Error, "Timeline", "No track selected to record!");
+		UI::Notify(UI::NotificationType::Error, "Timeline", "No track selected to record!");
 		return;
 	}
 
 	Volt::Entity cameraEnt = myCurrentScene->GetEntityFromID(entityId);
 	if (!cameraEnt.HasComponent<Volt::VisionCameraComponent>())
 	{
-		UI::Notify(NotificationType::Error, "Timeline", "Entity needs to be a Vision Camera");
+		UI::Notify(UI::NotificationType::Error, "Timeline", "Entity needs to be a Vision Camera");
 		return;
 	}
 
@@ -349,8 +351,7 @@ void Timeline::DrawEntityTracks(ImDrawList& drawlist, int trackIndex)
 
 	if (myTimelinePreset->myTracks[trackIndex].trackType == Volt::TrackType::T_Animation)
 	{
-		//todo_fabian: reimplement
-		//UI::PropertyEntity(myCurrentScene, myTimelinePreset->myTracks[trackIndex].targetEntity, myTrackWindowSize.x - recordButtonWidth - ImGui::GetStyle().ItemSpacing.x, nullptr);
+		UI::PropertyEntity(myCurrentScene, myTimelinePreset->myTracks[trackIndex].targetEntity, myTrackWindowSize.x - recordButtonWidth - ImGui::GetStyle().ItemSpacing.x, nullptr);
 	}
 	else
 	{

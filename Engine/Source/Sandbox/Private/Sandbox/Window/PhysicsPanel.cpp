@@ -2,6 +2,8 @@
 #include "Window/PhysicsPanel.h"
 
 #include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/UIScopedHelpers.h>
+#include <Volt-Application/UI/UIProperties.h>
 
 PhysicsPanel::PhysicsPanel()
 	: EditorWindow("Physics Panel")

@@ -49,7 +49,7 @@ void ShaderEditorPanel::UpdateToolbar()
 		//if (myCurrentShader)
 		//{
 		//	Volt::AssetManager::Get().SaveAsset(myCurrentShader);
-		//	UI::Notify(NotificationType::Success, "Saved Shader Definition!", std::format("Saved shader definition {0} to file!", myCurrentShader->GetName()));
+		//	UI::Notify(UI::NotificationType::Success, "Saved Shader Definition!", std::format("Saved shader definition {0} to file!", myCurrentShader->GetName()));
 		//}
 	}
 
@@ -63,7 +63,7 @@ void ShaderEditorPanel::UpdateToolbar()
 		//	myCurrentShader = Volt::AssetManager::GetAsset<Volt::Shader>(shaderPath);
 		//	if (!myCurrentShader || !myCurrentShader->IsValid())
 		//	{
-		//		UI::Notify(NotificationType::Error, "Unable to open shader!", std::format("Unable to open shader definition {0}!", myCurrentShader->assetName));
+		//		UI::Notify(UI::NotificationType::Error, "Unable to open shader!", std::format("Unable to open shader definition {0}!", myCurrentShader->assetName));
 		//	}
 		//}
 	}

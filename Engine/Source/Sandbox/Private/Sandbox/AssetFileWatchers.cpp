@@ -36,7 +36,7 @@ void Sandbox::CreateModifiedWatch()
 					Sandbox::Get().OnSceneStop();
 				}
 
-				UI::Notify(NotificationType::Success, "C# Assembly Reloaded!", "The C# assembly was reloaded successfully!");
+				UI::Notify(UI::NotificationType::Success, "C# Assembly Reloaded!", "The C# assembly was reloaded successfully!");
 				return;
 			}
 
@@ -64,11 +64,11 @@ void Sandbox::CreateModifiedWatch()
 					bool succeded = Volt::ShaderMap::ReloadShaderByName(std::string(shaderDef->GetName()));
 					if (succeded)
 					{
-						UI::Notify(NotificationType::Success, "Recompiled shader!", std::format("Shader {0} was successfully recompiled!", shaderDef->GetName()));
+						UI::Notify(UI::NotificationType::Success, "Recompiled shader!", std::format("Shader {0} was successfully recompiled!", shaderDef->GetName()));
 					}
 					else
 					{
-						UI::Notify(NotificationType::Error, "Failed to recompile shader!", std::format("Recompilation of shader {0} failed! Check log for more info!", shaderDef->GetName()));
+						UI::Notify(UI::NotificationType::Error, "Failed to recompile shader!", std::format("Recompilation of shader {0} failed! Check log for more info!", shaderDef->GetName()));
 					}
 				}
 			}
@@ -79,7 +79,7 @@ for (const auto& asset : assets)
 {
 	if (EditorUtils::ReimportSourceMesh(asset))
 	{
-		UI::Notify(NotificationType::Success, "Re imported mesh!", std::format("Mesh {0} has been reimported!", Volt::AssetManager::GetFilePathFromAssetHandle(asset).string()));
+		UI::Notify(UI::NotificationType::Success, "Re imported mesh!", std::format("Mesh {0} has been reimported!", Volt::AssetManager::GetFilePathFromAssetHandle(asset).string()));
 	}
 }*/
 			}

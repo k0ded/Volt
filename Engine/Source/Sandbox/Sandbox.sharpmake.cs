@@ -29,6 +29,7 @@ namespace VoltSharpmake
             };
 
             conf.AddPublicDependency<Volt>(target);
+            conf.AddPublicDependency<VoltApplication>(target);
 
 			conf.AddPublicDependency<VoltAssets>(target);
 

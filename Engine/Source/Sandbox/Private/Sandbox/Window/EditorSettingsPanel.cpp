@@ -97,15 +97,14 @@ void EditorSettingsPanel::DrawVersionControl()
 	auto& versionControlSettings = m_editorSettings.versionControlSettings;
 
 	UI::PushID();
-	//todo_fabian: reimplement
-	/*if (UI::BeginProperties())
+	if (UI::BeginProperties())
 	{
 		UI::Property("Host", versionControlSettings.server);
 		UI::Property("User", versionControlSettings.user);
 		UI::PropertyPassword("Password", versionControlSettings.password);
 
 		UI::EndProperties();
-	}*/
+	}
 
 	{
 		UI::ScopedColor buttonColor(ImGuiCol_Button, { 0.313f, 0.313f, 0.313f, 1.f });
@@ -180,38 +179,35 @@ void EditorSettingsPanel::DrawExternalTools()
 {
 
 	UI::PushID();
-	//todo_fabian: reimplement
-	//auto& externalToolsSettings = m_editorSettings.externalToolsSettings;
-	/*if (UI::BeginProperties())
+	auto& externalToolsSettings = m_editorSettings.externalToolsSettings;
+	if (UI::BeginProperties())
 	{
 		UI::Property("External Script Editor", externalToolsSettings.customExternalScriptEditor);
 
 		UI::EndProperties();
-	}*/
+	}
 	UI::PopID();
 }
 
 void EditorSettingsPanel::DrawStyleSettings()
 {
-	//todo_fabian: reimplement
-	//float currentWindowOpacity = Volt::WindowManager::Get().GetMainWindow().GetOpacity();
+	float currentWindowOpacity = Volt::WindowManager::Get().GetMainWindow().GetOpacity();
 
-	//UI::PushID();
-	/*if (UI::BeginProperties())
+	UI::PushID();
+	if (UI::BeginProperties())
 	{
 		if (UI::Property("Window Opacity", currentWindowOpacity, 0.f, 1.f))
 		{
 			Volt::WindowManager::Get().GetMainWindow().SetOpacity(currentWindowOpacity);
 		}
 		UI::EndProperties();
-	}*/
-	//UI::PopID();
+	}
+	UI::PopID();
 }
 
 void EditorSettingsPanel::DrawEditorSettings()
 {
-	//todo_fabian: reimplement
-	/*auto& sceneSettings = m_editorSettings.sceneSettings;
+	auto& sceneSettings = m_editorSettings.sceneSettings;
 
 	UI::PushID();
 	if (UI::BeginProperties())
@@ -220,5 +216,5 @@ void EditorSettingsPanel::DrawEditorSettings()
 
 		UI::EndProperties();
 	}
-	UI::PopID();*/
+	UI::PopID();
 }

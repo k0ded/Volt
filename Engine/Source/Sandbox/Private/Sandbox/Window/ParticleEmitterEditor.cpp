@@ -102,17 +102,17 @@ bool ParticleEmitterEditor::SavePreset(const std::filesystem::path& indata)
 {
 	if (indata == "None" || !myCurrentPreset)
 	{
-		UI::Notify(NotificationType::Error, "ParticlePreset save Failed", "Invalid preset");
+		UI::Notify(UI::NotificationType::Error, "ParticlePreset save Failed", "Invalid preset");
 		return false;
 	}
 
 	const auto& metadata = Volt::AssetManager::GetMetadataFromHandle(myCurrentPreset->handle);
 	if (!FileSystem::IsWriteable(Volt::ProjectManager::GetRootDirectory() / metadata.filePath))
 	{
-		UI::Notify(NotificationType::Error, "ParticlePreset save Failed", "Make sure file is writable");
+		UI::Notify(UI::NotificationType::Error, "ParticlePreset save Failed", "Make sure file is writable");
 		return false;
 	}
-	UI::Notify(NotificationType::Success, "ParticlePreset Saved ", "");
+	UI::Notify(UI::NotificationType::Success, "ParticlePreset Saved ", "");
 	Volt::AssetManager::Get().SaveAsset(myCurrentPreset);
 	return true;
 }
@@ -281,35 +281,33 @@ bool ParticleEmitterEditor::DrawEditorPanel()
 			}
 			// Reference model end
 
-			//todo_fabian: reimplement
-			//if (UI::BeginProperties("emitterSceneSkybox"))
-			//{
-			//	static glm::vec3 lightRot{ 0 };
-			//	static glm::vec3 lightColor{ 0 };
-			//	UI::PropertyAxisColor("Light Rotation", lightRot);
-			//	myLightEntity.SetRotation(lightRot);
+			if (UI::BeginProperties("emitterSceneSkybox"))
+			{
+				static glm::vec3 lightRot{ 0 };
+				static glm::vec3 lightColor{ 0 };
+				UI::PropertyAxisColor("Light Rotation", lightRot);
+				myLightEntity.SetRotation(lightRot);
 
-			//	static float cameraSpeed = 100;
-			//	cameraSpeed = myCameraController->GetTranslationSpeed();
-			//	UI::Property("Camera speed", cameraSpeed);
-			//	myCameraController->SetTranslationSpeed(cameraSpeed);
+				static float cameraSpeed = 100;
+				cameraSpeed = myCameraController->GetTranslationSpeed();
+				UI::Property("Camera speed", cameraSpeed);
+				myCameraController->SetTranslationSpeed(cameraSpeed);
 
-			//	//EditorUtils::Property("Skybox", myPreviewScene->GetAllEntitiesWith<Volt::SkylightComponent>()[0].GetComponent<Volt::SkylightComponent>().environmentHandle, AssetTypes::Texture);
-			//	UI::EndProperties();
-			//}
+				//EditorUtils::Property("Skybox", myPreviewScene->GetAllEntitiesWith<Volt::SkylightComponent>()[0].GetComponent<Volt::SkylightComponent>().environmentHandle, AssetTypes::Texture);
+				UI::EndProperties();
+			}
 		}
 
 		ImGui::Checkbox("##movingCheckb", &myIsMoving);
 		ImGui::SameLine();
 		if (ImGui::CollapsingHeader("Emitter Movement##emitterEditorSettingsMovementTab"))
 		{
-			//todo_fabian: reimplement
-			/*if (UI::BeginProperties("Velocity"))
+			if (UI::BeginProperties("Velocity"))
 			{
 				UI::Property("Length", myMoveLength);
 				UI::Property("Speed", myMoveSpeed);
 			}
-			UI::EndProperties();*/
+			UI::EndProperties();
 		}
 		ImGui::EndChild();
 	} ImGui::EndChild();
@@ -358,51 +356,48 @@ void ParticleEmitterEditor::DrawPropertiesPanel()
 			{
 				ImGui::LabelText("##emitterLabelLifeTime", "Life Time");
 				ImGui::Separator();
-				//todo_fabian: reimplement
-				//if (UI::BeginProperties("Life"))
-				//{
-				//	UI::Property("Looping", myCurrentPreset->isLooping);
-				//	if (!myCurrentPreset->isLooping)
-				//	{
-				//		ImGui::SameLine();
-				//		//ImGui::TextUnformatted("Duration");
-				//		//ImGui::SameLine();
-				//		ImGui::PushItemWidth(ImGui::GetColumnWidth());
-				//		ImGui::DragFloat("##duration", &myCurrentPreset->emittionTime, 0.1f);
-				//		ImGui::PopItemWidth();
-				//	}
+				if (UI::BeginProperties("Life"))
+				{
+					UI::Property("Looping", myCurrentPreset->isLooping);
+					if (!myCurrentPreset->isLooping)
+					{
+						ImGui::SameLine();
+						//ImGui::TextUnformatted("Duration");
+						//ImGui::SameLine();
+						ImGui::PushItemWidth(ImGui::GetColumnWidth());
+						ImGui::DragFloat("##duration", &myCurrentPreset->emittionTime, 0.1f);
+						ImGui::PopItemWidth();
+					}
 
-				//	static glm::vec2 lifespan{ myCurrentPreset->minLifeTime, myCurrentPreset->maxLifeTime };
-				//	lifespan = { myCurrentPreset->minLifeTime ,myCurrentPreset->maxLifeTime };
+					static glm::vec2 lifespan{ myCurrentPreset->minLifeTime, myCurrentPreset->maxLifeTime };
+					lifespan = { myCurrentPreset->minLifeTime ,myCurrentPreset->maxLifeTime };
 
-				//	UI::Property("Particle Lifespan", lifespan, 0.f, 0.f, "x = min life time, y = max life time");
-				//	myCurrentPreset->minLifeTime = lifespan.x;
-				//	myCurrentPreset->maxLifeTime = (lifespan.x > lifespan.y) ? lifespan.x : lifespan.y;
-				//	//UI::Property("MaxLifeTime", );
+					UI::Property("Particle Lifespan", lifespan, 0.f, 0.f, "x = min life time, y = max life time");
+					myCurrentPreset->minLifeTime = lifespan.x;
+					myCurrentPreset->maxLifeTime = (lifespan.x > lifespan.y) ? lifespan.x : lifespan.y;
+					//UI::Property("MaxLifeTime", );
 
-				//	UI::EndProperties();
-				//}
+					UI::EndProperties();
+				}
 
 				ImGui::LabelText("##emitterSettingSpawningLabel", "Spawning");
 				ImGui::Separator();
-				//todo_fabian: reimplement
-				/*if (UI::BeginProperties("Emitter"))
+				if (UI::BeginProperties("Emitter"))
 				{
 					UI::Property("Intensity", myCurrentPreset->intensity, 0.f, 0.f, "Amount of particles spawned each second");
 					UI::EndProperties();
-				}*/
+				}
 				ImGui::Checkbox("##burstCheckbox", &myCurrentPreset->isBurst);
 				ImGui::SameLine();
 				if (ImGui::TreeNode("Burst Emission##emitterSettingBurstTreeNode"))
 				{
-					//todo_fabian: reimplement
-					/*if (UI::BeginProperties())
+					if (UI::BeginProperties())
 					{
 						UI::PropertyDragFloat("Burst length", myCurrentPreset->burstLength, 0.1f);
 						UI::PropertyDragFloat("Burst interval", myCurrentPreset->burstInterval, 0.1f);
 						UI::EndProperties();
 						ImGui::Separator();
-					}*/
+					}
 					ImGui::TreePop();
 				}
 				static int currentShapeSelected = 0;
@@ -411,8 +406,7 @@ void ParticleEmitterEditor::DrawPropertiesPanel()
 					myCurrentPreset->shape = currentShapeSelected;
 				}
 
-				//todo_fabian: reimplement
-				/*if (UI::BeginProperties("Emitter"))
+				if (UI::BeginProperties("Emitter"))
 				{
 					if (currentShapeSelected == 0)
 					{
@@ -427,21 +421,20 @@ void ParticleEmitterEditor::DrawPropertiesPanel()
 					}
 					myCurrentPreset->shape = currentShapeSelected;
 					UI::EndProperties();
-				}*/
+				}
 			}
 			if (ImGui::CollapsingHeader("Update"))
 			{
 				ImGui::LabelText("", "Movement");
 				ImGui::Separator();
-				//todo_fabian: reimplement
-				/*if (UI::BeginProperties("Velocity"))
+				if (UI::BeginProperties("Velocity"))
 				{
 					UI::Property("StartVelocity", myCurrentPreset->startVelocity);
 					UI::Property("EndVelocity", myCurrentPreset->endVelocity);
 					UI::Property("Gravity", myCurrentPreset->gravity);
 
 					UI::EndProperties();
-				}*/
+				}
 
 				DrawElementSize();
 				DrawElementColor();
@@ -472,15 +465,15 @@ void ParticleEmitterEditor::DrawElementColor()
 	{
 		ImGui::Separator();
 		ImGui::BeginChild("##color settings", { ImGui::GetContentRegionAvail().x, 100.0f }, false);
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("color"))
+
+		if (UI::BeginProperties("color"))
 		{
 			for (int i = 0; i < myCurrentPreset->colors.size(); i++)
 			{
 				UI::PropertyColor(std::to_string(i + 1) + ": ", myCurrentPreset->colors[i]);
 			}
 			UI::EndProperties();
-		}*/
+		}
 		ImGui::EndChild();
 		ImGui::TreePop();
 	}
@@ -505,15 +498,15 @@ void ParticleEmitterEditor::DrawElementSize()
 	{
 		ImGui::Separator();
 		ImGui::BeginChild("##size settings", { ImGui::GetContentRegionAvail().x, 100.0f }, false);
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("size"))
+
+		if (UI::BeginProperties("size"))
 		{
 			for (int i = 0; i < myCurrentPreset->sizes.size(); i++)
 			{
 				UI::Property(std::to_string(i + 1) + ": ", myCurrentPreset->sizes[i]);
 			}
 			UI::EndProperties();
-		}*/
+		}
 		ImGui::EndChild();
 		ImGui::TreePop();
 	}

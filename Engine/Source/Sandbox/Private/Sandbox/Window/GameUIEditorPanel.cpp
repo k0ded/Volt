@@ -241,20 +241,18 @@ void GameUIEditorPanel::UpdateDetails()
 		{
 			if (selectedWidget.HasComponent<Volt::UITagComponent>())
 			{
-				//todo_fabian: reimplement
-				//auto& comp = selectedWidget.GetComponent<Volt::UITagComponent>();
-				/*if (UI::BeginProperties("Tag"))
+				auto& comp = selectedWidget.GetComponent<Volt::UITagComponent>();
+				if (UI::BeginProperties("Tag"))
 				{
 					UI::Property("Tag", comp.tag);
 					UI::EndProperties();
-				}*/
+				}
 			}
 
 			if (selectedWidget.HasComponent<Volt::UITransformComponent>() && UI::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				//todo_fabian: reimplement
-				//auto& comp = selectedWidget.GetComponent<Volt::UITransformComponent>();
-				/*if (UI::BeginProperties("Transform"))
+				auto& comp = selectedWidget.GetComponent<Volt::UITransformComponent>();
+				if (UI::BeginProperties("Transform"))
 				{
 					UI::PropertyAxisColor("Position", comp.position);
 					UI::PropertyAxisColor("Size", comp.size, 100.f);
@@ -262,21 +260,20 @@ void GameUIEditorPanel::UpdateDetails()
 					UI::Property("Rotation", comp.rotation);
 					UI::Property("Z Order", comp.zOrder);
 					UI::EndProperties();
-				}*/
+				}
 			}
 
 			if (selectedWidget.HasComponent<Volt::UIImageComponent>() && UI::CollapsingHeader("Image", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				//todo_fabian: reimplement
-				//auto& comp = selectedWidget.GetComponent<Volt::UIImageComponent>();
-				/*if (UI::BeginProperties("Image"))
+				auto& comp = selectedWidget.GetComponent<Volt::UIImageComponent>();
+				if (UI::BeginProperties("Image"))
 				{
 					EditorUtils::Property("Image", comp.imageHandle, AssetTypes::Texture);
 					UI::PropertyColor("Tint", comp.tint);
 					UI::Property("Alpha", comp.alpha);
 
 					UI::EndProperties();
-				}*/
+				}
 			}
 		}
 		ImGui::EndChild();

@@ -2,6 +2,8 @@
 
 #include "Window/VisonPanel.h"
 
+#include "Sandbox/Utility/UIPropertiesExtension.h"
+
 #include <Volt-Application/UI/UIUtility.h>
 #include <Volt/Vision/VisionTrigger.h>
 #include <Volt/Vision/Vision.h>
@@ -114,8 +116,7 @@ void VisionPanel::UpdateCameraProperties()
 	ImGui::Separator();
 
 	ImGui::LabelText("", "Core Settings");
-	//todo_fabian: reimplement
-	/*if (UI::BeginProperties("Core Settings"))
+	if (UI::BeginProperties("Core Settings"))
 	{
 		{
 			const Volt::IEnumTypeDesc* camTypeDesc = Volt::GetTypeDesc<Volt::eCameraType>();
@@ -149,13 +150,12 @@ void VisionPanel::UpdateCameraProperties()
 		ImGui::DragFloat("##Fov", &baseCamComp.fieldOfView);
 
 		UI::EndProperties();
-	}*/
+	}
 
 	ImGui::Separator();
 
 	ImGui::LabelText("", "Transform");
-	//todo_fabian: reimplement
-	/*if (UI::BeginProperties("Transform"))
+	if (UI::BeginProperties("Transform"))
 	{
 		if (UI::PropertyEntity("Follow", myCurrentScene, visionCamComp.followId, "Camera follows this entity"))
 		{
@@ -190,14 +190,13 @@ void VisionPanel::UpdateCameraProperties()
 		}
 
 		UI::EndProperties();
-	}*/
+	}
 
 	ImGui::Separator();
 
 	ImGui::LabelText("", "Controller");
 
-	//todo_fabian: reimplement
-	/*if (UI::BeginProperties("Controller"))
+	if (UI::BeginProperties("Controller"))
 	{
 		if (visionCamComp.cameraType == Volt::eCameraType::FirstPerson || visionCamComp.cameraType == Volt::eCameraType::ThirdPerson)
 		{
@@ -205,7 +204,7 @@ void VisionPanel::UpdateCameraProperties()
 			UI::Property("Focal Distance", visionCamComp.focalDistance);
 		}
 		UI::EndProperties();
-	}*/
+	}
 
 	if (visionCamComp.cameraType == Volt::eCameraType::ThirdPerson)
 	{
@@ -213,8 +212,7 @@ void VisionPanel::UpdateCameraProperties()
 
 		ImGui::LabelText("", "Collision");
 
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("Collision"))
+		if (UI::BeginProperties("Collision"))
 		{
 			UI::Property("Use Collision", visionCamComp.isColliding);
 			if (visionCamComp.isColliding)
@@ -247,7 +245,7 @@ void VisionPanel::UpdateCameraProperties()
 				}
 			}
 			UI::EndProperties();
-		}*/
+		}
 	}
 
 	UI::PopID();

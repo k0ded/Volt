@@ -13,6 +13,8 @@
 
 #include <Volt-Animation/Assets/Skeleton.h>
 #include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/UIProperties.h>
+#include <Volt-Application/UI/UIScopedHelpers.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
 
@@ -45,7 +47,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 		}
 	}
 
-	std::string textId = "##" + std::to_string(UI::GetID());
+	std::string textId = "##" + std::to_string(UI::GetAndIncrementStackID());
 
 	changed = UI::DrawItem(ImGui::GetColumnWidth() - 2.f * 25.f, [&]()
 	{
@@ -67,7 +69,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 	ImGui::SameLine();
 
-	std::string buttonId = "X##" + std::to_string(UI::GetID());
+	std::string buttonId = "X##" + std::to_string(UI::GetAndIncrementStackID());
 	if (ImGui::Button(buttonId.c_str(), { 24.5f, 24.5f }))
 	{
 		assetHandle = Volt::Asset::Null();
@@ -76,8 +78,8 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 	ImGui::SameLine();
 
-	std::string selectButtonId = "...##" + std::to_string(UI::GetID());
-	std::string popupId = "AssetsPopup##" + text + std::to_string(UI::GetID());
+	std::string selectButtonId = "...##" + std::to_string(UI::GetAndIncrementStackID());
+	std::string popupId = "AssetsPopup##" + text + std::to_string(UI::GetAndIncrementStackID());
 	const bool startState = s_assetBrowserPopupsOpen[popupId].state;
 
 	if (ImGui::Button(selectButtonId.c_str(), { 24.5f, 24.5f }))
@@ -207,11 +209,10 @@ bool EditorUtils::NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCh
 
 		if (UI::BeginProperties("NewCharacter"))
 		{
-			//todo_fabian: reimplement
-			/*UI::Property("Name", aCharacterData.name);
+			UI::Property("Name", aCharacterData.name);
 			EditorUtils::Property("Skeleton", aCharacterData.skeletonHandle, AssetTypes::Skeleton);
 			EditorUtils::Property("Skin", aCharacterData.skinHandle, AssetTypes::Mesh);
-			UI::PropertyDirectory("Destination", aCharacterData.destination);*/
+			UI::PropertyDirectory("Destination", aCharacterData.destination);
 
 			UI::EndProperties();
 		}

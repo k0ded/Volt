@@ -2,6 +2,7 @@
 #include "Window/AnimationEditorPanel.h"
 
 #include <AssetSystem/AssetManager.h>
+
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Animation/Assets/Animation.h>
@@ -38,7 +39,7 @@ void AnimationEditorPanel::UpdateMainContent()
 				const auto& events = m_animation->GetEvents();
 				for (int index = 0; index < events.size(); index++)
 				{
-					const auto id = UI::GetID();
+					const auto id = UI::GetAndIncrementStackID();
 					bool selected = false;
 
 					ImGui::Selectable(std::format("{0}: ", events[index].name).c_str(), &selected, ImGuiSelectableFlags_AllowItemOverlap, ImVec2(150, 25));
@@ -172,12 +173,11 @@ void AnimationEditorPanel::AddAnimationEventModal()
 	if (UI::BeginModal("Create Animation Event", ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		UI::PushID();
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("animEvent"))
+		if (UI::BeginProperties("animEvent"))
 		{
 			UI::Property("Name", m_addAnimEventData.name);
 			UI::EndProperties();
-		}*/
+		}
 		UI::PopID();
 
 		if (ImGui::Button("Cancel"))

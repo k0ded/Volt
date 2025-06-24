@@ -5,6 +5,8 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 
 #include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/UIScopedHelpers.h>
+
 #include <Volt/Asset/SourceAssetImporters/FbxSourceImporter.h>
 
 #include <AssetSystem/SourceAssetManager.h>
@@ -39,8 +41,7 @@ void MeshImportModal::DrawModalContent()
 
 	if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("meshOptions"))
+		if (UI::BeginProperties("meshOptions"))
 		{
 			if (m_currentImportType != ImportType::Animation)
 			{
@@ -58,60 +59,55 @@ void MeshImportModal::DrawModalContent()
 			}
 
 			UI::EndProperties();
-		}*/
+		}
 	}
 
 	if (m_currentImportType == ImportType::Animation || m_currentImportType == ImportType::SkeletalMesh)
 	{
 		if (ImGui::CollapsingHeader("Animation", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			//todo_fabian: reimplement
-			/*if (UI::BeginProperties("animationsOptions"))
+			if (UI::BeginProperties("animationsOptions"))
 			{
 				UI::Property("Import Animations", m_importOptions.importAnimations);
 				UI::EndProperties();
-			}*/
+			}
 		}
 	}
 
 	if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("options"))
+		if (UI::BeginProperties("options"))
 		{
 			UI::PropertyAxisColor("Import Translation", m_importOptions.translation, 0.f);
 			UI::PropertyAxisColor("Import Rotation", m_importOptions.rotation, 0.f);
 			UI::PropertyAxisColor("Import Scale", m_importOptions.scale, 1.f);
 
 			UI::EndProperties();
-		}*/
+		}
 	}
 
 	if (ImGui::CollapsingHeader("Miscellaneous", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		//todo_fabian: reimplement
-		//if (UI::BeginProperties("miscOptions"))
-		//{
-		//	UI::Property("Convert Scene", m_importOptions.convertScene);
+		if (UI::BeginProperties("miscOptions"))
+		{
+			UI::Property("Convert Scene", m_importOptions.convertScene);
 
-		//	UI::EndProperties();
-		//}
+			UI::EndProperties();
+		}
 	}
 
 	if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("materialOptions"))
+		if (UI::BeginProperties("materialOptions"))
 		{
 			UI::Property("Import Material", m_importOptions.importMaterial);
 			UI::EndProperties();
-		}*/
+		}
 	}
 
 	if (ImGui::CollapsingHeader("File Information", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		//todo_fabian: reimplement
-		/*if (UI::BeginProperties("fileInformation"))
+		if (UI::BeginProperties("fileInformation"))
 		{
 			UI::PropertyInfoString("File Version", m_fileInformation.fileVersion);
 			UI::PropertyInfoString("File Creator", m_fileInformation.fileCreator);
@@ -119,7 +115,7 @@ void MeshImportModal::DrawModalContent()
 			UI::PropertyInfoString("File Units", m_fileInformation.fileUnits);
 			UI::PropertyInfoString("File Axis Direction", m_fileInformation.fileAxisDirection);
 			UI::EndProperties();
-		}*/
+		}
 	}
 
 	{

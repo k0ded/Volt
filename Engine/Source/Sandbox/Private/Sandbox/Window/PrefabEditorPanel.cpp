@@ -208,16 +208,16 @@ void PrefabEditorPanel::SaveCurrentMesh()
 
 	if (!FileSystem::IsWriteable(filesystemPath))
 	{
-		UI::Notify(NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}! It is not writeable!", metadata.filePath.string()));
+		UI::Notify(UI::NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}! It is not writeable!", metadata.filePath.string()));
 		return;
 	}
 
 	//if (!Volt::MeshCompiler::TryCompile(myCurrentMesh, metadata.filePath, myCurrentMesh->GetMaterialTable()))
 	//{
-	//	UI::Notify(NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}!", metadata.filePath.string()));
+	//	UI::Notify(UI::NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}!", metadata.filePath.string()));
 	//}
 	//else
 	//{
-	//	UI::Notify(NotificationType::Success, "Saved Mesh!", std::format("Mesh {0} was saved successfully", metadata.filePath.string()));
+	//	UI::Notify(UI::NotificationType::Success, "Saved Mesh!", std::format("Mesh {0} was saved successfully", metadata.filePath.string()));
 	//}
 }
