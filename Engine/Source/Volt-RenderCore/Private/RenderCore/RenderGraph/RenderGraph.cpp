@@ -542,7 +542,7 @@ namespace Volt
 			context.CopyBufferRegion(parameters->SrcBuffer, 0, parameters->DstBuffer, 0, dataSize);
 			context.Flush(fence);
 
-			JobRef readbackJob = JobSystem::CreateJob("Readback", [fence, readbackBuffer]()
+			JobRef readbackJob = JobSystem::CreateJob("Readback", ExecutionPriority::Immediate, [fence, readbackBuffer]()
 			{
 				fence->WaitUntilSignaled();
 				readbackBuffer->m_isReady = true;
@@ -580,7 +580,7 @@ namespace Volt
 			context.CopyTexture(parameters->SrcTexture, parameters->DstTexture, desc.width, desc.height, desc.depth);
 			context.Flush(fence);
 
-			JobRef readbackJob = JobSystem::CreateJob("Readback", [fence, readbackTexture]()
+			JobRef readbackJob = JobSystem::CreateJob("Readback", ExecutionPriority::Render, [fence, readbackTexture]()
 			{
 				fence->WaitUntilSignaled();
 				readbackTexture->m_isReady = true;

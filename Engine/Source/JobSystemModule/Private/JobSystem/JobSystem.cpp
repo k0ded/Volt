@@ -45,7 +45,7 @@ namespace Volt
 			if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
 			{
 				const uint32_t nextQueueToPush = s_instance->m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % s_instance->m_numWorkers;
-				s_instance->m_workers.at(nextQueueToPush)->workQueue.Emplace(job);
+				s_instance->m_workers.at(nextQueueToPush)->workQueues.at(static_cast<size_t>(job->GetPriority())).Emplace(job);
 				s_instance->m_wakeCondition.notify_all();
 			}
 			else
@@ -76,7 +76,9 @@ namespace Volt
 			for (uint32_t index = 0; index < numJobsOnWorker; ++index)
 			{
 				const uint32_t jobIndex = numJobsPerWorker * worker + index;
-				s_instance->m_workers.at(worker)->workQueue.Emplace(jobs[jobIndex]);
+				Job* job = jobs[jobIndex];
+
+				s_instance->m_workers.at(worker)->workQueues.at(static_cast<size_t>(job->GetPriority())).Emplace(job);
 			}
 		}
 
@@ -135,7 +137,10 @@ namespace Volt
 			JobWorker* worker = m_workers.emplace_back(AllocateWorker(i));
 			worker->thread = std::thread(std::bind(&JobSystem::SpawnWorker, this, i));
 			
-			worker->workQueue.Allocate(NumMaxJobsPerQueue);
+			for (uint8_t priority = 0; priority < static_cast<uint8_t>(ExecutionPriority::Num); ++priority)
+			{
+				worker->workQueues.at(priority).Allocate(NumMaxJobsPerQueue);
+			}
 
 			PlatformThread::AssignThreadToCore(worker->thread.native_handle(), 1ull << i);
 			PlatformThread::SetThreadPriority(worker->thread.native_handle(), ThreadPriority::High);
@@ -218,6 +223,42 @@ namespace Volt
 	{
 		auto& worker = m_workers.at(workerId);
 
+		// Get jobs per priority first. Steal jobs of the highest priority before working on lower
+		// priority jobs.
+		auto tryGetJobOfPriority = [&worker, workerId, this](ExecutionPriority priority, Job*& outJob) 
+		{
+			const size_t priorityAsIndex = static_cast<size_t>(priority);
+
+			if (!worker->workQueues.at(priorityAsIndex).Pop(outJob))
+			{
+				uint32_t nextQueue = (workerId + 1) % m_numWorkers;
+				while (nextQueue != workerId)
+				{
+					auto& stealingQueue = m_workers.at(nextQueue)->workQueues.at(priorityAsIndex);
+					if (stealingQueue.Pop(outJob))
+					{
+						break;
+					}
+
+					nextQueue = (nextQueue + 1) % m_numWorkers;
+				}
+			}
+		};
+
+		Job* job = nullptr;
+
+		// Loop through the priorities in reverse to make sure we start with the
+		// highest priority.
+		for (int32_t i = static_cast<int32_t>(ExecutionPriority::Num) - 1; i >= 0; --i)
+		{
+			tryGetJobOfPriority(static_cast<ExecutionPriority>(i), job);
+			if (job)
+			{
+				break;
+			}
+		}
+
+#if 0
 		Job* job = nullptr;
 		if (!worker->workQueue.Pop(job))
 		{
@@ -234,6 +275,7 @@ namespace Volt
 				currentQueue = (currentQueue + 1) % m_numWorkers;
 			}
 		}
+#endif
 
 		return job;
 	}

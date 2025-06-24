@@ -144,7 +144,7 @@ namespace Volt
 			return;
 		}
 
-		JobRef job = JobSystem::CreateJob("Load Cell", [cellId, this]() 
+		JobRef job = JobSystem::CreateJob("Load Cell", ExecutionPriority::Latent, [cellId, this]() 
 		{
 			auto& cell = GetCellFromID(cellId);
 

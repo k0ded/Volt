@@ -59,7 +59,7 @@ namespace Volt
 
 		// Create a counter which we supply to the promise.
 		JobCounterRef importCounter = JobSystem::CreateCounter();
-		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", importCounter, [this, extension, importFunc, resultPromise, importConfig]()
+		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", ExecutionPriority::Latent, importCounter, [this, extension, importFunc, resultPromise, importConfig]()
 		{
 			auto result = importFunc();
 
@@ -113,7 +113,7 @@ namespace Volt
 			return;
 		}
 
-		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", [this, extension, importFunc, importedCallback, importConfig]()
+		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", ExecutionPriority::Latent, [this, extension, importFunc, importedCallback, importConfig]()
 		{
 			auto result = importFunc();
 
@@ -139,7 +139,7 @@ namespace Volt
 			*m_isImporterInUseMap[extension] = false;
 			m_wakeCondition.notify_one();
 
-			JobRef callbackJob = JobSystem::CreateJob("Import Callback", ExecutionPolicy::MainThread, [importedCallback, result]() 
+			JobRef callbackJob = JobSystem::CreateJob("Import Callback", ExecutionPriority::Latent, ExecutionPolicy::MainThread, [importedCallback, result]()
 			{
 				importedCallback(result);
 			});

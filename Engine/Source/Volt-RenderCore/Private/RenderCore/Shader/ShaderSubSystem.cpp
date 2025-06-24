@@ -62,7 +62,7 @@ namespace Volt
 
 		for (const auto& [typeIndex, registrationInfo] : registeredShaders)
 		{
-			taskGraph.AddTask("Load and Register Shader", [=]()
+			taskGraph.AddTask("Load and Register Shader", ExecutionPriority::Immediate, [=]()
 			{
 				RHI::ShaderCreateInfo createInfo;
 				createInfo.name = registrationInfo.name;

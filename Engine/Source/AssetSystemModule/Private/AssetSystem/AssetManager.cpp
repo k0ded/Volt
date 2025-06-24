@@ -197,7 +197,7 @@ namespace Volt
 
 		for (auto file : engineAssetFiles)
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", [this, file]()
+			taskGraph.AddTask("Deserialize Asset Metadata", ExecutionPriority::Immediate, [this, file]()
 			{
 				DeserializeAssetMetadata(file);
 			});
@@ -205,7 +205,7 @@ namespace Volt
 
 		for (auto file : projectAssetFiles)
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", [this, file]()
+			taskGraph.AddTask("Deserialize Asset Metadata", ExecutionPriority::Immediate, [this, file]()
 			{
 				DeserializeAssetMetadata(GetFilesystemPath(file));
 			});
@@ -1172,7 +1172,7 @@ namespace Volt
 
 		// If not, queue
 		{
-			JobRef loadJob = JobSystem::CreateJob("Load Asset", [this, metadata, handle = assetHandle]()
+			JobRef loadJob = JobSystem::CreateJob("Load Asset", ExecutionPriority::Latent, [this, metadata, handle = assetHandle]()
 			{
 				Ref<Asset> asset;
 				{

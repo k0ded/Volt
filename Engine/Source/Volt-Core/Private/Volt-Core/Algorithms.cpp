@@ -24,7 +24,7 @@ namespace Volt::Algo
 				currThreadIterationCount = iterationCount - i * perThreadIterationCount;
 			}
 
-			taskGraph.AddTask("ForEach", [currThreadIterationCount, func, iterOffset, i]()
+			taskGraph.AddTask("ForEach", ExecutionPriority::Immediate, [currThreadIterationCount, func, iterOffset, i]()
 			{
 				for (uint32_t iter = 0; iter < currThreadIterationCount; iter++)
 				{
@@ -56,7 +56,7 @@ namespace Volt::Algo
 				currThreadIterationCount = iterationCount - i * perThreadIterationCount;
 			}
 
-			jobs.emplace_back() = JobSystem::CreateJob("ForEachParallel", [currThreadIterationCount, func, iterOffset, i]()
+			jobs.emplace_back() = JobSystem::CreateJob("ForEachParallel", ExecutionPriority::Critical, [currThreadIterationCount, func, iterOffset, i]()
 			{
 				for (uint32_t iter = 0; iter < currThreadIterationCount; iter++)
 				{

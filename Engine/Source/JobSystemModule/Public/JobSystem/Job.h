@@ -12,6 +12,15 @@ namespace Volt
 		WorkerThread
 	};
 
+	enum class ExecutionPriority : uint8_t
+	{
+		Latent = 0,
+		Render,
+		Critical,
+		Immediate,
+		Num
+	};
+
 	class VTJS_API JobCounter
 	{
 	public:
@@ -71,7 +80,7 @@ namespace Volt
 	public:
 		Job() = default;
 
-		template<typename Func> void Create(std::string_view name, JobCounter* counter, JobCounter* waitCounter, ExecutionPolicy executionPolicy, Func&& jobFunc);
+		template<typename Func> void Create(std::string_view name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& jobFunc);
 
 		void Execute();
 		void Reset();
@@ -80,6 +89,7 @@ namespace Volt
 		VT_NODISCARD VT_INLINE JobCounter* GetCounter() const { return m_counter; }
 		VT_NODISCARD VT_INLINE JobCounter* GetWaitCounter() const { return m_waitCounter; }
 		VT_NODISCARD VT_INLINE ExecutionPolicy GetExecutionPolicy() const { return m_executionPolicy; }
+		VT_NODISCARD VT_INLINE ExecutionPriority GetPriority() const { return m_priority; }
 
 		VT_INLINE void IncRef()
 		{
@@ -112,6 +122,7 @@ namespace Volt
 
 		bool m_allocated = false;
 		ExecutionPolicy m_executionPolicy = ExecutionPolicy::WorkerThread;
+		ExecutionPriority m_priority = ExecutionPriority::Critical;
 		std::atomic<uint32_t> m_referenceCount = 0;
 		JobCounter* m_counter = nullptr;
 		JobCounter* m_waitCounter = nullptr;
@@ -122,7 +133,7 @@ namespace Volt
 	using JobRef = Job*;
 
 	template<typename Func>
-	void Job::Create(std::string_view name, JobCounter* counter, JobCounter* waitCounter, ExecutionPolicy executionPolicy, Func&& jobFunc)
+	void Job::Create(std::string_view name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& jobFunc)
 	{
 		static_assert(sizeof(Func) < 1024);
 
@@ -130,6 +141,7 @@ namespace Volt
 		m_counter = counter;
 		m_waitCounter = waitCounter;
 		m_executionPolicy = executionPolicy;
+		m_priority = priority;
 
 		void* storagePtr = &m_funcStorage;
 		new(storagePtr) JobFunc<std::remove_reference_t<Func>>(std::move(jobFunc));

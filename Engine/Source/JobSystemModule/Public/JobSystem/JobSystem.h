@@ -8,6 +8,7 @@
 #include <EventSystem/EventListener.h>
 
 #include <CoreUtilities/WorkQueue.h>
+#include <CoreUtilities/Containers/Array.h>
 #include <CoreUtilities/Allocators/LinearAllocator.h>
 
 namespace Volt
@@ -20,10 +21,10 @@ namespace Volt
 		JobSystem();
 		~JobSystem();
 
-		template<typename Func> static Job* CreateJob(std::string_view jobName, Func&& func);
-		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPolicy executionPolicy, Func&& func);
-		template<typename Func> static Job* CreateJob(std::string_view jobName, JobCounter* associatedCounter, Func&& func);
-		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func);
+		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, Func&& func);
+		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func);
+		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func);
+		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func);
 		template<typename Func> static Job* CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func);
 
 		static JobCounter* CreateCounter();
@@ -45,7 +46,7 @@ namespace Volt
 		struct JobWorker
 		{
 			std::thread thread;
-			WorkQueue<Job*, QueueThreadingPolicy::MPMC> workQueue;
+			Array<WorkQueue<Job*, QueueThreadingPolicy::MPMC>, static_cast<size_t>(ExecutionPriority::Num)> workQueues;
 		};
 		 
 		void Initialize() override;
@@ -69,8 +70,11 @@ namespace Volt
 		void PushToWaitingList(Job* job);
 		bool FlushWaitingList();
 
-		inline static constexpr size_t NumMaxWorkers = 64;
-		inline static constexpr size_t NumMaxJobsPerQueue = 8192;
+		inline static constexpr size_t NumMaxWorkers = 32;
+		inline static constexpr size_t NumMaxJobsPerQueue = 4096;
+		inline static constexpr size_t NumMaxJobs = 16384;
+		inline static constexpr size_t NumMaxWaitingJobs = 1024;
+
 		inline static JobSystem* s_instance = nullptr;
 
 		std::atomic<bool> m_isAlive;
@@ -86,34 +90,34 @@ namespace Volt
 
 		LinearAllocator<sizeof(JobWorker) * NumMaxWorkers> m_workerAllocator;
 
-		JobAllocator<Job, NumMaxJobsPerQueue> m_jobAllocator;
-		JobAllocator<JobCounter, NumMaxJobsPerQueue> m_counterAllocator;
-		AtomicStack<Job*, NumMaxJobsPerQueue> m_waitingList;
+		JobAllocator<Job, NumMaxJobs> m_jobAllocator;
+		JobAllocator<JobCounter, NumMaxJobs * 2> m_counterAllocator;
+		AtomicStack<Job*, NumMaxWaitingJobs> m_waitingList;
 	};
 
 	template<typename Func>
-	Job* JobSystem::CreateJob(std::string_view jobName, Func&& func)
+	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, Func&& func)
 	{
-		return CreateJob(jobName, ExecutionPolicy::WorkerThread, std::move(func));
+		return CreateJob(jobName, priority, ExecutionPolicy::WorkerThread, std::move(func));
 	}
 
 	template<typename Func>
-	Job* JobSystem::CreateJob(std::string_view jobName, JobCounter* associatedCounter, Func&& func)
+	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func)
 	{
-		return CreateJob(jobName, ExecutionPolicy::WorkerThread, associatedCounter, std::move(func));
+		return CreateJob(jobName, priority, ExecutionPolicy::WorkerThread, associatedCounter, std::move(func));
 	}
 
 	template<typename Func>
-	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPolicy executionPolicy, Func&& func)
+	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func)
 	{
-		// We skip adding a ref to the counter here because the
-		// the it's ref will be added later.
+		// We skip adding a ref to the counter here because
+		// it's ref will be added later.
 		JobCounter* associatedCounter = s_instance->AllocateCounter(false);
-		return CreateJob(jobName, executionPolicy, associatedCounter, std::move(func));
+		return CreateJob(jobName, priority, executionPolicy, associatedCounter, std::move(func));
 	}
 
 	template<typename Func>
-	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func)
+	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(associatedCounter->IsActive());
@@ -126,7 +130,7 @@ namespace Volt
 		associatedCounter->Increment();
 		associatedCounter->IncRef();
 
-		newJob->Create(jobName, associatedCounter, waitCounter, executionPolicy, func);
+		newJob->Create(jobName, associatedCounter, waitCounter, priority, executionPolicy, func);
 
 		return newJob;
 	}
@@ -134,6 +138,7 @@ namespace Volt
 	template<typename Func>
 	Job* JobSystem::CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func)
 	{
-		return CreateJob(jobName, dependantJob->GetWaitCounter(), std::move(func));
+		// Inherit the priority.
+		return CreateJob(jobName, dependantJob->GetPriority(), dependantJob->GetWaitCounter(), std::move(func));
 	}
 }

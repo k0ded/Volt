@@ -14,7 +14,7 @@ namespace Volt
 		VT_DELETE_COPY_MOVE(TaskGraph);
 
 		template<typename Func>
-		Job* AddTask(std::string_view name, Func&& func);
+		Job* AddTask(std::string_view name, ExecutionPriority priority, Func&& func);
 
 		void Execute();
 		void ExecuteAndWait();
@@ -29,9 +29,9 @@ namespace Volt
 	};
 
 	template<typename Func>
-	Job* TaskGraph::AddTask(std::string_view name, Func&& func)
+	Job* TaskGraph::AddTask(std::string_view name, ExecutionPriority priority, Func&& func)
 	{
-		Job* job = JobSystem::CreateJob(name, m_graphCounter, std::move(func));
+		Job* job = JobSystem::CreateJob(name, priority, m_graphCounter, std::move(func));
 		m_createdJobs.emplace_back(job);
 
 		return job;
