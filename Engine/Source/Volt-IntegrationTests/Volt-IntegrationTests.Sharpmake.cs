@@ -27,7 +27,7 @@ namespace VoltSharpmake
 
 			conf.AddPublicDependency<gtest>(target);
 			conf.AddPublicDependency<VoltRenderCore>(target);
-			conf.AddPublicDependency<Volt>(target);
+			conf.AddPublicDependency<VoltApplication>(target);
 			conf.AddPublicDependency<imgui>(target);
         }
     }

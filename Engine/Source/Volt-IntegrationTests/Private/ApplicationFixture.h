@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Volt/Core/Application.h>
+#include <Volt-Application/Application.h>
 
 #include <gtest/gtest.h>
 
-static const Volt::ApplicationInfo s_applicationInfo
+static const Volt::ApplicationCreationInfo s_applicationInfo
 {
 	.createMainWindow = false
 };
@@ -15,7 +15,7 @@ class ApplicationFixture : public Volt::Application, public testing::Test
 {
 public:
 	ApplicationFixture()
-		: Volt::Application(s_applicationInfo, Volt::CommandLineBuilder({ { "workingdir", g_workingDirectoryFilepath.string() } }))
+		: Volt::Application(Volt::CommandLineBuilder({ { "workingdir", g_workingDirectoryFilepath.string() } }), s_applicationInfo)
 	{ }
 
 	void SetUp() override
