@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt-Core/Layer/Layer.h>
+#include <Volt-Application/ApplicationLayer.h>
 
 #include <EventSystem/EventListener.h>
 #include <EventSystem/ApplicationEvents.h>
@@ -18,7 +18,7 @@ namespace Volt
 	class OnSceneLoadedEvent;
 }
 
-class GameLayer : public Volt::Layer, public Volt::EventListener
+class GameLayer : public Volt::ApplicationLayer, public Volt::EventListener
 {
 public:
 	GameLayer() = default;

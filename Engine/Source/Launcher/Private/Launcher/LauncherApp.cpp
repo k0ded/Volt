@@ -1,12 +1,12 @@
 #include "Launcher/GameLayer.h"
 
-#include <Volt/Core/Application.h>
+#include <Volt-Application/Application.h>
 
 class LauncherApp : public Volt::Application
 {
 public:
-	LauncherApp(const Volt::ApplicationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
-		: Volt::Application(appInfo, commandLineBuilder)
+	LauncherApp(const Volt::ApplicationCreationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
+		: Volt::Application(commandLineBuilder, appInfo)
 	{
 		GameLayer* testing = new GameLayer();
 		PushLayer(testing);
@@ -15,12 +15,11 @@ private:
 };
 
 bool g_useCrashHandling = true;
-Volt::Application* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
+Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder)
 {
-	Volt::ApplicationInfo info{};
+	Volt::ApplicationCreationInfo info{};
 	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
 	info.useVSync = false;
-	info.enableSteam = false;
 	info.enableImGui = false;
 	info.isRuntime = true;
 	info.width = 1600;

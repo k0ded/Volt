@@ -5,7 +5,8 @@
 
 #include <Volt-Renderer/SceneRenderer.h>
 
-#include <Volt/Core/Application.h>
+#include <Volt/Events/SceneEvents.h>
+
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
