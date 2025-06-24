@@ -7,10 +7,10 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(TempMaterialGraphSubSystem, PostEngine, 0);
+	VT_REGISTER_SUBSYSTEM(TempMaterialGraphSubSystem, Default, PostEngine, 0);
 
 	void TempMaterialGraphSubSystem::Initialize()
 	{
-		ImGui::SetCurrentContext(RHI::ImGuiImplementation::Get().GetContext());
+		//ImGui::SetCurrentContext(RHI::ImGuiImplementation::Get().GetContext());
 	}
 }

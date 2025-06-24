@@ -9,6 +9,7 @@
 #include "RHIModule/ImGui/ImGuiNotifications.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 namespace Volt::RHI
 {
@@ -42,7 +43,8 @@ namespace Volt::RHI
 	void ImGuiImplementation::Initialize()
 	{
 		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
+		CreateContext();
+		ImGui::SetCurrentContext(m_context);
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -213,7 +215,7 @@ namespace Volt::RHI
 
 	ImGuiContext* ImGuiImplementation::GetContext() const
 	{
-		return ImGui::GetCurrentContext();
+		return m_context;
 	}
 
 	RefPtr<ImGuiImplementation> ImGuiImplementation::Create(const ImGuiCreateInfo& createInfo)
@@ -227,5 +229,13 @@ namespace Volt::RHI
 	ImGuiImplementation& ImGuiImplementation::Get()
 	{
 		return *s_instance;
+	}
+	void ImGuiImplementation::CreateContext()
+	{
+		if (!m_context)
+		{
+			m_context = IM_NEW(ImGuiContext)(nullptr);
+			ImGui::Initialize(m_context);
+		}
 	}
 }

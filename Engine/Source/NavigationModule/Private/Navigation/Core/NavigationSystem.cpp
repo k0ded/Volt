@@ -6,6 +6,11 @@
 #include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Scene.h>
 
+#include <EntitySystem/SceneEvents.h>
+
+#include <EventSystem/ApplicationEvents.h>
+
+#include <Volt/Components/NavigationComponents.h>
 //#include <Volt/Physics/Physics.h>
 //#include <Volt/Physics/PhysicsScene.h>
 //#include <Volt/Physics/PhysicsActor.h>
@@ -25,7 +30,7 @@ namespace Volt
 			myNavMesh = CreateRef<NavMesh>();
 
 			RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(NavigationSystem::OnAppUpdateEvent));
-			RegisterListener<Volt::OnSceneLoadedEvent>(VT_BIND_EVENT_FN(NavigationSystem::OnSceneLoadedEvent));
+			//RegisterListener<Volt::OnSceneLoadedEvent>(VT_BIND_EVENT_FN(NavigationSystem::OnSceneLoadedEvent));
 		}
 
 		void NavigationSystem::SetVTNavMesh(Ref<NavMesh> navmesh)
@@ -114,7 +119,7 @@ namespace Volt
 			return false;
 		}
 
-		bool NavigationSystem::OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e)
+		/*bool NavigationSystem::OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e)
 		{
 			myActiveScene = e.GetScene();
 			const auto& metadata = AssetManager::GetMetadataFromHandle(myActiveScene->handle);
@@ -140,7 +145,7 @@ namespace Volt
 				InitAgents();
 			}
 			return false;
-		}
+		}*/
 
 		bool NavigationSystem::OnRuntimeStart()
 		{

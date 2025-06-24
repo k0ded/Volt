@@ -68,7 +68,12 @@
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/ImGuiSubSystem.h>
+
+#include <SubSystem/SubSystemManager.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -89,6 +94,7 @@
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
+
 Sandbox::Sandbox()
 {
 	VT_ASSERT_MSG(!s_instance, "Sandbox already exists!");
@@ -102,6 +108,12 @@ Sandbox::~Sandbox()
 
 void Sandbox::OnAttach()
 {
+	Volt::ImGuiSubSystem* imguiSubSystem = SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>();
+	if (imguiSubSystem)
+	{
+		imguiSubSystem->SetupContext();
+	}
+
 	RegisterEventListeners();
 
 	SelectionManager::Initialize();
@@ -111,7 +123,7 @@ void Sandbox::OnAttach()
 	NodeEditorHelpers::Initialize();
 	IONodeGraphEditorHelpers::Initialize();
 
-	SelectionManager::RegisterSelectionChangedCallback([&](const Vector<Volt::EntityID>& entities, SelectionContext context) 
+	SelectionManager::RegisterSelectionChangedCallback([&](const Vector<Volt::EntityID>& entities, SelectionContext context)
 	{
 		if (context == SelectionContext::Scene && m_outlineSceneRendererExtension)
 		{
@@ -306,6 +318,8 @@ void Sandbox::OnDetach()
 		OnSceneStop();
 	}
 
+	Volt::SceneManager::Shutdown();
+
 	UserSettingsManager::SaveUserSettings();
 	EditorLibrary::Clear();
 	EditorResources::Shutdown();
@@ -485,7 +499,8 @@ bool Sandbox::LoadScene(Volt::OnSceneTransitionEvent& e)
 
 bool Sandbox::CheckForUpdateNavMesh(Volt::Entity entity)
 {
-	for (auto child : entity.GetChildren())
+	// todo: reimplement when making navmesh
+	/*for (auto child : entity.GetChildren())
 	{
 		if (CheckForUpdateNavMesh(child))
 		{
@@ -493,7 +508,8 @@ bool Sandbox::CheckForUpdateNavMesh(Volt::Entity entity)
 		}
 	}
 
-	return (entity.HasComponent<Volt::NavMeshComponent>() || entity.HasComponent<Volt::NavLinkComponent>()) && UserSettingsManager::GetSettings().navmeshBuildSettings.useAutoBaking;
+	return (entity.HasComponent<Volt::NavMeshComponent>() || entity.HasComponent<Volt::NavLinkComponent>()) && UserSettingsManager::GetSettings().navmeshBuildSettings.useAutoBaking;*/
+	return false;
 }
 
 void Sandbox::BakeNavMesh()
@@ -510,11 +526,11 @@ void Sandbox::SaveScene()
 			if (FileSystem::IsWriteable(Volt::AssetManager::GetFilesystemPath(m_runtimeScene->handle)))
 			{
 				Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
-				UI::Notify(NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
+				UI::Notify(UI::NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
 			}
 			else
 			{
-				UI::Notify(NotificationType::Error, "Unable to save scene!", std::format("Scene {0} was is not writeable!", m_runtimeScene->assetName));
+				UI::Notify(UI::NotificationType::Error, "Unable to save scene!", std::format("Scene {0} was is not writeable!", m_runtimeScene->assetName));
 			}
 		}
 		else
@@ -559,7 +575,7 @@ void Sandbox::InstallMayaTools()
 	const std::filesystem::path mayaPath = documentsPath / "maya";
 	if (!std::filesystem::exists(mayaPath))
 	{
-		UI::Notify(NotificationType::Error, "Failed to install Maya tools", "Unable to install Maya tools because no installation was found!");
+		UI::Notify(UI::NotificationType::Error, "Failed to install Maya tools", "Unable to install Maya tools because no installation was found!");
 		return;
 	}
 
@@ -602,7 +618,7 @@ void Sandbox::InstallMayaTools()
 		FileSystem::Copy("../Tools/MayaExporter/yaml", scriptsPath / "yaml");
 	}
 
-	UI::Notify(NotificationType::Success, "Successfully installed Maya tools!", "The Maya tools were successfully installed!");
+	UI::Notify(UI::NotificationType::Success, "Successfully installed Maya tools!", "The Maya tools were successfully installed!");
 }
 
 void Sandbox::RegisterEventListeners()
@@ -616,7 +632,7 @@ void Sandbox::RegisterEventListeners()
 	RegisterListener<Volt::ViewportResizeEvent>(VT_BIND_EVENT_FN(Sandbox::OnViewportResizeEvent), isInitializedPred);
 	RegisterListener<Volt::OnSceneLoadedEvent>(VT_BIND_EVENT_FN(Sandbox::OnSceneLoadedEvent), isInitializedPred);
 	RegisterListener<Volt::OnSceneTransitionEvent>(VT_BIND_EVENT_FN(Sandbox::LoadScene), isInitializedPred);
-	
+
 	RegisterListener<Volt::WindowTitlebarHittestEvent>([&](Volt::WindowTitlebarHittestEvent& e)
 	{
 		e.SetHit(m_titlebarHovered);
@@ -663,7 +679,7 @@ bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
 	{
 		if (!GameBuilder::IsBuilding())
 		{
-			UI::Notify(NotificationType::Success, "Build Finished!", std::format("Build finished successfully in {0} seconds!", GameBuilder::GetCurrentBuildTime()));
+			UI::Notify(UI::NotificationType::Success, "Build Finished!", std::format("Build finished successfully in {0} seconds!", GameBuilder::GetCurrentBuildTime()));
 			m_buildStarted = false;
 		}
 	}
@@ -906,7 +922,7 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 			break;
 		}
 
-		case Volt::InputCode::Spacebar :
+		case Volt::InputCode::Spacebar:
 		{
 			if (ctrlPressed)
 			{
@@ -981,7 +997,7 @@ bool Sandbox::OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e)
 	Volt::EventSystem::DispatchEvent(e2);
 
 	auto scene = e.GetScene();
-	
+
 	/*DiscordPlugin::GetInstance().GetManager().SetState(scene->GetName());
 	DiscordPlugin::GetInstance().GetManager().SetPartySize(m_runtimeScene->GetActiveLayer() + 1);
 	DiscordPlugin::GetInstance().GetManager().SetMaxPartySize(static_cast<int32_t>(m_runtimeScene->GetLayers().size()));

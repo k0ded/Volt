@@ -5,13 +5,16 @@
 
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Utility/EditorUtilities.h"
+#include "Sandbox/Utility/UIPropertiesExtension.h"
 
 #include "Sandbox/UserSettingsManager.h"
 
 #include <Volt-CoreComponents/LightComponents.h>
-#include <Volt-Scene/Scene.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Scene/Scene.h>
+#include <Volt-Scene/Components/CoreComponents.h>
+
+#include <Volt-Application/UI/UIUtility.h>
 #include <Volt/Utility/PremadeCommands.h>
 
 #include <EntitySystem/ComponentRegistry.h>

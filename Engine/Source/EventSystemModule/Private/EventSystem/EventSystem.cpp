@@ -7,7 +7,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(EventSystem, PreEngine, -1);
+	VT_REGISTER_SUBSYSTEM(EventSystem, Minimal, PreEngine, -1);
 
 	EventSystem::EventSystem()
 	{

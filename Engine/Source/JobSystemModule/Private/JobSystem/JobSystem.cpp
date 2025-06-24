@@ -9,7 +9,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(JobSystem, PreEngine, 3);
+	VT_REGISTER_SUBSYSTEM(JobSystem, Minimal, PreEngine, 3);
 
     JobSystem::JobSystem()
     {

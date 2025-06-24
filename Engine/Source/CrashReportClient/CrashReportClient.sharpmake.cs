@@ -16,7 +16,12 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
 
-            conf.SolutionFolder = "Programs";
+			conf.VcxprojUserFile = new Configuration.VcxprojUserFileSettings
+			{
+				LocalDebuggerWorkingDirectory = Globals.EngineDirectory
+			};
+
+			conf.SolutionFolder = "Programs";
         }
 
         public override void ConfigureWin64(Configuration conf, CommonTarget target)

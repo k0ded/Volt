@@ -1,21 +1,21 @@
 #include "sbpch.h"
 #include "Window/BlendSpaceEditorPanel.h"
+#include "Sandbox/Utility/EditorUtilities.h"
 
 #include <Volt-Animation/BlendSpace.h>
 #include <Volt-Animation/Assets/Animation.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
-#include "Sandbox/Utility/EditorUtilities.h"
+#include <AssetSystem/AssetManager.h>
+
 
 BlendSpaceEditorPanel::BlendSpaceEditorPanel()
 	: EditorWindow("Blend Space Editor", true)
-{
-}
+{}
 
 BlendSpaceEditorPanel::~BlendSpaceEditorPanel()
-{
-}
+{}
 
 void BlendSpaceEditorPanel::UpdateContent()
 {
@@ -86,8 +86,8 @@ void BlendSpaceEditorPanel::UpdateProperties()
 		ImGui::EndPopup();
 	}
 
-	auto& animations = const_cast<Vector<std::pair<glm::vec2, Volt::AssetHandle>>&>(myCurrentBlendSpace->GetAnimations());
 
+	auto& animations = const_cast<Vector<std::pair<glm::vec2, Volt::AssetHandle>>&>(myCurrentBlendSpace->GetAnimations());
 	if (UI::BeginProperties("animationValues"))
 	{
 		for (auto& [value, anim] : animations)

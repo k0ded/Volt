@@ -6,8 +6,10 @@
 #include "Sandbox/Utility/AssetBrowserUtilities.h"
 #include "Sandbox/UserSettingsManager.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
 #include <InputModule/InputCodes.h>
+#include <InputModule/Input.h>
 
 namespace AssetBrowser
 {
@@ -98,7 +100,7 @@ namespace AssetBrowser
 				//Type name color at the bottom of the item
 				{
 					UI::ScopedColor typeNameColor(ImGuiCol_Text, GetTypeNameColor(hovered, isSelected));
-					UI::ScopedFont typeFont(FontType::Regular_12);
+					UI::ScopedFont typeFont(UI::FontType::Regular_12);
 					UI::ShiftCursor(itemPadding / 2.f, itemHeightModifier - ImGui::CalcTextSize(m_typeName.c_str()).y - itemPadding * 2.f);
 					ImGui::TextUnformatted(m_typeName.c_str());
 				}
@@ -223,13 +225,13 @@ namespace AssetBrowser
 		if (tileHovered && !rightClickMenuOpen)
 		{
 			ImGui::BeginTooltip();
-			UI::PushFont(FontType::Regular_20);
+			UI::PushFont(UI::FontType::Regular_20);
 			ImGui::TextEx(path.stem().string().c_str(), nullptr);
 			UI::PopFont();
 
 			ImGui::SameLine();
 
-			UI::PushFont(FontType::Regular_16);
+			UI::PushFont(UI::FontType::Regular_16);
 			ImGui::Text(("(" + m_typeName + ")").c_str());
 			UI::PopFont();
 

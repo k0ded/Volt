@@ -1,8 +1,11 @@
 #pragma once
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UITypes.h>
 
 #include <glm/glm.hpp>
+#include <glm/vec4.hpp>
+
+#include <imgui.h>
 
 namespace EditorTheme
 {
@@ -35,10 +38,10 @@ namespace EditorTheme
 
 	namespace Buttons
 	{
-		inline static const UI::Button RemoveButton = { { 0.8f, 0.1f, 0.15f, 1.f }, { 0.9f, 0.2f, 0.2f, 1.f }, { 0.8f, 0.1f, 0.15f, 1.f } };
-		inline static const UI::Button AddButton = { { 0.f, 0.78f, 0.25f, 1.f }, { 0.f, 0.98f, 0.31f, 1.f }, { 0.f, 0.78f, 0.25f, 1.f } };
-		inline static const UI::Button BlueButton = { ToNormalizedRGB(0.f, 112.f, 224.f), ToNormalizedRGB(14.f, 134.f, 225.f), ToNormalizedRGB(0.f, 80.f, 160.f) };
-		inline static const UI::Button DefaultButton = { ToNormalizedRGB(56.f, 56.f, 56.f), ToNormalizedRGB(87.f, 87.f, 87.f), ToNormalizedRGB(47.f, 47.f, 47.f) };
-		inline static const UI::Button TransparentButton = { { 0.f, 0.f, 0.f, 0.f }, { 0.3f, 0.305f, 0.31f, 0.5f }, { 0.5f, 0.505f, 0.51f, 0.5f } };
+		inline static const UI::ButtonColorInfo RemoveButton = { { 0.8f, 0.1f, 0.15f, 1.f }, { 0.9f, 0.2f, 0.2f, 1.f }, { 0.8f, 0.1f, 0.15f, 1.f } };
+		inline static const UI::ButtonColorInfo AddButton = { { 0.f, 0.78f, 0.25f, 1.f }, { 0.f, 0.98f, 0.31f, 1.f }, { 0.f, 0.78f, 0.25f, 1.f } };
+		inline static const UI::ButtonColorInfo BlueButton = { ToNormalizedRGB(0.f, 112.f, 224.f), ToNormalizedRGB(14.f, 134.f, 225.f), ToNormalizedRGB(0.f, 80.f, 160.f) };
+		inline static const UI::ButtonColorInfo DefaultButton = { ToNormalizedRGB(56.f, 56.f, 56.f), ToNormalizedRGB(87.f, 87.f, 87.f), ToNormalizedRGB(47.f, 47.f, 47.f) };
+		inline static const UI::ButtonColorInfo TransparentButton = { { 0.f, 0.f, 0.f, 0.f }, { 0.3f, 0.305f, 0.31f, 0.5f }, { 0.5f, 0.505f, 0.51f, 0.5f } };
 	}
 }

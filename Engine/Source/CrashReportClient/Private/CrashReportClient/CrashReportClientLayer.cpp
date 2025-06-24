@@ -2,8 +2,8 @@
 
 #include <Volt-Platforms/Platform.h>
 
-#include <Volt/Core/Application.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/BaseApplication.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
 
@@ -18,15 +18,15 @@ namespace Volt
 		return { r / 255.f, g / 255.f, b / 255.f, a / 255.f };
 	}
 
-	inline static const UI::Button BlueButton = { ToNormalizedRGB(0.f, 112.f, 224.f), ToNormalizedRGB(14.f, 134.f, 225.f), ToNormalizedRGB(0.f, 80.f, 160.f) };
-	inline static const UI::Button DefaultButton = { ToNormalizedRGB(56.f, 56.f, 56.f), ToNormalizedRGB(87.f, 87.f, 87.f), ToNormalizedRGB(47.f, 47.f, 47.f) };
+	inline static const UI::ButtonColorInfo BlueButton = { ToNormalizedRGB(0.f, 112.f, 224.f), ToNormalizedRGB(14.f, 134.f, 225.f), ToNormalizedRGB(0.f, 80.f, 160.f) };
+	inline static const UI::ButtonColorInfo DefaultButton = { ToNormalizedRGB(56.f, 56.f, 56.f), ToNormalizedRGB(87.f, 87.f, 87.f), ToNormalizedRGB(47.f, 47.f, 47.f) };
 
 	void CrashReportClientLayer::OnAttach()
 	{
 		RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(CrashReportClientLayer::OnUpdateEvent));
 		RegisterListener<Volt::AppImGuiUpdateEvent>(VT_BIND_EVENT_FN(CrashReportClientLayer::OnImGuiUpdateEvent));
 
-		const CommandLineBuilder& commandLineBuilder = Application::Get().GetCommandLineBuilder();
+		const CommandLineBuilder& commandLineBuilder = BaseApplication::Get().GetCommandLineBuilder();
 
 		if (commandLineBuilder.IsArgDefined("monitorprocess"))
 		{
@@ -66,13 +66,13 @@ namespace Volt
 	{
 		if ((!m_monitoredProcessHandle.IsValid() || !PlatformProcess::IsProcRunning(m_monitoredProcessHandle)) && !m_isDisplayingCrash)
 		{
-			Application::Get().Quit();
+			BaseApplication::Get().Quit();
 		}
 
 		if (!m_isDisplayingCrash)
 		{
 			const float appTargetDeltaTime = 1.f / 10.f;
-			const float currentDeltaTime = Application::Get().GetFrameTimer().GetDeltaTime();
+			const float currentDeltaTime = e.GetTimestep();
 			const float timeToSleep = std::clamp(appTargetDeltaTime - currentDeltaTime, 0.f, 1.f);
 			PlatformThread::Sleep<Time::Seconds>(timeToSleep);
 		}
@@ -109,7 +109,7 @@ namespace Volt
 				UI::ScopedButtonColor color{ DefaultButton };
 				if (ImGui::Button("Close without sending"))
 				{
-					Application::Get().Quit();
+					BaseApplication::Get().Quit();
 				}
 			}
 
@@ -121,7 +121,7 @@ namespace Volt
 				{
 					SendCrashReport();
 
-					Application::Get().Quit();
+					BaseApplication::Get().Quit();
 				}
 			}
 
@@ -134,7 +134,7 @@ namespace Volt
 					SendCrashReport();
 					RestartEngineAfterCrash();
 
-					Application::Get().Quit();
+					BaseApplication::Get().Quit();
 				}
 			}
 
@@ -154,7 +154,7 @@ namespace Volt
 				memcpy_s(m_crashContext.get(), sizeof(CrashContext), data.data(), data.size());
 			}
 
-			Application::Get().LaunchMainWindow();
+			BaseApplication::Get().LaunchMainWindow();
 			m_isDisplayingCrash = true;
 			return true;
 		}

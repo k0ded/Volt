@@ -40,7 +40,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(Renderer, Engine, 3);
+	VT_REGISTER_SUBSYSTEM(Renderer, Minimal, Engine, 3);
 
 	struct EquirectangularToCubemapCS : public GlobalShader
 	{
@@ -137,6 +137,11 @@ namespace Volt
 		RenderGraphExecutionThread::Initialize(RenderGraphExecutionThread::ExecutionMode::Multithreaded);
 
 		CreateDefaultResources();
+		//m_blueNoise = CreateScope<BlueNoise>();
+	}
+
+	void Renderer::CreateBlueNoise()
+	{
 		m_blueNoise = CreateScope<BlueNoise>();
 	}
 
@@ -439,14 +444,14 @@ namespace Volt
 			{
 				resultIncludes.emplace_back(filePath.parent_path() / includeString);
 			}
-			else if (std::filesystem::exists(ProjectManager::GetEngineShaderIncludeDirectory() / includeString))
-			{
-				resultIncludes.emplace_back(ProjectManager::GetEngineShaderIncludeDirectory() / includeString);
-			}
-			else if (std::filesystem::exists(ProjectManager::GetAssetsDirectory() / includeString))
-			{
-				resultIncludes.emplace_back(ProjectManager::GetAssetsDirectory() / includeString);
-			}
+			//else if (std::filesystem::exists(ProjectManager::GetEngineShaderIncludeDirectory() / includeString))
+			//{
+			//	resultIncludes.emplace_back(ProjectManager::GetEngineShaderIncludeDirectory() / includeString);
+			//}
+			//else if (std::filesystem::exists(ProjectManager::GetAssetsDirectory() / includeString))
+			//{
+			//	resultIncludes.emplace_back(ProjectManager::GetAssetsDirectory() / includeString);
+			//}
 
 			offset = shaderString.find(INCLUDE_KEYWORD, offset + 1);
 		}

@@ -6,8 +6,7 @@
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include <Volt/Core/Application.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 #include <imgui_stdlib.h>
 
 #include <WindowModule/WindowManager.h>
@@ -178,9 +177,9 @@ void EditorSettingsPanel::DrawVersionControl()
 
 void EditorSettingsPanel::DrawExternalTools()
 {
-	auto& externalToolsSettings = m_editorSettings.externalToolsSettings;
 
 	UI::PushID();
+	auto& externalToolsSettings = m_editorSettings.externalToolsSettings;
 	if (UI::BeginProperties())
 	{
 		UI::Property("External Script Editor", externalToolsSettings.customExternalScriptEditor);

@@ -71,6 +71,7 @@ namespace Volt
 		Renderer& operator=(const Renderer&) = delete;
 
 		void Initialize() override;
+		void CreateBlueNoise();
 		void Shutdown() override;
 
 		static const uint32_t GetFramesInFlight();

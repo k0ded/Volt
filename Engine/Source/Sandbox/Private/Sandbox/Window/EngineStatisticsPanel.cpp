@@ -1,12 +1,12 @@
 #include "sbpch.h"
 #include "Window/EngineStatisticsPanel.h"
 
-#include <Volt/Core/Application.h>
+#include <Volt-Application/Application.h>
 
 #include <Volt-Scene/Scene.h>
 #include <Volt-Renderer/SceneRenderer.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 EngineStatisticsPanel::EngineStatisticsPanel(Ref<Volt::Scene>& aScene, Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::SceneRenderer>& gameSceneRenderer)
 	: EditorWindow("Engine Statistics"), myScene(aScene), mySceneRenderer(sceneRenderer), myGameSceneRenderer(gameSceneRenderer)

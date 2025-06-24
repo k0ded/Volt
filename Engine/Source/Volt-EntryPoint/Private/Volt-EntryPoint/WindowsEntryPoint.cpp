@@ -1,5 +1,7 @@
 #include <Volt-Platforms/Platform.h>
-#include <Volt/Core/Application.h>
+#include <Volt-Application/BaseApplication.h>
+
+#include <Volt-Application/Application.h>
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/CommandLineBuilder.h>
@@ -10,6 +12,7 @@
 // Needs to be defined in the application creating code.
 extern bool g_useCrashHandling;
 extern Volt::Application* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder);
+extern Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder);
 
 namespace Volt
 {
@@ -27,7 +30,7 @@ namespace Volt
 
 	int32_t Main(const CommandLineBuilder& commandLineBuilder)
 	{
-		Application* app = CreateApplication(commandLineBuilder);
+		BaseApplication* app = CreateApplicationBase(commandLineBuilder);
 		app->Run();
 
 		delete app;

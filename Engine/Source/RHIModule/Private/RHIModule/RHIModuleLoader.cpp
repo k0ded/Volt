@@ -10,7 +10,7 @@
 
 namespace Volt::RHI
 {
-	VT_REGISTER_SUBSYSTEM(RHIModuleLoader, PreEngine, 2);
+	VT_REGISTER_SUBSYSTEM(RHIModuleLoader, Minimal, PreEngine, 2);
 
 	RHIModuleLoader::RHIModuleLoader()
 	{

@@ -4,7 +4,7 @@
 #include "Sandbox/Modals/ConvertToWorldEngineModal.h"
 #include "Sandbox/UISystems/ModalSystem.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 SceneSettingsPanel::SceneSettingsPanel(Ref<Volt::Scene>& editorScene)
 	: EditorWindow("Scene Settings"), m_editorScene(editorScene)

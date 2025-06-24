@@ -21,7 +21,7 @@
 
 #include <Volt/Math/RayTriangle.h>
 #include <Volt/Utility/PackUtility.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <EventSystem/Event.h>
 
@@ -286,11 +286,11 @@ void VertexPainterPanel::PanelDraw()
 			UI::EndProperties();
 		}
 
-		/*if (ImGui::Button("Default##vpResetView", { ImGui::GetContentRegionAvail().x, 0 }))
+		if (ImGui::Button("Default##vpResetView", { ImGui::GetContentRegionAvail().x, 0 }))
 		{
 			m_settings = Settings();
 			SelectionManager::Unlock();
-		}*/
+		}
 
 		ImGui::TableNextColumn();
 		ImGui::Dummy({ (ImGui::GetColumnWidth() * 0.5f) - (ImGui::CalcTextSize("Channels     ").x * 0.5f),20 });

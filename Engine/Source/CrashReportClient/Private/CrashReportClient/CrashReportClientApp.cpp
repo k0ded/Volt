@@ -2,13 +2,13 @@
 
 #include <Volt-Platforms/Platform.h>
 
-#include <Volt/Core/Application.h>
+#include <Volt-Application/UIApplication.h>
 
-class CrashReportClientApp : public Volt::Application
+class CrashReportClientApp : public Volt::UIApplication
 {
 public:
-	CrashReportClientApp(const Volt::ApplicationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
-		: Volt::Application(appInfo, commandLineBuilder)
+	CrashReportClientApp(const Volt::ApplicationCreationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
+		: Volt::UIApplication(commandLineBuilder, appInfo)
 	{ 
 		if (commandLineBuilder.IsArgDefined("waitfordebugger"))
 		{
@@ -21,9 +21,10 @@ public:
 };
 
 bool g_useCrashHandling = false;
-Volt::Application* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
+
+Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder)
 {
-	Volt::ApplicationInfo appInfo{};
+	Volt::ApplicationCreationInfo appInfo{ };
 	appInfo.title = "CrashReportClient";
 	appInfo.width = 512;
 	appInfo.height = 512;
@@ -31,5 +32,5 @@ Volt::Application* CreateApplication(const Volt::CommandLineBuilder& commandLine
 	appInfo.enableImGuiViewports = false;
 	appInfo.enableLogging = false;
 
-	return new CrashReportClientApp(appInfo, commandLineBuilder);
+	return new CrashReportClientApp(appInfo,commandLineBuilder);
 }

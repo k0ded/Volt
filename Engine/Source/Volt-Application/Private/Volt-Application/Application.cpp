@@ -1,64 +1,43 @@
-#include "vtpch.h"
-
-#include "Volt/Core/Application.h"
-#include "Volt/ImGuiSubSystem.h"
-
-#include "Volt/Steam/SteamImplementation.h"
-#include "Volt/Utility/Noise.h"
-#include "Volt/Utility/UIUtility.h"
-
-#include <Volt-Renderer/Renderer.h>
-
-#include <Volt-Scene/SceneManager.h>
-
-#include <Volt-Core/PluginSystem/PluginRegistry.h>
-#include <Volt-Core/PluginSystem/PluginSystem.h>
-#include <Volt-Core/Layer/Layer.h>
-
-#include <Volt-Physics/PhysicsSubSystem.h>
-
-#include <Volt-Platforms/Platform.h>
-
-#include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
-
-#include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetSerializerRegistry.h>
-#include <AssetSystem/AssetFactory.h>
-
-#include <RHIModule/ImGui/ImGuiImplementation.h>
-#include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/FrameCapture.h>
-#include <RHIModule/RHIModuleLoader.h>
-
-#include "Volt-Audio/AudioSystem/IAudioSystem.h"
-#include "Volt-Audio/AudioSystem/AudioSystemFactory.h"
-
-#include <Navigation/Core/NavigationSystem.h>
-
-#include <LogModule/Log.h>
-
-#include <InputModule/Events/KeyboardEvents.h>
+#include "vtapppch.h"
+#include "Volt-Application/Application.h"
+#include "Volt-Application/UI/ImGuiSubSystem.h"
 
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
 
-#include <EventSystem/EventSystem.h>
+#include <InputModule/Events/KeyboardEvents.h>
+#include <SubSystem/SubSystemManager.h>
+#include <LogModule/Log.h>	
+
 #include <EventSystem/ApplicationEvents.h>
+#include <EventSystem/EventSystem.h>
+
+#include <Volt-Core/PluginSystem/PluginSystem.h>
+#include <Volt-Core/PluginSystem/PluginRegistry.h>
+#include <Volt-Core/Project/ProjectManager.h>
+
+#include <Volt-Renderer/Renderer.h>
+
+#include <AssetSystem/AssetSerializerRegistry.h>
+#include <AssetSystem/AssetFactory.h>
 
 #include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/Allocators/FrameStackAllocator.h>
+
+#include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
+#include <RHIModule/FrameCapture.h>
+#include <RHIModule/RHIModuleLoader.h>
+
 
 namespace Volt
 {
 	ApplicationEventListener::ApplicationEventListener(Application& application)
 		: m_application(application)
-	{ 
+	{
 		RegisterListener<AppUpdateEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnAppUpdateEvent));
 		RegisterListener<WindowCloseEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnWindowCloseEvent));
 		RegisterListener<WindowResizeEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnWindowResizeEvent));
 		RegisterListener<ViewportResizeEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnViewportResizeEvent));
-		RegisterListener<KeyPressedEvent>(VT_BIND_EVENT_FN(ApplicationEventListener::OnKeyPressedEvent));
 	}
 
 	bool ApplicationEventListener::OnAppUpdateEvent(AppUpdateEvent& e)
@@ -81,26 +60,18 @@ namespace Volt
 		return m_application.OnViewportResizeEvent(e);
 	}
 
-	bool ApplicationEventListener::OnKeyPressedEvent(KeyPressedEvent& e)
+	Application::Application(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
+		: BaseApplication(commandLineBuilder, createInfo)
 	{
-		return m_application.OnKeyPressedEvent(e);
-	}
-
-	Application::Application(const ApplicationInfo& info, const CommandLineBuilder& commandLineBuilder)
-		: m_frameTimer(100), m_info(info), m_commandLineBuilder(commandLineBuilder)
-	{
-		VT_ASSERT_MSG(!s_instance, "Application already exists!");
-		s_instance = this;
-
 		FileSystem::Initialize();
-		FileSystem::InitializeWorkingDirectory(info.isRuntime, commandLineBuilder);
+		FileSystem::InitializeWorkingDirectory(IsRuntime(), commandLineBuilder);
 
 		m_subSystemManager = CreateScope<SubSystemManager>();
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
 
 		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
 		m_logSubSystem = SubSystemManager::GetSubSystem<Log>();
-		m_logSubSystem->EnableLogging(m_info.enableLogging);
+		m_logSubSystem->EnableLogging(IsLoggingEnabled());
 
 		m_pluginSystem = SubSystemManager::GetSubSystem<PluginSystem>();
 		m_pluginRegistry = SubSystemManager::GetSubSystem<PluginRegistry>();
@@ -127,58 +98,42 @@ namespace Volt
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 
-		if (m_info.createMainWindow)
+		if (m_appCreateInfo.createMainWindow)
 		{
-			WindowProperties windowProperties{};
-			windowProperties.Width = info.width;
-			windowProperties.Height = info.height;
-			windowProperties.VSync = info.useVSync;
-			windowProperties.Title = info.title;
-			windowProperties.WindowMode = info.windowMode;
-			windowProperties.IconPath = info.iconPath;
-			windowProperties.CursorPath = info.cursorPath;
-			windowProperties.UseTitlebar = info.useTitlebar;
-			windowProperties.UseCustomTitlebar = info.useCustomTitlebar;
-
-			if (m_info.isRuntime)
-			{
-				windowProperties.Title = ProjectManager::GetProject().name;
-				windowProperties.CursorPath = ProjectManager::GetProject().cursorFilepath;
-				windowProperties.IconPath = ProjectManager::GetProject().iconFilepath;
-			}
-
-			if (ProjectManager::GetProject().isDeprecated)
-			{
-				windowProperties.UseTitlebar = true;
-			}
-
-			m_windowManager->CreateMainWindow(windowProperties);
+			LaunchMainWindow();
 		}
 
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
 
-		//Init AudioSystem
+		//TODO: this is a hack because we dont have access to the AssetManager in all application types
+		Renderer* rendererSubsystem = SubSystemManager::GetSubSystem<Renderer>();
+		rendererSubsystem->CreateBlueNoise();
+
+		//Init AudioEngine
 		{
-			//TODO: Read .conf file to create other types of audio solutions and a headless mode
-			m_audioSystem = Audio::AudioSystemFactory::Create(Audio::AudioBackend::WWISE);
+			//std::filesystem::path defaultPath = ProjectManager::GetAudioBanksDirectory();
+			//Amp::WWiseEngine::Get().InitWWise(defaultPath.c_str());
+			//if (FileSystem::Exists(defaultPath))
+			//{
+			//	for (auto bankFile : std::filesystem::directory_iterator(ProjectManager::GetAudioBanksDirectory()))
+			//	{
+			//		if (bankFile.path().extension() == L".bnk")
+			//		{
+			//			Amp::WWiseEngine::Get().LoadBank(bankFile.path().filename().string().c_str());
+			//		}
+			//	}
+			//}
 		}
 
 		m_navigationSystem = CreateScope<Volt::AI::NavigationSystem>();
-
-		// Extras
-
-		if (info.enableSteam)
-		{
-			m_steamImplementation = SteamImplementation::Create();
-		}
 
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PostEngine);
 
 		m_imguiSubSystem = SubSystemManager::GetSubSystem<ImGuiSubSystem>();
 		// Make sure that the main window exits, it is required to initialize ImGui.
-		if (m_info.createMainWindow && m_info.enableImGui)
+		if (m_appCreateInfo.createMainWindow && m_appCreateInfo.enableImGui)
 		{
-			m_imguiSubSystem->InitializeImGui(m_info.enableImGuiViewports);
+			m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
 			m_imguiSubSystem->SetupContext();
 		}
 
@@ -201,9 +156,8 @@ namespace Volt
 
 		m_navigationSystem = nullptr;
 		m_layerStack.Clear();
-		SceneManager::Shutdown();
 
-		m_audioSystem->Release();
+		//Amp::WWiseEngine::Get().TermWwise();
 
 		m_assetManager->Clear();
 
@@ -221,12 +175,10 @@ namespace Volt
 		m_projectManager = nullptr;
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
-		 
+
 		FileSystem::Shutdown();
 
 		m_subSystemManager = nullptr;
-
-		s_instance = nullptr;
 	}
 
 	void Application::Run()
@@ -238,11 +190,9 @@ namespace Volt
 		while (m_isRunning)
 		{
 			VT_PROFILE_FRAME("Frame");
-		
 			MainUpdate();
 
-			m_frameIndex++;
-			FrameStackAllocator::Get().ClearStack();
+			//m_frameIndex++;
 		}
 	}
 
@@ -251,66 +201,58 @@ namespace Volt
 		m_isRunning = false;
 	}
 
-	void Application::PushLayer(Layer* layer)
+	void Application::PushLayer(ApplicationLayer* layer)
 	{
 		m_layerStack.PushLayer(layer);
 	}
 
-	void Application::PopLayer(Layer* layer)
+	void Volt::Application::PopLayer(ApplicationLayer* layer)
 	{
 		m_layerStack.PopLayer(layer);
 	}
 
 	void Application::LaunchMainWindow()
 	{
-		if (!m_info.createMainWindow && !m_windowManager->HasMainWindow())
+		if (!m_windowManager->HasMainWindow())
 		{
 			WindowProperties windowProperties{};
-			windowProperties.Width = m_info.width;
-			windowProperties.Height = m_info.height;
-			windowProperties.VSync = m_info.useVSync;
-			windowProperties.Title = m_info.title;
-			windowProperties.WindowMode = m_info.windowMode;
-			windowProperties.IconPath = m_info.iconPath;
-			windowProperties.CursorPath = m_info.cursorPath;
-			windowProperties.UseTitlebar = m_info.useTitlebar;
-			windowProperties.UseCustomTitlebar = m_info.useCustomTitlebar;
+			windowProperties.Width = m_appCreateInfo.width;
+			windowProperties.Height = m_appCreateInfo.height;
+			windowProperties.VSync = m_appCreateInfo.useVSync;
+			windowProperties.Title = m_appCreateInfo.title;
+			windowProperties.WindowMode = m_appCreateInfo.windowMode;
+			windowProperties.IconPath = m_appCreateInfo.iconPath;
+			windowProperties.CursorPath = m_appCreateInfo.cursorPath;
+			windowProperties.UseTitlebar = m_appCreateInfo.useTitlebar;
+			windowProperties.UseCustomTitlebar = m_appCreateInfo.useCustomTitlebar;
 
-			if (m_info.isRuntime)
+			if (m_appCreateInfo.isRuntime)
 			{
 				windowProperties.Title = ProjectManager::GetProject().name;
 				windowProperties.CursorPath = ProjectManager::GetProject().cursorFilepath;
 				windowProperties.IconPath = ProjectManager::GetProject().iconFilepath;
 			}
 
-			if (ProjectManager::GetProject().isDeprecated)
-			{
-				windowProperties.UseTitlebar = true;
-			}
-
 			m_windowManager->CreateMainWindow(windowProperties);
 
-			if (m_imguiSubSystem)
+			if (m_imguiSubSystem && m_appCreateInfo.enableImGui)
 			{
-				m_imguiSubSystem->InitializeImGui(m_info.enableImGuiViewports);
+				// Make sure that the main window exits, it is required to initialize ImGui.
+				m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
 				m_imguiSubSystem->SetupContext();
 			}
 
-			m_skipPresentThisFrame = true;
+			//if we are already running, we have to skip a frame so that we dont start trying to render witout beginning rendering
+			if (m_isRunning)
+			{
+				m_skipPresentThisFrame = true;
+			}
 		}
-	}
-
-	void Application::InitializeMainThread()
-	{
-		//PlatformThread::AssignThreadToCore(PlatformThread::GetCurrentThreadHandle(), 0);
 	}
 
 	void Application::MainUpdate()
 	{
-		m_hasSentMouseMovedEvent = false;
-
 		WindowManager::Get().BeginFrame();
-		m_isProcessingFrame = true;
 
 		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
 		m_frameTimer.Update();
@@ -330,18 +272,18 @@ namespace Volt
 		{
 			VT_PROFILE_SCOPE("Application::Update");
 
-			AppUpdateEvent updateEvent(m_currentDeltaTime); 
+			AppUpdateEvent updateEvent(m_currentDeltaTime);
 			EventSystem::DispatchEvent(updateEvent);
 
 			AssetManager::Update();
 		}
 
 		{
-			VT_PROFILE_SCOPE("Application::UpdateAudio");
-			m_audioSystem->Update();
+			//VT_PROFILE_SCOPE("Application::UpdateAudio");
+			//Amp::WWiseEngine::Get().Update();
 		}
 
-		if (m_info.enableImGui && m_imguiSubSystem->IsInitialized() && !m_skipPresentThisFrame)
+		if (m_appCreateInfo.enableImGui && m_imguiSubSystem->IsInitialized() && !m_skipPresentThisFrame)
 		{
 			VT_PROFILE_SCOPE("Application::ImGui");
 
@@ -364,8 +306,6 @@ namespace Volt
 			AppPostFrameUpdateEvent postFrameUpdateEvent{ m_currentDeltaTime };
 			EventSystem::DispatchEvent(postFrameUpdateEvent);
 		}
-
-		m_isProcessingFrame = false;
 
 		if (!m_skipPresentThisFrame)
 		{
@@ -397,50 +337,29 @@ namespace Volt
 		}
 	}
 
-	bool Application::OnAppUpdateEvent(AppUpdateEvent&)
+
+	bool Application::OnAppUpdateEvent(class AppUpdateEvent& e)
 	{
-		if (m_steamImplementation)
-		{
-			m_steamImplementation->Update();
-		}
 		return false;
 	}
 
-	bool Application::OnWindowCloseEvent(WindowCloseEvent&)
+	bool Application::OnWindowCloseEvent(class WindowCloseEvent& e)
 	{
 		m_isRunning = false;
 		return false;
 	}
 
-	bool Application::OnWindowResizeEvent(WindowResizeEvent& e)
+	bool Application::OnWindowResizeEvent(class WindowResizeEvent& e)
 	{
-		if (e.GetWidth() == 0 || e.GetHeight() == 0)
-		{
-			m_isMinimized = true;
-		}
-		else
-		{
-			m_isMinimized = false;
-		}
-
 		WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
 
-		if (!m_isProcessingFrame)
-		{
-			MainUpdate();
-		}
-
+		MainUpdate();
 		return false;
 	}
 
-	bool Application::OnViewportResizeEvent(ViewportResizeEvent& e)
+	bool Application::OnViewportResizeEvent(class ViewportResizeEvent& e)
 	{
 		WindowManager::Get().GetMainWindow().SetViewportSize(e.GetWidth(), e.GetHeight());
-		return false;
-	}
-
-	bool Application::OnKeyPressedEvent(KeyPressedEvent&)
-	{
 		return false;
 	}
 }

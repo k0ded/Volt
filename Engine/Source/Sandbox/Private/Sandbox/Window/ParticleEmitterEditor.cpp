@@ -10,7 +10,9 @@
 #include <Volt-CoreComponents/LightComponents.h>
 #include <Volt-CoreComponents/RenderingComponents.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -100,17 +102,17 @@ bool ParticleEmitterEditor::SavePreset(const std::filesystem::path& indata)
 {
 	if (indata == "None" || !myCurrentPreset)
 	{
-		UI::Notify(NotificationType::Error, "ParticlePreset save Failed", "Invalid preset");
+		UI::Notify(UI::NotificationType::Error, "ParticlePreset save Failed", "Invalid preset");
 		return false;
 	}
 
 	const auto& metadata = Volt::AssetManager::GetMetadataFromHandle(myCurrentPreset->handle);
 	if (!FileSystem::IsWriteable(Volt::ProjectManager::GetRootDirectory() / metadata.filePath))
 	{
-		UI::Notify(NotificationType::Error, "ParticlePreset save Failed", "Make sure file is writable");
+		UI::Notify(UI::NotificationType::Error, "ParticlePreset save Failed", "Make sure file is writable");
 		return false;
 	}
-	UI::Notify(NotificationType::Success, "ParticlePreset Saved ", "");
+	UI::Notify(UI::NotificationType::Success, "ParticlePreset Saved ", "");
 	Volt::AssetManager::Get().SaveAsset(myCurrentPreset);
 	return true;
 }
@@ -463,6 +465,7 @@ void ParticleEmitterEditor::DrawElementColor()
 	{
 		ImGui::Separator();
 		ImGui::BeginChild("##color settings", { ImGui::GetContentRegionAvail().x, 100.0f }, false);
+
 		if (UI::BeginProperties("color"))
 		{
 			for (int i = 0; i < myCurrentPreset->colors.size(); i++)
@@ -470,7 +473,8 @@ void ParticleEmitterEditor::DrawElementColor()
 				UI::PropertyColor(std::to_string(i + 1) + ": ", myCurrentPreset->colors[i]);
 			}
 			UI::EndProperties();
-		}ImGui::EndChild();
+		}
+		ImGui::EndChild();
 		ImGui::TreePop();
 	}
 }
@@ -494,6 +498,7 @@ void ParticleEmitterEditor::DrawElementSize()
 	{
 		ImGui::Separator();
 		ImGui::BeginChild("##size settings", { ImGui::GetContentRegionAvail().x, 100.0f }, false);
+
 		if (UI::BeginProperties("size"))
 		{
 			for (int i = 0; i < myCurrentPreset->sizes.size(); i++)
@@ -501,7 +506,8 @@ void ParticleEmitterEditor::DrawElementSize()
 				UI::Property(std::to_string(i + 1) + ": ", myCurrentPreset->sizes[i]);
 			}
 			UI::EndProperties();
-		}ImGui::EndChild();
+		}
+		ImGui::EndChild();
 		ImGui::TreePop();
 	}
 }

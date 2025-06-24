@@ -3,8 +3,6 @@
 #include "RenderCore/Shader/ShaderSubSystem.h"
 #include "RenderCore/RenderGraph/ShaderRegistry.h"
 
-#include <Volt-Core/Project/ProjectManager.h>
-
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Shader/ShaderCache.h>
 #include <RHIModule/Shader/Shader.h>
@@ -17,7 +15,7 @@ VT_DEFINE_LOG_CATEGORY(LogShaderSubSystem);
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(ShaderSubSystem, Engine, 0);
+	VT_REGISTER_SUBSYSTEM(ShaderSubSystem, Minimal, Engine, 0);
 
 	void ShaderSubSystem::Initialize()
 	{
@@ -33,11 +31,12 @@ namespace Volt
 			shaderCompilerInfo.flags = RHI::ShaderCompilerFlags::WarningsAsErrors;
 			shaderCompilerInfo.shaderCache = m_shaderCache;
 
+			const std::filesystem::path engineShaderIncludeDirectory = "Engine/Shaders/Source/Includes";
+			const std::filesystem::path engineShaderDirectory = "Engine/Shaders/Source/";
 			shaderCompilerInfo.includeDirectories =
 			{
-				ProjectManager::GetEngineShaderIncludeDirectory(),
-				ProjectManager::GetEngineShaderDirectory(),
-				ProjectManager::GetAssetsDirectory()
+				engineShaderIncludeDirectory,
+				engineShaderDirectory
 			};
 
 			m_shaderCompiler = RHI::ShaderCompiler::Create(shaderCompilerInfo);

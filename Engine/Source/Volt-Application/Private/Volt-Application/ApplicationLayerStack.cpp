@@ -1,32 +1,31 @@
-#include "vtcorepch.h"
-#include "Volt-Core/Layer/LayerStack.h"
-#include "Volt-Core/Layer/Layer.h"
+#include "vtapppch.h"
+#include "Volt-Application/ApplicationLayerStack.h"
+#include "Volt-Application/ApplicationLayer.h"
 
 namespace Volt
 {
-	LayerStack::LayerStack()
-	{
-	}
+	ApplicationLayerStack::ApplicationLayerStack()
+	{}
 
-	LayerStack::~LayerStack()
+	ApplicationLayerStack::~ApplicationLayerStack()
 	{
 		Clear();
 	}
 
-	void LayerStack::PushLayer(Layer* layer)
+	void ApplicationLayerStack::PushLayer(ApplicationLayer* layer)
 	{
 		m_layers.emplace(m_layers.begin() + m_lastInsertIndex, layer);
 		m_lastInsertIndex++;
 		layer->OnAttach();
 	}
 
-	void LayerStack::PushOverlay(Layer* overlay)
+	void ApplicationLayerStack::PushOverlay(ApplicationLayer* overlay)
 	{
 		m_layers.emplace_back(overlay);
 		overlay->OnAttach();
 	}
 
-	void LayerStack::PopLayer(Layer* layer)
+	void ApplicationLayerStack::PopLayer(ApplicationLayer* layer)
 	{
 		auto it = std::find(m_layers.begin(), m_layers.begin() + m_lastInsertIndex, layer);
 		if (it != m_layers.begin() + m_lastInsertIndex)
@@ -38,7 +37,7 @@ namespace Volt
 		}
 	}
 
-	void LayerStack::PopOverlay(Layer* overlay)
+	void ApplicationLayerStack::PopOverlay(ApplicationLayer* overlay)
 	{
 		auto it = std::find(m_layers.begin() + m_lastInsertIndex, m_layers.end(), overlay);
 		if (it != m_layers.end())
@@ -49,13 +48,13 @@ namespace Volt
 		}
 	}
 
-	void LayerStack::PopLast()
+	void ApplicationLayerStack::PopLast()
 	{
-		Layer* lastLayer = m_layers.back();
+		ApplicationLayer* lastLayer = m_layers.back();
 		PopLayer(lastLayer);
 	}
 
-	Layer* LayerStack::GetLastLayer()
+	ApplicationLayer* ApplicationLayerStack::GetLastLayer()
 	{
 		if (m_layers.empty())
 		{
@@ -64,9 +63,9 @@ namespace Volt
 		return m_layers.back();
 	}
 
-	void LayerStack::Clear()
+	void ApplicationLayerStack::Clear()
 	{
-		for (Layer* layer : m_layers)
+		for (ApplicationLayer* layer : m_layers)
 		{
 			layer->OnDetach();
 			delete layer;

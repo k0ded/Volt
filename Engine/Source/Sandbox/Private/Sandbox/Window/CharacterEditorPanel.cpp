@@ -11,6 +11,7 @@
 #include <Volt-Renderer/Texture/Texture2D.h>
 #include <Volt-Renderer/AnimatedCharacter.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
+
 #include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <Volt-Animation/AnimationManager.h>
@@ -18,7 +19,9 @@
 #include <Volt-Animation/Assets/Skeleton.h>
 #include <Volt-Scene/Scene.h>
 #include <Volt-Scene/Entity.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 #include <WindowModule/Events/WindowEvents.h>
@@ -77,7 +80,7 @@ void CharacterEditorPanel::UpdateMainContent()
 				if (myCurrentCharacter)
 				{
 					Volt::AssetManager::Get().SaveAsset(myCurrentCharacter);
-					UI::Notify(NotificationType::Success, "Saved character!", std::format("Character {0} successfully saved!", myCurrentCharacter->assetName));
+					UI::Notify(UI::NotificationType::Success, "Saved character!", std::format("Character {0} successfully saved!", myCurrentCharacter->assetName));
 				}
 			}
 
@@ -232,7 +235,7 @@ void CharacterEditorPanel::UpdateToolbar()
 		if (myCurrentCharacter)
 		{
 			Volt::AssetManager::Get().SaveAsset(myCurrentCharacter);
-			UI::Notify(NotificationType::Success, "Saved Character!", std::format("Saved character {0} to file!", myCurrentCharacter->assetName));
+			UI::Notify(UI::NotificationType::Success, "Saved Character!", std::format("Saved character {0} to file!", myCurrentCharacter->assetName));
 		}
 	}
 
@@ -490,7 +493,7 @@ void CharacterEditorPanel::UpdateAnimations()
 
 				// Remove
 				{
-					auto id = UI::GetID();
+					auto id = UI::GetAndIncrementStackID();
 
 					std::string strId = "-##" + std::to_string(id);
 
@@ -598,7 +601,7 @@ void CharacterEditorPanel::UpdateAnimationTimelinePanel()
 				const auto& events = myCurrentCharacter->GetAnimationEvents((uint32_t)mySelectedAnimation);
 				for (int index = 0; index < events.size(); index++)
 				{
-					const auto id = UI::GetID();
+					const auto id = UI::GetAndIncrementStackID();
 					bool selected = false;
 
 					ImGui::Selectable(std::format("{0}: ", events[index].name).c_str(), &selected, ImGuiSelectableFlags_AllowItemOverlap, ImVec2(150, 25));
@@ -757,7 +760,7 @@ void CharacterEditorPanel::UpdateJointAttachmentViewPanel()
 			auto jointName = myCurrentCharacter->GetSkeleton()->GetNameFromJointIndex(attachment.jointIndex);
 
 			ImGui::PushItemWidth(totalWidth - 11.f);
-			const std::string jntId = "##" + std::to_string(UI::GetID());
+			const std::string jntId = "##" + std::to_string(UI::GetAndIncrementStackID());
 
 			ImGui::InputTextString(jntId.c_str(), &jointName, ImGuiInputTextFlags_ReadOnly);
 			ImGui::PopItemWidth();
@@ -766,7 +769,7 @@ void CharacterEditorPanel::UpdateJointAttachmentViewPanel()
 
 			ImGui::PushItemWidth(totalWidth - 11.f);
 			
-			const std::string attId = "##" + std::to_string(UI::GetID());
+			const std::string attId = "##" + std::to_string(UI::GetAndIncrementStackID());
 			ImGui::InputTextString(attId.c_str(), &attachment.name);
 
 			std::string popupName = "offsetRightclick" + std::to_string(index);
@@ -875,7 +878,7 @@ void CharacterEditorPanel::AddJointAttachmentPopup()
 
 			for (const auto& name : jointNames)
 			{
-				const std::string id = name + "##" + std::to_string(UI::GetID());
+				const std::string id = name + "##" + std::to_string(UI::GetAndIncrementStackID());
 
 				UI::ShiftCursor(4.f, 0.f);
 				UI::RenderMatchingTextBackground(myJointSearchQuery, name, EditorTheme::MatchingTextBackground);

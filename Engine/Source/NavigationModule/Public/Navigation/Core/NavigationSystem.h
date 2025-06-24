@@ -2,15 +2,16 @@
 
 #include "Navigation/NavMesh/VTNavMesh.h"
 
-#include <Volt/Events/SceneEvents.h>
-
-#include <EventSystem/ApplicationEvents.h>
 #include <EventSystem/EventListener.h>
 
 static const int MAX_POLYS = 256;
 
 namespace Volt
 {
+	class AppUpdateEvent;
+	class OnSceneLoadedEvent;
+	class Scene;
+
 	namespace AI
 	{
 		class NavigationSystem : public EventListener
@@ -23,9 +24,10 @@ namespace Volt
 			const Ref<NavMesh>& GetVTNavMesh() { return myNavMesh; };
 
 		private:
-			friend class Volt::Scene;
+			friend class Scene;
 
-			bool OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e);
+			//todo_fabian: reimplement
+			//bool OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e);
 			bool OnAppUpdateEvent(Volt::AppUpdateEvent& e);
 			bool OnRuntimeStart();
 

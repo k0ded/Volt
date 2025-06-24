@@ -1,8 +1,6 @@
 #include "vtpch.h"
 #include "Volt/Particles/ParticleSystem.h"
 
-#include "Volt/Core/Application.h"
-
 #include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Scene.h>
 #include <Volt-Scene/Components/CoreComponents.h>

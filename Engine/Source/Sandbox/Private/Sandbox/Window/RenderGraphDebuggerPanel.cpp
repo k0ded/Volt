@@ -1,7 +1,7 @@
 #include "sbpch.h"
 #include "Sandbox/Window/RenderGraphDebuggerPanel.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Renderer/SceneRenderer.h>
 

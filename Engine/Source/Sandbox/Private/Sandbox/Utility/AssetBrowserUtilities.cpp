@@ -9,7 +9,7 @@
 #include "Sandbox/Sandbox.h"
 
 #include <Volt/Asset/Prefab.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 #include <Volt/Utility/MeshExporterUtilities.h>
 
 #include <Volt-Assets/MeshAsset.h>
@@ -132,11 +132,11 @@ namespace AssetBrowser
 					if (shader->Reload(true))
 					{
 						Volt::Renderer::ReloadShader(shader);
-						UI::Notify(NotificationType::Success, "Shader Compiled!", std::format("Shader {} compiled succesfully!", item->path.string()));
+						UI::Notify(UI::NotificationType::Success, "Shader Compiled!", std::format("Shader {} compiled succesfully!", item->path.string()));
 					}
 					else
 					{
-						UI::Notify(NotificationType::Error, "Shader Compilation Failed", std::format("Shader {} failed to compile!", item->path.string()));
+						UI::Notify(UI::NotificationType::Error, "Shader Compilation Failed", std::format("Shader {} failed to compile!", item->path.string()));
 					}*/
 				}
 			};

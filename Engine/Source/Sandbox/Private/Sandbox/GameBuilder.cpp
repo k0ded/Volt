@@ -1,13 +1,18 @@
 #include "sbpch.h"
 #include "GameBuilder.h"
 
-#include <Volt/Utility/UIUtility.h>
 #include <Volt/Utility/YAMLSerializationHelpers.h>
+#include <Volt/Utility/FileSystem.h>
+
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Scene/Scene.h>
+
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
+
+#include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/FileSystem.h>
 
@@ -123,13 +128,13 @@ void GameBuilder::BuildGame(const BuildInfo& buildInfo)
 {
 	if (myIsBuilding)
 	{
-		UI::Notify(NotificationType::Error, "Failed to start build!", "A build is already running!");
+		UI::Notify(UI::NotificationType::Error, "Failed to start build!", "A build is already running!");
 		return;
 	}
 
 	if (!std::filesystem::exists(buildInfo.buildDirectory))
 	{
-		UI::Notify(NotificationType::Error, "Build failed!", "Build directory does not exist!");
+		UI::Notify(UI::NotificationType::Error, "Build failed!", "Build directory does not exist!");
 		return;
 	}
 

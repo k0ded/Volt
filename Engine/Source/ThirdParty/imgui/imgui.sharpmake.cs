@@ -5,7 +5,7 @@ using System.IO;
 namespace VoltSharpmake
 {
     [Sharpmake.Generate]
-    public class imgui : CommonThirdPartyLibProject
+    public class imgui : CommonThirdPartyDllProject
     {
         public imgui() : base()
         {
@@ -30,11 +30,15 @@ namespace VoltSharpmake
                 "imgui_tables.cpp",
                 "imgui_stdlib.cpp",
                 "imgui_stdlib.h",
-                "imgui_bezier.h"
+                "imgui_bezier.h",
+                "Volt_imgui_config.h"
             );
 
             conf.ExportDefines.Add("IMGUI_DISABLE_OBSOLETE_KEYIO");
             conf.IncludePaths.Add("[project.RootPath]/[project.Name]");
+
+            conf.Defines.Add("IMGUI_DLL_EXPORT");
+
         }
     }
 }

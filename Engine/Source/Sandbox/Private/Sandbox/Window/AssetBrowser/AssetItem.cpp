@@ -20,7 +20,7 @@
 #include <Volt/Utility/PremadeCommands.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 namespace AssetBrowser
 {
@@ -132,7 +132,7 @@ namespace AssetBrowser
 			{
 				if (!Volt::PremadeCommands::RunOpenVSFileCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor, Volt::AssetManager::GetFilePathFromAssetHandle(handle)))
 				{
-					UI::Notify(NotificationType::Error, "Open file failed!", "External script editor is not valid!");
+					UI::Notify(UI::NotificationType::Error, "Open file failed!", "External script editor is not valid!");
 				}
 			}
 		}

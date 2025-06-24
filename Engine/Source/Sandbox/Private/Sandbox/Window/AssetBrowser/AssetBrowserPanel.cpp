@@ -25,7 +25,7 @@
 #include <Volt-Scene/Components/CoreComponents.h>
 #include <Volt-Scene/Scene.h>
 #include <Volt/Utility/FileSystem.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 #include <Volt/Utility/PremadeCommands.h>
 
 #include <Volt-Physics/PhysicsMaterialAsset.h>
@@ -1083,7 +1083,7 @@ void AssetBrowserPanel::CreatePrefabAndSetupEntities(Volt::EntityID id)
 
 	if (entity.HasComponent<Volt::PrefabComponent>())
 	{
-		UI::Notify(NotificationType::Error, "Unable to create prefab!", "Cannot create prefab of existing prefab!");
+		UI::Notify(UI::NotificationType::Error, "Unable to create prefab!", "Cannot create prefab of existing prefab!");
 		return;
 	}
 

@@ -1,15 +1,17 @@
 #pragma once
 
-#include <Volt-Core/Layer/Layer.h>
+#include <Volt-Application/ApplicationLayer.h>
+
 #include <Volt-Platforms/ProcessHandle.h>
 
 #include <EventSystem/EventListener.h>
 #include <EventSystem/ApplicationEvents.h>
 
+
 namespace Volt
 {
 	class CrashContext;
-	class CrashReportClientLayer : public Volt::Layer, public Volt::EventListener
+	class CrashReportClientLayer : public Volt::ApplicationLayer, public Volt::EventListener
 	{
 	public:
 		CrashReportClientLayer() = default;

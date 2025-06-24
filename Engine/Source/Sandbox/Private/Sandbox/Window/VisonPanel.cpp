@@ -2,10 +2,13 @@
 
 #include "Window/VisonPanel.h"
 
-#include <Volt/Utility/UIUtility.h>
-#include <Volt/Core/Application.h>
+#include "Sandbox/Utility/UIPropertiesExtension.h"
+
+#include <Volt-Application/UI/UIUtility.h>
 #include <Volt/Vision/VisionTrigger.h>
 #include <Volt/Vision/Vision.h>
+
+#include <Volt-Application/Application.h>
 
 #include <Volt-Renderer/Camera/Camera.h>
 
@@ -91,6 +94,7 @@ void VisionPanel::UpdateCameraProperties()
 
 	Volt::Entity selectedCam = myVisionCams[mySelectedCamera];
 	auto& baseCamComp = selectedCam.GetComponent<Volt::CameraComponent>();
+	baseCamComp;
 	auto& visionCamComp = selectedCam.GetComponent<Volt::VisionCameraComponent>();
 
 	std::string labelName = "Cam: " + selectedCam.GetComponent<Volt::TagComponent>().tag + " [" + std::to_string(mySelectedCamera) + "]";;

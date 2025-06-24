@@ -5,7 +5,7 @@
 #include "Sandbox/Utility/SelectionManager.h"
 #include "Sandbox/Utility/EditorResources.h"
 
-#include <Volt/Core/Application.h>
+#include <Volt-Application/Application.h>
 
 #include <Volt-Assets/MeshAsset.h>
 #include <Volt-Assets/MaterialAsset.h>
@@ -214,41 +214,42 @@ void Sandbox::RenderGizmos(Ref<Volt::Scene> scene, Ref<Volt::Camera> camera)
 	//	}
 	//}
 
+	//todo: reimplement when making navmesh
 	///// Sphere Bounds Visualization /////
-	switch (settings.navMeshViewMode)
-	{
-		case NavMeshViewMode::Only:
-		case NavMeshViewMode::All:
-		{
-			auto& myNavigationSystem = Volt::Application::Get().GetNavigationSystem();
+	//switch (settings.navMeshViewMode)
+	//{
+	//	case NavMeshViewMode::Only:
+	//	case NavMeshViewMode::All:
+	//	{
+	//		auto& myNavigationSystem = Volt::Application::Get().GetNavigationSystem();
 
-			if (myNavigationSystem.GetVTNavMesh())
-			{
-				// Draw NavMesh
-				{
-					NavMeshDebugDrawer::DrawNavMesh();
-				}
+	//		if (myNavigationSystem.GetVTNavMesh())
+	//		{
+	//			// Draw NavMesh
+	//			{
+	//				NavMeshDebugDrawer::DrawNavMesh();
+	//			}
 
-				// Draw NavLinks
-				{
-					Vector<Volt::AI::NavLinkConnection> links;
-					m_runtimeScene->ForEachWithComponents<const Volt::NavLinkComponent>([&](const entt::entity id, const Volt::NavLinkComponent& comp)
-					{
-						Volt::Entity entity{ id, m_runtimeScene.get() };
-						Volt::AI::NavLinkConnection link;
+	//			// Draw NavLinks
+	//			{
+	//				Vector<Volt::AI::NavLinkConnection> links;
+	//				m_runtimeScene->ForEachWithComponents<const Volt::NavLinkComponent>([&](const entt::entity id, const Volt::NavLinkComponent& comp)
+	//				{
+	//					Volt::Entity entity{ id, m_runtimeScene.get() };
+	//					Volt::AI::NavLinkConnection link;
 
-						link.start = entity.GetPosition() + comp.start;
-						link.end = entity.GetPosition() + comp.end;
-						link.bidirectional = comp.bidirectional;
+	//					link.start = entity.GetPosition() + comp.start;
+	//					link.end = entity.GetPosition() + comp.end;
+	//					link.bidirectional = comp.bidirectional;
 
-						links.emplace_back(link);
-					});
+	//					links.emplace_back(link);
+	//				});
 
-					NavMeshDebugDrawer::DrawLinks(links);
-				}
-			}
-		}
-	}
+	//				NavMeshDebugDrawer::DrawLinks(links);
+	//			}
+	//		}
+	//	}
+	//}
 
 	///////////////////////////////////////
 

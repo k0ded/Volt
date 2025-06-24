@@ -5,9 +5,13 @@
 
 #include <Volt/Asset/SourceAssetImporters/FbxSourceImporter.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/UIScopedHelpers.h>
+#include <Volt-Application/UI/UIProperties.h>
 
 #include <CoreUtilities/StringUtility.h>
+
+#include <AssetSystem/SourceAssetManager.h>
 
 
 TextureImportModal::TextureImportModal(const std::string& strId)

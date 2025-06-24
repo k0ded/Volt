@@ -4,8 +4,12 @@
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/UIScopedHelpers.h>
+
 #include <Volt/Asset/SourceAssetImporters/FbxSourceImporter.h>
+
+#include <AssetSystem/SourceAssetManager.h>
 
 #include <Volt-Animation/Assets/Skeleton.h>
 

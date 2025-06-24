@@ -4,7 +4,8 @@
 #include "Sandbox/GameBuilder.h"
 
 #include <Volt-Scene/Entity.h>
-#include <Volt-Core/Layer/Layer.h>
+
+#include <Volt-Application/ApplicationLayer.h>
 
 #include <EventSystem/EventListener.h>
 
@@ -48,7 +49,7 @@ class EditorCameraController;
 class OutlineSceneRendererExtension;
 class ObjectIDSceneRendererExtension;
 
-class Sandbox : public Volt::Layer, public Volt::EventListener
+class Sandbox : public Volt::ApplicationLayer, public Volt::EventListener
 {
 public:
 	Sandbox();

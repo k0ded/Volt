@@ -7,7 +7,7 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Assets/MaterialAsset.h>
 #include <Volt-Assets/MaterialCompilerSubSystem.h>
@@ -16,11 +16,15 @@
 #include <Volt-MaterialGraph/Nodes/ConstantNodes.h>
 #include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
+#include <Volt-Core/Project/ProjectManager.h>
+
 #include <AssetSystem/AssetManager.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicNode.h>
 #include <Mosaic/NodeRegistry.h>
+
+#include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/FileSystem.h>
 

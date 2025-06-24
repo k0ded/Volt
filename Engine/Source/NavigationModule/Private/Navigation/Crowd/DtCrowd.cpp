@@ -3,6 +3,10 @@
 
 #include "Navigation/Core/CoreInterfaces.h"
 
+#include <Volt/Components/NavigationComponents.h>
+
+#include <Volt-Scene/Entity.h>
+
 #include <DetourCommon.h>
 
 namespace Volt

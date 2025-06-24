@@ -10,7 +10,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(Input, PreEngine, 2);
+	VT_REGISTER_SUBSYSTEM(Input, Minimal, PreEngine, 2);
 
 	Input::Input()
 	{

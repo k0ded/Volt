@@ -8,9 +8,8 @@
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/UserSettingsManager.h"
 
-#include <Volt/Core/Application.h>
 #include <Volt/Utility/PremadeCommands.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <EventSystem/EventSystem.h>
 
@@ -686,11 +685,11 @@ void Sandbox::DrawMenuBar()
 			{
 				if (Volt::PremadeCommands::RunBuildCSProjectCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor))
 				{
-					UI::Notify(NotificationType::Success, "Build succeeded!", "Successfully compiled Project.sln in DIST config!");
+					UI::Notify(UI::NotificationType::Success, "Build succeeded!", "Successfully compiled Project.sln in DIST config!");
 				}
 				else
 				{
-					UI::Notify(NotificationType::Error, "Build failed!", "Could not find visual studio build tools!");
+					UI::Notify(UI::NotificationType::Error, "Build failed!", "Could not find visual studio build tools!");
 				}
 			}
 
@@ -736,7 +735,7 @@ void Sandbox::SaveSceneAsModal()
 			{
 				ImGui::CloseCurrentPopup();
 
-				UI::Notify(NotificationType::Error, "Unable to save scene!", "A scene with no name cannot be saved!");
+				UI::Notify(UI::NotificationType::Error, "Unable to save scene!", "A scene with no name cannot be saved!");
 
 				ImGui::PopItemWidth();
 				UI::EndModal();
@@ -756,7 +755,7 @@ void Sandbox::SaveSceneAsModal()
 
 			Volt::AssetManager::SaveAssetAs(m_runtimeScene, relPath);
 
-			UI::Notify(NotificationType::Success, "Successfully saved scene!", std::format("Scene {0} was saved successfully!", m_saveSceneData.name));
+			UI::Notify(UI::NotificationType::Success, "Successfully saved scene!", std::format("Scene {0} was saved successfully!", m_saveSceneData.name));
 
 			SetupNewSceneData();
 			ImGui::CloseCurrentPopup();
@@ -815,11 +814,11 @@ void Sandbox::BuildGameModal()
 			{
 				if (Volt::PremadeCommands::RunBuildCSProjectCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor))
 				{
-					UI::Notify(NotificationType::Success, "Compilation succeeded!", "Successfully compiled Project solution in DIST config!");
+					UI::Notify(UI::NotificationType::Success, "Compilation succeeded!", "Successfully compiled Project solution in DIST config!");
 				}
 				else
 				{
-					UI::Notify(NotificationType::Error, "Compilation failed!", "Build has been aborted!");
+					UI::Notify(UI::NotificationType::Error, "Compilation failed!", "Build has been aborted!");
 					abort = true;
 				}
 			}

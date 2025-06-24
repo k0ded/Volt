@@ -3,7 +3,7 @@
 
 #include "Sandbox/NodeGraph/NodeGraphEditorBackend.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 namespace ed = ax::NodeEditor;
 
@@ -348,7 +348,7 @@ namespace NodeGraph
 
 			if (!myGraphTypeText.empty())
 			{
-				UI::ScopedFont font{ FontType::Bold_90 };
+				UI::ScopedFont font{ UI::FontType::Bold_90 };
 				UI::ScopedStyleFloat alpha{ ImGuiStyleVar_Alpha, 0.2f };
 
 				const auto textSize = ImGui::CalcTextSize(myGraphTypeText.c_str());

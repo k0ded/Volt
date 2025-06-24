@@ -9,15 +9,20 @@
 
 #include <Volt/Asset/Prefab.h>
 #include <Volt/Asset/ParticlePreset.h>
-#include <Volt/Utility/UIUtility.h>
-#include <Volt-Scene/Components/CoreComponents.h>
 #include <Volt/Vision/VisionComponents.h>
 #include <Volt/ImGui/FontAwesome.h>
 
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-Scene/Components/CoreComponents.h>
+
 #include <Volt-Assets/MeshAsset.h>
+
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
 #include <Volt-Audio/Components/AudioComponents.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
@@ -515,7 +520,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{ 0.f, 0.f, 0.f, 0.f });
 	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{ 0.f, 0.f, 0.f, 0.f });
 
-	UI::PushFont(FontType::Regular_16);
+	UI::PushFont(UI::FontType::Regular_16);
 
 	if (!children.empty())
 	{
@@ -679,7 +684,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 					const auto prefabPath = Volt::AssetManager::GetFilePathFromAssetHandle(prefabComp.prefabAsset);
 					if (!FileSystem::IsWriteable(prefabPath))
 					{
-						UI::Notify(NotificationType::Error, "Unable to update prefab!", std::format("The prefab file {0} is not writeable!", prefabPath.string()));
+						UI::Notify(UI::NotificationType::Error, "Unable to update prefab!", std::format("The prefab file {0} is not writeable!", prefabPath.string()));
 					}
 					else
 					{
@@ -687,7 +692,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 						UpdatePrefabsInScene(prefabAsset, entity);
 
 						Volt::AssetManager::SaveAsset(prefabAsset);
-						UI::Notify(NotificationType::Success, "Prefab updated!", std::format("The prefab file {0} has been updated!", prefabPath.string()));
+						UI::Notify(UI::NotificationType::Success, "Prefab updated!", std::format("The prefab file {0} has been updated!", prefabPath.string()));
 					}
 				}
 			}
@@ -855,7 +860,7 @@ void SceneViewPanel::CreatePrefabAndSetupEntities(Volt::Entity entity)
 {
 	if (entity.HasComponent<Volt::PrefabComponent>())
 	{
-		UI::Notify(NotificationType::Error, "Unable to create prefab!", "Cannot create prefab of existing prefab!");
+		UI::Notify(UI::NotificationType::Error, "Unable to create prefab!", "Cannot create prefab of existing prefab!");
 		return;
 	}
 

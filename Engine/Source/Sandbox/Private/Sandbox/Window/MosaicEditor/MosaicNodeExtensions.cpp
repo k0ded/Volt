@@ -2,7 +2,7 @@
 
 #include "Sandbox/Window/MosaicEditor/MosaicNodeExtensions.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-MaterialGraph/Nodes/ConstantNodes.h>
 #include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
@@ -38,7 +38,7 @@ void SampleTextureNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 	const ImVec2 width = ImGui::CalcTextSize(assetFileName.c_str());
 	ImGui::PushItemWidth(std::max(width.x, 20.f) + 5.f);
 
-	const std::string id = "##" + std::to_string(UI::GetID());
+	const std::string id = "##" + std::to_string(UI::GetAndIncrementStackID());
 	ImGui::InputTextString(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
 	ImGui::PopItemWidth();
 

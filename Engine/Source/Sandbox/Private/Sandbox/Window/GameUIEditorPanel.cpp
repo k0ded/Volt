@@ -8,11 +8,13 @@
 #include <Volt/GameUI/UIScene.h>
 #include <Volt/GameUI/UIComponents.h>
 #include <Volt/GameUI/UIWidget.h>
+
 #include <InputModule/InputCodes.h>
+#include <InputModule/Input.h>
 
 #include <Volt-Renderer/UISceneRenderer.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 GameUIEditorPanel::GameUIEditorPanel()
 	: EditorWindow("Game UI Editor", true)

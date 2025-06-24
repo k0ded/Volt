@@ -7,8 +7,13 @@
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/VersionControl/VersionControl.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
 #include <Volt-Renderer/Texture/Texture2D.h>
+
+#include <AssetSystem/AssetManager.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <CoreUtilities/FileSystem.h>
 

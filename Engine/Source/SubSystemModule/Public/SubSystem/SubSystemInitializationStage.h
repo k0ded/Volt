@@ -6,3 +6,9 @@ enum class SubSystemInitializationStage : uint8_t
 	Engine,
 	PostEngine
 };
+
+enum class SubSystemInclusionLevel : uint8_t
+{
+	Minimal = 0,
+	Default = 1
+};
