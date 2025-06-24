@@ -3,6 +3,7 @@
 
 namespace Volt
 {
+#if 0
 	void BuildGPUSceneData(RenderGraph::Builder& builder, const GPUSceneData& data)
 	{
 		builder.ReadResource(data.meshesBuffer);
@@ -14,4 +15,5 @@ namespace Volt
 		builder.ReadResource(data.lightsBuffer);
 		builder.ReadResource(data.bonesBuffer);
 	}
+#endif
 }

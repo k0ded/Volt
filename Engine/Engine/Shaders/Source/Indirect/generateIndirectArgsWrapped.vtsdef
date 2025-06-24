@@ -1,6 +1,0 @@
-name: "GenerateIndirectArgsWrapped"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/Indirect/GenerateIndirectArgsWrapped_cs.hlsl"

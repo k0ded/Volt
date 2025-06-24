@@ -2,13 +2,15 @@
 
 #include "Volt-Core/Algorithms.h"
 
-#include <JobSystem/JobSystem.h>
+#include <Volt-Platforms/Platform.h>
+
+#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt::Algo
 {
 	void ForEachParallelLocking(std::function<void(uint32_t threadIdx, uint32_t elementIdx)>&& func, uint32_t iterationCount)
 	{
-		const uint32_t threadCount = std::min(iterationCount, std::thread::hardware_concurrency());
+		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfPhysicalCores());
 		const uint32_t perThreadIterationCount = iterationCount / threadCount;
 
 		TaskGraph taskGraph{};
@@ -22,7 +24,7 @@ namespace Volt::Algo
 				currThreadIterationCount = iterationCount - i * perThreadIterationCount;
 			}
 
-			taskGraph.AddTask([currThreadIterationCount, func, iterOffset, i]()
+			taskGraph.AddTask("ForEach", [currThreadIterationCount, func, iterOffset, i]()
 			{
 				for (uint32_t iter = 0; iter < currThreadIterationCount; iter++)
 				{
@@ -40,8 +42,10 @@ namespace Volt::Algo
 	{
 		VT_ASSERT_MSG(iterationCount > 0, "Iteration count must be greater than zero!");
 
-		const uint32_t threadCount = std::min(iterationCount, std::thread::hardware_concurrency());
+		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfPhysicalCores());
 		const uint32_t perThreadIterationCount = iterationCount / threadCount;
+
+		Vector<JobRef, InlineAllocator<32>> jobs;
 
 		uint32_t iterOffset = 0;
 		for (uint32_t i = 0; i < threadCount; i++)
@@ -52,7 +56,7 @@ namespace Volt::Algo
 				currThreadIterationCount = iterationCount - i * perThreadIterationCount;
 			}
 
-			JobSystem::CreateAndRunJob([currThreadIterationCount, func, iterOffset, i]()
+			jobs.emplace_back() = JobSystem::CreateJob("ForEachParallel", [currThreadIterationCount, func, iterOffset, i]()
 			{
 				for (uint32_t iter = 0; iter < currThreadIterationCount; iter++)
 				{
@@ -62,13 +66,15 @@ namespace Volt::Algo
 
 			iterOffset += currThreadIterationCount;
 		}
+
+		JobSystem::RunJobs(jobs);
 	}
 
 	uint32_t GetThreadCountFromIterationCount(uint32_t iterationCount)
 	{
 		VT_ASSERT_MSG(iterationCount > 0, "Iteration count must be greater than zero!");
 
-		const uint32_t threadCount = std::min(iterationCount, std::thread::hardware_concurrency());
+		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfPhysicalCores());
 	
 		return threadCount;
 	}

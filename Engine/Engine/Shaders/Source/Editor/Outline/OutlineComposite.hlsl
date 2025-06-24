@@ -1,7 +1,6 @@
-#include "Resources.hlsli"
-
-vt::RWTex2D<float4> RWOutputColor;
-vt::Tex2D<float4> JumpFloodResult;
+VT_SPECIFY_FORMAT("rgba16f")
+RWTexture2D<float4> RWOutputColor;
+Texture2D<float4> JumpFloodResult;
 
 float3 OutlineColor;
 uint2 RenderSize;
@@ -16,7 +15,7 @@ void OutlineCompositeCS(uint2 dispatchThreadID : SV_DispatchThreadID)
         float alpha = smoothstep(0.004f, 0.002f, dist);
         if (alpha > 0.f)
         {
-            RWOutputColor.Store(dispatchThreadID, float4(OutlineColor, 1.f));
+            RWOutputColor[dispatchThreadID] = float4(OutlineColor, 1.f);
         }
     }
 }

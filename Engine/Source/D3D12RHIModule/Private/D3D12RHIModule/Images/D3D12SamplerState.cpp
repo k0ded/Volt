@@ -5,11 +5,11 @@
 #include "D3D12RHIModule/Descriptors/CPUDescriptorHeapManager.h"
 #include "D3D12RHIModule/Graphics/D3D12GraphicsContext.h"
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt::RHI
 {
-	D3D12SamplerState::D3D12SamplerState(const SamplerStateCreateInfo& createInfo)
+	D3D12SamplerState::D3D12SamplerState(const SamplerStateDesc& createInfo)
 	{
 		D3D12_SAMPLER_DESC samplerDesc{};
 		samplerDesc.Filter = Utility::VoltToD3D12Filter(createInfo.minFilter, createInfo.magFilter, createInfo.mipFilter, createInfo.compareOperator);
@@ -35,7 +35,7 @@ namespace Volt::RHI
 	
 	D3D12SamplerState::~D3D12SamplerState()
 	{
-		RHIProxy::GetInstance().DestroyResource([descriptor = m_samplerDescriptor]() 
+		RHIModule::GetInstance().DestroyResource([descriptor = m_samplerDescriptor]() 
 		{
 			GraphicsContext::Get().As<D3D12GraphicsContext>()->GetCPUDescriptorHeapManager().Free(descriptor);
 		});

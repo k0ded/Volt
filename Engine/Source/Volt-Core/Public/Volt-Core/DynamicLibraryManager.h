@@ -26,6 +26,6 @@ namespace Volt
 	private:
 		inline static DynamicLibraryManager* s_instance = nullptr;
 
-		vt::map<std::filesystem::path, DLLHandle> m_loadedDynamicLibraries;
+		Map<std::filesystem::path, DLLHandle> m_loadedDynamicLibraries;
 	};
 }

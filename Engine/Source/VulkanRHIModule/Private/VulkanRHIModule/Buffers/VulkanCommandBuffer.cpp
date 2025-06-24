@@ -1,4 +1,4 @@
-#include "vkpch.h"
+ #include "vkpch.h"
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 
 #include "VulkanRHIModule/Common/VulkanCommon.h"
@@ -8,26 +8,25 @@
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Graphics/VulkanSwapchain.h"
 
-#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
-#include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorBufferTable.h"
 
 #include "VulkanRHIModule/Images/VulkanImage.h"
-
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
-
+#include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 #include "VulkanRHIModule/Synchronization/VulkanEvent.h"
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
+#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Graphics/DeviceQueue.h>
+
+#include <RHIModule/Pipelines/ComputePipeline.h>
+#include <RHIModule/Pipelines/RenderPipeline.h>
 
 #include <RHIModule/Memory/Allocation.h>
 
@@ -36,10 +35,11 @@
 
 #include <RHIModule/Images/ImageView.h>
 
-#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Core/Profiling.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/Core/RenderingInfo.h>
+#include <RHIModule/RHIModule.h>
 #include <RHIModule/Synchronization/Fence.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <RHIModule/RayTracing/AccelerationStructure.h>
 
@@ -66,6 +66,18 @@ namespace Volt::RHI
 		const VkPipelineStageFlags2 GetStageFromBarrierStage(const BarrierStage barrierStage)
 		{
 			VkPipelineStageFlags2 result = VK_PIPELINE_STAGE_2_NONE;
+
+#ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
+			if (EnumValueContainsFlag(barrierStage, BarrierStage::MeshShader) || EnumValueContainsFlag(barrierStage, BarrierStage::AmplificationShader))
+			{
+				VT_ENSURE(RHICanUseMeshShaders());
+			}
+
+			if (EnumValueContainsFlag(barrierStage, BarrierStage::RayTracingShader))
+			{
+				VT_ENSURE(RHICanUseRayTracing());
+			}
+#endif
 
 			if (EnumValueContainsFlag(barrierStage, BarrierStage::All))
 			{
@@ -334,20 +346,24 @@ namespace Volt::RHI
 			m_nextAvailableTimestampQuery = 2;
 		}
 
+#if 0
 		if (m_commandBufferLevel == CommandBufferLevel::Primary)
 		{
 			BeginMarker("CommandBuffer", { 1.f, 1.f, 1.f, 1.f });
 		}
+#endif 
 	}
 
 	void VulkanCommandBuffer::End()
 	{
 		VT_PROFILE_FUNCTION();
 
+#if 0
 		if (m_commandBufferLevel == CommandBufferLevel::Primary)
 		{
 			EndMarker();
 		}
+#endif
 
 		if (m_hasTimestampSupport)
 		{
@@ -664,20 +680,20 @@ namespace Volt::RHI
 		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.Size()), vkBuffers.Data(), offsets.Data());
 	}
 
-	void VulkanCommandBuffer::BindVertexBuffers(const StackVector<RawPtr<StorageBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	void VulkanCommandBuffer::BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding)
 	{
 		VT_PROFILE_FUNCTION();
 
-		StackVector<VkBuffer, MAX_VERTEX_BUFFER_COUNT> vkBuffers;
-		StackVector<VkDeviceSize, MAX_VERTEX_BUFFER_COUNT> offsets;
+		Vector<VkBuffer, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>> vkBuffers;
+		Vector<VkDeviceSize, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>> offsets;
 
-		for (size_t i = 0; i < vertexBuffers.Size(); i++)
+		for (size_t i = 0; i < vertexBuffers.size(); i++)
 		{
-			vkBuffers.EmplaceBack() = vertexBuffers[i]->GetHandle<VkBuffer>();
-			offsets.EmplaceBack(0u);
+			vkBuffers.emplace_back() = vertexBuffers[i]->GetHandle<VkBuffer>();
+			offsets.emplace_back(0u);
 		}
 
-		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.Size()), vkBuffers.Data(), offsets.Data());
+		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.size()), vkBuffers.data(), offsets.data());
 	}
 
 	void VulkanCommandBuffer::BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer)
@@ -700,13 +716,16 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		if (GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled())
+		VulkanDescriptorTable& vulkanTable = descriptorTable->AsRef<VulkanDescriptorTable>();
+		vulkanTable.PrepareForRender();
+
+		const VkPipelineBindPoint bindPoint = static_cast<VkPipelineBindPoint>(vulkanTable.GetRelatedBindPoint());
+		const Map<uint32_t, VkDescriptorSet>& descriptorSets = vulkanTable.GetDescriptorSets();
+		VkPipelineLayout pipelineLayout = vulkanTable.GetRelatedPipelineLayout();
+
+		for (const auto& [setIndex, descriptorSet] : descriptorSets)
 		{
-			descriptorTable->AsRef<VulkanDescriptorBufferTable>().Bind(*this);
-		}
-		else
-		{
-			descriptorTable->AsRef<VulkanDescriptorTable>().Bind(*this);
+			vkCmdBindDescriptorSets(m_commandBufferData.commandBuffer, bindPoint, pipelineLayout, setIndex, 1, &descriptorSet, 0, nullptr);
 		}
 	}
 
@@ -772,47 +791,6 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 		vkCmdEndRendering(m_commandBufferData.commandBuffer);
-	}
-
-	void VulkanCommandBuffer::PushConstants(const void* data, const uint32_t size, const uint32_t offset)
-	{
-		VT_PROFILE_FUNCTION();
-
-#ifndef VT_DIST
-		if (!m_currentRenderPipeline && !m_currentComputePipeline && !m_currentRayTracingPipeline)
-		{
-			VT_LOGC(Error, LogVulkanRHI, "Unable to push constants as no pipeline is currently bound!");
-		}
-#endif
-
-		VkPipelineLayout pipelineLayout = nullptr;
-		VkPipelineStageFlags stageFlags = 0;
-
-		if (m_currentRenderPipeline)
-		{
-			auto& vkPipeline = m_currentRenderPipeline->AsRef<VulkanRenderPipeline>();
-			pipelineLayout = vkPipeline.GetPipelineLayout();
-			stageFlags = static_cast<VkPipelineStageFlags>(vkPipeline.GetShader()->GetResources().constants.stageFlags);
-		}
-		else if (m_currentComputePipeline)
-		{
-			auto& vkPipeline = m_currentComputePipeline->AsRef<VulkanComputePipeline>();
-			pipelineLayout = vkPipeline.GetPipelineLayout();
-			stageFlags = static_cast<VkPipelineStageFlags>(vkPipeline.GetShader()->GetResources().constants.stageFlags);
-		}
-		else if (m_currentRayTracingPipeline)
-		{
-			VT_ENSURE(false);
-		}
-
-#ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		if (stageFlags == 0)
-		{
-			return;
-		}
-#endif
-
-		vkCmdPushConstants(m_commandBufferData.commandBuffer, pipelineLayout, stageFlags, offset, size, data);
 	}
 
 	void AddGlobalBarrier(const GlobalBarrier& barrierInfo, VkMemoryBarrier2& outBarrier)
@@ -918,13 +896,17 @@ namespace Volt::RHI
 		GraphicsContext::GetResourceStateTracker()->TransitionResource(barrierInfo.resource, barrierInfo.dstStage, barrierInfo.dstAccess, barrierInfo.dstLayout);
 	}
 
-	void VulkanCommandBuffer::ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers)
+	void VulkanCommandBuffer::ResourceBarrier(const BarrierVector& resourceBarriers)
 	{
 		VT_PROFILE_FUNCTION();
 
-		Vector<VkImageMemoryBarrier2> imageBarriers{};
-		Vector<VkBufferMemoryBarrier2> bufferBarriers{};
-		Vector<VkMemoryBarrier2> memoryBarriers{};
+		using ImageBarrierVector = Vector<VkImageMemoryBarrier2, InlineAllocator<16>>;
+		using BufferBarrierVector = Vector<VkBufferMemoryBarrier2, InlineAllocator<16>>;
+		using GlobalBarrierVector = Vector<VkMemoryBarrier2, InlineAllocator<16>>;
+
+		ImageBarrierVector imageBarriers{};
+		BufferBarrierVector bufferBarriers{};
+		GlobalBarrierVector memoryBarriers{};
 
 		for (const auto& resourceBarrier : resourceBarriers)
 		{
@@ -1056,7 +1038,13 @@ namespace Volt::RHI
 
 			const VkDeviceSize scratchBufferSize = (buildInfo.mode == AccelerationStructureBuildMode::Build ? buildSizes.buildScratchSize : buildSizes.updateScratchSize) + accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment;
 
-			RefPtr<StorageBuffer> scratchBuffer = StorageBuffer::Create(1, scratchBufferSize, "AS Scratch Buffer", BufferUsage::StorageBuffer | BufferUsage::DeviceAddress);
+			BufferDesc scratchBufferDesc{};
+			scratchBufferDesc.count = 1;
+			scratchBufferDesc.elementSize = scratchBufferSize;
+			scratchBufferDesc.usage = BufferUsage::StorageBuffer | BufferUsage::DeviceAddress;
+			scratchBufferDesc.debugName = "AS Scratch Buffer";
+
+			RefPtr<StorageBuffer> scratchBuffer = StorageBuffer::Create(scratchBufferDesc);
 			scratchBuffers.push_back(scratchBuffer);
 
 			vulkanBuildInfo.scratchData.deviceAddress = ::Utility::Align(scratchBuffer->GetDeviceAddress(), accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment);
@@ -1163,63 +1151,103 @@ namespace Volt::RHI
 		return m_executionTimes.at(timestampIndex / 2);
 	}
 
-	void VulkanCommandBuffer::ClearImage(RawPtr<Image> image, std::array<float, 4> clearColor)
+	void VulkanCommandBuffer::ClearBufferView(RawPtr<BufferView> bufferView, const uint32_t clearValue)
 	{
 		VT_PROFILE_FUNCTION();
 
-		VulkanImage& vkImage = image->AsRef<VulkanImage>();
+		VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
+		const BufferViewDesc& viewDesc = vkBufferView.GetDesc();
 
-		VkImageAspectFlags imageAspect = static_cast<VkImageAspectFlags>(vkImage.GetImageAspect());
+		vkCmdFillBuffer(m_commandBufferData.commandBuffer, bufferView->GetHandle<VkBuffer>(), viewDesc.offset, viewDesc.size, clearValue);
+	}
 
-		VkImageSubresourceRange range{};
-		range.aspectMask = imageAspect;
-		range.baseArrayLayer = 0;
-		range.baseMipLevel = 0;
-		range.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		range.levelCount = VK_REMAINING_MIP_LEVELS;
+	void VulkanCommandBuffer::ClearBufferView(RawPtr<BufferView> bufferView, const float clearValue)
+	{
+		VT_PROFILE_FUNCTION();
+
+		VulkanBufferView& vkBufferView = bufferView->AsRef<VulkanBufferView>();
+		const BufferViewDesc& viewDesc = vkBufferView.GetDesc();
+
+		const uint32_t uintClearValue = std::bit_cast<uint32_t>(clearValue);
+		vkCmdFillBuffer(m_commandBufferData.commandBuffer, bufferView->GetHandle<VkBuffer>(), viewDesc.offset, viewDesc.size, uintClearValue);
+	}
+
+	void VulkanCommandBuffer::ClearImageView(RawPtr<ImageView> imageView, std::array<uint32_t, 4> clearValue)
+	{
+		VT_PROFILE_FUNCTION();
+
+		const ImageViewDesc& desc = imageView->GetDesc();
+		RawPtr<Image> image = desc.image->As<Image>();
+
+		VkImageSubresourceRange subResourceRange{};
+		subResourceRange.aspectMask = Utility::GetVkImageAspect(imageView->GetImageAspect());
+		subResourceRange.baseArrayLayer = desc.baseArrayLayer;
+		subResourceRange.baseMipLevel = desc.baseMipLevel;
+		subResourceRange.layerCount = desc.layerCount;
+		subResourceRange.levelCount = desc.mipCount;
 
 		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
 
-		// This is a bit of a hack due to the differences in clearing images between Vulkan and D3D12
 		const VkImageLayout layout = EnumValueContainsFlag(currentState.stage, BarrierStage::Clear) ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Utility::GetVkImageLayoutFromImageLayout(currentState.layout);
 
-		if (imageAspect & VK_IMAGE_ASPECT_COLOR_BIT)
+		if ((subResourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0)
 		{
 			VkClearColorValue vkClearColor{};
-			vkClearColor.float32[0] = clearColor[0];
-			vkClearColor.float32[1] = clearColor[1];
-			vkClearColor.float32[2] = clearColor[2];
-			vkClearColor.float32[3] = clearColor[3];
+			vkClearColor.uint32[0] = clearValue[0];
+			vkClearColor.uint32[1] = clearValue[1];
+			vkClearColor.uint32[2] = clearValue[2];
+			vkClearColor.uint32[3] = clearValue[3];
 
 
-			vkCmdClearColorImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &range);
+			vkCmdClearColorImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &subResourceRange);
 		}
 		else
 		{
 			VkClearDepthStencilValue vkClearColor{};
-			vkClearColor.depth = clearColor[0];
-			vkClearColor.stencil = static_cast<uint32_t>(clearColor[1]);
+			vkClearColor.depth = static_cast<float>(clearValue[0]);
+			vkClearColor.stencil = clearValue[1];
 
-			vkCmdClearDepthStencilImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &range);
+			vkCmdClearDepthStencilImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &subResourceRange);
 		}
 	}
 
-	void VulkanCommandBuffer::ClearBuffer(RawPtr<StorageBuffer> buffer, const uint32_t value)
+	void VulkanCommandBuffer::ClearImageView(RawPtr<ImageView> imageView, std::array<float, 4> clearValue)
 	{
 		VT_PROFILE_FUNCTION();
 
-		VulkanStorageBuffer& vkBuffer = buffer->AsRef<VulkanStorageBuffer>();
-		vkCmdFillBuffer(m_commandBufferData.commandBuffer, vkBuffer.GetHandle<VkBuffer>(), 0, vkBuffer.GetByteSize(), value);
-	}
+		const ImageViewDesc& desc = imageView->GetDesc();
+		RawPtr<Image> image = desc.image->As<Image>();
 
-	void VulkanCommandBuffer::UpdateBuffer(RawPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data)
-	{
-		VT_PROFILE_FUNCTION();
+		VkImageSubresourceRange subResourceRange{};
+		subResourceRange.aspectMask = Utility::GetVkImageAspect(imageView->GetImageAspect());
+		subResourceRange.baseArrayLayer = desc.baseArrayLayer;
+		subResourceRange.baseMipLevel = desc.baseMipLevel;
+		subResourceRange.layerCount = desc.layerCount;
+		subResourceRange.levelCount = desc.mipCount;
 
-		VT_ASSERT(dataSize <= 65536 && "Size must not exceed MAX_UPDATE_SIZE!");
+		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
 
-		VulkanStorageBuffer& vkBuffer = dstBuffer->AsRef<VulkanStorageBuffer>();
-		vkCmdUpdateBuffer(m_commandBufferData.commandBuffer, vkBuffer.GetHandle<VkBuffer>(), dstOffset, dataSize, data);
+		const VkImageLayout layout = EnumValueContainsFlag(currentState.stage, BarrierStage::Clear) ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Utility::GetVkImageLayoutFromImageLayout(currentState.layout);
+
+		if ((subResourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0)
+		{
+			VkClearColorValue vkClearColor{};
+			vkClearColor.float32[0] = clearValue[0];
+			vkClearColor.float32[1] = clearValue[1];
+			vkClearColor.float32[2] = clearValue[2];
+			vkClearColor.float32[3] = clearValue[3];
+
+
+			vkCmdClearColorImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &subResourceRange);
+		}
+		else
+		{
+			VkClearDepthStencilValue vkClearColor{};
+			vkClearColor.depth = clearValue[0];
+			vkClearColor.stencil = static_cast<uint32_t>(clearValue[1]);
+
+			vkCmdClearDepthStencilImage(m_commandBufferData.commandBuffer, image->GetHandle<VkImage>(), layout, &vkClearColor, 1, &subResourceRange);
+		}
 	}
 
 	void VulkanCommandBuffer::CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size)
@@ -1488,7 +1516,7 @@ namespace Volt::RHI
 		}
 
 		VkFence fencePtr = waitFence->GetHandle<VkFence>();
-		RHIProxy::GetInstance().DestroyResource([fence = fencePtr, commandPool = m_commandBufferData.commandPool, timestampPool = m_timestampQueryPool, level = m_commandBufferLevel]()
+		RHIModule::GetInstance().DestroyResource([fence = fencePtr, commandPool = m_commandBufferData.commandPool, timestampPool = m_timestampQueryPool, level = m_commandBufferLevel]()
 		{
 			auto device = GraphicsContext::GetDevice();
 		
@@ -1595,28 +1623,5 @@ namespace Volt::RHI
 		m_currentRayTracingPipeline.Reset();
 		m_currentComputePipeline.Reset();
 		m_currentRenderPipeline.Reset();
-	}
-
-	VkPipelineLayout_T* VulkanCommandBuffer::GetCurrentPipelineLayout()
-	{
-		VkPipelineLayout pipelineLayout = nullptr;
-
-		if (m_currentRenderPipeline)
-		{
-			auto& vkPipeline = m_currentRenderPipeline->AsRef<VulkanRenderPipeline>();
-			pipelineLayout = vkPipeline.GetPipelineLayout();
-		}
-		else if (m_currentComputePipeline)
-		{
-			auto& vkPipeline = m_currentComputePipeline->AsRef<VulkanComputePipeline>();
-			pipelineLayout = vkPipeline.GetPipelineLayout();
-		}
-		else if (m_currentRayTracingPipeline)
-		{
-			auto& vkPipeline = m_currentRayTracingPipeline->AsRef<VulkanRayTracingPipeline>();
-			pipelineLayout = vkPipeline.GetPipelineLayout();
-		}
-
-		return pipelineLayout;
 	}
 }

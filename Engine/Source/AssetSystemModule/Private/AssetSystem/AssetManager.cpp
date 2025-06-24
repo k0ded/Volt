@@ -6,9 +6,8 @@
 #include "AssetSystem/Serialization/AssetSerializer.h"
 #include "AssetSystem/AssetSerializerRegistry.h"
 
-#include <JobSystem/JobSystem.h>
-
 #include <JobSystem/TaskGraph.h>
+#include <JobSystem/JobSystem.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/FileSystem.h>
@@ -23,7 +22,7 @@ namespace Volt
 	{
 		VT_ASSERT_MSG(!s_instance, "AssetManager already exists!");
 		s_instance = this;
-	
+
 		Initialize();
 	}
 
@@ -147,7 +146,7 @@ namespace Volt
 			return;
 		}
 
-		if (!GetAssetSerializerRegistry().HasSerializer(metadata.type))
+		if (!AssetSerializerRegistry::Get().HasSerializer(metadata.type))
 		{
 			VT_LOGC(Warning, LogAssetSystem, "No importer for asset found!");
 			asset->SetFlag(AssetFlag::Invalid, true);
@@ -163,7 +162,7 @@ namespace Volt
 #ifndef VT_DIST
 			ScopedTimer timer{};
 #endif
-			GetAssetSerializerRegistry().GetSerializer(metadata.type).Deserialize(metadata, asset);
+			AssetSerializerRegistry::Get().GetSerializer(metadata.type).Deserialize(metadata, asset);
 
 #ifndef VT_DIST
 			VT_LOGC(Trace, LogAssetSystem, "Loaded asset {0} with handle {1} in {2} seconds!", metadata.filePath, asset->handle, timer.GetTime<Time::Seconds>());
@@ -192,11 +191,13 @@ namespace Volt
 		const auto projectAssetFiles = GetProjectAssetFiles();
 		const auto engineAssetFiles = GetEngineAssetFiles();
 
+		m_assetRegistry.reserve(projectAssetFiles.size() + engineAssetFiles.size());
+
 		TaskGraph taskGraph{};
 
 		for (auto file : engineAssetFiles)
 		{
-			taskGraph.AddTask([this, file]() 
+			taskGraph.AddTask("Deserialize Asset Metadata", [this, file]()
 			{
 				DeserializeAssetMetadata(file);
 			});
@@ -204,7 +205,7 @@ namespace Volt
 
 		for (auto file : projectAssetFiles)
 		{
-			taskGraph.AddTask([this, file]()
+			taskGraph.AddTask("Deserialize Asset Metadata", [this, file]()
 			{
 				DeserializeAssetMetadata(GetFilesystemPath(file));
 			});
@@ -222,6 +223,8 @@ namespace Volt
 
 	void AssetManager::DeserializeAssetMetadata(std::filesystem::path assetPath)
 	{
+		VT_PROFILE_FUNCTION();
+
 		constexpr size_t assetHeaderSize = SerializedAssetMetadata::HeaderSize;
 
 		BinaryStreamReader streamReader{ assetPath, assetHeaderSize };
@@ -301,7 +304,7 @@ namespace Volt
 			return;
 		}
 
-		Ref<Asset> asset = GetAssetFactory().CreateAssetOfType(type);
+		Ref<Asset> asset = AssetFactory::Get().CreateAssetOfType(type);
 		LoadAsset(handle, asset);
 	}
 
@@ -338,7 +341,7 @@ namespace Volt
 				return;
 			}
 
-			if (!GetAssetSerializerRegistry().HasSerializer(asset->GetType()))
+			if (!AssetSerializerRegistry::Get().HasSerializer(asset->GetType()))
 			{
 				VT_LOGC(Error, LogAssetSystem, "No exporter for asset {} with handle {} and type {} does not exist!", assetName, asset->handle, asset->GetType()->GetName());
 				return;
@@ -373,7 +376,7 @@ namespace Volt
 #ifndef VT_DIST
 				ScopedTimer timer{};
 #endif
-				GetAssetSerializerRegistry().GetSerializer(metadata.type).Serialize(metadata, asset);
+				AssetSerializerRegistry::Get().GetSerializer(metadata.type).Serialize(metadata, asset);
 
 #ifndef VT_DIST
 				VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", metadata.handle, metadata.filePath, timer.GetTime<Time::Seconds>());
@@ -394,7 +397,7 @@ namespace Volt
 	{
 		auto& instance = Get();
 
-		if (!GetAssetSerializerRegistry().HasSerializer(asset->GetType()))
+		if (!AssetSerializerRegistry::Get().HasSerializer(asset->GetType()))
 		{
 			VT_LOGC(Error, LogAssetSystem, "No exporter for asset {0} found!", asset->handle);
 			return;
@@ -422,7 +425,7 @@ namespace Volt
 #ifndef VT_DIST
 			ScopedTimer timer{};
 #endif
-			GetAssetSerializerRegistry().GetSerializer(metadata.type).Serialize(metadata, asset);
+			AssetSerializerRegistry::Get().GetSerializer(metadata.type).Serialize(metadata, asset);
 
 #ifndef VT_DIST
 			VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", metadata.handle, metadata.filePath, timer.GetTime<Time::Seconds>());
@@ -834,8 +837,7 @@ namespace Volt
 
 #ifndef VT_DIST
 		{
-			ReadLock lock{ m_assetRegistryMutex };
-			const auto& metadata = GetMetadataFromFilePath(cleanFilePath);
+			const auto metadata = GetMetadataFromFilePath(cleanFilePath);
 
 			VT_ENSURE(!metadata.IsValid());
 			if (metadata.IsValid())
@@ -866,8 +868,7 @@ namespace Volt
 		{
 #ifndef VT_DIST
 			{
-				ReadLock lock{ m_assetRegistryMutex };
-				const auto& metadata = GetMetadataFromFilePath(cleanPath);
+				const auto metadata = GetMetadataFromFilePath(cleanPath);
 				VT_ENSURE_MSG(metadata.type == type, "Asset types does not match!");
 			}
 #endif
@@ -939,7 +940,7 @@ namespace Volt
 			return nullptr;
 		}
 
-		Ref<Asset> asset = GetAssetFactory().CreateAssetOfType(assetType);
+		Ref<Asset> asset = AssetFactory::Get().CreateAssetOfType(assetType);
 		LoadAsset(assetHandle, asset);
 
 		return asset;
@@ -958,7 +959,7 @@ namespace Volt
 			return nullptr;
 		}
 
-		Ref<Asset> asset = GetAssetFactory().CreateAssetOfType(assetType);
+		Ref<Asset> asset = AssetFactory::Get().CreateAssetOfType(assetType);
 		asset->SetFlag(AssetFlag::Queued, true);
 		Get().QueueAssetInternal(assetHandle, asset);
 
@@ -1160,7 +1161,7 @@ namespace Volt
 			m_assetCache.emplace(assetHandle, asset);
 		}
 
-		if (!GetAssetSerializerRegistry().HasSerializer(metadata.type))
+		if (!AssetSerializerRegistry::Get().HasSerializer(metadata.type))
 		{
 			VT_LOGC(Warning, LogAssetSystem, "No importer for asset found!");
 			asset->SetFlag(AssetFlag::Invalid, true);
@@ -1171,7 +1172,7 @@ namespace Volt
 
 		// If not, queue
 		{
-			JobSystem::CreateAndRunJob([this, metadata, handle = assetHandle]()
+			JobRef loadJob = JobSystem::CreateJob("Load Asset", [this, metadata, handle = assetHandle]()
 			{
 				Ref<Asset> asset;
 				{
@@ -1190,7 +1191,7 @@ namespace Volt
 #ifndef VT_DIST
 					ScopedTimer timer{};
 #endif
-					GetAssetSerializerRegistry().GetSerializer(metadata.type).Deserialize(metadata, asset);
+					AssetSerializerRegistry::Get().GetSerializer(metadata.type).Deserialize(metadata, asset);
 
 #ifndef VT_DIST
 					VT_LOGC(Trace, LogAssetSystem, "Loaded asset {0} with handle {1} in {2} seconds!", metadata.filePath.string().c_str(), asset->handle, timer.GetTime<Time::Seconds>());
@@ -1211,8 +1212,9 @@ namespace Volt
 
 				m_dependencyGraph->OnAssetChanged(handle, AssetChangedState::Updated);
 				QueueAssetChanged(asset->handle, AssetChangedState::Updated);
-
 			});
+
+			JobSystem::RunJob(loadJob);
 
 #ifndef VT_DIST
 			VT_LOGC(Trace, LogAssetSystem, "Queued asset {0} for loading!", metadata.filePath);

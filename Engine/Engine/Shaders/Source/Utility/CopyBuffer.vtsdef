@@ -1,6 +1,0 @@
-name: "CopyBuffer"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/Utility/CopyBuffer.hlsl"

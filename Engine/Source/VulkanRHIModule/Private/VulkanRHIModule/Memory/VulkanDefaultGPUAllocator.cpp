@@ -28,11 +28,6 @@ namespace Volt::RHI
 		info.instance = GraphicsContext::Get().GetHandle<VkInstance>();
 		info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
-		if (GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled())
-		{
-			info.flags |= VMA_ALLOCATOR_CREATE_EXT_DESCRIPTOR_BUFFER_BIT;
-		}
-
 		VT_VK_CHECK(vmaCreateAllocator(&info, &m_allocator));
 	}
 
@@ -53,12 +48,15 @@ namespace Volt::RHI
 		vmaDestroyAllocator(m_allocator);
 	}
 
-	Handle<Allocation> VulkanDefaultGPUAllocator::CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
+	Handle<Allocation> VulkanDefaultGPUAllocator::CreateBuffer(const BufferDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(size > 0);
 
-		const size_t hash = Utility::GetHashFromBufferSpec(size, usage, memoryUsage);
+		const uint64_t byteSize = desc.count * desc.elementSize;
+
+		VT_ENSURE(byteSize > 0);
+
+		const size_t hash = Utility::GetHashFromBufferSpec(byteSize, desc.usage, desc.memoryUsage);
 
 		{
 			std::scoped_lock lock{ m_bufferAllocationMutex };
@@ -74,32 +72,27 @@ namespace Volt::RHI
 		bufferInfo.pQueueFamilyIndices = nullptr;
 		bufferInfo.queueFamilyIndexCount = 0;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; 
-		bufferInfo.size = size;
-		bufferInfo.usage = Utility::GetVkBufferUsageFlags(usage);
-
-		if (GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().AreDescriptorBuffersEnabled())
-		{
-			bufferInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-		}
+		bufferInfo.size = byteSize;
+		bufferInfo.usage = Utility::GetVkBufferUsageFlags(desc.usage);
 
 		VmaMemoryUsage usageFlags = VMA_MEMORY_USAGE_AUTO;
 		VmaAllocationCreateFlags createFlags = 0;
 
-		if ((memoryUsage & MemoryUsage::CPU) != MemoryUsage::None)
+		if ((desc.memoryUsage & MemoryUsage::CPU) != MemoryUsage::None)
 		{
 			usageFlags = VMA_MEMORY_USAGE_CPU_ONLY;
 			createFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 		}
-		else if ((memoryUsage & MemoryUsage::CPUToGPU) != MemoryUsage::None)
+		else if ((desc.memoryUsage & MemoryUsage::CPUToGPU) != MemoryUsage::None)
 		{
 			createFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 		}
-		else if ((memoryUsage & MemoryUsage::GPUToCPU) != MemoryUsage::None)
+		else if ((desc.memoryUsage & MemoryUsage::GPUToCPU) != MemoryUsage::None)
 		{
 			createFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
 		}
 
-		if ((memoryUsage & MemoryUsage::Dedicated) != MemoryUsage::None)
+		if ((desc.memoryUsage & MemoryUsage::Dedicated) != MemoryUsage::None)
 		{
 			createFlags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 		}
@@ -115,15 +108,15 @@ namespace Volt::RHI
 
 		VmaAllocationInfo allocInfo{};
 
-		Handle<VulkanBufferAllocation> allocation = m_bufferAllocationArena.Allocate(hash, name);
+		Handle<VulkanBufferAllocation> allocation = m_bufferAllocationArena.Allocate(hash, desc.debugName);
 		VT_VK_CHECK(vmaCreateBuffer(m_allocator, &bufferInfo, &allocCreateInfo, &allocation->m_resource, &allocation->m_allocation, &allocInfo));
 
-		allocation->m_size = size;
+		allocation->m_size = byteSize;
 
 		return allocation;
 	}
 
-	Handle<Allocation> VulkanDefaultGPUAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> VulkanDefaultGPUAllocator::CreateImage(const ImageDesc& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 

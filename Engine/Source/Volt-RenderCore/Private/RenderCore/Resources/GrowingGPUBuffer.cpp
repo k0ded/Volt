@@ -8,7 +8,14 @@ namespace Volt
 {
 	GrowingGPUBuffer::GrowingGPUBuffer(uint32_t initialCount, uint64_t elementSize, const std::string& name, RHI::BufferUsage bufferUsage, RHI::MemoryUsage memoryUsage)
 	{
-		m_buffer = BindlessResource<RHI::StorageBuffer>::CreateRef(initialCount, elementSize, name, bufferUsage, memoryUsage);
+		RHI::BufferDesc desc{};
+		desc.count = initialCount;
+		desc.elementSize = elementSize;
+		desc.debugName = name;
+		desc.usage = bufferUsage;
+		desc.memoryUsage = memoryUsage;
+
+		m_buffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 	}
 
 	GrowingGPUBuffer::~GrowingGPUBuffer()

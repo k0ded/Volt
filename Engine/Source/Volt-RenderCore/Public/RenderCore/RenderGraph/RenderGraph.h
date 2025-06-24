@@ -2,63 +2,34 @@
 
 #include "RenderCore/Config.h"
 
-#include "RenderCore/RenderGraph/RenderGraphPass.h"
-#include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
-#include "RenderCore/RenderGraph/RenderContext.h"
-#include "RenderCore/RenderGraph/SharedRenderContext.h"
+#include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 #include "RenderCore/RenderGraph/RenderGraphAllocators.h"
+#include "RenderCore/RenderGraph/ShaderParameterStruct.h"
+#include "RenderCore/TransientResourceSystem/TransientResourceSystem.h"
 
-#include "RenderCore/TransientResourceSystem/TransientResourceSystem.h" 
-
-#include "RenderCore/Debug/ShaderRuntimeValidator.h"
-
+#include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Images/Image.h>
+#include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Core/ResourceStateTracker.h>
 
-#include <CoreUtilities/Containers/Map.h>
-#include <CoreUtilities/Containers/ThreadSafeVector.h>
-#include <CoreUtilities/Containers/VectorVariants.h>
-
-#include <string_view>
-#include <functional>
-
-// TODO:
-// * Implement validation system 
-// * Implement warning system
+#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/EnumUtils.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
 	namespace RHI
 	{
 		class CommandBuffer;
-		class Image2D;
-		class StorageBuffer;
-		class UniformBuffer;
-		class MemoryPool;
+		struct ResourceState;
 	}
 
-	class RenderGraphPassResources;
-	struct RenderGraphResourceNodeBase;		
-	struct RenderGraphPassNodeBase;
-
-	struct RenderGraphImageDesc;
-	struct RenderGraphBufferDesc;
-
 	class GPUReadbackBuffer;
-	class GPUReadbackImage;
-
-	struct ResourceUsageInfo
-	{
-		RenderGraphResourceHandle resourceHandle;
-		ResourceType type;
-		RHI::ResourceState newState;
-	};
+	class GPUReadbackTexture;
 
 	class VTRC_API RenderGraph
 	{
 	public:
-		typedef std::function<void(RefPtr<RHI::CommandBuffer> commandBuffer)> MarkerFunction;
-		typedef std::function<void(const uint64_t allocatedSize)> TotalAllocatedSizeCallback;
-
 		RenderGraph(RefPtr<RHI::CommandBuffer> commandBuffer);
 		~RenderGraph();
 
@@ -68,30 +39,50 @@ namespace Volt
 		RenderGraph(const RenderGraph& other) = delete;
 		RenderGraph& operator=(const RenderGraph& other) = delete;
 
-		class VTRC_API Builder
+		RGBufferRef CreateBuffer(const RGBufferDesc& desc);
+		RGTextureRef CreateTexture(const RGTextureDesc& desc);
+		RGUniformBufferRef CreateUniformBuffer(const RGUniformBufferDesc& desc);
+
+		RGBufferSRVRef CreateSRV(const RGBufferSRVDesc& desc);
+		RGBufferUAVRef CreateUAV(const RGBufferUAVDesc& desc);
+		RGBufferSRVRef CreateSRV(RGBufferRef buffer);
+		RGBufferUAVRef CreateUAV(RGBufferRef buffer);
+		RGBufferSRVRef CreateSRV(RGBufferRef buffer, RHI::PixelFormat format);
+		RGBufferUAVRef CreateUAV(RGBufferRef buffer, RHI::PixelFormat format);
+
+		RGTextureSRVRef CreateSRV(const RGTextureSRVDesc& desc);
+		RGTextureUAVRef CreateUAV(const RGTextureUAVDesc& desc);
+		RGTextureSRVRef CreateSRV(RGTextureRef texture);
+		RGTextureUAVRef CreateUAV(RGTextureRef texture);
+
+		RGBufferRef RegisterExternalBuffer(RefPtr<RHI::StorageBuffer> buffer);
+		RGUniformBufferRef RegisterExternalUniformBuffer(RefPtr<RHI::UniformBuffer> uniformBuffer);
+		RGTextureRef RegisterExternalTexture(RefPtr<RHI::Image> texture);
+
+		Ref<GPUReadbackBuffer> EnqueueBufferReadback(RGBufferRef srcBuffer);
+		Ref<GPUReadbackTexture> EnqueueTextureReadback(RGTextureRef srcTexture);
+
+		void EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage);
+		void EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::StorageBuffer>* outBuffer);
+
+		void BeginMarker(const std::string& markerName, const glm::vec4& markerColor = 1.f);
+		void EndMarker();
+
+		void AddResourceBarrier(RGResourceRef resourceHandle, const RHI::ResourceState& barrierInfo);
+
+		template<typename T>
+		T* AllocParameters()
 		{
-		public:
-			Builder(RenderGraph& renderGraph, Handle<RenderGraphPassNodeBase> pass);
+			return m_passParametersAllocator.Allocate<T>();
+		}
 
-			RenderGraphImageHandle CreateImage(const RenderGraphImageDesc& textureDesc, RenderGraphResourceState forceState = RenderGraphResourceState::None);
-			RenderGraphBufferHandle CreateBuffer(const RenderGraphBufferDesc& bufferDesc, RenderGraphResourceState forceState = RenderGraphResourceState::None);
-			RenderGraphUniformBufferHandle CreateUniformBuffer(const RenderGraphBufferDesc& bufferDesc, RenderGraphResourceState forceState = RenderGraphResourceState::None);
+		void* AllocData(size_t size)
+		{
+			return m_temporaryDataAllocator.Allocate(size);
+		}
 
-			RenderGraphImageHandle AddExternalImage(RefPtr<RHI::Image> image);
-			RenderGraphBufferHandle AddExternalBuffer(RefPtr<RHI::StorageBuffer> buffer);
-			RenderGraphUniformBufferHandle AddExternalUniformBuffer(RefPtr<RHI::UniformBuffer> buffer);
-
-			void SetHasSideEffect();
-			void SetIsComputePass();
-			void SetIsRayTracingPass();
-
-			void ReadResource(RenderGraphResourceHandle handle, RenderGraphResourceState forceState = RenderGraphResourceState::None);
-			void WriteResource(RenderGraphResourceHandle handle, RenderGraphResourceState forceState = RenderGraphResourceState::None);
-		
-		private:
-			RenderGraph& m_renderGraph;
-			Handle<RenderGraphPassNodeBase> m_pass;
-		};
+		template<typename ParameterStruct, typename ExecFunc>
+		void AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc);
 
 		void Compile();
 
@@ -100,73 +91,31 @@ namespace Volt
 		void ExecuteImmediate();
 		void ExecuteImmediateAndWait();
 
-		template<typename T, typename CreateFunc, typename ExecFunc>
-		T& AddPass(const std::string& name, CreateFunc&& createFunc, ExecFunc&& executeFunc);
-
-		template<typename CreateFunc, typename ExecFunc>
-		void AddPass(const std::string& name, CreateFunc&& createFunc, ExecFunc&& executeFunc);
-
-		void AddMappedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name);
-		void AddMappedBufferUpload(RenderGraphUniformBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name);
-		void AddStagedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size, const std::string& name);
-
-		void AddResourceBarrier(RenderGraphResourceHandle resourceHandle, const RenderGraphBarrierInfo& barrierInfo);
-		
-		Ref<GPUReadbackBuffer> EnqueueBufferReadback(RenderGraphBufferHandle sourceBuffer);
-		Ref<GPUReadbackImage> EnqueueImageReadback(RenderGraphImageHandle sourceImage);
-
-		void EnqueueImageExtraction(RenderGraphImageHandle resourceHandle, RefPtr<RHI::Image>& outImage);
-		void EnqueueBufferExtraction(RenderGraphBufferHandle resourceHandle, RefPtr<RHI::StorageBuffer>& outBuffer);
-
-		void BeginMarker(const std::string& markerName, const glm::vec4& markerColor = 1.f);
-		void EndMarker();
-
-		void SetTotalAllocatedSizeCallback(TotalAllocatedSizeCallback&& callback);
-
-		RenderGraphImageHandle AddExternalImage(RefPtr<RHI::Image> image);
-		RenderGraphBufferHandle AddExternalBuffer(RefPtr<RHI::StorageBuffer> buffer);
-		RenderGraphUniformBufferHandle AddExternalUniformBuffer(RefPtr<RHI::UniformBuffer> buffer);
-
-		RenderGraphImageHandle CreateImage(const RenderGraphImageDesc& textureDesc);
-		RenderGraphBufferHandle CreateBuffer(const RenderGraphBufferDesc& bufferDesc);
-		RenderGraphUniformBufferHandle CreateUniformBuffer(const RenderGraphBufferDesc& bufferDesc);
-
-		ResourceHandle GetImage(const RenderGraphImageHandle resourceHandle, const int32_t mip = -1, const int32_t layer = -1);
-		ResourceHandle GetImageArray(const RenderGraphImageHandle resourceHandle, const int32_t mip = -1);
-		ResourceHandle GetBuffer(const RenderGraphBufferHandle resourceHandle);
-		ResourceHandle GetUniformBuffer(const RenderGraphUniformBufferHandle resourceHandle);
-
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		ResourceHandle GetRuntimeShaderValidationErrorBuffer();
-#endif
-
-	private:
-		friend class RenderGraphPassResources;
-		friend class Builder;
-		friend class RenderGraphExecutionThread;
+	protected:
 		friend class RenderContext;
-		friend class RenderGraphDebugger;
+		friend class RenderGraphExecutionThread;
 
-		using FrameTemporaryDataAllocator = LinearAllocator<5 * 1024 * 1024>;
-
-		struct Image2DExtractionInfo
+		struct TextureExtractionInfo
 		{
-			RenderGraphImageHandle resourceHandle;
+			RGTextureRef texture;
 			RefPtr<RHI::Image>* outImagePtr = nullptr;
 		};
 
 		struct BufferExtractionInfo
 		{
-			RenderGraphBufferHandle resourceHandle;
+			RGBufferRef buffer;
 			RefPtr<RHI::StorageBuffer>* outBufferPtr = nullptr;
 		};
 
-		struct CompiledRenderGraphPass
+	public:
+		class CompiledPass
 		{
+		public:
 			struct BarrierInfo
 			{
 				RHI::ResourceBarrierInfo barrier;
-				RenderGraphResourceHandle resourceHandle = RenderGraphNullHandle{};
+				RGResourceRef resource = nullptr;
+				bool requiresExternalSrcState = false;
 			};
 
 			class PassBarriers
@@ -176,11 +125,12 @@ namespace Volt
 				VT_NODISCARD VT_INLINE size_t GetBarrierCount() const { return m_barriers.size(); }
 				VT_NODISCARD VT_INLINE bool Empty() const { return m_barriers.empty(); }
 
-				VT_NODISCARD VT_INLINE RHI::ResourceBarrierInfo& AddBarrier(RHI::BarrierType type, RenderGraphResourceHandle resourceHandle = RenderGraphNullHandle{})
+				VT_NODISCARD VT_INLINE RHI::ResourceBarrierInfo& AddBarrier(RHI::BarrierType type, RGResourceRef resource = nullptr, bool requiresExternalSrcState = false)
 				{
 					auto& barrierInfo = m_barriers.emplace_back();
 					barrierInfo.barrier.type = type;
-					barrierInfo.resourceHandle = resourceHandle;
+					barrierInfo.resource = resource;
+					barrierInfo.requiresExternalSrcState = requiresExternalSrcState;
 					return barrierInfo.barrier;
 				}
 
@@ -190,13 +140,12 @@ namespace Volt
 				}
 
 			private:
-				PagedVector<BarrierInfo> m_barriers;
+				Vector<BarrierInfo> m_barriers;
 			};
 
-			std::string_view name;
-			PagedVector<RenderGraphResourceHandle> surrenderableResources;
-			PassBarriers prePassBarriers;
-			PassBarriers postPassBarriers;
+			VT_INLINE void SetName(const std::string& name) { m_name = name; }
+			VT_INLINE void AddSurrenderableResource(RGResourceRef resource) { m_surrenderableResources.emplace_back(resource); }
+			VT_NODISCARD VT_INLINE const Vector<RGResourceRef>& GetSurrenderableResources() const { return m_surrenderableResources; }
 
 			// We only want maximum ONE global barrier per pass. As a single global barrier
 			// can represent multiple.
@@ -224,135 +173,183 @@ namespace Volt
 				return postPassBarriers.GetBarrier(static_cast<size_t>(m_postPassGlobalBarrierIndex)).globalBarrier();
 			}
 
+			PassBarriers prePassBarriers;
+			PassBarriers postPassBarriers;
+
 		private:
 			int32_t m_globalBarrierIndex = -1;
 			int32_t m_postPassGlobalBarrierIndex = -1;
+
+			Vector<RGResourceRef> m_surrenderableResources;
+			std::string_view m_name;
 		};
+	
+	protected:
 
 		class StandaloneBarriers
 		{
 		public:
+			struct ResourceUsageInfo
+			{
+				RGResourceRef resource;
+				RGResourceType type;
+				RHI::ResourceState newState;
+			};
+
 			VT_NODISCARD VT_INLINE ResourceUsageInfo& AddBarrier(uint32_t passIndex) { return m_passBarriers[passIndex].emplace_back(); }
 			VT_NODISCARD VT_INLINE std::span<const ResourceUsageInfo> GetPassBarriers(uint32_t passIndex) const { return m_passBarriers.at(passIndex); }
 			VT_NODISCARD VT_INLINE bool HasPassBarriers(uint32_t passIndex) const { return m_passBarriers.contains(passIndex) && !m_passBarriers.at(passIndex).empty(); }
 
 		private:
-			vt::map<uint32_t, PagedVector<ResourceUsageInfo>> m_passBarriers;
+			Map<uint32_t, Vector<ResourceUsageInfo>> m_passBarriers;
 		};
 
-		void ExecuteInternal(bool waitForCompletedExecution, bool waitForSync);
-
-		void DestroyResources();
-		void AllocateConstantsBuffer();
-		void ExtractResources();
-
-		void InitializeRuntimeShaderValidator();
-		void AddRuntimeShaderValidationBuffers(Builder& builder);
-
-		void PrintPassBarriers(const PagedVector<RHI::ResourceBarrierInfo>& barriers);
-
-		RawPtr<RHI::ImageView> GetImageView(const RenderGraphImageHandle resourceHandle);
-		RawPtr<RHI::Image> GetImageRaw(const RenderGraphImageHandle resourceHandle);
-		RawPtr<RHI::StorageBuffer> GetBufferRaw(const RenderGraphBufferHandle resourceHandle);
-		RawPtr<RHI::StorageBuffer> GetUniformBufferRaw(const RenderGraphUniformBufferHandle resourceHandle);
-		RawPtr<RHI::RHIResource> GetResourceRaw(const RenderGraphResourceHandle resourceHandle);
-
-		RefPtr<RHI::Image> GetImageRawRef(const RenderGraphImageHandle resourceHandle);
-		RefPtr<RHI::StorageBuffer> GetBufferRawRef(const RenderGraphBufferHandle resourceHandle);
-		RefPtr<RHI::StorageBuffer> GetUniformBufferRawRef(const RenderGraphUniformBufferHandle resourceHandle);
-
-		RenderGraphResourceHandle TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource);
-		void RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RenderGraphResourceHandle handle);
-
-		void InsertBarriersIntoCommandBuffer(const CompiledRenderGraphPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
-		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer> commandBuffer);
-
-		PagedVector<Image2DExtractionInfo> m_imageExtractions;
-		PagedVector<BufferExtractionInfo> m_bufferExtractions;
-
-		PagedVector<PagedVector<MarkerFunction>> m_standaloneMarkers; // Pass -> Markers
-
-		PagedVector<Handle<RenderGraphResourceNodeBase>> m_resourceNodes;
-		PagedVector<Handle<RenderGraphPassNodeBase>> m_passNodes;
-
-		StandaloneBarriers m_standaloneBarriers;
-
-		PagedVector<CompiledRenderGraphPass> m_compiledPasses;
-		
-		vt::map<RawPtr<RHI::RHIResource>, RenderGraphResourceHandle> m_registeredExternalResources;
-
-		struct RegisteredImageView
+		class StandaloneMarkers
 		{
-			ResourceHandle handle;
-			RHI::ImageViewType viewType;
+		public:
+			struct MarkerInfo
+			{
+				std::string markerName;
+				glm::vec4 markerColor;
+				bool isEnd;
+			};
+
+			void BeginMarker(uint32_t passIndex, const std::string& markerName, const glm::vec4& color);
+			void EndMarker(uint32_t passIndex);
+
+			VT_NODISCARD VT_INLINE bool PassHasMarkers(uint32_t passIndex) const { return m_markers.contains(passIndex); }
+			VT_NODISCARD VT_INLINE const Vector<MarkerInfo>& GetMarkersForPassIndex(uint32_t passIndex) { return m_markers.at(passIndex); }
+
+		private:
+			Map<uint32_t, Vector<MarkerInfo>> m_markers;
 		};
 
-		ThreadSafeVector<ResourceHandle, DefaultAllocator> m_registeredResources;
+		struct RGResourceState
+		{
+			Handle<RenderGraphPass> previousUsage;
+			RHI::ResourceState currentState;
+			bool isWriteState = false;
+		};
 
-		RenderGraphPassAllocator m_passAllocator;
-		RenderGraphResourceNodeAllocator m_resourceNodeAllocator;
-		FrameTemporaryDataAllocator m_frameTemporaryDataAllocator;
+		struct RGResourceStateTracker
+		{
+			inline RGResourceState& GetState(RGResourceRef resource) { return resourceStates[resource]; }
+			Map<RGResourceRef, RGResourceState> resourceStates;
+		};
+
+		using ExternalResourceRegistry = Map<RawPtr<RHI::RHIResource>, RGResourceRef>;
+
+		void ExecuteInternal(bool waitForSync);
+		void ExtractResources();
+		void TransitionExternalResources();
+
+		void InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
+		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer);
+
+		RGResourceRef TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource);
+		void RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RGResourceRef handle);
+
+		RefPtr<RHI::BufferView> GetRHIBufferSRV(RGBufferSRVRef bufferSRV);
+		RefPtr<RHI::BufferView> GetRHIBufferUAV(RGBufferUAVRef bufferUAV);
+
+		RefPtr<RHI::ImageView> GetRHITextureSRV(RGTextureSRVRef textureSRV);
+		RefPtr<RHI::ImageView> GetRHITextureUAV(RGTextureUAVRef textureUAV);
+		RefPtr<RHI::ImageView> GetRHITextureRT(RGTextureRef texture);
+
+		RefPtr<RHI::RHIResource> GetRHIResource(RGResourceRef resource);
+		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
+		RefPtr<RHI::UniformBuffer> GetRHIUniformBuffer(RGUniformBufferRef uniformBuffer);
+		RefPtr<RHI::Image> GetRHITexture(RGTextureRef texture);
+
+		// Private because we don't need to create a uniform buffer SRV
+		// outside of the Render Graph.
+		RGUniformBufferSRVRef CreateSRV(RGUniformBufferRef uniformBuffer);
+
+		TransientResourceSystem m_transientResourceSystem;
+		ExternalResourceRegistry m_registeredExternalResources;
+		StandaloneBarriers m_standaloneBarriers;
+		StandaloneMarkers m_standaloneMarkers;
+		RGResourceStateTracker m_resourceStateTracker;
+
+		RenderGraphResourceAllocator m_resourceAllocator; // Allocator for actual resources (Buffers, Textures)
+		RenderGraphResourceAllocator m_resourceAccessorAllocator; // Allocator for resource accessors (SRVs, UAVs)
+		RenderGraphResourceAllocator m_passParametersAllocator; // Allocator for pass parameters
+		RenderGraphPassAllocator m_passAllocator; // Allocator for RenderGraph passes.
+		LinearAllocator<1 * 1024 * 1024> m_temporaryDataAllocator; // Allocator for temporary data that needs to live during the execution of the render graph.
+	
+		Vector<TextureExtractionInfo> m_textureExtractions;
+		Vector<BufferExtractionInfo> m_bufferExtractions;
+
+		Vector<Handle<RenderGraphPass>> m_passes;
+		Vector<RGResourceRef> m_resources;
+
+		Vector<CompiledPass> m_compiledPasses;
 
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::Fence> m_executionFence;
-		RawPtr<RHI::UniformBuffer> m_renderGraphConstantsBuffer;
+	}; 
 
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		ShaderRuntimeValidator m_runtimeShaderValidator;
-#endif
-
-		TransientResourceSystem m_transientResourceSystem;
-
-		SharedRenderContext m_sharedRenderContext;
-
-		bool m_currentlyInBuilder = false;
-		bool m_hasBeenCompiled = false;
-
-		TotalAllocatedSizeCallback m_totalAllocatedSizeCallback;
-	};
-
-	template<typename T, typename CreateFunc, typename ExecFunc>
-	inline T& RenderGraph::AddPass(const std::string& name, CreateFunc&& createFunc, ExecFunc&& executeFunc)
+	template<typename ParameterStruct, typename ExecFunc>
+	void RenderGraph::AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc)
 	{
-		static_assert(sizeof(executeFunc) <= 1024 && "Execution function must not be larger than 1024 bytes!");
+		VT_PROFILE_FUNCTION();
 
-		Handle<RenderGraphPassNode<T>> newNode = m_passAllocator.AllocatePass<T>(name, std::forward<ExecFunc>(executeFunc));
-		
-		m_passNodes.emplace_back(newNode);
-		m_standaloneMarkers.emplace_back();
+		Handle<RenderGraphPass> newPass = m_passAllocator.AllocatePass(name, std::forward<ExecFunc>(executeFunc));
+		newPass->flags = flags;
 
-		m_currentlyInBuilder = true;
-		Builder builder{ *this, newNode };
-		createFunc(builder, newNode->data);
+		// Get all parameters accessed by shader.
+		// #TODO_Ivar: Add support for paged vector, or inline allocator
+		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
 
-		AddRuntimeShaderValidationBuffers(builder);
-		m_currentlyInBuilder = false;
+		// We need to use const_cast here because the resource parameters need to be non-const pointers.
+		uint8_t* parametersStructBytePtr = reinterpret_cast<uint8_t*>(const_cast<ParameterStruct*>(parameters));
 
-		return newNode->data;
-	}
-
-	template<typename CreateFunc, typename ExecFunc>
-	inline void RenderGraph::AddPass(const std::string& name, CreateFunc&& createFunc, ExecFunc&& executeFunc)
-	{
-		static_assert(sizeof(executeFunc) <= 1024 && "Execution function must not be larger than 1024 bytes!");
-
-		struct Empty {};
-
-		auto proxyExecuteFunc = [executeFunc](const Empty&, RenderContext& context)
+		for (const auto& parameter : parameterStructMetadata)
 		{
-			executeFunc(context);
-		};
+			uint8_t* dataPtr = &parametersStructBytePtr[parameter.structOffset];
 
-		Handle<RenderGraphPassNode<Empty>> newNode = m_passAllocator.AllocatePass<Empty>(name, std::move(proxyExecuteFunc));
+			switch (parameter.parameterType)
+			{
+				case ShaderParameterType::BufferSRV: newPass->AddResourceRead(*reinterpret_cast<RGBufferSRVRef*>(dataPtr)); break;
+				case ShaderParameterType::BufferUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
+				case ShaderParameterType::TextureSRV: newPass->AddResourceRead(*reinterpret_cast<RGTextureSRVRef*>(dataPtr)); break;
+				case ShaderParameterType::TextureUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
+				case ShaderParameterType::UniformBuffer:  
+				{
+					RGUniformBufferRef uniformBuffer = *reinterpret_cast<RGUniformBufferRef*>(dataPtr);
 
-		m_passNodes.emplace_back(newNode);
-		m_standaloneMarkers.emplace_back();
+					VT_ENSURE_MSG(uniformBuffer, "Uniform buffer must not be null!");
 
-		m_currentlyInBuilder = true;
-		Builder builder{ *this, newNode };
-		createFunc(builder);
+					newPass->AddResourceRead(CreateSRV(uniformBuffer));
+					break;
+				}
+				case ShaderParameterType::BufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGBufferRef*>(dataPtr), parameter.resourceAccessType); break;
+				case ShaderParameterType::TextureAccess: newPass->AddResourceAccess(*reinterpret_cast<RGTextureRef*>(dataPtr), parameter.resourceAccessType); break;
+				case ShaderParameterType::UniformBufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGUniformBufferRef*>(dataPtr), parameter.resourceAccessType); break;
+				case ShaderParameterType::RenderTargets:
+				{
+					VT_ENSURE(!EnumValueContainsFlag(flags, RenderGraphPassFlags::Compute));
 
-		AddRuntimeShaderValidationBuffers(builder);
-		m_currentlyInBuilder = false;
+					const ShaderParameterRenderTargetBindings& rtBindings = *reinterpret_cast<ShaderParameterRenderTargetBindings*>(dataPtr);
+
+					for (size_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
+					{
+						if (rtBindings.renderTargets[i] != nullptr)
+						{
+							newPass->AddResourceRenderTargetAccess(rtBindings.renderTargets[i]);
+						}
+					}
+
+					if (rtBindings.depthTarget != nullptr)
+					{
+						newPass->AddResourceRenderTargetAccess(rtBindings.depthTarget);
+					}
+
+					break;
+				}
+			}
+		}
+
+		m_passes.emplace_back(newPass);
 	}
 }

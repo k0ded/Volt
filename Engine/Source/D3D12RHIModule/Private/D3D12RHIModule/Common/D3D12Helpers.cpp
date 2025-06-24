@@ -3,7 +3,7 @@
 
 namespace Volt::RHI::Utility
 {
-	D3D12_RESOURCE_DESC1 GetD3D12ResourceDesc(const ImageSpecification& specification)
+	D3D12_RESOURCE_DESC1 GetD3D12ResourceDesc(const ImageDesc& specification)
 	{
 		D3D12_RESOURCE_DESC1 result{};
 

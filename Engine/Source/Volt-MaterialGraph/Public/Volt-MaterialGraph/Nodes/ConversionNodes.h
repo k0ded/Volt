@@ -3,6 +3,7 @@
 #include <Mosaic/MosaicNode.h>
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicHelpers.h>
+#include <Mosaic/MosaicShaderWriter.h>
 
 #include <Mosaic/FormatterExtension.h>
 
@@ -22,12 +23,13 @@ namespace Volt::MosaicNodes
 			AddOutputParameter("Result", BASE_TYPE, 3, DEFAULT_VALUE, false);
 		}
 
+		MOSAIC_NODE_DECLARE_GUID(GUID);
+
 		inline const std::string GetName() const override { return "Make " + Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO); }
 		inline const std::string GetCategory() const override { return "Conversion"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
-		inline const VoltGUID GetGUID() const override { return GUID; }
 
-		inline const Mosaic::ResultInfo GetShaderCode(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const override
+		inline const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override
 		{
 			constexpr const char* nodeStr = "const {0} {1} = {2}({3}, {4}, {5});";
 		
@@ -41,7 +43,7 @@ namespace Volt::MosaicNodes
 				const uint32_t paramIndex = edge.metaDataType->GetParameterInputIndex();
 
 				const auto& node = underlyingNode.GetNodeFromID(edge.startNode);
-				const Mosaic::ResultInfo info = node.nodeData->GetShaderCode(node, edge.metaDataType->GetParameterOutputIndex(), appendableShaderString);
+				const Mosaic::ResultInfo info = node.nodeData->Compile(node, edge.metaDataType->GetParameterOutputIndex(), shaderWriter);
 
 				if (paramIndex == 0)
 				{
@@ -61,7 +63,7 @@ namespace Volt::MosaicNodes
 			
 			const auto typeString = Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO);
 			std::string result = std::format(nodeStr, typeString, varName, typeString, R, G, B);
-			appendableShaderString.append(result);
+			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};
 			resultInfo.resultParamName = varName;
@@ -89,12 +91,13 @@ namespace Volt::MosaicNodes
 			AddOutputParameter("Result", BASE_TYPE, 4, DEFAULT_VALUE, false);
 		}
 
+		MOSAIC_NODE_DECLARE_GUID(GUID);
+
 		inline const std::string GetName() const override { return "Make " + Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO); }
 		inline const std::string GetCategory() const override { return "Conversion"; }
 		inline const glm::vec4 GetColor() const override { return 1.f; }
-		inline const VoltGUID GetGUID() const override { return GUID; }
 
-		inline const Mosaic::ResultInfo GetShaderCode(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const override
+		inline const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override
 		{
 			constexpr const char* nodeStr = "const {0} {1} = {2}({3}, {4}, {5}, {6});";
 
@@ -109,7 +112,7 @@ namespace Volt::MosaicNodes
 				const uint32_t paramIndex = edge.metaDataType->GetParameterInputIndex();
 
 				const auto& node = underlyingNode.GetNodeFromID(edge.startNode);
-				const Mosaic::ResultInfo info = node.nodeData->GetShaderCode(node, edge.metaDataType->GetParameterOutputIndex(), appendableShaderString);
+				const Mosaic::ResultInfo info = node.nodeData->Compile(node, edge.metaDataType->GetParameterOutputIndex(), shaderWriter);
 
 				if (paramIndex == 0)
 				{
@@ -133,7 +136,7 @@ namespace Volt::MosaicNodes
 
 			const auto typeString = Mosaic::Helpers::GetTypeNameFromTypeInfo(TYPE_INFO);
 			std::string result = std::format(nodeStr, typeString, varName, typeString, R, G, B, A);
-			appendableShaderString.append(result);
+			shaderWriter.AppendCodeBlock(result);
 
 			Mosaic::ResultInfo resultInfo{};
 			resultInfo.resultParamName = varName;

@@ -1,161 +1,167 @@
 #include "jspch.h"
-#include "JobSystem.h"
+#include "JobSystem/JobSystem.h"
 
 #include <Volt-Platforms/Platform.h>
 
 #include <EventSystem/ApplicationEvents.h>
 
-#include <CoreUtilities/Random.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(JobSystem, Minimal, PreEngine, 3);
 
-	JobSystem::JobSystem()
-	{
+    JobSystem::JobSystem()
+    {
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
 
 		RegisterListener<AppUpdateEvent>(VT_BIND_EVENT_FN(JobSystem::OnUpdate));
-	}
+    }
 
-	JobSystem::~JobSystem()
-	{
+    JobSystem::~JobSystem()
+    {
 		s_instance = nullptr;
+    }
+
+	JobCounter* JobSystem::CreateCounter()
+	{
+		return s_instance->AllocateCounter();
 	}
 
-	JobID JobSystem::CreateJob(const std::function<void()>& task)
+	void JobSystem::DestroyCounter(JobCounter* counter)
 	{
+		counter->DecRef();
+	}
+
+	void JobSystem::RunJob(Job* job)
+	{
+		VT_PROFILE_FUNCTION();
 		VT_ENSURE(s_instance);
-		return CreateJob(ExecutionPolicy::WorkerThread, task);
-	}
 
-	JobID JobSystem::CreateJob(ExecutionPolicy executionPolicy, const std::function<void()>& task)
-	{
-		auto [jobPtr, jobId] = s_instance->AllocateJobInternal(executionPolicy, task);
-		return jobId;
-	}
-
-	JobID JobSystem::CreateAndRunJob(const std::function<void()>& task)
-	{
-		return CreateAndRunJob(ExecutionPolicy::WorkerThread, task);
-	}
-
-	JobID JobSystem::CreateAndRunJob(ExecutionPolicy executionPolicy, const std::function<void()>& task)
-	{
-		JobID jobId = CreateJob(executionPolicy, task);
-		RunJob(jobId);
-
-		return jobId;
-	}
-
-	JobID JobSystem::CreateJobAsChild(JobID parentJob, const std::function<void()>& task)
-	{
-		return CreateJobAsChild(ExecutionPolicy::WorkerThread, parentJob, task);
-	}
-
-	JobID JobSystem::CreateJobAsChild(ExecutionPolicy executionPolicy, JobID parentJob, const std::function<void()>& task)
-	{
-		VT_ENSURE(s_instance);
-		VT_ENSURE_MSG(parentJob != INVALID_JOB_ID, "The parent job must be a valid job ID!");
-
-		auto [jobPtr, jobId] = s_instance->AllocateJobInternal(executionPolicy, task, parentJob);
-		return jobId;
-	}
-
-	void JobSystem::DestroyJob(JobID jobId)
-	{
-		VT_ENSURE(s_instance);
-		VT_ENSURE_MSG(jobId != INVALID_JOB_ID, "The job id must be a valid job ID!");
-		s_instance->m_allocator.FreeJob(jobId);
-	}
-
-	void JobSystem::WaitForJob(JobID jobId)
-	{
-		VT_ENSURE(s_instance);
-		VT_ENSURE_MSG(jobId != INVALID_JOB_ID, "The job id must be a valid job ID!");
-
-		Job* job = s_instance->m_allocator.GetJobFromID(jobId);
-		if (!job)
+		// Enqueue job if it's ready to run, otherwise push to waiting list.
+		if (job->GetWaitCounter()->IsCompleted())
 		{
-			return;
+			if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
+			{
+				const uint32_t nextQueueToPush = s_instance->m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % s_instance->m_numWorkers;
+				s_instance->m_workers.at(nextQueueToPush)->workQueue.Emplace(job);
+				s_instance->m_wakeCondition.notify_all();
+			}
+			else
+			{
+				s_instance->m_mainThreadQueue.Emplace(job);
+			}
+		}
+		else
+		{
+			s_instance->PushToWaitingList(job);
+		}
+	}
+
+	void JobSystem::RunJobs(std::span<Job*> jobs)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE(s_instance);
+
+		const uint32_t numJobs = static_cast<uint32_t>(jobs.size());
+		const uint32_t numJobsPerWorker = numJobs / s_instance->m_numWorkers;
+		const uint32_t remainder = numJobs - numJobsPerWorker * s_instance->m_numWorkers;
+
+		for (uint32_t worker = 0; worker < s_instance->m_numWorkers; ++worker)
+		{
+			const uint32_t numJobsOnWorker = numJobsPerWorker + (worker == (s_instance->m_numWorkers - 1) ? remainder : 0);
+
+			// #TODO_Ivar: Replace with multiple emplace in work queue.
+			for (uint32_t index = 0; index < numJobsOnWorker; ++index)
+			{
+				const uint32_t jobIndex = numJobsPerWorker * worker + index;
+				s_instance->m_workers.at(worker)->workQueue.Emplace(jobs[jobIndex]);
+			}
 		}
 
-		while (!s_instance->HasCompletedJob(job))
+		s_instance->m_wakeCondition.notify_all();
+	}
+
+	void JobSystem::WaitForCounter(JobCounter* counter)
+	{
+		VT_PROFILE_FUNCTION();
+
+		uint32_t workerId = 0;
+		if (s_instance->m_workerThreadIDToIndex.contains(std::this_thread::get_id()))
 		{
-			Job* nextJob = s_instance->TryGetJob(0);
-			if (nextJob)
+			workerId = s_instance->m_workerThreadIDToIndex.at(std::this_thread::get_id());
+		}
+
+		while (!counter->IsCompleted())
+		{
+			Job* jobPtr = s_instance->TryGetJob(workerId);
+			if (jobPtr)
 			{
-				s_instance->ExecuteJob(nextJob);
+				{
+					VT_PROFILE_SCOPE(jobPtr->GetName().data());
+					jobPtr->Execute();
+				}
+
+				s_instance->FinishJob(jobPtr);
+			}
+			else
+			{
+				s_instance->FlushWaitingList();
 			}
 		}
 	}
 
-	void JobSystem::RunJob(JobID jobId)
+	void JobSystem::WaitForAndDestroyCounter(JobCounter*& counter)
 	{
-		VT_ENSURE(s_instance);
-		VT_ENSURE_MSG(jobId != INVALID_JOB_ID, "The job id must be a valid job ID!");
+		WaitForCounter(counter);
+		DestroyCounter(counter);
 
-		auto& internalState = s_instance->m_internalState;
-		Job* jobPtr = s_instance->m_allocator.GetJobFromID(jobId);
-
-		if (jobPtr->executionPolicy == ExecutionPolicy::WorkerThread)
-		{
-			const uint32_t nextQueueToPush = internalState.nextQueueToPush.fetch_add(1) % internalState.workerCount;
-			internalState.jobQueues.at(nextQueueToPush).Push(jobPtr);
-			internalState.wakeCondition.notify_one();
-		}
-		else if (jobPtr->executionPolicy == ExecutionPolicy::MainThread)
-		{
-			internalState.mainThreadQueue.Push(jobPtr);
-		}
-	}
-
-	void JobSystem::ExecuteMainThreadJobs()
-	{
-		auto& internalState = m_internalState;
-
-		Job* jobPtr = internalState.mainThreadQueue.Pop();
-		while (jobPtr)
-		{
-			jobPtr->func();
-			FinishJob(jobPtr, m_allocator);
-			jobPtr = internalState.mainThreadQueue.Pop();
-		}
+		counter = nullptr;
 	}
 
 	void JobSystem::Initialize()
-	{
-		// Initialize num cores - 2 threads.
-		const uint32_t hardwareConcurrency = std::thread::hardware_concurrency() - 2;
-		m_internalState.workerCount = hardwareConcurrency;
-		m_internalState.jobQueues.resize(m_internalState.workerCount);
-		m_internalState.jobGroups.resize(MAX_JOB_GROUP_COUNT);
+    {
+		m_isAlive = true;
+		const uint32_t hardwareConcurrency = PlatformMisc::GetNumberOfPhysicalCores();
+		m_numWorkers = hardwareConcurrency;
 
-		for (uint32_t i = 0; i < hardwareConcurrency; i++)
+		m_mainThreadQueue.Allocate(1024);
+		m_workers.reserve(m_numWorkers);
+		m_workerThreadIDToIndex.reserve(m_numWorkers);
+
+		for (uint32_t i = 0; i < hardwareConcurrency; ++i)
 		{
-			auto& worker = m_workerThreads.emplace_back(std::bind(&JobSystem::SpawnWorker, this, i));
+			JobWorker* worker = m_workers.emplace_back(AllocateWorker(i));
+			worker->thread = std::thread(std::bind(&JobSystem::SpawnWorker, this, i));
+			
+			worker->workQueue.Allocate(NumMaxJobsPerQueue);
 
-			const uint64_t core = i + 2;
-			PlatformThread::AssignThreadToCore(worker.native_handle(), 1ull << core);
-			PlatformThread::SetThreadPriority(worker.native_handle(), ThreadPriority::High);
+			PlatformThread::AssignThreadToCore(worker->thread.native_handle(), 1ull << i);
+			PlatformThread::SetThreadPriority(worker->thread.native_handle(), ThreadPriority::High);
 
 			std::string threadName = std::format("Volt::Worker {}", i);
-			PlatformThread::SetThreadName(worker.native_handle(), threadName);
+			PlatformThread::SetThreadName(worker->thread.native_handle(), threadName);
 		}
-	}
+
+		// Notify all threads that they are allowed to run.
+		m_wakeCondition.notify_all();
+    }
 
 	void JobSystem::Shutdown()
-	{
-		// Kill the job system, and wake all threads
-		m_internalState.alive = false;
-		m_internalState.wakeCondition.notify_all();
+    {
+		m_isAlive = false;
+		m_wakeCondition.notify_all();
 
-		for (auto& w : m_workerThreads)
+		for (auto worker : m_workers)
 		{
-			w.join();
+			worker->thread.join();
+
+			// We need to manually call the destructor
+			// because the worker is allocated in a linear allocator.
+			worker->~JobWorker();
 		}
-	}
+    }
 
 	bool JobSystem::OnUpdate(AppUpdateEvent& event)
 	{
@@ -163,89 +169,173 @@ namespace Volt
 		return false;
 	}
 
-	JobSystem::AllocatedJob JobSystem::AllocateJobInternal(ExecutionPolicy executionPolicy, const std::function<void()>& task, JobID parentJob)
+	void JobSystem::ExecuteMainThreadJobs()
 	{
-		auto [newJob, jobId] = m_allocator.AllocateJob();
-		newJob->unfinishedJobs = 1;
-		newJob->func = task;
-		newJob->executionPolicy = executionPolicy;
-
-		if (parentJob != INVALID_JOB_ID)
+		Job* jobPtr;
+		while (m_mainThreadQueue.Pop(jobPtr))
 		{
-			Job* parentJobPtr = m_allocator.GetJobFromID(parentJob);
-			PlatformAtomics::InterlockedIncrement(&parentJobPtr->unfinishedJobs);
-			newJob->parentJob = parentJob;
+			{
+				VT_PROFILE_SCOPE(jobPtr->GetName().data());
+				jobPtr->Execute();
+			}
+
+			FinishJob(jobPtr);
+		}
+	}
+
+	void JobSystem::SpawnWorker(uint32_t workerId)
+	{
+		m_workerThreadIDToIndex[std::this_thread::get_id()] = workerId;
+
+		// Wait here for all threads to be created.
+		{
+			std::unique_lock<std::mutex> spawnLock(m_wakeMutex);
+			m_wakeCondition.wait(spawnLock);
 		}
 
-		return { newJob, jobId };
+		while (m_isAlive.load(std::memory_order::relaxed))
+		{
+			Job* jobPtr = TryGetJob(workerId);
+
+			if (jobPtr)
+			{
+				{
+					VT_PROFILE_SCOPE(jobPtr->GetName().data());
+					jobPtr->Execute();
+				}
+
+				FinishJob(jobPtr);
+			}
+			else if (!FlushWaitingList())
+			{
+				std::unique_lock<std::mutex> lock(m_wakeMutex);
+				m_wakeCondition.wait(lock);
+			}
+		}
 	}
 
 	Job* JobSystem::TryGetJob(uint32_t workerId)
 	{
-		auto& workerQueue = m_internalState.jobQueues.at(workerId);
+		auto& worker = m_workers.at(workerId);
 
-		Job* job = workerQueue.Pop();
-		if (!job)
+		Job* job = nullptr;
+		if (!worker->workQueue.Pop(job))
 		{
-			uint32_t currentQueue = (workerId + 1) % m_internalState.workerCount;
+			uint32_t currentQueue = (workerId + 1) % m_numWorkers;
 
 			while (currentQueue != workerId)
 			{
-				auto& stealingQueue = m_internalState.jobQueues.at(currentQueue);
-				Job* stolenJob = stealingQueue.Steal();
-				if (stolenJob)
+				auto& stealingQueue = m_workers.at(currentQueue)->workQueue;
+				if (stealingQueue.Pop(job))
 				{
-					return stolenJob;
+					return job;
 				}
 
-				currentQueue = (currentQueue + 1) % m_internalState.workerCount;
+				currentQueue = (currentQueue + 1) % m_numWorkers;
 			}
 		}
 
 		return job;
 	}
 
-	void JobSystem::SpawnWorker(uint32_t workerId)
+	JobSystem::JobWorker* JobSystem::AllocateWorker(uint32_t workerId)
 	{
-		while (m_internalState.alive.load())
-		{
-			Job* job = TryGetJob(workerId);
-			const bool foundWork = job != nullptr;
+		constexpr size_t WorkerSize = sizeof(JobWorker);
+		void* allocatedPtr = m_workerAllocator.Allocate(WorkerSize);
+		JobWorker* worker = new(allocatedPtr) JobWorker();
 
-			if (foundWork)
+		return worker;
+	}
+
+	void JobSystem::FinishJob(Job* jobPtr)
+	{
+		JobCounter* counter = jobPtr->GetCounter();
+		JobCounter* waitCounter = jobPtr->GetWaitCounter();
+
+		int32_t oldCount = counter->Decrement();
+		if (oldCount == 1)
+		{
+			// Mark as freed by setting value to < 0.
+			counter->Decrement();
+		}
+
+		counter->DecRef();
+		waitCounter->DecRef();
+		jobPtr->DecRef();
+	}
+
+	JobCounter* JobSystem::AllocateCounter(bool initializeWithRef)
+	{
+		JobCounter* counter = m_counterAllocator.Allocate();
+
+		if (initializeWithRef)
+		{
+			counter->IncRef();
+		}
+
+		return counter;
+	}
+
+	Job* JobSystem::AllocateJob()
+	{
+		Job* job = m_jobAllocator.Allocate();
+		job->IncRef();
+
+		return job;
+	}
+
+	void JobSystem::FreeCounter(JobCounter* counter)
+	{
+		VT_ENSURE_MSG(counter->IsCompleted(), "Counter must be completed!");
+		counter->Reset();
+		m_counterAllocator.Free(counter);
+	}
+
+	void JobSystem::FreeJob(Job* job)
+	{
+		job->Reset();
+		m_jobAllocator.Free(job);
+	}
+
+	void JobSystem::PushToWaitingList(Job* job)
+	{
+		m_waitingList.Push(job);
+	}
+
+	bool JobSystem::FlushWaitingList()
+	{
+		if (m_waitingList.Size() == 0)
+		{
+			return false;
+		}
+
+		// Use a lock here to make sure that only one thread flushes at a time.
+		std::scoped_lock lock{ m_waitingListMutex };
+
+		Vector<Job*> nonReadyJobs;
+		nonReadyJobs.reserve(128);
+
+		bool anyJobRun = false;
+
+		Job* jobPtr;
+		while (m_waitingList.Pop(jobPtr))
+		{
+			if (jobPtr->GetWaitCounter()->IsCompleted())
 			{
-				ExecuteJob(job);
+				RunJob(jobPtr);
+				anyJobRun |= true;
 			}
 			else
 			{
-				std::unique_lock<std::mutex> lock{ m_internalState.wakeMutex };
-				m_internalState.wakeCondition.wait(lock);
+				nonReadyJobs.emplace_back(jobPtr);
 			}
 		}
-	}
 
-	void JobSystem::ExecuteJob(Job* job)
-	{
-		job->func();
-		FinishJob(job, m_allocator);
-	}
-
-	void JobSystem::FinishJob(Job* job, JobAllocator& allocator)
-	{
-		const long unfinishedJobs = PlatformAtomics::InterlockedDecrement(&job->unfinishedJobs);
-		if (unfinishedJobs == 0)
+		for (auto job : nonReadyJobs)
 		{
-			if (job->parentJob != INVALID_JOB_ID)
-			{
-				FinishJob(allocator.GetJobFromID(job->parentJob), allocator);
-			}
-
-			allocator.FreeJob(job);
+			m_waitingList.Push(job);
 		}
-	}
 
-	bool JobSystem::HasCompletedJob(Job* job)
-	{
-		return job->unfinishedJobs == 0;
+		return anyJobRun;
 	}
 }

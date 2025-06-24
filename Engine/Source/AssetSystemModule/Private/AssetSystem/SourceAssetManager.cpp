@@ -56,10 +56,11 @@ namespace Volt
 		}
 
 		auto resultPromise = CreateRef<JobPromise<Vector<Ref<Asset>>>>();
-		JobID importJobId = JobSystem::CreateJob([this, extension, importFunc, resultPromise, importConfig]()
-		{
-			VT_PROFILE_SCOPE("Import Asset Job");
 
+		// Create a counter which we supply to the promise.
+		JobCounterRef importCounter = JobSystem::CreateCounter();
+		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", importCounter, [this, extension, importFunc, resultPromise, importConfig]()
+		{
 			auto result = importFunc();
 
 			if (importConfig.createAsMemoryAsset)
@@ -87,11 +88,11 @@ namespace Volt
 			m_wakeCondition.notify_one();
 		});
 
-		resultPromise->SetAssociatedJob(importJobId);
+		resultPromise->SetAssociatedCounter(importCounter);
 
 		ImportJob importJob;
 		importJob.resultPromise = resultPromise;
-		importJob.jobId = importJobId;
+		importJob.job = importJobRef;
 		importJob.debugString = filepath.string();
 
 		auto& importQueue = GetOrCreateQueue(extension);
@@ -112,10 +113,8 @@ namespace Volt
 			return;
 		}
 
-		JobID importJobId = JobSystem::CreateJob([this, extension, importFunc, importedCallback, importConfig]()
+		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", [this, extension, importFunc, importedCallback, importConfig]()
 		{
-			VT_PROFILE_SCOPE("Import Asset Job");
-
 			auto result = importFunc();
 
 			if (importConfig.createAsMemoryAsset)
@@ -140,14 +139,15 @@ namespace Volt
 			*m_isImporterInUseMap[extension] = false;
 			m_wakeCondition.notify_one();
 
-			JobSystem::CreateAndRunJob(ExecutionPolicy::MainThread, [importedCallback, result]()
+			JobRef callbackJob = JobSystem::CreateJob("Import Callback", ExecutionPolicy::MainThread, [importedCallback, result]() 
 			{
 				importedCallback(result);
 			});
+			JobSystem::RunJob(callbackJob);
 		});
 
 		ImportJob importJob;
-		importJob.jobId = importJobId;
+		importJob.job = importJobRef;
 		importJob.debugString = filepath.string();
 
 		auto& importQueue = GetOrCreateQueue(extension);
@@ -203,7 +203,7 @@ namespace Volt
 				if (queue->try_pop(jobHolder))
 				{
 					*m_isImporterInUseMap[ext] = true;
-					JobSystem::RunJob(jobHolder.jobId);
+					JobSystem::RunJob(jobHolder.job);
 				}
 			}
 

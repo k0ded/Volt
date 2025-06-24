@@ -1,104 +1,86 @@
 #pragma once
 
-#include "RenderGraphResourceHandle.h"
-
-#include <RHIModule/Descriptors/ResourceHandle.h>
-#include <RHIModule/Core/RHICommon.h>
-
 #include <CoreUtilities/Allocators/Handle.h>
+#include <CoreUtilities/Allocators/InlineAllocator.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
+
+// #TODO_Ivar: Switch to our own version.
+#include <bitset>
+#include <algorithm>
 
 namespace Volt
 {
-	namespace RHI
-	{
-		class Image2D;
-		class StorageBuffer;
-		class UniformBuffer;
-	}
+	class RenderGraphPass;
 
-	class RenderGraph;
-	struct RenderGraphPassNodeBase;
-
-	enum class ResourceType
+	enum class RGResourceType : uint8_t
 	{
-		Image2D,
-		Image3D,
+		Texture,
 		Buffer,
 		UniformBuffer
 	};
 
-	struct RenderGraphBarrierInfo
+	enum class RGResourceAccess : uint8_t
 	{
-		RHI::BarrierStage dstStage;
-		RHI::BarrierAccess dstAccess;
-
-		// Only images
-		RHI::ImageLayout dstLayout;
+		None,
+		IndirectArg,
+		VertexBuffer,
+		IndexBuffer,
+		CopyDst,
+		CopySrc
 	};
 
-	struct RenderGraphResourceNodeBase
-	{
-		virtual ~RenderGraphResourceNodeBase() = default;
+	class RGResourceSRV;
+	class RGResourceUAV;
 
-		uint32_t refCount = 0;
-		size_t hash = 0;
-
-		Handle<RenderGraphPassNodeBase> producer;
-		Handle<RenderGraphPassNodeBase> lastUsage;
-
-		RenderGraphResourceHandle handle;
-
-		bool isExternal = false;
-		bool isGlobal = false;
-
-		virtual ResourceType GetResourceType() const = 0;
-
-		template<typename T>
-		T& As()
-		{
-			static_assert(std::is_base_of_v<RenderGraphResourceNodeBase, T>);
-			return *reinterpret_cast<T*>(this);
-		}
-	};
-
-	template<typename T>
-	struct RenderGraphResourceNode : public RenderGraphResourceNodeBase
-	{
-		RenderGraphResourceNode() = default;
-		~RenderGraphResourceNode() override = default;
-
-		T resourceInfo;
-
-		VT_INLINE ResourceType GetResourceType() const override { return resourceInfo.GetType(); }
-	};
-
-	class VTRC_API RenderGraphPassResources
+	class RGResource
 	{
 	public:
-		RenderGraphPassResources(RenderGraph& renderGraph, RenderGraphPassNodeBase& pass);
-		
-		ResourceHandle GetImage(const RenderGraphImageHandle resourceHandle, const int32_t mip = -1, const int32_t layer = -1) const;
-		ResourceHandle GetBuffer(const RenderGraphBufferHandle resourceHandle) const;
-		ResourceHandle GetUniformBuffer(const RenderGraphUniformBufferHandle resourceHandle) const;
+		virtual ~RGResource() = default;
+		virtual RGResourceType GetResourceType() const = 0;
+
+		// Checks if this UAV description has been produced.
+		virtual bool HasProducer(RGResourceUAV* uav) const = 0;
+
+		// Checks if this resource has been produced at all.
+		virtual bool HasProducer() const = 0;
+
+		// Adds a producer that produces the specific UAV desc
+		virtual void AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav) = 0;
+
+		// Adds a producer that produces the entire resource.
+		virtual void AddProducer(Handle<RenderGraphPass> pass) = 0;
+
+		VT_INLINE bool IsProducer(Handle<RenderGraphPass> pass) { auto it = std::find(producers.begin(), producers.end(), pass); return it != producers.end(); }
+		VT_INLINE bool IsFirstProducer(Handle<RenderGraphPass> pass) { return (!producers.empty() && producers.front() == pass); }
+
+		VT_INLINE void AddRef() { ++m_refCount; }
+		VT_INLINE void DecRef() { --m_refCount; }
+		VT_INLINE uint32_t GetRefCount() const { return m_refCount; }
+
+		// Note: We assume a maximum number of producers per resource here.
+		Vector<Handle<RenderGraphPass>, InlineAllocator<32>> producers;
+		Handle<RenderGraphPass> lastUser;
+
+		bool isExternal = false;
+		bool isExtracted = false;
 
 	private:
-		friend class RenderContext3;
-		friend class RenderContext;
-
-		void ValidateResourceAccess(const RenderGraphResourceHandle resourceHandle) const;
-
-		RenderGraph& m_renderGraph;
-		RenderGraphPassNodeBase& m_pass;
+		uint32_t m_refCount = 0;
 	};
 
-	struct RenderGraphResourceAccess
-	{
-		RHI::BarrierStage dstStage = RHI::BarrierStage::None;
-		RHI::BarrierAccess dstAccess = RHI::BarrierAccess::None;
-		
-		// Image only
-		RHI::ImageLayout dstLayout = RHI::ImageLayout::Undefined;
+	using RGResourceRef = RGResource*;
 
-		RenderGraphResourceHandle resourceHandle = std::numeric_limits<RenderGraphResourceHandle>::max();
- 	};
+	class RGResourceSRV
+	{
+	public:
+		virtual ~RGResourceSRV() = default;
+		virtual RGResourceRef GetResource() const = 0;
+	};
+
+	class RGResourceUAV
+	{
+	public:
+		virtual ~RGResourceUAV() = default;
+		virtual RGResourceRef GetResource() const = 0;
+	};
 }

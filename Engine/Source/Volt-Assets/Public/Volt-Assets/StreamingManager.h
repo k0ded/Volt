@@ -10,7 +10,6 @@
 #include <SubSystem/SubSystem.h>
 
 #include <CoreUtilities/UUID.h>
-#include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/Allocators/PagedArenaAllocator.h>
 
 #include <unordered_set>
@@ -46,7 +45,7 @@ namespace Volt
 
 	private:
 		std::mutex m_streamingInstancesMapMutex;
-		vt::map<AssetHandle, std::unordered_set<StreamingInstanceID>> m_streamingInstancesFromAssetHandle;
+		Map<AssetHandle, std::unordered_set<StreamingInstanceID>> m_streamingInstancesFromAssetHandle;
 		AssetUpdatedFunc m_callbackFunction;
 		AssetType m_assetType;
 		UUID64 m_assetUpdatedCallback = 0;
@@ -72,7 +71,7 @@ namespace Volt
 		bool Contains(StreamingInstanceID id) const;
 
 	private:
-		vt::map<StreamingInstanceID, StreamingInstance*> m_streamingInstances;
+		Map<StreamingInstanceID, StreamingInstance*> m_streamingInstances;
 		PagedArenaAllocator<StreamingInstance, 1024> m_instanceAllocator;
 		mutable std::mutex m_mutex;
 	};

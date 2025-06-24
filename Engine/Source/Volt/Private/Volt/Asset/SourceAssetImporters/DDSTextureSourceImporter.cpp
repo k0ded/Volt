@@ -108,13 +108,12 @@ namespace Volt
 		const uint32_t height = imageData->m_height;
 
 		RefPtr<RHI::Image> image;
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 
 		const uint32_t mipLevelCount = importConfig.importMipMaps ? ddsFile.GetMipCount() : 1u;
 
 		// Create image
 		{
-			RHI::ImageSpecification specification{};
+			RHI::ImageDesc specification{};
 			specification.format = DDSToImageFormat(ddsFile.GetFormat());
 			specification.usage = RHI::ImageUsage::Texture;
 			specification.width = width;
@@ -149,9 +148,19 @@ namespace Volt
 			stagingAllocSize += subData.slicePitch;
 		}
 
-		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingAllocSize, RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CPUToGPU, "Staging Alloc");
+		RHI::BufferDesc stagingDesc{};
+		stagingDesc.count = 1;
+		stagingDesc.elementSize = stagingAllocSize;
+		stagingDesc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc;
+		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
+		stagingDesc.debugName = "Staging Alloc";
+
+		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
+
+		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
 
 		commandBuffer->Begin();
+		commandBuffer->BeginMarker(std::format("Import Texture {}", filepath.string()), { 1.f, 1.f, 1.f, 1.f });
 
 		{
 			RHI::ResourceBarrierInfo barrier{};
@@ -181,6 +190,7 @@ namespace Volt
 			commandBuffer->ResourceBarrier({ barrier });
 		}
 
+		commandBuffer->EndMarker();
 		commandBuffer->End();
 		commandBuffer->Execute();
 

@@ -2,6 +2,7 @@
 
 #include "Mosaic/FormatterExtension.h"
 #include "Mosaic/Config.h"
+#include "Mosaic/MosaicShaderWriter.h"
 
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/Containers/Graph.h>
@@ -37,7 +38,7 @@ namespace Mosaic
 		inline Graph<Ref<MosaicNode>, Ref<MosaicEdge>>& GetUnderlyingGraph() { return m_graph; }
 		inline const Graph<Ref<MosaicNode>, Ref<MosaicEdge>>& GetUnderlyingGraph() const { return m_graph; }
 
-		const std::string Compile() const;
+		const MosaicShaderWriter Compile() const;
 		void Clear();
 
 		static Scope<MosaicGraph> CreateDefaultGraph();

@@ -48,10 +48,10 @@ public:
 		return true;
 	}
 
-	VT_INLINE const vt::map<VoltGUID, RegisteredSubSystem>& GetRegisteredSubSystems() const { return m_registeredSubSystems; }
+	VT_INLINE const Map<VoltGUID, RegisteredSubSystem>& GetRegisteredSubSystems() const { return m_registeredSubSystems; }
 
 private:
-	vt::map<VoltGUID, RegisteredSubSystem> m_registeredSubSystems;
+	Map<VoltGUID, RegisteredSubSystem> m_registeredSubSystems;
 };
 
 extern SUBSYSTEMMODULE_API SubSystemRegistry g_subSystemRegistry;

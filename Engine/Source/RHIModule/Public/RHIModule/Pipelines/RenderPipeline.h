@@ -2,13 +2,12 @@
 
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
+#include "RHIModule/Shader/Shader.h"
 
 #include <CoreUtilities/Containers/Array.h>
 
 namespace Volt::RHI
 {
-	class Shader;
-
 	struct AttachmentBlendState
 	{
 		bool enabled = false;
@@ -22,7 +21,7 @@ namespace Volt::RHI
 
 	struct RenderPipelineCreateInfo
 	{
-		RefPtr<Shader> shader;
+		Vector<RefPtr<Shader>> shaders;
 
 		Topology topology = Topology::TriangleList;
 		CullMode cullMode = CullMode::Back;
@@ -31,7 +30,7 @@ namespace Volt::RHI
 		CompareOperator depthCompareOperator = CompareOperator::GreaterEqual;
 		bool enablePrimitiveRestart = false;
 
-		Array<AttachmentBlendState, MAX_ATTACHMENT_COUNT> attachmentBlendStates;
+		Array<AttachmentBlendState, MAX_COLOR_ATTACHMENT_COUNT> attachmentBlendStates;
 		std::string name;
 	};
 
@@ -39,9 +38,10 @@ namespace Volt::RHI
 	{
 	public:
 		virtual void Invalidate() = 0;
-		virtual RefPtr<Shader> GetShader() const = 0;
 		virtual bool IsValid() const = 0;
 		virtual size_t GetHash() const = 0;
+		virtual const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const = 0;
+		virtual const Vector<ShaderParameterMap>& GetShaderParameterMaps() const = 0;
 
 		static RefPtr<RenderPipeline> Create(const RenderPipelineCreateInfo& createInfo);
 

@@ -16,7 +16,9 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
 
-            conf.SolutionFolder = "Engine/RHI";
+			conf.IsExcludedFromBuild = true;
+
+			conf.SolutionFolder = "Engine/RHI";
 
             conf.PrecompHeader = "dxpch.h";
             conf.PrecompSource = "dxpch.cpp";
@@ -34,9 +36,20 @@ namespace VoltSharpmake
             conf.LibraryFiles.Add("d3d12.lib");
             conf.LibraryFiles.Add("DXGI.lib");
             conf.LibraryFiles.Add("dxguid.lib");
-        }
+		}
 
-        public override void ConfigureClangCl(Configuration conf, CommonTarget target)
+		public override void ConfigureWin64(Configuration conf, CommonTarget target)
+		{
+			base.ConfigureWin64(conf, target);
+
+			string d3d12FolderPath = Path.Combine(Globals.ThirdPartyDirectory, "d3d12", "Binaries");
+			conf.TargetCopyFiles.Add(d3d12FolderPath + "\\D3D12Core.dll");
+			conf.TargetCopyFiles.Add(d3d12FolderPath + "\\D3D12Core.pdb");
+			conf.TargetCopyFiles.Add(d3d12FolderPath + "\\d3d12SDKLayers.dll");
+			conf.TargetCopyFiles.Add(d3d12FolderPath + "\\d3d12SDKLayers.pdb");
+		}
+
+		public override void ConfigureClangCl(Configuration conf, CommonTarget target)
         {
             base.ConfigureClangCl(conf, target);
 

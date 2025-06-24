@@ -24,7 +24,7 @@ namespace Volt
 	using FbxIOSettingsPtr = std::unique_ptr<FbxIOSettings, FbxSDKDeleter>;
 	using FbxImporterPtr = std::unique_ptr<fbxsdk::FbxImporter, FbxSDKDeleter>;
 
-	using VertexDuplicateAccelerationMap = vt::map<size_t, uint32_t>; // Vertex hash to index
+	using VertexDuplicateAccelerationMap = Map<size_t, uint32_t>; // Vertex hash to index
 
 	inline void PostProccessFbxScene(FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData)
 	{
@@ -467,7 +467,7 @@ namespace Volt
 
 		VisitNodeAttributesOfType<FbxSkeleton>(fbxScene, fetcher);
 
-		vt::map<FbxNode*, int32_t> nodeToSkeletonIndexMap;
+		Map<FbxNode*, int32_t> nodeToSkeletonIndexMap;
 
 		for (size_t i = 0; i < skeletonNodes.size(); i++)
 		{

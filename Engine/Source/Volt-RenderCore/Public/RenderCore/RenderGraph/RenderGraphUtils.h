@@ -1,43 +1,43 @@
 #pragma once
 
-#include "RenderCore/RenderGraph/Resources/RenderGraphBufferResource.h"
-#include "RenderCore/RenderGraph/Resources/RenderGraphTextureResource.h"
+#include "RenderCore/Config.h"
+#include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
+#include "RenderCore/RenderGraph/RenderGraph.h"
+#include "RenderCore/RenderGraph/RenderContext.h"
+#include "RenderCore/Shader/PipelineStateCache.h"
 
-#include <glm/glm.hpp>
-
-#include <string_view>
-
-namespace Volt::RGUtils
+namespace Volt
 {
-	template<typename T, typename COUNT_TYPE>
-	inline static RenderGraphBufferDesc CreateBufferDesc(const COUNT_TYPE count, const RHI::BufferUsage usage, const RHI::MemoryUsage memoryUsage, const std::string& name)
-	{      
-		VT_ASSERT_MSG(count > 0, "Count must not be zero!");
-		return { static_cast<uint32_t>(count), sizeof(T), usage, memoryUsage, name };
-	}
+	class RenderGraph;
 
-	template<typename T, typename COUNT_TYPE>
-	inline static RenderGraphBufferDesc CreateBufferDescGPU(const COUNT_TYPE count, const std::string& name)
+	extern VTRC_API void AddCopyBufferPass(RenderGraph& renderGraph, RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size, const std::string& passName = "Copy Buffer");
+	extern VTRC_API void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize);
+	extern VTRC_API void AddMappedBufferUpload(RenderGraph& renderGraph, RGUniformBufferRef dstUAV, const void* data, const size_t dataSize);
+	extern VTRC_API void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const uint32_t clearValue);
+	extern VTRC_API void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const float clearValue);
+
+	namespace ComputeShaderUtils
 	{
-		VT_ASSERT_MSG(count > 0, "Count must not be zero!");
-		return { static_cast<uint32_t>(count), sizeof(T), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GPU, name };
-	}
+		template<typename ShaderType>
+		void AddPass(RenderGraph& renderGraph, const std::string& passName, RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* passParameters, RenderGraphPassFlags flags, const glm::uvec3& dispatchSize)
+		{
+			renderGraph.AddPass(passName,
+				RenderGraphPassFlags::Compute | flags,
+				passParameters,
+				[passParameters, shader, dispatchSize](RenderContext& context)
+			{
+				auto pipeline = PipelineStateCache::GetComputePipeline(shader);
 
-	template<RHI::PixelFormat format>
-	inline static RenderGraphImageDesc CreateImage2DDesc(const uint32_t width, const uint32_t height, const RHI::ImageUsage usage, const std::string& name)
-	{
-		VT_ASSERT_MSG(width > 0 && height > 0, "Width and height must not be zero!");
-		return { ResourceType::Image2D, format, width, height, 1, usage, name };
-	}
+				context.BindPipeline(pipeline);
+				context.SetParameters<ShaderType>(shader, passParameters);
+				context.Dispatch(dispatchSize.x, dispatchSize.y, dispatchSize.z);
+			});
+		}
 
-	template<RHI::PixelFormat format>
-	inline static RenderGraphImageDesc CreateImage3DDesc(const uint32_t width, const uint32_t height, const uint32_t depth, const RHI::ImageUsage usage, const std::string& name)
-	{
-		VT_ASSERT_MSG(width > 0 && height > 0, "Width and height must not be zero!");
-		return { ResourceType::Image3D, format, width, height, depth, usage, name };
+		template<typename ShaderType>
+		void AddPass(RenderGraph& renderGraph, const std::string& passName, RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* passParameters, const glm::uvec3& dispatchSize)
+		{
+			AddPass<ShaderType>(renderGraph, passName, shader, passParameters, RenderGraphPassFlags::None, dispatchSize);
+		}
 	}
-
-	extern VTRC_API void ClearImage(RenderGraph& renderGraph, RenderGraphImageHandle image, const glm::vec4& clearColor, const std::string& passName = "");
-	extern VTRC_API void ClearBuffer(RenderGraph& renderGraph, RenderGraphBufferHandle buffer, const uint32_t clearValue, const std::string& passName = "");
-	extern VTRC_API void CopyBuffer(RenderGraph& renderGraph, RenderGraphBufferHandle srcBuffer, RenderGraphBufferHandle dstBuffer, size_t copySize, const std::string& passName = "");
 }

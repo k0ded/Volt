@@ -6,7 +6,7 @@
 
 namespace UI
 {
-	static vt::map<FontType, ImFont*> s_fonts;
+	static Map<FontType, ImFont*> s_fonts;
 
 	void SetFont(FontType type, ImFont* font)
 	{

@@ -241,7 +241,9 @@ public:
 	template<typename... Args>
 	VT_INLINE static RefPtr<T> Create(Args&&... args)
 	{
-		void* allocatedPtr = T::Allocator::Allocate(sizeof(T), alignof(T));
+		typename T::Allocator allocator;
+
+		void* allocatedPtr = allocator.Allocate(sizeof(T), alignof(T));
 		T* objectPtr = new (allocatedPtr) T(std::forward<Args>(args)...);
 		return RefPtr<T>(objectPtr);
 	}

@@ -177,7 +177,7 @@ namespace VoltSharpmake
         [Configure(Compiler.MSVC)]
         public virtual void ConfigureMSVC(Configuration conf, CommonTarget target)
         {
-            //conf.AdditionalCompilerOptions.Add("/dynamicdeopt");
+			//conf.AdditionalCompilerOptions.Add("/dynamicdeopt");
 			//conf.AdditionalLinkerOptions.Add("/dynamicdeopt");
 			//conf.AdditionalLibrarianOptions.Add("/dynamicdeopt");
 		}
@@ -297,9 +297,11 @@ namespace VoltSharpmake
             conf.IncludePrivatePaths.Add("Public/" + Name);
             conf.IncludePrivatePaths.Add("Private/" + Name);
 
-            conf.Options.Add(new Sharpmake.Options.Vc.Compiler.DisableSpecificWarnings("4005", "4100", "4201", "4251", "4275", "4505"));
+            conf.Options.Add(new Sharpmake.Options.Vc.Compiler.DisableSpecificWarnings("4005", "4100", "4201", "4251", "4275", "4505", "4324"));
             conf.Options.Add(new Sharpmake.Options.Vc.Linker.DisableSpecificWarnings("4006", "4099"));   
             conf.Options.Add(new Sharpmake.Options.Vc.Linker.DisableSpecificWarnings("4098", "4217"));
+
+			conf.AdditionalLinkerOptions.Add("/PROFILE");
 		}
 
 		public override void ConfigureMSVC(Configuration conf, CommonTarget target)

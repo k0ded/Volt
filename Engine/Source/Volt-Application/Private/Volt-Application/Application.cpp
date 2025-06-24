@@ -22,13 +22,11 @@
 #include <AssetSystem/AssetSerializerRegistry.h>
 #include <AssetSystem/AssetFactory.h>
 
-#include <CoreUtilities/Allocator.h>
 #include <CoreUtilities/FileSystem.h>
 
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 #include <RHIModule/FrameCapture.h>
-#include <VulkanRHIModule/VulkanRHIProxy.h>
-#include <D3D12RHIModule/D3D12RHIProxy.h>
+#include <RHIModule/RHIModuleLoader.h>
 
 
 namespace Volt
@@ -65,14 +63,13 @@ namespace Volt
 	Application::Application(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
 		: BaseApplication(commandLineBuilder, createInfo)
 	{
-		g_heapAllocator = CreateScope<PagedHeapAllocator>();
-
 		FileSystem::Initialize();
 		FileSystem::InitializeWorkingDirectory(IsRuntime(), commandLineBuilder);
 
 		m_subSystemManager = CreateScope<SubSystemManager>();
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
 
+		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
 		m_logSubSystem = SubSystemManager::GetSubSystem<Log>();
 		m_logSubSystem->EnableLogging(IsLoggingEnabled());
 
@@ -167,13 +164,9 @@ namespace Volt
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
 		m_assetManager = nullptr;
-		g_assetSerializerRegistry.Clear();
-		g_assetFactory.Clear();
 
 		m_windowManager->DestroyMainWindow();
 
-		m_graphicsContext = nullptr;
-		m_rhiProxy = nullptr;
 		WindowManager::ShutdownGLFW();
 
 		m_pluginSystem->UnloadPlugins();
@@ -186,8 +179,6 @@ namespace Volt
 		FileSystem::Shutdown();
 
 		m_subSystemManager = nullptr;
-
-		g_heapAllocator.reset();
 	}
 
 	void Application::Run()
@@ -261,8 +252,6 @@ namespace Volt
 
 	void Application::MainUpdate()
 	{
-		RHI::GraphicsContext::Update();
-
 		WindowManager::Get().BeginFrame();
 
 		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
@@ -329,39 +318,22 @@ namespace Volt
 
 	void Application::CreateGraphicsContext()
 	{
-		RHI::GraphicsContextCreateInfo cinfo{};
-		cinfo.graphicsApi = RHI::GraphicsAPI::Vulkan;
-
-		if (cinfo.graphicsApi == RHI::GraphicsAPI::Vulkan)
+		RHI::RHICallbackInfo callbackInfo{};
+		callbackInfo.requestCloseEventCallback = []()
 		{
-			m_rhiProxy = RHI::CreateVulkanRHIProxy();
-		}
-		else if (cinfo.graphicsApi == RHI::GraphicsAPI::D3D12)
-		{
-			m_rhiProxy = RHI::CreateD3D12RHIProxy();
-		}
+			WindowCloseEvent closeEvent{};
+			EventSystem::DispatchEvent(closeEvent);
+		};
 
-		{
-			RHI::RHICallbackInfo callbackInfo{};
-			callbackInfo.resourceManagementInfo.resourceDeletionCallback = Renderer::DestroyResource;
-			callbackInfo.requestCloseEventCallback = []()
-			{
-				WindowCloseEvent closeEvent{};
-				EventSystem::DispatchEvent(closeEvent);
-			};
-
-			m_rhiProxy->SetRHICallbackInfo(callbackInfo);
-		}
-
-		m_graphicsContext = RHI::GraphicsContext::Create(cinfo);
+		m_rhiModuleLoader->LoadRHI(RHI::GraphicsAPI::Vulkan, callbackInfo);
 	}
 
 	void Application::SetupFrameCapture()
 	{
-		if (RHI::RHIProxy::GetInstance().GetFrameCapture())
+		if (RHI::RHIModule::GetInstance().GetFrameCapture())
 		{
-			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetFlags(RHI::FrameCaptureFlags::DisableOverlay);
-			RHI::RHIProxy::GetInstance().GetFrameCapture()->SetCaptureFileTargetFilePath(ProjectManager::GetProjectDirectory() / ("Volt-" + ProjectManager::GetProject().name));
+			RHI::RHIModule::GetInstance().GetFrameCapture()->SetFlags(RHI::FrameCaptureFlags::DisableOverlay);
+			RHI::RHIModule::GetInstance().GetFrameCapture()->SetCaptureFileTargetFilePath(ProjectManager::GetProjectDirectory() / ("Volt-" + ProjectManager::GetProject().name));
 		}
 	}
 

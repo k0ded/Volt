@@ -257,7 +257,7 @@ namespace Volt::RHI
 
 		std::string processedSource = source;
 
-		if (!PreprocessSource(shaderStage, sourceEntry.filePath, processedSource))
+		if (!PreprocessSource(shaderStage, sourceEntry.filepath, processedSource))
 		{
 			return CompilationResult::PreprocessFailed;
 		}
@@ -266,7 +266,7 @@ namespace Volt::RHI
 
 		Vector<const wchar_t*> arguments =
 		{
-			sourceEntry.filePath.c_str(),
+			sourceEntry.filepath.c_str(),
 			L"-E",
 			wEntryPoint.c_str(),
 			L"-T",
@@ -321,21 +321,6 @@ namespace Volt::RHI
 				outData.instanceLayout = result.instanceLayout;
 			}
 
-			if (!outData.renderGraphConstants.IsValid())
-			{
-				outData.renderGraphConstants = result.renderGraphConstants;
-			}
-			else if (result.renderGraphConstants.IsValid())
-			{
-				for (const auto& [name, uniform] : outData.renderGraphConstants.uniforms)
-				{
-					if (!result.renderGraphConstants.uniforms.contains(name) || uniform.type != result.renderGraphConstants.uniforms.at(name).type)
-					{
-						VT_LOGC(Error, LogD3D12RHI, "All shader stages must have equal constant struct definition!");
-					}
-				}
-			}
-
 			processedSource = result.preProcessedResult;
 		}
 
@@ -356,7 +341,7 @@ namespace Volt::RHI
 		if (failed)
 		{
 			error = std::format("Failed to compile. Error: {}\n", result);
-			error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(compilationResult), sourceEntry.filePath.string()));
+			error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(compilationResult), sourceEntry.filepath.string()));
 		}
 
 		if (error.empty())
@@ -367,7 +352,7 @@ namespace Volt::RHI
 			if (!shaderResult || shaderResult->GetBufferSize() == 0)
 			{
 				error = std::format("Failed to compile. Error: {}\n", result);
-				error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(compilationResult), sourceEntry.filePath.string()));
+				error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(compilationResult), sourceEntry.filepath.string()));
 
 				VT_LOG(Error, "[D3D12ShaderCompiler]: " + error);
 
@@ -399,7 +384,7 @@ namespace Volt::RHI
 			else
 			{
 				error = std::format("Failed to compile. Error: {}\n", result);
-				error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(compilationResult), sourceEntry.filePath.string()));
+				error.append(std::format("{0}\nWhile compiling shader file: {1}", Utility::GetErrorStringFromResult(compilationResult), sourceEntry.filepath.string()));
 
 				VT_LOG(Error, "[D3D12ShaderCompiler]: " + error);
 			}
@@ -428,11 +413,11 @@ namespace Volt::RHI
 		{
 			if (!reflectionData.at(stage))
 			{
-				VT_LOGC(Warning, LogD3D12RHI, "No reflection data availiable for shader {}!", specification.shaderSourceInfo.at(stage).sourceEntry.filePath.string());
+				VT_LOGC(Warning, LogD3D12RHI, "No reflection data availiable for shader {}!", specification.shaderSourceInfo.at(stage).sourceEntry.filepath.string());
 				continue;
 			}
 
-			VT_LOGC(Trace, LogD3D12RHI, "Reflecting shader {0}", specification.shaderSourceInfo.at(stage).sourceEntry.filePath.string());
+			VT_LOGC(Trace, LogD3D12RHI, "Reflecting shader {0}", specification.shaderSourceInfo.at(stage).sourceEntry.filepath.string());
 			ReflectStage(stage, specification, inOutData, reflectionData.at(stage));
 		}
 	}
@@ -451,11 +436,11 @@ namespace Volt::RHI
 			const uint32_t space = shaderInputBindDesc.Space;
 			const std::string name = shaderInputBindDesc.Name;
 
-			ShaderRegisterType registerType = ShaderRegisterType::Texture;
+			ShaderRegisterType registerType = ShaderRegisterType::SRV;
 
 			if (name == "$Globals")
 			{
-				VT_LOGC(Error, LogD3D12RHI, "Shader {0} seems to have incorrectly defined global variables!", specification.shaderSourceInfo.at(stage).sourceEntry.filePath.string());
+				VT_LOGC(Error, LogD3D12RHI, "Shader {0} seems to have incorrectly defined global variables!", specification.shaderSourceInfo.at(stage).sourceEntry.filepath.string());
 				continue;
 			}
 
@@ -465,7 +450,7 @@ namespace Volt::RHI
 				D3D12_SHADER_BUFFER_DESC cbDesc{};
 				reflectedCB->GetDesc(&cbDesc);
 
-				registerType = ShaderRegisterType::UniformBuffer;
+				registerType = ShaderRegisterType::CBV;
 
 				const size_t size = static_cast<size_t>(cbDesc.Size);
 
@@ -541,7 +526,7 @@ namespace Volt::RHI
 					}
 				}
 
-				registerType = buffer.isWrite ? ShaderRegisterType::UnorderedAccess : ShaderRegisterType::Texture;
+				registerType = buffer.isWrite ? ShaderRegisterType::UAV : ShaderRegisterType::SRV;
 			}
 			else if (shaderInputBindDesc.Type == D3D_SIT_UAV_RWTYPED && (shaderInputBindDesc.Dimension >= 2 && shaderInputBindDesc.Dimension <= 10)) // This is all the texutre types
 			{
@@ -549,7 +534,7 @@ namespace Volt::RHI
 				shaderImage.usageStages = shaderImage.usageStages | stage;
 				shaderImage.usageCount++;
 
-				registerType = ShaderRegisterType::UnorderedAccess;
+				registerType = ShaderRegisterType::UAV;
 
 				const bool firstEntry = !inOutData.storageImages[space].contains(binding);
 
@@ -571,7 +556,7 @@ namespace Volt::RHI
 				shaderImage.usageStages = shaderImage.usageStages | stage;
 				shaderImage.usageCount++;
 
-				registerType = ShaderRegisterType::Texture;
+				registerType = ShaderRegisterType::SRV;
 
 				const bool firstEntry = !inOutData.images[space].contains(binding);
 
@@ -607,7 +592,12 @@ namespace Volt::RHI
 			return false;
 		}
 
-		outData.bindings[name] = { set, binding, registerType };
+		outData.bindings[name] = { set, binding, 0, registerType };
 		return true;
+	}
+
+	Volt::RHI::ShaderCompiler::CompilationResultData D3D12ShaderCompiler::TryCompileImpl2(const Specification& specification)
+	{
+		return { };
 	}
 }

@@ -1,6 +1,6 @@
-RWTexture2DArray<float3> o_output;
-TextureCube<float3> u_input;
-SamplerState u_linearSampler;
+RWTexture2DArray<float3> RWOutput;
+TextureCube<float3> Input;
+SamplerState LinearSampler;
 
 static const float PI = 3.14159265359;
 
@@ -45,7 +45,7 @@ float3 IntegrateDiffuseCube(in float3 N)
         ImportanceSampleCosDir_N(eta, N, L, NdotL, pdf);
         if (NdotL > 0.f)
         {   
-            accBrdf += u_input.SampleLevel(u_linearSampler, L, 0.f);
+            accBrdf += Input.SampleLevel(LinearSampler, L, 0.f);
         }
     }
 
@@ -57,7 +57,7 @@ float3 GetCubeMapTexCoord(uint3 dispatchId)
     uint2 texSize;
     uint elements;
 
-    o_output.GetDimensions(texSize.x, texSize.y, elements);
+    RWOutput.GetDimensions(texSize.x, texSize.y, elements);
 
     float2 ST = dispatchId.xy / float2(texSize.x, texSize.y);
     float2 UV = 2.f * float2(ST.x, 1.f - ST.y) - 1.f;
@@ -89,8 +89,8 @@ float3 GetCubeMapTexCoord(uint3 dispatchId)
 }
 
 [numthreads(32, 32, 1)]
-void main(uint3 dispatchId : SV_DispatchThreadID)
+void MainCS(uint3 dispatchId : SV_DispatchThreadID)
 {
     float3 N = GetCubeMapTexCoord(dispatchId);
-    o_output[dispatchId] = IntegrateDiffuseCube(N);
+    RWOutput[dispatchId] = IntegrateDiffuseCube(N);
 }

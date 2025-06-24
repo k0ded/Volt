@@ -1,13 +1,13 @@
 #include "rhipch.h"
 
 #include "RHIModule/Graphics/GraphicsDevice.h"
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
 	RefPtr<GraphicsDevice> GraphicsDevice::Create(const GraphicsDeviceCreateInfo& deviceInfo)
 	{
-		return RHIProxy::GetInstance().CreateGraphicsDevice(deviceInfo);
+		return RHIModule::GetInstance().CreateGraphicsDevice(deviceInfo);
 	}
 
 	GraphicsDevice::GraphicsDevice()

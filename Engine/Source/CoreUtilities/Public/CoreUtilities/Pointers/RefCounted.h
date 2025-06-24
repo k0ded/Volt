@@ -2,12 +2,11 @@
 
 #include "CoreUtilities/Core.h"
 #include "CoreUtilities/Pointers/RefPtr.h"
-
-#include "CoreUtilities/Allocators/DefaultAllocator.h"
+#include "CoreUtilities/Allocators/HeapAllocator.h"
 
 #include <atomic>
 
-template<typename Type, class AllocatorType = DefaultAllocator>
+template<typename Type, class AllocatorType = HeapAllocator>
 class RefCounted
 {
 public:
@@ -35,7 +34,9 @@ public:
 
 			Type* derived = const_cast<Type*>(static_cast<const Type*>(this));
 			derived->~Type();
-			Allocator::Free(derived, alignof(Type));
+
+			Allocator allocator;
+			allocator.Free(derived);
 		}
 	}
 

@@ -1,8 +1,7 @@
-#include "Vertex.hlsli"
-#include "Resources.hlsli"
+#include "Utility/FullscreenTriangleVertex.hlsli"
 
-vt::Tex2D<float4> InputColor;
-vt::TextureSampler PointSampler;
+Texture2D<float4> InputColor;
+SamplerState PointSampler;
 float2 RenderSize;
 
 struct Output

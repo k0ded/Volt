@@ -27,6 +27,7 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<yaml>(target);
 			conf.AddPublicDependency<nlohmann>(target);
 			conf.AddPublicDependency<zlib>(target);
+			conf.AddPublicDependency<mimalloc>(target);
 
 			conf.IncludePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "unordered_dense\\include"));
         }

@@ -1,3 +1,4 @@
+using Sharpmake;
 using System;
 using System.IO;
 
@@ -29,6 +30,8 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<VulkanMemoryAllocator>(target);
 			conf.AddPrivateDependency<Aftermath>(target);
 			conf.AddPrivateDependency<DXC>(target);
+			conf.AddPrivateDependency<spirv_reflect>(target);
+			conf.AddPrivateDependency<SPIRV_Tools>(target);
 
 			string vulkanSDKPath = Path.Combine(Environment.GetEnvironmentVariable("VULKAN_SDK"), "Include");
 			if (vulkanSDKPath != null)
@@ -42,24 +45,19 @@ namespace VoltSharpmake
 				conf.LibraryPaths.Add(vulkanSDKLibPath);
 				conf.LibraryFiles.Add("vulkan-1.lib");
 			}
+
+			conf.Options.Add(Options.Vc.Linker.IgnoreImportLibrary.Enable);
 		}
 
 		public override void ConfigureDebug(Configuration conf, CommonTarget target)
 		{
 			base.ConfigureDebug(conf, target);
 
-
 			string vulkanSDKPath = Path.Combine(Environment.GetEnvironmentVariable("VULKAN_SDK"), "Lib");
 			if (vulkanSDKPath != null)
 			{
 				conf.LibraryPaths.Add(vulkanSDKPath);
 			}
-
-			conf.LibraryFiles.Add("shaderc_sharedd.lib");
-			conf.LibraryFiles.Add("shaderc_utild.lib");
-			conf.LibraryFiles.Add("spirv-cross-cored.lib");
-			conf.LibraryFiles.Add("spirv-cross-glsld.lib");
-			conf.LibraryFiles.Add("SPIRV-Toolsd.lib");
 		}
 
 		public override void ConfigureDevelopment(Configuration conf, CommonTarget target)
@@ -71,12 +69,6 @@ namespace VoltSharpmake
 			{
 				conf.LibraryPaths.Add(vulkanSDKPath);
 			}
-
-			conf.LibraryFiles.Add("shaderc_shared.lib");
-			conf.LibraryFiles.Add("shaderc_util.lib");
-			conf.LibraryFiles.Add("spirv-cross-core.lib");
-			conf.LibraryFiles.Add("spirv-cross-glsl.lib");
-			conf.LibraryFiles.Add("SPIRV-Tools.lib");
 		}
 
 		public override void ConfigureDist(Configuration conf, CommonTarget target)
@@ -88,12 +80,6 @@ namespace VoltSharpmake
 			{
 				conf.LibraryPaths.Add(vulkanSDKPath);
 			}
-
-			conf.LibraryFiles.Add("shaderc_shared.lib");
-			conf.LibraryFiles.Add("shaderc_util.lib");
-			conf.LibraryFiles.Add("spirv-cross-core.lib");
-			conf.LibraryFiles.Add("spirv-cross-glsl.lib");
-			conf.LibraryFiles.Add("SPIRV-Tools.lib");
 		}
 
 		public override void ConfigureClangCl(Configuration conf, CommonTarget target)

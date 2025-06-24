@@ -49,7 +49,7 @@ namespace Volt::RHI
 		bool m_isComputeTable = false;
 		uint32_t m_descriptorTableRootParamStartIndex = 0;
 
-		vt::map<uint32_t, vt::map<uint32_t, vt::map<ShaderRegisterType, AllocatedDescriptorInfo>>> m_allocatedDescriptorPointers;
+		Map<uint32_t, Map<uint32_t, Map<ShaderRegisterType, AllocatedDescriptorInfo>>> m_allocatedDescriptorPointers;
 		Vector<DescriptorCopyInfo> m_activeDescriptorCopies;
 		Vector<DescriptorCopyInfo> m_activeSamplerDescriptorCopies;
 

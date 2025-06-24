@@ -11,15 +11,17 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
+#include <RenderCore/Shader/ShaderMap.h>
+#if 0
+#include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/RenderGraph/RenderContextUtils.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
-#include <RenderCore/Shader/ShaderMap.h>
-
+#endif
 namespace Volt
 {
+#if 0
 	struct UI2DGridVSPS
 	{
 		BEGIN_SHADER_DEFINITION(UI2DGridVSPS)
@@ -68,6 +70,7 @@ namespace Volt
 
 		uint32_t indexCount = 0;
 	};
+#endif
 
 	struct UIVertex
 	{
@@ -114,6 +117,7 @@ namespace Volt
 
 	void UISceneRenderer::OnRender(RefPtr<RHI::Image> targetImage, const glm::mat4& projectionMatrix)
 	{
+#if 0
 		RenderGraphBlackboard blackboard;
 		RenderGraph renderGraph{ m_commandBufferSet.IncrementAndGetCommandBuffer() };
 	
@@ -258,6 +262,7 @@ namespace Volt
 
 		renderGraph.Compile();
 		renderGraph.Execute();
+#endif
 	}
 
 	bool UISceneRenderer::PrepareForRender(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
@@ -269,6 +274,7 @@ namespace Volt
 		// For now we will only do this for the images, but in the future we need
 		// to add this to other types
 
+#if 0
 		VertexIndexCounts vertexIndexCounts = CalculateMaxVertexAndIndexCount();
 
 		auto& renderingData = blackboard.Add<UIRenderingData>();
@@ -289,6 +295,7 @@ namespace Volt
 			const auto desc = RGUtils::CreateBufferDesc<uint32_t>(vertexIndexCounts.indexCount, RHI::BufferUsage::IndexBuffer, RHI::MemoryUsage::GPU, "UI Index Buffer");
 			renderingData.indexBuffer = renderGraph.CreateBuffer(desc);
 		}
+#endif
 
 		// All images
 		{

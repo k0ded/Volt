@@ -4,6 +4,7 @@
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicHelpers.h>
 #include <Mosaic/NodeRegistry.h>
+#include <Mosaic/MosaicShaderWriter.h>
 
 namespace Volt::MosaicNodes
 {
@@ -16,7 +17,7 @@ namespace Volt::MosaicNodes
 		AddOutputParameter("", Mosaic::ValueBaseType::Dynamic, 1, false);
 	}
 
-	const Mosaic::ResultInfo AddNode::GetShaderCode(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const
+	const Mosaic::ResultInfo AddNode::Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const
 	{
 		constexpr const char* nodeStr = "const {0} {1} = {2} + {3}; \n";
 		constexpr Mosaic::TypeInfo DEFAULT_PARAM_TYPEINFO{ Mosaic::ValueBaseType::Float, 1 };
@@ -33,7 +34,7 @@ namespace Volt::MosaicNodes
 			const uint32_t paramIndex = edge.metaDataType->GetParameterInputIndex();
 		
 			const auto& node = underlyingNode.GetNodeFromID(edge.startNode);
-			const Mosaic::ResultInfo info = node.nodeData->GetShaderCode(node, edge.metaDataType->GetParameterOutputIndex(), appendableShaderString);
+			const Mosaic::ResultInfo info = node.nodeData->Compile(node, edge.metaDataType->GetParameterOutputIndex(), shaderWriter);
 
 			if (paramIndex == 0)
 			{
@@ -51,8 +52,8 @@ namespace Volt::MosaicNodes
 		
 		const Mosaic::TypeInfo resultType = Mosaic::Helpers::GetPromotedTypeInfo(AInfo, BInfo);
 
-		std::string result = std::format(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(resultType), varName, A, B);
-		appendableShaderString.append(result);
+		std::string codeBlock = std::format(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(resultType), varName, A, B);
+		shaderWriter.AppendCodeBlock(codeBlock);
 
 		Mosaic::ResultInfo resultInfo{};
 		resultInfo.resultParamName = varName;
@@ -72,7 +73,7 @@ namespace Volt::MosaicNodes
 		AddOutputParameter("", Mosaic::ValueBaseType::Dynamic, 1, false);
 	}
 	
-	const Mosaic::ResultInfo MultiplyNode::GetShaderCode(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const
+	const Mosaic::ResultInfo MultiplyNode::Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const
 	{
 		constexpr const char* nodeStr = "const {0} {1} = {2} * {3}; \n";
 		constexpr Mosaic::TypeInfo DEFAULT_PARAM_TYPEINFO{ Mosaic::ValueBaseType::Float, 1 };
@@ -89,7 +90,7 @@ namespace Volt::MosaicNodes
 			const uint32_t paramIndex = edge.metaDataType->GetParameterInputIndex();
 
 			const auto& node = underlyingNode.GetNodeFromID(edge.startNode);
-			const Mosaic::ResultInfo info = node.nodeData->GetShaderCode(node, edge.metaDataType->GetParameterOutputIndex(), appendableShaderString);
+			const Mosaic::ResultInfo info = node.nodeData->Compile(node, edge.metaDataType->GetParameterOutputIndex(), shaderWriter);
 
 			if (paramIndex == 0)
 			{
@@ -107,8 +108,8 @@ namespace Volt::MosaicNodes
 
 		const Mosaic::TypeInfo resultType = Mosaic::Helpers::GetPromotedTypeInfo(AInfo, BInfo);
 
-		std::string result = std::format(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(resultType), varName, A, B);
-		appendableShaderString.append(result);
+		std::string codeBlock = std::format(nodeStr, Mosaic::Helpers::GetTypeNameFromTypeInfo(resultType), varName, A, B);
+		shaderWriter.AppendCodeBlock(codeBlock);
 
 		Mosaic::ResultInfo resultInfo{};
 		resultInfo.resultParamName = varName;

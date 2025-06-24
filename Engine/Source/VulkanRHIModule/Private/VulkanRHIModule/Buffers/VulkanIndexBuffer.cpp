@@ -9,7 +9,7 @@
 #include <RHIModule/Graphics/GraphicsDevice.h>
 
 #include <RHIModule/Memory/Allocation.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt::RHI
 {
@@ -91,7 +91,14 @@ namespace Volt::RHI
 
 		if (data)
 		{
-			stagingAllocation = allocator->CreateBuffer(bufferSize, BufferUsage::TransferSrc, MemoryUsage::CPU, "Staging Alloc");
+			BufferDesc stagingDesc{};
+			stagingDesc.count = 1;
+			stagingDesc.elementSize = bufferSize;
+			stagingDesc.usage = BufferUsage::TransferSrc;
+			stagingDesc.memoryUsage = MemoryUsage::CPU;
+			stagingDesc.debugName = "Staging Alloc";
+
+			stagingAllocation = allocator->CreateBuffer(stagingDesc);
 
 			// Copy to staging buffer
 			{
@@ -103,7 +110,14 @@ namespace Volt::RHI
 
 		// Create GPU buffer
 		{
-			m_allocation = allocator->CreateBuffer(bufferSize, BufferUsage::IndexBuffer | BufferUsage::TransferDst, MemoryUsage::CPU, m_name);
+			BufferDesc desc{};
+			desc.count = 1;
+			desc.elementSize = bufferSize;
+			desc.usage = BufferUsage::IndexBuffer | BufferUsage::TransferDst;
+			desc.memoryUsage = MemoryUsage::CPU;
+			desc.debugName = m_name;
+
+			m_allocation = allocator->CreateBuffer(desc);
 		}
 
 		if (data)

@@ -18,6 +18,8 @@ namespace Volt::RHI
 		RefPtr<Shader> GetShader() const override;
 		bool IsValid() const override;
 		size_t GetHash() const override;
+		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const override { return nullptr; }
+		const Vector<ShaderParameterMap>& GetShaderParameterMaps() const override { static Vector<ShaderParameterMap> s; return s; }
 
 		VT_NODISCARD VT_INLINE Topology GetTopology() const { return m_createInfo.topology; }
 

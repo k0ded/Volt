@@ -6,7 +6,9 @@
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Images/SamplerState.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
+
+#include <RHIModule/RHIFeatures.h>
 
 namespace Volt
 {
@@ -16,7 +18,10 @@ namespace Volt
 		s_instance = this;
 
 		constexpr uint32_t framesInFlight = 3;
-		m_bindlessDescriptorTable = RHI::BindlessDescriptorTable::Create(framesInFlight);
+		if (RHI::RHICanUseBindless())
+		{
+			m_bindlessDescriptorTable = RHI::BindlessDescriptorTable::Create(framesInFlight);
+		}
 	}
 
 	BindlessResourcesManager::~BindlessResourcesManager()
@@ -27,51 +32,89 @@ namespace Volt
 
 	ResourceHandle BindlessResourcesManager::RegisterBuffer(RawPtr<RHI::StorageBuffer> storageBuffer)
 	{
-		return m_bindlessDescriptorTable->RegisterBuffer(storageBuffer);
+		if (RHI::RHICanUseBindless())
+		{
+			return m_bindlessDescriptorTable->RegisterBuffer(storageBuffer);
+		}
+
+		return Resource::Invalid;
 	}
 
 	ResourceHandle BindlessResourcesManager::RegisterImageView(RawPtr<RHI::ImageView> imageView)
 	{
-		return m_bindlessDescriptorTable->RegisterImageView(imageView);
-	}
+		if (RHI::RHICanUseBindless())
+		{
+			return m_bindlessDescriptorTable->RegisterImageView(imageView);
+		}
+
+		return Resource::Invalid;
+}
 
 	ResourceHandle BindlessResourcesManager::RegisterSamplerState(RawPtr<RHI::SamplerState> samplerState)
 	{
-		return m_bindlessDescriptorTable->RegisterSamplerState(samplerState);
+		if (RHI::RHICanUseBindless())
+		{
+			return m_bindlessDescriptorTable->RegisterSamplerState(samplerState);
+		}
+
+		return Resource::Invalid;
 	}
 
 	void BindlessResourcesManager::UnregisterResource(ResourceHandle handle)
 	{
-		m_bindlessDescriptorTable->UnregisterResource(handle);
+		if (RHI::RHICanUseBindless())
+		{
+			m_bindlessDescriptorTable->UnregisterResource(handle);
+		}
 	}
 
 	void BindlessResourcesManager::MarkResourceAsDirty(ResourceHandle handle)
 	{
-		m_bindlessDescriptorTable->MarkResourceAsDirty(handle);
+		if (RHI::RHICanUseBindless())
+		{
+			m_bindlessDescriptorTable->MarkResourceAsDirty(handle);
+		}
 	}
 
 	void BindlessResourcesManager::UnregisterSamplerState(ResourceHandle handle)
 	{
-		m_bindlessDescriptorTable->UnregisterSamplerState(handle);
+		if (RHI::RHICanUseBindless())
+		{
+			m_bindlessDescriptorTable->UnregisterSamplerState(handle);
+		}
 	}
 
 	void BindlessResourcesManager::MarkSamplerStateAsDirty(ResourceHandle handle)
 	{
-		m_bindlessDescriptorTable->MarkSamplerStateAsDirty(handle);
+		if (RHI::RHICanUseBindless())
+		{
+			m_bindlessDescriptorTable->MarkSamplerStateAsDirty(handle);
+		}
 	}
 
 	void BindlessResourcesManager::Update()
 	{
-		m_bindlessDescriptorTable->Update();
+		if (RHI::RHICanUseBindless())
+		{
+			m_bindlessDescriptorTable->Update();
+		}
 	}
 
 	void BindlessResourcesManager::PrepareForRender()
 	{
-		m_bindlessDescriptorTable->PrepareForRender();
+		if (RHI::RHICanUseBindless())
+		{
+			m_bindlessDescriptorTable->PrepareForRender();
+		}
 	}
 
 	bool BindlessResourcesManager::IsResourceValid(ResourceHandle handle)
 	{
-		return m_bindlessDescriptorTable->IsResourceValid(handle);
+		if (RHI::RHICanUseBindless())
+		{
+			return m_bindlessDescriptorTable->IsResourceValid(handle);
+		}
+
+		return false;
 	}
 }

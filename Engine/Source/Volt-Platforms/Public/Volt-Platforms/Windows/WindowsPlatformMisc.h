@@ -19,6 +19,8 @@ namespace Volt
 		static bool IsDebuggerPresent();
 		static VoltGUID GenerateGUID();
 		static std::string GetCurrentUserName();
+		static uint32_t GetNumberOfPhysicalCores();
+		static uint32_t GetNumberOfLogicalCores();
 	};
 }
 

@@ -98,7 +98,7 @@ namespace Volt
 		Vector<Animation::TRS> m_restPose;
 		Vector<glm::mat4> m_inverseBindPose;
 
-		vt::map<std::string, size_t> m_jointNameToIndex;
+		Map<std::string, size_t> m_jointNameToIndex;
 
 		std::string m_name = "Skeleton";
 	};

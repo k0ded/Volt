@@ -11,7 +11,7 @@
 
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Memory/MemoryUtility.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 namespace Volt::RHI
 {
@@ -23,8 +23,14 @@ namespace Volt::RHI
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
 		const uint64_t alignedSize = Utility::Align(size, deviceProperties.limits.minUniformBufferOffsetAlignment);
 
-		const VkDeviceSize bufferSize = alignedSize * count;
-		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferSize, BufferUsage::UniformBuffer, MemoryUsage::CPUToGPU, m_name);
+		BufferDesc desc{};
+		desc.count = count;
+		desc.elementSize = alignedSize;
+		desc.usage = BufferUsage::UniformBuffer;
+		desc.memoryUsage = MemoryUsage::CPUToGPU;
+		desc.debugName = m_name;
+
+		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(desc);
 
 		if (data)
 		{
@@ -43,7 +49,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocation = m_allocation]() 
+		RHIModule::GetInstance().DestroyResource([allocation = m_allocation]() 
 		{
 			GraphicsContext::GetDefaultAllocator()->DestroyBuffer(allocation);
 		});
@@ -51,12 +57,12 @@ namespace Volt::RHI
 		m_allocation = nullptr;
 	}
 
-	RefPtr<BufferView> VulkanUniformBuffer::GetView()
+	RefPtr<BufferView> VulkanUniformBuffer::GetView(const BufferViewDesc& desc)
 	{
-		BufferViewSpecification spec{};
-		spec.bufferResource = this;
+		BufferViewDesc descCopy = desc;
+		descCopy.bufferResource = this;
 
-		return BufferView::Create(spec);
+		return BufferView::Create(descCopy);
 	}
 
 	const uint32_t VulkanUniformBuffer::GetSize() const

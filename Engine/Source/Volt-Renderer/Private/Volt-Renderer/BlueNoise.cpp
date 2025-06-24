@@ -4,7 +4,7 @@
 #include "Volt-Renderer/Texture/Texture2D.h"
 #include "Volt-Renderer/Renderer.h"
 
-#include <RenderCore/RenderGraph/RenderContext.h>
+#include <RenderCore/RenderGraph/RenderGraph.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -22,33 +22,6 @@ namespace Volt
 	BlueNoise::~BlueNoise()
 	{
 		s_blueNoiseData = {};
-	}
-
-	void BlueNoise::Build(RenderGraph::Builder& builder, const BlueNoiseTextures& blueNoiseTextures)
-	{
-		builder.ReadResource(blueNoiseTextures.blueNoiseScalarTexture);
-		builder.ReadResource(blueNoiseTextures.blueNoiseVec2Texture);
-		builder.ReadResource(blueNoiseTextures.blueNoiseRGBATexture);
-	}
-
-	void BlueNoise::Setup(BlueNoiseShaderParameters& parameters, const BlueNoiseTextures& blueNoiseTextures)
-	{
-		parameters.blueNoiseScalarTexture = blueNoiseTextures.blueNoiseScalarTexture;
-		parameters.blueNoiseVec2Texture = blueNoiseTextures.blueNoiseVec2Texture;
-		parameters.blueNoiseRGBATexture = blueNoiseTextures.blueNoiseRGBATexture;
-		parameters.pointWrapSampler = Renderer::GetSampler<RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest, RHI::TextureFilter::Nearest>()->GetResourceHandle();
-		parameters.moduloMasks = s_blueNoiseData.moduloMasks;
-		parameters.dimensions = s_blueNoiseData.dimensions;
-	}
-
-	BlueNoiseTextures BlueNoise::GetBlueNoiseTextures(RenderGraph& renderGraph)
-	{
-		BlueNoiseTextures result;
-		result.blueNoiseRGBATexture = renderGraph.AddExternalImage(s_blueNoiseData.rgbaBlueNoise->GetImage());
-		result.blueNoiseVec2Texture = renderGraph.AddExternalImage(s_blueNoiseData.vec2BlueNoise->GetImage());
-		result.blueNoiseScalarTexture = renderGraph.AddExternalImage(s_blueNoiseData.scalarBlueNoise->GetImage());
-
-		return result;
 	}
 
 	void BlueNoise::LoadBlueNoiseTextures()
@@ -69,4 +42,22 @@ namespace Volt
 		// RGBA
 		s_blueNoiseData.rgbaBlueNoise = AssetManager::GetAsset<Texture2D>("Engine/Textures/BlueNoise_rgba_512x512.vtasset");
 	}
+
+	BlueNoiseShaderParameters BlueNoise::GetBlueNoiseParameters(RenderGraph& renderGraph)
+	{
+		RGTextureRef scalarBlueNoise = renderGraph.RegisterExternalTexture(s_blueNoiseData.scalarBlueNoise->GetImage());
+		RGTextureRef vec2BlueNoise = renderGraph.RegisterExternalTexture(s_blueNoiseData.vec2BlueNoise->GetImage());
+		RGTextureRef rgbaBlueNoise = renderGraph.RegisterExternalTexture(s_blueNoiseData.rgbaBlueNoise->GetImage());
+
+		BlueNoiseShaderParameters parameters;
+		parameters.BlueNoiseScalarTexture = renderGraph.CreateSRV(scalarBlueNoise);
+		parameters.BlueNoiseVec2Texture = renderGraph.CreateSRV(vec2BlueNoise);
+		parameters.BlueNoiseRGBATexture = renderGraph.CreateSRV(rgbaBlueNoise);
+		parameters.BlueNoiseSampler = SamplerStateCache::GetPointSampler();
+		parameters.BlueNoiseModuloMasks = s_blueNoiseData.moduloMasks;
+		parameters.BlueNoiseDimensions = s_blueNoiseData.dimensions;
+
+		return parameters;
+	}
+
 }

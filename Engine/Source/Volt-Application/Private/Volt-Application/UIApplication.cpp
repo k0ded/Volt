@@ -9,14 +9,12 @@
 #include <WindowModule/Window.h>
 #include <WindowModule/Events/WindowEvents.h>
 
-#include <RHIModule/Graphics/GraphicsContext.h>
-#include <VulkanRHIModule/VulkanRHIProxy.h>
-#include <D3D12RHIModule/D3D12RHIProxy.h>
+#include <RHIModule/RHIModuleLoader.h>
+
 #include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 
-#include <CoreUtilities/Allocator.h>
-#include <CoreUtilities/Allocators/PagedHeapAllocator.h>
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <EventSystem/EventSystem.h>
 #include <EventSystem/ApplicationEvents.h>
@@ -55,14 +53,13 @@ namespace Volt
 	UIApplication::UIApplication(const CommandLineBuilder& commandLineBuilder, const ApplicationCreationInfo& createInfo)
 		: BaseApplication(commandLineBuilder, createInfo)
 	{
-		g_heapAllocator = CreateScope<PagedHeapAllocator>();
-
 		FileSystem::Initialize();
 		FileSystem::InitializeWorkingDirectory(createInfo.isRuntime, commandLineBuilder);
 
 		m_subSystemManager = CreateScope<SubSystemManager>(SubSystemInclusionLevel::Minimal);
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
 
+		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
 		// This is required because glfwInit must be called before setting up graphics device
 		WindowManager::InitializeGLFW();
 		CreateGraphicsContext();
@@ -103,8 +100,6 @@ namespace Volt
 
 		}
 
-		m_graphicsContext = nullptr;
-		m_rhiProxy = nullptr;
 		WindowManager::ShutdownGLFW();
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
@@ -112,8 +107,6 @@ namespace Volt
 		FileSystem::Shutdown();
 
 		m_subSystemManager = nullptr;
-
-		g_heapAllocator.reset();
 	}
 
 	void UIApplication::Run()
@@ -168,42 +161,29 @@ namespace Volt
 				m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
 				m_imguiSubSystem->SetupContext();
 			}
+
+			//if we are already running, we have to skip a frame so that we dont start trying to render witout beginning rendering
+			if (m_isRunning)
+			{
+				m_skipPresentThisFrame = true;
+			}
 		}
 	}
 
 	void UIApplication::CreateGraphicsContext()
 	{
-		RHI::GraphicsContextCreateInfo cinfo{};
-		cinfo.graphicsApi = RHI::GraphicsAPI::Vulkan;
-
-		if (cinfo.graphicsApi == RHI::GraphicsAPI::Vulkan)
+		RHI::RHICallbackInfo callbackInfo{};
+		callbackInfo.requestCloseEventCallback = []()
 		{
-			m_rhiProxy = RHI::CreateVulkanRHIProxy();
-		}
-		else if (cinfo.graphicsApi == RHI::GraphicsAPI::D3D12)
-		{
-			m_rhiProxy = RHI::CreateD3D12RHIProxy();
-		}
+			WindowCloseEvent closeEvent{};
+			EventSystem::DispatchEvent(closeEvent);
+		};
 
-		{
-			RHI::RHICallbackInfo callbackInfo{};
-			callbackInfo.resourceManagementInfo.resourceDeletionCallback = Renderer::DestroyResource;
-			callbackInfo.requestCloseEventCallback = []()
-			{
-				WindowCloseEvent closeEvent{};
-				EventSystem::DispatchEvent(closeEvent);
-			};
-
-			m_rhiProxy->SetRHICallbackInfo(callbackInfo);
-		}
-
-		m_graphicsContext = RHI::GraphicsContext::Create(cinfo);
+		m_rhiModuleLoader->LoadRHI(RHI::GraphicsAPI::Vulkan, callbackInfo);
 	}
 
 	void UIApplication::MainUpdate()
 	{
-		RHI::GraphicsContext::Update();
-
 		WindowManager::Get().BeginFrame();
 
 		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
@@ -228,7 +208,7 @@ namespace Volt
 			EventSystem::DispatchEvent(updateEvent);
 		}
 
-		if (m_info.enableImGui && m_imguiSubSystem->IsInitialized() /*&& !m_skipPresentThisFrame*/)
+		if (m_info.enableImGui && m_imguiSubSystem->IsInitialized() && !m_skipPresentThisFrame)
 		{
 			VT_PROFILE_SCOPE("Application::ImGui");
 
@@ -252,11 +232,11 @@ namespace Volt
 			EventSystem::DispatchEvent(postFrameUpdateEvent);
 		}
 
-		//if (!m_skipPresentThisFrame)
+		if (!m_skipPresentThisFrame)
 		{
 			WindowManager::Get().Present();
 		}
-		//m_skipPresentThisFrame = false;
+		m_skipPresentThisFrame = false;
 
 		m_frameTimer.Accumulate();
 	}

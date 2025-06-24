@@ -7,6 +7,7 @@
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 
 #include <RHIModule/Core/Profiling.h>
+#include <RHIModule/Core/RenderingInfo.h>
 #include <RHIModule/ImGui/FontAwesome.h>
 
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -67,7 +68,13 @@ namespace Volt::RHI
 
 	ImTextureID VulkanImGuiImplementation::GetTextureID(RefPtr<Image> image, int32_t mipIndex) const
 	{
-		ImTextureID id = ImGui_ImplVulkan_AddTexture(nullptr, image->GetView(mipIndex)->GetHandle<VkImageView>(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		RHI::ImageViewDesc viewDesc{};
+		if (mipIndex > -1)
+		{
+			viewDesc.baseMipLevel = mipIndex;
+		}
+
+		ImTextureID id = ImGui_ImplVulkan_AddTexture(nullptr, image->GetView(viewDesc)->GetHandle<VkImageView>(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		return id;
 	}
 
@@ -108,6 +115,7 @@ namespace Volt::RHI
 		auto commandBuffer = m_commandBufferSet.IncrementAndGetCommandBuffer();
 
 		commandBuffer->Begin();
+		commandBuffer->BeginMarker("Draw ImGui", { 1.f, 1.f, 1.f, 1.f });
 
 		{
 			ResourceBarrierInfo barrier{};
@@ -157,6 +165,7 @@ namespace Volt::RHI
 		ImGui_ImplVulkan_RenderDrawData(drawData, commandBuffer->GetHandle<VkCommandBuffer>());
 
 		commandBuffer->EndRendering();
+		commandBuffer->EndMarker();
 		commandBuffer->End();
 		commandBuffer->Execute();
 	}

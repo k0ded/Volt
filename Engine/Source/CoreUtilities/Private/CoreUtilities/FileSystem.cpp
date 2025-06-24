@@ -437,6 +437,18 @@ namespace FileSystem
 		// We don't need to do anything if we are in the "runtime" aka game launcher.
 		if (!isRuntime)
 		{
+			// Check if we have an override for the working directory
+			if (commandLineBuilder.IsArgDefined("workingdir"))
+			{
+				std::filesystem::path filepath = std::filesystem::absolute(commandLineBuilder.GetArgValue("workingdir"));
+
+				if (std::filesystem::exists(filepath))
+				{
+					std::filesystem::current_path(filepath);
+					return;
+				}
+			}
+
 			const std::filesystem::path currentDirectory = std::filesystem::current_path();
 			
 			// Make sure that the working directory isn't already correct with some hopefully correct checks

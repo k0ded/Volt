@@ -20,8 +20,6 @@ namespace Volt::RHI
 		void WaitForIdle();
 
 		RefPtr<DeviceQueue> GetDeviceQueue(QueueType queueType) const override;
-		const GraphicsDeviceCapabilities& GetCapabilities() const override;
-
 		RawPtr<VulkanPhysicalGraphicsDevice> GetPhysicalDevice() const;
 
 	protected:
@@ -36,7 +34,5 @@ namespace Volt::RHI
 
 		RawPtr<VulkanPhysicalGraphicsDevice> m_physicalDevice;
 		GPUCrashTracker m_deviceCrashTracker{};
-
-		GraphicsDeviceCapabilities m_capabilities;
 	};
 }

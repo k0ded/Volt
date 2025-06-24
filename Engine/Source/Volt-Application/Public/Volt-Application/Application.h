@@ -16,8 +16,6 @@
 #include <AssetSystem/SourceAssetManager.h>
 #include <Navigation/Core/NavigationSystem.h>
 
-#include <RHIModule/RHIProxy.h>
-#include <RHIModule/Graphics/GraphicsContext.h>
 
 
 class Log;
@@ -38,6 +36,7 @@ namespace Volt
 	namespace RHI
 	{
 		class ImGuiImplementation;
+		class RHIModuleLoader;
 	}
 
 	class Application;
@@ -90,9 +89,6 @@ namespace Volt
 		ApplicationLayerStack m_layerStack;
 		MultiTimer m_frameTimer;
 
-		RefPtr<RHI::GraphicsContext> m_graphicsContext;
-		RefPtr<RHI::RHIProxy> m_rhiProxy;
-
 		Scope<SubSystemManager> m_subSystemManager;
 		Scope<AssetManager> m_assetManager;
 		Scope<SourceAssetManager> m_sourceAssetManager;
@@ -106,6 +102,7 @@ namespace Volt
 		WindowManager* m_windowManager = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
 		Log* m_logSubSystem = nullptr;
+		RHI::RHIModuleLoader* m_rhiModuleLoader = nullptr;
 
 		bool m_skipPresentThisFrame = false;
 		bool m_isRunning = false;

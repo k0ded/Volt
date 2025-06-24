@@ -1,9 +1,0 @@
-name: "Skybox"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "vs"
-    filePath: "Engine/Shaders/Source/Environment/Skybox_vs.hlsl"
-  - entryPoint: "main"
-    shaderStage: "ps"
-    filePath: "Engine/Shaders/Source/Environment/Skybox_ps.hlsl"

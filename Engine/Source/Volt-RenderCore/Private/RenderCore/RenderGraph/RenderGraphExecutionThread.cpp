@@ -12,11 +12,12 @@
 
 #include <RHIModule/Graphics/Swapchain.h>
 
-#include <CoreUtilities/Containers/FunctionQueue.h>
 #include <CoreUtilities/Containers/ThreadSafeQueue.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
+	// #TODO_Ivar: Refactor to a non static class.
 	struct RenderGraphThreadData
 	{
 		Scope<std::thread> executionThread;
@@ -65,7 +66,7 @@ namespace Volt
 
 		auto execFunc = [rg = std::move(rgPtr)]() mutable
 		{
-			rg->ExecuteInternal(true, false);
+			rg->ExecuteInternal(false);
 		};
 
 		s_data->executionQueue.push(std::move(execFunc));

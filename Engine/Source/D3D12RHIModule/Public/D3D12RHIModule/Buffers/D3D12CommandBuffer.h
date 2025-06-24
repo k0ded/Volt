@@ -57,13 +57,11 @@ namespace Volt::RHI
 		void BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer) override;
 		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) override;
 
-		void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) override;
+		void BindDescriptorTable2(RawPtr<DescriptorTable> descriptorTable) override;
 		void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) override;
 
 		void BeginRendering(const RenderingInfo& renderingInfo) override;
 		void EndRendering() override;
-
-		void PushConstants(const void* data, const uint32_t size, const uint32_t offset) override;
 
 		void ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers) override;
 
@@ -76,10 +74,12 @@ namespace Volt::RHI
 		void EndTimestamp(uint32_t timestampIndex) override;
 		const float GetExecutionTime(uint32_t timestampIndex) const override;
 
-		void ClearImage(RawPtr<Image> image, std::array<float, 4> clearColor) override;
-		void ClearBuffer(RawPtr<StorageBuffer> buffer, const uint32_t value) override;
+		void ClearBufferView(RawPtr<BufferView> bufferView, const uint32_t clearValue) override;
+		void ClearBufferView(RawPtr<BufferView> bufferView, const float clearValue) override;
 
-		void UpdateBuffer(RawPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data) override;
+		void ClearImageView(RawPtr<ImageView> imageView, std::array<uint32_t, 4> clearValue) override;
+		void ClearImageView(RawPtr<ImageView> imageView, std::array<float, 4> clearValue) override;
+
 		void CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size) override;
 		void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip /* = 0 */) override;
 		void CopyImageToBuffer(RawPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) override;

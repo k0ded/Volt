@@ -215,7 +215,7 @@ namespace Volt::RHI
 
 			m_perImageData[i].resource = backBuffer;
 		
-			SwapchainImageSpecification spec{};
+			SwapchainImageDesc spec{};
 			spec.swapchain = this;
 			spec.imageIndex = i;
 			m_perImageData[i].imageReference = Image::Create(spec);

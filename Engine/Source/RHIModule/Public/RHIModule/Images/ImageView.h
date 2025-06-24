@@ -5,27 +5,31 @@
 
 namespace Volt::RHI
 {
-	struct ImageViewSpecification
+	struct ImageViewDesc
 	{
+		inline static constexpr uint32_t LayerCountMax = 31;
+		inline static constexpr uint32_t MipCountMax = 31;
+
 		ImageViewType viewType = ImageViewType::View2D;
 
 		uint32_t baseMipLevel = 0;
 		uint32_t baseArrayLayer = 0;
-		uint32_t mipCount = 1;
-		uint32_t layerCount = 1;
+		uint32_t mipCount = MipCountMax;
+		uint32_t layerCount = LayerCountMax;
 
-		RHIResource* image = nullptr;
+		RawPtr<RHIResource> image = nullptr;
 	};
 
 	class VTRHI_API ImageView : public RHIInterface
 	{
 	public:
-		static RefPtr<ImageView> Create(const ImageViewSpecification& specification);
+		static RefPtr<ImageView> Create(const ImageViewDesc& specification);
 
 		virtual const ImageAspect GetImageAspect() const = 0;
 		virtual const uint64_t GetDeviceAddress() const = 0;
 		virtual const ImageUsage GetImageUsage() const = 0;
 		virtual const ImageViewType GetViewType() const = 0;
+		virtual const ImageViewDesc& GetDesc() const = 0;
 		virtual const bool IsSwapchainView() const = 0;
 
 	protected:

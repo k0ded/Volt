@@ -10,7 +10,7 @@
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <vulkan/vulkan.h>
 
@@ -28,7 +28,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([handle = m_handle]() 
+		RHIModule::GetInstance().DestroyResource([handle = m_handle]() 
 		{
 			GraphicsContext::GetDevice()->As<VulkanGraphicsDevice>()->WaitForIdle(); // #TODO_Ivar: Should not be called.
 			vkDestroyAccelerationStructureKHR(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), handle, nullptr);
@@ -113,7 +113,13 @@ namespace Volt::RHI
 		auto device = GraphicsContext::GetDevice();
 		vkGetAccelerationStructureBuildSizesKHR(device->GetHandle<VkDevice>(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildGeometryInfo, primitiveCounts.data(), &buildSizes);
 	
-		m_backingBuffer = StorageBuffer::Create(1, buildSizes.accelerationStructureSize, "Acceleration Structure Backing Buffer", BufferUsage::AccelerationStructure | BufferUsage::DeviceAddress);
+		BufferDesc desc{};
+		desc.count = 1;
+		desc.elementSize = buildSizes.accelerationStructureSize;
+		desc.debugName = "Acceleration Structure Backing Buffer";
+		desc.usage = BufferUsage::AccelerationStructure | BufferUsage::DeviceAddress;
+
+		m_backingBuffer = StorageBuffer::Create(desc);
 		
 		VkAccelerationStructureCreateInfoKHR asCreateInfo{};
 		asCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;

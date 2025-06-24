@@ -2,6 +2,8 @@
 
 #include "Volt-Renderer/RenderScene/SceneLightData.h"
 
+#include <RenderCore/RenderGraph/ShaderParameterStruct.h>
+
 #include <RHIModule/Descriptors/ResourceHandle.h>
 
 #include <glm/glm.hpp>
@@ -123,4 +125,10 @@ namespace Volt
 		// Sky: .x=LOD
 		glm::vec4 lightSpecific;
 	};
+
+	BEGIN_SHADER_PARAMETER_STRUCT(GPUSceneParameters)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrimitiveDrawDataBuffer)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrevPrimitiveDrawDataBuffer)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<LightDrawData>, SceneLights)
+	END_SHADER_PARAMETER_STRUCT()
 }

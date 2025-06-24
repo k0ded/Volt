@@ -1,12 +1,12 @@
 #include "rhipch.h"
 
 #include "RHIModule/Images/ImageView.h"
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
-	RefPtr<ImageView> ImageView::Create(const ImageViewSpecification& specification)
+	RefPtr<ImageView> ImageView::Create(const ImageViewDesc& specification)
 	{
-		return RHIProxy::GetInstance().CreateImageView(specification);
+		return RHIModule::GetInstance().CreateImageView(specification);
 	}
 }

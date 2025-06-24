@@ -367,13 +367,23 @@ namespace Volt::RHI
 			return true;
 		}
 
-		const size_t inputStructLoc = processedSource.find("struct " + inputStruct);
+		// Find the correct declaration
+		size_t inputStructLoc = processedSource.find("struct " + inputStruct + " ");
+		if (inputStructLoc == std::string::npos)
+		{
+			inputStructLoc = processedSource.find("struct " + inputStruct + "\n");
+		}
+		if (inputStructLoc == std::string::npos)
+		{
+			inputStructLoc = processedSource.find("struct " + inputStruct + "\0");
+		}
+
 		const size_t openBracketLoc = processedSource.find_first_of('{', inputStructLoc);
 		const size_t closeBracketLoc = processedSource.find("};", inputStructLoc);
 
 		std::string structSubStr = processedSource.substr(openBracketLoc, closeBracketLoc - openBracketLoc);
 
-		Vector<BufferElement> inputElements{};
+		Map<uint32_t, Vector<BufferElement>> inputElementsMap{};
 		Vector<BufferElement> instanceInputElements{};
 
 		size_t currentInputSemiColLoc = structSubStr.find_first_of(';');
@@ -394,8 +404,10 @@ namespace Volt::RHI
 
 			if (!Utility::IsSystemValueSemantic(nameStr) && !Utility::IsVulkanBuiltIn(currentValueStr))
 			{
-				ElementType elementType = ElementType::Bool;
+				ElementType elementType = ElementType::Invalid;
+				uint32_t vertexInputIndex = 0;
 				bool isPerInstance = false;
+				bool isInvalid = false;
 
 				size_t typeTagLoc = currentValueStr.find("[[vt::");
 				while (typeTagLoc != std::string::npos)
@@ -407,27 +419,48 @@ namespace Volt::RHI
 					{
 						isPerInstance = true;
 					}
+					else if (lowerStr.find("vt::inputindex") != std::string::npos)
+					{
+						size_t delimiterBegin = lowerStr.find_first_of('(');
+						size_t delimiterEnd = lowerStr.find_last_of(')');
+
+						if (delimiterBegin != std::string::npos && delimiterEnd != std::string::npos)
+						{
+							vertexInputIndex = std::stoi(lowerStr.substr(delimiterBegin + 1, delimiterBegin - delimiterEnd));
+						}
+					}
 					else
 					{
 						elementType = FindElementTypeFromTag(lowerStr);
+
+						// If all checks have failed, and no element type was found, the tag is invalid.
+						if (elementType == ElementType::Invalid)
+						{
+							VT_LOGC(Error, LogRHI, "The tag {} is not a valid vertex definition tag!", tagSubstr);
+							isInvalid = true;
+						}
 					}
 
 					constexpr uint32_t TAG_LENGTH = 5;
 					typeTagLoc = currentValueStr.find("[[vt::", typeTagLoc + TAG_LENGTH);
 				}
 
-				if (typeTagLoc == std::string::npos)
+				if (elementType == ElementType::Invalid)
 				{
 					elementType = FindDefaultElementTypeFromString(currentValueStr);
 				}
 
-				if (!isPerInstance)
+				// If the input declaration was invalid, we do not add it to the vertex input definition.
+				if (!isInvalid)
 				{
-					inputElements.emplace_back(elementType, nameStr);
-				}
-				else
-				{
-					instanceInputElements.emplace_back(elementType, nameStr);
+					if (!isPerInstance)
+					{
+						inputElementsMap[vertexInputIndex].emplace_back(elementType, nameStr);
+					}
+					else
+					{
+						instanceInputElements.emplace_back(elementType, nameStr);
+					}
 				}
 			}
 
@@ -435,7 +468,10 @@ namespace Volt::RHI
 			currentInputSemiColLoc = structSubStr.find_first_of(';');
 		}
 
-		outResult.vertexLayout = inputElements;
+		for (const auto& [index, inputElements] : inputElementsMap)
+		{
+			outResult.vertexLayout[index] = inputElements;
+		}
 
 		return true;
 	}
@@ -647,7 +683,7 @@ namespace Volt::RHI
 			return ElementType::Float4x4;
 		}
 
-		return ElementType::Bool;
+		return ElementType::Invalid;
 	}
 
 	ShaderUniformType ShaderPreProcessor::FindUniformTypeFromString(std::string_view str)

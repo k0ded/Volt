@@ -1,6 +1,0 @@
-name: "GenerateMaterialCount"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/Visibility/GenerateMaterialCount_cs.hlsl"

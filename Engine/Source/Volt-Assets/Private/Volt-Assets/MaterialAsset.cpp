@@ -26,11 +26,11 @@ namespace Volt
 				if (state == AssetChangedState::Updated)
 				{
 					Ref<Texture2D> textureAsset = AssetManager::GetAsset<Texture2D>(dependencyHandle);
-					m_renderMaterial->SetTexture(index, RenderTexture(textureAsset->GetResourceHandle()));
+					m_renderMaterial->SetTexture(index, RenderTexture(textureAsset->GetImage()));
 				}
 				else if (state == AssetChangedState::Removed)
 				{
-					m_renderMaterial->SetTexture(index, RenderTexture(Resource::Invalid));
+					m_renderMaterial->SetTexture(index, RenderTexture(nullptr));
 				}
 
 				break;

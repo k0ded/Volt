@@ -6,13 +6,13 @@
 
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Images/ImageUtility.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <RHIModule/Utility/ResourceUtility.h>
 
 namespace Volt::RHI
 {
-	D3D12Image::D3D12Image(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator)
+	D3D12Image::D3D12Image(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator)
 		: m_specification(specification), m_allocator(allocator)
 	{
 		if (!allocator)
@@ -24,7 +24,7 @@ namespace Volt::RHI
 		SetName(specification.debugName);
 	}
 
-	D3D12Image::D3D12Image(const SwapchainImageSpecification& specification)
+	D3D12Image::D3D12Image(const SwapchainImageDesc& specification)
 		: m_isSwapchainImage(true)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
@@ -56,7 +56,7 @@ namespace Volt::RHI
 		return Buffer();
 	}
 
-	void D3D12Image::InvalidateSwapchainImage(const SwapchainImageSpecification& specification)
+	void D3D12Image::InvalidateSwapchainImage(const SwapchainImageDesc& specification)
 	{
 		const auto& d3d12Swapchain = specification.swapchain->AsRef<D3D12Swapchain>();
 
@@ -216,7 +216,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]()
+		RHIModule::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]()
 		{
 			allocator->DestroyImage(allocation);
 		});
@@ -238,7 +238,7 @@ namespace Volt::RHI
 			}
 		}
 
-		ImageViewSpecification spec{};
+		ImageViewDesc spec{};
 		spec.baseArrayLayer = (layer == -1) ? 0 : layer;
 		spec.baseMipLevel = (mip == -1) ? 0 : mip;
 		spec.layerCount = (layer == -1) ? m_specification.layers : 1;
@@ -307,7 +307,7 @@ namespace Volt::RHI
 			return m_arrayImageViews.at(mip);
 		}
 
-		ImageViewSpecification spec{};
+		ImageViewDesc spec{};
 		spec.baseArrayLayer = 0;
 		spec.baseMipLevel = (mip == -1) ? 0 : mip;
 		spec.layerCount = m_specification.layers;

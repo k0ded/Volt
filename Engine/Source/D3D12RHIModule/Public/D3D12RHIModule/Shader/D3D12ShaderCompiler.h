@@ -19,6 +19,7 @@ namespace Volt::RHI
 	
 	protected:
 		CompilationResultData TryCompileImpl(const Specification& specification) override;
+		CompilationResultData TryCompileImpl2(const Specification& specification) override;
 		void AddMacroImpl(const std::string& macroName) override;
 		void RemoveMacroImpl(std::string_view macroName) override;
 		void* GetHandleImpl() const override;

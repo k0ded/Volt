@@ -11,6 +11,7 @@
 #include <RHIModule/Graphics/PhysicalGraphicsDevice.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Memory/GPUAllocator.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -163,12 +164,18 @@ namespace Volt::RHI
 		m_defaultAllocator = DefaultGPUAllocator::Create();
 		m_transientAllocator = TransientGPUAllocator::Create();
 
-		VulkanBindlessDescriptorLayoutManager::CreateGlobalDescriptorLayout();
+		if (RHI::RHICanUseBindless())
+		{
+			VulkanBindlessDescriptorLayoutManager::CreateGlobalDescriptorLayout();
+		}
 	}
 
 	void VulkanGraphicsContext::Shutdown()
 	{
-		VulkanBindlessDescriptorLayoutManager::DestroyGlobalDescriptorLayout();
+		if (RHI::RHICanUseBindless())
+		{
+			VulkanBindlessDescriptorLayoutManager::DestroyGlobalDescriptorLayout();
+		}
 
 		m_defaultAllocator = nullptr;
 		m_transientAllocator = nullptr;

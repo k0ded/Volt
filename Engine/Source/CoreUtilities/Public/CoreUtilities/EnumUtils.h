@@ -213,3 +213,10 @@ inline static constexpr bool EnumValueContainsFlag(const T& value, const T& flag
 {
 	return (value & flag) != static_cast<T>(0);
 }
+
+
+template<Enum T, typename... Args>
+inline static constexpr bool EnumValueContainsAnyFlag(const T& value, Args&&... args)
+{
+	return (((value & args) != static_cast<T>(0)) || ...);
+}

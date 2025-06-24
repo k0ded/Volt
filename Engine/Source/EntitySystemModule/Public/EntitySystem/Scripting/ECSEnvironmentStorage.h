@@ -29,5 +29,5 @@ private:
 	};
 
 	Buffer m_dataBuffer;
-	vt::map<TypeTraits::TypeIndex, EnvironmentData> m_environmentTypeIndexToEnvData;
+	Map<TypeTraits::TypeIndex, EnvironmentData> m_environmentTypeIndexToEnvData;
 };

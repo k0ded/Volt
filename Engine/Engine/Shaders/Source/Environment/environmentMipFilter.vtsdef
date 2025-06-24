@@ -1,6 +1,0 @@
-name: "EnvironmentMipFilter"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/Environment/EnvironmentMipFilter_cs.hlsl"

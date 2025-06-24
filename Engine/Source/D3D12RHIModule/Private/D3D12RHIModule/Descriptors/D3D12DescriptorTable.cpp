@@ -298,7 +298,7 @@ namespace Volt::RHI
 		{
 			for (const auto& [binding, data] : bindings)
 			{
-				auto& info = m_allocatedDescriptorPointers[set][binding][ShaderRegisterType::UniformBuffer];
+				auto& info = m_allocatedDescriptorPointers[set][binding][ShaderRegisterType::CBV];
 				info.viewType = D3D12ViewType::CBV;
 				info.descriptorIndex = d3d12Shader.GetDescriptorIndexFromDescriptorHash(GetDescriptorBindingHash(set, binding, D3D12_DESCRIPTOR_RANGE_TYPE_CBV));
 
@@ -310,7 +310,7 @@ namespace Volt::RHI
 		{
 			for (const auto& [binding, data] : bindings)
 			{
-				auto& info = m_allocatedDescriptorPointers[set][binding][ShaderRegisterType::UnorderedAccess];
+				auto& info = m_allocatedDescriptorPointers[set][binding][ShaderRegisterType::UAV];
 
 				if (data.isWrite)
 				{
@@ -331,7 +331,7 @@ namespace Volt::RHI
 		{
 			for (const auto& [binding, data] : bindings)
 			{
-				auto& info = m_allocatedDescriptorPointers[set][binding][ShaderRegisterType::UnorderedAccess];
+				auto& info = m_allocatedDescriptorPointers[set][binding][ShaderRegisterType::UAV];
 				info.viewType = D3D12ViewType::UAV;
 				info.descriptorIndex = d3d12Shader.GetDescriptorIndexFromDescriptorHash(GetDescriptorBindingHash(set, binding, D3D12_DESCRIPTOR_RANGE_TYPE_UAV));
 				mainDescriptorCount++;
@@ -342,7 +342,7 @@ namespace Volt::RHI
 		{
 			for (const auto& [binding, data] : bindings)
 			{
-				auto& info = m_allocatedDescriptorPointers[set][binding][ShaderRegisterType::Texture];
+				auto& info = m_allocatedDescriptorPointers[set][binding][ShaderRegisterType::SRV];
 				info.viewType = D3D12ViewType::SRV;
 				info.descriptorIndex = d3d12Shader.GetDescriptorIndexFromDescriptorHash(GetDescriptorBindingHash(set, binding, D3D12_DESCRIPTOR_RANGE_TYPE_SRV));
 				mainDescriptorCount++;

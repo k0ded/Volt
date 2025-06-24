@@ -1,7 +1,6 @@
 #pragma once
 
-#include <RenderCore/RenderGraph/RenderGraph.h>
-#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
+#include <RenderCore/RenderGraph/ShaderParameterStruct.h>
 #include <CoreUtilities/Pointers/RefPtr.h>
 
 namespace Volt
@@ -12,6 +11,7 @@ namespace Volt
 	}
 
 	class Texture2D;
+	class RenderGraph;
 
 	struct BlueNoiseData
 	{
@@ -23,19 +23,19 @@ namespace Volt
 	};
 
 	BEGIN_SHADER_PARAMETER_STRUCT(BlueNoiseShaderParameters)
-		SHADER_PARAMETER_IMAGE(vt::Tex2D<float>, blueNoiseScalarTexture)
-		SHADER_PARAMETER_IMAGE(vt::Tex2D<float4>, blueNoiseVec2Texture)
-		SHADER_PARAMETER_IMAGE(vt::Tex2D<float4>, blueNoiseRGBATexture)
-		SHADER_PARAMETER_SAMPLER(vt::TextureSampler, pointWrapSampler)
-		SHADER_PARAMETER(uint3, moduloMasks)
-		SHADER_PARAMETER(uint3, dimensions)
+		SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, BlueNoiseScalarTexture)
+		SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, BlueNoiseVec2Texture)
+		SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, BlueNoiseRGBATexture)
+		SHADER_PARAMETER_SAMPLER(BlueNoiseSampler)
+		SHADER_PARAMETER(uint3, BlueNoiseModuloMasks)
+		SHADER_PARAMETER(uint3, BlueNoiseDimensions)
 	END_SHADER_PARAMETER_STRUCT()
 
 	struct BlueNoiseTextures
 	{
-		RenderGraphImageHandle blueNoiseScalarTexture;
-		RenderGraphImageHandle blueNoiseVec2Texture;
-		RenderGraphImageHandle blueNoiseRGBATexture;
+		RGTextureSRVRef blueNoiseScalarTexture;
+		RGTextureSRVRef blueNoiseVec2Texture;
+		RGTextureSRVRef blueNoiseRGBATexture;
 	};
 
 	class BlueNoise
@@ -44,10 +44,7 @@ namespace Volt
 		BlueNoise();
 		~BlueNoise();
 
-		static void Build(RenderGraph::Builder& builder, const BlueNoiseTextures& blueNoiseTextures);
-		static void Setup(BlueNoiseShaderParameters& parameters, const BlueNoiseTextures& blueNoiseTextures);
-		
-		static BlueNoiseTextures GetBlueNoiseTextures(RenderGraph& renderGraph);
+		static BlueNoiseShaderParameters GetBlueNoiseParameters(RenderGraph& renderGraph);
 
 	private:
 		void LoadBlueNoiseTextures();

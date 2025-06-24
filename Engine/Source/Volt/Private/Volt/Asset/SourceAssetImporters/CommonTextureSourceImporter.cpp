@@ -63,7 +63,7 @@ namespace Volt
 
 		const uint32_t mipLevelCount = importConfig.generateMipMaps ? RHI::Utility::CalculateMipCount(width, height) : 1u;
 
-		RHI::ImageSpecification specification{};
+		RHI::ImageDesc specification{};
 		specification.format = format;
 		specification.usage = RHI::ImageUsage::Texture;
 		specification.width = width;

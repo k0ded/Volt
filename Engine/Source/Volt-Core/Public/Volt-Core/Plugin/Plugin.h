@@ -69,5 +69,5 @@ VT_EXPORT_DLL Volt::Plugin* CreatePluginInstance(PluginInitializationInfo& initi
 																								\
 VT_EXPORT_DLL void DestroyPluginInstance(Volt::Plugin* plugin) 									\
 {																								\
-	delete plugin;																				\
+	delete reinterpret_cast<pluginTypename*>(plugin);																				\
 }

@@ -37,24 +37,26 @@ namespace Volt::RHI
 		m_imageHeaps.clear();
 	}
 
-	Handle<Allocation> VulkanTransientGPUAllocator::CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
+	Handle<Allocation> VulkanTransientGPUAllocator::CreateBuffer(const BufferDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 
-		const size_t hash = Utility::GetHashFromBufferSpec(size, usage, memoryUsage);
+		const uint64_t byteSize = desc.count * desc.elementSize;
+
+		const size_t hash = Utility::GetHashFromBufferSpec(byteSize, desc.usage, desc.memoryUsage);
 		if (auto buffer = m_allocationCache.TryGetBufferAllocationFromHash(hash))
 		{
 			return buffer;
 		}
 
 		TransientBufferCreateInfo info{};
-		info.size = size;
-		info.usage = usage;
-		info.memoryUsage = memoryUsage;
+		info.size = byteSize;
+		info.usage = desc.usage;
+		info.memoryUsage = desc.memoryUsage;
 		info.hash = hash;
 
 		TransientHeapFlags heapFlags = TransientHeapFlags::AllowBuffers;
-		if ((memoryUsage & MemoryUsage::CPUToGPU) != MemoryUsage::None)
+		if ((desc.memoryUsage & MemoryUsage::CPUToGPU) != MemoryUsage::None)
 		{
 			heapFlags |= TransientHeapFlags::AllowMappable;
 		}
@@ -63,9 +65,9 @@ namespace Volt::RHI
 
 		for (const auto& heap : m_bufferHeaps)
 		{
-			if (heap->IsAllocationSupported(size, heapFlags))
+			if (heap->IsAllocationSupported(byteSize, heapFlags))
 			{
-				result = heap->CreateBuffer(info, name);
+				result = heap->CreateBuffer(info, desc.debugName);
 				break;
 			}
 		}
@@ -74,21 +76,21 @@ namespace Volt::RHI
 		if (!result)
 		{
 			auto heap = CreateNewBufferHeap(heapFlags);
-			if (heap->IsAllocationSupported(size, heapFlags))
+			if (heap->IsAllocationSupported(byteSize, heapFlags))
 			{
-				result = heap->CreateBuffer(info, name);
+				result = heap->CreateBuffer(info, desc.debugName);
 			}
 		}
 
 		if (!result)
 		{
-			VT_LOGC(Error, LogVulkanRHI, "Unable to create buffer of size {0}!", size);
+			VT_LOGC(Error, LogVulkanRHI, "Unable to create buffer of size {0}!", byteSize);
 		}
 
 		return result;
 	}
 
-	Handle<Allocation> VulkanTransientGPUAllocator::CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage)
+	Handle<Allocation> VulkanTransientGPUAllocator::CreateImage(const ImageDesc& imageSpecification, MemoryUsage memoryUsage)
 	{
 		VT_PROFILE_FUNCTION();
 

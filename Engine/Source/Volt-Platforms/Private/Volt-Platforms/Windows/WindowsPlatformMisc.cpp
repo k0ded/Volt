@@ -4,9 +4,12 @@
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/Malloc.h>
+#include <CoreUtilities/Math/Math.h>
 
 #include <combaseapi.h>
 #include <lmcons.h>
+#include <winnt.h>
 
 namespace Volt
 {
@@ -67,6 +70,67 @@ namespace Volt
 		}
 
 		return std::string("Unnamned");
+	}
+
+	static void QueryCPUInfo(uint32_t& outNumCores, uint32_t& outNumLogicalCores)
+	{
+		outNumCores = 0;
+		outNumLogicalCores = 0;
+
+		uint8_t* bufferPtr = nullptr;
+		DWORD bufferSize = 0;
+
+		if (GetLogicalProcessorInformationEx(RelationAll, (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)bufferPtr, &bufferSize) == false)
+		{
+			if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+			{
+				bufferPtr = reinterpret_cast<uint8_t*>(Memory::Malloc(bufferSize));
+
+				if (GetLogicalProcessorInformationEx(RelationAll, (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)bufferPtr, &bufferSize))
+				{
+					uint8_t* infoPtr = bufferPtr;
+					while (infoPtr < bufferPtr + bufferSize)
+					{
+						PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX processorInfo = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)infoPtr;
+
+						if (!processorInfo)
+						{
+							break;
+						}
+
+						if (processorInfo->Relationship == RelationProcessorCore)
+						{
+							outNumCores++;
+
+							for (int32_t groupIndex = 0; groupIndex < processorInfo->Processor.GroupCount; ++groupIndex)
+							{
+								outNumLogicalCores += Math::CountBits(processorInfo->Processor.GroupMask[groupIndex].Mask);
+							}
+						}
+
+						infoPtr += processorInfo->Size;
+					}
+				}
+
+				Memory::Free(bufferPtr);
+			}
+		}
+	}
+
+	uint32_t WindowsPlatformMisc::GetNumberOfPhysicalCores()
+	{
+		uint32_t numCores, numLogicalCores;
+		QueryCPUInfo(numCores, numLogicalCores);
+		
+		return numCores;
+	}
+	
+	uint32_t WindowsPlatformMisc::GetNumberOfLogicalCores()
+	{
+		uint32_t numCores, numLogicalCores;
+		QueryCPUInfo(numCores, numLogicalCores);
+
+		return numLogicalCores;
 	}
 }
 #endif

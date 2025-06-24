@@ -1,9 +1,11 @@
 #pragma once
 
 #include "RenderCore/RenderGraph/ShaderTypes.h"
-#include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
+#include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
+#include "RenderCore/Shader/GlobalShader.h"
 
-#include <RHIModule/Descriptors/ResourceHandle.h>
+#include <RHIModule/Shader/ShaderCommon.h>
+#include <RHIModule/Images/SamplerState.h>
 
 #include <CoreUtilities/StringHash.h>
 
@@ -15,11 +17,17 @@ namespace Volt
 
 	enum class ShaderParameterType : uint8_t
 	{
-		Image,
-		Buffer,
+		BufferSRV,
+		BufferUAV,
+		TextureSRV,
+		TextureUAV,
 		UniformBuffer,
 		Sampler,
-		Parameter
+		Parameter,
+		BufferAccess,
+		TextureAccess,
+		UniformBufferAccess,
+		RenderTargets
 	};
 
 	struct ShaderParameterMetadata
@@ -27,22 +35,21 @@ namespace Volt
 		std::string name;
 		StringHash hashedName;
 		ShaderParameterType parameterType;
+		RGResourceAccess resourceAccessType;
 		uint32_t structOffset;
 		uint32_t structSize;
-		uint32_t parentStructOffset; 
-		uint32_t reflectedOffset;
 	};
 
-	struct RenderGraphImageAccess
+	struct ShaderParameterRenderTargetBindings
 	{
-		RenderGraphImageAccess() = default;
-		RenderGraphImageAccess(RenderGraphImageHandle inHandle, int32_t inMip = -1, int32_t inLayer = -1)
-			: handle(inHandle), mip(inMip), layer(inLayer)
-		{}
+		ShaderParameterRenderTargetBindings()
+			: depthTarget(nullptr)
+		{ 
+			memset(renderTargets, 0, sizeof(RGTextureRef) * RHI::MAX_COLOR_ATTACHMENT_COUNT);
+		}
 
-		RenderGraphImageHandle handle = RenderGraphNullHandle();
-		int32_t layer = -1;
-		int32_t mip = -1;
+		RGTextureRef renderTargets[RHI::MAX_COLOR_ATTACHMENT_COUNT];
+		RGTextureRef depthTarget;
 	};
 }
 
@@ -54,8 +61,8 @@ namespace Volt
 		inline static constexpr const char* CurrentStructName = #structName; \
 		struct FirstMemberID {}; \
 		typedef void* FuncPtr; \
-		typedef FuncPtr (*MemberFunc)(FirstMemberID, Vector<Volt::ShaderParameterMetadata>&, uint32_t, const std::string&); \
-		static FuncPtr ProcessMember(FirstMemberID, Vector<Volt::ShaderParameterMetadata>&, uint32_t parentStructOffset = 0, const std::string& parentName = "") \
+		typedef FuncPtr (*MemberFunc)(FirstMemberID, Vector<Volt::ShaderParameterMetadata>&, uint32_t); \
+		static FuncPtr ProcessMember(FirstMemberID, Vector<Volt::ShaderParameterMetadata>&, uint32_t) \
 		{ \
 			return nullptr; \
 		} \
@@ -64,66 +71,149 @@ namespace Volt
 #define END_SHADER_PARAMETER_STRUCT() \
 		LastMemberID; \
 		public: \
-		static void zzInternal_ProcessMembers(Vector<Volt::ShaderParameterMetadata>& outMetadata, uint32_t parentStructOffset = 0, const std::string& parentName = "") \
+		static void zzInternal_ProcessMembers(Vector<Volt::ShaderParameterMetadata>& outMetadata, uint32_t offset = 0) \
 		{ \
-			FuncPtr(*lastFunc)(LastMemberID, Vector<Volt::ShaderParameterMetadata>&, uint32_t, const std::string&); \
+			FuncPtr(*lastFunc)(LastMemberID, Vector<Volt::ShaderParameterMetadata>&, uint32_t); \
 			lastFunc = ProcessMember; \
 			FuncPtr ptr = (FuncPtr)lastFunc; \
 			do \
 			{ \
-				ptr = reinterpret_cast<MemberFunc>(ptr)(FirstMemberID(), outMetadata, parentStructOffset, parentName); \
+				ptr = reinterpret_cast<MemberFunc>(ptr)(FirstMemberID(), outMetadata, offset); \
 			} while (ptr != nullptr); \
+		} \
+		struct ShaderParameters \
+		{ \
+			ShaderParameters() \
+			{ \
+				zzInternal_ProcessMembers(parameterMetadata); \
+			} \
+			Vector<Volt::ShaderParameterMetadata> parameterMetadata; \
+		}; \
+		static const Vector<Volt::ShaderParameterMetadata>& GetShaderParameterMetadata() \
+		{ \
+			static ShaderParameters shaderParameters; \
+			return shaderParameters.parameterMetadata; \
 		} \
 	}; 
 
-#define SHADER_PARAMETER_COMMON_INTERNAL(type, paramName, paramType) \
+#define SHADER_PARAMETER_COMMON_INTERNAL(type, paramName, paramType, resourceAccess) \
 private: \
 	struct NextMemberID##paramName {}; \
-	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata>& outMetadata, uint32_t parentStructOffset = 0, const std::string& parentName = "") \
+	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata>& outMetadata, uint32_t offset) \
 	{ \
 		auto& paramMetadata = outMetadata.emplace_back(); \
-		paramMetadata.name = parentName.empty() ? #paramName : parentName + "." + #paramName; \
+		paramMetadata.name = #paramName; \
 		paramMetadata.hashedName = StringHash::Construct(paramMetadata.name); \
 		paramMetadata.parameterType = paramType; \
 		paramMetadata.structSize = sizeof(type); \
-		paramMetadata.structOffset = offsetof(CurrentStruct, paramName); \
-		paramMetadata.parentStructOffset = parentStructOffset; \
-		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata>&, uint32_t, const std::string&); \
+		paramMetadata.structOffset = offset + offsetof(CurrentStruct, paramName); \
+		paramMetadata.resourceAccessType = resourceAccess; \
+		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata>&, uint32_t); \
 		prevFunc = ProcessMember; \
 		return (FuncPtr)prevFunc; \
 	} \
 	typedef NextMemberID##paramName
 
+/*
+	Allows the user to define a indirect buffer access, such as vertex buffers,
+	index buffers or indirect arg buffers.
+*/
+#define RG_BUFFER_ACCESS(paramName, access) \
+	MemberID##paramName; \
+public: \
+	Volt::RGBufferRef paramName = nullptr; \
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGBufferRef, paramName, Volt::ShaderParameterType::BufferAccess, access)
+
+/*
+	Allows the user to define a indirect texture access, such as copy source or copy dest.
+*/
+#define RG_TEXTURE_ACCESS(paramName, access) \
+	MemberID##paramName; \
+public: \
+	Volt::RGTextureRef paramName = nullptr; \
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureRef, paramName, Volt::ShaderParameterType::TextureAccess, access)
+
+/*
+	Allows the user to define a indirect uniform buffer access, such as copy source or copy dest.
+*/
+#define RG_UNIFORM_BUFFER_ACCESS(paramName, access) \
+	MemberID##paramName; \
+public: \
+	Volt::RGUniformBufferRef paramName = nullptr; \
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGUniformBufferRef, paramName, Volt::ShaderParameterType::UniformBufferAccess, access)
+
+/*
+	Adds a parameter to the struct called "renderTargets", where the user
+	can specify the render targets that this pass will use.
+*/
+#define RG_RENDER_TARGETS() \
+	MemberIDrenderTargets; \
+public: \
+	Volt::ShaderParameterRenderTargetBindings renderTargets; \
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::ShaderParameterRenderTargetBindings, renderTargets, Volt::ShaderParameterType::RenderTargets, Volt::RGResourceAccess::None)
+
+/*
+	Adds a loose shader parameter of a type that the user can assign.
+*/
 #define SHADER_PARAMETER(type, paramName) \
 	MemberID##paramName; \
 public: \
 	type paramName; \
-	SHADER_PARAMETER_COMMON_INTERNAL(type, paramName, ShaderParameterType::Parameter)
+	SHADER_PARAMETER_COMMON_INTERNAL(type, paramName, Volt::ShaderParameterType::Parameter, Volt::RGResourceAccess::None)
 
-#define SHADER_PARAMETER_BUFFER(type, paramName) \
+/*
+	Adds a sampler state to the struct.
+*/
+#define SHADER_PARAMETER_SAMPLER(paramName) \
 	MemberID##paramName; \
 public: \
-	RenderGraphBufferHandle paramName = RenderGraphNullHandle(); \
-	SHADER_PARAMETER_COMMON_INTERNAL(RenderGraphBufferHandle, paramName, ShaderParameterType::Buffer)
+	RefPtr<Volt::RHI::SamplerState> paramName; \
+	SHADER_PARAMETER_COMMON_INTERNAL(RefPtr<Volt::RHI::SamplerState>, paramName, Volt::ShaderParameterType::Sampler, Volt::RGResourceAccess::None)
 
-// The image access works with RenderGraphImageHandle as its type, because the handle is the first variable in the struct.
-#define SHADER_PARAMETER_IMAGE(type, paramName) \
+/*
+	Adds a buffer read parameter to the struct
+*/
+#define SHADER_PARAMETER_BUFFER_SRV(type, paramName) \
 	MemberID##paramName; \
 public: \
-	RenderGraphImageAccess paramName; \
-	SHADER_PARAMETER_COMMON_INTERNAL(RenderGraphImageHandle, paramName, ShaderParameterType::Image)
+	Volt::RGBufferSRVRef paramName = nullptr; \
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGBufferSRVRef, paramName, Volt::ShaderParameterType::BufferSRV, Volt::RGResourceAccess::None)
 
+/*
+	Adds a buffer write parameter to the struct
+*/
+#define SHADER_PARAMETER_BUFFER_UAV(type, paramName) \
+	MemberID##paramName; \
+public: \
+	Volt::RGBufferUAVRef paramName = nullptr; \
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGBufferUAVRef, paramName, Volt::ShaderParameterType::BufferUAV, Volt::RGResourceAccess::None)
+
+/*
+	Adds a texture read parameter to the struct
+*/
+#define SHADER_PARAMETER_TEXTURE_SRV(type, paramName) \
+	MemberID##paramName; \
+public: \
+	Volt::RGTextureSRVRef paramName = nullptr; \
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureSRVRef, paramName, Volt::ShaderParameterType::TextureSRV, Volt::RGResourceAccess::None)
+
+/*
+	Adds a texture write parameter to the struct
+*/
+#define SHADER_PARAMETER_TEXTURE_UAV(type, paramName) \
+	MemberID##paramName; \
+public: \
+	Volt::RGTextureUAVRef paramName = nullptr; \
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGTextureUAVRef, paramName, Volt::ShaderParameterType::TextureUAV, Volt::RGResourceAccess::None)
+
+/*
+	Adds a uniform buffer read parameter to the struct
+*/
 #define SHADER_PARAMETER_UNIFORM_BUFFER(type, paramName) \
 	MemberID##paramName; \
 public: \
-	RenderGraphUniformBufferHandle paramName = RenderGraphNullHandle(); \
-	SHADER_PARAMETER_COMMON_INTERNAL(RenderGraphUniformBufferHandle, paramName, ShaderParameterType::UniformBuffer)
-
-#define SHADER_PARAMETER_SAMPLER(type, paramName) \
-	MemberID##paramName; \
-public: \
-	ResourceHandle paramName = Resource::Invalid; \
-	SHADER_PARAMETER_COMMON_INTERNAL(ResourceHandle, paramName, ShaderParameterType::Sampler)
+	Volt::RGUniformBufferRef paramName = nullptr; \
+	SHADER_PARAMETER_COMMON_INTERNAL(Volt::RGUniformBufferRef, paramName, Volt::ShaderParameterType::UniformBuffer, Volt::RGResourceAccess::None)
 
 #define SHADER_PARAMETER_STRUCT(type, paramName) \
 	MemberID##paramName; \
@@ -131,31 +221,30 @@ public: \
 	type paramName; \
 private: \
 	struct NextMemberID##paramName {}; \
-	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata>& outMetadata, uint32_t parentStructOffset = 0, const std::string& parentName = "") \
+	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata>& outMetadata, uint32_t offset) \
 	{ \
-		std::string completeParentName = parentName; \
-		if (!completeParentName.empty()) \
-		{ \
-			completeParentName += "."; \
-		} \
-		completeParentName += #paramName; \
-		type::zzInternal_ProcessMembers(outMetadata, parentStructOffset + offsetof(CurrentStruct, paramName), completeParentName); \
-		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata>&, uint32_t, const std::string&); \
+		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata>&, uint32_t); \
 		prevFunc = ProcessMember; \
 		return (FuncPtr)prevFunc; \
 	} \
 	typedef NextMemberID##paramName
 
+/*
+	Inlines another shader parameter struct into the current one.
+	Allowing access to it's shader parameters.
+	On the CPU side it will be accessed as: paramName.<parameter>
+	On the GPU size it will be accessed as: <parameter>
+*/
 #define SHADER_PARAMETER_STRUCT_INCLUDE(type, paramName) \
 	MemberID##paramName; \
 public: \
 	type paramName; \
 private: \
 	struct NextMemberID##paramName {}; \
-	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata>& outMetadata, uint32_t parentStructOffset = 0, const std::string& parentName = "") \
+	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata>& outMetadata, uint32_t offset) \
 	{ \
-		type::zzInternal_ProcessMembers(outMetadata, parentStructOffset + offsetof(CurrentStruct, paramName), parentName); \
-		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata>&, uint32_t, const std::string&); \
+		type::zzInternal_ProcessMembers(outMetadata, offsetof(CurrentStruct, paramName)); \
+		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata>&, uint32_t); \
 		prevFunc = ProcessMember; \
 		return (FuncPtr)prevFunc; \
 	} \

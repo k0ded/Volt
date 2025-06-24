@@ -52,7 +52,10 @@ namespace Volt::RHI
 
 	void VulkanBufferAllocation::Unmap()
 	{
-		vmaUnmapMemory(GraphicsContext::GetDefaultAllocator()->GetHandle<VmaAllocator>(), m_allocation);
+		VmaAllocator allocator = GraphicsContext::GetDefaultAllocator()->GetHandle<VmaAllocator>();
+
+		vmaFlushAllocation(allocator, m_allocation, 0, VK_WHOLE_SIZE);
+		vmaUnmapMemory(allocator, m_allocation);
 	}
 
 	const uint64_t VulkanBufferAllocation::GetDeviceAddress() const

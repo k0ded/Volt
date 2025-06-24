@@ -9,7 +9,7 @@
 
 namespace Volt::RHI
 {
-	struct ImageSpecification;
+	struct ImageDesc;
 
 	namespace Utility
 	{
@@ -284,6 +284,11 @@ namespace Volt::RHI
 				result |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 			}
 
+			if ((usageFlags & BufferUsage::TexelBuffer) != BufferUsage::None)
+			{
+				result |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+			}
+
 			if ((usageFlags & BufferUsage::IndexBuffer) != BufferUsage::None)
 			{
 				result |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
@@ -413,7 +418,7 @@ namespace Volt::RHI
 			return result;
 		}
 
-		const VkImageCreateInfo GetVkImageCreateInfo(const ImageSpecification& specification);
+		const VkImageCreateInfo GetVkImageCreateInfo(const ImageDesc& specification);
 		const MemoryRequirement GetImageRequirement(const VkImageCreateInfo& imageCreateInfo);
 
 		const ImageLayout GetImageLayoutFromVkImageLayout(VkImageLayout layout);

@@ -50,24 +50,22 @@ namespace VoltSharpmake
 			Type gameProjectType = Type.GetType("VoltSharpmake.Game");
 			if (gameProjectType != null)
 			{
-				conf.AddPrivateDependency(target, gameProjectType, DependencySetting.OnlyBuildOrder);
+				conf.AddPrivateDependency(target, gameProjectType);
 			}
 
-			conf.AddPrivateDependency<PhysXPhysicsInterface>(target, DependencySetting.OnlyBuildOrder);
+			conf.AddPrivateDependency<PhysXPhysicsInterface>(target);
 
 			conf.IncludePaths.Add(
                 Path.Combine(Globals.ThirdPartyDirectory ,@"nlohmann/include"),
                 Path.Combine(Globals.ThirdPartyDirectory ,@"cpp-httplib/include")
                 );
 
-
             conf.AdditionalDebuggerCommands = Path.Combine(Globals.VtProjectDirectory, @"Project.vtproj");
 
             conf.Defines.Add("CPPHTTPLIB_OPENSSL_SUPPORT");
+		}
 
-        }
-
-        public override void ConfigureWin64(Configuration conf, CommonTarget target)
+		public override void ConfigureWin64(Configuration conf, CommonTarget target)
         {
             base.ConfigureWin64(conf, target);
 
@@ -78,19 +76,6 @@ namespace VoltSharpmake
                 "Winmm.lib",
                 "Version.lib"
                 );
-
-            // This copy should probably be moved to the D3D12RHIModule script.
-            string d3d12FolderPath = Path.Combine(Globals.ThirdPartyDirectory, "d3d12", "Binaries");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\D3D12Core.dll\"" + " \"" + conf.TargetPath + "\"");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\D3D12Core.pdb\"" + " \"" + conf.TargetPath + "\"");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\d3d12SDKLayers.dll\"" + " \"" + conf.TargetPath + "\"");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\d3d12SDKLayers.pdb\"" + " \"" + conf.TargetPath + "\"");
-
-			// #TODO: Temporary fix.
-			conf.EventPostBuild.Add(@"copy /Y " + "\"" + Globals.BinariesDirectory + "\\libcrypto-1_1-x64.dll\"" + " \"" + conf.TargetPath + "\"");
-			conf.EventPostBuild.Add(@"copy /Y " + "\"" + Globals.BinariesDirectory + "\\libssl-1_1-x64.dll\"" + " \"" + conf.TargetPath + "\"");
-			conf.EventPostBuild.Add(@"copy /Y " + "\"" + Globals.BinariesDirectory + "\\libcrypto-3-x64.dll\"" + " \"" + conf.TargetPath + "\"");
-			conf.EventPostBuild.Add(@"copy /Y " + "\"" + Globals.BinariesDirectory + "\\libssl-3-x64.dll\"" + " \"" + conf.TargetPath + "\"");
 		}
 
 		public override void ConfigureMSVC(Configuration conf, CommonTarget target)

@@ -17,7 +17,6 @@
 #include <Volt/Asset/Prefab.h>
 #include <Volt/Asset/ParticlePreset.h>
 
-#include <Volt-Renderer/Material.h>
 #include <Volt-Assets/MaterialAsset.h>
 
 #include <Volt-Animation/Assets/MotionWeaveDatabase.h>

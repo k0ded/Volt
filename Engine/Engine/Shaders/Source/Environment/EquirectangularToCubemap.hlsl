@@ -1,7 +1,7 @@
-RWTexture2DArray<float3> o_output;
-Texture2D<float4> u_equirectangularMap;
+RWTexture2DArray<float3> RWOutput;
+Texture2D<float4> EquirectangularMap;
 
-SamplerState u_linearSampler;
+SamplerState LinearSampler;
 
 static const float m_pi = 3.14159265359f;
 
@@ -10,7 +10,7 @@ float3 GetCubeMapTexCoord(uint3 dispatchId)
     uint2 texSize;
     uint elements;
 
-    o_output.GetDimensions(texSize.x, texSize.y, elements);
+    RWOutput.GetDimensions(texSize.x, texSize.y, elements);
 
     float2 ST = dispatchId.xy / float2(texSize.x, texSize.y);
     float2 UV = 2.f * float2(ST.x, 1.f - ST.y) - 1.f;
@@ -42,7 +42,7 @@ float3 GetCubeMapTexCoord(uint3 dispatchId)
 }
 
 [numthreads(32, 32, 1)]
-void main(uint3 dispatchId : SV_DispatchThreadID)
+void MainCS(uint3 dispatchId : SV_DispatchThreadID)
 {
     float3 cubeTexCoord = GetCubeMapTexCoord(dispatchId);
 
@@ -52,6 +52,6 @@ void main(uint3 dispatchId : SV_DispatchThreadID)
     float phi = atan2(cubeTexCoord.z, cubeTexCoord.x);
     float theta = acos(cubeTexCoord.y);
 
-    float4 color = u_equirectangularMap.SampleLevel(u_linearSampler, float2(phi / (m_pi * 2.f), theta / m_pi), 0);
-    o_output[dispatchId] = color.rgb;
+    float4 color = EquirectangularMap.SampleLevel(LinearSampler, float2(phi / (m_pi * 2.f), theta / m_pi), 0);
+    RWOutput[dispatchId] = color.rgb;
 }

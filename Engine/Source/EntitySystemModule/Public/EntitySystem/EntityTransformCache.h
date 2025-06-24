@@ -26,7 +26,7 @@ namespace Volt
 		using WriteLock = std::unique_lock<std::shared_mutex>;
 		using ReadLock = std::shared_lock<std::shared_mutex>;
 
-		vt::map<EntityID, TQS> m_transformCache;
+		Map<EntityID, TQS> m_transformCache;
 		mutable std::shared_mutex m_mutex;
 	};
 }

@@ -50,8 +50,8 @@ namespace Volt::RHI
 		Vector<DescriptorCopyInfo> m_activeDescriptorCopies;
 		Vector<DescriptorCopyInfo> m_activeSamplerDescriptorCopies;
 
-		vt::map<ResourceHandle, D3D12DescriptorPointer> m_allocatedDescriptorPointers;
-		vt::map<ResourceHandle, D3D12DescriptorPointer> m_allocatedSamplerDescriptorPointers;
+		Map<ResourceHandle, D3D12DescriptorPointer> m_allocatedDescriptorPointers;
+		Map<ResourceHandle, D3D12DescriptorPointer> m_allocatedSamplerDescriptorPointers;
 
 		Scope<D3D12DescriptorHeap> m_mainHeap;
 		Scope<D3D12DescriptorHeap> m_samplerHeap;

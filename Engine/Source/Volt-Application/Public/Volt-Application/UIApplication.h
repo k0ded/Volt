@@ -20,8 +20,7 @@ namespace Volt
 	namespace RHI
 	{
 		class ImGuiImplementation;
-		class GraphicsContext;
-		class RHIProxy;
+		class RHIModuleLoader;
 	}
 
 	class UIApplication;
@@ -71,16 +70,15 @@ namespace Volt
 		ApplicationLayerStack m_layerStack;
 		MultiTimer m_frameTimer;
 
-		RefPtr<RHI::GraphicsContext> m_graphicsContext;
-		RefPtr<RHI::RHIProxy> m_rhiProxy;
-
 		Scope<SubSystemManager> m_subSystemManager;
 		Scope<UIApplicationEventListener> m_eventListener;
 
 		WindowManager* m_windowManager = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
+		RHI::RHIModuleLoader* m_rhiModuleLoader = nullptr;
 
 		bool m_isRunning = false;
+		bool m_skipPresentThisFrame = false;
 		float m_currentDeltaTime = 0.f;
 	};
 }

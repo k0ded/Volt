@@ -20,6 +20,7 @@
 
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
+#include <Volt-Audio/Components/AudioComponents.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
 
@@ -1075,6 +1076,19 @@ void SceneViewPanel::DrawMainRightClickPopup()
 		{
 			if (ImGui::BeginMenu(VT_ICON_FA_CUBES " Primitives"))
 			{
+				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Blockout Cube"))
+				{
+					auto ent = m_scene->CreateEntity();
+					auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
+					meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_BlockoutCube.vtasset");
+					Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(m_scene->GetEntityHelperFromEntityID(ent.GetID())));
+
+					ent.SetTag("New Cube");
+
+					SelectionManager::DeselectAll();
+					SelectionManager::Select(ent.GetID());
+				}
+
 				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Cube"))
 				{
 					auto ent = m_scene->CreateEntity();
@@ -1244,6 +1258,31 @@ void SceneViewPanel::DrawMainRightClickPopup()
 				SelectionManager::DeselectAll();
 				SelectionManager::Select(ent.GetID());
 			}
+
+			if (ImGui::BeginMenu("Audio"))
+			{
+				if (ImGui::MenuItem("Audio Listener"))
+				{
+					auto ent = m_scene->CreateEntity();
+					ent.AddComponent<Volt::Audio::AudioListenerComponent>();
+					ent.SetTag("New Audio Listener");
+
+					SelectionManager::DeselectAll();
+					SelectionManager::Select(ent.GetID());
+				}
+				if (ImGui::MenuItem("Audio Source"))
+				{
+					auto ent = m_scene->CreateEntity();
+					ent.AddComponent<Volt::Audio::AudioSourceComponent>();
+					ent.SetTag("New Audio Source");
+
+					SelectionManager::DeselectAll();
+					SelectionManager::Select(ent.GetID());
+				}
+				ImGui::EndMenu();
+			}
+
+
 
 			ImGui::EndMenu();
 		}

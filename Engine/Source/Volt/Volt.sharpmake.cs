@@ -32,7 +32,7 @@ namespace VoltSharpmake
             conf.AddPublicDependency<InputModule>(target);
 
             conf.AddPublicDependency<VulkanRHIModule>(target);
-            conf.AddPublicDependency<D3D12RHIModule>(target);
+            //conf.AddPublicDependency<D3D12RHIModule>(target, DependencySetting.OnlyBuildOrder);
 
 			conf.AddPublicDependency<VoltPhysics>(target);
 			conf.AddPublicDependency<VoltRenderCore>(target);
@@ -40,10 +40,10 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<VoltScene>(target);
 			conf.AddPublicDependency<VoltAssets>(target);
 			conf.AddPublicDependency<VoltCoreComponents>(target);
-
+            conf.AddPublicDependency<VoltAudio>(target);
+			
 			conf.AddPublicDependency<NavigationModule>(target);
             conf.AddPublicDependency<MosaicModule>(target);
-            conf.AddPublicDependency<Amp>(target);
 
             conf.AddPublicDependency<PhysX>(target);
             conf.AddPrivateDependency<meshoptimizer>(target);

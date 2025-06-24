@@ -4,7 +4,7 @@
 
 #include "RHIModule/Core/Core.h"
 #include "RHIModule/Core/Profiling.h"
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 #include "RHIModule/ImGui/ImGuiNotifications.h"
 
@@ -220,7 +220,7 @@ namespace Volt::RHI
 
 	RefPtr<ImGuiImplementation> ImGuiImplementation::Create(const ImGuiCreateInfo& createInfo)
 	{
-		RefPtr<ImGuiImplementation> implementation = RHIProxy::GetInstance().CreateImGuiImplementation(createInfo);
+		RefPtr<ImGuiImplementation> implementation = RHIModule::GetInstance().CreateImGuiImplementation(createInfo);
 		implementation->Initialize();
 
 		return implementation;
