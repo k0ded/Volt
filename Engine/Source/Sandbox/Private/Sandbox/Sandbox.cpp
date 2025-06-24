@@ -108,12 +108,6 @@ Sandbox::~Sandbox()
 
 void Sandbox::OnAttach()
 {
-	Volt::ImGuiSubSystem* imguiSubSystem = SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>();
-	if (imguiSubSystem)
-	{
-		imguiSubSystem->SetupContext();
-	}
-
 	RegisterEventListeners();
 
 	SelectionManager::Initialize();

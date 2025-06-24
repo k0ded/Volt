@@ -9,8 +9,8 @@
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
 
-
 #include <CoreUtilities/Time/ScopedTimer.h>
+#include <CoreUtilities/Malloc.h>
 
 VT_DEFINE_LOG_CATEGORY(LogImGuiSubSystem);
 
@@ -22,7 +22,17 @@ namespace Volt
 
 	void ImGuiSubSystem::Initialize()
 	{
+		constexpr auto imguiMalloc = [](size_t size, void*) -> void*
+		{
+			return Memory::Malloc(size);
+		};
 
+		constexpr auto imguiFree = [](void* ptr, void*)
+		{
+			Memory::Free(ptr);
+		};
+
+		ImGui::SetAllocatorFunctions(imguiMalloc, imguiFree, nullptr);
 	}
 
 	void ImGuiSubSystem::Shutdown()
