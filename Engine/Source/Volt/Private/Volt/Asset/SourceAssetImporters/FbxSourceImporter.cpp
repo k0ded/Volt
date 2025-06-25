@@ -736,8 +736,7 @@ namespace Volt
 				materialData.normal.y = uint8_t(octNormal.y * 255u);
 				materialData.tangent = Utility::EncodeTangent(uniqueVertices[i].normal, uniqueVertices[i].tangent);
 				materialData.tangentW = uniqueVertices[i].tangent.w;
-				materialData.texCoords.x = static_cast<half_float::half>(uniqueVertices[i].texCoords.x);
-				materialData.texCoords.y = static_cast<half_float::half>(uniqueVertices[i].texCoords.y);
+				materialData.texCoords = glm::packHalf2x16(uniqueVertices[i].texCoords);
 			}
 
 			// Setup anim data

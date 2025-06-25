@@ -111,6 +111,9 @@ public:
 
 	constexpr iterator append(const Vector<T, AllocatorType>& other) noexcept;
 
+	template<typename InputIterator>
+	constexpr iterator append(InputIterator first, InputIterator last) noexcept;
+
 	VT_NODISCARD constexpr iterator begin() noexcept;
 	VT_NODISCARD constexpr const_iterator begin() const noexcept;
 	VT_NODISCARD constexpr const_iterator cbegin() const noexcept;
@@ -387,6 +390,13 @@ template<typename T, typename AllocatorType>
 inline constexpr Vector<T, AllocatorType>::iterator Vector<T, AllocatorType>::append(const Vector<T, AllocatorType>& other) noexcept
 {
 	return insert(end(), other.begin(), other.end());
+}
+
+template<typename T, typename AllocatorType>
+template<typename InputIterator>
+constexpr Vector<T, AllocatorType>::iterator Vector<T, AllocatorType>::append(InputIterator first, InputIterator last) noexcept
+{
+	return insert(end(), first, last);
 }
 
 template<typename T, typename AllocatorType>

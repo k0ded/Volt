@@ -1,8 +1,6 @@
 #include "rhipch.h"
 #include "RHIModule/RHIModuleLoader.h"
 
-#include "RHIModule/Graphics/GraphicsContext.h"
-
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/DynamicLibraryHelpers.h>

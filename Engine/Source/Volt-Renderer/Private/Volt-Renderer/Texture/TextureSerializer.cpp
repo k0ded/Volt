@@ -10,6 +10,7 @@
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Utility/ResourceUtility.h>
@@ -115,7 +116,7 @@ namespace Volt
 			}
 
 			commandBuffer->End();
-			commandBuffer->ExecuteAndWait();
+			RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
 
 			for (uint32_t i = 0; i < image->GetMipCount(); i++)
 			{
@@ -139,7 +140,7 @@ namespace Volt
 				commandBuffer->Begin();
 				commandBuffer->CopyImageToBuffer(image, stagingBuffer, 0, newMip.width, newMip.height, 1, i);
 				commandBuffer->End();
-				commandBuffer->ExecuteAndWait();
+				RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
 
 				void* data = stagingBuffer->Map<void>();
 				dataBuffer.Resize(newMip.dataOffset + mipSize);
@@ -164,7 +165,7 @@ namespace Volt
 			}
 
 			commandBuffer->End();
-			commandBuffer->ExecuteAndWait();
+			RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
 
 			RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingBuffer);
 		}
@@ -296,7 +297,7 @@ namespace Volt
 		}
 
 		commandBuffer->End();
-		commandBuffer->Execute();
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 
 		RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
 

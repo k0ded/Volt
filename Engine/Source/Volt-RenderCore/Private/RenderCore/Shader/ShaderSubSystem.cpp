@@ -57,12 +57,12 @@ namespace Volt
 	{
 		const auto& registeredShaders = ShaderRegistry::Get().GetRegisteredShaders();
 
-		TaskGraph taskGraph{};
+		TaskGraph taskGraph{ ExecutionPriority::Immediate };
 		ScopedTimer timer{};
 
 		for (const auto& [typeIndex, registrationInfo] : registeredShaders)
 		{
-			taskGraph.AddTask("Load and Register Shader", ExecutionPriority::Immediate, [=]()
+			taskGraph.AddTask("Load and Register Shader", [=]()
 			{
 				RHI::ShaderCreateInfo createInfo;
 				createInfo.name = registrationInfo.name;

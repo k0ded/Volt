@@ -10,6 +10,7 @@
 #include "VulkanRHIModule/Graphics/VulkanDeviceQueue.h"
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 #include "VulkanRHIModule/Images/VulkanImage.h"
+#include "VulkanRHIModule/Synchronization/VulkanFence.h"
 
 #include <RHIModule/Core/Profiling.h>
 #include <RHIModule/Utility/ResourceUtility.h>
@@ -139,9 +140,11 @@ namespace Volt::RHI
 		VT_ASSERT_MSG(supportsPresent, "Device does not have present support!");
 
 		m_commandBuffers.resize(GetFramesInFlight());
+		m_fences.resize(GetFramesInFlight());
 		for (uint32_t i = 0; i < GetFramesInFlight(); i++)
 		{
 			m_commandBuffers[i] = CommandBuffer::Create();
+			m_fences[i] = Fence::Create({ true });
 		}
 
 		Invalidate(m_width, m_height, m_vSyncEnabled);
@@ -164,6 +167,9 @@ namespace Volt::RHI
 
 		auto device = GraphicsContext::GetDevice();
 		auto& frameData = m_perFrameInFlightData.at(m_currentFrame);
+
+		m_fences.at(m_currentFrame)->WaitUntilSignaled();
+		m_fences.at(m_currentFrame)->Reset();
 
 		m_commandBuffers.at(m_currentFrame)->Begin();
 		VkResult swapchainStatus = vkAcquireNextImageKHR(device->GetHandle<VkDevice>(), m_swapchain, 1000000000, frameData.presentSemaphore, nullptr, &m_currentImage);
@@ -210,7 +216,7 @@ namespace Volt::RHI
 		// Queue Submit
 		{
 			VkCommandBuffer cmdBuffer = m_commandBuffers.at(m_currentFrame)->GetHandle<VkCommandBuffer>();
-			VkFence fence = m_commandBuffers.at(m_currentFrame)->GetFence()->GetHandle<VkFence>();
+			VkFence fence = m_fences.at(m_currentFrame)->GetHandle<VkFence>();
 
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -229,6 +235,8 @@ namespace Volt::RHI
 			vkQueue.AquireLock();
 			VT_VK_CHECK(vkQueueSubmit(deviceQueue->GetHandle<VkQueue>(), 1, &submitInfo, fence));
 			vkQueue.ReleaseLock();
+		
+			m_fences.at(m_currentFrame)->As<VulkanFence>()->MarkAsExecuted();
 		}
 
 		// Present to screen
@@ -342,7 +350,7 @@ namespace Volt::RHI
 
 		auto device = GraphicsContext::GetDevice();
 		
-		m_commandBuffers.at(m_currentFrame)->WaitForFence();
+		m_fences.at(m_currentFrame)->WaitUntilSignaled();
 
 		for (auto& perFrameData : m_perFrameInFlightData)
 		{

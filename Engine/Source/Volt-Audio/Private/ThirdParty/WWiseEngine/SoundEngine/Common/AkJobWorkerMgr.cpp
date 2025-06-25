@@ -127,7 +127,7 @@ namespace AK
 		{
 			AkJobMgrSettings jobMgrSettings;
 			jobMgrSettings.fnRequestJobWorker = uNumWorkerThreads > 0 ? RequestJobWorker : nullptr;
-			for (int i = 0; i < AK_NUM_JOB_TYPES; i++)
+			for (uint32_t i = 0; i < AK_NUM_JOB_TYPES; i++)
 			{
 				jobMgrSettings.uMaxActiveWorkers[i] = uNumWorkerThreads;
 			}

@@ -42,7 +42,7 @@ namespace Volt
 					const glm::vec3 normal = Utility::OctNormalDecode(encodedNormal);
 
 					vertex.normal = normal;
-					vertex.uv = materialData.texCoords;
+					vertex.uv = glm::unpackHalf2x16(materialData.texCoords);
 				}
 			}
 
@@ -85,7 +85,7 @@ namespace Volt
 					const glm::vec3 normal = Utility::OctNormalDecode(encodedNormal);
 
 					vertex.normal = normal;
-					vertex.uv = materialData.texCoords;
+					vertex.uv = glm::unpackHalf2x16(materialData.texCoords);
 				}
 			}
 

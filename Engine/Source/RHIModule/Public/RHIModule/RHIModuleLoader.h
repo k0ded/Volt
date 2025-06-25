@@ -3,6 +3,7 @@
 #include "RHIModule/Core/Core.h"
 #include "RHIModule/Core/RHICommon.h"
 #include "RHIModule/RHIModule.h"
+#include "RHIModule/Graphics/GraphicsContext.h"
 
 #include <SubSystem/SubSystem.h>
 #include <EventSystem/EventListener.h>

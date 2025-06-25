@@ -67,8 +67,8 @@ namespace Volt
 		void FreeCounter(JobCounter* counter);
 		void FreeJob(Job *job);
 
-		void PushToWaitingList(Job* job);
-		bool FlushWaitingList();
+		void PushToWaitingList(ExecutionPriority priority, Job* job);
+		bool FlushWaitingList(ExecutionPriority priority);
 
 		inline static constexpr size_t NumMaxWorkers = 32;
 		inline static constexpr size_t NumMaxJobsPerQueue = 4096;
@@ -92,7 +92,7 @@ namespace Volt
 
 		JobAllocator<Job, NumMaxJobs> m_jobAllocator;
 		JobAllocator<JobCounter, NumMaxJobs * 2> m_counterAllocator;
-		AtomicStack<Job*, NumMaxWaitingJobs> m_waitingList;
+		Array<AtomicStack<Job*, NumMaxWaitingJobs>, static_cast<size_t>(ExecutionPriority::Num)> m_waitingList;
 	};
 
 	template<typename Func>

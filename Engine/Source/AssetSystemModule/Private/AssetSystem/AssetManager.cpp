@@ -193,11 +193,11 @@ namespace Volt
 
 		m_assetRegistry.reserve(projectAssetFiles.size() + engineAssetFiles.size());
 
-		TaskGraph taskGraph{};
+		TaskGraph taskGraph{ ExecutionPriority::Immediate };
 
 		for (auto file : engineAssetFiles)
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", ExecutionPriority::Immediate, [this, file]()
+			taskGraph.AddTask("Deserialize Asset Metadata", [this, file]()
 			{
 				DeserializeAssetMetadata(file);
 			});
@@ -205,7 +205,7 @@ namespace Volt
 
 		for (auto file : projectAssetFiles)
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", ExecutionPriority::Immediate, [this, file]()
+			taskGraph.AddTask("Deserialize Asset Metadata", [this, file]()
 			{
 				DeserializeAssetMetadata(GetFilesystemPath(file));
 			});

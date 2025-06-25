@@ -23,12 +23,6 @@ namespace Volt::RHI
 
 		void Begin() override;
 		void End() override;
-		void Execute() override;
-
-		void Flush(RefPtr<Fence> fence) override;
-		void ExecuteAndWait() override;
-		void ExecuteWithFence(RefPtr<Fence> fence) override;
-		void WaitForFence() override;
 
 		void SetEvent(RawPtr<Event> event) override;
 
@@ -91,7 +85,6 @@ namespace Volt::RHI
 
 		const QueueType GetQueueType() const override;
 		const CommandBufferLevel GetCommandBufferLevel() const override;
-		const RawPtr<Fence> GetFence() const override;
 
 		RefPtr<CommandBuffer> CreateSecondaryCommandBuffer() const override;
 		void ExecuteSecondaryCommandBuffer(RefPtr<CommandBuffer> commandBuffer) const override;
@@ -108,7 +101,7 @@ namespace Volt::RHI
 		inline static constexpr uint32_t MAX_QUERIES = 64;
 
 		void Invalidate();
-		void Release(RefPtr<Fence> waitFence);
+		void Release();
 
 		void CreateQueryPools();
 		void FetchTimestampResults();
@@ -124,7 +117,6 @@ namespace Volt::RHI
 			VkCommandPool_T* commandPool = nullptr;
 		};
 
-		RefPtr<Fence> m_fence;
 		CommandBufferData m_commandBufferData;
 
 		bool m_hasTimestampSupport = false;

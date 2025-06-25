@@ -409,7 +409,7 @@ namespace FileSystem
 		tempProcessName.insert(tempProcessName.begin(), '\"');
 		tempProcessName.push_back('\"');
 
-		SHELLEXECUTEINFO ShExecInfo = { 0 };
+		SHELLEXECUTEINFO ShExecInfo = {};
 		ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
 		ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
 		ShExecInfo.hwnd = NULL;

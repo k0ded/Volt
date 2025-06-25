@@ -5,6 +5,7 @@
 #include <RHIModule/Core/RHICommon.h>
 #include <RHIModule/Graphics/Swapchain.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Synchronization/Fence.h>
 
 struct VkSwapchainKHR_T;
 struct VkRenderPass_T;
@@ -105,6 +106,7 @@ namespace Volt::RHI
 		SwapchainCreateInfo m_createInfo{};
 
 		Vector<RefPtr<CommandBuffer>> m_commandBuffers;
+		Vector<RefPtr<Fence>> m_fences;
 		Vector<PerFrameInFlightData> m_perFrameInFlightData{};
 		Vector<PerImageData> m_perImageData{};
 

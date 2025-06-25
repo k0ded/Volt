@@ -2,8 +2,6 @@
 
 #include <CoreUtilities/Math/Hash.h>
 
-#include <half/half.hpp>
-
 #include <xhash>
 
 namespace Volt
@@ -61,7 +59,7 @@ namespace Volt
 		glm::vec<4, uint8_t> normal;
 		float tangent = 0.f;
 		float tangentW = 1.f; 
-		glm::vec<2, half_float::half> texCoords = glm::vec<2, half_float::half>(0.f, 0.f);
+		uint32_t texCoords = 0;
 	};
 
 	struct VertexAnimationInfo

@@ -78,6 +78,8 @@ namespace Volt
 	class VTJS_API alignas(64) Job
 	{
 	public:
+		inline static constexpr size_t MaxJobFuncSize = 1024;
+
 		Job() = default;
 
 		template<typename Func> void Create(std::string_view name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& jobFunc);
@@ -135,7 +137,7 @@ namespace Volt
 	template<typename Func>
 	void Job::Create(std::string_view name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& jobFunc)
 	{
-		static_assert(sizeof(Func) < 1024);
+		static_assert(sizeof(Func) <= Job::MaxJobFuncSize);
 
 		m_jobName = name;
 		m_counter = counter;

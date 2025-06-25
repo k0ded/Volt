@@ -59,7 +59,7 @@ namespace VoltSharpmake
             conf.Output = Configuration.OutputType.Lib; // defaults to creating static libs
 			conf.IsExcludedFromBuild = !Globals.ShouldBuildEngine;
 
-            conf.Options.Add(Options.Vc.Compiler.CppLanguageStandard.CPP20);
+            conf.Options.Add(Options.Vc.Compiler.CppLanguageStandard.Latest);
             conf.Options.Add(Options.Vc.Compiler.Exceptions.Disable);
             conf.Options.Add(Options.Vc.Compiler.RTTI.Disable);
             conf.Options.Add(Options.Vc.Compiler.FloatingPointModel.Precise);
@@ -188,8 +188,9 @@ namespace VoltSharpmake
         {
             conf.Options.Add(Options.Vc.General.PlatformToolset.ClangCL);
             conf.Options.Add(Options.Clang.Compiler.ExtraWarnings.Disable);
+			conf.Options.Add(Options.Vc.Compiler.Exceptions.Enable);
 
-            conf.AdditionalCompilerOptions.Add(
+			conf.AdditionalCompilerOptions.Add(
                 "-Wno-c++98-compat",
                 "-Wno-microsoft-include",
                 "-Wno-ignored-qualifiers",
@@ -197,7 +198,9 @@ namespace VoltSharpmake
                 "-Wno-comment",
                 "-Wno-unused-function",
                 "-Wno-missing-braces",
-                "-Wno-return-type-c-linkage"
+                "-Wno-return-type-c-linkage",
+				"-Wno-nonportable-include-path",
+				"-Wno-switch"
             );
         }
         #endregion

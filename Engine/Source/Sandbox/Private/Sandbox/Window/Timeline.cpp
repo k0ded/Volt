@@ -351,7 +351,7 @@ void Timeline::DrawEntityTracks(ImDrawList& drawlist, int trackIndex)
 
 	if (myTimelinePreset->myTracks[trackIndex].trackType == Volt::TrackType::T_Animation)
 	{
-		UI::PropertyEntity(myCurrentScene, myTimelinePreset->myTracks[trackIndex].targetEntity, myTrackWindowSize.x - recordButtonWidth - ImGui::GetStyle().ItemSpacing.x, nullptr);
+		UI::PropertyEntity(myCurrentScene, myTimelinePreset->myTracks[trackIndex].targetEntity, myTrackWindowSize.x - recordButtonWidth - ImGui::GetStyle().ItemSpacing.x);
 	}
 	else
 	{

@@ -52,7 +52,9 @@ Index of this file:
 
 #ifndef IMGUI_DISABLE
 
-#define IMGUI_DISABLE_OBSOLETE_KEYIO
+#ifndef IMGUI_DISABLE_OBSOLETE_KEYIO
+    #define IMGUI_DISABLE_OBSOLETE_KEYIO
+#endif
 
 //-----------------------------------------------------------------------------
 // [SECTION] Header mess

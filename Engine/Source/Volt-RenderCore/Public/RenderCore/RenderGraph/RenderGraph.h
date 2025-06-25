@@ -240,6 +240,7 @@ namespace Volt
 		using ExternalResourceRegistry = Map<RawPtr<RHI::RHIResource>, RGResourceRef>;
 
 		void ExecuteInternal(bool waitForSync);
+		void ExecuteInternal2(bool isImmediate, bool waitForSync);
 		void ExtractResources();
 		void TransitionExternalResources();
 

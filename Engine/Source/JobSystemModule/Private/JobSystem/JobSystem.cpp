@@ -55,7 +55,7 @@ namespace Volt
 		}
 		else
 		{
-			s_instance->PushToWaitingList(job);
+			s_instance->PushToWaitingList(job->GetPriority(), job);
 		}
 	}
 
@@ -72,13 +72,26 @@ namespace Volt
 		{
 			const uint32_t numJobsOnWorker = numJobsPerWorker + (worker == (s_instance->m_numWorkers - 1) ? remainder : 0);
 
-			// #TODO_Ivar: Replace with multiple emplace in work queue.
 			for (uint32_t index = 0; index < numJobsOnWorker; ++index)
 			{
 				const uint32_t jobIndex = numJobsPerWorker * worker + index;
 				Job* job = jobs[jobIndex];
 
-				s_instance->m_workers.at(worker)->workQueues.at(static_cast<size_t>(job->GetPriority())).Emplace(job);
+				if (job->GetWaitCounter()->IsCompleted())
+				{
+					if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
+					{
+						s_instance->m_workers.at(worker)->workQueues.at(static_cast<size_t>(job->GetPriority())).Emplace(job);
+					}
+					else
+					{
+						s_instance->m_mainThreadQueue.Emplace(job);
+					}
+				}
+				else
+				{
+					s_instance->PushToWaitingList(job->GetPriority(), job);
+				}
 			}
 		}
 
@@ -106,10 +119,6 @@ namespace Volt
 				}
 
 				s_instance->FinishJob(jobPtr);
-			}
-			else
-			{
-				s_instance->FlushWaitingList();
 			}
 		}
 	}
@@ -211,7 +220,7 @@ namespace Volt
 
 				FinishJob(jobPtr);
 			}
-			else if (!FlushWaitingList())
+			else
 			{
 				std::unique_lock<std::mutex> lock(m_wakeMutex);
 				m_wakeCondition.wait(lock);
@@ -243,6 +252,12 @@ namespace Volt
 					nextQueue = (nextQueue + 1) % m_numWorkers;
 				}
 			}
+
+			// If there still was no job, we flush this priorities waiting list.
+			if (!outJob)
+			{
+				FlushWaitingList(priority);
+			}
 		};
 
 		Job* job = nullptr;
@@ -257,25 +272,6 @@ namespace Volt
 				break;
 			}
 		}
-
-#if 0
-		Job* job = nullptr;
-		if (!worker->workQueue.Pop(job))
-		{
-			uint32_t currentQueue = (workerId + 1) % m_numWorkers;
-
-			while (currentQueue != workerId)
-			{
-				auto& stealingQueue = m_workers.at(currentQueue)->workQueue;
-				if (stealingQueue.Pop(job))
-				{
-					return job;
-				}
-
-				currentQueue = (currentQueue + 1) % m_numWorkers;
-			}
-		}
-#endif
 
 		return job;
 	}
@@ -339,14 +335,16 @@ namespace Volt
 		m_jobAllocator.Free(job);
 	}
 
-	void JobSystem::PushToWaitingList(Job* job)
+	void JobSystem::PushToWaitingList(ExecutionPriority priority, Job* job)
 	{
-		m_waitingList.Push(job);
+		m_waitingList.at(static_cast<size_t>(priority)).Push(job);
 	}
 
-	bool JobSystem::FlushWaitingList()
+	bool JobSystem::FlushWaitingList(ExecutionPriority priority)
 	{
-		if (m_waitingList.Size() == 0)
+		auto& waitingList = m_waitingList.at(static_cast<size_t>(priority));
+
+		if (waitingList.Size() == 0)
 		{
 			return false;
 		}
@@ -360,7 +358,7 @@ namespace Volt
 		bool anyJobRun = false;
 
 		Job* jobPtr;
-		while (m_waitingList.Pop(jobPtr))
+		while (waitingList.Pop(jobPtr))
 		{
 			if (jobPtr->GetWaitCounter()->IsCompleted())
 			{
@@ -375,7 +373,7 @@ namespace Volt
 
 		for (auto job : nonReadyJobs)
 		{
-			m_waitingList.Push(job);
+			waitingList.Push(job);
 		}
 
 		return anyJobRun;

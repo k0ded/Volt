@@ -86,11 +86,11 @@ void Volt::ParticleSystem::Update(entt::registry& registry, Weak<Scene> scene, c
 	Vector<std::future<void>> futures{};
 	std::mutex emittersToRemoveMutex;
 
-	TaskGraph taskGraph{};
+	TaskGraph taskGraph{ ExecutionPriority::Immediate };
 
 	for (auto& [id, particleStorage] : m_particleStorage)
 	{
-		taskGraph.AddTask("Update Particle System", ExecutionPriority::Immediate, [&]()
+		taskGraph.AddTask("Update Particle System", [&]()
 		{
 			Entity entity{ id, scene };
 			if (!entity)

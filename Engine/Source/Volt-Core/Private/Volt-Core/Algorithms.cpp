@@ -13,7 +13,7 @@ namespace Volt::Algo
 		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfPhysicalCores());
 		const uint32_t perThreadIterationCount = iterationCount / threadCount;
 
-		TaskGraph taskGraph{};
+		TaskGraph taskGraph{ ExecutionPriority::Immediate };
 
 		uint32_t iterOffset = 0;
 		for (uint32_t i = 0; i < threadCount; i++)
@@ -24,7 +24,7 @@ namespace Volt::Algo
 				currThreadIterationCount = iterationCount - i * perThreadIterationCount;
 			}
 
-			taskGraph.AddTask("ForEach", ExecutionPriority::Immediate, [currThreadIterationCount, func, iterOffset, i]()
+			taskGraph.AddTask("ForEach", [currThreadIterationCount, func, iterOffset, i]()
 			{
 				for (uint32_t iter = 0; iter < currThreadIterationCount; iter++)
 				{

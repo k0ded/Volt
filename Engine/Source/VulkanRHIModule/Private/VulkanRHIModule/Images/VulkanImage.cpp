@@ -7,6 +7,7 @@
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Images/ImageView.h>
 
@@ -240,7 +241,9 @@ namespace Volt::RHI
 
 		commandBuffer->EndMarker();
 		commandBuffer->End();
-		commandBuffer->ExecuteAndWait();
+
+		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		fence->WaitUntilSignaled();
 
 		m_hasGeneratedMips = true;
 	}
@@ -413,7 +416,9 @@ namespace Volt::RHI
 		vkCmdPipelineBarrier(commandBuffer->GetHandle<VkCommandBuffer>(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
 		commandBuffer->End();
-		commandBuffer->ExecuteAndWait();
+
+		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		fence->WaitUntilSignaled();
 
 		uint8_t* mappedMemory = stagingAlloc->Map<uint8_t>();
 
@@ -479,7 +484,9 @@ namespace Volt::RHI
 		commandBuffer->ResourceBarrier({ barrier });
 
 		commandBuffer->End();
-		commandBuffer->Execute();
+
+		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		fence->WaitUntilSignaled();
 	}
 
 	void VulkanImage::InitializeWithData(const void* data)
@@ -533,7 +540,9 @@ namespace Volt::RHI
 		}
 
 		commandBuffer->End();
-		commandBuffer->ExecuteAndWait();
+
+		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		fence->WaitUntilSignaled();
 
 		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
 	}

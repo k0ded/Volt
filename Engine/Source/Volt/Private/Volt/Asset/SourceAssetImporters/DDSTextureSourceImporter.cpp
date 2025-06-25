@@ -6,6 +6,7 @@
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Utility/ResourceUtility.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -192,7 +193,8 @@ namespace Volt
 
 		commandBuffer->EndMarker();
 		commandBuffer->End();
-		commandBuffer->Execute();
+
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 
 		RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
 

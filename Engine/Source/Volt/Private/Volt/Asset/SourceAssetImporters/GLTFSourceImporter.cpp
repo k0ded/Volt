@@ -10,6 +10,8 @@
 
 #include <AssetSystem/AssetManager.h>
 
+#include <glm/packing.hpp>
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #define TINYGLTF_NO_STB_IMAGE 
@@ -309,8 +311,7 @@ namespace Volt
 					materialData.normal.y = uint8_t(octNormal.y * 255u);
 					materialData.tangent = Utility::EncodeTangent(vertexNormals.GetAt(i), vertexTangents.GetAt(i));
 					materialData.tangentW = vertexTangents.GetAt(i).w;
-					materialData.texCoords.x = static_cast<half_float::half>(vertexTexCoords.GetAt(i).x);
-					materialData.texCoords.y = static_cast<half_float::half>(vertexTexCoords.GetAt(i).y);
+					materialData.texCoords = glm::packHalf2x16({ vertexTexCoords.GetAt(i).x, vertexTexCoords.GetAt(i).y });
 				}
 			}
 

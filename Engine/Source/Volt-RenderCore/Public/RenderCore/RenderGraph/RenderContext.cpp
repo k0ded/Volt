@@ -23,7 +23,7 @@ namespace Volt
 
 	void RenderContext::Flush(RefPtr<RHI::Fence> fence)
 	{
-		m_commandBuffer->Flush(fence);
+		//m_commandBuffer->Flush(fence);
 	}
 
 	void RenderContext::BeginRendering(const RenderingInfo& renderingInfo)
