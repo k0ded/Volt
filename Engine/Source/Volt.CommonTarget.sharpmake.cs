@@ -146,10 +146,10 @@ namespace VoltSharpmake
                 DotNetFramework.v4_8
             );
 
-			if (Util.DirectoryExists(Sharpmake.ClangForWindows.GetWindowsClangExecutablePath(devEnv)))
-			{
-				defaultTarget.Compiler |= Compiler.ClangCl;
-			}
+			//if (Util.DirectoryExists(Sharpmake.ClangForWindows.GetWindowsClangLibraryPath(devEnv)))
+			//{
+			//	defaultTarget.Compiler |= Compiler.ClangCl;
+			//}
 
 			result.Add(defaultTarget);
 			return result.ToArray();
