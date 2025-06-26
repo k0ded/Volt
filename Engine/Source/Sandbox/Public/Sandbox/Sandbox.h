@@ -40,7 +40,6 @@ enum class SceneState
 struct ImGuiWindow;
 class ViewportPanel;
 class GameViewPanel;
-class NavigationPanel;
 class AssetBrowserPanel;
 
 class EditorWindow;
@@ -85,7 +84,6 @@ public:
 	void TransitionToNewScene();
 
 	bool CheckForUpdateNavMesh(Volt::Entity entity);
-	void BakeNavMesh();
 
 private:
 	struct SaveSceneAsData
@@ -169,8 +167,6 @@ private:
 
 	Ref<ViewportPanel> m_viewportPanel;
 	Ref<GameViewPanel> m_gameViewPanel;
-
-	Ref<NavigationPanel> m_navigationPanel;
 
 	Ref<AssetBrowserPanel> m_assetBrowserPanel;
 

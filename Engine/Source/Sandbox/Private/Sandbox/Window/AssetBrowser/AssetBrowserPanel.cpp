@@ -14,8 +14,7 @@
 #include "Sandbox/Window/AssetBrowser/AssetDirectoryProcessor.h"
 #include "Sandbox/UserSettingsManager.h"
 
-#include <Volt/Asset/Prefab.h>
-#include <Volt/Asset/ParticlePreset.h>
+#include <Volt-Scene/Prefab.h>
 
 #include <Volt-Assets/MaterialAsset.h>
 
@@ -24,15 +23,16 @@
 
 #include <Volt-Scene/Components/CoreComponents.h>
 #include <Volt-Scene/Scene.h>
-#include <Volt/Utility/FileSystem.h>
 #include <Volt-Application/UI/UIUtility.h>
-#include <Volt/Utility/PremadeCommands.h>
 
 #include <Volt-Physics/PhysicsMaterialAsset.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>
+#include <CoreUtilities/FileSystem.h>
 
 #include <EventSystem/Event.h>
 
@@ -72,7 +72,7 @@ AssetBrowserPanel::AssetBrowserPanel(Ref<Volt::Scene>& aScene, const std::string
 
 		{
 			AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask };
-			myDirectories[FileSystem::GetEnginePath()] = processor.ProcessDirectories(FileSystem::GetEnginePath(), myMeshToImport);
+			myDirectories[Volt::ProjectManager::GetEngineDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetEngineDirectory(), myMeshToImport);
 		}
 
 		myAssetsDirectory = myDirectories[Volt::ProjectManager::GetAssetsDirectory()].get();
@@ -835,11 +835,6 @@ void AssetBrowserPanel::RenderWindowRightClickPopup()
 				CreateNewAssetInCurrentDirectory(AssetTypes::Scene);
 			}
 
-			if (ImGui::MenuItem("Particle Preset"))
-			{
-				CreateNewAssetInCurrentDirectory(AssetTypes::ParticlePreset);
-			}
-
 			if (ImGui::MenuItem("C# Script"))
 			{
 				CreateNewAssetInCurrentDirectory(AssetTypes::MonoScript);
@@ -1192,7 +1187,6 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 	if (type == AssetTypes::ShaderDefinition) originalName = "SH_NewShader";
 	if (type == AssetTypes::PhysicsMaterial) originalName = "PM_NewPhysicsMaterial";
 	if (type == AssetTypes::Scene) originalName = "SC_NewScene";
-	if (type == AssetTypes::ParticlePreset) originalName = "PP_NewParticlePreset";
 	if (type == AssetTypes::BlendSpace) originalName = "BS_NewBlendSpace";
 	if (type == AssetTypes::MonoScript) originalName = "idk.cs";
 	if (type == AssetTypes::PostProcessingStack) originalName = "PPS_NewPostStack";
@@ -1241,13 +1235,6 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 		Volt::AssetManager::SaveAsset(blendSpace);
 
 		newAssetHandle = blendSpace->handle;
-	}
-	else if (type == AssetTypes::ParticlePreset)
-	{
-		Ref<Volt::ParticlePreset> particlePreset = Volt::AssetManager::CreateAsset<Volt::ParticlePreset>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), tempName);
-		Volt::AssetManager::SaveAsset(particlePreset);
-
-		newAssetHandle = particlePreset->handle;
 	}
 	else if (type == AssetTypes::MonoScript)
 	{

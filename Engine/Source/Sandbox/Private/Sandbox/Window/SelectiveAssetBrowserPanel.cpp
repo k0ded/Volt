@@ -3,9 +3,10 @@
 
 #include "Sandbox/Utility/EditorResources.h"
 
-#include <Volt/Utility/FileSystem.h>
-#include <AssetSystem/AssetManager.h>
 #include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Core/Project/ProjectManager.h>
+
+#include <AssetSystem/AssetManager.h>
 
 static uint32_t s_assetBrowserCount;
 
@@ -75,7 +76,7 @@ void SelectiveAssetBrowserPanel::UpdateAssetList()
 {
 	myAllAssetsOfType.clear();
 
-	for (auto it : std::filesystem::recursive_directory_iterator(FileSystem::GetEnginePath()))
+	for (auto it : std::filesystem::recursive_directory_iterator(Volt::ProjectManager::GetEngineDirectory()))
 	{
 		if (!it.is_directory())
 		{

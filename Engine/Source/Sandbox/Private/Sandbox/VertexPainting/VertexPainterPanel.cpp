@@ -19,8 +19,6 @@
 
 #include <Volt-Scene/SceneManager.h>
 
-#include <Volt/Math/RayTriangle.h>
-#include <Volt/Utility/PackUtility.h>
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <EventSystem/Event.h>
@@ -29,6 +27,24 @@
 #include <InputModule/InputCodes.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
+
+#include <glm/gtx/intersect.hpp>
+
+inline bool RayTriangleIntersection(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, glm::vec3& intersectionPoint)
+{
+	// Calculate the triangle normal
+	glm::vec3 edge1 = v1 - v0;
+	glm::vec3 edge2 = v2 - v0;
+	glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+
+	// Calculate the intersection point
+	float t;
+	glm::vec2 temp;
+	bool intersects = glm::intersectRayTriangle(rayOrigin, rayDirection, v0, v1, v2, temp, t);
+	intersectionPoint = rayOrigin + rayDirection * t;
+
+	return intersects;
+}
 
 VertexPainterPanel::VertexPainterPanel(Ref<Volt::Scene>& in_scene, Ref<EditorCameraController>& in_cc)
 	: ex_scene(in_scene), ex_cameraController(in_cc), EditorWindow("Vertex Painting")
@@ -106,7 +122,7 @@ bool VertexPainterPanel::BrushUpdate()
 				auto p3 = vList[iList[i + 2]];
 
 				intersectionPoint = { 0,0,0 };
-				if (Volt::rayTriangleIntersection(origin, localRayDir, p1, p2, p3, intersectionPoint))
+				if (RayTriangleIntersection(origin, localRayDir, p1, p2, p3, intersectionPoint))
 				{
 					if (std::isnan(intersectionPoint.x) ||
 						std::isnan(intersectionPoint.y) ||
@@ -197,7 +213,7 @@ void VertexPainterPanel::PanelDraw()
 							m_settings.paintAlphaChannel ? m_settings.paintColor : 0
 					};
 
-					const uint32_t packedColor = Volt::Utility::PackUNormFloat4AsUInt(color);
+					const uint32_t packedColor = glm::packUnorm4x8(color);
 					vertex = packedColor;
 				}
 			}
@@ -524,7 +540,7 @@ bool VertexPainterPanel::AddPainted(Volt::Entity entity)
 	auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(entity.GetComponent<Volt::MeshComponent>().GetHandle());
 	auto& vpComp = entity.AddComponent<Volt::VertexPaintedComponent>();
 
-	vpComp.vertexColors = Vector<uint32_t>(mesh->GetMesh()->GetVertexContainer().Size(), Volt::Utility::PackUNormFloat4AsUInt({0.f, 0.f, 0.f, 1.f}));
+	vpComp.vertexColors = Vector<uint32_t>(mesh->GetMesh()->GetVertexContainer().Size(), glm::packUnorm4x8({0.f, 0.f, 0.f, 1.f}));
 	vpComp.meshHandle = mesh->handle;
 
 	//for (auto& vertex : entity.GetComponent<Volt::VertexPaintedComponent>().vertecies)
@@ -565,14 +581,14 @@ void VertexPainterPanel::Paint(float color)
 				{
 					auto& currentVertexColor = vertecies[index];
 
-					glm::vec4 unpackedColor = Volt::Utility::UnpackUIntToUNormFloat4(currentVertexColor);
+					glm::vec4 unpackedColor = glm::unpackUnorm4x8(currentVertexColor);
 
 					if (m_settings.paintRedChannel)		ApplyColor(unpackedColor.x, color);
 					if (m_settings.paintGreenChannel)	ApplyColor(unpackedColor.y, color);
 					if (m_settings.paintBlueChannel)	ApplyColor(unpackedColor.z, color);
 					if (m_settings.paintAlphaChannel)	ApplyColor(unpackedColor.w, color);
 
-					currentVertexColor = Volt::Utility::PackUNormFloat4AsUInt(unpackedColor);
+					currentVertexColor = glm::packUnorm4x8(unpackedColor);
 				}
 			}
 		}

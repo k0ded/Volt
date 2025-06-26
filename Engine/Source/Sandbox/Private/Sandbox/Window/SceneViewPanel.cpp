@@ -7,10 +7,7 @@
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Sandbox.h"
 
-#include <Volt/Asset/Prefab.h>
-#include <Volt/Asset/ParticlePreset.h>
-#include <Volt/Vision/VisionComponents.h>
-#include <Volt/ImGui/FontAwesome.h>
+#include <Volt-Scene/Prefab.h>
 
 #include <Volt-Application/UI/UIUtility.h>
 
@@ -23,6 +20,8 @@
 #include <Volt-Audio/Components/AudioComponents.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
+
+#include <RHIModule/ImGui/FontAwesome.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
@@ -214,19 +213,6 @@ void SceneViewPanel::UpdateMainContent()
 
 			newEntity.GetComponent<Volt::TagComponent>().tag = Volt::AssetManager::Get().GetFilePathFromAssetHandle(handle).stem().string();
 		}
-		else if (type == AssetTypes::ParticlePreset)
-		{
-			Volt::Entity newEntity = m_scene->CreateEntity();
-
-			auto& particleEmitter = newEntity.AddComponent<Volt::ParticleEmitterComponent>();
-			auto preset = Volt::AssetManager::GetAsset<Volt::ParticlePreset>(handle);
-			if (preset)
-			{
-				particleEmitter.preset = preset->handle;
-			}
-
-			newEntity.GetComponent<Volt::TagComponent>().tag = Volt::AssetManager::Get().GetFilePathFromAssetHandle(handle).stem().string();
-		}
 		else if (type == AssetTypes::Prefab)
 		{
 			auto prefab = Volt::AssetManager::GetAsset<Volt::Prefab>(handle);
@@ -310,11 +296,6 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 				m_scene->DestroyEntity(i);
 			}
 
-			if (shouldUpdateNavMesh)
-			{
-				Sandbox::Get().BakeNavMesh();
-			}
-
 			break;
 		}
 	}
@@ -362,16 +343,10 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 	const bool matchesQuery = MatchesQuery(entityName, filter);
 	const bool hasId = std::to_string(static_cast<uint32_t>(entity.GetID())) == filter;
 	const bool hasComponent = HasComponent(entity, filter);
-	const bool isVisionCamera = entity.HasComponent<Volt::VisionCameraComponent>();
 
 	if (!matchesQuery && !hasId && !hasMatchingChild && !hasMatchingParent && !hasComponent)
 	{
 		return;
-	}
-
-	if (isVisionCamera)
-	{
-		entityName = VT_ICON_FA_CAMERA + std::string(" ") + entityName;
 	}
 
 	const float rowHeight = 17.f;
@@ -1330,13 +1305,7 @@ void SceneViewPanel::RebuildEntityDrawListRecursive(Volt::Entity entity, const s
 		return;
 	}
 
-	const bool isVisionCamera = entity.HasComponent<Volt::VisionCameraComponent>();
 	std::string entityName = entity.GetTag();
-
-	if (isVisionCamera)
-	{
-		entityName = VT_ICON_FA_CAMERA + std::string(" ") + entityName;
-	}
 
 	const std::string entityStrId = entityName + "###" + entity.ToString();
 

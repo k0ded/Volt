@@ -28,6 +28,14 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<VoltCore>(target);
 			conf.AddPublicDependency<VoltRenderer>(target);
 			conf.AddPublicDependency<VoltMaterialGraph>(target);
+
+			conf.AddPrivateDependency<stb_image>(target);
+			conf.AddPrivateDependency<FbxSDK>(target);
+			conf.AddPrivateDependency<msdfgen>(target);
+			conf.AddPrivateDependency<msdf_atlas_gen>(target);
+
+			conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "tinyddsloader"));
+			conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "tiny_gltf"));
 		}
-    }
+	}
 }

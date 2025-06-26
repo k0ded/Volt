@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Volt/Core/Base.h>
 #include <Volt-Scene/Entity.h>
 
 namespace Volt

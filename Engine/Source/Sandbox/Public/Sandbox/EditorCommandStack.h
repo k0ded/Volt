@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Volt/Core/Base.h>
 #include <Volt-Scene/Components/CoreComponents.h>
 #include <Volt-Scene/Entity.h>
 #include <Volt-Scene/SceneSerializer.h>

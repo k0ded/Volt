@@ -6,9 +6,10 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/EditorLibrary.h"
 #include "Sandbox/Utility/Theme.h"
+#include "Sandbox/Utility/PremadeCommands.h"
+
 #include "Sandbox/UserSettingsManager.h"
 
-#include <Volt/Utility/PremadeCommands.h>
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <EventSystem/EventSystem.h>
@@ -661,7 +662,6 @@ void Sandbox::DrawMenuBar()
 
 			if (ImGui::MenuItem("Bake NavMesh"))
 			{
-				Sandbox::Get().BakeNavMesh();
 			}
 
 			if (ImGui::MenuItem("Crash"))

@@ -24,9 +24,9 @@ namespace VoltSharpmake
 				LocalDebuggerCommandArguments = Globals.VtProjectFilePath
 			};
 
-            conf.AddPublicDependency<Volt>(target);
 			conf.AddPublicDependency<VoltAssets>(target);
 			conf.AddPublicDependency<VoltRenderer>(target);
+			conf.AddPublicDependency<VoltScene>(target);
 
             conf.AddPublicDependency<imgui>(target);
             conf.AddPublicDependency<yaml>(target);
@@ -63,8 +63,6 @@ namespace VoltSharpmake
         {
             base.ConfigureMSVC(conf, target);
             conf.AdditionalLinkerOptions.Add(
-                "/WHOLEARCHIVE:PhysX",
-                "/WHOLEARCHIVE:Volt",
                 "/WHOLEARCHIVE:MosaicModule"
                 );
 

@@ -1,9 +1,6 @@
 #include "sbpch.h"
 #include "GameBuilder.h"
 
-#include <Volt/Utility/YAMLSerializationHelpers.h>
-#include <Volt/Utility/FileSystem.h>
-
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Scene/Scene.h>
@@ -192,12 +189,12 @@ void GameBuilder::Thread_BuildGame(const BuildInfo& buildInfo)
 		const auto enginePath = buildInfo.buildDirectory / "Engine";
 		FileSystem::CreateDirectories(enginePath);
 
-		for (const auto& file : std::filesystem::recursive_directory_iterator(FileSystem::GetEnginePath()))
+		for (const auto& file : std::filesystem::recursive_directory_iterator(Volt::ProjectManager::GetEngineDirectory()))
 		{
 			if (!file.is_directory() && file.path().extension().string() != ".exe" &&
 				file.path().extension().string() != ".pdb")
 			{
-				const auto relPath = std::filesystem::relative(file.path(), FileSystem::GetEnginePath()).parent_path();
+				const auto relPath = std::filesystem::relative(file.path(), Volt::ProjectManager::GetEngineDirectory()).parent_path();
 
 				if (!FileSystem::Exists(enginePath / relPath))
 				{
@@ -216,51 +213,6 @@ void GameBuilder::Thread_BuildGame(const BuildInfo& buildInfo)
 
 		// Remove HLSL path
 		FileSystem::Remove(enginePath / "Shaders/HLSL/");
-	}
-
-	// Copy Scripts folder
-	{
-		const auto scriptsPath = buildInfo.buildDirectory / "Scripts";
-		FileSystem::CreateDirectories(scriptsPath);
-
-		for (const auto& file : std::filesystem::recursive_directory_iterator(FileSystem::GetScriptsPath()))
-		{
-			if (!file.is_directory())
-			{
-				if (file.path().extension() == ".exe" || 
-					file.path().extension() == ".pdb" || 
-					file.path().extension() == ".rsp")
-				{
-					continue;
-				}
-
-				const auto relPath = std::filesystem::relative(file.path(), FileSystem::GetScriptsPath()).parent_path();
-
-				if (!FileSystem::Exists(scriptsPath / relPath))
-				{
-					FileSystem::CreateDirectories(scriptsPath / relPath);
-				}
-
-				{
-					std::scoped_lock lock(myMutex);
-					myCurrentFile = file.path().stem().string();
-				}
-
-				myCurrentFileNumber++;
-				FileSystem::CopyFileToDirectory(file.path(), scriptsPath / relPath);
-			}
-		}
-
-		// Remove unneeded files
-		if (FileSystem::Exists(scriptsPath / "Intermediates"))
-		{
-			FileSystem::Remove(scriptsPath / "Intermediates");
-		}
-
-		if (FileSystem::Exists(scriptsPath / "Volt-ScriptCore.pdb"))
-		{
-			FileSystem::Remove(scriptsPath / "Volt-ScriptCore.pdb");
-		}
 	}
 
 	// Copy Project file
@@ -429,7 +381,7 @@ uint32_t GameBuilder::GetRelevantFileCount(const BuildInfo& buildInfo)
 		const auto enginePath = buildInfo.buildDirectory / "Engine";
 		FileSystem::CreateDirectories(enginePath);
 
-		for (const auto& file : std::filesystem::recursive_directory_iterator(FileSystem::GetEnginePath()))
+		for (const auto& file : std::filesystem::recursive_directory_iterator(Volt::ProjectManager::GetEngineDirectory()))
 		{
 			const auto filePath = file.path().string();
 

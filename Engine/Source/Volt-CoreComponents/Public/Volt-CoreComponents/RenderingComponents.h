@@ -237,26 +237,4 @@ namespace Volt
 
 		REGISTER_COMPONENT(DecalComponent);
 	};
-
-	struct ParticleEmitterComponent
-	{
-		AssetHandle preset = Asset::Null();
-		AssetHandle currentPreset = Asset::Null();
-
-		float burstTimer = 0;
-
-		bool isLooping = false;
-		float internalTimer = 0;
-		float emissionTimer = 0;
-		int maxSpawnAmount = 0;
-
-		static void ReflectType(TypeDesc<ParticleEmitterComponent>& reflect)
-		{
-			reflect.SetGUID("{E31271AB-47C7-4D6A-91E8-4B1A62B20D66}"_guid);
-			reflect.SetLabel("Particle Emitter Component");
-			reflect.AddMember(&ParticleEmitterComponent::preset, "preset", "Preset", "", Asset::Null(), AssetTypes::ParticlePreset);
-		}
-
-		REGISTER_COMPONENT(ParticleEmitterComponent);
-	};
 }

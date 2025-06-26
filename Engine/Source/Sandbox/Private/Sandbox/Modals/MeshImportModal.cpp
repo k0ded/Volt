@@ -7,7 +7,7 @@
 #include <Volt-Application/UI/UIUtility.h>
 #include <Volt-Application/UI/UIScopedHelpers.h>
 
-#include <Volt/Asset/SourceAssetImporters/FbxSourceImporter.h>
+#include <Volt-Assets/SourceAssetImporters/ImportConfigs.h>
 
 #include <AssetSystem/SourceAssetManager.h>
 

@@ -2,10 +2,9 @@
 
 #include <Volt-Scene/Scene.h>
 #include <Volt-Scene/SceneManager.h>
+#include <Volt-Scene/SceneEvents.h>
 
 #include <Volt-Renderer/SceneRenderer.h>
-
-#include <Volt/Events/SceneEvents.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
 

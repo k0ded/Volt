@@ -17,7 +17,6 @@
 
 #include "Sandbox/SceneRendererExtensions/ObjectIDSceneRendererExtension.h"
 
-#include <Volt/Asset/ParticlePreset.h>
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Assets/MeshAsset.h>
@@ -165,7 +164,6 @@ void ViewportPanel::UpdateMainContent()
 				{
 					if (Sandbox::Get().CheckForUpdateNavMesh(m_editorScene->GetEntityFromID(ent)))
 					{
-						Sandbox::Get().BakeNavMesh();
 						break;
 					}
 				}
@@ -640,7 +638,6 @@ bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 
 			if (shouldUpdateNavMesh)
 			{
-				Sandbox::Get().BakeNavMesh();
 			}
 
 			break;
@@ -784,20 +781,6 @@ void ViewportPanel::CheckDragDrop()
 		}
 
 		newEntity.GetComponent<Volt::TagComponent>().tag = meshSourcePath.stem().string();
-		m_createdEntity = newEntity;
-	}
-	else if (type == AssetTypes::ParticlePreset)
-	{
-		Volt::Entity newEntity = m_editorScene->CreateEntity();
-
-		auto& particleEmitter = newEntity.AddComponent<Volt::ParticleEmitterComponent>();
-		auto preset = Volt::AssetManager::GetAsset<Volt::ParticlePreset>(handle);
-		if (preset)
-		{
-			particleEmitter.preset = preset->handle;
-		}
-
-		newEntity.GetComponent<Volt::TagComponent>().tag = Volt::AssetManager::GetFilePathFromAssetHandle(handle).stem().string();
 		m_createdEntity = newEntity;
 	}
 

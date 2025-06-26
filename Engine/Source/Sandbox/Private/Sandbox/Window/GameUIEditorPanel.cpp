@@ -5,9 +5,9 @@
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Utility/SelectionManager.h"
 
-#include <Volt/GameUI/UIScene.h>
-#include <Volt/GameUI/UIComponents.h>
-#include <Volt/GameUI/UIWidget.h>
+#include <Volt-GameUI/UIScene.h>
+#include <Volt-GameUI/UIComponents.h>
+#include <Volt-GameUI/UIWidget.h>
 
 #include <InputModule/InputCodes.h>
 #include <InputModule/Input.h>

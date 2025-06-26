@@ -13,10 +13,7 @@
 #include "Sandbox/Window/SceneViewPanel.h"
 #include "Sandbox/Window/AssetBrowser/AssetBrowserPanel.h"
 #include "Sandbox/Window/LogPanel.h"
-#include "Sandbox/Window/SplinePanel.h"
-#include "Sandbox/Window/VisonPanel.h"
 #include "Sandbox/Window/EngineStatisticsPanel.h"
-#include "Sandbox/Window/ParticleEmitterEditor.h"
 #include "Sandbox/Window/CharacterEditorPanel.h"
 #include "Sandbox/Window/AssetRegistryPanel.h"
 #include "Sandbox/Window/ThemesPanel.h"
@@ -29,9 +26,7 @@
 #include "Sandbox/Window/Sequencer.h"
 #include "Sandbox/Window/BlendSpaceEditorPanel.h"
 #include "Sandbox/Window/CurveGraphPanel.h"
-#include "Sandbox/Window/Timeline.h"
 #include "Sandbox/Window/ShaderEditorPanel.h"
-#include "Sandbox/Window/NavigationPanel.h"
 #include "Sandbox/Window/SceneSettingsPanel.h"
 #include "Sandbox/Window/WorldEnginePanel.h"
 #include "Sandbox/Window/MosaicEditor/MosaicEditorPanel.h"
@@ -64,6 +59,7 @@
 #include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Scene.h>
 #include <Volt-Scene/SceneManager.h>
+#include <Volt-Scene/SceneEvents.h>
 
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
@@ -74,6 +70,7 @@
 #include <SubSystem/SubSystemManager.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -188,7 +185,6 @@ void Sandbox::RegisterPanels()
 	// Shelved Panels (So panel tab doesn't get cluttered up).
 #ifdef VT_DEBUG
 	EditorLibrary::RegisterWithType<PrefabEditorPanel>("", AssetTypes::Prefab);
-	EditorLibrary::Register<SplinePanel>("", m_runtimeScene);
 	EditorLibrary::Register<Sequencer>("", m_runtimeScene);
 	EditorLibrary::Register<TaigaPanel>("Advanced");
 	EditorLibrary::Register<ThemesPanel>("Advanced");
@@ -199,7 +195,6 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::Register<LogPanel>("Advanced");
 	EditorLibrary::Register<RendererSettingsPanel>("Advanced", m_sceneRenderer);
 	EditorLibrary::Register<RenderGraphDebuggerPanel>("Advanced", m_sceneRenderer);
-	m_navigationPanel = EditorLibrary::Register<NavigationPanel>("Advanced", m_runtimeScene);
 	EditorLibrary::Register<EngineStatisticsPanel>("Advanced", m_runtimeScene, m_sceneRenderer, m_gameSceneRenderer);
 	EditorLibrary::RegisterWithType<TextureViewerPanel>("Advanced", AssetTypes::Texture);
 
@@ -216,7 +211,6 @@ void Sandbox::RegisterPanels()
 	m_viewportPanel = EditorLibrary::Register<ViewportPanel>("Level Editor", m_sceneRenderer, m_runtimeScene, m_editorCameraController.get(), m_sceneState);
 	m_gameViewPanel = EditorLibrary::Register<GameViewPanel>("Level Editor", m_gameSceneRenderer, m_runtimeScene, m_sceneState);
 
-	EditorLibrary::Register<VisionPanel>("", m_runtimeScene, m_editorCameraController.get());
 	EditorLibrary::Register<EditorSettingsPanel>("", UserSettingsManager::GetSettings());
 	EditorLibrary::Register<PhysicsPanel>("Physics");
 	EditorLibrary::Register<VertexPainterPanel>("", m_runtimeScene, m_editorCameraController);
@@ -225,8 +219,6 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::Register<WorldEnginePanel>("", m_runtimeScene);
 	EditorLibrary::Register<RenderResourcesPanel>("");
 	EditorLibrary::Register<GameUIEditorPanel>("UI");
-
-
 
 	EditorLibrary::RegisterWithType<MosaicEditorPanel>("", AssetTypes::Material);
 	//EditorLibrary::RegisterWithType<MaterialEditorPanel>("", , myRuntimeScene);
@@ -505,11 +497,6 @@ bool Sandbox::CheckForUpdateNavMesh(Volt::Entity entity)
 
 	return (entity.HasComponent<Volt::NavMeshComponent>() || entity.HasComponent<Volt::NavLinkComponent>()) && UserSettingsManager::GetSettings().navmeshBuildSettings.useAutoBaking;*/
 	return false;
-}
-
-void Sandbox::BakeNavMesh()
-{
-	m_navigationPanel->Bake();
 }
 
 void Sandbox::SaveScene()

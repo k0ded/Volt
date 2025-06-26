@@ -8,9 +8,8 @@
 #include "Sandbox/Modals/TextureImportModal.h"
 #include "Sandbox/Sandbox.h"
 
-#include <Volt/Asset/Prefab.h>
+#include <Volt-Scene/Prefab.h>
 #include <Volt-Application/UI/UIUtility.h>
-#include <Volt/Utility/MeshExporterUtilities.h>
 
 #include <Volt-Assets/MeshAsset.h>
 

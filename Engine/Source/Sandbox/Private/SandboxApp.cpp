@@ -3,8 +3,6 @@
 #include "Sandbox/Sandbox.h"
 #include "ProjectUpgrade/ProjectUpgradeLayer.h"
 
-#include <Volt/EntryPoint.h>
-
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <Volt-Application/Application.h>
