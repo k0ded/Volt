@@ -135,12 +135,6 @@ namespace ECS
 		Utility::TupleTypeIndex<const RemoveConstRef<Comp>&, ComponentTuple>::IsValid ||
 		Utility::TupleTypeIndex<RemoveConstRef<Comp>, ComponentTupleReadIfExists>::IsValid;
 
-	//template<typename Comp, typename ComponentTupleRaw, typename ComponentTuple>
-	//concept IsComponentReadAccess = ComponentIsSpecifiedInAccessor<Comp, ComponentTupleRaw> && !std::is_same_v<std::remove_reference_t<std::tuple_element_t<Utility::TupleTypeIndex<std::remove_const_t<std::remove_reference_t<Comp>>, ComponentTuple>::Value, ComponentTuple>>, std::add_const_t<std::remove_reference_t<Comp>>>;
-	//
-	//template<typename Comp, typename ComponentTupleRaw, typename ComponentTuple>
-	//concept IsComponentWriteAccess = ComponentIsSpecifiedInAccessor<Comp, ComponentTupleRaw> && !std::is_same_v<std::remove_const<std::remove_reference_t<std::tuple_element_t<Utility::TupleTypeIndex<std::remove_const_t<std::remove_reference_t<Comp>>, ComponentTuple>::Value, ComponentTuple>>>, std::remove_const_t<std::remove_reference_t<Comp>>>;
-
 	template<Type type, typename... T>
 	class ConstructComponents
 	{};
