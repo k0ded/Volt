@@ -201,7 +201,7 @@ private:
 			else if constexpr (T::ConstructType == ECS::Type::Query)
 			{
 				using ComponentTuple = typename T::ComponentViewTuple;
-				return T(GetRegistryView<ComponentTuple>(scene.GetRegistry()), scene.GetRegistry());
+				return T(GetRegistryView<ComponentTuple>(scene.GetRegistry()), &scene);
 			}
 		}
 		else
