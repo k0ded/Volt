@@ -1446,24 +1446,6 @@ VkDescriptorSet ImGui_ImplVulkan_AddTexture(VkSampler sampler, VkImageView image
     return descriptor_set;
 }
 //BEGIN_VOLT_CHANGE
-ImTextureID ImGui_ImplVulkan_AddTexture_Internal(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout)
-{
-    ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
-    ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
-
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc_info.descriptorPool = v->DescriptorPool;
-    alloc_info.descriptorSetCount = 1;
-    alloc_info.pSetLayouts = &bd->DescriptorSetLayout;
-    VkDescriptorSet descriptor_set;
-    VkResult err = vkAllocateDescriptorSets(v->Device, &alloc_info, &descriptor_set);
-    check_vk_result(err);
-
-    ImGui_ImplVulkan_UpdateTextureInfo(descriptor_set, sampler, image_view, image_layout);
-    return (ImTextureID)descriptor_set;
-}
-
 IMGUI_IMPL_API ImTextureID ImGui_ImplVulkan_UpdateTextureInfo(VkDescriptorSet descriptorSet, VkSampler sampler, VkImageView image_view, VkImageLayout image_layout)
 {
     ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
@@ -1485,6 +1467,25 @@ IMGUI_IMPL_API ImTextureID ImGui_ImplVulkan_UpdateTextureInfo(VkDescriptorSet de
 
     return (ImTextureID)descriptorSet;
 }
+
+ImTextureID ImGui_ImplVulkan_AddTexture_Internal(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout)
+{
+    ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
+    ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
+
+    VkDescriptorSetAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info.descriptorPool = v->DescriptorPool;
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.pSetLayouts = &bd->DescriptorSetLayout;
+    VkDescriptorSet descriptor_set;
+    VkResult err = vkAllocateDescriptorSets(v->Device, &alloc_info, &descriptor_set);
+    check_vk_result(err);
+
+    ImGui_ImplVulkan_UpdateTextureInfo(descriptor_set, sampler, image_view, image_layout);
+    return (ImTextureID)descriptor_set;
+}
+
 //END_VOLT_CHANGE
 
 void ImGui_ImplVulkan_RemoveTexture(VkDescriptorSet descriptor_set)

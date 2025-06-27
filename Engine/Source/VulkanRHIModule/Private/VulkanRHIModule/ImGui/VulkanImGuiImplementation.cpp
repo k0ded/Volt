@@ -40,20 +40,20 @@ namespace Volt::RHI
 		}
 	}
 
-	inline void MergeIconsWithLatestFont(float font_size)
+	inline void MergeIconsWithLatestFont()
 	{
 		ImGuiIO& io = ImGui::GetIO();
 	
-		float baseFontSize = font_size; // 13.0f is the size of the default font. Change to the font size you use.
-		float iconFontSize = baseFontSize; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+		//float baseFontSize = font_size; // 13.0f is the size of the default font. Change to the font size you use.
+		//float iconFontSize = baseFontSize; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
 	
 		// merge in icons from Font Awesome
 		static const ImWchar icons_ranges[] = { VT_ICON_MIN_FA, VT_ICON_MAX_16_FA, 0 };
 		ImFontConfig icons_config;
 		icons_config.MergeMode = true;
 		icons_config.PixelSnapH = true;
-		icons_config.GlyphMinAdvanceX = iconFontSize;
-		io.Fonts->AddFontFromFileTTF("Engine/Fonts/FontAwesome/" FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges);
+		//icons_config.GlyphMinAdvanceX = iconFontSize;
+		io.Fonts->AddFontFromFileTTF("Engine/Fonts/FontAwesome/" FONT_ICON_FILE_NAME_FAS, 0.0f, &icons_config, icons_ranges);
 	}
 
 	VulkanImGuiImplementation::VulkanImGuiImplementation(const ImGuiCreateInfo& createInfo)
@@ -78,12 +78,12 @@ namespace Volt::RHI
 		return id;
 	}
 
-	ImFont* VulkanImGuiImplementation::AddFont(const std::filesystem::path& fontPath, float pixelSize)
+	ImFont* VulkanImGuiImplementation::AddFont(const std::filesystem::path& fontPath)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		ImFont* newFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), pixelSize);
+		ImFont* newFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
 	
-		MergeIconsWithLatestFont(pixelSize);
+		MergeIconsWithLatestFont();
 
 		return newFont;
 	}
@@ -255,16 +255,16 @@ namespace Volt::RHI
 		ImGui_ImplVulkan_Shutdown();
 	}
 
-	Vector<ImFont*> VulkanImGuiImplementation::AddFonts(const Vector<FontInfo>& fontInfos)
+	Vector<ImFont*> VulkanImGuiImplementation::AddFonts(const Vector<std::filesystem::path>& fontPaths)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		
 		Vector<ImFont*> resultFonts;
 
-		for (const auto& fontInfo : fontInfos)
+		for (const auto& fontPath : fontPaths)
 		{
-			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontInfo.filepath.string().c_str(), fontInfo.pixelSize);
-			MergeIconsWithLatestFont(fontInfo.pixelSize);
+			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
+			MergeIconsWithLatestFont();
 		}
 
 		return resultFonts;

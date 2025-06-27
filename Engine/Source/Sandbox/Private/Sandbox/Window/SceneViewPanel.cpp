@@ -520,7 +520,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{ 0.f, 0.f, 0.f, 0.f });
 	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{ 0.f, 0.f, 0.f, 0.f });
 
-	UI::PushFont(UI::FontType::Regular_16);
+	UI::PushFont(UI::FontType::Regular, UI::DEFAULT_FONT_SIZE);
 
 	if (!children.empty())
 	{

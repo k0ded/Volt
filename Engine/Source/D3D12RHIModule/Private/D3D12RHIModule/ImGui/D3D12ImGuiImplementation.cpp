@@ -136,21 +136,21 @@ namespace Volt::RHI
 		return reinterpret_cast<ImTextureID>(resultDescriptor.GetGPUPointer());
 	}
 
-	ImFont* D3D12ImGuiImplementation::AddFont(const std::filesystem::path& fontPath, float pixelSize)
+	ImFont* D3D12ImGuiImplementation::AddFont(const std::filesystem::path& fontPath)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		return io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), pixelSize);
+		return io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
 	}
 
-	Vector<ImFont*> D3D12ImGuiImplementation::AddFonts(const Vector<FontInfo>& fontInfos)
+	Vector<ImFont*> D3D12ImGuiImplementation::AddFonts(const Vector<std::filesystem::path>& fontPaths)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
 		Vector<ImFont*> resultFonts;
 
-		for (const auto& fontInfo : fontInfos)
+		for (const auto& fontPath : fontPaths)
 		{
-			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontInfo.filepath.string().c_str(), fontInfo.pixelSize);
+			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
 		}
 
 		return resultFonts;

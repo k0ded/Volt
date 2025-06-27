@@ -22,9 +22,16 @@ namespace UI
 		return s_fonts[fontType];
 	}
 
-	void PushFont(FontType font)
+	void PushFont(FontType font, float fontSize)
 	{
-		ImGui::PushFont(GetFont(font));
+		if (font == FontType::None)
+		{
+			ImGui::PushFont(nullptr, fontSize);
+		}
+		else
+		{
+			ImGui::PushFont(GetFont(font), fontSize);
+		}
 	}
 
 	void PopFont()

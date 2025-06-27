@@ -33,7 +33,7 @@ namespace UI
 
 	void Header(const std::string& text)
 	{
-		ScopedFont font{ UI::FontType::Regular_20 };
+		ScopedFont font{ UI::FontType::Regular, UI::BIG_FONT_SIZE };
 		ImGui::TextUnformatted(text.c_str());
 	}
 
@@ -726,7 +726,7 @@ namespace UI
 
 	void SmallSeparatorHeader(const std::string& text, float padding)
 	{
-		ScopedFont font{ UI::FontType::Bold_16 };
+		ScopedFont font{ UI::FontType::Bold, UI::DEFAULT_FONT_SIZE };
 
 		const auto pos = ImGui::GetCursorPos();
 		ImGui::TextUnformatted(text.c_str());
