@@ -34,10 +34,10 @@ namespace VoltSharpmake
                 "imconfig.h"
             );
 
-            conf.ExportDefines.Add("IMGUI_DISABLE_OBSOLETE_KEYIO");
+            conf.ExportDefines.Add("IMGUI_DISABLE_OBSOLETE_KEYIO", "IMGUI_DISABLE_DEFAULT_ALLOCATORS");
             conf.IncludePaths.Add("[project.RootPath]/[project.Name]");
 
-            conf.Defines.Add("IMGUI_DLL_EXPORT");
+            conf.Defines.Add("IMGUI_DLL_EXPORT", "IMGUI_DISABLE_DEFAULT_ALLOCATORS");
 
         }
     }

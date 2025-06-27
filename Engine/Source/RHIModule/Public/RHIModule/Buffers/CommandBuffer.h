@@ -55,12 +55,6 @@ namespace Volt::RHI
 		virtual void Begin() = 0;
 		virtual void End() = 0;
 
-		virtual void Flush(RefPtr<Fence> fence) = 0;
-		virtual void Execute() = 0;
-		virtual void ExecuteAndWait() = 0;
-		virtual void ExecuteWithFence(RefPtr<Fence> fence) = 0;
-		virtual void WaitForFence() = 0;
-
 		virtual void SetEvent(RawPtr<Event> event) = 0;
 
 		virtual void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance) = 0;
@@ -122,7 +116,6 @@ namespace Volt::RHI
 
 		virtual const QueueType GetQueueType() const = 0;
 		virtual const CommandBufferLevel GetCommandBufferLevel() const = 0;
-		virtual const RawPtr<Fence> GetFence() const = 0;
 
 		virtual RefPtr<CommandBuffer> CreateSecondaryCommandBuffer() const = 0;
 		virtual void ExecuteSecondaryCommandBuffer(RefPtr<CommandBuffer> commandBuffer) const = 0;

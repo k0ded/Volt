@@ -13,7 +13,7 @@ namespace Volt::Algo
 		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfPhysicalCores());
 		const uint32_t perThreadIterationCount = iterationCount / threadCount;
 
-		TaskGraph taskGraph{};
+		TaskGraph taskGraph{ ExecutionPriority::Immediate };
 
 		uint32_t iterOffset = 0;
 		for (uint32_t i = 0; i < threadCount; i++)
@@ -56,7 +56,7 @@ namespace Volt::Algo
 				currThreadIterationCount = iterationCount - i * perThreadIterationCount;
 			}
 
-			jobs.emplace_back() = JobSystem::CreateJob("ForEachParallel", [currThreadIterationCount, func, iterOffset, i]()
+			jobs.emplace_back() = JobSystem::CreateJob("ForEachParallel", ExecutionPriority::Critical, [currThreadIterationCount, func, iterOffset, i]()
 			{
 				for (uint32_t iter = 0; iter < currThreadIterationCount; iter++)
 				{

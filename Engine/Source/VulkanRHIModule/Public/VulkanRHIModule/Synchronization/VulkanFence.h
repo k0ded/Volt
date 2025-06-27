@@ -17,9 +17,15 @@ namespace Volt::RHI
 		void WaitUntilSignaled() const override;
 
 	protected:
+		friend class VulkanDeviceQueue;
+		friend class VulkanSwapchain;
+
 		void* GetHandleImpl() const override;
+
+		void MarkAsExecuted();
 
 	private:
 		VkFence_T* m_fence = nullptr;
+		mutable std::atomic_bool m_isExecuted = false;
 	};
 }

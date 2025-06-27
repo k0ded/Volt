@@ -7,9 +7,12 @@ namespace Volt::RHI
 		: m_count(count)
 	{
 		m_commandBuffers.resize(m_count);
+		m_fences.resize(m_count);
+
 		for (uint32_t i = 0; i < m_count; i++)
 		{
 			m_commandBuffers[i] = CommandBuffer::Create(queueType);
+			m_fences[i] = Fence::Create({ true });
 		}
 	}
 
@@ -27,5 +30,10 @@ namespace Volt::RHI
 	void CommandBufferSet::Increment()
 	{
 		m_currentIndex = (m_currentIndex + 1) % m_count;
+	}
+
+	RefPtr<Fence> CommandBufferSet::GetCurrentFence() const
+	{
+		return m_fences.at(m_currentIndex);
 	}
 }

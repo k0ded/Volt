@@ -193,7 +193,7 @@ namespace Volt
 
 		m_assetRegistry.reserve(projectAssetFiles.size() + engineAssetFiles.size());
 
-		TaskGraph taskGraph{};
+		TaskGraph taskGraph{ ExecutionPriority::Immediate };
 
 		for (auto file : engineAssetFiles)
 		{
@@ -1172,7 +1172,7 @@ namespace Volt
 
 		// If not, queue
 		{
-			JobRef loadJob = JobSystem::CreateJob("Load Asset", [this, metadata, handle = assetHandle]()
+			JobRef loadJob = JobSystem::CreateJob("Load Asset", ExecutionPriority::Latent, [this, metadata, handle = assetHandle]()
 			{
 				Ref<Asset> asset;
 				{

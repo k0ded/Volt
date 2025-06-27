@@ -93,7 +93,7 @@ namespace Volt
 		WindowManager::InitializeGLFW();
 		CreateGraphicsContext();
 
-		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineDirectory());
+		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineRootDirectory());
 		m_sourceAssetManager = CreateScope<SourceAssetManager>();
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
@@ -134,7 +134,6 @@ namespace Volt
 		if (m_appCreateInfo.createMainWindow && m_appCreateInfo.enableImGui)
 		{
 			m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
-			m_imguiSubSystem->SetupContext();
 		}
 
 		m_scriptingSystem = CreateScope<ScriptingSystem>();
@@ -191,8 +190,6 @@ namespace Volt
 		{
 			VT_PROFILE_FRAME("Frame");
 			MainUpdate();
-
-			//m_frameIndex++;
 		}
 	}
 
@@ -239,7 +236,6 @@ namespace Volt
 			{
 				// Make sure that the main window exits, it is required to initialize ImGui.
 				m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
-				m_imguiSubSystem->SetupContext();
 			}
 
 			//if we are already running, we have to skip a frame so that we dont start trying to render witout beginning rendering

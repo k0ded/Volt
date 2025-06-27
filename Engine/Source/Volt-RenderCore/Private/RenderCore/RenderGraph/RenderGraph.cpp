@@ -12,14 +12,19 @@
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Synchronization/Fence.h>
+#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Graphics/GraphicsDevice.h>
+#include <RHIModule/Graphics/DeviceQueue.h>
 #include <RHIModule/RHIFeatures.h>
 
-#include <JobSystem/JobSystem.h>
+#include <JobSystem/TaskGraph.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/EnumUtils.h>
 #include <CoreUtilities/ComparisonHelpers.h>
+#include <CoreUtilities/Malloc.h>
 
 /*
 	These are the synchronization cases referenced and handeled in RenderGraph::Compile.
@@ -542,7 +547,7 @@ namespace Volt
 			context.CopyBufferRegion(parameters->SrcBuffer, 0, parameters->DstBuffer, 0, dataSize);
 			context.Flush(fence);
 
-			JobRef readbackJob = JobSystem::CreateJob("Readback", [fence, readbackBuffer]()
+			JobRef readbackJob = JobSystem::CreateJob("Readback", ExecutionPriority::Render, [fence, readbackBuffer]()
 			{
 				fence->WaitUntilSignaled();
 				readbackBuffer->m_isReady = true;
@@ -580,7 +585,7 @@ namespace Volt
 			context.CopyTexture(parameters->SrcTexture, parameters->DstTexture, desc.width, desc.height, desc.depth);
 			context.Flush(fence);
 
-			JobRef readbackJob = JobSystem::CreateJob("Readback", [fence, readbackTexture]()
+			JobRef readbackJob = JobSystem::CreateJob("Readback", ExecutionPriority::Render, [fence, readbackTexture]()
 			{
 				fence->WaitUntilSignaled();
 				readbackTexture->m_isReady = true;
@@ -1146,16 +1151,150 @@ namespace Volt
 	void RenderGraph::Execute()
 	{
 		RenderGraphExecutionThread::ExecuteRenderGraph(std::move(*this));
+		//ExecuteInternal2(false, false);
 	}
 
 	void RenderGraph::ExecuteImmediate()
 	{
 		ExecuteInternal(false);
+		//ExecuteInternal2(true, false);
 	}
 
 	void RenderGraph::ExecuteImmediateAndWait()
 	{
 		ExecuteInternal(true);
+		//ExecuteInternal2(true, true);
+	}
+
+	void RenderGraph::ExecuteInternal2(bool isImmediate, bool waitForSync)
+	{
+		VT_PROFILE_FUNCTION();
+
+		constexpr size_t NumPassesPerJob = 4;
+
+		struct PassExecutionRange
+		{
+			uint16_t begin;
+			uint16_t count;
+		};
+
+		Vector<PassExecutionRange> passExecutionRanges;
+		passExecutionRanges.reserve(Math::DivideRoundUp(m_passes.size(), NumPassesPerJob));
+
+		size_t currentOffset = 0;
+		while (currentOffset < m_passes.size())
+		{
+			auto& newRange = passExecutionRanges.emplace_back();
+			newRange.begin = static_cast<uint16_t>(currentOffset);
+			newRange.count = static_cast<uint16_t>(std::min(NumPassesPerJob, (m_passes.size() - currentOffset)));
+
+			currentOffset += NumPassesPerJob;
+		}
+
+		// Each execution range gets their own command buffer.
+		// #TODO_Ivar: Get from a command buffer pool.
+		Vector<RefPtr<RHI::CommandBuffer>> commandBuffers;
+		commandBuffers.resize(passExecutionRanges.size());
+
+		for (size_t i = 0; i < passExecutionRanges.size(); ++i)
+		{
+			commandBuffers[i] = RHI::CommandBuffer::Create();
+		}
+
+		// Move this RenderGraph into temporary storage, so that the 
+		// RenderGraph isn't destroyed before execution is finished.
+		// This data pointer is destroyed in the execution job.
+
+		// Create a temporary reference to the execution fence here to keep it alive.
+		RefPtr<RHI::Fence> executionFence = m_executionFence;
+
+		void* tempRenderGraphStorage = Memory::Malloc(sizeof(RenderGraph), alignof(RenderGraph));
+		new (tempRenderGraphStorage) RenderGraph(std::move(*this));
+
+		RenderGraph* renderGraphPtr = reinterpret_cast<RenderGraph*>(tempRenderGraphStorage);
+
+		TaskGraph taskGraph{ isImmediate ? ExecutionPriority::Immediate : ExecutionPriority::Render };
+
+		Vector<TaskGraph::Task*> recordTasks(passExecutionRanges.size());
+
+		for (uint32_t index = 0; const PassExecutionRange& executionRange : passExecutionRanges)
+		{
+			recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, executionRange, commandBuffers, index]()
+			{
+				RefPtr<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index);
+
+				commandBuffer->Begin();
+
+				for (uint16_t i = executionRange.begin; i < executionRange.begin + executionRange.count; ++i)
+				{
+					Handle<RenderGraphPass> pass = renderGraphPtr->m_passes.at(i);
+					const CompiledPass& compiledPass = renderGraphPtr->m_compiledPasses.at(pass->passIndex);
+
+					if (pass->isCulled)
+					{
+						renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, commandBuffer);
+						renderGraphPtr->InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, commandBuffer);
+						continue;
+					}
+
+					//InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, commandBuffer);
+
+					commandBuffer->BeginMarker(pass->name, { 1.f, 1.f, 1.f, 1.f });
+					renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.prePassBarriers, commandBuffer);
+
+					{
+						VT_PROFILE_SCOPE(pass->name.data());
+						RenderContext renderContext(*renderGraphPtr, pass.GetRaw(), commandBuffer);
+						renderGraphPtr->m_passAllocator.ExecutePass(pass, renderContext);
+					}
+
+					renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, commandBuffer);
+					commandBuffer->EndMarker();
+
+					for (const RGResourceRef resource : compiledPass.GetSurrenderableResources())
+					{
+						// #TODO_Ivar: This doesn't work correctly yet.
+						renderGraphPtr->m_transientResourceSystem.SurrenderResource(resource, 0);
+					}
+				}
+
+				commandBuffer->End();
+			});
+			index++;
+		}
+
+		taskGraph.AddTaskWithDependencies("RenderGraph::Execute", recordTasks, [renderGraphPtr, commandBuffers, executionFence]() 
+		{
+			RHI::DeviceQueueExecuteInfo executeInfo{};
+			executeInfo.commandBuffers.resize(commandBuffers.size());
+
+			for (size_t i = 0; i < commandBuffers.size(); ++i)
+			{
+				executeInfo.commandBuffers[i] = commandBuffers[i];
+			}
+
+			executeInfo.fence = executionFence;
+			RHI::GraphicsContext::GetDevice()->GetDeviceQueue(RHI::QueueType::Graphics)->Execute(executeInfo);
+		
+			renderGraphPtr->TransitionExternalResources();
+			renderGraphPtr->ExtractResources();
+
+			// Destroy the RenderGraph.
+			renderGraphPtr->~RenderGraph();
+			Memory::Free(renderGraphPtr);
+		});
+
+		taskGraph.Execute();
+
+		if (waitForSync)
+		{
+			executionFence->WaitUntilSignaled();
+		}
+
+		if (isImmediate)
+		{
+			taskGraph.Wait();
+		}
 	}
 
 	void RenderGraph::ExecuteInternal(bool waitForSync)
@@ -1204,7 +1343,8 @@ namespace Volt
 
 		m_commandBuffer->EndMarker();
 		m_commandBuffer->End();
-		m_commandBuffer->ExecuteWithFence(m_executionFence);
+
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(m_commandBuffer, m_executionFence);
 
 		if (waitForSync)
 		{

@@ -7,6 +7,7 @@
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Buffers/BufferView.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
 
 #include <RHIModule/Memory/MemoryCommon.h>
 #include <RHIModule/Memory/Allocation.h>
@@ -99,7 +100,7 @@ namespace Volt::RHI
 		commandBuffer->ResourceBarrier({ barrierInfo });
 
 		commandBuffer->End();
-		commandBuffer->Execute();
+		CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 	}
 
 	const size_t VulkanStorageBuffer::GetByteSize() const
@@ -169,7 +170,7 @@ namespace Volt::RHI
 
 		cmdBuffer->EndMarker();
 		cmdBuffer->End();
-		cmdBuffer->Execute();
+		CommandBufferUtils::ExecuteCommandBufferWithNewFence(cmdBuffer);
 
 		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAllocation);
 	}

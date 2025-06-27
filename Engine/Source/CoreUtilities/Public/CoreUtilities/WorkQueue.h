@@ -163,6 +163,13 @@ private:
 		int32_t unwrappedBeginIndex = 0;
 	};
 
+	inline static constexpr size_t CacheLineAlignment = std::hardware_destructive_interference_size;
+	inline static constexpr bool HasSinglePusher = ThreadingPolicy == QueueThreadingPolicy::SPMC;
+	inline static constexpr bool HasSinglePopper = ThreadingPolicy == QueueThreadingPolicy::MPSC;
+	inline static constexpr bool HasAwaitPushes = IsAwaitPushes(WaitingPolicy);
+	inline static constexpr bool HasAwaitPop = IsAwaitPop(WaitingPolicy);
+	inline static constexpr int32_t SizeMask = 0x80000000;
+
 	void Free()
 	{
 		if (!m_storagePtr)
@@ -390,13 +397,6 @@ private:
 		}
 	}
 
-	inline static constexpr size_t CacheLineAlignment = std::hardware_destructive_interference_size;
-	inline static constexpr bool HasSinglePusher = ThreadingPolicy == QueueThreadingPolicy::SPMC;
-	inline static constexpr bool HasSinglePopper = ThreadingPolicy == QueueThreadingPolicy::MPSC;
-	inline static constexpr bool HasAwaitPushes = IsAwaitPushes(WaitingPolicy);
-	inline static constexpr bool HasAwaitPop = IsAwaitPop(WaitingPolicy);
-	inline static constexpr int32_t SizeMask = 0x80000000;
-
 	alignas(CacheLineAlignment) std::atomic<uint64_t> m_pushPopIndices = 0;
 	alignas(CacheLineAlignment) std::atomic<int32_t> m_size = 0;
 	alignas(CacheLineAlignment) uint8_t* m_storagePtr = nullptr;
@@ -412,6 +412,10 @@ private:
 template<typename DataType, QueueWaitPolicy WaitingPolicy, typename AllocatorType>
 class WorkQueue<DataType, QueueThreadingPolicy::SPSC, WaitingPolicy, AllocatorType>
 {
+private:
+	inline static constexpr bool HasAwaitPushes = IsAwaitPushes(WaitingPolicy);
+	inline static constexpr bool HasAwaitPop = IsAwaitPop(WaitingPolicy);
+
 public:
 	using ThisType = WorkQueue<DataType, QueueThreadingPolicy::SPSC, WaitingPolicy, AllocatorType>;
 
@@ -775,8 +779,6 @@ private:
 	}
 
 	inline static constexpr size_t CacheLineAlignment = std::hardware_destructive_interference_size;
-	inline static constexpr bool HasAwaitPushes = IsAwaitPushes(WaitingPolicy);
-	inline static constexpr bool HasAwaitPop = IsAwaitPop(WaitingPolicy);
 	inline static constexpr int32_t SizeMask = 0x80000000;
 
 	alignas(CacheLineAlignment) std::atomic<int32_t> m_pushIndex;

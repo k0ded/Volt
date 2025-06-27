@@ -19,6 +19,8 @@ namespace Volt::RHI
 		info.pNext = nullptr;
 		info.flags = createInfo.createSignaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
 
+		m_isExecuted = createInfo.createSignaled;
+
 		auto device = GraphicsContext::GetDevice();
 		VT_VK_CHECK(vkCreateFence(device->GetHandle<VkDevice>(), &info, nullptr, &m_fence));
 	}
@@ -36,6 +38,8 @@ namespace Volt::RHI
 	{
 		auto device = GraphicsContext::GetDevice();
 		VT_VK_CHECK(vkResetFences(device->GetHandle<VkDevice>(), 1, &m_fence));
+	
+		m_isExecuted = false;
 	}
 
 	FenceStatus VulkanFence::GetStatus() const
@@ -57,6 +61,10 @@ namespace Volt::RHI
 
 	void VulkanFence::WaitUntilSignaled() const
 	{
+		// Make sure we wait for the fence to be used in an execution call before 
+		// we enter the wait for fences call.
+		m_isExecuted.wait(false, std::memory_order::relaxed);
+
 		auto device = GraphicsContext::GetDevice();
 		VT_VK_CHECK(vkWaitForFences(device->GetHandle<VkDevice>(), 1, &m_fence, VK_TRUE, UINT64_MAX));
 	}
@@ -64,5 +72,11 @@ namespace Volt::RHI
 	void* VulkanFence::GetHandleImpl() const
 	{
 		return m_fence;
+	}
+
+	void VulkanFence::MarkAsExecuted()
+	{
+		m_isExecuted = true;
+		m_isExecuted.notify_all();
 	}
 }

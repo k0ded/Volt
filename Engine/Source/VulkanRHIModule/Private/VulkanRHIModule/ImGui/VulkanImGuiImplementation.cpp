@@ -13,6 +13,7 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/PhysicalGraphicsDevice.h>
 #include <RHIModule/Graphics/DeviceQueue.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
 
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Images/Image.h>
@@ -82,7 +83,6 @@ namespace Volt::RHI
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		ImFont* newFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
-	
 		MergeIconsWithLatestFont();
 
 		return newFont;
@@ -102,7 +102,11 @@ namespace Volt::RHI
 
 		auto swapchainPtr = m_swapchain->As<VulkanSwapchain>();
 		auto commandBuffer = m_commandBufferSet.IncrementAndGetCommandBuffer();
+		auto fence = m_commandBufferSet.GetCurrentFence();
 
+		fence->WaitUntilSignaled();
+		fence->Reset();
+		
 		commandBuffer->Begin();
 		commandBuffer->BeginMarker("Draw ImGui", { 1.f, 1.f, 1.f, 1.f });
 
@@ -156,7 +160,8 @@ namespace Volt::RHI
 		commandBuffer->EndRendering();
 		commandBuffer->EndMarker();
 		commandBuffer->End();
-		commandBuffer->Execute();
+
+		CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, fence);
 	}
 
 	void VulkanImGuiImplementation::InitializeAPI(ImGuiContext* context)

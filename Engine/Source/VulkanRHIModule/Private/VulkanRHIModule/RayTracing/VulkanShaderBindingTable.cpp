@@ -5,6 +5,7 @@
 
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
 
 namespace Volt::RHI
 {
@@ -161,8 +162,8 @@ namespace Volt::RHI
 		}
 
 		commandBuffer->ResourceBarrier(barriers);
-
 		commandBuffer->End();
-		commandBuffer->Execute();
+
+		CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 	}
 }

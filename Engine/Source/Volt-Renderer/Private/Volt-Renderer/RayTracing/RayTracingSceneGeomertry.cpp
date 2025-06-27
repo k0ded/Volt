@@ -4,6 +4,7 @@
 
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
 
 namespace Volt
 {
@@ -54,7 +55,7 @@ namespace Volt
 		commandBuffer->BuildAccelerationStructures({ buildGeometryInfo }, { buildRanges });
 
 		commandBuffer->End();
-		commandBuffer->ExecuteAndWait();
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 	}
 
 	uint64_t RayTracingSceneGeometry::GetAccelerationStructureDeviceAddress() const

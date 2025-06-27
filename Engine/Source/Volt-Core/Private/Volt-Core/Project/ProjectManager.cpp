@@ -136,11 +136,6 @@ namespace Volt
 		}
 	}
 
-	const std::filesystem::path ProjectManager::GetEngineScriptsDirectory()
-	{
-		return GetAssetsDirectory() / "Scripts/Internal";
-	}
-
 	const std::filesystem::path ProjectManager::GetAssetsDirectory()
 	{
 		return s_instance->m_currentProject->isDeprecated ? "./" : s_instance->m_currentProject->rootDirectory / s_instance->m_currentProject->assetsDirectory;
@@ -156,9 +151,14 @@ namespace Volt
 		return s_instance->m_currentProject->isDeprecated ? "./" : s_instance->m_currentProject->rootDirectory;
 	}
 
-	const std::filesystem::path ProjectManager::GetEngineDirectory()
+	const std::filesystem::path ProjectManager::GetEngineRootDirectory()
 	{
 		return s_instance->m_currentEngineDirectory;
+	}
+
+	const std::filesystem::path ProjectManager::GetEngineAssetsDirectory()
+	{
+		return s_instance->m_currentEngineDirectory / "Engine";
 	}
 
 	const std::filesystem::path ProjectManager::GetPathRelativeToEngine(const std::filesystem::path& path)
@@ -174,16 +174,6 @@ namespace Volt
 	const std::filesystem::path ProjectManager::GetPathRelativeToProject(const std::filesystem::path& path)
 	{
 		return std::filesystem::relative(path, GetProjectDirectory());
-	}
-
-	const std::filesystem::path ProjectManager::GetMonoAssemblyPath()
-	{
-		return GetRootDirectory() / "Binaries" / "Project.dll";
-	}
-
-	const std::filesystem::path ProjectManager::GetMonoBinariesDirectory()
-	{
-		return GetRootDirectory() / "Binaries";
 	}
 
 	const std::filesystem::path ProjectManager::GetOrCreateSettingsDirectory()

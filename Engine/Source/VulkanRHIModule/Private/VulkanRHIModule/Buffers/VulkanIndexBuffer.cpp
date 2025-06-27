@@ -4,6 +4,7 @@
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
 
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -135,7 +136,8 @@ namespace Volt::RHI
 				vkCmdCopyBuffer(cmdBuffer->GetHandle<VkCommandBuffer>(), stagingAllocation->GetResourceHandle<VkBuffer>(), m_allocation->GetResourceHandle<VkBuffer>(), 1, &copy);
 
 				cmdBuffer->End();
-				cmdBuffer->Execute();
+
+				CommandBufferUtils::ExecuteCommandBufferWithNewFence(cmdBuffer);
 			}
 
 			allocator->DestroyBuffer(stagingAllocation);

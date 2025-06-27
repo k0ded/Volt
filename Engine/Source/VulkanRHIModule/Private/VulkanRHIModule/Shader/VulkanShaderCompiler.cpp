@@ -148,13 +148,11 @@ namespace Volt::RHI
 	{
 		if (!specification.forceCompile)
 		{
-#if 0
 			const auto cachedResult = m_shaderCache->TryGetCachedShader(specification);
 			if (cachedResult.data.IsValid())
 			{
 				return cachedResult.data;
 			}
-#endif
 		}
 
 		if (specification.shaderSourceInfo.source.empty())

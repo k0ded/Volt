@@ -79,7 +79,6 @@ namespace Volt
 		if (m_appCreateInfo.createMainWindow && m_appCreateInfo.enableImGui)
 		{
 			m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
-			m_imguiSubSystem->SetupContext();
 		}
 
 		m_eventListener = CreateScope<UIApplicationEventListener>(*this);
@@ -96,9 +95,6 @@ namespace Volt
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
 		m_windowManager->DestroyMainWindow();
-		{
-
-		}
 
 		WindowManager::ShutdownGLFW();
 
@@ -119,8 +115,6 @@ namespace Volt
 		{
 			VT_PROFILE_FRAME("Frame");
 			MainUpdate();
-
-			//m_frameIndex++;
 		}
 	}
 
@@ -159,7 +153,6 @@ namespace Volt
 			if (m_imguiSubSystem)
 			{
 				m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
-				m_imguiSubSystem->SetupContext();
 			}
 
 			//if we are already running, we have to skip a frame so that we dont start trying to render witout beginning rendering

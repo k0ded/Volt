@@ -8,6 +8,7 @@
 #include <EntitySystem/EntityHelper.h>
 
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers//CommandBufferUtility.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -104,7 +105,7 @@ namespace Volt
 		m_buildFence->WaitUntilSignaled();
 		m_buildFence->Reset();
 
-		commandBuffer->ExecuteWithFence(m_buildFence);
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, m_buildFence);
 
 		// #TODO_Ivar: Remove when design is finalized
 		m_buildFence->WaitUntilSignaled();
@@ -175,7 +176,7 @@ namespace Volt
 		m_updateFence->WaitUntilSignaled();
 		m_updateFence->Reset();
 		
-		commandBuffer->ExecuteWithFence(m_updateFence);
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, m_updateFence);
 
 		m_updateFence->WaitUntilSignaled();
 	}

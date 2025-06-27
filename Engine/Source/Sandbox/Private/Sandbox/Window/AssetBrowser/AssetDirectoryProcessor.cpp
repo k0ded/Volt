@@ -8,12 +8,16 @@
 
 #include <AssetSystem/AssetManager.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 AssetDirectoryProcessor::AssetDirectoryProcessor(Weak<AssetBrowser::SelectionManager> selectionManager, std::set<AssetType> assetMask)
 	: m_selectionManager(selectionManager), m_assetMask(assetMask)
 {}
 
 Ref<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(const std::filesystem::path& path, AssetData& meshToImportData)
 {
+	VT_PROFILE_FUNCTION();
+
 	struct AssetEntryData
 	{
 		std::filesystem::path path;
@@ -25,20 +29,24 @@ Ref<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(con
 	Vector<std::filesystem::path> pathsToProcess;
 	pathsToProcess.emplace_back(path);
 
-	while (!pathsToProcess.empty())
 	{
-		auto currentPath = pathsToProcess.back();
-		pathsToProcess.pop_back();
+		VT_PROFILE_SCOPE("Find directories");
 
-		for (const auto& entry : std::filesystem::directory_iterator(currentPath))
+		while (!pathsToProcess.empty())
 		{
-			auto& assetEntry = assetEntries.emplace_back();
-			assetEntry.path = entry.path();
-			assetEntry.isDirectory = entry.is_directory();
+			auto currentPath = pathsToProcess.back();
+			pathsToProcess.pop_back();
 
-			if (assetEntry.isDirectory)
+			for (const auto& entry : std::filesystem::directory_iterator(currentPath))
 			{
-				pathsToProcess.emplace_back(assetEntry.path);
+				auto& assetEntry = assetEntries.emplace_back();
+				assetEntry.path = entry.path();
+				assetEntry.isDirectory = entry.is_directory();
+
+				if (assetEntry.isDirectory)
+				{
+					pathsToProcess.emplace_back(assetEntry.path);
+				}
 			}
 		}
 	}
@@ -46,38 +54,43 @@ Ref<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(con
 	auto relStartPath = Volt::AssetManager::GetRelativePath(path);
 	Ref<AssetBrowser::DirectoryItem> resultItem = CreateRef<AssetBrowser::DirectoryItem>(m_selectionManager.Get(), relStartPath);
 	std::unordered_map<std::filesystem::path, Ref<AssetBrowser::DirectoryItem>> directoryItems;
-
 	directoryItems[relStartPath] = resultItem;
 
-	for (const auto& entry : assetEntries)
 	{
-		if (entry.isDirectory)
+		VT_PROFILE_SCOPE("Create items");
+
+		for (const auto& entry : assetEntries)
 		{
-			auto relPath = Volt::AssetManager::GetRelativePath(entry.path);
-			Ref<AssetBrowser::DirectoryItem> dirData = CreateRef<AssetBrowser::DirectoryItem>(m_selectionManager.Get(), relPath);
-			directoryItems[relPath] = dirData;
-			const auto parentPath = Volt::AssetManager::GetRelativePath(entry.path.parent_path());
-			directoryItems[parentPath]->subDirectories.emplace_back(dirData);
-			dirData->parentDirectory = directoryItems[parentPath].get();
-		}
-		else
-		{
-			AssetType type = Volt::AssetManager::GetAssetTypeFromPath(entry.path);
-			if (type == AssetTypes::None)
+			VT_PROFILE_SCOPE("Create item");
+
+			if (entry.isDirectory)
 			{
-				type = GetAssetTypeRegistry().GetTypeFromExtension(entry.path.extension().string());
+				auto relPath = Volt::AssetManager::GetRelativePath(entry.path);
+				Ref<AssetBrowser::DirectoryItem> dirData = CreateRef<AssetBrowser::DirectoryItem>(m_selectionManager.Get(), relPath);
+				directoryItems[relPath] = dirData;
+				const auto parentPath = Volt::AssetManager::GetRelativePath(entry.path.parent_path());
+				directoryItems[parentPath]->subDirectories.emplace_back(dirData);
+				dirData->parentDirectory = directoryItems[parentPath].get();
 			}
-
-			const auto filename = entry.path.filename().string();
-
-			if (type != AssetTypes::None && !Utility::StringContains(filename, ".vtthumb.png"))
+			else
 			{
-				if (m_assetMask.empty() || m_assetMask.contains(type))
+				AssetType type = Volt::AssetManager::GetAssetTypeFromPath(entry.path);
+				if (type == AssetTypes::None)
 				{
-					auto relPath = Volt::AssetManager::GetRelativePath(entry.path);
-					Ref<AssetBrowser::AssetItem> assetItem = CreateRef<AssetBrowser::AssetItem>(m_selectionManager.Get(), relPath, meshToImportData);
-					const auto parentPath = Volt::AssetManager::GetRelativePath(entry.path.parent_path());
-					directoryItems[parentPath]->assets.emplace_back(assetItem);
+					type = GetAssetTypeRegistry().GetTypeFromExtension(entry.path.extension().string());
+				}
+
+				const auto filename = entry.path.filename().string();
+
+				if (type != AssetTypes::None && !Utility::StringContains(filename, ".vtthumb.png"))
+				{
+					if (m_assetMask.empty() || m_assetMask.contains(type))
+					{
+						auto relPath = Volt::AssetManager::GetRelativePath(entry.path);
+						Ref<AssetBrowser::AssetItem> assetItem = CreateRef<AssetBrowser::AssetItem>(m_selectionManager.Get(), relPath, meshToImportData);
+						const auto parentPath = Volt::AssetManager::GetRelativePath(entry.path.parent_path());
+						directoryItems[parentPath]->assets.emplace_back(assetItem);
+					}
 				}
 			}
 		}

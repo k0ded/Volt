@@ -508,8 +508,7 @@ namespace Volt
 		result.normal.x = uint8_t(octNormal.x * 255);
 		result.normal.y = uint8_t(octNormal.y * 255);
 		result.tangent = Utility::EncodeTangent(vertex.normal, vertex.tangent);
-		result.texCoords.x = static_cast<half_float::half>(vertex.uv.x);
-		result.texCoords.y = static_cast<half_float::half>(vertex.uv.y);
+		result.texCoords = glm::packHalf2x16(vertex.uv);
 
 		return result;
 	}

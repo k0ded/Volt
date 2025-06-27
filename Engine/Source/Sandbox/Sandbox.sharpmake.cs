@@ -28,24 +28,34 @@ namespace VoltSharpmake
                 LocalDebuggerCommandArguments = Globals.VtProjectFilePath
             };
 
-            conf.AddPublicDependency<Volt>(target);
-            conf.AddPublicDependency<VoltApplication>(target);
-
-			conf.AddPublicDependency<VoltAssets>(target);
-
-            conf.AddPublicDependency<ImGuizmo>(target);
-            conf.AddPublicDependency<imgui_node_editor>(target);
-            conf.AddPublicDependency<p4>(target);
-            conf.AddPublicDependency<OpenSSL>(target);
-
-            conf.AddPublicDependency<nfd_extended>(target);
-            conf.AddPublicDependency<yaml>(target);
-            conf.AddPublicDependency<MosaicModule>(target);
-
-            conf.AddPublicDependency<glm>(target);
-
-            conf.AddPrivateDependency<esfw>(target);
+            conf.AddPrivateDependency<VoltApplication>(target);
+			conf.AddPrivateDependency<VoltAssets>(target);
+			conf.AddPrivateDependency<VoltScene>(target);
+			conf.AddPrivateDependency<VoltGameUI>(target);
 			conf.AddPrivateDependency<VoltEntryPoint>(target);
+			conf.AddPrivateDependency<VoltCoreComponents>(target);
+			conf.AddPrivateDependency<VoltRenderer>(target);
+			conf.AddPrivateDependency<VoltPhysics>(target);
+			conf.AddPrivateDependency<VoltAnimation>(target);
+
+			conf.AddPrivateDependency<NavigationModule>(target);
+			conf.AddPrivateDependency<InputModule>(target);
+			conf.AddPrivateDependency<WindowModule>(target);
+			conf.AddPrivateDependency<RHIModule>(target);
+			conf.AddPrivateDependency<JobSystemModule>(target);
+			conf.AddPrivateDependency<SubSystemModule>(target);
+
+			conf.AddPrivateDependency<ImGuizmo>(target);
+            conf.AddPrivateDependency<imgui_node_editor>(target);
+            conf.AddPrivateDependency<p4>(target);
+            conf.AddPrivateDependency<OpenSSL>(target);
+
+            conf.AddPrivateDependency<nfd_extended>(target);
+            conf.AddPrivateDependency<yaml>(target);
+            conf.AddPrivateDependency<MosaicModule>(target);
+
+            conf.AddPrivateDependency<glm>(target);
+            conf.AddPrivateDependency<esfw>(target);
 
 			Type gameProjectType = Type.GetType("VoltSharpmake.Game");
 			if (gameProjectType != null)
@@ -82,8 +92,6 @@ namespace VoltSharpmake
         {
             base.ConfigureMSVC(conf, target);
             conf.AdditionalLinkerOptions.Add(
-                "/WHOLEARCHIVE:PhysX",
-                "/WHOLEARCHIVE:Volt",
                 "/WHOLEARCHIVE:MosaicModule"
                 );
 

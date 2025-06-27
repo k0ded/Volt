@@ -22,6 +22,8 @@ namespace VoltSharpmake
 
             conf.IncludePaths.Add("src");
             conf.IncludePaths.Add("include");
-        }
+
+            conf.Options.Add(Sharpmake.Options.Vc.Compiler.Exceptions.Enable);
+		}
     }
 }

@@ -5,6 +5,7 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Utility/ComponentPropertyUtilities.h"
+#include "Sandbox/Utility/PremadeCommands.h"
 
 #include "Sandbox/Sandbox.h"
 #include "Sandbox/UserSettingsManager.h"
@@ -17,7 +18,6 @@
 #include <InputModule/MouseButtonCodes.h>
 
 #include <Volt-Application/UI/UIUtility.h>
-#include <Volt/Utility/PremadeCommands.h>
 
 PropertiesPanel::PropertiesPanel(Ref<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id)
 	: EditorWindow("Properties", false, id), myCurrentScene(currentScene), myCurrentSceneRenderer(currentSceneRenderer), mySceneState(sceneState)
@@ -193,7 +193,6 @@ void PropertiesPanel::UpdateMainContent()
 
 				if (shouldUpdateNavMesh && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && Sandbox::Get().CheckForUpdateNavMesh(entity))
 				{
-					Sandbox::Get().BakeNavMesh();
 					shouldUpdateNavMesh = false;
 				}
 			}

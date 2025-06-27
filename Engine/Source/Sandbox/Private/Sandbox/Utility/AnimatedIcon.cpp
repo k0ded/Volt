@@ -1,7 +1,7 @@
 #include "sbpch.h"
 #include "Sandbox/Utility/AnimatedIcon.h"
 
-#include <Volt/Asset/SourceAssetImporters/ImportConfigs.h>
+#include <Volt-Assets/SourceAssetImporters/ImportConfigs.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 

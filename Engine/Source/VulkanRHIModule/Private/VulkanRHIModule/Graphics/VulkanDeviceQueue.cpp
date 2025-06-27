@@ -10,6 +10,7 @@
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
 
 #include <vulkan/vulkan.h>
 
@@ -55,10 +56,10 @@ namespace Volt::RHI
 		VT_ENSURE_MSG(!executeInfo.commandBuffers.empty(), "Empty execution is invalid!");
 		VT_ENSURE_MSG(executeInfo.fence, "Fence must be supplied!");
 
-		Vector<VkCommandBufferSubmitInfo> vulkanCommandBuffers;
+		InlineVector<VkCommandBufferSubmitInfo, 64> vulkanCommandBuffers;
 		vulkanCommandBuffers.reserve(executeInfo.commandBuffers.size());
 
-		Vector<VkSemaphoreSubmitInfo> signalSemaphoreInfos{};
+		InlineVector<VkSemaphoreSubmitInfo, 64> signalSemaphoreInfos{};
 		signalSemaphoreInfos.reserve(executeInfo.signalSemaphores.size());
 
 		for (const auto& cmdBuffer : executeInfo.commandBuffers)
@@ -88,12 +89,15 @@ namespace Volt::RHI
 		info.signalSemaphoreInfoCount = static_cast<uint32_t>(signalSemaphoreInfos.size());
 		info.pSignalSemaphoreInfos = signalSemaphoreInfos.data();
 
+		VulkanFence& vulkanFence = executeInfo.fence->AsRef<VulkanFence>();
 		VkFence waitFence = executeInfo.fence->GetHandle<VkFence>();
 
 		{
 			std::scoped_lock lock{ m_executeMutex };
  			VT_VK_CHECK(vkQueueSubmit2(m_queue, 1, &info, waitFence));
 		}
+
+		vulkanFence.MarkAsExecuted();
 	}
 
 	void VulkanDeviceQueue::AquireLock()

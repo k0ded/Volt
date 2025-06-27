@@ -4,8 +4,6 @@
 #include "Sandbox/Window/EditorWindow.h"
 #include "Sandbox/Utility/EditorLibrary.h"
 
-#include <Volt/Utility/YAMLSerializationHelpers.h>
-
 #include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
 #include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>
 

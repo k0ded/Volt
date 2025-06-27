@@ -26,15 +26,6 @@ namespace Volt
 
 		void InitializeImGui(bool enableViewports = true);
 
-		//this function needs to be inline in order for other DLLs and EXEs to be able to set GImGui correctly
-		VT_INLINE void SetupContext()
-		{
-			//if (s_imguiEnabled.GetValue())
-			{
-				ImGui::SetCurrentContext(m_imguiImplementation->GetContext());
-			}
-		}
-
 		void Begin();
 		void End();
 

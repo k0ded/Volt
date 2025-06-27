@@ -57,7 +57,7 @@ namespace Volt
 	{
 		const auto& registeredShaders = ShaderRegistry::Get().GetRegisteredShaders();
 
-		TaskGraph taskGraph{};
+		TaskGraph taskGraph{ ExecutionPriority::Immediate };
 		ScopedTimer timer{};
 
 		for (const auto& [typeIndex, registrationInfo] : registeredShaders)
@@ -69,6 +69,7 @@ namespace Volt
 				createInfo.entryPoint = registrationInfo.stageInfos.entryPoint;
 				createInfo.sourceFilepath = registrationInfo.stageInfos.filePath;
 				createInfo.stage = registrationInfo.stageInfos.shaderStage;
+				createInfo.forceCompile = false;
 
 				RefPtr<RHI::Shader> shader;
 				{

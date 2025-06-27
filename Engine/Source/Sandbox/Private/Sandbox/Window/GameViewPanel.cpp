@@ -8,8 +8,7 @@
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/Sandbox.h"
 
-#include <Volt/Asset/ParticlePreset.h>
-#include <Volt/Asset/Prefab.h>
+#include <Volt-Scene/Prefab.h>
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/SceneRenderer.h>

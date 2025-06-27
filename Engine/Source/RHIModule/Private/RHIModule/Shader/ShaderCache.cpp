@@ -65,7 +65,7 @@ namespace Volt::RHI
 
 	CachedShaderResult ShaderCache::TryGetCachedShader(const ShaderCompiler::Specification& shaderSpecification)
 	{
-		uint64_t lastWriteTime = std::max(lastWriteTime, TimeUtility::GetLastWriteTime(shaderSpecification.shaderSourceInfo.sourceEntry.filepath));
+		uint64_t lastWriteTime = TimeUtility::GetLastWriteTime(shaderSpecification.shaderSourceInfo.sourceEntry.filepath);
 
 		BinaryStreamReader streamReader{ GetCachedFilePath(shaderSpecification) };
 		if (!streamReader.IsStreamValid())
@@ -86,10 +86,10 @@ namespace Volt::RHI
 
 		if (cachedHeader.timeSinceLastCompile < lastWriteTime)
 		{
-			return {};
+			return {}; 
 		}
 
-		Vector<SerializedShaderData> serializedShaderData;
+		SerializedShaderData serializedShaderData;
 		streamReader.Read(serializedShaderData);
 
 		CachedShaderResult result{};
@@ -97,6 +97,9 @@ namespace Volt::RHI
 		result.data.result = ShaderCompiler::CompilationResult::Success;
 
 		ShaderCompiler::CompilationResultData& resultData = result.data;
+		resultData.shaderBinary = serializedShaderData.shaderData;
+
+		VT_ENSURE(shaderSpecification.shaderSourceInfo.sourceEntry.shaderStage == serializedShaderData.stage);
 
 		streamReader.Read(resultData.outputFormats);
 		
@@ -140,7 +143,7 @@ namespace Volt::RHI
 		const size_t hash = Math::HashCombine(std::hash<std::filesystem::path>()(shaderSpec.shaderSourceInfo.sourceEntry.filepath), std::hash<std::string>()(shaderSpec.shaderSourceInfo.sourceEntry.entryPoint));
 
 		const auto cacheDir = m_info.cacheDirectory / Utility::GetShaderCacheSubDirectory();
-		const auto cachePath = cacheDir / (std::to_string(hash) + ".vtshcache");
+		const auto cachePath = cacheDir / (shaderSpec.shaderSourceInfo.sourceEntry.filepath.stem().string() + "_" + shaderSpec.shaderSourceInfo.sourceEntry.entryPoint + "_" + std::to_string(hash) + ".vtshcache");
 
 		if (!std::filesystem::exists(cacheDir))
 		{

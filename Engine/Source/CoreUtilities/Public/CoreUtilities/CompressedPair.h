@@ -141,7 +141,7 @@ public:
 
 	CompressedPairImp() {}
 	CompressedPairImp(FirstParamType x, SecondParamType y)
-		: m_first(x), SecondType(y)
+		: SecondType(y), m_first(x)
 	{
 	}
 

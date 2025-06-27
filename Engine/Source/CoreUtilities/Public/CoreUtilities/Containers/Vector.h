@@ -111,6 +111,9 @@ public:
 
 	constexpr iterator append(const Vector<T, AllocatorType>& other) noexcept;
 
+	template<typename InputIterator>
+	constexpr iterator append(InputIterator first, InputIterator last) noexcept;
+
 	VT_NODISCARD constexpr iterator begin() noexcept;
 	VT_NODISCARD constexpr const_iterator begin() const noexcept;
 	VT_NODISCARD constexpr const_iterator cbegin() const noexcept;
@@ -387,6 +390,13 @@ template<typename T, typename AllocatorType>
 inline constexpr Vector<T, AllocatorType>::iterator Vector<T, AllocatorType>::append(const Vector<T, AllocatorType>& other) noexcept
 {
 	return insert(end(), other.begin(), other.end());
+}
+
+template<typename T, typename AllocatorType>
+template<typename InputIterator>
+constexpr Vector<T, AllocatorType>::iterator Vector<T, AllocatorType>::append(InputIterator first, InputIterator last) noexcept
+{
+	return insert(end(), first, last);
 }
 
 template<typename T, typename AllocatorType>
@@ -946,7 +956,7 @@ inline void Vector<T, AllocatorType>::InsertValuesAtEnd(size_type count, const v
 		const size_type newCount = std::max(growCount, prevCount + count);
 		value_type* const newData = Allocate(newCount);
 
-		value_type* newEnd = UninitializedMovePtr(m_ptrBegin, m_ptrEnd, newData);
+		value_type* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
 
 		UninitializedConstructFillCountPtr(newEnd, count, value);
 		newEnd += count;
@@ -975,7 +985,7 @@ inline void Vector<T, AllocatorType>::InsertValuesAtEnd(size_type count)
 		const size_type newCount = std::max(growCount, prevCount + count);
 		value_type* const newData = Allocate(newCount);
 
-		value_type* newEnd = UninitializedMovePtr(m_ptrBegin, m_ptrEnd, newData);
+		value_type* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
 
 		UninitializedValueConstructCount(newEnd, count);
 		newEnd += count;
@@ -1006,7 +1016,7 @@ template<typename T, typename AllocatorType>
 inline void Vector<T, AllocatorType>::Grow(size_type count)
 {
 	value_type* const newData = Allocate(count);
-	value_type* newEnd = UninitializedMovePtr(m_ptrBegin, m_ptrEnd, newData);
+	value_type* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
 
 	Destruct(m_ptrBegin, m_ptrEnd);
 	DoFree(m_ptrBegin);
@@ -1043,7 +1053,7 @@ template<typename ForwardIterator>
 inline Vector<T, AllocatorType>::value_type* Vector<T, AllocatorType>::Reallocate(size_type count, ForwardIterator first, ForwardIterator last, ShouldMoveTag)
 {
 	value_type* const ptr = Allocate(count);
-	UninitializedMovePtr(first, last, ptr);
+	std::uninitialized_move(first, last, ptr);
 	return ptr;
 }
 
@@ -1219,7 +1229,7 @@ inline void Vector<T, AllocatorType>::InsertFromIterator(const_iterator position
 
 			if (count < countExtra)
 			{
-				UninitializedMovePtr(m_ptrEnd - count, m_ptrEnd, m_ptrEnd);
+				std::uninitialized_move(m_ptrEnd - count, m_ptrEnd, m_ptrEnd);
 				std::move_backward(destPosition, m_ptrEnd - count, m_ptrEnd);
 				std::copy(first, last, destPosition);
 			}
@@ -1228,7 +1238,7 @@ inline void Vector<T, AllocatorType>::InsertFromIterator(const_iterator position
 				BidirectionalIterator tempIter = first;
 				std::advance(tempIter, countExtra);
 				UninitializedCopyPtr(tempIter, last, m_ptrEnd);
-				UninitializedMovePtr(destPosition, m_ptrEnd, m_ptrEnd + count - countExtra);
+				std::uninitialized_move(destPosition, m_ptrEnd, m_ptrEnd + count - countExtra);
 				std::copy_backward(first, tempIter, destPosition + countExtra);
 			}
 
@@ -1248,8 +1258,8 @@ inline void Vector<T, AllocatorType>::InsertFromIterator(const_iterator position
 			value_type* secondPartitionDest = newData + destOffset + copyCount;
 			value_type* copyDataDest = newData + destOffset;
 
-			UninitializedMovePtr(m_ptrBegin, destPosition, newData);
-			UninitializedMovePtr(destPosition, m_ptrEnd, secondPartitionDest);
+			std::uninitialized_move(m_ptrBegin, destPosition, newData);
+			std::uninitialized_move(destPosition, m_ptrEnd, secondPartitionDest);
 			UninitializedCopyPtr(first, last, copyDataDest);
 			value_type* newEnd = secondPartitionDest + secondPartitionCount;
 
@@ -1281,14 +1291,14 @@ inline void Vector<T, AllocatorType>::InsertValues(const_iterator position, size
 
 			if (count < insertPosition)
 			{
-				UninitializedMovePtr(m_ptrEnd - count, m_ptrEnd, m_ptrEnd);
+				std::uninitialized_move(m_ptrEnd - count, m_ptrEnd, m_ptrEnd);
 				std::move_backward(destPosition, m_ptrEnd - count, m_ptrEnd);
 				std::fill(destPosition, destPosition + count, temp);
 			}
 			else
 			{
 				UninitializedConstructFillCountPtr(m_ptrEnd, count - insertPosition, temp);
-				UninitializedMovePtr(destPosition, m_ptrEnd, m_ptrEnd + count - insertPosition);
+				std::uninitialized_move(destPosition, m_ptrEnd, m_ptrEnd + count - insertPosition);
 				std::fill(destPosition, m_ptrEnd, temp);
 			}
 
@@ -1305,15 +1315,9 @@ inline void Vector<T, AllocatorType>::InsertValues(const_iterator position, size
 		const size_type firstPartitionCount = destPosition - m_ptrBegin;
 		const size_type secondPartitionCount = m_ptrEnd - destPosition;
 
-		UninitializedMovePtr(m_ptrBegin, destPosition, newData);
-		UninitializedMovePtr(destPosition, m_ptrEnd, newData + firstPartitionCount + count);
+		std::uninitialized_move(m_ptrBegin, destPosition, newData);
+		std::uninitialized_move(destPosition, m_ptrEnd, newData + firstPartitionCount + count);
 		UninitializedConstructFillCountPtr(newData + firstPartitionCount, count, value);
-
-#if 0
-		value_type* newEnd = UninitializedMovePtr(m_ptrBegin, destPosition, newData);
-		UninitializedConstructFillCountPtr(newEnd, count, value);
-		newEnd = UninitializedMovePtr(destPosition, m_ptrEnd, newEnd + count);
-#endif
 
 		value_type* newEnd = newData + firstPartitionCount + count + secondPartitionCount;
 
@@ -1356,8 +1360,8 @@ inline void Vector<T, AllocatorType>::InsertValue(const_iterator position, Args 
 		const size_type newCount = GetNewCapacity(prevCount);
 		value_type* const newData = Allocate(newCount);
 
-		value_type* newEnd = UninitializedMovePtr(m_ptrBegin, destPosition, newData);
-		newEnd = UninitializedMovePtr(destPosition, m_ptrEnd, ++newEnd);
+		value_type* newEnd = std::uninitialized_move(m_ptrBegin, destPosition, newData);
+		newEnd = std::uninitialized_move(destPosition, m_ptrEnd, ++newEnd);
 
 		::new(static_cast<void*>(newData + insertPos)) value_type(std::forward<Args>(args)...);
 
@@ -1381,7 +1385,7 @@ inline void Vector<T, AllocatorType>::InsertValueAtEnd(Args && ...args)
 	const size_type newCount = GetNewCapacity(prevCount);
 	T* const newData = Allocate(newCount);
 
-	T* newEnd = UninitializedMovePtr(m_ptrBegin, m_ptrEnd, newData);
+	T* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
 	::new((void*)newEnd) T(std::forward<Args>(args)...);
 	newEnd++; 
 
