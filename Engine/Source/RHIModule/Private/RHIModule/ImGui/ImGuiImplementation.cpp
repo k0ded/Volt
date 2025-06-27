@@ -179,7 +179,7 @@ namespace Volt::RHI
 
 		if (m_defaultFont)
 		{
-			ImGui::PushFont(m_defaultFont);
+			ImGui::PushFont(m_defaultFont, 16.f);
 		}
 	}
 
