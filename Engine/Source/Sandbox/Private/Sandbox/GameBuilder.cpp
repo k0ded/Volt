@@ -189,12 +189,12 @@ void GameBuilder::Thread_BuildGame(const BuildInfo& buildInfo)
 		const auto enginePath = buildInfo.buildDirectory / "Engine";
 		FileSystem::CreateDirectories(enginePath);
 
-		for (const auto& file : std::filesystem::recursive_directory_iterator(Volt::ProjectManager::GetEngineDirectory()))
+		for (const auto& file : std::filesystem::recursive_directory_iterator(Volt::ProjectManager::GetEngineAssetsDirectory()))
 		{
 			if (!file.is_directory() && file.path().extension().string() != ".exe" &&
 				file.path().extension().string() != ".pdb")
 			{
-				const auto relPath = std::filesystem::relative(file.path(), Volt::ProjectManager::GetEngineDirectory()).parent_path();
+				const auto relPath = std::filesystem::relative(file.path(), Volt::ProjectManager::GetEngineAssetsDirectory()).parent_path();
 
 				if (!FileSystem::Exists(enginePath / relPath))
 				{
@@ -381,7 +381,7 @@ uint32_t GameBuilder::GetRelevantFileCount(const BuildInfo& buildInfo)
 		const auto enginePath = buildInfo.buildDirectory / "Engine";
 		FileSystem::CreateDirectories(enginePath);
 
-		for (const auto& file : std::filesystem::recursive_directory_iterator(Volt::ProjectManager::GetEngineDirectory()))
+		for (const auto& file : std::filesystem::recursive_directory_iterator(Volt::ProjectManager::GetEngineAssetsDirectory()))
 		{
 			const auto filePath = file.path().string();
 

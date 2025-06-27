@@ -28,18 +28,6 @@ void Sandbox::CreateModifiedWatch()
 		std::scoped_lock lock(m_fileWatcherMutex);
 		m_fileChangeQueue.emplace_back([newPath, oldPath, this]()
 		{
-			auto assemblyPath = Volt::ProjectManager::GetMonoAssemblyPath();
-			if (Utility::StringContains((newPath.parent_path().filename() / newPath.filename()).string(), (assemblyPath.parent_path().filename() / assemblyPath.filename()).string()))
-			{
-				if (m_sceneState == SceneState::Play)
-				{
-					Sandbox::Get().OnSceneStop();
-				}
-
-				UI::Notify(UI::NotificationType::Success, "C# Assembly Reloaded!", "The C# assembly was reloaded successfully!");
-				return;
-			}
-
 			AssetType assetType = Volt::AssetManager::GetAssetTypeFromPath(newPath);
 			if (assetType == AssetTypes::Mesh ||
 				assetType == AssetTypes::Prefab ||

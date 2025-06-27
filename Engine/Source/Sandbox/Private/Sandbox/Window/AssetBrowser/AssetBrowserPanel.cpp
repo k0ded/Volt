@@ -72,7 +72,7 @@ AssetBrowserPanel::AssetBrowserPanel(Ref<Volt::Scene>& aScene, const std::string
 
 		{
 			AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask };
-			myDirectories[Volt::ProjectManager::GetEngineDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetEngineDirectory(), myMeshToImport);
+			myDirectories[Volt::ProjectManager::GetEngineAssetsDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetEngineAssetsDirectory(), myMeshToImport);
 		}
 
 		myAssetsDirectory = myDirectories[Volt::ProjectManager::GetAssetsDirectory()].get();

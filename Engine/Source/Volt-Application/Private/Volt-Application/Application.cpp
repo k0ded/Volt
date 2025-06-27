@@ -93,7 +93,7 @@ namespace Volt
 		WindowManager::InitializeGLFW();
 		CreateGraphicsContext();
 
-		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineDirectory());
+		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineRootDirectory());
 		m_sourceAssetManager = CreateScope<SourceAssetManager>();
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();

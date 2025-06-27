@@ -25,16 +25,14 @@ namespace Volt
 		void LoadProject(const std::filesystem::path projectPath, PluginRegistry& pluginRegistry);
 		void SerializeProject();
 
-		static const std::filesystem::path GetEngineScriptsDirectory();
 		static const std::filesystem::path GetAssetsDirectory();
 		static const std::filesystem::path GetAudioBanksDirectory();
 		static const std::filesystem::path GetProjectDirectory();
-		static const std::filesystem::path GetEngineDirectory();
+		static const std::filesystem::path GetEngineRootDirectory();
+		static const std::filesystem::path GetEngineAssetsDirectory();
 		static const std::filesystem::path GetPathRelativeToEngine(const std::filesystem::path& path);
 		static const std::filesystem::path GetPathRelativeToProject(const std::filesystem::path& path);
 		static const std::filesystem::path GetCachePath();
-		static const std::filesystem::path GetMonoAssemblyPath();
-		static const std::filesystem::path GetMonoBinariesDirectory();
 		static const std::filesystem::path GetOrCreateSettingsDirectory();
 		static const std::filesystem::path GetPhysicsSettingsPath();
 		static const std::filesystem::path GetPhysicsLayersPath();

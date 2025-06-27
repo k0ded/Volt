@@ -22,8 +22,8 @@ namespace Volt
 {
 	std::string ReadBaseFile()
 	{
-		constexpr const char* BaseShaderPath = "Engine\\Shaders\\Source\\Template\\GenerateGBufferPixel.hlsl";
-		const auto baseShaderPath = ProjectManager::GetEngineDirectory() / BaseShaderPath;
+		constexpr const char* BaseShaderPath = "Shaders\\Source\\Template\\GenerateGBufferPixel.hlsl";
+		const auto baseShaderPath = ProjectManager::GetEngineAssetsDirectory() / BaseShaderPath;
 
 		std::ifstream input(baseShaderPath, std::ios::in | std::ios::binary);
 		VT_ASSERT_MSG(input.is_open(), "Could not open file!");

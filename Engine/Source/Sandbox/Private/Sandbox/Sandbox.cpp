@@ -169,9 +169,8 @@ void Sandbox::OnAttach()
 
 void Sandbox::CreateWatches()
 {
-	m_fileWatcher->AddWatch(Volt::ProjectManager::GetEngineDirectory());
+	m_fileWatcher->AddWatch(Volt::ProjectManager::GetEngineAssetsDirectory());
 	m_fileWatcher->AddWatch(Volt::ProjectManager::GetAssetsDirectory());
-	m_fileWatcher->AddWatch(Volt::ProjectManager::GetMonoBinariesDirectory());
 
 	CreateModifiedWatch();
 	CreateDeleteWatch();

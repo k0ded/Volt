@@ -8,6 +8,7 @@
 
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <filesystem>
 #include <unordered_map>
@@ -198,6 +199,8 @@ namespace Volt
 	template<typename T>
 	inline Ref<T> AssetManager::GetAsset(AssetHandle assetHandle)
 	{
+		VT_PROFILE_FUNCTION();
+
 		if (assetHandle == Asset::Null())
 		{
 			return nullptr;
@@ -233,6 +236,8 @@ namespace Volt
 	template<typename T>
 	inline Ref<T> AssetManager::GetAssetLocking(AssetHandle assetHandle)
 	{
+		VT_PROFILE_FUNCTION();
+
 		if (assetHandle == Asset::Null())
 		{
 			return nullptr;
@@ -269,6 +274,8 @@ namespace Volt
 	template<typename T>
 	inline Ref<T> AssetManager::QueueAsset(AssetHandle handle)
 	{
+		VT_PROFILE_FUNCTION();
+
 		if (handle == Asset::Null())
 		{
 			return nullptr;

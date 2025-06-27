@@ -76,19 +76,19 @@ void SelectiveAssetBrowserPanel::UpdateAssetList()
 {
 	myAllAssetsOfType.clear();
 
-	for (auto it : std::filesystem::recursive_directory_iterator(Volt::ProjectManager::GetEngineDirectory()))
+	for (auto it : std::filesystem::recursive_directory_iterator(Volt::ProjectManager::GetEngineAssetsDirectory()))
 	{
 		if (!it.is_directory())
 		{
 			const std::filesystem::path path = it.path();
-			const AssetType type = Volt::AssetManager::Get().GetAssetTypeFromPath(path);
+			const AssetType type = Volt::AssetManager::GetAssetTypeFromPath(path);
 
 			if (type == mySelectiveAssetType)
 			{
 				auto& data = myAllAssetsOfType.emplace_back();
 				data.path = path;
-				data.handle = Volt::AssetManager::Get().GetAssetHandleFromFilePath(path);
-				data.type = Volt::AssetManager::Get().GetAssetTypeFromPath(path);
+				data.handle = Volt::AssetManager::GetAssetHandleFromFilePath(path);
+				data.type = Volt::AssetManager::GetAssetTypeFromPath(path);
 			}
 		}
 	}
