@@ -239,6 +239,7 @@ namespace Volt::RHI
 		samplerDesc.wrapMode = RHI::TextureWrap::Repeat;
 		samplerDesc.anisotropyLevel = RHI::AnisotropyLevel::X16;
 		samplerDesc.compareOperator = RHI::CompareOperator::None;
+		samplerDesc.maxLod = 2.f;
 
 		 m_textureSampler = RHI::SamplerState::Create(samplerDesc);
 

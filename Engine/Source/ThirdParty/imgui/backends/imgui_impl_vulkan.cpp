@@ -776,7 +776,13 @@ void ImGui_ImplVulkan_UpdateTexture(ImTextureData* tex)
         }
 
         // Create the Descriptor Set
+        //BEGIN_VOLT_CHANGE
+#if 0 // ORIGINAL_CODE
         backend_tex->DescriptorSet = ImGui_ImplVulkan_AddTexture(bd->TexSampler, backend_tex->ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+#else // MODIFIED_CODE
+        backend_tex->DescriptorSet = ImGui_ImplVulkan_AddTexture(bd->TexSampler, backend_tex->ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true);
+#endif
+        // END_VOLT_CHANGE
 
         // Store identifiers
         tex->SetTexID((ImTextureID)backend_tex->DescriptorSet);
@@ -1089,6 +1095,7 @@ bool ImGui_ImplVulkan_CreateDeviceObjects()
         err = vkCreateDescriptorSetLayout(v->Device, &info, v->Allocator, &bd->DescriptorSetLayout);
         check_vk_result(err);
     }
+    //BEGIN_VOLT_CHANGE
 #if 0 //ORIGINAL_CODE
     if (v->DescriptorPoolSize != 0)
     {
@@ -1104,9 +1111,7 @@ bool ImGui_ImplVulkan_CreateDeviceObjects()
         err = vkCreateDescriptorPool(v->Device, &pool_info, v->Allocator, &bd->DescriptorPool);
         check_vk_result(err);
     }
-#endif
-
-    //BEGIN_VOLT_CHANGE
+#else
     if (bd->DescriptorPools.empty())
     {
         constexpr VkDescriptorPoolSize poolSizes[] =
@@ -1136,6 +1141,7 @@ bool ImGui_ImplVulkan_CreateDeviceObjects()
             vkCreateDescriptorPool(bd->VulkanInitInfo.Device, &poolInfo, nullptr, &bd->DescriptorPools.emplace_back());
         }
     }
+#endif
     //END_VOLT_CHANGE
     if (!bd->PipelineLayout)
     {
@@ -1372,9 +1378,11 @@ void ImGui_ImplVulkan_NewFrame()
     IM_UNUSED(bd);
 
     //BEGIN_VOLT_CHANGE
+#if 1
     bd->CurrentFrame = (bd->CurrentFrame + 1) % bd->VulkanInitInfo.ImageCount;
     vkResetDescriptorPool(bd->VulkanInitInfo.Device, bd->DescriptorPools.at(bd->CurrentFrame), 0);
     bd->CachedDescriptorSets.clear();
+#endif
     //END_VOLT_CHANGE
 }
 
@@ -1396,7 +1404,13 @@ void ImGui_ImplVulkan_SetMinImageCount(uint32_t min_image_count)
 
 // Register a texture by creating a descriptor
 // FIXME: This is experimental in the sense that we are unsure how to best design/tackle this problem, please post to https://github.com/ocornut/imgui/pull/914 if you have suggestions.
+//BEGIN_VOLT_CHANGE
+#if 0 // ORIGINAL_CODE
 VkDescriptorSet ImGui_ImplVulkan_AddTexture(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout)
+#else // MODIFIED_CODE
+VkDescriptorSet ImGui_ImplVulkan_AddTexture(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout, bool useNonFramePool)
+#endif
+//END_VOLT_CHANGE
 {
     ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
     ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
@@ -1420,7 +1434,11 @@ VkDescriptorSet ImGui_ImplVulkan_AddTexture(VkSampler sampler, VkImageView image
         alloc_info.descriptorSetCount = 1;
         alloc_info.pSetLayouts = &bd->DescriptorSetLayout;
         //BEGIN_VOLT_CHANGE
-        alloc_info.descriptorPool = bd->DescriptorPools.at(bd->CurrentFrame);
+#if 0 // ORIGINAL_CODE
+        alloc_info.descriptorPool = pool;
+#else // MODIFIED_CODE
+        alloc_info.descriptorPool = useNonFramePool ? pool : bd->DescriptorPools.at(bd->CurrentFrame);
+#endif
         //END_VOLT_CHANGE
         VkResult err = vkAllocateDescriptorSets(v->Device, &alloc_info, &descriptor_set);
         check_vk_result(err);
@@ -1445,48 +1463,6 @@ VkDescriptorSet ImGui_ImplVulkan_AddTexture(VkSampler sampler, VkImageView image
     //END_VOLT_CHANGE
     return descriptor_set;
 }
-//BEGIN_VOLT_CHANGE
-IMGUI_IMPL_API ImTextureID ImGui_ImplVulkan_UpdateTextureInfo(VkDescriptorSet descriptorSet, VkSampler sampler, VkImageView image_view, VkImageLayout image_layout)
-{
-    ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
-    ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
-
-    VkDescriptorImageInfo desc_image = {};
-    desc_image.sampler = sampler;
-    desc_image.imageView = image_view;
-    desc_image.imageLayout = image_layout;
-
-    VkWriteDescriptorSet write_desc = {};
-    write_desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write_desc.dstSet = descriptorSet;
-    write_desc.descriptorCount = 1;
-    write_desc.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write_desc.pImageInfo = &desc_image;
-
-    vkUpdateDescriptorSets(v->Device, 1, &write_desc, 0, NULL);
-
-    return (ImTextureID)descriptorSet;
-}
-
-ImTextureID ImGui_ImplVulkan_AddTexture_Internal(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout)
-{
-    ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
-    ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
-
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc_info.descriptorPool = v->DescriptorPool;
-    alloc_info.descriptorSetCount = 1;
-    alloc_info.pSetLayouts = &bd->DescriptorSetLayout;
-    VkDescriptorSet descriptor_set;
-    VkResult err = vkAllocateDescriptorSets(v->Device, &alloc_info, &descriptor_set);
-    check_vk_result(err);
-
-    ImGui_ImplVulkan_UpdateTextureInfo(descriptor_set, sampler, image_view, image_layout);
-    return (ImTextureID)descriptor_set;
-}
-
-//END_VOLT_CHANGE
 
 void ImGui_ImplVulkan_RemoveTexture(VkDescriptorSet descriptor_set)
 {
