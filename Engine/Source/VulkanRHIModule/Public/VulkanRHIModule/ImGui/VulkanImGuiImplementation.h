@@ -21,8 +21,8 @@ namespace Volt::RHI
 		~VulkanImGuiImplementation() override;
 
 		ImTextureID GetTextureID(RefPtr<Image> image, int32_t mipIndex) const override;
-		ImFont* AddFont(const std::filesystem::path& fontPath, float pixelSize) override;
-		Vector<ImFont*> AddFonts(const Vector<FontInfo>& fontInfos) override;
+		ImFont* AddFont(const std::filesystem::path& fontPath) override;
+		Vector<ImFont*> AddFonts(const Vector<std::filesystem::path>& fontInfos) override;
 
 	protected:
 		void BeginAPI() override;
@@ -37,6 +37,7 @@ namespace Volt::RHI
 		void InitializeVulkanData();
 		void ReleaseVulkanData();
 	
+		RefPtr<RHI::SamplerState> m_textureSampler;
 		GLFWwindow* m_windowPtr = nullptr;
 		RawPtr<Swapchain> m_swapchain;
 		VkDescriptorPool_T* m_descriptorPool;

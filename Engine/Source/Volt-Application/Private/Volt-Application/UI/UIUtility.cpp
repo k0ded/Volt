@@ -33,7 +33,7 @@ namespace UI
 
 	void Header(const std::string& text)
 	{
-		ScopedFont font{ UI::FontType::Regular_20 };
+		ScopedFont font{ UI::FontType::Regular, UI::BIG_FONT_SIZE };
 		ImGui::TextUnformatted(text.c_str());
 	}
 
@@ -358,7 +358,7 @@ namespace UI
 		return ImGui::InputTextMultilineString(id.c_str(), &text, ImVec2{ 0.f, 0.f }, flags);
 	}
 
-	bool ImageButton(const std::string& id, ImTextureID textureId, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col)
+	bool ImageButton(const std::string& id, ImTextureID textureId, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& bg_col, const ImVec4& tint_col)
 	{
 		ImGuiContext& g = *GImGui;
 		ImGuiWindow* window = g.CurrentWindow;
@@ -367,16 +367,29 @@ namespace UI
 
 		const ImGuiID imId = window->GetID(id.c_str());
 
-		// Default to using texture ID as ID. User can still push string/integer prefixes.
-		const ImVec2 padding = (frame_padding >= 0) ? ImVec2((float)frame_padding, (float)frame_padding) : g.Style.FramePadding;
-		return ImGui::ImageButtonEx(imId, textureId, size, uv0, uv1, padding, bg_col, tint_col);
+		return ImGui::ImageButtonEx(imId, textureId, size, uv0, uv1, bg_col, tint_col);
+	}
+
+	bool ImageButton(const std::string& id, ImTextureID textureId, const ImVec2& size, const ImVec4& bg_col, const ImVec4& tint_col)
+	{
+		ImGuiContext& g = *GImGui;
+		ImGuiWindow* window = g.CurrentWindow;
+		if (window->SkipItems)
+			return false;
+
+		const ImGuiID imId = window->GetID(id.c_str());
+
+		const ImVec2& uv0 = ImVec2(0, 0);
+		const ImVec2& uv1 = ImVec2(1, 1);
+
+		return ImGui::ImageButtonEx(imId, textureId, size, uv0, uv1, bg_col, tint_col);
 	}
 
 	bool ImageButtonState(const std::string& id, bool state, ImTextureID textureId, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1)
 	{
 		if (state)
 		{
-			return ImageButton(id, textureId, size, uv0, uv1, -1, { 0.18f, 0.18f, 0.18f, 1.f });
+			return ImageButton(id, textureId, size, uv0, uv1, { 0.18f, 0.18f, 0.18f, 1.f });
 		}
 		else
 		{
@@ -415,14 +428,6 @@ namespace UI
 		ScopedStyleFloat frameRound(ImGuiStyleVar_FrameRounding, rounding);
 
 		return ImGui::TreeNodeEx(text.c_str(), nodeFlags);
-	}
-
-	bool TreeNodeWidth(const std::string& text, float width, float rounding, ImGuiTreeNodeFlags flags)
-	{
-		const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding | flags;
-		ScopedStyleFloat frameRound(ImGuiStyleVar_FrameRounding, rounding);
-
-		return ImGui::TreeNodeWidthEx(text.c_str(), width, nodeFlags);
 	}
 
 	void SameLine(float offsetX, float spacing)
@@ -573,8 +578,8 @@ namespace UI
 				IM_ASSERT(window->DC.NavLayersActiveMaskNext & (1 << layer)); // Sanity check
 				ImGui::FocusWindow(window);
 				ImGui::SetNavID(window->NavLastIds[layer], layer, 0, window->NavRectRel[layer]);
-				g.NavDisableHighlight = true; // Hide highlight for the current frame so we don't see the intermediary selection.
-				g.NavDisableMouseHover = g.NavMousePosDirty = true;
+				g.NavCursorVisible = true; // Hide highlight for the current frame so we don't see the intermediary selection.
+				g.NavHighlightItemUnderNav = g.NavMousePosDirty = true;
 				ImGui::NavMoveRequestForward(g.NavMoveDir, g.NavMoveClipDir, g.NavMoveFlags, g.NavMoveScrollFlags); // Repeat
 			}
 		}
@@ -711,8 +716,7 @@ namespace UI
 
 	bool BeginModal(const std::string& name, ImGuiWindowFlags flags)
 	{
-		const uint32_t nameHash = static_cast<uint32_t>(std::hash<std::string>()(name));
-		return ImGui::BeginPopupModal(name.c_str(), nameHash, nullptr, flags);
+		return ImGui::BeginPopupModal(name.c_str(), nullptr, flags);
 	}
 
 	void EndModal()
@@ -722,7 +726,7 @@ namespace UI
 
 	void SmallSeparatorHeader(const std::string& text, float padding)
 	{
-		ScopedFont font{ UI::FontType::Bold_16 };
+		ScopedFont font{ UI::FontType::Bold, UI::DEFAULT_FONT_SIZE };
 
 		const auto pos = ImGui::GetCursorPos();
 		ImGui::TextUnformatted(text.c_str());
@@ -764,23 +768,7 @@ namespace UI
 		return ImGui::CollapsingHeader(label.data(), flags);
 	}
 
-	bool ImageButton(const std::string& id, ImTextureID textureId, const ImVec2& size, const ImVec4& bg_col, const ImVec4& tint_col)
-	{
-		ImGuiContext& g = *GImGui;
-		ImGuiWindow* window = g.CurrentWindow;
-		if (window->SkipItems)
-			return false;
-
-		const ImGuiID imId = window->GetID(id.c_str());
-
-		const ImVec2& uv0 = ImVec2(0, 0);
-		const ImVec2& uv1 = ImVec2(1, 1);
-		int frame_padding = -1;
-
-		// Default to using texture ID as ID. User can still push string/integer prefixes.
-		const ImVec2 padding = (frame_padding >= 0) ? ImVec2((float)frame_padding, (float)frame_padding) : g.Style.FramePadding;
-		return ImGui::ImageButtonEx(imId, textureId, size, uv0, uv1, padding, bg_col, tint_col);
-	}
+	
 
 
 }

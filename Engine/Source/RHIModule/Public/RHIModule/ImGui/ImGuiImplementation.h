@@ -5,7 +5,7 @@
 
 struct GLFWwindow;
 
-typedef void* ImTextureID;
+typedef unsigned long long ImTextureID;
 struct ImFont;
 struct ImGuiContext;
 
@@ -24,12 +24,6 @@ namespace Volt::RHI
 	class VTRHI_API ImGuiImplementation : public RHIInterface
 	{
 	public:
-		struct FontInfo
-		{
-			std::filesystem::path filepath;
-			float pixelSize;
-		};
-
 		virtual ~ImGuiImplementation();
 
 		VT_DELETE_COPY_MOVE(ImGuiImplementation);
@@ -41,8 +35,8 @@ namespace Volt::RHI
 		ImGuiContext* GetContext() const;
 
 		virtual ImTextureID GetTextureID(RefPtr<Image> image, int32_t mipIndex = -1) const = 0;
-		virtual ImFont* AddFont(const std::filesystem::path& fontPath, float pixelSize) = 0;
-		virtual Vector<ImFont*> AddFonts(const Vector<FontInfo>& fontInfos) = 0;
+		virtual ImFont* AddFont(const std::filesystem::path& fontPath) = 0;
+		virtual Vector<ImFont*> AddFonts(const Vector<std::filesystem::path>& fontPaths) = 0;
 
 		static RefPtr<ImGuiImplementation> Create(const ImGuiCreateInfo& createInfo);
 		static ImGuiImplementation& Get();

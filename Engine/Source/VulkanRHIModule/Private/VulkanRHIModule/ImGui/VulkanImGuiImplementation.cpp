@@ -17,6 +17,7 @@
 
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Images/Image.h>
+#include <RHIModule/Images/SamplerState.h>
 
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
@@ -40,20 +41,20 @@ namespace Volt::RHI
 		}
 	}
 
-	inline void MergeIconsWithLatestFont(float font_size)
+	inline void MergeIconsWithLatestFont()
 	{
 		ImGuiIO& io = ImGui::GetIO();
 	
-		float baseFontSize = font_size; // 13.0f is the size of the default font. Change to the font size you use.
-		float iconFontSize = baseFontSize; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+		//float baseFontSize = font_size; // 13.0f is the size of the default font. Change to the font size you use.
+		//float iconFontSize = baseFontSize; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
 	
 		// merge in icons from Font Awesome
 		static const ImWchar icons_ranges[] = { VT_ICON_MIN_FA, VT_ICON_MAX_16_FA, 0 };
 		ImFontConfig icons_config;
 		icons_config.MergeMode = true;
 		icons_config.PixelSnapH = true;
-		icons_config.GlyphMinAdvanceX = iconFontSize;
-		io.Fonts->AddFontFromFileTTF("Engine/Fonts/FontAwesome/" FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges);
+		//icons_config.GlyphMinAdvanceX = iconFontSize;
+		io.Fonts->AddFontFromFileTTF("Engine/Fonts/FontAwesome/" FONT_ICON_FILE_NAME_FAS, 0.0f, &icons_config, icons_ranges);
 	}
 
 	VulkanImGuiImplementation::VulkanImGuiImplementation(const ImGuiCreateInfo& createInfo)
@@ -74,29 +75,15 @@ namespace Volt::RHI
 		{
 			viewDesc.baseMipLevel = mipIndex;
 		}
-
-		ImTextureID id = ImGui_ImplVulkan_AddTexture(nullptr, image->GetView(viewDesc)->GetHandle<VkImageView>(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		ImTextureID id = reinterpret_cast<ImTextureID>(ImGui_ImplVulkan_AddTexture(m_textureSampler->GetHandle<VkSampler>(), image->GetView(viewDesc)->GetHandle<VkImageView>(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
 		return id;
 	}
 
-	ImFont* VulkanImGuiImplementation::AddFont(const std::filesystem::path& fontPath, float pixelSize)
+	ImFont* VulkanImGuiImplementation::AddFont(const std::filesystem::path& fontPath)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		ImFont* newFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), pixelSize);
-	
-		MergeIconsWithLatestFont(pixelSize);
-
-		// Create font
-		{
-			RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
-			commandBuffer->Begin();
-			ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->GetHandle<VkCommandBuffer>());
-			commandBuffer->End();
-
-			CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
-
-			ImGui_ImplVulkan_DestroyFontUploadObjects();
-		}
+		ImFont* newFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
+		MergeIconsWithLatestFont();
 
 		return newFont;
 	}
@@ -181,7 +168,7 @@ namespace Volt::RHI
 	{
 		ImGui::SetCurrentContext(context);
 
-		ImGui_ImplGlfw_InitForVulkan(m_windowPtr, context, true);
+		ImGui_ImplGlfw_InitForVulkan(m_windowPtr, true);
 		InitializeVulkanData();
 	}
 
@@ -237,20 +224,31 @@ namespace Volt::RHI
 		initInfo.MinImageCount = VulkanSwapchain::MAX_FRAMES_IN_FLIGHT;
 		initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 		initInfo.CheckVkResultFn = Utility::CheckImGuiVulkanResults;
+		initInfo.UseDynamicRendering = true;
 
-		ImGui_ImplVulkan_Init(&initInfo, Utility::VoltToVulkanFormat(vulkanSwapchain->GetFormat()));
+		VkFormat targetFormat = Utility::VoltToVulkanFormat(vulkanSwapchain->GetFormat());
+		VkPipelineRenderingCreateInfo pipelineRenderingInfo{};
+		pipelineRenderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+		pipelineRenderingInfo.pNext = nullptr;
+		pipelineRenderingInfo.colorAttachmentCount = 1;
+		pipelineRenderingInfo.pColorAttachmentFormats = &targetFormat;
+		pipelineRenderingInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+		pipelineRenderingInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 
-		// Create font
-		{
-			RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
-			commandBuffer->Begin();
-			ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->GetHandle<VkCommandBuffer>());
-			commandBuffer->End();
+		initInfo.PipelineRenderingCreateInfo = pipelineRenderingInfo;
 
-			CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
-		
-			ImGui_ImplVulkan_DestroyFontUploadObjects();
-		}
+		SamplerStateDesc samplerDesc{};
+		samplerDesc.minFilter = RHI::TextureFilter::Linear;
+		samplerDesc.magFilter = RHI::TextureFilter::Linear;
+		samplerDesc.mipFilter = RHI::TextureFilter::Linear;
+		samplerDesc.wrapMode = RHI::TextureWrap::Repeat;
+		samplerDesc.anisotropyLevel = RHI::AnisotropyLevel::X16;
+		samplerDesc.compareOperator = RHI::CompareOperator::None;
+		samplerDesc.maxLod = 2.f;
+
+		 m_textureSampler = RHI::SamplerState::Create(samplerDesc);
+
+		ImGui_ImplVulkan_Init(&initInfo);
 	}
 
 	void VulkanImGuiImplementation::ReleaseVulkanData()
@@ -263,27 +261,16 @@ namespace Volt::RHI
 		ImGui_ImplVulkan_Shutdown();
 	}
 
-	Vector<ImFont*> VulkanImGuiImplementation::AddFonts(const Vector<FontInfo>& fontInfos)
+	Vector<ImFont*> VulkanImGuiImplementation::AddFonts(const Vector<std::filesystem::path>& fontPaths)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		
 		Vector<ImFont*> resultFonts;
 
-		for (const auto& fontInfo : fontInfos)
+		for (const auto& fontPath : fontPaths)
 		{
-			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontInfo.filepath.string().c_str(), fontInfo.pixelSize);
-			MergeIconsWithLatestFont(fontInfo.pixelSize);
-		}
-
-		// Create font
-		{
-			RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
-			commandBuffer->Begin();
-			ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->GetHandle<VkCommandBuffer>());
-			commandBuffer->End();
-			CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
-
-			ImGui_ImplVulkan_DestroyFontUploadObjects();
+			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
+			MergeIconsWithLatestFont();
 		}
 
 		return resultFonts;

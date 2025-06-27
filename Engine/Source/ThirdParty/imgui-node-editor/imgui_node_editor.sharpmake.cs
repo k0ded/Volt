@@ -33,12 +33,17 @@ namespace VoltSharpmake
                 "imgui_node_edtior_internal.inl",
                 "builders.cpp",
                 "builders.h",
+                "Config.h",
+				"Volt-ImGui-NodeEditor-Compatibility.cpp",
+				"Volt-ImGui-NodeEditor-Compatibility.h",
                 "misc/imgui_node_editor.natvis"
             );
 
             conf.AddPrivateDependency<imgui>(target);
 
             conf.IncludePaths.Add(@"[project.RootPath]\[project.Name]");
-        }
+
+			conf.Defines.Add("IMGUINODEEDITOR_DLL_EXPORT");
+		}
     }
 }

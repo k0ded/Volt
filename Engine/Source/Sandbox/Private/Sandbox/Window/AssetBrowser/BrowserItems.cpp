@@ -100,7 +100,7 @@ namespace AssetBrowser
 				//Type name color at the bottom of the item
 				{
 					UI::ScopedColor typeNameColor(ImGuiCol_Text, GetTypeNameColor(hovered, isSelected));
-					UI::ScopedFont typeFont(UI::FontType::Regular_12);
+					UI::ScopedFont typeFont(UI::FontType::Regular, UI::SMALL_FONT_SIZE);
 					UI::ShiftCursor(itemPadding / 2.f, itemHeightModifier - ImGui::CalcTextSize(m_typeName.c_str()).y - itemPadding * 2.f);
 					ImGui::TextUnformatted(m_typeName.c_str());
 				}
@@ -225,13 +225,13 @@ namespace AssetBrowser
 		if (tileHovered && !rightClickMenuOpen)
 		{
 			ImGui::BeginTooltip();
-			UI::PushFont(UI::FontType::Regular_20);
+			UI::PushFont(UI::FontType::Regular, UI::DEFAULT_FONT_SIZE);
 			ImGui::TextEx(path.stem().string().c_str(), nullptr);
 			UI::PopFont();
 
 			ImGui::SameLine();
 
-			UI::PushFont(UI::FontType::Regular_16);
+			UI::PushFont(UI::FontType::Regular, UI::DEFAULT_FONT_SIZE);
 			ImGui::Text(("(" + m_typeName + ")").c_str());
 			UI::PopFont();
 

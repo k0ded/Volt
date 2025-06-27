@@ -13,6 +13,8 @@
 //------------------------------------------------------------------------------
 #include "imgui_node_editor.h"
 
+#include "Volt-ImGui-NodeEditor-Compatibility.h"
+
 
 //------------------------------------------------------------------------------
 namespace ax {
@@ -23,7 +25,7 @@ namespace ax {
 			//------------------------------------------------------------------------------
 			struct BlueprintNodeBuilder
 			{
-				BlueprintNodeBuilder(ImTextureID texture = nullptr, int textureWidth = 0, int textureHeight = 0);
+				BlueprintNodeBuilder(ImTextureID texture = 0, int textureWidth = 0, int textureHeight = 0);
 
 				void Begin(NodeId id);
 				void End();

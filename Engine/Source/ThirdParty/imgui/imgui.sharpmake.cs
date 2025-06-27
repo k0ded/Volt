@@ -31,7 +31,7 @@ namespace VoltSharpmake
                 "imgui_stdlib.cpp",
                 "imgui_stdlib.h",
                 "imgui_bezier.h",
-                "Volt_imgui_config.h"
+                "imconfig.h"
             );
 
             conf.ExportDefines.Add("IMGUI_DISABLE_OBSOLETE_KEYIO", "IMGUI_DISABLE_DEFAULT_ALLOCATORS");

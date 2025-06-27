@@ -593,7 +593,7 @@ void MosaicEditorPanel::DrawNodes()
 		return;
 	}
 
-	ImTextureID textureId = nullptr;
+	ImTextureID textureId = 0;
 	int32_t width = 0;
 	int32_t height = 0;
 

@@ -61,31 +61,16 @@ namespace Volt
 
 		m_imguiImplementation = RHI::ImGuiImplementation::Create(createInfo);
 
-		Vector<RHI::ImGuiImplementation::FontInfo> fontInfos;
-		fontInfos.resize(9);
+		Vector<std::filesystem::path> fontPaths;
+		fontPaths.resize(2);
 
-		fontInfos[0] = { "Engine/Fonts/Inter/inter-regular.ttf", 16.f };
-		fontInfos[1] = { "Engine/Fonts/Inter/inter-regular.ttf", 12.f };
-		fontInfos[2] = { "Engine/Fonts/Inter/inter-regular.ttf", 17.f };
-		fontInfos[3] = { "Engine/Fonts/Inter/inter-regular.ttf", 20.f };
-		fontInfos[4] = { "Engine/Fonts/Inter/inter-bold.ttf", 12.f };
-		fontInfos[5] = { "Engine/Fonts/Inter/inter-bold.ttf", 16.f };
-		fontInfos[6] = { "Engine/Fonts/Inter/inter-bold.ttf", 17.f };
-		fontInfos[7] = { "Engine/Fonts/Inter/inter-bold.ttf", 20.f };
-		fontInfos[8] = { "Engine/Fonts/Inter/inter-bold.ttf", 90.f };
+		fontPaths[0] = "Engine/Fonts/Inter/inter-regular.ttf";
+		fontPaths[1] = "Engine/Fonts/Inter/inter-bold.ttf";
 
-		auto imFonts = m_imguiImplementation->AddFonts(fontInfos);
+		auto imFonts = m_imguiImplementation->AddFonts(fontPaths);
 
-		UI::SetFont(UI::FontType::Regular_16, imFonts[0]);
-		UI::SetFont(UI::FontType::Regular_12, imFonts[1]);
-		UI::SetFont(UI::FontType::Regular_17, imFonts[2]);
-		UI::SetFont(UI::FontType::Regular_20, imFonts[3]);
-
-		UI::SetFont(UI::FontType::Bold_12, imFonts[4]);
-		UI::SetFont(UI::FontType::Bold_16, imFonts[5]);
-		UI::SetFont(UI::FontType::Bold_17, imFonts[6]);
-		UI::SetFont(UI::FontType::Bold_20, imFonts[7]);
-		UI::SetFont(UI::FontType::Bold_90, imFonts[8]);
+		UI::SetFont(UI::FontType::Regular, imFonts[0]);
+		UI::SetFont(UI::FontType::Bold, imFonts[1]);
 
 		m_imguiImplementation->SetDefaultFont(imFonts[0]);
 		VT_LOGC(Trace, LogImGuiSubSystem, "ImGuiSubSystem initialized in {} seconds!", timer.GetTime<Time::Seconds>());

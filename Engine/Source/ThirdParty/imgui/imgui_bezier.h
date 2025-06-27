@@ -169,7 +169,7 @@ namespace ImGui
             return changed;
 
         const ImGuiID id = Window->GetID(label);
-        hovered |= 0 != ItemHoverable(ImRect(bb.Min, bb.Min + ImVec2(avail, dim)), id);
+        hovered |= 0 != ItemHoverable(ImRect(bb.Min, bb.Min + ImVec2(avail, dim)), id, ImGuiItemFlags_Default_);
 
         RenderFrame(bb.Min, bb.Max, GetColorU32(ImGuiCol_FrameBg, 1), true, Style.FrameRounding);
 

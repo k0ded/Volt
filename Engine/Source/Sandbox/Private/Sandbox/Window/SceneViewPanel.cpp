@@ -495,7 +495,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{ 0.f, 0.f, 0.f, 0.f });
 	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{ 0.f, 0.f, 0.f, 0.f });
 
-	UI::PushFont(UI::FontType::Regular_16);
+	UI::PushFont(UI::FontType::Regular, UI::DEFAULT_FONT_SIZE);
 
 	if (!children.empty())
 	{
@@ -753,7 +753,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 			Ref<Volt::Texture2D> visibleIcon = transformComponent.visible ? EditorResources::GetEditorIcon(EditorIcon::Visible) : EditorResources::GetEditorIcon(EditorIcon::Hidden);
 			std::string visibleId = "##visible" + entity.ToString();
-			if (UI::ImageButton(visibleId, UI::GetTextureID(visibleIcon), { imageSize, imageSize }, { 0.f, 0.f }, { 1.f, 1.f }, 0))
+			if (UI::ImageButton(visibleId, UI::GetTextureID(visibleIcon), { imageSize, imageSize }))
 			{
 				auto recursiveSetVisible = [scene = m_scene](Volt::Entity entity, bool visible, auto recursiveSetVisible) -> bool
 				{
@@ -789,7 +789,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 			Ref<Volt::Texture2D> lockedIcon = transformComponent.locked ? EditorResources::GetEditorIcon(EditorIcon::Locked) : EditorResources::GetEditorIcon(EditorIcon::Unlocked);
 			std::string lockedId = "##locked" + entity.ToString();
-			if (UI::ImageButton(lockedId, UI::GetTextureID(lockedIcon), { imageSize, imageSize }, { 0.f, 0.f }, { 1.f, 1.f }, 0))
+			if (UI::ImageButton(lockedId, UI::GetTextureID(lockedIcon), { imageSize, imageSize }))
 			{
 				const auto newVal = !transformComponent.locked;
 				if (!SelectionManager::IsSelected(entity.GetID()))
@@ -1312,7 +1312,7 @@ void SceneViewPanel::RebuildEntityDrawListRecursive(Volt::Entity entity, const s
 	auto imGuiID = ImGui::GetID(entityStrId.c_str());
 	m_entityToImGuiID[entity.GetID()] = imGuiID;
 
-	bool isOpen = ImGui::TreeNodeBehaviorIsOpen(imGuiID);
+	bool isOpen = ImGui::TreeNodeUpdateNextOpen(imGuiID, ImGuiTreeNodeFlags_None);
 
 	if (!isOpen)
 	{
