@@ -16,6 +16,7 @@
 
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Images/Image.h>
+#include <RHIModule/Images/SamplerState.h>
 
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
@@ -73,8 +74,7 @@ namespace Volt::RHI
 		{
 			viewDesc.baseMipLevel = mipIndex;
 		}
-
-		ImTextureID id = ImGui_ImplVulkan_AddTexture(nullptr, image->GetView(viewDesc)->GetHandle<VkImageView>(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		ImTextureID id = reinterpret_cast<ImTextureID>(ImGui_ImplVulkan_AddTexture(m_textureSampler->GetHandle<VkSampler>(), image->GetView(viewDesc)->GetHandle<VkImageView>(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
 		return id;
 	}
 
@@ -84,17 +84,6 @@ namespace Volt::RHI
 		ImFont* newFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), pixelSize);
 	
 		MergeIconsWithLatestFont(pixelSize);
-
-		// Create font
-		{
-			RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
-			commandBuffer->Begin();
-			ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->GetHandle<VkCommandBuffer>());
-			commandBuffer->End();
-			commandBuffer->ExecuteAndWait();
-
-			ImGui_ImplVulkan_DestroyFontUploadObjects();
-		}
 
 		return newFont;
 	}
@@ -174,7 +163,7 @@ namespace Volt::RHI
 	{
 		ImGui::SetCurrentContext(context);
 
-		ImGui_ImplGlfw_InitForVulkan(m_windowPtr, context, true);
+		ImGui_ImplGlfw_InitForVulkan(m_windowPtr, true);
 		InitializeVulkanData();
 	}
 
@@ -230,19 +219,30 @@ namespace Volt::RHI
 		initInfo.MinImageCount = VulkanSwapchain::MAX_FRAMES_IN_FLIGHT;
 		initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 		initInfo.CheckVkResultFn = Utility::CheckImGuiVulkanResults;
+		initInfo.UseDynamicRendering = true;
 
-		ImGui_ImplVulkan_Init(&initInfo, Utility::VoltToVulkanFormat(vulkanSwapchain->GetFormat()));
+		VkFormat targetFormat = Utility::VoltToVulkanFormat(vulkanSwapchain->GetFormat());
+		VkPipelineRenderingCreateInfo pipelineRenderingInfo{};
+		pipelineRenderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+		pipelineRenderingInfo.pNext = nullptr;
+		pipelineRenderingInfo.colorAttachmentCount = 1;
+		pipelineRenderingInfo.pColorAttachmentFormats = &targetFormat;
+		pipelineRenderingInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+		pipelineRenderingInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 
-		// Create font
-		{
-			RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
-			commandBuffer->Begin();
-			ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->GetHandle<VkCommandBuffer>());
-			commandBuffer->End();
-			commandBuffer->ExecuteAndWait();
-		
-			ImGui_ImplVulkan_DestroyFontUploadObjects();
-		}
+		initInfo.PipelineRenderingCreateInfo = pipelineRenderingInfo;
+
+		SamplerStateDesc samplerDesc{};
+		samplerDesc.minFilter = RHI::TextureFilter::Linear;
+		samplerDesc.magFilter = RHI::TextureFilter::Linear;
+		samplerDesc.mipFilter = RHI::TextureFilter::Linear;
+		samplerDesc.wrapMode = RHI::TextureWrap::Repeat;
+		samplerDesc.anisotropyLevel = RHI::AnisotropyLevel::X16;
+		samplerDesc.compareOperator = RHI::CompareOperator::None;
+
+		 m_textureSampler = RHI::SamplerState::Create(samplerDesc);
+
+		ImGui_ImplVulkan_Init(&initInfo);
 	}
 
 	void VulkanImGuiImplementation::ReleaseVulkanData()
@@ -265,17 +265,6 @@ namespace Volt::RHI
 		{
 			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontInfo.filepath.string().c_str(), fontInfo.pixelSize);
 			MergeIconsWithLatestFont(fontInfo.pixelSize);
-		}
-
-		// Create font
-		{
-			RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
-			commandBuffer->Begin();
-			ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->GetHandle<VkCommandBuffer>());
-			commandBuffer->End();
-			commandBuffer->ExecuteAndWait();
-
-			ImGui_ImplVulkan_DestroyFontUploadObjects();
 		}
 
 		return resultFonts;

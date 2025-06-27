@@ -34,46 +34,46 @@
     };
 
 
-namespace ax
-{
-	namespace NodeEditor
-	{
-		namespace Detail
-		{
-
-# define DECLARE_KEY_TESTER(Key)                                                                    \
-    DECLARE_HAS_NESTED(Key, Key)                                                                    \
-    struct KeyTester_ ## Key                                                                        \
-    {                                                                                               \
-        template <typename T>                                                                       \
-        static int Get(typename std::enable_if<has_nested_ ## Key<ImGuiKey_>::value, T>::type*)     \
-        {                                                                                           \
-            return ImGui::GetKeyIndex(T::Key);                                                      \
-        }                                                                                           \
-                                                                                                    \
-        template <typename T>                                                                       \
-        static int Get(typename std::enable_if<!has_nested_ ## Key<ImGuiKey_>::value, T>::type*)    \
-        {                                                                                           \
-            return -1;                                                                              \
-        }                                                                                           \
-    }
-
-			DECLARE_KEY_TESTER(ImGuiKey_F);
-			DECLARE_KEY_TESTER(ImGuiKey_D);
-
-			static inline int GetKeyIndexForF()
-			{
-				return KeyTester_ImGuiKey_F::Get<ImGuiKey_>(nullptr);
-			}
-
-			static inline int GetKeyIndexForD()
-			{
-				return KeyTester_ImGuiKey_D::Get<ImGuiKey_>(nullptr);
-			}
-
-		} // namespace Detail
-	} // namespace NodeEditor
-} // namespace ax
+//namespace ax
+//{
+//	namespace NodeEditor
+//	{
+//		namespace Detail
+//		{
+//
+//# define DECLARE_KEY_TESTER(Key)                                                                    \
+//    DECLARE_HAS_NESTED(Key, Key)                                                                    \
+//    struct KeyTester_ ## Key                                                                        \
+//    {                                                                                               \
+//        template <typename T>                                                                       \
+//        static int Get(typename std::enable_if<has_nested_ ## Key<ImGuiKey>::value, T>::type*)     \
+//        {                                                                                           \
+//            return ImGui::GetKeyIndex(T::Key);                                                      \
+//        }                                                                                           \
+//                                                                                                    \
+//        template <typename T>                                                                       \
+//        static int Get(typename std::enable_if<!has_nested_ ## Key<ImGuiKey>::value, T>::type*)    \
+//        {                                                                                           \
+//            return -1;                                                                              \
+//        }                                                                                           \
+//    }
+//
+//			DECLARE_KEY_TESTER(ImGuiKey_F);
+//			DECLARE_KEY_TESTER(ImGuiKey_D);
+//
+//			static inline int GetKeyIndexForF()
+//			{
+//				return KeyTester_ImGuiKey_F::Get<ImGuiKey>(nullptr);
+//			}
+//
+//			static inline int GetKeyIndexForD()
+//			{
+//				return KeyTester_ImGuiKey_D::Get<ImGuiKey>(nullptr);
+//			}
+//
+//		} // namespace Detail
+//	} // namespace NodeEditor
+//} // namespace ax
 
 
 //------------------------------------------------------------------------------
@@ -191,7 +191,7 @@ static void ImDrawListSplitter_Grow(ImDrawList* draw_list, ImDrawListSplitter* s
 		{
 			ImDrawCmd draw_cmd;
 			draw_cmd.ClipRect = draw_list->_ClipRectStack.back();
-			draw_cmd.TextureId = draw_list->_TextureIdStack.back();
+			draw_cmd.TexRef = draw_list->_TextureStack.back();
 			splitter->_Channels[i]._CmdBuffer.push_back(draw_cmd);
 		}
 	}
@@ -464,7 +464,7 @@ static void ImDrawList_AddBezierWithArrows(ImDrawList* drawList, const ImCubicBe
 
 	if (fill)
 	{
-		drawList->AddBezierCurve(curve.P0, curve.P1, curve.P2, curve.P3, color, thickness);
+		drawList->AddBezierCubic(curve.P0, curve.P1, curve.P2, curve.P3, color, thickness);
 
 		if (startArrowSize > 0.0f)
 		{
@@ -1147,7 +1147,7 @@ bool ed::EditorContext::Begin(const char* id, const ImVec2& size)
 	//    ImGuiWindowFlags_NoScrollbar |
 	//    ImGuiWindowFlags_NoScrollWithMouse);
 
-	ImGui::CaptureKeyboardFromApp();
+	ImGui::SetNextFrameWantCaptureKeyboard(true);
 
 	m_IsWindowActive = ImGui::IsWindowFocused();
 
@@ -2958,7 +2958,7 @@ ed::EditorAction::AcceptResult ed::NavigateAction::Accept(const Control& control
 
 	auto& io = ImGui::GetIO();
 
-	if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(GetKeyIndexForF()) && Editor->AreShortcutsEnabled())
+	if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_F) && Editor->AreShortcutsEnabled())
 	{
 		const auto allowZoomIn = io.KeyShift;
 
@@ -3963,15 +3963,15 @@ ed::EditorAction::AcceptResult ed::ShortcutAction::Accept(const Control& control
 	Action candidateAction = None;
 
 	auto& io = ImGui::GetIO();
-	if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_X)))
+	if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_X))
 		candidateAction = Cut;
-	if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C)))
+	if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_C))
 		candidateAction = Copy;
-	if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V)))
+	if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_V))
 		candidateAction = Paste;
-	if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(GetKeyIndexForD()))
+	if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_D))
 		candidateAction = Duplicate;
-	if (!io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Space)))
+	if (!io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_Space))
 		candidateAction = CreateNode;
 
 	if (candidateAction != None)
@@ -4518,7 +4518,7 @@ ed::EditorAction::AcceptResult ed::DeleteItemsAction::Accept(const Control& cont
 	};
 
 	auto& io = ImGui::GetIO();
-	if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)) && Editor->AreShortcutsEnabled())
+	if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete) && Editor->AreShortcutsEnabled())
 	{
 		auto& selection = Editor->GetSelectedObjects();
 		if (!selection.empty())

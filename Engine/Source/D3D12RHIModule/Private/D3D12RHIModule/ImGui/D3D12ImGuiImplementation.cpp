@@ -78,7 +78,8 @@ namespace Volt::RHI
 
 	void D3D12ImGuiImplementation::InitializeAPI(ImGuiContext* context)
 	{
-		ImGui_ImplGlfw_InitForVulkan(m_info.window, context, true);
+		ImGui::SetCurrentContext(context);
+		ImGui_ImplGlfw_InitForVulkan(m_info.window, true);
 		auto device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device2*>();
 
 		{

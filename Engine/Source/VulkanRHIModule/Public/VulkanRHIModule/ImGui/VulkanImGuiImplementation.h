@@ -37,6 +37,7 @@ namespace Volt::RHI
 		void InitializeVulkanData();
 		void ReleaseVulkanData();
 	
+		RefPtr<RHI::SamplerState> m_textureSampler;
 		GLFWwindow* m_windowPtr = nullptr;
 		RawPtr<Swapchain> m_swapchain;
 		VkDescriptorPool_T* m_descriptorPool;

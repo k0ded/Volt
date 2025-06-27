@@ -543,7 +543,7 @@ void AssetBrowserPanel::RenderControlsBar(float height)
 
 			// Settings button
 			{
-				ImGui::ImageButton(UI::GetTextureID(EditorResources::GetEditorIcon(EditorIcon::Settings)), { height - buttonSizeOffset, height - buttonSizeOffset });
+				ImGui::ImageButton("##AssetBrowserSettingsButton",UI::GetTextureID(EditorResources::GetEditorIcon(EditorIcon::Settings)), {height - buttonSizeOffset, height - buttonSizeOffset});
 				if (ImGui::BeginPopupContextItem("settingsMenu", ImGuiPopupFlags_MouseButtonLeft))
 				{
 					ImGui::PushItemWidth(100.f);

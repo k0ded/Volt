@@ -253,7 +253,7 @@ void ViewportPanel::UpdateContent()
 	UI::ScopedButtonColor transparent{ EditorTheme::Buttons::TransparentButton };
 	UI::ScopedColor background{ ImGuiCol_WindowBg, EditorTheme::MiddleGreyBackground };
 
-	ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTabBar);
+	ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar);
 
 	const uint32_t rightButtonCount = 12;
 	const float buttonSize = 22.f;

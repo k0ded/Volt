@@ -5,7 +5,7 @@
 
 struct GLFWwindow;
 
-typedef void* ImTextureID;
+typedef unsigned long long ImTextureID;
 struct ImFont;
 struct ImGuiContext;
 

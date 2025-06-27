@@ -18,7 +18,7 @@ void TaigaPanel::UpdateMainContent()
 
 void TaigaPanel::UpdateContent()
 {
-	ImGui::Begin("Main View", nullptr, ImGuiWindowFlags_NoTabBar);
+	ImGui::Begin("Main View", nullptr, ImGuiWindowFlags_NoTitleBar);
 	if (ImGui::BeginTabBar("tabs"))
 	{
 		if (ImGui::BeginTabItem("Projects"))
@@ -78,7 +78,7 @@ void TaigaPanel::UpdateContent()
 		ImGui::EndTabBar();
 	}
 	ImGui::End();
-	ImGui::Begin("Item View", nullptr, ImGuiWindowFlags_NoTabBar);
+	ImGui::Begin("Item View", nullptr, ImGuiWindowFlags_NoTitleBar);
 	ItemTab();
 	ImGui::End();
 }

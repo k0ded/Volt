@@ -75,7 +75,7 @@ void VisionPanel::UpdateContent()
 
 void VisionPanel::UpdateCameraProperties()
 {
-	ImGui::Begin("Camera Properties", nullptr, ImGuiWindowFlags_NoTabBar);
+	ImGui::Begin("Camera Properties", nullptr, ImGuiWindowFlags_NoTitleBar);
 
 	UI::PushID();
 
@@ -255,7 +255,7 @@ void VisionPanel::UpdateCameraProperties()
 
 void VisionPanel::UpdateSetDetails()
 {
-	ImGui::Begin("Studio", nullptr, ImGuiWindowFlags_NoTabBar);
+	ImGui::Begin("Studio", nullptr, ImGuiWindowFlags_NoTitleBar);
 
 	ImGui::LabelText("##Cams", "Cameras On Set");
 
