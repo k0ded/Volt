@@ -98,7 +98,7 @@ namespace ImGui
 		layout->StartPos = window->DC.CursorPos;
 		layout->StartCursorMaxPos = window->DC.CursorMaxPos;
 
-		BeginLayoutClipRect(*layout);
+		//BeginLayoutClipRect(*layout);
 
 		if (type == ImGuiLayoutType_Vertical)
 		{
@@ -196,7 +196,7 @@ namespace ImGui
 		if (layout->Parent == NULL)
 			BalanceChildLayouts(*layout);
 
-		EndLayoutClipRect(*layout);
+		//EndLayoutClipRect(*layout);
 
 		//window->DrawList->AddRect(layout->StartPos, layout->StartPos + measured_size, IM_COL32(0,255,0,255));           // [DEBUG]
 		//window->DrawList->AddRect(window->DC.LastItemRect.Min, window->DC.LastItemRect.Max, IM_COL32(255,255,0,255));   // [DEBUG]
