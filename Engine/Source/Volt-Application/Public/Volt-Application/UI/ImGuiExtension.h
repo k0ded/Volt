@@ -93,4 +93,41 @@ namespace ImGui
 		flags |= ImGuiSeparatorFlags_SpanAllColumns;
 		SeparatorWidthEx(width, flags);
 	}
+
+	// If 'p_open' is specified for a modal popup window, the popup will have a regular close button which will close the popup.
+	// Note that popup visibility status is owned by Dear ImGui (and manipulated with e.g. OpenPopup).
+	// - *p_open set back to false in BeginPopupModal() when popup is not open.
+	// - if you set *p_open to false before calling BeginPopupModal(), it will close the popup.
+	inline static bool BeginPopupModal(const char* name, ImGuiID id, bool* p_open, ImGuiWindowFlags flags)
+	{
+		ImGuiContext& g = *GImGui;
+		ImGuiWindow* window = g.CurrentWindow;
+		if (!IsPopupOpen(id, ImGuiPopupFlags_None))
+		{
+			g.NextWindowData.ClearFlags(); // We behave like Begin() and need to consume those values
+			if (p_open && *p_open)
+				*p_open = false;
+			return false;
+		}
+
+		// Center modal windows by default for increased visibility
+		// (this won't really last as settings will kick in, and is mostly for backward compatibility. user may do the same themselves)
+		// FIXME: Should test for (PosCond & window->SetWindowPosAllowFlags) with the upcoming window.
+		if ((g.NextWindowData.HasFlags & ImGuiNextWindowDataFlags_HasPos) == 0)
+		{
+			const ImGuiViewport* viewport = window->WasActive ? window->Viewport : GetMainViewport(); // FIXME-VIEWPORT: What may be our reference viewport?
+			SetNextWindowPos(viewport->GetCenter(), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+		}
+
+		flags |= ImGuiWindowFlags_Popup | ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
+		const bool is_open = Begin(name, p_open, flags);
+		if (!is_open || (p_open && !*p_open)) // NB: is_open can be 'false' when the popup is completely clipped (e.g. zero size display)
+		{
+			EndPopup();
+			if (is_open)
+				ClosePopupToLevel(g.BeginPopupStack.Size, true);
+			return false;
+		}
+		return is_open;
+	}
 }

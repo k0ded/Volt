@@ -716,7 +716,8 @@ namespace UI
 
 	bool BeginModal(const std::string& name, ImGuiWindowFlags flags)
 	{
-		return ImGui::BeginPopupModal(name.c_str(), nullptr, flags);
+		const uint32_t nameHash = static_cast<uint32_t>(std::hash<std::string>()(name));
+		return ImGui::BeginPopupModal(name.c_str(), nameHash, nullptr, flags);
 	}
 
 	void EndModal()
