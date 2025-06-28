@@ -33,6 +33,15 @@ namespace Volt
 		m_isExecuted = true;
 	}
 
+	JobCounterRef TaskGraph::ExecuteAndExtractCounter()
+	{
+		VT_PROFILE_FUNCTION();
+
+		Execute();
+		m_graphCounter->IncRef();
+		return m_graphCounter;
+	}
+
 	void TaskGraph::ExecuteAndWait()
 	{
 		VT_PROFILE_FUNCTION();

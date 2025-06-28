@@ -288,7 +288,7 @@ namespace Volt
 				desc.name = "ShaderParameters";
 
 				RGUniformBufferRef uniformBuffer = m_renderGraph.CreateUniformBuffer(desc);
-				RefPtr<RHI::UniformBuffer> rhiUniformBuffer = m_renderGraph.m_transientResourceSystem.AcquireUniformBuffer(uniformBuffer);
+				RefPtr<RHI::UniformBuffer> rhiUniformBuffer = m_renderGraph.m_transientResourceSystem.AcquireShaderParameterUniformBuffer(uniformBuffer);
 
 				auto& perStageShaderParameters = m_perStageShaderParameters.emplace_back();
 				perStageShaderParameters.shaderStage = shaderParameterMap.GetShaderStage();
@@ -311,7 +311,7 @@ namespace Volt
 					desc.elementSize = parameterMap.GetShaderParametersSize();
 
 					RGUniformBufferRef uniformBuffer = m_renderGraph.CreateUniformBuffer(desc);
-					RefPtr<RHI::UniformBuffer> rhiUniformBuffer = m_renderGraph.m_transientResourceSystem.AcquireUniformBuffer(uniformBuffer);
+					RefPtr<RHI::UniformBuffer> rhiUniformBuffer = m_renderGraph.m_transientResourceSystem.AcquireShaderParameterUniformBuffer(uniformBuffer);
 
 					auto& perStageShaderParameters = m_perStageShaderParameters.emplace_back();
 					perStageShaderParameters.shaderStage = parameterMap.GetShaderStage();

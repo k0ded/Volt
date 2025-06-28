@@ -33,8 +33,6 @@ namespace Volt
 			return reinterpret_cast<T*>(dataPtr);
 		}
 
-
-
 	private:
 		struct TaskDestructor
 		{
@@ -100,6 +98,7 @@ namespace Volt
 		TaskGraph::Task* AddTaskWithDependencies(std::string_view name, std::span<TaskGraph::Task*> dependencies, Func&& func);
 
 		void Execute();
+		JobCounterRef ExecuteAndExtractCounter();
 		void ExecuteAndWait();
 		void Wait();
 

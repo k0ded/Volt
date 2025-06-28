@@ -70,7 +70,8 @@ namespace Volt::RHI
 		m_desc.depth = depth;
 
 		m_allocation = m_allocator->CreateImage(m_desc, m_desc.memoryUsage);
-		
+		VT_ENSURE(m_allocation);
+
 		ImageLayout targetLayout = ImageLayout::Undefined;
 
 		if (m_desc.imageType == ResourceType::Image3D)

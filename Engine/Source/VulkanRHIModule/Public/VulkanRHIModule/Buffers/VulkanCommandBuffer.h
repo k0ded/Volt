@@ -128,7 +128,7 @@ namespace Volt::RHI
 		uint32_t m_nextAvailableTimestampQuery = 0; // The two first are command buffer total
 		uint32_t m_lastAvailableTimestampQuery = 0;
 
-		VkQueryPool_T* m_timestampQueryPool;
+		VkQueryPool_T* m_timestampQueryPool = nullptr;
 		uint32_t m_timestampCount;
 		Vector<uint64_t> m_timestampQueryResults;
 		Vector<float> m_executionTimes;

@@ -30,8 +30,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphCullingFixture, PassIsCulled)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGBufferRef buffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
 
@@ -47,8 +46,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphCullingFixture, PassIsNeverCulled)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{ };
 
 		RGBufferRef buffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
 
@@ -64,8 +62,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphCullingFixture, ExtractedResourceWriteIsNeverCulled)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGBufferRef buffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
 
@@ -83,8 +80,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphCullingFixture, ReadAfterWriteIsCulled)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGBufferRef writeBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
 
@@ -144,8 +140,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphCullingFixture, WriteAfterWriteNeverCullIsNeverCulled)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGBufferRef writeBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
 
@@ -172,8 +167,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphCullingFixture, MultipleProducerChainIsCulled)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGTextureDesc textureDesc{};
 		textureDesc.format = RHI::PixelFormat::R32G32B32A32_SFLOAT;
@@ -203,8 +197,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphCullingFixture, RasterPassWritesRasterOutputWithNeverCullFlagIsNeverCulled)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGTextureRef colorTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_SFLOAT>(1024, 1024, RHI::ImageUsage::AttachmentStorage));
 		RGTextureRef depthTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(1024, 1024, RHI::ImageUsage::AttachmentStorage));
@@ -236,8 +229,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphCullingFixture, RasterPassWithExtractUsingPreviousPassesResultIsNeverCulled)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGTextureRef colorTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_SFLOAT>(1024, 1024, RHI::ImageUsage::AttachmentStorage));
 		RGTextureRef depthTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(1024, 1024, RHI::ImageUsage::AttachmentStorage));

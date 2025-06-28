@@ -29,10 +29,15 @@ namespace Volt
 		RefPtr<RHI::Image> AcquireTexture(RGTextureRef resource);
 		RefPtr<RHI::StorageBuffer> AcquireBuffer(RGBufferRef resource);
 		RefPtr<RHI::UniformBuffer> AcquireUniformBuffer(RGUniformBufferRef resource);
+		RefPtr<RHI::UniformBuffer> AcquireShaderParameterUniformBuffer(RGUniformBufferRef resource);
 
 		RefPtr<RHI::Image> GetTextureIfExists(RGTextureRef resource);
 		RefPtr<RHI::StorageBuffer> GetBufferIfExists(RGBufferRef resource);
 		RefPtr<RHI::UniformBuffer> GetUniformBufferIfExists(RGUniformBufferRef resource);
+
+		void PrepareResource(RGTextureRef resource);
+		void PrepareResource(RGBufferRef resource);
+		void PrepareResource(RGUniformBufferRef resource);
 
 		void SurrenderResource(RGResourceRef originalResource, size_t hash);
 		void AddExternalResource(RGResourceRef resource, RefPtr<RHI::RHIResource> rhiResource);
@@ -51,5 +56,8 @@ namespace Volt
 
 		Map<size_t, Vector<RGResourceRef>> m_surrenderedResources;
 		mutable std::mutex m_surrenderedResourcesMutex;
+
+		Map<RGResourceRef, ResourceInfo> m_shaderParameterUniformBuffers;
+		mutable std::mutex m_shaderParameterUniformBufferMutex;
 	};
 }

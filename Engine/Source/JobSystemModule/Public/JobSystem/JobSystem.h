@@ -28,7 +28,7 @@ namespace Volt
 		template<typename Func> static Job* CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func);
 
 		static JobCounter* CreateCounter();
-		static void DestroyCounter(JobCounter* counter);
+		static void DestroyCounter(JobCounter*& counter);
 
 		static void RunJob(Job* job);
 		static void RunJobs(std::span<Job*> jobs);

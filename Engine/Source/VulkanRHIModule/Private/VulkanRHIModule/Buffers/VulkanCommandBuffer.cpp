@@ -1405,7 +1405,7 @@ namespace Volt::RHI
 		FenceCreateInfo fenceInfo{};
 		fenceInfo.createSignaled = true;
 
-		m_hasTimestampSupport = GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().GetProperties().limits.timestampComputeAndGraphics;
+		m_hasTimestampSupport = false; //GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().GetProperties().limits.timestampComputeAndGraphics;
 		if (m_hasTimestampSupport)
 		{
 			CreateQueryPools();
@@ -1426,7 +1426,11 @@ namespace Volt::RHI
 			auto device = GraphicsContext::GetDevice();
 
 			vkDestroyCommandPool(device->GetHandle<VkDevice>(), commandPool, nullptr);
-			vkDestroyQueryPool(device->GetHandle<VkDevice>(), timestampPool, nullptr);
+			
+			if (timestampPool)
+			{
+				vkDestroyQueryPool(device->GetHandle<VkDevice>(), timestampPool, nullptr);
+			}
 		});
 
 		m_commandBufferData = {};

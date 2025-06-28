@@ -16,6 +16,40 @@ public:
 		InitializeFreeList();
 	}
 
+	AtomicStack(const AtomicStack& other) noexcept
+		: m_stack(other.m_stack),
+		m_dataHead(other.m_dataHead.load()),
+		m_freeHead(other.m_freeHead.load()),
+		m_size(other.m_size.load())
+	{ }
+
+	AtomicStack(AtomicStack&& other) noexcept
+		: m_stack(std::move(other.m_stack)),
+		m_dataHead(other.m_dataHead.load()),
+		m_freeHead(other.m_freeHead.load()),
+		m_size(other.m_size.load())
+	{}
+
+	AtomicStack& operator=(const AtomicStack& other) noexcept
+	{
+		m_stack = other.m_stack;
+		m_dataHead = other.m_dataHead.load();
+		m_freeHead = other.m_freeHead.load();
+		m_size = other.m_size.load();
+	
+		return *this;
+	}
+
+	AtomicStack& operator=(AtomicStack&& other) noexcept
+	{
+		m_stack = std::move(other.m_stack);
+		m_dataHead = other.m_dataHead.load();
+		m_freeHead = other.m_freeHead.load();
+		m_size = other.m_size.load();
+
+		return *this;
+	}
+
 	bool Push(const T& value)
 	{
 		uint32_t index;
@@ -74,10 +108,36 @@ public:
 	}
 
 	VT_NODISCARD VT_INLINE uint32_t Size() const { return m_size; }
+	VT_NODISCARD VT_INLINE bool Empty() const { return m_size == 0; }
 
 private:
 	struct Node
 	{
+		Node() = default;
+		Node(const Node& other) noexcept
+			: value(other.value),
+			next(other.next.load())
+		{ }
+
+		Node(Node&& other) noexcept
+			: value(std::move(other.value)),
+			next(other.next.load())
+		{}
+
+		Node& operator=(const Node& other) noexcept
+		{
+			value = other.value;
+			next = other.next.load();
+			return *this;
+		}
+
+		Node& operator=(Node&& other) noexcept
+		{
+			value = std::move(other.value);
+			next = other.next.load();
+			return *this;
+		}
+
 		T value;
 		std::atomic<uint32_t> next;
 	};

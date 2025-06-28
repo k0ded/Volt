@@ -141,8 +141,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, ComputeSingleTextureWrite)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGTextureRef texture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32G32B32A32_SFLOAT>(1024, 1024, RHI::ImageUsage::Storage));
 
@@ -161,8 +160,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, ComputeTextureReadAfterWrite)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGTextureRef texture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32G32B32A32_SFLOAT>(1024, 1024, RHI::ImageUsage::Storage));
 
@@ -197,8 +195,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, ComputeTextureWriteAfterWrite)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGTextureRef texture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32G32B32A32_SFLOAT>(1024, 1024, RHI::ImageUsage::Storage));
 
@@ -234,8 +231,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, ComputeTextureReadAfterRead)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGTextureRef texture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32G32B32A32_SFLOAT>(1024, 1024, RHI::ImageUsage::Storage));
 
@@ -280,8 +276,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, ComputeSingleBufferWrite)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGBufferRef buffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
 
@@ -300,8 +295,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, ComputeBufferReadAfterWrite)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGBufferRef buffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
 
@@ -335,8 +329,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, ComputeBufferWriteAfterWrite)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGBufferRef buffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
 
@@ -370,8 +363,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, ComputeBufferReadAfterRead)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGBufferRef buffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1));
 
@@ -415,8 +407,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, RasterRenderTargetWrite)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGTextureRef colorTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_SFLOAT>(1024, 1024, RHI::ImageUsage::AttachmentStorage));
 		RGTextureRef depthTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(1024, 1024, RHI::ImageUsage::AttachmentStorage));
@@ -444,8 +435,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, RasterRenderTargetReadAfterWrite)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGTextureRef colorTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_SFLOAT>(1024, 1024, RHI::ImageUsage::AttachmentStorage));
 		RGTextureRef depthTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(1024, 1024, RHI::ImageUsage::AttachmentStorage));
@@ -492,8 +482,7 @@ namespace IntegrationTests
 
 	TEST_F(RenderGraphBarrierFixture, RasterRenderTargetWriteAfterWrite)
 	{
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		TestingRenderGraph renderGraph{ commandBuffer };
+		TestingRenderGraph renderGraph{};
 
 		RGTextureRef colorTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_SFLOAT>(1024, 1024, RHI::ImageUsage::AttachmentStorage));
 		RGTextureRef depthTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(1024, 1024, RHI::ImageUsage::AttachmentStorage));

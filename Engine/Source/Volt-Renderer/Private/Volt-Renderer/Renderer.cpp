@@ -9,7 +9,6 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderContext.h>
@@ -133,8 +132,7 @@ namespace Volt
 
 		m_descriptorTableCache = CreateScope<DescriptorTableCache>();
 		m_samplerStateCache = CreateScope<SamplerStateCache>();
-
-		RenderGraphExecutionThread::Initialize(RenderGraphExecutionThread::ExecutionMode::Multithreaded);
+		m_commandBufferPool = CreateScope<CommandBufferPool>();
 
 		CreateDefaultResources();
 		//m_blueNoise = CreateScope<BlueNoise>();
@@ -147,8 +145,6 @@ namespace Volt
 
 	void Renderer::Shutdown()
 	{
-		RenderGraphExecutionThread::Shutdown();
-
 		m_blueNoise.reset();
 
 		m_defaultResources.Clear();
@@ -183,8 +179,7 @@ namespace Volt
 		constexpr uint32_t DiffuseMapSize = 256;
 		constexpr uint32_t ConversionThreadGroupSize = 32;
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-		RenderGraph renderGraph{ commandBuffer };
+		RenderGraph renderGraph{};
 
 		RGTextureRef environmentRaw = renderGraph.CreateTexture(RGTextureDesc::CreateCube<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(CubeMapSize, CubeMapSize, RHI::ImageUsage::Storage, "EquirectangularTexture"));
 
@@ -299,6 +294,7 @@ namespace Volt
 		}
 
 		m_descriptorTableCache->Update();
+		m_commandBufferPool->Update();
 
 		return false;
 	}
@@ -370,9 +366,7 @@ namespace Volt
 
 		m_defaultResources.DFGLuT = RHI::Image::Create(spec);
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
-
-		RenderGraph renderGraph{ commandBuffer };
+		RenderGraph renderGraph{};
 
 		GeneratePreIntegratedDFGPS::Parameters* passParameters = renderGraph.AllocParameters<GeneratePreIntegratedDFGPS::Parameters>();
 		passParameters->renderTargets.renderTargets[0] = renderGraph.RegisterExternalTexture(m_defaultResources.DFGLuT);
@@ -444,14 +438,6 @@ namespace Volt
 			{
 				resultIncludes.emplace_back(filePath.parent_path() / includeString);
 			}
-			//else if (std::filesystem::exists(ProjectManager::GetEngineShaderIncludeDirectory() / includeString))
-			//{
-			//	resultIncludes.emplace_back(ProjectManager::GetEngineShaderIncludeDirectory() / includeString);
-			//}
-			//else if (std::filesystem::exists(ProjectManager::GetAssetsDirectory() / includeString))
-			//{
-			//	resultIncludes.emplace_back(ProjectManager::GetAssetsDirectory() / includeString);
-			//}
 
 			offset = shaderString.find(INCLUDE_KEYWORD, offset + 1);
 		}

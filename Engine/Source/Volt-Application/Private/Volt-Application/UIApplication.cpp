@@ -11,8 +11,6 @@
 
 #include <RHIModule/RHIModuleLoader.h>
 
-#include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
-
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -209,20 +207,17 @@ namespace Volt
 
 			AppImGuiUpdateEvent imguiEvent{};
 			EventSystem::DispatchEvent(imguiEvent);
-
-			// #TODO_Ivar: HACK! Will keep this here for now. We need to make sure that the scene renderer output image is ready. 
-			RenderGraphExecutionThread::WaitForFinishedExecution();
-			m_imguiSubSystem->End();
-		}
-		else
-		{
-			RenderGraphExecutionThread::WaitForFinishedExecution();
 		}
 
 		{
 			VT_PROFILE_SCOPE("Application::PostFrameUpdate");
 			AppPostFrameUpdateEvent postFrameUpdateEvent{ m_currentDeltaTime };
 			EventSystem::DispatchEvent(postFrameUpdateEvent);
+		}
+
+		if (m_appCreateInfo.enableImGui && m_imguiSubSystem->IsInitialized() && !m_skipPresentThisFrame)
+		{
+			m_imguiSubSystem->End();
 		}
 
 		if (!m_skipPresentThisFrame)

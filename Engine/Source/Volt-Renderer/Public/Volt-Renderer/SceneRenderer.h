@@ -9,7 +9,11 @@
 
 #include <RenderCore/RenderGraph/RenderGraphDebugger.h>
 
-#include <RHIModule/Buffers/CommandBufferSet.h>
+#include <JobSystem/Job.h>
+
+#include <EventSystem/EventListener.h>
+#include <EventSystem/ApplicationEvents.h>
+
 #include <RenderCore/Resources/GrowingGPUBuffer.h>
 
 namespace Volt
@@ -49,7 +53,7 @@ namespace Volt
 		Ref<RenderScene> renderScene;
 	};
 
-	class VTR_API SceneRenderer
+	class VTR_API SceneRenderer : public EventListener
 	{
 	public:
 		enum class VisualizationMode : uint8_t
@@ -75,7 +79,7 @@ namespace Volt
 		};
 
 		SceneRenderer(const SceneRendererCreateInfo& specification);
-		~SceneRenderer();
+		~SceneRenderer() override;
 
 		void OnRenderEditor(Ref<Camera> camera, float timestep);
 
@@ -121,6 +125,8 @@ namespace Volt
 		bool ShouldApplyJitter() const;
 		bool IsMeshPassVisualizationMode() const;
 
+		bool OnPostFrameUpdateEvent(AppPostFrameUpdateEvent& event);
+
 		bool m_enabled = false;
 
 		RefPtr<RHI::Image> m_outputImage;
@@ -147,8 +153,8 @@ namespace Volt
 		VisualizationMode m_visualizationMode = VisualizationMode::None;
 
 		PreviousFrameData m_previousFrameData;
+		JobCounterRef m_renderGraphExecutionCounter = nullptr;
 
-		RHI::CommandBufferSet m_commandBufferSet;
 		RenderGraphDebugger m_renderGraphDebugger;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;

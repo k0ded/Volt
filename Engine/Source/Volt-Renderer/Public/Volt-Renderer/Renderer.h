@@ -7,6 +7,7 @@
 
 #include <RenderCore/Resources/BindlessResource.h>
 #include <RenderCore/DescriptorTableCache.h>
+#include <RenderCore/CommandBufferPool.h>
 #include <RenderCore/SamplerStateCache.h>
 
 #include <RHIModule/Images/SamplerState.h>
@@ -97,6 +98,7 @@ namespace Volt
 		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
 		Scope<DescriptorTableCache> m_descriptorTableCache;
 		Scope<SamplerStateCache> m_samplerStateCache;
+		Scope<CommandBufferPool> m_commandBufferPool;
 
 		uint32_t m_frameIndex = 0;
 	};

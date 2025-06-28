@@ -7,6 +7,8 @@
 #include "RenderCore/RenderGraph/ShaderParameterStruct.h"
 #include "RenderCore/TransientResourceSystem/TransientResourceSystem.h"
 
+#include <JobSystem/Job.h>
+
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Synchronization/Fence.h>
@@ -30,7 +32,7 @@ namespace Volt
 	class VTRC_API RenderGraph
 	{
 	public:
-		RenderGraph(RefPtr<RHI::CommandBuffer> commandBuffer);
+		RenderGraph();
 		~RenderGraph();
 
 		RenderGraph(RenderGraph&& other) noexcept;
@@ -88,6 +90,7 @@ namespace Volt
 
 		// NOTE: After calling Execute the RenderGraph object is no longer valid to use!
 		void Execute();
+		JobCounterRef ExecuteAndExtractCounter();
 		void ExecuteImmediate();
 		void ExecuteImmediateAndWait();
 
@@ -239,10 +242,10 @@ namespace Volt
 
 		using ExternalResourceRegistry = Map<RawPtr<RHI::RHIResource>, RGResourceRef>;
 
-		void ExecuteInternal(bool waitForSync);
-		void ExecuteInternal2(bool isImmediate, bool waitForSync);
+		JobCounterRef ExecuteInternal(bool isImmediate, bool waitForSync, bool extractCounter);
 		void ExtractResources();
 		void TransitionExternalResources();
+		void PrepareResourcesForExecution();
 
 		void InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
 		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer);
@@ -286,8 +289,9 @@ namespace Volt
 
 		Vector<CompiledPass> m_compiledPasses;
 
-		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::Fence> m_executionFence;
+
+		std::mutex m_tempMutex;
 	}; 
 
 	template<typename ParameterStruct, typename ExecFunc>

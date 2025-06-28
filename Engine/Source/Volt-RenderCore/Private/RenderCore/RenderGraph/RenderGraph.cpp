@@ -3,9 +3,9 @@
 #include "RenderCore/RenderGraph/RenderGraph.h"
 #include "RenderCore/RenderGraph/RenderContext.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
-#include "RenderCore/RenderGraph/RenderGraphExecutionThread.h"
 #include "RenderCore/RenderGraph/GPUReadbackBuffer.h"
 #include "RenderCore/RenderGraph/GPUReadbackTexture.h"
+#include "RenderCore/CommandBufferPool.h"
 
 #include <RHIModule/Utility/ResourceUtility.h>
 #include <RHIModule/Images/ImageUtility.h>
@@ -168,8 +168,7 @@ namespace Volt
 		}
 	}
 
-	RenderGraph::RenderGraph(RefPtr<RHI::CommandBuffer> commandBuffer)
-		: m_commandBuffer(commandBuffer)
+	RenderGraph::RenderGraph()
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -191,7 +190,6 @@ namespace Volt
 		m_passes(std::move(other.m_passes)),
 		m_resources(std::move(other.m_resources)),
 		m_compiledPasses(std::move(other.m_compiledPasses)),
-		m_commandBuffer(std::move(other.m_commandBuffer)),
 		m_executionFence(std::move(other.m_executionFence)),
 		m_textureExtractions(std::move(other.m_textureExtractions)),
 		m_bufferExtractions(std::move(other.m_bufferExtractions)),
@@ -218,7 +216,6 @@ namespace Volt
 		m_passes = std::move(other.m_passes);
 		m_resources = std::move(other.m_resources);
 		m_compiledPasses = std::move(other.m_compiledPasses);
-		m_commandBuffer = std::move(other.m_commandBuffer);
 		m_executionFence = std::move(other.m_executionFence);
 		m_textureExtractions = std::move(other.m_textureExtractions);
 		m_bufferExtractions = std::move(other.m_bufferExtractions);
@@ -254,6 +251,8 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		std::scoped_lock lock{ m_tempMutex };
+
 		RGUniformBufferRef uniformBuffer = m_resourceAllocator.Allocate<RGUniformBuffer>(desc);
 		m_resources.emplace_back(uniformBuffer);
 
@@ -287,6 +286,47 @@ namespace Volt
 
 				const RGResourceState& resourceState = m_resourceStateTracker.GetState(resource);
 				resourceTracker->TransitionResource(rhiResource, resourceState.currentState.stage, resourceState.currentState.access, resourceState.currentState.layout);
+			}
+		}
+	}
+
+	void RenderGraph::PrepareResourcesForExecution()
+	{
+		constexpr auto hasReferencedProducer = [](RGResourceRef resource) -> bool
+		{
+			for (const auto producer : resource->producers)
+			{
+				if (producer->refCount > 0)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		};
+
+
+		// At this point we know all resources that will be referenced, and we can create them accordingly.
+		for (auto resource : m_resources)
+		{
+			const bool shouldResourceBeCreated =
+				!resource->isExternal &&
+				(resource->GetRefCount() > 0 || resource->isExtracted || hasReferencedProducer(resource));
+
+			if (shouldResourceBeCreated)
+			{
+				if (resource->GetResourceType() == RGResourceType::Texture)
+				{
+					m_transientResourceSystem.PrepareResource(reinterpret_cast<RGTextureRef>(resource));
+				}
+				else if (resource->GetResourceType() == RGResourceType::Buffer)
+				{
+					m_transientResourceSystem.PrepareResource(reinterpret_cast<RGBufferRef>(resource));
+				}
+				else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
+				{
+					m_transientResourceSystem.PrepareResource(reinterpret_cast<RGUniformBufferRef>(resource));
+				}
 			}
 		}
 	}
@@ -1150,25 +1190,29 @@ namespace Volt
 
 	void RenderGraph::Execute()
 	{
-		RenderGraphExecutionThread::ExecuteRenderGraph(std::move(*this));
-		//ExecuteInternal2(false, false);
+		ExecuteInternal(false, false, false);
 	}
 
 	void RenderGraph::ExecuteImmediate()
 	{
-		ExecuteInternal(false);
-		//ExecuteInternal2(true, false);
+		ExecuteInternal(true, false, false);
 	}
 
 	void RenderGraph::ExecuteImmediateAndWait()
 	{
-		ExecuteInternal(true);
-		//ExecuteInternal2(true, true);
+		ExecuteInternal(true, true, false);
 	}
 
-	void RenderGraph::ExecuteInternal2(bool isImmediate, bool waitForSync)
+	JobCounterRef RenderGraph::ExecuteAndExtractCounter()
+	{
+		return ExecuteInternal(false, false, true);
+	}
+
+	JobCounterRef RenderGraph::ExecuteInternal(bool isImmediate, bool waitForSync, bool extractCounter)
 	{
 		VT_PROFILE_FUNCTION();
+
+		PrepareResourcesForExecution();
 
 		constexpr size_t NumPassesPerJob = 4;
 
@@ -1198,7 +1242,7 @@ namespace Volt
 
 		for (size_t i = 0; i < passExecutionRanges.size(); ++i)
 		{
-			commandBuffers[i] = RHI::CommandBuffer::Create();
+			commandBuffers[i] = CommandBufferPool::GetCommandBuffer();
 		}
 
 		// Move this RenderGraph into temporary storage, so that the 
@@ -1275,16 +1319,21 @@ namespace Volt
 
 			executeInfo.fence = executionFence;
 			RHI::GraphicsContext::GetDevice()->GetDeviceQueue(RHI::QueueType::Graphics)->Execute(executeInfo);
-		
+
 			renderGraphPtr->TransitionExternalResources();
 			renderGraphPtr->ExtractResources();
+
+			for (const auto& commandBuffer : commandBuffers)
+			{
+				CommandBufferPool::FreeCommandBuffer(commandBuffer);
+			}
 
 			// Destroy the RenderGraph.
 			renderGraphPtr->~RenderGraph();
 			Memory::Free(renderGraphPtr);
 		});
 
-		taskGraph.Execute();
+		JobCounterRef jobCounter = taskGraph.ExecuteAndExtractCounter();
 
 		if (waitForSync)
 		{
@@ -1295,64 +1344,14 @@ namespace Volt
 		{
 			taskGraph.Wait();
 		}
-	}
 
-	void RenderGraph::ExecuteInternal(bool waitForSync)
-	{
-		VT_PROFILE_FUNCTION();
-
-		m_commandBuffer->Begin();
-		m_commandBuffer->BeginMarker("RenderGraph::Execute", { 1.f, 1.f, 1.f, 1.f });
-		for (auto pass : m_passes)
+		if (!extractCounter)
 		{
-			const CompiledPass& compiledPass = m_compiledPasses.at(pass->passIndex);
-
-			if (pass->isCulled)
-			{
-				InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, m_commandBuffer);
-				InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, m_commandBuffer);
-				continue;
-			}
-
-			InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, m_commandBuffer);
-			
-			m_commandBuffer->BeginMarker(pass->name, { 1.f, 1.f, 1.f, 1.f });
-			InsertBarriersIntoCommandBuffer(compiledPass.prePassBarriers, m_commandBuffer);
-
-			{
-				VT_PROFILE_SCOPE(pass->name.data());
-				RenderContext renderContext(*this, pass.GetRaw(), m_commandBuffer);
-				m_passAllocator.ExecutePass(pass, renderContext);
-			}
-
-			InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, m_commandBuffer);
-			m_commandBuffer->EndMarker();
-
-			for (const RGResourceRef resource : compiledPass.GetSurrenderableResources())
-			{
-				// #TODO_Ivar: This doesn't work correctly yet.
-				m_transientResourceSystem.SurrenderResource(resource, 0);
-			}
+			// Remove the ref created from ExecuteAndExtractCounter here.
+			JobSystem::DestroyCounter(jobCounter);
 		}
 
-		// Make sure markers added after the final pass also are added.
-		if (m_standaloneMarkers.PassHasMarkers(static_cast<uint32_t>(m_passes.size())))
-		{
-			InsertStandaloneMarkersIntoCommandBuffer(static_cast<uint32_t>(m_passes.size()), m_commandBuffer);
-		}
-
-		m_commandBuffer->EndMarker();
-		m_commandBuffer->End();
-
-		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(m_commandBuffer, m_executionFence);
-
-		if (waitForSync)
-		{
-			m_executionFence->WaitUntilSignaled();
-		}
-
-		TransitionExternalResources();
-		ExtractResources();
+		return jobCounter;
 	}
 
 	void RenderGraph::ExtractResources()

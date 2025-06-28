@@ -29,6 +29,7 @@ namespace Volt
 		template<typename ResourceType, typename... Args>
 		ResourceType* Allocate(Args&&... args)
 		{
+			std::scoped_lock lock{ m_allocationMutex };
 			constexpr size_t allocationSize = sizeof(ResourceType);
 
 			void* allocationPtr = m_allocator.Allocate(allocationSize);
@@ -44,6 +45,7 @@ namespace Volt
 
 		LinearAllocator<MaxResourceNodeAllocationSize> m_allocator;
 		Vector<DestructorHelper> m_nodeDestructors;
+		std::mutex m_allocationMutex;
 	};
 	
 	class VTRC_API RenderGraphPassAllocator

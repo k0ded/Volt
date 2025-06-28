@@ -18,8 +18,9 @@
 #include "Volt-Renderer/RenderingTechniques/LightTileBinningTechnique.h"
 #include "Volt-Renderer/RenderingTechniques/GTAOTechnique.h"
 
+#include <JobSystem/JobSystem.h>
+
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
-#include <RenderCore/RenderGraph/RenderGraphExecutionThread.h>
 #include <RenderCore/RenderGraph/GPUReadbackBuffer.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/Shader/ShaderMap.h>
@@ -35,7 +36,7 @@
 namespace Volt
 {
 	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)
-		: m_renderScene(specification.renderScene), m_commandBufferSet(Renderer::GetFramesInFlight())
+		: m_renderScene(specification.renderScene)
 	{
 		CreateMainRenderTarget(specification.initialResolution.x, specification.initialResolution.y);
 
@@ -49,11 +50,16 @@ namespace Volt
 
 		m_averageLuminanceImage = RHI::Image::Create(spec);
 		m_skyboxMesh = ShapeLibrary::GetCube();
+	
+		RegisterListener<AppPostFrameUpdateEvent>(VT_BIND_EVENT_FN(SceneRenderer::OnPostFrameUpdateEvent));
 	}
 
 	SceneRenderer::~SceneRenderer()
 	{
-		RenderGraphExecutionThread::WaitForFinishedExecution();
+		if (m_renderGraphExecutionCounter)
+		{
+			JobSystem::WaitForAndDestroyCounter(m_renderGraphExecutionCounter);
+		}
 	}
 
 	void SceneRenderer::OnRenderEditor(Ref<Camera> camera, float timestep)
@@ -83,14 +89,19 @@ namespace Volt
 			m_width = m_resizeWidth;
 			m_height = m_resizeHeight;
 
-			RenderGraphExecutionThread::WaitForFinishedExecution();
+			// Make sure we wait for the previous frame to finish render before
+			// resizing.
+			if (m_renderGraphExecutionCounter)
+			{
+				JobSystem::WaitForAndDestroyCounter(m_renderGraphExecutionCounter);
+			}
 
 			CreateMainRenderTarget(m_width, m_height);
 			m_shouldResize = false;
 		}
 
 		RenderGraphBlackboard blackboard;
-		RenderGraph renderGraph{ m_commandBufferSet.IncrementAndGetCommandBuffer() };
+		RenderGraph renderGraph{};
 
 		if (ShouldApplyJitter())
 		{
@@ -156,7 +167,7 @@ namespace Volt
 		//m_renderGraphDebugger.ProcessRenderGraph(renderGraph);
 
 		renderGraph.Compile();
-		renderGraph.Execute();
+		m_renderGraphExecutionCounter = renderGraph.ExecuteAndExtractCounter();
 
 		m_frameIndex++;
  	}
@@ -221,6 +232,12 @@ namespace Volt
 		}
 	
 		AddTonemappingPass(renderGraph, blackboard, view);
+	}
+
+	bool SceneRenderer::OnPostFrameUpdateEvent(AppPostFrameUpdateEvent& event)
+	{
+		JobSystem::WaitForAndDestroyCounter(m_renderGraphExecutionCounter);
+		return false;
 	}
 
 	struct TonemapPS : public GlobalShader

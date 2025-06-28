@@ -29,9 +29,10 @@ namespace Volt
 		return s_instance->AllocateCounter();
 	}
 
-	void JobSystem::DestroyCounter(JobCounter* counter)
+	void JobSystem::DestroyCounter(JobCounter*& counter)
 	{
 		counter->DecRef();
+		counter = nullptr;
 	}
 
 	void JobSystem::RunJob(Job* job)
@@ -102,6 +103,11 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		if (!counter)
+		{
+			return;
+		}
+
 		uint32_t workerId = 0;
 		if (s_instance->m_workerThreadIDToIndex.contains(std::this_thread::get_id()))
 		{
@@ -125,6 +131,11 @@ namespace Volt
 
 	void JobSystem::WaitForAndDestroyCounter(JobCounter*& counter)
 	{
+		if (!counter)
+		{
+			return;
+		}
+
 		WaitForCounter(counter);
 		DestroyCounter(counter);
 
