@@ -44,16 +44,6 @@ namespace Volt
 			m_monitoredWritePipe = reinterpret_cast<void*>(std::stoull(commandLineBuilder.GetArgValue("writepipe")));
 		}
 
-		YAMLFileStreamReader fileReader{};
-		if (fileReader.OpenFile("Engine/EngineConfig.vtconfig"))
-		{
-			fileReader.EnterScope("EngineConfig");
-			m_connectionURL = fileReader.ReadAtKey("crashReporterServerURL", std::string());
-			m_connectionUsername = fileReader.ReadAtKey("crashReporterServerUsername", std::string());
-			m_connectionPassword = fileReader.ReadAtKey("crashReporterServerPassword", std::string());
-			fileReader.ExitScope();
-		}
-
 		m_crashContext = CreateScope<CrashContext>();
 	}
 
@@ -154,6 +144,8 @@ namespace Volt
 				memcpy_s(m_crashContext.get(), sizeof(CrashContext), data.data(), data.size());
 			}
 
+			LoadEngineConfig();
+
 			BaseApplication::Get().LaunchMainWindow();
 			m_isDisplayingCrash = true;
 			return true;
@@ -203,5 +195,24 @@ namespace Volt
 		// As we have inherited the working directory from the engine we need to enter the binaries directory.
 		const auto sandboxFilepath = std::filesystem::current_path() / "Binaries\\Sandbox.exe";
 		PlatformProcess::CreateProc(sandboxFilepath, std::string(m_crashContext->commandLine), true, false, nullptr);
+	}
+
+	void CrashReportClientLayer::LoadEngineConfig()
+	{
+		CommandLineBuilder commandLineBuilder;
+		commandLineBuilder.BuildFromString(m_crashContext->commandLine);
+
+		std::filesystem::path projectFilepath = commandLineBuilder.GetArgValue("project");
+		std::filesystem::path projectDirectory = projectFilepath.parent_path();
+
+		YAMLFileStreamReader fileReader{};
+		if (fileReader.OpenFile(projectDirectory / "EngineConfig.vtconfig"))
+		{
+			fileReader.EnterScope("EngineConfig");
+			m_connectionURL = fileReader.ReadAtKey("crashReporterServerURL", std::string());
+			m_connectionUsername = fileReader.ReadAtKey("crashReporterServerUsername", std::string());
+			m_connectionPassword = fileReader.ReadAtKey("crashReporterServerPassword", std::string());
+			fileReader.ExitScope();
+		}
 	}
 }

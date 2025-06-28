@@ -18,6 +18,7 @@ namespace Volt
 
 		void AddArgument(const std::string& key, const std::string& value = "");
 		void BuildFromArgV(wchar_t** argList, int32_t numArgs);
+		void BuildFromString(const std::string& string);
 
 		std::string GetAsString() const;
 		std::wstring GetAsWString() const;

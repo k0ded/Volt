@@ -65,6 +65,25 @@ namespace Volt
 		}
 	}
 
+	void CommandLineBuilder::BuildFromString(const std::string& string)
+	{
+		size_t optionOffset = string.find_first_of('-');
+		while (optionOffset != std::string::npos)
+		{
+			size_t nextOptionOffset = string.find_first_of('-', optionOffset + 1);
+			size_t dividerOffset = string.find_first_of('=', optionOffset + 1);
+
+			nextOptionOffset = nextOptionOffset == std::string::npos ? string.size() : nextOptionOffset;
+
+			std::string key = string.substr(optionOffset + 1, dividerOffset - optionOffset - 1);
+			std::string value = string.substr(dividerOffset + 1, nextOptionOffset - dividerOffset - 1);
+
+			m_arguments[key] = value;
+
+			optionOffset = string.find_first_of('-', optionOffset + 1);
+		}
+	}
+
 	std::string CommandLineBuilder::GetAsString() const
 	{
 		std::stringstream sstream;

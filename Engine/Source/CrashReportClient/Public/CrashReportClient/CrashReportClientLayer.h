@@ -27,6 +27,7 @@ namespace Volt
 
 		void SendCrashReport();
 		void RestartEngineAfterCrash();
+		void LoadEngineConfig();
 
 		ProcessHandle m_monitoredProcessHandle;
 		void* m_monitoredReadPipe = nullptr;
