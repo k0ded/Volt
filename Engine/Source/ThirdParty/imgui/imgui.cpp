@@ -8474,6 +8474,15 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
             DebugLocateItemResolveWithLastItem();
 #endif
 
+        //BEGIN_VOLT_CHANGE_FOR_NODE_EDITOR
+        // Mark all layouts as dead. They may be revived in this frame.
+        for (int i = 0; i < window->DC.Layouts.Data.Size; i++)
+        {
+            ImGuiLayout* layout = (ImGuiLayout*)window->DC.Layouts.Data[i].val_p;
+            bool* LiveBoolPointer = reinterpret_cast<bool*>(reinterpret_cast<uint8_t*>(layout) + sizeof(ImGuiLayoutType) + sizeof(ImGuiID));
+            *LiveBoolPointer = false;
+        }
+        //ENd_VOLT_CHANGE_FOR_NODE_EDITOR
         // [Test Engine] Register title bar / tab with MoveId.
 #ifdef IMGUI_ENABLE_TEST_ENGINE
         if (!(window->Flags & ImGuiWindowFlags_NoTitleBar))
@@ -11717,7 +11726,7 @@ bool ImGui::ItemAdd(const ImRect& bb, ImGuiID id, const ImRect* nav_bb_arg, ImGu
     if (window->DC.CurrentLayoutItem)
     {
         //note_fabian: hack for now, we will remove this later
-        ImRect* Rect = reinterpret_cast<ImRect*>(reinterpret_cast<uint8_t*>(&window->DC.CurrentLayoutItem) + 4);
+        ImRect* Rect = reinterpret_cast<ImRect*>(reinterpret_cast<uint8_t*>(window->DC.CurrentLayoutItem) + 4);
         Rect->Max = ImMax(Rect->Max, bb.Max);
     }
      //END_VOLT_CHANGE_FOR_NODE_EDITOR
@@ -11810,7 +11819,7 @@ void ImGui::ItemSize(const ImVec2& size, float text_baseline_y)
     if (window->DC.CurrentLayout)
     {
         //note_fabian: hack for now, we will remove this later
-        ImGuiLayoutType* type = reinterpret_cast<ImGuiLayoutType*>(reinterpret_cast<ImGuiLayoutType*>(&window->DC.CurrentLayout) + sizeof(ImGuiID));
+        ImGuiLayoutType* type = reinterpret_cast<ImGuiLayoutType*>(reinterpret_cast<uint8_t*>(window->DC.CurrentLayout) + sizeof(ImGuiID));
         layout_type = *type;
     }
 
