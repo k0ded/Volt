@@ -257,8 +257,8 @@ namespace Volt::RHI
 
 		GraphicsContext::GetDevice()->GetDeviceQueue(QueueType::Graphics)->WaitForQueue();
 
-		vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), m_descriptorPool, nullptr);
 		ImGui_ImplVulkan_Shutdown();
+		vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), m_descriptorPool, nullptr);
 	}
 
 	Vector<ImFont*> VulkanImGuiImplementation::AddFonts(const Vector<std::filesystem::path>& fontPaths)
