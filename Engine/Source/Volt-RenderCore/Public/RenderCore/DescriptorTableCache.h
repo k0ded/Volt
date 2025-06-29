@@ -21,6 +21,8 @@ namespace Volt
 		void AddDescriptorTable(RefPtr<RHI::DescriptorTable> descriptorTable, size_t pipelineHash);
 		Vector<ActiveDescriptorTable> UpdateAndGetInactiveDescriptorTables();
 
+		void FlushDescriptorTableCacheForPipeline(size_t pipelineHash);
+
 	private:
 		struct ActiveDescriptorTableContainer
 		{
@@ -40,6 +42,8 @@ namespace Volt
 
 		RefPtr<RHI::DescriptorTable> GetOrCreateDescriptorTableForPipeline(RefPtr<RHI::ComputePipeline> pipeline);
 		RefPtr<RHI::DescriptorTable> GetOrCreateDescriptorTableForPipeline(RefPtr<RHI::RenderPipeline> pipeline);
+
+		void FlushDescriptorTableCacheForPipeline(size_t pipelineHash);
 
 		void Update();
 

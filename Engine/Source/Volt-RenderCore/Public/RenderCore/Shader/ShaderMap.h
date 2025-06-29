@@ -29,7 +29,7 @@ namespace Volt
 		~ShaderMap();
 
 		static void ReloadAll();
-		static bool ReloadShaderByName(const std::string& name);
+		static bool ReloadAllWithReferenceToFile(const std::filesystem::path& filepath);
 
 		static void RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader);
 
@@ -40,15 +40,15 @@ namespace Volt
 		static RefPtr<RHI::Shader> Get()
 		{
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
-			VT_ENSURE(s_instance->m_shaderMap2.contains(typeIndex));
+			VT_ENSURE(s_instance->m_shaderMap.contains(typeIndex));
 
-			return s_instance->m_shaderMap2.at(typeIndex);
+			return s_instance->m_shaderMap.at(typeIndex);
 		}
 
 	private:
 		inline static ShaderMap* s_instance = nullptr;
 
-		Map<TypeTraits::TypeIndex, RefPtr<RHI::Shader>> m_shaderMap2;
+		Map<TypeTraits::TypeIndex, RefPtr<RHI::Shader>> m_shaderMap;
 
 		Map<size_t, RefPtr<RHI::RayTracingPipeline>> m_rayTracingPipelineCache;
 		Map<size_t, RefPtr<RHI::ShaderBindingTable>> m_shaderBindingTableCache;

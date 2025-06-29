@@ -27,6 +27,9 @@ public:
 	void Read(std::string& data);
 
 	template<>
+	void Read(std::filesystem::path& data);
+
+	template<>
 	void Read(Buffer& data);
 
 	template<typename T>
@@ -124,6 +127,22 @@ inline void BinaryStreamReader::Read(std::string& data)
 	{
 		ReadData(data.data(), serializedTypeHeader, typeHeader);
 	}
+}
+
+template<>
+inline void BinaryStreamReader::Read(std::filesystem::path& data)
+{
+	TypeHeader typeHeader{};
+	TypeHeader serializedTypeHeader = ReadTypeHeader();
+
+	std::string filepathStr;
+	filepathStr.resize(serializedTypeHeader.totalTypeSize);
+	if (serializedTypeHeader.totalTypeSize > 0)
+	{
+		ReadData(filepathStr.data(), serializedTypeHeader, typeHeader);
+	}
+
+	data = filepathStr;
 }
 
 template<>

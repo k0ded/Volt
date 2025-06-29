@@ -466,4 +466,9 @@ namespace Volt::RHI
 	{
 		return m_shaderParameterMaps;
 	}
+
+	const Vector<RefPtr<Shader>>& VulkanRenderPipeline::GetShaders() const
+	{
+		return m_createInfo.shaders;
+	}
 }

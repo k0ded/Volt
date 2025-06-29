@@ -86,6 +86,7 @@ namespace Volt::RHI
 		m_shaderInfo.instanceLayout = compilationResult.instanceLayout;
 
 		m_shaderParameterMap = compilationResult.shaderParameterMap;
+		m_shaderIncludeDependencies = compilationResult.includeDependencies;
 
 		// Release old shader
 		Release();

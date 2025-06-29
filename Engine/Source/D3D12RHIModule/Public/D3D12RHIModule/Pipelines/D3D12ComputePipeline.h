@@ -17,7 +17,7 @@ namespace Volt::RHI
 
 		void Invalidate() override;
 		RefPtr<Shader> GetShader() const override;
-		RefPtr<Shader> GetShader2() const override { return nullptr; }
+		RefPtr<Shader> GetShader() const override { return nullptr; }
 		bool IsValid() const override;
 		size_t GetHash() const override;
 		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name) const override { return nullptr; }

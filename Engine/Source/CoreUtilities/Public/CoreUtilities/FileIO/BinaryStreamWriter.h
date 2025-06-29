@@ -33,6 +33,9 @@ public:
 	size_t Write(const std::string& data);
 
 	template<>
+	size_t Write(const std::filesystem::path& data);
+
+	template<>
 	size_t Write(const Buffer& buffer);
 
 	template<typename F>
@@ -147,6 +150,23 @@ inline size_t BinaryStreamWriter::Write(const std::string& data)
 	if (!data.empty())
 	{
 		WriteData(data.data(), data.size());
+	}
+
+	return m_data.size();
+}
+
+template<>
+inline size_t BinaryStreamWriter::Write(const std::filesystem::path& data)
+{
+	std::string pathStr = data.string();
+
+	TypeHeader header{};
+	header.totalTypeSize = static_cast<uint32_t>(pathStr.size());
+
+	WriteTypeHeader(header);
+	if (!pathStr.empty())
+	{
+		WriteData(pathStr.data(), pathStr.size());
 	}
 
 	return m_data.size();

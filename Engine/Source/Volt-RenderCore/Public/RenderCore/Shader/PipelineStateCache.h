@@ -15,6 +15,7 @@ namespace Volt
 
 		static RefPtr<RHI::RenderPipeline> GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo);
 		static RefPtr<RHI::ComputePipeline> GetComputePipeline(RefPtr<RHI::Shader> computeShader);
+		static void InvalidatePipelinesWithReferenceToShader(RefPtr<RHI::Shader> shader);
 
 	private:
 		inline static PipelineStateCache* s_instance = nullptr;

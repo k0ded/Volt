@@ -25,6 +25,8 @@ namespace Volt::RHI
 		ULONG AddRef() override { return 0; }
 		ULONG Release() override { return 0; }
 
+		const std::unordered_set<std::filesystem::path>& GetIncludedFiles() const { return m_includedFiles; }
+
 	private:
 		IDxcIncludeHandler* m_defaultIncludeHandler = nullptr;
 		IDxcUtils* m_hlslUtils = nullptr;

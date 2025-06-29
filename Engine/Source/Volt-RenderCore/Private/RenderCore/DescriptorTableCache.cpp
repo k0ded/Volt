@@ -78,6 +78,16 @@ namespace Volt
 		return descriptorTable;
 	}
 
+	void DescriptorTableCache::FlushDescriptorTableCacheForPipeline(size_t pipelineHash)
+	{
+		if (m_descriptorTableCache.contains(pipelineHash))
+		{
+			m_descriptorTableCache.erase(pipelineHash);
+		}
+
+		m_activeDescriptorTableCache.FlushDescriptorTableCacheForPipeline(pipelineHash);
+	}
+
 	void DescriptorTableCache::Update()
 	{
 		Vector<ActiveDescriptorTableCache::ActiveDescriptorTable> inactiveDescriptorTables = m_activeDescriptorTableCache.UpdateAndGetInactiveDescriptorTables();
@@ -133,4 +143,15 @@ namespace Volt
 		return result;
 	}
 
+	void ActiveDescriptorTableCache::FlushDescriptorTableCacheForPipeline(size_t pipelineHash)
+	{
+		std::scoped_lock lock{ m_mutex };
+		for (int32_t i = static_cast<int32_t>(m_activeDescriptorTables.size()) - 1; i >= 0; --i)
+		{
+			if (m_activeDescriptorTables.at(i).activeDescriptorTable.pipelineHash == pipelineHash)
+			{
+				m_activeDescriptorTables.erase_unsorted(m_activeDescriptorTables.begin() + i);
+			}
+		}
+	}
 }

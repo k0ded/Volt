@@ -10,7 +10,7 @@
 
 namespace Volt::RHI
 {
-	constexpr uint32_t SHADER_CACHE_VERSION = 2; // Increase this when updating the shader cache format!
+	constexpr uint32_t SHADER_CACHE_VERSION = 3; // Increase this when updating the shader cache format!
 
 	namespace Utility
 	{
@@ -107,6 +107,7 @@ namespace Volt::RHI
 		streamReader.Read(resultData.instanceLayout);
 		
 		streamReader.Read(resultData.shaderParameterMap);
+		streamReader.Read(resultData.includeDependencies);
 
 		return result;
 	}
@@ -134,6 +135,7 @@ namespace Volt::RHI
 
 		// Common
 		streamWriter.Write(compilationResult.shaderParameterMap);
+		streamWriter.Write(compilationResult.includeDependencies);
 
 		streamWriter.WriteToDisk(GetCachedFilePath(shaderSpec), false, 0);
 	}

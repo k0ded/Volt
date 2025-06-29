@@ -63,6 +63,7 @@ namespace Volt::RHI
 
 			// Common
 			ShaderParameterMap shaderParameterMap;
+			Vector<std::filesystem::path> includeDependencies;
 
 			VT_NODISCARD VT_INLINE bool IsValid() const { return !shaderBinary.empty(); }
 		};

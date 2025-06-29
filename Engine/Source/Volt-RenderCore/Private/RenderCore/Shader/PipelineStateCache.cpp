@@ -1,6 +1,7 @@
 #include "rcpch.h"
 
 #include "RenderCore/Shader/PipelineStateCache.h"
+#include "RenderCore/DescriptorTableCache.h"
 
 #include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -100,5 +101,37 @@ namespace Volt
 
 		VT_ENSURE(pipeline->IsValid());
 		return pipeline;
+	}
+
+	void PipelineStateCache::InvalidatePipelinesWithReferenceToShader(RefPtr<RHI::Shader> shader)
+	{
+		if (shader->GetShaderStage() == RHI::ShaderStage::Compute)
+		{
+			std::scoped_lock lock{ s_instance->m_computePipelineCacheMutex };
+			for (const auto& [hash, computePipeline] : s_instance->m_computePipelineCache)
+			{
+				if (computePipeline->GetShader() == shader)
+				{
+					DescriptorTableCache::Get().FlushDescriptorTableCacheForPipeline(computePipeline->GetHash());
+					computePipeline->Invalidate();
+				}
+			}
+		}
+		else
+		{
+			std::scoped_lock lock{ s_instance->m_renderPipelineCacheMutex };
+			for (const auto& [hash, renderPipeline] : s_instance->m_renderPipelineCache)
+			{
+				for (const auto& pipelineShader : renderPipeline->GetShaders())
+				{
+					if (pipelineShader == shader)
+					{
+						DescriptorTableCache::Get().FlushDescriptorTableCacheForPipeline(renderPipeline->GetHash());
+						renderPipeline->Invalidate();
+						break;
+					}
+				}
+			}
+		}
 	}
 }

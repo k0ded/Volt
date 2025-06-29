@@ -149,7 +149,7 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	RefPtr<Shader> VulkanComputePipeline::GetShader2() const
+	RefPtr<Shader> VulkanComputePipeline::GetShader() const
 	{
 		return m_shader;
 	}

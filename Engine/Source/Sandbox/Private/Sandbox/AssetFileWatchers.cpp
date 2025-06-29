@@ -46,6 +46,13 @@ for (const auto& asset : assets)
 	}
 }*/
 			}
+			else
+			{
+				if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
+				{
+					Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
+				}
+			}
 		});
 	});
 }

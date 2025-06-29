@@ -352,6 +352,11 @@ namespace Volt::RHI
 			const Scope<HLSLIncluder> includer = CreateScope<HLSLIncluder>();
 			DxcCompilationResult preProcessingResult = InvokeCompilerWithArguments(compilationArgs, sourceEntry.filepath, outProcessedSource, includer.get());
 
+			for (const auto& filepath : includer->GetIncludedFiles())
+			{
+				compilationResult.includeDependencies.emplace_back(filepath);
+			}
+
 			if (preProcessingResult.succeded)
 			{
 				IDxcBlob* blob = nullptr;

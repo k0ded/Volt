@@ -22,7 +22,8 @@ namespace Volt::RHI
 		const ShaderParameterMap& GetParameterMap() const override { return m_shaderParameterMap; }
 
 		VT_NODISCARD VT_INLINE const ShaderInfo& GetShaderInfo() const override { return m_shaderInfo; }
-		VT_NODISCARD VT_INLINE const ShaderSourceInfo& GetShaderSourceInfo() const { return m_sourceInfo; }
+		VT_NODISCARD VT_INLINE const ShaderSourceInfo& GetShaderSourceInfo() const override { return m_sourceInfo; }
+		VT_NODISCARD VT_INLINE const ShaderIncludeDependencies& GetShaderIncludeDependencies() const override { return m_shaderIncludeDependencies; }
 		VT_NODISCARD VT_INLINE VkShaderModule_T* GetShaderModule() const { return m_shaderModule; }
 
 	protected:
@@ -38,6 +39,7 @@ namespace Volt::RHI
 		ShaderPermutationConfig m_permutationConfig;
 		ShaderSourceInfo m_sourceInfo;
 		ShaderInfo m_shaderInfo;
+		ShaderIncludeDependencies m_shaderIncludeDependencies;
 
 		VkShaderModule_T* m_shaderModule = nullptr;
 		std::string m_name;

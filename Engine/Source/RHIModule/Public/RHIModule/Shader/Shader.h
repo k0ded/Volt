@@ -35,12 +35,16 @@ namespace Volt::RHI
 	class VTRHI_API Shader : public RHIInterface
 	{
 	public:
+		using ShaderIncludeDependencies = Vector<std::filesystem::path>;
+
 		virtual void Reload(bool forceCompile = false) = 0;
 		virtual std::string_view GetName() const = 0;
 		virtual size_t GetHash() const = 0;
 		virtual ShaderStage GetShaderStage() const = 0;
 		virtual const ShaderParameterMap& GetParameterMap() const = 0;
 		virtual const ShaderInfo& GetShaderInfo() const = 0;
+		virtual const ShaderSourceInfo& GetShaderSourceInfo() const = 0;
+		virtual const ShaderIncludeDependencies& GetShaderIncludeDependencies() const = 0;
 		virtual bool IsValid() const = 0;
 
 		static RefPtr<Shader> Create(const ShaderCreateInfo& createInfo);

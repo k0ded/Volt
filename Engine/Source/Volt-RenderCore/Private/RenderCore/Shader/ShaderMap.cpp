@@ -1,5 +1,6 @@
 #include "rcpch.h"
 #include "RenderCore/Shader/ShaderMap.h"
+#include "RenderCore/Shader/PipelineStateCache.h"
 
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
@@ -74,71 +75,54 @@ namespace Volt
 
 	}
 
-	bool ShaderMap::ReloadShaderByName(const std::string& name)
+	bool ShaderMap::ReloadAllWithReferenceToFile(const std::filesystem::path& filepath)
 	{
-		// #TODO_Ivar: Reimplement
+		const bool isSourceFile = filepath.extension() == L".hlsl";
 
-		//if (!s_instance->m_shaderMap.contains(name))
-		//{
-		//	return false;
-		//}
-		//
-		//auto shader = s_instance->m_shaderMap.at(name);
-		//bool reloaded = shader->Reload(true);
-		//
-		//// #TODO_Ivar: Hack for finding out if it's a compute shader or not
-		//
-		//if (reloaded)
-		//{
-		//	if (shader->GetShaderType() == RHI::ShaderType::Compute)
-		//	{
-		//		for (const auto& [hash, pipeline] : s_instance->m_computePipelineCache)
-		//		{
-		//			if (pipeline->GetShader() == shader)
-		//			{
-		//				pipeline->Invalidate();
-		//			}
-		//		}
-		//	}
-		//	else if (shader->GetShaderType() == RHI::ShaderType::Rasterization)
-		//	{
-		//		for (const auto& [hash, pipeline] : s_instance->m_renderPipelineCache)
-		//		{
-		//			if (pipeline->GetShader() == shader)
-		//			{
-		//				pipeline->Invalidate();
-		//			}
-		//		}
-		//	}
-		//	else
-		//	{
-		//		for (const auto& [hash, pipeline] : s_instance->m_rayTracingPipelineCache)
-		//		{
-		//			if (pipeline->IsShaderInPipeline(shader))
-		//			{
-		//				pipeline->Invalidate();
-		//			}
-		//		}
-		//
-		//		for (const auto& [hash, sbt] : s_instance->m_shaderBindingTableCache)
-		//		{
-		//			if (sbt->IsShaderInTable(shader))
-		//			{
-		//				sbt->Invalidate();
-		//			}
-		//		}
-		//	}
-		//}
-		//
-		//return reloaded;
+		Vector<RefPtr<RHI::Shader>> touchedShaders;
 
-		return false;
+		// Find all shaders that have any reference to the file.
+		if (isSourceFile)
+		{
+			for (const auto& [typeIndex, shader] : s_instance->m_shaderMap)
+			{
+				std::filesystem::path absoluteSourcePath = std::filesystem::absolute(shader->GetShaderSourceInfo().sourceEntry.filepath);
+
+				if (absoluteSourcePath == filepath)
+				{
+					touchedShaders.emplace_back(shader);
+				}
+			}
+		}
+		else
+		{
+			for (const auto& [typeIndex, shader] : s_instance->m_shaderMap)
+			{
+				for (const auto& includeDependency : shader->GetShaderIncludeDependencies())
+				{
+					if (includeDependency == filepath)
+					{
+						touchedShaders.emplace_back(shader);
+						break;
+					}
+				}
+			}
+		}
+
+		// Invalidate all pipelines that reference this shader.
+		for (const auto& shader : touchedShaders)
+		{
+			shader->Reload(true);
+			PipelineStateCache::InvalidatePipelinesWithReferenceToShader(shader);
+		}
+
+		return true;
 	}
 
 	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader)
 	{
 		std::scoped_lock lock{ s_instance->m_registerMutex };
-		s_instance->m_shaderMap2[typeIndex] = shader;
+		s_instance->m_shaderMap[typeIndex] = shader;
 	}
 	RefPtr<RHI::RayTracingPipeline> ShaderMap::GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo)
 	{
