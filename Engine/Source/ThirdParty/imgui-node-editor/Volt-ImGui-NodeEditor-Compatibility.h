@@ -50,6 +50,8 @@ struct ImGuiLayoutItem
 
 struct ImGuiLayout
 {
+	typedef void(*Destroy)(void* dataPtr);
+
 	ImGuiID                     Id;
 	ImGuiLayoutType             Type;
 	bool                        Live;
@@ -70,6 +72,7 @@ struct ImGuiLayout
 	ImVec2                      StartCursorMaxPos;  // Maximum cursor position when BeginLayout is called.
 
 	ImDrawListSplitter          Splitter;
+	Destroy						DestroyFunc;
 
 	ImGuiLayout(ImGuiID id, ImGuiLayoutType type)
 	{

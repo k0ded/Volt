@@ -4592,10 +4592,18 @@ ImGuiWindow::~ImGuiWindow()
     ColumnsStorage.clear_destruct();
     //BEGIN_VOLT_CHANGE_FOR_NODE_EDITOR
     // Mark all layouts as dead. They may be revived in this frame.
+
+    // Hack to be able to destroy ImGuiLayout properly,
+    // as we do not have the struct declaration available.
+    typedef void(*Destroy)(void* dataPtr);
+    constexpr size_t DestroyFuncOffset = 144; 
+
     for (int i = 0; i < DC.Layouts.Data.Size; i++)
     {
         ImGuiLayout* layout = (ImGuiLayout*)DC.Layouts.Data[i].val_p;
-        delete layout;
+        auto destroyFunc = *reinterpret_cast<Destroy*>(reinterpret_cast<uint8_t*>(layout) + DestroyFuncOffset);
+        destroyFunc(layout);
+        ImGui::MemFree(layout);
     }
     //END_VOLT_CHANGE_FOR_NODE_EDITOR
 }

@@ -50,6 +50,11 @@ namespace ImGui
 		return layout;
 	}
 
+	static void DestoryImGuiLayout(void* dataPtr)
+	{
+		reinterpret_cast<ImGuiLayout*>(dataPtr)->~ImGuiLayout();
+	}
+
 	static ImGuiLayout* ImGui::CreateNewLayout(ImGuiID id, ImGuiLayoutType type, ImVec2 size)
 	{
 		IM_ASSERT(type == ImGuiLayoutType_Horizontal || type == ImGuiLayoutType_Vertical);
@@ -58,6 +63,7 @@ namespace ImGui
 
 		ImGuiLayout* layout = IM_NEW(ImGuiLayout)(id, type);
 		layout->Size = size;
+		layout->DestroyFunc = DestoryImGuiLayout;
 
 		window->DC.Layouts.SetVoidPtr(id, layout);
 
