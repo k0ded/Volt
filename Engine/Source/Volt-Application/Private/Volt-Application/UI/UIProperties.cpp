@@ -519,10 +519,11 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
+		std::string id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
-			return InputText("", const_cast<std::string&>(value), readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
+			return InputText("", id, const_cast<std::string&>(value), readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
 		});
 
 		EndPropertyRow();
@@ -539,10 +540,11 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
+		std::string id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
-			return InputText("", const_cast<std::string&>(value), readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
+			return InputText("", id, const_cast<std::string&>(value), readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
 		});
 
 		EndPropertyRow();
@@ -559,10 +561,11 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
+		std::string id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
-			return InputText("", value, readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
+			return InputText("", id, value, readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
 		});
 
 		EndPropertyRow();
@@ -616,10 +619,11 @@ namespace UI
 
 		ImGui::TableNextColumn();
 		std::string sPath = path.string();
+		std::string id = MakePropertyID();
 
 		changed = DrawItem(ImGui::GetColumnWidth() - ImGui::CalcTextSize("Open...").x - 20.f, [&]()
 		{
-			if (InputText("", sPath))
+			if (InputText("", id, sPath))
 			{
 				path = std::filesystem::path(sPath);
 				return true;
@@ -655,10 +659,11 @@ namespace UI
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
 		std::string sPath = path.string();
+		std::string id = MakePropertyID();
 
 		changed = DrawItem(ImGui::GetColumnWidth() - ImGui::CalcTextSize("Open...").x - 20.f, [&]()
 		{
-			if (InputText("", sPath))
+			if (InputText("", id, sPath))
 			{
 				path = std::filesystem::path(sPath);
 				return true;
@@ -739,10 +744,11 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
+		std::string id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
-			return InputTextMultiline("", value, readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
+			return InputTextMultiline("", id, value, readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
 		});
 
 		EndPropertyRow();
@@ -759,10 +765,11 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 		SimpleToolTip(toolTip);
 		ImGui::TableNextColumn();
+		std::string id = MakePropertyID();
 
 		changed = DrawItem([&]()
 		{
-			return InputText("", value, readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_Password);
+			return InputText("", id, value, readOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_Password);
 		});
 
 		EndPropertyRow();

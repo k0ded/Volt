@@ -88,18 +88,6 @@ namespace UI
 		ImGui::EndPopup();
 	}
 
-	bool InputText(const std::string& name, std::string& text, ImGuiInputTextFlags_ flags)
-	{
-		if (!name.empty())
-		{
-			ImGui::TextUnformatted(name.c_str());
-			ImGui::SameLine();
-		}
-
-		std::string id = "##" + std::to_string(GetAndIncrementStackID());
-		return ImGui::InputTextString(id.c_str(), &text, flags);
-	}
-
 	int32_t LevenshteinDistance(const std::string& str1, const std::string& str2)
 	{
 		int32_t m = (int32_t)str1.length();
@@ -336,17 +324,23 @@ namespace UI
 
 	bool InputTextWithHint(const std::string& name, std::string& text, const std::string& hint, ImGuiInputTextFlags_ flags /* = ImGuiInputTextFlags_None */)
 	{
-		if (!name.empty())
-		{
-			ImGui::TextUnformatted(name.c_str());
-			ImGui::SameLine();
-		}
-
 		std::string id = "##" + std::to_string(GetAndIncrementStackID());
-		return ImGui::InputTextWithHintString(id.c_str(), hint.c_str(), &text, flags);
+		return InputTextWithHint(name, id, text, hint, flags);
 	}
 
 	bool InputTextMultiline(const std::string& name, std::string& text, ImGuiInputTextFlags_ flags)
+	{
+		std::string id = "##" + std::to_string(GetAndIncrementStackID());
+		return InputTextMultiline(name, text, id, flags);
+	}
+
+	bool InputText(const std::string& name, std::string& text, ImGuiInputTextFlags_ flags)
+	{
+		std::string id = "##" + std::to_string(GetAndIncrementStackID());
+		return InputText(name, id, text, flags);
+	}
+
+	bool InputText(const std::string& name, const std::string& id, std::string& text, ImGuiInputTextFlags_ flags)
 	{
 		if (!name.empty())
 		{
@@ -354,7 +348,28 @@ namespace UI
 			ImGui::SameLine();
 		}
 
-		std::string id = "##" + std::to_string(GetAndIncrementStackID());
+		return ImGui::InputTextString(id.c_str(), &text, flags);
+	}
+
+	bool InputTextWithHint(const std::string& name, const std::string& id, std::string& text, const std::string& hint, ImGuiInputTextFlags_ flags)
+	{
+		if (!name.empty())
+		{
+			ImGui::TextUnformatted(name.c_str());
+			ImGui::SameLine();
+		}
+
+		return ImGui::InputTextWithHintString(id.c_str(), hint.c_str(), &text, flags);
+	}
+
+	bool InputTextMultiline(const std::string& name, const std::string& id, std::string& text, ImGuiInputTextFlags_ flags)
+	{
+		if (!name.empty())
+		{
+			ImGui::TextUnformatted(name.c_str());
+			ImGui::SameLine();
+		}
+
 		return ImGui::InputTextMultilineString(id.c_str(), &text, ImVec2{ 0.f, 0.f }, flags);
 	}
 
@@ -479,17 +494,17 @@ namespace UI
 
 	int32_t GetAndIncrementStackID()
 	{
+		int32_t newId = 0;
 		if (s_stackId != UINT32_MAX) [[likely]]
 		{
-			s_stackId = s_stackId++;
+			newId = s_stackId++;
 		}
 		else
 		{
 			s_stackId = 0;
 		}
-		return s_stackId;
+		return newId;
 	}
-
 
 	bool IsInputEnabled()
 	{
