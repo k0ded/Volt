@@ -39,13 +39,7 @@ namespace UI
 			return ImGui::InputTextString(id.c_str(), &entityName, ImGuiInputTextFlags_ReadOnly);
 		});
 
-		if (auto ptr = DragDropTarget("scene_entity_hierarchy"))
-		{
-			Volt::EntityID entityId = *(Volt::EntityID*)ptr;
-			value = entityId;
-			changed = true;
-		}
-
+		changed = DragDropTarget<Volt::EntityID>("scene_entity_hierarchy", value);
 		EndPropertyRow();
 
 		return changed;
@@ -75,12 +69,7 @@ namespace UI
 			return ImGui::InputTextString(id.c_str(), &entityName, ImGuiInputTextFlags_ReadOnly);
 		});
 
-		if (auto ptr = DragDropTarget("scene_entity_hierarchy"))
-		{
-			Volt::EntityID entityId = *(Volt::EntityID*)ptr;
-			value = entityId;
-			changed = true;
-		}
+		changed = DragDropTarget<Volt::EntityID>("scene_entity_hierarchy", value);
 
 		EndPropertyRow();
 

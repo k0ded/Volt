@@ -103,9 +103,6 @@ namespace UI
 	 VTAPP_API bool Combo(const std::string& text, int& currentItem, const char** items, uint32_t count);
 	 VTAPP_API bool Combo(const std::string& text, int& currentItem, const Vector<std::string>& strItems, float width = 100.f);
 	 
-	 VTAPP_API void* DragDropTarget(const std::string& type);
-	 VTAPP_API void* DragDropTarget(std::initializer_list<std::string> types, ImGuiDragDropFlags flags = 0);
-	 
 	 VTAPP_API void Notify(NotificationType type, const std::string& title, const std::string& content, int32_t duration = 5000);
 	 
 	 VTAPP_API void OpenModal(const std::string& name, ImGuiPopupFlags flags = 0);
@@ -132,4 +129,38 @@ namespace UI
 
 	//inline  uint32_t s_contextId = 0;
 
+	 template<typename T> bool DragDropTarget(const std::string& type, T& outValue)
+	 {
+		 if (ImGui::BeginDragDropTarget())
+		 {
+			 if (const ImGuiPayload* pPayload = ImGui::AcceptDragDropPayload(type.c_str()))
+			 {
+				 outValue = *(reinterpret_cast<T*>(pPayload->Data));
+				 return true;
+			 }
+
+			 ImGui::EndDragDropTarget();
+		 }
+		 
+		 return false;
+	 }
+
+	 template<typename T> bool DragDropTarget(std::initializer_list<std::string> types, T& outValue, ImGuiDragDropFlags flags = 0)
+	 {
+		 for (const auto& type : types)
+		 {
+			 if (ImGui::BeginDragDropTarget())
+			 {
+				 if (const ImGuiPayload* pPayload = ImGui::AcceptDragDropPayload(type.c_str(), flags))
+				 {
+					 outValue = *(reinterpret_cast<T*>(pPayload->Data));
+					 return true;
+				 }
+
+				 ImGui::EndDragDropTarget();
+			 }
+		 }
+
+		 return false;
+	 }
 };

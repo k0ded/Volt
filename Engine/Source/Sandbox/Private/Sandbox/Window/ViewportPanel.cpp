@@ -1071,9 +1071,9 @@ void ViewportPanel::UpdateModals()
 
 void ViewportPanel::HandleNonMeshDragDrop()
 {
-	if (void* ptr = UI::DragDropTarget({ "ASSET_BROWSER_ITEM" }))
+	Volt::AssetHandle handle;
+	if (UI::DragDropTarget({ "ASSET_BROWSER_ITEM" }, handle))
 	{
-		const Volt::AssetHandle handle = *(const Volt::AssetHandle*)ptr;
 		const AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(handle);
 
 		if (type == AssetTypes::Material)

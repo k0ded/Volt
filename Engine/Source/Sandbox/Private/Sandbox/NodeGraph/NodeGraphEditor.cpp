@@ -234,11 +234,6 @@ namespace NodeGraph
 
 			const std::string id = "Editor##" + myContext;
 			ImGui::Begin(id.c_str());
-		
-			if (UI::DragDropTarget("ASSET_BROWSER_ITEM"))
-			{
-
-			}
 		}
 
 		ed::SetCurrentEditor(myEditorContext->editorContext);

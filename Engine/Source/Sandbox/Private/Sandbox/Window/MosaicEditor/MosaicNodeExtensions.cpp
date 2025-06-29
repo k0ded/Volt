@@ -42,9 +42,9 @@ void SampleTextureNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 	ImGui::InputTextString(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
 	ImGui::PopItemWidth();
 
-	if (auto ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))
+	Volt::AssetHandle newHandle;
+	if (UI::DragDropTarget("ASSET_BROWSER_ITEM", newHandle))
 	{
-		Volt::AssetHandle newHandle = *(Volt::AssetHandle*)ptr;
 		sampleTextureNode->SetTextureHandle(newHandle);
 	}
 }

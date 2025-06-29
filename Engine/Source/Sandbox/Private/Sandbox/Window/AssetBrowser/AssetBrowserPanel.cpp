@@ -222,12 +222,12 @@ void AssetBrowserPanel::UpdateMainContent()
 			}
 			ImGui::EndChild();
 
-			if (void* ptr = UI::DragDropTarget("scene_entity_hierarchy"))
+			Volt::EntityID entityId;
+			if (UI::DragDropTarget("scene_entity_hierarchy", entityId))
 			{
-				Volt::EntityID entity = *(Volt::EntityID*)ptr;
-				if (entity != Volt::Entity::NullID())
+				if (entityId != Volt::Entity::NullID())
 				{
-					CreatePrefabAndSetupEntities(entity);
+					CreatePrefabAndSetupEntities(entityId);
 					Reload();
 				}
 			}
@@ -460,9 +460,9 @@ void AssetBrowserPanel::RenderControlsBar(float height)
 					UI::ShiftCursor(0.f, 4.f);
 					ImGui::TextUnformatted(dirName.c_str());
 
-					if (void* ptr = UI::DragDropTarget({ "ASSET_BROWSER_ITEM" }))
+					Volt::AssetHandle handle;
+					if (UI::DragDropTarget({ "ASSET_BROWSER_ITEM" }, handle))
 					{
-						Volt::AssetHandle handle = *(Volt::AssetHandle*)ptr;
 						Volt::AssetManager::Get().MoveAsset(handle, myDirectoryButtons.at(i)->path);
 						Reload();
 
@@ -634,7 +634,8 @@ bool AssetBrowserPanel::RenderDirectory(const Ref<AssetBrowser::DirectoryItem> d
 		myNextDirectory = dirData.get();
 	}
 
-	if (void* ptr = UI::DragDropTarget({ "ASSET_BROWSER_ITEM", "ASSET_BROWSER_FOLDER" }))
+	bool temp;
+	if (UI::DragDropTarget({ "ASSET_BROWSER_ITEM", "ASSET_BROWSER_FOLDER" }, temp))
 	{
 		for (const auto& item : mySelectionManager->GetSelectedItems())
 		{

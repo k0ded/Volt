@@ -29,7 +29,8 @@ namespace AssetBrowser
 	{
 		bool reload = Item::Render();
 
-		if (void* ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))// TODO: DIRECTORY UNIQUE CODE
+		bool temp;
+		if (UI::DragDropTarget("ASSET_BROWSER_ITEM", temp))// TODO: DIRECTORY UNIQUE CODE
 		{
 			for (const auto& item : m_selectionManager->GetSelectedItems())
 			{
@@ -53,7 +54,7 @@ namespace AssetBrowser
 			reload = true;
 		}
 
-		if (void* ptr = UI::DragDropTarget("ASSET_BROWSER_FOLDER"))// TODO: DIRECTORY UNIQUE CODE
+		if (UI::DragDropTarget("ASSET_BROWSER_FOLDER", temp))// TODO: DIRECTORY UNIQUE CODE
 		{
 			for (const auto& item : m_selectionManager->GetSelectedItems())
 			{

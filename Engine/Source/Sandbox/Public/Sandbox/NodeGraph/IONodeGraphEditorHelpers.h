@@ -468,11 +468,7 @@ public:
 		ImGui::InputTextString(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
 		ImGui::PopItemWidth();
 
-		if (auto ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))
-		{
-			Volt::AssetHandle newHandle = *(Volt::AssetHandle*)ptr;
-			assetHandle = newHandle;
-		}
+		UI::DragDropTarget("ASSET_BROWSER_ITEM", assetHandle);
 	}
 
 	inline static const auto& GetAttribFunctions() { return myAttributeFunctions; }

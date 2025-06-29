@@ -55,9 +55,9 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 		return false;
 	});
 
-	if (auto ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))
+	Volt::AssetHandle newHandle;
+	if (UI::DragDropTarget("ASSET_BROWSER_ITEM", newHandle))
 	{
-		Volt::AssetHandle newHandle = *(Volt::AssetHandle*)ptr;
 		auto droppedAssetType = Volt::AssetManager::GetAssetTypeFromHandle(newHandle);
 
 		if (droppedAssetType == wantedType)

@@ -654,43 +654,6 @@ namespace UI
 		return changed;
 	}
 
-	void* DragDropTarget(const std::string& type)
-	{
-		void* data = nullptr;
-
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* pPayload = ImGui::AcceptDragDropPayload(type.c_str()))
-			{
-				data = pPayload->Data;
-			}
-
-			ImGui::EndDragDropTarget();
-		}
-
-		return data;
-	}
-
-	void* DragDropTarget(std::initializer_list<std::string> types, ImGuiDragDropFlags flags)
-	{
-		void* data = nullptr;
-
-		for (const auto& type : types)
-		{
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* pPayload = ImGui::AcceptDragDropPayload(type.c_str(), flags))
-				{
-					data = pPayload->Data;
-				}
-
-				ImGui::EndDragDropTarget();
-			}
-		}
-
-		return data;
-	}
-
 	void Notify(NotificationType type, const std::string& title, const std::string& content, int32_t duration)
 	{
 		Volt::RHI::ImGuiNotificationInfo info;
