@@ -32,9 +32,10 @@ void ImportanceSampleCosDir_N(float2 u, float3 N, out float3 L, out float NdotL,
 
 float3 IntegrateDiffuseCube(in float3 N)
 {
-    const uint sampleCount = 32;
+    const uint sampleCount = 64 * 1024;
 
     float3 accBrdf = 0.f;
+
     for (uint i = 0; i < sampleCount; i++)
     {
         float2 eta = GetSample(i, sampleCount, 0);

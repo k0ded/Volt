@@ -176,7 +176,7 @@ namespace Volt
 		}
 
 		constexpr uint32_t CubeMapSize = 1024;
-		constexpr uint32_t DiffuseMapSize = 256;
+		constexpr uint32_t DiffuseMapSize = 32;
 		constexpr uint32_t ConversionThreadGroupSize = 32;
 
 		RenderGraph renderGraph{};

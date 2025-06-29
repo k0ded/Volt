@@ -177,19 +177,25 @@ namespace Volt
 
 			RHI::RenderPipelineCreateInfo renderPipelineInfo = pipelineInfo;
 
+			RefPtr<RHI::Shader> primitivePixelShader;
+
 			// No pixel shader means that we will use the materials shader.
 			if (!pixelShader)
 			{
-				pixelShader = renderPrimitive.material->GetPixelShader();
+				primitivePixelShader = renderPrimitive.material->GetPixelShader();
+			}
+			else
+			{
+				primitivePixelShader = pixelShader;
 			}
 
 			// If there still is no pixel shader, we will use the default one
-			if (!pixelShader)
+			if (!primitivePixelShader)
 			{
-				pixelShader = ShaderMap::Get<OpaqueDefaultPixelPS>();
+				primitivePixelShader = ShaderMap::Get<OpaqueDefaultPixelPS>();
 			}
 
-			renderPipelineInfo.shaders = { vertexShader, pixelShader };
+			renderPipelineInfo.shaders = { vertexShader, primitivePixelShader };
 			newCommand.renderPipeline = PipelineStateCache::GetRenderPipeline(renderPipelineInfo);
 			newCommand.renderMaterial = renderPrimitive.material;
 
@@ -273,18 +279,12 @@ namespace Volt
 
 					if (EnumValueContainsFlag(batchType, MeshBatchType::VertexIndexBuffer))
 					{
-						VT_ENSURE(!currentMeshBatch->vertexBuffers.empty());
-						VT_ENSURE(currentMeshBatch->indexBuffer);
-
 						currentMeshBatch->vertexBuffers = renderCommandExt.vertexBuffers;
 						currentMeshBatch->indexBuffer = renderCommandExt.indexBuffer;
 					}
 
 					if (EnumValueContainsFlag(batchType, MeshBatchType::RenderPipeline))
 					{
-						VT_ENSURE(currentMeshBatch->renderPipeline);
-						VT_ENSURE(currentMeshBatch->descriptorTable);
-
 						currentMeshBatch->renderPipeline = renderCommandExt.renderPipeline;
 						currentMeshBatch->descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(renderCommandExt.renderPipeline);
 

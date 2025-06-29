@@ -104,6 +104,8 @@ TextureCube<float3> SkylightIrradiance;
 TextureCube<float3> SkylightRadiance;
 SamplerState LinearSampler;
 
+uint NumRadianceMipLevels;
+
 float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
 {
     float NdotV = saturate(dot(brdfInput.N, brdfInput.V));
@@ -117,7 +119,7 @@ float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
         float3 dominantN = GetDiffuseDominantDirection(brdfInput.N, brdfInput.V, NdotV, brdfInput.roughness);
         float3 diffuseLighting = SkylightIrradiance.SampleLevel(LinearSampler, dominantN, light.lightSpecific.x);
 
-        diffuse = diffuseLighting * DFG.z;
+        diffuse = brdfInput.diffuseColor * diffuseLighting * DFG.z;
     }
 
     // Specular IBL
@@ -125,13 +127,8 @@ float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
         float3 R = 2.f * NdotV * brdfInput.N - brdfInput.V;
         float3 dominantR = GetSpecularDominantDirection(brdfInput.N, R, brdfInput.roughness );
 
-        // #TODO_Ivar: This is quite slow 
-        uint radianceTextureLevels;
-        uint width, height;
-        SkylightRadiance.GetDimensions(0, width, height, radianceTextureLevels);
-
         NdotV = max(NdotV, 0.5f / DFGTextureSize);
-        float mipLevel = LinearRoughnessToMipLevel(brdfInput.roughness, radianceTextureLevels);
+        float mipLevel = LinearRoughnessToMipLevel(brdfInput.roughness, NumRadianceMipLevels);
         float3 preLD = SkylightRadiance.SampleLevel(LinearSampler, dominantR, mipLevel);
 
         specular = preLD * (brdfInput.f0 * DFG.x + brdfInput.f90 * DFG.y);

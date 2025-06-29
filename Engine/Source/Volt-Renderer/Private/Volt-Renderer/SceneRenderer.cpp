@@ -515,6 +515,7 @@ namespace Volt
 			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightIrradiance)
 			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightRadiance)
 			SHADER_PARAMETER_SAMPLER(LinearSampler)
+			SHADER_PARAMETER(uint, NumRadianceMipLevels)
 		END_SHADER_PARAMETER_STRUCT()
 	};
 	REGISTER_SHADER(RenderDeferredShadingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "MainCS", Compute);
@@ -542,6 +543,7 @@ namespace Volt
 		passParameters->SkylightIrradiance = renderGraph.CreateSRV(environmentTextures.irradiance);
 		passParameters->SkylightRadiance = renderGraph.CreateSRV(environmentTextures.radiance);
 		passParameters->LinearSampler = SamplerStateCache::GetTrilinearSampler();
+		passParameters->NumRadianceMipLevels = environmentTextures.radiance->GetDesc().mips;
 
 		auto shader = ShaderMap::Get<RenderDeferredShadingCS>();
 		ComputeShaderUtils::AddPass<RenderDeferredShadingCS>(renderGraph,
