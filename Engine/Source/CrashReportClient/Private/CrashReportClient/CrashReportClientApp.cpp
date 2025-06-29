@@ -22,7 +22,7 @@ public:
 
 bool g_useCrashHandling = false;
 
-Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder)
+Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
 {
 	Volt::ApplicationCreationInfo appInfo{ };
 	appInfo.title = "CrashReportClient";

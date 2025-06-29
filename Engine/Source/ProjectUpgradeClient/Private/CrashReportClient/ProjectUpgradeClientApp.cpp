@@ -17,7 +17,7 @@ public:
 
 bool g_useCrashHandling = true;
 
-Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder)
+Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
 {
 	Volt::ApplicationCreationInfo appInfo{ };
 	appInfo.title = "ProjectUpgradeClient";

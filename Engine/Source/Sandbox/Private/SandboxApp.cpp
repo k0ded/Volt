@@ -109,7 +109,7 @@ public:
 
 bool g_useCrashHandling = true;
 
-Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder)
+Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
 {
 	//if the project is deprecated, dont load anything and instead launch the project upgrade client
 	{

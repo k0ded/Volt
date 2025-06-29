@@ -11,8 +11,7 @@
 
 // Needs to be defined in the application creating code.
 extern bool g_useCrashHandling;
-extern Volt::Application* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder);
-extern Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder);
+extern Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder);
 
 namespace Volt
 {
@@ -30,7 +29,7 @@ namespace Volt
 
 	int32_t Main(const CommandLineBuilder& commandLineBuilder)
 	{
-		BaseApplication* app = CreateApplicationBase(commandLineBuilder);
+		BaseApplication* app = CreateApplication(commandLineBuilder);
 		if (!app)
 		{
 			return 0;
