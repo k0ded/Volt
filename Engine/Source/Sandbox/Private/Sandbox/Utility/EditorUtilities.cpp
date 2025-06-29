@@ -47,7 +47,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 		}
 	}
 
-	std::string textId = "##" + std::to_string(UI::GetAndIncrementStackID());
+	std::string textId = UI::MakePropertyID();
 
 	changed = UI::DrawItem(ImGui::GetColumnWidth() - 2.f * 25.f, [&]()
 	{
@@ -69,7 +69,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 	ImGui::SameLine();
 
-	std::string buttonId = "X##" + std::to_string(UI::GetAndIncrementStackID());
+	std::string buttonId = "X" + UI::MakePropertyID();
 	if (ImGui::Button(buttonId.c_str(), { 24.5f, 24.5f }))
 	{
 		assetHandle = Volt::Asset::Null();
@@ -78,8 +78,8 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 	ImGui::SameLine();
 
-	std::string selectButtonId = "...##" + std::to_string(UI::GetAndIncrementStackID());
-	std::string popupId = "AssetsPopup##" + text + std::to_string(UI::GetAndIncrementStackID());
+	std::string selectButtonId = "..." + UI::MakePropertyID();
+	std::string popupId = "AssetsPopup" + UI::MakePropertyID();
 	const bool startState = s_assetBrowserPopupsOpen[popupId].state;
 
 	if (ImGui::Button(selectButtonId.c_str(), { 24.5f, 24.5f }))
