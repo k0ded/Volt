@@ -832,9 +832,7 @@ namespace UI
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0.f, 0.f });
 
-		//todo_fabian: verify (font size no longer exists)
-		//float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.f;
-		float lineHeight = GImGui->Style.FramePadding.y * 2.f;
+		float lineHeight = GImGui->FontSize + GImGui->Style.FramePadding.y * 2.f;
 		ImVec2 buttonSize = { lineHeight + 3.f, lineHeight };
 
 		{
@@ -950,9 +948,7 @@ namespace UI
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0.f, 0.f });
 
-		//todo_fabian: verify (font size no longer exists)
-		//float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.f;
-		float lineHeight = GImGui->Style.FramePadding.y * 2.f;
+		float lineHeight = GImGui->FontSize + GImGui->Style.FramePadding.y * 2.f;
 		ImVec2 buttonSize = { lineHeight + 3.f, lineHeight };
 
 		{
