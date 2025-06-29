@@ -123,23 +123,6 @@ namespace AssetBrowser
 
 		if (renderFunctions.empty())
 		{
-			renderFunctions[AssetTypes::ShaderDefinition] = [](AssetItem* item, SelectionManager* selectionManager)
-			{
-				if (ImGui::MenuItem("Recompile Shader"))
-				{
-					/*Ref<Volt::Shader> shader = Volt::AssetManager::GetAsset<Volt::Shader>(item->path);
-					if (shader->Reload(true))
-					{
-						Volt::Renderer::ReloadShader(shader);
-						UI::Notify(UI::NotificationType::Success, "Shader Compiled!", std::format("Shader {} compiled succesfully!", item->path.string()));
-					}
-					else
-					{
-						UI::Notify(UI::NotificationType::Error, "Shader Compilation Failed", std::format("Shader {} failed to compile!", item->path.string()));
-					}*/
-				}
-			};
-
 			renderFunctions[AssetTypes::MeshSource] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
 				if (ImGui::MenuItem("Import"))

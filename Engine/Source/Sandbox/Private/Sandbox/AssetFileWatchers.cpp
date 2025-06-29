@@ -1,7 +1,6 @@
 #include "sbpch.h"
 #include "Sandbox.h"
 
-#include <RenderCore/Shader/ShaderDefinition.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <Volt-Application/UI/UIUtility.h>
@@ -35,30 +34,6 @@ void Sandbox::CreateModifiedWatch()
 				assetType == AssetTypes::Texture)
 			{
 				Volt::AssetManager::Get().ReloadAsset(Volt::AssetManager::GetRelativePath(newPath));
-			}
-			else if (assetType == AssetTypes::ShaderSource)
-			{
-				const auto dependents = Volt::AssetManager::GetAssetsDependentOn(Volt::AssetManager::GetAssetHandleFromFilePath(newPath));
-
-				for (const auto& assetHandle : dependents)
-				{
-					const auto dependentType = Volt::AssetManager::GetAssetTypeFromHandle(assetHandle);
-					if (dependentType != AssetTypes::ShaderDefinition)
-					{
-						continue;
-					}
-
-					Ref<Volt::ShaderDefinition> shaderDef = Volt::AssetManager::GetAsset<Volt::ShaderDefinition>(assetHandle);
-					bool succeded = Volt::ShaderMap::ReloadShaderByName(std::string(shaderDef->GetName()));
-					if (succeded)
-					{
-						UI::Notify(UI::NotificationType::Success, "Recompiled shader!", std::format("Shader {0} was successfully recompiled!", shaderDef->GetName()));
-					}
-					else
-					{
-						UI::Notify(UI::NotificationType::Error, "Failed to recompile shader!", std::format("Recompilation of shader {0} failed! Check log for more info!", shaderDef->GetName()));
-					}
-				}
 			}
 			else if (assetType == AssetTypes::MeshSource)
 			{

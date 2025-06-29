@@ -790,11 +790,6 @@ void AssetBrowserPanel::RenderWindowRightClickPopup()
 					CreateNewAssetInCurrentDirectory(AssetTypes::Material);
 				}
 
-				if (ImGui::MenuItem("Shader"))
-				{
-					CreateNewAssetInCurrentDirectory(AssetTypes::ShaderDefinition);
-				}
-
 				if (ImGui::MenuItem("Post Processing Stack"))
 				{
 					CreateNewAssetInCurrentDirectory(AssetTypes::PostProcessingStack);
@@ -916,13 +911,6 @@ void AssetBrowserPanel::DeleteFilesModal()
 			{
 				if (!item->isDirectory && Volt::AssetManager::ExistsInRegistry(item->path))
 				{
-					const auto assetType = Volt::AssetManager::GetAssetTypeFromPath(item->path);
-					if (assetType == AssetTypes::ShaderDefinition)
-					{
-						//auto shader = Volt::AssetManager::GetAsset<Volt::Shader>(item->path);
-						//Volt::ShaderRegistry::Unregister(shader->GetName());
-					}
-
 					Volt::AssetManager::Get().RemoveAsset(Volt::AssetManager::GetRelativePath(item->path));
 				}
 			}
@@ -1188,7 +1176,6 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 
 	if (type == AssetTypes::Material) originalName = "M_NewMaterial";
 	if (type == AssetTypes::AnimatedCharacter) originalName = "CHR_NewCharacter";
-	if (type == AssetTypes::ShaderDefinition) originalName = "SH_NewShader";
 	if (type == AssetTypes::PhysicsMaterial) originalName = "PM_NewPhysicsMaterial";
 	if (type == AssetTypes::Scene) originalName = "SC_NewScene";
 	if (type == AssetTypes::BlendSpace) originalName = "BS_NewBlendSpace";
@@ -1219,11 +1206,6 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 		myNewCharacterData.name = tempName;
 
 		UI::OpenModal("New Character##assetBrowser");
-	}
-	else if (type == AssetTypes::ShaderDefinition)
-	{
-		myNewShaderData = {};
-		UI::OpenModal("New Shader##assetBrowser");
 	}
 	else if (type == AssetTypes::Scene)
 	{

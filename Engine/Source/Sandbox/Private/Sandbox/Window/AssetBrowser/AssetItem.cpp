@@ -222,8 +222,6 @@ namespace AssetBrowser
 		if (assetType == AssetTypes::Skeleton) return { 1.f, 0.49f, 0.8f, 1.f };
 		if (assetType == AssetTypes::Texture) return { 0.9f, 0.26f, 0.27f, 1.f };
 		if (assetType == AssetTypes::Material) return { 0.26f, 0.35f, 0.9f, 1.f };
-		if (assetType == AssetTypes::ShaderDefinition) return { 0.26f, 0.6f, 0.9f, 1.f };
-		if (assetType == AssetTypes::ShaderSource) return { 0.26f, 0.72f, 0.9f, 1.f };
 		if (assetType == AssetTypes::Scene) return { 0.9f, 0.54f, 0.26f, 1.f };
 		if (assetType == AssetTypes::AnimatedCharacter) return { 0.9f, 0.25f, 0.49f, 1.f };
 		if (assetType == AssetTypes::Prefab) return { 0.25f, 0.93f, 0.92f, 1.f };
