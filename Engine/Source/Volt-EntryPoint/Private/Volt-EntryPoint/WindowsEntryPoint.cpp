@@ -31,6 +31,10 @@ namespace Volt
 	int32_t Main(const CommandLineBuilder& commandLineBuilder)
 	{
 		BaseApplication* app = CreateApplicationBase(commandLineBuilder);
+		if (!app)
+		{
+			return 0;
+		}
 		app->Run();
 
 		delete app;

@@ -3,26 +3,107 @@
 #include "Sandbox/Sandbox.h"
 #include "ProjectUpgrade/ProjectUpgradeLayer.h"
 
+#include <Volt-Core/Config.h>
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <Volt-Application/Application.h>
 
+#include <Volt-Platforms/Platform.h>
+
+#include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
+
+std::filesystem::path GetProjectPath(const Volt::CommandLineBuilder& commandLineBuilder)
+{
+	std::filesystem::path projectFilepath;
+	if (commandLineBuilder.IsArgDefined("project"))
+	{
+		projectFilepath = commandLineBuilder.GetArgValue("project");
+	}
+
+	//try to find the project same way as the ProjectManager
+	if (projectFilepath.empty())
+	{
+		for (const auto& dir : std::filesystem::directory_iterator("./"))
+		{
+			if (dir.path().extension() == ".vtproj")
+			{
+				projectFilepath = dir.path();
+				break;
+			}
+		}
+	}
+
+	if (projectFilepath.empty())
+	{
+		VT_ASSERT_MSG(projectFilepath.empty(), "No project filepath provided!");
+	}
+
+	return projectFilepath;
+}
+
+bool PeekProjectVersionIsDeprecated(const std::filesystem::path& projectPath)
+{
+	YAMLFileStreamReader streamReader{};
+
+	if (!streamReader.OpenFile(projectPath))
+	{
+		std::runtime_error(std::format("Failed to open file: {0}!", projectPath.string()));
+		return false;
+	}
+
+	if (!streamReader.HasKey("Project"))
+	{
+		std::runtime_error(std::format("Project file {0} is invalid!", projectPath.string()));
+		return false;
+	}
+
+	streamReader.EnterScope("Project");
+
+	Volt::Version projectVersion = streamReader.ReadAtKey("EngineVersion", std::string(""));
+
+	if (projectVersion != Volt::VT_VERSION)
+	{
+		//is deprecated
+		return true;
+	}
+
+	return false;
+}
+
+void LaunchProjectUpgradeClient(const std::filesystem::path& projectPath)
+{
+	// As we at this point might be inside the binaries directory, we must also check if the crash reporter lies in the current directory.
+	auto projectUpgradeClientFilepath = std::filesystem::current_path() / "Binaries\\ProjectUpgradeClient.exe";
+	if (!FileSystem::Exists(projectUpgradeClientFilepath))
+	{
+		projectUpgradeClientFilepath = std::filesystem::current_path() / "ProjectUpgradeClient.exe";
+	}
+
+	if (!FileSystem::Exists(projectUpgradeClientFilepath))
+	{
+		std::runtime_error(std::format("Could not find the project upgrade clien at '{0}'", projectUpgradeClientFilepath.string()));
+		return;
+	}
+
+	Volt::CommandLineBuilder commandLineBuilder;
+	commandLineBuilder.AddArgument("project", projectPath.string());
+	//commandLineBuilder.AddArgument("waitfordebugger");
+
+	Volt::PlatformProcess::CreateProc(
+		projectUpgradeClientFilepath,
+		commandLineBuilder.GetAsString(),
+		true, false, nullptr);
+}
+
 class SandboxApp : public Volt::Application
 {
 public:
-	SandboxApp( const Volt::CommandLineBuilder& commandLineBuilder, const Volt::ApplicationCreationInfo& appInfo)
+	SandboxApp(const Volt::CommandLineBuilder& commandLineBuilder, const Volt::ApplicationCreationInfo& appInfo)
 		: Volt::Application(commandLineBuilder, appInfo)
 	{
-		if (Volt::ProjectManager::GetProject().isDeprecated)
-		{
-			ProjectUpgradeLayer* layer = new ProjectUpgradeLayer();
-			PushLayer(layer);
-		}
-		else
-		{
-			Sandbox* sandbox = new Sandbox();
-			PushLayer(sandbox);
-		}
+		Sandbox* sandbox = new Sandbox();
+		PushLayer(sandbox);
 	}
 };
 
@@ -30,6 +111,22 @@ bool g_useCrashHandling = true;
 
 Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& commandLineBuilder)
 {
+	//if the project is deprecated, dont load anything and instead launch the project upgrade client
+	{
+		std::filesystem::path projectPath = GetProjectPath(commandLineBuilder);
+
+		if (projectPath.empty())
+		{
+			return nullptr;
+		}
+
+		if (PeekProjectVersionIsDeprecated(projectPath))
+		{
+			LaunchProjectUpgradeClient(projectPath);
+			return nullptr;
+		}
+	}
+
 	Volt::ApplicationCreationInfo info{};
 	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
 	info.useVSync = true;
