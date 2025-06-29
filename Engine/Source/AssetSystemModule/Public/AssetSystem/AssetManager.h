@@ -41,7 +41,8 @@ namespace Volt
 		void Shutdown();
 		void Clear();
 
-		void Unload(AssetHandle assetHandle);
+		void UnloadAsset(AssetHandle assetHandle);
+		void UnloadMemoryAsset(AssetHandle assetHandle);
 
 		void MoveAsset(Ref<Asset> asset, const std::filesystem::path& targetDir);
 		void MoveAsset(AssetHandle asset, const std::filesystem::path& targetDir);

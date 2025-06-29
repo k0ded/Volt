@@ -190,5 +190,119 @@ namespace Volt::RHI
 
 			return 0;
 		}
+
+		inline uint32_t GetFormatTexelBlockSize(PixelFormat format)
+		{
+			switch (format)
+			{
+				case PixelFormat::R8_UNORM: 
+					return 1;
+
+				case PixelFormat::R16_SFLOAT: 
+					return 2;
+				
+				case PixelFormat::R32_SFLOAT:
+				case PixelFormat::R32_SINT:
+				case PixelFormat::R32_UINT: 
+				case PixelFormat::R16G16_SFLOAT:
+				case PixelFormat::R8G8B8A8_UNORM:
+				case PixelFormat::B10G11R11_UFLOAT_PACK32:
+					return 4;
+
+				case PixelFormat::R32G32_UINT:
+				case PixelFormat::R32G32_SFLOAT: 
+				case PixelFormat::R16G16B16A16_SFLOAT:
+					return 8;
+				
+				case PixelFormat::R32G32B32A32_SFLOAT: 
+					return 16;
+
+
+				case PixelFormat::BC1_RGB_SRGB_BLOCK:
+				case PixelFormat::BC1_RGB_UNORM_BLOCK:
+				case PixelFormat::BC1_RGBA_SRGB_BLOCK:
+				case PixelFormat::BC1_RGBA_UNORM_BLOCK: 
+					return 8;
+
+				case PixelFormat::BC2_SRGB_BLOCK:
+				case PixelFormat::BC2_UNORM_BLOCK:
+					return 16;
+
+				case PixelFormat::BC3_SRGB_BLOCK:
+				case PixelFormat::BC3_UNORM_BLOCK:
+					return 16;
+
+				case PixelFormat::BC4_SNORM_BLOCK:
+				case PixelFormat::BC4_UNORM_BLOCK:
+					return 8;
+
+				case PixelFormat::BC5_SNORM_BLOCK:
+				case PixelFormat::BC5_UNORM_BLOCK:
+					return 16;
+
+				case PixelFormat::BC6H_SFLOAT_BLOCK:
+				case PixelFormat::BC6H_UFLOAT_BLOCK:
+					return 16;
+
+				case PixelFormat::BC7_SRGB_BLOCK:
+				case PixelFormat::BC7_UNORM_BLOCK:
+					return 16;
+			}
+
+			VT_ENSURE(false);
+			return 0;
+		}
+
+		inline uint32_t GetFormatTexelsPerBlock(PixelFormat format)
+		{
+			switch (format)
+			{
+				case PixelFormat::R8_UNORM:
+				case PixelFormat::R16_SFLOAT:
+				case PixelFormat::R32_SFLOAT:
+				case PixelFormat::R32_SINT:
+				case PixelFormat::R32_UINT:
+				case PixelFormat::R32G32_UINT:
+				case PixelFormat::R16G16_SFLOAT:
+				case PixelFormat::R32G32_SFLOAT:
+				case PixelFormat::R8G8B8A8_UNORM:
+				case PixelFormat::R16G16B16A16_SFLOAT:
+				case PixelFormat::R32G32B32A32_SFLOAT:
+				case PixelFormat::B10G11R11_UFLOAT_PACK32:
+					return 1;
+
+				case PixelFormat::BC1_RGB_SRGB_BLOCK:
+				case PixelFormat::BC1_RGB_UNORM_BLOCK:
+				case PixelFormat::BC1_RGBA_SRGB_BLOCK:
+				case PixelFormat::BC1_RGBA_UNORM_BLOCK:
+					return 16;
+
+				case PixelFormat::BC2_SRGB_BLOCK:
+				case PixelFormat::BC2_UNORM_BLOCK:
+					return 16;
+
+				case PixelFormat::BC3_SRGB_BLOCK:
+				case PixelFormat::BC3_UNORM_BLOCK:
+					return 16;
+
+				case PixelFormat::BC4_SNORM_BLOCK:
+				case PixelFormat::BC4_UNORM_BLOCK:
+					return 16;
+
+				case PixelFormat::BC5_SNORM_BLOCK:
+				case PixelFormat::BC5_UNORM_BLOCK:
+					return 16;
+
+				case PixelFormat::BC6H_SFLOAT_BLOCK:
+				case PixelFormat::BC6H_UFLOAT_BLOCK:
+					return 16;
+
+				case PixelFormat::BC7_SRGB_BLOCK:
+				case PixelFormat::BC7_UNORM_BLOCK:
+					return 16;
+			}
+
+			return 0;
+		}
 	}
 }

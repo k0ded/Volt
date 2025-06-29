@@ -254,7 +254,7 @@ namespace Volt
 		}
 	}
 
-	void AssetManager::Unload(AssetHandle assetHandle)
+	void AssetManager::UnloadAsset(AssetHandle assetHandle)
 	{
 		{
 			ReadLock lock{ m_assetCacheMutex };
@@ -282,6 +282,34 @@ namespace Volt
 		}
 	}
 
+	void AssetManager::UnloadMemoryAsset(AssetHandle assetHandle)
+	{
+		{
+			ReadLock lock{ m_assetCacheMutex };
+			if (!m_memoryAssets.contains(assetHandle))
+			{
+				VT_LOGC(Warning, LogAssetSystem, "Unable to unload asset with handle {0}, it doesn't exist or is not a memory asset!", assetHandle);
+				return;
+			}
+		}
+
+		{
+			WriteLock lock{ m_assetRegistryMutex };
+			if (!m_assetRegistry.contains(assetHandle))
+			{
+				VT_LOGC(Warning, LogAssetSystem, "Unable to unload asset with handle {0}, it does not exist in the registry!", assetHandle);
+				return;
+			}
+
+			m_assetRegistry.erase(assetHandle);
+		}
+
+		{
+			WriteLock lock{ m_assetCacheMutex };
+			m_memoryAssets.erase(assetHandle);
+		}
+	}
+
 	void AssetManager::ReloadAsset(const std::filesystem::path& path)
 	{
 		AssetHandle handle = GetAssetHandleFromFilePath(path);
@@ -296,7 +324,7 @@ namespace Volt
 
 	void AssetManager::ReloadAsset(AssetHandle handle)
 	{
-		Unload(handle);
+		UnloadAsset(handle);
 
 		const auto type = GetAssetTypeFromHandle(handle);
 		if (type == AssetTypes::None)

@@ -170,7 +170,7 @@ void GameLayer::TrySceneTransition()
 
 	m_scene->OnRuntimeEnd();
 
-	Volt::AssetManager::Get().Unload(m_scene->handle);
+	Volt::AssetManager::Get().UnloadAsset(m_scene->handle);
 
 	if (m_scene == m_storedScene)
 	{

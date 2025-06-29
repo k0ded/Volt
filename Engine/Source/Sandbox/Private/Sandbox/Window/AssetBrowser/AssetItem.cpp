@@ -230,6 +230,7 @@ namespace AssetBrowser
 		if (assetType == AssetTypes::MonoScript) return { 0.f, 0.6f, 0.f, 1.f };
 		if (assetType == AssetTypes::BehaviorGraph) return { 0.75f, 0.04f, 0.83f, 1.f };
 		if (assetType == AssetTypes::MotionWeave) return { 0.74f, 0, 0.32f, 1.f };
+		if (assetType == AssetTypes::EnvironmentTexture) return { 0.5f, 0.26f, 0.8f, 1.f };
 
 		return { 0.f, 0.f, 0.f, 1.f };
 	}

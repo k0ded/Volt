@@ -109,7 +109,7 @@ namespace Utility
 
 		if (!wasLoaded)
 		{
-			Volt::AssetManager::Get().Unload(handle);
+			Volt::AssetManager::Get().UnloadAsset(handle);
 		}
 
 		return hPow2 && wPow2;
@@ -356,7 +356,7 @@ void GameBuilder::Thread_BuildGame(const BuildInfo& buildInfo)
 
 			if (!wasLoaded)
 			{
-				Volt::AssetManager::Get().Unload(sceneHandle);
+				Volt::AssetManager::Get().UnloadAsset(sceneHandle);
 			}
 		}
 	}

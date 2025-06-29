@@ -32,7 +32,7 @@ Volt::BaseApplication* CreateApplicationBase(const Volt::CommandLineBuilder& com
 {
 	Volt::ApplicationCreationInfo info{};
 	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
-	info.useVSync = false;
+	info.useVSync = true;
 	info.enableImGui = true;
 	info.useTitlebar = true;
 	info.useCustomTitlebar = true;

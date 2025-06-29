@@ -70,10 +70,13 @@ AssetBrowserPanel::AssetBrowserPanel(Ref<Volt::Scene>& aScene, const std::string
 			myDirectories[Volt::ProjectManager::GetAssetsDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetAssetsDirectory(), myMeshToImport);
 		}
 
+		// Note: Disabled for now, as there is no way to actually see the engine assets.
+#if 0
 		{
 			AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask };
 			myDirectories[Volt::ProjectManager::GetEngineAssetsDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetEngineAssetsDirectory(), myMeshToImport);
 		}
+#endif
 
 		myAssetsDirectory = myDirectories[Volt::ProjectManager::GetAssetsDirectory()].get();
 	}

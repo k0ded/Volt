@@ -416,7 +416,7 @@ void Sandbox::NewScene()
 	SelectionManager::DeselectAll();
 	if (m_runtimeScene)
 	{
-		Volt::AssetManager::Get().Unload(m_runtimeScene->handle);
+		Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
 	}
 
 	m_runtimeScene = Volt::Scene::CreateDefaultScene("New Scene", true);
@@ -467,7 +467,7 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 	}
 	else if (m_runtimeScene && !metadata.filePath.empty())
 	{
-		Volt::AssetManager::Get().Unload(m_runtimeScene->handle);
+		Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
 	}
 
 	m_runtimeScene = newScene;
@@ -526,7 +526,7 @@ void Sandbox::TransitionToNewScene()
 	m_runtimeScene->OnRuntimeEnd();
 
 	SelectionManager::DeselectAll();
-	Volt::AssetManager::Get().Unload(m_runtimeScene->handle);
+	Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
 
 	m_runtimeScene = CreateRef<Volt::Scene>();
 	m_storedScene->CopyTo(m_runtimeScene);

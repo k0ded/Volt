@@ -90,7 +90,7 @@ void PreviewRenderer::RenderPreview(Weak<AssetBrowser::AssetItem> assetItem)
 
 	if (!assetWasLoaded)
 	{
-		Volt::AssetManager::Get().Unload(assetItem->handle);
+		Volt::AssetManager::Get().UnloadAsset(assetItem->handle);
 	}
 }
 

@@ -16,10 +16,17 @@ protected:
 	void OnClose() override;
 
 private:
+	enum class ImportType
+	{
+		Texture,
+		EnvironmentTexture
+	};
+
 	struct ImportOptions
 	{
 		bool importMipMaps = true;
 		bool generateMipMaps = true;
+		ImportType importType = ImportType::Texture;
 	} m_importOptions;
 
 	std::string GetImportTypeStringFromFilepath(const std::filesystem::path& filepath);

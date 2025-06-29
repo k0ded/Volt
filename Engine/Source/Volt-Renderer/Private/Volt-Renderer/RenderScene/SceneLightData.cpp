@@ -13,7 +13,10 @@ namespace Volt
 
 	SceneLightData::~SceneLightData()
 	{
-		DestroyPrimitive();
+		if (m_renderSceneId != 0)
+		{
+			DestroyPrimitive();
+		}
 	}
 
 	void SceneLightData::InitializeFromDescription(const SceneLightDescription& description)

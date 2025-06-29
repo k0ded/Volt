@@ -264,7 +264,7 @@ namespace Volt
 
 				auto& meshComp = ent.AddComponent<MeshComponent>();
 				meshComp.handle = AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Cube.vtasset");
-				Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent.GetScene()->GetEntityHelperFromEntityID(ent.GetID())));
+				MeshComponent::OnMemberChanged(MeshComponent::MeshEntity(ent.GetScene()->GetEntityHelperFromEntityID(ent.GetID())));
 			}
 
 			// Light
@@ -281,7 +281,7 @@ namespace Volt
 				auto ent = newScene->CreateEntity("Skylight");
 				SkylightComponent& skyComp = ent.AddComponent<SkylightComponent>();
 				skyComp.environmentTextureHandle = AssetManager::GetAssetHandleFromFilePath("Engine/Textures/HDRIs/defaultHDRI.vtasset");
-				skyComp.UpdateSceneLightData(true);
+				SkylightComponent::OnMemberChanged(SkylightComponent::LightEntity(ent.GetScene()->GetEntityHelperFromEntityID(ent.GetID())));
 			}
 
 			// Camera

@@ -5,6 +5,8 @@
 #include <Volt-Renderer/Texture/Texture2D.h>
 #include <Volt-Renderer/RenderScene/SceneLightData.h>
 
+#include <Volt-Assets/StreamingInstanceID.h>
+
 #include <AssetSystem/Asset.h>
 
 #include <EntitySystem/ComponentRegistry.h>
@@ -190,25 +192,21 @@ namespace Volt
 
 	struct SkylightComponent
 	{
-		struct Environment
-		{
-			RefPtr<RHI::Image> diffuse;
-			RefPtr<RHI::Image> specular;
-		};
+		using LightEntity = ECS::Access
+			::Write<SkylightComponent>
+			::Read<IDComponent>
+			::As<ECS::Type::Entity>;
 
 		AssetHandle environmentTextureHandle = Asset::Null();
 		bool show = true;
 		float lod = 0.f;
 		float intensity = 1.f;
 
-		Environment currentSceneEnvironment;
-		AssetHandle lastEnvironmentHandle = Asset::Null();
-
 		static void ReflectType(TypeDesc<SkylightComponent>& reflect)
 		{
 			reflect.SetGUID("{29F75381-2873-4734-A074-3F3640E54C84}"_guid);
 			reflect.SetLabel("Skylight Component");
-			reflect.AddMember(&SkylightComponent::environmentTextureHandle, "environmentHandle", "Environment", "", Asset::Null(), AssetTypes::Texture);
+			reflect.AddMember(&SkylightComponent::environmentTextureHandle, "environmentHandle", "Environment", "", Asset::Null(), AssetTypes::EnvironmentTexture);
 			reflect.AddMember(&SkylightComponent::intensity, "intensity", "Intensity", "", 1.f);
 			reflect.AddMember(&SkylightComponent::lod, "lod", "LOD", "", 0.f);
 			reflect.AddMember(&SkylightComponent::show, "show", "Show", "", true);
@@ -219,21 +217,19 @@ namespace Volt
 			reflect.SetOnCreateCallback(&SkylightComponent::OnCreate);
 		}
 
-		VTCC_API void UpdateSceneLightData(bool force = false);
+		VTCC_API static void OnMemberChanged(LightEntity entity);
 
 		REGISTER_COMPONENT(SkylightComponent);
 
 	private:
-		using LightEntity = ECS::Access
-			::Write<SkylightComponent>
-			::Read<IDComponent>
-			::As<ECS::Type::Entity>;
 
 		VTCC_API static void OnCreate(LightEntity entity);
 		VTCC_API static void OnDestroy(LightEntity entity);
 		VTCC_API static void OnComponentCopied(LightEntity entity);
-		VTCC_API static void OnMemberChanged(LightEntity entity);
+
+		void UpdateSceneLightData(EntityID entityId);
 
 		Ref<SceneLightData> m_sceneLightData;
+		StreamingInstanceID m_streamingInstanceID;
 	};
 }

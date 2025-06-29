@@ -2,6 +2,8 @@
 
 #include "Volt-CoreComponents/LightComponents.h"
 
+#include <Volt-Assets/StreamingManager.h>
+
 #include <Volt-Renderer/Renderer.h>
 
 namespace Volt
@@ -56,11 +58,20 @@ namespace Volt
 			lightDescription.lightType = SceneLightType::Sky;
 			lightDescription.intensity = component.intensity;
 			lightDescription.lod = component.lod;
-			lightDescription.diffuseIBL = component.currentSceneEnvironment.diffuse;
-			lightDescription.specularIBL = component.currentSceneEnvironment.specular;
 			lightDescription.show = component.show;
 
 			return lightDescription;
+		}
+
+		StreamingInstanceDescription CreateStreamingInstanceDescription(const SkylightComponent& skylightComponent, EntityID entityId, Ref<SceneLightData> sceneLightData)
+		{
+			StreamingInstanceDescription streamingInstanceDesc;
+			streamingInstanceDesc.entityId = entityId;
+			streamingInstanceDesc.environmentTextureHandle = skylightComponent.environmentTextureHandle;
+			streamingInstanceDesc.sceneLightData = sceneLightData;
+			streamingInstanceDesc.sceneLightDescription = InitializeLightDescription(skylightComponent);
+
+			return streamingInstanceDesc;
 		}
 	}
 
@@ -175,45 +186,42 @@ namespace Volt
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
 
-	VTCC_API void SkylightComponent::UpdateSceneLightData(bool force)
+	void SkylightComponent::UpdateSceneLightData(EntityID entityId)
 	{
 		VT_ENSURE(m_sceneLightData);
 
-		if (force || lastEnvironmentHandle != environmentTextureHandle)
+		if (environmentTextureHandle == Asset::Null())
 		{
-			auto envTextures = Renderer::GenerateEnvironmentTextures(environmentTextureHandle);
-			currentSceneEnvironment.diffuse = envTextures.diffuse;
-			currentSceneEnvironment.specular = envTextures.specular;
-
-			lastEnvironmentHandle = environmentTextureHandle;
+			return;
 		}
-
-		m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(*this));
+		StreamingManager::Get().InvalidateInstance(m_streamingInstanceID, Utility::CreateStreamingInstanceDescription(*this, entityId, m_sceneLightData));
 	}
 
 	void SkylightComponent::OnCreate(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
+		component.m_streamingInstanceID = StreamingManager::Get().AddInstance(Utility::CreateStreamingInstanceDescription(component, entity.GetID(), component.m_sceneLightData));
 	}
 
 	void SkylightComponent::OnDestroy(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
+
+		StreamingManager::Get().RemoveInstance(component.m_streamingInstanceID);
 		component.m_sceneLightData = nullptr;
 	}
 
 	void SkylightComponent::OnComponentCopied(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
-		component.UpdateSceneLightData(/*force*/ true);
+		component.UpdateSceneLightData(entity.GetID());
 	}
 
 	void SkylightComponent::OnMemberChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
 
-		component.UpdateSceneLightData(/*force*/ false);
+		component.UpdateSceneLightData(entity.GetID());
 	}
 }

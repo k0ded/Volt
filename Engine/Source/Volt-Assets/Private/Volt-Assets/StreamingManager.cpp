@@ -7,6 +7,7 @@
 #include <Volt-Renderer/RenderScene/ScenePrimitiveData.h>
 #include <Volt-Renderer/Renderer.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/Texture/EnvironmentTexture.h>
 
 #include <Volt-Core/AssetTypes.h>
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
@@ -23,7 +24,8 @@ namespace Volt
 
 	StreamingManager::StreamingManager()
 		: m_meshReferenceCounter(AssetTypes::Mesh),
-		m_materialReferenceCounter(AssetTypes::Material)
+		m_materialReferenceCounter(AssetTypes::Material),
+		m_environmentTextureReferenceCounter(AssetTypes::EnvironmentTexture)
 	{
 		VT_ENSURE(!s_instance);
 
@@ -52,6 +54,18 @@ namespace Volt
 				}
 			}
 		});
+
+		m_environmentTextureReferenceCounter.SetAssetUpdatedCallback([&](AssetHandle textureHandle, const std::unordered_set<StreamingInstanceID>& streamingInstances, AssetChangedState state)
+		{
+			if (state == AssetChangedState::Updated)
+			{
+				for (const auto& instanceId : streamingInstances)
+				{
+					const auto& instance = m_streamingInstances.Get(instanceId);
+					InitializeSceneLightDataFromInstance(instance);
+				}
+			}
+		});
 	}
 
 	StreamingManager::~StreamingManager()
@@ -64,24 +78,51 @@ namespace Volt
 		StreamingInstanceID newId;
 
 		StreamingInstanceMap::StreamingInstance& instance = m_streamingInstances.Add(newId);
-		instance.entityId = description.entityId;
-		instance.meshHandle = description.meshHandle;
-		instance.materialHandles = description.materialHandles;
-		instance.primitiveData = description.primitiveData;
-
-		for (const auto& materialHandle : description.materialHandles)
+		
+		// It's a primitive
+		if (description.primitiveData)
 		{
-			m_materialReferenceCounter.AddReference(materialHandle, newId);
+			instance.entityId = description.entityId;
+			instance.meshHandle = description.meshHandle;
+			instance.materialHandles = description.materialHandles;
+			instance.primitiveData = description.primitiveData;
+
+			for (const auto& materialHandle : description.materialHandles)
+			{
+				m_materialReferenceCounter.AddReference(materialHandle, newId);
+			}
+
+			m_meshReferenceCounter.AddReference(description.meshHandle, newId);
+
+			if (s_logStreamingManagerUpdates.GetValue())
+			{
+				VT_LOGC(Trace, LogStreamingManager, "Added a new instance linked to entity {} with mesh {} and gave it ID {}", description.entityId, description.meshHandle, newId);
+			}
+
+			InitializeScenePrimitiveFromInstance(m_streamingInstances.Get(newId));
+		}
+		// It's a skylight
+		else if (description.sceneLightData)
+		{
+			VT_ENSURE_MSG(description.sceneLightDescription.lightType == SceneLightType::Sky, "Only skylights should be added to the streaming manager!");
+
+			instance.environmentTextureHandle = description.environmentTextureHandle;
+			instance.sceneLightData = description.sceneLightData;
+			instance.sceneLightDescription = description.sceneLightDescription;
+			instance.entityId = description.entityId;
+
+			m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, newId);
+
+			if (s_logStreamingManagerUpdates.GetValue())
+			{
+				VT_LOGC(Trace, LogStreamingManager, "Added a new instance linked to entity {} with environment texture {} and gave it ID {}", description.entityId, description.environmentTextureHandle, newId);
+			}
+		}
+		else
+		{
+			VT_ENSURE(false);
 		}
 
-		m_meshReferenceCounter.AddReference(description.meshHandle, newId);
-
-		if (s_logStreamingManagerUpdates.GetValue())
-		{
-			VT_LOGC(Trace, LogStreamingManager, "Added a new instance linked to entity {} with mesh {} and gave it ID {}", description.entityId, description.meshHandle, newId);
-		}
-
-		InitializeScenePrimitiveFromInstance(m_streamingInstances.Get(newId));
 		return newId;
 	}
 
@@ -91,14 +132,21 @@ namespace Volt
 
 		if (s_logStreamingManagerUpdates.GetValue())
 		{
-			VT_LOGC(Trace, LogStreamingManager, "Removed instance with ID {} which has mesh {}", instanceId, instance.entityId);
+			VT_LOGC(Trace, LogStreamingManager, "Removed instance with ID {} which is linked to entity {}", instanceId, instance.entityId);
 		}
 
-		m_meshReferenceCounter.RemoveReference(instance.meshHandle, instanceId);
-
-		for (const auto& materialHandle : instance.materialHandles)
+		if (instance.primitiveData)
 		{
-			m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+			m_meshReferenceCounter.RemoveReference(instance.meshHandle, instanceId);
+
+			for (const auto& materialHandle : instance.materialHandles)
+			{
+				m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+			}
+		}
+		else if (instance.sceneLightData)
+		{
+			m_environmentTextureReferenceCounter.RemoveReference(instance.environmentTextureHandle, instanceId);
 		}
 
 		if (m_streamingInstances.Contains(instanceId))
@@ -116,28 +164,45 @@ namespace Volt
 
 		auto& streamingInstance = m_streamingInstances.Get(instanceId);
 
-		for (const auto& materialHandle : streamingInstance.materialHandles)
+		if (streamingInstance.primitiveData)
 		{
-			m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+			for (const auto& materialHandle : streamingInstance.materialHandles)
+			{
+				m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+			}
+
+			m_meshReferenceCounter.RemoveReference(streamingInstance.meshHandle, instanceId);
+
+			for (const auto& materialHandle : description.materialHandles)
+			{
+				m_materialReferenceCounter.AddReference(materialHandle, instanceId);
+			}
+
+			m_meshReferenceCounter.AddReference(description.meshHandle, instanceId);
+
+			streamingInstance.meshHandle = description.meshHandle;
+			streamingInstance.materialHandles = description.materialHandles;
+
+			InitializeScenePrimitiveFromInstance(streamingInstance);
+
+			if (s_logStreamingManagerUpdates.GetValue())
+			{
+				VT_LOGC(Trace, LogStreamingManager, "Invalidated instance with ID {} linked to entity {} and has mesh {}", instanceId, streamingInstance.entityId, streamingInstance.meshHandle);
+			}
 		}
-
-		m_meshReferenceCounter.RemoveReference(streamingInstance.meshHandle, instanceId);
-
-		for (const auto& materialHandle : description.materialHandles)
+		else if (streamingInstance.sceneLightData)
 		{
-			m_materialReferenceCounter.AddReference(materialHandle, instanceId);
-		}
+			m_environmentTextureReferenceCounter.RemoveReference(streamingInstance.environmentTextureHandle, instanceId);
+			m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, instanceId);
 
-		m_meshReferenceCounter.AddReference(description.meshHandle, instanceId);
+			streamingInstance.environmentTextureHandle = description.environmentTextureHandle;
 
-		streamingInstance.meshHandle = description.meshHandle;
-		streamingInstance.materialHandles = description.materialHandles;
+			InitializeSceneLightDataFromInstance(streamingInstance);
 
-		InitializeScenePrimitiveFromInstance(streamingInstance);
-
-		if (s_logStreamingManagerUpdates.GetValue())
-		{
-			VT_LOGC(Trace, LogStreamingManager, "Invalidated instance with ID {} linked to entity {} and has mesh {}", instanceId, streamingInstance.entityId, streamingInstance.meshHandle);
+			if (s_logStreamingManagerUpdates.GetValue())
+			{
+				VT_LOGC(Trace, LogStreamingManager, "Invalidated instance with ID {} linked to entity {} and environment texture {}", instanceId, streamingInstance.entityId, streamingInstance.environmentTextureHandle);
+			}
 		}
 	}
 
@@ -196,6 +261,26 @@ namespace Volt
 		}
 
 		instance.primitiveData->InitializeFromDescription(primitiveDescription);
+	}
+
+	void StreamingManager::InitializeSceneLightDataFromInstance(const StreamingInstanceMap::StreamingInstance& instance)
+	{
+		Ref<EnvironmentTexture> environmentTexture = AssetManager::QueueAsset<EnvironmentTexture>(instance.environmentTextureHandle);
+
+		SceneLightDescription lightDescription = instance.sceneLightDescription;
+		
+		if (environmentTexture && environmentTexture->IsValid())
+		{
+			lightDescription.diffuseIBL = environmentTexture->GetDiffuseImage();
+			lightDescription.specularIBL = environmentTexture->GetSpecularImage();
+		}
+		else
+		{
+			lightDescription.diffuseIBL = Renderer::GetDefaultResources().blackCubeTexture;
+			lightDescription.specularIBL = Renderer::GetDefaultResources().blackCubeTexture;
+		}
+
+		instance.sceneLightData->InitializeFromDescription(lightDescription);
 	}
 
 	StreamingInstanceAssetReferenceCounter::StreamingInstanceAssetReferenceCounter(AssetType assetType)

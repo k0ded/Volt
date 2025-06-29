@@ -3,6 +3,8 @@
 #include "Volt-Assets/Config.h"
 #include "Volt-Assets/StreamingInstanceID.h"
 
+#include "Volt-Renderer/RenderScene/SceneLightData.h"
+
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetHandle.h>
 
@@ -26,8 +28,12 @@ namespace Volt
 		EntityID entityId; 
 		AssetHandle meshHandle;
 		Vector<AssetHandle> materialHandles;
-
 		Ref<ScenePrimitiveData> primitiveData;
+
+		// For skylight
+		SceneLightDescription sceneLightDescription;
+		AssetHandle environmentTextureHandle;
+		Ref<SceneLightData> sceneLightData;
 	};
 
 	class VTASSETS_API StreamingInstanceAssetReferenceCounter
@@ -60,6 +66,11 @@ namespace Volt
 			AssetHandle meshHandle;
 			Vector<AssetHandle> materialHandles;
 			Ref<ScenePrimitiveData> primitiveData;
+		
+			// For skylight
+			SceneLightDescription sceneLightDescription;
+			AssetHandle environmentTextureHandle;
+			Ref<SceneLightData> sceneLightData;
 		};
 
 		StreamingInstance& Add(StreamingInstanceID id);
@@ -93,10 +104,12 @@ namespace Volt
 
 	private:
 		void InitializeScenePrimitiveFromInstance(const StreamingInstanceMap::StreamingInstance& instance);
+		void InitializeSceneLightDataFromInstance(const StreamingInstanceMap::StreamingInstance& instance);
 
 		StreamingInstanceMap m_streamingInstances;
 		StreamingInstanceAssetReferenceCounter m_meshReferenceCounter;
 		StreamingInstanceAssetReferenceCounter m_materialReferenceCounter;
+		StreamingInstanceAssetReferenceCounter m_environmentTextureReferenceCounter;
 
 		inline static StreamingManager* s_instance = nullptr;
 	};

@@ -1217,7 +1217,7 @@ namespace Volt::RHI
 		region.imageSubresource.aspectMask = static_cast<VkImageAspectFlags>(vkImage.GetImageAspect());
 		region.imageSubresource.mipLevel = mip;
 		region.imageSubresource.baseArrayLayer = 0;
-		region.imageSubresource.layerCount = 1;
+		region.imageSubresource.layerCount = srcImage->GetLayerCount();
 
 		region.imageOffset = { 0, 0, 0 };
 		region.imageExtent = { width, height, 1 };
