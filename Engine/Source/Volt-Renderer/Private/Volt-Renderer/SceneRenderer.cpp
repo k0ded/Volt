@@ -542,7 +542,7 @@ namespace Volt
 		passParameters->DFGLuT = renderGraph.CreateSRV(environmentTextures.DFGLuT);
 		passParameters->SkylightIrradiance = renderGraph.CreateSRV(environmentTextures.irradiance);
 		passParameters->SkylightRadiance = renderGraph.CreateSRV(environmentTextures.radiance);
-		passParameters->LinearSampler = SamplerStateCache::GetTrilinearSampler();
+		passParameters->LinearSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>();
 		passParameters->NumRadianceMipLevels = environmentTextures.radiance->GetDesc().mips;
 
 		auto shader = ShaderMap::Get<RenderDeferredShadingCS>();

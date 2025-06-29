@@ -100,7 +100,9 @@ namespace Volt
 			{
 				for (const auto& includeDependency : shader->GetShaderIncludeDependencies())
 				{
-					if (includeDependency == filepath)
+					std::filesystem::path absoluteDependencyPath = std::filesystem::absolute(includeDependency);
+
+					if (absoluteDependencyPath == filepath)
 					{
 						touchedShaders.emplace_back(shader);
 						break;
