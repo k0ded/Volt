@@ -28,6 +28,4 @@ namespace Volt
 		static Buffer GetImageDataBuffer(RefPtr<RHI::Image> image, Vector<TextureMip>& outMips);
 		static void UploadImageData(RefPtr<RHI::Image> image, RHI::PixelFormat format, const Vector<TextureMip>& mips, const Buffer& dataBuffer);
 	};
-
-	VT_REGISTER_ASSET_SERIALIZER(AssetTypes::Texture, TextureSerializer);
 }

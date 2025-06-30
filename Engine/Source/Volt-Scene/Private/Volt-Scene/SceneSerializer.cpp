@@ -19,6 +19,8 @@
 
 namespace Volt
 {
+	VT_REGISTER_ASSET_SERIALIZER(AssetTypes::Scene, SceneSerializer);
+
 	static constexpr const char* ENTITY_FILE_EXTENSION = ".vtent";
 
 	template<typename T>

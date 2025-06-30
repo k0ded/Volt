@@ -5,6 +5,7 @@ AssetSerializerRegistry g_assetSerializerRegistry;
 
 bool AssetSerializerRegistry::RegisterAssetSerializer(VoltGUID typeGuid, Ref<Volt::AssetSerializer> serializer)
 {
+	VT_ASSERT(!m_serializers.contains(typeGuid));
 	m_serializers[typeGuid] = std::move(serializer);
 	return true;
 }

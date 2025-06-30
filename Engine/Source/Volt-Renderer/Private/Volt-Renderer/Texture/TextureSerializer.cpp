@@ -19,6 +19,8 @@
 
 namespace Volt
 {
+	VT_REGISTER_ASSET_SERIALIZER(AssetTypes::Texture, TextureSerializer);
+
 	struct TextureHeader
 	{
 		RHI::PixelFormat format; // Should be one of the BC formats

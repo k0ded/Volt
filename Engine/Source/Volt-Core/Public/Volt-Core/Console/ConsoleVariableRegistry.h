@@ -154,12 +154,7 @@ namespace Volt
 
 		Ref<RegisteredConsoleVariable<T>> consoleVariable = CreateRef<RegisteredConsoleVariable<T>>(tempVarName, defaultValue, description);
 
-		// #TODO_Ivar: Replace with assert.
-		if (g_consoleVariableRegistry.m_registeredVariables.contains(tempVarName))
-		{
-			return g_consoleVariableRegistry.m_registeredVariables.at(tempVarName);
-		}
-		//VT_ASSERT_MSG(!g_consoleVariableRegistry.m_registeredVariables.contains(tempVarName), "Command variable with name already registered!");
+		VT_ASSERT_MSG(!g_consoleVariableRegistry.m_registeredVariables.contains(tempVarName), "Command variable with name already registered!");
 		g_consoleVariableRegistry.m_registeredVariables[tempVarName] = consoleVariable;
 
 		return consoleVariable;
