@@ -176,6 +176,7 @@ namespace Volt
 	void UIApplication::MainUpdate()
 	{
 		WindowManager::Get().BeginFrame();
+		m_isProcessingFrame = true;
 
 		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
 		m_frameTimer.Update();
@@ -220,6 +221,7 @@ namespace Volt
 			m_imguiSubSystem->End();
 		}
 
+		m_isProcessingFrame = false;
 		if (!m_skipPresentThisFrame)
 		{
 			WindowManager::Get().Present();
@@ -244,7 +246,10 @@ namespace Volt
 	{
 		WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
 
-		MainUpdate();
+		if (!m_isProcessingFrame)
+		{
+			MainUpdate();
+		}
 		return false;
 	}
 

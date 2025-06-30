@@ -106,6 +106,7 @@ namespace Volt
 
 		bool m_skipPresentThisFrame = false;
 		bool m_isRunning = false;
+		bool m_isProcessingFrame = false;
 		float m_currentDeltaTime = 0.f;
 	};
 }
