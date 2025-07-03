@@ -124,7 +124,7 @@ namespace Volt::RHI
 	}
 
 	VulkanSwapchain::VulkanSwapchain(const SwapchainCreateInfo& createInfo)
-		: m_createInfo(createInfo)
+		: m_createInfo(createInfo), m_VSyncEnabled(createInfo.enableVSync)
 	{
 		auto vulkanContext = GraphicsContext::Get().As<VulkanGraphicsContext>();
 		auto& vulkanPhysicalDevice = GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>();
@@ -147,7 +147,7 @@ namespace Volt::RHI
 			m_fences[i] = Fence::Create({ true });
 		}
 
-		Invalidate(m_width, m_height, m_vSyncEnabled);
+		Invalidate(m_width, m_height, m_VSyncEnabled);
 	}
 
 	VulkanSwapchain::~VulkanSwapchain()
@@ -161,7 +161,7 @@ namespace Volt::RHI
 
 		if (m_swapchainNeedsRebuild)
 		{
-			Resize(m_width, m_height, m_vSyncEnabled);
+			Resize(m_width, m_height, m_VSyncEnabled);
 			m_swapchainNeedsRebuild = false;
 		}
 
@@ -279,7 +279,7 @@ namespace Volt::RHI
 
 		m_width = width;
 		m_height = height;
-		m_vSyncEnabled = enableVSync;
+		m_VSyncEnabled = enableVSync;
 
 		QuerySwapchainCapabilities();
 
@@ -333,7 +333,7 @@ namespace Volt::RHI
 	{
 		m_width = width;
 		m_height = height;
-		m_vSyncEnabled = enableVSync;
+		m_VSyncEnabled = enableVSync;
 
 		QuerySwapchainCapabilities();
 

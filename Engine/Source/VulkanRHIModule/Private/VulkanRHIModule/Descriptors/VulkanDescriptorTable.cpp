@@ -49,6 +49,8 @@ namespace Volt::RHI
 	
 	void VulkanDescriptorTable::SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding)
 	{
+		VT_PROFILE_FUNCTION();
+
 		// Make sure set and binding is actually used in the pipeline.
 		if (!m_writeDescriptorsMapping.contains(set) || !m_writeDescriptorsMapping.at(set).contains(binding))
 		{
@@ -89,6 +91,8 @@ namespace Volt::RHI
 	
 	void VulkanDescriptorTable::SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding)
 	{
+		VT_PROFILE_FUNCTION();
+
 		// Make sure set and binding is actually used in the pipeline.
 		if (!m_writeDescriptorsMapping.contains(set) || !m_writeDescriptorsMapping.at(set).contains(binding))
 		{
@@ -161,6 +165,8 @@ namespace Volt::RHI
 	
 	void VulkanDescriptorTable::SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding)
 	{
+		VT_PROFILE_FUNCTION();
+
 		// Make sure set and binding is actually used in the pipeline.
 		if (!m_writeDescriptorsMapping.contains(set) || !m_writeDescriptorsMapping.at(set).contains(binding))
 		{
@@ -407,6 +413,13 @@ namespace Volt::RHI
 				m_writeDescriptorsMapping[binding.set][binding.binding] = static_cast<uint32_t>(m_descriptorWrites.size() - 1);
 			}
 		}
+
+		for (const auto& [set, bindings] : m_writeDescriptorsMapping)
+		{
+			m_activeDescriptorWritesMapping[set].reserve(bindings.size());
+		}
+
+		m_activeDescriptorWrites.reserve(m_descriptorWrites.size());
 	}
 
 	void VulkanDescriptorTable::InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet)
@@ -503,6 +516,15 @@ namespace Volt::RHI
 
 					case ShaderResourceType::StructuredBuffer:
 					case ShaderResourceType::UniformBuffer:
+					{
+						auto& descriptorInfo = m_bufferDescriptorInfos[binding.set][binding.binding];
+						descriptorInfo.buffer = nullptr;
+						descriptorInfo.offset = 0;
+						descriptorInfo.range = 0;
+
+						break;
+					}
+
 					case ShaderResourceType::TexelBuffer:
 					{
 						auto& descriptorInfo = m_bufferDescriptorInfos[binding.set][binding.binding];
@@ -510,6 +532,7 @@ namespace Volt::RHI
 						descriptorInfo.offset = 0;
 						descriptorInfo.range = 0;
 
+						m_texelBufferViews[binding.set][binding.binding] = nullptr;
 						break;
 					}
 				}

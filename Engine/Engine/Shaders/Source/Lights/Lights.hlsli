@@ -49,12 +49,6 @@ struct LightDrawData
     float4 lightSpecific;
 };
 
-struct DirectionalLightShadowData
-{
-    float cascadeDistances[DIRECTIONAL_SHADOW_CASCADE_COUNT];
-    float4x4 viewProjections[DIRECTIONAL_SHADOW_CASCADE_COUNT];
-};
-
 int GetLightBufferIndex(Buffer<int> lightIndexBuffer, uint tileCountX, int i, uint2 tileId)
 {
     const uint index = tileId.y * tileCountX + tileId.x;

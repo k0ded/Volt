@@ -72,7 +72,7 @@ END_SHADER_PARAMETER_STRUCT()
 RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& renderScene, const RenderView& view, const MeshRenderer::PrimitveFilterFunc& primitiveFilter)
 {
 	MeshRenderer meshRenderer;
-	meshRenderer.BuildRenderCommandsWithFilter(renderScene, primitiveFilter, ShaderMap::Get<OutlineGeometryVS>(), ShaderMap::Get<OutlineGeometryPS>());
+	meshRenderer.BuildRenderCommandsWithFilter(m_renderGraph, renderScene, view.GetCullingInfo(), primitiveFilter, ShaderMap::Get<OutlineGeometryVS>(), ShaderMap::Get<OutlineGeometryPS>());
 
 	RGTextureRef colorTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "OutlineGeometryColor"));
 	RGTextureRef depthTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "OutlineGeometryDepth"));

@@ -75,6 +75,7 @@ namespace Volt
 		template<typename ParameterStruct> void CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters);
 
 		RefPtr<RHI::CommandBuffer> GetRHICommandBuffer();
+		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
 
 	private:
 		struct PerStageShaderParameters

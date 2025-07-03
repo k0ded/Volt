@@ -2,7 +2,6 @@
 #include "Utility/Bitwise.hlsli"
 
 RWBuffer<uint> RWValidPrimitiveDrawData;
-StructuredBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;
 
 uint PrimitiveDrawDataCount;
 

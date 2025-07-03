@@ -34,7 +34,6 @@ namespace Volt
 		: m_scene(sceneRef)
 	{
 		m_buffers.meshesBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMesh), "GPU Meshes");
-		m_buffers.sdfMeshesBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMeshSDF), "SDF GPU Meshes");
 		m_buffers.materialsBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMaterial), "GPU Materials");
 		m_buffers.primitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(PrimitiveDrawData), "Primitive Draw Data");
 		m_buffers.prevPrimitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(PrimitiveDrawData), "Prev Primitive Draw Data");
@@ -62,11 +61,14 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		renderGraph.BeginMarker("RenderScene::Update");
+
 		UpdateInvalidMaterials(renderGraph);
 		UpdateInvalidMeshes(renderGraph);
 		UpdateInvalidLights(renderGraph);
 		UpdateInvalidPrimitiveData(renderGraph);
 		CompactValidPrimitiveDrawDatas(renderGraph);
+		BuildPerMeshIndirectDrawCommands(renderGraph);
 
 		// Temporary animation sampling
 		m_currentBoneCount = 0;
@@ -106,6 +108,8 @@ namespace Volt
 		{
 			m_rayTracingScene->Update();
 		}
+
+		renderGraph.EndMarker();
 	}
 
 	void RenderScene::EndFrame(RenderGraph& renderGraph)
@@ -346,6 +350,7 @@ namespace Volt
 		GPUSceneParameters result;
 		result.PrimitiveDrawDataBuffer = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource()));
 		result.PrevPrimitiveDrawDataBuffer = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource()));
+		result.GPUMeshes = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.meshesBuffer->GetResource()));
 		result.SceneLights = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.lightsBuffer->GetResource()));
 
 		return result;
@@ -383,7 +388,7 @@ namespace Volt
 		return *it;
 	}
 
-	VT_NODISCARD Vector<uint32_t> RenderScene::GetPrimitiveIndicesFromEntityID(EntityID entityId) const
+	Vector<uint32_t> RenderScene::GetPrimitiveIndicesFromEntityID(EntityID entityId) const
 	{
 		Vector<uint32_t> result;
 
@@ -434,25 +439,9 @@ namespace Volt
 		primitiveDrawData.isAnimated = renderObject.IsAnimated();
 		primitiveDrawData.flags = PrimitiveFlags::Valid;
 
+#if 0
 		m_currentMeshletCount += m_gpuMeshes.at(meshId).meshletCount;
-	}
-
-	void RenderScene::BuildSingleSDFPrimitiveDrawData(SDFPrimitiveDrawData& primtiveDrawData, const RenderPrimitiveData& renderObject)
-	{
-		EntityHelper entity = m_scene->GetEntityHelperFromEntityID(renderObject.entityId);
-		if (!entity.IsValid())
-		{
-			return;
-		}
-
-		const size_t hash = Math::HashCombine(renderObject.mesh->GetHash(), std::hash<uint32_t>()(renderObject.subMeshIndex));
-		const uint32_t meshId = m_meshSubMeshToGPUMeshSDFIndex.contains(hash) ? m_meshSubMeshToGPUMeshSDFIndex.at(hash) : 0;
-
-		primtiveDrawData.position = entity.GetPosition();
-		primtiveDrawData.scale = entity.GetScale();
-		primtiveDrawData.rotation = entity.GetRotation();
-		primtiveDrawData.primtiveId = static_cast<uint32_t>(m_primitiveIndicesContainer.GetIndexFromID(renderObject.id));
-		primtiveDrawData.meshSDFId = meshId;
+#endif
 	}
 
 	void RenderScene::BuildSingleLightDrawData(LightDrawData& lightDrawData, RenderLightData& renderLight)
@@ -512,6 +501,8 @@ namespace Volt
 			return;
 		}
 
+		const size_t newMeshIndex = m_individualMeshes.size();
+
 		m_individualMeshes.emplace_back(mesh);
 		m_currentIndividualMeshCount += static_cast<uint32_t>(mesh->GetSubMeshes().size());
 
@@ -524,6 +515,7 @@ namespace Volt
 
 			const size_t meshHash = Math::HashCombine(mesh->GetHash(), std::hash<uint32_t>()(subMeshIndex));
 			m_meshSubMeshToGPUMeshIndex[meshHash] = static_cast<uint32_t>(currentIndex);
+			m_gpuMeshIndexToMeshAndSubMeshIndex[static_cast<uint32_t>(currentIndex)] = { newMeshIndex, subMeshIndex };
 			m_invalidMeshes.emplace_back(mesh, subMeshIndex, currentIndex);
 
 			currentIndex++;
@@ -688,6 +680,47 @@ namespace Volt
 
 			bufferUpload.UploadTo(renderGraph, drawDataBuffer->GetResource());
 		}
+	}
+
+	void RenderScene::BuildPerMeshIndirectDrawCommands(RenderGraph& renderGraph)
+	{
+		m_buffers.perMeshIndirectDrawCommands = renderGraph.CreateBuffer(RGBufferDesc::CreateIndirectDesc<RHI::DrawIndexedIndirectCommand>(m_gpuMeshes.size(), "RenderScene.PerMeshIndirectDrawCommands", RHI::MemoryUsage::CPUToGPU));
+		
+		Vector<RHI::DrawIndexedIndirectCommand> commands;
+		commands.reserve(m_gpuMeshes.size());
+
+		for (uint32_t index = 0; const auto& gpuMesh : m_gpuMeshes)
+		{
+			VT_UNUSED(gpuMesh);
+
+			auto& newCommand = commands.emplace_back();
+
+			if (m_gpuMeshIndexToMeshAndSubMeshIndex.contains(index))
+			{
+				MeshAndSubMeshIndex indices = m_gpuMeshIndexToMeshAndSubMeshIndex.at(index);
+
+				Weak<Mesh> mesh = m_individualMeshes.at(indices.meshIndex);
+				const SubMesh& subMesh = mesh->GetSubMeshes().at(indices.subMeshIndex);
+
+				newCommand.indexCount = subMesh.indexCount;
+				newCommand.instanceCount = 0;
+				newCommand.firstIndex = subMesh.indexStartOffset;
+				newCommand.vertexOffset = subMesh.vertexStartOffset;
+				newCommand.firstInstance = 0;
+			}
+			else
+			{
+				newCommand.indexCount = 0;
+				newCommand.instanceCount = 0;
+				newCommand.firstIndex = 0;
+				newCommand.vertexOffset = 0;
+				newCommand.firstInstance = 0;
+			}
+
+			index++;
+		}
+
+		AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(m_buffers.perMeshIndirectDrawCommands, RHI::PixelFormat::R32_UINT), commands.data(), sizeof(RHI::DrawIndexedIndirectCommand) * commands.size());
 	}
 
 	struct CompactValidDrawCallCS : public GlobalShader

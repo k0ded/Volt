@@ -111,6 +111,7 @@ namespace Volt
 			RHI::SwapchainCreateInfo createInfo{};
 			createInfo.platformWindow = m_window;
 			createInfo.useHDRIfAvailable = false;
+			createInfo.enableVSync = m_data.VSync;
 
 			m_swapchain = RHI::Swapchain::Create(createInfo);
 			m_swapchain->Resize(m_data.Width, m_data.Height, m_data.VSync);

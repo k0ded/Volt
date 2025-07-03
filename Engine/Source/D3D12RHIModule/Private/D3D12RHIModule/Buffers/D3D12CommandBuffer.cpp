@@ -555,7 +555,7 @@ namespace Volt::RHI
 		VT_ENSURE(m_currentComputePipeline != nullptr);
 #endif
 
-		ComPtr<ID3D12CommandSignature> signature = CommandSignatureCache::Get().GetOrCreateCommandSignature(CommandSignatureType::Dispatch, sizeof(IndirectDispatchCommand));
+		ComPtr<ID3D12CommandSignature> signature = CommandSignatureCache::Get().GetOrCreateCommandSignature(CommandSignatureType::Dispatch, sizeof(DispatchIndirectCommand));
 		m_commandListData.commandList->ExecuteIndirect(signature.Get(), 1, commandsBuffer->GetHandle<ID3D12Resource*>(), offset, nullptr, 0);
 	}
 

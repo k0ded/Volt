@@ -14,6 +14,7 @@ namespace Volt::RHI
 	{
 		void* platformWindow;
 		bool useHDRIfAvailable;
+		bool enableVSync;
 	};
 
 	class VTRHI_API Swapchain : public RHIInterface

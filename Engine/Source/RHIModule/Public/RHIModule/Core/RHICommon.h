@@ -817,34 +817,42 @@ namespace Volt::RHI
 		Variant<ImageBarrier, BufferBarrier, GlobalBarrier> m_barrier;
 	};
 
-	struct IndirectDrawIndexedCommand
+	struct DrawIndexedIndirectCommand
 	{
 		uint32_t indexCount;
 		uint32_t instanceCount;
 		uint32_t firstIndex;
 		int32_t vertexOffset;
 		uint32_t firstInstance;
+
+		inline static constexpr uint32_t SizeInUInts = 5;
 	};
 
-	struct IndirectDrawCommand
+	struct DrawIndirectCommand
 	{
 		uint32_t vertexCount;
 		uint32_t instanceCount;
 		uint32_t firstVertex;
 		uint32_t firstInstance;
+
+		inline static constexpr uint32_t SizeInUInts = 4;
 	};
 
-	struct IndirectDispatchCommand
+	struct DispatchIndirectCommand
 	{
 		uint32_t x;
 		uint32_t y;
 		uint32_t z;
+
+		inline static constexpr uint32_t SizeInUInts = 3;
 	};
 
-	struct IndirectMeshTasksCommand
+	struct MeshTasksIndirectCommand
 	{
 		uint32_t x;
 		uint32_t y;
 		uint32_t z;
+
+		inline static constexpr uint32_t SizeInUInts = 3;
 	};
 }

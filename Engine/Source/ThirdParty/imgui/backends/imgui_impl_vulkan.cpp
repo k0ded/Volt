@@ -99,6 +99,14 @@
 #define IM_MAX(A, B)    (((A) >= (B)) ? (A) : (B))
 #endif
 
+// BEGIN_VOLT_CHANGE
+#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Graphics/GraphicsDevice.h>
+#include <RHIModule/Graphics/DeviceQueue.h>
+
+#include <VulkanRHIModule/Graphics/VulkanDeviceQueue.h>
+// END_VOLD_CHANGE
+
 // Visual Studio warnings
 #ifdef _MSC_VER
 #pragma warning (disable: 4127) // condition expression is constant
@@ -903,12 +911,28 @@ void ImGui_ImplVulkan_UpdateTexture(ImTextureData* tex)
             end_info.pCommandBuffers = &bd->TexCommandBuffer;
             err = vkEndCommandBuffer(bd->TexCommandBuffer);
             check_vk_result(err);
+            // BEGIN_VOLT_CHANGE
+#if 0
             err = vkQueueSubmit(v->Queue, 1, &end_info, VK_NULL_HANDLE);
             check_vk_result(err);
+#else
+            auto vkQueue = Volt::RHI::GraphicsContext::GetDevice()->GetDeviceQueue(Volt::RHI::QueueType::Graphics)->As<Volt::RHI::VulkanDeviceQueue>();
+            vkQueue->AquireLock();
+            err = vkQueueSubmit(v->Queue, 1, &end_info, VK_NULL_HANDLE);
+            check_vk_result(err);
+            vkQueue->ReleaseLock();
+#endif
+            //END_VOLT_CHANGE
         }
 
+        // BEGIN_VOLT_CHANGE
+#if 0
         err = vkQueueWaitIdle(v->Queue); // FIXME-OPT: Suboptimal!
         check_vk_result(err);
+#else
+        Volt::RHI::GraphicsContext::GetDevice()->GetDeviceQueue(Volt::RHI::QueueType::Graphics)->WaitForQueue();
+#endif
+        // END_VOLT_CHANGE
         vkDestroyBuffer(v->Device, upload_buffer, v->Allocator);
         vkFreeMemory(v->Device, upload_buffer_memory, v->Allocator);
 
@@ -1395,8 +1419,15 @@ void ImGui_ImplVulkan_SetMinImageCount(uint32_t min_image_count)
 
     IM_ASSERT(0); // FIXME-VIEWPORT: Unsupported. Need to recreate all swap chains!
     ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
+
+    // BEGIN_VOLT_CHANGE
+#if 0
     VkResult err = vkDeviceWaitIdle(v->Device);
     check_vk_result(err);
+#else
+    Volt::RHI::GraphicsContext::GetDevice()->GetDeviceQueue(Volt::RHI::QueueType::Graphics)->WaitForQueue();
+#endif
+    // END_VOLT_CHANGE
     ImGui_ImplVulkanH_DestroyAllViewportsRenderBuffers(v->Device, v->Allocator);
 
     bd->VulkanInitInfo.MinImageCount = min_image_count;
@@ -1686,8 +1717,14 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
     VkResult err;
     VkSwapchainKHR old_swapchain = wd->Swapchain;
     wd->Swapchain = VK_NULL_HANDLE;
+    // BEGIN_VOLT_CHANGE
+#if 0
     err = vkDeviceWaitIdle(device);
     check_vk_result(err);
+#else
+    Volt::RHI::GraphicsContext::GetDevice()->GetDeviceQueue(Volt::RHI::QueueType::Graphics)->WaitForQueue();
+#endif
+    // END_VOLT_CHANGE
 
     // We don't use ImGui_ImplVulkanH_DestroyWindow() because we want to preserve the old swapchain to create the new one.
     // Destroy old Framebuffer
@@ -1911,8 +1948,18 @@ void ImGui_ImplVulkanH_CreateOrResizeWindow(VkInstance instance, VkPhysicalDevic
 
     VkQueue queue;
     vkGetDeviceQueue(device, queue_family, 0, &queue);
+    // BEGIN_VOLT_CHANGE
+#if 0
     err = vkQueueSubmit(queue, 1, &submit_info, fence);
     check_vk_result(err);
+#else
+    auto vkQueue = Volt::RHI::GraphicsContext::GetDevice()->GetDeviceQueue(Volt::RHI::QueueType::Graphics)->As<Volt::RHI::VulkanDeviceQueue>();
+    vkQueue->AquireLock();
+    err = vkQueueSubmit(queue, 1, &submit_info, fence);
+    check_vk_result(err);
+    vkQueue->ReleaseLock();
+#endif
+    //END_VOLT_CHANGE
     err = vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
     check_vk_result(err);
     err = vkResetFences(device, 1, &fence);
@@ -1933,7 +1980,13 @@ void ImGui_ImplVulkanH_CreateOrResizeWindow(VkInstance instance, VkPhysicalDevic
 
 void ImGui_ImplVulkanH_DestroyWindow(VkInstance instance, VkDevice device, ImGui_ImplVulkanH_Window* wd, const VkAllocationCallbacks* allocator)
 {
+    // BEGIN_VOLT_CHANGE
+#if 0
     vkDeviceWaitIdle(device); // FIXME: We could wait on the Queue if we had the queue in wd-> (otherwise VulkanH functions can't use globals)
+#else
+    Volt::RHI::GraphicsContext::GetDevice()->GetDeviceQueue(Volt::RHI::QueueType::Graphics)->WaitForQueue();
+#endif
+    // END_VOLT_CHANGE
     //vkQueueWaitIdle(bd->Queue);
 
     for (uint32_t i = 0; i < wd->ImageCount; i++)
@@ -2202,8 +2255,18 @@ static void ImGui_ImplVulkan_RenderWindow(ImGuiViewport* viewport, void*)
             check_vk_result(err);
             err = vkResetFences(v->Device, 1, &fd->Fence);
             check_vk_result(err);
+            // BEGIN_VOLT_CHANGE
+#if 0
             err = vkQueueSubmit(v->Queue, 1, &info, fd->Fence);
             check_vk_result(err);
+#else
+            auto vkQueue = Volt::RHI::GraphicsContext::GetDevice()->GetDeviceQueue(Volt::RHI::QueueType::Graphics)->As<Volt::RHI::VulkanDeviceQueue>();
+            vkQueue->AquireLock();
+            err = vkQueueSubmit(v->Queue, 1, &info, fd->Fence);
+            check_vk_result(err);
+            vkQueue->ReleaseLock();
+#endif
+            //END_VOLT_CHANGE
         }
     }
 }

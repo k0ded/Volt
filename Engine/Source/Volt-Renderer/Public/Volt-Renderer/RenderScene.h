@@ -31,7 +31,6 @@ namespace Volt
 	struct GPUSceneBuffers
 	{
 		Ref<GrowingGPUBuffer> meshesBuffer;
-		Ref<GrowingGPUBuffer> sdfMeshesBuffer;
 		Ref<GrowingGPUBuffer> materialsBuffer;
 		Ref<GrowingGPUBuffer> primitiveDrawDataBuffer;
 		Ref<GrowingGPUBuffer> prevPrimitiveDrawDataBuffer;
@@ -39,6 +38,7 @@ namespace Volt
 		Ref<GrowingGPUBuffer> lightsBuffer;
 
 		Ref<GrowingGPUBuffer> validPrimitiveDrawDatasBuffer;
+		RGBufferRef perMeshIndirectDrawCommands;
 	};
 
 	class VTR_API RenderScene
@@ -63,13 +63,12 @@ namespace Volt
 		UUID64 AddLightInstance(EntityID entityId, const SceneLightDescription& description);
 		void RemoveLightInstance(UUID64 id);
 
-		VT_INLINE VT_NODISCARD uint32_t GetRenderObjectCount() const { return static_cast<uint32_t>(m_renderPrimitives.size()); }
+		VT_INLINE VT_NODISCARD uint32_t GetNumRenderPrimitives() const { return static_cast<uint32_t>(m_renderPrimitives.size()); }
 		VT_INLINE VT_NODISCARD uint32_t GetIndividualMeshCount() const { return m_currentIndividualMeshCount; }
 		VT_INLINE VT_NODISCARD uint32_t GetIndividualMaterialCount() const { return static_cast<uint32_t>(m_individualMaterials.size()); }
 		VT_INLINE VT_NODISCARD uint32_t GetMeshletCount() const { return m_currentMeshletCount; }
 		VT_INLINE VT_NODISCARD uint32_t GetDrawCount() const { return m_renderPrimitives.empty() ? 0u : static_cast<uint32_t>(m_primitiveDrawData.size()); }
 		VT_INLINE VT_NODISCARD uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
-		VT_INLINE VT_NODISCARD uint32_t GetSDFPrimitiveCount() const { return static_cast<uint32_t>(m_sdfPrimitiveDrawData.size()); }
 		VT_INLINE VT_NODISCARD size_t GetMaxPrimitiveIndex() const { return m_primitiveIndicesContainer.GetMaxIndex(); }
 
 		VT_NODISCARD Weak<RenderMaterial> GetMaterialFromID(const uint32_t materialId) const;
@@ -103,7 +102,6 @@ namespace Volt
 		void BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial);
 
 		void BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderPrimitiveData& renderPrimitive);
-		void BuildSingleSDFPrimitiveDrawData(SDFPrimitiveDrawData& primtiveDrawData, const RenderPrimitiveData& renderPrimitive);
 		void BuildSingleLightDrawData(LightDrawData& lightDrawData, RenderLightData& renderLight);
 
 		void TryAddMesh(Ref<Mesh> mesh);
@@ -113,6 +111,7 @@ namespace Volt
 		void UpdateInvalidMeshes(RenderGraph& renderGraph);
 		void UpdateInvalidPrimitiveData(RenderGraph& renderGraph);
 		void CompactValidPrimitiveDrawDatas(RenderGraph& renderGraph);
+		void BuildPerMeshIndirectDrawCommands(RenderGraph& renderGraph);
 
 		void UpdateInvalidLights(RenderGraph& renderGraph);
 
@@ -136,6 +135,12 @@ namespace Volt
 		{
 			UUID64 id;
 			size_t index;
+		};
+
+		struct MeshAndSubMeshIndex
+		{
+			size_t meshIndex;
+			uint32_t subMeshIndex;
 		};
 
 		class PrimitiveIndicesContainer
@@ -179,7 +184,6 @@ namespace Volt
 		Vector<RenderLightData> m_renderLights;
 
 		Vector<GPUMesh> m_gpuMeshes;
-		Vector<GPUMeshSDF> m_gpuSDFMeshes;
 		Vector<GPUMaterial> m_gpuMaterials;
 
 		Vector<InvalidMaterial> m_invalidMaterials;
@@ -187,7 +191,7 @@ namespace Volt
 
 		Map<size_t, size_t> m_gpuMaterialIndexFromMaterialHash;
 		Map<size_t, uint32_t> m_meshSubMeshToGPUMeshIndex;
-		Map<size_t, uint32_t> m_meshSubMeshToGPUMeshSDFIndex;
+		Map<uint32_t, MeshAndSubMeshIndex> m_gpuMeshIndexToMeshAndSubMeshIndex;
 
 		Vector<Weak<Mesh>> m_individualMeshes;
 		Vector<Weak<RenderMaterial>> m_individualMaterials;
@@ -197,7 +201,6 @@ namespace Volt
 
 		// Scene Primitives
 		Vector<PrimitiveDrawData> m_primitiveDrawData;
-		Vector<SDFPrimitiveDrawData> m_sdfPrimitiveDrawData;
 		PrimitiveIndicesContainer m_primitiveIndicesContainer;
 
 		// Scene Lights

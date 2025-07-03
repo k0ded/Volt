@@ -258,6 +258,11 @@ namespace Volt
 		return m_commandBuffer;
 	}
 
+	RefPtr<RHI::StorageBuffer> RenderContext::GetRHIBuffer(RGBufferRef buffer)
+	{
+		return m_renderGraph.GetRHIBuffer(buffer);
+	}
+
 	void RenderContext::BindDescriptorTable()
 	{
 		VT_ENSURE(m_descriptorTable);

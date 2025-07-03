@@ -327,7 +327,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		MeshRenderer meshRenderer;
-		meshRenderer.BuildRenderCommands(m_renderScene, ShaderMap::Get<DepthPrePassVS>(), ShaderMap::Get<DepthPrePassPS>());
+		meshRenderer.BuildRenderCommands(renderGraph, m_renderScene, view.GetCullingInfo(), ShaderMap::Get<DepthPrePassVS>(), ShaderMap::Get<DepthPrePassPS>());
 
 		SceneTextures& sceneTextures = blackboard.Add<SceneTextures>();
 		sceneTextures.sceneVelocity = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "SceneVelocity"));
@@ -386,7 +386,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		
 		MeshRenderer meshRenderer;
-		meshRenderer.BuildRenderCommands(m_renderScene, ShaderMap::Get<GenerateGBufferVS>());
+		meshRenderer.BuildRenderCommands(renderGraph, m_renderScene, view.GetCullingInfo(), ShaderMap::Get<GenerateGBufferVS>());
 
 		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 		sceneTextures.gBufferAlbedo = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferAlbedo"));
