@@ -6,11 +6,12 @@
 struct VkInstance_T;
 struct VkDebugUtilsMessengerEXT_T;
 
-class PhysicalGraphicsDevice;
-class GraphicsDevice;
-
 namespace Volt::RHI
 {
+	class PhysicalGraphicsDevice;
+	class GraphicsDevice;
+	class VulkanDebugLayer;
+
 	class VulkanGraphicsContext final : public GraphicsContext
 	{
 	public:
@@ -34,7 +35,6 @@ namespace Volt::RHI
 		void Shutdown();
 		void CreateInstance();
 
-		const bool CheckValidationLayerSupport() const;
 		const Vector<const char*> GetRequiredExtensions() const;
 
 		VkInstance_T* m_instance = nullptr;
@@ -46,6 +46,8 @@ namespace Volt::RHI
 
 		RefPtr<GPUAllocator> m_defaultAllocator;
 		RefPtr<GPUAllocator> m_transientAllocator;
+
+		Ref<VulkanDebugLayer> m_debugLayer;
 
 		GraphicsContextCreateInfo m_createInfo{};
 	};
