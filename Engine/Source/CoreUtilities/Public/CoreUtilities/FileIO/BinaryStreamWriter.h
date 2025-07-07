@@ -58,6 +58,9 @@ public:
 
 	size_t Write(const void* data, const size_t size);
 
+	//should generally be avoided
+	size_t WriteWithoutHeader(const void* data, const size_t size);
+
 private:
 	bool GetCompressed(Vector<uint8_t>& result, size_t compressedDataOffset = 0);
 

@@ -666,7 +666,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 						prefabAsset->UpdateEntityInPrefab(entity);
 						UpdatePrefabsInScene(prefabAsset, entity);
 
-						Volt::AssetManager::SaveAsset(prefabAsset);
+						Volt::AssetManager::SaveAsset(prefabAsset->handle);
 						UI::Notify(UI::NotificationType::Success, "Prefab updated!", std::format("The prefab file {0} has been updated!", prefabPath.string()));
 					}
 				}
@@ -841,18 +841,16 @@ void SceneViewPanel::CreatePrefabAndSetupEntities(Volt::Entity entity)
 
 	const auto& tagComp = entity.GetComponent<Volt::TagComponent>();
 
-	Ref<Volt::Prefab> prefab = CreateRef<Volt::Prefab>(entity);
+	std::string noSpacesPrefabName = tagComp.tag;
+	noSpacesPrefabName.erase(std::remove_if(noSpacesPrefabName.begin(), noSpacesPrefabName.end(), ::isspace), noSpacesPrefabName.end());
+
+	Ref<Volt::Prefab> prefab = Volt::AssetManager::CreateAsset<Volt::Prefab>(noSpacesPrefabName, entity);
 
 	const std::filesystem::path basePath = "Assets/Prefabs/";
 
-	std::string path = basePath.string() + tagComp.tag + ".vtprefab";
-	if (!std::filesystem::exists(Volt::ProjectManager::GetProjectDirectory() / basePath))
-	{
-		std::filesystem::create_directories(Volt::ProjectManager::GetProjectDirectory() / basePath);
-	}
+	//todo_fabian: fix prefabs properly
 
-	path.erase(std::remove_if(path.begin(), path.end(), ::isspace), path.end());
-	Volt::AssetManager::SaveAssetAs(prefab, path);
+	Volt::AssetManager::SaveMemoryAssetToDirectory(prefab->handle, basePath);
 
 	EditorUtils::MarkEntityAndChildrenAsEdited(entity);
 }

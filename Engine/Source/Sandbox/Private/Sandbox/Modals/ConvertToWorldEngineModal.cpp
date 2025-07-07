@@ -41,7 +41,7 @@ void ConvertToWorldEngineModal::DrawModalContent()
 
 		if (Volt::AssetManager::ExistsInRegistry(m_scene->handle))
 		{
-			Volt::AssetManager::SaveAsset(m_scene.GetSharedPtr());
+			Volt::AssetManager::SaveAsset(m_scene->handle);
 		}
 		Close();
 	}

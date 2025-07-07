@@ -148,7 +148,7 @@ namespace Volt
 		{
 			auto& cell = GetCellFromID(cellId);
 
-			SceneSerializer::Get().LoadWorldCell(m_scene->shared_from_this(), cell);
+			//SceneSerializer::Get().LoadWorldCell(m_scene->shared_from_this(), cell);
 			cell.isLoaded = true;
 		});
 		JobSystem::RunJob(job);

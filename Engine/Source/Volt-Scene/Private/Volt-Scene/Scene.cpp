@@ -253,7 +253,7 @@ namespace Volt
 
 	Ref<Scene> Scene::CreateDefaultScene(const std::string& name, bool createDefaultMesh)
 	{
-		Ref<Scene> newScene = CreateRef<Scene>(name);
+		Ref<Scene> newScene = Volt::AssetManager::CreateAsset<Scene>(name);
 
 		// Setup
 		{

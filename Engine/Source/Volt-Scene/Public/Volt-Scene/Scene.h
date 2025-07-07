@@ -2,8 +2,7 @@
 
 #include "Volt-Scene/WorldEngine/WorldEngine.h"
 #include "Volt-Scene/Config.h"
-
-#include <Volt-Core/AssetTypes.h>
+#include "Volt-Scene/AssetTypes.h"
 
 #include <AssetSystem/Asset.h>
 

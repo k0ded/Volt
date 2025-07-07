@@ -19,7 +19,7 @@
 
 namespace Volt
 {
-	void MaterialSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
+	void MaterialSerializer::Serialize(const AssetMetadata& metadata, StackVector<uint8_t, ASSET_METADATA_SIZE>& customData, const Ref<Asset>& asset) const
 	{
 		const Ref<MaterialAsset> mosaicAsset = std::reinterpret_pointer_cast<MaterialAsset>(asset);
 		const auto& graph = mosaicAsset->GetMaterialGraph()->GetMosaicGraph();

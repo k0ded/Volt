@@ -48,3 +48,16 @@ namespace Volt
 		uint32_t m_patch = 0;
 	};
 }
+
+namespace std
+{
+	template<>
+	struct hash<Volt::Version>
+	{
+		size_t operator()(const Volt::Version& version) const
+		{
+			std::hash<uint64_t> hasher;
+			return hasher(version.GetMajor()) ^ hasher(version.GetMinor()) ^ hasher(version.GetPatch());
+		}
+	};
+}

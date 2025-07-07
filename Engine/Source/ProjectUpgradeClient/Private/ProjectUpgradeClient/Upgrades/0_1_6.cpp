@@ -1,0 +1,248 @@
+#include "Upgrades/0_1_6.h"
+
+#include "UpgradesRegistry.h"
+
+#include "Volt-Platforms/Windows/WindowsPlatformThread.h"
+
+#include <CoreUtilities/FileSystem.h>
+
+#include <CoreUtilities/Containers/StackVector.h>
+
+#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
+#include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
+
+#include <CoreUtilities/Allocators/InlineAllocator.h>
+
+#include <Volt-Core/Project/Project.h>
+
+namespace Volt
+{
+	REGISTER_UPGRADE(Volt::Version::Create(0, 1, 6), Upgrade_0_1_6);
+
+	Upgrade_0_1_6::Upgrade_0_1_6(const Project& inProject)
+		: Upgrade(inProject)
+	{
+		m_currentStage = UpgradeStage::Collecting;
+		m_numActionsCompleted = 0;
+		m_numTotalActions = 0;
+	}
+
+	bool Upgrade_0_1_6::ProcessUpgrade()
+	{
+		switch (m_currentStage)
+		{
+			case UpgradeStage::Collecting:
+			{
+				const auto assetsDir = GetTargetProject().rootDirectory.parent_path();
+				//const auto assetsDir = GetTargetProject().rootDirectory / GetTargetProject().assetsDirectory;
+				if (FileSystem::Exists(assetsDir))
+				{
+					for (auto& p : std::filesystem::recursive_directory_iterator(assetsDir))
+					{
+						if (p.path().extension() == ".vtent" ||
+							p.path().extension() == ".vtasset")
+						{
+							m_filesToProcess.emplace_back(p.path());
+						}
+					}
+				}
+				m_numTotalActions = m_filesToProcess.size();
+				m_currentStage = UpgradeStage::Converting;
+				break;
+			}
+			case UpgradeStage::Converting:
+			{
+				//25 is probably good enough
+				for (size_t i = 0; i < 25; i++)
+				{
+					if (m_filesToProcess.empty())
+					{
+						break;
+					}
+					std::filesystem::path path = m_filesToProcess.back();
+					m_filesToProcess.pop_back();
+
+					ProcessFile(path);
+				}
+				break;
+			}
+		}
+
+		return m_filesToProcess.empty();
+	}
+
+	size_t Upgrade_0_1_6::GetNumTotalActions()
+	{
+		return m_numTotalActions;
+	}
+
+	size_t Upgrade_0_1_6::GetNumActionsCompleted()
+	{
+		return m_numActionsCompleted;
+	}
+
+	std::string Upgrade_0_1_6::GetCurrentActionText()
+	{
+		switch(m_currentStage)
+		{
+			case UpgradeStage::Collecting:
+				return "Collecting files to convert...";
+			case UpgradeStage::Converting:
+				return "Converting files...";
+		}
+		return "Error";
+	}
+
+	void Upgrade_0_1_6::ProcessFile(std::filesystem::path inPath)
+	{
+		if (inPath.extension() == ".vtent")
+		{
+			ProcessEntityFile(inPath);
+		}
+		else if (inPath.extension() == ".vtasset")
+		{
+			ProcessAssetFile(inPath);
+		}
+
+		m_numActionsCompleted++;
+	}
+
+	void Upgrade_0_1_6::ProcessEntityFile(std::filesystem::path inPath)
+	{
+		//find the owning scene, it should be one folder up and the only vtasset in that folder
+		const std::filesystem::path sceneDir = inPath.parent_path().parent_path();
+		std::filesystem::path sceneAssetPath;
+		if (FileSystem::Exists(sceneDir))
+		{
+			for (auto& p : std::filesystem::directory_iterator(sceneDir))
+			{
+				if (p.path().extension() == ".vtasset")
+				{
+					sceneAssetPath = p;
+					break;
+				}
+			}
+		}
+
+		//get the asset handle of the owning scene
+		BinaryStreamReader sceneStreamReader{ sceneAssetPath };
+		if (!sceneStreamReader.IsStreamValid())
+		{
+			return;
+		}
+
+		uint32_t magicSceneVal = 0;
+		sceneStreamReader.Read(magicSceneVal);
+		if (magicSceneVal != OldSerializedAssetMetadata::AssetMagic)
+		{
+			return;
+		}
+		OldSerializedAssetMetadata OldMetadata;
+		sceneStreamReader.Read(OldMetadata);
+
+		UUID64 OwningSceneAssetHandle = OldMetadata.handle;
+		//done finding owning scene
+
+		BinaryStreamReader streamReader{ inPath };
+		if (!streamReader.IsStreamValid())
+		{
+			return;
+		}
+
+		uint32_t magicVal = 0;
+		streamReader.Read(magicVal);
+
+		constexpr uint32_t ENTITY_MAGIC_VAL = 1515;
+		if (magicVal != ENTITY_MAGIC_VAL)
+		{
+			return;
+		}
+
+		//this buffer is the entity data
+		Buffer buffer{};
+		streamReader.Read(buffer);
+
+
+		//write to file
+		BinaryStreamWriter entityDescFileWriter{};
+
+		entityDescFileWriter.Write(NewSerializedAssetMetadata::AssetMagic);
+
+		NewSerializedAssetMetadata newMetadata;
+		newMetadata.handle = UUID64();
+		newMetadata.type = "{50C26090-1874-4609-8386-67AEB44CE208}"_guid;
+		newMetadata.version = 1;
+		memset(newMetadata.customData.Data(), 0, ASSET_CUSTOM_METADATA_SIZE);
+		//custom metadata for entities contain the sceneHandle of the entity
+		UUID64& MetadataSceneHandleRef = *reinterpret_cast<UUID64*>(newMetadata.customData.Data());
+		//assign scene handle here
+		MetadataSceneHandleRef = OwningSceneAssetHandle;
+
+		size_t compressedDataOffset = entityDescFileWriter.Write(newMetadata);
+
+		entityDescFileWriter.Write(buffer);
+		buffer.Release();
+
+		entityDescFileWriter.WriteToDisk(inPath, true, compressedDataOffset);
+
+		//change extension of entity file
+		std::filesystem::path newPath = inPath;
+		newPath.replace_filename(inPath.stem().string() + ".vtasset");
+		std::filesystem::rename(inPath, newPath);
+	}
+
+	void Upgrade_0_1_6::ProcessAssetFile(std::filesystem::path inPath)
+	{
+		BinaryStreamReader streamReader{ inPath };
+		if (!streamReader.IsStreamValid())
+		{
+			return;
+		}
+
+		uint32_t magicVal = 0;
+		streamReader.Read(magicVal);
+		if (magicVal != OldSerializedAssetMetadata::AssetMagic)
+		{
+			return;
+		}
+		OldSerializedAssetMetadata OldMetadata;
+		streamReader.Read(OldMetadata);
+
+		//this is the asset data
+		Vector<uint8_t> bytes;
+		streamReader.ReadBytesRaw(bytes, streamReader.GetRemainingDataSize());
+
+
+		//write to file
+		BinaryStreamWriter streamWriter{};
+
+		NewSerializedAssetMetadata newMetadata;
+		memset(newMetadata.customData.Data(), 0, ASSET_CUSTOM_METADATA_SIZE);
+		newMetadata.handle = OldMetadata.handle;
+		newMetadata.version = OldMetadata.version;
+		newMetadata.type = OldMetadata.type;
+
+		streamWriter.Write(NewSerializedAssetMetadata::AssetMagic);
+		size_t compressedDataOffset = streamWriter.Write(newMetadata);
+
+		streamWriter.WriteWithoutHeader(bytes.data(), bytes.size());
+
+		streamWriter.WriteToDisk(inPath, true, compressedDataOffset);
+	}
+
+	void Upgrade_0_1_6::NewSerializedAssetMetadata::Serialize(BinaryStreamWriter& streamWriter, const NewSerializedAssetMetadata& data)
+	{
+		streamWriter.Write(data.handle);
+		streamWriter.Write(data.type);
+		streamWriter.Write(data.version);
+		streamWriter.Write(data.customData);
+	}
+
+	void Upgrade_0_1_6::OldSerializedAssetMetadata::Deserialize(BinaryStreamReader& streamReader, OldSerializedAssetMetadata& outData)
+	{
+		streamReader.Read(outData.handle);
+		streamReader.Read(outData.type);
+		streamReader.Read(outData.version);
+	}
+
+}

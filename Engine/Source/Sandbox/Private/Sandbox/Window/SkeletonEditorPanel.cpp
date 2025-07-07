@@ -26,7 +26,7 @@ void SkeletonEditorPanel::UpdateMainContent()
 
 	if (ImGui::Button("Save"))
 	{
-		Volt::AssetManager::SaveAsset(m_skeleton);
+		Volt::AssetManager::SaveAsset(m_skeleton->handle);
 	}
 
 	if (ImGui::Button("Add"))
@@ -115,7 +115,7 @@ void SkeletonEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 {
 	if (m_skeleton)
 	{
-		Volt::AssetManager::SaveAsset(std::reinterpret_pointer_cast<Volt::Asset>(m_skeleton));
+		Volt::AssetManager::SaveAsset(m_skeleton->handle);
 	}
 
 	m_skeleton = std::reinterpret_pointer_cast<Volt::Skeleton>(asset);

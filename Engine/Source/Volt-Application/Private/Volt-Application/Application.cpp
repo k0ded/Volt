@@ -270,8 +270,6 @@ namespace Volt
 
 			AppUpdateEvent updateEvent(m_currentDeltaTime);
 			EventSystem::DispatchEvent(updateEvent);
-
-			AssetManager::Update();
 		}
 
 		{

@@ -233,3 +233,13 @@ TypeHeader BinaryStreamReader::ReadTypeHeader()
 	return result;
 }
 
+size_t BinaryStreamReader::GetRemainingDataSize()
+{
+	return m_data.size() - m_currentOffset;
+}
+
+bool BinaryStreamReader::IsAtEnd()
+{
+	return m_currentOffset == m_data.size();
+}
+

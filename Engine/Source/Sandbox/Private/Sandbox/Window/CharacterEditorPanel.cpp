@@ -79,7 +79,7 @@ void CharacterEditorPanel::UpdateMainContent()
 			{
 				if (myCurrentCharacter)
 				{
-					Volt::AssetManager::Get().SaveAsset(myCurrentCharacter);
+					Volt::AssetManager::Get().SaveAsset(myCurrentCharacter->handle);
 					UI::Notify(UI::NotificationType::Success, "Saved character!", std::format("Character {0} successfully saved!", myCurrentCharacter->assetName));
 				}
 			}
@@ -118,7 +118,7 @@ void CharacterEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 {
 	if (myCurrentCharacter)
 	{
-		Volt::AssetManager::Get().SaveAsset(myCurrentCharacter);
+		Volt::AssetManager::Get().SaveAsset(myCurrentCharacter->handle);
 	}
 
 	myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().animatedCharacter = asset->handle;
@@ -234,7 +234,7 @@ void CharacterEditorPanel::UpdateToolbar()
 	{
 		if (myCurrentCharacter)
 		{
-			Volt::AssetManager::Get().SaveAsset(myCurrentCharacter);
+			Volt::AssetManager::Get().SaveAsset(myCurrentCharacter->handle);
 			UI::Notify(UI::NotificationType::Success, "Saved Character!", std::format("Saved character {0} to file!", myCurrentCharacter->assetName));
 		}
 	}

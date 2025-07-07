@@ -13,9 +13,8 @@ namespace Volt
 		PrefabSerializer();
 		~PrefabSerializer() override;
 
-		void Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const override;
+		void Serialize(const AssetMetadata& metadata, StackVector<uint8_t, ASSET_METADATA_SIZE>& customData, const Ref<Asset>& asset) const override;
 		bool Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const override;
-
 	private:
 		inline static PrefabSerializer* s_instance = nullptr;
 	};

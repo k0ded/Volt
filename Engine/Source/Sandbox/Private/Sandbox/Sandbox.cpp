@@ -45,6 +45,7 @@
 
 #include "Sandbox/Modals/MeshImportModal.h"
 #include "Sandbox/Modals/TextureImportModal.h"
+#include "Sandbox/Modals/CheckoutFilesModal.h"
 
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/EditorLibrary.h"
@@ -140,11 +141,6 @@ void Sandbox::OnAttach()
 				worldEngine.BeginStreamingCell(cell.cellId);
 			}
 		}
-	}
-
-	if (!m_runtimeScene)
-	{
-		NewScene();
 	}
 
 	RegisterPanels();
@@ -293,6 +289,9 @@ void Sandbox::InitializeModals()
 
 	auto& textureModal = ModalSystem::AddModal<TextureImportModal>("Import Texture##sandbox");
 	m_textureImportModal = textureModal.GetID();
+
+	auto& checkoutFilesModal = ModalSystem::AddModal<CheckoutFilesModal>("Checkout Files##sandbox");
+	m_checkoutFilesModal = checkoutFilesModal.GetID();
 }
 
 void Sandbox::OnDetach()
@@ -411,6 +410,16 @@ void Sandbox::OnSimulationStop()
 	SetupNewSceneData();
 }
 
+void Sandbox::PromptForCheckoutFiles(const Vector<std::filesystem::path>& paths, std::function<void()> onConfirm, std::function<void()> onCancel)
+{
+	auto& modal = ModalSystem::GetModal<CheckoutFilesModal>(GetCheckoutFilesModalID());
+	modal.SetAssetsToCheckout(paths);
+	modal.SetOnConfirm(onConfirm);
+	modal.SetOnCancel(onCancel);
+
+	m_wantsToOpenCheckoutFilesModal = true;
+}
+
 void Sandbox::NewScene()
 {
 	SelectionManager::DeselectAll();
@@ -479,6 +488,7 @@ bool Sandbox::LoadScene(Volt::OnSceneTransitionEvent& e)
 {
 	m_storedScene = Volt::AssetManager::GetAsset<Volt::Scene>(e.GetHandle());
 	m_shouldLoadNewScene = true;
+	TransitionToNewScene();
 
 	return true;
 }
@@ -504,12 +514,46 @@ void Sandbox::SaveScene()
 	{
 		if (Volt::AssetManager::ExistsInRegistry(m_runtimeScene->handle))
 		{
-			if (FileSystem::IsWriteable(Volt::AssetManager::GetFilesystemPath(m_runtimeScene->handle)))
+			//Vector<std::filesystem::path> paths;
+			//Volt::AssetManager::Get().GetFilesAffectedBySave(m_runtimeScene, paths);
+
+			//PromptForCheckoutFiles(paths,
+			//	// onConfirm
+			//[paths, this]()
+			//{
+			//	Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
+
+			//	String Message;
+
+			//	bool anyWriteable = false;
+			//	for (const std::filesystem::path& path : paths)
+			//	{
+			//		if (FileSystem::IsWriteable(path))
+			//		{
+			//			anyWriteable = true;
+			//		}
+
+
+
+			//	}
+
+			//	UI::Notify(NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
+			//},
+
+			////on Cancel
+			//[]()
+			//{
+			//	//do nothing
+			//});
+
+
+			//todo_fabian: reimplement
+			/*if (FileSystem::IsWriteable(Volt::AssetManager::GetFilesystemPath(m_runtimeScene->handle)))
 			{
 				Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
 				UI::Notify(UI::NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
 			}
-			else
+			else*/
 			{
 				UI::Notify(UI::NotificationType::Error, "Unable to save scene!", std::format("Scene {0} was is not writeable!", m_runtimeScene->assetName));
 			}
@@ -707,6 +751,14 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 		NewScene();
 	}
 
+	if (m_wantsToOpenCheckoutFilesModal)
+	{
+		auto& modal = ModalSystem::GetModal<CheckoutFilesModal>(GetCheckoutFilesModalID());
+		modal.Open();
+
+		m_wantsToOpenCheckoutFilesModal = false;
+	}
+
 	UpdateDockSpace();
 
 	ModalSystem::Update();
@@ -805,7 +857,7 @@ bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
 
 	if (m_shouldLoadNewScene)
 	{
-		TransitionToNewScene();
+		//TransitionToNewScene();
 	}
 
 	RenderGameView(e.GetTimestep());

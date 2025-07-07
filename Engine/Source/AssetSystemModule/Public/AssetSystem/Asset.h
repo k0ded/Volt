@@ -3,10 +3,14 @@
 #include "AssetSystem/AssetType.h"
 #include "AssetSystem/AssetHandle.h"
 
+#include <CoreUtilities/Containers/StackVector.h>
+
 #include <filesystem>
+
 
 namespace Volt
 {
+
 	enum class AssetChangedState : uint8_t
 	{
 		Removed,
@@ -23,18 +27,31 @@ namespace Volt
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(AssetFlag);
 
+	inline static constexpr size_t ASSET_METADATA_SIZE = 256;
 	struct AssetMetadata
 	{
 		inline const bool IsValid() const { return handle != 0; }
+
+		template<typename CustomMetadataType> 
+		const CustomMetadataType& GetCustomData() const
+		{
+			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(type), std::format("Custom metadata type is not for type %s!", type->GetName()));
+			VT_ENSURE_MSG(customData.Size() == sizeof(CustomMetadataType), std::format("Custom metadata size is not correct, for type: %s!", type->GetName()));
+
+			return reinterpret_cast<const CustomMetadataType&>(*customData.Data());
+		}
 
 		AssetHandle handle = 0;
 		AssetType type;
 
 		bool isLoaded = false;
 		bool isQueued = false;
+		//a memory asset is an asset that is not saved to a file on the disc
 		bool isMemoryAsset = false;
 
 		std::filesystem::path filePath;
+
+		StackVector<uint8_t, ASSET_METADATA_SIZE> customData;
 	};
 
 	// #TODO_Ivar: Change name to be getter / setter, also add virtual functions when name changes.

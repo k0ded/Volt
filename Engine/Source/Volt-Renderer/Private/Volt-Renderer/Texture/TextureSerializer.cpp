@@ -66,7 +66,7 @@ namespace Volt
 		Vector<Mip> mips;
 	};
 
-	void TextureSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
+	void TextureSerializer::Serialize(const AssetMetadata& metadata, StackVector<uint8_t, ASSET_METADATA_SIZE>& customData, const Ref<Asset>& asset) const
 	{
 		Ref<Texture2D> texture = std::reinterpret_pointer_cast<Texture2D>(asset);
 		RefPtr<RHI::Image> image = texture->GetImage();

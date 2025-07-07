@@ -73,6 +73,9 @@ public:
 	
 	VT_NODISCARD VT_INLINE UUID64 GetMeshImportModalID() const { return m_meshImportModal; }
 	VT_NODISCARD VT_INLINE UUID64 GetTextureImportModalID() const { return m_textureImportModal; }
+	VT_NODISCARD VT_INLINE UUID64 GetCheckoutFilesModalID() const { return m_checkoutFilesModal; }
+
+	void PromptForCheckoutFiles(const Vector<std::filesystem::path>& paths, std::function<void()> onConfirm, std::function<void()> onCancel);
 
 	VT_NODISCARD VT_INLINE Ref<ObjectIDSceneRendererExtension> GetObjectIDSceneRendererExtension() const { return m_objectIDSceneRendererExtension; }
 
@@ -158,6 +161,7 @@ private:
 	///// Modals /////
 	UUID64 m_meshImportModal;
 	UUID64 m_textureImportModal;
+	UUID64 m_checkoutFilesModal;
 	//////////////////
 
 	Ref<Volt::Scene> m_runtimeScene;
@@ -180,6 +184,7 @@ private:
 	bool m_buildStarted = false;
 	bool m_playHasMouseControl = false;
 	bool m_isInitialized = false;
+	bool m_wantsToOpenCheckoutFilesModal = false;
 
 	Ref<Volt::Scene> m_storedScene;
 	bool m_shouldLoadNewScene = false;

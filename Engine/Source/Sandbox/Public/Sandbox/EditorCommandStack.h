@@ -2,7 +2,7 @@
 
 #include <Volt-Scene/Components/CoreComponents.h>
 #include <Volt-Scene/Entity.h>
-#include <Volt-Scene/SceneSerializer.h>
+#include <Volt-Scene/EntityDescriptionSerializer.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
@@ -319,7 +319,7 @@ private:
 
 		Volt::AssetMetadata fakeMetadata;
 		fakeMetadata.filePath = "Metadata Created By ObjectStateCommand.";
-		Volt::SceneSerializer::Get().SerializeEntity(entity.GetHandle(), fakeMetadata, entity.GetScene(), writer);
+		Volt::EntityDescSerializer::Get().SerializeEntity(entity.GetID(), entity.GetScene(), writer);
 
 		m_EntitiesDataList.push_back(writer.WriteAndGetBuffer());
 
@@ -334,7 +334,7 @@ private:
 			reader.ConsumeBuffer(buffer);
 			Volt::AssetMetadata fakeMetadata;
 			fakeMetadata.filePath = "Metadata Created By ObjectStateCommand.";
-			Volt::SceneSerializer::Get().DeserializeEntity(m_TargetScene, fakeMetadata, reader);
+			Volt::EntityDescSerializer::Get().DeserializeEntity(m_TargetScene, reader);
 		}
 
 		//have to invalidate the transform after spawning the entity

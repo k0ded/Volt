@@ -9,6 +9,7 @@ namespace Volt
 		serializedMetadata.handle = metadata.handle;
 		serializedMetadata.type = metadata.type;
 		serializedMetadata.version = version;
+		serializedMetadata.customData = metadata.customData;
 
 		streamWriter.Write(SerializedAssetMetadata::AssetMagic);
 		return streamWriter.Write(serializedMetadata);
@@ -24,5 +25,4 @@ namespace Volt
 		streamReader.Read(result);
 		return result;
 	}
-
 }

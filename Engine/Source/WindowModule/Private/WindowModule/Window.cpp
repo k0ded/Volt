@@ -386,6 +386,12 @@ namespace Volt
 
 	void Window::Resize(uint32_t aWidth, uint32_t aHeight)
 	{
+		if (m_data.Width == aWidth && m_data.Height == aHeight)
+		{
+			// new size is same as current size
+			return;
+		}
+
 		if (aWidth == 0 && aHeight == 0)
 		{
 			int tempWidth = 0, tempHeight = 0;
@@ -396,16 +402,17 @@ namespace Volt
 			}
 		}
 
+
 		m_data.Width = aWidth;
 		m_data.Height = aHeight;
 
-		/*if (Application::Get().IsRuntime())
+		/*if (Application::Get().IsRuntime())*/
 		{
-			if (m_data.windowMode == WindowMode::Windowed)
+			if (m_data.WindowMode == WindowMode::Windowed)
 			{
 				glfwSetWindowSize(m_window, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight));
 			}
-			else if (m_data.windowMode == WindowMode::Fullscreen)
+			else if (m_data.WindowMode == WindowMode::Fullscreen)
 			{
 				glfwSetWindowMonitor(m_window, glfwGetPrimaryMonitor(), 0, 0, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight), GLFW_DONT_CARE);
 			}
@@ -413,7 +420,7 @@ namespace Volt
 			{
 				return;
 			}
-		}*/
+		}
 
 		m_swapchain->Resize(aWidth, aHeight, m_data.VSync);
 	}

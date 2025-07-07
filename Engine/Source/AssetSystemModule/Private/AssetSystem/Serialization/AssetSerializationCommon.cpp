@@ -11,6 +11,7 @@ namespace Volt
 		streamWriter.Write(data.handle);
 		streamWriter.Write(data.type->GetGUID());
 		streamWriter.Write(data.version);
+		streamWriter.Write(data.customData);
 	}
 
 	void SerializedAssetMetadata::Deserialize(BinaryStreamReader& streamReader, SerializedAssetMetadata& outData)
@@ -20,7 +21,7 @@ namespace Volt
 		streamReader.Read(outData.handle);
 		streamReader.Read(guid);
 		streamReader.Read(outData.version);
-
+		streamReader.Read(outData.customData);
 		outData.type = GetAssetTypeRegistry().GetTypeFromGUID(guid);
 	}
 }

@@ -2,6 +2,9 @@
 
 #include "CoreUtilities/VoltAssert.h"
 
+#include "CoreUtilities/FileIO/BinaryStreamReader.h"
+#include "CoreUtilities/FileIO/BinaryStreamWriter.h"
+
 #include <array>
 
 template<typename T, size_t MAX_SIZE>
@@ -13,8 +16,12 @@ public:
 
 	StackVector(std::initializer_list<T> initializerList);
 
+	static void Serialize(BinaryStreamWriter& streamWriter, const StackVector<T, MAX_SIZE>& data);
+	static void Deserialize(BinaryStreamReader& streamReader, StackVector<T, MAX_SIZE>& outData);
+
 	void Push(const T& value);
 	void Erase(const size_t index);
+	void Resize(const size_t newSize);
 
 	template<typename... Args>
 	constexpr T& EmplaceBack(Args&&... args);
@@ -93,6 +100,21 @@ inline StackVector<T, MAX_SIZE>::StackVector(std::initializer_list<T> initialize
 }
 
 template<typename T, size_t MAX_SIZE>
+inline void StackVector<T, MAX_SIZE>::Serialize(BinaryStreamWriter& streamWriter, const StackVector<T, MAX_SIZE>& data)
+{
+	streamWriter.Write(data.m_currentSize);
+	streamWriter.Write(data.m_data);
+}
+
+template<typename T, size_t MAX_SIZE>
+inline void StackVector<T, MAX_SIZE>::Deserialize(BinaryStreamReader& streamReader, StackVector<T, MAX_SIZE>& outData)
+{
+	streamReader.Read(outData.m_currentSize);
+	streamReader.Read(outData.m_data);
+
+}
+
+template<typename T, size_t MAX_SIZE>
 template<typename ...Args>
 inline constexpr T& StackVector<T, MAX_SIZE>::EmplaceBack(Args&& ...args)
 {
@@ -125,6 +147,19 @@ inline void StackVector<T, MAX_SIZE>::Erase(const size_t index)
 	}
 
 	m_currentSize--;
+}
+
+template<typename T, size_t MAX_SIZE>
+inline void StackVector<T, MAX_SIZE>::Resize(const size_t newSize)
+{
+	VT_ASSERT(MAX_SIZE <= newSize);
+
+	if (m_currentSize == newSize)
+	{
+		return;
+	}
+
+	m_currentSize = newSize;
 }
 
 template<typename T, size_t MAX_SIZE>

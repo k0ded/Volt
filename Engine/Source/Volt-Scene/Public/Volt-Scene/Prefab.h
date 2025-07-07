@@ -4,6 +4,8 @@
 
 #include "Volt-Scene/Entity.h"
 
+#include <Volt-Core/AssetTypes.h>
+
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>
 

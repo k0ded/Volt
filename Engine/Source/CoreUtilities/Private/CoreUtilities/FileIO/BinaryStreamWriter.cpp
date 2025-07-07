@@ -138,3 +138,10 @@ size_t BinaryStreamWriter::Write(const void* data, const size_t size)
 
 	return m_data.size();
 }
+
+size_t BinaryStreamWriter::WriteWithoutHeader(const void* data, const size_t size)
+{
+	WriteData(data, size);
+
+	return m_data.size();
+}

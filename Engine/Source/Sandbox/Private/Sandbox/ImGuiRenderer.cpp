@@ -731,33 +731,35 @@ void Sandbox::SaveSceneAsModal()
 		ImGui::PushItemWidth(80.f);
 		if (ImGui::Button("Save"))
 		{
-			if (m_saveSceneData.name.empty())
-			{
-				ImGui::CloseCurrentPopup();
+			//todo_fabian: reimplement
+			
+			//if (m_saveSceneData.name.empty())
+			//{
+			//	ImGui::CloseCurrentPopup();
 
-				UI::Notify(UI::NotificationType::Error, "Unable to save scene!", "A scene with no name cannot be saved!");
+			//	UI::Notify(UI::NotificationType::Error, "Unable to save scene!", "A scene with no name cannot be saved!");
 
-				ImGui::PopItemWidth();
-				UI::EndModal();
-				return;
-			}
+			//	ImGui::PopItemWidth();
+			//	UI::EndModal();
+			//	return;
+			//}
 
-			const std::filesystem::path destPath = m_saveSceneData.destinationPath / m_saveSceneData.name;
-			if (!FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / destPath))
-			{
-				std::filesystem::create_directories(Volt::ProjectManager::GetRootDirectory() / destPath);
-			}
+			//const std::filesystem::path destPath = m_saveSceneData.destinationPath / m_saveSceneData.name;
+			//if (!FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / destPath))
+			//{
+			//	std::filesystem::create_directories(Volt::ProjectManager::GetRootDirectory() / destPath);
+			//}
 
-			const auto relPath = Volt::AssetManager::GetRelativePath(destPath.string() + "\\" + m_saveSceneData.name + ".vtasset");
+			//const auto relPath = Volt::AssetManager::GetRelativePath(destPath.string() + "\\" + m_saveSceneData.name + ".vtasset");
 
-			//myRuntimeScene->CopyTo(myRuntimeScene);
-			m_runtimeScene->handle = {};
+			////myRuntimeScene->CopyTo(myRuntimeScene);
+			//m_runtimeScene->handle = {};
 
-			Volt::AssetManager::SaveAssetAs(m_runtimeScene, relPath);
+			//Volt::AssetManager::SaveAssetAs(m_runtimeScene, relPath);
 
-			UI::Notify(UI::NotificationType::Success, "Successfully saved scene!", std::format("Scene {0} was saved successfully!", m_saveSceneData.name));
+			//UI::Notify(UI::NotificationType::Success, "Successfully saved scene!", std::format("Scene {0} was saved successfully!", m_saveSceneData.name));
 
-			SetupNewSceneData();
+			//SetupNewSceneData();
 			ImGui::CloseCurrentPopup();
 		}
 

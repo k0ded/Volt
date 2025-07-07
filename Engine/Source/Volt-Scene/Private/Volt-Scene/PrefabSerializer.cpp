@@ -5,6 +5,8 @@
 
 #include <AssetSystem/AssetManager.h>
 
+#include <Volt-Scene/EntityDescriptionSerializer.h>
+
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 
@@ -20,7 +22,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void PrefabSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
+	void PrefabSerializer::Serialize(const AssetMetadata& metadata, StackVector<uint8_t, ASSET_METADATA_SIZE>& customData, const Ref<Asset>& asset) const
 	{
 		const Ref<Prefab> prefab = std::reinterpret_pointer_cast<Prefab>(asset);
 
@@ -33,9 +35,9 @@ namespace Volt
 
 		yamlStreamWriter.BeginSequence("Entities");
 		{
-			for (const auto id : prefab->m_prefabScene->GetAllEntities())
+			for (const auto entity : prefab->m_prefabScene->GetAllEntities())
 			{
-				SceneSerializer::Get().SerializeEntity(id, metadata, prefab->m_prefabScene, yamlStreamWriter);
+				EntityDescSerializer::Get().SerializeEntity(entity.GetID(), prefab->m_prefabScene, yamlStreamWriter);
 			}
 		}
 		yamlStreamWriter.EndSequence();
@@ -110,7 +112,7 @@ namespace Volt
 
 			yamlStreamReader.ForEach("Entities", [&]() 
 			{
-				SceneSerializer::Get().DeserializeEntity(prefabScene, metadata, yamlStreamReader);
+				EntityDescSerializer::Get().DeserializeEntity(prefabScene, yamlStreamReader);
 			});
 
 			yamlStreamReader.ForEach("PrefabReferences", [&]() 

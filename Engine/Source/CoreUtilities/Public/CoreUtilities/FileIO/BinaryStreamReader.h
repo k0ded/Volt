@@ -54,9 +54,17 @@ public:
 	void Read(Map<Key, Value>& data);
 
 	void Read(void* data);
+	
+	//note: this will override any data in the destination vector
+	template<typename AllocatorType = HeapAllocator>
+	void ReadBytesRaw(Vector<uint8_t, AllocatorType>& destination, size_t numBytes);
 
 	void ResetHead();
 	TypeHeader ReadTypeHeader();
+
+	size_t GetRemainingDataSize();
+
+	bool IsAtEnd();
 
 private:
 	void ReadData(void* outData, const TypeHeader& serializedTypeHeader, const TypeHeader& constructedTypeHeader);
@@ -352,4 +360,15 @@ inline void BinaryStreamReader::Read(Map<Key, Value>& data)
 
 		data[key] = value;
 	}
+}
+
+template<typename AllocatorType>
+inline void BinaryStreamReader::ReadBytesRaw(Vector<uint8_t, AllocatorType>& destination, size_t numBytes)
+{
+	VT_ASSERT(numBytes <= GetRemainingDataSize());
+
+	destination.resize_uninitialized(numBytes);
+	memcpy_s(destination.data(), destination.size(), &m_data[m_currentOffset], numBytes);
+
+	m_currentOffset += numBytes;
 }

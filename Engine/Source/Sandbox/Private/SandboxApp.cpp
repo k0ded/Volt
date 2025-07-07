@@ -1,7 +1,6 @@
 #include "sbpch.h"
 
 #include "Sandbox/Sandbox.h"
-#include "ProjectUpgrade/ProjectUpgradeLayer.h"
 
 #include <Volt-Core/Config.h>
 #include <Volt-Core/Project/ProjectManager.h>
