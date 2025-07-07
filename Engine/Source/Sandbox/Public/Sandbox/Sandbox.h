@@ -126,6 +126,8 @@ private:
 
 	float DrawTitlebar();
 	void DrawMenuBar();
+
+	void DrawUnsavedAssetsBlock();
 	
 	void RenderGameView(float timestep);
 	///////////////

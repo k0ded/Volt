@@ -62,6 +62,13 @@ ViewportPanel::ViewportPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::
 
 void ViewportPanel::UpdateMainContent()
 {
+	if (!m_editorScene)
+	{
+		UI::ScopedFont font(UI::FontType::Regular, 90.f);
+		ImGui::Text("No Scene Loaded.");
+		return;
+	}
+
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{ 0.07f, 0.07f, 0.07f, 1.f });
 
 	auto viewportMinRegion = ImGui::GetWindowContentRegionMin();

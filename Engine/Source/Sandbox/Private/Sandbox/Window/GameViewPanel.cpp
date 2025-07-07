@@ -41,6 +41,13 @@ GameViewPanel::GameViewPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::
 
 void GameViewPanel::UpdateMainContent()
 {
+	if (!m_editorScene)
+	{
+		UI::ScopedFont font(UI::FontType::Regular, 90.f);
+		ImGui::Text("No Scene Loaded.");
+		return;
+	}
+
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{ 0.07f, 0.07f, 0.07f, 1.f });
 
 	auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
@@ -69,7 +76,10 @@ void GameViewPanel::OnOpen()
 {
 	Volt::SceneRendererCreateInfo spec{};
 	spec.debugName = "Game Viewport";
-	spec.renderScene = m_editorScene->GetRenderScene();
+	if (m_editorScene)
+	{
+		spec.renderScene = m_editorScene->GetRenderScene();
+	}
 	m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
 }
 

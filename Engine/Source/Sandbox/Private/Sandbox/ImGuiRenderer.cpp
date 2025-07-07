@@ -10,6 +10,8 @@
 
 #include "Sandbox/UserSettingsManager.h"
 
+#include "Sandbox/DirtyAssetsManager.h"
+
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <EventSystem/EventSystem.h>
@@ -707,10 +709,27 @@ void Sandbox::DrawMenuBar()
 			ImGui::EndMenu();
 		}
 
+
+		DrawUnsavedAssetsBlock();
 		UI::EndMenuBar();
 	}
 	ImGui::EndGroup();
 }
+
+void Sandbox::DrawUnsavedAssetsBlock()
+{
+	const std::set<Volt::AssetHandle>& dirtyAssets = DirtyAssetsManager::Get().GetDirtyAssets();
+
+	if (dirtyAssets.empty())
+	{
+		ImGui::Text("No dirty assets");
+	}
+	else
+	{
+		ImGui::Text("%d dirty assets", dirtyAssets.size());
+	}
+}
+
 
 void Sandbox::SaveSceneAsModal()
 {

@@ -57,6 +57,12 @@ void SceneViewPanel::UpdateMainContent()
 {
 	VT_PROFILE_FUNCTION();
 
+	if (!m_scene)
+	{
+		ImGui::Text("No scene loaded.");
+		return;
+	}
+
 	//if (myTitle.contains("#"))
 	//{
 	//	SelectionManager::SetSelectionKey(myId);

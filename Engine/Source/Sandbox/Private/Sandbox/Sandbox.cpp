@@ -47,6 +47,8 @@
 #include "Sandbox/Modals/TextureImportModal.h"
 #include "Sandbox/Modals/CheckoutFilesModal.h"
 
+#include "Sandbox/DirtyAssetsManager.h"
+
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/EditorLibrary.h"
 #include "Sandbox/Utility/SelectionManager.h"
@@ -61,6 +63,7 @@
 #include <Volt-Scene/Scene.h>
 #include <Volt-Scene/SceneManager.h>
 #include <Volt-Scene/SceneEvents.h>
+#include <Volt-Scene/EntityDescription.h>
 
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
@@ -429,6 +432,13 @@ void Sandbox::NewScene()
 	}
 
 	m_runtimeScene = Volt::Scene::CreateDefaultScene("New Scene", true);
+	DirtyAssetsManager::Get().MarkAssetDirty(m_runtimeScene->handle);
+	m_runtimeScene->ForEachWithComponents<Volt::TagComponent>([sceneHandle = m_runtimeScene->handle](const entt::entity id, const Volt::TagComponent& tagComponent)
+	{
+		std::string name = std::to_string(static_cast<uint32_t>(id));
+		Ref<Volt::EntityDesc> asset = Volt::AssetManager::CreateAsset<Volt::EntityDesc>(name, Volt::EntityID(static_cast<uint32_t>(id)), sceneHandle);
+		DirtyAssetsManager::Get().MarkAssetDirty(asset->handle);
+	});
 	SetupNewSceneData();
 }
 
@@ -510,59 +520,65 @@ bool Sandbox::CheckForUpdateNavMesh(Volt::Entity entity)
 
 void Sandbox::SaveScene()
 {
-	if (m_runtimeScene)
-	{
-		if (Volt::AssetManager::ExistsInRegistry(m_runtimeScene->handle))
-		{
-			//Vector<std::filesystem::path> paths;
-			//Volt::AssetManager::Get().GetFilesAffectedBySave(m_runtimeScene, paths);
+	//blocking modal here
 
-			//PromptForCheckoutFiles(paths,
-			//	// onConfirm
-			//[paths, this]()
-			//{
-			//	Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
+	//todo_fabian implement filtering
+	DirtyAssetsManager::Get().SaveAssets();
 
-			//	String Message;
+	//if (m_runtimeScene)
+	//{
+	//	DirtyAssetsManager::Get().SaveAssets();
+	//	if (Volt::AssetManager::ExistsInRegistry(m_runtimeScene->handle))
+	//	{
+	//		//Vector<std::filesystem::path> paths;
+	//		//Volt::AssetManager::Get().GetFilesAffectedBySave(m_runtimeScene, paths);
 
-			//	bool anyWriteable = false;
-			//	for (const std::filesystem::path& path : paths)
-			//	{
-			//		if (FileSystem::IsWriteable(path))
-			//		{
-			//			anyWriteable = true;
-			//		}
+	//		//PromptForCheckoutFiles(paths,
+	//		//	// onConfirm
+	//		//[paths, this]()
+	//		//{
+	//		//	Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
 
+	//		//	String Message;
 
-
-			//	}
-
-			//	UI::Notify(NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
-			//},
-
-			////on Cancel
-			//[]()
-			//{
-			//	//do nothing
-			//});
+	//		//	bool anyWriteable = false;
+	//		//	for (const std::filesystem::path& path : paths)
+	//		//	{
+	//		//		if (FileSystem::IsWriteable(path))
+	//		//		{
+	//		//			anyWriteable = true;
+	//		//		}
 
 
-			//todo_fabian: reimplement
-			/*if (FileSystem::IsWriteable(Volt::AssetManager::GetFilesystemPath(m_runtimeScene->handle)))
-			{
-				Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
-				UI::Notify(UI::NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
-			}
-			else*/
-			{
-				UI::Notify(UI::NotificationType::Error, "Unable to save scene!", std::format("Scene {0} was is not writeable!", m_runtimeScene->assetName));
-			}
-		}
-		else
-		{
-			SaveSceneAs();
-		}
-	}
+
+	//		//	}
+
+	//		//	UI::Notify(NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
+	//		//},
+
+	//		////on Cancel
+	//		//[]()
+	//		//{
+	//		//	//do nothing
+	//		//});
+
+
+	//		//todo_fabian: reimplement
+	//		/*if (FileSystem::IsWriteable(Volt::AssetManager::GetFilesystemPath(m_runtimeScene->handle)))
+	//		{
+	//			Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
+	//			UI::Notify(UI::NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
+	//		}
+	//		else*/
+	//		{
+	//			UI::Notify(UI::NotificationType::Error, "Unable to save scene!", std::format("Scene {0} was is not writeable!", m_runtimeScene->assetName));
+	//		}
+	//	}
+	//	else
+	//	{
+	//		SaveSceneAs();
+	//	}
+	//}
 }
 
 void Sandbox::TransitionToNewScene()
@@ -674,25 +690,28 @@ bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
 	auto mousePos = Volt::Input::GetMousePosition();
 	Volt::Input::SetViewportMousePosition(m_gameViewPanel->GetViewportLocalPosition(mousePos));
 
-	switch (m_sceneState)
+	if (m_runtimeScene)
 	{
-		case SceneState::Edit:
-			m_runtimeScene->UpdateEditor(e.GetTimestep());
-			break;
+		switch (m_sceneState)
+		{
+			case SceneState::Edit:
+				m_runtimeScene->UpdateEditor(e.GetTimestep());
+				break;
 
-		case SceneState::Play:
-			m_runtimeScene->Update(e.GetTimestep());
-			break;
+			case SceneState::Play:
+				m_runtimeScene->Update(e.GetTimestep());
+				break;
 
-		case SceneState::Pause:
-			break;
+			case SceneState::Pause:
+				break;
 
-		case SceneState::Simulating:
-			m_runtimeScene->UpdateSimulation(e.GetTimestep());
-			break;
+			case SceneState::Simulating:
+				m_runtimeScene->UpdateSimulation(e.GetTimestep());
+				break;
+		}
+
+		SelectionManager::Update(m_runtimeScene);
 	}
-
-	SelectionManager::Update(m_runtimeScene);
 
 	if (m_shouldResetLayout)
 	{
@@ -806,31 +825,34 @@ void Sandbox::RenderGameView(float timestep)
 		case SceneState::Pause:
 		case SceneState::Simulating:
 		{
-			Volt::Entity cameraEntity{};
-			int32_t highestPrio = -1;
-
-			m_runtimeScene->ForEachWithComponents<const Volt::CameraComponent>([&](const entt::entity id, const Volt::CameraComponent& camComp)
+			if (m_runtimeScene)
 			{
-				if ((int32_t)camComp.priority > highestPrio)
+				Volt::Entity cameraEntity{};
+				int32_t highestPrio = -1;
+
+				m_runtimeScene->ForEachWithComponents<const Volt::CameraComponent>([&](const entt::entity id, const Volt::CameraComponent& camComp)
 				{
-					highestPrio = (int32_t)camComp.priority;
-					cameraEntity = { id, m_runtimeScene.get() };
+					if ((int32_t)camComp.priority > highestPrio)
+					{
+						highestPrio = (int32_t)camComp.priority;
+						cameraEntity = { id, m_runtimeScene.get() };
+					}
+				});
+
+				if (!cameraEntity)
+				{
+					break;
 				}
-			});
 
-			if (!cameraEntity)
-			{
-				break;
+				const auto& camComp = cameraEntity.GetComponent<Volt::CameraComponent>();
+				const auto finalImage = m_gameSceneRenderer->GetFinalImage();
+
+				Ref<Volt::Camera> camera = CreateRef<Volt::Camera>(camComp.fieldOfView, (float)finalImage->GetWidth() / (float)finalImage->GetHeight(), camComp.nearPlane, camComp.farPlane);
+				camera->SetPosition(cameraEntity.GetPosition());
+				camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
+
+				m_gameSceneRenderer->OnRenderEditor(camera, timestep);
 			}
-
-			const auto& camComp = cameraEntity.GetComponent<Volt::CameraComponent>();
-			const auto finalImage = m_gameSceneRenderer->GetFinalImage();
-
-			Ref<Volt::Camera> camera = CreateRef<Volt::Camera>(camComp.fieldOfView, (float)finalImage->GetWidth() / (float)finalImage->GetHeight(), camComp.nearPlane, camComp.farPlane);
-			camera->SetPosition(cameraEntity.GetPosition());
-			camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
-
-			m_gameSceneRenderer->OnRenderEditor(camera, timestep);
 			break;
 		}
 	}
@@ -851,7 +873,10 @@ bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
 		case SceneState::Play:
 		case SceneState::Pause:
 		case SceneState::Simulating:
-			m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera(), e.GetTimestep());
+			if (m_sceneRenderer)
+			{
+				m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera(), e.GetTimestep());
+			}
 			break;
 	}
 
