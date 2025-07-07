@@ -64,13 +64,15 @@ namespace Volt::RHI
 		imageDescriptor.imageView = imageView->GetHandle<VkImageView>();
 		imageDescriptor.sampler = nullptr;
 
-		VT_ENSURE(imageDescriptor.imageView);
+		//VT_ENSURE(imageDescriptor.imageView);
 
 		uint32_t writeDescriptorIndex = 0;
 
 		// Create a new active descriptor write, or use a cached one.
 		if (m_activeDescriptorWritesMapping[set][binding].value == DefaultInvalid::INVALID_VALUE)
 		{
+			VT_PROFILE_SCOPE("Copy descriptor write");
+
 			writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
 
 			DescriptorWrite& writeDescriptorCopy = m_activeDescriptorWrites.emplace_back() = m_descriptorWrites.at(writeDescriptorIndex);
@@ -82,6 +84,8 @@ namespace Volt::RHI
 		}
 		else
 		{
+			VT_PROFILE_SCOPE("Update cached descriptor write");
+
 			writeDescriptorIndex = m_activeDescriptorWritesMapping[set][binding].value;
 			m_activeDescriptorWrites.at(writeDescriptorIndex).pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageDescriptor);
 		}
@@ -93,12 +97,12 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		// Make sure set and binding is actually used in the pipeline.
-		if (!m_writeDescriptorsMapping.contains(set) || !m_writeDescriptorsMapping.at(set).contains(binding))
-		{
-			// We return here without error as it is fine to do this. Maybe add later under validation define?
-			return;
-		}
+		//// Make sure set and binding is actually used in the pipeline.
+		//if (!m_writeDescriptorsMapping.contains(set) || !m_writeDescriptorsMapping.at(set).contains(binding))
+		//{
+		//	// We return here without error as it is fine to do this. Maybe add later under validation define?
+		//	return;
+		//}
 
 		m_isDirty = true;
 
@@ -130,6 +134,8 @@ namespace Volt::RHI
 		// Create a new active descriptor write, or use a cached one.
 		if (m_activeDescriptorWritesMapping[set][binding].value == DefaultInvalid::INVALID_VALUE)
 		{
+			VT_PROFILE_SCOPE("Copy descriptor write");
+
 			const uint32_t writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
 
 			DescriptorWrite& writeDescriptorCopy = m_activeDescriptorWrites.emplace_back() = m_descriptorWrites.at(writeDescriptorIndex);
@@ -149,6 +155,8 @@ namespace Volt::RHI
 		}
 		else
 		{
+			VT_PROFILE_SCOPE("Update cached descriptor write");
+
 			const uint32_t writeDescriptorIndex = m_activeDescriptorWritesMapping[set][binding].value;
 			auto& activeDescriptorWrite = m_activeDescriptorWrites.at(writeDescriptorIndex);
 

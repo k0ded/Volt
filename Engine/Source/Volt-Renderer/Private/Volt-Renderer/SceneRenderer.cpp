@@ -17,6 +17,7 @@
 #include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
 #include "Volt-Renderer/RenderingTechniques/LightTileBinningTechnique.h"
 #include "Volt-Renderer/RenderingTechniques/GTAOTechnique.h"
+#include "Volt-Renderer/RenderingTechniques/CascadedDirectionalShadowTechnique.h"
 
 #include <JobSystem/JobSystem.h>
 
@@ -141,6 +142,15 @@ namespace Volt
 		// Requires GBuffer normals.
 		GTAOTechnique gtaoTechnique{ renderGraph, blackboard };
 		gtaoTechnique.Execute(renderView);
+
+		for (const RenderLightData& light : m_renderScene->GetRenderLightData())
+		{
+			if (light.description.lightType == SceneLightType::Directional)
+			{
+				CascadedDirectionalShadowTechnique cascadedDirectionalShadowTechnique{ renderGraph, blackboard };
+				cascadedDirectionalShadowTechnique.Execute(renderView, light);
+			}
+		}
 
 		// Create shading RT
 		{

@@ -2,6 +2,7 @@
 
 #include "RHIModule/Descriptors/ResourceHandle.h"
 #include "RHIModule/Core/RHICommon.h"
+#include "RHIModule/Core/RHIInterface.h"
 
 #include <CoreUtilities/Containers/FunctionQueue.h>
 
@@ -9,8 +10,6 @@
 
 namespace Volt::RHI
 {
-	class RHIInterface;
-
 	struct RegisteredResource
 	{
 		ResourceHandle handle;
@@ -18,7 +17,7 @@ namespace Volt::RHI
 		ImageUsage imageUsage;
 		uint32_t userData;
 
-		RawPtr<RHIInterface> resource;
+		RawPtr<ArenaRHIInterface> resource;
 	};
 
 	class VTRHI_API ResourceRegistry
@@ -26,10 +25,10 @@ namespace Volt::RHI
 	public:
 		ResourceRegistry(uint32_t handleSize, uint64_t framesInFlight);
 
-		ResourceHandle RegisterResource(RawPtr<RHIInterface> resource, ImageUsage imageUsage = ImageUsage::None, uint32_t userData = 0);
+		ResourceHandle RegisterResource(RawPtr<ArenaRHIInterface> resource, ImageUsage imageUsage = ImageUsage::None, uint32_t userData = 0);
 		void UnregisterResource(ResourceHandle handle);
 
-		ResourceHandle GetResourceHandle(RawPtr<RHIInterface> resource);
+		ResourceHandle GetResourceHandle(RawPtr<ArenaRHIInterface> resource);
 
 		void Update();
 		void MarkAsDirty(ResourceHandle handle);

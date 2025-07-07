@@ -17,13 +17,13 @@ public:
 	RefCounted(RefCounted&&) noexcept = delete;
 	RefCounted& operator=(RefCounted&&) noexcept = delete;
 
-	void IncRef() const noexcept
+	VT_INLINE void IncRef() const noexcept
 	{
 		[[maybe_unused]] auto oldValue = m_count.fetch_add(1, std::memory_order_relaxed);
 		VT_ASSERT(oldValue > 0);
 	}
 
-	void DecRef() const noexcept
+	VT_INLINE void DecRef() const noexcept
 	{
 		auto oldCount = m_count.fetch_sub(1, std::memory_order_release);
 		VT_ASSERT(oldCount > 0);

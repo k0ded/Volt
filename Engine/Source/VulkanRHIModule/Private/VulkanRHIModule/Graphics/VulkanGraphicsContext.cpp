@@ -108,7 +108,7 @@ namespace Volt::RHI
 #ifdef VT_ENABLE_VALIDATION
 		m_debugLayer = CreateRef<VulkanDebugLayer>();
 
-		if (!m_debugLayer->IsSupported())
+		if (m_debugLayer && !m_debugLayer->IsSupported())
 		{
 			VT_LOGC(Warning, LogVulkanRHI, "Vulkan validation layers were requested but not supported. Running without it!");
 		}

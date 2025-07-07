@@ -2,41 +2,70 @@
 #include "RenderCore/Shader/BatchedShaderParameters.h"
 
 #include <RHIModule/Shader/ShaderParameterMap.h>
+#include <RHIModule/Globals.h>
 
 namespace Volt
 {
 	void BatchedShaderParameters::AddBufferParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::BufferView> bufferView)
 	{
-		BatchedBufferShaderParameter* parameter = m_allocator.Allocate<BatchedBufferShaderParameter>(bindingName, resourceType, bufferView);
-		m_parameters.emplace_back(parameter);
+		BatchedBufferShaderBinding* parameter = m_allocator.Allocate<BatchedBufferShaderBinding>(bindingName, resourceType, bufferView);
+		m_bindings.emplace_back(parameter);
 	}
 
 	void BatchedShaderParameters::AddTextureParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::ImageView> imageView)
 	{
-		BatchedTextureShaderParameter* parameter = m_allocator.Allocate<BatchedTextureShaderParameter>(bindingName, resourceType, imageView);
-		m_parameters.emplace_back(parameter);
+		BatchedTextureShaderBinding* parameter = m_allocator.Allocate<BatchedTextureShaderBinding>(bindingName, resourceType, imageView);
+		m_bindings.emplace_back(parameter);
 	}
 
 	void BatchedShaderParameters::AddSamplerParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::SamplerState> sampler)
 	{
-		BatchedSamplerShaderParameter* parameter = m_allocator.Allocate<BatchedSamplerShaderParameter>(bindingName, resourceType, sampler);
+		BatchedSamplerShaderBinding* parameter = m_allocator.Allocate<BatchedSamplerShaderBinding>(bindingName, resourceType, sampler);
+		m_bindings.emplace_back(parameter);
+	}
+
+	void BatchedShaderParameters::AddShaderParameter(const StringHash parameterName, const void* data, const size_t size)
+	{
+		BatchedShaderParameter* parameter = m_allocator.Allocate<BatchedShaderParameter>(parameterName, data, size);
 		m_parameters.emplace_back(parameter);
 	}
 
-	void BatchedShaderParameters::BindParametersToDescriptorTable(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable) const
+	void BatchedShaderParameters::PopulateShaderParameterUniformBuffers(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& outShaderParameters)
 	{
 		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
 		{
 			for (const BatchedShaderParameter* parameter : m_parameters)
 			{
-				const RHI::ShaderResourceBinding* resourceBinding = parameterMap.GetResourceBindingFromName(parameter->bindingName);
-				if (resourceBinding && resourceBinding->resourceType == parameter->resourceType)
+				const RHI::ShaderUniform* shaderParameter = parameterMap.GetParameterFromName(parameter->parameterName);
+				if (shaderParameter)
 				{
-					switch (parameter->resourceType)
+					for (const auto& perStageParameters : outShaderParameters)
+					{
+						if (perStageParameters.shaderStage == parameterMap.GetShaderStage())
+						{
+							memcpy(perStageParameters.mappedPtr + shaderParameter->offset, parameter->data, parameter->size);
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	void BatchedShaderParameters::BindShaderBindingsToDescriptorTable(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable, const InlineVector<RenderContext::PerStageShaderParameters, 8>& shaderParameterUniformBuffers) const
+	{
+		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
+		{
+			for (const BatchedShaderBinding* binding : m_bindings)
+			{
+				const RHI::ShaderResourceBinding* resourceBinding = parameterMap.GetResourceBindingFromName(binding->bindingName);
+				if (resourceBinding && resourceBinding->resourceType == binding->resourceType)
+				{
+					switch (binding->resourceType)
 					{
 						case RHI::ShaderResourceType::Texture:
 						{
-							const BatchedTextureShaderParameter* textureParameter = reinterpret_cast<const BatchedTextureShaderParameter*>(parameter);
+							const BatchedTextureShaderBinding* textureParameter = reinterpret_cast<const BatchedTextureShaderBinding*>(binding);
 							descriptorTable->SetImageView(textureParameter->imageView, resourceBinding->set, resourceBinding->binding);
 
 							break;
@@ -46,7 +75,7 @@ namespace Volt
 						case RHI::ShaderResourceType::TexelBuffer:
 						case RHI::ShaderResourceType::UniformBuffer:
 						{
-							const BatchedBufferShaderParameter* bufferParameter = reinterpret_cast<const BatchedBufferShaderParameter*>(parameter);
+							const BatchedBufferShaderBinding* bufferParameter = reinterpret_cast<const BatchedBufferShaderBinding*>(binding);
 							descriptorTable->SetBufferView(bufferParameter->bufferView, resourceBinding->set, resourceBinding->binding);
 
 							break;
@@ -54,12 +83,18 @@ namespace Volt
 
 						case RHI::ShaderResourceType::Sampler:
 						{
-							const BatchedSamplerShaderParameter* samplerParameter = reinterpret_cast<const BatchedSamplerShaderParameter*>(parameter);
+							const BatchedSamplerShaderBinding* samplerParameter = reinterpret_cast<const BatchedSamplerShaderBinding*>(binding);
 							descriptorTable->SetSamplerState(samplerParameter->sampler, resourceBinding->set, resourceBinding->binding);
 						}
 					}
 				}
 			}
+		}
+
+		for (const RenderContext::PerStageShaderParameters& perStageParameters : shaderParameterUniformBuffers)
+		{
+			perStageParameters.uniformBuffer->Unmap();
+			descriptorTable->SetBufferView(perStageParameters.uniformBuffer->GetView(), RHI::GetDescriptorSetIndexFromShaderStage(perStageParameters.shaderStage), RHI::Globals::SHADER_GLOBALS_BINDING);
 		}
 	}
 

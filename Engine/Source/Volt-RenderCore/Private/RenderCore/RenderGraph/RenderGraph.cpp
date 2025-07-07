@@ -314,6 +314,7 @@ namespace Volt
 
 
 		// At this point we know all resources that will be referenced, and we can create them accordingly.
+		m_transientResourceSystem.ReserveResourceSpace(m_resources.size());
 		for (auto resource : m_resources)
 		{
 			const bool shouldResourceBeCreated =
@@ -1221,7 +1222,7 @@ namespace Volt
 
 		PrepareResourcesForExecution();
 
-		constexpr size_t NumPassesPerJob = 4;
+		constexpr size_t NumPassesPerJob = 8;
 
 		struct PassExecutionRange
 		{
@@ -1341,8 +1342,12 @@ namespace Volt
 			}
 
 			// Destroy the RenderGraph.
-			renderGraphPtr->~RenderGraph();
-			Memory::Free(renderGraphPtr);
+			JobRef destroyJob = JobSystem::CreateJob("RenderGraph::Destroy", ExecutionPriority::Render, [renderGraphPtr]() 
+			{
+				renderGraphPtr->~RenderGraph();
+				Memory::Free(renderGraphPtr);
+			});
+			JobSystem::RunJob(destroyJob);
 		};
 
 		const uint32_t numExecutionRanges = static_cast<uint32_t>(passExecutionRanges.size());

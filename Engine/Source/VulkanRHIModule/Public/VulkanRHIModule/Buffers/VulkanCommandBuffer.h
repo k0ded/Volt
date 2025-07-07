@@ -48,9 +48,7 @@ namespace Volt::RHI
 		void BindPipeline(RawPtr<RenderPipeline> pipeline) override;
 		void BindPipeline(RawPtr<ComputePipeline> pipeline) override;
 		void BindPipeline(RawPtr<RayTracingPipeline> pipeline) override;
-		void BindVertexBuffers(const StackVector<RawPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) override;
 		void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) override;
-		void BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer) override;
 		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) override;
 
 		void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) override;

@@ -46,7 +46,7 @@ namespace Volt::RHI
 		std::mutex m_allocationMutex;
 		UUID64 m_heapId;
 
-		ArenaAllocator<D3D12TransientBufferAllocation, 200> m_bufferAllocationArena;
-		ArenaAllocator<D3D12TransientImageAllocation, 200> m_imageAllocationArena;
+		ArenaAllocator<D3D12TransientBufferAllocation> m_bufferAllocationArena;
+		ArenaAllocator<D3D12TransientImageAllocation> m_imageAllocationArena;
 	};
 }

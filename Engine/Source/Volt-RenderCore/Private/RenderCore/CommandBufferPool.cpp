@@ -15,6 +15,13 @@ namespace Volt
 		s_instance = this;
 
 		m_waitingCommandBufferPool.resize(RHI::Swapchain::FramesInFlight);
+		for (uint32_t i = 0; i < RHI::Swapchain::FramesInFlight; ++i)
+		{
+			m_waitingCommandBufferPool[i].Allocate(WaitCommandBufferPoolSize);
+		}
+
+		m_commandBufferPool.Allocate(CommandBufferPoolSize);
+
 		CreateInitialCommandBuffers();
 	}
 

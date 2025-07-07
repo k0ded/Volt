@@ -62,6 +62,7 @@ namespace Volt::RHI
 	VulkanDebugLayer::VulkanDebugLayer()
 	{
 		CheckValidationLayerSupport();
+		m_isSupported = false;
 
 		if (m_isSupported)
 		{

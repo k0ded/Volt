@@ -1,12 +1,9 @@
 #pragma once
 
-#include "Structures.hlsli"
-#include "Lights.hlsli"
-
 struct CascadedDirectionalLightShadowMappingData
 {
-    float cascadeDistances[DIRECTIONAL_SHADOW_CASCADE_COUNT];
     float4x4 viewProjections[DIRECTIONAL_SHADOW_CASCADE_COUNT];
+    float cascadeDistances[DIRECTIONAL_SHADOW_CASCADE_COUNT];
 };
 
 static const float3 m_cascadeColors[DIRECTIONAL_SHADOW_CASCADE_COUNT] = 

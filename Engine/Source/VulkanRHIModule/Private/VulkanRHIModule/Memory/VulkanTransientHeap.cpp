@@ -23,10 +23,12 @@ namespace Volt::RHI
 		if ((info.flags & TransientHeapFlags::AllowBuffers) != TransientHeapFlags::None)
 		{
 			InitializeAsBufferHeap();
+			m_bufferAllocationArena.AllocateArena(4096);
 		}
 		else if ((info.flags & TransientHeapFlags::AllowTextures) != TransientHeapFlags::None || (info.flags & TransientHeapFlags::AllowRenderTargets) != TransientHeapFlags::None)
 		{
 			InitializeAsImageHeap();
+			m_imageAllocationArena.AllocateArena(4096);
 		}
 	}
 
@@ -173,7 +175,7 @@ namespace Volt::RHI
 
 	const bool VulkanTransientHeap::IsAllocationSupported(const uint64_t size, TransientHeapFlags heapFlags) const
 	{
-		if ((m_createInfo.flags & heapFlags) == TransientHeapFlags::None)
+		if ((m_createInfo.flags & heapFlags) != heapFlags)
 		{
 			return false;
 		}

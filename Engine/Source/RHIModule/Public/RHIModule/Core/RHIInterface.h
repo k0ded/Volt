@@ -4,14 +4,16 @@
 
 #include <CoreUtilities/Pointers/RefCounted.h>
 #include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/ArenaRefCounted.h>
 
 namespace Volt::RHI
 {
-	class VTRHI_API RHIInterface : public RefCounted<RHIInterface>
+	template<template<typename> class RefCounter = RefCounted>
+	class TRHIInterface : public RefCounter<TRHIInterface<RefCounter>>
 	{
 	public:
-		~RHIInterface() override = default;
-		VT_DELETE_COPY_MOVE(RHIInterface);
+		~TRHIInterface() override = default;
+		VT_DELETE_COPY_MOVE(TRHIInterface);
 
 		template<typename T>
 		constexpr T GetHandle() const
@@ -32,8 +34,11 @@ namespace Volt::RHI
 		}
 
 	protected:
-		RHIInterface() = default;
+		TRHIInterface() = default;
 
 		virtual void* GetHandleImpl() const = 0;
 	};
+
+	using RHIInterface = TRHIInterface<RefCounted>;
+	using ArenaRHIInterface = TRHIInterface<ArenaRefCounted>;
 }

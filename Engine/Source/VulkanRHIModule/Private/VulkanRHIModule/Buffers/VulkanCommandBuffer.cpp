@@ -30,9 +30,6 @@
 
 #include <RHIModule/Memory/Allocation.h>
 
-#include <RHIModule/Buffers/IndexBuffer.h>
-#include <RHIModule/Buffers/VertexBuffer.h>
-
 #include <RHIModule/Images/ImageView.h>
 
 #include <RHIModule/Core/Profiling.h>
@@ -578,22 +575,6 @@ namespace Volt::RHI
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->GetHandle<VkPipeline>());
 	}
 
-	void VulkanCommandBuffer::BindVertexBuffers(const StackVector<RawPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
-	{
-		VT_PROFILE_FUNCTION();
-
-		StackVector<VkBuffer, MAX_VERTEX_BUFFER_COUNT> vkBuffers;
-		StackVector<VkDeviceSize, MAX_VERTEX_BUFFER_COUNT> offsets;
-
-		for (size_t i = 0; i < vertexBuffers.Size(); i++)
-		{
-			vkBuffers.EmplaceBack() = vertexBuffers[i]->GetHandle<VkBuffer>();
-			offsets.EmplaceBack(0u);
-		}
-
-		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.Size()), vkBuffers.Data(), offsets.Data());
-	}
-
 	void VulkanCommandBuffer::BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding)
 	{
 		VT_PROFILE_FUNCTION();
@@ -608,14 +589,6 @@ namespace Volt::RHI
 		}
 
 		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.size()), vkBuffers.data(), offsets.data());
-	}
-
-	void VulkanCommandBuffer::BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer)
-	{
-		VT_PROFILE_FUNCTION();
-
-		constexpr VkDeviceSize offset = 0;
-		vkCmdBindIndexBuffer(m_commandBufferData.commandBuffer, indexBuffer->GetHandle<VkBuffer>(), offset, VK_INDEX_TYPE_UINT32);
 	}
 
 	void VulkanCommandBuffer::BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer)

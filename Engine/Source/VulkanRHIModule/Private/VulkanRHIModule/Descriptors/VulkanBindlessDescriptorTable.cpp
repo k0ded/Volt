@@ -76,11 +76,7 @@ namespace Volt::RHI
 	ResourceHandle VulkanBindlessDescriptorTable::RegisterImageView(RawPtr<ImageView> imageView)
 	{
 		VT_PROFILE_FUNCTION();
-
 		return m_mainRegistry.RegisterResource(imageView, imageView->GetImageUsage(), static_cast<uint32_t>(ResourceType::Image1D));
-
-		VT_ENSURE(false);
-		return Resource::Invalid;
 	}
 
 	ResourceHandle VulkanBindlessDescriptorTable::RegisterSamplerState(RawPtr<SamplerState> samplerState)

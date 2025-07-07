@@ -50,27 +50,33 @@ namespace Volt
 
 	RefPtr<RHI::Image> TransientResourceSystem::AcquireTexture(RGTextureRef resource)
 	{
+		VT_PROFILE_FUNCTION();
+
 		VT_ENSURE_MSG(m_allocatedResources.contains(resource), "All resources should be created by this point!");
 		return m_allocatedResources.at(resource).resource.As<RHI::Image>();
 	}
 
 	RefPtr<RHI::StorageBuffer> TransientResourceSystem::AcquireBuffer(RGBufferRef resource)
 	{
+		VT_PROFILE_FUNCTION();
+
 		VT_ENSURE_MSG(m_allocatedResources.contains(resource), "All resources should be created by this point!");
 		return m_allocatedResources.at(resource).resource.As<RHI::StorageBuffer>();
 	}
 
 	RefPtr<RHI::UniformBuffer> TransientResourceSystem::AcquireUniformBuffer(RGUniformBufferRef resource)
 	{
+		VT_PROFILE_FUNCTION();
+
 		VT_ENSURE_MSG(m_allocatedResources.contains(resource), "All resources should be created by this point!");
 		return m_allocatedResources.at(resource).resource.As<RHI::UniformBuffer>();
 	}
 
 	RefPtr<RHI::UniformBuffer> TransientResourceSystem::AcquireShaderParameterUniformBuffer(RGUniformBufferRef resource)
 	{
-		std::scoped_lock lock{ m_shaderParameterUniformBufferMutex };
-
 		VT_PROFILE_FUNCTION();
+
+		std::scoped_lock lock{ m_shaderParameterUniformBufferMutex };
 
 		if (m_allocatedResources.contains(resource))
 		{
@@ -143,9 +149,12 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		// #TODO_Ivar: Switch to transient allocations
-		auto allocator = RHI::GraphicsContext::GetDefaultAllocator(); //(bufferDesc.memoryUsage & RHI::MemoryUsage::CPUToGPU) != RHI::MemoryUsage::None ? RHI::GraphicsContext::GetDefaultAllocator() : RHI::GraphicsContext::GetTransientAllocator();
+		//auto allocator = RHI::GraphicsContext::GetDefaultAllocator(); //(bufferDesc.memoryUsage & RHI::MemoryUsage::CPUToGPU) != RHI::MemoryUsage::None ? RHI::GraphicsContext::GetDefaultAllocator() : RHI::GraphicsContext::GetTransientAllocator();
 
 		const RGBufferDesc& desc = resource->GetDesc();
+		
+		// If the resource is going to be extracted we will not use the transient allocator.
+		RefPtr<RHI::GPUAllocator> allocator = (!resource->isExtracted && desc.memoryUsage != RHI::MemoryUsage::CPUToGPU) ? RHI::GraphicsContext::GetTransientAllocator() : nullptr;
 		RefPtr<RHI::StorageBuffer> buffer = RHI::StorageBuffer::Create(desc, allocator);
 
 		ResourceInfo info{};
@@ -165,6 +174,11 @@ namespace Volt
 		info.isOriginal = true;
 
 		m_allocatedResources[resource] = info;
+	}
+
+	void TransientResourceSystem::ReserveResourceSpace(size_t num)
+	{
+		m_allocatedResources.reserve(num);
 	}
 
 	void TransientResourceSystem::SurrenderResource(RGResourceRef originalResource, size_t hash)

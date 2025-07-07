@@ -9,6 +9,7 @@ namespace Volt
 {
 	class Mesh;
 	class MotionWeaver;
+	class RenderMaterial;
 
 	using RenderPrimitiveID = UUID64;
 

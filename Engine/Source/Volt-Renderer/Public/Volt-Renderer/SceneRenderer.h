@@ -44,6 +44,7 @@ namespace Volt
 	class RenderGraphBlackboard;
 
 	struct RenderView;
+	struct RenderLightData;
 
 	struct SceneRendererCreateInfo
 	{

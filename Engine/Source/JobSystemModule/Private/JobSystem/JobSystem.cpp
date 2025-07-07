@@ -18,6 +18,11 @@ namespace Volt
 		s_instance = this;
 
 		RegisterListener<AppUpdateEvent>(VT_BIND_EVENT_FN(JobSystem::OnUpdate));
+
+		for (uint32_t i = 0; i < static_cast<uint32_t>(ExecutionPriority::Num); ++i)
+		{
+			m_waitingList[i].Allocate(NumMaxWaitingJobs);
+		}
     }
 
     JobSystem::~JobSystem()

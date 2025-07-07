@@ -25,6 +25,9 @@ namespace Volt::RHI
 		desc.Flags = D3D12MA::ALLOCATOR_FLAG_NONE;
 
 		VT_D3D12_CHECK(D3D12MA::CreateAllocator(&desc, &m_allocator));
+
+		m_bufferAllocationArena.AllocateArena(5000);
+		m_imageAllocationArena.AllocateArena(5000);
 	}
 
 	D3D12DefaultGPUAllocator::~D3D12DefaultGPUAllocator()

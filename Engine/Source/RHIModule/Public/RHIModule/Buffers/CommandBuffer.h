@@ -11,9 +11,6 @@
 #include "RHIModule/RayTracing/RayTracingCommon.h"
 #include "RHIModule/RayTracing/ShaderBindingTable.h"
 
-#include <RHIModule/Buffers/IndexBuffer.h>
-#include <RHIModule/Buffers/VertexBuffer.h>
-
 #include <CoreUtilities/Pointers/RawPtr.h>
 #include <CoreUtilities/Containers/StackVector.h>
 #include <CoreUtilities/Containers/Vector.h>
@@ -79,9 +76,7 @@ namespace Volt::RHI
 		virtual void BindPipeline(RawPtr<RenderPipeline> pipeline) = 0;
 		virtual void BindPipeline(RawPtr<ComputePipeline> pipeline) = 0;
 		virtual void BindPipeline(RawPtr<RayTracingPipeline> pipeline) = 0;
-		virtual void BindVertexBuffers(const StackVector<RawPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) = 0;
 		virtual void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) = 0;
-		virtual void BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer) = 0;
 		virtual void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) = 0;
 
 		virtual void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) = 0;

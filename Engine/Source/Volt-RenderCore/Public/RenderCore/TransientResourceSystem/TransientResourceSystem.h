@@ -38,6 +38,7 @@ namespace Volt
 		void PrepareResource(RGTextureRef resource);
 		void PrepareResource(RGBufferRef resource);
 		void PrepareResource(RGUniformBufferRef resource);
+		void ReserveResourceSpace(size_t num);
 
 		void SurrenderResource(RGResourceRef originalResource, size_t hash);
 		void AddExternalResource(RGResourceRef resource, RefPtr<RHI::RHIResource> rhiResource);

@@ -66,7 +66,10 @@ namespace Volt
 		{
 			if (EnumValueContainsFlag(meshBatch.batchType, MeshBatchType::RenderPipeline))
 			{
-				batchedShaderParameters.BindParametersToDescriptorTable(meshBatch.renderPipeline->GetShaderParameterMaps(), meshBatch.descriptorTable);
+				InlineVector<RenderContext::PerStageShaderParameters, 8> perStageParameters = renderContext.AllocatePerStageShaderParameterBuffers(meshBatch.renderPipeline);
+
+				batchedShaderParameters.PopulateShaderParameterUniformBuffers(meshBatch.renderPipeline->GetShaderParameterMaps(), perStageParameters);
+				batchedShaderParameters.BindShaderBindingsToDescriptorTable(meshBatch.renderPipeline->GetShaderParameterMaps(), meshBatch.descriptorTable, perStageParameters);
 
 				commandBuffer->BindPipeline(meshBatch.renderPipeline);
 				commandBuffer->BindDescriptorTable(meshBatch.descriptorTable);
@@ -375,6 +378,7 @@ namespace Volt
 				passParameters->GPUScene = renderScene.GetGPUSceneParameters(renderGraph);
 				passParameters->ViewMatrix = cullingInfo.viewMatrix;
 				passParameters->CullingFrustum = cullingInfo.cullingFrustum;
+				passParameters->CullingType = static_cast<uint32_t>(cullingInfo.type);
 				passParameters->NearPlane = cullingInfo.nearPlane;
 				passParameters->FarPlane = cullingInfo.farPlane;
 

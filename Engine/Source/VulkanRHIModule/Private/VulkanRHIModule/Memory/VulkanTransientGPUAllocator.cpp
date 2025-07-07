@@ -171,6 +171,14 @@ namespace Volt::RHI
 			m_bufferHeaps.push_back(TransientHeap::Create(info));
 		}
 
+		// Buffer heap mappable
+		{
+			TransientHeapCreateInfo info{};
+			info.pageSize = HEAP_PAGE_SIZE;
+			info.flags = TransientHeapFlags::AllowBuffers | TransientHeapFlags::AllowMappable;
+			m_bufferHeaps.push_back(TransientHeap::Create(info));
+		}
+
 		// Image heap
 		{
 			TransientHeapCreateInfo info{};

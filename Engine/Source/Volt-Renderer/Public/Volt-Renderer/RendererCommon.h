@@ -4,13 +4,6 @@
 
 namespace Volt
 {
-	struct MeshTaskCommand
-	{
-		uint32_t drawId;
-		uint32_t taskCount;
-		uint32_t meshletOffset;
-	};
-
 	///// Rendering Structures /////
 	struct ViewUniformBuffer
 	{
@@ -47,43 +40,7 @@ namespace Volt
 	{
 		inline static constexpr uint32_t CASCADE_COUNT = 4;
 
-		float cascadeDistances[CASCADE_COUNT];
 		glm::mat4 viewProjections[CASCADE_COUNT];
-	};
-
-	struct DirectionalLightInfo
-	{
-		DirectionalLightShadowUniformBuffer data;
-		glm::vec4 projectionBounds[DirectionalLightShadowUniformBuffer::CASCADE_COUNT];
-		glm::mat4 views[DirectionalLightShadowUniformBuffer::CASCADE_COUNT];
-		glm::vec3 direction;
-	};
-
-	struct PointLightData
-	{
-		glm::vec3 position;
-		float radius;
-
-		glm::vec3 color;
-		float intensity;
-
-		float falloff;
-		glm::vec3 padding;
-	};
-
-	struct SpotLightData
-	{
-		glm::vec3 position;
-		float lightAngleScale;
-
-		glm::vec3 color;
-		float intensity;
-
-		glm::vec3 direction;
-		float range;
-
-		float lightAngleOffset;
-		float falloff;
-		glm::vec2 padding;
+		float cascadeDistances[CASCADE_COUNT];
 	};
 }

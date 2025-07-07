@@ -224,7 +224,7 @@ namespace Volt::RHI
 			submitInfo.pCommandBuffers = &cmdBuffer;
 
 			submitInfo.signalSemaphoreCount = 1;
-			submitInfo.pSignalSemaphores = &frameData.renderSemaphore;
+			submitInfo.pSignalSemaphores = &m_perFrameInFlightData.at(m_currentImage).renderSemaphore;
 
 			submitInfo.waitSemaphoreCount = 1;
 			submitInfo.pWaitSemaphores = &frameData.presentSemaphore;
@@ -247,7 +247,7 @@ namespace Volt::RHI
 			presentInfo.swapchainCount = 1;
 			presentInfo.pSwapchains = &m_swapchain;
 
-			presentInfo.pWaitSemaphores = &frameData.renderSemaphore;
+			presentInfo.pWaitSemaphores = &m_perFrameInFlightData.at(m_currentImage).renderSemaphore;
 			presentInfo.waitSemaphoreCount = 1;
 			presentInfo.pImageIndices = &m_currentImage;
 
