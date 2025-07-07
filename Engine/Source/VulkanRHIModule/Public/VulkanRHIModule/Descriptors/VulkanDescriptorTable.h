@@ -60,9 +60,7 @@ namespace Volt::RHI
 		Map<uint32_t, Map<uint32_t, DescriptorImageInfo>> m_imageDescriptorInfos; // Set -> Binding
 		Map<uint32_t, Map<uint32_t, DescriptorBufferInfo>> m_bufferDescriptorInfos; // Set -> Binding
 		Map<uint32_t, Map<uint32_t, VkBufferView>> m_texelBufferViews;
-		Map<uint32_t, Map<uint32_t, DefaultInvalid>> m_activeDescriptorWritesMapping; // Set -> Binding
 
 		Vector<DescriptorWrite> m_descriptorWrites;
-		Vector<DescriptorWrite> m_activeDescriptorWrites;
 	};
 }

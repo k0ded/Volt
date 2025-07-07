@@ -51,12 +51,12 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		// Make sure set and binding is actually used in the pipeline.
-		if (!m_writeDescriptorsMapping.contains(set) || !m_writeDescriptorsMapping.at(set).contains(binding))
-		{
-			// We return here without error as it is fine to do this. Maybe add later under validation define?
-			return;
-		}
+		//// Make sure set and binding is actually used in the pipeline.
+		//if (!m_writeDescriptorsMapping.contains(set) || !m_writeDescriptorsMapping.at(set).contains(binding))
+		//{
+		//	// We return here without error as it is fine to do this. Maybe add later under validation define?
+		//	return;
+		//}
 
 		m_isDirty = true;
 
@@ -64,33 +64,11 @@ namespace Volt::RHI
 		imageDescriptor.imageView = imageView->GetHandle<VkImageView>();
 		imageDescriptor.sampler = nullptr;
 
-		//VT_ENSURE(imageDescriptor.imageView);
+		VT_ENSURE(imageDescriptor.imageView);
 
-		uint32_t writeDescriptorIndex = 0;
-
-		// Create a new active descriptor write, or use a cached one.
-		if (m_activeDescriptorWritesMapping[set][binding].value == DefaultInvalid::INVALID_VALUE)
-		{
-			VT_PROFILE_SCOPE("Copy descriptor write");
-
-			writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
-
-			DescriptorWrite& writeDescriptorCopy = m_activeDescriptorWrites.emplace_back() = m_descriptorWrites.at(writeDescriptorIndex);
-			writeDescriptorCopy.dstArrayElement = 0;
-			writeDescriptorCopy.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageDescriptor);
-
-			writeDescriptorIndex = static_cast<uint32_t>(m_activeDescriptorWrites.size() - 1);
-			m_activeDescriptorWritesMapping[set][binding].value = writeDescriptorIndex;
-		}
-		else
-		{
-			VT_PROFILE_SCOPE("Update cached descriptor write");
-
-			writeDescriptorIndex = m_activeDescriptorWritesMapping[set][binding].value;
-			m_activeDescriptorWrites.at(writeDescriptorIndex).pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageDescriptor);
-		}
-
-		imageDescriptor.imageLayout = Utility::GetImageLayoutFromDescriptorType(static_cast<VkDescriptorType>(m_activeDescriptorWrites.at(writeDescriptorIndex).descriptorType));
+		uint32_t writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
+		m_descriptorWrites.at(writeDescriptorIndex).pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageDescriptor);
+		imageDescriptor.imageLayout = Utility::GetImageLayoutFromDescriptorType(static_cast<VkDescriptorType>(m_descriptorWrites.at(writeDescriptorIndex).descriptorType));
 	}
 	
 	void VulkanDescriptorTable::SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding)
@@ -131,43 +109,15 @@ namespace Volt::RHI
 			vkTexelBufferView = &view;
 		}
 
-		// Create a new active descriptor write, or use a cached one.
-		if (m_activeDescriptorWritesMapping[set][binding].value == DefaultInvalid::INVALID_VALUE)
+		const uint32_t writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
+
+		if (!isTexelBufferView)
 		{
-			VT_PROFILE_SCOPE("Copy descriptor write");
-
-			const uint32_t writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
-
-			DescriptorWrite& writeDescriptorCopy = m_activeDescriptorWrites.emplace_back() = m_descriptorWrites.at(writeDescriptorIndex);
-			writeDescriptorCopy.dstArrayElement = 0;
-
-			if (!isTexelBufferView)
-			{
-				writeDescriptorCopy.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(bufferDescriptorPtr);
-			}
-			else
-			{
-				writeDescriptorCopy.pTexelBufferView = vkTexelBufferView;
-			}
-
-			const uint32_t activeWriteDescriptorIndex = static_cast<uint32_t>(m_activeDescriptorWrites.size() - 1);
-			m_activeDescriptorWritesMapping[set][binding].value = activeWriteDescriptorIndex;
+			m_descriptorWrites.at(writeDescriptorIndex).pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(bufferDescriptorPtr);
 		}
 		else
 		{
-			VT_PROFILE_SCOPE("Update cached descriptor write");
-
-			const uint32_t writeDescriptorIndex = m_activeDescriptorWritesMapping[set][binding].value;
-			auto& activeDescriptorWrite = m_activeDescriptorWrites.at(writeDescriptorIndex);
-
-			if (!isTexelBufferView)
-			{
-				activeDescriptorWrite.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(bufferDescriptorPtr);
-			}
-			else
-			{
-				activeDescriptorWrite.pTexelBufferView = vkTexelBufferView;
-			}
+			m_descriptorWrites.at(writeDescriptorIndex).pTexelBufferView = vkTexelBufferView;
 		}
 	}
 	
@@ -189,24 +139,8 @@ namespace Volt::RHI
 		samplerDescriptor.imageView = nullptr;
 		samplerDescriptor.sampler = samplerState->GetHandle<VkSampler>();
 
-		// Create a new active descriptor write, or use a cached one.
-		if (m_activeDescriptorWritesMapping[set][binding].value == DefaultInvalid::INVALID_VALUE)
-		{
-			const uint32_t writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
-
-			DescriptorWrite writeDescriptorCopy = m_descriptorWrites.at(writeDescriptorIndex);
-			writeDescriptorCopy.dstArrayElement = 0;
-			writeDescriptorCopy.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&samplerDescriptor);
-			m_activeDescriptorWrites.emplace_back(writeDescriptorCopy);
-
-			const uint32_t activeWriteDescriptorIndex = static_cast<uint32_t>(m_activeDescriptorWrites.size() - 1);
-			m_activeDescriptorWritesMapping[set][binding].value = activeWriteDescriptorIndex;
-		}
-		else
-		{
-			const uint32_t writeDescriptorIndex = m_activeDescriptorWritesMapping[set][binding].value;
-			m_activeDescriptorWrites.at(writeDescriptorIndex).pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&samplerDescriptor);
-		}
+		const uint32_t writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
+		m_descriptorWrites.at(writeDescriptorIndex).pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&samplerDescriptor);
 	}
 	
 	void VulkanDescriptorTable::PrepareForRender()
@@ -218,18 +152,15 @@ namespace Volt::RHI
 			return;
 		}
 
-		if (m_activeDescriptorWrites.empty())
+		if (m_descriptorWrites.empty())
 		{
 			return;
 		}
 
 		auto device = GraphicsContext::GetDevice();
-		const VkWriteDescriptorSet* writeDescriptorsPtr = reinterpret_cast<const VkWriteDescriptorSet*>(m_activeDescriptorWrites.data());
+		const VkWriteDescriptorSet* writeDescriptorsPtr = reinterpret_cast<const VkWriteDescriptorSet*>(m_descriptorWrites.data());
 
-		vkUpdateDescriptorSets(device->GetHandle<VkDevice>(), static_cast<uint32_t>(m_activeDescriptorWrites.size()), writeDescriptorsPtr, 0, nullptr);
-
-		m_activeDescriptorWrites.clear();
-		m_activeDescriptorWritesMapping.clear();
+		vkUpdateDescriptorSets(device->GetHandle<VkDevice>(), static_cast<uint32_t>(m_descriptorWrites.size()), writeDescriptorsPtr, 0, nullptr);
 
 		m_isDirty = false;
 	}
@@ -368,7 +299,6 @@ namespace Volt::RHI
 	void VulkanDescriptorTable::BuildWriteDescriptors()
 	{
 		m_descriptorWrites.clear();
-		m_activeDescriptorWrites.clear();
 		m_writeDescriptorsMapping.clear();
 
 		Vector<ShaderParameterMap> shaderParameterMaps;
@@ -421,13 +351,6 @@ namespace Volt::RHI
 				m_writeDescriptorsMapping[binding.set][binding.binding] = static_cast<uint32_t>(m_descriptorWrites.size() - 1);
 			}
 		}
-
-		for (const auto& [set, bindings] : m_writeDescriptorsMapping)
-		{
-			m_activeDescriptorWritesMapping[set].reserve(bindings.size());
-		}
-
-		m_activeDescriptorWrites.reserve(m_descriptorWrites.size());
 	}
 
 	void VulkanDescriptorTable::InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet)
