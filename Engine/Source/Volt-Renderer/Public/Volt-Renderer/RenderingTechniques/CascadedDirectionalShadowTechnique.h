@@ -13,8 +13,14 @@ namespace Volt
 	class CascadedDirectionalShadowTechnique
 	{
 	public:
+		struct Result
+		{
+			RGTextureRef shadowMap;
+			RGUniformBufferRef uniformBuffer;
+		};
+
 		CascadedDirectionalShadowTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void Execute(const RenderView& view, const RenderLightData& renderLightData);
+		Result Execute(const RenderView& view, const RenderLightData& renderLightData);
 
 	private:
 		RGUniformBufferRef UploadUniformBufferData(const RenderView& view, const RenderLightData& renderLightData);

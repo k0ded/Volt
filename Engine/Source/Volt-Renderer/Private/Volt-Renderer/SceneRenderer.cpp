@@ -143,12 +143,16 @@ namespace Volt
 		GTAOTechnique gtaoTechnique{ renderGraph, blackboard };
 		gtaoTechnique.Execute(renderView);
 
+		CascadedDirectionalShadowTechnique::Result directionalShadowMap{};
+
 		for (const RenderLightData& light : m_renderScene->GetRenderLightData())
 		{
 			if (light.description.lightType == SceneLightType::Directional)
 			{
 				CascadedDirectionalShadowTechnique cascadedDirectionalShadowTechnique{ renderGraph, blackboard };
-				cascadedDirectionalShadowTechnique.Execute(renderView, light);
+				directionalShadowMap = cascadedDirectionalShadowTechnique.Execute(renderView, light);
+
+				break;
 			}
 		}
 
@@ -159,7 +163,7 @@ namespace Volt
 		}
 
 		AddSkyboxPass(renderGraph, blackboard, renderView);
-		AddShadingPass(renderGraph, blackboard, renderView);
+		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer);
 
 		AddPostProcessingPasses(renderGraph, blackboard, renderView);
 
@@ -524,13 +528,16 @@ namespace Volt
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, DFGLuT)
 			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightIrradiance)
 			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightRadiance)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2DArray<float>, CascadedDirectionalShadowMap)
+			SHADER_PARAMETER_UNIFORM_BUFFER(CascadedDirectionalLightShadowMappingData, CascadedDirectionalLightShadowMapping)
 			SHADER_PARAMETER_SAMPLER(LinearSampler)
+			SHADER_PARAMETER_SAMPLER(ShadowSampler)
 			SHADER_PARAMETER(uint, NumRadianceMipLevels)
 		END_SHADER_PARAMETER_STRUCT()
 	};
 	REGISTER_SHADER(RenderDeferredShadingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "MainCS", Compute);
 
-	void SceneRenderer::AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	void SceneRenderer::AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -554,6 +561,10 @@ namespace Volt
 		passParameters->SkylightRadiance = renderGraph.CreateSRV(environmentTextures.radiance);
 		passParameters->LinearSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>();
 		passParameters->NumRadianceMipLevels = environmentTextures.radiance->GetDesc().mips;
+
+		passParameters->CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMap);
+		passParameters->ShadowSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>();
+		passParameters->CascadedDirectionalLightShadowMapping = directionalShadowUniformBuffer;
 
 		auto shader = ShaderMap::Get<RenderDeferredShadingCS>();
 		ComputeShaderUtils::AddPass<RenderDeferredShadingCS>(renderGraph,

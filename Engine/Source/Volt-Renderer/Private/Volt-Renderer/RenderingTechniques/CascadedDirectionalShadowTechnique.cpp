@@ -50,7 +50,7 @@ namespace Volt
 
 	}
 
-	void CascadedDirectionalShadowTechnique::Execute(const RenderView& view, const RenderLightData& renderLightData)
+	CascadedDirectionalShadowTechnique::Result CascadedDirectionalShadowTechnique::Execute(const RenderView& view, const RenderLightData& renderLightData)
 	{
 		constexpr float Size = 1000.f;
 
@@ -75,6 +75,9 @@ namespace Volt
 		auto vertexShader = ShaderMap::Get<CascadedDirectionalShadowVS>();
 		auto pixelShader = ShaderMap::Get<CascadedDirectionalShadowPS>();
 
+		RHI::RenderPipelineCreateInfo pipelineCreateInfo{};
+		pipelineCreateInfo.depthCompareOperator = RHI::CompareOperator::LessEqual;
+
 		for (uint32_t i = 0; i < DirectionalLightShadowUniformBuffer::CASCADE_COUNT; ++i)
 		{
 			CullingInfo cullingInfo{};
@@ -85,7 +88,7 @@ namespace Volt
 			cullingInfo.viewMatrix = shadowCamera->GetView();
 
 			MeshRenderer meshRenderer;
-			meshRenderer.BuildRenderCommands(m_renderGraph, view.renderScene, cullingInfo, vertexShader, pixelShader);
+			meshRenderer.BuildRenderCommands(m_renderGraph, view.renderScene, cullingInfo, vertexShader, pixelShader, pipelineCreateInfo);
 
 			CascadedDirectionalShadowParameters* passParameters = m_renderGraph.AllocParameters<CascadedDirectionalShadowParameters>();
 			passParameters->VS.CascadedDirectionalLightShadowMapping = directionalLightUniformBuffer;
@@ -96,7 +99,7 @@ namespace Volt
 			const std::string passName = std::format("CascadedDirectionalShadow Cascade: {}", i);
 
 			m_renderGraph.AddPass(passName,
-				RenderGraphPassFlags::NeverCull,
+				RenderGraphPassFlags::None,
 				passParameters,
 				[passParameters, view, meshRenderer, i](RenderContext& context) 
 			{
@@ -105,6 +108,7 @@ namespace Volt
 
 				RenderingInfo renderingInfo = context.CreateRenderingInfo(2048, 2048, passParameters->PS.renderTargets);
 				renderingInfo.renderingInfo.layerCount = DirectionalLightShadowUniformBuffer::CASCADE_COUNT;
+				renderingInfo.renderingInfo.depthAttachmentInfo.SetClearColor(1.f, 1.f, 1.f, 1.f);
 
 				if (i > 0)
 				{
@@ -118,6 +122,8 @@ namespace Volt
 		}
 
 		m_renderGraph.EndMarker();
+	
+		return { directionalShadowTexture, directionalLightUniformBuffer };
 	}
 
 	RGUniformBufferRef CascadedDirectionalShadowTechnique::UploadUniformBufferData(const RenderView& view, const RenderLightData& renderLightData)
