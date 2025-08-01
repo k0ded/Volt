@@ -46,6 +46,11 @@ namespace Volt::RHI
 			uint32_t value = INVALID_VALUE;
 		};
 
+		struct DefaultFalse
+		{
+			bool value = false;
+		};
+
 		void BuildDescriptorInfos();
 		void BuildWriteDescriptors();
 		void InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet);
@@ -62,5 +67,7 @@ namespace Volt::RHI
 		Map<uint32_t, Map<uint32_t, VkBufferView>> m_texelBufferViews;
 
 		Vector<DescriptorWrite> m_descriptorWrites;
+		Vector<DescriptorWrite> m_activeDescriptorWrites;
+		Vector<DefaultFalse> m_descriptorIsUpdated;
 	};
 }

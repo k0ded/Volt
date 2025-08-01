@@ -2,8 +2,6 @@
 #include "Volt-Application/UI/UIFonts.h"
 #include <CoreUtilities/Containers/Map.h>
 
-
-
 namespace UI
 {
 	static Map<FontType, ImFont*> s_fonts;

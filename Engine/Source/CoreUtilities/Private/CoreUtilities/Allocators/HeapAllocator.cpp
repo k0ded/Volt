@@ -56,6 +56,36 @@ void* HeapAllocator::Allocate(size_t size, size_t alignment)
 	return resultPtr;
 }
 
+void* HeapAllocator::Reallocate(void* original, size_t size, size_t alignment)
+{
+	constexpr size_t DefaultAlignment = 8;
+
+	void* resultPtr = nullptr;
+
+	if (alignment != DefaultAlignment)
+	{
+		alignment = std::max(size_t(size >= 16u ? 16u : 8u), alignment);
+#if USE_MIMALLOC
+		resultPtr = mi_realloc_aligned(original, size, alignment);
+#else
+		resultPtr = _aligned_malloc(size, alignment);
+#endif
+	}
+	else
+	{
+		alignment = size_t(size >= 16u ? 16u : DefaultAlignment);
+#if USE_MIMALLOC
+		resultPtr = mi_realloc_aligned(original, size, alignment);
+#else
+		resultPtr = _aligned_malloc(size, alignment);
+#endif
+	}
+
+	VT_PROFILE_FREE(original);
+	VT_PROFILE_ALLOC(resultPtr, size);
+	return resultPtr;
+}
+
 void HeapAllocator::Free(void* pointer)
 {
 	if (!pointer)

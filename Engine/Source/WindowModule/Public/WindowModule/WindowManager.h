@@ -5,16 +5,21 @@
 
 #include "WindowModule/Config.h"
 
+#include <EventSystem/EventListener.h>
+
 #include <SubSystem/SubSystem.h>
 #include <CoreUtilities/Core.h>
 
 #include <unordered_map>
 
+struct GLFWmonitor;
+
 namespace Volt
 {
 	class Window;
+	class Monitor;
 
-	class WINDOWMODULE_API WindowManager : public SubSystem
+	class WINDOWMODULE_API WindowManager : public SubSystem, public EventListener
 	{
 	public:
 		WindowManager();
@@ -22,9 +27,6 @@ namespace Volt
 
 		WindowManager(const WindowManager&) = delete;
 		WindowManager& operator=(const WindowManager&) = delete;
-
-		static void InitializeGLFW();
-		static void ShutdownGLFW();
 
 		void Initialize() override;
 		void Shutdown() override;
@@ -34,6 +36,7 @@ namespace Volt
 
 		const WindowHandle CreateNewWindow(const WindowProperties& windowProperties);
 		void DestroyWindow(const WindowHandle handle);
+		void DestroyWindow(Window& window);
 
 		void BeginFrame();
 		void Render(float timestep);
@@ -45,6 +48,7 @@ namespace Volt
 		Window& GetWindow(const WindowHandle handle) const;
 
 		VT_NODISCARD VT_INLINE bool HasMainWindow() const { return m_mainWindowHandle != 0; }
+		VT_NODISCARD VT_INLINE const Vector<Ref<Monitor>>& GetMonitors() const { return m_monitors; }
 
 		static WindowManager& Get();
 
@@ -53,7 +57,17 @@ namespace Volt
 	private:
 		inline static WindowManager* s_instance = nullptr;
 
+		void InitializeMonitors();
+		void InitializeGLFW();
+		void ShutdownGLFW();
+
+		Ref<Monitor> TryGetMonitor(GLFWmonitor* nativeMonitor);
+		Ref<Monitor> AddMonitor(GLFWmonitor* nativeMonitor);
+		void RemoveMonitor(Ref<Monitor> monitor);
+
 		WindowHandle m_mainWindowHandle = 0;
 		std::unordered_map<WindowHandle, Scope<Window>> m_windows;
+
+		Vector<Ref<Monitor>> m_monitors;
 	};
 }

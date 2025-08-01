@@ -36,6 +36,7 @@
 
 #include <EventSystem/EventSystem.h>
 #include <WindowModule/Events/WindowEvents.h>
+#include <WindowModule/WindowManager.h>
 
 #include <RHIModule/Images/Image.h>
 
@@ -82,13 +83,18 @@ void ViewportPanel::UpdateMainContent()
 
 	auto& settings = UserSettingsManager::GetSettings();
 
-	if (!settings.sceneSettings.use16by9)
+	auto finalImage = m_sceneRenderer->GetFinalImage();
+
+	if (finalImage)
 	{
-		ImGui::Image(UI::GetTextureID(m_sceneRenderer->GetFinalImage()), { m_viewportSize.x, m_viewportSize.y });
-	}
-	else
-	{
-		ImGui::Image(UI::GetTextureID(m_sceneRenderer->GetFinalImage()), { m_viewportSize.x, m_viewportSize.y });
+		if (!settings.sceneSettings.use16by9)
+		{
+			ImGui::Image(UI::GetTextureID(finalImage), { m_viewportSize.x, m_viewportSize.y });
+		}
+		else
+		{
+			ImGui::Image(UI::GetTextureID(finalImage), { m_viewportSize.x, m_viewportSize.y });
+		}
 	}
 
 	HandleNonMeshDragDrop();
@@ -1131,7 +1137,7 @@ void ViewportPanel::Resize(const glm::vec2& viewportSize)
 
 	m_editorCameraController->UpdateProjection((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 
-	Volt::ViewportResizeEvent resizeEvent{ (uint32_t)m_perspectiveBounds[0].x, (uint32_t)m_perspectiveBounds[0].y, (uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y };
+	Volt::ViewportResizeEvent resizeEvent{ Volt::WindowManager::Get().GetMainWindow(), (uint32_t)m_perspectiveBounds[0].x, (uint32_t)m_perspectiveBounds[0].y, (uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y };
 	Volt::EventSystem::DispatchEvent(resizeEvent);
 }
 

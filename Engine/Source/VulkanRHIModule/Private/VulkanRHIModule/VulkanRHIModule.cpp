@@ -37,8 +37,6 @@
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
 
-#include "VulkanRHIModule/ImGui/VulkanImGuiImplementation.h"
-
 namespace Volt::RHI
 {
 	VulkanRHIModule::VulkanRHIModule()
@@ -190,11 +188,6 @@ namespace Volt::RHI
 	RefPtr<Semaphore> VulkanRHIModule::CreateSemaphore(const SemaphoreCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanSemaphore>::Create(createInfo);
-	}
-
-	RefPtr<ImGuiImplementation> VulkanRHIModule::CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const
-	{
-		return RefPtr<VulkanImGuiImplementation>::Create(createInfo);
 	}
 
 	RefPtr<AccelerationStructure> VulkanRHIModule::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const

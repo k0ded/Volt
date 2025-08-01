@@ -4,6 +4,8 @@
 
 #include <RHIModule/Buffers/StorageBuffer.h>
 
+#include <CoreUtilities/Containers/Map.h>
+
 namespace Volt::RHI
 {
 	class Allocation;

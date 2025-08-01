@@ -312,7 +312,6 @@ namespace Volt
 			return false;
 		};
 
-
 		// At this point we know all resources that will be referenced, and we can create them accordingly.
 		m_transientResourceSystem.ReserveResourceSpace(m_resources.size());
 		for (auto resource : m_resources)

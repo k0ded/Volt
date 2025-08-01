@@ -456,7 +456,7 @@ namespace Volt::RHI
 		m_desc.height = vulkanSwapchain.GetHeight();
 		m_desc.format = vulkanSwapchain.GetFormat();
 		m_desc.usage = ImageUsage::Attachment;
-
+		
 		m_swapchainImageData.image = vulkanSwapchain.GetImageAtIndex(specification.imageIndex);
 	}
 

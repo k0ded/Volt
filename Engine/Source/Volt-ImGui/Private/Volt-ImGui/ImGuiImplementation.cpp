@@ -1,17 +1,14 @@
-#include "rhipch.h"
+#include "Volt-ImGui/ImGuiImplementation.h"
+#include "Volt-ImGui/ImGuiNotifications.h"
+#include "Volt-ImGui/FontAwesome.h"
 
-#include "RHIModule/ImGui/ImGuiImplementation.h"
+#include <LogModule/Log.h>
 
-#include "RHIModule/Core/Core.h"
-#include "RHIModule/Core/Profiling.h"
-#include "RHIModule/RHIModule.h"
-
-#include "RHIModule/ImGui/ImGuiNotifications.h"
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <imgui.h>
-#include <imgui_internal.h>
 
-namespace Volt::RHI
+namespace Volt
 {
 	std::filesystem::path GetOrCreateIniPath()
 	{
@@ -20,12 +17,12 @@ namespace Volt::RHI
 
 		if (!std::filesystem::exists(userIniPath))
 		{
-			VT_LOGC(Warning, LogRHI, "User ini file not found! Copying default!");
+			VT_LOG(Warning, "User ini file not found! Copying default!");
 
 			std::filesystem::create_directories(userIniPath.parent_path());
 			if (!std::filesystem::exists(defaultIniPath))
 			{
-				VT_LOGC(Error, LogRHI, "Unable to find default ini file!");
+				VT_LOG(Error, "Unable to find default ini file!");
 				return "imgui.ini";
 			}
 			std::filesystem::copy(defaultIniPath, userIniPath.parent_path());
@@ -34,17 +31,116 @@ namespace Volt::RHI
 		return userIniPath;
 	}
 
-	ImGuiImplementation::ImGuiImplementation(ImGuiCreateInfo createInfo)
+	inline void MergeIconsWithLatestFont()
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		//float baseFontSize = font_size; // 13.0f is the size of the default font. Change to the font size you use.
+		//float iconFontSize = baseFontSize; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+
+		// merge in icons from Font Awesome
+		static const ImWchar icons_ranges[] = { VT_ICON_MIN_FA, VT_ICON_MAX_16_FA, 0 };
+		ImFontConfig icons_config;
+		icons_config.MergeMode = true;
+		icons_config.PixelSnapH = true;
+		//icons_config.GlyphMinAdvanceX = iconFontSize;
+		io.Fonts->AddFontFromFileTTF("Engine/Fonts/FontAwesome/" FONT_ICON_FILE_NAME_FAS, 0.0f, &icons_config, icons_ranges);
+	}
+
+	ImGuiImplementation::ImGuiImplementation(const ImGuiCreateInfo2& createInfo)
 		: m_createInfo(createInfo)
 	{
-		s_instance = this;
+		Initialize();
+
+		m_platform = CreateScope<ImGuiPlatform>();
+		m_renderer = CreateScope<ImGuiRenderer>(m_createInfo.window);
+	}
+
+	ImGuiImplementation::~ImGuiImplementation()
+	{
+		m_platform->Destroy();
+		m_renderer->Destroy();
+
+		const std::filesystem::path iniPath = GetOrCreateIniPath();
+		ImGui::SaveIniSettingsToDisk(iniPath.string().c_str());
+		ImGui::DestroyContext();
+	}
+
+	void ImGuiImplementation::Begin()
+	{
+		VT_PROFILE_FUNCTION();
+
+		m_platform->BeginFrame();
+		ImGui::NewFrame();
+
+		if (m_defaultFont)
+		{
+			ImGui::PushFont(m_defaultFont, 16.f);
+		}
+	}
+	
+	void ImGuiImplementation::End()
+	{
+		VT_PROFILE_FUNCTION();
+
+		ImGuiNotifications::RenderNotifications();
+
+		if (m_defaultFont)
+		{
+			ImGui::PopFont();
+		}
+
+		ImGui::Render();
+
+		ImDrawData* drawData = ImGui::GetDrawData();
+		m_renderer->Render(drawData);
+
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
+	}
+	
+	void ImGuiImplementation::SetDefaultFont(ImFont* font)
+	{
+		m_defaultFont = font;
+	}
+
+	ImFont* ImGuiImplementation::AddFont(const std::filesystem::path& fontPath)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		ImFont* newFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
+		MergeIconsWithLatestFont();
+
+		return newFont;
+	}
+
+	Vector<ImFont*> ImGuiImplementation::AddFonts(const Vector<std::filesystem::path>& fontPaths)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		Vector<ImFont*> resultFonts;
+
+		for (const auto& fontPath : fontPaths)
+		{
+			resultFonts.emplace_back() = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str());
+			MergeIconsWithLatestFont();
+		}
+
+		return resultFonts;
+	}
+
+	ImTextureID ImGuiImplementation::GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex)
+	{
+		return m_renderer->AddTexture(image);
 	}
 
 	void ImGuiImplementation::Initialize()
 	{
 		IMGUI_CHECKVERSION();
-		CreateContext();
-		ImGui::SetCurrentContext(m_context);
+		ImGui::CreateContext();
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -155,85 +251,5 @@ namespace Volt::RHI
 		style.TabRounding = 0.0f;
 		style.WindowRounding = 0.0f;
 		style.WindowBorderSize = 2.f;
-
-		InitializeAPI(ImGui::GetCurrentContext());
-	}
-
-	ImGuiImplementation::~ImGuiImplementation()
-	{
-		ShutdownAPI();
-
-		const std::filesystem::path iniPath = GetOrCreateIniPath();
-		ImGui::SaveIniSettingsToDisk(iniPath.string().c_str());
-		ImGui::DestroyContext();
-
-		s_instance = nullptr;
-	}
-
-	void ImGuiImplementation::Begin()
-	{
-		VT_PROFILE_FUNCTION();
-
-		BeginAPI();
-		ImGui::NewFrame();
-
-		if (m_defaultFont)
-		{
-			ImGui::PushFont(m_defaultFont, 16.f);
-		}
-	}
-
-	void ImGuiImplementation::End()
-	{
-		VT_PROFILE_FUNCTION();
-
-		ImGuiNotifications::RenderNotifications();
-
-		if (m_defaultFont)
-		{
-			ImGui::PopFont();
-		}
-
-		//Rendering
-		ImGui::Render();
-
-		EndAPI();
-
-		ImGuiIO& io = ImGui::GetIO();
-		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-		{
-			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault();
-		}
-	}
-
-	void ImGuiImplementation::SetDefaultFont(ImFont* font)
-	{
-		m_defaultFont = font;
-	}
-
-	ImGuiContext* ImGuiImplementation::GetContext() const
-	{
-		return m_context;
-	}
-
-	RefPtr<ImGuiImplementation> ImGuiImplementation::Create(const ImGuiCreateInfo& createInfo)
-	{
-		RefPtr<ImGuiImplementation> implementation = RHIModule::GetInstance().CreateImGuiImplementation(createInfo);
-		implementation->Initialize();
-
-		return implementation;
-	}
-
-	ImGuiImplementation& ImGuiImplementation::Get()
-	{
-		return *s_instance;
-	}
-	void ImGuiImplementation::CreateContext()
-	{
-		if (!m_context)
-		{
-			m_context = ImGui::CreateContext();
-		}
 	}
 }

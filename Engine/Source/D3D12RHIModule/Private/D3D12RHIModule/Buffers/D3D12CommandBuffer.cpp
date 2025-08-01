@@ -20,8 +20,6 @@
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
-#include <RHIModule/Buffers/IndexBuffer.h>
-#include <RHIModule/Buffers/VertexBuffer.h>
 #include <RHIModule/Synchronization/Semaphore.h>
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Memory/MemoryUtility.h>

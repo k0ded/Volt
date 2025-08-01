@@ -33,7 +33,7 @@ CharacterEditorPanel::CharacterEditorPanel()
 {
 	m_windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
 
-	RegisterListener<Volt::WindowRenderEvent>(VT_BIND_EVENT_FN(CharacterEditorPanel::OnRenderEvent));
+	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(CharacterEditorPanel::OnRenderEvent));
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(CharacterEditorPanel::OnUpdateEvent));
 
 	myCameraController = CreateRef<EditorCameraController>(60.f, 1.f, 100000.f);
@@ -178,7 +178,7 @@ void CharacterEditorPanel::OnClose()
 	mySceneRenderer = nullptr;
 }
 
-bool CharacterEditorPanel::OnRenderEvent(Volt::WindowRenderEvent& e)
+bool CharacterEditorPanel::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera(), e.GetTimestep());
 	return false;

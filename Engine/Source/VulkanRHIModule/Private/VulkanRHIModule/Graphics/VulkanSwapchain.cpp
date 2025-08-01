@@ -15,6 +15,7 @@
 #include <RHIModule/Core/Profiling.h>
 #include <RHIModule/Utility/ResourceUtility.h>
 #include <RHIModule/Synchronization/Fence.h>
+#include <RHIModule/RHIModule.h>
 
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -84,6 +85,8 @@ namespace Volt::RHI
 
 		inline static VkSurfaceFormatKHR ChooseSwapchainFormat(const std::span<VulkanSwapchain::SurfaceFormat> swapchainFormats, bool useHDRIfAvailable)
 		{
+			VT_PROFILE_FUNCTION();
+
 			VkSurfaceFormatKHR result{};
 
 			uint32_t bestScore = 0;
@@ -106,6 +109,8 @@ namespace Volt::RHI
 
 		inline static VkPresentModeKHR ChooseSwapchainPresentMode(bool useVSync, const std::span<PresentMode> presentModes)
 		{
+			VT_PROFILE_FUNCTION();
+
 			for (const auto& presentMode : presentModes)
 			{
 				if (useVSync && presentMode == PresentMode::FIFO)
@@ -124,7 +129,7 @@ namespace Volt::RHI
 	}
 
 	VulkanSwapchain::VulkanSwapchain(const SwapchainCreateInfo& createInfo)
-		: m_createInfo(createInfo), m_VSyncEnabled(createInfo.enableVSync)
+		: m_createInfo(createInfo), m_VSyncEnabled(createInfo.enableVSync), m_width(createInfo.width), m_height(createInfo.height)
 	{
 		auto vulkanContext = GraphicsContext::Get().As<VulkanGraphicsContext>();
 		auto& vulkanPhysicalDevice = GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>();
@@ -146,7 +151,7 @@ namespace Volt::RHI
 			m_commandBuffers[i] = CommandBuffer::Create();
 			m_fences[i] = Fence::Create({ true });
 		}
-
+		 
 		Invalidate(m_width, m_height, m_VSyncEnabled);
 	}
 
@@ -161,7 +166,8 @@ namespace Volt::RHI
 
 		if (m_swapchainNeedsRebuild)
 		{
-			Resize(m_width, m_height, m_VSyncEnabled);
+			QuerySwapchainCapabilities();
+			Invalidate(m_width, m_height, m_VSyncEnabled);
 			m_swapchainNeedsRebuild = false;
 		}
 
@@ -277,14 +283,16 @@ namespace Volt::RHI
 			return;
 		}
 
+		if (m_width == width && m_height == height && m_VSyncEnabled == enableVSync)
+		{
+			return;
+		}
+
 		m_width = width;
 		m_height = height;
 		m_VSyncEnabled = enableVSync;
 
 		QuerySwapchainCapabilities();
-
-		GraphicsContext::GetDevice()->GetDeviceQueue(QueueType::Compute)->WaitForQueue();
-
 		CreateSwapchain(width, height, enableVSync);
 	}
 
@@ -331,6 +339,8 @@ namespace Volt::RHI
 
 	void VulkanSwapchain::Invalidate(const uint32_t width, const uint32_t height, bool enableVSync)
 	{
+		VT_PROFILE_FUNCTION();
+
 		m_width = width;
 		m_height = height;
 		m_VSyncEnabled = enableVSync;
@@ -348,25 +358,36 @@ namespace Volt::RHI
 			return;
 		}
 
-		auto device = GraphicsContext::GetDevice();
 		
-		m_fences.at(m_currentFrame)->WaitUntilSignaled();
+		auto vulkanFence = m_fences.at(m_currentFrame).As<VulkanFence>();
 
-		for (auto& perFrameData : m_perFrameInFlightData)
+		if (vulkanFence->HasBeenExecuted())
 		{
-			vkDestroySemaphore(device->GetHandle<VkDevice>(), perFrameData.presentSemaphore, nullptr);
-			vkDestroySemaphore(device->GetHandle<VkDevice>(), perFrameData.renderSemaphore, nullptr);
+			m_fences.at(m_currentFrame)->WaitUntilSignaled();
 		}
+
+		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, swapchain = m_swapchain, surface = m_surface]()
+		{
+			auto device = GraphicsContext::GetDevice();
+
+			for (auto& perFrameData : perFrameInFlightData)
+			{
+				vkDestroySemaphore(device->GetHandle<VkDevice>(), perFrameData.presentSemaphore, nullptr);
+				vkDestroySemaphore(device->GetHandle<VkDevice>(), perFrameData.renderSemaphore, nullptr);
+			}
+
+			vkDestroySwapchainKHR(device->GetHandle<VkDevice>(), swapchain, nullptr);
+			vkDestroySurfaceKHR(GraphicsContext::Get().GetHandle<VkInstance>(), surface, nullptr);
+		});
 
 		m_perFrameInFlightData.clear();
 		m_perImageData.clear();
-
-		vkDestroySwapchainKHR(device->GetHandle<VkDevice>(), m_swapchain, nullptr);
-		vkDestroySurfaceKHR(GraphicsContext::Get().GetHandle<VkInstance>(), m_surface, nullptr);
 	}
 
 	void VulkanSwapchain::QuerySwapchainCapabilities()
 	{
+		VT_PROFILE_FUNCTION();
+
 		auto physicalDevice = GraphicsContext::GetPhysicalDevice();
 
 		VkSurfaceCapabilitiesKHR capabilities{};
@@ -401,6 +422,8 @@ namespace Volt::RHI
 
 	void VulkanSwapchain::CreateSwapchain(const uint32_t width, const uint32_t height, bool enableVSync)
 	{
+		VT_PROFILE_FUNCTION();
+
 		const VkSurfaceFormatKHR surfaceFormat = Utility::ChooseSwapchainFormat(m_capabilities.surfaceFormats, m_createInfo.useHDRIfAvailable);
 		if (surfaceFormat.colorSpace )
 		{
@@ -437,7 +460,11 @@ namespace Volt::RHI
 		swapchainCreateInfo.oldSwapchain = oldSwapchain;
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateSwapchainKHR(device->GetHandle<VkDevice>(), &swapchainCreateInfo, nullptr, &m_swapchain));
+
+		{
+			VT_PROFILE_SCOPE("vkCreateSwapchainKHR");
+			VT_VK_CHECK(vkCreateSwapchainKHR(device->GetHandle<VkDevice>(), &swapchainCreateInfo, nullptr, &m_swapchain));
+		}
 
 		if (oldSwapchain != VK_NULL_HANDLE)
 		{
@@ -446,35 +473,48 @@ namespace Volt::RHI
 				imageData.imageReference = nullptr;
 			}
 
-			vkDestroySwapchainKHR(device->GetHandle<VkDevice>(), oldSwapchain, nullptr);
+			RHIModule::GetInstance().DestroyResource([oldSwapchain]() 
+			{
+				auto device = GraphicsContext::GetDevice();
+				vkDestroySwapchainKHR(device->GetHandle<VkDevice>(), oldSwapchain, nullptr);
+			});
+
 		}
 
-		VT_VK_CHECK(vkGetSwapchainImagesKHR(device->GetHandle<VkDevice>(), m_swapchain, &m_totalImageCount, nullptr));
-
 		Vector<VkImage> images{};
-
-		m_perImageData.clear();
-		m_perImageData.resize(m_totalImageCount);
-		images.resize(m_totalImageCount);
-
-		VT_VK_CHECK(vkGetSwapchainImagesKHR(device->GetHandle<VkDevice>(), m_swapchain, &m_totalImageCount, images.data()));
-
-		for (size_t i = 0; i < m_perImageData.size(); i++)
 		{
-			m_perImageData[i].image = images.at(i);
+			VT_PROFILE_SCOPE("Get Images");
+			VT_VK_CHECK(vkGetSwapchainImagesKHR(device->GetHandle<VkDevice>(), m_swapchain, &m_totalImageCount, nullptr));
 
-			SwapchainImageDesc spec{};
-			spec.swapchain = this;
-			spec.imageIndex = static_cast<uint32_t>(i);
+			m_perImageData.clear();
+			m_perImageData.resize(m_totalImageCount);
+			images.resize(m_totalImageCount);
 
-			m_perImageData[i].imageReference = Image::Create(spec);
+			VT_VK_CHECK(vkGetSwapchainImagesKHR(device->GetHandle<VkDevice>(), m_swapchain, &m_totalImageCount, images.data()));
 		}
 
 		m_swapchainFormat = Utility::VulkanToVoltFormat(surfaceFormat.format);
+
+		{
+			VT_PROFILE_SCOPE("Create Images");
+
+			for (size_t i = 0; i < m_perImageData.size(); i++)
+			{
+				m_perImageData[i].image = images.at(i);
+
+				SwapchainImageDesc spec{};
+				spec.swapchain = this;
+				spec.imageIndex = static_cast<uint32_t>(i);
+
+				m_perImageData[i].imageReference = Image::Create(spec);
+			}
+		}
 	}
 
 	void VulkanSwapchain::CreateSyncObjects()
 	{
+		VT_PROFILE_FUNCTION();
+
 		VkFenceCreateInfo fenceInfo{};
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;

@@ -59,7 +59,6 @@ namespace Volt
 
 		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
 		// This is required because glfwInit must be called before setting up graphics device
-		WindowManager::InitializeGLFW();
 		CreateGraphicsContext();
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
@@ -93,8 +92,6 @@ namespace Volt
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
 		m_windowManager->DestroyMainWindow();
-
-		WindowManager::ShutdownGLFW();
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
 
@@ -136,15 +133,15 @@ namespace Volt
 		if (!m_windowManager->HasMainWindow())
 		{
 			WindowProperties windowProperties{};
-			windowProperties.Width = m_appCreateInfo.width;
-			windowProperties.Height = m_appCreateInfo.height;
-			windowProperties.VSync = m_appCreateInfo.useVSync;
-			windowProperties.Title = m_appCreateInfo.title;
-			windowProperties.WindowMode = m_appCreateInfo.windowMode;
-			windowProperties.IconPath = m_appCreateInfo.iconPath;
-			windowProperties.CursorPath = m_appCreateInfo.cursorPath;
-			windowProperties.UseTitlebar = m_appCreateInfo.useTitlebar;
-			windowProperties.UseCustomTitlebar = m_appCreateInfo.useCustomTitlebar;
+			windowProperties.width = m_appCreateInfo.width;
+			windowProperties.height = m_appCreateInfo.height;
+			windowProperties.vsync = m_appCreateInfo.useVSync;
+			windowProperties.title = m_appCreateInfo.title;
+			windowProperties.windowMode = m_appCreateInfo.windowMode;
+			windowProperties.iconPath = m_appCreateInfo.iconPath;
+			windowProperties.cursorPath = m_appCreateInfo.cursorPath;
+			windowProperties.useTitlebar = m_appCreateInfo.useTitlebar;
+			windowProperties.useCustomTitlebar = m_appCreateInfo.useCustomTitlebar;
 
 			m_windowManager->CreateMainWindow(windowProperties);
 
@@ -166,7 +163,7 @@ namespace Volt
 		RHI::RHICallbackInfo callbackInfo{};
 		callbackInfo.requestCloseEventCallback = []()
 		{
-			WindowCloseEvent closeEvent{};
+			WindowCloseEvent closeEvent{ WindowManager::Get().GetMainWindow() };
 			EventSystem::DispatchEvent(closeEvent);
 		};
 

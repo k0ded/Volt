@@ -12,6 +12,8 @@ namespace Volt::RHI
 {
 	struct SwapchainCreateInfo
 	{
+		uint32_t width;
+		uint32_t height;
 		void* platformWindow;
 		bool useHDRIfAvailable;
 		bool enableVSync;

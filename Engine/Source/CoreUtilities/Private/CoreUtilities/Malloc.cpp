@@ -13,6 +13,11 @@ namespace Memory
 		return g_allocator.Allocate(size, alignment);
 	}
 
+	void* Realloc(void* original, const size_t size, const size_t alignment /*= 0*/)
+	{
+		return g_allocator.Reallocate(original, size, alignment);
+	}
+
 	void Free(void* ptr)
 	{
 		g_allocator.Free(ptr);

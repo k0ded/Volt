@@ -20,7 +20,7 @@ namespace Volt
 	std::string KeyTypedEvent::ToString() const
 	{
 		std::stringstream ss;
-		ss << "KeyTypedEvent: " << Volt::ToString(m_keyCode);
+		ss << "KeyTypedEvent: " << m_character;
 		return ss.str();
 	}
 }

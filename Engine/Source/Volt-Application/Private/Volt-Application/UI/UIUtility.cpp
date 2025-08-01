@@ -2,10 +2,11 @@
 #include "Volt-Application/UI/UIUtility.h"
 #include "Volt-Application/UI/UIScopedHelpers.h"
 #include "Volt-Application/UI/UIFonts.h"
+#include "Volt-Application/UI/ImGuiSubSystem.h"
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <RHIModule/ImGui/ImGuiImplementation.h>
+#include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/StringUtility.h>
 
@@ -23,12 +24,17 @@ namespace UI
 
 	ImTextureID GetTextureID(Ref<Volt::Texture2D> texture, int32_t mipIndex)
 	{
-		return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture->GetImage(), mipIndex);
+		Volt::ImGuiSubSystem* subSystem = SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>();
+		return subSystem->GetTextureID(texture->GetImage(), mipIndex);
+
+		//return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture->GetImage(), mipIndex);
 	}
 
 	ImTextureID GetTextureID(RefPtr<Volt::RHI::Image> texture, int32_t mipIndex)
 	{
-		return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture, mipIndex);
+		Volt::ImGuiSubSystem* subSystem = SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>();
+		return subSystem->GetTextureID(texture, mipIndex);
+		//return Volt::RHI::ImGuiImplementation::Get().GetTextureID(texture, mipIndex);
 	}
 
 	void Header(const std::string& text)
@@ -37,15 +43,15 @@ namespace UI
 		ImGui::TextUnformatted(text.c_str());
 	}
 
-	Volt::RHI::ImGuiNotificationType ImGuiNotificationTypeFromNotificationType(NotificationType type)
+	Volt::ImGuiNotificationType ImGuiNotificationTypeFromNotificationType(NotificationType type)
 	{
 		switch (type)
 		{
-			case UI::NotificationType::Info: return Volt::RHI::ImGuiNotificationType::Info;
-			case UI::NotificationType::Warning: return Volt::RHI::ImGuiNotificationType::Warning;
-			case UI::NotificationType::Error: return Volt::RHI::ImGuiNotificationType::Error;
-			case UI::NotificationType::Success: return Volt::RHI::ImGuiNotificationType::Success;
-			default: return Volt::RHI::ImGuiNotificationType::None;
+			case UI::NotificationType::Info: return Volt::ImGuiNotificationType::Info;
+			case UI::NotificationType::Warning: return Volt::ImGuiNotificationType::Warning;
+			case UI::NotificationType::Error: return Volt::ImGuiNotificationType::Error;
+			case UI::NotificationType::Success: return Volt::ImGuiNotificationType::Success;
+			default: return Volt::ImGuiNotificationType::None;
 		}
 	}
 
@@ -671,13 +677,13 @@ namespace UI
 
 	void Notify(NotificationType type, const std::string& title, const std::string& content, int32_t duration)
 	{
-		Volt::RHI::ImGuiNotificationInfo info;
+		Volt::ImGuiNotificationInfo info;
 		info.type = ImGuiNotificationTypeFromNotificationType(type);
 		info.dismissTime = duration;
 		info.title = title.c_str();
 		info.message = content.c_str();
 
-		Volt::RHI::ImGuiNotifications::InsertNotification(info);
+		Volt::ImGuiNotifications::InsertNotification(info);
 	}
 
 	void OpenModal(const std::string& name, ImGuiPopupFlags flags)

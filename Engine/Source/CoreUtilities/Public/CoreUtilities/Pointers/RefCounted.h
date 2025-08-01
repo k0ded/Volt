@@ -40,6 +40,11 @@ public:
 		}
 	}
 
+	VT_INLINE int32_t GetRefCount() const noexcept
+	{
+		return m_count.load(std::memory_order_relaxed);
+	}
+
 protected:
 	RefCounted() noexcept = default;
 	virtual ~RefCounted() noexcept

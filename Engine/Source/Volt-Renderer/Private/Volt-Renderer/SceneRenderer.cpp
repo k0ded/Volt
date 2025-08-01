@@ -31,6 +31,8 @@
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
+#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Graphics/DeviceQueue.h>
 
 #include <CoreUtilities/Math/Math.h>
 
@@ -104,6 +106,20 @@ namespace Volt
 		RenderGraphBlackboard blackboard;
 		RenderGraph renderGraph{};
 
+		//RGTextureDesc outputTextureDesc{};
+		//outputTextureDesc.width = m_width;
+		//outputTextureDesc.height = m_height;
+		//outputTextureDesc.usage = RHI::ImageUsage::AttachmentStorage;
+		//outputTextureDesc.generateMips = false;
+		//outputTextureDesc.format = RHI::PixelFormat::R8G8B8A8_UNORM;
+		//outputTextureDesc.debugName = "SceneRenderer.FinalImage";
+		//
+		//RGTextureRef outputTexture = renderGraph.CreateTexture(outputTextureDesc);
+		//
+		//renderGraph.EnqueueTextureExtraction(outputTexture, &m_outputImage);
+
+		RGTextureRef outputTexture = renderGraph.RegisterExternalTexture(m_outputImage);
+
 		if (ShouldApplyJitter())
 		{
 			m_prevJitter = m_currentJitter;
@@ -165,7 +181,7 @@ namespace Volt
 		AddSkyboxPass(renderGraph, blackboard, renderView);
 		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer);
 
-		AddPostProcessingPasses(renderGraph, blackboard, renderView);
+		AddPostProcessingPasses(renderGraph, blackboard, renderView, outputTexture);
 
 		m_renderScene->EndFrame(renderGraph);
 
@@ -175,7 +191,7 @@ namespace Volt
 			barrier.access = RHI::BarrierAccess::ShaderRead;
 			barrier.layout = RHI::ImageLayout::ShaderRead;
 
-			renderGraph.AddResourceBarrier(renderGraph.RegisterExternalTexture(m_outputImage), barrier);
+			renderGraph.AddResourceBarrier(outputTexture, barrier);
 		}
 
 		//m_renderGraphDebugger.ProcessRenderGraph(renderGraph);
@@ -221,7 +237,7 @@ namespace Volt
 		}
 	}
 
-	void SceneRenderer::AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	void SceneRenderer::AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture)
 	{
 		renderGraph.BeginMarker("Post Processing");
 
@@ -245,7 +261,7 @@ namespace Volt
 			}
 		}
 	
-		AddTonemappingPass(renderGraph, blackboard, view);
+		AddTonemappingPass(renderGraph, blackboard, view, outputTexture);
 	}
 
 	bool SceneRenderer::OnPostFrameUpdateEvent(AppPostFrameUpdateEvent& event)
@@ -269,14 +285,12 @@ namespace Volt
 	};
 	REGISTER_SHADER(TonemapPS, "Engine/Shaders/Source/PostProcessing/Tonemap.hlsl", "MainPS", Pixel);
 
-	void SceneRenderer::AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	void SceneRenderer::AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture)
 	{
 		constexpr float MiddleGray = 0.18f;
 		constexpr float WhitePoint = 1.1f;
 
 		const SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
-
-		RGTextureRef targetTexture = renderGraph.RegisterExternalTexture(m_outputImage);
 
 		TonemapPS::Parameters* passParameters = renderGraph.AllocParameters<TonemapPS::Parameters>();
 		passParameters->FinalColor = renderGraph.CreateSRV(sceneTextures.sceneColor);
@@ -284,7 +298,7 @@ namespace Volt
 		passParameters->WhitePoint = WhitePoint * WhitePoint;
 		passParameters->FrameIndex = view.frameIndex;
 		passParameters->BlueNoise = BlueNoise::GetBlueNoiseParameters(renderGraph);
-		passParameters->renderTargets.renderTargets[0] = targetTexture;
+		passParameters->renderTargets.renderTargets[0] = outputTexture;
 
 		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
 		auto pixelShader = ShaderMap::Get<TonemapPS>();
@@ -562,6 +576,11 @@ namespace Volt
 		passParameters->LinearSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>();
 		passParameters->NumRadianceMipLevels = environmentTextures.radiance->GetDesc().mips;
 
+		if (!directionalShadowMap)
+		{
+			directionalShadowMap = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+		}
+
 		passParameters->CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMap);
 		passParameters->ShadowSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>();
 		passParameters->CascadedDirectionalLightShadowMapping = directionalShadowUniformBuffer;
@@ -599,6 +618,7 @@ namespace Volt
 		spec.generateMips = false;
 		spec.format = RHI::PixelFormat::R8G8B8A8_UNORM;
 		spec.debugName = "Final Image";
+		spec.initializeImage = false;
 
 		m_outputImage = RHI::Image::Create(spec);
 	}

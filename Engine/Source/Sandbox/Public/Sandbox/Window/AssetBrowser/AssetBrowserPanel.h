@@ -14,7 +14,7 @@ namespace Volt
 	class WindowDragDropEvent;
 	class KeyPressedEvent;
 	class MouseButtonReleasedEvent;
-	class WindowRenderEvent;
+	class AppRenderEvent;
 }
 
 namespace AssetBrowser
@@ -38,7 +38,7 @@ private:
 	bool OnDragDropEvent(Volt::WindowDragDropEvent& e);
 	bool OnKeyPressedEvent(Volt::KeyPressedEvent& e);
 	bool OnMouseReleasedEvent(Volt::MouseButtonReleasedEvent& e);
-	bool OnRenderEvent(Volt::WindowRenderEvent& e);
+	bool OnRenderEvent(Volt::AppRenderEvent& e);
 
 	Vector<AssetBrowser::DirectoryItem*> FindParentDirectoriesOfDirectory(AssetBrowser::DirectoryItem* directory);
 

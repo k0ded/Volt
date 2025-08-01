@@ -25,8 +25,8 @@ namespace Volt::DefaultBlendStates
 		result.srcColorBlend = RHI::AttachmentBlendFactor::SrcAlpha;
 		result.dstColorBlend = RHI::AttachmentBlendFactor::OneMinusSrcAlpha;
 		result.colorBlendOp = RHI::AttachmentBlendOp::Add;
-		result.srcAlphaBlend = RHI::AttachmentBlendFactor::OneMinusDstAlpha;
-		result.dstAlphaBlend = RHI::AttachmentBlendFactor::One;
+		result.srcAlphaBlend = RHI::AttachmentBlendFactor::One;
+		result.dstAlphaBlend = RHI::AttachmentBlendFactor::OneMinusSrcAlpha;
 		result.alphaBlendOp = RHI::AttachmentBlendOp::Add;
 
 		return result;

@@ -69,6 +69,8 @@ namespace Volt::RHI
 		uint32_t writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
 		m_descriptorWrites.at(writeDescriptorIndex).pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&imageDescriptor);
 		imageDescriptor.imageLayout = Utility::GetImageLayoutFromDescriptorType(static_cast<VkDescriptorType>(m_descriptorWrites.at(writeDescriptorIndex).descriptorType));
+		
+		m_descriptorIsUpdated.at(writeDescriptorIndex).value = true;
 	}
 	
 	void VulkanDescriptorTable::SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding)
@@ -119,6 +121,8 @@ namespace Volt::RHI
 		{
 			m_descriptorWrites.at(writeDescriptorIndex).pTexelBufferView = vkTexelBufferView;
 		}
+
+		m_descriptorIsUpdated.at(writeDescriptorIndex).value = true;
 	}
 	
 	void VulkanDescriptorTable::SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding)
@@ -141,6 +145,8 @@ namespace Volt::RHI
 
 		const uint32_t writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
 		m_descriptorWrites.at(writeDescriptorIndex).pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(&samplerDescriptor);
+
+		m_descriptorIsUpdated.at(writeDescriptorIndex).value = true;
 	}
 	
 	void VulkanDescriptorTable::PrepareForRender()
@@ -157,11 +163,25 @@ namespace Volt::RHI
 			return;
 		}
 
+		m_activeDescriptorWrites.clear();
+		for (size_t index = 0; const DefaultFalse isUpdated : m_descriptorIsUpdated)
+		{
+			if (isUpdated.value)
+			{
+				m_activeDescriptorWrites.emplace_back() = m_descriptorWrites.at(index);
+			}
+
+			index++;
+		}
+
 		auto device = GraphicsContext::GetDevice();
-		const VkWriteDescriptorSet* writeDescriptorsPtr = reinterpret_cast<const VkWriteDescriptorSet*>(m_descriptorWrites.data());
+		const VkWriteDescriptorSet* writeDescriptorsPtr = reinterpret_cast<const VkWriteDescriptorSet*>(m_activeDescriptorWrites.data());
 
-		vkUpdateDescriptorSets(device->GetHandle<VkDevice>(), static_cast<uint32_t>(m_descriptorWrites.size()), writeDescriptorsPtr, 0, nullptr);
+		vkUpdateDescriptorSets(device->GetHandle<VkDevice>(), static_cast<uint32_t>(m_activeDescriptorWrites.size()), writeDescriptorsPtr, 0, nullptr);
 
+		m_activeDescriptorWrites.clear();
+		m_descriptorIsUpdated.clear();
+		m_descriptorIsUpdated.resize(m_descriptorWrites.size());
 		m_isDirty = false;
 	}
 
@@ -351,6 +371,9 @@ namespace Volt::RHI
 				m_writeDescriptorsMapping[binding.set][binding.binding] = static_cast<uint32_t>(m_descriptorWrites.size() - 1);
 			}
 		}
+
+		m_activeDescriptorWrites.reserve(m_descriptorWrites.size());
+		m_descriptorIsUpdated.resize(m_descriptorWrites.size());
 	}
 
 	void VulkanDescriptorTable::InitializeWriteDescriptor(DescriptorWrite& writeDescriptor, const uint32_t binding, const uint32_t descriptorType, VkDescriptorSet_T* dstDescriptorSet)

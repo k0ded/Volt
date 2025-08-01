@@ -35,6 +35,11 @@ public:
 		}
 	}
 
+	VT_INLINE int32_t GetRefCount() const noexcept
+	{
+		return m_count.load(std::memory_order_relaxed);
+	}
+
 	template<typename T>
 	VT_INLINE void SetArena(ArenaAllocator<T>* arena)
 	{

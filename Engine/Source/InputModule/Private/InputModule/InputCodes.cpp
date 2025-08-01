@@ -1,6 +1,8 @@
 #include "inputpch.h"
 #include "InputCodes.h"
 
+#include <GLFW/glfw3.h>
+
 // From glfw3.h
 #define VT_KEY_SPACE              32
 #define VT_KEY_APOSTROPHE         39  /* ' */
@@ -256,7 +258,7 @@ namespace Volt
 			case VT_KEY_KP_SUBTRACT: return InputCode::Subtract;
 			case VT_KEY_KP_ADD: return InputCode::Add;
 			case VT_KEY_KP_ENTER: return InputCode::Enter;
-			case VT_KEY_KP_EQUAL: return InputCode::Equal;
+			case VT_KEY_KP_EQUAL: return InputCode::Numpad_Equal;
 			case VT_KEY_LEFT_SHIFT: return InputCode::LeftShift;
 			case VT_KEY_LEFT_CONTROL: return InputCode::LeftControl;
 			case VT_KEY_LEFT_ALT: return InputCode::LeftAlt;
@@ -288,4 +290,144 @@ namespace Volt
 		}
 	}
 
+	int32_t InputCodeToGLFWCode(InputCode inputCode)
+	{
+		switch (inputCode)
+		{
+			case InputCode::Spacebar: return VT_KEY_SPACE;
+			case InputCode::Apostrophe: return VT_KEY_APOSTROPHE;
+			case InputCode::Comma: return VT_KEY_COMMA;
+			case InputCode::Minus: return VT_KEY_MINUS;
+			case InputCode::Period: return VT_KEY_PERIOD;
+			case InputCode::Slash: return VT_KEY_SLASH;
+			case InputCode::Key_0: return VT_KEY_0;
+			case InputCode::Key_1: return VT_KEY_1;
+			case InputCode::Key_2: return VT_KEY_2;
+			case InputCode::Key_3: return VT_KEY_3;
+			case InputCode::Key_4: return VT_KEY_4;
+			case InputCode::Key_5: return VT_KEY_5;
+			case InputCode::Key_6: return VT_KEY_6;
+			case InputCode::Key_7: return VT_KEY_7;
+			case InputCode::Key_8: return VT_KEY_8;
+			case InputCode::Key_9: return VT_KEY_9;
+			case InputCode::Semicolon: return VT_KEY_SEMICOLON;
+			case InputCode::A: return VT_KEY_A;
+			case InputCode::B: return VT_KEY_B;
+			case InputCode::C: return VT_KEY_C;
+			case InputCode::D: return VT_KEY_D;
+			case InputCode::E: return VT_KEY_E;
+			case InputCode::F: return VT_KEY_F;
+			case InputCode::G: return VT_KEY_G;
+			case InputCode::H: return VT_KEY_H;
+			case InputCode::I: return VT_KEY_I;
+			case InputCode::J: return VT_KEY_J;
+			case InputCode::K: return VT_KEY_K;
+			case InputCode::L: return VT_KEY_L;
+			case InputCode::M: return VT_KEY_M;
+			case InputCode::N: return VT_KEY_N;
+			case InputCode::O: return VT_KEY_O;
+			case InputCode::P: return VT_KEY_P;
+			case InputCode::Q: return VT_KEY_Q;
+			case InputCode::R: return VT_KEY_R;
+			case InputCode::S: return VT_KEY_S;
+			case InputCode::T: return VT_KEY_T;
+			case InputCode::U: return VT_KEY_U;
+			case InputCode::V: return VT_KEY_V;
+			case InputCode::W: return VT_KEY_W;
+			case InputCode::X: return VT_KEY_X;
+			case InputCode::Y: return VT_KEY_Y;
+			case InputCode::Z: return VT_KEY_Z;
+			case InputCode::LeftBracket: return VT_KEY_LEFT_BRACKET;
+			case InputCode::Backslash: return VT_KEY_BACKSLASH;
+			case InputCode::RightBracket: return VT_KEY_RIGHT_BRACKET;
+			case InputCode::GraveAccent: return VT_KEY_GRAVE_ACCENT;
+			case InputCode::World_1: return VT_KEY_WORLD_1;
+			case InputCode::World_2: return VT_KEY_WORLD_2;
+			case InputCode::Esc: return VT_KEY_ESCAPE;
+			case InputCode::Return: return VT_KEY_ENTER;
+			case InputCode::Tab: return VT_KEY_TAB;
+			case InputCode::Backspace: return VT_KEY_BACKSPACE;
+			case InputCode::Insert: return VT_KEY_INSERT;
+			case InputCode::Delete: return VT_KEY_DELETE;
+			case InputCode::RightArrow: return VT_KEY_RIGHT;
+			case InputCode::LeftArrow: return VT_KEY_LEFT;
+			case InputCode::DownArrow: return VT_KEY_DOWN;
+			case InputCode::UpArrow: return VT_KEY_UP;
+			case InputCode::PageUp: return VT_KEY_PAGE_UP;
+			case InputCode::PageDown: return VT_KEY_PAGE_DOWN;
+			case InputCode::Home: return VT_KEY_HOME;
+			case InputCode::End: return VT_KEY_END;
+			case InputCode::CapsLock: return VT_KEY_CAPS_LOCK;
+			case InputCode::ScrollLock: return VT_KEY_SCROLL_LOCK;
+			case InputCode::NumLock: return VT_KEY_NUM_LOCK;
+			case InputCode::PrintScreen: return VT_KEY_PRINT_SCREEN;
+			case InputCode::Pause: return VT_KEY_PAUSE;
+			case InputCode::F1: return VT_KEY_F1;
+			case InputCode::F2: return VT_KEY_F2;
+			case InputCode::F3: return VT_KEY_F3;
+			case InputCode::F4: return VT_KEY_F4;
+			case InputCode::F5: return VT_KEY_F5;
+			case InputCode::F6: return VT_KEY_F6;
+			case InputCode::F7: return VT_KEY_F7;
+			case InputCode::F8: return VT_KEY_F8;
+			case InputCode::F9: return VT_KEY_F9;
+			case InputCode::F10: return VT_KEY_F10;
+			case InputCode::F11: return VT_KEY_F11;
+			case InputCode::F12: return VT_KEY_F12;
+			case InputCode::F13: return VT_KEY_F13;
+			case InputCode::F14: return VT_KEY_F14;
+			case InputCode::F15: return VT_KEY_F15;
+			case InputCode::F16: return VT_KEY_F16;
+			case InputCode::F17: return VT_KEY_F17;
+			case InputCode::F18: return VT_KEY_F18;
+			case InputCode::F19: return VT_KEY_F19;
+			case InputCode::F20: return VT_KEY_F20;
+			case InputCode::F21: return VT_KEY_F21;
+			case InputCode::F22: return VT_KEY_F22;
+			case InputCode::F23: return VT_KEY_F23;
+			case InputCode::F24: return VT_KEY_F24;
+			case InputCode::Numpad_0: return VT_KEY_KP_0;
+			case InputCode::Numpad_1: return VT_KEY_KP_1;
+			case InputCode::Numpad_2: return VT_KEY_KP_2;
+			case InputCode::Numpad_3: return VT_KEY_KP_3;
+			case InputCode::Numpad_4: return VT_KEY_KP_4;
+			case InputCode::Numpad_5: return VT_KEY_KP_5;
+			case InputCode::Numpad_6: return VT_KEY_KP_6;
+			case InputCode::Numpad_7: return VT_KEY_KP_7;
+			case InputCode::Numpad_8: return VT_KEY_KP_8;
+			case InputCode::Numpad_9: return VT_KEY_KP_9;
+			case InputCode::Decimal: return VT_KEY_KP_DECIMAL;
+			case InputCode::Divide: return VT_KEY_KP_DIVIDE;
+			case InputCode::Multiply: return VT_KEY_KP_MULTIPLY;
+			case InputCode::Subtract: return VT_KEY_KP_SUBTRACT;
+			case InputCode::Add: return VT_KEY_KP_ADD;
+			case InputCode::Enter: return VT_KEY_KP_ENTER;
+			case InputCode::Numpad_Equal: return VT_KEY_KP_EQUAL;
+			case InputCode::LeftShift: return VT_KEY_LEFT_SHIFT;
+			case InputCode::LeftControl: return VT_KEY_LEFT_CONTROL;
+			case InputCode::LeftAlt: return VT_KEY_LEFT_ALT;
+			case InputCode::LeftSuper: return VT_KEY_LEFT_SUPER;
+			case InputCode::RightShift: return VT_KEY_RIGHT_SHIFT;
+			case InputCode::RightControl: return VT_KEY_RIGHT_CONTROL;
+			case InputCode::RightAlt: return VT_KEY_RIGHT_ALT;
+			case InputCode::RightSuper: return VT_KEY_RIGHT_SUPER;
+			case InputCode::Menu: return VT_KEY_MENU;
+
+			case InputCode::Mouse_LB: return VT_MOUSE_BUTTON_1;
+			case InputCode::Mouse_RB: return VT_MOUSE_BUTTON_2;
+			case InputCode::Mouse_MB: return VT_MOUSE_BUTTON_3;
+			case InputCode::Mouse_X1: return VT_MOUSE_BUTTON_4;
+			case InputCode::Mouse_X2: return VT_MOUSE_BUTTON_5;
+			case InputCode::Mouse_X3: return VT_MOUSE_BUTTON_6;
+			case InputCode::Mouse_X4: return VT_MOUSE_BUTTON_7;
+			case InputCode::Mouse_X5: return VT_MOUSE_BUTTON_8;
+		}
+
+		return -1;
+	}
+
+	const char* GetKeyName(InputCode inputCode, int32_t scancode)
+	{
+		return glfwGetKeyName(InputCodeToGLFWCode(inputCode), scancode);
+	}
 }

@@ -8,27 +8,34 @@
 
 namespace Volt
 {
+	class Window;
+
 	class INPUTMODULE_API KeyEvent : public Event
 	{
 	public:
-		inline InputCode GetKeyCode() const { return m_keyCode; }
+		VT_NODISCARD VT_INLINE InputCode GetKeyCode() const { return m_keyCode; }
+		VT_NODISCARD VT_INLINE int32_t GetScanCode() const { return m_scanCode; }
+		VT_NODISCARD VT_INLINE Window& GetWindow() const { return m_window; }
+
 
 		EVENT_CLASS(KeyEvent, "{F57124D9-554B-4A8F-9788-79641498BF1C}"_guid);
 	protected:
-		KeyEvent(int32_t keyCode)
-			
+		KeyEvent(Window& window, int32_t keyCode, int32_t scanCode)
+			: m_window(window), m_scanCode(scanCode)
 		{
 			m_keyCode = GLFWKeyCodeToInputCode(keyCode);
 		}
 
 		InputCode m_keyCode;
+		int32_t m_scanCode;
+		Window& m_window;
 	};
 
 	class INPUTMODULE_API KeyPressedEvent : public KeyEvent
 	{
 	public:
-		KeyPressedEvent(int32_t keyCode, int32_t repeatCount)
-			: KeyEvent(keyCode), m_repeatCount(repeatCount)
+		KeyPressedEvent(Window& window, int32_t keyCode, int32_t scanCode, int32_t repeatCount)
+			: KeyEvent(window, keyCode, scanCode), m_repeatCount(repeatCount)
 		{
 		}
 
@@ -44,8 +51,8 @@ namespace Volt
 	class INPUTMODULE_API KeyReleasedEvent : public KeyEvent
 	{
 	public:
-		KeyReleasedEvent(int32_t keyCode)
-			: KeyEvent(keyCode)
+		KeyReleasedEvent(Window& window, int32_t keyCode, int32_t scanCode)
+			: KeyEvent(window, keyCode, scanCode)
 		{
 		}
 
@@ -54,16 +61,23 @@ namespace Volt
 		EVENT_CLASS(KeyReleasedEvent, "{683AC3F1-9CEC-4BEA-9944-1740CD80E7A4}"_guid);
 	};
 
-	class INPUTMODULE_API KeyTypedEvent : public KeyEvent
+	class INPUTMODULE_API KeyTypedEvent : public Event
 	{
 	public:
-		KeyTypedEvent(int32_t keyCode)
-			: KeyEvent(keyCode)
+		KeyTypedEvent(Window& window, uint32_t character)
+			: m_window(window), m_character(character)
 		{
 		}
 
 		std::string ToString() const override;
 
+		VT_NODISCARD VT_INLINE uint32_t GetCharacter() const { return m_character; }
+		VT_NODISCARD VT_INLINE Window& GetWindow() const { return m_window; }
+
 		EVENT_CLASS(KeyTypedEvent, "{E01DA431-6A5A-427D-8A99-2D1A3D4868AB}"_guid);
+	
+	private:
+		Window& m_window;
+		uint32_t m_character;
 	};
 }

@@ -31,7 +31,7 @@ public:
 	void OnClose() override;
 
 private:
-	bool OnRenderEvent(Volt::WindowRenderEvent& e);
+	bool OnRenderEvent(Volt::AppRenderEvent& e);
 	bool OnMouseScrollEvent(Volt::MouseScrolledEvent& e);
 	bool OnMouseButtonPressedEvent(Volt::MouseButtonPressedEvent& e);
 	bool OnMouseButtonReleasedEvent(Volt::MouseButtonReleasedEvent& e);

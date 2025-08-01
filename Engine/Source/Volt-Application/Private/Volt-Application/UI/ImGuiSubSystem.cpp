@@ -5,6 +5,7 @@
 #include "Volt-Application/UI/UIFonts.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <Volt-ImGui/ImGuiImplementation.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -54,12 +55,11 @@ namespace Volt
 
 		auto& window = WindowManager::Get().GetMainWindow();
 
-		RHI::ImGuiCreateInfo createInfo{};
-		createInfo.swapchain = window.GetSwapchainPtr();
-		createInfo.window = window.GetNativeWindow();
+		ImGuiCreateInfo2 createInfo{};
 		createInfo.enableViewports = enableViewports;
+		createInfo.window = &window;
 
-		m_imguiImplementation = RHI::ImGuiImplementation::Create(createInfo);
+		m_imguiImplementation = CreateRef<ImGuiImplementation>(createInfo);
 
 		Vector<std::filesystem::path> fontPaths;
 		fontPaths.resize(2);
@@ -68,11 +68,12 @@ namespace Volt
 		fontPaths[1] = "Engine/Fonts/Inter/inter-bold.ttf";
 
 		auto imFonts = m_imguiImplementation->AddFonts(fontPaths);
-
+		
 		UI::SetFont(UI::FontType::Regular, imFonts[0]);
 		UI::SetFont(UI::FontType::Bold, imFonts[1]);
 
 		m_imguiImplementation->SetDefaultFont(imFonts[0]);
+
 		VT_LOGC(Trace, LogImGuiSubSystem, "ImGuiSubSystem initialized in {} seconds!", timer.GetTime<Time::Seconds>());
 	}
 
@@ -90,5 +91,10 @@ namespace Volt
 		{
 			m_imguiImplementation->End();
 		}
+	}
+
+	ImTextureID ImGuiSubSystem::GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex /*= -1*/)
+	{
+		return m_imguiImplementation->GetTextureID(image, mipIndex);
 	}
 }

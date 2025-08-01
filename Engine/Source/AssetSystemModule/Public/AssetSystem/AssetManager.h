@@ -95,7 +95,7 @@ namespace Volt
 		static AssetType GetAssetTypeFromHandle(const AssetHandle& handle);
 		static AssetType GetAssetTypeFromPath(const std::filesystem::path& path);
 		static AssetHandle GetAssetHandleFromFilePath(const std::filesystem::path& path);
-		
+
 		static const AssetMetadata& GetMetadataFromHandle(AssetHandle handle);
 		static const AssetMetadata& GetMetadataFromFilePath(const std::filesystem::path filePath);
 
@@ -175,7 +175,7 @@ namespace Volt
 		static AssetMetadata& GetMetadataFromFilePathMutable(const std::filesystem::path filePath);
 
 		static const std::filesystem::path GetCleanAssetFilePath(const std::filesystem::path& path);
-		
+
 		Vector<std::filesystem::path> GetEngineAssetFiles();
 		Vector<std::filesystem::path> GetProjectAssetFiles();
 
@@ -262,7 +262,8 @@ namespace Volt
 		}
 
 		while (!asset->IsValid())
-		{}
+		{
+		}
 		return std::reinterpret_pointer_cast<T>(asset);
 	}
 
@@ -282,14 +283,11 @@ namespace Volt
 			return nullptr;
 		}
 
+		const auto metadata = GetMetadataFromHandle(handle);
+		if (!metadata.IsValid())
 		{
-			ReadLock lock{ Get().m_assetRegistryMutex };
-			const auto& metadata = GetMetadataFromHandle(handle);
-			if (!metadata.IsValid())
-			{
-				VT_LOGC(Error, LogAssetSystem, "Trying to load asset which has invalid metadata!");
-				return nullptr;
-			}
+			VT_LOGC(Error, LogAssetSystem, "Trying to load asset which has invalid metadata!");
+			return nullptr;
 		}
 
 		// If it's a memory asset, return it

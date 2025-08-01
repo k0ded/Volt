@@ -15,6 +15,7 @@
 #include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/EnumUtils.h>
+#include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt::RHI
@@ -52,6 +53,11 @@ namespace Volt::RHI
 
 	void VulkanStorageBuffer::Resize(const uint64_t byteSize)
 	{
+		if (byteSize <= m_desc.elementSize * m_desc.count)
+		{
+			return;
+		}
+
 		m_desc.count = static_cast<uint32_t>(byteSize / m_desc.elementSize);
 
 		Invalidate(byteSize);
@@ -225,7 +231,8 @@ namespace Volt::RHI
 		tempDesc.size = desc.size;
 		tempDesc.offset = desc.offset;
 
-		return BufferView::Create(tempDesc);
+		RefPtr<BufferView> bufferView = BufferView::Create(tempDesc);
+		return bufferView;
 	}
 
 	void VulkanStorageBuffer::SetName(const std::string& name)

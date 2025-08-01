@@ -1,6 +1,8 @@
 #pragma once
 
-#include "CoreUtilities/EnumUtils.h"
+#include <InputModule/InputModuleConfig.h>
+
+#include <CoreUtilities/EnumUtils.h>
 
 namespace Volt
 {
@@ -119,6 +121,7 @@ namespace Volt
 		LeftSuper,
 		RightSuper,
 		Menu,
+		Enter,
 
 		// Numpad keys
 		Numpad_0,
@@ -136,7 +139,7 @@ namespace Volt
 		Multiply,
 		Subtract,
 		Add,
-		Enter,
+		Numpad_Equal,
 
 		// Mouse buttons
 		Mouse_LB,
@@ -154,6 +157,9 @@ namespace Volt
 		Unknown
 	);
 
-	InputCode GLFWKeyCodeToInputCode(uint32_t glfwKeyCode);
-	InputCode GLFWMouseCodeToInputCode(uint32_t glfwMouseCode);
+	INPUTMODULE_API InputCode GLFWKeyCodeToInputCode(uint32_t glfwKeyCode);
+	INPUTMODULE_API InputCode GLFWMouseCodeToInputCode(uint32_t glfwMouseCode);
+
+	INPUTMODULE_API int32_t InputCodeToGLFWCode(InputCode inputCode);
+	INPUTMODULE_API const char* GetKeyName(InputCode inputCode, int32_t scancode);
 }

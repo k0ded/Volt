@@ -324,14 +324,14 @@ namespace Volt
 
 	StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Get(StreamingInstanceID id)
 	{
-		VT_ENSURE(m_streamingInstances.contains(id));
 		std::scoped_lock lock(m_mutex);
+		VT_ENSURE(m_streamingInstances.contains(id));
 		return *m_streamingInstances.at(id);
 	}
 	const StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Get(StreamingInstanceID id) const
 	{
-		VT_ENSURE(m_streamingInstances.contains(id));
 		std::scoped_lock lock(m_mutex);
+		VT_ENSURE(m_streamingInstances.contains(id));
 		return *m_streamingInstances.at(id);
 	}
 

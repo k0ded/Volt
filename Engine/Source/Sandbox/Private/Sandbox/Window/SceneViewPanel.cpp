@@ -21,7 +21,7 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <RHIModule/ImGui/FontAwesome.h>
+#include <Volt-ImGui/FontAwesome.h>
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>

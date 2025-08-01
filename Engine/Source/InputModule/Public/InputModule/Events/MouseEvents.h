@@ -7,6 +7,8 @@
 
 namespace Volt
 {
+	class Window;
+
 	//used by the InputModule to tell the window module to set the mouse position
 	class INPUTMODULE_API SetMousePositionEvent : public Event
 	{
@@ -45,12 +47,24 @@ namespace Volt
 		bool m_show;
 	};
 
-
-	class INPUTMODULE_API MouseMovedEvent : public Event
+	class INPUTMODULE_API MouseEvent : public Event
 	{
 	public:
-		MouseMovedEvent(float x, float y)
-			: m_mouseX(x), m_mouseY(y)
+		VT_NODISCARD VT_INLINE Window& GetWindow() { return m_window; }
+
+	protected:
+		MouseEvent(Window& window)
+			: m_window(window)
+		{ }
+
+		Window& m_window;
+	};
+
+	class INPUTMODULE_API MouseMovedEvent : public MouseEvent
+	{
+	public:
+		MouseMovedEvent(Window& window, float x, float y)
+			: MouseEvent(window), m_mouseX(x), m_mouseY(y)
 		{
 		}
 
@@ -67,11 +81,11 @@ namespace Volt
 		float m_mouseY;
 	};
 
-	class INPUTMODULE_API MouseScrolledEvent : public Event
+	class INPUTMODULE_API MouseScrolledEvent : public MouseEvent
 	{
 	public:
-		MouseScrolledEvent(float xOffset, float yOffset)
-			: m_xOffset(xOffset), m_yOffset(yOffset)
+		MouseScrolledEvent(Window& window, float xOffset, float yOffset)
+			: MouseEvent(window), m_xOffset(xOffset), m_yOffset(yOffset)
 		{
 		}
 
@@ -84,7 +98,7 @@ namespace Volt
 		float m_yOffset;
 	};
 
-	class INPUTMODULE_API MouseButtonEvent : public Event
+	class INPUTMODULE_API MouseButtonEvent : public MouseEvent
 	{
 	public:
 		//Getting
@@ -92,7 +106,8 @@ namespace Volt
 
 		EVENT_CLASS(MouseButtonEvent, "{6A5764D2-B47E-41BF-9CA9-609AFC3610F2}"_guid)
 	protected:
-		MouseButtonEvent(int button)
+		MouseButtonEvent(Window& window, int button)
+			: MouseEvent(window)
 		{
 			m_button = GLFWMouseCodeToInputCode(button);
 		}
@@ -103,8 +118,8 @@ namespace Volt
 	class INPUTMODULE_API MouseButtonPressedEvent : public MouseButtonEvent
 	{
 	public:
-		MouseButtonPressedEvent(int button)
-			: MouseButtonEvent(button)
+		MouseButtonPressedEvent(Window& window, int button)
+			: MouseButtonEvent(window, button)
 		{
 		}
 
@@ -116,8 +131,8 @@ namespace Volt
 	class INPUTMODULE_API MouseButtonReleasedEvent : public MouseButtonEvent
 	{
 	public:
-		MouseButtonReleasedEvent(int button)
-			: MouseButtonEvent(button)
+		MouseButtonReleasedEvent(Window& window, int button)
+			: MouseButtonEvent(window, button)
 		{
 		}
 

@@ -19,7 +19,7 @@
 GameUIEditorPanel::GameUIEditorPanel()
 	: EditorWindow("Game UI Editor", true)
 {
-	RegisterListener<Volt::WindowRenderEvent>(VT_BIND_EVENT_FN(GameUIEditorPanel::OnRenderEvent));
+	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(GameUIEditorPanel::OnRenderEvent));
 	RegisterListener<Volt::MouseButtonPressedEvent>(VT_BIND_EVENT_FN(GameUIEditorPanel::OnMouseButtonPressedEvent));
 	RegisterListener<Volt::MouseButtonReleasedEvent>(VT_BIND_EVENT_FN(GameUIEditorPanel::OnMouseButtonReleasedEvent));
 	RegisterListener<Volt::MouseScrolledEvent>(VT_BIND_EVENT_FN(GameUIEditorPanel::OnMouseScrollEvent));
@@ -69,7 +69,7 @@ void GameUIEditorPanel::OnClose()
 	m_viewportImage = nullptr;
 }
 
-bool GameUIEditorPanel::OnRenderEvent(Volt::WindowRenderEvent& e)
+bool GameUIEditorPanel::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 	if (!m_viewportImage || static_cast<float>(m_viewportImage->GetWidth()) != m_viewportSize.x || static_cast<float>(m_viewportImage->GetHeight()) != m_viewportSize.y)
 	{

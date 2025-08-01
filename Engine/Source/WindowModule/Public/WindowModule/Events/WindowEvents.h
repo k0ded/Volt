@@ -8,20 +8,37 @@
 
 namespace Volt
 {
-	class WINDOWMODULE_API WindowBeginFrameEvent : public Event
+	class Window;
+	class Monitor;
+
+	class WINDOWMODULE_API WindowEvent : public Event
 	{
 	public:
-		WindowBeginFrameEvent()
-		{
-		}
+		VT_NODISCARD VT_INLINE Window& GetWindow() { return m_window; }
+
+	protected:
+		WindowEvent(Window& window)
+			: m_window(window)
+		{ }
+
+		Window& m_window;
+	};
+
+	class WINDOWMODULE_API WindowBeginFrameEvent : public WindowEvent
+	{
+	public:
+		WindowBeginFrameEvent(Window& window)
+			: WindowEvent(window)
+		{}
 
 		EVENT_CLASS(WindowBeginFrameEvent, "{AF873F34-6F2D-41AF-B85D-E15D6EEC5F5A}"_guid);
 	};
 
-	class WINDOWMODULE_API WindowPresentFrameEvent : public Event
+	class WINDOWMODULE_API WindowPresentFrameEvent : public WindowEvent
 	{
 	public:
-		WindowPresentFrameEvent()
+		WindowPresentFrameEvent(Window& window)
+			: WindowEvent(window)
 		{
 		}
 
@@ -29,16 +46,16 @@ namespace Volt
 
 	};
 
-	class WINDOWMODULE_API WindowResizeEvent : public Event
+	class WINDOWMODULE_API WindowResizeEvent : public WindowEvent
 	{
 	public:
-		WindowResizeEvent(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
-			: m_width(width), m_height(height), m_x(x), m_y(y)
+		WindowResizeEvent(Window& window, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+			: WindowEvent(window), m_width(width), m_height(height), m_x(x), m_y(y)
 		{
 		}
 
-		WindowResizeEvent(uint32_t width, uint32_t height)
-			: m_width(width), m_height(height), m_x(0), m_y(0)
+		WindowResizeEvent(Window& window, uint32_t width, uint32_t height)
+			: WindowEvent(window), m_width(width), m_height(height), m_x(0), m_y(0)
 		{
 		}
 
@@ -59,11 +76,11 @@ namespace Volt
 		uint32_t m_y;
 	};
 
-	class WINDOWMODULE_API ViewportResizeEvent : public Event
+	class WINDOWMODULE_API ViewportResizeEvent : public WindowEvent
 	{
 	public:
-		ViewportResizeEvent(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
-			: m_width(width), m_height(height), m_x(x), m_y(y)
+		ViewportResizeEvent(Window& window, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+			: WindowEvent(window), m_width(width), m_height(height), m_x(x), m_y(y)
 		{
 		}
 		//Getting
@@ -83,19 +100,21 @@ namespace Volt
 		uint32_t m_y;
 	};
 
-	class WINDOWMODULE_API WindowCloseEvent : public Event
+	class WINDOWMODULE_API WindowCloseEvent : public WindowEvent
 	{
 	public:
-		WindowCloseEvent() = default;
+		WindowCloseEvent(Window& window)
+			: WindowEvent(window)
+		{}
 
 		EVENT_CLASS(WindowCloseEvent, "{01DFAC3F-FDB8-42E3-9903-22C0F4B9736F}"_guid);
 	};
 
-	class WINDOWMODULE_API WindowTitlebarHittestEvent : public Event
+	class WINDOWMODULE_API WindowTitlebarHittestEvent : public WindowEvent
 	{
 	public:
-		WindowTitlebarHittestEvent(int x, int y, int& hit)
-			: m_x(x), m_y(y), m_hit(hit)
+		WindowTitlebarHittestEvent(Window& window, int x, int y, int& hit)
+			: WindowEvent(window), m_x(x), m_y(y), m_hit(hit)
 		{
 		}
 
@@ -112,11 +131,11 @@ namespace Volt
 		int& m_hit;
 	};
 
-	class WINDOWMODULE_API WindowRenderEvent : public Event
+	class WINDOWMODULE_API WindowRenderEvent : public WindowEvent
 	{
 	public:
-		WindowRenderEvent(float timestep)
-			: m_timestep(timestep)
+		WindowRenderEvent(Window& window, float timestep)
+			: WindowEvent(window), m_timestep(timestep)
 		{ }
 
 		VT_INLINE float GetTimestep() const { return m_timestep; }
@@ -126,10 +145,11 @@ namespace Volt
 		float m_timestep;
 	};
 
-	class WINDOWMODULE_API WindowDragDropEvent : public Event
+	class WINDOWMODULE_API WindowDragDropEvent : public WindowEvent
 	{
 	public:
-		WindowDragDropEvent(int32_t count, const char** paths)
+		WindowDragDropEvent(Window& window, int32_t count, const char** paths)
+			: WindowEvent(window)
 		{
 			for (int32_t i = 0; i < count; ++i)
 			{
@@ -141,8 +161,65 @@ namespace Volt
 
 		EVENT_CLASS(WindowDragDropEvent, "{FE76F668-D2AB-4EFF-8209-A8EFDC9EBDCF}"_guid);
 
-
 	private:
 		Vector<std::filesystem::path> m_paths;
+	};
+
+	class WINDOWMODULE_API WindowFocusChangedEvent : public WindowEvent
+	{
+	public:
+		WindowFocusChangedEvent(Window& window, bool focused)
+			: WindowEvent(window), m_focused(focused)
+		{ }
+
+		VT_NODISCARD VT_INLINE bool Focused() const { return m_focused; }
+
+		EVENT_CLASS(WindowFocusChangedEvent, "{06CF0423-AB2C-4E7C-8BD2-5961FE3B996D}"_guid);
+
+	private:
+		bool m_focused;
+	};
+
+	class WINDOWMODULE_API WindowCursorEnteredEvent : public WindowEvent
+	{
+	public:
+		WindowCursorEnteredEvent(Window& window, bool entered)
+			: WindowEvent(window), m_entered(entered)
+		{ }
+
+		VT_NODISCARD VT_INLINE bool Entered() const { return m_entered; }
+
+		EVENT_CLASS(WindowFocusChangedEvent, "{E742A4A1-7C58-4BEE-873C-43BFC066FBA2}"_guid);
+
+	private:
+		bool m_entered;
+	};
+
+	class WINDOWMODULE_API MonitorConnectedEvent : public Event
+	{
+	public:
+		MonitorConnectedEvent(Monitor& monitor)
+			: m_monitor(monitor)
+		{}
+
+		VT_NODISCARD VT_INLINE Monitor& GetMonitor() const { return m_monitor; }
+
+		EVENT_CLASS(MonitorConnectedEvent, "{EF6241B8-B841-4F26-9CC9-D2271E1386EC}"_guid);
+	private:
+		Monitor& m_monitor;
+	};
+
+	class WINDOWMODULE_API MonitorDisconnectedEvent : public Event
+	{
+	public:
+		MonitorDisconnectedEvent(Monitor& monitor)
+			: m_monitor(monitor)
+		{}
+
+		VT_NODISCARD VT_INLINE Monitor& GetMonitor() const { return m_monitor; }
+
+		EVENT_CLASS(MonitorDisconnectedEvent, "{EE88C8CB-4991-4685-9B89-D1F843049792}"_guid);
+	private:
+		Monitor& m_monitor;
 	};
 }

@@ -62,7 +62,7 @@ void ProjectUpgradeLayer::DrawUpgradeUI()
 
 		Volt::ProjectManager::OnProjectUpgraded();
 
-		Volt::WindowCloseEvent loadEvent{};
+		Volt::WindowCloseEvent loadEvent{ Volt::WindowManager::Get().GetMainWindow() };
 		Volt::EventSystem::DispatchEvent(loadEvent);
 	}
 
@@ -70,7 +70,7 @@ void ProjectUpgradeLayer::DrawUpgradeUI()
 
 	if (ImGui::Button("No"))
 	{
-		Volt::WindowCloseEvent loadEvent{};
+		Volt::WindowCloseEvent loadEvent{ Volt::WindowManager::Get().GetMainWindow(), };
 		Volt::EventSystem::DispatchEvent(loadEvent);
 	}
 }

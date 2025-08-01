@@ -79,4 +79,9 @@ namespace Volt::RHI
 		m_isExecuted = true;
 		m_isExecuted.notify_all();
 	}
+
+	bool VulkanFence::HasBeenExecuted() const
+	{
+		return m_isExecuted.load(std::memory_order::relaxed);
+	}
 }

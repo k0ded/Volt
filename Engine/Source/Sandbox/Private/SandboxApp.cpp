@@ -48,13 +48,15 @@ bool PeekProjectVersionIsDeprecated(const std::filesystem::path& projectPath)
 
 	if (!streamReader.OpenFile(projectPath))
 	{
-		std::runtime_error(std::format("Failed to open file: {0}!", projectPath.string()));
+		const std::string error = std::format("Failed to open file: {0}!", projectPath.string());
+		throw std::runtime_error(error.c_str());
 		return false;
 	}
 
 	if (!streamReader.HasKey("Project"))
 	{
-		std::runtime_error(std::format("Project file {0} is invalid!", projectPath.string()));
+		const std::string error = std::format("Project file {0} is invalid!", projectPath.string());
+		throw std::runtime_error(error.c_str());
 		return false;
 	}
 
@@ -82,7 +84,7 @@ void LaunchProjectUpgradeClient(const std::filesystem::path& projectPath)
 
 	if (!FileSystem::Exists(projectUpgradeClientFilepath))
 	{
-		std::runtime_error(std::format("Could not find the project upgrade clien at '{0}'", projectUpgradeClientFilepath.string()));
+		throw std::runtime_error(std::format("Could not find the project upgrade clien at '{0}'", projectUpgradeClientFilepath.string()));
 		return;
 	}
 

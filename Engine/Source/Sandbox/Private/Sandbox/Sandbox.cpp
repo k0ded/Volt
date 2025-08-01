@@ -349,7 +349,7 @@ void Sandbox::OnScenePlay()
 	Volt::OnScenePlayEvent playEvent{};
 	Volt::EventSystem::DispatchEvent(playEvent);
 
-	Volt::ViewportResizeEvent e2 = { m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
+	Volt::ViewportResizeEvent e2 = { Volt::WindowManager::Get().GetMainWindow(), m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
 	Volt::EventSystem::DispatchEvent(e2);
 }
 
@@ -360,7 +360,7 @@ void Sandbox::OnSceneStop()
 	Volt::OnSceneStopEvent stopEvent{};
 	Volt::EventSystem::DispatchEvent(stopEvent);
 
-	Volt::ViewportResizeEvent e2 = { m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
+	Volt::ViewportResizeEvent e2 = { Volt::WindowManager::Get().GetMainWindow(), m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
 	Volt::EventSystem::DispatchEvent(e2);
 
 	m_runtimeScene->OnRuntimeEnd();
@@ -535,7 +535,7 @@ void Sandbox::TransitionToNewScene()
 
 	m_runtimeScene->OnRuntimeStart();
 
-	Volt::ViewportResizeEvent windowResizeEvent{ m_viewportPosition.x, m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
+	Volt::ViewportResizeEvent windowResizeEvent{ Volt::WindowManager::Get().GetMainWindow(), m_viewportPosition.x, m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
 	Volt::EventSystem::DispatchEvent(windowResizeEvent);
 
 	Volt::OnScenePlayEvent playEvent{};
@@ -608,7 +608,7 @@ void Sandbox::RegisterEventListeners()
 
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(Sandbox::OnUpdateEvent), isInitializedPred);
 	RegisterListener<Volt::AppImGuiUpdateEvent>(VT_BIND_EVENT_FN(Sandbox::OnImGuiUpdateEvent), isInitializedPred);
-	RegisterListener<Volt::WindowRenderEvent>(VT_BIND_EVENT_FN(Sandbox::OnRenderEvent), isInitializedPred);
+	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(Sandbox::OnRenderEvent), isInitializedPred);
 	RegisterListener<Volt::KeyPressedEvent>(VT_BIND_EVENT_FN(Sandbox::OnKeyPressedEvent), isInitializedPred);
 	RegisterListener<Volt::ViewportResizeEvent>(VT_BIND_EVENT_FN(Sandbox::OnViewportResizeEvent), isInitializedPred);
 	RegisterListener<Volt::OnSceneLoadedEvent>(VT_BIND_EVENT_FN(Sandbox::OnSceneLoadedEvent), isInitializedPred);
@@ -784,7 +784,7 @@ void Sandbox::RenderGameView(float timestep)
 	}
 }
 
-bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
+bool Sandbox::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 	VT_PROFILE_FUNCTION();
 
@@ -974,7 +974,7 @@ bool Sandbox::OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e)
 
 	e.GetScene()->SetRenderSize(m_viewportSize.x, m_viewportSize.y);
 
-	Volt::ViewportResizeEvent e2 = { m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
+	Volt::ViewportResizeEvent e2 = { Volt::WindowManager::Get().GetMainWindow(), m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
 	Volt::EventSystem::DispatchEvent(e2);
 
 	auto scene = e.GetScene();

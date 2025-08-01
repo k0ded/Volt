@@ -57,7 +57,7 @@ void GameViewPanel::UpdateMainContent()
 		Resize({ viewportSize.x, viewportSize.y });
 	}
 
-	if (m_sceneRenderer)
+	if (m_sceneRenderer && m_sceneRenderer->GetFinalImage())
 	{
 		ImGui::Image(UI::GetTextureID(m_sceneRenderer->GetFinalImage()), { m_viewportSize.x, m_viewportSize.y });
 	}

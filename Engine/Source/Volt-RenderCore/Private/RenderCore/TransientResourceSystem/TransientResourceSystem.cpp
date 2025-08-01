@@ -24,18 +24,21 @@ namespace Volt
 	{
 		m_allocatedResources = other.m_allocatedResources;
 		m_surrenderedResources = other.m_surrenderedResources;
+		m_shaderParameterUniformBuffers = other.m_shaderParameterUniformBuffers;
 	}
 
 	TransientResourceSystem::TransientResourceSystem(TransientResourceSystem&& other) noexcept
 	{
 		m_allocatedResources = std::move(other.m_allocatedResources);
 		m_surrenderedResources = std::move(other.m_surrenderedResources);
+		m_shaderParameterUniformBuffers = std::move(other.m_shaderParameterUniformBuffers);
 	}
 
 	TransientResourceSystem& TransientResourceSystem::operator=(const TransientResourceSystem& other) noexcept
 	{
 		m_allocatedResources = other.m_allocatedResources;
 		m_surrenderedResources = other.m_surrenderedResources;
+		m_shaderParameterUniformBuffers = other.m_shaderParameterUniformBuffers;
 
 		return *this;
 	}
@@ -44,6 +47,7 @@ namespace Volt
 	{
 		m_allocatedResources = std::move(other.m_allocatedResources);
 		m_surrenderedResources = std::move(other.m_surrenderedResources);
+		m_shaderParameterUniformBuffers = std::move(other.m_shaderParameterUniformBuffers);
 
 		return *this;
 	}

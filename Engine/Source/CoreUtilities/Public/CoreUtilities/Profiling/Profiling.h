@@ -16,9 +16,13 @@
 #define VT_PROFILE_THREAD(...) tracy::SetThreadName(__VA_ARGS__)
 #define VT_PROFILE_CATEGORY(...)
 
+#ifdef VT_DEBUG
 #define VT_PROFILE_ALLOC(ptr, size) TracyAlloc(ptr, size)
 #define VT_PROFILE_FREE(ptr) TracyFree(ptr)
-
+#else
+#endif
+#define VT_PROFILE_ALLOC(ptr, size)
+#define VT_PROFILE_FREE(ptr)
 #else
 
 #define VT_PROFILE_FRAME(...)

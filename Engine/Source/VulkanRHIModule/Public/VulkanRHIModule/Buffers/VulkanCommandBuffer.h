@@ -49,7 +49,7 @@ namespace Volt::RHI
 		void BindPipeline(RawPtr<ComputePipeline> pipeline) override;
 		void BindPipeline(RawPtr<RayTracingPipeline> pipeline) override;
 		void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) override;
-		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) override;
+		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer, const IndexType indexType) override;
 
 		void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) override;
 		void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) override;
@@ -76,6 +76,7 @@ namespace Volt::RHI
 
 		void CopyBufferRegion(Handle<Allocation> srcAllocation, const size_t srcOffset, Handle<Allocation> dstAllocation, const size_t dstOffset, const size_t size) override;
 		void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip /* = 0 */) override;
+		void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const int32_t offsetX, const int32_t offsetY, const int32_t offsetZ, const uint32_t mip) override;
 		void CopyImageToBuffer(RawPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) override;
 		void CopyImage(RawPtr<Image> srcImage, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth) override;
 
