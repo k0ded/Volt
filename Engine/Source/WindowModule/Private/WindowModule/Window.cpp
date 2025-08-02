@@ -178,7 +178,7 @@ namespace Volt
 			});
 		}
 
-		glfwSetKeyCallback(m_window, [](GLFWwindow* window, int32_t key, int32_t scanCode, int32_t action, int32_t)
+		glfwSetKeyCallback(m_window, [](GLFWwindow* window, int32_t key, int32_t scanCode, int32_t action, int32_t modifiers)
 		{
 			if (key == -1)
 			{
@@ -191,21 +191,21 @@ namespace Volt
 			{
 				case GLFW_PRESS:
 				{
-					KeyPressedEvent event(voltWindow, key, scanCode, 0);
+					KeyPressedEvent event(voltWindow, key, scanCode, 0, modifiers);
 					EventSystem::DispatchEvent(event);
 					break;
 				}
 
 				case GLFW_RELEASE:
 				{
-					KeyReleasedEvent event(voltWindow, key, scanCode);
+					KeyReleasedEvent event(voltWindow, key, scanCode, modifiers);
 					EventSystem::DispatchEvent(event);
 					break;
 				}
 
 				case GLFW_REPEAT:
 				{
-					KeyPressedEvent event(voltWindow, key, scanCode, 1);
+					KeyPressedEvent event(voltWindow, key, scanCode, 1, modifiers);
 					EventSystem::DispatchEvent(event);
 					break;
 				}
@@ -220,7 +220,7 @@ namespace Volt
 			EventSystem::DispatchEvent(event);
 		});
 
-		glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int)
+		glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int modifiers)
 		{
 			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
 
@@ -228,13 +228,13 @@ namespace Volt
 			{
 				case GLFW_PRESS:
 				{
-					MouseButtonPressedEvent event(voltWindow, button);
+					MouseButtonPressedEvent event(voltWindow, button, modifiers);
 					EventSystem::DispatchEvent(event);
 					break;
 				}
 				case GLFW_RELEASE:
 				{
-					MouseButtonReleasedEvent event(voltWindow, button);
+					MouseButtonReleasedEvent event(voltWindow, button, modifiers);
 					EventSystem::DispatchEvent(event);
 					break;
 				}

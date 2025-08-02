@@ -3,6 +3,7 @@
 #include <InputModule/InputModuleConfig.h>
 
 #include <CoreUtilities/EnumUtils.h>
+#include <CoreUtilities/Core.h>
 
 namespace Volt
 {
@@ -157,8 +158,20 @@ namespace Volt
 		Unknown
 	);
 
+	CREATE_ENUM(InputModifier,
+		Shift = 0x0001,
+		Control = 0x0002,
+		Alt = 0x0004,
+		Super = 0x0008,
+		CapsLock = 0x0010,
+		NumLock = 0x0020
+	);
+
+	VT_SETUP_ENUM_CLASS_OPERATORS(InputModifier);
+
 	INPUTMODULE_API InputCode GLFWKeyCodeToInputCode(uint32_t glfwKeyCode);
 	INPUTMODULE_API InputCode GLFWMouseCodeToInputCode(uint32_t glfwMouseCode);
+	INPUTMODULE_API InputModifier GLFWModifierToInputModifier(int32_t glfwModifier);
 
 	INPUTMODULE_API int32_t InputCodeToGLFWCode(InputCode inputCode);
 	INPUTMODULE_API const char* GetKeyName(InputCode inputCode, int32_t scancode);

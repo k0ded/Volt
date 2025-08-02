@@ -102,24 +102,27 @@ namespace Volt
 	{
 	public:
 		//Getting
-		inline InputCode GetMouseButton() const { return m_button; }
+		VT_NODISCARD VT_INLINE InputCode GetMouseButton() const { return m_button; }
+		VT_NODISCARD VT_INLINE InputModifier GetModifiers() const { return m_modifiers; }
 
 		EVENT_CLASS(MouseButtonEvent, "{6A5764D2-B47E-41BF-9CA9-609AFC3610F2}"_guid)
 	protected:
-		MouseButtonEvent(Window& window, int button)
+		MouseButtonEvent(Window& window, int32_t button, int32_t modifiers)
 			: MouseEvent(window)
 		{
 			m_button = GLFWMouseCodeToInputCode(button);
+			m_modifiers = GLFWModifierToInputModifier(modifiers);
 		}
 
 		InputCode m_button;
+		InputModifier m_modifiers;
 	};
 
 	class INPUTMODULE_API MouseButtonPressedEvent : public MouseButtonEvent
 	{
 	public:
-		MouseButtonPressedEvent(Window& window, int button)
-			: MouseButtonEvent(window, button)
+		MouseButtonPressedEvent(Window& window, int32_t button, int32_t modifiers)
+			: MouseButtonEvent(window, button, modifiers)
 		{
 		}
 
@@ -131,8 +134,8 @@ namespace Volt
 	class INPUTMODULE_API MouseButtonReleasedEvent : public MouseButtonEvent
 	{
 	public:
-		MouseButtonReleasedEvent(Window& window, int button)
-			: MouseButtonEvent(window, button)
+		MouseButtonReleasedEvent(Window& window, int32_t button, int32_t modifiers)
+			: MouseButtonEvent(window, button, modifiers)
 		{
 		}
 

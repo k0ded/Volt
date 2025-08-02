@@ -14,19 +14,22 @@ namespace Volt
 	{
 	public:
 		VT_NODISCARD VT_INLINE InputCode GetKeyCode() const { return m_keyCode; }
+		VT_NODISCARD VT_INLINE InputModifier GetModifiers() const { return m_inputModifiers; }
 		VT_NODISCARD VT_INLINE int32_t GetScanCode() const { return m_scanCode; }
 		VT_NODISCARD VT_INLINE Window& GetWindow() const { return m_window; }
 
 
 		EVENT_CLASS(KeyEvent, "{F57124D9-554B-4A8F-9788-79641498BF1C}"_guid);
 	protected:
-		KeyEvent(Window& window, int32_t keyCode, int32_t scanCode)
+		KeyEvent(Window& window, int32_t keyCode, int32_t scanCode, int32_t modifierBitmask)
 			: m_window(window), m_scanCode(scanCode)
 		{
 			m_keyCode = GLFWKeyCodeToInputCode(keyCode);
+			m_inputModifiers = GLFWModifierToInputModifier(modifierBitmask);
 		}
 
 		InputCode m_keyCode;
+		InputModifier m_inputModifiers;
 		int32_t m_scanCode;
 		Window& m_window;
 	};
@@ -34,8 +37,8 @@ namespace Volt
 	class INPUTMODULE_API KeyPressedEvent : public KeyEvent
 	{
 	public:
-		KeyPressedEvent(Window& window, int32_t keyCode, int32_t scanCode, int32_t repeatCount)
-			: KeyEvent(window, keyCode, scanCode), m_repeatCount(repeatCount)
+		KeyPressedEvent(Window& window, int32_t keyCode, int32_t scanCode, int32_t repeatCount, int32_t modifierBitmask)
+			: KeyEvent(window, keyCode, scanCode, modifierBitmask), m_repeatCount(repeatCount)
 		{
 		}
 
@@ -51,8 +54,8 @@ namespace Volt
 	class INPUTMODULE_API KeyReleasedEvent : public KeyEvent
 	{
 	public:
-		KeyReleasedEvent(Window& window, int32_t keyCode, int32_t scanCode)
-			: KeyEvent(window, keyCode, scanCode)
+		KeyReleasedEvent(Window& window, int32_t keyCode, int32_t scanCode, int32_t modifierBitmask)
+			: KeyEvent(window, keyCode, scanCode, modifierBitmask)
 		{
 		}
 

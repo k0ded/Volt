@@ -430,4 +430,9 @@ namespace Volt
 	{
 		return glfwGetKeyName(InputCodeToGLFWCode(inputCode), scancode);
 	}
+
+	InputModifier GLFWModifierToInputModifier(int32_t glfwModifier)
+	{
+		return static_cast<InputModifier>(glfwModifier);
+	}
 }

@@ -224,6 +224,14 @@ namespace Volt
 		m_windowToContextMap.erase(window);
 	}
 
+	static void UpdateImGuiModifierKeys(ImGuiIO& io, InputModifier modifiers)
+	{
+		io.AddKeyEvent(ImGuiMod_Ctrl, EnumValueContainsFlag(modifiers, InputModifier::Control));
+		io.AddKeyEvent(ImGuiMod_Shift, EnumValueContainsFlag(modifiers, InputModifier::Shift));
+		io.AddKeyEvent(ImGuiMod_Alt, EnumValueContainsFlag(modifiers, InputModifier::Alt));
+		io.AddKeyEvent(ImGuiMod_Super, EnumValueContainsFlag(modifiers, InputModifier::Super));
+	}
+
 	void ImGuiPlatform::RegisterEventListeners()
 	{
 		RegisterListener<WindowFocusChangedEvent>([this](WindowFocusChangedEvent& event)
@@ -288,6 +296,7 @@ namespace Volt
 				ImGuiIO& io = ImGui::GetIO(context);
 
 				io.AddMouseButtonEvent(glfwCode, true);
+				UpdateImGuiModifierKeys(io, event.GetModifiers());
 			}
 
 			return false;
@@ -303,6 +312,7 @@ namespace Volt
 				ImGuiIO& io = ImGui::GetIO(context);
 
 				io.AddMouseButtonEvent(glfwCode, false);
+				UpdateImGuiModifierKeys(io, event.GetModifiers());
 			}
 
 			return false;
@@ -334,6 +344,8 @@ namespace Volt
 			io.AddKeyEvent(imguiKey, true);
 			io.SetKeyEventNativeData(imguiKey, keycode, event.GetScanCode());
 
+			UpdateImGuiModifierKeys(io, event.GetModifiers());
+
 			return false;
 		});
 
@@ -347,6 +359,8 @@ namespace Volt
 
 			io.AddKeyEvent(imguiKey, false);
 			io.SetKeyEventNativeData(imguiKey, keycode, event.GetScanCode());
+
+			UpdateImGuiModifierKeys(io, event.GetModifiers());
 
 			return false;
 		});
