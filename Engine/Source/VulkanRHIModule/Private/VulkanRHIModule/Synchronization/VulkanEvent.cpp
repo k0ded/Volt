@@ -22,7 +22,7 @@ namespace Volt::RHI
 		info.flags = createInfo.deviceOnly ? VK_EVENT_CREATE_DEVICE_ONLY_BIT : 0;
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateEvent(device->GetHandle<VkDevice>(), &info, nullptr, &m_event));
+		VT_VK_CHECK(vkCreateEvent(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_event));
 	}
 	
 	VulkanEvent::~VulkanEvent()
@@ -30,7 +30,7 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([event = m_event]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyEvent(device->GetHandle<VkDevice>(), event, nullptr);
+			vkDestroyEvent(device->GetHandle<VkDevice>(), event, VT_VULKAN_ALLOCATOR);
 		});
 	}
 

@@ -305,7 +305,7 @@ namespace Volt::RHI
 			}
 		}
 
-		return ImageView::Create(tempDesc);;
+		return ImageView::Create(tempDesc);
 	}
 
 	const uint32_t VulkanImage::CalculateMipCount() const

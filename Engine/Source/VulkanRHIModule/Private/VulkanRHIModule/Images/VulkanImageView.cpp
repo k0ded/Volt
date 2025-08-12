@@ -46,7 +46,7 @@ namespace Volt::RHI
 		viewInfo.image = image->GetHandle<VkImage>();
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateImageView(device->GetHandle<VkDevice>(), &viewInfo, nullptr, &m_imageView));
+		VT_VK_CHECK(vkCreateImageView(device->GetHandle<VkDevice>(), &viewInfo, VT_VULKAN_ALLOCATOR, &m_imageView));
 	}
 
 	VulkanImageView::~VulkanImageView()
@@ -54,7 +54,7 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([imageView = m_imageView]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyImageView(device->GetHandle<VkDevice>(), imageView, nullptr);
+			vkDestroyImageView(device->GetHandle<VkDevice>(), imageView, VT_VULKAN_ALLOCATOR);
 		});
 
 		m_imageView = nullptr;

@@ -179,8 +179,19 @@ namespace Volt
 	template<typename... T, typename F>
 	inline void Scene::ForEachWithComponents(const F& func)
 	{
-		auto view = m_entityScene.GetRegistry().view<T...>();
-		view.each(func);
+		using ComponentTuple = std::tuple<T...>;
+		using FirstComponentType = std::tuple_element_t<0, ComponentTuple>;
+
+		if constexpr (std::tuple_size_v<ComponentTuple> > 1)
+		{
+			auto view = m_entityScene.GetRegistry().view<T...>().use<FirstComponentType>();
+			view.each(func);
+		}
+		else
+		{
+			auto view = m_entityScene.GetRegistry().view<T...>();
+			view.each(func);
+		}
 	}
 
 	template<typename EntityType>

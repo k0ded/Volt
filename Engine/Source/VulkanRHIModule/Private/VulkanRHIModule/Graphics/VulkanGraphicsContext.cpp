@@ -100,7 +100,7 @@ namespace Volt::RHI
 			m_debugLayer->DestroyDebugMessenger(m_instance);
 		}
 
-		vkDestroyInstance(m_instance, nullptr);
+		vkDestroyInstance(m_instance, VT_VULKAN_ALLOCATOR);
 	}
 
 	void VulkanGraphicsContext::CreateInstance()
@@ -138,7 +138,7 @@ namespace Volt::RHI
 			m_debugLayer->SetupCreateInfo(createInfo);
 		}
 		
-		VT_VK_CHECK(vkCreateInstance(&createInfo, nullptr, &m_instance));
+		VT_VK_CHECK(vkCreateInstance(&createInfo, VT_VULKAN_ALLOCATOR, &m_instance));
 
 		if (!m_instance)
 		{

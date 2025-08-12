@@ -203,7 +203,8 @@ namespace Volt
 		m_standaloneBarriers(std::move(other.m_standaloneBarriers)),
 		m_standaloneMarkers(std::move(other.m_standaloneMarkers)),
 		m_temporaryDataAllocator(std::move(other.m_temporaryDataAllocator)),
-		m_resourceStateTracker(std::move(other.m_resourceStateTracker))
+		m_resourceStateTracker(std::move(other.m_resourceStateTracker)),
+		m_resourceViewCache(std::move(other.m_resourceViewCache))
 	{
 	}
 
@@ -230,6 +231,7 @@ namespace Volt
 		m_standaloneMarkers = std::move(other.m_standaloneMarkers);
 		m_temporaryDataAllocator = std::move(other.m_temporaryDataAllocator);
 		m_resourceStateTracker = std::move(other.m_resourceStateTracker);
+		m_resourceViewCache = std::move(other.m_resourceViewCache);
 
 		return *this;
 	}
@@ -1526,7 +1528,7 @@ namespace Volt
 		RHI::BufferViewDesc desc{};
 		desc.bufferFormat = bufferSRV->GetDesc().format;
 
-		return rhiBuffer->GetView(desc);
+		return m_resourceViewCache.GetOrCreateBufferView(desc, rhiBuffer);
 	}
 
 	RefPtr<RHI::BufferView> RenderGraph::GetRHIBufferUAV(RGBufferUAVRef bufferUAV)
@@ -1538,7 +1540,7 @@ namespace Volt
 		RHI::BufferViewDesc desc{};
 		desc.bufferFormat = bufferUAV->GetDesc().format;
 
-		return rhiBuffer->GetView(desc);
+		return m_resourceViewCache.GetOrCreateBufferView(desc, rhiBuffer);
 	}
 
 	RefPtr<RHI::ImageView> RenderGraph::GetRHITextureSRV(RGTextureSRVRef textureSRV)
@@ -1597,7 +1599,7 @@ namespace Volt
 		}
 
 		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(texture);
-		return rhiImage->GetView(viewDesc);
+		return m_resourceViewCache.GetOrCreateImageView(viewDesc, rhiImage);
 	}
 
 	RefPtr<RHI::ImageView> RenderGraph::GetRHITextureUAV(RGTextureUAVRef textureUAV)
@@ -1649,7 +1651,7 @@ namespace Volt
 		}
 
 		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(texture);
-		return rhiImage->GetView(viewDesc);
+		return m_resourceViewCache.GetOrCreateImageView(viewDesc, rhiImage);
 	}
 
 	RefPtr<Volt::RHI::ImageView> RenderGraph::GetRHITextureRT(RGTextureRef texture)

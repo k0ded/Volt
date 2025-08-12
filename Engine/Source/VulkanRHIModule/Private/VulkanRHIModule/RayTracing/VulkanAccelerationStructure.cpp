@@ -31,7 +31,7 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([handle = m_handle]() 
 		{
 			GraphicsContext::GetDevice()->As<VulkanGraphicsDevice>()->WaitForIdle(); // #TODO_Ivar: Should not be called.
-			vkDestroyAccelerationStructureKHR(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), handle, nullptr);
+			vkDestroyAccelerationStructureKHR(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), handle, VT_VULKAN_ALLOCATOR);
 		});
 	}
 
@@ -131,7 +131,7 @@ namespace Volt::RHI
 		asCreateInfo.type = Utility::GetAccelerationStructureType(createInfo.type);
 		asCreateInfo.deviceAddress = 0;
 
-		VT_VK_CHECK(vkCreateAccelerationStructureKHR(device->GetHandle<VkDevice>(), &asCreateInfo, nullptr, &m_handle));
+		VT_VK_CHECK(vkCreateAccelerationStructureKHR(device->GetHandle<VkDevice>(), &asCreateInfo, VT_VULKAN_ALLOCATOR, &m_handle));
 
 		VkAccelerationStructureDeviceAddressInfoKHR deviceAddressInfo{};
 		deviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;

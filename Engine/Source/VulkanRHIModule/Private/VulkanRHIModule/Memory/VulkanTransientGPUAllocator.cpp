@@ -3,6 +3,7 @@
 
 #include "VulkanRHIModule/Memory/VulkanAllocation.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
+#include "VulkanRHIModule/Common/VulkanCommon.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/PhysicalGraphicsDevice.h>
@@ -243,13 +244,13 @@ namespace Volt::RHI
 	void VulkanTransientGPUAllocator::DestroyOrphanBuffer(Handle<Allocation> allocation)
 	{
 		auto device = GraphicsContext::GetDevice();
-		vkDestroyBuffer(device->GetHandle<VkDevice>(), allocation->GetResourceHandle<VkBuffer>(), nullptr);
+		vkDestroyBuffer(device->GetHandle<VkDevice>(), allocation->GetResourceHandle<VkBuffer>(), VT_VULKAN_ALLOCATOR);
 	}
 
 	void VulkanTransientGPUAllocator::DestroyOrphanImage(Handle<Allocation> allocation)
 	{
 		auto device = GraphicsContext::GetDevice();
-		vkDestroyImage(device->GetHandle<VkDevice>(), allocation->GetResourceHandle<VkImage>(), nullptr);
+		vkDestroyImage(device->GetHandle<VkDevice>(), allocation->GetResourceHandle<VkImage>(), VT_VULKAN_ALLOCATOR);
 	}
 
 	RefPtr<TransientHeap> VulkanTransientGPUAllocator::CreateNewImageHeap()

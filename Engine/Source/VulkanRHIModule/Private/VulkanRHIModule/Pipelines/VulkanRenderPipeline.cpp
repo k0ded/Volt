@@ -157,7 +157,7 @@ namespace Volt::RHI
 			info.pushConstantRangeCount = 0;
 			info.pPushConstantRanges = nullptr;
 
-			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, nullptr, &m_pipelineLayout));
+			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_pipelineLayout));
 		}
 
 		// Create pipeline
@@ -345,7 +345,7 @@ namespace Volt::RHI
 			pipelineInfo.subpass = 0;
 			pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-			VT_VK_CHECK(vkCreateGraphicsPipelines(device->GetHandle<VkDevice>(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
+			VT_VK_CHECK(vkCreateGraphicsPipelines(device->GetHandle<VkDevice>(), VK_NULL_HANDLE, 1, &pipelineInfo, VT_VULKAN_ALLOCATOR, &m_pipeline));
 		}
 
 		GenerateHash();
@@ -377,12 +377,12 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_pipelineLayoutDescriptorSetLayouts]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, nullptr);
-			vkDestroyPipelineLayout(device->GetHandle<VkDevice>(), pipelineLayout, nullptr);
+			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, VT_VULKAN_ALLOCATOR);
+			vkDestroyPipelineLayout(device->GetHandle<VkDevice>(), pipelineLayout, VT_VULKAN_ALLOCATOR);
 
 			for (const auto& descriptorSetLayout : descriptorSetLayouts)
 			{
-				vkDestroyDescriptorSetLayout(device->GetHandle<VkDevice>(), descriptorSetLayout, nullptr);
+				vkDestroyDescriptorSetLayout(device->GetHandle<VkDevice>(), descriptorSetLayout, VT_VULKAN_ALLOCATOR);
 			}
 		});
 

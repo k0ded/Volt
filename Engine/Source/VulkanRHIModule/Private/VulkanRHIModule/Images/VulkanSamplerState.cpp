@@ -37,7 +37,7 @@ namespace Volt::RHI
 		info.compareOp = createInfo.compareOperator == CompareOperator::None ? VK_COMPARE_OP_ALWAYS : Utility::VoltToVulkanCompareOp(createInfo.compareOperator);
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateSampler(device->GetHandle<VkDevice>(), &info, nullptr, &m_sampler));
+		VT_VK_CHECK(vkCreateSampler(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_sampler));
 	}
 
 	VulkanSamplerState::~VulkanSamplerState()
@@ -45,7 +45,7 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([sampler = m_sampler]() 
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroySampler(device->GetHandle<VkDevice>(), sampler, nullptr);
+			vkDestroySampler(device->GetHandle<VkDevice>(), sampler, VT_VULKAN_ALLOCATOR);
 		});
 
 		m_sampler = nullptr;

@@ -212,7 +212,7 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), descriptorPool, nullptr);
+			vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), descriptorPool, VT_VULKAN_ALLOCATOR);
 		});
 	}
 
@@ -241,7 +241,7 @@ namespace Volt::RHI
 
 		auto vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();
 
-		VT_VK_CHECK(vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &m_descriptorPool));
+		VT_VK_CHECK(vkCreateDescriptorPool(vkDevice, &poolInfo, VT_VULKAN_ALLOCATOR, &m_descriptorPool));
 
 		const auto descriptorSetLayouts = VulkanBindlessDescriptorLayoutManager::GetGlobalDescriptorSetLayouts();
 

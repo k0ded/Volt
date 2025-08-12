@@ -37,6 +37,8 @@
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
 
+#include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
+
 namespace Volt::RHI
 {
 	VulkanRHIModule::VulkanRHIModule()
@@ -54,6 +56,8 @@ namespace Volt::RHI
 		m_uniformBufferArena.AllocateArena(ArenaSize);
 		m_imageArena.AllocateArena(ArenaSize);
 		m_samplerStateArena.AllocateArena(ArenaSize);
+
+		m_vulkanCpuAllocator = CreateRef<VulkanCPUAllocator>();
 	}
 
 	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification) const

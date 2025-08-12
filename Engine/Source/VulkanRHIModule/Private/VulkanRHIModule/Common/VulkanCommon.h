@@ -1,10 +1,10 @@
 #pragma once
 
 #ifdef VT_ENABLE_NV_AFTERMATH
-
 #include "VulkanRHIModule/Common/VulkanNsightAftermath.h"
-
 #endif
+
+#include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
 #include <cstdint>
 

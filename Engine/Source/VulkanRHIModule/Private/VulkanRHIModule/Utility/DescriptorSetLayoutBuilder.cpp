@@ -80,7 +80,7 @@ namespace Volt::RHI
 				info.pBindings = nullptr;
 				info.flags = 0;
 
-				VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, nullptr, &result.pipelineLayoutDescriptorSetLayouts.emplace_back()));
+				VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &result.pipelineLayoutDescriptorSetLayouts.emplace_back()));
 				lastSet++;
 			}
 
@@ -91,7 +91,7 @@ namespace Volt::RHI
 			info.pBindings = bindings.data();
 			info.flags = 0;
 
-			VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, nullptr, &result.pipelineLayoutDescriptorSetLayouts.emplace_back()));
+			VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &result.pipelineLayoutDescriptorSetLayouts.emplace_back()));
 			lastSet = set;
 
 			result.descriptorSetLayouts[set] = result.pipelineLayoutDescriptorSetLayouts.back();

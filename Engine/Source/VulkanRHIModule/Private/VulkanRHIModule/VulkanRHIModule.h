@@ -15,6 +15,7 @@
 
 namespace Volt::RHI
 {
+	class VulkanCPUAllocator;
 	class VulkanRHIModule : public RHIModule
 	{
 	public:
@@ -79,6 +80,8 @@ namespace Volt::RHI
 		mutable ArenaAllocator<VulkanUniformBuffer> m_uniformBufferArena;
 		mutable ArenaAllocator<VulkanImage> m_imageArena;
 		mutable ArenaAllocator<VulkanSamplerState> m_samplerStateArena;
+
+		Ref<VulkanCPUAllocator> m_vulkanCpuAllocator;
 	};
 }
 

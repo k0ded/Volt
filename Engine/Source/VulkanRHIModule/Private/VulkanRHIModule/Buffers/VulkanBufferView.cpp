@@ -3,6 +3,7 @@
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
+#include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
 #include <RHIModule/Core/RHIResource.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -39,7 +40,9 @@ namespace Volt::RHI
 				viewCreateInfo.range = specification.size;
 
 				auto device = GraphicsContext::GetDevice();
-				vkCreateBufferView(device->GetHandle<VkDevice>(), &viewCreateInfo, nullptr, &m_texelBufferView);
+				{
+					vkCreateBufferView(device->GetHandle<VkDevice>(), &viewCreateInfo, VT_VULKAN_ALLOCATOR, &m_texelBufferView);
+				}
 			}
 		}
 	}
@@ -51,7 +54,7 @@ namespace Volt::RHI
 			RHIModule::GetInstance().DestroyResource([view = m_texelBufferView]() 
 			{
 				auto device = GraphicsContext::GetDevice();
-				vkDestroyBufferView(device->GetHandle<VkDevice>(), view, nullptr);
+				vkDestroyBufferView(device->GetHandle<VkDevice>(), view, VT_VULKAN_ALLOCATOR);
 			});
 		}
 	}

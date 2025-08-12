@@ -6,6 +6,7 @@
 #include "RenderCore/RenderGraph/RenderGraphAllocators.h"
 #include "RenderCore/RenderGraph/ShaderParameterStruct.h"
 #include "RenderCore/TransientResourceSystem/TransientResourceSystem.h"
+#include "RenderCore/TransientResourceSystem/ResourceViewCache.h"
 
 #include <JobSystem/Job.h>
 
@@ -270,6 +271,7 @@ namespace Volt
 		RGUniformBufferSRVRef CreateSRV(RGUniformBufferRef uniformBuffer);
 
 		TransientResourceSystem m_transientResourceSystem;
+		ResourceViewCache m_resourceViewCache;
 		ExternalResourceRegistry m_registeredExternalResources;
 		StandaloneBarriers m_standaloneBarriers;
 		StandaloneMarkers m_standaloneMarkers;

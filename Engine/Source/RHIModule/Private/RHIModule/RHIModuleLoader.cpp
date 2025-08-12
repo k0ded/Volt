@@ -1,5 +1,7 @@
 #include "rhipch.h"
+
 #include "RHIModule/RHIModuleLoader.h"
+#include "RHIModule/Graphics/DeviceQueue.h"
 
 #include <EventSystem/ApplicationEvents.h>
 
@@ -64,6 +66,10 @@ namespace Volt::RHI
 	{
 		if (m_rhiModuleHandle && m_rhiModule)
 		{
+			m_graphicsContext->GetDevice()->GetDeviceQueue(QueueType::Graphics)->WaitForQueue();
+			m_graphicsContext->GetDevice()->GetDeviceQueue(QueueType::Compute)->WaitForQueue();
+			m_graphicsContext->GetDevice()->GetDeviceQueue(QueueType::TransferCopy)->WaitForQueue();
+
 			m_rhiModule->FlushResourceDeletionQueue();
 			m_graphicsContext = nullptr;
 		

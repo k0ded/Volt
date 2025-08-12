@@ -4,6 +4,7 @@
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
+#include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Graphics/VulkanSwapchain.h"
@@ -11,6 +12,7 @@
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
+#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 
 #include "VulkanRHIModule/Images/VulkanImage.h"
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
@@ -19,7 +21,6 @@
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -1317,7 +1318,7 @@ namespace Volt::RHI
 		poolInfo.queueFamilyIndex = queueFamilyIndex;
 		poolInfo.flags = 0;
 
-		VT_VK_CHECK(vkCreateCommandPool(device->GetHandle<VkDevice>(), &poolInfo, nullptr, &m_commandBufferData.commandPool));
+		VT_VK_CHECK(vkCreateCommandPool(device->GetHandle<VkDevice>(), &poolInfo, VT_VULKAN_ALLOCATOR, &m_commandBufferData.commandPool));
 
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1350,11 +1351,11 @@ namespace Volt::RHI
 		{
 			auto device = GraphicsContext::GetDevice();
 
-			vkDestroyCommandPool(device->GetHandle<VkDevice>(), commandPool, nullptr);
+			vkDestroyCommandPool(device->GetHandle<VkDevice>(), commandPool, VT_VULKAN_ALLOCATOR);
 			
 			if (timestampPool)
 			{
-				vkDestroyQueryPool(device->GetHandle<VkDevice>(), timestampPool, nullptr);
+				vkDestroyQueryPool(device->GetHandle<VkDevice>(), timestampPool, VT_VULKAN_ALLOCATOR);
 			}
 		});
 
@@ -1375,7 +1376,7 @@ namespace Volt::RHI
 		info.queryType = VK_QUERY_TYPE_TIMESTAMP;
 		info.queryCount = m_timestampQueryCount;
 
-		VT_VK_CHECK(vkCreateQueryPool(device->GetHandle<VkDevice>(), &info, nullptr, &m_timestampQueryPool));
+		VT_VK_CHECK(vkCreateQueryPool(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_timestampQueryPool));
 
 		m_timestampCount = 0u;
 

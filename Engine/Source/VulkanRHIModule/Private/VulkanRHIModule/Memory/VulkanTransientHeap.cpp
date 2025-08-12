@@ -75,7 +75,7 @@ namespace Volt::RHI
 		const auto& page = m_pageAllocations.at(pageIndex);
 
 		VkBuffer buffer;
-		vkCreateBuffer(device->GetHandle<VkDevice>(), &bufferInfo, nullptr, &buffer);
+		vkCreateBuffer(device->GetHandle<VkDevice>(), &bufferInfo, VT_VULKAN_ALLOCATOR, &buffer);
 		vkBindBufferMemory(device->GetHandle<VkDevice>(), buffer, static_cast<VkDeviceMemory>(page.handle), blockAlloc.offset);
 
 		Handle<VulkanTransientBufferAllocation> bufferAlloc = m_bufferAllocationArena.Allocate(createInfo.hash, name);
@@ -112,7 +112,7 @@ namespace Volt::RHI
 
 		{
 			VT_PROFILE_SCOPE("Create VkImage");
-			vkCreateImage(device->GetHandle<VkDevice>(), &imageInfo, nullptr, &image);
+			vkCreateImage(device->GetHandle<VkDevice>(), &imageInfo, VT_VULKAN_ALLOCATOR, &image);
 		}
 
 		{
@@ -142,7 +142,7 @@ namespace Volt::RHI
 
 		auto device = GraphicsContext::GetDevice();
 
-		vkDestroyBuffer(device->GetHandle<VkDevice>(), bufferAlloc->m_resource, nullptr);
+		vkDestroyBuffer(device->GetHandle<VkDevice>(), bufferAlloc->m_resource, VT_VULKAN_ALLOCATOR);
 
 		AllocationBlock allocBlock = bufferAlloc->m_allocationBlock;
 		ForfeitAllocationBlock(allocBlock);
@@ -164,7 +164,7 @@ namespace Volt::RHI
 
 		{
 			VT_PROFILE_SCOPE("Vulkan Destroy Image");
-			vkDestroyImage(device->GetHandle<VkDevice>(), imageAlloc->m_resource, nullptr);
+			vkDestroyImage(device->GetHandle<VkDevice>(), imageAlloc->m_resource, VT_VULKAN_ALLOCATOR);
 		}
 
 		AllocationBlock allocBlock = imageAlloc->m_allocationBlock;

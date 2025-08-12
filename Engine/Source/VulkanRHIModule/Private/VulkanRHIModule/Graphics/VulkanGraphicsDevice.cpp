@@ -350,7 +350,7 @@ namespace Volt::RHI
 			m_deviceCrashTracker.Initialize(GraphicsAPI::Vulkan);
 #endif
 
-			VT_VK_CHECK(vkCreateDevice(physicalDevicePtr.GetHandle<VkPhysicalDevice>(), &deviceInfo, nullptr, &m_device));
+			VT_VK_CHECK(vkCreateDevice(physicalDevicePtr.GetHandle<VkPhysicalDevice>(), &deviceInfo, VT_VULKAN_ALLOCATOR, &m_device));
 		}
 
 		m_deviceQueues[QueueType::Graphics] = RefPtr<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Graphics });
@@ -371,7 +371,7 @@ namespace Volt::RHI
 
 	VulkanGraphicsDevice::~VulkanGraphicsDevice()
 	{
-		vkDestroyDevice(m_device, nullptr);
+		vkDestroyDevice(m_device, VT_VULKAN_ALLOCATOR);
 	}
 
 	void VulkanGraphicsDevice::WaitForIdle()

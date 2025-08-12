@@ -372,12 +372,12 @@ namespace Volt::RHI
 
 			for (auto& perFrameData : perFrameInFlightData)
 			{
-				vkDestroySemaphore(device->GetHandle<VkDevice>(), perFrameData.presentSemaphore, nullptr);
-				vkDestroySemaphore(device->GetHandle<VkDevice>(), perFrameData.renderSemaphore, nullptr);
+				vkDestroySemaphore(device->GetHandle<VkDevice>(), perFrameData.presentSemaphore, VT_VULKAN_ALLOCATOR);
+				vkDestroySemaphore(device->GetHandle<VkDevice>(), perFrameData.renderSemaphore, VT_VULKAN_ALLOCATOR);
 			}
 
-			vkDestroySwapchainKHR(device->GetHandle<VkDevice>(), swapchain, nullptr);
-			vkDestroySurfaceKHR(GraphicsContext::Get().GetHandle<VkInstance>(), surface, nullptr);
+			vkDestroySwapchainKHR(device->GetHandle<VkDevice>(), swapchain, VT_VULKAN_ALLOCATOR);
+			vkDestroySurfaceKHR(GraphicsContext::Get().GetHandle<VkInstance>(), surface, VT_VULKAN_ALLOCATOR);
 		});
 
 		m_perFrameInFlightData.clear();
@@ -463,7 +463,7 @@ namespace Volt::RHI
 
 		{
 			VT_PROFILE_SCOPE("vkCreateSwapchainKHR");
-			VT_VK_CHECK(vkCreateSwapchainKHR(device->GetHandle<VkDevice>(), &swapchainCreateInfo, nullptr, &m_swapchain));
+			VT_VK_CHECK(vkCreateSwapchainKHR(device->GetHandle<VkDevice>(), &swapchainCreateInfo, VT_VULKAN_ALLOCATOR, &m_swapchain));
 		}
 
 		if (oldSwapchain != VK_NULL_HANDLE)
@@ -476,7 +476,7 @@ namespace Volt::RHI
 			RHIModule::GetInstance().DestroyResource([oldSwapchain]() 
 			{
 				auto device = GraphicsContext::GetDevice();
-				vkDestroySwapchainKHR(device->GetHandle<VkDevice>(), oldSwapchain, nullptr);
+				vkDestroySwapchainKHR(device->GetHandle<VkDevice>(), oldSwapchain, VT_VULKAN_ALLOCATOR);
 			});
 
 		}
@@ -528,8 +528,8 @@ namespace Volt::RHI
 
 		for (auto& frameData : m_perFrameInFlightData)
 		{
-			VT_VK_CHECK(vkCreateSemaphore(device->GetHandle<VkDevice>(), &semaphoreInfo, nullptr, &frameData.presentSemaphore));
-			VT_VK_CHECK(vkCreateSemaphore(device->GetHandle<VkDevice>(), &semaphoreInfo, nullptr, &frameData.renderSemaphore));
+			VT_VK_CHECK(vkCreateSemaphore(device->GetHandle<VkDevice>(), &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.presentSemaphore));
+			VT_VK_CHECK(vkCreateSemaphore(device->GetHandle<VkDevice>(), &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.renderSemaphore));
 		}
 	}
 

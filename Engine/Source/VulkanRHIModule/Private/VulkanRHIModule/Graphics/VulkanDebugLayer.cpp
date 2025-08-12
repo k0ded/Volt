@@ -146,7 +146,7 @@ namespace Volt::RHI
 	{
 		if (m_isSupported)
 		{
-			vkCreateDebugUtilsMessengerEXT(instance, &m_debugMessengerCreateInfo, nullptr, &m_debugMessenger);
+			vkCreateDebugUtilsMessengerEXT(instance, &m_debugMessengerCreateInfo, VT_VULKAN_ALLOCATOR, &m_debugMessenger);
 		}
 	}
 
@@ -154,7 +154,7 @@ namespace Volt::RHI
 	{
 		if (m_debugMessenger)
 		{
-			vkDestroyDebugUtilsMessengerEXT(instance, m_debugMessenger, nullptr);
+			vkDestroyDebugUtilsMessengerEXT(instance, m_debugMessenger, VT_VULKAN_ALLOCATOR);
 		}
 	}
 }

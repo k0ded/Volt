@@ -211,7 +211,7 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), descriptorPool, nullptr);
+			vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), descriptorPool, VT_VULKAN_ALLOCATOR);
 		});
 
 		m_descriptorPool = nullptr;
@@ -245,7 +245,7 @@ namespace Volt::RHI
 		poolInfo.pPoolSizes = poolSizes.data();
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateDescriptorPool(device->GetHandle<VkDevice>(), &poolInfo, nullptr, &m_descriptorPool));
+		VT_VK_CHECK(vkCreateDescriptorPool(device->GetHandle<VkDevice>(), &poolInfo, VT_VULKAN_ALLOCATOR, &m_descriptorPool));
 
 		// Allocate all descriptor sets
 		VkDescriptorSetAllocateInfo allocInfo{};
@@ -292,7 +292,7 @@ namespace Volt::RHI
 		poolInfo.pPoolSizes = poolSizes.data();
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateDescriptorPool(device->GetHandle<VkDevice>(), &poolInfo, nullptr, &m_descriptorPool));
+		VT_VK_CHECK(vkCreateDescriptorPool(device->GetHandle<VkDevice>(), &poolInfo, VT_VULKAN_ALLOCATOR, &m_descriptorPool));
 
 		// Allocate all descriptor sets
 		VkDescriptorSetAllocateInfo allocInfo{};
