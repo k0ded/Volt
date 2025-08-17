@@ -50,9 +50,11 @@ namespace Volt
 
 		virtual void Run() = 0;
 		virtual void Quit() = 0;
+		virtual void Tick() = 0;
 		virtual void PushLayer(ApplicationLayer* layer) = 0;
 		virtual void PopLayer(ApplicationLayer* layer) = 0;
 		virtual void LaunchMainWindow() = 0;
+		virtual uint64_t GetFrameIndex() const = 0;
 
 		bool IsRuntime() { return m_appCreateInfo.isRuntime; }
 		bool IsLoggingEnabled() { return m_appCreateInfo.enableLogging; }

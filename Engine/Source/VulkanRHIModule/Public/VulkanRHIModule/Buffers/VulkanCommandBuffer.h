@@ -21,9 +21,9 @@ namespace Volt::RHI
 		VulkanCommandBuffer(const CommandBuffer* parentCommandBuffer);
 		~VulkanCommandBuffer() override;
 
-		void Begin() override;
+		void Begin(bool oneTimeSubmit) override;
 		void End() override;
-
+		                                                                      
 		void SetEvent(RawPtr<Event> event) override;
 
 		void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance) override;
@@ -105,8 +105,8 @@ namespace Volt::RHI
 		void CreateQueryPools();
 		void FetchTimestampResults();
 
-		void BeginPrimaryInternal();
-		void BeginSecondaryInternal();
+		void BeginPrimaryInternal(bool oneTimeSubmit);
+		void BeginSecondaryInternal(bool oneTimeSubmit);
 
 		void ClearCurrentPipeline();
 

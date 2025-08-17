@@ -1,10 +1,14 @@
 #include "sbpch.h"
 #include "Modals/Modal.h"
 
+#include "Sandbox/Utility/Theme.h"
+
+#include <SubSystem/SubSystemManager.h>
+
 #include <Volt-Application/UI/UIScopedHelpers.h>
 #include <Volt-Application/UI/UIUtility.h>
 
-#include "Sandbox/Utility/Theme.h"
+#include <Volt-Application/UI/ImGuiSubSystem.h>
 
 Modal::Modal(const std::string& strId)
 	: m_strId(strId)
@@ -20,11 +24,35 @@ void Modal::Open()
 	OnOpen();
 }
 
+void Modal::OpenBlocking()
+{
+	RegisterListener<Volt::AppImGuiBlockingUpdateEvent>(VT_BIND_EVENT_FN(Modal::OnImGuiUpdateBlocking));
+	m_isBlocking = true;
+
+	Volt::ImGuiSubSystem* imguiSubSystem = SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>();
+	imguiSubSystem->EnterBlockingContext([&]()
+	{
+		UI::OpenModal(m_strId);
+		m_wasOpenLastFrame = false;
+
+		OnOpen();
+	});
+}
+
 void Modal::Close()
 {
 	ImGui::CloseCurrentPopup();
-
 	OnClose();
+
+	if (m_isBlocking)
+	{
+		Volt::ImGuiSubSystem* imguiSubSystem = SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>();
+		imguiSubSystem->ExitBlockingContext();
+
+		UnregisterListener<Volt::AppImGuiBlockingUpdateEvent>();
+	}
+
+	m_isBlocking = false;
 }
 
 bool Modal::Update()
@@ -58,4 +86,11 @@ bool Modal::Update()
 	}
 
 	return modalOpen;
+}
+
+bool Modal::OnImGuiUpdateBlocking(Volt::AppImGuiBlockingUpdateEvent& e)
+{
+	Update();
+
+	return true;
 }

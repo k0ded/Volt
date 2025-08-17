@@ -2,6 +2,14 @@
 #include "Volt-ImGui/ImGuiNotifications.h"
 #include "Volt-ImGui/FontAwesome.h"
 
+#include <WindowModule/Window.h>
+
+#include <RenderCore/CommandBufferPool.h>
+#include <RenderCore/DescriptorTableCache.h>
+
+#include <RHIModule/Buffers/CommandBufferUtility.h>
+#include <RHIModule/Core/RenderingInfo.h>
+
 #include <LogModule/Log.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -47,30 +55,34 @@ namespace Volt
 		io.Fonts->AddFontFromFileTTF("Engine/Fonts/FontAwesome/" FONT_ICON_FILE_NAME_FAS, 0.0f, &icons_config, icons_ranges);
 	}
 
-	ImGuiImplementation::ImGuiImplementation(const ImGuiCreateInfo2& createInfo)
+	ImGuiImplementation::ImGuiImplementation(const ImGuiCreateInfo& createInfo)
 		: m_createInfo(createInfo)
 	{
 		Initialize();
-
-		m_platform = CreateScope<ImGuiPlatform>();
-		m_renderer = CreateScope<ImGuiRenderer>(m_createInfo.window);
 	}
 
 	ImGuiImplementation::~ImGuiImplementation()
 	{
-		m_platform->Destroy();
-		m_renderer->Destroy();
-
 		const std::filesystem::path iniPath = GetOrCreateIniPath();
 		ImGui::SaveIniSettingsToDisk(iniPath.string().c_str());
-		ImGui::DestroyContext();
+
+		for (auto& contextData : m_contextStack)
+		{
+			contextData.platform->Destroy();
+			contextData.renderer->Destroy();
+			ImGui::DestroyContext(contextData.context);
+		}
+
+		m_contextStack.clear();
+
+		IM_DELETE(m_sharedFontAtlas);
 	}
 
 	void ImGuiImplementation::Begin()
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_platform->BeginFrame();
+		GetActivePlatform()->BeginFrame();
 		ImGui::NewFrame();
 
 		if (m_defaultFont)
@@ -93,7 +105,8 @@ namespace Volt
 		ImGui::Render();
 
 		ImDrawData* drawData = ImGui::GetDrawData();
-		m_renderer->Render(drawData);
+
+		GetActiveRenderer()->Render(drawData, m_createInfo.window, m_contextStack.size() > 1);
 
 		ImGuiIO& io = ImGui::GetIO();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -101,8 +114,137 @@ namespace Volt
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
 		}
+
+		// Composite all windows render targets to their respective swapchains.
+		RefPtr<RHI::CommandBuffer> commandBuffer = CommandBufferPool::GetCommandBuffer();
+		commandBuffer->Begin();
+
+		const Map<Window*, ImGuiRenderTargetManager::RenderTarget>& renderTargets = m_renderTargetManager->GetAllRenderTargets();
+		for (const auto& [window, renderTarget] : renderTargets)
+		{
+			auto& swapchain = window->GetSwapchain();
+
+			{
+				RHI::ResourceBarrierInfo barrier{};
+				barrier.type = RHI::BarrierType::Image;
+				barrier.imageBarrier().srcAccess = RHI::BarrierAccess::None;
+				barrier.imageBarrier().srcStage = RHI::BarrierStage::All;
+				barrier.imageBarrier().srcLayout = RHI::ImageLayout::Undefined;
+				barrier.imageBarrier().dstAccess = RHI::BarrierAccess::RenderTarget;
+				barrier.imageBarrier().dstStage = RHI::BarrierStage::RenderTarget;
+				barrier.imageBarrier().dstLayout = RHI::ImageLayout::RenderTarget;
+				barrier.imageBarrier().resource = swapchain.GetCurrentImage();
+
+				commandBuffer->ResourceBarrier({ barrier });
+			}
+
+			{
+				RHI::ResourceBarrierInfo barrier{};
+				barrier.type = RHI::BarrierType::Image;
+				barrier.imageBarrier().srcAccess = RHI::BarrierAccess::RenderTarget;
+				barrier.imageBarrier().srcStage = RHI::BarrierStage::RenderTarget;
+				barrier.imageBarrier().srcLayout = RHI::ImageLayout::RenderTarget;
+				barrier.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
+				barrier.imageBarrier().dstStage = RHI::BarrierStage::PixelShader;
+				barrier.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
+				barrier.imageBarrier().resource = renderTarget.image;
+
+				commandBuffer->ResourceBarrier({ barrier });
+			}
+
+			// Copy the render target to the swapchain
+			RHI::AttachmentInfo attachment{};
+			attachment.view = swapchain.GetCurrentImage()->GetView();
+			attachment.clearMode = RHI::ClearMode::Clear;
+			attachment.clearColor = { 0.1f, 0.1f, 0.1f, 1.f };
+			
+			const uint32_t renderTargetWidth = renderTarget.image->GetWidth();
+			const uint32_t renderTargetHeight = renderTarget.image->GetHeight();
+
+			RHI::RenderingInfo renderingInfo{};
+			renderingInfo.colorAttachments = { attachment };
+			renderingInfo.renderArea.extent.width = renderTargetWidth;
+			renderingInfo.renderArea.extent.height = renderTargetHeight;
+		
+			commandBuffer->BeginRendering(renderingInfo);
+
+			RHI::Viewport viewport{};
+			viewport.x = 0.f;
+			viewport.y = static_cast<float>(renderTargetHeight);
+			viewport.width = static_cast<float>(renderTargetWidth);
+			viewport.height = -static_cast<float>(renderTargetHeight);
+			viewport.minDepth = 0.f;
+			viewport.maxDepth = 1.f;
+
+			RHI::Rect2D scissor{};
+			scissor.extent.width = renderTargetWidth;
+			scissor.extent.height = renderTargetHeight;
+			scissor.offset.x = 0;
+			scissor.offset.y = 0;
+
+			commandBuffer->SetViewports({ viewport });
+			commandBuffer->BindPipeline(m_copyRenderPipeline);
+			commandBuffer->SetScissors({ scissor });
+
+			RefPtr<RHI::DescriptorTable> descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(m_copyRenderPipeline );
+			RefPtr<RHI::ImageView> imageView = renderTarget.image->GetView();
+			descriptorTable->SetImageView(imageView, GetDescriptorSetIndexFromShaderStage(RHI::ShaderStage::Pixel), 1);
+
+			commandBuffer->BindDescriptorTable(descriptorTable);
+
+			commandBuffer->Draw(3, 1, 0, 0);
+			commandBuffer->EndRendering();
+
+			{
+				RHI::ResourceBarrierInfo barrier{};
+				barrier.type = RHI::BarrierType::Image;
+				barrier.imageBarrier().srcAccess = RHI::BarrierAccess::ShaderRead;
+				barrier.imageBarrier().srcStage = RHI::BarrierStage::PixelShader;
+				barrier.imageBarrier().srcLayout = RHI::ImageLayout::ShaderRead;
+				barrier.imageBarrier().dstAccess = RHI::BarrierAccess::RenderTarget;
+				barrier.imageBarrier().dstStage = RHI::BarrierStage::RenderTarget;
+				barrier.imageBarrier().dstLayout = RHI::ImageLayout::RenderTarget;
+				barrier.imageBarrier().resource = renderTarget.image;
+
+				commandBuffer->ResourceBarrier({ barrier });
+			}
+		}
+
+		commandBuffer->End();
+
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		CommandBufferPool::FreeCommandBuffer(commandBuffer);
 	}
 	
+	void ImGuiImplementation::RenderPreviousFrameContextStack()
+	{
+		for (size_t i = 0; i < m_contextStack.size() - 1; ++i)
+		{
+			ContextData& contextData = m_contextStack.at(i);
+			contextData.renderer->RenderPreviousFrame(m_createInfo.window);
+		}
+	}
+
+	void ImGuiImplementation::PushNewContext()
+	{
+		m_contextStack.emplace_back() = CreateAndInitializeNewContext();
+		ImGui::SetCurrentContext(m_contextStack.back().context);
+	}
+
+	void ImGuiImplementation::PopContext()
+	{
+		VT_ENSURE(m_contextStack.size() > 1);
+
+		ContextData lastContext = m_contextStack.back();
+		m_contextStack.pop_back();
+
+		lastContext.platform->Destroy();
+		lastContext.renderer->Destroy();
+
+		ImGui::DestroyContext(lastContext.context);
+		ImGui::SetCurrentContext(m_contextStack.back().context);
+	}
+
 	void ImGuiImplementation::SetDefaultFont(ImFont* font)
 	{
 		m_defaultFont = font;
@@ -134,13 +276,62 @@ namespace Volt
 
 	ImTextureID ImGuiImplementation::GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex)
 	{
-		return m_renderer->AddTexture(image);
+		return GetActiveRenderer()->AddTexture(image);
 	}
 
 	void ImGuiImplementation::Initialize()
 	{
 		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
+		
+		m_renderTargetManager = CreateScope<ImGuiRenderTargetManager>();
+		CreateCopyRenderPipeline();
+
+		// Create and add the default context
+		m_contextStack.emplace_back() = CreateAndInitializeNewContext();
+
+		const std::filesystem::path iniPath = GetOrCreateIniPath();
+		ImGui::LoadIniSettingsFromDisk(iniPath.string().c_str());
+	}
+
+	void ImGuiImplementation::CreateCopyRenderPipeline()
+	{
+		RefPtr<RHI::Shader> vertexShader;
+		RefPtr<RHI::Shader> pixelShader;
+
+		RHI::ShaderCreateInfo shaderCreateInfo{};
+
+		{
+			shaderCreateInfo.entryPoint = "MainVS";
+			shaderCreateInfo.name = "CopyVS";
+			shaderCreateInfo.sourceFilepath = "Engine/Shaders/Source/Utility/FullscreenTriangle.hlsl";
+			shaderCreateInfo.stage = RHI::ShaderStage::Vertex;
+
+			vertexShader = RHI::Shader::Create(shaderCreateInfo);
+		}
+
+		{
+			shaderCreateInfo.entryPoint = "MainPS";
+			shaderCreateInfo.name = "CopyPS";
+			shaderCreateInfo.sourceFilepath = "Engine/Shaders/Source/Utility/CopyImage.hlsl";
+			shaderCreateInfo.stage = RHI::ShaderStage::Pixel;
+
+			pixelShader = RHI::Shader::Create(shaderCreateInfo);
+		}
+
+		RHI::RenderPipelineCreateInfo pipelineCreateInfo{};
+		pipelineCreateInfo.shaders = { vertexShader, pixelShader };
+		pipelineCreateInfo.cullMode = RHI::CullMode::None;
+
+		m_copyRenderPipeline = RHI::RenderPipeline::Create(pipelineCreateInfo);
+	}
+
+	ImGuiImplementation::ContextData ImGuiImplementation::CreateAndInitializeNewContext()
+	{
+		ImGuiContext* context = ImGui::CreateContext(m_sharedFontAtlas);
+		if (!m_sharedFontAtlas)
+		{
+			m_sharedFontAtlas = ImGui::GetIO().Fonts;
+		}
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -152,13 +343,7 @@ namespace Volt
 		}
 
 		io.ConfigWindowsMoveFromTitleBarOnly = true;
-
-		ImFontConfig fontCfg;
-		fontCfg.FontDataOwnedByAtlas = true;
 		io.IniFilename = nullptr;
-
-		const std::filesystem::path iniPath = GetOrCreateIniPath();
-		ImGui::LoadIniSettingsFromDisk(iniPath.string().c_str());
 
 		ImGui::StyleColorsDark();
 
@@ -251,5 +436,14 @@ namespace Volt
 		style.TabRounding = 0.0f;
 		style.WindowRounding = 0.0f;
 		style.WindowBorderSize = 2.f;
+
+		ImGui::SetCurrentContext(context);
+
+		ContextData result;
+		result.context = context;
+		result.platform = CreateRef<ImGuiPlatform>();
+		result.renderer = CreateRef<ImGuiRenderer>(m_renderTargetManager.get());
+
+		return result;
 	}
 }

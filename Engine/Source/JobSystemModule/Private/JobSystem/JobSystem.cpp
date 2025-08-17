@@ -17,7 +17,7 @@ namespace Volt
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
 
-		RegisterListener<AppUpdateEvent>(VT_BIND_EVENT_FN(JobSystem::OnUpdate));
+		RegisterListener<AppTickEvent>(VT_BIND_EVENT_FN(JobSystem::OnTick));
 
 		for (uint32_t i = 0; i < static_cast<uint32_t>(ExecutionPriority::Num); ++i)
 		{
@@ -199,7 +199,7 @@ namespace Volt
 		}
     }
 
-	bool JobSystem::OnUpdate(AppUpdateEvent& event)
+	bool JobSystem::OnTick(AppTickEvent& event)
 	{
 		ExecuteMainThreadJobs();
 		return false;

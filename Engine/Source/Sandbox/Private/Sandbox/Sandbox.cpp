@@ -107,6 +107,8 @@ void Sandbox::OnAttach()
 {
 	RegisterEventListeners();
 
+	m_modalSystem = CreateScope<ModalSystem>();
+
 	SelectionManager::Initialize();
 	EditorResources::Initialize();
 	VersionControl::Initialize(VersionControlSystem::Perforce);
@@ -323,6 +325,8 @@ void Sandbox::OnDetach()
 	m_intermediateScene = nullptr;
 
 	s_instance = nullptr;
+
+	m_modalSystem = nullptr;
 
 	NodeEditorHelpers::Shutdown();
 	VersionControl::Shutdown();

@@ -1,4 +1,5 @@
 #include "Volt-ImGui/ImGuiRenderer.h"
+#include "Volt-ImGui/ImGuiRenderTargetManager.h"
 
 #include <RHIModule/Graphics/Swapchain.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -14,8 +15,8 @@
 
 namespace Volt
 {
-	ImGuiRenderer::ImGuiRenderer(Window* window)
-		: m_window(window)
+	ImGuiRenderer::ImGuiRenderer(ImGuiRenderTargetManager* renderTargetManager)
+		: m_renderTargetManager(renderTargetManager)
 	{
 		// Create sampler state
 		{
@@ -42,10 +43,9 @@ namespace Volt
 		io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
 
 		m_usedImages.resize(RHI::Swapchain::FramesInFlight);
+		m_activeImageViews.resize(RHI::Swapchain::FramesInFlight);
 
 		InitalizeMultiViewportSupport();
-
-		AddViewportRenderContext(m_window);
 	}
 
 	ImGuiRenderer::~ImGuiRenderer()
@@ -53,13 +53,13 @@ namespace Volt
 
 	}
 
-	void ImGuiRenderer::Destroy()
+	void ImGuiRenderer::Destroy	()
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.BackendRendererUserData = nullptr;
 	}
 
-	void ImGuiRenderer::Render(ImDrawData* drawData)
+	void ImGuiRenderer::Render(ImDrawData* drawData, Window* window, bool shouldUseLoadRTAction)
 	{
 		if (drawData->Textures != nullptr)
 		{
@@ -72,14 +72,32 @@ namespace Volt
 			}
 		}
 
-		RenderImGuiViewport(drawData, m_window);
+		RenderImGuiViewport(drawData, window, shouldUseLoadRTAction);
 
 		m_usedImages.at(m_frameIndex).clear();
 		m_frameIndex = (m_frameIndex + 1) % RHI::Swapchain::FramesInFlight;
 	}
 
-	void ImGuiRenderer::RenderImGuiViewport(ImDrawData* drawData, Window* window)
+	void ImGuiRenderer::RenderPreviousFrame(Window* window)
 	{
+		RenderContext& renderContext = m_renderContexts.at(window);
+		
+		auto fence = renderContext.commandBufferSet.GetCurrentFence();
+		auto commandBuffer = renderContext.commandBufferSet.GetCurrentCommandBuffer();
+
+		fence->WaitUntilSignaled();
+		fence->Reset();
+
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, fence);
+	}
+
+	void ImGuiRenderer::RenderImGuiViewport(ImDrawData* drawData, Window* window, bool shouldUseLoadRTAction)
+	{
+		if (!m_renderContexts.contains(window))
+		{
+			AddViewportRenderContext(window);
+		}
+
 		RenderContext& renderContext = m_renderContexts.at(window);
 
 		int32_t renderWidth = static_cast<int32_t>(drawData->DisplaySize.x * drawData->FramebufferScale.x);
@@ -93,15 +111,17 @@ namespace Volt
 		auto commandBuffer = renderContext.commandBufferSet.IncrementAndGetCommandBuffer();
 		auto fence = renderContext.commandBufferSet.GetCurrentFence();
 
-		const uint32_t index = renderContext.commandBufferSet.GetCurrentIndex();
+		const uint32_t frameIndex = renderContext.commandBufferSet.GetCurrentIndex();
+
+		m_activeImageViews.at(frameIndex).clear();
 
 		if (drawData->TotalVtxCount > 0)
 		{
-			renderContext.vertexBuffers.at(index)->Resize(drawData->TotalVtxCount * sizeof(ImDrawVert));
-			renderContext.indexBuffers.at(index)->Resize(drawData->TotalIdxCount * sizeof(ImDrawIdx));
+			renderContext.vertexBuffers.at(frameIndex)->Resize(drawData->TotalVtxCount * sizeof(ImDrawVert));
+			renderContext.indexBuffers.at(frameIndex)->Resize(drawData->TotalIdxCount * sizeof(ImDrawIdx));
 
-			ImDrawVert* mappedVertices = renderContext.vertexBuffers.at(index)->Map<ImDrawVert>();
-			ImDrawIdx* mappedIndices = renderContext.indexBuffers.at(index)->Map<ImDrawIdx>();
+			ImDrawVert* mappedVertices = renderContext.vertexBuffers.at(frameIndex)->Map<ImDrawVert>();
+			ImDrawIdx* mappedIndices = renderContext.indexBuffers.at(frameIndex)->Map<ImDrawIdx>();
 
 			for (int32_t n = 0; n < drawData->CmdListsCount; ++n)
 			{
@@ -113,8 +133,8 @@ namespace Volt
 				mappedIndices += drawList->IdxBuffer.Size;
 			}
 
-			renderContext.indexBuffers.at(index)->Unmap();
-			renderContext.vertexBuffers.at(index)->Unmap();
+			renderContext.indexBuffers.at(frameIndex)->Unmap();
+			renderContext.vertexBuffers.at(frameIndex)->Unmap();
 		}
 
 		// Update globals
@@ -136,10 +156,10 @@ namespace Volt
 		fence->WaitUntilSignaled();
 		fence->Reset();
 
-		commandBuffer->Begin();
+		commandBuffer->Begin(false);
 		commandBuffer->BeginMarker("Draw ImGui", { 1.f, 1.f, 1.f, 1.f });
 
-		auto& swapchain = window->GetSwapchain();
+		RefPtr<RHI::Image> renderTarget = m_renderTargetManager->GetRenderTargetForWindow(window);
 
 		{
 			RHI::ResourceBarrierInfo barrier{};
@@ -150,38 +170,38 @@ namespace Volt
 			barrier.imageBarrier().dstAccess = RHI::BarrierAccess::RenderTarget;
 			barrier.imageBarrier().dstStage = RHI::BarrierStage::RenderTarget;
 			barrier.imageBarrier().dstLayout = RHI::ImageLayout::RenderTarget;
-			barrier.imageBarrier().resource = swapchain.GetCurrentImage();
+			barrier.imageBarrier().resource = renderTarget;
 
 			commandBuffer->ResourceBarrier({ barrier });
 		}
 
-		const uint32_t swapchainWidth = swapchain.GetWidth();
-		const uint32_t swapchainHeight = swapchain.GetHeight();
+		const uint32_t renderTargetWidth = renderTarget->GetWidth();
+		const uint32_t renderTargetHeight = renderTarget->GetHeight();
 
 		RHI::AttachmentInfo attachment{};
-		attachment.view = swapchain.GetCurrentImage()->GetView();
-		attachment.clearMode = RHI::ClearMode::Clear;
+		attachment.view = renderTarget->GetView();
+		attachment.clearMode = shouldUseLoadRTAction ? RHI::ClearMode::Load : RHI::ClearMode::Clear;
 		attachment.clearColor = { 0.1f, 0.1f, 0.1f, 1.f };
 
 		RHI::RenderingInfo renderingInfo{};
 		renderingInfo.colorAttachments = { attachment };
-		renderingInfo.renderArea.extent.width = swapchainWidth;
-		renderingInfo.renderArea.extent.height = swapchainHeight;
+		renderingInfo.renderArea.extent.width = renderTargetWidth;
+		renderingInfo.renderArea.extent.height = renderTargetHeight;
 
 		commandBuffer->BeginRendering(renderingInfo);
 
 		RHI::Viewport viewport{};
 		viewport.x = 0.f;
-		viewport.y = static_cast<float>(swapchainHeight);
-		viewport.width = static_cast<float>(swapchainWidth);
-		viewport.height = -static_cast<float>(swapchainHeight);
+		viewport.y = static_cast<float>(renderTargetHeight);
+		viewport.width = static_cast<float>(renderTargetWidth);
+		viewport.height = -static_cast<float>(renderTargetHeight);
 		viewport.minDepth = 0.f;
 		viewport.maxDepth = 1.f;
 
 		commandBuffer->SetViewports({ viewport });
 
-		commandBuffer->BindVertexBuffers({ renderContext.vertexBuffers.at(index) }, 0);
-		commandBuffer->BindIndexBuffer(renderContext.indexBuffers.at(index), sizeof(ImDrawIdx) == sizeof(uint16_t) ? RHI::IndexType::UInt16 : RHI::IndexType::UInt32);
+		commandBuffer->BindVertexBuffers({ renderContext.vertexBuffers.at(frameIndex) }, 0);
+		commandBuffer->BindIndexBuffer(renderContext.indexBuffers.at(frameIndex), sizeof(ImDrawIdx) == sizeof(uint16_t) ? RHI::IndexType::UInt16 : RHI::IndexType::UInt32);
 		commandBuffer->BindPipeline(m_imguiRenderPipeline);
 
 		// Will project scissor/clipping rectangles into framebuffer space
@@ -221,6 +241,8 @@ namespace Volt
 				RHI::Image* image = (RHI::Image*)cmd->GetTexID();
 
 				RefPtr<RHI::ImageView> imageView = image->GetView();
+				m_activeImageViews.at(frameIndex).emplace_back(imageView);
+
 				RefPtr<RHI::DescriptorTable> descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(m_imguiRenderPipeline);
 				descriptorTable->SetBufferView(renderContext.globalsUniformBuffer->GetView(), GetDescriptorSetIndexFromShaderStage(RHI::ShaderStage::Vertex), 0);
 				descriptorTable->SetBufferView(renderContext.globalsUniformBuffer->GetView(), GetDescriptorSetIndexFromShaderStage(RHI::ShaderStage::Pixel), 0);
@@ -428,7 +450,7 @@ namespace Volt
 		ImGuiRenderer* renderer = (ImGuiRenderer*)io.BackendRendererUserData;
 		Window* window = (Window*)viewport->PlatformHandle;
 
-		renderer->RenderImGuiViewport(viewport->DrawData, window);
+		renderer->RenderImGuiViewport(viewport->DrawData, window, false);
 	}
 
 	void ImGuiRenderer::InitalizeMultiViewportSupport()
@@ -455,7 +477,7 @@ namespace Volt
 
 			renderContext.vertexBuffers.resize(RHI::Swapchain::FramesInFlight);
 
-			for (uint32_t i = 0; i < RHI::Swapchain::FramesInFlight; ++i)
+			for (uint32_t i = 0; i < RHI::Swapchain::FramesInFlight; ++i) 
 			{
 				renderContext.vertexBuffers[i] = RHI::StorageBuffer::Create(desc);
 			}
@@ -483,5 +505,6 @@ namespace Volt
 	void ImGuiRenderer::RemoveViewportRenderContext(Window* window)
 	{
 		m_renderContexts.erase(window);
+		m_renderTargetManager->RemoveWindowRenderTarget(window);
 	}
 }

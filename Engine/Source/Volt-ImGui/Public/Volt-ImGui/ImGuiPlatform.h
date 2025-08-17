@@ -42,10 +42,12 @@ namespace Volt
 
 		void InitializeViewportSupport();
 
+		bool IsWindowInContext(Window& window);
+
 		ContextData& GetContextDataFromWindow(Window& window);
 		ImGuiContext* GetImGuiContextFromWindow(Window& window);
 
 		Map<Window*, ContextData> m_windowToContextMap;
-		float m_deltaTime = 0.f;
+		float m_deltaTime = 1.f / 60.f;
 	};
 }

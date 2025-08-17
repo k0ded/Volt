@@ -311,7 +311,7 @@ namespace Volt::RHI
 		Release();
 	}
 
-	void VulkanCommandBuffer::Begin()
+	void VulkanCommandBuffer::Begin(bool oneTimeSubmit)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -327,8 +327,8 @@ namespace Volt::RHI
 
 		// Begin command buffer
 		{
-			if (m_commandBufferLevel == CommandBufferLevel::Primary) BeginPrimaryInternal();
-			else													 BeginSecondaryInternal();
+			if (m_commandBufferLevel == CommandBufferLevel::Primary) BeginPrimaryInternal(oneTimeSubmit);
+			else													 BeginSecondaryInternal(oneTimeSubmit);
 		}
 
 		if (m_hasTimestampSupport)
@@ -1412,20 +1412,20 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanCommandBuffer::BeginPrimaryInternal()
+	void VulkanCommandBuffer::BeginPrimaryInternal(bool oneTimeSubmit)
 	{
 		VT_PROFILE_FUNCTION();
 
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.pNext = nullptr;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		beginInfo.flags = oneTimeSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0;
 		beginInfo.pInheritanceInfo = nullptr;
 
 		VT_VK_CHECK(vkBeginCommandBuffer(m_commandBufferData.commandBuffer, &beginInfo));
 	}
 
-	void VulkanCommandBuffer::BeginSecondaryInternal()
+	void VulkanCommandBuffer::BeginSecondaryInternal(bool oneTimeSubmit)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1442,7 +1442,7 @@ namespace Volt::RHI
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.pNext = nullptr;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		beginInfo.flags = oneTimeSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0;
 		beginInfo.pInheritanceInfo = &inheritanceInfo;
 
 		VT_VK_CHECK(vkBeginCommandBuffer(m_commandBufferData.commandBuffer, &beginInfo));

@@ -38,9 +38,16 @@ namespace Volt
 			}, predicate);
 		}
 
+		template<IsEvent T>
+		void UnregisterListener()
+		{
+			UnregisterListenerInternal(T::GetStaticGUID());
+		}
+
 	private:
 		void RegisterListenerInternal(VoltGUID eventGUID, std::function<bool(Event&)> delegate, std::function<bool()> predicate);
-	
+		void UnregisterListenerInternal(VoltGUID eventGUID);
+
 		bool m_eventsBlocked = false;
 	};
 }

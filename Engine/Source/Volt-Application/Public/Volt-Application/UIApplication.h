@@ -48,6 +48,8 @@ namespace Volt
 
 		void Run() override;
 		void Quit() override;
+		void Tick() override;
+		uint64_t GetFrameIndex() const override;
 
 		void PushLayer(ApplicationLayer* layer) override;
 		void PopLayer(ApplicationLayer* layer) override;
@@ -81,5 +83,6 @@ namespace Volt
 		bool m_skipPresentThisFrame = false;
 		bool m_isProcessingFrame = false;
 		float m_currentDeltaTime = 0.f;
+		uint64_t m_frameIndex = 0;
 	};
 }

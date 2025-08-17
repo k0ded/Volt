@@ -3,6 +3,8 @@
 #include "Sandbox/FileWatcher/FileWatcher.h"
 #include "Sandbox/GameBuilder.h"
 
+#include "Sandbox/UISystems/ModalSystem.h"
+
 #include <Volt-Scene/Entity.h>
 
 #include <Volt-Application/ApplicationLayer.h>
@@ -167,6 +169,7 @@ private:
 
 	Ref<ViewportPanel> m_viewportPanel;
 	Ref<GameViewPanel> m_gameViewPanel;
+	Scope<ModalSystem> m_modalSystem;
 
 	Ref<AssetBrowserPanel> m_assetBrowserPanel;
 

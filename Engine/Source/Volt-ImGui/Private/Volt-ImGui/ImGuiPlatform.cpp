@@ -236,6 +236,11 @@ namespace Volt
 	{
 		RegisterListener<WindowFocusChangedEvent>([this](WindowFocusChangedEvent& event)
 		{
+			if (!IsWindowInContext(event.GetWindow()))
+			{
+				return false;
+			}
+
 			ImGuiContext* context = GetImGuiContextFromWindow(event.GetWindow());
 			
 			ImGuiIO& io = ImGui::GetIO(context);
@@ -246,6 +251,11 @@ namespace Volt
 
 		RegisterListener<WindowCursorEnteredEvent>([this](WindowCursorEnteredEvent& event) 
 		{
+			if (!IsWindowInContext(event.GetWindow()))
+			{
+				return false;
+			}
+
 			ContextData& contextData = GetContextDataFromWindow(event.GetWindow());
 
 			ImGuiIO& io = ImGui::GetIO(contextData.imguiContext);
@@ -267,6 +277,11 @@ namespace Volt
 
 		RegisterListener<MouseMovedEvent>([this](MouseMovedEvent& event)
 		{
+			if (!IsWindowInContext(event.GetWindow()))
+			{
+				return false;
+			}
+
 			ContextData& contextData = GetContextDataFromWindow(event.GetWindow());
 
 			float x = event.GetX();
@@ -288,6 +303,11 @@ namespace Volt
 
 		RegisterListener<MouseButtonPressedEvent>([this](MouseButtonPressedEvent& event) 
 		{
+			if (!IsWindowInContext(event.GetWindow()))
+			{
+				return false;
+			}
+
 			int32_t glfwCode = InputCodeToGLFWCode(event.GetMouseButton());
 
 			if (event.GetMouseButton() != InputCode::Unknown && glfwCode < ImGuiMouseButton_COUNT)
@@ -304,6 +324,11 @@ namespace Volt
 
 		RegisterListener<MouseButtonReleasedEvent>([this](MouseButtonReleasedEvent& event) 
 		{
+			if (!IsWindowInContext(event.GetWindow()))
+			{
+				return false;
+			}
+
 			int32_t glfwCode = InputCodeToGLFWCode(event.GetMouseButton());
 
 			if (event.GetMouseButton() != InputCode::Unknown && glfwCode < ImGuiMouseButton_COUNT)
@@ -320,6 +345,11 @@ namespace Volt
 
 		RegisterListener<MouseScrolledEvent>([this](MouseScrolledEvent& event) 
 		{
+			if (!IsWindowInContext(event.GetWindow()))
+			{
+				return false;
+			}
+
 			ImGuiContext* context = GetImGuiContextFromWindow(event.GetWindow());
 			ImGuiIO& io = ImGui::GetIO(context);
 
@@ -330,6 +360,11 @@ namespace Volt
 
 		RegisterListener<KeyPressedEvent>([this](KeyPressedEvent& event) 
 		{
+			if (!IsWindowInContext(event.GetWindow()))
+			{
+				return false;
+			}
+
 			if (event.GetRepeatCount() > 0)
 			{
 				return false;
@@ -351,6 +386,11 @@ namespace Volt
 
 		RegisterListener<KeyReleasedEvent>([this](KeyReleasedEvent& event)
 		{
+			if (!IsWindowInContext(event.GetWindow()))
+			{
+				return false;
+			}
+
 			int32_t keycode = TranslateUntranslatedKey(InputCodeToGLFWCode(event.GetKeyCode()), event.GetScanCode());
 			ImGuiKey imguiKey = InputCodeToImGuiKey(GLFWKeyCodeToInputCode(keycode));
 
@@ -367,6 +407,11 @@ namespace Volt
 
 		RegisterListener<KeyTypedEvent>([this](KeyTypedEvent& event) 
 		{
+			if (!IsWindowInContext(event.GetWindow()))
+			{
+				return false;
+			}
+
 			ImGuiContext* context = GetImGuiContextFromWindow(event.GetWindow());
 			ImGuiIO& io = ImGui::GetIO(context);
 			io.AddInputCharacter(event.GetCharacter());
@@ -374,10 +419,9 @@ namespace Volt
 			return false;
 		});
 
-		RegisterListener<AppUpdateEvent>([this](AppUpdateEvent& event)
+		RegisterListener<AppTickEvent>([this](AppTickEvent& event)
 		{
 			m_deltaTime = event.GetTimestep();
-
 			return false;
 		});
 	}
@@ -458,7 +502,12 @@ namespace Volt
 			imguiPlatform->RemoveViewportWindow(window);
 		}
 
-		WindowManager::Get().DestroyWindow(*window);
+		// Only destroy windows that were created by imgui.
+		Window* mainWindow = &WindowManager::Get().GetMainWindow();
+		if (window != mainWindow)
+		{
+			WindowManager::Get().DestroyWindow(*window);
+		}
 	}
 
 	static void ShowImGuiWindow(ImGuiViewport* viewport)
@@ -566,6 +615,11 @@ namespace Volt
 		platformIO.Platform_SwapBuffers = Unused_ImGuiWindowSwapBuffers;
 	}
 
+	bool ImGuiPlatform::IsWindowInContext(Window& window)
+	{
+		return m_windowToContextMap.contains(&window);
+	}
+
 	void ImGuiPlatform::InitializeMonitors()
 	{
 		ImGuiPlatformIO& platformIO = ImGui::GetPlatformIO();
@@ -604,6 +658,11 @@ namespace Volt
 		{
 			ImGuiViewport* viewport = platformIO.Viewports[i];
 			Window* window = reinterpret_cast<Window*>(viewport->PlatformHandle);
+
+			if (window == nullptr)
+			{
+				continue;
+			}
 
 			ContextData& contextData = m_windowToContextMap.at(window);
 
@@ -656,6 +715,11 @@ namespace Volt
 		{
 			ImGuiViewport* viewport = platformIO.Viewports[i];
 			Window* window = reinterpret_cast<Window*>(viewport->PlatformHandle);
+
+			if (window == nullptr)
+			{
+				continue;
+			}
 
 			if (imguiCursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
 			{

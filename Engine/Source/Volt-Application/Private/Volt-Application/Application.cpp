@@ -193,6 +193,24 @@ namespace Volt
 		m_isRunning = false;
 	}
 
+	void Application::Tick()
+	{
+		VT_PROFILE_FUNCTION();
+
+		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
+		m_frameTimer.Update();
+
+		m_frameIndex++;
+
+		AppTickEvent tickEvent(m_currentDeltaTime, m_frameIndex);
+		EventSystem::DispatchEvent(tickEvent);
+	}
+
+	uint64_t Application::GetFrameIndex() const
+	{
+		return m_frameIndex;
+	}
+
 	void Application::PushLayer(ApplicationLayer* layer)
 	{
 		m_layerStack.PushLayer(layer);
@@ -246,13 +264,12 @@ namespace Volt
 		m_isProcessingFrame = true;
 		WindowManager::Get().BeginFrame();
 
-		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
-		m_frameTimer.Update();
+		Tick();
 
 		{
 			VT_PROFILE_SCOPE("Application::Render");
 
-			AppPreRenderEvent preRenderEvent;
+			AppPreRenderEvent preRenderEvent(m_frameIndex);
 			EventSystem::DispatchEvent(preRenderEvent);
 
 			AppRenderEvent renderEvent(m_currentDeltaTime);
@@ -297,7 +314,6 @@ namespace Volt
 		}
 
 		m_isProcessingFrame = false;
-
 		if (!m_skipPresentThisFrame)
 		{
 			WindowManager::Get().Present();

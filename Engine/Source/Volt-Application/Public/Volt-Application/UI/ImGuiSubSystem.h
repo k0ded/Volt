@@ -29,6 +29,9 @@ namespace Volt
 		void Begin();
 		void End();
 
+		void EnterBlockingContext(std::function<void()> onEnterCallback = {});
+		void ExitBlockingContext();
+
 		ImTextureID GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex = -1);
 
 		VT_NODISCARD VT_INLINE bool IsInitialized() const { return m_imguiImplementation != nullptr; }
@@ -36,6 +39,7 @@ namespace Volt
 		VT_DECLARE_SUBSYSTEM("{482BA05C-2FFA-4457-9FFD-7B14833C8212}"_guid);
 
 	private:
+		bool m_isBlockingActive = false;
 		Ref<ImGuiImplementation> m_imguiImplementation;
 	};
 }

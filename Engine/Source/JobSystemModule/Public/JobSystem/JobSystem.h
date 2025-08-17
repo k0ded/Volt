@@ -13,7 +13,7 @@
 
 namespace Volt
 {
-	class AppUpdateEvent;
+	class AppTickEvent;
 
 	class VTJS_API JobSystem : public SubSystem, EventListener
 	{
@@ -52,7 +52,7 @@ namespace Volt
 		void Initialize() override;
 		void Shutdown() override;
 
-		bool OnUpdate(AppUpdateEvent& event);
+		bool OnTick(AppTickEvent& event);
 		void ExecuteMainThreadJobs();
 
 		void SpawnWorker(uint32_t workerId);

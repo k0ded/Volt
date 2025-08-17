@@ -88,9 +88,9 @@ namespace Volt
 		m_activeDescriptorTableCache.FlushDescriptorTableCacheForPipeline(pipelineHash);
 	}
 
-	void DescriptorTableCache::Update()
+	void DescriptorTableCache::Update(uint64_t frameIndex)
 	{
-		Vector<ActiveDescriptorTableCache::ActiveDescriptorTable> inactiveDescriptorTables = m_activeDescriptorTableCache.UpdateAndGetInactiveDescriptorTables();
+		Vector<ActiveDescriptorTableCache::ActiveDescriptorTable> inactiveDescriptorTables = m_activeDescriptorTableCache.UpdateAndGetInactiveDescriptorTables(frameIndex);
 
 		for (const auto& inactiveTable : inactiveDescriptorTables)
 		{
@@ -114,31 +114,29 @@ namespace Volt
 		auto& newActive = m_activeDescriptorTables.emplace_back();
 		newActive.activeDescriptorTable.descriptorTable = descriptorTable;
 		newActive.activeDescriptorTable.pipelineHash = pipelineHash;
-		newActive.framesAlive = 0;
+		newActive.lastUsedFrameIndex = m_frameIndex;
 	}
 
-	Vector<ActiveDescriptorTableCache::ActiveDescriptorTable> ActiveDescriptorTableCache::UpdateAndGetInactiveDescriptorTables()
+	Vector<ActiveDescriptorTableCache::ActiveDescriptorTable> ActiveDescriptorTableCache::UpdateAndGetInactiveDescriptorTables(uint64_t frameIndex)
 	{
 		Vector<ActiveDescriptorTableCache::ActiveDescriptorTable> result{};
 
-		constexpr size_t FRAMES_ALIVE = 3;
+		constexpr uint64_t FRAMES_ALIVE = 3;
 
 		{
 			std::scoped_lock lock{ m_mutex };
 			for (int32_t i = static_cast<int32_t>(m_activeDescriptorTables.size()) - 1; i >= 0; --i)
 			{
 				auto& activeDescriptorTable = m_activeDescriptorTables.at(i);
-				if (activeDescriptorTable.framesAlive >= FRAMES_ALIVE)
+				if (frameIndex - activeDescriptorTable.lastUsedFrameIndex >= FRAMES_ALIVE)
 				{
 					result.emplace_back(activeDescriptorTable.activeDescriptorTable);
 					m_activeDescriptorTables.erase_unsorted(m_activeDescriptorTables.begin() + i);
 				}
-				else
-				{
-					activeDescriptorTable.framesAlive++;
-				}
 			}
 		}
+
+		m_frameIndex = frameIndex;
 
 		return result;
 	}

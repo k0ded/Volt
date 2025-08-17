@@ -129,7 +129,6 @@ namespace Volt
 			createInfo.enableVSync = m_data.vsync;
 
 			m_swapchain = RHI::Swapchain::Create(createInfo);
-			//m_swapchain->Resize(m_data.width, m_data.height, m_data.vsync);
 			m_hasBeenInitialized = true;
 		}
 

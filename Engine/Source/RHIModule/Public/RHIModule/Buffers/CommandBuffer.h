@@ -48,7 +48,7 @@ namespace Volt::RHI
 		VT_DELETE_COPY_MOVE(CommandBuffer);
 		~CommandBuffer() override = default;
 
-		virtual void Begin() = 0;
+		virtual void Begin(bool oneTimeSubmit = true) = 0;
 		virtual void End() = 0;
 
 		virtual void SetEvent(RawPtr<Event> event) = 0;
