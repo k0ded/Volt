@@ -5,6 +5,7 @@
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
+#include "Sandbox/Utility/EditorSearchBar.h"
 #include "Sandbox/Sandbox.h"
 
 #include <Volt-Scene/Prefab.h>
@@ -62,7 +63,9 @@ void SceneViewPanel::UpdateMainContent()
 	//	SelectionManager::SetSelectionKey(myId);
 	//}
 
-	EditorUtils::SearchBar(m_searchQuery, m_hasSearchQuery);
+	static EditorSearchBar searchBar(EditorTheme::DarkGreyBackground, true);
+	searchBar.Render(0.f);
+	m_searchQuery = searchBar.GetSearchQuery();
 
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, { 0.16f, 0.16f, 0.16f, 1.f });
 
@@ -74,7 +77,6 @@ void SceneViewPanel::UpdateMainContent()
 		UI::ScopedColor tableRow(ImGuiCol_TableRowBg, { 0.18f, 0.18f, 0.18f, 1.f });
 		UI::ScopedStyleFloat2 padd{ ImGuiStyleVar_FramePadding, { 4.f, 4.f } };
 		UI::ScopedStyleFloat2 padd1{ ImGuiStyleVar_CellPadding, { 4.f, 0.f } };
-
 
 		DrawSceneName();
 

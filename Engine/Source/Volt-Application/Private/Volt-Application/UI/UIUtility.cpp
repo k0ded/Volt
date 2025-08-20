@@ -7,6 +7,8 @@
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <SubSystem/SubSystemManager.h>
+#include <SubSystem/SubSystem.h>
+#include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/StringUtility.h>
 
@@ -21,6 +23,23 @@ namespace UI
 {
 	static uint32_t s_contextId = 0;
 	static uint32_t s_stackId = 0;
+
+	class ResetStackEventListener : public SubSystem, Volt::EventListener
+	{
+	public:
+		ResetStackEventListener()
+		{
+			RegisterListener<Volt::AppUpdateEvent>([](Volt::AppUpdateEvent& e) 
+			{
+				s_stackId = 0;
+
+				return false;
+			});
+		}
+
+		VT_DECLARE_SUBSYSTEM("{549B4945-CFF4-4DC3-9B9E-7F495425EBED}"_guid);
+	};
+	VT_REGISTER_SUBSYSTEM(ResetStackEventListener, Minimal, PreEngine, 0);
 
 	ImTextureID GetTextureID(Ref<Volt::Texture2D> texture, int32_t mipIndex)
 	{

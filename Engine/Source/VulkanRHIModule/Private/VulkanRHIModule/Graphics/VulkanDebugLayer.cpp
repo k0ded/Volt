@@ -43,16 +43,16 @@ namespace Volt::RHI
 		switch (messageSeverity)
 		{
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-				VT_LOG_UNFORMATTED(Trace, sstream.str());
+				VT_LOGC_UNFORMATTED(Trace, LogVulkanRHI, sstream.str());
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-				VT_LOG_UNFORMATTED(Info, sstream.str());
+				VT_LOGC_UNFORMATTED(Info, LogVulkanRHI, sstream.str());
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-				VT_LOG_UNFORMATTED(Warning, sstream.str());
+				VT_LOGC_UNFORMATTED(Warning, LogVulkanRHI, sstream.str());
 				break;
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-				VT_LOG_UNFORMATTED(Error, sstream.str());
+				VT_LOGC_UNFORMATTED(Error, LogVulkanRHI, sstream.str());
 				break;
 		}
 
