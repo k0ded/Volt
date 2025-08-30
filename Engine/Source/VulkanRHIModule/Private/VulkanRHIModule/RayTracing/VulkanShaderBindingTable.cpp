@@ -86,7 +86,7 @@ namespace Volt::RHI
 				BufferDesc desc{};
 				desc.count = static_cast<uint32_t>(missData.shaderHandles.size());
 				desc.elementSize = sizeof(uint8_t);
-				desc.debugName = "RayGen SBT";
+				desc.debugName = "Miss SBT";
 				desc.usage = BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress;
 				desc.memoryUsage = MemoryUsage::GPU;
 
@@ -114,7 +114,7 @@ namespace Volt::RHI
 				BufferDesc desc{};
 				desc.count = static_cast<uint32_t>(hitGroupData.shaderHandles.size());
 				desc.elementSize = sizeof(uint8_t);
-				desc.debugName = "RayGen SBT";
+				desc.debugName = "Hit SBT";
 				desc.usage = BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress;
 				desc.memoryUsage = MemoryUsage::GPU;
 
@@ -142,7 +142,7 @@ namespace Volt::RHI
 				BufferDesc desc{};
 				desc.count = static_cast<uint32_t>(callableData.shaderHandles.size());
 				desc.elementSize = sizeof(uint8_t);
-				desc.debugName = "RayGen SBT";
+				desc.debugName = "Callable SBT";
 				desc.usage = BufferUsage::StorageBuffer | BufferUsage::ShaderBindingTable | BufferUsage::DeviceAddress;
 				desc.memoryUsage = MemoryUsage::GPU;
 

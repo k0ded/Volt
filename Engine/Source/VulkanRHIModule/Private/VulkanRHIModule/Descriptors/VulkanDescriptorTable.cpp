@@ -10,6 +10,7 @@
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/RayTracing/AccelerationStructure.h>
 #include <RHIModule/Globals.h>
 #include <RHIModule/RHIModule.h>
 
@@ -122,6 +123,24 @@ namespace Volt::RHI
 			m_descriptorWrites.at(writeDescriptorIndex).pTexelBufferView = vkTexelBufferView;
 		}
 
+		m_descriptorIsUpdated.at(writeDescriptorIndex).value = true;
+	}
+
+	void VulkanDescriptorTable::SetAccelerationStructure(RawPtr<AccelerationStructure> accelerationStructure, uint32_t set, uint32_t binding)
+	{
+		VT_PROFILE_FUNCTION();
+
+		m_isDirty = true;
+
+		auto& handle = m_accelerationStructureHandles[set][binding];
+		handle = accelerationStructure->GetHandle<VkAccelerationStructureKHR>();
+
+		auto& accelerationStructureDescriptor = m_accelerationStructureDescriptorInfos[set][binding];
+		accelerationStructureDescriptor.accelerationStructures = &handle;
+
+		const uint32_t writeDescriptorIndex = m_writeDescriptorsMapping[set][binding];
+		m_descriptorWrites.at(writeDescriptorIndex).pNext = &accelerationStructureDescriptor;
+	
 		m_descriptorIsUpdated.at(writeDescriptorIndex).value = true;
 	}
 	
@@ -351,6 +370,7 @@ namespace Volt::RHI
 							case ShaderResourceType::StructuredBuffer: descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
 							case ShaderResourceType::TexelBuffer: descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
 							case ShaderResourceType::Texture: descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; break;
+							case ShaderResourceType::AccelerationStructure: descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR; break;
 						}
 						break;
 					}
@@ -385,6 +405,9 @@ namespace Volt::RHI
 		writeDescriptor.dstBinding = binding;
 		writeDescriptor.descriptorType = descriptorType;
 		writeDescriptor.dstSet = dstDescriptorSet;
+		writeDescriptor.pBufferInfo = nullptr;
+		writeDescriptor.pImageInfo = nullptr;
+		writeDescriptor.pTexelBufferView = nullptr;
 	}
 
 	VkPipelineLayout_T* VulkanDescriptorTable::GetRelatedPipelineLayout() const
@@ -421,6 +444,7 @@ namespace Volt::RHI
 	{
 		m_imageDescriptorInfos.clear();
 		m_bufferDescriptorInfos.clear();
+		m_accelerationStructureDescriptorInfos.clear();
 		
 		Vector<ShaderParameterMap> shaderParameterMaps;
 
@@ -489,6 +513,21 @@ namespace Volt::RHI
 						m_texelBufferViews[binding.set][binding.binding] = nullptr;
 						break;
 					}
+
+					case ShaderResourceType::AccelerationStructure:
+					{
+						auto& accelerationStructureInfo = m_accelerationStructureDescriptorInfos[binding.set][binding.binding];
+						accelerationStructureInfo.accelerationStructures = nullptr;
+						accelerationStructureInfo.accelerationStructureCount = binding.arraySize;
+						accelerationStructureInfo.pNext = nullptr;
+						accelerationStructureInfo.sType = static_cast<uint32_t>(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR);
+
+						m_accelerationStructureHandles[binding.set][binding.binding] = nullptr;
+						break;
+					}
+
+					default:
+						VT_ENSURE(false);
 				}
 			}
 		}

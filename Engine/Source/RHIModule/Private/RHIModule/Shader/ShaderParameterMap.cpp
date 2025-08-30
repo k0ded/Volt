@@ -91,6 +91,17 @@ namespace Volt::RHI
 		resourceBinding.name = name;
 	}
 
+	void ShaderParameterMap::AddAccelerationStructure(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
+	{
+		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
+		resourceBinding.set = set;
+		resourceBinding.binding = binding;
+		resourceBinding.registerType = ShaderRegisterType::SRV;
+		resourceBinding.resourceType = ShaderResourceType::AccelerationStructure;
+		resourceBinding.shaderStage = shaderStage;
+		resourceBinding.name = name;
+	}
+
 	void ShaderParameterMap::AddParameter(const std::string& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset)
 	{
 		auto& parameter = m_shaderParameters[StringHash::Construct(name)];

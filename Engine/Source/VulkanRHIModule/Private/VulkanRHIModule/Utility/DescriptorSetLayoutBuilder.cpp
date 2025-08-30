@@ -60,6 +60,10 @@ namespace Volt::RHI
 					descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 				}
 			}
+			else if (binding.resourceType == ShaderResourceType::AccelerationStructure)
+			{
+				descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+			}
 		}
 
 		DescriptorSets result;
@@ -142,6 +146,7 @@ namespace Volt::RHI
 		uint32_t storageImageCount = 0;
 		uint32_t imageCount = 0;
 		uint32_t seperateSamplerCount = 0;
+		uint32_t accelerationStructureCount = 0;
 
 		for (const auto& [nameHash, binding] : resourceBindings)
 		{
@@ -178,6 +183,10 @@ namespace Volt::RHI
 				{
 					storageImageCount += binding.arraySize;
 				}
+			}
+			else if (binding.resourceType == ShaderResourceType::AccelerationStructure)
+			{
+				accelerationStructureCount += binding.arraySize;
 			}
 		}
 
@@ -216,6 +225,11 @@ namespace Volt::RHI
 		if (seperateSamplerCount > 0)
 		{
 			result.emplace_back(static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_SAMPLER), seperateSamplerCount);
+		}
+
+		if (accelerationStructureCount > 0)
+		{
+			result.emplace_back(static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR), accelerationStructureCount);
 		}
 
 		return result;

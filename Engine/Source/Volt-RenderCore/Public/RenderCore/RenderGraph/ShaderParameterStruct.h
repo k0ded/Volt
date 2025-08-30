@@ -6,6 +6,7 @@
 
 #include <RHIModule/Shader/ShaderCommon.h>
 #include <RHIModule/Images/SamplerState.h>
+#include <RHIModule/RayTracing/AccelerationStructure.h>
 
 #include <CoreUtilities/StringHash.h>
 
@@ -27,7 +28,8 @@ namespace Volt
 		BufferAccess,
 		TextureAccess,
 		UniformBufferAccess,
-		RenderTargets
+		RenderTargets,
+		AccelerationStructure
 	};
 
 	struct ShaderParameterMetadata
@@ -169,6 +171,15 @@ public: \
 public: \
 	RefPtr<Volt::RHI::SamplerState> paramName; \
 	SHADER_PARAMETER_COMMON_INTERNAL(RefPtr<Volt::RHI::SamplerState>, paramName, Volt::ShaderParameterType::Sampler, Volt::RGResourceAccess::None)
+
+/*
+	Adds an acceleration structure to the struct.
+*/
+#define SHADER_PARAMETER_ACCELERATION_STRUCTURE(paramName) \
+	MemberID##paramName; \
+public: \
+	RefPtr<Volt::RHI::AccelerationStructure> paramName; \
+	SHADER_PARAMETER_COMMON_INTERNAL(RefPtr<Volt::RHI::AccelerationStructure>, paramName, Volt::ShaderParameterType::AccelerationStructure, Volt::RGResourceAccess::None)
 
 /*
 	Adds a buffer read parameter to the struct

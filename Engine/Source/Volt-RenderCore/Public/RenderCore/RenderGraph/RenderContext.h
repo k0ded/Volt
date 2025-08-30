@@ -100,6 +100,7 @@ namespace Volt
 		void SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 
 		void CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
@@ -164,6 +165,7 @@ namespace Volt
 				case ShaderParameterType::TextureUAV: SetTextureUAVParameter(*reinterpret_cast<RGTextureUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::UniformBuffer: SetUniformBufferParameter(*reinterpret_cast<RGUniformBufferRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::Sampler: SetSamplerParameter(*reinterpret_cast<RefPtr<RHI::SamplerState>*>(parameterDataPtr), parameter, shaderParameterMap); break;
+				case ShaderParameterType::AccelerationStructure: SetAccelerationStructureParameter(*reinterpret_cast<RefPtr<RHI::AccelerationStructure>*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::Parameter: SetShaderParameter(parameterDataPtr, parameter, shaderParameterMap); break;
 			}
 		}
@@ -234,6 +236,7 @@ namespace Volt
 				case ShaderParameterType::TextureUAV:
 				case ShaderParameterType::UniformBuffer:
 				case ShaderParameterType::Sampler:
+				case ShaderParameterType::AccelerationStructure:
 					resourceBindingsFoundMap[parameter.hashedName].value = true;
 			}
 		}

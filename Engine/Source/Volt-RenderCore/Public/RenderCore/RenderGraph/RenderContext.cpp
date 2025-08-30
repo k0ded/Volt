@@ -427,6 +427,17 @@ namespace Volt
 		}
 	}
 
+	void RenderContext::SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		VT_ENSURE(m_descriptorTable);
+
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding)
+		{
+			m_descriptorTable->SetAccelerationStructure(accelerationStructure, resourceBinding->set, resourceBinding->binding);
+		}
+	}
+
 	void RenderContext::SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
 		const RHI::ShaderUniform* shaderParameter = shaderParameterMap.GetParameterFromName(parameterMetadata.hashedName);

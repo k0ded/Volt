@@ -21,6 +21,7 @@ namespace Volt::RHI
 		void AddTexelBufferSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 		void AddTextureSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 		void AddTextureUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
+		void AddAccelerationStructure(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 
 		void AddParameter(const std::string& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset);
 

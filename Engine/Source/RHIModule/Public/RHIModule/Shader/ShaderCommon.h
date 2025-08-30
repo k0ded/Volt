@@ -49,7 +49,8 @@ namespace Volt::RHI
 		StructuredBuffer,
 		TexelBuffer,
 		Texture,
-		Sampler
+		Sampler,
+		AccelerationStructure
 	};
 
 	enum class ShaderUniformBaseType : uint8_t

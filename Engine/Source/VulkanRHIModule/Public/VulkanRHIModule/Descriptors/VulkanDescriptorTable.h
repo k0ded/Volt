@@ -21,6 +21,7 @@ namespace Volt::RHI
 		void SetImageView(RawPtr<ImageView> imageView, uint32_t set, uint32_t binding) override;
 		void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding) override;
 		void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding) override;
+		void SetAccelerationStructure(RawPtr<AccelerationStructure> accelerationStructure, uint32_t set, uint32_t binding) override;
 		size_t GetHash() const override;
 
 		void PrepareForRender() override;
@@ -64,7 +65,9 @@ namespace Volt::RHI
 		Map<uint32_t, Map<uint32_t, uint32_t>> m_writeDescriptorsMapping; // Set -> Binding
 		Map<uint32_t, Map<uint32_t, DescriptorImageInfo>> m_imageDescriptorInfos; // Set -> Binding
 		Map<uint32_t, Map<uint32_t, DescriptorBufferInfo>> m_bufferDescriptorInfos; // Set -> Binding
+		Map<uint32_t, Map<uint32_t, DescriptorAccelerationStructureInfo>> m_accelerationStructureDescriptorInfos; // Set -> Binding
 		Map<uint32_t, Map<uint32_t, VkBufferView>> m_texelBufferViews;
+		Map<uint32_t, Map<uint32_t, VkAccelerationStructureKHR>> m_accelerationStructureHandles;
 
 		Vector<DescriptorWrite> m_descriptorWrites;
 		Vector<DescriptorWrite> m_activeDescriptorWrites;
