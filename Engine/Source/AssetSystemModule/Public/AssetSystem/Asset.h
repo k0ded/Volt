@@ -3,7 +3,8 @@
 #include "AssetSystem/AssetType.h"
 #include "AssetSystem/AssetHandle.h"
 
-#include <CoreUtilities/Containers/StackVector.h>
+#include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 #include <filesystem>
 
@@ -27,7 +28,9 @@ namespace Volt
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(AssetFlag);
 
-	inline static constexpr size_t ASSET_METADATA_SIZE = 256;
+	inline static constexpr size_t ASSET_CUSTOM_METADATA_SIZE = 256;
+	typedef Vector<uint8_t, InlineAllocator<ASSET_CUSTOM_METADATA_SIZE>> CustomAssetMetadataVector;
+
 	struct AssetMetadata
 	{
 		inline const bool IsValid() const { return handle != 0; }
@@ -36,9 +39,9 @@ namespace Volt
 		const CustomMetadataType& GetCustomData() const
 		{
 			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(type), std::format("Custom metadata type is not for type %s!", type->GetName()));
-			VT_ENSURE_MSG(customData.Size() == sizeof(CustomMetadataType), std::format("Custom metadata size is not correct, for type: %s!", type->GetName()));
+			VT_ENSURE_MSG(customData.size() == sizeof(CustomMetadataType), std::format("Custom metadata size is not correct, for type: %s!", type->GetName()));
 
-			return reinterpret_cast<const CustomMetadataType&>(*customData.Data());
+			return reinterpret_cast<const CustomMetadataType&>(*customData.data());
 		}
 
 		AssetHandle handle = 0;
@@ -51,7 +54,7 @@ namespace Volt
 
 		std::filesystem::path filePath;
 
-		StackVector<uint8_t, ASSET_METADATA_SIZE> customData;
+		CustomAssetMetadataVector customData;
 	};
 
 	// #TODO_Ivar: Change name to be getter / setter, also add virtual functions when name changes.
@@ -90,6 +93,7 @@ namespace Volt
 		virtual AssetType GetType() { return AssetTypes::None; }
 		virtual uint32_t GetVersion() const { return 1; }
 		virtual void OnDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state) {}
+		virtual void SetupInitialCustomMetadata(CustomAssetMetadataVector& customMetadata) {}
 
 		AssetFlag assetFlags = AssetFlag::None;
 		AssetHandle handle = {};

@@ -31,7 +31,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void SceneSerializer::Serialize(const AssetMetadata& metadata, StackVector<uint8_t, ASSET_METADATA_SIZE>& customData, const Ref<Asset>& asset) const
+	void SceneSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		const Ref<Scene> scene = std::reinterpret_pointer_cast<Scene>(asset);
 

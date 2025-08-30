@@ -9,6 +9,7 @@ void BinaryStreamWriter::WriteToDisk(const std::filesystem::path& targetFilepath
 	constexpr uint32_t MAGIC = 5121;
 
 	std::ofstream stream(targetFilepath, std::ios::out | std::ios::binary);
+	VT_ASSERT(stream.is_open());
 
 	const uint8_t* writePtr = m_data.data();
 	size_t size = m_data.size();
@@ -51,7 +52,13 @@ void BinaryStreamWriter::WriteToDisk(const std::filesystem::path& targetFilepath
 	}
 
 	stream.write(reinterpret_cast<const char*>(writePtr), size);
+	VT_ASSERT(!stream.fail());
 	stream.close();
+	VT_ASSERT(!stream.fail());
+	VT_ASSERT(std::filesystem::exists(targetFilepath));
+
+	std::ifstream infile(targetFilepath.c_str());
+	VT_ASSERT(infile.good());
 }
 
 bool BinaryStreamWriter::GetCompressed(Vector<uint8_t>& result, size_t compressedDataOffset)

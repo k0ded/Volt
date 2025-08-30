@@ -940,6 +940,9 @@ namespace Volt
 
 	const std::filesystem::path AssetManager::GetFilePathFromAssetHandle(AssetHandle handle)
 	{
+		auto& instance = Get();
+		ReadLock lock{ instance.m_assetRegistryMutex };
+
 		const auto& metadata = GetMetadataFromHandle(handle);
 		if (!metadata.IsValid())
 		{

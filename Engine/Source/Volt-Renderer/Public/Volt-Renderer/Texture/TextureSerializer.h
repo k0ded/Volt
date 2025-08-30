@@ -22,7 +22,7 @@ namespace Volt
 			size_t dataOffset;
 		};
 
-		void Serialize(const AssetMetadata& metadata, StackVector<uint8_t, ASSET_METADATA_SIZE>& customData, const Ref<Asset>& asset) const override;
+		void Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const override;
 		bool Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const override;
 	
 		static Buffer GetImageDataBuffer(RefPtr<RHI::Image> image, Vector<TextureMip>& outMips);

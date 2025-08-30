@@ -22,7 +22,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void PrefabSerializer::Serialize(const AssetMetadata& metadata, StackVector<uint8_t, ASSET_METADATA_SIZE>& customData, const Ref<Asset>& asset) const
+	void PrefabSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		const Ref<Prefab> prefab = std::reinterpret_pointer_cast<Prefab>(asset);
 

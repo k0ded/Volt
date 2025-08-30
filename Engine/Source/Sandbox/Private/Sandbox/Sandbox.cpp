@@ -64,6 +64,7 @@
 #include <Volt-Scene/SceneManager.h>
 #include <Volt-Scene/SceneEvents.h>
 #include <Volt-Scene/EntityDescription.h>
+#include <Volt-Scene/EntityDescCustomMetadata.h>
 
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
@@ -114,6 +115,7 @@ void Sandbox::OnAttach()
 	SelectionManager::Initialize();
 	EditorResources::Initialize();
 	VersionControl::Initialize(VersionControlSystem::Perforce);
+	DirtyAssetsManager::Get().Initialize();
 
 	NodeEditorHelpers::Initialize();
 	IONodeGraphEditorHelpers::Initialize();
@@ -162,6 +164,31 @@ void Sandbox::OnAttach()
 	//DiscordPlugin::GetInstance().GetManager().SetLargeText("Volt");
 	//DiscordPlugin::GetInstance().GetManager().SetActivityType(ActivityType::Playing);
 	//DiscordPlugin::GetInstance().GetManager().UpdateChanges();
+
+
+	DirtySaveCustomization entityDescSaveCustimization;
+	entityDescSaveCustimization.RequiresExternalAction = [](Volt::AssetHandle handle) -> bool
+	{
+		const Volt::AssetMetadata& metadata = Volt::AssetManager::GetMetadataFromHandle(handle);
+		const Volt::EntityDescCustomMetadata& customData = metadata.GetCustomData<Volt::EntityDescCustomMetadata>();
+		if (Volt::AssetManager::IsMemoryAsset(customData.sceneHandle))
+		{
+			return true;
+		}
+		return false;
+	};
+	DirtyAssetsManager::Get().RegisterSaveCustomizationForType(AssetTypes::EntityDesc, entityDescSaveCustimization);
+
+	DirtySaveCustomization sceneSaveCustimization;
+	sceneSaveCustimization.RequiresExternalAction = [](Volt::AssetHandle handle) -> bool
+	{
+		if (Volt::AssetManager::IsMemoryAsset(handle))
+		{
+			return true;
+		}
+		return false;
+	};
+	DirtyAssetsManager::Get().RegisterSaveCustomizationForType(AssetTypes::Scene, sceneSaveCustimization);
 
 	m_isInitialized = true;
 }
@@ -292,9 +319,6 @@ void Sandbox::InitializeModals()
 
 	auto& textureModal = ModalSystem::AddModal<TextureImportModal>("Import Texture##sandbox");
 	m_textureImportModal = textureModal.GetID();
-
-	auto& checkoutFilesModal = ModalSystem::AddModal<CheckoutFilesModal>("Checkout Files##sandbox");
-	m_checkoutFilesModal = checkoutFilesModal.GetID();
 }
 
 void Sandbox::OnDetach()
@@ -413,16 +437,6 @@ void Sandbox::OnSimulationStop()
 	SetupNewSceneData();
 }
 
-void Sandbox::PromptForCheckoutFiles(const Vector<std::filesystem::path>& paths, std::function<void()> onConfirm, std::function<void()> onCancel)
-{
-	auto& modal = ModalSystem::GetModal<CheckoutFilesModal>(GetCheckoutFilesModalID());
-	modal.SetAssetsToCheckout(paths);
-	modal.SetOnConfirm(onConfirm);
-	modal.SetOnCancel(onCancel);
-
-	m_wantsToOpenCheckoutFilesModal = true;
-}
-
 void Sandbox::NewScene()
 {
 	SelectionManager::DeselectAll();
@@ -433,12 +447,15 @@ void Sandbox::NewScene()
 
 	m_runtimeScene = Volt::Scene::CreateDefaultScene("New Scene", true);
 	DirtyAssetsManager::Get().MarkAssetDirty(m_runtimeScene->handle);
-	m_runtimeScene->ForEachWithComponents<Volt::TagComponent>([sceneHandle = m_runtimeScene->handle](const entt::entity id, const Volt::TagComponent& tagComponent)
+	Vector<Volt::Entity> entities = m_runtimeScene->GetAllEntities();
+	for (const Volt::Entity& entity : entities)
 	{
-		std::string name = std::to_string(static_cast<uint32_t>(id));
-		Ref<Volt::EntityDesc> asset = Volt::AssetManager::CreateAsset<Volt::EntityDesc>(name, Volt::EntityID(static_cast<uint32_t>(id)), sceneHandle);
+		std::string name = std::to_string(entity.GetID());
+		Ref<Volt::EntityDesc> asset = Volt::AssetManager::CreateAsset<Volt::EntityDesc>(name, entity.GetID(), m_runtimeScene->handle);
+		m_entities.push_back(asset);
 		DirtyAssetsManager::Get().MarkAssetDirty(asset->handle);
-	});
+	}
+
 	SetupNewSceneData();
 }
 
@@ -750,33 +767,27 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 {
 	ImGuizmo::BeginFrame();
 
-	if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##OpenScene"); returnState != SaveReturnState::None)
-	{
-		if (returnState == SaveReturnState::Save)
-		{
-			SaveScene();
-		}
+	//if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##OpenScene"); returnState != SaveReturnState::None)
+	//{
+	//	if (returnState == SaveReturnState::Save)
+	//	{
+	//		SaveScene();
+	//	}
 
-		OpenScene();
-	}
+	//	OpenScene();
+	//}
 
-	if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##NewScene"); returnState != SaveReturnState::None)
-	{
-		if (returnState == SaveReturnState::Save)
-		{
-			SaveScene();
-		}
+	//if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##NewScene"); returnState != SaveReturnState::None)
+	//{
+	//	if (returnState == SaveReturnState::Save)
+	//	{
+	//		SaveScene();
+	//	}
 
-		NewScene();
-	}
+	//	NewScene();
+	//}
 
-	if (m_wantsToOpenCheckoutFilesModal)
-	{
-		auto& modal = ModalSystem::GetModal<CheckoutFilesModal>(GetCheckoutFilesModalID());
-		modal.Open();
-
-		m_wantsToOpenCheckoutFilesModal = false;
-	}
+	ImGui::ShowDemoWindow();
 
 	UpdateDockSpace();
 

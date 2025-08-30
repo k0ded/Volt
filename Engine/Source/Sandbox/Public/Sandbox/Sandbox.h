@@ -18,6 +18,7 @@ namespace Volt
 	class Mesh;
 	class Camera;
 	class Texture2D;
+	class EntityDesc;
 
 	class Event;
 	class AppUpdateEvent;
@@ -73,7 +74,6 @@ public:
 	
 	VT_NODISCARD VT_INLINE UUID64 GetMeshImportModalID() const { return m_meshImportModal; }
 	VT_NODISCARD VT_INLINE UUID64 GetTextureImportModalID() const { return m_textureImportModal; }
-	VT_NODISCARD VT_INLINE UUID64 GetCheckoutFilesModalID() const { return m_checkoutFilesModal; }
 
 	void PromptForCheckoutFiles(const Vector<std::filesystem::path>& paths, std::function<void()> onConfirm, std::function<void()> onCancel);
 
@@ -94,6 +94,11 @@ private:
 		std::string name = "New Scene";
 		std::filesystem::path destinationPath = "Assets/Scenes/";
 	} m_saveSceneData;
+
+	struct DirtyAssetExternalSaveData
+	{
+		bool SceneSavedAs = false;
+	} m_dirtyAssetExternalSaveData;
 
 	void SaveSceneAs();
 	void InstallMayaTools();
@@ -128,6 +133,8 @@ private:
 	void DrawMenuBar();
 
 	void DrawUnsavedAssetsBlock();
+	void DrawDirtyAssetsExternalActionModal();
+	void DrawSaveSceneAs(Volt::AssetHandle handle);
 	
 	void RenderGameView(float timestep);
 	///////////////
@@ -163,11 +170,11 @@ private:
 	///// Modals /////
 	UUID64 m_meshImportModal;
 	UUID64 m_textureImportModal;
-	UUID64 m_checkoutFilesModal;
 	//////////////////
 
 	Ref<Volt::Scene> m_runtimeScene;
 	Ref<Volt::Scene> m_intermediateScene;
+	Vector<Ref<Volt::EntityDesc>> m_entities;
 
 	SceneState m_sceneState = SceneState::Edit;
 

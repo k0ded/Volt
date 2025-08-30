@@ -4,6 +4,7 @@
 #include "CoreUtilities/Buffer/Buffer.h"
 #include "CoreUtilities/Containers/Vector.h"
 #include "CoreUtilities/Containers/Map.h"
+#include "CoreUtilities/Allocators/InlineAllocator.h"
 
 #include <fstream>
 
@@ -37,6 +38,9 @@ public:
 
 	template<typename F>
 	void Read(Vector<F>& data);
+
+	template<typename F, size_t NumValues>
+	void Read(Vector<F, InlineAllocator<NumValues>>& data);
 
 	template<typename F>
 	void ReadRaw(Vector<F>& data);
@@ -187,6 +191,25 @@ inline void BinaryStreamReader::Read(Vector<F>& data)
 			Read(data[i]);
 		}
 	}
+}
+
+template<typename F, size_t NumValues>
+inline void BinaryStreamReader::Read(Vector<F, InlineAllocator<NumValues>>& data)
+{
+	size_t serializedNumValues;
+	Read(serializedNumValues);
+
+	TypeHeader typeHeader{};
+	typeHeader.totalTypeSize = static_cast<uint32_t>(NumValues * sizeof(F));
+
+	TypeHeader serializedTypeHeader = ReadTypeHeader();
+
+	//call reserve here to make sure the begin ptr has been assigned
+	data.reserve(NumValues);
+	data.resize(serializedNumValues);
+	memset(data.data(), 0, NumValues);
+
+	ReadData(data.data(), serializedTypeHeader, typeHeader);
 }
 
 template<typename F>

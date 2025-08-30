@@ -47,13 +47,13 @@ namespace Volt
 		struct NewSerializedAssetMetadata
 		{
 			inline static constexpr uint32_t AssetMagic = 9999;
-			inline static constexpr size_t HeaderSize = sizeof(VoltGUID) + sizeof(uint32_t) + sizeof(UUID64) + sizeof(TypeHeader) * 9 + sizeof(StackVector<uint8_t, ASSET_CUSTOM_METADATA_SIZE>) + sizeof(TypeHeader) * 2;
+			inline static constexpr size_t HeaderSize = sizeof(VoltGUID) + sizeof(uint32_t) + sizeof(UUID64) + sizeof(TypeHeader) * 9 + ASSET_CUSTOM_METADATA_SIZE + sizeof(TypeHeader) * 2;
 
 			VoltGUID type;
 			uint32_t version;
 			UUID64 handle;
 
-			StackVector<uint8_t, ASSET_CUSTOM_METADATA_SIZE> customData; // asset specific Metadata
+			Vector<uint8_t, InlineAllocator<ASSET_CUSTOM_METADATA_SIZE>> customData; // asset specific Metadata
 
 			static void Serialize(BinaryStreamWriter& streamWriter, const NewSerializedAssetMetadata& data);
 		};

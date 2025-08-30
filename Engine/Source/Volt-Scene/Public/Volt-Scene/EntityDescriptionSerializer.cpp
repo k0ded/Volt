@@ -8,16 +8,20 @@
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetSerializerRegistry.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
 #include <EntitySystem/ComponentRegistry.h>
+#include <Volt-Platforms/Windows/WindowsPlatformThread.h>
 
 
 namespace Volt
 {
+	VT_REGISTER_ASSET_SERIALIZER(AssetTypes::EntityDesc, EntityDescSerializer);
+
 	template<typename T>
 	void RegisterSerializationFunction(std::unordered_map<TypeTraits::TypeIndex, std::function<void(YAMLMemoryStreamWriter&, const uint8_t*, const size_t)>>& outTypes)
 	{
@@ -115,30 +119,30 @@ namespace Volt
 	EntityDescSerializer::~EntityDescSerializer()
 	{}
 
-	void EntityDescSerializer::Serialize(const AssetMetadata& metadata, StackVector<uint8_t, ASSET_METADATA_SIZE>& customData, const Ref<Asset>& asset) const
+	void EntityDescSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		const Ref<EntityDesc> entityDesc = std::reinterpret_pointer_cast<EntityDesc>(asset);
 
-		customData.Resize(sizeof(EntityDescCustomMetadata));
-		EntityDescCustomMetadata& entityDescCustomMeta = reinterpret_cast<EntityDescCustomMetadata&>(*customData.Data());
-		entityDescCustomMeta.sceneHandle = entityDesc->GetSceneHandle();
-
-
 		//if the scene is not loaded here, the entity is not supposed to be loaded, and cannot be saved
 		VT_ENSURE(AssetManager::Get().IsLoaded(entityDesc->GetSceneHandle()));
+		//if the scene is a memory asset it doesnt have a path yet, and will thus fail the save of this entity
+		VT_ENSURE(!AssetManager::Get().IsMemoryAsset(entityDesc->GetSceneHandle()));
 
 		//get the path of the directory this asset is in
-		std::filesystem::path directoryPath = AssetManager::GetFilesystemPath(metadata.filePath);
+		std::filesystem::path directoryPath = AssetManager::GetFilesystemPath(entityDesc->GetSceneHandle());
 		if (!std::filesystem::is_directory(directoryPath))
 		{
 			directoryPath = directoryPath.parent_path();
 		}
+		directoryPath /= "Entities";
 
-		//if the directory doesnt exist create it
 		if (!std::filesystem::exists(directoryPath))
 		{
 			std::filesystem::create_directories(directoryPath);
 		}
+
+		std::filesystem::path entityPath = directoryPath / (metadata.filePath.stem().string() + ".vtasset");
+
 
 		//serialize entity data
 		YAMLMemoryStreamWriter streamWriter{};
@@ -153,7 +157,7 @@ namespace Volt
 		entityDescFileWriter.Write(buffer);
 		buffer.Release();
 
-		entityDescFileWriter.WriteToDisk(metadata.filePath, true, compressedDataOffset);
+		entityDescFileWriter.WriteToDisk(entityPath, true, compressedDataOffset);
 	}
 
 	bool EntityDescSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
@@ -185,7 +189,7 @@ namespace Volt
 
 		auto& registry = scene->GetRegistry();
 
-		Entity entity{ id.Get(), scene };
+		Entity entity = scene->GetEntityFromID(id);
 
 		streamWriter.SetKey("id", entity.GetID());
 		streamWriter.BeginSequence("components");

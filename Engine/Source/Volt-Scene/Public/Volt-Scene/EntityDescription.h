@@ -19,6 +19,9 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::EntityDesc; }
 		AssetType GetType() override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
+		void SetupInitialCustomMetadata(CustomAssetMetadataVector& customMetadata) override;
+
+
 
 		__forceinline AssetHandle GetSceneHandle() { return m_sceneHandle; }
 		__forceinline EntityID GetEntityID() { return m_entityID; }

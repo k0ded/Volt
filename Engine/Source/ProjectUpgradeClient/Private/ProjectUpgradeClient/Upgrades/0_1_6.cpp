@@ -172,9 +172,12 @@ namespace Volt
 		newMetadata.handle = UUID64();
 		newMetadata.type = "{50C26090-1874-4609-8386-67AEB44CE208}"_guid;
 		newMetadata.version = 1;
-		memset(newMetadata.customData.Data(), 0, ASSET_CUSTOM_METADATA_SIZE);
+
+		//call reserve here to set the begin ptr
+		newMetadata.customData.reserve(ASSET_CUSTOM_METADATA_SIZE);
+		memset(newMetadata.customData.data(), 0, ASSET_CUSTOM_METADATA_SIZE);
 		//custom metadata for entities contain the sceneHandle of the entity
-		UUID64& MetadataSceneHandleRef = *reinterpret_cast<UUID64*>(newMetadata.customData.Data());
+		UUID64& MetadataSceneHandleRef = *reinterpret_cast<UUID64*>(newMetadata.customData.data());
 		//assign scene handle here
 		MetadataSceneHandleRef = OwningSceneAssetHandle;
 
@@ -216,11 +219,14 @@ namespace Volt
 		//write to file
 		BinaryStreamWriter streamWriter{};
 
-		NewSerializedAssetMetadata newMetadata;
-		memset(newMetadata.customData.Data(), 0, ASSET_CUSTOM_METADATA_SIZE);
+		NewSerializedAssetMetadata newMetadata{};
 		newMetadata.handle = OldMetadata.handle;
 		newMetadata.version = OldMetadata.version;
 		newMetadata.type = OldMetadata.type;
+
+		//call reserve here to set the begin ptr
+		newMetadata.customData.reserve(ASSET_CUSTOM_METADATA_SIZE);
+		memset(newMetadata.customData.data(), 0, ASSET_CUSTOM_METADATA_SIZE);
 
 		streamWriter.Write(NewSerializedAssetMetadata::AssetMagic);
 		size_t compressedDataOffset = streamWriter.Write(newMetadata);

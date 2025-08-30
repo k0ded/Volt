@@ -11,6 +11,9 @@ namespace Volt
 		serializedMetadata.version = version;
 		serializedMetadata.customData = metadata.customData;
 
+		//call reserve here to set the begin ptr
+		serializedMetadata.customData.reserve(ASSET_CUSTOM_METADATA_SIZE);
+
 		streamWriter.Write(SerializedAssetMetadata::AssetMagic);
 		return streamWriter.Write(serializedMetadata);
 	}

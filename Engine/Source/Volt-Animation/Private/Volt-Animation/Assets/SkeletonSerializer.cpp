@@ -37,7 +37,7 @@ namespace Volt
 		}
 	};
 
-	void SkeletonSerializer::Serialize(const AssetMetadata& metadata, StackVector<uint8_t, ASSET_METADATA_SIZE>& customData, const Ref<Asset>& asset) const
+	void SkeletonSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		Ref<Skeleton> skeleton = std::reinterpret_pointer_cast<Skeleton>(asset);
 		BinaryStreamWriter streamWriter{};

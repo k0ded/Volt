@@ -15,7 +15,7 @@ namespace Volt
 		float bounciness;
 	};
 
-	void PhysicsMaterialSerializer::Serialize(const AssetMetadata& metadata, StackVector<uint8_t, ASSET_METADATA_SIZE>& customData, const Ref<Asset>& asset) const
+	void PhysicsMaterialSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		Ref<PhysicsMaterialAsset> material = std::reinterpret_pointer_cast<PhysicsMaterialAsset>(asset);
 

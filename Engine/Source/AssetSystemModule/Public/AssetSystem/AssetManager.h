@@ -354,6 +354,8 @@ namespace Volt
 		//since this asset is not linked to a file on disk, it is a memory asset
 		metadata.isMemoryAsset = true; 
 
+		asset->SetupInitialCustomMetadata(metadata.customData);
+
 		asset->assetName = cleanName;
 
 		WriteLock lockCache{ Get().m_assetCacheMutex };

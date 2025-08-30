@@ -10,6 +10,19 @@
 struct SaveDirtyAssetsFilter
 {
 	//todo_fabian: make a filter thingy
+	Vector<Volt::AssetHandle> SkipAssets;
+};
+
+struct RequiredExternalActionData
+{
+	Vector<Volt::AssetHandle> ReadOnlyAssets;
+	Vector<Volt::AssetHandle> AssetsNeedingCustomAction;
+};
+
+struct DirtySaveCustomization
+{
+	//return true to add this asset to the required action data list
+	std::function<bool(Volt::AssetHandle)> RequiresExternalAction;
 };
 
 class DirtyAssetsManager
@@ -19,9 +32,11 @@ public:
 public:
 	static DirtyAssetsManager& Get();
 
-	void RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomizationFn fn);
+	void Initialize();
 
-	void SaveAssets(SaveDirtyAssetsFilter* filter = nullptr);
+	void RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomization customization);
+
+	void SaveAssets(SaveDirtyAssetsFilter filter = SaveDirtyAssetsFilter());
 
 	bool IsAssetDirty(Volt::AssetHandle handle);
 	void MarkAssetDirty(Volt::AssetHandle handle);
@@ -33,7 +48,11 @@ private:
 	DirtyAssetsManager() = default;
 	static DirtyAssetsManager s_instance;
 
-	std::set<Volt::AssetHandle> m_dirtyAssets;	
-	Map<AssetType, DirtySaveCustomizationFn> m_dirtySaveCustomizations;
+	void SaveAssetsImpl(SaveDirtyAssetsFilter filter);
 
+	std::set<Volt::AssetHandle> m_dirtyAssets;	
+	Map<AssetType, DirtySaveCustomization> m_dirtySaveCustomizations;
+
+	UUID64 m_checkoutFilesModal;
+	UUID64 m_createFilesModal;
 };
