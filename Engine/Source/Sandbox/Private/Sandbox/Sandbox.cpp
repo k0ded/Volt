@@ -45,7 +45,6 @@
 
 #include "Sandbox/Modals/MeshImportModal.h"
 #include "Sandbox/Modals/TextureImportModal.h"
-#include "Sandbox/Modals/CheckoutFilesModal.h"
 
 #include "Sandbox/DirtyAssetsManager.h"
 

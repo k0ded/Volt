@@ -36,7 +36,7 @@ public:
 
 	void RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomization customization);
 
-	void SaveAssets(SaveDirtyAssetsFilter filter = SaveDirtyAssetsFilter());
+	void SaveAssets(bool showSaveDialog = true, SaveDirtyAssetsFilter filter = SaveDirtyAssetsFilter());
 
 	bool IsAssetDirty(Volt::AssetHandle handle);
 	void MarkAssetDirty(Volt::AssetHandle handle);
@@ -53,6 +53,5 @@ private:
 	std::set<Volt::AssetHandle> m_dirtyAssets;	
 	Map<AssetType, DirtySaveCustomization> m_dirtySaveCustomizations;
 
-	UUID64 m_checkoutFilesModal;
-	UUID64 m_createFilesModal;
+	UUID64 m_assetsModalID;
 };

@@ -3,8 +3,7 @@
 
 #include "Sandbox/UISystems/ModalSystem.h"
 
-#include "Sandbox/Modals/CheckoutFilesModal.h"
-#include "Sandbox/Modals/CreateAssetsModal.h"
+#include "Sandbox/Modals/AssetsModal.h"
 
 #include <AssetSystem/AssetManager.h>
 
@@ -21,11 +20,8 @@ DirtyAssetsManager& DirtyAssetsManager::Get()
 
 void DirtyAssetsManager::Initialize()
 {
-	auto& checkoutFilesModal = ModalSystem::AddModal<CheckoutFilesModal>("Checkout Files##sandbox");
-	m_checkoutFilesModal = checkoutFilesModal.GetID();
-
-	auto& createFilesModal = ModalSystem::AddModal<CreateFilesModal>("Create Files##sandbox");
-	m_createFilesModal = createFilesModal.GetID();
+	auto& assetsModal = ModalSystem::AddModal<AssetsModal>("Assets Modal##sandbox");
+	m_assetsModalID = assetsModal.GetID();
 }
 
 void DirtyAssetsManager::RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomization customization)
@@ -34,45 +30,130 @@ void DirtyAssetsManager::RegisterSaveCustomizationForType(AssetType type, DirtyS
 	m_dirtySaveCustomizations.emplace(type, customization);
 }
 
-void DirtyAssetsManager::SaveAssets(SaveDirtyAssetsFilter filter)
+void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter filter)
 {
-	//todo_fabian implement filtering
-	filter;
-
-	Vector<Volt::AssetHandle, FrameStackAllocator::Mark> assetsNeedActions;
-	for (const Volt::AssetHandle& dirtyAssetHandle : m_dirtyAssets)
+	//no dirty assets
+	if (m_dirtyAssets.empty())
 	{
-		if (CreateFilesModal::NeedsAction(dirtyAssetHandle))
-		{
-			assetsNeedActions.push_back(dirtyAssetHandle);
-		}
-	}
-
-	if (!assetsNeedActions.empty())
-	{
-		//CheckoutFilesModal& modal = ModalSystem::GetModal<CheckoutFilesModal>(m_checkoutFilesModal);
-		CreateFilesModal& modal = ModalSystem::GetModal<CreateFilesModal>(m_createFilesModal);
-		modal.SetAssetsToHandle(assetsNeedActions);
-
-		//modal.SetOnConfirm([this, filter]()
-		//{
-		//	CheckoutFilesModal& modal = ModalSystem::GetModal<CheckoutFilesModal>(m_checkoutFilesModal);
-		//	SaveDirtyAssetsFilter confirmFilter = filter;
-		//	SaveAssetsImpl(confirmFilter);
-		//});
-
-		//modal.SetOnCancel([this, filter]()
-		//{
-		//	//nothing
-		//});
-
-		modal.Open();
-
-
 		return;
 	}
 
-	SaveAssetsImpl(filter);
+	//todo_fabian implement filtering
+	filter;
+
+	FrameStackVector<Volt::AssetHandle> assetsToSave;
+	assetsToSave.reserve(m_dirtyAssets.size());
+	for (const Volt::AssetHandle& dirtyAssetHandle : m_dirtyAssets)
+	{
+		assetsToSave.push_back(dirtyAssetHandle);
+	}
+
+	//save dialog
+	if (showSaveDialog)
+	{
+		AssetsModal& modal = ModalSystem::GetModal<AssetsModal>(m_assetsModalID);
+		std::set<Volt::AssetHandle> outSelectedAssetsToSave;
+		AssetModalResult result = modal.OpenAssetModalTypeBlocking(AssetModalType::Save, assetsToSave, outSelectedAssetsToSave);
+
+		if (result != AssetModalResult::Save)
+		{
+			return;
+		}
+
+		//user chose to save no assets when prompted
+		if (outSelectedAssetsToSave.empty())
+		{
+			return;
+		}
+
+		for (int32_t i = static_cast<int32_t>(assetsToSave.size() - 1); i >= 0; i--)
+		{
+			if (!outSelectedAssetsToSave.contains(assetsToSave[i]))
+			{
+				assetsToSave.erase(assetsToSave.begin() + i);
+			}
+		}
+	}
+
+	//create assets dialog
+	{
+		FrameStackVector<Volt::AssetHandle> assetsNeedCreation;
+		for (const Volt::AssetHandle& asset : assetsToSave)
+		{
+			if (Volt::AssetManager::IsMemoryAsset(asset))
+			{
+				assetsNeedCreation.push_back(asset);
+			}
+		}
+
+		AssetsModal& modal = ModalSystem::GetModal<AssetsModal>(m_assetsModalID);
+		std::set<Volt::AssetHandle> outSelectedAssetsToCreate;
+		AssetModalResult result = modal.OpenAssetModalTypeBlocking(AssetModalType::Create, assetsNeedCreation, outSelectedAssetsToCreate);
+
+		if (result == AssetModalResult::Cancel)
+		{
+			return;
+		}
+
+		if (result == AssetModalResult::Create)
+		{
+			//todo_fabian create assets here
+		}
+	}
+
+
+	//checkout assets dialog
+	{
+		FrameStackVector<Volt::AssetHandle> readOnlyAssets;
+		for (const Volt::AssetHandle& asset : assetsToSave)
+		{
+			const std::filesystem::path assetPath = Volt::AssetManager::GetFilesystemPath(asset);
+			if (!FileSystem::IsWriteable(assetPath))
+			{
+				readOnlyAssets.push_back(asset);
+			}
+		}
+
+		if (!readOnlyAssets.empty())
+		{
+
+			AssetsModal& modal = ModalSystem::GetModal<AssetsModal>(m_assetsModalID);
+			std::set<Volt::AssetHandle> outSelectedAssetsToCheckOut;
+			AssetModalResult result = modal.OpenAssetModalTypeBlocking(AssetModalType::CheckOut, readOnlyAssets, outSelectedAssetsToCheckOut);
+
+			if (result == AssetModalResult::CheckOut)
+			{
+				//todo_fabian check assets out here
+			}
+
+			if (result == AssetModalResult::MakeWriteable)
+			{
+				for (Volt::AssetHandle asset : outSelectedAssetsToCheckOut)
+				{
+					const std::filesystem::path assetPath = Volt::AssetManager::GetFilesystemPath(asset);
+					FileSystem::MakeWriteable(assetPath);
+				}
+			}
+
+			// remove the assets that are still read-only from the assets to save
+			for (int32_t i = static_cast<int32_t>(assetsToSave.size() - 1); i >= 0; i--)
+			{
+				const std::filesystem::path assetPath = Volt::AssetManager::GetFilesystemPath(assetsToSave[i]);
+				if (!FileSystem::IsWriteable(assetPath))
+				{
+					assetsToSave.erase(assetsToSave.begin() + i);
+				}
+			}
+		}
+	}
+
+	//no assets to save
+	if (assetsToSave.empty())
+	{
+		return;
+	}
+
+	//SaveAssetsImpl(filter);
 }
 
 bool DirtyAssetsManager::IsAssetDirty(Volt::AssetHandle handle)
