@@ -5,15 +5,13 @@
 #include <atomic>
 #include <cstdint>
 
-template<typename T, size_t N>
+template<typename T>
 class AtomicStack
 {
 public:
 	AtomicStack()
 	{
 		m_dataHead.store(Pack(InvalidIndex, 0));
-
-		InitializeFreeList();
 	}
 
 	AtomicStack(const AtomicStack& other) noexcept
@@ -21,14 +19,16 @@ public:
 		m_dataHead(other.m_dataHead.load()),
 		m_freeHead(other.m_freeHead.load()),
 		m_size(other.m_size.load())
-	{ }
+	{
+	}
 
 	AtomicStack(AtomicStack&& other) noexcept
 		: m_stack(std::move(other.m_stack)),
 		m_dataHead(other.m_dataHead.load()),
 		m_freeHead(other.m_freeHead.load()),
 		m_size(other.m_size.load())
-	{}
+	{
+	}
 
 	AtomicStack& operator=(const AtomicStack& other) noexcept
 	{
@@ -36,7 +36,7 @@ public:
 		m_dataHead = other.m_dataHead.load();
 		m_freeHead = other.m_freeHead.load();
 		m_size = other.m_size.load();
-	
+
 		return *this;
 	}
 
@@ -48,6 +48,17 @@ public:
 		m_size = other.m_size.load();
 
 		return *this;
+	}
+
+	void Allocate(const size_t numMaxElements)
+	{
+		VT_ENSURE(numMaxElements > 0);
+		VT_ENSURE_MSG(m_stack.empty(), "You should only call allocate once!");
+
+		m_maxSize = numMaxElements;
+		m_stack.resize(numMaxElements);
+
+		InitializeFreeList();
 	}
 
 	bool Push(const T& value)
@@ -65,7 +76,7 @@ public:
 		{
 			uint32_t oldIndex = UnpackIndex(oldHead);
 			uint32_t oldVersion = UnpackVersion(oldHead);
-			
+
 			m_stack[index].next.store(oldIndex);
 
 			uint64_t newHead = Pack(index, oldVersion + 1);
@@ -117,12 +128,14 @@ private:
 		Node(const Node& other) noexcept
 			: value(other.value),
 			next(other.next.load())
-		{ }
+		{
+		}
 
 		Node(Node&& other) noexcept
 			: value(std::move(other.value)),
 			next(other.next.load())
-		{}
+		{
+		}
 
 		Node& operator=(const Node& other) noexcept
 		{
@@ -156,15 +169,15 @@ private:
 	}
 
 	VT_INLINE static uint32_t UnpackVersion(uint64_t tagged)
-	{ 
+	{
 		return uint32_t(tagged >> 32);
 	}
 
 	void InitializeFreeList()
 	{
-		for (size_t i = 0; i < N; i++)
+		for (size_t i = 0; i < m_maxSize; i++)
 		{
-			m_stack[i].next.store(static_cast<uint32_t>(i) + 1 < N ? i + 1 : InvalidIndex);
+			m_stack[i].next.store(static_cast<uint32_t>(i) + 1 < m_maxSize ? i + 1 : InvalidIndex);
 		}
 
 		m_freeHead.store(Pack(0, 0));
@@ -215,8 +228,9 @@ private:
 		}
 	}
 
-	alignas(CacheLineAlignment) Array<Node, N> m_stack;
+	alignas(CacheLineAlignment) Vector<Node> m_stack;
 	alignas(CacheLineAlignment) std::atomic<uint64_t> m_dataHead;
 	alignas(CacheLineAlignment) std::atomic<uint64_t> m_freeHead;
 	alignas(CacheLineAlignment) std::atomic<uint32_t> m_size;
+	alignas(CacheLineAlignment) size_t m_maxSize = 0;
 };

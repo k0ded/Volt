@@ -9,5 +9,6 @@ public:
 
 	HeapAllocator();
 	void* Allocate(size_t size, size_t alignment);
+	void* Reallocate(void* original, size_t size, size_t alignment);
 	void Free(void* pointer);
 };

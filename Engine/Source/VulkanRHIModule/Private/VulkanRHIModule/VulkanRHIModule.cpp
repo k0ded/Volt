@@ -3,8 +3,6 @@
 
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
-#include "VulkanRHIModule/Buffers/VulkanIndexBuffer.h"
-#include "VulkanRHIModule/Buffers/VulkanVertexBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
 
@@ -39,7 +37,7 @@
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
 
-#include "VulkanRHIModule/ImGui/VulkanImGuiImplementation.h"
+#include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
 namespace Volt::RHI
 {
@@ -47,11 +45,27 @@ namespace Volt::RHI
 	{
 		s_instance = this;
 		m_resourceDeletionQueue.SetSize(RHI::Swapchain::FramesInFlight);
+
+		// Allocate arenas
+		constexpr size_t ArenaSize = 4096;
+
+		m_bufferViewArena.AllocateArena(ArenaSize);
+		m_imageViewArena.AllocateArena(ArenaSize);
+
+		m_storageBufferArena.AllocateArena(ArenaSize);
+		m_uniformBufferArena.AllocateArena(ArenaSize);
+		m_imageArena.AllocateArena(ArenaSize);
+		m_samplerStateArena.AllocateArena(ArenaSize);
+
+		m_vulkanCpuAllocator = CreateRef<VulkanCPUAllocator>();
 	}
 
 	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification) const
 	{
-		return RefPtr<VulkanBufferView>::Create(specification);
+		RefPtr<BufferView> bufferView = RefPtr<VulkanBufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification));
+		bufferView->SetArena(&m_bufferViewArena);
+
+		return bufferView;
 	}
 
 	RefPtr<CommandBuffer> VulkanRHIModule::CreateCommandBuffer(QueueType queueType) const
@@ -59,24 +73,18 @@ namespace Volt::RHI
 		return RefPtr<VulkanCommandBuffer>::Create(queueType);
 	}
 
-	RefPtr<IndexBuffer> VulkanRHIModule::CreateIndexBuffer(std::span<const uint32_t> indices) const
-	{
-		return RefPtr<VulkanIndexBuffer>::Create(indices);
-	}
-
-	RefPtr<VertexBuffer> VulkanRHIModule::CreateVertexBuffer(const void* data, const uint32_t size, const uint32_t stride) const
-	{
-		return RefPtr<VulkanVertexBuffer>::Create(data, size, stride);
-	}
-
 	RefPtr<StorageBuffer> VulkanRHIModule::CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const
 	{
-		return RefPtr<VulkanStorageBuffer>::Create(desc, allocator);
+		RefPtr<StorageBuffer> storageBuffer = RefPtr<VulkanStorageBuffer>::AttachNoRef(m_storageBufferArena.Allocate(desc, allocator));
+		storageBuffer->SetArena(&m_storageBufferArena);
+		return storageBuffer;
 	}
 
 	RefPtr<UniformBuffer> VulkanRHIModule::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const
 	{
-		return RefPtr<VulkanUniformBuffer>::Create(size, data, count, name);
+		RefPtr<UniformBuffer> uniformBuffer = RefPtr<VulkanUniformBuffer>::AttachNoRef(m_uniformBufferArena.Allocate(size, data, count, name));
+		uniformBuffer->SetArena(&m_uniformBufferArena);
+		return uniformBuffer;
 	}
 
 	RefPtr<BindlessDescriptorTable> VulkanRHIModule::CreateBindlessDescriptorTable(const uint64_t framesInFlight) const
@@ -111,22 +119,34 @@ namespace Volt::RHI
 
 	RefPtr<Image> VulkanRHIModule::CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const
 	{
-		return RefPtr<VulkanImage>::Create(specification, data, allocator);
+		RefPtr<VulkanImage> image = RefPtr<VulkanImage>::AttachNoRef(m_imageArena.Allocate(specification, data, allocator));
+		image->SetArena(&m_imageArena);
+
+		return image;
 	}
 
 	RefPtr<Image> VulkanRHIModule::CreateImage(const SwapchainImageDesc& specification) const
 	{
-		return RefPtr<VulkanImage>::Create(specification);
+		RefPtr<VulkanImage> image = RefPtr<VulkanImage>::AttachNoRef(m_imageArena.Allocate(specification));
+		image->SetArena(&m_imageArena);
+
+		return image;
 	}
 
 	RefPtr<ImageView> VulkanRHIModule::CreateImageView(const ImageViewDesc& specification) const
 	{
-		return RefPtr<VulkanImageView>::Create(specification);
+		RefPtr<ImageView> imageView = RefPtr<VulkanImageView>::AttachNoRef(m_imageViewArena.Allocate(specification));
+		imageView->SetArena(&m_imageViewArena);
+
+		return imageView;
 	}
 
 	RefPtr<SamplerState> VulkanRHIModule::CreateSamplerState(const SamplerStateDesc& createInfo) const
 	{
-		return RefPtr<VulkanSamplerState>::Create(createInfo);
+		RefPtr<SamplerState> samplerState = RefPtr<VulkanSamplerState>::AttachNoRef(m_samplerStateArena.Allocate(createInfo));
+		samplerState->SetArena(&m_samplerStateArena);
+
+		return samplerState;
 	}
 
 	RefPtr<DefaultGPUAllocator> VulkanRHIModule::CreateDefaultAllocator() const
@@ -172,11 +192,6 @@ namespace Volt::RHI
 	RefPtr<Semaphore> VulkanRHIModule::CreateSemaphore(const SemaphoreCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanSemaphore>::Create(createInfo);
-	}
-
-	RefPtr<ImGuiImplementation> VulkanRHIModule::CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const
-	{
-		return RefPtr<VulkanImGuiImplementation>::Create(createInfo);
 	}
 
 	RefPtr<AccelerationStructure> VulkanRHIModule::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const

@@ -20,7 +20,7 @@ namespace Volt::RHI
 		RawPtr<RHIResource> image = nullptr;
 	};
 
-	class VTRHI_API ImageView : public RHIInterface
+	class VTRHI_API ImageView : public ArenaRHIInterface
 	{
 	public:
 		static RefPtr<ImageView> Create(const ImageViewDesc& specification);

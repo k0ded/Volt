@@ -47,7 +47,7 @@ namespace Volt::RHI
 		std::mutex m_allocationMutex;
 		UUID64 m_heapId;
 
-		ArenaAllocator<VulkanTransientBufferAllocation, 200> m_bufferAllocationArena;
-		ArenaAllocator<VulkanTransientImageAllocation, 200> m_imageAllocationArena;
+		ArenaAllocator<VulkanTransientBufferAllocation> m_bufferAllocationArena;
+		ArenaAllocator<VulkanTransientImageAllocation> m_imageAllocationArena;
 	};
 }

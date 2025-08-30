@@ -2,11 +2,20 @@
 
 #include "VulkanRHIModule/Core.h"
 
+#include "VulkanRHIModule/Buffers/VulkanBufferView.h"
+#include "VulkanRHIModule/Images/VulkanImageView.h"
+
+#include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
+#include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
+#include "VulkanRHIModule/Images/VulkanImage.h"
+#include "VulkanRHIModule/Images/VulkanSamplerState.h"
+
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/ResourceDeletionQueue.h>
 
 namespace Volt::RHI
 {
+	class VulkanCPUAllocator;
 	class VulkanRHIModule : public RHIModule
 	{
 	public:
@@ -15,9 +24,6 @@ namespace Volt::RHI
 		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification) const override;
 
 		RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const override;
-
-		RefPtr<IndexBuffer> CreateIndexBuffer(std::span<const uint32_t> indices) const override;
-		RefPtr<VertexBuffer> CreateVertexBuffer(const void* data, const uint32_t size, const uint32_t stride) const override;
 
 		RefPtr<StorageBuffer> CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const override;
 		RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const override;
@@ -52,8 +58,6 @@ namespace Volt::RHI
 		RefPtr<Fence> CreateFence(const FenceCreateInfo& createInfo) const override;
 		RefPtr<Semaphore> CreateSemaphore(const SemaphoreCreateInfo& createInfo) const override;
 	
-		RefPtr<ImGuiImplementation> CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const override;
-
 		RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const override;
 		RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const override;
 
@@ -67,6 +71,17 @@ namespace Volt::RHI
 		RHICallbackInfo m_callbackInfo;
 		ResourceDeletionQueue m_resourceDeletionQueue;
 		uint32_t m_frameIndex = 0;
+
+		// Arenas
+		mutable ArenaAllocator<VulkanBufferView> m_bufferViewArena;
+		mutable ArenaAllocator<VulkanImageView> m_imageViewArena;
+
+		mutable ArenaAllocator<VulkanStorageBuffer> m_storageBufferArena;
+		mutable ArenaAllocator<VulkanUniformBuffer> m_uniformBufferArena;
+		mutable ArenaAllocator<VulkanImage> m_imageArena;
+		mutable ArenaAllocator<VulkanSamplerState> m_samplerStateArena;
+
+		Ref<VulkanCPUAllocator> m_vulkanCpuAllocator;
 	};
 }
 

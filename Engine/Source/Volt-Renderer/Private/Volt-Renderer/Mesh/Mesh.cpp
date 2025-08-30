@@ -422,6 +422,7 @@ namespace Volt
 		for (uint32_t i = 0; const auto& subMesh : m_subMeshes)
 		{
 			auto& gpuMesh = m_gpuMeshes.emplace_back();
+#if 0
 			gpuMesh.vertexStartOffset = subMesh.vertexStartOffset;
 			gpuMesh.meshletStartOffset = subMesh.meshletStartOffset;
 			gpuMesh.meshletCount = subMesh.meshletCount;
@@ -434,6 +435,8 @@ namespace Volt
 			gpuMesh.indexBuffer = m_indexBuffer->GetResourceHandle();
 			gpuMesh.meshletsBuffer = m_meshletsBuffer->GetResourceHandle();
 			gpuMesh.meshletDataBuffer = m_meshletDataBuffer->GetResourceHandle();
+#endif
+
 			gpuMesh.center = subMesh.transform * glm::vec4(m_subMeshBoundingSpheres.at(i).center, 1.f);
 
 			glm::vec3 t, r, s;
@@ -442,31 +445,6 @@ namespace Volt
 			gpuMesh.radius = m_subMeshBoundingSpheres.at(i).radius * glm::max(s.x, glm::max(s.y, s.z));
 
 			i++;
-		}
-
-		// Create SDF data
-		{
-			//SDFGenerator sdfGenerator{};
-			//auto res = sdfGenerator.Generate(*this);
-		
-			//m_gpuMeshSDFs.reserve(res.size());
-
-			//for (uint32_t i = 0; const auto& sdf : res)
-			//{
-			//	m_sdfTextures[i] = sdf.sdfTexture;
-			//	m_brickGrids[i] = sdf.brickGrid;
-			//	m_brickBuffers[i] = CreateRef<BindlessResource<RHI::StorageBuffer>>(sdf.sdfBricksBuffer);
-
-			//	auto& gpuSDF = m_gpuMeshSDFs.emplace_back();
-			//	gpuSDF.min = sdf.min;
-			//	gpuSDF.max = sdf.max;
-			//	gpuSDF.size = sdf.size; 
-			//	gpuSDF.sdfTexture = sdf.sdfTexture->GetResourceHandle();
-			//	gpuSDF.bricksBuffer = m_brickBuffers[i]->GetResourceHandle();
-			//	gpuSDF.brickCount = static_cast<uint32_t>(sdf.brickGrid.size());
-
-			//	i++;
-			//}
 		}
 
 		// Create RT data

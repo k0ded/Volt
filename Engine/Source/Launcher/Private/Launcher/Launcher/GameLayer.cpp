@@ -12,12 +12,13 @@
 #include <Navigation/Core/NavigationSystem.h>
 
 #include <WindowModule/Events/WindowEvents.h>
+#include <WindowModule/WindowManager.h>
 #include <EventSystem/EventSystem.h>
 
 void GameLayer::OnAttach()
 {
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(GameLayer::OnUpdateEvent));
-	RegisterListener<Volt::WindowRenderEvent>(VT_BIND_EVENT_FN(GameLayer::OnRenderEvent));
+	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(GameLayer::OnRenderEvent));
 	RegisterListener<Volt::WindowResizeEvent>(VT_BIND_EVENT_FN(GameLayer::OnWindowResizeEvent));
 	RegisterListener<Volt::OnSceneTransitionEvent>(VT_BIND_EVENT_FN(GameLayer::OnSceneTransition));
 	RegisterListener<Volt::OnSceneLoadedEvent>(VT_BIND_EVENT_FN(GameLayer::OnSceneLoaded));
@@ -73,7 +74,7 @@ bool GameLayer::OnUpdateEvent(Volt::AppUpdateEvent& e)
 	return false;
 }
 
-bool GameLayer::OnRenderEvent(Volt::WindowRenderEvent& e)
+bool GameLayer::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 	//mySceneRenderer->OnRenderRuntime();
 
@@ -130,7 +131,7 @@ bool GameLayer::OnWindowResizeEvent(Volt::WindowResizeEvent& e)
 	m_sceneRenderer->Resize(e.GetWidth(), e.GetHeight());
 	m_scene->SetRenderSize(e.GetWidth(), e.GetHeight());
 
-	Volt::ViewportResizeEvent resizeEvent{ e.GetX(), e.GetY(), e.GetWidth(), e.GetHeight() };
+	Volt::ViewportResizeEvent resizeEvent{ Volt::WindowManager::Get().GetMainWindow(), e.GetX(), e.GetY(), e.GetWidth(), e.GetHeight() };
 
 	//myScene->OnEvent(resizeEvent);
 	Volt::EventSystem::DispatchEvent(resizeEvent);
@@ -212,6 +213,6 @@ void GameLayer::TrySceneTransition()
 	Volt::OnScenePlayEvent playEvent{};
 	Volt::EventSystem::DispatchEvent(playEvent);
 
-	Volt::ViewportResizeEvent resizeEvent{ 0, 0, m_lastWidth, m_lastHeight };
+	Volt::ViewportResizeEvent resizeEvent{ Volt::WindowManager::Get().GetMainWindow(), 0, 0, m_lastWidth, m_lastHeight };
 	Volt::EventSystem::DispatchEvent(resizeEvent);
 }

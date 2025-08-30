@@ -1,8 +1,8 @@
-#include "rhipch.h"
 #include "ImGuiNotifications.h"
 
 #include <ImGuiNotify.hpp>
-namespace Volt::RHI
+
+namespace Volt
 {
 	void ImGuiNotifications::InsertNotification(const ImGuiNotificationInfo& notifInfo)
 	{

@@ -88,8 +88,6 @@ namespace Volt
 		m_pluginRegistry->BuildPluginDependencies();
 		m_pluginSystem->LoadPlugins(ProjectManager::GetProject());
 
-		// This is required because glfwInit must be called before setting up graphics device
-		WindowManager::InitializeGLFW();
 		CreateGraphicsContext();
 
 		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineRootDirectory());
@@ -165,8 +163,6 @@ namespace Volt
 
 		m_windowManager->DestroyMainWindow();
 
-		WindowManager::ShutdownGLFW();
-
 		m_pluginSystem->UnloadPlugins();
 		m_pluginSystem = nullptr;
 		m_pluginRegistry = nullptr;
@@ -197,6 +193,24 @@ namespace Volt
 		m_isRunning = false;
 	}
 
+	void Application::Tick()
+	{
+		VT_PROFILE_FUNCTION();
+
+		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
+		m_frameTimer.Update();
+
+		m_frameIndex++;
+
+		AppTickEvent tickEvent(m_currentDeltaTime, m_frameIndex);
+		EventSystem::DispatchEvent(tickEvent);
+	}
+
+	uint64_t Application::GetFrameIndex() const
+	{
+		return m_frameIndex;
+	}
+
 	void Application::PushLayer(ApplicationLayer* layer)
 	{
 		m_layerStack.PushLayer(layer);
@@ -212,21 +226,21 @@ namespace Volt
 		if (!m_windowManager->HasMainWindow())
 		{
 			WindowProperties windowProperties{};
-			windowProperties.Width = m_appCreateInfo.width;
-			windowProperties.Height = m_appCreateInfo.height;
-			windowProperties.VSync = m_appCreateInfo.useVSync;
-			windowProperties.Title = m_appCreateInfo.title;
-			windowProperties.WindowMode = m_appCreateInfo.windowMode;
-			windowProperties.IconPath = m_appCreateInfo.iconPath;
-			windowProperties.CursorPath = m_appCreateInfo.cursorPath;
-			windowProperties.UseTitlebar = m_appCreateInfo.useTitlebar;
-			windowProperties.UseCustomTitlebar = m_appCreateInfo.useCustomTitlebar;
+			windowProperties.width = m_appCreateInfo.width;
+			windowProperties.height = m_appCreateInfo.height;
+			windowProperties.vsync = m_appCreateInfo.useVSync;
+			windowProperties.title = m_appCreateInfo.title;
+			windowProperties.windowMode = m_appCreateInfo.windowMode;
+			windowProperties.iconPath = m_appCreateInfo.iconPath;
+			windowProperties.cursorPath = m_appCreateInfo.cursorPath;
+			windowProperties.useTitlebar = m_appCreateInfo.useTitlebar;
+			windowProperties.useCustomTitlebar = m_appCreateInfo.useCustomTitlebar;
 
 			if (m_appCreateInfo.isRuntime)
 			{
-				windowProperties.Title = ProjectManager::GetProject().name;
-				windowProperties.CursorPath = ProjectManager::GetProject().cursorFilepath;
-				windowProperties.IconPath = ProjectManager::GetProject().iconFilepath;
+				windowProperties.title = ProjectManager::GetProject().name;
+				windowProperties.cursorPath = ProjectManager::GetProject().cursorFilepath;
+				windowProperties.iconPath = ProjectManager::GetProject().iconFilepath;
 			}
 
 			m_windowManager->CreateMainWindow(windowProperties);
@@ -250,13 +264,12 @@ namespace Volt
 		m_isProcessingFrame = true;
 		WindowManager::Get().BeginFrame();
 
-		m_currentDeltaTime = m_frameTimer.GetDeltaTime();
-		m_frameTimer.Update();
+		Tick();
 
 		{
 			VT_PROFILE_SCOPE("Application::Render");
 
-			AppPreRenderEvent preRenderEvent;
+			AppPreRenderEvent preRenderEvent(m_frameIndex);
 			EventSystem::DispatchEvent(preRenderEvent);
 
 			AppRenderEvent renderEvent(m_currentDeltaTime);
@@ -299,7 +312,6 @@ namespace Volt
 		}
 
 		m_isProcessingFrame = false;
-
 		if (!m_skipPresentThisFrame)
 		{
 			WindowManager::Get().Present();
@@ -314,7 +326,7 @@ namespace Volt
 		RHI::RHICallbackInfo callbackInfo{};
 		callbackInfo.requestCloseEventCallback = []()
 		{
-			WindowCloseEvent closeEvent{};
+			WindowCloseEvent closeEvent{ WindowManager::Get().GetMainWindow() };
 			EventSystem::DispatchEvent(closeEvent);
 		};
 
@@ -344,12 +356,16 @@ namespace Volt
 
 	bool Application::OnWindowResizeEvent(class WindowResizeEvent& e)
 	{
-		WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
-
-		if (!m_isProcessingFrame)
+		if (&e.GetWindow() == &WindowManager::Get().GetMainWindow())
 		{
-			MainUpdate();
+			WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
+
+			if (!m_isProcessingFrame)
+			{
+				MainUpdate();
+			}
 		}
+
 		return false;
 	}
 

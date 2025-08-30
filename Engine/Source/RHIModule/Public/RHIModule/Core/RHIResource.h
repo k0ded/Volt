@@ -8,7 +8,7 @@
 
 namespace Volt::RHI
 {
-	class VTRHI_API RHIResource : public RHIInterface
+	class VTRHI_API RHIResource : public ArenaRHIInterface
 	{
 	public:
 		~RHIResource() override = default;

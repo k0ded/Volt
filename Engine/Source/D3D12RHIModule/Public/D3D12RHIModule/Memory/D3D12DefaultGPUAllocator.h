@@ -45,7 +45,7 @@ namespace Volt::RHI
 		std::mutex m_bufferAllocationMutex;
 		std::mutex m_imageAllocationMutex;
 
-		ArenaAllocator<D3D12BufferAllocation, 5000> m_bufferAllocationArena;
-		ArenaAllocator<D3D12ImageAllocation, 5000> m_imageAllocationArena;
+		ArenaAllocator<D3D12BufferAllocation> m_bufferAllocationArena;
+		ArenaAllocator<D3D12ImageAllocation> m_imageAllocationArena;
 	};
 }

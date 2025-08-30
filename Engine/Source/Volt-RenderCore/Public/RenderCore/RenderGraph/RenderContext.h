@@ -30,6 +30,13 @@ namespace Volt
 	class VTRC_API RenderContext
 	{
 	public:
+		struct PerStageShaderParameters
+		{
+			RHI::ShaderStage shaderStage;
+			RefPtr<RHI::UniformBuffer> uniformBuffer;
+			uint8_t* mappedPtr;
+		};
+
 		RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer);
 
 		void Flush(RefPtr<RHI::Fence> fence);
@@ -75,15 +82,12 @@ namespace Volt
 		template<typename ParameterStruct> void CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters);
 
 		RefPtr<RHI::CommandBuffer> GetRHICommandBuffer();
+		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
+
+		InlineVector<PerStageShaderParameters, 8> AllocatePerStageShaderParameterBuffers(RawPtr<RHI::RenderPipeline> renderPipeline);
+		InlineVector<PerStageShaderParameters, 8> AllocatePerStageShaderParameterBuffers(RawPtr<RHI::ComputePipeline> computePipeline);
 
 	private:
-		struct PerStageShaderParameters
-		{
-			RHI::ShaderStage shaderStage;
-			RefPtr<RHI::UniformBuffer> uniformBuffer;
-			uint8_t* mappedPtr;
-		};
-
 		void BindDescriptorTable();
 		void AllocatePerStageShaderParameterBuffers();
 
@@ -104,6 +108,7 @@ namespace Volt
 		void CollectTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
 		void CollectSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
 		void CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
+		void CollectShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
 
 		void* MapInternal(RGBufferUAVRef buffer);
 		void* MapInternal(RGUniformBufferRef buffer);
@@ -113,7 +118,7 @@ namespace Volt
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::DescriptorTable> m_descriptorTable;
 
-		Vector<PerStageShaderParameters, InlineAllocator<16>> m_perStageShaderParameters;
+		InlineVector<PerStageShaderParameters, 8> m_perStageShaderParameters;
 
 		RenderGraph& m_renderGraph;
 		RenderGraphPass* m_currentPass;
@@ -186,6 +191,7 @@ namespace Volt
 				case ShaderParameterType::TextureUAV: CollectTextureUAVParameter(*reinterpret_cast<RGTextureUAVRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
 				case ShaderParameterType::Sampler: CollectSamplerParameter(*reinterpret_cast<RefPtr<RHI::SamplerState>*>(parameterDataPtr), parameter, batchedShaderParameters); break;
 				case ShaderParameterType::UniformBuffer: CollectUniformBufferParameter(*reinterpret_cast<RGUniformBufferRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
+				case ShaderParameterType::Parameter: CollectShaderParameter(parameterDataPtr, parameter, batchedShaderParameters); break;
 			}
 		}
 	}

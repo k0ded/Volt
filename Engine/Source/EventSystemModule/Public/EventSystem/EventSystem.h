@@ -20,6 +20,7 @@ namespace Volt
 		typedef std::function<bool()> EventDispatchPredicate;
 
 		static void RegisterListener(VoltGUID eventGUID, EventListenerDelegate delegate, EventDispatchPredicate predicate, EventListener* listener);
+		static void UnregisterListener(VoltGUID eventGUID, EventListener* listener);
 		static void UnregisterListeners(EventListener* listener);
 
 		template<IsEvent T>

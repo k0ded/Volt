@@ -24,13 +24,13 @@ namespace Volt::RHI
 		createInfo.flags = 0;
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateSemaphore(device->GetHandle<VkDevice>(), &createInfo, nullptr, &m_semaphore));
+		VT_VK_CHECK(vkCreateSemaphore(device->GetHandle<VkDevice>(), &createInfo, VT_VULKAN_ALLOCATOR, &m_semaphore));
 	}
 
 	VulkanSemaphore::~VulkanSemaphore()
 	{
 		auto device = GraphicsContext::GetDevice();
-		vkDestroySemaphore(device->GetHandle<VkDevice>(), m_semaphore, nullptr);
+		vkDestroySemaphore(device->GetHandle<VkDevice>(), m_semaphore, VT_VULKAN_ALLOCATOR);
 	}
 
 	void* VulkanSemaphore::GetHandleImpl() const

@@ -27,7 +27,7 @@
 MeshPreviewPanel::MeshPreviewPanel()
 	: EditorWindow("Mesh Preview", true)
 {
-	RegisterListener<Volt::WindowRenderEvent>(VT_BIND_EVENT_FN(MeshPreviewPanel::OnRenderEvent));
+	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(MeshPreviewPanel::OnRenderEvent));
 
 	myCameraController = CreateRef<EditorCameraController>(60.f, 1.f, 100000.f);
 	myScene = Volt::Scene::CreateDefaultScene("Mesh Preview", false);
@@ -80,7 +80,7 @@ void MeshPreviewPanel::OnClose()
 	mySceneRenderer = nullptr;
 }
 
-bool MeshPreviewPanel::OnRenderEvent(Volt::WindowRenderEvent& e)
+bool MeshPreviewPanel::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 	//mySceneRenderer->ClearOutlineCommands();
 

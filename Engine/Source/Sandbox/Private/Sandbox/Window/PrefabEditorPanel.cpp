@@ -26,7 +26,7 @@
 PrefabEditorPanel::PrefabEditorPanel()
 	: EditorWindow("Prefab Editor", true)
 {
-	RegisterListener<Volt::WindowRenderEvent>(VT_BIND_EVENT_FN(PrefabEditorPanel::OnRenderEvent));
+	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(PrefabEditorPanel::OnRenderEvent));
 
 	myCameraController = CreateRef<EditorCameraController>(60.f, 1.f, 100000.f);
 	myScene = Volt::Scene::CreateDefaultScene("Prefab Editor", false);
@@ -76,7 +76,7 @@ void PrefabEditorPanel::OnClose()
 	mySceneRenderer = nullptr;
 }
 
-bool PrefabEditorPanel::OnRenderEvent(Volt::WindowRenderEvent& e)
+bool PrefabEditorPanel::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 	mySceneRenderer->OnRenderEditor(myCameraController->GetCamera(), e.GetTimestep());
 	return false;

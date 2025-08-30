@@ -256,6 +256,12 @@ public:
 		return refPtr;
 	}
 
+	VT_INLINE static RefPtr<T> AttachNoRef(T* ptr)
+	{
+		RefPtr<T> refPtr(ptr);
+		return refPtr;
+	}
+
 private:
 	RefPtr(T* object) noexcept
 		: m_object(object)

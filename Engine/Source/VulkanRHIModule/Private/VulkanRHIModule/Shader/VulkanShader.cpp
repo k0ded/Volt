@@ -101,7 +101,7 @@ namespace Volt::RHI
 		if (m_shaderModule)
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyShaderModule(device->GetHandle<VkDevice>(), m_shaderModule, nullptr);
+			vkDestroyShaderModule(device->GetHandle<VkDevice>(), m_shaderModule, VT_VULKAN_ALLOCATOR);
 			m_shaderModule = nullptr;
 		}
 	}
@@ -114,7 +114,7 @@ namespace Volt::RHI
 		moduleInfo.pCode = shaderBinary.data();
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateShaderModule(device->GetHandle<VkDevice>(), &moduleInfo, nullptr, &m_shaderModule));
+		VT_VK_CHECK(vkCreateShaderModule(device->GetHandle<VkDevice>(), &moduleInfo, VT_VULKAN_ALLOCATOR, &m_shaderModule));
 	}
 
 	void VulkanShader::GenerateHash()

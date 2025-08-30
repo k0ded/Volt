@@ -15,6 +15,8 @@
 
 #include <RHIModule/RHIModule.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 #include <vulkan/vulkan.h>
 
 namespace Volt::RHI
@@ -22,6 +24,8 @@ namespace Volt::RHI
 	VulkanImage::VulkanImage(const ImageDesc& desc, const void* data, RefPtr<GPUAllocator> allocator)
 		: m_desc(desc), m_allocator(allocator)
 	{
+		VT_PROFILE_FUNCTION();
+
 		if (!allocator)
 		{
 			m_allocator = GraphicsContext::GetDefaultAllocator();
@@ -251,8 +255,15 @@ namespace Volt::RHI
 
 	RefPtr<ImageView> VulkanImage::GetView(const ImageViewDesc& desc)
 	{
+		VT_PROFILE_FUNCTION();
+
 		ImageViewDesc tempDesc = desc;
 		tempDesc.image = this;
+
+		if (desc.layerCount > 1 && m_desc.layers > 1 && tempDesc.viewType == ImageViewType::View2D)
+		{
+			tempDesc.viewType = ImageViewType::View2DArray;
+		}
 
 		if (tempDesc.viewType == ImageViewType::View1D)
 		{
@@ -294,7 +305,7 @@ namespace Volt::RHI
 			}
 		}
 
-		return ImageView::Create(tempDesc);;
+		return ImageView::Create(tempDesc);
 	}
 
 	const uint32_t VulkanImage::CalculateMipCount() const
@@ -445,7 +456,7 @@ namespace Volt::RHI
 		m_desc.height = vulkanSwapchain.GetHeight();
 		m_desc.format = vulkanSwapchain.GetFormat();
 		m_desc.usage = ImageUsage::Attachment;
-
+		
 		m_swapchainImageData.image = vulkanSwapchain.GetImageAtIndex(specification.imageIndex);
 	}
 

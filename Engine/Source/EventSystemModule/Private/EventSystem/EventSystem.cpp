@@ -26,6 +26,20 @@ namespace Volt
 		s_instance->m_registeredListeners[eventGUID].emplace_back(listener, delegate, predicate);
 	}
 
+	void EventSystem::UnregisterListener(VoltGUID eventGUID, EventListener* listener)
+	{
+		auto& listeners = s_instance->m_registeredListeners[eventGUID];
+
+		for (int32_t i = static_cast<int32_t>(listeners.size()) - 1; i >= 0; --i)
+		{
+			if (listeners[i].listener == listener)
+			{
+				listeners.erase_unsorted(listeners.begin() + i);
+				break;
+			}
+		}
+	}
+
 	void EventSystem::UnregisterListeners(EventListener* listener)
 	{
 		VT_ENSURE(s_instance);

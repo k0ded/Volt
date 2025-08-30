@@ -49,14 +49,14 @@ namespace Volt::RHI
 			info.pBindings = bindings.data();
 			info.flags = 0;
 
-			VT_VK_CHECK(vkCreateDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), &info, nullptr, &s_renderGraphConstantsLayout));
+			VT_VK_CHECK(vkCreateDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &s_renderGraphConstantsLayout));
 		}
 	}
 
 	void VulkanBindlessDescriptorLayoutManager::DestroyGlobalDescriptorLayout()
 	{
-		vkDestroyDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), s_globalDescriptorSetLayout, nullptr);
-		vkDestroyDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), s_renderGraphConstantsLayout, nullptr);
+		vkDestroyDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), s_globalDescriptorSetLayout, VT_VULKAN_ALLOCATOR);
+		vkDestroyDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), s_renderGraphConstantsLayout, VT_VULKAN_ALLOCATOR);
 		s_globalDescriptorSetLayout = nullptr;
 		s_renderGraphConstantsLayout = nullptr;
 	}
@@ -154,7 +154,7 @@ namespace Volt::RHI
 			return false;
 		}
 
-		VT_VK_CHECK(vkCreateDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), &createInfo, nullptr, &outDescriptorSetLayouts));
+		VT_VK_CHECK(vkCreateDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), &createInfo, VT_VULKAN_ALLOCATOR, &outDescriptorSetLayouts));
 		return true;
 	}
 }

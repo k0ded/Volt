@@ -6,6 +6,7 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt
 {
@@ -16,7 +17,12 @@ namespace Volt
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
 
-		RegisterListener<AppUpdateEvent>(VT_BIND_EVENT_FN(JobSystem::OnUpdate));
+		RegisterListener<AppTickEvent>(VT_BIND_EVENT_FN(JobSystem::OnTick));
+
+		for (uint32_t i = 0; i < static_cast<uint32_t>(ExecutionPriority::Num); ++i)
+		{
+			m_waitingList[i].Allocate(NumMaxWaitingJobs);
+		}
     }
 
     JobSystem::~JobSystem()
@@ -31,6 +37,11 @@ namespace Volt
 
 	void JobSystem::DestroyCounter(JobCounter*& counter)
 	{
+		if (!counter)
+		{
+			return;
+		}
+
 		counter->DecRef();
 		counter = nullptr;
 	}
@@ -188,7 +199,7 @@ namespace Volt
 		}
     }
 
-	bool JobSystem::OnUpdate(AppUpdateEvent& event)
+	bool JobSystem::OnTick(AppTickEvent& event)
 	{
 		ExecuteMainThreadJobs();
 		return false;
@@ -353,6 +364,8 @@ namespace Volt
 
 	bool JobSystem::FlushWaitingList(ExecutionPriority priority)
 	{
+		VT_PROFILE_FUNCTION();
+
 		auto& waitingList = m_waitingList.at(static_cast<size_t>(priority));
 
 		if (waitingList.Size() == 0)
@@ -363,8 +376,7 @@ namespace Volt
 		// Use a lock here to make sure that only one thread flushes at a time.
 		std::scoped_lock lock{ m_waitingListMutex };
 
-		Vector<Job*> nonReadyJobs;
-		nonReadyJobs.reserve(128);
+		Vector<Job*, InlineAllocator<128>> nonReadyJobs;
 
 		bool anyJobRun = false;
 

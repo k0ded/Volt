@@ -13,7 +13,7 @@
 
 namespace Volt
 {
-	class AppUpdateEvent;
+	class AppTickEvent;
 
 	class VTJS_API JobSystem : public SubSystem, EventListener
 	{
@@ -21,11 +21,11 @@ namespace Volt
 		JobSystem();
 		~JobSystem();
 
-		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, Func&& func);
-		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func);
-		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func);
-		template<typename Func> static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func);
-		template<typename Func> static Job* CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, Func&& func);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func);
+		template<typename Func> VT_NODISCARD static Job* CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func);
 
 		static JobCounter* CreateCounter();
 		static void DestroyCounter(JobCounter*& counter);
@@ -52,7 +52,7 @@ namespace Volt
 		void Initialize() override;
 		void Shutdown() override;
 
-		bool OnUpdate(AppUpdateEvent& event);
+		bool OnTick(AppTickEvent& event);
 		void ExecuteMainThreadJobs();
 
 		void SpawnWorker(uint32_t workerId);
@@ -92,7 +92,7 @@ namespace Volt
 
 		JobAllocator<Job, NumMaxJobs> m_jobAllocator;
 		JobAllocator<JobCounter, NumMaxJobs * 2> m_counterAllocator;
-		Array<AtomicStack<Job*, NumMaxWaitingJobs>, static_cast<size_t>(ExecutionPriority::Num)> m_waitingList;
+		Array<AtomicStack<Job*>, static_cast<size_t>(ExecutionPriority::Num)> m_waitingList;
 	};
 
 	template<typename Func>

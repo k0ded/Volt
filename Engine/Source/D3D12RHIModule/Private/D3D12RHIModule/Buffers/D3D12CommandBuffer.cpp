@@ -20,8 +20,6 @@
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
-#include <RHIModule/Buffers/IndexBuffer.h>
-#include <RHIModule/Buffers/VertexBuffer.h>
 #include <RHIModule/Synchronization/Semaphore.h>
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Memory/MemoryUtility.h>
@@ -555,7 +553,7 @@ namespace Volt::RHI
 		VT_ENSURE(m_currentComputePipeline != nullptr);
 #endif
 
-		ComPtr<ID3D12CommandSignature> signature = CommandSignatureCache::Get().GetOrCreateCommandSignature(CommandSignatureType::Dispatch, sizeof(IndirectDispatchCommand));
+		ComPtr<ID3D12CommandSignature> signature = CommandSignatureCache::Get().GetOrCreateCommandSignature(CommandSignatureType::Dispatch, sizeof(DispatchIndirectCommand));
 		m_commandListData.commandList->ExecuteIndirect(signature.Get(), 1, commandsBuffer->GetHandle<ID3D12Resource*>(), offset, nullptr, 0);
 	}
 

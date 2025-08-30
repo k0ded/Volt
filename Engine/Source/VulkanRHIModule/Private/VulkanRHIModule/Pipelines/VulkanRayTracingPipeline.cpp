@@ -348,8 +348,8 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([pipelineLayout = m_pipelineLayout, pipeline = m_pipeline]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyPipelineLayout(device->GetHandle<VkDevice>(), pipelineLayout, nullptr);
-			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, nullptr);
+			vkDestroyPipelineLayout(device->GetHandle<VkDevice>(), pipelineLayout, VT_VULKAN_ALLOCATOR);
+			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, VT_VULKAN_ALLOCATOR);
 		});
 
 		m_pipelineLayout = nullptr;

@@ -86,14 +86,16 @@ void Log::EnableLogging(bool enable)
 	m_isEnabled = enable;
 }
 
-void Log::LogMessage(LogVerbosity severity, const std::string& category, const std::string& message)
+void Log::LogMessage(LogVerbosity severity, const LogCategoryBase* category, const std::string& message)
 {
 	if (!m_isEnabled)
 	{
 		return;
 	}
 
-	std::string finalString = category.empty() ? "" : "[" + category + "]: ";
+	std::string categoryName = std::string(category->GetName());
+
+	std::string finalString = categoryName.empty() ? "" : "[" + categoryName + "]: ";
 	finalString += message;
 
 	switch (severity)

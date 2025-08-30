@@ -21,9 +21,9 @@ namespace Volt::RHI
 		VulkanCommandBuffer(const CommandBuffer* parentCommandBuffer);
 		~VulkanCommandBuffer() override;
 
-		void Begin() override;
+		void Begin(bool oneTimeSubmit) override;
 		void End() override;
-
+		                                                                      
 		void SetEvent(RawPtr<Event> event) override;
 
 		void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance) override;
@@ -48,10 +48,8 @@ namespace Volt::RHI
 		void BindPipeline(RawPtr<RenderPipeline> pipeline) override;
 		void BindPipeline(RawPtr<ComputePipeline> pipeline) override;
 		void BindPipeline(RawPtr<RayTracingPipeline> pipeline) override;
-		void BindVertexBuffers(const StackVector<RawPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) override;
 		void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) override;
-		void BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer) override;
-		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) override;
+		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer, const IndexType indexType) override;
 
 		void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) override;
 		void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) override;
@@ -78,6 +76,7 @@ namespace Volt::RHI
 
 		void CopyBufferRegion(Handle<Allocation> srcAllocation, const size_t srcOffset, Handle<Allocation> dstAllocation, const size_t dstOffset, const size_t size) override;
 		void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip /* = 0 */) override;
+		void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const int32_t offsetX, const int32_t offsetY, const int32_t offsetZ, const uint32_t mip) override;
 		void CopyImageToBuffer(RawPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) override;
 		void CopyImage(RawPtr<Image> srcImage, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth) override;
 
@@ -106,8 +105,8 @@ namespace Volt::RHI
 		void CreateQueryPools();
 		void FetchTimestampResults();
 
-		void BeginPrimaryInternal();
-		void BeginSecondaryInternal();
+		void BeginPrimaryInternal(bool oneTimeSubmit);
+		void BeginSecondaryInternal(bool oneTimeSubmit);
 
 		void ClearCurrentPipeline();
 

@@ -18,7 +18,7 @@ namespace Volt
 		std::atomic<uint32_t> m_numAllocated;
 		Array<Type, Size> m_allocator;
 
-		AtomicStack<uint32_t, Size> m_availableStack;
+		AtomicStack<uint32_t> m_availableStack;
 	};
 
 	template<typename Type, size_t Size>
@@ -50,5 +50,7 @@ namespace Volt
 	template<typename Type, size_t Size>
 	JobAllocator<Type, Size>::JobAllocator()
 		: m_numAllocated(0)
-	{}
+	{
+		m_availableStack.Allocate(Size);
+	}
 }

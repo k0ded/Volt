@@ -2,6 +2,7 @@
 
 #include "BRDF.hlsli"
 #include "Lights/Lights.hlsli"
+#include "Utility/ShadowMapping.hlsli"
 
 ///// ----- Punctual lights ----- /////
 float SmoothDistanceAttenuation(float squaredDistance, float invSqrAttRadius)
@@ -38,7 +39,7 @@ float3 EvaluatePointLight(in LightDrawData light, in BRDFInput brdfInput, float3
     float attenuation = GetDistanceAttenuation(unormalizedLightVector, invSqrRadius);
 
     return BRDF(brdfInput, L) * light.color * light.intensity * attenuation;   
-}
+} 
 
 float3 EvaluateSpotLight(in LightDrawData light, in BRDFInput brdfInput, float3 worldPosition)
 {
@@ -54,6 +55,14 @@ float3 EvaluateSpotLight(in LightDrawData light, in BRDFInput brdfInput, float3 
 } 
 
 ///// ----- Directional light ----- /////
+float EvaluateDirectionalShadow(in LightDrawData light, in float4x4 viewMatrix, float3 normal, float3 worldPosition)
+{
+    const uint cascadeIndex = GetCascadeIndexFromWorldPosition(worldPosition, viewMatrix);
+    const float3 shadowMapCoords = GetShadowMapCoords(CascadedDirectionalLightShadowMapping.viewProjections[cascadeIndex], worldPosition);
+    const float result = EvaluateDirectionalShadow_Hard(light, normal, cascadeIndex, shadowMapCoords);
+    return result; 
+}
+
 float3 EvaluateDirectionalLight(in LightDrawData light, in BRDFInput brdfInput, float3 worldPosition)
 {
     float3 D = normalize(light.direction.xyz);
@@ -70,7 +79,14 @@ float3 EvaluateDirectionalLight(in LightDrawData light, in BRDFInput brdfInput, 
 
     float illuminance = light.intensity * NdotD;
 
-    return BRDF(brdfInput, D, L) * light.color * illuminance;
+    float shadow = 1.f;
+
+    if (light.flags & LightFlags::LF_CastShadows)
+    {
+        shadow = EvaluateDirectionalShadow(light, View.view, brdfInput.N, worldPosition);
+    }
+
+    return BRDF(brdfInput, D, L) * light.color * illuminance * shadow;
 } 
 
 ///// ----- IBL ----- /////

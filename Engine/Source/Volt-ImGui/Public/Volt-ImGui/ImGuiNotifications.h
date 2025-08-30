@@ -1,13 +1,13 @@
 #pragma once
 
-#include "RHIModule/Core/Core.h"
+#include "Volt-ImGui/Config.h"
+
 #include <functional>
+#include <string>
 
 enum class ImGuiToastType : uint8_t;
 
-
-
-namespace Volt::RHI
+namespace Volt
 {
 	enum ImGuiNotificationType
 	{
@@ -34,7 +34,7 @@ namespace Volt::RHI
 	class ImGuiNotifications
 	{
 	public:
-		VTRHI_API static void InsertNotification(const ImGuiNotificationInfo& notifInfo);
+		VTIMGUI_API static void InsertNotification(const ImGuiNotificationInfo& notifInfo);
 		
 		static void RenderNotifications();
 	private:

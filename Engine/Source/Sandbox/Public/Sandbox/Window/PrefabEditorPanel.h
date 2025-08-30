@@ -30,7 +30,7 @@ public:
 	void OnClose() override;
 
 private:
-	bool OnRenderEvent(Volt::WindowRenderEvent& e);
+	bool OnRenderEvent(Volt::AppRenderEvent& e);
 
 	void UpdateViewport();
 	void UpdateSceneView();

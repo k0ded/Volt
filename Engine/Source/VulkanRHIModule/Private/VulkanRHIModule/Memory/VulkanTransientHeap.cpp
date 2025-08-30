@@ -23,10 +23,12 @@ namespace Volt::RHI
 		if ((info.flags & TransientHeapFlags::AllowBuffers) != TransientHeapFlags::None)
 		{
 			InitializeAsBufferHeap();
+			m_bufferAllocationArena.AllocateArena(4096);
 		}
 		else if ((info.flags & TransientHeapFlags::AllowTextures) != TransientHeapFlags::None || (info.flags & TransientHeapFlags::AllowRenderTargets) != TransientHeapFlags::None)
 		{
 			InitializeAsImageHeap();
+			m_imageAllocationArena.AllocateArena(4096);
 		}
 	}
 
@@ -73,7 +75,7 @@ namespace Volt::RHI
 		const auto& page = m_pageAllocations.at(pageIndex);
 
 		VkBuffer buffer;
-		vkCreateBuffer(device->GetHandle<VkDevice>(), &bufferInfo, nullptr, &buffer);
+		vkCreateBuffer(device->GetHandle<VkDevice>(), &bufferInfo, VT_VULKAN_ALLOCATOR, &buffer);
 		vkBindBufferMemory(device->GetHandle<VkDevice>(), buffer, static_cast<VkDeviceMemory>(page.handle), blockAlloc.offset);
 
 		Handle<VulkanTransientBufferAllocation> bufferAlloc = m_bufferAllocationArena.Allocate(createInfo.hash, name);
@@ -110,7 +112,7 @@ namespace Volt::RHI
 
 		{
 			VT_PROFILE_SCOPE("Create VkImage");
-			vkCreateImage(device->GetHandle<VkDevice>(), &imageInfo, nullptr, &image);
+			vkCreateImage(device->GetHandle<VkDevice>(), &imageInfo, VT_VULKAN_ALLOCATOR, &image);
 		}
 
 		{
@@ -140,7 +142,7 @@ namespace Volt::RHI
 
 		auto device = GraphicsContext::GetDevice();
 
-		vkDestroyBuffer(device->GetHandle<VkDevice>(), bufferAlloc->m_resource, nullptr);
+		vkDestroyBuffer(device->GetHandle<VkDevice>(), bufferAlloc->m_resource, VT_VULKAN_ALLOCATOR);
 
 		AllocationBlock allocBlock = bufferAlloc->m_allocationBlock;
 		ForfeitAllocationBlock(allocBlock);
@@ -162,7 +164,7 @@ namespace Volt::RHI
 
 		{
 			VT_PROFILE_SCOPE("Vulkan Destroy Image");
-			vkDestroyImage(device->GetHandle<VkDevice>(), imageAlloc->m_resource, nullptr);
+			vkDestroyImage(device->GetHandle<VkDevice>(), imageAlloc->m_resource, VT_VULKAN_ALLOCATOR);
 		}
 
 		AllocationBlock allocBlock = imageAlloc->m_allocationBlock;
@@ -173,7 +175,7 @@ namespace Volt::RHI
 
 	const bool VulkanTransientHeap::IsAllocationSupported(const uint64_t size, TransientHeapFlags heapFlags) const
 	{
-		if ((m_createInfo.flags & heapFlags) == TransientHeapFlags::None)
+		if ((m_createInfo.flags & heapFlags) != heapFlags)
 		{
 			return false;
 		}

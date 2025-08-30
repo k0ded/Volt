@@ -3,6 +3,8 @@
 #include "Sandbox/FileWatcher/FileWatcher.h"
 #include "Sandbox/GameBuilder.h"
 
+#include "Sandbox/UISystems/ModalSystem.h"
+
 #include <Volt-Scene/Entity.h>
 
 #include <Volt-Application/ApplicationLayer.h>
@@ -23,7 +25,7 @@ namespace Volt
 	class Event;
 	class AppUpdateEvent;
 	class AppImGuiUpdateEvent;
-	class WindowRenderEvent;
+	class AppRenderEvent;
 	class KeyPressedEvent;
 	class ViewportResizeEvent;
 	class OnSceneLoadedEvent;
@@ -106,7 +108,7 @@ private:
 
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
-	bool OnRenderEvent(Volt::WindowRenderEvent& e);
+	bool OnRenderEvent(Volt::AppRenderEvent& e);
 	bool OnKeyPressedEvent(Volt::KeyPressedEvent& e);
 	bool OnViewportResizeEvent(Volt::ViewportResizeEvent& e);
 	bool OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e);
@@ -180,6 +182,7 @@ private:
 
 	Ref<ViewportPanel> m_viewportPanel;
 	Ref<GameViewPanel> m_gameViewPanel;
+	Scope<ModalSystem> m_modalSystem;
 
 	Ref<AssetBrowserPanel> m_assetBrowserPanel;
 

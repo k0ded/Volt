@@ -11,7 +11,7 @@ namespace Volt
 	class SceneRenderer;
 	struct SceneRendererSettings;
 
-	class WindowRenderEvent;
+	class AppRenderEvent;
 	class WindowResizeEvent;
 
 	class OnSceneTransitionEvent;
@@ -33,7 +33,7 @@ public:
 
 private:
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
-	bool OnRenderEvent(Volt::WindowRenderEvent& e);
+	bool OnRenderEvent(Volt::AppRenderEvent& e);
 	bool OnWindowResizeEvent(Volt::WindowResizeEvent& e);
 	bool OnSceneTransition(Volt::OnSceneTransitionEvent& e);
 	bool OnSceneLoaded(Volt::OnSceneLoadedEvent& e);

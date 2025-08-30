@@ -11,7 +11,7 @@ namespace Volt
 	class SceneRenderer;
 	class Scene;
 	class MeshAsset;
-	class WindowRenderEvent;
+	class AppRenderEvent;
 }
 
 class EditorCameraController;
@@ -29,7 +29,7 @@ public:
 	void OnClose() override;
 
 private:
-	bool OnRenderEvent(Volt::WindowRenderEvent& e);
+	bool OnRenderEvent(Volt::AppRenderEvent& e);
 
 	void UpdateViewport();
 	void UpdateProperties();

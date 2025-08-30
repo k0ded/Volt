@@ -1,17 +1,65 @@
 #pragma once
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Containers/AtomicStack.h>
 #include <CoreUtilities/CompilerTraits.h>
+#include <CoreUtilities/Malloc.h>
 
 #include <mutex>
 
-template<typename Type, size_t MaxCount>
+template<typename Type>
 class ArenaAllocator
 {
 public:
 	ArenaAllocator()
-	{
-		m_dataBuffer = new uint8_t[MaxCount * sizeof(Type)];
+	{}
+
+	ArenaAllocator(const ArenaAllocator& other)
+	{ 
+		m_availableIndices = other.m_availableIndices;
+		m_nextIndex = other.m_nextIndex.load();
+
+		if (other.m_dataBuffer)
+		{
+			AllocateArena(other.m_numMaxElements);
+			memcpy(m_dataBuffer, other.m_dataBuffer, sizeof(Type) * other.m_numMaxElements);
+		}
+	}
+
+	ArenaAllocator(ArenaAllocator&& other)
+	{ 
+		m_availableIndices = std::move(other.m_availableIndices);
+		m_nextIndex = other.m_nextIndex.load();
+		m_numMaxElements = other.m_numMaxElements;
+		m_dataBuffer = other.m_dataBuffer;
+
+		other.m_dataBuffer = nullptr;
+	}
+
+	ArenaAllocator& operator=(const ArenaAllocator& other)
+	{ 
+		m_availableIndices = other.m_availableIndices;
+		m_nextIndex = other.m_nextIndex.load();
+
+		if (other.m_dataBuffer)
+		{
+			AllocateArena(other.m_numMaxElements);
+			memcpy(m_dataBuffer, other.m_dataBuffer, sizeof(Type) * other.m_numMaxElements);
+		}
+
+		return *this;
+	}
+
+	ArenaAllocator& operator=(ArenaAllocator&& other)
+	{ 
+		m_availableIndices = std::move(other.m_availableIndices);
+		m_nextIndex = other.m_nextIndex.load();
+		m_dataBuffer = other.m_dataBuffer;
+		m_numMaxElements = other.m_numMaxElements;
+
+		other.m_dataBuffer = nullptr;
+
+		return *this;
 	}
 
 	~ArenaAllocator()
@@ -23,17 +71,27 @@ public:
 			Free(alloc);
 		}
 
-		delete[] m_dataBuffer;
+		Memory::Free(m_dataBuffer);
+	}
+
+	void AllocateArena(const size_t numMaxElements)
+	{
+		VT_ENSURE_MSG(m_dataBuffer == nullptr, "An arena should only be allocated once!");
+
+		m_dataBuffer = reinterpret_cast<uint8_t*>(Memory::Malloc(numMaxElements * sizeof(Type), alignof(Type)));
+		m_numMaxElements = numMaxElements;
+
+		m_availableIndices.Allocate(numMaxElements);
 	}
 
 	VT_NODISCARD size_t GetNumAllocations() const
 	{
-		return m_nextIndex - m_availableIndices.size();
+		return m_nextIndex.load(std::memory_order::relaxed) - m_availableIndices.Size();
 	}
 
 	VT_NODISCARD bool HasAvailableSlots() const
 	{
-		return !m_availableIndices.empty() || m_nextIndex < MaxCount;
+		return !m_availableIndices.Empty() || m_nextIndex.load(std::memory_order::relaxed) < m_numMaxElements;
 	}
 
 	VT_NODISCARD bool IsEmpty() const
@@ -46,19 +104,14 @@ public:
 	{
 		size_t newIndex = std::numeric_limits<size_t>::max();
 
-		if (!m_availableIndices.empty())
+		if (!m_availableIndices.Pop(newIndex))
 		{
-			newIndex = m_availableIndices.back();
-			m_availableIndices.pop_back();
+			newIndex = m_nextIndex.fetch_add(1);
+			VT_ENSURE(newIndex < m_numMaxElements);
 		}
 
-		if (newIndex == std::numeric_limits<size_t>::max())
-		{
-			VT_ENSURE(m_nextIndex < MaxCount);
-			newIndex = m_nextIndex++;
-		}
-
-		Type* newAllocation = ::new(&m_dataBuffer[newIndex * sizeof(Type)]) Type(std::forward<Args>(args)...);
+		void* dataPtr = &m_dataBuffer[newIndex * sizeof(Type)];
+		Type* newAllocation = ::new(dataPtr) Type(std::forward<Args>(args)...);
 		return newAllocation;
 	}
 
@@ -69,7 +122,10 @@ public:
 		std::ptrdiff_t allocationIndex = allocation - reinterpret_cast<Type*>(m_dataBuffer);
 		allocation->~Type();
 
-		m_availableIndices.emplace_back(allocationIndex);
+		// Set these to zero, to "mark" the allocation as unused.
+		memset(allocation, 0, std::min(sizeof(Type), 8ull));
+
+ 		m_availableIndices.Push(allocationIndex);
 	}
 
 	bool IsPointerWithinArena(Type* ptr)
@@ -80,7 +136,7 @@ public:
 		}
 
 		std::ptrdiff_t allocationIndex = ptr - reinterpret_cast<Type*>(m_dataBuffer);
-		if (allocationIndex >= MaxCount)
+		if (allocationIndex >= m_numMaxElements)
 		{
 			return false;
 		}
@@ -89,26 +145,30 @@ public:
 	}
 
 	// Note: This is a slow operation!
-	VT_NODISCARD Vector<Type*> GetActiveAllocations() const
+	Vector<Type*> GetActiveAllocations() const
 	{
 		Vector<Type*> result;
 		result.reserve(m_nextIndex);
 
+		Type* currentIt = reinterpret_cast<Type*>(const_cast<uint8_t*>(m_dataBuffer));
+
 		for (size_t i = 0; i < m_nextIndex; i++)
 		{
-			if (auto it = std::ranges::find(m_availableIndices, i); it == m_availableIndices.end())
+			if (*reinterpret_cast<size_t*>(currentIt) != 0)
 			{
-				result.emplace_back(reinterpret_cast<Type*>(&m_dataBuffer[i * sizeof(Type)]));
+				result.emplace_back(currentIt);
 			}
+
+			currentIt++;
 		}
 
 		return result;
 	}
 
 private:
-	Vector<size_t> m_availableIndices;
-
+	AtomicStack<size_t> m_availableIndices;
+	std::atomic<size_t> m_nextIndex = 0;
 	uint8_t* m_dataBuffer = nullptr;
-	size_t m_nextIndex = 0;
+	size_t m_numMaxElements = 0;
 };
 

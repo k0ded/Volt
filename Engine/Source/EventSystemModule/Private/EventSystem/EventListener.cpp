@@ -29,4 +29,9 @@ namespace Volt
 	{
 		EventSystem::RegisterListener(eventGUID, delegate, predicate, this);
 	}
+
+	void EventListener::UnregisterListenerInternal(VoltGUID eventGUID)
+	{
+		EventSystem::UnregisterListener(eventGUID, this);
+	}
 }

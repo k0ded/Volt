@@ -1,15 +1,9 @@
 #pragma once
 
-#include "Structures.hlsli"
-#include "Lights.hlsli"
-
-struct DirectionalShadowMappingInfo
+struct CascadedDirectionalLightShadowMappingData
 {
-    vt::UniformBuffer<DirectionalLightShadowData> directionalLightShadowData;
-    vt::Tex2DArray<float> shadowMap;
-    vt::TextureSampler shadowSampler;
-
-    float4x4 viewMatrix;
+    float4x4 viewProjections[DIRECTIONAL_SHADOW_CASCADE_COUNT];
+    float cascadeDistances[DIRECTIONAL_SHADOW_CASCADE_COUNT];
 };
 
 static const float3 m_cascadeColors[DIRECTIONAL_SHADOW_CASCADE_COUNT] = 
@@ -20,6 +14,10 @@ static const float3 m_cascadeColors[DIRECTIONAL_SHADOW_CASCADE_COUNT] =
     float3(1.f, 1.f, 0.f),
     //float3(1.f, 0.f, 1.f)
 };
+
+ConstantBuffer<CascadedDirectionalLightShadowMappingData> CascadedDirectionalLightShadowMapping;
+Texture2DArray<float> CascadedDirectionalShadowMap;
+SamplerState ShadowSampler;
 
 float3 GetShadowMapCoords(in float4x4 viewProj, in float3 worldPosition)
 {
@@ -32,7 +30,7 @@ float3 GetCascadeColorFromIndex(uint cascadeIndex)
     return m_cascadeColors[cascadeIndex];
 }
 
-uint GetCascadeIndexFromWorldPosition(in DirectionalLightShadowData shadowData, in float3 worldPosition, in float4x4 viewMatrix)
+uint GetCascadeIndexFromWorldPosition(in float3 worldPosition, in float4x4 viewMatrix)
 {
     const float4 viewSpacePosition = mul(viewMatrix, float4(worldPosition, 1.f));
     
@@ -41,7 +39,7 @@ uint GetCascadeIndexFromWorldPosition(in DirectionalLightShadowData shadowData, 
     [unroll]
     for (int i = 0; i < DIRECTIONAL_SHADOW_CASCADE_COUNT; i++)
     {
-        if (viewSpacePosition.z < shadowData.cascadeDistances[i].x)
+        if (viewSpacePosition.z < CascadedDirectionalLightShadowMapping.cascadeDistances[i].x)
         {
             cascadeIndex = i;
             break;
@@ -63,11 +61,11 @@ float GetDirectionalShadowBias(in LightDrawData light, in uint cascadeIndex, in 
     return bias;
 }
 
-float EvaluateDirectionalShadow_Hard(in LightDrawData light, in vt::TextureSampler samplerState, in vt::Tex2DArray<float> shadowMap, in float3 normal, in uint cascadeIndex, in float3 shadowCoords)
+float EvaluateDirectionalShadow_Hard(in LightDrawData light, in float3 normal, in uint cascadeIndex, in float3 shadowCoords)
 {
     const float bias = GetDirectionalShadowBias(light, cascadeIndex, normal);
     const float2 sampleCoords = float2(shadowCoords.x * 0.5f + 0.5f, -shadowCoords.y * 0.5f + 0.5f);
 
-    const float shadowMapDepth = shadowMap.SampleLevel(samplerState, float3(sampleCoords, (float)cascadeIndex), 0.f).r;
+    const float shadowMapDepth = CascadedDirectionalShadowMap.SampleLevel(ShadowSampler, float3(sampleCoords, (float)cascadeIndex), 0.f).r;
     return step(shadowCoords.z, shadowMapDepth + bias);
 }

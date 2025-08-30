@@ -16,6 +16,42 @@ namespace Volt::RHI
 		}
 	}
 
+	CommandBufferSet::CommandBufferSet(const CommandBufferSet& other) noexcept
+		: m_count(other.m_count),
+		m_currentIndex(other.m_currentIndex),
+		m_fences(other.m_fences),
+		m_commandBuffers(other.m_commandBuffers)
+	{
+	}
+
+	CommandBufferSet::CommandBufferSet(CommandBufferSet&& other) noexcept 
+		: m_count(other.m_count),
+		m_currentIndex(std::move(other.m_currentIndex)),
+		m_fences(std::move(other.m_fences)),
+		m_commandBuffers(std::move(other.m_commandBuffers))
+	{
+	}
+
+	CommandBufferSet& CommandBufferSet::operator=(const CommandBufferSet& other) noexcept
+	{
+		m_count = other.m_count;
+		m_currentIndex = other.m_currentIndex;
+		m_fences = other.m_fences;
+		m_commandBuffers = other.m_commandBuffers;
+
+		return *this;
+	}
+
+	CommandBufferSet& CommandBufferSet::operator=(CommandBufferSet&& other) noexcept
+	{
+		m_count = other.m_count;
+		m_currentIndex = std::move(other.m_currentIndex);
+		m_fences = std::move(other.m_fences);
+		m_commandBuffers = std::move(other.m_commandBuffers);
+
+		return *this;
+	}
+
 	RefPtr<CommandBuffer> CommandBufferSet::GetCurrentCommandBuffer() const
 	{
 		return m_commandBuffers.at(m_currentIndex);

@@ -523,7 +523,7 @@ float Sandbox::DrawTitlebar()
 
 		if (UI::ImageButton("##close", UI::GetTextureID(EditorResources::GetEditorIcon(EditorIcon::Close)), { buttonSize, buttonSize }))
 		{
-			Volt::WindowCloseEvent e{};
+			Volt::WindowCloseEvent e{ Volt::WindowManager::Get().GetMainWindow() };
 			Volt::EventSystem::DispatchEvent(e);
 		}
 	}

@@ -293,7 +293,7 @@ namespace Volt
 			m_bindlessResourcesManager->Update();
 		}
 
-		m_descriptorTableCache->Update();
+		m_descriptorTableCache->Update(event.GetFrameIndex());
 		m_commandBufferPool->Update();
 
 		return false;

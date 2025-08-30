@@ -9,7 +9,9 @@ namespace Volt::RHI
 	inline PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT;
 	inline PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT;
 	inline PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT;
-	
+	inline PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
+	inline PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
+
 	// Descriptor Buffers
 	inline PFN_vkGetDescriptorSetLayoutSizeEXT vkGetDescriptorSetLayoutSizeEXT;
 	inline PFN_vkGetDescriptorEXT vkGetDescriptorEXT;
@@ -32,11 +34,13 @@ namespace Volt::RHI
 	inline PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR;
 	inline PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
 
-	inline static void FindVulkanFunctions(VkInstance instance)
+	inline static void LoadVulkanFunctions(VkInstance instance)
 	{
 		VT_GET_VULKAN_FUNCTION(vkSetDebugUtilsObjectNameEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdBeginDebugUtilsLabelEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdEndDebugUtilsLabelEXT);
+		VT_GET_VULKAN_FUNCTION(vkCreateDebugUtilsMessengerEXT);
+		VT_GET_VULKAN_FUNCTION(vkDestroyDebugUtilsMessengerEXT);
 
 		// Descriptor Buffers
 		VT_GET_VULKAN_FUNCTION(vkGetDescriptorSetLayoutSizeEXT);

@@ -22,7 +22,7 @@ namespace Volt::RHI
 		m_isExecuted = createInfo.createSignaled;
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateFence(device->GetHandle<VkDevice>(), &info, nullptr, &m_fence));
+		VT_VK_CHECK(vkCreateFence(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_fence));
 	}
 
 	VulkanFence::~VulkanFence()
@@ -30,7 +30,7 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([fence = m_fence]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyFence(device->GetHandle<VkDevice>(), fence, nullptr);
+			vkDestroyFence(device->GetHandle<VkDevice>(), fence, VT_VULKAN_ALLOCATOR);
 		});
 	}
 
@@ -78,5 +78,10 @@ namespace Volt::RHI
 	{
 		m_isExecuted = true;
 		m_isExecuted.notify_all();
+	}
+
+	bool VulkanFence::HasBeenExecuted() const
+	{
+		return m_isExecuted.load(std::memory_order::relaxed);
 	}
 }

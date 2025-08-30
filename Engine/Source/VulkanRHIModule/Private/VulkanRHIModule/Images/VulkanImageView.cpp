@@ -18,6 +18,9 @@ namespace Volt::RHI
 	VulkanImageView::VulkanImageView(const ImageViewDesc& desc)
 		: m_desc(desc)
 	{
+		// Keep a reference to the image, as it should be alive untill all views have been destroyed.
+		desc.image->IncRef();
+
 		auto imageRes = desc.image;
 		auto image = imageRes->As<Image>();
 
@@ -46,15 +49,18 @@ namespace Volt::RHI
 		viewInfo.image = image->GetHandle<VkImage>();
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateImageView(device->GetHandle<VkDevice>(), &viewInfo, nullptr, &m_imageView));
+		VT_VK_CHECK(vkCreateImageView(device->GetHandle<VkDevice>(), &viewInfo, VT_VULKAN_ALLOCATOR, &m_imageView));
 	}
 
 	VulkanImageView::~VulkanImageView()
 	{
+		// Remove the reference we add on creation.
+		m_desc.image->DecRef();
+
 		RHIModule::GetInstance().DestroyResource([imageView = m_imageView]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyImageView(device->GetHandle<VkDevice>(), imageView, nullptr);
+			vkDestroyImageView(device->GetHandle<VkDevice>(), imageView, VT_VULKAN_ALLOCATOR);
 		});
 
 		m_imageView = nullptr;

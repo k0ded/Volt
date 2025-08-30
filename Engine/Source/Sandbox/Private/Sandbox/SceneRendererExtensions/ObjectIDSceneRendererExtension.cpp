@@ -52,7 +52,7 @@ Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& r
 	pipelineInfo.depthMode = RHI::DepthMode::Read;
 
 	MeshRenderer meshRenderer;
-	meshRenderer.BuildRenderCommands(m_renderScene, ShaderMap::Get<ObjectIDVS>(), ShaderMap::Get<ObjectIDPS>(), pipelineInfo);
+	meshRenderer.BuildRenderCommands(renderGraph, m_renderScene, view.GetCullingInfo(), ShaderMap::Get<ObjectIDVS>(), ShaderMap::Get<ObjectIDPS>(), pipelineInfo);
 
 	RGTextureRef objectIdTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32_UINT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "ObjectID"));
 

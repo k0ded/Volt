@@ -88,6 +88,22 @@ namespace Volt
 
 			return desc;
 		}
+
+		template<typename CommandType, typename SizeType>
+		static RGBufferDesc CreateIndirectDesc(const SizeType numCommands, const std::string& name = "Buffer", const RHI::MemoryUsage memoryUsage = RHI::MemoryUsage::GPU)
+		{
+			VT_ASSERT_MSG(numCommands > 0, "Num commands must not be zero!");
+
+			RGBufferDesc desc{};
+			desc.count = numCommands;
+			desc.elementSize = CommandType::SizeInUInts * sizeof(uint32_t);
+			desc.usage = RHI::BufferUsage::IndirectBuffer | RHI::BufferUsage::TexelBuffer;
+			desc.memoryUsage = memoryUsage;
+			desc.debugName = name;
+			desc.isTexelBufferDesc = true;
+
+			return desc;
+		}
 	};
 
 	class VTRC_API RGBuffer : public RGResource

@@ -16,7 +16,7 @@ namespace Volt
 {
 	struct LightTileBinningCS : public GlobalShader
 	{
-		DECLARE_GLOBAL_SHADER(GlobalShader)
+		DECLARE_GLOBAL_SHADER(LightTileBinningCS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SceneDepth)

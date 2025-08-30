@@ -7,6 +7,8 @@
 #include "RenderCore/RenderGraph/GPUReadbackTexture.h"
 #include "RenderCore/CommandBufferPool.h"
 
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
 #include <RHIModule/Utility/ResourceUtility.h>
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Images/Image.h>
@@ -84,6 +86,11 @@
 
 namespace Volt
 {
+	ConsoleVariable<int32_t> g_renderGraphForceSingleThreadedExecution(
+		"r.RenderGraph.ForceSingleThreadedExecution", 
+		0, 
+		"Whether or not to force single threaded execution of the RenderGraph.");
+
 	inline RHI::ResourceState GetWriteStateForRasterizedTexture(RGResourceRef resource)
 	{
 		VT_ENSURE(resource->GetResourceType() == RGResourceType::Texture);
@@ -196,7 +203,8 @@ namespace Volt
 		m_standaloneBarriers(std::move(other.m_standaloneBarriers)),
 		m_standaloneMarkers(std::move(other.m_standaloneMarkers)),
 		m_temporaryDataAllocator(std::move(other.m_temporaryDataAllocator)),
-		m_resourceStateTracker(std::move(other.m_resourceStateTracker))
+		m_resourceStateTracker(std::move(other.m_resourceStateTracker)),
+		m_resourceViewCache(std::move(other.m_resourceViewCache))
 	{
 	}
 
@@ -223,6 +231,7 @@ namespace Volt
 		m_standaloneMarkers = std::move(other.m_standaloneMarkers);
 		m_temporaryDataAllocator = std::move(other.m_temporaryDataAllocator);
 		m_resourceStateTracker = std::move(other.m_resourceStateTracker);
+		m_resourceViewCache = std::move(other.m_resourceViewCache);
 
 		return *this;
 	}
@@ -305,8 +314,8 @@ namespace Volt
 			return false;
 		};
 
-
 		// At this point we know all resources that will be referenced, and we can create them accordingly.
+		m_transientResourceSystem.ReserveResourceSpace(m_resources.size());
 		for (auto resource : m_resources)
 		{
 			const bool shouldResourceBeCreated =
@@ -1214,7 +1223,7 @@ namespace Volt
 
 		PrepareResourcesForExecution();
 
-		constexpr size_t NumPassesPerJob = 4;
+		constexpr size_t NumPassesPerJob = 8;
 
 		struct PassExecutionRange
 		{
@@ -1257,57 +1266,62 @@ namespace Volt
 
 		RenderGraph* renderGraphPtr = reinterpret_cast<RenderGraph*>(tempRenderGraphStorage);
 
-		TaskGraph taskGraph{ isImmediate ? ExecutionPriority::Immediate : ExecutionPriority::Render };
-
-		Vector<TaskGraph::Task*> recordTasks(passExecutionRanges.size());
-
-		for (uint32_t index = 0; const PassExecutionRange& executionRange : passExecutionRanges)
+		// This function executes the provided pass range.
+		constexpr auto executePassRangeFunc = [](RenderGraph* renderGraphPtr, const PassExecutionRange& executionRange, 
+			const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, const uint32_t index, const uint32_t numExecutionRanges)
 		{
-			recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, executionRange, commandBuffers, index]()
+			RefPtr<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index);
+
+			commandBuffer->Begin();
+
+			if (index == 0)
 			{
-				RefPtr<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index);
+				commandBuffer->BeginMarker("RenderGraph::Execute", { 1.f, 1.f, 1.f, 1.f });
+			}
 
-				commandBuffer->Begin();
+			for (uint16_t i = executionRange.begin; i < executionRange.begin + executionRange.count; ++i)
+			{
+				Handle<RenderGraphPass> pass = renderGraphPtr->m_passes.at(i);
+				const CompiledPass& compiledPass = renderGraphPtr->m_compiledPasses.at(pass->passIndex);
 
-				for (uint16_t i = executionRange.begin; i < executionRange.begin + executionRange.count; ++i)
+				if (pass->isCulled)
 				{
-					Handle<RenderGraphPass> pass = renderGraphPtr->m_passes.at(i);
-					const CompiledPass& compiledPass = renderGraphPtr->m_compiledPasses.at(pass->passIndex);
-
-					if (pass->isCulled)
-					{
-						renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, commandBuffer);
-						renderGraphPtr->InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, commandBuffer);
-						continue;
-					}
-
-					//InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, commandBuffer);
-
-					commandBuffer->BeginMarker(pass->name, { 1.f, 1.f, 1.f, 1.f });
-					renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.prePassBarriers, commandBuffer);
-
-					{
-						VT_PROFILE_SCOPE(pass->name.data());
-						RenderContext renderContext(*renderGraphPtr, pass.GetRaw(), commandBuffer);
-						renderGraphPtr->m_passAllocator.ExecutePass(pass, renderContext);
-					}
-
 					renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, commandBuffer);
-					commandBuffer->EndMarker();
-
-					for (const RGResourceRef resource : compiledPass.GetSurrenderableResources())
-					{
-						// #TODO_Ivar: This doesn't work correctly yet.
-						renderGraphPtr->m_transientResourceSystem.SurrenderResource(resource, 0);
-					}
+					renderGraphPtr->InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, commandBuffer);
+					continue;
 				}
 
-				commandBuffer->End();
-			});
-			index++;
-		}
+				renderGraphPtr->InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, commandBuffer);
 
-		taskGraph.AddTaskWithDependencies("RenderGraph::Execute", recordTasks, [renderGraphPtr, commandBuffers, executionFence]() 
+				commandBuffer->BeginMarker(pass->name, { 1.f, 1.f, 1.f, 1.f });
+				renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.prePassBarriers, commandBuffer);
+
+				{
+					VT_PROFILE_SCOPE(pass->name.data());
+					RenderContext renderContext(*renderGraphPtr, pass.GetRaw(), commandBuffer);
+					renderGraphPtr->m_passAllocator.ExecutePass(pass, renderContext);
+				}
+
+				renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, commandBuffer);
+				commandBuffer->EndMarker();
+
+				for (const RGResourceRef resource : compiledPass.GetSurrenderableResources())
+				{
+					// #TODO_Ivar: This doesn't work correctly yet.
+					renderGraphPtr->m_transientResourceSystem.SurrenderResource(resource, 0);
+				}
+			}
+
+			if (index == numExecutionRanges - 1)
+			{
+				commandBuffer->EndMarker();
+			}
+
+			commandBuffer->End();
+		};
+
+		// This function is responsible for executing the recorded command buffers.
+		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
 		{
 			RHI::DeviceQueueExecuteInfo executeInfo{};
 			executeInfo.commandBuffers.resize(commandBuffers.size());
@@ -1329,11 +1343,50 @@ namespace Volt
 			}
 
 			// Destroy the RenderGraph.
-			renderGraphPtr->~RenderGraph();
-			Memory::Free(renderGraphPtr);
-		});
+			JobRef destroyJob = JobSystem::CreateJob("RenderGraph::Destroy", ExecutionPriority::Render, [renderGraphPtr]() 
+			{
+				renderGraphPtr->~RenderGraph();
+				Memory::Free(renderGraphPtr);
+			});
+			JobSystem::RunJob(destroyJob);
+		};
 
-		JobCounterRef jobCounter = taskGraph.ExecuteAndExtractCounter();
+		const uint32_t numExecutionRanges = static_cast<uint32_t>(passExecutionRanges.size());
+		const bool isAsyncExecution = g_renderGraphForceSingleThreadedExecution.GetValue() == 0;
+
+		JobCounterRef jobCounter = nullptr;
+
+		if (isAsyncExecution)
+		{
+			TaskGraph taskGraph{ isImmediate ? ExecutionPriority::Immediate : ExecutionPriority::Render };
+			Vector<TaskGraph::Task*> recordTasks(passExecutionRanges.size());
+
+			for (uint32_t index = 0; const PassExecutionRange & executionRange : passExecutionRanges)
+			{
+				recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, executionRange, commandBuffers, index, numExecutionRanges]()
+				{
+					executePassRangeFunc(renderGraphPtr, executionRange, commandBuffers, index, numExecutionRanges);
+				});
+				index++;
+			}
+
+			taskGraph.AddTaskWithDependencies("RenderGraph::Execute", recordTasks, [renderGraphPtr, commandBuffers, executionFence]()
+			{
+				executeRenderGraphFunc(renderGraphPtr, commandBuffers, executionFence);
+			});
+
+			jobCounter = taskGraph.ExecuteAndExtractCounter();
+		}
+		else
+		{
+			for (uint32_t index = 0; const PassExecutionRange & executionRange : passExecutionRanges)
+			{
+				executePassRangeFunc(renderGraphPtr, executionRange, commandBuffers, index, numExecutionRanges);
+				index++;
+			}
+
+			executeRenderGraphFunc(renderGraphPtr, commandBuffers, executionFence);
+		}
 
 		if (waitForSync)
 		{
@@ -1342,7 +1395,7 @@ namespace Volt
 
 		if (isImmediate)
 		{
-			taskGraph.Wait();
+			JobSystem::WaitForCounter(jobCounter);
 		}
 
 		if (!extractCounter)
@@ -1475,7 +1528,7 @@ namespace Volt
 		RHI::BufferViewDesc desc{};
 		desc.bufferFormat = bufferSRV->GetDesc().format;
 
-		return rhiBuffer->GetView(desc);
+		return m_resourceViewCache.GetOrCreateBufferView(desc, rhiBuffer);
 	}
 
 	RefPtr<RHI::BufferView> RenderGraph::GetRHIBufferUAV(RGBufferUAVRef bufferUAV)
@@ -1487,7 +1540,7 @@ namespace Volt
 		RHI::BufferViewDesc desc{};
 		desc.bufferFormat = bufferUAV->GetDesc().format;
 
-		return rhiBuffer->GetView(desc);
+		return m_resourceViewCache.GetOrCreateBufferView(desc, rhiBuffer);
 	}
 
 	RefPtr<RHI::ImageView> RenderGraph::GetRHITextureSRV(RGTextureSRVRef textureSRV)
@@ -1546,7 +1599,7 @@ namespace Volt
 		}
 
 		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(texture);
-		return rhiImage->GetView(viewDesc);
+		return m_resourceViewCache.GetOrCreateImageView(viewDesc, rhiImage);
 	}
 
 	RefPtr<RHI::ImageView> RenderGraph::GetRHITextureUAV(RGTextureUAVRef textureUAV)
@@ -1598,7 +1651,7 @@ namespace Volt
 		}
 
 		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(texture);
-		return rhiImage->GetView(viewDesc);
+		return m_resourceViewCache.GetOrCreateImageView(viewDesc, rhiImage);
 	}
 
 	RefPtr<Volt::RHI::ImageView> RenderGraph::GetRHITextureRT(RGTextureRef texture)

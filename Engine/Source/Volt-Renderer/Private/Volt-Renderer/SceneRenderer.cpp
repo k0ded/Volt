@@ -17,6 +17,7 @@
 #include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
 #include "Volt-Renderer/RenderingTechniques/LightTileBinningTechnique.h"
 #include "Volt-Renderer/RenderingTechniques/GTAOTechnique.h"
+#include "Volt-Renderer/RenderingTechniques/CascadedDirectionalShadowTechnique.h"
 
 #include <JobSystem/JobSystem.h>
 
@@ -30,6 +31,8 @@
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
+#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Graphics/DeviceQueue.h>
 
 #include <CoreUtilities/Math/Math.h>
 
@@ -103,6 +106,20 @@ namespace Volt
 		RenderGraphBlackboard blackboard;
 		RenderGraph renderGraph{};
 
+		//RGTextureDesc outputTextureDesc{};
+		//outputTextureDesc.width = m_width;
+		//outputTextureDesc.height = m_height;
+		//outputTextureDesc.usage = RHI::ImageUsage::AttachmentStorage;
+		//outputTextureDesc.generateMips = false;
+		//outputTextureDesc.format = RHI::PixelFormat::R8G8B8A8_UNORM;
+		//outputTextureDesc.debugName = "SceneRenderer.FinalImage";
+		//
+		//RGTextureRef outputTexture = renderGraph.CreateTexture(outputTextureDesc);
+		//
+		//renderGraph.EnqueueTextureExtraction(outputTexture, &m_outputImage);
+
+		RGTextureRef outputTexture = renderGraph.RegisterExternalTexture(m_outputImage);
+
 		if (ShouldApplyJitter())
 		{
 			m_prevJitter = m_currentJitter;
@@ -142,6 +159,19 @@ namespace Volt
 		GTAOTechnique gtaoTechnique{ renderGraph, blackboard };
 		gtaoTechnique.Execute(renderView);
 
+		CascadedDirectionalShadowTechnique::Result directionalShadowMap{};
+
+		for (const RenderLightData& light : m_renderScene->GetRenderLightData())
+		{
+			if (light.description.lightType == SceneLightType::Directional)
+			{
+				CascadedDirectionalShadowTechnique cascadedDirectionalShadowTechnique{ renderGraph, blackboard };
+				directionalShadowMap = cascadedDirectionalShadowTechnique.Execute(renderView, light);
+
+				break;
+			}
+		}
+
 		// Create shading RT
 		{
 			SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
@@ -149,9 +179,9 @@ namespace Volt
 		}
 
 		AddSkyboxPass(renderGraph, blackboard, renderView);
-		AddShadingPass(renderGraph, blackboard, renderView);
+		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer);
 
-		AddPostProcessingPasses(renderGraph, blackboard, renderView);
+		AddPostProcessingPasses(renderGraph, blackboard, renderView, outputTexture);
 
 		m_renderScene->EndFrame(renderGraph);
 
@@ -161,7 +191,7 @@ namespace Volt
 			barrier.access = RHI::BarrierAccess::ShaderRead;
 			barrier.layout = RHI::ImageLayout::ShaderRead;
 
-			renderGraph.AddResourceBarrier(renderGraph.RegisterExternalTexture(m_outputImage), barrier);
+			renderGraph.AddResourceBarrier(outputTexture, barrier);
 		}
 
 		//m_renderGraphDebugger.ProcessRenderGraph(renderGraph);
@@ -207,7 +237,7 @@ namespace Volt
 		}
 	}
 
-	void SceneRenderer::AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	void SceneRenderer::AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture)
 	{
 		renderGraph.BeginMarker("Post Processing");
 
@@ -231,7 +261,7 @@ namespace Volt
 			}
 		}
 	
-		AddTonemappingPass(renderGraph, blackboard, view);
+		AddTonemappingPass(renderGraph, blackboard, view, outputTexture);
 	}
 
 	bool SceneRenderer::OnPostFrameUpdateEvent(AppPostFrameUpdateEvent& event)
@@ -255,14 +285,12 @@ namespace Volt
 	};
 	REGISTER_SHADER(TonemapPS, "Engine/Shaders/Source/PostProcessing/Tonemap.hlsl", "MainPS", Pixel);
 
-	void SceneRenderer::AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	void SceneRenderer::AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture)
 	{
 		constexpr float MiddleGray = 0.18f;
 		constexpr float WhitePoint = 1.1f;
 
 		const SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
-
-		RGTextureRef targetTexture = renderGraph.RegisterExternalTexture(m_outputImage);
 
 		TonemapPS::Parameters* passParameters = renderGraph.AllocParameters<TonemapPS::Parameters>();
 		passParameters->FinalColor = renderGraph.CreateSRV(sceneTextures.sceneColor);
@@ -270,7 +298,7 @@ namespace Volt
 		passParameters->WhitePoint = WhitePoint * WhitePoint;
 		passParameters->FrameIndex = view.frameIndex;
 		passParameters->BlueNoise = BlueNoise::GetBlueNoiseParameters(renderGraph);
-		passParameters->renderTargets.renderTargets[0] = targetTexture;
+		passParameters->renderTargets.renderTargets[0] = outputTexture;
 
 		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
 		auto pixelShader = ShaderMap::Get<TonemapPS>();
@@ -327,7 +355,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		MeshRenderer meshRenderer;
-		meshRenderer.BuildRenderCommands(m_renderScene, ShaderMap::Get<DepthPrePassVS>(), ShaderMap::Get<DepthPrePassPS>());
+		meshRenderer.BuildRenderCommands(renderGraph, m_renderScene, view.GetCullingInfo(), ShaderMap::Get<DepthPrePassVS>(), ShaderMap::Get<DepthPrePassPS>());
 
 		SceneTextures& sceneTextures = blackboard.Add<SceneTextures>();
 		sceneTextures.sceneVelocity = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "SceneVelocity"));
@@ -386,7 +414,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		
 		MeshRenderer meshRenderer;
-		meshRenderer.BuildRenderCommands(m_renderScene, ShaderMap::Get<GenerateGBufferVS>());
+		meshRenderer.BuildRenderCommands(renderGraph, m_renderScene, view.GetCullingInfo(), ShaderMap::Get<GenerateGBufferVS>());
 
 		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 		sceneTextures.gBufferAlbedo = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferAlbedo"));
@@ -514,13 +542,16 @@ namespace Volt
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, DFGLuT)
 			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightIrradiance)
 			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightRadiance)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2DArray<float>, CascadedDirectionalShadowMap)
+			SHADER_PARAMETER_UNIFORM_BUFFER(CascadedDirectionalLightShadowMappingData, CascadedDirectionalLightShadowMapping)
 			SHADER_PARAMETER_SAMPLER(LinearSampler)
+			SHADER_PARAMETER_SAMPLER(ShadowSampler)
 			SHADER_PARAMETER(uint, NumRadianceMipLevels)
 		END_SHADER_PARAMETER_STRUCT()
 	};
 	REGISTER_SHADER(RenderDeferredShadingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "MainCS", Compute);
 
-	void SceneRenderer::AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	void SceneRenderer::AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -544,6 +575,15 @@ namespace Volt
 		passParameters->SkylightRadiance = renderGraph.CreateSRV(environmentTextures.radiance);
 		passParameters->LinearSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>();
 		passParameters->NumRadianceMipLevels = environmentTextures.radiance->GetDesc().mips;
+
+		if (!directionalShadowMap)
+		{
+			directionalShadowMap = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+		}
+
+		passParameters->CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMap);
+		passParameters->ShadowSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>();
+		passParameters->CascadedDirectionalLightShadowMapping = directionalShadowUniformBuffer;
 
 		auto shader = ShaderMap::Get<RenderDeferredShadingCS>();
 		ComputeShaderUtils::AddPass<RenderDeferredShadingCS>(renderGraph,
@@ -578,6 +618,7 @@ namespace Volt
 		spec.generateMips = false;
 		spec.format = RHI::PixelFormat::R8G8B8A8_UNORM;
 		spec.debugName = "Final Image";
+		spec.initializeImage = false;
 
 		m_outputImage = RHI::Image::Create(spec);
 	}

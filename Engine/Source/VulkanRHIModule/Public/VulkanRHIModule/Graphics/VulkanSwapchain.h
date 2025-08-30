@@ -72,7 +72,7 @@ namespace Volt::RHI
 		uint32_t m_width = 1280;
 		uint32_t m_height = 720;
 
-		bool m_vSyncEnabled = false;
+		bool m_VSyncEnabled = false;
 		bool m_isHDREnabled = false;
 		bool m_swapchainNeedsRebuild = false;
 

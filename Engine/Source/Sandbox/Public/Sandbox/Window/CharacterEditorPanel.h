@@ -16,7 +16,7 @@ namespace Volt
 	class ComputePipeline;
 	class Scene;
 	class SceneRenderer;
-	class WindowRenderEvent;
+	class AppRenderEvent;
 }
 
 class EditorCameraController;
@@ -51,7 +51,7 @@ private:
 		Vector<TempJoint> joints;
 	};
 
-	bool OnRenderEvent(Volt::WindowRenderEvent& e);
+	bool OnRenderEvent(Volt::AppRenderEvent& e);
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 
 	void UpdateToolbar();

@@ -76,11 +76,7 @@ namespace Volt::RHI
 	ResourceHandle VulkanBindlessDescriptorTable::RegisterImageView(RawPtr<ImageView> imageView)
 	{
 		VT_PROFILE_FUNCTION();
-
 		return m_mainRegistry.RegisterResource(imageView, imageView->GetImageUsage(), static_cast<uint32_t>(ResourceType::Image1D));
-
-		VT_ENSURE(false);
-		return Resource::Invalid;
 	}
 
 	ResourceHandle VulkanBindlessDescriptorTable::RegisterSamplerState(RawPtr<SamplerState> samplerState)
@@ -216,7 +212,7 @@ namespace Volt::RHI
 		RHIModule::GetInstance().DestroyResource([descriptorPool = m_descriptorPool]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), descriptorPool, nullptr);
+			vkDestroyDescriptorPool(device->GetHandle<VkDevice>(), descriptorPool, VT_VULKAN_ALLOCATOR);
 		});
 	}
 
@@ -245,7 +241,7 @@ namespace Volt::RHI
 
 		auto vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();
 
-		VT_VK_CHECK(vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &m_descriptorPool));
+		VT_VK_CHECK(vkCreateDescriptorPool(vkDevice, &poolInfo, VT_VULKAN_ALLOCATOR, &m_descriptorPool));
 
 		const auto descriptorSetLayouts = VulkanBindlessDescriptorLayoutManager::GetGlobalDescriptorSetLayouts();
 

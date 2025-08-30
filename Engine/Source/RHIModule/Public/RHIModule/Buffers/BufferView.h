@@ -19,7 +19,7 @@ namespace Volt::RHI
 		RHIResource* bufferResource = nullptr;
 	};
 
-	class VTRHI_API BufferView : public RHIInterface
+	class VTRHI_API BufferView : public ArenaRHIInterface
 	{
 	public:
 		~BufferView() override = default;

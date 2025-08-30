@@ -18,6 +18,8 @@ public:
 		}
 
 		auto& newPage = m_pages.emplace_back();
+		newPage.AllocateArena(PageSize);
+
 		return newPage.Allocate(std::forward<Args>(args)...);
 	}
 
@@ -40,5 +42,5 @@ public:
 	}
 
 private:
-	Vector<ArenaAllocator<Type, PageSize>> m_pages;
+	Vector<ArenaAllocator<Type>> m_pages;
 };

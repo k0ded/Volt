@@ -13,11 +13,15 @@
 #include <RHIModule/Memory/MemoryUtility.h>
 #include <RHIModule/RHIModule.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt::RHI
 {
 	VulkanUniformBuffer::VulkanUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name)
 		: m_size(size), m_name(name)
 	{
+		VT_PROFILE_FUNCTION();
+
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();

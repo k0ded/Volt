@@ -22,7 +22,7 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
-#include <RHIModule/ImGui/ImGuiNotifications.h>
+#include <Volt-Imgui/ImGuiNotifications.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
 
@@ -55,7 +55,7 @@ namespace UI
 	
 	 VTAPP_API void Header(const std::string& text);
 	 
-	 VTAPP_API Volt::RHI::ImGuiNotificationType ImGuiNotificationTypeFromNotificationType(NotificationType type);
+	 VTAPP_API Volt::ImGuiNotificationType ImGuiNotificationTypeFromNotificationType(NotificationType type);
 	 
 	 VTAPP_API void ShiftCursor(float x, float y);
 	 

@@ -1,15 +1,16 @@
 #pragma once
 
+#include <EventSystem/EventListener.h>
+#include <EventSystem/ApplicationEvents.h>
+
 #include <CoreUtilities/UUID.h>
 
 #include <string>
 
 typedef UUID64 ModalID;
-
-
 typedef int ImGuiWindowFlags;       // -> enum ImGuiWindowFlags_
 
-class Modal
+class Modal : public Volt::EventListener
 {
 public:
 	// ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysAutoResize
@@ -17,6 +18,7 @@ public:
 	virtual ~Modal() = default;
 
 	void Open();
+	void OpenBlocking();
 	void Close();
 	bool Update();
 
@@ -30,7 +32,10 @@ protected:
 private:
 	friend class ModalSystem;
 
+	bool OnImGuiUpdateBlocking(Volt::AppImGuiBlockingUpdateEvent& e);
+
 	bool m_wasOpenLastFrame = false;
+	bool m_isBlocking = false;
 
 	ModalID m_id;
 	std::string m_strId;

@@ -56,7 +56,7 @@ AssetBrowserPanel::AssetBrowserPanel(Ref<Volt::Scene>& aScene, const std::string
 
 	RegisterListener<Volt::WindowDragDropEvent>(VT_BIND_EVENT_FN(AssetBrowserPanel::OnDragDropEvent));
 	RegisterListener<Volt::KeyPressedEvent>(VT_BIND_EVENT_FN(AssetBrowserPanel::OnKeyPressedEvent));
-	RegisterListener<Volt::WindowRenderEvent>(VT_BIND_EVENT_FN(AssetBrowserPanel::OnRenderEvent));
+	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(AssetBrowserPanel::OnRenderEvent));
 
 	SetMinWindowSize({ 700.f, 300.f });
 
@@ -339,7 +339,7 @@ bool AssetBrowserPanel::OnMouseReleasedEvent(Volt::MouseButtonReleasedEvent& e)
 	return false;
 }
 
-bool AssetBrowserPanel::OnRenderEvent(Volt::WindowRenderEvent& e)
+bool AssetBrowserPanel::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 	if (!myPreviewRenderer)
 	{

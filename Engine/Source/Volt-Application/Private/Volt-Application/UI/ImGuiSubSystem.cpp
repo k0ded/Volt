@@ -3,11 +3,16 @@
 #include "Volt-Application/UI/ImGuiSubSystem.h"
 #include "Volt-Application/UI/UIUtility.h"
 #include "Volt-Application/UI/UIFonts.h"
+#include "Volt-Application/BaseApplication.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <Volt-ImGui/ImGuiImplementation.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
+
+#include <EventSystem/ApplicationEvents.h>
+#include <EventSystem/EventSystem.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Malloc.h>
@@ -54,12 +59,11 @@ namespace Volt
 
 		auto& window = WindowManager::Get().GetMainWindow();
 
-		RHI::ImGuiCreateInfo createInfo{};
-		createInfo.swapchain = window.GetSwapchainPtr();
-		createInfo.window = window.GetNativeWindow();
+		ImGuiCreateInfo createInfo{};
 		createInfo.enableViewports = enableViewports;
+		createInfo.window = &window;
 
-		m_imguiImplementation = RHI::ImGuiImplementation::Create(createInfo);
+		m_imguiImplementation = CreateRef<ImGuiImplementation>(createInfo);
 
 		Vector<std::filesystem::path> fontPaths;
 		fontPaths.resize(2);
@@ -68,11 +72,12 @@ namespace Volt
 		fontPaths[1] = "Engine/Fonts/Inter/inter-bold.ttf";
 
 		auto imFonts = m_imguiImplementation->AddFonts(fontPaths);
-
+		
 		UI::SetFont(UI::FontType::Regular, imFonts[0]);
 		UI::SetFont(UI::FontType::Bold, imFonts[1]);
 
 		m_imguiImplementation->SetDefaultFont(imFonts[0]);
+
 		VT_LOGC(Trace, LogImGuiSubSystem, "ImGuiSubSystem initialized in {} seconds!", timer.GetTime<Time::Seconds>());
 	}
 
@@ -90,5 +95,56 @@ namespace Volt
 		{
 			m_imguiImplementation->End();
 		}
+	}
+
+	void ImGuiSubSystem::EnterBlockingContext(std::function<void()> onEnterCallback)
+	{
+		m_isBlockingActive = true;
+
+		m_imguiImplementation->PushNewContext();
+
+		WindowManager::Get().Present();
+
+		bool hasCalledCallback = false;
+
+		while (m_isBlockingActive)
+		{
+			WindowManager::Get().BeginFrame();
+
+			BaseApplication::Get().Tick();
+
+			AppPreRenderEvent preRenderEvent(BaseApplication::Get().GetFrameIndex());
+			EventSystem::DispatchEvent(preRenderEvent);
+
+			m_imguiImplementation->Begin();
+
+			if (!hasCalledCallback && onEnterCallback)
+			{
+				onEnterCallback();
+				hasCalledCallback = true;
+			}
+
+			AppImGuiBlockingUpdateEvent event{};
+			EventSystem::DispatchEvent(event);
+
+			m_imguiImplementation->RenderPreviousFrameContextStack();
+			m_imguiImplementation->End();
+
+			WindowManager::Get().Present();
+		}
+
+		m_imguiImplementation->PopContext();
+
+		WindowManager::Get().BeginFrame();
+	}
+
+	void ImGuiSubSystem::ExitBlockingContext()
+	{
+		m_isBlockingActive = false;
+	}
+
+	ImTextureID ImGuiSubSystem::GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex /*= -1*/)
+	{
+		return m_imguiImplementation->GetTextureID(image, mipIndex);
 	}
 }

@@ -7,12 +7,11 @@
 #include "RHIModule/Descriptors/DescriptorTable.h"
 
 #include "RHIModule/Pipelines/RayTracingPipeline.h"
+#include "RHIModule/Pipelines/RenderPipeline.h"
+#include "RHIModule/Pipelines/ComputePipeline.h"
 
 #include "RHIModule/RayTracing/RayTracingCommon.h"
 #include "RHIModule/RayTracing/ShaderBindingTable.h"
-
-#include <RHIModule/Buffers/IndexBuffer.h>
-#include <RHIModule/Buffers/VertexBuffer.h>
 
 #include <CoreUtilities/Pointers/RawPtr.h>
 #include <CoreUtilities/Containers/StackVector.h>
@@ -22,9 +21,6 @@
 
 namespace Volt::RHI
 {
-	class RenderPipeline;
-	class ComputePipeline;
-	
 	class Image;
 	class StorageBuffer;
 	class Allocation;
@@ -52,7 +48,7 @@ namespace Volt::RHI
 		VT_DELETE_COPY_MOVE(CommandBuffer);
 		~CommandBuffer() override = default;
 
-		virtual void Begin() = 0;
+		virtual void Begin(bool oneTimeSubmit = true) = 0;
 		virtual void End() = 0;
 
 		virtual void SetEvent(RawPtr<Event> event) = 0;
@@ -79,10 +75,8 @@ namespace Volt::RHI
 		virtual void BindPipeline(RawPtr<RenderPipeline> pipeline) = 0;
 		virtual void BindPipeline(RawPtr<ComputePipeline> pipeline) = 0;
 		virtual void BindPipeline(RawPtr<RayTracingPipeline> pipeline) = 0;
-		virtual void BindVertexBuffers(const StackVector<RawPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) = 0;
 		virtual void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) = 0;
-		virtual void BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer) = 0;
-		virtual void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) = 0;
+		virtual void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer, const IndexType indexType = IndexType::UInt32) = 0;
 
 		virtual void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) = 0;
 		virtual void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure = nullptr) = 0;
@@ -109,6 +103,7 @@ namespace Volt::RHI
 
 		virtual void CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size) = 0;
 		virtual void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip = 0) = 0;
+		virtual void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const int32_t offsetX, const int32_t offsetY, const int32_t offsetZ, const uint32_t mip = 0) = 0;
 		virtual void CopyImageToBuffer(RawPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) = 0;
 		virtual void CopyImage(RawPtr<Image> srcImage, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth) = 0;
 

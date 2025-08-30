@@ -29,6 +29,9 @@ namespace Volt::RHI
 		info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
 		VT_VK_CHECK(vmaCreateAllocator(&info, &m_allocator));
+
+		m_bufferAllocationArena.AllocateArena(5000);
+		m_imageAllocationArena.AllocateArena(5000);
 	}
 
 	VulkanDefaultGPUAllocator::~VulkanDefaultGPUAllocator()

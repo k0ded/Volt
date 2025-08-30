@@ -997,7 +997,7 @@ static void ImGui_ImplGlfw_UpdateMonitors()
         platform_io.Monitors.push_back(monitor);
     }
 }
-
+   
 // - On Windows the process needs to be marked DPI-aware!! SDL2 doesn't do it by default. You can call ::SetProcessDPIAware() or call ImGui_ImplWin32_EnableDpiAwareness() from Win32 backend.
 // - Apple platforms use FramebufferScale so we always return 1.0f.
 // - Some accessibility applications are declaring virtual monitors with a DPI of 0.0f, see #7902. We preserve this value for caller to handle.

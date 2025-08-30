@@ -33,6 +33,7 @@ namespace Volt
 	{
 		inline static constexpr uint32_t MAX_LOD_COUNT = 8;
 
+#if 0
 		ResourceHandle vertexPositionsBuffer;
 		ResourceHandle vertexMaterialBuffer;
 		ResourceHandle vertexAnimationInfoBuffer;
@@ -42,14 +43,17 @@ namespace Volt
 		ResourceHandle vertexBoneWeightsBuffer;
 		ResourceHandle meshletDataBuffer;
 		ResourceHandle meshletsBuffer;
+#endif
 
 		glm::vec3 center;
 		float radius;
 
+#if 0
 		uint32_t vertexStartOffset;
 		uint32_t meshletCount;
 		uint32_t meshletStartOffset;
 		uint32_t meshletIndexStartOffset;
+#endif
 	};
 
 	struct GPUMeshSDF
@@ -129,6 +133,7 @@ namespace Volt
 	BEGIN_SHADER_PARAMETER_STRUCT(GPUSceneParameters)
 		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrimitiveDrawDataBuffer)
 		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrevPrimitiveDrawDataBuffer)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<GPUMesh>, GPUMeshes)
 		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<LightDrawData>, SceneLights)
 	END_SHADER_PARAMETER_STRUCT()
 }

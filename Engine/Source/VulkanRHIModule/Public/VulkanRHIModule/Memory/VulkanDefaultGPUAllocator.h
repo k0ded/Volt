@@ -42,7 +42,7 @@ namespace Volt::RHI
 		std::mutex m_imageAllocationMutex;
 		std::mutex m_bufferAllocationMutex;
 
-		ArenaAllocator<VulkanBufferAllocation, 5000> m_bufferAllocationArena;
-		ArenaAllocator<VulkanImageAllocation, 5000> m_imageAllocationArena;
+		ArenaAllocator<VulkanBufferAllocation> m_bufferAllocationArena;
+		ArenaAllocator<VulkanImageAllocation> m_imageAllocationArena;
 	};
 }

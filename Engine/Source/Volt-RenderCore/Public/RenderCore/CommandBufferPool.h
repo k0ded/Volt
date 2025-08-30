@@ -27,8 +27,8 @@ namespace Volt
 		inline static constexpr size_t CommandBufferPoolSize = 4096;
 		inline static constexpr size_t WaitCommandBufferPoolSize = 1024;
 
-		AtomicStack<RefPtr<RHI::CommandBuffer>, CommandBufferPoolSize> m_commandBufferPool;
-		Vector<AtomicStack<RefPtr<RHI::CommandBuffer>, WaitCommandBufferPoolSize>> m_waitingCommandBufferPool;
+		AtomicStack<RefPtr<RHI::CommandBuffer>> m_commandBufferPool;
+		Vector<AtomicStack<RefPtr<RHI::CommandBuffer>>> m_waitingCommandBufferPool;
 
 		uint32_t m_frameIndex = 0;
 	};

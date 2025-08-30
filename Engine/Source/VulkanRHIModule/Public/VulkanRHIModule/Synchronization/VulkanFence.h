@@ -23,6 +23,7 @@ namespace Volt::RHI
 		void* GetHandleImpl() const override;
 
 		void MarkAsExecuted();
+		bool HasBeenExecuted() const;
 
 	private:
 		VkFence_T* m_fence = nullptr;

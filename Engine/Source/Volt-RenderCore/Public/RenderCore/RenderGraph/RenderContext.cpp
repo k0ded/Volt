@@ -8,7 +8,6 @@
 
 #include <RHIModule/Buffers/UniformBuffer.h>
 #include <RHIModule/Buffers/StorageBuffer.h>
-#include <RHIModule/Buffers/IndexBuffer.h>
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Globals.h>
 
@@ -258,6 +257,11 @@ namespace Volt
 		return m_commandBuffer;
 	}
 
+	RefPtr<RHI::StorageBuffer> RenderContext::GetRHIBuffer(RGBufferRef buffer)
+	{
+		return m_renderGraph.GetRHIBuffer(buffer);
+	}
+
 	void RenderContext::BindDescriptorTable()
 	{
 		VT_ENSURE(m_descriptorTable);
@@ -278,48 +282,66 @@ namespace Volt
 
 		if (m_currentComputePipeline)
 		{
-			const RHI::ShaderParameterMap& shaderParameterMap = m_currentComputePipeline->GetShaderParameterMap();
+			m_perStageShaderParameters = AllocatePerStageShaderParameterBuffers(m_currentComputePipeline);
+		}
+		else
+		{
+			m_perStageShaderParameters = AllocatePerStageShaderParameterBuffers(m_currentRenderPipeline);
+		}
+	}
 
-			if (shaderParameterMap.GetShaderParametersSize() > 0)
+	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::AllocatePerStageShaderParameterBuffers(RawPtr<RHI::RenderPipeline> renderPipeline)
+	{
+		const Vector<RHI::ShaderParameterMap>& shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
+
+		InlineVector<RenderContext::PerStageShaderParameters, 8> result;
+
+		RGUniformBufferDesc desc{};
+		desc.count = 1;
+		desc.name = "ShaderParameters";
+
+		for (const auto& parameterMap : shaderParameterMaps)
+		{
+			if (parameterMap.GetShaderParametersSize() > 0)
 			{
-				RGUniformBufferDesc desc{};
-				desc.count = 1;
-				desc.elementSize = std::max(shaderParameterMap.GetShaderParametersSize(), 1u);
-				desc.name = "ShaderParameters";
+				desc.elementSize = parameterMap.GetShaderParametersSize();
 
 				RGUniformBufferRef uniformBuffer = m_renderGraph.CreateUniformBuffer(desc);
 				RefPtr<RHI::UniformBuffer> rhiUniformBuffer = m_renderGraph.m_transientResourceSystem.AcquireShaderParameterUniformBuffer(uniformBuffer);
 
-				auto& perStageShaderParameters = m_perStageShaderParameters.emplace_back();
-				perStageShaderParameters.shaderStage = shaderParameterMap.GetShaderStage();
+				auto& perStageShaderParameters = result.emplace_back();
+				perStageShaderParameters.shaderStage = parameterMap.GetShaderStage();
 				perStageShaderParameters.uniformBuffer = rhiUniformBuffer;
 				perStageShaderParameters.mappedPtr = rhiUniformBuffer->Map<uint8_t>();
 			}
 		}
-		else
-		{
-			const Vector<RHI::ShaderParameterMap>& shaderParameterMaps = m_currentRenderPipeline->GetShaderParameterMaps();
 
+		return result;
+	}
+
+	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::AllocatePerStageShaderParameterBuffers(RawPtr<RHI::ComputePipeline> computePipeline)
+	{
+		const RHI::ShaderParameterMap& shaderParameterMap = computePipeline->GetShaderParameterMap();
+
+		InlineVector<RenderContext::PerStageShaderParameters, 8> result;
+
+		if (shaderParameterMap.GetShaderParametersSize() > 0)
+		{
 			RGUniformBufferDesc desc{};
 			desc.count = 1;
+			desc.elementSize = std::max(shaderParameterMap.GetShaderParametersSize(), 1u);
 			desc.name = "ShaderParameters";
 
-			for (const auto& parameterMap : shaderParameterMaps)
-			{
-				if (parameterMap.GetShaderParametersSize() > 0)
-				{
-					desc.elementSize = parameterMap.GetShaderParametersSize();
+			RGUniformBufferRef uniformBuffer = m_renderGraph.CreateUniformBuffer(desc);
+			RefPtr<RHI::UniformBuffer> rhiUniformBuffer = m_renderGraph.m_transientResourceSystem.AcquireShaderParameterUniformBuffer(uniformBuffer);
 
-					RGUniformBufferRef uniformBuffer = m_renderGraph.CreateUniformBuffer(desc);
-					RefPtr<RHI::UniformBuffer> rhiUniformBuffer = m_renderGraph.m_transientResourceSystem.AcquireShaderParameterUniformBuffer(uniformBuffer);
-
-					auto& perStageShaderParameters = m_perStageShaderParameters.emplace_back();
-					perStageShaderParameters.shaderStage = parameterMap.GetShaderStage();
-					perStageShaderParameters.uniformBuffer = rhiUniformBuffer;
-					perStageShaderParameters.mappedPtr = rhiUniformBuffer->Map<uint8_t>();
-				}
-			}
+			auto& perStageShaderParameters = result.emplace_back();
+			perStageShaderParameters.shaderStage = shaderParameterMap.GetShaderStage();
+			perStageShaderParameters.uniformBuffer = rhiUniformBuffer;
+			perStageShaderParameters.mappedPtr = rhiUniformBuffer->Map<uint8_t>();
 		}
+
+		return result;
 	}
 
 	void RenderContext::SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
@@ -458,6 +480,11 @@ namespace Volt
 		RefPtr<RHI::BufferView> bufferView = rhiUniformBuffer->GetView();
 
 		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::UniformBuffer, bufferView);
+	}
+
+	void RenderContext::CollectShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	{
+		batchedShaderParameters.AddShaderParameter(parameterMetadata.hashedName, data, parameterMetadata.structSize);
 	}
 
 	void* RenderContext::MapInternal(RGBufferUAVRef buffer)

@@ -16,9 +16,6 @@ namespace Volt::RHI
 {
 	class StorageBuffer;
 	class UniformBuffer;
-
-	class VertexBuffer;
-	class IndexBuffer;
 	class BufferView;
 
 	class CommandBuffer;
@@ -99,9 +96,6 @@ namespace Volt::RHI
 
 		virtual RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const = 0;
 
-		virtual RefPtr<IndexBuffer> CreateIndexBuffer(std::span<const uint32_t> indices) const = 0;
-		virtual RefPtr<VertexBuffer> CreateVertexBuffer(const void* data, const uint32_t size, const uint32_t stride) const = 0;
-
 		virtual RefPtr<StorageBuffer> CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const = 0;
 		virtual RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const = 0;
 
@@ -134,8 +128,6 @@ namespace Volt::RHI
 		virtual RefPtr<Event> CreateEvent(const EventCreateInfo& createInfo) const = 0;
 		virtual RefPtr<Fence> CreateFence(const FenceCreateInfo& createInfo) const = 0;
 		virtual RefPtr<Semaphore> CreateSemaphore(const SemaphoreCreateInfo& createInfo) const = 0;
-
-		virtual RefPtr<ImGuiImplementation> CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const = 0;
 		virtual RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const = 0;

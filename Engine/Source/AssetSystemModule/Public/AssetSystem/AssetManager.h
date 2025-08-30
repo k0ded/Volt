@@ -293,14 +293,11 @@ namespace Volt
 			return nullptr;
 		}
 
+		const auto metadata = GetMetadataFromHandle(handle);
+		if (!metadata.IsValid())
 		{
-			ReadLock lock{ Get().m_assetRegistryMutex };
-			const auto& metadata = GetMetadataFromHandle(handle);
-			if (!metadata.IsValid())
-			{
-				VT_LOGC(Error, LogAssetSystem, "Trying to load asset which has invalid metadata!");
-				return nullptr;
-			}
+			VT_LOGC(Error, LogAssetSystem, "Trying to load asset which has invalid metadata!");
+			return nullptr;
 		}
 
 		// If it's a memory asset, return it

@@ -62,9 +62,9 @@ namespace Volt::RHI
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
 
-		m_signatureCache[GetCommandSignatureHash(CommandSignatureType::Draw, sizeof(IndirectDrawCommand))] = CreateCommandSignature<D3D12_INDIRECT_ARGUMENT_TYPE_DRAW, IndirectDrawCommand>();
-		m_signatureCache[GetCommandSignatureHash(CommandSignatureType::DrawIndexed, sizeof(IndirectDrawIndexedCommand))] = CreateCommandSignature<D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED, IndirectDrawIndexedCommand>();
-		m_signatureCache[GetCommandSignatureHash(CommandSignatureType::Dispatch, sizeof(IndirectDispatchCommand))] = CreateCommandSignature<D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH, IndirectDispatchCommand>();
+		m_signatureCache[GetCommandSignatureHash(CommandSignatureType::Draw, sizeof(DrawIndirectCommand))] = CreateCommandSignature<D3D12_INDIRECT_ARGUMENT_TYPE_DRAW, DrawIndirectCommand>();
+		m_signatureCache[GetCommandSignatureHash(CommandSignatureType::DrawIndexed, sizeof(DrawIndexedIndirectCommand))] = CreateCommandSignature<D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED, DrawIndexedIndirectCommand>();
+		m_signatureCache[GetCommandSignatureHash(CommandSignatureType::Dispatch, sizeof(DispatchIndirectCommand))] = CreateCommandSignature<D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH, DispatchIndirectCommand>();
 	}
 	
 	CommandSignatureCache::~CommandSignatureCache()
