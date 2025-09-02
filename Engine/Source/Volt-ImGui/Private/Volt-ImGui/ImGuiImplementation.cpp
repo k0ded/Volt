@@ -66,6 +66,7 @@ namespace Volt
 		const std::filesystem::path iniPath = GetOrCreateIniPath();
 		ImGui::SaveIniSettingsToDisk(iniPath.string().c_str());
 
+		// Shared font altas will be destroyed here.
 		for (auto& contextData : m_contextStack)
 		{
 			contextData.platform->Destroy();
@@ -73,9 +74,8 @@ namespace Volt
 			ImGui::DestroyContext(contextData.context);
 		}
 
+		m_sharedFontAtlas = nullptr;
 		m_contextStack.clear();
-
-		IM_DELETE(m_sharedFontAtlas);
 	}
 
 	void ImGuiImplementation::Begin()

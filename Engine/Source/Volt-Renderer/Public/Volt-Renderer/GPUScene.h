@@ -43,17 +43,24 @@ namespace Volt
 		ResourceHandle vertexBoneWeightsBuffer;
 		ResourceHandle meshletDataBuffer;
 		ResourceHandle meshletsBuffer;
-#endif
 
-		glm::vec3 center;
-		float radius;
-
-#if 0
 		uint32_t vertexStartOffset;
 		uint32_t meshletCount;
 		uint32_t meshletStartOffset;
 		uint32_t meshletIndexStartOffset;
 #endif
+
+		glm::vec3 center;
+		float radius;
+
+		uint32_t vertexStartOffset;
+		uint32_t indexStartOffset;
+		
+		// Ray Tracing
+		uint32_t RT_vertexPositionsBuffer;
+		uint32_t RT_vertexMaterialBuffer;
+		uint32_t RT_vertexAnimationInfoBuffer;
+		uint32_t RT_indexBuffer;
 	};
 
 	struct GPUMeshSDF

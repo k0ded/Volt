@@ -200,7 +200,7 @@ namespace Volt::RHI
 			info.pushConstantRangeCount = 0;
 			info.pPushConstantRanges = nullptr;
 
-			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, nullptr, &m_pipelineLayout));
+			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_pipelineLayout));
 		}
 
 		VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo{};

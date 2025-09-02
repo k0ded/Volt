@@ -5,8 +5,11 @@
 #include "Volt-Renderer/RenderPrimitiveData.h"
 
 #include <RenderCore/Resources/GrowingGPUBuffer.h>
-
+#include <RHIModule/RayTracing/RayTracingResuorceTable.h>
 #include <CoreUtilities/Containers/Map.h>
+
+#include <EventSystem/EventListener.h>
+#include <EventSystem/ApplicationEvents.h>
 
 #include <span>
 
@@ -41,7 +44,7 @@ namespace Volt
 		RGBufferRef perMeshIndirectDrawCommands;
 	};
 
-	class VTR_API RenderScene
+	class VTR_API RenderScene : public EventListener
 	{
 	public:
 		RenderScene(EntityScene* sceneRef);
@@ -97,6 +100,7 @@ namespace Volt
 		VT_NODISCARD VT_INLINE std::span<const GPUMesh> GetGPUMeshes() const { return m_gpuMeshes; }
 		VT_NODISCARD VT_INLINE std::span<const PrimitiveDrawData> GetPrimitiveDrawData() const { return m_primitiveDrawData; }
 		VT_NODISCARD VT_INLINE Ref<RayTracingScene> GetRayTracingScene() const { return m_rayTracingScene; }
+		VT_NODISCARD VT_INLINE RefPtr<RHI::RayTracingResourceTable> GetRayTracingResourceTable() const { return m_rayTracingResourceTable; }
 
 	private:
 		void BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial);
@@ -114,6 +118,8 @@ namespace Volt
 		void BuildPerMeshIndirectDrawCommands(RenderGraph& renderGraph);
 
 		void UpdateInvalidLights(RenderGraph& renderGraph);
+
+		bool OnPreRenderEvent(AppPreRenderEvent& event);
 
 		VT_NODISCARD RenderLightData& GetLightDataFromID(UUID64 id);
 		VT_NODISCARD PrimitiveDrawData& GetPrimitiveDrawDataFromIndex(size_t index);
@@ -199,6 +205,8 @@ namespace Volt
 		std::mutex m_materialUpdateMutex;
 		std::mutex m_meshUpdateMutex;
 
+		RefPtr<RHI::RayTracingResourceTable> m_rayTracingResourceTable;
+
 		// Scene Primitives
 		Vector<PrimitiveDrawData> m_primitiveDrawData;
 		PrimitiveIndicesContainer m_primitiveIndicesContainer;
@@ -219,5 +227,6 @@ namespace Volt
 		uint32_t m_currentIndividualMeshCount = 0;
 		uint32_t m_currentBoneCount = 0;
 		uint32_t m_currentMeshletCount = 0;
+		uint32_t m_frameIndex = 0;
 	};
 }

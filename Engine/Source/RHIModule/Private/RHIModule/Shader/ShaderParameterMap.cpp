@@ -139,6 +139,7 @@ namespace Volt::RHI
 		streamWriter.Write(data.m_shaderStage);
 		streamWriter.Write(data.m_resourceBindings);
 		streamWriter.Write(data.m_shaderParameters);
+		streamWriter.Write(data.m_accessesRayTracingResourceTable);
 	}
 	
 	void ShaderParameterMap::Deserialize(BinaryStreamReader& streamReader, ShaderParameterMap& outData)
@@ -147,5 +148,6 @@ namespace Volt::RHI
 		streamReader.Read(outData.m_shaderStage);
 		streamReader.Read(outData.m_resourceBindings);
 		streamReader.Read(outData.m_shaderParameters);
+		streamReader.Read(outData.m_accessesRayTracingResourceTable);
 	}
 }

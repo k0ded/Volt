@@ -144,6 +144,11 @@ namespace Volt::RHI
 		m_descriptorIsUpdated.at(writeDescriptorIndex).value = true;
 	}
 	
+	void VulkanDescriptorTable::SetRayTracingResourceTable(RefPtr<RayTracingResourceTable> rayTracingResourceTable)
+	{
+		m_activeRayTracingResourceTable = rayTracingResourceTable;
+	}
+
 	void VulkanDescriptorTable::SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding)
 	{
 		VT_PROFILE_FUNCTION();
@@ -531,5 +536,10 @@ namespace Volt::RHI
 				}
 			}
 		}
+	}
+
+	void VulkanDescriptorTable::ResetRayTracingResourceTable()
+	{
+		m_activeRayTracingResourceTable = nullptr;
 	}
 }

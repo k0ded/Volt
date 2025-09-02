@@ -69,6 +69,12 @@ float3 ReconstructWorldPosition(float2 texCoords, float pixelDepth)
     return worldSpacePos.xyz;
 }
 
+float3 ReconstructWorldPosition(uint2 pixelCoords, float pixelDepth)
+{
+    const float2 texCoords = float2(float(pixelCoords.x) * View.invRenderSize.x, 1.f - float(pixelCoords.y) * View.invRenderSize.y);
+    return ReconstructWorldPosition(texCoords, pixelDepth);
+}
+
 float Distance2(float3 A, float3 B)
 {
 	float3 diff = B - A;

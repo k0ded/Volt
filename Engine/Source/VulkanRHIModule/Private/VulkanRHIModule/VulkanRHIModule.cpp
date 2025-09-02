@@ -36,6 +36,7 @@
 
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
+#include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
 
 #include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
@@ -251,6 +252,12 @@ namespace Volt::RHI
 	{
 		return RefPtr<VulkanDescriptorTable>::Create(createInfo);
 	}
+
+	RefPtr<RayTracingResourceTable> VulkanRHIModule::CreateRayTracingResourceTable() const
+	{
+		return RefPtr<VulkanRayTracingResourceTable>::Create();
+	}
+
 }
 
 Volt::RHI::RHIModule* CreateRHIModule()

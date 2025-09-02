@@ -24,6 +24,7 @@ namespace Volt::RHI
 		void AddAccelerationStructure(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 
 		void AddParameter(const std::string& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset);
+		VT_NODISCARD VT_INLINE void SetAccessesRayTracingResourceTable() { m_accessesRayTracingResourceTable = true; }
 
 		const ShaderUniform* GetParameterFromName(StringHash name) const;
 		const ShaderResourceBinding* GetResourceBindingFromName(StringHash name) const;
@@ -34,6 +35,7 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE const ParameterMap& GetShaderParameters() const { return m_shaderParameters; }
 		VT_NODISCARD VT_INLINE ShaderStage GetShaderStage() const { return m_shaderStage; }
 		VT_NODISCARD VT_INLINE uint32_t GetShaderParametersSize() const { return m_shaderParameterSize; }
+		VT_NODISCARD VT_INLINE bool AccessesRayTracingTable() const { return m_accessesRayTracingResourceTable; }
 
 		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderParameterMap& data);
 		static void Deserialize(BinaryStreamReader& streamReader, ShaderParameterMap& outData);
@@ -44,5 +46,6 @@ namespace Volt::RHI
 		ShaderStage m_shaderStage;
 
 		uint32_t m_shaderParameterSize = 0;
+		bool m_accessesRayTracingResourceTable = false;
 	};
 }

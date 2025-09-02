@@ -11,6 +11,7 @@ namespace Volt::RHI
 	class PhysicalGraphicsDevice;
 	class GraphicsDevice;
 	class VulkanDebugLayer;
+	class RayTracingTableDescriptorSetManager;
 
 	class VulkanGraphicsContext final : public GraphicsContext
 	{
@@ -48,6 +49,7 @@ namespace Volt::RHI
 		RefPtr<GPUAllocator> m_transientAllocator;
 
 		Ref<VulkanDebugLayer> m_debugLayer;
+		Ref<RayTracingTableDescriptorSetManager> m_rayTracingTableDescriptorSetManager;
 
 		GraphicsContextCreateInfo m_createInfo{};
 	};

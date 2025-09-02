@@ -3,6 +3,7 @@
 
 #include "VulkanRHIModule/Shader/HLSLIncluder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
+#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Shader/ShaderUtility.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -471,7 +472,7 @@ namespace Volt::RHI
 
 		for (size_t i = 0; i < sets.size(); ++i)
 		{
-			const SpvReflectDescriptorSet* spvSet = sets[0];
+			const SpvReflectDescriptorSet* spvSet = sets[i];
 
 			// First find the globals UB, to make sure that it always gets binding 0
 			for (uint32_t binding = 0; binding < spvSet->binding_count; ++binding)
@@ -566,7 +567,15 @@ namespace Volt::RHI
 
 		for (SpvReflectDescriptorBinding* storageBuffer : storageBuffers)
 		{
-			shaderParameterMap.AddStructuredBufferSRV(storageBuffer->name, storageBuffer->set, storageBuffer->binding, currentShaderStage);
+			// Special case for ray tracing resource table
+			if (storageBuffer->set == RayTracingTableDescriptorSetManager::Set && storageBuffer->binding == RayTracingTableDescriptorSetManager::BuffersBinding)
+			{
+				shaderParameterMap.SetAccessesRayTracingResourceTable();
+			}
+			else
+			{
+				shaderParameterMap.AddStructuredBufferSRV(storageBuffer->name, storageBuffer->set, storageBuffer->binding, currentShaderStage);
+			}
 		}
 
 		for (SpvReflectDescriptorBinding* uniformTexelBuffer : uniformTexelBuffers)
@@ -586,7 +595,15 @@ namespace Volt::RHI
 
 		for (SpvReflectDescriptorBinding* image : images)
 		{
-			shaderParameterMap.AddTextureSRV(image->name, image->set, image->binding, currentShaderStage);
+			// Special case for ray tracing resource table
+			if (image->set == RayTracingTableDescriptorSetManager::Set && image->binding == RayTracingTableDescriptorSetManager::TexturesBinding)
+			{
+				shaderParameterMap.SetAccessesRayTracingResourceTable();
+			}
+			else
+			{
+				shaderParameterMap.AddTextureSRV(image->name, image->set, image->binding, currentShaderStage);
+			}
 		}
 
 		for (SpvReflectDescriptorBinding* sampler : samplers)

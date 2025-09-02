@@ -2,6 +2,7 @@
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorCommon.h"
 
+#include <RHIModule/RayTracing/RayTracingResuorceTable.h>
 #include <RHIModule/Descriptors/DescriptorTable.h>
 #include <CoreUtilities/Containers/Map.h>
 
@@ -22,12 +23,17 @@ namespace Volt::RHI
 		void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding) override;
 		void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding) override;
 		void SetAccelerationStructure(RawPtr<AccelerationStructure> accelerationStructure, uint32_t set, uint32_t binding) override;
+		void SetRayTracingResourceTable(RefPtr<RayTracingResourceTable> rayTracingResourceTable) override;
+
 		size_t GetHash() const override;
 
 		void PrepareForRender() override;
 
 		VkPipelineLayout_T* GetRelatedPipelineLayout() const;
 		uint32_t GetRelatedBindPoint() const;
+		
+		void ResetRayTracingResourceTable();
+		VT_NODISCARD VT_INLINE RefPtr<RayTracingResourceTable> GetRayTracingResourceTable() const { return m_activeRayTracingResourceTable; }
 		
 		VT_NODISCARD VT_INLINE const Map<uint32_t, VkDescriptorSet_T*>& GetDescriptorSets() const { return m_descriptorSets; }
 
@@ -72,5 +78,7 @@ namespace Volt::RHI
 		Vector<DescriptorWrite> m_descriptorWrites;
 		Vector<DescriptorWrite> m_activeDescriptorWrites;
 		Vector<DefaultFalse> m_descriptorIsUpdated;
+
+		RefPtr<RayTracingResourceTable> m_activeRayTracingResourceTable;
 	};
 }

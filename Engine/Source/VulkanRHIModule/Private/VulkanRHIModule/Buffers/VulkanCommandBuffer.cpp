@@ -21,6 +21,8 @@
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
+#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -577,6 +579,16 @@ namespace Volt::RHI
 		for (const auto& [setIndex, descriptorSet] : descriptorSets)
 		{
 			vkCmdBindDescriptorSets(m_commandBufferData.commandBuffer, bindPoint, pipelineLayout, setIndex, 1, &descriptorSet, 0, nullptr);
+		}
+
+		if (RHI::RHICanUseRayTracing())
+		{
+			RefPtr<RayTracingResourceTable> rtResourceTable = vulkanTable.GetRayTracingResourceTable();
+			if (rtResourceTable)
+			{
+				VkDescriptorSet descriptorSet = rtResourceTable->As<VulkanRayTracingResourceTable>()->GetDescriptorSet();
+				vkCmdBindDescriptorSets(m_commandBufferData.commandBuffer, bindPoint, pipelineLayout, RayTracingTableDescriptorSetManager::Set, 1, &descriptorSet, 0, nullptr);
+			}
 		}
 	}
 

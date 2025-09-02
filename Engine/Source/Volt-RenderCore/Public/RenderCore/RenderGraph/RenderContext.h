@@ -101,6 +101,7 @@ namespace Volt
 		void SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 
 		void CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
@@ -166,6 +167,7 @@ namespace Volt
 				case ShaderParameterType::UniformBuffer: SetUniformBufferParameter(*reinterpret_cast<RGUniformBufferRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::Sampler: SetSamplerParameter(*reinterpret_cast<RefPtr<RHI::SamplerState>*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::AccelerationStructure: SetAccelerationStructureParameter(*reinterpret_cast<RefPtr<RHI::AccelerationStructure>*>(parameterDataPtr), parameter, shaderParameterMap); break;
+				case ShaderParameterType::RayTracingResourceTable: SetRayTracingResourceTableParameter(*reinterpret_cast<RefPtr<RHI::RayTracingResourceTable>*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::Parameter: SetShaderParameter(parameterDataPtr, parameter, shaderParameterMap); break;
 			}
 		}
@@ -238,6 +240,12 @@ namespace Volt
 				case ShaderParameterType::Sampler:
 				case ShaderParameterType::AccelerationStructure:
 					resourceBindingsFoundMap[parameter.hashedName].value = true;
+					break;
+
+				case ShaderParameterType::RayTracingResourceTable:
+					resourceBindingsFoundMap[StringHash::Construct("RayTracingBufferTable")].value = true;
+					resourceBindingsFoundMap[StringHash::Construct("RayTracingTexture2DTable")].value = true;
+					break;
 			}
 		}
 

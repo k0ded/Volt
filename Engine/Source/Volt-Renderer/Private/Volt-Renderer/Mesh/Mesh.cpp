@@ -443,6 +443,8 @@ namespace Volt
 			Math::Decompose(subMesh.transform, t, r, s);
 
 			gpuMesh.radius = m_subMeshBoundingSpheres.at(i).radius * glm::max(s.x, glm::max(s.y, s.z));
+			gpuMesh.vertexStartOffset = subMesh.vertexStartOffset;
+			gpuMesh.indexStartOffset = subMesh.indexStartOffset;
 
 			i++;
 		}

@@ -8,6 +8,7 @@
 #include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
 
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
+#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Graphics/PhysicalGraphicsDevice.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -80,10 +81,20 @@ namespace Volt::RHI
 		{
 			VulkanBindlessDescriptorLayoutManager::CreateGlobalDescriptorLayout();
 		}
+
+		if (RHI::RHICanUseRayTracing())
+		{
+			m_rayTracingTableDescriptorSetManager = CreateRef<RayTracingTableDescriptorSetManager>();
+		}
 	}
 
 	void VulkanGraphicsContext::Shutdown()
 	{
+		if (RHI::RHICanUseRayTracing())
+		{
+			m_rayTracingTableDescriptorSetManager = nullptr;
+		}
+
 		if (RHI::RHICanUseBindless())
 		{
 			VulkanBindlessDescriptorLayoutManager::DestroyGlobalDescriptorLayout();

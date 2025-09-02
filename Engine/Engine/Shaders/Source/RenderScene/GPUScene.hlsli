@@ -86,6 +86,15 @@ struct PrimitiveDrawData
 struct GPUMesh
 {
     BoundingSphere boundingSphere;
+
+	uint32_t vertexStartOffset;
+	uint32_t indexStartOffset;
+	
+	// Ray Tracing
+	uint32_t RT_vertexPositionsBuffer;
+	uint32_t RT_vertexMaterialBuffer;
+	uint32_t RT_vertexAnimationInfoBuffer;
+	uint32_t RT_IndexBuffer;
 };
 
 StructuredBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;

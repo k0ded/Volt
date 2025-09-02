@@ -50,7 +50,10 @@ namespace Volt
 		if (RHI::RHICanUseRayTracing())
 		{
 			m_rayTracingScene = CreateRef<RayTracingScene>(m_scene);
+			m_rayTracingResourceTable = RHI::RayTracingResourceTable::Create();
 		}
+
+		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(RenderScene::OnPreRenderEvent));
 	}
 
 	RenderScene::~RenderScene()
@@ -372,6 +375,16 @@ namespace Volt
 		return *it;
 	}
 
+	bool RenderScene::OnPreRenderEvent(AppPreRenderEvent& event)
+	{
+		if (RHI::RHICanUseRayTracing())
+		{
+			m_rayTracingResourceTable->Update(static_cast<uint32_t>(event.GetFrameIndex()));
+		}
+
+		return false;
+	}
+
 	VT_NODISCARD const RenderLightData& RenderScene::GetLightDataFromID(UUID64 id) const
 	{
 		auto it = std::ranges::find_if(m_renderLights, [id](const auto& light)
@@ -501,6 +514,25 @@ namespace Volt
 			return;
 		}
 
+		// Add vertex and index buffers to ray tracing table
+		uint32_t RT_vertexPositionsBuffer = 0;
+		uint32_t RT_vertexAnimationInfoBuffer = 0;
+		uint32_t RT_vertexMaterialBuffer = 0;
+		uint32_t RT_indexBuffer = 0;
+
+		if (RHI::RHICanUseRayTracing())
+		{
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexPositionsBuffer()->GetResource());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexAnimationInfoBuffer()->GetResource());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexMaterialBuffer()->GetResource());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetIndexBuffer()->GetResource());
+
+			RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer()->GetResource());
+			RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer()->GetResource());
+			RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer()->GetResource());
+			RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer()->GetResource());
+		}
+
 		const size_t newMeshIndex = m_individualMeshes.size();
 
 		m_individualMeshes.emplace_back(mesh);
@@ -509,8 +541,13 @@ namespace Volt
 		size_t currentIndex = m_gpuMeshes.size();
 
 		std::scoped_lock lock{ m_meshUpdateMutex };
-		for (uint32_t subMeshIndex = 0; const auto& gpuMesh : mesh->GetGPUMeshes())
+		for (uint32_t subMeshIndex = 0; auto gpuMesh : mesh->GetGPUMeshes())
 		{
+			gpuMesh.RT_vertexPositionsBuffer = RT_vertexPositionsBuffer;
+			gpuMesh.RT_vertexAnimationInfoBuffer = RT_vertexAnimationInfoBuffer;
+			gpuMesh.RT_vertexMaterialBuffer = RT_vertexMaterialBuffer;
+			gpuMesh.RT_indexBuffer = RT_indexBuffer;
+
 			m_gpuMeshes.emplace_back(gpuMesh);
 
 			const size_t meshHash = Math::HashCombine(mesh->GetHash(), std::hash<uint32_t>()(subMeshIndex));
@@ -552,6 +589,15 @@ namespace Volt
 		m_individualMaterials.emplace_back(material);
 		m_gpuMaterialIndexFromMaterialHash[material->GetHash()] = gpuMaterialIndex;
 		m_invalidMaterials.emplace_back(material, gpuMaterialIndex);
+
+		// Add textures to ray tracing table
+		if (RHI::RHICanUseRayTracing())
+		{
+			for (const auto& [index, textureInfo] : material->GetTextures())
+			{
+				m_rayTracingResourceTable->AddTexture(textureInfo.texture.GetResource());
+			}
+		}
 	
 		if (s_logRenderSceneUpdatedCVar.GetValue())
 		{

@@ -15,6 +15,7 @@ namespace Volt::RHI
 
 	class SamplerState;
 	class AccelerationStructure;
+	class RayTracingResourceTable;
 
 	class CommandBuffer;
 
@@ -31,6 +32,8 @@ namespace Volt::RHI
 		virtual void SetBufferView(RawPtr<BufferView> bufferView, uint32_t set, uint32_t binding) = 0;
 		virtual void SetSamplerState(RawPtr<SamplerState> samplerState, uint32_t set, uint32_t binding) = 0;
 		virtual void SetAccelerationStructure(RawPtr<AccelerationStructure> accelerationStructure, uint32_t set, uint32_t binding) = 0;
+		virtual void SetRayTracingResourceTable(RefPtr<RayTracingResourceTable> rayTracingResourceTable) = 0;
+
 		virtual size_t GetHash() const = 0;
 
 		virtual void PrepareForRender() = 0;
