@@ -8,6 +8,10 @@
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 #include <Volt-ImGui/ImGuiImplementation.h>
 
+#include <RHIModule/Graphics/DeviceQueue.h>
+#include <RHIModule/Graphics/GraphicsDevice.h>
+#include <RHIModule/Graphics/GraphicsContext.h>
+
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
 
@@ -24,6 +28,12 @@ namespace Volt
 	VT_REGISTER_SUBSYSTEM(ImGuiSubSystem, Minimal, PostEngine, -1);
 
 	static ConsoleVariable<int32_t> s_imguiEnabled("e.imguiEnabled", 1, "Whether or not imgui is enabled");;
+
+	ImGuiSubSystem::ImGuiSubSystem()
+	{
+		RegisterListener<AppBeginFrameEvent>(VT_BIND_EVENT_FN(ImGuiSubSystem::OnAppBeginFrameEvent));
+		RegisterListener<AppPresentFrameEvent>(VT_BIND_EVENT_FN(ImGuiSubSystem::OnAppPresentFrameEvent));
+	}
 
 	void ImGuiSubSystem::Initialize()
 	{
@@ -100,10 +110,14 @@ namespace Volt
 	void ImGuiSubSystem::EnterBlockingContext(std::function<void()> onEnterCallback)
 	{
 		m_isBlockingActive = true;
-
 		m_imguiImplementation->PushNewContext();
 
-		WindowManager::Get().Present();
+		bool wasWithinFrameBeforeEntering = m_isWithinFrame;
+
+		if (wasWithinFrameBeforeEntering)
+		{
+			WindowManager::Get().Present();
+		}
 
 		bool hasCalledCallback = false;
 
@@ -135,7 +149,12 @@ namespace Volt
 
 		m_imguiImplementation->PopContext();
 
-		WindowManager::Get().BeginFrame();
+		RHI::GraphicsContext::GetDevice()->GetDeviceQueue(RHI::QueueType::Graphics)->WaitForQueue();
+
+		if (wasWithinFrameBeforeEntering)
+		{
+			WindowManager::Get().BeginFrame();
+		}
 	}
 
 	void ImGuiSubSystem::ExitBlockingContext()
@@ -146,5 +165,17 @@ namespace Volt
 	ImTextureID ImGuiSubSystem::GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex /*= -1*/)
 	{
 		return m_imguiImplementation->GetTextureID(image, mipIndex);
+	}
+
+	bool ImGuiSubSystem::OnAppBeginFrameEvent(AppBeginFrameEvent& e)
+	{
+		m_isWithinFrame = true;
+		return false;
+	}
+
+	bool ImGuiSubSystem::OnAppPresentFrameEvent(AppPresentFrameEvent& e)
+	{
+		m_isWithinFrame = false;
+		return false;
 	}
 }

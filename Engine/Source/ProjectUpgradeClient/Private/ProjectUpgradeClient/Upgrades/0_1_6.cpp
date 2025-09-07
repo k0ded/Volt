@@ -95,6 +95,11 @@ namespace Volt
 
 	void Upgrade_0_1_6::ProcessFile(std::filesystem::path inPath)
 	{
+		if (!FileSystem::IsWriteable(inPath))
+		{
+			FileSystem::MakeWriteable(inPath);
+		}
+
 		if (inPath.extension() == ".vtent")
 		{
 			ProcessEntityFile(inPath);

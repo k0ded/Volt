@@ -77,9 +77,12 @@ namespace Volt
 			}
 
 			// If the event gets handled, we skip the rest of the listeners
-			if (info.delegate(e))
+			if (info.delegate)
 			{
-				break;
+				if (info.delegate(e))
+				{
+					break;
+				}
 			}
 		}
 	}

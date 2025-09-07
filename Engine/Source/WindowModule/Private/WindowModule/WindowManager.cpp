@@ -173,6 +173,8 @@ namespace Volt
 		{
 			window->Present();
 		}
+
+		glfwPollEvents();
 	}
 
 	WindowHandle WindowManager::GetMainWindowHandle() const

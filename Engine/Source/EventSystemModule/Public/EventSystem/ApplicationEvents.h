@@ -96,4 +96,22 @@ namespace Volt
 	private:
 		float m_timestep;
 	};
+
+	class AppBeginFrameEvent : public Event
+	{
+	public:
+		AppBeginFrameEvent()
+		{}
+
+		EVENT_CLASS(AppBeginFrameEvent, "{E7899035-D479-4F85-A101-F7396EC89A61}"_guid);
+	};
+
+	class AppPresentFrameEvent : public Event
+	{
+	public:
+		AppPresentFrameEvent()
+		{}
+
+		EVENT_CLASS(AppPresentFrameEvent, "{4DA476C4-E0AA-42C6-A66D-55B57E985959}"_guid);
+	};
 }

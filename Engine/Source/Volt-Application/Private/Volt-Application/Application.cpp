@@ -264,6 +264,9 @@ namespace Volt
 		m_isProcessingFrame = true;
 		WindowManager::Get().BeginFrame();
 
+		AppBeginFrameEvent appBeginFrameEvent{};
+		EventSystem::DispatchEvent(appBeginFrameEvent);
+
 		Tick();
 
 		{
@@ -310,6 +313,9 @@ namespace Volt
 		{
 			m_imguiSubSystem->End();
 		}
+
+		AppPresentFrameEvent appPresentEvent{};
+		EventSystem::DispatchEvent(appPresentEvent);
 
 		m_isProcessingFrame = false;
 		if (!m_skipPresentThisFrame)

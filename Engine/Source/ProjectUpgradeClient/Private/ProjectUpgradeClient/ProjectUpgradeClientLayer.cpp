@@ -12,6 +12,7 @@
 #include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
+#include <CoreUtilities/FileSystem.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -271,6 +272,11 @@ namespace Volt
 			streamReader.ExitScope();
 		}
 
+		if (!FileSystem::IsWriteable(projectFilepath))
+		{
+			FileSystem::MakeWriteable(projectFilepath);
+		}
+
 		YAMLFileStreamWriter streamWriter{ projectFilepath };
 
 		streamWriter.BeginMap();
@@ -295,9 +301,5 @@ namespace Volt
 		streamWriter.EndMap();
 		streamWriter.EndMap();
 		streamWriter.WriteToDisk();
-
-
-
-
 	}
 }
