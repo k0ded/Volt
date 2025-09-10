@@ -465,7 +465,7 @@ void MosaicEditorPanel::DrawMenuBar()
 			if (ImGui::MenuItem("Create"))
 			{
 				std::filesystem::path path = FileSystem::SaveFileDialogue({{ "Mosaic Graph (*.vtmat)", "vtmat" }}, Volt::ProjectManager::GetAssetsDirectory());
-				m_material = Volt::AssetManager::CreateAssetFile<Volt::MaterialAsset>(path.parent_path(), path.stem().string());
+				m_material = Volt::AssetManager::CreateAssetAndFile<Volt::MaterialAsset>(path.parent_path(), path.stem().string());
 			}
 
 			if (ImGui::MenuItem("Save") && m_material)

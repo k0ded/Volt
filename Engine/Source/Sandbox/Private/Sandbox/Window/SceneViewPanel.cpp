@@ -858,7 +858,7 @@ void SceneViewPanel::CreatePrefabAndSetupEntities(Volt::Entity entity)
 
 	//todo_fabian: fix prefabs properly
 
-	Volt::AssetManager::SaveMemoryAssetToDirectory(prefab->handle, basePath);
+	Volt::AssetManager::CreateFileForAsset(prefab->handle, basePath);
 
 	EditorUtils::MarkEntityAndChildrenAsEdited(entity);
 }

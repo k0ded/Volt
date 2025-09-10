@@ -90,8 +90,6 @@ namespace Volt
 		static bool ExistsInRegistry(const std::filesystem::path& path);
 
 		static void SaveAsset(AssetHandle handle);
-		static void SaveMemoryAssetToDirectory(AssetHandle handle, const std::filesystem::path& targetDirectory);
-		static void SaveMemoryAssetToPath(AssetHandle handle, const std::filesystem::path& targetFilePath);
 
 		static const std::filesystem::path GetFilesystemPath(AssetHandle handle);
 		static const std::filesystem::path GetFilesystemPath(const std::filesystem::path& path);
@@ -132,10 +130,20 @@ namespace Volt
 		template<IsVoltAsset T>
 		static Ref<T> QueueAsset(const std::filesystem::path& filepath);
 
+		//a memory asset is an asset that can never be saved to disk, it is meant to be only in memory
+		template<typename T, typename... Args>
+		static Ref<T> CreateMemoryAsset(const std::string& name, Args&&... args);
+
+		//create an asset that doesnt have a path assigned yet
 		template<IsVoltAsset T, typename... Args>
 		static Ref<T> CreateAsset(const std::string& name, Args&&... args);
+
+		//create an asset and a corresponding file at a path
 		template<IsVoltAsset T, typename... Args>
-		static Ref<T> CreateAssetFile(const std::filesystem::path& targetDir, const std::string& name, Args&&... args);
+		static Ref<T> CreateAssetAndFile(const std::filesystem::path& targetDir, const std::string& name, Args&&... args);
+
+		//asset must not already have a representing file
+		VT_INLINE static void CreateFileForAsset(Volt::AssetHandle asset, const std::filesystem::path& path);
 
 		template<typename ImporterType, typename Type>
 		static const ImporterType& GetImporterForType();
@@ -183,8 +191,9 @@ namespace Volt
 		static const std::filesystem::path GetCleanAssetFilePath(const std::filesystem::path& path);
 
 		void SaveAssetImpl(AssetHandle handle);
-		void SaveMemoryAssetToDirectoryImpl(AssetHandle handle, const std::filesystem::path& targetDirectory);
-		void SaveMemoryAssetToPathImpl(AssetHandle handle, const std::filesystem::path& targetFilePath);
+		template<IsVoltAsset T, typename... Args>
+		Ref<T> CreateAssetImpl(const std::string& name, bool isMemoryAsset, Args&&... args);
+		void CreateFileForAssetImpl(AssetHandle asset, const std::filesystem::path& targetFilePath);
 
 		Vector<std::filesystem::path> GetEngineAssetFiles();
 		Vector<std::filesystem::path> GetProjectAssetFiles();
@@ -333,8 +342,20 @@ namespace Volt
 		return QueueAsset<T>(GetAssetHandleFromFilePath(filepath));
 	}
 
+	template<typename T, typename ...Args>
+	inline Ref<T> AssetManager::CreateMemoryAsset(const std::string& name, Args&& ...args)
+	{
+		return Get().CreateAssetImpl<T>(name, /*isMemoryAsset*/ true, std::forward(args)...);
+	}
+
 	template<IsVoltAsset T, typename ...Args>
 	inline Ref<T> AssetManager::CreateAsset(const std::string& name, Args && ...args)
+	{
+		return Get().CreateAssetImpl<T>(name, /*isMemoryAsset*/ false, std::forward<Args>(args)...);
+	}
+
+	template<IsVoltAsset T, typename ...Args>
+	inline Ref<T> AssetManager::CreateAssetImpl(const std::string& name, bool isMemoryAsset, Args && ...args)
 	{
 		Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
 
@@ -347,31 +368,41 @@ namespace Volt
 		metadata.handle = asset->handle; // handle will have generated on asset creation
 		metadata.type = T::GetStaticType();
 		metadata.isLoaded = true;
-
-		//since this asset is not linked to a file on disk, it is a memory asset
-		metadata.isMemoryAsset = true; 
+		metadata.isMemoryAsset = isMemoryAsset;
 
 		asset->SetupInitialCustomMetadata(metadata.customData);
 
 		asset->assetName = cleanName;
 
-		WriteLock lockCache{ Get().m_assetCacheMutex };
-		WriteLock lockRegistry{ Get().m_assetRegistryMutex };
+		WriteLock lockCache{ m_assetCacheMutex };
+		WriteLock lockRegistry{ m_assetRegistryMutex };
 
-		AssetManager::Get().m_assetRegistry.emplace(asset->handle, metadata);
-		AssetManager::Get().m_assetCache.emplace(asset->handle, asset);
+		m_assetRegistry.emplace(asset->handle, metadata);
+		if (isMemoryAsset)
+		{
+			m_memoryAssets.emplace(asset->handle, asset);
+		}
+		else
+		{
+			m_assetCache.emplace(asset->handle, asset);
+		}
 
 		return asset;
 	}
 
 	template<IsVoltAsset T, typename ...Args>
-	inline Ref<T> AssetManager::CreateAssetFile(const std::filesystem::path& targetDir, const std::string& name, Args && ...args)
+	inline Ref<T> AssetManager::CreateAssetAndFile(const std::filesystem::path& targetDir, const std::string& name, Args && ...args)
 	{
 		Ref<T> asset = CreateAsset<T>(name, std::forward<Args>(args)...);
 
-		SaveMemoryAssetToDirectory(asset->handle, targetDir);
+		CreateFileForAsset(asset->handle, targetDir);
 
 		return asset;
+	}
+
+	void AssetManager::CreateFileForAsset(Volt::AssetHandle asset, const std::filesystem::path& path)
+	{
+		Get().CreateFileForAssetImpl(asset, path);
 	}
 
 	template<typename ImporterType, typename Type>
@@ -405,4 +436,5 @@ namespace Volt
 	{
 		return GetAllAssetsOfType(T::GetStaticType());
 	}
+
 }

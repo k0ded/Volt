@@ -1003,18 +1003,6 @@ namespace Volt
 		instance.SaveAssetImpl(handle);
 	}
 
-	void AssetManager::SaveMemoryAssetToDirectory(AssetHandle handle, const std::filesystem::path& targetDirectory)
-	{
-		auto& instance = Get();
-		instance.SaveMemoryAssetToDirectoryImpl(handle, targetDirectory);
-	}
-
-	void AssetManager::SaveMemoryAssetToPath(AssetHandle handle, const std::filesystem::path& targetFilePath)
-	{
-		auto& instance = Get();
-		instance.SaveMemoryAssetToPathImpl(handle, targetFilePath);
-	}
-
 	const std::filesystem::path AssetManager::GetFilesystemPath(AssetHandle handle)
 	{
 		const auto path = GetFilePathFromAssetHandle(handle);
@@ -1180,7 +1168,7 @@ namespace Volt
 		//todo_fabian: think about if we want to be able to save an asset that is not loaded
 		if (!m_assetCache.contains(handle))
 		{
-			VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' that is not loaded. ", handle);
+			VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' that is not loaded.", handle);
 			return;
 		}
 
@@ -1208,6 +1196,12 @@ namespace Volt
 			return;
 		}
 
+		if (metadata.filePath.empty())
+		{
+			VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that that does not have a path. ", asset->assetName, handle);
+			return;
+		}
+
 		{
 #ifndef VT_DIST
 			ScopedTimer timer{};
@@ -1229,22 +1223,7 @@ namespace Volt
 		}
 	}
 
-	void AssetManager::SaveMemoryAssetToDirectoryImpl(AssetHandle handle, const std::filesystem::path& targetDirectory)
-	{
-		const std::string fileExtension = ".vtasset";
-
-		Ref<Asset> asset = GetAssetRaw(handle);
-		if (!asset)
-		{
-			VT_LOGC(Error, LogAssetSystem, "Tried to save a memory asset '{0}' to directory '{1}' that is not registered in the asset registry.", handle, targetDirectory.string().c_str());
-			return;
-		}
-
-		const std::filesystem::path filePath = ::Utility::ReplaceCharacter((targetDirectory / (asset->assetName + fileExtension)).string(), '\\', '/');
-		SaveMemoryAssetToPath(asset->handle, filePath);
-	}
-
-	void AssetManager::SaveMemoryAssetToPathImpl(AssetHandle handle, const std::filesystem::path& targetFilePath)
+	void AssetManager::CreateFileForAssetImpl(AssetHandle handle, const std::filesystem::path& targetFilePath)
 	{
 		if (FileSystem::FilePathIsOnlyExtension(targetFilePath) || targetFilePath.stem().empty())
 		{
@@ -1258,18 +1237,23 @@ namespace Volt
 
 			if (!metadata.IsValid())
 			{
-				VT_LOGC(Error, LogAssetSystem, "Tried to save a memory asset '{0}' that is not registered in the asset registry. Target FilePath: '{1}'", handle, targetFilePath.string().c_str());
+				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is not registered in the asset registry. Target FilePath: '{1}'", handle, targetFilePath.string().c_str());
 				return;
 			}
 
-			if (!metadata.isMemoryAsset)
+			if (metadata.isMemoryAsset)
 			{
-				VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' not marked as memory asset as if it was a memory asset. Target FilePath: '{1}'", handle, targetFilePath.string().c_str());
+				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is marked as a memory asset. Target file oath: '{1}'", handle, targetFilePath.string().c_str());
+				return;
+			}
+
+			if (!metadata.filePath.empty())
+			{
+				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that already has an assigned file path. Target file oath: '{1}'", handle, targetFilePath.string().c_str());
 				return;
 			}
 
 			metadata.filePath = targetFilePath;
-			metadata.isMemoryAsset = false;
 		}
 		SaveAssetImpl(handle);
 

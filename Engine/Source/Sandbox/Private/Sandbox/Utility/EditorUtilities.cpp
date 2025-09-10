@@ -227,7 +227,7 @@ bool EditorUtils::NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCh
 		if (ImGui::Button("Create"))
 		{
 			created = true;
-			outCharacter = Volt::AssetManager::CreateAsset<Volt::AnimatedCharacter>(aCharacterData.name);
+			outCharacter = Volt::AssetManager::CreateAssetAndFile<Volt::AnimatedCharacter>(aCharacterData.destination, aCharacterData.name);
 
 			if (aCharacterData.skeletonHandle != Volt::Asset::Null())
 			{
@@ -238,8 +238,6 @@ bool EditorUtils::NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCh
 			{
 				outCharacter->SetSkin(Volt::AssetManager::GetAsset<Volt::MeshAsset>(aCharacterData.skinHandle)->GetMesh());
 			}
-
-			Volt::AssetManager::Get().SaveMemoryAssetToDirectory(outCharacter->handle, aCharacterData.destination);
 			ImGui::CloseCurrentPopup();
 		}
 

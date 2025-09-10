@@ -132,7 +132,7 @@ void TextureImportModal::Import(const std::filesystem::path filepath)
 			[textureHandle, importConfig]()
 			{
 				Volt::Renderer::EnvironmentTextures envTextures = Volt::Renderer::GenerateEnvironmentTextures(textureHandle);
-				Volt::AssetManager::CreateAssetFile<Volt::EnvironmentTexture>(importConfig.destinationDirectory, importConfig.destinationFilename, envTextures.diffuse, envTextures.specular);
+				Volt::AssetManager::CreateAssetAndFile<Volt::EnvironmentTexture>(importConfig.destinationDirectory, importConfig.destinationFilename, envTextures.diffuse, envTextures.specular);
 
 				Volt::AssetManager::Get().UnloadMemoryAsset(textureHandle);
 			});

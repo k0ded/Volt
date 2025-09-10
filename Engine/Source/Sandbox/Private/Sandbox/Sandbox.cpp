@@ -802,7 +802,6 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 		m_shouldOpenSaveSceneAs = false;
 	}
 
-	SaveSceneAsModal();
 	BuildGameModal();
 
 	for (auto& window : EditorLibrary::GetPanels())

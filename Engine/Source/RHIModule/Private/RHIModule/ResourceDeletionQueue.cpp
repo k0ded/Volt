@@ -17,6 +17,10 @@ namespace Volt::RHI
 		// Run through the list in reverse order to get FIFO behaviour
 		for (const auto& func : m_queues.at(index))
 		{
+			if(!func)
+			{
+				continue;
+			}
 			func();
 		}
 

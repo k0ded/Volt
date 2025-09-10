@@ -13,6 +13,8 @@
 #include "Sandbox/Window/AssetBrowser/PreviewRenderer.h"
 #include "Sandbox/Window/AssetBrowser/AssetDirectoryProcessor.h"
 #include "Sandbox/UserSettingsManager.h"
+#include "Sandbox/DirtyAssetsManager.h"
+
 
 #include <Volt-Scene/Prefab.h>
 
@@ -1079,7 +1081,7 @@ void AssetBrowserPanel::CreatePrefabAndSetupEntities(Volt::EntityID id)
 	std::string name = tagComp.tag;
 	name.erase(std::remove_if(name.begin(), name.end(), ::isspace), name.end());
 
-	Ref<Volt::Prefab> prefab = Volt::AssetManager::CreateAssetFile<Volt::Prefab>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), name, entity);
+	Ref<Volt::Prefab> prefab = Volt::AssetManager::CreateAssetAndFile<Volt::Prefab>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), name, entity);
 
 	SetupEntityAsPrefab(entity.GetID(), prefab->handle);
 	Reload();
@@ -1194,7 +1196,7 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 
 	if (type == AssetTypes::Material)
 	{
-		Ref<Volt::MaterialAsset> material = Volt::AssetManager::CreateAssetFile<Volt::MaterialAsset>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), tempName);
+		Ref<Volt::MaterialAsset> material = Volt::AssetManager::CreateAssetAndFile<Volt::MaterialAsset>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), tempName);
 		newAssetHandle = material->handle;
 	}
 	else if (type == AssetTypes::AnimatedCharacter)
@@ -1210,11 +1212,11 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 
 		Ref<Volt::Scene> scene = Volt::Scene::CreateDefaultScene("New Scene");
 		const std::filesystem::path targetFilePath = (Volt::AssetManager::GetRelativePath(myCurrentDirectory->path / tempName / (tempName + ext)));
-		Volt::AssetManager::SaveMemoryAssetToPath(scene->handle, targetFilePath);
+		Volt::AssetManager::CreateFileForAsset(scene->handle, targetFilePath);
 	}
 	else if (type == AssetTypes::BlendSpace)
 	{
-		Ref<Volt::BlendSpace> blendSpace = Volt::AssetManager::CreateAssetFile<Volt::BlendSpace>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), tempName);
+		Ref<Volt::BlendSpace> blendSpace = Volt::AssetManager::CreateAssetAndFile<Volt::BlendSpace>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), tempName);
 
 		newAssetHandle = blendSpace->handle;
 	}
@@ -1483,7 +1485,7 @@ void AssetBrowserPanel::CreateNewMotionWeaveDatabaseModal()
 		}
 		if (ImGui::Button("Create"))
 		{
-			Ref<Volt::MotionWeaveDatabase> motionWeaveGraph = Volt::AssetManager::CreateAssetFile<Volt::MotionWeaveDatabase>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), m_NewMotionWeaveDatabaseData.name, m_NewMotionWeaveDatabaseData.skeleton);
+			Ref<Volt::MotionWeaveDatabase> motionWeaveGraph = Volt::AssetManager::CreateAssetAndFile<Volt::MotionWeaveDatabase>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), m_NewMotionWeaveDatabaseData.name, m_NewMotionWeaveDatabaseData.skeleton);
 			
 			ImGui::CloseCurrentPopup();
 		}

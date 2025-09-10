@@ -76,7 +76,7 @@ namespace Volt
 				{
 					std::filesystem::path filePath = AssetManager::GetFilePathFromAssetHandle(asset->handle);
 					filePath = GetNonExistingFilePath(filePath.parent_path(), filePath.stem().string());
-					AssetManager::SaveMemoryAssetToPath(asset->handle, filePath);
+					AssetManager::CreateFileForAsset(asset->handle, filePath);
 
 					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->assetName, filePath);
 				}
@@ -130,7 +130,7 @@ namespace Volt
 				{
 					std::filesystem::path filePath = AssetManager::GetFilePathFromAssetHandle(asset->handle);
 					filePath = GetNonExistingFilePath(filePath.parent_path(), filePath.stem().string());
-					AssetManager::SaveMemoryAssetToPath(asset->handle, filePath);
+					AssetManager::CreateFileForAsset(asset->handle, filePath);
 
 					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->assetName, filePath);
 				}

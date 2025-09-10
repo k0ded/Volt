@@ -49,6 +49,7 @@ private:
 	static DirtyAssetsManager s_instance;
 
 	void SaveAssetsImpl(SaveDirtyAssetsFilter filter);
+	void CreateAssetsImpl(Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate);
 
 	std::set<Volt::AssetHandle> m_dirtyAssets;	
 	Map<AssetType, DirtySaveCustomization> m_dirtySaveCustomizations;

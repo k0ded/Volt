@@ -122,7 +122,6 @@ private:
 
 	/////ImGui/////
 	void UpdateDockSpace();
-	void SaveSceneAsModal();
 
 	void BuildGameModal();
 	void RenderProgressBar(float progress);
@@ -136,7 +135,6 @@ private:
 
 	void DrawUnsavedAssetsBlock();
 	void DrawDirtyAssetsExternalActionModal();
-	void DrawSaveSceneAs(Volt::AssetHandle handle);
 	
 	void RenderGameView(float timestep);
 	///////////////

@@ -204,11 +204,11 @@ namespace Volt
 
 		if (importConfig.createAsMemoryAsset)
 		{
-			voltTexture = AssetManager::CreateAsset<Texture2D>(importConfig.destinationFilename);
+			voltTexture = AssetManager::CreateMemoryAsset<Texture2D>(importConfig.destinationFilename);
 		}
 		else
 		{
-			voltTexture = AssetManager::CreateAssetFile<Texture2D>(importConfig.destinationDirectory, importConfig.destinationFilename);
+			voltTexture = AssetManager::CreateAsset<Texture2D>(importConfig.destinationFilename);
 		}
 
 		voltTexture->SetImage(image);

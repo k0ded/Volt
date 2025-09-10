@@ -49,7 +49,7 @@ namespace Volt
 
 		bool isLoaded = false;
 		bool isQueued = false;
-		//a memory asset is an asset that is not saved to a file on the disc
+		//a memory asset is an asset that is not saved to a file on the disk
 		bool isMemoryAsset = false;
 
 		std::filesystem::path filePath;

@@ -97,7 +97,13 @@ void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 
 		if (result == AssetModalResult::Create)
 		{
-			//todo_fabian create assets here
+			Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate;
+			assetsToCreate.reserve(outSelectedAssetsToCreate.size());
+			for (const Volt::AssetHandle& asset : outSelectedAssetsToCreate)
+			{
+				assetsToCreate.push_back({ asset, modal.GetNewAssetPath(asset) });
+			}
+			CreateAssetsImpl(assetsToCreate);
 		}
 	}
 
@@ -183,16 +189,18 @@ void DirtyAssetsManager::SaveAssetsImpl(SaveDirtyAssetsFilter filter)
 	{
 		AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(dirtyAssetHandle);
 
-		if (Volt::AssetManager::IsMemoryAsset(dirtyAssetHandle))
-		{
-			//todo_fabian: make a proper solution for this, maybe a window that pops up
-			Volt::AssetManager::SaveMemoryAssetToDirectory(dirtyAssetHandle, "Assets/TEMP/");
-		}
-		else
-		{
-			Volt::AssetManager::SaveAsset(dirtyAssetHandle);
-		}
+		Volt::AssetManager::SaveAsset(dirtyAssetHandle);
 
 		MarkAssetNotDirty(dirtyAssetHandle);
+	}
+}
+
+void DirtyAssetsManager::CreateAssetsImpl(Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate)
+{
+	for (const auto& [asset, path] : assetsToCreate)
+	{
+		Volt::AssetManager::CreateFileForAsset(asset, path);
+
+		MarkAssetNotDirty(asset);
 	}
 }

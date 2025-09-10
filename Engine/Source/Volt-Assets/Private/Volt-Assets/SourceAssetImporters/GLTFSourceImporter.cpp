@@ -40,12 +40,12 @@ namespace Volt
 				matName = importConfig.destinationFilename + "_UnnamnedMaterial";
 			}
 
-			result.emplace_back(AssetManager::CreateAssetFile<MaterialAsset>(importConfig.destinationDirectory, matName));
+			result.emplace_back(AssetManager::CreateAssetAndFile<MaterialAsset>(importConfig.destinationDirectory, matName));
 		}
 
 		if (result.empty())
 		{
-			result.emplace_back(AssetManager::CreateAssetFile<MaterialAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_DummyMaterial"));
+			result.emplace_back(AssetManager::CreateAssetAndFile<MaterialAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_DummyMaterial"));
 		}
 
 		return result;
@@ -344,7 +344,7 @@ namespace Volt
 		}
 
 		Vector<Ref<MaterialAsset>> materials = CreateSceneMaterials(gltfModel, importConfig);
-		Ref<MeshAsset> voltMesh = AssetManager::CreateAssetFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
+		Ref<MeshAsset> voltMesh = AssetManager::CreateAssetAndFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
 
 		for (const auto& nodeIndex : gltfMeshNodes)
 		{
