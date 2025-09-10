@@ -135,7 +135,7 @@ namespace Volt::RHI
 		// Create descriptor set layouts
 		bool anyAccessesRayTracingResourceTable = false;
 		{
-			Vector<ShaderParameterMap::ResourceBindingsMap> shaderResourceBindings;
+			Vector<ShaderParameterMap::ResourceBindings> shaderResourceBindings;
 
 			for (const auto shader : m_createInfo.shaders)
 			{
@@ -471,10 +471,13 @@ namespace Volt::RHI
 		{
 			if (parameterMap.GetShaderStage() == shaderStage)
 			{
-				const ShaderParameterMap::ResourceBindingsMap& resourceBindingsMap = parameterMap.GetResourceBindings();
-				if (resourceBindingsMap.contains(name))
+				const ShaderParameterMap::ResourceBindings& resourceBindingsMap = parameterMap.GetResourceBindings();
+				for (const auto& [binding, nameHash] : resourceBindingsMap)
 				{
-					return &resourceBindingsMap.at(name);
+					if (nameHash == name)
+					{
+						return &binding;
+					}
 				}
 
 				// We can break here because there is only max one of each shader stage per pipeline

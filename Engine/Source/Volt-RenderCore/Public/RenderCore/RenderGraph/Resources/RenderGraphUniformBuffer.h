@@ -1,8 +1,9 @@
 #pragma once
 
 #include "RenderCore/Config.h"
-
 #include "RenderCore/RenderGraph/Resources/RenderGraphResource.h"
+
+#include <RHIModule/Buffers/BufferView.h>
 
 namespace Volt
 {
@@ -24,6 +25,8 @@ namespace Volt
 		}
 	};
 
+	class RGRHIUniformBufferResource;
+
 	class VTRC_API RGUniformBuffer : public RGResource
 	{
 	public:
@@ -36,11 +39,16 @@ namespace Volt
 		void AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav) override;
 		void AddProducer(Handle<RenderGraphPass> pass) override;
 
+		VT_INLINE void AssignRHIResource(RGRHIUniformBufferResource* resource) { m_rhiResource = resource; }
+
 		VT_NODISCARD VT_INLINE const RGUniformBufferDesc& GetDesc() const { return m_desc; }
+		VT_NODISCARD VT_INLINE RGRHIUniformBufferResource* GetRHIResource() const { return m_rhiResource; }
 
 	private:
 		bool m_isProduced = false;
 		RGUniformBufferDesc m_desc;
+
+		RGRHIUniformBufferResource* m_rhiResource;
 	};
 
 	using RGUniformBufferRef = RGUniformBuffer*;
@@ -53,7 +61,11 @@ namespace Volt
 
 		RGResourceRef GetResource() const override { return m_resource; }
 
+		VT_INLINE void AssignRHIView(RefPtr<RHI::BufferView> view) { m_rhiView = view; }
+		VT_INLINE RefPtr<RHI::BufferView> GetRHIView() { return m_rhiView; }
+
 	private:
+		RefPtr<RHI::BufferView> m_rhiView;
 		RGUniformBufferRef m_resource;
 	};
 

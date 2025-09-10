@@ -82,7 +82,6 @@ namespace Volt
 		template<typename ParameterStruct> void CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters);
 
 		RefPtr<RHI::CommandBuffer> GetRHICommandBuffer();
-		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
 
 		InlineVector<PerStageShaderParameters, 8> AllocatePerStageShaderParameterBuffers(RawPtr<RHI::RenderPipeline> renderPipeline);
 		InlineVector<PerStageShaderParameters, 8> AllocatePerStageShaderParameterBuffers(RawPtr<RHI::ComputePipeline> computePipeline);
@@ -208,23 +207,32 @@ namespace Volt
 		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
 
 		const RHI::ShaderParameterMap& shaderParameterMap = shader->GetParameterMap();
-		const RHI::ShaderParameterMap::ResourceBindingsMap& resourceBindings = shaderParameterMap.GetResourceBindings();
+		const RHI::ShaderParameterMap::ResourceBindings& resourceBindings = shaderParameterMap.GetResourceBindings();
 
 		struct Binding
 		{
+			StringHash hash;
 			std::string_view name;
 			bool value;
 		};
 
-		Map<StringHash, Binding> resourceBindingsFoundMap;
-		resourceBindingsFoundMap.reserve(resourceBindings.size());
+		Vector<Binding> foundResourceBindings;
+		foundResourceBindings.reserve(resourceBindings.size());
 
-		for (const auto& [hashedName, binding] : resourceBindings)
+		STRING_HASH_CONSTEXPR StringHash GlobalsStringHash = StringHash::Construct("$Globals");
+		STRING_HASH_CONSTEXPR StringHash RayTracingBufferTableHash = StringHash::Construct("RayTracingBufferTable");
+		STRING_HASH_CONSTEXPR StringHash RayTracingTexture2DTableHash = StringHash::Construct("RayTracingTexture2DTable");
+
+		for (size_t i = 0; i < resourceBindings.size(); ++i)
 		{
-			if (hashedName != StringHash::Construct("$Globals"))
+			auto& resourceBinding = resourceBindings.at(i);
+
+			if (resourceBinding.hash != GlobalsStringHash)
 			{
-				resourceBindingsFoundMap[hashedName].name = binding.name;
-				resourceBindingsFoundMap[hashedName].value = false;
+				auto& foundBinding = foundResourceBindings.emplace_back();
+				foundBinding.hash = resourceBinding.hash;
+				foundBinding.name = resourceBinding.binding.name;
+				foundBinding.value = false;
 			}
 		}
 
@@ -239,25 +247,45 @@ namespace Volt
 				case ShaderParameterType::UniformBuffer:
 				case ShaderParameterType::Sampler:
 				case ShaderParameterType::AccelerationStructure:
-					resourceBindingsFoundMap[parameter.hashedName].value = true;
+				{
+					for (auto& foundBinding : foundResourceBindings)
+					{
+						if (foundBinding.hash == parameter.hashedName)
+						{
+							foundBinding.value = true;
+						}
+					}
 					break;
-
+				}
 				case ShaderParameterType::RayTracingResourceTable:
-					resourceBindingsFoundMap[StringHash::Construct("RayTracingBufferTable")].value = true;
-					resourceBindingsFoundMap[StringHash::Construct("RayTracingTexture2DTable")].value = true;
+				{
+					for (auto& foundBinding : foundResourceBindings)
+					{
+						if (foundBinding.hash == RayTracingBufferTableHash)
+						{
+							foundBinding.value = true;
+						}
+
+						if (foundBinding.hash == RayTracingTexture2DTableHash)
+						{
+							foundBinding.value = true;
+						}
+					}
+
 					break;
+				}
 			}
 		}
 
 		std::string errorMessage;
 		bool shouldError = false;
 
-		for (const auto& [hashedName, binding] : resourceBindingsFoundMap)
+		for (const auto& foundBinding : foundResourceBindings)
 		{
-			if (!binding.value)
+			if (!foundBinding.value)
 			{
 				shouldError = true;
-				errorMessage += std::format("{}\n", binding.name);
+				errorMessage += std::format("{}\n", foundBinding.name);
 			}
 		}
 

@@ -52,6 +52,7 @@ namespace Volt
 
 		VT_INLINE bool IsProducer(Handle<RenderGraphPass> pass) { auto it = std::find(producers.begin(), producers.end(), pass); return it != producers.end(); }
 		VT_INLINE bool IsFirstProducer(Handle<RenderGraphPass> pass) { return (!producers.empty() && producers.front() == pass); }
+		VT_INLINE Handle<RenderGraphPass> GetFirstProducer() const { return producers.front(); }
 
 		VT_INLINE void AddRef() { ++m_refCount; }
 		VT_INLINE void DecRef() { --m_refCount; }

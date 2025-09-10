@@ -431,6 +431,19 @@ namespace Volt
 #endif
 	}
 
+	void RenderScene::BuildGPUMesh(Weak<Mesh> mesh, uint32_t subMeshIndex, GPUMesh& outGPUMesh)
+	{
+		outGPUMesh = mesh->GetGPUMeshes().at(subMeshIndex);
+
+		if (RHI::RHICanUseRayTracing())
+		{
+			outGPUMesh.RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer()->GetResource());
+			outGPUMesh.RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer()->GetResource());
+			outGPUMesh.RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer()->GetResource());
+			outGPUMesh.RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer()->GetResource());
+		}
+	}
+
 	void RenderScene::BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderPrimitiveData& renderObject)
 	{
 		EntityHelper entity = m_scene->GetEntityHelperFromEntityID(renderObject.entityId);
@@ -543,12 +556,7 @@ namespace Volt
 		std::scoped_lock lock{ m_meshUpdateMutex };
 		for (uint32_t subMeshIndex = 0; auto gpuMesh : mesh->GetGPUMeshes())
 		{
-			gpuMesh.RT_vertexPositionsBuffer = RT_vertexPositionsBuffer;
-			gpuMesh.RT_vertexAnimationInfoBuffer = RT_vertexAnimationInfoBuffer;
-			gpuMesh.RT_vertexMaterialBuffer = RT_vertexMaterialBuffer;
-			gpuMesh.RT_indexBuffer = RT_indexBuffer;
-
-			m_gpuMeshes.emplace_back(gpuMesh);
+			BuildGPUMesh(mesh, subMeshIndex, m_gpuMeshes.emplace_back());
 
 			const size_t meshHash = Math::HashCombine(mesh->GetHash(), std::hash<uint32_t>()(subMeshIndex));
 			m_meshSubMeshToGPUMeshIndex[meshHash] = static_cast<uint32_t>(currentIndex);
@@ -672,7 +680,7 @@ namespace Volt
 			for (const auto& invalidMesh : m_invalidMeshes)
 			{
 				auto& data = bufferUpload.AddUploadItem(invalidMesh.index);
-				data = invalidMesh.mesh->GetGPUMeshes().at(invalidMesh.subMeshIndex);
+				BuildGPUMesh(invalidMesh.mesh, invalidMesh.subMeshIndex, data);
 
 				m_gpuMeshes[invalidMesh.index] = data;
 

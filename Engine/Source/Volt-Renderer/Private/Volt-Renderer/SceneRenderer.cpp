@@ -106,18 +106,6 @@ namespace Volt
 		RenderGraphBlackboard blackboard;
 		RenderGraph renderGraph{};
 
-		//RGTextureDesc outputTextureDesc{};
-		//outputTextureDesc.width = m_width;
-		//outputTextureDesc.height = m_height;
-		//outputTextureDesc.usage = RHI::ImageUsage::AttachmentStorage;
-		//outputTextureDesc.generateMips = false;
-		//outputTextureDesc.format = RHI::PixelFormat::R8G8B8A8_UNORM;
-		//outputTextureDesc.debugName = "SceneRenderer.FinalImage";
-		//
-		//RGTextureRef outputTexture = renderGraph.CreateTexture(outputTextureDesc);
-		//
-		//renderGraph.EnqueueTextureExtraction(outputTexture, &m_outputImage);
-
 		RGTextureRef outputTexture = renderGraph.RegisterExternalTexture(m_outputImage);
 
 		if (ShouldApplyJitter())
@@ -172,6 +160,8 @@ namespace Volt
 			}
 		}
 
+		blackboard.Add<CascadedDirectionalShadowTechnique::Result>() = directionalShadowMap;
+
 		// Create shading RT
 		{
 			SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
@@ -180,6 +170,10 @@ namespace Volt
 
 		AddSkyboxPass(renderGraph, blackboard, renderView);
 		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer);
+
+		//SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
+		//auto output = m_globalIlluminationRenderer.Execute(renderGraph, blackboard, renderView);
+		//sceneTextures.sceneColor = output.indirectLight;
 
 		AddPostProcessingPasses(renderGraph, blackboard, renderView, outputTexture);
 

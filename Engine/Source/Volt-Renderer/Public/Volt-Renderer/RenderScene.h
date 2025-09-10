@@ -104,6 +104,7 @@ namespace Volt
 
 	private:
 		void BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial);
+		void BuildGPUMesh(Weak<Mesh> mesh, uint32_t subMeshIndex, GPUMesh& outGPUMesh);
 
 		void BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderPrimitiveData& renderPrimitive);
 		void BuildSingleLightDrawData(LightDrawData& lightDrawData, RenderLightData& renderLight);

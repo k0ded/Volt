@@ -81,10 +81,10 @@ float3 EvaluateDirectionalLight(in LightDrawData light, in BRDFInput brdfInput, 
 
     float shadow = 1.f;
 
-    if (light.flags & LightFlags::LF_CastShadows)
-    {
-        shadow = EvaluateDirectionalShadow(light, View.view, brdfInput.N, worldPosition);
-    }
+    //if (light.flags & LightFlags::LF_CastShadows)
+    //{
+    //    shadow = EvaluateDirectionalShadow(light, View.view, brdfInput.N, worldPosition);
+    //}
 
     return BRDF(brdfInput, D, L) * light.color * illuminance * shadow;
 } 

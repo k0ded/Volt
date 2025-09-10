@@ -11,6 +11,7 @@
 #include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Packing.h>
 
 #include <glm/packing.hpp>
 
@@ -309,11 +310,8 @@ namespace Volt
 				{
 					auto& materialData = vertexContainer.materialData[i];
 
-					const auto octNormal = Utility::OctNormalEncode(vertexNormals.GetAt(i));
-
-					materialData.normal.x = uint8_t(octNormal.x * 255u);
-					materialData.normal.y = uint8_t(octNormal.y * 255u);
-					materialData.tangent = Utility::EncodeTangent(vertexNormals.GetAt(i), vertexTangents.GetAt(i));
+					materialData.normal = Packing::PackNormalToUInt32(vertexNormals.GetAt(i));
+					materialData.tangent = Packing::EncodeTangent(vertexNormals.GetAt(i), vertexTangents.GetAt(i));
 					materialData.tangentW = vertexTangents.GetAt(i).w;
 					materialData.texCoords = glm::packHalf2x16({ vertexTexCoords.GetAt(i).x, vertexTexCoords.GetAt(i).y });
 				}

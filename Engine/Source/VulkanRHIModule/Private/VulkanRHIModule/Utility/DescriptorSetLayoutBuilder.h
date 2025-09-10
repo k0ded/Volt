@@ -17,10 +17,10 @@ namespace Volt::RHI
 			Map<uint32_t, VkDescriptorSetLayout_T*> descriptorSetLayouts;
 		};
 
-		DescriptorSets BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindingsMap& resourceBindings, bool accessesRayTracingResourceTable);
-		DescriptorSets BuildFromShaderResourceBindings(const Vector<ShaderParameterMap::ResourceBindingsMap>& resourceBindings, bool accessesRayTracingResourceTable);
+		DescriptorSets BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindings& resourceBindings, bool accessesRayTracingResourceTable);
+		DescriptorSets BuildFromShaderResourceBindings(const Vector<ShaderParameterMap::ResourceBindings>& resourceBindings, bool accessesRayTracingResourceTable);
 	
-		Vector<std::pair<uint32_t, uint32_t>> CalculateDescriptorPoolSizesFromBindings(const ShaderParameterMap::ResourceBindingsMap& resourceBindings);
-		Vector<std::pair<uint32_t, uint32_t>> CalculateDescriptorPoolSizesFromBindings(const Vector<ShaderParameterMap::ResourceBindingsMap>& resourceBindings);
+		Vector<std::pair<uint32_t, uint32_t>> CalculateDescriptorPoolSizesFromBindings(const ShaderParameterMap::ResourceBindings& resourceBindings);
+		Vector<std::pair<uint32_t, uint32_t>> CalculateDescriptorPoolSizesFromBindings(const Vector<ShaderParameterMap::ResourceBindings>& resourceBindings);
 	};
 }

@@ -6,6 +6,7 @@
 #include "Volt-Renderer/Config.h"
 #include "Volt-Renderer/Mesh/MeshRenderer.h"
 #include "Volt-Renderer/RenderingTechniques/TAANoise.h"
+#include "Volt-Renderer/GlobalIllumination/GlobalIlluminationRenderer.h"
 
 #include <RenderCore/RenderGraph/RenderGraphDebugger.h>
 
@@ -75,6 +76,7 @@ namespace Volt
 
 		enum class AntiAliasingMethod : uint8_t
 		{
+			None,
 			FXAA,
 			TAA
 		};
@@ -166,6 +168,8 @@ namespace Volt
 		
 		Ref<RenderScene> m_renderScene;
 		TAANoise m_taaNoise;
+
+		GlobalIlluminationRenderer m_globalIlluminationRenderer;
 
 		// Extensions
 		SceneRendererExtensionMap m_sceneRendererExtensions;

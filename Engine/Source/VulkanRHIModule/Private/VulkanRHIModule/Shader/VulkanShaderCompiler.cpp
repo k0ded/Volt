@@ -538,6 +538,11 @@ namespace Volt::RHI
 		const uint32_t shaderStageDescriptorSetIndex = GetDescriptorSetIndexFromShaderStage(currentShaderStage);
 		for (uint32_t bindingIndex = 0; SpvReflectDescriptorBinding* binding : allBindings)
 		{
+			if (binding->set == RayTracingTableDescriptorSetManager::Set && (binding->binding == RayTracingTableDescriptorSetManager::BuffersBinding || binding->binding == RayTracingTableDescriptorSetManager::TexturesBinding))
+			{
+				continue;
+			}
+
 			result = spvReflectChangeDescriptorBindingNumbers(&spirvModule, binding, bindingIndex, shaderStageDescriptorSetIndex);
 			VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
 

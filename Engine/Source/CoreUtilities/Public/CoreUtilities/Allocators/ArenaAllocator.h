@@ -34,6 +34,7 @@ public:
 		m_dataBuffer = other.m_dataBuffer;
 
 		other.m_dataBuffer = nullptr;
+		other.m_nextIndex = 0;
 	}
 
 	ArenaAllocator& operator=(const ArenaAllocator& other)
@@ -58,6 +59,7 @@ public:
 		m_numMaxElements = other.m_numMaxElements;
 
 		other.m_dataBuffer = nullptr;
+		other.m_nextIndex = 0;
 
 		return *this;
 	}

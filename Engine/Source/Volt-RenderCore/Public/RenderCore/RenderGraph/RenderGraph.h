@@ -5,8 +5,7 @@
 #include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 #include "RenderCore/RenderGraph/RenderGraphAllocators.h"
 #include "RenderCore/RenderGraph/ShaderParameterStruct.h"
-#include "RenderCore/TransientResourceSystem/TransientResourceSystem.h"
-#include "RenderCore/TransientResourceSystem/ResourceViewCache.h"
+#include "RenderCore/RenderGraph/RenderGraphResourceManager.h"
 
 #include <JobSystem/Job.h>
 
@@ -126,6 +125,7 @@ namespace Volt
 			{
 			public:
 				VT_NODISCARD VT_INLINE std::span<const BarrierInfo> GetBarriers() const { return m_barriers; }
+				VT_NODISCARD VT_INLINE Vector<BarrierInfo>& GetBarriersMutable() { return m_barriers; }
 				VT_NODISCARD VT_INLINE size_t GetBarrierCount() const { return m_barriers.size(); }
 				VT_NODISCARD VT_INLINE bool Empty() const { return m_barriers.empty(); }
 
@@ -247,6 +247,8 @@ namespace Volt
 		void ExtractResources();
 		void TransitionExternalResources();
 		void PrepareResourcesForExecution();
+		void CreateResourceViews();
+		void CreateShaderParameterUniformBuffers();
 
 		void InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
 		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer);
@@ -254,24 +256,13 @@ namespace Volt
 		RGResourceRef TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource);
 		void RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RGResourceRef handle);
 
-		RefPtr<RHI::BufferView> GetRHIBufferSRV(RGBufferSRVRef bufferSRV);
-		RefPtr<RHI::BufferView> GetRHIBufferUAV(RGBufferUAVRef bufferUAV);
-
-		RefPtr<RHI::ImageView> GetRHITextureSRV(RGTextureSRVRef textureSRV);
-		RefPtr<RHI::ImageView> GetRHITextureUAV(RGTextureUAVRef textureUAV);
-		RefPtr<RHI::ImageView> GetRHITextureRT(RGTextureRef texture);
-
 		RefPtr<RHI::RHIResource> GetRHIResource(RGResourceRef resource);
-		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
-		RefPtr<RHI::UniformBuffer> GetRHIUniformBuffer(RGUniformBufferRef uniformBuffer);
-		RefPtr<RHI::Image> GetRHITexture(RGTextureRef texture);
 
 		// Private because we don't need to create a uniform buffer SRV
 		// outside of the Render Graph.
 		RGUniformBufferSRVRef CreateSRV(RGUniformBufferRef uniformBuffer);
 
-		TransientResourceSystem m_transientResourceSystem;
-		ResourceViewCache m_resourceViewCache;
+		RenderGraphResourceManager m_resourceManager;
 		ExternalResourceRegistry m_registeredExternalResources;
 		StandaloneBarriers m_standaloneBarriers;
 		StandaloneMarkers m_standaloneMarkers;
@@ -288,6 +279,8 @@ namespace Volt
 
 		Vector<Handle<RenderGraphPass>> m_passes;
 		Vector<RGResourceRef> m_resources;
+		Vector<RGResourceSRVRef> m_resourceSRVs;
+		Vector<RGResourceUAVRef> m_resourceUAVs;
 
 		Vector<CompiledPass> m_compiledPasses;
 
@@ -324,10 +317,10 @@ namespace Volt
 				case ShaderParameterType::UniformBuffer:  
 				{
 					RGUniformBufferRef uniformBuffer = *reinterpret_cast<RGUniformBufferRef*>(dataPtr);
-
-					VT_ENSURE_MSG(uniformBuffer, "Uniform buffer must not be null!");
-
-					newPass->AddResourceRead(CreateSRV(uniformBuffer));
+					if (uniformBuffer != nullptr)
+					{
+						newPass->AddResourceRead(CreateSRV(uniformBuffer));
+					}
 					break;
 				}
 				case ShaderParameterType::BufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGBufferRef*>(dataPtr), parameter.resourceAccessType); break;
@@ -343,12 +336,20 @@ namespace Volt
 					{
 						if (rtBindings.renderTargets[i] != nullptr)
 						{
+							VT_ENSURE_MSG(rtBindings.renderTargets[i]->GetDesc().usage == RHI::ImageUsage::Attachment 
+								|| rtBindings.renderTargets[i]->GetDesc().usage == RHI::ImageUsage::AttachmentStorage, 
+								"Render Targets must have a Attachment usage type!");
+							
 							newPass->AddResourceRenderTargetAccess(rtBindings.renderTargets[i]);
 						}
 					}
 
 					if (rtBindings.depthTarget != nullptr)
 					{
+						VT_ENSURE_MSG(rtBindings.depthTarget->GetDesc().usage == RHI::ImageUsage::Attachment 
+							|| rtBindings.depthTarget->GetDesc().usage == RHI::ImageUsage::AttachmentStorage, 
+							"Render Targets must have a Attachment usage type!");
+
 						newPass->AddResourceRenderTargetAccess(rtBindings.depthTarget);
 					}
 

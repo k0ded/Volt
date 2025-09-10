@@ -15,11 +15,11 @@
 
 namespace Volt::RHI
 {
-	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindingsMap& resourceBindings, bool accessesRayTracingResourceTable)
+	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindings& resourceBindings, bool accessesRayTracingResourceTable)
 	{
 		std::map<uint32_t, Vector<VkDescriptorSetLayoutBinding>> descriptorSetBindings;
 
-		for (const auto& [nameHash, binding] : resourceBindings)
+		for (const auto& [binding, nameHash] : resourceBindings)
 		{
 			auto& descriptorBinding = descriptorSetBindings[binding.set].emplace_back();
 			descriptorBinding.binding = binding.binding;
@@ -130,29 +130,32 @@ namespace Volt::RHI
 		return result;
 	}
 
-	void AppendBindings(ShaderParameterMap::ResourceBindingsMap& outBindings, const ShaderParameterMap::ResourceBindingsMap& shaderBindings)
+	void AppendBindings(ShaderParameterMap::ResourceBindings& outBindings, const ShaderParameterMap::ResourceBindings& shaderBindings)
 	{
 		// Because multiple shader stages might have bindings with the same name, we need 
 		// to check for and handle duplicates. As the names does not matter here, we can replace them
 		// with temporary ones.
 		uint32_t duplicateIndex = 0;
-		for (const auto& [nameHash, binding] : shaderBindings)
+		for (const auto& [binding, shaderBindingHash] : shaderBindings)
 		{
-			StringHash newNameHash = nameHash;
+			StringHash newNameHash = shaderBindingHash;
 
-			if (outBindings.contains(nameHash))
+			for (const auto& [newBinding, newBindingHash] : outBindings)
 			{
-				newNameHash = StringHash::Construct("Duplicate" + std::to_string(duplicateIndex++));
+				if (shaderBindingHash == newBindingHash)
+				{
+					newNameHash = StringHash::Construct("Duplicate" + std::to_string(duplicateIndex++));
+				}
 			}
 
-			outBindings[newNameHash] = binding;
+			outBindings.emplace_back(binding, newNameHash);
 		}
 	}
 
-	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const Vector<ShaderParameterMap::ResourceBindingsMap>& bindings, bool accessesRayTracingResourceTable)
+	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const Vector<ShaderParameterMap::ResourceBindings>& bindings, bool accessesRayTracingResourceTable)
 	{
 		// With multiple shaders, we start by merging all resources.
-		ShaderParameterMap::ResourceBindingsMap mergedShaderBindings;
+		ShaderParameterMap::ResourceBindings mergedShaderBindings;
 
 		for (const auto& shaderBindings : bindings)
 		{
@@ -163,7 +166,7 @@ namespace Volt::RHI
 		return BuildFromShaderResourceBindings(mergedShaderBindings, accessesRayTracingResourceTable);
 	}
 
-	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const ShaderParameterMap::ResourceBindingsMap& resourceBindings)
+	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const ShaderParameterMap::ResourceBindings& resourceBindings)
 	{
 		uint32_t uboCount = 0;
 		uint32_t ssboCount = 0;
@@ -174,7 +177,7 @@ namespace Volt::RHI
 		uint32_t seperateSamplerCount = 0;
 		uint32_t accelerationStructureCount = 0;
 
-		for (const auto& [nameHash, binding] : resourceBindings)
+		for (const auto& [binding, nameHash] : resourceBindings)
 		{
 			if (binding.resourceType == ShaderResourceType::UniformBuffer)
 			{
@@ -261,10 +264,10 @@ namespace Volt::RHI
 		return result;
 	}
 	
-	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const Vector<ShaderParameterMap::ResourceBindingsMap>& shaderBindings)
+	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const Vector<ShaderParameterMap::ResourceBindings>& shaderBindings)
 	{
 		// With multiple shaders, we start by merging all resources.
-		ShaderParameterMap::ResourceBindingsMap mergedShaderBindings;
+		ShaderParameterMap::ResourceBindings mergedShaderBindings;
 
 		for (const auto& bindings : shaderBindings)
 		{

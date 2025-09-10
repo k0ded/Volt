@@ -160,10 +160,13 @@ namespace Volt::RHI
 
 	const ShaderResourceBinding* VulkanComputePipeline::GetResourceBindingFromName(const StringHash& name) const
 	{
-		const ShaderParameterMap::ResourceBindingsMap& resourceBindings = m_shaderParameterMap.GetResourceBindings();
-		if (resourceBindings.contains(name))
+		const ShaderParameterMap::ResourceBindings& resourceBindings = m_shaderParameterMap.GetResourceBindings();
+		for (const auto& [binding, nameHash] : resourceBindings)
 		{
-			return &resourceBindings.at(name);
+			if (nameHash == name)
+			{
+				return &binding;
+			}
 		}
 
 		return nullptr;

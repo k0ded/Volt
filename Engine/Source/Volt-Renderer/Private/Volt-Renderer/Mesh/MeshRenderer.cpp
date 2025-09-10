@@ -59,7 +59,7 @@ namespace Volt
 
 		if (m_primitiveDrawDataIndirection)
 		{
-			batchedShaderParameters.AddBufferParameter("PrimitiveDrawDataIndirection"_sh, RHI::ShaderResourceType::TexelBuffer, renderContext.GetRHIBuffer(m_primitiveDrawDataIndirection)->GetView(RHI::BufferViewDesc{ .bufferFormat = RHI::PixelFormat::R32_UINT }));
+			batchedShaderParameters.AddBufferParameter("PrimitiveDrawDataIndirection"_sh, RHI::ShaderResourceType::TexelBuffer, m_primitiveDrawDataIndirection->GetRHIResource()->GetOrCreateView(RHI::BufferViewDesc{ .bufferFormat = RHI::PixelFormat::R32_UINT }));
 		}
 
 		for (const MeshBatch& meshBatch : m_meshBatches)
@@ -83,7 +83,7 @@ namespace Volt
 
 			if (meshBatch.drawCommandOffset >= 0)
 			{
-				commandBuffer->DrawIndexedIndirect(renderContext.GetRHIBuffer(m_indirectDrawCommandsBuffer), meshBatch.drawCommandOffset * sizeof(RHI::DrawIndexedIndirectCommand), 1, 0);
+				commandBuffer->DrawIndexedIndirect(m_indirectDrawCommandsBuffer->GetRHIResource()->GetRHIBuffer(), meshBatch.drawCommandOffset * sizeof(RHI::DrawIndexedIndirectCommand), 1, 0);
 			}
 		}
 	}
@@ -115,8 +115,8 @@ namespace Volt
 
 		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
 		{
-			const RHI::ShaderParameterMap::ResourceBindingsMap& bindingsMap = parameterMap.GetResourceBindings();
-			for (const auto& [hashedName, binding] : bindingsMap)
+			const RHI::ShaderParameterMap::ResourceBindings& bindingsMap = parameterMap.GetResourceBindings();
+			for (const auto& [binding, hashedName] : bindingsMap)
 			{
 				if (binding.resourceType == RHI::ShaderResourceType::Sampler)
 				{

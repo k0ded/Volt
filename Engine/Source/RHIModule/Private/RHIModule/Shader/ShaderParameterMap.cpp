@@ -5,101 +5,110 @@ namespace Volt::RHI
 {
 	void ShaderParameterMap::AddUniformBuffer(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
-		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
-		resourceBinding.set = set;
-		resourceBinding.binding = binding;
-		resourceBinding.registerType = ShaderRegisterType::CBV;
-		resourceBinding.resourceType = ShaderResourceType::UniformBuffer;
-		resourceBinding.shaderStage = shaderStage;
-		resourceBinding.name = name;
+		auto& resourceBinding = m_resourceBindings.emplace_back();
+		resourceBinding.binding.set = set;
+		resourceBinding.binding.binding = binding;
+		resourceBinding.binding.registerType = ShaderRegisterType::CBV;
+		resourceBinding.binding.resourceType = ShaderResourceType::UniformBuffer;
+		resourceBinding.binding.shaderStage = shaderStage;
+		resourceBinding.binding.name = name;
+		resourceBinding.hash = StringHash::Construct(name);
 	}
 
 	void ShaderParameterMap::AddSampler(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
-		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
-		resourceBinding.set = set;
-		resourceBinding.binding = binding;
-		resourceBinding.registerType = ShaderRegisterType::Sampler;
-		resourceBinding.resourceType = ShaderResourceType::Sampler;
-		resourceBinding.shaderStage = shaderStage;
-		resourceBinding.name = name;
+		auto& resourceBinding = m_resourceBindings.emplace_back();
+		resourceBinding.binding.set = set;
+		resourceBinding.binding.binding = binding;
+		resourceBinding.binding.registerType = ShaderRegisterType::Sampler;
+		resourceBinding.binding.resourceType = ShaderResourceType::Sampler;
+		resourceBinding.binding.shaderStage = shaderStage;
+		resourceBinding.binding.name = name;
+		resourceBinding.hash = StringHash::Construct(name);
 	}
 	
 	void ShaderParameterMap::AddStructuredBufferUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
-		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
-		resourceBinding.set = set;
-		resourceBinding.binding = binding;
-		resourceBinding.registerType = ShaderRegisterType::UAV;
-		resourceBinding.resourceType = ShaderResourceType::StructuredBuffer;
-		resourceBinding.shaderStage = shaderStage;
-		resourceBinding.name = name;
+		auto& resourceBinding = m_resourceBindings.emplace_back();
+		resourceBinding.binding.set = set;
+		resourceBinding.binding.binding = binding;
+		resourceBinding.binding.registerType = ShaderRegisterType::UAV;
+		resourceBinding.binding.resourceType = ShaderResourceType::StructuredBuffer;
+		resourceBinding.binding.shaderStage = shaderStage;
+		resourceBinding.binding.name = name;
+		resourceBinding.hash = StringHash::Construct(name);
 	}
 	
 	void ShaderParameterMap::AddStructuredBufferSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
-		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
-		resourceBinding.set = set;
-		resourceBinding.binding = binding;
-		resourceBinding.registerType = ShaderRegisterType::SRV;
-		resourceBinding.resourceType = ShaderResourceType::StructuredBuffer;
-		resourceBinding.shaderStage = shaderStage;
-		resourceBinding.name = name;
+		auto& resourceBinding = m_resourceBindings.emplace_back();
+		resourceBinding.binding.set = set;
+		resourceBinding.binding.binding = binding;
+		resourceBinding.binding.registerType = ShaderRegisterType::SRV;
+		resourceBinding.binding.resourceType = ShaderResourceType::StructuredBuffer;
+		resourceBinding.binding.shaderStage = shaderStage;
+		resourceBinding.binding.name = name;
+		resourceBinding.hash = StringHash::Construct(name);
 	}
 
 	void ShaderParameterMap::AddTexelBufferUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
-		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
-		resourceBinding.set = set;
-		resourceBinding.binding = binding;
-		resourceBinding.registerType = ShaderRegisterType::UAV;
-		resourceBinding.resourceType = ShaderResourceType::TexelBuffer;
-		resourceBinding.shaderStage = shaderStage;
-		resourceBinding.name = name;
+		auto& resourceBinding = m_resourceBindings.emplace_back();
+		resourceBinding.binding.set = set;
+		resourceBinding.binding.binding = binding;
+		resourceBinding.binding.registerType = ShaderRegisterType::UAV;
+		resourceBinding.binding.resourceType = ShaderResourceType::TexelBuffer;
+		resourceBinding.binding.shaderStage = shaderStage;
+		resourceBinding.binding.name = name;
+		resourceBinding.hash = StringHash::Construct(name);
 	}
 
 	void ShaderParameterMap::AddTexelBufferSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
-		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
-		resourceBinding.set = set;
-		resourceBinding.binding = binding;
-		resourceBinding.registerType = ShaderRegisterType::SRV;
-		resourceBinding.resourceType = ShaderResourceType::TexelBuffer;
-		resourceBinding.shaderStage = shaderStage;
-		resourceBinding.name = name;
+		auto& resourceBinding = m_resourceBindings.emplace_back();
+		resourceBinding.binding.set = set;
+		resourceBinding.binding.binding = binding;
+		resourceBinding.binding.registerType = ShaderRegisterType::SRV;
+		resourceBinding.binding.resourceType = ShaderResourceType::TexelBuffer;
+		resourceBinding.binding.shaderStage = shaderStage;
+		resourceBinding.binding.name = name;
+		resourceBinding.hash = StringHash::Construct(name);
 	}
 	
 	void ShaderParameterMap::AddTextureSRV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
-		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
-		resourceBinding.set = set;
-		resourceBinding.binding = binding;
-		resourceBinding.registerType = ShaderRegisterType::SRV;
-		resourceBinding.resourceType = ShaderResourceType::Texture;
-		resourceBinding.shaderStage = shaderStage;
-		resourceBinding.name = name;
+		auto& resourceBinding = m_resourceBindings.emplace_back();
+		resourceBinding.binding.set = set;
+		resourceBinding.binding.binding = binding;
+		resourceBinding.binding.registerType = ShaderRegisterType::SRV;
+		resourceBinding.binding.resourceType = ShaderResourceType::Texture;
+		resourceBinding.binding.shaderStage = shaderStage;
+		resourceBinding.binding.name = name;
+		resourceBinding.hash = StringHash::Construct(name);
 	}
 	
 	void ShaderParameterMap::AddTextureUAV(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
-		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
-		resourceBinding.set = set;
-		resourceBinding.binding = binding;
-		resourceBinding.registerType = ShaderRegisterType::UAV;
-		resourceBinding.resourceType = ShaderResourceType::Texture;
-		resourceBinding.shaderStage = shaderStage;
-		resourceBinding.name = name;
+		auto& resourceBinding = m_resourceBindings.emplace_back();
+		resourceBinding.binding.set = set;
+		resourceBinding.binding.binding = binding;
+		resourceBinding.binding.registerType = ShaderRegisterType::UAV;
+		resourceBinding.binding.resourceType = ShaderResourceType::Texture;
+		resourceBinding.binding.shaderStage = shaderStage;
+		resourceBinding.binding.name = name;
+		resourceBinding.hash = StringHash::Construct(name);
 	}
 
 	void ShaderParameterMap::AddAccelerationStructure(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
-		auto& resourceBinding = m_resourceBindings[StringHash::Construct(name)];
-		resourceBinding.set = set;
-		resourceBinding.binding = binding;
-		resourceBinding.registerType = ShaderRegisterType::SRV;
-		resourceBinding.resourceType = ShaderResourceType::AccelerationStructure;
-		resourceBinding.shaderStage = shaderStage;
-		resourceBinding.name = name;
+		auto& resourceBinding = m_resourceBindings.emplace_back();
+		resourceBinding.binding.set = set;
+		resourceBinding.binding.binding = binding;
+		resourceBinding.binding.registerType = ShaderRegisterType::SRV;
+		resourceBinding.binding.resourceType = ShaderResourceType::AccelerationStructure;
+		resourceBinding.binding.shaderStage = shaderStage;
+		resourceBinding.binding.name = name;
+		resourceBinding.hash = StringHash::Construct(name);
 	}
 
 	void ShaderParameterMap::AddParameter(const std::string& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset)
@@ -125,11 +134,13 @@ namespace Volt::RHI
 
 	const ShaderResourceBinding* ShaderParameterMap::GetResourceBindingFromName(StringHash name) const
 	{
-		if (m_resourceBindings.contains(name))
+		for (const ResourceBinding& binding : m_resourceBindings)
 		{
-			return &m_resourceBindings.at(name);
+			if (binding.hash == name)
+			{
+				return &binding.binding;
+			}
 		}
-
 		return nullptr;
 	}
 
@@ -149,5 +160,17 @@ namespace Volt::RHI
 		streamReader.Read(outData.m_resourceBindings);
 		streamReader.Read(outData.m_shaderParameters);
 		streamReader.Read(outData.m_accessesRayTracingResourceTable);
+	}
+
+	void ShaderParameterMap::ResourceBinding::Serialize(BinaryStreamWriter& streamWriter, const ResourceBinding& data)
+	{
+		streamWriter.Write(data.binding);
+		streamWriter.Write(data.hash);
+	}
+
+	void ShaderParameterMap::ResourceBinding::Deserialize(BinaryStreamReader& streamReader, ResourceBinding& outData)
+	{
+		streamReader.Read(outData.binding);
+		streamReader.Read(outData.hash);
 	}
 }

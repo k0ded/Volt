@@ -359,7 +359,7 @@ namespace Volt::RHI
 		// Cache all possible descriptor writes, to skip that during runtime.
 		for (const auto& parameterMap : shaderParameterMaps)
 		{
-			for (const auto& [nameHash, binding] : parameterMap.GetResourceBindings())
+			for (const auto& [binding, nameHash] : parameterMap.GetResourceBindings())
 			{
 				auto& writeDescriptor = m_descriptorWrites.emplace_back();
 				
@@ -465,7 +465,7 @@ namespace Volt::RHI
 		// Cache all possible descriptor infos.
 		for (const auto& parameterMap : shaderParameterMaps)
 		{
-			for (const auto& [nameHash, binding] : parameterMap.GetResourceBindings())
+			for (const auto& [binding, nameHash] : parameterMap.GetResourceBindings())
 			{
 				switch (binding.resourceType)
 				{

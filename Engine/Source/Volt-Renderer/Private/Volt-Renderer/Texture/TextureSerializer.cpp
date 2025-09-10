@@ -139,6 +139,7 @@ namespace Volt
 			specification.mips = static_cast<uint32_t>(textureHeader.mips.size());
 			specification.generateMips = false;
 			specification.debugName = filePath.stem().string();
+			specification.initializeImage = false;
 
 			image = RHI::Image::Create(specification);
 		}

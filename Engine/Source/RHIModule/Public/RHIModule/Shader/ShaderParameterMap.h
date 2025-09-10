@@ -10,8 +10,18 @@ namespace Volt::RHI
 	class VTRHI_API ShaderParameterMap
 	{
 	public:
-		using ResourceBindingsMap = Map<StringHash, ShaderResourceBinding>;
 		using ParameterMap = Map<StringHash, ShaderUniform>;
+
+		struct ResourceBinding
+		{
+			ShaderResourceBinding binding;
+			StringHash hash;
+
+			static void Serialize(BinaryStreamWriter& streamWriter, const ResourceBinding& data);
+			static void Deserialize(BinaryStreamReader& streamReader, ResourceBinding& outData);
+		};
+
+		using ResourceBindings = Vector<ResourceBinding>;
 
 		void AddUniformBuffer(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
 		void AddSampler(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage);
@@ -31,7 +41,7 @@ namespace Volt::RHI
 
 		VT_INLINE void SetShaderStage(ShaderStage shaderStage) { m_shaderStage = shaderStage; }
 
-		VT_NODISCARD VT_INLINE const ResourceBindingsMap& GetResourceBindings() const { return m_resourceBindings; }
+		VT_NODISCARD VT_INLINE const ResourceBindings& GetResourceBindings() const { return m_resourceBindings; }
 		VT_NODISCARD VT_INLINE const ParameterMap& GetShaderParameters() const { return m_shaderParameters; }
 		VT_NODISCARD VT_INLINE ShaderStage GetShaderStage() const { return m_shaderStage; }
 		VT_NODISCARD VT_INLINE uint32_t GetShaderParametersSize() const { return m_shaderParameterSize; }
@@ -41,7 +51,7 @@ namespace Volt::RHI
 		static void Deserialize(BinaryStreamReader& streamReader, ShaderParameterMap& outData);
 
 	private:
-		ResourceBindingsMap m_resourceBindings;
+		ResourceBindings m_resourceBindings;
 		ParameterMap m_shaderParameters;
 		ShaderStage m_shaderStage;
 

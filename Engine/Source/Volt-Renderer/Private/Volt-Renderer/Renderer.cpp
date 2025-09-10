@@ -133,6 +133,7 @@ namespace Volt
 		m_descriptorTableCache = CreateScope<DescriptorTableCache>();
 		m_samplerStateCache = CreateScope<SamplerStateCache>();
 		m_commandBufferPool = CreateScope<CommandBufferPool>();
+		m_transientResourceAllocator = CreateScope<TransientResourceAllocator>();
 
 		CreateDefaultResources();
 		//m_blueNoise = CreateScope<BlueNoise>();
@@ -292,6 +293,8 @@ namespace Volt
 		{
 			m_bindlessResourcesManager->Update();
 		}
+
+		m_transientResourceAllocator->OnPreRender(event.GetFrameIndex());
 
 		m_descriptorTableCache->Update(event.GetFrameIndex());
 		m_commandBufferPool->Update();

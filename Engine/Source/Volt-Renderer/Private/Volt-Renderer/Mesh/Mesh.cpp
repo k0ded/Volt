@@ -13,6 +13,7 @@
 #include <RHIModule/RHIFeatures.h>
 
 #include <CoreUtilities/Math/Math.h>
+#include <CoreUtilities/Packing.h>
 
 #include <meshoptimizer/meshoptimizer.h>
 
@@ -483,11 +484,8 @@ namespace Volt
 	VertexMaterialData Mesh::GetMaterialDataFromVertex(const Vertex& vertex)
 	{
 		VertexMaterialData result;
-		const auto octNormal = Utility::OctNormalEncode(vertex.normal);
-
-		result.normal.x = uint8_t(octNormal.x * 255);
-		result.normal.y = uint8_t(octNormal.y * 255);
-		result.tangent = Utility::EncodeTangent(vertex.normal, vertex.tangent);
+		result.normal = Packing::PackNormalToUInt32(vertex.normal);
+		result.tangent = Packing::EncodeTangent(vertex.normal, vertex.tangent);
 		result.texCoords = glm::packHalf2x16(vertex.uv);
 
 		return result;

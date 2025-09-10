@@ -257,7 +257,6 @@ namespace Volt::RHI
 	{
 		return RefPtr<VulkanRayTracingResourceTable>::Create();
 	}
-
 }
 
 Volt::RHI::RHIModule* CreateRHIModule()
