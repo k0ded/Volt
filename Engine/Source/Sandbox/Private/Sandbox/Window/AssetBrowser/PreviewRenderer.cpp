@@ -21,7 +21,7 @@
 PreviewRenderer::PreviewRenderer()
 {
 	myCamera = CreateRef<Volt::Camera>(60.f, 1.f, 1.f, 100000.f);
-	myPreviewScene = Volt::Scene::CreateDefaultScene("Preview", false);
+	myPreviewScene = Volt::Scene::CreateDefaultScene("Preview", false, true);
 
 	// Set HDRI
 	{

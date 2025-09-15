@@ -30,6 +30,7 @@ namespace Volt
 	class ViewportResizeEvent;
 	class OnSceneLoadedEvent;
 	class OnSceneTransitionEvent;
+	class AssetFileCreatedEvent;
 }
 
 enum class SceneState
@@ -174,7 +175,6 @@ private:
 
 	Ref<Volt::Scene> m_runtimeScene;
 	Ref<Volt::Scene> m_intermediateScene;
-	Vector<Ref<Volt::EntityDesc>> m_entities;
 
 	SceneState m_sceneState = SceneState::Edit;
 

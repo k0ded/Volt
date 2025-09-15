@@ -138,7 +138,7 @@ namespace Volt
 		Vector<Vector<uint32_t>> perThreadMeshletData(threadCount);
 		Vector<Vector<Meshlet>> perThreadMeshlets(threadCount);
 
-		Algo::ForEachParallelLocking([&](uint32_t threadIdx, uint32_t elementIdx)
+		Algo::ForEachParalellBlocking([&](uint32_t threadIdx, uint32_t elementIdx)
 		{
 			auto& meshletData = perThreadMeshletData.at(threadIdx);
 			auto& meshlets = perThreadMeshlets.at(threadIdx);
@@ -206,14 +206,14 @@ namespace Volt
 		const auto meshletPrefixSums = Algo::ElementCountPrefixSum(perThreadMeshlets);
 		const auto indexPrefixSums = Algo::ElementCountPrefixSum(perThreadMeshletData);
 
-		Algo::ForEachParallelLocking([&](uint32_t threadIdx, uint32_t elementIdx)
+		Algo::ForEachParalellBlocking([&](uint32_t threadIdx, uint32_t elementIdx)
 		{
 			auto& subMesh = m_subMeshes.at(elementIdx);
 			subMesh.meshletStartOffset += meshletPrefixSums.at(threadIdx);
 
 		}, subMeshCount);
 
-		Algo::ForEachParallelLocking([&](uint32_t threadIdx, uint32_t elementIdx)
+		Algo::ForEachParalellBlocking([&](uint32_t threadIdx, uint32_t elementIdx)
 		{
 			for (auto& meshlet : perThreadMeshlets.at(elementIdx))
 			{

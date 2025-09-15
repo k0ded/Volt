@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AssetSystem/Asset.h"
+#include "AssetSystem/Events/AssetEvents.h"
 
 #include <LogModule/Log.h>
 
@@ -10,6 +11,7 @@
 #include <CoreUtilities/StringUtility.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
+#include <EventSystem/EventSystem.h>
 #include <EventSystem/EventListener.h>
 
 #include <filesystem>
@@ -96,6 +98,7 @@ namespace Volt
 		static const std::filesystem::path GetRelativePath(const std::filesystem::path& path);
 		static const std::filesystem::path GetFilePathFromAssetHandle(AssetHandle handle);
 		static const std::filesystem::path GetContextPath(const std::filesystem::path& path);
+		static const bool HasFilePath(AssetHandle handle);
 
 		static AssetType GetAssetTypeFromHandle(const AssetHandle& handle);
 		static AssetType GetAssetTypeFromPath(const std::filesystem::path& path);
@@ -345,7 +348,7 @@ namespace Volt
 	template<typename T, typename ...Args>
 	inline Ref<T> AssetManager::CreateMemoryAsset(const std::string& name, Args&& ...args)
 	{
-		return Get().CreateAssetImpl<T>(name, /*isMemoryAsset*/ true, std::forward(args)...);
+		return Get().CreateAssetImpl<T>(name, /*isMemoryAsset*/ true, std::forward<Args>(args)...);
 	}
 
 	template<IsVoltAsset T, typename ...Args>
@@ -374,19 +377,23 @@ namespace Volt
 
 		asset->assetName = cleanName;
 
-		WriteLock lockCache{ m_assetCacheMutex };
-		WriteLock lockRegistry{ m_assetRegistryMutex };
-
-		m_assetRegistry.emplace(asset->handle, metadata);
-		if (isMemoryAsset)
 		{
-			m_memoryAssets.emplace(asset->handle, asset);
-		}
-		else
-		{
-			m_assetCache.emplace(asset->handle, asset);
+			WriteLock lockCache{ m_assetCacheMutex };
+			WriteLock lockRegistry{ m_assetRegistryMutex };
+
+			m_assetRegistry.emplace(asset->handle, metadata);
+			if (isMemoryAsset)
+			{
+				m_memoryAssets.emplace(asset->handle, asset);
+			}
+			else
+			{
+				m_assetCache.emplace(asset->handle, asset);
+			}
 		}
 
+		AssetCreatedEvent assetCreatedEvent(asset->handle);
+		EventSystem::DispatchEvent(assetCreatedEvent);
 		return asset;
 	}
 

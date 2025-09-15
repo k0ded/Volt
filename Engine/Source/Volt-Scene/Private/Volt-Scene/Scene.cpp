@@ -2,6 +2,7 @@
 
 #include "Volt-Scene/Scene.h"
 #include "Volt-Scene/Entity.h"
+#include "Volt-Scene/EntityDescription.h"
 
 #include <Volt-Physics/RigidbodyComponent.h>
 #include <Volt-Physics/EntityPhysicsScene.h>
@@ -81,7 +82,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 		m_statistics.entityCount = m_entityScene.GetEntityAliveCount();
-		
+
 		m_entityScene.Update(aDeltaTime);
 
 		AnimationManager::Update(aDeltaTime);
@@ -135,6 +136,8 @@ namespace Volt
 		Entity newEntity(newHelper.GetHandle(), this);
 		m_worldEngine.AddEntity(newEntity);
 
+		CreateEntityDescForEntity(newEntity.GetID());
+
 		return newEntity;
 	}
 
@@ -147,6 +150,25 @@ namespace Volt
 		m_worldEngine.AddEntity(newEntity);
 
 		return newEntity;
+	}
+
+	Volt::AssetHandle Scene::CreateEntityDescForEntity(const EntityID& id)
+	{
+		VT_ENSURE(!m_entityIDToDescHandle.contains(id));
+		VT_ENSURE(m_entityScene.IsEntityValid(id));
+
+		std::string name = std::to_string(id);
+		Ref<Volt::EntityDesc> asset;
+		if (Volt::AssetManager::IsMemoryAsset(this->handle))
+		{
+			asset = Volt::AssetManager::CreateMemoryAsset<Volt::EntityDesc>(name, id, this->handle);
+		}
+		else
+		{
+			asset = Volt::AssetManager::CreateAsset<Volt::EntityDesc>(name, id, this->handle);
+		}
+		m_entityIDToDescHandle.emplace(id, asset->handle);
+		return asset->handle;
 	}
 
 	Entity Scene::GetEntityFromID(const EntityID id) const
@@ -164,6 +186,15 @@ namespace Volt
 	EntityHelper Scene::GetEntityHelperFromEntityID(EntityID entityId) const
 	{
 		return m_entityScene.GetEntityHelperFromEntityID(entityId);
+	}
+
+	Volt::AssetHandle Scene::GetEntityDescHandleFromEntityID(EntityID entityID) const
+	{
+		if (!m_entityIDToDescHandle.contains(entityID))
+		{
+			return Volt::AssetHandle();
+		}
+		return m_entityIDToDescHandle.at(entityID);
 	}
 
 	void Scene::DestroyEntity(Entity entity)
@@ -251,9 +282,17 @@ namespace Volt
 		return m_entityScene.IsEntityValid(entityId);
 	}
 
-	Ref<Scene> Scene::CreateDefaultScene(const std::string& name, bool createDefaultMesh)
+	Ref<Scene> Scene::CreateDefaultScene(const std::string& name, bool createDefaultMesh, bool asMemoryAsset)
 	{
-		Ref<Scene> newScene = Volt::AssetManager::CreateAsset<Scene>(name);
+		Ref<Scene> newScene;
+		if (asMemoryAsset)
+		{
+			newScene = Volt::AssetManager::CreateMemoryAsset<Scene>(name);
+		}
+		else
+		{
+			newScene = Volt::AssetManager::CreateAsset<Scene>(name);
+		}
 
 		// Setup
 		{
@@ -312,13 +351,13 @@ namespace Volt
 		{
 			const EntityID uuid = registry.get<IDComponent>(id).id;
 
-			auto entity =  otherScene->CreateEntityWithID(uuid);
+			auto entity = otherScene->CreateEntityWithID(uuid);
 			Entity::Copy(Entity{ id, this }, entity, EntityCopyFlags::None);
 
 			otherScene->InvalidateEntityTransform(entity.GetID());
 			otherScene->GetWorldEngineMutable().OnEntityMoved(entity);
 		});
-	} 
+	}
 
 	void Scene::Clear()
 	{

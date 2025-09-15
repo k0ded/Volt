@@ -6,9 +6,11 @@
 #include "Sandbox/Modals/AssetsModal.h"
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/Events/AssetEvents.h>
 
 #include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/FileSystem.h>
+
 
 
 DirtyAssetsManager DirtyAssetsManager::s_instance{};
@@ -20,8 +22,33 @@ DirtyAssetsManager& DirtyAssetsManager::Get()
 
 void DirtyAssetsManager::Initialize()
 {
+	RegisterEventListeners();
+
 	auto& assetsModal = ModalSystem::AddModal<AssetsModal>("Assets Modal##sandbox");
 	m_assetsModalID = assetsModal.GetID();
+}
+
+void DirtyAssetsManager::RegisterEventListeners()
+{
+	RegisterListener<Volt::AssetCreatedEvent>(VT_BIND_EVENT_FN(DirtyAssetsManager::OnAssetCreated));
+	RegisterListener<Volt::AssetSavedEvent>(VT_BIND_EVENT_FN(DirtyAssetsManager::OnAssetSaved));
+}
+
+bool DirtyAssetsManager::OnAssetCreated(Volt::AssetCreatedEvent& e)
+{
+	const Volt::AssetHandle& handle = e.GetAssetHandle();
+	if (Volt::AssetManager::IsMemoryAsset(handle))
+	{
+		return false;
+	}
+	MarkAssetDirty(handle);
+	return false;
+}
+
+bool DirtyAssetsManager::OnAssetSaved(Volt::AssetSavedEvent& e)
+{
+	MarkAssetNotDirty(e.GetAssetHandle());
+	return false;
 }
 
 void DirtyAssetsManager::RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomization customization)
@@ -80,7 +107,7 @@ void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 		FrameStackVector<Volt::AssetHandle> assetsNeedCreation;
 		for (const Volt::AssetHandle& asset : assetsToSave)
 		{
-			if (Volt::AssetManager::IsMemoryAsset(asset))
+			if (!Volt::AssetManager::HasFilePath(asset))
 			{
 				assetsNeedCreation.push_back(asset);
 			}
@@ -174,6 +201,10 @@ void DirtyAssetsManager::MarkAssetDirty(Volt::AssetHandle handle)
 
 void DirtyAssetsManager::MarkAssetNotDirty(Volt::AssetHandle handle)
 {
+	if (!m_dirtyAssets.contains(handle))
+	{
+		return;
+	}
 	m_dirtyAssets.erase(handle);
 }
 
@@ -181,6 +212,8 @@ const std::set<Volt::AssetHandle>& DirtyAssetsManager::GetDirtyAssets()
 {
 	return m_dirtyAssets;
 }
+
+
 
 
 void DirtyAssetsManager::SaveAssetsImpl(SaveDirtyAssetsFilter filter)

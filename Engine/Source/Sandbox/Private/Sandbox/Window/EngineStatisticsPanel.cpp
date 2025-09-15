@@ -10,8 +10,7 @@
 
 EngineStatisticsPanel::EngineStatisticsPanel(Ref<Volt::Scene>& aScene, Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::SceneRenderer>& gameSceneRenderer)
 	: EditorWindow("Engine Statistics"), myScene(aScene), mySceneRenderer(sceneRenderer), myGameSceneRenderer(gameSceneRenderer)
-{
-}
+{}
 
 void EngineStatisticsPanel::UpdateMainContent()
 {
@@ -60,7 +59,14 @@ void EngineStatisticsPanel::UpdateMainContent()
 
 	if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		const auto& stats = myScene->GetStatistics();
-		ImGui::Text("Entity count: %d", stats.entityCount);
+		if (myScene)
+		{
+			const auto& stats = myScene->GetStatistics();
+			ImGui::Text("Entity count: %d", stats.entityCount);
+		}
+		else
+		{
+			ImGui::Text("No Scene Loaded");
+		}
 	}
 }

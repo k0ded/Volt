@@ -449,15 +449,6 @@ void Sandbox::NewScene()
 	}
 
 	m_runtimeScene = Volt::Scene::CreateDefaultScene("New Scene", true);
-	DirtyAssetsManager::Get().MarkAssetDirty(m_runtimeScene->handle);
-	Vector<Volt::Entity> entities = m_runtimeScene->GetAllEntities();
-	for (const Volt::Entity& entity : entities)
-	{
-		std::string name = std::to_string(entity.GetID());
-		Ref<Volt::EntityDesc> asset = Volt::AssetManager::CreateAsset<Volt::EntityDesc>(name, entity.GetID(), m_runtimeScene->handle);
-		m_entities.push_back(asset);
-		DirtyAssetsManager::Get().MarkAssetDirty(asset->handle);
-	}
 
 	SetupNewSceneData();
 }

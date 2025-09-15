@@ -73,11 +73,12 @@ namespace Volt
 
 		Entity CreateEntity(const std::string& tag = "");
 		Entity CreateEntityWithID(const EntityID& id, const std::string& tag = "");
+		Volt::AssetHandle CreateEntityDescForEntity(const EntityID& id);
 
 		Entity GetEntityFromID(const EntityID id) const;
 		Entity GetEntityFromHandle(entt::entity entityHandle) const;
-
 		EntityHelper GetEntityHelperFromEntityID(EntityID entityId) const;
+		Volt::AssetHandle GetEntityDescHandleFromEntityID(EntityID entityID) const;
 
 		bool IsRelatedTo(Entity entity, Entity otherEntity);
 		void DestroyEntity(Entity entity);
@@ -103,7 +104,7 @@ namespace Volt
 		Vector<Entity> GetAllEditedEntities() const;
 		Vector<EntityID> GetAllRemovedEntities() const;
 
-		static Ref<Scene> CreateDefaultScene(const std::string& name, bool createDefaultMesh = true);
+		static Ref<Scene> CreateDefaultScene(const std::string& name, bool createDefaultMesh = true, bool asMemoryAsset = false);
 
 		static AssetType GetStaticType() { return AssetTypes::Scene; }
 		AssetType GetType() override { return GetStaticType(); }
@@ -141,6 +142,8 @@ namespace Volt
 		uint32_t m_viewportHeight = 1;
 
 		EntityScene m_entityScene;
+		Map<Volt::EntityID, Volt::AssetHandle> m_entityIDToDescHandle;
+
 
 		//Ref<Vision> m_visionSystem; // Needs to be of ptr type because of include loop // #TODO_Scene
 		Ref<RenderScene> m_renderScene;

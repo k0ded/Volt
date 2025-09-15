@@ -3,9 +3,19 @@
 #include <AssetSystem/AssetHandle.h>
 #include <AssetSystem/AssetType.h>
 
+#include <SubSystem/SubSystem.h>
+
 #include <CoreUtilities/Containers/Vector.h>
 
+#include <EventSystem/EventListener.h>
+
 #include <set>
+
+namespace Volt
+{
+	class AssetCreatedEvent;
+	class AssetSavedEvent;
+}
 
 struct SaveDirtyAssetsFilter
 {
@@ -25,7 +35,7 @@ struct DirtySaveCustomization
 	std::function<bool(Volt::AssetHandle)> RequiresExternalAction;
 };
 
-class DirtyAssetsManager
+class DirtyAssetsManager : public Volt::EventListener
 {
 public:
 	typedef std::function<void(Volt::AssetHandle)> DirtySaveCustomizationFn;
@@ -47,6 +57,11 @@ public:
 private:
 	DirtyAssetsManager() = default;
 	static DirtyAssetsManager s_instance;
+
+	void RegisterEventListeners();
+
+	bool OnAssetCreated(Volt::AssetCreatedEvent& e);
+	bool OnAssetSaved(Volt::AssetSavedEvent& e);
 
 	void SaveAssetsImpl(SaveDirtyAssetsFilter filter);
 	void CreateAssetsImpl(Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate);

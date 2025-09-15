@@ -262,6 +262,7 @@ namespace Volt
 
 	void AssetManager::UnloadAsset(AssetHandle assetHandle)
 	{
+		//todo_fabian: make this work with not-yet saved assets
 		{
 			ReadLock lock{ m_assetCacheMutex };
 			if (!m_assetCache.contains(assetHandle))
@@ -964,6 +965,20 @@ namespace Volt
 		return projDir;
 	}
 
+	const bool AssetManager::HasFilePath(AssetHandle handle)
+	{
+		auto& instance = Get();
+		ReadLock lock{ instance.m_assetRegistryMutex };
+
+		const auto& metadata = GetMetadataFromHandle(handle);
+		if (!metadata.IsValid())
+		{
+			return {};
+		}
+
+		return !metadata.filePath.empty();
+	}
+
 	const std::filesystem::path AssetManager::GetFilePathFromFilename(const std::string& filename)
 	{
 		auto& instance = Get();
@@ -1220,6 +1235,11 @@ namespace Volt
 			{
 				m_assetCache.emplace(asset->handle, asset);
 			}
+		}
+
+		{
+			AssetSavedEvent assetSavedEvent(asset->handle);
+			EventSystem::DispatchEvent(assetSavedEvent);
 		}
 	}
 
