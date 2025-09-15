@@ -29,6 +29,10 @@ namespace Volt::RHI
 		DepthMode depthMode = DepthMode::ReadWrite;
 		CompareOperator depthCompareOperator = CompareOperator::GreaterEqual;
 		bool enablePrimitiveRestart = false;
+		bool enableDepthClamp = false;
+		float depthBiasConstantFactor = 0.f;
+		float depthBiasClamp = 0.f;
+		float depthBiasSlopeFactor = 0.f;
 
 		Array<AttachmentBlendState, MAX_COLOR_ATTACHMENT_COUNT> attachmentBlendStates;
 		std::string name;

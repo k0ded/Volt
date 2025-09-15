@@ -191,7 +191,10 @@ namespace Volt::RHI
 
 			VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
 			rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-			rasterizerInfo.depthBiasClamp = VK_FALSE;
+			rasterizerInfo.depthClampEnable = m_createInfo.enableDepthClamp ? VK_TRUE : VK_FALSE;
+			rasterizerInfo.depthBiasClamp = m_createInfo.depthBiasClamp;
+			rasterizerInfo.depthBiasConstantFactor = m_createInfo.depthBiasConstantFactor;
+			rasterizerInfo.depthBiasSlopeFactor = m_createInfo.depthBiasSlopeFactor;
 			rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
 			rasterizerInfo.polygonMode = Utility::VoltToVulkanFill(m_createInfo.fillMode);
 			rasterizerInfo.cullMode = Utility::VoltToVulkanCull(m_createInfo.cullMode);

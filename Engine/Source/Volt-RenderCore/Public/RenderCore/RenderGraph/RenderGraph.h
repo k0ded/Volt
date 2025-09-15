@@ -28,6 +28,27 @@ namespace Volt
 
 	class GPUReadbackBuffer;
 	class GPUReadbackTexture;
+	class RenderGraph;
+
+	class RenderGraphShaderParameterUniformBuffer
+	{
+	public:
+		inline static constexpr uint64_t PerStageUniformBufferSize = 1024;
+
+		RenderGraphShaderParameterUniformBuffer(RenderGraph& renderGraph);
+
+		VT_INLINE RGUniformBufferSRVRef GetNext() { uint32_t index = m_counter.fetch_add(1u, std::memory_order::relaxed); return m_srvs.at(index); }
+		VT_INLINE uint8_t* GetMappedPointer() const { return reinterpret_cast<uint8_t*>(m_mappedPtr); }
+		
+		void Map();
+		void Unmap();
+
+	private:
+		Vector<RGUniformBufferSRVRef> m_srvs;
+		RGUniformBufferRef m_uniformBuffer;
+		void* m_mappedPtr;
+		std::atomic_uint32_t m_counter;
+	};
 
 	class VTRC_API RenderGraph
 	{
@@ -96,7 +117,7 @@ namespace Volt
 
 	protected:
 		friend class RenderContext;
-		friend class RenderGraphExecutionThread;
+		friend class RenderGraphShaderParameterUniformBuffer;
 
 		struct TextureExtractionInfo
 		{
@@ -187,9 +208,8 @@ namespace Volt
 			Vector<RGResourceRef> m_surrenderableResources;
 			std::string_view m_name;
 		};
-	
-	protected:
 
+	protected:
 		class StandaloneBarriers
 		{
 		public:
@@ -248,7 +268,6 @@ namespace Volt
 		void TransitionExternalResources();
 		void PrepareResourcesForExecution();
 		void CreateResourceViews();
-		void CreateShaderParameterUniformBuffers();
 
 		void InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
 		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer);
@@ -260,7 +279,7 @@ namespace Volt
 
 		// Private because we don't need to create a uniform buffer SRV
 		// outside of the Render Graph.
-		RGUniformBufferSRVRef CreateSRV(RGUniformBufferRef uniformBuffer);
+		RGUniformBufferSRVRef CreateSRV(const RGUniformBufferSRVDesc& desc);
 
 		RenderGraphResourceManager m_resourceManager;
 		ExternalResourceRegistry m_registeredExternalResources;
@@ -319,7 +338,10 @@ namespace Volt
 					RGUniformBufferRef uniformBuffer = *reinterpret_cast<RGUniformBufferRef*>(dataPtr);
 					if (uniformBuffer != nullptr)
 					{
-						newPass->AddResourceRead(CreateSRV(uniformBuffer));
+						RGUniformBufferSRVDesc srvDesc{};
+						srvDesc.bufferResource = uniformBuffer;
+
+						newPass->AddResourceRead(CreateSRV(srvDesc));
 					}
 					break;
 				}

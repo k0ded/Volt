@@ -14,8 +14,8 @@
 namespace Volt
 {
 
-	RenderContext::RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer)
-		: m_renderGraph(renderGraph), m_currentPass(currentPass), m_commandBuffer(commandBuffer)
+	RenderContext::RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
+		: m_renderGraph(renderGraph), m_currentPass(currentPass), m_commandBuffer(commandBuffer), m_shaderParameterUniformBuffer(shaderParameterUniformBuffer)
 	{
 
 	}
@@ -259,9 +259,7 @@ namespace Volt
 
 		for (const auto& shaderParameters : m_perStageShaderParameters)
 		{
-			shaderParameters.uniformBuffer->Unmap();
-
-			m_descriptorTable->SetBufferView(shaderParameters.uniformBuffer->GetView(), RHI::GetDescriptorSetIndexFromShaderStage(shaderParameters.shaderStage), RHI::Globals::SHADER_GLOBALS_BINDING);
+			m_descriptorTable->SetBufferView(shaderParameters.uniformBufferSRV->GetRHIView(), RHI::GetDescriptorSetIndexFromShaderStage(shaderParameters.shaderStage), RHI::Globals::SHADER_GLOBALS_BINDING);
 		}
 
 		m_commandBuffer->BindDescriptorTable(m_descriptorTable);
@@ -291,13 +289,10 @@ namespace Volt
 		{
 			if (parameterMap.GetShaderParametersSize() > 0)
 			{
-				RGUniformBufferRef uniformBuffer = m_renderGraph.m_resourceManager.AquireShaderParameterUniformBuffer();
-				RefPtr<RHI::UniformBuffer> rhiUniformBuffer = uniformBuffer->GetRHIResource()->GetRHIUniformBuffer();
-
 				auto& perStageShaderParameters = result.emplace_back();
 				perStageShaderParameters.shaderStage = parameterMap.GetShaderStage();
-				perStageShaderParameters.uniformBuffer = rhiUniformBuffer;
-				perStageShaderParameters.mappedPtr = rhiUniformBuffer->Map<uint8_t>();
+				perStageShaderParameters.uniformBufferSRV = m_shaderParameterUniformBuffer.GetNext();
+				perStageShaderParameters.mappedPtr = m_shaderParameterUniformBuffer.GetMappedPointer() + perStageShaderParameters.uniformBufferSRV->GetDesc().offset;
 			}
 		}
 
@@ -312,13 +307,10 @@ namespace Volt
 
 		if (shaderParameterMap.GetShaderParametersSize() > 0)
 		{
-			RGUniformBufferRef uniformBuffer = m_renderGraph.m_resourceManager.AquireShaderParameterUniformBuffer();
-			RefPtr<RHI::UniformBuffer> rhiUniformBuffer = uniformBuffer->GetRHIResource()->GetRHIUniformBuffer();
-
 			auto& perStageShaderParameters = result.emplace_back();
 			perStageShaderParameters.shaderStage = shaderParameterMap.GetShaderStage();
-			perStageShaderParameters.uniformBuffer = rhiUniformBuffer;
-			perStageShaderParameters.mappedPtr = rhiUniformBuffer->Map<uint8_t>();
+			perStageShaderParameters.uniformBufferSRV = m_shaderParameterUniformBuffer.GetNext();
+			perStageShaderParameters.mappedPtr = m_shaderParameterUniformBuffer.GetMappedPointer() + perStageShaderParameters.uniformBufferSRV->GetDesc().offset;
 		}
 
 		return result;

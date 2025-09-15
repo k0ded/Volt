@@ -16,7 +16,7 @@
 namespace Volt
 {
 	class RenderGraph;
-	class SharedRenderContext;
+	class RenderGraphShaderParameterUniformBuffer;
 	class RenderGraphPass;
 	class BatchedShaderParameters;
 
@@ -33,11 +33,11 @@ namespace Volt
 		struct PerStageShaderParameters
 		{
 			RHI::ShaderStage shaderStage;
-			RefPtr<RHI::UniformBuffer> uniformBuffer;
+			RGUniformBufferSRVRef uniformBufferSRV;
 			uint8_t* mappedPtr;
 		};
 
-		RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer);
+		RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
 
 		void Flush(RefPtr<RHI::Fence> fence);
 
@@ -123,6 +123,7 @@ namespace Volt
 
 		RenderGraph& m_renderGraph;
 		RenderGraphPass* m_currentPass;
+		RenderGraphShaderParameterUniformBuffer& m_shaderParameterUniformBuffer;
 	};
 
 	template<typename T>

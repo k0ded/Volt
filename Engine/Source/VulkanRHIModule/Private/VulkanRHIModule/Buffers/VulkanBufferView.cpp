@@ -16,16 +16,16 @@
 
 namespace Volt::RHI
 {
-	VulkanBufferView::VulkanBufferView(const BufferViewDesc& specification)
-		: m_buffer(specification.bufferResource)
+	VulkanBufferView::VulkanBufferView(const BufferViewDesc& desc)
+		: m_desc(desc)
 	{
 		VT_PROFILE_FUNCTION();
 
 		// If the resource is a storage buffer, we nned to check if it's
 		// a texel buffer, and create a VkBufferView if that's the case.
-		if (specification.bufferResource->GetType() == ResourceType::StorageBuffer)
+		if (desc.bufferResource->GetType() == ResourceType::StorageBuffer)
 		{
-			VulkanStorageBuffer& vkStorageBuffer = specification.bufferResource->AsRef<VulkanStorageBuffer>();
+			VulkanStorageBuffer& vkStorageBuffer = desc.bufferResource->AsRef<VulkanStorageBuffer>();
 			const BufferDesc& bufferDesc = vkStorageBuffer.GetDesc();
 
 			if (EnumValueContainsFlag(bufferDesc.usage, BufferUsage::TexelBuffer))
@@ -35,9 +35,9 @@ namespace Volt::RHI
 				viewCreateInfo.pNext = nullptr;
 				viewCreateInfo.flags = 0;
 				viewCreateInfo.buffer = vkStorageBuffer.GetHandle<VkBuffer>();
-				viewCreateInfo.format = Utility::VoltToVulkanFormat(specification.bufferFormat);
-				viewCreateInfo.offset = specification.offset;
-				viewCreateInfo.range = specification.size;
+				viewCreateInfo.format = Utility::VoltToVulkanFormat(desc.bufferFormat);
+				viewCreateInfo.offset = desc.offset;
+				viewCreateInfo.range = desc.size;
 
 				auto device = GraphicsContext::GetDevice();
 				{
@@ -61,12 +61,12 @@ namespace Volt::RHI
 
 	const uint64_t VulkanBufferView::GetDeviceAddress() const
 	{
-		return m_buffer->GetDeviceAddress();
+		return m_desc.bufferResource->GetDeviceAddress();
 	}
 
 	void* VulkanBufferView::GetHandleImpl() const
 	{
-		return m_buffer->GetHandle<void*>();
+		return m_desc.bufferResource->GetHandle<void*>();
 	}
 
 	bool VulkanBufferView::IsTexelBufferView() const

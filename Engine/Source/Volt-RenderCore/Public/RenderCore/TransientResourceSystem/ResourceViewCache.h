@@ -62,6 +62,7 @@ namespace Volt
 		};
 
 		RGRHIUniformBufferResource* m_buffer;
-		InlineVector<ViewPair, 8> m_views;
+		// Switch to inline vector when allocator stuff has been sorted.
+		Vector<ViewPair> m_views;
 	};
 }

@@ -15,7 +15,7 @@ namespace Volt::RHI
 
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 
-		RHIResource* GetResource() const { return m_buffer; }
+		RHIResource* GetResource() const { return m_desc.bufferResource; }
 		bool IsTexelBufferView() const override;
 
 		VT_NODISCARD VT_INLINE const BufferViewDesc& GetDesc() const { return m_desc; }
@@ -26,8 +26,6 @@ namespace Volt::RHI
 
 	private:
 		BufferViewDesc m_desc;
-		RHIResource* m_buffer = nullptr;
-
 		VkBufferView_T* m_texelBufferView = nullptr;
 	};
 }

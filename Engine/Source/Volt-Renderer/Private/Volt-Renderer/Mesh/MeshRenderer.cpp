@@ -440,6 +440,7 @@ namespace Volt
 		}
 
 		MeshBatch* currentMeshBatch = nullptr;
+		size_t lastSubMeshHash = 0;
 
 		for (size_t i = 0; i < renderCommandExts.size(); ++i)
 		{
@@ -459,6 +460,7 @@ namespace Volt
 
 				lastVertexIndexBufferHash = renderCommandExt.vertexIndexBufferHash;
 				lastRenderPipelineHash = renderCommandExt.renderPipelineHash;
+				lastSubMeshHash = renderCommandExt.subMeshHash;
 			}
 			else
 			{
@@ -474,6 +476,12 @@ namespace Volt
 				{
 					batchType |= MeshBatchType::RenderPipeline;
 					lastRenderPipelineHash = renderCommandExt.renderPipelineHash;
+				}
+
+				if (renderCommandExt.subMeshHash != lastSubMeshHash)
+				{
+					batchType |= MeshBatchType::SubMesh;
+					lastSubMeshHash = renderCommandExt.subMeshHash;
 				}
 
 				if (batchType != MeshBatchType::None)
@@ -494,6 +502,11 @@ namespace Volt
 						currentMeshBatch->descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(renderCommandExt.renderPipeline);
 
 						SetMaterialParametersInDescriptorTable(renderCommandExt.renderMaterial, renderCommandExt.renderPipeline, currentMeshBatch->descriptorTable);
+					}
+
+					if (EnumValueContainsFlag(batchType, MeshBatchType::SubMesh))
+					{
+						currentMeshBatch->drawCommandOffset = primitiveDrawCommandIndex[renderCommandExt.primitiveIndex].value;
 					}
 				}
 			}

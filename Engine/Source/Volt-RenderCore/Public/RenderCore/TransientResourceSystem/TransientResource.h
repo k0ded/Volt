@@ -16,8 +16,10 @@ namespace Volt
 		VT_INLINE RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
 		VT_INLINE RefPtr<RHI::StorageBuffer> GetRHIBuffer() const override { return m_buffer; }
 		VT_INLINE size_t GetHash() const { return m_hash; }
+		VT_INLINE uint64_t GetFrameReleased() const { return m_frameReleasedIndex; }
+		VT_INLINE bool IsAcquired() const { return m_acquired.load(std::memory_order::relaxed); }
 
-		VT_INLINE bool TryAquire(uint64_t frameIndex) 
+		VT_INLINE bool TryAcquire(uint64_t frameIndex) 
 		{
 			if (m_frameReleasedIndex + m_framesToKeepAlive <= frameIndex)
 			{
@@ -27,7 +29,11 @@ namespace Volt
 			return false;
 		}
 		
-		VT_INLINE void Release(uint64_t frameIndex) { m_frameReleasedIndex = frameIndex; m_aquired.store(false, std::memory_order::relaxed); }
+		VT_INLINE void Release(uint64_t frameIndex) 
+		{ 
+			m_frameReleasedIndex = frameIndex; 
+			m_acquired.store(false, std::memory_order::relaxed); 
+		}
 
 	private:
 		TransientBufferViewCache m_viewCache;
@@ -36,7 +42,7 @@ namespace Volt
 		uint64_t m_frameReleasedIndex;
 		uint64_t m_framesToKeepAlive;
 
-		std::atomic_bool m_aquired;
+		std::atomic_bool m_acquired;
 	};
 
 	class TransientTextureResource : public RGRHITextureResource
@@ -48,18 +54,24 @@ namespace Volt
 		VT_INLINE RefPtr<RHI::ImageView> GetOrCreateView(const RHI::ImageViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
 		VT_INLINE RefPtr<RHI::Image> GetRHITexture() const override { return m_image; }
 		VT_INLINE size_t GetHash() const { return m_hash; }
+		VT_INLINE uint64_t GetFrameReleased() const { return m_frameReleasedIndex; }
+		VT_INLINE bool IsAcquired() const { return m_acquired.load(std::memory_order::relaxed); }
 
-		VT_INLINE bool TryAquire(uint64_t frameIndex)
+		VT_INLINE bool TryAcquire(uint64_t frameIndex)
 		{
 			if (m_frameReleasedIndex + m_framesToKeepAlive <= frameIndex)
 			{
 				bool expected = false;
-				return m_aquired.compare_exchange_weak(expected, true);
+				return m_acquired.compare_exchange_weak(expected, true);
 			}
 			return false;
 		}
 
-		VT_INLINE void Release(uint64_t frameIndex) { m_frameReleasedIndex = frameIndex; m_aquired.store(false, std::memory_order::relaxed); }
+		VT_INLINE void Release(uint64_t frameIndex) 
+		{ 
+			m_frameReleasedIndex = frameIndex; 
+			m_acquired.store(false, std::memory_order::relaxed); 
+		}
 
 	private:
 		TransientImageViewCache m_viewCache;
@@ -68,7 +80,7 @@ namespace Volt
 		uint64_t m_frameReleasedIndex;
 		uint64_t m_framesToKeepAlive;
 
-		std::atomic_bool m_aquired;
+		std::atomic_bool m_acquired;
 	};
 
 	class TransientUniformBufferResource : public RGRHIUniformBufferResource
@@ -81,26 +93,32 @@ namespace Volt
 		RefPtr<RHI::UniformBuffer> GetRHIUniformBuffer() const override { return m_uniformBuffer; }
 	
 		VT_INLINE size_t GetHash() const { return m_hash; }
+		VT_INLINE uint64_t GetFrameReleased() const { return m_frameReleasedIndex; }
+		VT_INLINE bool IsAcquired() const { return m_acquired.load(std::memory_order::relaxed); }
 
-		VT_INLINE bool TryAquire(uint64_t frameIndex)
+		VT_INLINE bool TryAcquire(uint64_t frameIndex)
 		{
 			if (m_frameReleasedIndex + m_framesToKeepAlive <= frameIndex)
 			{
 				bool expected = false;
-				return m_aquired.compare_exchange_weak(expected, true);
+				return m_acquired.compare_exchange_weak(expected, true);
 			}
 			return false;
 		}
 
-		VT_INLINE void Release(uint64_t frameIndex) { m_frameReleasedIndex = frameIndex; m_aquired.store(false, std::memory_order::relaxed); }
+		VT_INLINE void Release(uint64_t frameIndex) 
+		{ 
+			m_frameReleasedIndex = frameIndex; 
+			m_acquired.store(false, std::memory_order::relaxed); 
+		}
 
 	private:
 		TransientUniformBufferViewCache m_viewCache;
-		RefPtr<RHI::StorageBuffer> m_uniformBuffer;
+		RefPtr<RHI::UniformBuffer> m_uniformBuffer;
 		size_t m_hash;
 		uint64_t m_frameReleasedIndex;
 		uint64_t m_framesToKeepAlive;
 
-		std::atomic_bool m_aquired;
+		std::atomic_bool m_acquired;
 	};
 }

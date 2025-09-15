@@ -122,6 +122,7 @@ namespace Volt
 	{
 		VT_ASSERT_MSG(!m_indices.empty() && !m_vertexContainer.positions.empty(), "Indices and vertices must not be empty!");
 		
+#if 0
 		constexpr size_t MAX_VERTEX_COUNT = 64;
 		constexpr size_t MAX_TRIANGLE_COUNT = 64;
 		constexpr float CONE_WEIGHT = 0.f;
@@ -228,6 +229,7 @@ namespace Volt
 			m_meshlets.append(perThreadMeshlets.at(i));
 			m_meshletData.append(perThreadMeshletData.at(i));
 		}
+#endif
 
 		const std::string meshName = !m_name.empty() ? m_name + "." : "";
 
@@ -340,6 +342,7 @@ namespace Volt
 			}
 		}
 
+#if 0
 		// Meshlet Data
 		{
 			RHI::BufferDesc desc{};
@@ -361,7 +364,7 @@ namespace Volt
 			m_meshletsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
 			m_meshletsBuffer->GetResource()->SetData(m_meshlets.data(), m_meshlets.size() * sizeof(Meshlet));
 		}
-
+#endif
 		for (auto& subMesh : m_subMeshes)
 		{
 			glm::vec3 t, r, s;
@@ -398,11 +401,11 @@ namespace Volt
 			Vector<glm::vec3> subMeshVertices;
 			subMeshVertices.insert(subMeshVertices.end(), std::next(m_vertexContainer.positions.begin(), subMesh.vertexStartOffset), std::next(m_vertexContainer.positions.begin(), subMesh.vertexStartOffset + subMesh.vertexCount));
 
+			glm::vec3 t, r, s;
+			Math::Decompose(subMesh.transform, t, r, s);
+
 			// Find bounding box
-			{
-				glm::vec3 t, r, s;
-				Math::Decompose(subMesh.transform, t, r, s);
-			
+			{			
 				glm::vec3 subMin = { FLT_MAX, FLT_MAX, FLT_MAX };
 				glm::vec3 subMax = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 

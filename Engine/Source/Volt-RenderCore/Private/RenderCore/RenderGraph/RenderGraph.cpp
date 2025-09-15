@@ -35,49 +35,49 @@
 	These are the synchronization cases referenced and handeled in RenderGraph::Compile.
 
 	### Case 1:
-	
+
 	- If it’s an image resource AND the previous AND current usage are READ operations, no barrier is required.
-	
+
 	### Case 2:
-	
+
 	- If it’s an image resource AND the previous AND current usage are WRITE operations of the same type, a global barrier should be inserted.
-	
+
 	### Case 3:
-	
+
 	- If it’s a buffer resource AND the previous AND current usage are READ operations, no barrier is required.
-	
+
 	### Case 4:
-	
+
 	- If it’s a buffer resource AND the previous AND current usage are WRITE operations, a global barrier should be inserted.
-	
+
 	### Case 5:
-	
+
 	- If it’s a buffer resource AND the previous usage was a READ operation AND the current usage is a WRITE operation, a global barrier should be inserted.
-	
+
 	### Case 6:
-	
+
 	- If it’s a buffer resource AND the previous usage was a WRITE operation AND the current usage is a READ operation, a global barrier should be inserted.
-	
+
 	### Case 7: Resource A is created in render pass B
-	
+
 	If a resource is created in a render pass, we assume that the resource will be written to in the pass.
-	
+
 	- If it’s a depth resource AND it’s a rasterization pass -> transition to a DEPTH_WRITE state
 	- If it’s a depth resource AND it’s a compute pass -> transition to a SHADER_WRITE state
 	- If it’s a color resource AND it’s a rasterization pass -> transition to a COLOR_WRITE state
 	- If it’s a color resource AND it’s a compute pass -> transition to a SHADER_WRITE state
 	- If it’s a buffer resource -> transition to a SHADER_WRITE state
-	
+
 	### Case 8: Resource A is read in render pass B
-	
+
 	If a resource is marked as read in a render pass, the resource will be transitioned into a read state.
-	
+
 	- All resources will be transitioned into a SHADER_READ state
-	
+
 	### Case 9: Resource A is written to, but not created in render pass B
-	
+
 	If a resource is marked as write in a render pass, but not created in that render pass, the resource will be transitioned into a write state.
-	
+
 	- If it’s a depth resource AND it’s a rasterization pass -> transition to a DEPTH_WRITE state
 	- If it’s a depth resource AND it’s a compute pass -> transition to a SHADER_WRITE state
 	- If it’s a color resource AND it’s a rasterization pass -> transition to a COLOR_WRITE state
@@ -89,12 +89,12 @@
 
 namespace Volt
 {
-	ConsoleVariable<int32_t> g_renderGraphForceSingleThreadedExecution(
-		"r.RenderGraph.ForceSingleThreadedExecution", 
+	static ConsoleVariable<int32_t> g_renderGraphForceSingleThreadedExecution(
+		"r.RenderGraph.ForceSingleThreadedExecution",
 		0,
 		"Wether or not to force single threaded execution of the RenderGraph.");
 
-	ConsoleVariable<int32_t> g_renderGraphForceFullBarriersBetweenPasses(
+	static ConsoleVariable<int32_t> g_renderGraphForceFullBarriersBetweenPasses(
 		"r.RenderGraph.ForceFullBarriersBetweenPasses",
 		0,
 		""
@@ -193,8 +193,7 @@ namespace Volt
 	}
 
 	RenderGraph::~RenderGraph()
-	{
-	}
+	{}
 
 	RenderGraph::RenderGraph(RenderGraph&& other) noexcept
 		: m_registeredExternalResources(std::move(other.m_registeredExternalResources)),
@@ -215,8 +214,7 @@ namespace Volt
 		m_resourceSRVs(std::move(other.m_resourceSRVs)),
 		m_resourceUAVs(std::move(other.m_resourceUAVs)),
 		m_resourceManager(std::move(other.m_resourceManager))
-	{
-	}
+	{}
 
 	RenderGraph& RenderGraph::operator=(RenderGraph&& other) noexcept
 	{
@@ -287,26 +285,35 @@ namespace Volt
 
 		for (const RGResourceRef resource : m_resources)
 		{
-			//if (resource->isExternal)
-			{
-				RefPtr<RHI::RHIResource> rhiResource;
+			RefPtr<RHI::RHIResource> rhiResource;
 
-				if (resource->GetResourceType() == RGResourceType::Texture)
+			if (resource->GetResourceType() == RGResourceType::Texture)
+			{
+				RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
+				if (textureResource->GetRHIResource())
 				{
-					RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
 					rhiResource = textureResource->GetRHIResource()->GetRHITexture();
 				}
-				else if (resource->GetResourceType() == RGResourceType::Buffer)
+			}
+			else if (resource->GetResourceType() == RGResourceType::Buffer)
+			{
+				RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
+				if (bufferResource->GetRHIResource())
 				{
-					RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
 					rhiResource = bufferResource->GetRHIResource()->GetRHIBuffer();
 				}
-				else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
+			}
+			else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
+			{
+				RGUniformBufferRef bufferResource = reinterpret_cast<RGUniformBufferRef>(resource);
+				if (bufferResource->GetRHIResource())
 				{
-					RGUniformBufferRef bufferResource = reinterpret_cast<RGUniformBufferRef>(resource);
 					rhiResource = bufferResource->GetRHIResource()->GetRHIUniformBuffer();
 				}
+			}
 
+			if (rhiResource)
+			{
 				const RGResourceState& resourceState = m_resourceStateTracker.GetState(resource);
 				resourceTracker->TransitionResource(rhiResource, resourceState.currentState.stage, resourceState.currentState.access, resourceState.currentState.layout);
 			}
@@ -486,7 +493,11 @@ namespace Volt
 
 				if (uniformBufferResource->GetRHIResource())
 				{
-					uniformBufferSRV->AssignRHIView(uniformBufferResource->GetRHIResource()->GetOrCreateView({}));
+					RHI::BufferViewDesc desc{};
+					desc.offset = uniformBufferSRV->GetDesc().offset;
+					desc.size = uniformBufferSRV->GetDesc().size;
+					
+					uniformBufferSRV->AssignRHIView(uniformBufferResource->GetRHIResource()->GetOrCreateView(desc));
 				}
 			}
 			else
@@ -533,29 +544,6 @@ namespace Volt
 		}
 	}
 
-	void RenderGraph::CreateShaderParameterUniformBuffers()
-	{
-		VT_PROFILE_FUNCTION();
-
-		// Rough estimate.
-		const size_t numRequiredShaderParameterUniformBuffers = m_passes.size() * 2;
-	
-		RGUniformBufferDesc desc{};
-		desc.count = 1;
-		desc.elementSize = 1024;
-		desc.name = "ShaderParameters";
-
-		for (size_t i = 0; i < numRequiredShaderParameterUniformBuffers; ++i)
-		{
-			RGUniformBufferRef uniformBuffer = CreateUniformBuffer(desc);
-			
-			// Add a reference to make sure it's created.
-			uniformBuffer->AddRef();
-
-			m_resourceManager.AddShaderParameterUniformBuffer(uniformBuffer);
-		}
-	}
-
 	RGBufferSRVRef RenderGraph::CreateSRV(const RGBufferSRVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
@@ -563,15 +551,15 @@ namespace Volt
 
 		RGBufferSRVRef bufferSRV = m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
 		m_resourceSRVs.emplace_back(bufferSRV);
-		
+
 		return bufferSRV;
 	}
 
-	RGUniformBufferSRVRef RenderGraph::CreateSRV(RGUniformBufferRef uniformBuffer)
+	RGUniformBufferSRVRef RenderGraph::CreateSRV(const RGUniformBufferSRVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
-		
-		RGUniformBufferSRVRef bufferSRV = m_resourceAccessorAllocator.Allocate<RGUniformBufferSRV>(uniformBuffer);
+
+		RGUniformBufferSRVRef bufferSRV = m_resourceAccessorAllocator.Allocate<RGUniformBufferSRV>(desc);
 		m_resourceSRVs.emplace_back(bufferSRV);
 
 		return bufferSRV;
@@ -1254,7 +1242,7 @@ namespace Volt
 						auto& resourceState = m_resourceStateTracker.GetState(resource);
 
 						const bool isSameLayoutType = newState.layout == resourceState.currentState.layout;
-					
+
 						// If it's the same layout (read after read / write after write) then we only need a global barrier.
 						if (isSameLayoutType)
 						{
@@ -1475,7 +1463,8 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		CreateShaderParameterUniformBuffers();
+		RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer = new RenderGraphShaderParameterUniformBuffer(*this);
+
 		PrepareResourcesForExecution();
 		CreateResourceViews();
 
@@ -1510,6 +1499,8 @@ namespace Volt
 			commandBuffers[i] = CommandBufferPool::GetCommandBuffer();
 		}
 
+		shaderParameterUniformBuffer->Map();
+
 		// Move this RenderGraph into temporary storage, so that the 
 		// RenderGraph isn't destroyed before execution is finished.
 		// This data pointer is destroyed in the execution job.
@@ -1523,7 +1514,7 @@ namespace Volt
 		RenderGraph* renderGraphPtr = reinterpret_cast<RenderGraph*>(tempRenderGraphStorage);
 
 		// This function executes the provided pass range.
-		constexpr auto executePassRangeFunc = [](RenderGraph* renderGraphPtr, const PassExecutionRange& executionRange, 
+		constexpr auto executePassRangeFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer, const PassExecutionRange& executionRange,
 			const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, const uint32_t index, const uint32_t numExecutionRanges)
 		{
 			RefPtr<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index);
@@ -1554,7 +1545,7 @@ namespace Volt
 
 				{
 					VT_PROFILE_SCOPE(pass->name.data());
-					RenderContext renderContext(*renderGraphPtr, pass.GetRaw(), commandBuffer);
+					RenderContext renderContext(*renderGraphPtr, pass.GetRaw(), commandBuffer, shaderParameterUniformBuffer);
 					renderGraphPtr->m_passAllocator.ExecutePass(pass, renderContext);
 				}
 
@@ -1570,8 +1561,10 @@ namespace Volt
 			commandBuffer->End();
 		};
 
+		shaderParameterUniformBuffer->Unmap();
+
 		// This function is responsible for executing the recorded command buffers.
-		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
+		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
 		{
 			RHI::DeviceQueueExecuteInfo executeInfo{};
 			executeInfo.commandBuffers.resize(commandBuffers.size());
@@ -1593,8 +1586,10 @@ namespace Volt
 			}
 
 			// Destroy the RenderGraph.
-			JobRef destroyJob = JobSystem::CreateJob("RenderGraph::Destroy", ExecutionPriority::Render, [renderGraphPtr]() 
+			JobRef destroyJob = JobSystem::CreateJob("RenderGraph::Destroy", ExecutionPriority::Render, [renderGraphPtr, shaderParameterUniformBuffer]()
 			{
+				delete shaderParameterUniformBuffer;
+
 				renderGraphPtr->~RenderGraph();
 				Memory::Free(renderGraphPtr);
 			});
@@ -1611,31 +1606,31 @@ namespace Volt
 			TaskGraph taskGraph{ isImmediate ? ExecutionPriority::Immediate : ExecutionPriority::Render };
 			Vector<TaskGraph::Task*> recordTasks(passExecutionRanges.size());
 
-			for (uint32_t index = 0; const PassExecutionRange & executionRange : passExecutionRanges)
+			for (uint32_t index = 0; const PassExecutionRange& executionRange : passExecutionRanges)
 			{
-				recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, executionRange, commandBuffers, index, numExecutionRanges]()
+				recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges]()
 				{
-					executePassRangeFunc(renderGraphPtr, executionRange, commandBuffers, index, numExecutionRanges);
+					executePassRangeFunc(renderGraphPtr, *shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges);
 				});
 				index++;
 			}
 
-			taskGraph.AddTaskWithDependencies("RenderGraph::Execute", recordTasks, [renderGraphPtr, commandBuffers, executionFence]()
+			taskGraph.AddTaskWithDependencies("RenderGraph::Execute", recordTasks, [renderGraphPtr, shaderParameterUniformBuffer, commandBuffers, executionFence]()
 			{
-				executeRenderGraphFunc(renderGraphPtr, commandBuffers, executionFence);
+				executeRenderGraphFunc(renderGraphPtr, shaderParameterUniformBuffer, commandBuffers, executionFence);
 			});
 
 			jobCounter = taskGraph.ExecuteAndExtractCounter();
 		}
 		else
 		{
-			for (uint32_t index = 0; const PassExecutionRange & executionRange : passExecutionRanges)
+			for (uint32_t index = 0; const PassExecutionRange& executionRange : passExecutionRanges)
 			{
-				executePassRangeFunc(renderGraphPtr, executionRange, commandBuffers, index, numExecutionRanges);
+				executePassRangeFunc(renderGraphPtr, *shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges);
 				index++;
 			}
 
-			executeRenderGraphFunc(renderGraphPtr, commandBuffers, executionFence);
+			executeRenderGraphFunc(renderGraphPtr, shaderParameterUniformBuffer, commandBuffers, executionFence);
 		}
 
 		if (waitForSync)
@@ -1827,5 +1822,44 @@ namespace Volt
 	{
 		auto& newMarker = m_markers[passIndex].emplace_back();
 		newMarker.isEnd = true;
+	}
+
+	RenderGraphShaderParameterUniformBuffer::RenderGraphShaderParameterUniformBuffer(RenderGraph& renderGraph)
+		: m_counter(0), m_mappedPtr(nullptr)
+	{
+		VT_PROFILE_FUNCTION();
+
+		const size_t numShaderParameters = renderGraph.m_passes.size() * 2;
+
+		RGUniformBufferDesc desc{};
+		desc.count = 1;
+		desc.elementSize = PerStageUniformBufferSize * numShaderParameters;
+		desc.name = "ShaderParameters";
+
+		m_uniformBuffer = renderGraph.CreateUniformBuffer(desc);
+		m_uniformBuffer->AddRef();
+
+		// Create views
+		m_srvs.resize_uninitialized(numShaderParameters);
+
+		RGUniformBufferSRVDesc srvDesc{};
+		srvDesc.bufferResource = m_uniformBuffer;
+		srvDesc.size = PerStageUniformBufferSize;
+
+		for (size_t i = 0; i < numShaderParameters; ++i)
+		{
+			srvDesc.offset = i * PerStageUniformBufferSize;
+			m_srvs[i] = renderGraph.CreateSRV(srvDesc);
+		}
+	}
+
+	void RenderGraphShaderParameterUniformBuffer::Map()
+	{
+		m_mappedPtr = m_uniformBuffer->GetRHIResource()->GetRHIUniformBuffer()->Map<void>();
+	}
+
+	void RenderGraphShaderParameterUniformBuffer::Unmap()
+	{
+		m_uniformBuffer->GetRHIResource()->GetRHIUniformBuffer()->Unmap();
 	}
 }

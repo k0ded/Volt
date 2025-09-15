@@ -93,8 +93,7 @@ namespace Volt
 
 		for (const RenderContext::PerStageShaderParameters& perStageParameters : shaderParameterUniformBuffers)
 		{
-			perStageParameters.uniformBuffer->Unmap();
-			descriptorTable->SetBufferView(perStageParameters.uniformBuffer->GetView(), RHI::GetDescriptorSetIndexFromShaderStage(perStageParameters.shaderStage), RHI::Globals::SHADER_GLOBALS_BINDING);
+			descriptorTable->SetBufferView(perStageParameters.uniformBufferSRV->GetRHIView(), RHI::GetDescriptorSetIndexFromShaderStage(perStageParameters.shaderStage), RHI::Globals::SHADER_GLOBALS_BINDING);
 		}
 	}
 

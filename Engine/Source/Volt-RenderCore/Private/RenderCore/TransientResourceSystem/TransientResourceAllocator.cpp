@@ -2,6 +2,8 @@
 #include "RenderCore/TransientResourceSystem/TransientResourceAllocator.h"
 #include "RenderCore/TransientResourceSystem/TransientResource.h"
 
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/Swapchain.h>
 
@@ -11,6 +13,12 @@
 
 namespace Volt
 {
+	static ConsoleVariable<int32_t> s_renderGraphTransientAllocatorNumFramesToKeepAliveResources(
+		"r.RenderGraph.TransientAllocator.NumFramesToKeepAliveResources",
+		3,
+		""
+	);
+
 	VT_INLINE size_t GetBufferDescHash(const RHI::BufferDesc& desc)
 	{
 		size_t hash = Math::HashCombine(std::hash<uint32_t>()(desc.count), std::hash<uint64_t>()(desc.elementSize));
@@ -66,19 +74,22 @@ namespace Volt
 
 			if (transientBuffer->GetHash() == hash)
 			{
-				if (transientBuffer->TryAquire(m_frameIndex))
+				if (transientBuffer->TryAcquire(m_frameIndex))
 				{
 					return transientBuffer;
 				}
 			}
 		}
 
-		const bool isCpuAccessiable = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
+		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
 		
-		RefPtr<RHI::GPUAllocator> allocator = isCpuAccessiable ? nullptr : RHI::GraphicsContext::GetTransientAllocator();
-
+		RefPtr<RHI::GPUAllocator> allocator = isCpuAccessible ? nullptr : RHI::GraphicsContext::GetTransientAllocator();
 		RefPtr<RHI::StorageBuffer> rhiBbuffer = RHI::StorageBuffer::Create(desc, allocator);
-		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, isCpuAccessiable ? RHI::Swapchain::FramesInFlight : 1);
+		
+		// Create the buffer and make sure we acquire it.
+		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, isCpuAccessible ? RHI::Swapchain::FramesInFlight : 1);
+		transientBuffer->TryAcquire(m_frameIndex);
+
 		m_bufferCache.emplace_back(transientBuffer);
 
 		return transientBuffer;
@@ -100,7 +111,7 @@ namespace Volt
 
 			if (transientTexture->GetHash() == hash)
 			{
-				if (transientTexture->TryAquire(m_frameIndex))
+				if (transientTexture->TryAcquire(m_frameIndex))
 				{
 					return transientTexture;
 				}
@@ -110,12 +121,15 @@ namespace Volt
 		RHI::ImageDesc specification = desc;
 		specification.initializeImage = false;
 
-		const bool isCpuAccessiable = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
+		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
 
-		RefPtr<RHI::GPUAllocator> allocator = isCpuAccessiable ? nullptr : RHI::GraphicsContext::GetTransientAllocator();
-
+		RefPtr<RHI::GPUAllocator> allocator = isCpuAccessible ? nullptr : RHI::GraphicsContext::GetTransientAllocator();
 		RefPtr<RHI::Image> rhiTexture = RHI::Image::Create(specification, nullptr, allocator);
-		TransientTextureResourceRef transientTexture = m_transientTextureAllocator.Allocate(rhiTexture, hash, isCpuAccessiable ? RHI::Swapchain::FramesInFlight : 1);
+
+		// Create the texture and make sure we acquire it.
+		TransientTextureResourceRef transientTexture = m_transientTextureAllocator.Allocate(rhiTexture, hash, isCpuAccessible ? RHI::Swapchain::FramesInFlight : 1);
+		transientTexture->TryAcquire(m_frameIndex);
+
 		m_textureCache.emplace_back(transientTexture);
 
 		return transientTexture;
@@ -137,7 +151,7 @@ namespace Volt
 
 			if (transientBuffer->GetHash() == hash)
 			{
-				if (transientBuffer->TryAquire(m_frameIndex))
+				if (transientBuffer->TryAcquire(m_frameIndex))
 				{
 					return transientBuffer;
 				}
@@ -145,7 +159,11 @@ namespace Volt
 		}
 
 		RefPtr<RHI::UniformBuffer> rhiBbuffer = RHI::UniformBuffer::Create(static_cast<uint32_t>(desc.elementSize), nullptr, desc.count, desc.name);
+		
+		// Create the buffer and make sure we acquire it.
 		TransientUniformBufferResourceRef transientBuffer = m_transientUniformBufferAllocator.Allocate(rhiBbuffer, hash, RHI::Swapchain::FramesInFlight);
+		transientBuffer->TryAcquire(m_frameIndex);
+
 		m_uniformBufferCache.emplace_back(transientBuffer);
 
 		return transientBuffer;
@@ -159,5 +177,37 @@ namespace Volt
 	void TransientResourceAllocator::OnPreRender(uint64_t frameIndex)
 	{
 		m_frameIndex = frameIndex;
+
+		const uint64_t numFramesToKeepAliveResources = static_cast<uint64_t>(std::max(s_renderGraphTransientAllocatorNumFramesToKeepAliveResources.GetValue(), 0));
+
+		for (int32_t i = static_cast<int32_t>(m_bufferCache.size() - 1); i >= 0; --i)
+		{
+			TransientBufferResourceRef buffer = m_bufferCache[i];
+			if (!buffer->IsAcquired() && buffer->GetFrameReleased() + numFramesToKeepAliveResources <= m_frameIndex)
+			{
+				m_bufferCache.erase_unsorted(m_bufferCache.begin() + i);
+				m_transientBufferAllocator.Free(buffer);
+			}
+		}
+
+		for (int32_t i = static_cast<int32_t>(m_textureCache.size() - 1); i >= 0; --i)
+		{
+			TransientTextureResourceRef texture = m_textureCache[i];
+			if (!texture->IsAcquired() && texture->GetFrameReleased() + numFramesToKeepAliveResources <= m_frameIndex)
+			{
+				m_textureCache.erase_unsorted(m_textureCache.begin() + i);
+				m_transientTextureAllocator.Free(texture);
+			}
+		}
+
+		for (int32_t i = static_cast<int32_t>(m_uniformBufferCache.size() - 1); i >= 0; --i)
+		{
+			TransientUniformBufferResourceRef buffer = m_uniformBufferCache[i];
+			if (!buffer->IsAcquired() && buffer->GetFrameReleased() + numFramesToKeepAliveResources <= m_frameIndex)
+			{
+				m_uniformBufferCache.erase_unsorted(m_uniformBufferCache.begin() + i);
+				m_transientUniformBufferAllocator.Free(buffer);
+			}
+		}
 	}
 }

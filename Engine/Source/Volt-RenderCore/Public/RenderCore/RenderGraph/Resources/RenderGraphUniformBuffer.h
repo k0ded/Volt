@@ -53,20 +53,29 @@ namespace Volt
 
 	using RGUniformBufferRef = RGUniformBuffer*;
 
+	struct RGUniformBufferSRVDesc
+	{
+		RGUniformBufferRef bufferResource = nullptr;
+
+		size_t offset = 0;
+		size_t size = std::numeric_limits<size_t>::max();
+	};
+
 	class VTRC_API RGUniformBufferSRV : public RGResourceSRV
 	{
 	public:
-		RGUniformBufferSRV(RGUniformBufferRef uniformBuffer);
+		RGUniformBufferSRV(const RGUniformBufferSRVDesc& desc);
 		~RGUniformBufferSRV() override = default;
 
-		RGResourceRef GetResource() const override { return m_resource; }
+		RGResourceRef GetResource() const override { return m_desc.bufferResource; }
 
 		VT_INLINE void AssignRHIView(RefPtr<RHI::BufferView> view) { m_rhiView = view; }
 		VT_INLINE RefPtr<RHI::BufferView> GetRHIView() { return m_rhiView; }
+		VT_INLINE const RGUniformBufferSRVDesc& GetDesc() { return m_desc; }
 
 	private:
 		RefPtr<RHI::BufferView> m_rhiView;
-		RGUniformBufferRef m_resource;
+		RGUniformBufferSRVDesc m_desc;
 	};
 
 }

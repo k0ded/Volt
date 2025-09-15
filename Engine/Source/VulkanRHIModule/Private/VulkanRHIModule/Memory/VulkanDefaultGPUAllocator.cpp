@@ -114,6 +114,11 @@ namespace Volt::RHI
 		Handle<VulkanBufferAllocation> allocation = m_bufferAllocationArena.Allocate(hash, desc.debugName);
 		VT_VK_CHECK(vmaCreateBuffer(m_allocator, &bufferInfo, &allocCreateInfo, &allocation->m_resource, &allocation->m_allocation, &allocInfo));
 
+		if (!desc.debugName.empty())
+		{
+			vmaSetAllocationName(m_allocator, allocation->m_allocation, desc.debugName.c_str());
+		}
+
 		allocation->m_size = byteSize;
 
 		return allocation;

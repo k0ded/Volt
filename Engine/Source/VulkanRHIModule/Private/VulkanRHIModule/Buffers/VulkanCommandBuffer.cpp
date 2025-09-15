@@ -830,7 +830,7 @@ namespace Volt::RHI
 					triangles.indexData.deviceAddress = geometryInfo.indexBuffer->GetDeviceAddress();
 					triangles.transformData.deviceAddress = 0;
 
-					primitiveCounts.emplace_back(geometryInfo.indexBuffer->GetCount() / 3u);
+					primitiveCounts.emplace_back(geometryInfo.indexCount / 3u);
 				}
 				else if (geometryInfo.geometryType == AccelerationStructureGeometryType::Instances)
 				{

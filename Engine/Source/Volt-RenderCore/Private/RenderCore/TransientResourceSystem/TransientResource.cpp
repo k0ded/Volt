@@ -8,7 +8,7 @@ namespace Volt
 		: m_buffer(buffer),
 		m_hash(hash),
 		m_viewCache(this),
-		m_aquired(false),
+		m_acquired(false),
 		m_framesToKeepAlive(framesToKeepAlive),
 		m_frameReleasedIndex(0)
 	{
@@ -19,7 +19,7 @@ namespace Volt
 		: m_image(image),
 		m_hash(hash),
 		m_viewCache(this),
-		m_aquired(false),
+		m_acquired(false),
 		m_framesToKeepAlive(framesToKeepAlive),
 		m_frameReleasedIndex(0)
 	{
@@ -30,7 +30,7 @@ namespace Volt
 		: m_uniformBuffer(uniformBuffer),
 		m_hash(hash),
 		m_viewCache(this),
-		m_aquired(false),
+		m_acquired(false),
 		m_framesToKeepAlive(framesToKeepAlive),
 		m_frameReleasedIndex(0)
 	{

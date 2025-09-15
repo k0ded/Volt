@@ -25,7 +25,8 @@ namespace Volt
 	{
 		None = 0,
 		VertexIndexBuffer = BIT(0),
-		RenderPipeline = BIT(2)
+		RenderPipeline = BIT(2),
+		SubMesh = BIT(3)
 	};
 	VT_SETUP_ENUM_CLASS_OPERATORS(MeshBatchType);
 
