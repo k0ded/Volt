@@ -65,8 +65,9 @@ public:
 		return *this;
 	}
 
-	template<class U, class = std::enable_if<std::is_convertible_v<U*, T*>, void>>
+	template<class U>
 	constexpr RefPtr(const RefPtr<U>& other) noexcept
+		requires (std::is_convertible_v<U*, T*>)
 		: m_object(reinterpret_cast<T*>(other.GetRaw()))
 	{
 		if (m_object)
@@ -75,13 +76,15 @@ public:
 		}
 	}
 
-	template<class U, class = std::enable_if<std::is_convertible_v<U*, T*>, void>>
+	template<class U>
 	constexpr RefPtr(RefPtr<U>&& other) noexcept
+		requires (std::is_convertible_v<U*, T*>)
 		: m_object(reinterpret_cast<T*>(other.Release()))
 	{}
 
-	template<class U, class = std::enable_if<std::is_convertible_v<U*, T*>, void>>
-	constexpr RefPtr<T>& operator=(const RefPtr<U>& other) noexcept
+	template<class U>
+	constexpr RefPtr<T>& operator=(const RefPtr<U>& other) noexcept 
+		requires (std::is_convertible_v<U*, T*>)
 	{
 		T* temp = m_object;
 		m_object = other.GetRaw();
@@ -99,8 +102,9 @@ public:
 		return *this;
 	}
 
-	template<class U, class = std::enable_if<std::is_convertible_v<U*, T*>, void>>
+	template<class U>
 	constexpr RefPtr<T>& operator=(RefPtr<U>&& other) noexcept
+		requires (std::is_convertible_v<U*, T*>)
 	{
 		if (m_object)
 		{
@@ -150,9 +154,15 @@ public:
 	}
 
 	template<typename U>
-	constexpr RefPtr<U> As() const noexcept requires (std::is_base_of<T, U>::value || std::is_base_of<U, T>::value)
+	constexpr RefPtr<U> As() const noexcept
+		requires (std::is_convertible_v<U*, T*>)
 	{
-		return RefPtr<U>(const_cast<RefPtr<T>&>(*this));
+		// Add a ref here as the constructor will not.
+		if (m_object)
+		{
+			m_object->IncRef();
+		}
+		return RefPtr<U>(static_cast<U*>(m_object));
 	}
 
 	constexpr T* operator->() noexcept
@@ -263,7 +273,10 @@ public:
 	}
 
 private:
-	RefPtr(T* object) noexcept
+	template<typename U>
+	friend class RefPtr;
+
+	explicit RefPtr(T* object) noexcept
 		: m_object(object)
 	{}
 

@@ -15,14 +15,11 @@
 
 namespace Volt::RHI
 {
-	VulkanImageView::VulkanImageView(const ImageViewDesc& desc)
-		: m_desc(desc)
+	VulkanImageView::VulkanImageView(const ImageViewDesc& desc, RawPtr<Image> image)
+		: m_desc(desc), m_image(image)
 	{
-		// Keep a reference to the image, as it should be alive untill all views have been destroyed.
-		desc.image->IncRef();
-
-		auto imageRes = desc.image;
-		auto image = imageRes->As<Image>();
+		// Keep a reference to the image, as it should be alive until all views have been destroyed.
+		m_image->IncRef();
 
 		m_format = image->GetFormat();
 		m_imageUsage = image->GetUsage();
@@ -55,7 +52,7 @@ namespace Volt::RHI
 	VulkanImageView::~VulkanImageView()
 	{
 		// Remove the reference we add on creation.
-		m_desc.image->DecRef();
+		m_image->DecRef();
 
 		RHIModule::GetInstance().DestroyResource([imageView = m_imageView]()
 		{
@@ -78,7 +75,7 @@ namespace Volt::RHI
 
 	const uint64_t VulkanImageView::GetDeviceAddress() const
 	{
-		return m_desc.image->GetDeviceAddress();
+		return m_image->GetDeviceAddress();
 	}
 
 	const ImageUsage VulkanImageView::GetImageUsage() const
@@ -104,5 +101,10 @@ namespace Volt::RHI
 	const ImageViewDesc& VulkanImageView::GetDesc() const
 	{
 		return m_desc;
+	}
+
+	RawPtr<Image> VulkanImageView::GetImage() const
+	{
+		return m_image;
 	}
 }

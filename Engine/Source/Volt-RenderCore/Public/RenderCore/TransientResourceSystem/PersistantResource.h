@@ -44,6 +44,6 @@ namespace Volt
 
 	private:
 		TransientUniformBufferViewCache m_viewCache;
-		RefPtr<RHI::StorageBuffer> m_uniformBuffer;
+		RefPtr<RHI::UniformBuffer> m_uniformBuffer;
 	};
 }

@@ -10,7 +10,7 @@ namespace Volt::RHI
 	class VulkanImageView : public ImageView
 	{
 	public:
-		VulkanImageView(const ImageViewDesc& specification);
+		VulkanImageView(const ImageViewDesc& specification, RawPtr<Image> image);
 		~VulkanImageView() override;
 
 		const PixelFormat GetFormat() const;
@@ -19,6 +19,7 @@ namespace Volt::RHI
 		const ImageUsage GetImageUsage() const override;
 		const ImageViewType GetViewType() const override;
 		const ImageViewDesc& GetDesc() const override;
+		RawPtr<Image> GetImage() const override;
 		const bool IsSwapchainView() const override;
 
 	protected:
@@ -28,6 +29,7 @@ namespace Volt::RHI
 		ImageViewDesc m_desc{};
 
 		VkImageView_T* m_imageView = nullptr;
+		RawPtr<Image> m_image;
 
 		PixelFormat m_format;
 		ImageAspect m_imageAspect;

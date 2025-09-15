@@ -1024,7 +1024,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		const ImageViewDesc& desc = imageView->GetDesc();
-		RawPtr<Image> image = desc.image->As<Image>();
+		RawPtr<Image> image = imageView->GetImage();
 
 		VkImageSubresourceRange subResourceRange{};
 		subResourceRange.aspectMask = Utility::GetVkImageAspect(imageView->GetImageAspect());
@@ -1062,7 +1062,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		const ImageViewDesc& desc = imageView->GetDesc();
-		RawPtr<Image> image = desc.image->As<Image>();
+		RawPtr<Image> image = imageView->GetImage();
 
 		VkImageSubresourceRange subResourceRange{};
 		subResourceRange.aspectMask = Utility::GetVkImageAspect(imageView->GetImageAspect());

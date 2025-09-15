@@ -63,10 +63,7 @@ namespace Volt::RHI
 
 	RefPtr<BufferView> VulkanUniformBuffer::GetView(const BufferViewDesc& desc)
 	{
-		BufferViewDesc descCopy = desc;
-		descCopy.bufferResource = this;
-
-		return BufferView::Create(descCopy);
+		return BufferView::Create(desc, this);
 	}
 
 	const uint32_t VulkanUniformBuffer::GetSize() const

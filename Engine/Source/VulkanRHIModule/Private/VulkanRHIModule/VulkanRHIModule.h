@@ -21,7 +21,8 @@ namespace Volt::RHI
 	public:
 		VulkanRHIModule();
 
-		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification) const override;
+		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<StorageBuffer> buffer) const override;
+		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const override;
 
 		RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const override;
 
@@ -40,7 +41,7 @@ namespace Volt::RHI
 		RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const override;
 		RefPtr<Image> CreateImage(const SwapchainImageDesc& specification) const override;
 
-		RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification) const override;
+		RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const override;
 		RefPtr<SamplerState> CreateSamplerState(const SamplerStateDesc& createInfo) const override;
 
 		RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const override;

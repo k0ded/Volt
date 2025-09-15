@@ -24,7 +24,7 @@ namespace Volt
 			if (m_frameReleasedIndex + m_framesToKeepAlive <= frameIndex)
 			{
 				bool expected = false;
-				return m_aquired.compare_exchange_weak(expected, true);
+				return m_acquired.compare_exchange_weak(expected, true);
 			}
 			return false;
 		}
