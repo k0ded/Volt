@@ -22,54 +22,78 @@ namespace Volt
 	{
 		if (state == AssetChangedState::Updated)
 		{
-			for (const auto& [index, materialHandle] : m_materials)
+			for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
 			{
+				const AssetHandle materialHandle = m_materials.at(i);
 				if (materialHandle == dependencyHandle)
 				{
+					Ref<RenderMaterial> renderMaterial;
+
 					if (AssetManager::IsLoaded(materialHandle))
 					{
 						Ref<MaterialAsset> materialAsset = AssetManager::GetAsset<MaterialAsset>(materialHandle);
-						m_mesh->SetMaterial(materialAsset->GetRenderMaterial(), index);
+						renderMaterial = materialAsset->GetRenderMaterial();
 					}
 					else
 					{
-						m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, index);
+						renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
 					}
+					m_mesh->SetMaterial(renderMaterial, i);
 					break;
 				}
 			}
 		}
 		else if (state == AssetChangedState::Removed)
 		{
-			for (auto& [index, materialHandle] : m_materials)
+			for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
 			{
+				const AssetHandle materialHandle = m_materials.at(i);
 				if (materialHandle == dependencyHandle)
 				{
-					materialHandle = Asset::Null();
-
-					m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, index);
+					m_materials[i] = Asset::Null();
+					m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, i);
 					break;
 				}
 			}
 		}
 	}
 
-	void MeshAsset::FinalizeDeserialization()
+	void MeshAsset::Initialize(const MeshInitializer& meshInitializer, const Vector<Ref<MaterialAsset>>& materials)
 	{
-		for (const auto& [index, materialHandle] : m_materials)
+		VT_PROFILE_FUNCTION();
+
+		m_materials.resize(materials.size());
+		for (size_t i = 0; i < m_materials.size(); ++i)
 		{
-			if (AssetManager::IsLoaded(materialHandle))
-			{
-				Ref<MaterialAsset> materialAsset = AssetManager::GetAsset<MaterialAsset>(materialHandle);
-				m_mesh->SetMaterial(materialAsset->GetRenderMaterial(), index);
-			}
-			else
-			{
-				m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, index);
-			}
+			m_materials[i] = materials[i]->handle;
 		}
 
 		m_mesh->SetName(assetName);
-		m_mesh->Construct();
+		m_mesh->Initialize(meshInitializer);
+	}
+
+	void MeshAsset::Initialize(MeshInitializer& meshInitializer, const Vector<AssetHandle>& materials)
+	{
+		m_materials.resize(materials.size());
+		for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
+		{
+			const AssetHandle materialHandle = materials.at(i);
+
+			Ref<RenderMaterial> renderMaterial;
+
+			if (AssetManager::IsLoaded(materialHandle))
+			{
+				Ref<MaterialAsset> materialAsset = AssetManager::GetAsset<MaterialAsset>(materialHandle);
+				renderMaterial = materialAsset->GetRenderMaterial();
+			}
+			else
+			{
+				renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
+			}
+			meshInitializer.AddMaterial(renderMaterial, i);
+		}
+
+		m_mesh->SetName(assetName);
+		m_mesh->Initialize(meshInitializer);
 	}
 }

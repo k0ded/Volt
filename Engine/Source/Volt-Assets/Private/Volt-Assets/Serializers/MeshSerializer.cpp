@@ -10,46 +10,11 @@
 
 namespace Volt
 {
-	struct MeshSerializationData_V1
-	{
-		Vector<AssetHandle> materials;
-		Vector<Vertex> vertices;
-		Vector<uint32_t> indices;
-
-		glm::vec3 boundingSphereCenter;
-		float boundingSphereRadius;
-
-		Vector<SubMesh> subMeshes;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const MeshSerializationData_V1& data)
-		{
-			streamWriter.WriteRaw(data.materials);
-			streamWriter.WriteRaw(data.vertices);
-			streamWriter.WriteRaw(data.indices);
-			streamWriter.Write(data.boundingSphereCenter);
-			streamWriter.Write(data.boundingSphereRadius);
-			streamWriter.Write(data.subMeshes);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, MeshSerializationData_V1& outData)
-		{
-			streamReader.ReadRaw(outData.materials);
-			streamReader.ReadRaw(outData.vertices);
-			streamReader.ReadRaw(outData.indices);
-			streamReader.Read(outData.boundingSphereCenter);
-			streamReader.Read(outData.boundingSphereRadius);
-			streamReader.Read(outData.subMeshes);
-		}
-	};
-
 	struct MeshSerializationData_V2
 	{
 		Vector<glm::vec3> vertexPositions;
 		Vector<VertexMaterialData> vertexMaterialData;
-		Vector<VertexAnimationInfo> vertexAnimationInfo;
 		Vector<VertexAnimationData> vertexAnimationData;
-		Vector<uint16_t> vertexBoneInfluences;
-		Vector<float> vertexBoneWeights;
 		Vector<uint32_t> indices;
 
 		Vector<AssetHandle> materials;
@@ -63,10 +28,7 @@ namespace Volt
 		{
 			streamWriter.WriteRaw(data.vertexPositions);
 			streamWriter.WriteRaw(data.vertexMaterialData);
-			streamWriter.WriteRaw(data.vertexAnimationInfo);
 			streamWriter.WriteRaw(data.vertexAnimationData);
-			streamWriter.WriteRaw(data.vertexBoneInfluences);
-			streamWriter.WriteRaw(data.vertexBoneWeights);
 			streamWriter.WriteRaw(data.indices);
 			streamWriter.WriteRaw(data.materials);
 			streamWriter.Write(data.boundingSphereCenter);
@@ -78,10 +40,7 @@ namespace Volt
 		{
 			streamReader.ReadRaw(outData.vertexPositions);
 			streamReader.ReadRaw(outData.vertexMaterialData);
-			streamReader.ReadRaw(outData.vertexAnimationInfo);
 			streamReader.ReadRaw(outData.vertexAnimationData);
-			streamReader.ReadRaw(outData.vertexBoneInfluences);
-			streamReader.ReadRaw(outData.vertexBoneWeights);
 			streamReader.ReadRaw(outData.indices);
 			streamReader.ReadRaw(outData.materials);
 			streamReader.Read(outData.boundingSphereCenter);
@@ -97,22 +56,14 @@ namespace Volt
 		BinaryStreamWriter streamWriter{};
 		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), streamWriter);
 
-		const auto& meshMaterials = meshAsset->m_materials;
-
-		MeshSerializationData_V2 serializationData{}; 
-		for (const auto& [index, handle] : meshMaterials)
-		{
-			serializationData.materials.emplace_back(handle);
-		}
+		MeshSerializationData_V2 serializationData{};
 
 		const auto& vertexContainer = meshAsset->m_mesh->GetVertexContainer();
 
+		serializationData.materials = meshAsset->m_materials;
 		serializationData.vertexPositions = vertexContainer.positions;
 		serializationData.vertexMaterialData = vertexContainer.materialData;
-		serializationData.vertexAnimationInfo = vertexContainer.animationInfo;
 		serializationData.vertexAnimationData = vertexContainer.animationData;
-		serializationData.vertexBoneInfluences = vertexContainer.boneInfluences;
-		serializationData.vertexBoneWeights = vertexContainer.boneWeights;
 		serializationData.indices = meshAsset->m_mesh->GetIndices();
 		serializationData.boundingSphereCenter = meshAsset->m_mesh->GetBoundingSphere().center;
 		serializationData.boundingSphereRadius = meshAsset->m_mesh->GetBoundingSphere().radius;
@@ -147,54 +98,35 @@ namespace Volt
 		Ref<MeshAsset> meshAsset = std::reinterpret_pointer_cast<MeshAsset>(destinationAsset);
 
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
-		if (serializedMetadata.version == 1)
-		{
-			MeshSerializationData_V1 serializationData{};
-			streamReader.Read(serializationData);
 
-			for (uint32_t i = 0; const auto & mat : serializationData.materials)
-			{
-				meshAsset->m_materials.emplace(i, mat);
-				AssetManager::AddDependencyToAsset(metadata.handle, mat);
-				i++;
-			}
-
-			meshAsset->m_mesh->InitializeWithVertices(serializationData.vertices);
-			meshAsset->m_mesh->m_indices = serializationData.indices;
-			meshAsset->m_mesh->m_boundingSphere.center = serializationData.boundingSphereCenter;
-			meshAsset->m_mesh->m_boundingSphere.radius = serializationData.boundingSphereRadius;
-			meshAsset->m_mesh->m_subMeshes = serializationData.subMeshes;
-		}
-		else
+		if (serializedMetadata.version == 2)
 		{
 			MeshSerializationData_V2 serializationData{};
 			streamReader.Read(serializationData);
 
-			for (uint32_t i = 0; const auto & mat : serializationData.materials)
+			MeshInitializer meshInitializer;
+
+			for (const auto& mat : serializationData.materials)
 			{
-				meshAsset->m_materials.emplace(i, mat);
 				AssetManager::AddDependencyToAsset(metadata.handle, mat);
-				i++;
 			}
 
-			meshAsset->m_mesh->m_vertexContainer.positions = serializationData.vertexPositions;
-			meshAsset->m_mesh->m_vertexContainer.materialData = serializationData.vertexMaterialData;
-			meshAsset->m_mesh->m_vertexContainer.animationInfo = serializationData.vertexAnimationInfo;
-			meshAsset->m_mesh->m_vertexContainer.animationData = serializationData.vertexAnimationData;
-			meshAsset->m_mesh->m_vertexContainer.boneInfluences = serializationData.vertexBoneInfluences;
-			meshAsset->m_mesh->m_vertexContainer.boneWeights = serializationData.vertexBoneWeights;
-			meshAsset->m_mesh->m_indices = serializationData.indices;
-			meshAsset->m_mesh->m_boundingSphere.center = serializationData.boundingSphereCenter;
-			meshAsset->m_mesh->m_boundingSphere.radius = serializationData.boundingSphereRadius;
-			meshAsset->m_mesh->m_subMeshes = serializationData.subMeshes;
-		}
+			meshInitializer.SetVertices(
+				serializationData.vertexPositions,
+				serializationData.vertexMaterialData,
+				serializationData.vertexAnimationData
+			);
 
-		for (auto& subMesh : meshAsset->m_mesh->m_subMeshes)
+			meshInitializer.SetIndices(serializationData.indices);
+			meshInitializer.SetSubMeshes(serializationData.subMeshes);
+
+			meshAsset->Initialize(meshInitializer, serializationData.materials);
+		}
+		else
 		{
-			subMesh.GenerateHash();
+			return false;
 		}
 
-		meshAsset->FinalizeDeserialization();
 		return true;
 	}
 }

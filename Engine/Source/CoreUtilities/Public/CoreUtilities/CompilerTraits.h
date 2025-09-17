@@ -16,14 +16,6 @@
 	#define VT_INLINE inline
 #endif
 
-// No discard
-#define VT_NODISCARD [[nodiscard]]
-
-// Fallthrough
-#define VT_FALLTHROUGH [[fallthrough]]
-
-#define VT_UNREACHABLE __assume(0)
-
 #if defined(_MSC_VER)
 #define VT_DISABLE_WARNING(w) \
 	__pragma(warning(push)) \
@@ -91,3 +83,11 @@ inline void VTBaseUnused(const volatile T& x) { (void)x; }
 #else
 	#error "Not defined!"
 #endif
+
+// No discard
+#define VT_NODISCARD [[nodiscard]]
+
+// Fallthrough
+#define VT_FALLTHROUGH [[fallthrough]]
+
+#define VT_UNREACHABLE __assume(0)

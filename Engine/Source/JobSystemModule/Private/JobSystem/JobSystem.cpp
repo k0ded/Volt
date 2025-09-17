@@ -156,7 +156,7 @@ namespace Volt
 	void JobSystem::Initialize()
     {
 		m_isAlive = true;
-		const uint32_t hardwareConcurrency = PlatformMisc::GetNumberOfPhysicalCores();
+		const uint32_t hardwareConcurrency = PlatformMisc::GetNumberOfLogicalCores();
 		m_numWorkers = hardwareConcurrency;
 
 		m_mainThreadQueue.Allocate(1024);
@@ -173,7 +173,7 @@ namespace Volt
 				worker->workQueues.at(priority).Allocate(NumMaxJobsPerQueue);
 			}
 
-			PlatformThread::AssignThreadToCore(worker->thread.native_handle(), 1ull << i);
+			//PlatformThread::AssignThreadToCore(worker->thread.native_handle(), 1ull << i);
 			PlatformThread::SetThreadPriority(worker->thread.native_handle(), ThreadPriority::High);
 
 			std::string threadName = std::format("Volt::Worker {}", i);

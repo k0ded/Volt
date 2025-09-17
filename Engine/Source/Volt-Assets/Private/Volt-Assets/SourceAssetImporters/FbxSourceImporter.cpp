@@ -349,7 +349,7 @@ namespace Volt
 		}
 	}
 
-	inline Vector<Ref<MaterialAsset>> CreateSceneMaterials(FbxScene* fbxScene, const MeshSourceImportConfig& importConfig)
+	inline Vector<Ref<MaterialAsset>> CreateSceneMaterials(FbxScene* fbxScene, MeshInitializer& meshInitializer, const MeshSourceImportConfig& importConfig)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -376,6 +376,8 @@ namespace Volt
 
 			Ref<MaterialAsset> material = AssetManager::CreateAsset<MaterialAsset>(importConfig.destinationDirectory, name);
 			result.emplace_back(material);
+
+			meshInitializer.AddMaterial(material->GetRenderMaterial(), static_cast<uint32_t>(result.size() - 1));
 		}
 
 		// Create a dummy material
@@ -383,6 +385,8 @@ namespace Volt
 		{
 			Ref<MaterialAsset> material = AssetManager::CreateAsset<MaterialAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_DummyMat");
 			result.emplace_back(material);
+
+			meshInitializer.AddMaterial(material->GetRenderMaterial(), 0);
 		}
 
 		return result;
@@ -690,7 +694,7 @@ namespace Volt
 		return voltAnimation;
 	}
 
-	void FbxSourceImporter::CreateSubMeshFromVertexRange(Ref<Mesh> destinationMesh, const FbxVertex* vertices, size_t indexCount, const std::string& name) const
+	void FbxSourceImporter::CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const FbxVertex* vertices, size_t indexCount, const std::string& name) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -730,16 +734,7 @@ namespace Volt
 		for (size_t i = 0; i < uniqueVertices.size(); i++)
 		{
 			vertexContainer.positions[i] = uniqueVertices[i].position;
-
-			// Setup material data
-			{
-				auto& materialData = vertexContainer.materialData[i];
-
-				materialData.normal = Packing::PackNormalToUInt32(uniqueVertices[i].normal);
-				materialData.tangent = Packing::EncodeTangent(uniqueVertices[i].normal, uniqueVertices[i].tangent);
-				materialData.tangentW = uniqueVertices[i].tangent.w;
-				materialData.texCoords = glm::packHalf2x16(uniqueVertices[i].texCoords);
-			}
+			vertexContainer.materialData[i] = VertexMaterialData::Pack(uniqueVertices[i].normal, uniqueVertices[i].tangent, uniqueVertices[i].texCoords);
 
 			// Setup anim data
 			{
@@ -749,20 +744,21 @@ namespace Volt
 			}
 		}
 
-		auto& subMesh = destinationMesh->m_subMeshes.emplace_back();
-		subMesh.vertexStartOffset = static_cast<uint32_t>(destinationMesh->m_vertexContainer.positions.size());
-		subMesh.indexStartOffset = static_cast<uint32_t>(destinationMesh->m_indices.size());
+		SubMesh subMesh;
+		subMesh.vertexStartOffset = meshInitializer.GetNumVertices();
+		subMesh.indexStartOffset = meshInitializer.GetNumIndices();
 		subMesh.vertexCount = static_cast<uint32_t>(uniqueVertices.size());
 		subMesh.indexCount = static_cast<uint32_t>(indices.size());
 		subMesh.name = name;
 		subMesh.materialIndex = static_cast<uint32_t>(uniqueVertices.front().material);
 		subMesh.GenerateHash();
 
-		destinationMesh->m_indices.append(indices);
-		destinationMesh->m_vertexContainer.Append(vertexContainer, uniqueVertices.size());
+		meshInitializer.AddSubMesh(subMesh);
+		meshInitializer.AddVertices(vertexContainer);
+		meshInitializer.AddIndices(indices);
 	}
 
-	void FbxSourceImporter::CreateVoltMeshFromFbxMesh(const fbxsdk::FbxMesh& fbxMesh, Ref<Mesh> destinationMesh, const Vector<Ref<MaterialAsset>>& materials, const JointVertexLinkMap* jointVertexLinks) const
+	void FbxSourceImporter::CreateVoltMeshFromFbxMesh(const fbxsdk::FbxMesh& fbxMesh, MeshInitializer& meshInitializer, const Vector<Ref<MaterialAsset>>& materials, const JointVertexLinkMap* jointVertexLinks) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -800,7 +796,7 @@ namespace Volt
 		for (const auto& [first, last] : subMeshRanges)
 		{
 			const size_t indexCount = last - first;
-			CreateSubMeshFromVertexRange(destinationMesh, &vertices[first], indexCount, fbxMesh.GetName());
+			CreateSubMeshFromVertexRange(meshInitializer, &vertices[first], indexCount, fbxMesh.GetName());
 		}
 	}
 
@@ -930,21 +926,17 @@ namespace Volt
 			return {};
 		}
 
-		Vector<Ref<MaterialAsset>> materials = CreateSceneMaterials(fbxScene, importConfig);
+		MeshInitializer meshInitializer;
+
+		Vector<Ref<MaterialAsset>> materials = CreateSceneMaterials(fbxScene, meshInitializer, importConfig);
 		Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
 
 		for (auto* fbxMesh : fbxMeshes)
 		{
-			CreateVoltMeshFromFbxMesh(*fbxMesh, voltMesh->m_mesh, materials, nullptr);
+			CreateVoltMeshFromFbxMesh(*fbxMesh, meshInitializer, materials, nullptr);
 		}
 
-		for (uint32_t i = 0; i < static_cast<uint32_t>(materials.size()); i++)
-		{
-			voltMesh->m_mesh->m_materialTable.SetMaterial(materials[i]->GetRenderMaterial(), i);
-			voltMesh->m_materials.emplace(i, materials[i]->handle);
-		}
-
-		voltMesh->FinalizeDeserialization();
+		voltMesh->Initialize(meshInitializer, materials);
 
 		Vector<Ref<Asset>> result;
 		result.emplace_back(voltMesh);
@@ -984,23 +976,19 @@ namespace Volt
 
 		JointVertexLinkMap jointVertexLinkMap{};
 
+		MeshInitializer meshInitializer;
+
 		// Create mesh
-		Vector<Ref<MaterialAsset>> materials = CreateSceneMaterials(fbxScene, importConfig);
+		Vector<Ref<MaterialAsset>> materials = CreateSceneMaterials(fbxScene, meshInitializer, importConfig);
 		Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
 
 		for (auto* fbxMesh : fbxMeshes)
 		{
 			FindJointVertexLinksAndSetupSkeleton(*fbxMesh, fbxSkeleton, jointVertexLinkMap);
-			CreateVoltMeshFromFbxMesh(*fbxMesh, voltMesh->m_mesh, materials, &jointVertexLinkMap);
+			CreateVoltMeshFromFbxMesh(*fbxMesh, meshInitializer, materials, &jointVertexLinkMap);
 		}
 
-		for (uint32_t i = 0; i < static_cast<uint32_t>(materials.size()); i++)
-		{
-			voltMesh->m_mesh->m_materialTable.SetMaterial(materials[i]->GetRenderMaterial(), i);
-			voltMesh->m_materials.emplace(i, materials[i]->handle);
-		}
-
-		voltMesh->FinalizeDeserialization();
+		voltMesh->Initialize(meshInitializer, materials);
 
 		// Create skeleton
 		Ref<Skeleton> voltSkeleton = AssetManager::CreateAsset<Skeleton>(importConfig.destinationDirectory, importConfig.destinationFilename + "_Skeleton");

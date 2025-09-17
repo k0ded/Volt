@@ -9,6 +9,8 @@
 namespace Volt
 {
 	class Mesh;
+	class MeshInitializer;
+	class MaterialAsset;
 
 	class VTASSETS_API MeshAsset : public Asset
 	{
@@ -29,9 +31,10 @@ namespace Volt
 		friend class GLTFSourceImporter;
 		friend class FbxSourceImporter;
 
-		void FinalizeDeserialization();
+		void Initialize(const MeshInitializer& meshInitializer, const Vector<Ref<MaterialAsset>>& materials);
+		void Initialize(MeshInitializer& meshInitializer, const Vector<AssetHandle>& materials);
 
 		Ref<Mesh> m_mesh;
-		Map<uint32_t, AssetHandle> m_materials;
+		Vector<AssetHandle> m_materials;
 	};
 }

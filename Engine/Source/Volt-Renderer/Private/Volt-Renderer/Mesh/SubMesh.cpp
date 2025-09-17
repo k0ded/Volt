@@ -10,12 +10,6 @@
 
 namespace Volt
 {
-	SubMesh::SubMesh(uint32_t aMaterialIndex, uint32_t aVertexCount, uint32_t aIndexCount, uint32_t aVertexStartOffset, uint32_t aIndexStartOffset)
-		: materialIndex(aMaterialIndex), vertexCount(aVertexCount), indexCount(aIndexCount), vertexStartOffset(aVertexStartOffset), indexStartOffset(aIndexStartOffset)
-	{
-		GenerateHash();
-	}
-
 	void SubMesh::GenerateHash()
 	{
 		m_hash = Math::HashCombine(m_hash, std::hash<uint32_t>()(materialIndex));

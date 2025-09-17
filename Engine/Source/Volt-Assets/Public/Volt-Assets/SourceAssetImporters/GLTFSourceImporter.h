@@ -20,6 +20,7 @@ namespace Volt
 {
 	class Mesh;
 	class MaterialAsset;
+	class MeshInitializer;
 
 	class GLTFSourceImporter final : public SourceAssetImporter
 	{
@@ -28,7 +29,7 @@ namespace Volt
 		SourceAssetFileInformation GetSourceFileInformation(const std::filesystem::path& filepath) const override;
 
 	private:
-		void CreateVoltMeshFromGLTFMesh(const tinygltf::Mesh& gltfMesh, const tinygltf::Node& gltfNode, const tinygltf::Model& gltfModel, Ref<Mesh> destinationMesh, const Vector<Ref<MaterialAsset>>& materials) const;
+		void CreateVoltMeshFromGLTFMesh(const tinygltf::Mesh& gltfMesh, const tinygltf::Node& gltfNode, const tinygltf::Model& gltfModel, MeshInitializer& meshInitializer, const Vector<Ref<MaterialAsset>>& materials) const;
 
 		Vector<Ref<Asset>> ImportAsStaticMesh(tinygltf::Model& gltfModel, const MeshSourceImportConfig importConfig, const SourceAssetUserImportData& userData) const;
 	};
