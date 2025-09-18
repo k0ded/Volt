@@ -4,9 +4,11 @@
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
+#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/RHIModule.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Math/Hash.h>
@@ -131,17 +133,20 @@ namespace Volt::RHI
 		auto device = GraphicsContext::GetDevice();
 
 		// Create descriptor set layouts
+		bool anyAccessesRayTracingResourceTable = false;
 		{
-			Vector<ShaderParameterMap::ResourceBindingsMap> shaderResourceBindings;
+			Vector<ShaderParameterMap::ResourceBindings> shaderResourceBindings;
 
 			for (const auto shader : m_createInfo.shaders)
 			{
 				auto& parameterMap = m_shaderParameterMaps.emplace_back(shader->GetParameterMap());
 				shaderResourceBindings.emplace_back(parameterMap.GetResourceBindings());
+			
+				anyAccessesRayTracingResourceTable |= parameterMap.AccessesRayTracingTable();
 			}
 
 			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
-			DescriptorSetLayoutBuilder::DescriptorSets descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderResourceBindings);
+			DescriptorSetLayoutBuilder::DescriptorSets descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderResourceBindings, anyAccessesRayTracingResourceTable);
 			m_descriptorSetLayouts = descriptorSets.descriptorSetLayouts;
 			m_pipelineLayoutDescriptorSetLayouts = descriptorSets.pipelineLayoutDescriptorSetLayouts;
 			m_descriptorPoolSizes = descriptorSetLayoutBuilder.CalculateDescriptorPoolSizesFromBindings(shaderResourceBindings);
@@ -186,7 +191,10 @@ namespace Volt::RHI
 
 			VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
 			rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-			rasterizerInfo.depthBiasClamp = VK_FALSE;
+			rasterizerInfo.depthClampEnable = m_createInfo.enableDepthClamp ? VK_TRUE : VK_FALSE;
+			rasterizerInfo.depthBiasClamp = m_createInfo.depthBiasClamp;
+			rasterizerInfo.depthBiasConstantFactor = m_createInfo.depthBiasConstantFactor;
+			rasterizerInfo.depthBiasSlopeFactor = m_createInfo.depthBiasSlopeFactor;
 			rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
 			rasterizerInfo.polygonMode = Utility::VoltToVulkanFill(m_createInfo.fillMode);
 			rasterizerInfo.cullMode = Utility::VoltToVulkanCull(m_createInfo.cullMode);
@@ -348,6 +356,24 @@ namespace Volt::RHI
 			VT_VK_CHECK(vkCreateGraphicsPipelines(device->GetHandle<VkDevice>(), VK_NULL_HANDLE, 1, &pipelineInfo, VT_VULKAN_ALLOCATOR, &m_pipeline));
 		}
 
+		if (RHI::RHICanUseRayTracing() && anyAccessesRayTracingResourceTable)
+		{
+			// Erase the ray tracing pipelines from the lists, as they should not be accessed outside of the pipeline.
+			if (m_descriptorSetLayouts.contains(RayTracingTableDescriptorSetManager::Set))
+			{
+				m_descriptorSetLayouts.erase(RayTracingTableDescriptorSetManager::Set);
+			}
+
+			for (auto it = m_pipelineLayoutDescriptorSetLayouts.begin(); it != m_pipelineLayoutDescriptorSetLayouts.end(); ++it)
+			{
+				if (*it == RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout())
+				{
+					m_pipelineLayoutDescriptorSetLayouts.erase(it);
+					break;
+				}
+			}
+		}
+
 		GenerateHash();
 		VT_LOGC(Trace, LogVulkanRHI, "Created Vulkan Render Pipeline in {} seconds!", scopedTimer.GetTime<Time::Seconds>());
 	}
@@ -448,10 +474,13 @@ namespace Volt::RHI
 		{
 			if (parameterMap.GetShaderStage() == shaderStage)
 			{
-				const ShaderParameterMap::ResourceBindingsMap& resourceBindingsMap = parameterMap.GetResourceBindings();
-				if (resourceBindingsMap.contains(name))
+				const ShaderParameterMap::ResourceBindings& resourceBindingsMap = parameterMap.GetResourceBindings();
+				for (const auto& [binding, nameHash] : resourceBindingsMap)
 				{
-					return &resourceBindingsMap.at(name);
+					if (nameHash == name)
+					{
+						return &binding;
+					}
 				}
 
 				// We can break here because there is only max one of each shader stage per pipeline

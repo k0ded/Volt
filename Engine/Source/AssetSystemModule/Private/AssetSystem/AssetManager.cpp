@@ -196,41 +196,56 @@ namespace Volt
 		const auto projectAssetFiles = GetProjectAssetFiles();
 		const auto engineAssetFiles = GetEngineAssetFiles();
 
-		m_assetRegistry.reserve(projectAssetFiles.size() + engineAssetFiles.size());
+		Vector<AssetMetadata> serializedMetadata;
+		serializedMetadata.resize(projectAssetFiles.size() + engineAssetFiles.size());
 
 		TaskGraph taskGraph{ ExecutionPriority::Immediate };
 
-		for (auto file : engineAssetFiles)
+		for (size_t index = 0; const auto& file : engineAssetFiles)
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", [this, file]()
+			taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index]()
 			{
-				DeserializeAssetMetadata(file);
+				DeserializeAssetMetadata(file, serializedMetadata[index]);
 			});
+
+			index++;
 		}
 
-		for (auto file : projectAssetFiles)
+		const size_t offset = engineAssetFiles.size();
+
+		for (size_t index = 0; const auto& file : projectAssetFiles)
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", [this, file]()
+			taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index, offset]()
 			{
-				DeserializeAssetMetadata(GetFilesystemPath(file));
+				DeserializeAssetMetadata(file, serializedMetadata[offset + index]);
 			});
+
+			index++;
 		}
 
 		taskGraph.ExecuteAndWait();
 
-		for (const auto& [handle, metadata] : m_assetRegistry)
+		m_assetRegistry.reserve(projectAssetFiles.size() + engineAssetFiles.size());
+
+		for (const AssetMetadata& metadata : serializedMetadata)
 		{
-			m_dependencyGraph->AddAssetToGraph(handle);
+			if (metadata.handle != Asset::Null())
+			{
+				m_assetRegistry[metadata.handle] = metadata;
+				m_dependencyGraph->AddAssetToGraph(metadata.handle);
+			}
 		}
 
 		VT_LOGC(Info, LogAssetSystem, "Finished fetching meta data in {} seconds!", timer.GetTime<Time::Seconds>());
 	}
 
-	void AssetManager::DeserializeAssetMetadata(std::filesystem::path assetPath)
+	void AssetManager::DeserializeAssetMetadata(const std::filesystem::path& assetPath, AssetMetadata& outMetadata)
 	{
 		VT_PROFILE_FUNCTION();
 
 		constexpr size_t assetHeaderSize = SerializedAssetMetadata::HeaderSize;
+
+		outMetadata.handle = Asset::Null();
 
 		BinaryStreamReader streamReader{ assetPath, assetHeaderSize };
 		if (!streamReader.IsStreamValid())
@@ -250,14 +265,10 @@ namespace Volt
 
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
 
-		{
-			WriteLock lock{ m_assetRegistryMutex };
-			AssetMetadata& metadata = m_assetRegistry[serializedMetadata.handle];
-			metadata.handle = serializedMetadata.handle;
-			metadata.filePath = GetRelativePath(assetPath);
-			metadata.type = serializedMetadata.type;
-			metadata.customData = serializedMetadata.customData;
-		}
+		outMetadata.handle = serializedMetadata.handle;
+		outMetadata.filePath = GetRelativePath(assetPath);
+		outMetadata.type = serializedMetadata.type;
+		outMetadata.customData = serializedMetadata.customData;
 	}
 
 	void AssetManager::UnloadAsset(AssetHandle assetHandle)
@@ -1374,7 +1385,7 @@ namespace Volt
 		{
 			if (p.path().extension() == ext)
 			{
-				files.emplace_back(GetRelativePath(p.path()));
+				files.emplace_back(p.path());
 			}
 		}
 
@@ -1385,7 +1396,7 @@ namespace Volt
 			{
 				if (p.path().extension() == ext)
 				{
-					files.emplace_back(GetRelativePath(p.path()));
+					files.emplace_back(p.path());
 				}
 			}
 		}
@@ -1408,7 +1419,7 @@ namespace Volt
 			{
 				if (p.path().extension() == ext)
 				{
-					files.emplace_back(GetRelativePath(p.path()));
+					files.emplace_back(p.path());
 				}
 			}
 		}

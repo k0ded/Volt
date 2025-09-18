@@ -43,4 +43,12 @@ namespace Volt::RHI
 		uint64_t offset = 0;
 		uint64_t range = 0;
 	};
+
+	struct DescriptorAccelerationStructureInfo
+	{
+		uint32_t sType = 0;
+		const void* pNext = nullptr;
+		uint32_t accelerationStructureCount = 0;
+		const VkAccelerationStructureKHR* accelerationStructures = nullptr;
+	};
 }

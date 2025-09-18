@@ -31,6 +31,7 @@ namespace Volt::RHI
 	class RayTracingSceneGeometry;
 	class AccelerationStructure;
 	class ShaderBindingTable;
+	class RayTracingResourceTable;
 
 	class GPUAllocator;
 	class DefaultGPUAllocator;
@@ -92,7 +93,8 @@ namespace Volt::RHI
 	public:
 		virtual ~RHIModule();
 
-		virtual RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification) const = 0;
+		virtual RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<StorageBuffer> buffer) const = 0;
+		virtual RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const = 0;
 
 		virtual RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const = 0;
 
@@ -111,7 +113,7 @@ namespace Volt::RHI
 		virtual RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const = 0;
 		virtual RefPtr<Image> CreateImage(const SwapchainImageDesc& specification) const = 0;
 
-		virtual RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification) const = 0;
+		virtual RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const = 0;
 		virtual RefPtr<SamplerState> CreateSamplerState(const SamplerStateDesc& createInfo) const = 0;
 
 		virtual RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const = 0; 
@@ -131,6 +133,7 @@ namespace Volt::RHI
 
 		virtual RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const = 0;
 		virtual RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const = 0;
+		virtual RefPtr<RayTracingResourceTable> CreateRayTracingResourceTable() const = 0;
 
 		virtual void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) = 0;
 

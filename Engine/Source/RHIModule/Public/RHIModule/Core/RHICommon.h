@@ -653,6 +653,8 @@ namespace Volt::RHI
 		GraphicsAPI graphicsApi;
 		PhysicalDeviceCreateInfo physicalDeviceInfo;
 		GraphicsDeviceCreateInfo graphicsDeviceInfo;
+
+		bool enabledDebugLayer = false;
 	};
 
 	struct DeviceQueueCreateInfo

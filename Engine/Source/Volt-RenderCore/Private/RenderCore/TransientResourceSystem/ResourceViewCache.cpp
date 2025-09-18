@@ -1,73 +1,104 @@
 #include "rcpch.h"
 #include "RenderCore/TransientResourceSystem/ResourceViewCache.h"
+#include "RenderCore/TransientResourceSystem/TransientResource.h"
+
+#include <RHIModule/Buffers/BufferView.h>
 
 #include <CoreUtilities/Math/Hash.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
-	ResourceViewCache::ResourceViewCache(const ResourceViewCache& other)
-		: m_bufferViewCache(other.m_bufferViewCache),
-		m_imageViewCache(other.m_imageViewCache)
-	{}
-	
-	ResourceViewCache::ResourceViewCache(ResourceViewCache&& other)
-		: m_bufferViewCache(std::move(other.m_bufferViewCache)),
-		m_imageViewCache(std::move(other.m_imageViewCache))
-	{}
-	
-	ResourceViewCache& ResourceViewCache::operator=(const ResourceViewCache& other)
+	namespace Utility
 	{
-		m_bufferViewCache = other.m_bufferViewCache;
-		m_imageViewCache = other.m_imageViewCache;
-	
-		return *this;
-	}
-	
-	ResourceViewCache& ResourceViewCache::operator=(ResourceViewCache&& other)
-	{
-		m_bufferViewCache = std::move(other.m_bufferViewCache);
-		m_imageViewCache = std::move(other.m_imageViewCache);
-
-		return *this;
-	}
-
-	RefPtr<RHI::BufferView> ResourceViewCache::GetOrCreateBufferView(const RHI::BufferViewDesc& desc, RefPtr<RHI::StorageBuffer> rhiBuffer)
-	{
-		size_t hash = Math::HashCombine(std::hash<size_t>()(desc.offset), std::hash<size_t>()(desc.size));
-		hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(desc.bufferFormat)));
-		hash = Math::HashCombine(hash, std::hash<void*>()(rhiBuffer.GetRaw()));
-
-		std::scoped_lock lock{ m_bufferViewCacheMutex };
-
-		if (m_bufferViewCache.contains(hash))
+		VT_INLINE size_t GetHashFromBufferViewDesc(const RHI::BufferViewDesc& desc)
 		{
-			return m_bufferViewCache.at(hash);
+			size_t hash = Math::HashCombine(std::hash<size_t>()(desc.offset), std::hash<size_t>()(desc.size));
+			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(desc.bufferFormat)));
+			return hash;
 		}
 
-		RefPtr<RHI::BufferView> view = rhiBuffer->GetView(desc);
-		m_bufferViewCache[hash] = view;
+		VT_INLINE size_t GetHashFromImageViewDesc(const RHI::ImageViewDesc& desc)
+		{
+			size_t hash = Math::HashCombine(std::hash<uint32_t>()(static_cast<uint32_t>(desc.viewType)), std::hash<uint32_t>()(desc.baseMipLevel));
+			hash = Math::HashCombine(hash, std::hash<uint32_t>()(desc.baseArrayLayer));
+			hash = Math::HashCombine(hash, std::hash<uint32_t>()(desc.mipCount));
+			hash = Math::HashCombine(hash, std::hash<uint32_t>()(desc.layerCount));
 
-		return view;
+			return hash;
+		}
 	}
 
-	RefPtr<RHI::ImageView> ResourceViewCache::GetOrCreateImageView(const RHI::ImageViewDesc& desc, RefPtr<RHI::Image> rhiImage)
+	TransientBufferViewCache::TransientBufferViewCache(RGRHIBufferResource* buffer)
+		: m_buffer(buffer)
+	{}
+
+	RefPtr<Volt::RHI::BufferView> TransientBufferViewCache::GetOrCreateView(const RHI::BufferViewDesc& desc)
 	{
-		size_t hash = Math::HashCombine(std::hash<uint32_t>()(static_cast<uint32_t>(desc.viewType)), std::hash<uint32_t>()(desc.baseMipLevel));
-		hash = Math::HashCombine(hash, std::hash<uint32_t>()(desc.baseArrayLayer));
-		hash = Math::HashCombine(hash, std::hash<uint32_t>()(desc.mipCount));
-		hash = Math::HashCombine(hash, std::hash<uint32_t>()(desc.layerCount));
-		hash = Math::HashCombine(hash, std::hash<void*>()(rhiImage.GetRaw()));
+		VT_PROFILE_FUNCTION();
 
-		std::scoped_lock lock{ m_imageViewCacheMutex };
+		const size_t hash = Utility::GetHashFromBufferViewDesc(desc);
 
-		if (m_imageViewCache.contains(hash))
+		for (size_t i = 0; i < m_views.size(); ++i)
 		{
-			return m_imageViewCache.at(hash);
+			if (m_views[i].hash == hash)
+			{
+				return m_views[i].view;
+			}
 		}
 
-		RefPtr<RHI::ImageView> view = rhiImage->GetView(desc);
-		m_imageViewCache[hash] = view;
+		RefPtr<RHI::BufferView> bufferView = m_buffer->GetRHIBuffer()->GetView(desc);
+		m_views.emplace_back(hash, bufferView);
 
-		return view;
+		return bufferView;
+	}
+
+	TransientImageViewCache::TransientImageViewCache(RGRHITextureResource* texture)
+		: m_texture(texture)
+	{}
+
+	RefPtr<RHI::ImageView> TransientImageViewCache::GetOrCreateView(const RHI::ImageViewDesc& desc)
+	{
+		VT_PROFILE_FUNCTION();
+		
+		const size_t hash = Utility::GetHashFromImageViewDesc(desc);
+
+		for (size_t i = 0; i < m_views.size(); ++i)
+		{
+			if (m_views[i].hash == hash)
+			{
+				return m_views[i].view;
+			}
+		}
+
+		RefPtr<RHI::ImageView> imageView = m_texture->GetRHITexture()->GetView(desc);
+		m_views.emplace_back(hash, imageView);
+
+		return imageView;
+	}
+
+	TransientUniformBufferViewCache::TransientUniformBufferViewCache(RGRHIUniformBufferResource* buffer)
+		: m_buffer(buffer)
+	{
+	}
+
+	RefPtr<Volt::RHI::BufferView> TransientUniformBufferViewCache::GetOrCreateView(const RHI::BufferViewDesc& desc)
+	{
+		VT_PROFILE_FUNCTION();
+
+		const size_t hash = Utility::GetHashFromBufferViewDesc(desc);
+
+		for (size_t i = 0; i < m_views.size(); ++i)
+		{
+			if (m_views[i].hash == hash)
+			{
+				return m_views[i].view;
+			}
+		}
+
+		RefPtr<RHI::BufferView> bufferView = m_buffer->GetRHIUniformBuffer()->GetView(desc);
+		m_views.emplace_back(hash, bufferView);
+
+		return bufferView;
 	}
 }

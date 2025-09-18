@@ -10,12 +10,13 @@ namespace Volt::RHI
 	class VulkanBufferView : public BufferView
 	{
 	public:
-		VulkanBufferView(const BufferViewDesc& specification);
+		VulkanBufferView(const BufferViewDesc& desc, RawPtr<StorageBuffer> buffer);
+		VulkanBufferView(const BufferViewDesc& desc, RawPtr<UniformBuffer> buffer);
 		~VulkanBufferView() override;
 
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 
-		RHIResource* GetResource() const { return m_buffer; }
+		RawPtr<RHIResource> GetResource() const { return m_resource; }
 		bool IsTexelBufferView() const override;
 
 		VT_NODISCARD VT_INLINE const BufferViewDesc& GetDesc() const { return m_desc; }
@@ -25,9 +26,10 @@ namespace Volt::RHI
 		void* GetHandleImpl() const override;
 
 	private:
-		BufferViewDesc m_desc;
-		RHIResource* m_buffer = nullptr;
+		void CreateView();
 
+		BufferViewDesc m_desc;
+		RawPtr<RHIResource> m_resource;
 		VkBufferView_T* m_texelBufferView = nullptr;
 	};
 }

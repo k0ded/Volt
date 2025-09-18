@@ -4,7 +4,7 @@
 #include "CoreUtilities/Profiling/Profiling.h"
 #include "CoreUtilities/VoltAssert.h"
 
-#define USE_MIMALLOC 1
+#define USE_MIMALLOC 0
 
 #if USE_MIMALLOC
 #include <mimalloc.h>
@@ -80,6 +80,10 @@ void* HeapAllocator::Reallocate(void* original, size_t size, size_t alignment)
 		resultPtr = _aligned_malloc(size, alignment);
 #endif
 	}
+
+#if !USE_MIMALLOC
+	Free(original);
+#endif
 
 	VT_PROFILE_FREE(original);
 	VT_PROFILE_ALLOC(resultPtr, size);

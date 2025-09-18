@@ -3,6 +3,7 @@
 
 #include "VulkanRHIModule/Shader/HLSLIncluder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
+#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Shader/ShaderUtility.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -467,10 +468,11 @@ namespace Volt::RHI
 		Vector<SpvReflectDescriptorBinding*> storageImages;
 		Vector<SpvReflectDescriptorBinding*> images;
 		Vector<SpvReflectDescriptorBinding*> samplers;
+		Vector<SpvReflectDescriptorBinding*> accelerationStructures;
 
 		for (size_t i = 0; i < sets.size(); ++i)
 		{
-			const SpvReflectDescriptorSet* spvSet = sets[0];
+			const SpvReflectDescriptorSet* spvSet = sets[i];
 
 			// First find the globals UB, to make sure that it always gets binding 0
 			for (uint32_t binding = 0; binding < spvSet->binding_count; ++binding)
@@ -500,6 +502,7 @@ namespace Volt::RHI
 								case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE: images.emplace_back(spvBinding); break;
 								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER: storageBuffers.emplace_back(spvBinding); break;
 								case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER: uniformTexelBuffers.emplace_back(spvBinding); break;
+								case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructures.emplace_back(spvBinding); break;
 							}
 							break;
 						}
@@ -527,6 +530,7 @@ namespace Volt::RHI
 		allBindings.append(storageImages);
 		allBindings.append(images);
 		allBindings.append(samplers);
+		allBindings.append(accelerationStructures);
 
 		// Change all descriptor set indices to be the same
 		// Because we always add uniform buffers first, the globals UB will always end up at binding index 0.
@@ -534,6 +538,11 @@ namespace Volt::RHI
 		const uint32_t shaderStageDescriptorSetIndex = GetDescriptorSetIndexFromShaderStage(currentShaderStage);
 		for (uint32_t bindingIndex = 0; SpvReflectDescriptorBinding* binding : allBindings)
 		{
+			if (binding->set == RayTracingTableDescriptorSetManager::Set && (binding->binding == RayTracingTableDescriptorSetManager::BuffersBinding || binding->binding == RayTracingTableDescriptorSetManager::TexturesBinding))
+			{
+				continue;
+			}
+
 			result = spvReflectChangeDescriptorBindingNumbers(&spirvModule, binding, bindingIndex, shaderStageDescriptorSetIndex);
 			VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
 
@@ -563,7 +572,15 @@ namespace Volt::RHI
 
 		for (SpvReflectDescriptorBinding* storageBuffer : storageBuffers)
 		{
-			shaderParameterMap.AddStructuredBufferSRV(storageBuffer->name, storageBuffer->set, storageBuffer->binding, currentShaderStage);
+			// Special case for ray tracing resource table
+			if (storageBuffer->set == RayTracingTableDescriptorSetManager::Set && storageBuffer->binding == RayTracingTableDescriptorSetManager::BuffersBinding)
+			{
+				shaderParameterMap.SetAccessesRayTracingResourceTable();
+			}
+			else
+			{
+				shaderParameterMap.AddStructuredBufferSRV(storageBuffer->name, storageBuffer->set, storageBuffer->binding, currentShaderStage);
+			}
 		}
 
 		for (SpvReflectDescriptorBinding* uniformTexelBuffer : uniformTexelBuffers)
@@ -583,12 +600,25 @@ namespace Volt::RHI
 
 		for (SpvReflectDescriptorBinding* image : images)
 		{
-			shaderParameterMap.AddTextureSRV(image->name, image->set, image->binding, currentShaderStage);
+			// Special case for ray tracing resource table
+			if (image->set == RayTracingTableDescriptorSetManager::Set && image->binding == RayTracingTableDescriptorSetManager::TexturesBinding)
+			{
+				shaderParameterMap.SetAccessesRayTracingResourceTable();
+			}
+			else
+			{
+				shaderParameterMap.AddTextureSRV(image->name, image->set, image->binding, currentShaderStage);
+			}
 		}
 
 		for (SpvReflectDescriptorBinding* sampler : samplers)
 		{
 			shaderParameterMap.AddSampler(sampler->name, sampler->set, sampler->binding, currentShaderStage);
+		}
+
+		for (SpvReflectDescriptorBinding* accelerationStructure : accelerationStructures)
+		{
+			shaderParameterMap.AddAccelerationStructure(accelerationStructure->name, accelerationStructure->set, accelerationStructure->binding, currentShaderStage);
 		}
 
 		const uint32_t spirvSize = spvReflectGetCodeSize(&spirvModule);

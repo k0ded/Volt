@@ -158,12 +158,26 @@ namespace Volt
 		const uint32_t dispatchY = Math::DivideRoundUp(view.height, 8u);
 
 		auto shader = ShaderMap::Get<GTAODenoiseCS>();
+#if 0
 		ComputeShaderUtils::AddPass<GTAODenoiseCS>(
 			m_renderGraph,
 			"GTAO.Denoise",
 			shader,
 			passParameters,
 			{ dispatchX, dispatchY, 1 });
+#else
+		m_renderGraph.AddPass("GTAO.Denoise",
+		RenderGraphPassFlags::Compute,
+		passParameters,
+		[passParameters, shader, dispatchX, dispatchY](RenderContext& context)
+		{
+			auto pipeline = PipelineStateCache::GetComputePipeline(shader);
+
+			context.BindPipeline(pipeline);
+			context.SetParameters<GTAODenoiseCS>(shader, passParameters);
+			context.Dispatch(dispatchX, dispatchY, 1);
+		});
+#endif
 
 		SceneTextures& sceneTextures = m_blackboard.Get<SceneTextures>();
 		sceneTextures.sceneAO = finalAOTerm;

@@ -84,6 +84,7 @@ namespace Volt::RHI
 		PixelFormat vertexFormat;
 		uint32_t vertexStride;
 		uint32_t vertexCount;
+		uint32_t indexCount;
 
 		IndexType indexType;
 		AccelerationStructureGeometryType geometryType;

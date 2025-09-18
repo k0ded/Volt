@@ -5,8 +5,7 @@
 #include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 #include "RenderCore/RenderGraph/RenderGraphAllocators.h"
 #include "RenderCore/RenderGraph/ShaderParameterStruct.h"
-#include "RenderCore/TransientResourceSystem/TransientResourceSystem.h"
-#include "RenderCore/TransientResourceSystem/ResourceViewCache.h"
+#include "RenderCore/RenderGraph/RenderGraphResourceManager.h"
 
 #include <JobSystem/Job.h>
 
@@ -29,6 +28,27 @@ namespace Volt
 
 	class GPUReadbackBuffer;
 	class GPUReadbackTexture;
+	class RenderGraph;
+
+	class RenderGraphShaderParameterUniformBuffer
+	{
+	public:
+		inline static constexpr uint64_t PerStageUniformBufferSize = 1024;
+
+		RenderGraphShaderParameterUniformBuffer(RenderGraph& renderGraph);
+
+		VT_INLINE RGUniformBufferSRVRef GetNext() { uint32_t index = m_counter.fetch_add(1u, std::memory_order::relaxed); return m_srvs.at(index); }
+		VT_INLINE uint8_t* GetMappedPointer() const { return reinterpret_cast<uint8_t*>(m_mappedPtr); }
+		
+		void Map();
+		void Unmap();
+
+	private:
+		Vector<RGUniformBufferSRVRef> m_srvs;
+		RGUniformBufferRef m_uniformBuffer;
+		void* m_mappedPtr;
+		std::atomic_uint32_t m_counter;
+	};
 
 	class VTRC_API RenderGraph
 	{
@@ -97,7 +117,7 @@ namespace Volt
 
 	protected:
 		friend class RenderContext;
-		friend class RenderGraphExecutionThread;
+		friend class RenderGraphShaderParameterUniformBuffer;
 
 		struct TextureExtractionInfo
 		{
@@ -126,6 +146,7 @@ namespace Volt
 			{
 			public:
 				VT_NODISCARD VT_INLINE std::span<const BarrierInfo> GetBarriers() const { return m_barriers; }
+				VT_NODISCARD VT_INLINE Vector<BarrierInfo>& GetBarriersMutable() { return m_barriers; }
 				VT_NODISCARD VT_INLINE size_t GetBarrierCount() const { return m_barriers.size(); }
 				VT_NODISCARD VT_INLINE bool Empty() const { return m_barriers.empty(); }
 
@@ -187,9 +208,8 @@ namespace Volt
 			Vector<RGResourceRef> m_surrenderableResources;
 			std::string_view m_name;
 		};
-	
-	protected:
 
+	protected:
 		class StandaloneBarriers
 		{
 		public:
@@ -247,6 +267,7 @@ namespace Volt
 		void ExtractResources();
 		void TransitionExternalResources();
 		void PrepareResourcesForExecution();
+		void CreateResourceViews();
 
 		void InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
 		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer);
@@ -254,24 +275,13 @@ namespace Volt
 		RGResourceRef TryGetRegisteredExternalResource(RawPtr<RHI::RHIResource> resource);
 		void RegisterExternalResource(RawPtr<RHI::RHIResource> resource, RGResourceRef handle);
 
-		RefPtr<RHI::BufferView> GetRHIBufferSRV(RGBufferSRVRef bufferSRV);
-		RefPtr<RHI::BufferView> GetRHIBufferUAV(RGBufferUAVRef bufferUAV);
-
-		RefPtr<RHI::ImageView> GetRHITextureSRV(RGTextureSRVRef textureSRV);
-		RefPtr<RHI::ImageView> GetRHITextureUAV(RGTextureUAVRef textureUAV);
-		RefPtr<RHI::ImageView> GetRHITextureRT(RGTextureRef texture);
-
 		RefPtr<RHI::RHIResource> GetRHIResource(RGResourceRef resource);
-		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
-		RefPtr<RHI::UniformBuffer> GetRHIUniformBuffer(RGUniformBufferRef uniformBuffer);
-		RefPtr<RHI::Image> GetRHITexture(RGTextureRef texture);
 
 		// Private because we don't need to create a uniform buffer SRV
 		// outside of the Render Graph.
-		RGUniformBufferSRVRef CreateSRV(RGUniformBufferRef uniformBuffer);
+		RGUniformBufferSRVRef CreateSRV(const RGUniformBufferSRVDesc& desc);
 
-		TransientResourceSystem m_transientResourceSystem;
-		ResourceViewCache m_resourceViewCache;
+		RenderGraphResourceManager m_resourceManager;
 		ExternalResourceRegistry m_registeredExternalResources;
 		StandaloneBarriers m_standaloneBarriers;
 		StandaloneMarkers m_standaloneMarkers;
@@ -288,6 +298,8 @@ namespace Volt
 
 		Vector<Handle<RenderGraphPass>> m_passes;
 		Vector<RGResourceRef> m_resources;
+		Vector<RGResourceSRVRef> m_resourceSRVs;
+		Vector<RGResourceUAVRef> m_resourceUAVs;
 
 		Vector<CompiledPass> m_compiledPasses;
 
@@ -324,10 +336,13 @@ namespace Volt
 				case ShaderParameterType::UniformBuffer:  
 				{
 					RGUniformBufferRef uniformBuffer = *reinterpret_cast<RGUniformBufferRef*>(dataPtr);
+					if (uniformBuffer != nullptr)
+					{
+						RGUniformBufferSRVDesc srvDesc{};
+						srvDesc.bufferResource = uniformBuffer;
 
-					VT_ENSURE_MSG(uniformBuffer, "Uniform buffer must not be null!");
-
-					newPass->AddResourceRead(CreateSRV(uniformBuffer));
+						newPass->AddResourceRead(CreateSRV(srvDesc));
+					}
 					break;
 				}
 				case ShaderParameterType::BufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGBufferRef*>(dataPtr), parameter.resourceAccessType); break;
@@ -343,12 +358,20 @@ namespace Volt
 					{
 						if (rtBindings.renderTargets[i] != nullptr)
 						{
+							VT_ENSURE_MSG(rtBindings.renderTargets[i]->GetDesc().usage == RHI::ImageUsage::Attachment 
+								|| rtBindings.renderTargets[i]->GetDesc().usage == RHI::ImageUsage::AttachmentStorage, 
+								"Render Targets must have a Attachment usage type!");
+							
 							newPass->AddResourceRenderTargetAccess(rtBindings.renderTargets[i]);
 						}
 					}
 
 					if (rtBindings.depthTarget != nullptr)
 					{
+						VT_ENSURE_MSG(rtBindings.depthTarget->GetDesc().usage == RHI::ImageUsage::Attachment 
+							|| rtBindings.depthTarget->GetDesc().usage == RHI::ImageUsage::AttachmentStorage, 
+							"Render Targets must have a Attachment usage type!");
+
 						newPass->AddResourceRenderTargetAccess(rtBindings.depthTarget);
 					}
 

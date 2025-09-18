@@ -5,7 +5,8 @@
 
 namespace Volt::RHI
 {
-	class RHIResource;
+	class StorageBuffer;
+	class UniformBuffer;
 
 	struct BufferViewDesc
 	{
@@ -14,9 +15,6 @@ namespace Volt::RHI
 
 		// Used for texel buffers.
 		RHI::PixelFormat bufferFormat = RHI::PixelFormat::UNDEFINED;
-
-		// #TODO_Ivar: Move out from the desc.
-		RHIResource* bufferResource = nullptr;
 	};
 
 	class VTRHI_API BufferView : public ArenaRHIInterface
@@ -24,7 +22,8 @@ namespace Volt::RHI
 	public:
 		~BufferView() override = default;
 
-		static RefPtr<BufferView> Create(const BufferViewDesc& specification);
+		static RefPtr<BufferView> Create(const BufferViewDesc& desc, RawPtr<StorageBuffer> buffer);
+		static RefPtr<BufferView> Create(const BufferViewDesc& desc, RawPtr<UniformBuffer> buffer);
 		virtual const uint64_t GetDeviceAddress() const = 0;
 		virtual bool IsTexelBufferView() const = 0;
 

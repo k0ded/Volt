@@ -6,6 +6,7 @@
 
 #include <RHIModule/Core/RHICommon.h>
 #include <RHIModule/Buffers/BufferDesc.h>
+#include <RHIModule/Buffers/BufferView.h>
 
 namespace Volt
 {
@@ -106,6 +107,8 @@ namespace Volt
 		}
 	};
 
+	class RGRHIBufferResource;
+
 	class VTRC_API RGBuffer : public RGResource
 	{
 	public:
@@ -118,11 +121,16 @@ namespace Volt
 		void AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav) override;
 		void AddProducer(Handle<RenderGraphPass> pass) override;
 
+		VT_INLINE void AssignRHIResource(RGRHIBufferResource* resource) { m_rhiResource = resource; }
+
 		VT_NODISCARD VT_INLINE const RGBufferDesc& GetDesc() const { return m_desc; }
+		VT_NODISCARD VT_INLINE RGRHIBufferResource* GetRHIResource() const { return m_rhiResource; }
 
 	private:
 		bool m_isProduced = false;
 		RGBufferDesc m_desc;
+
+		RGRHIBufferResource* m_rhiResource;
 	};
 
 	using RGBufferRef = RGBuffer*;
@@ -144,7 +152,11 @@ namespace Volt
 		RGResourceRef GetResource() const override { return m_desc.bufferResource; }
 		const RGBufferSRVDesc& GetDesc() const { return m_desc; }
 
+		VT_INLINE void AssignRHIView(RefPtr<RHI::BufferView> view) { m_rhiView = view; }
+		VT_INLINE RefPtr<RHI::BufferView> GetRHIView() { return m_rhiView; }
+
 	private:
+		RefPtr<RHI::BufferView> m_rhiView;
 		RGBufferSRVDesc m_desc;
 	};
 
@@ -165,7 +177,11 @@ namespace Volt
 		RGResourceRef GetResource() const override { return m_desc.bufferResource; }
 		const RGBufferUAVDesc& GetDesc() const { return m_desc; }
 	
+		VT_INLINE void AssignRHIView(RefPtr<RHI::BufferView> view) { m_rhiView = view; }
+		VT_INLINE RefPtr<RHI::BufferView> GetRHIView() { return m_rhiView; }
+
 	private:
+		RefPtr<RHI::BufferView> m_rhiView;
 		RGBufferUAVDesc m_desc;
 	};
 }

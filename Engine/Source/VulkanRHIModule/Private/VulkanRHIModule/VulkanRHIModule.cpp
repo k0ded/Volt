@@ -36,6 +36,7 @@
 
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
+#include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
 
 #include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
@@ -47,7 +48,7 @@ namespace Volt::RHI
 		m_resourceDeletionQueue.SetSize(RHI::Swapchain::FramesInFlight);
 
 		// Allocate arenas
-		constexpr size_t ArenaSize = 4096;
+		constexpr size_t ArenaSize = 8192;
 
 		m_bufferViewArena.AllocateArena(ArenaSize);
 		m_imageViewArena.AllocateArena(ArenaSize);
@@ -60,9 +61,17 @@ namespace Volt::RHI
 		m_vulkanCpuAllocator = CreateRef<VulkanCPUAllocator>();
 	}
 
-	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification) const
+	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<StorageBuffer> buffer) const
 	{
-		RefPtr<BufferView> bufferView = RefPtr<VulkanBufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification));
+		RefPtr<BufferView> bufferView = RefPtr<VulkanBufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
+		bufferView->SetArena(&m_bufferViewArena);
+
+		return bufferView;
+	}
+
+	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const
+	{
+		RefPtr<BufferView> bufferView = RefPtr<VulkanBufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
 		bufferView->SetArena(&m_bufferViewArena);
 
 		return bufferView;
@@ -133,9 +142,9 @@ namespace Volt::RHI
 		return image;
 	}
 
-	RefPtr<ImageView> VulkanRHIModule::CreateImageView(const ImageViewDesc& specification) const
+	RefPtr<ImageView> VulkanRHIModule::CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const
 	{
-		RefPtr<ImageView> imageView = RefPtr<VulkanImageView>::AttachNoRef(m_imageViewArena.Allocate(specification));
+		RefPtr<ImageView> imageView = RefPtr<VulkanImageView>::AttachNoRef(m_imageViewArena.Allocate(specification, image));
 		imageView->SetArena(&m_imageViewArena);
 
 		return imageView;
@@ -250,6 +259,11 @@ namespace Volt::RHI
 	RefPtr<DescriptorTable> VulkanRHIModule::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanDescriptorTable>::Create(createInfo);
+	}
+
+	RefPtr<RayTracingResourceTable> VulkanRHIModule::CreateRayTracingResourceTable() const
+	{
+		return RefPtr<VulkanRayTracingResourceTable>::Create();
 	}
 }
 

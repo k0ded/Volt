@@ -21,6 +21,8 @@
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
+#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -578,6 +580,16 @@ namespace Volt::RHI
 		{
 			vkCmdBindDescriptorSets(m_commandBufferData.commandBuffer, bindPoint, pipelineLayout, setIndex, 1, &descriptorSet, 0, nullptr);
 		}
+
+		if (RHI::RHICanUseRayTracing())
+		{
+			RefPtr<RayTracingResourceTable> rtResourceTable = vulkanTable.GetRayTracingResourceTable();
+			if (rtResourceTable)
+			{
+				VkDescriptorSet descriptorSet = rtResourceTable->As<VulkanRayTracingResourceTable>()->GetDescriptorSet();
+				vkCmdBindDescriptorSets(m_commandBufferData.commandBuffer, bindPoint, pipelineLayout, RayTracingTableDescriptorSetManager::Set, 1, &descriptorSet, 0, nullptr);
+			}
+		}
 	}
 
 	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)
@@ -818,7 +830,7 @@ namespace Volt::RHI
 					triangles.indexData.deviceAddress = geometryInfo.indexBuffer->GetDeviceAddress();
 					triangles.transformData.deviceAddress = 0;
 
-					primitiveCounts.emplace_back(geometryInfo.indexBuffer->GetCount() / 3u);
+					primitiveCounts.emplace_back(geometryInfo.indexCount / 3u);
 				}
 				else if (geometryInfo.geometryType == AccelerationStructureGeometryType::Instances)
 				{
@@ -1012,7 +1024,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		const ImageViewDesc& desc = imageView->GetDesc();
-		RawPtr<Image> image = desc.image->As<Image>();
+		RawPtr<Image> image = imageView->GetImage();
 
 		VkImageSubresourceRange subResourceRange{};
 		subResourceRange.aspectMask = Utility::GetVkImageAspect(imageView->GetImageAspect());
@@ -1050,7 +1062,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		const ImageViewDesc& desc = imageView->GetDesc();
-		RawPtr<Image> image = desc.image->As<Image>();
+		RawPtr<Image> image = imageView->GetImage();
 
 		VkImageSubresourceRange subResourceRange{};
 		subResourceRange.aspectMask = Utility::GetVkImageAspect(imageView->GetImageAspect());

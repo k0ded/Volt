@@ -8,6 +8,7 @@
 #include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
 
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
+#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Graphics/PhysicalGraphicsDevice.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -80,10 +81,20 @@ namespace Volt::RHI
 		{
 			VulkanBindlessDescriptorLayoutManager::CreateGlobalDescriptorLayout();
 		}
+
+		if (RHI::RHICanUseRayTracing())
+		{
+			m_rayTracingTableDescriptorSetManager = CreateRef<RayTracingTableDescriptorSetManager>();
+		}
 	}
 
 	void VulkanGraphicsContext::Shutdown()
 	{
+		if (RHI::RHICanUseRayTracing())
+		{
+			m_rayTracingTableDescriptorSetManager = nullptr;
+		}
+
 		if (RHI::RHICanUseBindless())
 		{
 			VulkanBindlessDescriptorLayoutManager::DestroyGlobalDescriptorLayout();
@@ -106,11 +117,14 @@ namespace Volt::RHI
 	void VulkanGraphicsContext::CreateInstance()
 	{
 #ifdef VT_ENABLE_VALIDATION
-		m_debugLayer = CreateRef<VulkanDebugLayer>();
-
-		if (m_debugLayer && !m_debugLayer->IsSupported())
+		if (m_createInfo.enabledDebugLayer)
 		{
-			VT_LOGC(Warning, LogVulkanRHI, "Vulkan validation layers were requested but not supported. Running without it!");
+			m_debugLayer = CreateRef<VulkanDebugLayer>();
+
+			if (m_debugLayer && !m_debugLayer->IsSupported())
+			{
+				VT_LOGC(Warning, LogVulkanRHI, "Vulkan validation layers were requested but not supported. Running without it!");
+			}
 		}
 #endif
 

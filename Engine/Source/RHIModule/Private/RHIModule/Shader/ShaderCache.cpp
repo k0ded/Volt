@@ -10,7 +10,7 @@
 
 namespace Volt::RHI
 {
-	constexpr uint32_t SHADER_CACHE_VERSION = 3; // Increase this when updating the shader cache format!
+	constexpr uint32_t SHADER_CACHE_VERSION = 5; // Increase this when updating the shader cache format!
 
 	namespace Utility
 	{

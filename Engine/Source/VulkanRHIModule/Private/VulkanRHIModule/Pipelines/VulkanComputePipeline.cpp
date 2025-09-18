@@ -4,9 +4,11 @@
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
+#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/RHIModule.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Math/Hash.h>
@@ -43,7 +45,7 @@ namespace Volt::RHI
 			const ShaderParameterMap& shaderParameterMap = m_shader->GetParameterMap();
 
 			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
-			DescriptorSetLayoutBuilder::DescriptorSets descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderParameterMap.GetResourceBindings());
+			DescriptorSetLayoutBuilder::DescriptorSets descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderParameterMap.GetResourceBindings(), shaderParameterMap.AccessesRayTracingTable());
 			m_descriptorSetLayouts = descriptorSets.descriptorSetLayouts;
 			m_pipelineLayoutDescriptorSetLayouts = descriptorSets.pipelineLayoutDescriptorSetLayouts;
 
@@ -61,7 +63,7 @@ namespace Volt::RHI
 			info.pushConstantRangeCount = 0;
 			info.pPushConstantRanges = nullptr;
 
-			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, nullptr, &m_pipelineLayout));
+			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_pipelineLayout));
 		}
 
 		// Create pipeline
@@ -85,6 +87,24 @@ namespace Volt::RHI
 			info.basePipelineIndex = 0;
 
 			VT_VK_CHECK(vkCreateComputePipelines(device->GetHandle<VkDevice>(), nullptr, 1, &info, VT_VULKAN_ALLOCATOR, &m_pipeline));
+		}
+
+		if (RHI::RHICanUseRayTracing() && m_shaderParameterMap.AccessesRayTracingTable())
+		{
+			// Erase the ray tracing pipelines from the lists, as they should not be accessed outside of the pipeline.
+			if (m_descriptorSetLayouts.contains(RayTracingTableDescriptorSetManager::Set))
+			{
+				m_descriptorSetLayouts.erase(RayTracingTableDescriptorSetManager::Set);
+			}
+
+			for (auto it = m_pipelineLayoutDescriptorSetLayouts.begin(); it != m_pipelineLayoutDescriptorSetLayouts.end(); ++it)
+			{
+				if (*it == RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout())
+				{
+					m_pipelineLayoutDescriptorSetLayouts.erase(it);
+					break;
+				}
+			}
 		}
 
 		GenerateHash();
@@ -140,10 +160,13 @@ namespace Volt::RHI
 
 	const ShaderResourceBinding* VulkanComputePipeline::GetResourceBindingFromName(const StringHash& name) const
 	{
-		const ShaderParameterMap::ResourceBindingsMap& resourceBindings = m_shaderParameterMap.GetResourceBindings();
-		if (resourceBindings.contains(name))
+		const ShaderParameterMap::ResourceBindings& resourceBindings = m_shaderParameterMap.GetResourceBindings();
+		for (const auto& [binding, nameHash] : resourceBindings)
 		{
-			return &resourceBindings.at(name);
+			if (nameHash == name)
+			{
+				return &binding;
+			}
 		}
 
 		return nullptr;

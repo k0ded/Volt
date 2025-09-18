@@ -30,6 +30,7 @@
 #include "DetourNavMesh.h"
 
 #include <Volt-Renderer/Mesh/MeshCommon.h>
+#include <CoreUtilities/Packing.h>
 
 inline static bool intersectSegmentTriangle(const float* sp, const float* sq,
 									 const float* a, const float* b, const float* c,
@@ -129,8 +130,7 @@ InputGeom::InputGeom(Ref<Volt::Mesh> asset) :
 		m_verts[(i * 3) + 1] = srcVertices.positions[i].y;
 		m_verts[(i * 3) + 2] = srcVertices.positions[i].z;
 
-		const glm::vec2 encodedNormal = { srcVertices.materialData[i].normal.x / 255.f, srcVertices.materialData[i].normal.y / 255.f};
-		const glm::vec3 normal = Volt::Utility::OctNormalDecode(encodedNormal);
+		const glm::vec3 normal = Packing::UnpackNormalFromUInt32(srcVertices.materialData[i].normal);
 
 		m_normals[(i * 3) + 0] = normal.x;
 		m_normals[(i * 3) + 1] = normal.y;

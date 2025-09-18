@@ -5,7 +5,7 @@
 namespace Volt
 {
 	RGUniformBuffer::RGUniformBuffer(const RGUniformBufferDesc& desc)
-		: m_desc(desc)
+		: m_desc(desc), m_rhiResource(nullptr)
 	{
 
 	}
@@ -39,8 +39,8 @@ namespace Volt
 		m_isProduced = true;
 	}
 
-	RGUniformBufferSRV::RGUniformBufferSRV(RGUniformBufferRef uniformBuffer)
-		: m_resource(uniformBuffer)
+	RGUniformBufferSRV::RGUniformBufferSRV(const RGUniformBufferSRVDesc& desc)
+		: m_desc(desc)
 	{
 
 	}

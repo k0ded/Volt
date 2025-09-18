@@ -7,7 +7,7 @@ class RawPtr
 {
 public:
 	constexpr RawPtr() noexcept = default;
-	
+
 	constexpr RawPtr(T* ptr) noexcept
 		: m_object(ptr)
 	{}
@@ -17,28 +17,29 @@ public:
 	{}
 
 	template<typename U>
-	constexpr RawPtr(const RefPtr<U>& refPtr) noexcept requires (std::is_base_of<T, U>::value || std::is_base_of<U, T>::value)
-		: m_object(refPtr.GetRaw())
+	constexpr RawPtr(const RefPtr<U>& refPtr) noexcept
+		requires (std::is_convertible_v<U*, T*>)
+	: m_object(static_cast<T*>(refPtr.GetRaw()))
 	{}
 
-	constexpr RawPtr(const RawPtr<T>& weakPtr) noexcept
-		: m_object(weakPtr.GetRaw())
-	{
-	}
+	constexpr RawPtr(const RawPtr<T>& other) noexcept
+		: m_object(other.GetRaw())
+	{}
 
 	constexpr RawPtr(RawPtr<T>&& other) noexcept
 		: m_object(other.GetRaw())
 	{}
 
 	template<typename U>
-	constexpr RawPtr(RawPtr<U>&& other) noexcept requires (std::is_base_of<T, U>::value || std::is_base_of<U, T>::value)
-		: m_object(other.GetRaw())
-	{
-	}
+	constexpr RawPtr(RawPtr<U>&& other) noexcept
+		requires (std::is_convertible_v<U*, T*>)
+	: m_object(static_cast<T*>(other.GetRaw()))
+	{}
 
 	template<typename U>
-	RawPtr(const RawPtr<U>& other) noexcept requires (std::is_base_of<T, U>::value || std::is_base_of<U, T>::value)
-		: m_object(reinterpret_cast<T*>(other.GetRaw()))
+	constexpr RawPtr(const RawPtr<U>& other) noexcept
+		requires (std::is_convertible_v<U*, T*>)
+	: m_object(static_cast<T*>(other.GetRaw()))
 	{}
 
 	~RawPtr() noexcept
@@ -46,56 +47,30 @@ public:
 		m_object = nullptr;
 	}
 
-	VT_NODISCARD constexpr T* GetRaw() noexcept
-	{
-		return m_object;
-	}
+	VT_NODISCARD constexpr T* GetRaw() noexcept { return m_object; }
+	VT_NODISCARD constexpr T* GetRaw() const noexcept { return m_object; }
 
-	VT_NODISCARD constexpr T* GetRaw() const noexcept
-	{
-		return m_object;
-	}
-
-	VT_NODISCARD constexpr const size_t GetHash() const
+	VT_NODISCARD constexpr std::size_t GetHash() const
 	{
 		return std::hash<void*>()(m_object);
 	}
 
-	constexpr void Reset() noexcept
-	{
-		m_object = nullptr;
-	}
+	constexpr void Reset() noexcept { m_object = nullptr; }
 
-	VT_NODISCARD constexpr bool IsValid() const
-	{
-		return m_object != nullptr;
-	}
+	VT_NODISCARD constexpr bool IsValid() const { return m_object != nullptr; }
 
+	// Note: Not type safe!
 	template<typename U>
-	VT_NODISCARD constexpr RawPtr<U> As() const noexcept requires (std::is_base_of<T, U>::value || std::is_base_of<U, T>::value)
+	VT_NODISCARD constexpr RawPtr<U> As() const noexcept
 	{
-		return RawPtr<U>(const_cast<RawPtr<T>&>(*this));
+		return RawPtr<U>(static_cast<U*>(m_object));
 	}
 
-	VT_NODISCARD constexpr T* operator->() noexcept
-	{
-		return m_object;
-	}
+	VT_NODISCARD constexpr T* operator->() noexcept { return m_object; }
+	VT_NODISCARD constexpr T& operator*() noexcept { return *m_object; }
 
-	VT_NODISCARD constexpr T& operator*() noexcept
-	{
-		return *m_object;
-	}
-
-	VT_NODISCARD constexpr T* operator->() const noexcept
-	{
-		return m_object;
-	}
-
-	VT_NODISCARD constexpr T& operator*() const noexcept
-	{
-		return *m_object;
-	}
+	VT_NODISCARD constexpr T* operator->() const noexcept { return m_object; }
+	VT_NODISCARD constexpr T& operator*() const noexcept { return *m_object; }
 
 	constexpr RawPtr<T>& operator=(const RawPtr<T>& other) noexcept
 	{
@@ -110,16 +85,18 @@ public:
 	}
 
 	template<typename U>
-	VT_INLINE RawPtr<T>& operator=(RawPtr<U>&& other) noexcept requires (std::is_base_of<T, U>::value || std::is_base_of<U, T>::value)
+	VT_INLINE RawPtr<T>& operator=(RawPtr<U>&& other) noexcept
+		requires (std::is_convertible_v<U*, T*>)
 	{
-		m_object = other.GetRaw();
+		m_object = static_cast<T*>(other.GetRaw());
 		return *this;
 	}
 
 	template<typename U>
-	VT_INLINE RawPtr<T>& operator=(const RawPtr<U>& other) noexcept requires (std::is_base_of<T, U>::value || std::is_base_of<U, T>::value)
+	VT_INLINE RawPtr<T>& operator=(const RawPtr<U>& other) noexcept
+		requires (std::is_convertible_v<U*, T*>)
 	{
-		m_object = other.GetRaw();
+		m_object = static_cast<T*>(other.GetRaw());
 		return *this;
 	}
 
@@ -136,12 +113,10 @@ private:
 
 namespace std
 {
-	template<typename T> struct hash;
-
-	template<class Ty>
-	struct hash<RawPtr<Ty>>
+	template<typename T>
+	struct hash<RawPtr<T>>
 	{
-		std::size_t operator()(const RawPtr<Ty> ptr) const
+		std::size_t operator()(const RawPtr<T>& ptr) const noexcept
 		{
 			return ptr.GetHash();
 		}

@@ -5,6 +5,9 @@
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
 #include "RenderCore/RenderGraph/GPUReadbackBuffer.h"
 #include "RenderCore/RenderGraph/GPUReadbackTexture.h"
+
+#include "RenderCore/TransientResourceSystem/TransientResource.h"
+
 #include "RenderCore/CommandBufferPool.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
@@ -32,49 +35,49 @@
 	These are the synchronization cases referenced and handeled in RenderGraph::Compile.
 
 	### Case 1:
-	
+
 	- If it’s an image resource AND the previous AND current usage are READ operations, no barrier is required.
-	
+
 	### Case 2:
-	
+
 	- If it’s an image resource AND the previous AND current usage are WRITE operations of the same type, a global barrier should be inserted.
-	
+
 	### Case 3:
-	
+
 	- If it’s a buffer resource AND the previous AND current usage are READ operations, no barrier is required.
-	
+
 	### Case 4:
-	
+
 	- If it’s a buffer resource AND the previous AND current usage are WRITE operations, a global barrier should be inserted.
-	
+
 	### Case 5:
-	
+
 	- If it’s a buffer resource AND the previous usage was a READ operation AND the current usage is a WRITE operation, a global barrier should be inserted.
-	
+
 	### Case 6:
-	
+
 	- If it’s a buffer resource AND the previous usage was a WRITE operation AND the current usage is a READ operation, a global barrier should be inserted.
-	
+
 	### Case 7: Resource A is created in render pass B
-	
+
 	If a resource is created in a render pass, we assume that the resource will be written to in the pass.
-	
+
 	- If it’s a depth resource AND it’s a rasterization pass -> transition to a DEPTH_WRITE state
 	- If it’s a depth resource AND it’s a compute pass -> transition to a SHADER_WRITE state
 	- If it’s a color resource AND it’s a rasterization pass -> transition to a COLOR_WRITE state
 	- If it’s a color resource AND it’s a compute pass -> transition to a SHADER_WRITE state
 	- If it’s a buffer resource -> transition to a SHADER_WRITE state
-	
+
 	### Case 8: Resource A is read in render pass B
-	
+
 	If a resource is marked as read in a render pass, the resource will be transitioned into a read state.
-	
+
 	- All resources will be transitioned into a SHADER_READ state
-	
+
 	### Case 9: Resource A is written to, but not created in render pass B
-	
+
 	If a resource is marked as write in a render pass, but not created in that render pass, the resource will be transitioned into a write state.
-	
+
 	- If it’s a depth resource AND it’s a rasterization pass -> transition to a DEPTH_WRITE state
 	- If it’s a depth resource AND it’s a compute pass -> transition to a SHADER_WRITE state
 	- If it’s a color resource AND it’s a rasterization pass -> transition to a COLOR_WRITE state
@@ -86,10 +89,16 @@
 
 namespace Volt
 {
-	ConsoleVariable<int32_t> g_renderGraphForceSingleThreadedExecution(
-		"r.RenderGraph.ForceSingleThreadedExecution", 
-		0, 
-		"Whether or not to force single threaded execution of the RenderGraph.");
+	static ConsoleVariable<int32_t> g_renderGraphForceSingleThreadedExecution(
+		"r.RenderGraph.ForceSingleThreadedExecution",
+		0,
+		"Wether or not to force single threaded execution of the RenderGraph.");
+
+	static ConsoleVariable<int32_t> g_renderGraphForceFullBarriersBetweenPasses(
+		"r.RenderGraph.ForceFullBarriersBetweenPasses",
+		0,
+		""
+	);
 
 	inline RHI::ResourceState GetWriteStateForRasterizedTexture(RGResourceRef resource)
 	{
@@ -184,12 +193,10 @@ namespace Volt
 	}
 
 	RenderGraph::~RenderGraph()
-	{
-	}
+	{}
 
 	RenderGraph::RenderGraph(RenderGraph&& other) noexcept
-		: m_transientResourceSystem(std::move(other.m_transientResourceSystem)),
-		m_registeredExternalResources(std::move(other.m_registeredExternalResources)),
+		: m_registeredExternalResources(std::move(other.m_registeredExternalResources)),
 		m_resourceAllocator(std::move(other.m_resourceAllocator)),
 		m_resourceAccessorAllocator(std::move(other.m_resourceAccessorAllocator)),
 		m_passParametersAllocator(std::move(other.m_passParametersAllocator)),
@@ -204,9 +211,10 @@ namespace Volt
 		m_standaloneMarkers(std::move(other.m_standaloneMarkers)),
 		m_temporaryDataAllocator(std::move(other.m_temporaryDataAllocator)),
 		m_resourceStateTracker(std::move(other.m_resourceStateTracker)),
-		m_resourceViewCache(std::move(other.m_resourceViewCache))
-	{
-	}
+		m_resourceSRVs(std::move(other.m_resourceSRVs)),
+		m_resourceUAVs(std::move(other.m_resourceUAVs)),
+		m_resourceManager(std::move(other.m_resourceManager))
+	{}
 
 	RenderGraph& RenderGraph::operator=(RenderGraph&& other) noexcept
 	{
@@ -215,7 +223,6 @@ namespace Volt
 			return *this;
 		}
 
-		m_transientResourceSystem = std::move(other.m_transientResourceSystem);
 		m_registeredExternalResources = std::move(other.m_registeredExternalResources);
 		m_resourceAllocator = std::move(other.m_resourceAllocator);
 		m_resourceAccessorAllocator = std::move(other.m_resourceAccessorAllocator);
@@ -231,7 +238,9 @@ namespace Volt
 		m_standaloneMarkers = std::move(other.m_standaloneMarkers);
 		m_temporaryDataAllocator = std::move(other.m_temporaryDataAllocator);
 		m_resourceStateTracker = std::move(other.m_resourceStateTracker);
-		m_resourceViewCache = std::move(other.m_resourceViewCache);
+		m_resourceSRVs = std::move(other.m_resourceSRVs);
+		m_resourceUAVs = std::move(other.m_resourceUAVs);
+		m_resourceManager = std::move(other.m_resourceManager);
 
 		return *this;
 	}
@@ -276,23 +285,35 @@ namespace Volt
 
 		for (const RGResourceRef resource : m_resources)
 		{
-			if (resource->isExternal)
+			RefPtr<RHI::RHIResource> rhiResource;
+
+			if (resource->GetResourceType() == RGResourceType::Texture)
 			{
-				RefPtr<RHI::RHIResource> rhiResource;
+				RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
+				if (textureResource->GetRHIResource())
+				{
+					rhiResource = textureResource->GetRHIResource()->GetRHITexture();
+				}
+			}
+			else if (resource->GetResourceType() == RGResourceType::Buffer)
+			{
+				RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
+				if (bufferResource->GetRHIResource())
+				{
+					rhiResource = bufferResource->GetRHIResource()->GetRHIBuffer();
+				}
+			}
+			else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
+			{
+				RGUniformBufferRef bufferResource = reinterpret_cast<RGUniformBufferRef>(resource);
+				if (bufferResource->GetRHIResource())
+				{
+					rhiResource = bufferResource->GetRHIResource()->GetRHIUniformBuffer();
+				}
+			}
 
-				if (resource->GetResourceType() == RGResourceType::Texture)
-				{
-					rhiResource = m_transientResourceSystem.GetTextureIfExists(reinterpret_cast<RGTextureRef>(resource));
-				}
-				else if (resource->GetResourceType() == RGResourceType::Buffer)
-				{
-					rhiResource = m_transientResourceSystem.GetBufferIfExists(reinterpret_cast<RGBufferRef>(resource));
-				}
-				else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
-				{
-					rhiResource = m_transientResourceSystem.GetUniformBufferIfExists(reinterpret_cast<RGUniformBufferRef>(resource));
-				}
-
+			if (rhiResource)
+			{
 				const RGResourceState& resourceState = m_resourceStateTracker.GetState(resource);
 				resourceTracker->TransitionResource(rhiResource, resourceState.currentState.stage, resourceState.currentState.access, resourceState.currentState.layout);
 			}
@@ -301,6 +322,8 @@ namespace Volt
 
 	void RenderGraph::PrepareResourcesForExecution()
 	{
+		VT_PROFILE_FUNCTION();
+
 		constexpr auto hasReferencedProducer = [](RGResourceRef resource) -> bool
 		{
 			for (const auto producer : resource->producers)
@@ -314,8 +337,9 @@ namespace Volt
 			return false;
 		};
 
+		auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
+
 		// At this point we know all resources that will be referenced, and we can create them accordingly.
-		m_transientResourceSystem.ReserveResourceSpace(m_resources.size());
 		for (auto resource : m_resources)
 		{
 			const bool shouldResourceBeCreated =
@@ -326,16 +350,196 @@ namespace Volt
 			{
 				if (resource->GetResourceType() == RGResourceType::Texture)
 				{
-					m_transientResourceSystem.PrepareResource(reinterpret_cast<RGTextureRef>(resource));
+					RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
+					m_resourceManager.AllocateResource(textureResource);
+
+					Handle<RenderGraphPass> producer = textureResource->GetFirstProducer();
+					CompiledPass& compiledPass = m_compiledPasses.at(producer->passIndex);
+
+					const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(textureResource->GetRHIResource()->GetRHITexture());
+
+					for (auto& barrier : compiledPass.prePassBarriers.GetBarriersMutable())
+					{
+						if (barrier.resource == resource)
+						{
+							barrier.barrier.imageBarrier().srcAccess = resourceState.access;
+							barrier.barrier.imageBarrier().srcStage = resourceState.stage;
+							barrier.barrier.imageBarrier().srcLayout = resourceState.layout;
+							break;
+						}
+					}
 				}
 				else if (resource->GetResourceType() == RGResourceType::Buffer)
 				{
-					m_transientResourceSystem.PrepareResource(reinterpret_cast<RGBufferRef>(resource));
+					RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
+
+					m_resourceManager.AllocateResource(bufferResource);
+
+					Handle<RenderGraphPass> producer = bufferResource->GetFirstProducer();
+					CompiledPass& compiledPass = m_compiledPasses.at(producer->passIndex);
+
+					const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(bufferResource->GetRHIResource()->GetRHIBuffer());
+
+					for (auto& barrier : compiledPass.prePassBarriers.GetBarriersMutable())
+					{
+						if (barrier.resource == resource)
+						{
+							barrier.barrier.globalBarrier().srcStage |= resourceState.stage;
+							barrier.barrier.globalBarrier().srcAccess |= resourceState.access;
+							break;
+						}
+					}
 				}
 				else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
 				{
-					m_transientResourceSystem.PrepareResource(reinterpret_cast<RGUniformBufferRef>(resource));
+					m_resourceManager.AllocateResource(reinterpret_cast<RGUniformBufferRef>(resource));
 				}
+			}
+		}
+	}
+
+	template<typename T>
+	inline RHI::ImageViewDesc GetImageViewDesc(const RGTextureDesc& textureDesc, const T& desc)
+	{
+		RHI::ImageViewDesc viewDesc{};
+		viewDesc.baseMipLevel = desc.baseMipLevel;
+		viewDesc.baseArrayLayer = desc.baseArrayLayer;
+		viewDesc.mipCount = desc.mipCount;
+		viewDesc.layerCount = desc.layerCount;
+
+		if (textureDesc.imageType == RHI::ResourceType::Image1D)
+		{
+			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
+			{
+				viewDesc.viewType = RHI::ImageViewType::View1D;
+			}
+			else
+			{
+				viewDesc.viewType = RHI::ImageViewType::View1DArray;
+			}
+		}
+		else if (textureDesc.imageType == RHI::ResourceType::Image2D)
+		{
+			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
+			{
+				viewDesc.viewType = RHI::ImageViewType::View2D;
+			}
+			else
+			{
+				if (textureDesc.isCubeMap)
+				{
+					viewDesc.viewType = RHI::ImageViewType::ViewCube;
+				}
+				else
+				{
+					viewDesc.viewType = RHI::ImageViewType::View2DArray;
+				}
+			}
+		}
+		else if (textureDesc.imageType == RHI::ResourceType::Image3D)
+		{
+			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
+			{
+				viewDesc.viewType = RHI::ImageViewType::View3D;
+			}
+			else
+			{
+				viewDesc.viewType = RHI::ImageViewType::View3DArray;
+			}
+		}
+
+		return viewDesc;
+	}
+
+	void RenderGraph::CreateResourceViews()
+	{
+		VT_PROFILE_FUNCTION();
+
+		for (RGResourceSRVRef resourceSRV : m_resourceSRVs)
+		{
+			RGResourceRef resource = resourceSRV->GetResource();
+			if (resource->GetResourceType() == RGResourceType::Buffer)
+			{
+				RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
+				RGBufferSRVRef bufferSRV = reinterpret_cast<RGBufferSRVRef>(resourceSRV);
+
+				// Make sure the buffer resource has been assigned.
+				if (bufferResource->GetRHIResource() != nullptr)
+				{
+					RHI::BufferViewDesc viewDesc{};
+					viewDesc.bufferFormat = bufferSRV->GetDesc().format;
+					bufferSRV->AssignRHIView(bufferResource->GetRHIResource()->GetOrCreateView(viewDesc));
+				}
+			}
+			else if (resource->GetResourceType() == RGResourceType::Texture)
+			{
+				RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
+				RGTextureSRVRef textureSRV = reinterpret_cast<RGTextureSRVRef>(resourceSRV);
+
+				// Make sure the buffer resource has been assigned.
+				if (textureResource->GetRHIResource() != nullptr)
+				{
+					const RGTextureDesc& textureDesc = textureResource->GetDesc();
+					const RGTextureSRVDesc& srvDesc = textureSRV->GetDesc();
+
+					const RHI::ImageViewDesc viewDesc = GetImageViewDesc(textureDesc, srvDesc);
+					textureSRV->AssignRHIView(textureResource->GetRHIResource()->GetOrCreateView(viewDesc));
+				}
+			}
+			else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
+			{
+				RGUniformBufferRef uniformBufferResource = reinterpret_cast<RGUniformBufferRef>(resource);
+				RGUniformBufferSRVRef uniformBufferSRV = reinterpret_cast<RGUniformBufferSRVRef>(resourceSRV);
+
+				if (uniformBufferResource->GetRHIResource())
+				{
+					RHI::BufferViewDesc desc{};
+					desc.offset = uniformBufferSRV->GetDesc().offset;
+					desc.size = uniformBufferSRV->GetDesc().size;
+					
+					uniformBufferSRV->AssignRHIView(uniformBufferResource->GetRHIResource()->GetOrCreateView(desc));
+				}
+			}
+			else
+			{
+				VT_ENSURE(false);
+			}
+		}
+
+		for (RGResourceUAVRef resourceUAV : m_resourceUAVs)
+		{
+			RGResourceRef resource = resourceUAV->GetResource();
+			if (resource->GetResourceType() == RGResourceType::Buffer)
+			{
+				RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
+				RGBufferUAVRef bufferUAV = reinterpret_cast<RGBufferUAVRef>(resourceUAV);
+
+				// Make sure the buffer resource has been assigned.
+				if (bufferResource->GetRHIResource())
+				{
+					RHI::BufferViewDesc viewDesc{};
+					viewDesc.bufferFormat = bufferUAV->GetDesc().format;
+					bufferUAV->AssignRHIView(bufferResource->GetRHIResource()->GetOrCreateView(viewDesc));
+				}
+			}
+			else if (resource->GetResourceType() == RGResourceType::Texture)
+			{
+				RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
+				RGTextureUAVRef textureUAV = reinterpret_cast<RGTextureUAVRef>(resourceUAV);
+
+				// Make sure the buffer resource has been assigned.
+				if (textureResource->GetRHIResource() != nullptr)
+				{
+					const RGTextureDesc& textureDesc = textureResource->GetDesc();
+					const RGTextureUAVDesc& srvDesc = textureUAV->GetDesc();
+
+					const RHI::ImageViewDesc viewDesc = GetImageViewDesc(textureDesc, srvDesc);
+					textureUAV->AssignRHIView(textureResource->GetRHIResource()->GetOrCreateView(viewDesc));
+				}
+			}
+			else
+			{
+				VT_ENSURE(false);
 			}
 		}
 	}
@@ -343,46 +547,61 @@ namespace Volt
 	RGBufferSRVRef RenderGraph::CreateSRV(const RGBufferSRVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
-
 		VT_ENSURE_MSG(!desc.bufferResource->GetDesc().isTexelBufferDesc, "Buffer format has to be provided if the buffer is a texel buffer!");
-		return m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
+
+		RGBufferSRVRef bufferSRV = m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
+		m_resourceSRVs.emplace_back(bufferSRV);
+
+		return bufferSRV;
 	}
 
-	RGUniformBufferSRVRef RenderGraph::CreateSRV(RGUniformBufferRef uniformBuffer)
+	RGUniformBufferSRVRef RenderGraph::CreateSRV(const RGUniformBufferSRVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 
-		return m_resourceAccessorAllocator.Allocate<RGUniformBufferSRV>(uniformBuffer);
+		RGUniformBufferSRVRef bufferSRV = m_resourceAccessorAllocator.Allocate<RGUniformBufferSRV>(desc);
+		m_resourceSRVs.emplace_back(bufferSRV);
+
+		return bufferSRV;
 	}
 
 	RGBufferUAVRef RenderGraph::CreateUAV(const RGBufferUAVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
-
 		VT_ENSURE_MSG(!desc.bufferResource->GetDesc().isTexelBufferDesc, "Buffer format has to be provided if the buffer is a texel buffer!");
-		return m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
+
+		RGBufferUAVRef bufferUAV = m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
+		m_resourceUAVs.emplace_back(bufferUAV);
+
+		return bufferUAV;
 	}
 
 	RGBufferSRVRef RenderGraph::CreateSRV(RGBufferRef buffer)
 	{
 		VT_PROFILE_FUNCTION();
-
 		VT_ENSURE_MSG(!buffer->GetDesc().isTexelBufferDesc, "Buffer format has to be provided if the buffer is a texel buffer!");
 
 		RGBufferSRVDesc desc{};
 		desc.bufferResource = buffer;
-		return m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
+
+		RGBufferSRVRef bufferSRV = m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
+		m_resourceSRVs.emplace_back(bufferSRV);
+
+		return bufferSRV;
 	}
 
 	RGBufferUAVRef RenderGraph::CreateUAV(RGBufferRef buffer)
 	{
 		VT_PROFILE_FUNCTION();
-
 		VT_ENSURE_MSG(!buffer->GetDesc().isTexelBufferDesc, "Buffer format has to be provided if the buffer is a texel buffer!");
 
 		RGBufferUAVDesc desc{};
 		desc.bufferResource = buffer;
-		return m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
+
+		RGBufferUAVRef bufferUAV = m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
+		m_resourceUAVs.emplace_back(bufferUAV);
+
+		return bufferUAV;
 	}
 
 	RGBufferSRVRef RenderGraph::CreateSRV(RGBufferRef buffer, RHI::PixelFormat format)
@@ -394,7 +613,11 @@ namespace Volt
 		RGBufferSRVDesc desc{};
 		desc.bufferResource = buffer;
 		desc.format = format;
-		return m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
+
+		RGBufferSRVRef bufferSRV = m_resourceAccessorAllocator.Allocate<RGBufferSRV>(desc);
+		m_resourceSRVs.emplace_back(bufferSRV);
+
+		return bufferSRV;
 	}
 
 	RGBufferUAVRef RenderGraph::CreateUAV(RGBufferRef buffer, RHI::PixelFormat format)
@@ -406,21 +629,29 @@ namespace Volt
 		RGBufferUAVDesc desc{};
 		desc.bufferResource = buffer;
 		desc.format = format;
-		return m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
+
+		RGBufferUAVRef bufferUAV = m_resourceAccessorAllocator.Allocate<RGBufferUAV>(desc);
+		m_resourceUAVs.emplace_back(bufferUAV);
+
+		return bufferUAV;
 	}
 
 	RGTextureSRVRef RenderGraph::CreateSRV(const RGTextureSRVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 
-		return m_resourceAccessorAllocator.Allocate<RGTextureSRV>(desc);
+		RGTextureSRVRef textureSRV = m_resourceAccessorAllocator.Allocate<RGTextureSRV>(desc);
+		m_resourceSRVs.emplace_back(textureSRV);
+		return textureSRV;
 	}
 
 	RGTextureUAVRef RenderGraph::CreateUAV(const RGTextureUAVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 
-		return m_resourceAccessorAllocator.Allocate<RGTextureUAV>(desc);
+		RGTextureUAVRef textureUAV = m_resourceAccessorAllocator.Allocate<RGTextureUAV>(desc);
+		m_resourceUAVs.emplace_back(textureUAV);
+		return textureUAV;
 	}
 
 	RGTextureSRVRef RenderGraph::CreateSRV(RGTextureRef texture)
@@ -430,7 +661,10 @@ namespace Volt
 
 		RGTextureSRVDesc desc{};
 		desc.textureResource = texture;
-		return m_resourceAccessorAllocator.Allocate<RGTextureSRV>(desc);
+
+		RGTextureSRVRef textureSRV = m_resourceAccessorAllocator.Allocate<RGTextureSRV>(desc);
+		m_resourceSRVs.emplace_back(textureSRV);
+		return textureSRV;
 	}
 
 	RGTextureUAVRef RenderGraph::CreateUAV(RGTextureRef texture)
@@ -440,7 +674,10 @@ namespace Volt
 
 		RGTextureUAVDesc desc{};
 		desc.textureResource = texture;
-		return m_resourceAccessorAllocator.Allocate<RGTextureUAV>(desc);
+
+		RGTextureUAVRef textureUAV = m_resourceAccessorAllocator.Allocate<RGTextureUAV>(desc);
+		m_resourceUAVs.emplace_back(textureUAV);
+		return textureUAV;
 	}
 
 	RGBufferRef RenderGraph::RegisterExternalBuffer(RefPtr<RHI::StorageBuffer> buffer)
@@ -467,7 +704,7 @@ namespace Volt
 		bufferResource->isExternal = true;
 
 		m_resources.emplace_back(bufferResource);
-		m_transientResourceSystem.AddExternalResource(bufferResource, buffer);
+		m_resourceManager.AddExternalResource(bufferResource, buffer);
 
 		RegisterExternalResource(buffer, bufferResource);
 
@@ -493,7 +730,7 @@ namespace Volt
 		bufferResource->isExternal = true;
 
 		m_resources.emplace_back(bufferResource);
-		m_transientResourceSystem.AddExternalResource(bufferResource, uniformBuffer);
+		m_resourceManager.AddExternalResource(bufferResource, uniformBuffer);
 
 		RegisterExternalResource(uniformBuffer, bufferResource);
 
@@ -527,7 +764,7 @@ namespace Volt
 		textureResource->isExternal = true;
 
 		m_resources.emplace_back(textureResource);
-		m_transientResourceSystem.AddExternalResource(textureResource, texture);
+		m_resourceManager.AddExternalResource(textureResource, texture);
 
 		RegisterExternalResource(texture, textureResource);
 
@@ -847,6 +1084,8 @@ namespace Volt
 			m_compiledPasses[passIndex].AddSurrenderableResource(resource);
 		}
 
+		auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
+
 		// Add all external resources to the resource state tracker
 		for (auto resource : m_resources)
 		{
@@ -857,11 +1096,12 @@ namespace Volt
 			}
 
 			const RGResourceType resourceType = resource->GetResourceType();
-			auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
 
 			if (resourceType == RGResourceType::Texture)
 			{
-				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetTextureIfExists(reinterpret_cast<RGTextureRef>(resource)));
+				RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
+
+				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(textureResource->GetRHIResource()->GetRHITexture());
 
 				RGResourceState& currentState = m_resourceStateTracker.GetState(resource);
 				currentState.currentState = resourceState;
@@ -873,7 +1113,8 @@ namespace Volt
 			}
 			else if (resourceType == RGResourceType::Buffer)
 			{
-				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetBufferIfExists(reinterpret_cast<RGBufferRef>(resource)));
+				RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
+				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(bufferResource->GetRHIResource()->GetRHIBuffer());
 
 				RGResourceState& currentState = m_resourceStateTracker.GetState(resource);
 				currentState.currentState = resourceState;
@@ -885,7 +1126,8 @@ namespace Volt
 			}
 			else if (resourceType == RGResourceType::UniformBuffer)
 			{
-				m_resourceStateTracker.GetState(resource).currentState = resourceTracker->GetCurrentResourceState(m_transientResourceSystem.GetUniformBufferIfExists(reinterpret_cast<RGUniformBufferRef>(resource)));
+				RGUniformBufferRef uniformBufferResource = reinterpret_cast<RGUniformBufferRef>(resource);
+				m_resourceStateTracker.GetState(resource).currentState = resourceTracker->GetCurrentResourceState(uniformBufferResource->GetRHIResource()->GetRHIUniformBuffer());
 			}
 		}
 
@@ -1000,7 +1242,7 @@ namespace Volt
 						auto& resourceState = m_resourceStateTracker.GetState(resource);
 
 						const bool isSameLayoutType = newState.layout == resourceState.currentState.layout;
-					
+
 						// If it's the same layout (read after read / write after write) then we only need a global barrier.
 						if (isSameLayoutType)
 						{
@@ -1221,7 +1463,10 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer = new RenderGraphShaderParameterUniformBuffer(*this);
+
 		PrepareResourcesForExecution();
+		CreateResourceViews();
 
 		constexpr size_t NumPassesPerJob = 8;
 
@@ -1254,6 +1499,8 @@ namespace Volt
 			commandBuffers[i] = CommandBufferPool::GetCommandBuffer();
 		}
 
+		shaderParameterUniformBuffer->Map();
+
 		// Move this RenderGraph into temporary storage, so that the 
 		// RenderGraph isn't destroyed before execution is finished.
 		// This data pointer is destroyed in the execution job.
@@ -1267,7 +1514,7 @@ namespace Volt
 		RenderGraph* renderGraphPtr = reinterpret_cast<RenderGraph*>(tempRenderGraphStorage);
 
 		// This function executes the provided pass range.
-		constexpr auto executePassRangeFunc = [](RenderGraph* renderGraphPtr, const PassExecutionRange& executionRange, 
+		constexpr auto executePassRangeFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer, const PassExecutionRange& executionRange,
 			const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, const uint32_t index, const uint32_t numExecutionRanges)
 		{
 			RefPtr<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index);
@@ -1298,18 +1545,12 @@ namespace Volt
 
 				{
 					VT_PROFILE_SCOPE(pass->name.data());
-					RenderContext renderContext(*renderGraphPtr, pass.GetRaw(), commandBuffer);
+					RenderContext renderContext(*renderGraphPtr, pass.GetRaw(), commandBuffer, shaderParameterUniformBuffer);
 					renderGraphPtr->m_passAllocator.ExecutePass(pass, renderContext);
 				}
 
 				renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, commandBuffer);
 				commandBuffer->EndMarker();
-
-				for (const RGResourceRef resource : compiledPass.GetSurrenderableResources())
-				{
-					// #TODO_Ivar: This doesn't work correctly yet.
-					renderGraphPtr->m_transientResourceSystem.SurrenderResource(resource, 0);
-				}
 			}
 
 			if (index == numExecutionRanges - 1)
@@ -1320,8 +1561,10 @@ namespace Volt
 			commandBuffer->End();
 		};
 
+		shaderParameterUniformBuffer->Unmap();
+
 		// This function is responsible for executing the recorded command buffers.
-		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
+		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
 		{
 			RHI::DeviceQueueExecuteInfo executeInfo{};
 			executeInfo.commandBuffers.resize(commandBuffers.size());
@@ -1343,8 +1586,10 @@ namespace Volt
 			}
 
 			// Destroy the RenderGraph.
-			JobRef destroyJob = JobSystem::CreateJob("RenderGraph::Destroy", ExecutionPriority::Render, [renderGraphPtr]() 
+			JobRef destroyJob = JobSystem::CreateJob("RenderGraph::Destroy", ExecutionPriority::Render, [renderGraphPtr, shaderParameterUniformBuffer]()
 			{
+				delete shaderParameterUniformBuffer;
+
 				renderGraphPtr->~RenderGraph();
 				Memory::Free(renderGraphPtr);
 			});
@@ -1361,31 +1606,31 @@ namespace Volt
 			TaskGraph taskGraph{ isImmediate ? ExecutionPriority::Immediate : ExecutionPriority::Render };
 			Vector<TaskGraph::Task*> recordTasks(passExecutionRanges.size());
 
-			for (uint32_t index = 0; const PassExecutionRange & executionRange : passExecutionRanges)
+			for (uint32_t index = 0; const PassExecutionRange& executionRange : passExecutionRanges)
 			{
-				recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, executionRange, commandBuffers, index, numExecutionRanges]()
+				recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges]()
 				{
-					executePassRangeFunc(renderGraphPtr, executionRange, commandBuffers, index, numExecutionRanges);
+					executePassRangeFunc(renderGraphPtr, *shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges);
 				});
 				index++;
 			}
 
-			taskGraph.AddTaskWithDependencies("RenderGraph::Execute", recordTasks, [renderGraphPtr, commandBuffers, executionFence]()
+			taskGraph.AddTaskWithDependencies("RenderGraph::Execute", recordTasks, [renderGraphPtr, shaderParameterUniformBuffer, commandBuffers, executionFence]()
 			{
-				executeRenderGraphFunc(renderGraphPtr, commandBuffers, executionFence);
+				executeRenderGraphFunc(renderGraphPtr, shaderParameterUniformBuffer, commandBuffers, executionFence);
 			});
 
 			jobCounter = taskGraph.ExecuteAndExtractCounter();
 		}
 		else
 		{
-			for (uint32_t index = 0; const PassExecutionRange & executionRange : passExecutionRanges)
+			for (uint32_t index = 0; const PassExecutionRange& executionRange : passExecutionRanges)
 			{
-				executePassRangeFunc(renderGraphPtr, executionRange, commandBuffers, index, numExecutionRanges);
+				executePassRangeFunc(renderGraphPtr, *shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges);
 				index++;
 			}
 
-			executeRenderGraphFunc(renderGraphPtr, commandBuffers, executionFence);
+			executeRenderGraphFunc(renderGraphPtr, shaderParameterUniformBuffer, commandBuffers, executionFence);
 		}
 
 		if (waitForSync)
@@ -1420,7 +1665,7 @@ namespace Volt
 				continue;
 			}
 
-			*textureExtractionData.outImagePtr = m_transientResourceSystem.GetTextureIfExists(textureExtractionData.texture);
+			*textureExtractionData.outImagePtr = textureExtractionData.texture->GetRHIResource()->GetRHITexture();
 
 			// Update resource state of extracted texture
 			const RGResourceState& resourceState = m_resourceStateTracker.GetState(textureExtractionData.texture);
@@ -1434,7 +1679,7 @@ namespace Volt
 				continue;
 			}
 
-			*bufferExtractionData.outBufferPtr = m_transientResourceSystem.GetBufferIfExists(bufferExtractionData.buffer);
+			*bufferExtractionData.outBufferPtr = bufferExtractionData.buffer->GetRHIResource()->GetRHIBuffer();
 
 			// Update resource state of extracted buffer
 			const RGResourceState& resourceState = m_resourceStateTracker.GetState(bufferExtractionData.buffer);
@@ -1451,8 +1696,11 @@ namespace Volt
 			return;
 		}
 
+		const bool forceFullBarriersBetweenPasses = g_renderGraphForceFullBarriersBetweenPasses.GetValue() > 0;
+		const size_t numBarriers = passBarriers.GetBarrierCount() + (forceFullBarriersBetweenPasses ? 1 : 0);
+
 		RHI::BarrierVector resultBarriers;
-		resultBarriers.reserve(passBarriers.GetBarrierCount());
+		resultBarriers.reserve(numBarriers);
 
 		for (const auto& passBarrier : passBarriers.GetBarriers())
 		{
@@ -1479,6 +1727,16 @@ namespace Volt
 			{
 				barrier.bufferBarrier().resource = GetRHIResource(passBarrier.resource);
 			}
+		}
+
+		if (forceFullBarriersBetweenPasses)
+		{
+			auto& barrier = resultBarriers.emplace_back();
+			barrier.type = RHI::BarrierType::Global;
+			barrier.globalBarrier().srcStage |= RHI::BarrierStage::All;
+			barrier.globalBarrier().srcAccess |= RHI::BarrierAccess::AllRead | RHI::BarrierAccess::AllWrite;
+			barrier.globalBarrier().dstStage |= RHI::BarrierStage::All;
+			barrier.globalBarrier().dstAccess |= RHI::BarrierAccess::AllRead | RHI::BarrierAccess::AllWrite;
 		}
 
 		commandBuffer->ResourceBarrier(resultBarriers);
@@ -1519,149 +1777,6 @@ namespace Volt
 		m_registeredExternalResources[resource] = handle;
 	}
 
-	RefPtr<RHI::BufferView> RenderGraph::GetRHIBufferSRV(RGBufferSRVRef bufferSRV)
-	{
-		VT_PROFILE_FUNCTION();
-
-		RefPtr<RHI::StorageBuffer> rhiBuffer = m_transientResourceSystem.AcquireBuffer(reinterpret_cast<RGBufferRef>(bufferSRV->GetResource()));
-
-		RHI::BufferViewDesc desc{};
-		desc.bufferFormat = bufferSRV->GetDesc().format;
-
-		return m_resourceViewCache.GetOrCreateBufferView(desc, rhiBuffer);
-	}
-
-	RefPtr<RHI::BufferView> RenderGraph::GetRHIBufferUAV(RGBufferUAVRef bufferUAV)
-	{
-		VT_PROFILE_FUNCTION();
-
-		RefPtr<RHI::StorageBuffer> rhiBuffer = m_transientResourceSystem.AcquireBuffer(reinterpret_cast<RGBufferRef>(bufferUAV->GetResource()));
-
-		RHI::BufferViewDesc desc{};
-		desc.bufferFormat = bufferUAV->GetDesc().format;
-
-		return m_resourceViewCache.GetOrCreateBufferView(desc, rhiBuffer);
-	}
-
-	RefPtr<RHI::ImageView> RenderGraph::GetRHITextureSRV(RGTextureSRVRef textureSRV)
-	{
-		VT_PROFILE_FUNCTION();
-
-		RGTextureRef texture = reinterpret_cast<RGTextureRef>(textureSRV->GetResource());
-		const RGTextureDesc& textureDesc = texture->GetDesc();
-		const RGTextureSRVDesc& srvDesc = textureSRV->GetDesc();
-
-		RHI::ImageViewDesc viewDesc{};
-		viewDesc.baseMipLevel = srvDesc.baseMipLevel;
-		viewDesc.baseArrayLayer = srvDesc.baseArrayLayer;
-		viewDesc.mipCount = srvDesc.mipCount;
-		viewDesc.layerCount = srvDesc.layerCount;
-
-		if (textureDesc.imageType == RHI::ResourceType::Image1D)
-		{
-			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
-			{
-				viewDesc.viewType = RHI::ImageViewType::View1D;
-			}
-			else
-			{
-				viewDesc.viewType = RHI::ImageViewType::View1DArray;
-			}
-		}
-		else if (textureDesc.imageType == RHI::ResourceType::Image2D)
-		{
-			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
-			{
-				viewDesc.viewType = RHI::ImageViewType::View2D;
-			}
-			else
-			{
-				if (textureDesc.isCubeMap)
-				{
-					viewDesc.viewType = RHI::ImageViewType::ViewCube;
-				}
-				else
-				{
-					viewDesc.viewType = RHI::ImageViewType::View2DArray;
-				}
-			}
-		}
-		else if (textureDesc.imageType == RHI::ResourceType::Image3D)
-		{
-			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
-			{
-				viewDesc.viewType = RHI::ImageViewType::View3D;
-			}
-			else
-			{
-				viewDesc.viewType = RHI::ImageViewType::View3DArray;
-			}
-		}
-
-		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(texture);
-		return m_resourceViewCache.GetOrCreateImageView(viewDesc, rhiImage);
-	}
-
-	RefPtr<RHI::ImageView> RenderGraph::GetRHITextureUAV(RGTextureUAVRef textureUAV)
-	{
-		VT_PROFILE_FUNCTION();
-
-		RGTextureRef texture = reinterpret_cast<RGTextureRef>(textureUAV->GetResource());
-		const RGTextureDesc& textureDesc = texture->GetDesc();
-		const RGTextureUAVDesc& uavDesc = textureUAV->GetDesc();
-
-		RHI::ImageViewDesc viewDesc{};
-		viewDesc.baseMipLevel = uavDesc.baseMipLevel;
-		viewDesc.baseArrayLayer = uavDesc.baseArrayLayer;
-		viewDesc.mipCount = uavDesc.mipCount;
-		viewDesc.layerCount = uavDesc.layerCount;
-
-		if (textureDesc.imageType == RHI::ResourceType::Image1D)
-		{
-			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
-			{
-				viewDesc.viewType = RHI::ImageViewType::View1D;
-			}
-			else
-			{
-				viewDesc.viewType = RHI::ImageViewType::View1DArray;
-			}
-		}
-		else if (textureDesc.imageType == RHI::ResourceType::Image2D)
-		{
-			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
-			{
-				viewDesc.viewType = RHI::ImageViewType::View2D;
-			}
-			else
-			{
-				viewDesc.viewType = RHI::ImageViewType::View2DArray;
-			}
-		}
-		else if (textureDesc.imageType == RHI::ResourceType::Image3D)
-		{
-			if (textureDesc.layers == 1 || viewDesc.layerCount == 1)
-			{
-				viewDesc.viewType = RHI::ImageViewType::View3D;
-			}
-			else
-			{
-				viewDesc.viewType = RHI::ImageViewType::View3DArray;
-			}
-		}
-
-		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(texture);
-		return m_resourceViewCache.GetOrCreateImageView(viewDesc, rhiImage);
-	}
-
-	RefPtr<Volt::RHI::ImageView> RenderGraph::GetRHITextureRT(RGTextureRef texture)
-	{
-		VT_PROFILE_FUNCTION();
-
-		RefPtr<RHI::Image> rhiImage = m_transientResourceSystem.AcquireTexture(texture);
-		return rhiImage->GetView();
-	}
-
 	RefPtr<Volt::RHI::RHIResource> RenderGraph::GetRHIResource(RGResourceRef resource)
 	{
 		VT_PROFILE_FUNCTION();
@@ -1672,45 +1787,27 @@ namespace Volt
 		{
 			case RGResourceType::Texture:
 			{
-				rhiResource = m_transientResourceSystem.AcquireTexture(reinterpret_cast<RGTextureRef>(resource));
+				RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
+				rhiResource = textureResource->GetRHIResource()->GetRHITexture();
 				break;
 			}
 
 			case RGResourceType::Buffer:
 			{
-				rhiResource = m_transientResourceSystem.AcquireBuffer(reinterpret_cast<RGBufferRef>(resource));
+				RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
+				rhiResource = bufferResource->GetRHIResource()->GetRHIBuffer();
 				break;
 			}
 
 			case  RGResourceType::UniformBuffer:
 			{
-				rhiResource = m_transientResourceSystem.AcquireUniformBuffer(reinterpret_cast<RGUniformBufferRef>(resource));
+				RGUniformBufferRef bufferResource = reinterpret_cast<RGUniformBufferRef>(resource);
+				rhiResource = bufferResource->GetRHIResource()->GetRHIUniformBuffer();
 				break;
 			}
 		}
 
 		return rhiResource;
-	}
-
-	RefPtr<RHI::StorageBuffer> RenderGraph::GetRHIBuffer(RGBufferRef buffer)
-	{
-		VT_PROFILE_FUNCTION();
-
-		return m_transientResourceSystem.AcquireBuffer(buffer);
-	}
-
-	RefPtr<RHI::UniformBuffer> RenderGraph::GetRHIUniformBuffer(RGUniformBufferRef uniformBuffer)
-	{
-		VT_PROFILE_FUNCTION();
-
-		return m_transientResourceSystem.AcquireUniformBuffer(uniformBuffer);
-	}
-
-	RefPtr<RHI::Image> RenderGraph::GetRHITexture(RGTextureRef texture)
-	{
-		VT_PROFILE_FUNCTION();
-
-		return m_transientResourceSystem.AcquireTexture(texture);
 	}
 
 	void RenderGraph::StandaloneMarkers::BeginMarker(uint32_t passIndex, const std::string& markerName, const glm::vec4& color)
@@ -1725,5 +1822,44 @@ namespace Volt
 	{
 		auto& newMarker = m_markers[passIndex].emplace_back();
 		newMarker.isEnd = true;
+	}
+
+	RenderGraphShaderParameterUniformBuffer::RenderGraphShaderParameterUniformBuffer(RenderGraph& renderGraph)
+		: m_counter(0), m_mappedPtr(nullptr)
+	{
+		VT_PROFILE_FUNCTION();
+
+		const size_t numShaderParameters = renderGraph.m_passes.size() * 2;
+
+		RGUniformBufferDesc desc{};
+		desc.count = 1;
+		desc.elementSize = PerStageUniformBufferSize * numShaderParameters;
+		desc.name = "ShaderParameters";
+
+		m_uniformBuffer = renderGraph.CreateUniformBuffer(desc);
+		m_uniformBuffer->AddRef();
+
+		// Create views
+		m_srvs.resize_uninitialized(numShaderParameters);
+
+		RGUniformBufferSRVDesc srvDesc{};
+		srvDesc.bufferResource = m_uniformBuffer;
+		srvDesc.size = PerStageUniformBufferSize;
+
+		for (size_t i = 0; i < numShaderParameters; ++i)
+		{
+			srvDesc.offset = i * PerStageUniformBufferSize;
+			m_srvs[i] = renderGraph.CreateSRV(srvDesc);
+		}
+	}
+
+	void RenderGraphShaderParameterUniformBuffer::Map()
+	{
+		m_mappedPtr = m_uniformBuffer->GetRHIResource()->GetRHIUniformBuffer()->Map<void>();
+	}
+
+	void RenderGraphShaderParameterUniformBuffer::Unmap()
+	{
+		m_uniformBuffer->GetRHIResource()->GetRHIUniformBuffer()->Unmap();
 	}
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
+
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Images/Image.h>
 
@@ -10,24 +12,57 @@
 
 namespace Volt
 {
-	class ResourceViewCache
+	class RGRHIBufferResource;
+
+	class TransientBufferViewCache
 	{
 	public:
-		ResourceViewCache() = default;
-		ResourceViewCache(const ResourceViewCache& other);
-		ResourceViewCache(ResourceViewCache&& other);
-
-		ResourceViewCache& operator=(const ResourceViewCache& other);
-		ResourceViewCache& operator=(ResourceViewCache&& other);
-
-		RefPtr<RHI::BufferView> GetOrCreateBufferView(const RHI::BufferViewDesc& desc, RefPtr<RHI::StorageBuffer> rhiBuffer);
-		RefPtr<RHI::ImageView> GetOrCreateImageView(const RHI::ImageViewDesc& desc, RefPtr<RHI::Image> rhiTexture);
+		TransientBufferViewCache(RGRHIBufferResource* buffer);
+		RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc);
 
 	private:
-		std::mutex m_bufferViewCacheMutex;
-		std::mutex m_imageViewCacheMutex;
+		struct ViewPair
+		{
+			size_t hash;
+			RefPtr<RHI::BufferView> view;
+		};
 
-		Map<size_t, RefPtr<RHI::BufferView>> m_bufferViewCache;
-		Map<size_t, RefPtr<RHI::ImageView>> m_imageViewCache;
+		RGRHIBufferResource* m_buffer;
+		InlineVector<ViewPair, 8> m_views;
+	};
+
+	class TransientImageViewCache
+	{
+	public:
+		TransientImageViewCache(RGRHITextureResource* buffer);
+		RefPtr<RHI::ImageView> GetOrCreateView(const RHI::ImageViewDesc& desc);
+
+	private:
+		struct ViewPair
+		{
+			size_t hash;
+			RefPtr<RHI::ImageView> view;
+		};
+
+		RGRHITextureResource* m_texture;
+		InlineVector<ViewPair, 8> m_views;
+	};
+
+	class TransientUniformBufferViewCache
+	{
+	public:
+		TransientUniformBufferViewCache(RGRHIUniformBufferResource* buffer);
+		RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc);
+
+	private:
+		struct ViewPair
+		{
+			size_t hash;
+			RefPtr<RHI::BufferView> view;
+		};
+
+		RGRHIUniformBufferResource* m_buffer;
+		// Switch to inline vector when allocator stuff has been sorted.
+		Vector<ViewPair> m_views;
 	};
 }

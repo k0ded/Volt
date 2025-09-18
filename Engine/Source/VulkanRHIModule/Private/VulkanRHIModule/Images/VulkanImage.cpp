@@ -258,7 +258,6 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		ImageViewDesc tempDesc = desc;
-		tempDesc.image = this;
 
 		if (desc.layerCount > 1 && m_desc.layers > 1 && tempDesc.viewType == ImageViewType::View2D)
 		{
@@ -305,7 +304,7 @@ namespace Volt::RHI
 			}
 		}
 
-		return ImageView::Create(tempDesc);
+		return ImageView::Create(tempDesc, this);
 	}
 
 	const uint32_t VulkanImage::CalculateMipCount() const

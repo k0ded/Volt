@@ -20,6 +20,7 @@ namespace Volt
 			asGeometry.vertexFormat = RHI::PixelFormat::R32G32B32_SFLOAT;
 			asGeometry.vertexStride = static_cast<uint32_t>(createInfo.vertexPositionsBuffer->GetElementSize());
 			asGeometry.vertexCount = geom.vertexCount;
+			asGeometry.indexCount = geom.indexCount;
 			asGeometry.indexType = RHI::IndexType::UInt32;
 			asGeometry.flags = RHI::AccelerationStructureGeometryFlags::Opaque;
 			asGeometry.vertexPositionsBuffer = createInfo.vertexPositionsBuffer;

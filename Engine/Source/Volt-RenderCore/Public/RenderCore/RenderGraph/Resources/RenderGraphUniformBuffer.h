@@ -1,8 +1,9 @@
 #pragma once
 
 #include "RenderCore/Config.h"
-
 #include "RenderCore/RenderGraph/Resources/RenderGraphResource.h"
+
+#include <RHIModule/Buffers/BufferView.h>
 
 namespace Volt
 {
@@ -24,6 +25,8 @@ namespace Volt
 		}
 	};
 
+	class RGRHIUniformBufferResource;
+
 	class VTRC_API RGUniformBuffer : public RGResource
 	{
 	public:
@@ -36,25 +39,43 @@ namespace Volt
 		void AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav) override;
 		void AddProducer(Handle<RenderGraphPass> pass) override;
 
+		VT_INLINE void AssignRHIResource(RGRHIUniformBufferResource* resource) { m_rhiResource = resource; }
+
 		VT_NODISCARD VT_INLINE const RGUniformBufferDesc& GetDesc() const { return m_desc; }
+		VT_NODISCARD VT_INLINE RGRHIUniformBufferResource* GetRHIResource() const { return m_rhiResource; }
 
 	private:
 		bool m_isProduced = false;
 		RGUniformBufferDesc m_desc;
+
+		RGRHIUniformBufferResource* m_rhiResource;
 	};
 
 	using RGUniformBufferRef = RGUniformBuffer*;
 
+	struct RGUniformBufferSRVDesc
+	{
+		RGUniformBufferRef bufferResource = nullptr;
+
+		size_t offset = 0;
+		size_t size = std::numeric_limits<size_t>::max();
+	};
+
 	class VTRC_API RGUniformBufferSRV : public RGResourceSRV
 	{
 	public:
-		RGUniformBufferSRV(RGUniformBufferRef uniformBuffer);
+		RGUniformBufferSRV(const RGUniformBufferSRVDesc& desc);
 		~RGUniformBufferSRV() override = default;
 
-		RGResourceRef GetResource() const override { return m_resource; }
+		RGResourceRef GetResource() const override { return m_desc.bufferResource; }
+
+		VT_INLINE void AssignRHIView(RefPtr<RHI::BufferView> view) { m_rhiView = view; }
+		VT_INLINE RefPtr<RHI::BufferView> GetRHIView() { return m_rhiView; }
+		VT_INLINE const RGUniformBufferSRVDesc& GetDesc() { return m_desc; }
 
 	private:
-		RGUniformBufferRef m_resource;
+		RefPtr<RHI::BufferView> m_rhiView;
+		RGUniformBufferSRVDesc m_desc;
 	};
 
 }

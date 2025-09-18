@@ -5,6 +5,8 @@
 
 namespace Volt::RHI
 {
+	class Image;
+
 	struct ImageViewDesc
 	{
 		inline static constexpr uint32_t LayerCountMax = 31;
@@ -16,20 +18,19 @@ namespace Volt::RHI
 		uint32_t baseArrayLayer = 0;
 		uint32_t mipCount = MipCountMax;
 		uint32_t layerCount = LayerCountMax;
-
-		RawPtr<RHIResource> image = nullptr;
 	};
 
 	class VTRHI_API ImageView : public ArenaRHIInterface
 	{
 	public:
-		static RefPtr<ImageView> Create(const ImageViewDesc& specification);
+		static RefPtr<ImageView> Create(const ImageViewDesc& specification, RawPtr<Image> image);
 
 		virtual const ImageAspect GetImageAspect() const = 0;
 		virtual const uint64_t GetDeviceAddress() const = 0;
 		virtual const ImageUsage GetImageUsage() const = 0;
 		virtual const ImageViewType GetViewType() const = 0;
 		virtual const ImageViewDesc& GetDesc() const = 0;
+		virtual RawPtr<Image> GetImage() const = 0;
 		virtual const bool IsSwapchainView() const = 0;
 
 	protected:

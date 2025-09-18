@@ -855,7 +855,7 @@ void Sandbox::RenderGameView(float timestep)
 				camera->SetPosition(cameraEntity.GetPosition());
 				camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
 
-				m_gameSceneRenderer->OnRenderEditor(camera, timestep);
+				//m_gameSceneRenderer->OnRenderEditor(camera, timestep);
 			}
 			break;
 		}

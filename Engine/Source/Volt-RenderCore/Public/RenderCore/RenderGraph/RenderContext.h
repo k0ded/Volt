@@ -16,7 +16,7 @@
 namespace Volt
 {
 	class RenderGraph;
-	class SharedRenderContext;
+	class RenderGraphShaderParameterUniformBuffer;
 	class RenderGraphPass;
 	class BatchedShaderParameters;
 
@@ -33,11 +33,11 @@ namespace Volt
 		struct PerStageShaderParameters
 		{
 			RHI::ShaderStage shaderStage;
-			RefPtr<RHI::UniformBuffer> uniformBuffer;
+			RGUniformBufferSRVRef uniformBufferSRV;
 			uint8_t* mappedPtr;
 		};
 
-		RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer);
+		RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
 
 		void Flush(RefPtr<RHI::Fence> fence);
 
@@ -82,7 +82,6 @@ namespace Volt
 		template<typename ParameterStruct> void CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters);
 
 		RefPtr<RHI::CommandBuffer> GetRHICommandBuffer();
-		RefPtr<RHI::StorageBuffer> GetRHIBuffer(RGBufferRef buffer);
 
 		InlineVector<PerStageShaderParameters, 8> AllocatePerStageShaderParameterBuffers(RawPtr<RHI::RenderPipeline> renderPipeline);
 		InlineVector<PerStageShaderParameters, 8> AllocatePerStageShaderParameterBuffers(RawPtr<RHI::ComputePipeline> computePipeline);
@@ -100,6 +99,8 @@ namespace Volt
 		void SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 		void SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
 
 		void CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
@@ -122,6 +123,7 @@ namespace Volt
 
 		RenderGraph& m_renderGraph;
 		RenderGraphPass* m_currentPass;
+		RenderGraphShaderParameterUniformBuffer& m_shaderParameterUniformBuffer;
 	};
 
 	template<typename T>
@@ -164,6 +166,8 @@ namespace Volt
 				case ShaderParameterType::TextureUAV: SetTextureUAVParameter(*reinterpret_cast<RGTextureUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::UniformBuffer: SetUniformBufferParameter(*reinterpret_cast<RGUniformBufferRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::Sampler: SetSamplerParameter(*reinterpret_cast<RefPtr<RHI::SamplerState>*>(parameterDataPtr), parameter, shaderParameterMap); break;
+				case ShaderParameterType::AccelerationStructure: SetAccelerationStructureParameter(*reinterpret_cast<RefPtr<RHI::AccelerationStructure>*>(parameterDataPtr), parameter, shaderParameterMap); break;
+				case ShaderParameterType::RayTracingResourceTable: SetRayTracingResourceTableParameter(*reinterpret_cast<RefPtr<RHI::RayTracingResourceTable>*>(parameterDataPtr), parameter, shaderParameterMap); break;
 				case ShaderParameterType::Parameter: SetShaderParameter(parameterDataPtr, parameter, shaderParameterMap); break;
 			}
 		}
@@ -204,23 +208,32 @@ namespace Volt
 		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
 
 		const RHI::ShaderParameterMap& shaderParameterMap = shader->GetParameterMap();
-		const RHI::ShaderParameterMap::ResourceBindingsMap& resourceBindings = shaderParameterMap.GetResourceBindings();
+		const RHI::ShaderParameterMap::ResourceBindings& resourceBindings = shaderParameterMap.GetResourceBindings();
 
 		struct Binding
 		{
+			StringHash hash;
 			std::string_view name;
 			bool value;
 		};
 
-		Map<StringHash, Binding> resourceBindingsFoundMap;
-		resourceBindingsFoundMap.reserve(resourceBindings.size());
+		Vector<Binding> foundResourceBindings;
+		foundResourceBindings.reserve(resourceBindings.size());
 
-		for (const auto& [hashedName, binding] : resourceBindings)
+		STRING_HASH_CONSTEXPR StringHash GlobalsStringHash = StringHash::Construct("$Globals");
+		STRING_HASH_CONSTEXPR StringHash RayTracingBufferTableHash = StringHash::Construct("RayTracingBufferTable");
+		STRING_HASH_CONSTEXPR StringHash RayTracingTexture2DTableHash = StringHash::Construct("RayTracingTexture2DTable");
+
+		for (size_t i = 0; i < resourceBindings.size(); ++i)
 		{
-			if (hashedName != StringHash::Construct("$Globals"))
+			auto& resourceBinding = resourceBindings.at(i);
+
+			if (resourceBinding.hash != GlobalsStringHash)
 			{
-				resourceBindingsFoundMap[hashedName].name = binding.name;
-				resourceBindingsFoundMap[hashedName].value = false;
+				auto& foundBinding = foundResourceBindings.emplace_back();
+				foundBinding.hash = resourceBinding.hash;
+				foundBinding.name = resourceBinding.binding.name;
+				foundBinding.value = false;
 			}
 		}
 
@@ -234,19 +247,46 @@ namespace Volt
 				case ShaderParameterType::TextureUAV:
 				case ShaderParameterType::UniformBuffer:
 				case ShaderParameterType::Sampler:
-					resourceBindingsFoundMap[parameter.hashedName].value = true;
+				case ShaderParameterType::AccelerationStructure:
+				{
+					for (auto& foundBinding : foundResourceBindings)
+					{
+						if (foundBinding.hash == parameter.hashedName)
+						{
+							foundBinding.value = true;
+						}
+					}
+					break;
+				}
+				case ShaderParameterType::RayTracingResourceTable:
+				{
+					for (auto& foundBinding : foundResourceBindings)
+					{
+						if (foundBinding.hash == RayTracingBufferTableHash)
+						{
+							foundBinding.value = true;
+						}
+
+						if (foundBinding.hash == RayTracingTexture2DTableHash)
+						{
+							foundBinding.value = true;
+						}
+					}
+
+					break;
+				}
 			}
 		}
 
 		std::string errorMessage;
 		bool shouldError = false;
 
-		for (const auto& [hashedName, binding] : resourceBindingsFoundMap)
+		for (const auto& foundBinding : foundResourceBindings)
 		{
-			if (!binding.value)
+			if (!foundBinding.value)
 			{
 				shouldError = true;
-				errorMessage += std::format("{}\n", binding.name);
+				errorMessage += std::format("{}\n", foundBinding.name);
 			}
 		}
 

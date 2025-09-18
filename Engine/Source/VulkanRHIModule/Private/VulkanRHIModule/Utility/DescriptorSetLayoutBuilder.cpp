@@ -3,9 +3,11 @@
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
+#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Globals.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/RHIFeatures.h>
 
 #include <CoreUtilities/Containers/Map.h>
 
@@ -13,11 +15,11 @@
 
 namespace Volt::RHI
 {
-	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindingsMap& resourceBindings)
+	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindings& resourceBindings, bool accessesRayTracingResourceTable)
 	{
 		std::map<uint32_t, Vector<VkDescriptorSetLayoutBinding>> descriptorSetBindings;
 
-		for (const auto& [nameHash, binding] : resourceBindings)
+		for (const auto& [binding, nameHash] : resourceBindings)
 		{
 			auto& descriptorBinding = descriptorSetBindings[binding.set].emplace_back();
 			descriptorBinding.binding = binding.binding;
@@ -60,6 +62,10 @@ namespace Volt::RHI
 					descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 				}
 			}
+			else if (binding.resourceType == ShaderResourceType::AccelerationStructure)
+			{
+				descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+			}
 		}
 
 		DescriptorSets result;
@@ -97,32 +103,59 @@ namespace Volt::RHI
 			result.descriptorSetLayouts[set] = result.pipelineLayoutDescriptorSetLayouts.back();
 		}
 
+		if (RHI::RHICanUseRayTracing() && accessesRayTracingResourceTable)
+		{
+			result.pipelineLayoutDescriptorSetLayouts.resize(RayTracingTableDescriptorSetManager::Set + 1);
+
+			// Fill all null descriptor set layouts with empty layouts.
+			for (uint32_t i = 0; i < RayTracingTableDescriptorSetManager::Set + 1u; ++i)
+			{
+				if (result.pipelineLayoutDescriptorSetLayouts[i] == nullptr)
+				{
+					VkDescriptorSetLayoutCreateInfo info{};
+					info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+					info.pNext = nullptr;
+					info.bindingCount = 0;
+					info.pBindings = nullptr;
+					info.flags = 0;
+
+					VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &result.pipelineLayoutDescriptorSetLayouts[i]));
+				}
+			}
+
+			result.descriptorSetLayouts[RayTracingTableDescriptorSetManager::Set] = RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout();
+			result.pipelineLayoutDescriptorSetLayouts[RayTracingTableDescriptorSetManager::Set] = RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout();
+		}
+
 		return result;
 	}
 
-	void AppendBindings(ShaderParameterMap::ResourceBindingsMap& outBindings, const ShaderParameterMap::ResourceBindingsMap& shaderBindings)
+	void AppendBindings(ShaderParameterMap::ResourceBindings& outBindings, const ShaderParameterMap::ResourceBindings& shaderBindings)
 	{
 		// Because multiple shader stages might have bindings with the same name, we need 
 		// to check for and handle duplicates. As the names does not matter here, we can replace them
 		// with temporary ones.
 		uint32_t duplicateIndex = 0;
-		for (const auto& [nameHash, binding] : shaderBindings)
+		for (const auto& [binding, shaderBindingHash] : shaderBindings)
 		{
-			StringHash newNameHash = nameHash;
+			StringHash newNameHash = shaderBindingHash;
 
-			if (outBindings.contains(nameHash))
+			for (const auto& [newBinding, newBindingHash] : outBindings)
 			{
-				newNameHash = StringHash::Construct("Duplicate" + std::to_string(duplicateIndex++));
+				if (shaderBindingHash == newBindingHash)
+				{
+					newNameHash = StringHash::Construct("Duplicate" + std::to_string(duplicateIndex++));
+				}
 			}
 
-			outBindings[newNameHash] = binding;
+			outBindings.emplace_back(binding, newNameHash);
 		}
 	}
 
-	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const Vector<ShaderParameterMap::ResourceBindingsMap>& bindings)
+	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const Vector<ShaderParameterMap::ResourceBindings>& bindings, bool accessesRayTracingResourceTable)
 	{
 		// With multiple shaders, we start by merging all resources.
-		ShaderParameterMap::ResourceBindingsMap mergedShaderBindings;
+		ShaderParameterMap::ResourceBindings mergedShaderBindings;
 
 		for (const auto& shaderBindings : bindings)
 		{
@@ -130,10 +163,10 @@ namespace Volt::RHI
 		}
 
 		// Now we create descriptor set layouts of the merged bindings.
-		return BuildFromShaderResourceBindings(mergedShaderBindings);
+		return BuildFromShaderResourceBindings(mergedShaderBindings, accessesRayTracingResourceTable);
 	}
 
-	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const ShaderParameterMap::ResourceBindingsMap& resourceBindings)
+	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const ShaderParameterMap::ResourceBindings& resourceBindings)
 	{
 		uint32_t uboCount = 0;
 		uint32_t ssboCount = 0;
@@ -142,8 +175,9 @@ namespace Volt::RHI
 		uint32_t storageImageCount = 0;
 		uint32_t imageCount = 0;
 		uint32_t seperateSamplerCount = 0;
+		uint32_t accelerationStructureCount = 0;
 
-		for (const auto& [nameHash, binding] : resourceBindings)
+		for (const auto& [binding, nameHash] : resourceBindings)
 		{
 			if (binding.resourceType == ShaderResourceType::UniformBuffer)
 			{
@@ -178,6 +212,10 @@ namespace Volt::RHI
 				{
 					storageImageCount += binding.arraySize;
 				}
+			}
+			else if (binding.resourceType == ShaderResourceType::AccelerationStructure)
+			{
+				accelerationStructureCount += binding.arraySize;
 			}
 		}
 
@@ -218,13 +256,18 @@ namespace Volt::RHI
 			result.emplace_back(static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_SAMPLER), seperateSamplerCount);
 		}
 
+		if (accelerationStructureCount > 0)
+		{
+			result.emplace_back(static_cast<uint32_t>(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR), accelerationStructureCount);
+		}
+
 		return result;
 	}
 	
-	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const Vector<ShaderParameterMap::ResourceBindingsMap>& shaderBindings)
+	Vector<std::pair<uint32_t, uint32_t>> DescriptorSetLayoutBuilder::CalculateDescriptorPoolSizesFromBindings(const Vector<ShaderParameterMap::ResourceBindings>& shaderBindings)
 	{
 		// With multiple shaders, we start by merging all resources.
-		ShaderParameterMap::ResourceBindingsMap mergedShaderBindings;
+		ShaderParameterMap::ResourceBindings mergedShaderBindings;
 
 		for (const auto& bindings : shaderBindings)
 		{

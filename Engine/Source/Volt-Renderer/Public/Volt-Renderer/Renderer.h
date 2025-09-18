@@ -5,6 +5,7 @@
 
 #include <AssetSystem/AssetHandle.h>
 
+#include <RenderCore/TransientResourceSystem/TransientResourceAllocator.h>
 #include <RenderCore/Resources/BindlessResource.h>
 #include <RenderCore/DescriptorTableCache.h>
 #include <RenderCore/CommandBufferPool.h>
@@ -99,6 +100,7 @@ namespace Volt
 		Scope<DescriptorTableCache> m_descriptorTableCache;
 		Scope<SamplerStateCache> m_samplerStateCache;
 		Scope<CommandBufferPool> m_commandBufferPool;
+		Scope<TransientResourceAllocator> m_transientResourceAllocator;
 
 		uint32_t m_frameIndex = 0;
 	};

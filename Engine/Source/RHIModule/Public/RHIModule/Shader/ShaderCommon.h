@@ -32,8 +32,13 @@ namespace Volt::RHI
 		All = Vertex | Pixel | Hull | Domain | Geometry | Compute,
 		Common = Vertex | Pixel | Geometry | Compute
 	};
-
 	VT_SETUP_ENUM_CLASS_OPERATORS(ShaderStage);
+
+	inline constexpr uint32_t GetNumShaderStages()
+	{
+		constexpr uint32_t NumShaderStages = 13;
+		return NumShaderStages;
+	}
 
 	enum class ShaderRegisterType : uint8_t
 	{
@@ -49,7 +54,8 @@ namespace Volt::RHI
 		StructuredBuffer,
 		TexelBuffer,
 		Texture,
-		Sampler
+		Sampler,
+		AccelerationStructure
 	};
 
 	enum class ShaderUniformBaseType : uint8_t

@@ -46,6 +46,8 @@ namespace Volt
 		}
 	};
 
+	class RGRHITextureResource;
+
 	class VTRC_API RGTexture : public RGResource
 	{
 	public:
@@ -58,13 +60,18 @@ namespace Volt
 		void AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav) override;
 		void AddProducer(Handle<RenderGraphPass> pass) override;
 
+		VT_INLINE void AssignRHIResource(RGRHITextureResource* resource) { m_rhiResource = resource; }
+
 		VT_NODISCARD VT_INLINE const RGTextureDesc& GetDesc() const { return m_desc; }
-	
+		VT_NODISCARD VT_INLINE RGRHITextureResource* GetRHIResource() const { return m_rhiResource; }
+
 	private:
 		RGTextureDesc m_desc;
 
 		std::bitset<32> m_layersProduced;
 		std::bitset<32> m_mipsProduced;
+
+		RGRHITextureResource* m_rhiResource;
 	};
 
 	using RGTextureRef = RGTexture*;
@@ -88,8 +95,11 @@ namespace Volt
 		RGResourceRef GetResource() const override { return m_desc.textureResource; }
 
 		VT_NODISCARD VT_INLINE const RGTextureSRVDesc& GetDesc() const { return m_desc; }
+		VT_INLINE void AssignRHIView(RefPtr<RHI::ImageView> view) { m_rhiView = view; }
+		VT_INLINE RefPtr<RHI::ImageView> GetRHIView() { return m_rhiView; }
 
 	private:
+		RefPtr<RHI::ImageView> m_rhiView;
 		RGTextureSRVDesc m_desc;
 	};
 
@@ -112,8 +122,11 @@ namespace Volt
 		RGResourceRef GetResource() const override { return m_desc.textureResource; }
 
 		VT_NODISCARD VT_INLINE const RGTextureUAVDesc& GetDesc() const { return m_desc; }
+		VT_INLINE void AssignRHIView(RefPtr<RHI::ImageView> view) { m_rhiView = view; }
+		VT_INLINE RefPtr<RHI::ImageView> GetRHIView() { return m_rhiView; }
 
 	private:
+		RefPtr<RHI::ImageView> m_rhiView;
 		RGTextureUAVDesc m_desc;
 	};
 }

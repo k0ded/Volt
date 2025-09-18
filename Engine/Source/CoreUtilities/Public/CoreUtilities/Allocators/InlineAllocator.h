@@ -46,6 +46,7 @@ public:
 
 		void* Allocate(size_t size, size_t alignment) noexcept
 		{
+			VT_ENSURE(size <= TotalSize);
 			return m_data;
 		}
 

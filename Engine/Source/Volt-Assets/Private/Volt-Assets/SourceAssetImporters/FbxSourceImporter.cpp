@@ -12,6 +12,7 @@
 #include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Packing.h>
 
 #include <fbxsdk.h>
 
@@ -734,11 +735,8 @@ namespace Volt
 			{
 				auto& materialData = vertexContainer.materialData[i];
 
-				const auto octNormal = Utility::OctNormalEncode(uniqueVertices[i].normal);
-
-				materialData.normal.x = uint8_t(octNormal.x * 255u);
-				materialData.normal.y = uint8_t(octNormal.y * 255u);
-				materialData.tangent = Utility::EncodeTangent(uniqueVertices[i].normal, uniqueVertices[i].tangent);
+				materialData.normal = Packing::PackNormalToUInt32(uniqueVertices[i].normal);
+				materialData.tangent = Packing::EncodeTangent(uniqueVertices[i].normal, uniqueVertices[i].tangent);
 				materialData.tangentW = uniqueVertices[i].tangent.w;
 				materialData.texCoords = glm::packHalf2x16(uniqueVertices[i].texCoords);
 			}

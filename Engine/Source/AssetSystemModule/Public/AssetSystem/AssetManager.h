@@ -180,7 +180,7 @@ namespace Volt
 		void LoadAsset(AssetHandle assetHandle, Ref<Asset>& asset);
 
 		void LoadAllAssetMetadata();
-		void DeserializeAssetMetadata(std::filesystem::path assetPath);
+		void DeserializeAssetMetadata(const std::filesystem::path& assetPath, AssetMetadata& outMetadata);
 
 		void OnAssetChanged(AssetHandle assetHandle, AssetChangedState state);
 		void QueueAssetChanged(AssetHandle assetHandle, AssetChangedState state);

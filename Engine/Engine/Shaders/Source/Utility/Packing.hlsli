@@ -88,3 +88,46 @@ float4 UnpackUIntToFloat4(uint packedValue)
     
     return result;
 }
+
+float2 UnpackHalf2FromUInt(uint packedValue)
+{
+    return float2(
+        f16tof32((packedValue >> 16u) & 0xFFFF),
+        f16tof32(packedValue & 0xFFFF)
+    );
+}
+
+float2 UnitVectorToOctahedron(float3 n)
+{
+	n.xy /= dot(1, abs(n));
+	if( n.z <= 0 )
+	{
+		n.xy = (1 - abs(n.yx)) * select(n.xy >= 0, float2(1,1), float2(-1,-1));
+	}
+	return n.xy;
+}
+
+float3 OctahedronToUnitVector(float2 oct)
+{
+	float3 n = float3( oct, 1 - dot( 1, abs(oct) ) );
+	float t = max( -n.z, 0 );
+	n.xy += select(n.xy >= 0, float2(-t, -t), float2(t, t));
+	return normalize(n);
+}
+
+// Pack normal vector into an uint32 using Octahedron encoding
+uint PackNormalToUInt32(float3 normal)
+{
+	float2 normalAsOctahedron = UnitVectorToOctahedron(normal);
+	uint2 quantizedOctahedron = clamp((normalAsOctahedron * 0.5 + 0.5) * 65535.0 + 0.5, 0.0, 65535.0);
+	return ((quantizedOctahedron.x & 0xFFFF) << 16) | (quantizedOctahedron.y & 0xFFFF);
+}
+
+// Pack normal vector into from an uint32 using Octahedron encoding
+float3 UnpackNormalFromUInt32(uint packedNormal)
+{
+	uint2 quantizedOctahedron = uint2((packedNormal >> 16) & 0xFFFF, packedNormal & 0xFFFF);
+	float2 worldNormalAsOctahedron = ((quantizedOctahedron / 65535.0) - 0.5) * 2.0;
+	float3 worldNormal = OctahedronToUnitVector(worldNormalAsOctahedron);
+	return worldNormal;
+}
