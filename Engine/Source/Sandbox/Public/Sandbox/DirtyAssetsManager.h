@@ -6,6 +6,7 @@
 #include <SubSystem/SubSystem.h>
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
 
 #include <EventSystem/EventListener.h>
 
@@ -31,8 +32,17 @@ struct RequiredExternalActionData
 
 struct DirtySaveCustomization
 {
-	//return true to add this asset to the required action data list
-	std::function<bool(Volt::AssetHandle)> RequiresExternalAction;
+	// initial check if the asset is allowed to be saved,
+	// the asset will still show up in the explicit save popup but will be disabled
+	std::function<bool(const Volt::AssetHandle&/*asset*/, std::string& /*outCantReason*/)> CanSaveAsset;
+
+	// check if we can save asset after the create assets modal has been run
+	// only called if CanUserAssignPath returned false
+	std::function<bool(const Volt::AssetHandle&/*asset*/, std::filesystem::path& /*outAssetNewPath*/, std::string& /*outCantReason*/)> CanSaveAssetPostCreateStep;
+
+	// check if the user is allowed to set the path of the asset manually, 
+	// returning false will hide the asset in the create assets modal
+	std::function<bool(const Volt::AssetHandle&/*asset*/)> CanUserAssignPath;
 };
 
 class DirtyAssetsManager : public SubSystem, public Volt::EventListener
@@ -69,8 +79,8 @@ private:
 	bool OnAssetCreated(Volt::AssetCreatedEvent& e);
 	bool OnAssetSaved(Volt::AssetSavedEvent& e);
 
-	void SaveAssetsImpl(SaveDirtyAssetsFilter filter);
-	void CreateAssetsImpl(Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate);
+	void SaveAssetsImpl(const FrameStackVector<Volt::AssetHandle>& assetsToSave);
+	void CreateAssetsImpl(const Vector<std::pair<Volt::AssetHandle, std::filesystem::path>>& assetsToCreate);
 
 	std::set<Volt::AssetHandle> m_dirtyAssets;
 	Map<AssetType, DirtySaveCustomization> m_dirtySaveCustomizations;

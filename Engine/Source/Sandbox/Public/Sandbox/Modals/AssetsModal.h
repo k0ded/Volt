@@ -9,6 +9,8 @@
 
 #include <filesystem>
 
+#include <string>
+
 CREATE_ENUM(CreateFilesTableColumns,
 	Selected,
 	Status,
@@ -48,11 +50,15 @@ public:
 
 	//this should be called instead of OpenModalBlocking
 	template<typename Allocator>
-	[[nodiscard]] AssetModalResult OpenAssetModalTypeBlocking(AssetModalType inAssetModalType, const Vector<Volt::AssetHandle, Allocator>& inAssets, std::set<Volt::AssetHandle>& outSelectedAssets)
+	[[nodiscard]] AssetModalResult OpenAssetModalTypeBlocking(AssetModalType inAssetModalType,
+		const Vector<Volt::AssetHandle,
+		Allocator>& inAssets,
+		std::set<Volt::AssetHandle>& outSelectedAssets,
+		const Map<Volt::AssetHandle, std::string /*disabled reason*/>* disabledAssets = nullptr)
 	{
 		m_assetHandles.resize_uninitialized(inAssets.size());
 		memcpy_s(m_assetHandles.data(), m_assetHandles.byte_size() * sizeof(Volt::AssetHandle), inAssets.data(), inAssets.byte_size());
-		return OpenAssetModalTypeBlockingImpl(inAssetModalType, outSelectedAssets);
+		return OpenAssetModalTypeBlockingImpl(inAssetModalType, outSelectedAssets, disabledAssets);
 	}
 
 	[[nodiscard]] std::filesystem::path GetNewAssetPath(Volt::AssetHandle handle) 
@@ -66,7 +72,9 @@ private:
 	void OnOpen() override;
 	void OnClose() override;
 private:
-	AssetModalResult OpenAssetModalTypeBlockingImpl(AssetModalType inAssetModalType, std::set<Volt::AssetHandle>& outSelectedAssets);
+	AssetModalResult OpenAssetModalTypeBlockingImpl(AssetModalType inAssetModalType,
+		std::set<Volt::AssetHandle>& outSelectedAssets,
+		const Map<Volt::AssetHandle, std::string /*disabled reason*/>* disabledAssets);
 	AssetModalResult GetResult() { return m_result; }
 	bool ShouldColumnExist(CreateFilesTableColumns column);
 
@@ -87,5 +95,6 @@ private:
 	Vector<Volt::AssetHandle> m_assetHandles;
 	std::set<Volt::AssetHandle> m_selectedAssets;
 	Map<Volt::AssetHandle, std::filesystem::path> m_assetToNewPath;
+	Map<Volt::AssetHandle, std::string> m_disabledAssets;
 
 };

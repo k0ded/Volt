@@ -28,6 +28,8 @@ namespace Volt
 
 		static EntityDescSerializer& Get() { return *s_instance; }
 
+		static std::filesystem::path GetSavePathFromSceneHandle(const Volt::AssetHandle& );
+
 	private:
 		inline static EntityDescSerializer* s_instance = nullptr;
 

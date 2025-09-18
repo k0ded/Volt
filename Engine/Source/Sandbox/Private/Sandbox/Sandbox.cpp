@@ -164,29 +164,35 @@ void Sandbox::OnAttach()
 	//DiscordPlugin::GetInstance().GetManager().UpdateChanges();
 
 
-	DirtySaveCustomization entityDescSaveCustimization;
-	entityDescSaveCustimization.RequiresExternalAction = [](Volt::AssetHandle handle) -> bool
+	DirtySaveCustomization entityDescSaveCustomization;
+	entityDescSaveCustomization.CanSaveAsset = [](const Volt::AssetHandle& handle, std::string& outCantReason) -> bool
 	{
-		const Volt::AssetMetadata& metadata = Volt::AssetManager::GetMetadataFromHandle(handle);
-		const Volt::EntityDescCustomMetadata& customData = metadata.GetCustomData<Volt::EntityDescCustomMetadata>();
-		if (Volt::AssetManager::IsMemoryAsset(customData.sceneHandle))
-		{
-			return true;
-		}
+		return true;
+	};
+	entityDescSaveCustomization.CanUserAssignPath = [](const Volt::AssetHandle& handle)
+	{
 		return false;
 	};
-	DirtyAssetsManager::Get().RegisterSaveCustomizationForType(AssetTypes::EntityDesc, entityDescSaveCustimization);
+	entityDescSaveCustomization.CanSaveAssetPostCreateStep = [](const Volt::AssetHandle& asset, std::filesystem::path& outAssetNewPath, std::string& outCantReason)
+	{
+		const Volt::AssetMetadata& entityMetadata = Volt::AssetManager::GetMetadataFromHandle(asset);
+		const Volt::EntityDescCustomMetadata& customMetadata = entityMetadata.GetCustomData<Volt::EntityDescCustomMetadata>();
+		const Volt::AssetHandle& owningSceneHandle = customMetadata.sceneHandle;
+		const Volt::EntityID& entityID = customMetadata.entityID;
 
-	DirtySaveCustomization sceneSaveCustimization;
-	sceneSaveCustimization.RequiresExternalAction = [](Volt::AssetHandle handle) -> bool
-	{
-		if (Volt::AssetManager::IsMemoryAsset(handle))
+		if (!Volt::AssetManager::HasFilePath(owningSceneHandle))
 		{
-			return true;
+			outCantReason = "Owning Scene Does not have an associated file. Please create the scene in order to save this entity.";
+			return false;
 		}
-		return false;
+
+		//make the path just the filename we want the entity to have, the entity desc serializer will handle the rest of the path
+		outAssetNewPath = std::to_string((uint32_t)entityID);
+
+		return true;
 	};
-	DirtyAssetsManager::Get().RegisterSaveCustomizationForType(AssetTypes::Scene, sceneSaveCustimization);
+
+	DirtyAssetsManager::Get().RegisterSaveCustomizationForType(AssetTypes::EntityDesc, entityDescSaveCustomization);
 
 	m_isInitialized = true;
 }

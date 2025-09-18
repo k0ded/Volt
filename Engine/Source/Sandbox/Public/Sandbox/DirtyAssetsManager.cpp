@@ -44,8 +44,7 @@ void DirtyAssetsManager::Initialize()
 }
 
 void DirtyAssetsManager::Shutdown()
-{
-}
+{}
 
 void DirtyAssetsManager::RegisterEventListeners()
 {
@@ -94,61 +93,178 @@ void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 		assetsToSave.push_back(dirtyAssetHandle);
 	}
 
-	//save dialog
-	if (showSaveDialog)
+
 	{
-		AssetsModal& modal = ModalSystem::GetModal<AssetsModal>(m_assetsModalID);
-		std::set<Volt::AssetHandle> outSelectedAssetsToSave;
-		AssetModalResult result = modal.OpenAssetModalTypeBlocking(AssetModalType::Save, assetsToSave, outSelectedAssetsToSave);
-
-		if (result != AssetModalResult::Save)
-		{
-			return;
-		}
-
-		//user chose to save no assets when prompted
-		if (outSelectedAssetsToSave.empty())
-		{
-			return;
-		}
-
+		Map<Volt::AssetHandle, std::string> cantSaveAssets;
 		for (int32_t i = static_cast<int32_t>(assetsToSave.size() - 1); i >= 0; i--)
 		{
-			if (!outSelectedAssetsToSave.contains(assetsToSave[i]))
+			const Volt::AssetHandle& handle = assetsToSave[i];
+			AssetType assetType = Volt::AssetManager::GetAssetTypeFromHandle(handle);
+			if (!m_dirtySaveCustomizations.contains(assetType))
 			{
-				assetsToSave.erase(assetsToSave.begin() + i);
+				continue;
+			}
+
+			const DirtySaveCustomization& customization = m_dirtySaveCustomizations[assetType];
+			//default behaviour as true
+			if (!customization.CanSaveAsset)
+			{
+				continue;
+			}
+
+			std::string outCantReason = "";
+			if (!customization.CanSaveAsset(handle, outCantReason))
+			{
+				//if we arent showing the explicit save dialog, we just remove the asset from assets to save
+				if (!showSaveDialog)
+				{
+					assetsToSave.erase(assetsToSave.begin() + i);
+				}
+				else
+				{
+					cantSaveAssets.emplace(handle, outCantReason);
+				}
+			}
+		}
+
+		//save dialog
+		if (showSaveDialog)
+		{
+			AssetsModal& modal = ModalSystem::GetModal<AssetsModal>(m_assetsModalID);
+			std::set<Volt::AssetHandle> outSelectedAssetsToSave;
+			AssetModalResult result = modal.OpenAssetModalTypeBlocking(AssetModalType::Save, assetsToSave, outSelectedAssetsToSave, &cantSaveAssets);
+
+			if (result != AssetModalResult::Save)
+			{
+				return;
+			}
+
+			//user chose to save no assets when prompted
+			if (outSelectedAssetsToSave.empty())
+			{
+				return;
+			}
+
+			for (int32_t i = static_cast<int32_t>(assetsToSave.size() - 1); i >= 0; i--)
+			{
+				if (!outSelectedAssetsToSave.contains(assetsToSave[i]))
+				{
+					assetsToSave.erase(assetsToSave.begin() + i);
+				}
 			}
 		}
 	}
 
 	//create assets dialog
 	{
-		FrameStackVector<Volt::AssetHandle> assetsNeedCreation;
-		for (const Volt::AssetHandle& asset : assetsToSave)
+		FrameStackVector<Volt::AssetHandle> assetsNeedUserAssignedPath;
+		FrameStackVector<Volt::AssetHandle> assetsNotAllowedUserAssignPath;
+		for (int32_t i = static_cast<int32_t>(assetsToSave.size()) - 1; i >= 0; i--)
 		{
+			const Volt::AssetHandle& asset = assetsToSave[i];
+
+			// check if the asset has a save customization, if it does, check if the user is allowed to assign a path
+			// if the user is not allowed to assign a path, we might still be able to save the asset post create
+			AssetType assetType = Volt::AssetManager::GetAssetTypeFromHandle(asset);
+			if (m_dirtySaveCustomizations.contains(assetType))
+			{
+				const DirtySaveCustomization& customization = m_dirtySaveCustomizations[assetType];
+				if (!customization.CanUserAssignPath)
+				{
+					continue;
+				}
+				//default behaviour as true
+				if (customization.CanUserAssignPath && !customization.CanUserAssignPath(asset))
+				{
+					assetsNotAllowedUserAssignPath.push_back(asset);
+					continue;
+				}
+			}
+
 			if (!Volt::AssetManager::HasFilePath(asset))
 			{
-				assetsNeedCreation.push_back(asset);
+				//cannot save assets without a path, instead prompt to create
+				assetsNeedUserAssignedPath.push_back(asset);
+				assetsToSave.erase(assetsToSave.begin() + i);
 			}
 		}
 
-		AssetsModal& modal = ModalSystem::GetModal<AssetsModal>(m_assetsModalID);
-		std::set<Volt::AssetHandle> outSelectedAssetsToCreate;
-		AssetModalResult result = modal.OpenAssetModalTypeBlocking(AssetModalType::Create, assetsNeedCreation, outSelectedAssetsToCreate);
+		Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate;
 
-		if (result == AssetModalResult::Cancel)
+		//if there are no assets needing a user assigned path, dont open the modal
+		if (!assetsNeedUserAssignedPath.empty())
 		{
-			return;
-		}
+			AssetsModal& modal = ModalSystem::GetModal<AssetsModal>(m_assetsModalID);
+			std::set<Volt::AssetHandle> outSelectedAssetsToCreate;
+			AssetModalResult result = modal.OpenAssetModalTypeBlocking(AssetModalType::Create, assetsNeedUserAssignedPath, outSelectedAssetsToCreate);
 
-		if (result == AssetModalResult::Create)
-		{
-			Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate;
-			assetsToCreate.reserve(outSelectedAssetsToCreate.size());
-			for (const Volt::AssetHandle& asset : outSelectedAssetsToCreate)
+			if (result == AssetModalResult::Cancel)
 			{
-				assetsToCreate.push_back({ asset, modal.GetNewAssetPath(asset) });
+				return;
 			}
+
+			if (result == AssetModalResult::Create)
+			{
+				//populate assets to create
+				assetsToCreate.reserve(outSelectedAssetsToCreate.size());
+				for (const Volt::AssetHandle& asset : outSelectedAssetsToCreate)
+				{
+					assetsToCreate.push_back({ asset, modal.GetNewAssetPath(asset) });
+				}
+
+				//find what assets were not given a path by the user
+				std::set<Volt::AssetHandle> assetsNotAssignedPath;
+				for (const Volt::AssetHandle& handle : assetsNeedUserAssignedPath)
+				{
+					assetsNotAssignedPath.insert(handle);
+				}
+
+				//remove the assets that needed a user assigned path but did not get one
+				for (int32_t i = static_cast<int32_t>(assetsToSave.size()) - 1; i >= 0; i--)
+				{
+					if (assetsNotAssignedPath.contains(assetsToSave[i]))
+					{
+						assetsToSave.erase(assetsToSave.begin() + i);
+					}
+				}
+			}
+		}
+
+		//all the assets that were not allowed to be assigned a user path need to check if they can be saved now with a custom behaviour
+		for (const Volt::AssetHandle& handle : assetsNotAllowedUserAssignPath)
+		{
+			AssetType assetType = Volt::AssetManager::GetAssetTypeFromHandle(handle);
+			if (m_dirtySaveCustomizations.contains(assetType))
+			{
+				continue;
+			}
+
+			const DirtySaveCustomization& customization = m_dirtySaveCustomizations[assetType];
+
+			std::filesystem::path outNewPath = "";
+			std::string outCantReason = "CanSaveAssetPostCreateStep was not bound but CanUserAssignPath returned false!!";
+			bool canSaveAssetPostCreateStep = false;
+			//default behaviour as false
+			if (customization.CanSaveAssetPostCreateStep)
+			{
+				canSaveAssetPostCreateStep = customization.CanSaveAssetPostCreateStep(handle, outNewPath, outCantReason);
+			}
+			if (canSaveAssetPostCreateStep)
+			{
+				VT_LOG(Warning, "Failed to Save asset with handle '{0}' Reason: {1}", handle, outCantReason.c_str());
+				auto it = std::find(assetsToSave.begin(), assetsToSave.end(), handle);
+
+				VT_ENSURE_MSG(it != assetsToSave.end(), "assetsToSave is supposed to include all assets that were not allowed an user assigned path at this point.");
+				assetsToSave.erase(it);
+				continue;
+			}
+
+			VT_ENSURE(!outNewPath.empty());
+			assetsToCreate.push_back({ handle, outNewPath });
+		}
+
+		if (!assetsToCreate.empty())
+		{
 			CreateAssetsImpl(assetsToCreate);
 		}
 	}
@@ -205,7 +321,7 @@ void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 		return;
 	}
 
-	//SaveAssetsImpl(filter);
+	SaveAssetsImpl(assetsToSave);
 }
 
 bool DirtyAssetsManager::IsAssetDirty(Volt::AssetHandle handle)
@@ -232,27 +348,18 @@ const std::set<Volt::AssetHandle>& DirtyAssetsManager::GetDirtyAssets()
 	return m_dirtyAssets;
 }
 
-
-
-
-void DirtyAssetsManager::SaveAssetsImpl(SaveDirtyAssetsFilter filter)
+void DirtyAssetsManager::SaveAssetsImpl(const FrameStackVector<Volt::AssetHandle>& assetsToSave)
 {
-	for (const Volt::AssetHandle& dirtyAssetHandle : m_dirtyAssets)
+	for (const Volt::AssetHandle& handle : assetsToSave)
 	{
-		AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(dirtyAssetHandle);
-
-		Volt::AssetManager::SaveAsset(dirtyAssetHandle);
-
-		MarkAssetNotDirty(dirtyAssetHandle);
+		Volt::AssetManager::SaveAsset(handle);
 	}
 }
 
-void DirtyAssetsManager::CreateAssetsImpl(Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate)
+void DirtyAssetsManager::CreateAssetsImpl(const Vector<std::pair<Volt::AssetHandle, std::filesystem::path>>& assetsToCreate)
 {
 	for (const auto& [asset, path] : assetsToCreate)
 	{
 		Volt::AssetManager::CreateFileForAsset(asset, path);
-
-		MarkAssetNotDirty(asset);
 	}
 }

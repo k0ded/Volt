@@ -46,9 +46,28 @@ void AssetsModal::OnClose()
 	VT_ASSERT(m_result != AssetModalResult::None);
 }
 
-AssetModalResult AssetsModal::OpenAssetModalTypeBlockingImpl(AssetModalType inAssetModalType, std::set<Volt::AssetHandle>& outSelectedAssets)
+AssetModalResult AssetsModal::OpenAssetModalTypeBlockingImpl(AssetModalType inAssetModalType,
+	std::set<Volt::AssetHandle>& outSelectedAssets,
+	const Map<Volt::AssetHandle, std::string>* disabledAssets)
 {
 	m_assetModalType = inAssetModalType;
+	m_selectedAssets.clear();
+	m_disabledAssets.clear();
+	if (disabledAssets)
+	{
+		m_disabledAssets = *disabledAssets;
+	}
+
+	for (const Volt::AssetHandle& handle : m_assetHandles)
+	{
+		if (m_disabledAssets.contains(handle))
+		{
+			continue;
+		}
+
+		m_selectedAssets.insert(handle);
+	}
+
 	OpenBlocking();
 
 	if (m_assetModalType == AssetModalType::Create)
@@ -242,6 +261,19 @@ void AssetsModal::DrawHeaderRowColumn(CreateFilesTableColumns column)
 
 void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandle handle)
 {
+	bool disabled = m_disabledAssets.contains(handle);
+
+	if (disabled)
+	{
+		if (ImGui::BeginTooltip())
+		{
+			ImGui::Text(m_disabledAssets[handle].c_str());
+
+			ImGui::EndTooltip();
+		}
+
+		ImGui::BeginDisabled();
+	}
 	switch (column)
 	{
 		case CreateFilesTableColumns::Selected:
@@ -328,6 +360,11 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 		default:
 			ImGui::Text("ERROR");
 			break;
+	}
+
+	if (disabled)
+	{
+		ImGui::EndDisabled();
 	}
 
 }
