@@ -127,6 +127,8 @@ namespace Volt
 
 		m_frameIndex++;
 
+		EventSystem::Update();
+
 		AppTickEvent tickEvent(m_currentDeltaTime, m_frameIndex);
 		EventSystem::DispatchEvent(tickEvent);
 	}

@@ -26,6 +26,27 @@ namespace Volt
 		s_instance->m_registeredListeners[eventGUID].emplace_back(listener, delegate, predicate);
 	}
 
+	void EventSystem::Update()
+	{
+		if (s_instance->m_queuedUnregisters.empty())
+		{
+			return;
+		}
+
+		for (auto& [guid, indices] : s_instance->m_queuedUnregisters)
+		{
+			std::sort(indices.begin(), indices.end());
+			for (int32_t i = static_cast<int32_t>(indices.size() - 1); i >= 0; i--)
+			{
+				const size_t removeIndex = indices[i];
+				const auto removeIt = s_instance->m_registeredListeners[guid].begin() + removeIndex;
+				s_instance->m_registeredListeners[guid].erase_unsorted(removeIt);
+			}
+		}
+
+		s_instance->m_queuedUnregisters.clear();
+	}
+
 	void EventSystem::UnregisterListener(VoltGUID eventGUID, EventListener* listener)
 	{
 		auto& listeners = s_instance->m_registeredListeners[eventGUID];
@@ -34,7 +55,8 @@ namespace Volt
 		{
 			if (listeners[i].listener == listener)
 			{
-				listeners.erase_unsorted(listeners.begin() + i);
+				s_instance->m_queuedUnregisters[eventGUID].push_back(i);
+				listeners[i].Invalid = true;
 				break;
 			}
 		}
@@ -52,7 +74,9 @@ namespace Volt
 
 			if (it != delegates.end())
 			{
-				delegates.erase(it);
+				const int32_t index = static_cast<int32_t>(it - delegates.begin());
+				s_instance->m_queuedUnregisters[guid].push_back(index);
+				it->Invalid= true;
 			}
 		}
 	}
@@ -63,6 +87,11 @@ namespace Volt
 
 		for (auto& info : m_registeredListeners[eventGUID])
 		{
+			if (info.Invalid)
+			{
+				continue;
+			}
+
 			if (info.listener->AreEventsBlocked())
 			{
 				continue;

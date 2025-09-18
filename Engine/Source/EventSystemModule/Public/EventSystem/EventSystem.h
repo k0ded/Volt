@@ -23,6 +23,8 @@ namespace Volt
 		static void UnregisterListener(VoltGUID eventGUID, EventListener* listener);
 		static void UnregisterListeners(EventListener* listener);
 
+		static void Update();
+
 		template<IsEvent T>
 		static void DispatchEvent(T& e)
 		{
@@ -40,10 +42,12 @@ namespace Volt
 			EventListener* listener;
 			EventListenerDelegate delegate;
 			EventDispatchPredicate predicate;
+			bool Invalid = false;
 		};
 
 		void DispatchEventInternal(VoltGUID eventGUID, Event& e);
 
 		Map<VoltGUID, Vector<ListenerInfo>> m_registeredListeners;
+		Map<VoltGUID, Vector<int32_t>> m_queuedUnregisters;
 	};
 }
