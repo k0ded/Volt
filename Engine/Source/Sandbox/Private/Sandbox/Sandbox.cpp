@@ -114,7 +114,6 @@ void Sandbox::OnAttach()
 	SelectionManager::Initialize();
 	EditorResources::Initialize();
 	VersionControl::Initialize(VersionControlSystem::Perforce);
-	DirtyAssetsManager::Get().Initialize();
 
 	NodeEditorHelpers::Initialize();
 	IONodeGraphEditorHelpers::Initialize();

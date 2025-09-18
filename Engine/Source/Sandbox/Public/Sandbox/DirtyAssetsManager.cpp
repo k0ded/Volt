@@ -13,12 +13,27 @@
 
 
 
-DirtyAssetsManager DirtyAssetsManager::s_instance{};
+VT_REGISTER_SUBSYSTEM(DirtyAssetsManager, Default, Engine, 0);
+
+DirtyAssetsManager* DirtyAssetsManager::s_instance = nullptr;
 
 DirtyAssetsManager& DirtyAssetsManager::Get()
 {
-	return s_instance;
+	VT_ENSURE(s_instance != nullptr);
+	return *s_instance;
 }
+
+DirtyAssetsManager::DirtyAssetsManager()
+{
+	VT_ENSURE(s_instance == nullptr);
+	s_instance = this;
+}
+
+DirtyAssetsManager::~DirtyAssetsManager()
+{
+	s_instance = nullptr;
+}
+
 
 void DirtyAssetsManager::Initialize()
 {
@@ -26,6 +41,10 @@ void DirtyAssetsManager::Initialize()
 
 	auto& assetsModal = ModalSystem::AddModal<AssetsModal>("Assets Modal##sandbox");
 	m_assetsModalID = assetsModal.GetID();
+}
+
+void DirtyAssetsManager::Shutdown()
+{
 }
 
 void DirtyAssetsManager::RegisterEventListeners()

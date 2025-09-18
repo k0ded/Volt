@@ -35,14 +35,21 @@ struct DirtySaveCustomization
 	std::function<bool(Volt::AssetHandle)> RequiresExternalAction;
 };
 
-class DirtyAssetsManager : public Volt::EventListener
+class DirtyAssetsManager : public SubSystem, public Volt::EventListener
 {
+public:
+	VT_DECLARE_SUBSYSTEM("{DEFEC05B-66E0-45D9-8D1A-694DD2166407}"_guid)
+
 public:
 	typedef std::function<void(Volt::AssetHandle)> DirtySaveCustomizationFn;
 public:
 	static DirtyAssetsManager& Get();
 
-	void Initialize();
+	DirtyAssetsManager();
+	~DirtyAssetsManager();
+
+	void Initialize() override;
+	void Shutdown() override;
 
 	void RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomization customization);
 
@@ -55,8 +62,7 @@ public:
 	const std::set<Volt::AssetHandle>& GetDirtyAssets();
 
 private:
-	DirtyAssetsManager() = default;
-	static DirtyAssetsManager s_instance;
+	static DirtyAssetsManager* s_instance;
 
 	void RegisterEventListeners();
 
@@ -66,7 +72,7 @@ private:
 	void SaveAssetsImpl(SaveDirtyAssetsFilter filter);
 	void CreateAssetsImpl(Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate);
 
-	std::set<Volt::AssetHandle> m_dirtyAssets;	
+	std::set<Volt::AssetHandle> m_dirtyAssets;
 	Map<AssetType, DirtySaveCustomization> m_dirtySaveCustomizations;
 
 	UUID64 m_assetsModalID;
