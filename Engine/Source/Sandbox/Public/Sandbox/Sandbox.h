@@ -180,7 +180,6 @@ private:
 
 	Ref<ViewportPanel> m_viewportPanel;
 	Ref<GameViewPanel> m_gameViewPanel;
-	Scope<ModalSystem> m_modalSystem;
 
 	Ref<AssetBrowserPanel> m_assetBrowserPanel;
 

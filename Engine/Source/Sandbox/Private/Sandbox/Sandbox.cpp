@@ -111,8 +111,6 @@ void Sandbox::OnAttach()
 {
 	RegisterEventListeners();
 
-	m_modalSystem = CreateScope<ModalSystem>();
-
 	SelectionManager::Initialize();
 	EditorResources::Initialize();
 	VersionControl::Initialize(VersionControlSystem::Perforce);
@@ -351,11 +349,10 @@ void Sandbox::OnDetach()
 
 	s_instance = nullptr;
 
-	m_modalSystem = nullptr;
-
 	NodeEditorHelpers::Shutdown();
 	VersionControl::Shutdown();
 	SelectionManager::Shutdown();
+
 }
 
 void Sandbox::OnScenePlay()
@@ -784,8 +781,6 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 	ImGui::ShowDemoWindow();
 
 	UpdateDockSpace();
-
-	ModalSystem::Update();
 
 	if (m_shouldOpenSaveSceneAs)
 	{

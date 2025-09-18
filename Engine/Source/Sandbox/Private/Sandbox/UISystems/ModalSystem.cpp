@@ -3,6 +3,10 @@
 
 #include "Sandbox/Modals/Modal.h"
 
+#include <EventSystem/ApplicationEvents.h>
+
+VT_REGISTER_SUBSYSTEM(ModalSystem, Default, Engine, 1);
+
 ModalSystem::ModalSystem()
 {
 	VT_ENSURE(s_instance == nullptr);
@@ -14,12 +18,13 @@ ModalSystem::~ModalSystem()
 	s_instance = nullptr;
 }
 
-void ModalSystem::Update()
+void ModalSystem::Initialize()
 {
-	for (const auto& [modalId, modal] : s_instance->m_modals)
-	{
-		modal->Update();
-	}
+	RegisterEventListeners();
+}
+
+void ModalSystem::Shutdown()
+{
 }
 
 void ModalSystem::RemoveModal(const UUID64& modalId)
@@ -28,4 +33,20 @@ void ModalSystem::RemoveModal(const UUID64& modalId)
 	{
 		s_instance->m_modals.erase(modalId);
 	}
+}
+
+void ModalSystem::RegisterEventListeners()
+{
+	auto isInitializedPred = [this]() { return s_instance != nullptr; };
+	RegisterListener<Volt::AppImGuiUpdateEvent>(VT_BIND_EVENT_FN(ModalSystem::OnImGuiUpdate), isInitializedPred);
+}
+
+bool ModalSystem::OnImGuiUpdate(Volt::AppImGuiUpdateEvent& e)
+{
+	for (const auto& [modalId, modal] : s_instance->m_modals)
+	{
+		modal->Update();
+	}
+
+	return false;
 }
