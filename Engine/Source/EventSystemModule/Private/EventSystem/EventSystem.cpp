@@ -85,8 +85,10 @@ namespace Volt
 	{
 		VT_PROFILE_SCOPE(std::format("Dispatch {}", e.GetName()).c_str());
 
+		int32_t idx = -1;
 		for (auto& info : m_registeredListeners[eventGUID])
 		{
+			idx++;
 			if (info.Invalid)
 			{
 				continue;

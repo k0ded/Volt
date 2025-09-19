@@ -228,13 +228,15 @@ void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 					}
 				}
 			}
+			CreateAssetsImpl(assetsToCreate);
+			assetsToCreate.clear();
 		}
 
 		//all the assets that were not allowed to be assigned a user path need to check if they can be saved now with a custom behaviour
 		for (const Volt::AssetHandle& handle : assetsNotAllowedUserAssignPath)
 		{
 			AssetType assetType = Volt::AssetManager::GetAssetTypeFromHandle(handle);
-			if (m_dirtySaveCustomizations.contains(assetType))
+			if (!m_dirtySaveCustomizations.contains(assetType))
 			{
 				continue;
 			}
@@ -249,7 +251,7 @@ void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 			{
 				canSaveAssetPostCreateStep = customization.CanSaveAssetPostCreateStep(handle, outNewPath, outCantReason);
 			}
-			if (canSaveAssetPostCreateStep)
+			if (!canSaveAssetPostCreateStep)
 			{
 				VT_LOG(Warning, "Failed to Save asset with handle '{0}' Reason: {1}", handle, outCantReason.c_str());
 				auto it = std::find(assetsToSave.begin(), assetsToSave.end(), handle);

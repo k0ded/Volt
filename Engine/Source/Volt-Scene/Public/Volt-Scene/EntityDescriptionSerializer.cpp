@@ -128,20 +128,11 @@ namespace Volt
 		//if the scene is a memory asset it doesnt have a path yet, and will thus fail the save of this entity
 		VT_ENSURE(!AssetManager::Get().IsMemoryAsset(entityDesc->GetSceneHandle()));
 
-		//get the path of the directory this asset is in
-		std::filesystem::path directoryPath = AssetManager::GetFilesystemPath(entityDesc->GetSceneHandle());
-		if (!std::filesystem::is_directory(directoryPath))
-		{
-			directoryPath = directoryPath.parent_path();
-		}
-		directoryPath /= "Entities";
-
+		const std::filesystem::path directoryPath = metadata.filePath.parent_path();
 		if (!std::filesystem::exists(directoryPath))
 		{
 			std::filesystem::create_directories(directoryPath);
 		}
-
-		std::filesystem::path entityPath = directoryPath / (metadata.filePath.stem().string() + ".vtasset");
 
 
 		//serialize entity data
@@ -157,7 +148,7 @@ namespace Volt
 		entityDescFileWriter.Write(buffer);
 		buffer.Release();
 
-		entityDescFileWriter.WriteToDisk(entityPath, true, compressedDataOffset);
+		entityDescFileWriter.WriteToDisk(metadata.filePath, true, compressedDataOffset);
 	}
 
 	bool EntityDescSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
@@ -330,6 +321,21 @@ namespace Volt
 		streamReader.ExitScope();
 
 		return entity;
+	}
+
+	std::filesystem::path EntityDescSerializer::GetSavePathForEntity_ThreadSafe(const Volt::AssetHandle& handle)
+	{
+		const Volt::AssetMetadata metadata = Volt::AssetManager::GetMetadataFromHandle(handle);
+		VT_ENSURE(metadata.type == AssetTypes::EntityDesc);
+		const EntityDescCustomMetadata& entityMetadata = metadata.GetCustomData<EntityDescCustomMetadata>();
+
+		const Volt::AssetHandle& sceneHandle = entityMetadata.sceneHandle;
+		VT_ENSURE(Volt::AssetManager::HasFilePath(sceneHandle));
+
+		const std::filesystem::path owningScenePath = AssetManager::GetFilePathFromAssetHandle(sceneHandle);
+		const std::string owningSceneName = owningScenePath.stem().string();
+
+		return owningScenePath.parent_path() / (owningSceneName + "_Entities") / (std::to_string(entityMetadata.entityID) + ".vtasset");
 	}
 
 	Entity EntityDescSerializer::CreateEntityFromUUIDThreadSafe(EntityID entityId, const Ref<Scene>& scene) const

@@ -64,6 +64,7 @@
 #include <Volt-Scene/SceneEvents.h>
 #include <Volt-Scene/EntityDescription.h>
 #include <Volt-Scene/EntityDescCustomMetadata.h>
+#include <Volt-Scene/EntityDescriptionSerializer.h>	
 
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
@@ -178,7 +179,6 @@ void Sandbox::OnAttach()
 		const Volt::AssetMetadata& entityMetadata = Volt::AssetManager::GetMetadataFromHandle(asset);
 		const Volt::EntityDescCustomMetadata& customMetadata = entityMetadata.GetCustomData<Volt::EntityDescCustomMetadata>();
 		const Volt::AssetHandle& owningSceneHandle = customMetadata.sceneHandle;
-		const Volt::EntityID& entityID = customMetadata.entityID;
 
 		if (!Volt::AssetManager::HasFilePath(owningSceneHandle))
 		{
@@ -187,7 +187,7 @@ void Sandbox::OnAttach()
 		}
 
 		//make the path just the filename we want the entity to have, the entity desc serializer will handle the rest of the path
-		outAssetNewPath = std::to_string((uint32_t)entityID);
+		outAssetNewPath = Volt::EntityDescSerializer::GetSavePathForEntity_ThreadSafe(asset);
 
 		return true;
 	};

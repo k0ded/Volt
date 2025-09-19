@@ -13,4 +13,5 @@ void Volt::EntityDesc::SetupInitialCustomMetadata(CustomAssetMetadataVector& cus
 	customMetadata.resize(newSize);
 	EntityDescCustomMetadata& entityDescCustomMeta = reinterpret_cast<EntityDescCustomMetadata&>(*customMetadata.data());
 	entityDescCustomMeta.sceneHandle = m_sceneHandle;
+	entityDescCustomMeta.entityID = m_entityID;
 }
