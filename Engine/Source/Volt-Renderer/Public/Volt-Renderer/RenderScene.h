@@ -122,8 +122,6 @@ namespace Volt
 
 		void UpdateInvalidLights(RenderGraph& renderGraph);
 
-		void BuildRenderCommands();
-
 		void VisualizeRenderPrimitives();
 
 		bool OnPreRenderEvent(AppPreRenderEvent& event);
