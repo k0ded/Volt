@@ -1,6 +1,7 @@
 #include "RayTracing/RayTracingCommon.hlsli"
 #include "RayTracing/RayTracingResourceTable.hlsli"
 #include "RayTracing/RayTracingTriangleAttributes.hlsli"
+#include "RayTracing/RayTracingInline.hlsli"
 
 #include "RenderScene/GPUScene.hlsli"
 
@@ -57,42 +58,40 @@ void FinalGatherCS(uint2 DispatchThreadID : SV_DispatchThreadID)
 		const float3 pixelNormal = GBufferNormal.Load(int3(pixelPos, 0)).xyz * 2.f - 1.f;
 		const float3x3 tangentBasis = GetTangentBasis(pixelNormal);
 
-		uint randomSeed = DispatchThreadID.x * View.renderSize.x + DispatchThreadID.y + View.frameIndex;
+		uint randomSeed = uint(uint(1973) + (DispatchThreadID.y * View.renderSize.x + DispatchThreadID.x) * uint(9277) + View.frameIndex * uint(26699)) | uint(1);
 
 		const float2 randSample = float2(StepAndOutputRNGFloat(randomSeed), StepAndOutputRNGFloat(randomSeed));
 		//const float2 randSample = BlueNoiseVec2(pixelPos, View.frameIndex); //float2(0.f, 0.f);
 		float3 raySample = CosineSampleHemisphere(randSample);
-		raySample = mul(raySample, tangentBasis);
+		raySample = normalize(mul(raySample, tangentBasis));
 
 		RayDescription rayDesc;
 		rayDesc.origin = pixelWorldPosition;
 		rayDesc.direction = raySample;
-		rayDesc.tMin = 10.f;
+		rayDesc.tMin = 1.f;
 		rayDesc.tMax = 100000.f;
 
-		RayQuery<RAY_FLAG_FORCE_OPAQUE> query;
-		query.TraceRayInline(TLAS, 0u, 0xFF, rayDesc.GetNativeDesc());
-		query.Proceed();
+		const uint rayFlags = RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_CULL_BACK_FACING_TRIANGLES;
+		const uint instanceMask = 0xFF;
 
-		if (query.CommittedStatus() == COMMITTED_TRIANGLE_HIT)
+		RayTraceInlineResult inlineTraceResult = TraceInlineRay(TLAS, rayFlags, instanceMask, rayDesc);
+
+		if (inlineTraceResult.IsHit() && inlineTraceResult.IsFrontFace())
 		{
-			const float3 hitPosition = rayDesc.origin + rayDesc.direction * query.CommittedRayT();
-			const uint primitiveIndex = query.CommittedInstanceID();
+			const float3 hitPosition = rayDesc.origin + rayDesc.direction * inlineTraceResult.GetHitT();
+			const uint primitiveIndex = inlineTraceResult.GetInstanceID();
 
 			const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[primitiveIndex];
 			const GPUMesh gpuMesh = GPUMeshes[primitiveData.meshId];
 
-			Barycentrics barycentrics;
-			barycentrics.Initialize(query.CommittedTriangleBarycentrics());
-
-			TriangleAttributes triangleAttribs = LoadTriangleAttributes(gpuMesh, barycentrics, query.CommittedPrimitiveIndex());
+			TriangleAttributes triangleAttribs = LoadTriangleAttributes(gpuMesh, inlineTraceResult.GetBarycentrics(), inlineTraceResult.GetPrimitiveIndex());
 
 			const float3 albedo = 0.8f;
 			const float metallic = 0.f;
 			const float roughness = 0.8f;
 
 			BRDFInput brdfInput;
-			brdfInput.V = -raySample;
+			brdfInput.V = raySample;
 			brdfInput.N = triangleAttribs.normal;
 			brdfInput.diffuseColor = CalculateDiffuseColor(albedo, metallic);
 			brdfInput.f0 = CalculateF0(albedo, metallic);

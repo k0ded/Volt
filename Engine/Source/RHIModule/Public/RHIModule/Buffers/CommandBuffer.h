@@ -17,7 +17,6 @@
 #include <CoreUtilities/Containers/StackVector.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Allocators/Handle.h>
-#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt::RHI
 {

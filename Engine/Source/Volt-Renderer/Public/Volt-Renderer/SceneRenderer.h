@@ -51,6 +51,7 @@ namespace Volt
 	{
 		std::string debugName;
 		glm::uvec2 initialResolution = { 1280, 720 };
+		bool drawDebug = false;
 
 		Ref<RenderScene> renderScene;
 	};
@@ -116,7 +117,7 @@ namespace Volt
 		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
-		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer);
+		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer, RGTextureRef indirectLightTexture);
 		void AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture);
 		void AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture);
 		/////////////////////////
@@ -159,6 +160,7 @@ namespace Volt
 		JobCounterRef m_renderGraphExecutionCounter = nullptr;
 
 		RenderGraphDebugger m_renderGraphDebugger;
+		SceneRendererCreateInfo m_createInfo;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;
 

@@ -7,6 +7,7 @@
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
 #include "Volt-Renderer/Utility/ScatteredBufferUpload.h"
 #include "Volt-Renderer/Texture/Texture2D.h"
+#include "Volt-Renderer/Debug/DebugRenderer.h"
 
 #include <RenderCore/Shader/GlobalShader.h>
 
@@ -28,7 +29,16 @@ VT_DEFINE_LOG_CATEGORY(LogRenderScene);
 
 namespace Volt
 {
-	static ConsoleVariable<int32_t> s_logRenderSceneUpdatedCVar("r.RenderScene.LogUpdates", 0, "Whether or not to log Render Scene updates");
+	static ConsoleVariable<int32_t> s_logRenderSceneUpdatedCVar(
+		"r.RenderScene.LogUpdates", 
+		0, 
+		"Whether or not to log Render Scene updates");
+
+	static ConsoleVariable<int32_t> s_visualizeRenderScenePrimitiveBoundingSpheres(
+		"r.RenderScene.VisualizePrimitiveBoundingSpheres",
+		0,
+		"Whether of not to visualize render primitive bounding spheres."
+	);
 
 	RenderScene::RenderScene(EntityScene* sceneRef)
 		: m_scene(sceneRef)
@@ -72,6 +82,7 @@ namespace Volt
 		UpdateInvalidPrimitiveData(renderGraph);
 		CompactValidPrimitiveDrawDatas(renderGraph);
 		BuildPerMeshIndirectDrawCommands(renderGraph);
+		m_meshRenderCommandBuilder.Build(*this, renderGraph);
 
 		// Temporary animation sampling
 		m_currentBoneCount = 0;
@@ -110,6 +121,11 @@ namespace Volt
 		if (m_rayTracingScene)
 		{
 			m_rayTracingScene->Update();
+		}
+
+		if (s_visualizeRenderScenePrimitiveBoundingSpheres.GetValue())
+		{
+			VisualizeRenderPrimitives();
 		}
 
 		renderGraph.EndMarker();
@@ -373,6 +389,30 @@ namespace Volt
 		}
 
 		return *it;
+	}
+
+	void RenderScene::VisualizeRenderPrimitives()
+	{
+		auto transformPosition = [](const glm::vec3& pos, const glm::vec3& translation, const glm::vec3& scale, const glm::quat& rotation) 
+		{
+			glm::vec3 v = pos * scale;
+			glm::vec3 rotXYZ = glm::vec3(rotation.x, rotation.y, rotation.z);
+
+			v = v + 2.f * glm::cross(rotXYZ, glm::cross(rotXYZ, v) + rotation.w * v);
+			v += translation;
+
+			return v;
+		};
+
+		for (const PrimitiveDrawData& primitive : m_primitiveDrawData)
+		{
+			const GPUMesh& gpuMesh = m_gpuMeshes.at(primitive.meshId);
+		
+			const float maxScale = glm::max(glm::max(primitive.scale.x, primitive.scale.y), primitive.scale.z);
+			const glm::vec3 center = transformPosition(gpuMesh.center, primitive.position, primitive.scale, primitive.rotation);
+
+			Renderer::GetDebugRenderer().DrawLineSphere(center, maxScale * gpuMesh.radius, 1.f);
+		}
 	}
 
 	bool RenderScene::OnPreRenderEvent(AppPreRenderEvent& event)
@@ -715,6 +755,8 @@ namespace Volt
 				auto& data = bufferUpload.AddUploadItem(invalidPrimitive.index);
 				BuildSinglePrimitiveDrawData(data, renderObject);
 
+				m_primitiveDrawData[invalidPrimitive.index] = data;
+
 				if (s_logRenderSceneUpdatedCVar.GetValue())
 				{
 					VT_LOGC(Trace, LogRenderScene, "Primitive Data attached to entity {} was uploaded to index {}.", data.entityId, invalidPrimitive.index);
@@ -738,6 +780,8 @@ namespace Volt
 
 	void RenderScene::BuildPerMeshIndirectDrawCommands(RenderGraph& renderGraph)
 	{
+		VT_PROFILE_FUNCTION();
+
 		m_buffers.perMeshIndirectDrawCommands = renderGraph.CreateBuffer(RGBufferDesc::CreateIndirectDesc<RHI::DrawIndexedIndirectCommand>(m_gpuMeshes.size(), "RenderScene.PerMeshIndirectDrawCommands", RHI::MemoryUsage::CPUToGPU));
 		
 		Vector<RHI::DrawIndexedIndirectCommand> commands;

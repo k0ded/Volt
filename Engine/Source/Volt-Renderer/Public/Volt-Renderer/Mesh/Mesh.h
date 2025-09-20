@@ -72,6 +72,7 @@ namespace Volt
 		void SetVertices(const Vector<glm::vec3>& vertexPositions, const Vector<VertexMaterialData>& vertexMaterialData, const Vector<VertexAnimationData>& vertexAnimationData);
 		void SetIndices(const Vector<uint32_t>& indices);
 		void SetSubMeshes(const Vector<SubMesh>& subMeshes);
+		void SetMaterialTable(const MaterialTable& materialTable);
 
 		bool IsValid() const;
 

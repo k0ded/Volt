@@ -53,6 +53,11 @@ float3 F_Schlick(float3 F0, float3 F90, float u)
     return F0 + (F90 - F0) * pow(1.f - u, 5.f);
 }
 
+float3 LambertDiffuse(float3 diffuse)
+{
+    return diffuse / PI;
+}
+
 float3 Fr_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness, float3 diffuseColor)
 {
     float energyBias = lerp(0.f, 0.5f, linearRoughness);

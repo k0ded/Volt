@@ -188,6 +188,8 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		m_temporaryDataAllocator.Reserve(10 * 1024 * 1024);
+
 		RHI::FenceCreateInfo createInfo{};
 		m_executionFence = RHI::Fence::Create(createInfo);
 	}
@@ -945,6 +947,11 @@ namespace Volt
 					// We need to increase the ref count of the pass as well.
 					pass->refCount++;
 				}
+				else if (!resourceAccess.resource->IsProducer(pass))
+				{
+					// Otherwise we add a reference to the resource
+					resourceAccess.resource->AddRef();
+				}
 			}
 		}
 
@@ -1490,8 +1497,7 @@ namespace Volt
 		}
 
 		// Each execution range gets their own command buffer.
-		// #TODO_Ivar: Get from a command buffer pool.
-		Vector<RefPtr<RHI::CommandBuffer>> commandBuffers;
+		Vector<RefPtr<PooledCommandBuffer>> commandBuffers;
 		commandBuffers.resize(passExecutionRanges.size());
 
 		for (size_t i = 0; i < passExecutionRanges.size(); ++i)
@@ -1515,9 +1521,9 @@ namespace Volt
 
 		// This function executes the provided pass range.
 		constexpr auto executePassRangeFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer, const PassExecutionRange& executionRange,
-			const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, const uint32_t index, const uint32_t numExecutionRanges)
+			const Vector<RefPtr<PooledCommandBuffer>>& commandBuffers, const uint32_t index, const uint32_t numExecutionRanges)
 		{
-			RefPtr<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index);
+			RefPtr<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index)->Get();
 
 			commandBuffer->Begin();
 
@@ -1564,14 +1570,14 @@ namespace Volt
 		shaderParameterUniformBuffer->Unmap();
 
 		// This function is responsible for executing the recorded command buffers.
-		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
+		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<PooledCommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
 		{
 			RHI::DeviceQueueExecuteInfo executeInfo{};
 			executeInfo.commandBuffers.resize(commandBuffers.size());
 
 			for (size_t i = 0; i < commandBuffers.size(); ++i)
 			{
-				executeInfo.commandBuffers[i] = commandBuffers[i];
+				executeInfo.commandBuffers[i] = commandBuffers[i]->Get();
 			}
 
 			executeInfo.fence = executionFence;
@@ -1579,11 +1585,6 @@ namespace Volt
 
 			renderGraphPtr->TransitionExternalResources();
 			renderGraphPtr->ExtractResources();
-
-			for (const auto& commandBuffer : commandBuffers)
-			{
-				CommandBufferPool::FreeCommandBuffer(commandBuffer);
-			}
 
 			// Destroy the RenderGraph.
 			JobRef destroyJob = JobSystem::CreateJob("RenderGraph::Destroy", ExecutionPriority::Render, [renderGraphPtr, shaderParameterUniformBuffer]()
@@ -1829,7 +1830,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		const size_t numShaderParameters = renderGraph.m_passes.size() * 2;
+		const size_t numShaderParameters = renderGraph.m_passes.size() * 10;
 
 		RGUniformBufferDesc desc{};
 		desc.count = 1;

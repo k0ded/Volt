@@ -40,11 +40,11 @@ namespace Volt
 
 		using JointVertexLinkMap = std::unordered_multimap<uint32_t, JointLink>;
 
-		void CreateVoltMeshFromFbxMesh(const fbxsdk::FbxMesh& fbxMesh, MeshInitializer& meshInitializer, const Vector<Ref<MaterialAsset>>& materials, const JointVertexLinkMap* jointVertexLinks) const;
+		void CreateVoltMeshFromFbxMesh(const fbxsdk::FbxMesh& fbxMesh, MeshInitializer& meshInitializer, const Vector<Ref<MaterialAsset>>& materials, const MeshSourceImportConfig& importConfig, const JointVertexLinkMap* jointVertexLinks) const;
 		void CreateVoltSkeletonFromFbxSkeleton(const FbxSkeletonContainer& fbxSkeleton, Ref<Skeleton> destinationSkeleton) const;
 
 		void FindJointVertexLinksAndSetupSkeleton(const fbxsdk::FbxMesh& fbxMesh, FbxSkeletonContainer& inOutSkeleton, JointVertexLinkMap& outVertexLinks) const;
-		void CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const FbxVertex* vertices, size_t indexCount, const std::string& name) const;
+		void CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const MeshSourceImportConfig& importConfig, const FbxVertex* vertices, size_t indexCount, const std::string& name) const;
 
 		void CreateNonIndexedMesh(const fbxsdk::FbxMesh& fbxMesh, Vector<FbxVertex>& outVertices, const JointVertexLinkMap* jointVertexLinks) const;
 

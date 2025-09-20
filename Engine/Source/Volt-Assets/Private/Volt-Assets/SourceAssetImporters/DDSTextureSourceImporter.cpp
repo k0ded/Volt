@@ -4,6 +4,8 @@
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
+#include <RenderCore/CommandBufferPool.h>
+
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
@@ -160,7 +162,8 @@ namespace Volt
 
 		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 		commandBuffer->Begin();
 		commandBuffer->BeginMarker(std::format("Import Texture {}", filepath.string()), { 1.f, 1.f, 1.f, 1.f });

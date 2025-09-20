@@ -5,7 +5,7 @@
 #include <mutex>
 #include <shared_mutex>
 
-template<typename T, typename AllocatorType = HeapAllocator>
+template<typename T, typename AllocatorType = DefaultHeapAllocator>
 class ThreadSafeVector : protected Vector<T, AllocatorType>
 {
 public:

@@ -1,16 +1,15 @@
 #pragma once
 
-#include "CoreUtilities/Allocators/HeapAllocator.h"
-
 #include "CoreUtilities/StringView.h"
 #include "CoreUtilities/CompressedPair.h"
+#include "CoreUtilities/Allocators/ContainerAllocators.h"
 
 #include <algorithm>
 #include <iterator>
 
 // License in Engine\Source\ThirdParty\eastl
 
-template<typename T, typename Allocator = HeapAllocator>
+template<typename T, typename Allocator = DefaultHeapAllocator>
 class BasicString
 {
 public:

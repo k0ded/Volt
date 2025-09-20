@@ -1,6 +1,8 @@
 #include "Volt-ImGui/ImGuiRenderer.h"
 #include "Volt-ImGui/ImGuiRenderTargetManager.h"
 
+#include <RenderCore/CommandBufferPool.h>
+
 #include <RHIModule/Graphics/Swapchain.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Memory/Allocation.h>
@@ -358,7 +360,8 @@ namespace Volt
 				stagingAlloc->Unmap();
 			}
 
-			RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+			RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+			RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 			RawPtr<RHI::Image> image = (RHI::Image*)textureData->GetTexID();
 

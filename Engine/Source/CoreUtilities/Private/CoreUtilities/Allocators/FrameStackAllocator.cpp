@@ -5,6 +5,11 @@
 
 FrameStackAllocator g_frameStackAllocator;
 
+FrameStackAllocator::FrameStackAllocator()
+{
+	m_linearAllocator.Reserve(FrameStackSize);
+}
+
 void* FrameStackAllocator::AllocateOnStack(size_t size, size_t alignment)
 {
 	m_numAllocations++;

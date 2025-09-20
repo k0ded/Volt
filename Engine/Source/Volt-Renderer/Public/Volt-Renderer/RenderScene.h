@@ -3,6 +3,7 @@
 #include "Volt-Renderer/Config.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
+#include "Volt-Renderer/MeshRenderCommandBuilder.h"
 
 #include <RenderCore/Resources/GrowingGPUBuffer.h>
 #include <RHIModule/RayTracing/RayTracingResuorceTable.h>
@@ -101,6 +102,7 @@ namespace Volt
 		VT_NODISCARD VT_INLINE std::span<const PrimitiveDrawData> GetPrimitiveDrawData() const { return m_primitiveDrawData; }
 		VT_NODISCARD VT_INLINE Ref<RayTracingScene> GetRayTracingScene() const { return m_rayTracingScene; }
 		VT_NODISCARD VT_INLINE RefPtr<RHI::RayTracingResourceTable> GetRayTracingResourceTable() const { return m_rayTracingResourceTable; }
+		VT_NODISCARD VT_INLINE const MeshRenderCommandBuilder& GetMeshRenderCommandBuilder() const { return m_meshRenderCommandBuilder; }
 
 	private:
 		void BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial);
@@ -119,6 +121,10 @@ namespace Volt
 		void BuildPerMeshIndirectDrawCommands(RenderGraph& renderGraph);
 
 		void UpdateInvalidLights(RenderGraph& renderGraph);
+
+		void BuildRenderCommands();
+
+		void VisualizeRenderPrimitives();
 
 		bool OnPreRenderEvent(AppPreRenderEvent& event);
 
@@ -207,6 +213,7 @@ namespace Volt
 		std::mutex m_meshUpdateMutex;
 
 		RefPtr<RHI::RayTracingResourceTable> m_rayTracingResourceTable;
+		MeshRenderCommandBuilder m_meshRenderCommandBuilder;
 
 		// Scene Primitives
 		Vector<PrimitiveDrawData> m_primitiveDrawData;

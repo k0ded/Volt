@@ -44,14 +44,15 @@ namespace Volt
 		}
 	}
 
-	inline static BoundingSphere GetBoundingSphereFromVertices(const glm::vec3* vertexPtr, const size_t size)
+	inline static BoundingSphere GetBoundingSphereFromVertices(const glm::vec3* vertexPtr, const uint32_t* indices, size_t numIndices)
 	{
 		glm::vec3 minVertex(std::numeric_limits<float>::max());
 		glm::vec3 maxVertex(std::numeric_limits<float>::min());
 
-		for (size_t i = 0; i < size; i++)
+		for (size_t i = 0; i < numIndices; ++i)
 		{
-			const auto& vertex = vertexPtr[i];
+			const uint32_t index = indices[i];
+			const glm::vec3& vertex = vertexPtr[index];
 
 			minVertex = glm::min(minVertex, vertex);
 			maxVertex = glm::max(maxVertex, vertex);
@@ -60,10 +61,11 @@ namespace Volt
 		glm::vec3 extents = (maxVertex - minVertex) * 0.5f;
 		glm::vec3 origin = extents + minVertex;
 
-		float radius = 0.0f;
-		for (size_t i = 0; i < size; i++)
+		float radius = 0.f;
+		for (size_t i = 0; i < numIndices; ++i)
 		{
-			const auto& vertex = vertexPtr[i];
+			const uint32_t index = indices[i];
+			const glm::vec3& vertex = vertexPtr[index];
 
 			glm::vec3 offset = vertex - origin;
 			float distance = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
@@ -72,7 +74,6 @@ namespace Volt
 		}
 
 		radius = std::sqrt(radius);
-
 		return { origin, radius };
 	}
 
@@ -214,7 +215,9 @@ namespace Volt
 			Math::Decompose(subMesh.transform, t, r, s);
 
 			const glm::vec3* positionData = &m_vertexContainer.positions.at(subMesh.vertexStartOffset);
-			BoundingSphere boundingSphere = GetBoundingSphereFromVertices(positionData, subMesh.vertexCount);
+			const uint32_t* indices = &m_indices[subMesh.indexStartOffset];
+
+			BoundingSphere boundingSphere = GetBoundingSphereFromVertices(positionData, indices, subMesh.indexCount);
 
 			const float maxScale = glm::max(glm::max(s.x, s.y), s.z);
 			boundingSphere.center = subMesh.transform * glm::vec4(boundingSphere.center, 1.f);
@@ -261,6 +264,11 @@ namespace Volt
 	void MeshInitializer::SetSubMeshes(const Vector<SubMesh>& subMeshes)
 	{
 		m_subMeshes = subMeshes;
+	}
+
+	void MeshInitializer::SetMaterialTable(const MaterialTable& materialTable)
+	{
+		m_materialTable = materialTable;
 	}
 
 	bool MeshInitializer::IsValid() const

@@ -43,19 +43,19 @@ namespace Volt
 		}
 	}
 
-	RefPtr<RHI::CommandBuffer> CommandBufferPool::GetCommandBuffer()
+	RefPtr<PooledCommandBuffer> CommandBufferPool::GetCommandBuffer()
 	{
 		VT_PROFILE_FUNCTION();
 		// We try to pop a command buffer from the stack.
 		RefPtr<RHI::CommandBuffer> result;
 		if (s_instance->m_commandBufferPool.Pop(result))
 		{
-			return result;
+			return RefPtr<PooledCommandBuffer>::Create(result);
 		}
 
 		// If no command buffers were available, we fallback to creating a new one.
 		result = RHI::CommandBuffer::Create();
-		return result;
+		return RefPtr<PooledCommandBuffer>::Create(result);
 	}
 
 	void CommandBufferPool::FreeCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer)
@@ -72,5 +72,15 @@ namespace Volt
 		{
 			m_commandBufferPool.Push(RHI::CommandBuffer::Create());
 		}
+	}
+
+	PooledCommandBuffer::~PooledCommandBuffer()
+	{
+		CommandBufferPool::FreeCommandBuffer(m_commandBuffer);
+	}
+
+	PooledCommandBuffer::PooledCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer)
+	{
+		m_commandBuffer = commandBuffer;
 	}
 }

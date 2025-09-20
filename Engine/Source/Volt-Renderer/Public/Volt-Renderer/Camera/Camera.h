@@ -33,6 +33,8 @@ namespace Volt
 		inline const glm::mat4& GetNonReversedProjection() const { return m_nonReversedProjectionMatrix; }
 		inline const glm::mat4& GetView() const { return m_viewMatrix; }
 
+		glm::mat4 GetTransform() const;
+
 		const glm::mat4 GetNonJitteredProjection() const;
 
 		inline const glm::vec3& GetPosition() const { return m_position; }

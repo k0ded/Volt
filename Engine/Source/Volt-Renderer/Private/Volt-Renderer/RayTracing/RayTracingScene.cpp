@@ -4,6 +4,8 @@
 #include "Volt-Renderer/RayTracing/RayTracingSceneGeometry.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 
+#include <RenderCore/CommandBufferPool.h>
+
 #include <EntitySystem/EntityScene.h>
 #include <EntitySystem/EntityHelper.h>
 
@@ -80,7 +82,9 @@ namespace Volt
 
 		m_accelerationStructure = RHI::AccelerationStructure::Create(asCreateInfo);
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		RHI::AccelerationStructureBuildGeometryInfo buildGeometryInfo{};
@@ -147,7 +151,9 @@ namespace Volt
 			m_instancesBuffer->GetResource()->Unmap();
 		}
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		RHI::AccelerationStructureBuildGeometryInfo buildGeometryInfo{};

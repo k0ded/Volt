@@ -5,9 +5,25 @@
 #include <RHIModule/Buffers/CommandBuffer.h>
 
 #include <CoreUtilities/Containers/AtomicStack.h>
+#include <CoreUtilities/Pointers/RefCounted.h>
 
 namespace Volt
 {
+	class VTRC_API PooledCommandBuffer : public RefCounted<PooledCommandBuffer>
+	{
+	public:
+		~PooledCommandBuffer() override;
+
+		VT_INLINE RefPtr<RHI::CommandBuffer> Get() const { return m_commandBuffer; }
+
+	private:
+		friend class RefPtr<PooledCommandBuffer>;
+
+		PooledCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer);
+
+		RefPtr<RHI::CommandBuffer> m_commandBuffer;
+	};
+
 	class VTRC_API CommandBufferPool
 	{
 	public:
@@ -16,7 +32,10 @@ namespace Volt
 
 		void Update();
 
-		static RefPtr<RHI::CommandBuffer> GetCommandBuffer();
+		// Returns a pooled command buffer, once the PooledCommandBuffer object
+		// is no longer referenced, it's command buffer will be freed.
+		static RefPtr<PooledCommandBuffer> GetCommandBuffer();
+
 		static void FreeCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer);
 
 	private:

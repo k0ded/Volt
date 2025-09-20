@@ -2,6 +2,8 @@
 
 #include "Volt-Renderer/RayTracing/RayTracingSceneGeometry.h"
 
+#include <RenderCore/CommandBufferPool.h>
+
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
@@ -32,7 +34,9 @@ namespace Volt
 
 		m_accelerationStructure = RHI::AccelerationStructure::Create(asCreateInfo);
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		RHI::AccelerationStructureBuildGeometryInfo buildGeometryInfo{};

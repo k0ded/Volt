@@ -32,6 +32,8 @@ namespace Volt
 
 	void BatchedShaderParameters::PopulateShaderParameterUniformBuffers(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& outShaderParameters)
 	{
+		VT_PROFILE_FUNCTION();
+
 		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
 		{
 			for (const BatchedShaderParameter* parameter : m_parameters)
@@ -54,6 +56,8 @@ namespace Volt
 
 	void BatchedShaderParameters::BindShaderBindingsToDescriptorTable(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable, const InlineVector<RenderContext::PerStageShaderParameters, 8>& shaderParameterUniformBuffers) const
 	{
+		VT_PROFILE_FUNCTION();
+
 		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
 		{
 			for (const BatchedShaderBinding* binding : m_bindings)
@@ -95,6 +99,11 @@ namespace Volt
 		{
 			descriptorTable->SetBufferView(perStageParameters.uniformBufferSRV->GetRHIView(), RHI::GetDescriptorSetIndexFromShaderStage(perStageParameters.shaderStage), RHI::Globals::SHADER_GLOBALS_BINDING);
 		}
+	}
+
+	BatchedShaderParameterAllocator::BatchedShaderParameterAllocator()
+	{
+		m_allocator.Reserve(MaxBatchedShaderParameterSize);
 	}
 
 	BatchedShaderParameterAllocator::~BatchedShaderParameterAllocator()

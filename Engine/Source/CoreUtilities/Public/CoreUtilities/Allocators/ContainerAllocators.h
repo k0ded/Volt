@@ -1,8 +1,35 @@
 #pragma once
 
-#include "CoreUtilities/Config.h"
+#include "CoreUtilities/Malloc.h"
+#include "CoreUtilities/Memory.h"
 
-#include <cstdint>
+class DefaultHeapAllocator
+{
+public:
+	template<typename ValueType>
+	class ForElementType
+	{
+	public:
+		inline static constexpr bool IsInline = false;
+
+		ForElementType()
+		{}
+
+		~ForElementType()
+		{}
+
+		VT_INLINE void* Allocate(size_t size, size_t alignment)
+		{
+			void* newAllocation = Memory::Malloc(size, alignment);
+			return newAllocation;
+		}
+
+		VT_INLINE void Free(void* allocation)
+		{
+			Memory::Free(allocation);
+		}
+	};
+};
 
 template<size_t NumValues>
 class InlineAllocator

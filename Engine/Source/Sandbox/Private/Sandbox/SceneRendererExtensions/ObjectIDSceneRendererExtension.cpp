@@ -74,7 +74,7 @@ Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& r
 		renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
 		context.BeginRendering(renderingInfo);
-		meshRenderer.Render(context, batchedShaderParameters);
+		meshRenderer.Render(context, *view.renderScene, batchedShaderParameters);
 		context.EndRendering();
 	});
 

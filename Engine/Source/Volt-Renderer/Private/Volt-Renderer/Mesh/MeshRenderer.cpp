@@ -23,10 +23,11 @@ namespace Volt
 
 	MeshRenderer::MeshRenderer(const MeshRenderer& other) noexcept
 	{
-		m_renderCommands = other.m_renderCommands;
-		m_meshBatches = other.m_meshBatches;
 		m_indirectDrawCommandsBuffer = other.m_indirectDrawCommandsBuffer;
 		m_primitiveDrawDataIndirection = other.m_primitiveDrawDataIndirection;
+		m_vertexShader = other.m_vertexShader;
+		m_pixelShader = other.m_pixelShader;
+		m_renderPipelineCreateInfo = other.m_renderPipelineCreateInfo;
 	}
 
 	void MeshRenderer::BuildRenderCommands(RenderGraph& renderGraph, Ref<RenderScene> renderScene, const CullingInfo& cullingInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo)
@@ -36,60 +37,13 @@ namespace Volt
 
 	void MeshRenderer::BuildRenderCommands(RenderGraph& renderGraph, RenderScene& renderScene, const CullingInfo& cullingInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo /*= {}*/)
 	{
-		constexpr auto func = [](const RenderPrimitiveData& primitive) { return true; };
-
-		BuildRenderCommandsInternal(renderGraph, renderScene, cullingInfo, func, vertexShader, pixelShader, pipelineInfo);
-	}
-
-	void MeshRenderer::BuildRenderCommandsWithFilter(RenderGraph& renderGraph, Ref<RenderScene> renderScene, const CullingInfo& cullingInfo, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo)
-	{
-		BuildRenderCommandsWithFilter(renderGraph, *renderScene, cullingInfo, filterFunc, vertexShader, pixelShader, pipelineInfo);
-	}
-
-	void MeshRenderer::BuildRenderCommandsWithFilter(RenderGraph& renderGraph, RenderScene& renderScene, const CullingInfo& cullingInfo, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo)
-	{
-		BuildRenderCommandsInternal(renderGraph, renderScene, cullingInfo, filterFunc, vertexShader, pixelShader, pipelineInfo);
-	}
-
-	void MeshRenderer::Render(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters) const
-	{
-		VT_PROFILE_FUNCTION();
-
-		RefPtr<RHI::CommandBuffer> commandBuffer = renderContext.GetRHICommandBuffer();
-
-		if (m_primitiveDrawDataIndirection)
-		{
-			batchedShaderParameters.AddBufferParameter("PrimitiveDrawDataIndirection"_sh, RHI::ShaderResourceType::TexelBuffer, m_primitiveDrawDataIndirection->GetRHIResource()->GetOrCreateView(RHI::BufferViewDesc{ .bufferFormat = RHI::PixelFormat::R32_UINT }));
-		}
-
-		for (const MeshBatch& meshBatch : m_meshBatches)
-		{
-			if (EnumValueContainsFlag(meshBatch.batchType, MeshBatchType::RenderPipeline))
-			{
-				InlineVector<RenderContext::PerStageShaderParameters, 8> perStageParameters = renderContext.AllocatePerStageShaderParameterBuffers(meshBatch.renderPipeline);
-
-				batchedShaderParameters.PopulateShaderParameterUniformBuffers(meshBatch.renderPipeline->GetShaderParameterMaps(), perStageParameters);
-				batchedShaderParameters.BindShaderBindingsToDescriptorTable(meshBatch.renderPipeline->GetShaderParameterMaps(), meshBatch.descriptorTable, perStageParameters);
-
-				commandBuffer->BindPipeline(meshBatch.renderPipeline);
-				commandBuffer->BindDescriptorTable(meshBatch.descriptorTable);
-			}
-
-			if (EnumValueContainsFlag(meshBatch.batchType, MeshBatchType::VertexIndexBuffer))
-			{
-				commandBuffer->BindVertexBuffers(meshBatch.vertexBuffers, 0);
-				commandBuffer->BindIndexBuffer(meshBatch.indexBuffer);
-			}
-
-			if (meshBatch.drawCommandOffset >= 0)
-			{
-				commandBuffer->DrawIndexedIndirect(m_indirectDrawCommandsBuffer->GetRHIResource()->GetRHIBuffer(), meshBatch.drawCommandOffset * sizeof(RHI::DrawIndexedIndirectCommand), 1, 0);
-			}
-		}
+		BuildRenderCommandsInternal(renderGraph, renderScene, cullingInfo, vertexShader, pixelShader, pipelineInfo);
 	}
 
 	void SetMaterialParametersInDescriptorTable(Weak<RenderMaterial> material, RefPtr<RHI::RenderPipeline> renderPipeline, RefPtr<RHI::DescriptorTable> descriptorTable)
 	{
+		VT_PROFILE_FUNCTION();
+
 		const auto& materialTextures = material->GetTextures();
 
 		const Vector<RHI::ShaderParameterMap>& shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
@@ -124,6 +78,70 @@ namespace Volt
 
 					descriptorTable->SetSamplerState(sampler, binding.set, binding.binding);
 				}
+			}
+		}
+	}
+
+	void MeshRenderer::Render(RenderContext& renderContext, RenderScene& renderScene, BatchedShaderParameters& batchedShaderParameters) const
+	{
+		VT_PROFILE_FUNCTION();
+
+		RefPtr<RHI::CommandBuffer> commandBuffer = renderContext.GetRHICommandBuffer();
+
+		if (m_primitiveDrawDataIndirection)
+		{
+			batchedShaderParameters.AddBufferParameter("PrimitiveDrawDataIndirection"_sh, RHI::ShaderResourceType::TexelBuffer, m_primitiveDrawDataIndirection->GetRHIResource()->GetOrCreateView(RHI::BufferViewDesc{ .bufferFormat = RHI::PixelFormat::R32_UINT }));
+		}
+
+		const bool shouldOverrideMaterials = m_vertexShader && m_pixelShader;
+
+		const MeshRenderCommandBuilder& meshRenderCommandBuilder = renderScene.GetMeshRenderCommandBuilder();
+
+		RefPtr<RHI::RenderPipeline> activeRenderPipeline;
+		RefPtr<RHI::DescriptorTable> activeDescriptorTable;
+
+		RHI::RenderPipelineCreateInfo tempRenderPipelineInfo = m_renderPipelineCreateInfo;
+		tempRenderPipelineInfo.shaders.resize(2);
+		tempRenderPipelineInfo.shaders[0] = m_vertexShader;
+
+		if (shouldOverrideMaterials)
+		{
+			tempRenderPipelineInfo.shaders[1] = m_pixelShader;
+			activeRenderPipeline = PipelineStateCache::GetRenderPipeline(tempRenderPipelineInfo);
+		}
+
+		for (const MeshRenderCommandBuilder::MeshBatch& meshBatch : meshRenderCommandBuilder.GetMeshBatches())
+		{
+			VT_PROFILE_SCOPE("Draw Mesh batch");
+
+			if (EnumValueContainsFlag(meshBatch.batchType, MeshBatchType::RenderPipeline))
+			{
+				if (!shouldOverrideMaterials)
+				{
+					tempRenderPipelineInfo.shaders[1] = meshBatch.pixelShader;
+					activeRenderPipeline = PipelineStateCache::GetRenderPipeline(tempRenderPipelineInfo);
+				}
+				activeDescriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(activeRenderPipeline);
+				SetMaterialParametersInDescriptorTable(meshBatch.renderMaterial, activeRenderPipeline, activeDescriptorTable);
+
+				InlineVector<RenderContext::PerStageShaderParameters, 8> perStageParameters = renderContext.AllocatePerStageShaderParameterBuffers(activeRenderPipeline);
+
+				batchedShaderParameters.PopulateShaderParameterUniformBuffers(activeRenderPipeline->GetShaderParameterMaps(), perStageParameters);
+				batchedShaderParameters.BindShaderBindingsToDescriptorTable(activeRenderPipeline->GetShaderParameterMaps(), activeDescriptorTable, perStageParameters);
+
+				commandBuffer->BindPipeline(activeRenderPipeline);
+				commandBuffer->BindDescriptorTable(activeDescriptorTable);
+			}
+
+			if (EnumValueContainsFlag(meshBatch.batchType, MeshBatchType::VertexIndexBuffer))
+			{
+				commandBuffer->BindVertexBuffers(meshBatch.vertexBuffers, 0);
+				commandBuffer->BindIndexBuffer(meshBatch.indexBuffer);
+			}
+
+			if (meshBatch.drawCommandOffset >= 0)
+			{
+				commandBuffer->DrawIndexedIndirect(m_indirectDrawCommandsBuffer->GetRHIResource()->GetRHIBuffer(), meshBatch.drawCommandOffset * sizeof(RHI::DrawIndexedIndirectCommand), 1, 0);
 			}
 		}
 	}
@@ -173,196 +191,40 @@ namespace Volt
 	};
 	REGISTER_SHADER(CompactAndWriteRenderCommandsCS, "Engine/Shaders/Source/RenderPipelineLegacy/CullAndWriteRenderCommands.hlsl", "CompactAndWriteRenderCommandsCS", Compute);
 
-	void MeshRenderer::BuildRenderCommandsInternal(RenderGraph& renderGraph, RenderScene& renderScene, const CullingInfo& cullingInfo, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo /*= {}*/)
+	void MeshRenderer::BuildRenderCommandsInternal(RenderGraph& renderGraph, RenderScene& renderScene, const CullingInfo& cullingInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo /*= {}*/)
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_renderCommands.clear();
-		m_meshBatches.clear();
+		m_vertexShader = vertexShader;
+		m_pixelShader = pixelShader;
+		m_renderPipelineCreateInfo = pipelineInfo;
 
-		struct RenderCommandExt : public RenderCommand
-		{
-			size_t vertexIndexBufferHash;
-			size_t subMeshHash;
-			size_t renderPipelineHash;
-			
-			uint32_t subMeshIndex;
-			MeshBatch::VertexBufferVector vertexBuffers;
-			RefPtr<RHI::StorageBuffer> indexBuffer;
-			RefPtr<RHI::RenderPipeline> renderPipeline;
-			Weak<RenderMaterial> renderMaterial;
-			Weak<Mesh> mesh;
-		};
+		const MeshRenderCommandBuilder& meshRenderCommandBuilder = renderScene.GetMeshRenderCommandBuilder();
 
-		Vector<RenderCommandExt> renderCommandExts;
-		renderCommandExts.reserve(renderScene.GetNumRenderPrimitives());
-
-		Vector<uint32_t> validPrimitiveIndices;
-		validPrimitiveIndices.reserve(renderScene.GetNumRenderPrimitives());
-
-		// Counter
-		validPrimitiveIndices.push_back(0);
-
-		const bool usePrimitivePixelShader = pixelShader == nullptr;
-		const RHI::ShaderInfo& vertexShaderInfo = vertexShader->GetShaderInfo();
-
-		// First get all commands, their info and the required hashes for sorting.
-		for (const RenderPrimitiveData& renderPrimitive : renderScene)
-		{
-			if (!filterFunc(renderPrimitive))
-			{
-				continue;
-			}
-
-			const SubMesh& subMesh = renderPrimitive.mesh->GetSubMeshes().at(renderPrimitive.subMeshIndex);
-
-			auto& newCommand = renderCommandExts.emplace_back();
-			newCommand.indexBuffer = renderPrimitive.mesh->GetIndexBuffer()->GetResource();
-			newCommand.primitiveIndex = renderScene.GetPrimitiveIndexFromID(renderPrimitive.id);
-			newCommand.mesh = renderPrimitive.mesh;
-			newCommand.subMeshIndex = renderPrimitive.subMeshIndex;
-
-			for (const auto& [index, layout] : vertexShaderInfo.vertexLayout)
-			{
-				if (index == 0)
-				{
-					newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexPositionsBuffer()->GetResource());
-				}
-				else if (index == 1)
-				{
-					newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexMaterialBuffer()->GetResource());
-				}
-				else if (index == 2)
-				{
-					newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexAnimationInfoBuffer()->GetResource());
-				}
-			}
-
-			RHI::RenderPipelineCreateInfo renderPipelineInfo = pipelineInfo;
-
-			RefPtr<RHI::Shader> primitivePixelShader;
-
-			// No pixel shader means that we will use the materials shader.
-			if (!pixelShader)
-			{
-				primitivePixelShader = renderPrimitive.material->GetPixelShader();
-			}
-			else
-			{
-				primitivePixelShader = pixelShader;
-			}
-
-			// If there still is no pixel shader, we will use the default one
-			if (!primitivePixelShader)
-			{
-				primitivePixelShader = ShaderMap::Get<OpaqueDefaultPixelPS>();
-			}
-
-			renderPipelineInfo.shaders = { vertexShader, primitivePixelShader };
-			newCommand.renderPipeline = PipelineStateCache::GetRenderPipeline(renderPipelineInfo);
-			newCommand.renderMaterial = renderPrimitive.material;
-
-			newCommand.vertexIndexBufferHash = newCommand.indexBuffer.GetHash();
-
-			for (const auto& vertexBuffer : newCommand.vertexBuffers)
-			{
-				newCommand.vertexIndexBufferHash = Math::HashCombine(newCommand.vertexIndexBufferHash, vertexBuffer.GetHash());
-			}
-
-			newCommand.subMeshHash = subMesh.GetHash();
-			newCommand.renderPipelineHash = newCommand.renderPipeline->GetHash();
-
-			validPrimitiveIndices[0]++;
-			validPrimitiveIndices.push_back(newCommand.primitiveIndex);
-		}
-
-		// Now sort the commands to get the correct order
-		std::sort(renderCommandExts.begin(), renderCommandExts.end(), [](const RenderCommandExt& lhs, const RenderCommandExt& rhs)
-		{
-			if (lhs.vertexIndexBufferHash == rhs.vertexIndexBufferHash)
-			{
-				if (lhs.subMeshHash == rhs.subMeshHash)
-				{
-					return lhs.renderPipelineHash < rhs.renderPipelineHash;
-				}
-
-				return lhs.subMeshHash < rhs.subMeshHash;
-			}
-
-			return lhs.vertexIndexBufferHash < rhs.vertexIndexBufferHash;
-		});
-
-		// And lastly we build the ranges and put the render commands into the final container.
-		m_renderCommands.reserve(renderCommandExts.size());
-
-		size_t lastVertexIndexBufferHash = 0;
-		size_t lastRenderPipelineHash = 0;
-
-		struct DefaultInvalid
-		{
-			int32_t value = -1;
-		};
-
-		Vector<uint32_t> meshIds;
-		Vector<size_t> renderPipelineHashes;
-		Vector<DefaultInvalid> primitiveDrawCommandIndex;
-
-		for (size_t i = 0; i < renderCommandExts.size(); ++i)
-		{
-			const RenderCommandExt& renderCommandExt = renderCommandExts.at(i);
-			const uint32_t meshId = renderScene.GetMeshID(renderCommandExt.mesh, renderCommandExt.subMeshIndex);
-
-			if (i == 0)
-			{
-				meshIds.emplace_back(meshId);
-				renderPipelineHashes.emplace_back(renderCommandExt.renderPipelineHash);
-			}
-			else
-			{
-				if (meshId != meshIds.back() || (renderCommandExt.renderPipelineHash != renderPipelineHashes.back() && usePrimitivePixelShader))
-				{
-					meshIds.emplace_back(meshId);
-					renderPipelineHashes.emplace_back(renderCommandExt.renderPipelineHash);
-				}
-			}
-
-			primitiveDrawCommandIndex.resize(std::max(renderCommandExt.primitiveIndex + 1, static_cast<uint32_t>(primitiveDrawCommandIndex.size())));
-			primitiveDrawCommandIndex[renderCommandExt.primitiveIndex].value = static_cast<int32_t>(meshIds.size() - 1);
-		}
-
-		if (!meshIds.empty())
+		if (meshRenderCommandBuilder.HasRenderCommands())
 		{
 			renderGraph.BeginMarker("MeshRenderer::BuildRenderCommands");
 
-			RGBufferRef drawCommandsToCopyIndices = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(meshIds.size(), "MeshRenderer.DrawCommandsToCopyIndices", RHI::MemoryUsage::CPUToGPU));
-			AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(drawCommandsToCopyIndices, RHI::PixelFormat::R32_UINT), meshIds.data(), meshIds.byte_size());
-
-			RGBufferRef primitiveIndexToDrawCommandIndex = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<int32_t>(primitiveDrawCommandIndex.size(), "MeshRenderer.PrimitiveIndexToDrawCommandIndex", RHI::MemoryUsage::CPUToGPU));
-			AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(primitiveIndexToDrawCommandIndex, RHI::PixelFormat::R32_SINT), primitiveDrawCommandIndex.data(), primitiveDrawCommandIndex.byte_size());
-
-			RGBufferRef validPrimitiveDrawDataIndices = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(validPrimitiveIndices.size(), "MeshRenderer.ValidPrimitiveIndices", RHI::MemoryUsage::CPUToGPU));
-			AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(validPrimitiveDrawDataIndices, RHI::PixelFormat::R32_UINT), validPrimitiveIndices.data(), validPrimitiveIndices.byte_size());
-
-			RGBufferRef drawCommands = renderGraph.CreateBuffer(RGBufferDesc::CreateIndirectDesc<RHI::DrawIndexedIndirectCommand>(meshIds.size(), "MeshRenderer.DrawCommands"));
+			RGBufferRef drawCommands = renderGraph.CreateBuffer(RGBufferDesc::CreateIndirectDesc<RHI::DrawIndexedIndirectCommand>(meshRenderCommandBuilder.NumDrawCommands(), "MeshRenderer.DrawCommands"));
 
 			// Copy draw commands
 			{
 				CopyIndirectDrawCommandsCS::Parameters* passParameters = renderGraph.AllocParameters<CopyIndirectDrawCommandsCS::Parameters>();
 				passParameters->RWDrawCommands = renderGraph.CreateUAV(drawCommands, RHI::PixelFormat::R32_UINT);
 				passParameters->PrebuiltDrawCommands = renderGraph.CreateSRV(renderScene.GetGPUSceneBuffers().perMeshIndirectDrawCommands, RHI::PixelFormat::R32_UINT);
-				passParameters->DrawCommandsToCopyIndices = renderGraph.CreateSRV(drawCommandsToCopyIndices, RHI::PixelFormat::R32_UINT);
-				passParameters->NumCommandsToCopy = static_cast<uint32_t>(meshIds.size());
+				passParameters->DrawCommandsToCopyIndices = renderGraph.CreateSRV(meshRenderCommandBuilder.GetDrawCommandsToCopyIndicesBuffer(), RHI::PixelFormat::R32_UINT);
+				passParameters->NumCommandsToCopy = meshRenderCommandBuilder.NumDrawCommands();
 
 				auto shader = ShaderMap::Get<CopyIndirectDrawCommandsCS>();
 				ComputeShaderUtils::AddPass<CopyIndirectDrawCommandsCS>(renderGraph,
 					"CopyDrawCommands",
 					shader,
 					passParameters,
-					{ Math::DivideRoundUp(meshIds.size(), 64ull), 1, 1 });
+					{ Math::DivideRoundUp(meshRenderCommandBuilder.NumDrawCommands(), 64u), 1, 1 });
 			}
 
 			// Cull render primitives
-			RGBufferRef perMeshDrawCommandCount = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(meshIds.size(), "MeshRenderer.PerMeshDrawCommandCount"));
+			RGBufferRef perMeshDrawCommandCount = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(meshRenderCommandBuilder.NumDrawCommands(), "MeshRenderer.PerMeshDrawCommandCount"));
 			RGBufferRef primitivesToDrawCounter = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(1, "MeshRenderer.PrimitivesToDrawCounter"));
 			RGBufferRef primitivesToDraw = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(renderScene.GetNumRenderPrimitives(), "MeshRenderer.PrimitivesToDraw"));
 			{
@@ -373,8 +235,8 @@ namespace Volt
 				passParameters->RWPerMeshDrawCommandCount = renderGraph.CreateUAV(perMeshDrawCommandCount, RHI::PixelFormat::R32_UINT);
 				passParameters->RWPrimitivesToDrawCounter = renderGraph.CreateUAV(primitivesToDrawCounter, RHI::PixelFormat::R32_UINT);
 				passParameters->RWPrimitivesToDraw = renderGraph.CreateUAV(primitivesToDraw, RHI::PixelFormat::R32_UINT);
-				passParameters->ValidPrimitiveDrawDataIndices = renderGraph.CreateSRV(validPrimitiveDrawDataIndices, RHI::PixelFormat::R32_UINT);
-				passParameters->PrimitiveIndexToDrawCommandIndex = renderGraph.CreateSRV(primitiveIndexToDrawCommandIndex, RHI::PixelFormat::R32_SINT);
+				passParameters->ValidPrimitiveDrawDataIndices = renderGraph.CreateSRV(meshRenderCommandBuilder.GetValidPrimitiveDrawDataIndicesBuffer(), RHI::PixelFormat::R32_UINT);
+				passParameters->PrimitiveIndexToDrawCommandIndex = renderGraph.CreateSRV(meshRenderCommandBuilder.GetPrimitiveIndexToDrawCommandIndexBuffer(), RHI::PixelFormat::R32_SINT);
 				passParameters->GPUScene = renderScene.GetGPUSceneParameters(renderGraph);
 				passParameters->ViewMatrix = cullingInfo.viewMatrix;
 				passParameters->CullingFrustum = cullingInfo.cullingFrustum;
@@ -391,10 +253,10 @@ namespace Volt
 			}
 
 			// Prefix Sum
-			RGBufferRef primitiveStartOffset = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(meshIds.size(), "MeshRenderer.PrimitiveStartOffset"));
+			RGBufferRef primitiveStartOffset = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(meshRenderCommandBuilder.NumDrawCommands(), "MeshRenderer.PrimitiveStartOffset"));
 			{
 				PrefixSumTechnique prefixSum{ renderGraph };
-				prefixSum.Execute(perMeshDrawCommandCount, primitiveStartOffset, static_cast<uint32_t>(meshIds.size()));
+				prefixSum.Execute(perMeshDrawCommandCount, primitiveStartOffset, meshRenderCommandBuilder.NumDrawCommands());
 			}
 
 			// Compact and write render commands
@@ -406,7 +268,7 @@ namespace Volt
 				passParameters->PrimitiveStartOffset = renderGraph.CreateSRV(primitiveStartOffset, RHI::PixelFormat::R32_UINT);
 				passParameters->PrimitivesToDraw = renderGraph.CreateSRV(primitivesToDraw, RHI::PixelFormat::R32_UINT);
 				passParameters->PrimitivesToDrawCounter = renderGraph.CreateSRV(primitivesToDrawCounter, RHI::PixelFormat::R32_UINT);
-				passParameters->PrimitiveIndexToDrawCommandIndex = renderGraph.CreateSRV(primitiveIndexToDrawCommandIndex, RHI::PixelFormat::R32_SINT);
+				passParameters->PrimitiveIndexToDrawCommandIndex = renderGraph.CreateSRV(meshRenderCommandBuilder.GetPrimitiveIndexToDrawCommandIndexBuffer(), RHI::PixelFormat::R32_SINT);
 
 				auto shader = ShaderMap::Get<CompactAndWriteRenderCommandsCS>();
 				ComputeShaderUtils::AddPass<CompactAndWriteRenderCommandsCS>(renderGraph,
@@ -437,81 +299,6 @@ namespace Volt
 			m_primitiveDrawDataIndirection = primitiveDrawDataIndirection;
 
 			renderGraph.EndMarker();
-		}
-
-		MeshBatch* currentMeshBatch = nullptr;
-		size_t lastSubMeshHash = 0;
-
-		for (size_t i = 0; i < renderCommandExts.size(); ++i)
-		{
-			const RenderCommandExt& renderCommandExt = renderCommandExts.at(i);
-
-			if (i == 0)
-			{
-				currentMeshBatch = &m_meshBatches.emplace_back();
-				currentMeshBatch->batchType = MeshBatchType::VertexIndexBuffer | MeshBatchType::RenderPipeline;
-				currentMeshBatch->indexBuffer = renderCommandExt.indexBuffer;
-				currentMeshBatch->vertexBuffers = renderCommandExt.vertexBuffers;
-				currentMeshBatch->renderPipeline = renderCommandExt.renderPipeline;
-				currentMeshBatch->descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(renderCommandExt.renderPipeline);
-				currentMeshBatch->drawCommandOffset = 0;
-
-				SetMaterialParametersInDescriptorTable(renderCommandExt.renderMaterial, renderCommandExt.renderPipeline, currentMeshBatch->descriptorTable);
-
-				lastVertexIndexBufferHash = renderCommandExt.vertexIndexBufferHash;
-				lastRenderPipelineHash = renderCommandExt.renderPipelineHash;
-				lastSubMeshHash = renderCommandExt.subMeshHash;
-			}
-			else
-			{
-				MeshBatchType batchType = MeshBatchType::None;
-
-				if (renderCommandExt.vertexIndexBufferHash != lastVertexIndexBufferHash)
-				{
-					batchType |= MeshBatchType::VertexIndexBuffer;
-					lastVertexIndexBufferHash = renderCommandExt.vertexIndexBufferHash;
-				}
-
-				if (renderCommandExt.renderPipelineHash != lastRenderPipelineHash)
-				{
-					batchType |= MeshBatchType::RenderPipeline;
-					lastRenderPipelineHash = renderCommandExt.renderPipelineHash;
-				}
-
-				if (renderCommandExt.subMeshHash != lastSubMeshHash)
-				{
-					batchType |= MeshBatchType::SubMesh;
-					lastSubMeshHash = renderCommandExt.subMeshHash;
-				}
-
-				if (batchType != MeshBatchType::None)
-				{
-					currentMeshBatch = &m_meshBatches.emplace_back();
-					currentMeshBatch->batchType = batchType;
-					currentMeshBatch->drawCommandOffset = primitiveDrawCommandIndex[renderCommandExt.primitiveIndex].value;
-
-					if (EnumValueContainsFlag(batchType, MeshBatchType::VertexIndexBuffer))
-					{
-						currentMeshBatch->vertexBuffers = renderCommandExt.vertexBuffers;
-						currentMeshBatch->indexBuffer = renderCommandExt.indexBuffer;
-					}
-
-					if (EnumValueContainsFlag(batchType, MeshBatchType::RenderPipeline))
-					{
-						currentMeshBatch->renderPipeline = renderCommandExt.renderPipeline;
-						currentMeshBatch->descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(renderCommandExt.renderPipeline);
-
-						SetMaterialParametersInDescriptorTable(renderCommandExt.renderMaterial, renderCommandExt.renderPipeline, currentMeshBatch->descriptorTable);
-					}
-
-					if (EnumValueContainsFlag(batchType, MeshBatchType::SubMesh))
-					{
-						currentMeshBatch->drawCommandOffset = primitiveDrawCommandIndex[renderCommandExt.primitiveIndex].value;
-					}
-				}
-			}
-
-			m_renderCommands.emplace_back(renderCommandExt);
 		}
 	}
 }

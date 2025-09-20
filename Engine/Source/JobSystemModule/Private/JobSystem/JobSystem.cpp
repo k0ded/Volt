@@ -6,7 +6,6 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
-#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt
 {
@@ -16,6 +15,8 @@ namespace Volt
     {
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
+
+		m_workerAllocator.Reserve(sizeof(JobWorker) * NumMaxWorkers);
 
 		RegisterListener<AppTickEvent>(VT_BIND_EVENT_FN(JobSystem::OnTick));
 

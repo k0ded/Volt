@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreUtilities/Containers/AtomicBitVector.h"
-#include "CoreUtilities/Allocators/HeapAllocator.h"
 #include "CoreUtilities/Math/Math.h"
 
 #include <new>
@@ -36,7 +35,7 @@ constexpr bool IsAwaitPop(QueueWaitPolicy policy)
 	return policy == QueueWaitPolicy::PopAwait || policy == QueueWaitPolicy::BothWait;
 }
 
-template<typename DataType, QueueThreadingPolicy ThreadingPolicy, QueueWaitPolicy WaitingPolicy = QueueWaitPolicy::NoWaits, typename AllocatorType = HeapAllocator>
+template<typename DataType, QueueThreadingPolicy ThreadingPolicy, QueueWaitPolicy WaitingPolicy = QueueWaitPolicy::NoWaits, typename AllocatorType = DefaultHeapAllocator>
 class WorkQueue
 {
 public:
@@ -405,7 +404,7 @@ private:
 	int32_t m_capacity = 0;
 	int32_t m_indexEnd = 0;
 
-	AllocatorType m_allocator;
+	AllocatorType::template ForElementType<uint8_t> m_allocator;
 };
 
 ///// SPSC Specialization /////
@@ -789,5 +788,5 @@ private:
 	int32_t m_capacity = 0;
 	int32_t m_indexEnd = 0;
 
-	AllocatorType m_allocator;
+	AllocatorType::template ForElementType<uint8_t> m_allocator;
 };

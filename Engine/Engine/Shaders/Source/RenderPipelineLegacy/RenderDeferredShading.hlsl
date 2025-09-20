@@ -56,3 +56,14 @@ void MainCS(uint2 threadId : SV_DispatchThreadID)
         RWSceneColor[threadId] = float4(outputColor, 1.f);
     }
 }
+
+Texture2D<float4> IndirectLight;
+
+[numthreads(8, 8, 1)]
+void CompositeLightingCS(uint2 DispatchThreadID : SV_DispatchThreadID)
+{
+    const float4 directLight = RWSceneColor[DispatchThreadID];
+    const float4 indirectLight = IndirectLight[DispatchThreadID];
+
+    //RWSceneColor[DispatchThreadID] = float4(directLight.rgb + indirectLight.rgb, 1.f);
+}

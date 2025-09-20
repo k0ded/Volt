@@ -28,7 +28,7 @@ namespace Volt
 
 	using GLTFNodeIndex = size_t;
 
-	inline Vector<Ref<MaterialAsset>> CreateSceneMaterials(tinygltf::Model& gltfModel, MeshInitializer& meshInitializer, const MeshSourceImportConfig& importConfig)
+	inline Vector<Ref<MaterialAsset>> CreateSceneMaterials(tinygltf::Model& gltfModel, MaterialTable& materialTable, const MeshSourceImportConfig& importConfig)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -45,7 +45,7 @@ namespace Volt
 			Ref<MaterialAsset> material = AssetManager::CreateAsset<MaterialAsset>(importConfig.destinationDirectory, matName);
 			result.emplace_back(material);
 		
-			meshInitializer.AddMaterial(material->GetRenderMaterial(), static_cast<uint32_t>(result.size() - 1));
+			materialTable.SetMaterial(material->GetRenderMaterial(), static_cast<uint32_t>(result.size() - 1));
 		}
 
 		if (result.empty())
@@ -53,7 +53,7 @@ namespace Volt
 			Ref<MaterialAsset> material = AssetManager::CreateAsset<MaterialAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_DummyMaterial");
 			result.emplace_back(material);
 
-			meshInitializer.AddMaterial(material->GetRenderMaterial(), 0);
+			materialTable.SetMaterial(material->GetRenderMaterial(), 0);
 		}
 
 		return result;
@@ -345,21 +345,45 @@ namespace Volt
 			return {};
 		}
 
-		MeshInitializer meshInitializer;
-
-		Vector<Ref<MaterialAsset>> materials = CreateSceneMaterials(gltfModel, meshInitializer, importConfig);
-		Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
-
-		for (const auto& nodeIndex : gltfMeshNodes)
-		{
-			const auto& gltfNode = gltfModel.nodes[nodeIndex];
-			CreateVoltMeshFromGLTFMesh(gltfModel.meshes[gltfNode.mesh], gltfNode, gltfModel, meshInitializer, materials);
-		}
-
-		voltMesh->Initialize(meshInitializer, materials);
-
+		MaterialTable materialTable;
+		Vector<Ref<MaterialAsset>> materials = CreateSceneMaterials(gltfModel, materialTable, importConfig);
+		
 		Vector<Ref<Asset>> result;
-		result.emplace_back(voltMesh);
+		if (importConfig.combineMeshes)
+		{
+			MeshInitializer meshInitializer;
+			meshInitializer.SetMaterialTable(materialTable);
+
+			Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
+
+			for (const auto& nodeIndex : gltfMeshNodes)
+			{
+				const auto& gltfNode = gltfModel.nodes[nodeIndex];
+				CreateVoltMeshFromGLTFMesh(gltfModel.meshes[gltfNode.mesh], gltfNode, gltfModel, meshInitializer, materials);
+			}
+
+			voltMesh->Initialize(meshInitializer, materials);
+			result.emplace_back(voltMesh);
+		}
+		else
+		{
+			for (const auto& nodeIndex : gltfMeshNodes)
+			{
+				const auto& gltfNode = gltfModel.nodes[nodeIndex];
+
+				Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + gltfNode.name);
+				MeshInitializer meshInitializer;
+
+				CreateVoltMeshFromGLTFMesh(gltfModel.meshes[gltfNode.mesh], gltfNode, gltfModel, meshInitializer, materials);
+
+				const uint32_t materialIndex = meshInitializer.GetSubMeshes().at(0).materialIndex;
+				meshInitializer.AddMaterial(materialTable.GetMaterial(materialIndex), materialIndex);
+
+				voltMesh->Initialize(meshInitializer, { materials.at(materialIndex) });
+
+				result.emplace_back(voltMesh);
+			}
+		}
 
 		for (auto& material : materials)
 		{

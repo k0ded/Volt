@@ -10,7 +10,7 @@ namespace Volt
 	struct RenderView;
 	struct RenderLightData;
 
-	class CascadedDirectionalShadowTechnique
+	class CascadedShadowMapsTechnique
 	{
 	public:
 		struct Result
@@ -19,11 +19,12 @@ namespace Volt
 			RGUniformBufferRef uniformBuffer;
 		};
 
-		CascadedDirectionalShadowTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		CascadedShadowMapsTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		Result Execute(const RenderView& view, const RenderLightData& renderLightData);
 
 	private:
 		RGUniformBufferRef UploadUniformBufferData(const RenderView& view, const RenderLightData& renderLightData);
+		RGUniformBufferRef GenerateCascades(const RenderView& view, const RenderLightData& renderLightData);
 
 		RenderGraph& m_renderGraph;
 		RenderGraphBlackboard& m_blackboard;

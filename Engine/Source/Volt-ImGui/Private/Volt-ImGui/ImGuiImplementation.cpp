@@ -116,7 +116,9 @@ namespace Volt
 		}
 
 		// Composite all windows render targets to their respective swapchains.
-		RefPtr<RHI::CommandBuffer> commandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		const Map<Window*, ImGuiRenderTargetManager::RenderTarget>& renderTargets = m_renderTargetManager->GetAllRenderTargets();
@@ -213,7 +215,6 @@ namespace Volt
 		commandBuffer->End();
 
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
-		CommandBufferPool::FreeCommandBuffer(commandBuffer);
 	}
 	
 	void ImGuiImplementation::RenderPreviousFrameContextStack()

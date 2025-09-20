@@ -6,32 +6,15 @@
 #include "CoreUtilities/VoltAssert.h"
 #include "CoreUtilities/CompressedPair.h"
 
-#include "CoreUtilities/Allocators/HeapAllocator.h"
+#include "CoreUtilities/Allocators/ContainerAllocators.h"
 
 #include <initializer_list>
 #include <iterator>
 
-template<typename T, typename U>
-concept AllocatorIsTyped = requires {
-	typename T::template ForElementType<U>;
-};
-
-template<typename Allocator, typename T, bool = AllocatorIsTyped<Allocator, T>>
-struct GetAllocatorType
-{
-	using type = Allocator;
-};
-
-template<typename Allocator, typename T>
-struct GetAllocatorType<Allocator, T, true>
-{
-	using type = typename Allocator::template ForElementType<T>;
-};
-
 template<typename T, typename Allocator>
 struct VectorBase
 {
-	using allocator_type = GetAllocatorType<Allocator, T>::type;
+	using allocator_type = Allocator::template ForElementType<T>;
 	typedef size_t size_type;
 	typedef ptrdiff_t difference_type;
 
@@ -58,7 +41,7 @@ protected:
 	CompressedPair<T*, allocator_type> m_capacityAllocator;
 };
 
-template<typename T, typename AllocatorType = HeapAllocator>
+template<typename T, typename AllocatorType = DefaultHeapAllocator>
 class Vector : public VectorBase<T, AllocatorType>
 {
 private:

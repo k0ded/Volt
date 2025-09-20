@@ -2,16 +2,14 @@
 
 #include "CoreUtilities/Core.h"
 #include "CoreUtilities/Pointers/RefPtr.h"
-#include "CoreUtilities/Allocators/HeapAllocator.h"
+#include "CoreUtilities/Malloc.h"
 
 #include <atomic>
 
-template<typename Type, class AllocatorType = HeapAllocator>
+template<typename Type>
 class RefCounted
 {
 public:
-	using Allocator = AllocatorType;
-
 	RefCounted(const RefCounted&) noexcept = delete;
 	RefCounted& operator=(const RefCounted&) noexcept = delete;
 	RefCounted(RefCounted&&) noexcept = delete;
@@ -35,8 +33,7 @@ public:
 			Type* derived = const_cast<Type*>(static_cast<const Type*>(this));
 			derived->~Type();
 
-			Allocator allocator;
-			allocator.Free(derived);
+			Memory::Free(derived);
 		}
 	}
 

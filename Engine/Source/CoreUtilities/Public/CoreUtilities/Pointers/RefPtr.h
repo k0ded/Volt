@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CoreUtilities/Malloc.h"
+
 #include <xhash>
 
 template<typename T>
@@ -251,9 +253,7 @@ public:
 	template<typename... Args>
 	VT_INLINE static RefPtr<T> Create(Args&&... args)
 	{
-		typename T::Allocator allocator;
-
-		void* allocatedPtr = allocator.Allocate(sizeof(T), alignof(T));
+		void* allocatedPtr = Memory::Malloc(sizeof(T), alignof(T));
 		T* objectPtr = new (allocatedPtr) T(std::forward<Args>(args)...);
 		return RefPtr<T>(objectPtr);
 	}

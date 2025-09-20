@@ -12,6 +12,7 @@ namespace Volt
 	class VTRC_API RenderGraphBlackboard
 	{
 	public:
+		RenderGraphBlackboard();
 		~RenderGraphBlackboard();
 
 		template<typename T>
@@ -70,7 +71,7 @@ namespace Volt
 
 		inline static constexpr size_t BlackboardSize = 2048;
 
-		LinearAllocator<BlackboardSize> m_allocator;
+		LinearAllocator<> m_allocator;
 		Map<TypeTraits::TypeIndex, TypeInfo> m_typeInfos;
 	};
 }

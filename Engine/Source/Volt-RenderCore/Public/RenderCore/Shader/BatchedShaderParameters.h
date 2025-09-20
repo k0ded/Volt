@@ -12,7 +12,6 @@
 #include <RHIModule/Buffers/UniformBuffer.h>
 
 #include <CoreUtilities/Allocators/LinearAllocator.h>
-#include <CoreUtilities/Allocators//InlineAllocator.h>
 #include <CoreUtilities/DestructorHelper.h>
 
 namespace Volt
@@ -25,6 +24,7 @@ namespace Volt
 	class VTRC_API BatchedShaderParameterAllocator
 	{
 	public:
+		BatchedShaderParameterAllocator();
 		~BatchedShaderParameterAllocator();
 
 		template<typename T, typename... Args>
@@ -39,7 +39,7 @@ namespace Volt
 
 	private:
 		inline static constexpr size_t MaxBatchedShaderParameterSize = 1024;
-		LinearAllocator<MaxBatchedShaderParameterSize> m_allocator;
+		LinearAllocator<> m_allocator;
 		Vector<DestructorHelper> m_destructors;
 	};
 

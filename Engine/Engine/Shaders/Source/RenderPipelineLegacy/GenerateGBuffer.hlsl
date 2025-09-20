@@ -22,7 +22,7 @@ GBufferPixelShaderInput MainVS(in GBufferVertex input)
     const uint primitiveIndex = PrimitiveDrawDataIndirection[input.instanceId];
     const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[primitiveIndex];
 
-    const float3 normal = DecodeNormal(input.normal);
+    const float3 normal = UnpackNormalFromUInt32(input.normal);
     const float3 tangent = DecodeTangent(normal, input.tangent);
 
     GBufferPixelShaderInput result;

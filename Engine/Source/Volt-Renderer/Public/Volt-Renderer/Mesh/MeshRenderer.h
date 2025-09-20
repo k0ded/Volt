@@ -7,9 +7,9 @@
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Descriptors/DescriptorTable.h>
+#include <RHIModule/Shader/Shader.h>
 
 #include <CoreUtilities/Core.h>
-#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 #include <glm/glm.hpp>
 
@@ -21,14 +21,14 @@ namespace Volt
 	class BatchedShaderParameters;
 	struct RenderPrimitiveData;
 
-	enum class MeshBatchType : uint8_t
+	enum class MeshBatchTypeOld : uint8_t
 	{
 		None = 0,
 		VertexIndexBuffer = BIT(0),
 		RenderPipeline = BIT(2),
 		SubMesh = BIT(3)
 	};
-	VT_SETUP_ENUM_CLASS_OPERATORS(MeshBatchType);
+	VT_SETUP_ENUM_CLASS_OPERATORS(MeshBatchTypeOld);
 
 	struct CullingInfo
 	{
@@ -58,36 +58,16 @@ namespace Volt
 		void BuildRenderCommands(RenderGraph& renderGraph, Ref<RenderScene> renderScene, const CullingInfo& cullingInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader = nullptr, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
 		void BuildRenderCommands(RenderGraph& renderGraph, RenderScene& renderScene, const CullingInfo& cullingInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader = nullptr, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
 
-		void BuildRenderCommandsWithFilter(RenderGraph& renderGraph, Ref<RenderScene> renderScene, const CullingInfo& cullingInfo, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
-		void BuildRenderCommandsWithFilter(RenderGraph& renderGraph, RenderScene& renderScene, const CullingInfo& cullingInfo, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
-
-		void Render(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters) const;
+		void Render(RenderContext& renderContext, RenderScene& renderScene, BatchedShaderParameters& batchedShaderParameters) const;
 
 	private:
-		void BuildRenderCommandsInternal(RenderGraph& renderGraph, RenderScene& renderScene, const CullingInfo& cullingInfo, const PrimitveFilterFunc& filterFunc, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
-
-		struct MeshBatch
-		{
-			using VertexBufferVector = Vector<RefPtr<RHI::StorageBuffer>, InlineAllocator<32>>;
-
-			VertexBufferVector vertexBuffers;
-			RefPtr<RHI::StorageBuffer> indexBuffer;
-			RefPtr<RHI::RenderPipeline> renderPipeline;
-			RefPtr<RHI::DescriptorTable> descriptorTable;
-
-			int32_t drawCommandOffset;
-			MeshBatchType batchType;
-		};
-
-		struct RenderCommand
-		{
-			uint32_t primitiveIndex;
-		};
-
-		Vector<RenderCommand> m_renderCommands;
-		Vector<MeshBatch> m_meshBatches;
+		void BuildRenderCommandsInternal(RenderGraph& renderGraph, RenderScene& renderScene, const CullingInfo& cullingInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader, const RHI::RenderPipelineCreateInfo& pipelineInfo = {});
 
 		RGBufferRef m_indirectDrawCommandsBuffer = nullptr;
 		RGBufferRef m_primitiveDrawDataIndirection = nullptr;
+
+		RefPtr<RHI::Shader> m_vertexShader;
+		RefPtr<RHI::Shader> m_pixelShader;
+		RHI::RenderPipelineCreateInfo m_renderPipelineCreateInfo;
 	};
 }
