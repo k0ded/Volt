@@ -48,6 +48,7 @@ namespace Volt
 		void DispatchEventInternal(VoltGUID eventGUID, Event& e);
 
 		Map<VoltGUID, Vector<ListenerInfo>> m_registeredListeners;
+		Map<VoltGUID, Vector<ListenerInfo>> m_queuedRegisters;
 		Map<VoltGUID, Vector<int32_t>> m_queuedUnregisters;
 	};
 }

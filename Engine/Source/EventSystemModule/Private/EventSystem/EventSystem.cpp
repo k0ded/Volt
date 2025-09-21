@@ -23,16 +23,15 @@ namespace Volt
 	void EventSystem::RegisterListener(VoltGUID eventGUID, EventListenerDelegate delegate, EventDispatchPredicate predicate, EventListener* listener)
 	{
 		VT_ENSURE(s_instance);
-		s_instance->m_registeredListeners[eventGUID].emplace_back(listener, delegate, predicate);
+		s_instance->m_queuedRegisters[eventGUID].emplace_back(listener, delegate, predicate);
 	}
 
 	void EventSystem::Update()
 	{
-		if (s_instance->m_queuedUnregisters.empty())
+		if (s_instance->m_queuedUnregisters.empty() && s_instance->m_queuedRegisters.empty())
 		{
 			return;
 		}
-
 		for (auto& [guid, indices] : s_instance->m_queuedUnregisters)
 		{
 			std::sort(indices.begin(), indices.end());
@@ -44,7 +43,16 @@ namespace Volt
 			}
 		}
 
+		for (auto& [guid, infos] : s_instance->m_queuedRegisters)
+		{
+			for (const ListenerInfo& info : infos)
+			{
+				s_instance->m_registeredListeners[guid].push_back(info);
+			}
+		}
+
 		s_instance->m_queuedUnregisters.clear();
+		s_instance->m_queuedRegisters.clear();
 	}
 
 	void EventSystem::UnregisterListener(VoltGUID eventGUID, EventListener* listener)
@@ -76,7 +84,7 @@ namespace Volt
 			{
 				const int32_t index = static_cast<int32_t>(it - delegates.begin());
 				s_instance->m_queuedUnregisters[guid].push_back(index);
-				it->Invalid= true;
+				it->Invalid = true;
 			}
 		}
 	}
