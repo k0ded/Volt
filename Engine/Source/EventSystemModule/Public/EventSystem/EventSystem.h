@@ -7,6 +7,7 @@
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/VoltGUID.h>
 
+#include <shared_mutex>
 namespace Volt
 {
 	class EventListener;
@@ -50,5 +51,9 @@ namespace Volt
 		Map<VoltGUID, Vector<ListenerInfo>> m_registeredListeners;
 		Map<VoltGUID, Vector<ListenerInfo>> m_queuedRegisters;
 		Map<VoltGUID, Vector<int32_t>> m_queuedUnregisters;
+
+		std::shared_mutex m_registerQueueMutex;
+		std::shared_mutex m_unregisterQueueMutex;
+		std::shared_mutex m_listenersMutex;
 	};
 }

@@ -23,15 +23,21 @@ namespace Volt
 	void EventSystem::RegisterListener(VoltGUID eventGUID, EventListenerDelegate delegate, EventDispatchPredicate predicate, EventListener* listener)
 	{
 		VT_ENSURE(s_instance);
+		std::unique_lock<std::shared_mutex> lock(s_instance->m_registerQueueMutex);
 		s_instance->m_queuedRegisters[eventGUID].emplace_back(listener, delegate, predicate);
 	}
 
 	void EventSystem::Update()
 	{
+		std::unique_lock<std::shared_mutex> lock(s_instance->m_registerQueueMutex);
+		std::unique_lock<std::shared_mutex> lock1(s_instance->m_unregisterQueueMutex);
+		std::unique_lock<std::shared_mutex> lock2(s_instance->m_listenersMutex);
+
 		if (s_instance->m_queuedUnregisters.empty() && s_instance->m_queuedRegisters.empty())
 		{
 			return;
 		}
+
 		for (auto& [guid, indices] : s_instance->m_queuedUnregisters)
 		{
 			std::sort(indices.begin(), indices.end());
@@ -51,6 +57,7 @@ namespace Volt
 			}
 		}
 
+
 		s_instance->m_queuedUnregisters.clear();
 		s_instance->m_queuedRegisters.clear();
 	}
@@ -58,6 +65,8 @@ namespace Volt
 	void EventSystem::UnregisterListener(VoltGUID eventGUID, EventListener* listener)
 	{
 		auto& listeners = s_instance->m_registeredListeners[eventGUID];
+
+		std::unique_lock<std::shared_mutex> lock(s_instance->m_unregisterQueueMutex);
 
 		for (int32_t i = static_cast<int32_t>(listeners.size()) - 1; i >= 0; --i)
 		{
@@ -72,6 +81,8 @@ namespace Volt
 
 	void EventSystem::UnregisterListeners(EventListener* listener)
 	{
+		std::unique_lock<std::shared_mutex> lock(s_instance->m_unregisterQueueMutex);
+
 		VT_ENSURE(s_instance);
 		for (auto& [guid, delegates] : s_instance->m_registeredListeners)
 		{
@@ -92,6 +103,8 @@ namespace Volt
 	void EventSystem::DispatchEventInternal(VoltGUID eventGUID, Event& e)
 	{
 		VT_PROFILE_SCOPE(std::format("Dispatch {}", e.GetName()).c_str());
+
+		std::shared_lock<std::shared_mutex> lock(s_instance->m_listenersMutex);
 
 		int32_t idx = -1;
 		for (auto& info : m_registeredListeners[eventGUID])
