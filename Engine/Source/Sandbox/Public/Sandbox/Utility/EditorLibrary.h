@@ -32,7 +32,7 @@ public:
 	template<typename T, typename ...Args>
 	static Ref<T> Register(const std::string& category, Args&& ...args);
 	
-	static bool OpenAsset(Ref<Volt::Asset> asset);
+	static bool OpenAsset(Volt::AssetHandle handle);
 	static Ref<EditorWindow> Get(AssetType type);
 
 	template<typename T>

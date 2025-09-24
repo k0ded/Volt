@@ -120,7 +120,7 @@ namespace AssetBrowser
 
 	void AssetItem::Open()
 	{
-		if (!EditorLibrary::OpenAsset(Volt::AssetManager::Get().GetAssetRaw(handle)))
+		if (!EditorLibrary::OpenAsset(handle))
 		{
 			if (type == AssetTypes::Scene)
 			{
