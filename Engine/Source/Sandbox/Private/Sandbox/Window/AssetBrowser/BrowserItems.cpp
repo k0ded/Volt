@@ -240,7 +240,8 @@ namespace AssetBrowser
 			pathNoName._Remove_filename_and_separator();
 			DrawHoverInfo("Path", pathNoName.string());
 			
-			DrawAdditionalHoverInfo();
+			//todo_fabian: make hover info just use metadata
+			//DrawAdditionalHoverInfo();
 			ImGui::EndTooltip();
 		}
 
