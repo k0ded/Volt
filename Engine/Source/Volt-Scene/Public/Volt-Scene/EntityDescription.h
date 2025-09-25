@@ -12,7 +12,7 @@ namespace Volt
 	class VTS_API EntityDesc : public Asset
 	{
 	public:
-		EntityDesc() = delete;
+		EntityDesc() = default;
 		EntityDesc( EntityID entityID, AssetHandle sceneHandle);
 		~EntityDesc() override = default;
 
@@ -20,6 +20,8 @@ namespace Volt
 		AssetType GetType() override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 		void SetupInitialCustomMetadata(CustomAssetMetadataVector& customMetadata) override;
+
+		const Buffer& GetEntitySpawnData() { return m_entitySpawnData; }
 
 
 
@@ -31,5 +33,8 @@ namespace Volt
 
 		AssetHandle m_sceneHandle;
 		EntityID m_entityID;
+
+		Buffer m_entitySpawnData;
+
 	};
 }

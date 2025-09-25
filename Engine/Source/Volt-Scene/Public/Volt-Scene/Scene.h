@@ -50,6 +50,9 @@ namespace Volt
 
 		void SortScene();
 
+		void LoadEntities();
+		bool IsFinishedLoadingEntities() { return m_isFinishedLoadingEntities; }
+
 		void MarkEntityAsEdited(const Entity& entity);
 		void ClearEditedEntities();
 
@@ -128,6 +131,8 @@ namespace Volt
 		glm::mat4 GetWorldTransform(Entity entity) const;
 		Vector<Entity> FlattenEntityHeirarchy(Entity entity);
 
+		bool m_isFinishedLoadingEntities = false;
+
 		SceneSettings m_sceneSettings;
 		Statistics m_statistics;
 		WorldEngine m_worldEngine;
@@ -142,6 +147,8 @@ namespace Volt
 		uint32_t m_viewportHeight = 1;
 
 		EntityScene m_entityScene;
+
+		std::mutex m_registerEntityMutex;
 		Map<Volt::EntityID, Volt::AssetHandle> m_entityIDToDescHandle;
 
 

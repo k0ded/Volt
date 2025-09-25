@@ -156,20 +156,16 @@ namespace Volt
 		const EntityDescCustomMetadata& customMeta = metadata.GetCustomData<EntityDescCustomMetadata>();
 		Ref<EntityDesc> entityDesc = std::reinterpret_pointer_cast<EntityDesc>(destinationAsset);
 		entityDesc->m_sceneHandle = customMeta.sceneHandle;
+		entityDesc->m_entityID = customMeta.entityID;
 
-		//if the scene is not loaded here, the entity cannot be loaded
-		VT_ENSURE(AssetManager::Get().IsLoaded(customMeta.sceneHandle));
-		Ref<Scene> scene = AssetManager::Get().GetAsset<Scene>(customMeta.sceneHandle);
 
-		BinaryStreamReader streamReader{ metadata.filePath };
-		Buffer buffer{};
-		streamReader.Read(buffer);
 
-		YAMLMemoryStreamReader yamlStreamReader{};
-		yamlStreamReader.ConsumeBuffer(buffer);
-		Entity resultEntity = DeserializeEntity(scene, yamlStreamReader);
 
-		entityDesc->m_entityID = resultEntity.GetID();
+		BinaryStreamReader streamReader{ AssetManager::GetFilesystemPath(metadata.filePath) };
+		AssetSerializer::ReadMetadata(streamReader);
+
+		entityDesc->m_entitySpawnData.Clear();
+		streamReader.Read(entityDesc->m_entitySpawnData);		
 		return true;
 	}
 

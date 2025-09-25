@@ -2,12 +2,16 @@
 
 #include "Volt-Scene/Scene.h"
 #include "Volt-Scene/Entity.h"
+#include "Volt-Scene/EntityDescriptionSerializer.h"
 #include "Volt-Scene/EntityDescription.h"
+#include "Volt-Scene/EntityDescCustomMetadata.h"
 
 #include <Volt-Physics/RigidbodyComponent.h>
 #include <Volt-Physics/EntityPhysicsScene.h>
 
 #include <Volt-Animation/AnimationManager.h>
+
+#include <Volt-Core/Algorithms.h>
 
 #include <Volt-CoreComponents/LightComponents.h>
 #include <Volt-CoreComponents/RenderingComponents.h>
@@ -21,6 +25,7 @@
 
 #include <CoreUtilities/Math/Math.h>
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 
 namespace Volt
 {
@@ -126,6 +131,47 @@ namespace Volt
 	void Scene::SortScene()
 	{
 		m_entityScene.SortScene();
+	}
+
+	void Scene::LoadEntities()
+	{
+		JobRef job = JobSystem::CreateJob("Register Entities", ExecutionPriority::Latent, [this]()
+		{
+			Vector<AssetHandle> allEntityDescAssetsForScene = Volt::AssetManager::GetAllAssetsOfType<Volt::EntityDesc>();
+			for (const AssetHandle& handle : allEntityDescAssetsForScene)
+			{
+				const AssetMetadata meta = Volt::AssetManager::GetMetadataFromHandle(handle);
+				const EntityDescCustomMetadata& customMeta = meta.GetCustomData<EntityDescCustomMetadata>();
+
+				if (customMeta.sceneHandle != this->handle)
+				{
+					continue;
+				}
+				m_entityIDToDescHandle.emplace(customMeta.entityID, handle);
+			}
+
+			TaskGraph taskGraph{ ExecutionPriority::Latent };
+
+			for (const auto& [entityID, handle]: m_entityIDToDescHandle)
+			{
+				taskGraph.AddTask("Spawn Entity", [this, handle]()
+				{
+					bool wasLoaded = Volt::AssetManager::IsLoaded(handle);
+					Ref<Volt::EntityDesc> entityDesc = Volt::AssetManager::GetAsset<EntityDesc>(handle);
+
+					YAMLMemoryStreamReader yamlStreamReader{};
+					yamlStreamReader.ReadBuffer(entityDesc->GetEntitySpawnData());
+					Volt::EntityDescSerializer::Get().DeserializeEntity(shared_from_this(), yamlStreamReader);
+
+					if (!wasLoaded)
+					{
+						Volt::AssetManager::Get().UnloadAsset(handle);
+					}
+				});
+			}
+			taskGraph.Execute();
+		});
+		JobSystem::RunJob(job);
 	}
 
 	Entity Scene::CreateEntity(const std::string& tag)

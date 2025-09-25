@@ -3,6 +3,7 @@
 #include "Volt-Scene/SceneSerializer.h"
 #include "Volt-Scene/Scene.h"
 #include "Volt-Scene/Entity.h"
+#include "Volt-Scene/EntityDescription.h"
 #include "Volt-Scene/WorldEngine/WorldCell.h"
 
 #include <AssetSystem/AssetManager.h>
@@ -131,12 +132,7 @@ namespace Volt
 			yamlStreamReader.ExitScope();
 		}
 
-		//const std::filesystem::path& scenePath = filePath;
-		//std::filesystem::path directoryPath = scenePath.parent_path();
-
-		//LoadCellEntities(metadata, scene, directoryPath);
-
-		scene->SortScene();
+		scene->LoadEntities();
 		return true;
 	}
 
