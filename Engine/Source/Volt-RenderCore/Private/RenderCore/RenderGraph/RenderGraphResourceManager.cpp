@@ -189,7 +189,7 @@ namespace Volt
 		const RGUniformBufferDesc& desc = resource->GetDesc();
 
 		TransientUniformBufferResourceRef uniformBuffer = TransientResourceAllocator::Get().CreateUniformBuffer(desc);
-		uniformBuffer->GetRHIUniformBuffer()->SetName(desc.name);
+		uniformBuffer->GetRHIUniformBuffer()->SetName(desc.debugName);
 
 		m_allocatedUniformBuffers.emplace_back(uniformBuffer);
 		resource->AssignRHIResource(uniformBuffer);

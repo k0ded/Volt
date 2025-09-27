@@ -243,4 +243,6 @@ namespace Volt::RHI
 		PhysicalDeviceMemoryProperties memoryProperties;
 		PhysicalDeviceLimits limits;
 	};
+
+	extern PhysicalDeviceProperties g_physicalDeviceProperties;
 }

@@ -8,12 +8,14 @@ namespace Volt::RHI
 	class CommandBuffer;
 	class Semaphore;
 	class Fence;
+	class Fence_New;
 
 	struct DeviceQueueExecuteInfo
 	{
 		Vector<RawPtr<CommandBuffer>> commandBuffers;
 		Vector<RawPtr<Semaphore>> signalSemaphores;
 	
+		RawPtr<Fence_New> fence_new;
 		RawPtr<Fence> fence;
 	};
 

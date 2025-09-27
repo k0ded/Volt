@@ -129,6 +129,8 @@ void Sandbox::OnAttach()
 	m_editorCameraController = CreateRef<EditorCameraController>(glm::radians(60.f), 1.f, 100000.f);
 
 	UserSettingsManager::LoadUserSettings();
+	
+#if 0
 	const auto& userSettings = UserSettingsManager::GetSettings();
 
 	if (userSettings.sceneSettings.defaultOpenScene != Volt::Asset::Null())
@@ -143,6 +145,7 @@ void Sandbox::OnAttach()
 			}
 		}
 	}
+#endif
 
 	if (!m_runtimeScene)
 	{

@@ -3,13 +3,14 @@
 
 #include "Sandbox/Utility/EditorSearchBar.h"
 #include "Sandbox/Utility/Theme.h"
+#include "Sandbox/Utility/EditorUtilities.h"
 
 #include <Volt-Application/UI/UIUtility.h>
 #include <Volt-Application/UI/UIScopedHelpers.h>
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
-#include "Sandbox/Utility/EditorUtilities.h"
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Utility
 {
@@ -138,6 +139,8 @@ void LogPanel::RenderTopBar()
 
 void LogPanel::RenderLogChildWindow()
 {
+	VT_PROFILE_FUNCTION();
+
 	constexpr float BottomBarHeight = 30.f;
 	const float height = ImGui::GetContentRegionAvail().y - BottomBarHeight;
 
@@ -150,7 +153,7 @@ void LogPanel::RenderLogChildWindow()
 			ImVec4 color = Utility::GetColorFromLevel(msg.severity);
 
 			ImGui::PushStyleColor(ImGuiCol_Text, Utility::GetColorFromLevel(msg.severity));
-			ImGui::TextWrapped(msg.message.c_str());
+			ImGui::TextWrapped("%s", msg.message.c_str());
 			ImGui::PopStyleColor();
 		}
 

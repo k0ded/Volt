@@ -3,23 +3,20 @@
 #include "RenderCore/Config.h"
 #include "RenderCore/RenderGraph/Resources/RenderGraphResource.h"
 
+#include <RHIModule/Buffers/UniformBuffer.h>
+
 #include <RHIModule/Buffers/BufferView.h>
 
 namespace Volt
 {
-	struct RGUniformBufferDesc
+	struct RGUniformBufferDesc : public RHI::UniformBufferDesc
 	{
-		uint32_t count;
-		uint64_t elementSize;
-		std::string name;
-
 		template<typename T>
 		static RGUniformBufferDesc Create(const std::string& name = "UniformBuffer")
 		{
 			RGUniformBufferDesc result;
-			result.count = 1;
-			result.elementSize = sizeof(T);
-			result.name = name;
+			result.size = sizeof(T);
+			result.debugName = name;
 
 			return result;
 		}

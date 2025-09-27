@@ -16,6 +16,7 @@
 #include <RHIModule/Utility/ResourceUtility.h>
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/RHIModule.h>
+#include <RHIModule/RHICapabilities.h>
 
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -144,9 +145,9 @@ namespace Volt::RHI
 
 		VT_ASSERT_MSG(supportsPresent, "Device does not have present support!");
 
-		m_commandBuffers.resize(GetFramesInFlight());
-		m_fences.resize(GetFramesInFlight());
-		for (uint32_t i = 0; i < GetFramesInFlight(); i++)
+		m_commandBuffers.resize(RHI::RHICapabilities::NumFramesInFlight);
+		m_fences.resize(RHI::RHICapabilities::NumFramesInFlight);
+		for (uint32_t i = 0; i < RHI::RHICapabilities::NumFramesInFlight; i++)
 		{
 			m_commandBuffers[i] = CommandBuffer::Create();
 			m_fences[i] = Fence::Create({ true });
@@ -178,7 +179,10 @@ namespace Volt::RHI
 		m_fences.at(m_currentFrame)->Reset();
 
 		m_commandBuffers.at(m_currentFrame)->Begin();
+
+		m_swapchainMutex.lock();
 		VkResult swapchainStatus = vkAcquireNextImageKHR(device->GetHandle<VkDevice>(), m_swapchain, 1000000000, frameData.presentSemaphore, nullptr, &m_currentImage);
+		m_swapchainMutex.unlock();
 
 		if (swapchainStatus == VK_ERROR_OUT_OF_DATE_KHR)
 		{
@@ -215,6 +219,7 @@ namespace Volt::RHI
 		}
 
 		auto& frameData = m_perFrameInFlightData.at(m_currentFrame);
+
 		const auto deviceQueue = GraphicsContext::GetDevice()->GetDeviceQueue(QueueType::Graphics);
 
 		VulkanDeviceQueue& vkQueue = deviceQueue->AsRef<VulkanDeviceQueue>();
@@ -273,7 +278,6 @@ namespace Volt::RHI
 				throw std::runtime_error("Failed to present swapchain image!");
 			}
 		}
-
 	}
 
 	void VulkanSwapchain::Resize(const uint32_t width, const uint32_t height, bool enableVSync)
@@ -309,11 +313,6 @@ namespace Volt::RHI
 	const uint32_t VulkanSwapchain::GetHeight() const
 	{
 		return m_height;
-	}
-
-	const uint32_t VulkanSwapchain::GetFramesInFlight() const
-	{
-		return VulkanSwapchain::MAX_FRAMES_IN_FLIGHT;
 	}
 
 	const PixelFormat VulkanSwapchain::GetFormat() const
@@ -358,7 +357,6 @@ namespace Volt::RHI
 			return;
 		}
 
-		
 		auto vulkanFence = m_fences.at(m_currentFrame).As<VulkanFence>();
 
 		if (vulkanFence->HasBeenExecuted())
@@ -521,7 +519,7 @@ namespace Volt::RHI
 
 		auto device = GraphicsContext::GetDevice();
 
-		m_perFrameInFlightData.resize(MAX_FRAMES_IN_FLIGHT);
+		m_perFrameInFlightData.resize(RHI::RHICapabilities::NumFramesInFlight);
 
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -535,6 +533,6 @@ namespace Volt::RHI
 
 	void VulkanSwapchain::GetNextFrameIndex()
 	{
-		m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+		m_currentFrame = (m_currentFrame + 1) % RHI::RHICapabilities::NumFramesInFlight;
 	}
 }

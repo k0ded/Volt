@@ -11,6 +11,7 @@ namespace Volt::RHI
 	class PhysicalGraphicsDevice;
 	class GraphicsDevice;
 	class VulkanDebugLayer;
+	class VulkanDescriptorHeap;
 	class RayTracingTableDescriptorSetManager;
 
 	class VulkanGraphicsContext final : public GraphicsContext
@@ -19,7 +20,7 @@ namespace Volt::RHI
 		VulkanGraphicsContext(const GraphicsContextCreateInfo& createInfo);
 		~VulkanGraphicsContext() override;
 
-		inline VkInstance_T* GetInstance() const { return m_instance; }
+		VT_NODISCARD VT_INLINE VulkanDescriptorHeap& GetDescriptorHeap() const { return *m_descriptorHeap; }
 
 	protected:
 		RefPtr<GPUAllocator> GetDefaultAllocatorImpl() override;
@@ -49,6 +50,7 @@ namespace Volt::RHI
 		RefPtr<GPUAllocator> m_transientAllocator;
 
 		Ref<VulkanDebugLayer> m_debugLayer;
+		Ref<VulkanDescriptorHeap> m_descriptorHeap;
 		Ref<RayTracingTableDescriptorSetManager> m_rayTracingTableDescriptorSetManager;
 
 		GraphicsContextCreateInfo m_createInfo{};

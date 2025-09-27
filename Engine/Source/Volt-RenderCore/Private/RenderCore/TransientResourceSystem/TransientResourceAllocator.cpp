@@ -6,6 +6,7 @@
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/Swapchain.h>
+#include <RHIModule/RHICapabilities.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Math/Hash.h>
@@ -44,7 +45,7 @@ namespace Volt
 
 	VT_INLINE size_t GetUniformBufferDescHash(const RGUniformBufferDesc& desc)
 	{
-		size_t hash = Math::HashCombine(std::hash<uint32_t>()(desc.count), std::hash<uint64_t>()(desc.elementSize));
+		const size_t hash = std::hash<uint32_t>()(desc.size);
 		return hash;
 	}
 
@@ -87,7 +88,7 @@ namespace Volt
 		RefPtr<RHI::StorageBuffer> rhiBbuffer = RHI::StorageBuffer::Create(desc, allocator);
 		
 		// Create the buffer and make sure we acquire it.
-		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, isCpuAccessible ? RHI::Swapchain::FramesInFlight : 1);
+		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1);
 		transientBuffer->TryAcquire(m_frameIndex);
 
 		m_bufferCache.emplace_back(transientBuffer);
@@ -127,7 +128,7 @@ namespace Volt
 		RefPtr<RHI::Image> rhiTexture = RHI::Image::Create(specification, nullptr, allocator);
 
 		// Create the texture and make sure we acquire it.
-		TransientTextureResourceRef transientTexture = m_transientTextureAllocator.Allocate(rhiTexture, hash, isCpuAccessible ? RHI::Swapchain::FramesInFlight : 1);
+		TransientTextureResourceRef transientTexture = m_transientTextureAllocator.Allocate(rhiTexture, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1);
 		transientTexture->TryAcquire(m_frameIndex);
 
 		m_textureCache.emplace_back(transientTexture);
@@ -158,10 +159,10 @@ namespace Volt
 			}
 		}
 
-		RefPtr<RHI::UniformBuffer> rhiBbuffer = RHI::UniformBuffer::Create(static_cast<uint32_t>(desc.elementSize), nullptr, desc.count, desc.name);
+		RefPtr<RHI::UniformBuffer> rhiBbuffer = RHI::UniformBuffer::Create(desc);
 		
 		// Create the buffer and make sure we acquire it.
-		TransientUniformBufferResourceRef transientBuffer = m_transientUniformBufferAllocator.Allocate(rhiBbuffer, hash, RHI::Swapchain::FramesInFlight);
+		TransientUniformBufferResourceRef transientBuffer = m_transientUniformBufferAllocator.Allocate(rhiBbuffer, hash, RHI::RHICapabilities::NumFramesInFlight);
 		transientBuffer->TryAcquire(m_frameIndex);
 
 		m_uniformBufferCache.emplace_back(transientBuffer);

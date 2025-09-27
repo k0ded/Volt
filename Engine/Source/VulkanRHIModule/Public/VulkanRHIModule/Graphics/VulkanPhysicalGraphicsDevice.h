@@ -30,12 +30,12 @@ namespace Volt::RHI
 		VulkanPhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo);
 		~VulkanPhysicalGraphicsDevice() override;
 
-		VT_NODISCARD VT_INLINE std::string_view GetDeviceName() const override { return m_deviceProperties.deviceName; }
-		VT_NODISCARD VT_INLINE const DeviceVendor GetDeviceVendor() const override { return m_deviceProperties.vendor; }
-		VT_NODISCARD VT_INLINE const PhysicalDeviceProperties& GetProperties() const { return m_deviceProperties; }
+		VT_NODISCARD VT_INLINE std::string_view GetDeviceName() const override { return g_physicalDeviceProperties.deviceName; }
+		VT_NODISCARD VT_INLINE const DeviceVendor GetDeviceVendor() const override { return g_physicalDeviceProperties.vendor; }
+		VT_NODISCARD VT_INLINE const PhysicalDeviceProperties& GetProperties() const { return g_physicalDeviceProperties; }
 
 		inline const PhysicalDeviceQueueFamilyIndices& GetQueueFamilies() const { return m_queueFamilyIndices; }
-		inline const PhysicalDeviceProperties& GetDeviceProperties() const { return m_deviceProperties; }
+		inline const PhysicalDeviceProperties& GetDeviceProperties() const { return g_physicalDeviceProperties; }
 
 		const int32_t GetMemoryTypeIndex(const uint32_t reqMemoryTypeBits, const uint32_t requiredPropertyFlags);
 		const bool IsExtensionAvailable(const char* extensionName) const;
@@ -52,8 +52,6 @@ namespace Volt::RHI
 
 		PhysicalDeviceQueueFamilyIndices m_queueFamilyIndices{};
 
-		Vector<ExtensionProperties> m_availiableExtensions;
-
-		PhysicalDeviceProperties m_deviceProperties;
+		Vector<ExtensionProperties> m_availableExtensions;
 	};
 }

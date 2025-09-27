@@ -33,13 +33,31 @@
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
-#include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Graphics/DeviceQueue.h>
 
 #include <CoreUtilities/Math/Math.h>
 
 namespace Volt
 {
+	struct DepthPrePassVS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(DepthPrePassVS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
+			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(DepthPrePassVS, "Engine/Shaders/Source/RenderPipelineLegacy/DepthPrePass.hlsl", "MainVS", Vertex);
+
+	struct DepthPrePassPS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(DepthPrePassPS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
+			RG_RENDER_TARGETS()
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(DepthPrePassPS, "Engine/Shaders/Source/RenderPipelineLegacy/DepthPrePass.hlsl", "MainPS", Pixel);
+
 	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& createInfo)
 		: m_renderScene(createInfo.renderScene), m_createInfo(createInfo)
 	{
@@ -57,10 +75,27 @@ namespace Volt
 		m_skyboxMesh = ShapeLibrary::GetCube();
 	
 		RegisterListener<AppPostFrameUpdateEvent>(VT_BIND_EVENT_FN(SceneRenderer::OnPostFrameUpdateEvent));
+
+		{
+			m_testMeshPassProcessor = m_meshPassProcessorRegistry.AddProcessor<TestMeshPassProcessor>();
+
+			m_onRenderPrimitiveAddedCallbackId = m_renderScene->RegisterOnRenderPrimitiveAddedCallback([this](const RenderPrimitiveData& renderPrimitives)
+			{
+				m_meshPassProcessorRegistry.AddRenderPrimitive(renderPrimitives);
+			});
+
+			m_onRenderPrimitiveRemovedCallbackId = m_renderScene->RegisterOnRenderPrimitiveRemovedCallback([this](const RenderPrimitiveData& renderPrimitive)
+			{
+				m_meshPassProcessorRegistry.RemoveRenderPrimitive(renderPrimitive.id);
+			});
+		}
 	}
 
 	SceneRenderer::~SceneRenderer()
 	{
+		m_renderScene->UnregisterOnRenderPrimitiveAddedCallback(m_onRenderPrimitiveAddedCallbackId);
+		m_renderScene->UnregisterOnRenderPrimitiveRemovedCallback(m_onRenderPrimitiveRemovedCallbackId);
+
 		if (m_renderGraphExecutionCounter)
 		{
 			JobSystem::WaitForAndDestroyCounter(m_renderGraphExecutionCounter);
@@ -326,26 +361,6 @@ namespace Volt
 		});
 	}
 
-	struct DepthPrePassVS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(DepthPrePassVS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
-			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
-		END_SHADER_PARAMETER_STRUCT()
-	};
-	REGISTER_SHADER(DepthPrePassVS, "Engine/Shaders/Source/RenderPipelineLegacy/DepthPrePass.hlsl", "MainVS", Vertex);
-
-	struct DepthPrePassPS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(DepthPrePassPS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
-			RG_RENDER_TARGETS()
-		END_SHADER_PARAMETER_STRUCT()
-	};
-	REGISTER_SHADER(DepthPrePassPS, "Engine/Shaders/Source/RenderPipelineLegacy/DepthPrePass.hlsl", "MainPS", Pixel);
-
 	BEGIN_SHADER_PARAMETER_STRUCT(DepthPrePassParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(DepthPrePassVS::Parameters, VS)
 		SHADER_PARAMETER_STRUCT_INCLUDE(DepthPrePassPS::Parameters, PS)
@@ -372,7 +387,7 @@ namespace Volt
 		renderGraph.AddPass("Depth Pre Pass",
 			RenderGraphPassFlags::None,
 			passParameters,
-			[passParameters, view, meshRenderer](RenderContext& context)
+			[passParameters, view, meshRenderer, meshPass = m_testMeshPassProcessor](RenderContext& context)
 		{
 			BatchedShaderParameters batchedShaderParameters;
 			context.CollectParameters(passParameters, batchedShaderParameters);
@@ -380,6 +395,7 @@ namespace Volt
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
 			context.BeginRendering(renderingInfo);
 
+			//meshPass->ExecuteCommands(context, batchedShaderParameters);
 			meshRenderer.Render(context, *view.renderScene, batchedShaderParameters);
 
 			context.EndRendering();
@@ -719,5 +735,13 @@ namespace Volt
 		return m_visualizationMode == VisualizationMode::GeometryNormals ||
 			m_visualizationMode == VisualizationMode::UV ||
 			m_visualizationMode == VisualizationMode::GeometryTangents;
+	}
+
+	void TestMeshPassProcessor::AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	{
+		auto vertexShader = ShaderMap::Get<DepthPrePassVS>();
+		auto pixelShader = ShaderMap::Get<DepthPrePassPS>();
+
+		BuildMeshDrawCommand(renderPrimitive, {}, vertexShader, pixelShader);
 	}
 }

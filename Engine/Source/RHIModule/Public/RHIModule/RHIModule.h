@@ -51,6 +51,7 @@ namespace Volt::RHI
 
 	class Event;
 	class Fence;
+	class Fence_New;
 	class Semaphore;
 
 	class ImGuiImplementation;
@@ -82,6 +83,7 @@ namespace Volt::RHI
 	struct SwapchainCreateInfo;
 	struct ShaderCreateInfo;
 	struct BufferDesc;
+	struct UniformBufferDesc;
 
 	struct RHICallbackInfo
 	{
@@ -99,7 +101,7 @@ namespace Volt::RHI
 		virtual RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const = 0;
 
 		virtual RefPtr<StorageBuffer> CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const = 0;
-		virtual RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const = 0;
+		virtual RefPtr<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData = nullptr) const = 0;
 
 		virtual RefPtr<DescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const = 0;
 		virtual RefPtr<BindlessDescriptorTable> CreateBindlessDescriptorTable(const uint64_t framesInFlight) const = 0;
@@ -129,6 +131,7 @@ namespace Volt::RHI
 
 		virtual RefPtr<Event> CreateEvent(const EventCreateInfo& createInfo) const = 0;
 		virtual RefPtr<Fence> CreateFence(const FenceCreateInfo& createInfo) const = 0;
+		virtual RefPtr<Fence_New> CreateFence() const = 0;
 		virtual RefPtr<Semaphore> CreateSemaphore(const SemaphoreCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const = 0;
@@ -139,7 +142,8 @@ namespace Volt::RHI
 
 		virtual void DestroyResource(std::function<void()>&& function) = 0;
 		virtual void RequestApplicationClose() = 0;
-		virtual void Update() = 0;
+		virtual void BeginFrame() = 0;
+		virtual void EndFrame() = 0;
 		virtual void FlushResourceDeletionQueue() = 0;
 
 		void SetFrameCapture(Ref<FrameCapture> frameCapture);

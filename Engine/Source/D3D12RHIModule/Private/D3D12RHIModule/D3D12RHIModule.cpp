@@ -227,7 +227,7 @@ namespace Volt::RHI
 		}
 	}
 
-	void D3D12RHIModule::Update()
+	void D3D12RHIModule::BeginFrame()
 	{
 		GraphicsContext::GetDefaultAllocator()->Update();
 		GraphicsContext::GetTransientAllocator()->Update();

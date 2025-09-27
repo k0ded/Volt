@@ -2,6 +2,8 @@
 
 #include "RHIModule/Core/Core.h"
 
+#define USE_DESCRIPTOR_TABLE 0
+
 namespace Volt::RHI
 {
 	struct RHICapabilities
@@ -12,6 +14,8 @@ namespace Volt::RHI
 			uint32_t y = 0;
 			uint32_t z = 0;
 		};
+
+		inline static constexpr uint32_t NumFramesInFlight = 3;
 
 		uint32_t max2DTextureDimensions = 2048;
 		uint64_t maxBufferDimensions = (1 << 27);
@@ -42,7 +46,7 @@ namespace Volt::RHI
 		bool supportsBindless = false;
 
 		ComputeDimensions maxDispatchThreadGroupsPerDimension;
-	
+
 		// #TODO_Ivar: Move to some other place
 		bool useMeshShaders = false;
 		bool useBindless = false;

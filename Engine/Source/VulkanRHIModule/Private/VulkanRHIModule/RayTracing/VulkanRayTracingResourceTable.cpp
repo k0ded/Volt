@@ -58,7 +58,7 @@ namespace Volt::RHI
 	void VulkanRayTracingResourceTable::CreateDescriptorSets()
 	{
 		constexpr uint32_t DescriptorTypeCount = 2;
-		constexpr uint32_t MaxDescriptors = std::numeric_limits<uint16_t>::max() * RHI::Swapchain::FramesInFlight;
+		constexpr uint32_t MaxDescriptors = std::numeric_limits<uint16_t>::max() * RHI::RHICapabilities::NumFramesInFlight;
 
 		Array<VkDescriptorPoolSize, DescriptorTypeCount> descriptorPoolSizes =
 		{
@@ -79,18 +79,18 @@ namespace Volt::RHI
 
 		VkDescriptorSetLayout setLayout = RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout();
 		
-		Array<VkDescriptorSetLayout, RHI::Swapchain::FramesInFlight> descriptorSetLayouts =
+		Array<VkDescriptorSetLayout, RHI::RHICapabilities::NumFramesInFlight> descriptorSetLayouts =
 		{
 			setLayout, setLayout, setLayout
 		};
 
-		m_descriptorSets.resize(RHI::Swapchain::FramesInFlight);
+		m_descriptorSets.resize(RHI::RHICapabilities::NumFramesInFlight);
 
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.pNext = nullptr;
 		allocInfo.descriptorPool = m_descriptorPool;
-		allocInfo.descriptorSetCount = RHI::Swapchain::FramesInFlight;
+		allocInfo.descriptorSetCount = RHI::RHICapabilities::NumFramesInFlight;
 		allocInfo.pSetLayouts = descriptorSetLayouts.data();
 	
 		VT_VK_CHECK(vkAllocateDescriptorSets(vkDevice, &allocInfo, m_descriptorSets.data()));
@@ -104,7 +104,7 @@ namespace Volt::RHI
 		}
 
 		m_lastUpdateIndex = index;
-		index = index % RHI::Swapchain::FramesInFlight;
+		index = index % RHI::RHICapabilities::NumFramesInFlight;
 
 		Vector<uint32_t> dirtyBufferSlots = m_bufferTable.GetAndClearDirtySlots(index);
 		Vector<uint32_t> dirtyTextureSlots = m_textureTable.GetAndClearDirtySlots(index);
@@ -186,6 +186,6 @@ namespace Volt::RHI
 
 	VkDescriptorSet_T* VulkanRayTracingResourceTable::GetDescriptorSet() const
 	{
-		return m_descriptorSets.at(m_lastUpdateIndex % RHI::Swapchain::FramesInFlight);
+		return m_descriptorSets.at(m_lastUpdateIndex % RHI::RHICapabilities::NumFramesInFlight);
 	}
 }

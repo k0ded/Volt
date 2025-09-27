@@ -353,7 +353,10 @@ namespace Volt::RHI
 		}
 		else
 		{
-			shaderParameterMaps = m_createInfo.renderPipeline->GetShaderParameterMaps();
+			for (const ShaderParameterMap& parameterMap : m_createInfo.renderPipeline->GetShaderParameterMaps())
+			{
+				shaderParameterMaps.emplace_back(parameterMap);
+			}
 		}
 
 		// Cache all possible descriptor writes, to skip that during runtime.
@@ -459,7 +462,10 @@ namespace Volt::RHI
 		}
 		else
 		{
-			shaderParameterMaps = m_createInfo.renderPipeline->GetShaderParameterMaps();
+			for (const ShaderParameterMap& parameterMap : m_createInfo.renderPipeline->GetShaderParameterMaps())
+			{
+				shaderParameterMaps.emplace_back(parameterMap);
+			}
 		}
 
 		// Cache all possible descriptor infos.

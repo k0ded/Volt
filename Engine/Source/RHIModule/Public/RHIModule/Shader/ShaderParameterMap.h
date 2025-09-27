@@ -46,6 +46,7 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE ShaderStage GetShaderStage() const { return m_shaderStage; }
 		VT_NODISCARD VT_INLINE uint32_t GetShaderParametersSize() const { return m_shaderParameterSize; }
 		VT_NODISCARD VT_INLINE bool AccessesRayTracingTable() const { return m_accessesRayTracingResourceTable; }
+		VT_NODISCARD VT_INLINE bool IsValid() const { return !m_resourceBindings.empty() || !m_shaderParameters.empty() || m_accessesRayTracingResourceTable; }
 
 		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderParameterMap& data);
 		static void Deserialize(BinaryStreamReader& streamReader, ShaderParameterMap& outData);

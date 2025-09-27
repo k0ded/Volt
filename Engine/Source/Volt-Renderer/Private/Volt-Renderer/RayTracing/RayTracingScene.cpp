@@ -19,11 +19,8 @@ namespace Volt
 	RayTracingScene::RayTracingScene(EntityScene* scene)
 		: m_scene(scene)
 	{
-		RHI::FenceCreateInfo fenceInfo{};
-		fenceInfo.createSignaled = true;
-
-		m_buildFence = RHI::Fence::Create(fenceInfo);
-		m_updateFence = RHI::Fence::Create(fenceInfo);
+		m_buildFence = RHI::Fence_New::Create();
+		m_updateFence = RHI::Fence_New::Create();
 	}
 
 	void RayTracingScene::RebuildAccelerationStructure()
@@ -107,8 +104,6 @@ namespace Volt
 		commandBuffer->End();
 
 		m_buildFence->WaitUntilSignaled();
-		m_buildFence->Reset();
-
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, m_buildFence);
 
 		// #TODO_Ivar: Remove when design is finalized
@@ -180,8 +175,6 @@ namespace Volt
 		commandBuffer->End();
 		
 		m_updateFence->WaitUntilSignaled();
-		m_updateFence->Reset();
-		
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, m_updateFence);
 
 		m_updateFence->WaitUntilSignaled();

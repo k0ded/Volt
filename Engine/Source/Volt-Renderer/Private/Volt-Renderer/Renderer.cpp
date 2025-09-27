@@ -161,7 +161,7 @@ namespace Volt
 
 	const uint32_t Renderer::GetFramesInFlight()
 	{
-		return RHI::Swapchain::FramesInFlight;
+		return RHI::RHICapabilities::NumFramesInFlight;
 	}
 
 	const DefaultResources& Renderer::GetDefaultResources()

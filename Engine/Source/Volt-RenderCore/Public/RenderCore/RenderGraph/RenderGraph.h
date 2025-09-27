@@ -11,7 +11,7 @@
 
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Images/Image.h>
-#include <RHIModule/Synchronization/Fence.h>
+#include <RHIModule/Synchronization/Fence_New.h>
 #include <RHIModule/Core/ResourceStateTracker.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
@@ -303,7 +303,7 @@ namespace Volt
 
 		Vector<CompiledPass> m_compiledPasses;
 
-		RefPtr<RHI::Fence> m_executionFence;
+		RefPtr<RHI::Fence_New> m_executionFence;
 
 		std::mutex m_tempMutex;
 	}; 
@@ -314,7 +314,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		Handle<RenderGraphPass> newPass = m_passAllocator.AllocatePass(name, std::forward<ExecFunc>(executeFunc));
-		newPass->flags = flags;
+		newPass->flags = flags | RenderGraphPassFlags::NeverCull;
 
 		// Get all parameters accessed by shader.
 		// #TODO_Ivar: Add support for paged vector, or inline allocator

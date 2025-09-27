@@ -10,9 +10,8 @@ public:
 	class ForElementType
 	{
 	public:
-		inline static constexpr bool IsInline = false;
-
 		ForElementType()
+			: m_allocation(nullptr)
 		{}
 
 		~ForElementType()
@@ -21,13 +20,28 @@ public:
 		VT_INLINE void* Allocate(size_t size, size_t alignment)
 		{
 			void* newAllocation = Memory::Malloc(size, alignment);
+			m_allocation = newAllocation;
 			return newAllocation;
 		}
 
 		VT_INLINE void Free(void* allocation)
 		{
+			if (allocation == m_allocation)
+			{
+				m_allocation = nullptr;
+			}
 			Memory::Free(allocation);
 		}
+
+		VT_INLINE void Swap(ForElementType& other)
+		{
+			std::swap(m_allocation, other.m_allocation);
+		}
+
+		VT_INLINE ValueType* GetAllocation() { return reinterpret_cast<ValueType*>(m_allocation); }
+
+	private:
+		void* m_allocation;
 	};
 };
 
@@ -39,8 +53,6 @@ public:
 	class ForElementType
 	{
 	public:
-		inline static constexpr bool IsInline = true;
-
 		ForElementType() = default;
 
 		ForElementType(const ForElementType& other) noexcept
@@ -81,6 +93,13 @@ public:
 		{
 
 		}
+
+		VT_INLINE void Swap(ForElementType& other)
+		{
+			std::swap(m_data, other.m_data);
+		}
+
+		VT_INLINE ValueType* GetAllocation() { return reinterpret_cast<ValueType*>(m_data); }
 
 	private:
 		inline static constexpr size_t TotalSize = sizeof(ValueType) * NumValues;

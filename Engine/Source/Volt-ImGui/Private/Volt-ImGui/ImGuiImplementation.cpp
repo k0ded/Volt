@@ -8,6 +8,7 @@
 #include <RenderCore/DescriptorTableCache.h>
 
 #include <RHIModule/Buffers/CommandBufferUtility.h>
+#include <RHIModule/Descriptors/ShaderBindingMap.h>
 #include <RHIModule/Core/RenderingInfo.h>
 
 #include <LogModule/Log.h>
@@ -188,12 +189,10 @@ namespace Volt
 			commandBuffer->BindPipeline(m_copyRenderPipeline);
 			commandBuffer->SetScissors({ scissor });
 
-			RefPtr<RHI::DescriptorTable> descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(m_copyRenderPipeline );
-			RefPtr<RHI::ImageView> imageView = renderTarget.image->GetView();
-			descriptorTable->SetImageView(imageView, GetDescriptorSetIndexFromShaderStage(RHI::ShaderStage::Pixel), 1);
+			RHI::ShaderBindingMap shaderBindingMap;
+			shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 0, renderTarget.image->GetView());
 
-			commandBuffer->BindDescriptorTable(descriptorTable);
-
+			commandBuffer->BindShaderBindings(shaderBindingMap);
 			commandBuffer->Draw(3, 1, 0, 0);
 			commandBuffer->EndRendering();
 

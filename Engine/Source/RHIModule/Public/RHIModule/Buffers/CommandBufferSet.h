@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RHIModule/Buffers/CommandBuffer.h"
-#include "RHIModule/Synchronization/Fence.h"
+#include "RHIModule/Synchronization/Fence_New.h"
 
 namespace Volt::RHI
 {
@@ -16,7 +16,7 @@ namespace Volt::RHI
 		CommandBufferSet& operator=(CommandBufferSet&& other) noexcept;
 
 		RefPtr<CommandBuffer> GetCurrentCommandBuffer() const;
-		RefPtr<Fence> GetCurrentFence() const;
+		RefPtr<Fence_New> GetCurrentFence() const;
 		RefPtr<CommandBuffer> IncrementAndGetCommandBuffer();
 		void Increment();
 
@@ -24,7 +24,7 @@ namespace Volt::RHI
 
 	private:
 		Vector<RefPtr<CommandBuffer>> m_commandBuffers;
-		Vector<RefPtr<Fence>> m_fences;
+		Vector<RefPtr<Fence_New>> m_fences;
 		
 		uint32_t m_currentIndex = 0;
 		uint32_t m_count;

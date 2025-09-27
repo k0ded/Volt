@@ -391,9 +391,15 @@ namespace Volt::RHI
 			return;
 		}
 
+		VkMemoryAllocateFlagsInfo memoryAllocFlags{};
+		memoryAllocFlags.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+		memoryAllocFlags.pNext = nullptr;
+		memoryAllocFlags.deviceMask = 0;
+		memoryAllocFlags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.pNext = nullptr;
+		allocInfo.pNext = &memoryAllocFlags;
 		allocInfo.allocationSize = m_memoryRequirements.size;
 		allocInfo.memoryTypeIndex = static_cast<uint32_t>(memoryTypeIndex);
 

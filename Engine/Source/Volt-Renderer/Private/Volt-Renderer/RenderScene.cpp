@@ -75,7 +75,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		renderGraph.BeginMarker("RenderScene::Update");
-
+	
 		UpdateInvalidMaterials(renderGraph);
 		UpdateInvalidMeshes(renderGraph);
 		UpdateInvalidLights(renderGraph);
@@ -191,6 +191,8 @@ namespace Volt
 		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
 		InvalidatePrimitiveInstance(newId);
 
+		OnRenderPrimitiveAdded(newObj);
+
 		return newId;
 	}
 
@@ -216,6 +218,8 @@ namespace Volt
 		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
 		InvalidatePrimitiveInstance(newId);
 
+		OnRenderPrimitiveAdded(newObj);
+
 		return newId;
 	}
 
@@ -232,6 +236,8 @@ namespace Volt
 		{
 			return;
 		}
+
+		OnRenderPrimitiveRemoved(*it);
 
 		const bool isAnimated = (*it).IsAnimated();
 
@@ -310,6 +316,62 @@ namespace Volt
 		if (it != m_renderLights.end())
 		{
 			m_renderLights.erase(it);
+		}
+	}
+
+	void RenderScene::OnRenderPrimitiveAdded(const RenderPrimitiveData& renderPrimitive)
+	{
+		for (auto& callback : m_onRenderPrimitiveAddedCallbacks)
+		{
+			callback.callback(renderPrimitive);
+		}
+	}
+
+	void RenderScene::OnRenderPrimitiveRemoved(const RenderPrimitiveData& renderPrimitive)
+	{
+		for (auto& callback : m_onRenderPrimitiveRemovedCallbacks)
+		{
+			callback.callback(renderPrimitive);
+		}
+	}
+
+	UUID32 RenderScene::RegisterOnRenderPrimitiveAddedCallback(std::function<void(const RenderPrimitiveData& renderPrimitive)>&& callback)
+	{
+		auto& newCallback = m_onRenderPrimitiveAddedCallbacks.emplace_back();
+		newCallback.callback = std::move(callback);
+		
+		return newCallback.id;
+	}
+
+	UUID32 RenderScene::RegisterOnRenderPrimitiveRemovedCallback(std::function<void(const RenderPrimitiveData& renderPrimitive)>&& callback)
+	{
+		auto& newCallback = m_onRenderPrimitiveRemovedCallbacks.emplace_back();
+		newCallback.callback = std::move(callback);
+
+		return newCallback.id;
+	}
+
+	void RenderScene::UnregisterOnRenderPrimitiveAddedCallback(UUID32 callbackId)
+	{
+		for (int32_t i = static_cast<int32_t>(m_onRenderPrimitiveAddedCallbacks.size()) - 1; i >= 0; --i)
+		{
+			if (m_onRenderPrimitiveAddedCallbacks.at(i).id == callbackId)
+			{
+				m_onRenderPrimitiveAddedCallbacks.erase_unsorted(m_onRenderPrimitiveAddedCallbacks.begin() + i);
+				break;
+			}
+		}
+	}
+
+	void RenderScene::UnregisterOnRenderPrimitiveRemovedCallback(UUID32 callbackId)
+	{
+		for (int32_t i = static_cast<int32_t>(m_onRenderPrimitiveRemovedCallbacks.size()) - 1; i >= 0; --i)
+		{
+			if (m_onRenderPrimitiveRemovedCallbacks.at(i).id == callbackId)
+			{
+				m_onRenderPrimitiveRemovedCallbacks.erase_unsorted(m_onRenderPrimitiveRemovedCallbacks.begin() + i);
+				break;
+			}
 		}
 	}
 
@@ -406,12 +468,15 @@ namespace Volt
 
 		for (const PrimitiveDrawData& primitive : m_primitiveDrawData)
 		{
-			const GPUMesh& gpuMesh = m_gpuMeshes.at(primitive.meshId);
-		
-			const float maxScale = glm::max(glm::max(primitive.scale.x, primitive.scale.y), primitive.scale.z);
-			const glm::vec3 center = transformPosition(gpuMesh.center, primitive.position, primitive.scale, primitive.rotation);
+			if (EnumValueContainsAnyFlag(primitive.flags, PrimitiveFlags::Valid))
+			{
+				const GPUMesh& gpuMesh = m_gpuMeshes.at(primitive.meshId);
 
-			Renderer::GetDebugRenderer().DrawLineSphere(center, maxScale * gpuMesh.radius, 1.f);
+				const float maxScale = glm::max(glm::max(primitive.scale.x, primitive.scale.y), primitive.scale.z);
+				const glm::vec3 center = transformPosition(gpuMesh.center, primitive.position, primitive.scale, primitive.rotation);
+
+				Renderer::GetDebugRenderer().DrawLineSphere(center, maxScale * gpuMesh.radius, 1.f);
+			}
 		}
 	}
 
@@ -767,6 +832,8 @@ namespace Volt
 			{
 				auto& data = bufferUpload.AddUploadItem(removedPrimitiveIndex);
 				data.flags = PrimitiveFlags::Invalid;
+
+				m_primitiveDrawData[removedPrimitiveIndex] = data;
 
 				if (s_logRenderSceneUpdatedCVar.GetValue())
 				{

@@ -328,23 +328,21 @@ inline constexpr Vector<T, AllocatorType>& Vector<T, AllocatorType>::operator=(V
 template<typename T, typename AllocatorType>
 inline constexpr void Vector<T, AllocatorType>::swap(Vector<T, AllocatorType>& other)
 {
-	// If the allocator has inline storage, we need to handle this
-	// method a bit different, as swapping the pointers wont work.
-	if constexpr (allocator_type::IsInline)
-	{
-		const size_t otherSize = other.size();
-		value_type* const newData = Reallocate(otherSize, other.m_ptrBegin, other.m_ptrEnd, ShouldMoveTag());
+	const size_t thisSize = size();
+	const size_t otherSize = other.size();
 
-		m_ptrBegin = newData;
-		m_ptrEnd = m_ptrBegin + otherSize;
-		InternalCapacityPtr() = m_ptrBegin + otherSize;
-	}
-	else
-	{
-		std::swap(m_ptrBegin, other.m_ptrBegin);
-		std::swap(m_ptrEnd, other.m_ptrEnd);
-		std::swap(m_capacityAllocator, other.m_capacityAllocator);
-	}
+	const size_t thisCapacity = capacity();
+	const size_t otherCapacity = other.capacity();
+
+	InternalAllocator().Swap(other.InternalAllocator());
+
+	m_ptrBegin = InternalAllocator().GetAllocation();
+	m_ptrEnd = m_ptrBegin + otherSize;
+	InternalCapacityPtr() = m_ptrBegin + otherCapacity;
+
+	other.m_ptrBegin = other.InternalAllocator().GetAllocation();
+	other.m_ptrEnd = other.m_ptrBegin + thisSize;
+	other.InternalCapacityPtr() = m_ptrBegin + thisCapacity;
 }
 
 template<typename T, typename AllocatorType>
@@ -469,7 +467,7 @@ inline constexpr Vector<T, AllocatorType>::size_type Vector<T, AllocatorType>::s
 template<typename T, typename AllocatorType>
 inline constexpr Vector<T, AllocatorType>::size_type Vector<T, AllocatorType>::byte_size() const noexcept
 {
-	return static_cast<size_type>((m_ptrEnd - m_ptrBegin) * sizeof(T)) ;
+	return static_cast<size_type>((m_ptrEnd - m_ptrBegin) * sizeof(T));
 }
 
 template<typename T, typename AllocatorType>
@@ -551,8 +549,7 @@ inline constexpr void Vector<T, AllocatorType>::set_capacity(size_type count)
 	else
 	{
 		value_type* const newData = Reallocate(count, m_ptrBegin, m_ptrEnd, ShouldMoveTag());
-
-		if constexpr (!allocator_type::IsInline)
+		if (newData == m_ptrBegin)
 		{
 			Destruct(m_ptrBegin, m_ptrEnd);
 		}
@@ -939,16 +936,25 @@ inline void Vector<T, AllocatorType>::InsertValuesAtEnd(size_type count, const v
 		const size_type newCount = std::max(growCount, prevCount + count);
 		value_type* const newData = Allocate(newCount);
 
-		value_type* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
+		if (newData == m_ptrBegin)
+		{
+			UninitializedConstructFillCountPtr(m_ptrEnd, count, value);
+			m_ptrEnd += count;
+		}
+		else
+		{
+			value_type* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
 
-		UninitializedConstructFillCountPtr(newEnd, count, value);
-		newEnd += count;
+			UninitializedConstructFillCountPtr(newEnd, count, value);
+			newEnd += count;
 
-		Destruct(m_ptrBegin, m_ptrEnd);
-		DoFree(m_ptrBegin);
+			Destruct(m_ptrBegin, m_ptrEnd);
+			DoFree(m_ptrBegin);
 
-		m_ptrBegin = newData;
-		m_ptrEnd = newEnd;
+			m_ptrBegin = newData;
+			m_ptrEnd = newEnd;
+		}
+
 		InternalCapacityPtr() = newData + newCount;
 	}
 	else
@@ -968,16 +974,26 @@ inline void Vector<T, AllocatorType>::InsertValuesAtEnd(size_type count)
 		const size_type newCount = std::max(growCount, prevCount + count);
 		value_type* const newData = Allocate(newCount);
 
-		value_type* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
+		if (newData == m_ptrBegin)
+		{
+			UninitializedValueConstructCount(m_ptrEnd, count);
+			m_ptrEnd += count;
+		}
+		else
+		{
+			value_type* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
 
-		UninitializedValueConstructCount(newEnd, count);
-		newEnd += count;
+			UninitializedValueConstructCount(newEnd, count);
+			newEnd += count;
 
-		Destruct(m_ptrBegin, m_ptrEnd);
-		DoFree(m_ptrBegin);
+			Destruct(m_ptrBegin, m_ptrEnd);
+			DoFree(m_ptrBegin);
 
-		m_ptrBegin = newData;
-		m_ptrEnd = newEnd;
+			m_ptrBegin = newData;
+			m_ptrEnd = newEnd;
+		}
+
+
 		InternalCapacityPtr() = newData + newCount;
 	}
 	else
@@ -999,13 +1015,17 @@ template<typename T, typename AllocatorType>
 inline void Vector<T, AllocatorType>::Grow(size_type count)
 {
 	value_type* const newData = Allocate(count);
-	value_type* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
+	if (newData != m_ptrBegin)
+	{
+		value_type* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
 
-	Destruct(m_ptrBegin, m_ptrEnd);
-	DoFree(m_ptrBegin);
+		Destruct(m_ptrBegin, m_ptrEnd);
+		DoFree(m_ptrBegin);
 
-	m_ptrBegin = newData;
-	m_ptrEnd = newEnd;
+		m_ptrBegin = newData;
+		m_ptrEnd = newEnd;
+	}
+
 	InternalCapacityPtr() = newData + count;
 }
 
@@ -1027,7 +1047,10 @@ template<typename ForwardIterator>
 inline Vector<T, AllocatorType>::value_type* Vector<T, AllocatorType>::Reallocate(size_type count, ForwardIterator first, ForwardIterator last, ShouldCopyTag)
 {
 	value_type* const ptr = Allocate(count);
-	UninitializedCopyPtr(first, last, ptr);
+	if (ptr != m_ptrBegin)
+	{
+		UninitializedCopyPtr(first, last, ptr);
+	}
 	return ptr;
 }
 
@@ -1036,7 +1059,10 @@ template<typename ForwardIterator>
 inline Vector<T, AllocatorType>::value_type* Vector<T, AllocatorType>::Reallocate(size_type count, ForwardIterator first, ForwardIterator last, ShouldMoveTag)
 {
 	value_type* const ptr = Allocate(count);
-	std::uninitialized_move(first, last, ptr);
+	if (ptr != m_ptrBegin)
+	{
+		std::uninitialized_move(first, last, ptr);
+	}
 	return ptr;
 }
 
@@ -1148,7 +1174,10 @@ inline void Vector<T, AllocatorType>::AssignFromIterator(RandomAccessIterator be
 	if (count > static_cast<size_type>(InternalCapacityPtr() - m_ptrBegin)) // count > capacity
 	{
 		value_type* const newData = Reallocate(count, begin, end, ShouldMoveOrCopyTag<move>());
-		Destruct(m_ptrBegin, m_ptrEnd);
+		if (newData != m_ptrBegin)
+		{
+			Destruct(m_ptrBegin, m_ptrEnd);
+		}
 		DoFree(m_ptrBegin);
 
 		m_ptrBegin = newData;
@@ -1241,19 +1270,34 @@ inline void Vector<T, AllocatorType>::InsertFromIterator(const_iterator position
 			value_type* secondPartitionDest = newData + destOffset + copyCount;
 			value_type* copyDataDest = newData + destOffset;
 
-			std::uninitialized_move(m_ptrBegin, destPosition, newData);
-			std::uninitialized_move(destPosition, m_ptrEnd, secondPartitionDest);
-			UninitializedCopyPtr(first, last, copyDataDest);
-			value_type* newEnd = secondPartitionDest + secondPartitionCount;
-
-			if (!allocator_type::IsInline)
+			if (m_ptrBegin == newData)
 			{
-				Destruct(m_ptrBegin, m_ptrEnd);
-			}
-			DoFree(m_ptrBegin);
+				const size_t numUninitializedMoves = copyCount - secondPartitionCount;
+				const size_t numInitializedMoves = copyCount - numUninitializedMoves;
+				if (numInitializedMoves > 0)
+				{
+					std::move(destPosition, destPosition + numInitializedMoves, secondPartitionDest);
+				}
+				std::uninitialized_move(destPosition + numInitializedMoves, destPosition + numInitializedMoves + numUninitializedMoves, secondPartitionDest + numInitializedMoves);
+				UninitializedCopyPtr(first, last, copyDataDest);
 
-			m_ptrBegin = newData;
-			m_ptrEnd = newEnd;
+				value_type* newEnd = secondPartitionDest + secondPartitionCount;
+				m_ptrEnd = newEnd;
+			}
+			else
+			{
+				std::uninitialized_move(m_ptrBegin, destPosition, newData);
+				std::uninitialized_move(destPosition, m_ptrEnd, secondPartitionDest);
+				UninitializedCopyPtr(first, last, copyDataDest);
+				value_type* newEnd = secondPartitionDest + secondPartitionCount;
+
+				Destruct(m_ptrBegin, m_ptrEnd);
+				DoFree(m_ptrBegin);
+
+				m_ptrBegin = newData;
+				m_ptrEnd = newEnd;
+			}
+
 			InternalCapacityPtr() = newData + newCount;
 		}
 	}
@@ -1298,20 +1342,27 @@ inline void Vector<T, AllocatorType>::InsertValues(const_iterator position, size
 		const size_type firstPartitionCount = destPosition - m_ptrBegin;
 		const size_type secondPartitionCount = m_ptrEnd - destPosition;
 
-		std::uninitialized_move(m_ptrBegin, destPosition, newData);
-		std::uninitialized_move(destPosition, m_ptrEnd, newData + firstPartitionCount + count);
-		UninitializedConstructFillCountPtr(newData + firstPartitionCount, count, value);
-
-		value_type* newEnd = newData + firstPartitionCount + count + secondPartitionCount;
-
-		if (!allocator_type::IsInline)
+		if (newData == m_ptrBegin)
 		{
-			Destruct(m_ptrBegin, m_ptrEnd);
+			value_type* newEnd = std::uninitialized_move(destPosition, m_ptrEnd, newData + firstPartitionCount + count);
+			UninitializedConstructFillCountPtr(newData + firstPartitionCount, count, value);
+			m_ptrEnd = newEnd;
 		}
-		DoFree(m_ptrBegin);
+		else
+		{
+			std::uninitialized_move(m_ptrBegin, destPosition, newData);
+			std::uninitialized_move(destPosition, m_ptrEnd, newData + firstPartitionCount + count);
+			UninitializedConstructFillCountPtr(newData + firstPartitionCount, count, value);
 
-		m_ptrBegin = newData;
-		m_ptrEnd = newEnd;
+			value_type* newEnd = newData + firstPartitionCount + count + secondPartitionCount;
+
+			Destruct(m_ptrBegin, m_ptrEnd);
+			DoFree(m_ptrBegin);
+
+			m_ptrBegin = newData;
+			m_ptrEnd = newEnd;
+		}
+
 		InternalCapacityPtr() = newData + newCount;
 	}
 }
@@ -1343,19 +1394,26 @@ inline void Vector<T, AllocatorType>::InsertValue(const_iterator position, Args 
 		const size_type newCount = GetNewCapacity(prevCount);
 		value_type* const newData = Allocate(newCount);
 
-		value_type* newEnd = std::uninitialized_move(m_ptrBegin, destPosition, newData);
-		newEnd = std::uninitialized_move(destPosition, m_ptrEnd, ++newEnd);
-
-		::new(static_cast<void*>(newData + insertPos)) value_type(std::forward<Args>(args)...);
-
-		if (!allocator_type::IsInline)
+		if (newData == m_ptrBegin)
 		{
-			Destruct(m_ptrBegin, m_ptrEnd);
-		}
-		DoFree(m_ptrBegin);
+			value_type* newEnd = std::uninitialized_move(destPosition, m_ptrEnd, newData + insertPos + 1);
+			::new(static_cast<void*>(newData + insertPos)) value_type(std::forward<Args>(args)...);
+			m_ptrEnd = newEnd;
+		}	
+		else
+		{
+			value_type* newEnd = std::uninitialized_move(m_ptrBegin, destPosition, newData);
+			newEnd = std::uninitialized_move(destPosition, m_ptrEnd, ++newEnd);
 
-		m_ptrBegin = newData;
-		m_ptrEnd = newEnd;
+			::new(static_cast<void*>(newData + insertPos)) value_type(std::forward<Args>(args)...);
+
+			Destruct(m_ptrBegin, m_ptrEnd);
+			DoFree(m_ptrBegin);
+
+			m_ptrBegin = newData;
+			m_ptrEnd = newEnd;
+		}
+
 		InternalCapacityPtr() = newData + newCount;
 	}
 }
@@ -1368,18 +1426,24 @@ inline void Vector<T, AllocatorType>::InsertValueAtEnd(Args && ...args)
 	const size_type newCount = GetNewCapacity(prevCount);
 	T* const newData = Allocate(newCount);
 
-	T* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
-	::new((void*)newEnd) T(std::forward<Args>(args)...);
-	newEnd++; 
-
-	if (!allocator_type::IsInline)
+	if (newData == m_ptrBegin)
 	{
-		Destruct(m_ptrBegin, m_ptrEnd);
+		::new((void*)m_ptrEnd) T(std::forward<Args>(args)...);
+		m_ptrEnd++;
 	}
-	DoFree(m_ptrBegin);
+	else
+	{
+		T* newEnd = std::uninitialized_move(m_ptrBegin, m_ptrEnd, newData);
+		::new((void*)newEnd) T(std::forward<Args>(args)...);
+		newEnd++;
 
-	m_ptrBegin = newData;
-	m_ptrEnd = newEnd;
+		Destruct(m_ptrBegin, m_ptrEnd);
+		DoFree(m_ptrBegin);
+
+		m_ptrBegin = newData;
+		m_ptrEnd = newEnd;
+	}
+
 	InternalCapacityPtr() = newData + newCount;
 }
 
@@ -1388,16 +1452,14 @@ inline VectorBase<T, Allocator>::VectorBase()
 	: m_ptrBegin(nullptr),
 	m_ptrEnd(nullptr),
 	m_capacityAllocator(nullptr, allocator_type())
-{
-}
+{}
 
 template<typename T, typename Allocator>
 inline VectorBase<T, Allocator>::VectorBase(const allocator_type& allocator)
 	: m_ptrBegin(nullptr),
 	m_ptrEnd(nullptr),
 	m_capacityAllocator(nullptr, allocator)
-{
-}
+{}
 
 template<typename T, typename Allocator>
 inline VectorBase<T, Allocator>::VectorBase(size_type num, const allocator_type& allocator)
@@ -1412,7 +1474,7 @@ inline VectorBase<T, Allocator>::~VectorBase()
 {
 	if (m_ptrBegin)
 	{
- 		DoFree(m_ptrBegin);
+		DoFree(m_ptrBegin);
 	}
 }
 

@@ -8,6 +8,7 @@
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
+#include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 
 #include "VulkanRHIModule/Graphics/VulkanDeviceQueue.h"
 #include "VulkanRHIModule/Graphics/VulkanGraphicsContext.h"
@@ -32,6 +33,7 @@
 
 #include "VulkanRHIModule/Synchronization/VulkanEvent.h"
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
+#include "VulkanRHIModule/Synchronization/VulkanFence_New.h"
 #include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
@@ -45,7 +47,7 @@ namespace Volt::RHI
 	VulkanRHIModule::VulkanRHIModule()
 	{
 		s_instance = this;
-		m_resourceDeletionQueue.SetSize(RHI::Swapchain::FramesInFlight);
+		m_resourceDeletionQueue.SetSize(RHI::RHICapabilities::NumFramesInFlight);
 
 		// Allocate arenas
 		constexpr size_t ArenaSize = 8192;
@@ -89,9 +91,9 @@ namespace Volt::RHI
 		return storageBuffer;
 	}
 
-	RefPtr<UniformBuffer> VulkanRHIModule::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const
+	RefPtr<UniformBuffer> VulkanRHIModule::CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData = nullptr) const
 	{
-		RefPtr<UniformBuffer> uniformBuffer = RefPtr<VulkanUniformBuffer>::AttachNoRef(m_uniformBufferArena.Allocate(size, data, count, name));
+		RefPtr<UniformBuffer> uniformBuffer = RefPtr<VulkanUniformBuffer>::AttachNoRef(m_uniformBufferArena.Allocate(uniformBufferDesc, initialData));
 		uniformBuffer->SetArena(&m_uniformBufferArena);
 		return uniformBuffer;
 	}
@@ -198,6 +200,11 @@ namespace Volt::RHI
 		return RefPtr<VulkanFence>::Create(createInfo);
 	}
 
+	RefPtr<Fence_New> VulkanRHIModule::CreateFence() const
+	{
+		return RefPtr<VulkanFence_New>::Create();
+	}
+
 	RefPtr<Semaphore> VulkanRHIModule::CreateSemaphore(const SemaphoreCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanSemaphore>::Create(createInfo);
@@ -220,7 +227,7 @@ namespace Volt::RHI
 
 	void VulkanRHIModule::DestroyResource(std::function<void()>&& function)
 	{
-		const uint32_t queueIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
+		const uint32_t queueIndex = m_frameIndex % RHI::RHICapabilities::NumFramesInFlight;
 		m_resourceDeletionQueue.EnqueueResourceDeletion(queueIndex, std::move(function));
 	}
 
@@ -232,12 +239,15 @@ namespace Volt::RHI
 		}
 	}
 
-	void VulkanRHIModule::Update()
+	void VulkanRHIModule::BeginFrame()
 	{
 		GraphicsContext::GetDefaultAllocator()->Update();
 		GraphicsContext::GetTransientAllocator()->Update();
 
-		const uint32_t queueIndex = ++m_frameIndex % RHI::Swapchain::FramesInFlight;
+		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
+		vkGraphicsContext.GetDescriptorHeap().BeginFrame();
+
+		const uint32_t queueIndex = ++m_frameIndex % RHI::RHICapabilities::NumFramesInFlight;
 		m_resourceDeletionQueue.FlushQueue(queueIndex);
 	}
 
@@ -264,6 +274,12 @@ namespace Volt::RHI
 	RefPtr<RayTracingResourceTable> VulkanRHIModule::CreateRayTracingResourceTable() const
 	{
 		return RefPtr<VulkanRayTracingResourceTable>::Create();
+	}
+
+	void VulkanRHIModule::EndFrame()
+	{
+		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
+		vkGraphicsContext.GetDescriptorHeap().Flush();
 	}
 }
 

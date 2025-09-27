@@ -35,11 +35,6 @@ private:
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnRenderEvent(Volt::AppRenderEvent& e);
 	bool OnWindowResizeEvent(Volt::WindowResizeEvent& e);
-	bool OnSceneTransition(Volt::OnSceneTransitionEvent& e);
-	bool OnSceneLoaded(Volt::OnSceneLoadedEvent& e);
-	//bool OnGameStateChanged(Volt::OnGameStateChangedEvent& e);
-
-	void TrySceneTransition();
 
 	Ref<Volt::SceneRenderer> m_sceneRenderer;
 	Ref<Volt::Scene> m_scene;

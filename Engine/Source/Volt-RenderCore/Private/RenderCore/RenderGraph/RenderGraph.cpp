@@ -91,7 +91,7 @@ namespace Volt
 {
 	static ConsoleVariable<int32_t> g_renderGraphForceSingleThreadedExecution(
 		"r.RenderGraph.ForceSingleThreadedExecution",
-		0,
+		1,
 		"Wether or not to force single threaded execution of the RenderGraph.");
 
 	static ConsoleVariable<int32_t> g_renderGraphForceFullBarriersBetweenPasses(
@@ -189,9 +189,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		m_temporaryDataAllocator.Reserve(10 * 1024 * 1024);
-
-		RHI::FenceCreateInfo createInfo{};
-		m_executionFence = RHI::Fence::Create(createInfo);
+		m_executionFence = RHI::Fence_New::Create();
 	}
 
 	RenderGraph::~RenderGraph()
@@ -725,8 +723,8 @@ namespace Volt
 		}
 
 		RGUniformBufferDesc desc{};
-		desc.elementSize = uniformBuffer->GetByteSize();
-		desc.name = uniformBuffer->GetName();
+		desc.size = static_cast<uint32_t>(uniformBuffer->GetByteSize());
+		desc.debugName = uniformBuffer->GetName();
 
 		RGUniformBufferRef bufferResource = m_resourceAllocator.Allocate<RGUniformBuffer>(desc);
 		bufferResource->isExternal = true;
@@ -1470,6 +1468,11 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		if (m_passes.empty())
+		{
+			return nullptr;
+		}
+
 		RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer = new RenderGraphShaderParameterUniformBuffer(*this);
 
 		PrepareResourcesForExecution();
@@ -1512,7 +1515,7 @@ namespace Volt
 		// This data pointer is destroyed in the execution job.
 
 		// Create a temporary reference to the execution fence here to keep it alive.
-		RefPtr<RHI::Fence> executionFence = m_executionFence;
+		RefPtr<RHI::Fence_New> executionFence = m_executionFence;
 
 		void* tempRenderGraphStorage = Memory::Malloc(sizeof(RenderGraph), alignof(RenderGraph));
 		new (tempRenderGraphStorage) RenderGraph(std::move(*this));
@@ -1570,7 +1573,7 @@ namespace Volt
 		shaderParameterUniformBuffer->Unmap();
 
 		// This function is responsible for executing the recorded command buffers.
-		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<PooledCommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
+		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<PooledCommandBuffer>>& commandBuffers, RefPtr<RHI::Fence_New> executionFence)
 		{
 			RHI::DeviceQueueExecuteInfo executeInfo{};
 			executeInfo.commandBuffers.resize(commandBuffers.size());
@@ -1580,7 +1583,7 @@ namespace Volt
 				executeInfo.commandBuffers[i] = commandBuffers[i]->Get();
 			}
 
-			executeInfo.fence = executionFence;
+			executeInfo.fence_new = executionFence;
 			RHI::GraphicsContext::GetDevice()->GetDeviceQueue(RHI::QueueType::Graphics)->Execute(executeInfo);
 
 			renderGraphPtr->TransitionExternalResources();
@@ -1833,9 +1836,8 @@ namespace Volt
 		const size_t numShaderParameters = renderGraph.m_passes.size() * 10;
 
 		RGUniformBufferDesc desc{};
-		desc.count = 1;
-		desc.elementSize = PerStageUniformBufferSize * numShaderParameters;
-		desc.name = "ShaderParameters";
+		desc.size = static_cast<uint32_t>(PerStageUniformBufferSize * numShaderParameters);
+		desc.debugName = "ShaderParameters";
 
 		m_uniformBuffer = renderGraph.CreateUniformBuffer(desc);
 		m_uniformBuffer->AddRef();

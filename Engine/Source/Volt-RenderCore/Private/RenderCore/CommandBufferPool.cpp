@@ -2,7 +2,7 @@
 
 #include "RenderCore/CommandBufferPool.h"
 
-#include <RHIModule/Graphics/Swapchain.h>
+#include <RHIModule/RHICapabilities.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -14,8 +14,8 @@ namespace Volt
 		VT_ENSURE(!s_instance);
 		s_instance = this;
 
-		m_waitingCommandBufferPool.resize(RHI::Swapchain::FramesInFlight);
-		for (uint32_t i = 0; i < RHI::Swapchain::FramesInFlight; ++i)
+		m_waitingCommandBufferPool.resize(RHI::RHICapabilities::NumFramesInFlight);
+		for (uint32_t i = 0; i < RHI::RHICapabilities::NumFramesInFlight; ++i)
 		{
 			m_waitingCommandBufferPool[i].Allocate(WaitCommandBufferPoolSize);
 		}
@@ -34,12 +34,20 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_frameIndex = ++m_frameIndex % RHI::Swapchain::FramesInFlight;
-		
+		m_frameIndex = ++m_frameIndex % RHI::RHICapabilities::NumFramesInFlight;
+		uint32_t nextFrameIndex = (m_frameIndex + 1) % RHI::RHICapabilities::NumFramesInFlight;
+
 		RefPtr<RHI::CommandBuffer> commandBuffer;
 		while (m_waitingCommandBufferPool.at(m_frameIndex).Pop(commandBuffer))
 		{
-			m_commandBufferPool.Push(commandBuffer);
+			if (commandBuffer->HasFinishedExecution())
+			{
+				m_commandBufferPool.Push(commandBuffer);
+			}
+			else
+			{
+				m_waitingCommandBufferPool.at(nextFrameIndex).Push(commandBuffer);
+			}
 		}
 	}
 

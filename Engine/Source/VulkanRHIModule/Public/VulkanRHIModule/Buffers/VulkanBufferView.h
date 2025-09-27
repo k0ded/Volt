@@ -19,7 +19,7 @@ namespace Volt::RHI
 		RawPtr<RHIResource> GetResource() const { return m_resource; }
 		bool IsTexelBufferView() const override;
 
-		VT_NODISCARD VT_INLINE const BufferViewDesc& GetDesc() const { return m_desc; }
+		VT_NODISCARD VT_INLINE const BufferViewDesc& GetDesc() const override { return m_desc; }
 		VT_NODISCARD VT_INLINE VkBufferView_T* GetTexelBufferView() const { return m_texelBufferView; }
 
 	protected:

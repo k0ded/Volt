@@ -1,4 +1,5 @@
 #include "Launcher/GameLayer.h"
+#include "Launcher/TestingLayer.h"
 
 #include <Volt-Application/Application.h>
 
@@ -8,7 +9,7 @@ public:
 	LauncherApp(const Volt::ApplicationCreationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
 		: Volt::Application(commandLineBuilder, appInfo)
 	{
-		GameLayer* testing = new GameLayer();
+		TestingLayer* testing = new TestingLayer();
 		PushLayer(testing);
 	}
 private:
@@ -20,7 +21,7 @@ Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& command
 	Volt::ApplicationCreationInfo info{};
 	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
 	info.useVSync = false;
-	info.enableImGui = false;
+	info.enableImGui = true;
 	info.isRuntime = true;
 	info.width = 1600;
 	info.height = 900;

@@ -11,6 +11,7 @@
 namespace Volt
 {
 	class AppPreRenderEvent;
+	class AppPostFrameUpdateEvent;
 }
 
 namespace Volt::RHI
@@ -38,6 +39,7 @@ namespace Volt::RHI
 		void LoadRHIFromFilepath(const std::filesystem::path& filepath);
 		void CreateGraphicsContextForRHI(RHI::GraphicsAPI api, const RHI::RHICallbackInfo& callbackInfo);
 		bool OnPreRenderEvent(AppPreRenderEvent& event);
+		bool OnPostFrameUpdate(AppPostFrameUpdateEvent& event);
 
 		RHIModule* m_rhiModule = nullptr;
 		RefPtr<RHI::GraphicsContext> m_graphicsContext;

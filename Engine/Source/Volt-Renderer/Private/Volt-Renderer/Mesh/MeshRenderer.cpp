@@ -46,23 +46,26 @@ namespace Volt
 
 		const auto& materialTextures = material->GetTextures();
 
-		const Vector<RHI::ShaderParameterMap>& shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
+		ArrayView<RHI::ShaderParameterMap> shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
 
 		for (const auto& [index, materialTexture] : materialTextures)
 		{
 			for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
 			{
-				const RHI::ShaderResourceBinding* resourceBinding = parameterMap.GetResourceBindingFromName(StringHash::Construct(materialTexture.bindingName));
-				if (resourceBinding)
+				if (parameterMap.IsValid())
 				{
-					auto image = materialTexture.texture.GetResource();
-
-					if (!image)
+					const RHI::ShaderResourceBinding* resourceBinding = parameterMap.GetResourceBindingFromName(StringHash::Construct(materialTexture.bindingName));
+					if (resourceBinding)
 					{
-						image = Renderer::GetDefaultResources().whiteTexture->GetImage();
-					}
+						auto image = materialTexture.texture.GetResource();
 
-					descriptorTable->SetImageView(image->GetView(), resourceBinding->set, resourceBinding->binding);
+						if (!image)
+						{
+							image = Renderer::GetDefaultResources().whiteTexture->GetImage();
+						}
+
+						descriptorTable->SetImageView(image->GetView(), resourceBinding->set, resourceBinding->binding);
+					}
 				}
 			}
 		}
@@ -84,6 +87,7 @@ namespace Volt
 
 	void MeshRenderer::Render(RenderContext& renderContext, RenderScene& renderScene, BatchedShaderParameters& batchedShaderParameters) const
 	{
+#if 0
 		VT_PROFILE_FUNCTION();
 
 		RefPtr<RHI::CommandBuffer> commandBuffer = renderContext.GetRHICommandBuffer();
@@ -144,6 +148,7 @@ namespace Volt
 				commandBuffer->DrawIndexedIndirect(m_indirectDrawCommandsBuffer->GetRHIResource()->GetRHIBuffer(), meshBatch.drawCommandOffset * sizeof(RHI::DrawIndexedIndirectCommand), 1, 0);
 			}
 		}
+#endif
 	}
 
 	struct CopyIndirectDrawCommandsCS : public GlobalShader

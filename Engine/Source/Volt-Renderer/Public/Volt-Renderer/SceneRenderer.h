@@ -7,6 +7,7 @@
 #include "Volt-Renderer/Mesh/MeshRenderer.h"
 #include "Volt-Renderer/RenderingTechniques/TAANoise.h"
 #include "Volt-Renderer/GlobalIllumination/GlobalIlluminationRenderer.h"
+#include "Volt-Renderer/MeshPassProcessor.h"
 
 #include <RenderCore/RenderGraph/RenderGraphDebugger.h>
 
@@ -54,6 +55,17 @@ namespace Volt
 		bool drawDebug = false;
 
 		Ref<RenderScene> renderScene;
+	};
+
+	class TestMeshPassProcessor : public MeshPassProcessor
+	{
+	public:
+		void AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive) override;
+
+		void RemoveRenderPrimitive(UUID64 renderPrimitveId) override
+		{
+
+		}
 	};
 
 	class VTR_API SceneRenderer : public EventListener
@@ -153,7 +165,7 @@ namespace Volt
 		glm::vec2 m_currentJitter = 0.f;
 		glm::vec2 m_prevJitter = 0.f;
 
-		AntiAliasingMethod m_antiAliasingMethod = AntiAliasingMethod::TAA;
+		AntiAliasingMethod m_antiAliasingMethod = AntiAliasingMethod::None;
 		VisualizationMode m_visualizationMode = VisualizationMode::None;
 
 		PreviousFrameData m_previousFrameData;
@@ -175,6 +187,13 @@ namespace Volt
 
 		// Extensions
 		SceneRendererExtensionMap m_sceneRendererExtensions;
+
+		// Mesh passes
+		MeshPassProcessorRegistry m_meshPassProcessorRegistry;
+		UUID32 m_onRenderPrimitiveAddedCallbackId = 0;
+		UUID32 m_onRenderPrimitiveRemovedCallbackId = 0;
+
+		TestMeshPassProcessor* m_testMeshPassProcessor = nullptr;
 	};
 
 	template<typename T>

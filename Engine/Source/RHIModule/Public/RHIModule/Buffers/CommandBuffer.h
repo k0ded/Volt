@@ -24,6 +24,7 @@ namespace Volt::RHI
 	class StorageBuffer;
 	class Allocation;
 	class Swapchain;
+	class ShaderBindingMap;
 
 	class Event;
 	class Fence;
@@ -80,6 +81,8 @@ namespace Volt::RHI
 		virtual void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) = 0;
 		virtual void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure = nullptr) = 0;
 
+		virtual void BindShaderBindings(const ShaderBindingMap& shaderBindings) = 0;
+
 		virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
 		virtual void EndRendering() = 0;
 
@@ -107,6 +110,8 @@ namespace Volt::RHI
 		virtual void CopyImage(RawPtr<Image> srcImage, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth) = 0;
 
 		virtual void UploadTextureData(RawPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData) = 0;
+
+		virtual bool HasFinishedExecution() const = 0;
 
 		virtual const QueueType GetQueueType() const = 0;
 		virtual const CommandBufferLevel GetCommandBufferLevel() const = 0;

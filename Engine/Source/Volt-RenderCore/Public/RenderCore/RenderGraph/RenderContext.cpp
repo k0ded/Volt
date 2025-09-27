@@ -13,7 +13,6 @@
 
 namespace Volt
 {
-
 	RenderContext::RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
 		: m_renderGraph(renderGraph), m_currentPass(currentPass), m_commandBuffer(commandBuffer), m_shaderParameterUniformBuffer(shaderParameterUniformBuffer)
 	{
@@ -188,8 +187,6 @@ namespace Volt
 		m_commandBuffer->BindPipeline(pipeline);
 
 		AllocatePerStageShaderParameterBuffers();
-
-		m_descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(pipeline);
 	}
 
 	void RenderContext::BindPipeline(RefPtr<RHI::ComputePipeline> pipeline)
@@ -198,8 +195,6 @@ namespace Volt
 		m_commandBuffer->BindPipeline(pipeline);
 
 		AllocatePerStageShaderParameterBuffers();
-
-		m_descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(pipeline);
 	}
 
 	void RenderContext::BindIndexBuffer(RGBufferRef indexBuffer)
@@ -255,6 +250,7 @@ namespace Volt
 
 	void RenderContext::BindDescriptorTable()
 	{
+#if USE_DESCRIPTOR_TABLE
 		VT_ENSURE(m_descriptorTable);
 
 		for (const auto& shaderParameters : m_perStageShaderParameters)
@@ -263,6 +259,14 @@ namespace Volt
 		}
 
 		m_commandBuffer->BindDescriptorTable(m_descriptorTable);
+#else
+		for (const auto& shaderParameters : m_perStageShaderParameters)
+		{
+			m_shaderBindingMap.SetUniformBuffer(shaderParameters.shaderStage, RHI::Globals::SHADER_GLOBALS_BINDING, shaderParameters.uniformBufferSRV->GetRHIView());
+		}
+
+		m_commandBuffer->BindShaderBindings(m_shaderBindingMap);
+#endif
 	}
 
 	void RenderContext::AllocatePerStageShaderParameterBuffers()
@@ -281,7 +285,7 @@ namespace Volt
 
 	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::AllocatePerStageShaderParameterBuffers(RawPtr<RHI::RenderPipeline> renderPipeline)
 	{
-		const Vector<RHI::ShaderParameterMap>& shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
+		ArrayView<RHI::ShaderParameterMap> shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
 
 		InlineVector<RenderContext::PerStageShaderParameters, 8> result;
 
@@ -318,6 +322,7 @@ namespace Volt
 
 	void RenderContext::SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
+#if USE_DESCRIPTOR_TABLE
 		VT_ENSURE(m_descriptorTable);
 
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
@@ -326,10 +331,30 @@ namespace Volt
 			VT_ENSURE_MSG(bufferSRV, "Buffer SRV must not be null!");
 			m_descriptorTable->SetBufferView(bufferSRV->GetRHIView(), resourceBinding->set, resourceBinding->binding);
 		}
+#else
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding)
+		{
+			VT_ENSURE_MSG(bufferSRV, "Buffer SRV must not be null!");
+			
+			RefPtr<RHI::BufferView> rhiView = bufferSRV->GetRHIView();
+			const bool isTexelBufferView = rhiView->IsTexelBufferView();
+
+			if (isTexelBufferView)
+			{
+				m_shaderBindingMap.SetTexelBufferSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
+			else
+			{
+				m_shaderBindingMap.SetStructuredBufferSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
+		}
+#endif
 	}
 
 	void RenderContext::SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
+#if USE_DESCRIPTOR_TABLE
 		VT_ENSURE(m_descriptorTable);
 
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
@@ -338,10 +363,30 @@ namespace Volt
 			VT_ENSURE_MSG(bufferUAV, "Buffer UAV must not be null!");
 			m_descriptorTable->SetBufferView(bufferUAV->GetRHIView(), resourceBinding->set, resourceBinding->binding);
 		}
+#else
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding)
+		{
+			VT_ENSURE_MSG(bufferUAV, "Buffer SRV must not be null!");
+
+			RefPtr<RHI::BufferView> rhiView = bufferUAV->GetRHIView();
+			const bool isTexelBufferView = rhiView->IsTexelBufferView();
+
+			if (isTexelBufferView)
+			{
+				m_shaderBindingMap.SetTexelBufferUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
+			else
+			{
+				m_shaderBindingMap.SetStructuredBufferUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
+		}
+#endif
 	}
 
 	void RenderContext::SetTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
+#if USE_DESCRIPTOR_TABLE
 		VT_ENSURE(m_descriptorTable);
 	
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
@@ -351,10 +396,19 @@ namespace Volt
 
 			m_descriptorTable->SetImageView(textureSRV->GetRHIView(), resourceBinding->set, resourceBinding->binding);
 		}
+#else
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding)
+		{
+			VT_ENSURE_MSG(textureSRV, "Texture SRV must not be null!");
+			m_shaderBindingMap.SetTextureSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, textureSRV->GetRHIView());
+		}
+#endif
 	}
 
 	void RenderContext::SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
+#if USE_DESCRIPTOR_TABLE
 		VT_ENSURE(m_descriptorTable);
 
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
@@ -364,10 +418,19 @@ namespace Volt
 
 			m_descriptorTable->SetImageView(textureUAV->GetRHIView(), resourceBinding->set, resourceBinding->binding);
 		}
+#else
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding)
+		{
+			VT_ENSURE_MSG(textureUAV, "Texture UAV must not be null!");
+			m_shaderBindingMap.SetTextureUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, textureUAV->GetRHIView());
+		}
+#endif
 	}
 
 	void RenderContext::SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
+#if USE_DESCRIPTOR_TABLE
 		VT_ENSURE(m_descriptorTable);
 
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
@@ -378,10 +441,18 @@ namespace Volt
 			RefPtr<RHI::BufferView> bufferView = uniformBuffer->GetRHIResource()->GetOrCreateView({});
 			m_descriptorTable->SetBufferView(bufferView, resourceBinding->set, resourceBinding->binding);
 		}
+#else
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding && uniformBuffer)
+		{
+			m_shaderBindingMap.SetUniformBuffer(shaderParameterMap.GetShaderStage(), resourceBinding->binding, uniformBuffer->GetRHIResource()->GetOrCreateView({}));
+		}
+#endif
 	}
 
 	void RenderContext::SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
+#if USE_DESCRIPTOR_TABLE
 		VT_ENSURE(m_descriptorTable);
 
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
@@ -389,10 +460,18 @@ namespace Volt
 		{
 			m_descriptorTable->SetSamplerState(sampler, resourceBinding->set, resourceBinding->binding);
 		}
+#else
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding)
+		{
+			m_shaderBindingMap.SetSampler(shaderParameterMap.GetShaderStage(), resourceBinding->binding, sampler);
+		}
+#endif
 	}
 
 	void RenderContext::SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
+#if USE_DESCRIPTOR_TABLE
 		VT_ENSURE(m_descriptorTable);
 
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
@@ -400,6 +479,13 @@ namespace Volt
 		{
 			m_descriptorTable->SetAccelerationStructure(accelerationStructure, resourceBinding->set, resourceBinding->binding);
 		}
+#else
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		if (resourceBinding)
+		{
+			m_shaderBindingMap.SetAccelerationStructure(shaderParameterMap.GetShaderStage(), resourceBinding->binding, accelerationStructure);
+		}
+#endif
 	}
 
 	void RenderContext::SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)

@@ -44,6 +44,12 @@ namespace Volt::RHI
 		return m_allocation;
 	}
 
+	void VulkanImageAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+		VmaAllocator allocator = GraphicsContext::GetDefaultAllocator()->GetHandle<VmaAllocator>();
+		vmaFlushAllocation(allocator, m_allocation, offset, size);
+	}
+
 	VulkanBufferAllocation::VulkanBufferAllocation(const size_t hash, const std::string& name)
 		: m_allocationHash(hash),
 		m_name(name)
@@ -82,6 +88,12 @@ namespace Volt::RHI
 	void* VulkanBufferAllocation::GetHandleImpl() const
 	{
 		return m_allocation;
+	}
+
+	void VulkanBufferAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+		VmaAllocator allocator = GraphicsContext::GetDefaultAllocator()->GetHandle<VmaAllocator>();
+		vmaFlushAllocation(allocator, m_allocation, offset, size);
 	}
 
 	VulkanTransientBufferAllocation::VulkanTransientBufferAllocation(const size_t hash, const std::string& name)
@@ -124,7 +136,13 @@ namespace Volt::RHI
 	{
 		return m_memoryHandle;
 	}
-	
+
+	void VulkanTransientBufferAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+
+	}
+
+
 	VulkanTransientImageAllocation::VulkanTransientImageAllocation(const size_t hash, const std::string& name)
 		: m_allocationHash(hash),
 		m_name(name)
@@ -160,5 +178,10 @@ namespace Volt::RHI
 	void* VulkanTransientImageAllocation::GetHandleImpl() const
 	{
 		return m_memoryHandle;
+	}
+
+	void VulkanTransientImageAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+
 	}
 }

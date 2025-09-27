@@ -30,7 +30,7 @@ namespace Volt
 		m_parameters.emplace_back(parameter);
 	}
 
-	void BatchedShaderParameters::PopulateShaderParameterUniformBuffers(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& outShaderParameters)
+	void BatchedShaderParameters::PopulateShaderParameterUniformBuffers(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& outShaderParameters)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -54,7 +54,7 @@ namespace Volt
 		}
 	}
 
-	void BatchedShaderParameters::BindShaderBindingsToDescriptorTable(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable, const InlineVector<RenderContext::PerStageShaderParameters, 8>& shaderParameterUniformBuffers) const
+	void BatchedShaderParameters::BindShaderBindingsToDescriptorTable(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable, const InlineVector<RenderContext::PerStageShaderParameters, 8>& shaderParameterUniformBuffers) const
 	{
 		VT_PROFILE_FUNCTION();
 

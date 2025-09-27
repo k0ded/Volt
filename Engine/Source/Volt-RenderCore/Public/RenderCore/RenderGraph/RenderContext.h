@@ -9,6 +9,9 @@
 #include <RHIModule/Buffers/UniformBuffer.h>
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Core/RenderingInfo.h>
+#include <RHIModule/Synchronization/Fence.h>
+
+#include <RHIModule/Descriptors/ShaderBindingMap.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -117,6 +120,8 @@ namespace Volt
 		RawPtr<RHI::ComputePipeline> m_currentComputePipeline;
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 		RefPtr<RHI::DescriptorTable> m_descriptorTable;
+
+		RHI::ShaderBindingMap m_shaderBindingMap;
 
 		InlineVector<PerStageShaderParameters, 8> m_perStageShaderParameters;
 

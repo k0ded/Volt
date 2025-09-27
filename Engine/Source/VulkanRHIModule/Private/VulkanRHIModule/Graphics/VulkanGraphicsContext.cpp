@@ -8,6 +8,7 @@
 #include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
 
 #include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
+#include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Graphics/PhysicalGraphicsDevice.h>
@@ -86,10 +87,14 @@ namespace Volt::RHI
 		{
 			m_rayTracingTableDescriptorSetManager = CreateRef<RayTracingTableDescriptorSetManager>();
 		}
+
+		m_descriptorHeap = CreateRef<VulkanDescriptorHeap>();
 	}
 
 	void VulkanGraphicsContext::Shutdown()
 	{
+		m_descriptorHeap = nullptr;
+
 		if (RHI::RHICanUseRayTracing())
 		{
 			m_rayTracingTableDescriptorSetManager = nullptr;
@@ -117,7 +122,7 @@ namespace Volt::RHI
 	void VulkanGraphicsContext::CreateInstance()
 	{
 #ifdef VT_ENABLE_VALIDATION
-		if (m_createInfo.enabledDebugLayer)
+		//if (m_createInfo.enabledDebugLayer)
 		{
 			m_debugLayer = CreateRef<VulkanDebugLayer>();
 
@@ -134,7 +139,7 @@ namespace Volt::RHI
 		appInfo.pEngineName = "Volt";
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_3;
+		appInfo.apiVersion = VK_API_VERSION_1_4;
 
 		const auto requiredExtensions = GetRequiredExtensions();
 

@@ -83,7 +83,13 @@ namespace Volt::RHI
 
 	bool RHIModuleLoader::OnPreRenderEvent(AppPreRenderEvent& event)
 	{
-		m_rhiModule->Update();
+		m_rhiModule->BeginFrame();
+		return false;
+	}
+
+	bool RHIModuleLoader::OnPostFrameUpdate(AppPostFrameUpdateEvent& event)
+	{
+		m_rhiModule->EndFrame();
 		return false;
 	}
 }
