@@ -1,11 +1,6 @@
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
-#ifdef __EMSCRIPTEN__
-#  include <GLES2/gl2.h>
-#  include <emscripten/html5.h>
-#else
-#  include "imgui/imgui_impl_opengl3_loader.h"
-#endif
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_opengl3_loader.h>
 
 #include <chrono>
 #include <GLFW/glfw3.h>
@@ -13,7 +8,8 @@
 #include <stdlib.h>
 #include <thread>
 
-#include "../../server/TracyImGui.hpp"
+#include "profiler/TracyConfig.hpp"
+#include "profiler/TracyImGui.hpp"
 
 #include "Backend.hpp"
 #include "RunQueue.hpp"
@@ -21,9 +17,14 @@
 
 static GLFWwindow* s_window;
 static std::function<void()> s_redraw;
+static std::function<void(float)> s_scaleChanged;
 static RunQueue* s_mainThreadTasks;
 static WindowPosition* s_winPos;
 static bool s_iconified;
+static float s_prevScale = -1;
+
+extern tracy::Config s_config;
+
 
 static void glfw_error_callback( int error, const char* description )
 {
@@ -60,7 +61,7 @@ static void glfw_window_iconify_callback( GLFWwindow*, int iconified )
 }
 
 
-Backend::Backend( const char* title, const std::function<void()>& redraw, RunQueue* mainThreadTasks )
+Backend::Backend( const char* title, const std::function<void()>& redraw, const std::function<void(float)>& scaleChanged, const std::function<int(void)>& isBusy, RunQueue* mainThreadTasks )
 {
     glfwSetErrorCallback( glfw_error_callback );
     if( !glfwInit() ) exit( 1 );
@@ -79,6 +80,9 @@ Backend::Backend( const char* title, const std::function<void()>& redraw, RunQue
 #  if GLFW_VERSION_MAJOR > 3 || ( GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 4 )
     glfwWindowHint( GLFW_WIN32_KEYBOARD_MENU, 1 );
 #  endif
+#  if GLFW_VERSION_MAJOR > 3 || ( GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3 )
+    glfwWindowHint( GLFW_SCALE_TO_MONITOR, 1 );
+#  endif
 #endif
     s_window = glfwCreateWindow( m_winPos.w, m_winPos.h, title, NULL, NULL );
     if( !s_window ) exit( 1 );
@@ -93,13 +97,10 @@ Backend::Backend( const char* title, const std::function<void()>& redraw, RunQue
     glfwSetWindowRefreshCallback( s_window, []( GLFWwindow* ) { tracy::s_wasActive = true; s_redraw(); } );
 
     ImGui_ImplGlfw_InitForOpenGL( s_window, true );
-#ifdef __EMSCRIPTEN__
-    ImGui_ImplOpenGL3_Init( "#version 100" );
-#else
     ImGui_ImplOpenGL3_Init( "#version 150" );
-#endif
 
     s_redraw = redraw;
+    s_scaleChanged = scaleChanged;
     s_mainThreadTasks = mainThreadTasks;
     s_winPos = &m_winPos;
     s_iconified = false;
@@ -129,13 +130,6 @@ void Backend::Show()
 
 void Backend::Run()
 {
-#ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop( []() {
-        glfwPollEvents();
-        s_redraw();
-        s_mainThreadTasks->Run();
-    }, 0, 1 );
-#else
     while( !glfwWindowShouldClose( s_window ) )
     {
         if( s_iconified )
@@ -146,14 +140,10 @@ void Backend::Run()
         {
             glfwPollEvents();
             s_redraw();
-            if( !glfwGetWindowAttrib( s_window, GLFW_FOCUSED ) )
-            {
-                std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
-            }
+            if( s_config.focusLostLimit && !glfwGetWindowAttrib( s_window, GLFW_FOCUSED ) ) std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
             s_mainThreadTasks->Run();
         }
     }
-#endif
 }
 
 void Backend::Attention()
@@ -168,7 +158,18 @@ void Backend::Attention()
 
 void Backend::NewFrame( int& w, int& h )
 {
+    const auto scale = GetDpiScale();
+    if( scale != s_prevScale )
+    {
+        s_prevScale = scale;
+        s_scaleChanged( scale );
+    }
+
     glfwGetFramebufferSize( s_window, &w, &h );
+#if defined( __APPLE__ )
+    w = static_cast<int>( w / scale );
+    h = static_cast<int>( h / scale );
+#endif
     m_w = w;
     m_h = h;
 
@@ -178,7 +179,7 @@ void Backend::NewFrame( int& w, int& h )
 
 void Backend::EndFrame()
 {
-    const ImVec4 clear_color = ImColor( 114, 144, 154 );
+    const ImVec4 clear_color = ImColor( 20, 20, 17 );
 
     ImGui::Render();
     glViewport( 0, 0, m_w, m_h );
@@ -205,25 +206,11 @@ void Backend::SetTitle( const char* title )
 
 float Backend::GetDpiScale()
 {
-#ifdef __EMSCRIPTEN__
-    return EM_ASM_DOUBLE( { return window.devicePixelRatio; } );
-#elif GLFW_VERSION_MAJOR > 3 || ( GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3 )
-    auto monitor = glfwGetWindowMonitor( s_window );
-    if( !monitor ) monitor = glfwGetPrimaryMonitor();
-    if( monitor )
-    {
-        float x, y;
-        glfwGetMonitorContentScale( monitor, &x, &y );
-        return x;
-    }
-#endif
+#if GLFW_VERSION_MAJOR > 3 || ( GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3 )
+    float x, y;
+    glfwGetWindowContentScale( s_window, &x, &y );
+    return x;
+#else
     return 1;
-}
-
-#ifdef __EMSCRIPTEN__
-extern "C" int nativeResize( int width, int height )
-{
-    glfwSetWindowSize( s_window, width, height );
-    return 0;
-}
 #endif
+}

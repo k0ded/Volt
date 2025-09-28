@@ -16,6 +16,7 @@
 #include <WindowModule/Window.h>
 
 #include <imgui.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 using namespace Volt;
 
@@ -115,6 +116,14 @@ bool TestingLayer::OnRenderEvent(Volt::AppRenderEvent& e)
 bool TestingLayer::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 {
 	ImGui::ShowDemoWindow();
+
+	if (ImGui::Begin("Test"))
+	{
+		//ImGui::Image(UI::GetTextureID(m_sceneRenderer->GetFinalImage()), { 800, 400 });
+
+		ImGui::End();
+	}
+
 	return false;
 }
 
