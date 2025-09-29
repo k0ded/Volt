@@ -1538,11 +1538,14 @@ namespace Volt::RHI
 				{
 					case ShaderRegisterType::CBV:
 					{
+						const uint64_t offset = binding.uniformBufferSize > 0 ? binding.uniformBufferOffset : binding.bufferView->GetDesc().offset;
+						const uint64_t size = binding.uniformBufferSize > 0 ? binding.uniformBufferSize : binding.bufferView->GetDesc().size;
+
 						VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
 						addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
 						addressInfo.pNext = nullptr;
-						addressInfo.address = binding.bufferView->GetDeviceAddress() + binding.bufferView->GetDesc().offset;
-						addressInfo.range = binding.bufferView->GetDesc().size;
+						addressInfo.address = binding.bufferView->GetDeviceAddress() + offset;
+						addressInfo.range = size;
 						addressInfo.format = VK_FORMAT_UNDEFINED;
 
 						newDescriptor.vkInfo.data.pUniformBuffer = &addressInfo;

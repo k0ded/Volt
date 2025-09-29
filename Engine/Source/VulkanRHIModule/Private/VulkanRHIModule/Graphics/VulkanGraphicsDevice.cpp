@@ -452,6 +452,7 @@ namespace Volt::RHI
 		g_rhiCapabilities.maxTextureSamplers = deviceProperties.limits.maxDescriptorSetSamplers;
 		g_rhiCapabilities.maxComputeSharedMemorySize = deviceProperties.limits.maxComputeSharedMemorySize;
 		g_rhiCapabilities.maxWorkGroupInvocations = deviceProperties.limits.maxComputeWorkGroupInvocations;
+		g_rhiCapabilities.minUniformBufferAlignment = deviceProperties.limits.minUniformBufferOffsetAlignment;
 
 		g_rhiCapabilities.rayTracing.supportsRayTracing = m_physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && m_physicalDevice->IsExtensionAvailable(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
 		g_rhiCapabilities.rayTracing.supportsInlineRaytracing = m_physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME);

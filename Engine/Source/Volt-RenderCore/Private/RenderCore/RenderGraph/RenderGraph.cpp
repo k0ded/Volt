@@ -29,6 +29,7 @@
 #include <CoreUtilities/EnumUtils.h>
 #include <CoreUtilities/ComparisonHelpers.h>
 #include <CoreUtilities/Malloc.h>
+#include <CoreUtilities/MemoryUtility.h>
 
 /*
 	These are the synchronization cases referenced and handeled in RenderGraph::Compile.
@@ -187,7 +188,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_temporaryDataAllocator.Reserve(10 * 1024 * 1024);
+		m_temporaryDataAllocator.Reserve(1 * 1024 * 1024);
 		m_executionFence = RHI::Fence::Create();
 	}
 
@@ -1828,31 +1829,26 @@ namespace Volt
 	}
 
 	RenderGraphShaderParameterUniformBuffer::RenderGraphShaderParameterUniformBuffer(RenderGraph& renderGraph)
-		: m_counter(0), m_mappedPtr(nullptr)
+		: m_head(0), m_mappedPtr(nullptr)
 	{
 		VT_PROFILE_FUNCTION();
 
-		const size_t numShaderParameters = renderGraph.m_passes.size() * 10;
+		constexpr uint64_t TotalShaderParametersByteSize = 1 * 1024 * 1024;
 
 		RGUniformBufferDesc desc{};
-		desc.size = static_cast<uint32_t>(PerStageUniformBufferSize * numShaderParameters);
+		desc.size = TotalShaderParametersByteSize;
 		desc.debugName = "ShaderParameters";
 
 		m_uniformBuffer = renderGraph.CreateUniformBuffer(desc);
 		m_uniformBuffer->AddRef();
 
-		// Create views
-		m_srvs.resize_uninitialized(numShaderParameters);
-
+		// Create view
 		RGUniformBufferSRVDesc srvDesc{};
 		srvDesc.bufferResource = m_uniformBuffer;
-		srvDesc.size = PerStageUniformBufferSize;
+		srvDesc.size = TotalShaderParametersByteSize;
+		srvDesc.offset = 0;
 
-		for (size_t i = 0; i < numShaderParameters; ++i)
-		{
-			srvDesc.offset = i * PerStageUniformBufferSize;
-			m_srvs[i] = renderGraph.CreateSRV(srvDesc);
-		}
+		m_srv = renderGraph.CreateSRV(srvDesc);
 	}
 
 	void RenderGraphShaderParameterUniformBuffer::Map()
@@ -1863,5 +1859,12 @@ namespace Volt
 	void RenderGraphShaderParameterUniformBuffer::Unmap()
 	{
 		m_uniformBuffer->GetRHIResource()->GetRHIUniformBuffer()->Unmap();
+	}
+
+	uint64_t RenderGraphShaderParameterUniformBuffer::Allocate(uint64_t size)
+	{
+		const uint64_t alignedSize = std::max(size, g_rhiCapabilities.minUniformBufferAlignment);
+		uint64_t allocOffset = m_head.fetch_add(alignedSize, std::memory_order::relaxed);
+		return Utility::Align(allocOffset, g_rhiCapabilities.minUniformBufferAlignment);
 	}
 }

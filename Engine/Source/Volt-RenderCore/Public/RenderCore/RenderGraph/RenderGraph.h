@@ -37,17 +37,20 @@ namespace Volt
 
 		RenderGraphShaderParameterUniformBuffer(RenderGraph& renderGraph);
 
-		VT_INLINE RGUniformBufferSRVRef GetNext() { uint32_t index = m_counter.fetch_add(1u, std::memory_order::relaxed); return m_srvs.at(index); }
+		VT_INLINE RGUniformBufferSRVRef GetSRV() { return m_srv; }
 		VT_INLINE uint8_t* GetMappedPointer() const { return reinterpret_cast<uint8_t*>(m_mappedPtr); }
 		
 		void Map();
 		void Unmap();
 
+		uint64_t Allocate(uint64_t size);
+
 	private:
-		Vector<RGUniformBufferSRVRef> m_srvs;
+		RGUniformBufferSRVRef m_srv;
 		RGUniformBufferRef m_uniformBuffer;
 		void* m_mappedPtr;
-		std::atomic_uint32_t m_counter;
+	
+		std::atomic_uint64_t m_head;
 	};
 
 	class VTRC_API RenderGraph

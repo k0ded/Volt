@@ -84,4 +84,15 @@ namespace Volt::RHI
 		resourceBinding.bindingIndex = bindingIndex;
 		resourceBinding.accelerationStructure = accelerationStructure;
 	}
+
+	void ShaderBindingMap::SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView, uint64_t size, uint64_t offset)
+	{
+		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+		resourceBinding.registerType = ShaderRegisterType::CBV;
+		resourceBinding.resourceType = ShaderResourceType::UniformBuffer;
+		resourceBinding.bindingIndex = bindingIndex;
+		resourceBinding.bufferView = bufferView;
+		resourceBinding.uniformBufferSize = size;
+		resourceBinding.uniformBufferOffset = offset;
+	}
 }

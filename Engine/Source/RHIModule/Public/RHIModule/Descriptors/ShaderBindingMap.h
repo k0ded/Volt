@@ -26,11 +26,15 @@ namespace Volt::RHI
 			ShaderRegisterType registerType;
 			ShaderResourceType resourceType;
 			uint32_t bindingIndex;
+
+			uint64_t uniformBufferSize = 0;
+			uint64_t uniformBufferOffset = 0;
 		};
 
 		using ResourceBindingsMap = Map<ShaderStage, InlineVector<ResourceBinding, NumMaxBindings>>;
 
 		void SetUniformBuffer(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);
+		void SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView, uint64_t size, uint64_t offset);
 		void SetSampler(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::SamplerState> samplerState);
 		void SetStructuredBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);
 		void SetStructuredBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);

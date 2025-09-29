@@ -35,7 +35,9 @@ namespace Volt
 		struct PerStageShaderParameters
 		{
 			RHI::ShaderStage shaderStage;
+			uint32_t size;
 			RGUniformBufferSRVRef uniformBufferSRV;
+			uint64_t offset;
 			uint8_t* mappedPtr;
 		};
 
@@ -89,7 +91,7 @@ namespace Volt
 		InlineVector<PerStageShaderParameters, 8> AllocatePerStageShaderParameterBuffers(RawPtr<RHI::ComputePipeline> computePipeline);
 
 	private:
-		void BindDescriptorTable();
+		void BindShaderBindings();
 		void AllocatePerStageShaderParameterBuffers();
 
 		template<typename ParameterStruct>

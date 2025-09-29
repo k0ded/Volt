@@ -2,8 +2,6 @@
 
 #include "RHIModule/Core/Core.h"
 
-#define USE_DESCRIPTOR_TABLE 0
-
 namespace Volt::RHI
 {
 	struct RHICapabilities
@@ -25,6 +23,7 @@ namespace Volt::RHI
 		uint32_t maxTextureSamplers = 16;
 		uint64_t maxComputeSharedMemorySize = (1 << 15);
 		uint32_t maxWorkGroupInvocations = 1024;
+		uint64_t minUniformBufferAlignment = 0;
 
 		struct RayTracing
 		{
