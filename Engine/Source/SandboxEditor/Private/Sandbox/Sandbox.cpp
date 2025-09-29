@@ -225,24 +225,20 @@ void Sandbox::RegisterPanels()
 
 void Sandbox::SetEditorHasMouseControl()
 {
-#if 0
 	Volt::Input::ShowCursor(true);
 	UI::SetInputEnabled(true);
 	Volt::Input::DisableInput(true);
 
 	m_playHasMouseControl = false;
-#endif
 }
 
 void Sandbox::SetPlayHasMouseControl()
 {
-#if 0
 	Volt::Input::ShowCursor(false);
 	UI::SetInputEnabled(false);
 	Volt::Input::DisableInput(false);
 
 	m_playHasMouseControl = true;
-#endif
 }
 
 void Sandbox::SetupNewSceneData()
@@ -297,7 +293,6 @@ void Sandbox::InitializeModals()
 
 void Sandbox::OnDetach()
 {
-#if 0
 	m_isInitialized = false;
 
 	if (m_sceneState == SceneState::Play)
@@ -330,7 +325,6 @@ void Sandbox::OnDetach()
 	NodeEditorHelpers::Shutdown();
 	VersionControl::Shutdown();
 	SelectionManager::Shutdown();
-#endif
 }
 
 void Sandbox::OnScenePlay()
@@ -965,13 +959,6 @@ bool Sandbox::OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e)
 	Volt::EventSystem::DispatchEvent(e2);
 
 	auto scene = e.GetScene();
-
-	/*DiscordPlugin::GetInstance().GetManager().SetState(scene->GetName());
-	DiscordPlugin::GetInstance().GetManager().SetPartySize(m_runtimeScene->GetActiveLayer() + 1);
-	DiscordPlugin::GetInstance().GetManager().SetMaxPartySize(static_cast<int32_t>(m_runtimeScene->GetLayers().size()));
-	DiscordPlugin::GetInstance().GetManager().SetStartTime(std::time(nullptr));
-
-	DiscordPlugin::GetInstance().GetManager().UpdateChanges();*/
 
 	return false;
 }

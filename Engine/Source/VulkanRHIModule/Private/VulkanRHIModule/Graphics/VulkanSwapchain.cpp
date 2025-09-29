@@ -10,11 +10,9 @@
 #include "VulkanRHIModule/Graphics/VulkanDeviceQueue.h"
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 #include "VulkanRHIModule/Images/VulkanImage.h"
-#include "VulkanRHIModule/Synchronization/VulkanFence.h"
 
 #include <RHIModule/Core/Profiling.h>
 #include <RHIModule/Utility/ResourceUtility.h>
-#include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/RHICapabilities.h>
 
@@ -150,7 +148,6 @@ namespace Volt::RHI
 		for (uint32_t i = 0; i < RHI::RHICapabilities::NumFramesInFlight; i++)
 		{
 			m_commandBuffers[i] = CommandBuffer::Create();
-			m_fences[i] = Fence::Create({ true });
 		}
 		 
 		Invalidate(m_width, m_height, m_VSyncEnabled);
@@ -175,8 +172,8 @@ namespace Volt::RHI
 		auto device = GraphicsContext::GetDevice();
 		auto& frameData = m_perFrameInFlightData.at(m_currentFrame);
 
-		m_fences.at(m_currentFrame)->WaitUntilSignaled();
-		m_fences.at(m_currentFrame)->Reset();
+		vkWaitForFences(device->GetHandle<VkDevice>(), 1, &m_fences.at(m_currentFrame), VK_TRUE, UINT64_MAX);
+		vkResetFences(device->GetHandle<VkDevice>(), 1, &m_fences.at(m_currentFrame));
 
 		m_commandBuffers.at(m_currentFrame)->Begin();
 
@@ -227,7 +224,7 @@ namespace Volt::RHI
 		// Queue Submit
 		{
 			VkCommandBuffer cmdBuffer = m_commandBuffers.at(m_currentFrame)->GetHandle<VkCommandBuffer>();
-			VkFence fence = m_fences.at(m_currentFrame)->GetHandle<VkFence>();
+			VkFence fence = m_fences.at(m_currentFrame);
 
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -246,8 +243,6 @@ namespace Volt::RHI
 			vkQueue.AquireLock();
 			VT_VK_CHECK(vkQueueSubmit(deviceQueue->GetHandle<VkQueue>(), 1, &submitInfo, fence));
 			vkQueue.ReleaseLock();
-		
-			m_fences.at(m_currentFrame)->As<VulkanFence>()->MarkAsExecuted();
 		}
 
 		// Present to screen
@@ -357,24 +352,25 @@ namespace Volt::RHI
 			return;
 		}
 
-		auto vulkanFence = m_fences.at(m_currentFrame).As<VulkanFence>();
+		vkWaitForFences(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), 1, &m_fences.at(m_currentFrame), VK_TRUE, UINT64_MAX);
 
-		if (vulkanFence->HasBeenExecuted())
-		{
-			m_fences.at(m_currentFrame)->WaitUntilSignaled();
-		}
-
-		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, swapchain = m_swapchain, surface = m_surface]()
+		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, fences = m_fences, swapchain = m_swapchain, surface = m_surface]()
 		{
 			auto device = GraphicsContext::GetDevice();
+			VkDevice vkDevice = device->GetHandle<VkDevice>();
 
 			for (auto& perFrameData : perFrameInFlightData)
 			{
-				vkDestroySemaphore(device->GetHandle<VkDevice>(), perFrameData.presentSemaphore, VT_VULKAN_ALLOCATOR);
-				vkDestroySemaphore(device->GetHandle<VkDevice>(), perFrameData.renderSemaphore, VT_VULKAN_ALLOCATOR);
+				vkDestroySemaphore(vkDevice, perFrameData.presentSemaphore, VT_VULKAN_ALLOCATOR);
+				vkDestroySemaphore(vkDevice, perFrameData.renderSemaphore, VT_VULKAN_ALLOCATOR);
 			}
 
-			vkDestroySwapchainKHR(device->GetHandle<VkDevice>(), swapchain, VT_VULKAN_ALLOCATOR);
+			for (auto& fence : fences)
+			{
+				vkDestroyFence(vkDevice, fence, VT_VULKAN_ALLOCATOR);
+			}
+
+			vkDestroySwapchainKHR(vkDevice, swapchain, VT_VULKAN_ALLOCATOR);
 			vkDestroySurfaceKHR(GraphicsContext::Get().GetHandle<VkInstance>(), surface, nullptr); 
 		});
 
@@ -513,21 +509,30 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		VkFenceCreateInfo fenceInfo{};
-		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
 		auto device = GraphicsContext::GetDevice();
 
 		m_perFrameInFlightData.resize(RHI::RHICapabilities::NumFramesInFlight);
+		m_fences.resize(RHI::RHICapabilities::NumFramesInFlight);
 
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
+		VkDevice vkDevice = device->GetHandle<VkDevice>();
+
 		for (auto& frameData : m_perFrameInFlightData)
 		{
-			VT_VK_CHECK(vkCreateSemaphore(device->GetHandle<VkDevice>(), &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.presentSemaphore));
-			VT_VK_CHECK(vkCreateSemaphore(device->GetHandle<VkDevice>(), &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.renderSemaphore));
+			VT_VK_CHECK(vkCreateSemaphore(vkDevice, &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.presentSemaphore));
+			VT_VK_CHECK(vkCreateSemaphore(vkDevice, &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.renderSemaphore));
+		}
+
+		VkFenceCreateInfo fenceCreateInfo{};
+		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceCreateInfo.pNext = nullptr;
+		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+		for (auto& fence : m_fences)
+		{
+			vkCreateFence(vkDevice, &fenceCreateInfo, VT_VULKAN_ALLOCATOR, &fence);
 		}
 	}
 

@@ -19,8 +19,8 @@ namespace Volt
 	RayTracingScene::RayTracingScene(EntityScene* scene)
 		: m_scene(scene)
 	{
-		m_buildFence = RHI::Fence_New::Create();
-		m_updateFence = RHI::Fence_New::Create();
+		m_buildFence = RHI::Fence::Create();
+		m_updateFence = RHI::Fence::Create();
 	}
 
 	void RayTracingScene::RebuildAccelerationStructure()

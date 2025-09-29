@@ -12,7 +12,6 @@ namespace Volt
 	struct RenderView;
 }
 
-#if 0
 struct OutlineTechnique
 {
 	OutlineTechnique(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard);
@@ -28,4 +27,3 @@ private:
 	Volt::RenderGraph& m_renderGraph;
 	Volt::RenderGraphBlackboard& m_blackboard;
 };
-#endif

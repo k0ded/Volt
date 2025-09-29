@@ -7,7 +7,7 @@
 #include <EntitySystem/EntityID.h>
 
 #include <RHIModule/RayTracing/AccelerationStructure.h>
-#include <RHIModule/Synchronization/Fence_New.h>
+#include <RHIModule/Synchronization/Fence.h>
 
 #include <CoreUtilities/Containers/Vector.h>
 
@@ -53,8 +53,8 @@ namespace Volt
 		RefPtr<RHI::AccelerationStructure> m_accelerationStructure;
 		Ref<GrowingGPUBuffer> m_instancesBuffer;
 
-		RefPtr<RHI::Fence_New> m_updateFence;
-		RefPtr<RHI::Fence_New> m_buildFence;
+		RefPtr<RHI::Fence> m_updateFence;
+		RefPtr<RHI::Fence> m_buildFence;
 
 		Vector<RayTracingInstance> m_instances;
 		Vector<Operation> m_frameOperations;

@@ -18,7 +18,6 @@
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 
 using namespace Volt;
-#if 0
 
 OutlineTechnique::OutlineTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 	: m_renderGraph(renderGraph), m_blackboard(blackboard)
@@ -239,4 +238,3 @@ void OutlineTechnique::AddOutlineCompositePass(RGTextureRef dstImage, const Volt
 		passParameters,
 		{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
 }
-#endif

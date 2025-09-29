@@ -4,7 +4,6 @@
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Buffers/StorageBuffer.h>
-#include <RHIModule/Synchronization/Fence.h>
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Pointers/RefPtr.h>
@@ -30,8 +29,6 @@ namespace Volt
 		VT_NODISCARD VT_INLINE const Vector<RefPtr<RHI::StorageBuffer>>& GetStorageBuffers() const { return m_extractedBuffers; }
 
 	private:
-		RefPtr<RHI::Fence> m_renderGraphFence;
-
 		Vector<RefPtr<RHI::Image>> m_extractedImages;
 		Vector<RefPtr<RHI::StorageBuffer>> m_extractedBuffers;
 	};

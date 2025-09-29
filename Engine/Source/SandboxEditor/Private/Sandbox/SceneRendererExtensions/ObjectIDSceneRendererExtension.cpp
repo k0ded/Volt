@@ -20,7 +20,6 @@
 
 using namespace Volt;
 
-#if 0
 struct ObjectIDVS : public GlobalShader
 {
 	DECLARE_GLOBAL_SHADER(ObjectIDVS)
@@ -44,11 +43,9 @@ BEGIN_SHADER_PARAMETER_STRUCT(ObjectIDParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(ObjectIDVS::Parameters, VS)
 	SHADER_PARAMETER_STRUCT_INCLUDE(ObjectIDPS::Parameters, PS)
 END_SHADER_PARAMETER_STRUCT()
-#endif
 
 Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage)
 {
-#if 0
 	const SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 
 	RHI::RenderPipelineCreateInfo pipelineInfo;
@@ -82,7 +79,6 @@ Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& r
 	});
 
 	renderGraph.EnqueueTextureExtraction(objectIdTexture, &m_objectIdImage);
-#endif
 
 	return prevOutputImage;
 }

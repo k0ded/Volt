@@ -51,7 +51,6 @@ namespace Volt::RHI
 
 	class Event;
 	class Fence;
-	class Fence_New;
 	class Semaphore;
 
 	class ImGuiImplementation;
@@ -130,8 +129,7 @@ namespace Volt::RHI
 		virtual RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<Event> CreateEvent(const EventCreateInfo& createInfo) const = 0;
-		virtual RefPtr<Fence> CreateFence(const FenceCreateInfo& createInfo) const = 0;
-		virtual RefPtr<Fence_New> CreateFence() const = 0;
+		virtual RefPtr<Fence> CreateFence() const = 0;
 		virtual RefPtr<Semaphore> CreateSemaphore(const SemaphoreCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const = 0;

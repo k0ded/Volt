@@ -43,7 +43,6 @@
 
 #include <RHIModule/Core/Profiling.h>
 #include <RHIModule/Core/RenderingInfo.h>
-#include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/RHIFeatures.h>
 #include <RHIModule/RHIModule.h>
 
@@ -1357,9 +1356,6 @@ namespace Volt::RHI
 		allocInfo.commandBufferCount = 1;
 
 		VT_VK_CHECK(vkAllocateCommandBuffers(device->GetHandle<VkDevice>(), &allocInfo, &m_commandBufferData.commandBuffer));
-
-		FenceCreateInfo fenceInfo{};
-		fenceInfo.createSignaled = true;
 
 		m_hasTimestampSupport = false; //GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().GetProperties().limits.timestampComputeAndGraphics;
 		if (m_hasTimestampSupport)

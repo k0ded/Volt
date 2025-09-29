@@ -61,9 +61,5 @@ namespace Volt
 
 	void RenderGraphDebugger::WaitForFinishedExecution() const
 	{
-		if (m_renderGraphFence)
-		{
-			m_renderGraphFence->WaitUntilSignaled();
-		}
 	}
 }

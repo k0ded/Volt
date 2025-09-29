@@ -18,7 +18,6 @@
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
-#include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Graphics/DeviceQueue.h>
@@ -189,7 +188,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		m_temporaryDataAllocator.Reserve(10 * 1024 * 1024);
-		m_executionFence = RHI::Fence_New::Create();
+		m_executionFence = RHI::Fence::Create();
 	}
 
 	RenderGraph::~RenderGraph()
@@ -819,7 +818,7 @@ namespace Volt
 		Ref<GPUReadbackBuffer> readbackBuffer = CreateRef<GPUReadbackBuffer>(dataSize);
 		RGBufferRef dstBuffer = RegisterExternalBuffer(readbackBuffer->GetBuffer());
 
-		RefPtr<RHI::Fence> fence = RHI::Fence::Create(RHI::FenceCreateInfo{ false });
+		RefPtr<RHI::Fence> fence = RHI::Fence::Create();
 
 		ReadbackBufferParameters* parameters = AllocParameters<ReadbackBufferParameters>();
 		parameters->SrcBuffer = srcBuffer;
@@ -856,7 +855,7 @@ namespace Volt
 		Ref<GPUReadbackTexture> readbackTexture = CreateRef<GPUReadbackTexture>(srcTexture->GetDesc());
 		RGTextureRef dstTexture = RegisterExternalTexture(readbackTexture->GetImage());
 
-		RefPtr<RHI::Fence> fence = RHI::Fence::Create(RHI::FenceCreateInfo{ false });
+		RefPtr<RHI::Fence> fence = RHI::Fence::Create();
 
 		ReadbackTextureParameters* parameters = AllocParameters<ReadbackTextureParameters>();
 		parameters->SrcTexture = srcTexture;
@@ -1515,7 +1514,7 @@ namespace Volt
 		// This data pointer is destroyed in the execution job.
 
 		// Create a temporary reference to the execution fence here to keep it alive.
-		RefPtr<RHI::Fence_New> executionFence = m_executionFence;
+		RefPtr<RHI::Fence> executionFence = m_executionFence;
 
 		void* tempRenderGraphStorage = Memory::Malloc(sizeof(RenderGraph), alignof(RenderGraph));
 		new (tempRenderGraphStorage) RenderGraph(std::move(*this));
@@ -1573,7 +1572,7 @@ namespace Volt
 		shaderParameterUniformBuffer->Unmap();
 
 		// This function is responsible for executing the recorded command buffers.
-		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<PooledCommandBuffer>>& commandBuffers, RefPtr<RHI::Fence_New> executionFence)
+		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<PooledCommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
 		{
 			RHI::DeviceQueueExecuteInfo executeInfo{};
 			executeInfo.commandBuffers.resize(commandBuffers.size());

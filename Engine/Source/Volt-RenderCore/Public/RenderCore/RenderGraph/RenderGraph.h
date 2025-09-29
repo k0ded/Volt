@@ -11,7 +11,7 @@
 
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Images/Image.h>
-#include <RHIModule/Synchronization/Fence_New.h>
+#include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Core/ResourceStateTracker.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
@@ -303,7 +303,7 @@ namespace Volt
 
 		Vector<CompiledPass> m_compiledPasses;
 
-		RefPtr<RHI::Fence_New> m_executionFence;
+		RefPtr<RHI::Fence> m_executionFence;
 
 		std::mutex m_tempMutex;
 	}; 

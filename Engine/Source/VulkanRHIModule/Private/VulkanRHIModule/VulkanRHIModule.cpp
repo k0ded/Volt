@@ -33,7 +33,6 @@
 
 #include "VulkanRHIModule/Synchronization/VulkanEvent.h"
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
-#include "VulkanRHIModule/Synchronization/VulkanFence_New.h"
 #include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
@@ -195,14 +194,9 @@ namespace Volt::RHI
 		return RefPtr<VulkanEvent>::Create(createInfo);
 	}
 
-	RefPtr<Fence> VulkanRHIModule::CreateFence(const FenceCreateInfo& createInfo) const
+	RefPtr<Fence> VulkanRHIModule::CreateFence() const
 	{
-		return RefPtr<VulkanFence>::Create(createInfo);
-	}
-
-	RefPtr<Fence_New> VulkanRHIModule::CreateFence() const
-	{
-		return RefPtr<VulkanFence_New>::Create();
+		return RefPtr<VulkanFence>::Create();
 	}
 
 	RefPtr<Semaphore> VulkanRHIModule::CreateSemaphore(const SemaphoreCreateInfo& createInfo) const

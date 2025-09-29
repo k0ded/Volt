@@ -8,7 +8,6 @@
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 #include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
-#include "VulkanRHIModule/Synchronization/VulkanFence_New.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 
@@ -71,7 +70,7 @@ namespace Volt::RHI
 		{
 			VulkanCommandBuffer& vkCmdBuffer = cmdBuffer->AsRef<VulkanCommandBuffer>();
 			
-			vkCmdBuffer.m_submissionFence = Fence_New::Create();
+			vkCmdBuffer.m_submissionFence = Fence::Create();
 
 			auto& info = vulkanCommandBuffers.emplace_back();
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
@@ -87,7 +86,7 @@ namespace Volt::RHI
 			info.pNext = nullptr;
 			info.deviceIndex = 0;
 			info.stageMask = VK_PIPELINE_STAGE_2_NONE;
-			info.semaphore = semaphore->GetHandle<VkSemaphore>();;
+			info.semaphore = semaphore->GetHandle<VkSemaphore>();
 			info.value = semaphore->GetValue();
 		}
 
@@ -107,15 +106,6 @@ namespace Volt::RHI
 		info.signalSemaphoreInfoCount = static_cast<uint32_t>(signalSemaphoreInfos.size());
 		info.pSignalSemaphoreInfos = signalSemaphoreInfos.data();
 		
-		VkFence waitFence = nullptr;
-
-		if (executeInfo.fence)
-		{
-			VulkanFence& vulkanFence = executeInfo.fence->AsRef<VulkanFence>();
-			waitFence = executeInfo.fence->GetHandle<VkFence>();
-			vulkanFence.MarkAsExecuted();
-		}
-
 		// Assign the semaphore value here, to make sure the execution order is correct.
 		uint64_t submitSemaphoreValue;
 		{
@@ -127,12 +117,12 @@ namespace Volt::RHI
 				signalSemaphoreInfo.value = submitSemaphoreValue;
 			}
 
- 			VT_VK_CHECK(vkQueueSubmit2(m_queue, 1, &info, waitFence));
+ 			VT_VK_CHECK(vkQueueSubmit2(m_queue, 1, &info, nullptr));
 		}
 
 		if (executeInfo.fence_new)
 		{
-			VulkanFence_New& vkFence = executeInfo.fence_new->AsRef<VulkanFence_New>();
+			VulkanFence& vkFence = executeInfo.fence_new->AsRef<VulkanFence>();
 			vkFence.m_referencedSemaphore = m_queueSemaphore;
 			vkFence.m_referencedValue = submitSemaphoreValue;
 		}
@@ -140,7 +130,7 @@ namespace Volt::RHI
 		for (const auto& cmdBuffer : executeInfo.commandBuffers)
 		{
 			VulkanCommandBuffer& vkCmdBuffer = cmdBuffer->AsRef<VulkanCommandBuffer>();
-			VulkanFence_New& vkSubmissionFence = vkCmdBuffer.m_submissionFence->AsRef<VulkanFence_New>();
+			VulkanFence& vkSubmissionFence = vkCmdBuffer.m_submissionFence->AsRef<VulkanFence>();
 			vkSubmissionFence.m_referencedValue = submitSemaphoreValue;
 			vkSubmissionFence.m_referencedSemaphore = m_queueSemaphore;
 		}

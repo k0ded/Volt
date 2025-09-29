@@ -3,7 +3,7 @@
 #include "VulkanRHIModule/Core.h"
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 
-#include <RHIModule/Synchronization/Fence_New.h>
+#include <RHIModule/Synchronization/Fence.h>
 
 #include <RHIModule/Buffers/CommandBuffer.h>
 
@@ -147,7 +147,7 @@ namespace Volt::RHI
 		RawPtr<RenderPipeline> m_currentRenderPipeline;
 		RawPtr<ComputePipeline> m_currentComputePipeline;
 		RawPtr<RayTracingPipeline> m_currentRayTracingPipeline;
-		RefPtr<Fence_New> m_submissionFence;
+		RefPtr<Fence> m_submissionFence;
 
 		// Secondary command buffer
 		CommandBufferLevel m_commandBufferLevel = CommandBufferLevel::Primary;

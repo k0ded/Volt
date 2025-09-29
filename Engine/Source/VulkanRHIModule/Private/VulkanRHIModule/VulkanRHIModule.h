@@ -56,8 +56,7 @@ namespace Volt::RHI
 		RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const override;
 
 		RefPtr<Event> CreateEvent(const EventCreateInfo& createInfo) const override;
-		RefPtr<Fence> CreateFence(const FenceCreateInfo& createInfo) const override;
-		RefPtr<Fence_New> CreateFence() const override;
+		RefPtr<Fence> CreateFence() const override;
 		RefPtr<Semaphore> CreateSemaphore(const SemaphoreCreateInfo& createInfo) const override;
 	
 		RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const override;

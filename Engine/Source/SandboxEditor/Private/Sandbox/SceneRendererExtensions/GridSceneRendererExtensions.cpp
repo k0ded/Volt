@@ -17,7 +17,6 @@
 #include <RenderCore/DefaultBlendStates.h>
 
 using namespace Volt;
-#if 0
 struct EditorGridVS : public GlobalShader
 {
 	DECLARE_GLOBAL_SHADER(EditorGridVS)
@@ -44,11 +43,9 @@ BEGIN_SHADER_PARAMETER_STRUCT(EditorGridParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(EditorGridVS::Parameters, VS)
 	SHADER_PARAMETER_STRUCT_INCLUDE(EditorGridPS::Parameters, PS)
 END_SHADER_PARAMETER_STRUCT()
-#endif
 
 RGTextureRef GridSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage)
 {
-#if 0
 	const Volt::SceneTextures& sceneTextures = blackboard.Get<Volt::SceneTextures>();
 
 	EditorGridParameters* passParameters = renderGraph.AllocParameters<EditorGridParameters>();
@@ -84,7 +81,6 @@ RGTextureRef GridSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph
 		context.Draw(3, 1, 0, 0);
 		context.EndRendering();
 	});
-#endif
 
 	return prevOutputImage;
 }

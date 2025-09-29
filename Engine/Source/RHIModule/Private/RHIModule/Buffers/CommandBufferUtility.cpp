@@ -7,9 +7,9 @@
 
 namespace Volt::RHI::CommandBufferUtils
 {
-	RefPtr<Fence_New> ExecuteCommandBufferWithNewFence(RefPtr<CommandBuffer> commandBuffer, QueueType queueType)
+	RefPtr<Fence> ExecuteCommandBufferWithNewFence(RefPtr<CommandBuffer> commandBuffer, QueueType queueType)
 	{
-		RefPtr<Fence_New> fence = Fence_New::Create();
+		RefPtr<Fence> fence = Fence::Create();
 
 		DeviceQueueExecuteInfo executeInfo{};
 		executeInfo.commandBuffers = { commandBuffer };
@@ -20,7 +20,7 @@ namespace Volt::RHI::CommandBufferUtils
 		return fence;
 	}
 
-	void ExecuteCommandBufferWithFence(RefPtr<CommandBuffer> commandBuffer, RefPtr<Fence_New> fence, QueueType queueType)
+	void ExecuteCommandBufferWithFence(RefPtr<CommandBuffer> commandBuffer, RefPtr<Fence> fence, QueueType queueType)
 	{
 		DeviceQueueExecuteInfo executeInfo{};
 		executeInfo.commandBuffers = { commandBuffer };
@@ -29,9 +29,9 @@ namespace Volt::RHI::CommandBufferUtils
 		GraphicsContext::GetDevice()->GetDeviceQueue(queueType)->Execute(executeInfo);
 	}
 
-	RefPtr<Fence_New> ExecuteCommandBufferWithNewFenceAndWait(RefPtr<CommandBuffer> commandBuffer, QueueType queueType /*= QueueType::Graphics*/)
+	RefPtr<Fence> ExecuteCommandBufferWithNewFenceAndWait(RefPtr<CommandBuffer> commandBuffer, QueueType queueType /*= QueueType::Graphics*/)
 	{
-		RefPtr<Fence_New> fence = Fence_New::Create();
+		RefPtr<Fence> fence = Fence::Create();
 
 		DeviceQueueExecuteInfo executeInfo{};
 		executeInfo.commandBuffers = { commandBuffer };

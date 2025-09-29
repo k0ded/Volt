@@ -42,10 +42,8 @@ Volt::RGTextureRef OutlineSceneRendererExtension::OnRender(Volt::RenderGraph& re
 		return m_selectedPrimitivesSet.contains(primitiveData.entityId);
 	};
 
-#if 0
 	OutlineTechnique outlineTechnique{ renderGraph, blackboard };
 	outlineTechnique.Execute(prevOutputImage, *m_renderScene, view, filterFunc);
-#endif
 
 	return prevOutputImage;
 }

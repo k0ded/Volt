@@ -247,7 +247,7 @@ namespace Volt::RHI
 		commandBuffer->EndMarker();
 		commandBuffer->End();
 
-		RefPtr<Fence_New> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 		fence->WaitUntilSignaled();
 
 		m_hasGeneratedMips = true;
@@ -428,7 +428,7 @@ namespace Volt::RHI
 
 		commandBuffer->End();
 
-		RefPtr<Fence_New> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 		fence->WaitUntilSignaled();
 
 		uint8_t* mappedMemory = stagingAlloc->Map<uint8_t>();
@@ -496,7 +496,7 @@ namespace Volt::RHI
 
 		commandBuffer->End();
 
-		RefPtr<Fence_New> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 		fence->WaitUntilSignaled();
 	}
 
@@ -552,7 +552,7 @@ namespace Volt::RHI
 
 		commandBuffer->End();
 
-		RefPtr<Fence_New> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 		fence->WaitUntilSignaled();
 
 		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
