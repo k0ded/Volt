@@ -1,6 +1,8 @@
 #pragma once
 
-#include "RenderCore/Resources/BindlessResource.h"
+#include "RenderCore/Config.h"
+
+#include <RHIModule/Buffers/StorageBuffer.h>
 
 namespace Volt
 {
@@ -16,6 +18,6 @@ namespace Volt
 		RefPtr<RHI::StorageBuffer> GetResource() const;
 
 	private:
-		BindlessResourceRef<RHI::StorageBuffer> m_buffer;
+		RefPtr<RHI::StorageBuffer> m_buffer;
 	};
 }

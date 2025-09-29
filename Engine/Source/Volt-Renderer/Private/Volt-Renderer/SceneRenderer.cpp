@@ -502,8 +502,8 @@ namespace Volt
 
 		SkyboxParameters* passParameters = renderGraph.AllocParameters<SkyboxParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;
-		passParameters->VS.VertexBuffer = renderGraph.RegisterExternalBuffer(m_skyboxMesh->GetVertexPositionsBuffer()->GetResource());
-		passParameters->VS.IndexBuffer = renderGraph.RegisterExternalBuffer(m_skyboxMesh->GetIndexBuffer()->GetResource());
+		passParameters->VS.VertexBuffer = renderGraph.RegisterExternalBuffer(m_skyboxMesh->GetVertexPositionsBuffer());
+		passParameters->VS.IndexBuffer = renderGraph.RegisterExternalBuffer(m_skyboxMesh->GetIndexBuffer());
 		passParameters->PS.EnvironmentTexture = renderGraph.CreateSRV(environmentTextures.radiance);
 		passParameters->PS.LinearSampler = SamplerStateCache::GetTrilinearSampler();
 		passParameters->PS.LOD = 0.f;

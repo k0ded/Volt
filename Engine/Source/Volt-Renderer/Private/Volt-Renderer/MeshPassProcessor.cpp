@@ -7,7 +7,6 @@
 #include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
-#include <RenderCore/DescriptorTableCache.h>
 
 #include <RHIModule/Globals.h>
 
@@ -50,10 +49,7 @@ namespace Volt
 
 		for (MeshDrawCommand& drawCommand : m_meshDrawCommands)
 		{
-			
-
 			commandBuffer->BindPipeline(drawCommand.renderPipeline);
-			commandBuffer->BindDescriptorTable(drawCommand.descriptorTable);
 			commandBuffer->BindVertexBuffers(drawCommand.vertexBuffers, 0);
 			commandBuffer->BindIndexBuffer(drawCommand.indexBuffer);
 			commandBuffer->DrawIndexed(drawCommand.drawCommand.indexCount, drawCommand.drawCommand.instanceCount, drawCommand.drawCommand.firstIndex, drawCommand.drawCommand.vertexOffset, drawCommand.drawCommand.firstInstance);
@@ -74,9 +70,9 @@ namespace Volt
 		newDrawCommand.renderPipeline = renderPipeline;
 		//newDrawCommand.descriptorTable = descriptorTable;
 		newDrawCommand.shaderParameters = AllocateShaderParametersForPipeline(renderPipeline);
-		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexPositionsBuffer()->GetResource());
-		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexMaterialBuffer()->GetResource());
-		newDrawCommand.indexBuffer = renderPrimitive.mesh->GetIndexBuffer()->GetResource();
+		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexPositionsBuffer());
+		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexMaterialBuffer());
+		newDrawCommand.indexBuffer = renderPrimitive.mesh->GetIndexBuffer();
 		newDrawCommand.drawCommand.indexCount = subMesh.indexCount;
 		newDrawCommand.drawCommand.instanceCount = 1;
 		newDrawCommand.drawCommand.firstIndex = subMesh.indexCount;

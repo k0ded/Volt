@@ -542,10 +542,10 @@ namespace Volt
 
 		if (RHI::RHICanUseRayTracing())
 		{
-			outGPUMesh.RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer()->GetResource());
-			outGPUMesh.RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer()->GetResource());
-			outGPUMesh.RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer()->GetResource());
-			outGPUMesh.RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer()->GetResource());
+			outGPUMesh.RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer());
+			outGPUMesh.RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer());
+			outGPUMesh.RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer());
+			outGPUMesh.RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer());
 		}
 	}
 
@@ -640,15 +640,15 @@ namespace Volt
 
 		if (RHI::RHICanUseRayTracing())
 		{
-			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexPositionsBuffer()->GetResource());
-			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexAnimationInfoBuffer()->GetResource());
-			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexMaterialBuffer()->GetResource());
-			m_rayTracingResourceTable->AddBuffer(mesh->GetIndexBuffer()->GetResource());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexPositionsBuffer());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexAnimationInfoBuffer());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexMaterialBuffer());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetIndexBuffer());
 
-			RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer()->GetResource());
-			RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer()->GetResource());
-			RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer()->GetResource());
-			RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer()->GetResource());
+			RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer());
+			RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer());
+			RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer());
+			RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer());
 		}
 
 		const size_t newMeshIndex = m_individualMeshes.size();

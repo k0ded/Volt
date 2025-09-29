@@ -6,7 +6,6 @@
 
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
-#include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Shader/Shader.h>
 
 #include <CoreUtilities/Core.h>

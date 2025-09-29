@@ -1,7 +1,6 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
-#include "VulkanRHIModule/Graphics/VulkanQueueSubmissionThread.h"
 
 #include <RHIModule/Graphics/DeviceQueue.h>
 

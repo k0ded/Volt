@@ -3,7 +3,6 @@
 #include "Volt-Renderer/Texture/Texture2D.h"
 
 #include <AssetSystem/AssetFactory.h>
-#include <RenderCore/Resources/BindlessResourcesManager.h>
 
 namespace Volt
 {
@@ -18,22 +17,15 @@ namespace Volt
 		imageSpec.height = static_cast<uint32_t>(height);
 
 		m_image = RHI::Image::Create(imageSpec, data);
-		m_resourceHandle = BindlessResourcesManager::Get().RegisterImageView(m_image->GetView());
 	}
 
 	Texture2D::Texture2D(RefPtr<RHI::Image> image)
 		: m_image(image)
 	{
-		m_resourceHandle = BindlessResourcesManager::Get().RegisterImageView(m_image->GetView());
 	}
 
 	Texture2D::~Texture2D()
 	{
-		if (m_image)
-		{
-			BindlessResourcesManager::Get().UnregisterResource(m_resourceHandle);
-		}
-		
 		m_image = nullptr;
 	}
 
@@ -47,20 +39,8 @@ namespace Volt
 		return m_image->GetHeight();
 	}
 
-	ResourceHandle Texture2D::GetResourceHandle() const
-	{
-		return m_resourceHandle;
-	}
-
 	void Texture2D::SetImage(RefPtr<RHI::Image> image)
 	{
-		if (m_image)
-		{
-			BindlessResourcesManager::Get().UnregisterResource(m_resourceHandle);
-		}
-
-		m_resourceHandle = BindlessResourcesManager::Get().RegisterImageView(image->GetView());
-
 		m_image = image;
 	}
 

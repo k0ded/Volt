@@ -12,7 +12,6 @@
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderContext.h>
-#include <RenderCore/Resources/BindlessResourcesManager.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/Shader/DefaultShaders.h>
@@ -24,7 +23,6 @@
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Images/ImageUtility.h>
-#include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/RHIFeatures.h>
 
@@ -123,14 +121,6 @@ namespace Volt
 
 	void Renderer::Initialize()
 	{
-		// Bindless resources manager
-		// This will be created even if bindless is not enabled.
-		// It just doesn't do anything.
-		{
-			m_bindlessResourcesManager = CreateScope<BindlessResourcesManager>();
-		}
-
-		m_descriptorTableCache = CreateScope<DescriptorTableCache>();
 		m_samplerStateCache = CreateScope<SamplerStateCache>();
 		m_commandBufferPool = CreateScope<CommandBufferPool>();
 		m_transientResourceAllocator = CreateScope<TransientResourceAllocator>();
@@ -155,8 +145,6 @@ namespace Volt
 
 		m_shaderMap = nullptr;
 		m_samplerStateCache = nullptr;
-		m_descriptorTableCache = nullptr;
-		m_bindlessResourcesManager = nullptr;
 	}
 
 	const uint32_t Renderer::GetFramesInFlight()
@@ -291,14 +279,7 @@ namespace Volt
 
 	bool Renderer::OnPreRenderEvent(AppPreRenderEvent& event)
 	{
-		if (RHI::RHICanUseBindless())
-		{
-			m_bindlessResourcesManager->Update();
-		}
-
 		m_transientResourceAllocator->OnPreRender(event.GetFrameIndex());
-
-		m_descriptorTableCache->Update(event.GetFrameIndex());
 		m_commandBufferPool->Update();
 
 		return false;

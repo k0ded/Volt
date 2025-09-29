@@ -2,7 +2,6 @@
 
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
-#include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Core/RHICommon.h>
 
 #include <CoreUtilities/Containers/Vector.h>
@@ -31,7 +30,6 @@ namespace Volt
 		RefPtr<RHI::StorageBuffer> indexBuffer;
 
 		RefPtr<RHI::RenderPipeline> renderPipeline;
-		RefPtr<RHI::DescriptorTable> descriptorTable;
 
 		ShaderParameters shaderParameters;
 

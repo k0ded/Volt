@@ -8,7 +8,6 @@
 #include <RHIModule/Buffers/BufferView.h>
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Images/SamplerState.h>
-#include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
 
 #include <CoreUtilities/Allocators/LinearAllocator.h>
@@ -108,7 +107,6 @@ namespace Volt
 		VT_INLINE ArrayView<BatchedShaderBinding*> GetShaderBindings() const { return m_bindings; }
 
 		void PopulateShaderParameterUniformBuffers(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& outShaderParameters);
-		void BindShaderBindingsToDescriptorTable(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable, const Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& shaderParameterUniformBuffers = {}) const;
 
 	private:
 		InlineVector<BatchedShaderBinding*, NumMaxShaderBindings> m_bindings;

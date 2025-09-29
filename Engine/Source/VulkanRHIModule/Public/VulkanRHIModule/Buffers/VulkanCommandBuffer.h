@@ -55,8 +55,6 @@ namespace Volt::RHI
 		void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) override;
 		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer, const IndexType indexType) override;
 
-		void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) override;
-		void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) override;
 		void BindShaderBindings(const ShaderBindingMap& shaderBindingsMap) override;
 
 		void BeginRendering(const RenderingInfo& renderingInfo) override;

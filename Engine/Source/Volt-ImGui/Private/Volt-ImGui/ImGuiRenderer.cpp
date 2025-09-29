@@ -11,8 +11,6 @@
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/RHICapabilities.h>
 
-#include <RenderCore/DescriptorTableCache.h>
-
 #include <WindowModule/Window.h>
 
 #include <imgui.h>

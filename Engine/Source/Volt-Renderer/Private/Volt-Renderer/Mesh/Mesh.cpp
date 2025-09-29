@@ -111,8 +111,8 @@ namespace Volt
 			desc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndexBuffer | bufferRayTracingFlags;
 			desc.debugName = meshName + "IndexBuffer";
 
-			m_indexBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
-			m_indexBuffer->GetResource()->SetData(indices.data(), indices.size() * sizeof(uint32_t));
+			m_indexBuffer = RHI::StorageBuffer::Create(desc);
+			m_indexBuffer->SetData(indices.data(), indices.size() * sizeof(uint32_t));
 		}
 
 		// Vertex positions
@@ -125,8 +125,8 @@ namespace Volt
 			desc.usage = RHI::BufferUsage::VertexBuffer | bufferRayTracingFlags;
 			desc.debugName = meshName + "VertexPositions";
 
-			m_vertexPositionsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
-			m_vertexPositionsBuffer->GetResource()->SetData(vertexPositions.data(), vertexPositions.size() * sizeof(glm::vec3));
+			m_vertexPositionsBuffer = RHI::StorageBuffer::Create(desc);
+			m_vertexPositionsBuffer->SetData(vertexPositions.data(), vertexPositions.size() * sizeof(glm::vec3));
 		}
 
 		// Vertex material data
@@ -139,8 +139,8 @@ namespace Volt
 			desc.debugName = meshName + "VertexMaterialData";
 			desc.usage = RHI::BufferUsage::VertexBuffer;
 
-			m_vertexMaterialBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
-			m_vertexMaterialBuffer->GetResource()->SetData(vertexMaterialData.data(), vertexMaterialData.size() * sizeof(VertexMaterialData));
+			m_vertexMaterialBuffer = RHI::StorageBuffer::Create(desc);
+			m_vertexMaterialBuffer->SetData(vertexMaterialData.data(), vertexMaterialData.size() * sizeof(VertexMaterialData));
 		}
 
 		// Vertex animation data
@@ -152,8 +152,8 @@ namespace Volt
 			desc.elementSize = sizeof(VertexAnimationData);
 			desc.debugName = meshName + "VertexAnimationData";
 
-			m_vertexAnimationDataBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
-			m_vertexAnimationDataBuffer->GetResource()->SetData(vertexAnimationData.data(), vertexAnimationData.size() * sizeof(VertexAnimationData));
+			m_vertexAnimationDataBuffer = RHI::StorageBuffer::Create(desc);
+			m_vertexAnimationDataBuffer->SetData(vertexAnimationData.data(), vertexAnimationData.size() * sizeof(VertexAnimationData));
 		}
 
 		CreateBoundingSpheres();
@@ -174,8 +174,8 @@ namespace Volt
 		if (RHI::RHICanUseRayTracing())
 		{
 			RayTracingSceneGeometryCreateInfo info{};
-			info.indexBuffer = m_indexBuffer->GetResource();
-			info.vertexPositionsBuffer = m_vertexPositionsBuffer->GetResource();
+			info.indexBuffer = m_indexBuffer;
+			info.vertexPositionsBuffer = m_vertexPositionsBuffer;
 
 			for (const auto& subMesh : m_subMeshes)
 			{

@@ -8,8 +8,6 @@
 #include "Volt-Renderer/Mesh/MeshCommon.h"
 #include "Volt-Renderer/GPUScene.h"
 
-#include <RenderCore/Resources/BindlessResource.h>
-
 #include <RHIModule/Buffers/StorageBuffer.h>
 
 #include <CoreUtilities/Containers/Map.h>
@@ -126,10 +124,10 @@ namespace Volt
 
 		inline const BoundingSphere& GetSubMeshBoundingSphere(const uint32_t index) const { return m_subMeshBoundingSpheres.at(index);  }
 
-		inline BindlessResourceRef<RHI::StorageBuffer> GetVertexPositionsBuffer() const { return m_vertexPositionsBuffer; }
-		inline BindlessResourceRef<RHI::StorageBuffer> GetVertexMaterialBuffer() const { return m_vertexMaterialBuffer; }
-		inline BindlessResourceRef<RHI::StorageBuffer> GetVertexAnimationInfoBuffer() const { return m_vertexAnimationDataBuffer; }
-		inline BindlessResourceRef<RHI::StorageBuffer> GetIndexBuffer() const { return m_indexBuffer; }
+		inline RefPtr<RHI::StorageBuffer> GetVertexPositionsBuffer() const { return m_vertexPositionsBuffer; }
+		inline RefPtr<RHI::StorageBuffer> GetVertexMaterialBuffer() const { return m_vertexMaterialBuffer; }
+		inline RefPtr<RHI::StorageBuffer> GetVertexAnimationInfoBuffer() const { return m_vertexAnimationDataBuffer; }
+		inline RefPtr<RHI::StorageBuffer> GetIndexBuffer() const { return m_indexBuffer; }
 
 		VT_NODISCARD VT_INLINE const VertexContainer& GetVertexContainer() const { return m_vertexContainer; }
 		VT_NODISCARD VT_INLINE Ref<RayTracingSceneGeometry> GetRayTracingSceneGeometry() const { return m_rayTracingSceneGeometry; }
@@ -153,10 +151,10 @@ namespace Volt
 
 		MaterialTable m_materialTable;
 
-		BindlessResourceRef<RHI::StorageBuffer> m_indexBuffer;
-		BindlessResourceRef<RHI::StorageBuffer> m_vertexPositionsBuffer;
-		BindlessResourceRef<RHI::StorageBuffer> m_vertexMaterialBuffer;
-		BindlessResourceRef<RHI::StorageBuffer> m_vertexAnimationDataBuffer;
+		RefPtr<RHI::StorageBuffer> m_indexBuffer;
+		RefPtr<RHI::StorageBuffer> m_vertexPositionsBuffer;
+		RefPtr<RHI::StorageBuffer> m_vertexMaterialBuffer;
+		RefPtr<RHI::StorageBuffer> m_vertexAnimationDataBuffer;
 
 		Ref<RayTracingSceneGeometry> m_rayTracingSceneGeometry;
 

@@ -121,7 +121,6 @@ namespace Volt
 		RawPtr<RHI::RenderPipeline> m_currentRenderPipeline;
 		RawPtr<RHI::ComputePipeline> m_currentComputePipeline;
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
-		RefPtr<RHI::DescriptorTable> m_descriptorTable;
 
 		RHI::ShaderBindingMap m_shaderBindingMap;
 

@@ -3,7 +3,6 @@
 
 #include "RenderCore/RenderGraph/RenderGraph.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
-#include "RenderCore/DescriptorTableCache.h"
 #include "RenderCore/Shader/BatchedShaderParameters.h"
 
 #include <RHIModule/Buffers/UniformBuffer.h>
@@ -404,7 +403,6 @@ namespace Volt
 
 	void RenderContext::SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		m_descriptorTable->SetRayTracingResourceTable(rayTracingResourceTable);
 	}
 
 	void RenderContext::SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)

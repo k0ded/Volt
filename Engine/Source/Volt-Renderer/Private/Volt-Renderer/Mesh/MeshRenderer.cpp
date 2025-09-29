@@ -12,7 +12,6 @@
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
-#include <RenderCore/DescriptorTableCache.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
 #include <RenderCore/Shader/DefaultShaders.h>
 
@@ -40,6 +39,7 @@ namespace Volt
 		BuildRenderCommandsInternal(renderGraph, renderScene, cullingInfo, vertexShader, pixelShader, pipelineInfo);
 	}
 
+#if 0
 	void SetMaterialParametersInDescriptorTable(Weak<RenderMaterial> material, RefPtr<RHI::RenderPipeline> renderPipeline, RefPtr<RHI::DescriptorTable> descriptorTable)
 	{
 		VT_PROFILE_FUNCTION();
@@ -84,6 +84,7 @@ namespace Volt
 			}
 		}
 	}
+#endif
 
 	void MeshRenderer::Render(RenderContext& renderContext, RenderScene& renderScene, BatchedShaderParameters& batchedShaderParameters) const
 	{

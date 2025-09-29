@@ -54,6 +54,7 @@ namespace Volt
 		}
 	}
 
+#if 0
 	void BatchedShaderParameters::BindShaderBindingsToDescriptorTable(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable, const InlineVector<RenderContext::PerStageShaderParameters, 8>& shaderParameterUniformBuffers) const
 	{
 		VT_PROFILE_FUNCTION();
@@ -100,6 +101,7 @@ namespace Volt
 			descriptorTable->SetBufferView(perStageParameters.uniformBufferSRV->GetRHIView(), RHI::GetDescriptorSetIndexFromShaderStage(perStageParameters.shaderStage), RHI::Globals::SHADER_GLOBALS_BINDING);
 		}
 	}
+#endif
 
 	BatchedShaderParameterAllocator::BatchedShaderParameterAllocator()
 	{

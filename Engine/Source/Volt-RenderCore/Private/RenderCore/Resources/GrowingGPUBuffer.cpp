@@ -15,7 +15,7 @@ namespace Volt
 		desc.usage = bufferUsage;
 		desc.memoryUsage = memoryUsage;
 
-		m_buffer = BindlessResource<RHI::StorageBuffer>::CreateRef(desc);
+		m_buffer = RHI::StorageBuffer::Create(desc);
 	}
 
 	GrowingGPUBuffer::~GrowingGPUBuffer()
@@ -27,10 +27,9 @@ namespace Volt
 	{
 		constexpr float GrowMultiplier = 1.5f;
 
-		if (m_buffer->GetResource()->GetCount() < requestedElementCount)
+		if (m_buffer->GetCount() < requestedElementCount)
 		{
-			m_buffer->GetResource()->ResizeWithCount(std::max(static_cast<uint32_t>(m_buffer->GetResource()->GetCount() * GrowMultiplier), requestedElementCount));
-			m_buffer->MarkAsDirty();
+			m_buffer->ResizeWithCount(std::max(static_cast<uint32_t>(m_buffer->GetCount() * GrowMultiplier), requestedElementCount));
 		}
 	}
 
@@ -41,6 +40,6 @@ namespace Volt
 
 	RefPtr<RHI::StorageBuffer> GrowingGPUBuffer::GetResource() const
 	{
-		return m_buffer->GetResource();
+		return m_buffer;
 	}
 }

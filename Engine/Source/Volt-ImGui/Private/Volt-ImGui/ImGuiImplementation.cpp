@@ -5,7 +5,6 @@
 #include <WindowModule/Window.h>
 
 #include <RenderCore/CommandBufferPool.h>
-#include <RenderCore/DescriptorTableCache.h>
 
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Descriptors/ShaderBindingMap.h>

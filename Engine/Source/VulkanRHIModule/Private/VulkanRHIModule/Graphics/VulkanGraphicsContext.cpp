@@ -7,7 +7,6 @@
 
 #include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
 
-#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
@@ -78,11 +77,6 @@ namespace Volt::RHI
 		m_defaultAllocator = DefaultGPUAllocator::Create();
 		m_transientAllocator = TransientGPUAllocator::Create();
 
-		if (RHI::RHICanUseBindless())
-		{
-			VulkanBindlessDescriptorLayoutManager::CreateGlobalDescriptorLayout();
-		}
-
 		if (RHI::RHICanUseRayTracing())
 		{
 			m_rayTracingTableDescriptorSetManager = CreateRef<RayTracingTableDescriptorSetManager>();
@@ -98,11 +92,6 @@ namespace Volt::RHI
 		if (RHI::RHICanUseRayTracing())
 		{
 			m_rayTracingTableDescriptorSetManager = nullptr;
-		}
-
-		if (RHI::RHICanUseBindless())
-		{
-			VulkanBindlessDescriptorLayoutManager::DestroyGlobalDescriptorLayout();
 		}
 
 		m_defaultAllocator = nullptr;

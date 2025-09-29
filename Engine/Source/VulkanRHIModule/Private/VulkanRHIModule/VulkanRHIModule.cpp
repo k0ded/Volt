@@ -6,8 +6,6 @@
 #include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
 
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
-#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 
 #include "VulkanRHIModule/Graphics/VulkanDeviceQueue.h"
@@ -95,11 +93,6 @@ namespace Volt::RHI
 		RefPtr<UniformBuffer> uniformBuffer = RefPtr<VulkanUniformBuffer>::AttachNoRef(m_uniformBufferArena.Allocate(uniformBufferDesc, initialData));
 		uniformBuffer->SetArena(&m_uniformBufferArena);
 		return uniformBuffer;
-	}
-
-	RefPtr<BindlessDescriptorTable> VulkanRHIModule::CreateBindlessDescriptorTable(const uint64_t framesInFlight) const
-	{
-		return RefPtr<VulkanBindlessDescriptorTable>::Create(framesInFlight);
 	}
 
 	RefPtr<DeviceQueue> VulkanRHIModule::CreateDeviceQueue(const DeviceQueueCreateInfo& createInfo) const
@@ -258,11 +251,6 @@ namespace Volt::RHI
 	RefPtr<RenderPipeline> VulkanRHIModule::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanRenderPipeline>::Create(createInfo);
-	}
-
-	RefPtr<DescriptorTable> VulkanRHIModule::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const
-	{
-		return RefPtr<VulkanDescriptorTable>::Create(createInfo);
 	}
 
 	RefPtr<RayTracingResourceTable> VulkanRHIModule::CreateRayTracingResourceTable() const

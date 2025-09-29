@@ -13,8 +13,6 @@
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
 
-#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 
 #include "VulkanRHIModule/Images/VulkanImage.h"
@@ -582,36 +580,6 @@ namespace Volt::RHI
 	{
 		constexpr VkDeviceSize offset = 0;
 		vkCmdBindIndexBuffer(m_commandBufferData.commandBuffer, indexBuffer->GetHandle<VkBuffer>(), offset, indexType == IndexType::UInt16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
-	}
-
-	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable)
-	{
-		VulkanDescriptorTable& vulkanTable = descriptorTable->AsRef<VulkanDescriptorTable>();
-		vulkanTable.PrepareForRender();
-
-		const VkPipelineBindPoint bindPoint = static_cast<VkPipelineBindPoint>(vulkanTable.GetRelatedBindPoint());
-		const Map<uint32_t, VkDescriptorSet>& descriptorSets = vulkanTable.GetDescriptorSets();
-		VkPipelineLayout pipelineLayout = vulkanTable.GetRelatedPipelineLayout();
-
-		for (const auto& [setIndex, descriptorSet] : descriptorSets)
-		{
-			vkCmdBindDescriptorSets(m_commandBufferData.commandBuffer, bindPoint, pipelineLayout, setIndex, 1, &descriptorSet, 0, nullptr);
-		}
-
-		if (RHI::RHICanUseRayTracing())
-		{
-			RefPtr<RayTracingResourceTable> rtResourceTable = vulkanTable.GetRayTracingResourceTable();
-			if (rtResourceTable)
-			{
-				VkDescriptorSet descriptorSet = rtResourceTable->As<VulkanRayTracingResourceTable>()->GetDescriptorSet();
-				vkCmdBindDescriptorSets(m_commandBufferData.commandBuffer, bindPoint, pipelineLayout, RayTracingTableDescriptorSetManager::Set, 1, &descriptorSet, 0, nullptr);
-			}
-		}
-	}
-
-	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)
-	{
-		descriptorTable->AsRef<VulkanBindlessDescriptorTable>().Bind(*this, constantsBuffer, offsetIndex, stride, accelerationStructure);
 	}
 
 	void VulkanCommandBuffer::BeginRendering(const RenderingInfo& renderingInfo)

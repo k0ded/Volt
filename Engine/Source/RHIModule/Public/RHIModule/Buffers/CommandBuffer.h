@@ -3,9 +3,6 @@
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
 
-#include "RHIModule/Descriptors/BindlessDescriptorTable.h"
-#include "RHIModule/Descriptors/DescriptorTable.h"
-
 #include "RHIModule/Pipelines/RayTracingPipeline.h"
 #include "RHIModule/Pipelines/RenderPipeline.h"
 #include "RHIModule/Pipelines/ComputePipeline.h"
@@ -25,6 +22,8 @@ namespace Volt::RHI
 	class Allocation;
 	class Swapchain;
 	class ShaderBindingMap;
+	class BufferView;
+	class ImageView;
 
 	class Event;
 	class Fence;
@@ -77,9 +76,6 @@ namespace Volt::RHI
 		virtual void BindPipeline(RawPtr<RayTracingPipeline> pipeline) = 0;
 		virtual void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) = 0;
 		virtual void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer, const IndexType indexType = IndexType::UInt32) = 0;
-
-		virtual void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) = 0;
-		virtual void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure = nullptr) = 0;
 
 		virtual void BindShaderBindings(const ShaderBindingMap& shaderBindings) = 0;
 

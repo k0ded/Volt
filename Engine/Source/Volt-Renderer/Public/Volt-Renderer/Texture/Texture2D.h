@@ -28,8 +28,6 @@ namespace Volt
 		const uint32_t GetWidth() const;
 		const uint32_t GetHeight() const;
 
-		ResourceHandle GetResourceHandle() const;
-
 		inline const RefPtr<RHI::Image> GetImage() const { return m_image; }
 		void SetImage(RefPtr<RHI::Image> image);
 
@@ -42,6 +40,5 @@ namespace Volt
 
 	private:
 		RefPtr<RHI::Image> m_image;
-		ResourceHandle m_resourceHandle = Resource::Invalid;
 	};
 }

@@ -56,14 +56,14 @@ namespace Volt
 				const SubMesh& subMesh = renderPrimitive.mesh->GetSubMeshes().at(renderPrimitive.subMeshIndex);
 
 				auto& newCommand = renderCommandExts.emplace_back();
-				newCommand.indexBuffer = renderPrimitive.mesh->GetIndexBuffer()->GetResource();
+				newCommand.indexBuffer = renderPrimitive.mesh->GetIndexBuffer();
 				newCommand.primitiveIndex = renderScene.GetPrimitiveIndexFromID(renderPrimitive.id);
 				newCommand.mesh = renderPrimitive.mesh;
 				newCommand.subMeshIndex = renderPrimitive.subMeshIndex;
 
 				// Always bind all vertex buffers, just in case.
-				newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexPositionsBuffer()->GetResource());
-				newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexMaterialBuffer()->GetResource());
+				newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexPositionsBuffer());
+				newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexMaterialBuffer());
 				//newCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexAnimationInfoBuffer()->GetResource());
 
 				RefPtr<RHI::Shader> primitivePixelShader = renderPrimitive.material->GetPixelShader();
