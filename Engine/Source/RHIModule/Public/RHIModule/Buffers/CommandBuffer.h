@@ -38,8 +38,14 @@ namespace Volt::RHI
 		Secondary
 	};
 
+	struct VertexBufferBinding
+	{
+		RefPtr<RHI::StorageBuffer> buffer;
+		uint64_t offset = 0;
+	};
+
 	using BarrierVector = Vector<ResourceBarrierInfo, InlineAllocator<32>>;
-	using VertexBufferVector = Vector<RefPtr<RHI::StorageBuffer>, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>>;
+	using VertexBufferVector = Vector<VertexBufferBinding, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>>;
 
 	class VTRHI_API CommandBuffer : public RHIInterface
 	{

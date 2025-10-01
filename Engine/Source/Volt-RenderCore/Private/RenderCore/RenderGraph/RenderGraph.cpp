@@ -248,6 +248,7 @@ namespace Volt
 	RGBuffer* RenderGraph::CreateBuffer(const RGBufferDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
+		VT_ENSURE(desc.count * desc.elementSize > 0);
 
 		RGBufferRef buffer = m_resourceAllocator.Allocate<RGBuffer>(desc);
 		m_resources.emplace_back(buffer);
@@ -1196,6 +1197,8 @@ namespace Volt
 						{
 							const bool requireExternalSrcAccess = resource->isExternal && resourceState.previousUsage == nullptr;
 
+							VT_ENSURE(newState.layout != RHI::ImageLayout::Undefined);
+
 							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, requireExternalSrcAccess);
 							newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
 							newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
@@ -1863,7 +1866,7 @@ namespace Volt
 
 	uint64_t RenderGraphShaderParameterUniformBuffer::Allocate(uint64_t size)
 	{
-		const uint64_t alignedSize = std::max(size, g_rhiCapabilities.minUniformBufferAlignment);
+		const uint64_t alignedSize = size + g_rhiCapabilities.minUniformBufferAlignment;
 		uint64_t allocOffset = m_head.fetch_add(alignedSize, std::memory_order::relaxed);
 		return Utility::Align(allocOffset, g_rhiCapabilities.minUniformBufferAlignment);
 	}

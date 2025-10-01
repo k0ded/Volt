@@ -57,17 +57,6 @@ namespace Volt
 		Ref<RenderScene> renderScene;
 	};
 
-	class TestMeshPassProcessor : public MeshPassProcessor
-	{
-	public:
-		void AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive) override;
-
-		void RemoveRenderPrimitive(UUID64 renderPrimitveId) override
-		{
-
-		}
-	};
-
 	class VTR_API SceneRenderer : public EventListener
 	{
 	public:
@@ -127,7 +116,7 @@ namespace Volt
 		void AddDefaultTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddEnvironmentTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
-		void AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddBasePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer, RGTextureRef indirectLightTexture);
 		void AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture);
@@ -193,7 +182,8 @@ namespace Volt
 		UUID32 m_onRenderPrimitiveAddedCallbackId = 0;
 		UUID32 m_onRenderPrimitiveRemovedCallbackId = 0;
 
-		TestMeshPassProcessor* m_testMeshPassProcessor = nullptr;
+		class DepthPrePassMeshProcessor* m_depthPrePassMeshProcessor = nullptr;
+		class BasePassMeshProcessor* m_basePassMeshProcessor = nullptr;
 	};
 
 	template<typename T>
@@ -202,6 +192,8 @@ namespace Volt
 		static_assert(std::is_base_of_v<SceneRendererExtension, T>);
 
 		Ref<T> instance = CreateRef<T>(m_renderScene);
+		instance->OnRegistered(m_meshPassProcessorRegistry);
+
 		m_sceneRendererExtensions[stage].emplace_back(instance);
 		return instance;
 	}

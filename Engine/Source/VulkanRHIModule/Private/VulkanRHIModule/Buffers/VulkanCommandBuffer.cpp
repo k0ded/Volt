@@ -569,8 +569,8 @@ namespace Volt::RHI
 
 		for (size_t i = 0; i < vertexBuffers.size(); i++)
 		{
-			vkBuffers.emplace_back() = vertexBuffers[i]->GetHandle<VkBuffer>();
-			offsets.emplace_back(0u);
+			vkBuffers.emplace_back() = vertexBuffers[i].buffer->GetHandle<VkBuffer>();
+			offsets.emplace_back(vertexBuffers[i].offset);
 		}
 
 		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.size()), vkBuffers.data(), offsets.data());

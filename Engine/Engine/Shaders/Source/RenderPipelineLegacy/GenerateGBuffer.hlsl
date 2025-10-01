@@ -12,15 +12,13 @@ struct GBufferVertex
     [[vt::inputIndex(1)]] float tangentW : TANGENTW;
     [[vt::inputIndex(1)]] [[vt::half2]] float2 texCoords : TEXCOORD;
 
+    [[vt::instance]] uint primitiveIndex : PRIMITIVEINDEX;
     uint instanceId : SV_InstanceID;    
 };
 
-Buffer<uint> PrimitiveDrawDataIndirection;
-
 GBufferPixelShaderInput MainVS(in GBufferVertex input)
 {
-    const uint primitiveIndex = PrimitiveDrawDataIndirection[input.instanceId];
-    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[primitiveIndex];
+    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[input.primitiveIndex];
 
     const float3 normal = UnpackNormalFromUInt32(input.normal);
     const float3 tangent = DecodeTangent(normal, input.tangent);
@@ -30,7 +28,7 @@ GBufferPixelShaderInput MainVS(in GBufferVertex input)
     result.texCoords = input.texCoords;
     result.normal = normalize(primitiveData.transform.RotateVector(normal));
     result.tangent = float4(normalize(primitiveData.transform.RotateVector(tangent)), input.tangentW);
-    result.primitiveIndex = primitiveIndex;
+    result.primitiveIndex = input.primitiveIndex;
 
     return result;
 }

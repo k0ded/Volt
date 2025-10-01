@@ -317,7 +317,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		Handle<RenderGraphPass> newPass = m_passAllocator.AllocatePass(name, std::forward<ExecFunc>(executeFunc));
-		newPass->flags = flags | RenderGraphPassFlags::NeverCull;
+		newPass->flags = flags;
 
 		// Get all parameters accessed by shader.
 		// #TODO_Ivar: Add support for paged vector, or inline allocator

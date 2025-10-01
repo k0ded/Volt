@@ -207,7 +207,8 @@ namespace Volt
 		RHI::VertexBufferVector rhiVertexBuffers;
 		for (const RGBufferRef buffer : vertexBuffers)
 		{
-			rhiVertexBuffers.emplace_back() = buffer->GetRHIResource()->GetRHIBuffer();
+			auto& vertexBufferBinding = rhiVertexBuffers.emplace_back();
+			vertexBufferBinding.buffer = buffer->GetRHIResource()->GetRHIBuffer();
 		}
 
 		m_commandBuffer->BindVertexBuffers(rhiVertexBuffers, firstBinding);

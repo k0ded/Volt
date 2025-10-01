@@ -22,7 +22,7 @@ namespace Volt::RHI
 		Vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	};
 
-	inline VertexAttributeData CreateVertexLayout(const BufferLayoutMap& vertexLayoutMap, const BufferLayout& instanceLayout)
+	inline VertexAttributeData CreateVertexLayout(const BufferLayoutMap& vertexLayoutMap, const BufferLayout& instanceLayout, VertexBufferLayout& vertexBufferLayout)
 	{
 		VertexAttributeData result{};
 
@@ -46,19 +46,24 @@ namespace Volt::RHI
 			}
 
 			lastVertexBufferIndex = std::max(lastVertexBufferIndex, index);
+
+			vertexBufferLayout.vertexBuffers.emplace_back(vertexLayout, index);
 		}
 
 		if (instanceLayout.IsValid())
 		{
+			lastVertexBufferIndex++;
+			vertexBufferLayout.perInstanceVertexBuffer = { instanceLayout, lastVertexBufferIndex };
+
 			VkVertexInputBindingDescription& instanceBindingDesc = result.bindingDescriptions.emplace_back();
-			instanceBindingDesc.binding = 1;
+			instanceBindingDesc.binding = lastVertexBufferIndex;
 			instanceBindingDesc.stride = instanceLayout.GetStride();
 			instanceBindingDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
 			for (const auto& element : instanceLayout.GetElements())
 			{
 				VkVertexInputAttributeDescription& desc = result.attributeDescriptions.emplace_back();
-				desc.binding = 1;
+				desc.binding = lastVertexBufferIndex;
 				desc.location = attributeIndex++;
 				desc.format = Utility::VoltToVulkanElementFormat(element.type);
 				desc.offset = static_cast<uint32_t>(element.offset);
@@ -68,7 +73,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	inline VertexAttributeData CreateVertexLayoutFromShaders(const Vector<RefPtr<Shader>>& shaders)
+	inline VertexAttributeData CreateVertexLayoutFromShaders(const Vector<RefPtr<Shader>>& shaders, VertexBufferLayout& vertexBufferLayout)
 	{
 		// We will pick the first shader that contains a vertex layout (should only be one anyways)
 		for (const auto shader : shaders)
@@ -79,7 +84,7 @@ namespace Volt::RHI
 			{
 				if (shaderInfo.vertexLayout.begin()->second.IsValid())
 				{
-					return CreateVertexLayout(shaderInfo.vertexLayout, shaderInfo.instanceLayout);
+					return CreateVertexLayout(shaderInfo.vertexLayout, shaderInfo.instanceLayout, vertexBufferLayout);
 				}
 			}
 		}
@@ -166,7 +171,7 @@ namespace Volt::RHI
 
 		// Create pipeline
 		{
-			VertexAttributeData vertexAttributes = CreateVertexLayoutFromShaders(m_createInfo.shaders);
+			VertexAttributeData vertexAttributes = CreateVertexLayoutFromShaders(m_createInfo.shaders, m_vertexBufferLayout);
 
 			VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 			vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -495,5 +500,10 @@ namespace Volt::RHI
 	const Vector<RefPtr<Shader>>& VulkanRenderPipeline::GetShaders() const
 	{
 		return m_createInfo.shaders;
+	}
+
+	const VertexBufferLayout& VulkanRenderPipeline::GetVertexBufferLayout() const
+	{
+		return m_vertexBufferLayout;
 	}
 }

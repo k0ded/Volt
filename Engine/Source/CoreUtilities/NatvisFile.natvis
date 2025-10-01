@@ -20,6 +20,24 @@
 		</Expand>
 	</Type>
 
+	<Type Name="ArrayView&lt;*&gt;">
+		<DisplayString Condition="m_size == 0">[empty] {{}}</DisplayString>
+		<DisplayString Condition="m_size == 1">[{m_size}] {{ {*m_data} }}</DisplayString>
+		<DisplayString Condition="m_size == 2">[{m_size}] {{ {*m_data}, {*(m_data+1)} }}</DisplayString>
+		<DisplayString Condition="m_size == 3">[{m_size}] {{ {*m_data}, {*(m_data+1)}, {*(m_data+2)} }}</DisplayString>
+		<DisplayString Condition="m_size == 4">[{m_size}] {{ {*m_data}, {*(m_data+1)}, {*(m_data+2)}, {*(m_data+3)} }}</DisplayString>
+		<DisplayString Condition="m_size == 5">[{m_size}] {{ {*m_data}, {*(m_data+1)}, {*(m_data+2)}, {*(m_data+3)}, {*(m_data+4)} }}</DisplayString>
+		<DisplayString Condition="m_size == 6">[{m_size}] {{ {*m_data}, {*(m_data+1)}, {*(m_data+2)}, {*(m_data+3)}, {*(m_data+4)}, {*(m_data+5)} }}</DisplayString>
+		<DisplayString Condition="m_size &gt; 6">[{m_size}] {{ {*m_data}, {*(m_data+1)}, {*(m_data+2)}, {*(m_data+3)}, {*(m_data+4)}, {*(m_data+5)}, ... }}</DisplayString>
+		<Expand>
+			<Item Name="[size]">m_size</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>m_data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
 	<Type Name="StackVector&lt;*&gt;">
 		<DisplayString Condition="m_ptrEnd == m_ptrBegin">[empty] {{}}</DisplayString>
 		<DisplayString Condition="m_ptrEnd - m_ptrBegin == 1">[{m_ptrEnd - m_ptrBegin}] {{ {*m_ptrBegin} }}</DisplayString>

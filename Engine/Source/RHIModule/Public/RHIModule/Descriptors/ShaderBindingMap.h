@@ -10,6 +10,7 @@
 
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/Containers/VectorVariants.h>
+#include <CoreUtilities/Containers/BitArray.h>
 
 namespace Volt::RHI
 {
@@ -32,6 +33,7 @@ namespace Volt::RHI
 		};
 
 		using ResourceBindingsMap = Map<ShaderStage, InlineVector<ResourceBinding, NumMaxBindings>>;
+		using ResourceIsSetMap = Map<ShaderStage, BitArray<NumMaxBindings>>;
 
 		void SetUniformBuffer(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);
 		void SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView, uint64_t size, uint64_t offset);
@@ -48,5 +50,6 @@ namespace Volt::RHI
 
 	private:
 		ResourceBindingsMap m_resourceBindings;
+		ResourceIsSetMap m_resourceIsSet;
 	};
 }

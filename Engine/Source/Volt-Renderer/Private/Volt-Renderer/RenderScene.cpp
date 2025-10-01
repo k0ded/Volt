@@ -186,6 +186,9 @@ namespace Volt
 		TryAddMesh(mesh);
 
 		const size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
+
+		newObj.primitiveIndex = static_cast<uint32_t>(primitiveDrawDataIndex);
+
 		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
 
 		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
@@ -213,6 +216,9 @@ namespace Volt
 		TryAddMesh(mesh);
 
 		size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
+
+		newObj.primitiveIndex = static_cast<uint32_t>(primitiveDrawDataIndex);
+
 		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
 
 		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);

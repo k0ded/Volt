@@ -199,7 +199,7 @@ namespace Volt
 
 		commandBuffer->SetViewports({ viewport });
 
-		commandBuffer->BindVertexBuffers({ renderContext.vertexBuffers.at(frameIndex) }, 0);
+		commandBuffer->BindVertexBuffers({ { renderContext.vertexBuffers.at(frameIndex), 0ull } }, 0);
 		commandBuffer->BindIndexBuffer(renderContext.indexBuffers.at(frameIndex), sizeof(ImDrawIdx) == sizeof(uint16_t) ? RHI::IndexType::UInt16 : RHI::IndexType::UInt32);
 		commandBuffer->BindPipeline(m_imguiRenderPipeline);
 

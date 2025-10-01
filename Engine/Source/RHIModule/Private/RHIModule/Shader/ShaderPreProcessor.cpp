@@ -473,6 +473,8 @@ namespace Volt::RHI
 			outResult.vertexLayout[index] = inputElements;
 		}
 
+		outResult.instanceLayout = instanceInputElements;
+
 		return true;
 	}
 

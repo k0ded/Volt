@@ -1,12 +1,16 @@
 #pragma once
 
+#include "Volt-Renderer/Config.h"
+
 #include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Core/RHICommon.h>
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Allocators/LinearAllocator.h>
 #include <CoreUtilities/DestructorHelper.h>
+#include <CoreUtilities/UUID.h>
 
 #include <type_traits>
 
@@ -14,9 +18,9 @@ namespace Volt
 {
 	struct RenderPrimitiveData;
 	class RenderContext;
+	class RenderGraph;
 	class BatchedShaderParameters;
-
-	using VertexBufferVector = Vector<RefPtr<RHI::StorageBuffer>, InlineAllocator<RHI::MAX_VERTEX_BUFFER_COUNT>>;
+	class RGBuffer;
 
 	struct MeshDrawCommand
 	{
@@ -26,34 +30,42 @@ namespace Volt
 			Map<RHI::ShaderStage, RefPtr<RHI::BufferView>> views;
 		};
 
-		VertexBufferVector vertexBuffers;
+		RHI::VertexBufferVector vertexBuffers;
 		RefPtr<RHI::StorageBuffer> indexBuffer;
 
 		RefPtr<RHI::RenderPipeline> renderPipeline;
 
 		ShaderParameters shaderParameters;
+		uint32_t primitiveIndex;
+		UUID64 renderPrimitiveID;
 
 		// Draw command
 		RHI::DrawIndexedIndirectCommand drawCommand;
 	};
 
-	class MeshPassProcessor
+	class VTR_API MeshPassProcessor
 	{
 	public:
+		MeshPassProcessor();
 		virtual ~MeshPassProcessor() = default;
 
+		void PrepareRenderCommands(RenderGraph& renderGraph);
 		void ExecuteCommands(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters);
 
 		virtual void AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive) = 0;
 		virtual void RemoveRenderPrimitive(UUID64 renderPrimitveId) = 0;
 
 	protected:
-		void BuildMeshDrawCommand(const RenderPrimitiveData& renderPrimitive, const RHI::RenderPipelineCreateInfo& pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
+		void BuildMeshDrawCommand(const RenderPrimitiveData& renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
+		void RemoveMeshDrawCommand(UUID64 renderPrimitiveId);
 
 	private:
 		MeshDrawCommand::ShaderParameters AllocateShaderParametersForPipeline(RefPtr<RHI::RenderPipeline> renderPipeline);
 
 		Vector<MeshDrawCommand> m_meshDrawCommands;
+		Vector<uint32_t> m_perDrawCommandPrimitiveIndices;
+
+		RGBuffer* m_primitiveIndexVertexBuffer = nullptr;
 	};
 
 	class MeshPassProcessorRegistry

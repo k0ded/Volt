@@ -6,93 +6,163 @@ namespace Volt::RHI
 {
 	void ShaderBindingMap::SetUniformBuffer(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
 	{
-		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
-		resourceBinding.registerType = ShaderRegisterType::CBV;
-		resourceBinding.resourceType = ShaderResourceType::UniformBuffer;
-		resourceBinding.bindingIndex = bindingIndex;
-		resourceBinding.bufferView = bufferView;
+		auto& bitArray = m_resourceIsSet[shaderStage];
+
+		if (!bitArray.IsBitSet(bindingIndex))
+		{
+			auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+			resourceBinding.registerType = ShaderRegisterType::CBV;
+			resourceBinding.resourceType = ShaderResourceType::UniformBuffer;
+			resourceBinding.bindingIndex = bindingIndex;
+			resourceBinding.bufferView = bufferView;
+
+			bitArray.SetBit(bindingIndex, true);
+		}
 	}
-	
+
 	void ShaderBindingMap::SetSampler(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::SamplerState> samplerState)
 	{
-		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
-		resourceBinding.registerType = ShaderRegisterType::Sampler;
-		resourceBinding.resourceType = ShaderResourceType::Sampler;
-		resourceBinding.bindingIndex = bindingIndex;
-		resourceBinding.samplerState = samplerState;
+		auto& bitArray = m_resourceIsSet[shaderStage];
+
+		if (!bitArray.IsBitSet(bindingIndex))
+		{
+			auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+			resourceBinding.registerType = ShaderRegisterType::Sampler;
+			resourceBinding.resourceType = ShaderResourceType::Sampler;
+			resourceBinding.bindingIndex = bindingIndex;
+			resourceBinding.samplerState = samplerState;
+
+			bitArray.SetBit(bindingIndex, true);
+		}
 	}
-	
+
 	void ShaderBindingMap::SetStructuredBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
 	{
-		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
-		resourceBinding.registerType = ShaderRegisterType::UAV;
-		resourceBinding.resourceType = ShaderResourceType::StructuredBuffer;
-		resourceBinding.bindingIndex = bindingIndex;
-		resourceBinding.bufferView = bufferView;
+		auto& bitArray = m_resourceIsSet[shaderStage];
+
+		if (!bitArray.IsBitSet(bindingIndex))
+		{
+			auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+			resourceBinding.registerType = ShaderRegisterType::UAV;
+			resourceBinding.resourceType = ShaderResourceType::StructuredBuffer;
+			resourceBinding.bindingIndex = bindingIndex;
+			resourceBinding.bufferView = bufferView;
+
+			bitArray.SetBit(bindingIndex, true);
+		}
 	}
-	
+
 	void ShaderBindingMap::SetStructuredBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
 	{
-		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
-		resourceBinding.registerType = ShaderRegisterType::SRV;
-		resourceBinding.resourceType = ShaderResourceType::StructuredBuffer;
-		resourceBinding.bindingIndex = bindingIndex;
-		resourceBinding.bufferView = bufferView;
+		auto& bitArray = m_resourceIsSet[shaderStage];
+
+		if (!bitArray.IsBitSet(bindingIndex))
+		{
+			auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+			resourceBinding.registerType = ShaderRegisterType::SRV;
+			resourceBinding.resourceType = ShaderResourceType::StructuredBuffer;
+			resourceBinding.bindingIndex = bindingIndex;
+			resourceBinding.bufferView = bufferView;
+
+			bitArray.SetBit(bindingIndex, true);
+		}
 	}
-	
+
 	void ShaderBindingMap::SetTexelBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
 	{
-		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
-		resourceBinding.registerType = ShaderRegisterType::UAV;
-		resourceBinding.resourceType = ShaderResourceType::TexelBuffer;
-		resourceBinding.bindingIndex = bindingIndex;
-		resourceBinding.bufferView = bufferView;
+		auto& bitArray = m_resourceIsSet[shaderStage];
+
+		if (!bitArray.IsBitSet(bindingIndex))
+		{
+			auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+			resourceBinding.registerType = ShaderRegisterType::UAV;
+			resourceBinding.resourceType = ShaderResourceType::TexelBuffer;
+			resourceBinding.bindingIndex = bindingIndex;
+			resourceBinding.bufferView = bufferView;
+
+			bitArray.SetBit(bindingIndex, true);
+		}
 	}
-	
+
 	void ShaderBindingMap::SetTexelBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
 	{
-		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
-		resourceBinding.registerType = ShaderRegisterType::SRV;
-		resourceBinding.resourceType = ShaderResourceType::TexelBuffer;
-		resourceBinding.bindingIndex = bindingIndex;
-		resourceBinding.bufferView = bufferView;
+		auto& bitArray = m_resourceIsSet[shaderStage];
+
+		if (!bitArray.IsBitSet(bindingIndex))
+		{
+			auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+			resourceBinding.registerType = ShaderRegisterType::SRV;
+			resourceBinding.resourceType = ShaderResourceType::TexelBuffer;
+			resourceBinding.bindingIndex = bindingIndex;
+			resourceBinding.bufferView = bufferView;
+
+			bitArray.SetBit(bindingIndex, true);
+		}
 	}
-	
+
 	void ShaderBindingMap::SetTextureSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView)
 	{
-		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
-		resourceBinding.registerType = ShaderRegisterType::SRV;
-		resourceBinding.resourceType = ShaderResourceType::Texture;
-		resourceBinding.bindingIndex = bindingIndex;
-		resourceBinding.imageView = imageView;
+		auto& bitArray = m_resourceIsSet[shaderStage];
+
+		if (!bitArray.IsBitSet(bindingIndex))
+		{
+			auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+			resourceBinding.registerType = ShaderRegisterType::SRV;
+			resourceBinding.resourceType = ShaderResourceType::Texture;
+			resourceBinding.bindingIndex = bindingIndex;
+			resourceBinding.imageView = imageView;
+
+			bitArray.SetBit(bindingIndex, true);
+		}
 	}
-	
+
 	void ShaderBindingMap::SetTextureUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView)
 	{
-		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
-		resourceBinding.registerType = ShaderRegisterType::UAV;
-		resourceBinding.resourceType = ShaderResourceType::Texture;
-		resourceBinding.bindingIndex = bindingIndex;
-		resourceBinding.imageView = imageView;
+		auto& bitArray = m_resourceIsSet[shaderStage];
+
+		if (!bitArray.IsBitSet(bindingIndex))
+		{
+			auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+			resourceBinding.registerType = ShaderRegisterType::UAV;
+			resourceBinding.resourceType = ShaderResourceType::Texture;
+			resourceBinding.bindingIndex = bindingIndex;
+			resourceBinding.imageView = imageView;
+
+			bitArray.SetBit(bindingIndex, true);
+		}
 	}
-	
+
 	void ShaderBindingMap::SetAccelerationStructure(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::AccelerationStructure> accelerationStructure)
 	{
-		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
-		resourceBinding.registerType = ShaderRegisterType::SRV;
-		resourceBinding.resourceType = ShaderResourceType::AccelerationStructure;
-		resourceBinding.bindingIndex = bindingIndex;
-		resourceBinding.accelerationStructure = accelerationStructure;
+		auto& bitArray = m_resourceIsSet[shaderStage];
+
+		if (!bitArray.IsBitSet(bindingIndex))
+		{
+			auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+			resourceBinding.registerType = ShaderRegisterType::SRV;
+			resourceBinding.resourceType = ShaderResourceType::AccelerationStructure;
+			resourceBinding.bindingIndex = bindingIndex;
+			resourceBinding.accelerationStructure = accelerationStructure;
+		
+			bitArray.SetBit(bindingIndex, true);
+		}
 	}
 
 	void ShaderBindingMap::SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView, uint64_t size, uint64_t offset)
 	{
-		auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
-		resourceBinding.registerType = ShaderRegisterType::CBV;
-		resourceBinding.resourceType = ShaderResourceType::UniformBuffer;
-		resourceBinding.bindingIndex = bindingIndex;
-		resourceBinding.bufferView = bufferView;
-		resourceBinding.uniformBufferSize = size;
-		resourceBinding.uniformBufferOffset = offset;
+		auto& bitArray = m_resourceIsSet[shaderStage];
+
+		if (!bitArray.IsBitSet(bindingIndex))
+		{
+			auto& resourceBinding = m_resourceBindings[shaderStage].emplace_back();
+			resourceBinding.registerType = ShaderRegisterType::CBV;
+			resourceBinding.resourceType = ShaderResourceType::UniformBuffer;
+			resourceBinding.bindingIndex = bindingIndex;
+			resourceBinding.bufferView = bufferView;
+			resourceBinding.uniformBufferSize = size;
+			resourceBinding.uniformBufferOffset = offset;
+
+			bitArray.SetBit(bindingIndex, true);
+		}
 	}
 }

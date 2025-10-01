@@ -54,11 +54,10 @@ namespace Volt
 		}
 	}
 
-#if 0
-	void BatchedShaderParameters::BindShaderBindingsToDescriptorTable(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable, const InlineVector<RenderContext::PerStageShaderParameters, 8>& shaderParameterUniformBuffers) const
+	void BatchedShaderParameters::BindShaderBindings(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RHI::ShaderBindingMap& shaderBindings)
 	{
 		VT_PROFILE_FUNCTION();
-
+		
 		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
 		{
 			for (const BatchedShaderBinding* binding : m_bindings)
@@ -71,17 +70,31 @@ namespace Volt
 						case RHI::ShaderResourceType::Texture:
 						{
 							const BatchedTextureShaderBinding* textureParameter = reinterpret_cast<const BatchedTextureShaderBinding*>(binding);
-							descriptorTable->SetImageView(textureParameter->imageView, resourceBinding->set, resourceBinding->binding);
+							shaderBindings.SetTextureSRV(parameterMap.GetShaderStage(), resourceBinding->binding, textureParameter->imageView);
 
 							break;
 						}
 
 						case RHI::ShaderResourceType::StructuredBuffer:
+						{
+							const BatchedBufferShaderBinding* bufferParameter = reinterpret_cast<const BatchedBufferShaderBinding*>(binding);
+							shaderBindings.SetStructuredBufferSRV(parameterMap.GetShaderStage(), resourceBinding->binding, bufferParameter->bufferView);
+							
+							break;
+						}
+
 						case RHI::ShaderResourceType::TexelBuffer:
+						{
+							const BatchedBufferShaderBinding* bufferParameter = reinterpret_cast<const BatchedBufferShaderBinding*>(binding);
+							shaderBindings.SetTexelBufferSRV(parameterMap.GetShaderStage(), resourceBinding->binding, bufferParameter->bufferView);
+
+							break;
+						}
+						
 						case RHI::ShaderResourceType::UniformBuffer:
 						{
 							const BatchedBufferShaderBinding* bufferParameter = reinterpret_cast<const BatchedBufferShaderBinding*>(binding);
-							descriptorTable->SetBufferView(bufferParameter->bufferView, resourceBinding->set, resourceBinding->binding);
+							shaderBindings.SetUniformBuffer(parameterMap.GetShaderStage(), resourceBinding->binding, bufferParameter->bufferView);
 
 							break;
 						}
@@ -89,19 +102,13 @@ namespace Volt
 						case RHI::ShaderResourceType::Sampler:
 						{
 							const BatchedSamplerShaderBinding* samplerParameter = reinterpret_cast<const BatchedSamplerShaderBinding*>(binding);
-							descriptorTable->SetSamplerState(samplerParameter->sampler, resourceBinding->set, resourceBinding->binding);
+							shaderBindings.SetSampler(parameterMap.GetShaderStage(), resourceBinding->binding, samplerParameter->sampler);
 						}
 					}
 				}
 			}
 		}
-
-		for (const RenderContext::PerStageShaderParameters& perStageParameters : shaderParameterUniformBuffers)
-		{
-			descriptorTable->SetBufferView(perStageParameters.uniformBufferSRV->GetRHIView(), RHI::GetDescriptorSetIndexFromShaderStage(perStageParameters.shaderStage), RHI::Globals::SHADER_GLOBALS_BINDING);
-		}
 	}
-#endif
 
 	BatchedShaderParameterAllocator::BatchedShaderParameterAllocator()
 	{
