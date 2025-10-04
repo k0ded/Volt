@@ -44,9 +44,33 @@ namespace Volt
 						{
 							m_filesToProcess.emplace_back(p.path());
 						}
+
+						if (p.path().extension() == ".vtasset")
+						{
+							BinaryStreamReader streamReader{ p.path() };
+							if (!streamReader.IsStreamValid())
+							{
+								continue;
+							}
+
+							uint32_t magicVal = 0;
+							streamReader.Read(magicVal);
+							if (magicVal != OldSerializedAssetMetadata::AssetMagic)
+							{
+								continue;
+							}
+							OldSerializedAssetMetadata OldMetadata;
+							streamReader.Read(OldMetadata);
+
+							//if asset is a scene
+							if (OldMetadata.type == "{EF155FF1-61DC-4200-84DE-4A0C8A01D049}"_guid)
+							{
+								m_sceneFilesToProcess.push_back(p.path());
+							}
+						}
 					}
 				}
-				m_numTotalActions = m_filesToProcess.size();
+				m_numTotalActions = m_filesToProcess.size() + m_sceneFilesToProcess.size();
 				m_currentStage = UpgradeStage::Converting;
 				break;
 			}
@@ -64,11 +88,39 @@ namespace Volt
 
 					ProcessFile(path);
 				}
+
+				if (m_filesToProcess.empty())
+				{
+					m_currentStage = UpgradeStage::MovingSceneFiles;
+				}
+				break;
+			}
+
+			case UpgradeStage::MovingSceneFiles:
+			{
+				//5 is probably good enough
+				for (size_t i = 0; i < 5; i++)
+				{
+					if (m_sceneFilesToProcess.empty())
+					{
+						break;
+					}
+					std::filesystem::path path = m_sceneFilesToProcess.back();
+					m_sceneFilesToProcess.pop_back();
+
+					MoveSceneFileAndEntities(path);
+					m_numActionsCompleted++;
+				}
+
+				if (m_sceneFilesToProcess.empty())
+				{
+					m_currentStage = UpgradeStage::Done;
+				}
 				break;
 			}
 		}
 
-		return m_filesToProcess.empty();
+		return m_currentStage == UpgradeStage::Done;
 	}
 
 	size_t Upgrade_0_1_6::GetNumTotalActions()
@@ -83,12 +135,14 @@ namespace Volt
 
 	std::string Upgrade_0_1_6::GetCurrentActionText()
 	{
-		switch(m_currentStage)
+		switch (m_currentStage)
 		{
 			case UpgradeStage::Collecting:
 				return "Collecting files to convert...";
 			case UpgradeStage::Converting:
 				return "Converting files...";
+			case UpgradeStage::MovingSceneFiles:
+				return "Moving Scene And Entity Files...";
 		}
 		return "Error";
 	}
@@ -178,13 +232,28 @@ namespace Volt
 		newMetadata.type = "{50C26090-1874-4609-8386-67AEB44CE208}"_guid;
 		newMetadata.version = 1;
 
-		//call reserve here to set the begin ptr
-		newMetadata.customData.reserve(ASSET_CUSTOM_METADATA_SIZE);
+
+		newMetadata.customData.resize(sizeof(EntityDescCustomMetadata));
 		memset(newMetadata.customData.data(), 0, ASSET_CUSTOM_METADATA_SIZE);
+
 		//custom metadata for entities contain the sceneHandle of the entity
-		UUID64& MetadataSceneHandleRef = *reinterpret_cast<UUID64*>(newMetadata.customData.data());
-		//assign scene handle here
-		MetadataSceneHandleRef = OwningSceneAssetHandle;
+		{
+			UUID64& MetadataSceneHandleRef = *reinterpret_cast<UUID64*>(newMetadata.customData.data());
+			//assign scene handle here
+			MetadataSceneHandleRef = OwningSceneAssetHandle;
+		}
+
+		//they also contain the ID of the entity
+		{
+			uint32_t& entityIDRef = *reinterpret_cast<uint32_t*>(newMetadata.customData.data() + sizeof(UUID64));
+
+			YAMLMemoryStreamReader reader;
+			reader.ReadBuffer(buffer);
+
+			reader.EnterScope("Entity");
+			entityIDRef = reader.ReadAtKey("id", static_cast<uint32_t>(0));
+			VT_ASSERT(entityIDRef != 0);
+		}
 
 		size_t compressedDataOffset = entityDescFileWriter.Write(newMetadata);
 
@@ -239,6 +308,31 @@ namespace Volt
 		streamWriter.WriteWithoutHeader(bytes.data(), bytes.size());
 
 		streamWriter.WriteToDisk(inPath, true, compressedDataOffset);
+	}
+
+	void Upgrade_0_1_6::MoveSceneFileAndEntities(std::filesystem::path inPath)
+	{
+		std::filesystem::path newSceneDirectory = inPath.parent_path().parent_path();
+		FileSystem::Move(inPath, newSceneDirectory);
+
+
+		std::filesystem::path oldEntitiesDir = inPath.parent_path() / "Entities";
+		Vector<std::filesystem::path> entitiesPaths;
+
+		for (auto& p : std::filesystem::recursive_directory_iterator(oldEntitiesDir))
+		{
+			entitiesPaths.push_back(p.path());
+		}
+
+		const std::filesystem::path& newEntityDirectory = newSceneDirectory / (inPath.stem().string() + "_Entities");
+		FileSystem::CreateDirectories(newEntityDirectory);
+		for (const std::filesystem::path& entityPath : entitiesPaths)
+		{
+			FileSystem::Move(entityPath, newEntityDirectory);
+		}
+
+		//remove the folder that the old scene lived in
+		FileSystem::Remove(inPath.parent_path());
 	}
 
 	void Upgrade_0_1_6::NewSerializedAssetMetadata::Serialize(BinaryStreamWriter& streamWriter, const NewSerializedAssetMetadata& data)

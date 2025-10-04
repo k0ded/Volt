@@ -28,7 +28,9 @@ namespace Volt
 		enum class UpgradeStage
 		{
 			Collecting,
-			Converting
+			Converting,
+			MovingSceneFiles,
+			Done
 		};
 
 		struct OldSerializedAssetMetadata
@@ -57,15 +59,23 @@ namespace Volt
 
 			static void Serialize(BinaryStreamWriter& streamWriter, const NewSerializedAssetMetadata& data);
 		};
+
+		struct EntityDescCustomMetadata
+		{
+			UUID64 sceneHandle;
+			uint32_t entityID;
+		};
 	private:
 		void ProcessFile(std::filesystem::path inPath);
 		void ProcessEntityFile(std::filesystem::path inPath);
 		void ProcessAssetFile(std::filesystem::path inPath);
+		void MoveSceneFileAndEntities(std::filesystem::path inPath);
 
 
 		UpgradeStage m_currentStage;
 		//absolute paths
 		Vector<std::filesystem::path> m_filesToProcess;
+		Vector<std::filesystem::path> m_sceneFilesToProcess;
 
 		size_t m_numTotalActions;
 		size_t m_numActionsCompleted;
