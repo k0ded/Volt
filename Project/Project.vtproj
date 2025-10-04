@@ -1,5 +1,5 @@
 Project:
-  EngineVersion: 0.1.6
+  EngineVersion: 0.1.5
   Name: Project
   CompanyName: Default
   AssetsDirectory: Assets
@@ -8,5 +8,5 @@ Project:
   CursorPath: ""
   StartScenePath: ""
   Plugins:
-    - Game
-    - DiscordPlugin
+    - "Game"
+    - "DiscordPlugin"
