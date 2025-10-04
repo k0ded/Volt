@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 #include "EventSystem/Event.h"
 
@@ -8,6 +9,8 @@
 #include <CoreUtilities/VoltGUID.h>
 
 #include <shared_mutex>
+#include <set>
+
 namespace Volt
 {
 	class EventListener;
@@ -37,13 +40,25 @@ namespace Volt
 
 	private:
 		inline static EventSystem* s_instance = nullptr;
-	
+
 		struct ListenerInfo
 		{
+			ListenerInfo(EventListener* inListener,
+			EventListenerDelegate inDelegate,
+			EventDispatchPredicate inPredicate)
+				: listener(inListener),
+				delegate(inDelegate),
+				predicate(inPredicate),
+				invalid(false),
+				dispatchMutex(CreateRef<std::shared_mutex>())
+			{}
+
 			EventListener* listener;
 			EventListenerDelegate delegate;
 			EventDispatchPredicate predicate;
-			bool Invalid = false;
+			bool invalid;
+
+			Ref<std::shared_mutex> dispatchMutex;
 		};
 
 		void DispatchEventInternal(VoltGUID eventGUID, Event& e);
@@ -52,8 +67,7 @@ namespace Volt
 		Map<VoltGUID, Vector<ListenerInfo>> m_queuedRegisters;
 		Map<VoltGUID, Vector<int32_t>> m_queuedUnregisters;
 
-		std::shared_mutex m_registerQueueMutex;
-		std::shared_mutex m_unregisterQueueMutex;
-		std::shared_mutex m_listenersMutex;
+		std::set<VoltGUID> m_dispatchSet;
+		std::shared_mutex m_dispatchSetMutex;
 	};
 }

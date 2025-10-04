@@ -15,9 +15,12 @@ namespace Volt
 	class VTPL_API WindowsPlatformThread
 	{
 	public:
+		static void Initialize();
+
 		static void SetThreadName(std::thread::native_handle_type threadHandle, std::string_view threadName);
 		static void SetThreadPriority(std::thread::native_handle_type threadHandle, ThreadPriority priority);
 		static void AssignThreadToCore(std::thread::native_handle_type threadHandle, uint64_t affinityMask);
+		static std::thread::native_handle_type GetMainThreadHandle() { return m_mainThreadHandle; }
 		static std::thread::native_handle_type GetCurrentThreadHandle();
 
 		template<typename Period = Time::Milliseconds>
@@ -38,6 +41,8 @@ namespace Volt
 
 	private:
 		static void SleepInternal(const float durationInMilliseconds);
+
+		static std::thread::native_handle_type m_mainThreadHandle;
 	};
 }
 

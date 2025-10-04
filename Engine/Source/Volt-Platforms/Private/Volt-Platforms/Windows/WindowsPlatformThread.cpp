@@ -6,6 +6,14 @@
 
 namespace Volt
 {
+	std::thread::native_handle_type WindowsPlatformThread::m_mainThreadHandle = nullptr;
+
+	void WindowsPlatformThread::Initialize()
+	{
+		VT_ASSERT_MSG(m_mainThreadHandle == nullptr, "WindowsPlatformThread was initialized more than once!");
+		m_mainThreadHandle = WindowsPlatformThread::GetCurrentThreadHandle();
+	}
+
 	void WindowsPlatformThread::SetThreadName(std::thread::native_handle_type threadHandle, std::string_view threadName)
 	{
 		std::wstring wThreadName = Utility::ToWString(threadName);

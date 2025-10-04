@@ -21,6 +21,7 @@ namespace VoltSharpmake
             conf.PrecompSource = "eventpch.cpp";
 
 			conf.AddPublicDependency<SubSystemModule>(target);
+			conf.AddPrivateDependency<VoltPlatforms>(target);
         }
     }
 }

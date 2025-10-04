@@ -35,6 +35,9 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<NavigationModule>(target);
 
 			conf.AddPublicDependency<imgui>(target);
+
+			//private
+			conf.AddPrivateDependency<VoltPlatforms>(target);
 		}
     }
 }

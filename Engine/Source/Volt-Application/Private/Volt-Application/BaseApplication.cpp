@@ -1,6 +1,8 @@
 #include "vtapppch.h"
 #include "BaseApplication.h"
 
+#include <Volt-Platforms/Platform.h>
+
 namespace Volt
 {
 	BaseApplication* BaseApplication::s_instance = nullptr;
@@ -10,6 +12,8 @@ namespace Volt
 	{
 		VT_ASSERT_MSG(!s_instance, "Application already exists!");
 		s_instance = this;
+
+		PlatformThread::Initialize();
 	}
 	BaseApplication::~BaseApplication()
 	{
