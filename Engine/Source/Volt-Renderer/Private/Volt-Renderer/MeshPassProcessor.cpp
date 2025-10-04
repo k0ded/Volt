@@ -4,6 +4,8 @@
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
 
+#include <JobSystem/JobSystem.h>
+
 #include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
@@ -36,11 +38,11 @@ namespace Volt
 		}
 	}
 
-	void MeshPassProcessorRegistry::RemoveRenderPrimitive(UUID64 renderPrimitiveId)
+	void MeshPassProcessorRegistry::RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
 	{
 		for (MeshPassProcessor* meshPassProcessor : m_meshPassProcessors)
 		{
-			meshPassProcessor->RemoveRenderPrimitive(renderPrimitiveId);
+			meshPassProcessor->RemoveRenderPrimitive(renderPrimitive);
 		}
 	}
 
@@ -48,28 +50,61 @@ namespace Volt
 	{
 	}
 
+	MeshPassProcessor::~MeshPassProcessor()
+	{
+		if (m_sortTaskCounter)
+		{
+			JobSystem::DestroyCounter(m_sortTaskCounter);
+		}
+	}
+
 	void MeshPassProcessor::PrepareRenderCommands(RenderGraph& renderGraph)
 	{
-		RGBufferDesc bufferDesc{};
-		bufferDesc.count = std::max(static_cast<uint32_t>(m_perDrawCommandPrimitiveIndices.size()), 100u);
-		bufferDesc.elementSize = sizeof(uint32_t);
-		bufferDesc.usage = RHI::BufferUsage::VertexBuffer | RHI::BufferUsage::StorageBuffer;
-		bufferDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
-		bufferDesc.debugName = "PrimitiveIndexVertexBuffer";
+		VT_PROFILE_FUNCTION();
 
-		m_primitiveIndexVertexBuffer = renderGraph.CreateBuffer(bufferDesc);
+		JobSystem::WaitForAndDestroyCounter(m_sortTaskCounter);
 
-		// Make sure the buffer is referenced.
-		m_primitiveIndexVertexBuffer->AddRef();
+		uint32_t numPrimitivesToRender = 0;
 
-		AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(m_primitiveIndexVertexBuffer), m_perDrawCommandPrimitiveIndices.data(), m_perDrawCommandPrimitiveIndices.byte_size());
+		Vector<uint32_t> primitiveIndices;
+		for (const auto& meshDrawCommandBucket : m_meshDrawCommandBuckets)
+		{
+			primitiveIndices.reserve(primitiveIndices.size() + meshDrawCommandBucket.drawCommands.size());
+
+			for (const auto& drawCommand : meshDrawCommandBucket.drawCommands)
+			{
+				primitiveIndices.emplace_back(drawCommand.primitiveIndex);
+			}
+
+			numPrimitivesToRender += static_cast<uint32_t>(meshDrawCommandBucket.drawCommands.size());
+		}
+
+		if (numPrimitivesToRender > 0)
+		{
+			RGBufferDesc bufferDesc{};
+			bufferDesc.count = numPrimitivesToRender;
+			bufferDesc.elementSize = sizeof(uint32_t);
+			bufferDesc.usage = RHI::BufferUsage::VertexBuffer | RHI::BufferUsage::StorageBuffer;
+			bufferDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
+			bufferDesc.debugName = "PrimitiveIndexVertexBuffer";
+
+			m_primitiveIndexVertexBuffer = renderGraph.CreateBuffer(bufferDesc);
+
+			m_primitiveIndexVertexBuffer->AddRef();
+
+			AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(m_primitiveIndexVertexBuffer), primitiveIndices.data(), primitiveIndices.byte_size());
+		}
+		else
+		{
+			m_primitiveIndexVertexBuffer = nullptr;
+		}
 	}
 
 	void MeshPassProcessor::ExecuteCommands(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters)
 	{
 		VT_PROFILE_FUNCTION();
 
-		if (m_meshDrawCommands.empty())
+		if (!m_primitiveIndexVertexBuffer)
 		{
 			return;
 		}
@@ -81,25 +116,37 @@ namespace Volt
 		primitiveIndexVertexBufferVector.resize(1);
 		primitiveIndexVertexBufferVector[0].buffer = primitiveIndexVertexBuffer;
 
-		for (uint64_t offset = 0; MeshDrawCommand& drawCommand : m_meshDrawCommands)
+		for (const MeshDrawCommandBucket& drawCommandBucket : m_meshDrawCommandBuckets)
 		{
-			RHI::ShaderBindingMap shaderBindings;
-			batchedShaderParameters.BindShaderBindings(drawCommand.renderPipeline->GetShaderParameterMaps(), shaderBindings);
+			for (const MeshDrawCommandBucket::InstancingRange& instancingRange : drawCommandBucket.instancingRanges)
+			{
+				const MeshDrawCommand& firstDrawComamnd = drawCommandBucket.drawCommands.at(instancingRange.offset);
 
-			VT_ENSURE_MSG(drawCommand.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
+				ArrayView<RHI::ShaderParameterMap> shaderParametersMaps = firstDrawComamnd.renderPipeline->GetShaderParameterMaps();
+				InlineVector<RenderContext::PerStageShaderParameters, 8> perShaderStageParameters = renderContext.AllocatePerStageShaderParameterBuffers(firstDrawComamnd.renderPipeline);
 
-			const uint32_t perInstanceBindingIndex = drawCommand.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
+				RHI::ShaderBindingMap shaderBindings;
+				batchedShaderParameters.BindShaderBindings(shaderParametersMaps, shaderBindings);
+				batchedShaderParameters.PopulateShaderParameterUniformBuffers(shaderParametersMaps, perShaderStageParameters);
 
-			primitiveIndexVertexBufferVector[0].offset = offset * sizeof(uint32_t);
+				for (auto& shaderParameters : perShaderStageParameters)
+				{
+					shaderBindings.SetUniformBufferWithSizeAndOffset(shaderParameters.shaderStage, RHI::Globals::SHADER_GLOBALS_BINDING, shaderParameters.uniformBufferSRV->GetRHIView(), shaderParameters.size, shaderParameters.offset);
+				}
 
-			commandBuffer->BindPipeline(drawCommand.renderPipeline);
-			commandBuffer->BindShaderBindings(shaderBindings);
-			commandBuffer->BindVertexBuffers(drawCommand.vertexBuffers, 0);
-			commandBuffer->BindVertexBuffers(primitiveIndexVertexBufferVector, perInstanceBindingIndex);
-			commandBuffer->BindIndexBuffer(drawCommand.indexBuffer);
-			commandBuffer->DrawIndexed(drawCommand.drawCommand.indexCount, drawCommand.drawCommand.instanceCount, drawCommand.drawCommand.firstIndex, drawCommand.drawCommand.vertexOffset, drawCommand.drawCommand.firstInstance);
-		
-			offset++;
+				VT_ENSURE_MSG(firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
+
+				const uint32_t perInstanceBindingIndex = firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
+
+				primitiveIndexVertexBufferVector[0].offset = instancingRange.offset * sizeof(uint32_t);
+
+				commandBuffer->BindPipeline(firstDrawComamnd.renderPipeline);
+				commandBuffer->BindShaderBindings(shaderBindings);
+				commandBuffer->BindVertexBuffers(firstDrawComamnd.vertexBuffers, 0);
+				commandBuffer->BindVertexBuffers(primitiveIndexVertexBufferVector, perInstanceBindingIndex);
+				commandBuffer->BindIndexBuffer(firstDrawComamnd.indexBuffer);
+				commandBuffer->DrawIndexed(firstDrawComamnd.drawCommand.indexCount, instancingRange.count, firstDrawComamnd.drawCommand.firstIndex, firstDrawComamnd.drawCommand.vertexOffset, firstDrawComamnd.drawCommand.firstInstance);
+			}
 		}
 	}
 
@@ -111,7 +158,11 @@ namespace Volt
 
 		const SubMesh& subMesh = renderPrimitive.mesh->GetSubMeshes().at(renderPrimitive.subMeshIndex);
 
-		MeshDrawCommand& newDrawCommand = m_meshDrawCommands.emplace_back();
+		const MeshDrawCommandHashKey hashKey = GetHashKeyFromRenderPrimitive(renderPrimitive);
+
+		MeshDrawCommandBucket& drawCommandBucket = GetOrCreateBucket(hashKey);
+
+		MeshDrawCommand& newDrawCommand = drawCommandBucket.drawCommands.emplace_back();
 		newDrawCommand.renderPipeline = renderPipeline;
 		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexPositionsBuffer());
 		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexMaterialBuffer());
@@ -124,75 +175,139 @@ namespace Volt
 		newDrawCommand.drawCommand.vertexOffset = subMesh.vertexStartOffset;
 		newDrawCommand.drawCommand.firstInstance = 0;
 
-		m_perDrawCommandPrimitiveIndices.emplace_back(renderPrimitive.primitiveIndex);
+		newDrawCommand.sortKey.sortKeyContents.pixelShaderHash = pixelShader->GetHash();
+		newDrawCommand.sortKey.sortKeyContents.vertexShaderHash = vertexShader->GetHash();
+
+		MarkBucketDirty(hashKey);
+   	}
+
+	void MeshPassProcessor::RemoveMeshDrawCommand(const RenderPrimitiveData& renderPrimitive)
+	{
+		const MeshDrawCommandHashKey hashKey = GetHashKeyFromRenderPrimitive(renderPrimitive);
+
+		MeshDrawCommandBucket* drawCommandBucket = TryGetBucket(hashKey);
+
+		if (drawCommandBucket != nullptr)
+		{
+			Vector<MeshDrawCommand>& drawCommands = drawCommandBucket->drawCommands;
+
+			for (int32_t drawCommandIndex = static_cast<int32_t>(drawCommands.size()) - 1; drawCommandIndex >= 0; --drawCommandIndex)
+			{
+				if (drawCommands[drawCommandIndex].renderPrimitiveID == renderPrimitive.id)
+				{
+					drawCommands.erase(drawCommands.begin() + drawCommandIndex);
+					MarkBucketDirty(hashKey);
+					break;
+				}
+			}
+		}
 	}
 
-	void MeshPassProcessor::RemoveMeshDrawCommand(UUID64 renderPrimitiveId)
+	MeshPassProcessor::MeshDrawCommandBucket& MeshPassProcessor::GetOrCreateBucket(MeshDrawCommandHashKey hashKey)
 	{
-		uint32_t primitiveIndex = uint32_t(-1);
-
-		for (size_t i = 0; i < m_meshDrawCommands.size(); ++i)
+		auto it = m_hashKeyToBucketIndex.find(hashKey);
+		if (it != m_hashKeyToBucketIndex.end())
 		{
-			if (m_meshDrawCommands.at(i).renderPrimitiveID == renderPrimitiveId)
-			{
-				primitiveIndex = m_meshDrawCommands.at(i).primitiveIndex;
-				m_meshDrawCommands.erase(m_meshDrawCommands.begin() + i);
-				break;
-			}
+			return m_meshDrawCommandBuckets[it->second];
 		}
 
-		m_perDrawCommandPrimitiveIndices.erase_with_predicate([primitiveIndex](uint32_t index)
-		{
-			return primitiveIndex == index;
-		});
+		const size_t newIndex = m_meshDrawCommandBuckets.size();
+		auto& bucket = m_meshDrawCommandBuckets.emplace_back();
+
+		m_hashKeyToBucketIndex[hashKey] = newIndex;
+
+		return bucket;
 	}
 
-	MeshDrawCommand::ShaderParameters MeshPassProcessor::AllocateShaderParametersForPipeline(RefPtr<RHI::RenderPipeline> renderPipeline)
+	MeshPassProcessor::MeshDrawCommandBucket* MeshPassProcessor::TryGetBucket(MeshDrawCommandHashKey hashKey)
 	{
-		VT_PROFILE_FUNCTION();
-
-		ArrayView<RHI::ShaderParameterMap> shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
-
-		// Loop through all shader parameter maps to find the total size and
-		// each shader stages offset
-		uint32_t totalShaderParameterSize = 0;
-		Map<RHI::ShaderStage, uint32_t> perShaderStageOffset;
-
-		for (const RHI::ShaderParameterMap& shaderParameterMap : shaderParameterMaps)
+		auto it = m_hashKeyToBucketIndex.find(hashKey);
+		if (it != m_hashKeyToBucketIndex.end())
 		{
-			if (shaderParameterMap.IsValid())
+			return &m_meshDrawCommandBuckets[it->second];
+		}
+
+		return nullptr;
+	}
+
+	void MeshPassProcessor::MarkBucketDirty(MeshDrawCommandHashKey hashKey)
+	{
+		MeshDrawCommandBucket* bucket = TryGetBucket(hashKey);
+		if (bucket != nullptr)
+		{
+			if (!bucket->isDirty)
 			{
-				perShaderStageOffset[shaderParameterMap.GetShaderStage()] = totalShaderParameterSize;
-				totalShaderParameterSize += shaderParameterMap.GetShaderParametersSize();
+				bucket->isDirty = true;
+
+				if (!m_sortTaskCounter || !m_sortTaskCounter->IsActive())
+				{
+					if (m_sortTaskCounter)
+					{
+						JobSystem::DestroyCounter(m_sortTaskCounter);
+					}
+
+					m_sortTaskCounter = JobSystem::CreateCounter();
+				}
+
+				JobRef findInstancingOffsetsTask = JobSystem::CreateJob("MeshPassProcessor::FindInstancingOffsets", ExecutionPriority::Render, m_sortTaskCounter,
+				[bucket]() 
+				{
+					auto& drawCommands = bucket->drawCommands;
+					auto& instancingOffsets = bucket->instancingRanges;
+
+					instancingOffsets.clear();
+
+					for (size_t index = 0; index < drawCommands.size(); ++index)
+					{
+						if (index == 0)
+						{
+							instancingOffsets.emplace_back(0, 1);
+						}
+						else
+						{
+							const MeshDrawCommand& prevDrawCommand = drawCommands.at(index - 1);
+							const MeshDrawCommand& currDrawCommand = drawCommands.at(index);
+
+							if (prevDrawCommand.sortKey.sortKey != currDrawCommand.sortKey.sortKey)
+							{
+								instancingOffsets.emplace_back(index);
+							}
+							else
+							{
+								instancingOffsets.back().count++;
+							}
+						}
+					}
+				});
+
+				JobRef sortTask = JobSystem::CreateJobAsDependency("MeshPassProcessor::SortMeshDrawCommandBucket", findInstancingOffsetsTask,
+				[bucket]()
+				{
+					auto& drawCommands = bucket->drawCommands;
+					std::sort(drawCommands.begin(), drawCommands.end(), [](const MeshDrawCommand& lhs, const MeshDrawCommand& rhs)
+					{
+						return lhs.sortKey.sortKey < rhs.sortKey.sortKey;
+					});
+
+					bucket->isDirty = false;
+				});
+
+				JobSystem::RunJob(sortTask);
+				JobSystem::RunJob(findInstancingOffsetsTask);
 			}
 		}
+	}
 
-		if (totalShaderParameterSize == 0)
-		{
-			return {};
-		}
+	MeshDrawCommandHashKey MeshPassProcessor::GetHashKeyFromRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	{
+		const SubMesh& subMesh = renderPrimitive.mesh->GetSubMeshes().at(renderPrimitive.subMeshIndex);
 
-		RHI::UniformBufferDesc uboDesc{};
-		uboDesc.size = totalShaderParameterSize;
-		uboDesc.debugName = "ShaderParameters";
+		MeshDrawCommandHashKey hashKey;
+		hashKey.hashKeyContents.vertexBufferHash = renderPrimitive.mesh->GetVertexPositionsBuffer().GetHash();
+		hashKey.hashKeyContents.indexBufferHash = renderPrimitive.mesh->GetIndexBuffer().GetHash();
+		hashKey.hashKeyContents.subMeshHash = subMesh.GetHash();
 
-		RefPtr<RHI::UniformBuffer> uniformBuffer = RHI::UniformBuffer::Create(uboDesc);
 
-		MeshDrawCommand::ShaderParameters result;
-		result.uniformBuffer = uniformBuffer;
-
-		for (const RHI::ShaderParameterMap& shaderParameterMap : shaderParameterMaps)
-		{
-			if (shaderParameterMap.IsValid())
-			{
-				RHI::BufferViewDesc viewDesc{};
-				viewDesc.size = shaderParameterMap.GetShaderParametersSize();
-				viewDesc.offset = perShaderStageOffset[shaderParameterMap.GetShaderStage()];
-
-				result.views[shaderParameterMap.GetShaderStage()] = uniformBuffer->GetView(viewDesc);
-			}
-		}
-
-		return result;
+		return hashKey;
 	}
 }

@@ -15,8 +15,8 @@ namespace Volt
 		BuildMeshDrawCommand(renderPrimitive, {}, vertexShader, pixelShader);
 	}
 
-	void DepthPrePassMeshProcessor::RemoveRenderPrimitive(UUID64 renderPrimitveId)
+	void DepthPrePassMeshProcessor::RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
 	{
-		RemoveMeshDrawCommand(renderPrimitveId);
+		RemoveMeshDrawCommand(renderPrimitive);
 	}
 }

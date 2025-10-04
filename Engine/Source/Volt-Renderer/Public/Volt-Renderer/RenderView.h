@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Volt-Renderer/Config.h"
-#include "Volt-Renderer/Mesh/MeshRenderer.h"
 
 #include <RenderCore/RenderGraph/Resources/ResourceDeclarations.h>
 
@@ -20,7 +19,5 @@ namespace Volt
 		Weak<RenderScene> renderScene;
 
 		RGUniformBufferRef viewUniformBuffer;
-
-		VTR_API CullingInfo GetCullingInfo() const;
 	};
 }

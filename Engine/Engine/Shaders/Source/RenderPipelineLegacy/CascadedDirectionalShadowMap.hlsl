@@ -10,13 +10,11 @@ struct VSToPS
     uint target : SV_RenderTargetArrayIndex;
 };
 
-Buffer<uint> PrimitiveDrawDataIndirection;
-
 uint CascadeIndex;
 
 VSToPS MainVS(in Vertex input)
 {
-    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[PrimitiveDrawDataIndirection[input.instanceId]];
+    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[input.primitiveIndex];
 
     VSToPS result;
     result.position = mul(CascadedDirectionalLightShadowMapping.viewProjections[CascadeIndex], float4(primitiveData.transform.GetWorldPosition(input.position), 1.f));

@@ -72,7 +72,6 @@ const char* GetAddressTypeStr(VkDeviceFaultAddressTypeEXT addressType)
 
 void HandleDeviceLost()
 {
-#if 0
 	VkDeviceFaultCountsEXT counts{};
 	counts.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT;
 
@@ -112,5 +111,4 @@ void HandleDeviceLost()
 			VT_LOG(Error, "Fault address: {}, type: {}\n", (uint64_t)a.reportedAddress, GetAddressTypeStr(a.addressType));
 		}
 	}
-#endif
 }

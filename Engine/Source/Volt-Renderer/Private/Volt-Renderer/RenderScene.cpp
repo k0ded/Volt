@@ -82,7 +82,6 @@ namespace Volt
 		UpdateInvalidPrimitiveData(renderGraph);
 		CompactValidPrimitiveDrawDatas(renderGraph);
 		BuildPerMeshIndirectDrawCommands(renderGraph);
-		m_meshRenderCommandBuilder.Build(*this, renderGraph);
 
 		// Temporary animation sampling
 		m_currentBoneCount = 0;

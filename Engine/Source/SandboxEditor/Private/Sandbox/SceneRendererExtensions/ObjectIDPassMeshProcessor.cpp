@@ -18,8 +18,8 @@ void ObjectIDPassMeshProcessor::AddRenderPrimitive(const Volt::RenderPrimitiveDa
 	BuildMeshDrawCommand(renderPrimitive, pipelineInfo, vertexShader, pixelShader);
 }
 
-void ObjectIDPassMeshProcessor::RemoveRenderPrimitive(UUID64 renderPrimitveId)
+void ObjectIDPassMeshProcessor::RemoveRenderPrimitive(const Volt::RenderPrimitiveData& renderPrimitive)
 {
-	RemoveMeshDrawCommand(renderPrimitveId);
+	RemoveMeshDrawCommand(renderPrimitive);
 }
 

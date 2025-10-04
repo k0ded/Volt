@@ -288,6 +288,11 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, ObjectStateAction::Delete);
 			EditorCommandStack::GetInstance().PushUndo(command);
 
+			for (const auto& i : entitiesToRemove)
+			{
+				m_scene->DestroyEntity(i);
+			}
+
 			break;
 		}
 	}

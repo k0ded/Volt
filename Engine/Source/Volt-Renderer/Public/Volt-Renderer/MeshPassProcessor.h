@@ -21,23 +21,55 @@ namespace Volt
 	class RenderGraph;
 	class BatchedShaderParameters;
 	class RGBuffer;
+	class JobCounter;
+
+	struct MeshDrawCommandSortKey
+	{
+		union
+		{
+			uint64_t sortKey;
+
+			struct SortKeyContents
+			{
+				uint64_t vertexShaderHash : 32u;
+				uint64_t pixelShaderHash : 32u;
+
+			} sortKeyContents;
+		};
+	};
+
+	struct MeshDrawCommandHashKey
+	{
+		union
+		{
+			uint64_t hashKey;
+
+			struct HashKeyContents
+			{
+				uint64_t vertexBufferHash : 16u;
+				uint64_t indexBufferHash : 16u;
+				uint64_t subMeshHash : 32u;
+			} hashKeyContents;
+		};
+	};
+
+	VT_INLINE bool operator==(const MeshDrawCommandHashKey& lhs, const MeshDrawCommandHashKey& rhs)
+	{
+		return lhs.hashKey == rhs.hashKey;
+	}
 
 	struct MeshDrawCommand
 	{
-		struct ShaderParameters
-		{
-			RefPtr<RHI::UniformBuffer> uniformBuffer;
-			Map<RHI::ShaderStage, RefPtr<RHI::BufferView>> views;
-		};
-
 		RHI::VertexBufferVector vertexBuffers;
 		RefPtr<RHI::StorageBuffer> indexBuffer;
 
 		RefPtr<RHI::RenderPipeline> renderPipeline;
 
-		ShaderParameters shaderParameters;
-		uint32_t primitiveIndex;
 		UUID64 renderPrimitiveID;
+		MeshDrawCommandSortKey sortKey;
+		MeshDrawCommandHashKey hashKey;
+
+		uint32_t primitiveIndex;
 
 		// Draw command
 		RHI::DrawIndexedIndirectCommand drawCommand;
@@ -47,23 +79,44 @@ namespace Volt
 	{
 	public:
 		MeshPassProcessor();
-		virtual ~MeshPassProcessor() = default;
+		virtual ~MeshPassProcessor();
 
 		void PrepareRenderCommands(RenderGraph& renderGraph);
+
 		void ExecuteCommands(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters);
 
 		virtual void AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive) = 0;
-		virtual void RemoveRenderPrimitive(UUID64 renderPrimitveId) = 0;
+		virtual void RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive) = 0;
 
 	protected:
 		void BuildMeshDrawCommand(const RenderPrimitiveData& renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
-		void RemoveMeshDrawCommand(UUID64 renderPrimitiveId);
+		void RemoveMeshDrawCommand(const RenderPrimitiveData& renderPrimitive);
 
 	private:
-		MeshDrawCommand::ShaderParameters AllocateShaderParametersForPipeline(RefPtr<RHI::RenderPipeline> renderPipeline);
+		struct MeshDrawCommandBucket
+		{
+			struct InstancingRange
+			{
+				uint32_t offset;
+				uint32_t count;
+			};
 
-		Vector<MeshDrawCommand> m_meshDrawCommands;
-		Vector<uint32_t> m_perDrawCommandPrimitiveIndices;
+			Vector<MeshDrawCommand> drawCommands;
+			Vector<InstancingRange> instancingRanges;
+			bool isDirty;
+		};
+
+		MeshDrawCommandBucket& GetOrCreateBucket(MeshDrawCommandHashKey hashKey);
+		MeshDrawCommandBucket* TryGetBucket(MeshDrawCommandHashKey hashKey);
+
+		void MarkBucketDirty(MeshDrawCommandHashKey hashKey);
+
+		MeshDrawCommandHashKey GetHashKeyFromRenderPrimitive(const RenderPrimitiveData& renderPrimitive);
+
+		Vector<MeshDrawCommandBucket> m_meshDrawCommandBuckets;
+		Map<MeshDrawCommandHashKey, size_t> m_hashKeyToBucketIndex;
+
+		JobCounter* m_sortTaskCounter = nullptr;
 
 		RGBuffer* m_primitiveIndexVertexBuffer = nullptr;
 	};
@@ -90,11 +143,25 @@ namespace Volt
 		}
 
 		void AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive);
-		void RemoveRenderPrimitive(UUID64 renderPrimitiveId);
+		void RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive);
 
 	private:
 		LinearAllocator<> m_meshPassProcessorAllocator;
 		Vector<MeshPassProcessor*> m_meshPassProcessors;
 		Vector<DestructorHelper> m_meshPassDestructors;
+	};
+}
+
+namespace std
+{
+	template <typename T> struct hash;
+
+	template<>
+	struct hash<Volt::MeshDrawCommandHashKey>
+	{
+		std::size_t operator()(const Volt::MeshDrawCommandHashKey& hashKey) const
+		{
+			return static_cast<size_t>(hashKey.hashKey);
+		}
 	};
 }

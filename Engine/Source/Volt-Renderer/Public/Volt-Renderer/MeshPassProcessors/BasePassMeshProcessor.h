@@ -8,6 +8,6 @@ namespace Volt
 	{
 	public:
 		void AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive) override;
-		void RemoveRenderPrimitive(UUID64 renderPrimitveId) override;
+		void RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive) override;
 	};
 }

@@ -111,7 +111,7 @@ namespace Volt::RHI
 	void VulkanGraphicsContext::CreateInstance()
 	{
 #ifdef VT_ENABLE_VALIDATION
-		//if (m_createInfo.enabledDebugLayer)
+		if (m_createInfo.enabledDebugLayer)
 		{
 			m_debugLayer = CreateRef<VulkanDebugLayer>();
 

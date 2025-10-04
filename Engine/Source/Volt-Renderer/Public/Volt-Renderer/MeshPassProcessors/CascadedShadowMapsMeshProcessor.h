@@ -4,7 +4,7 @@
 
 namespace Volt
 {
-	class DepthPrePassMeshProcessor : public MeshPassProcessor
+	class CascadedShadowMapMeshProcessor : public MeshPassProcessor
 	{
 	public:
 		void AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive) override;

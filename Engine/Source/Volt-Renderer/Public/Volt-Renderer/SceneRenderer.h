@@ -4,7 +4,6 @@
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/SceneRendererExtension.h"
 #include "Volt-Renderer/Config.h"
-#include "Volt-Renderer/Mesh/MeshRenderer.h"
 #include "Volt-Renderer/RenderingTechniques/TAANoise.h"
 #include "Volt-Renderer/GlobalIllumination/GlobalIlluminationRenderer.h"
 #include "Volt-Renderer/MeshPassProcessor.h"
@@ -184,6 +183,7 @@ namespace Volt
 
 		class DepthPrePassMeshProcessor* m_depthPrePassMeshProcessor = nullptr;
 		class BasePassMeshProcessor* m_basePassMeshProcessor = nullptr;
+		class CascadedShadowMapMeshProcessor* m_cascadedShadowMapMeshProcessor = nullptr;
 	};
 
 	template<typename T>

@@ -24,6 +24,7 @@
 
 #include "Volt-Renderer/MeshPassProcessors/DepthPrePassMeshProcessor.h"
 #include "Volt-Renderer/MeshPassProcessors/BasePassMeshProcessor.h"
+#include "Volt-Renderer/MeshPassProcessors/CascadedShadowMapsMeshProcessor.h"
 
 #include <JobSystem/JobSystem.h>
 
@@ -63,6 +64,7 @@ namespace Volt
 		{
 			m_depthPrePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<DepthPrePassMeshProcessor>();
 			m_basePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<BasePassMeshProcessor>();
+			m_cascadedShadowMapMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<CascadedShadowMapMeshProcessor>();
 
 			m_onRenderPrimitiveAddedCallbackId = m_renderScene->RegisterOnRenderPrimitiveAddedCallback([this](const RenderPrimitiveData& renderPrimitives)
 			{
@@ -71,7 +73,7 @@ namespace Volt
 
 			m_onRenderPrimitiveRemovedCallbackId = m_renderScene->RegisterOnRenderPrimitiveRemovedCallback([this](const RenderPrimitiveData& renderPrimitive)
 			{
-				m_meshPassProcessorRegistry.RemoveRenderPrimitive(renderPrimitive.id);
+				m_meshPassProcessorRegistry.RemoveRenderPrimitive(renderPrimitive);
 			});
 		}
 	}
@@ -175,7 +177,7 @@ namespace Volt
 		{
 			if (light.description.lightType == SceneLightType::Directional)
 			{
-				CascadedShadowMapsTechnique cascadedDirectionalShadowTechnique{ renderGraph, blackboard };
+				CascadedShadowMapsTechnique cascadedDirectionalShadowTechnique{ renderGraph, blackboard, m_cascadedShadowMapMeshProcessor };
 				directionalShadowMap = cascadedDirectionalShadowTechnique.Execute(renderView, light);
 
 				break;

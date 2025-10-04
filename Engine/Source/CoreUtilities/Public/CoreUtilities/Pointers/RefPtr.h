@@ -152,7 +152,7 @@ public:
 
 	constexpr size_t GetHash() const
 	{
-		return std::hash<void*>()(m_object);
+		return std::hash<void*>()(m_object) >> 4u;
 	}
 
 	template<typename U>

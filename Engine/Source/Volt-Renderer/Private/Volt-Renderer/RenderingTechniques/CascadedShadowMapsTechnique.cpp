@@ -1,7 +1,8 @@
 #include "vrpch.h"
 #include "Volt-Renderer/RenderingTechniques/CascadedShadowMapsTechnique.h"
+#include "Volt-Renderer/MeshPassProcessors/CascadedShadowMapsMeshProcessor.h"
+
 #include "Volt-Renderer/Camera/Camera.h"
-#include "Volt-Renderer/Mesh/MeshRenderer.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
 #include "Volt-Renderer/RendererCommon.h"
 #include "Volt-Renderer/RenderView.h"
@@ -18,24 +19,7 @@
 
 namespace Volt
 {
-	struct CascadedDirectionalShadowVS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(CascadedDirectionalShadowVS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_UNIFORM_BUFFER(CascadedDirectionalLightShadowMappingData, CascadedDirectionalLightShadowMapping)
-			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
-			SHADER_PARAMETER(uint, CascadeIndex)
-		END_SHADER_PARAMETER_STRUCT()
-	};
 	REGISTER_SHADER(CascadedDirectionalShadowVS, "Engine/Shaders/Source/RenderPipelineLegacy/CascadedDirectionalShadowMap.hlsl", "MainVS", Vertex);
-
-	struct CascadedDirectionalShadowPS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(CascadedDirectionalShadowPS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			RG_RENDER_TARGETS()
-		END_SHADER_PARAMETER_STRUCT()
-	};
 	REGISTER_SHADER(CascadedDirectionalShadowPS, "Engine/Shaders/Source/RenderPipelineLegacy/CascadedDirectionalShadowMap.hlsl", "MainPS", Pixel);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(CascadedDirectionalShadowParameters)
@@ -43,9 +27,10 @@ namespace Volt
 		SHADER_PARAMETER_STRUCT_INCLUDE(CascadedDirectionalShadowPS::Parameters, PS)
 	END_SHADER_PARAMETER_STRUCT()
 
-	CascadedShadowMapsTechnique::CascadedShadowMapsTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
+	CascadedShadowMapsTechnique::CascadedShadowMapsTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, CascadedShadowMapMeshProcessor* meshProcessor)
 		: m_renderGraph(renderGraph),
-		m_blackboard(blackboard)
+		m_blackboard(blackboard),
+		m_meshProcessor(meshProcessor)
 	{
 
 	}
@@ -74,27 +59,10 @@ namespace Volt
 
 		RGTextureRef directionalShadowTexture = m_renderGraph.CreateTexture(directionalShadowTextureDesc);
 
-		auto vertexShader = ShaderMap::Get<CascadedDirectionalShadowVS>();
-		auto pixelShader = ShaderMap::Get<CascadedDirectionalShadowPS>();
-
-		RHI::RenderPipelineCreateInfo pipelineCreateInfo{};
-		pipelineCreateInfo.depthCompareOperator = RHI::CompareOperator::LessEqual;
-		pipelineCreateInfo.enableDepthClamp = true;
-		pipelineCreateInfo.depthBiasClamp = 1.f / 128.f;
-		pipelineCreateInfo.depthBiasSlopeFactor = 3.f;
+		m_meshProcessor->PrepareRenderCommands(m_renderGraph);
 
 		for (uint32_t i = 0; i < DirectionalLightShadowUniformBuffer::NumCascades; ++i)
 		{
-			CullingInfo cullingInfo{};
-			cullingInfo.type = CullingInfo::Type::Orthographic;
-			cullingInfo.nearPlane = shadowCamera->GetNearPlane();
-			cullingInfo.farPlane = shadowCamera->GetFarPlane();
-			cullingInfo.cullingFrustum = shadowCamera->GetFrustumCullingInfo();
-			cullingInfo.viewMatrix = shadowCamera->GetView();
-
-			MeshRenderer meshRenderer;
-			meshRenderer.BuildRenderCommands(m_renderGraph, view.renderScene, cullingInfo, vertexShader, pixelShader, pipelineCreateInfo);
-
 			CascadedDirectionalShadowParameters* passParameters = m_renderGraph.AllocParameters<CascadedDirectionalShadowParameters>();
 			passParameters->VS.CascadedDirectionalLightShadowMapping = directionalLightUniformBuffer;
 			passParameters->VS.GPUScene = view.renderScene->GetGPUSceneParameters(m_renderGraph);
@@ -106,7 +74,7 @@ namespace Volt
 			m_renderGraph.AddPass(passName,
 				RenderGraphPassFlags::None,
 				passParameters,
-				[passParameters, view, meshRenderer, i](RenderContext& context) 
+				[passParameters, view, meshPassProcessor = m_meshProcessor, i](RenderContext& context) 
 			{
 				BatchedShaderParameters batchedShaderParameters;
 				context.CollectParameters(passParameters, batchedShaderParameters);
@@ -121,7 +89,7 @@ namespace Volt
 				}
 
 				context.BeginRendering(renderingInfo);
-				meshRenderer.Render(context, *view.renderScene, batchedShaderParameters);
+				meshPassProcessor->ExecuteCommands(context, batchedShaderParameters);
 				context.EndRendering();
 			});
 		}
