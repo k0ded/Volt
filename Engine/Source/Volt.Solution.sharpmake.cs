@@ -28,7 +28,7 @@ namespace VoltSharpmake
 			}
 
 			conf.Solution.ExtraItems["Solution Items"] = new Strings(Path.Combine(Globals.RootDirectory, ".editorconfig"));
-			conf.SetStartupProject<SandboxEditor>();
+			conf.SetStartupProject<Sandbox>();
 		}
 	}
 }

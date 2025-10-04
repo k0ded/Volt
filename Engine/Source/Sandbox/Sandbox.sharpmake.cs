@@ -5,12 +5,12 @@ using System.IO;
 namespace VoltSharpmake
 {
     [Sharpmake.Generate]
-    public class SandboxEditor : CommonVoltExeProject
+    public class Sandbox : CommonVoltExeProject
     {
-        public SandboxEditor()
+        public Sandbox()
         {
-            Name = "SandboxEditor";
-			SourceFiles.Add("SandboxEditor.rc");
+            Name = "Sandbox";
+			SourceFiles.Add("Sandbox.rc");
 		}
 
 		public override void ConfigureAll(Configuration conf, CommonTarget target)
