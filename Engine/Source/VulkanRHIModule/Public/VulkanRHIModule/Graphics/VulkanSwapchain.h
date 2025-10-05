@@ -65,6 +65,7 @@ namespace Volt::RHI
 
 		uint32_t m_currentImage = 0;
 		uint32_t m_currentFrame = 0;
+		uint32_t m_lastSubmittedFence;
 
 		uint32_t m_width = 1280;
 		uint32_t m_height = 720;
