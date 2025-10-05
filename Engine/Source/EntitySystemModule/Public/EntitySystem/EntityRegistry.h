@@ -6,6 +6,8 @@
 
 #include <entt.hpp>
 
+#include <shared_mutex>
+
 namespace Volt
 {
 	class EntityHelper;
@@ -34,5 +36,7 @@ namespace Volt
 
 		std::set<EntityID> m_editedEntities;
 		std::set<EntityID> m_removedEntities;
+
+		mutable std::shared_mutex m_entityMutex;
 	};
 }

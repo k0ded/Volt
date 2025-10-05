@@ -476,6 +476,11 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 		return;
 	}
 
+	if (!Volt::AssetManager::ExistsInRegistry(sceneHandle))
+	{
+		return;
+	}
+
 	SelectionManager::DeselectAll();
 
 	Volt::AssetMetadata metadata;

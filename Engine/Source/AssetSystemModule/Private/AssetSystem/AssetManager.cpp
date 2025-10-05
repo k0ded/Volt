@@ -141,7 +141,7 @@ namespace Volt
 
 		{
 			ReadLock lock{ m_assetRegistryMutex };
-			metadata = GetMetadataFromHandle(assetHandle);
+			metadata = GetMetadataFromHandleLockless(assetHandle);
 		}
 
 		if (!metadata.IsValid())
@@ -363,7 +363,7 @@ namespace Volt
 		{
 			ReadLock lock{ m_assetRegistryMutex };
 
-			const auto& assetMetaData = GetMetadataFromHandle(asset->handle);
+			const auto& assetMetaData = GetMetadataFromHandleLockless(asset->handle);
 			if (!assetMetaData.IsValid())
 			{
 				VT_LOGC(Warning, LogAssetSystem, "Unable to move invalid asset {0}!", asset->handle);
@@ -390,7 +390,7 @@ namespace Volt
 		{
 			ReadLock lock{ m_assetRegistryMutex };
 
-			const auto& assetMetaData = GetMetadataFromHandle(assetHandle);
+			const auto& assetMetaData = GetMetadataFromHandleLockless(assetHandle);
 			if (!assetMetaData.IsValid())
 			{
 				VT_LOGC(Warning, LogAssetSystem, "Unable to move invalid asset {0}!", assetHandle);
@@ -558,7 +558,7 @@ namespace Volt
 	bool AssetManager::ValidateAssetType(AssetHandle handle, Ref<Asset> asset)
 	{
 		ReadLock lock{ Get().m_assetRegistryMutex };
-		const auto& metadata = GetMetadataFromHandle(handle);
+		const auto& metadata = GetMetadataFromHandleLockless(handle);
 
 		// If the metadata is not valid we allow the asset to be valid
 		if (!metadata.IsValid())
@@ -913,31 +913,16 @@ namespace Volt
 	{
 		auto& instance = Get();
 		ReadLock lock{ instance.m_assetRegistryMutex };
-
-		if (!instance.m_assetRegistry.contains(handle))
-		{
-			return s_nullMetadata;
-		}
-
-		return instance.m_assetRegistry.at(handle);
+		
+		return GetMetadataFromHandleLockless(handle);
 	}
 
 	const AssetMetadata& AssetManager::GetMetadataFromFilePath(const std::filesystem::path filePath)
 	{
 		auto& instance = Get();
 		ReadLock lock{ instance.m_assetRegistryMutex };
-
-		std::filesystem::path cleanPath = GetRelativePath(filePath);
-
-		for (const auto& [handle, metaData] : instance.m_assetRegistry)
-		{
-			if (metaData.filePath == cleanPath)
-			{
-				return metaData;
-			}
-		}
-
-		return s_nullMetadata;
+		
+		return GetMetadataFromFilePathLockless(filePath);
 	}
 
 	const AssetManager::AssetRegistry& AssetManager::GetAssetRegistry()
@@ -955,7 +940,7 @@ namespace Volt
 		auto& instance = Get();
 		ReadLock lock{ instance.m_assetRegistryMutex };
 
-		const auto& metadata = GetMetadataFromHandle(handle);
+		const auto& metadata = GetMetadataFromHandleLockless(handle);
 		if (!metadata.IsValid())
 		{
 			return {};
@@ -981,7 +966,7 @@ namespace Volt
 		auto& instance = Get();
 		ReadLock lock{ instance.m_assetRegistryMutex };
 
-		const auto& metadata = GetMetadataFromHandle(handle);
+		const auto& metadata = GetMetadataFromHandleLockless(handle);
 		if (!metadata.IsValid())
 		{
 			return {};
@@ -1079,7 +1064,7 @@ namespace Volt
 
 		{
 			ReadLock registryLock{ m_assetRegistryMutex };
-			metadata = GetMetadataFromHandle(assetHandle);
+			metadata = GetMetadataFromHandleLockless(assetHandle);
 		}
 
 		if (!metadata.IsValid())
@@ -1174,6 +1159,35 @@ namespace Volt
 		for (auto& [handle, metaData] : instance.m_assetRegistry)
 		{
 			if (metaData.filePath == filePath)
+			{
+				return metaData;
+			}
+		}
+
+		return s_nullMetadata;
+	}
+
+	const AssetMetadata& AssetManager::GetMetadataFromHandleLockless(AssetHandle handle)
+	{
+		auto& instance = Get();
+
+		if (!instance.m_assetRegistry.contains(handle))
+		{
+			return s_nullMetadata;
+		}
+
+		return instance.m_assetRegistry.at(handle);
+	}
+
+	const AssetMetadata& AssetManager::GetMetadataFromFilePathLockless(const std::filesystem::path filePath)
+	{
+		auto& instance = Get();
+
+		std::filesystem::path cleanPath = GetRelativePath(filePath);
+
+		for (const auto& [handle, metaData] : instance.m_assetRegistry)
+		{
+			if (metaData.filePath == cleanPath)
 			{
 				return metaData;
 			}

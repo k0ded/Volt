@@ -190,6 +190,8 @@ namespace Volt
 		static bool ValidateAssetType(AssetHandle handle, Ref<Asset> asset);
 		static AssetMetadata& GetMetadataFromHandleMutable(AssetHandle handle);
 		static AssetMetadata& GetMetadataFromFilePathMutable(const std::filesystem::path filePath);
+		static const AssetMetadata& GetMetadataFromHandleLockless(AssetHandle handle);
+		static const AssetMetadata& GetMetadataFromFilePathLockless(const std::filesystem::path filePath);
 
 		static const std::filesystem::path GetCleanAssetFilePath(const std::filesystem::path& path);
 

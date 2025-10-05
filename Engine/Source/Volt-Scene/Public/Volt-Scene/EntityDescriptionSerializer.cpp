@@ -331,7 +331,8 @@ namespace Volt
 		const std::filesystem::path owningScenePath = AssetManager::GetFilePathFromAssetHandle(sceneHandle);
 		const std::string owningSceneName = owningScenePath.stem().string();
 
-		return owningScenePath.parent_path() / (owningSceneName + "_Entities") / (std::to_string(entityMetadata.entityID) + ".vtasset");
+		const std::filesystem::path relativePath = owningScenePath.parent_path() / (owningSceneName + "_Entities") / (std::to_string(entityMetadata.entityID) + ".vtasset");
+		return AssetManager::GetFilesystemPath(relativePath);
 	}
 
 	Entity EntityDescSerializer::CreateEntityFromUUIDThreadSafe(EntityID entityId, const Ref<Scene>& scene) const

@@ -39,7 +39,7 @@ namespace AssetBrowser
 	{
 		bool reload = Item::Render();
 
-		if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##OpenSceneAssetBrowser"); returnState != SaveReturnState::None)
+		/*if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##OpenSceneAssetBrowser"); returnState != SaveReturnState::None)
 		{
 			if (returnState == SaveReturnState::Save)
 			{
@@ -48,7 +48,7 @@ namespace AssetBrowser
 
 			Sandbox::Get().OpenScene(Volt::AssetManager::GetFilePathFromAssetHandle(mySceneToOpen));
 			mySceneToOpen = Volt::Asset::Null();
-		}
+		}*/
 
 		return reload;
 	}
@@ -124,8 +124,7 @@ namespace AssetBrowser
 		{
 			if (type == AssetTypes::Scene)
 			{
-				UI::OpenModal("Do you want to save scene?##OpenSceneAssetBrowser");
-				mySceneToOpen = handle;
+				Sandbox::Get().OpenScene(handle);
 			}
 			else if (type == AssetTypes::MonoScript)
 			{

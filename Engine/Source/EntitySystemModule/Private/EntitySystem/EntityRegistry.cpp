@@ -18,17 +18,23 @@ namespace Volt
 
 	void EntityRegistry::AddEntity(const EntityHelper& entity)
 	{
-		if (m_entityMap.contains(entity.GetID()) || m_handleMap.contains(entity.GetHandle()))
 		{
-			return;
+			std::shared_lock<std::shared_mutex> lock(m_entityMutex);
+			if (m_entityMap.contains(entity.GetID()) || m_handleMap.contains(entity.GetHandle()))
+			{
+				return;
+			}
 		}
 
+		std::unique_lock<std::shared_mutex> lock(m_entityMutex);
 		m_entityMap.emplace(entity.GetID(), entity.GetHandle());
 		m_handleMap.emplace(entity.GetHandle(), entity.GetID());
 	}
 
 	void EntityRegistry::RemoveEntity(const EntityID& entityId, entt::entity entityHandle)
 	{
+		std::unique_lock<std::shared_mutex> lock(m_entityMutex);
+
 		if (m_entityMap.contains(entityId))
 		{
 			m_entityMap.erase(entityId);
@@ -49,6 +55,8 @@ namespace Volt
 
 	EntityID EntityRegistry::GetUUIDFromHandle(entt::entity handle) const
 	{
+		std::shared_lock<std::shared_mutex> lock(m_entityMutex);
+
 		if (!m_handleMap.contains(handle))
 		{
 			return EntityID::Null();
@@ -59,6 +67,7 @@ namespace Volt
 
 	entt::entity EntityRegistry::GetHandleFromID(EntityID uuid) const
 	{
+		std::shared_lock<std::shared_mutex> lock(m_entityMutex);
 		if (!m_entityMap.contains(uuid))
 		{
 			return entt::null;
@@ -69,11 +78,13 @@ namespace Volt
 
 	bool EntityRegistry::Contains(EntityID uuid) const
 	{
+		std::shared_lock<std::shared_mutex> lock(m_entityMutex);
 		return m_entityMap.contains(uuid);
 	}
 
 	bool EntityRegistry::Contains(entt::entity handle) const
 	{
+		std::shared_lock<std::shared_mutex> lock(m_entityMutex);
 		return m_handleMap.contains(handle);
 	}
 }
