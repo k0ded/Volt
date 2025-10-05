@@ -11,8 +11,6 @@
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 
-#include <CoreUtilities/Allocators/InlineAllocator.h>
-
 #include <Volt-Core/Project/Project.h>
 
 namespace Volt
