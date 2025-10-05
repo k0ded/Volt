@@ -78,8 +78,8 @@ void GameViewPanel::OnOpen()
 	if (m_editorScene)
 	{
 		spec.renderScene = m_editorScene->GetRenderScene();
+		m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
 	}
-	m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
 }
 
 void GameViewPanel::OnClose()

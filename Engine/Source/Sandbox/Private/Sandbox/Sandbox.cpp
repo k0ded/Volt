@@ -129,7 +129,7 @@ void Sandbox::OnAttach()
 
 	//Volt::WindowManager::Get().GetMainWindow().Maximize();
 
-	m_editorCameraController = CreateRef<EditorCameraController>(60.f, 1.f, 100000.f);
+	m_editorCameraController = CreateRef<EditorCameraController>(glm::radians(60.f), 1.f, 100000.f);
 
 	UserSettingsManager::LoadUserSettings();
 	const auto& userSettings = UserSettingsManager::GetSettings();
@@ -280,6 +280,7 @@ void Sandbox::SetupNewSceneData()
 
 		spec.debugName = "Editor Viewport";
 		spec.renderScene = m_runtimeScene->GetRenderScene();
+		spec.drawDebug = true;
 
 		gameSpec.debugName = "Game Viewport";
 		gameSpec.renderScene = m_runtimeScene->GetRenderScene();
@@ -817,7 +818,7 @@ void Sandbox::RenderGameView(float timestep)
 				const auto& camComp = cameraEntity.GetComponent<Volt::CameraComponent>();
 				const auto finalImage = m_gameSceneRenderer->GetFinalImage();
 
-				Ref<Volt::Camera> camera = CreateRef<Volt::Camera>(camComp.fieldOfView, (float)finalImage->GetWidth() / (float)finalImage->GetHeight(), camComp.nearPlane, camComp.farPlane);
+				Ref<Volt::Camera> camera = CreateRef<Volt::Camera>(glm::radians(camComp.fieldOfView), (float)finalImage->GetWidth() / (float)finalImage->GetHeight(), camComp.nearPlane, camComp.farPlane);
 				camera->SetPosition(cameraEntity.GetPosition());
 				camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
 
