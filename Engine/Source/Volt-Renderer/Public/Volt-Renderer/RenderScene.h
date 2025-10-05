@@ -5,6 +5,7 @@
 #include "Volt-Renderer/RenderPrimitiveData.h"
 
 #include "Volt-Renderer/MeshPassProcessor.h"
+#include "Volt-Renderer/RenderScene/RenderSceneUpdateQueue.h"
 
 #include <RenderCore/Resources/GrowingGPUBuffer.h>
 #include <RHIModule/RayTracing/RayTracingResuorceTable.h>
@@ -136,6 +137,12 @@ namespace Volt
 		VT_NODISCARD RenderLightData& GetLightDataFromID(UUID64 id);
 		VT_NODISCARD PrimitiveDrawData& GetPrimitiveDrawDataFromIndex(size_t index);
 
+		void ProcessQueuedUpdateOperations();
+		void ProcessAddPrimitiveInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
+		void ProcessAddLightInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
+		void ProcessQueuedRemove(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
+		void ProcessQueuedInvalidation(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
+
 		struct InvalidMaterial
 		{
 			Weak<RenderMaterial> material;
@@ -228,6 +235,8 @@ namespace Volt
 
 		Vector<Callback<std::function<void(const RenderPrimitiveData&)>>> m_onRenderPrimitiveAddedCallbacks;
 		Vector<Callback<std::function<void(const RenderPrimitiveData&)>>> m_onRenderPrimitiveRemovedCallbacks;
+
+		RenderSceneUpdateQueue m_updateQueue;
 
 		// Scene Primitives
 		Vector<PrimitiveDrawData> m_primitiveDrawData;

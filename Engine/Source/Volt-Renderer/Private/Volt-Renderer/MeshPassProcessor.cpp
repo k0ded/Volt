@@ -3,6 +3,7 @@
 #include "Volt-Renderer/MeshPassProcessor.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
+#include "Volt-Renderer/RenderScene.h"
 
 #include <JobSystem/JobSystem.h>
 
@@ -17,7 +18,8 @@
 
 namespace Volt
 {
-	MeshPassProcessorRegistry::MeshPassProcessorRegistry()
+	MeshPassProcessorRegistry::MeshPassProcessorRegistry(RenderScene* renderScene)
+		: m_renderScene(renderScene)
 	{
 		m_meshPassProcessorAllocator.Reserve(512 * 1024);
 	}
@@ -43,6 +45,14 @@ namespace Volt
 		for (MeshPassProcessor* meshPassProcessor : m_meshPassProcessors)
 		{
 			meshPassProcessor->RemoveRenderPrimitive(renderPrimitive);
+		}
+	}
+
+	void MeshPassProcessorRegistry::AddPrimitivesToMeshPassProcessor(MeshPassProcessor* meshPassProcessor)
+	{
+		for (const RenderPrimitiveData& renderPrimitive : (*m_renderScene))
+		{
+			meshPassProcessor->AddRenderPrimitive(renderPrimitive);
 		}
 	}
 

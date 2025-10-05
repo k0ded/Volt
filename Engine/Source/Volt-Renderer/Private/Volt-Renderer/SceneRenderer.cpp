@@ -44,7 +44,8 @@
 namespace Volt
 {
 	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& createInfo)
-		: m_renderScene(createInfo.renderScene), m_createInfo(createInfo)
+		: m_renderScene(createInfo.renderScene), m_createInfo(createInfo),
+		m_meshPassProcessorRegistry(createInfo.renderScene.get())
 	{
 		CreateMainRenderTarget(createInfo.initialResolution.x, createInfo.initialResolution.y);
 
@@ -61,21 +62,7 @@ namespace Volt
 	
 		RegisterListener<AppPostFrameUpdateEvent>(VT_BIND_EVENT_FN(SceneRenderer::OnPostFrameUpdateEvent));
 
-		{
-			m_depthPrePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<DepthPrePassMeshProcessor>();
-			m_basePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<BasePassMeshProcessor>();
-			m_cascadedShadowMapMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<CascadedShadowMapMeshProcessor>();
-
-			m_onRenderPrimitiveAddedCallbackId = m_renderScene->RegisterOnRenderPrimitiveAddedCallback([this](const RenderPrimitiveData& renderPrimitives)
-			{
-				m_meshPassProcessorRegistry.AddRenderPrimitive(renderPrimitives);
-			});
-
-			m_onRenderPrimitiveRemovedCallbackId = m_renderScene->RegisterOnRenderPrimitiveRemovedCallback([this](const RenderPrimitiveData& renderPrimitive)
-			{
-				m_meshPassProcessorRegistry.RemoveRenderPrimitive(renderPrimitive);
-			});
-		}
+		AddMeshPassProcessors();
 	}
 
 	SceneRenderer::~SceneRenderer()
@@ -285,6 +272,23 @@ namespace Volt
 		}
 	
 		AddTonemappingPass(renderGraph, blackboard, view, outputTexture);
+	}
+
+	void SceneRenderer::AddMeshPassProcessors()
+	{
+		m_depthPrePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<DepthPrePassMeshProcessor>();
+		m_basePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<BasePassMeshProcessor>();
+		m_cascadedShadowMapMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<CascadedShadowMapMeshProcessor>();
+
+		m_onRenderPrimitiveAddedCallbackId = m_renderScene->RegisterOnRenderPrimitiveAddedCallback([this](const RenderPrimitiveData& renderPrimitives)
+		{
+			m_meshPassProcessorRegistry.AddRenderPrimitive(renderPrimitives);
+		});
+
+		m_onRenderPrimitiveRemovedCallbackId = m_renderScene->RegisterOnRenderPrimitiveRemovedCallback([this](const RenderPrimitiveData& renderPrimitive)
+		{
+			m_meshPassProcessorRegistry.RemoveRenderPrimitive(renderPrimitive);
+		});
 	}
 
 	bool SceneRenderer::OnPostFrameUpdateEvent(AppPostFrameUpdateEvent& event)

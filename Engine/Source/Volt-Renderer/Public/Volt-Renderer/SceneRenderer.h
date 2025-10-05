@@ -123,6 +123,7 @@ namespace Volt
 		/////////////////////////
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
+		void AddMeshPassProcessors();
 
 		RGUniformBufferRef CreateViewUniformBuffer(RenderGraph& renderGraph, Ref<Camera> camera);
 

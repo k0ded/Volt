@@ -19,6 +19,7 @@ namespace Volt
 	struct RenderPrimitiveData;
 	class RenderContext;
 	class RenderGraph;
+	class RenderScene;
 	class BatchedShaderParameters;
 	class RGBuffer;
 	class JobCounter;
@@ -124,7 +125,7 @@ namespace Volt
 	class MeshPassProcessorRegistry
 	{
 	public:
-		MeshPassProcessorRegistry();
+		MeshPassProcessorRegistry(RenderScene* renderScene);
 		~MeshPassProcessorRegistry();
 
 		template<typename T>
@@ -139,6 +140,8 @@ namespace Volt
 			m_meshPassDestructors.emplace_back() = DestructorHelper::Create<T>(alloc);
 			m_meshPassProcessors.emplace_back(processor);
 
+			AddPrimitivesToMeshPassProcessor(processor);
+
 			return processor;
 		}
 
@@ -146,9 +149,13 @@ namespace Volt
 		void RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive);
 
 	private:
+		void VTR_API AddPrimitivesToMeshPassProcessor(MeshPassProcessor* meshPassProcessor);
+
 		LinearAllocator<> m_meshPassProcessorAllocator;
 		Vector<MeshPassProcessor*> m_meshPassProcessors;
 		Vector<DestructorHelper> m_meshPassDestructors;
+
+		RenderScene* m_renderScene;
 	};
 }
 
