@@ -75,24 +75,33 @@ void DirtyAssetsManager::RegisterSaveCustomizationForType(AssetType type, DirtyS
 	m_dirtySaveCustomizations.emplace(type, customization);
 }
 
-void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter filter)
+bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter filter)
 {
 	//no dirty assets
 	if (m_dirtyAssets.empty())
 	{
-		return;
+		return true;
 	}
-
-	//todo_fabian implement filtering
-	filter;
 
 	FrameStackVector<Volt::AssetHandle> assetsToSave;
 	assetsToSave.reserve(m_dirtyAssets.size());
 	for (const Volt::AssetHandle& dirtyAssetHandle : m_dirtyAssets)
 	{
+		if (filter.includeAssetDelegate)
+		{
+			if (!filter.includeAssetDelegate(dirtyAssetHandle))
+			{
+				continue;
+			}
+		}
+
 		assetsToSave.push_back(dirtyAssetHandle);
 	}
 
+	if (assetsToSave.empty())
+	{
+		return true;
+	}
 
 	{
 		Map<Volt::AssetHandle, std::string> cantSaveAssets;
@@ -136,13 +145,13 @@ void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 
 			if (result != AssetModalResult::Save)
 			{
-				return;
+				return false;
 			}
 
 			//user chose to save no assets when prompted
 			if (outSelectedAssetsToSave.empty())
 			{
-				return;
+				return true;
 			}
 
 			for (int32_t i = static_cast<int32_t>(assetsToSave.size() - 1); i >= 0; i--)
@@ -200,7 +209,7 @@ void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 
 			if (result == AssetModalResult::Cancel)
 			{
-				return;
+				return false;
 			}
 
 			if (result == AssetModalResult::Create)
@@ -291,6 +300,11 @@ void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 			std::set<Volt::AssetHandle> outSelectedAssetsToCheckOut;
 			AssetModalResult result = modal.OpenAssetModalTypeBlocking(AssetModalType::CheckOut, readOnlyAssets, outSelectedAssetsToCheckOut);
 
+			if (result == AssetModalResult::Cancel)
+			{
+				return false;
+			}
+			
 			if (result == AssetModalResult::CheckOut)
 			{
 				//todo_fabian check assets out here
@@ -320,10 +334,11 @@ void DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 	//no assets to save
 	if (assetsToSave.empty())
 	{
-		return;
+		return true;
 	}
 
 	SaveAssetsImpl(assetsToSave);
+	return true;
 }
 
 bool DirtyAssetsManager::IsAssetDirty(Volt::AssetHandle handle)

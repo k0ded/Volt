@@ -104,8 +104,8 @@ namespace Volt
 		static AssetType GetAssetTypeFromPath(const std::filesystem::path& path);
 		static AssetHandle GetAssetHandleFromFilePath(const std::filesystem::path& path);
 
-		static const AssetMetadata& GetMetadataFromHandle(AssetHandle handle);
-		static const AssetMetadata& GetMetadataFromFilePath(const std::filesystem::path filePath);
+		static AssetMetadata GetMetadataFromHandle(AssetHandle handle);
+		static AssetMetadata GetMetadataFromFilePath(const std::filesystem::path filePath);
 
 		static const AssetRegistry& GetAssetRegistry();
 		static AssetRegistry& GetAssetRegistryMutable();

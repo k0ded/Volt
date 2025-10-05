@@ -20,14 +20,8 @@ namespace Volt
 
 struct SaveDirtyAssetsFilter
 {
-	//todo_fabian: make a filter thingy
-	Vector<Volt::AssetHandle> SkipAssets;
-};
-
-struct RequiredExternalActionData
-{
-	Vector<Volt::AssetHandle> ReadOnlyAssets;
-	Vector<Volt::AssetHandle> AssetsNeedingCustomAction;
+	//return true for an asset if it should be included in the save
+	std::function<bool(const Volt::AssetHandle&/*asset*/)> includeAssetDelegate;
 };
 
 struct DirtySaveCustomization
@@ -63,7 +57,8 @@ public:
 
 	void RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomization customization);
 
-	void SaveAssets(bool showSaveDialog = true, SaveDirtyAssetsFilter filter = SaveDirtyAssetsFilter());
+	//returns false if user cancels
+	bool SaveAssets(bool showSaveDialog = true, SaveDirtyAssetsFilter filter = SaveDirtyAssetsFilter());
 
 	bool IsAssetDirty(Volt::AssetHandle handle);
 	void MarkAssetDirty(Volt::AssetHandle handle);

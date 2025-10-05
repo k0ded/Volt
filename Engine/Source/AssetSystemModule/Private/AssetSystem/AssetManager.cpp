@@ -909,7 +909,7 @@ namespace Volt
 		return metadata.handle;
 	}
 
-	const AssetMetadata& AssetManager::GetMetadataFromHandle(AssetHandle handle)
+	AssetMetadata AssetManager::GetMetadataFromHandle(AssetHandle handle)
 	{
 		auto& instance = Get();
 		ReadLock lock{ instance.m_assetRegistryMutex };
@@ -917,7 +917,7 @@ namespace Volt
 		return GetMetadataFromHandleLockless(handle);
 	}
 
-	const AssetMetadata& AssetManager::GetMetadataFromFilePath(const std::filesystem::path filePath)
+	AssetMetadata AssetManager::GetMetadataFromFilePath(const std::filesystem::path filePath)
 	{
 		auto& instance = Get();
 		ReadLock lock{ instance.m_assetRegistryMutex };

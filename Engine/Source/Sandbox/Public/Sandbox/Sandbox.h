@@ -86,7 +86,8 @@ public:
 	void OpenScene();
 	void OpenScene(const std::filesystem::path& path);
 	void OpenScene(Volt::AssetHandle sceneHandle);
-	void SaveScene();
+	//returns false if user cancels save
+	bool SaveScene(bool showDialog = false);
 	void TransitionToNewScene();
 
 	bool CheckForUpdateNavMesh(Volt::Entity entity);

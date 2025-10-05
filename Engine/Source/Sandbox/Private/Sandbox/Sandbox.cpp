@@ -444,11 +444,21 @@ void Sandbox::OnSimulationStop()
 
 void Sandbox::NewScene()
 {
-	SelectionManager::DeselectAll();
+	//if a scene is already loaded, prompt user to save, then unload it
 	if (m_runtimeScene)
 	{
+		const bool userCancelSave = !SaveScene(/*showDialog*/true);
+		if (userCancelSave)
+		{
+			//if the user cancels the save, dont load the new scene
+			return;
+		}
+
 		Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
+		m_runtimeScene = nullptr;
 	}
+
+	SelectionManager::DeselectAll();
 
 	m_runtimeScene = Volt::Scene::CreateDefaultScene("New Scene", true);
 
@@ -481,35 +491,73 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 		return;
 	}
 
-	SelectionManager::DeselectAll();
+	VT_ENSURE(Volt::AssetManager::GetAssetTypeFromHandle(sceneHandle) == AssetTypes::Scene);
 
-	Volt::AssetMetadata metadata;
-
+	//if a scene is already loaded, prompt user to save, then unload it
 	if (m_runtimeScene)
 	{
-		metadata = Volt::AssetManager::GetMetadataFromHandle(m_runtimeScene->handle);
+		const bool userCancelSave = !SaveScene(/*showDialog*/true);
+		if (userCancelSave)
+		{
+			//if the user cancels the save, dont load the new scene
+			return;
+		}
+
+		Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
+		m_runtimeScene = nullptr;
 	}
 
-	const auto newScene = Volt::AssetManager::GetAsset<Volt::Scene>(sceneHandle);
+	SelectionManager::DeselectAll();	
+
+	//load new scene
+	const Ref<Volt::Scene> newScene = Volt::AssetManager::GetAsset<Volt::Scene>(sceneHandle);
 	if (!newScene)
 	{
+		Volt::AssetMetadata metadata = Volt::AssetManager::GetMetadataFromHandle(sceneHandle);
+		UI::Notify(UI::NotificationType::Error,
+			std::format("Failed to open Scene '{0}'", metadata.filePath.stem().string()),
+			std::format("Failed to open scene with handle '{0}'", std::to_string(sceneHandle)));
 		return;
-	}
-
-	VT_ENSURE(Volt::AssetManager::GetMetadataFromHandle(newScene->handle).type == AssetTypes::Scene);
-
-	if (metadata.handle == sceneHandle)
-	{
-		Volt::AssetManager::Get().ReloadAsset(m_runtimeScene->handle);
-	}
-	else if (m_runtimeScene && !metadata.filePath.empty())
-	{
-		Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
 	}
 
 	m_runtimeScene = newScene;
 
 	SetupNewSceneData();
+}
+
+bool Sandbox::SaveScene(bool showDialog)
+{
+	//if we have no scene loaded, we successfully saved nothing!
+	if (!m_runtimeScene)
+	{
+		return true;
+	}
+
+	SaveDirtyAssetsFilter filter;
+	filter.includeAssetDelegate = [sceneHandle = m_runtimeScene->handle](Volt::AssetHandle handle) -> bool
+	{
+		//if its the scene being unloaded, it should be included
+		if (sceneHandle == handle)
+		{
+			return true;
+		}
+
+		//other than the owning scene we only care about entity descriptions
+		if (Volt::AssetManager::GetAssetTypeFromHandle(handle) != AssetTypes::EntityDesc)
+		{
+			return false;
+		}
+
+		//additionally we only care about entitites with the scene being unloaded as their owner
+		Volt::AssetMetadata metadata = Volt::AssetManager::GetMetadataFromHandle(handle);
+		if (metadata.GetCustomData<Volt::EntityDescCustomMetadata>().sceneHandle != sceneHandle)
+		{
+			return false;
+		}
+
+		return true;
+	};
+	return DirtyAssetsManager::Get().SaveAssets(showDialog, filter);
 }
 
 bool Sandbox::LoadScene(Volt::OnSceneTransitionEvent& e)
@@ -534,69 +582,6 @@ bool Sandbox::CheckForUpdateNavMesh(Volt::Entity entity)
 
 	return (entity.HasComponent<Volt::NavMeshComponent>() || entity.HasComponent<Volt::NavLinkComponent>()) && UserSettingsManager::GetSettings().navmeshBuildSettings.useAutoBaking;*/
 	return false;
-}
-
-void Sandbox::SaveScene()
-{
-	//blocking modal here
-
-	//todo_fabian implement filtering
-	DirtyAssetsManager::Get().SaveAssets();
-
-	//if (m_runtimeScene)
-	//{
-	//	DirtyAssetsManager::Get().SaveAssets();
-	//	if (Volt::AssetManager::ExistsInRegistry(m_runtimeScene->handle))
-	//	{
-	//		//Vector<std::filesystem::path> paths;
-	//		//Volt::AssetManager::Get().GetFilesAffectedBySave(m_runtimeScene, paths);
-
-	//		//PromptForCheckoutFiles(paths,
-	//		//	// onConfirm
-	//		//[paths, this]()
-	//		//{
-	//		//	Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
-
-	//		//	String Message;
-
-	//		//	bool anyWriteable = false;
-	//		//	for (const std::filesystem::path& path : paths)
-	//		//	{
-	//		//		if (FileSystem::IsWriteable(path))
-	//		//		{
-	//		//			anyWriteable = true;
-	//		//		}
-
-
-
-	//		//	}
-
-	//		//	UI::Notify(NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
-	//		//},
-
-	//		////on Cancel
-	//		//[]()
-	//		//{
-	//		//	//do nothing
-	//		//});
-
-
-	//		//todo_fabian: reimplement
-	//		/*if (FileSystem::IsWriteable(Volt::AssetManager::GetFilesystemPath(m_runtimeScene->handle)))
-	//		{
-	//			Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
-	//			UI::Notify(UI::NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
-	//		}
-	//		else*/
-	//		{
-	//			UI::Notify(UI::NotificationType::Error, "Unable to save scene!", std::format("Scene {0} was is not writeable!", m_runtimeScene->assetName));
-	//		}
-	//	}
-	//	else
-	//	{
-	//		SaveSceneAs();
-	//	}
-	//}
 }
 
 void Sandbox::TransitionToNewScene()
