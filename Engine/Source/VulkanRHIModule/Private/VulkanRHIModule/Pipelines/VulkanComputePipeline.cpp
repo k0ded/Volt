@@ -1,7 +1,6 @@
 #include "vkpch.h"
 
 #include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
-#include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
@@ -45,9 +44,7 @@ namespace Volt::RHI
 			const ShaderParameterMap& shaderParameterMap = m_shader->GetParameterMap();
 
 			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
-			DescriptorSetLayoutBuilder::DescriptorSets descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderParameterMap.GetResourceBindings(), shaderParameterMap.AccessesRayTracingTable());
-			m_descriptorSetLayouts = descriptorSets.descriptorSetLayouts;
-			m_pipelineLayoutDescriptorSetLayouts = descriptorSets.pipelineLayoutDescriptorSetLayouts;
+			m_descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderParameterMap.GetResourceBindings(), shaderParameterMap.AccessesRayTracingTable());
 
 			m_descriptorPoolSizes = descriptorSetLayoutBuilder.CalculateDescriptorPoolSizesFromBindings(shaderParameterMap.GetResourceBindings());
 			m_shaderParameterMap = shaderParameterMap;
@@ -58,8 +55,8 @@ namespace Volt::RHI
 			VkPipelineLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			info.pNext = nullptr;
-			info.setLayoutCount = static_cast<uint32_t>(m_pipelineLayoutDescriptorSetLayouts.size());
-			info.pSetLayouts = m_pipelineLayoutDescriptorSetLayouts.data();
+			info.setLayoutCount = static_cast<uint32_t>(m_descriptorSets.pipelineLayoutDescriptorSetLayouts.size());
+			info.pSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.data();
 			info.pushConstantRangeCount = 0;
 			info.pPushConstantRanges = nullptr;
 
@@ -81,7 +78,7 @@ namespace Volt::RHI
 			info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 			info.pNext = nullptr;
 			info.layout = m_pipelineLayout;
-			info.flags = 0;
+			info.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 			info.stage = stageInfo;
 			info.basePipelineHandle = nullptr;
 			info.basePipelineIndex = 0;
@@ -92,16 +89,16 @@ namespace Volt::RHI
 		if (RHI::RHICanUseRayTracing() && m_shaderParameterMap.AccessesRayTracingTable())
 		{
 			// Erase the ray tracing pipelines from the lists, as they should not be accessed outside of the pipeline.
-			if (m_descriptorSetLayouts.contains(RayTracingTableDescriptorSetManager::Set))
+			if (m_descriptorSets.descriptorSetLayouts.contains(RayTracingTableDescriptorSetManager::Set))
 			{
-				m_descriptorSetLayouts.erase(RayTracingTableDescriptorSetManager::Set);
+				m_descriptorSets.descriptorSetLayouts.erase(RayTracingTableDescriptorSetManager::Set);
 			}
 
-			for (auto it = m_pipelineLayoutDescriptorSetLayouts.begin(); it != m_pipelineLayoutDescriptorSetLayouts.end(); ++it)
+			for (auto it = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.begin(); it != m_descriptorSets.pipelineLayoutDescriptorSetLayouts.end(); ++it)
 			{
 				if (*it == RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout())
 				{
-					m_pipelineLayoutDescriptorSetLayouts.erase(it);
+					m_descriptorSets.pipelineLayoutDescriptorSetLayouts.erase(it);
 					break;
 				}
 			}
@@ -133,7 +130,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_pipelineLayoutDescriptorSetLayouts]()
+		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, VT_VULKAN_ALLOCATOR);
@@ -147,7 +144,7 @@ namespace Volt::RHI
 
 		m_pipeline = nullptr;
 		m_pipelineLayout = nullptr;
-		m_descriptorSetLayouts.clear();
+		m_descriptorSets.descriptorSetLayouts.clear();
 	}
 
 	void VulkanComputePipeline::GenerateHash()

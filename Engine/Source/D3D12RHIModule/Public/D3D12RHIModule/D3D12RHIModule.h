@@ -61,7 +61,7 @@ namespace Volt::RHI
 		void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) override;
 		void DestroyResource(std::function<void()>&& function) override;
 		void RequestApplicationClose() override;
-		void Update() override;
+		void BeginFrame() override;
 		void FlushResourceDeletionQueue() override;
 
 	private:

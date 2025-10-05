@@ -4,7 +4,6 @@
 #include "AssetSystem/AssetHandle.h"
 
 #include <CoreUtilities/Containers/Vector.h>
-#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 #include <filesystem>
 

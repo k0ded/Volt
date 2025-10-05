@@ -73,6 +73,9 @@ namespace VoltSharpmake
             conf.AdditionalDebuggerCommands = Path.Combine(Globals.VtProjectDirectory, @"Project.vtproj");
 
             conf.Defines.Add("CPPHTTPLIB_OPENSSL_SUPPORT");
+
+			conf.IncludePaths.Add("Public/Sandbox");
+			conf.IncludePaths.Add("Private/Sandbox");
 		}
 
 		public override void ConfigureWin64(Configuration conf, CommonTarget target)

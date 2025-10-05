@@ -18,7 +18,6 @@
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
-#include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Graphics/DeviceQueue.h>
@@ -30,6 +29,7 @@
 #include <CoreUtilities/EnumUtils.h>
 #include <CoreUtilities/ComparisonHelpers.h>
 #include <CoreUtilities/Malloc.h>
+#include <CoreUtilities/MemoryUtility.h>
 
 /*
 	These are the synchronization cases referenced and handeled in RenderGraph::Compile.
@@ -188,8 +188,8 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		RHI::FenceCreateInfo createInfo{};
-		m_executionFence = RHI::Fence::Create(createInfo);
+		m_temporaryDataAllocator.Reserve(1 * 1024 * 1024);
+		m_executionFence = RHI::Fence::Create();
 	}
 
 	RenderGraph::~RenderGraph()
@@ -248,6 +248,7 @@ namespace Volt
 	RGBuffer* RenderGraph::CreateBuffer(const RGBufferDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
+		VT_ENSURE(desc.count * desc.elementSize > 0);
 
 		RGBufferRef buffer = m_resourceAllocator.Allocate<RGBuffer>(desc);
 		m_resources.emplace_back(buffer);
@@ -723,8 +724,8 @@ namespace Volt
 		}
 
 		RGUniformBufferDesc desc{};
-		desc.elementSize = uniformBuffer->GetByteSize();
-		desc.name = uniformBuffer->GetName();
+		desc.size = static_cast<uint32_t>(uniformBuffer->GetByteSize());
+		desc.debugName = uniformBuffer->GetName();
 
 		RGUniformBufferRef bufferResource = m_resourceAllocator.Allocate<RGUniformBuffer>(desc);
 		bufferResource->isExternal = true;
@@ -819,7 +820,7 @@ namespace Volt
 		Ref<GPUReadbackBuffer> readbackBuffer = CreateRef<GPUReadbackBuffer>(dataSize);
 		RGBufferRef dstBuffer = RegisterExternalBuffer(readbackBuffer->GetBuffer());
 
-		RefPtr<RHI::Fence> fence = RHI::Fence::Create(RHI::FenceCreateInfo{ false });
+		RefPtr<RHI::Fence> fence = RHI::Fence::Create();
 
 		ReadbackBufferParameters* parameters = AllocParameters<ReadbackBufferParameters>();
 		parameters->SrcBuffer = srcBuffer;
@@ -856,7 +857,7 @@ namespace Volt
 		Ref<GPUReadbackTexture> readbackTexture = CreateRef<GPUReadbackTexture>(srcTexture->GetDesc());
 		RGTextureRef dstTexture = RegisterExternalTexture(readbackTexture->GetImage());
 
-		RefPtr<RHI::Fence> fence = RHI::Fence::Create(RHI::FenceCreateInfo{ false });
+		RefPtr<RHI::Fence> fence = RHI::Fence::Create();
 
 		ReadbackTextureParameters* parameters = AllocParameters<ReadbackTextureParameters>();
 		parameters->SrcTexture = srcTexture;
@@ -944,6 +945,11 @@ namespace Volt
 
 					// We need to increase the ref count of the pass as well.
 					pass->refCount++;
+				}
+				else if (!resourceAccess.resource->IsProducer(pass))
+				{
+					// Otherwise we add a reference to the resource
+					resourceAccess.resource->AddRef();
 				}
 			}
 		}
@@ -1190,6 +1196,8 @@ namespace Volt
 						else
 						{
 							const bool requireExternalSrcAccess = resource->isExternal && resourceState.previousUsage == nullptr;
+
+							VT_ENSURE(newState.layout != RHI::ImageLayout::Undefined);
 
 							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, requireExternalSrcAccess);
 							newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
@@ -1463,12 +1471,17 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		if (m_passes.empty())
+		{
+			return nullptr;
+		}
+
 		RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer = new RenderGraphShaderParameterUniformBuffer(*this);
 
 		PrepareResourcesForExecution();
 		CreateResourceViews();
 
-		constexpr size_t NumPassesPerJob = 8;
+		constexpr size_t NumPassesPerJob = 4;
 
 		struct PassExecutionRange
 		{
@@ -1490,8 +1503,7 @@ namespace Volt
 		}
 
 		// Each execution range gets their own command buffer.
-		// #TODO_Ivar: Get from a command buffer pool.
-		Vector<RefPtr<RHI::CommandBuffer>> commandBuffers;
+		Vector<RefPtr<PooledCommandBuffer>> commandBuffers;
 		commandBuffers.resize(passExecutionRanges.size());
 
 		for (size_t i = 0; i < passExecutionRanges.size(); ++i)
@@ -1515,9 +1527,9 @@ namespace Volt
 
 		// This function executes the provided pass range.
 		constexpr auto executePassRangeFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer, const PassExecutionRange& executionRange,
-			const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, const uint32_t index, const uint32_t numExecutionRanges)
+			const Vector<RefPtr<PooledCommandBuffer>>& commandBuffers, const uint32_t index, const uint32_t numExecutionRanges)
 		{
-			RefPtr<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index);
+			RefPtr<RHI::CommandBuffer> commandBuffer = commandBuffers.at(index)->Get();
 
 			commandBuffer->Begin();
 
@@ -1564,26 +1576,21 @@ namespace Volt
 		shaderParameterUniformBuffer->Unmap();
 
 		// This function is responsible for executing the recorded command buffers.
-		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<RHI::CommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
+		constexpr auto executeRenderGraphFunc = [](RenderGraph* renderGraphPtr, RenderGraphShaderParameterUniformBuffer* shaderParameterUniformBuffer, const Vector<RefPtr<PooledCommandBuffer>>& commandBuffers, RefPtr<RHI::Fence> executionFence)
 		{
 			RHI::DeviceQueueExecuteInfo executeInfo{};
 			executeInfo.commandBuffers.resize(commandBuffers.size());
 
 			for (size_t i = 0; i < commandBuffers.size(); ++i)
 			{
-				executeInfo.commandBuffers[i] = commandBuffers[i];
+				executeInfo.commandBuffers[i] = commandBuffers[i]->Get();
 			}
 
-			executeInfo.fence = executionFence;
+			executeInfo.fence_new = executionFence;
 			RHI::GraphicsContext::GetDevice()->GetDeviceQueue(RHI::QueueType::Graphics)->Execute(executeInfo);
 
 			renderGraphPtr->TransitionExternalResources();
 			renderGraphPtr->ExtractResources();
-
-			for (const auto& commandBuffer : commandBuffers)
-			{
-				CommandBufferPool::FreeCommandBuffer(commandBuffer);
-			}
 
 			// Destroy the RenderGraph.
 			JobRef destroyJob = JobSystem::CreateJob("RenderGraph::Destroy", ExecutionPriority::Render, [renderGraphPtr, shaderParameterUniformBuffer]()
@@ -1825,32 +1832,26 @@ namespace Volt
 	}
 
 	RenderGraphShaderParameterUniformBuffer::RenderGraphShaderParameterUniformBuffer(RenderGraph& renderGraph)
-		: m_counter(0), m_mappedPtr(nullptr)
+		: m_head(0), m_mappedPtr(nullptr)
 	{
 		VT_PROFILE_FUNCTION();
 
-		const size_t numShaderParameters = renderGraph.m_passes.size() * 2;
+		constexpr uint64_t TotalShaderParametersByteSize = 1 * 1024 * 1024;
 
 		RGUniformBufferDesc desc{};
-		desc.count = 1;
-		desc.elementSize = PerStageUniformBufferSize * numShaderParameters;
-		desc.name = "ShaderParameters";
+		desc.size = TotalShaderParametersByteSize;
+		desc.debugName = "ShaderParameters";
 
 		m_uniformBuffer = renderGraph.CreateUniformBuffer(desc);
 		m_uniformBuffer->AddRef();
 
-		// Create views
-		m_srvs.resize_uninitialized(numShaderParameters);
-
+		// Create view
 		RGUniformBufferSRVDesc srvDesc{};
 		srvDesc.bufferResource = m_uniformBuffer;
-		srvDesc.size = PerStageUniformBufferSize;
+		srvDesc.size = TotalShaderParametersByteSize;
+		srvDesc.offset = 0;
 
-		for (size_t i = 0; i < numShaderParameters; ++i)
-		{
-			srvDesc.offset = i * PerStageUniformBufferSize;
-			m_srvs[i] = renderGraph.CreateSRV(srvDesc);
-		}
+		m_srv = renderGraph.CreateSRV(srvDesc);
 	}
 
 	void RenderGraphShaderParameterUniformBuffer::Map()
@@ -1861,5 +1862,12 @@ namespace Volt
 	void RenderGraphShaderParameterUniformBuffer::Unmap()
 	{
 		m_uniformBuffer->GetRHIResource()->GetRHIUniformBuffer()->Unmap();
+	}
+
+	uint64_t RenderGraphShaderParameterUniformBuffer::Allocate(uint64_t size)
+	{
+		const uint64_t alignedSize = size + g_rhiCapabilities.minUniformBufferAlignment;
+		uint64_t allocOffset = m_head.fetch_add(alignedSize, std::memory_order::relaxed);
+		return Utility::Align(allocOffset, g_rhiCapabilities.minUniformBufferAlignment);
 	}
 }

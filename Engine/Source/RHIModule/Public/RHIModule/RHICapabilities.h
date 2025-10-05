@@ -13,6 +13,8 @@ namespace Volt::RHI
 			uint32_t z = 0;
 		};
 
+		inline static constexpr uint32_t NumFramesInFlight = 3;
+
 		uint32_t max2DTextureDimensions = 2048;
 		uint64_t maxBufferDimensions = (1 << 27);
 		uint32_t max3DTextureDimensions = 2048;
@@ -21,6 +23,7 @@ namespace Volt::RHI
 		uint32_t maxTextureSamplers = 16;
 		uint64_t maxComputeSharedMemorySize = (1 << 15);
 		uint32_t maxWorkGroupInvocations = 1024;
+		uint64_t minUniformBufferAlignment = 0;
 
 		struct RayTracing
 		{
@@ -42,7 +45,7 @@ namespace Volt::RHI
 		bool supportsBindless = false;
 
 		ComputeDimensions maxDispatchThreadGroupsPerDimension;
-	
+
 		// #TODO_Ivar: Move to some other place
 		bool useMeshShaders = false;
 		bool useBindless = false;

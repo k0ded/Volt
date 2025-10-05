@@ -101,12 +101,6 @@ namespace Volt
 		uint32_t id = 0;
 	};
 
-	struct LineVertex
-	{
-		glm::vec4 position = glm::vec4(0.f);
-		glm::vec4 color = glm::vec4(1.f);
-	};
-
 	struct TextVertex
 	{
 		glm::vec4 position = glm::vec4(0.f);

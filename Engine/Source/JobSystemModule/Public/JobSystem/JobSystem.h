@@ -88,7 +88,7 @@ namespace Volt
 		WorkQueue<Job*, QueueThreadingPolicy::MPSC> m_mainThreadQueue;
 		Map<std::thread::id, uint32_t> m_workerThreadIDToIndex;
 
-		LinearAllocator<sizeof(JobWorker) * NumMaxWorkers> m_workerAllocator;
+		LinearAllocator<DefaultHeapAllocator> m_workerAllocator;
 
 		JobAllocator<Job, NumMaxJobs> m_jobAllocator;
 		JobAllocator<JobCounter, NumMaxJobs * 2> m_counterAllocator;

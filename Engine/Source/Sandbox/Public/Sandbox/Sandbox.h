@@ -90,8 +90,6 @@ public:
 	bool SaveScene(bool showDialog = false);
 	void TransitionToNewScene();
 
-	bool CheckForUpdateNavMesh(Volt::Entity entity);
-
 private:
 	struct SaveSceneAsData
 	{

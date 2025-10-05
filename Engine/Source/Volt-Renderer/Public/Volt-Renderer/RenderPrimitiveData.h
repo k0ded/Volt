@@ -25,6 +25,7 @@ namespace Volt
 		uint32_t subMeshIndex = 0;
 		uint32_t vertexBufferIndex = 0;
 		uint32_t meshletStartOffset = 0;
+		uint32_t primitiveIndex = 0;
 
 		VT_NODISCARD VT_INLINE bool IsAnimated() const { return motionWeaver != nullptr; }
 	};

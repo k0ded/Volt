@@ -85,7 +85,7 @@ namespace Volt
 	void CameraComponent::OnCreate(CameraEntity entity)
 	{
 		auto& component = entity.GetComponent<CameraComponent>();
-		component.camera = CreateRef<Camera>(component.fieldOfView, 1.f, 16.f / 9.f, component.nearPlane, component.farPlane);
+		component.camera = CreateRef<Camera>(glm::radians(component.fieldOfView), 1.f, 16.f / 9.f, component.nearPlane, component.farPlane);
 	}
 
 	void MotionWeaveComponent::OnStart(WeaveEntity entity)

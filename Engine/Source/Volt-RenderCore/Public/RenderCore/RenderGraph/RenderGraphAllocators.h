@@ -18,7 +18,7 @@ namespace Volt
 	class VTRC_API RenderGraphResourceAllocator
 	{
 	public:
-		RenderGraphResourceAllocator() = default;
+		RenderGraphResourceAllocator();
 		~RenderGraphResourceAllocator();
 
 		RenderGraphResourceAllocator(const RenderGraphResourceAllocator& other) noexcept = delete;
@@ -42,14 +42,14 @@ namespace Volt
 	private:
 		inline static constexpr size_t MaxResourceNodeAllocationSize = 512 * 1024;
 
-		LinearAllocator<MaxResourceNodeAllocationSize> m_allocator;
+		LinearAllocator<> m_allocator;
 		Vector<DestructorHelper> m_nodeDestructors;
 	};
 	
 	class VTRC_API RenderGraphPassAllocator
 	{
 	public:
-		RenderGraphPassAllocator() = default;
+		RenderGraphPassAllocator();
 		~RenderGraphPassAllocator();
 
 		RenderGraphPassAllocator(const RenderGraphPassAllocator& other) noexcept = delete;
@@ -104,8 +104,8 @@ namespace Volt
 
 		PassAllocation AllocatePass(PassExecFunc execWrapperFunc, size_t execFuncSize);
 
-		LinearAllocator<MaxExecutionFunctionAllocationSize> m_passExecutionFunctionAllocator;
-		LinearAllocator<MaxPassNodeAllocationSize> m_passNodeAllocator;
+		LinearAllocator<> m_passExecutionFunctionAllocator;
+		LinearAllocator<> m_passNodeAllocator;
 
 		uint32_t m_numPasses = 0;
 		Vector<DestructorHelper> m_passDestructors;

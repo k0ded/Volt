@@ -27,10 +27,7 @@ namespace Volt::RHI
 		RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const override;
 
 		RefPtr<StorageBuffer> CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const override;
-		RefPtr<UniformBuffer> CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const override;
-
-		RefPtr<DescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const override;
-		RefPtr<BindlessDescriptorTable> CreateBindlessDescriptorTable(const uint64_t framesInFlight) const override;
+		RefPtr<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData) const override;
 
 		RefPtr<DeviceQueue> CreateDeviceQueue(const DeviceQueueCreateInfo& createInfo) const override;
 		RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const override;
@@ -56,7 +53,7 @@ namespace Volt::RHI
 		RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const override;
 
 		RefPtr<Event> CreateEvent(const EventCreateInfo& createInfo) const override;
-		RefPtr<Fence> CreateFence(const FenceCreateInfo& createInfo) const override;
+		RefPtr<Fence> CreateFence() const override;
 		RefPtr<Semaphore> CreateSemaphore(const SemaphoreCreateInfo& createInfo) const override;
 	
 		RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const override;
@@ -66,7 +63,8 @@ namespace Volt::RHI
 		void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) override;
 		void DestroyResource(std::function<void()>&& function) override;
 		void RequestApplicationClose() override;
-		void Update() override;
+		void BeginFrame() override;
+		void EndFrame() override;
 		void FlushResourceDeletionQueue() override;
 
 	private:

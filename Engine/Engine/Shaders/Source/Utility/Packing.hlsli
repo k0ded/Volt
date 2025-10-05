@@ -51,20 +51,6 @@ float3 decode_tangent(float3 normal, float diamond_tangent)
     return packed_tangent.x * t1 + packed_tangent.y * t2;
 }
 
-const float3 DecodeNormal(uint normalInt)
-{
-    uint2 octIntNormal;
-    
-    octIntNormal.x = normalInt & 0xFF;
-    octIntNormal.y = (normalInt >> 8) & 0xFF;
-    
-    float2 octNormal = 0.f;
-    octNormal.x = float(octIntNormal.x) / 255.f;
-    octNormal.y = float(octIntNormal.y) / 255.f;
-    
-    return OctNormalDecode(octNormal);
-}
-
 const float3 DecodeTangent(float3 normal, float tangentFloat)
 {
     return decode_tangent(normal, tangentFloat);

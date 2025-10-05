@@ -1,7 +1,6 @@
 #include "rcpch.h"
 
 #include "RenderCore/Shader/PipelineStateCache.h"
-#include "RenderCore/DescriptorTableCache.h"
 
 #include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -112,7 +111,6 @@ namespace Volt
 			{
 				if (computePipeline->GetShader() == shader)
 				{
-					DescriptorTableCache::Get().FlushDescriptorTableCacheForPipeline(computePipeline->GetHash());
 					computePipeline->Invalidate();
 				}
 			}
@@ -126,7 +124,6 @@ namespace Volt
 				{
 					if (pipelineShader == shader)
 					{
-						DescriptorTableCache::Get().FlushDescriptorTableCacheForPipeline(renderPipeline->GetHash());
 						renderPipeline->Invalidate();
 						break;
 					}

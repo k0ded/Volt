@@ -1,6 +1,10 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
+#include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
+
+#include <RHIModule/Synchronization/Fence.h>
+
 #include <RHIModule/Buffers/CommandBuffer.h>
 
 struct VkCommandBuffer_T;
@@ -51,8 +55,7 @@ namespace Volt::RHI
 		void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) override;
 		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer, const IndexType indexType) override;
 
-		void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) override;
-		void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) override;
+		void BindShaderBindings(const ShaderBindingMap& shaderBindingsMap) override;
 
 		void BeginRendering(const RenderingInfo& renderingInfo) override;
 		void EndRendering() override;
@@ -82,6 +85,8 @@ namespace Volt::RHI
 
 		void UploadTextureData(RawPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData) override;
 
+		bool HasFinishedExecution() const override;
+
 		const QueueType GetQueueType() const override;
 		const CommandBufferLevel GetCommandBufferLevel() const override;
 
@@ -96,6 +101,7 @@ namespace Volt::RHI
 		friend class VulkanDescriptorTable;
 		friend class VulkanDescriptorBufferTable;
 		friend class VulkanBindlessDescriptorTable;
+		friend class VulkanDeviceQueue;
 
 		inline static constexpr uint32_t MAX_QUERIES = 64;
 
@@ -109,6 +115,9 @@ namespace Volt::RHI
 		void BeginSecondaryInternal(bool oneTimeSubmit);
 
 		void ClearCurrentPipeline();
+
+		VkPipelineLayout_T* GetActivePipelineLayout();
+		const DescriptorSetLayoutBuilder::DescriptorSets& GetActivePipelineDescriptorSets();
 
 		struct CommandBufferData
 		{
@@ -136,6 +145,7 @@ namespace Volt::RHI
 		RawPtr<RenderPipeline> m_currentRenderPipeline;
 		RawPtr<ComputePipeline> m_currentComputePipeline;
 		RawPtr<RayTracingPipeline> m_currentRayTracingPipeline;
+		RefPtr<Fence> m_submissionFence;
 
 		// Secondary command buffer
 		CommandBufferLevel m_commandBufferLevel = CommandBufferLevel::Primary;

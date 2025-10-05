@@ -39,7 +39,7 @@ namespace Volt::RHI
 		}
 
 		// Make sure buffer always contains transfer source and transfer dest
-		m_desc.usage |= BufferUsage::TransferSrc | BufferUsage::TransferDst;
+		m_desc.usage |= BufferUsage::TransferSrc | BufferUsage::TransferDst | BufferUsage::DeviceAddress;
 
 		Invalidate(desc.elementSize * desc.count);
 		SetName(desc.debugName);

@@ -4,6 +4,8 @@
 #include "Volt-Renderer/RayTracing/RayTracingSceneGeometry.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 
+#include <RenderCore/CommandBufferPool.h>
+
 #include <EntitySystem/EntityScene.h>
 #include <EntitySystem/EntityHelper.h>
 
@@ -17,11 +19,8 @@ namespace Volt
 	RayTracingScene::RayTracingScene(EntityScene* scene)
 		: m_scene(scene)
 	{
-		RHI::FenceCreateInfo fenceInfo{};
-		fenceInfo.createSignaled = true;
-
-		m_buildFence = RHI::Fence::Create(fenceInfo);
-		m_updateFence = RHI::Fence::Create(fenceInfo);
+		m_buildFence = RHI::Fence::Create();
+		m_updateFence = RHI::Fence::Create();
 	}
 
 	void RayTracingScene::RebuildAccelerationStructure()
@@ -80,7 +79,9 @@ namespace Volt
 
 		m_accelerationStructure = RHI::AccelerationStructure::Create(asCreateInfo);
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		RHI::AccelerationStructureBuildGeometryInfo buildGeometryInfo{};
@@ -103,8 +104,6 @@ namespace Volt
 		commandBuffer->End();
 
 		m_buildFence->WaitUntilSignaled();
-		m_buildFence->Reset();
-
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, m_buildFence);
 
 		// #TODO_Ivar: Remove when design is finalized
@@ -147,7 +146,9 @@ namespace Volt
 			m_instancesBuffer->GetResource()->Unmap();
 		}
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		RHI::AccelerationStructureBuildGeometryInfo buildGeometryInfo{};
@@ -174,8 +175,6 @@ namespace Volt
 		commandBuffer->End();
 		
 		m_updateFence->WaitUntilSignaled();
-		m_updateFence->Reset();
-		
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, m_updateFence);
 
 		m_updateFence->WaitUntilSignaled();

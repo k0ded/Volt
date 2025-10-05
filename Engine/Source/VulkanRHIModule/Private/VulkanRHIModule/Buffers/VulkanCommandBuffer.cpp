@@ -7,22 +7,24 @@
 #include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
-#include "VulkanRHIModule/Graphics/VulkanSwapchain.h"
+#include "VulkanRHIModule/Graphics/VulkanGraphicsContext.h"
 
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
+#include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
+#include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
 
-#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorTable.h"
-#include "VulkanRHIModule/Descriptors/VulkanDescriptorTable.h"
+#include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 
 #include "VulkanRHIModule/Images/VulkanImage.h"
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
-#include "VulkanRHIModule/Synchronization/VulkanEvent.h"
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
+
+#include <RHIModule/Descriptors/ShaderBindingMap.h>
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -35,11 +37,12 @@
 
 #include <RHIModule/Images/ImageView.h>
 
+#include <RHIModule/Shader/ShaderCommon.h>
+
 #include <RHIModule/Core/Profiling.h>
 #include <RHIModule/Core/RenderingInfo.h>
-#include <RHIModule/RHIModule.h>
-#include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/RHIFeatures.h>
+#include <RHIModule/RHIModule.h>
 
 #include <RHIModule/RayTracing/AccelerationStructure.h>
 
@@ -293,6 +296,18 @@ namespace Volt::RHI
 			}
 
 			return size;
+		}
+
+		inline VkImageLayout GetImageLayoutFromDescriptorType(VkDescriptorType descriptorType)
+		{
+			switch (descriptorType)
+			{
+				case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE: return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: return VK_IMAGE_LAYOUT_GENERAL;
+			}
+
+			return VK_IMAGE_LAYOUT_UNDEFINED;
 		}
 	}
 
@@ -554,8 +569,8 @@ namespace Volt::RHI
 
 		for (size_t i = 0; i < vertexBuffers.size(); i++)
 		{
-			vkBuffers.emplace_back() = vertexBuffers[i]->GetHandle<VkBuffer>();
-			offsets.emplace_back(0u);
+			vkBuffers.emplace_back() = vertexBuffers[i].buffer->GetHandle<VkBuffer>();
+			offsets.emplace_back(vertexBuffers[i].offset);
 		}
 
 		vkCmdBindVertexBuffers(m_commandBufferData.commandBuffer, firstBinding, static_cast<uint32_t>(vkBuffers.size()), vkBuffers.data(), offsets.data());
@@ -565,36 +580,6 @@ namespace Volt::RHI
 	{
 		constexpr VkDeviceSize offset = 0;
 		vkCmdBindIndexBuffer(m_commandBufferData.commandBuffer, indexBuffer->GetHandle<VkBuffer>(), offset, indexType == IndexType::UInt16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
-	}
-
-	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable)
-	{
-		VulkanDescriptorTable& vulkanTable = descriptorTable->AsRef<VulkanDescriptorTable>();
-		vulkanTable.PrepareForRender();
-
-		const VkPipelineBindPoint bindPoint = static_cast<VkPipelineBindPoint>(vulkanTable.GetRelatedBindPoint());
-		const Map<uint32_t, VkDescriptorSet>& descriptorSets = vulkanTable.GetDescriptorSets();
-		VkPipelineLayout pipelineLayout = vulkanTable.GetRelatedPipelineLayout();
-
-		for (const auto& [setIndex, descriptorSet] : descriptorSets)
-		{
-			vkCmdBindDescriptorSets(m_commandBufferData.commandBuffer, bindPoint, pipelineLayout, setIndex, 1, &descriptorSet, 0, nullptr);
-		}
-
-		if (RHI::RHICanUseRayTracing())
-		{
-			RefPtr<RayTracingResourceTable> rtResourceTable = vulkanTable.GetRayTracingResourceTable();
-			if (rtResourceTable)
-			{
-				VkDescriptorSet descriptorSet = rtResourceTable->As<VulkanRayTracingResourceTable>()->GetDescriptorSet();
-				vkCmdBindDescriptorSets(m_commandBufferData.commandBuffer, bindPoint, pipelineLayout, RayTracingTableDescriptorSetManager::Set, 1, &descriptorSet, 0, nullptr);
-			}
-		}
-	}
-
-	void VulkanCommandBuffer::BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure)
-	{
-		descriptorTable->AsRef<VulkanBindlessDescriptorTable>().Bind(*this, constantsBuffer, offsetIndex, stride, accelerationStructure);
 	}
 
 	void VulkanCommandBuffer::BeginRendering(const RenderingInfo& renderingInfo)
@@ -1340,9 +1325,6 @@ namespace Volt::RHI
 
 		VT_VK_CHECK(vkAllocateCommandBuffers(device->GetHandle<VkDevice>(), &allocInfo, &m_commandBufferData.commandBuffer));
 
-		FenceCreateInfo fenceInfo{};
-		fenceInfo.createSignaled = true;
-
 		m_hasTimestampSupport = false; //GraphicsContext::GetPhysicalDevice()->AsRef<VulkanPhysicalGraphicsDevice>().GetProperties().limits.timestampComputeAndGraphics;
 		if (m_hasTimestampSupport)
 		{
@@ -1359,9 +1341,14 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([commandPool = m_commandBufferData.commandPool, timestampPool = m_timestampQueryPool, level = m_commandBufferLevel]()
+		RHIModule::GetInstance().DestroyResource([commandPool = m_commandBufferData.commandPool, timestampPool = m_timestampQueryPool, level = m_commandBufferLevel, submissionFence = m_submissionFence]()
 		{
 			auto device = GraphicsContext::GetDevice();
+
+			if (submissionFence)
+			{
+				submissionFence->WaitUntilSignaled();
+			}
 
 			vkDestroyCommandPool(device->GetHandle<VkDevice>(), commandPool, VT_VULKAN_ALLOCATOR);
 			
@@ -1465,5 +1452,255 @@ namespace Volt::RHI
 		m_currentRayTracingPipeline.Reset();
 		m_currentComputePipeline.Reset();
 		m_currentRenderPipeline.Reset();
+	}
+
+	void VulkanCommandBuffer::BindShaderBindings(const ShaderBindingMap& shaderBindingsMap)
+	{
+		VT_PROFILE_FUNCTION();
+
+		const auto& shaderBindings = shaderBindingsMap.GetBindings();
+
+		struct DescriptorInfo
+		{
+			VkDescriptorGetInfoEXT vkInfo;
+			uint64_t offset;
+			uint64_t descriptorSize;
+		};
+
+		struct BindingInfo
+		{
+			ShaderStage shaderStage;
+			uint32_t setIndex;
+			uint64_t offset;
+		};
+
+		InlineVector<DescriptorInfo, ShaderBindingMap::NumMaxBindings> descriptorInfo;
+		InlineVector<VkDescriptorAddressInfoEXT, ShaderBindingMap::NumMaxBindings> bufferDescriptors;
+		InlineVector<VkDescriptorImageInfo, ShaderBindingMap::NumMaxBindings> imageDescriptors;
+		InlineVector<VkSampler, ShaderBindingMap::NumMaxBindings> samplers;
+
+		InlineVector<BindingInfo, GetNumShaderStages()> perShaderStageSetOffsets;
+
+		const DescriptorSetLayoutBuilder::DescriptorSets& activePipelineDescriptorSets = GetActivePipelineDescriptorSets();
+
+		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
+		VulkanDescriptorHeap& descriptorHeap = vkGraphicsContext.GetDescriptorHeap();
+
+		for (const auto& [shaderStage, bindings] : shaderBindings)
+		{
+			const uint32_t shaderStageSetIndex = GetDescriptorSetIndexFromShaderStage(shaderStage);
+
+			BindingInfo& bindingInfo = perShaderStageSetOffsets.emplace_back();
+			bindingInfo.offset = descriptorHeap.AllocateDescriptorSet(activePipelineDescriptorSets.descriptorSetLayoutSizes.at(shaderStageSetIndex));
+			bindingInfo.shaderStage = shaderStage;
+			bindingInfo.setIndex = GetDescriptorSetIndexFromShaderStage(shaderStage);
+
+			for (const auto& binding : bindings)
+			{
+				DescriptorInfo& newDescriptor = descriptorInfo.emplace_back();
+				newDescriptor.vkInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+				newDescriptor.vkInfo.pNext = nullptr;
+				newDescriptor.offset = activePipelineDescriptorSets.descriptorSetLayoutBindings.at(shaderStageSetIndex).at(binding.bindingIndex).offset + bindingInfo.offset;
+
+				switch (binding.registerType)
+				{
+					case ShaderRegisterType::CBV:
+					{
+						const uint64_t offset = binding.uniformBufferSize > 0 ? binding.uniformBufferOffset : binding.bufferView->GetDesc().offset;
+						const uint64_t size = binding.uniformBufferSize > 0 ? binding.uniformBufferSize : binding.bufferView->GetDesc().size;
+
+						VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
+						addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
+						addressInfo.pNext = nullptr;
+						addressInfo.address = binding.bufferView->GetDeviceAddress() + offset;
+						addressInfo.range = size;
+						addressInfo.format = VK_FORMAT_UNDEFINED;
+
+						newDescriptor.vkInfo.data.pUniformBuffer = &addressInfo;
+						newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+						newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.uniformBufferDescriptorSize;
+						break;
+					}
+					case ShaderRegisterType::Sampler:
+					{
+						VkSampler& sampler = samplers.emplace_back() = binding.samplerState->GetHandle<VkSampler>();
+
+						newDescriptor.vkInfo.data.pSampler = &sampler;
+						newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+						newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.samplerDescriptorSize;
+						break;
+					}
+					case ShaderRegisterType::SRV:
+					{
+						switch (binding.resourceType)
+						{
+							case ShaderResourceType::StructuredBuffer:
+							{
+								VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
+								addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
+								addressInfo.pNext = nullptr;
+								addressInfo.address = binding.bufferView->GetDeviceAddress() + binding.bufferView->GetDesc().offset;
+								addressInfo.range = binding.bufferView->GetDesc().size;
+								addressInfo.format = VK_FORMAT_UNDEFINED;
+
+								newDescriptor.vkInfo.data.pStorageBuffer = &addressInfo;
+								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageBufferDescriptorSize;
+								break;
+							};
+							case ShaderResourceType::TexelBuffer:
+							{
+								VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
+								addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
+								addressInfo.pNext = nullptr;
+								addressInfo.address = binding.bufferView->GetDeviceAddress() + binding.bufferView->GetDesc().offset;
+								addressInfo.range = binding.bufferView->GetDesc().size;
+								addressInfo.format = Utility::VoltToVulkanFormat(binding.bufferView->GetDesc().bufferFormat);
+
+								newDescriptor.vkInfo.data.pUniformTexelBuffer = &addressInfo;
+								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.uniformTexelBufferDescriptorSize;
+								break;
+							}
+							case ShaderResourceType::Texture:
+							{
+								VkDescriptorImageInfo& imageDescriptor = imageDescriptors.emplace_back();
+								imageDescriptor.imageLayout = Utility::GetImageLayoutFromDescriptorType(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+								imageDescriptor.imageView = binding.imageView->GetHandle<VkImageView>();
+
+								newDescriptor.vkInfo.data.pSampledImage = &imageDescriptor;
+								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.sampledImageDescriptorSize;
+								break;
+							}
+							case ShaderResourceType::AccelerationStructure:
+							{
+								newDescriptor.vkInfo.data.accelerationStructure = binding.accelerationStructure->GetDeviceAddress();
+								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.accelerationStructureDescriptorSize;
+								break;
+							}
+						}
+						break;
+					}
+
+					case ShaderRegisterType::UAV:
+					{
+						switch (binding.resourceType)
+						{
+							case ShaderResourceType::StructuredBuffer:
+							{
+								VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
+								addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
+								addressInfo.pNext = nullptr;
+								addressInfo.address = binding.bufferView->GetDeviceAddress() + binding.bufferView->GetDesc().offset;
+								addressInfo.range = binding.bufferView->GetDesc().size;
+								addressInfo.format = VK_FORMAT_UNDEFINED;
+
+								newDescriptor.vkInfo.data.pStorageBuffer = &addressInfo;
+								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageBufferDescriptorSize;
+								break;
+							}
+
+							case ShaderResourceType::TexelBuffer:
+							{
+								VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
+								addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
+								addressInfo.pNext = nullptr;
+								addressInfo.address = binding.bufferView->GetDeviceAddress() + binding.bufferView->GetDesc().offset;
+								addressInfo.range = binding.bufferView->GetDesc().size;
+								addressInfo.format = Utility::VoltToVulkanFormat(binding.bufferView->GetDesc().bufferFormat);
+
+								newDescriptor.vkInfo.data.pStorageTexelBuffer = &addressInfo;
+								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageTexelBufferDescriptorSize;
+								break;
+							}
+							case ShaderResourceType::Texture:
+							{
+								VkDescriptorImageInfo& imageDescriptor = imageDescriptors.emplace_back();
+								imageDescriptor.imageLayout = Utility::GetImageLayoutFromDescriptorType(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+								imageDescriptor.imageView = binding.imageView->GetHandle<VkImageView>();
+
+								newDescriptor.vkInfo.data.pStorageImage = &imageDescriptor;
+								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageImageDescriptorSize;
+								break;
+							}
+						}
+						break;
+					}
+				}
+			}
+		}
+
+		uint8_t* descriptorHeapPointer = descriptorHeap.GetHeapPointer();
+
+		VkDevice vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();
+
+		for (const DescriptorInfo& descriptor : descriptorInfo)
+		{
+			uint8_t* outPtr = descriptorHeapPointer + descriptor.offset;
+			vkGetDescriptorEXT(vkDevice, &descriptor.vkInfo, descriptor.descriptorSize, outPtr);
+		}
+
+		VkDescriptorBufferBindingInfoEXT vkBindingInfo;
+		vkBindingInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
+		vkBindingInfo.pNext = nullptr;
+		vkBindingInfo.address = descriptorHeap.GetDeviceAddress();
+		vkBindingInfo.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+		vkCmdBindDescriptorBuffersEXT(m_commandBufferData.commandBuffer, 1, &vkBindingInfo);
+
+		VkPipelineBindPoint bindPoint = m_currentRenderPipeline ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
+		VkPipelineLayout activePipelineLayout = GetActivePipelineLayout();
+
+		const uint32_t bufferIndex = 0;
+		const uint64_t descriptorHeapBaseOffset = descriptorHeap.GetBaseOffset();
+
+		for (const BindingInfo& bindingInfo : perShaderStageSetOffsets)
+		{
+			const uint64_t offset = bindingInfo.offset + descriptorHeapBaseOffset;
+			vkCmdSetDescriptorBufferOffsetsEXT(m_commandBufferData.commandBuffer, bindPoint, activePipelineLayout, bindingInfo.setIndex, 1, &bufferIndex, &offset);
+		}
+	}
+
+	VkPipelineLayout_T* VulkanCommandBuffer::GetActivePipelineLayout()
+	{
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+
+		if (m_currentRenderPipeline)
+		{
+			return m_currentRenderPipeline->As<VulkanRenderPipeline>()->GetPipelineLayout();
+		}
+		else
+		{
+			return m_currentComputePipeline->As<VulkanComputePipeline>()->GetPipelineLayout();
+		}
+	}
+
+	const DescriptorSetLayoutBuilder::DescriptorSets& VulkanCommandBuffer::GetActivePipelineDescriptorSets()
+	{
+		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+
+		if (m_currentRenderPipeline)
+		{
+			return m_currentRenderPipeline->As<VulkanRenderPipeline>()->GetDescriptorSets();
+		}
+		else
+		{
+			return m_currentComputePipeline->As<VulkanComputePipeline>()->GetDescriptorSets();
+		}
+	}
+
+	bool VulkanCommandBuffer::HasFinishedExecution() const
+	{
+		if (m_submissionFence)
+		{
+			return m_submissionFence->IsSignaled();
+		}
+
+		return true;
 	}
 }

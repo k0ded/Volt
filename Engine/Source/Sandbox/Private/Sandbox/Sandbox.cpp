@@ -156,15 +156,6 @@ void Sandbox::OnAttach()
 
 	InitializeModals();
 
-	//constexpr int64_t discordAppId = 1108502963447681106;
-
-	//DiscordPlugin::GetInstance().GetManager().SetApplicationID(discordAppId);
-	//DiscordPlugin::GetInstance().GetManager().SetLargeImage("icon_volt");
-	//DiscordPlugin::GetInstance().GetManager().SetLargeText("Volt");
-	//DiscordPlugin::GetInstance().GetManager().SetActivityType(ActivityType::Playing);
-	//DiscordPlugin::GetInstance().GetManager().UpdateChanges();
-
-
 	DirtySaveCustomization entityDescSaveCustomization;
 	entityDescSaveCustomization.CanSaveAsset = [](const Volt::AssetHandle& handle, std::string& outCantReason) -> bool
 	{
@@ -567,21 +558,6 @@ bool Sandbox::LoadScene(Volt::OnSceneTransitionEvent& e)
 	TransitionToNewScene();
 
 	return true;
-}
-
-bool Sandbox::CheckForUpdateNavMesh(Volt::Entity entity)
-{
-	// todo: reimplement when making navmesh
-	/*for (auto child : entity.GetChildren())
-	{
-		if (CheckForUpdateNavMesh(child))
-		{
-			return true;
-		}
-	}
-
-	return (entity.HasComponent<Volt::NavMeshComponent>() || entity.HasComponent<Volt::NavLinkComponent>()) && UserSettingsManager::GetSettings().navmeshBuildSettings.useAutoBaking;*/
-	return false;
 }
 
 void Sandbox::TransitionToNewScene()

@@ -176,7 +176,7 @@ namespace Math
 	}
 
 	template<typename T>
-	VT_INLINE T DivideRoundUp(const T& numerator, const T& denominator)
+	constexpr VT_INLINE T DivideRoundUp(const T& numerator, const T& denominator)
 	{
 		return (numerator + denominator - T{ 1 }) / denominator;
 	}

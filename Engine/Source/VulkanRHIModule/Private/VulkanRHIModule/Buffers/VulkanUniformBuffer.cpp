@@ -17,31 +17,31 @@
 
 namespace Volt::RHI
 {
-	VulkanUniformBuffer::VulkanUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name)
-		: m_size(size), m_name(name)
+	VulkanUniformBuffer::VulkanUniformBuffer(const UniformBufferDesc& desc, const void* initialData)
+		: m_desc(desc)
 	{
 		VT_PROFILE_FUNCTION();
 
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
-		const uint64_t alignedSize = Utility::Align(size, deviceProperties.limits.minUniformBufferOffsetAlignment);
+		const uint64_t alignedSize = Utility::Align(desc.size, deviceProperties.limits.minUniformBufferOffsetAlignment);
 
-		BufferDesc desc{};
-		desc.count = count;
-		desc.elementSize = alignedSize;
-		desc.usage = BufferUsage::UniformBuffer;
-		desc.memoryUsage = MemoryUsage::CPUToGPU;
-		desc.debugName = m_name;
+		BufferDesc bufferDesc{};
+		bufferDesc.count = 1;
+		bufferDesc.elementSize = alignedSize;
+		bufferDesc.usage = BufferUsage::UniformBuffer | BufferUsage::DeviceAddress;
+		bufferDesc.memoryUsage = MemoryUsage::CPUToGPU;
+		bufferDesc.debugName = desc.debugName;
 
-		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(desc);
+		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferDesc);
 
-		if (data)
+		if (initialData)
 		{
-			SetData(data, size);
+			SetData(initialData, desc.size);
 		}
 
-		SetName(name);
+		SetName(desc.debugName);
 	}
 
 	VulkanUniformBuffer::~VulkanUniformBuffer()
@@ -69,13 +69,13 @@ namespace Volt::RHI
 	const uint32_t VulkanUniformBuffer::GetSize() const
 	{
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
-		return Utility::Align(m_size, deviceProperties.limits.minUniformBufferOffsetAlignment);
+		return Utility::Align(m_desc.size, deviceProperties.limits.minUniformBufferOffsetAlignment);
 	}
 
 	void VulkanUniformBuffer::SetData(const void* data, const uint32_t size)
 	{
 		void* bufferData = m_allocation->Map<void>();
-		memcpy_s(bufferData, m_size, data, size);
+		memcpy_s(bufferData, m_desc.size, data, size);
 		m_allocation->Unmap();
 	}
 
@@ -98,12 +98,12 @@ namespace Volt::RHI
 			Volt::RHI::vkSetDebugUtilsObjectNameEXT(device->GetHandle<VkDevice>(), &nameInfo);
 		}
 
-		m_name = name;
+		m_desc.debugName = name;
 	}
 
 	std::string_view VulkanUniformBuffer::GetName() const
 	{
-		return m_name;
+		return m_desc.debugName;
 	}
 
 	const uint64_t VulkanUniformBuffer::GetDeviceAddress() const
@@ -119,7 +119,7 @@ namespace Volt::RHI
 	void* VulkanUniformBuffer::MapInternal(const uint32_t index)
 	{
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
-		const uint32_t offset = Utility::Align(m_size, deviceProperties.limits.minUniformBufferOffsetAlignment) * index;
+		const uint32_t offset = Utility::Align(m_desc.size, deviceProperties.limits.minUniformBufferOffsetAlignment) * index;
 
 		uint8_t* bytePtr = m_allocation->Map<uint8_t>();
 		return &bytePtr[offset];

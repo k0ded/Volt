@@ -4,6 +4,12 @@
 
 namespace Volt
 {
+
+	RenderGraphBlackboard::RenderGraphBlackboard()
+	{
+		m_allocator.Reserve(BlackboardSize);
+	}
+
 	RenderGraphBlackboard::~RenderGraphBlackboard()
 	{
 		for (auto& [typeIndex, typeInfo] : m_typeInfos)

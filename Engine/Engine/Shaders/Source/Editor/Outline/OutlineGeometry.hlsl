@@ -4,7 +4,7 @@
 struct Vertex
 {
     [[vt::inputIndex(0)]] float3 position : POSITION;
-    uint instanceId : SV_InstanceID;
+    [[vt::instance]] uint primitiveIndex : PRIMITIVEINDEX;
 };
 
 struct VSToPS
@@ -12,11 +12,9 @@ struct VSToPS
     float4 position : SV_Position;
 };
 
-Buffer<uint> PrimitiveDrawDataIndirection;
-
 VSToPS MainVS(in Vertex input)
 {
-    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[PrimitiveDrawDataIndirection[input.instanceId]];
+    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[input.primitiveIndex];
 
     VSToPS result;
     result.position = mul(View.viewProjection, float4(primitiveData.transform.GetWorldPosition(input.position), 1.f));

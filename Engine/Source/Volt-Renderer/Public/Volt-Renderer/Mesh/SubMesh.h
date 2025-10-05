@@ -12,7 +12,6 @@ namespace Volt
 {
 	struct VTR_API SubMesh
 	{
-		SubMesh(uint32_t aMaterialIndex, uint32_t aVertexCount, uint32_t aIndexCount, uint32_t aVertexStartOffset, uint32_t aIndexStartOffset);
 		SubMesh() = default;
 
 		void GenerateHash();
@@ -30,11 +29,6 @@ namespace Volt
 		uint32_t indexCount = 0;
 		uint32_t vertexStartOffset = 0;
 		uint32_t indexStartOffset = 0;
-
-		uint32_t meshletStartOffset = 0;
-		uint32_t meshletCount = 0;
-		uint32_t meshletIndexStartOffset = 0;
-		uint32_t meshletVertexStartOffset = 0;
 
 		glm::mat4 transform = { 1.f };
 		std::string name;

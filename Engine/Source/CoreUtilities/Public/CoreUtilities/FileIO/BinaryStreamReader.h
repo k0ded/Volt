@@ -4,7 +4,6 @@
 #include "CoreUtilities/Buffer/Buffer.h"
 #include "CoreUtilities/Containers/Vector.h"
 #include "CoreUtilities/Containers/Map.h"
-#include "CoreUtilities/Allocators/InlineAllocator.h"
 
 #include <fstream>
 
@@ -60,7 +59,7 @@ public:
 	void Read(void* data);
 	
 	//note: this will override any data in the destination vector
-	template<typename AllocatorType = HeapAllocator>
+	template<typename AllocatorType = DefaultHeapAllocator>
 	void ReadBytesRaw(Vector<uint8_t, AllocatorType>& destination, size_t numBytes);
 
 	void ResetHead();

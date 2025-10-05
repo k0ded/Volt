@@ -83,7 +83,7 @@ void LaunchProjectUpgradeClient(const std::filesystem::path& projectPath)
 
 	if (!FileSystem::Exists(projectUpgradeClientFilepath))
 	{
-		throw std::runtime_error(std::format("Could not find the project upgrade clien at '{0}'", projectUpgradeClientFilepath.string()));
+		throw std::runtime_error(std::format("Could not find the project upgrade client at '{0}'", projectUpgradeClientFilepath.string()));
 		return;
 	}
 

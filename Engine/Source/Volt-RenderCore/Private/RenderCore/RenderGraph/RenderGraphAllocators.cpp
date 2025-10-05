@@ -4,6 +4,11 @@
 
 namespace Volt
 {
+	RenderGraphResourceAllocator::RenderGraphResourceAllocator()
+	{
+		m_allocator.Reserve(MaxResourceNodeAllocationSize);
+	}
+
 	RenderGraphResourceAllocator::~RenderGraphResourceAllocator()
 	{
 		for (auto& destructor : m_nodeDestructors)
@@ -40,6 +45,12 @@ namespace Volt
 		m_passNodeAllocator(std::move(other.m_passNodeAllocator)),
 		m_passDestructors(std::move(other.m_passDestructors))
 	{
+	}
+
+	RenderGraphPassAllocator::RenderGraphPassAllocator()
+	{
+		m_passExecutionFunctionAllocator.Reserve(MaxExecutionFunctionAllocationSize);
+		m_passNodeAllocator.Reserve(MaxPassNodeAllocationSize);
 	}
 
 	RenderGraphPassAllocator& RenderGraphPassAllocator::operator=(RenderGraphPassAllocator&& other) noexcept

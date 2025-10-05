@@ -4,6 +4,8 @@
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
 
+#include "Volt-Renderer/MeshPassProcessor.h"
+
 #include <RenderCore/Resources/GrowingGPUBuffer.h>
 #include <RHIModule/RayTracing/RayTracingResuorceTable.h>
 #include <CoreUtilities/Containers/Map.h>
@@ -66,6 +68,13 @@ namespace Volt
 		UUID64 AddLightInstance(EntityID entityId, const SceneLightDescription& description);
 		void RemoveLightInstance(UUID64 id);
 
+		void OnRenderPrimitiveAdded(const RenderPrimitiveData& renderPrimitive);
+		void OnRenderPrimitiveRemoved(const RenderPrimitiveData& renderPrimitive);
+		UUID32 RegisterOnRenderPrimitiveAddedCallback(std::function<void(const RenderPrimitiveData& renderPrimitive)>&& callback);
+		UUID32 RegisterOnRenderPrimitiveRemovedCallback(std::function<void(const RenderPrimitiveData& renderPrimitive)>&& callback);
+		void UnregisterOnRenderPrimitiveAddedCallback(UUID32 callbackId);
+		void UnregisterOnRenderPrimitiveRemovedCallback(UUID32 callbackId);
+
 		VT_INLINE VT_NODISCARD uint32_t GetNumRenderPrimitives() const { return static_cast<uint32_t>(m_renderPrimitives.size()); }
 		VT_INLINE VT_NODISCARD uint32_t GetIndividualMeshCount() const { return m_currentIndividualMeshCount; }
 		VT_INLINE VT_NODISCARD uint32_t GetIndividualMaterialCount() const { return static_cast<uint32_t>(m_individualMaterials.size()); }
@@ -119,6 +128,8 @@ namespace Volt
 		void BuildPerMeshIndirectDrawCommands(RenderGraph& renderGraph);
 
 		void UpdateInvalidLights(RenderGraph& renderGraph);
+
+		void VisualizeRenderPrimitives();
 
 		bool OnPreRenderEvent(AppPreRenderEvent& event);
 
@@ -184,6 +195,13 @@ namespace Volt
 			size_t m_nextIndex = 0;
 		};
 
+		template<typename Func>
+		struct Callback
+		{
+			Func callback;
+			UUID32 id;
+		};
+
 		Ref<RayTracingScene> m_rayTracingScene;
 
 		Vector<UUID64> m_animatedRenderObjects;
@@ -207,6 +225,9 @@ namespace Volt
 		std::mutex m_meshUpdateMutex;
 
 		RefPtr<RHI::RayTracingResourceTable> m_rayTracingResourceTable;
+
+		Vector<Callback<std::function<void(const RenderPrimitiveData&)>>> m_onRenderPrimitiveAddedCallbacks;
+		Vector<Callback<std::function<void(const RenderPrimitiveData&)>>> m_onRenderPrimitiveRemovedCallbacks;
 
 		// Scene Primitives
 		Vector<PrimitiveDrawData> m_primitiveDrawData;

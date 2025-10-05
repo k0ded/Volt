@@ -1,11 +1,11 @@
 #include "sbpch.h"
 
 #include "Sandbox/SceneRendererExtensions/ObjectIDSceneRendererExtension.h"
+#include "Sandbox/SceneRendererExtensions/ObjectIDPassMeshProcessor.h"
 
 #include <Volt-Renderer/SceneRendererStructs.h>
 #include <Volt-Renderer/RendererCommon.h>
 #include <Volt-Renderer/GPUScene.h>
-#include <Volt-Renderer/Mesh/MeshRenderer.h>
 #include <Volt-Renderer/RenderView.h>
 #include <Volt-Renderer/RenderScene.h>
 #include <Volt-Renderer/SceneRendererRenderGraphData.h>
@@ -13,30 +13,13 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/ShaderParameterStruct.h>
-#include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
 
 using namespace Volt;
 
-struct ObjectIDVS : public GlobalShader
-{
-	DECLARE_GLOBAL_SHADER(ObjectIDVS)
-	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-		SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
-		SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
-	END_SHADER_PARAMETER_STRUCT()
-};
 REGISTER_SHADER(ObjectIDVS, "Engine/Shaders/Source/Editor/ObjectID.hlsl", "MainVS", Vertex);
-
-struct ObjectIDPS : public GlobalShader
-{
-	DECLARE_GLOBAL_SHADER(ObjectIDPS)
-	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-		RG_RENDER_TARGETS()
-	END_SHADER_PARAMETER_STRUCT()
-};
 REGISTER_SHADER(ObjectIDPS, "Engine/Shaders/Source/Editor/ObjectID.hlsl", "MainPS", Pixel);
 
 BEGIN_SHADER_PARAMETER_STRUCT(ObjectIDParameters)
@@ -51,9 +34,6 @@ Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& r
 	RHI::RenderPipelineCreateInfo pipelineInfo;
 	pipelineInfo.depthMode = RHI::DepthMode::Read;
 
-	MeshRenderer meshRenderer;
-	meshRenderer.BuildRenderCommands(renderGraph, m_renderScene, view.GetCullingInfo(), ShaderMap::Get<ObjectIDVS>(), ShaderMap::Get<ObjectIDPS>(), pipelineInfo);
-
 	RGTextureRef objectIdTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32_UINT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "ObjectID"));
 
 	ObjectIDParameters* passParameters = renderGraph.AllocParameters<ObjectIDParameters>();
@@ -62,10 +42,12 @@ Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& r
 	passParameters->PS.renderTargets.renderTargets[0] = objectIdTexture;
 	passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
 
+	m_meshPassProcessor->PrepareRenderCommands(renderGraph);
+
 	renderGraph.AddPass("Render Object ID",
 		RenderGraphPassFlags::None,
 		passParameters, 
-		[passParameters, view, meshRenderer](RenderContext& context)
+		[passParameters, view, meshPassProcessor = m_meshPassProcessor](RenderContext& context)
 	{
 		BatchedShaderParameters batchedShaderParameters;
 		context.CollectParameters(passParameters, batchedShaderParameters);
@@ -74,11 +56,16 @@ Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& r
 		renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
 		context.BeginRendering(renderingInfo);
-		meshRenderer.Render(context, batchedShaderParameters);
+		meshPassProcessor->ExecuteCommands(context, batchedShaderParameters);
 		context.EndRendering();
 	});
 
 	renderGraph.EnqueueTextureExtraction(objectIdTexture, &m_objectIdImage);
 
 	return prevOutputImage;
+}
+
+void ObjectIDSceneRendererExtension::OnRegistered(Volt::MeshPassProcessorRegistry& meshPassProcessorRegistry)
+{
+	m_meshPassProcessor = meshPassProcessorRegistry.AddProcessor<ObjectIDPassMeshProcessor>();
 }

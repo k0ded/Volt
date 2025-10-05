@@ -24,4 +24,4 @@ VT_DECLARE_ASSET_TYPE_EXPORT(Texture, "{9E8AA137-2364-413C-B4AE-51E0A1E96D9D}"_g
 VT_DECLARE_ASSET_TYPE_EXPORT(EnvironmentTexture, "{C9162CC3-3971-485C-9AA3-2452409F2972}"_guid, VTCORE_API);
 
 VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(TextureSource, (Vector<std::string>{ ".png", ".jpg", ".jpeg", ".tga", ".dds", ".hdr" }), "{6B5BFE19-D38D-4894-AF8B-B5C1167F9D28}"_guid, VTCORE_API);
-VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(MeshSource, (Vector<std::string>{ ".fbx", ".gltf", ".glb" }), "{1E5E401F-80E4-4CEF-B874-DE4699C7B7E8}"_guid, VTCORE_API);
+VT_DECLARE_ASSET_SOURCE_TYPE_EXPORT(MeshSource, (Vector<std::string>{ ".fbx", ".FBX", ".gltf", ".glb" }), "{1E5E401F-80E4-4CEF-B874-DE4699C7B7E8}"_guid, VTCORE_API);

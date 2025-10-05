@@ -57,10 +57,7 @@ float3 EvaluateSpotLight(in LightDrawData light, in BRDFInput brdfInput, float3 
 ///// ----- Directional light ----- /////
 float EvaluateDirectionalShadow(in LightDrawData light, in float4x4 viewMatrix, float3 normal, float3 worldPosition)
 {
-    const uint cascadeIndex = GetCascadeIndexFromWorldPosition(worldPosition, viewMatrix);
-    const float3 shadowMapCoords = GetShadowMapCoords(CascadedDirectionalLightShadowMapping.viewProjections[cascadeIndex], worldPosition);
-    const float result = EvaluateDirectionalShadow_Hard(light, normal, cascadeIndex, shadowMapCoords);
-    return result; 
+    return EvaluateDirectionalShadow_Hard(light, normal, worldPosition);
 }
 
 float3 EvaluateDirectionalLight(in LightDrawData light, in BRDFInput brdfInput, float3 worldPosition)
@@ -77,17 +74,17 @@ float3 EvaluateDirectionalLight(in LightDrawData light, in BRDFInput brdfInput, 
 
     const float NdotD = saturate(dot(brdfInput.N, D));
 
-    float illuminance = light.intensity * NdotD;
+    float illuminance = light.intensity * NdotD; 
 
     float shadow = 1.f;
 
-    //if (light.flags & LightFlags::LF_CastShadows)
-    //{
-    //    shadow = EvaluateDirectionalShadow(light, View.view, brdfInput.N, worldPosition);
-    //}
+    if (light.flags & LightFlags::LF_CastShadows)
+    {
+        shadow = EvaluateDirectionalShadow(light, View.view, brdfInput.N, worldPosition);
+    }
 
     return BRDF(brdfInput, D, L) * light.color * illuminance * shadow;
-} 
+}
 
 ///// ----- IBL ----- /////
 float3 GetSpecularDominantDirection(float3 N, float3 R, float roughness)

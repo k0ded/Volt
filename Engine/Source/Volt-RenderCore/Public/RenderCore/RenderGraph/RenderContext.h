@@ -9,9 +9,11 @@
 #include <RHIModule/Buffers/UniformBuffer.h>
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Core/RenderingInfo.h>
+#include <RHIModule/Synchronization/Fence.h>
+
+#include <RHIModule/Descriptors/ShaderBindingMap.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
-#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt
 {
@@ -33,7 +35,9 @@ namespace Volt
 		struct PerStageShaderParameters
 		{
 			RHI::ShaderStage shaderStage;
+			uint32_t size;
 			RGUniformBufferSRVRef uniformBufferSRV;
+			uint64_t offset;
 			uint8_t* mappedPtr;
 		};
 
@@ -87,7 +91,7 @@ namespace Volt
 		InlineVector<PerStageShaderParameters, 8> AllocatePerStageShaderParameterBuffers(RawPtr<RHI::ComputePipeline> computePipeline);
 
 	private:
-		void BindDescriptorTable();
+		void BindShaderBindings();
 		void AllocatePerStageShaderParameterBuffers();
 
 		template<typename ParameterStruct>
@@ -117,7 +121,8 @@ namespace Volt
 		RawPtr<RHI::RenderPipeline> m_currentRenderPipeline;
 		RawPtr<RHI::ComputePipeline> m_currentComputePipeline;
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
-		RefPtr<RHI::DescriptorTable> m_descriptorTable;
+
+		RHI::ShaderBindingMap m_shaderBindingMap;
 
 		InlineVector<PerStageShaderParameters, 8> m_perStageShaderParameters;
 

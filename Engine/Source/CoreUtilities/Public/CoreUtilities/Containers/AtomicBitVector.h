@@ -1,12 +1,11 @@
 #pragma once
 
 #include "CoreUtilities/Containers/Vector.h"
-#include "CoreUtilities/Allocators/HeapAllocator.h"
 #include "CoreUtilities/Math/Math.h"
 
 #include <atomic>
 
-template<typename IndexType, typename AllocatorType = HeapAllocator>
+template<typename IndexType, typename AllocatorType = DefaultHeapAllocator>
 class AtomicBitVector
 {
 public:

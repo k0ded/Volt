@@ -17,7 +17,6 @@
 #include <RenderCore/DefaultBlendStates.h>
 
 using namespace Volt;
-
 struct EditorGridVS : public GlobalShader
 {
 	DECLARE_GLOBAL_SHADER(EditorGridVS)

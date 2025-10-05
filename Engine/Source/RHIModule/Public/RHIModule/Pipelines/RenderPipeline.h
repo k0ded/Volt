@@ -5,6 +5,7 @@
 #include "RHIModule/Shader/Shader.h"
 
 #include <CoreUtilities/Containers/Array.h>
+#include <CoreUtilities/Containers/ArrayView.h>
 
 namespace Volt::RHI
 {
@@ -38,6 +39,18 @@ namespace Volt::RHI
 		std::string name;
 	};
 
+	struct VertexBufferLayout
+	{
+		struct VertexBufferBinding
+		{
+			BufferLayout layout;
+			uint32_t bindingIndex;
+		};
+
+		Vector<VertexBufferBinding> vertexBuffers;
+		VertexBufferBinding perInstanceVertexBuffer;
+	};
+
 	class VTRHI_API RenderPipeline : public RHIInterface
 	{
 	public:
@@ -45,8 +58,9 @@ namespace Volt::RHI
 		virtual bool IsValid() const = 0;
 		virtual size_t GetHash() const = 0;
 		virtual const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const = 0;
-		virtual const Vector<ShaderParameterMap>& GetShaderParameterMaps() const = 0;
+		virtual ArrayView<ShaderParameterMap> GetShaderParameterMaps() const = 0;
 		virtual const Vector<RefPtr<Shader>>& GetShaders() const = 0;
+		virtual const VertexBufferLayout& GetVertexBufferLayout() const = 0;
 
 		static RefPtr<RenderPipeline> Create(const RenderPipelineCreateInfo& createInfo);
 

@@ -10,12 +10,10 @@ struct VSToPS
     float4 prevPosition : PREV_POSITION;
 };
 
-Buffer<uint> PrimitiveDrawDataIndirection;
-
 VSToPS MainVS(in Vertex input)
 {
-    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[PrimitiveDrawDataIndirection[input.instanceId]];
-    const PrimitiveDrawData prevPrimitiveData = PrevPrimitiveDrawDataBuffer[PrimitiveDrawDataIndirection[input.instanceId]];
+    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[input.primitiveIndex];
+    const PrimitiveDrawData prevPrimitiveData = PrevPrimitiveDrawDataBuffer[input.primitiveIndex];
 
     VSToPS result;
     result.position = mul(View.viewProjection, float4(primitiveData.transform.GetWorldPosition(input.position), 1.f));

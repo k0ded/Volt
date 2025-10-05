@@ -2,7 +2,6 @@
 
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 #include "VulkanRHIModule/Shader/VulkanShader.h"
-#include "VulkanRHIModule/Descriptors/VulkanBindlessDescriptorLayoutManager.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
@@ -190,9 +189,8 @@ namespace Volt::RHI
 		auto device = GraphicsContext::GetDevice();
 
 		// Create pipeline layout
+#if 0
 		{
-			const auto descriptorSetLayouts = VulkanBindlessDescriptorLayoutManager::GetGlobalDescriptorSetLayouts();
-
 			VkPipelineLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			info.setLayoutCount = 2;
@@ -202,6 +200,7 @@ namespace Volt::RHI
 
 			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_pipelineLayout));
 		}
+#endif
 
 		VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo{};
 		pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;

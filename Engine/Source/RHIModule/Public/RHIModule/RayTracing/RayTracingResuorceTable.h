@@ -4,6 +4,7 @@
 #include "RHIModule/Buffers/StorageBuffer.h"
 #include "RHIModule/Images/Image.h"
 #include "RHIModule/Graphics/Swapchain.h"
+#include "RHIModule/RHICapabilities.h"
 
 #include <CoreUtilities/Containers/AtomicStack.h>
 #include <CoreUtilities/Containers/AtomicBitVector.h>
@@ -81,7 +82,7 @@ namespace Volt::RHI
 	{
 		m_table.resize(RayTracingResourceTable::MaxSize);
 		m_resourceToIndex.reserve(RayTracingResourceTable::MaxSize);
-		m_dirtySlots.resize(Swapchain::FramesInFlight);
+		m_dirtySlots.resize(RHI::RHICapabilities::NumFramesInFlight);
 	}
 
 	template<typename ResourceType>

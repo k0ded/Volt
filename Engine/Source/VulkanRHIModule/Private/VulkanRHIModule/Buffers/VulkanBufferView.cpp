@@ -67,6 +67,8 @@ namespace Volt::RHI
 			VulkanStorageBuffer& vkStorageBuffer = m_resource->AsRef<VulkanStorageBuffer>();
 			const BufferDesc& bufferDesc = vkStorageBuffer.GetDesc();
 
+			m_desc.size = std::min(vkStorageBuffer.GetByteSize(), m_desc.size);
+
 			if (EnumValueContainsFlag(bufferDesc.usage, BufferUsage::TexelBuffer))
 			{
 				VkBufferViewCreateInfo viewCreateInfo;
@@ -83,6 +85,11 @@ namespace Volt::RHI
 					vkCreateBufferView(device->GetHandle<VkDevice>(), &viewCreateInfo, VT_VULKAN_ALLOCATOR, &m_texelBufferView);
 				}
 			}
+		}
+		else if (m_resource->GetType() == ResourceType::UniformBuffer)
+		{
+			VulkanUniformBuffer& vkUniformBuffer = m_resource->AsRef<VulkanUniformBuffer>();
+			m_desc.size = std::min(vkUniformBuffer.GetByteSize(), m_desc.size);
 		}
 	}
 }

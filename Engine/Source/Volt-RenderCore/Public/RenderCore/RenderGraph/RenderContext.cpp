@@ -3,7 +3,6 @@
 
 #include "RenderCore/RenderGraph/RenderGraph.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
-#include "RenderCore/DescriptorTableCache.h"
 #include "RenderCore/Shader/BatchedShaderParameters.h"
 
 #include <RHIModule/Buffers/UniformBuffer.h>
@@ -13,7 +12,6 @@
 
 namespace Volt
 {
-
 	RenderContext::RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
 		: m_renderGraph(renderGraph), m_currentPass(currentPass), m_commandBuffer(commandBuffer), m_shaderParameterUniformBuffer(shaderParameterUniformBuffer)
 	{
@@ -94,14 +92,14 @@ namespace Volt
 
 	void RenderContext::DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
 	{
-		BindDescriptorTable();
+		BindShaderBindings();
 
 		m_commandBuffer->DispatchMeshTasks(groupCountX, groupCountY, groupCountZ);
 	}
 
 	void RenderContext::DispatchMeshTasksIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
-		BindDescriptorTable();
+		BindShaderBindings();
 
 		RefPtr<RHI::StorageBuffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
 		m_commandBuffer->DispatchMeshTasksIndirect(rhiCommandsBuffer, offset, drawCount, stride);
@@ -109,7 +107,7 @@ namespace Volt
 
 	void RenderContext::DispatchMeshTasksIndirectCount(RGBufferRef commandsBuffer, const size_t offset, RGBufferRef countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
-		BindDescriptorTable();
+		BindShaderBindings();
 
 		RefPtr<RHI::StorageBuffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
 		RefPtr<RHI::StorageBuffer> rhiCountBuffer = countBuffer->GetRHIResource()->GetRHIBuffer();
@@ -118,14 +116,14 @@ namespace Volt
 
 	void RenderContext::Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
 	{
-		BindDescriptorTable();
+		BindShaderBindings();
 
 		m_commandBuffer->Dispatch(groupCountX, groupCountY, groupCountZ);
 	}
 
 	void RenderContext::DispatchIndirect(RGBufferRef commandsBuffer, const size_t offset)
 	{
-		BindDescriptorTable();
+		BindShaderBindings();
 
 		RefPtr<RHI::StorageBuffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
 		m_commandBuffer->DispatchIndirect(rhiCommandsBuffer, offset);
@@ -133,7 +131,7 @@ namespace Volt
 
 	void RenderContext::DrawIndirectCount(RGBufferRef commandsBuffer, const size_t offset, RGBufferRef countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
-		BindDescriptorTable();
+		BindShaderBindings();
 
 		RefPtr<RHI::StorageBuffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
 		RefPtr<RHI::StorageBuffer> rhiCountBuffer = countBuffer->GetRHIResource()->GetRHIBuffer();
@@ -142,7 +140,7 @@ namespace Volt
 
 	void RenderContext::DrawIndexedIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
-		BindDescriptorTable();
+		BindShaderBindings();
 
 		RefPtr<RHI::StorageBuffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
 		m_commandBuffer->DrawIndexedIndirect(rhiCommandsBuffer, offset, drawCount, stride);
@@ -150,14 +148,14 @@ namespace Volt
 
 	void RenderContext::DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance)
 	{
-		BindDescriptorTable();
+		BindShaderBindings();
 
 		m_commandBuffer->DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
 	void RenderContext::Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance)
 	{
-		BindDescriptorTable();
+		BindShaderBindings();
 	
 		m_commandBuffer->Draw(vertexCount, instanceCount, firstVertex, firstInstance);
 	}
@@ -188,8 +186,6 @@ namespace Volt
 		m_commandBuffer->BindPipeline(pipeline);
 
 		AllocatePerStageShaderParameterBuffers();
-
-		m_descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(pipeline);
 	}
 
 	void RenderContext::BindPipeline(RefPtr<RHI::ComputePipeline> pipeline)
@@ -198,8 +194,6 @@ namespace Volt
 		m_commandBuffer->BindPipeline(pipeline);
 
 		AllocatePerStageShaderParameterBuffers();
-
-		m_descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(pipeline);
 	}
 
 	void RenderContext::BindIndexBuffer(RGBufferRef indexBuffer)
@@ -213,7 +207,8 @@ namespace Volt
 		RHI::VertexBufferVector rhiVertexBuffers;
 		for (const RGBufferRef buffer : vertexBuffers)
 		{
-			rhiVertexBuffers.emplace_back() = buffer->GetRHIResource()->GetRHIBuffer();
+			auto& vertexBufferBinding = rhiVertexBuffers.emplace_back();
+			vertexBufferBinding.buffer = buffer->GetRHIResource()->GetRHIBuffer();
 		}
 
 		m_commandBuffer->BindVertexBuffers(rhiVertexBuffers, firstBinding);
@@ -253,16 +248,14 @@ namespace Volt
 		return m_commandBuffer;
 	}
 
-	void RenderContext::BindDescriptorTable()
+	void RenderContext::BindShaderBindings()
 	{
-		VT_ENSURE(m_descriptorTable);
-
 		for (const auto& shaderParameters : m_perStageShaderParameters)
 		{
-			m_descriptorTable->SetBufferView(shaderParameters.uniformBufferSRV->GetRHIView(), RHI::GetDescriptorSetIndexFromShaderStage(shaderParameters.shaderStage), RHI::Globals::SHADER_GLOBALS_BINDING);
+			m_shaderBindingMap.SetUniformBufferWithSizeAndOffset(shaderParameters.shaderStage, RHI::Globals::SHADER_GLOBALS_BINDING, shaderParameters.uniformBufferSRV->GetRHIView(), shaderParameters.size, shaderParameters.offset);
 		}
 
-		m_commandBuffer->BindDescriptorTable(m_descriptorTable);
+		m_commandBuffer->BindShaderBindings(m_shaderBindingMap);
 	}
 
 	void RenderContext::AllocatePerStageShaderParameterBuffers()
@@ -281,7 +274,7 @@ namespace Volt
 
 	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::AllocatePerStageShaderParameterBuffers(RawPtr<RHI::RenderPipeline> renderPipeline)
 	{
-		const Vector<RHI::ShaderParameterMap>& shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
+		ArrayView<RHI::ShaderParameterMap> shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
 
 		InlineVector<RenderContext::PerStageShaderParameters, 8> result;
 
@@ -291,8 +284,10 @@ namespace Volt
 			{
 				auto& perStageShaderParameters = result.emplace_back();
 				perStageShaderParameters.shaderStage = parameterMap.GetShaderStage();
-				perStageShaderParameters.uniformBufferSRV = m_shaderParameterUniformBuffer.GetNext();
-				perStageShaderParameters.mappedPtr = m_shaderParameterUniformBuffer.GetMappedPointer() + perStageShaderParameters.uniformBufferSRV->GetDesc().offset;
+				perStageShaderParameters.uniformBufferSRV = m_shaderParameterUniformBuffer.GetSRV();
+				perStageShaderParameters.size = parameterMap.GetShaderParametersSize();
+				perStageShaderParameters.offset = m_shaderParameterUniformBuffer.Allocate(parameterMap.GetShaderParametersSize());
+				perStageShaderParameters.mappedPtr = m_shaderParameterUniformBuffer.GetMappedPointer() + perStageShaderParameters.offset;
 			}
 		}
 
@@ -309,8 +304,10 @@ namespace Volt
 		{
 			auto& perStageShaderParameters = result.emplace_back();
 			perStageShaderParameters.shaderStage = shaderParameterMap.GetShaderStage();
-			perStageShaderParameters.uniformBufferSRV = m_shaderParameterUniformBuffer.GetNext();
-			perStageShaderParameters.mappedPtr = m_shaderParameterUniformBuffer.GetMappedPointer() + perStageShaderParameters.uniformBufferSRV->GetDesc().offset;
+			perStageShaderParameters.uniformBufferSRV = m_shaderParameterUniformBuffer.GetSRV();
+			perStageShaderParameters.size = shaderParameterMap.GetShaderParametersSize();
+			perStageShaderParameters.offset = m_shaderParameterUniformBuffer.Allocate(shaderParameterMap.GetShaderParametersSize());
+			perStageShaderParameters.mappedPtr = m_shaderParameterUniformBuffer.GetMappedPointer() + perStageShaderParameters.offset;
 		}
 
 		return result;
@@ -318,93 +315,95 @@ namespace Volt
 
 	void RenderContext::SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		VT_ENSURE(m_descriptorTable);
-
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding)
 		{
 			VT_ENSURE_MSG(bufferSRV, "Buffer SRV must not be null!");
-			m_descriptorTable->SetBufferView(bufferSRV->GetRHIView(), resourceBinding->set, resourceBinding->binding);
+			
+			RefPtr<RHI::BufferView> rhiView = bufferSRV->GetRHIView();
+			const bool isTexelBufferView = rhiView->IsTexelBufferView();
+
+			if (isTexelBufferView)
+			{
+				m_shaderBindingMap.SetTexelBufferSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
+			else
+			{
+				m_shaderBindingMap.SetStructuredBufferSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
 		}
 	}
 
 	void RenderContext::SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		VT_ENSURE(m_descriptorTable);
-
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding)
 		{
-			VT_ENSURE_MSG(bufferUAV, "Buffer UAV must not be null!");
-			m_descriptorTable->SetBufferView(bufferUAV->GetRHIView(), resourceBinding->set, resourceBinding->binding);
+			VT_ENSURE_MSG(bufferUAV, "Buffer SRV must not be null!");
+
+			RefPtr<RHI::BufferView> rhiView = bufferUAV->GetRHIView();
+			const bool isTexelBufferView = rhiView->IsTexelBufferView();
+
+			if (isTexelBufferView)
+			{
+				m_shaderBindingMap.SetTexelBufferUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
+			else
+			{
+				m_shaderBindingMap.SetStructuredBufferUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
 		}
 	}
 
 	void RenderContext::SetTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		VT_ENSURE(m_descriptorTable);
-	
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding)
 		{
 			VT_ENSURE_MSG(textureSRV, "Texture SRV must not be null!");
-
-			m_descriptorTable->SetImageView(textureSRV->GetRHIView(), resourceBinding->set, resourceBinding->binding);
+			m_shaderBindingMap.SetTextureSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, textureSRV->GetRHIView());
 		}
 	}
 
 	void RenderContext::SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		VT_ENSURE(m_descriptorTable);
-
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding)
 		{
 			VT_ENSURE_MSG(textureUAV, "Texture UAV must not be null!");
-
-			m_descriptorTable->SetImageView(textureUAV->GetRHIView(), resourceBinding->set, resourceBinding->binding);
+			m_shaderBindingMap.SetTextureUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, textureUAV->GetRHIView());
 		}
 	}
 
 	void RenderContext::SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		VT_ENSURE(m_descriptorTable);
-
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding && uniformBuffer)
 		{
-			VT_ENSURE_MSG(uniformBuffer, "Uniform buffer must not be null!");
-
-			RefPtr<RHI::BufferView> bufferView = uniformBuffer->GetRHIResource()->GetOrCreateView({});
-			m_descriptorTable->SetBufferView(bufferView, resourceBinding->set, resourceBinding->binding);
+			m_shaderBindingMap.SetUniformBuffer(shaderParameterMap.GetShaderStage(), resourceBinding->binding, uniformBuffer->GetRHIResource()->GetOrCreateView({}));
 		}
 	}
 
 	void RenderContext::SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		VT_ENSURE(m_descriptorTable);
-
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
 		if (resourceBinding)
 		{
-			m_descriptorTable->SetSamplerState(sampler, resourceBinding->set, resourceBinding->binding);
+			m_shaderBindingMap.SetSampler(shaderParameterMap.GetShaderStage(), resourceBinding->binding, sampler);
 		}
 	}
 
 	void RenderContext::SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		VT_ENSURE(m_descriptorTable);
-
 		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
-		if (resourceBinding && accelerationStructure)
+		if (resourceBinding)
 		{
-			m_descriptorTable->SetAccelerationStructure(accelerationStructure, resourceBinding->set, resourceBinding->binding);
+			m_shaderBindingMap.SetAccelerationStructure(shaderParameterMap.GetShaderStage(), resourceBinding->binding, accelerationStructure);
 		}
 	}
 
 	void RenderContext::SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		m_descriptorTable->SetRayTracingResourceTable(rayTracingResourceTable);
 	}
 
 	void RenderContext::SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)

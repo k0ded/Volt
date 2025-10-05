@@ -2,7 +2,7 @@
 
 #include "RenderCore/CommandBufferPool.h"
 
-#include <RHIModule/Graphics/Swapchain.h>
+#include <RHIModule/RHICapabilities.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -14,8 +14,8 @@ namespace Volt
 		VT_ENSURE(!s_instance);
 		s_instance = this;
 
-		m_waitingCommandBufferPool.resize(RHI::Swapchain::FramesInFlight);
-		for (uint32_t i = 0; i < RHI::Swapchain::FramesInFlight; ++i)
+		m_waitingCommandBufferPool.resize(RHI::RHICapabilities::NumFramesInFlight);
+		for (uint32_t i = 0; i < RHI::RHICapabilities::NumFramesInFlight; ++i)
 		{
 			m_waitingCommandBufferPool[i].Allocate(WaitCommandBufferPoolSize);
 		}
@@ -34,28 +34,36 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_frameIndex = ++m_frameIndex % RHI::Swapchain::FramesInFlight;
-		
+		m_frameIndex = ++m_frameIndex % RHI::RHICapabilities::NumFramesInFlight;
+		uint32_t nextFrameIndex = (m_frameIndex + 1) % RHI::RHICapabilities::NumFramesInFlight;
+
 		RefPtr<RHI::CommandBuffer> commandBuffer;
 		while (m_waitingCommandBufferPool.at(m_frameIndex).Pop(commandBuffer))
 		{
-			m_commandBufferPool.Push(commandBuffer);
+			if (commandBuffer->HasFinishedExecution())
+			{
+				m_commandBufferPool.Push(commandBuffer);
+			}
+			else
+			{
+				m_waitingCommandBufferPool.at(nextFrameIndex).Push(commandBuffer);
+			}
 		}
 	}
 
-	RefPtr<RHI::CommandBuffer> CommandBufferPool::GetCommandBuffer()
+	RefPtr<PooledCommandBuffer> CommandBufferPool::GetCommandBuffer()
 	{
 		VT_PROFILE_FUNCTION();
 		// We try to pop a command buffer from the stack.
 		RefPtr<RHI::CommandBuffer> result;
 		if (s_instance->m_commandBufferPool.Pop(result))
 		{
-			return result;
+			return RefPtr<PooledCommandBuffer>::Create(result);
 		}
 
 		// If no command buffers were available, we fallback to creating a new one.
 		result = RHI::CommandBuffer::Create();
-		return result;
+		return RefPtr<PooledCommandBuffer>::Create(result);
 	}
 
 	void CommandBufferPool::FreeCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer)
@@ -72,5 +80,15 @@ namespace Volt
 		{
 			m_commandBufferPool.Push(RHI::CommandBuffer::Create());
 		}
+	}
+
+	PooledCommandBuffer::~PooledCommandBuffer()
+	{
+		CommandBufferPool::FreeCommandBuffer(m_commandBuffer);
+	}
+
+	PooledCommandBuffer::PooledCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer)
+	{
+		m_commandBuffer = commandBuffer;
 	}
 }

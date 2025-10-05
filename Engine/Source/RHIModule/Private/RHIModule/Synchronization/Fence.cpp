@@ -1,12 +1,13 @@
 #include "rhipch.h"
 
 #include "RHIModule/Synchronization/Fence.h"
+
 #include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
-	RefPtr<Fence> Fence::Create(const FenceCreateInfo& createInfo)
+	RefPtr<Fence> Fence::Create()
 	{
-		return RHIModule::GetInstance().CreateFence(createInfo);
+		return RHIModule::GetInstance().CreateFence();
 	}
 }

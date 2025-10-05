@@ -12,12 +12,19 @@
 #include "Volt-Renderer/ShadowMappingUtility.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/SceneRendererRenderGraphData.h"
+#include "Volt-Renderer/SceneRendererShaderDefinitions.h"
 #include "Volt-Renderer/RenderView.h"
+
+#include "Volt-Renderer/Debug/DebugRenderer.h"
 
 #include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
 #include "Volt-Renderer/RenderingTechniques/LightTileBinningTechnique.h"
 #include "Volt-Renderer/RenderingTechniques/GTAOTechnique.h"
-#include "Volt-Renderer/RenderingTechniques/CascadedDirectionalShadowTechnique.h"
+#include "Volt-Renderer/RenderingTechniques/CascadedShadowMapsTechnique.h"
+
+#include "Volt-Renderer/MeshPassProcessors/DepthPrePassMeshProcessor.h"
+#include "Volt-Renderer/MeshPassProcessors/BasePassMeshProcessor.h"
+#include "Volt-Renderer/MeshPassProcessors/CascadedShadowMapsMeshProcessor.h"
 
 #include <JobSystem/JobSystem.h>
 
@@ -31,17 +38,15 @@
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
-#include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Graphics/DeviceQueue.h>
 
 #include <CoreUtilities/Math/Math.h>
 
 namespace Volt
 {
-	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& specification)
-		: m_renderScene(specification.renderScene)
+	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& createInfo)
+		: m_renderScene(createInfo.renderScene), m_createInfo(createInfo)
 	{
-		CreateMainRenderTarget(specification.initialResolution.x, specification.initialResolution.y);
+		CreateMainRenderTarget(createInfo.initialResolution.x, createInfo.initialResolution.y);
 
 		RHI::ImageDesc spec{};
 		spec.width = 1;
@@ -55,10 +60,29 @@ namespace Volt
 		m_skyboxMesh = ShapeLibrary::GetCube();
 	
 		RegisterListener<AppPostFrameUpdateEvent>(VT_BIND_EVENT_FN(SceneRenderer::OnPostFrameUpdateEvent));
+
+		{
+			m_depthPrePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<DepthPrePassMeshProcessor>();
+			m_basePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<BasePassMeshProcessor>();
+			m_cascadedShadowMapMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<CascadedShadowMapMeshProcessor>();
+
+			m_onRenderPrimitiveAddedCallbackId = m_renderScene->RegisterOnRenderPrimitiveAddedCallback([this](const RenderPrimitiveData& renderPrimitives)
+			{
+				m_meshPassProcessorRegistry.AddRenderPrimitive(renderPrimitives);
+			});
+
+			m_onRenderPrimitiveRemovedCallbackId = m_renderScene->RegisterOnRenderPrimitiveRemovedCallback([this](const RenderPrimitiveData& renderPrimitive)
+			{
+				m_meshPassProcessorRegistry.RemoveRenderPrimitive(renderPrimitive);
+			});
+		}
 	}
 
 	SceneRenderer::~SceneRenderer()
 	{
+		m_renderScene->UnregisterOnRenderPrimitiveAddedCallback(m_onRenderPrimitiveAddedCallbackId);
+		m_renderScene->UnregisterOnRenderPrimitiveRemovedCallback(m_onRenderPrimitiveRemovedCallbackId);
+
 		if (m_renderGraphExecutionCounter)
 		{
 			JobSystem::WaitForAndDestroyCounter(m_renderGraphExecutionCounter);
@@ -141,41 +165,46 @@ namespace Volt
 			}
 		}
 
-		AddGenerateGBufferPass(renderGraph, blackboard, renderView);
+		AddBasePass(renderGraph, blackboard, renderView);
 
 		// Requires GBuffer normals.
 		GTAOTechnique gtaoTechnique{ renderGraph, blackboard };
 		gtaoTechnique.Execute(renderView);
 
-		CascadedDirectionalShadowTechnique::Result directionalShadowMap{};
+		CascadedShadowMapsTechnique::Result directionalShadowMap{};
 
 		for (const RenderLightData& light : m_renderScene->GetRenderLightData())
 		{
 			if (light.description.lightType == SceneLightType::Directional)
 			{
-				CascadedDirectionalShadowTechnique cascadedDirectionalShadowTechnique{ renderGraph, blackboard };
+				CascadedShadowMapsTechnique cascadedDirectionalShadowTechnique{ renderGraph, blackboard, m_cascadedShadowMapMeshProcessor };
 				directionalShadowMap = cascadedDirectionalShadowTechnique.Execute(renderView, light);
 
 				break;
 			}
 		}
 
-		blackboard.Add<CascadedDirectionalShadowTechnique::Result>() = directionalShadowMap;
+		blackboard.Add<CascadedShadowMapsTechnique::Result>() = directionalShadowMap;
 
+		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 		// Create shading RT
 		{
-			SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 			sceneTextures.sceneColor = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_SFLOAT>(renderView.width, renderView.height, RHI::ImageUsage::AttachmentStorage, "SceneColor"));
 		}
 
 		AddSkyboxPass(renderGraph, blackboard, renderView);
-		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer);
 
-		//SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
-		//auto output = m_globalIlluminationRenderer.Execute(renderGraph, blackboard, renderView);
-		//sceneTextures.sceneColor = output.indirectLight;
+#if 0
+		auto giOutput = m_globalIlluminationRenderer.Execute(renderGraph, blackboard, renderView);
+#endif
 
+		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer, nullptr);
 		AddPostProcessingPasses(renderGraph, blackboard, renderView, outputTexture);
+
+		if (m_createInfo.drawDebug)
+		{
+			Renderer::GetDebugRenderer().Render(renderGraph, renderView, outputTexture, sceneTextures.sceneDepth);
+		}
 
 		m_renderScene->EndFrame(renderGraph);
 
@@ -319,26 +348,6 @@ namespace Volt
 		});
 	}
 
-	struct DepthPrePassVS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(DepthPrePassVS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
-			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
-		END_SHADER_PARAMETER_STRUCT()
-	};
-	REGISTER_SHADER(DepthPrePassVS, "Engine/Shaders/Source/RenderPipelineLegacy/DepthPrePass.hlsl", "MainVS", Vertex);
-
-	struct DepthPrePassPS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(DepthPrePassPS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
-			RG_RENDER_TARGETS()
-		END_SHADER_PARAMETER_STRUCT()
-	};
-	REGISTER_SHADER(DepthPrePassPS, "Engine/Shaders/Source/RenderPipelineLegacy/DepthPrePass.hlsl", "MainPS", Pixel);
-
 	BEGIN_SHADER_PARAMETER_STRUCT(DepthPrePassParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(DepthPrePassVS::Parameters, VS)
 		SHADER_PARAMETER_STRUCT_INCLUDE(DepthPrePassPS::Parameters, PS)
@@ -347,9 +356,6 @@ namespace Volt
 	void SceneRenderer::AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
 	{
 		VT_PROFILE_FUNCTION();
-
-		MeshRenderer meshRenderer;
-		meshRenderer.BuildRenderCommands(renderGraph, m_renderScene, view.GetCullingInfo(), ShaderMap::Get<DepthPrePassVS>(), ShaderMap::Get<DepthPrePassPS>());
 
 		SceneTextures& sceneTextures = blackboard.Add<SceneTextures>();
 		sceneTextures.sceneVelocity = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "SceneVelocity"));
@@ -362,54 +368,32 @@ namespace Volt
 		passParameters->PS.renderTargets.renderTargets[0] = sceneTextures.sceneVelocity;
 		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
 
+		m_depthPrePassMeshProcessor->PrepareRenderCommands(renderGraph);
+
 		renderGraph.AddPass("Depth Pre Pass",
 			RenderGraphPassFlags::None,
 			passParameters,
-			[passParameters, view, meshRenderer](RenderContext& context)
+			[passParameters, view, meshPassProcessor = m_depthPrePassMeshProcessor](RenderContext& context)
 		{
 			BatchedShaderParameters batchedShaderParameters;
 			context.CollectParameters(passParameters, batchedShaderParameters);
 
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
 			context.BeginRendering(renderingInfo);
-
-			meshRenderer.Render(context, batchedShaderParameters);
-
+			meshPassProcessor->ExecuteCommands(context, batchedShaderParameters);
 			context.EndRendering();
 		});
 	}
 
-	struct GenerateGBufferVS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(GenerateGBufferVS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
-			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
-		END_SHADER_PARAMETER_STRUCT()
-	};
-	REGISTER_SHADER(GenerateGBufferVS, "Engine/Shaders/Source/RenderPipelineLegacy/GenerateGBuffer.hlsl", "MainVS", Vertex);
-
-	struct GenerateGBufferPS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(GenerateGBufferPS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			RG_RENDER_TARGETS()
-		END_SHADER_PARAMETER_STRUCT()
-	};
-	REGISTER_SHADER(GenerateGBufferPS, "Engine/Shaders/Source/RenderPipelineLegacy/GenerateGBuffer.hlsl", "MainPS", Pixel);
-
 	BEGIN_SHADER_PARAMETER_STRUCT(GenerateGBufferParameters)
-		SHADER_PARAMETER_STRUCT_INCLUDE(GenerateGBufferVS::Parameters, VS)
-		SHADER_PARAMETER_STRUCT_INCLUDE(GenerateGBufferPS::Parameters, PS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(BasePassVS::Parameters, VS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(BasePassPS::Parameters, PS)
 	END_SHADER_PARAMETER_STRUCT()
 
-	void SceneRenderer::AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	void SceneRenderer::AddBasePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
 	{
 		VT_PROFILE_FUNCTION();
 		
-		MeshRenderer meshRenderer;
-		meshRenderer.BuildRenderCommands(renderGraph, m_renderScene, view.GetCullingInfo(), ShaderMap::Get<GenerateGBufferVS>());
-
 		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 		sceneTextures.gBufferAlbedo = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferAlbedo"));
 		sceneTextures.gBufferNormals = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferNormals"));
@@ -423,10 +407,12 @@ namespace Volt
 		passParameters->PS.renderTargets.renderTargets[2] = sceneTextures.gBufferMaterial;
 		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
 
-		renderGraph.AddPass("Generate GBuffer",
+		m_basePassMeshProcessor->PrepareRenderCommands(renderGraph);
+
+		renderGraph.AddPass("BasePass",
 			RenderGraphPassFlags::None,
 			passParameters,
-			[passParameters, view, meshRenderer](RenderContext& context)
+			[passParameters, view, meshPassProcessor = m_basePassMeshProcessor](RenderContext& context)
 		{
 			BatchedShaderParameters batchedShaderParameters;
 			context.CollectParameters(passParameters, batchedShaderParameters);
@@ -435,7 +421,7 @@ namespace Volt
 			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
 			context.BeginRendering(renderingInfo);
-			meshRenderer.Render(context, batchedShaderParameters);
+			meshPassProcessor->ExecuteCommands(context, batchedShaderParameters);
 			context.EndRendering();
 		});
 	}
@@ -479,8 +465,8 @@ namespace Volt
 
 		SkyboxParameters* passParameters = renderGraph.AllocParameters<SkyboxParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;
-		passParameters->VS.VertexBuffer = renderGraph.RegisterExternalBuffer(m_skyboxMesh->GetVertexPositionsBuffer()->GetResource());
-		passParameters->VS.IndexBuffer = renderGraph.RegisterExternalBuffer(m_skyboxMesh->GetIndexBuffer()->GetResource());
+		passParameters->VS.VertexBuffer = renderGraph.RegisterExternalBuffer(m_skyboxMesh->GetVertexPositionsBuffer());
+		passParameters->VS.IndexBuffer = renderGraph.RegisterExternalBuffer(m_skyboxMesh->GetIndexBuffer());
 		passParameters->PS.EnvironmentTexture = renderGraph.CreateSRV(environmentTextures.radiance);
 		passParameters->PS.LinearSampler = SamplerStateCache::GetTrilinearSampler();
 		passParameters->PS.LOD = 0.f;
@@ -545,7 +531,18 @@ namespace Volt
 	};
 	REGISTER_SHADER(RenderDeferredShadingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "MainCS", Compute);
 
-	void SceneRenderer::AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer)
+	struct CompositeLightingCS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(CompositeLightingCS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWSceneColor)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, IndirectLight)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(CompositeLightingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "CompositeLightingCS", Compute);
+
+	void SceneRenderer::AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, 
+		RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer, RGTextureRef indirectLightTexture)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -553,39 +550,59 @@ namespace Volt
 		const EnvironmentTextures& environmentTextures = blackboard.Get<EnvironmentTextures>();
 		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 
-		RenderDeferredShadingCS::Parameters* passParameters = renderGraph.AllocParameters<RenderDeferredShadingCS::Parameters>();
-		passParameters->View = view.viewUniformBuffer;
-		passParameters->VisibleLightIndices = renderGraph.CreateSRV(lightScene.visibleLightIndices, RHI::PixelFormat::R32_SINT);
-		passParameters->GBufferAlbedo = renderGraph.CreateSRV(sceneTextures.gBufferAlbedo);
-		passParameters->GBufferNormal = renderGraph.CreateSRV(sceneTextures.gBufferNormals);
-		passParameters->GBufferMaterial = renderGraph.CreateSRV(sceneTextures.gBufferMaterial);
-		passParameters->SceneDepth = renderGraph.CreateSRV(sceneTextures.sceneDepth);
-		passParameters->SceneAO = renderGraph.CreateSRV(sceneTextures.sceneAO);
-		passParameters->GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
-		passParameters->RWSceneColor = renderGraph.CreateUAV(sceneTextures.sceneColor);
+		RGTextureUAVRef sceneColorUAV = renderGraph.CreateUAV(sceneTextures.sceneColor);
 
-		passParameters->DFGLuT = renderGraph.CreateSRV(environmentTextures.DFGLuT);
-		passParameters->SkylightIrradiance = renderGraph.CreateSRV(environmentTextures.irradiance);
-		passParameters->SkylightRadiance = renderGraph.CreateSRV(environmentTextures.radiance);
-		passParameters->LinearSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>();
-		passParameters->NumRadianceMipLevels = environmentTextures.radiance->GetDesc().mips;
-
-		if (!directionalShadowMap)
 		{
-			directionalShadowMap = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+			RenderDeferredShadingCS::Parameters* passParameters = renderGraph.AllocParameters<RenderDeferredShadingCS::Parameters>();
+			passParameters->View = view.viewUniformBuffer;
+			passParameters->VisibleLightIndices = renderGraph.CreateSRV(lightScene.visibleLightIndices, RHI::PixelFormat::R32_SINT);
+			passParameters->GBufferAlbedo = renderGraph.CreateSRV(sceneTextures.gBufferAlbedo);
+			passParameters->GBufferNormal = renderGraph.CreateSRV(sceneTextures.gBufferNormals);
+			passParameters->GBufferMaterial = renderGraph.CreateSRV(sceneTextures.gBufferMaterial);
+			passParameters->SceneDepth = renderGraph.CreateSRV(sceneTextures.sceneDepth);
+			passParameters->SceneAO = renderGraph.CreateSRV(sceneTextures.sceneAO);
+			passParameters->GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
+			passParameters->RWSceneColor = sceneColorUAV;
+
+			passParameters->DFGLuT = renderGraph.CreateSRV(environmentTextures.DFGLuT);
+			passParameters->SkylightIrradiance = renderGraph.CreateSRV(environmentTextures.irradiance);
+			passParameters->SkylightRadiance = renderGraph.CreateSRV(environmentTextures.radiance);
+			passParameters->LinearSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>();
+			passParameters->NumRadianceMipLevels = environmentTextures.radiance->GetDesc().mips;
+
+			if (!directionalShadowMap)
+			{
+				directionalShadowMap = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+			}
+
+			passParameters->CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMap);
+			passParameters->ShadowSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>();
+			passParameters->CascadedDirectionalLightShadowMapping = directionalShadowUniformBuffer;
+
+			auto shader = ShaderMap::Get<RenderDeferredShadingCS>();
+			ComputeShaderUtils::AddPass<RenderDeferredShadingCS>(renderGraph,
+				"RenderDeferredShading",
+				shader,
+				passParameters,
+				RenderGraphPassFlags::None,
+				{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
 		}
 
-		passParameters->CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMap);
-		passParameters->ShadowSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>();
-		passParameters->CascadedDirectionalLightShadowMapping = directionalShadowUniformBuffer;
+#if 0
+		{
+			CompositeLightingCS::Parameters* passParameters = renderGraph.AllocParameters<CompositeLightingCS::Parameters>();
+			passParameters->RWSceneColor = sceneColorUAV;
+			passParameters->IndirectLight = renderGraph.CreateSRV(indirectLightTexture);
 
-		auto shader = ShaderMap::Get<RenderDeferredShadingCS>();
-		ComputeShaderUtils::AddPass<RenderDeferredShadingCS>(renderGraph,
-			"Render Deferred Shading",
-			shader,
-			passParameters,
-			RenderGraphPassFlags::None,
-			{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
+			auto shader = ShaderMap::Get<CompositeLightingCS>();
+			ComputeShaderUtils::AddPass<CompositeLightingCS>(renderGraph,
+				"CompositeLighting",
+				shader,
+				passParameters,
+				RenderGraphPassFlags::None,
+				{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
+		}
+#endif
 	}
 
 	void SceneRenderer::Invalidate()

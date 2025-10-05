@@ -6,7 +6,6 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
-#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt
 {
@@ -16,6 +15,8 @@ namespace Volt
     {
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
+
+		m_workerAllocator.Reserve(sizeof(JobWorker) * NumMaxWorkers);
 
 		RegisterListener<AppTickEvent>(VT_BIND_EVENT_FN(JobSystem::OnTick));
 
@@ -156,7 +157,7 @@ namespace Volt
 	void JobSystem::Initialize()
     {
 		m_isAlive = true;
-		const uint32_t hardwareConcurrency = PlatformMisc::GetNumberOfPhysicalCores();
+		const uint32_t hardwareConcurrency = PlatformMisc::GetNumberOfLogicalCores();
 		m_numWorkers = hardwareConcurrency;
 
 		m_mainThreadQueue.Allocate(1024);
@@ -173,7 +174,7 @@ namespace Volt
 				worker->workQueues.at(priority).Allocate(NumMaxJobsPerQueue);
 			}
 
-			PlatformThread::AssignThreadToCore(worker->thread.native_handle(), 1ull << i);
+			//PlatformThread::AssignThreadToCore(worker->thread.native_handle(), 1ull << i);
 			PlatformThread::SetThreadPriority(worker->thread.native_handle(), ThreadPriority::High);
 
 			std::string threadName = std::format("Volt::Worker {}", i);

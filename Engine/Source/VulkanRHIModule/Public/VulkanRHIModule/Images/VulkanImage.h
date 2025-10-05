@@ -1,7 +1,6 @@
 #pragma once
 
 #include <RHIModule/Images/Image.h>
-#include <CoreUtilities/Containers/ThreadSafeMap.h>
 
 struct VkImage_T;
 

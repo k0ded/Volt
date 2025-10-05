@@ -3,9 +3,6 @@
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
 
-#include "RHIModule/Descriptors/BindlessDescriptorTable.h"
-#include "RHIModule/Descriptors/DescriptorTable.h"
-
 #include "RHIModule/Pipelines/RayTracingPipeline.h"
 #include "RHIModule/Pipelines/RenderPipeline.h"
 #include "RHIModule/Pipelines/ComputePipeline.h"
@@ -17,7 +14,6 @@
 #include <CoreUtilities/Containers/StackVector.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Allocators/Handle.h>
-#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 namespace Volt::RHI
 {
@@ -25,6 +21,9 @@ namespace Volt::RHI
 	class StorageBuffer;
 	class Allocation;
 	class Swapchain;
+	class ShaderBindingMap;
+	class BufferView;
+	class ImageView;
 
 	class Event;
 	class Fence;
@@ -39,8 +38,14 @@ namespace Volt::RHI
 		Secondary
 	};
 
+	struct VertexBufferBinding
+	{
+		RefPtr<RHI::StorageBuffer> buffer;
+		uint64_t offset = 0;
+	};
+
 	using BarrierVector = Vector<ResourceBarrierInfo, InlineAllocator<32>>;
-	using VertexBufferVector = Vector<RefPtr<RHI::StorageBuffer>, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>>;
+	using VertexBufferVector = Vector<VertexBufferBinding, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>>;
 
 	class VTRHI_API CommandBuffer : public RHIInterface
 	{
@@ -78,8 +83,7 @@ namespace Volt::RHI
 		virtual void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) = 0;
 		virtual void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer, const IndexType indexType = IndexType::UInt32) = 0;
 
-		virtual void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) = 0;
-		virtual void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure = nullptr) = 0;
+		virtual void BindShaderBindings(const ShaderBindingMap& shaderBindings) = 0;
 
 		virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
 		virtual void EndRendering() = 0;
@@ -108,6 +112,8 @@ namespace Volt::RHI
 		virtual void CopyImage(RawPtr<Image> srcImage, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth) = 0;
 
 		virtual void UploadTextureData(RawPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData) = 0;
+
+		virtual bool HasFinishedExecution() const = 0;
 
 		virtual const QueueType GetQueueType() const = 0;
 		virtual const CommandBufferLevel GetCommandBufferLevel() const = 0;

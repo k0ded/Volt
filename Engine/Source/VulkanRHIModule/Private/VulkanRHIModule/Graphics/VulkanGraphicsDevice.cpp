@@ -17,6 +17,7 @@ namespace Volt::RHI
 		VkPhysicalDeviceVulkan11Features vulkan11Features;
 		VkPhysicalDeviceVulkan12Features vulkan12Features;
 		VkPhysicalDeviceVulkan13Features vulkan13Features;
+		VkPhysicalDeviceVulkan14Features vulkan14Features;
 
 		VkPhysicalDeviceFeatures2 physicalDeviceFeatures;
 		VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
@@ -65,6 +66,7 @@ namespace Volt::RHI
 			s_enabledFeatures.vulkan12Features.samplerFilterMinmax = VK_TRUE;
 			s_enabledFeatures.vulkan12Features.hostQueryReset = VK_TRUE;
 			s_enabledFeatures.vulkan12Features.runtimeDescriptorArray = VK_TRUE;
+			s_enabledFeatures.vulkan12Features.timelineSemaphore = VK_TRUE;
 
 			s_enabledFeatures.vulkan12Features.descriptorIndexing = VK_TRUE;
 			s_enabledFeatures.vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
@@ -96,7 +98,12 @@ namespace Volt::RHI
 			s_enabledFeatures.vulkan13Features.shaderDemoteToHelperInvocation = VK_TRUE;
 			s_enabledFeatures.vulkan13Features.subgroupSizeControl = VK_TRUE;
 
-			void* chainEntryPoint = &s_enabledFeatures.vulkan13Features;
+			s_enabledFeatures.vulkan14Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
+			s_enabledFeatures.vulkan14Features.pNext = &s_enabledFeatures.vulkan13Features;
+			s_enabledFeatures.vulkan14Features.maintenance6 = VK_TRUE;
+			s_enabledFeatures.vulkan14Features.pushDescriptor = VK_TRUE;
+
+			void* chainEntryPoint = &s_enabledFeatures.vulkan14Features;
 
 			if (physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME) && g_rhiCapabilities.useMeshShaders)
 			{
@@ -173,6 +180,16 @@ namespace Volt::RHI
 				s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR.rayTracingPipelineTraceRaysIndirect2 = VK_FALSE;
 			
 				chainEntryPoint = &s_enabledFeatures.physicalDeviceRayTracingMaintenance1FeaturesKHR;
+			}
+
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME))
+			{
+				s_enabledFeatures.descriptorBufferFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
+				s_enabledFeatures.descriptorBufferFeaturesEXT.pNext = chainEntryPoint;
+				s_enabledFeatures.descriptorBufferFeaturesEXT.descriptorBuffer = VK_TRUE;
+				s_enabledFeatures.descriptorBufferFeaturesEXT.descriptorBufferCaptureReplay = VK_TRUE;
+
+				chainEntryPoint = &s_enabledFeatures.descriptorBufferFeaturesEXT;
 			}
 
 #ifdef VT_ENABLE_NV_AFTERMATH
@@ -279,6 +296,16 @@ namespace Volt::RHI
 				enabledExtensions.emplace_back(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
 			}
 
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME))
+			{
+				enabledExtensions.emplace_back(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+			}
+
+			if (physicalDevice->IsExtensionAvailable(VK_EXT_DEVICE_FAULT_EXTENSION_NAME))
+			{
+				enabledExtensions.emplace_back(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+			}
+
 			return enabledExtensions;
 		}
 	}
@@ -373,6 +400,11 @@ namespace Volt::RHI
 
 	VulkanGraphicsDevice::~VulkanGraphicsDevice()
 	{
+		for (auto& [queueType, queue] : m_deviceQueues)
+		{
+			queue->AsRef<VulkanDeviceQueue>().DestroyQueueSemaphore(*this);
+		}
+
 		vkDestroyDevice(m_device, VT_VULKAN_ALLOCATOR);
 	}
 
@@ -420,6 +452,7 @@ namespace Volt::RHI
 		g_rhiCapabilities.maxTextureSamplers = deviceProperties.limits.maxDescriptorSetSamplers;
 		g_rhiCapabilities.maxComputeSharedMemorySize = deviceProperties.limits.maxComputeSharedMemorySize;
 		g_rhiCapabilities.maxWorkGroupInvocations = deviceProperties.limits.maxComputeWorkGroupInvocations;
+		g_rhiCapabilities.minUniformBufferAlignment = deviceProperties.limits.minUniformBufferOffsetAlignment;
 
 		g_rhiCapabilities.rayTracing.supportsRayTracing = m_physicalDevice->IsExtensionAvailable(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) && m_physicalDevice->IsExtensionAvailable(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
 		g_rhiCapabilities.rayTracing.supportsInlineRaytracing = m_physicalDevice->IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME);

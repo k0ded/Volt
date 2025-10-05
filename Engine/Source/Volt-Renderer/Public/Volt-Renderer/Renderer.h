@@ -2,12 +2,11 @@
 
 #include "Volt-Renderer/BlueNoise.h"
 #include "Volt-Renderer/Config.h"
+#include "Volt-Renderer/Debug/DebugRenderer.h"
 
 #include <AssetSystem/AssetHandle.h>
 
 #include <RenderCore/TransientResourceSystem/TransientResourceAllocator.h>
-#include <RenderCore/Resources/BindlessResource.h>
-#include <RenderCore/DescriptorTableCache.h>
 #include <RenderCore/CommandBufferPool.h>
 #include <RenderCore/SamplerStateCache.h>
 
@@ -78,6 +77,7 @@ namespace Volt
 
 		static const uint32_t GetFramesInFlight();
 
+		static DebugRenderer& GetDebugRenderer();
 		static const DefaultResources& GetDefaultResources();
 		static EnvironmentTextures GenerateEnvironmentTextures(AssetHandle baseTextureHandle);
 
@@ -96,11 +96,10 @@ namespace Volt
 
 		Scope<ShaderMap> m_shaderMap;
 		Scope<BlueNoise> m_blueNoise;
-		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
-		Scope<DescriptorTableCache> m_descriptorTableCache;
 		Scope<SamplerStateCache> m_samplerStateCache;
 		Scope<CommandBufferPool> m_commandBufferPool;
 		Scope<TransientResourceAllocator> m_transientResourceAllocator;
+		Scope<DebugRenderer> m_debugRenderer;
 
 		uint32_t m_frameIndex = 0;
 	};

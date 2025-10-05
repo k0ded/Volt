@@ -1,6 +1,7 @@
 #include "sbpch.h"
 
 #include "Sandbox/SceneRendererExtensions/OutlineSceneRendererExtension.h"
+#include "Sandbox/SceneRendererExtensions/OutlinePassMeshProcessor.h"
 #include "Sandbox/SceneRendererExtensions/OutlineTechnique.h"
 
 #include <Volt-Renderer/RenderScene.h>
@@ -37,15 +38,15 @@ Volt::RGTextureRef OutlineSceneRendererExtension::OnRender(Volt::RenderGraph& re
 		}
 	}
 
-	auto filterFunc = [this](const RenderPrimitiveData& primitiveData)
-	{
-		return m_selectedPrimitivesSet.contains(primitiveData.entityId);
-	};
-
-	OutlineTechnique outlineTechnique{ renderGraph, blackboard };
-	outlineTechnique.Execute(prevOutputImage, *m_renderScene, view, filterFunc);
+	OutlineTechnique outlineTechnique{ renderGraph, blackboard, m_meshPassProcessor };
+	outlineTechnique.Execute(prevOutputImage, *m_renderScene, view);
 
 	return prevOutputImage;
+}
+
+void OutlineSceneRendererExtension::OnRegistered(Volt::MeshPassProcessorRegistry& meshPassProcessorRegistry)
+{
+	m_meshPassProcessor = meshPassProcessorRegistry.AddProcessor<OutlinePassMeshProcessor>();
 }
 
 void OutlineSceneRendererExtension::UpdateSelection(const Vector<EntityID>& entityIds)

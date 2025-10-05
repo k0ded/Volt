@@ -1,3 +1,5 @@
+#pragma once
+
 struct RayDescription
 {
 	float3 origin;

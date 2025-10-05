@@ -4,9 +4,9 @@
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/SceneRendererExtension.h"
 #include "Volt-Renderer/Config.h"
-#include "Volt-Renderer/Mesh/MeshRenderer.h"
 #include "Volt-Renderer/RenderingTechniques/TAANoise.h"
 #include "Volt-Renderer/GlobalIllumination/GlobalIlluminationRenderer.h"
+#include "Volt-Renderer/MeshPassProcessor.h"
 
 #include <RenderCore/RenderGraph/RenderGraphDebugger.h>
 
@@ -51,6 +51,7 @@ namespace Volt
 	{
 		std::string debugName;
 		glm::uvec2 initialResolution = { 1280, 720 };
+		bool drawDebug = false;
 
 		Ref<RenderScene> renderScene;
 	};
@@ -114,9 +115,9 @@ namespace Volt
 		void AddDefaultTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddEnvironmentTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
 		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
-		void AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddBasePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
-		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer);
+		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer, RGTextureRef indirectLightTexture);
 		void AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture);
 		void AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture);
 		/////////////////////////
@@ -152,13 +153,14 @@ namespace Volt
 		glm::vec2 m_currentJitter = 0.f;
 		glm::vec2 m_prevJitter = 0.f;
 
-		AntiAliasingMethod m_antiAliasingMethod = AntiAliasingMethod::TAA;
+		AntiAliasingMethod m_antiAliasingMethod = AntiAliasingMethod::None;
 		VisualizationMode m_visualizationMode = VisualizationMode::None;
 
 		PreviousFrameData m_previousFrameData;
 		JobCounterRef m_renderGraphExecutionCounter = nullptr;
 
 		RenderGraphDebugger m_renderGraphDebugger;
+		SceneRendererCreateInfo m_createInfo;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;
 
@@ -173,6 +175,15 @@ namespace Volt
 
 		// Extensions
 		SceneRendererExtensionMap m_sceneRendererExtensions;
+
+		// Mesh passes
+		MeshPassProcessorRegistry m_meshPassProcessorRegistry;
+		UUID32 m_onRenderPrimitiveAddedCallbackId = 0;
+		UUID32 m_onRenderPrimitiveRemovedCallbackId = 0;
+
+		class DepthPrePassMeshProcessor* m_depthPrePassMeshProcessor = nullptr;
+		class BasePassMeshProcessor* m_basePassMeshProcessor = nullptr;
+		class CascadedShadowMapMeshProcessor* m_cascadedShadowMapMeshProcessor = nullptr;
 	};
 
 	template<typename T>
@@ -181,6 +192,8 @@ namespace Volt
 		static_assert(std::is_base_of_v<SceneRendererExtension, T>);
 
 		Ref<T> instance = CreateRef<T>(m_renderScene);
+		instance->OnRegistered(m_meshPassProcessorRegistry);
+
 		m_sceneRendererExtensions[stage].emplace_back(instance);
 		return instance;
 	}

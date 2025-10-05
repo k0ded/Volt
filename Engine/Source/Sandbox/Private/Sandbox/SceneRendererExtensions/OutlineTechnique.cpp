@@ -1,6 +1,7 @@
 #include "sbpch.h"
 
 #include "Sandbox/SceneRendererExtensions/OutlineTechnique.h"
+#include "Sandbox/SceneRendererExtensions/OutlinePassMeshProcessor.h"
 
 #include <Volt-Renderer/GPUScene.h>
 #include <Volt-Renderer/SceneRendererRenderGraphData.h>
@@ -19,16 +20,16 @@
 
 using namespace Volt;
 
-OutlineTechnique::OutlineTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
-	: m_renderGraph(renderGraph), m_blackboard(blackboard)
+OutlineTechnique::OutlineTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, OutlinePassMeshProcessor* meshPassProcessor)
+	: m_renderGraph(renderGraph), m_blackboard(blackboard), m_meshPassProcessor(meshPassProcessor)
 {
 }
 
-void OutlineTechnique::Execute(RGTextureRef dstImage, RenderScene& renderScene, const RenderView& view, const MeshRenderer::PrimitveFilterFunc& primitiveFilter)
+void OutlineTechnique::Execute(RGTextureRef dstImage, RenderScene& renderScene, const RenderView& view)
 {
 	m_renderGraph.BeginMarker("Outline");
 
-	RGTextureRef outlineGeometryTexture = AddDrawOutlineGeometryPass(renderScene, view, primitiveFilter);
+	RGTextureRef outlineGeometryTexture = AddDrawOutlineGeometryPass(renderScene, view);
 	RGTextureRef jumpFloodTexture = AddJumpFloodInitPass(outlineGeometryTexture, view);
 
 	const int32_t numSteps = 2;
@@ -45,23 +46,7 @@ void OutlineTechnique::Execute(RGTextureRef dstImage, RenderScene& renderScene, 
 	m_renderGraph.EndMarker();
 }
 
-struct OutlineGeometryVS : public GlobalShader
-{
-	DECLARE_GLOBAL_SHADER(OutlineGeometryVS)
-	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-		SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
-		SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
-	END_SHADER_PARAMETER_STRUCT()
-};
 REGISTER_SHADER(OutlineGeometryVS, "Engine/Shaders/Source/Editor/Outline/OutlineGeometry.hlsl", "MainVS", Vertex);
-
-struct OutlineGeometryPS : public GlobalShader
-{
-	DECLARE_GLOBAL_SHADER(OutlineGeometryPS)
-	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-		RG_RENDER_TARGETS()
-	END_SHADER_PARAMETER_STRUCT()
-};
 REGISTER_SHADER(OutlineGeometryPS, "Engine/Shaders/Source/Editor/Outline/OutlineGeometry.hlsl", "MainPS", Pixel);
 
 BEGIN_SHADER_PARAMETER_STRUCT(OutlineGeometryParameters)
@@ -69,11 +54,8 @@ BEGIN_SHADER_PARAMETER_STRUCT(OutlineGeometryParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(OutlineGeometryPS::Parameters, PS)
 END_SHADER_PARAMETER_STRUCT()
 
-RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& renderScene, const RenderView& view, const MeshRenderer::PrimitveFilterFunc& primitiveFilter)
+RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& renderScene, const RenderView& view)
 {
-	MeshRenderer meshRenderer;
-	meshRenderer.BuildRenderCommandsWithFilter(m_renderGraph, renderScene, view.GetCullingInfo(), primitiveFilter, ShaderMap::Get<OutlineGeometryVS>(), ShaderMap::Get<OutlineGeometryPS>());
-
 	RGTextureRef colorTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "OutlineGeometryColor"));
 	RGTextureRef depthTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "OutlineGeometryDepth"));
 
@@ -83,10 +65,12 @@ RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& ren
 	passParameters->PS.renderTargets.renderTargets[0] = colorTexture;
 	passParameters->PS.renderTargets.depthTarget = depthTexture;
 
+	m_meshPassProcessor->PrepareRenderCommands(m_renderGraph);
+
 	m_renderGraph.AddPass("Outline Geometry",
 		RenderGraphPassFlags::None,
 		passParameters,
-		[passParameters, view, meshRenderer](RenderContext& context)
+		[passParameters, view, &renderScene, meshPassProcessor = m_meshPassProcessor](RenderContext& context)
 	{
 		BatchedShaderParameters batchedShaderParameters;
 		context.CollectParameters(passParameters, batchedShaderParameters);
@@ -94,7 +78,7 @@ RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& ren
 		RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
 
 		context.BeginRendering(renderingInfo);
-		meshRenderer.Render(context, batchedShaderParameters);
+		meshPassProcessor->ExecuteCommands(context, batchedShaderParameters);
 		context.EndRendering();
 	});
 

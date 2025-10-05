@@ -168,19 +168,7 @@ void ViewportPanel::UpdateMainContent()
 				}
 			}
 
-			bool wasUsedPreviousFrame = isUsing;
 			isUsing = ImGuizmo::IsUsing();
-
-			if (wasUsedPreviousFrame && !isUsing)
-			{
-				for (auto ent : SelectionManager::GetSelectedEntities())
-				{
-					if (Sandbox::Get().CheckForUpdateNavMesh(m_editorScene->GetEntityFromID(ent)))
-					{
-						break;
-					}
-				}
-			}
 
 			if (isUsing)
 			{
@@ -634,23 +622,9 @@ bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, ObjectStateAction::Delete);
 			EditorCommandStack::GetInstance().PushUndo(command);
 
-			bool shouldUpdateNavMesh = false;
-			for (const auto& entity : entitiesToRemove)
+			for (const auto& i : entitiesToRemove)
 			{
-				if (!entity)
-				{
-					continue;
-				}
-
-				if (!shouldUpdateNavMesh && Sandbox::Get().CheckForUpdateNavMesh(entity))
-				{
-					shouldUpdateNavMesh = true;
-				}
-				m_editorScene->DestroyEntity(entity);
-			}
-
-			if (shouldUpdateNavMesh)
-			{
+				m_editorScene->DestroyEntity(i);
 			}
 
 			break;

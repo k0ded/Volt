@@ -294,13 +294,8 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, ObjectStateAction::Delete);
 			EditorCommandStack::GetInstance().PushUndo(command);
 
-			bool shouldUpdateNavMesh = false;
 			for (const auto& i : entitiesToRemove)
 			{
-				if (!shouldUpdateNavMesh && Sandbox::Get().CheckForUpdateNavMesh(i))
-				{
-					shouldUpdateNavMesh = true;
-				}
 				m_scene->DestroyEntity(i);
 			}
 

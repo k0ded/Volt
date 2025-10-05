@@ -1,9 +1,11 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
+
 #include <RHIModule/Graphics/DeviceQueue.h>
 
 struct VkQueue_T;
+struct VkSemaphore_T;
 
 namespace Volt::RHI
 {
@@ -19,12 +21,18 @@ namespace Volt::RHI
 		void AquireLock();
 		void ReleaseLock();
 
+		void DestroyQueueSemaphore(class VulkanGraphicsDevice& graphicsDevice);
+
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
+		void CreateQueueSemaphore(class VulkanGraphicsDevice& graphicsDevice);
+
 		std::mutex m_executeMutex{};
 
 		VkQueue_T* m_queue = nullptr;
+		VkSemaphore_T* m_queueSemaphore = nullptr;
+		uint64_t m_semaphoreValue = 1;
 	};
 }

@@ -1,18 +1,16 @@
 #pragma once
 
-#include "CoreUtilities/Allocators/HeapAllocator.h"
+#include "CoreUtilities/Allocators/ContainerAllocators.h"
 #include "CoreUtilities/VoltAssert.h"
 
 #include <atomic>
 
-template<size_t MaxByteSize, typename SecondaryAllocator = HeapAllocator>
+template<typename SecondaryAllocator = DefaultHeapAllocator>
 class LinearAllocator
 {
 public:
 	LinearAllocator()
-	{ 
-		m_dataBuffer = reinterpret_cast<uint8_t*>(m_allocator.Allocate(MaxByteSize, alignof(uint8_t)));
-	}
+	{}
 
 	~LinearAllocator()
 	{
@@ -25,10 +23,10 @@ public:
 	LinearAllocator(const LinearAllocator& other) noexcept
 	{
 		m_allocator = other.m_allocator;
-		m_dataBuffer = reinterpret_cast<uint8_t*>(m_allocator.Allocate(MaxByteSize, alignof(uint8_t)));
+		m_dataBuffer = reinterpret_cast<uint8_t*>(m_allocator.Allocate(other.m_size, 0));
 
 		m_dataPointer.store(other.m_dataPointer.load());
-		memcpy(m_dataBuffer, other.m_dataBuffer, MaxByteSize);
+		memcpy(m_dataBuffer, other.m_dataBuffer, other.m_size);
 	}
 
 	LinearAllocator(LinearAllocator&& other) noexcept
@@ -43,8 +41,10 @@ public:
 	LinearAllocator& operator=(const LinearAllocator& other) noexcept
 	{
 		m_allocator = other.m_allocator;
+		m_dataBuffer = reinterpret_cast<uint8_t*>(m_allocator.Allocate(other.m_size, 0));
+
 		m_dataPointer.store(other.m_dataPointer.load());
-		memcpy(m_dataBuffer, other.m_dataBuffer, MaxByteSize);
+		memcpy(m_dataBuffer, other.m_dataBuffer, other.m_size);
 
 		return *this;
 	}
@@ -68,9 +68,16 @@ public:
 	void* Allocate(size_t allocationSize)
 	{
 		size_t allocationOffset = m_dataPointer.fetch_add(allocationSize);
-		VT_ENSURE(m_dataPointer <= MaxByteSize);
-
+		VT_ENSURE(m_dataPointer <= m_size);
+		 
 		return &m_dataBuffer[allocationOffset];
+	}
+
+	void Reserve(size_t size)
+	{
+		VT_ENSURE(!m_dataBuffer);
+		m_dataBuffer = reinterpret_cast<uint8_t*>(m_allocator.Allocate(size, 0));
+		m_size = size;
 	}
 
 	uint8_t* GetData() const
@@ -85,7 +92,8 @@ public:
 
 private:
 	uint8_t* m_dataBuffer = nullptr;
+	size_t m_size = 0;
 	std::atomic_size_t m_dataPointer = 0;
 
-	SecondaryAllocator m_allocator;
+	SecondaryAllocator::template ForElementType<uint8_t> m_allocator;
 };

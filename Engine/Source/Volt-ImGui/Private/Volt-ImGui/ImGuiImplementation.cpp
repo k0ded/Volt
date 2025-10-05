@@ -5,9 +5,9 @@
 #include <WindowModule/Window.h>
 
 #include <RenderCore/CommandBufferPool.h>
-#include <RenderCore/DescriptorTableCache.h>
 
 #include <RHIModule/Buffers/CommandBufferUtility.h>
+#include <RHIModule/Descriptors/ShaderBindingMap.h>
 #include <RHIModule/Core/RenderingInfo.h>
 
 #include <LogModule/Log.h>
@@ -116,7 +116,9 @@ namespace Volt
 		}
 
 		// Composite all windows render targets to their respective swapchains.
-		RefPtr<RHI::CommandBuffer> commandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		const Map<Window*, ImGuiRenderTargetManager::RenderTarget>& renderTargets = m_renderTargetManager->GetAllRenderTargets();
@@ -186,12 +188,10 @@ namespace Volt
 			commandBuffer->BindPipeline(m_copyRenderPipeline);
 			commandBuffer->SetScissors({ scissor });
 
-			RefPtr<RHI::DescriptorTable> descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(m_copyRenderPipeline );
-			RefPtr<RHI::ImageView> imageView = renderTarget.image->GetView();
-			descriptorTable->SetImageView(imageView, GetDescriptorSetIndexFromShaderStage(RHI::ShaderStage::Pixel), 1);
+			RHI::ShaderBindingMap shaderBindingMap;
+			shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 0, renderTarget.image->GetView());
 
-			commandBuffer->BindDescriptorTable(descriptorTable);
-
+			commandBuffer->BindShaderBindings(shaderBindingMap);
 			commandBuffer->Draw(3, 1, 0, 0);
 			commandBuffer->EndRendering();
 
@@ -213,7 +213,6 @@ namespace Volt
 		commandBuffer->End();
 
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
-		CommandBufferPool::FreeCommandBuffer(commandBuffer);
 	}
 	
 	void ImGuiImplementation::RenderPreviousFrameContextStack()

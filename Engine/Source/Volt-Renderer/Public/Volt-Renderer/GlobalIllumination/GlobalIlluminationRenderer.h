@@ -4,6 +4,11 @@
 
 namespace Volt
 {
+	namespace RHI
+	{
+		class Image;
+	}
+
 	class RenderGraph;
 	class RenderGraphBlackboard;
 	struct RenderView;
@@ -19,5 +24,6 @@ namespace Volt
 		Output Execute(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 
 	private:
+		RefPtr<RHI::Image> m_prevIndirectLight;
 	};
 }

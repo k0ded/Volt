@@ -7,6 +7,7 @@
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
 #include "Volt-Renderer/Utility/ScatteredBufferUpload.h"
 #include "Volt-Renderer/Texture/Texture2D.h"
+#include "Volt-Renderer/Debug/DebugRenderer.h"
 
 #include <RenderCore/Shader/GlobalShader.h>
 
@@ -28,7 +29,16 @@ VT_DEFINE_LOG_CATEGORY(LogRenderScene);
 
 namespace Volt
 {
-	static ConsoleVariable<int32_t> s_logRenderSceneUpdatedCVar("r.RenderScene.LogUpdates", 0, "Whether or not to log Render Scene updates");
+	static ConsoleVariable<int32_t> s_logRenderSceneUpdatedCVar(
+		"r.RenderScene.LogUpdates", 
+		0, 
+		"Whether or not to log Render Scene updates");
+
+	static ConsoleVariable<int32_t> s_visualizeRenderScenePrimitiveBoundingSpheres(
+		"r.RenderScene.VisualizePrimitiveBoundingSpheres",
+		0,
+		"Whether of not to visualize render primitive bounding spheres."
+	);
 
 	RenderScene::RenderScene(EntityScene* sceneRef)
 		: m_scene(sceneRef)
@@ -65,7 +75,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		renderGraph.BeginMarker("RenderScene::Update");
-
+	
 		UpdateInvalidMaterials(renderGraph);
 		UpdateInvalidMeshes(renderGraph);
 		UpdateInvalidLights(renderGraph);
@@ -110,6 +120,11 @@ namespace Volt
 		if (m_rayTracingScene)
 		{
 			m_rayTracingScene->Update();
+		}
+
+		if (s_visualizeRenderScenePrimitiveBoundingSpheres.GetValue())
+		{
+			VisualizeRenderPrimitives();
 		}
 
 		renderGraph.EndMarker();
@@ -170,10 +185,15 @@ namespace Volt
 		TryAddMesh(mesh);
 
 		const size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
+
+		newObj.primitiveIndex = static_cast<uint32_t>(primitiveDrawDataIndex);
+
 		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
 
 		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
 		InvalidatePrimitiveInstance(newId);
+
+		OnRenderPrimitiveAdded(newObj);
 
 		return newId;
 	}
@@ -195,10 +215,15 @@ namespace Volt
 		TryAddMesh(mesh);
 
 		size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
+
+		newObj.primitiveIndex = static_cast<uint32_t>(primitiveDrawDataIndex);
+
 		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
 
 		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
 		InvalidatePrimitiveInstance(newId);
+
+		OnRenderPrimitiveAdded(newObj);
 
 		return newId;
 	}
@@ -216,6 +241,8 @@ namespace Volt
 		{
 			return;
 		}
+
+		OnRenderPrimitiveRemoved(*it);
 
 		const bool isAnimated = (*it).IsAnimated();
 
@@ -297,6 +324,62 @@ namespace Volt
 		}
 	}
 
+	void RenderScene::OnRenderPrimitiveAdded(const RenderPrimitiveData& renderPrimitive)
+	{
+		for (auto& callback : m_onRenderPrimitiveAddedCallbacks)
+		{
+			callback.callback(renderPrimitive);
+		}
+	}
+
+	void RenderScene::OnRenderPrimitiveRemoved(const RenderPrimitiveData& renderPrimitive)
+	{
+		for (auto& callback : m_onRenderPrimitiveRemovedCallbacks)
+		{
+			callback.callback(renderPrimitive);
+		}
+	}
+
+	UUID32 RenderScene::RegisterOnRenderPrimitiveAddedCallback(std::function<void(const RenderPrimitiveData& renderPrimitive)>&& callback)
+	{
+		auto& newCallback = m_onRenderPrimitiveAddedCallbacks.emplace_back();
+		newCallback.callback = std::move(callback);
+		
+		return newCallback.id;
+	}
+
+	UUID32 RenderScene::RegisterOnRenderPrimitiveRemovedCallback(std::function<void(const RenderPrimitiveData& renderPrimitive)>&& callback)
+	{
+		auto& newCallback = m_onRenderPrimitiveRemovedCallbacks.emplace_back();
+		newCallback.callback = std::move(callback);
+
+		return newCallback.id;
+	}
+
+	void RenderScene::UnregisterOnRenderPrimitiveAddedCallback(UUID32 callbackId)
+	{
+		for (int32_t i = static_cast<int32_t>(m_onRenderPrimitiveAddedCallbacks.size()) - 1; i >= 0; --i)
+		{
+			if (m_onRenderPrimitiveAddedCallbacks.at(i).id == callbackId)
+			{
+				m_onRenderPrimitiveAddedCallbacks.erase_unsorted(m_onRenderPrimitiveAddedCallbacks.begin() + i);
+				break;
+			}
+		}
+	}
+
+	void RenderScene::UnregisterOnRenderPrimitiveRemovedCallback(UUID32 callbackId)
+	{
+		for (int32_t i = static_cast<int32_t>(m_onRenderPrimitiveRemovedCallbacks.size()) - 1; i >= 0; --i)
+		{
+			if (m_onRenderPrimitiveRemovedCallbacks.at(i).id == callbackId)
+			{
+				m_onRenderPrimitiveRemovedCallbacks.erase_unsorted(m_onRenderPrimitiveRemovedCallbacks.begin() + i);
+				break;
+			}
+		}
+	}
+
 	Weak<RenderMaterial> RenderScene::GetMaterialFromID(const uint32_t materialId) const
 	{
 		if (static_cast<size_t>(materialId) >= m_individualMaterials.size())
@@ -375,6 +458,33 @@ namespace Volt
 		return *it;
 	}
 
+	void RenderScene::VisualizeRenderPrimitives()
+	{
+		auto transformPosition = [](const glm::vec3& pos, const glm::vec3& translation, const glm::vec3& scale, const glm::quat& rotation) 
+		{
+			glm::vec3 v = pos * scale;
+			glm::vec3 rotXYZ = glm::vec3(rotation.x, rotation.y, rotation.z);
+
+			v = v + 2.f * glm::cross(rotXYZ, glm::cross(rotXYZ, v) + rotation.w * v);
+			v += translation;
+
+			return v;
+		};
+
+		for (const PrimitiveDrawData& primitive : m_primitiveDrawData)
+		{
+			if (EnumValueContainsAnyFlag(primitive.flags, PrimitiveFlags::Valid))
+			{
+				const GPUMesh& gpuMesh = m_gpuMeshes.at(primitive.meshId);
+
+				const float maxScale = glm::max(glm::max(primitive.scale.x, primitive.scale.y), primitive.scale.z);
+				const glm::vec3 center = transformPosition(gpuMesh.center, primitive.position, primitive.scale, primitive.rotation);
+
+				Renderer::GetDebugRenderer().DrawLineSphere(center, maxScale * gpuMesh.radius, 1.f);
+			}
+		}
+	}
+
 	bool RenderScene::OnPreRenderEvent(AppPreRenderEvent& event)
 	{
 		if (RHI::RHICanUseRayTracing())
@@ -437,10 +547,10 @@ namespace Volt
 
 		if (RHI::RHICanUseRayTracing())
 		{
-			outGPUMesh.RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer()->GetResource());
-			outGPUMesh.RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer()->GetResource());
-			outGPUMesh.RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer()->GetResource());
-			outGPUMesh.RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer()->GetResource());
+			outGPUMesh.RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer());
+			outGPUMesh.RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer());
+			outGPUMesh.RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer());
+			outGPUMesh.RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer());
 		}
 	}
 
@@ -535,15 +645,15 @@ namespace Volt
 
 		if (RHI::RHICanUseRayTracing())
 		{
-			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexPositionsBuffer()->GetResource());
-			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexAnimationInfoBuffer()->GetResource());
-			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexMaterialBuffer()->GetResource());
-			m_rayTracingResourceTable->AddBuffer(mesh->GetIndexBuffer()->GetResource());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexPositionsBuffer());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexAnimationInfoBuffer());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexMaterialBuffer());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetIndexBuffer());
 
-			RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer()->GetResource());
-			RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer()->GetResource());
-			RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer()->GetResource());
-			RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer()->GetResource());
+			RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer());
+			RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer());
+			RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer());
+			RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer());
 		}
 
 		const size_t newMeshIndex = m_individualMeshes.size();
@@ -715,6 +825,8 @@ namespace Volt
 				auto& data = bufferUpload.AddUploadItem(invalidPrimitive.index);
 				BuildSinglePrimitiveDrawData(data, renderObject);
 
+				m_primitiveDrawData[invalidPrimitive.index] = data;
+
 				if (s_logRenderSceneUpdatedCVar.GetValue())
 				{
 					VT_LOGC(Trace, LogRenderScene, "Primitive Data attached to entity {} was uploaded to index {}.", data.entityId, invalidPrimitive.index);
@@ -725,6 +837,8 @@ namespace Volt
 			{
 				auto& data = bufferUpload.AddUploadItem(removedPrimitiveIndex);
 				data.flags = PrimitiveFlags::Invalid;
+
+				m_primitiveDrawData[removedPrimitiveIndex] = data;
 
 				if (s_logRenderSceneUpdatedCVar.GetValue())
 				{
@@ -738,6 +852,8 @@ namespace Volt
 
 	void RenderScene::BuildPerMeshIndirectDrawCommands(RenderGraph& renderGraph)
 	{
+		VT_PROFILE_FUNCTION();
+
 		m_buffers.perMeshIndirectDrawCommands = renderGraph.CreateBuffer(RGBufferDesc::CreateIndirectDesc<RHI::DrawIndexedIndirectCommand>(m_gpuMeshes.size(), "RenderScene.PerMeshIndirectDrawCommands", RHI::MemoryUsage::CPUToGPU));
 		
 		Vector<RHI::DrawIndexedIndirectCommand> commands;

@@ -33,8 +33,6 @@ namespace Volt::RHI
 			ColorSpace colorSpace;
 		};
 		
-		inline constexpr static uint32_t MAX_FRAMES_IN_FLIGHT = 3;
-
 		VulkanSwapchain(const SwapchainCreateInfo& createInfo);
 		~VulkanSwapchain() override;
 
@@ -45,7 +43,6 @@ namespace Volt::RHI
 		const uint32_t GetCurrentFrame() const override;
 		const uint32_t GetWidth() const override;
 		const uint32_t GetHeight() const override;
-		const uint32_t GetFramesInFlight() const override;
 		const PixelFormat GetFormat() const override;
 		RefPtr<Image> GetCurrentImage() const override;
 		bool IsHDREnabled() const override;
@@ -106,12 +103,14 @@ namespace Volt::RHI
 		SwapchainCreateInfo m_createInfo{};
 
 		Vector<RefPtr<CommandBuffer>> m_commandBuffers;
-		Vector<RefPtr<Fence>> m_fences;
+		Vector<VkFence_T*> m_fences;
 		Vector<PerFrameInFlightData> m_perFrameInFlightData{};
 		Vector<PerImageData> m_perImageData{};
 
 		VkSwapchainKHR_T* m_swapchain = nullptr;
 		VkSurfaceKHR_T* m_surface = nullptr;
+
+		std::mutex m_swapchainMutex;
 
 		PixelFormat m_swapchainFormat = PixelFormat::UNDEFINED;
 	};

@@ -5,6 +5,7 @@
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/CommandLineBuilder.h>
+#include <CoreUtilities/Malloc.h>
 
 #include <cstdint>
 #include <iostream>
@@ -29,6 +30,8 @@ namespace Volt
 
 	int32_t Main(const CommandLineBuilder& commandLineBuilder)
 	{
+		Memory::Initialize();
+
 		BaseApplication* app = CreateApplication(commandLineBuilder);
 		if (!app)
 		{

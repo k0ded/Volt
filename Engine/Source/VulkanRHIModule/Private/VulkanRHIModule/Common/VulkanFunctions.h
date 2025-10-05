@@ -34,6 +34,9 @@ namespace Volt::RHI
 	inline PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR;
 	inline PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
 
+	// Device fault
+	inline PFN_vkGetDeviceFaultInfoEXT vkGetDeviceFaultInfoEXT;
+
 	inline static void LoadVulkanFunctions(VkInstance instance)
 	{
 		VT_GET_VULKAN_FUNCTION(vkSetDebugUtilsObjectNameEXT);
@@ -63,5 +66,8 @@ namespace Volt::RHI
 		VT_GET_VULKAN_FUNCTION(vkCreateRayTracingPipelinesKHR);
 		VT_GET_VULKAN_FUNCTION(vkGetRayTracingShaderGroupHandlesKHR);
 		VT_GET_VULKAN_FUNCTION(vkCmdTraceRaysKHR);
+	
+		// Device fault
+		VT_GET_VULKAN_FUNCTION(vkGetDeviceFaultInfoEXT);
 	}
 }

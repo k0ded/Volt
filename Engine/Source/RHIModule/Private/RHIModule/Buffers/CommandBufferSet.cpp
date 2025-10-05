@@ -12,7 +12,7 @@ namespace Volt::RHI
 		for (uint32_t i = 0; i < m_count; i++)
 		{
 			m_commandBuffers[i] = CommandBuffer::Create(queueType);
-			m_fences[i] = Fence::Create({ true });
+			m_fences[i] = Fence::Create();
 		}
 	}
 

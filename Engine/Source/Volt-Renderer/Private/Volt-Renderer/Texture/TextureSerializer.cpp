@@ -181,7 +181,9 @@ namespace Volt
 			totalImageSize += mipSize;
 		}
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		const auto& currentResourceState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
@@ -231,7 +233,6 @@ namespace Volt
 
 		commandBuffer->End();
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
-		CommandBufferPool::FreeCommandBuffer(commandBuffer);
 
 		Buffer dataBuffer;
 
@@ -293,7 +294,9 @@ namespace Volt
 
 		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		{
@@ -326,8 +329,6 @@ namespace Volt
 
 		commandBuffer->End();
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
-
-		CommandBufferPool::FreeCommandBuffer(commandBuffer);
 
 		RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
 	}

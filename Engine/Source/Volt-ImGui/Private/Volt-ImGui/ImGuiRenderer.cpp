@@ -1,13 +1,15 @@
 #include "Volt-ImGui/ImGuiRenderer.h"
 #include "Volt-ImGui/ImGuiRenderTargetManager.h"
 
+#include <RenderCore/CommandBufferPool.h>
+
 #include <RHIModule/Graphics/Swapchain.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Descriptors/ShaderBindingMap.h>
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Core/RenderingInfo.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
-
-#include <RenderCore/DescriptorTableCache.h>
+#include <RHIModule/RHICapabilities.h>
 
 #include <WindowModule/Window.h>
 
@@ -42,8 +44,8 @@ namespace Volt
 		io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
 		io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
 
-		m_usedImages.resize(RHI::Swapchain::FramesInFlight);
-		m_activeImageViews.resize(RHI::Swapchain::FramesInFlight);
+		m_usedImages.resize(RHI::RHICapabilities::NumFramesInFlight);
+		m_activeImageViews.resize(RHI::RHICapabilities::NumFramesInFlight);
 
 		InitalizeMultiViewportSupport();
 	}
@@ -75,7 +77,7 @@ namespace Volt
 		RenderImGuiViewport(drawData, window, shouldUseLoadRTAction);
 
 		m_usedImages.at(m_frameIndex).clear();
-		m_frameIndex = (m_frameIndex + 1) % RHI::Swapchain::FramesInFlight;
+		m_frameIndex = (m_frameIndex + 1) % RHI::RHICapabilities::NumFramesInFlight;
 	}
 
 	void ImGuiRenderer::RenderPreviousFrame(Window* window)
@@ -86,8 +88,6 @@ namespace Volt
 		auto commandBuffer = renderContext.commandBufferSet.GetCurrentCommandBuffer();
 
 		fence->WaitUntilSignaled();
-		fence->Reset();
-
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, fence);
 	}
 
@@ -154,7 +154,6 @@ namespace Volt
 		}
 
 		fence->WaitUntilSignaled();
-		fence->Reset();
 
 		commandBuffer->Begin(false);
 		commandBuffer->BeginMarker("Draw ImGui", { 1.f, 1.f, 1.f, 1.f });
@@ -200,7 +199,7 @@ namespace Volt
 
 		commandBuffer->SetViewports({ viewport });
 
-		commandBuffer->BindVertexBuffers({ renderContext.vertexBuffers.at(frameIndex) }, 0);
+		commandBuffer->BindVertexBuffers({ { renderContext.vertexBuffers.at(frameIndex), 0ull } }, 0);
 		commandBuffer->BindIndexBuffer(renderContext.indexBuffers.at(frameIndex), sizeof(ImDrawIdx) == sizeof(uint16_t) ? RHI::IndexType::UInt16 : RHI::IndexType::UInt32);
 		commandBuffer->BindPipeline(m_imguiRenderPipeline);
 
@@ -243,14 +242,13 @@ namespace Volt
 				RefPtr<RHI::ImageView> imageView = image->GetView();
 				m_activeImageViews.at(frameIndex).emplace_back(imageView);
 
-				RefPtr<RHI::DescriptorTable> descriptorTable = DescriptorTableCache::Get().GetOrCreateDescriptorTableForPipeline(m_imguiRenderPipeline);
-				descriptorTable->SetBufferView(renderContext.globalsUniformBuffer->GetView(), GetDescriptorSetIndexFromShaderStage(RHI::ShaderStage::Vertex), 0);
-				descriptorTable->SetBufferView(renderContext.globalsUniformBuffer->GetView(), GetDescriptorSetIndexFromShaderStage(RHI::ShaderStage::Pixel), 0);
-				descriptorTable->SetImageView(imageView, GetDescriptorSetIndexFromShaderStage(RHI::ShaderStage::Pixel), 1);
-				descriptorTable->SetSamplerState(m_textureSampler, GetDescriptorSetIndexFromShaderStage(RHI::ShaderStage::Pixel), 2);
+				RHI::ShaderBindingMap shaderBindingMap;
+				shaderBindingMap.SetUniformBuffer(RHI::ShaderStage::Vertex, 0, renderContext.globalsUniformBuffer->GetView());
+				shaderBindingMap.SetUniformBuffer(RHI::ShaderStage::Pixel, 0, renderContext.globalsUniformBuffer->GetView());
+				shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 1, imageView);
+				shaderBindingMap.SetSampler(RHI::ShaderStage::Pixel, 2, m_textureSampler);
 
-				commandBuffer->BindDescriptorTable(descriptorTable);
-
+				commandBuffer->BindShaderBindings(shaderBindingMap);
 				commandBuffer->DrawIndexed(cmd->ElemCount, 1, cmd->IdxOffset + globalIndexOffset, cmd->VtxOffset + globalVertexOffset, 0);
 			}
 
@@ -358,7 +356,8 @@ namespace Volt
 				stagingAlloc->Unmap();
 			}
 
-			RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+			RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+			RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
 			RawPtr<RHI::Image> image = (RHI::Image*)textureData->GetTexID();
 
@@ -465,7 +464,7 @@ namespace Volt
 
 	void ImGuiRenderer::AddViewportRenderContext(Window* window)
 	{
-		RenderContext& renderContext = m_renderContexts[window] = RenderContext(RHI::Swapchain::FramesInFlight);
+		RenderContext& renderContext = m_renderContexts[window] = RenderContext(RHI::RHICapabilities::NumFramesInFlight);
 
 		{
 			RHI::BufferDesc desc{};
@@ -475,9 +474,9 @@ namespace Volt
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			desc.usage = RHI::BufferUsage::VertexBuffer;
 
-			renderContext.vertexBuffers.resize(RHI::Swapchain::FramesInFlight);
+			renderContext.vertexBuffers.resize(RHI::RHICapabilities::NumFramesInFlight);
 
-			for (uint32_t i = 0; i < RHI::Swapchain::FramesInFlight; ++i) 
+			for (uint32_t i = 0; i < RHI::RHICapabilities::NumFramesInFlight; ++i)
 			{
 				renderContext.vertexBuffers[i] = RHI::StorageBuffer::Create(desc);
 			}
@@ -491,15 +490,18 @@ namespace Volt
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			desc.usage = RHI::BufferUsage::IndexBuffer;
 
-			renderContext.indexBuffers.resize(RHI::Swapchain::FramesInFlight);
+			renderContext.indexBuffers.resize(RHI::RHICapabilities::NumFramesInFlight);
 
-			for (uint32_t i = 0; i < RHI::Swapchain::FramesInFlight; ++i)
+			for (uint32_t i = 0; i < RHI::RHICapabilities::NumFramesInFlight; ++i)
 			{
 				renderContext.indexBuffers[i] = RHI::StorageBuffer::Create(desc);
 			}
 		}
 
-		renderContext.globalsUniformBuffer = RHI::UniformBuffer::Create(sizeof(glm::vec2) * 2);
+		RHI::UniformBufferDesc desc{};
+		desc.size = sizeof(glm::vec2) * 2;
+		desc.debugName = "ImGuiRenderer.GlobalsBuffer";
+		renderContext.globalsUniformBuffer = RHI::UniformBuffer::Create(desc);
 	}
 
 	void ImGuiRenderer::RemoveViewportRenderContext(Window* window)

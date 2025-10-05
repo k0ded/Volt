@@ -1,5 +1,4 @@
 #include <CoreUtilities/Containers/Vector.h>
-#include <CoreUtilities/Allocators/InlineAllocator.h>
 
 #include <gtest/gtest.h>
 
@@ -545,6 +544,29 @@ namespace UnitTests
 		ASSERT_EQ(v0.size(), 0);
 	}
 
+	template<typename VectorType>
+	void Test_ResizeMultiple()
+	{
+		VectorType v0;
+
+		for (size_t i = 0; i < 2048; ++i)
+		{
+			v0.emplace_back(i);
+		}
+
+		VectorType v1;
+		for (size_t i = 0; i < v0.size(); ++i)
+		{
+			v1.emplace_back(v0.at(i));
+		}
+
+		v0.clear();
+		v1.clear();
+
+		ASSERT_EQ(v0.size(), 0);
+		ASSERT_EQ(v1.size(), 0);
+	}
+
 	TEST(Vector, Swap)
 	{
 		Test_Swap<Vector<ValueWithDestructor>>();
@@ -698,6 +720,11 @@ namespace UnitTests
 	TEST(Vector, Clear)
 	{
 		Test_Clear<Vector<ValueWithDestructor>>();
+	}
+
+	TEST(Vector, ResizeMultiple)
+	{
+		Test_ResizeMultiple<Vector<ValueWithDestructor>>();
 	}
 
 	using VectorWithInlineAllocator = Vector<ValueWithDestructor, InlineAllocator<128>>;

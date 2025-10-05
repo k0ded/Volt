@@ -12,7 +12,6 @@
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderContext.h>
-#include <RenderCore/Resources/BindlessResourcesManager.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/PipelineStateCache.h>
 #include <RenderCore/Shader/DefaultShaders.h>
@@ -24,7 +23,6 @@
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Images/ImageUtility.h>
-#include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/RHIFeatures.h>
 
@@ -123,17 +121,10 @@ namespace Volt
 
 	void Renderer::Initialize()
 	{
-		// Bindless resources manager
-		// This will be created even if bindless is not enabled.
-		// It just doesn't do anything.
-		{
-			m_bindlessResourcesManager = CreateScope<BindlessResourcesManager>();
-		}
-
-		m_descriptorTableCache = CreateScope<DescriptorTableCache>();
 		m_samplerStateCache = CreateScope<SamplerStateCache>();
 		m_commandBufferPool = CreateScope<CommandBufferPool>();
 		m_transientResourceAllocator = CreateScope<TransientResourceAllocator>();
+		m_debugRenderer = CreateScope<DebugRenderer>();
 
 		CreateDefaultResources();
 		//m_blueNoise = CreateScope<BlueNoise>();
@@ -154,13 +145,11 @@ namespace Volt
 
 		m_shaderMap = nullptr;
 		m_samplerStateCache = nullptr;
-		m_descriptorTableCache = nullptr;
-		m_bindlessResourcesManager = nullptr;
 	}
 
 	const uint32_t Renderer::GetFramesInFlight()
 	{
-		return RHI::Swapchain::FramesInFlight;
+		return RHI::RHICapabilities::NumFramesInFlight;
 	}
 
 	const DefaultResources& Renderer::GetDefaultResources()
@@ -283,20 +272,14 @@ namespace Volt
 
 	bool Renderer::OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event)
 	{
+		m_debugRenderer->Reset();
 		m_frameIndex++;
 		return false;
 	}
 
 	bool Renderer::OnPreRenderEvent(AppPreRenderEvent& event)
 	{
-		if (RHI::RHICanUseBindless())
-		{
-			m_bindlessResourcesManager->Update();
-		}
-
 		m_transientResourceAllocator->OnPreRender(event.GetFrameIndex());
-
-		m_descriptorTableCache->Update(event.GetFrameIndex());
 		m_commandBufferPool->Update();
 
 		return false;
@@ -397,6 +380,11 @@ namespace Volt
 
 		renderGraph.Compile();
 		renderGraph.ExecuteImmediateAndWait();
+	}
+
+	DebugRenderer& Renderer::GetDebugRenderer()
+	{
+		return *s_instance->m_debugRenderer;
 	}
 
 	static Vector<std::filesystem::path> FindShaderIncludes(const std::filesystem::path& filePath)

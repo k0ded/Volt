@@ -1,7 +1,6 @@
 #include "vkpch.h"
 
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
-#include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
@@ -23,7 +22,7 @@ namespace Volt::RHI
 		Vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	};
 
-	inline VertexAttributeData CreateVertexLayout(const BufferLayoutMap& vertexLayoutMap, const BufferLayout& instanceLayout)
+	inline VertexAttributeData CreateVertexLayout(const BufferLayoutMap& vertexLayoutMap, const BufferLayout& instanceLayout, VertexBufferLayout& vertexBufferLayout)
 	{
 		VertexAttributeData result{};
 
@@ -47,19 +46,24 @@ namespace Volt::RHI
 			}
 
 			lastVertexBufferIndex = std::max(lastVertexBufferIndex, index);
+
+			vertexBufferLayout.vertexBuffers.emplace_back(vertexLayout, index);
 		}
 
 		if (instanceLayout.IsValid())
 		{
+			lastVertexBufferIndex++;
+			vertexBufferLayout.perInstanceVertexBuffer = { instanceLayout, lastVertexBufferIndex };
+
 			VkVertexInputBindingDescription& instanceBindingDesc = result.bindingDescriptions.emplace_back();
-			instanceBindingDesc.binding = 1;
+			instanceBindingDesc.binding = lastVertexBufferIndex;
 			instanceBindingDesc.stride = instanceLayout.GetStride();
 			instanceBindingDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
 			for (const auto& element : instanceLayout.GetElements())
 			{
 				VkVertexInputAttributeDescription& desc = result.attributeDescriptions.emplace_back();
-				desc.binding = 1;
+				desc.binding = lastVertexBufferIndex;
 				desc.location = attributeIndex++;
 				desc.format = Utility::VoltToVulkanElementFormat(element.type);
 				desc.offset = static_cast<uint32_t>(element.offset);
@@ -69,7 +73,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	inline VertexAttributeData CreateVertexLayoutFromShaders(const Vector<RefPtr<Shader>>& shaders)
+	inline VertexAttributeData CreateVertexLayoutFromShaders(const Vector<RefPtr<Shader>>& shaders, VertexBufferLayout& vertexBufferLayout)
 	{
 		// We will pick the first shader that contains a vertex layout (should only be one anyways)
 		for (const auto shader : shaders)
@@ -80,7 +84,7 @@ namespace Volt::RHI
 			{
 				if (shaderInfo.vertexLayout.begin()->second.IsValid())
 				{
-					return CreateVertexLayout(shaderInfo.vertexLayout, shaderInfo.instanceLayout);
+					return CreateVertexLayout(shaderInfo.vertexLayout, shaderInfo.instanceLayout, vertexBufferLayout);
 				}
 			}
 		}
@@ -139,16 +143,16 @@ namespace Volt::RHI
 
 			for (const auto shader : m_createInfo.shaders)
 			{
-				auto& parameterMap = m_shaderParameterMaps.emplace_back(shader->GetParameterMap());
+				const ShaderParameterMap& parameterMap = shader->GetParameterMap();
+
+				m_shaderParameterMaps[GetDescriptorSetIndexFromShaderStage(shader->GetShaderStage())] = parameterMap;
 				shaderResourceBindings.emplace_back(parameterMap.GetResourceBindings());
 			
 				anyAccessesRayTracingResourceTable |= parameterMap.AccessesRayTracingTable();
 			}
 
 			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
-			DescriptorSetLayoutBuilder::DescriptorSets descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderResourceBindings, anyAccessesRayTracingResourceTable);
-			m_descriptorSetLayouts = descriptorSets.descriptorSetLayouts;
-			m_pipelineLayoutDescriptorSetLayouts = descriptorSets.pipelineLayoutDescriptorSetLayouts;
+			m_descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderResourceBindings, anyAccessesRayTracingResourceTable);
 			m_descriptorPoolSizes = descriptorSetLayoutBuilder.CalculateDescriptorPoolSizesFromBindings(shaderResourceBindings);
 		}
 
@@ -157,8 +161,8 @@ namespace Volt::RHI
 			VkPipelineLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			info.pNext = nullptr;
-			info.setLayoutCount = static_cast<uint32_t>(m_pipelineLayoutDescriptorSetLayouts.size());
-			info.pSetLayouts = m_pipelineLayoutDescriptorSetLayouts.data();
+			info.setLayoutCount = static_cast<uint32_t>(m_descriptorSets.pipelineLayoutDescriptorSetLayouts.size());
+			info.pSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.data();
 			info.pushConstantRangeCount = 0;
 			info.pPushConstantRanges = nullptr;
 
@@ -167,7 +171,7 @@ namespace Volt::RHI
 
 		// Create pipeline
 		{
-			VertexAttributeData vertexAttributes = CreateVertexLayoutFromShaders(m_createInfo.shaders);
+			VertexAttributeData vertexAttributes = CreateVertexLayoutFromShaders(m_createInfo.shaders, m_vertexBufferLayout);
 
 			VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 			vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -352,6 +356,7 @@ namespace Volt::RHI
 			pipelineInfo.layout = m_pipelineLayout;
 			pipelineInfo.subpass = 0;
 			pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+			pipelineInfo.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 
 			VT_VK_CHECK(vkCreateGraphicsPipelines(device->GetHandle<VkDevice>(), VK_NULL_HANDLE, 1, &pipelineInfo, VT_VULKAN_ALLOCATOR, &m_pipeline));
 		}
@@ -359,16 +364,16 @@ namespace Volt::RHI
 		if (RHI::RHICanUseRayTracing() && anyAccessesRayTracingResourceTable)
 		{
 			// Erase the ray tracing pipelines from the lists, as they should not be accessed outside of the pipeline.
-			if (m_descriptorSetLayouts.contains(RayTracingTableDescriptorSetManager::Set))
+			if (m_descriptorSets.descriptorSetLayouts.contains(RayTracingTableDescriptorSetManager::Set))
 			{
-				m_descriptorSetLayouts.erase(RayTracingTableDescriptorSetManager::Set);
+				m_descriptorSets.descriptorSetLayouts.erase(RayTracingTableDescriptorSetManager::Set);
 			}
 
-			for (auto it = m_pipelineLayoutDescriptorSetLayouts.begin(); it != m_pipelineLayoutDescriptorSetLayouts.end(); ++it)
+			for (auto it = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.begin(); it != m_descriptorSets.pipelineLayoutDescriptorSetLayouts.end(); ++it)
 			{
 				if (*it == RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout())
 				{
-					m_pipelineLayoutDescriptorSetLayouts.erase(it);
+					m_descriptorSets.pipelineLayoutDescriptorSetLayouts.erase(it);
 					break;
 				}
 			}
@@ -400,7 +405,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_pipelineLayoutDescriptorSetLayouts]()
+		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, VT_VULKAN_ALLOCATOR);
@@ -414,7 +419,7 @@ namespace Volt::RHI
 
 		m_pipeline = nullptr;
 		m_pipelineLayout = nullptr;
-		m_descriptorSetLayouts.clear();
+		m_descriptorSets.pipelineLayoutDescriptorSetLayouts.clear();
 	}
 
 	void VulkanRenderPipeline::GenerateHash()
@@ -470,18 +475,14 @@ namespace Volt::RHI
 
 	const ShaderResourceBinding* VulkanRenderPipeline::GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const
 	{
-		for (const auto& parameterMap : m_shaderParameterMaps)
+		auto& shaderParameterMap = m_shaderParameterMaps[GetDescriptorSetIndexFromShaderStage(shaderStage)];
+
+		const ShaderParameterMap::ResourceBindings& resourceBindingsMap = shaderParameterMap.GetResourceBindings();
+		for (const auto& [binding, nameHash] : resourceBindingsMap)
 		{
-			if (parameterMap.GetShaderStage() == shaderStage)
+			if (nameHash == name)
 			{
-				const ShaderParameterMap::ResourceBindings& resourceBindingsMap = parameterMap.GetResourceBindings();
-				for (const auto& [binding, nameHash] : resourceBindingsMap)
-				{
-					if (nameHash == name)
-					{
-						return &binding;
-					}
-				}
+				return &binding;
 
 				// We can break here because there is only max one of each shader stage per pipeline
 				break;
@@ -491,7 +492,7 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	const Vector<ShaderParameterMap>& VulkanRenderPipeline::GetShaderParameterMaps() const
+	ArrayView<ShaderParameterMap> VulkanRenderPipeline::GetShaderParameterMaps() const
 	{
 		return m_shaderParameterMaps;
 	}
@@ -499,5 +500,10 @@ namespace Volt::RHI
 	const Vector<RefPtr<Shader>>& VulkanRenderPipeline::GetShaders() const
 	{
 		return m_createInfo.shaders;
+	}
+
+	const VertexBufferLayout& VulkanRenderPipeline::GetVertexBufferLayout() const
+	{
+		return m_vertexBufferLayout;
 	}
 }

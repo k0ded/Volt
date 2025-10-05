@@ -8,11 +8,10 @@
 #include <RHIModule/Buffers/BufferView.h>
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Images/SamplerState.h>
-#include <RHIModule/Descriptors/DescriptorTable.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
 
 #include <CoreUtilities/Allocators/LinearAllocator.h>
-#include <CoreUtilities/Allocators//InlineAllocator.h>
+#include <CoreUtilities/Containers/ArrayView.h>
 #include <CoreUtilities/DestructorHelper.h>
 
 namespace Volt
@@ -25,6 +24,7 @@ namespace Volt
 	class VTRC_API BatchedShaderParameterAllocator
 	{
 	public:
+		BatchedShaderParameterAllocator();
 		~BatchedShaderParameterAllocator();
 
 		template<typename T, typename... Args>
@@ -39,7 +39,7 @@ namespace Volt
 
 	private:
 		inline static constexpr size_t MaxBatchedShaderParameterSize = 1024;
-		LinearAllocator<MaxBatchedShaderParameterSize> m_allocator;
+		LinearAllocator<> m_allocator;
 		Vector<DestructorHelper> m_destructors;
 	};
 
@@ -95,20 +95,23 @@ namespace Volt
 	class VTRC_API BatchedShaderParameters
 	{
 	public:
+		inline static constexpr size_t NumMaxShaderBindings = 64;
+		inline static constexpr size_t NumMaxShaderParameters = 16;
+
 		void AddBufferParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::BufferView> bufferView);
 		void AddTextureParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::ImageView> imageView);
 		void AddSamplerParameter(const StringHash bindingName, const RHI::ShaderResourceType resourceType, RefPtr<RHI::SamplerState> sampler);
 		void AddShaderParameter(const StringHash parameterName, const void* data, const size_t size);
 
-		void PopulateShaderParameterUniformBuffers(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& outShaderParameters);
-		void BindShaderBindingsToDescriptorTable(const Vector<RHI::ShaderParameterMap>& shaderParameterMaps, RefPtr<RHI::DescriptorTable> descriptorTable, const Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& shaderParameterUniformBuffers = {}) const;
+		VT_INLINE ArrayView<BatchedShaderParameter*> GetShaderParameters() const { return m_parameters; }
+		VT_INLINE ArrayView<BatchedShaderBinding*> GetShaderBindings() const { return m_bindings; }
+
+		void PopulateShaderParameterUniformBuffers(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, Vector<RenderContext::PerStageShaderParameters, InlineAllocator<8>>& outShaderParameters);
+		void BindShaderBindings(ArrayView<RHI::ShaderParameterMap> shaderParameterMaps, RHI::ShaderBindingMap& shaderBindings);
 
 	private:
-		inline static constexpr size_t NumMaxShaderBindings = 64;
-		inline static constexpr size_t NumMaxShaderParameters = 16;
-
-		Vector<BatchedShaderBinding*, InlineAllocator<NumMaxShaderBindings>> m_bindings;
-		Vector<BatchedShaderParameter*, InlineAllocator<NumMaxShaderParameters>> m_parameters;
+		InlineVector<BatchedShaderBinding*, NumMaxShaderBindings> m_bindings;
+		InlineVector<BatchedShaderParameter*, NumMaxShaderParameters> m_parameters;
 		BatchedShaderParameterAllocator m_allocator;
 	};
 }

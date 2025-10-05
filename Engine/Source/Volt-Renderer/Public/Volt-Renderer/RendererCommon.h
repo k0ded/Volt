@@ -38,9 +38,14 @@ namespace Volt
 
 	struct DirectionalLightShadowUniformBuffer
 	{
-		inline static constexpr uint32_t CASCADE_COUNT = 4;
+		inline static constexpr uint32_t NumCascades = 4;
 
-		glm::mat4 viewProjections[CASCADE_COUNT];
-		float cascadeDistances[CASCADE_COUNT];
+		glm::mat4 viewProjections[NumCascades];
+
+		glm::mat4 cascade0Matrix;
+		glm::vec4 cascadeScale[NumCascades - 1];
+		glm::vec4 cascadeOffset[NumCascades - 1];
+		glm::vec4 samplingOffsets[2];
+		glm::vec4 cascadeDistances[NumCascades];
 	};
 }

@@ -1,7 +1,10 @@
 #pragma once
 
+#include "Volt-Renderer/Config.h"
+
 #include <CoreUtilities/Math/Hash.h>
 
+#include <glm/glm.hpp>
 #include <xhash>
 
 namespace Volt
@@ -56,6 +59,8 @@ namespace Volt
 
 	struct VertexMaterialData
 	{
+		static VTR_API VertexMaterialData Pack(const glm::vec3& normal, const glm::vec4& tangent, const glm::vec2& uv);
+
 		uint32_t normal;
 		float tangent = 0.f;
 		float tangentW = 1.f; 

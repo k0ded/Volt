@@ -120,14 +120,10 @@ void PropertiesPanel::UpdateMainContent()
 
 			if (entity.HasComponent<Volt::TransformComponent>())
 			{
-				static bool shouldUpdateNavMesh = false;
-
 				auto& transform = entity.GetComponent<Volt::TransformComponent>();
 
 				if (UI::PropertyAxisColor("Position", transform.position, 0.f))
 				{
-					shouldUpdateNavMesh = true;
-
 					if (myMidEvent == false)
 					{
 						Ref<ValueCommand<glm::vec3>> command = CreateRef<ValueCommand<glm::vec3>>(&transform.position, transform.position);
@@ -150,7 +146,6 @@ void PropertiesPanel::UpdateMainContent()
 
 				if (UI::PropertyAxisColor("Rotation", rotDegrees, 0.f))
 				{
-					shouldUpdateNavMesh = true;
 					transform.rotation = glm::quat{ glm::radians(rotDegrees) };
 
 					if (myMidEvent == false)
@@ -172,8 +167,6 @@ void PropertiesPanel::UpdateMainContent()
 
 				if (UI::PropertyAxisColor("Scale", transform.scale, 1.f))
 				{
-					shouldUpdateNavMesh = true;
-
 					if (myMidEvent == false)
 					{
 						Ref<ValueCommand<glm::vec3>> command = CreateRef<ValueCommand<glm::vec3>>(&transform.scale, transform.scale);
@@ -189,11 +182,6 @@ void PropertiesPanel::UpdateMainContent()
 
 						EditorUtils::MarkEntityAsEdited(ent);
 					}
-				}
-
-				if (shouldUpdateNavMesh && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && Sandbox::Get().CheckForUpdateNavMesh(entity))
-				{
-					shouldUpdateNavMesh = false;
 				}
 			}
 
