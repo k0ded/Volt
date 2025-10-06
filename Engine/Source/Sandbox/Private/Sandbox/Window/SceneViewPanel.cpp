@@ -64,6 +64,12 @@ void SceneViewPanel::UpdateMainContent()
 		return;
 	}
 
+	if (!m_scene->IsFinishedLoadingEntities())
+	{
+		ImGui::Text("Scene is still loading entitites, please wait.");
+		return;
+	}
+
 	//if (myTitle.contains("#"))
 	//{
 	//	SelectionManager::SetSelectionKey(myId);

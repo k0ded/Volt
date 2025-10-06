@@ -151,10 +151,15 @@ namespace Volt
 			}
 
 			TaskGraph taskGraph{ ExecutionPriority::Latent };
+			
+			TaskGraph::Task* finishUpTask = taskGraph.AddTask("Finish up registering entities", [this]()
+			{
+				m_isFinishedLoadingEntities = true;
+			});
 
 			for (const auto& [entityID, handle]: m_entityIDToDescHandle)
 			{
-				taskGraph.AddTask("Spawn Entity", [this, handle]()
+				TaskGraph::Task* spawnEntityTask = taskGraph.AddTask("Spawn Entity", [this, handle]()
 				{
 					bool wasLoaded = Volt::AssetManager::IsLoaded(handle);
 					Ref<Volt::EntityDesc> entityDesc = Volt::AssetManager::GetAsset<EntityDesc>(handle);
@@ -168,7 +173,10 @@ namespace Volt
 						Volt::AssetManager::Get().UnloadAsset(handle);
 					}
 				});
+
+				finishUpTask->AddDependency(spawnEntityTask);
 			}
+
 			taskGraph.Execute();
 		});
 		JobSystem::RunJob(job);
@@ -379,6 +387,7 @@ namespace Volt
 		}
 
 		newScene->m_sceneSettings.useWorldEngine = true;
+		newScene->m_isFinishedLoadingEntities = true;
 
 		return newScene;
 	}
