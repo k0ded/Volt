@@ -126,6 +126,7 @@ namespace Volt
 		primitiveIndexVertexBufferVector.resize(1);
 		primitiveIndexVertexBufferVector[0].buffer = primitiveIndexVertexBuffer;
 
+		uint64_t primitiveOffset = 0;
 		for (const MeshDrawCommandBucket& drawCommandBucket : m_meshDrawCommandBuckets)
 		{
 			for (const MeshDrawCommandBucket::InstancingRange& instancingRange : drawCommandBucket.instancingRanges)
@@ -148,7 +149,7 @@ namespace Volt
 
 				const uint32_t perInstanceBindingIndex = firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
 
-				primitiveIndexVertexBufferVector[0].offset = instancingRange.offset * sizeof(uint32_t);
+				primitiveIndexVertexBufferVector[0].offset = (primitiveOffset + instancingRange.offset) * sizeof(uint32_t);
 
 				commandBuffer->BindPipeline(firstDrawComamnd.renderPipeline);
 				commandBuffer->BindShaderBindings(shaderBindings);
@@ -157,6 +158,8 @@ namespace Volt
 				commandBuffer->BindIndexBuffer(firstDrawComamnd.indexBuffer);
 				commandBuffer->DrawIndexed(firstDrawComamnd.drawCommand.indexCount, instancingRange.count, firstDrawComamnd.drawCommand.firstIndex, firstDrawComamnd.drawCommand.vertexOffset, firstDrawComamnd.drawCommand.firstInstance);
 			}
+
+			primitiveOffset += drawCommandBucket.drawCommands.size();
 		}
 	}
 
@@ -249,15 +252,11 @@ namespace Volt
 			{
 				bucket->isDirty = true;
 
-				if (!m_sortTaskCounter || !m_sortTaskCounter->IsActive())
+				if (m_sortTaskCounter)
 				{
-					if (m_sortTaskCounter)
-					{
-						JobSystem::DestroyCounter(m_sortTaskCounter);
-					}
-
-					m_sortTaskCounter = JobSystem::CreateCounter();
+					JobSystem::WaitForAndDestroyCounter(m_sortTaskCounter);
 				}
+				m_sortTaskCounter = JobSystem::CreateCounter();
 
 				JobRef findInstancingOffsetsTask = JobSystem::CreateJob("MeshPassProcessor::FindInstancingOffsets", ExecutionPriority::Render, m_sortTaskCounter,
 				[bucket]() 
