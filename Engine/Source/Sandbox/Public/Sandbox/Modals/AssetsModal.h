@@ -18,6 +18,7 @@ CREATE_ENUM(CreateFilesTableColumns,
 	Name,
 	Type,
 	Path,
+	AssetHandle,
 
 	SetPath,
 
@@ -28,6 +29,7 @@ enum class AssetModalType
 {
 	Create,
 	Save,
+	SaveOrDiscard,
 	CheckOut,
 	None
 };
@@ -39,6 +41,7 @@ enum class AssetModalResult
 	CheckOut,
 	Save,
 	Create,
+	Discard,
 	None
 };
 

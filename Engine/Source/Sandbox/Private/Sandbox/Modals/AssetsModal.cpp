@@ -129,6 +129,8 @@ void AssetsModal::SetupTableColumn(CreateFilesTableColumns column)
 			break;
 		case CreateFilesTableColumns::Path:
 			break;
+		case CreateFilesTableColumns::AssetHandle:
+			break;
 
 		case CreateFilesTableColumns::SetPath:
 			flags = ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth;
@@ -316,6 +318,12 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 			ImGui::Text(assetName.c_str());
 			break;
 		}
+		case CreateFilesTableColumns::AssetHandle:
+		{
+			const std::string assetHandleString = std::to_string(handle);
+			ImGui::Text(assetHandleString.c_str());
+			break;
+		}
 		case CreateFilesTableColumns::Type:
 		{
 			AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(handle);
@@ -375,23 +383,41 @@ void AssetsModal::DrawDecisionButtons()
 	switch (m_assetModalType)
 	{
 		case AssetModalType::Create:
+		{
 			if (ImGui::Button("Create"))
 			{
 				m_result = AssetModalResult::Create;
 			}
 			break;
+		}
+		case AssetModalType::SaveOrDiscard:
 		case AssetModalType::Save:
+		{
 			if (ImGui::Button("Save"))
 			{
 				m_result = AssetModalResult::Save;
 			}
+
+			if (m_assetModalType == AssetModalType::SaveOrDiscard)
+			{
+				ImGui::SameLine();
+
+				if (ImGui::Button("Discard"))
+				{
+					m_result = AssetModalResult::Discard;
+				}
+			}
 			break;
+		}
+
 		case AssetModalType::CheckOut:
+		{
 			if (ImGui::Button("Check Out"))
 			{
 				m_result = AssetModalResult::CheckOut;
 			}
 			break;
+		}
 	}
 	ImGui::PopStyleColor(); // pop primary button color
 

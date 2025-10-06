@@ -201,7 +201,7 @@ namespace Volt
 
 		TaskGraph taskGraph{ ExecutionPriority::Immediate };
 
-		for (size_t index = 0; const auto& file : engineAssetFiles)
+		for (size_t index = 0; const auto & file : engineAssetFiles)
 		{
 			taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index]()
 			{
@@ -213,7 +213,7 @@ namespace Volt
 
 		const size_t offset = engineAssetFiles.size();
 
-		for (size_t index = 0; const auto& file : projectAssetFiles)
+		for (size_t index = 0; const auto & file : projectAssetFiles)
 		{
 			taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index, offset]()
 			{
@@ -291,7 +291,16 @@ namespace Volt
 				return;
 			}
 
-			m_assetRegistry.at(assetHandle).isLoaded = false;
+			//if the asset does not have a file, instead remove it from the registy, the asset will be lost forever
+			if (!HasFilePathLockless(assetHandle))
+			{
+				m_assetRegistry.erase(assetHandle);
+			}
+			else
+			{
+
+				m_assetRegistry.at(assetHandle).isLoaded = false;
+			}
 		}
 
 		{
@@ -913,7 +922,7 @@ namespace Volt
 	{
 		auto& instance = Get();
 		ReadLock lock{ instance.m_assetRegistryMutex };
-		
+
 		return GetMetadataFromHandleLockless(handle);
 	}
 
@@ -921,7 +930,7 @@ namespace Volt
 	{
 		auto& instance = Get();
 		ReadLock lock{ instance.m_assetRegistryMutex };
-		
+
 		return GetMetadataFromFilePathLockless(filePath);
 	}
 
@@ -966,13 +975,7 @@ namespace Volt
 		auto& instance = Get();
 		ReadLock lock{ instance.m_assetRegistryMutex };
 
-		const auto& metadata = GetMetadataFromHandleLockless(handle);
-		if (!metadata.IsValid())
-		{
-			return {};
-		}
-
-		return !metadata.filePath.empty();
+		return HasFilePathLockless(handle);
 	}
 
 	const std::filesystem::path AssetManager::GetFilePathFromFilename(const std::string& filename)
@@ -1194,6 +1197,17 @@ namespace Volt
 		}
 
 		return s_nullMetadata;
+	}
+
+	const bool AssetManager::HasFilePathLockless(AssetHandle handle)
+	{
+		const auto& metadata = GetMetadataFromHandleLockless(handle);
+		if (!metadata.IsValid())
+		{
+			return {};
+		}
+
+		return !metadata.filePath.empty();
 	}
 
 	const std::filesystem::path AssetManager::GetCleanAssetFilePath(const std::filesystem::path& filePath)

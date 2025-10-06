@@ -75,7 +75,7 @@ void DirtyAssetsManager::RegisterSaveCustomizationForType(AssetType type, DirtyS
 	m_dirtySaveCustomizations.emplace(type, customization);
 }
 
-bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter filter)
+bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, SaveDirtyAssetsFilter filter)
 {
 	//no dirty assets
 	if (m_dirtyAssets.empty())
@@ -141,15 +141,17 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, SaveDirtyAssetsFilter f
 		{
 			AssetsModal& modal = ModalSystem::GetModal<AssetsModal>(m_assetsModalID);
 			std::set<Volt::AssetHandle> outSelectedAssetsToSave;
-			AssetModalResult result = modal.OpenAssetModalTypeBlocking(AssetModalType::Save, assetsToSave, outSelectedAssetsToSave, &cantSaveAssets);
 
-			if (result != AssetModalResult::Save)
+			const AssetModalType assetModalType = allowDiscardSave ? AssetModalType::SaveOrDiscard : AssetModalType::Save;
+			const AssetModalResult result = modal.OpenAssetModalTypeBlocking(assetModalType, assetsToSave, outSelectedAssetsToSave, &cantSaveAssets);
+
+			if (result == AssetModalResult::Cancel)
 			{
 				return false;
 			}
 
 			//user chose to save no assets when prompted
-			if (outSelectedAssetsToSave.empty())
+			if (outSelectedAssetsToSave.empty() || result == AssetModalResult::Discard)
 			{
 				return true;
 			}

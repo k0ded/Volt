@@ -192,6 +192,7 @@ namespace Volt
 		static AssetMetadata& GetMetadataFromFilePathMutable(const std::filesystem::path filePath);
 		static const AssetMetadata& GetMetadataFromHandleLockless(AssetHandle handle);
 		static const AssetMetadata& GetMetadataFromFilePathLockless(const std::filesystem::path filePath);
+		static const bool HasFilePathLockless(AssetHandle handle);
 
 		static const std::filesystem::path GetCleanAssetFilePath(const std::filesystem::path& path);
 

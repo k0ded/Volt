@@ -58,7 +58,8 @@ public:
 	void RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomization customization);
 
 	//returns false if user cancels
-	bool SaveAssets(bool showSaveDialog = true, SaveDirtyAssetsFilter filter = SaveDirtyAssetsFilter());
+	//allowDiscardSave is only relevant if showSaveDialog is true
+	bool SaveAssets(bool showSaveDialog = false, bool allowDiscardSave = false, SaveDirtyAssetsFilter filter = SaveDirtyAssetsFilter());
 
 	bool IsAssetDirty(Volt::AssetHandle handle);
 	void MarkAssetDirty(Volt::AssetHandle handle);

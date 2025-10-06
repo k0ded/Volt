@@ -549,7 +549,7 @@ bool Sandbox::SaveScene(bool showDialog)
 
 		return true;
 	};
-	return DirtyAssetsManager::Get().SaveAssets(showDialog, filter);
+	return DirtyAssetsManager::Get().SaveAssets(showDialog, true, filter);
 }
 
 bool Sandbox::LoadScene(Volt::OnSceneTransitionEvent& e)
