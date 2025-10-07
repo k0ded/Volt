@@ -243,6 +243,8 @@ namespace Volt::RHI
 			vkQueue.AquireLock();
 			VT_VK_CHECK(vkQueueSubmit(deviceQueue->GetHandle<VkQueue>(), 1, &submitInfo, fence));
 			vkQueue.ReleaseLock();
+
+			m_lastSubmittedFence = m_currentFrame;
 		}
 
 		// Present to screen
@@ -339,6 +341,8 @@ namespace Volt::RHI
 		m_height = height;
 		m_VSyncEnabled = enableVSync;
 
+		m_lastSubmittedFence = RHI::RHICapabilities::NumFramesInFlight;
+
 		QuerySwapchainCapabilities();
 
 		CreateSwapchain(width, height, enableVSync);
@@ -352,7 +356,11 @@ namespace Volt::RHI
 			return;
 		}
 
-		vkWaitForFences(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), 1, &m_fences.at(m_currentFrame), VK_TRUE, UINT64_MAX);
+		if (m_lastSubmittedFence < RHI::RHICapabilities::NumFramesInFlight)
+		{
+			vkWaitForFences(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), 1, &m_fences.at(m_lastSubmittedFence), VK_TRUE, UINT64_MAX);
+		}
+
 
 		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, fences = m_fences, swapchain = m_swapchain, surface = m_surface]()
 		{

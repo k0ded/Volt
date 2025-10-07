@@ -127,7 +127,6 @@ namespace Volt
 		m_debugRenderer = CreateScope<DebugRenderer>();
 
 		CreateDefaultResources();
-		//m_blueNoise = CreateScope<BlueNoise>();
 	}
 
 	void Renderer::CreateBlueNoise()

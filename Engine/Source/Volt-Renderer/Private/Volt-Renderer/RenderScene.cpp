@@ -76,6 +76,8 @@ namespace Volt
 
 		renderGraph.BeginMarker("RenderScene::Update");
 	
+		ProcessQueuedUpdateOperations();
+
 		UpdateInvalidMaterials(renderGraph);
 		UpdateInvalidMeshes(renderGraph);
 		UpdateInvalidLights(renderGraph);
@@ -142,11 +144,6 @@ namespace Volt
 		AddCopyBufferPass(renderGraph, srcPrimitiveData, 0, dstPrimitiveData, 0, m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize(), "Copy PrimitiveDrawData");
 	}
 
-	void RenderScene::InvalidatePrimitiveInstance(UUID64 renderObject)
-	{
-		m_primitiveIndicesContainer.InvalidateIndexWithID(renderObject);
-	}
-
 	void RenderScene::InvalidateMesh(Ref<Mesh> mesh)
 	{
 		std::scoped_lock lock{ m_meshUpdateMutex };
@@ -172,156 +169,37 @@ namespace Volt
 
 	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
 	{
-		UUID64 newId = {};
-		auto& newObj = m_renderPrimitives.emplace_back();
-
-		newObj.id = newId;
-		newObj.entityId = entityId;
-		newObj.mesh = mesh;
-		newObj.material = material;
-		newObj.subMeshIndex = subMeshIndex;
-
-		TryAddMaterial(material);
-		TryAddMesh(mesh);
-
-		const size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
-
-		newObj.primitiveIndex = static_cast<uint32_t>(primitiveDrawDataIndex);
-
-		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
-
-		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
-		InvalidatePrimitiveInstance(newId);
-
-		OnRenderPrimitiveAdded(newObj);
-
-		return newId;
+		return m_updateQueue.AddPrimitiveInstance(entityId, nullptr, mesh, material, subMeshIndex);
 	}
 
 	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
 	{
-		UUID64 newId = {};
-		auto& newObj = m_renderPrimitives.emplace_back();
-		m_animatedRenderObjects.emplace_back(newId);
-
-		newObj.id = newId;
-		newObj.entityId = entityId;
-		newObj.mesh = mesh;
-		newObj.material = material;
-		newObj.subMeshIndex = subMeshIndex;
-		newObj.motionWeaver = motionWeaver;
-
-		TryAddMaterial(material);
-		TryAddMesh(mesh);
-
-		size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
-
-		newObj.primitiveIndex = static_cast<uint32_t>(primitiveDrawDataIndex);
-
-		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
-
-		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
-		InvalidatePrimitiveInstance(newId);
-
-		OnRenderPrimitiveAdded(newObj);
-
-		return newId;
+		return m_updateQueue.AddPrimitiveInstance(entityId, motionWeaver, mesh, material, subMeshIndex);
 	}
 
 	void RenderScene::RemovePrimitiveInstance(UUID64 id)
 	{
-		m_primitiveIndicesContainer.FreeIndexWithID(id);
-
-		auto it = std::find_if(m_renderPrimitives.begin(), m_renderPrimitives.end(), [id](const auto& obj)
-		{
-			return obj.id == id;
-		});
-
-		if (it == m_renderPrimitives.end())
-		{
-			return;
-		}
-
-		OnRenderPrimitiveRemoved(*it);
-
-		const bool isAnimated = (*it).IsAnimated();
-
-		if (it != m_renderPrimitives.end())
-		{
-			m_renderPrimitives.erase(it);
-		}
-
-		if (isAnimated)
-		{
-			auto animIt = std::find_if(m_animatedRenderObjects.begin(), m_animatedRenderObjects.end(), [id](const auto& obj)
-			{
-				return obj == id;
-			});
-
-			if (animIt != m_animatedRenderObjects.end())
-			{
-				m_animatedRenderObjects.erase(animIt);
-			}
-		}
+		m_updateQueue.RemovePrimitiveInstance(id);
 	}
 
-	void RenderScene::InvalidateLightInstance(UUID64 id)
+	void RenderScene::InvalidatePrimitiveInstance(UUID64 renderObject)
 	{
-		if (m_lightIndexFromLightID.contains(id))
-		{
-			m_invalidLightDataIndices.emplace_back(id, m_lightIndexFromLightID.at(id));
-		}
+		m_updateQueue.InvalidatePrimitiveInstance(renderObject);
 	}
 
 	UUID64 RenderScene::AddLightInstance(EntityID entityId, const SceneLightDescription& description)
 	{
-		UUID64 id{};
-
-		auto& lightInstance = m_renderLights.emplace_back();
-		lightInstance.id = id;
-		lightInstance.entityId = entityId;
-		lightInstance.description = description;
-
-		constexpr size_t SizeMax = std::numeric_limits<size_t>::max();
-
-		size_t lightDrawDataIndex = SizeMax;
-
-		if (!m_freeLightDataIndices.empty())
-		{
-			lightDrawDataIndex = m_freeLightDataIndices.back();
-			m_freeLightDataIndices.pop_back();
-		}
-
-		LightDrawData& lightDrawData = (lightDrawDataIndex != SizeMax) ? m_lightDrawData.at(lightDrawDataIndex) : m_lightDrawData.emplace_back();
-		lightDrawData.lightType = description.lightType;
-
-		m_lightIndexFromLightID[id] = static_cast<uint32_t>((lightDrawDataIndex != SizeMax) ? lightDrawDataIndex : m_lightDrawData.size() - 1);
-		InvalidateLightInstance(id);
-
-		return id;
+		return m_updateQueue.AddLightInstance(entityId, description);
 	}
 
 	void RenderScene::RemoveLightInstance(UUID64 id)
 	{
-		VT_ENSURE(m_lightIndexFromLightID.contains(id));
+		return m_updateQueue.RemoveLightInstance(id);
+	}
 
-		const size_t lightDataIndex = m_lightIndexFromLightID.at(id);
-
-		m_lightDrawData.at(lightDataIndex).flags = LightFlags::Invalid;
-		m_removedLightDataIndices.emplace_back(lightDataIndex);
-		m_freeLightDataIndices.emplace_back(lightDataIndex);
-
-		m_lightIndexFromLightID.erase(id);
-
-		auto it = std::ranges::find_if(m_renderLights, [id](const auto& obj)
-		{
-			return obj.id == id;
-		});
-
-		if (it != m_renderLights.end())
-		{
-			m_renderLights.erase(it);
-		}
+	void RenderScene::InvalidateLightInstance(UUID64 id)
+	{
+		m_updateQueue.InvalidateLightInstance(id);
 	}
 
 	void RenderScene::OnRenderPrimitiveAdded(const RenderPrimitiveData& renderPrimitive)
@@ -509,6 +387,170 @@ namespace Volt
 		}
 
 		return *it;
+	}
+
+	void RenderScene::ProcessQueuedUpdateOperations()
+	{
+		VT_PROFILE_FUNCTION();
+
+		RenderSceneUpdateQueue::QueuedUpdate queuedUpdate;
+		while (m_updateQueue.TryPop(queuedUpdate))
+		{
+			if (queuedUpdate.operation == RenderSceneUpdateQueue::UpdateOperation::Add)
+			{
+				if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Primitive)
+				{
+					ProcessAddPrimitiveInstance(queuedUpdate);
+				}
+				else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Light)
+				{
+					ProcessAddLightInstance(queuedUpdate);
+				}
+			}
+			else if (queuedUpdate.operation == RenderSceneUpdateQueue::UpdateOperation::Remove)
+			{
+				ProcessQueuedRemove(queuedUpdate);
+			}
+			else if (queuedUpdate.operation == RenderSceneUpdateQueue::UpdateOperation::Invalidate)
+			{
+				ProcessQueuedInvalidation(queuedUpdate);
+			}
+		}
+	}
+
+	void RenderScene::ProcessAddPrimitiveInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
+	{
+		UUID64 newId = queuedUpdate.primitiveInfo.id;
+		auto& newObj = m_renderPrimitives.emplace_back();
+
+		if (queuedUpdate.primitiveInfo.motionWeaver)
+		{
+			m_animatedRenderObjects.emplace_back(newId);
+		}
+
+		newObj.id = newId;
+		newObj.entityId = queuedUpdate.primitiveInfo.entityId;
+		newObj.mesh = queuedUpdate.primitiveInfo.mesh;
+		newObj.material = queuedUpdate.primitiveInfo.material;
+		newObj.subMeshIndex = queuedUpdate.primitiveInfo.subMeshIndex;
+		newObj.motionWeaver = queuedUpdate.primitiveInfo.motionWeaver;
+
+		TryAddMaterial(queuedUpdate.primitiveInfo.material);
+		TryAddMesh(queuedUpdate.primitiveInfo.mesh);
+
+		size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
+
+		newObj.primitiveIndex = static_cast<uint32_t>(primitiveDrawDataIndex);
+
+		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
+
+		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
+		InvalidatePrimitiveInstance(newId);
+
+		OnRenderPrimitiveAdded(newObj);
+	}
+
+	void RenderScene::ProcessAddLightInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
+	{
+		UUID64 id = queuedUpdate.lightInfo.id;
+
+		auto& lightInstance = m_renderLights.emplace_back();
+		lightInstance.id = id;
+		lightInstance.entityId = queuedUpdate.lightInfo.entityId;
+		lightInstance.description = queuedUpdate.lightInfo.lightDescription;
+
+		constexpr size_t SizeMax = std::numeric_limits<size_t>::max();
+
+		size_t lightDrawDataIndex = SizeMax;
+
+		if (!m_freeLightDataIndices.empty())
+		{
+			lightDrawDataIndex = m_freeLightDataIndices.back();
+			m_freeLightDataIndices.pop_back();
+		}
+
+		LightDrawData& lightDrawData = (lightDrawDataIndex != SizeMax) ? m_lightDrawData.at(lightDrawDataIndex) : m_lightDrawData.emplace_back();
+		lightDrawData.lightType = queuedUpdate.lightInfo.lightDescription.lightType;
+
+		m_lightIndexFromLightID[id] = static_cast<uint32_t>((lightDrawDataIndex != SizeMax) ? lightDrawDataIndex : m_lightDrawData.size() - 1);
+		InvalidateLightInstance(id);
+	}
+
+	void RenderScene::ProcessQueuedRemove(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
+	{
+		if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Primitive)
+		{
+			m_primitiveIndicesContainer.FreeIndexWithID(queuedUpdate.id);
+
+			auto it = std::find_if(m_renderPrimitives.begin(), m_renderPrimitives.end(), [id = queuedUpdate.id](const auto& obj)
+			{
+				return obj.id == id;
+			});
+
+			if (it == m_renderPrimitives.end())
+			{
+				return;
+			}
+
+			OnRenderPrimitiveRemoved(*it);
+
+			const bool isAnimated = (*it).IsAnimated();
+
+			if (it != m_renderPrimitives.end())
+			{
+				m_renderPrimitives.erase(it);
+			}
+
+			if (isAnimated)
+			{
+				auto animIt = std::find_if(m_animatedRenderObjects.begin(), m_animatedRenderObjects.end(), [id = queuedUpdate.id](const auto& obj)
+				{
+					return obj == id;
+				});
+
+				if (animIt != m_animatedRenderObjects.end())
+				{
+					m_animatedRenderObjects.erase(animIt);
+				}
+			}
+		}
+		else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Light)
+		{
+			VT_ENSURE(m_lightIndexFromLightID.contains(queuedUpdate.id));
+
+			const size_t lightDataIndex = m_lightIndexFromLightID.at(queuedUpdate.id);
+
+			m_lightDrawData.at(lightDataIndex).flags = LightFlags::Invalid;
+			m_removedLightDataIndices.emplace_back(lightDataIndex);
+			m_freeLightDataIndices.emplace_back(lightDataIndex);
+
+			m_lightIndexFromLightID.erase(queuedUpdate.id);
+
+			auto it = std::ranges::find_if(m_renderLights, [id = queuedUpdate.id](const auto& obj)
+			{
+				return obj.id == id;
+			});
+
+			if (it != m_renderLights.end())
+			{
+				m_renderLights.erase(it);
+			}
+		}
+	}
+
+	void RenderScene::ProcessQueuedInvalidation(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
+	{
+		if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Primitive)
+		{
+			m_primitiveIndicesContainer.InvalidateIndexWithID(queuedUpdate.id);
+		}
+		else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Light)
+		{
+			if (m_lightIndexFromLightID.contains(queuedUpdate.id))
+			{
+				m_invalidLightDataIndices.emplace_back(queuedUpdate.id, m_lightIndexFromLightID.at(queuedUpdate.id));
+			}
+		}
 	}
 
 	Vector<uint32_t> RenderScene::GetPrimitiveIndicesFromEntityID(EntityID entityId) const
