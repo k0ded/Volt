@@ -7,6 +7,8 @@
 
 #include <entt.hpp>
 
+#include <shared_mutex>
+
 class ECSBuilder;
 class ScriptingEngine;
 
@@ -85,5 +87,7 @@ namespace Volt
 		Map<UUID64, EntityDestroyedCallbackFunc> m_entityDestroyedCallbacks;
 
 		RenderScene* m_renderScene;
+
+		mutable std::shared_mutex m_registryMutex;
 	};
 }

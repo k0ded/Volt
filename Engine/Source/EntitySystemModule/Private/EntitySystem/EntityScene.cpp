@@ -18,6 +18,7 @@
 
 #include <ranges>
 
+
 namespace Volt
 {
 	EntityScene::EntityScene()
@@ -37,7 +38,7 @@ namespace Volt
 		m_scriptingEngine->OnRuntimeStart();
 
 		ComponentOnStart();
-		
+
 		OnSceneRuntimeStartEvent startEvent(*this);
 		EventSystem::DispatchEvent(startEvent);
 	}
@@ -73,6 +74,7 @@ namespace Volt
 
 	void EntityScene::SortScene()
 	{
+		std::unique_lock lock(m_registryMutex);
 		m_registry.sort<CommonComponent>([&](entt::entity lhs, entt::entity rhs)
 		{
 			const auto& lhsComp = m_registry.get<CommonComponent>(lhs);
@@ -89,7 +91,11 @@ namespace Volt
 
 	EntityHelper EntityScene::CreateEntity(const std::string& tag)
 	{
-		entt::entity entityHandle = m_registry.create();
+		entt::entity entityHandle;
+		{
+			std::unique_lock lock(m_registryMutex);
+			entityHandle = m_registry.create();
+		}
 
 		EntityHelper newHelper(entityHandle, this);
 
@@ -124,7 +130,7 @@ namespace Volt
 
 		m_entityRegistry.AddEntity(newHelper);
 		m_entityRegistry.MarkEntityAsEdited(newHelper);
-		
+
 		InvalidateEntityTransform(newHelper.GetID());
 		SortScene();
 		return newHelper;
@@ -134,7 +140,11 @@ namespace Volt
 	{
 		VT_ENSURE(!m_entityRegistry.Contains(id));
 
-		entt::entity entityHandle = m_registry.create();
+		entt::entity entityHandle;
+		{
+			std::unique_lock lock(m_registryMutex);
+			entityHandle = m_registry.create();
+		}
 
 		EntityHelper newHelper(entityHandle, this);
 
@@ -192,7 +202,7 @@ namespace Volt
 				VT_ENSURE(parentHelper.HasComponent<RelationshipComponent>());
 
 				auto& parentRelationshipComponent = parentHelper.GetComponent<RelationshipComponent>();
-				parentRelationshipComponent.children.erase_with_predicate([&helper](EntityID id) 
+				parentRelationshipComponent.children.erase_with_predicate([&helper](EntityID id)
 				{
 					return id == helper.GetID();
 				});
@@ -209,7 +219,10 @@ namespace Volt
 			relationshipComponent = helper.GetComponent<RelationshipComponent>();
 		}
 
-		m_registry.destroy(helper.GetHandle());
+		{
+			std::unique_lock lock(m_registryMutex);
+			m_registry.destroy(helper.GetHandle());
+		}
 		m_entityRegistry.RemoveEntity(id, helper.GetHandle());
 	}
 
@@ -240,11 +253,12 @@ namespace Volt
 			EntityHelper entityHelper(m_entityRegistry.GetHandleFromID(currentId), this);
 
 			VT_ENSURE(entityHelper.HasComponent<RelationshipComponent>());
-		
+
 			auto& relationshipComponent = entityHelper.GetComponent<RelationshipComponent>();
 
 			m_transformCache.InvalidateTransform(currentId);
 
+			std::shared_lock lock(m_registryMutex);
 			// Call on transform changed on all components on entity
 			for (auto&& curr : m_registry.storage())
 			{
@@ -321,6 +335,7 @@ namespace Volt
 
 	bool EntityScene::IsEntityValid(EntityID entityId) const
 	{
+		std::shared_lock lock(m_registryMutex);
 		return m_registry.valid(m_entityRegistry.GetHandleFromID(entityId));
 	}
 
@@ -342,6 +357,7 @@ namespace Volt
 			currentEntity = parent;
 		}
 
+		std::shared_lock lock(m_registryMutex);
 		TQS resultTransform{};
 		for (const auto& ent : std::ranges::reverse_view(hierarchy))
 		{
@@ -378,11 +394,13 @@ namespace Volt
 
 	uint32_t EntityScene::GetEntityAliveCount() const
 	{
+		std::shared_lock lock(m_registryMutex);
 		return static_cast<uint32_t>(m_registry.alive());
 	}
 
 	void EntityScene::Initialize()
 	{
+		std::unique_lock lock(m_registryMutex);
 		m_scriptingEngine = CreateScope<ScriptingEngine>();
 		m_ecsBuilder = CreateScope<ECSBuilder>(*m_scriptingEngine);
 		m_registry.set_user_data(this);
@@ -396,6 +414,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		std::shared_lock lock(m_registryMutex);
 		for (auto&& curr : m_registry.storage())
 		{
 			auto& storage = curr.second;
@@ -420,11 +439,12 @@ namespace Volt
 			}
 		}
 	}
-	
+
 	void EntityScene::ComponentOnStop()
 	{
 		VT_PROFILE_FUNCTION();
 
+		std::shared_lock lock(m_registryMutex);
 		for (auto&& curr : m_registry.storage())
 		{
 			auto& storage = curr.second;
