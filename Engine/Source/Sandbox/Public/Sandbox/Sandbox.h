@@ -74,6 +74,7 @@ public:
 
 	Ref<Volt::SceneRenderer>& GetSceneRenderer() { return m_sceneRenderer; }
 	VT_NODISCARD VT_INLINE const SceneState GetSceneState() const { return m_sceneState; }
+	VT_NODISCARD VT_INLINE Ref<Volt::Scene> GetRuntimeScene() const { return m_runtimeScene; }
 	
 	VT_NODISCARD VT_INLINE UUID64 GetMeshImportModalID() const { return m_meshImportModal; }
 	VT_NODISCARD VT_INLINE UUID64 GetTextureImportModalID() const { return m_textureImportModal; }
