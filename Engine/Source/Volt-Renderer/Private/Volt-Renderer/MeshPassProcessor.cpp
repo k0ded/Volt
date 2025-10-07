@@ -5,7 +5,10 @@
 #include "Volt-Renderer/RenderPrimitiveData.h"
 #include "Volt-Renderer/RenderScene.h"
 
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
 #include <JobSystem/JobSystem.h>
+#include <JobSystem/TaskGraph.h>
 
 #include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
@@ -18,6 +21,11 @@
 
 namespace Volt
 {
+	static ConsoleVariable<int32_t> s_forceImmediateSorting(
+		"r.MeshPassProcessor.ForceImmediateSorting",
+		1,
+		"Whether or not force immediate sorting of mesh draw commands.");
+
 	MeshPassProcessorRegistry::MeshPassProcessorRegistry(RenderScene* renderScene)
 		: m_renderScene(renderScene)
 	{
@@ -113,6 +121,8 @@ namespace Volt
 	void MeshPassProcessor::ExecuteCommands(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters)
 	{
 		VT_PROFILE_FUNCTION();
+
+		JobSystem::WaitForAndDestroyCounter(m_sortTaskCounter);
 
 		if (!m_primitiveIndexVertexBuffer)
 		{
@@ -252,14 +262,7 @@ namespace Volt
 			{
 				bucket->isDirty = true;
 
-				if (m_sortTaskCounter)
-				{
-					JobSystem::WaitForAndDestroyCounter(m_sortTaskCounter);
-				}
-				m_sortTaskCounter = JobSystem::CreateCounter();
-
-				JobRef findInstancingOffsetsTask = JobSystem::CreateJob("MeshPassProcessor::FindInstancingOffsets", ExecutionPriority::Render, m_sortTaskCounter,
-				[bucket]() 
+				auto findInstancingOffsetsFunc = [bucket]()
 				{
 					auto& drawCommands = bucket->drawCommands;
 					auto& instancingOffsets = bucket->instancingRanges;
@@ -287,10 +290,9 @@ namespace Volt
 							}
 						}
 					}
-				});
+				};
 
-				JobRef sortTask = JobSystem::CreateJobAsDependency("MeshPassProcessor::SortMeshDrawCommandBucket", findInstancingOffsetsTask,
-				[bucket]()
+				auto sortDrawCommandsFunc = [bucket]() 
 				{
 					auto& drawCommands = bucket->drawCommands;
 					std::sort(drawCommands.begin(), drawCommands.end(), [](const MeshDrawCommand& lhs, const MeshDrawCommand& rhs)
@@ -299,10 +301,24 @@ namespace Volt
 					});
 
 					bucket->isDirty = false;
-				});
+				};
 
-				JobSystem::RunJob(sortTask);
-				JobSystem::RunJob(findInstancingOffsetsTask);
+				if (s_forceImmediateSorting.GetValue())
+				{
+					sortDrawCommandsFunc();
+					findInstancingOffsetsFunc();
+				}
+				else
+				{
+					// Make sure previous tasks have finished.
+					JobSystem::WaitForAndDestroyCounter(m_sortTaskCounter);
+
+					TaskGraph taskGraph{ ExecutionPriority::Render, 2 };
+					TaskGraph::Task* sortTask = taskGraph.AddTask("MeshPassProcessor::SortMeshDrawCommandBucket", std::move(sortDrawCommandsFunc));
+					taskGraph.AddTaskWithDependencies("MeshPassProcessor::FindInstancingOffsets", { sortTask }, std::move(findInstancingOffsetsFunc));
+
+					m_sortTaskCounter = taskGraph.ExecuteAndExtractCounter();
+				}
 			}
 		}
 	}

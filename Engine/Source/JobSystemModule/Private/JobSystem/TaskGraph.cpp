@@ -161,4 +161,14 @@ namespace Volt
 
 		m_dependencies.append(dependencies.begin(), dependencies.end());
 	}
+
+	void TaskGraph::Task::AddDependencies(std::initializer_list<Task*> dependencies)
+	{
+		for (Task* dependency : dependencies)
+		{
+			dependency->IncRef();
+		}
+
+		m_dependencies.append(dependencies.begin(), dependencies.end());
+	}
 }
