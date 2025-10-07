@@ -37,6 +37,7 @@
 #include "Sandbox/Window/RenderResourcesPanel.h"
 #include "Sandbox/Window/RenderGraphDebuggerPanel.h"
 #include "Sandbox/Window/TextureViewerPanel.h"
+#include "Sandbox/Window/DebugToolsPanel.h"
 #include "Sandbox/VertexPainting/VertexPainterPanel.h"
 
 #include "Sandbox/SceneRendererExtensions/GridSceneRendererExtension.h"
@@ -210,6 +211,8 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::Register<ThemesPanel>("Advanced");
 	EditorLibrary::Register<CurveGraphPanel>("Advanced");
 #endif
+
+	EditorLibrary::Register<DebugToolsPanel>("Debug");
 
 	EditorLibrary::Register<AssetRegistryPanel>("Advanced");
 	EditorLibrary::Register<LogPanel>("Advanced");
