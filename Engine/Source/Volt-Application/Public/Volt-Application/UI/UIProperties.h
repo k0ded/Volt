@@ -12,6 +12,8 @@
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/Containers/Vector.h>
 
+struct FileFilter;
+
 namespace UI
 {
 	inline static constexpr float PROPERTY_ROW_HEIGHT = 17.f;
@@ -27,8 +29,6 @@ namespace UI
 	 VTAPP_API void BeginPropertyRow();
 	 VTAPP_API void EndPropertyRow();
 
-
-
 	 VTAPP_API void PropertyInfoString(const std::string& key, const std::string& info);
 
 	 VTAPP_API bool PropertyDragFloat(const std::string& text, float& value, float increment, float min = 0.f, float max = 0.f, const std::string& toolTip = "");
@@ -36,6 +36,7 @@ namespace UI
 	 VTAPP_API bool PropertyPassword(const std::string& text, std::string& value, bool readOnly = false, const std::string& toolTip = "");
 	 VTAPP_API bool PropertyMultiline(const std::string& text, std::string& value, bool readOnly = false, const std::string& toolTip = "");
 	 VTAPP_API bool PropertyDirectory(const std::string& text, std::filesystem::path& path, const std::filesystem::path& baseDir = "", const std::string& toolTip = "");
+	 VTAPP_API bool PropertyFile(const std::string& text, std::filesystem::path& path, const Vector<FileFilter>& fileFilter);
 
 	 VTAPP_API bool ComboProperty(const std::string& text, int& currentItem, const Vector<std::string>& strItems, float width = 0.f);
 	 VTAPP_API bool ComboProperty(const std::string& text, int& currentItem, const Vector<const char*>& items, float width = 0.f);

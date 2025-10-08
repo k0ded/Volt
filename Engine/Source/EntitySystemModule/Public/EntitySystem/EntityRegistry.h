@@ -5,6 +5,7 @@
 #include <CoreUtilities/Containers/Map.h>
 
 #include <entt.hpp>
+#include <shared_mutex>
 
 namespace Volt
 {
@@ -29,10 +30,15 @@ namespace Volt
 		inline const std::set<EntityID>& GetRemovedEntities() const { return m_removedEntities; }
 
 	private:
+		using WriteLock = std::unique_lock<std::shared_mutex>;
+		using ReadLock = std::shared_lock<std::shared_mutex>;
+
 		Map<EntityID, entt::entity> m_entityMap;
 		Map<entt::entity, EntityID> m_handleMap;
 
 		std::set<EntityID> m_editedEntities;
 		std::set<EntityID> m_removedEntities;
+
+		mutable std::shared_mutex m_mutex;
 	};
 }

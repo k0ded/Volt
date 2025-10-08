@@ -152,6 +152,8 @@ namespace Volt
 			cell.isLoaded = true;
 		});
 		JobSystem::RunJob(job);
+
+		JobSystem::WaitForCounter(job->GetCounter());
 	}
 
 	WorldCellID WorldEngine::GetCellIDFromEntity(const Entity& entity) const

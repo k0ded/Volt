@@ -579,7 +579,12 @@ namespace Volt
 			}
 		}
 
-		compDesc->OnComponentCopied(dstEntity.GetScene()->GetEntityHelperFromEntityID(dstEntity.GetID()));
+		EntityHelper entityHelper = dstEntity.GetScene()->GetEntityHelperFromEntityID(dstEntity.GetID());
+
+		if (entityHelper)
+		{
+			compDesc->OnComponentCopied(entityHelper);
+		}
 	}
 
 	void Entity::UpdatePhysicsTranslation(bool updateThis)

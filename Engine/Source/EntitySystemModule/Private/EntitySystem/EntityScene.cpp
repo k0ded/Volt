@@ -73,6 +73,8 @@ namespace Volt
 
 	void EntityScene::SortScene()
 	{
+		VT_PROFILE_FUNCTION();
+
 		m_registry.sort<CommonComponent>([&](entt::entity lhs, entt::entity rhs)
 		{
 			const auto& lhsComp = m_registry.get<CommonComponent>(lhs);
@@ -126,12 +128,13 @@ namespace Volt
 		m_entityRegistry.MarkEntityAsEdited(newHelper);
 		
 		InvalidateEntityTransform(newHelper.GetID());
-		SortScene();
 		return newHelper;
 	}
 
 	EntityHelper EntityScene::CreateEntityWithID(EntityID id, const std::string& tag)
 	{
+		VT_PROFILE_FUNCTION();
+
 		VT_ENSURE(!m_entityRegistry.Contains(id));
 
 		entt::entity entityHandle = m_registry.create();
@@ -167,7 +170,6 @@ namespace Volt
 		m_entityRegistry.AddEntity(newHelper);
 
 		InvalidateEntityTransform(newHelper.GetID());
-		SortScene();
 		return newHelper;
 	}
 
@@ -183,12 +185,12 @@ namespace Volt
 		// We need to handle the entity's parent and children.
 		VT_ENSURE(helper.HasComponent<RelationshipComponent>());
 
-		auto& relationshipComponent = helper.GetComponent<RelationshipComponent>();
-		if (relationshipComponent.parent != EntityID::Null())
+		auto* relationshipComponent = &helper.GetComponent<RelationshipComponent>();
+		if (relationshipComponent->parent != EntityID::Null())
 		{
 			if (!isDestroyingChildFromParent)
 			{
-				EntityHelper parentHelper = GetEntityHelperFromEntityID(relationshipComponent.parent);
+				EntityHelper parentHelper = GetEntityHelperFromEntityID(relationshipComponent->parent);
 				VT_ENSURE(parentHelper.HasComponent<RelationshipComponent>());
 
 				auto& parentRelationshipComponent = parentHelper.GetComponent<RelationshipComponent>();
@@ -200,13 +202,13 @@ namespace Volt
 		}
 
 		// We need to do this backwards, otherwise we will be pointing to invalid indices
-		for (int32_t i = static_cast<int32_t>(relationshipComponent.children.size()) - 1; i >= 0; --i)
+		for (int32_t i = static_cast<int32_t>(relationshipComponent->children.size()) - 1; i >= 0; --i)
 		{
-			DestroyEntity(relationshipComponent.children.at(i), true);
+			DestroyEntity(relationshipComponent->children.at(i), true);
 
 			// This is required, because removing components from entt::registry might
 			// invalidate pointers.
-			relationshipComponent = helper.GetComponent<RelationshipComponent>();
+			relationshipComponent = &helper.GetComponent<RelationshipComponent>();
 		}
 
 		m_registry.destroy(helper.GetHandle());
@@ -236,6 +238,12 @@ namespace Volt
 		{
 			const EntityID currentId = entityStack.back();
 			entityStack.pop_back();
+
+			entt::entity entityHandle = m_entityRegistry.GetHandleFromID(currentId);
+			if (entityHandle == entt::null)
+			{
+				continue;
+			}
 
 			EntityHelper entityHelper(m_entityRegistry.GetHandleFromID(currentId), this);
 

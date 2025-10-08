@@ -77,6 +77,12 @@ namespace Volt
 	{
 		StreamingInstanceID newId;
 
+		// Make sure id is not in use.
+		while (m_streamingInstances.Contains(newId))
+		{
+			newId = {};
+		}
+
 		StreamingInstanceMap::StreamingInstance& instance = m_streamingInstances.Add(newId);
 		
 		// It's a primitive

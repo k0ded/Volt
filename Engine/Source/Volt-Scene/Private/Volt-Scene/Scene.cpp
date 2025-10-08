@@ -169,7 +169,6 @@ namespace Volt
 	void Scene::DestroyEntity(Entity entity)
 	{
 		m_entityScene.DestroyEntity(entity.GetID());
-		SortScene();
 	}
 
 	void Scene::ParentEntity(Entity parent, Entity child)
@@ -233,14 +232,13 @@ namespace Volt
 
 	void Scene::InvalidateEntityTransform(const EntityID& entityId)
 	{
-		Vector<EntityID> invalidatedEntities = m_entityScene.InvalidateEntityTransform(entityId);
-
-		for (const auto& id : invalidatedEntities)
+		if (m_sceneSettings.useWorldEngine)
 		{
-			Entity currentEntity = GetEntityFromID(id);
+			Vector<EntityID> invalidatedEntities = m_entityScene.InvalidateEntityTransform(entityId);
 
-			if (m_sceneSettings.useWorldEngine)
+			for (const auto& id : invalidatedEntities)
 			{
+				Entity currentEntity = GetEntityFromID(id);
 				m_worldEngine.OnEntityMoved(currentEntity);
 			}
 		}

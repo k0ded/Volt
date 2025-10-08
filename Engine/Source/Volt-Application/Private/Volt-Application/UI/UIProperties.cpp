@@ -690,6 +690,46 @@ namespace UI
 		return changed;
 	}
 
+	bool PropertyFile(const std::string& text, std::filesystem::path& path, const Vector<FileFilter>& fileFilter)
+	{
+		bool changed = false;
+
+		BeginPropertyRow();
+
+		ImGui::TextUnformatted(text.c_str());
+		ImGui::TableNextColumn();
+		std::string sPath = path.string();
+		std::string id = MakePropertyID();
+
+		changed = DrawItem(ImGui::GetColumnWidth() - ImGui::CalcTextSize("Open...").x - 20.f, [&]()
+		{
+			if (InputText("", id, sPath))
+			{
+				path = std::filesystem::path(sPath);
+				return true;
+			}
+
+			return false;
+		});
+
+		ImGui::SameLine();
+
+		std::string buttonId = "Open..." + MakePropertyID();
+		if (ImGui::Button(buttonId.c_str(), { ImGui::GetContentRegionAvail().x, 25.f }))
+		{
+			auto newPath = FileSystem::OpenFileDialogue(fileFilter, "");
+			if (!newPath.empty())
+			{
+				path = newPath;
+				changed = true;
+			}
+		}
+
+		EndPropertyRow();
+
+		return changed;
+	}
+
 	bool UI::ComboProperty(const std::string& text, int& currentItem, const Vector<const char*>& items, float width)
 	{
 		bool changed = false;

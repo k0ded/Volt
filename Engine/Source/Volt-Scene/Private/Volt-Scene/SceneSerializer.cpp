@@ -11,6 +11,7 @@
 #include <Volt-Core/Algorithms.h>
 
 #include <EntitySystem/ComponentRegistry.h>
+#include <EntitySystem/Scripting/CoreComponents.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
@@ -26,7 +27,6 @@ namespace Volt
 	template<typename T>
 	void RegisterSerializationFunction(std::unordered_map<TypeTraits::TypeIndex, std::function<void(YAMLMemoryStreamWriter&, const uint8_t*, const size_t)>>& outTypes)
 	{
-		VT_PROFILE_FUNCTION();
 
 		outTypes[TypeTraits::TypeIndex::FromType<T>()] = [](YAMLMemoryStreamWriter& streamWriter, const uint8_t* data, const size_t offset)
 		{
@@ -38,8 +38,6 @@ namespace Volt
 	template<typename T>
 	void RegisterDeserializationFunction(std::unordered_map<TypeTraits::TypeIndex, std::function<void(YAMLMemoryStreamReader&, uint8_t*, const size_t)>>& outTypes)
 	{
-		VT_PROFILE_FUNCTION();
-
 		outTypes[TypeTraits::TypeIndex::FromType<T>()] = [](YAMLMemoryStreamReader& streamReader, uint8_t* data, const size_t offset)
 		{
 			*reinterpret_cast<T*>(&data[offset]) = streamReader.ReadAtKey("data", T());
@@ -124,6 +122,8 @@ namespace Volt
 
 	void SceneSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
 	{
+		VT_PROFILE_FUNCTION();
+
 		const Ref<Scene> scene = std::reinterpret_pointer_cast<Scene>(asset);
 
 		std::filesystem::path directoryPath = AssetManager::GetFilesystemPath(metadata.filePath);
@@ -173,6 +173,8 @@ namespace Volt
 
 	bool SceneSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
 	{
+		VT_PROFILE_FUNCTION();
+
 		Ref<Scene> scene = reinterpret_pointer_cast<Scene>(destinationAsset);
 
 		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
@@ -235,6 +237,8 @@ namespace Volt
 
 	void SceneSerializer::SerializeEntity(entt::entity id, const AssetMetadata& metadata, const Ref<Scene>& scene, YAMLMemoryStreamWriter& streamWriter) const
 	{
+		VT_PROFILE_FUNCTION();
+
 		streamWriter.BeginMap();
 		streamWriter.BeginMapNamned("Entity");
 
@@ -294,6 +298,8 @@ namespace Volt
 
 	void SceneSerializer::DeserializeEntity(const Ref<Scene>& scene, const AssetMetadata& metadata, YAMLMemoryStreamReader& streamReader) const
 	{
+		VT_PROFILE_FUNCTION();
+
 		streamReader.EnterScope("Entity");
 
 		EntityID entityId = streamReader.ReadAtKey("id", Entity::NullID());
