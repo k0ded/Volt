@@ -2,7 +2,7 @@
 
 #include "EntitySystem/Scripting/CoreComponents.h"
 #include "EntitySystem/EntityID.h"
-#include "EntitySystem/EntityHelper.h"
+#include "EntitySystem/Entity.h"
 
 #include <entt.hpp>
 
@@ -154,10 +154,10 @@ namespace ECS
 
 		inline static constexpr Type ConstructType = ::ECS::Type::Entity;
 
-		ConstructComponents(const Volt::EntityHelper& entityHelper)
-			: m_entityHelper(entityHelper)
+		ConstructComponents(const Volt::Entity& entityHelper)
+			: m_entity(entityHelper)
 		{
-			VT_ENSURE(m_entityHelper);
+			VT_ENSURE(m_entity);
 		}
 
 		template<typename Comp>
@@ -167,14 +167,14 @@ namespace ECS
 
 			if constexpr (ComponentTraits::IsValid)
 			{
-				return m_entityHelper.GetComponent<Comp>();
+				return m_entity.GetComponent<Comp>();
 			}
 			else
 			{
 				using WriteIfExistsTraits = Utility::TupleTypeIndex<RemoveConstRef<Comp>, ComponentTupleWriteIfExists>;
 
 				static_assert(WriteIfExistsTraits::IsValid);
-				return m_entityHelper.GetComponent<Comp>();
+				return m_entity.GetComponent<Comp>();
 			}
 		}
 
@@ -185,7 +185,7 @@ namespace ECS
 
 			if constexpr (ComponentTraits::IsValid)
 			{
-				return m_entityHelper.GetComponent<Comp>();
+				return m_entity.GetComponent<Comp>();
 			}
 			else
 			{
@@ -193,133 +193,133 @@ namespace ECS
 				using WriteIfExistsTraits = Utility::TupleTypeIndex<RemoveConstRef<Comp>, ComponentTupleWriteIfExists>;
 
 				static_assert(ReadIfExistsTraits::IsValid && WriteIfExistsTraits::IsValid);
-				return m_entityHelper.GetComponent<Comp>();
+				return m_entity.GetComponent<Comp>();
 			}
 		}
 
 		template<typename Comp>
 		Comp& GetComponentUnsafe()
 		{
-			return m_entityHelper.GetComponent<Comp>();
+			return m_entity.GetComponent<Comp>();
 		}
 
 		template<typename Comp, typename... Args>
 		Comp& AddComponent(Args&&... args)
 		{
-			return m_entityHelper.AddComponent<Comp>(std::forward<Args>(args)...);
+			return m_entity.AddComponent<Comp>(std::forward<Args>(args)...);
 		}
 
 		template<typename Comp>
 		bool HasComponent()
 		{
-			return m_entityHelper.HasComponent<Comp>();
+			return m_entity.HasComponent<Comp>();
 		}
 
 		template<typename Comp>
 		void RemoveComponent()
 		{
-			return m_entityHelper.RemoveComponent<Comp>();
+			return m_entity.RemoveComponent<Comp>();
 		}
 
 		void SetPosition(const glm::vec3& position) requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			m_entityHelper.SetPosition(position);
+			m_entity.SetPosition(position);
 		}
 
 		void SetRotation(const glm::quat& rotation) requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			m_entityHelper.SetRotation(rotation);
+			m_entity.SetRotation(rotation);
 		}
 
 		void SetScale(const glm::vec3& scale) requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			m_entityHelper.SetScale(scale);
+			m_entity.SetScale(scale);
 		}
 
 		void SetLocalPosition(const glm::vec3& position) requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			m_entityHelper.SetLocalPosition(position);
+			m_entity.SetLocalPosition(position);
 		}
 
 		void SetLocalRotation(const glm::quat& rotation) requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			m_entityHelper.SetLocalRotation(rotation);
+			m_entity.SetLocalRotation(rotation);
 		}
 
 		void SetLocalScale(const glm::vec3& scale) requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			m_entityHelper.SetLocalScale(scale);
+			m_entity.SetLocalScale(scale);
 		}
 
 		VT_NODISCARD glm::vec3 GetPosition() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetPosition();
+			return m_entity.GetPosition();
 		}
 
 		VT_NODISCARD glm::quat GetRotation() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetRotation();
+			return m_entity.GetRotation();
 		}
 
 		VT_NODISCARD glm::vec3 GetScale() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetScale();
+			return m_entity.GetScale();
 		}
 
 		VT_NODISCARD glm::vec3 GetLocalPosition() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetLocalPosition();
+			return m_entity.GetLocalPosition();
 		}
 
 		VT_NODISCARD glm::quat GetLocalRotation() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetLocalRotation();
+			return m_entity.GetLocalRotation();
 		}
 
 		VT_NODISCARD glm::vec3 GetLocalScale() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetLocalScale();
+			return m_entity.GetLocalScale();
 		}
 
 		VT_NODISCARD glm::vec3 GetForward() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetForward();
+			return m_entity.GetForward();
 		}
 
 		VT_NODISCARD glm::vec3 GetRight() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetRight();
+			return m_entity.GetRight();
 		}
 
 		VT_NODISCARD glm::vec3 GetUp() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetUp();
+			return m_entity.GetUp();
 		}
 
 		VT_NODISCARD glm::vec3 GetLocalForward() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetLocalForward();
+			return m_entity.GetLocalForward();
 		}
 
 		VT_NODISCARD glm::vec3 GetLocalRight() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetLocalRight();
+			return m_entity.GetLocalRight();
 		}
 
 		VT_NODISCARD glm::vec3 GetLocalUp() const requires ComponentIsSpecifiedInAccessor<Volt::TransformComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetLocalUp();
+			return m_entity.GetLocalUp();
 		}
 
 		VT_NODISCARD Volt::EntityID GetID() const requires ComponentIsSpecifiedInAccessor<Volt::IDComponent, ComponentTupleRaw>
 		{
-			return m_entityHelper.GetID();
+			return m_entity.GetID();
 		}
 
-		VT_NODISCARD VT_INLINE entt::entity GetHandle() const { return m_entityHelper.GetHandle(); }
+		VT_NODISCARD VT_INLINE entt::entity GetHandle() const { return m_entity.GetHandle(); }
 		VT_NODISCARD Volt::RenderScene* GetRenderScene() const
 		{
-			return m_entityHelper.GetSceneReference()->GetRenderScene();
+			return m_entity.GetSceneReference()->GetRenderScene();
 		}
 
 		template<std::size_t N>
@@ -330,7 +330,7 @@ namespace ECS
 		}
 
 	private:
-		Volt::EntityHelper m_entityHelper;
+		Volt::Entity m_entity;
 	};
 
 	template<typename T>
@@ -377,7 +377,7 @@ namespace ECS
 
 			VT_INLINE constexpr ConstructComponents<Type::Entity, T...> operator*() const
 			{
-				return ConstructComponents<Type::Entity, T...>(Volt::EntityHelper(*m_iterator, m_entityScene));
+				return ConstructComponents<Type::Entity, T...>(Volt::Entity(*m_iterator, m_entityScene));
 			}
 
 			VT_INLINE constexpr Iterator& operator++()

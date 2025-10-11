@@ -22,7 +22,6 @@
 #include <Volt-Assets/MeshAsset.h>
 
 #include <Volt-Scene/Components/CoreComponents.h>
-#include <Volt-Scene/Entity.h>
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/SceneRenderer.h>
@@ -34,6 +33,7 @@
 
 #include <AssetSystem/AssetManager.h>
 
+#include <EntitySystem/Entity.h>
 #include <EventSystem/EventSystem.h>
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
@@ -619,7 +619,7 @@ bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 				SelectionManager::GetLastSelectedRow() = -1;
 			}
 
-			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, ObjectStateAction::Delete);
+			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, m_editorScene, ObjectStateAction::Delete);
 			EditorCommandStack::GetInstance().PushUndo(command);
 
 			for (const auto& i : entitiesToRemove)
@@ -713,7 +713,7 @@ void ViewportPanel::CheckDragDrop()
 	{
 		Volt::Entity newEntity = m_editorScene->CreateEntity();
 
-		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, ObjectStateAction::Create);
+		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, m_editorScene, ObjectStateAction::Create);
 		EditorCommandStack::GetInstance().PushUndo(command);
 
 		auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
@@ -730,7 +730,7 @@ void ViewportPanel::CheckDragDrop()
 
 		m_createdEntity = newEntity;
 
-		Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity.GetScene()->GetEntityHelperFromEntityID(newEntity.GetID())));
+		Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity));
 	}
 	else if (type == AssetTypes::MeshSource)
 	{
@@ -740,7 +740,7 @@ void ViewportPanel::CheckDragDrop()
 		Volt::AssetHandle resultHandle = handle;
 		Volt::Entity newEntity = m_editorScene->CreateEntity();
 
-		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, ObjectStateAction::Create);
+		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, m_editorScene, ObjectStateAction::Create);
 		EditorCommandStack::GetInstance().PushUndo(command);
 
 		if (FileSystem::Exists(vtMeshPath))
@@ -757,7 +757,7 @@ void ViewportPanel::CheckDragDrop()
 			{
 				meshComp.handle = mesh->handle;
 			}
-			Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity.GetScene()->GetEntityHelperFromEntityID(newEntity.GetID())));
+			Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity));
 		}
 		else
 		{

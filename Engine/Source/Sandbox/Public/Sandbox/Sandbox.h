@@ -5,7 +5,7 @@
 
 #include "Sandbox/UISystems/ModalSystem.h"
 
-#include <Volt-Scene/Entity.h>
+#include <EntitySystem/Entity.h>
 
 #include <Volt-Application/ApplicationLayer.h>
 

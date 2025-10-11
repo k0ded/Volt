@@ -21,7 +21,7 @@ public:
 	template<Volt::IsEvent T, typename... Filter, typename F>
 	void RegisterListenerSystem(const F& func)
 	{
-		constexpr bool EventHasGetEntitiesFunc = HasGetEntitiesFunc<T, Vector<Volt::EntityHelper>(void)>::value;
+		constexpr bool EventHasGetEntitiesFunc = HasGetEntitiesFunc<T, Vector<Volt::Entity>(void)>::value;
 
 		const TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
 

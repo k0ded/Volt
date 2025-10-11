@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Volt-Scene/Entity.h"
+#include "Volt-Scene/Config.h"
 
 #include <Volt-Core/AssetTypes.h>
 
@@ -36,8 +36,8 @@ namespace Volt
 
 	private:
 		inline static SceneSerializer* s_instance = nullptr;
-
-		void SerializeWorldEngine(const Ref<Scene>& scene, YAMLMemoryStreamWriter& streamWriter) const;
-		void DeserializeWorldEngine(const Ref<Scene>& scene, YAMLMemoryStreamReader& streamReader) const;
+		//todo: world engine
+		//void SerializeWorldEngine(const Ref<Scene>& scene, YAMLMemoryStreamWriter& streamWriter) const;
+		//void DeserializeWorldEngine(const Ref<Scene>& scene, YAMLMemoryStreamReader& streamReader) const;
 	};
 }

@@ -18,8 +18,9 @@
 #include <InputModule/InputCodes.h>
 #include <InputModule/MouseButtonCodes.h>
 
-#include <Volt-Scene/Entity.h>
 #include <Volt-Application/UI/UIUtility.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <InputModule/Events/KeyboardEvents.h>
 

@@ -43,38 +43,37 @@ namespace Volt
 		return m_typeNameToGUIDMap.at(typeName);
 	}
 
-	void ComponentRegistry::AddComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity)
-	{
-		std::unique_lock<std::shared_mutex> lock(m_componentMutexes[guid]);
 
-		VT_ENSURE(m_componentHelperFunctions.contains(guid));
-		m_componentHelperFunctions.at(guid).addComponent(registry, entity);
+	void ComponentRegistry::Helpers::AddComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity)
+	{
+		ComponentRegistry& componentRegistry = GetComponentRegistry();
+		VT_ENSURE(componentRegistry.m_componentHelperFunctions.contains(guid));
+		componentRegistry.m_componentHelperFunctions.at(guid).addComponent(registry, entity);
 	}
 
-	void ComponentRegistry::RemoveComponentWithGUID(const VoltGUID & guid, entt::registry & registry, entt::entity entity)
+	void ComponentRegistry::Helpers::RemoveComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity)
 	{
-		std::unique_lock<std::shared_mutex> lock(m_componentMutexes[guid]);
-		VT_ENSURE(m_componentHelperFunctions.contains(guid));
-		m_componentHelperFunctions.at(guid).removeComponent(registry, entity);
+		ComponentRegistry& componentRegistry = GetComponentRegistry();
+		VT_ENSURE(componentRegistry.m_componentHelperFunctions.contains(guid));
+		componentRegistry.m_componentHelperFunctions.at(guid).removeComponent(registry, entity);
 	}
 
-	const bool ComponentRegistry::HasComponentWithGUID(const VoltGUID & guid, const entt::registry & registry, entt::entity entity)
+	const bool ComponentRegistry::Helpers::HasComponentWithGUID(const VoltGUID& guid, const entt::registry& registry, entt::entity entity)
 	{
-		std::shared_lock<std::shared_mutex> lock(m_componentMutexes[guid]);
-		VT_ENSURE(m_componentHelperFunctions.contains(guid));
-		return m_componentHelperFunctions.at(guid).hasComponent(registry, entity);
+		ComponentRegistry& componentRegistry = GetComponentRegistry();
+		VT_ENSURE(componentRegistry.m_componentHelperFunctions.contains(guid));
+		return componentRegistry.m_componentHelperFunctions.at(guid).hasComponent(registry, entity);
 	}
 
-	void* ComponentRegistry::GetComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity)
+	void* ComponentRegistry::Helpers::GetComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity)
 	{
-		std::shared_lock<std::shared_mutex> lock(m_componentMutexes[guid]);
-		VT_ENSURE(m_componentHelperFunctions.contains(guid));
-		return m_componentHelperFunctions.at(guid).getComponent(registry, entity);
+		ComponentRegistry& componentRegistry = GetComponentRegistry();
+		VT_ENSURE(componentRegistry.m_componentHelperFunctions.contains(guid));
+		return componentRegistry.m_componentHelperFunctions.at(guid).getComponent(registry, entity);
 	}
 
-	void ComponentRegistry::SetupComponentCallbacks(entt::registry& registry)
+	void ComponentRegistry::Helpers::SetupComponentCallbacks(entt::registry& registry)
 	{
-		std::unique_lock<std::shared_mutex> lock(m_helpersMutex);
 		ComponentRegistry& componentRegistry = GetComponentRegistry();
 		for (auto& [uuid, helpers] : componentRegistry.m_componentHelperFunctions)
 		{

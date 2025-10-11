@@ -1,8 +1,9 @@
 #include "espch.h"
 
-#include "EntitySystem/EntityHelper.h"
+#include "EntitySystem/Entity.h"
 #include "EntitySystem/EntityScene.h"
 #include "EntitySystem/SceneEvents.h"
+#include "EntitySystem/ComponentRegistry.h"
 
 #include "EntitySystem/Scripting/CoreComponents.h"
 #include "EntitySystem/Scripting/CommonComponent.h"
@@ -89,7 +90,7 @@ namespace Volt
 		m_registry.clear();
 	}
 
-	EntityHelper EntityScene::CreateEntity(const std::string& tag)
+	Entity EntityScene::CreateEntity(const std::string& tag)
 	{
 		entt::entity entityHandle;
 		{
@@ -97,7 +98,7 @@ namespace Volt
 			entityHandle = m_registry.create();
 		}
 
-		EntityHelper newHelper(entityHandle, this);
+		Entity newHelper(entityHandle, this);
 
 		// Setup default components
 		{
@@ -128,15 +129,16 @@ namespace Volt
 			newHelper.AddComponent<RelationshipComponent>();
 		}
 
-		m_entityRegistry.AddEntity(newHelper);
-		m_entityRegistry.MarkEntityAsEdited(newHelper);
+		m_entityRegistry.AddEntity(newHelper.GetID(), entityHandle);
+		//todo_fabian: reimplement
+		//m_entityRegistry.MarkEntityAsEdited(newHelper);
 
 		InvalidateEntityTransform(newHelper.GetID());
 		SortScene();
 		return newHelper;
 	}
 
-	EntityHelper EntityScene::CreateEntityWithID(EntityID id, const std::string& tag)
+	Entity EntityScene::CreateEntityWithID(EntityID id, const std::string& tag)
 	{
 		VT_ENSURE(!m_entityRegistry.Contains(id));
 
@@ -146,7 +148,7 @@ namespace Volt
 			entityHandle = m_registry.create();
 		}
 
-		EntityHelper newHelper(entityHandle, this);
+		Entity newHelper(entityHandle, this);
 
 		// Setup default components
 		{
@@ -174,7 +176,7 @@ namespace Volt
 			newHelper.AddComponent<RelationshipComponent>();
 		}
 
-		m_entityRegistry.AddEntity(newHelper);
+		m_entityRegistry.AddEntity(id, entityHandle);
 
 		InvalidateEntityTransform(newHelper.GetID());
 		SortScene();
@@ -188,7 +190,7 @@ namespace Volt
 			return;
 		}
 
-		EntityHelper helper = GetEntityHelperFromEntityID(id);
+		Entity helper = GetEntityFromID(id);
 
 		// We need to handle the entity's parent and children.
 		VT_ENSURE(helper.HasComponent<RelationshipComponent>());
@@ -198,7 +200,7 @@ namespace Volt
 		{
 			if (!isDestroyingChildFromParent)
 			{
-				EntityHelper parentHelper = GetEntityHelperFromEntityID(relationshipComponent.parent);
+				Entity parentHelper = GetEntityFromID(relationshipComponent.parent);
 				VT_ENSURE(parentHelper.HasComponent<RelationshipComponent>());
 
 				auto& parentRelationshipComponent = parentHelper.GetComponent<RelationshipComponent>();
@@ -226,15 +228,15 @@ namespace Volt
 		m_entityRegistry.RemoveEntity(id, helper.GetHandle());
 	}
 
-	void EntityScene::MarkEntityAsEdited(const EntityHelper& entityHelper)
-	{
-		m_entityRegistry.MarkEntityAsEdited(entityHelper);
-	}
+	//void EntityScene::MarkEntityAsEdited(const Entity& entityHelper)
+	//{
+	//	m_entityRegistry.MarkEntityAsEdited(entityHelper);
+	//}
 
-	void EntityScene::ClearEditedEntities()
-	{
-		m_entityRegistry.ClearEditedEntities();
-	}
+	//void EntityScene::ClearEditedEntities()
+	//{
+	//	m_entityRegistry.ClearEditedEntities();
+	//}
 
 	Vector<EntityID> EntityScene::InvalidateEntityTransform(EntityID entityId)
 	{
@@ -250,7 +252,7 @@ namespace Volt
 			const EntityID currentId = entityStack.back();
 			entityStack.pop_back();
 
-			EntityHelper entityHelper(m_entityRegistry.GetHandleFromID(currentId), this);
+			Entity entityHelper(m_entityRegistry.GetHandleFromID(currentId), this);
 
 			VT_ENSURE(entityHelper.HasComponent<RelationshipComponent>());
 
@@ -339,17 +341,18 @@ namespace Volt
 		return m_registry.valid(m_entityRegistry.GetHandleFromID(entityId));
 	}
 
-	TQS EntityScene::GetEntityWorldTQS(const EntityHelper& entityHelper) const
+
+	TQS EntityScene::GetEntityWorldTQS(const Entity& entityHelper) const
 	{
 		if (m_transformCache.HasCachedTransform(entityHelper.GetID()))
 		{
 			return m_transformCache.GetCachedTransform(entityHelper.GetID());
 		}
 
-		Vector<EntityHelper> hierarchy{};
+		Vector<Entity> hierarchy{};
 		hierarchy.emplace_back(entityHelper);
 
-		EntityHelper currentEntity = entityHelper;
+		Entity currentEntity = entityHelper;
 		while (currentEntity.HasParent())
 		{
 			auto parent = currentEntity.GetParent();
@@ -372,21 +375,21 @@ namespace Volt
 		return resultTransform;
 	}
 
-	EntityHelper EntityScene::GetEntityHelperFromEntityID(EntityID entityId) const
+	Entity EntityScene::GetEntityFromID(EntityID entityId) const
 	{
 		if (!m_entityRegistry.Contains(entityId))
 		{
-			return EntityHelper::Null();
+			return Entity::Null();
 		}
 
 		return { m_entityRegistry.GetHandleFromID(entityId), this };
 	}
 
-	EntityHelper EntityScene::GetEntityHelperFromEntityHandle(entt::entity entityHandle) const
+	Entity EntityScene::GetEntityFromHandle(entt::entity entityHandle) const
 	{
 		if (!m_entityRegistry.Contains(entityHandle))
 		{
-			return EntityHelper::Null();
+			return Entity::Null();
 		}
 
 		return { entityHandle, this };
@@ -434,7 +437,7 @@ namespace Volt
 			for (auto& entity : storage)
 			{
 				const IComponentTypeDesc* compTypeDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
-				auto entityHelper = GetEntityHelperFromEntityHandle(entity);
+				auto entityHelper = GetEntityFromHandle(entity);
 				compTypeDesc->OnStart(entityHelper);
 			}
 		}
@@ -464,7 +467,7 @@ namespace Volt
 			for (auto& entity : storage)
 			{
 				const IComponentTypeDesc* compTypeDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
-				auto entityHelper = GetEntityHelperFromEntityHandle(entity);
+				auto entityHelper = GetEntityFromHandle(entity);
 				compTypeDesc->OnStop(entityHelper);
 			}
 		}

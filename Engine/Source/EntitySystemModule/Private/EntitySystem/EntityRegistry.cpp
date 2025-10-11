@@ -1,34 +1,34 @@
 #include "espch.h"
 
 #include "EntitySystem/EntityRegistry.h"
-#include "EntitySystem/EntityHelper.h"
 
 namespace Volt
 {
-	void EntityRegistry::MarkEntityAsEdited(const EntityHelper& entity)
-	{
-		m_editedEntities.emplace(entity.GetID());
-	}
+	//todo_fabian: reimplement
+	//void EntityRegistry::MarkEntityAsEdited(const EntityHelper& entity)
+	//{
+	//	m_editedEntities.emplace(entity.GetID());
+	//}
 
-	void EntityRegistry::ClearEditedEntities()
-	{
-		m_editedEntities.clear();
-		m_removedEntities.clear();
-	}
+	//void EntityRegistry::ClearEditedEntities()
+	//{
+	//	m_editedEntities.clear();
+	//	m_removedEntities.clear();
+	//}
 
-	void EntityRegistry::AddEntity(const EntityHelper& entity)
+	void EntityRegistry::AddEntity(const EntityID& entityId, entt::entity entityHandle)
 	{
 		{
 			std::shared_lock<std::shared_mutex> lock(m_entityMutex);
-			if (m_entityMap.contains(entity.GetID()) || m_handleMap.contains(entity.GetHandle()))
+			if (m_entityMap.contains(entityId) || m_handleMap.contains(entityHandle))
 			{
 				return;
 			}
 		}
 
 		std::unique_lock<std::shared_mutex> lock(m_entityMutex);
-		m_entityMap.emplace(entity.GetID(), entity.GetHandle());
-		m_handleMap.emplace(entity.GetHandle(), entity.GetID());
+		m_entityMap.emplace(entityId, entityHandle);
+		m_handleMap.emplace(entityHandle, entityId);
 	}
 
 	void EntityRegistry::RemoveEntity(const EntityID& entityId, entt::entity entityHandle)
@@ -45,12 +45,13 @@ namespace Volt
 			m_handleMap.erase(entityHandle);
 		}
 
-		if (m_editedEntities.contains(entityId))
+		//todo_fabian: reimplement
+		/*if (m_editedEntities.contains(entityId))
 		{
 			m_editedEntities.erase(entityId);
 		}
 
-		m_removedEntities.emplace(entityId);
+		m_removedEntities.emplace(entityId);*/
 	}
 
 	EntityID EntityRegistry::GetUUIDFromHandle(entt::entity handle) const

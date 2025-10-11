@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt-Scene/Entity.h>
+#include <EntitySystem/Entity.h>
 
 namespace Volt
 {

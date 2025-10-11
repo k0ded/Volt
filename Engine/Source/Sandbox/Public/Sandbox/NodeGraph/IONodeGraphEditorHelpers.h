@@ -2,8 +2,9 @@
 
 #include <Volt-Application/UI/UIUtility.h>
 
-#include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Components/CoreComponents.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>
 

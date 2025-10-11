@@ -5,7 +5,7 @@
 #include "Sandbox/Window/SceneViewPanel.h"
 #include "Sandbox/Window/PropertiesPanel.h"
 
-#include <Volt-Scene/Entity.h>
+#include <EntitySystem/Entity.h>
 
 #include <EventSystem/ApplicationEvents.h>
 

@@ -9,6 +9,7 @@
 #include "Sandbox/Sandbox.h"
 
 #include <Volt-Scene/Prefab.h>
+#include <Volt-Scene/Scene.h>
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Assets/MeshAsset.h>

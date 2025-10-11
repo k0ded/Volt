@@ -59,7 +59,6 @@
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
-#include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Scene.h>
 #include <Volt-Scene/SceneManager.h>
 #include <Volt-Scene/SceneEvents.h>
@@ -93,6 +92,8 @@
 
 #include <EventSystem/EventSystem.h>
 #include <EventSystem/ApplicationEvents.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -809,7 +810,7 @@ void Sandbox::RenderGameView(float timestep)
 					if ((int32_t)camComp.priority > highestPrio)
 					{
 						highestPrio = (int32_t)camComp.priority;
-						cameraEntity = { id, m_runtimeScene.get() };
+						cameraEntity = { id, &m_runtimeScene->GetEntityScene()};
 					}
 				});
 

@@ -17,6 +17,8 @@
 #include <Volt-Renderer/SceneRenderer.h>
 
 #include <Volt-Scene/Components/CoreComponents.h>
+#include <Volt-Scene/Scene.h>
+
 #include <Volt-Physics/ColliderComponents.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -256,7 +258,7 @@ void Sandbox::RenderGizmos(Ref<Volt::Scene> scene, Ref<Volt::Camera> camera)
 	///// Camera Gizmo /////
 	m_runtimeScene->ForEachWithComponents<Volt::CameraComponent>([&](entt::entity id, const Volt::CameraComponent& cameraComponent)
 	{
-		Volt::Entity entity{ id, m_runtimeScene.get() };
+		Volt::Entity entity{ id, &m_runtimeScene->GetEntityScene()};
 
 		if (!entity.IsVisible())
 		{

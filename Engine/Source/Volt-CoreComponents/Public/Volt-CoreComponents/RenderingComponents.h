@@ -100,7 +100,7 @@ namespace Volt
 		uint32_t currentAnimation = 0;
 		float currentStartTime = 0.f;
 
-		std::unordered_map<UUID64, Vector<EntityHelper>> attachedEntities;
+		std::unordered_map<UUID64, Vector<Entity>> attachedEntities;
 
 		bool isLooping = true;
 		bool isPlaying = false;

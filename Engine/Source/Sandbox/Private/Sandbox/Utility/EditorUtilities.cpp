@@ -18,7 +18,7 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <Volt-Scene/Entity.h>
+#include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -361,17 +361,19 @@ std::string EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)
 
 void EditorUtils::MarkEntityAsEdited(const Volt::Entity& entity)
 {
-	auto scene = entity.GetScene();
-	scene->MarkEntityAsEdited(entity);
+	//todo_fabian: reimplement
+	//auto scene = entity.GetScene();
+	//scene->MarkEntityAsEdited(entity);
 }
 
 void EditorUtils::MarkEntityAndChildrenAsEdited(const Volt::Entity& entity)
 {
-	auto scene = entity.GetScene();
+	//todo_fabian: reimplement
+	/*auto scene = entity.GetScene();
 	scene->MarkEntityAsEdited(entity);
 
 	for (const auto& child : entity.GetChildren())
 	{
 		MarkEntityAndChildrenAsEdited(child);
-	}
+	}*/
 }

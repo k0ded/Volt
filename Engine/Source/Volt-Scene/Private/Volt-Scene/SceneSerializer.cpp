@@ -2,7 +2,6 @@
 
 #include "Volt-Scene/SceneSerializer.h"
 #include "Volt-Scene/Scene.h"
-#include "Volt-Scene/Entity.h"
 #include "Volt-Scene/EntityDescription.h"
 #include "Volt-Scene/WorldEngine/WorldCell.h"
 
@@ -11,6 +10,7 @@
 #include <Volt-Core/Project/ProjectManager.h>
 #include <Volt-Core/Algorithms.h>
 
+#include <EntitySystem/Entity.h>
 #include <EntitySystem/ComponentRegistry.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
@@ -60,10 +60,11 @@ namespace Volt
 			streamWriter.SetKey("useWorldEngine", scene->m_sceneSettings.useWorldEngine);
 			streamWriter.EndMap();
 
-			if (scene->m_sceneSettings.useWorldEngine)
+			//todo: world engine
+			/*if (scene->m_sceneSettings.useWorldEngine)
 			{
 				SerializeWorldEngine(scene, streamWriter);
-			}
+			}*/
 
 			streamWriter.EndMap();
 			streamWriter.EndMap();
@@ -124,10 +125,11 @@ namespace Volt
 			}
 			yamlStreamReader.ExitScope();
 
-			if (scene->m_sceneSettings.useWorldEngine)
+			//todo: world engine
+			/*if (scene->m_sceneSettings.useWorldEngine)
 			{
 				DeserializeWorldEngine(scene, yamlStreamReader);
-			}
+			}*/
 
 			yamlStreamReader.ExitScope();
 		}
@@ -250,25 +252,26 @@ namespace Volt
 		}
 	}*/
 
-	void SceneSerializer::SerializeWorldEngine(const Ref<Scene>& scene, YAMLMemoryStreamWriter& streamWriter) const
-	{
-		auto& worldEngine = scene->m_worldEngine;
+	//todo: wordl engine
+	//void SceneSerializer::SerializeWorldEngine(const Ref<Scene>& scene, YAMLMemoryStreamWriter& streamWriter) const
+	//{
+	//	auto& worldEngine = scene->m_worldEngine;
 
-		streamWriter.BeginMapNamned("WorldEngine");
-		streamWriter.SetKey("cellSize", worldEngine.GetSettings().cellSize);
-		streamWriter.SetKey("worldSize", worldEngine.GetSettings().worldSize);
+	//	streamWriter.BeginMapNamned("WorldEngine");
+	//	streamWriter.SetKey("cellSize", worldEngine.GetSettings().cellSize);
+	//	streamWriter.SetKey("worldSize", worldEngine.GetSettings().worldSize);
 
-		streamWriter.EndMap();
-	}
+	//	streamWriter.EndMap();
+	//}
 
-	void SceneSerializer::DeserializeWorldEngine(const Ref<Scene>& scene, YAMLMemoryStreamReader& streamReader) const
-	{
-		auto& worldEngine = scene->m_worldEngine;
+	//void SceneSerializer::DeserializeWorldEngine(const Ref<Scene>& scene, YAMLMemoryStreamReader& streamReader) const
+	//{
+	//	auto& worldEngine = scene->m_worldEngine;
 
-		streamReader.EnterScope("WorldEngine");
-		worldEngine.GetSettingsMutable().cellSize = streamReader.ReadAtKey("cellSize", 25'600);
-		worldEngine.GetSettingsMutable().worldSize = streamReader.ReadAtKey("worldSize", glm::uvec2{ 128'000 });
-		worldEngine.GenerateCells();
-		streamReader.ExitScope();
-	}
+	//	streamReader.EnterScope("WorldEngine");
+	//	worldEngine.GetSettingsMutable().cellSize = streamReader.ReadAtKey("cellSize", 25'600);
+	//	worldEngine.GetSettingsMutable().worldSize = streamReader.ReadAtKey("worldSize", glm::uvec2{ 128'000 });
+	//	worldEngine.GenerateCells();
+	//	streamReader.ExitScope();
+	//}
 }

@@ -2,6 +2,7 @@
 #include "Volt-Scene/PrefabSerializer.h"
 #include "Volt-Scene/Prefab.h"
 #include "Volt-Scene/SceneSerializer.h"
+#include "Volt-Scene/Scene.h"
 
 #include <AssetSystem/AssetManager.h>
 

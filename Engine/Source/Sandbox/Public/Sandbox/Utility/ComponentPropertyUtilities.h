@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt-Scene/Entity.h>
+#include <AssetSystem/AssetType.h>
 
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
@@ -13,6 +13,8 @@ namespace Volt
 	class IComponentTypeDesc;
 	class IEnumTypeDesc;
 	class IArrayTypeDesc;
+	class Entity;
+	class Scene;
 	struct ComponentMember;
 }
 

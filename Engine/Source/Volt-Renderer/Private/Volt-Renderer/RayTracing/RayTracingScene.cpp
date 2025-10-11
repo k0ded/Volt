@@ -7,7 +7,7 @@
 #include <RenderCore/CommandBufferPool.h>
 
 #include <EntitySystem/EntityScene.h>
-#include <EntitySystem/EntityHelper.h>
+#include <EntitySystem/Entity.h>
 
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Buffers//CommandBufferUtility.h>
@@ -32,7 +32,7 @@ namespace Volt
 
 		for (const auto& instance : m_instances)
 		{
-			auto entity = m_scene->GetEntityHelperFromEntityID(instance.entityId);
+			auto entity = m_scene->GetEntityFromID(instance.entityId);
 			if (!entity)
 			{
 				continue;
@@ -119,7 +119,7 @@ namespace Volt
 
 		for (const auto& instance : m_instances)
 		{
-			auto entity = m_scene->GetEntityHelperFromEntityID(instance.entityId);
+			auto entity = m_scene->GetEntityFromID(instance.entityId);
 			if (!entity)
 			{
 				continue;

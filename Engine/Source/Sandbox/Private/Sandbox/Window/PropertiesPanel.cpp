@@ -279,9 +279,9 @@ void PropertiesPanel::AddComponentPopup()
 						{
 							auto entity = myCurrentScene->GetEntityFromID(ent);
 
-							if (!Volt::ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, myCurrentScene->GetRegistry(), entity))
+							if (!Volt::ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, myCurrentScene->GetEntityScene().GetRegistry(), entity))
 							{
-								Volt::ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, myCurrentScene->GetRegistry(), entity);
+								Volt::ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, myCurrentScene->GetEntityScene().GetRegistry(), entity);
 								EditorUtils::MarkEntityAsEdited(entity);
 							}
 						}

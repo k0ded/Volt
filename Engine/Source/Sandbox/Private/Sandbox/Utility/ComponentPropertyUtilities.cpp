@@ -70,7 +70,7 @@ void ComponentPropertyUtility::DrawComponents(Weak<Volt::Scene> scene, Volt::Ent
 	}
 
 	auto scenePtr = scene;
-	auto& registry = scenePtr->GetRegistry();
+	auto& registry = scenePtr->GetEntityScene().GetRegistry();
 
 	for (auto&& curr : registry.storage())
 	{
@@ -118,7 +118,7 @@ void ComponentPropertyUtility::DrawComponents(Weak<Volt::Scene> scene, Volt::Ent
 
 					if (removeComp)
 					{
-						Volt::ComponentRegistry::Helpers::RemoveComponentWithGUID(compTypeDesc->GetGUID(), scene->GetRegistry(), entity);
+						Volt::ComponentRegistry::Helpers::RemoveComponentWithGUID(compTypeDesc->GetGUID(), scene->GetEntityScene().GetRegistry(), entity);
 						EditorUtils::MarkEntityAsEdited(entity);
 					}
 
@@ -194,8 +194,7 @@ bool ComponentPropertyUtility::DrawComponent(Weak<Volt::Scene> scene, Volt::Enti
 
 	if (edited)
 	{
-		Volt::EntityHelper entityHelper = scene->GetEntityHelperFromEntityID(entity.GetID());
-		componentType->OnMemberChanged(entityHelper);
+		componentType->OnMemberChanged(entity);
 
 		EditorUtils::MarkEntityAsEdited(entity);
 	}

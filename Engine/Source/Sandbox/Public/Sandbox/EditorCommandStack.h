@@ -1,12 +1,13 @@
 #pragma once
 
 #include <Volt-Scene/Components/CoreComponents.h>
-#include <Volt-Scene/Entity.h>
 #include <Volt-Scene/EntityDescriptionSerializer.h>
+#include <Volt-Scene/Scene.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 
+#include <EntitySystem/Entity.h>
 
 #include <stack>
 #include "EditorCommand.h"
@@ -215,11 +216,11 @@ enum class ObjectStateAction
 
 struct ObjectStateCommand : EditorCommand
 {
-	ObjectStateCommand(Vector<Volt::Entity> entityList, ObjectStateAction action) :
-		m_Action(action)
+	ObjectStateCommand(Vector<Volt::Entity> entityList, Weak<Volt::Scene> targetScene, ObjectStateAction action) :
+		m_Action(action), m_TargetScene(targetScene)
 	{
 		VT_ENSURE(entityList.size() > 0);
-		m_TargetScene = entityList[0].GetScene();
+		VT_ENSURE(&m_TargetScene->GetEntityScene() == entityList[0].GetSceneReference());
 
 		m_EntityIDs.reserve(entityList.size());
 		for (Volt::Entity& entity : entityList)
@@ -234,12 +235,11 @@ struct ObjectStateCommand : EditorCommand
 		}
 	}
 
-	ObjectStateCommand(Volt::Entity entity, ObjectStateAction action) :
-		m_Action(action)
+	ObjectStateCommand(Volt::Entity entity, Weak<Volt::Scene> targetScene, ObjectStateAction action) :
+		m_Action(action), m_TargetScene(targetScene)
 	{
+		VT_ENSURE(&m_TargetScene->GetEntityScene() == entity.GetSceneReference());
 		m_EntityIDs.push_back(entity.GetID());
-
-		m_TargetScene = entity.GetScene();
 
 		//if the action is delete, we need to save the data so that we can recreate the actor later
 		if (action == ObjectStateAction::Delete)
@@ -319,7 +319,7 @@ private:
 
 		Volt::AssetMetadata fakeMetadata;
 		fakeMetadata.filePath = "Metadata Created By ObjectStateCommand.";
-		Volt::EntityDescSerializer::Get().SerializeEntity(entity.GetID(), entity.GetScene(), writer);
+		Volt::EntityDescSerializer::Get().SerializeEntity(entity.GetID(), m_TargetScene, writer);
 
 		m_EntitiesDataList.push_back(writer.WriteAndGetBuffer());
 
@@ -381,7 +381,7 @@ struct ParentingCommand : EditorCommand
 
 			for (int i = 0; i < myData.size(); i++)
 			{
-				myData[i]->myChild.GetScene()->UnparentEntity(myData[i]->myChild);
+				myData[i]->myChild.UnparentEntity();
 			}
 		}
 		else if (myAction == ParentingAction::Unparent)
@@ -391,7 +391,7 @@ struct ParentingCommand : EditorCommand
 
 			for (int i = 0; i < myData.size(); i++)
 			{
-				myData[i]->myChild.GetScene()->ParentEntity(myData[i]->myParent, myData[i]->myChild);
+				myData[i]->myChild.SetParent(myData[i]->myParent);
 			}
 		}
 	}
@@ -405,7 +405,7 @@ struct ParentingCommand : EditorCommand
 
 			for (int i = 0; i < myData.size(); i++)
 			{
-				myData[i]->myChild.GetScene()->UnparentEntity(myData[i]->myChild);
+				myData[i]->myChild.UnparentEntity();
 			}
 		}
 		else if (myAction == ParentingAction::Unparent)
@@ -415,7 +415,7 @@ struct ParentingCommand : EditorCommand
 
 			for (int i = 0; i < myData.size(); i++)
 			{
-				myData[i]->myChild.GetScene()->ParentEntity(myData[i]->myParent, myData[i]->myChild);
+				myData[i]->myChild.SetParent(myData[i]->myParent);
 			}
 		}
 	}

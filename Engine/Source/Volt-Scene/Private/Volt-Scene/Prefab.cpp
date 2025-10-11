@@ -34,7 +34,7 @@ namespace Volt
 			return Entity::Null();
 		}
 
-		Entity newEntity = Entity::Duplicate(rootEntity, targetScene, Entity::Null(), EntityCopyFlags::SkipCommonData);
+		Entity newEntity = Entity::Duplicate(rootEntity, &targetScene->GetEntityScene(), Entity::Null(), Entity::CreateSkipComponentOnCopySet<CommonComponent>());
 		if (targetScene->IsPlaying())
 		{
 			InitializeComponents(newEntity);
@@ -99,7 +99,7 @@ namespace Volt
 		UpdateEntityInSceneInternal(sceneEntity, Entity::NullID());
 	}
 
-	void Prefab::CopyPrefabEntity(Entity dstEntity, EntityID srcPrefabEntityId, const EntityCopyFlags copyFlags) const
+	void Prefab::CopyPrefabEntity(Entity dstEntity, EntityID srcPrefabEntityId, std::set<VoltGUID> componentsToSkip) const
 	{
 		Entity prefabEntity = m_prefabScene->GetEntityFromID(srcPrefabEntityId);
 		if (!prefabEntity)
@@ -107,7 +107,7 @@ namespace Volt
 			return;
 		}
 
-		Entity::Copy(prefabEntity, dstEntity, copyFlags);
+		Entity::Copy(prefabEntity, dstEntity, componentsToSkip);
 	}
 
 	const bool Prefab::IsEntityValidInPrefab(Entity entity) const
@@ -289,7 +289,7 @@ namespace Volt
 		{
 			bool exists = false;
 
-			if (!m_prefabScene->IsRelatedTo(srcPrefabEntity, Entity{ id, m_prefabScene }))
+			if (!m_prefabScene->IsRelatedTo(srcPrefabEntity, Entity{ id, &m_prefabScene->GetEntityScene()}))
 			{
 				return;
 			}
@@ -401,7 +401,7 @@ namespace Volt
 		auto prefabCommonComponent = targetEntity.GetComponent<CommonComponent>();
 		auto prefabComponent = targetEntity.GetComponent<PrefabComponent>();
 
-		Entity::Copy(srcEntity, targetEntity, EntityCopyFlags::SkipID | EntityCopyFlags::SkipRelationships | EntityCopyFlags::SkipCommonData);
+		Entity::Copy(srcEntity, targetEntity, Entity::CreateSkipComponentOnCopySet<IDComponent, RelationshipComponent, CommonComponent>());
 
 		targetEntity.GetComponent<RelationshipComponent>() = prefabRelationships;
 		targetEntity.GetComponent<CommonComponent>() = prefabCommonComponent;
@@ -436,7 +436,7 @@ namespace Volt
 		Entity prefabEntity = m_prefabScene->GetEntityFromID(prefabEntityId);
 		if (!prefabEntity)
 		{
-			sceneEntity.GetScene()->DestroyEntity(sceneEntity);
+			sceneEntity.GetSceneReference()->DestroyEntity(sceneEntity.GetID());
 			return;
 		}
 
@@ -445,7 +445,7 @@ namespace Volt
 		auto sceneCommonComponent = sceneEntity.GetComponent<CommonComponent>();
 		const auto sceneRootId = sceneEntity.GetComponent<PrefabComponent>().sceneRootEntity;
 
-		Entity::Copy(prefabEntity, sceneEntity, EntityCopyFlags::SkipID | EntityCopyFlags::SkipCommonData | EntityCopyFlags::SkipRelationships);
+		Entity::Copy(prefabEntity, sceneEntity, Entity::CreateSkipComponentOnCopySet<IDComponent, RelationshipComponent, CommonComponent>());
 
 		if (prefabEntity.GetID() == m_rootEntityId)
 		{
@@ -457,7 +457,7 @@ namespace Volt
 		sceneEntity.GetComponent<RelationshipComponent>() = sceneRelationships;
 		sceneEntity.GetComponent<CommonComponent>() = sceneCommonComponent;
 
-		sceneEntity.GetScene()->InvalidateEntityTransform(sceneEntity.GetID());
+		sceneEntity.GetSceneReference()->InvalidateEntityTransform(sceneEntity.GetID());
 
 		for (const auto& sceneChild : sceneEntity.GetChildren())
 		{
@@ -484,7 +484,7 @@ namespace Volt
 
 			if (!exists)
 			{
-				auto newEntity = InstantiateEntity(sceneEntity.GetScene(), prefabChild);
+				auto newEntity = InstantiateEntity(sceneEntity.GetSceneReference(), prefabChild);
 				auto preParentTransform = newEntity.GetComponent<TransformComponent>();
 
 				newEntity.SetParent(sceneEntity);
@@ -494,7 +494,7 @@ namespace Volt
 		}
 	}
 
-	Entity Prefab::InstantiateEntity(Weak<Scene> targetScene, Entity prefabEntity)
+	Entity Prefab::InstantiateEntity(EntityScene* targetScene, Entity prefabEntity)
 	{
 		Entity newEntity = Entity::Duplicate(prefabEntity, targetScene);
 		if (targetScene->IsPlaying())

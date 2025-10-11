@@ -19,6 +19,8 @@
 #include <AssetSystem/AssetManager.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
+#include <Volt-Scene/AssetTypes.h>
+
 #include <Volt-Application/UI/UIUtility.h>
 
 namespace AssetBrowser

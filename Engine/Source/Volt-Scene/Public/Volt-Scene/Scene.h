@@ -58,7 +58,8 @@ namespace Volt
 
 		VT_NODISCARD TQS GetEntityWorldTQS(const Entity& entity) const;
 
-		VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_entityScene.GetRegistry(); }
+		//VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_entityScene.GetRegistry(); }
+		VT_NODISCARD VT_INLINE EntityScene& GetEntityScene() { return m_entityScene; }
 		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
 		VT_NODISCARD VT_INLINE const Statistics& GetStatistics() const { return m_statistics; }
 		VT_NODISCARD VT_INLINE bool IsPlaying() const { return m_isPlaying; }
@@ -75,18 +76,15 @@ namespace Volt
 		void SetRenderSize(uint32_t aWidth, uint32_t aHeight);
 
 		Entity CreateEntity(const std::string& tag = "");
-		Entity CreateEntityWithID(const EntityID& id, const std::string& tag = "");
+		Entity CreateEntityWithID(const EntityID& id, const std::string& tag = "", bool alsoCreateDesc = false);
 		Volt::AssetHandle CreateEntityDescForEntity(const EntityID& id);
 
 		Entity GetEntityFromID(const EntityID id) const;
 		Entity GetEntityFromHandle(entt::entity entityHandle) const;
-		EntityHelper GetEntityHelperFromEntityID(EntityID entityId) const;
 		Volt::AssetHandle GetEntityDescHandleFromEntityID(EntityID entityID) const;
 
 		bool IsRelatedTo(Entity entity, Entity otherEntity);
 		void DestroyEntity(Entity entity);
-		void ParentEntity(Entity parent, Entity child);
-		void UnparentEntity(Entity entity);
 
 		void InvalidateEntityTransform(const EntityID& entityId);
 		bool IsEntityValid(EntityID entityId) const;

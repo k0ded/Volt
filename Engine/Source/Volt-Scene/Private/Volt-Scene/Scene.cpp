@@ -1,7 +1,6 @@
 #include "vspch.h"
 
 #include "Volt-Scene/Scene.h"
-#include "Volt-Scene/Entity.h"
 #include "Volt-Scene/EntityDescriptionSerializer.h"
 #include "Volt-Scene/EntityDescription.h"
 #include "Volt-Scene/EntityDescCustomMetadata.h"
@@ -19,6 +18,8 @@
 #include <Volt-Renderer/Camera/Camera.h>
 
 #include <SubSystem/SubSystemManager.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetFactory.h>
@@ -108,7 +109,7 @@ namespace Volt
 		{
 			if (transComp.visible)
 			{
-				Entity entity = { id, this };
+				Entity entity = { id, &m_entityScene };
 
 				if (!cameraComp.camera)
 				{
@@ -184,24 +185,29 @@ namespace Volt
 
 	Entity Scene::CreateEntity(const std::string& tag)
 	{
-		EntityHelper newHelper = m_entityScene.CreateEntity(tag);
-		VT_ENSURE(newHelper);
+		Entity newEntity = m_entityScene.CreateEntity(tag);
+		VT_ENSURE(newEntity);
 
-		Entity newEntity(newHelper.GetHandle(), this);
-		m_worldEngine.AddEntity(newEntity);
+		//todo: World Engine
+		//m_worldEngine.AddEntity(newEntity);
 
 		CreateEntityDescForEntity(newEntity.GetID());
 
 		return newEntity;
 	}
 
-	Entity Scene::CreateEntityWithID(const EntityID& id, const std::string& tag)
+	Entity Scene::CreateEntityWithID(const EntityID& id, const std::string& tag, bool alsoCreateDesc)
 	{
-		EntityHelper newHelper = m_entityScene.CreateEntityWithID(id, tag);
-		VT_ENSURE(newHelper);
+		Entity newEntity = m_entityScene.CreateEntityWithID(id, tag);
+		VT_ENSURE(newEntity);
 
-		Entity newEntity(newHelper.GetHandle(), this);
-		m_worldEngine.AddEntity(newEntity);
+		//todo: World Engine
+		//m_worldEngine.AddEntity(newEntity);
+
+		if (alsoCreateDesc)
+		{
+			CreateEntityDescForEntity(newEntity.GetID());
+		}
 
 		return newEntity;
 	}
@@ -227,19 +233,12 @@ namespace Volt
 
 	Entity Scene::GetEntityFromID(const EntityID id) const
 	{
-		EntityHelper helper = m_entityScene.GetEntityHelperFromEntityID(id);
-		return Entity(helper.GetHandle(), const_cast<Scene*>(this));
+		return m_entityScene.GetEntityFromID(id);
 	}
 
 	Entity Scene::GetEntityFromHandle(entt::entity entityHandle) const
 	{
-		EntityHelper helper = m_entityScene.GetEntityHelperFromEntityHandle(entityHandle);
-		return Entity(helper.GetHandle(), const_cast<Scene*>(this));
-	}
-
-	EntityHelper Scene::GetEntityHelperFromEntityID(EntityID entityId) const
-	{
-		return m_entityScene.GetEntityHelperFromEntityID(entityId);
+		return  m_entityScene.GetEntityFromHandle(entityHandle);
 	}
 
 	Volt::AssetHandle Scene::GetEntityDescHandleFromEntityID(EntityID entityID) const
@@ -257,70 +256,12 @@ namespace Volt
 		SortScene();
 	}
 
-	void Scene::ParentEntity(Entity parent, Entity child)
-	{
-		if (!parent.IsValid() || !child.IsValid() || parent == child)
-		{
-			return;
-		}
-
-		// Check that it's not in the child chain
-		bool isChild = false;
-		IsRecursiveChildOf(parent, child, isChild);
-		if (isChild)
-		{
-			return;
-		}
-
-		if (child.GetParent())
-		{
-			UnparentEntity(child);
-		}
-
-		auto& childChildren = child.GetComponent<RelationshipComponent>().children;
-
-		if (auto it = std::find(childChildren.begin(), childChildren.end(), parent.GetID()) != childChildren.end())
-		{
-			return;
-		}
-
-		child.GetComponent<RelationshipComponent>().parent = parent.GetID();
-		parent.GetComponent<RelationshipComponent>().children.emplace_back(child.GetID());
-
-		ConvertToLocalSpace(child);
-	}
-
-	void Scene::UnparentEntity(Entity entity)
-	{
-		if (!entity.IsValid()) { return; }
-
-		auto parent = entity.GetParent();
-		if (!parent.IsValid())
-		{
-			return;
-		}
-
-		auto& children = parent.GetComponent<RelationshipComponent>().children;
-
-		auto it = std::find(children.begin(), children.end(), entity.GetID());
-		if (it != children.end())
-		{
-			children.erase(it);
-		}
-
-		//we need to convert to world space before removing the parent because it takes the parent transform into account
-		ConvertToWorldSpace(entity);
-		entity.GetComponent<RelationshipComponent>().parent = Entity::NullID();
-
-		//we have to invalidate the transform here even though ConvertToWorldSpace already does it since it takes the parent into account
-		InvalidateEntityTransform(entity.GetID());
-	}
-
 	void Scene::InvalidateEntityTransform(const EntityID& entityId)
 	{
 		Vector<EntityID> invalidatedEntities = m_entityScene.InvalidateEntityTransform(entityId);
 
-		for (const auto& id : invalidatedEntities)
+		//todo: World Engine
+		/*for (const auto& id : invalidatedEntities)
 		{
 			Entity currentEntity = GetEntityFromID(id);
 
@@ -328,7 +269,7 @@ namespace Volt
 			{
 				m_worldEngine.OnEntityMoved(currentEntity);
 			}
-		}
+		}*/
 	}
 
 	bool Scene::IsEntityValid(EntityID entityId) const
@@ -357,7 +298,7 @@ namespace Volt
 
 				auto& meshComp = ent.AddComponent<MeshComponent>();
 				meshComp.handle = AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Cube.vtasset");
-				MeshComponent::OnMemberChanged(MeshComponent::MeshEntity(ent.GetScene()->GetEntityHelperFromEntityID(ent.GetID())));
+				MeshComponent::OnMemberChanged(MeshComponent::MeshEntity(ent));
 			}
 
 			// Light
@@ -374,7 +315,7 @@ namespace Volt
 				auto ent = newScene->CreateEntity("Skylight");
 				SkylightComponent& skyComp = ent.AddComponent<SkylightComponent>();
 				skyComp.environmentTextureHandle = AssetManager::GetAssetHandleFromFilePath("Engine/Textures/HDRIs/defaultHDRI.vtasset");
-				SkylightComponent::OnMemberChanged(SkylightComponent::LightEntity(ent.GetScene()->GetEntityHelperFromEntityID(ent.GetID())));
+				SkylightComponent::OnMemberChanged(SkylightComponent::LightEntity(ent));
 			}
 
 			// Camera
@@ -407,7 +348,7 @@ namespace Volt
 			const EntityID uuid = registry.get<IDComponent>(id).id;
 
 			auto entity = otherScene->CreateEntityWithID(uuid);
-			Entity::Copy(Entity{ id, this }, entity, EntityCopyFlags::None);
+			Entity::Copy(Entity{ id, &m_entityScene }, entity);
 
 			otherScene->InvalidateEntityTransform(entity.GetID());
 			otherScene->GetWorldEngineMutable().OnEntityMoved(entity);
@@ -421,7 +362,7 @@ namespace Volt
 
 	glm::mat4 Scene::GetWorldTransform(Entity entity) const
 	{
-		const TQS entityWorldTQS = m_entityScene.GetEntityWorldTQS(m_entityScene.GetEntityHelperFromEntityID(entity.GetID()));
+		const TQS entityWorldTQS = m_entityScene.GetEntityWorldTQS(entity);
 
 		const glm::mat4 transform = glm::translate(glm::mat4{ 1.f }, entityWorldTQS.translation)
 			* glm::mat4_cast(entityWorldTQS.rotation)
@@ -533,16 +474,17 @@ namespace Volt
 		InvalidateEntityTransform(entity.GetID());
 	}
 
-	void Scene::MarkEntityAsEdited(const Entity& entity)
+	//todo_fabian:
+	/*void Scene::MarkEntityAsEdited(const Entity& entity)
 	{
 		VT_ENSURE_MSG(entity.IsValid(), "Entity is not valid! Only valid entities can be marked as edited!");
-		m_entityScene.MarkEntityAsEdited(m_entityScene.GetEntityHelperFromEntityID(entity.GetID()));
+		m_entityScene.MarkEntityAsEdited(m_entityScene.GetEntityFromEntityID(entity.GetID()));
 	}
 
 	void Scene::ClearEditedEntities()
 	{
 		m_entityScene.ClearEditedEntities();
-	}
+	}*/
 
 	Vector<Entity> Scene::GetAllEntities() const
 	{
@@ -553,13 +495,14 @@ namespace Volt
 
 		registry.each([&](const entt::entity id)
 		{
-			result.emplace_back(Entity{ id, const_cast<Scene*>(this) });
+			result.emplace_back(Entity{ id, &m_entityScene });
 		});
 
 		return result;
 	}
 
-	Vector<Entity> Scene::GetAllEditedEntities() const
+	//todo_fabian
+	/*Vector<Entity> Scene::GetAllEditedEntities() const
 	{
 		Vector<Entity> entities;
 
@@ -581,10 +524,10 @@ namespace Volt
 		}
 
 		return entities;
-	}
+	}*/
 
 	TQS Scene::GetEntityWorldTQS(const Entity& entity) const
 	{
-		return m_entityScene.GetEntityWorldTQS(m_entityScene.GetEntityHelperFromEntityID(entity.GetID()));
+		return m_entityScene.GetEntityWorldTQS(entity);
 	}
 }

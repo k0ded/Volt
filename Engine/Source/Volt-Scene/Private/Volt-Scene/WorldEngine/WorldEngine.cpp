@@ -1,13 +1,14 @@
 #include "vspch.h"
 
 #include "Volt-Scene/Scene.h"
-#include "Volt-Scene/Entity.h"
 #include "Volt-Scene/WorldEngine/WorldEngine.h"
 #include "Volt-Scene/Components/CoreComponents.h"
 
 #include "Volt-Scene/SceneSerializer.h"
 
 #include <JobSystem/JobSystem.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <CoreUtilities/Math/Math.h>
 

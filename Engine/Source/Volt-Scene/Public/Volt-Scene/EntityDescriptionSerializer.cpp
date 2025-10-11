@@ -4,7 +4,6 @@
 #include "Volt-Scene/EntityDescription.h"
 #include "Volt-Scene/EntityDescCustomMetadata.h"
 #include "Volt-Scene/Scene.h"
-#include "Volt-Scene/Entity.h"
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/Asset.h>
@@ -14,7 +13,9 @@
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
+#include <EntitySystem/Entity.h>
 #include <EntitySystem/ComponentRegistry.h>
+
 #include <Volt-Platforms/Windows/WindowsPlatformThread.h>
 
 
@@ -174,7 +175,7 @@ namespace Volt
 		streamWriter.BeginMap();
 		streamWriter.BeginMapNamned("Entity");
 
-		auto& registry = scene->GetRegistry();
+		auto& registry = scene->GetEntityScene().GetRegistry();
 
 		Entity entity = scene->GetEntityFromID(id);
 
@@ -262,12 +263,14 @@ namespace Volt
 			{
 				case ValueType::Component:
 				{
-					if (!ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, scene->GetRegistry(), entity))
+					auto& registry = scene->GetEntityScene().GetRegistry();
+
+					if (!ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, registry, entity.GetHandle()))
 					{
-						ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, scene->GetRegistry(), entity);
+						ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, registry, entity.GetHandle());
 					}
 
-					void* voidCompPtr = ComponentRegistry::Helpers::GetComponentWithGUID(compGuid, scene->GetRegistry(), entity);
+					void* voidCompPtr = ComponentRegistry::Helpers::GetComponentWithGUID(compGuid, registry, entity.GetHandle());
 					uint8_t* componentData = reinterpret_cast<uint8_t*>(voidCompPtr);
 
 					const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
@@ -503,7 +506,7 @@ namespace Volt
 			}
 		});
 
-		compDesc->OnComponentDeserialized(dstEntity.GetScene()->GetEntityHelperFromEntityID(dstEntity.GetID()));
+		compDesc->OnComponentDeserialized(dstEntity.GetSceneReference()->GetEntityFromID(dstEntity.GetID()));
 	}
 
 	void EntityDescSerializer::DeserializeArray(uint8_t* data, const size_t offset, const IArrayTypeDesc* arrayDesc, Entity dstEntity, YAMLMemoryStreamReader& streamReader) const

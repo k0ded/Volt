@@ -23,7 +23,7 @@ namespace Volt																\
 
 namespace Volt
 {
-	class EntityHelper;
+	class Entity;
 
 	template<typename T, class ENABLE = void> class TypeDesc;
 	template<typename T> constexpr bool IsReflectedType();
@@ -157,14 +157,14 @@ namespace Volt
 		[[nodiscard]] virtual ComponentMember* FindMemberByName(std::string_view name) = 0;
 		[[nodiscard]] virtual const ComponentMember* FindMemberByName(std::string_view name) const = 0;
 		
-		virtual void OnCreate(const EntityHelper& entityHelper) const = 0;
-		virtual void OnDestroy(const EntityHelper& entityHelper) const = 0;
-		virtual void OnStart(const EntityHelper& entityHelper) const = 0;
-		virtual void OnStop(const EntityHelper& entityHelper) const = 0;
-		virtual void OnMemberChanged(const EntityHelper& entityHelper) const = 0;
-		virtual void OnComponentCopied(const EntityHelper& entityHelper) const = 0;
-		virtual void OnComponentDeserialized(const EntityHelper& entityHelper) const = 0;
-		virtual void OnTransformChanged(const EntityHelper& entityHelper) const = 0;
+		virtual void OnCreate(const Entity& entityHelper) const = 0;
+		virtual void OnDestroy(const Entity& entityHelper) const = 0;
+		virtual void OnStart(const Entity& entityHelper) const = 0;
+		virtual void OnStop(const Entity& entityHelper) const = 0;
+		virtual void OnMemberChanged(const Entity& entityHelper) const = 0;
+		virtual void OnComponentCopied(const Entity& entityHelper) const = 0;
+		virtual void OnComponentDeserialized(const Entity& entityHelper) const = 0;
+		virtual void OnTransformChanged(const Entity& entityHelper) const = 0;
 	};
 
 	class IEnumTypeDesc : public CommonTypeDesc<ValueType::Enum>
@@ -326,7 +326,7 @@ namespace Volt
 	class ComponentTypeDesc : public IComponentTypeDesc
 	{
 	public:
-		using ComponentCallbackFunc = std::function<void(const EntityHelper&)>;
+		using ComponentCallbackFunc = std::function<void(const Entity&)>;
 
 		~ComponentTypeDesc() override = default;
 
@@ -341,14 +341,14 @@ namespace Volt
 		[[nodiscard]] inline const Vector<ComponentMember>& GetMembers() const override { return m_members; }
 		[[nodiscard]] inline const bool IsHidden() const override { return m_isHidden; }
 
-		void OnCreate(const EntityHelper& entityHelper) const override;
-		void OnDestroy(const EntityHelper& entityHelper) const override;
-		void OnStart(const EntityHelper& entityHelper) const override;
-		void OnStop(const EntityHelper& entityHelper) const override;
-		void OnMemberChanged(const EntityHelper& entityHelper) const override;
-		void OnComponentCopied(const EntityHelper& entityHelper) const override;
-		void OnComponentDeserialized(const EntityHelper& entityHelper) const override;
-		void OnTransformChanged(const EntityHelper& entityHelper) const override;
+		void OnCreate(const Entity& entityHelper) const override;
+		void OnDestroy(const Entity& entityHelper) const override;
+		void OnStart(const Entity& entityHelper) const override;
+		void OnStop(const Entity& entityHelper) const override;
+		void OnMemberChanged(const Entity& entityHelper) const override;
+		void OnComponentCopied(const Entity& entityHelper) const override;
+		void OnComponentDeserialized(const Entity& entityHelper) const override;
+		void OnTransformChanged(const Entity& entityHelper) const override;
 
 		[[nodiscard]] ComponentMember* FindMemberByOffset(const ptrdiff_t offset) override;
 		[[nodiscard]] ComponentMember* FindMemberByName(std::string_view name) override;
@@ -412,7 +412,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnCreateCallback(void(*func)(EntityType))
 		{
-			m_onCreateCallback = [func](const EntityHelper& entityHelper)
+			m_onCreateCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -422,7 +422,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnDestroyCallback(void(*func)(EntityType))
 		{
-			m_onDestroyCallback = [func](const EntityHelper& entityHelper)
+			m_onDestroyCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -432,7 +432,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnStartCallback(void(*func)(EntityType))
 		{
-			m_onStartCallback = [func](const EntityHelper& entityHelper)
+			m_onStartCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -442,7 +442,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnStopCallback(void(*func)(EntityType))
 		{
-			m_onStopCallback = [func](const EntityHelper& entityHelper)
+			m_onStopCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -452,7 +452,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnMemberChangedCallback(void(*func)(EntityType))
 		{
-			m_onMemberChangedCallback = [func](const EntityHelper& entityHelper)
+			m_onMemberChangedCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -462,7 +462,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnComponentCopiedCallback(void(*func)(EntityType))
 		{
-			m_onComponentCopiedCallback = [func](const EntityHelper& entityHelper)
+			m_onComponentCopiedCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -472,7 +472,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnComponentDeserializedCallback(void(*func)(EntityType))
 		{
-			m_onComponentDeserializedCallback = [func](const EntityHelper& entityHelper)
+			m_onComponentDeserializedCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -482,7 +482,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnTransformChangedCallback(void(*func)(EntityType))
 		{
-			m_onTransformChangedCallback = [func](const EntityHelper& entityHelper)
+			m_onTransformChangedCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -556,7 +556,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnCreate(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnCreate(const Entity& entityHelper) const
 	{
 		if (m_onCreateCallback)
 		{
@@ -565,7 +565,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnDestroy(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnDestroy(const Entity& entityHelper) const
 	{
 		if (m_onDestroyCallback)
 		{
@@ -574,7 +574,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnStart(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnStart(const Entity& entityHelper) const
 	{
 		if (m_onStartCallback)
 		{
@@ -583,7 +583,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnStop(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnStop(const Entity& entityHelper) const
 	{
 		if (m_onStopCallback)
 		{
@@ -592,7 +592,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnMemberChanged(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnMemberChanged(const Entity& entityHelper) const
 	{
 		if (m_onMemberChangedCallback)
 		{
@@ -601,7 +601,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnComponentCopied(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnComponentCopied(const Entity& entityHelper) const
 	{
 		if (m_onComponentCopiedCallback)
 		{
@@ -610,7 +610,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnComponentDeserialized(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnComponentDeserialized(const Entity& entityHelper) const
 	{
 		if (m_onComponentDeserializedCallback)
 		{
@@ -619,7 +619,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnTransformChanged(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnTransformChanged(const Entity& entityHelper) const
 	{
 		if (m_onTransformChangedCallback)
 		{
