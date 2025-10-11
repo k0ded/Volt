@@ -21,6 +21,14 @@ namespace Volt
 		: m_handle(entityHandle), m_sceneReference(const_cast<EntityScene*>(scene))
 	{}
 
+	Entity::Entity(entt::entity entityHandle, EntityScene & scene)
+		: m_handle(entityHandle), m_sceneReference(&scene)
+	{}
+	
+	Entity::Entity(entt::entity entityHandle, const EntityScene& scene)
+		: m_handle(entityHandle), m_sceneReference(const_cast<EntityScene*>(&scene))
+	{}
+
 	Entity::~Entity()
 	{}
 

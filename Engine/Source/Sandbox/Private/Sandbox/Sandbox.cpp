@@ -810,7 +810,7 @@ void Sandbox::RenderGameView(float timestep)
 					if ((int32_t)camComp.priority > highestPrio)
 					{
 						highestPrio = (int32_t)camComp.priority;
-						cameraEntity = { id, &m_runtimeScene->GetEntityScene()};
+						cameraEntity = { id, m_runtimeScene->GetEntityScene()};
 					}
 				});
 

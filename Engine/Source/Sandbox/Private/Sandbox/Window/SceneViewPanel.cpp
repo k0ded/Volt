@@ -889,7 +889,7 @@ void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity
 			return;
 		}
 
-		auto entity = Volt::Entity{ id, &m_scene->GetEntityScene()};
+		auto entity = Volt::Entity{ id, m_scene->GetEntityScene()};
 		prefabAsset->UpdateEntityInScene(entity);
 
 		EditorUtils::MarkEntityAsEdited(entity);
@@ -917,7 +917,7 @@ void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity
 				return;
 			}
 
-			auto entity = Volt::Entity{ id, &m_scene->GetEntityScene()};
+			auto entity = Volt::Entity{ id, m_scene->GetEntityScene()};
 			prefabRefAsset->UpdateEntityInScene(entity);
 
 			EditorUtils::MarkEntityAsEdited(entity);
@@ -1283,7 +1283,7 @@ void SceneViewPanel::RebuildEntityDrawList()
 
 	m_scene->ForEachWithComponents<const Volt::CommonComponent>([&](entt::entity id, const Volt::CommonComponent& dataComp)
 	{
-		Volt::Entity entity{ id, &m_scene->GetEntityScene()};
+		Volt::Entity entity{ id, m_scene->GetEntityScene()};
 		if (entity.GetParent())
 		{
 			return;

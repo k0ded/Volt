@@ -25,6 +25,8 @@ namespace Volt
 		Entity();
 		Entity(entt::entity entityHandle, EntityScene* scene);
 		Entity(entt::entity entityHandle, const EntityScene* scene);
+		Entity(entt::entity entityHandle, EntityScene& scene);
+		Entity(entt::entity entityHandle, const EntityScene& scene);
 		~Entity();
 
 		//setters
