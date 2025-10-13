@@ -62,6 +62,8 @@ namespace Volt
 		VT_NODISCARD Entity GetEntityFromHandle(entt::entity entityHandle) const;
 		VT_NODISCARD uint32_t GetEntityAliveCount() const;
 
+		VT_NODISCARD entt::entity GetEntityHandleFromID(EntityID id) const { return m_entityRegistry.GetHandleFromID(id); };
+
 		//todo_fabian: reimplement
 		//VT_NODISCARD const std::set<EntityID>& GetEditedEntities() const { return m_entityRegistry.GetEditedEntities(); }
 		//VT_NODISCARD const std::set<EntityID>& GetRemovedEntities() const { return m_entityRegistry.GetRemovedEntities(); }

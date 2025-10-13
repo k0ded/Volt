@@ -23,6 +23,7 @@
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetFactory.h>
+#include <AssetSystem/AssetSerializerRegistry.h>
 
 #include <CoreUtilities/Math/Math.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -136,8 +137,13 @@ namespace Volt
 
 	void Scene::LoadEntities()
 	{
+		if (m_isFinishedLoadingEntities)
+		{
+			return;
+		}
 		JobRef job = JobSystem::CreateJob("Register Entities", ExecutionPriority::Latent, [this]()
 		{
+			//collect all entity descriptions to spawn
 			Vector<AssetHandle> allEntityDescAssetsForScene = Volt::AssetManager::GetAllAssetsOfType<Volt::EntityDesc>();
 			for (const AssetHandle& handle : allEntityDescAssetsForScene)
 			{
@@ -151,32 +157,104 @@ namespace Volt
 				m_entityIDToDescHandle.emplace(customMeta.entityID, handle);
 			}
 
+
 			TaskGraph taskGraph{ ExecutionPriority::Latent };
-			
-			TaskGraph::Task* finishUpTask = taskGraph.AddTask("Finish up registering entities", [this]()
+			TaskGraph::Task* createEntitiesTask = taskGraph.AddTask("Create Entities", [this]()
 			{
-				m_isFinishedLoadingEntities = true;
+				entt::registry& registry = m_entityScene.GetRegistry();
+				registry.reserve(m_entityIDToDescHandle.size());
+				for (const auto& [entityID, descHandle] : m_entityIDToDescHandle)
+				{
+					CreateEntityWithID(entityID);
+				}
 			});
 
-			for (const auto& [entityID, handle]: m_entityIDToDescHandle)
+			//parse entity descriptions to YAML
+			Vector<TaskGraph::Task*> parseEntityDescTasks;
+			parseEntityDescTasks.reserve(m_entityIDToDescHandle.size());
+
+			//keep track of all the parsed yamlReaders
+			Ref<std::unordered_map<EntityID, Ref<YAMLMemoryStreamReader>>> yamlReaders = CreateRef<std::unordered_map<EntityID, Ref<YAMLMemoryStreamReader>>>();
+			yamlReaders->reserve(m_entityIDToDescHandle.size());
+
+			//keep track of what components each entity needs
+			Ref<Map<EntityID, Vector<VoltGUID>>> entityToComponentTypes = CreateRef<Map<EntityID, Vector<VoltGUID>>>();
+			entityToComponentTypes->reserve(m_entityIDToDescHandle.size());
+			for (const auto& [entityID, descHandle] : m_entityIDToDescHandle)
 			{
-				TaskGraph::Task* spawnEntityTask = taskGraph.AddTask("Spawn Entity", [this, handle]()
+				//create the reader for this entity
+				Ref<YAMLMemoryStreamReader> reader = CreateRef<YAMLMemoryStreamReader>();
+				yamlReaders->insert({ entityID,reader });
+
+				//create the entry for this entity
+				entityToComponentTypes->insert({ entityID,  {} });
+
+				parseEntityDescTasks.push_back(taskGraph.AddTask("Parse EntityDesc Data", [descHandle, entityID, reader, entityToComponentTypes]
 				{
-					bool wasLoaded = Volt::AssetManager::IsLoaded(handle);
-					Ref<Volt::EntityDesc> entityDesc = Volt::AssetManager::GetAsset<EntityDesc>(handle);
+					Ref<EntityDesc> entityDesc = AssetManager::GetAsset<EntityDesc>(descHandle);
 
-					YAMLMemoryStreamReader yamlStreamReader{};
-					yamlStreamReader.ReadBuffer(entityDesc->GetEntitySpawnData());
-					Volt::EntityDescSerializer::Get().DeserializeEntity(shared_from_this(), yamlStreamReader);
+					reader->ReadBuffer(entityDesc->GetEntitySpawnData());
 
-					if (!wasLoaded)
-					{
-						Volt::AssetManager::Get().UnloadAsset(handle);
-					}
-				});
+					AssetManager::Get().UnloadAsset(descHandle);
 
-				finishUpTask->AddDependency(spawnEntityTask);
+					entityToComponentTypes->at(entityID) = EntityDescSerializer::FindComponentTypes(*reader);
+				}));
 			}
+
+
+			//arrange component types to map from type to entityIDs to quickly create them concurrently later
+			Ref<Map<VoltGUID, Vector<EntityID>>> componentTypeToOwningEntities = CreateRef<Map<VoltGUID, Vector<EntityID>>>();
+			TaskGraph::Task* arrangeComponentsToEntityIDTask = taskGraph.AddTaskWithDependencies("Arrange Components To EntityIDs", parseEntityDescTasks, [componentTypeToOwningEntities, entityToComponentTypes]()
+			{
+				for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
+				{
+					for (VoltGUID componentType : componentTypes)
+					{
+						(*componentTypeToOwningEntities)[componentType].push_back(entityID);
+					}
+				}
+			});
+
+			//new task graph to be able to create a separate task per component type
+			taskGraph.AddTaskWithDependencies("Launch Component Creation and Serialization Jobs", { arrangeComponentsToEntityIDTask, createEntitiesTask }, [this, componentTypeToOwningEntities, entityToComponentTypes, yamlReaders]()
+			{
+				TaskGraph componentTaskGraph{ ExecutionPriority::Latent };
+
+				//create all components
+				Vector<TaskGraph::Task*> createComponentsTasks;
+				createComponentsTasks.reserve(componentTypeToOwningEntities->size());
+				for (const auto& [componentType, entityIDs] : *componentTypeToOwningEntities)
+				{
+					VT_LOG(Warning, "ADD TASK CREATING COMPONENTS: {}", componentType.ToString());
+					createComponentsTasks.push_back(componentTaskGraph.AddTask("Create Components", [this, componentType, entityIDs]()
+					{
+						VT_LOG(Warning, "CREATING COMPONENTS: {}. thread id: '{}'", componentType.ToString(), std::this_thread::get_id());
+						
+						/*entt::registry& registry = m_entityScene.GetRegistry();
+
+						for (EntityID entityID : entityIDs)
+						{
+							entt::entity entityHandle = m_entityScene.GetEntityHandleFromID(entityID);
+							ComponentRegistry::Helpers::AddComponentWithGUID(componentType->GetGUID(), registry, entityHandle);
+						}*/
+					}));
+				}
+
+				//serialize all component data onto the created components
+				Vector<TaskGraph::Task*> serializeComponentDataTasks;
+				for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
+				{
+					serializeComponentDataTasks.push_back(componentTaskGraph.AddTaskWithDependencies("Deserialize Entities Component Datas", createComponentsTasks, [this, entityToComponentTypes, entityID, yamlReaders]()
+					{
+
+						/*const EntityDescSerializer& serializer = reinterpret_cast<const EntityDescSerializer&>(AssetSerializerRegistry::Get().GetSerializer(AssetTypes::EntityDesc));
+						Volt::Entity entity = m_entityScene.GetEntityFromID(entityID);
+						YAMLMemoryStreamReader& reader = *yamlReaders->at(entityID);
+						serializer.DeserializeEntityInPlace(entity, reader);*/
+					}));
+				}
+				componentTaskGraph.Execute();
+			});
 
 			taskGraph.Execute();
 		});

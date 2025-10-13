@@ -48,71 +48,71 @@ namespace Volt
 
 	EntityDescSerializer::EntityDescSerializer()
 	{
-		RegisterSerializationFunction<int8_t>(s_typeSerializers);
-		RegisterSerializationFunction<uint8_t>(s_typeSerializers);
-		RegisterSerializationFunction<int16_t>(s_typeSerializers);
-		RegisterSerializationFunction<uint16_t>(s_typeSerializers);
-		RegisterSerializationFunction<int32_t>(s_typeSerializers);
-		RegisterSerializationFunction<uint32_t>(s_typeSerializers);
+		RegisterSerializationFunction<int8_t>(m_typeSerializers);
+		RegisterSerializationFunction<uint8_t>(m_typeSerializers);
+		RegisterSerializationFunction<int16_t>(m_typeSerializers);
+		RegisterSerializationFunction<uint16_t>(m_typeSerializers);
+		RegisterSerializationFunction<int32_t>(m_typeSerializers);
+		RegisterSerializationFunction<uint32_t>(m_typeSerializers);
 
-		RegisterSerializationFunction<float>(s_typeSerializers);
-		RegisterSerializationFunction<double>(s_typeSerializers);
-		RegisterSerializationFunction<bool>(s_typeSerializers);
+		RegisterSerializationFunction<float>(m_typeSerializers);
+		RegisterSerializationFunction<double>(m_typeSerializers);
+		RegisterSerializationFunction<bool>(m_typeSerializers);
 
-		RegisterSerializationFunction<glm::vec2>(s_typeSerializers);
-		RegisterSerializationFunction<glm::vec3>(s_typeSerializers);
-		RegisterSerializationFunction<glm::vec4>(s_typeSerializers);
+		RegisterSerializationFunction<glm::vec2>(m_typeSerializers);
+		RegisterSerializationFunction<glm::vec3>(m_typeSerializers);
+		RegisterSerializationFunction<glm::vec4>(m_typeSerializers);
 
-		RegisterSerializationFunction<glm::uvec2>(s_typeSerializers);
-		RegisterSerializationFunction<glm::uvec3>(s_typeSerializers);
-		RegisterSerializationFunction<glm::uvec4>(s_typeSerializers);
+		RegisterSerializationFunction<glm::uvec2>(m_typeSerializers);
+		RegisterSerializationFunction<glm::uvec3>(m_typeSerializers);
+		RegisterSerializationFunction<glm::uvec4>(m_typeSerializers);
 
-		RegisterSerializationFunction<glm::ivec2>(s_typeSerializers);
-		RegisterSerializationFunction<glm::ivec3>(s_typeSerializers);
-		RegisterSerializationFunction<glm::ivec4>(s_typeSerializers);
+		RegisterSerializationFunction<glm::ivec2>(m_typeSerializers);
+		RegisterSerializationFunction<glm::ivec3>(m_typeSerializers);
+		RegisterSerializationFunction<glm::ivec4>(m_typeSerializers);
 
-		RegisterSerializationFunction<glm::quat>(s_typeSerializers);
-		RegisterSerializationFunction<glm::mat4>(s_typeSerializers);
-		RegisterSerializationFunction<VoltGUID>(s_typeSerializers);
+		RegisterSerializationFunction<glm::quat>(m_typeSerializers);
+		RegisterSerializationFunction<glm::mat4>(m_typeSerializers);
+		RegisterSerializationFunction<VoltGUID>(m_typeSerializers);
 
-		RegisterSerializationFunction<std::string>(s_typeSerializers);
-		RegisterSerializationFunction<std::filesystem::path>(s_typeSerializers);
+		RegisterSerializationFunction<std::string>(m_typeSerializers);
+		RegisterSerializationFunction<std::filesystem::path>(m_typeSerializers);
 
-		RegisterSerializationFunction<Volt::EntityID>(s_typeSerializers);
-		RegisterSerializationFunction<AssetHandle>(s_typeSerializers);
+		RegisterSerializationFunction<Volt::EntityID>(m_typeSerializers);
+		RegisterSerializationFunction<AssetHandle>(m_typeSerializers);
 
-		RegisterDeserializationFunction<int8_t>(s_typeDeserializers);
-		RegisterDeserializationFunction<uint8_t>(s_typeDeserializers);
-		RegisterDeserializationFunction<int16_t>(s_typeDeserializers);
-		RegisterDeserializationFunction<uint16_t>(s_typeDeserializers);
-		RegisterDeserializationFunction<int32_t>(s_typeDeserializers);
-		RegisterDeserializationFunction<uint32_t>(s_typeDeserializers);
+		RegisterDeserializationFunction<int8_t>(m_typeDeserializers);
+		RegisterDeserializationFunction<uint8_t>(m_typeDeserializers);
+		RegisterDeserializationFunction<int16_t>(m_typeDeserializers);
+		RegisterDeserializationFunction<uint16_t>(m_typeDeserializers);
+		RegisterDeserializationFunction<int32_t>(m_typeDeserializers);
+		RegisterDeserializationFunction<uint32_t>(m_typeDeserializers);
 
-		RegisterDeserializationFunction<float>(s_typeDeserializers);
-		RegisterDeserializationFunction<double>(s_typeDeserializers);
-		RegisterDeserializationFunction<bool>(s_typeDeserializers);
+		RegisterDeserializationFunction<float>(m_typeDeserializers);
+		RegisterDeserializationFunction<double>(m_typeDeserializers);
+		RegisterDeserializationFunction<bool>(m_typeDeserializers);
 
-		RegisterDeserializationFunction<glm::vec2>(s_typeDeserializers);
-		RegisterDeserializationFunction<glm::vec3>(s_typeDeserializers);
-		RegisterDeserializationFunction<glm::vec4>(s_typeDeserializers);
+		RegisterDeserializationFunction<glm::vec2>(m_typeDeserializers);
+		RegisterDeserializationFunction<glm::vec3>(m_typeDeserializers);
+		RegisterDeserializationFunction<glm::vec4>(m_typeDeserializers);
 
-		RegisterDeserializationFunction<glm::uvec2>(s_typeDeserializers);
-		RegisterDeserializationFunction<glm::uvec3>(s_typeDeserializers);
-		RegisterDeserializationFunction<glm::uvec4>(s_typeDeserializers);
+		RegisterDeserializationFunction<glm::uvec2>(m_typeDeserializers);
+		RegisterDeserializationFunction<glm::uvec3>(m_typeDeserializers);
+		RegisterDeserializationFunction<glm::uvec4>(m_typeDeserializers);
 
-		RegisterDeserializationFunction<glm::ivec2>(s_typeDeserializers);
-		RegisterDeserializationFunction<glm::ivec3>(s_typeDeserializers);
-		RegisterDeserializationFunction<glm::ivec4>(s_typeDeserializers);
+		RegisterDeserializationFunction<glm::ivec2>(m_typeDeserializers);
+		RegisterDeserializationFunction<glm::ivec3>(m_typeDeserializers);
+		RegisterDeserializationFunction<glm::ivec4>(m_typeDeserializers);
 
-		RegisterDeserializationFunction<glm::quat>(s_typeDeserializers);
-		RegisterDeserializationFunction<glm::mat4>(s_typeDeserializers);
-		RegisterDeserializationFunction<VoltGUID>(s_typeDeserializers);
+		RegisterDeserializationFunction<glm::quat>(m_typeDeserializers);
+		RegisterDeserializationFunction<glm::mat4>(m_typeDeserializers);
+		RegisterDeserializationFunction<VoltGUID>(m_typeDeserializers);
 
-		RegisterDeserializationFunction<std::string>(s_typeDeserializers);
-		RegisterDeserializationFunction<std::filesystem::path>(s_typeDeserializers);
+		RegisterDeserializationFunction<std::string>(m_typeDeserializers);
+		RegisterDeserializationFunction<std::filesystem::path>(m_typeDeserializers);
 
-		RegisterDeserializationFunction<Volt::EntityID>(s_typeDeserializers);
-		RegisterDeserializationFunction<AssetHandle>(s_typeDeserializers);
+		RegisterDeserializationFunction<Volt::EntityID>(m_typeDeserializers);
+		RegisterDeserializationFunction<AssetHandle>(m_typeDeserializers);
 
 		s_instance = this;
 	}
@@ -322,6 +322,75 @@ namespace Volt
 		return entity;
 	}
 
+	void EntityDescSerializer::DeserializeEntityInPlace(Volt::Entity entity, YAMLMemoryStreamReader& streamReader) const
+	{
+		streamReader.EnterScope("Entity");
+
+		EntityID entityId = streamReader.ReadAtKey("id", Entity::NullID());
+		VT_ENSURE_MSG(entityId == entity.GetID(), std::format("tried to deserialize entity with ID '{0}' onto an entity with ID '{1}'", std::to_string(entityId), std::to_string(entity.GetID())));
+
+		streamReader.ForEach("components", [&]()
+		{
+			VoltGUID compGuid = streamReader.ReadAtKey("guid", VoltGUID::Null());
+			if (compGuid == VoltGUID::Null())
+			{
+				return;
+			}
+
+			const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromGUID(compGuid);
+			if (!typeDesc)
+			{
+				return;
+			}
+			switch (typeDesc->GetValueType())
+			{
+				case ValueType::Component:
+				{
+					entt::registry& registry = entity.GetSceneReference()->GetRegistry();
+					const bool hasComponent = ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, registry, entity.GetHandle());
+					VT_ENSURE_MSG(hasComponent, "All components for entity have to be created beforehand in order to use DeserializeEntityInPlace");
+
+					void* voidCompPtr = ComponentRegistry::Helpers::GetComponentWithGUID(compGuid, registry, entity.GetHandle());
+					uint8_t* componentData = reinterpret_cast<uint8_t*>(voidCompPtr);
+
+					const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
+					DeserializeClass(componentData, 0, componentDesc, entity, streamReader);
+					break;
+				}
+			}
+		});
+	}
+
+	Vector<VoltGUID> EntityDescSerializer::FindComponentTypes(YAMLMemoryStreamReader& streamReader)
+	{
+		Vector<VoltGUID> result;
+
+		streamReader.EnterScope("Entity");
+
+		streamReader.ForEach("components", [&]()
+		{
+			VT_PROFILE_SCOPE("Component");
+
+			VoltGUID compGuid = streamReader.ReadAtKey("guid", VoltGUID::Null());
+			if (compGuid == VoltGUID::Null())
+			{
+				return;
+			}
+
+			const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromGUID(compGuid);
+			if (!typeDesc)
+			{
+				return;
+			}
+
+			result.push_back(compGuid);
+		});
+
+		streamReader.ExitScope();
+
+		return result;
+	}
+
 	std::filesystem::path EntityDescSerializer::GetSavePathForEntity_ThreadSafe(const Volt::AssetHandle& handle)
 	{
 		const Volt::AssetMetadata metadata = Volt::AssetManager::GetMetadataFromHandle(handle);
@@ -390,9 +459,9 @@ namespace Volt
 			}
 			else
 			{
-				if (s_typeSerializers.contains(member.typeIndex))
+				if (m_typeSerializers.contains(member.typeIndex))
 				{
-					s_typeSerializers.at(member.typeIndex)(streamWriter, data, offset + member.offset);
+					m_typeSerializers.at(member.typeIndex)(streamWriter, data, offset + member.offset);
 				}
 			}
 
@@ -414,7 +483,7 @@ namespace Volt
 		const bool isNonDefaultType = arrayDesc->GetElementTypeDesc() != nullptr;
 		const auto& typeIndex = arrayDesc->GetElementTypeIndex();
 
-		if (!isNonDefaultType && !s_typeSerializers.contains(typeIndex))
+		if (!isNonDefaultType && !m_typeSerializers.contains(typeIndex))
 		{
 			return;
 		}
@@ -446,9 +515,9 @@ namespace Volt
 			}
 			else
 			{
-				if (s_typeSerializers.contains(typeIndex))
+				if (m_typeSerializers.contains(typeIndex))
 				{
-					s_typeSerializers.at(typeIndex)(streamWriter, elementData, 0);
+					m_typeSerializers.at(typeIndex)(streamWriter, elementData, 0);
 				}
 			}
 			streamWriter.EndMap();
@@ -499,9 +568,9 @@ namespace Volt
 			}
 			else
 			{
-				if (s_typeDeserializers.contains(componentMember->typeIndex))
+				if (m_typeDeserializers.contains(componentMember->typeIndex))
 				{
-					s_typeDeserializers.at(componentMember->typeIndex)(streamReader, data, offset + componentMember->offset);
+					m_typeDeserializers.at(componentMember->typeIndex)(streamReader, data, offset + componentMember->offset);
 				}
 			}
 		});
@@ -516,7 +585,7 @@ namespace Volt
 		const bool isNonDefaultType = arrayDesc->GetElementTypeDesc() != nullptr;
 		const auto& typeIndex = arrayDesc->GetElementTypeIndex();
 
-		if (!isNonDefaultType && !s_typeSerializers.contains(typeIndex))
+		if (!isNonDefaultType && !m_typeSerializers.contains(typeIndex))
 		{
 			return;
 		}
@@ -553,9 +622,9 @@ namespace Volt
 			}
 			else
 			{
-				if (s_typeDeserializers.contains(typeIndex))
+				if (m_typeDeserializers.contains(typeIndex))
 				{
-					s_typeDeserializers.at(typeIndex)(streamReader, tempBytePtr, 0);
+					m_typeDeserializers.at(typeIndex)(streamReader, tempBytePtr, 0);
 				}
 			}
 
