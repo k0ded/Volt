@@ -28,7 +28,7 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<InputModule>(target);
 
 			conf.AddPublicDependency<VulkanRHIModule>(target);
-			//conf.AddPublicDependency<D3D12RHIModule>(target);
+			conf.AddPublicDependency<D3D12RHIModule_New>(target);
 
 			conf.AddPublicDependency<VoltRenderer>(target);
 

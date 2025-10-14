@@ -5,8 +5,4 @@
 
 namespace Volt::RHI
 {
-	RefPtr<DeviceQueue> DeviceQueue::Create(const DeviceQueueCreateInfo& createInfo)
-	{
-		return RHIModule::GetInstance().CreateDeviceQueue(createInfo);
-	}
 }

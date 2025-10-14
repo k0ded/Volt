@@ -1586,7 +1586,7 @@ namespace Volt
 				executeInfo.commandBuffers[i] = commandBuffers[i]->Get();
 			}
 
-			executeInfo.fence_new = executionFence;
+			executeInfo.executionFence = executionFence;
 			RHI::GraphicsContext::GetDevice()->GetDeviceQueue(RHI::QueueType::Graphics)->Execute(executeInfo);
 
 			renderGraphPtr->TransitionExternalResources();

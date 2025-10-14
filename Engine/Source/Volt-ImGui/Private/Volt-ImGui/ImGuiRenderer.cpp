@@ -244,9 +244,8 @@ namespace Volt
 
 				RHI::ShaderBindingMap shaderBindingMap;
 				shaderBindingMap.SetUniformBuffer(RHI::ShaderStage::Vertex, 0, renderContext.globalsUniformBuffer->GetView());
-				shaderBindingMap.SetUniformBuffer(RHI::ShaderStage::Pixel, 0, renderContext.globalsUniformBuffer->GetView());
-				shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 1, imageView);
-				shaderBindingMap.SetSampler(RHI::ShaderStage::Pixel, 2, m_textureSampler);
+				shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 0, imageView);
+				shaderBindingMap.SetSampler(RHI::ShaderStage::Pixel, 0, m_textureSampler);
 
 				commandBuffer->BindShaderBindings(shaderBindingMap);
 				commandBuffer->DrawIndexed(cmd->ElemCount, 1, cmd->IdxOffset + globalIndexOffset, cmd->VtxOffset + globalVertexOffset, 0);
@@ -390,7 +389,7 @@ namespace Volt
 			commandBuffer->ResourceBarrier({ barrierInfo });
 
 			commandBuffer->End();
-			RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+			RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
 
 			textureData->SetStatus(ImTextureStatus_OK);
 

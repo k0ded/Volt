@@ -332,7 +332,7 @@ namespace Volt
 			EventSystem::DispatchEvent(closeEvent);
 		};
 
-		m_rhiModuleLoader->LoadRHI(RHI::GraphicsAPI::Vulkan, callbackInfo);
+		m_rhiModuleLoader->LoadRHI(RHI::GraphicsAPI::D3D12, callbackInfo);
 	}
 
 	void Application::SetupFrameCapture()

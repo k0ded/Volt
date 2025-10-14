@@ -25,7 +25,7 @@ namespace Volt::RHI
 		switch (api)
 		{
 			case Volt::RHI::GraphicsAPI::Vulkan: filepath /= "VulkanRHIModule.dll"; break;
-			case Volt::RHI::GraphicsAPI::D3D12: filepath /= "D3D12RHIModule.dll"; break;
+			case Volt::RHI::GraphicsAPI::D3D12: filepath /= "D3D12RHIModule_New.dll"; break;
 		}
 
 		VT_ENSURE_MSG(std::filesystem::exists(filepath), std::format("RHI module at filepath {} not found!", filepath));
@@ -57,6 +57,7 @@ namespace Volt::RHI
 	{
 		RHI::GraphicsContextCreateInfo createInfo;
 		createInfo.graphicsApi = api;
+		createInfo.enableDebugLayer = true;
 
 		m_rhiModule->SetRHICallbackInfo(callbackInfo);
 		m_graphicsContext = RHI::GraphicsContext::Create(createInfo);

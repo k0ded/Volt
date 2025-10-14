@@ -13,7 +13,7 @@ namespace Volt::RHI::CommandBufferUtils
 
 		DeviceQueueExecuteInfo executeInfo{};
 		executeInfo.commandBuffers = { commandBuffer };
-		executeInfo.fence_new = fence;
+		executeInfo.executionFence = fence;
 
 		GraphicsContext::GetDevice()->GetDeviceQueue(queueType)->Execute(executeInfo);
 
@@ -24,7 +24,7 @@ namespace Volt::RHI::CommandBufferUtils
 	{
 		DeviceQueueExecuteInfo executeInfo{};
 		executeInfo.commandBuffers = { commandBuffer };
-		executeInfo.fence_new = fence;
+		executeInfo.executionFence = fence;
 
 		GraphicsContext::GetDevice()->GetDeviceQueue(queueType)->Execute(executeInfo);
 	}
@@ -35,7 +35,7 @@ namespace Volt::RHI::CommandBufferUtils
 
 		DeviceQueueExecuteInfo executeInfo{};
 		executeInfo.commandBuffers = { commandBuffer };
-		executeInfo.fence_new = fence;
+		executeInfo.executionFence = fence;
 
 		GraphicsContext::GetDevice()->GetDeviceQueue(queueType)->Execute(executeInfo);
 		fence->WaitUntilSignaled();

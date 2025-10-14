@@ -15,9 +15,14 @@ namespace Volt::RHI
 	void ResourceDeletionQueue::FlushQueue(uint32_t index)
 	{
 		// Run through the list in reverse order to get FIFO behaviour
+		std::scoped_lock lock{ m_queueMutex };
+
 		for (const auto& func : m_queues.at(index))
 		{
-			func();
+			if (func)
+			{
+				func();
+			}
 		}
 
 		m_queues.at(index).clear();

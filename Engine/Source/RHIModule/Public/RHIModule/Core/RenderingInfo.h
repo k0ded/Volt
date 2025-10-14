@@ -46,7 +46,7 @@ namespace Volt::RHI
 
 	struct RenderingInfo
 	{
-		StackVector<AttachmentInfo, MAX_COLOR_ATTACHMENT_COUNT> colorAttachments;
+		InlineVector<AttachmentInfo, MAX_COLOR_ATTACHMENT_COUNT> colorAttachments;
 		AttachmentInfo depthAttachmentInfo{};
 
 		Rect2D renderArea{};

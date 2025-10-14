@@ -10,5 +10,6 @@ namespace Volt::RHI
 		static RefPtr<Fence> Create();
 		virtual void WaitUntilSignaled() const = 0;
 		virtual bool IsSignaled() const = 0;
+		virtual void Reset() = 0;
 	};
 }

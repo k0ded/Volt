@@ -13,9 +13,9 @@ namespace Volt::RHI
 	struct DeviceQueueExecuteInfo
 	{
 		Vector<RawPtr<CommandBuffer>> commandBuffers;
-		Vector<RawPtr<Semaphore>> signalSemaphores;
+		Vector<RawPtr<Fence>> signalFences;
 	
-		RawPtr<Fence> fence_new;
+		RawPtr<Fence> executionFence;
 	};
 
 	class VTRHI_API DeviceQueue : public RHIInterface
@@ -26,11 +26,7 @@ namespace Volt::RHI
 		virtual void WaitForQueue() = 0;
 		virtual void Execute(const DeviceQueueExecuteInfo& executeInfo) = 0;
 
-		static RefPtr<DeviceQueue> Create(const DeviceQueueCreateInfo& createInfo);
-
 	protected:
 		DeviceQueue() = default;
-
-		QueueType m_queueType = QueueType::Graphics;
 	};
 }

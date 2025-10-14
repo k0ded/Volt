@@ -5,8 +5,8 @@
 
 namespace Volt::RHI
 {
-	RefPtr<PhysicalGraphicsDevice> PhysicalGraphicsDevice::Create(const PhysicalDeviceCreateInfo& deviceInfo)
+	RefPtr<PhysicalGraphicsDevice> PhysicalGraphicsDevice::Create(const PhysicalDeviceCreateInfo& deviceInfo, bool enableDebugLayer)
 	{
-		return RHIModule::GetInstance().CreatePhysicalGraphicsDevice(deviceInfo);
+		return RHIModule::GetInstance().CreatePhysicalGraphicsDevice(deviceInfo, enableDebugLayer);
 	}
 }

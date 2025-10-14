@@ -15,7 +15,7 @@ namespace Volt::RHI
 		~GraphicsDevice() override = default;
 
 		virtual RefPtr<DeviceQueue> GetDeviceQueue(QueueType queueType) const = 0;
-		static RefPtr<GraphicsDevice> Create(const GraphicsDeviceCreateInfo& deviceInfo);
+		static RefPtr<GraphicsDevice> Create(const GraphicsDeviceCreateInfo& deviceInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer);
 	
 	protected:
 		GraphicsDevice();
