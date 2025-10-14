@@ -1,0 +1,157 @@
+#include "dxpch.h"
+#include "D3D12RHIModule/Memory/D3D12Allocation.h"
+
+namespace Volt::RHI
+{
+	D3D12ImageAllocation::D3D12ImageAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash),
+		m_name(name)
+	{
+	}
+	
+	void D3D12ImageAllocation::Unmap()
+	{
+		m_resource->Unmap(0, nullptr);
+	}
+	
+	const uint64_t D3D12ImageAllocation::GetDeviceAddress() const
+	{
+		return m_resource->GetGPUVirtualAddress();
+	}
+	
+	void* D3D12ImageAllocation::GetResourceHandleInternal() const
+	{
+		return m_resource;
+	}
+	
+	void* D3D12ImageAllocation::MapInternal()
+	{
+		void* ptr = nullptr;
+		m_resource->Map(0, nullptr, &ptr);
+		return ptr;
+	}
+
+	void* D3D12ImageAllocation::GetHandleImpl() const
+	{
+		return m_allocation;
+	}
+
+	void D3D12ImageAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+	}
+
+	D3D12BufferAllocation::D3D12BufferAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash),
+		m_name(name)
+	{
+	}
+
+	void D3D12BufferAllocation::Unmap()
+	{
+		m_resource->Unmap(0, nullptr);
+	}
+
+	const uint64_t D3D12BufferAllocation::GetDeviceAddress() const
+	{
+		return m_resource->GetGPUVirtualAddress();
+	}
+
+	void* D3D12BufferAllocation::GetResourceHandleInternal() const
+	{
+		return m_resource;
+	}
+
+	void* D3D12BufferAllocation::MapInternal()
+	{
+		void* ptr = nullptr;
+		m_resource->Map(0, nullptr, &ptr);
+		return ptr;
+	}
+
+	void* D3D12BufferAllocation::GetHandleImpl() const
+	{
+		return m_allocation;
+	}
+
+	void D3D12BufferAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+
+	}
+
+	D3D12TransientBufferAllocation::D3D12TransientBufferAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash), 
+		m_name(name)
+	{
+	}
+	
+	void D3D12TransientBufferAllocation::Unmap()
+	{
+		m_resource->Unmap(0, nullptr);
+	}
+
+	const uint64_t D3D12TransientBufferAllocation::GetDeviceAddress() const
+	{
+		return m_resource->GetGPUVirtualAddress();
+	}
+
+	void* D3D12TransientBufferAllocation::GetResourceHandleInternal() const
+	{
+		return m_resource;
+	}
+
+	void* D3D12TransientBufferAllocation::MapInternal()
+	{
+		void* ptr = nullptr;
+		m_resource->Map(0, nullptr, &ptr);
+		return ptr;
+	}
+
+	void* D3D12TransientBufferAllocation::GetHandleImpl() const
+	{
+		return nullptr;
+	}
+
+	void D3D12TransientBufferAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+
+	}
+
+	D3D12TransientImageAllocation::D3D12TransientImageAllocation(const size_t hash, const std::string& name)
+		: m_allocationHash(hash),
+		m_name(name)
+	{
+	}
+
+	void D3D12TransientImageAllocation::Unmap()
+	{
+		m_resource->Unmap(0, nullptr);
+	}
+
+	const uint64_t D3D12TransientImageAllocation::GetDeviceAddress() const
+	{
+		return m_resource->GetGPUVirtualAddress();
+	}
+
+	void* D3D12TransientImageAllocation::GetResourceHandleInternal() const
+	{
+		return m_resource;
+	}
+
+	void* D3D12TransientImageAllocation::MapInternal()
+	{
+		void* ptr = nullptr;
+		m_resource->Map(0, nullptr, &ptr);
+		return ptr;
+	}
+
+	void* D3D12TransientImageAllocation::GetHandleImpl() const
+	{
+		return nullptr;
+	}
+
+	void D3D12TransientImageAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+
+	}
+
+}

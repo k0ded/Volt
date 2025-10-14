@@ -52,7 +52,7 @@ float3 IntegrateCubeLDOnly(float3 V, float3 N, float roughness)
     {
         float2 eta = GetSample(i, sampleCount, 0);
         float3 L;
-        float H;
+        float3 H;
         
         ImportanceSampleGGX_Dir(eta, V, N, roughness, H, L);
         float NdotL = dot(N, L);

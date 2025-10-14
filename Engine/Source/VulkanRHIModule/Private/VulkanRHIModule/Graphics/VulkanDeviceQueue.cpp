@@ -6,7 +6,6 @@
 #include "VulkanRHIModule/Graphics/VulkanGraphicsDevice.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
-#include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -64,7 +63,7 @@ namespace Volt::RHI
 		vulkanCommandBuffers.reserve(executeInfo.commandBuffers.size());
 
 		InlineVector<VkSemaphoreSubmitInfo, 64> signalSemaphoreInfos{};
-		signalSemaphoreInfos.reserve(executeInfo.signalSemaphores.size());
+		signalSemaphoreInfos.reserve(executeInfo.signalFences.size());
 
 		for (const auto& cmdBuffer : executeInfo.commandBuffers)
 		{
@@ -79,15 +78,14 @@ namespace Volt::RHI
 			info.commandBuffer = vkCmdBuffer.GetHandle<VkCommandBuffer>();
 		}
 
-		for (const auto& semaphore : executeInfo.signalSemaphores)
+		for (const auto& fence : executeInfo.signalFences)
 		{
 			auto& info = signalSemaphoreInfos.emplace_back();
 			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
 			info.pNext = nullptr;
 			info.deviceIndex = 0;
 			info.stageMask = VK_PIPELINE_STAGE_2_NONE;
-			info.semaphore = semaphore->GetHandle<VkSemaphore>();
-			info.value = semaphore->GetValue();
+			info.semaphore = fence->GetHandle<VkSemaphore>();
 		}
 
 		{
@@ -120,9 +118,16 @@ namespace Volt::RHI
  			VT_VK_CHECK(vkQueueSubmit2(m_queue, 1, &info, nullptr));
 		}
 
-		if (executeInfo.fence_new)
+		for (const auto& fence : executeInfo.signalFences)
 		{
-			VulkanFence& vkFence = executeInfo.fence_new->AsRef<VulkanFence>();
+			VulkanFence& vkFence = fence->AsRef<VulkanFence>();
+			vkFence.m_referencedSemaphore = m_queueSemaphore;
+			vkFence.m_referencedValue = submitSemaphoreValue;
+		}
+
+		if (executeInfo.executionFence)
+		{
+			VulkanFence& vkFence = executeInfo.executionFence->AsRef<VulkanFence>();
 			vkFence.m_referencedSemaphore = m_queueSemaphore;
 			vkFence.m_referencedValue = submitSemaphoreValue;
 		}

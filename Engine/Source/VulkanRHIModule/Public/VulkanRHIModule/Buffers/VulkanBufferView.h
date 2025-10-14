@@ -7,7 +7,7 @@ struct VkBufferView_T;
 
 namespace Volt::RHI
 {
-	class VulkanBufferView : public BufferView
+	class VulkanBufferView final : public BufferView
 	{
 	public:
 		VulkanBufferView(const BufferViewDesc& desc, RawPtr<StorageBuffer> buffer);

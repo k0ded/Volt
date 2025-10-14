@@ -23,7 +23,6 @@ namespace Volt::RHI
 		DescriptorSets result;
 		auto device = GraphicsContext::GetDevice();
 
-#if 1
 		std::map<uint32_t, Vector<VkDescriptorSetLayoutBinding>> descriptorSetBindings;
 
 		for (const auto& [binding, nameHash] : resourceBindings)
@@ -118,70 +117,7 @@ namespace Volt::RHI
 				vkGetDescriptorSetLayoutBindingOffsetEXT(device->GetHandle<VkDevice>(), result.pipelineLayoutDescriptorSetLayouts.back(), bindingIndex, &binding.offset);
 			}
 		}
-#else
-		{
-			Vector<VkDescriptorSetLayoutBinding> descriptorSetBindings;
 
-			for (const auto& [binding, nameHash] : resourceBindings)
-			{
-				auto& descriptorBinding = descriptorSetBindings.emplace_back();
-				descriptorBinding.binding = binding.binding;
-				descriptorBinding.descriptorCount = 1;
-				descriptorBinding.pImmutableSamplers = nullptr;
-				descriptorBinding.descriptorCount = binding.arraySize;
-				descriptorBinding.stageFlags = Utility::VoltToVulkanShaderStage(binding.shaderStage);
-
-				if (binding.resourceType == ShaderResourceType::UniformBuffer)
-				{
-					descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				}
-				else if (binding.resourceType == ShaderResourceType::Sampler)
-				{
-					descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-				}
-				else if (binding.resourceType == ShaderResourceType::StructuredBuffer)
-				{
-					descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-				}
-				else if (binding.resourceType == ShaderResourceType::TexelBuffer)
-				{
-					if (binding.registerType == ShaderRegisterType::SRV)
-					{
-						descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-					}
-					else
-					{
-						descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-					}
-				}
-				else if (binding.resourceType == ShaderResourceType::Texture)
-				{
-					if (binding.registerType == ShaderRegisterType::SRV)
-					{
-						descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-					}
-					else
-					{
-						descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-					}
-				}
-				else if (binding.resourceType == ShaderResourceType::AccelerationStructure)
-				{
-					descriptorBinding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-				}
-			}
-
-			VkDescriptorSetLayoutCreateInfo info{};
-			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			info.pNext = nullptr;
-			info.bindingCount = static_cast<uint32_t>(descriptorSetBindings.size());
-			info.pBindings = descriptorSetBindings.data();
-			info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
-
-			VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &result.pipelineLayoutDescriptorSetLayouts.emplace_back()));
-			result.descriptorSetLayouts[0] = result.pipelineLayoutDescriptorSetLayouts.back();
-		}
-#endif
 		if (RHI::RHICanUseRayTracing() && accessesRayTracingResourceTable)
 		{
 			result.pipelineLayoutDescriptorSetLayouts.resize(RayTracingTableDescriptorSetManager::Set + 1);

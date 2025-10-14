@@ -7,13 +7,8 @@
 #include "D3D12RHIModule/Graphics/D3D12PhysicalGraphicsDevice.h"
 #include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 
-#include "D3D12RHIModule/Descriptors/D3D12DescriptorTable.h"
-#include "D3D12RHIModule/Descriptors/D3D12BindlessDescriptorTable.h"
-
 #include "D3D12RHIModule/Buffers/D3D12UniformBuffer.h"
 #include "D3D12RHIModule/Buffers/D3D12StorageBuffer.h"
-#include "D3D12RHIModule/Buffers/D3D12VertexBuffer.h"
-#include "D3D12RHIModule/Buffers/D3D12IndexBuffer.h"
 #include "D3D12RHIModule/Buffers/D3D12BufferView.h"
 #include "D3D12RHIModule/Buffers/D3D12CommandBuffer.h"
 
@@ -36,58 +31,42 @@
 #include "D3D12RHIModule/Synchronization/D3D12Semaphore.h"
 
 #include <RHIModule/RayTracing/AccelerationStructure.h>
-
 #include <RHIModule/Synchronization/Fence.h>
-#include <RHIModule/Synchronization/Event.h>
+#include <RHIModule/RHICapabilities.h>
 
 namespace Volt::RHI
 {
 	D3D12RHIModule::D3D12RHIModule()
 	{
 		s_instance = this;
-		m_resourceDeletionQueue.SetSize(RHI::Swapchain::FramesInFlight);
+		m_resourceDeletionQueue.SetSize(RHI::RHICapabilities::NumFramesInFlight);
 	}
 	
-	RefPtr<BufferView> D3D12RHIModule::CreateBufferView(const BufferViewDesc& specification) const
+	RefPtr<BufferView> D3D12RHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<StorageBuffer> buffer) const
 	{
-		return RefPtr<D3D12BufferView>::Create(specification);
+		return RefPtr<D3D12BufferView>::Create(specification, buffer);
 	}
-	
+
+	RefPtr<BufferView> D3D12RHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const
+	{
+		return RefPtr<D3D12BufferView>::Create(specification, buffer);
+	}
+
 	RefPtr<CommandBuffer> D3D12RHIModule::CreateCommandBuffer(QueueType queueType) const
 	{
 		return RefPtr<D3D12CommandBuffer>::Create(queueType);
 	}
 	
-	RefPtr<IndexBuffer> D3D12RHIModule::CreateIndexBuffer(std::span<const uint32_t> indices) const
+	RefPtr<StorageBuffer> D3D12RHIModule::CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const
 	{
-		return RefPtr<D3D12IndexBuffer>::Create(indices);
-	}
-	
-	RefPtr<VertexBuffer> D3D12RHIModule::CreateVertexBuffer(const void* data, const uint32_t size, const uint32_t stride) const
-	{
-		return RefPtr<D3D12VertexBuffer>::Create(data, size, stride);
-	}
-	
-	RefPtr<StorageBuffer> D3D12RHIModule::CreateStorageBuffer(uint32_t count, uint64_t elementSize, const std::string& name, BufferUsage bufferUsage, MemoryUsage memoryUsage, RefPtr<GPUAllocator> allocator) const
-	{
-		return RefPtr<D3D12StorageBuffer>::Create(count, elementSize, name, bufferUsage, memoryUsage, allocator);
+		return RefPtr<D3D12StorageBuffer>::Create(desc, allocator);
 	}
 
-	RefPtr<UniformBuffer> D3D12RHIModule::CreateUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name) const
+	RefPtr<UniformBuffer> D3D12RHIModule::CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData) const
 	{
-		return RefPtr<D3D12UniformBuffer>::Create(size, data, count, name);
-	}
-	
-	RefPtr<DescriptorTable> D3D12RHIModule::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const
-	{
-		return RefPtr<D3D12DescriptorTable>::Create(createInfo);
+		return RefPtr<D3D12UniformBuffer>::Create(uniformBufferDesc, initialData);
 	}
 
-	RefPtr<BindlessDescriptorTable> D3D12RHIModule::CreateBindlessDescriptorTable(const uint64_t framesInFlight) const
-	{
-		return RefPtr<D3D12BindlessDescriptorTable>::Create(framesInFlight);
-	}
-	
 	RefPtr<DeviceQueue> D3D12RHIModule::CreateDeviceQueue(const DeviceQueueCreateInfo& createInfo) const
 	{
 		return RefPtr<DeviceQueue>();
@@ -123,11 +102,11 @@ namespace Volt::RHI
 		return RefPtr<D3D12Image>::Create(specification);
 	}
 
-	RefPtr<ImageView> D3D12RHIModule::CreateImageView(const ImageViewDesc& specification) const
+	RefPtr<ImageView> D3D12RHIModule::CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const
 	{
-		return RefPtr<D3D12ImageView>::Create(specification);
+		return RefPtr<D3D12ImageView>::Create(specification, image);
 	}
-	
+
 	RefPtr<SamplerState> D3D12RHIModule::CreateSamplerState(const SamplerStateDesc& createInfo) const
 	{
 		return RefPtr<D3D12SamplerState>::Create(createInfo);
@@ -153,14 +132,9 @@ namespace Volt::RHI
 		return RefPtr<D3D12RenderPipeline>::Create(createInfo);
 	}
 	
-	RefPtr<ComputePipeline> D3D12RHIModule::CreateComputePipeline(RefPtr<Shader> shader, bool useGlobalResources) const
-	{
-		return RefPtr<D3D12ComputePipeline>::Create(shader, useGlobalResources);
-	}
-
 	RefPtr<ComputePipeline> D3D12RHIModule::CreateComputePipeline(RefPtr<Shader> shader) const
 	{
-		return nullptr;
+		return RefPtr<D3D12ComputePipeline>::Create(shader);
 	}
 
 	RefPtr<RayTracingPipeline> D3D12RHIModule::CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const
@@ -168,7 +142,7 @@ namespace Volt::RHI
 		return RefPtr<RayTracingPipeline>();
 	}
 	
-	RefPtr<Shader> D3D12RHIModule::CreateShader(const ShaderSpecification& specification) const
+	RefPtr<Shader> D3D12RHIModule::CreateShader(const ShaderCreateInfo& specification) const
 	{
 		return RefPtr<D3D12Shader>::Create(specification);
 	}
@@ -178,16 +152,11 @@ namespace Volt::RHI
 		return RefPtr<D3D12ShaderCompiler>::Create(createInfo);
 	}
 	
-	RefPtr<Event> D3D12RHIModule::CreateEvent(const EventCreateInfo& createInfo) const
-	{
-		return RefPtr<Event>();
-	}
-	
-	RefPtr<Fence> D3D12RHIModule::CreateFence(const FenceCreateInfo& createInfo) const
+	RefPtr<Fence> D3D12RHIModule::CreateFence() const
 	{
 		return RefPtr<Fence>();
 	}
-	
+
 	RefPtr<Semaphore> D3D12RHIModule::CreateSemaphore(const SemaphoreCreateInfo& createInfo) const
 	{
 		return RefPtr<D3D12Semaphore>::Create(createInfo);
@@ -203,11 +172,6 @@ namespace Volt::RHI
 		return RefPtr<ShaderBindingTable>();
 	}
 	
-	RefPtr<ImGuiImplementation> D3D12RHIModule::CreateImGuiImplementation(const ImGuiCreateInfo& createInfo) const
-	{
-		return RefPtr<D3D12ImGuiImplementation>::Create(createInfo);
-	}
-
 	void D3D12RHIModule::SetRHICallbackInfo(const RHICallbackInfo& callbackInfo)
 	{
 		m_callbackInfo = callbackInfo;
@@ -215,7 +179,7 @@ namespace Volt::RHI
 
 	void D3D12RHIModule::DestroyResource(std::function<void()>&& function)
 	{
-		const uint32_t queueIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
+		const uint32_t queueIndex = m_frameIndex % RHI::RHICapabilities::NumFramesInFlight;
 		m_resourceDeletionQueue.EnqueueResourceDeletion(queueIndex, std::move(function));
 	}
 
@@ -232,7 +196,7 @@ namespace Volt::RHI
 		GraphicsContext::GetDefaultAllocator()->Update();
 		GraphicsContext::GetTransientAllocator()->Update();
 
-		const uint32_t queueIndex = m_frameIndex % RHI::Swapchain::FramesInFlight;
+		const uint32_t queueIndex = m_frameIndex % RHI::RHICapabilities::NumFramesInFlight;
 		m_resourceDeletionQueue.FlushQueue(queueIndex);
 
 		m_frameIndex++;
@@ -253,10 +217,16 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	RefPtr<DescriptorTable> D3D12RHIModule::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) const
+	RefPtr<RayTracingResourceTable> D3D12RHIModule::CreateRayTracingResourceTable() const
 	{
 		return nullptr;
 	}
+
+	void D3D12RHIModule::EndFrame()
+	{
+
+	}
+
 }
 
 Volt::RHI::RHIModule* CreateRHIModule()

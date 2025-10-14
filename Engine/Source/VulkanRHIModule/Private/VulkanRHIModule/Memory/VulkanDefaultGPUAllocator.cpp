@@ -60,13 +60,9 @@ namespace Volt::RHI
 		VT_ENSURE(byteSize > 0);
 
 		const size_t hash = Utility::GetHashFromBufferSpec(byteSize, desc.usage, desc.memoryUsage);
-
+		if (auto buffer = m_allocationCache.TryGetBufferAllocationFromHash(hash))
 		{
-			std::scoped_lock lock{ m_bufferAllocationMutex };
-			if (auto buffer = m_allocationCache.TryGetBufferAllocationFromHash(hash))
-			{
-				return buffer;
-			}
+			return buffer;
 		}
 
 		VkBufferCreateInfo bufferInfo{};
@@ -74,7 +70,7 @@ namespace Volt::RHI
 		bufferInfo.pNext = nullptr;
 		bufferInfo.pQueueFamilyIndices = nullptr;
 		bufferInfo.queueFamilyIndexCount = 0;
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; 
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		bufferInfo.size = byteSize;
 		bufferInfo.usage = Utility::GetVkBufferUsageFlags(desc.usage);
 
@@ -129,14 +125,9 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		const size_t hash = Utility::GetHashFromImageSpec(imageSpecification, memoryUsage);
-
+		if (auto image = m_allocationCache.TryGetImageAllocationFromHash(hash))
 		{
-			std::scoped_lock lock{ m_imageAllocationMutex };
-
-			if (auto image = m_allocationCache.TryGetImageAllocationFromHash(hash))
-			{
-				return image;
-			}
+			return image;
 		}
 
 		const VkImageCreateInfo imageInfo = Utility::GetVkImageCreateInfo(imageSpecification);
@@ -231,7 +222,7 @@ namespace Volt::RHI
 	void VulkanDefaultGPUAllocator::Update()
 	{
 		const auto allocationsToRemove = m_allocationCache.UpdateAndGetAllocationsToDestroy();
-		
+
 		for (const auto& alloc : allocationsToRemove.bufferAllocations)
 		{
 			DestroyBufferInternal(alloc);
@@ -259,7 +250,7 @@ namespace Volt::RHI
 
 		auto imageAlloc = allocation.As<VulkanImageAllocation>();
 		vmaDestroyImage(m_allocator, imageAlloc->m_resource, imageAlloc->m_allocation);
-		
+
 		m_imageAllocationArena.Free(imageAlloc.GetRaw());
 	}
 

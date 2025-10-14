@@ -9,9 +9,8 @@ namespace Volt::RHI
 {
 	D3D12DeviceQueue::D3D12DeviceQueue(const DeviceQueueCreateInfo& createInfo)
 	{
-		m_queueType = createInfo.queueType;
 		m_device = reinterpret_cast<D3D12GraphicsDevice*>(createInfo.graphicsDevice);
-		CreateCommandQueue(createInfo.queueType);
+		CreateCommandQueue(QueueType::Graphics);
 	}
 
 	D3D12DeviceQueue::~D3D12DeviceQueue()

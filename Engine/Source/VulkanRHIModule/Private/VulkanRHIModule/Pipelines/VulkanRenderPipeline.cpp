@@ -8,6 +8,7 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/RHIFeatures.h>
+#include <RHIModule/Shader/ShaderUtility.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Math/Hash.h>
@@ -91,23 +92,6 @@ namespace Volt::RHI
 
 		// We allow no vertex layout
 		return {};
-	}
-
-	inline Vector<PixelFormat> GetOutputFormatsFromShaders(const Vector<RefPtr<Shader>>& shaders)
-	{
-		// We will pick the first pixel shader, there should only be one.
-		for (const auto shader : shaders)
-		{
-			if (shader->GetShaderStage() == ShaderStage::Pixel)
-			{
-				VulkanShader& vulkanShader = shader->AsRef<VulkanShader>();
-				return vulkanShader.GetShaderInfo().outputFormats;
-			}
-		}
-
-		// No pixel shader is a valid case, for depth only shaders for example.
-		// For now we assume that if no pixel shader exists, the output format is D32
-		return { PixelFormat::D32_SFLOAT };
 	}
 
 	VulkanRenderPipeline::VulkanRenderPipeline(const RenderPipelineCreateInfo& createInfo)
@@ -196,6 +180,7 @@ namespace Volt::RHI
 			VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
 			rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 			rasterizerInfo.depthClampEnable = m_createInfo.enableDepthClamp ? VK_TRUE : VK_FALSE;
+			rasterizerInfo.depthBiasEnable = m_createInfo.depthBiasClamp > 0.f ? VK_TRUE : VK_FALSE;
 			rasterizerInfo.depthBiasClamp = m_createInfo.depthBiasClamp;
 			rasterizerInfo.depthBiasConstantFactor = m_createInfo.depthBiasConstantFactor;
 			rasterizerInfo.depthBiasSlopeFactor = m_createInfo.depthBiasSlopeFactor;
@@ -204,7 +189,6 @@ namespace Volt::RHI
 			rasterizerInfo.cullMode = Utility::VoltToVulkanCull(m_createInfo.cullMode);
 			rasterizerInfo.lineWidth = 1.f;
 			rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-			rasterizerInfo.depthBiasEnable = VK_FALSE;
 
 			// #TODO_Ivar: Add tessellation support
 
@@ -224,7 +208,7 @@ namespace Volt::RHI
 
 			Vector<VkPipelineColorBlendAttachmentState> blendAttachments{};
 
-			const Vector<PixelFormat> shaderOutputFormats = GetOutputFormatsFromShaders(m_createInfo.shaders);
+			const Vector<PixelFormat> shaderOutputFormats = Utility::GetOutputFormatsFromShaders(m_createInfo.shaders);
 			for (size_t index = 0; const auto& outputFormat : shaderOutputFormats)
 			{
 				if (Utility::IsDepthFormat(outputFormat) || Utility::IsStencilFormat(outputFormat))

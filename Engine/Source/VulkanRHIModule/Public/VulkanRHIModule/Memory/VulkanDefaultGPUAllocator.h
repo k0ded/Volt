@@ -39,9 +39,6 @@ namespace Volt::RHI
 
 		AllocationCache m_allocationCache{};
 
-		std::mutex m_imageAllocationMutex;
-		std::mutex m_bufferAllocationMutex;
-
 		ArenaAllocator<VulkanBufferAllocation> m_bufferAllocationArena;
 		ArenaAllocator<VulkanImageAllocation> m_imageAllocationArena;
 	};

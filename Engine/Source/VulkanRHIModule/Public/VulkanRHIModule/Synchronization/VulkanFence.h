@@ -14,6 +14,7 @@ namespace Volt::RHI
 
 		void WaitUntilSignaled() const override;
 		bool IsSignaled() const override;
+		void Reset() override;
 
 	protected:
 		void* GetHandleImpl() const override;

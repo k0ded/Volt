@@ -5,7 +5,6 @@
 #include <CoreUtilities/Core.h>
 
 
-
 namespace Volt::RHI
 {
 	class D3D12DescriptorHeap;

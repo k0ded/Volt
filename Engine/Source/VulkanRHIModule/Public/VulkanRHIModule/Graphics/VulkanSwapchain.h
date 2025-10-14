@@ -63,8 +63,8 @@ namespace Volt::RHI
 
 		void GetNextFrameIndex();
 
-		uint32_t m_currentImage = 0;
-		uint32_t m_currentFrame = 0;
+		uint32_t m_currentImageIndex = 0;
+		uint32_t m_currentFrameIndex = 0;
 		uint32_t m_lastSubmittedFence;
 
 		uint32_t m_width = 1280;

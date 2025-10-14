@@ -23,8 +23,6 @@ namespace Volt::RHI
 	VulkanStorageBuffer::VulkanStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator)
 		: m_allocator(allocator), m_desc(desc)
 	{
-		VT_PROFILE_FUNCTION();
-
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
 		if (!m_allocator)

@@ -28,8 +28,6 @@ namespace Volt::RHI
 		void Begin(bool oneTimeSubmit) override;
 		void End() override;
 		                                                                      
-		void SetEvent(RawPtr<Event> event) override;
-
 		void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance) override;
 		void DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance) override;
 		void DrawIndexedIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) override;
@@ -46,8 +44,8 @@ namespace Volt::RHI
 
 		void TraceRays(RawPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth) override;
 
-		void SetViewports(const StackVector<Viewport, MAX_VIEWPORT_COUNT>& viewports) override;
-		void SetScissors(const StackVector<Rect2D, MAX_VIEWPORT_COUNT>& scissors) override;
+		void SetViewports(const InlineVector<Viewport, MAX_VIEWPORT_COUNT>& viewports) override;
+		void SetScissors(const InlineVector<Rect2D, MAX_VIEWPORT_COUNT>& scissors) override;
 
 		void BindPipeline(RawPtr<RenderPipeline> pipeline) override;
 		void BindPipeline(RawPtr<ComputePipeline> pipeline) override;
@@ -98,9 +96,6 @@ namespace Volt::RHI
 		void* GetHandleImpl() const override;
 
 	private:
-		friend class VulkanDescriptorTable;
-		friend class VulkanDescriptorBufferTable;
-		friend class VulkanBindlessDescriptorTable;
 		friend class VulkanDeviceQueue;
 
 		inline static constexpr uint32_t MAX_QUERIES = 64;
@@ -114,7 +109,9 @@ namespace Volt::RHI
 		void BeginPrimaryInternal(bool oneTimeSubmit);
 		void BeginSecondaryInternal(bool oneTimeSubmit);
 
-		void ClearCurrentPipeline();
+		void BindDescriptorBuffer();
+
+		void ClearActivePipeline();
 
 		VkPipelineLayout_T* GetActivePipelineLayout();
 		const DescriptorSetLayoutBuilder::DescriptorSets& GetActivePipelineDescriptorSets();
@@ -142,9 +139,9 @@ namespace Volt::RHI
 		Vector<float> m_executionTimes;
 
 		// Internal state
-		RawPtr<RenderPipeline> m_currentRenderPipeline;
-		RawPtr<ComputePipeline> m_currentComputePipeline;
-		RawPtr<RayTracingPipeline> m_currentRayTracingPipeline;
+		RawPtr<RenderPipeline> m_activeRenderPipeline;
+		RawPtr<ComputePipeline> m_activeComputePipeline;
+		RawPtr<RayTracingPipeline> m_activeRayTracingPipeline;
 		RefPtr<Fence> m_submissionFence;
 
 		// Secondary command buffer

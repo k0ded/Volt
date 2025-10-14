@@ -6,7 +6,6 @@
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Shader/ShaderUtility.h>
-#include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Shader/ShaderPreProcessor.h>
 #include <RHIModule/Shader/ShaderCache.h>
 #include <RHIModule/Globals.h>
@@ -17,11 +16,11 @@
 #ifdef _WIN32
 #include <wrl.h>
 #else
-#include <dxsc/WinAdapter.h>
+#include <dxc/WinAdapter.h>
 #endif
 
-#include <dxsc/dxcapi.h>
-#include <dxsc/dxctools.h>
+#include <dxc/dxcapi.h>
+#include <dxc/dxctools.h>
 
 #include <spirv_reflect.h>
 

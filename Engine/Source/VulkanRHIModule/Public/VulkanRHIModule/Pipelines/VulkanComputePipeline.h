@@ -11,7 +11,7 @@ struct VkPipelineLayout_T;
 
 namespace Volt::RHI
 {
-	class VulkanComputePipeline : public ComputePipeline
+	class VulkanComputePipeline final : public ComputePipeline
 	{
 	public:
 		VulkanComputePipeline(RefPtr<Shader> shader);
