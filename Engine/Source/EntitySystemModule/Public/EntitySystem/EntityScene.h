@@ -40,7 +40,7 @@ namespace Volt
 		void ClearScene();
 
 		Entity CreateEntity(const std::string& tag = "");
-		Entity CreateEntityWithID(EntityID id, const std::string& tag = "");
+		Entity CreateEntityWithID(EntityID id);
 
 		void DestroyEntity(EntityID id, bool isDestroyingChildFromParent = false);
 
@@ -99,7 +99,5 @@ namespace Volt
 		Map<UUID64, EntityDestroyedCallbackFunc> m_entityDestroyedCallbacks;
 
 		RenderScene* m_renderScene;
-
-		mutable std::shared_mutex m_registryMutex;
 	};
 }

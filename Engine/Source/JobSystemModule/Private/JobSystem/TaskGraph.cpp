@@ -31,6 +31,8 @@ namespace Volt
 		JobSystem::RunJobs(m_jobs);
 
 		m_isExecuted = true;
+
+		VT_ENSURE(m_jobs.size() == m_tasks.size());
 	}
 
 	JobCounterRef TaskGraph::ExecuteAndExtractCounter()

@@ -76,7 +76,9 @@ namespace Volt
 		void SetRenderSize(uint32_t aWidth, uint32_t aHeight);
 
 		Entity CreateEntity(const std::string& tag = "");
-		Entity CreateEntityWithID(const EntityID& id, const std::string& tag = "", bool alsoCreateDesc = false);
+
+		//this will not create a new EntityDesc for the entity
+		Entity CreateEntityWithID(const EntityID& id);
 		Volt::AssetHandle CreateEntityDescForEntity(const EntityID& id);
 
 		Entity GetEntityFromID(const EntityID id) const;

@@ -503,7 +503,7 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 		m_runtimeScene = nullptr;
 	}
 
-	SelectionManager::DeselectAll();	
+	SelectionManager::DeselectAll();
 
 	//load new scene
 	const Ref<Volt::Scene> newScene = Volt::AssetManager::GetAsset<Volt::Scene>(sceneHandle);
@@ -519,6 +519,7 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 	m_runtimeScene = newScene;
 
 	SetupNewSceneData();
+	newScene->LoadEntities();
 }
 
 bool Sandbox::SaveScene(bool showDialog)
@@ -676,22 +677,25 @@ bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
 
 	if (m_runtimeScene)
 	{
-		switch (m_sceneState)
+		if (m_runtimeScene->IsFinishedLoadingEntities())
 		{
-			case SceneState::Edit:
-				m_runtimeScene->UpdateEditor(e.GetTimestep());
-				break;
+			switch (m_sceneState)
+			{
+				case SceneState::Edit:
+					m_runtimeScene->UpdateEditor(e.GetTimestep());
+					break;
 
-			case SceneState::Play:
-				m_runtimeScene->Update(e.GetTimestep());
-				break;
+				case SceneState::Play:
+					m_runtimeScene->Update(e.GetTimestep());
+					break;
 
-			case SceneState::Pause:
-				break;
+				case SceneState::Pause:
+					break;
 
-			case SceneState::Simulating:
-				m_runtimeScene->UpdateSimulation(e.GetTimestep());
-				break;
+				case SceneState::Simulating:
+					m_runtimeScene->UpdateSimulation(e.GetTimestep());
+					break;
+			}
 		}
 
 		SelectionManager::Update(m_runtimeScene);
@@ -800,34 +804,40 @@ void Sandbox::RenderGameView(float timestep)
 		case SceneState::Pause:
 		case SceneState::Simulating:
 		{
-			if (m_runtimeScene)
+			if (!m_runtimeScene)
 			{
-				Volt::Entity cameraEntity{};
-				int32_t highestPrio = -1;
-
-				m_runtimeScene->ForEachWithComponents<const Volt::CameraComponent>([&](const entt::entity id, const Volt::CameraComponent& camComp)
-				{
-					if ((int32_t)camComp.priority > highestPrio)
-					{
-						highestPrio = (int32_t)camComp.priority;
-						cameraEntity = { id, m_runtimeScene->GetEntityScene()};
-					}
-				});
-
-				if (!cameraEntity)
-				{
-					break;
-				}
-
-				const auto& camComp = cameraEntity.GetComponent<Volt::CameraComponent>();
-				const auto finalImage = m_gameSceneRenderer->GetFinalImage();
-
-				Ref<Volt::Camera> camera = CreateRef<Volt::Camera>(glm::radians(camComp.fieldOfView), (float)finalImage->GetWidth() / (float)finalImage->GetHeight(), camComp.nearPlane, camComp.farPlane);
-				camera->SetPosition(cameraEntity.GetPosition());
-				camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
-
-				//m_gameSceneRenderer->OnRenderEditor(camera, timestep);
+				break;
 			}
+			if (!m_runtimeScene->IsFinishedLoadingEntities())
+			{
+				break;
+			}
+
+			Volt::Entity cameraEntity{};
+			int32_t highestPrio = -1;
+
+			m_runtimeScene->ForEachWithComponents<const Volt::CameraComponent>([&](const entt::entity id, const Volt::CameraComponent& camComp)
+			{
+				if ((int32_t)camComp.priority > highestPrio)
+				{
+					highestPrio = (int32_t)camComp.priority;
+					cameraEntity = { id, m_runtimeScene->GetEntityScene() };
+				}
+			});
+
+			if (!cameraEntity)
+			{
+				break;
+			}
+
+			const auto& camComp = cameraEntity.GetComponent<Volt::CameraComponent>();
+			const auto finalImage = m_gameSceneRenderer->GetFinalImage();
+
+			Ref<Volt::Camera> camera = CreateRef<Volt::Camera>(glm::radians(camComp.fieldOfView), (float)finalImage->GetWidth() / (float)finalImage->GetHeight(), camComp.nearPlane, camComp.farPlane);
+			camera->SetPosition(cameraEntity.GetPosition());
+			camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
+
+			//m_gameSceneRenderer->OnRenderEditor(camera, timestep);
 			break;
 		}
 	}

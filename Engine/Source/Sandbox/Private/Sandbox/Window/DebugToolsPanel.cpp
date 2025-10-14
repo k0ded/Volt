@@ -45,7 +45,7 @@ void DebugToolsPanel::DrawLoadSceneMultipleTimes()
 	if (m_sceneLoadingData.running)
 	{
 		const float fraction = static_cast<float>(m_sceneLoadingData.numFinishedLoading) / static_cast<float>(m_sceneLoadingData.numToLoad);
-		ImGui::ProgressBar(fraction, { 200.f,  ImGui::CalcTextSize("").y + 4.f}, std::format("{0}/{1}", m_sceneLoadingData.numFinishedLoading, m_sceneLoadingData.numToLoad).c_str());
+		ImGui::ProgressBar(fraction, { 200.f,  ImGui::CalcTextSize("").y + 4.f }, std::format("{0}/{1}", m_sceneLoadingData.numFinishedLoading, m_sceneLoadingData.numToLoad).c_str());
 
 		if (ImGui::Button("Stop"))
 		{
@@ -75,11 +75,13 @@ void DebugToolsPanel::UpdateSceneLoading()
 		return;
 	}
 
-	Ref<Volt::Scene> scene = Sandbox::Get().GetRuntimeScene();
 	bool loadLevel = true;
-	if (scene)
 	{
-		loadLevel = scene->IsFinishedLoadingEntities();
+		Ref<Volt::Scene> scene = Sandbox::Get().GetRuntimeScene();
+		if (scene)
+		{
+			loadLevel = scene->IsFinishedLoadingEntities();
+		}
 	}
 
 	if (loadLevel)

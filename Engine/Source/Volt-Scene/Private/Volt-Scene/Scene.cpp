@@ -20,6 +20,7 @@
 #include <SubSystem/SubSystemManager.h>
 
 #include <EntitySystem/Entity.h>
+#include <EntitySystem/Scripting/CommonComponent.h>
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetFactory.h>
@@ -141,6 +142,7 @@ namespace Volt
 		{
 			return;
 		}
+		VT_PROFILE_MESSAGE("START LOADING ENTITIES");
 		JobRef job = JobSystem::CreateJob("Register Entities", ExecutionPriority::Latent, [this]()
 		{
 			//collect all entity descriptions to spawn
@@ -165,7 +167,7 @@ namespace Volt
 				registry.reserve(m_entityIDToDescHandle.size());
 				for (const auto& [entityID, descHandle] : m_entityIDToDescHandle)
 				{
-					CreateEntityWithID(entityID);
+					m_entityScene.CreateEntityWithID(entityID);
 				}
 			});
 
@@ -206,6 +208,7 @@ namespace Volt
 			Ref<Map<VoltGUID, Vector<EntityID>>> componentTypeToOwningEntities = CreateRef<Map<VoltGUID, Vector<EntityID>>>();
 			TaskGraph::Task* arrangeComponentsToEntityIDTask = taskGraph.AddTaskWithDependencies("Arrange Components To EntityIDs", parseEntityDescTasks, [componentTypeToOwningEntities, entityToComponentTypes]()
 			{
+				VT_LOG(Warning, "Arranging components to entityIDs");
 				for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
 				{
 					for (VoltGUID componentType : componentTypes)
@@ -218,6 +221,8 @@ namespace Volt
 			//new task graph to be able to create a separate task per component type
 			taskGraph.AddTaskWithDependencies("Launch Component Creation and Serialization Jobs", { arrangeComponentsToEntityIDTask, createEntitiesTask }, [this, componentTypeToOwningEntities, entityToComponentTypes, yamlReaders]()
 			{
+				VT_LOG(Warning, "Launch Component Creation and Serialization Jobs");
+
 				TaskGraph componentTaskGraph{ ExecutionPriority::Latent };
 
 				//create all components
@@ -225,34 +230,49 @@ namespace Volt
 				createComponentsTasks.reserve(componentTypeToOwningEntities->size());
 				for (const auto& [componentType, entityIDs] : *componentTypeToOwningEntities)
 				{
-					VT_LOG(Warning, "ADD TASK CREATING COMPONENTS: {}", componentType.ToString());
-					createComponentsTasks.push_back(componentTaskGraph.AddTask("Create Components", [this, componentType, entityIDs]()
+					//todo: there should be a different system for order of initialization so that we dont have to make a special case
+					if (componentType == GetTypeGUID<IDComponent>() ||
+					componentType == GetTypeGUID<TransformComponent>() ||
+					componentType == GetTypeGUID<TagComponent>() ||
+					componentType == GetTypeGUID<RelationshipComponent>() ||
+					componentType == GetTypeGUID<CommonComponent>())
 					{
-						VT_LOG(Warning, "CREATING COMPONENTS: {}. thread id: '{}'", componentType.ToString(), std::this_thread::get_id());
-						
-						/*entt::registry& registry = m_entityScene.GetRegistry();
+						continue;
+					}
 
-						for (EntityID entityID : entityIDs)
+					createComponentsTasks.push_back(componentTaskGraph.AddTask("Create Components", [this, componentType, componentTypeToOwningEntities]()
+					{
+						entt::registry& registry = m_entityScene.GetRegistry();
+
+						for (EntityID entityID : componentTypeToOwningEntities->at(componentType))
 						{
 							entt::entity entityHandle = m_entityScene.GetEntityHandleFromID(entityID);
-							ComponentRegistry::Helpers::AddComponentWithGUID(componentType->GetGUID(), registry, entityHandle);
-						}*/
-					}));
+
+							ComponentRegistry::Helpers::AddComponentWithGUID(componentType, registry, entityHandle);
+						}
+					}
+					));
 				}
 
-				//serialize all component data onto the created components
-				Vector<TaskGraph::Task*> serializeComponentDataTasks;
-				for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
+				//todo_fabian: this can be multiple jobs when some issues are fixed with the task graph
+				TaskGraph::Task* deserializeComponentsTask = componentTaskGraph.AddTaskWithDependencies("Deserialize Entities Component Datas", createComponentsTasks, [this, entityToComponentTypes, yamlReaders]()
 				{
-					serializeComponentDataTasks.push_back(componentTaskGraph.AddTaskWithDependencies("Deserialize Entities Component Datas", createComponentsTasks, [this, entityToComponentTypes, entityID, yamlReaders]()
+					for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
 					{
-
-						/*const EntityDescSerializer& serializer = reinterpret_cast<const EntityDescSerializer&>(AssetSerializerRegistry::Get().GetSerializer(AssetTypes::EntityDesc));
+						const EntityDescSerializer& serializer = reinterpret_cast<const EntityDescSerializer&>(AssetSerializerRegistry::Get().GetSerializer(AssetTypes::EntityDesc));
 						Volt::Entity entity = m_entityScene.GetEntityFromID(entityID);
 						YAMLMemoryStreamReader& reader = *yamlReaders->at(entityID);
-						serializer.DeserializeEntityInPlace(entity, reader);*/
-					}));
-				}
+						serializer.DeserializeEntityInPlace(entity, reader);
+					}
+				});
+
+				//todo_fabian: this can be multiple jobs when some issues are fixed with the task graph
+				componentTaskGraph.AddTaskWithDependencies("Finished loading entities", { deserializeComponentsTask }, [this]()
+				{
+					VT_PROFILE_MESSAGE("FINISH LOADING ENTITIES");
+					m_isFinishedLoadingEntities = true;
+				});
+
 				componentTaskGraph.Execute();
 			});
 
@@ -274,18 +294,13 @@ namespace Volt
 		return newEntity;
 	}
 
-	Entity Scene::CreateEntityWithID(const EntityID& id, const std::string& tag, bool alsoCreateDesc)
+	Entity Scene::CreateEntityWithID(const EntityID& id)
 	{
-		Entity newEntity = m_entityScene.CreateEntityWithID(id, tag);
+		Entity newEntity = m_entityScene.CreateEntityWithID(id);
 		VT_ENSURE(newEntity);
 
 		//todo: World Engine
 		//m_worldEngine.AddEntity(newEntity);
-
-		if (alsoCreateDesc)
-		{
-			CreateEntityDescForEntity(newEntity.GetID());
-		}
 
 		return newEntity;
 	}

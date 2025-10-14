@@ -134,7 +134,6 @@ namespace Volt
 			yamlStreamReader.ExitScope();
 		}
 
-		scene->LoadEntities();
 		return true;
 	}
 
