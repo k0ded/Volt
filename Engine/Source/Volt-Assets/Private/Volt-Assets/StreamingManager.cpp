@@ -33,7 +33,7 @@ namespace Volt
 
 		m_meshReferenceCounter.SetAssetUpdatedCallback([&](AssetHandle meshHandle, const std::unordered_set<StreamingInstanceID>& streamingInstances, AssetChangedState state)
 		{
-			if (state == AssetChangedState::Updated)
+			if (state == AssetChangedState::Loaded)
 			{
 				for (const auto& instanceId : streamingInstances)
 				{
@@ -45,7 +45,7 @@ namespace Volt
 
 		m_materialReferenceCounter.SetAssetUpdatedCallback([&](AssetHandle meshHandle, const std::unordered_set<StreamingInstanceID>& streamingInstances, AssetChangedState state)
 		{
-			if (state == AssetChangedState::Updated)
+			if (state == AssetChangedState::Loaded)
 			{
 				for (const auto& instanceId : streamingInstances)
 				{
@@ -57,7 +57,7 @@ namespace Volt
 
 		m_environmentTextureReferenceCounter.SetAssetUpdatedCallback([&](AssetHandle textureHandle, const std::unordered_set<StreamingInstanceID>& streamingInstances, AssetChangedState state)
 		{
-			if (state == AssetChangedState::Updated)
+			if (state == AssetChangedState::Loaded)
 			{
 				for (const auto& instanceId : streamingInstances)
 				{

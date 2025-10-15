@@ -37,37 +37,65 @@ DirtyAssetsManager::~DirtyAssetsManager()
 
 void DirtyAssetsManager::Initialize()
 {
-	RegisterEventListeners();
-
 	auto& assetsModal = ModalSystem::AddModal<AssetsModal>("Assets Modal##sandbox");
 	m_assetsModalID = assetsModal.GetID();
+	m_assetChangedCallbackID = Volt::AssetManager::RegisterAssetUpdatedCallback(AssetTypes::None,
+		[this](Volt::AssetHandle assetHandle, Volt::AssetChangedState state)
+	{
+		OnAssetChanged(assetHandle, state); 
+	});
 }
 
 void DirtyAssetsManager::Shutdown()
-{}
-
-void DirtyAssetsManager::RegisterEventListeners()
 {
-	RegisterListener<Volt::AssetCreatedEvent>(VT_BIND_EVENT_FN(DirtyAssetsManager::OnAssetCreated));
-	RegisterListener<Volt::AssetSavedEvent>(VT_BIND_EVENT_FN(DirtyAssetsManager::OnAssetSaved));
+	Volt::AssetManager::UnregisterAssetUpdatedCallback(AssetTypes::None, m_assetChangedCallbackID);
 }
 
-bool DirtyAssetsManager::OnAssetCreated(Volt::AssetCreatedEvent& e)
+void DirtyAssetsManager::OnAssetChanged(Volt::AssetHandle assetHandle, Volt::AssetChangedState state)
 {
-	const Volt::AssetHandle& handle = e.GetAssetHandle();
-	if (Volt::AssetManager::IsMemoryAsset(handle))
+	if (Volt::AssetManager::IsMemoryAsset(assetHandle))
 	{
-		return false;
+		return;
 	}
-	MarkAssetDirty(handle);
-	return false;
-}
 
-bool DirtyAssetsManager::OnAssetSaved(Volt::AssetSavedEvent& e)
-{
-	MarkAssetNotDirty(e.GetAssetHandle());
-	return false;
+	switch (state)
+	{
+		case Volt::AssetChangedState::Saved:
+		case Volt::AssetChangedState::Deleted:
+		case Volt::AssetChangedState::Unloaded:
+			MarkAssetNotDirty(assetHandle);
+			break;
+
+		case Volt::AssetChangedState::Loaded:
+		{
+			if (!Volt::AssetManager::HasFilePath(assetHandle))
+			{
+				MarkAssetDirty(assetHandle);
+				break;
+			}
+			break;
+		}
+	}
+
+
 }
+//
+//bool DirtyAssetsManager::OnAssetCreated(Volt::AssetCreatedEvent& e)
+//{
+//	const Volt::AssetHandle& handle = e.GetAssetHandle();
+//	if (Volt::AssetManager::IsMemoryAsset(handle))
+//	{
+//		return false;
+//	}
+//	MarkAssetDirty(handle);
+//	return false;
+//}
+//
+//bool DirtyAssetsManager::OnAssetSaved(Volt::AssetSavedEvent& e)
+//{
+//	MarkAssetNotDirty(e.GetAssetHandle());
+//	return false;
+//}
 
 void DirtyAssetsManager::RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomization customization)
 {
@@ -306,7 +334,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 			{
 				return false;
 			}
-			
+
 			if (result == AssetModalResult::CheckOut)
 			{
 				//todo_fabian check assets out here

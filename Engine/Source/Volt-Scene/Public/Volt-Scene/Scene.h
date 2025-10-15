@@ -51,6 +51,7 @@ namespace Volt
 		void SortScene();
 
 		void LoadEntities();
+		void UnloadEntities();
 		bool IsFinishedLoadingEntities() { return m_isFinishedLoadingEntities; }
 
 		void MarkEntityAsEdited(const Entity& entity);

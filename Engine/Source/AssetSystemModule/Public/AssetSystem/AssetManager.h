@@ -62,8 +62,8 @@ namespace Volt
 		void RenameAsset(AssetHandle asset, const std::string& newName);
 		void RenameAssetFolder(AssetHandle asset, const std::filesystem::path& targetFilePath);
 
-		void RemoveAsset(AssetHandle asset);
-		void RemoveAsset(const std::filesystem::path& path);
+		void DeleteAsset(AssetHandle asset);
+		void DeleteAsset(const std::filesystem::path& path);
 
 		void RemoveAssetFromRegistry(AssetHandle asset);
 		void RemoveAssetFromRegistry(const std::filesystem::path& path);
@@ -395,8 +395,7 @@ namespace Volt
 			}
 		}
 
-		AssetCreatedEvent assetCreatedEvent(asset->handle);
-		EventSystem::DispatchEvent(assetCreatedEvent);
+		QueueAssetChanged(asset->handle, AssetChangedState::Loaded);
 		return asset;
 	}
 

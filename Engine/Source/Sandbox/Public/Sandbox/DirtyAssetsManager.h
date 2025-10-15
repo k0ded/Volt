@@ -16,6 +16,7 @@ namespace Volt
 {
 	class AssetCreatedEvent;
 	class AssetSavedEvent;
+	enum class AssetChangedState : uint8_t;
 }
 
 struct SaveDirtyAssetsFilter
@@ -39,7 +40,7 @@ struct DirtySaveCustomization
 	std::function<bool(const Volt::AssetHandle&/*asset*/)> CanUserAssignPath;
 };
 
-class DirtyAssetsManager : public SubSystem, public Volt::EventListener
+class DirtyAssetsManager : public SubSystem
 {
 public:
 	VT_DECLARE_SUBSYSTEM("{DEFEC05B-66E0-45D9-8D1A-694DD2166407}"_guid)
@@ -70,10 +71,7 @@ public:
 private:
 	static DirtyAssetsManager* s_instance;
 
-	void RegisterEventListeners();
-
-	bool OnAssetCreated(Volt::AssetCreatedEvent& e);
-	bool OnAssetSaved(Volt::AssetSavedEvent& e);
+	void OnAssetChanged(Volt::AssetHandle assetHandle, Volt::AssetChangedState state);
 
 	void SaveAssetsImpl(const FrameStackVector<Volt::AssetHandle>& assetsToSave);
 	void CreateAssetsImpl(const Vector<std::pair<Volt::AssetHandle, std::filesystem::path>>& assetsToCreate);
@@ -82,4 +80,5 @@ private:
 	Map<AssetType, DirtySaveCustomization> m_dirtySaveCustomizations;
 
 	UUID64 m_assetsModalID;
+	UUID64 m_assetChangedCallbackID;
 };

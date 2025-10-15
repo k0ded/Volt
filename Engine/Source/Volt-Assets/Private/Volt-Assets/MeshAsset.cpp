@@ -20,7 +20,7 @@ namespace Volt
 
 	void MeshAsset::OnDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state)
 	{
-		if (state == AssetChangedState::Updated)
+		if (state == AssetChangedState::Loaded)
 		{
 			for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
 			{
@@ -43,7 +43,7 @@ namespace Volt
 				}
 			}
 		}
-		else if (state == AssetChangedState::Removed)
+		else if (state == AssetChangedState::Deleted)
 		{
 			for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
 			{

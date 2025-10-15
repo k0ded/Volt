@@ -39,21 +39,4 @@ namespace Volt
 	private:
 		Ref<Volt::Scene> myScene;
 	};
-
-	class OnSceneTransitionEvent : public Event
-	{
-	public:
-		OnSceneTransitionEvent(Volt::AssetHandle aHandle)
-			: myHandle(aHandle)
-		{
-		}
-
-		inline Volt::AssetHandle GetHandle() const { return myHandle; }
-
-		EVENT_CLASS(OnSceneLoadedEvent, "{95250536-3211-4AD7-A2F1-4ECB6CC860B7}"_guid);
-
-
-	private:
-		Volt::AssetHandle myHandle;
-	};
 }

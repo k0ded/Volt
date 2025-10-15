@@ -13,8 +13,10 @@ namespace Volt
 
 	enum class AssetChangedState : uint8_t
 	{
-		Removed,
-		Updated
+		Deleted,
+		Loaded,
+		Unloaded,
+		Saved,
 	};
 
 	enum class AssetFlag : uint8_t

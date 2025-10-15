@@ -197,7 +197,10 @@ namespace Volt
 
 					reader->ReadBuffer(entityDesc->GetEntitySpawnData());
 
-					AssetManager::Get().UnloadAsset(descHandle);
+					//todo_fabian: we probably want to be able to have the
+					// entity descriptions not loaded but the entity present...
+					//for now DirtyAssetManager relies on the desc being loaded
+					//AssetManager::Get().UnloadAsset(descHandle);
 
 					entityToComponentTypes->at(entityID) = EntityDescSerializer::FindComponentTypes(*reader);
 				}));
@@ -279,6 +282,19 @@ namespace Volt
 			taskGraph.Execute();
 		});
 		JobSystem::RunJob(job);
+	}
+
+	void Scene::UnloadEntities()
+	{
+		//todo_fabian: we probably want to be able to have the
+		// entity descriptions not loaded but the entity present...
+		//for now DirtyAssetManager relies on the desc being loaded
+		for (const auto& [id, descHandle] : m_entityIDToDescHandle)
+		{
+			AssetManager::Get().UnloadAsset(descHandle);
+		}
+		Clear();
+
 	}
 
 	Entity Scene::CreateEntity(const std::string& tag)

@@ -180,7 +180,8 @@ namespace Volt
 			postMeta.isLoaded = true;
 		}
 
-		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Updated);
+		QueueAssetChanged(asset->handle, AssetChangedState::Loaded);
+		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
 
 		{
 			WriteLock lock{ m_assetCacheMutex };
@@ -273,7 +274,6 @@ namespace Volt
 
 	void AssetManager::UnloadAsset(AssetHandle assetHandle)
 	{
-		//todo_fabian: make this work with not-yet saved assets
 		{
 			ReadLock lock{ m_assetCacheMutex };
 			if (!m_assetCache.contains(assetHandle))
@@ -307,6 +307,8 @@ namespace Volt
 			WriteLock lock{ m_assetCacheMutex };
 			m_assetCache.erase(assetHandle);
 		}
+
+		QueueAssetChanged(assetHandle, AssetChangedState::Unloaded);
 	}
 
 	void AssetManager::UnloadMemoryAsset(AssetHandle assetHandle)
@@ -335,6 +337,8 @@ namespace Volt
 			WriteLock lock{ m_assetCacheMutex };
 			m_memoryAssets.erase(assetHandle);
 		}
+
+		QueueAssetChanged(assetHandle, AssetChangedState::Unloaded);
 	}
 
 	void AssetManager::ReloadAsset(const std::filesystem::path& path)
@@ -528,7 +532,7 @@ namespace Volt
 		metadata.filePath = GetCleanAssetFilePath(targetFilePath);
 	}
 
-	void AssetManager::RemoveAsset(AssetHandle assetHandle)
+	void AssetManager::DeleteAsset(AssetHandle assetHandle)
 	{
 		const auto metadata = GetMetadataFromHandle(assetHandle);
 		if (!metadata.IsValid())
@@ -548,20 +552,20 @@ namespace Volt
 			m_assetCache.erase(assetHandle);
 		}
 
-		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Removed);
-		QueueAssetChanged(assetHandle, AssetChangedState::Removed);
+		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Deleted);
+		QueueAssetChanged(assetHandle, AssetChangedState::Deleted);
 		m_dependencyGraph->RemoveAssetFromGraph(assetHandle);
 
 		FileSystem::MoveToRecycleBin(projDir / filePath);
 
 #ifdef VT_DEBUG
-		VT_LOGC(Trace, LogAssetSystem, "Removed asset {0} with handle {1}!", assetHandle, filePath.string());
+		VT_LOGC(Trace, LogAssetSystem, "Deleted asset {0} with handle {1}!", assetHandle, filePath.string());
 #endif
 	}
 
-	void AssetManager::RemoveAsset(const std::filesystem::path& path)
+	void AssetManager::DeleteAsset(const std::filesystem::path& path)
 	{
-		RemoveAsset(GetAssetHandleFromFilePath(path));
+		DeleteAsset(GetAssetHandleFromFilePath(path));
 	}
 
 	bool AssetManager::ValidateAssetType(AssetHandle handle, Ref<Asset> asset)
@@ -582,8 +586,7 @@ namespace Volt
 
 	void AssetManager::OnAssetChanged(AssetHandle assetHandle, AssetChangedState state)
 	{
-		const auto type = GetAssetTypeFromHandle(assetHandle);
-		if (m_assetChangedCallbacks.contains(type))
+		auto broadcast = [&](const AssetType type)
 		{
 			const auto& callbacks = m_assetChangedCallbacks.at(type);
 			for (const auto& callback : callbacks)
@@ -595,7 +598,15 @@ namespace Volt
 
 				callback.callback(assetHandle, state);
 			}
+		};
+		const auto type = GetAssetTypeFromHandle(assetHandle);
+		if (m_assetChangedCallbacks.contains(type))
+		{
+			broadcast(type);
 		}
+
+		//also call all the ones registered to AssetTypes::None
+		broadcast(AssetTypes::None);
 	}
 
 	void AssetManager::QueueAssetChanged(AssetHandle assetHandle, AssetChangedState state)
@@ -1131,8 +1142,8 @@ namespace Volt
 					m_assetCache[handle] = asset;
 				}
 
-				m_dependencyGraph->OnAssetChanged(handle, AssetChangedState::Updated);
-				QueueAssetChanged(asset->handle, AssetChangedState::Updated);
+				m_dependencyGraph->OnAssetChanged(handle, AssetChangedState::Loaded);
+				QueueAssetChanged(asset->handle, AssetChangedState::Loaded);
 			});
 
 			JobSystem::RunJob(loadJob);
@@ -1276,10 +1287,7 @@ namespace Volt
 			}
 		}
 
-		{
-			AssetSavedEvent assetSavedEvent(asset->handle);
-			EventSystem::DispatchEvent(assetSavedEvent);
-		}
+		QueueAssetChanged(asset->handle, AssetChangedState::Saved);
 	}
 
 	void AssetManager::CreateFileForAssetImpl(AssetHandle handle, const std::filesystem::path& targetFilePath)

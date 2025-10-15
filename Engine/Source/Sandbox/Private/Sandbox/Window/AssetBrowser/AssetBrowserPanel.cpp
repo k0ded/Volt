@@ -913,7 +913,7 @@ void AssetBrowserPanel::DeleteFilesModal()
 			{
 				if (!item->isDirectory && Volt::AssetManager::ExistsInRegistry(item->path))
 				{
-					Volt::AssetManager::Get().RemoveAsset(Volt::AssetManager::GetRelativePath(item->path));
+					Volt::AssetManager::Get().DeleteAsset(Volt::AssetManager::GetRelativePath(item->path));
 				}
 			}
 
@@ -1113,7 +1113,7 @@ void AssetBrowserPanel::RecursiveRemoveFolderContents(DirectoryData* aDir)
 	{
 		if (FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / asset.path))
 		{
-			Volt::AssetManager::Get().RemoveAsset(asset.handle);
+			Volt::AssetManager::Get().DeleteAsset(asset.handle);
 		}
 	}
 

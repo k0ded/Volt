@@ -79,8 +79,6 @@ public:
 	VT_NODISCARD VT_INLINE UUID64 GetMeshImportModalID() const { return m_meshImportModal; }
 	VT_NODISCARD VT_INLINE UUID64 GetTextureImportModalID() const { return m_textureImportModal; }
 
-	void PromptForCheckoutFiles(const Vector<std::filesystem::path>& paths, std::function<void()> onConfirm, std::function<void()> onCancel);
-
 	VT_NODISCARD VT_INLINE Ref<ObjectIDSceneRendererExtension> GetObjectIDSceneRendererExtension() const { return m_objectIDSceneRendererExtension; }
 
 	void NewScene();
@@ -89,7 +87,6 @@ public:
 	void OpenScene(Volt::AssetHandle sceneHandle);
 	//returns false if user cancels save
 	bool SaveScene(bool showDialog = false);
-	void TransitionToNewScene();
 
 private:
 	struct SaveSceneAsData
@@ -106,6 +103,10 @@ private:
 	void SaveSceneAs();
 	void InstallMayaTools();
 	void RegisterEventListeners();
+	//return wether to procced
+	//false when user cancels unload
+	bool PromptUnloadCurrentScene();
+
 
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
@@ -113,7 +114,6 @@ private:
 	bool OnKeyPressedEvent(Volt::KeyPressedEvent& e);
 	bool OnViewportResizeEvent(Volt::ViewportResizeEvent& e);
 	bool OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e);
-	bool LoadScene(Volt::OnSceneTransitionEvent& e);
 
 	void CreateWatches();
 	void RegisterPanels();

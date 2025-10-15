@@ -440,18 +440,9 @@ void Sandbox::OnSimulationStop()
 
 void Sandbox::NewScene()
 {
-	//if a scene is already loaded, prompt user to save, then unload it
-	if (m_runtimeScene)
+	if (!PromptUnloadCurrentScene())
 	{
-		const bool userCancelSave = !SaveScene(/*showDialog*/true);
-		if (userCancelSave)
-		{
-			//if the user cancels the save, dont load the new scene
-			return;
-		}
-
-		Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
-		m_runtimeScene = nullptr;
+		return;
 	}
 
 	SelectionManager::DeselectAll();
@@ -489,18 +480,9 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 
 	VT_ENSURE(Volt::AssetManager::GetAssetTypeFromHandle(sceneHandle) == AssetTypes::Scene);
 
-	//if a scene is already loaded, prompt user to save, then unload it
-	if (m_runtimeScene)
+	if (!PromptUnloadCurrentScene())
 	{
-		const bool userCancelSave = !SaveScene(/*showDialog*/true);
-		if (userCancelSave)
-		{
-			//if the user cancels the save, dont load the new scene
-			return;
-		}
-
-		Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
-		m_runtimeScene = nullptr;
+		return;
 	}
 
 	SelectionManager::DeselectAll();
@@ -555,39 +537,6 @@ bool Sandbox::SaveScene(bool showDialog)
 		return true;
 	};
 	return DirtyAssetsManager::Get().SaveAssets(showDialog, true, filter);
-}
-
-bool Sandbox::LoadScene(Volt::OnSceneTransitionEvent& e)
-{
-	m_storedScene = Volt::AssetManager::GetAsset<Volt::Scene>(e.GetHandle());
-	m_shouldLoadNewScene = true;
-	TransitionToNewScene();
-
-	return true;
-}
-
-void Sandbox::TransitionToNewScene()
-{
-	m_runtimeScene->OnRuntimeEnd();
-
-	SelectionManager::DeselectAll();
-	Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
-
-	m_runtimeScene = CreateRef<Volt::Scene>();
-	m_storedScene->CopyTo(m_runtimeScene);
-
-	SetupNewSceneData();
-
-	m_runtimeScene->OnRuntimeStart();
-
-	Volt::ViewportResizeEvent windowResizeEvent{ Volt::WindowManager::Get().GetMainWindow(), m_viewportPosition.x, m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
-	Volt::EventSystem::DispatchEvent(windowResizeEvent);
-
-	Volt::OnScenePlayEvent playEvent{};
-	Volt::EventSystem::DispatchEvent(playEvent);
-
-	m_shouldLoadNewScene = false;
-	m_storedScene = nullptr;
 }
 
 void Sandbox::SaveSceneAs()
@@ -657,13 +606,31 @@ void Sandbox::RegisterEventListeners()
 	RegisterListener<Volt::KeyPressedEvent>(VT_BIND_EVENT_FN(Sandbox::OnKeyPressedEvent), isInitializedPred);
 	RegisterListener<Volt::ViewportResizeEvent>(VT_BIND_EVENT_FN(Sandbox::OnViewportResizeEvent), isInitializedPred);
 	RegisterListener<Volt::OnSceneLoadedEvent>(VT_BIND_EVENT_FN(Sandbox::OnSceneLoadedEvent), isInitializedPred);
-	RegisterListener<Volt::OnSceneTransitionEvent>(VT_BIND_EVENT_FN(Sandbox::LoadScene), isInitializedPred);
 
 	RegisterListener<Volt::WindowTitlebarHittestEvent>([&](Volt::WindowTitlebarHittestEvent& e)
 	{
 		e.SetHit(m_titlebarHovered);
 		return false;
 	}, isInitializedPred);
+}
+
+bool Sandbox::PromptUnloadCurrentScene()
+{
+	//if a scene is already loaded, prompt user to save, then unload it
+	if (m_runtimeScene)
+	{
+		const bool userCancelSave = !SaveScene(/*showDialog*/true);
+		if (userCancelSave)
+		{
+			//if the user cancels the save, dont load the new scene
+			return false;
+		}
+
+		m_runtimeScene->UnloadEntities();
+		Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
+		m_runtimeScene = nullptr;
+	}
+	return true;
 }
 
 bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
@@ -863,11 +830,6 @@ bool Sandbox::OnRenderEvent(Volt::AppRenderEvent& e)
 				m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera(), e.GetTimestep());
 			}
 			break;
-	}
-
-	if (m_shouldLoadNewScene)
-	{
-		//TransitionToNewScene();
 	}
 
 	RenderGameView(e.GetTimestep());
