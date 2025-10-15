@@ -4,6 +4,7 @@
 #include "Sandbox/Utility/AssetBrowserUtilities.h"
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/Theme.h"
+#include "Sandbox/DirtyAssetsManager.h"
 
 #include <Volt-Assets/MeshAsset.h>
 
@@ -17,6 +18,8 @@
 #include <Volt-Application/UI/UIScopedHelpers.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
+
+#include <Volt-Scene/Scene.h>
 
 #include <EntitySystem/Entity.h>
 
@@ -359,21 +362,22 @@ std::string EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)
 	return originalName;
 }
 
-void EditorUtils::MarkEntityAsEdited(const Volt::Entity& entity)
+void EditorUtils::MarkEntityAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity)
 {
-	//todo_fabian: reimplement
-	//auto scene = entity.GetScene();
-	//scene->MarkEntityAsEdited(entity);
+	VT_ENSURE(scene);
+
+	const Volt::AssetHandle descHandle = scene->GetEntityDescHandleFromEntityID(entity.GetID());
+	DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
 }
 
-void EditorUtils::MarkEntityAndChildrenAsEdited(const Volt::Entity& entity)
+void EditorUtils::MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity)
 {
-	//todo_fabian: reimplement
-	/*auto scene = entity.GetScene();
-	scene->MarkEntityAsEdited(entity);
+	VT_ENSURE(scene);
+
+	MarkEntityAsEdited(scene, entity);
 
 	for (const auto& child : entity.GetChildren())
 	{
-		MarkEntityAndChildrenAsEdited(child);
-	}*/
+		MarkEntityAndChildrenAsEdited(scene, child);
+	}
 }

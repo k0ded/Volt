@@ -187,8 +187,8 @@ void SceneViewPanel::UpdateMainContent()
 						data->myChild = child;
 						undoData.push_back(data);
 
-						EditorUtils::MarkEntityAsEdited(child);
-						EditorUtils::MarkEntityAsEdited(child.GetParent());
+						EditorUtils::MarkEntityAsEdited(m_scene, child);
+						EditorUtils::MarkEntityAsEdited(m_scene, child.GetParent());
 						child.UnparentEntity();
 					}
 
@@ -252,7 +252,7 @@ void SceneViewPanel::HighlightEntity(Volt::Entity entity)
 void RecursiveUnpackPrefab(Ref<Volt::Scene> scene, Volt::EntityID id)
 {
 	Volt::Entity entity = scene->GetEntityFromID(id);
-	EditorUtils::MarkEntityAsEdited(entity);
+	EditorUtils::MarkEntityAsEdited(scene, entity);
 
 	if (entity.HasComponent<Volt::PrefabComponent>())
 	{
@@ -635,8 +635,8 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 				
 				newParent.AddChild(child);
 
-				EditorUtils::MarkEntityAsEdited(child);
-				EditorUtils::MarkEntityAsEdited(newParent);
+				EditorUtils::MarkEntityAsEdited(m_scene, child);
+				EditorUtils::MarkEntityAsEdited(m_scene, newParent);
 			}
 
 			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(undoData, ParentingAction::Parent);
@@ -776,7 +776,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 						recursiveSetVisible(e, visible, recursiveSetVisible);
 					}
 
-					EditorUtils::MarkEntityAsEdited(entity);
+					EditorUtils::MarkEntityAsEdited(scene, entity);
 					return false;
 				};
 
@@ -861,7 +861,7 @@ void SceneViewPanel::CreatePrefabAndSetupEntities(Volt::Entity entity)
 
 	Volt::AssetManager::CreateFileForAsset(prefab->handle, basePath);
 
-	EditorUtils::MarkEntityAndChildrenAsEdited(entity);
+	EditorUtils::MarkEntityAndChildrenAsEdited(m_scene, entity);
 }
 
 void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity srcEntity)
@@ -892,7 +892,7 @@ void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity
 		auto entity = Volt::Entity{ id, m_scene->GetEntityScene()};
 		prefabAsset->UpdateEntityInScene(entity);
 
-		EditorUtils::MarkEntityAsEdited(entity);
+		EditorUtils::MarkEntityAsEdited(m_scene, entity);
 	});
 
 	if (prefabAsset->IsReference(srcEntity))
@@ -920,7 +920,7 @@ void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity
 			auto entity = Volt::Entity{ id, m_scene->GetEntityScene()};
 			prefabRefAsset->UpdateEntityInScene(entity);
 
-			EditorUtils::MarkEntityAsEdited(entity);
+			EditorUtils::MarkEntityAsEdited(m_scene, entity);
 		});
 	}
 }

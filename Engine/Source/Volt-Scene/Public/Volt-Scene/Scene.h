@@ -54,9 +54,6 @@ namespace Volt
 		void UnloadEntities();
 		bool IsFinishedLoadingEntities() { return m_isFinishedLoadingEntities; }
 
-		void MarkEntityAsEdited(const Entity& entity);
-		void ClearEditedEntities();
-
 		VT_NODISCARD TQS GetEntityWorldTQS(const Entity& entity) const;
 
 		//VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_entityScene.GetRegistry(); }
@@ -105,8 +102,6 @@ namespace Volt
 		Entity GetSceneEntityFromScriptingEntity(EntityType scriptingEntity);
 
 		Vector<Entity> GetAllEntities() const;
-		Vector<Entity> GetAllEditedEntities() const;
-		Vector<EntityID> GetAllRemovedEntities() const;
 
 		static Ref<Scene> CreateDefaultScene(const std::string& name, bool createDefaultMesh = true, bool asMemoryAsset = false);
 

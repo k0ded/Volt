@@ -149,7 +149,8 @@ namespace Volt
 		entityDescFileWriter.Write(buffer);
 		buffer.Release();
 
-		entityDescFileWriter.WriteToDisk(metadata.filePath, true, compressedDataOffset);
+		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		entityDescFileWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
 	bool EntityDescSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const

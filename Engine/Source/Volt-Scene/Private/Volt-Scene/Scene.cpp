@@ -269,7 +269,6 @@ namespace Volt
 					}
 				});
 
-				//todo_fabian: this can be multiple jobs when some issues are fixed with the task graph
 				componentTaskGraph.AddTaskWithDependencies("Finished loading entities", { deserializeComponentsTask }, [this]()
 				{
 					VT_PROFILE_MESSAGE("FINISH LOADING ENTITIES");
@@ -583,18 +582,6 @@ namespace Volt
 		InvalidateEntityTransform(entity.GetID());
 	}
 
-	//todo_fabian:
-	/*void Scene::MarkEntityAsEdited(const Entity& entity)
-	{
-		VT_ENSURE_MSG(entity.IsValid(), "Entity is not valid! Only valid entities can be marked as edited!");
-		m_entityScene.MarkEntityAsEdited(m_entityScene.GetEntityFromEntityID(entity.GetID()));
-	}
-
-	void Scene::ClearEditedEntities()
-	{
-		m_entityScene.ClearEditedEntities();
-	}*/
-
 	Vector<Entity> Scene::GetAllEntities() const
 	{
 		const auto& registry = m_entityScene.GetRegistry();
@@ -609,31 +596,6 @@ namespace Volt
 
 		return result;
 	}
-
-	//todo_fabian
-	/*Vector<Entity> Scene::GetAllEditedEntities() const
-	{
-		Vector<Entity> entities;
-
-		for (const auto& entity : m_entityScene.GetEditedEntities())
-		{
-			entities.push_back(GetEntityFromID(entity));
-		}
-
-		return entities;
-	}
-
-	Vector<EntityID> Scene::GetAllRemovedEntities() const
-	{
-		Vector<EntityID> entities;
-
-		for (const auto& entity : m_entityScene.GetRemovedEntities())
-		{
-			entities.push_back(entity);
-		}
-
-		return entities;
-	}*/
 
 	TQS Scene::GetEntityWorldTQS(const Entity& entity) const
 	{

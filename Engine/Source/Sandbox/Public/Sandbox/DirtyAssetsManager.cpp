@@ -202,6 +202,12 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 		{
 			const Volt::AssetHandle& asset = assetsToSave[i];
 
+			//only assets that dont have a file path need to be created
+			if (Volt::AssetManager::HasFilePath(asset))
+			{
+				continue;
+			}
+
 			// check if the asset has a save customization, if it does, check if the user is allowed to assign a path
 			// if the user is not allowed to assign a path, we might still be able to save the asset post create
 			AssetType assetType = Volt::AssetManager::GetAssetTypeFromHandle(asset);
@@ -220,12 +226,10 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 				}
 			}
 
-			if (!Volt::AssetManager::HasFilePath(asset))
-			{
+			
 				//cannot save assets without a path, instead prompt to create
 				assetsNeedUserAssignedPath.push_back(asset);
 				assetsToSave.erase(assetsToSave.begin() + i);
-			}
 		}
 
 		Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate;

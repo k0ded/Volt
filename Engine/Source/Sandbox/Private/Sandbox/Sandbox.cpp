@@ -617,19 +617,21 @@ void Sandbox::RegisterEventListeners()
 bool Sandbox::PromptUnloadCurrentScene()
 {
 	//if a scene is already loaded, prompt user to save, then unload it
-	if (m_runtimeScene)
+	if (!m_runtimeScene)
 	{
-		const bool userCancelSave = !SaveScene(/*showDialog*/true);
-		if (userCancelSave)
-		{
-			//if the user cancels the save, dont load the new scene
-			return false;
-		}
-
-		m_runtimeScene->UnloadEntities();
-		Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
-		m_runtimeScene = nullptr;
+		return true;
 	}
+
+	const bool userCancelSave = !SaveScene(/*showDialog*/true);
+	if (userCancelSave)
+	{
+		//if the user cancels the save, dont load the new scene
+		return false;
+	}
+
+	m_runtimeScene->UnloadEntities();
+	Volt::AssetManager::Get().UnloadAsset(m_runtimeScene->handle);
+	m_runtimeScene = nullptr;
 	return true;
 }
 

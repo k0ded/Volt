@@ -125,8 +125,6 @@ namespace Volt
 		}
 
 		m_entityRegistry.AddEntity(newHelper.GetID(), entityHandle);
-		//todo_fabian: reimplement
-		//m_entityRegistry.MarkEntityAsEdited(newHelper);
 
 		InvalidateEntityTransform(newHelper.GetID());
 		SortScene();
@@ -208,16 +206,6 @@ namespace Volt
 		m_registry.destroy(helper.GetHandle());
 		m_entityRegistry.RemoveEntity(id, helper.GetHandle());
 	}
-
-	//void EntityScene::MarkEntityAsEdited(const Entity& entityHelper)
-	//{
-	//	m_entityRegistry.MarkEntityAsEdited(entityHelper);
-	//}
-
-	//void EntityScene::ClearEditedEntities()
-	//{
-	//	m_entityRegistry.ClearEditedEntities();
-	//}
 
 	Vector<EntityID> EntityScene::InvalidateEntityTransform(EntityID entityId)
 	{

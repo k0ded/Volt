@@ -4,18 +4,6 @@
 
 namespace Volt
 {
-	//todo_fabian: reimplement
-	//void EntityRegistry::MarkEntityAsEdited(const EntityHelper& entity)
-	//{
-	//	m_editedEntities.emplace(entity.GetID());
-	//}
-
-	//void EntityRegistry::ClearEditedEntities()
-	//{
-	//	m_editedEntities.clear();
-	//	m_removedEntities.clear();
-	//}
-
 	void EntityRegistry::AddEntity(const EntityID& entityId, entt::entity entityHandle)
 	{
 		{
