@@ -34,29 +34,31 @@ namespace Volt::RHI
 		m_imageHeaps.clear();
 	}
 
-	Handle<Allocation> D3D12TransientGPUAllocator::CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name)
+	Handle<Allocation> D3D12TransientGPUAllocator::CreateBuffer(const BufferDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
 
-		const size_t hash = Utility::GetHashFromBufferSpec(size, usage, memoryUsage);
+		const uint64_t byteSize = desc.count * desc.elementSize;
+
+		const size_t hash = Utility::GetHashFromBufferSpec(byteSize, desc.usage, desc.memoryUsage);
 		if (auto buffer = m_allocationCache.TryGetBufferAllocationFromHash(hash))
 		{
 			return buffer;
 		}
 
 		TransientBufferCreateInfo info{};
-		info.size = Utility::Align(size, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
-		info.usage = usage;
-		info.memoryUsage = memoryUsage;
+		info.size = Utility::Align(byteSize, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
+		info.usage = desc.usage;
+		info.memoryUsage = desc.memoryUsage;
 		info.hash = hash;
 
 		Handle<Allocation> result;
 
 		for (const auto& heap : m_bufferHeaps)
 		{
-			if (heap->IsAllocationSupported(size, TransientHeapFlags::AllowBuffers))
+			if (heap->IsAllocationSupported(byteSize, TransientHeapFlags::AllowBuffers))
 			{
-				result = heap->CreateBuffer(info, name);
+				result = heap->CreateBuffer(info, desc.debugName);
 				break;
 			}
 		}
@@ -65,15 +67,15 @@ namespace Volt::RHI
 		if (!result)
 		{
 			auto heap = CreateNewBufferHeap();
-			if (heap->IsAllocationSupported(size, TransientHeapFlags::AllowBuffers))
+			if (heap->IsAllocationSupported(byteSize, TransientHeapFlags::AllowBuffers))
 			{
-				result = heap->CreateBuffer(info, name);
+				result = heap->CreateBuffer(info, desc.debugName);
 			}
 		}
 
 		if (!result)
 		{
-			VT_LOGC(Error, LogD3D12RHI, "Unable to create buffer of size {0}!", size);
+			VT_LOGC(Error, LogD3D12RHI, "Unable to create buffer of size {0}!", byteSize);
 		}
 
 		return result;

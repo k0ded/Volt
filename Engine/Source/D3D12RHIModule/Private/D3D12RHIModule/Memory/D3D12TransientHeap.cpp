@@ -3,10 +3,12 @@
 
 #include "D3D12RHIModule/Memory/D3D12Allocation.h"
 #include "D3D12RHIModule/Common/D3D12Helpers.h"
+#include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 
 #include <RHIModule/Memory/MemoryUtility.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/EnumUtils.h>
 
 namespace Volt::RHI
 {
@@ -42,7 +44,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE((m_createInfo.flags & TransientHeapFlags::AllowBuffers) != TransientHeapFlags::None);
 
-		auto device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device10*>();
+		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>()->GetDevice10();
 
 		auto [pageIndex, blockAlloc] = FindNextAvailableBlock(createInfo.size);
 
@@ -64,7 +66,7 @@ namespace Volt::RHI
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-		if ((createInfo.usage & BufferUsage::StorageBuffer) != BufferUsage::None)
+		if (EnumValueContainsFlag(createInfo.memoryUsage, MemoryUsage::GPU))
 		{
 			resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		}
@@ -72,7 +74,7 @@ namespace Volt::RHI
 		const auto& page = m_pageAllocations.at(pageIndex);
 
 		ID3D12Resource* resource = nullptr;
-		device->CreatePlacedResource2(static_cast<ID3D12Heap*>(page.handle), blockAlloc.offset, &resourceDesc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr, VT_D3D12_ID(resource));
+		d3d12Device->CreatePlacedResource2(static_cast<ID3D12Heap*>(page.handle), blockAlloc.offset, &resourceDesc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr, VT_D3D12_ID(resource));
 
 		Handle<D3D12TransientBufferAllocation> bufferAlloc = m_bufferAllocationArena.Allocate(createInfo.hash, name);
 		bufferAlloc->m_resource = resource;
@@ -88,7 +90,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE((m_createInfo.flags & TransientHeapFlags::AllowTextures) != TransientHeapFlags::None);
 
-		auto device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device10*>();
+		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>()->GetDevice10();
 		auto [pageIndex, blockAlloc] = FindNextAvailableBlock(createInfo.size);
 
 		if (blockAlloc.size == 0)
@@ -125,7 +127,7 @@ namespace Volt::RHI
 
 		const auto& page = m_pageAllocations.at(pageIndex);
 		ID3D12Resource* resource = nullptr;
-		device->CreatePlacedResource2(static_cast<ID3D12Heap*>(page.handle), blockAlloc.offset, &resourceDesc, initialLayout, nullptr, 0, nullptr, VT_D3D12_ID(resource));
+		d3d12Device->CreatePlacedResource2(static_cast<ID3D12Heap*>(page.handle), blockAlloc.offset, &resourceDesc, initialLayout, nullptr, 0, nullptr, VT_D3D12_ID(resource));
 
 		Handle<D3D12TransientImageAllocation> imageAlloc = m_imageAllocationArena.Allocate(createInfo.hash, name);
 		imageAlloc->m_resource = resource;
@@ -146,8 +148,6 @@ namespace Volt::RHI
 			return;
 		}
 
-		auto device = GraphicsContext::GetDevice();
-
 		bufferAlloc->m_resource->Release();
 		AllocationBlock allocBlock = bufferAlloc->m_allocationBlock;
 		ForfeitAllocationBlock(allocBlock);
@@ -164,8 +164,6 @@ namespace Volt::RHI
 		{
 			return;
 		}
-
-		auto device = GraphicsContext::GetDevice();
 
 		{
 			VT_PROFILE_SCOPE("D3D12 Destroy Image");
@@ -368,7 +366,7 @@ namespace Volt::RHI
 
 		heapDesc.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
 
-		ID3D12Device2* d3d12Device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device2*>();
+		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>()->GetDevice10();
 
 		for (uint32_t i = 0; i < MAX_PAGE_COUNT; i++)
 		{
@@ -402,7 +400,7 @@ namespace Volt::RHI
 
 		heapDesc.Flags = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
 
-		ID3D12Device2* d3d12Device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device2*>();
+		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>()->GetDevice10();
 
 		for (uint32_t i = 0; i < MAX_PAGE_COUNT; i++)
 		{

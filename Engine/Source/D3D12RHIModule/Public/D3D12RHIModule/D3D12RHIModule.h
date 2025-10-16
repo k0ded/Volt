@@ -2,6 +2,13 @@
 
 #include "D3D12RHIModule/Core.h"
 
+#include "D3D12RHIModule/Buffers/D3D12BufferView.h"
+#include "D3D12RHIModule/Buffers/D3D12UniformBuffer.h"
+#include "D3D12RHIModule/Buffers/D3D12StorageBuffer.h"
+#include "D3D12RHIModule/Images/D3D12Image.h"
+#include "D3D12RHIModule/Images/D3D12ImageView.h"
+#include "D3D12RHIModule/Images/D3D12SamplerState.h"
+
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/ResourceDeletionQueue.h>
 
@@ -21,10 +28,9 @@ namespace Volt::RHI
 		RefPtr<StorageBuffer> CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const override;
 		RefPtr<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData) const override;
 
-		RefPtr<DeviceQueue> CreateDeviceQueue(const DeviceQueueCreateInfo& createInfo) const override;
 		RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const override;
-		RefPtr<GraphicsDevice> CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo) const override;
-		RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const override;
+		RefPtr<GraphicsDevice> CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer) const override;
+		RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const override;
 		RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const override;
 
 		RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const override;
@@ -45,7 +51,6 @@ namespace Volt::RHI
 		RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const override;
 
 		RefPtr<Fence> CreateFence() const override;
-		RefPtr<Semaphore> CreateSemaphore(const SemaphoreCreateInfo& createInfo) const override;
 
 		RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const override;
 		RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const override;
@@ -62,6 +67,15 @@ namespace Volt::RHI
 		RHICallbackInfo m_callbackInfo;
 		ResourceDeletionQueue m_resourceDeletionQueue;
 		uint32_t m_frameIndex = 0;
+
+		// Arenas
+		mutable ArenaAllocator<D3D12BufferView> m_bufferViewArena;
+		mutable ArenaAllocator<D3D12ImageView> m_imageViewArena;
+
+		mutable ArenaAllocator<D3D12StorageBuffer> m_storageBufferArena;
+		mutable ArenaAllocator<D3D12UniformBuffer> m_uniformBufferArena;
+		mutable ArenaAllocator<D3D12Image> m_imageArena;
+		mutable ArenaAllocator<D3D12SamplerState> m_samplerStateArena;
 	};
 }
 

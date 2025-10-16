@@ -1,34 +1,50 @@
 #include "dxpch.h"
+
 #include "D3D12RHIModule/Synchronization/D3D12Fence.h"
 
 namespace Volt::RHI
 {
-	D3D12Fence::D3D12Fence(const FenceCreateInfo& createInfo)
+	D3D12Fence::D3D12Fence()
 	{
-		auto* d3d12Device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device2*>();
-		VT_D3D12_CHECK(d3d12Device->CreateFence(0, D3D12_FENCE_FLAG_SHARED, VT_D3D12_ID(m_fence)));
-		m_windowsFenceEvent = ::CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
-	}
-	
-	D3D12Fence::~D3D12Fence()
-	{
-	}
-	
-	void D3D12Fence::Reset() const
-	{
+
 	}
 
-	FenceStatus D3D12Fence::GetStatus() const
+	D3D12Fence::~D3D12Fence()
 	{
-		return FenceStatus();
+
 	}
 
 	void D3D12Fence::WaitUntilSignaled() const
 	{
+		if (m_referencedFence)
+		{
+			if (m_referencedFence->GetCompletedValue() < m_referencedValue)
+			{
+				m_referencedFence->SetEventOnCompletion(m_referencedValue, m_referencedWindowsEventHandle);
+				::WaitForSingleObject(m_referencedWindowsEventHandle, INFINITE);
+			}
+		}
+	}
+
+	bool D3D12Fence::IsSignaled() const
+	{
+		if (m_referencedFence)
+		{
+			return m_referencedFence->GetCompletedValue() >= m_referencedValue;
+		}
+
+		// If no fence is referenced, we treat it as signaled.
+		return true;
 	}
 
 	void* D3D12Fence::GetHandleImpl() const
 	{
-		return m_fence.Get();
+		return m_referencedFence.Get();
+	}
+
+	void D3D12Fence::Reset()
+	{
+		m_referencedFence = nullptr;
+		m_referencedWindowsEventHandle = nullptr;
 	}
 }

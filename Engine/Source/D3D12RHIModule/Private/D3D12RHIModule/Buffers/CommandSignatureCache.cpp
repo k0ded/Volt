@@ -1,19 +1,18 @@
 #include "dxpch.h"
+
 #include "D3D12RHIModule/Buffers/CommandSignatureCache.h"
+#include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 
-#include <RHIModule/Core/RHICommon.h>
-#include <RHIModule/Graphics/GraphicsDevice.h>
-#include <RHIModule/Graphics/GraphicsContext.h>
-
-#include <RHIModule/Utility/HashUtility.h>
-
-#include <d3d12/d3d12.h>
+#include <CoreUtilities/Math/Hash.h>
 
 namespace Volt::RHI
 {
+	CommandSignatureCache g_commandSignatureCache;
+
 	VT_INLINE ComPtr<ID3D12CommandSignature> CreateCommandSignature(D3D12_INDIRECT_ARGUMENT_TYPE argType, uint32_t stride)
 	{
-		auto d3d12Device = GraphicsContext::GetDevice()->GetHandle<ID3D12Device2*>();
+		auto device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>();
+		ID3D12Device10* d3d12Device = device->GetDevice10();
 
 		D3D12_INDIRECT_ARGUMENT_DESC argDesc{};
 		argDesc.Type = argType;
@@ -42,49 +41,26 @@ namespace Volt::RHI
 		return result;
 	}
 
-	VT_INLINE D3D12_INDIRECT_ARGUMENT_TYPE GetTypeFromSignatureType(CommandSignatureType type)
+	void CommandSignatureCache::Initialize()
 	{
-		switch (type)
-		{
-			case CommandSignatureType::Draw: return D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
-			case CommandSignatureType::DrawIndexed: return D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
-			case CommandSignatureType::Dispatch: return D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
-			case CommandSignatureType::DispatchRays: return D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_RAYS;
-			case CommandSignatureType::DispatchMesh: return D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH;
-		}
-
-		VT_ENSURE(false);
-		return D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
-	}
-
-	CommandSignatureCache::CommandSignatureCache()
-	{
-		VT_ENSURE(s_instance == nullptr);
-		s_instance = this;
+		VT_ENSURE(!m_initialized);
+		m_initialized = true;
 
 		m_signatureCache[GetCommandSignatureHash(CommandSignatureType::Draw, sizeof(DrawIndirectCommand))] = CreateCommandSignature<D3D12_INDIRECT_ARGUMENT_TYPE_DRAW, DrawIndirectCommand>();
 		m_signatureCache[GetCommandSignatureHash(CommandSignatureType::DrawIndexed, sizeof(DrawIndexedIndirectCommand))] = CreateCommandSignature<D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED, DrawIndexedIndirectCommand>();
 		m_signatureCache[GetCommandSignatureHash(CommandSignatureType::Dispatch, sizeof(DispatchIndirectCommand))] = CreateCommandSignature<D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH, DispatchIndirectCommand>();
 	}
-	
-	CommandSignatureCache::~CommandSignatureCache()
-	{
-		m_signatureCache.clear();
-		s_instance = nullptr;
-	}
 
-	ComPtr<ID3D12CommandSignature> CommandSignatureCache::GetOrCreateCommandSignature(CommandSignatureType type, const uint32_t stride) const
+	ComPtr<ID3D12CommandSignature> CommandSignatureCache::GetCommandSignature(CommandSignatureType type, const uint32_t stride)
 	{
 		const size_t hash = GetCommandSignatureHash(type, stride);
+		VT_ENSURE(m_signatureCache.contains(hash));
 
-		std::scoped_lock lock{ m_cacheMutex };
-
-		if (m_signatureCache.contains(hash))
-		{
-			return m_signatureCache.at(hash);
-		}
-
-		m_signatureCache[hash] = CreateCommandSignature(GetTypeFromSignatureType(type), stride);
 		return m_signatureCache.at(hash);
+	}
+
+	void CommandSignatureCache::Shutdown()
+	{
+		m_signatureCache.clear();
 	}
 }

@@ -7,18 +7,21 @@
 
 namespace Volt::RHI
 {
-	class D3D12BufferView : public BufferView
+	class D3D12BufferView final : public BufferView
 	{
 	public:
-		D3D12BufferView(const BufferViewDesc& specification);
+		D3D12BufferView(const BufferViewDesc& desc, RawPtr<StorageBuffer> buffer);
+		D3D12BufferView(const BufferViewDesc& desc, RawPtr<UniformBuffer> buffer);
 		~D3D12BufferView() override;
 
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
+		bool IsTexelBufferView() const override;
 
+		VT_NODISCARD VT_INLINE const BufferViewDesc& GetDesc() const override { return m_desc; }
+		
 		VT_NODISCARD VT_INLINE const D3D12DescriptorPointer& GetSRVDescriptor() const { return m_srvDescriptor; }
 		VT_NODISCARD VT_INLINE const D3D12DescriptorPointer& GetUAVDescriptor() const { return m_uavDescriptor; }
 		VT_NODISCARD VT_INLINE const D3D12DescriptorPointer& GetCBVDescriptor() const { return m_cbvDescriptor; }
-		VT_NODISCARD VT_INLINE D3D12ViewType GetD3D12ViewType() const { return m_viewType; }
 
 	protected:
 		void* GetHandleImpl() const override;
@@ -34,6 +37,7 @@ namespace Volt::RHI
 		D3D12DescriptorPointer m_uavDescriptor;
 		D3D12DescriptorPointer m_cbvDescriptor;
 
-		RHIResource* m_resource = nullptr;
+		BufferViewDesc m_desc;
+		RawPtr<RHIResource> m_resource;
 	};
 }

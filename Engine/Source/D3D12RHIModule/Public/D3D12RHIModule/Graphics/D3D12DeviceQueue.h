@@ -5,31 +5,34 @@
 #include <RHIModule/Graphics/DeviceQueue.h>
 
 struct ID3D12CommandQueue;
-struct ID3D12Fence;
 
 namespace Volt::RHI
 {
-	class D3D12GraphicsDevice;
-
-
 	class D3D12DeviceQueue final : public DeviceQueue
 	{
 	public:
-		D3D12DeviceQueue(const DeviceQueueCreateInfo& createInfo); 
+		D3D12DeviceQueue(const DeviceQueueCreateInfo& createInfo);
 		~D3D12DeviceQueue() override;
 
 		void WaitForQueue() override;
 		void Execute(const DeviceQueueExecuteInfo& commandBuffer) override;
 
-		ID3D12CommandQueue** GetAddesss() { return &m_commandQueue; }
+		void SignalFence(ComPtr<ID3D12Fence> fence, uint64_t value);
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
-		void CreateCommandQueue(QueueType type);
+		void CreateCommandQueue(GraphicsDevice* graphicsDevice);
+		void CreateQueueFence(GraphicsDevice* graphicsDevice);
+
+		std::mutex m_executeMutex{};
+
+		ComPtr<ID3D12Fence> m_fence;
+		void* m_windowsFenceEvent = nullptr;
 
 		ComPtr<ID3D12CommandQueue> m_commandQueue;
-		D3D12GraphicsDevice* m_device = nullptr;
+		QueueType m_queueType;
+		uint64_t m_semaphoreValue = 1;
 	};
 }
