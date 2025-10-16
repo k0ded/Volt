@@ -6,25 +6,23 @@
 
 namespace Volt
 {
-	RefPtr<RHI::Image> ImGuiRenderTargetManager::GetRenderTargetForWindow(Window* window)
+	RefPtr<RHI::Image> ImGuiRenderTargetManager::GetRenderTargetForWindow(Window* window, uint32_t desiredWidth, uint32_t desiredHeight)
 	{
-		auto& windowSwapchain = window->GetSwapchain();
-
 		if (m_renderTargets.contains(window))
 		{
 			RenderTarget& renderTarget = m_renderTargets.at(window);
-			const bool requiresResize = windowSwapchain.GetWidth() != renderTarget.image->GetWidth() || windowSwapchain.GetHeight() != renderTarget.image->GetHeight();
+			const bool requiresResize = desiredWidth != renderTarget.image->GetWidth() || desiredHeight != renderTarget.image->GetHeight();
 
 			if (requiresResize)
 			{
-				renderTarget.image = CreateRenderTargetForWindow(window);
+				renderTarget.image = CreateRenderTargetForWindow(window, desiredWidth, desiredHeight);
 			}
 
 			return renderTarget.image;
 		}
 
 		RenderTarget& renderTarget = m_renderTargets[window];
-		renderTarget.image = CreateRenderTargetForWindow(window);
+		renderTarget.image = CreateRenderTargetForWindow(window, desiredWidth, desiredHeight);
 
 		return renderTarget.image;
 	}
@@ -37,14 +35,12 @@ namespace Volt
 		}
 	}
 
-	RefPtr<RHI::Image> ImGuiRenderTargetManager::CreateRenderTargetForWindow(Window* window)
+	RefPtr<RHI::Image> ImGuiRenderTargetManager::CreateRenderTargetForWindow(Window* window, uint32_t desiredWidth, uint32_t desiredHeight)
 	{
-		auto& windowSwapchain = window->GetSwapchain();
-
 		RHI::ImageDesc desc{};
 		desc.format = RHI::PixelFormat::R8G8B8A8_UNORM;
-		desc.width = windowSwapchain.GetWidth();
-		desc.height = windowSwapchain.GetHeight();
+		desc.width = desiredWidth;
+		desc.height = desiredHeight;
 		desc.imageType = RHI::ResourceType::Image2D;
 		desc.usage = RHI::ImageUsage::AttachmentStorage;
 		desc.generateMips = false;

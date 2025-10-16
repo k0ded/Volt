@@ -1,3 +1,4 @@
+
 #include "sbpch.h"
 
 #include "Sandbox/SceneRendererExtensions/OutlineTechnique.h"
@@ -56,8 +57,8 @@ END_SHADER_PARAMETER_STRUCT()
 
 RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& renderScene, const RenderView& view)
 {
-	RGTextureRef colorTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "OutlineGeometryColor"));
-	RGTextureRef depthTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "OutlineGeometryDepth"));
+	RGTextureRef colorTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::Attachment, "OutlineGeometryColor"));
+	RGTextureRef depthTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::Attachment, "OutlineGeometryDepth"));
 
 	OutlineGeometryParameters* passParameters = m_renderGraph.AllocParameters<OutlineGeometryParameters>();
 	passParameters->VS.View = view.viewUniformBuffer;

@@ -160,8 +160,8 @@ namespace Volt
 			attachment.clearMode = RHI::ClearMode::Clear;
 			attachment.clearColor = { 0.1f, 0.1f, 0.1f, 1.f };
 			
-			const uint32_t renderTargetWidth = renderTarget.image->GetWidth();
-			const uint32_t renderTargetHeight = renderTarget.image->GetHeight();
+			const uint32_t renderTargetWidth = swapchain.GetWidth();
+			const uint32_t renderTargetHeight = swapchain.GetHeight();
 
 			RHI::RenderingInfo renderingInfo{};
 			renderingInfo.colorAttachments = { attachment };

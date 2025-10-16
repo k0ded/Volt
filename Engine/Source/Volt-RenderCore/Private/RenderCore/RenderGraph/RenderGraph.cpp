@@ -184,6 +184,36 @@ namespace Volt
 		}
 	}
 
+	inline void InitializeImageBarrierSubresourceFromSRV(RGResourceSRVRef textureSRV, RHI::ImageSubResource& subResource)
+	{
+		RGTextureSRVRef textureSRVRef = reinterpret_cast<RGTextureSRVRef>(textureSRV);
+		const RGTextureSRVDesc& srvDesc = textureSRVRef->GetDesc();
+
+		RGTextureRef texture = reinterpret_cast<RGTextureRef>(textureSRV->GetResource());
+		const RGTextureDesc& textureDesc = texture->GetDesc();
+
+		subResource.baseMipLevel = srvDesc.baseMipLevel;
+		subResource.levelCount = srvDesc.mipCount == RHI::ImageViewDesc::MipCountMax ? textureDesc.mips - subResource.baseMipLevel : srvDesc.mipCount;
+		subResource.layerCount = srvDesc.layerCount == RHI::ImageViewDesc::LayerCountMax ? textureDesc.layers - subResource.baseArrayLayer : srvDesc.layerCount;
+		subResource.baseArrayLayer = srvDesc.baseArrayLayer;
+		subResource.baseMipLevel = srvDesc.baseMipLevel;
+	}
+
+	inline void InitializeImageBarrierSubresourceFromUAV(RGResourceUAVRef textureUAV, RHI::ImageSubResource& subResource)
+	{
+		RGTextureUAVRef textureUAVRef = reinterpret_cast<RGTextureUAVRef>(textureUAV);
+		const RGTextureUAVDesc& srvDesc = textureUAVRef->GetDesc();
+
+		RGTextureRef texture = reinterpret_cast<RGTextureRef>(textureUAV->GetResource());
+		const RGTextureDesc& textureDesc = texture->GetDesc();
+
+		subResource.baseMipLevel = srvDesc.baseMipLevel;
+		subResource.levelCount = srvDesc.mipCount == RHI::ImageViewDesc::MipCountMax ? textureDesc.mips - subResource.baseMipLevel : srvDesc.mipCount;
+		subResource.layerCount = srvDesc.layerCount == RHI::ImageViewDesc::LayerCountMax ? textureDesc.layers - subResource.baseArrayLayer : srvDesc.layerCount;
+		subResource.baseArrayLayer = srvDesc.baseArrayLayer;
+		subResource.baseMipLevel = srvDesc.baseMipLevel;
+	}
+
 	RenderGraph::RenderGraph()
 	{
 		VT_PROFILE_FUNCTION();
@@ -259,6 +289,9 @@ namespace Volt
 	RGTexture* RenderGraph::CreateTexture(const RGTextureDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
+
+		VT_ENSURE_MSG(RHI::Utility::IsDepthFormat(desc.format) ? (desc.usage != RHI::ImageUsage::AttachmentStorage && desc.usage != RHI::ImageUsage::Storage) : true, 
+			"A texture with a depth format may not be used for UAV access!");
 
 		RGTextureRef texture = m_resourceAllocator.Allocate<RGTexture>(desc);
 		m_resources.emplace_back(texture);
@@ -496,8 +529,6 @@ namespace Volt
 				{
 					RHI::BufferViewDesc desc{};
 					desc.offset = uniformBufferSRV->GetDesc().offset;
-					desc.size = uniformBufferSRV->GetDesc().size;
-					
 					uniformBufferSRV->AssignRHIView(uniformBufferResource->GetRHIResource()->GetOrCreateView(desc));
 				}
 			}
@@ -1206,6 +1237,7 @@ namespace Volt
 							newBarrier.imageBarrier().dstAccess = newState.access;
 							newBarrier.imageBarrier().dstStage = newState.stage;
 							newBarrier.imageBarrier().dstLayout = newState.layout;
+							InitializeImageBarrierSubresourceFromUAV(resourceAccess, newBarrier.imageBarrier().subResource);
 						}
 
 						resourceState.currentState = newState;
@@ -1225,10 +1257,11 @@ namespace Volt
 
 						if (IsEqualToAny(resourceType, RGResourceType::Texture))
 						{
-							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource);
+							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, true);
 							newBarrier.imageBarrier().dstAccess = newState.access;
 							newBarrier.imageBarrier().dstStage = newState.stage;
 							newBarrier.imageBarrier().dstLayout = newState.layout;
+							InitializeImageBarrierSubresourceFromUAV(resourceAccess, newBarrier.imageBarrier().subResource);
 						}
 						else if (resourceType == RGResourceType::Buffer)
 						{
@@ -1285,7 +1318,7 @@ namespace Volt
 						resourceState.previousUsage = pass;
 						resourceState.isWriteState = true;
 
-						auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource);
+						auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, true);
 						newBarrier.imageBarrier().dstAccess = newState.access;
 						newBarrier.imageBarrier().dstStage = newState.stage;
 						newBarrier.imageBarrier().dstLayout = newState.layout;
@@ -1351,6 +1384,7 @@ namespace Volt
 						newBarrier.imageBarrier().dstAccess = newState.access;
 						newBarrier.imageBarrier().dstStage = newState.stage;
 						newBarrier.imageBarrier().dstLayout = newState.layout;
+						InitializeImageBarrierSubresourceFromSRV(resourceAccess, newBarrier.imageBarrier().subResource);
 					}
 
 					resourceState.currentState = newState;

@@ -33,6 +33,7 @@ namespace Volt::RHI
 		VT_INLINE const bool IsSwapchainImage() const override { return m_isSwapchainImage; };
 		VT_INLINE const ImageAspect GetImageAspect() const override { return m_imageAspect; }
 		VT_INLINE const ImageDesc& GetDesc() const override { return m_desc; }
+		uint64_t GetMaxRequiredStagingBufferSize() const override;
 
 		VT_INLINE ResourceType GetType() const override { return m_desc.imageType; }
 		void SetName(const std::string& name) override;

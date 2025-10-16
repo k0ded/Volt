@@ -2,6 +2,7 @@
 
 #include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 #include "D3D12RHIModule/Utility/RootSignatureBuilder.h"
+#include "RHIModule/Globals.h"
 
 namespace Volt::RHI
 {
@@ -51,9 +52,17 @@ namespace Volt::RHI
 			return descriptorRange;
 		};
 
+		Map<ShaderStage, D3D12_ROOT_DESCRIPTOR> globalsDescriptors;
+
 		// Start by adding a range per binding.
 		for (const auto& [binding, nameHash] : resourceBindings)
 		{
+			if (nameHash == StringHash::Construct("$Globals"))
+			{
+				globalsDescriptors[binding.shaderStage] = D3D12_ROOT_DESCRIPTOR(binding.binding, binding.set);
+				continue;
+			}
+
 			auto& descriptorRange = allocateDescriptorRange(binding.shaderStage, binding.resourceType, binding.registerType);
 			descriptorRange.RegisterSpace = binding.set;
 			descriptorRange.BaseShaderRegister = binding.binding;
@@ -165,6 +174,16 @@ namespace Volt::RHI
 		// Next we create the root parameter descriptor tables.
 
 		Vector<D3D12_ROOT_PARAMETER> rootParameters;
+
+		for (const auto& [shaderStage, descriptor] : globalsDescriptors)
+		{
+			result.shaderStageGlobalsRootIndex[GetDescriptorSetIndexFromShaderStage(shaderStage)] = static_cast<uint32_t>(rootParameters.size());
+
+			auto& rootParameter = rootParameters.emplace_back();
+			rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+			rootParameter.Descriptor = descriptor;
+			rootParameter.ShaderVisibility = GetShaderVisibilityFromShaderStage(shaderStage);
+		}
 
 		for (const auto& [shaderStage, descriptorRanges] : compactedDescriptorRanges)
 		{

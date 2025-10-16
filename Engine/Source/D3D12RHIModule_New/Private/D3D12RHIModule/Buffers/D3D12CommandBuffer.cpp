@@ -533,7 +533,7 @@ namespace Volt::RHI
 
 			if (renderingInfo.depthAttachmentInfo.clearMode == ClearMode::Clear)
 			{
-				m_commandListData.commandList->ClearDepthStencilView(dsvView, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
+				m_commandListData.commandList->ClearDepthStencilView(dsvView, D3D12_CLEAR_FLAG_DEPTH, renderingInfo.depthAttachmentInfo.clearColor.float32[0], 0, 0, nullptr);
 			}
 		}
 
@@ -845,7 +845,11 @@ namespace Volt::RHI
 
 		D3D12_TEXTURE_COPY_LOCATION src;
 		src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-		src.PlacedFootprint = footprint;
+		src.PlacedFootprint.Footprint.Format = ConvertFormatToD3D12Format(dstImage->GetFormat());
+		src.PlacedFootprint.Footprint.Width = width;
+		src.PlacedFootprint.Footprint.Height = height;
+		src.PlacedFootprint.Footprint.Depth = 1;
+		src.PlacedFootprint.Footprint.RowPitch = static_cast<uint32_t>(rowSizeInBytes);
 		src.pResource = srcBuffer->GetResourceHandle<ID3D12Resource*>();
 
 		m_commandListData.commandList->CopyTextureRegion(&dst, offsetX, offsetY, offsetZ, &src, nullptr);
@@ -870,21 +874,47 @@ namespace Volt::RHI
 
 	void D3D12CommandBuffer::UploadTextureData(RawPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData)
 	{
-		Vector<D3D12_SUBRESOURCE_DATA> subResources;
-		subResources.reserve(copyData.copySubData.size());
+		ID3D12Resource* d3d12Image = dstImage->GetHandle<ID3D12Resource*>();
+		const D3D12_RESOURCE_DESC desc = d3d12Image->GetDesc();
 
+		const uint32_t mipLevels = static_cast<uint32_t>(desc.MipLevels);
+		const uint32_t arraySize = desc.DepthOrArraySize;
+
+		Vector<D3D12_SUBRESOURCE_DATA> subResources;
+		subResources.resize(mipLevels * arraySize);
+
+		//uint32_t i = 0;
 		for (const auto& subData : copyData.copySubData)
 		{
-			auto& newSubResource = subResources.emplace_back();
-			newSubResource.pData = subData.data;
-			newSubResource.RowPitch = subData.rowPitch;
-			newSubResource.SlicePitch = subData.slicePitch;
+			const uint32_t baseMip = subData.subResource.baseMipLevel;
+			const uint32_t numMips = subData.subResource.levelCount == ALL_MIPS ? mipLevels - baseMip : subData.subResource.levelCount;
+		
+			const uint32_t baseArrayLayer = subData.subResource.baseArrayLayer;
+			const uint32_t numLayers = subData.subResource.layerCount == ALL_LAYERS ? arraySize - baseArrayLayer : subData.subResource.layerCount;
+		
+			VT_UNUSED(numLayers);
+			VT_UNUSED(numMips);
+
+			const uint8_t* layerDataPtr = static_cast<const uint8_t*>(subData.data);
+
+			for (uint32_t layer = baseArrayLayer; layer < baseArrayLayer + numLayers; ++layer)
+			{
+				for (uint32_t mip = baseMip; mip < baseMip + numMips; ++mip)
+				{
+					uint32_t subResourceIndex = D3D12CalcSubresource(mip, layer, 0, mipLevels, arraySize);
+
+					const uint32_t d3d12SlicePitch = subData.rowPitch * subData.height;
+
+					D3D12_SUBRESOURCE_DATA& newSubresource = subResources[subResourceIndex];
+					newSubresource.pData = layerDataPtr + (layer * d3d12SlicePitch * subData.depth);
+					newSubresource.RowPitch = subData.rowPitch;
+					newSubresource.SlicePitch = d3d12SlicePitch;
+				}
+			}
 		}
 
-		ID3D12Resource* d3d12Image = dstImage->GetHandle<ID3D12Resource*>();
-
-		const uint32_t subResourceCount = static_cast<uint32_t>(subResources.size());
-		UpdateSubresources(m_commandListData.commandList.Get(), d3d12Image, stagingAllocation->GetResourceHandle<ID3D12Resource*>(), 0, 0, subResourceCount, subResources.data());
+		const uint32_t numSubresources = static_cast<uint32_t>(subResources.size());
+		VT_ENSURE(UpdateSubresources(m_commandListData.commandList.Get(), d3d12Image, stagingAllocation->GetResourceHandle<ID3D12Resource*>(), 0, 0, numSubresources, subResources.data()) > 0);
 	}
 
 	const QueueType D3D12CommandBuffer::GetQueueType() const
@@ -943,11 +973,17 @@ namespace Volt::RHI
 		InlineVector<D3D12_CPU_DESCRIPTOR_HANDLE, ShaderBindingMap::NumMaxBindings> dstDescriptors;
 		InlineVector<D3D12_CPU_DESCRIPTOR_HANDLE, ShaderBindingMap::NumMaxBindings> dstSamplerDescriptors;
 
-		InlineVector<uint32_t, GetNumShaderStages()> copyRangeSizes;
-		InlineVector<uint32_t, GetNumShaderStages()> samplerCopyRangeSizes;
-
 		Array<D3D12DescriptorPointer, GetNumShaderStages()> perShaderStageBaseDescriptor;
 		Array<D3D12DescriptorPointer, GetNumShaderStages()> perShaderStageSamplerBaseDescriptor;
+
+		// Unfortunately we need to make a special case here, as D3D12 doesn't allow offsets
+		// of views.
+		struct OffsetCBVDescriptor
+		{
+			uint64_t deviceAddress = 0;
+		};
+
+		Array<OffsetCBVDescriptor, GetNumShaderStages()> perShaderStageOffsetCBVDescriptors;
 
 		uint32_t descriptorBaseOffset = 0;
 		uint32_t samplerDescriptorBaseOffset = 0;
@@ -959,6 +995,14 @@ namespace Volt::RHI
 
 			for (const ShaderBindingMap::ResourceBinding& binding : bindings)
 			{
+				// Special case for offset uniform buffers
+				if ((binding.uniformBufferOffset > 0 || binding.uniformBufferSize > 0) && binding.registerType == ShaderRegisterType::CBV)
+				{
+					D3D12BufferView& d3d12BufferView = binding.bufferView->AsRef<D3D12BufferView>();
+					perShaderStageOffsetCBVDescriptors[GetDescriptorSetIndexFromShaderStage(shaderStage)].deviceAddress = d3d12BufferView.GetDeviceAddress() + binding.uniformBufferOffset;
+					continue;
+				}
+
 				uint32_t descriptorIndex = 0;
 
 				if (binding.registerType != ShaderRegisterType::Sampler)
@@ -1048,8 +1092,6 @@ namespace Volt::RHI
 			
 			if (numMainDescriptors > 0)
 			{
-				copyRangeSizes.emplace_back(descriptorBaseOffset);
-
 				size_t startOffset = dstDescriptors.size();
 				dstDescriptors.resize_uninitialized(dstDescriptors.size() + numMainDescriptors);
 
@@ -1066,8 +1108,6 @@ namespace Volt::RHI
 
 			if (numSamplerDescriptors > 0)
 			{
-				samplerCopyRangeSizes.emplace_back(samplerDescriptorBaseOffset);
-
 				size_t startOffset = dstSamplerDescriptors.size();
 				dstSamplerDescriptors.resize_uninitialized(dstSamplerDescriptors.size() + numSamplerDescriptors);
 
@@ -1085,8 +1125,13 @@ namespace Volt::RHI
 
 		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>()->GetDevice10();
 
+		InlineVector<uint32_t, ShaderBindingMap::NumMaxBindings> copyRangeSizes;
+
 		if (!srcDescriptors.empty())
 		{
+			copyRangeSizes.resize_uninitialized(srcDescriptors.size());
+			std::fill(copyRangeSizes.begin(), copyRangeSizes.end(), 1u);
+
 			d3d12Device->CopyDescriptors(
 				static_cast<uint32_t>(copyRangeSizes.size()),
 				dstDescriptors.data(),
@@ -1100,13 +1145,16 @@ namespace Volt::RHI
 
 		if (!srcSamplerDescriptors.empty())
 		{
+			copyRangeSizes.resize_uninitialized(srcSamplerDescriptors.size());
+			std::fill(copyRangeSizes.begin(), copyRangeSizes.end(), 1u);
+
 			d3d12Device->CopyDescriptors(
-				static_cast<uint32_t>(samplerCopyRangeSizes.size()),
+				static_cast<uint32_t>(copyRangeSizes.size()),
 				dstSamplerDescriptors.data(),
-				samplerCopyRangeSizes.data(),
-				static_cast<uint32_t>(samplerCopyRangeSizes.size()),
+				copyRangeSizes.data(),
+				static_cast<uint32_t>(copyRangeSizes.size()),
 				srcSamplerDescriptors.data(),
-				samplerCopyRangeSizes.data(),
+				copyRangeSizes.data(),
 				D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
 			);
 		}
@@ -1126,6 +1174,12 @@ namespace Volt::RHI
 				{
 					m_commandListData.commandList->SetComputeRootDescriptorTable(rootSignature->GetSamplerDescriptorTableIndexFromShaderStage(shaderStage), D3D12_GPU_DESCRIPTOR_HANDLE(samplerDescriptorPointer.GetGPUPointer()));
 				}
+
+				const OffsetCBVDescriptor& offsetCBVDescriptor = perShaderStageOffsetCBVDescriptors[GetDescriptorSetIndexFromShaderStage(shaderStage)];
+				if (offsetCBVDescriptor.deviceAddress != 0)
+				{
+					m_commandListData.commandList->SetComputeRootConstantBufferView(rootSignature->GetGlobalsRootIndexFromShaderStage(shaderStage), D3D12_GPU_VIRTUAL_ADDRESS(offsetCBVDescriptor.deviceAddress));
+				}
 			}
 		}
 		else if (m_activeRenderPipeline)
@@ -1142,6 +1196,12 @@ namespace Volt::RHI
 				if (samplerDescriptorPointer.IsValid())
 				{
 					m_commandListData.commandList->SetGraphicsRootDescriptorTable(rootSignature->GetSamplerDescriptorTableIndexFromShaderStage(shaderStage), D3D12_GPU_DESCRIPTOR_HANDLE(samplerDescriptorPointer.GetGPUPointer()));
+				}
+
+				const OffsetCBVDescriptor& offsetCBVDescriptor = perShaderStageOffsetCBVDescriptors[GetDescriptorSetIndexFromShaderStage(shaderStage)];
+				if (offsetCBVDescriptor.deviceAddress != 0)
+				{
+					m_commandListData.commandList->SetGraphicsRootConstantBufferView(rootSignature->GetGlobalsRootIndexFromShaderStage(shaderStage), D3D12_GPU_VIRTUAL_ADDRESS(offsetCBVDescriptor.deviceAddress));
 				}
 			}
 		}

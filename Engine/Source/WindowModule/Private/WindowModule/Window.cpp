@@ -101,6 +101,27 @@ namespace Volt
 		m_window = glfwCreateWindow(createWidth, createHeight, m_data.title.c_str(), primaryMonitor, nullptr);
 		m_windowHandle = glfwGetWin32Window(m_window);
 
+		// If we have no title bar, or use a custom one, we need to add the window frame size to
+		// the window size, this is to make sure the swapchain is created in the correct size.
+		if (!m_properties.useTitlebar || (m_properties.useTitlebar && m_properties.useCustomTitlebar))
+		{
+			int32_t actualWidth;
+			int32_t actualHeight;
+
+			glfwGetWindowSize(m_window, &actualWidth, &actualHeight);
+
+			int32_t left, right, bottom, top;
+			glfwGetWindowFrameSize(m_window, &left, &top, &right, &bottom);
+
+			m_data.width = static_cast<uint32_t>(actualWidth + left + right);
+			m_data.height = static_cast<uint32_t>(actualHeight + bottom + top);
+
+			// For some reason we need to force a resize of the window for
+			// the titlebar to actually disappear.
+			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth + 1), static_cast<int32_t>(createHeight + 1));
+			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth), static_cast<int32_t>(createHeight));
+		}
+
 		if (!m_data.iconPath.empty() && std::filesystem::exists(m_data.iconPath))
 		{
 			SetIcon(m_data.iconPath);
@@ -145,14 +166,14 @@ namespace Volt
 
 			if (!voltWindow.m_shouldSkipDispatchResizeEvent)
 			{
-				voltWindow.m_data.width = width;
-				voltWindow.m_data.height = height;
-
 				int32_t x, y;
 				glfwGetWindowPos(window, &x, &y);
 
 				WindowResizeEvent event(voltWindow, (uint32_t)x, (uint32_t)y, width, height);
 				EventSystem::DispatchEvent(event);
+
+				voltWindow.m_data.width = width;
+				voltWindow.m_data.height = height;
 			}
 
 			voltWindow.m_shouldSkipDispatchResizeEvent = false;
@@ -279,12 +300,6 @@ namespace Volt
 			WindowCursorEnteredEvent event(voltWindow, entered == GLFW_TRUE);
 			EventSystem::DispatchEvent(event);
 		});
-
-		if (!m_properties.useTitlebar || (m_properties.useTitlebar && m_properties.useCustomTitlebar))
-		{
-			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth + 1), static_cast<int32_t>(createHeight + 1));
-			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth), static_cast<int32_t>(createHeight));
-		}
 
 		m_eventListener = CreateScope<WindowEventListener>(m_window);
 	}
@@ -477,7 +492,7 @@ namespace Volt
 
 		// Make sure that we don't end up in a recursive resize.
 		m_shouldSkipDispatchResizeEvent = true;
-		glfwSetWindowSize(m_window, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight));
+		//glfwSetWindowSize(m_window, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight));
 
 		m_swapchain->Resize(aWidth, aHeight, m_data.vsync);
 	}

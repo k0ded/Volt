@@ -2,6 +2,7 @@
 
 #include "D3D12RHIModule/Images/D3D12Image.h"
 #include "D3D12RHIModule/Graphics/D3D12Swapchain.h"
+#include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Utility/ResourceUtility.h>
@@ -66,6 +67,7 @@ namespace Volt::RHI
 		VT_ENSURE(m_allocation);
 
 		ImageLayout targetLayout = ImageLayout::Undefined;
+		BarrierAccess barrierAccess = BarrierAccess::None;
 
 		if (m_desc.imageType == ResourceType::Image3D)
 		{
@@ -86,17 +88,21 @@ namespace Volt::RHI
 					targetLayout = ImageLayout::RenderTarget;
 				}
 				break;
+
+				barrierAccess = BarrierAccess::RenderTarget;
 			}
 
 			case ImageUsage::Texture:
 			{
 				targetLayout = ImageLayout::ShaderRead;
+				barrierAccess = BarrierAccess::ShaderRead;
 				break;
 			}
 
 			case ImageUsage::Storage:
 			{
 				targetLayout = ImageLayout::ShaderWrite;
+				barrierAccess = BarrierAccess::ShaderWrite;
 				break;
 			}
 		}
@@ -352,5 +358,32 @@ namespace Volt::RHI
 		fence->WaitUntilSignaled();
 
 		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
+	}
+
+	uint64_t D3D12Image::GetMaxRequiredStagingBufferSize() const
+	{
+		const uint32_t numSubresources = m_desc.mips * m_desc.layers;
+
+		Vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts(numSubresources);
+		Vector<uint32_t> numRows(numSubresources);
+		Vector<uint64_t> rowSizeInBytes(numSubresources);
+
+		uint64_t requiredSize;
+
+		const D3D12_RESOURCE_DESC d3d12Desc = m_allocation->GetResourceHandle<ID3D12Resource*>()->GetDesc();
+
+		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>()->GetDevice10();
+		d3d12Device->GetCopyableFootprints(
+			&d3d12Desc,
+			0,
+			numSubresources,
+			0,
+			layouts.data(),
+			numRows.data(),
+			rowSizeInBytes.data(),
+			&requiredSize
+		);
+
+		return requiredSize;
 	}
 }

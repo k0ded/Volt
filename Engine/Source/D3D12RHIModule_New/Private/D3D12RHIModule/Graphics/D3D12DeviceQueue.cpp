@@ -82,6 +82,7 @@ namespace Volt::RHI
 	{
 		if (m_fence->GetCompletedValue() < m_semaphoreValue - 1)
 		{
+			::ResetEvent(m_windowsFenceEvent);
 			m_fence->SetEventOnCompletion(m_semaphoreValue - 1, m_windowsFenceEvent);
 			::WaitForSingleObject(m_windowsFenceEvent, INFINITE);
 		}
@@ -142,5 +143,10 @@ namespace Volt::RHI
 		ID3D12Device10* d3d12Device = graphicsDevice->AsRef<D3D12GraphicsDevice>().GetDevice10();
 		VT_D3D12_CHECK(d3d12Device->CreateFence(0, D3D12_FENCE_FLAG_SHARED, VT_D3D12_ID(m_fence)));
 		m_windowsFenceEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+	}
+
+	void D3D12DeviceQueue::SignalFence(ComPtr<ID3D12Fence> fence, uint64_t value)
+	{
+		m_commandQueue->Signal(fence.Get(), value);
 	}
 }

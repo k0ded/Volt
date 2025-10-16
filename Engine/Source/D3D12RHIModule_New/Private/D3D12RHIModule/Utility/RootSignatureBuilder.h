@@ -21,6 +21,11 @@ namespace Volt::RHI
 				uint32_t offsetFromTableStart;
 			};
 
+			VT_INLINE uint32_t GetGlobalsRootIndexFromShaderStage(ShaderStage shaderStage) const
+			{
+				return shaderStageGlobalsRootIndex[GetDescriptorSetIndexFromShaderStage(shaderStage)];
+			}
+
 			VT_INLINE uint32_t GetDescriptorTableIndexFromShaderStage(ShaderStage shaderStage) const
 			{
 				return shaderStageTableIndex[GetDescriptorSetIndexFromShaderStage(shaderStage)];
@@ -71,6 +76,8 @@ namespace Volt::RHI
 			{
 				return shaderStageSamplerDescriptorRanges[GetDescriptorSetIndexFromShaderStage(shaderStage)];
 			}
+
+			Array<uint32_t, GetNumShaderStages()> shaderStageGlobalsRootIndex;
 
 			Array<uint32_t, GetNumShaderStages()> shaderStageTableIndex;
 			Array<uint32_t, GetNumShaderStages()> shaderStageSamplerTableIndex;

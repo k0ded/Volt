@@ -463,7 +463,7 @@ namespace Volt::RHI
 						const uint32_t memberOffset = varDesc.StartOffset;
 						const uint32_t memberSize = varDesc.Size;
 
-						shaderParameterMap.AddParameter(baseTypeDesc.Name, type, memberSize, memberOffset);
+						shaderParameterMap.AddParameter(varDesc.Name, type, memberSize, memberOffset);
 					}
 				}
 			}

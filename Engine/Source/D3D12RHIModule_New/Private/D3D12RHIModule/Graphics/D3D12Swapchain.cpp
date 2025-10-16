@@ -1,9 +1,9 @@
 #include "dxpch.h"
 
 #include "D3D12RHIModule/Graphics/D3D12Swapchain.h"
+#include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
+#include "D3D12RHIModule/Graphics/D3D12DeviceQueue.h"
 
-#include <RHIModule/Graphics/GraphicsDevice.h>
-#include <RHIModule/Graphics/DeviceQueue.h>
 #include <RHIModule/Utility/ResourceUtility.h>
 #include <RHIModule/RHICapabilities.h>
 #include <RHIModule/Synchronization/Fence.h>
@@ -57,12 +57,20 @@ namespace Volt::RHI
 			m_renderFences[i] = Fence::Create();
 		}
 
+		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->AsRef<D3D12GraphicsDevice>().GetDevice10();
+		VT_D3D12_CHECK(d3d12Device->CreateFence(0, D3D12_FENCE_FLAG_SHARED, VT_D3D12_ID(m_presentFence)));
+		m_windowsPresentFenceEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
 
 		Invalidate(m_width, m_height);
 	}
 
 	D3D12Swapchain::~D3D12Swapchain()
 	{
+		if (m_windowsPresentFenceEvent)
+		{
+			::CloseHandle(m_windowsPresentFenceEvent);
+		}
+
 		Release();
 	}
 
@@ -104,9 +112,12 @@ namespace Volt::RHI
 		executeInfo.commandBuffers = { m_commandBuffers.at(m_currentFrameIndex) };
 		executeInfo.executionFence = m_renderFences.at(m_currentFrameIndex);
 
-		GraphicsContext::GetDevice()->GetDeviceQueue(QueueType::Graphics)->Execute(executeInfo);
+		D3D12DeviceQueue& deviceQueue = GraphicsContext::GetDevice()->GetDeviceQueue(QueueType::Graphics)->AsRef<D3D12DeviceQueue>();
+		deviceQueue.Execute(executeInfo);
 
 		VT_D3D12_CHECK(m_swapchain->Present(m_VSyncEnabled ? 1 : 0, m_supportsTearing ? DXGI_PRESENT_ALLOW_TEARING : 0));
+
+		deviceQueue.SignalFence(m_presentFence, ++m_presentFenceValue);
 
 		GetNextFrameIndex();
 	}
@@ -119,10 +130,19 @@ namespace Volt::RHI
 		m_height = height;
 		m_VSyncEnabled = enableVSync;
 
+		if (m_presentFence->GetCompletedValue() < m_presentFenceValue)
+		{
+			m_presentFence->SetEventOnCompletion(m_presentFenceValue, m_windowsPresentFenceEvent);
+			::WaitForSingleObject(m_windowsPresentFenceEvent, INFINITE);
+			::ResetEvent(m_windowsPresentFenceEvent);
+		}
+
 		for (RefPtr<Fence> fence : m_renderFences)
 		{
 			fence->WaitUntilSignaled();
 		}
+
+		GraphicsContext::GetDevice()->GetDeviceQueue(QueueType::Graphics)->WaitForQueue();
 
 		for (uint32_t i = 0; i < RHI::RHICapabilities::NumFramesInFlight; i++)
 		{
@@ -133,7 +153,6 @@ namespace Volt::RHI
 		DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
 		VT_D3D12_CHECK(m_swapchain->GetDesc(&swapChainDesc));
 		VT_D3D12_CHECK(m_swapchain->ResizeBuffers(RHI::RHICapabilities::NumFramesInFlight, m_width, m_height, swapChainDesc.BufferDesc.Format, swapChainDesc.Flags));
-
 		GetSwapchainImages();
 	}
 

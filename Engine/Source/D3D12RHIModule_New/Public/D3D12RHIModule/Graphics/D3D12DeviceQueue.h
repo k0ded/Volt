@@ -17,6 +17,8 @@ namespace Volt::RHI
 		void WaitForQueue() override;
 		void Execute(const DeviceQueueExecuteInfo& commandBuffer) override;
 
+		void SignalFence(ComPtr<ID3D12Fence> fence, uint64_t value);
+
 	protected:
 		void* GetHandleImpl() const override;
 

@@ -132,8 +132,6 @@ namespace Volt
 
 		RHI::ImageCopyData copyData{};
 
-		uint64_t stagingAllocSize = 0;
-
 		for (uint32_t i = 0; i < mipLevelCount; i++)
 		{
 			auto mipData = ddsFile.GetImageData(i);
@@ -149,13 +147,11 @@ namespace Volt
 			subData.subResource.baseMipLevel = i;
 			subData.subResource.layerCount = 1;
 			subData.subResource.levelCount = 1;
-
-			stagingAllocSize += subData.slicePitch;
 		}
 
 		RHI::BufferDesc stagingDesc{};
 		stagingDesc.count = 1;
-		stagingDesc.elementSize = stagingAllocSize;
+		stagingDesc.elementSize = image->GetMaxRequiredStagingBufferSize();
 		stagingDesc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc;
 		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 		stagingDesc.debugName = "Staging Alloc";

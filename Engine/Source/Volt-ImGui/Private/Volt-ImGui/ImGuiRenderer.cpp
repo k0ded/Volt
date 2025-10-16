@@ -139,9 +139,9 @@ namespace Volt
 
 		// Update globals
 		{
-			float scale[2];
 
 			float* data = renderContext.globalsUniformBuffer->Map<float>();
+			float scale[2];
 			scale[0] = 2.0f / drawData->DisplaySize.x;
 			scale[1] = 2.0f / drawData->DisplaySize.y;
 
@@ -158,7 +158,7 @@ namespace Volt
 		commandBuffer->Begin(false);
 		commandBuffer->BeginMarker("Draw ImGui", { 1.f, 1.f, 1.f, 1.f });
 
-		RefPtr<RHI::Image> renderTarget = m_renderTargetManager->GetRenderTargetForWindow(window);
+		RefPtr<RHI::Image> renderTarget = m_renderTargetManager->GetRenderTargetForWindow(window, renderWidth, renderHeight);
 
 		{
 			RHI::ResourceBarrierInfo barrier{};
@@ -174,9 +174,6 @@ namespace Volt
 			commandBuffer->ResourceBarrier({ barrier });
 		}
 
-		const uint32_t renderTargetWidth = renderTarget->GetWidth();
-		const uint32_t renderTargetHeight = renderTarget->GetHeight();
-
 		RHI::AttachmentInfo attachment{};
 		attachment.view = renderTarget->GetView();
 		attachment.clearMode = shouldUseLoadRTAction ? RHI::ClearMode::Load : RHI::ClearMode::Clear;
@@ -184,16 +181,16 @@ namespace Volt
 
 		RHI::RenderingInfo renderingInfo{};
 		renderingInfo.colorAttachments = { attachment };
-		renderingInfo.renderArea.extent.width = renderTargetWidth;
-		renderingInfo.renderArea.extent.height = renderTargetHeight;
+		renderingInfo.renderArea.extent.width = renderWidth;
+		renderingInfo.renderArea.extent.height = renderHeight;
 
 		commandBuffer->BeginRendering(renderingInfo);
 
 		RHI::Viewport viewport{};
 		viewport.x = 0.f;
-		viewport.y = static_cast<float>(renderTargetHeight);
-		viewport.width = static_cast<float>(renderTargetWidth);
-		viewport.height = -static_cast<float>(renderTargetHeight);
+		viewport.y = static_cast<float>(renderHeight);
+		viewport.width = static_cast<float>(renderWidth);
+		viewport.height = -static_cast<float>(renderHeight);
 		viewport.minDepth = 0.f;
 		viewport.maxDepth = 1.f;
 
@@ -202,6 +199,14 @@ namespace Volt
 		commandBuffer->BindVertexBuffers({ { renderContext.vertexBuffers.at(frameIndex), 0ull } }, 0);
 		commandBuffer->BindIndexBuffer(renderContext.indexBuffers.at(frameIndex), sizeof(ImDrawIdx) == sizeof(uint16_t) ? RHI::IndexType::UInt16 : RHI::IndexType::UInt32);
 		commandBuffer->BindPipeline(m_imguiRenderPipeline);
+
+		STRING_HASH_CONSTEXPR StringHash TextureStringHash = StringHash::Construct("Tex");
+		STRING_HASH_CONSTEXPR StringHash SamplerStringHash = StringHash::Construct("Sampler");
+
+		const RHI::ShaderResourceBinding* textureResourceBinding = m_imguiRenderPipeline->GetResourceBindingFromName(TextureStringHash, RHI::ShaderStage::Pixel);
+		const RHI::ShaderResourceBinding* samplerResourceBinding = m_imguiRenderPipeline->GetResourceBindingFromName(SamplerStringHash, RHI::ShaderStage::Pixel);
+
+		VT_ENSURE(textureResourceBinding != nullptr && samplerResourceBinding != nullptr);
 
 		// Will project scissor/clipping rectangles into framebuffer space
 		ImVec2 clip_off = drawData->DisplayPos;         // (0,0) unless using multi-viewports
@@ -243,9 +248,9 @@ namespace Volt
 				m_activeImageViews.at(frameIndex).emplace_back(imageView);
 
 				RHI::ShaderBindingMap shaderBindingMap;
-				shaderBindingMap.SetUniformBuffer(RHI::ShaderStage::Vertex, 0, renderContext.globalsUniformBuffer->GetView());
-				shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 0, imageView);
-				shaderBindingMap.SetSampler(RHI::ShaderStage::Pixel, 0, m_textureSampler);
+				shaderBindingMap.SetUniformBufferWithSizeAndOffset(RHI::ShaderStage::Vertex, 0, renderContext.globalsUniformBuffer->GetView(), renderContext.globalsUniformBuffer->GetSize(), 0);
+				shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, textureResourceBinding->binding, imageView);
+				shaderBindingMap.SetSampler(RHI::ShaderStage::Pixel, samplerResourceBinding->binding, m_textureSampler);
 
 				commandBuffer->BindShaderBindings(shaderBindingMap);
 				commandBuffer->DrawIndexed(cmd->ElemCount, 1, cmd->IdxOffset + globalIndexOffset, cmd->VtxOffset + globalVertexOffset, 0);
@@ -335,11 +340,12 @@ namespace Volt
 			const int32_t uploadH = (textureData->Status == ImTextureStatus_WantCreate) ? textureData->Height : textureData->UpdateRect.h;
 
 			size_t uploadPitch = uploadW * textureData->BytesPerPixel;
-			size_t uploadSize = uploadH * uploadPitch;
+
+			RawPtr<RHI::Image> image = (RHI::Image*)textureData->GetTexID();
 
 			RHI::BufferDesc stagingDesc{};
 			stagingDesc.count = 1;
-			stagingDesc.elementSize = uploadSize;
+			stagingDesc.elementSize = image->GetMaxRequiredStagingBufferSize();
 			stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			stagingDesc.usage = RHI::BufferUsage::TransferSrc;
 
@@ -358,7 +364,6 @@ namespace Volt
 			RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
 			RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
-			RawPtr<RHI::Image> image = (RHI::Image*)textureData->GetTexID();
 
 			commandBuffer->Begin();
 
@@ -498,7 +503,7 @@ namespace Volt
 		}
 
 		RHI::UniformBufferDesc desc{};
-		desc.size = sizeof(glm::vec2) * 2;
+		desc.size = sizeof(glm::mat4) * 2;
 		desc.debugName = "ImGuiRenderer.GlobalsBuffer";
 		renderContext.globalsUniformBuffer = RHI::UniformBuffer::Create(desc);
 	}

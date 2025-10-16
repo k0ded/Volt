@@ -63,5 +63,9 @@ namespace Volt::RHI
 
 		HWND m_windowHandle;
 		ComPtr<IDXGISwapChain4> m_swapchain;
+
+		ComPtr<ID3D12Fence> m_presentFence;
+		uint64_t m_presentFenceValue = 0;
+		void* m_windowsPresentFenceEvent = nullptr;
 	};
 }
