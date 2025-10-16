@@ -34,6 +34,7 @@ namespace Volt::RHI
 		VT_INLINE const ImageAspect GetImageAspect() const override { return m_imageAspect; }
 		VT_INLINE const ImageDesc& GetDesc() const override { return m_desc; }
 		uint64_t GetMaxRequiredStagingBufferSize() const override;
+		uint32_t GetRowPitch() const override;
 
 		VT_INLINE ResourceType GetType() const override { return m_desc.imageType; }
 		void SetName(const std::string& name) override;

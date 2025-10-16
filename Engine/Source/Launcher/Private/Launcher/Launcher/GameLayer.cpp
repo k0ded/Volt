@@ -24,23 +24,6 @@ void GameLayer::OnAttach()
 
 void GameLayer::OnDetach()
 {
-	m_scene->OnRuntimeEnd();
-
-	m_sceneRenderer = nullptr;
-	m_scene = nullptr;
-}
-
-void GameLayer::LoadStartScene()
-{
-	Volt::SceneManager::SetActiveScene(m_scene);
-
-	Volt::OnSceneLoadedEvent loadEvent{ m_scene };
-	Volt::EventSystem::DispatchEvent(loadEvent);
-
-	m_scene->OnRuntimeStart();
-	Volt::OnScenePlayEvent playEvent{};
-	Volt::EventSystem::DispatchEvent(playEvent);
-
 }
 
 bool GameLayer::OnUpdateEvent(Volt::AppUpdateEvent& e)

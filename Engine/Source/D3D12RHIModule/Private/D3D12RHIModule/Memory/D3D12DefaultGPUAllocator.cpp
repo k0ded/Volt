@@ -10,6 +10,7 @@
 #include <RHIModule/Images/ImageUtility.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/StringUtility.h>
 
 #include <CoreUtilities/EnumUtils.h>
 
@@ -33,6 +34,18 @@ namespace Volt::RHI
 
 	D3D12DefaultGPUAllocator::~D3D12DefaultGPUAllocator()
 	{
+		auto activeImageAllocations = GetActiveImageAllocations();
+		for (const auto& alloc : activeImageAllocations)
+		{
+			DestroyImageInternal(alloc);
+		}
+
+		auto activeBufferAllocations = GetActiveBufferAllocations();
+		for (const auto& alloc : activeBufferAllocations)
+		{
+			DestroyBufferInternal(alloc);
+		}
+
 		VT_D3D12_DELETE(m_allocator);
 	}
 
@@ -87,6 +100,9 @@ namespace Volt::RHI
 		Handle<D3D12BufferAllocation> allocation = m_bufferAllocationArena.Allocate(hash, desc.debugName);
 		VT_D3D12_CHECK(m_allocator->CreateResource(&allocDesc, &resourceDesc, Utility::GetResourceStateFromUsage(desc.usage), nullptr, &allocation->m_allocation, IID_PPV_ARGS(&allocation->m_resource)));
 
+		const std::wstring wDebugName = ::Utility::ToWString(desc.debugName);
+		allocation->m_allocation->SetName(wDebugName.c_str());
+
 		allocation->m_size = byteSize;
 
 		return allocation;
@@ -126,6 +142,9 @@ namespace Volt::RHI
 		Handle<D3D12ImageAllocation> allocation = m_imageAllocationArena.Allocate(hash, imageSpecification.debugName);
 		VT_D3D12_CHECK(m_allocator->CreateResource2(&allocDesc, &resourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, &allocation->m_allocation, IID_PPV_ARGS(&allocation->m_resource)));
 
+		const std::wstring wDebugName = ::Utility::ToWString(imageSpecification.debugName);
+		allocation->m_allocation->SetName(wDebugName.c_str());
+
 		allocation->m_size = allocation->m_allocation->GetSize();
 
 		return allocation;
@@ -143,12 +162,32 @@ namespace Volt::RHI
 
 	Vector<Handle<Allocation>> D3D12DefaultGPUAllocator::GetActiveBufferAllocations() const
 	{
-		return Vector<Handle<Allocation>>();
+		auto activeAllocations = m_bufferAllocationArena.GetActiveAllocations();
+
+		Vector<Handle<Allocation>> result;
+		result.reserve(activeAllocations.size());
+
+		for (const auto& alloc : activeAllocations)
+		{
+			result.emplace_back(Handle<Allocation>(alloc));
+		}
+
+		return result;
 	}
 
 	Vector<Handle<Allocation>> D3D12DefaultGPUAllocator::GetActiveImageAllocations() const
 	{
-		return Vector<Handle<Allocation>>();
+		auto activeAllocations = m_imageAllocationArena.GetActiveAllocations();
+
+		Vector<Handle<Allocation>> result;
+		result.reserve(activeAllocations.size());
+
+		for (const auto& alloc : activeAllocations)
+		{
+			result.emplace_back(Handle<Allocation>(alloc));
+		}
+
+		return result;
 	}
 
 	void D3D12DefaultGPUAllocator::Update()

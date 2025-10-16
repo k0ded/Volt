@@ -80,7 +80,7 @@ namespace Volt
 		friend class ApplicationEventListener;
 
 		void MainUpdate();
-		void CreateGraphicsContext();
+		void CreateGraphicsContext(const CommandLineBuilder& commandLineBuilder);
 		void SetupFrameCapture();
 
 		bool OnAppUpdateEvent(class AppUpdateEvent& e);

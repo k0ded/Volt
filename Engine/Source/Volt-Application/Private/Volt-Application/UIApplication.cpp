@@ -59,7 +59,7 @@ namespace Volt
 
 		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
 		// This is required because glfwInit must be called before setting up graphics device
-		CreateGraphicsContext();
+		CreateGraphicsContext(commandLineBuilder);
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 
@@ -176,7 +176,7 @@ namespace Volt
 		}
 	}
 
-	void UIApplication::CreateGraphicsContext()
+	void UIApplication::CreateGraphicsContext(const CommandLineBuilder& commandLineBuilder)
 	{
 		RHI::RHICallbackInfo callbackInfo{};
 		callbackInfo.requestCloseEventCallback = []()
@@ -185,7 +185,26 @@ namespace Volt
 			EventSystem::DispatchEvent(closeEvent);
 		};
 
-		m_rhiModuleLoader->LoadRHI(RHI::GraphicsAPI::Vulkan, callbackInfo);
+		RHI::RHIConfig rhiConfig;
+		rhiConfig.api = RHI::GraphicsAPI::Vulkan;
+		rhiConfig.enableDebugLayer = false;
+
+		if (commandLineBuilder.IsArgDefined("vulkan"))
+		{
+			rhiConfig.api = RHI::GraphicsAPI::Vulkan;
+		}
+
+		if (commandLineBuilder.IsArgDefined("d3d12"))
+		{
+			rhiConfig.api = RHI::GraphicsAPI::D3D12;
+		}
+
+		if (commandLineBuilder.IsArgDefined("rhidebuglayer"))
+		{
+			rhiConfig.enableDebugLayer = true;
+		}
+
+		m_rhiModuleLoader->LoadRHI(rhiConfig, callbackInfo);
 	}
 
 	void UIApplication::MainUpdate()

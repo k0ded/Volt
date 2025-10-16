@@ -244,8 +244,81 @@ namespace Volt::RHI
 
 	Buffer D3D12Image::ReadPixelInternal(const uint32_t x, const uint32_t y, const uint32_t z, const size_t stride)
 	{
-		VT_ENSURE(false);
-		return {};
+		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>()->GetDevice10();
+
+		ID3D12Resource* imageResource = m_allocation->GetResourceHandle<ID3D12Resource*>();
+
+		D3D12_RESOURCE_DESC desc = imageResource->GetDesc();
+
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+		UINT numRows;
+		UINT64 rowSizeInBytes;
+		UINT64 totalBytes;
+		d3d12Device->GetCopyableFootprints(
+			&desc,
+			0, 1, 0,
+			&footprint,
+			&numRows,
+			&rowSizeInBytes,
+			&totalBytes);
+
+		BufferDesc stagingDesc{};
+		stagingDesc.count = 1;
+		stagingDesc.elementSize = totalBytes;
+		stagingDesc.usage = BufferUsage::TransferDst;
+		stagingDesc.memoryUsage = MemoryUsage::GPUToCPU;
+		stagingDesc.debugName = "Staging Alloc";
+
+		Handle<Allocation> stagingAlloc = GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
+
+		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
+		commandBuffer->Begin();
+
+		RHI::ResourceBarrierInfo barrier{};
+		barrier.type = RHI::BarrierType::Image;
+		ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), this);
+
+		barrier.imageBarrier().dstStage = RHI::BarrierStage::Copy;
+		barrier.imageBarrier().dstAccess = RHI::BarrierAccess::CopySource;
+		barrier.imageBarrier().dstLayout = RHI::ImageLayout::CopySource;
+		barrier.imageBarrier().resource = this;
+			
+		commandBuffer->ResourceBarrier({ barrier });
+
+		D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
+		dstLocation.pResource = stagingAlloc->GetResourceHandle<ID3D12Resource*>();
+		dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+		dstLocation.PlacedFootprint = footprint;
+
+		D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
+		srcLocation.pResource = imageResource;
+		srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		srcLocation.SubresourceIndex = 0;
+
+		commandBuffer->GetHandle<ID3D12GraphicsCommandList7*>()->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
+
+		std::swap(barrier.imageBarrier().srcStage, barrier.imageBarrier().dstStage);
+		std::swap(barrier.imageBarrier().srcLayout, barrier.imageBarrier().dstLayout);
+		std::swap(barrier.imageBarrier().srcAccess, barrier.imageBarrier().dstAccess);
+
+		commandBuffer->ResourceBarrier({ barrier });
+		commandBuffer->End();
+
+		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		fence->WaitUntilSignaled();
+
+		uint8_t* mappedMemory = stagingAlloc->Map<uint8_t>();
+	
+		const uint32_t perPixelSize = Utility::GetByteSizePerPixelFromFormat(m_desc.format);
+		const uint32_t srcBufferIndex = x * perPixelSize + y * footprint.Footprint.RowPitch;
+
+		Buffer buffer{ stride };
+		buffer.Copy(&mappedMemory[srcBufferIndex], stride);
+
+		stagingAlloc->Unmap();
+		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
+
+		return buffer;
 	}
 
 	void D3D12Image::InvalidateSwapchainImage(const SwapchainImageDesc& specification)
@@ -385,5 +458,28 @@ namespace Volt::RHI
 		);
 
 		return requiredSize;
+	}
+
+	uint32_t D3D12Image::GetRowPitch() const
+	{
+		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>()->GetDevice10();
+
+		ID3D12Resource* imageResource = m_allocation->GetResourceHandle<ID3D12Resource*>();
+
+		D3D12_RESOURCE_DESC desc = imageResource->GetDesc();
+
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+		UINT numRows;
+		UINT64 rowSizeInBytes;
+		UINT64 totalBytes;
+		d3d12Device->GetCopyableFootprints(
+			&desc,
+			0, 1, 0,
+			&footprint,
+			&numRows,
+			&rowSizeInBytes,
+			&totalBytes);
+
+		return footprint.Footprint.RowPitch;
 	}
 }

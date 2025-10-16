@@ -144,6 +144,8 @@ namespace Volt
 
 		m_shaderMap = nullptr;
 		m_samplerStateCache = nullptr;
+		m_debugRenderer = nullptr;
+		m_transientResourceAllocator = nullptr;
 	}
 
 	const uint32_t Renderer::GetFramesInFlight()

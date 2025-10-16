@@ -115,7 +115,7 @@ bool TestingLayer::OnRenderEvent(Volt::AppRenderEvent& e)
 
 bool TestingLayer::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 {
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 
 	if (ImGui::Begin("Test"))
 	{

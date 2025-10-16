@@ -883,7 +883,6 @@ namespace Volt::RHI
 		Vector<D3D12_SUBRESOURCE_DATA> subResources;
 		subResources.resize(mipLevels * arraySize);
 
-		//uint32_t i = 0;
 		for (const auto& subData : copyData.copySubData)
 		{
 			const uint32_t baseMip = subData.subResource.baseMipLevel;

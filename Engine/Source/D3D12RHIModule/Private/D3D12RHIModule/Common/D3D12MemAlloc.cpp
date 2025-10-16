@@ -29,6 +29,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <malloc.h> // for _aligned_malloc, _aligned_free
+
 #ifndef _WIN32
     #include <shared_mutex>
 #endif
@@ -113,7 +114,7 @@ especially to test compatibility with D3D12_RESOURCE_HEAP_TIER_1 on modern GPUs.
 #endif
 
 #ifndef D3D12MA_DEBUG_LOG
-   #define D3D12MA_DEBUG_LOG(format, ...)
+   #define D3D12MA_DEBUG_LOG(f, ...) \
    /*
    #define D3D12MA_DEBUG_LOG(format, ...) do { \
        wprintf(format, __VA_ARGS__); \

@@ -16,7 +16,7 @@ namespace Volt
 {
 	static ConsoleVariable<int32_t> s_renderGraphTransientAllocatorNumFramesToKeepAliveResources(
 		"r.RenderGraph.TransientAllocator.NumFramesToKeepAliveResources",
-		3,
+		4,
 		""
 	);
 
@@ -61,6 +61,8 @@ namespace Volt
 
 	TransientResourceAllocator::~TransientResourceAllocator()
 	{
+		m_bufferCache.clear();
+		m_textureCache.clear();
 		s_instance = nullptr;
 	}
 

@@ -582,4 +582,9 @@ namespace Volt::RHI
 		
 		return totalImageSize;
 	}
+
+	uint32_t VulkanImage::GetRowPitch() const
+	{
+		return m_desc.width * RHI::Utility::GetByteSizePerPixelFromFormat(m_desc.format);
+	}
 }

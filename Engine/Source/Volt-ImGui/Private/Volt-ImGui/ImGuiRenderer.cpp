@@ -339,9 +339,10 @@ namespace Volt
 			const int32_t uploadW = (textureData->Status == ImTextureStatus_WantCreate) ? textureData->Width : textureData->UpdateRect.w;
 			const int32_t uploadH = (textureData->Status == ImTextureStatus_WantCreate) ? textureData->Height : textureData->UpdateRect.h;
 
-			size_t uploadPitch = uploadW * textureData->BytesPerPixel;
-
 			RawPtr<RHI::Image> image = (RHI::Image*)textureData->GetTexID();
+
+			uint32_t uploadPitchSrc = uploadW * textureData->BytesPerPixel;
+			uint32_t uploadPitchDst = image->GetRowPitch();
 
 			RHI::BufferDesc stagingDesc{};
 			stagingDesc.count = 1;
@@ -356,7 +357,7 @@ namespace Volt
 				uint8_t* ptr = stagingAlloc->Map<uint8_t>();
 				for (int y = 0; y < uploadH; y++)
 				{
-					memcpy(ptr + uploadPitch * y, textureData->GetPixelsAt(uploadX, uploadY + y), (size_t)uploadPitch);
+					memcpy(ptr + uploadPitchDst * y, textureData->GetPixelsAt(uploadX, uploadY + y), (size_t)uploadPitchSrc);
 				}
 				stagingAlloc->Unmap();
 			}
