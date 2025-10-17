@@ -31,16 +31,3 @@ FrameStackAllocator& FrameStackAllocator::Get()
 {
 	return g_frameStackAllocator;
 }
-
-void* FrameStackAllocator::Mark::Allocate(size_t size, size_t alignment)
-{
-	return g_frameStackAllocator.AllocateOnStack(size, alignment);
-}
-
-void FrameStackAllocator::Mark::Free(void* pointer)
-{
-	if (pointer)
-	{
-		return g_frameStackAllocator.FreeOnStack(pointer);
-	}
-}

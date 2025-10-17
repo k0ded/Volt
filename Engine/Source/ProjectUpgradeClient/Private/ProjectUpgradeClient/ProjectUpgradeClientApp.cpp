@@ -10,6 +10,11 @@ public:
 	ProjectUpgradeClientApp(const Volt::ApplicationCreationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
 		: Volt::UIApplication(commandLineBuilder, appInfo)
 	{ 
+		if (commandLineBuilder.IsArgDefined("waitfordebugger"))
+		{
+			while (!Volt::PlatformMisc::IsDebuggerPresent()) {}
+		}
+
 		Volt::ProjectUpgradeClientLayer* projectUpgradeClientLayer = new Volt::ProjectUpgradeClientLayer();
 		PushLayer(projectUpgradeClientLayer);
 	}

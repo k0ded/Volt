@@ -4,7 +4,7 @@
 #include <EntitySystem/EntityID.h>
 
 #include <Volt-Scene/Scene.h>
-#include <Volt-Scene/Entity.h>
+#include <EntitySystem/Entity.h>
 
 void SelectionManager::Initialize()
 {

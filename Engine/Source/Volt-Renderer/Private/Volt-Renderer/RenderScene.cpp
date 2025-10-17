@@ -17,7 +17,7 @@
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <EntitySystem/EntityScene.h>
-#include <EntitySystem/EntityHelper.h>
+#include <EntitySystem/Entity.h>
 #include <AssetSystem/AssetManager.h>
 
 #include <RHIModule/Buffers/StorageBuffer.h>
@@ -598,7 +598,7 @@ namespace Volt
 
 	void RenderScene::BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderPrimitiveData& renderObject)
 	{
-		EntityHelper entity = m_scene->GetEntityHelperFromEntityID(renderObject.entityId);
+		Entity entity = m_scene->GetEntityFromID(renderObject.entityId);
 		if (!entity.IsValid())
 		{
 			return;
@@ -624,7 +624,7 @@ namespace Volt
 
 	void RenderScene::BuildSingleLightDrawData(LightDrawData& lightDrawData, RenderLightData& renderLight)
 	{
-		EntityHelper entity = m_scene->GetEntityHelperFromEntityID(renderLight.entityId);
+		Entity entity = m_scene->GetEntityFromID(renderLight.entityId);
 		if (!entity.IsValid())
 		{
 			return;

@@ -41,6 +41,9 @@ public:
 	template<typename F>
 	size_t Write(const Vector<F>& data);
 
+	template<typename F, size_t NumValues>
+	size_t Write(const Vector<F, InlineAllocator<NumValues>>& data);
+
 	template<typename F>
 	size_t WriteRaw(const Vector<F>& data);
 
@@ -57,6 +60,9 @@ public:
 	size_t Write(const Map<Key, Value>& data);
 
 	size_t Write(const void* data, const size_t size);
+
+	//should generally be avoided
+	size_t WriteWithoutHeader(const void* data, const size_t size);
 
 private:
 	bool GetCompressed(Vector<uint8_t>& result, size_t compressedDataOffset = 0);
@@ -209,6 +215,23 @@ inline size_t BinaryStreamWriter::Write(const Vector<F>& data)
 			Write(obj);
 		}
 	}
+
+	return m_data.size();
+}
+
+template<typename F, size_t NumValues>
+inline size_t BinaryStreamWriter::Write(const Vector<F, InlineAllocator<NumValues>>& data)
+{
+	size_t numValues = data.size();
+	Write(numValues);
+
+	TypeHeader header{};
+	header.totalTypeSize = static_cast<uint32_t>(NumValues * sizeof(F));
+
+	VT_ASSERT_MSG(data.data(), "Begin ptr has not been assigned yet! Please call any function that calls Allocate of the vector before serializing it.");
+
+	WriteTypeHeader(header);
+	WriteData(data.data(), NumValues * sizeof(F));
 
 	return m_data.size();
 }

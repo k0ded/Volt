@@ -29,9 +29,10 @@ PrefabEditorPanel::PrefabEditorPanel()
 	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(PrefabEditorPanel::OnRenderEvent));
 
 	myCameraController = CreateRef<EditorCameraController>(60.f, 1.f, 100000.f);
-	myScene = Volt::Scene::CreateDefaultScene("Prefab Editor", false);
+	//todo_fabian: this was disabled for now, make sure prefabs work
+	//myScene = Volt::Scene::CreateDefaultScene("Prefab Editor", false);
 
-	myScene->Clear();
+	//myScene->Clear();
 
 	mySceneViewPanel = CreateRef<SceneViewPanel>(myScene, "##PrefabEditor");
 	myPropertiesPanel = CreateRef<PropertiesPanel>(myScene, mySceneRenderer, mySceneState, "##PrefabEditor");

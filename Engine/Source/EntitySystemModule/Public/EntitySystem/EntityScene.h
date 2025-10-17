@@ -3,19 +3,25 @@
 #include "EntitySystem/EntityTransformCache.h"
 #include "EntitySystem/EntityRegistry.h"
 
+#include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/UUID.h>
 
 #include <entt.hpp>
+
+#include <shared_mutex>
 
 class ECSBuilder;
 class ScriptingEngine;
 
 namespace Volt
 {
+	class Entity;
+
+	class IComponentTypeDesc;
 	class RenderScene;
 
-	using TransformChangedCallbackFunc = std::function<void(EntityHelper entityHelper)>;
-	using EntityDestroyedCallbackFunc = std::function<void(EntityHelper entityHelper)>;
+	using TransformChangedCallbackFunc = std::function<void(Entity entity)>;
+	using EntityDestroyedCallbackFunc = std::function<void(Entity entity)>;
 
 	class VTES_API EntityScene
 	{
@@ -25,6 +31,7 @@ namespace Volt
 
 		void OnRuntimeStart();
 		void OnRuntimeEnd();
+		bool IsPlaying() const { return m_isPlaying; }
 
 		void Update(float deltaTime);
 		void FixedUpdate(float deltaTime);
@@ -32,13 +39,10 @@ namespace Volt
 		void SortScene();
 		void ClearScene();
 
-		EntityHelper CreateEntity(const std::string& tag = "");
-		EntityHelper CreateEntityWithID(EntityID id, const std::string& tag = "");
+		Entity CreateEntity(const std::string& tag = "");
+		Entity CreateEntityWithID(EntityID id);
 
-		void DestroyEntity(EntityID id, bool isDestroyingChildFromParent = false);
-
-		void MarkEntityAsEdited(const EntityHelper& entityHelper);
-		void ClearEditedEntities();
+		void DestroyEntity(EntityID id,Vector<EntityID>* outDestroyedEntities = nullptr, bool isDestroyingChildFromParent = false);
 
 		Vector<EntityID> InvalidateEntityTransform(EntityID entityId);
 
@@ -49,13 +53,12 @@ namespace Volt
 		void UnregisterEntityDestroyedCallback(UUID64 id);
 
 		VT_NODISCARD bool IsEntityValid(EntityID entityId) const;
-		VT_NODISCARD TQS GetEntityWorldTQS(const EntityHelper& entityHelper) const;
-		VT_NODISCARD EntityHelper GetEntityHelperFromEntityID(EntityID entityId) const;
-		VT_NODISCARD EntityHelper GetEntityHelperFromEntityHandle(entt::entity entityHandle) const;
+		VT_NODISCARD TQS GetEntityWorldTQS(const Entity& entityHelper) const;
+		VT_NODISCARD Entity GetEntityFromID(EntityID entityId) const;
+		VT_NODISCARD Entity GetEntityFromHandle(entt::entity entityHandle) const;
 		VT_NODISCARD uint32_t GetEntityAliveCount() const;
 
-		VT_NODISCARD const std::set<EntityID>& GetEditedEntities() const { return m_entityRegistry.GetEditedEntities(); }
-		VT_NODISCARD const std::set<EntityID>& GetRemovedEntities() const { return m_entityRegistry.GetRemovedEntities(); }
+		VT_NODISCARD entt::entity GetEntityHandleFromID(EntityID id) const { return m_entityRegistry.GetHandleFromID(id); };
 
 		VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_registry; }
 		VT_NODISCARD VT_INLINE const entt::registry& GetRegistry() const { return m_registry; }
@@ -66,7 +69,7 @@ namespace Volt
 		VT_INLINE void SetRenderScene(RenderScene* renderScene) { m_renderScene = renderScene; }
 
 	private:
-		friend class EntityHelper;
+		//friend class Entity;
 
 		void Initialize();
 
@@ -74,13 +77,16 @@ namespace Volt
 		void ComponentOnStop();
 
 		entt::registry m_registry;
-
-		bool m_isPlaying = false;
+		EntityRegistry m_entityRegistry;
 
 		Scope<ECSBuilder> m_ecsBuilder;
 		Scope<ScriptingEngine> m_scriptingEngine;
-		EntityRegistry m_entityRegistry;
+
+
 		mutable EntityTransformCache m_transformCache;
+
+		bool m_isPlaying = false;
+
 		Map<UUID64, TransformChangedCallbackFunc> m_transformChangedCallbacks;
 		Map<UUID64, EntityDestroyedCallbackFunc> m_entityDestroyedCallbacks;
 

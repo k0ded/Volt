@@ -7,7 +7,7 @@
 
 namespace Volt
 {
-	void FontSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
+	void FontSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		VT_ASSERT_MSG(false, "[FontSerializer]: Asset it not serializable");
 	}

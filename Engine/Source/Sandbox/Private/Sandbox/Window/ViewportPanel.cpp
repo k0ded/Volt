@@ -22,7 +22,7 @@
 #include <Volt-Assets/MeshAsset.h>
 
 #include <Volt-Scene/Components/CoreComponents.h>
-#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/EntityUtility.h>
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/SceneRenderer.h>
@@ -34,6 +34,7 @@
 
 #include <AssetSystem/AssetManager.h>
 
+#include <EntitySystem/Entity.h>
 #include <EventSystem/EventSystem.h>
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
@@ -63,6 +64,13 @@ ViewportPanel::ViewportPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::
 
 void ViewportPanel::UpdateMainContent()
 {
+	if (!m_editorScene)
+	{
+		UI::ScopedFont font(UI::FontType::Regular, 90.f);
+		ImGui::Text("No Scene Loaded.");
+		return;
+	}
+
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{ 0.07f, 0.07f, 0.07f, 1.f });
 
 	auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
@@ -157,7 +165,7 @@ void ViewportPanel::UpdateMainContent()
 				for (const auto& entId : SelectionManager::GetSelectedEntities())
 				{
 					auto entity = m_editorScene->GetEntityFromID(entId);
-					EditorUtils::MarkEntityAndChildrenAsEdited(entity);
+					EditorUtils::MarkEntityAndChildrenAsEdited(m_editorScene, entity);
 				}
 			}
 
@@ -612,12 +620,12 @@ bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 				SelectionManager::GetLastSelectedRow() = -1;
 			}
 
-			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, ObjectStateAction::Delete);
+			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, m_editorScene, ObjectStateAction::Delete);
 			EditorCommandStack::GetInstance().PushUndo(command);
 
 			for (const auto& i : entitiesToRemove)
 			{
-				m_editorScene->DestroyEntity(i);
+				EditorUtils::DestroyEntity(m_editorScene, i);
 			}
 
 			break;
@@ -684,7 +692,7 @@ void ViewportPanel::CheckDragDrop()
 	{
 		if (m_createdAssetOnDrag && m_createdEntity)
 		{
-			m_editorScene->DestroyEntity(m_createdEntity);
+			EditorUtils::DestroyEntity(m_editorScene, m_createdEntity);
 			m_createdAssetOnDrag = false;
 		}
 
@@ -706,7 +714,7 @@ void ViewportPanel::CheckDragDrop()
 	{
 		Volt::Entity newEntity = m_editorScene->CreateEntity();
 
-		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, ObjectStateAction::Create);
+		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, m_editorScene, ObjectStateAction::Create);
 		EditorCommandStack::GetInstance().PushUndo(command);
 
 		auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
@@ -723,7 +731,7 @@ void ViewportPanel::CheckDragDrop()
 
 		m_createdEntity = newEntity;
 
-		Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity.GetScene()->GetEntityHelperFromEntityID(newEntity.GetID())));
+		Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity));
 	}
 	else if (type == AssetTypes::MeshSource)
 	{
@@ -733,7 +741,7 @@ void ViewportPanel::CheckDragDrop()
 		Volt::AssetHandle resultHandle = handle;
 		Volt::Entity newEntity = m_editorScene->CreateEntity();
 
-		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, ObjectStateAction::Create);
+		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, m_editorScene, ObjectStateAction::Create);
 		EditorCommandStack::GetInstance().PushUndo(command);
 
 		if (FileSystem::Exists(vtMeshPath))
@@ -750,7 +758,7 @@ void ViewportPanel::CheckDragDrop()
 			{
 				meshComp.handle = mesh->handle;
 			}
-			Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity.GetScene()->GetEntityHelperFromEntityID(newEntity.GetID())));
+			Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity));
 		}
 		else
 		{
@@ -811,7 +819,7 @@ void ViewportPanel::DuplicateSelection()
 			continue;
 		}
 
-		auto duplicatedEntity = Volt::Entity::Duplicate(m_editorScene->GetEntityFromID(ent));
+		auto duplicatedEntity = Volt::DuplicateEntity(m_editorScene->GetEntityFromID(ent), m_editorScene);
 		duplicatedEntity.SetTag(EditorUtils::GetDuplicatedNameFromEntity(m_editorScene->GetEntityFromID(ent)));
 
 		duplicated.emplace_back(duplicatedEntity);

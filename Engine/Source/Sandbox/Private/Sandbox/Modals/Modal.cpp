@@ -10,8 +10,8 @@
 
 #include <Volt-Application/UI/ImGuiSubSystem.h>
 
-Modal::Modal(const std::string& strId)
-	: m_strId(strId)
+Modal::Modal(const std::string& strId, ImGuiWindowFlags flags)
+	: m_strId(strId), m_flags(flags)
 {
 
 }
@@ -77,7 +77,7 @@ bool Modal::Update()
 	// Default button style
 	UI::ScopedButtonColor defaultButtonColor{ EditorTheme::Buttons::DefaultButton };
 
-	const bool modalOpen = UI::BeginModal(m_strId, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysAutoResize);
+	const bool modalOpen = UI::BeginModal(m_strId, m_flags);
 
 	if (modalOpen)
 	{

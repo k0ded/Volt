@@ -18,8 +18,9 @@
 #include <InputModule/InputCodes.h>
 #include <InputModule/MouseButtonCodes.h>
 
-#include <Volt-Scene/Entity.h>
 #include <Volt-Application/UI/UIUtility.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <InputModule/Events/KeyboardEvents.h>
 
@@ -29,7 +30,6 @@ GameViewPanel::GameViewPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::
 	: EditorWindow(GAMEVIEWPANEL_TITLE), m_sceneRenderer(sceneRenderer), m_editorScene(editorScene),
 	m_sceneState(aSceneState)
 {
-	Open();
 	m_windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 	m_isFullscreenImage = true;
 
@@ -41,6 +41,13 @@ GameViewPanel::GameViewPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::
 
 void GameViewPanel::UpdateMainContent()
 {
+	if (!m_editorScene)
+	{
+		UI::ScopedFont font(UI::FontType::Regular, 90.f);
+		ImGui::Text("No Scene Loaded.");
+		return;
+	}
+
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{ 0.07f, 0.07f, 0.07f, 1.f });
 
 	auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
@@ -69,8 +76,11 @@ void GameViewPanel::OnOpen()
 {
 	Volt::SceneRendererCreateInfo spec{};
 	spec.debugName = "Game Viewport";
-	spec.renderScene = m_editorScene->GetRenderScene();
-	m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
+	if (m_editorScene)
+	{
+		spec.renderScene = m_editorScene->GetRenderScene();
+		m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
+	}
 }
 
 void GameViewPanel::OnClose()

@@ -21,6 +21,7 @@ namespace Volt
 namespace FileSystem
 {
 	extern VTCOREUTIL_API bool IsWriteable(const std::filesystem::path& path);
+	extern VTCOREUTIL_API void MakeWriteable(const std::filesystem::path& path);
 	extern VTCOREUTIL_API bool Copy(const std::filesystem::path& source, const std::filesystem::path& destination);
 	extern VTCOREUTIL_API bool CopyFileToDirectory(const std::filesystem::path& source, const std::filesystem::path& dstDir);
 	extern VTCOREUTIL_API bool Exists(const std::filesystem::path& path);

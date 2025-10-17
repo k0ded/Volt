@@ -32,7 +32,7 @@ namespace Volt
 		}
 	};
 
-	void MotionWeaveDatabaseSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
+	void MotionWeaveDatabaseSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		Ref<MotionWeaveDatabase> motionWeaveDatabase = std::reinterpret_pointer_cast<MotionWeaveDatabase>(asset);
 

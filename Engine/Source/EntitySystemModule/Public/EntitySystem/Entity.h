@@ -1,21 +1,36 @@
 #pragma once
 
-#include "EntitySystem/EntityScene.h"
+#include "EntitySystem/EntityScene.h" 
+#include "EntitySystem/Config.h"
+#include "EntitySystem/EntityID.h"
+#include "EntitySystem/ComponentReflection.h"
+
 
 #include <CoreUtilities/VoltGUID.h>
 
 #include <entt.hpp>
-#include <glm/glm.hpp>
+#include <glm/fwd.hpp>
 
 namespace Volt
 {
-	class VTES_API EntityHelper
+	class EntityScene;
+	class EntityID;
+
+	class VTES_API Entity
 	{
 	public:
-		EntityHelper();
-		EntityHelper(entt::entity entityHandle, EntityScene* scene);
-		EntityHelper(entt::entity entityHandle, const EntityScene* scene);
-		~EntityHelper();
+		static VT_NODISCARD Entity Null();
+		constexpr static VT_NODISCARD EntityID NullID() { return EntityID(0); }
+	public:
+		Entity();
+		Entity(entt::entity entityHandle, EntityScene* scene);
+		Entity(entt::entity entityHandle, const EntityScene* scene);
+		Entity(entt::entity entityHandle, EntityScene& scene);
+		Entity(entt::entity entityHandle, const EntityScene& scene);
+		~Entity();
+
+		//setters
+		void SetTag(const std::string& tag);
 
 		void SetPosition(const glm::vec3& position);
 		void SetRotation(const glm::quat& rotation);
@@ -25,7 +40,17 @@ namespace Volt
 		void SetLocalRotation(const glm::quat& rotation);
 		void SetLocalScale(const glm::vec3& scale);
 
-		void SetTag(const std::string& tag);
+		void SetParent(Entity parentEntity);
+		void UnparentEntity();
+		void AddChild(Entity childEntity);
+		void RemoveChild(Entity entity);
+		void ClearChildren();
+
+		//getters
+		VT_NODISCARD const std::string& GetTag() const;
+
+		VT_NODISCARD glm::mat4 GetTransform() const;
+		VT_NODISCARD glm::mat4 GetLocalTransform() const;
 
 		VT_NODISCARD glm::vec3 GetPosition() const;
 		VT_NODISCARD glm::quat GetRotation() const;
@@ -43,16 +68,31 @@ namespace Volt
 		VT_NODISCARD glm::vec3 GetLocalRight() const;
 		VT_NODISCARD glm::vec3 GetLocalUp() const;
 
-		VT_NODISCARD const std::string& GetTag() const;
-
+		VT_NODISCARD Entity GetParent() const;
 		VT_NODISCARD bool HasParent() const;
-		VT_NODISCARD EntityHelper GetParent() const;
 
-		VT_NODISCARD VT_INLINE bool IsValid() const { return m_handle != entt::null && m_sceneReference != nullptr && m_sceneReference->GetRegistry().valid(m_handle); }
+		VT_NODISCARD Vector<Entity> GetChildren() const;
 
 		VT_NODISCARD EntityID GetID() const;
 		VT_NODISCARD VT_INLINE entt::entity GetHandle() const { return m_handle; }
 
+
+		//utility
+		VT_NODISCARD const std::string ToString() const;
+		VT_NODISCARD bool IsValid() const { return m_handle != entt::null && m_sceneReference != nullptr && m_sceneReference->GetRegistry().valid(m_handle); }
+		VT_NODISCARD bool IsVisible() const;
+		VT_NODISCARD bool IsLocked() const;
+
+		VT_NODISCARD VT_INLINE bool operator==(const Entity& entity) const { return m_handle == entity.m_handle; }
+		VT_NODISCARD VT_INLINE bool operator!() const { return !IsValid(); }
+		VT_NODISCARD VT_INLINE explicit operator bool() const { return IsValid(); }
+		VT_NODISCARD VT_INLINE explicit operator std::string() const { return ToString(); }
+		VT_NODISCARD VT_INLINE operator entt::entity() const { return m_handle; }
+		VT_NODISCARD VT_INLINE operator uint32_t() const { return static_cast<uint32_t>(m_handle); }
+
+
+
+		//component handling
 		template<typename T> VT_NODISCARD T& GetComponent();
 		template<typename T> VT_NODISCARD const T& GetComponent() const;
 		template<typename T> VT_NODISCARD bool HasComponent() const;
@@ -62,20 +102,22 @@ namespace Volt
 		VT_NODISCARD bool HasComponent(std::string_view componentName) const;
 		VT_NODISCARD bool HasComponent(const VoltGUID& componentGUID) const;
 
-		VT_NODISCARD VT_INLINE explicit operator bool() const { return IsValid(); }
-
-		VT_NODISCARD static EntityHelper Null();
-
 		// #TODO_Ivar: Probably shouldn't expose this
 		VT_NODISCARD VT_INLINE EntityScene* GetSceneReference() const { return m_sceneReference; }
-
 	private:
+		void ParentEntity(Entity parent, Entity child);
+		void IsRecursiveChildOf(Entity mainParent, Entity currentEntity, bool& outChild);
+
+		void ConvertToWorldSpace();
+		void ConvertToLocalSpace();
+
+
 		EntityScene* m_sceneReference = nullptr;
 		entt::entity m_handle = entt::null;
 	};
 
 	template<typename T>
-	inline T& EntityHelper::GetComponent()
+	inline T& Entity::GetComponent()
 	{
 		VT_ENSURE(IsValid());
 
@@ -83,9 +125,9 @@ namespace Volt
 		VT_ENSURE(registry.any_of<T>(m_handle));
 		return registry.get<T>(m_handle);
 	}
-	
+
 	template<typename T>
-	inline const T& EntityHelper::GetComponent() const
+	inline const T& Entity::GetComponent() const
 	{
 		VT_ENSURE(IsValid());
 
@@ -93,18 +135,18 @@ namespace Volt
 		VT_ENSURE(registry.any_of<T>(m_handle));
 		return registry.get<T>(m_handle);
 	}
-	
+
 	template<typename T>
-	inline bool EntityHelper::HasComponent() const
+	inline bool Entity::HasComponent() const
 	{
 		VT_ENSURE(IsValid());
 
 		auto& registry = m_sceneReference->GetRegistry();
 		return registry.any_of<T>(m_handle);
 	}
-	
+
 	template<typename T, typename ...Args>
-	inline T& EntityHelper::AddComponent(Args && ...args)
+	inline T& Entity::AddComponent(Args && ...args)
 	{
 		VT_ENSURE(IsValid());
 
@@ -112,9 +154,9 @@ namespace Volt
 		VT_ENSURE(!registry.any_of<T>(m_handle));
 		return registry.emplace<T>(m_handle, std::forward<Args>(args)...);
 	}
-	
+
 	template<typename T>
-	inline void EntityHelper::RemoveComponent()
+	inline void Entity::RemoveComponent()
 	{
 		VT_ENSURE(IsValid());
 

@@ -38,6 +38,9 @@ public:
 	template<typename F>
 	void Read(Vector<F>& data);
 
+	template<typename F, size_t NumValues>
+	void Read(Vector<F, InlineAllocator<NumValues>>& data);
+
 	template<typename F>
 	void ReadRaw(Vector<F>& data);
 
@@ -54,9 +57,17 @@ public:
 	void Read(Map<Key, Value>& data);
 
 	void Read(void* data);
+	
+	//note: this will override any data in the destination vector
+	template<typename AllocatorType = DefaultHeapAllocator>
+	void ReadBytesRaw(Vector<uint8_t, AllocatorType>& destination, size_t numBytes);
 
 	void ResetHead();
 	TypeHeader ReadTypeHeader();
+
+	size_t GetRemainingDataSize();
+
+	bool IsAtEnd();
 
 private:
 	void ReadData(void* outData, const TypeHeader& serializedTypeHeader, const TypeHeader& constructedTypeHeader);
@@ -179,6 +190,25 @@ inline void BinaryStreamReader::Read(Vector<F>& data)
 			Read(data[i]);
 		}
 	}
+}
+
+template<typename F, size_t NumValues>
+inline void BinaryStreamReader::Read(Vector<F, InlineAllocator<NumValues>>& data)
+{
+	size_t serializedNumValues;
+	Read(serializedNumValues);
+
+	TypeHeader typeHeader{};
+	typeHeader.totalTypeSize = static_cast<uint32_t>(NumValues * sizeof(F));
+
+	TypeHeader serializedTypeHeader = ReadTypeHeader();
+
+	//call reserve here to make sure the begin ptr has been assigned
+	data.reserve(NumValues);
+	data.resize(serializedNumValues);
+	memset(data.data(), 0, NumValues);
+
+	ReadData(data.data(), serializedTypeHeader, typeHeader);
 }
 
 template<typename F>
@@ -352,4 +382,15 @@ inline void BinaryStreamReader::Read(Map<Key, Value>& data)
 
 		data[key] = value;
 	}
+}
+
+template<typename AllocatorType>
+inline void BinaryStreamReader::ReadBytesRaw(Vector<uint8_t, AllocatorType>& destination, size_t numBytes)
+{
+	VT_ASSERT(numBytes <= GetRemainingDataSize());
+
+	destination.resize_uninitialized(numBytes);
+	memcpy_s(destination.data(), destination.size(), &m_data[m_currentOffset], numBytes);
+
+	m_currentOffset += numBytes;
 }

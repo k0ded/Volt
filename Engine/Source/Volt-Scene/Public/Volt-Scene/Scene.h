@@ -2,8 +2,7 @@
 
 #include "Volt-Scene/WorldEngine/WorldEngine.h"
 #include "Volt-Scene/Config.h"
-
-#include <Volt-Core/AssetTypes.h>
+#include "Volt-Scene/AssetTypes.h"
 
 #include <AssetSystem/Asset.h>
 
@@ -51,12 +50,14 @@ namespace Volt
 
 		void SortScene();
 
-		void MarkEntityAsEdited(const Entity& entity);
-		void ClearEditedEntities();
+		void LoadEntities();
+		void UnloadEntities();
+		bool IsFinishedLoadingEntities() { return m_isFinishedLoadingEntities; }
 
 		VT_NODISCARD TQS GetEntityWorldTQS(const Entity& entity) const;
 
-		VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_entityScene.GetRegistry(); }
+		//VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_entityScene.GetRegistry(); }
+		VT_NODISCARD VT_INLINE EntityScene& GetEntityScene() { return m_entityScene; }
 		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
 		VT_NODISCARD VT_INLINE const Statistics& GetStatistics() const { return m_statistics; }
 		VT_NODISCARD VT_INLINE bool IsPlaying() const { return m_isPlaying; }
@@ -73,17 +74,20 @@ namespace Volt
 		void SetRenderSize(uint32_t aWidth, uint32_t aHeight);
 
 		Entity CreateEntity(const std::string& tag = "");
-		Entity CreateEntityWithID(const EntityID& id, const std::string& tag = "");
+
+		//this will not create a new EntityDesc for the entity
+		Entity CreateEntityWithID(const EntityID& id);
+		Volt::AssetHandle CreateEntityDescForEntity(const EntityID& id);
 
 		Entity GetEntityFromID(const EntityID id) const;
 		Entity GetEntityFromHandle(entt::entity entityHandle) const;
-
-		EntityHelper GetEntityHelperFromEntityID(EntityID entityId) const;
+		Volt::AssetHandle GetEntityDescHandleFromEntityID(EntityID entityID) const;
 
 		bool IsRelatedTo(Entity entity, Entity otherEntity);
 		void DestroyEntity(Entity entity);
-		void ParentEntity(Entity parent, Entity child);
-		void UnparentEntity(Entity entity);
+		void DestroyEntity(Entity entity, Vector<EntityID>& outDestroyedEntities);
+		void DestroyEntity(Entity entity, Vector<Volt::AssetHandle>& outDestroyedEntityDescs);
+		void DestroyEntity(Entity entity, Vector<EntityID>* outDestroyedEntities, Vector<Volt::AssetHandle>* outDestroyedEntityDescs);
 
 		void InvalidateEntityTransform(const EntityID& entityId);
 		bool IsEntityValid(EntityID entityId) const;
@@ -101,10 +105,8 @@ namespace Volt
 		Entity GetSceneEntityFromScriptingEntity(EntityType scriptingEntity);
 
 		Vector<Entity> GetAllEntities() const;
-		Vector<Entity> GetAllEditedEntities() const;
-		Vector<EntityID> GetAllRemovedEntities() const;
 
-		static Ref<Scene> CreateDefaultScene(const std::string& name, bool createDefaultMesh = true);
+		static Ref<Scene> CreateDefaultScene(const std::string& name, bool createDefaultMesh = true, bool asMemoryAsset = false);
 
 		static AssetType GetStaticType() { return AssetTypes::Scene; }
 		AssetType GetType() override { return GetStaticType(); }
@@ -128,6 +130,8 @@ namespace Volt
 		glm::mat4 GetWorldTransform(Entity entity) const;
 		Vector<Entity> FlattenEntityHeirarchy(Entity entity);
 
+		bool m_isFinishedLoadingEntities = false;
+
 		SceneSettings m_sceneSettings;
 		Statistics m_statistics;
 		WorldEngine m_worldEngine;
@@ -142,6 +146,10 @@ namespace Volt
 		uint32_t m_viewportHeight = 1;
 
 		EntityScene m_entityScene;
+
+		std::mutex m_registerEntityMutex;
+		Map<Volt::EntityID, Volt::AssetHandle> m_entityIDToDescHandle;
+
 
 		//Ref<Vision> m_visionSystem; // Needs to be of ptr type because of include loop // #TODO_Scene
 		Ref<RenderScene> m_renderScene;

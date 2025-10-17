@@ -3,7 +3,7 @@
 #include "Sandbox/Utility/UIPropertiesExtension.h"
 
 #include <Volt-Scene/Scene.h>
-#include <Volt-Scene/Entity.h>
+#include <EntitySystem/Entity.h>
 
 #include <EntitySystem/Scripting/CoreComponents.h>
 

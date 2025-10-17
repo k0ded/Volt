@@ -5,6 +5,7 @@
 #include <Volt-ImGui/ImGuiImplementation.h>
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
+#include <EventSystem/EventListener.h>
 #include <SubSystem/SubSystem.h>
 
 #include <LogModule/LogCategory.h>
@@ -17,10 +18,14 @@ struct ImGuiContext;
 namespace Volt
 {
 	class ImGuiImplementation;
+	class AppBeginFrameEvent;
+	class AppPresentFrameEvent;
 
-	class VTAPP_API ImGuiSubSystem : public SubSystem
+	class VTAPP_API ImGuiSubSystem : public SubSystem, public EventListener
 	{
 	public:
+		ImGuiSubSystem();
+
 		void Initialize() override;
 		void Shutdown() override;
 
@@ -39,7 +44,11 @@ namespace Volt
 		VT_DECLARE_SUBSYSTEM("{482BA05C-2FFA-4457-9FFD-7B14833C8212}"_guid);
 
 	private:
+		bool OnAppBeginFrameEvent(AppBeginFrameEvent& e);
+		bool OnAppPresentFrameEvent(AppPresentFrameEvent& e);
+
 		bool m_isBlockingActive = false;
+		bool m_isWithinFrame = false;
 		Ref<ImGuiImplementation> m_imguiImplementation;
 	};
 }

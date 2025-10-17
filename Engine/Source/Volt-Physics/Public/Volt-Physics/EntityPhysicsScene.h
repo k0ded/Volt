@@ -2,12 +2,13 @@
 
 #include "Volt-Physics/Config.h"
 
-#include <EntitySystem/EntityHelper.h>
+#include <EntitySystem/EntityID.h>
 
 #include <PhysicsInterface/PhysicsTypes.h>
 
 namespace Volt
 {
+	class Entity;
 	class EntityScene;
 	class PhysicsScene;
 
@@ -21,7 +22,7 @@ namespace Volt
 
 	private:
 		void ExecuteRigidbodySystem();
-		void CreateActorFromEntity(EntityHelper entity);
+		void CreateActorFromEntity(Entity entity);
 
 		Ref<PhysicsScene> m_physicsScene;
 

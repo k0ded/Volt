@@ -29,7 +29,7 @@ namespace Volt
 		}
 	};
 
-	void EnvironmentTextureSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
+	void EnvironmentTextureSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		Ref<EnvironmentTexture> environmentTexture = std::reinterpret_pointer_cast<EnvironmentTexture>(asset);
 

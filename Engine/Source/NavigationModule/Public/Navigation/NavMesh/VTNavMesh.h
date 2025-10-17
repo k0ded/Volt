@@ -10,6 +10,8 @@
 
 #include <AssetSystem/Asset.h>
 
+#include <Volt-Core/AssetTypes.h>
+
 namespace Volt
 {
 	namespace AI

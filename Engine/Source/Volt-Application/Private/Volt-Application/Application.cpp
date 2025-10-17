@@ -202,6 +202,8 @@ namespace Volt
 
 		m_frameIndex++;
 
+		EventSystem::Update();
+
 		AppTickEvent tickEvent(m_currentDeltaTime, m_frameIndex);
 		EventSystem::DispatchEvent(tickEvent);
 	}
@@ -264,6 +266,9 @@ namespace Volt
 		m_isProcessingFrame = true;
 		WindowManager::Get().BeginFrame();
 
+		AppBeginFrameEvent appBeginFrameEvent{};
+		EventSystem::DispatchEvent(appBeginFrameEvent);
+
 		Tick();
 
 		{
@@ -283,8 +288,6 @@ namespace Volt
 
 			AppUpdateEvent updateEvent(m_currentDeltaTime);
 			EventSystem::DispatchEvent(updateEvent);
-
-			AssetManager::Update();
 		}
 
 		{
@@ -312,6 +315,9 @@ namespace Volt
 		{
 			m_imguiSubSystem->End();
 		}
+
+		AppPresentFrameEvent appPresentEvent{};
+		EventSystem::DispatchEvent(appPresentEvent);
 
 		m_isProcessingFrame = false;
 		if (!m_skipPresentThisFrame)
@@ -377,7 +383,7 @@ namespace Volt
 
 	bool Application::OnWindowResizeEvent(class WindowResizeEvent& e)
 	{
-		if (&e.GetWindow() == &WindowManager::Get().GetMainWindow())
+		/*if (&e.GetWindow() == &WindowManager::Get().GetMainWindow())
 		{
 			WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
 
@@ -385,7 +391,7 @@ namespace Volt
 			{
 				MainUpdate();
 			}
-		}
+		}*/
 
 		return false;
 	}

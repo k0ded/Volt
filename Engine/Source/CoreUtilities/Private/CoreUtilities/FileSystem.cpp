@@ -17,6 +17,11 @@ namespace FileSystem
 		return (status.permissions() & std::filesystem::perms::owner_write) != std::filesystem::perms::none;
 	}
 
+	void MakeWriteable(const std::filesystem::path& path)
+	{
+		std::filesystem::permissions(path, std::filesystem::perms::owner_write, std::filesystem::perm_options::add);
+	}
+
 	bool Copy(const std::filesystem::path& source, const std::filesystem::path& destination)
 	{
 		if (!Exists(source))

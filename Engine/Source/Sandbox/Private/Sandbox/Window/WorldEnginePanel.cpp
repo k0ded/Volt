@@ -12,6 +12,11 @@ WorldEnginePanel::WorldEnginePanel(Ref<Volt::Scene>& editorScene)
 
 void WorldEnginePanel::UpdateMainContent()
 {
+	if (!m_editorScene)
+	{
+		ImGui::Text("No Scene Loaded.");
+		return;
+	}
 	auto& worldEngine = m_editorScene->GetWorldEngineMutable();
 
  	if (UI::BeginProperties("worldEngineSettings"))

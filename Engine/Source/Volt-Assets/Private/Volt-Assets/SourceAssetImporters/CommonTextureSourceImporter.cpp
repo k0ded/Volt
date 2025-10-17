@@ -86,7 +86,7 @@ namespace Volt
 		}
 		else
 		{
-			voltTexture = AssetManager::CreateAsset<Texture2D>(importConfig.destinationDirectory, importConfig.destinationFilename);
+			voltTexture = AssetManager::CreateAssetAndFile<Texture2D>(importConfig.destinationDirectory, importConfig.destinationFilename);
 		}
 
 		voltTexture->SetImage(image);

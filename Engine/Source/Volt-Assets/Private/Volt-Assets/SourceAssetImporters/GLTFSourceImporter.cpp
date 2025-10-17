@@ -42,7 +42,7 @@ namespace Volt
 				matName = importConfig.destinationFilename + "_UnnamnedMaterial";
 			}
 
-			Ref<MaterialAsset> material = AssetManager::CreateAsset<MaterialAsset>(importConfig.destinationDirectory, matName);
+			Ref<MaterialAsset> material = AssetManager::CreateAssetAndFile<MaterialAsset>(importConfig.destinationDirectory, matName);
 			result.emplace_back(material);
 		
 			materialTable.SetMaterial(material->GetRenderMaterial(), static_cast<uint32_t>(result.size() - 1));
@@ -50,7 +50,7 @@ namespace Volt
 
 		if (result.empty())
 		{
-			Ref<MaterialAsset> material = AssetManager::CreateAsset<MaterialAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_DummyMaterial");
+			Ref<MaterialAsset> material = AssetManager::CreateAssetAndFile<MaterialAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_DummyMaterial");
 			result.emplace_back(material);
 
 			materialTable.SetMaterial(material->GetRenderMaterial(), 0);
@@ -354,7 +354,7 @@ namespace Volt
 			MeshInitializer meshInitializer;
 			meshInitializer.SetMaterialTable(materialTable);
 
-			Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
+			Ref<MeshAsset> voltMesh = AssetManager::CreateAssetAndFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
 
 			for (const auto& nodeIndex : gltfMeshNodes)
 			{
@@ -371,7 +371,7 @@ namespace Volt
 			{
 				const auto& gltfNode = gltfModel.nodes[nodeIndex];
 
-				Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + gltfNode.name);
+				Ref<MeshAsset> voltMesh = AssetManager::CreateAssetAndFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + gltfNode.name);
 				MeshInitializer meshInitializer;
 
 				CreateVoltMeshFromGLTFMesh(gltfModel.meshes[gltfNode.mesh], gltfNode, gltfModel, meshInitializer, materials);

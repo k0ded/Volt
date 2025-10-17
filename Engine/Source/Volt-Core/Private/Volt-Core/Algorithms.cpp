@@ -6,7 +6,7 @@
 
 namespace Volt::Algo
 {
-	void ForEachParallelLocking(std::function<void(uint32_t threadIdx, uint32_t elementIdx)>&& func, uint32_t iterationCount)
+	void ForEachParalellBlocking(std::function<void(uint32_t threadIdx, uint32_t elementIdx)>&& func, uint32_t iterationCount)
 	{
 		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfPhysicalCores());
 		const uint32_t perThreadIterationCount = iterationCount / threadCount;
@@ -36,7 +36,7 @@ namespace Volt::Algo
 		taskGraph.ExecuteAndWait();
 	}
 
-	void ForEachParallel(std::function<void(uint32_t, uint32_t)>&& func, uint32_t iterationCount)
+	void ForEachParallelAsync(std::function<void(uint32_t, uint32_t)>&& func, uint32_t iterationCount)
 	{
 		VT_ASSERT_MSG(iterationCount > 0, "Iteration count must be greater than zero!");
 

@@ -7,17 +7,14 @@
 #include <entt.hpp>
 #include <shared_mutex>
 
+#include <shared_mutex>
+
 namespace Volt
 {
-	class EntityHelper;
-
 	class EntityRegistry
 	{
 	public:
-		void MarkEntityAsEdited(const EntityHelper& entity);
-		void ClearEditedEntities();
-
-		void AddEntity(const EntityHelper& entity);
+		void AddEntity(const EntityID& entityId, entt::entity entityHandle);
 		void RemoveEntity(const EntityID& entityId, entt::entity entityHandle);
 
 		EntityID GetUUIDFromHandle(entt::entity handle) const;
@@ -25,9 +22,6 @@ namespace Volt
 
 		bool Contains(EntityID uuid) const;
 		bool Contains(entt::entity handle) const;
-
-		inline const std::set<EntityID>& GetEditedEntities() const { return m_editedEntities; }
-		inline const std::set<EntityID>& GetRemovedEntities() const { return m_removedEntities; }
 
 	private:
 		using WriteLock = std::unique_lock<std::shared_mutex>;

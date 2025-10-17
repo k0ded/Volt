@@ -460,7 +460,6 @@ namespace Volt
 		if (m_frameHasStarted)
 		{
 			m_swapchain->Present();
-			glfwPollEvents();
 
 			WindowPresentFrameEvent presentFrameEvent(*this);
 			EventSystem::DispatchEvent(presentFrameEvent);

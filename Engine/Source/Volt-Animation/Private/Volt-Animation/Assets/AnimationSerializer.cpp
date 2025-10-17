@@ -31,7 +31,7 @@ namespace Volt
 		}
 	};
 
-	void AnimationSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
+	void AnimationSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		Ref<Animation> animation = std::reinterpret_pointer_cast<Animation>(asset);
 

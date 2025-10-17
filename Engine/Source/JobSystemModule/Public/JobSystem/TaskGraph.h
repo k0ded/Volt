@@ -57,6 +57,7 @@ namespace Volt
 
 			void AddDependency(Task* dependency);
 			void AddDependencies(std::span<Task*> dependencies);
+			void AddDependencies(std::initializer_list<Task*> dependencies);
 
 			VT_INLINE uint32_t GetRefCount() const
 			{
@@ -96,6 +97,9 @@ namespace Volt
 
 		template<typename Func>
 		TaskGraph::Task* AddTaskWithDependencies(std::string_view name, std::span<TaskGraph::Task*> dependencies, Func&& func);
+
+		template<typename Func>
+		TaskGraph::Task* AddTaskWithDependencies(std::string_view name, std::initializer_list<TaskGraph::Task*> dependencies, Func&& func);
 
 		void Execute();
 		JobCounterRef ExecuteAndExtractCounter();
@@ -150,6 +154,17 @@ namespace Volt
 
 	template<typename Func>
 	TaskGraph::Task* TaskGraph::AddTaskWithDependencies(std::string_view name, std::span<TaskGraph::Task*> dependencies, Func&& func)
+	{
+		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func));
+		taskDescription->m_name = name;
+		taskDescription->AddDependencies(dependencies);
+
+		m_tasks.emplace_back(taskDescription);
+		return taskDescription;
+	}
+
+	template<typename Func>
+	TaskGraph::Task* TaskGraph::AddTaskWithDependencies(std::string_view name, std::initializer_list<TaskGraph::Task*> dependencies, Func&& func)
 	{
 		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func));
 		taskDescription->m_name = name;

@@ -31,6 +31,8 @@ namespace Volt
 		JobSystem::RunJobs(m_jobs);
 
 		m_isExecuted = true;
+
+		VT_ENSURE(m_jobs.size() == m_tasks.size());
 	}
 
 	JobCounterRef TaskGraph::ExecuteAndExtractCounter()
@@ -153,6 +155,16 @@ namespace Volt
 	}
 	
 	void TaskGraph::Task::AddDependencies(std::span<Task*> dependencies)
+	{
+		for (Task* dependency : dependencies)
+		{
+			dependency->IncRef();
+		}
+
+		m_dependencies.append(dependencies.begin(), dependencies.end());
+	}
+
+	void TaskGraph::Task::AddDependencies(std::initializer_list<Task*> dependencies)
 	{
 		for (Task* dependency : dependencies)
 		{

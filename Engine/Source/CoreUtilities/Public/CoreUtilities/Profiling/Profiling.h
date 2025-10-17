@@ -16,6 +16,8 @@
 #define VT_PROFILE_THREAD(...) tracy::SetThreadName(__VA_ARGS__)
 #define VT_PROFILE_CATEGORY(...)
 
+#define VT_PROFILE_MESSAGE(MESSAGE) TracyMessageL(MESSAGE)
+
 #ifdef VT_DEBUG
 #define VT_PROFILE_ALLOC(ptr, size) TracyAlloc(ptr, size)
 #define VT_PROFILE_FREE(ptr) TracyFree(ptr)
@@ -32,7 +34,8 @@
 #define VT_PROFILE_THREAD(...)
 #define VT_PROFILE_CATEGORY(...)
 
+#define VT_PROFILE_EVENT(MESSAGE)
+
 #define VT_PROFILE_ALLOC(ptr, size)
 #define VT_PROFILE_FREE(ptr)
-
 #endif

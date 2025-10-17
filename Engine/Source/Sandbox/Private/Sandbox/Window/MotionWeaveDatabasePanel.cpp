@@ -16,7 +16,7 @@ void MotionWeaveDatabasePanel::UpdateMainContent()
 {
 	if (ImGui::Button("Save##MWDBSave"))
 	{
-		Volt::AssetManager::Get().SaveAsset(m_Database);
+		Volt::AssetManager::Get().SaveAsset(m_Database->handle);
 	}
 
 	if (!m_Database)

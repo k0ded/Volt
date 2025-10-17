@@ -53,7 +53,7 @@ void PropertiesPanel::UpdateMainContent()
 			auto& tag = firstEntity.GetComponent<Volt::TagComponent>();
 			if (UI::InputText("Name", tag.tag))
 			{
-				EditorUtils::MarkEntityAsEdited(firstEntity);
+				EditorUtils::MarkEntityAsEdited(myCurrentScene, firstEntity);
 			}
 		}
 	}
@@ -103,7 +103,7 @@ void PropertiesPanel::UpdateMainContent()
 				if (entity.HasComponent<Volt::TagComponent>())
 				{
 					entity.GetComponent<Volt::TagComponent>().tag = inputText;
-					EditorUtils::MarkEntityAsEdited(entity);
+					EditorUtils::MarkEntityAsEdited(myCurrentScene, entity);
 				}
 			}
 		}
@@ -137,7 +137,7 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalPosition(transform.position);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAndChildrenAsEdited(ent);
+						EditorUtils::MarkEntityAndChildrenAsEdited(myCurrentScene, ent);
 					}
 				}
 
@@ -161,7 +161,7 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalRotation(transform.rotation);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAsEdited(ent);
+						EditorUtils::MarkEntityAsEdited(myCurrentScene, ent);
 					}
 				}
 
@@ -180,7 +180,7 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalScale(transform.scale);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAsEdited(ent);
+						EditorUtils::MarkEntityAsEdited(myCurrentScene, ent);
 					}
 				}
 			}
@@ -266,10 +266,9 @@ void PropertiesPanel::AddComponentPopup()
 			for (const auto& label : componentNames)
 			{
 				const auto compGuid = nameToGUIDMap.at(label);
-				std::string_view componentTypeName = GetComponentRegistry().GetTypeNameFromGUID(compGuid);
 
 				Volt::Entity frontEntity = myCurrentScene->GetEntityFromID(SelectionManager::GetSelectedEntities().front());
-				if (!frontEntity.HasComponent(componentTypeName))
+				if (!frontEntity.HasComponent(compGuid))
 				{
 					UI::ShiftCursor(4.f, 0.f);
 					UI::RenderMatchingTextBackground(myComponentSearchQuery, label, EditorTheme::MatchingTextBackground);
@@ -279,10 +278,10 @@ void PropertiesPanel::AddComponentPopup()
 						{
 							auto entity = myCurrentScene->GetEntityFromID(ent);
 
-							if (!Volt::ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, myCurrentScene->GetRegistry(), entity))
+							if (!Volt::ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, myCurrentScene->GetEntityScene().GetRegistry(), entity))
 							{
-								Volt::ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, myCurrentScene->GetRegistry(), entity);
-								EditorUtils::MarkEntityAsEdited(entity);
+								Volt::ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, myCurrentScene->GetEntityScene().GetRegistry(), entity);
+								EditorUtils::MarkEntityAsEdited(myCurrentScene, entity);
 							}
 						}
 

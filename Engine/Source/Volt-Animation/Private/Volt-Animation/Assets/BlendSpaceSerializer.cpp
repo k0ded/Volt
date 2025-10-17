@@ -38,7 +38,7 @@ namespace Volt
 		}
 	};
 
-	void BlendSpaceSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
+	void BlendSpaceSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		Ref<BlendSpace> blendSpace = std::reinterpret_pointer_cast<BlendSpace>(asset);
 

@@ -2,8 +2,11 @@
 #include "Volt-Scene/PrefabSerializer.h"
 #include "Volt-Scene/Prefab.h"
 #include "Volt-Scene/SceneSerializer.h"
+#include "Volt-Scene/Scene.h"
 
 #include <AssetSystem/AssetManager.h>
+
+#include <Volt-Scene/EntityDescriptionSerializer.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
@@ -20,7 +23,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void PrefabSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
+	void PrefabSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		const Ref<Prefab> prefab = std::reinterpret_pointer_cast<Prefab>(asset);
 
@@ -33,9 +36,9 @@ namespace Volt
 
 		yamlStreamWriter.BeginSequence("Entities");
 		{
-			for (const auto id : prefab->m_prefabScene->GetAllEntities())
+			for (const auto entity : prefab->m_prefabScene->GetAllEntities())
 			{
-				SceneSerializer::Get().SerializeEntity(id, metadata, prefab->m_prefabScene, yamlStreamWriter);
+				EntityDescSerializer::Get().SerializeEntity(entity, yamlStreamWriter);
 			}
 		}
 		yamlStreamWriter.EndSequence();
@@ -64,6 +67,11 @@ namespace Volt
 		buffer.Release();
 
 		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto directory = filePath.parent_path();
+		if (!std::filesystem::exists(directory))
+		{
+			std::filesystem::create_directories(directory);
+		}
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
@@ -108,12 +116,12 @@ namespace Volt
 			prefab->m_version = yamlStreamReader.ReadAtKey("version", uint32_t(0));
 			prefab->m_rootEntityId = yamlStreamReader.ReadAtKey("rootEntityId", Entity::NullID());
 
-			yamlStreamReader.ForEach("Entities", [&]() 
+			yamlStreamReader.ForEach("Entities", [&]()
 			{
-				SceneSerializer::Get().DeserializeEntity(prefabScene, metadata, yamlStreamReader);
+				EntityDescSerializer::Get().DeserializeEntity(prefabScene, yamlStreamReader);
 			});
 
-			yamlStreamReader.ForEach("PrefabReferences", [&]() 
+			yamlStreamReader.ForEach("PrefabReferences", [&]()
 			{
 				EntityID entityId = yamlStreamReader.ReadAtKey("entity", Entity::NullID());
 				AssetHandle prefabHandle = yamlStreamReader.ReadAtKey("prefabHandle", Asset::Null());

@@ -5,7 +5,7 @@
 
 #include "Sandbox/UISystems/ModalSystem.h"
 
-#include <Volt-Scene/Entity.h>
+#include <EntitySystem/Entity.h>
 
 #include <Volt-Application/ApplicationLayer.h>
 
@@ -20,6 +20,7 @@ namespace Volt
 	class Mesh;
 	class Camera;
 	class Texture2D;
+	class EntityDesc;
 
 	class Event;
 	class AppUpdateEvent;
@@ -29,6 +30,7 @@ namespace Volt
 	class ViewportResizeEvent;
 	class OnSceneLoadedEvent;
 	class OnSceneTransitionEvent;
+	class AssetFileCreatedEvent;
 }
 
 enum class SceneState
@@ -72,6 +74,7 @@ public:
 
 	Ref<Volt::SceneRenderer>& GetSceneRenderer() { return m_sceneRenderer; }
 	VT_NODISCARD VT_INLINE const SceneState GetSceneState() const { return m_sceneState; }
+	VT_NODISCARD VT_INLINE Ref<Volt::Scene> GetRuntimeScene() const { return m_runtimeScene; }
 	
 	VT_NODISCARD VT_INLINE UUID64 GetMeshImportModalID() const { return m_meshImportModal; }
 	VT_NODISCARD VT_INLINE UUID64 GetTextureImportModalID() const { return m_textureImportModal; }
@@ -82,8 +85,8 @@ public:
 	void OpenScene();
 	void OpenScene(const std::filesystem::path& path);
 	void OpenScene(Volt::AssetHandle sceneHandle);
-	void SaveScene();
-	void TransitionToNewScene();
+	//returns false if user cancels save
+	bool SaveScene(bool showDialog = false, bool allowDiscard = false);
 
 private:
 	struct SaveSceneAsData
@@ -92,9 +95,17 @@ private:
 		std::filesystem::path destinationPath = "Assets/Scenes/";
 	} m_saveSceneData;
 
-	void SaveSceneAs();
+	struct DirtyAssetExternalSaveData
+	{
+		bool SceneSavedAs = false;
+	} m_dirtyAssetExternalSaveData;
+
 	void InstallMayaTools();
 	void RegisterEventListeners();
+	//return wether to procced
+	//false when user cancels unload
+	bool PromptUnloadCurrentScene();
+
 
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
@@ -102,7 +113,6 @@ private:
 	bool OnKeyPressedEvent(Volt::KeyPressedEvent& e);
 	bool OnViewportResizeEvent(Volt::ViewportResizeEvent& e);
 	bool OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e);
-	bool LoadScene(Volt::OnSceneTransitionEvent& e);
 
 	void CreateWatches();
 	void RegisterPanels();
@@ -112,7 +122,6 @@ private:
 
 	/////ImGui/////
 	void UpdateDockSpace();
-	void SaveSceneAsModal();
 
 	void BuildGameModal();
 	void RenderProgressBar(float progress);
@@ -123,6 +132,9 @@ private:
 
 	float DrawTitlebar();
 	void DrawMenuBar();
+
+	void DrawUnsavedAssetsBlock();
+	void DrawDirtyAssetsExternalActionModal();
 	
 	void RenderGameView(float timestep);
 	///////////////
@@ -167,7 +179,6 @@ private:
 
 	Ref<ViewportPanel> m_viewportPanel;
 	Ref<GameViewPanel> m_gameViewPanel;
-	Scope<ModalSystem> m_modalSystem;
 
 	Ref<AssetBrowserPanel> m_assetBrowserPanel;
 
@@ -181,6 +192,7 @@ private:
 	bool m_buildStarted = false;
 	bool m_playHasMouseControl = false;
 	bool m_isInitialized = false;
+	bool m_wantsToOpenCheckoutFilesModal = false;
 
 	Ref<Volt::Scene> m_storedScene;
 	bool m_shouldLoadNewScene = false;

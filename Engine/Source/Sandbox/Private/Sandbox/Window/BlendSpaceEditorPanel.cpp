@@ -41,7 +41,7 @@ void BlendSpaceEditorPanel::UpdateProperties()
 
 	if (ImGui::Button("Save"))
 	{
-		Volt::AssetManager::Get().SaveAsset(myCurrentBlendSpace);
+		Volt::AssetManager::Get().SaveAsset(myCurrentBlendSpace->handle);
 	}
 
 	const Vector<const char*> blendSpaceDimenstions =

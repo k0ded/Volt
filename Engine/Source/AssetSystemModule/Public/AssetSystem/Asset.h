@@ -3,14 +3,20 @@
 #include "AssetSystem/AssetType.h"
 #include "AssetSystem/AssetHandle.h"
 
+#include <CoreUtilities/Containers/Vector.h>
+
 #include <filesystem>
+
 
 namespace Volt
 {
+
 	enum class AssetChangedState : uint8_t
 	{
-		Removed,
-		Updated
+		Deleted,
+		Loaded,
+		Unloaded,
+		Saved,
 	};
 
 	enum class AssetFlag : uint8_t
@@ -23,18 +29,33 @@ namespace Volt
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(AssetFlag);
 
+	inline static constexpr size_t ASSET_CUSTOM_METADATA_SIZE = 256;
+	typedef Vector<uint8_t, InlineAllocator<ASSET_CUSTOM_METADATA_SIZE>> CustomAssetMetadataVector;
+
 	struct AssetMetadata
 	{
 		inline const bool IsValid() const { return handle != 0; }
+
+		template<typename CustomMetadataType> 
+		const CustomMetadataType& GetCustomData() const
+		{
+			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(type), std::format("Custom metadata type is not for type %s!", type->GetName()));
+			VT_ENSURE_MSG(customData.size() == sizeof(CustomMetadataType), std::format("Custom metadata size is not correct, for type: %s!", type->GetName()));
+
+			return reinterpret_cast<const CustomMetadataType&>(*customData.data());
+		}
 
 		AssetHandle handle = 0;
 		AssetType type;
 
 		bool isLoaded = false;
 		bool isQueued = false;
+		//a memory asset is an asset that is not saved to a file on the disk
 		bool isMemoryAsset = false;
 
 		std::filesystem::path filePath;
+
+		CustomAssetMetadataVector customData;
 	};
 
 	// #TODO_Ivar: Change name to be getter / setter, also add virtual functions when name changes.
@@ -73,6 +94,7 @@ namespace Volt
 		virtual AssetType GetType() { return AssetTypes::None; }
 		virtual uint32_t GetVersion() const { return 1; }
 		virtual void OnDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state) {}
+		virtual void SetupInitialCustomMetadata(CustomAssetMetadataVector& customMetadata) {}
 
 		AssetFlag assetFlags = AssetFlag::None;
 		AssetHandle handle = {};

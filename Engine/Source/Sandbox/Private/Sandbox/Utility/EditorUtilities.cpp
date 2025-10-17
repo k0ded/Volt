@@ -4,6 +4,7 @@
 #include "Sandbox/Utility/AssetBrowserUtilities.h"
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/Theme.h"
+#include "Sandbox/DirtyAssetsManager.h"
 
 #include <Volt-Assets/MeshAsset.h>
 
@@ -18,7 +19,9 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <Volt-Scene/Entity.h>
+#include <Volt-Scene/Scene.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -227,7 +230,7 @@ bool EditorUtils::NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCh
 		if (ImGui::Button("Create"))
 		{
 			created = true;
-			outCharacter = Volt::AssetManager::CreateAsset<Volt::AnimatedCharacter>(aCharacterData.destination, aCharacterData.name);
+			outCharacter = Volt::AssetManager::CreateAssetAndFile<Volt::AnimatedCharacter>(aCharacterData.destination, aCharacterData.name);
 
 			if (aCharacterData.skeletonHandle != Volt::Asset::Null())
 			{
@@ -238,8 +241,6 @@ bool EditorUtils::NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCh
 			{
 				outCharacter->SetSkin(Volt::AssetManager::GetAsset<Volt::MeshAsset>(aCharacterData.skinHandle)->GetMesh());
 			}
-
-			Volt::AssetManager::Get().SaveAsset(outCharacter);
 			ImGui::CloseCurrentPopup();
 		}
 
@@ -361,19 +362,32 @@ std::string EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)
 	return originalName;
 }
 
-void EditorUtils::MarkEntityAsEdited(const Volt::Entity& entity)
+void EditorUtils::MarkEntityAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity)
 {
-	auto scene = entity.GetScene();
-	scene->MarkEntityAsEdited(entity);
+	VT_ENSURE(scene);
+
+	const Volt::AssetHandle descHandle = scene->GetEntityDescHandleFromEntityID(entity.GetID());
+	DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
 }
 
-void EditorUtils::MarkEntityAndChildrenAsEdited(const Volt::Entity& entity)
+void EditorUtils::MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity)
 {
-	auto scene = entity.GetScene();
-	scene->MarkEntityAsEdited(entity);
+	VT_ENSURE(scene);
+
+	MarkEntityAsEdited(scene, entity);
 
 	for (const auto& child : entity.GetChildren())
 	{
-		MarkEntityAndChildrenAsEdited(child);
+		MarkEntityAndChildrenAsEdited(scene, child);
+	}
+}
+
+void EditorUtils::DestroyEntity(Weak<Volt::Scene> scene, const Volt::Entity& entity)
+{
+	Vector<Volt::AssetHandle> destroyedEntityDescs;
+	scene->DestroyEntity(entity, destroyedEntityDescs);
+	for (Volt::AssetHandle asset : destroyedEntityDescs)
+	{
+		DirtyAssetsManager::Get().MarkAssetDirty(asset);
 	}
 }

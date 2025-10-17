@@ -14,7 +14,6 @@ namespace Volt
 	class AppRenderEvent;
 	class WindowResizeEvent;
 
-	class OnSceneTransitionEvent;
 	class OnSceneLoadedEvent;
 }
 

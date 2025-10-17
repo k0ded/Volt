@@ -3,7 +3,7 @@
 
 #include "Navigation/Core/CoreInterfaces.h"
 
-#include <Volt-Scene/Entity.h>
+#include <EntitySystem/Entity.h>
 
 #include <DetourCommon.h>
 

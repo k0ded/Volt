@@ -374,7 +374,7 @@ namespace Volt
 				continue;
 			}
 
-			Ref<MaterialAsset> material = AssetManager::CreateAsset<MaterialAsset>(importConfig.destinationDirectory, name);
+			Ref<MaterialAsset> material = AssetManager::CreateAssetAndFile<MaterialAsset>(importConfig.destinationDirectory, name);
 			result.emplace_back(material);
 
 			materialTable.SetMaterial(material->GetRenderMaterial(), static_cast<uint32_t>(result.size() - 1));
@@ -383,7 +383,7 @@ namespace Volt
 		// Create a dummy material
 		if (result.empty())
 		{
-			Ref<MaterialAsset> material = AssetManager::CreateAsset<MaterialAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_DummyMat");
+			Ref<MaterialAsset> material = AssetManager::CreateAssetAndFile<MaterialAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_DummyMat");
 			result.emplace_back(material);
 
 			materialTable.SetMaterial(material->GetRenderMaterial(), 0);
@@ -665,7 +665,7 @@ namespace Volt
 
 		const FbxLongLong animationLength = endFrame - startFrame + 1;
 
-		Ref<Animation> voltAnimation = AssetManager::CreateAsset<Animation>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + std::string(animStackName.Buffer()));
+		Ref<Animation> voltAnimation = AssetManager::CreateAssetAndFile<Animation>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + std::string(animStackName.Buffer()));
 		voltAnimation->m_framesPerSecond = FbxUtility::GetFramesPerSecond(timeMode);
 		voltAnimation->m_duration = static_cast<float>(animationLength) / static_cast<float>(voltAnimation->m_framesPerSecond);
 		voltAnimation->m_frames.resize(animationLength);
@@ -937,7 +937,7 @@ namespace Volt
 			MeshInitializer meshInitializer;
 			meshInitializer.SetMaterialTable(materialTable);
 
-			Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
+			Ref<MeshAsset> voltMesh = AssetManager::CreateAssetAndFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
 
 			for (auto* fbxMesh : fbxMeshes)
 			{
@@ -951,7 +951,7 @@ namespace Volt
 		{
 			for (auto* fbxMesh : fbxMeshes)
 			{
-				Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + fbxMesh->GetName());
+				Ref<MeshAsset> voltMesh = AssetManager::CreateAssetAndFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + fbxMesh->GetName());
 
 				MeshInitializer meshInitializer;
 				CreateVoltMeshFromFbxMesh(*fbxMesh, meshInitializer, materials, importConfig, nullptr);
@@ -1009,7 +1009,7 @@ namespace Volt
 			MeshInitializer meshInitializer;
 			meshInitializer.SetMaterialTable(materialTable);
 
-			Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
+			Ref<MeshAsset> voltMesh = AssetManager::CreateAssetAndFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
 
 			for (auto* fbxMesh : fbxMeshes)
 			{
@@ -1023,7 +1023,7 @@ namespace Volt
 		{
 			for (auto* fbxMesh : fbxMeshes)
 			{
-				Ref<MeshAsset> voltMesh = AssetManager::CreateAsset<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + fbxMesh->GetName());
+				Ref<MeshAsset> voltMesh = AssetManager::CreateAssetAndFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + fbxMesh->GetName());
 
 				MeshInitializer meshInitializer;
 				CreateVoltMeshFromFbxMesh(*fbxMesh, meshInitializer, materials, importConfig, &jointVertexLinkMap);
@@ -1038,7 +1038,7 @@ namespace Volt
 		}
 
 		// Create skeleton
-		Ref<Skeleton> voltSkeleton = AssetManager::CreateAsset<Skeleton>(importConfig.destinationDirectory, importConfig.destinationFilename + "_Skeleton");
+		Ref<Skeleton> voltSkeleton = AssetManager::CreateAssetAndFile<Skeleton>(importConfig.destinationDirectory, importConfig.destinationFilename + "_Skeleton");
 		CreateVoltSkeletonFromFbxSkeleton(fbxSkeleton, voltSkeleton);
 
 		Vector<Ref<Asset>> animations;

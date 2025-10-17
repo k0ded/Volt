@@ -3,13 +3,17 @@
 #include "Config.h"
 #include "ComponentReflection.h"
 
-#include "EntitySystem/EntityHelper.h"
+#include "EntitySystem/EntityScene.h"
+#include "EntitySystem/Entity.h"
 
 #include <unordered_map>
 #include <entt.hpp>
 
+#include <shared_mutex>
+
 namespace Volt
 {
+	class Entity;
 	class VTES_API ComponentRegistry
 	{
 	public:
@@ -20,7 +24,7 @@ namespace Volt
 		const bool RegisterEnum();
 
 		void ClearRegistry();
-		
+
 		const ICommonTypeDesc* GetTypeDescFromName(std::string_view name);
 		const ICommonTypeDesc* GetTypeDescFromGUID(const VoltGUID& guid);
 		std::string_view GetTypeNameFromGUID(const VoltGUID& guid);
@@ -33,7 +37,7 @@ namespace Volt
 			std::function<void(entt::registry&, entt::entity)> addComponent;
 			std::function<void(entt::registry&, entt::entity)> removeComponent;
 			std::function<bool(const entt::registry&, entt::entity)> hasComponent;
-			std::function<void*(entt::registry&, entt::entity)> getComponent;
+			std::function<void* (entt::registry&, entt::entity)> getComponent;
 			std::function<void(entt::registry&)> setupOnCreate;
 			std::function<void(entt::registry&)> setupOnDestroy;
 		};
@@ -46,7 +50,6 @@ namespace Volt
 			VTES_API static const bool HasComponentWithGUID(const VoltGUID& guid, const entt::registry& registry, entt::entity entity);
 			VTES_API static void* GetComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity);
 			VTES_API static void SetupComponentCallbacks(entt::registry& registry);
-
 		private:
 			Helpers() = default;
 		};
@@ -102,15 +105,14 @@ namespace Volt
 
 		helpers.getComponent = [](entt::registry& registry, entt::entity entity) -> void*
 		{
-			for (auto&& curr : registry.storage())
+			if (registry.any_of<T>(entity))
 			{
-				if (auto& storage = curr.second; curr.second.type().name() == entt::type_id<T>().name())
-				{
-					return storage.get(entity);
-				}
+				return reinterpret_cast<void*>(&registry.get<T>(entity));
 			}
-
-			return nullptr;
+			else
+			{
+				return nullptr;
+			}
 		};
 
 		helpers.setupOnCreate = [](entt::registry& registry)
@@ -155,7 +157,7 @@ namespace Volt
 		EntityScene* entityScene = reinterpret_cast<EntityScene*>(registry.get_user_data());
 		VT_ENSURE(entityScene);
 
-		compDesc->OnCreate(entityScene->GetEntityHelperFromEntityHandle(entity));
+		compDesc->OnCreate(entityScene->GetEntityFromHandle(entity));
 	}
 
 	template<typename T>
@@ -167,7 +169,7 @@ namespace Volt
 		EntityScene* entityScene = reinterpret_cast<EntityScene*>(registry.get_user_data());
 		VT_ENSURE(entityScene);
 
-		compDesc->OnDestroy(entityScene->GetEntityHelperFromEntityHandle(entity));
+		compDesc->OnDestroy(entityScene->GetEntityFromHandle(entity));
 	}
 }
 

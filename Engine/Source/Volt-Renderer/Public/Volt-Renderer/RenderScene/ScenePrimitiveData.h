@@ -5,7 +5,7 @@
 #include "Volt-Renderer/RenderPrimitiveData.h"
 #include "Volt-Renderer/RayTracing/RayTracingInstance.h"
 
-#include <EntitySystem/EntityHelper.h>
+#include <EntitySystem/EntityID.h>
 
 #include <LogModule/LogCategory.h>
 

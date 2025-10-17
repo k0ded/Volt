@@ -43,6 +43,7 @@ namespace Volt
 		return m_typeNameToGUIDMap.at(typeName);
 	}
 
+
 	void ComponentRegistry::Helpers::AddComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity)
 	{
 		ComponentRegistry& componentRegistry = GetComponentRegistry();

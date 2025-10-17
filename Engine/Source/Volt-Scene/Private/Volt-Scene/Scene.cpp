@@ -1,12 +1,17 @@
 #include "vspch.h"
 
 #include "Volt-Scene/Scene.h"
-#include "Volt-Scene/Entity.h"
+#include "Volt-Scene/EntityDescriptionSerializer.h"
+#include "Volt-Scene/EntityDescription.h"
+#include "Volt-Scene/EntityDescCustomMetadata.h"
+#include "Volt-Scene/EntityUtility.h"
 
 #include <Volt-Physics/RigidbodyComponent.h>
 #include <Volt-Physics/EntityPhysicsScene.h>
 
 #include <Volt-Animation/AnimationManager.h>
+
+#include <Volt-Core/Algorithms.h>
 
 #include <Volt-CoreComponents/LightComponents.h>
 #include <Volt-CoreComponents/RenderingComponents.h>
@@ -15,11 +20,16 @@
 
 #include <SubSystem/SubSystemManager.h>
 
+#include <EntitySystem/Entity.h>
+#include <EntitySystem/Scripting/CommonComponent.h>
+
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetFactory.h>
+#include <AssetSystem/AssetSerializerRegistry.h>
 
 #include <CoreUtilities/Math/Math.h>
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 
 namespace Volt
 {
@@ -81,7 +91,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 		m_statistics.entityCount = m_entityScene.GetEntityAliveCount();
-		
+
 		m_entityScene.Update(aDeltaTime);
 
 		AnimationManager::Update(aDeltaTime);
@@ -102,7 +112,7 @@ namespace Volt
 		{
 			if (transComp.visible)
 			{
-				Entity entity = { id, this };
+				Entity entity = { id, &m_entityScene };
 
 				if (!cameraComp.camera)
 				{
@@ -127,112 +137,269 @@ namespace Volt
 		m_entityScene.SortScene();
 	}
 
+	void Scene::LoadEntities()
+	{
+		if (m_isFinishedLoadingEntities)
+		{
+			return;
+		}
+		VT_PROFILE_MESSAGE("START LOADING ENTITIES");
+		JobRef job = JobSystem::CreateJob("Register Entities", ExecutionPriority::Latent, [this]()
+		{
+			//collect all entity descriptions to spawn
+			Vector<AssetHandle> allEntityDescAssetsForScene = Volt::AssetManager::GetAllAssetsOfType<Volt::EntityDesc>();
+			for (const AssetHandle& handle : allEntityDescAssetsForScene)
+			{
+				const AssetMetadata meta = Volt::AssetManager::GetMetadataFromHandle(handle);
+				const EntityDescCustomMetadata& customMeta = meta.GetCustomData<EntityDescCustomMetadata>();
+
+				if (customMeta.sceneHandle != this->handle)
+				{
+					continue;
+				}
+				m_entityIDToDescHandle.emplace(customMeta.entityID, handle);
+			}
+
+
+			TaskGraph taskGraph{ ExecutionPriority::Latent };
+			TaskGraph::Task* createEntitiesTask = taskGraph.AddTask("Create Entities", [this]()
+			{
+				entt::registry& registry = m_entityScene.GetRegistry();
+				registry.reserve(m_entityIDToDescHandle.size());
+				for (const auto& [entityID, descHandle] : m_entityIDToDescHandle)
+				{
+					m_entityScene.CreateEntityWithID(entityID);
+				}
+			});
+
+			//parse entity descriptions to YAML
+			Vector<TaskGraph::Task*> parseEntityDescTasks;
+			parseEntityDescTasks.reserve(m_entityIDToDescHandle.size());
+
+			//keep track of all the parsed yamlReaders
+			Ref<std::unordered_map<EntityID, Ref<YAMLMemoryStreamReader>>> yamlReaders = CreateRef<std::unordered_map<EntityID, Ref<YAMLMemoryStreamReader>>>();
+			yamlReaders->reserve(m_entityIDToDescHandle.size());
+
+			//keep track of what components each entity needs
+			Ref<Map<EntityID, Vector<VoltGUID>>> entityToComponentTypes = CreateRef<Map<EntityID, Vector<VoltGUID>>>();
+			entityToComponentTypes->reserve(m_entityIDToDescHandle.size());
+			for (const auto& [entityID, descHandle] : m_entityIDToDescHandle)
+			{
+				//create the reader for this entity
+				Ref<YAMLMemoryStreamReader> reader = CreateRef<YAMLMemoryStreamReader>();
+				yamlReaders->insert({ entityID,reader });
+
+				//create the entry for this entity
+				entityToComponentTypes->insert({ entityID,  {} });
+
+				parseEntityDescTasks.push_back(taskGraph.AddTask("Parse EntityDesc Data", [descHandle, entityID, reader, entityToComponentTypes]
+				{
+					Ref<EntityDesc> entityDesc = AssetManager::GetAsset<EntityDesc>(descHandle);
+
+					reader->ReadBuffer(entityDesc->GetEntitySpawnData());
+
+					//todo_fabian: we probably want to be able to have the
+					// entity descriptions not loaded but the entity present...
+					//for now DirtyAssetManager relies on the desc being loaded
+					//AssetManager::Get().UnloadAsset(descHandle);
+
+					entityToComponentTypes->at(entityID) = EntityDescSerializer::FindComponentTypes(*reader);
+				}));
+			}
+
+
+			//arrange component types to map from type to entityIDs to quickly create them concurrently later
+			Ref<Map<VoltGUID, Vector<EntityID>>> componentTypeToOwningEntities = CreateRef<Map<VoltGUID, Vector<EntityID>>>();
+			TaskGraph::Task* arrangeComponentsToEntityIDTask = taskGraph.AddTaskWithDependencies("Arrange Components To EntityIDs", parseEntityDescTasks, [componentTypeToOwningEntities, entityToComponentTypes]()
+			{
+				VT_LOG(Warning, "Arranging components to entityIDs");
+				for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
+				{
+					for (VoltGUID componentType : componentTypes)
+					{
+						(*componentTypeToOwningEntities)[componentType].push_back(entityID);
+					}
+				}
+			});
+
+			//new task graph to be able to create a separate task per component type
+			taskGraph.AddTaskWithDependencies("Launch Component Creation and Serialization Jobs", { arrangeComponentsToEntityIDTask, createEntitiesTask }, [this, componentTypeToOwningEntities, entityToComponentTypes, yamlReaders]()
+			{
+				VT_LOG(Warning, "Launch Component Creation and Serialization Jobs");
+
+				TaskGraph componentTaskGraph{ ExecutionPriority::Latent };
+
+				//create all components
+				Vector<TaskGraph::Task*> createComponentsTasks;
+				createComponentsTasks.reserve(componentTypeToOwningEntities->size());
+				for (const auto& [componentType, entityIDs] : *componentTypeToOwningEntities)
+				{
+					//todo: there should be a different system for order of initialization so that we dont have to make a special case
+					if (componentType == GetTypeGUID<IDComponent>() ||
+					componentType == GetTypeGUID<TransformComponent>() ||
+					componentType == GetTypeGUID<TagComponent>() ||
+					componentType == GetTypeGUID<RelationshipComponent>() ||
+					componentType == GetTypeGUID<CommonComponent>())
+					{
+						continue;
+					}
+
+					createComponentsTasks.push_back(componentTaskGraph.AddTask("Create Components", [this, componentType, componentTypeToOwningEntities]()
+					{
+						entt::registry& registry = m_entityScene.GetRegistry();
+
+						for (EntityID entityID : componentTypeToOwningEntities->at(componentType))
+						{
+							entt::entity entityHandle = m_entityScene.GetEntityHandleFromID(entityID);
+
+							ComponentRegistry::Helpers::AddComponentWithGUID(componentType, registry, entityHandle);
+						}
+					}
+					));
+				}
+
+				//todo_fabian: this can be multiple jobs when some issues are fixed with the task graph
+				TaskGraph::Task* deserializeComponentsTask = componentTaskGraph.AddTaskWithDependencies("Deserialize Entities Component Datas", createComponentsTasks, [this, entityToComponentTypes, yamlReaders]()
+				{
+					for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
+					{
+						const EntityDescSerializer& serializer = reinterpret_cast<const EntityDescSerializer&>(AssetSerializerRegistry::Get().GetSerializer(AssetTypes::EntityDesc));
+						Volt::Entity entity = m_entityScene.GetEntityFromID(entityID);
+						YAMLMemoryStreamReader& reader = *yamlReaders->at(entityID);
+						serializer.DeserializeEntityInPlace(entity, reader);
+					}
+				});
+
+				componentTaskGraph.AddTaskWithDependencies("Finished loading entities", { deserializeComponentsTask }, [this]()
+				{
+					VT_PROFILE_MESSAGE("FINISH LOADING ENTITIES");
+					m_isFinishedLoadingEntities = true;
+				});
+
+				componentTaskGraph.Execute();
+			});
+
+			taskGraph.Execute();
+		});
+		JobSystem::RunJob(job);
+	}
+
+	void Scene::UnloadEntities()
+	{
+		//todo_fabian: we probably want to be able to have the
+		// entity descriptions not loaded but the entity present...
+		//for now DirtyAssetManager relies on the desc being loaded
+		for (const auto& [id, descHandle] : m_entityIDToDescHandle)
+		{
+			AssetManager::Get().UnloadAsset(descHandle);
+		}
+		Clear();
+
+	}
+
 	Entity Scene::CreateEntity(const std::string& tag)
 	{
-		EntityHelper newHelper = m_entityScene.CreateEntity(tag);
-		VT_ENSURE(newHelper);
+		Entity newEntity = m_entityScene.CreateEntity(tag);
+		VT_ENSURE(newEntity);
 
-		Entity newEntity(newHelper.GetHandle(), this);
-		m_worldEngine.AddEntity(newEntity);
+		//todo: World Engine
+		//m_worldEngine.AddEntity(newEntity);
+
+		CreateEntityDescForEntity(newEntity.GetID());
 
 		return newEntity;
 	}
 
-	Entity Scene::CreateEntityWithID(const EntityID& id, const std::string& tag)
+	Entity Scene::CreateEntityWithID(const EntityID& id)
 	{
-		EntityHelper newHelper = m_entityScene.CreateEntityWithID(id, tag);
-		VT_ENSURE(newHelper);
+		Entity newEntity = m_entityScene.CreateEntityWithID(id);
+		VT_ENSURE(newEntity);
 
-		Entity newEntity(newHelper.GetHandle(), this);
-		m_worldEngine.AddEntity(newEntity);
+		//todo: World Engine
+		//m_worldEngine.AddEntity(newEntity);
 
 		return newEntity;
+	}
+
+	Volt::AssetHandle Scene::CreateEntityDescForEntity(const EntityID& id)
+	{
+		VT_ENSURE(!m_entityIDToDescHandle.contains(id));
+		VT_ENSURE(m_entityScene.IsEntityValid(id));
+
+		std::string name = std::to_string(id);
+		Ref<Volt::EntityDesc> asset;
+		if (Volt::AssetManager::IsMemoryAsset(this->handle))
+		{
+			asset = Volt::AssetManager::CreateMemoryAsset<Volt::EntityDesc>(name, id, this->handle);
+		}
+		else
+		{
+			asset = Volt::AssetManager::CreateAsset<Volt::EntityDesc>(name, id, this->handle);
+		}
+		m_entityIDToDescHandle.emplace(id, asset->handle);
+		return asset->handle;
 	}
 
 	Entity Scene::GetEntityFromID(const EntityID id) const
 	{
-		EntityHelper helper = m_entityScene.GetEntityHelperFromEntityID(id);
-		return Entity(helper.GetHandle(), const_cast<Scene*>(this));
+		return m_entityScene.GetEntityFromID(id);
 	}
 
 	Entity Scene::GetEntityFromHandle(entt::entity entityHandle) const
 	{
-		EntityHelper helper = m_entityScene.GetEntityHelperFromEntityHandle(entityHandle);
-		return Entity(helper.GetHandle(), const_cast<Scene*>(this));
+		return  m_entityScene.GetEntityFromHandle(entityHandle);
 	}
 
-	EntityHelper Scene::GetEntityHelperFromEntityID(EntityID entityId) const
+	Volt::AssetHandle Scene::GetEntityDescHandleFromEntityID(EntityID entityID) const
 	{
-		return m_entityScene.GetEntityHelperFromEntityID(entityId);
+		if (!m_entityIDToDescHandle.contains(entityID))
+		{
+			return Volt::Asset::Null();
+		}
+		return m_entityIDToDescHandle.at(entityID);
 	}
 
 	void Scene::DestroyEntity(Entity entity)
 	{
-		m_entityScene.DestroyEntity(entity.GetID());
+		DestroyEntity(entity, nullptr, nullptr);
 	}
 
-	void Scene::ParentEntity(Entity parent, Entity child)
+	void Scene::DestroyEntity(Entity entity, Vector<EntityID>& outDestroyedEntities)
 	{
-		if (!parent.IsValid() || !child.IsValid() || parent == child)
-		{
-			return;
-		}
-
-		// Check that it's not in the child chain
-		bool isChild = false;
-		IsRecursiveChildOf(parent, child, isChild);
-		if (isChild)
-		{
-			return;
-		}
-
-		if (child.GetParent())
-		{
-			UnparentEntity(child);
-		}
-
-		auto& childChildren = child.GetComponent<RelationshipComponent>().children;
-
-		if (auto it = std::find(childChildren.begin(), childChildren.end(), parent.GetID()) != childChildren.end())
-		{
-			return;
-		}
-
-		child.GetComponent<RelationshipComponent>().parent = parent.GetID();
-		parent.GetComponent<RelationshipComponent>().children.emplace_back(child.GetID());
-
-		ConvertToLocalSpace(child);
+		DestroyEntity(entity, &outDestroyedEntities, nullptr);
 	}
 
-	void Scene::UnparentEntity(Entity entity)
+	void Scene::DestroyEntity(Entity entity, Vector<AssetHandle>& outDestroyedEntityDescs)
 	{
-		if (!entity.IsValid()) { return; }
+		DestroyEntity(entity, nullptr, &outDestroyedEntityDescs);
+	}
 
-		auto parent = entity.GetParent();
-		if (!parent.IsValid())
+	void Scene::DestroyEntity(Entity entity, Vector<EntityID>* outDestroyedEntities, Vector<Volt::AssetHandle>* outDestroyedEntityDescs)
+	{
+		Vector<EntityID> destroyedEntities;
+		m_entityScene.DestroyEntity(entity.GetID(), &destroyedEntities);
+
+		for (EntityID destroyedEnt : destroyedEntities)
 		{
-			return;
+			if (outDestroyedEntityDescs)
+			{
+				outDestroyedEntityDescs->push_back(m_entityIDToDescHandle[destroyedEnt]);
+			}
+			m_entityIDToDescHandle.erase(destroyedEnt);
 		}
 
-		auto& children = parent.GetComponent<RelationshipComponent>().children;
-
-		auto it = std::find(children.begin(), children.end(), entity.GetID());
-		if (it != children.end())
+		if (outDestroyedEntities)
 		{
-			children.erase(it);
+			*outDestroyedEntities = destroyedEntities;
 		}
-
-		//we need to convert to world space before removing the parent because it takes the parent transform into account
-		ConvertToWorldSpace(entity);
-		entity.GetComponent<RelationshipComponent>().parent = Entity::NullID();
-
-		//we have to invalidate the transform here even though ConvertToWorldSpace already does it since it takes the parent into account
-		InvalidateEntityTransform(entity.GetID());
 	}
 
 	void Scene::InvalidateEntityTransform(const EntityID& entityId)
 	{
-		if (m_sceneSettings.useWorldEngine)
+		Vector<EntityID> invalidatedEntities = m_entityScene.InvalidateEntityTransform(entityId);
+
+		//todo: World Engine
+		/*if (m_sceneSettings.useWorldEngine)
 		{
 			Vector<EntityID> invalidatedEntities = m_entityScene.InvalidateEntityTransform(entityId);
 
@@ -241,7 +408,7 @@ namespace Volt
 				Entity currentEntity = GetEntityFromID(id);
 				m_worldEngine.OnEntityMoved(currentEntity);
 			}
-		}
+		}*/
 	}
 
 	bool Scene::IsEntityValid(EntityID entityId) const
@@ -249,9 +416,17 @@ namespace Volt
 		return m_entityScene.IsEntityValid(entityId);
 	}
 
-	Ref<Scene> Scene::CreateDefaultScene(const std::string& name, bool createDefaultMesh)
+	Ref<Scene> Scene::CreateDefaultScene(const std::string& name, bool createDefaultMesh, bool asMemoryAsset)
 	{
-		Ref<Scene> newScene = CreateRef<Scene>(name);
+		Ref<Scene> newScene;
+		if (asMemoryAsset)
+		{
+			newScene = Volt::AssetManager::CreateMemoryAsset<Scene>(name);
+		}
+		else
+		{
+			newScene = Volt::AssetManager::CreateAsset<Scene>(name);
+		}
 
 		// Setup
 		{
@@ -262,7 +437,7 @@ namespace Volt
 
 				auto& meshComp = ent.AddComponent<MeshComponent>();
 				meshComp.handle = AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Cube.vtasset");
-				MeshComponent::OnMemberChanged(MeshComponent::MeshEntity(ent.GetScene()->GetEntityHelperFromEntityID(ent.GetID())));
+				MeshComponent::OnMemberChanged(MeshComponent::MeshEntity(ent));
 			}
 
 			// Light
@@ -279,7 +454,7 @@ namespace Volt
 				auto ent = newScene->CreateEntity("Skylight");
 				SkylightComponent& skyComp = ent.AddComponent<SkylightComponent>();
 				skyComp.environmentTextureHandle = AssetManager::GetAssetHandleFromFilePath("Engine/Textures/HDRIs/defaultHDRI.vtasset");
-				SkylightComponent::OnMemberChanged(SkylightComponent::LightEntity(ent.GetScene()->GetEntityHelperFromEntityID(ent.GetID())));
+				SkylightComponent::OnMemberChanged(SkylightComponent::LightEntity(ent));
 			}
 
 			// Camera
@@ -292,6 +467,7 @@ namespace Volt
 		}
 
 		newScene->m_sceneSettings.useWorldEngine = true;
+		newScene->m_isFinishedLoadingEntities = true;
 
 		return newScene;
 	}
@@ -310,13 +486,13 @@ namespace Volt
 		{
 			const EntityID uuid = registry.get<IDComponent>(id).id;
 
-			auto entity =  otherScene->CreateEntityWithID(uuid);
-			Entity::Copy(Entity{ id, this }, entity, EntityCopyFlags::None);
+			auto entity = otherScene->CreateEntityWithID(uuid);
+			CopyEntity(Entity{ id, &m_entityScene }, entity);
 
 			otherScene->InvalidateEntityTransform(entity.GetID());
 			otherScene->GetWorldEngineMutable().OnEntityMoved(entity);
 		});
-	} 
+	}
 
 	void Scene::Clear()
 	{
@@ -325,7 +501,7 @@ namespace Volt
 
 	glm::mat4 Scene::GetWorldTransform(Entity entity) const
 	{
-		const TQS entityWorldTQS = m_entityScene.GetEntityWorldTQS(m_entityScene.GetEntityHelperFromEntityID(entity.GetID()));
+		const TQS entityWorldTQS = m_entityScene.GetEntityWorldTQS(entity);
 
 		const glm::mat4 transform = glm::translate(glm::mat4{ 1.f }, entityWorldTQS.translation)
 			* glm::mat4_cast(entityWorldTQS.rotation)
@@ -437,17 +613,6 @@ namespace Volt
 		InvalidateEntityTransform(entity.GetID());
 	}
 
-	void Scene::MarkEntityAsEdited(const Entity& entity)
-	{
-		VT_ENSURE_MSG(entity.IsValid(), "Entity is not valid! Only valid entities can be marked as edited!");
-		m_entityScene.MarkEntityAsEdited(m_entityScene.GetEntityHelperFromEntityID(entity.GetID()));
-	}
-
-	void Scene::ClearEditedEntities()
-	{
-		m_entityScene.ClearEditedEntities();
-	}
-
 	Vector<Entity> Scene::GetAllEntities() const
 	{
 		const auto& registry = m_entityScene.GetRegistry();
@@ -457,38 +622,14 @@ namespace Volt
 
 		registry.each([&](const entt::entity id)
 		{
-			result.emplace_back(Entity{ id, const_cast<Scene*>(this) });
+			result.emplace_back(Entity{ id, &m_entityScene });
 		});
 
 		return result;
 	}
 
-	Vector<Entity> Scene::GetAllEditedEntities() const
-	{
-		Vector<Entity> entities;
-
-		for (const auto& entity : m_entityScene.GetEditedEntities())
-		{
-			entities.push_back(GetEntityFromID(entity));
-		}
-
-		return entities;
-	}
-
-	Vector<EntityID> Scene::GetAllRemovedEntities() const
-	{
-		Vector<EntityID> entities;
-
-		for (const auto& entity : m_entityScene.GetRemovedEntities())
-		{
-			entities.push_back(entity);
-		}
-
-		return entities;
-	}
-
 	TQS Scene::GetEntityWorldTQS(const Entity& entity) const
 	{
-		return m_entityScene.GetEntityWorldTQS(m_entityScene.GetEntityHelperFromEntityID(entity.GetID()));
+		return m_entityScene.GetEntityWorldTQS(entity);
 	}
 }

@@ -107,4 +107,3 @@ public:
 		uint8_t m_data[TotalSize];
 	};
 };
-

@@ -49,7 +49,7 @@ namespace Volt
 		}
 	};
 
-	void MeshSerializer::Serialize(const AssetMetadata& metadata, const Ref<Asset>& asset) const
+	void MeshSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
 	{
 		Ref<MeshAsset> meshAsset = std::reinterpret_pointer_cast<MeshAsset>(asset);
 

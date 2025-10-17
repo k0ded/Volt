@@ -1,5 +1,6 @@
 #include "sbpch.h"
 #include "Sandbox/Window/ProjectConversionPanel.h"
+#include "Sandbox/Utility/EditorUtilities.h"
 
 #include <Volt-Application/UI/UIUtility.h>
 
@@ -11,6 +12,7 @@
 
 #include <Volt-Assets/MeshAsset.h>
 #include <Volt-Scene/Prefab.h>
+#include <Volt-Scene/EntityUtility.h>
 
 #include <Volt-Physics/ColliderComponents.h>
 #include <Volt-Physics/RigidbodyComponent.h>
@@ -22,6 +24,7 @@
 #include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
 #include <SubSystem/SubSystemManager.h>
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetSerializerRegistry.h>
 
 using namespace Volt;
 
@@ -430,7 +433,8 @@ void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, cons
 		{
 			std::filesystem::create_directories(absoluteFilepath.parent_path());
 		}
-		AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Serialize(metadata, asset);
+		Volt::CustomAssetMetadataVector OutCustomMetadata;
+		AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Serialize(metadata, OutCustomMetadata, asset);
 	}
 }
 
@@ -501,7 +505,7 @@ Ref<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project,
 			EntityID entityId = layerReader.ReadAtKey("id", 0u);
 
 			Entity newEntity = scene->CreateEntityWithID(entityId);
-			scene->MarkEntityAsEdited(newEntity);
+			EditorUtils::MarkEntityAsEdited(scene, newEntity);
 
 			layerReader.ForEach("components", [&]() 
 			{
@@ -521,12 +525,12 @@ Ref<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project,
 				{
 					case ValueType::Component:
 					{
-						if (!ComponentRegistry::Helpers::HasComponentWithGUID(componentGUID, scene->GetRegistry(), newEntity.GetHandle()))
+						if (!ComponentRegistry::Helpers::HasComponentWithGUID(componentGUID, scene->GetEntityScene().GetRegistry(), newEntity.GetHandle()))
 						{
-							ComponentRegistry::Helpers::AddComponentWithGUID(componentGUID, scene->GetRegistry(), newEntity.GetHandle());
+							ComponentRegistry::Helpers::AddComponentWithGUID(componentGUID, scene->GetEntityScene().GetRegistry(), newEntity.GetHandle());
 						}
 
-						uint8_t* componentData = reinterpret_cast<uint8_t*>(ComponentRegistry::Helpers::GetComponentWithGUID(componentGUID, scene->GetRegistry(), newEntity.GetHandle()));
+						uint8_t* componentData = reinterpret_cast<uint8_t*>(ComponentRegistry::Helpers::GetComponentWithGUID(componentGUID, scene->GetEntityScene().GetRegistry(), newEntity.GetHandle()));
 						const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
 
 						layerReader.ForEach("properties", [&]() 
@@ -593,7 +597,7 @@ Ref<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project,
 
 		// Fixup prefabs
 		{
-			auto view = scene->GetRegistry().view<PrefabComponent>();
+			auto view = scene->GetEntityScene().GetRegistry().view<PrefabComponent>();
 
 			for (const auto& entId : view)
 			{
@@ -634,11 +638,8 @@ Ref<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project,
 					if (prefabIt != prefabs.end())
 					{
 						Ref<Prefab> prefab = prefabIt->second;
-						prefab->CopyPrefabEntity(entity, prefabComponent.prefabEntity, 
-							EntityCopyFlags::SkipRelationships | 
-							EntityCopyFlags::SkipTransform | 
-							EntityCopyFlags::SkipID | 
-							EntityCopyFlags::SkipPrefab);
+						prefab->CopyPrefabEntity(entity, prefabComponent.prefabEntity,
+							Volt::CreateSkipComponentOnCopySet<RelationshipComponent, TransformComponent, IDComponent, PrefabComponent>());
 					}
 				}
 			}
@@ -830,12 +831,12 @@ Ref<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Project& projec
 			{
 				case ValueType::Component:
 				{
-					if (!ComponentRegistry::Helpers::HasComponentWithGUID(componentGUID, prefabScene->GetRegistry(), prefabEntity.GetHandle()))
+					if (!ComponentRegistry::Helpers::HasComponentWithGUID(componentGUID, prefabScene->GetEntityScene().GetRegistry(), prefabEntity.GetHandle()))
 					{
-						ComponentRegistry::Helpers::AddComponentWithGUID(componentGUID, prefabScene->GetRegistry(), prefabEntity.GetHandle());
+						ComponentRegistry::Helpers::AddComponentWithGUID(componentGUID, prefabScene->GetEntityScene().GetRegistry(), prefabEntity.GetHandle());
 					}
 
-					uint8_t* componentData = reinterpret_cast<uint8_t*>(ComponentRegistry::Helpers::GetComponentWithGUID(componentGUID, prefabScene->GetRegistry(), prefabEntity.GetHandle()));
+					uint8_t* componentData = reinterpret_cast<uint8_t*>(ComponentRegistry::Helpers::GetComponentWithGUID(componentGUID, prefabScene->GetEntityScene().GetRegistry(), prefabEntity.GetHandle()));
 					const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
 
 					streamReader.ForEach("properties", [&]()

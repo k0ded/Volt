@@ -24,7 +24,7 @@ void AnimationEditorPanel::UpdateMainContent()
 
 	if (ImGui::Button("Save"))
 	{
-		Volt::AssetManager::SaveAsset(m_animation);
+		Volt::AssetManager::SaveAsset(m_animation->handle);
 	}
 
 	if (ImGui::BeginTable("timelineTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
@@ -153,7 +153,7 @@ void AnimationEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 {
 	if (m_animation)
 	{
-		Volt::AssetManager::SaveAsset(m_animation);
+		Volt::AssetManager::SaveAsset(m_animation->handle);
 	}
 
 	m_animation = std::reinterpret_pointer_cast<Volt::Animation>(asset);

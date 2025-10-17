@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CoreUtilities/FileIO/SerializationHelpers.h"
 #include "CoreUtilities/Core.h"
 #include "CoreUtilities/Containers/Vector.h"
 

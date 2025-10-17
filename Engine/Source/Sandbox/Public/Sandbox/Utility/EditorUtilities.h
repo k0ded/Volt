@@ -13,6 +13,7 @@ namespace Volt
 	class Texture2D;
 	class Mesh;
 	class Entity;
+	class Scene;
 }
 
 struct NewCharacterData
@@ -56,8 +57,9 @@ public:
 
 	static std::string GetDuplicatedNameFromEntity(const Volt::Entity& entity);
 
-	static void MarkEntityAsEdited(const Volt::Entity& entity);
-	static void MarkEntityAndChildrenAsEdited(const Volt::Entity& entity);
+	static void MarkEntityAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity);
+	static void MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity);
+	static void DestroyEntity(Weak<Volt::Scene> scene, const Volt::Entity& entity);
 
 private:
 	static bool AssetBrowserPopupInternal(const std::string& id, Volt::AssetHandle& assetHandle, bool startState, AssetType wantedType = AssetTypes::None);

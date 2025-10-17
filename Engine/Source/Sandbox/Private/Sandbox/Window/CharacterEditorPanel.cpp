@@ -18,10 +18,11 @@
 #include <Volt-Animation/Assets/Animation.h>
 #include <Volt-Animation/Assets/Skeleton.h>
 #include <Volt-Scene/Scene.h>
-#include <Volt-Scene/Entity.h>
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>
 #include <WindowModule/Events/WindowEvents.h>
@@ -79,7 +80,7 @@ void CharacterEditorPanel::UpdateMainContent()
 			{
 				if (myCurrentCharacter)
 				{
-					Volt::AssetManager::Get().SaveAsset(myCurrentCharacter);
+					Volt::AssetManager::Get().SaveAsset(myCurrentCharacter->handle);
 					UI::Notify(UI::NotificationType::Success, "Saved character!", std::format("Character {0} successfully saved!", myCurrentCharacter->assetName));
 				}
 			}
@@ -118,7 +119,7 @@ void CharacterEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 {
 	if (myCurrentCharacter)
 	{
-		Volt::AssetManager::Get().SaveAsset(myCurrentCharacter);
+		Volt::AssetManager::Get().SaveAsset(myCurrentCharacter->handle);
 	}
 
 	myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().animatedCharacter = asset->handle;
@@ -148,7 +149,7 @@ void CharacterEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
 			newEntity.AddComponent<Volt::MeshComponent>().handle = Volt::AssetManager::GetAsset<Volt::MeshAsset>("Engine/Meshes/Primitives/SM_Sphere.vtasset")->handle;
 			newEntity.SetScale(0.2f);
 
-			myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().attachedEntities[attachment.id].emplace_back(myScene->GetEntityHelperFromEntityID(newEntity.GetID()));
+			myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().attachedEntities[attachment.id].emplace_back(newEntity);
 		}
 	}
 	else
@@ -234,7 +235,7 @@ void CharacterEditorPanel::UpdateToolbar()
 	{
 		if (myCurrentCharacter)
 		{
-			Volt::AssetManager::Get().SaveAsset(myCurrentCharacter);
+			Volt::AssetManager::Get().SaveAsset(myCurrentCharacter->handle);
 			UI::Notify(UI::NotificationType::Success, "Saved Character!", std::format("Saved character {0} to file!", myCurrentCharacter->assetName));
 		}
 	}
@@ -892,7 +893,7 @@ void CharacterEditorPanel::AddJointAttachmentPopup()
 					newEntity.AddComponent<Volt::MeshComponent>().handle = Volt::AssetManager::GetAsset<Volt::MeshAsset>("Engine/Meshes/Primitives/SM_Sphere.vtasset")->handle;
 					newEntity.SetScale(0.2f);
 
-					myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().attachedEntities[newAttachment.id].emplace_back(myScene->GetEntityHelperFromEntityID(newEntity.GetID()));
+					myCharacterEntity.GetComponent<Volt::AnimatedCharacterComponent>().attachedEntities[newAttachment.id].emplace_back(newEntity);
 
 					ImGui::CloseCurrentPopup();
 				}

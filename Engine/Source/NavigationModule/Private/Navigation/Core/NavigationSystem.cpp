@@ -3,10 +3,10 @@
 
 #include "NavigationEditor/Tools/NavMeshDebugDrawer.h"
 
-#include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Scene.h>
 
 #include <EntitySystem/SceneEvents.h>
+#include <EntitySystem/Entity.h>
 
 #include <EventSystem/ApplicationEvents.h>
 

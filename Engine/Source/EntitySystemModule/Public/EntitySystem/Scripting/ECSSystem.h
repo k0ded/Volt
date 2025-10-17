@@ -196,7 +196,7 @@ private:
 		{
 			if constexpr (T::ConstructType == ECS::Type::Entity)
 			{
-				return T(scene.GetEntityHelperFromEntityHandle(entityId));
+				return T(scene.GetEntityFromHandle(entityId));
 			}
 			else if constexpr (T::ConstructType == ECS::Type::Query)
 			{

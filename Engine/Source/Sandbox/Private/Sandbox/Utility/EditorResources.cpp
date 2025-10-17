@@ -13,6 +13,8 @@
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/SourceAssetManager.h>
 
+#include <Volt-Scene/AssetTypes.h>
+
 void EditorResources::Initialize()
 {
 	// Asset icons
