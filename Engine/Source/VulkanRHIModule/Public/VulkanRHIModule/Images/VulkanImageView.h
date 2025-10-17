@@ -3,6 +3,8 @@
 #include "VulkanRHIModule/Core.h"
 #include <RHIModule/Images/ImageView.h>
 	
+#include <vulkan/vulkan.h>
+
 struct VkImageView_T;
 
 namespace Volt::RHI
@@ -10,6 +12,13 @@ namespace Volt::RHI
 	class VulkanImageView final : public ImageView
 	{
 	public:
+		struct DescriptorDescription
+		{
+			VkDescriptorGetInfoEXT vkDescriptorInfo;
+			VkDescriptorImageInfo vkImageDescriptor;
+			uint64_t descriptorSize;
+		};
+
 		VulkanImageView(const ImageViewDesc& specification, RawPtr<Image> image);
 		~VulkanImageView() override;
 
@@ -22,10 +31,15 @@ namespace Volt::RHI
 		RawPtr<Image> GetImage() const override;
 		const bool IsSwapchainView() const override;
 
+		VT_NODISCARD VT_INLINE const DescriptorDescription& GetSRVDescriptor() const { return m_srvDescriptor; }
+		VT_NODISCARD VT_INLINE const DescriptorDescription& GetUAVDescriptor() const { return m_uavDescriptor; }
+
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
+		void CreateDescriptors();
+
 		ImageViewDesc m_desc{};
 
 		VkImageView_T* m_imageView = nullptr;
@@ -35,5 +49,8 @@ namespace Volt::RHI
 		ImageAspect m_imageAspect;
 		ImageUsage m_imageUsage;
 		bool m_isSwapchainImage;
+
+		DescriptorDescription m_srvDescriptor;
+		DescriptorDescription m_uavDescriptor;
 	};
 }

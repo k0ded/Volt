@@ -16,6 +16,8 @@
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 
 #include "VulkanRHIModule/Images/VulkanImage.h"
+#include "VulkanRHIModule/Images/VulkanSamplerState.h"
+#include "VulkanRHIModule/Images/VulkanImageView.h"
 #include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 
@@ -34,8 +36,6 @@
 #include <RHIModule/Pipelines/RenderPipeline.h>
 
 #include <RHIModule/Memory/Allocation.h>
-
-#include <RHIModule/Images/ImageView.h>
 
 #include <RHIModule/Shader/ShaderCommon.h>
 
@@ -1450,13 +1450,6 @@ namespace Volt::RHI
 
 		const auto& shaderBindings = shaderBindingsMap.GetBindings();
 
-		struct DescriptorInfo
-		{
-			VkDescriptorGetInfoEXT vkInfo;
-			uint64_t offset;
-			uint64_t descriptorSize;
-		};
-
 		struct BindingInfo
 		{
 			ShaderStage shaderStage;
@@ -1464,19 +1457,15 @@ namespace Volt::RHI
 			uint64_t offset;
 		};
 
-		// #TODO_Ivar: Move descriptor setup into views, and just copy later.
-
-		InlineVector<DescriptorInfo, ShaderBindingMap::NumMaxBindings> descriptorInfo;
-		InlineVector<VkDescriptorAddressInfoEXT, ShaderBindingMap::NumMaxBindings> bufferDescriptors;
-		InlineVector<VkDescriptorImageInfo, ShaderBindingMap::NumMaxBindings> imageDescriptors;
-		InlineVector<VkSampler, ShaderBindingMap::NumMaxBindings> samplers;
-
 		InlineVector<BindingInfo, GetNumShaderStages()> perShaderStageSetOffsets;
 
 		const DescriptorSetLayoutBuilder::DescriptorSets& activePipelineDescriptorSets = GetActivePipelineDescriptorSets();
 
 		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
 		VulkanDescriptorHeap& descriptorHeap = vkGraphicsContext.GetDescriptorHeap();
+
+		uint8_t* descriptorHeapPointer = descriptorHeap.GetHeapPointer();
+		VkDevice vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();
 
 		for (const auto& [shaderStage, bindings] : shaderBindings)
 		{
@@ -1489,87 +1478,78 @@ namespace Volt::RHI
 
 			for (const auto& binding : bindings)
 			{
-				DescriptorInfo& newDescriptor = descriptorInfo.emplace_back();
-				newDescriptor.vkInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
-				newDescriptor.vkInfo.pNext = nullptr;
-				newDescriptor.offset = activePipelineDescriptorSets.descriptorSetLayoutBindings.at(shaderStageSetIndex).at(binding.bindingIndex).offset + bindingInfo.offset;
+				const uint64_t descriptorOffset = activePipelineDescriptorSets.descriptorSetLayoutBindings.at(shaderStageSetIndex).at(binding.bindingIndex).offset + bindingInfo.offset;
+				uint8_t* outDescriptorPtr = descriptorHeapPointer + descriptorOffset;
 
 				switch (binding.registerType)
 				{
 					case ShaderRegisterType::CBV:
 					{
-						const uint64_t offset = binding.uniformBufferSize > 0 ? binding.uniformBufferOffset : binding.bufferView->GetDesc().offset;
-						const uint64_t size = binding.uniformBufferSize > 0 ? binding.uniformBufferSize : binding.bufferView->GetDesc().size;
+						VulkanBufferView& vkBufferView = binding.bufferView->AsRef<VulkanBufferView>();
+						const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
 
-						VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
-						addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
-						addressInfo.pNext = nullptr;
-						addressInfo.address = binding.bufferView->GetDeviceAddress() + offset;
-						addressInfo.range = size;
-						addressInfo.format = VK_FORMAT_UNDEFINED;
+						// If dynamic offsets were provided it's a special case, because the descriptor is
+						// hard coded in the view.
+						if (binding.uniformBufferOffset > 0 || binding.uniformBufferSize > 0)
+						{
+							// Copy the descriptor and set it's size and offset to the correct values.
+							const uint64_t offset = binding.uniformBufferSize > 0 ? binding.uniformBufferOffset : binding.bufferView->GetDesc().offset;
+							const uint64_t size = binding.uniformBufferSize > 0 ? binding.uniformBufferSize : binding.bufferView->GetDesc().size;
 
-						newDescriptor.vkInfo.data.pUniformBuffer = &addressInfo;
-						newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-						newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.uniformBufferDescriptorSize;
+							VulkanBufferView::DescriptorDescription descriptorCopy = srvDescriptor;
+							descriptorCopy.addressInfo.address = vkBufferView.GetDeviceAddress() + offset;
+							descriptorCopy.addressInfo.range = size;
+							descriptorCopy.vkDescriptorInfo.data.pUniformBuffer = &descriptorCopy.addressInfo;
+						
+							vkGetDescriptorEXT(vkDevice, &descriptorCopy.vkDescriptorInfo, descriptorCopy.descriptorSize, outDescriptorPtr);
+						}
+						else
+						{
+							vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
+						}
+
 						break;
 					}
 					case ShaderRegisterType::Sampler:
 					{
-						VkSampler& sampler = samplers.emplace_back() = binding.samplerState->GetHandle<VkSampler>();
+						VulkanSamplerState& vkSampler = binding.samplerState->AsRef<VulkanSamplerState>();
+						const VulkanSamplerState::DescriptorDescription& descriptor = vkSampler.GetDescriptor();
+						vkGetDescriptorEXT(vkDevice, &descriptor.vkDescriptorInfo, descriptor.descriptorSize, outDescriptorPtr);
 
-						newDescriptor.vkInfo.data.pSampler = &sampler;
-						newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-						newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.samplerDescriptorSize;
 						break;
 					}
 					case ShaderRegisterType::SRV:
 					{
 						switch (binding.resourceType)
 						{
+							case ShaderResourceType::TexelBuffer:
 							case ShaderResourceType::StructuredBuffer:
 							{
-								VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
-								addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
-								addressInfo.pNext = nullptr;
-								addressInfo.address = binding.bufferView->GetDeviceAddress() + binding.bufferView->GetDesc().offset;
-								addressInfo.range = binding.bufferView->GetDesc().size;
-								addressInfo.format = VK_FORMAT_UNDEFINED;
+								VulkanBufferView& vkBufferView = binding.bufferView->AsRef<VulkanBufferView>();
 
-								newDescriptor.vkInfo.data.pStorageBuffer = &addressInfo;
-								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageBufferDescriptorSize;
+								const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
+								vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
 								break;
 							};
-							case ShaderResourceType::TexelBuffer:
-							{
-								VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
-								addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
-								addressInfo.pNext = nullptr;
-								addressInfo.address = binding.bufferView->GetDeviceAddress() + binding.bufferView->GetDesc().offset;
-								addressInfo.range = binding.bufferView->GetDesc().size;
-								addressInfo.format = Utility::VoltToVulkanFormat(binding.bufferView->GetDesc().bufferFormat);
-
-								newDescriptor.vkInfo.data.pUniformTexelBuffer = &addressInfo;
-								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.uniformTexelBufferDescriptorSize;
-								break;
-							}
 							case ShaderResourceType::Texture:
 							{
-								VkDescriptorImageInfo& imageDescriptor = imageDescriptors.emplace_back();
-								imageDescriptor.imageLayout = Utility::GetImageLayoutFromDescriptorType(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-								imageDescriptor.imageView = binding.imageView->GetHandle<VkImageView>();
+								VulkanImageView& vkImageView = binding.imageView->AsRef<VulkanImageView>();
 
-								newDescriptor.vkInfo.data.pSampledImage = &imageDescriptor;
-								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.sampledImageDescriptorSize;
+								const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetSRVDescriptor();
+								vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
 								break;
 							}
 							case ShaderResourceType::AccelerationStructure:
 							{
-								newDescriptor.vkInfo.data.accelerationStructure = binding.accelerationStructure->GetDeviceAddress();
-								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.accelerationStructureDescriptorSize;
+								VkDescriptorGetInfoEXT descriptorInfo;
+								descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+								descriptorInfo.pNext = nullptr;
+								descriptorInfo.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+								descriptorInfo.data.accelerationStructure = binding.accelerationStructure->GetDeviceAddress();
+
+								const uint64_t descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.accelerationStructureDescriptorSize;
+
+								vkGetDescriptorEXT(vkDevice, &descriptorInfo, descriptorSize, outDescriptorPtr);
 								break;
 							}
 						}
@@ -1580,44 +1560,22 @@ namespace Volt::RHI
 					{
 						switch (binding.resourceType)
 						{
+							case ShaderResourceType::TexelBuffer:
 							case ShaderResourceType::StructuredBuffer:
 							{
-								VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
-								addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
-								addressInfo.pNext = nullptr;
-								addressInfo.address = binding.bufferView->GetDeviceAddress() + binding.bufferView->GetDesc().offset;
-								addressInfo.range = binding.bufferView->GetDesc().size;
-								addressInfo.format = VK_FORMAT_UNDEFINED;
+								VulkanBufferView& vkBufferView = binding.bufferView->AsRef<VulkanBufferView>();
 
-								newDescriptor.vkInfo.data.pStorageBuffer = &addressInfo;
-								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageBufferDescriptorSize;
+								const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetUAVDescriptor();
+								vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
 								break;
-							}
+							};
 
-							case ShaderResourceType::TexelBuffer:
-							{
-								VkDescriptorAddressInfoEXT& addressInfo = bufferDescriptors.emplace_back();
-								addressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
-								addressInfo.pNext = nullptr;
-								addressInfo.address = binding.bufferView->GetDeviceAddress() + binding.bufferView->GetDesc().offset;
-								addressInfo.range = binding.bufferView->GetDesc().size;
-								addressInfo.format = Utility::VoltToVulkanFormat(binding.bufferView->GetDesc().bufferFormat);
-
-								newDescriptor.vkInfo.data.pStorageTexelBuffer = &addressInfo;
-								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageTexelBufferDescriptorSize;
-								break;
-							}
 							case ShaderResourceType::Texture:
 							{
-								VkDescriptorImageInfo& imageDescriptor = imageDescriptors.emplace_back();
-								imageDescriptor.imageLayout = Utility::GetImageLayoutFromDescriptorType(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-								imageDescriptor.imageView = binding.imageView->GetHandle<VkImageView>();
+								VulkanImageView& vkImageView = binding.imageView->AsRef<VulkanImageView>();
 
-								newDescriptor.vkInfo.data.pStorageImage = &imageDescriptor;
-								newDescriptor.vkInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-								newDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageImageDescriptorSize;
+								const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetUAVDescriptor();
+								vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
 								break;
 							}
 						}
@@ -1625,15 +1583,6 @@ namespace Volt::RHI
 					}
 				}
 			}
-		}
-
-		uint8_t* descriptorHeapPointer = descriptorHeap.GetHeapPointer();
-		VkDevice vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();
-
-		for (const DescriptorInfo& descriptor : descriptorInfo)
-		{
-			uint8_t* outPtr = descriptorHeapPointer + descriptor.offset;
-			vkGetDescriptorEXT(vkDevice, &descriptor.vkInfo, descriptor.descriptorSize, outPtr);
 		}
 
 		VkPipelineBindPoint bindPoint = m_activeRenderPipeline ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;

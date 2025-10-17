@@ -11,6 +11,8 @@ namespace Volt
 
 	void MaterialCompilerSubSystem::Initialize()
 	{
+		m_queue.Allocate(4096);
+
 		m_workerThread = CreateScope<std::thread>(std::bind(&MaterialCompilerSubSystem::RunWorker, this));
 		PlatformThread::SetThreadName(m_workerThread->native_handle(), "MaterialCompilerWorker");
 		PlatformThread::SetThreadPriority(m_workerThread->native_handle(), ThreadPriority::Low);
@@ -28,7 +30,7 @@ namespace Volt
 	{
 		CompilationJob job;
 		job.material = materialAsset;
-		m_queue.push(job);
+		m_queue.Emplace(job);
 		m_wakeCondition.notify_all();
 	}
 
@@ -37,7 +39,7 @@ namespace Volt
 		while (m_isRunning)
 		{
 			CompilationJob job;
-			while (m_queue.try_pop(job))
+			while (m_queue.Pop(job))
 			{
 				ExecuteJob(job);
 			}

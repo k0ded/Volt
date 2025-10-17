@@ -9,7 +9,7 @@
 
 #include <JobSystem/JobPromise.h>
 #include <CoreUtilities/Containers/Vector.h>
-#include <CoreUtilities/Containers/ThreadSafeQueue.h>
+#include <CoreUtilities/WorkQueue.h>
 
 VT_DECLARE_LOG_CATEGORY_EXPORT(VTAS_API, LogSourceAssetManager, LogVerbosity::Trace);
 
@@ -77,7 +77,7 @@ namespace Volt
 		JobFuture<Vector<Ref<Asset>>> ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
 		void ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
 
-		ThreadSafeQueue<ImportJob>& GetOrCreateQueue(const std::string& extension);
+		WorkQueue<ImportJob, QueueThreadingPolicy::MPSC>& GetOrCreateQueue(const std::string& extension);
 		void RunAssetImportWorker();
 
 		inline static SourceAssetManager* s_instance = nullptr;
@@ -88,6 +88,6 @@ namespace Volt
 		Scope<std::thread> m_assetImporterWorkerThread;
 
 		Map<std::string, Scope<std::atomic_bool>> m_isImporterInUseMap;
-		Map<std::string, Scope<ThreadSafeQueue<ImportJob>>> m_importQueues;
+		Map<std::string, Scope<WorkQueue<ImportJob, QueueThreadingPolicy::MPSC>>> m_importQueues;
 	};
 }

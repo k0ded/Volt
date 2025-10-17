@@ -267,6 +267,8 @@ namespace VoltSharpmake
 
     public abstract class CommonVoltProject : CommonProject
     {
+		protected bool ReferenceCoreUtilities = true;
+
         protected CommonVoltProject() : base()
         { }
 
@@ -278,14 +280,14 @@ namespace VoltSharpmake
             conf.Options.Add(Options.Vc.General.ExternalWarningLevel.Level0);
             conf.Options.Add(Options.Vc.General.TreatAngleIncludeAsExternal.Enable);
 
-			if (this.GetType() != typeof(CoreUtilities) && this.GetType() != typeof(NewOverloadModule))
+			if (this.GetType() != typeof(CoreUtilities) && this.GetType() != typeof(NewOverloadModule) && ReferenceCoreUtilities)
             {
                 conf.AddPublicDependency<CoreUtilities>(target);
             }
 
 			if (this.GetType() != typeof(NewOverloadModule))
 			{
-				conf.AddPublicDependency<NewOverloadModule>(target);
+				conf.AddPrivateDependency<NewOverloadModule>(target);
 			}
 
             conf.IncludePrivatePaths.Add("Private/");

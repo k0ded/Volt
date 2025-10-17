@@ -4,7 +4,7 @@
 
 #include <SubSystem/SubSystem.h>
 
-#include <CoreUtilities/Containers/ThreadSafeQueue.h>
+#include <CoreUtilities/WorkQueue.h>
 
 namespace Volt
 {
@@ -33,6 +33,6 @@ namespace Volt
 		std::mutex m_wakeMutex;
 		
 		Scope<std::thread> m_workerThread;
-		ThreadSafeQueue<CompilationJob> m_queue;
+		WorkQueue<CompilationJob, QueueThreadingPolicy::MPSC> m_queue;
 	};
 }

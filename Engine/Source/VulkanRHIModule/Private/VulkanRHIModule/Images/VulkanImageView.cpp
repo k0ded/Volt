@@ -4,6 +4,8 @@
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
+#include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
+
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -47,6 +49,8 @@ namespace Volt::RHI
 
 		auto device = GraphicsContext::GetDevice();
 		VT_VK_CHECK(vkCreateImageView(device->GetHandle<VkDevice>(), &viewInfo, VT_VULKAN_ALLOCATOR, &m_imageView));
+
+		CreateDescriptors();
 	}
 
 	VulkanImageView::~VulkanImageView()
@@ -106,5 +110,26 @@ namespace Volt::RHI
 	RawPtr<Image> VulkanImageView::GetImage() const
 	{
 		return m_image;
+	}
+
+	void VulkanImageView::CreateDescriptors()
+	{
+		m_srvDescriptor.vkDescriptorInfo.sType = m_uavDescriptor.vkDescriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+		m_srvDescriptor.vkDescriptorInfo.pNext = m_uavDescriptor.vkDescriptorInfo.pNext = nullptr;
+
+		m_srvDescriptor.vkDescriptorInfo.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		m_srvDescriptor.vkDescriptorInfo.data.pSampledImage = &m_srvDescriptor.vkImageDescriptor;
+
+		m_uavDescriptor.vkDescriptorInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		m_uavDescriptor.vkDescriptorInfo.data.pSampledImage = &m_uavDescriptor.vkImageDescriptor;
+
+		m_srvDescriptor.vkImageDescriptor.imageView = m_imageView;
+		m_srvDescriptor.vkImageDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+		m_uavDescriptor.vkImageDescriptor.imageView = m_imageView;
+		m_uavDescriptor.vkImageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+		m_srvDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.sampledImageDescriptorSize;
+		m_uavDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageImageDescriptorSize;
 	}
 }

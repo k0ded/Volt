@@ -96,7 +96,7 @@ namespace Volt
 		importJob.debugString = filepath.string();
 
 		auto& importQueue = GetOrCreateQueue(extension);
-		importQueue.push(importJob);
+		importQueue.Emplace(importJob);
 
 		m_wakeCondition.notify_one();
 
@@ -151,7 +151,7 @@ namespace Volt
 		importJob.debugString = filepath.string();
 
 		auto& importQueue = GetOrCreateQueue(extension);
-		importQueue.push(importJob);
+		importQueue.Emplace(importJob);
 
 		m_wakeCondition.notify_one();
 	}
@@ -171,14 +171,18 @@ namespace Volt
 		return GetSourceAssetImporterRegistry().GetImporterForExtension(extension).GetSourceFileInformation(AssetManager::GetFilesystemPath(filepath));
 	}
 
-	ThreadSafeQueue<SourceAssetManager::ImportJob>& SourceAssetManager::GetOrCreateQueue(const std::string& extension)
+	WorkQueue<SourceAssetManager::ImportJob, QueueThreadingPolicy::MPSC>& SourceAssetManager::GetOrCreateQueue(const std::string& extension)
 	{
 		if (m_importQueues.contains(extension))
 		{
 			return *m_importQueues.at(extension);
 		}
 
-		m_importQueues[extension] = CreateScope<ThreadSafeQueue<ImportJob>>();
+		constexpr uint32_t NumMaxImportJobs = 2048;
+
+		m_importQueues[extension] = CreateScope<WorkQueue<ImportJob, QueueThreadingPolicy::MPSC>>();
+		m_importQueues[extension]->Allocate(NumMaxImportJobs);
+
 		return *m_importQueues.at(extension);
 	}
 
@@ -200,7 +204,7 @@ namespace Volt
 				}
 
 				ImportJob jobHolder;
-				if (queue->try_pop(jobHolder))
+				if (queue->Pop(jobHolder))
 				{
 					*m_isImporterInUseMap[ext] = true;
 					JobSystem::RunJob(jobHolder.job);

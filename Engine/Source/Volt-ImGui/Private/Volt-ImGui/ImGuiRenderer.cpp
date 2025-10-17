@@ -139,7 +139,6 @@ namespace Volt
 
 		// Update globals
 		{
-
 			float* data = renderContext.globalsUniformBuffer->Map<float>();
 			float scale[2];
 			scale[0] = 2.0f / drawData->DisplaySize.x;
@@ -365,7 +364,6 @@ namespace Volt
 			RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
 			RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
-
 			commandBuffer->Begin();
 
 			RHI::ResourceState resourceState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
@@ -504,7 +502,7 @@ namespace Volt
 		}
 
 		RHI::UniformBufferDesc desc{};
-		desc.size = sizeof(glm::mat4) * 2;
+		desc.size = sizeof(glm::vec2) * 2;
 		desc.debugName = "ImGuiRenderer.GlobalsBuffer";
 		renderContext.globalsUniformBuffer = RHI::UniformBuffer::Create(desc);
 	}

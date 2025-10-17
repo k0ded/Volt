@@ -4,6 +4,8 @@
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
+#include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
+
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
 
@@ -38,6 +40,13 @@ namespace Volt::RHI
 
 		auto device = GraphicsContext::GetDevice();
 		VT_VK_CHECK(vkCreateSampler(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_sampler));
+
+		// Setup the descriptor
+		m_descriptor.vkDescriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+		m_descriptor.vkDescriptorInfo.pNext = nullptr;
+		m_descriptor.vkDescriptorInfo.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+		m_descriptor.vkDescriptorInfo.data.pSampler = &m_sampler;
+		m_descriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.samplerDescriptorSize;
 	}
 
 	VulkanSamplerState::~VulkanSamplerState()

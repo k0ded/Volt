@@ -7,6 +7,8 @@
 #include "Volt-Platforms/Windows/WindowsPlatformProcess.h"
 #include "Volt-Platforms/Windows/WindowsPlatformThread.h"
 #include "Volt-Platforms/Windows/WindowsPlatformAtomics.h"
+#include "Volt-Platforms/Windows/WindowsPlatformTime.h"
+#include "Volt-Platforms/Windows/WindowsPlatformMutex.h"
 #include "Volt-Platforms/Common/CommonPlatformFTPClient.h"
 
 namespace Volt
@@ -16,6 +18,8 @@ namespace Volt
 	using PlatformProcess = WindowsPlatformProcess;
 	using PlatformThread = WindowsPlatformThread;
 	using PlatformAtomics = WindowsPlatformAtomics;
+	using PlatformTime = WindowsPlatformTime;
+	using PlatformMutex = WindowsPlatformMutex;
 	using PlatformFTPClient = CommonPlatformFTPClient;
 }
 #endif

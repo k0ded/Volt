@@ -23,6 +23,8 @@
 #include <RHIModule/Core/RenderingInfo.h>
 #include <RHIModule/Descriptors/ShaderBindingMap.h>
 
+#include <RHIModule/RHIFeatures.h>
+
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/EnumUtils.h>
