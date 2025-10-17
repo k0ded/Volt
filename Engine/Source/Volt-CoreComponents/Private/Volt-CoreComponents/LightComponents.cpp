@@ -75,7 +75,7 @@ namespace Volt
 		}
 	}
 
-	void PointLightComponent::OnCreate(LightEntity entity)
+	void PointLightComponent::OnInitialize(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<PointLightComponent>();
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
@@ -112,7 +112,7 @@ namespace Volt
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
 	}
 	
-	void SpotLightComponent::OnCreate(LightEntity entity)
+	void SpotLightComponent::OnInitialize(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SpotLightComponent>();
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
@@ -149,7 +149,7 @@ namespace Volt
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
 
-	void DirectionalLightComponent::OnCreate(LightEntity entity)
+	void DirectionalLightComponent::OnInitialize(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<DirectionalLightComponent>();
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
@@ -197,7 +197,7 @@ namespace Volt
 		StreamingManager::Get().InvalidateInstance(m_streamingInstanceID, Utility::CreateStreamingInstanceDescription(*this, entityId, m_sceneLightData));
 	}
 
-	void SkylightComponent::OnCreate(LightEntity entity)
+	void SkylightComponent::OnInitialize(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
@@ -213,12 +213,6 @@ namespace Volt
 	}
 
 	void SkylightComponent::OnComponentCopied(LightEntity entity)
-	{
-		auto& component = entity.GetComponent<SkylightComponent>();
-		component.UpdateSceneLightData(entity.GetID());
-	}
-
-	void SkylightComponent::OnDeserialized(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
 		component.UpdateSceneLightData(entity.GetID());
