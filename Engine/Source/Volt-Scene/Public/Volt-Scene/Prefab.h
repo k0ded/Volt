@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Volt-Scene/Config.h"
+#include "Volt-Scene/EntityUtility.h"
 
 #include <Volt-Core/AssetTypes.h>
 
@@ -31,9 +32,9 @@ namespace Volt
 
 		Entity Instantiate(Weak<Scene> targetScene);
 		const bool UpdateEntityInPrefab(Entity srcEntity);
-		void UpdateEntityInScene(Entity sceneEntity);
+		void UpdateEntityInScene(Weak<Scene> targetScene, Entity sceneEntity);
 
-		void CopyPrefabEntity(Entity dstEntity, EntityID srcPrefabEntityId, const std::set<VoltGUID> componentsToSkip = Entity::CreateSkipComponentOnCopySet<RelationshipComponent>()) const;
+		void CopyPrefabEntity(Entity dstEntity, EntityID srcPrefabEntityId, const std::set<VoltGUID> componentsToSkip = CreateSkipComponentOnCopySet<RelationshipComponent>()) const;
 
 		[[nodiscard]] inline const bool IsPrefabValid() { return m_prefabScene != nullptr && m_rootEntityId != Entity::NullID(); }
 		[[nodiscard]] const bool IsEntityValidInPrefab(Entity entity) const;
@@ -61,9 +62,9 @@ namespace Volt
 		void UpdatePrefabVersion(Entity entity, uint32_t targetVersion);
 
 		const bool UpdateEntityInPrefabInternal(Entity srcEntity, EntityID rootSceneId, EntityID forcedPrefabEntity);
-		void UpdateEntityInSceneInternal(Entity sceneEntity, EntityID forcedPrefabEntity);
+		void UpdateEntityInSceneInternal(Ref<Scene> scene, Entity sceneEntity, EntityID forcedPrefabEntity);
 
-		Entity InstantiateEntity(EntityScene* targetScene, Entity prefabEntity);
+		Entity InstantiateEntity(Ref<Scene> scene, Entity prefabEntity);
 		const Vector<Entity> FlattenEntityHeirarchy(Entity entity);
 
 		Ref<Scene> m_prefabScene;

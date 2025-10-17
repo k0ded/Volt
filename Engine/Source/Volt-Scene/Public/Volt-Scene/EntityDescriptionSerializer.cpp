@@ -139,7 +139,7 @@ namespace Volt
 		//serialize entity data
 		YAMLMemoryStreamWriter streamWriter{};
 		Ref<Scene> scene = AssetManager::Get().GetAsset<Scene>(entityDesc->GetSceneHandle());
-		SerializeEntity(entityDesc->m_entityID, scene, streamWriter);
+		SerializeEntity(scene->GetEntityFromID(entityDesc->m_entityID), streamWriter);
 
 		//write to file
 		BinaryStreamWriter entityDescFileWriter{};
@@ -171,14 +171,12 @@ namespace Volt
 		return true;
 	}
 
-	void EntityDescSerializer::SerializeEntity(Volt::EntityID id, const Ref<Scene>& scene, YAMLMemoryStreamWriter& streamWriter) const
+	void EntityDescSerializer::SerializeEntity(Entity entity, YAMLMemoryStreamWriter& streamWriter) const
 	{
 		streamWriter.BeginMap();
 		streamWriter.BeginMapNamned("Entity");
 
-		auto& registry = scene->GetEntityScene().GetRegistry();
-
-		Entity entity = scene->GetEntityFromID(id);
+		entt::registry& registry = entity.GetSceneReference()->GetRegistry();
 
 		streamWriter.SetKey("id", entity.GetID());
 		streamWriter.BeginSequence("components");

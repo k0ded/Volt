@@ -22,6 +22,7 @@
 #include <Volt-Assets/MeshAsset.h>
 
 #include <Volt-Scene/Components/CoreComponents.h>
+#include <Volt-Scene/EntityUtility.h>
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/SceneRenderer.h>
@@ -624,7 +625,7 @@ bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 
 			for (const auto& i : entitiesToRemove)
 			{
-				m_editorScene->DestroyEntity(i);
+				EditorUtils::DestroyEntity(m_editorScene, i);
 			}
 
 			break;
@@ -691,7 +692,7 @@ void ViewportPanel::CheckDragDrop()
 	{
 		if (m_createdAssetOnDrag && m_createdEntity)
 		{
-			m_editorScene->DestroyEntity(m_createdEntity);
+			EditorUtils::DestroyEntity(m_editorScene, m_createdEntity);
 			m_createdAssetOnDrag = false;
 		}
 
@@ -818,7 +819,7 @@ void ViewportPanel::DuplicateSelection()
 			continue;
 		}
 
-		auto duplicatedEntity = Volt::Entity::Duplicate(m_editorScene->GetEntityFromID(ent));
+		auto duplicatedEntity = Volt::DuplicateEntity(m_editorScene->GetEntityFromID(ent), m_editorScene);
 		duplicatedEntity.SetTag(EditorUtils::GetDuplicatedNameFromEntity(m_editorScene->GetEntityFromID(ent)));
 
 		duplicated.emplace_back(duplicatedEntity);

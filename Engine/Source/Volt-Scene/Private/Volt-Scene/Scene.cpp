@@ -4,6 +4,7 @@
 #include "Volt-Scene/EntityDescriptionSerializer.h"
 #include "Volt-Scene/EntityDescription.h"
 #include "Volt-Scene/EntityDescCustomMetadata.h"
+#include "Volt-Scene/EntityUtility.h"
 
 #include <Volt-Physics/RigidbodyComponent.h>
 #include <Volt-Physics/EntityPhysicsScene.h>
@@ -353,14 +354,40 @@ namespace Volt
 	{
 		if (!m_entityIDToDescHandle.contains(entityID))
 		{
-			return Volt::AssetHandle();
+			return Volt::Asset::Null();
 		}
 		return m_entityIDToDescHandle.at(entityID);
 	}
 
-	void Scene::DestroyEntity(Entity entity)
+	void Scene::DestroyEntity(Entity entity, Vector<EntityID>& outDestroyedEntities)
 	{
-		m_entityScene.DestroyEntity(entity.GetID());
+		DestroyEntity(entity, &outDestroyedEntities, nullptr);
+	}
+
+	void Scene::DestroyEntity(Entity entity, Vector<AssetHandle>& outDestroyedEntityDescs)
+	{
+		DestroyEntity(entity, nullptr, &outDestroyedEntityDescs);
+	}
+
+	void Scene::DestroyEntity(Entity entity, Vector<EntityID>* outDestroyedEntities, Vector<Volt::AssetHandle>* outDestroyedEntityDescs)
+	{
+		Vector<EntityID> destroyedEntities;
+		m_entityScene.DestroyEntity(entity.GetID(), &destroyedEntities);
+
+		for (EntityID destroyedEnt : destroyedEntities)
+		{
+			if (outDestroyedEntityDescs)
+			{
+				outDestroyedEntityDescs->push_back(m_entityIDToDescHandle[destroyedEnt]);
+			}
+			m_entityIDToDescHandle.erase(destroyedEnt);
+		}
+
+		if (outDestroyedEntities)
+		{
+			*outDestroyedEntities = destroyedEntities;
+		}
+
 		SortScene();
 	}
 
@@ -456,7 +483,7 @@ namespace Volt
 			const EntityID uuid = registry.get<IDComponent>(id).id;
 
 			auto entity = otherScene->CreateEntityWithID(uuid);
-			Entity::Copy(Entity{ id, &m_entityScene }, entity);
+			CopyEntity(Entity{ id, &m_entityScene }, entity);
 
 			otherScene->InvalidateEntityTransform(entity.GetID());
 			otherScene->GetWorldEngineMutable().OnEntityMoved(entity);
@@ -524,6 +551,11 @@ namespace Volt
 		}
 
 		return false;
+	}
+
+	void Scene::DestroyEntity(Entity entity)
+	{
+		DestroyEntity(entity, nullptr, nullptr);
 	}
 
 	void Scene::IsRecursiveChildOf(Entity parent, Entity currentEntity, bool& outChild)

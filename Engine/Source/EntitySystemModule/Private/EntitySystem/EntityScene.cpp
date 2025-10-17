@@ -160,12 +160,10 @@ namespace Volt
 
 		m_entityRegistry.AddEntity(id, entityHandle);
 
-		m_entityRegistry.AddEntity(id, entityHandle);
-
 		return newHelper;
 	}
 
-	void EntityScene::DestroyEntity(EntityID id, bool isDestroyingChildFromParent)
+	void EntityScene::DestroyEntity(EntityID id, Vector<EntityID>* outDestroyedEntities, bool isDestroyingChildFromParent)
 	{
 		if (!IsEntityValid(id))
 		{
@@ -196,13 +194,17 @@ namespace Volt
 		// We need to do this backwards, otherwise we will be pointing to invalid indices
 		for (int32_t i = static_cast<int32_t>(relationshipComponent.children.size()) - 1; i >= 0; --i)
 		{
-			DestroyEntity(relationshipComponent.children.at(i), true);
+			DestroyEntity(relationshipComponent.children.at(i), outDestroyedEntities, true);
 
 			// This is required, because removing components from entt::registry might
 			// invalidate pointers.
 			relationshipComponent = helper.GetComponent<RelationshipComponent>();
 		}
 
+		if (outDestroyedEntities)
+		{
+			outDestroyedEntities->push_back(id);
+		}
 		m_registry.destroy(helper.GetHandle());
 		m_entityRegistry.RemoveEntity(id, helper.GetHandle());
 	}

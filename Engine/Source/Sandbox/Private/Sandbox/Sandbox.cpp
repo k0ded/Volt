@@ -184,6 +184,22 @@ void Sandbox::OnAttach()
 
 		return true;
 	};
+	entityDescSaveCustomization.ShouldDeleteInstead = [](const Volt::AssetHandle& asset) -> bool
+	{
+		const Volt::AssetMetadata& entityMetadata = Volt::AssetManager::GetMetadataFromHandle(asset);
+		const Volt::EntityDescCustomMetadata& customMetadata = entityMetadata.GetCustomData<Volt::EntityDescCustomMetadata>();
+		const Volt::AssetHandle& owningSceneHandle = customMetadata.sceneHandle;
+
+		VT_ENSURE(Volt::AssetManager::IsLoaded(owningSceneHandle));
+		Ref<Volt::Scene> scene = Volt::AssetManager::GetAsset<Volt::Scene>(owningSceneHandle);
+
+		if (!scene->IsEntityValid(customMetadata.entityID))
+		{
+			return true;
+		}
+
+		return false;
+	};
 
 	DirtyAssetsManager::Get().RegisterSaveCustomizationForType(AssetTypes::EntityDesc, entityDescSaveCustomization);
 

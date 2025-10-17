@@ -266,10 +266,9 @@ void PropertiesPanel::AddComponentPopup()
 			for (const auto& label : componentNames)
 			{
 				const auto compGuid = nameToGUIDMap.at(label);
-				std::string_view componentTypeName = GetComponentRegistry().GetTypeNameFromGUID(compGuid);
 
 				Volt::Entity frontEntity = myCurrentScene->GetEntityFromID(SelectionManager::GetSelectedEntities().front());
-				if (!frontEntity.HasComponent(componentTypeName))
+				if (!frontEntity.HasComponent(compGuid))
 				{
 					UI::ShiftCursor(4.f, 0.f);
 					UI::RenderMatchingTextBackground(myComponentSearchQuery, label, EditorTheme::MatchingTextBackground);

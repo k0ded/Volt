@@ -404,7 +404,8 @@ namespace Volt
 	{
 		Ref<T> asset = CreateAsset<T>(name, std::forward<Args>(args)...);
 
-		CreateFileForAsset(asset->handle, targetDir);
+		std::filesystem::path targetPath = targetDir / (name + ".vtasset");
+		CreateFileForAsset(asset->handle, targetPath);
 
 		return asset;
 	}

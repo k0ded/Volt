@@ -319,7 +319,7 @@ private:
 
 		Volt::AssetMetadata fakeMetadata;
 		fakeMetadata.filePath = "Metadata Created By ObjectStateCommand.";
-		Volt::EntityDescSerializer::Get().SerializeEntity(entity.GetID(), m_TargetScene, writer);
+		Volt::EntityDescSerializer::Get().SerializeEntity(entity, writer);
 
 		m_EntitiesDataList.push_back(writer.WriteAndGetBuffer());
 

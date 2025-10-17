@@ -38,6 +38,11 @@ struct DirtySaveCustomization
 	// check if the user is allowed to set the path of the asset manually, 
 	// returning false will hide the asset in the create assets modal
 	std::function<bool(const Volt::AssetHandle&/*asset*/)> CanUserAssignPath;
+
+
+	// check if asset should be removed instead of saved when save is performed
+	// returning true will delete the asset when save otherwise happens
+	std::function<bool(const Volt::AssetHandle&/*asset*/)> ShouldDeleteInstead;
 };
 
 class DirtyAssetsManager : public SubSystem

@@ -23,7 +23,7 @@ namespace Volt
 		void Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const override;
 		bool Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const override;
 
-		void SerializeEntity(EntityID id, const Ref<Scene>& scene, YAMLMemoryStreamWriter& streamWriter) const;
+		void SerializeEntity(Entity entity, YAMLMemoryStreamWriter& streamWriter) const;
 		Entity DeserializeEntity(const Ref<Scene>& scene, YAMLMemoryStreamReader& streamReader) const;
 
 		//if the entity and it's components have already been created, apply the data from the stream reader to them

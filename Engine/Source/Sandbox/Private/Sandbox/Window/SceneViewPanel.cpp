@@ -302,7 +302,7 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 
 			for (const auto& i : entitiesToRemove)
 			{
-				m_scene->DestroyEntity(i);
+				EditorUtils::DestroyEntity(m_scene, i);
 			}
 
 			break;
@@ -737,8 +737,9 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 		for (const auto& i : entitiesToRemove)
 		{
-			m_scene->DestroyEntity(i);
+			EditorUtils::DestroyEntity(m_scene, i);
 		}
+		return;
 	}
 
 	ImGui::TableNextColumn();
@@ -853,13 +854,8 @@ void SceneViewPanel::CreatePrefabAndSetupEntities(Volt::Entity entity)
 	std::string noSpacesPrefabName = tagComp.tag;
 	noSpacesPrefabName.erase(std::remove_if(noSpacesPrefabName.begin(), noSpacesPrefabName.end(), ::isspace), noSpacesPrefabName.end());
 
-	Ref<Volt::Prefab> prefab = Volt::AssetManager::CreateAsset<Volt::Prefab>(noSpacesPrefabName, entity);
-
 	const std::filesystem::path basePath = "Assets/Prefabs/";
-
-	//todo_fabian: fix prefabs properly
-
-	Volt::AssetManager::CreateFileForAsset(prefab->handle, basePath);
+	Ref<Volt::Prefab> prefab = Volt::AssetManager::CreateAssetAndFile<Volt::Prefab>(basePath, noSpacesPrefabName, entity);
 
 	EditorUtils::MarkEntityAndChildrenAsEdited(m_scene, entity);
 }
@@ -890,7 +886,7 @@ void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity
 		}
 
 		auto entity = Volt::Entity{ id, m_scene->GetEntityScene()};
-		prefabAsset->UpdateEntityInScene(entity);
+		prefabAsset->UpdateEntityInScene(m_scene, entity);
 
 		EditorUtils::MarkEntityAsEdited(m_scene, entity);
 	});
@@ -918,7 +914,7 @@ void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity
 			}
 
 			auto entity = Volt::Entity{ id, m_scene->GetEntityScene()};
-			prefabRefAsset->UpdateEntityInScene(entity);
+			prefabRefAsset->UpdateEntityInScene(m_scene, entity);
 
 			EditorUtils::MarkEntityAsEdited(m_scene, entity);
 		});

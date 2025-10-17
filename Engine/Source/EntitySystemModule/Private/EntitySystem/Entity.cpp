@@ -349,120 +349,14 @@ namespace Volt
 	{
 		VT_ENSURE(IsValid());
 
-		const std::string lowerCompName = ::Utility::ToLower(std::string(componentName));
-		const ICommonTypeDesc* compType = GetComponentRegistry().GetTypeDescFromName(lowerCompName);
+		//const std::string lowerCompName = ::Utility::ToLower(std::string(componentName));
+		const ICommonTypeDesc* compType = GetComponentRegistry().GetTypeDescFromName(componentName);
 		return ComponentRegistry::Helpers::HasComponentWithGUID(compType->GetGUID(), m_sceneReference->GetRegistry(), m_handle);
 	}
 
 	bool Entity::HasComponent(const VoltGUID& componentGUID) const
 	{
 		return ComponentRegistry::Helpers::HasComponentWithGUID(componentGUID, m_sceneReference->GetRegistry(), m_handle);
-	}
-
-	void Entity::Copy(Entity srcEntity, Entity dstEntity, std::set<VoltGUID> componentsToSkip)
-	{
-		auto srcScene = dstEntity.GetSceneReference();
-		auto& srcRegistry = srcScene->GetRegistry();
-
-		auto dstScene = srcEntity.GetSceneReference();
-		auto& dstRegistry = dstScene->GetRegistry();
-
-		for (auto&& curr : srcRegistry.storage())
-		{
-			auto& storage = curr.second;
-
-			if (!storage.contains(srcEntity.GetHandle()))
-			{
-				continue;
-			}
-
-			const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(GetComponentRegistry().GetTypeDescFromName(storage.type().name()));
-			if (!componentDesc)
-			{
-				continue;
-			}
-
-			if (componentDesc->GetValueType() != ValueType::Component)
-			{
-				continue;
-			}
-
-			if (!ComponentRegistry::Helpers::HasComponentWithGUID(componentDesc->GetGUID(), dstRegistry, dstEntity.GetHandle()))
-			{
-				ComponentRegistry::Helpers::AddComponentWithGUID(componentDesc->GetGUID(), dstRegistry, dstEntity.GetHandle());
-			}
-
-			void* voidCompPtr = Volt::ComponentRegistry::Helpers::GetComponentWithGUID(componentDesc->GetGUID(), dstRegistry, dstEntity.GetHandle());
-			uint8_t* componentData = reinterpret_cast<uint8_t*>(voidCompPtr);
-
-			if (componentsToSkip.contains(componentDesc->GetGUID()))
-			{
-				continue;
-			}
-			CopyComponent(reinterpret_cast<const uint8_t*>(storage.get(srcEntity.GetHandle())), componentData, 0, componentDesc, dstEntity);
-		}
-	}
-
-	Entity Entity::Duplicate(Entity srcEntity, EntityScene* targetScene, Entity parent, std::set<VoltGUID> componentsToSkip)
-	{
-		auto scene = targetScene ? targetScene : srcEntity.GetSceneReference();
-
-		Entity newEntity = scene->CreateEntity();
-
-		auto allSkipComponents = CreateSkipComponentOnCopySet<IDComponent, RelationshipComponent>();
-		allSkipComponents.insert(componentsToSkip.begin(), componentsToSkip.end());
-		Copy(srcEntity, newEntity, allSkipComponents);
-
-		Vector<EntityID> newChildren;
-
-		for (const auto& child : srcEntity.GetChildren())
-		{
-			newChildren.emplace_back(Duplicate(child, targetScene, newEntity).GetID());
-		}
-
-		newEntity.GetComponent<RelationshipComponent>().children = newChildren;
-		newEntity.GetComponent<RelationshipComponent>().parent = parent ? parent.GetID() : Entity::NullID();
-
-		scene->InvalidateEntityTransform(newEntity.GetID());
-
-		return newEntity;
-	}
-	void Entity::CopyComponent(const uint8_t* srcData, uint8_t* dstData, const size_t offset, const IComponentTypeDesc* compDesc, Entity dstEntity)
-	{
-		for (const auto& member : compDesc->GetMembers())
-		{
-			if ((member.flags & ComponentMemberFlag::NoCopy) != ComponentMemberFlag::None)
-			{
-				continue;
-			}
-
-			if (member.typeDesc != nullptr)
-			{
-				switch (member.typeDesc->GetValueType())
-				{
-					case ValueType::Component:
-					{
-						const IComponentTypeDesc* memberCompDesc = reinterpret_cast<const IComponentTypeDesc*>(member.typeDesc);
-						CopyComponent(srcData, dstData, offset + member.offset, memberCompDesc, dstEntity);
-						break;
-					}
-
-					case ValueType::Enum:
-						*reinterpret_cast<int32_t*>(&dstData[offset + member.offset]) = *(reinterpret_cast<const int32_t*>(&srcData[offset + member.offset]));
-						break;
-
-					case ValueType::Array:
-						member.copyFunction(&dstData[offset + member.offset], &srcData[offset + member.offset]);
-						break;
-				}
-			}
-			else
-			{
-				member.copyFunction(&dstData[offset + member.offset], &srcData[offset + member.offset]);
-			}
-		}
-
-		compDesc->OnComponentCopied(dstEntity);
 	}
 
 	Entity Entity::Null()

@@ -38,7 +38,7 @@ namespace Volt
 		{
 			for (const auto entity : prefab->m_prefabScene->GetAllEntities())
 			{
-				EntityDescSerializer::Get().SerializeEntity(entity.GetID(), prefab->m_prefabScene, yamlStreamWriter);
+				EntityDescSerializer::Get().SerializeEntity(entity, yamlStreamWriter);
 			}
 		}
 		yamlStreamWriter.EndSequence();
@@ -67,6 +67,11 @@ namespace Volt
 		buffer.Release();
 
 		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto directory = filePath.parent_path();
+		if (!std::filesystem::exists(directory))
+		{
+			std::filesystem::create_directories(directory);
+		}
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
@@ -111,12 +116,12 @@ namespace Volt
 			prefab->m_version = yamlStreamReader.ReadAtKey("version", uint32_t(0));
 			prefab->m_rootEntityId = yamlStreamReader.ReadAtKey("rootEntityId", Entity::NullID());
 
-			yamlStreamReader.ForEach("Entities", [&]() 
+			yamlStreamReader.ForEach("Entities", [&]()
 			{
 				EntityDescSerializer::Get().DeserializeEntity(prefabScene, yamlStreamReader);
 			});
 
-			yamlStreamReader.ForEach("PrefabReferences", [&]() 
+			yamlStreamReader.ForEach("PrefabReferences", [&]()
 			{
 				EntityID entityId = yamlStreamReader.ReadAtKey("entity", Entity::NullID());
 				AssetHandle prefabHandle = yamlStreamReader.ReadAtKey("prefabHandle", Asset::Null());

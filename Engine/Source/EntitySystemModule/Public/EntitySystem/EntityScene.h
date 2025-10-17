@@ -42,7 +42,7 @@ namespace Volt
 		Entity CreateEntity(const std::string& tag = "");
 		Entity CreateEntityWithID(EntityID id);
 
-		void DestroyEntity(EntityID id, bool isDestroyingChildFromParent = false);
+		void DestroyEntity(EntityID id,Vector<EntityID>* outDestroyedEntities = nullptr, bool isDestroyingChildFromParent = false);
 
 		Vector<EntityID> InvalidateEntityTransform(EntityID entityId);
 

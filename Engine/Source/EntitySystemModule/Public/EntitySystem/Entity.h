@@ -102,14 +102,6 @@ namespace Volt
 		VT_NODISCARD bool HasComponent(std::string_view componentName) const;
 		VT_NODISCARD bool HasComponent(const VoltGUID& componentGUID) const;
 
-
-		template<typename ...T>
-		static std::set<VoltGUID> CreateSkipComponentOnCopySet();
-		// Copies a single entity
-		static void Copy(Entity srcEntity, Entity dstEntity, std::set<VoltGUID> componentsToSkip = {});
-		// Duplicates an entire entity tree
-		static Entity Duplicate(Entity srcEntity, EntityScene* targetScene = nullptr, Entity parent = Entity::Null(), std::set<VoltGUID> componentsToSkip = {});
-
 		// #TODO_Ivar: Probably shouldn't expose this
 		VT_NODISCARD VT_INLINE EntityScene* GetSceneReference() const { return m_sceneReference; }
 	private:
@@ -119,7 +111,6 @@ namespace Volt
 		void ConvertToWorldSpace();
 		void ConvertToLocalSpace();
 
-		static void CopyComponent(const uint8_t* srcData, uint8_t* dstData, const size_t offset, const IComponentTypeDesc* compDesc, Entity dstEntity);
 
 		EntityScene* m_sceneReference = nullptr;
 		entt::entity m_handle = entt::null;
@@ -171,11 +162,5 @@ namespace Volt
 
 		auto& registry = m_sceneReference->GetRegistry();
 		registry.remove<T>(m_handle);
-	}
-
-	template<typename ...T>
-	inline std::set<VoltGUID> Entity::CreateSkipComponentOnCopySet()
-	{
-		return { GetTypeGUID<T>()... };
 	}
 }

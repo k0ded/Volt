@@ -381,3 +381,13 @@ void EditorUtils::MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, c
 		MarkEntityAndChildrenAsEdited(scene, child);
 	}
 }
+
+void EditorUtils::DestroyEntity(Weak<Volt::Scene> scene, const Volt::Entity& entity)
+{
+	Vector<Volt::AssetHandle> destroyedEntityDescs;
+	scene->DestroyEntity(entity, destroyedEntityDescs);
+	for (Volt::AssetHandle asset : destroyedEntityDescs)
+	{
+		DirtyAssetsManager::Get().MarkAssetDirty(asset);
+	}
+}

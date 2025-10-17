@@ -85,6 +85,9 @@ namespace Volt
 
 		bool IsRelatedTo(Entity entity, Entity otherEntity);
 		void DestroyEntity(Entity entity);
+		void DestroyEntity(Entity entity, Vector<EntityID>& outDestroyedEntities);
+		void DestroyEntity(Entity entity, Vector<Volt::AssetHandle>& outDestroyedEntityDescs);
+		void DestroyEntity(Entity entity, Vector<EntityID>* outDestroyedEntities, Vector<Volt::AssetHandle>* outDestroyedEntityDescs);
 
 		void InvalidateEntityTransform(const EntityID& entityId);
 		bool IsEntityValid(EntityID entityId) const;

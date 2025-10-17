@@ -79,23 +79,6 @@ void DirtyAssetsManager::OnAssetChanged(Volt::AssetHandle assetHandle, Volt::Ass
 
 
 }
-//
-//bool DirtyAssetsManager::OnAssetCreated(Volt::AssetCreatedEvent& e)
-//{
-//	const Volt::AssetHandle& handle = e.GetAssetHandle();
-//	if (Volt::AssetManager::IsMemoryAsset(handle))
-//	{
-//		return false;
-//	}
-//	MarkAssetDirty(handle);
-//	return false;
-//}
-//
-//bool DirtyAssetsManager::OnAssetSaved(Volt::AssetSavedEvent& e)
-//{
-//	MarkAssetNotDirty(e.GetAssetHandle());
-//	return false;
-//}
 
 void DirtyAssetsManager::RegisterSaveCustomizationForType(AssetType type, DirtySaveCustomization customization)
 {
@@ -382,6 +365,7 @@ bool DirtyAssetsManager::IsAssetDirty(Volt::AssetHandle handle)
 
 void DirtyAssetsManager::MarkAssetDirty(Volt::AssetHandle handle)
 {
+	VT_ENSURE(handle != Volt::Asset::Null());
 	m_dirtyAssets.insert(handle);
 }
 
@@ -403,6 +387,13 @@ void DirtyAssetsManager::SaveAssetsImpl(const FrameStackVector<Volt::AssetHandle
 {
 	for (const Volt::AssetHandle& handle : assetsToSave)
 	{
+		AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(handle);
+		if (m_dirtySaveCustomizations[type].ShouldDeleteInstead(handle))
+		{
+			Volt::AssetManager::Get().DeleteAsset(handle);
+			continue;
+		}
+
 		Volt::AssetManager::SaveAsset(handle);
 	}
 }
