@@ -6,16 +6,8 @@
 #include <iostream>
 
 template<>
-struct std::formatter<glm::vec2, char>
+struct std::formatter<glm::vec2> : std::formatter<std::string>
 {
-	bool quoted = false;
-
-	template<class ParseContext>
-	constexpr ParseContext::iterator parse(ParseContext& ctx)
-	{
-		return ctx.end();
-	}
-
 	template<class FmtContext>
 	FmtContext::iterator format(glm::vec2 s, FmtContext& ctx) const
 	{
@@ -24,16 +16,8 @@ struct std::formatter<glm::vec2, char>
 };
 
 template<>
-struct std::formatter<glm::vec3, char>
+struct std::formatter<glm::vec3> : std::formatter<std::string>
 {
-	bool quoted = false;
-
-	template<class ParseContext>
-	constexpr ParseContext::iterator parse(ParseContext& ctx)
-	{
-		return ctx.end();
-	}
-
 	template<class FmtContext>
 	FmtContext::iterator format(glm::vec3 s, FmtContext& ctx) const
 	{
@@ -42,16 +26,8 @@ struct std::formatter<glm::vec3, char>
 };
 
 template<>
-struct std::formatter<glm::vec4, char>
+struct std::formatter<glm::vec4> : std::formatter<std::string>
 {
-	bool quoted = false;
-
-	template<class ParseContext>
-	constexpr ParseContext::iterator parse(ParseContext& ctx)
-	{
-		return ctx.end();
-	}
-
 	template<class FmtContext>
 	FmtContext::iterator format(glm::vec4 s, FmtContext& ctx) const
 	{
@@ -60,16 +36,8 @@ struct std::formatter<glm::vec4, char>
 };
 
 template<>
-struct std::formatter<glm::quat, char>
+struct std::formatter<glm::quat> : std::formatter<std::string>
 {
-	bool quoted = false;
-
-	template<class ParseContext>
-	constexpr ParseContext::iterator parse(ParseContext& ctx)
-	{
-		return ctx.end();
-	}
-
 	template<class FmtContext>
 	FmtContext::iterator format(glm::quat s, FmtContext& ctx) const
 	{
@@ -78,16 +46,8 @@ struct std::formatter<glm::quat, char>
 };
 
 template<>
-struct std::formatter<glm::ivec2, char>
+struct std::formatter<glm::ivec2> : std::formatter<std::string>
 {
-	bool quoted = false;
-
-	template<class ParseContext>
-	constexpr ParseContext::iterator parse(ParseContext& ctx)
-	{
-		return ctx.end();
-	}
-
 	template<class FmtContext>
 	FmtContext::iterator format(glm::ivec2 s, FmtContext& ctx) const
 	{
@@ -96,16 +56,8 @@ struct std::formatter<glm::ivec2, char>
 };
 
 template<>
-struct std::formatter<glm::ivec3, char>
+struct std::formatter<glm::ivec3> : std::formatter<std::string>
 {
-	bool quoted = false;
-
-	template<class ParseContext>
-	constexpr ParseContext::iterator parse(ParseContext& ctx)
-	{
-		return ctx.end();
-	}
-
 	template<class FmtContext>
 	FmtContext::iterator format(glm::ivec3 s, FmtContext& ctx) const
 	{
@@ -114,16 +66,8 @@ struct std::formatter<glm::ivec3, char>
 };
 
 template<>
-struct std::formatter<glm::ivec4, char>
+struct std::formatter<glm::ivec4> : std::formatter<std::string>
 {
-	bool quoted = false;
-
-	template<class ParseContext>
-	constexpr ParseContext::iterator parse(ParseContext& ctx)
-	{
-		return ctx.end();
-	}
-
 	template<class FmtContext>
 	FmtContext::iterator format(glm::ivec4 s, FmtContext& ctx) const
 	{

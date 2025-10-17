@@ -33,7 +33,7 @@ namespace Volt
 {
 	static ConsoleVariable<int32_t> s_logRenderSceneUpdatedCVar(
 		"r.RenderScene.LogUpdates", 
-		0, 
+		1,
 		"Whether or not to log Render Scene updates");
 
 	static ConsoleVariable<int32_t> s_visualizeRenderScenePrimitiveBoundingSpheres(
@@ -877,11 +877,15 @@ namespace Volt
 						"Primitive Data with ID {} added: \n"
 						"	- Entity: {}\n"
 						"	- Index: {}\n"
-						"	- Position: {}\n",
+						"	- Position: {}\n"
+						"	- Rotation: {}\n"
+						"	- Scale: {}\n",
 						invalidPrimitive.id,
 						data.entityId,
 						invalidPrimitive.index,
-						data.position
+						data.position,
+						data.rotation,
+						data.scale
 					);
 
 					VT_LOGC_UNFORMATTED(Trace, LogRenderScene, logMessage);
