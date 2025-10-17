@@ -33,6 +33,8 @@ namespace Volt::RHI
 		virtual const uint32_t CalculateMipCount() const = 0;
 		virtual const bool IsSwapchainImage() const = 0;
 		virtual const ImageDesc& GetDesc() const = 0;
+		virtual uint64_t GetMaxRequiredStagingBufferSize() const = 0;
+		virtual uint32_t GetRowPitch() const = 0;
 
 		template<typename T>
 		VT_INLINE T ReadPixel(uint32_t x, uint32_t y, uint32_t z);

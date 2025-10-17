@@ -1,7 +1,7 @@
 #pragma once
 #include "RHIModule/Core/Core.h"
 
-#include <CoreUtilities/Containers/StackVector.h>
+#include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Variant.h>
 #include <CoreUtilities/Pointers/RawPtr.h>
 
@@ -644,17 +644,13 @@ namespace Volt::RHI
 	};
 
 	struct GraphicsDeviceCreateInfo
-	{
-		RefPtr<PhysicalGraphicsDevice> physicalDevice;
-	};
+	{};
 
 	struct GraphicsContextCreateInfo
 	{
 		GraphicsAPI graphicsApi;
-		PhysicalDeviceCreateInfo physicalDeviceInfo;
-		GraphicsDeviceCreateInfo graphicsDeviceInfo;
 
-		bool enabledDebugLayer = false;
+		bool enableDebugLayer = false;
 	};
 
 	struct DeviceQueueCreateInfo

@@ -48,6 +48,8 @@ private:
 
 template<typename T>
 inline constexpr ArrayView<T>::ArrayView() noexcept
+	: m_data(nullptr),
+	m_size(0)
 {}
 
 template<typename T>
@@ -165,6 +167,12 @@ template<typename T>
 constexpr ArrayView<T>::size_type ArrayView<T>::size() const noexcept
 {
 	return m_size;
+}
+
+template<typename T>
+constexpr const T* ArrayView<T>::data() const noexcept
+{
+	return m_data;
 }
 
 template<typename T>

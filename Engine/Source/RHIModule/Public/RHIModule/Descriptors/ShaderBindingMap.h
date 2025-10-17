@@ -33,7 +33,7 @@ namespace Volt::RHI
 		};
 
 		using ResourceBindingsMap = Map<ShaderStage, InlineVector<ResourceBinding, NumMaxBindings>>;
-		using ResourceIsSetMap = Map<ShaderStage, BitArray<NumMaxBindings>>;
+		using ResourceIsSetMap = Map<ShaderStage, Map<ShaderRegisterType, BitArray<NumMaxBindings>>>;
 
 		void SetUniformBuffer(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);
 		void SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView, uint64_t size, uint64_t offset);

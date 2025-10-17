@@ -7,7 +7,7 @@ struct VkImageView_T;
 
 namespace Volt::RHI
 {
-	class VulkanImageView : public ImageView
+	class VulkanImageView final : public ImageView
 	{
 	public:
 		VulkanImageView(const ImageViewDesc& specification, RawPtr<Image> image);

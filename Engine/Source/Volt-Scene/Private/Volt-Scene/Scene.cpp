@@ -359,6 +359,11 @@ namespace Volt
 		return m_entityIDToDescHandle.at(entityID);
 	}
 
+	void Scene::DestroyEntity(Entity entity)
+	{
+		DestroyEntity(entity, nullptr, nullptr);
+	}
+
 	void Scene::DestroyEntity(Entity entity, Vector<EntityID>& outDestroyedEntities)
 	{
 		DestroyEntity(entity, &outDestroyedEntities, nullptr);
@@ -387,8 +392,6 @@ namespace Volt
 		{
 			*outDestroyedEntities = destroyedEntities;
 		}
-
-		SortScene();
 	}
 
 	void Scene::InvalidateEntityTransform(const EntityID& entityId)
@@ -396,12 +399,13 @@ namespace Volt
 		Vector<EntityID> invalidatedEntities = m_entityScene.InvalidateEntityTransform(entityId);
 
 		//todo: World Engine
-		/*for (const auto& id : invalidatedEntities)
+		/*if (m_sceneSettings.useWorldEngine)
 		{
-			Entity currentEntity = GetEntityFromID(id);
+			Vector<EntityID> invalidatedEntities = m_entityScene.InvalidateEntityTransform(entityId);
 
-			if (m_sceneSettings.useWorldEngine)
+			for (const auto& id : invalidatedEntities)
 			{
+				Entity currentEntity = GetEntityFromID(id);
 				m_worldEngine.OnEntityMoved(currentEntity);
 			}
 		}*/
@@ -551,11 +555,6 @@ namespace Volt
 		}
 
 		return false;
-	}
-
-	void Scene::DestroyEntity(Entity entity)
-	{
-		DestroyEntity(entity, nullptr, nullptr);
 	}
 
 	void Scene::IsRecursiveChildOf(Entity parent, Entity currentEntity, bool& outChild)

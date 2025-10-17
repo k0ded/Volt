@@ -2,9 +2,6 @@
 
 #include "D3D12RHIModule/Common/ComPtr.h"
 
-#include <CoreUtilities/Core.h>
-#include <CoreUtilities/Containers/Map.h>
-
 struct ID3D12CommandSignature;
 
 namespace Volt::RHI
@@ -21,17 +18,14 @@ namespace Volt::RHI
 	class CommandSignatureCache
 	{
 	public:
-		CommandSignatureCache();
-		~CommandSignatureCache();
-
-		VT_NODISCARD VT_INLINE static CommandSignatureCache& Get() { return *s_instance; }
-
-		ComPtr<ID3D12CommandSignature> GetOrCreateCommandSignature(CommandSignatureType type, const uint32_t stride) const;
+		void Initialize();
+		void Shutdown();
+		ComPtr<ID3D12CommandSignature> GetCommandSignature(CommandSignatureType type, const uint32_t stride);
 
 	private:
-		inline static CommandSignatureCache* s_instance;
-
-		mutable std::mutex m_cacheMutex;
-		mutable Map<size_t, ComPtr<ID3D12CommandSignature>> m_signatureCache;
+		Map<size_t, ComPtr<ID3D12CommandSignature>> m_signatureCache;
+		bool m_initialized = false;
 	};
+
+	extern CommandSignatureCache g_commandSignatureCache;
 }

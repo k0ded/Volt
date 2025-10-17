@@ -29,9 +29,7 @@
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Shader/VulkanShaderCompiler.h"
 
-#include "VulkanRHIModule/Synchronization/VulkanEvent.h"
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
-#include "VulkanRHIModule/Synchronization/VulkanSemaphore.h"
 
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
@@ -95,24 +93,19 @@ namespace Volt::RHI
 		return uniformBuffer;
 	}
 
-	RefPtr<DeviceQueue> VulkanRHIModule::CreateDeviceQueue(const DeviceQueueCreateInfo& createInfo) const
-	{
-		return RefPtr<VulkanDeviceQueue>::Create(createInfo);
-	}
-
 	RefPtr<GraphicsContext> VulkanRHIModule::CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanGraphicsContext>::Create(createInfo);
 	}
 
-	RefPtr<GraphicsDevice> VulkanRHIModule::CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo) const
+	RefPtr<GraphicsDevice> VulkanRHIModule::CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer) const
 	{
-		return RefPtr<VulkanGraphicsDevice>::Create(createInfo);
+		return RefPtr<VulkanGraphicsDevice>::Create(createInfo, physicalGraphicsDevice, enableDebugLayer);
 	}
 
-	RefPtr<PhysicalGraphicsDevice> VulkanRHIModule::CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const
+	RefPtr<PhysicalGraphicsDevice> VulkanRHIModule::CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const
 	{
-		return RefPtr<VulkanPhysicalGraphicsDevice>::Create(createInfo);
+		return RefPtr<VulkanPhysicalGraphicsDevice>::Create(createInfo, enableDebugLayer);
 	}
 
 	RefPtr<Swapchain> VulkanRHIModule::CreateSwapchain(const SwapchainCreateInfo& createInfo) const
@@ -182,19 +175,9 @@ namespace Volt::RHI
 		return RefPtr<VulkanShaderCompiler>::Create(createInfo);
 	}
 
-	RefPtr<Event> VulkanRHIModule::CreateEvent(const EventCreateInfo& createInfo) const
-	{
-		return RefPtr<VulkanEvent>::Create(createInfo);
-	}
-
 	RefPtr<Fence> VulkanRHIModule::CreateFence() const
 	{
 		return RefPtr<VulkanFence>::Create();
-	}
-
-	RefPtr<Semaphore> VulkanRHIModule::CreateSemaphore(const SemaphoreCreateInfo& createInfo) const
-	{
-		return RefPtr<VulkanSemaphore>::Create(createInfo);
 	}
 
 	RefPtr<AccelerationStructure> VulkanRHIModule::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const

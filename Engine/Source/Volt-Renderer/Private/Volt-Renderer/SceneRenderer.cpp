@@ -363,7 +363,7 @@ namespace Volt
 
 		SceneTextures& sceneTextures = blackboard.Add<SceneTextures>();
 		sceneTextures.sceneVelocity = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "SceneVelocity"));
-		sceneTextures.sceneDepth = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "SceneDepth"));
+		sceneTextures.sceneDepth = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::Attachment, "SceneDepth"));
 
 		DepthPrePassParameters* passParameters = renderGraph.AllocParameters<DepthPrePassParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;

@@ -52,7 +52,7 @@ namespace Volt
 		viewport.minDepth = 0.f;
 		viewport.maxDepth = 1.f;
 
-		StackVector<RHI::AttachmentInfo, RHI::MAX_COLOR_ATTACHMENT_COUNT> colorAttachments;
+		InlineVector<RHI::AttachmentInfo, RHI::MAX_COLOR_ATTACHMENT_COUNT> colorAttachments;
 		RHI::AttachmentInfo depthAttachment{};
 
 		for (size_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
@@ -61,12 +61,10 @@ namespace Volt
 			{
 				RefPtr<RHI::ImageView> view = rtBindings.renderTargets[i]->GetRHIResource()->GetOrCreateView({});
 
-				RHI::AttachmentInfo attachment{};
+				RHI::AttachmentInfo& attachment = colorAttachments.emplace_back();
 				attachment.clearMode = RHI::ClearMode::Clear;
 				attachment.clearColor = { 0.f, 0.f, 0.f, 0.f };
 				attachment.view = view;
-
-				colorAttachments.Push(attachment);
 			}
 		}
 
@@ -202,7 +200,7 @@ namespace Volt
 		m_commandBuffer->BindIndexBuffer(rhiIndexBuffer);
 	}
 
-	void RenderContext::BindVertexBuffers(const StackVector<RGBufferRef, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	void RenderContext::BindVertexBuffers(const InlineVector<RGBufferRef, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
 	{
 		RHI::VertexBufferVector rhiVertexBuffers;
 		for (const RGBufferRef buffer : vertexBuffers)

@@ -5,6 +5,7 @@
 #include <CoreUtilities/Containers/Map.h>
 
 #include <entt.hpp>
+#include <shared_mutex>
 
 #include <shared_mutex>
 
@@ -23,9 +24,15 @@ namespace Volt
 		bool Contains(entt::entity handle) const;
 
 	private:
+		using WriteLock = std::unique_lock<std::shared_mutex>;
+		using ReadLock = std::shared_lock<std::shared_mutex>;
+
 		Map<EntityID, entt::entity> m_entityMap;
 		Map<entt::entity, EntityID> m_handleMap;
 
-		mutable std::shared_mutex m_entityMutex;
+		std::set<EntityID> m_editedEntities;
+		std::set<EntityID> m_removedEntities;
+
+		mutable std::shared_mutex m_mutex;
 	};
 }

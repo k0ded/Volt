@@ -61,6 +61,7 @@ namespace Volt
 	void MeshAsset::Initialize(const MeshInitializer& meshInitializer, const Vector<Ref<MaterialAsset>>& materials)
 	{
 		VT_PROFILE_FUNCTION();
+		VT_ENSURE_MSG(!m_isInitialized, "A mesh should not be initialized more than once!");
 
 		m_materials.resize(materials.size());
 		for (size_t i = 0; i < m_materials.size(); ++i)
@@ -70,10 +71,14 @@ namespace Volt
 
 		m_mesh->SetName(assetName);
 		m_mesh->Initialize(meshInitializer);
+
+		m_isInitialized = true;
 	}
 
 	void MeshAsset::Initialize(MeshInitializer& meshInitializer, const Vector<AssetHandle>& materials)
 	{
+		VT_ENSURE_MSG(!m_isInitialized, "A mesh should not be initialized more than once!");
+
 		m_materials.resize(materials.size());
 		for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
 		{
@@ -95,5 +100,7 @@ namespace Volt
 
 		m_mesh->SetName(assetName);
 		m_mesh->Initialize(meshInitializer);
+
+		m_isInitialized = true;
 	}
 }

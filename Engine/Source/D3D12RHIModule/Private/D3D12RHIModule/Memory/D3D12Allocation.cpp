@@ -16,7 +16,7 @@ namespace Volt::RHI
 	
 	const uint64_t D3D12ImageAllocation::GetDeviceAddress() const
 	{
-		return 0;
+		return m_resource->GetGPUVirtualAddress();
 	}
 	
 	void* D3D12ImageAllocation::GetResourceHandleInternal() const
@@ -36,6 +36,10 @@ namespace Volt::RHI
 		return m_allocation;
 	}
 
+	void D3D12ImageAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+	}
+
 	D3D12BufferAllocation::D3D12BufferAllocation(const size_t hash, const std::string& name)
 		: m_allocationHash(hash),
 		m_name(name)
@@ -49,7 +53,7 @@ namespace Volt::RHI
 
 	const uint64_t D3D12BufferAllocation::GetDeviceAddress() const
 	{
-		return 0;
+		return m_resource->GetGPUVirtualAddress();
 	}
 
 	void* D3D12BufferAllocation::GetResourceHandleInternal() const
@@ -69,6 +73,11 @@ namespace Volt::RHI
 		return m_allocation;
 	}
 
+	void D3D12BufferAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+
+	}
+
 	D3D12TransientBufferAllocation::D3D12TransientBufferAllocation(const size_t hash, const std::string& name)
 		: m_allocationHash(hash), 
 		m_name(name)
@@ -82,7 +91,7 @@ namespace Volt::RHI
 
 	const uint64_t D3D12TransientBufferAllocation::GetDeviceAddress() const
 	{
-		return 0;
+		return m_resource->GetGPUVirtualAddress();
 	}
 
 	void* D3D12TransientBufferAllocation::GetResourceHandleInternal() const
@@ -102,6 +111,11 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
+	void D3D12TransientBufferAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+
+	}
+
 	D3D12TransientImageAllocation::D3D12TransientImageAllocation(const size_t hash, const std::string& name)
 		: m_allocationHash(hash),
 		m_name(name)
@@ -115,7 +129,7 @@ namespace Volt::RHI
 
 	const uint64_t D3D12TransientImageAllocation::GetDeviceAddress() const
 	{
-		return 0;
+		return m_resource->GetGPUVirtualAddress();
 	}
 
 	void* D3D12TransientImageAllocation::GetResourceHandleInternal() const
@@ -134,4 +148,10 @@ namespace Volt::RHI
 	{
 		return nullptr;
 	}
+
+	void D3D12TransientImageAllocation::Flush(uint64_t offset, uint64_t size)
+	{
+
+	}
+
 }

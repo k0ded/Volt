@@ -3,10 +3,10 @@
 #ifdef _WIN32
 #include <wrl.h>
 #else
-#include <dxsc/WinAdapter.h>
+#include <dxc/WinAdapter.h>
 #endif
 
-#include <dxsc/dxcapi.h>
+#include <dxc/dxcapi.h>
 
 #include <unordered_set>
 #include <filesystem>
@@ -24,6 +24,8 @@ namespace Volt::RHI
 
 		ULONG AddRef() override { return 0; }
 		ULONG Release() override { return 0; }
+
+		const std::unordered_set<std::filesystem::path>& GetIncludedFiles() const { return m_includedFiles; }
 
 	private:
 		IDxcIncludeHandler* m_defaultIncludeHandler = nullptr;

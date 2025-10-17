@@ -14,7 +14,7 @@ namespace Volt::RHI
 	class VulkanGraphicsDevice final : public GraphicsDevice
 	{
 	public:
-		VulkanGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo);
+		VulkanGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer);
 		~VulkanGraphicsDevice() override;
 
 		void WaitForIdle();

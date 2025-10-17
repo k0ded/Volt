@@ -30,7 +30,7 @@ namespace Volt::RHI
 			{
 				vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
-				constexpr auto VERSION = VK_API_VERSION_1_3;
+				constexpr auto VERSION = VK_API_VERSION_1_4;
 
 				if (deviceProperties.apiVersion >= VERSION)
 				{
@@ -108,7 +108,7 @@ namespace Volt::RHI
 		}
 	}
 
-	VulkanPhysicalGraphicsDevice::VulkanPhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo)
+	VulkanPhysicalGraphicsDevice::VulkanPhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer)
 	{
 		VkInstance vulkanInstance = GraphicsContext::Get().AsRef<VulkanGraphicsContext>().GetHandle<VkInstance>();
 		VkPhysicalDevice selectedDevice = Utility::FindBestSuitableDevice(vulkanInstance);

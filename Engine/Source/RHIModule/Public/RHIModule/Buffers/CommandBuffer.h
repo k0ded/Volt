@@ -11,9 +11,9 @@
 #include "RHIModule/RayTracing/ShaderBindingTable.h"
 
 #include <CoreUtilities/Pointers/RawPtr.h>
-#include <CoreUtilities/Containers/StackVector.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Allocators/Handle.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
 
 namespace Volt::RHI
 {
@@ -56,8 +56,6 @@ namespace Volt::RHI
 		virtual void Begin(bool oneTimeSubmit = true) = 0;
 		virtual void End() = 0;
 
-		virtual void SetEvent(RawPtr<Event> event) = 0;
-
 		virtual void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance) = 0;
 		virtual void DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance) = 0;
 		virtual void DrawIndexedIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
@@ -74,8 +72,8 @@ namespace Volt::RHI
 
 		virtual void TraceRays(RawPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth) = 0;
 
-		virtual void SetViewports(const StackVector<Viewport, MAX_VIEWPORT_COUNT>& viewports) = 0;
-		virtual void SetScissors(const StackVector<Rect2D, MAX_VIEWPORT_COUNT>& scissors) = 0;
+		virtual void SetViewports(const InlineVector<Viewport, MAX_VIEWPORT_COUNT>& viewports) = 0;
+		virtual void SetScissors(const InlineVector<Rect2D, MAX_VIEWPORT_COUNT>& scissors) = 0;
 
 		virtual void BindPipeline(RawPtr<RenderPipeline> pipeline) = 0;
 		virtual void BindPipeline(RawPtr<ComputePipeline> pipeline) = 0;

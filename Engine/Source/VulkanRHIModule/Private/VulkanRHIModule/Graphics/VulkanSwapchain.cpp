@@ -170,15 +170,15 @@ namespace Volt::RHI
 		}
 
 		auto device = GraphicsContext::GetDevice();
-		auto& frameData = m_perFrameInFlightData.at(m_currentFrame);
+		auto& frameData = m_perFrameInFlightData.at(m_currentFrameIndex);
 
-		vkWaitForFences(device->GetHandle<VkDevice>(), 1, &m_fences.at(m_currentFrame), VK_TRUE, UINT64_MAX);
-		vkResetFences(device->GetHandle<VkDevice>(), 1, &m_fences.at(m_currentFrame));
+		vkWaitForFences(device->GetHandle<VkDevice>(), 1, &m_fences.at(m_currentFrameIndex), VK_TRUE, UINT64_MAX);
+		vkResetFences(device->GetHandle<VkDevice>(), 1, &m_fences.at(m_currentFrameIndex));
 
-		m_commandBuffers.at(m_currentFrame)->Begin();
+		m_commandBuffers.at(m_currentFrameIndex)->Begin();
 
 		m_swapchainMutex.lock();
-		VkResult swapchainStatus = vkAcquireNextImageKHR(device->GetHandle<VkDevice>(), m_swapchain, 1000000000, frameData.presentSemaphore, nullptr, &m_currentImage);
+		VkResult swapchainStatus = vkAcquireNextImageKHR(device->GetHandle<VkDevice>(), m_swapchain, 1000000000, frameData.presentSemaphore, nullptr, &m_currentImageIndex);
 		m_swapchainMutex.unlock();
 
 		if (swapchainStatus == VK_ERROR_OUT_OF_DATE_KHR)
@@ -199,23 +199,23 @@ namespace Volt::RHI
 		{
 			ResourceBarrierInfo barrier{};
 			barrier.type = BarrierType::Image;
-			ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), m_perImageData.at(m_currentImage).imageReference);
+			ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), m_perImageData.at(m_currentImageIndex).imageReference);
 			barrier.imageBarrier().dstAccess = BarrierAccess::None;
 			barrier.imageBarrier().dstStage = BarrierStage::AllGraphics;
 			barrier.imageBarrier().dstLayout = ImageLayout::Present;
-			barrier.imageBarrier().resource = m_perImageData.at(m_currentImage).imageReference;
+			barrier.imageBarrier().resource = m_perImageData.at(m_currentImageIndex).imageReference;
 
-			m_commandBuffers.at(m_currentFrame)->ResourceBarrier({ barrier });
+			m_commandBuffers.at(m_currentFrameIndex)->ResourceBarrier({ barrier });
 		}
 
-		m_commandBuffers.at(m_currentFrame)->End();
+		m_commandBuffers.at(m_currentFrameIndex)->End();
 
 		if (m_swapchainNeedsRebuild)
 		{
 			return;
 		}
 
-		auto& frameData = m_perFrameInFlightData.at(m_currentFrame);
+		auto& frameData = m_perFrameInFlightData.at(m_currentFrameIndex);
 
 		const auto deviceQueue = GraphicsContext::GetDevice()->GetDeviceQueue(QueueType::Graphics);
 
@@ -223,8 +223,8 @@ namespace Volt::RHI
 
 		// Queue Submit
 		{
-			VkCommandBuffer cmdBuffer = m_commandBuffers.at(m_currentFrame)->GetHandle<VkCommandBuffer>();
-			VkFence fence = m_fences.at(m_currentFrame);
+			VkCommandBuffer cmdBuffer = m_commandBuffers.at(m_currentFrameIndex)->GetHandle<VkCommandBuffer>();
+			VkFence fence = m_fences.at(m_currentFrameIndex);
 
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -232,7 +232,7 @@ namespace Volt::RHI
 			submitInfo.pCommandBuffers = &cmdBuffer;
 
 			submitInfo.signalSemaphoreCount = 1;
-			submitInfo.pSignalSemaphores = &m_perFrameInFlightData.at(m_currentImage).renderSemaphore;
+			submitInfo.pSignalSemaphores = &m_perFrameInFlightData.at(m_currentImageIndex).renderSemaphore;
 
 			submitInfo.waitSemaphoreCount = 1;
 			submitInfo.pWaitSemaphores = &frameData.presentSemaphore;
@@ -244,7 +244,7 @@ namespace Volt::RHI
 			VT_VK_CHECK(vkQueueSubmit(deviceQueue->GetHandle<VkQueue>(), 1, &submitInfo, fence));
 			vkQueue.ReleaseLock();
 
-			m_lastSubmittedFence = m_currentFrame;
+			m_lastSubmittedFence = m_currentFrameIndex;
 		}
 
 		// Present to screen
@@ -255,9 +255,9 @@ namespace Volt::RHI
 			presentInfo.swapchainCount = 1;
 			presentInfo.pSwapchains = &m_swapchain;
 
-			presentInfo.pWaitSemaphores = &m_perFrameInFlightData.at(m_currentImage).renderSemaphore;
+			presentInfo.pWaitSemaphores = &m_perFrameInFlightData.at(m_currentImageIndex).renderSemaphore;
 			presentInfo.waitSemaphoreCount = 1;
-			presentInfo.pImageIndices = &m_currentImage;
+			presentInfo.pImageIndices = &m_currentImageIndex;
 
 			vkQueue.AquireLock();
 			VkResult presentResult = vkQueuePresentKHR(deviceQueue->GetHandle<VkQueue>(), &presentInfo);
@@ -299,7 +299,7 @@ namespace Volt::RHI
 
 	const uint32_t VulkanSwapchain::GetCurrentFrame() const
 	{
-		return m_currentFrame;
+		return m_currentFrameIndex;
 	}
 
 	const uint32_t VulkanSwapchain::GetWidth() const
@@ -319,7 +319,7 @@ namespace Volt::RHI
 
 	RefPtr<Image> VulkanSwapchain::GetCurrentImage() const
 	{
-		const auto& data = m_perImageData.at(m_currentImage);
+		const auto& data = m_perImageData.at(m_currentImageIndex);
 		return data.imageReference;
 	}
 
@@ -546,6 +546,6 @@ namespace Volt::RHI
 
 	void VulkanSwapchain::GetNextFrameIndex()
 	{
-		m_currentFrame = (m_currentFrame + 1) % RHI::RHICapabilities::NumFramesInFlight;
+		m_currentFrameIndex = (m_currentFrameIndex + 1) % RHI::RHICapabilities::NumFramesInFlight;
 	}
 }

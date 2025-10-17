@@ -44,9 +44,10 @@ namespace Volt
 
 		[[nodiscard]] const PrefabReferenceData& GetReferenceData(Entity entity) const;
 
+		uint32_t GetPrefabVersion() const { return m_version; }
+
 		static AssetType GetStaticType() { return AssetTypes::Prefab; }
 		AssetType GetType() override { return GetStaticType(); };
-		uint32_t GetVersion() const override { return m_version; }
 
 	private:
 		friend class PrefabImporter;

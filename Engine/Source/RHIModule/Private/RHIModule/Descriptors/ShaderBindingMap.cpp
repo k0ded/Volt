@@ -6,7 +6,7 @@ namespace Volt::RHI
 {
 	void ShaderBindingMap::SetUniformBuffer(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
 	{
-		auto& bitArray = m_resourceIsSet[shaderStage];
+		auto& bitArray = m_resourceIsSet[shaderStage][ShaderRegisterType::CBV];
 
 		if (!bitArray.IsBitSet(bindingIndex))
 		{
@@ -22,7 +22,7 @@ namespace Volt::RHI
 
 	void ShaderBindingMap::SetSampler(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::SamplerState> samplerState)
 	{
-		auto& bitArray = m_resourceIsSet[shaderStage];
+		auto& bitArray = m_resourceIsSet[shaderStage][ShaderRegisterType::Sampler];
 
 		if (!bitArray.IsBitSet(bindingIndex))
 		{
@@ -38,7 +38,7 @@ namespace Volt::RHI
 
 	void ShaderBindingMap::SetStructuredBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
 	{
-		auto& bitArray = m_resourceIsSet[shaderStage];
+		auto& bitArray = m_resourceIsSet[shaderStage][ShaderRegisterType::UAV];
 
 		if (!bitArray.IsBitSet(bindingIndex))
 		{
@@ -54,7 +54,7 @@ namespace Volt::RHI
 
 	void ShaderBindingMap::SetStructuredBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
 	{
-		auto& bitArray = m_resourceIsSet[shaderStage];
+		auto& bitArray = m_resourceIsSet[shaderStage][ShaderRegisterType::SRV];
 
 		if (!bitArray.IsBitSet(bindingIndex))
 		{
@@ -70,7 +70,7 @@ namespace Volt::RHI
 
 	void ShaderBindingMap::SetTexelBufferUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
 	{
-		auto& bitArray = m_resourceIsSet[shaderStage];
+		auto& bitArray = m_resourceIsSet[shaderStage][ShaderRegisterType::UAV];
 
 		if (!bitArray.IsBitSet(bindingIndex))
 		{
@@ -86,7 +86,7 @@ namespace Volt::RHI
 
 	void ShaderBindingMap::SetTexelBufferSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView)
 	{
-		auto& bitArray = m_resourceIsSet[shaderStage];
+		auto& bitArray = m_resourceIsSet[shaderStage][ShaderRegisterType::SRV];
 
 		if (!bitArray.IsBitSet(bindingIndex))
 		{
@@ -102,7 +102,7 @@ namespace Volt::RHI
 
 	void ShaderBindingMap::SetTextureSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView)
 	{
-		auto& bitArray = m_resourceIsSet[shaderStage];
+		auto& bitArray = m_resourceIsSet[shaderStage][ShaderRegisterType::SRV];
 
 		if (!bitArray.IsBitSet(bindingIndex))
 		{
@@ -118,7 +118,7 @@ namespace Volt::RHI
 
 	void ShaderBindingMap::SetTextureUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView)
 	{
-		auto& bitArray = m_resourceIsSet[shaderStage];
+		auto& bitArray = m_resourceIsSet[shaderStage][ShaderRegisterType::UAV];
 
 		if (!bitArray.IsBitSet(bindingIndex))
 		{
@@ -134,7 +134,7 @@ namespace Volt::RHI
 
 	void ShaderBindingMap::SetAccelerationStructure(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::AccelerationStructure> accelerationStructure)
 	{
-		auto& bitArray = m_resourceIsSet[shaderStage];
+		auto& bitArray = m_resourceIsSet[shaderStage][ShaderRegisterType::SRV];
 
 		if (!bitArray.IsBitSet(bindingIndex))
 		{
@@ -150,7 +150,7 @@ namespace Volt::RHI
 
 	void ShaderBindingMap::SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView, uint64_t size, uint64_t offset)
 	{
-		auto& bitArray = m_resourceIsSet[shaderStage];
+		auto& bitArray = m_resourceIsSet[shaderStage][ShaderRegisterType::CBV];
 
 		if (!bitArray.IsBitSet(bindingIndex))
 		{

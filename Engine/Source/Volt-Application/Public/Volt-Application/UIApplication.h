@@ -59,7 +59,7 @@ namespace Volt
 	private:
 		friend class UIApplicationEventListener;
 
-		void CreateGraphicsContext();
+		void CreateGraphicsContext(const CommandLineBuilder& commandLineBuilder);
 		void MainUpdate();
 
 		bool OnAppUpdateEvent(class AppUpdateEvent& e);

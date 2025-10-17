@@ -24,6 +24,7 @@ namespace Volt::RHI
 		uint64_t maxComputeSharedMemorySize = (1 << 15);
 		uint32_t maxWorkGroupInvocations = 1024;
 		uint64_t minUniformBufferAlignment = 0;
+		uint64_t maxUniformBufferViewSize = 65536;
 
 		struct RayTracing
 		{

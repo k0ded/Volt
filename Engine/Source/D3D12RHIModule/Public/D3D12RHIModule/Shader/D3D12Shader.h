@@ -1,74 +1,50 @@
 #pragma once
 
 #include "D3D12RHIModule/Common/ComPtr.h"
-#include "D3D12RHIModule/Descriptors/DescriptorCommon.h"
 
 #include <RHIModule/Shader/Shader.h>
-#include <RHIModule/Shader/ShaderCompiler.h>
 
-#include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Containers/ArrayView.h>
 
 struct ID3D12RootSignature;
 
 namespace Volt::RHI
 {
-	struct DescriptorRangeInfo
-	{
-		size_t rangeIndex;
-		uint32_t descriptorIndex;
-	};
-
 	class D3D12Shader final : public Shader
 	{
 	public:
-		D3D12Shader(const ShaderSpecification& createInfo);
+		D3D12Shader(const ShaderCreateInfo& createInfo);
 		~D3D12Shader() override;
 
-		const bool Reload(bool forceCompile) override;
+		void Reload(bool forceCompile /* = false */) override;
 		std::string_view GetName() const override;
-		const Vector<ShaderSourceEntry>& GetSourceEntries() const override;
-		const ShaderResources& GetResources() const override;
-		ShaderDataBuffer GetConstantsBuffer() const override;
-		VT_NODISCARD bool HasConstants() const override;
-		const ShaderResourceBinding& GetResourceBindingFromName(std::string_view name) const override;
-		ShaderType GetShaderType() const override;
 		size_t GetHash() const override;
 		bool IsValid() const override;
+		ShaderStage GetShaderStage() const override;
+		const ShaderParameterMap& GetParameterMap() const override { return m_shaderParameterMap; }
 
-		VT_NODISCARD VT_INLINE const std::unordered_map<ShaderStage, Vector<uint32_t>>& GetShaderStageData() const { return m_shaderStageData; }
-		VT_NODISCARD VT_INLINE ComPtr<ID3D12RootSignature> GetRootSignature() const { return m_rootSignature; }
-
-		VT_NODISCARD uint32_t GetDescriptorIndexFromDescriptorHash(const size_t hash);
-		VT_NODISCARD VT_INLINE uint32_t GetPushConstantsRootParameterIndex() const { return m_pushConstantsRootParamIndex; }
-		VT_NODISCARD VT_INLINE uint32_t GetRenderGraphConstantsRootParameterIndex() const { return m_renderGraphConstantsRootParamIndex; }
-		VT_NODISCARD VT_INLINE uint32_t GetDescriptorTableRootParameterIndex() const { return m_descriptorTableRootParamIndex; }
+		VT_NODISCARD VT_INLINE const ShaderInfo& GetShaderInfo() const override { return m_shaderInfo; }
+		VT_NODISCARD VT_INLINE const ShaderSourceInfo& GetShaderSourceInfo() const override { return m_sourceInfo; }
+		VT_NODISCARD VT_INLINE const ShaderIncludeDependencies& GetShaderIncludeDependencies() const override { return m_shaderIncludeDependencies; }
+		VT_NODISCARD VT_INLINE ArrayView<uint32_t> GetShaderBinary() const { return m_shaderBinary; }
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
-		void LoadShaderFromFiles();
-		void Release();
+		void LoadAndCompileShader(bool forceCompile);
 		void GenerateHash();
 
-		void CopyCompilationResults(const ShaderCompiler::CompilationResultData& compilationResult);
-		void CreateRootSignature();
+		ShaderParameterMap m_shaderParameterMap;
+		ShaderPermutationConfig m_permutationConfig;
+		ShaderSourceInfo m_sourceInfo;
+		ShaderInfo m_shaderInfo;
+		ShaderIncludeDependencies m_shaderIncludeDependencies;
 
-		ShaderCompiler::CompilationResultData CompileOrGetBinary(bool forceCompile);
-
-		std::unordered_map<ShaderStage, Vector<uint32_t>> m_shaderStageData;
-		std::unordered_map<ShaderStage, ShaderSourceInfo> m_shaderSources;
-
-		Map<size_t, DescriptorRangeInfo> m_bindingToDescriptorRangeInfo; // Hash is space + binding + type
-
-		ComPtr<ID3D12RootSignature> m_rootSignature;
-
-		ShaderSpecification m_specification;
-		ShaderResources m_resources;
+		std::string m_name;
 		size_t m_hash = 0;
+		bool m_failureIsFatal;
 
-		uint32_t m_pushConstantsRootParamIndex = ~0u;
-		uint32_t m_renderGraphConstantsRootParamIndex = ~0u;
-		uint32_t m_descriptorTableRootParamIndex = ~0u;
+		Vector<uint32_t> m_shaderBinary;
 	};
 }

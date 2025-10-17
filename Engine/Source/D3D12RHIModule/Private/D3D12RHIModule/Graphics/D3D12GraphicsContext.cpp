@@ -1,46 +1,16 @@
 #include "dxpch.h"
+
 #include "D3D12RHIModule/Graphics/D3D12GraphicsContext.h"
-#include "D3D12RHIModule/Graphics/D3D12PhysicalGraphicsDevice.h"
-#include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
-
-#include "D3D12RHIModule/Memory/D3D12DefaultGPUAllocator.h"
-#include "D3D12RHIModule/Descriptors/CPUDescriptorHeapManager.h"
-
+#include "D3D12RHIModule/Graphics/D3D12DebugLayer.h"
 #include "D3D12RHIModule/Buffers/CommandSignatureCache.h"
+#include "D3D12RHIModule/Descriptors/D3D12DescriptorManager.h"
 
 namespace Volt::RHI
 {
-	namespace Utility
+	D3D12GraphicsContext::D3D12GraphicsContext(const GraphicsContextCreateInfo& createInfo)
+		: m_createInfo(createInfo)
 	{
-		void LogD3D12Message(D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, LPCSTR pDescription, void* context)
-		{
-			switch (severity)
-			{
-				case D3D12_MESSAGE_SEVERITY_CORRUPTION:
-					VT_LOG(Error, std::string("D3D12 Validation:") + std::string(pDescription));
-					break;
-				case D3D12_MESSAGE_SEVERITY_ERROR:
-					VT_LOG(Error, std::string("D3D12 Validation:") + std::string(pDescription));
-					break;
-				case D3D12_MESSAGE_SEVERITY_WARNING:
-					VT_LOG(Warning, std::string("D3D12 Validation:") + std::string(pDescription));
-					break;
-				case D3D12_MESSAGE_SEVERITY_INFO:
-					VT_LOG(Info, std::string("D3D12 Validation:") + std::string(pDescription));
-					break;
-				case D3D12_MESSAGE_SEVERITY_MESSAGE:
-					VT_LOG(Trace, std::string("D3D12 Validation:") + std::string(pDescription));
-					break;
-				default:
-					break;
-			}
-		}
-	}
-
-	D3D12GraphicsContext::D3D12GraphicsContext(const GraphicsContextCreateInfo& info)
-		: m_createInfo(info)
-	{
-		Initalize();
+		Initialize();
 	}
 
 	D3D12GraphicsContext::~D3D12GraphicsContext()
@@ -78,101 +48,49 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
-	void D3D12GraphicsContext::Initalize()
+	void D3D12GraphicsContext::Initialize()
 	{
-		m_physicalDevice = PhysicalGraphicsDevice::Create(m_createInfo.physicalDeviceInfo);
-
-		GraphicsDeviceCreateInfo deviceCreateInfo = {};
-		deviceCreateInfo.physicalDevice = m_physicalDevice;
+		PhysicalDeviceCreateInfo physicalDeviceCreateInfo{};
+		m_physicalDevice = PhysicalGraphicsDevice::Create(physicalDeviceCreateInfo, m_createInfo.enableDebugLayer);
 
 #ifdef VT_ENABLE_VALIDATION
-		InitializeDebugLayer();
+		if (m_createInfo.enableDebugLayer)
+		{
+			m_debugLayer = CreateRef<D3D12DebugLayer>();
+
+			if (!m_debugLayer->IsSupported())
+			{
+				VT_LOGC(Warning, LogD3D12RHI, "D3D12 debug layer were requested but not supported. Running without it!");
+			}
+		}
 #endif
 
-		m_graphicsDevice = GraphicsDevice::Create(deviceCreateInfo);
+		GraphicsDeviceCreateInfo graphicsDeviceInfo{};
+		m_graphicsDevice = GraphicsDevice::Create(graphicsDeviceInfo, m_physicalDevice, m_createInfo.enableDebugLayer);
 
 #ifdef VT_ENABLE_VALIDATION
-		InitializeAPIValidation();
+		if (m_debugLayer)
+		{
+			m_debugLayer->InitializeAPIValidation(m_graphicsDevice);
+		}
 #endif
 
+		m_resourceStateTracker = RefPtr<ResourceStateTracker>::Create();
 		m_defaultAllocator = DefaultGPUAllocator::Create();
 		m_transientAllocator = TransientGPUAllocator::Create();
-		m_resourceStateTracker = RefPtr<ResourceStateTracker>::Create();
-		m_cpuDescriptorHeapManager = CreateScope<CPUDescriptorHeapManager>();
-		m_commandSignatureCache = CreateScope<CommandSignatureCache>();
+
+		g_commandSignatureCache.Initialize();
+		g_descriptorManager.Initialize();
 	}
 
 	void D3D12GraphicsContext::Shutdown()
 	{
-		m_commandSignatureCache = nullptr;
-		m_cpuDescriptorHeapManager = nullptr;
+		g_descriptorManager.Shutdown();
+		g_commandSignatureCache.Shutdown();
+
 		m_transientAllocator = nullptr;
 		m_defaultAllocator = nullptr;
 
-#ifdef VT_ENABLE_VALIDATION
-		ShutdownAPIValidation();
-#endif
-
-		m_debugInterface = nullptr;
-	}
-
-	void D3D12GraphicsContext::InitializeAPIValidation()
-	{
-		m_infoQueue = nullptr;
-
-		auto d3d12Device = m_graphicsDevice->GetHandle<ID3D12Device2*>();
-		auto hr = (d3d12Device->QueryInterface(m_infoQueue.ReleaseAndGetAddressOf()));
-		
-		if (SUCCEEDED(hr))
-		{
-			m_infoQueue->RegisterMessageCallback(&Utility::LogD3D12Message, D3D12_MESSAGE_CALLBACK_FLAG_NONE, nullptr, &m_debugCallbackId);
-			m_infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-			m_infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-			m_infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false); 
-			m_infoQueue->SetBreakOnCategory(D3D12_MESSAGE_CATEGORY_CLEANUP, true);
-
-			D3D12_MESSAGE_SEVERITY severities[] =
-			{
-				D3D12_MESSAGE_SEVERITY_INFO
-			};
-
-			D3D12_MESSAGE_ID denyIDs[] =
-			{
-				D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE,
-				D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
-				D3D12_MESSAGE_ID_NON_OPTIMAL_BARRIER_ONLY_EXECUTE_COMMAND_LISTS
-			};
-
-			D3D12_INFO_QUEUE_FILTER queueFilter{};
-			queueFilter.DenyList.NumCategories = 0;
-			queueFilter.DenyList.NumSeverities = 1;
-			queueFilter.DenyList.pSeverityList = severities;
-			queueFilter.DenyList.NumIDs = 3;
-			queueFilter.DenyList.pIDList = denyIDs;
-
-			VT_D3D12_CHECK(m_infoQueue->PushStorageFilter(&queueFilter));
-		}
-		else
-		{
-			m_infoQueue = nullptr;
-		}
-	}
-
-	void D3D12GraphicsContext::ShutdownAPIValidation()
-	{
-		if (m_infoQueue)
-		{
-			m_infoQueue->UnregisterMessageCallback(m_debugCallbackId);
-		}
-
-		m_infoQueue = nullptr;
-	}
-
-	void D3D12GraphicsContext::InitializeDebugLayer()
-	{
-		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_debugInterface))))
-		{
-			m_debugInterface->EnableDebugLayer();
-		}
+		m_debugLayer = nullptr;
 	}
 }

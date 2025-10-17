@@ -260,8 +260,6 @@ namespace Volt
 		TextureData texData{};
 		texData.SetupMips(mips, dataBuffer);
 
-		uint64_t stagingAllocSize = 0;
-
 		const uint32_t formatTexelBlockSize = RHI::Utility::GetFormatTexelBlockSize(format);
 		const uint32_t formatTexelsPerBlock = RHI::Utility::GetFormatTexelsPerBlock(format);
 
@@ -280,14 +278,12 @@ namespace Volt
 			subData.subResource.layerCount = image->GetLayerCount();
 			subData.subResource.levelCount = 1;
 
-			stagingAllocSize += subData.slicePitch;
-
 			mipIndex++;
 		}
 
 		RHI::BufferDesc stagingDesc{};
 		stagingDesc.count = 1;
-		stagingDesc.elementSize = stagingAllocSize;
+		stagingDesc.elementSize = image->GetMaxRequiredStagingBufferSize();
 		stagingDesc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc;
 		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 		stagingDesc.debugName = "Staging Alloc";

@@ -18,6 +18,7 @@
 #include <CoreUtilities/Profiling/Profiling.h>
 
 #include <vulkan/vulkan.h>
+#include <CoreUtilities/MemoryUtility.h>
 
 namespace Volt::RHI
 {
@@ -556,5 +557,34 @@ namespace Volt::RHI
 		fence->WaitUntilSignaled();
 
 		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
+	}
+
+	uint64_t VulkanImage::GetMaxRequiredStagingBufferSize() const
+	{
+		const uint32_t formatTexelBlockSize = RHI::Utility::GetFormatTexelBlockSize(m_desc.format);
+		const uint32_t formatTexelsPerBlock = RHI::Utility::GetFormatTexelsPerBlock(m_desc.format);
+
+		uint64_t totalImageSize = 0;
+
+		for (uint32_t i = 0; i < GetMipCount(); ++i)
+		{
+			const uint32_t width = std::max(GetWidth() >> i, 1u);
+			const uint32_t height = std::max(GetHeight() >> i, 1u);
+
+			const uint32_t blockTexelSize = static_cast<uint32_t>(sqrt(formatTexelsPerBlock));
+			const uint32_t blockWidth = std::max(1u, (width + blockTexelSize - 1u) / blockTexelSize);
+			const uint32_t blockHeight = std::max(1u, (height + blockTexelSize - 1u) / blockTexelSize);
+			
+			const uint64_t mipSize = blockWidth * blockHeight * formatTexelBlockSize * m_desc.layers;
+
+			totalImageSize += mipSize;
+		}
+		
+		return totalImageSize;
+	}
+
+	uint32_t VulkanImage::GetRowPitch() const
+	{
+		return m_desc.width * RHI::Utility::GetByteSizePerPixelFromFormat(m_desc.format);
 	}
 }

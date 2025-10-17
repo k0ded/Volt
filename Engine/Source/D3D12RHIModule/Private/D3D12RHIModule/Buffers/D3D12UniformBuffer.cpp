@@ -1,34 +1,42 @@
 #include "dxpch.h"
+
 #include "D3D12RHIModule/Buffers/D3D12UniformBuffer.h"
 
+#include <RHIModule/Memory/MemoryUtility.h>
 #include <RHIModule/Memory/Allocation.h>
-
-#include <RHIModule/Buffers/BufferView.h>
 #include <RHIModule/RHIModule.h>
+#include <RHIModule/RHICapabilities.h>
 
 #include <CoreUtilities/StringUtility.h>
 
 namespace Volt::RHI
 {
-	D3D12UniformBuffer::D3D12UniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name)
-		: m_size(size)
+	D3D12UniformBuffer::D3D12UniformBuffer(const UniformBufferDesc& desc, const void* initialData)
+		: m_desc(desc)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
-		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(size * count, BufferUsage::UniformBuffer, MemoryUsage::CPUToGPU, name);
+		BufferDesc bufferDesc{};
+		bufferDesc.count = 1;
+		bufferDesc.elementSize = Utility::Align(desc.size, g_rhiCapabilities.minUniformBufferAlignment);
+		bufferDesc.usage = BufferUsage::UniformBuffer | BufferUsage::DeviceAddress;
+		bufferDesc.memoryUsage = MemoryUsage::CPUToGPU;
+		bufferDesc.debugName = desc.debugName;
 
-		if (data)
+		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferDesc);
+
+		if (initialData)
 		{
-			SetData(data, size);
+			SetData(initialData, desc.size);
 		}
 
-		SetName(name);
+		SetName(desc.debugName);
 	}
 
 	D3D12UniformBuffer::~D3D12UniformBuffer()
 	{
 		GraphicsContext::GetResourceStateTracker()->RemoveResource(this);
-		
+
 		if (m_allocation == nullptr)
 		{
 			return;
@@ -44,21 +52,18 @@ namespace Volt::RHI
 
 	RefPtr<BufferView> D3D12UniformBuffer::GetView(const BufferViewDesc& desc)
 	{
-		BufferViewDesc spec{};
-		spec.bufferResource = this;
-
-		return BufferView::Create(spec);
+		return BufferView::Create(desc, this);
 	}
 
 	const uint32_t D3D12UniformBuffer::GetSize() const
 	{
-		return m_size;
+		return m_desc.size;
 	}
 
 	void D3D12UniformBuffer::SetData(const void* data, const uint32_t size)
 	{
 		void* bufferData = m_allocation->Map<void>();
-		memcpy_s(bufferData, m_size, data, size);
+		memcpy_s(bufferData, m_desc.size, data, size);
 		m_allocation->Unmap();
 	}
 
@@ -69,24 +74,24 @@ namespace Volt::RHI
 
 	void D3D12UniformBuffer::SetName(const std::string& name)
 	{
-		m_name = name;
+		m_desc.debugName = name;
 		if (!m_allocation)
 		{
 			return;
 		}
 
-		std::wstring str = Utility::ToWString(name);
+		std::wstring str = ::Utility::ToWString(name);
 		m_allocation->GetResourceHandle<ID3D12Resource*>()->SetName(str.c_str());
 	}
 
 	std::string_view D3D12UniformBuffer::GetName() const
 	{
-		return m_name;
+		return m_desc.debugName;
 	}
 
 	const uint64_t D3D12UniformBuffer::GetDeviceAddress() const
 	{
-		return 0;
+		return m_allocation->GetDeviceAddress();
 	}
 
 	const uint64_t D3D12UniformBuffer::GetByteSize() const
@@ -96,10 +101,8 @@ namespace Volt::RHI
 
 	void* D3D12UniformBuffer::MapInternal(const uint32_t index)
 	{
-		const uint32_t offset = m_size * index;
-
 		uint8_t* bytePtr = m_allocation->Map<uint8_t>();
-		return &bytePtr[offset];
+		return bytePtr;
 	}
 
 	void* D3D12UniformBuffer::GetHandleImpl() const

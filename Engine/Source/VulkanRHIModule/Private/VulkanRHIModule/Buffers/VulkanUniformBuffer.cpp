@@ -20,8 +20,6 @@ namespace Volt::RHI
 	VulkanUniformBuffer::VulkanUniformBuffer(const UniformBufferDesc& desc, const void* initialData)
 		: m_desc(desc)
 	{
-		VT_PROFILE_FUNCTION();
-
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
 
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();

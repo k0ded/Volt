@@ -88,7 +88,7 @@ namespace Volt
 		m_pluginRegistry->BuildPluginDependencies();
 		m_pluginSystem->LoadPlugins(ProjectManager::GetProject());
 
-		CreateGraphicsContext();
+		CreateGraphicsContext(commandLineBuilder);
 
 		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineRootDirectory());
 		m_sourceAssetManager = CreateScope<SourceAssetManager>();
@@ -329,7 +329,7 @@ namespace Volt
 		m_frameTimer.Accumulate();
 	}
 
-	void Application::CreateGraphicsContext()
+	void Application::CreateGraphicsContext(const CommandLineBuilder& commandLineBuilder)
 	{
 		RHI::RHICallbackInfo callbackInfo{};
 		callbackInfo.requestCloseEventCallback = []()
@@ -338,7 +338,26 @@ namespace Volt
 			EventSystem::DispatchEvent(closeEvent);
 		};
 
-		m_rhiModuleLoader->LoadRHI(RHI::GraphicsAPI::Vulkan, callbackInfo);
+		RHI::RHIConfig rhiConfig;
+		rhiConfig.api = RHI::GraphicsAPI::Vulkan;
+		rhiConfig.enableDebugLayer = false;
+
+		if (commandLineBuilder.IsArgDefined("vulkan"))
+		{
+			rhiConfig.api = RHI::GraphicsAPI::Vulkan;
+		}
+
+		if (commandLineBuilder.IsArgDefined("d3d12"))
+		{
+			rhiConfig.api = RHI::GraphicsAPI::D3D12;
+		}
+
+		if (commandLineBuilder.IsArgDefined("rhidebuglayer"))
+		{
+			rhiConfig.enableDebugLayer = true;
+		}
+
+		m_rhiModuleLoader->LoadRHI(rhiConfig, callbackInfo);
 	}
 
 	void Application::SetupFrameCapture()

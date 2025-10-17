@@ -49,7 +49,6 @@ namespace Volt::RHI
 
 	class Event;
 	class Fence;
-	class Semaphore;
 
 	class ImGuiImplementation;
 	class ResourceStateTracker;
@@ -73,7 +72,6 @@ namespace Volt::RHI
 	struct ShaderCompilerCreateInfo;
 	struct EventCreateInfo;
 	struct FenceCreateInfo;
-	struct SemaphoreCreateInfo;
 	struct ImGuiCreateInfo;
 	struct RayTracingSceneGeometryCreateInfo;
 	struct AccelerationStructureCreateInfo;
@@ -100,10 +98,9 @@ namespace Volt::RHI
 		virtual RefPtr<StorageBuffer> CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const = 0;
 		virtual RefPtr<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData = nullptr) const = 0;
 
-		virtual RefPtr<DeviceQueue> CreateDeviceQueue(const DeviceQueueCreateInfo& createInfo) const = 0;
 		virtual RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const = 0;
-		virtual RefPtr<GraphicsDevice> CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo) const = 0;
-		virtual RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo) const = 0;
+		virtual RefPtr<GraphicsDevice> CreateGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer) const = 0;
+		virtual RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const = 0;
 		virtual RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const = 0;
@@ -123,9 +120,7 @@ namespace Volt::RHI
 		virtual RefPtr<Shader> CreateShader(const ShaderCreateInfo& specification) const = 0;
 		virtual RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const = 0;
 
-		virtual RefPtr<Event> CreateEvent(const EventCreateInfo& createInfo) const = 0;
 		virtual RefPtr<Fence> CreateFence() const = 0;
-		virtual RefPtr<Semaphore> CreateSemaphore(const SemaphoreCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const = 0;
 		virtual RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const = 0;

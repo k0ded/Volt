@@ -13,7 +13,7 @@ namespace Volt::RHI
 		D3D12TransientGPUAllocator();
 		~D3D12TransientGPUAllocator() override;
 
-		Handle<Allocation> CreateBuffer(const uint64_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) override;
+		Handle<Allocation> CreateBuffer(const BufferDesc& desc) override;
 		Handle<Allocation> CreateImage(const ImageDesc& imageSpecification, MemoryUsage memoryUsage) override;
 
 		void DestroyBuffer(Handle<Allocation> allocation) override;

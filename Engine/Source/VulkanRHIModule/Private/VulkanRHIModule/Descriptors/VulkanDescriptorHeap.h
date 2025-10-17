@@ -34,7 +34,6 @@ namespace Volt::RHI
 			uint8_t* mappedPtr;
 			uint64_t size;
 			std::atomic_uint64_t head;
-			Array<uint64_t, RHICapabilities::NumFramesInFlight> perFrameInFlightOffset;
 		};
 
 		RingBufferState m_ringBufferState;

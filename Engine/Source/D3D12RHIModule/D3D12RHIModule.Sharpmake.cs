@@ -16,8 +16,6 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
 
-			conf.IsExcludedFromBuild = true;
-
 			conf.SolutionFolder = "Engine/RHI";
 
             conf.PrecompHeader = "dxpch.h";
@@ -33,7 +31,7 @@ namespace VoltSharpmake
 
             conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "d3d12"));
 
-            conf.LibraryFiles.Add("d3d12.lib");
+			conf.LibraryFiles.Add("d3d12.lib");
             conf.LibraryFiles.Add("DXGI.lib");
             conf.LibraryFiles.Add("dxguid.lib");
 		}

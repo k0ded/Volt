@@ -20,7 +20,7 @@ namespace Volt::RHI
 		D3D12DefaultGPUAllocator();
 		~D3D12DefaultGPUAllocator() override;
 
-		Handle<Allocation> CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) override;
+		Handle<Allocation> CreateBuffer(const BufferDesc& desc) override;
 		Handle<Allocation> CreateImage(const ImageDesc& imageSpecification, MemoryUsage memoryUsage) override;
 
 		void DestroyBuffer(Handle<Allocation> allocation) override;
@@ -41,9 +41,6 @@ namespace Volt::RHI
 		D3D12MA::Allocator* m_allocator;
 
 		AllocationCache m_allocationCache{};
-
-		std::mutex m_bufferAllocationMutex;
-		std::mutex m_imageAllocationMutex;
 
 		ArenaAllocator<D3D12BufferAllocation> m_bufferAllocationArena;
 		ArenaAllocator<D3D12ImageAllocation> m_imageAllocationArena;

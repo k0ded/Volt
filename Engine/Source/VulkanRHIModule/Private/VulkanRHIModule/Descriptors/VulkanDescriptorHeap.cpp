@@ -45,11 +45,6 @@ namespace Volt::RHI
 		m_ringBufferState.head = 0;
 		m_ringBufferState.size = DescriptorRingBufferSize;
 		m_ringBufferState.mappedPtr = m_descriptorHeapAllocation->Map<uint8_t>(); // Keep mapped during application lifetime.
-
-		for (uint32_t i = 0; i < RHICapabilities::NumFramesInFlight; ++i)
-		{
-			m_ringBufferState.perFrameInFlightOffset[i] = i * DescriptorRingBufferSize;
-		}
 	}
 
 	void VulkanDescriptorHeap::Release()

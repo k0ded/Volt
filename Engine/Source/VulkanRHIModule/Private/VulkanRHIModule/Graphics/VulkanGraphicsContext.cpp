@@ -67,11 +67,11 @@ namespace Volt::RHI
 	{
 		CreateInstance();
 
-		m_physicalDevice = PhysicalGraphicsDevice::Create(m_createInfo.physicalDeviceInfo);
+		PhysicalDeviceCreateInfo physicalDeviceCreateInfo{};
+		m_physicalDevice = PhysicalGraphicsDevice::Create(physicalDeviceCreateInfo, m_createInfo.enableDebugLayer);
 		
 		GraphicsDeviceCreateInfo graphicsDeviceInfo{};
-		graphicsDeviceInfo.physicalDevice = m_physicalDevice;
-		m_graphicsDevice = GraphicsDevice::Create(graphicsDeviceInfo);
+		m_graphicsDevice = GraphicsDevice::Create(graphicsDeviceInfo, m_physicalDevice, m_createInfo.enableDebugLayer);
 	
 		m_resourceStateTracker = RefPtr<ResourceStateTracker>::Create();
 		m_defaultAllocator = DefaultGPUAllocator::Create();
@@ -111,11 +111,11 @@ namespace Volt::RHI
 	void VulkanGraphicsContext::CreateInstance()
 	{
 #ifdef VT_ENABLE_VALIDATION
-		if (m_createInfo.enabledDebugLayer)
+		if (m_createInfo.enableDebugLayer)
 		{
 			m_debugLayer = CreateRef<VulkanDebugLayer>();
 
-			if (m_debugLayer && !m_debugLayer->IsSupported())
+			if (!m_debugLayer->IsSupported())
 			{
 				VT_LOGC(Warning, LogVulkanRHI, "Vulkan validation layers were requested but not supported. Running without it!");
 			}

@@ -19,6 +19,7 @@ namespace Volt::RHI
 		~D3D12ImageAllocation() override = default;
 
 		void Unmap() override;
+		void Flush(uint64_t offset, uint64_t size) override;
 		VT_NODISCARD VT_INLINE const UUID64 GetHeapID() const override { return 0; }
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
@@ -49,6 +50,7 @@ namespace Volt::RHI
 		~D3D12BufferAllocation() override = default;
 
 		void Unmap() override;
+		void Flush(uint64_t offset, uint64_t size) override;
 		VT_NODISCARD VT_INLINE const UUID64 GetHeapID() const override { return 0; }
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
@@ -79,6 +81,7 @@ namespace Volt::RHI
 		~D3D12TransientBufferAllocation() override = default;
 
 		void Unmap() override;
+		void Flush(uint64_t offset, uint64_t size) override;
 		VT_NODISCARD VT_INLINE const UUID64 GetHeapID() const override { return m_heapId; }
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
@@ -111,6 +114,7 @@ namespace Volt::RHI
 		~D3D12TransientImageAllocation() override = default;
 
 		void Unmap() override;
+		void Flush(uint64_t offset, uint64_t size) override;
 		VT_NODISCARD VT_INLINE const UUID64 GetHeapID() const override { return m_heapId; }
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }

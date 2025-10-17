@@ -26,15 +26,15 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE Ref<Mesh> GetMesh() const { return m_mesh; }
 
-	private:
-		friend class MeshSerializer;
-		friend class GLTFSourceImporter;
-		friend class FbxSourceImporter;
-
 		void Initialize(const MeshInitializer& meshInitializer, const Vector<Ref<MaterialAsset>>& materials);
 		void Initialize(MeshInitializer& meshInitializer, const Vector<AssetHandle>& materials);
 
+	private:
+		friend class MeshSerializer;
+
 		Ref<Mesh> m_mesh;
 		Vector<AssetHandle> m_materials;
+
+		bool m_isInitialized = false;
 	};
 }

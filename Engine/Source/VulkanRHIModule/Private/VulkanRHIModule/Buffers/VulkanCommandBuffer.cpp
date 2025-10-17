@@ -356,6 +356,9 @@ namespace Volt::RHI
 			m_timestampCount = m_nextAvailableTimestampQuery;
 			m_nextAvailableTimestampQuery = 2;
 		}
+
+		// We only need to bind the descriptor buffer once.
+		BindDescriptorBuffer();
 	}
 
 	void VulkanCommandBuffer::End()
@@ -370,23 +373,10 @@ namespace Volt::RHI
 		VT_VK_CHECK(vkEndCommandBuffer(m_commandBufferData.commandBuffer));
 	}
 
-	void VulkanCommandBuffer::SetEvent(RawPtr<Event> event)
-	{
-		VT_PROFILE_FUNCTION();
-
-		VkDependencyInfo depInfo{};
-		depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-		depInfo.pNext = nullptr;
-		depInfo.dependencyFlags = 0;
-		//depInfo.
-
-		//vkCmdSetEvent2()
-	}
-
 	void VulkanCommandBuffer::Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentRenderPipeline != nullptr);
+		VT_ENSURE(m_activeRenderPipeline != nullptr);
 #endif
 
 		vkCmdDraw(m_commandBufferData.commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
@@ -395,7 +385,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentRenderPipeline != nullptr);
+		VT_ENSURE(m_activeRenderPipeline != nullptr);
 #endif
 
 		vkCmdDrawIndexed(m_commandBufferData.commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
@@ -404,7 +394,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::DrawIndexedIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentRenderPipeline != nullptr);
+		VT_ENSURE(m_activeRenderPipeline != nullptr);
 #endif
 
 		vkCmdDrawIndexedIndirect(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, drawCount, stride);
@@ -413,7 +403,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::DrawIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentRenderPipeline != nullptr);
+		VT_ENSURE(m_activeRenderPipeline != nullptr);
 #endif
 
 		vkCmdDrawIndirect(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, drawCount, stride);
@@ -422,7 +412,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::DrawIndexedIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentRenderPipeline != nullptr);
+		VT_ENSURE(m_activeRenderPipeline != nullptr);
 #endif
 
 		vkCmdDrawIndexedIndirectCount(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, countBuffer->GetHandle<VkBuffer>(), countBufferOffset, maxDrawCount, stride);
@@ -431,7 +421,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::DrawIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentRenderPipeline != nullptr);
+		VT_ENSURE(m_activeRenderPipeline != nullptr);
 #endif
 
 		vkCmdDrawIndirectCount(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, countBuffer->GetHandle<VkBuffer>(), countBufferOffset, maxDrawCount, stride);
@@ -440,7 +430,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentComputePipeline != nullptr);
+		VT_ENSURE(m_activeComputePipeline != nullptr);
 #endif
 
 		vkCmdDispatch(m_commandBufferData.commandBuffer, groupCountX, groupCountY, groupCountZ);
@@ -449,7 +439,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::DispatchIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentComputePipeline != nullptr);
+		VT_ENSURE(m_activeComputePipeline != nullptr);
 #endif
 
 		vkCmdDispatchIndirect(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset);
@@ -458,7 +448,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentRenderPipeline != nullptr);
+		VT_ENSURE(m_activeRenderPipeline != nullptr);
 #endif
 
 		vkCmdDrawMeshTasksEXT(m_commandBufferData.commandBuffer, groupCountX, groupCountY, groupCountZ);
@@ -467,7 +457,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::DispatchMeshTasksIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentRenderPipeline != nullptr);
+		VT_ENSURE(m_activeRenderPipeline != nullptr);
 #endif
 
 		vkCmdDrawMeshTasksIndirectEXT(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, drawCount, stride);
@@ -476,7 +466,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::DispatchMeshTasksIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentRenderPipeline != nullptr);
+		VT_ENSURE(m_activeRenderPipeline != nullptr);
 #endif
 
 		vkCmdDrawMeshTasksIndirectCountEXT(m_commandBufferData.commandBuffer, commandsBuffer->GetHandle<VkBuffer>(), offset, countBuffer->GetHandle<VkBuffer>(), countBufferOffset, maxDrawCount, stride);
@@ -485,7 +475,7 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::TraceRays(RawPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth)
 	{
 #ifdef VT_ENABLE_COMMAND_BUFFER_VALIDATION
-		VT_ENSURE(m_currentRayTracingPipeline != nullptr);
+		VT_ENSURE(m_activeRayTracingPipeline != nullptr);
 #endif
 
 		const auto& rayTracingPipelineProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetDeviceProperties().rayTracingPipelineProperties;
@@ -511,7 +501,7 @@ namespace Volt::RHI
 			return result;
 		};
 
-		VulkanRayTracingPipeline& vulkanPipeline = m_currentRayTracingPipeline->AsRef<VulkanRayTracingPipeline>();
+		VulkanRayTracingPipeline& vulkanPipeline = m_activeRayTracingPipeline->AsRef<VulkanRayTracingPipeline>();
 		VulkanShaderBindingTable& vulkanSBT = shaderBindingTable->AsRef<VulkanShaderBindingTable>();
 
 		VkStridedDeviceAddressRegionKHR rayGenTable = GetStridedDeviceAddressRegion(vulkanPipeline.GetRayGenData(), vulkanSBT.GetRayGenTable());
@@ -522,23 +512,23 @@ namespace Volt::RHI
 		vkCmdTraceRaysKHR(m_commandBufferData.commandBuffer, &rayGenTable, &missTable, &hitGroupTable, &callableTable, width, height, depth);
 	}
 
-	void VulkanCommandBuffer::SetViewports(const StackVector<Viewport, MAX_VIEWPORT_COUNT>& viewports)
+	void VulkanCommandBuffer::SetViewports(const InlineVector<Viewport, MAX_VIEWPORT_COUNT>& viewports)
 	{
-		vkCmdSetViewport(m_commandBufferData.commandBuffer, 0, static_cast<uint32_t>(viewports.Size()), reinterpret_cast<const VkViewport*>(viewports.Data()));
+		vkCmdSetViewport(m_commandBufferData.commandBuffer, 0, static_cast<uint32_t>(viewports.size()), reinterpret_cast<const VkViewport*>(viewports.data()));
 	}
 
-	void VulkanCommandBuffer::SetScissors(const StackVector<Rect2D, MAX_VIEWPORT_COUNT>& scissors)
+	void VulkanCommandBuffer::SetScissors(const InlineVector<Rect2D, MAX_VIEWPORT_COUNT>& scissors)
 	{
-		vkCmdSetScissor(m_commandBufferData.commandBuffer, 0, static_cast<uint32_t>(scissors.Size()), reinterpret_cast<const VkRect2D*>(scissors.Data()));
+		vkCmdSetScissor(m_commandBufferData.commandBuffer, 0, static_cast<uint32_t>(scissors.size()), reinterpret_cast<const VkRect2D*>(scissors.data()));
 	}
 
 	void VulkanCommandBuffer::BindPipeline(RawPtr<RenderPipeline> pipeline)
 	{
 		VT_ENSURE(pipeline);
 
-		ClearCurrentPipeline();
+		ClearActivePipeline();
 
-		m_currentRenderPipeline = pipeline;
+		m_activeRenderPipeline = pipeline;
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetHandle<VkPipeline>());
 	}
 
@@ -546,9 +536,9 @@ namespace Volt::RHI
 	{
 		VT_ENSURE(pipeline);
 
-		ClearCurrentPipeline();
+		ClearActivePipeline();
 
-		m_currentComputePipeline = pipeline;
+		m_activeComputePipeline = pipeline;
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->GetHandle<VkPipeline>());
 	}
 
@@ -556,9 +546,9 @@ namespace Volt::RHI
 	{
 		VT_ENSURE(pipeline);
 
-		ClearCurrentPipeline();
+		ClearActivePipeline();
 
-		m_currentRayTracingPipeline = pipeline;
+		m_activeRayTracingPipeline = pipeline;
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->GetHandle<VkPipeline>());
 	}
 
@@ -584,12 +574,12 @@ namespace Volt::RHI
 
 	void VulkanCommandBuffer::BeginRendering(const RenderingInfo& renderingInfo)
 	{
-		StackVector<VkRenderingAttachmentInfo, MAX_COLOR_ATTACHMENT_COUNT> colorAttachmentInfo{};
+		InlineVector<VkRenderingAttachmentInfo, MAX_COLOR_ATTACHMENT_COUNT> colorAttachmentInfo{};
 		VkRenderingAttachmentInfo depthAttachmentInfo{};
 
 		for (const auto& colorAtt : renderingInfo.colorAttachments)
 		{
-			VkRenderingAttachmentInfo& newInfo = colorAttachmentInfo.EmplaceBack();
+			VkRenderingAttachmentInfo& newInfo = colorAttachmentInfo.emplace_back();
 			newInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
 			newInfo.imageView = colorAtt.view->GetHandle<VkImageView>();
 			newInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -616,8 +606,8 @@ namespace Volt::RHI
 		vkRenderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
 		vkRenderingInfo.renderArea = { renderingInfo.renderArea.offset.x, renderingInfo.renderArea.offset.y, renderingInfo.renderArea.extent.width, renderingInfo.renderArea.extent.height };
 		vkRenderingInfo.layerCount = renderingInfo.layerCount;
-		vkRenderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfo.Size());
-		vkRenderingInfo.pColorAttachments = colorAttachmentInfo.Data();
+		vkRenderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfo.size());
+		vkRenderingInfo.pColorAttachments = colorAttachmentInfo.data();
 		vkRenderingInfo.pStencilAttachment = nullptr;
 
 		if (hasDepth)
@@ -1447,11 +1437,11 @@ namespace Volt::RHI
 		VT_VK_CHECK(vkBeginCommandBuffer(m_commandBufferData.commandBuffer, &beginInfo));
 	}
 
-	void VulkanCommandBuffer::ClearCurrentPipeline()
+	void VulkanCommandBuffer::ClearActivePipeline()
 	{
-		m_currentRayTracingPipeline.Reset();
-		m_currentComputePipeline.Reset();
-		m_currentRenderPipeline.Reset();
+		m_activeRayTracingPipeline.Reset();
+		m_activeComputePipeline.Reset();
+		m_activeRenderPipeline.Reset();
 	}
 
 	void VulkanCommandBuffer::BindShaderBindings(const ShaderBindingMap& shaderBindingsMap)
@@ -1473,6 +1463,8 @@ namespace Volt::RHI
 			uint32_t setIndex;
 			uint64_t offset;
 		};
+
+		// #TODO_Ivar: Move descriptor setup into views, and just copy later.
 
 		InlineVector<DescriptorInfo, ShaderBindingMap::NumMaxBindings> descriptorInfo;
 		InlineVector<VkDescriptorAddressInfoEXT, ShaderBindingMap::NumMaxBindings> bufferDescriptors;
@@ -1636,7 +1628,6 @@ namespace Volt::RHI
 		}
 
 		uint8_t* descriptorHeapPointer = descriptorHeap.GetHeapPointer();
-
 		VkDevice vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();
 
 		for (const DescriptorInfo& descriptor : descriptorInfo)
@@ -1645,15 +1636,7 @@ namespace Volt::RHI
 			vkGetDescriptorEXT(vkDevice, &descriptor.vkInfo, descriptor.descriptorSize, outPtr);
 		}
 
-		VkDescriptorBufferBindingInfoEXT vkBindingInfo;
-		vkBindingInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
-		vkBindingInfo.pNext = nullptr;
-		vkBindingInfo.address = descriptorHeap.GetDeviceAddress();
-		vkBindingInfo.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-
-		vkCmdBindDescriptorBuffersEXT(m_commandBufferData.commandBuffer, 1, &vkBindingInfo);
-
-		VkPipelineBindPoint bindPoint = m_currentRenderPipeline ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
+		VkPipelineBindPoint bindPoint = m_activeRenderPipeline ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
 		VkPipelineLayout activePipelineLayout = GetActivePipelineLayout();
 
 		const uint32_t bufferIndex = 0;
@@ -1668,29 +1651,29 @@ namespace Volt::RHI
 
 	VkPipelineLayout_T* VulkanCommandBuffer::GetActivePipelineLayout()
 	{
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_activeRenderPipeline || m_activeComputePipeline);
 
-		if (m_currentRenderPipeline)
+		if (m_activeRenderPipeline)
 		{
-			return m_currentRenderPipeline->As<VulkanRenderPipeline>()->GetPipelineLayout();
+			return m_activeRenderPipeline->As<VulkanRenderPipeline>()->GetPipelineLayout();
 		}
 		else
 		{
-			return m_currentComputePipeline->As<VulkanComputePipeline>()->GetPipelineLayout();
+			return m_activeComputePipeline->As<VulkanComputePipeline>()->GetPipelineLayout();
 		}
 	}
 
 	const DescriptorSetLayoutBuilder::DescriptorSets& VulkanCommandBuffer::GetActivePipelineDescriptorSets()
 	{
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
+		VT_ENSURE(m_activeRenderPipeline || m_activeComputePipeline);
 
-		if (m_currentRenderPipeline)
+		if (m_activeRenderPipeline)
 		{
-			return m_currentRenderPipeline->As<VulkanRenderPipeline>()->GetDescriptorSets();
+			return m_activeRenderPipeline->As<VulkanRenderPipeline>()->GetDescriptorSets();
 		}
 		else
 		{
-			return m_currentComputePipeline->As<VulkanComputePipeline>()->GetDescriptorSets();
+			return m_activeComputePipeline->As<VulkanComputePipeline>()->GetDescriptorSets();
 		}
 	}
 
@@ -1702,5 +1685,19 @@ namespace Volt::RHI
 		}
 
 		return true;
+	}
+
+	void VulkanCommandBuffer::BindDescriptorBuffer()
+	{
+		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
+		VulkanDescriptorHeap& descriptorHeap = vkGraphicsContext.GetDescriptorHeap();
+
+		VkDescriptorBufferBindingInfoEXT vkBindingInfo;
+		vkBindingInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
+		vkBindingInfo.pNext = nullptr;
+		vkBindingInfo.address = descriptorHeap.GetDeviceAddress();
+		vkBindingInfo.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+		vkCmdBindDescriptorBuffersEXT(m_commandBufferData.commandBuffer, 1, &vkBindingInfo);
 	}
 }

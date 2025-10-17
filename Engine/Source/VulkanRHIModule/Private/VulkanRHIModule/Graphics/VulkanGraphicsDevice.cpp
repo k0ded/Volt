@@ -312,9 +312,9 @@ namespace Volt::RHI
 
 	inline static const char* s_validationLayer = "VK_LAYER_KHRONOS_validation";
 
-	VulkanGraphicsDevice::VulkanGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo)
+	VulkanGraphicsDevice::VulkanGraphicsDevice(const GraphicsDeviceCreateInfo& createInfo, RawPtr<PhysicalGraphicsDevice> physicalGraphicsDevice, bool enableDebugLayer)
 	{
-		m_physicalDevice = createInfo.physicalDevice.As<VulkanPhysicalGraphicsDevice>();
+		m_physicalDevice = physicalGraphicsDevice.As<VulkanPhysicalGraphicsDevice>();
 
 		InitializeCapabilities();
 
@@ -361,8 +361,11 @@ namespace Volt::RHI
 			deviceInfo.enabledLayerCount = 0;
 
 #ifdef VT_ENABLE_VALIDATION
-			deviceInfo.enabledLayerCount = 1u;
-			deviceInfo.ppEnabledLayerNames = &s_validationLayer;
+			if (enableDebugLayer)
+			{
+				deviceInfo.enabledLayerCount = 1u;
+				deviceInfo.ppEnabledLayerNames = &s_validationLayer;
+			}
 #endif
 
 			//VT_ENSURE_MSG(m_physicalDevice->IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME), "Mesh Shader support is required!");

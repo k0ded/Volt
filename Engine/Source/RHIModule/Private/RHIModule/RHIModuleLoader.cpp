@@ -17,12 +17,12 @@ namespace Volt::RHI
 		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(RHIModuleLoader::OnPreRenderEvent));
 	}
 
-	void RHIModuleLoader::LoadRHI(RHI::GraphicsAPI api, const RHI::RHICallbackInfo& callbackInfo)
+	void RHIModuleLoader::LoadRHI(const RHIConfig& rhiConfig, const RHI::RHICallbackInfo& callbackInfo)
 	{
 		// At this point in the runtime our working directory should be right out side of Binaries.
 		// And for now we assume it is.
 		std::filesystem::path filepath = "Binaries";
-		switch (api)
+		switch (rhiConfig.api)
 		{
 			case Volt::RHI::GraphicsAPI::Vulkan: filepath /= "VulkanRHIModule.dll"; break;
 			case Volt::RHI::GraphicsAPI::D3D12: filepath /= "D3D12RHIModule.dll"; break;
@@ -31,7 +31,7 @@ namespace Volt::RHI
 		VT_ENSURE_MSG(std::filesystem::exists(filepath), std::format("RHI module at filepath {} not found!", filepath));
 
 		LoadRHIFromFilepath(filepath);
-		CreateGraphicsContextForRHI(api, callbackInfo);
+		CreateGraphicsContextForRHI(rhiConfig, callbackInfo);
 	}
 
 	void RHIModuleLoader::LoadRHIFromFilepath(const std::filesystem::path& filepath)
@@ -53,10 +53,11 @@ namespace Volt::RHI
 		m_rhiModule = createFunc();
 	}
 
-	void RHIModuleLoader::CreateGraphicsContextForRHI(RHI::GraphicsAPI api, const RHI::RHICallbackInfo& callbackInfo)
+	void RHIModuleLoader::CreateGraphicsContextForRHI(const RHIConfig& rhiConfig, const RHI::RHICallbackInfo& callbackInfo)
 	{
 		RHI::GraphicsContextCreateInfo createInfo;
-		createInfo.graphicsApi = api;
+		createInfo.graphicsApi = rhiConfig.api;
+		createInfo.enableDebugLayer = rhiConfig.enableDebugLayer;
 
 		m_rhiModule->SetRHICallbackInfo(callbackInfo);
 		m_graphicsContext = RHI::GraphicsContext::Create(createInfo);

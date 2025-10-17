@@ -23,7 +23,7 @@ namespace Volt
 
 	struct SceneSettings
 	{
-		bool useWorldEngine = false;
+		bool useWorldEngine = true;
 	};
 
 	class VTS_API Scene : public Asset, public EventListener, public std::enable_shared_from_this<Scene>

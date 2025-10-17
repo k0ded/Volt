@@ -40,10 +40,21 @@ namespace Volt::RHI
 
 	bool VulkanFence::IsSignaled() const
 	{
-		uint64_t value;
-		auto device = GraphicsContext::GetDevice();
-		vkGetSemaphoreCounterValue(device->GetHandle<VkDevice>(), m_referencedSemaphore, &value);
+		if (m_referencedSemaphore)
+		{
+			uint64_t value;
+			auto device = GraphicsContext::GetDevice();
+			vkGetSemaphoreCounterValue(device->GetHandle<VkDevice>(), m_referencedSemaphore, &value);
 
-		return value >= m_referencedValue;
+			return value >= m_referencedValue;
+		}
+
+		// If no fence is referenced, we treat it as signaled.
+		return true;
+	}
+
+	void VulkanFence::Reset()
+	{
+		m_referencedSemaphore = nullptr;
 	}
 }

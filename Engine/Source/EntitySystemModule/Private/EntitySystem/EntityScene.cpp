@@ -75,6 +75,8 @@ namespace Volt
 
 	void EntityScene::SortScene()
 	{
+		VT_PROFILE_FUNCTION();
+
 		m_registry.sort<CommonComponent>([&](entt::entity lhs, entt::entity rhs)
 		{
 			const auto& lhsComp = m_registry.get<CommonComponent>(lhs);
@@ -127,12 +129,13 @@ namespace Volt
 		m_entityRegistry.AddEntity(newHelper.GetID(), entityHandle);
 
 		InvalidateEntityTransform(newHelper.GetID());
-		SortScene();
 		return newHelper;
 	}
 
 	Entity EntityScene::CreateEntityWithID(EntityID id)
 	{
+		VT_PROFILE_FUNCTION();
+
 		VT_ENSURE(!m_entityRegistry.Contains(id));
 
 		entt::entity entityHandle = m_registry.create();
@@ -175,12 +178,12 @@ namespace Volt
 		// We need to handle the entity's parent and children.
 		VT_ENSURE(helper.HasComponent<RelationshipComponent>());
 
-		auto& relationshipComponent = helper.GetComponent<RelationshipComponent>();
-		if (relationshipComponent.parent != EntityID::Null())
+		auto* relationshipComponent = &helper.GetComponent<RelationshipComponent>();
+		if (relationshipComponent->parent != EntityID::Null())
 		{
 			if (!isDestroyingChildFromParent)
 			{
-				Entity parentHelper = GetEntityFromID(relationshipComponent.parent);
+				Entity parentHelper = GetEntityFromID(relationshipComponent->parent);
 				VT_ENSURE(parentHelper.HasComponent<RelationshipComponent>());
 
 				auto& parentRelationshipComponent = parentHelper.GetComponent<RelationshipComponent>();
@@ -192,13 +195,13 @@ namespace Volt
 		}
 
 		// We need to do this backwards, otherwise we will be pointing to invalid indices
-		for (int32_t i = static_cast<int32_t>(relationshipComponent.children.size()) - 1; i >= 0; --i)
+		for (int32_t i = static_cast<int32_t>(relationshipComponent->children.size()) - 1; i >= 0; --i)
 		{
-			DestroyEntity(relationshipComponent.children.at(i), outDestroyedEntities, true);
+			DestroyEntity(relationshipComponent->children.at(i), outDestroyedEntities, true);
 
 			// This is required, because removing components from entt::registry might
 			// invalidate pointers.
-			relationshipComponent = helper.GetComponent<RelationshipComponent>();
+			relationshipComponent = &helper.GetComponent<RelationshipComponent>();
 		}
 
 		if (outDestroyedEntities)

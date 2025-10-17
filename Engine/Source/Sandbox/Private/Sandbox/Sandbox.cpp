@@ -38,6 +38,7 @@
 #include "Sandbox/Window/RenderGraphDebuggerPanel.h"
 #include "Sandbox/Window/TextureViewerPanel.h"
 #include "Sandbox/Window/DebugToolsPanel.h"
+#include "Sandbox/Window/ProjectConversionPanel.h"
 #include "Sandbox/VertexPainting/VertexPainterPanel.h"
 
 #include "Sandbox/SceneRendererExtensions/GridSceneRendererExtension.h"
@@ -237,6 +238,8 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::Register<RenderGraphDebuggerPanel>("Advanced", m_sceneRenderer);
 	EditorLibrary::Register<EngineStatisticsPanel>("Advanced", m_runtimeScene, m_sceneRenderer, m_gameSceneRenderer);
 	EditorLibrary::RegisterWithType<TextureViewerPanel>("Advanced", AssetTypes::Texture);
+
+	EditorLibrary::Register<ProjectConversionPanel>("Advanced");
 
 	//EditorLibrary::RegisterWithType<CharacterEditorPanel>("Animation", AssetTypes::AnimatedCharacter); // we dont have animated characters anymore
 	EditorLibrary::RegisterWithType<SkeletonEditorPanel>("Animation", AssetTypes::Skeleton);
