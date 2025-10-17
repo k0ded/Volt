@@ -836,7 +836,9 @@ namespace Volt::RHI
 		auto device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>();
 		ID3D12Device10* d3d12Device = device->GetDevice10();
 
-		const D3D12_RESOURCE_DESC1 resourceDesc = Utility::GetD3D12ResourceDesc(dstImage->GetDesc());
+		D3D12_RESOURCE_DESC1 resourceDesc = Utility::GetD3D12ResourceDesc(dstImage->GetDesc());
+		resourceDesc.Width = width;
+		
 		const uint32_t subResourceIndex = D3D12CalcSubresource(mip, 0, 0, 1, 1);
 
 		d3d12Device->GetCopyableFootprints1(&resourceDesc, subResourceIndex, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
@@ -852,7 +854,7 @@ namespace Volt::RHI
 		src.PlacedFootprint.Footprint.Width = width;
 		src.PlacedFootprint.Footprint.Height = height;
 		src.PlacedFootprint.Footprint.Depth = 1;
-		src.PlacedFootprint.Footprint.RowPitch = static_cast<uint32_t>(rowSizeInBytes);
+		src.PlacedFootprint.Footprint.RowPitch = footprint.Footprint.RowPitch;
 		src.pResource = srcBuffer->GetResourceHandle<ID3D12Resource*>();
 
 		m_commandListData.commandList->CopyTextureRegion(&dst, offsetX, offsetY, offsetZ, &src, nullptr);

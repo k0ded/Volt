@@ -22,6 +22,9 @@ namespace Volt::RHI
 		RefPtr<DeviceQueue> GetDeviceQueue(QueueType queueType) const override;
 		RawPtr<VulkanPhysicalGraphicsDevice> GetPhysicalDevice() const;
 
+		uint64_t GetMaxRequiredStagingBufferSizeForImage(RawPtr<Image> image) const override;
+		uint64_t GetRowPitchForWidth(RawPtr<Image> image, uint32_t width) const override;
+
 	protected:
 		void* GetHandleImpl() const override;
 

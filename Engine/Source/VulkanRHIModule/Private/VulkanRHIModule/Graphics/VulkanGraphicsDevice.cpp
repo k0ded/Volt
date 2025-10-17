@@ -5,7 +5,9 @@
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Core.h"
 
-#include "RHIModule/RHICapabilities.h"
+#include <RHIModule/RHICapabilities.h>
+#include <RHIModule/Images/Image.h>
+#include <RHIModule/Images/ImageUtility.h>
 
 #include <vulkan/vulkan.h>
 
@@ -475,6 +477,38 @@ namespace Volt::RHI
 		g_rhiCapabilities.maxDispatchThreadGroupsPerDimension.x = deviceProperties.limits.maxComputeWorkGroupCount[0];
 		g_rhiCapabilities.maxDispatchThreadGroupsPerDimension.y = deviceProperties.limits.maxComputeWorkGroupCount[1];
 		g_rhiCapabilities.maxDispatchThreadGroupsPerDimension.z = deviceProperties.limits.maxComputeWorkGroupCount[2];
+	}
+
+	uint64_t VulkanGraphicsDevice::GetMaxRequiredStagingBufferSizeForImage(RawPtr<Image> image) const
+	{
+		const ImageDesc& desc = image->GetDesc();
+
+		const uint32_t formatTexelBlockSize = RHI::Utility::GetFormatTexelBlockSize(desc.format);
+		const uint32_t formatTexelsPerBlock = RHI::Utility::GetFormatTexelsPerBlock(desc.format);
+
+		uint64_t totalImageSize = 0;
+
+		for (uint32_t i = 0; i < image->GetMipCount(); ++i)
+		{
+			const uint32_t width = std::max(image->GetWidth() >> i, 1u);
+			const uint32_t height = std::max(image->GetHeight() >> i, 1u);
+
+			const uint32_t blockTexelSize = static_cast<uint32_t>(sqrt(formatTexelsPerBlock));
+			const uint32_t blockWidth = std::max(1u, (width + blockTexelSize - 1u) / blockTexelSize);
+			const uint32_t blockHeight = std::max(1u, (height + blockTexelSize - 1u) / blockTexelSize);
+
+			const uint64_t mipSize = blockWidth * blockHeight * formatTexelBlockSize * desc.layers;
+
+			totalImageSize += mipSize;
+		}
+
+		return totalImageSize;
+	}
+
+	uint64_t VulkanGraphicsDevice::GetRowPitchForWidth(RawPtr<Image> image, uint32_t width) const
+	{
+		const ImageDesc& desc = image->GetDesc();
+		return width * RHI::Utility::GetByteSizePerPixelFromFormat(desc.format);
 	}
 }
 

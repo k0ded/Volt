@@ -30,6 +30,9 @@ namespace Volt::RHI
 
 		RefPtr<DeviceQueue> GetDeviceQueue(QueueType queueType) const override;
 
+		uint64_t GetMaxRequiredStagingBufferSizeForImage(RawPtr<Image> image) const override;
+		uint64_t GetRowPitchForWidth(RawPtr<Image> image, uint32_t width) const override;
+
 		VT_NODISCARD VT_INLINE ID3D12Device10* GetDevice10() const { return m_device.Get(); }
 		VT_NODISCARD VT_INLINE const Properties& GetDeviceProperties() const { return m_properties; }
 

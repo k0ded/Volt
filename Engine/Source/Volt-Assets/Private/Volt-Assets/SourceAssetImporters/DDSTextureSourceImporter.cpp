@@ -151,7 +151,7 @@ namespace Volt
 
 		RHI::BufferDesc stagingDesc{};
 		stagingDesc.count = 1;
-		stagingDesc.elementSize = image->GetMaxRequiredStagingBufferSize();
+		stagingDesc.elementSize = RHI::GraphicsContext::GetDevice()->GetMaxRequiredStagingBufferSizeForImage(image);
 		stagingDesc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc;
 		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 		stagingDesc.debugName = "Staging Alloc";

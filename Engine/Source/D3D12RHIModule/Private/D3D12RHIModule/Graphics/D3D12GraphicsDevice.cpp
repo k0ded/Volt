@@ -3,6 +3,9 @@
 #include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 #include "D3D12RHIModule/Graphics/D3D12DeviceQueue.h"
 
+#include <RHIModule/Images/Image.h>
+#include <RHIModule/Images/ImageUtility.h>
+
 #include <RHIModule/RHICapabilities.h>
 
 namespace Volt::RHI
@@ -69,5 +72,43 @@ namespace Volt::RHI
 		}
 
 		g_rhiCapabilities.minUniformBufferAlignment = 256u;
+	}
+
+	uint64_t D3D12GraphicsDevice::GetMaxRequiredStagingBufferSizeForImage(RawPtr<Image> image) const
+	{
+		const ImageDesc& desc = image->GetDesc();
+
+		const uint32_t numSubresources = desc.mips * desc.layers;
+
+		Vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts(numSubresources);
+		Vector<uint32_t> numRows(numSubresources);
+		Vector<uint64_t> rowSizeInBytes(numSubresources);
+
+		uint64_t requiredSize;
+
+		const D3D12_RESOURCE_DESC d3d12Desc = image->GetHandle<ID3D12Resource*>()->GetDesc();
+
+		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->As<D3D12GraphicsDevice>()->GetDevice10();
+		d3d12Device->GetCopyableFootprints(
+			&d3d12Desc,
+			0,
+			numSubresources,
+			0,
+			layouts.data(),
+			numRows.data(),
+			rowSizeInBytes.data(),
+			&requiredSize
+		);
+
+		return requiredSize;
+	}
+
+	uint64_t D3D12GraphicsDevice::GetRowPitchForWidth(RawPtr<Image> image, uint32_t width) const
+	{
+		const ImageDesc& desc = image->GetDesc();
+		uint64_t rowPitch = width * RHI::Utility::GetByteSizePerPixelFromFormat(desc.format);
+		rowPitch = (rowPitch + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
+
+		return rowPitch;
 	}
 }

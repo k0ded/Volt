@@ -5,6 +5,7 @@
 
 #include <RHIModule/Graphics/Swapchain.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Descriptors/ShaderBindingMap.h>
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Core/RenderingInfo.h>
@@ -341,11 +342,11 @@ namespace Volt
 			RawPtr<RHI::Image> image = (RHI::Image*)textureData->GetTexID();
 
 			uint32_t uploadPitchSrc = uploadW * textureData->BytesPerPixel;
-			uint32_t uploadPitchDst = image->GetRowPitch();
+			uint64_t uploadPitchDst = RHI::GraphicsContext::GetDevice()->GetRowPitchForWidth(image, uploadW);
 
 			RHI::BufferDesc stagingDesc{};
 			stagingDesc.count = 1;
-			stagingDesc.elementSize = image->GetMaxRequiredStagingBufferSize();
+			stagingDesc.elementSize = RHI::GraphicsContext::GetDevice()->GetMaxRequiredStagingBufferSizeForImage(image);
 			stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			stagingDesc.usage = RHI::BufferUsage::TransferSrc;
 

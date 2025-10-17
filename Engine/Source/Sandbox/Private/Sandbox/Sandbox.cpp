@@ -739,8 +739,6 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 {
 	ImGuizmo::BeginFrame();
 
-	ImGui::ShowDemoWindow();
-
 	UpdateDockSpace();
 	BuildGameModal();
 
