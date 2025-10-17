@@ -33,7 +33,7 @@ namespace Volt
 {
 	static ConsoleVariable<int32_t> s_logRenderSceneUpdatedCVar(
 		"r.RenderScene.LogUpdates", 
-		1,
+		0,
 		"Whether or not to log Render Scene updates");
 
 	static ConsoleVariable<int32_t> s_visualizeRenderScenePrimitiveBoundingSpheres(
