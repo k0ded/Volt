@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Mosaic/FormatterExtension.h"
 #include "Mosaic/Config.h"
 #include "Mosaic/MosaicShaderWriter.h"
 
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/Containers/Graph.h>
 #include <CoreUtilities/VoltGUID.h>
+#include <CoreUtilities/FormatterExtension.h>
 
 #include <cstdint>
 

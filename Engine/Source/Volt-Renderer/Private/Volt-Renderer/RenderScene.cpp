@@ -23,6 +23,8 @@
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/RHIFeatures.h>
 
+#include <CoreUtilities/FormatterExtension.h>
+
 #include <ranges>
 
 VT_DEFINE_LOG_CATEGORY(LogRenderScene);
@@ -871,7 +873,18 @@ namespace Volt
 
 				if (s_logRenderSceneUpdatedCVar.GetValue())
 				{
-					VT_LOGC(Trace, LogRenderScene, "Primitive Data attached to entity {} was uploaded to index {}.", data.entityId, invalidPrimitive.index);
+					std::string logMessage = std::format(
+						"Primitive Data with ID {} added: \n"
+						"	- Entity: {}\n"
+						"	- Index: {}\n"
+						"	- Position: {}\n",
+						invalidPrimitive.id,
+						data.entityId,
+						invalidPrimitive.index,
+						data.position
+					);
+
+					VT_LOGC_UNFORMATTED(Trace, LogRenderScene, logMessage);
 				}
 			}
 

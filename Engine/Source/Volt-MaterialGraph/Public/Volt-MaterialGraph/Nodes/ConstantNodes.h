@@ -5,7 +5,7 @@
 #include <Mosaic/MosaicHelpers.h>
 #include <Mosaic/MosaicShaderWriter.h>
 
-#include <Mosaic/FormatterExtension.h>
+#include <CoreUtilities/FormatterExtension.h>
 
 #include <imgui.h>
 
