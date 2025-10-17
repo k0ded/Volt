@@ -218,10 +218,15 @@ namespace Volt
 		component.UpdateSceneLightData(entity.GetID());
 	}
 
+	void SkylightComponent::OnDeserialized(LightEntity entity)
+	{
+		auto& component = entity.GetComponent<SkylightComponent>();
+		component.UpdateSceneLightData(entity.GetID());
+	}
+
 	void SkylightComponent::OnMemberChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
-
 		component.UpdateSceneLightData(entity.GetID());
 	}
 }

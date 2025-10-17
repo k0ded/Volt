@@ -215,6 +215,7 @@ namespace Volt
 			reflect.SetOnComponentCopiedCallback(&SkylightComponent::OnComponentCopied);
 			reflect.SetOnDestroyCallback(&SkylightComponent::OnDestroy);
 			reflect.SetOnCreateCallback(&SkylightComponent::OnCreate);
+			reflect.SetOnComponentDeserializedCallback(&SkylightComponent::OnDeserialized);
 		}
 
 		VTCC_API static void OnMemberChanged(LightEntity entity);
@@ -226,6 +227,7 @@ namespace Volt
 		VTCC_API static void OnCreate(LightEntity entity);
 		VTCC_API static void OnDestroy(LightEntity entity);
 		VTCC_API static void OnComponentCopied(LightEntity entity);
+		VTCC_API static void OnDeserialized(LightEntity entity);
 
 		void UpdateSceneLightData(EntityID entityId);
 
