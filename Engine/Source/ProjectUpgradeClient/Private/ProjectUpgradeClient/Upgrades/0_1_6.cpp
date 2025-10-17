@@ -6,8 +6,6 @@
 
 #include <CoreUtilities/FileSystem.h>
 
-#include <CoreUtilities/Containers/StackVector.h>
-
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 

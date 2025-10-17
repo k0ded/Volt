@@ -2,7 +2,6 @@
 #include "UpgradeInterface.h"
 
 #include <CoreUtilities/Containers/Vector.h>
-#include <CoreUtilities/Containers/StackVector.h>
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/UUID.h>
 
