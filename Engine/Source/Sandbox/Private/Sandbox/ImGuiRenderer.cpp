@@ -542,17 +542,12 @@ void Sandbox::DrawMenuBar()
 		{
 			if (ImGui::MenuItem("New Scene", "Ctrl + N"))
 			{
-				UI::OpenModal("Do you want to save scene?##NewScene");
+				NewScene();
 			}
 
 			if (ImGui::MenuItem("Open...", "Ctrl + O"))
 			{
-				UI::OpenModal("Do you want to save scene?##OpenScene");
-			}
-
-			if (ImGui::MenuItem("Save As", "Ctrl + Shift + S"))
-			{
-				SaveSceneAs();
+				OpenScene();
 			}
 
 			if (ImGui::MenuItem("Save", "Ctrl + S"))

@@ -473,16 +473,30 @@ void Sandbox::NewScene()
 
 void Sandbox::OpenScene()
 {
-	const std::filesystem::path loadPath = FileSystem::OpenFileDialogue({ { "Scene(*.vtscene)", "vtscene" } }, Volt::ProjectManager::GetAssetsDirectory());
+	const std::filesystem::path loadPath = FileSystem::OpenFileDialogue({ { "Scene(*.vtasset)", "vtasset" } }, Volt::ProjectManager::GetAssetsDirectory());
 	OpenScene(Volt::AssetManager::GetRelativePath(loadPath));
 }
 
 void Sandbox::OpenScene(const std::filesystem::path& path)
 {
-	if (!path.empty() && FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / path))
+	if (path.empty())
 	{
-		OpenScene(Volt::AssetManager::GetAssetHandleFromFilePath(path));
+		return;
 	}
+	if (!FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / path))
+	{
+		UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with path {}.\nFile doesnt exist!", path.string()));
+		return;
+	}
+	const Volt::AssetHandle handle = Volt::AssetManager::GetAssetHandleFromFilePath(path);
+
+	if (Volt::AssetManager::GetAssetTypeFromHandle(handle) != AssetTypes::Scene)
+	{
+		UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with path {}.\nAsset is not a Scene!", path.string()));
+		return;
+	}
+
+	OpenScene(handle);
 }
 
 void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
@@ -497,7 +511,11 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 		return;
 	}
 
-	VT_ENSURE(Volt::AssetManager::GetAssetTypeFromHandle(sceneHandle) == AssetTypes::Scene);
+	if (Volt::AssetManager::GetAssetTypeFromHandle(sceneHandle) != AssetTypes::Scene)
+	{
+		UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with handle {}.\nAsset is not a Scene!", sceneHandle));
+		return;
+	}
 
 	if (!PromptUnloadCurrentScene())
 	{
@@ -523,7 +541,7 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 	newScene->LoadEntities();
 }
 
-bool Sandbox::SaveScene(bool showDialog)
+bool Sandbox::SaveScene(bool showDialog, bool allowDiscard)
 {
 	//if we have no scene loaded, we successfully saved nothing!
 	if (!m_runtimeScene)
@@ -555,12 +573,7 @@ bool Sandbox::SaveScene(bool showDialog)
 
 		return true;
 	};
-	return DirtyAssetsManager::Get().SaveAssets(showDialog, true, filter);
-}
-
-void Sandbox::SaveSceneAs()
-{
-	m_shouldOpenSaveSceneAs = true;
+	return DirtyAssetsManager::Get().SaveAssets(showDialog, allowDiscard, filter);
 }
 
 void Sandbox::InstallMayaTools()
@@ -641,7 +654,7 @@ bool Sandbox::PromptUnloadCurrentScene()
 		return true;
 	}
 
-	const bool userCancelSave = !SaveScene(/*showDialog*/true);
+	const bool userCancelSave = !SaveScene(/*showDialog*/true, true);
 	if (userCancelSave)
 	{
 		//if the user cancels the save, dont load the new scene
@@ -726,36 +739,9 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 {
 	ImGuizmo::BeginFrame();
 
-	//if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##OpenScene"); returnState != SaveReturnState::None)
-	//{
-	//	if (returnState == SaveReturnState::Save)
-	//	{
-	//		SaveScene();
-	//	}
-
-	//	OpenScene();
-	//}
-
-	//if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##NewScene"); returnState != SaveReturnState::None)
-	//{
-	//	if (returnState == SaveReturnState::Save)
-	//	{
-	//		SaveScene();
-	//	}
-
-	//	NewScene();
-	//}
-
 	ImGui::ShowDemoWindow();
 
 	UpdateDockSpace();
-
-	if (m_shouldOpenSaveSceneAs)
-	{
-		UI::OpenModal("Save As");
-		m_shouldOpenSaveSceneAs = false;
-	}
-
 	BuildGameModal();
 
 	for (auto& window : EditorLibrary::GetPanels())
@@ -895,7 +881,7 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 			}
 			else if (ctrlPressed && shiftPressed)
 			{
-				SaveSceneAs();
+				SaveScene(/*show dialog*/true);
 			}
 
 			break;
@@ -905,14 +891,7 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 		{
 			if (ctrlPressed)
 			{
-				if (m_runtimeScene)
-				{
-					m_openShouldSaveScenePopup = true;
-				}
-				else
-				{
-					OpenScene();
-				}
+				OpenScene();
 			}
 
 			break;

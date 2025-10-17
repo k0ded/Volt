@@ -86,7 +86,7 @@ public:
 	void OpenScene(const std::filesystem::path& path);
 	void OpenScene(Volt::AssetHandle sceneHandle);
 	//returns false if user cancels save
-	bool SaveScene(bool showDialog = false);
+	bool SaveScene(bool showDialog = false, bool allowDiscard = false);
 
 private:
 	struct SaveSceneAsData
@@ -100,7 +100,6 @@ private:
 		bool SceneSavedAs = false;
 	} m_dirtyAssetExternalSaveData;
 
-	void SaveSceneAs();
 	void InstallMayaTools();
 	void RegisterEventListeners();
 	//return wether to procced
