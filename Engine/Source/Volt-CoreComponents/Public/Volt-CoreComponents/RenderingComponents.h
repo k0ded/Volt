@@ -41,9 +41,8 @@ namespace Volt
 			reflect.AddMember(&MeshComponent::materials, "materials", "Materials", "", Asset::Null(), AssetTypes::Material);
 			reflect.SetOnMemberChangedCallback(&MeshComponent::OnMemberChanged);
 			reflect.SetOnComponentCopiedCallback(&MeshComponent::OnComponentCopied);
-			reflect.SetOnComponentDeserializedCallback(&MeshComponent::OnComponentDeserialized);
+			reflect.SetOnInitializeCallback(&MeshComponent::OnIntitialize);
 			reflect.SetOnDestroyCallback(&MeshComponent::OnDestroy);
-			reflect.SetOnCreateCallback(&MeshComponent::OnCreate);
 			reflect.SetOnTransformChangedCallback(&MeshComponent::OnTransformChanged);
 		}
 
@@ -52,11 +51,10 @@ namespace Volt
 		VTCC_API static void OnMemberChanged(MeshEntity entity);
 
 	private:
-		VTCC_API static void OnCreate(MeshEntity entity);
 		VTCC_API static void OnDestroy(MeshEntity entity);
+		VTCC_API static void OnIntitialize(MeshEntity entity);
 		VTCC_API static void OnTransformChanged(MeshEntity entity);
 		VTCC_API static void OnComponentCopied(MeshEntity entity);
-		VTCC_API static void OnComponentDeserialized(MeshEntity entity);
 
 		Ref<ScenePrimitiveData> m_scenePrimitiveData;
 		StreamingInstanceID m_streamingInstanceID;
@@ -79,7 +77,7 @@ namespace Volt
 			reflect.AddMember(&CameraComponent::nearPlane, "nearPlane", "Near Plane", "", 1.f);
 			reflect.AddMember(&CameraComponent::farPlane, "farPlane", "Far Plane", "", 100'000.f);
 			reflect.AddMember(&CameraComponent::priority, "priority", "Priority", "", 0);
-			reflect.SetOnCreateCallback(&CameraComponent::OnCreate);
+			reflect.SetOnInitializeCallback(&CameraComponent::OnInitialize);
 		}
 
 		REGISTER_COMPONENT(CameraComponent);
@@ -89,7 +87,7 @@ namespace Volt
 			::Write<CameraComponent>
 			::As<ECS::Type::Entity>;
 
-		VTCC_API static void OnCreate(CameraEntity entity);
+		VTCC_API static void OnInitialize(CameraEntity entity);
 	};
 
 	struct AnimatedCharacterComponent

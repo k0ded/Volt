@@ -34,7 +34,7 @@ namespace Volt
 			reflect.AddMember(&BoxColliderComponent::offset, "offset", "Offset", "", glm::vec3{ 0.f });
 			reflect.AddMember(&BoxColliderComponent::isTrigger, "isTrigger", "Is Trigger", "", false);
 			reflect.AddMember(&BoxColliderComponent::material, "material", "Material", "", Asset::Null(), AssetTypes::PhysicsMaterial);
-			reflect.SetOnCreateCallback(&BoxColliderComponent::OnCreate);
+			reflect.SetOnInitializeCallback(&BoxColliderComponent::OnInitialize);
 			reflect.SetOnDestroyCallback(&BoxColliderComponent::OnDestroy);
 		}
 
@@ -45,7 +45,7 @@ namespace Volt
 			::Write<BoxColliderComponent>
 			::As<ECS::Type::Entity>;
 
-		VTP_API static void OnCreate(PhysicsEntity entity);
+		VTP_API static void OnInitialize(PhysicsEntity entity);
 		VTP_API static void OnDestroy(PhysicsEntity entity);
 	};
 
@@ -71,7 +71,7 @@ namespace Volt
 			reflect.AddMember(&SphereColliderComponent::offset, "offset", "Offset", "", glm::vec3{ 0.f });
 			reflect.AddMember(&SphereColliderComponent::isTrigger, "isTrigger", "Is Trigger", "", false);
 			reflect.AddMember(&SphereColliderComponent::material, "material", "Material", "", Asset::Null(), AssetTypes::PhysicsMaterial);
-			reflect.SetOnCreateCallback(&SphereColliderComponent::OnCreate);
+			reflect.SetOnInitializeCallback(&SphereColliderComponent::OnInitialize);
 			reflect.SetOnDestroyCallback(&SphereColliderComponent::OnDestroy);
 		}
 
@@ -82,7 +82,7 @@ namespace Volt
 			::Write<SphereColliderComponent>
 			::As<ECS::Type::Entity>;
 
-		VTP_API static void OnCreate(PhysicsEntity entity);
+		VTP_API static void OnInitialize(PhysicsEntity entity);
 		VTP_API static void OnDestroy(PhysicsEntity entity);
 	};
 
@@ -110,7 +110,7 @@ namespace Volt
 			reflect.AddMember(&CapsuleColliderComponent::offset, "offset", "Offset", "", glm::vec3{ 0.f });
 			reflect.AddMember(&CapsuleColliderComponent::isTrigger, "isTrigger", "Is Trigger", "", false);
 			reflect.AddMember(&CapsuleColliderComponent::material, "material", "Material", "", Asset::Null(), AssetTypes::PhysicsMaterial);
-			reflect.SetOnCreateCallback(&CapsuleColliderComponent::OnCreate);
+			reflect.SetOnInitializeCallback(&CapsuleColliderComponent::OnInitialize);
 			reflect.SetOnDestroyCallback(&CapsuleColliderComponent::OnDestroy);
 		}
 
@@ -121,7 +121,7 @@ namespace Volt
 			::Write<CapsuleColliderComponent>
 			::As<ECS::Type::Entity>;
 
-		VTP_API static void OnCreate(PhysicsEntity entity);
+		VTP_API static void OnInitialize(PhysicsEntity entity);
 		VTP_API static void OnDestroy(PhysicsEntity entity);
 	};
 
@@ -149,7 +149,7 @@ namespace Volt
 			reflect.AddMember(&MeshColliderComponent::subMeshIndex, "subMeshIndex", "subMeshIndex", "", -1);
 			reflect.AddMember(&MeshColliderComponent::isConvex, "isConvex", "Is Convex", "", true);
 			reflect.AddMember(&MeshColliderComponent::isTrigger, "isTrigger", "Is Trigger", "", false);
-			reflect.SetOnCreateCallback(&MeshColliderComponent::OnCreate);
+			reflect.SetOnInitializeCallback(&MeshColliderComponent::OnInitialize);
 			reflect.SetOnDestroyCallback(&MeshColliderComponent::OnDestroy);
 		}
 
@@ -160,7 +160,7 @@ namespace Volt
 			::Write<MeshColliderComponent>
 			::As<ECS::Type::Entity>;
 
-		VTP_API static void OnCreate(PhysicsEntity entity);
+		VTP_API static void OnInitialize(PhysicsEntity entity);
 		VTP_API static void OnDestroy(PhysicsEntity entity);
 	};
 }

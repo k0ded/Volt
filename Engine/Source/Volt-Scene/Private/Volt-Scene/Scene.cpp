@@ -270,7 +270,22 @@ namespace Volt
 					}
 				});
 
-				componentTaskGraph.AddTaskWithDependencies("Finished loading entities", { deserializeComponentsTask }, [this]()
+				//todo_fabian: this can be multiple jobs when some issues are fixed with the task graph
+				//we initialize all components after all components have gotten 
+				TaskGraph::Task* initializeComponentsTask = componentTaskGraph.AddTaskWithDependencies("Initialize All Components", { deserializeComponentsTask }, [this, entityToComponentTypes]()
+				{
+					for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
+					{
+						for (const VoltGUID& componentType : componentTypes)
+						{
+							const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromGUID(componentType);
+							const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
+							componentDesc->OnInitialize(m_entityScene.GetEntityFromID(entityID));
+						}
+					}
+				});
+
+				componentTaskGraph.AddTaskWithDependencies("Finished loading entities", { initializeComponentsTask }, [this]()
 				{
 					VT_PROFILE_MESSAGE("FINISH LOADING ENTITIES");
 					m_isFinishedLoadingEntities = true;

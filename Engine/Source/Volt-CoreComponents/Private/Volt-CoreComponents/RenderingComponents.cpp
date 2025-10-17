@@ -25,19 +25,19 @@ namespace Volt
 		return streamingInstanceDescription;
 	}
 
-	void MeshComponent::OnCreate(MeshEntity entity)
-	{
-		auto& meshComponent = entity.GetComponent<MeshComponent>();
-		meshComponent.m_scenePrimitiveData = CreateRef<ScenePrimitiveData>(entity.GetID(), entity.GetRenderScene());
-		meshComponent.m_streamingInstanceID = StreamingManager::Get().AddInstance(CreateStreamingInstanceDescription(meshComponent, entity.GetID(), meshComponent.m_scenePrimitiveData));
-	}
-
 	void MeshComponent::OnDestroy(MeshEntity entity)
 	{
 		auto& component = entity.GetComponent<MeshComponent>();
 
 		StreamingManager::Get().RemoveInstance(component.m_streamingInstanceID);
 		component.m_scenePrimitiveData = nullptr;
+	}
+
+	void MeshComponent::OnIntitialize(MeshEntity entity)
+	{
+		auto& meshComponent = entity.GetComponent<MeshComponent>();
+		meshComponent.m_scenePrimitiveData = CreateRef<ScenePrimitiveData>(entity.GetID(), entity.GetRenderScene());
+		meshComponent.m_streamingInstanceID = StreamingManager::Get().AddInstance(CreateStreamingInstanceDescription(meshComponent, entity.GetID(), meshComponent.m_scenePrimitiveData));
 	}
 
 	void MeshComponent::OnMemberChanged(MeshEntity entity)
@@ -64,25 +64,13 @@ namespace Volt
 		StreamingManager::Get().InvalidateInstance(component.m_streamingInstanceID, CreateStreamingInstanceDescription(component, entity.GetID(), component.m_scenePrimitiveData));
 	}
 
-	VTCC_API void MeshComponent::OnComponentDeserialized(MeshEntity entity)
-	{
-		auto& component = entity.GetComponent<MeshComponent>();
-
-		if (component.handle == Asset::Null())
-		{
-			return;
-		}
-
-		StreamingManager::Get().InvalidateInstance(component.m_streamingInstanceID, CreateStreamingInstanceDescription(component, entity.GetID(), component.m_scenePrimitiveData));
-	}
-
 	void MeshComponent::OnTransformChanged(MeshEntity entity)
 	{
 		auto& meshComponent = entity.GetComponent<MeshComponent>();
 		meshComponent.m_scenePrimitiveData->Invalidate();
 	}
 
-	void CameraComponent::OnCreate(CameraEntity entity)
+	void CameraComponent::OnInitialize(CameraEntity entity)
 	{
 		auto& component = entity.GetComponent<CameraComponent>();
 		component.camera = CreateRef<Camera>(glm::radians(component.fieldOfView), 1.f, 16.f / 9.f, component.nearPlane, component.farPlane);

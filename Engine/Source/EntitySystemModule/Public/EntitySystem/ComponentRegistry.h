@@ -151,13 +151,7 @@ namespace Volt
 	template<typename T>
 	inline void ComponentRegistry::OnConstructComponent(entt::registry& registry, entt::entity entity)
 	{
-		const auto* typeDesc = GetTypeDesc<T>();
-		const IComponentTypeDesc* compDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
-
-		EntityScene* entityScene = reinterpret_cast<EntityScene*>(registry.get_user_data());
-		VT_ENSURE(entityScene);
-
-		compDesc->OnCreate(entityScene->GetEntityFromHandle(entity));
+		//nothing to do here right now...
 	}
 
 	template<typename T>

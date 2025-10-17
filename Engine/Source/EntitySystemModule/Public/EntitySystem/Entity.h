@@ -152,7 +152,13 @@ namespace Volt
 
 		auto& registry = m_sceneReference->GetRegistry();
 		VT_ENSURE(!registry.any_of<T>(m_handle));
-		return registry.emplace<T>(m_handle, std::forward<Args>(args)...);
+		T& createdComp = registry.emplace<T>(m_handle, std::forward<Args>(args)...);
+
+		const ICommonTypeDesc* typeDesc = GetTypeDesc<T>();
+		const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
+		componentDesc->OnInitialize(*this);
+
+		return createdComp;
 	}
 
 	template<typename T>

@@ -39,7 +39,7 @@ namespace Volt
 			reflect.SetOnMemberChangedCallback(&PointLightComponent::OnMemberChanged);
 			reflect.SetOnComponentCopiedCallback(&PointLightComponent::OnComponentCopied);
 			reflect.SetOnDestroyCallback(&PointLightComponent::OnDestroy);
-			reflect.SetOnCreateCallback(&PointLightComponent::OnCreate);
+			reflect.SetOnInitializeCallback(&PointLightComponent::OnInitialize);
 			reflect.SetOnTransformChangedCallback(&PointLightComponent::OnTransformChanged);
 		}
 
@@ -51,7 +51,7 @@ namespace Volt
 			::Read<IDComponent>
 			::As<ECS::Type::Entity>;
 
-		VTCC_API static void OnCreate(LightEntity entity);
+		VTCC_API static void OnInitialize(LightEntity entity);
 		VTCC_API static void OnDestroy(LightEntity entity);
 		VTCC_API static void OnTransformChanged(LightEntity entity);
 		VTCC_API static void OnComponentCopied(LightEntity entity);
@@ -85,7 +85,7 @@ namespace Volt
 			reflect.SetOnMemberChangedCallback(&SpotLightComponent::OnMemberChanged);
 			reflect.SetOnComponentCopiedCallback(&SpotLightComponent::OnComponentCopied);
 			reflect.SetOnDestroyCallback(&SpotLightComponent::OnDestroy);
-			reflect.SetOnCreateCallback(&SpotLightComponent::OnCreate);
+			reflect.SetOnInitializeCallback(&SpotLightComponent::OnInitialize);
 			reflect.SetOnTransformChangedCallback(&SpotLightComponent::OnTransformChanged);
 		}
 
@@ -98,7 +98,7 @@ namespace Volt
 			::Read<TransformComponent>
 			::As<ECS::Type::Entity>;
 
-		VTCC_API static void OnCreate(LightEntity entity);
+		VTCC_API static void OnInitialize(LightEntity entity);
 		VTCC_API static void OnDestroy(LightEntity entity);
 		VTCC_API static void OnTransformChanged(LightEntity entity);
 		VTCC_API static void OnComponentCopied(LightEntity entity);
@@ -168,7 +168,7 @@ namespace Volt
 			reflect.SetOnMemberChangedCallback(&DirectionalLightComponent::OnMemberChanged);
 			reflect.SetOnComponentCopiedCallback(&DirectionalLightComponent::OnComponentCopied);
 			reflect.SetOnDestroyCallback(&DirectionalLightComponent::OnDestroy);
-			reflect.SetOnCreateCallback(&DirectionalLightComponent::OnCreate);
+			reflect.SetOnInitializeCallback(&DirectionalLightComponent::OnInitialize);
 			reflect.SetOnTransformChangedCallback(&DirectionalLightComponent::OnTransformChanged);
 		}
 
@@ -181,7 +181,7 @@ namespace Volt
 			::Read<TransformComponent>
 			::As<ECS::Type::Entity>;
 
-		VTCC_API static void OnCreate(LightEntity entity);
+		VTCC_API static void OnInitialize(LightEntity entity);
 		VTCC_API static void OnDestroy(LightEntity entity);
 		VTCC_API static void OnTransformChanged(LightEntity entity);
 		VTCC_API static void OnComponentCopied(LightEntity entity);
@@ -214,8 +214,7 @@ namespace Volt
 			reflect.SetOnMemberChangedCallback(&SkylightComponent::OnMemberChanged);
 			reflect.SetOnComponentCopiedCallback(&SkylightComponent::OnComponentCopied);
 			reflect.SetOnDestroyCallback(&SkylightComponent::OnDestroy);
-			reflect.SetOnCreateCallback(&SkylightComponent::OnCreate);
-			reflect.SetOnComponentDeserializedCallback(&SkylightComponent::OnDeserialized);
+			reflect.SetOnInitializeCallback(&SkylightComponent::OnInitialize);
 		}
 
 		VTCC_API static void OnMemberChanged(LightEntity entity);
@@ -224,10 +223,9 @@ namespace Volt
 
 	private:
 
-		VTCC_API static void OnCreate(LightEntity entity);
+		VTCC_API static void OnInitialize(LightEntity entity);
 		VTCC_API static void OnDestroy(LightEntity entity);
 		VTCC_API static void OnComponentCopied(LightEntity entity);
-		VTCC_API static void OnDeserialized(LightEntity entity);
 
 		void UpdateSceneLightData(EntityID entityId);
 

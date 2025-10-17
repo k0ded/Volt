@@ -118,6 +118,7 @@ namespace Volt
 			instance.entityId = description.entityId;
 
 			m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, newId);
+			InitializeSceneLightDataFromInstance(m_streamingInstances.Get(newId));
 
 			if (s_logStreamingManagerUpdates.GetValue())
 			{
