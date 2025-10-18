@@ -5,7 +5,7 @@
 #include <atomic>
 #include <cstdint>
 
-template<typename T>
+template<typename T, typename SecondaryAllocator = DefaultHeapAllocator>
 class AtomicStack
 {
 public:
@@ -14,30 +14,12 @@ public:
 		m_dataHead.store(Pack(InvalidIndex, 0));
 	}
 
-	AtomicStack(const AtomicStack& other) noexcept
-		: m_stack(other.m_stack),
-		m_dataHead(other.m_dataHead.load()),
-		m_freeHead(other.m_freeHead.load()),
-		m_size(other.m_size.load())
-	{
-	}
-
 	AtomicStack(AtomicStack&& other) noexcept
 		: m_stack(std::move(other.m_stack)),
 		m_dataHead(other.m_dataHead.load()),
 		m_freeHead(other.m_freeHead.load()),
 		m_size(other.m_size.load())
 	{
-	}
-
-	AtomicStack& operator=(const AtomicStack& other) noexcept
-	{
-		m_stack = other.m_stack;
-		m_dataHead = other.m_dataHead.load();
-		m_freeHead = other.m_freeHead.load();
-		m_size = other.m_size.load();
-
-		return *this;
 	}
 
 	AtomicStack& operator=(AtomicStack&& other) noexcept
@@ -228,7 +210,7 @@ private:
 		}
 	}
 
-	alignas(CacheLineAlignment) Vector<Node> m_stack;
+	alignas(CacheLineAlignment) Vector<Node, SecondaryAllocator> m_stack;
 	alignas(CacheLineAlignment) std::atomic<uint64_t> m_dataHead;
 	alignas(CacheLineAlignment) std::atomic<uint64_t> m_freeHead;
 	alignas(CacheLineAlignment) std::atomic<uint32_t> m_size;

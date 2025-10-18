@@ -13,12 +13,16 @@ namespace UnitTests
 	{
 		PagedLinearAllocator<PageSize> allocator;
 		allocator.ReservePages(1);
+
+		ASSERT_EQ(allocator.GetNumAllocatedPages(), 1);
 	}
 
 	TEST(PagedLinearAllocator, ReservePages_10)
 	{
 		PagedLinearAllocator<PageSize> allocator;
 		allocator.ReservePages(10);
+
+		ASSERT_EQ(allocator.GetNumAllocatedPages(), 10);
 	}
 
 	TEST(PagedLinearAllocator, Allocate_1)
@@ -58,7 +62,6 @@ namespace UnitTests
 
 		// 1048 to account for header size.
 		PagedLinearAllocator<PageSize> allocator;
-		allocator.ReservePages(100);
 
 		auto allocateWorkerFunc = [&allocator]()
 		{
@@ -79,6 +82,6 @@ namespace UnitTests
 		}
 
 		// 512 / 1024 * 100 = 50.
-		ASSERT_EQ(allocator.GetNumAllocatedPages(), 100);
+		ASSERT_EQ(allocator.GetNumAllocatedPages(), 50);
 	}
 }

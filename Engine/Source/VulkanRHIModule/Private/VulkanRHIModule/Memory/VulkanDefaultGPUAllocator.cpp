@@ -30,8 +30,8 @@ namespace Volt::RHI
 
 		VT_VK_CHECK(vmaCreateAllocator(&info, &m_allocator));
 
-		m_bufferAllocationArena.AllocateArena(16384);
-		m_imageAllocationArena.AllocateArena(16384);
+		m_bufferAllocationArena.Reserve(16384);
+		m_imageAllocationArena.Reserve(16384);
 	}
 
 	VulkanDefaultGPUAllocator::~VulkanDefaultGPUAllocator()

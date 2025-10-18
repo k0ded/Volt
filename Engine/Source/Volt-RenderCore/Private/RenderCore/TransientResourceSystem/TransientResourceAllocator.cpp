@@ -54,9 +54,9 @@ namespace Volt
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
 
-		m_transientBufferAllocator.AllocateArena(2048);
-		m_transientTextureAllocator.AllocateArena(2048);
-		m_transientUniformBufferAllocator.AllocateArena(2048);
+		m_transientBufferAllocator.ReservePages(1);
+		m_transientTextureAllocator.ReservePages(1);
+		m_transientUniformBufferAllocator.ReservePages(1);
 	}
 
 	TransientResourceAllocator::~TransientResourceAllocator()

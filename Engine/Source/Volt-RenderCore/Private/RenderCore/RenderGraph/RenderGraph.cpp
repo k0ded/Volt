@@ -218,7 +218,6 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_temporaryDataAllocator.Reserve(1 * 1024 * 1024);
 		m_executionFence = RHI::Fence::Create();
 	}
 

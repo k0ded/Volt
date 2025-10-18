@@ -9,10 +9,9 @@ namespace Volt
 {
 	RenderGraphResourceManager::RenderGraphResourceManager()
 	{
-		m_persistantBufferResources.AllocateArena(1024);
-		m_persistantTextureResources.AllocateArena(1024);
-		m_persistantUniformBufferResources.AllocateArena(1024);
-		m_shaderParameterUniformBuffers.Allocate(1024);
+		m_persistantBufferResources.ReservePages(1);
+		m_persistantTextureResources.ReservePages(1);
+		m_persistantUniformBufferResources.ReservePages(1);
 	}
 
 	RenderGraphResourceManager::~RenderGraphResourceManager()
@@ -33,18 +32,6 @@ namespace Volt
 		}
 	}
 
-	RenderGraphResourceManager::RenderGraphResourceManager(const RenderGraphResourceManager& other) noexcept
-	{
-		m_persistantBufferResources = other.m_persistantBufferResources;
-		m_persistantTextureResources = other.m_persistantTextureResources;
-
-		m_allocatedBuffers = other.m_allocatedBuffers;
-		m_allocatedTextures = other.m_allocatedTextures;
-		m_allocatedUniformBuffers = other.m_allocatedUniformBuffers;
-		
-		m_shaderParameterUniformBuffers = other.m_shaderParameterUniformBuffers;
-	}
-
 	RenderGraphResourceManager::RenderGraphResourceManager(RenderGraphResourceManager && other) noexcept
 	{
 		m_persistantBufferResources = std::move(other.m_persistantBufferResources);
@@ -53,21 +40,6 @@ namespace Volt
 		m_allocatedBuffers = std::move(other.m_allocatedBuffers);
 		m_allocatedTextures = std::move(other.m_allocatedTextures);
 		m_allocatedUniformBuffers = std::move(other.m_allocatedUniformBuffers);
-
-		m_shaderParameterUniformBuffers = std::move(other.m_shaderParameterUniformBuffers);
-	}
-
-	RenderGraphResourceManager& RenderGraphResourceManager::operator=(const RenderGraphResourceManager& other) noexcept
-	{
-		m_persistantBufferResources = other.m_persistantBufferResources;
-		m_persistantTextureResources = other.m_persistantTextureResources;
-
-		m_allocatedBuffers = other.m_allocatedBuffers;
-		m_allocatedTextures = other.m_allocatedTextures;
-		m_allocatedUniformBuffers = other.m_allocatedUniformBuffers;
-
-		m_shaderParameterUniformBuffers = other.m_shaderParameterUniformBuffers;
-		return *this;
 	}
 
 	RenderGraphResourceManager& RenderGraphResourceManager::operator=(RenderGraphResourceManager&& other) noexcept
@@ -78,8 +50,6 @@ namespace Volt
 		m_allocatedBuffers = std::move(other.m_allocatedBuffers);
 		m_allocatedTextures = std::move(other.m_allocatedTextures);
 		m_allocatedUniformBuffers = std::move(other.m_allocatedUniformBuffers);
-
-		m_shaderParameterUniformBuffers = std::move(other.m_shaderParameterUniformBuffers);
 		return *this;
 	}
 
@@ -112,20 +82,6 @@ namespace Volt
 		{
 			VT_ENSURE(false);
 		}
-	}
-
-	void RenderGraphResourceManager::AddShaderParameterUniformBuffer(RGUniformBufferRef uniformBuffer)
-	{
-		m_shaderParameterUniformBuffers.Push(uniformBuffer);
-	}
-
-	RGUniformBufferRef RenderGraphResourceManager::AquireShaderParameterUniformBuffer()
-	{
-		RGUniformBufferRef result;
-		m_shaderParameterUniformBuffers.Pop(result);
-	
-		VT_ENSURE(result != nullptr);
-		return result;
 	}
 
 	void RenderGraphResourceManager::AllocateResource(RGTextureRef resource)

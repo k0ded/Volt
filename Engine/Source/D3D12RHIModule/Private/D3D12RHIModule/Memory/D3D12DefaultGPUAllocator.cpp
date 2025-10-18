@@ -28,8 +28,8 @@ namespace Volt::RHI
 
 		VT_D3D12_CHECK(D3D12MA::CreateAllocator(&desc, &m_allocator));
 
-		m_bufferAllocationArena.AllocateArena(16384);
-		m_imageAllocationArena.AllocateArena(16384);
+		m_bufferAllocationArena.Reserve(16384);
+		m_imageAllocationArena.Reserve(16384);
 	}
 
 	D3D12DefaultGPUAllocator::~D3D12DefaultGPUAllocator()

@@ -16,6 +16,20 @@ public:
 		: m_size(0)
 	{ }
 
+	AtomicBitVector(AtomicBitVector&& other) noexcept
+		: m_bitArray(std::move(other.m_bitArray)),
+		m_size(other.m_size)
+	{
+	}
+
+	AtomicBitVector& operator=(AtomicBitVector&& other) noexcept
+	{
+		m_bitArray = std::move(other.m_bitArray);
+		m_size = other.m_size;
+
+		return *this;
+	}
+
 	VT_NODISCARD VT_INLINE size_t Size() const { return m_size; }
 
 	void Resize(const size_t numBits)
@@ -25,7 +39,7 @@ public:
 		m_size = numBits;
 	}
 
-	bool IsBitSet(const size_t index, std::memory_order memoryOrder)
+	bool IsBitSet(const size_t index, std::memory_order memoryOrder) const
  	{
 		VT_ENSURE(index < m_size);
 

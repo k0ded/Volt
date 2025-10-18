@@ -41,6 +41,23 @@ public:
 		FreePage(m_basePage);
 	}
 
+	PagedLinearAllocator(PagedLinearAllocator&& other) noexcept
+	{
+		m_allocator = std::move(other.m_allocator);
+		m_basePage.store(other.m_basePage);
+
+		other.m_basePage = nullptr;
+	}
+
+	PagedLinearAllocator& operator=(PagedLinearAllocator&& other) noexcept
+	{
+		m_allocator = std::move(other.m_allocator);
+		m_basePage.store(other.m_basePage);
+
+		other.m_basePage = nullptr;
+		return *this;
+	}
+
 	void ReservePages(uint32_t numPages)
 	{
 		PageHeader* lastPage = nullptr;
@@ -86,14 +103,14 @@ public:
 			// No base page has been allocated, try to allocate one and store
 			// in the pointer.
 			PageHeader* newPage = AllocatePage();
-			if (!m_basePage.compare_exchange_strong(NullHeader, newPage))
+			if (!m_basePage.compare_exchange_strong(NullHeader, newPage, std::memory_order::release))
 			{
 				// Another thread already allocated it, free the page again.
 				FreePage(newPage);
 			}
 		}
 
-		PageHeader* currentPage = m_basePage;
+		PageHeader* currentPage = m_basePage.load(std::memory_order::acquire);
 
 		void* allocation = nullptr;
 
@@ -109,14 +126,18 @@ public:
 				{
 					// Try to allocate a new page
 					PageHeader* newPage = AllocatePage();
-					if (!currentPage->next.compare_exchange_strong(NullHeader, newPage))
+					if (!currentPage->next.compare_exchange_strong(NullHeader, newPage, std::memory_order::release))
 					{
 						// Another thread already allocated it, free the page again.
 						FreePage(newPage);
 					}
+					else
+					{
+						newPage->prev = currentPage;
+					}
 				}
 
-				currentPage = currentPage->next;
+				currentPage = currentPage->next.load(std::memory_order::acquire);
 			}
 		}
 
@@ -171,12 +192,11 @@ private:
 				return false;
 			}
 
-			uint64_t dataOffset = dataPointer.fetch_add(allocationSize);
+			uint64_t dataOffset = dataPointer.fetch_add(allocationSize, std::memory_order::relaxed);
 
 			// Another thread allocated before us, and we ended up out of range.
 			if (dataOffset + allocationSize > GetDataSize())
 			{
-				dataPointer.fetch_sub(allocationSize);
 				return false;
 			}
 

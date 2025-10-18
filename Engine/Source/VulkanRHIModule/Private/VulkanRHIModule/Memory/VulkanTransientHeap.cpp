@@ -23,12 +23,12 @@ namespace Volt::RHI
 		if ((info.flags & TransientHeapFlags::AllowBuffers) != TransientHeapFlags::None)
 		{
 			InitializeAsBufferHeap();
-			m_bufferAllocationArena.AllocateArena(4096);
+			m_bufferAllocationArena.Reserve(4096);
 		}
 		else if ((info.flags & TransientHeapFlags::AllowTextures) != TransientHeapFlags::None || (info.flags & TransientHeapFlags::AllowRenderTargets) != TransientHeapFlags::None)
 		{
 			InitializeAsImageHeap();
-			m_imageAllocationArena.AllocateArena(4096);
+			m_imageAllocationArena.Reserve(4096);
 		}
 	}
 

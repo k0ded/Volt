@@ -6,6 +6,7 @@
 
 #include <CoreUtilities/Allocators/Handle.h>
 #include <CoreUtilities/Allocators/LinearAllocator.h>
+#include <CoreUtilities/Allocators/PagedLinearAllocator.h>
 #include <CoreUtilities/DestructorHelper.h>
 #include <CoreUtilities/Containers/Vector.h>
 
@@ -40,9 +41,7 @@ namespace Volt
 		}
 
 	private:
-		inline static constexpr size_t MaxResourceNodeAllocationSize = 512 * 1024;
-
-		LinearAllocator<> m_allocator;
+		PagedLinearAllocator<65536> m_allocator;
 		Vector<DestructorHelper> m_nodeDestructors;
 	};
 	
@@ -93,9 +92,6 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE uint32_t GetNumPasses() const { return m_numPasses; }
 
-		inline static constexpr size_t MaxExecutionFunctionAllocationSize = 2 * 1024 * 1024;
-		inline static constexpr size_t MaxPassNodeAllocationSize = 1 * 1024 * 1024;
-
 		struct PassAllocation
 		{
 			void* executionFunctionPtr;
@@ -104,8 +100,8 @@ namespace Volt
 
 		PassAllocation AllocatePass(PassExecFunc execWrapperFunc, size_t execFuncSize);
 
-		LinearAllocator<> m_passExecutionFunctionAllocator;
-		LinearAllocator<> m_passNodeAllocator;
+		PagedLinearAllocator<65536> m_passExecutionFunctionAllocator;
+		PagedLinearAllocator<65536> m_passNodeAllocator;
 
 		uint32_t m_numPasses = 0;
 		Vector<DestructorHelper> m_passDestructors;

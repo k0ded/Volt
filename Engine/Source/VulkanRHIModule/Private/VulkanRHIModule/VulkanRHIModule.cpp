@@ -47,13 +47,13 @@ namespace Volt::RHI
 		// Allocate arenas
 		constexpr size_t ArenaSize = 8192;
 
-		m_bufferViewArena.AllocateArena(ArenaSize);
-		m_imageViewArena.AllocateArena(ArenaSize);
+		m_bufferViewArena.Reserve(ArenaSize);
+		m_imageViewArena.Reserve(ArenaSize);
 
-		m_storageBufferArena.AllocateArena(ArenaSize);
-		m_uniformBufferArena.AllocateArena(ArenaSize);
-		m_imageArena.AllocateArena(ArenaSize);
-		m_samplerStateArena.AllocateArena(ArenaSize);
+		m_storageBufferArena.Reserve(ArenaSize);
+		m_uniformBufferArena.Reserve(ArenaSize);
+		m_imageArena.Reserve(ArenaSize);
+		m_samplerStateArena.Reserve(ArenaSize);
 
 		m_vulkanCpuAllocator = CreateRef<VulkanCPUAllocator>();
 	}
