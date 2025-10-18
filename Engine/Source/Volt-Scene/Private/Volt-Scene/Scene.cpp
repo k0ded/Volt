@@ -327,6 +327,22 @@ namespace Volt
 		return newEntity;
 	}
 
+	Entity Scene::CreateEntityWithIDForExistingDescription(const EntityID& id, Volt::AssetHandle existingEntityDescHandle)
+	{
+		AssetMetadata meta = AssetManager::GetMetadataFromHandle(existingEntityDescHandle);
+		const EntityDescCustomMetadata& customMeta = meta.GetCustomData<EntityDescCustomMetadata>();
+
+		VT_ENSURE(customMeta.sceneHandle == this->handle);
+		VT_ENSURE(customMeta.entityID == id);
+
+		Entity newEntity = m_entityScene.CreateEntityWithID(id);
+		VT_ENSURE(newEntity);
+
+		m_entityIDToDescHandle.emplace(id, existingEntityDescHandle);
+
+		return newEntity;
+	}
+
 	Volt::AssetHandle Scene::CreateEntityDescForEntity(const EntityID& id)
 	{
 		VT_ENSURE(!m_entityIDToDescHandle.contains(id));

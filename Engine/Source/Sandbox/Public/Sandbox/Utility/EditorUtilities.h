@@ -60,6 +60,7 @@ public:
 	static void MarkEntityAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity);
 	static void MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity);
 	static void DestroyEntity(Weak<Volt::Scene> scene, const Volt::Entity& entity);
+	static void DestroyEntities(Weak<Volt::Scene> scene, const Vector<Volt::Entity>& entities);
 
 private:
 	static bool AssetBrowserPopupInternal(const std::string& id, Volt::AssetHandle& assetHandle, bool startState, AssetType wantedType = AssetTypes::None);

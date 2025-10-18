@@ -338,6 +338,30 @@ namespace Volt
 		return GetComponent<TransformComponent>().locked;
 	}
 
+	bool Entity::IsDistantParentOf(Entity potentialChild) const
+	{
+		if (!HasComponent<RelationshipComponent>())
+		{
+			return false;
+		}
+		Entity checking = potentialChild;
+		while (checking.IsValid())
+		{
+			if (checking.GetParent() == *this)
+			{
+				return true;
+			}
+			checking = checking.GetParent();
+		}
+
+		return false;
+	}
+
+	bool Entity::IsDistantChildOf(Entity potentialParent) const
+	{
+		return potentialParent.IsDistantParentOf(*this);
+	}
+
 	void Entity::RemoveComponent(const VoltGUID& guid)
 	{
 		VT_ENSURE(IsValid());

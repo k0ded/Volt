@@ -5,6 +5,7 @@
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/DirtyAssetsManager.h"
+#include "Sandbox/EditorCommandStack.h"
 
 #include <Volt-Assets/MeshAsset.h>
 
@@ -384,10 +385,61 @@ void EditorUtils::MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, c
 
 void EditorUtils::DestroyEntity(Weak<Volt::Scene> scene, const Volt::Entity& entity)
 {
-	Vector<Volt::AssetHandle> destroyedEntityDescs;
-	scene->DestroyEntity(entity, destroyedEntityDescs);
-	for (Volt::AssetHandle asset : destroyedEntityDescs)
+	DestroyEntities(scene, { entity });
+}
+
+void EditorUtils::DestroyEntities(Weak<Volt::Scene> scene, const Vector<Volt::Entity>& entities)
+{
+	//only the parentmost entities should be called delete on
+	FrameStackVector<Volt::Entity> parentmostEntities;
+	for (const Volt::Entity& entity : entities)
 	{
-		DirtyAssetsManager::Get().MarkAssetDirty(asset);
+		bool isParentmost = true;
+		for (const Volt::Entity& checking : entities)
+		{
+			if (entity == checking)
+			{
+				continue;
+			}
+			if (entity.IsDistantChildOf(checking))
+			{
+				isParentmost = false;
+				break;
+			}
+		}
+		if (isParentmost)
+		{
+			parentmostEntities.push_back(entity);
+		}
+
+	}
+
+	//pre-collect all entities about to be destroyed to create a editor command
+	FrameStackVector<Volt::Entity> toCheck = parentmostEntities;
+	Vector<Volt::Entity> allEntitiesBeingDestroyed;
+	while (!toCheck.empty())
+	{
+		Volt::Entity checking = toCheck.back();
+		toCheck.pop_back();
+
+		allEntitiesBeingDestroyed.push_back(checking);
+
+		//also check the children of checking 
+		Vector<Volt::Entity> children = checking.GetChildren();
+		toCheck.append(children.begin(), children.end());
+	}
+
+	Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(allEntitiesBeingDestroyed, scene, ObjectStateAction::Delete);
+	EditorCommandStack::GetInstance().PushUndo(command);
+
+	//destroy all the parentmose entities
+	for (Volt::Entity& entity : parentmostEntities)
+	{
+		Vector<Volt::AssetHandle> destroyedEntityDescs;
+		scene->DestroyEntity(entity, destroyedEntityDescs);
+		for (Volt::AssetHandle asset : destroyedEntityDescs)
+		{
+			DirtyAssetsManager::Get().MarkAssetDirty(asset);
+		}
 	}
 }
