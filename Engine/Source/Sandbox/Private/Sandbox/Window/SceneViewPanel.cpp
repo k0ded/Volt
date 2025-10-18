@@ -1040,109 +1040,47 @@ void SceneViewPanel::DrawMainRightClickPopup()
 {
 	if (UI::BeginPopup("MainRightClickMenu", ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 	{
-		if (ImGui::MenuItem(VT_ICON_FA_PLUS " Create Empty Entity"))
+		auto postCreateNewEntityFromMenu = [&](Volt::Entity ent)
 		{
-			auto ent = m_scene->CreateEntity();
-
 			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(ent, m_scene, ObjectStateAction::Create);
 			EditorCommandStack::GetInstance().PushUndo(command);
 			SelectionManager::DeselectAll();
 			SelectionManager::Select(ent.GetID());
+		};
+		if (ImGui::MenuItem(VT_ICON_FA_PLUS " Create Empty Entity"))
+		{
+			auto ent = m_scene->CreateEntity();
+
+			postCreateNewEntityFromMenu(ent);
 		}
 
 		if (ImGui::BeginMenu(VT_ICON_FA_PLUS " New"))
 		{
 			if (ImGui::BeginMenu(VT_ICON_FA_CUBES " Primitives"))
 			{
-				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Blockout Cube"))
+
+				auto newPrimitiveMenuItem = [&](std::string primitiveName, std::string_view primitivePath)
 				{
-					auto ent = m_scene->CreateEntity();
-					auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
-					meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_BlockoutCube.vtasset");
-					Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent));
+					if (ImGui::MenuItem((VT_ICON_FA_CUBE " " + primitiveName).c_str()))
+					{
+						auto ent = m_scene->CreateEntity();
+						auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
+						meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath(primitivePath);
+						Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent));
 
-					ent.SetTag("New Cube");
+						ent.SetTag("New " + primitiveName);
 
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
-				}
+						postCreateNewEntityFromMenu(ent);
+					}
+				};
 
-				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Cube"))
-				{
-					auto ent = m_scene->CreateEntity();
-					auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
-					meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Cube.vtasset");
-					Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent));
-
-					ent.SetTag("New Cube");
-
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
-				}
-
-				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Capsule"))
-				{
-					auto ent = m_scene->CreateEntity();
-					auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
-					meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Capsule.vtasset");
-					Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent));
-
-					ent.SetTag("New Capsule");
-
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
-				}
-
-				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Cone"))
-				{
-					auto ent = m_scene->CreateEntity();
-					auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
-					meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Cone.vtasset");
-					Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent));
-
-					ent.SetTag("New Cone");
-
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
-				}
-
-				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Cylinder"))
-				{
-					auto ent = m_scene->CreateEntity();
-					auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
-					meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Cylinder.vtasset");
-					Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent));
-
-					ent.SetTag("New Cylinder");
-
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
-				}
-
-				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Sphere"))
-				{
-					auto ent = m_scene->CreateEntity();
-					auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
-					meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Sphere.vtasset");
-					Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent));
-					ent.SetTag("New Sphere");
-
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
-				}
-
-				if (ImGui::MenuItem(VT_ICON_FA_CUBE " Plane"))
-				{
-					auto ent = m_scene->CreateEntity();
-					auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
-					meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Plane.vtasset");
-					Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent));
-
-					ent.SetTag("New Plane");
-
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
-				}
+				newPrimitiveMenuItem("Blockout Cube", "Engine/Meshes/Primitives/SM_BlockoutCube.vtasset");
+				newPrimitiveMenuItem("Cube", "Engine/Meshes/Primitives/SM_Cube.vtasset");
+				newPrimitiveMenuItem("Capsule", "Engine/Meshes/Primitives/SM_Capsule.vtasset");
+				newPrimitiveMenuItem("Cone", "Engine/Meshes/Primitives/SM_Cone.vtasset");
+				newPrimitiveMenuItem("Cylinder", "Engine/Meshes/Primitives/SM_Cylinder.vtasset");
+				newPrimitiveMenuItem("Sphere", "Engine/Meshes/Primitives/SM_SphereCube.vtasset");
+				newPrimitiveMenuItem("Plane", "Engine/Meshes/Primitives/SM_BlockoutCube.vtasset");
 
 				ImGui::EndMenu();
 			}
@@ -1155,8 +1093,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 					ent.AddComponent<Volt::DecalComponent>();
 					ent.SetTag("New Decal");
 
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
+					postCreateNewEntityFromMenu(ent);
 				}
 
 				ImGui::EndMenu();
@@ -1170,8 +1107,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 					ent.AddComponent<Volt::PointLightComponent>();
 					ent.SetTag("New Point Light");
 
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
+					postCreateNewEntityFromMenu(ent);
 				}
 
 				if (ImGui::MenuItem(VT_ICON_FA_LIGHTBULB " Spot Light"))
@@ -1180,8 +1116,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 					ent.AddComponent<Volt::SpotLightComponent>();
 					ent.SetTag("New Spot Light");
 
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
+					postCreateNewEntityFromMenu(ent);
 				}
 
 				if (ImGui::MenuItem(VT_ICON_FA_SUN " Directional Light"))
@@ -1190,8 +1125,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 					ent.AddComponent<Volt::DirectionalLightComponent>();
 					ent.SetTag("New Directional Light");
 
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
+					postCreateNewEntityFromMenu(ent);
 				}
 
 				if (ImGui::MenuItem(VT_ICON_FA_LIGHTBULB " Skylight"))
@@ -1200,8 +1134,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 					ent.AddComponent<Volt::SkylightComponent>();
 					ent.SetTag("New Skylight");
 
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
+					postCreateNewEntityFromMenu(ent);
 				}
 
 				if (ImGui::MenuItem(VT_ICON_FA_LIGHTBULB " Sphere Light"))
@@ -1210,8 +1143,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 					ent.AddComponent<Volt::SphereLightComponent>();
 					ent.SetTag("New Sphere Light");
 
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
+					postCreateNewEntityFromMenu(ent);
 				}
 
 				if (ImGui::MenuItem(VT_ICON_FA_LIGHTBULB " Rectangle Light"))
@@ -1220,8 +1152,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 					ent.AddComponent<Volt::RectangleLightComponent>();
 					ent.SetTag("New Rectangle Light");
 
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
+					postCreateNewEntityFromMenu(ent);
 				}
 
 				ImGui::EndMenu();
@@ -1233,8 +1164,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 				ent.AddComponent<Volt::CameraComponent>();
 				ent.SetTag("New Camera");
 
-				SelectionManager::DeselectAll();
-				SelectionManager::Select(ent.GetID());
+				postCreateNewEntityFromMenu(ent);
 			}
 
 			if (ImGui::BeginMenu("Audio"))
@@ -1245,8 +1175,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 					ent.AddComponent<Volt::Audio::AudioListenerComponent>();
 					ent.SetTag("New Audio Listener");
 
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
+					postCreateNewEntityFromMenu(ent);
 				}
 				if (ImGui::MenuItem("Audio Source"))
 				{
@@ -1254,13 +1183,10 @@ void SceneViewPanel::DrawMainRightClickPopup()
 					ent.AddComponent<Volt::Audio::AudioSourceComponent>();
 					ent.SetTag("New Audio Source");
 
-					SelectionManager::DeselectAll();
-					SelectionManager::Select(ent.GetID());
+					postCreateNewEntityFromMenu(ent);
 				}
 				ImGui::EndMenu();
 			}
-
-
 
 			ImGui::EndMenu();
 		}

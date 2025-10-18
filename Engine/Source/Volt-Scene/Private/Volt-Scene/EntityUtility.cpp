@@ -76,6 +76,9 @@ namespace Volt
 		newEntity.GetComponent<RelationshipComponent>().children = newChildren;
 		newEntity.GetComponent<RelationshipComponent>().parent = parent ? parent.GetID() : Entity::NullID();
 
+		//initialize all components after the entity has spawned
+		newEntity.InitializeComponents();
+
 		targetScene->InvalidateEntityTransform(newEntity.GetID());
 
 		return newEntity;

@@ -275,7 +275,7 @@ struct ObjectStateCommand : EditorCommand
 			for (Volt::EntityID& id : m_EntityIDs)
 			{
 				Volt::Entity entity = m_TargetScene->GetEntityFromID(id);
-				m_TargetScene->DestroyEntity(entity);
+				m_TargetScene->DestroyEntity(entity, true);
 			}
 		}
 		else if (m_Action == ObjectStateAction::Delete)
@@ -299,7 +299,7 @@ struct ObjectStateCommand : EditorCommand
 			for (Volt::EntityID& id : m_EntityIDs)
 			{
 				Volt::Entity entity = m_TargetScene->GetEntityFromID(id);
-				m_TargetScene->DestroyEntity(entity);
+				m_TargetScene->DestroyEntity(entity, true);
 			}
 		}
 		else if (m_Action == ObjectStateAction::Delete)
@@ -317,8 +317,6 @@ private:
 	{
 		YAMLMemoryStreamWriter writer{};
 
-		Volt::AssetMetadata fakeMetadata;
-		fakeMetadata.filePath = "Metadata Created By ObjectStateCommand.";
 		Volt::EntityDescSerializer::Get().SerializeEntity(entity, writer);
 
 		m_EntitiesDataList.push_back(writer.WriteAndGetBuffer());
@@ -332,16 +330,7 @@ private:
 		{
 			YAMLMemoryStreamReader reader;
 			reader.ConsumeBuffer(buffer);
-			Volt::AssetMetadata fakeMetadata;
-			fakeMetadata.filePath = "Metadata Created By ObjectStateCommand.";
 			Volt::EntityDescSerializer::Get().DeserializeEntity(m_TargetScene, reader);
-		}
-
-		//have to invalidate the transform after spawning the entity
-		//todo: make it so we dont need to manually invalidate
-		for (Volt::EntityID& id : m_EntityIDs)
-		{
-			m_TargetScene->InvalidateEntityTransform(id);
 		}
 	}
 

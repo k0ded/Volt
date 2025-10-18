@@ -74,9 +74,8 @@ namespace Volt
 		void SetRenderSize(uint32_t aWidth, uint32_t aHeight);
 
 		Entity CreateEntity(const std::string& tag = "");
-
-		//this will not create a new EntityDesc for the entity
 		Entity CreateEntityWithID(const EntityID& id);
+
 		Volt::AssetHandle CreateEntityDescForEntity(const EntityID& id);
 
 		Entity GetEntityFromID(const EntityID id) const;
@@ -84,10 +83,10 @@ namespace Volt
 		Volt::AssetHandle GetEntityDescHandleFromEntityID(EntityID entityID) const;
 
 		bool IsRelatedTo(Entity entity, Entity otherEntity);
-		void DestroyEntity(Entity entity);
-		void DestroyEntity(Entity entity, Vector<EntityID>& outDestroyedEntities);
-		void DestroyEntity(Entity entity, Vector<Volt::AssetHandle>& outDestroyedEntityDescs);
-		void DestroyEntity(Entity entity, Vector<EntityID>* outDestroyedEntities, Vector<Volt::AssetHandle>* outDestroyedEntityDescs);
+		void DestroyEntity(Entity entity, bool ignoreChildren = false);
+		void DestroyEntity(Entity entity, Vector<EntityID>& outDestroyedEntities, bool ignoreChildren = false);
+		void DestroyEntity(Entity entity, Vector<Volt::AssetHandle>& outDestroyedEntityDescs, bool ignoreChildren = false);
+		void DestroyEntity(Entity entity, Vector<EntityID>* outDestroyedEntities, Vector<Volt::AssetHandle>* outDestroyedEntityDescs, bool ignoreChildren = false);
 
 		void InvalidateEntityTransform(const EntityID& entityId);
 		bool IsEntityValid(EntityID entityId) const;

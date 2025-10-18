@@ -162,11 +162,25 @@ namespace Volt
 		}
 
 		m_entityRegistry.AddEntity(id, entityHandle);
+		InvalidateEntityTransform(newHelper.GetID());
 
 		return newHelper;
 	}
 
-	void EntityScene::DestroyEntity(EntityID id, Vector<EntityID>* outDestroyedEntities, bool isDestroyingChildFromParent)
+	Entity EntityScene::CreateEntityWithNoComponentsForID(EntityID id)
+	{
+		VT_PROFILE_FUNCTION();
+
+		VT_ENSURE(!m_entityRegistry.Contains(id));
+
+		entt::entity entityHandle = m_registry.create();
+		m_entityRegistry.AddEntity(id, entityHandle);
+
+		Entity newEntity(entityHandle, this);
+		return newEntity;
+	}
+
+	void EntityScene::DestroyEntity(EntityID id, Vector<EntityID>* outDestroyedEntities, bool isDestroyingChildFromParent, bool ignoreChildren)
 	{
 		if (!IsEntityValid(id))
 		{
@@ -177,31 +191,32 @@ namespace Volt
 
 		// We need to handle the entity's parent and children.
 		VT_ENSURE(helper.HasComponent<RelationshipComponent>());
-
 		auto* relationshipComponent = &helper.GetComponent<RelationshipComponent>();
-		if (relationshipComponent->parent != EntityID::Null())
-		{
-			if (!isDestroyingChildFromParent)
-			{
-				Entity parentHelper = GetEntityFromID(relationshipComponent->parent);
-				VT_ENSURE(parentHelper.HasComponent<RelationshipComponent>());
 
-				auto& parentRelationshipComponent = parentHelper.GetComponent<RelationshipComponent>();
-				parentRelationshipComponent.children.erase_with_predicate([&helper](EntityID id)
-				{
-					return id == helper.GetID();
-				});
+		//remove ourselves from our parent's children
+		helper.UnparentEntity();
+
+		//even when ignoring children, we still need to remove ourselves as a parent from our children
+		if (ignoreChildren)
+		{
+			for (int32_t i = 0; i < relationshipComponent->children.size(); ++i)
+			{
+				EntityID childID = relationshipComponent->children.at(i);
+				Entity child = GetEntityFromID(childID);
+				child.UnparentEntity();
 			}
 		}
-
-		// We need to do this backwards, otherwise we will be pointing to invalid indices
-		for (int32_t i = static_cast<int32_t>(relationshipComponent->children.size()) - 1; i >= 0; --i)
+		else
 		{
-			DestroyEntity(relationshipComponent->children.at(i), outDestroyedEntities, true);
+			// We need to do this backwards, otherwise we will be pointing to invalid indices
+			for (int32_t i = static_cast<int32_t>(relationshipComponent->children.size()) - 1; i >= 0; --i)
+			{
+				DestroyEntity(relationshipComponent->children.at(i), outDestroyedEntities, true);
 
-			// This is required, because removing components from entt::registry might
-			// invalidate pointers.
-			relationshipComponent = &helper.GetComponent<RelationshipComponent>();
+				// This is required, because removing components from entt::registry might
+				// invalidate pointers.
+				relationshipComponent = &helper.GetComponent<RelationshipComponent>();
+			}
 		}
 
 		if (outDestroyedEntities)
