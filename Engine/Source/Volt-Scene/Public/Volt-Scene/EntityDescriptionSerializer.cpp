@@ -15,6 +15,7 @@
 
 #include <EntitySystem/Entity.h>
 #include <EntitySystem/ComponentRegistry.h>
+#include <EntitySystem/Scripting/CoreComponents.h>
 
 #include <Volt-Platforms/Windows/WindowsPlatformThread.h>
 
@@ -240,7 +241,7 @@ namespace Volt
 			return Entity::Null();
 		}
 
-		Entity entity = CreateEntityFromUUIDThreadSafe(entityId, scene);
+		Entity entity = scene->CreateEntityWithID(entityId);
 
 		streamReader.ForEach("components", [&]()
 		{
@@ -318,6 +319,8 @@ namespace Volt
 
 		streamReader.ExitScope();
 
+		entity.InitializeComponents();
+
 		return entity;
 	}
 
@@ -326,8 +329,9 @@ namespace Volt
 		streamReader.EnterScope("Entity");
 
 		EntityID entityId = streamReader.ReadAtKey("id", Entity::NullID());
-		VT_ENSURE_MSG(entityId == entity.GetID(), std::format("tried to deserialize entity with ID '{0}' onto an entity with ID '{1}'", std::to_string(entityId), std::to_string(entity.GetID())));
-
+		VT_ENSURE_MSG(entity.HasComponent<IDComponent>(), "All components for entity have to be created beforehand in order to use DeserializeEntityInPlace");
+		entity.GetComponent<IDComponent>().id = entityId;
+		
 		streamReader.ForEach("components", [&]()
 		{
 			VoltGUID compGuid = streamReader.ReadAtKey("guid", VoltGUID::Null());

@@ -41,8 +41,11 @@ namespace Volt
 
 		Entity CreateEntity(const std::string& tag = "");
 		Entity CreateEntityWithID(EntityID id);
+		//this will create an entity WITHOUR components, but still adding an entry in the EntityRegistry
+		//intended for when the caller wants to add all components at a later stage, e.g serialization
+		Entity CreateEntityWithNoComponentsForID(EntityID id);
 
-		void DestroyEntity(EntityID id,Vector<EntityID>* outDestroyedEntities = nullptr, bool isDestroyingChildFromParent = false);
+		void DestroyEntity(EntityID id,Vector<EntityID>* outDestroyedEntities = nullptr, bool isDestroyingChildFromParent = false, bool ignoreChildren = false);
 
 		Vector<EntityID> InvalidateEntityTransform(EntityID entityId);
 

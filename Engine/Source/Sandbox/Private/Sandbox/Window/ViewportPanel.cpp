@@ -831,6 +831,32 @@ void ViewportPanel::DuplicateSelection()
 	{
 		SelectionManager::Select(ent.GetID());
 	}
+
+	//todo: maybe not done the most optimal way, but works for now
+	//construct a undo command from the newly created entities, we also need to add their children to this
+	Vector<Volt::Entity> toCheck = duplicated;
+	std::set<Volt::EntityID> checked;
+	duplicated.clear();
+	while (!toCheck.empty())
+	{
+		Volt::Entity checking = toCheck.back();
+		toCheck.pop_back();
+
+		if (checked.contains(checking.GetID()))
+		{
+			continue;
+		}
+		checked.insert(checking.GetID());
+
+		duplicated.push_back(checking);
+
+		//also check the children of checking 
+		Vector<Volt::Entity> children = checking.GetChildren();
+		toCheck.append(children);
+	}
+
+	Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(duplicated, m_editorScene, ObjectStateAction::Create);
+	EditorCommandStack::GetInstance().PushUndo(command);
 }
 
 void ViewportPanel::HandleSingleSelect()

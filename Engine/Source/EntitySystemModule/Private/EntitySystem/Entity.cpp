@@ -21,10 +21,10 @@ namespace Volt
 		: m_handle(entityHandle), m_sceneReference(const_cast<EntityScene*>(scene))
 	{}
 
-	Entity::Entity(entt::entity entityHandle, EntityScene & scene)
+	Entity::Entity(entt::entity entityHandle, EntityScene& scene)
 		: m_handle(entityHandle), m_sceneReference(&scene)
 	{}
-	
+
 	Entity::Entity(entt::entity entityHandle, const EntityScene& scene)
 		: m_handle(entityHandle), m_sceneReference(const_cast<EntityScene*>(&scene))
 	{}
@@ -357,6 +357,28 @@ namespace Volt
 	bool Entity::HasComponent(const VoltGUID& componentGUID) const
 	{
 		return ComponentRegistry::Helpers::HasComponentWithGUID(componentGUID, m_sceneReference->GetRegistry(), m_handle);
+	}
+
+	void Entity::InitializeComponents()
+	{
+		VT_ENSURE(IsValid());
+
+		for (auto&& curr : m_sceneReference->GetRegistry().storage())
+		{
+			auto& storage = curr.second;
+
+			if (!storage.contains(m_handle))
+			{
+				continue;
+			}
+
+			const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(GetComponentRegistry().GetTypeDescFromName(storage.type().name()));
+			if (!componentDesc)
+			{
+				continue;
+			}
+			componentDesc->OnInitialize(*this);
+		}
 	}
 
 	Entity Entity::Null()

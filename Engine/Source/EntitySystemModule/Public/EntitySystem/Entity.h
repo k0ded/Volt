@@ -102,6 +102,9 @@ namespace Volt
 		VT_NODISCARD bool HasComponent(std::string_view componentName) const;
 		VT_NODISCARD bool HasComponent(const VoltGUID& componentGUID) const;
 
+		//this should only be called when constructing an entity without using the AddComponent helper as is initializes the added components as you add them
+		void InitializeComponents();
+
 		// #TODO_Ivar: Probably shouldn't expose this
 		VT_NODISCARD VT_INLINE EntityScene* GetSceneReference() const { return m_sceneReference; }
 	private:

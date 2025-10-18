@@ -23,10 +23,13 @@ namespace Volt
 	{
 		WriteLock lock{ m_mutex };
 
-		if (m_handleMap.contains(entityHandle))
+		if (!m_entityMap.contains(entityId) && !m_handleMap.contains(entityHandle))
 		{
-			m_handleMap.erase(entityHandle);
+			return;
 		}
+		VT_ENSURE(m_entityMap.contains(entityId) && m_handleMap.contains(entityHandle));
+		m_entityMap.erase(entityId);
+		m_handleMap.erase(entityHandle);
 	}
 
 	EntityID EntityRegistry::GetUUIDFromHandle(entt::entity handle) const

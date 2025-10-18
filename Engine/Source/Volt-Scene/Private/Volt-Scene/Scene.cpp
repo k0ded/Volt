@@ -168,7 +168,7 @@ namespace Volt
 				registry.reserve(m_entityIDToDescHandle.size());
 				for (const auto& [entityID, descHandle] : m_entityIDToDescHandle)
 				{
-					m_entityScene.CreateEntityWithID(entityID);
+					m_entityScene.CreateEntityWithNoComponentsForID(entityID);
 				}
 			});
 
@@ -234,16 +234,6 @@ namespace Volt
 				createComponentsTasks.reserve(componentTypeToOwningEntities->size());
 				for (const auto& [componentType, entityIDs] : *componentTypeToOwningEntities)
 				{
-					//todo: there should be a different system for order of initialization so that we dont have to make a special case
-					if (componentType == GetTypeGUID<IDComponent>() ||
-					componentType == GetTypeGUID<TransformComponent>() ||
-					componentType == GetTypeGUID<TagComponent>() ||
-					componentType == GetTypeGUID<RelationshipComponent>() ||
-					componentType == GetTypeGUID<CommonComponent>())
-					{
-						continue;
-					}
-
 					createComponentsTasks.push_back(componentTaskGraph.AddTask("Create Components", [this, componentType, componentTypeToOwningEntities]()
 					{
 						entt::registry& registry = m_entityScene.GetRegistry();
@@ -330,6 +320,7 @@ namespace Volt
 		Entity newEntity = m_entityScene.CreateEntityWithID(id);
 		VT_ENSURE(newEntity);
 
+		CreateEntityDescForEntity(newEntity.GetID());
 		//todo: World Engine
 		//m_worldEngine.AddEntity(newEntity);
 
@@ -374,25 +365,25 @@ namespace Volt
 		return m_entityIDToDescHandle.at(entityID);
 	}
 
-	void Scene::DestroyEntity(Entity entity)
+	void Scene::DestroyEntity(Entity entity, bool ignoreChildren)
 	{
-		DestroyEntity(entity, nullptr, nullptr);
+		DestroyEntity(entity, nullptr, nullptr, ignoreChildren);
 	}
 
-	void Scene::DestroyEntity(Entity entity, Vector<EntityID>& outDestroyedEntities)
+	void Scene::DestroyEntity(Entity entity, Vector<EntityID>& outDestroyedEntities, bool ignoreChildren)
 	{
-		DestroyEntity(entity, &outDestroyedEntities, nullptr);
+		DestroyEntity(entity, &outDestroyedEntities, nullptr, ignoreChildren);
 	}
 
-	void Scene::DestroyEntity(Entity entity, Vector<AssetHandle>& outDestroyedEntityDescs)
+	void Scene::DestroyEntity(Entity entity, Vector<AssetHandle>& outDestroyedEntityDescs, bool ignoreChildren)
 	{
-		DestroyEntity(entity, nullptr, &outDestroyedEntityDescs);
+		DestroyEntity(entity, nullptr, &outDestroyedEntityDescs, ignoreChildren);
 	}
 
-	void Scene::DestroyEntity(Entity entity, Vector<EntityID>* outDestroyedEntities, Vector<Volt::AssetHandle>* outDestroyedEntityDescs)
+	void Scene::DestroyEntity(Entity entity, Vector<EntityID>* outDestroyedEntities, Vector<Volt::AssetHandle>* outDestroyedEntityDescs, bool ignoreChildren)
 	{
 		Vector<EntityID> destroyedEntities;
-		m_entityScene.DestroyEntity(entity.GetID(), &destroyedEntities);
+		m_entityScene.DestroyEntity(entity.GetID(), &destroyedEntities, false, ignoreChildren);
 
 		for (EntityID destroyedEnt : destroyedEntities)
 		{
@@ -400,6 +391,26 @@ namespace Volt
 			{
 				outDestroyedEntityDescs->push_back(m_entityIDToDescHandle[destroyedEnt]);
 			}
+
+
+			//todo_fabian: we probably want to be able to have the
+			// entity descriptions not loaded but the entity present...
+			//so might need to change the unload below
+
+			//if the entity doesnt have a filepath, it is not part of the saved scene
+			const Volt::AssetHandle entityDescHandle = m_entityIDToDescHandle[destroyedEnt];
+			if (!Volt::AssetManager::HasFilePath(entityDescHandle))
+			{
+				if (Volt::AssetManager::IsMemoryAsset(this->handle))
+				{
+					Volt::AssetManager::Get().UnloadMemoryAsset(entityDescHandle);
+				}
+				else
+				{
+					Volt::AssetManager::Get().UnloadAsset(entityDescHandle);
+				}
+			}
+
 			m_entityIDToDescHandle.erase(destroyedEnt);
 		}
 
@@ -407,6 +418,8 @@ namespace Volt
 		{
 			*outDestroyedEntities = destroyedEntities;
 		}
+
+
 	}
 
 	void Scene::InvalidateEntityTransform(const EntityID& entityId)

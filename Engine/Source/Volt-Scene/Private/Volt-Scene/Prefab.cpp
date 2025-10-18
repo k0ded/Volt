@@ -240,12 +240,6 @@ namespace Volt
 		EntityID newEntityId = srcEntity.GetID();
 		auto newEntity = m_prefabScene->CreateEntityWithID(newEntityId);
 
-		RelationshipComponent& srcComp = srcEntity.GetComponent<RelationshipComponent>();
-		RelationshipComponent& newComp = newEntity.GetComponent<RelationshipComponent>();
-
-		srcComp;
-		newComp;
-
 		// If this entity already has a prefab component, it probably is another prefab. Add it as a reference
 		if (srcEntity.HasComponent<PrefabComponent>())
 		{
