@@ -32,7 +32,7 @@ public:
 	}
 };
 
-typedef Ref<AssetTypeBase> AssetType;
+using AssetType = Ref<AssetTypeBase>;
 
 class VTAS_API AssetTypeRegistry
 {

@@ -17,18 +17,18 @@ public:
 
 	VT_INLINE void IncRef() const noexcept
 	{
-		[[maybe_unused]] auto oldValue = m_count.fetch_add(1, std::memory_order_relaxed);
+		[[maybe_unused]] auto oldValue = m_count.fetch_add(1, std::memory_order::relaxed);
 		VT_ASSERT(oldValue > 0);
 	}
 
 	VT_INLINE void DecRef() const noexcept
 	{
-		auto oldCount = m_count.fetch_sub(1, std::memory_order_release);
+		auto oldCount = m_count.fetch_sub(1, std::memory_order::release);
 		VT_ASSERT(oldCount > 0);
 
 		if (oldCount == 1)
 		{
-			std::atomic_thread_fence(std::memory_order_acquire);
+			std::atomic_thread_fence(std::memory_order::acquire);
 
 			Type* derived = const_cast<Type*>(static_cast<const Type*>(this));
 			derived->~Type();
@@ -39,7 +39,7 @@ public:
 
 	VT_INLINE int32_t GetRefCount() const noexcept
 	{
-		return m_count.load(std::memory_order_relaxed);
+		return m_count.load(std::memory_order::relaxed);
 	}
 
 protected:
@@ -47,7 +47,7 @@ protected:
 	virtual ~RefCounted() noexcept
 	{
 		[[maybe_unused]] auto validCount = [](auto val) { return val == 0 || val == 1; };
-		VT_ASSERT(validCount(m_count.load(std::memory_order_relaxed)));
+		VT_ASSERT(validCount(m_count.load(std::memory_order::relaxed)));
 	}
 
 	RefPtr<Type> CreateRefPtrFromThis() const

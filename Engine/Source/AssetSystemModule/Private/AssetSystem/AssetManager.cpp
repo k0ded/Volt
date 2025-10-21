@@ -14,6 +14,7 @@
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/StringUtility.h>
+#include "AssetManager_New.h"
 
 namespace Volt
 {

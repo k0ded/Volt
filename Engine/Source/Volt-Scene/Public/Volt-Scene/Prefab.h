@@ -3,7 +3,7 @@
 #include "Volt-Scene/Config.h"
 #include "Volt-Scene/EntityUtility.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <EntitySystem/Entity.h>
 #include <EntitySystem/Scripting/CoreComponents.h>

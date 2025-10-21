@@ -114,6 +114,8 @@ namespace Volt
 		m_currentProject->cursorFilepath = streamReader.ReadAtKey("CursorPath", std::filesystem::path(""));
 		m_currentProject->startSceneFilepath = streamReader.ReadAtKey("StartScene", std::filesystem::path(""));
 
+		m_currentProject->assetsDirectoryName = m_currentProject->assetsDirectory.stem().string();
+
 		streamReader.ForEach("Plugins", [&]() 
 		{
 			const std::string pluginName = streamReader.ReadValue<std::string>();
@@ -136,9 +138,15 @@ namespace Volt
 		}
 	}
 
+	// #TODO_AssetSystem: Deprecate, other code is misusing it. Use project directory + asset directory name instead.
 	const std::filesystem::path ProjectManager::GetAssetsDirectory()
 	{
 		return s_instance->m_currentProject->isDeprecated ? "./" : s_instance->m_currentProject->rootDirectory / s_instance->m_currentProject->assetsDirectory;
+	}
+
+	const std::string_view ProjectManager::GetAssetsDirectoryName()
+	{
+		return s_instance->m_currentProject->assetsDirectoryName;
 	}
 
 	const std::filesystem::path ProjectManager::GetAudioBanksDirectory()

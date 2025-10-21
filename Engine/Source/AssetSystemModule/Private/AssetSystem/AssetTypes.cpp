@@ -1,5 +1,5 @@
-#include "vtcorepch.h"
-#include "Volt-Core/AssetTypes.h"
+#include "aspch.h"
+#include "AssetSystem/AssetTypes.h"
 
 VT_REGISTER_ASSET_TYPE(Mesh);
 VT_REGISTER_ASSET_TYPE(Material);

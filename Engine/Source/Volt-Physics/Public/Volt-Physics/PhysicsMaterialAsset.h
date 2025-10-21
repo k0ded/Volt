@@ -2,7 +2,7 @@
 
 #include "Volt-Physics/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <PhysicsInterface/PhysicsMaterial.h>
 

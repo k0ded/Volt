@@ -20,8 +20,12 @@ namespace VoltSharpmake
             conf.PrecompHeader = "aspch.h";
             conf.PrecompSource = "aspch.cpp";
 
-            conf.AddPublicDependency<LogModule>(target);
-            conf.AddPublicDependency<JobSystemModule>(target);
-        }
+            conf.AddPrivateDependency<LogModule>(target);
+            conf.AddPrivateDependency<JobSystemModule>(target);
+			conf.AddPrivateDependency<EventSystemModule>(target);
+
+			conf.AddPrivateDependency<VoltCore>(target);
+			conf.AddPrivateDependency<VoltPlatforms>(target);
+		}
     }
 }

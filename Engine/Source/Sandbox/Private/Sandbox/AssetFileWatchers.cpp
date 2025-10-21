@@ -6,7 +6,7 @@
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/AssetManager.h>
 

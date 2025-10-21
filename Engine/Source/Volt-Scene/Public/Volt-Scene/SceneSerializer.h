@@ -2,7 +2,7 @@
 
 #include "Volt-Scene/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Serialization/AssetSerializer.h>
 #include <AssetSystem/AssetSerializerRegistry.h>

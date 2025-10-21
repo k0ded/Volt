@@ -175,6 +175,8 @@ namespace Volt
 
 	void MeshPassProcessor::BuildMeshDrawCommand(const RenderPrimitiveData& renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader)
 	{
+		VT_ENSURE_MSG(vertexShader && pixelShader, "Valid shaders must be supplied!");
+
 		pipelineInfo.shaders = { vertexShader, pixelShader };
 
 		RefPtr<RHI::RenderPipeline> renderPipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);

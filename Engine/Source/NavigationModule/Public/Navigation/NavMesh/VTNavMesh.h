@@ -6,11 +6,9 @@
 #include "Navigation/Crowd/DtCrowd.h"
 
 #include <Volt-Renderer/Mesh/Mesh.h>
-#include <Volt-Core/AssetTypes.h>
 
+#include <AssetSystem/AssetTypes.h>
 #include <AssetSystem/Asset.h>
-
-#include <Volt-Core/AssetTypes.h>
 
 namespace Volt
 {

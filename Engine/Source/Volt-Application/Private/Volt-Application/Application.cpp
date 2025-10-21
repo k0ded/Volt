@@ -21,6 +21,7 @@
 
 #include <AssetSystem/AssetSerializerRegistry.h>
 #include <AssetSystem/AssetFactory.h>
+#include <AssetSystem/AssetManager_New.h>
 
 #include <CoreUtilities/FileSystem.h>
 
@@ -92,6 +93,8 @@ namespace Volt
 
 		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineRootDirectory());
 		m_sourceAssetManager = CreateScope<SourceAssetManager>();
+		// #TODO_AssetSystem: Move to a sub system.
+		g_assetManager = CreateScope<AssetManager_New>(ProjectManager::GetEngineRootDirectory(), ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectoryName());
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 

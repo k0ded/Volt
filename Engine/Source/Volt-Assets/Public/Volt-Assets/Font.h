@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>

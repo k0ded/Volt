@@ -9,7 +9,7 @@
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/Texture/EnvironmentTexture.h>
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <AssetSystem/AssetManager.h>

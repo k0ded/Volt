@@ -6,11 +6,10 @@
 #include <CoreUtilities/Containers/Vector.h>
 
 #include <filesystem>
-
+#include <shared_mutex>
 
 namespace Volt
 {
-
 	enum class AssetChangedState : uint8_t
 	{
 		Deleted,
@@ -34,7 +33,32 @@ namespace Volt
 
 	struct AssetMetadata
 	{
-		inline const bool IsValid() const { return handle != 0; }
+		AssetMetadata() = default;
+		AssetMetadata(const AssetMetadata& other)
+		{
+			handle = other.handle;
+			type = other.type;
+			isLoaded = other.isLoaded;
+			isQueued = other.isQueued;
+			isMemoryAsset = other.isMemoryAsset;
+			filePath = other.filePath;
+			customData = other.customData;
+		}
+
+		AssetMetadata& operator=(const AssetMetadata& other)
+		{
+			handle = other.handle;
+			type = other.type;
+			isLoaded = other.isLoaded;
+			isQueued = other.isQueued;
+			isMemoryAsset = other.isMemoryAsset;
+			filePath = other.filePath;
+			customData = other.customData;
+
+			return *this;
+		}
+
+		VT_INLINE bool IsValid() const { return handle != 0; }
 
 		template<typename CustomMetadataType> 
 		const CustomMetadataType& GetCustomData() const
@@ -56,6 +80,12 @@ namespace Volt
 		std::filesystem::path filePath;
 
 		CustomAssetMetadataVector customData;
+
+	private:
+		friend class LockedAssetMetadata;
+		friend class AssetMetadataConstReference;
+
+		std::shared_mutex m_assetMetadataMutex;
 	};
 
 	// #TODO_Ivar: Change name to be getter / setter, also add virtual functions when name changes.

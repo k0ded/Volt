@@ -24,9 +24,12 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<LogModule>(target);
 			conf.AddPublicDependency<MosaicModule>(target);
 			conf.AddPublicDependency<AssetSystemModule>(target);
+			conf.AddPrivateDependency<EntitySystemModule>(target);
 			conf.AddPublicDependency<RHIModule>(target);
+
+			conf.AddPrivateDependency<VoltPlatforms>(target);
+
 			conf.AddPublicDependency<yaml>(target);
-			
 			conf.AddPrivateDependency<imgui>(target);
 		}
     }

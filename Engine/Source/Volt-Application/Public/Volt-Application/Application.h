@@ -16,8 +16,6 @@
 #include <AssetSystem/SourceAssetManager.h>
 #include <Navigation/Core/NavigationSystem.h>
 
-
-
 class Log;
 namespace Volt
 {
