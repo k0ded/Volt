@@ -17,6 +17,8 @@ namespace Volt
 	}
 	BaseApplication::~BaseApplication()
 	{
+		PlatformThread::Shutdown();
+
 		s_instance = nullptr;
 	}
 }

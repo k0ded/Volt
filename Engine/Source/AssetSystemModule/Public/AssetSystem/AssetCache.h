@@ -13,6 +13,8 @@ namespace Volt
 		VTAS_API void AddAsset(RefPtr<Asset_New> asset);
 		void RemoveAsset(AssetHandle assetHandle);
 
+		RefPtr<Asset_New> GetAsset(AssetHandle assetHandle);
+
 	private:
 		// Replace
 		Map<AssetHandle, RefPtr<Asset_New>> m_assetMap;

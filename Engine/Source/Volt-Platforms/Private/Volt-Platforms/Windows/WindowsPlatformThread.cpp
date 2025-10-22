@@ -14,6 +14,11 @@ namespace Volt
 		m_mainThreadHandle = WindowsPlatformThread::GetCurrentThreadHandle();
 	}
 
+	void WindowsPlatformThread::Shutdown()
+	{
+		m_mainThreadHandle = nullptr;
+	}
+
 	void WindowsPlatformThread::SetThreadName(std::thread::native_handle_type threadHandle, std::string_view threadName)
 	{
 		std::wstring wThreadName = Utility::ToWString(threadName);

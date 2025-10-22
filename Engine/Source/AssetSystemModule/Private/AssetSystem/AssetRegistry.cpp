@@ -54,6 +54,12 @@ namespace Volt
 		return nullptr;
 	}
 
+	bool AssetRegistry::IsValidAssetHandle(AssetHandle assetHandle) const
+	{
+		uint64_t temp;
+		return m_hashTable.Get(assetHandle, temp);
+	}
+
 	void AssetRegistry::Initialize()
 	{
 		// Initialization
@@ -64,6 +70,8 @@ namespace Volt
 
 	void AssetRegistry::LoadAssetMetadata()
 	{
+		// #TODO_AssetSystem: Seperate out, so that engine asset meta data loading stalls, but project asset meta data continues in the background.
+
 		VT_LOGC(Info, LogAssetSystem, "Fetching asset meta data...");
 		ScopedTimer timer{};
 
@@ -127,6 +135,22 @@ namespace Volt
 			*allocatedAssetMetadata = std::move(assetMetadata);
 
 			m_metadataIndirection[metadataIndex] = allocatedAssetMetadata;
+		}
+	}
+
+	void AssetRegistry::RemoveAssetMetadata(AssetHandle assetHandle)
+	{
+		uint64_t metadataIndex = UINT64_MAX;
+		if (m_hashTable.Get(assetHandle, metadataIndex))
+		{
+			m_metadata.Free(m_metadataIndirection.at(metadataIndex));
+			m_metadataIndirection[metadataIndex] = nullptr;
+	
+			m_hashTable.Remove(assetHandle);
+		}
+		else
+		{
+			VT_ENSURE_MSG(false, "Trying to remove metadata which is not in hash table!");
 		}
 	}
 

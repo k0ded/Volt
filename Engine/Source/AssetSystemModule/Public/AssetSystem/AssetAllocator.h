@@ -28,6 +28,7 @@ namespace Volt
 		static const AssetType assetType = T::GetStaticType();
 		VT_ENSURE(m_assetAllocator.contains(assetType->GetGUID()));
 
+		// This is safe because the type has been registered to this guid.
 		AssetTypeAllocatorImpl<T>& allocator = *std::reinterpret_pointer_cast<AssetTypeAllocatorImpl<T>>(m_assetAllocator.at(assetType->GetGUID()));
 
 		T* assetPtr = allocator.Allocate(std::forward<Args>(args)...);

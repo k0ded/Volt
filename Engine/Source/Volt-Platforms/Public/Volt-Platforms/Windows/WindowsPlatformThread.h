@@ -16,6 +16,7 @@ namespace Volt
 	{
 	public:
 		static void Initialize();
+		static void Shutdown();
 
 		static void SetThreadName(std::thread::native_handle_type threadHandle, std::string_view threadName);
 		static void SetThreadPriority(std::thread::native_handle_type threadHandle, ThreadPriority priority);

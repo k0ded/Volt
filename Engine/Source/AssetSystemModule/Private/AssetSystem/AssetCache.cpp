@@ -15,4 +15,14 @@ namespace Volt
 		VT_ENSURE(m_assetMap.contains(assetHandle));
 		m_assetMap.erase(assetHandle);
 	}
+
+	RefPtr<Asset_New> AssetCache::GetAsset(AssetHandle assetHandle)
+	{
+		if (m_assetMap.contains(assetHandle))
+		{
+			return m_assetMap.at(assetHandle);
+		}
+
+		return nullptr;
+	}
 }

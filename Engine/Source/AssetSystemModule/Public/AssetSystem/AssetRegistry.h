@@ -15,7 +15,10 @@ namespace Volt
 		AssetMetadata* GetAssetMetadata(AssetHandle assetHandle);
 		AssetMetadata* GetAssetMetadata(AssetHandle assetHandle) const;
 
+		bool IsValidAssetHandle(AssetHandle assetHandle) const;
+
 		VTAS_API void InsertAssetMetadata(AssetMetadata&& assetMetadata);
+		void RemoveAssetMetadata(AssetHandle assetHandle);
 
 	private:
 		void Initialize();
@@ -28,6 +31,7 @@ namespace Volt
 		std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& filepath);
 
 		// Returns all asset filepaths located within engine and project asset directories.
+		// #TODO_AssetSystem: Change to take a vector reference instead.
 		Vector<std::filesystem::path> ScanForAssets();
 
 		std::filesystem::path m_engineDirectoryPath;

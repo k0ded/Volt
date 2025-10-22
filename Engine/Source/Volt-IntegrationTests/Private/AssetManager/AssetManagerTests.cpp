@@ -32,9 +32,49 @@ namespace IntergrationTests
 
 	TEST_F(AssetManagerFixture, CreateMemoryAsset)
 	{
-		RefPtr<TestAsset> newAsset = g_assetManager->CreateMemoryAsset<TestAsset>("TestingAsset", 1001);
-		EXPECT_NE(newAsset, nullptr);
-		EXPECT_EQ(newAsset->testValue, 1001);
+		AssetHandle newAssetHandle = Asset_New::Null();
+		{
+			AssetReference<TestAsset> newAsset = g_assetManager->CreateMemoryAsset<TestAsset>("TestingAsset", 1001);
+			EXPECT_NE(newAsset, nullptr);
+
+			newAssetHandle = newAsset->GetAssetHandle();
+			EXPECT_NE(newAssetHandle, Asset_New::Null());
+
+			EXPECT_EQ(newAsset->testValue, 1001);
+		
+			ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(newAssetHandle);
+			EXPECT_TRUE(assetMetadata->isMemoryAsset);
+			EXPECT_TRUE(assetMetadata->isLoaded);
+		}
+
+		// At this point the asset should have been released/removed
+		EXPECT_FALSE(g_assetManager->IsValidAssetHandle(newAssetHandle));
+	}
+
+	TEST_F(AssetManagerFixture, CreateAsset)
+	{
+		AssetHandle newAssetHandle = Asset_New::Null();
+		{
+			AssetReference<TestAsset> newAsset = g_assetManager->CreateAsset<TestAsset>("TestingAsset", 1001);
+			EXPECT_NE(newAsset, nullptr);
+
+			newAssetHandle = newAsset->GetAssetHandle();
+			EXPECT_NE(newAssetHandle, Asset_New::Null());
+
+			EXPECT_EQ(newAsset->testValue, 1001);
+
+			ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(newAssetHandle);
+			EXPECT_FALSE(assetMetadata->isMemoryAsset);
+			EXPECT_TRUE(assetMetadata->isLoaded);
+		}
+
+		// At this point the asset should have been released, but the metadata still valid.
+		EXPECT_TRUE(g_assetManager->IsValidAssetHandle(newAssetHandle));
+
+		{
+			ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(newAssetHandle);
+			EXPECT_FALSE(assetMetadata->isLoaded);
+		}
 	}
 
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::TestingAssetType, TestAsset);

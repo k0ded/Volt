@@ -82,8 +82,8 @@ namespace Volt
 		CustomAssetMetadataVector customData;
 
 	private:
-		friend class LockedAssetMetadata;
-		friend class AssetMetadataConstReference;
+		friend class WriteableAssetMetadata;
+		friend class ReadOnlyAssetMetadata;
 
 		std::shared_mutex m_assetMetadataMutex;
 	};

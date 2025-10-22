@@ -4,6 +4,7 @@
 #include "AssetSystem/AssetRegistry.h"
 #include "AssetSystem/AssetAllocator.h"
 #include "AssetSystem/AssetCache.h"
+#include "AssetSystem/AssetReference.h"
 
 #include <CoreUtilities/Pointers/RefPtr.h>
 
@@ -15,10 +16,10 @@ namespace Volt
 	// thread can access it at the same time.
 	// Takes a asset metadata as a reference, it is ok as all metadata
 	// has stable pointers.
-	class LockedAssetMetadata
+	class WriteableAssetMetadata
 	{
 	public:
-		LockedAssetMetadata(AssetMetadata* inMetadata)
+		WriteableAssetMetadata(AssetMetadata* inMetadata) noexcept
 			: m_metadata(inMetadata)
 		{
 			if (m_metadata)
@@ -27,13 +28,18 @@ namespace Volt
 			}
 		}
 
-		~LockedAssetMetadata()
+		~WriteableAssetMetadata() noexcept
 		{
 			if (m_metadata)
 			{
 				m_metadata->m_assetMetadataMutex.unlock();
 			}
 		}
+
+		WriteableAssetMetadata(WriteableAssetMetadata&&) = delete;
+		WriteableAssetMetadata(const WriteableAssetMetadata&) = delete;
+		WriteableAssetMetadata& operator=(WriteableAssetMetadata&&) = delete;
+		WriteableAssetMetadata& operator=(const WriteableAssetMetadata&) = delete;
 
 		AssetMetadata* operator->() noexcept
 		{
@@ -44,10 +50,10 @@ namespace Volt
 		AssetMetadata* m_metadata;
 	};
 
-	class AssetMetadataConstReference
+	class ReadOnlyAssetMetadata
 	{
 	public:
-		AssetMetadataConstReference(AssetMetadata* inMetadata)
+		ReadOnlyAssetMetadata(AssetMetadata* inMetadata) noexcept
 			: m_metadata(inMetadata)
 		{
 			if (m_metadata)
@@ -56,12 +62,50 @@ namespace Volt
 			}
 		}
 
-		~AssetMetadataConstReference()
+		~ReadOnlyAssetMetadata() noexcept
 		{
 			if (m_metadata)
 			{
 				m_metadata->m_assetMetadataMutex.unlock_shared();
 			}
+		}
+
+		ReadOnlyAssetMetadata(ReadOnlyAssetMetadata&& other) noexcept
+		{
+			// We take control of the lock from the moved asset.
+			m_metadata = other.m_metadata;
+			other.m_metadata = nullptr;
+		}
+
+		ReadOnlyAssetMetadata(const ReadOnlyAssetMetadata& other) noexcept
+		{
+			// Lock the asset meta for this instance.
+			m_metadata = other.m_metadata;
+			if (m_metadata)
+			{
+				m_metadata->m_assetMetadataMutex.lock_shared();
+			}
+		}
+
+		ReadOnlyAssetMetadata& operator=(ReadOnlyAssetMetadata&& other) noexcept
+		{
+			// We take control of the lock from the moved asset.
+			m_metadata = other.m_metadata;
+			other.m_metadata = nullptr;
+
+			return *this;
+		}
+
+		ReadOnlyAssetMetadata& operator=(const ReadOnlyAssetMetadata& other) noexcept
+		{
+			// Lock the asset meta for this instance.
+			m_metadata = other.m_metadata;
+			if (m_metadata)
+			{
+				m_metadata->m_assetMetadataMutex.lock_shared();
+			}
+
+			return *this;
 		}
 
 		const AssetMetadata* operator->() const noexcept
@@ -83,8 +127,8 @@ namespace Volt
 		~AssetManager_New();
 
 		///// Asset Metadata /////
-		LockedAssetMetadata GetWriteableAssetMetadata(AssetHandle assetHandle) const;
-		AssetMetadataConstReference GetReadOnlyAssetMetadata(AssetHandle assetHandle) const;
+		WriteableAssetMetadata GetWriteableAssetMetadata(AssetHandle assetHandle) const;
+		ReadOnlyAssetMetadata GetReadOnlyAssetMetadata(AssetHandle assetHandle) const;
 		AssetMetadata GetAssetMetadataCopy(AssetHandle assetHandle) const;
 
 		///// Asset /////
@@ -95,17 +139,20 @@ namespace Volt
 		// Will trigger a serialization of the asset, if it has an assigned filepath.
 		void SaveAsset(AssetHandle assetHandle);
 		
+		// Returns wether or not the asset exists in the asset registry.
+		bool IsValidAssetHandle(AssetHandle assetHandle) const;
+
 		// Will return the requested asset if loaded, will otherwise stall until the asset has been loaded.
-		template<VoltAssetType T> RefPtr<T> GetAssetImmediately(AssetHandle assetHandle);
+		template<VoltAssetType T> AssetReference<T> GetAssetImmediately(AssetHandle assetHandle);
 		// Will return true and the asset if it is loaded, if the asset is not loaded it will queue it for loading.
-		template<VoltAssetType T> bool TryGetAsset(AssetHandle assetHandle, RefPtr<T>& outAsset);
+		template<VoltAssetType T> bool TryGetAsset(AssetHandle assetHandle, AssetReference<T>& outAsset);
 
 		// Creates an asset that only lives in memory during the current application run, is not serializable to disk.
-		template<VoltAssetType T, typename... Args> RefPtr<T> CreateMemoryAsset(std::string_view assetName, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateMemoryAsset(std::string_view assetName, Args&&... args);
 		// Creates an asset that does not have a filepath yet.
-		template<VoltAssetType T, typename... Args> RefPtr<T> CreateAsset(std::string_view assetName, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAsset(std::string_view assetName, Args&&... args);
 		// Creates an asset, assigns a filepath and creates the asset disk file itself.
-		template<VoltAssetType T, typename... Args> RefPtr<T> CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args);
 
 		void CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath);
 
@@ -119,7 +166,16 @@ namespace Volt
 	private:
 		friend class AssetRefCounter;
 
-		template<VoltAssetType T, typename... Args> RefPtr<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, Args&&... args);
+		struct ScopedAssetLock
+		{
+			ScopedAssetLock(RefPtr<Asset_New> asset);
+			~ScopedAssetLock();
+
+		private:
+			RefPtr<Asset_New> m_asset;
+		};
+
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, Args&&... args);
 
 		void UnloadAndFreeAsset(AssetRefCounter* assetRefCounter);
 
@@ -129,39 +185,39 @@ namespace Volt
 	};
 
 	template<VoltAssetType T> 
-	RefPtr<T> AssetManager_New::GetAssetImmediately(AssetHandle assetHandle)
+	AssetReference<T> AssetManager_New::GetAssetImmediately(AssetHandle assetHandle)
 	{
 
 	}
 
 	template<VoltAssetType T>
-	bool AssetManager_New::TryGetAsset(AssetHandle assetHandle, RefPtr<T>& outAsset)
+	bool AssetManager_New::TryGetAsset(AssetHandle assetHandle, AssetReference<T>& outAsset)
 	{
 
 	}
 
 	template<VoltAssetType T, typename... Args> 
-	RefPtr<T> AssetManager_New::CreateMemoryAsset(std::string_view assetName, Args&&... args)
+	AssetReference<T> AssetManager_New::CreateMemoryAsset(std::string_view assetName, Args&&... args)
 	{
 		constexpr bool IsMemoryAsset = true;
 		return CreateAssetImpl<T>(assetName, IsMemoryAsset, std::forward<Args>(args)...);
 	}
 
 	template<VoltAssetType T, typename... Args> 
-	RefPtr<T> AssetManager_New::CreateAsset(std::string_view assetName, Args&&... args)
+	AssetReference<T> AssetManager_New::CreateAsset(std::string_view assetName, Args&&... args)
 	{
 		constexpr bool IsMemoryAsset = false;
 		return CreateAssetImpl<T>(assetName, IsMemoryAsset, std::forward<Args>(args)...);
 	}
 
 	template<VoltAssetType T, typename... Args> 
-	RefPtr<T> AssetManager_New::CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args)
+	AssetReference<T> AssetManager_New::CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args)
 	{
 
 	}
 
 	template<VoltAssetType T, typename... Args> 
-	RefPtr<T> AssetManager_New::CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, Args&&... args)
+	AssetReference<T> AssetManager_New::CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, Args&&... args)
 	{
 		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>(std::forward<Args>(args)...);
 

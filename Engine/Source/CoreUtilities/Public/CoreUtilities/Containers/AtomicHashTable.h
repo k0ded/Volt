@@ -36,9 +36,9 @@ public:
 			checksum = shiftxor(hash);
 
 			uint64_t expected = 0;
- 			uint64_t storedChecksum = m_checksum[outIndex].atomic.compare_exchange_strong(expected, checksum, std::memory_order::relaxed);
+ 			bool replaced = m_checksum[outIndex].atomic.compare_exchange_strong(expected, checksum, std::memory_order::relaxed);
 
-			if (storedChecksum == 0 || storedChecksum == checksum)
+			if (replaced || expected == checksum)
 			{
 				break;
 			}
@@ -66,9 +66,11 @@ public:
 		while (iteration++ < NumMaxIterations)
 		{
 			checksum = shiftxor(hash);
-		
-			uint64_t storedChecksum = m_checksum[hashIndex].compare_exchange_strong(checksum, 0ull, std::memory_order::relaxed);
-			if (storedChecksum == 0 || storedChecksum == checksum)
+
+			uint64_t expected = checksum;
+
+			bool replaced = m_checksum[hashIndex].atomic.compare_exchange_strong(expected, 0ull, std::memory_order::relaxed);
+			if (replaced || expected == 0)
 			{
 				break;
 			}
