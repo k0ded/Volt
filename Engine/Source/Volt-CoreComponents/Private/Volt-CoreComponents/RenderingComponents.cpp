@@ -52,18 +52,6 @@ namespace Volt
 		StreamingManager::Get().InvalidateInstance(component.m_streamingInstanceID, CreateStreamingInstanceDescription(component, entity.GetID(), component.m_scenePrimitiveData));
 	}
 
-	void MeshComponent::OnComponentCopied(MeshEntity entity)
-	{
-		auto& component = entity.GetComponent<MeshComponent>();
-
-		if (component.handle == Asset::Null())
-		{
-			return;
-		}
-
-		StreamingManager::Get().InvalidateInstance(component.m_streamingInstanceID, CreateStreamingInstanceDescription(component, entity.GetID(), component.m_scenePrimitiveData));
-	}
-
 	void MeshComponent::OnTransformChanged(MeshEntity entity)
 	{
 		auto& meshComponent = entity.GetComponent<MeshComponent>();

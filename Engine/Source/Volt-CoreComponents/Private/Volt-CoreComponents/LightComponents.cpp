@@ -96,14 +96,6 @@ namespace Volt
 		component.m_sceneLightData->Invalidate();
 	}
 
-	void PointLightComponent::OnComponentCopied(LightEntity entity)
-	{
-		auto& component = entity.GetComponent<PointLightComponent>();
-		VT_ENSURE(component.m_sceneLightData);
-
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
-	}
-
 	void PointLightComponent::OnMemberChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<PointLightComponent>();
@@ -133,14 +125,6 @@ namespace Volt
 		component.m_sceneLightData->Invalidate();
 	}
 
-	void SpotLightComponent::OnComponentCopied(LightEntity entity)
-	{
-		auto& component = entity.GetComponent<SpotLightComponent>();
-		VT_ENSURE(component.m_sceneLightData);
-
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
-	}
-
 	void SpotLightComponent::OnMemberChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SpotLightComponent>();
@@ -168,14 +152,6 @@ namespace Volt
 		VT_ENSURE(component.m_sceneLightData);
 
 		component.m_sceneLightData->Invalidate();
-	}
-
-	void DirectionalLightComponent::OnComponentCopied(LightEntity entity)
-	{
-		auto& component = entity.GetComponent<DirectionalLightComponent>();
-		VT_ENSURE(component.m_sceneLightData);
-
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
 
 	void DirectionalLightComponent::OnMemberChanged(LightEntity entity)
@@ -210,12 +186,6 @@ namespace Volt
 
 		StreamingManager::Get().RemoveInstance(component.m_streamingInstanceID);
 		component.m_sceneLightData = nullptr;
-	}
-
-	void SkylightComponent::OnComponentCopied(LightEntity entity)
-	{
-		auto& component = entity.GetComponent<SkylightComponent>();
-		component.UpdateSceneLightData(entity.GetID());
 	}
 
 	void SkylightComponent::OnMemberChanged(LightEntity entity)

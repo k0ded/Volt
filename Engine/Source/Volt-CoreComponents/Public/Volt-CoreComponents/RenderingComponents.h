@@ -40,7 +40,6 @@ namespace Volt
 			reflect.AddMember(&MeshComponent::handle, "handle", "Mesh", "", Asset::Null(), AssetTypes::Mesh);
 			reflect.AddMember(&MeshComponent::materials, "materials", "Materials", "", Asset::Null(), AssetTypes::Material);
 			reflect.SetOnMemberChangedCallback(&MeshComponent::OnMemberChanged);
-			reflect.SetOnComponentCopiedCallback(&MeshComponent::OnComponentCopied);
 			reflect.SetOnInitializeCallback(&MeshComponent::OnIntitialize);
 			reflect.SetOnDestroyCallback(&MeshComponent::OnDestroy);
 			reflect.SetOnTransformChangedCallback(&MeshComponent::OnTransformChanged);
@@ -54,7 +53,6 @@ namespace Volt
 		VTCC_API static void OnDestroy(MeshEntity entity);
 		VTCC_API static void OnIntitialize(MeshEntity entity);
 		VTCC_API static void OnTransformChanged(MeshEntity entity);
-		VTCC_API static void OnComponentCopied(MeshEntity entity);
 
 		Ref<ScenePrimitiveData> m_scenePrimitiveData;
 		StreamingInstanceID m_streamingInstanceID;

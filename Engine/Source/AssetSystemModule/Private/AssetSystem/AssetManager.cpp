@@ -204,10 +204,11 @@ namespace Volt
 
 		for (size_t index = 0; const auto & file : engineAssetFiles)
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index]()
+			//taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index]()
 			{
 				DeserializeAssetMetadata(file, serializedMetadata[index]);
-			});
+			}
+				//);
 
 			index++;
 		}
@@ -216,10 +217,11 @@ namespace Volt
 
 		for (size_t index = 0; const auto & file : projectAssetFiles)
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index, offset]()
+			//taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index, offset]()
 			{
 				DeserializeAssetMetadata(file, serializedMetadata[offset + index]);
-			});
+			}
+				//);
 
 			index++;
 		}
