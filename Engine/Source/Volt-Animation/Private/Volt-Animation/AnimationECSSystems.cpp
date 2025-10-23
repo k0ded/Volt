@@ -17,6 +17,10 @@ namespace Volt
 	{
 		AnimationPlayerComponent& animPlayerComp = entity.GetComponent<AnimationPlayerComponent>();
 
+		if (animPlayerComp.animationHandle == Asset::Null())
+		{
+			return;
+		}
 		Ref<Animation> animation = AssetManager::QueueAsset<Animation>(animPlayerComp.animationHandle);
 		if (!animation->IsValid())
 		{
