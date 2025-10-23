@@ -31,6 +31,7 @@ namespace Volt
 		struct PrimitiveAddInfo
 		{
 			EntityID entityId;
+			Ref<Mesh> padding;
 			Ref<Mesh> mesh;
 			Ref<RenderMaterial> material;
 			uint32_t subMeshIndex;

@@ -18,6 +18,7 @@ namespace Volt
 		EntityID entityId;
 	
 		Weak<Mesh> mesh;
+		Ref<Mesh> padding;
 		Weak<RenderMaterial> material;
 
 		uint32_t subMeshIndex = 0;
