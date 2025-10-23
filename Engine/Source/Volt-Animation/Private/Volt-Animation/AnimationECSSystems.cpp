@@ -2,6 +2,7 @@
 
 #include "Volt-Animation/AnimationComponents.h"
 #include "Volt-Animation/Assets/Animation.h"
+#include "Volt-Animation/TempAnimator.h"
 
 #include <AssetSystem/AssetManager.h>
 
@@ -35,10 +36,7 @@ namespace Volt
 			animPlayerComp.currentPlayTime -= animation->GetDuration();
 		}
 		
-		const float fraction = animPlayerComp.currentPlayTime / animation->GetDuration();
-		VT_UNUSED(fraction);
-		//const Vector<glm::mat4> pose = animation->Sample(fraction, /*Need a skelington here*/);
-		//todo: put the pose on the animated mesh component here
+		animPlayerComp.animator->Update(animPlayerComp.currentPlayTime);
 	}
 
 	void RegisterModule(ECSBuilder& builder)

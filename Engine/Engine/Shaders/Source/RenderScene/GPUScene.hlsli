@@ -101,3 +101,4 @@ StructuredBuffer<PrimitiveDrawData> PrimitiveDrawDataBuffer;
 StructuredBuffer<PrimitiveDrawData> PrevPrimitiveDrawDataBuffer;
 StructuredBuffer<GPUMesh> GPUMeshes;
 StructuredBuffer<LightDrawData> SceneLights;
+StructuredBuffer<float4x4> AnimatedBones;

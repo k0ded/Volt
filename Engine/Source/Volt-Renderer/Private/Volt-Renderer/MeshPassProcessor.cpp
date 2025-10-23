@@ -189,6 +189,7 @@ namespace Volt
 		newDrawCommand.renderPipeline = renderPipeline;
 		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexPositionsBuffer());
 		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexMaterialBuffer());
+		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexAnimationInfoBuffer());
 		newDrawCommand.indexBuffer = renderPrimitive.mesh->GetIndexBuffer();
 		newDrawCommand.primitiveIndex = renderPrimitive.primitiveIndex;
 		newDrawCommand.renderPrimitiveID = renderPrimitive.id;

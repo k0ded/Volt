@@ -142,5 +142,6 @@ namespace Volt
 		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrevPrimitiveDrawDataBuffer)
 		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<GPUMesh>, GPUMeshes)
 		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<LightDrawData>, SceneLights)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<float4x4>, AnimatedBones)
 	END_SHADER_PARAMETER_STRUCT()
 }

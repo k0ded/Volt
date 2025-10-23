@@ -15,6 +15,7 @@ namespace Volt
 {
 	class Mesh;
 	class RenderScene;
+	class TempAnimator;
 
 	struct ScenePrimitiveDescription
 	{
@@ -25,7 +26,8 @@ namespace Volt
 	class VTR_API ScenePrimitiveData
 	{
 	public:
-		ScenePrimitiveData(const EntityID& entityId, RenderScene* renderScene);
+		ScenePrimitiveData(const EntityID& relatedEntity, RenderScene* renderScene);
+		ScenePrimitiveData(const EntityID& relatedEntity, RenderScene* renderScene, Ref<TempAnimator> animator);
 		~ScenePrimitiveData();
 
 		void InitializeFromDescription(const ScenePrimitiveDescription& description);
@@ -36,6 +38,7 @@ namespace Volt
 		void DestroyScenePrimitives();
 
 		Ref<Mesh> m_primitiveMesh;
+		Ref<TempAnimator> m_animator;
 		MaterialTable m_primitiveMaterialTable;
 
 		EntityID m_relatedEntity;

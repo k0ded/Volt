@@ -5,8 +5,7 @@
 #include <Volt-Core/AssetTypes.h>
 
 #include <Volt-Assets/StreamingInstanceID.h>
-
-#include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Animation/AnimationComponents.h>
 
 #include <EntitySystem/ComponentRegistry.h>
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
@@ -23,6 +22,7 @@ namespace Volt
 		using MeshEntity = ECS::Access
 			::Write<MeshComponent>
 			::Read<IDComponent>
+			::WriteIfExists<AnimationPlayerComponent>
 			::As<ECS::Type::Entity>;
 
 		AssetHandle handle = Asset::Null();

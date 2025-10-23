@@ -8,6 +8,7 @@
 namespace Volt
 {
 	class Mesh;
+	class TempAnimator;
 	class RenderMaterial;
 
 	using RenderPrimitiveID = UUID64;
@@ -18,13 +19,15 @@ namespace Volt
 		EntityID entityId;
 	
 		Weak<Mesh> mesh;
-		Ref<Mesh> padding;
+		Ref<TempAnimator> animator;
 		Weak<RenderMaterial> material;
 
 		uint32_t subMeshIndex = 0;
 		uint32_t vertexBufferIndex = 0;
 		uint32_t meshletStartOffset = 0;
 		uint32_t primitiveIndex = 0;
+
+		VT_NODISCARD VT_INLINE bool IsAnimated() const { return animator != nullptr; }
 	};
 
 	inline bool operator==(const RenderPrimitiveData& lhs, const RenderPrimitiveData& rhs) { return lhs.id == rhs.id; }

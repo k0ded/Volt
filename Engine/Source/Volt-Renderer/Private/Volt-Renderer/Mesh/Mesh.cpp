@@ -151,6 +151,7 @@ namespace Volt
 			desc.count = static_cast<uint32_t>(vertexAnimationData.size());
 			desc.elementSize = sizeof(VertexAnimationData);
 			desc.debugName = meshName + "VertexAnimationData";
+			desc.usage = RHI::BufferUsage::VertexBuffer;
 
 			m_vertexAnimationDataBuffer = RHI::StorageBuffer::Create(desc);
 			m_vertexAnimationDataBuffer->SetData(vertexAnimationData.data(), vertexAnimationData.size() * sizeof(VertexAnimationData));

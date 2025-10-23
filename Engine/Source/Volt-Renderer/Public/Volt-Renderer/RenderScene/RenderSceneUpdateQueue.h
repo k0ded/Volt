@@ -9,6 +9,7 @@
 
 namespace Volt
 {
+	class TempAnimator;
 	class Mesh;
 	class RenderMaterial;
 
@@ -31,7 +32,7 @@ namespace Volt
 		struct PrimitiveAddInfo
 		{
 			EntityID entityId;
-			Ref<Mesh> padding;
+			Ref<TempAnimator> animator;
 			Ref<Mesh> mesh;
 			Ref<RenderMaterial> material;
 			uint32_t subMeshIndex;
@@ -60,7 +61,7 @@ namespace Volt
 
 		RenderSceneUpdateQueue();
 
-		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
+		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<TempAnimator> animator, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
 		UUID64 AddLightInstance(EntityID entityId, const SceneLightDescription& description);
 
 		void RemovePrimitiveInstance(UUID64 id);
