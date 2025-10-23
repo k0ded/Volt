@@ -7,7 +7,6 @@
 
 #include "Volt-Animation/Assets/Animation.h"
 #include "Volt-Animation/Assets/Skeleton.h"
-#include "Volt-Renderer/AnimatedCharacter.h"
 
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/Texture/Texture2D.h"
@@ -141,28 +140,6 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 					std::make_pair("Entity Count", Utility::ToStringWithThousandSeparator(stats.entityCount)),
 				};
 
-				return data;
-			})
-	},
-	{
-		AssetTypes::AnimatedCharacter,
-		EditorAssetData(
-			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
-			{
-				auto asset = Volt::AssetManager::GetAsset<Volt::AnimatedCharacter>(aAssetHandle);
-				if (!asset->IsValid())
-				{
-					return Vector<std::pair<std::string, std::string>>();
-				}
-				const auto skeletonFilePath = "";//Volt::AssetManager::GetFilePathFromAssetHandle(asset->GetSkeleton()->handle).string();
-				const auto meshFilePath = ""; //Volt::AssetManager::GetFilePathFromAssetHandle(asset->GetSkin()->handle).string();
-
-				Vector<std::pair<std::string, std::string>> data =
-				{
-					std::make_pair("Skeleton Path", skeletonFilePath),
-					std::make_pair("Mesh Path", meshFilePath),
-					std::make_pair("Animation Count", std::to_string(asset->GetAnimationCount())),
-				};
 				return data;
 			})
 	},

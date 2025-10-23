@@ -9,8 +9,6 @@
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
 
-#include <Volt-Animation/MotionWeaver.h>
-
 #include <AssetSystem/AssetManager.h>
 
 namespace Volt
@@ -62,34 +60,5 @@ namespace Volt
 	{
 		auto& component = entity.GetComponent<CameraComponent>();
 		component.camera = CreateRef<Camera>(glm::radians(component.fieldOfView), 1.f, 16.f / 9.f, component.nearPlane, component.farPlane);
-	}
-
-	void MotionWeaveComponent::OnStart(WeaveEntity entity)
-	{
-		//const auto& meshComponent = entity.GetComponent<MeshComponent>();
-		//auto& weaveComponent = entity.GetComponent<MotionWeaveComponent>();
-
-		//auto scene = SceneManager::GetActiveScene();
-
-		//auto sceneEntity = scene->GetSceneEntityFromScriptingEntity(entity);
-
-		//weaveComponent.MotionWeaver = MotionWeaver::Create(weaveComponent.motionWeaveDatabase);
-
-		//Ref<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.handle);
-		//if (mesh && mesh->IsValid())
-		//{
-		//	const auto& materialTable = mesh->GetMaterialTable();
-
-		//	for (size_t i = 0; i < mesh->GetSubMeshes().size(); i++)
-		//	{
-		//		auto material = AssetManager::QueueAsset<Material>(materialTable.GetMaterial(mesh->GetSubMeshes().at(i).materialIndex));
-		//		if (!material->IsValid())
-		//		{
-		//		}
-
-		//		auto uuid = scene->GetRenderScene()->AddInstance(entity.GetID(), weaveComponent.MotionWeaver, mesh, material, static_cast<uint32_t>(i));
-		//		weaveComponent.renderObjectIds.emplace_back(uuid);
-		//	}
-		//}
 	}
 }

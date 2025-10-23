@@ -11,7 +11,6 @@
 
 #include <RenderCore/Shader/GlobalShader.h>
 
-#include <Volt-Animation/MotionWeaver.h>
 #include <Volt-Animation/Assets/Skeleton.h>
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
@@ -87,31 +86,34 @@ namespace Volt
 		CompactValidPrimitiveDrawDatas(renderGraph);
 		BuildPerMeshIndirectDrawCommands(renderGraph);
 
-		// Temporary animation sampling
-		m_currentBoneCount = 0;
-		for (const auto& animatedObject : m_animatedRenderObjects)
-		{
-			auto& primitiveDrawData = m_primitiveDrawData.at(m_primitiveIndicesContainer.GetIndexFromID(animatedObject));
-			primitiveDrawData.boneOffset = m_currentBoneCount;
+		//todo: need animations to work again
+		//// Temporary animation sampling
+		//m_currentBoneCount = 0;
+		//for (const auto& animatedObject : m_animatedRenderObjects)
+		//{
+		//	auto& primitiveDrawData = m_primitiveDrawData.at(m_primitiveIndicesContainer.GetIndexFromID(animatedObject));
+		//	primitiveDrawData.boneOffset = m_currentBoneCount;
 
-			const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
-			m_currentBoneCount += static_cast<uint32_t>(renderObject.motionWeaver->GetSkeleton()->GetJointCount());
-		}
+		//	const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
+		//	//todo_fabian: need bones for animations
+		//	//m_currentBoneCount += static_cast<uint32_t>(renderObject.motionWeaver->GetSkeleton()->GetJointCount());
+		//}
 
-		m_animationBufferStorage.resize(m_currentBoneCount);
-		if (m_currentBoneCount > 0)
-		{
-			for (const auto& animatedObject : m_animatedRenderObjects)
-			{
-				const auto& primitiveDrawData = m_primitiveDrawData.at(m_primitiveIndicesContainer.GetIndexFromID(animatedObject));
-				const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
+		//m_animationBufferStorage.resize(m_currentBoneCount);
+		//if (m_currentBoneCount > 0)
+		//{
+		//	for (const auto& animatedObject : m_animatedRenderObjects)
+		//	{
+		//		const auto& primitiveDrawData = m_primitiveDrawData.at(m_primitiveIndicesContainer.GetIndexFromID(animatedObject));
+		//		const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
 
-				const auto sample = renderObject.motionWeaver->Sample();
-				memcpy_s(m_animationBufferStorage.data() + primitiveDrawData.boneOffset, sizeof(glm::mat4) * sample.size(), sample.data(), sizeof(glm::mat4) * sample.size());
-			}
-		}
+		//		//todo_fabian: need some sampling for animations
+		//		/*const auto sample = renderObject.motionWeaver->Sample();
+		//		memcpy_s(m_animationBufferStorage.data() + primitiveDrawData.boneOffset, sizeof(glm::mat4) * sample.size(), sample.data(), sizeof(glm::mat4) * sample.size());*/
+		//	}
+		//}
 
-		if (m_currentBoneCount > 0)
+		/*if (m_currentBoneCount > 0)
 		{
 			auto bonesBuffer = m_buffers.bonesBuffer;
 
@@ -119,7 +121,7 @@ namespace Volt
 
 			bonesBuffer->GetResource()->SetData(m_animationBufferStorage.data(), m_animationBufferStorage.size() * sizeof(glm::mat4));
 			m_animationBufferStorage.clear();
-		}
+		}*/
 
 		if (m_rayTracingScene)
 		{
@@ -171,12 +173,7 @@ namespace Volt
 
 	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
 	{
-		return m_updateQueue.AddPrimitiveInstance(entityId, nullptr, mesh, material, subMeshIndex);
-	}
-
-	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
-	{
-		return m_updateQueue.AddPrimitiveInstance(entityId, motionWeaver, mesh, material, subMeshIndex);
+		return m_updateQueue.AddPrimitiveInstance(entityId, mesh, material, subMeshIndex);
 	}
 
 	void RenderScene::RemovePrimitiveInstance(UUID64 id)
@@ -425,17 +422,11 @@ namespace Volt
 		UUID64 newId = queuedUpdate.primitiveInfo.id;
 		auto& newObj = m_renderPrimitives.emplace_back();
 
-		if (queuedUpdate.primitiveInfo.motionWeaver)
-		{
-			m_animatedRenderObjects.emplace_back(newId);
-		}
-
 		newObj.id = newId;
 		newObj.entityId = queuedUpdate.primitiveInfo.entityId;
 		newObj.mesh = queuedUpdate.primitiveInfo.mesh;
 		newObj.material = queuedUpdate.primitiveInfo.material;
 		newObj.subMeshIndex = queuedUpdate.primitiveInfo.subMeshIndex;
-		newObj.motionWeaver = queuedUpdate.primitiveInfo.motionWeaver;
 
 		TryAddMaterial(queuedUpdate.primitiveInfo.material);
 		TryAddMesh(queuedUpdate.primitiveInfo.mesh);
@@ -496,7 +487,8 @@ namespace Volt
 
 			OnRenderPrimitiveRemoved(*it);
 
-			const bool isAnimated = (*it).IsAnimated();
+			//todo: do something about this? previously it checked if the primitive had a motion weaver
+			const bool isAnimated = false;
 
 			if (it != m_renderPrimitives.end())
 			{
@@ -616,7 +608,7 @@ namespace Volt
 		primitiveDrawData.entityId = entity.GetID();
 		primitiveDrawData.materialId = GetMaterialIndex(renderObject.material);
 		primitiveDrawData.meshletStartOffset = renderObject.meshletStartOffset;
-		primitiveDrawData.isAnimated = renderObject.IsAnimated();
+		primitiveDrawData.isAnimated = false;
 		primitiveDrawData.flags = PrimitiveFlags::Valid;
 
 #if 0

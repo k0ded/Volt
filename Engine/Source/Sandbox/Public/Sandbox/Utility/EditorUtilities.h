@@ -8,29 +8,11 @@
 
 namespace Volt
 {
-	class AnimationGraphAsset;
-	class AnimatedCharacter;
 	class Texture2D;
 	class Mesh;
 	class Entity;
 	class Scene;
 }
-
-struct NewCharacterData
-{
-	std::string name = "None";
-	Volt::AssetHandle skeletonHandle = Volt::Asset::Null();
-	Volt::AssetHandle skinHandle = Volt::Asset::Null();
-	std::filesystem::path destination = "Assets/Animations/";
-};
-
-struct NewAnimationGraphData
-{
-	std::string name = "None";
-	Volt::AssetHandle skeletonHandle = Volt::Asset::Null();
-
-	std::filesystem::path destination = "Assets/Animations/";
-};
 
 enum class SaveReturnState
 {
@@ -46,8 +28,6 @@ public:
 	static bool AssetBrowserPopupField(const std::string& id, Volt::AssetHandle& assetHandle, AssetType wantedType = AssetTypes::None);
 
 	static bool SearchBar(std::string& outSearchQuery, bool& outHasSearchQuery, bool setAsActive = false);
-
-	static bool NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCharacter>& outCharacter, NewCharacterData& aCharacterData);
 
 	static SaveReturnState SaveFilePopup(const std::string& aId);
 

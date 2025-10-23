@@ -91,25 +91,6 @@ inline static void DrawIconKey(ImDrawList* drawList, const ImVec2& a, const ImVe
 		else
 			drawList->PathFillConvex(color);
 	}
-	else if (type == IconType::AnimationPose)
-	{
-		Ref<Volt::Texture2D> texture;
-		if (filled)
-		{
-			texture = EditorResources::GetEditorIcon(EditorIcon::GraphPinAnimationPoseFilled);
-		}
-		else
-		{
-			texture = EditorResources::GetEditorIcon(EditorIcon::GraphPinAnimationPose);
-		}
-		if (texture)
-		{
-			if (texture->IsValid())
-			{
-				drawList->AddImage(UI::GetTextureID(texture), rect.Min, rect.Max, ImVec2(0, 0), ImVec2(1, 1), color);
-			}
-		}
-	}
 	else
 	{
 		auto triangleStart = rect_center_x + 0.32f * rect_w;

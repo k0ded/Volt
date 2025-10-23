@@ -29,7 +29,6 @@ namespace Volt
 	class EntityScene;
 	class RenderMaterial;
 	class RenderGraph;
-	class MotionWeaver;
 	class RayTracingScene;
 
 	struct SceneLightDescription;
@@ -61,7 +60,6 @@ namespace Volt
 		void InvalidateMaterial(Ref<RenderMaterial> material);
 
 		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
-		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
 		void RemovePrimitiveInstance(UUID64 id);
 
 		void InvalidateLightInstance(UUID64 id);

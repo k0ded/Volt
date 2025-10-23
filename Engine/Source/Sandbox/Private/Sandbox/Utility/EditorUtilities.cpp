@@ -10,7 +10,6 @@
 #include <Volt-Assets/MeshAsset.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
-#include <Volt-Renderer/AnimatedCharacter.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
 
 #include <Volt-Animation/Assets/Skeleton.h>
@@ -199,56 +198,6 @@ bool EditorUtils::AssetBrowserPopupInternal(const std::string& popupId, Volt::As
 	}
 
 	return changed;
-}
-
-bool EditorUtils::NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCharacter>& outCharacter, NewCharacterData& aCharacterData)
-{
-	bool created = false;
-
-	UI::ScopedStyleFloat rounding{ ImGuiStyleVar_FrameRounding, 2.f };
-	if (UI::BeginModal(aId, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
-	{
-		UI::ShiftCursor(300.f, 0.f);
-		UI::ShiftCursor(-300.f, 0.f);
-
-		if (UI::BeginProperties("NewCharacter"))
-		{
-			UI::Property("Name", aCharacterData.name);
-			EditorUtils::Property("Skeleton", aCharacterData.skeletonHandle, AssetTypes::Skeleton);
-			EditorUtils::Property("Skin", aCharacterData.skinHandle, AssetTypes::Mesh);
-			UI::PropertyDirectory("Destination", aCharacterData.destination);
-
-			UI::EndProperties();
-		}
-
-		if (ImGui::Button("Cancel"))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-
-		ImGui::SameLine();
-
-		if (ImGui::Button("Create"))
-		{
-			created = true;
-			outCharacter = Volt::AssetManager::CreateAssetAndFile<Volt::AnimatedCharacter>(aCharacterData.destination, aCharacterData.name);
-
-			if (aCharacterData.skeletonHandle != Volt::Asset::Null())
-			{
-				outCharacter->SetSkeleton(Volt::AssetManager::GetAsset<Volt::Skeleton>(aCharacterData.skeletonHandle));
-			}
-
-			if (aCharacterData.skinHandle != Volt::Asset::Null())
-			{
-				outCharacter->SetSkin(Volt::AssetManager::GetAsset<Volt::MeshAsset>(aCharacterData.skinHandle)->GetMesh());
-			}
-			ImGui::CloseCurrentPopup();
-		}
-
-		UI::EndModal();
-	}
-
-	return created;
 }
 
 SaveReturnState EditorUtils::SaveFilePopup(const std::string& aId)

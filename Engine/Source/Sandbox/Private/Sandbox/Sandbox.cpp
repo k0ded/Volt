@@ -14,7 +14,6 @@
 #include "Sandbox/Window/AssetBrowser/AssetBrowserPanel.h"
 #include "Sandbox/Window/LogPanel.h"
 #include "Sandbox/Window/EngineStatisticsPanel.h"
-#include "Sandbox/Window/CharacterEditorPanel.h"
 #include "Sandbox/Window/AssetRegistryPanel.h"
 #include "Sandbox/Window/ThemesPanel.h"
 #include "Sandbox/Window/Taiga/TaigaPanel.h"
@@ -33,7 +32,6 @@
 #include "Sandbox/Window/SkeletonEditorPanel.h"
 #include "Sandbox/Window/AnimationEditorPanel.h"
 #include "Sandbox/Window/GameUIEditorPanel.h"
-#include "Sandbox/Window/MotionWeaveDatabasePanel.h"
 #include "Sandbox/Window/RenderResourcesPanel.h"
 #include "Sandbox/Window/RenderGraphDebuggerPanel.h"
 #include "Sandbox/Window/TextureViewerPanel.h"
@@ -241,11 +239,9 @@ void Sandbox::RegisterPanels()
 
 	EditorLibrary::Register<ProjectConversionPanel>("Advanced");
 
-	//EditorLibrary::RegisterWithType<CharacterEditorPanel>("Animation", AssetTypes::AnimatedCharacter); // we dont have animated characters anymore
 	EditorLibrary::RegisterWithType<SkeletonEditorPanel>("Animation", AssetTypes::Skeleton);
 	EditorLibrary::RegisterWithType<AnimationEditorPanel>("Animation", AssetTypes::Animation);
 	EditorLibrary::RegisterWithType<BlendSpaceEditorPanel>("Animation", AssetTypes::BlendSpace);
-	//EditorLibrary::RegisterWithType<MotionWeaveDatabasePanel>("Animation", AssetTypes::MotionWeave); // motion weave not working yet
 
 	m_assetBrowserPanel = EditorLibrary::Register<AssetBrowserPanel>("Asset Browser", m_runtimeScene, "##Main");
 

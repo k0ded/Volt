@@ -11,14 +11,13 @@ namespace Volt
 		m_updateQueue.Allocate(NumMaxUpdates);
 	}
 
-	UUID64 RenderSceneUpdateQueue::AddPrimitiveInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
+	UUID64 RenderSceneUpdateQueue::AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
 	{
 		QueuedUpdate queuedUpdate{};
 		queuedUpdate.operation = UpdateOperation::Add;
 		queuedUpdate.type = UpdateType::Primitive;
 
 		queuedUpdate.primitiveInfo.entityId = entityId;
-		queuedUpdate.primitiveInfo.motionWeaver = motionWeaver;
 		queuedUpdate.primitiveInfo.mesh = mesh;
 		queuedUpdate.primitiveInfo.material = material;
 		queuedUpdate.primitiveInfo.subMeshIndex = subMeshIndex;
