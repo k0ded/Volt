@@ -138,15 +138,19 @@ namespace Volt
 		}
 	}
 
-	void AssetRegistry::RemoveAssetMetadata(AssetHandle assetHandle)
+	void AssetRegistry::RemoveAssetMetadata(AssetHandle assetHandle, bool unlockMutex)
 	{
+		// Remove the metadata from the hash table and get it's indirection index.
+		// It should now be safe to release the mutex and remove the references.
 		uint64_t metadataIndex = UINT64_MAX;
-		if (m_hashTable.Get(assetHandle, metadataIndex))
+		if (m_hashTable.GetAndRemove(assetHandle, metadataIndex))
 		{
+			if (unlockMutex)
+			{
+				m_metadataIndirection.at(metadataIndex)->m_assetMetadataMutex.unlock();
+			}
 			m_metadata.Free(m_metadataIndirection.at(metadataIndex));
 			m_metadataIndirection[metadataIndex] = nullptr;
-	
-			m_hashTable.Remove(assetHandle);
 		}
 		else
 		{

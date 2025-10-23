@@ -25,4 +25,15 @@ namespace Volt
 
 		return nullptr;
 	}
+
+	bool AssetCache::TryGetAsset(AssetHandle assetHandle, RefPtr<Asset_New>& outAsset)
+	{
+		if (m_assetMap.contains(assetHandle))
+		{
+			outAsset = m_assetMap.at(assetHandle);
+			return true;
+		}
+
+		return false;
+	}
 }

@@ -4,6 +4,7 @@
 #include <AssetSystem/AssetType.h>
 #include <AssetSystem/Asset_New.h>
 #include <AssetSystem/AssetFactory.h>
+#include <AssetSystem/AssetLocks.h>
 
 using namespace Volt;
 
@@ -37,11 +38,13 @@ namespace IntergrationTests
 			AssetReference<TestAsset> newAsset = g_assetManager->CreateMemoryAsset<TestAsset>("TestingAsset", 1001);
 			EXPECT_NE(newAsset, nullptr);
 
+			ScopedAssetReferenceLock assetLock{ newAsset };
+
 			newAssetHandle = newAsset->GetAssetHandle();
 			EXPECT_NE(newAssetHandle, Asset_New::Null());
 
 			EXPECT_EQ(newAsset->testValue, 1001);
-		
+
 			ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(newAssetHandle);
 			EXPECT_TRUE(assetMetadata->isMemoryAsset);
 			EXPECT_TRUE(assetMetadata->isLoaded);
@@ -57,6 +60,8 @@ namespace IntergrationTests
 		{
 			AssetReference<TestAsset> newAsset = g_assetManager->CreateAsset<TestAsset>("TestingAsset", 1001);
 			EXPECT_NE(newAsset, nullptr);
+
+			ScopedAssetReferenceLock assetLock{ newAsset };
 
 			newAssetHandle = newAsset->GetAssetHandle();
 			EXPECT_NE(newAssetHandle, Asset_New::Null());

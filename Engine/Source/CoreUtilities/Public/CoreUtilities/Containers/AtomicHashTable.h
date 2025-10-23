@@ -53,10 +53,10 @@ public:
 	}
 
 	template<typename KeyType>
-	void Remove(const KeyType& key)
+	bool GetAndRemove(const KeyType& key, uint64_t& outIndex)
 	{
 		uint64_t hash = std::hash<KeyType>()(key);
-		uint64_t hashIndex = hash % m_checksum.size();
+		outIndex = hash % m_checksum.size();
 
 		uint64_t checksum = 0;
 
@@ -69,17 +69,23 @@ public:
 
 			uint64_t expected = checksum;
 
-			bool replaced = m_checksum[hashIndex].atomic.compare_exchange_strong(expected, 0ull, std::memory_order::relaxed);
-			if (replaced || expected == 0)
+			bool replaced = m_checksum[outIndex].atomic.compare_exchange_strong(expected, 0ull, std::memory_order::relaxed);
+			if (replaced)
 			{
-				break;
+				return true;
+			}
+			else if (expected == 0)
+			{
+				return false;
 			}
 			else
 			{
 				hash = std::hash<uint64_t>()(hash);
-				hashIndex = hash % m_checksum.size();
+				outIndex = hash % m_checksum.size();
 			}
 		}
+
+		return iteration <= NumMaxIterations;
 	}
 
 	template<typename KeyType>

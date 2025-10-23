@@ -5,6 +5,7 @@
 #include "AssetSystem/AssetAllocator.h"
 #include "AssetSystem/AssetCache.h"
 #include "AssetSystem/AssetReference.h"
+#include "AssetSystem/AssetSerializerRegistry.h"
 
 #include <CoreUtilities/Pointers/RefPtr.h>
 
@@ -41,9 +42,19 @@ namespace Volt
 		WriteableAssetMetadata& operator=(WriteableAssetMetadata&&) = delete;
 		WriteableAssetMetadata& operator=(const WriteableAssetMetadata&) = delete;
 
-		AssetMetadata* operator->() noexcept
+		VT_INLINE AssetMetadata* operator->() noexcept
 		{
 			return m_metadata;
+		}
+
+		VT_INLINE AssetMetadata& operator*() noexcept
+		{
+			return *m_metadata;
+		}
+
+		VT_INLINE bool IsValid() const 
+		{
+			return m_metadata != nullptr;
 		}
 
 	private:
@@ -70,14 +81,14 @@ namespace Volt
 			}
 		}
 
-		ReadOnlyAssetMetadata(ReadOnlyAssetMetadata&& other) noexcept
+		VT_INLINE ReadOnlyAssetMetadata(ReadOnlyAssetMetadata&& other) noexcept
 		{
 			// We take control of the lock from the moved asset.
 			m_metadata = other.m_metadata;
 			other.m_metadata = nullptr;
 		}
 
-		ReadOnlyAssetMetadata(const ReadOnlyAssetMetadata& other) noexcept
+		VT_INLINE ReadOnlyAssetMetadata(const ReadOnlyAssetMetadata& other) noexcept
 		{
 			// Lock the asset meta for this instance.
 			m_metadata = other.m_metadata;
@@ -87,7 +98,7 @@ namespace Volt
 			}
 		}
 
-		ReadOnlyAssetMetadata& operator=(ReadOnlyAssetMetadata&& other) noexcept
+		VT_INLINE ReadOnlyAssetMetadata& operator=(ReadOnlyAssetMetadata&& other) noexcept
 		{
 			// We take control of the lock from the moved asset.
 			m_metadata = other.m_metadata;
@@ -96,7 +107,7 @@ namespace Volt
 			return *this;
 		}
 
-		ReadOnlyAssetMetadata& operator=(const ReadOnlyAssetMetadata& other) noexcept
+		VT_INLINE ReadOnlyAssetMetadata& operator=(const ReadOnlyAssetMetadata& other) noexcept
 		{
 			// Lock the asset meta for this instance.
 			m_metadata = other.m_metadata;
@@ -108,9 +119,19 @@ namespace Volt
 			return *this;
 		}
 
-		const AssetMetadata* operator->() const noexcept
+		VT_INLINE const AssetMetadata* operator->() const noexcept
 		{
 			return m_metadata;
+		}
+
+		VT_INLINE const AssetMetadata& operator*() const noexcept
+		{
+			return *m_metadata;
+		}
+
+		VT_INLINE bool IsValid() const
+		{
+			return m_metadata != nullptr;
 		}
 
 	private:
@@ -138,7 +159,8 @@ namespace Volt
 
 		// Will trigger a serialization of the asset, if it has an assigned filepath.
 		void SaveAsset(AssetHandle assetHandle);
-		
+		void SaveAsset(AssetReference<Asset_New> asset);
+
 		// Returns wether or not the asset exists in the asset registry.
 		bool IsValidAssetHandle(AssetHandle assetHandle) const;
 
@@ -177,6 +199,7 @@ namespace Volt
 
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, Args&&... args);
 
+		void LoadAsset(AssetHandle assetHandle, RefPtr<Asset_New> asset);
 		void UnloadAndFreeAsset(AssetRefCounter* assetRefCounter);
 
 		AssetRegistry m_assetRegistry;
@@ -187,7 +210,42 @@ namespace Volt
 	template<VoltAssetType T> 
 	AssetReference<T> AssetManager_New::GetAssetImmediately(AssetHandle assetHandle)
 	{
+		// Make sure the asset exists.
+		if (!m_assetRegistry.IsValidAssetHandle(assetHandle))
+		{
+			VT_LOGC(Warning, LogAssetSystem, "Asset handle {} is not a valid asset handle!", assetHandle);
+			return {};
+		}
 
+		// Try to get the asset from the asset cache.
+		RefPtr<Asset_New> tempAsset;
+		if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
+		{
+			VT_ENSURE(T::GetStaticType() == tempAsset->GetType());
+			return AssetReference<T>(tempAsset.As<T>());
+		}
+
+		// Check if we can actually load this asset.
+		if (!AssetSerializerRegistry::Get().HasSerializer(T::GetStaticType()))
+		{
+			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, T::GetStaticType()->GetName());
+			return {};
+		}
+
+		// Asset wasn't in the cache, create and load it.
+		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
+
+		{
+			ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+
+			// All metadatas should be valid.
+			VT_ENSURE(metadata->IsValid());
+
+			newAsset->AssignAssetHandle(metadata->handle);
+			newAsset->SetName(metadata->filePath.stem().string());
+		}
+
+		LoadAsset(assetHandle, newAsset);
 	}
 
 	template<VoltAssetType T>
@@ -213,7 +271,10 @@ namespace Volt
 	template<VoltAssetType T, typename... Args> 
 	AssetReference<T> AssetManager_New::CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args)
 	{
+		AssetReference<T> asset = CreateAsset<T>(assetName, std::forward<Args>(args)...);
 
+		std::filesystem::path targetPath = targetDirectory / (assetName + ".vtasset");
+		CreateFileForAsset(asset->GetAssetHandle(), targetPath);
 	}
 
 	template<VoltAssetType T, typename... Args> 
@@ -232,8 +293,7 @@ namespace Volt
 		newAsset->SetName(std::string(assetName));
 
 		// Setup a link back to the asset manager.
-		AssetRefCounter* assetRefCounter = static_cast<AssetRefCounter*>(newAsset.GetRaw());
-		assetRefCounter->m_referencedAssetManager = this;
+		newAsset->m_referencedAssetManager = this;
 
 		m_assetRegistry.InsertAssetMetadata(std::move(metadata));
 

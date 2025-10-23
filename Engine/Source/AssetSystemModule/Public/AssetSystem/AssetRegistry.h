@@ -18,7 +18,7 @@ namespace Volt
 		bool IsValidAssetHandle(AssetHandle assetHandle) const;
 
 		VTAS_API void InsertAssetMetadata(AssetMetadata&& assetMetadata);
-		void RemoveAssetMetadata(AssetHandle assetHandle);
+		void RemoveAssetMetadata(AssetHandle assetHandle, bool unlockMutex = false);
 
 	private:
 		void Initialize();

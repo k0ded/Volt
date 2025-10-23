@@ -68,8 +68,7 @@ namespace Volt
 
 		friend class AssetManager_New;
 
-		std::atomic_flag m_assetManagerLock = ATOMIC_FLAG_INIT;
-		std::atomic_uint32_t m_assetReferenceLock = 0;
+		std::shared_mutex m_assetMutex;
 	};
 
 	class Asset_New : public AssetRefCounter, public AssetLocks
@@ -99,6 +98,7 @@ namespace Volt
 		VT_INLINE bool operator!=(const Asset_New& other) { return m_handle != other.m_handle; }
 
 		VT_NODISCARD VT_INLINE static const AssetHandle Null() { return AssetHandle(0); }
+		VT_NODISCARD VT_INLINE bool IsValid() const { return (!IsFlagSet(AssetFlag::Invalid) && !IsFlagSet(AssetFlag::Missing) && !IsFlagSet(AssetFlag::Queued)); }
 
 	protected:
 		Asset_New() noexcept = default;
