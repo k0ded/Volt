@@ -1,3 +1,5 @@
+#include "vapch.h"
+
 #include "Volt-Animation/AnimationComponents.h"
 #include "Volt-Animation/Assets/Animation.h"
 
@@ -34,6 +36,7 @@ namespace Volt
 		}
 		
 		const float fraction = animPlayerComp.currentPlayTime / animation->GetDuration();
+		VT_UNUSED(fraction);
 		//const Vector<glm::mat4> pose = animation->Sample(fraction, /*Need a skelington here*/);
 		//todo: put the pose on the animated mesh component here
 	}
