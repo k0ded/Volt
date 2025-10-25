@@ -1015,6 +1015,8 @@ namespace Volt
 			{
 				FindJointVertexLinksAndSetupSkeleton(*fbxMesh, fbxSkeleton, jointVertexLinkMap);
 				CreateVoltMeshFromFbxMesh(*fbxMesh, meshInitializer, materials, importConfig, &jointVertexLinkMap);
+			
+				jointVertexLinkMap.clear();
 			}
 
 			voltMesh->Initialize(meshInitializer, materials);
@@ -1036,6 +1038,8 @@ namespace Volt
 				voltMesh->Initialize(meshInitializer, { materials.at(materialIndex) });
 
 				result.emplace_back(voltMesh);
+			
+				jointVertexLinkMap.clear();
 			}
 		}
 
