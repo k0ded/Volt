@@ -8,29 +8,11 @@
 
 namespace Volt
 {
-	class AnimationGraphAsset;
-	class AnimatedCharacter;
 	class Texture2D;
 	class Mesh;
 	class Entity;
 	class Scene;
 }
-
-struct NewCharacterData
-{
-	std::string name = "None";
-	Volt::AssetHandle skeletonHandle = Volt::Asset::Null();
-	Volt::AssetHandle skinHandle = Volt::Asset::Null();
-	std::filesystem::path destination = "Assets/Animations/";
-};
-
-struct NewAnimationGraphData
-{
-	std::string name = "None";
-	Volt::AssetHandle skeletonHandle = Volt::Asset::Null();
-
-	std::filesystem::path destination = "Assets/Animations/";
-};
 
 enum class SaveReturnState
 {
@@ -47,8 +29,6 @@ public:
 
 	static bool SearchBar(std::string& outSearchQuery, bool& outHasSearchQuery, bool setAsActive = false);
 
-	static bool NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCharacter>& outCharacter, NewCharacterData& aCharacterData);
-
 	static SaveReturnState SaveFilePopup(const std::string& aId);
 
 	static Ref<Volt::Texture2D> GenerateThumbnail(const std::filesystem::path& path);
@@ -60,6 +40,7 @@ public:
 	static void MarkEntityAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity);
 	static void MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity);
 	static void DestroyEntity(Weak<Volt::Scene> scene, const Volt::Entity& entity);
+	static void DestroyEntities(Weak<Volt::Scene> scene, const Vector<Volt::Entity>& entities);
 
 private:
 	static bool AssetBrowserPopupInternal(const std::string& id, Volt::AssetHandle& assetHandle, bool startState, AssetType wantedType = AssetTypes::None);

@@ -19,6 +19,14 @@ namespace Volt
 	{
 	}
 
+	ScenePrimitiveData::ScenePrimitiveData(const EntityID& relatedEntity, RenderScene* renderScene, Ref<TempAnimator> animator)
+		: m_relatedEntity(relatedEntity),
+		m_renderScene(renderScene),
+		m_animator(animator)
+	{
+
+	}
+
 	ScenePrimitiveData::~ScenePrimitiveData()
 	{
 		DestroyScenePrimitives();
@@ -89,7 +97,7 @@ namespace Volt
 				material = Renderer::GetDefaultResources().defaultMaterial;
 			}
 
-			RenderPrimitiveID renderObjectId = m_renderScene->AddPrimitiveInstance(m_relatedEntity, m_primitiveMesh, material, static_cast<uint32_t>(i));
+			RenderPrimitiveID renderObjectId = m_renderScene->AddPrimitiveInstance(m_relatedEntity, m_animator, m_primitiveMesh, material, static_cast<uint32_t>(i));
 			m_renderObjects.emplace_back(renderObjectId);
 		}
 

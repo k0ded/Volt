@@ -82,8 +82,12 @@ namespace Volt
 		VT_NODISCARD bool IsValid() const { return m_handle != entt::null && m_sceneReference != nullptr && m_sceneReference->GetRegistry().valid(m_handle); }
 		VT_NODISCARD bool IsVisible() const;
 		VT_NODISCARD bool IsLocked() const;
+		//returns true if given entity has this entity as a parent or parent's parent or so on
+		VT_NODISCARD bool IsDistantParentOf(Entity potentialChild) const;
+		//returns true if given entity has this entity as a child or child's child or so on
+		VT_NODISCARD bool IsDistantChildOf(Entity potentialParent) const;
 
-		VT_NODISCARD VT_INLINE bool operator==(const Entity& entity) const { return m_handle == entity.m_handle; }
+		VT_NODISCARD VT_INLINE bool operator==(const Entity& entity) const { return m_handle == entity.m_handle && m_sceneReference == entity.m_sceneReference; }
 		VT_NODISCARD VT_INLINE bool operator!() const { return !IsValid(); }
 		VT_NODISCARD VT_INLINE explicit operator bool() const { return IsValid(); }
 		VT_NODISCARD VT_INLINE explicit operator std::string() const { return ToString(); }

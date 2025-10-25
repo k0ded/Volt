@@ -20,7 +20,6 @@
 
 #include <Volt-Assets/MaterialAsset.h>
 
-#include <Volt-Animation/Assets/MotionWeaveDatabase.h>
 #include <Volt-Animation/BlendSpace.h>
 
 #include <Volt-Scene/Components/CoreComponents.h>
@@ -245,14 +244,7 @@ void AssetBrowserPanel::UpdateMainContent()
 		myShouldDeleteSelected = false;
 	}
 
-	if (EditorUtils::NewCharacterModal("New Character##assetBrowser", myNewAnimatedCharacter, myNewCharacterData))
-	{
-		myNewAnimatedCharacter = nullptr;
-		Reload();
-	}
-
 	CreateNewShaderModal();
-	CreateNewMotionWeaveDatabaseModal();
 	DeleteFilesModal();
 }
 
@@ -812,20 +804,11 @@ void AssetBrowserPanel::RenderWindowRightClickPopup()
 
 			if (ImGui::BeginMenu("Animation##Menu"))
 			{
-				if (ImGui::MenuItem("Animated Character"))
-				{
-					CreateNewAssetInCurrentDirectory(AssetTypes::AnimatedCharacter);
-				}
-
 				if (ImGui::MenuItem("Blend Space"))
 				{
 					CreateNewAssetInCurrentDirectory(AssetTypes::BlendSpace);
 				}
 
-				if (ImGui::MenuItem("Motion Weave Database"))
-				{
-					CreateNewAssetInCurrentDirectory(AssetTypes::MotionWeave);
-				}
 				ImGui::EndMenu();
 			}
 
@@ -1176,14 +1159,12 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 	Volt::AssetHandle newAssetHandle = Volt::Asset::Null();
 
 	if (type == AssetTypes::Material) originalName = "M_NewMaterial";
-	if (type == AssetTypes::AnimatedCharacter) originalName = "CHR_NewCharacter";
 	if (type == AssetTypes::PhysicsMaterial) originalName = "PM_NewPhysicsMaterial";
 	if (type == AssetTypes::Scene) originalName = "SC_NewScene";
 	if (type == AssetTypes::BlendSpace) originalName = "BS_NewBlendSpace";
 	if (type == AssetTypes::MonoScript) originalName = "idk.cs";
 	if (type == AssetTypes::PostProcessingStack) originalName = "PPS_NewPostStack";
 	if (type == AssetTypes::PostProcessingMaterial) originalName = "PPM_NewPostMaterial";
-	if (type == AssetTypes::MotionWeave) originalName = "MW_NewMotionWeaveDatabase";
 
 	tempName = originalName;
 
@@ -1198,13 +1179,6 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 	{
 		Ref<Volt::MaterialAsset> material = Volt::AssetManager::CreateAssetAndFile<Volt::MaterialAsset>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), tempName);
 		newAssetHandle = material->handle;
-	}
-	else if (type == AssetTypes::AnimatedCharacter)
-	{
-		myNewCharacterData.destination = Volt::AssetManager::GetRelativePath(myCurrentDirectory->path);
-		myNewCharacterData.name = tempName;
-
-		UI::OpenModal("New Character##assetBrowser");
 	}
 	else if (type == AssetTypes::Scene)
 	{
@@ -1223,12 +1197,6 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 	else if (type == AssetTypes::MonoScript)
 	{
 		UI::OpenModal("New MonoScript##assetBrowser");
-	}
-	else if (type == AssetTypes::MotionWeave)
-	{
-		m_NewMotionWeaveDatabaseData.name = "";
-		m_NewMotionWeaveDatabaseData.skeleton = Volt::Asset::Null();
-		UI::OpenModal("New MotionWeaveDatabase##assetBrowser");
 	}
 
 	Reload();
@@ -1455,45 +1423,6 @@ void AssetBrowserPanel::CreateNewShaderModal()
 			Reload();
 		}
 
-		ImGui::SameLine();
-
-		if (ImGui::Button("Cancel"))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-
-		UI::EndModal();
-	}
-}
-
-void AssetBrowserPanel::CreateNewMotionWeaveDatabaseModal()
-{
-	if (UI::BeginModal("New MotionWeaveDatabase##assetBrowser"))
-	{
-		if (UI::BeginProperties("motionWeaveProp"))
-		{
-			UI::Property("Name", m_NewMotionWeaveDatabaseData.name);
-			EditorUtils::Property("Skeleton", m_NewMotionWeaveDatabaseData.skeleton, AssetTypes::Skeleton);
-			UI::EndProperties();
-		}
-		
-		bool canCreate = m_NewMotionWeaveDatabaseData.skeleton != Volt::Asset::Null() && !m_NewMotionWeaveDatabaseData.name.empty();
-		
-		if (!canCreate)
-		{
-			ImGui::BeginDisabled();
-		}
-		if (ImGui::Button("Create"))
-		{
-			Ref<Volt::MotionWeaveDatabase> motionWeaveGraph = Volt::AssetManager::CreateAssetAndFile<Volt::MotionWeaveDatabase>(Volt::AssetManager::GetRelativePath(myCurrentDirectory->path), m_NewMotionWeaveDatabaseData.name, m_NewMotionWeaveDatabaseData.skeleton);
-			
-			ImGui::CloseCurrentPopup();
-		}
-		if (!canCreate)
-		{
-			ImGui::EndDisabled();
-			UI::SimpleToolTip("Cannot create Motion Weave Database without a name or without a skeleton");
-		}
 		ImGui::SameLine();
 
 		if (ImGui::Button("Cancel"))

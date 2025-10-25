@@ -620,9 +620,6 @@ bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 				SelectionManager::GetLastSelectedRow() = -1;
 			}
 
-			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, m_editorScene, ObjectStateAction::Delete);
-			EditorCommandStack::GetInstance().PushUndo(command);
-
 			for (const auto& i : entitiesToRemove)
 			{
 				EditorUtils::DestroyEntity(m_editorScene, i);

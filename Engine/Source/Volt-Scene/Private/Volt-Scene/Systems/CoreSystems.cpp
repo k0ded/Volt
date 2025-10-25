@@ -5,8 +5,6 @@
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-Renderer/Camera/Camera.h>
 
-#include <Volt-Animation/MotionWeaver.h>
-
 #include <EntitySystem/Scripting/CommonComponent.h>
 #include <EntitySystem/Scripting/ECSBuilder.h>
 #include <EntitySystem/Scripting/ECSSystemRegistry.h>
@@ -44,25 +42,10 @@ namespace Volt
 		cameraComponent.camera->SetRotation(glm::eulerAngles(entity.GetRotation()));
 	}
 
-	using MotionWeaveEntity = ECS::Access
-		::Write<MotionWeaveComponent>
-		::With<MeshComponent>
-		::As<ECS::Type::Entity>;
-
-	void MotionWeaveSystem(MotionWeaveEntity entity, const env::VariableUpdate& variableUpdate)
-	{
-		auto& weaveComponent = entity.GetComponent<MotionWeaveComponent>();
-		if (weaveComponent.MotionWeaver)
-		{
-			weaveComponent.MotionWeaver->Update(variableUpdate.deltaTime);
-		}
-	}
-
 	void RegisterModule(ECSBuilder& builder)
 	{
 		builder.GetGameLoop(GameLoop::Variable).RegisterSystem(CommonSystem);
 		builder.GetGameLoop(GameLoop::Variable).RegisterSystem(CameraSystem);
-		builder.GetGameLoop(GameLoop::Variable).RegisterSystem(MotionWeaveSystem);
 	}
 
 	VT_REGISTER_ECS_MODULE(RegisterModule);

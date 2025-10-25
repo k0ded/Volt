@@ -329,7 +329,10 @@ namespace Volt
 		streamReader.EnterScope("Entity");
 
 		EntityID entityId = streamReader.ReadAtKey("id", Entity::NullID());
-		VT_ENSURE_MSG(entity.HasComponent<IDComponent>(), "All components for entity have to be created beforehand in order to use DeserializeEntityInPlace");
+		if (!entity.HasComponent<IDComponent>())
+		{
+			entity.AddComponent<IDComponent>();
+		}
 		entity.GetComponent<IDComponent>().id = entityId;
 		
 		streamReader.ForEach("components", [&]()
@@ -351,7 +354,10 @@ namespace Volt
 				{
 					entt::registry& registry = entity.GetSceneReference()->GetRegistry();
 					const bool hasComponent = ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, registry, entity.GetHandle());
-					VT_ENSURE_MSG(hasComponent, "All components for entity have to be created beforehand in order to use DeserializeEntityInPlace");
+					if (!hasComponent)
+					{
+						ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, registry, entity.GetHandle());
+					}
 
 					void* voidCompPtr = ComponentRegistry::Helpers::GetComponentWithGUID(compGuid, registry, entity.GetHandle());
 					uint8_t* componentData = reinterpret_cast<uint8_t*>(voidCompPtr);

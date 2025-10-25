@@ -245,7 +245,7 @@ inline size_t BinaryStreamWriter::WriteRaw(const Vector<F>& data)
 	WriteTypeHeader(header);
 	if (!data.empty())
 	{
-		WriteData(data.data(), data.size() * sizeof(F));
+		WriteData(data.data(), data.byte_size());
 	}
 
 	return m_data.size();

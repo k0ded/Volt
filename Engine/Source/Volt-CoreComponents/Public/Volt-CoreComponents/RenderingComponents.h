@@ -2,12 +2,10 @@
 
 #include "Volt-CoreComponents/Config.h"
 
+#include <Volt-Core/AssetTypes.h>
+
 #include <Volt-Assets/StreamingInstanceID.h>
-
-#include <Volt-Renderer/Mesh/Mesh.h>
-#include <Volt-Renderer/AnimatedCharacter.h>
-
-#include <Volt-Animation/Assets/MotionWeaveDatabase.h>
+#include <Volt-Animation/AnimationComponents.h>
 
 #include <EntitySystem/ComponentRegistry.h>
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
@@ -17,15 +15,14 @@
 namespace Volt
 {
 	class Camera;
-	class AnimationController;
 	class ScenePrimitiveData;
-	class MotionWeaver;
 
 	struct MeshComponent
 	{
 		using MeshEntity = ECS::Access
 			::Write<MeshComponent>
 			::Read<IDComponent>
+			::WriteIfExists<AnimationPlayerComponent>
 			::As<ECS::Type::Entity>;
 
 		AssetHandle handle = Asset::Null();
@@ -40,7 +37,6 @@ namespace Volt
 			reflect.AddMember(&MeshComponent::handle, "handle", "Mesh", "", Asset::Null(), AssetTypes::Mesh);
 			reflect.AddMember(&MeshComponent::materials, "materials", "Materials", "", Asset::Null(), AssetTypes::Material);
 			reflect.SetOnMemberChangedCallback(&MeshComponent::OnMemberChanged);
-			reflect.SetOnComponentCopiedCallback(&MeshComponent::OnComponentCopied);
 			reflect.SetOnInitializeCallback(&MeshComponent::OnIntitialize);
 			reflect.SetOnDestroyCallback(&MeshComponent::OnDestroy);
 			reflect.SetOnTransformChangedCallback(&MeshComponent::OnTransformChanged);
@@ -54,7 +50,6 @@ namespace Volt
 		VTCC_API static void OnDestroy(MeshEntity entity);
 		VTCC_API static void OnIntitialize(MeshEntity entity);
 		VTCC_API static void OnTransformChanged(MeshEntity entity);
-		VTCC_API static void OnComponentCopied(MeshEntity entity);
 
 		Ref<ScenePrimitiveData> m_scenePrimitiveData;
 		StreamingInstanceID m_streamingInstanceID;
@@ -90,29 +85,6 @@ namespace Volt
 		VTCC_API static void OnInitialize(CameraEntity entity);
 	};
 
-	struct AnimatedCharacterComponent
-	{
-		AssetHandle animatedCharacter = Asset::Null();
-
-		int32_t selectedFrame = -1;
-		uint32_t currentAnimation = 0;
-		float currentStartTime = 0.f;
-
-		std::unordered_map<UUID64, Vector<Entity>> attachedEntities;
-
-		bool isLooping = true;
-		bool isPlaying = false;
-
-		static void ReflectType(TypeDesc<AnimatedCharacterComponent>& reflect)
-		{
-			reflect.SetGUID("{37333031-9816-4DDE-BFEA-5E83E32754D1}"_guid);
-			reflect.SetLabel("Animated Character Component");
-			reflect.AddMember(&AnimatedCharacterComponent::animatedCharacter, "animatedCharacter", "Character", "", Asset::Null(), AssetTypes::AnimatedCharacter);
-		}
-
-		REGISTER_COMPONENT(AnimatedCharacterComponent);
-	};
-
 	struct TextRendererComponent
 	{
 		std::string text = "Text";
@@ -145,53 +117,6 @@ namespace Volt
 		}
 
 		REGISTER_COMPONENT(SpriteComponent);
-	};
-
-	struct AnimationControllerComponent
-	{
-		AssetHandle material = Asset::Null();
-		AssetHandle skin = Asset::Null();
-		bool applyRootMotion = false;
-
-		Ref<AnimationController> controller;
-
-		static void ReflectType(TypeDesc<AnimationControllerComponent>& reflect)
-		{
-			reflect.SetGUID("{36D3CFA2-538E-4036-BB28-2B672F294478}"_guid);
-			reflect.SetLabel("Animation Controller Component");
-			reflect.AddMember(&AnimationControllerComponent::material, "material", "Material", "", Asset::Null(), AssetTypes::Material);
-			reflect.AddMember(&AnimationControllerComponent::skin, "skin", "Skin", "", Asset::Null(), AssetTypes::Mesh);
-			reflect.AddMember(&AnimationControllerComponent::applyRootMotion, "applyRootMotion", "Apply Root Motion", "", false);
-		}
-
-		REGISTER_COMPONENT(AnimationControllerComponent);
-	};
-
-	struct MotionWeaveComponent
-	{
-		AssetHandle motionWeaveDatabase = Asset::Null();
-
-		Ref<MotionWeaver> MotionWeaver;
-		Vector<UUID64> renderObjectIds;
-
-		static void ReflectType(TypeDesc<MotionWeaveComponent>& reflect)
-		{
-			reflect.SetGUID("{5D3B2C0D-5457-43D8-9623-98730E1556F4}"_guid);
-			reflect.SetLabel("Motion Weave Component");
-			reflect.AddMember(&MotionWeaveComponent::motionWeaveDatabase, "motionGraph", "Motion Graph", "", Asset::Null(), AssetTypes::MotionWeave);
-			reflect.SetOnStartCallback(&MotionWeaveComponent::OnStart);
-		}
-
-		REGISTER_COMPONENT(MotionWeaveComponent);
-
-	private:
-		using WeaveEntity = ECS::Access
-			::Write<MotionWeaveComponent>
-			::Read<MeshComponent>
-			::Read<IDComponent>
-			::As<ECS::Type::Entity>;
-
-		VTCC_API static void OnStart(WeaveEntity entity);
 	};
 
 	struct VertexPaintedComponent

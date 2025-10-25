@@ -66,7 +66,7 @@ void GameViewPanel::UpdateMainContent()
 
 	if (m_sceneRenderer && m_sceneRenderer->GetFinalImage())
 	{
-		//ImGui::Image(UI::GetTextureID(m_sceneRenderer->GetFinalImage()), { m_viewportSize.x, m_viewportSize.y });
+		ImGui::Image(UI::GetTextureID(m_sceneRenderer->GetFinalImage()), { m_viewportSize.x, m_viewportSize.y });
 	}
 
 	ImGui::PopStyleColor();

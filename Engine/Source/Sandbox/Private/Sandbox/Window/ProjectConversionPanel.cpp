@@ -40,7 +40,6 @@ static Map<std::string, AssetType> g_fileExtensionToAssetType
 
 	{ ".vtsk", AssetTypes::Skeleton },
 	{ ".vtanim", AssetTypes::Animation },
-	{ ".vtchr", AssetTypes::AnimatedCharacter },
 	//{ ".vtanimgraph", AssetTypes::AnimationGraph },
 
 	{ ".png", AssetTypes::Texture },

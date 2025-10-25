@@ -75,6 +75,7 @@ namespace Volt
 
 		Entity CreateEntity(const std::string& tag = "");
 		Entity CreateEntityWithID(const EntityID& id);
+		Entity CreateEntityWithIDForExistingDescription(const EntityID& id, Volt::AssetHandle existingEntityDescHandle);
 
 		Volt::AssetHandle CreateEntityDescForEntity(const EntityID& id);
 
@@ -111,7 +112,8 @@ namespace Volt
 		AssetType GetType() override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 
-		void CopyTo(Ref<Scene> otherScene);
+		//copy all the entities into another scene, first removing all entities in the other scene
+		void CopyEntitiesTo(Ref<Scene> otherScene);
 		void Clear();
 
 	private:
@@ -146,11 +148,8 @@ namespace Volt
 
 		EntityScene m_entityScene;
 
-		std::mutex m_registerEntityMutex;
 		Map<Volt::EntityID, Volt::AssetHandle> m_entityIDToDescHandle;
 
-
-		//Ref<Vision> m_visionSystem; // Needs to be of ptr type because of include loop // #TODO_Scene
 		Ref<RenderScene> m_renderScene;
 		Scope<EntityPhysicsScene> m_entityPhysicsScene;
 	};

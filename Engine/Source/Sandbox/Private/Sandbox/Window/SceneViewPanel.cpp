@@ -297,13 +297,7 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 				SelectionManager::GetLastSelectedRow() = -1;
 			}
 
-			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, m_scene, ObjectStateAction::Delete);
-			EditorCommandStack::GetInstance().PushUndo(command);
-
-			for (const auto& i : entitiesToRemove)
-			{
-				EditorUtils::DestroyEntity(m_scene, i);
-			}
+			EditorUtils::DestroyEntities(m_scene, entitiesToRemove);
 
 			break;
 		}
@@ -632,7 +626,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 				data->myParent = newParent;
 				data->myChild = child;
 				undoData.push_back(data);
-				
+
 				newParent.AddChild(child);
 
 				EditorUtils::MarkEntityAsEdited(m_scene, child);
@@ -885,7 +879,7 @@ void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity
 			return;
 		}
 
-		auto entity = Volt::Entity{ id, m_scene->GetEntityScene()};
+		auto entity = Volt::Entity{ id, m_scene->GetEntityScene() };
 		prefabAsset->UpdateEntityInScene(m_scene, entity);
 
 		EditorUtils::MarkEntityAsEdited(m_scene, entity);
@@ -913,7 +907,7 @@ void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity
 				return;
 			}
 
-			auto entity = Volt::Entity{ id, m_scene->GetEntityScene()};
+			auto entity = Volt::Entity{ id, m_scene->GetEntityScene() };
 			prefabRefAsset->UpdateEntityInScene(m_scene, entity);
 
 			EditorUtils::MarkEntityAsEdited(m_scene, entity);
@@ -1205,7 +1199,7 @@ void SceneViewPanel::RebuildEntityDrawList()
 
 	m_scene->ForEachWithComponents<const Volt::CommonComponent>([&](entt::entity id, const Volt::CommonComponent& dataComp)
 	{
-		Volt::Entity entity{ id, m_scene->GetEntityScene()};
+		Volt::Entity entity{ id, m_scene->GetEntityScene() };
 		if (entity.GetParent())
 		{
 			return;

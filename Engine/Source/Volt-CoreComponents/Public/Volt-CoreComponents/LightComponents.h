@@ -37,7 +37,6 @@ namespace Volt
 			reflect.AddMember(&PointLightComponent::castShadows, "castShadows", "Cast Shadows", "", false);
 		
 			reflect.SetOnMemberChangedCallback(&PointLightComponent::OnMemberChanged);
-			reflect.SetOnComponentCopiedCallback(&PointLightComponent::OnComponentCopied);
 			reflect.SetOnDestroyCallback(&PointLightComponent::OnDestroy);
 			reflect.SetOnInitializeCallback(&PointLightComponent::OnInitialize);
 			reflect.SetOnTransformChangedCallback(&PointLightComponent::OnTransformChanged);
@@ -54,7 +53,6 @@ namespace Volt
 		VTCC_API static void OnInitialize(LightEntity entity);
 		VTCC_API static void OnDestroy(LightEntity entity);
 		VTCC_API static void OnTransformChanged(LightEntity entity);
-		VTCC_API static void OnComponentCopied(LightEntity entity);
 		VTCC_API static void OnMemberChanged(LightEntity entity);
 
 		Ref<SceneLightData> m_sceneLightData;
@@ -83,7 +81,6 @@ namespace Volt
 			reflect.AddMember(&SpotLightComponent::castShadows, "castShadows", "Cast Shadows", "", false);
 
 			reflect.SetOnMemberChangedCallback(&SpotLightComponent::OnMemberChanged);
-			reflect.SetOnComponentCopiedCallback(&SpotLightComponent::OnComponentCopied);
 			reflect.SetOnDestroyCallback(&SpotLightComponent::OnDestroy);
 			reflect.SetOnInitializeCallback(&SpotLightComponent::OnInitialize);
 			reflect.SetOnTransformChangedCallback(&SpotLightComponent::OnTransformChanged);
@@ -101,7 +98,6 @@ namespace Volt
 		VTCC_API static void OnInitialize(LightEntity entity);
 		VTCC_API static void OnDestroy(LightEntity entity);
 		VTCC_API static void OnTransformChanged(LightEntity entity);
-		VTCC_API static void OnComponentCopied(LightEntity entity);
 		VTCC_API static void OnMemberChanged(LightEntity entity);
 
 		Ref<SceneLightData> m_sceneLightData;
@@ -166,7 +162,6 @@ namespace Volt
 			reflect.AddMember(&DirectionalLightComponent::castShadows, "castShadows", "Cast Shadows", "", true);
 
 			reflect.SetOnMemberChangedCallback(&DirectionalLightComponent::OnMemberChanged);
-			reflect.SetOnComponentCopiedCallback(&DirectionalLightComponent::OnComponentCopied);
 			reflect.SetOnDestroyCallback(&DirectionalLightComponent::OnDestroy);
 			reflect.SetOnInitializeCallback(&DirectionalLightComponent::OnInitialize);
 			reflect.SetOnTransformChangedCallback(&DirectionalLightComponent::OnTransformChanged);
@@ -184,7 +179,6 @@ namespace Volt
 		VTCC_API static void OnInitialize(LightEntity entity);
 		VTCC_API static void OnDestroy(LightEntity entity);
 		VTCC_API static void OnTransformChanged(LightEntity entity);
-		VTCC_API static void OnComponentCopied(LightEntity entity);
 		VTCC_API static void OnMemberChanged(LightEntity entity);
 
 		Ref<SceneLightData> m_sceneLightData;
@@ -212,7 +206,6 @@ namespace Volt
 			reflect.AddMember(&SkylightComponent::show, "show", "Show", "", true);
 
 			reflect.SetOnMemberChangedCallback(&SkylightComponent::OnMemberChanged);
-			reflect.SetOnComponentCopiedCallback(&SkylightComponent::OnComponentCopied);
 			reflect.SetOnDestroyCallback(&SkylightComponent::OnDestroy);
 			reflect.SetOnInitializeCallback(&SkylightComponent::OnInitialize);
 		}
@@ -225,7 +218,6 @@ namespace Volt
 
 		VTCC_API static void OnInitialize(LightEntity entity);
 		VTCC_API static void OnDestroy(LightEntity entity);
-		VTCC_API static void OnComponentCopied(LightEntity entity);
 
 		void UpdateSceneLightData(EntityID entityId);
 

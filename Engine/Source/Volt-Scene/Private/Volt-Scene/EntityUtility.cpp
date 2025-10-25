@@ -118,7 +118,5 @@ namespace Volt
 				member.copyFunction(&dstData[offset + member.offset], &srcData[offset + member.offset]);
 			}
 		}
-
-		compDesc->OnComponentCopied(dstEntity);
 	}
 }

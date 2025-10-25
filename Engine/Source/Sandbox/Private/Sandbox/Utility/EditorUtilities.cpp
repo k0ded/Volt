@@ -5,11 +5,11 @@
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/DirtyAssetsManager.h"
+#include "Sandbox/EditorCommandStack.h"
 
 #include <Volt-Assets/MeshAsset.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
-#include <Volt-Renderer/AnimatedCharacter.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
 
 #include <Volt-Animation/Assets/Skeleton.h>
@@ -200,56 +200,6 @@ bool EditorUtils::AssetBrowserPopupInternal(const std::string& popupId, Volt::As
 	return changed;
 }
 
-bool EditorUtils::NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCharacter>& outCharacter, NewCharacterData& aCharacterData)
-{
-	bool created = false;
-
-	UI::ScopedStyleFloat rounding{ ImGuiStyleVar_FrameRounding, 2.f };
-	if (UI::BeginModal(aId, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
-	{
-		UI::ShiftCursor(300.f, 0.f);
-		UI::ShiftCursor(-300.f, 0.f);
-
-		if (UI::BeginProperties("NewCharacter"))
-		{
-			UI::Property("Name", aCharacterData.name);
-			EditorUtils::Property("Skeleton", aCharacterData.skeletonHandle, AssetTypes::Skeleton);
-			EditorUtils::Property("Skin", aCharacterData.skinHandle, AssetTypes::Mesh);
-			UI::PropertyDirectory("Destination", aCharacterData.destination);
-
-			UI::EndProperties();
-		}
-
-		if (ImGui::Button("Cancel"))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-
-		ImGui::SameLine();
-
-		if (ImGui::Button("Create"))
-		{
-			created = true;
-			outCharacter = Volt::AssetManager::CreateAssetAndFile<Volt::AnimatedCharacter>(aCharacterData.destination, aCharacterData.name);
-
-			if (aCharacterData.skeletonHandle != Volt::Asset::Null())
-			{
-				outCharacter->SetSkeleton(Volt::AssetManager::GetAsset<Volt::Skeleton>(aCharacterData.skeletonHandle));
-			}
-
-			if (aCharacterData.skinHandle != Volt::Asset::Null())
-			{
-				outCharacter->SetSkin(Volt::AssetManager::GetAsset<Volt::MeshAsset>(aCharacterData.skinHandle)->GetMesh());
-			}
-			ImGui::CloseCurrentPopup();
-		}
-
-		UI::EndModal();
-	}
-
-	return created;
-}
-
 SaveReturnState EditorUtils::SaveFilePopup(const std::string& aId)
 {
 	SaveReturnState returnState = SaveReturnState::None;
@@ -384,10 +334,61 @@ void EditorUtils::MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, c
 
 void EditorUtils::DestroyEntity(Weak<Volt::Scene> scene, const Volt::Entity& entity)
 {
-	Vector<Volt::AssetHandle> destroyedEntityDescs;
-	scene->DestroyEntity(entity, destroyedEntityDescs);
-	for (Volt::AssetHandle asset : destroyedEntityDescs)
+	DestroyEntities(scene, { entity });
+}
+
+void EditorUtils::DestroyEntities(Weak<Volt::Scene> scene, const Vector<Volt::Entity>& entities)
+{
+	//only the parentmost entities should be called delete on
+	FrameStackVector<Volt::Entity> parentmostEntities;
+	for (const Volt::Entity& entity : entities)
 	{
-		DirtyAssetsManager::Get().MarkAssetDirty(asset);
+		bool isParentmost = true;
+		for (const Volt::Entity& checking : entities)
+		{
+			if (entity == checking)
+			{
+				continue;
+			}
+			if (entity.IsDistantChildOf(checking))
+			{
+				isParentmost = false;
+				break;
+			}
+		}
+		if (isParentmost)
+		{
+			parentmostEntities.push_back(entity);
+		}
+
+	}
+
+	//pre-collect all entities about to be destroyed to create a editor command
+	FrameStackVector<Volt::Entity> toCheck = parentmostEntities;
+	Vector<Volt::Entity> allEntitiesBeingDestroyed;
+	while (!toCheck.empty())
+	{
+		Volt::Entity checking = toCheck.back();
+		toCheck.pop_back();
+
+		allEntitiesBeingDestroyed.push_back(checking);
+
+		//also check the children of checking 
+		Vector<Volt::Entity> children = checking.GetChildren();
+		toCheck.append(children.begin(), children.end());
+	}
+
+	Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(allEntitiesBeingDestroyed, scene, ObjectStateAction::Delete);
+	EditorCommandStack::GetInstance().PushUndo(command);
+
+	//destroy all the parentmose entities
+	for (Volt::Entity& entity : parentmostEntities)
+	{
+		Vector<Volt::AssetHandle> destroyedEntityDescs;
+		scene->DestroyEntity(entity, destroyedEntityDescs);
+		for (Volt::AssetHandle asset : destroyedEntityDescs)
+		{
+			DirtyAssetsManager::Get().MarkAssetDirty(asset);
+		}
 	}
 }

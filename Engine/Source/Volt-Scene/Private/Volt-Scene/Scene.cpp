@@ -147,17 +147,17 @@ namespace Volt
 		JobRef job = JobSystem::CreateJob("Register Entities", ExecutionPriority::Latent, [this]()
 		{
 			//collect all entity descriptions to spawn
-			Vector<AssetHandle> allEntityDescAssetsForScene = Volt::AssetManager::GetAllAssetsOfType<Volt::EntityDesc>();
-			for (const AssetHandle& handle : allEntityDescAssetsForScene)
+			const Vector<AssetHandle> allEntityDescAssetsForScene = Volt::AssetManager::GetAllAssetsOfType<Volt::EntityDesc>();
+			for (const AssetHandle& entityHandle : allEntityDescAssetsForScene)
 			{
-				const AssetMetadata meta = Volt::AssetManager::GetMetadataFromHandle(handle);
+				const AssetMetadata meta = Volt::AssetManager::GetMetadataFromHandle(entityHandle);
 				const EntityDescCustomMetadata& customMeta = meta.GetCustomData<EntityDescCustomMetadata>();
 
 				if (customMeta.sceneHandle != this->handle)
 				{
 					continue;
 				}
-				m_entityIDToDescHandle.emplace(customMeta.entityID, handle);
+				m_entityIDToDescHandle.emplace(customMeta.entityID, entityHandle);
 			}
 
 
@@ -323,6 +323,22 @@ namespace Volt
 		CreateEntityDescForEntity(newEntity.GetID());
 		//todo: World Engine
 		//m_worldEngine.AddEntity(newEntity);
+
+		return newEntity;
+	}
+
+	Entity Scene::CreateEntityWithIDForExistingDescription(const EntityID& id, Volt::AssetHandle existingEntityDescHandle)
+	{
+		AssetMetadata meta = AssetManager::GetMetadataFromHandle(existingEntityDescHandle);
+		const EntityDescCustomMetadata& customMeta = meta.GetCustomData<EntityDescCustomMetadata>();
+
+		VT_ENSURE(customMeta.sceneHandle == this->handle);
+		VT_ENSURE(customMeta.entityID == id);
+
+		Entity newEntity = m_entityScene.CreateEntityWithID(id);
+		VT_ENSURE(newEntity);
+
+		m_entityIDToDescHandle.emplace(id, existingEntityDescHandle);
 
 		return newEntity;
 	}
@@ -500,30 +516,29 @@ namespace Volt
 		return newScene;
 	}
 
-	void Scene::CopyTo(Ref<Scene> otherScene)
+	void Scene::CopyEntitiesTo(Ref<Scene> otherScene)
 	{
 		VT_PROFILE_FUNCTION();
-
-		otherScene->m_name = m_name;
-		//otherScene->m_environment = m_environment; // #TODO_Scene
-		otherScene->handle = handle;
+		otherScene->Clear();
 
 		auto& registry = m_entityScene.GetRegistry();
-
 		registry.each([&](entt::entity id)
 		{
 			const EntityID uuid = registry.get<IDComponent>(id).id;
 
 			auto entity = otherScene->CreateEntityWithID(uuid);
 			CopyEntity(Entity{ id, &m_entityScene }, entity);
-
+			entity.InitializeComponents();
 			otherScene->InvalidateEntityTransform(entity.GetID());
 			otherScene->GetWorldEngineMutable().OnEntityMoved(entity);
 		});
+
+		otherScene->m_isFinishedLoadingEntities = true;
 	}
 
 	void Scene::Clear()
 	{
+		m_entityIDToDescHandle.clear();
 		m_entityScene.ClearScene();
 	}
 

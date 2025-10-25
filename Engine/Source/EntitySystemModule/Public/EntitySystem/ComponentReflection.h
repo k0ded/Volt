@@ -164,7 +164,6 @@ namespace Volt
 		virtual void OnStart(const Entity& entityHelper) const = 0;
 		virtual void OnStop(const Entity& entityHelper) const = 0;
 		virtual void OnMemberChanged(const Entity& entityHelper) const = 0;
-		virtual void OnComponentCopied(const Entity& entityHelper) const = 0;
 		virtual void OnTransformChanged(const Entity& entityHelper) const = 0;
 	};
 
@@ -347,7 +346,6 @@ namespace Volt
 		void OnStart(const Entity& entityHelper) const override;
 		void OnStop(const Entity& entityHelper) const override;
 		void OnMemberChanged(const Entity& entityHelper) const override;
-		void OnComponentCopied(const Entity& entityHelper) const override;
 		void OnTransformChanged(const Entity& entityHelper) const override;
 
 		VT_NODISCARD ComponentMember* FindMemberByOffset(const ptrdiff_t offset) override;
@@ -462,16 +460,6 @@ namespace Volt
 		}
 
 		template<typename EntityType>
-		void SetOnComponentCopiedCallback(void(*func)(EntityType))
-		{
-			m_onComponentCopiedCallback = [func](const Entity& entityHelper)
-			{
-				auto entity = EntityType(entityHelper);
-				func(entity);
-			};
-		}
-
-		template<typename EntityType>
 		void SetOnTransformChangedCallback(void(*func)(EntityType))
 		{
 			m_onTransformChangedCallback = [func](const Entity& entityHelper)
@@ -495,7 +483,6 @@ namespace Volt
 		ComponentCallbackFunc m_onStartCallback;
 		ComponentCallbackFunc m_onStopCallback;
 		ComponentCallbackFunc m_onMemberChangedCallback;
-		ComponentCallbackFunc m_onComponentCopiedCallback;
 		ComponentCallbackFunc m_onTransformChangedCallback;
 	};
 
@@ -588,15 +575,6 @@ namespace Volt
 		if (m_onMemberChangedCallback)
 		{
 			m_onMemberChangedCallback(entityHelper);
-		}
-	}
-
-	template<typename T>
-	inline void ComponentTypeDesc<T>::OnComponentCopied(const Entity& entityHelper) const
-	{
-		if (m_onComponentCopiedCallback)
-		{
-			m_onComponentCopiedCallback(entityHelper);
 		}
 	}
 

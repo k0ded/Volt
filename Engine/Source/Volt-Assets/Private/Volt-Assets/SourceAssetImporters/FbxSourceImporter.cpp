@@ -1013,6 +1013,7 @@ namespace Volt
 
 			for (auto* fbxMesh : fbxMeshes)
 			{
+				FindJointVertexLinksAndSetupSkeleton(*fbxMesh, fbxSkeleton, jointVertexLinkMap);
 				CreateVoltMeshFromFbxMesh(*fbxMesh, meshInitializer, materials, importConfig, &jointVertexLinkMap);
 			}
 
@@ -1026,6 +1027,7 @@ namespace Volt
 				Ref<MeshAsset> voltMesh = AssetManager::CreateAssetAndFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + fbxMesh->GetName());
 
 				MeshInitializer meshInitializer;
+				FindJointVertexLinksAndSetupSkeleton(*fbxMesh, fbxSkeleton, jointVertexLinkMap);
 				CreateVoltMeshFromFbxMesh(*fbxMesh, meshInitializer, materials, importConfig, &jointVertexLinkMap);
 
 				const uint32_t materialIndex = meshInitializer.GetSubMeshes().at(0).materialIndex;

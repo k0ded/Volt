@@ -25,12 +25,10 @@ void EditorResources::Initialize()
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_navmesh.dds", &m_assetIcons[AssetTypes::NavMesh]);
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_skeleton.dds", &m_assetIcons[AssetTypes::Skeleton]);
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_animation.dds", &m_assetIcons[AssetTypes::Animation]);
-		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_animatedCharacter.dds", &m_assetIcons[AssetTypes::AnimatedCharacter]);
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_scene.dds", &m_assetIcons[AssetTypes::Scene]);
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_prefab.dds", &m_assetIcons[AssetTypes::Prefab]);
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_monoscript.dds", &m_assetIcons[AssetTypes::MonoScript]);
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_behaviorTree.dds", &m_assetIcons[AssetTypes::BehaviorGraph]);
-		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_motionWeaveDatabase.dds", &m_assetIcons[AssetTypes::MotionWeave]);
 	}
 
 	// Editor Icons
@@ -83,12 +81,6 @@ void EditorResources::Initialize()
 		TryLoadIcon("Editor/Textures/Icons/icon_dentalFilling.dds", &m_editorIcons[EditorIcon::Fill]);
 		TryLoadIcon("Editor/Textures/Icons/icon_swap.dds", &m_editorIcons[EditorIcon::Swap]);
 		TryLoadIcon("Editor/Textures/Icons/icon_remove.dds", &m_editorIcons[EditorIcon::Remove]);
-
-		TryLoadIcon("Editor/Textures/Icons/icon_graph_pin_anim_pose.dds", &m_editorIcons[EditorIcon::GraphPinAnimationPose]);
-		TryLoadIcon("Editor/Textures/Icons/icon_graph_pin_anim_pose_filled.dds", &m_editorIcons[EditorIcon::GraphPinAnimationPoseFilled]);
-
-		TryLoadIcon("Editor/Textures/Icons/icon_statemachine_alias_state.dds", &m_editorIcons[EditorIcon::StateMachineAliasState]);
-		TryLoadIcon("Editor/Textures/Icons/icon_statemachine_animation_state.dds", &m_editorIcons[EditorIcon::StateMachineAnimationState]);
 
 		TryLoadIcon("Editor/Textures/Icons/icon_volt.dds", &m_editorIcons[EditorIcon::Volt]);
 	}

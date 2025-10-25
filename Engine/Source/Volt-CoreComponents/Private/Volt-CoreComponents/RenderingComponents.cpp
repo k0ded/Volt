@@ -8,8 +8,7 @@
 #include <Volt-Renderer/RenderScene.h>
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
-
-#include <Volt-Animation/MotionWeaver.h>
+#include <Volt-Animation/TempAnimator.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -36,23 +35,26 @@ namespace Volt
 	void MeshComponent::OnIntitialize(MeshEntity entity)
 	{
 		auto& meshComponent = entity.GetComponent<MeshComponent>();
-		meshComponent.m_scenePrimitiveData = CreateRef<ScenePrimitiveData>(entity.GetID(), entity.GetRenderScene());
+
+		Ref<TempAnimator> animator;
+		if (entity.HasComponent<AnimationPlayerComponent>())
+		{
+			AnimationPlayerComponent& animatorComponent = entity.GetComponent<AnimationPlayerComponent>();
+			animator = animatorComponent.animator = CreateRef<TempAnimator>(animatorComponent.skeletonHandle, animatorComponent.animationHandle);
+		}
+
+		if (animator)
+		{
+			meshComponent.m_scenePrimitiveData = CreateRef<ScenePrimitiveData>(entity.GetID(), entity.GetRenderScene(), animator);
+		}
+		else
+		{
+			meshComponent.m_scenePrimitiveData = CreateRef<ScenePrimitiveData>(entity.GetID(), entity.GetRenderScene());
+		}
 		meshComponent.m_streamingInstanceID = StreamingManager::Get().AddInstance(CreateStreamingInstanceDescription(meshComponent, entity.GetID(), meshComponent.m_scenePrimitiveData));
 	}
 
 	void MeshComponent::OnMemberChanged(MeshEntity entity)
-	{
-		auto& component = entity.GetComponent<MeshComponent>();
-
-		if (component.handle == Asset::Null())
-		{
-			return;
-		}
-
-		StreamingManager::Get().InvalidateInstance(component.m_streamingInstanceID, CreateStreamingInstanceDescription(component, entity.GetID(), component.m_scenePrimitiveData));
-	}
-
-	void MeshComponent::OnComponentCopied(MeshEntity entity)
 	{
 		auto& component = entity.GetComponent<MeshComponent>();
 
@@ -74,34 +76,5 @@ namespace Volt
 	{
 		auto& component = entity.GetComponent<CameraComponent>();
 		component.camera = CreateRef<Camera>(glm::radians(component.fieldOfView), 1.f, 16.f / 9.f, component.nearPlane, component.farPlane);
-	}
-
-	void MotionWeaveComponent::OnStart(WeaveEntity entity)
-	{
-		//const auto& meshComponent = entity.GetComponent<MeshComponent>();
-		//auto& weaveComponent = entity.GetComponent<MotionWeaveComponent>();
-
-		//auto scene = SceneManager::GetActiveScene();
-
-		//auto sceneEntity = scene->GetSceneEntityFromScriptingEntity(entity);
-
-		//weaveComponent.MotionWeaver = MotionWeaver::Create(weaveComponent.motionWeaveDatabase);
-
-		//Ref<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.handle);
-		//if (mesh && mesh->IsValid())
-		//{
-		//	const auto& materialTable = mesh->GetMaterialTable();
-
-		//	for (size_t i = 0; i < mesh->GetSubMeshes().size(); i++)
-		//	{
-		//		auto material = AssetManager::QueueAsset<Material>(materialTable.GetMaterial(mesh->GetSubMeshes().at(i).materialIndex));
-		//		if (!material->IsValid())
-		//		{
-		//		}
-
-		//		auto uuid = scene->GetRenderScene()->AddInstance(entity.GetID(), weaveComponent.MotionWeaver, mesh, material, static_cast<uint32_t>(i));
-		//		weaveComponent.renderObjectIds.emplace_back(uuid);
-		//	}
-		//}
 	}
 }

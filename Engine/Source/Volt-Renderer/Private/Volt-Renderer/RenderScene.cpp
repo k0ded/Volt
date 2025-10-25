@@ -11,7 +11,7 @@
 
 #include <RenderCore/Shader/GlobalShader.h>
 
-#include <Volt-Animation/MotionWeaver.h>
+#include <Volt-Animation/TempAnimator.h>
 #include <Volt-Animation/Assets/Skeleton.h>
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
@@ -65,7 +65,7 @@ namespace Volt
 			m_rayTracingResourceTable = RHI::RayTracingResourceTable::Create();
 		}
 
-		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(RenderScene::OnPreRenderEvent));
+		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(RenderScene::OnPreRenderEvent)); 
 	}
 
 	RenderScene::~RenderScene()
@@ -77,15 +77,6 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		renderGraph.BeginMarker("RenderScene::Update");
-	
-		ProcessQueuedUpdateOperations();
-
-		UpdateInvalidMaterials(renderGraph);
-		UpdateInvalidMeshes(renderGraph);
-		UpdateInvalidLights(renderGraph);
-		UpdateInvalidPrimitiveData(renderGraph);
-		CompactValidPrimitiveDrawDatas(renderGraph);
-		BuildPerMeshIndirectDrawCommands(renderGraph);
 
 		// Temporary animation sampling
 		m_currentBoneCount = 0;
@@ -95,7 +86,12 @@ namespace Volt
 			primitiveDrawData.boneOffset = m_currentBoneCount;
 
 			const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
-			m_currentBoneCount += static_cast<uint32_t>(renderObject.motionWeaver->GetSkeleton()->GetJointCount());
+			if (renderObject.animator->GetSkeleton())
+			{
+				m_currentBoneCount += static_cast<uint32_t>(renderObject.animator->GetSkeleton()->GetJointCount());
+				// Mark primitive as invalid.
+				InvalidatePrimitiveInstance(animatedObject);
+			}
 		}
 
 		m_animationBufferStorage.resize(m_currentBoneCount);
@@ -106,10 +102,19 @@ namespace Volt
 				const auto& primitiveDrawData = m_primitiveDrawData.at(m_primitiveIndicesContainer.GetIndexFromID(animatedObject));
 				const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
 
-				const auto sample = renderObject.motionWeaver->Sample();
+				const auto sample = renderObject.animator->Sample();
 				memcpy_s(m_animationBufferStorage.data() + primitiveDrawData.boneOffset, sizeof(glm::mat4) * sample.size(), sample.data(), sizeof(glm::mat4) * sample.size());
 			}
 		}
+
+		ProcessQueuedUpdateOperations();
+
+		UpdateInvalidMaterials(renderGraph);
+		UpdateInvalidMeshes(renderGraph);
+		UpdateInvalidLights(renderGraph);
+		UpdateInvalidPrimitiveData(renderGraph);
+		CompactValidPrimitiveDrawDatas(renderGraph);
+		BuildPerMeshIndirectDrawCommands(renderGraph);
 
 		if (m_currentBoneCount > 0)
 		{
@@ -174,9 +179,9 @@ namespace Volt
 		return m_updateQueue.AddPrimitiveInstance(entityId, nullptr, mesh, material, subMeshIndex);
 	}
 
-	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
+	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<TempAnimator> animator, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
 	{
-		return m_updateQueue.AddPrimitiveInstance(entityId, motionWeaver, mesh, material, subMeshIndex);
+		return m_updateQueue.AddPrimitiveInstance(entityId, animator, mesh, material, subMeshIndex);
 	}
 
 	void RenderScene::RemovePrimitiveInstance(UUID64 id)
@@ -318,6 +323,7 @@ namespace Volt
 		result.PrevPrimitiveDrawDataBuffer = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource()));
 		result.GPUMeshes = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.meshesBuffer->GetResource()));
 		result.SceneLights = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.lightsBuffer->GetResource()));
+		result.AnimatedBones = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.bonesBuffer->GetResource()));
 
 		return result;
 	}
@@ -425,7 +431,7 @@ namespace Volt
 		UUID64 newId = queuedUpdate.primitiveInfo.id;
 		auto& newObj = m_renderPrimitives.emplace_back();
 
-		if (queuedUpdate.primitiveInfo.motionWeaver)
+		if (queuedUpdate.primitiveInfo.animator)
 		{
 			m_animatedRenderObjects.emplace_back(newId);
 		}
@@ -435,7 +441,7 @@ namespace Volt
 		newObj.mesh = queuedUpdate.primitiveInfo.mesh;
 		newObj.material = queuedUpdate.primitiveInfo.material;
 		newObj.subMeshIndex = queuedUpdate.primitiveInfo.subMeshIndex;
-		newObj.motionWeaver = queuedUpdate.primitiveInfo.motionWeaver;
+		newObj.animator = queuedUpdate.primitiveInfo.animator;
 
 		TryAddMaterial(queuedUpdate.primitiveInfo.material);
 		TryAddMesh(queuedUpdate.primitiveInfo.mesh);

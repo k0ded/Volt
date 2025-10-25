@@ -205,10 +205,11 @@ namespace Volt
 
 		for (size_t index = 0; const auto & file : engineAssetFiles)
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index]()
+			//taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index]()
 			{
 				DeserializeAssetMetadata(file, serializedMetadata[index]);
-			});
+			}
+				//);
 
 			index++;
 		}
@@ -217,10 +218,11 @@ namespace Volt
 
 		for (size_t index = 0; const auto & file : projectAssetFiles)
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index, offset]()
+			//taskGraph.AddTask("Deserialize Asset Metadata", [this, &file, &serializedMetadata, index, offset]()
 			{
 				DeserializeAssetMetadata(file, serializedMetadata[offset + index]);
-			});
+			}
+				//);
 
 			index++;
 		}
@@ -1305,23 +1307,24 @@ namespace Volt
 
 			if (!metadata.IsValid())
 			{
-				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is not registered in the asset registry. Target FilePath: '{1}'", handle, targetFilePath.string().c_str());
+				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is not registered in the asset registry. Target file path: '{1}'", handle, targetFilePath.string().c_str());
 				return;
 			}
 
 			if (metadata.isMemoryAsset)
 			{
-				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is marked as a memory asset. Target file oath: '{1}'", handle, targetFilePath.string().c_str());
+				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is marked as a memory asset. Target file path: '{1}'", handle, targetFilePath.string().c_str());
 				return;
 			}
 
 			if (!metadata.filePath.empty())
 			{
-				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that already has an assigned file path. Target file oath: '{1}'", handle, targetFilePath.string().c_str());
-				return;
+				VT_LOGC(Warning, LogAssetSystem, "Tried to create a file for an asset '{0}' that already has an assigned file path. Target file path: '{1}'", handle, targetFilePath.string().c_str());
 			}
-
-			metadata.filePath = targetFilePath;
+			else
+			{
+				metadata.filePath = targetFilePath;
+			}
 		}
 		SaveAssetImpl(handle);
 

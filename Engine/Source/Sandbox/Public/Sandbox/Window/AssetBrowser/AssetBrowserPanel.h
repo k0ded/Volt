@@ -68,7 +68,6 @@ private:
 	///// Asset Creation /////	
 	void CreateNewAssetInCurrentDirectory(AssetType type);
 	void CreateNewShaderModal();
-	void CreateNewMotionWeaveDatabaseModal();
 
 	struct NewShaderData
 	{
@@ -81,11 +80,6 @@ private:
 
 	} myNewShaderData;
 
-	struct NewMotionWeaveDatabaseData
-	{
-		std::string name = "New Motion Weave Database";
-		Volt::AssetHandle skeleton = Volt::Asset::Null();
-	} m_NewMotionWeaveDatabaseData;
 	//////////////////////////
 
 	Ref<Volt::Scene>& myEditorScene;
@@ -115,13 +109,6 @@ private:
 	bool myIsImporting = false;
 
 	Volt::AssetHandle myAnimationReimportTargetSkeleton;
-
-	///// Animated Character creation /////
-	NewCharacterData myNewCharacterData{};
-	Ref<Volt::AnimatedCharacter> myNewAnimatedCharacter;
-
-	///// Animation Graph creation /////
-	NewAnimationGraphData myNewAnimationGraphData{};
 
 	std::unordered_map <std::filesystem::path, Ref<AssetBrowser::DirectoryItem>> myDirectories;
 	Ref<AssetBrowser::SelectionManager> mySelectionManager;
