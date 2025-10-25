@@ -12,7 +12,9 @@ namespace Volt
 
 	AssetManager_New::AssetManager_New(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName)
 		: m_assetRegistry(engineDirectoryPath, projectDirectoryPath, assetsDirectoryName)
-	{}
+	{
+		CreateDependencyGraphAndAddAssetsFromRegistry();
+	}
 
 	AssetManager_New::~AssetManager_New()
 	{}
@@ -145,7 +147,7 @@ namespace Volt
 
 	void AssetManager_New::AddDependencyToAsset(AssetHandle dependant, AssetHandle dependency)
 	{
-
+		m_dependencyGraph->AddDependencyToAsset(dependant, dependency);
 	}
 
 	Vector<AssetHandle> AssetManager_New::GetAssetsDependentOn(AssetHandle assetHandle) const
@@ -156,13 +158,18 @@ namespace Volt
 	void AssetManager_New::LoadAsset(AssetHandle assetHandle, RefPtr<Asset_New> asset)
 	{
 		ScopedTimer timer{};
-		
+
+		m_dependencyGraph->AddAssetToGraph(assetHandle);
+
 		WriteableAssetMetadata assetMetadata = GetWriteableAssetMetadata(assetHandle);
 
 		// #TODO_AssetSystem: Uncomment once assets have been converted.
 		//AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(assetHandle, asset);
 
 		assetMetadata->isLoaded = true;
+
+		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
+
 		VT_LOGC(Trace, LogAssetSystem, "Loaded asset {0} with handle {1} in {2} seconds!", assetMetadata->filePath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
 	}
 
@@ -171,6 +178,7 @@ namespace Volt
 		// Safe to upcast like this, because AssetRefCounter should only be derived by Asset.
 		Asset_New* asset = reinterpret_cast<Asset_New*>(assetRefCounter);
 		const AssetHandle assetHandle = asset->GetAssetHandle();
+		const std::string nameCopy(asset->GetAssetName());
 
 		// Make sure we lock the metadata
 		{
@@ -205,6 +213,18 @@ namespace Volt
 				// The mutex gets unlocked in here.
 				m_assetRegistry.RemoveAssetMetadata(assetHandle, true);
 			}
+		}
+		
+		VT_LOGC(Trace, LogAssetSystem, "Asset '{}' (Handle: '{}') was unloaded!", nameCopy, assetHandle);
+	}
+
+	void AssetManager_New::CreateDependencyGraphAndAddAssetsFromRegistry()
+	{
+		m_dependencyGraph = CreateScope<AssetDependencyGraph>();
+	
+		for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
+		{
+			m_dependencyGraph->AddAssetToGraph((*it)->handle);
 		}
 	}
 

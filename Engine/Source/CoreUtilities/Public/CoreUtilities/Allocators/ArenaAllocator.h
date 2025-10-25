@@ -76,6 +76,11 @@ public:
 		return !m_availableIndices.Empty() || m_nextIndex.load(std::memory_order::relaxed) < m_numMaxElements;
 	}
 
+	VT_NODISCARD size_t GetNumMaxAllocations() const
+	{
+		return m_numMaxElements;
+	}
+
 	VT_NODISCARD bool IsEmpty() const
 	{
 		return GetNumAllocations() == 0;
@@ -152,6 +157,67 @@ public:
 
 		return result;
 	}
+
+	class Iterator
+	{
+	public:
+		Iterator()
+			: m_arenaAllocator(nullptr)
+		{}
+
+		Iterator(ArenaAllocator& arenaAllocator)
+			: m_arenaAllocator(&arenaAllocator)
+		{
+			// Store max index on create, to not move the end of the iterator during iteration.
+			m_maxIndex = std::min(arenaAllocator.m_nextIndex.load(std::memory_order::relaxed), arenaAllocator.m_numMaxElements);
+
+			// Find first allocation
+			for (; m_currentIndex < m_maxIndex; ++m_currentIndex)
+			{
+				if (m_arenaAllocator->m_allocatedEntriesBitmask.IsBitSet(m_currentIndex, std::memory_order::relaxed))
+				{
+					break;
+				}
+			}
+		}
+
+		VT_INLINE void operator++()
+		{
+			// Find the next active allocation
+			// Make sure we start at the next index.
+			m_currentIndex++;
+
+			for (; m_currentIndex < m_maxIndex; ++m_currentIndex)
+			{
+				if (m_arenaAllocator->m_allocatedEntriesBitmask.IsBitSet(m_currentIndex, std::memory_order::relaxed))
+				{
+					break;
+				}
+			}
+		}
+
+		VT_INLINE Type* operator->() const
+		{
+			VT_ENSURE(m_arenaAllocator->m_allocatedEntriesBitmask.IsBitSet(m_currentIndex, std::memory_order::relaxed));
+			return reinterpret_cast<Type*>(&m_arenaAllocator->m_dataBuffer[m_currentIndex * sizeof(Type)]);
+		}
+
+		VT_INLINE Type* operator*() const
+		{
+			VT_ENSURE(m_arenaAllocator->m_allocatedEntriesBitmask.IsBitSet(m_currentIndex, std::memory_order::relaxed));
+			return reinterpret_cast<Type*>(&m_arenaAllocator->m_dataBuffer[m_currentIndex * sizeof(Type)]);
+		}
+
+		VT_INLINE explicit operator bool() const
+		{
+			return m_arenaAllocator != nullptr && m_currentIndex < m_maxIndex;
+		}
+
+	private:
+		ArenaAllocator* m_arenaAllocator;
+		size_t m_maxIndex = 0;
+		size_t m_currentIndex = 0;
+	};
 
 private:
 	SecondaryAllocator::template ForElementType<uint8_t> m_allocator;

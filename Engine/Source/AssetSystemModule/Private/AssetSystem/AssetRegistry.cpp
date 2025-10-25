@@ -85,7 +85,10 @@ namespace Volt
 			{
 				AssetMetadata assetMetadata{};
 				DeserializeAssetMetadata(assetFilepath, assetMetadata);
-				InsertAssetMetadata(std::move(assetMetadata));
+				if (assetMetadata.IsValid())
+				{
+					InsertAssetMetadata(std::move(assetMetadata));
+				}
 			});
 		}
 
