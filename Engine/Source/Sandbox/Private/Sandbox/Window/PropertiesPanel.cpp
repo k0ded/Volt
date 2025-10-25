@@ -13,6 +13,8 @@
 
 #include <Volt-CoreComponents/LightComponents.h>
 
+#include <EntitySystem/ComponentRegistry.h>
+
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 #include <InputModule/MouseButtonCodes.h>
@@ -281,6 +283,13 @@ void PropertiesPanel::AddComponentPopup()
 							if (!Volt::ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, myCurrentScene->GetEntityScene().GetRegistry(), entity))
 							{
 								Volt::ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, myCurrentScene->GetEntityScene().GetRegistry(), entity);
+
+								const Volt::IComponentTypeDesc* componentTypeDesc = reinterpret_cast<const Volt::IComponentTypeDesc*>(GetComponentRegistry().GetTypeDescFromGUID(compGuid));
+								if (componentTypeDesc)
+								{
+									componentTypeDesc->OnInitialize(entity);
+								}
+
 								EditorUtils::MarkEntityAsEdited(myCurrentScene, entity);
 							}
 						}
