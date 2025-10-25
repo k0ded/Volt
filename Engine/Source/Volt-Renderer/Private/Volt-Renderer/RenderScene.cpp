@@ -875,6 +875,8 @@ namespace Volt
 				auto& data = bufferUpload.AddUploadItem(invalidPrimitive.index);
 				BuildSinglePrimitiveDrawData(data, renderObject);
 
+				// Copy the bone offset which is set before this is run.
+				data.boneOffset = m_primitiveDrawData[invalidPrimitive.index].boneOffset;
 				m_primitiveDrawData[invalidPrimitive.index] = data;
 
 				if (s_logRenderSceneUpdatedCVar.GetValue())
