@@ -6,15 +6,21 @@
 
 #include <PhysicsInterface/PhysicsMaterial.h>
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 namespace Volt
 {
-	class PhysicsMaterialAsset : public Asset
+	class PhysicsMaterialAsset : public Asset_New
 	{
 	public:
 		PhysicsMaterialAsset();
 		~PhysicsMaterialAsset() override;
+
+		static AssetType GetStaticType() { return AssetTypes::PhysicsMaterial; }
+		AssetType GetType() const override { return GetStaticType(); };
+		uint32_t GetVersion() const override { return 1; }
+
+		Ref<PhysicsMaterial> GetMaterial() const { return m_material; }
 
 	private:
 		friend class PhysicsMaterialSerializer;

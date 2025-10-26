@@ -230,7 +230,7 @@ public:
 			: m_arenaAllocator(nullptr)
 		{}
 
-		Iterator(PagedArenaAllocator& arenaAllocator)
+		Iterator(const PagedArenaAllocator& arenaAllocator)
 			: m_arenaAllocator(&arenaAllocator)
 		{
 			m_currentPage = m_arenaAllocator->m_basePage;
@@ -274,6 +274,6 @@ public:
 	private:
 		ArenaAllocator<Type>::Iterator m_iterator;
 		PageHeader* m_currentPage = nullptr;
-		PagedArenaAllocator* m_arenaAllocator;
+		const PagedArenaAllocator* m_arenaAllocator;
 	};
 };

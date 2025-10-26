@@ -3,7 +3,8 @@
 #include "Volt-Animation/Assets/AnimationSerializer.h"
 #include "Volt-Animation/Assets/Animation.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -31,9 +32,10 @@ namespace Volt
 		}
 	};
 
-	void AnimationSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void AnimationSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
 	{
-		Ref<Animation> animation = std::reinterpret_pointer_cast<Animation>(asset);
+		AssetReference<Animation> animation = asset.ConvertTo<Animation>();
+		ScopedAssetReferenceLock animationLock{ animation };
 
 		BinaryStreamWriter streamWriter{};
 
@@ -43,29 +45,29 @@ namespace Volt
 		serializationData.frames = animation->m_frames;
 		serializationData.events = animation->m_events;
 	
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), streamWriter);
+		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
 		streamWriter.Write(serializationData);
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool AnimationSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool AnimationSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
 	{
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filepath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
-		if (!std::filesystem::exists(filePath))
+		if (!std::filesystem::exists(filepath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
 
-		BinaryStreamReader streamReader{ filePath };
+		BinaryStreamReader streamReader{ filepath };
 
 		if (!streamReader.IsStreamValid())
 		{
-			VT_LOG(Error, "Failed to open file: {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
@@ -76,7 +78,8 @@ namespace Volt
 		AnimationSerializationData serializationData{};
 		streamReader.Read(serializationData);
 
-		Ref<Animation> animation = std::reinterpret_pointer_cast<Animation>(destinationAsset);
+		AssetReference<Animation> animation = destinationAsset.ConvertTo<Animation>();
+		ScopedAssetReferenceLock animationLock{ animation };
 
 		animation->m_duration = serializationData.duration;
 		animation->m_framesPerSecond = serializationData.framesPerSecond;

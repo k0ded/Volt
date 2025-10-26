@@ -7,7 +7,8 @@
 #include <Volt-Renderer/Renderer.h>
 
 #include <AssetSystem/AssetFactory.h>
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -18,7 +19,7 @@ namespace Volt
 		m_mesh = CreateRef<Mesh>();
 	}
 
-	void MeshAsset::OnDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state)
+	void MeshAsset::OnAssetDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state)
 	{
 		if (state == AssetChangedState::Loaded)
 		{
@@ -29,9 +30,10 @@ namespace Volt
 				{
 					Ref<RenderMaterial> renderMaterial;
 
-					if (AssetManager::IsLoaded(materialHandle))
+					AssetReference<MaterialAsset> materialAsset;
+					if (g_assetManager->TryGetAssetIfLoaded(materialHandle, materialAsset))
 					{
-						Ref<MaterialAsset> materialAsset = AssetManager::GetAsset<MaterialAsset>(materialHandle);
+						ScopedAssetReferenceLock assetLock{ materialAsset };
 						renderMaterial = materialAsset->GetRenderMaterial();
 					}
 					else
@@ -58,7 +60,7 @@ namespace Volt
 		}
 	}
 
-	void MeshAsset::Initialize(const MeshInitializer& meshInitializer, const Vector<Ref<MaterialAsset>>& materials)
+	void MeshAsset::Initialize(const MeshInitializer& meshInitializer, const Vector<AssetReference<MaterialAsset>>& materials)
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE_MSG(!m_isInitialized, "A mesh should not be initialized more than once!");
@@ -66,10 +68,11 @@ namespace Volt
 		m_materials.resize(materials.size());
 		for (size_t i = 0; i < m_materials.size(); ++i)
 		{
-			m_materials[i] = materials[i]->handle;
+			ScopedAssetReferenceLock lock{ materials[i] };
+			m_materials[i] = materials[i]->GetAssetHandle();
 		}
 
-		m_mesh->SetName(assetName);
+		m_mesh->SetName(std::string(GetAssetName()));
 		m_mesh->Initialize(meshInitializer);
 
 		m_isInitialized = true;
@@ -86,9 +89,10 @@ namespace Volt
 
 			Ref<RenderMaterial> renderMaterial;
 
-			if (AssetManager::IsLoaded(materialHandle))
+			AssetReference<MaterialAsset> materialAsset;
+			if (g_assetManager->TryGetAssetIfLoaded(materialHandle, materialAsset))
 			{
-				Ref<MaterialAsset> materialAsset = AssetManager::GetAsset<MaterialAsset>(materialHandle);
+				ScopedAssetReferenceLock assetLock{ materialAsset };
 				renderMaterial = materialAsset->GetRenderMaterial();
 			}
 			else
@@ -98,7 +102,7 @@ namespace Volt
 			meshInitializer.AddMaterial(renderMaterial, i);
 		}
 
-		m_mesh->SetName(assetName);
+		m_mesh->SetName(std::string(GetAssetName()));
 		m_mesh->Initialize(meshInitializer);
 
 		m_isInitialized = true;

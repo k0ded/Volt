@@ -5,7 +5,8 @@
 #include "Volt-Scene/EntityDescription.h"
 #include "Volt-Scene/WorldEngine/WorldCell.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
 #include <Volt-Core/Algorithms.h>
@@ -32,11 +33,12 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void SceneSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void SceneSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
 	{
-		const Ref<Scene> scene = std::reinterpret_pointer_cast<Scene>(asset);
+		const AssetReference<Scene> scene = asset.ConvertTo<Scene>();
+		ScopedAssetReferenceLock sceneLock{ scene };
 
-		std::filesystem::path directoryPath = AssetManager::GetFilesystemPath(metadata.filePath);
+		std::filesystem::path directoryPath = g_assetManager->GetFilesystemPath(metadata->filepath);
 		if (!std::filesystem::is_directory(directoryPath))
 		{
 			directoryPath = directoryPath.parent_path();
@@ -47,14 +49,14 @@ namespace Volt
 			std::filesystem::create_directories(directoryPath);
 		}
 
-		std::filesystem::path scenePath = directoryPath / (metadata.filePath.stem().string() + ".vtasset");
+		std::filesystem::path scenePath = directoryPath / (metadata->filepath.stem().string() + ".vtasset");
 
 		// Serialize scene file
 		{
 			YAMLMemoryStreamWriter streamWriter{};
 			streamWriter.BeginMap();
 			streamWriter.BeginMapNamned("Scene");
-			streamWriter.SetKey("name", metadata.filePath.stem().string());
+			streamWriter.SetKey("name", metadata->filepath.stem().string());
 
 			streamWriter.BeginMapNamned("Settings");
 			streamWriter.SetKey("useWorldEngine", scene->m_sceneSettings.useWorldEngine);
@@ -70,7 +72,7 @@ namespace Volt
 			streamWriter.EndMap();
 
 			BinaryStreamWriter sceneFileWriter{};
-			const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), sceneFileWriter);
+			const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), sceneFileWriter);
 
 			auto buffer = streamWriter.WriteAndGetBuffer();
 			sceneFileWriter.Write(buffer);
@@ -80,15 +82,16 @@ namespace Volt
 		}
 	}
 
-	bool SceneSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool SceneSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
 	{
-		Ref<Scene> scene = reinterpret_pointer_cast<Scene>(destinationAsset);
+		AssetReference<Scene> scene = destinationAsset.ConvertTo<Scene>();
+		ScopedAssetReferenceLock sceneLock{ scene };
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
@@ -96,7 +99,7 @@ namespace Volt
 		BinaryStreamReader streamReader{ filePath };
 		if (!streamReader.IsStreamValid())
 		{
-			VT_LOG(Error, "Failed to open file {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to open file {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}

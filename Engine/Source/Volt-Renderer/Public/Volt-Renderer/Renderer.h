@@ -5,6 +5,7 @@
 #include "Volt-Renderer/Debug/DebugRenderer.h"
 
 #include <AssetSystem/AssetHandle.h>
+#include <AssetSystem/AssetReference.h>
 
 #include <RenderCore/TransientResourceSystem/TransientResourceAllocator.h>
 #include <RenderCore/CommandBufferPool.h>
@@ -30,7 +31,7 @@ namespace Volt
 
 	struct DefaultResources
 	{
-		Ref<Texture2D> whiteTexture;
+		AssetReference<Texture2D> whiteTexture;
 		Ref<RenderMaterial> defaultMaterial;
 		Ref<Mesh> defaultMesh;
 

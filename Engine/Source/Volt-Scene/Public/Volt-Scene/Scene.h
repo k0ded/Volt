@@ -4,7 +4,7 @@
 #include "Volt-Scene/Config.h"
 #include "Volt-Scene/AssetTypes.h"
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 #include <EventSystem/EventListener.h>
 #include <EntitySystem/EntityScene.h>
@@ -26,7 +26,7 @@ namespace Volt
 		bool useWorldEngine = true;
 	};
 
-	class VTS_API Scene : public Asset, public EventListener, public std::enable_shared_from_this<Scene>
+	class VTS_API Scene : public Asset_New, public EventListener
 	{
 	public:
 		struct Statistics
@@ -106,14 +106,14 @@ namespace Volt
 
 		Vector<Entity> GetAllEntities() const;
 
-		static Ref<Scene> CreateDefaultScene(const std::string& name, bool createDefaultMesh = true, bool asMemoryAsset = false);
+		static AssetReference<Scene> CreateDefaultScene(const std::string& name, bool createDefaultMesh = true, bool asMemoryAsset = false);
 
 		static AssetType GetStaticType() { return AssetTypes::Scene; }
-		AssetType GetType() override { return GetStaticType(); }
+		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 
 		//copy all the entities into another scene, first removing all entities in the other scene
-		void CopyEntitiesTo(Ref<Scene> otherScene);
+		void CopyEntitiesTo(AssetReference<Scene> otherScene);
 		void Clear();
 
 	private:

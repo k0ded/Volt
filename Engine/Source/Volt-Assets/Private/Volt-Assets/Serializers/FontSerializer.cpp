@@ -3,27 +3,30 @@
 #include "Volt-Assets/Serializers/FontSerializer.h"
 #include "Volt-Assets/Font.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
-	void FontSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void FontSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
 	{
 		VT_ASSERT_MSG(false, "[FontSerializer]: Asset it not serializable");
 	}
 
-	bool FontSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool FontSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
 	{
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
 
-		Ref<Font> font = std::reinterpret_pointer_cast<Font>(destinationAsset);
+		AssetReference<Font> font = destinationAsset.ConvertTo<Font>();
+		ScopedAssetReferenceLock fontLock{ font };
+
 		font->Initialize(filePath);
 
 		return true;

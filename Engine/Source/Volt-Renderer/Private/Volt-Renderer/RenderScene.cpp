@@ -18,7 +18,8 @@
 
 #include <EntitySystem/EntityScene.h>
 #include <EntitySystem/Entity.h>
-#include <AssetSystem/AssetManager.h>
+
+#include <AssetSystem/AssetLocks.h>
 
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/RHIFeatures.h>
@@ -86,8 +87,12 @@ namespace Volt
 			primitiveDrawData.boneOffset = m_currentBoneCount;
 
 			const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
-			if (renderObject.animator->GetSkeleton())
+			AssetReference<Skeleton> skeleton = renderObject.animator->GetSkeleton();
+
+			if (skeleton.IsValid())
 			{
+				ScopedAssetReferenceLock skeletonLock{ skeleton };
+				
 				m_currentBoneCount += static_cast<uint32_t>(renderObject.animator->GetSkeleton()->GetJointCount());
 				// Mark primitive as invalid.
 				InvalidatePrimitiveInstance(animatedObject);

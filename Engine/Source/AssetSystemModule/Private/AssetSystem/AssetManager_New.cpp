@@ -5,6 +5,7 @@
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/StringUtility.h>
 
 namespace Volt
 {
@@ -13,6 +14,10 @@ namespace Volt
 	AssetManager_New::AssetManager_New(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName)
 		: m_assetRegistry(engineDirectoryPath, projectDirectoryPath, assetsDirectoryName)
 	{
+		m_root.engineDirectoryPath = engineDirectoryPath;
+		m_root.projectDirectoryPath = projectDirectoryPath;
+		m_root.assetsDirectoryName = assetsDirectoryName;
+
 		CreateDependencyGraphAndAddAssetsFromRegistry();
 	}
 
@@ -87,7 +92,7 @@ namespace Volt
 			return;
 		}
 
-		if (assetMetadata->filePath.empty())
+		if (assetMetadata->filepath.empty())
 		{
 			VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that that does not have a path. ", asset->GetAssetHandle(), asset->GetAssetHandle());
 			return;
@@ -98,13 +103,19 @@ namespace Volt
 			// #TODO_AssetSystem: Uncomment once assets have been converted.
 			//AssetSerializerRegistry::Get().GetSerializer(assetMetadata->type).Serialize(*assetMetadata, assetMetadata->customData, asset);
 
-			VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", assetMetadata->handle, assetMetadata->filePath, timer.GetTime<Time::Seconds>());
+			VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", assetMetadata->handle, assetMetadata->filepath, timer.GetTime<Time::Seconds>());
 		}
 	}
 
 	bool AssetManager_New::IsValidAssetHandle(AssetHandle assetHandle) const
 	{
 		return m_assetRegistry.IsValidAssetHandle(assetHandle);
+	}
+
+	bool AssetManager_New::IsAssetLoaded(AssetHandle assetHandle) const
+	{
+		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+		return assetMetadata->isLoaded;
 	}
 
 	void AssetManager_New::CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath)
@@ -129,12 +140,12 @@ namespace Volt
 				return;
 			}
 
-			if (!assetMetadata->filePath.empty())
+			if (!assetMetadata->filepath.empty())
 			{
 				VT_LOGC(Warning, LogAssetSystem, "Tried to create a file for an asset '{0}' that already has an assigned file path, overriding!. Target file path: '{1}'", assetHandle, filepath.string().c_str());
 			}
 	
-			assetMetadata->filePath = filepath;
+			assetMetadata->filepath = filepath;
 		}
 
 		SaveAsset(assetHandle);
@@ -155,6 +166,63 @@ namespace Volt
 		return {};
 	}
 
+	void AssetManager_New::IterateAssetRegistryWithFilter(const AssetRegistryIteratorFilter& filter, AssetRegistryIteratorFunc&& func) const
+	{
+		VT_ENSURE(func != nullptr);
+
+		for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
+		{
+			ReadOnlyAssetMetadata assetMetadata = *it;
+
+			if (!filter.includeMemoryAssets && assetMetadata->isMemoryAsset)
+			{
+				continue;
+			}
+
+			if (!filter.filteredAssetTypes.empty() && !filter.filteredAssetTypes.contains(assetMetadata->type))
+			{
+				continue;
+			}
+
+			if (!func(*it))
+			{
+				break;
+			}
+		}
+	}
+
+	std::filesystem::path AssetManager_New::GetContextPath(const std::filesystem::path& path) const
+	{
+		std::filesystem::path projDir;
+
+		if (!IsEngineAsset(path))
+		{
+			projDir = m_root.projectDirectoryPath;
+		}
+
+		return projDir;
+	}
+
+	std::filesystem::path AssetManager_New::GetFilesystemPath(const std::filesystem::path& path) const
+	{
+		return GetContextPath(path) / path;
+	}
+
+	bool AssetManager_New::IsEngineAsset(const std::filesystem::path& path) const
+	{
+		const auto pathSplit = ::Utility::SplitStringsByCharacter(path.string(), '/');
+		if (!pathSplit.empty())
+		{
+			std::string lowerFirstPart = ::Utility::ToLower(pathSplit.front());
+			if (::Utility::StringContains(lowerFirstPart, "engine") || ::Utility::StringContains(lowerFirstPart, "editor"))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	void AssetManager_New::LoadAsset(AssetHandle assetHandle, RefPtr<Asset_New> asset)
 	{
 		ScopedTimer timer{};
@@ -170,7 +238,7 @@ namespace Volt
 
 		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
 
-		VT_LOGC(Trace, LogAssetSystem, "Loaded asset {0} with handle {1} in {2} seconds!", assetMetadata->filePath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
+		VT_LOGC(Trace, LogAssetSystem, "Loaded asset {0} with handle {1} in {2} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
 	}
 
 	void AssetManager_New::UnloadAndFreeAsset(AssetRefCounter* assetRefCounter)
@@ -226,6 +294,47 @@ namespace Volt
 		{
 			m_dependencyGraph->AddAssetToGraph((*it)->handle);
 		}
+	}
+
+	ReadOnlyAssetMetadata AssetManager_New::GetAssetMetadataFromFilepath(const std::filesystem::path& filepath)
+	{
+		AssetRegistryIteratorFilter filter{};
+
+		ReadOnlyAssetMetadata resultAssetMetadata{ AssetMetadataInit::Null };
+
+		IterateAssetRegistryWithFilter(filter, [filepath, &resultAssetMetadata](ReadOnlyAssetMetadata assetMetadata)
+		{
+			if (assetMetadata->filepath == filepath)
+			{
+				resultAssetMetadata = assetMetadata;
+				return false;
+			}
+
+			return true;
+		});
+
+		return { AssetMetadataInit::Null };
+	}
+
+	AssetHandle AssetManager_New::GetAssetHandleFromFilepath(const std::filesystem::path& filepath) const
+	{
+		AssetRegistryIteratorFilter filter{};
+		filter.includeMemoryAssets = false;
+
+		AssetHandle resultAssetHandle = Asset_New::Null();
+
+		IterateAssetRegistryWithFilter(filter, [&resultAssetHandle, filepath](ReadOnlyAssetMetadata assetMetadata) 
+		{
+			if (assetMetadata->filepath == filepath)
+			{
+				resultAssetHandle = assetMetadata->handle;
+				return false;
+			}
+
+			return true;
+		});
+
+		return resultAssetHandle;
 	}
 
 	AssetManager_New::ScopedAssetLock::ScopedAssetLock(RefPtr<Asset_New> asset)

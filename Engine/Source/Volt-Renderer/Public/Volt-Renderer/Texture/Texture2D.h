@@ -4,7 +4,7 @@
 
 #include <AssetSystem/AssetTypes.h>
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 #include <RHIModule/Descriptors/ResourceHandle.h>
 #include <RHIModule/Core/RHICommon.h>
@@ -17,7 +17,7 @@ namespace Volt
 		class Image;
 	}
 
-	class VTR_API Texture2D : public Asset
+	class VTR_API Texture2D : public Asset_New
 	{
 	public:
 		Texture2D(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data);
@@ -32,7 +32,7 @@ namespace Volt
 		void SetImage(RefPtr<RHI::Image> image);
 
 		static AssetType GetStaticType() { return AssetTypes::Texture; }
-		AssetType GetType() override { return GetStaticType(); }
+		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 
 		static Ref<Texture2D> Create(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data = nullptr);

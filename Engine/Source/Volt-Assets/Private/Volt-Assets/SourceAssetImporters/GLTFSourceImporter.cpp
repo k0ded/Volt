@@ -8,7 +8,8 @@
 #include <Volt-Assets/MaterialAsset.h>
 #include <Volt-Assets/MeshAsset.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Packing.h>
@@ -28,11 +29,11 @@ namespace Volt
 
 	using GLTFNodeIndex = size_t;
 
-	inline Vector<Ref<MaterialAsset>> CreateSceneMaterials(tinygltf::Model& gltfModel, MaterialTable& materialTable, const MeshSourceImportConfig& importConfig)
+	inline Vector<AssetReference<MaterialAsset>> CreateSceneMaterials(tinygltf::Model& gltfModel, MaterialTable& materialTable, const MeshSourceImportConfig& importConfig)
 	{
 		VT_PROFILE_FUNCTION();
 
-		Vector<Ref<MaterialAsset>> result;
+		Vector<AssetReference<MaterialAsset>> result;
 
 		for (const auto& mat : gltfModel.materials)
 		{
@@ -42,7 +43,9 @@ namespace Volt
 				matName = importConfig.destinationFilename + "_UnnamnedMaterial";
 			}
 
-			Ref<MaterialAsset> material = AssetManager::CreateAssetAndFile<MaterialAsset>(importConfig.destinationDirectory, matName);
+			AssetReference<MaterialAsset> material = g_assetManager->CreateAsset<MaterialAsset>(matName);
+			ScopedAssetReferenceLock materialLock{ material };
+
 			result.emplace_back(material);
 		
 			materialTable.SetMaterial(material->GetRenderMaterial(), static_cast<uint32_t>(result.size() - 1));
@@ -50,7 +53,9 @@ namespace Volt
 
 		if (result.empty())
 		{
-			Ref<MaterialAsset> material = AssetManager::CreateAssetAndFile<MaterialAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_DummyMaterial");
+			AssetReference<MaterialAsset> material = g_assetManager->CreateAsset<MaterialAsset>(importConfig.destinationFilename + "_DummyMaterial");
+			ScopedAssetReferenceLock materialLock{ material };
+
 			result.emplace_back(material);
 
 			materialTable.SetMaterial(material->GetRenderMaterial(), 0);
@@ -88,7 +93,7 @@ namespace Volt
 		return result;
 	}
 
-	Vector<Ref<Asset>> GLTFSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset_New>> GLTFSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const MeshSourceImportConfig& importConfig = *reinterpret_cast<const MeshSourceImportConfig*>(config);
@@ -124,7 +129,7 @@ namespace Volt
 			userData.OnWarning(outWarning);
 		}
 
-		Vector<Ref<Asset>> result;
+		Vector<AssetReference<Asset_New>> result;
 
 		switch (importConfig.importType)
 		{
@@ -269,7 +274,7 @@ namespace Volt
 		}
 	}
 
-	void GLTFSourceImporter::CreateVoltMeshFromGLTFMesh(const tinygltf::Mesh& gltfMesh, const tinygltf::Node& gltfNode, const tinygltf::Model& gltfModel, MeshInitializer& meshInitializer, const Vector<Ref<MaterialAsset>>& materials) const
+	void GLTFSourceImporter::CreateVoltMeshFromGLTFMesh(const tinygltf::Mesh& gltfMesh, const tinygltf::Node& gltfNode, const tinygltf::Model& gltfModel, MeshInitializer& meshInitializer, const Vector<AssetReference<MaterialAsset>>& materials) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -334,7 +339,7 @@ namespace Volt
 		}
 	}
 
-	Vector<Ref<Asset>> GLTFSourceImporter::ImportAsStaticMesh(tinygltf::Model& gltfModel, const MeshSourceImportConfig importConfig, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset_New>> GLTFSourceImporter::ImportAsStaticMesh(tinygltf::Model& gltfModel, const MeshSourceImportConfig importConfig, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -346,15 +351,15 @@ namespace Volt
 		}
 
 		MaterialTable materialTable;
-		Vector<Ref<MaterialAsset>> materials = CreateSceneMaterials(gltfModel, materialTable, importConfig);
+		Vector<AssetReference<MaterialAsset>> materials = CreateSceneMaterials(gltfModel, materialTable, importConfig);
 		
-		Vector<Ref<Asset>> result;
+		Vector<AssetReference<Asset_New>> result;
 		if (importConfig.combineMeshes)
 		{
 			MeshInitializer meshInitializer;
 			meshInitializer.SetMaterialTable(materialTable);
 
-			Ref<MeshAsset> voltMesh = AssetManager::CreateAssetAndFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename);
+			AssetReference<MeshAsset> voltMesh = g_assetManager->CreateAsset<MeshAsset>(importConfig.destinationFilename);
 
 			for (const auto& nodeIndex : gltfMeshNodes)
 			{
@@ -371,7 +376,9 @@ namespace Volt
 			{
 				const auto& gltfNode = gltfModel.nodes[nodeIndex];
 
-				Ref<MeshAsset> voltMesh = AssetManager::CreateAssetAndFile<MeshAsset>(importConfig.destinationDirectory, importConfig.destinationFilename + "_" + gltfNode.name);
+				AssetReference<MeshAsset> voltMesh = g_assetManager->CreateAsset<MeshAsset>(importConfig.destinationFilename + "_" + gltfNode.name);
+				ScopedAssetReferenceLock meshLock{ voltMesh };
+
 				MeshInitializer meshInitializer;
 
 				CreateVoltMeshFromGLTFMesh(gltfModel.meshes[gltfNode.mesh], gltfNode, gltfModel, meshInitializer, materials);

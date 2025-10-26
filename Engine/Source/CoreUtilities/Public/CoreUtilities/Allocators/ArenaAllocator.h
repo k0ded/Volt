@@ -165,7 +165,7 @@ public:
 			: m_arenaAllocator(nullptr)
 		{}
 
-		Iterator(ArenaAllocator& arenaAllocator)
+		Iterator(const ArenaAllocator& arenaAllocator)
 			: m_arenaAllocator(&arenaAllocator)
 		{
 			// Store max index on create, to not move the end of the iterator during iteration.
@@ -214,7 +214,7 @@ public:
 		}
 
 	private:
-		ArenaAllocator* m_arenaAllocator;
+		const ArenaAllocator* m_arenaAllocator;
 		size_t m_maxIndex = 0;
 		size_t m_currentIndex = 0;
 	};

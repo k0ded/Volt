@@ -4,7 +4,8 @@
 #include "Volt-Renderer/Texture/EnvironmentTexture.h"
 #include "Volt-Renderer/Texture/TextureSerializer.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -29,9 +30,10 @@ namespace Volt
 		}
 	};
 
-	void EnvironmentTextureSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void EnvironmentTextureSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
 	{
-		Ref<EnvironmentTexture> environmentTexture = std::reinterpret_pointer_cast<EnvironmentTexture>(asset);
+		AssetReference<EnvironmentTexture> environmentTexture = asset.ConvertTo<EnvironmentTexture>();
+		ScopedAssetReferenceLock textureLock{ environmentTexture };
 
 		RefPtr<RHI::Image> diffuseImage = environmentTexture->m_diffuseImage;
 		RefPtr<RHI::Image> specularImage = environmentTexture->m_specularImage;
@@ -47,7 +49,7 @@ namespace Volt
 		Buffer specularImageBuffer = TextureSerializer::GetImageDataBuffer(specularImage, specularHeader.mips);
 
 		BinaryStreamWriter streamWriter{};
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), streamWriter);
+		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
 
 		streamWriter.Write(diffuseHeader);
 		streamWriter.Write(specularHeader);
@@ -57,17 +59,17 @@ namespace Volt
 		diffuseImageBuffer.Release();
 		specularImageBuffer.Release();
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool EnvironmentTextureSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool EnvironmentTextureSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
 	{
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
@@ -76,7 +78,7 @@ namespace Volt
 
 		if (!streamReader.IsStreamValid())
 		{
-			VT_LOG(Error, "Failed to open file: {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
@@ -118,7 +120,9 @@ namespace Volt
 		TextureSerializer::UploadImageData(diffuseImage, diffuseHeader.format, diffuseHeader.mips, diffuseImageBuffer);
 		TextureSerializer::UploadImageData(specularImage, specularHeader.format, specularHeader.mips, specularImageBuffer);
 
-		Ref<EnvironmentTexture> environmentTexture = std::reinterpret_pointer_cast<EnvironmentTexture>(destinationAsset);
+		AssetReference<EnvironmentTexture> environmentTexture = destinationAsset.ConvertTo<EnvironmentTexture>();
+		ScopedAssetReferenceLock textureLock{ environmentTexture };
+
 		environmentTexture->m_diffuseImage = diffuseImage;
 		environmentTexture->m_specularImage = specularImage;
 

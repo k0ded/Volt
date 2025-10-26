@@ -4,7 +4,7 @@
 
 #include <AssetSystem/AssetTypes.h>
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 #include <glm/glm.hpp>
 
@@ -16,7 +16,7 @@ namespace Volt
 		TwoD
 	};
 
-	class BlendSpace : public Asset
+	class BlendSpace : public Asset_New
 	{
 	public:
 		BlendSpace() = default;
@@ -32,7 +32,7 @@ namespace Volt
 		inline void SetDimension(BlendSpaceDimension dim) { m_dimension = dim; }
 
 		static AssetType GetStaticType() { return AssetTypes::BlendSpace; }
-		virtual AssetType GetType() override { return AssetTypes::BlendSpace; }
+		virtual AssetType GetType() const override { return AssetTypes::BlendSpace; }
 		uint32_t GetVersion() const override { return 1; }
 
 	private:

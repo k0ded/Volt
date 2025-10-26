@@ -260,9 +260,9 @@ void MeshPreviewPanel::SaveCurrentMesh()
 		return;
 	}
 
-	if (!FileSystem::IsWriteable(currentMeshMeta.filePath))
+	if (!FileSystem::IsWriteable(currentMeshMeta.filepath))
 	{
-		UI::Notify(UI::NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}! It is not writeable!", currentMeshMeta.filePath.string()));
+		UI::Notify(UI::NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}! It is not writeable!", currentMeshMeta.filepath.string()));
 		return;
 	}
 

@@ -370,7 +370,7 @@ namespace Volt
 		cleanName.erase(std::remove_if(cleanName.begin(), cleanName.end(), [](char c) { return c == ':'; }), cleanName.end());
 
 		AssetMetadata metadata{};
-		metadata.filePath = ""; // assets that are not saved will not have a file path
+		metadata.filepath = ""; // assets that are not saved will not have a file path
 		metadata.handle = asset->handle; // handle will have generated on asset creation
 		metadata.type = T::GetStaticType();
 		metadata.isLoaded = true;

@@ -7,7 +7,8 @@
 #include <Volt-Physics/RigidbodyComponent.h>
 #include <Volt-Physics/CharacterControllerComponent.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Random.h>
 
@@ -49,8 +50,13 @@ namespace Volt
 				{
 					const auto& prefabRefData = m_prefabReferencesMap.at(entity.GetID());
 
-					Ref<Prefab> prefabRefAsset = AssetManager::GetAsset<Prefab>(prefabRefData.prefabAsset);
-					prefabRefAsset->UpdateEntityInSceneInternal(targetScene, entity, prefabRefData.prefabReferenceEntity);
+					AssetReference<Prefab> prefabRefAsset;
+					if (g_assetManager->TryGetAssetImmediately<Prefab>(prefabRefData.prefabAsset, prefabRefAsset))
+					{
+						ScopedAssetReferenceLock assetLock{ prefabRefAsset };
+						prefabRefAsset->UpdateEntityInSceneInternal(targetScene, entity, prefabRefData.prefabReferenceEntity);
+
+					}
 				}
 				else
 				{
@@ -119,7 +125,7 @@ namespace Volt
 
 		const auto& prefabComponent = entity.GetComponent<PrefabComponent>();
 
-		if (prefabComponent.prefabAsset != handle)
+		if (prefabComponent.prefabAsset != GetAssetHandle())
 		{
 			return false;
 		}
@@ -145,7 +151,7 @@ namespace Volt
 
 		const auto& prefabComponent = entity.GetComponent<PrefabComponent>();
 
-		if (prefabComponent.prefabAsset != handle)
+		if (prefabComponent.prefabAsset != GetAssetHandle())
 		{
 			return false;
 		}
@@ -244,7 +250,7 @@ namespace Volt
 		if (srcEntity.HasComponent<PrefabComponent>())
 		{
 			const auto& prefabComp = srcEntity.GetComponent<PrefabComponent>();
-			if (prefabComp.prefabAsset != handle)
+			if (prefabComp.prefabAsset != GetAssetHandle())
 			{
 				auto& prefabRefData = m_prefabReferencesMap[newEntity.GetID()];
 				prefabRefData.prefabReferenceEntity = prefabComp.prefabEntity;
@@ -257,7 +263,7 @@ namespace Volt
 		}
 
 		auto& srcPrefabComp = srcEntity.GetComponent<PrefabComponent>();
-		srcPrefabComp.prefabAsset = handle;
+		srcPrefabComp.prefabAsset = GetAssetHandle();
 		srcPrefabComp.prefabEntity = newEntity.GetID();
 		srcPrefabComp.version = m_version;
 
@@ -354,17 +360,18 @@ namespace Volt
 			{
 				const auto& prefabRefData = m_prefabReferencesMap.at(srcPrefabComp.prefabEntity);
 
-				Ref<Prefab> prefabRefAsset = AssetManager::GetAsset<Prefab>(prefabRefData.prefabAsset);
-				if (!prefabRefAsset || !prefabRefAsset->IsValid())
+				AssetReference<Prefab> prefabRefAsset;
+				if (g_assetManager->TryGetAssetImmediately<Prefab>(prefabRefData.prefabAsset, prefabRefAsset))
 				{
-					return false;
+					ScopedAssetReferenceLock assetLock{ prefabRefAsset };
+					return prefabRefAsset->UpdateEntityInPrefabInternal(srcEntity, sceneRootId, prefabRefData.prefabReferenceEntity);
 				}
 
-				return prefabRefAsset->UpdateEntityInPrefabInternal(srcEntity, sceneRootId, prefabRefData.prefabReferenceEntity);
+				return false;
 			}
 
 			// Make sure we are not updating from another prefab
-			if (srcEntity.GetComponent<PrefabComponent>().prefabAsset != handle && forcedPrefabEntity == Entity::NullID())
+			if (srcEntity.GetComponent<PrefabComponent>().prefabAsset != GetAssetHandle() && forcedPrefabEntity == Entity::NullID())
 			{
 				shouldAddEntity = true;
 			}
@@ -427,8 +434,12 @@ namespace Volt
 
 		if (m_prefabReferencesMap.contains(prefabEntityId))
 		{
-			Ref<Prefab> prefabRefAsset = AssetManager::GetAsset<Prefab>(scenePrefabComp.prefabAsset);
-			prefabRefAsset->UpdateEntityInSceneInternal(scene, sceneEntity, m_prefabReferencesMap.at(prefabEntityId).prefabReferenceEntity);
+			AssetReference<Prefab> prefabRefAsset;
+			if (g_assetManager->TryGetAssetImmediately<Prefab>(scenePrefabComp.prefabAsset, prefabRefAsset))
+			{
+				ScopedAssetReferenceLock assetLock{ prefabRefAsset };
+				prefabRefAsset->UpdateEntityInSceneInternal(scene, sceneEntity, m_prefabReferencesMap.at(prefabEntityId).prefabReferenceEntity);
+			}
 
 			return;
 		}

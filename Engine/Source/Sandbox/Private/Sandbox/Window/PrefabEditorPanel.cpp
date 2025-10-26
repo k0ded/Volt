@@ -209,7 +209,7 @@ void PrefabEditorPanel::SaveCurrentMesh()
 
 	if (!FileSystem::IsWriteable(filesystemPath))
 	{
-		UI::Notify(UI::NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}! It is not writeable!", metadata.filePath.string()));
+		UI::Notify(UI::NotificationType::Error, "Unable to save Mesh!", std::format("Unable to save mesh {0}! It is not writeable!", metadata.filepath.string()));
 		return;
 	}
 

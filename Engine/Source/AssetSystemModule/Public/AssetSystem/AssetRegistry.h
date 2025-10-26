@@ -12,10 +12,10 @@ namespace Volt
 	public:
 		AssetRegistry(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName);
 
-		AssetMetadata* GetAssetMetadata(AssetHandle assetHandle);
-		AssetMetadata* GetAssetMetadata(AssetHandle assetHandle) const;
+		VTAS_API AssetMetadata* GetAssetMetadata(AssetHandle assetHandle);
+		VTAS_API AssetMetadata* GetAssetMetadata(AssetHandle assetHandle) const;
 
-		bool IsValidAssetHandle(AssetHandle assetHandle) const;
+		VTAS_API bool IsValidAssetHandle(AssetHandle assetHandle) const;
 
 		VTAS_API void InsertAssetMetadata(AssetMetadata&& assetMetadata);
 		void RemoveAssetMetadata(AssetHandle assetHandle, bool unlockMutex = false);
@@ -48,6 +48,11 @@ namespace Volt
 		AssetMetadataAllocator m_metadata;
 	};
 
+	enum class AssetMetadataInit
+	{
+		Null
+	};
+
 	// A wrapper of the asset metadata that ensures no other
 	// thread can access it at the same time.
 	// Takes a asset metadata as a reference, it is ok as all metadata
@@ -55,6 +60,10 @@ namespace Volt
 	class WriteableAssetMetadata
 	{
 	public:
+		WriteableAssetMetadata(AssetMetadataInit) noexcept
+			: m_metadata(nullptr)
+		{}
+
 		WriteableAssetMetadata(AssetMetadata* inMetadata) noexcept
 			: m_metadata(inMetadata)
 		{
@@ -99,6 +108,10 @@ namespace Volt
 	class ReadOnlyAssetMetadata
 	{
 	public:
+		ReadOnlyAssetMetadata(AssetMetadataInit) noexcept
+			: m_metadata(nullptr)
+		{}
+
 		ReadOnlyAssetMetadata(AssetMetadata* inMetadata) noexcept
 			: m_metadata(inMetadata)
 		{
@@ -204,7 +217,7 @@ namespace Volt
 	class AssetRegistryConstIterator
 	{
 	public:
-		AssetRegistryConstIterator(AssetRegistry& assetRegistry)
+		AssetRegistryConstIterator(const AssetRegistry& assetRegistry)
 			: m_assetRegistry(assetRegistry),
 			m_iterator(assetRegistry.m_metadata)
 		{}
@@ -226,6 +239,21 @@ namespace Volt
 
 	private:
 		AssetRegistry::AssetMetadataAllocator::Iterator m_iterator;
-		AssetRegistry& m_assetRegistry;
+		const AssetRegistry& m_assetRegistry;
+	};
+
+	struct AssetRegistryIteratorFilter
+	{
+		// Wether or not to include memory assets.
+		bool includeMemoryAssets = true;
+
+		// If empty, all types are considered. Otherwise only the ones in this list.
+		std::set<AssetType> filteredAssetTypes;
+
+		template<typename T>
+		void AddAssetType()
+		{
+			filteredAssetTypes.insert(T::GetStaticType());
+		}
 	};
 }

@@ -2,7 +2,8 @@
 #include "Volt-Physics/PhysicsMaterialSerializer.h"
 #include "Volt-Physics/PhysicsMaterialAsset.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <PhysicsInterface/PhysicsMaterial.h>
 
@@ -15,12 +16,13 @@ namespace Volt
 		float bounciness;
 	};
 
-	void PhysicsMaterialSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void PhysicsMaterialSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
 	{
-		Ref<PhysicsMaterialAsset> material = std::reinterpret_pointer_cast<PhysicsMaterialAsset>(asset);
+		AssetReference<PhysicsMaterialAsset> material = asset.ConvertTo<PhysicsMaterialAsset>();
+		ScopedAssetReferenceLock materialLock{ material };
 
 		BinaryStreamWriter streamWriter{};
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), streamWriter);
+		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
 
 		PhysicsMaterialSerializationData serializationData{};
 		serializationData.staticFriction = material->m_material->GetStaticFriction();
@@ -29,17 +31,17 @@ namespace Volt
 
 		streamWriter.Write(serializationData);
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool PhysicsMaterialSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool PhysicsMaterialSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
 	{
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
@@ -48,7 +50,7 @@ namespace Volt
 
 		if (!streamReader.IsStreamValid())
 		{
-			VT_LOG(Error, "Failed to open file: {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
@@ -59,10 +61,12 @@ namespace Volt
 		PhysicsMaterialSerializationData serializationData{};
 		streamReader.Read(serializationData);
 
-		Ref<PhysicsMaterial> physicsMat = std::reinterpret_pointer_cast<PhysicsMaterial>(destinationAsset);
-		physicsMat->SetStaticFriction(serializationData.staticFriction);
-		physicsMat->SetDynamicFriction(serializationData.dynamicFriction);
-		physicsMat->SetBounciness(serializationData.bounciness);
+		AssetReference<PhysicsMaterialAsset> physicsMat = destinationAsset.ConvertTo<PhysicsMaterialAsset>();
+		ScopedAssetReferenceLock materialLock{ physicsMat };
+
+		physicsMat->GetMaterial()->SetStaticFriction(serializationData.staticFriction);
+		physicsMat->GetMaterial()->SetDynamicFriction(serializationData.dynamicFriction);
+		physicsMat->GetMaterial()->SetBounciness(serializationData.bounciness);
 
 		return true;
 	}

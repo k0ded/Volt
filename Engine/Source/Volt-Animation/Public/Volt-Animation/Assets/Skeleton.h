@@ -2,7 +2,7 @@
 
 #include "Volt-Animation/Assets/Animation.h"
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 #include <AssetSystem/AssetFactory.h>
 
 #include <CoreUtilities/Containers/Map.h>
@@ -11,7 +11,7 @@
 
 namespace Volt
 {
-	class VTA_API Skeleton : public Asset
+	class VTA_API Skeleton : public Asset_New
 	{
 	public:
 		struct Joint
@@ -85,7 +85,7 @@ namespace Volt
 		const std::string GetNameFromJointIndex(int32_t index);
 
 		static AssetType GetStaticType() { return AssetTypes::Skeleton; }
-		AssetType GetType() override { return GetStaticType(); };
+		AssetType GetType() const override { return GetStaticType(); };
 		uint32_t GetVersion() const override { return 1; }
 
 	private:

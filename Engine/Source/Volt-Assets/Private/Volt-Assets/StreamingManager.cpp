@@ -12,7 +12,8 @@
 #include <AssetSystem/AssetTypes.h>
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 VT_DEFINE_LOG_CATEGORY(LogStreamingManager);
 
@@ -215,11 +216,12 @@ namespace Volt
 
 	void StreamingManager::InitializeScenePrimitiveFromInstance(const StreamingInstanceMap::StreamingInstance& instance)
 	{
-		Ref<MeshAsset> meshAsset = AssetManager::QueueAsset<MeshAsset>(instance.meshHandle);
 		Ref<Mesh> mesh;
 
-		if (meshAsset && meshAsset->IsValid())
+		AssetReference<MeshAsset> meshAsset;
+		if (g_assetManager->TryGetAsset<MeshAsset>(instance.meshHandle, meshAsset))
 		{
+			ScopedAssetReferenceLock assetLock{ meshAsset };
 			mesh = meshAsset->GetMesh();
 		}
 		else
@@ -237,11 +239,12 @@ namespace Volt
 				continue;
 			}
 
-			Ref<MaterialAsset> materialAsset = AssetManager::QueueAsset<MaterialAsset>(materialHandle);
 			Ref<RenderMaterial> renderMaterial;
 			
-			if (materialAsset && materialAsset->IsValid())
+			AssetReference<MaterialAsset> materialAsset;
+			if (g_assetManager->TryGetAsset(materialHandle, materialAsset))
 			{
+				ScopedAssetReferenceLock assetLock{ materialAsset };
 				renderMaterial = materialAsset->GetRenderMaterial();
 			}
 			else
@@ -272,12 +275,13 @@ namespace Volt
 
 	void StreamingManager::InitializeSceneLightDataFromInstance(const StreamingInstanceMap::StreamingInstance& instance)
 	{
-		Ref<EnvironmentTexture> environmentTexture = AssetManager::QueueAsset<EnvironmentTexture>(instance.environmentTextureHandle);
-
 		SceneLightDescription lightDescription = instance.sceneLightDescription;
 		
-		if (environmentTexture && environmentTexture->IsValid())
+		AssetReference<EnvironmentTexture> environmentTexture;
+		if (g_assetManager->TryGetAsset(instance.environmentTextureHandle, environmentTexture))
 		{
+			ScopedAssetReferenceLock assetLock{ environmentTexture };
+
 			lightDescription.diffuseIBL = environmentTexture->GetDiffuseImage();
 			lightDescription.specularIBL = environmentTexture->GetSpecularImage();
 		}
@@ -293,7 +297,7 @@ namespace Volt
 	StreamingInstanceAssetReferenceCounter::StreamingInstanceAssetReferenceCounter(AssetType assetType)
 		: m_assetType(assetType)
 	{
-		m_assetUpdatedCallback = AssetManager::RegisterAssetUpdatedCallback(assetType, [&](AssetHandle assetHandle, AssetChangedState state)
+		m_assetUpdatedCallback = g_assetManager->RegisterAssetUpdatedCallback(assetType, [&](AssetHandle assetHandle, AssetChangedState state)
 		{
 			std::scoped_lock lock{ m_streamingInstancesMapMutex };
 			if (m_callbackFunction && m_streamingInstancesFromAssetHandle.contains(assetHandle))
@@ -305,7 +309,7 @@ namespace Volt
 
 	StreamingInstanceAssetReferenceCounter::~StreamingInstanceAssetReferenceCounter()
 	{
-		AssetManager::UnregisterAssetUpdatedCallback(m_assetType, m_assetUpdatedCallback);
+		g_assetManager->UnregisterAssetUpdatedCallback(m_assetType, m_assetUpdatedCallback);
 	}
 
 	void StreamingInstanceAssetReferenceCounter::AddReference(AssetHandle assetHandle, StreamingInstanceID instanceId)

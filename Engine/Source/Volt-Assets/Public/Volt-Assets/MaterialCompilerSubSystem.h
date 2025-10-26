@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Volt-Assets/Config.h"
+#include "Volt-Assets/MaterialAsset.h"
 
+#include <AssetSystem/AssetReference.h>
 #include <SubSystem/SubSystem.h>
 
 #include <CoreUtilities/WorkQueue.h>
@@ -16,13 +18,13 @@ namespace Volt
 		void Initialize() override;
 		void Shutdown() override;
 
-		void RequestMaterialCompilation(Ref<MaterialAsset> materialAsset);
+		void RequestMaterialCompilation(AssetReference<MaterialAsset> materialAsset);
 
 		VT_DECLARE_SUBSYSTEM("{EEB3C410-3128-486A-8F66-810CEB39314C}"_guid);
 	private:
 		struct CompilationJob
 		{
-			Ref<MaterialAsset> material;
+			AssetReference<MaterialAsset> material;
 		};
 		
 		void RunWorker();

@@ -8,10 +8,10 @@ namespace Volt
 	class ScopedAssetReferenceLock
 	{
 	public:
-		ScopedAssetReferenceLock(AssetReference<T>& assetReference) noexcept
+		ScopedAssetReferenceLock(const AssetReference<T>& assetReference) noexcept
 			: m_assetReference(assetReference)
 		{
-			assetReference.Lock();
+			m_assetReference.Lock();
 		}
 
 		~ScopedAssetReferenceLock() noexcept
@@ -25,6 +25,6 @@ namespace Volt
 		ScopedAssetReferenceLock& operator=(const ScopedAssetReferenceLock&) = delete;
 
 	private:
-		AssetReference<T>& m_assetReference;
+		const AssetReference<T>& m_assetReference;
 	};
 }

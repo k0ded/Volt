@@ -57,7 +57,7 @@ AssetBrowserPopup::State AssetBrowserPopup::Update()
 inline static size_t GetHashFromMetadata(const Volt::AssetMetadata& metadata)
 {
 	size_t hash = 0;
-	hash = std::hash<std::string>()(metadata.filePath.stem().string());
+	hash = std::hash<std::string>()(metadata.filepath.stem().string());
 	hash = Math::HashCombine(hash, std::hash<uint64_t>()(metadata.handle));
 
 	return hash;
@@ -83,7 +83,7 @@ AssetBrowserPopup::State AssetBrowserPopup::RenderView(const Vector<Volt::AssetH
 			continue;
 		}
 
-		const std::string assetName = metadata.filePath.stem().string();
+		const std::string assetName = metadata.filepath.stem().string();
 		nameHandle.emplace_back(assetName, metadata.handle);
 	}
 

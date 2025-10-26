@@ -1,6 +1,11 @@
 #pragma once
 
+#include "Volt-Renderer/Texture/Texture2D.h"
+
 #include <RenderCore/RenderGraph/ShaderParameterStruct.h>
+
+#include <AssetSystem/AssetReference.h>
+
 #include <CoreUtilities/Pointers/RefPtr.h>
 
 namespace Volt
@@ -10,14 +15,13 @@ namespace Volt
 		class Image;
 	}
 
-	class Texture2D;
 	class RenderGraph;
 
 	struct BlueNoiseData
 	{
-		Ref<Texture2D> scalarBlueNoise;
-		Ref<Texture2D> rgbaBlueNoise;
-		Ref<Texture2D> vec2BlueNoise;
+		AssetReference<Texture2D> scalarBlueNoise;
+		AssetReference<Texture2D> rgbaBlueNoise;
+		AssetReference<Texture2D> vec2BlueNoise;
 		glm::uvec3 moduloMasks;
 		glm::uvec3 dimensions;
 	};

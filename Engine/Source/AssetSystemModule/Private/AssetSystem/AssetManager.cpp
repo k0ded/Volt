@@ -162,16 +162,16 @@ namespace Volt
 		m_dependencyGraph->AddAssetToGraph(assetHandle);
 
 		asset->handle = metadata.handle;
-		asset->assetName = metadata.filePath.stem().string();
+		asset->assetName = metadata.filepath.stem().string();
 
 		{
 #ifndef VT_DIST
 			ScopedTimer timer{};
 #endif
-			AssetSerializerRegistry::Get().GetSerializer(metadata.type).Deserialize(metadata, asset);
+			//AssetSerializerRegistry::Get().GetSerializer(metadata.type).Deserialize(metadata, asset);
 
 #ifndef VT_DIST
-			VT_LOGC(Trace, LogAssetSystem, "Loaded asset {0} with handle {1} in {2} seconds!", metadata.filePath, asset->handle, timer.GetTime<Time::Seconds>());
+			VT_LOGC(Trace, LogAssetSystem, "Loaded asset {0} with handle {1} in {2} seconds!", metadata.filepath, asset->handle, timer.GetTime<Time::Seconds>());
 #endif	
 		}
 
@@ -270,7 +270,7 @@ namespace Volt
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
 
 		outMetadata.handle = serializedMetadata.handle;
-		outMetadata.filePath = GetRelativePath(assetPath);
+		outMetadata.filepath = GetRelativePath(assetPath);
 		outMetadata.type = serializedMetadata.type;
 		outMetadata.customData = serializedMetadata.customData;
 	}
@@ -386,7 +386,7 @@ namespace Volt
 				return;
 			}
 
-			assetFilePath = assetMetaData.filePath;
+			assetFilePath = assetMetaData.filepath;
 		}
 
 		FileSystem::Move(projDir / assetFilePath, projDir / targetDir);
@@ -395,7 +395,7 @@ namespace Volt
 
 		{
 			WriteLock lock{ m_assetRegistryMutex };
-			m_assetRegistry[asset->handle].filePath = newPath;
+			m_assetRegistry[asset->handle].filepath = newPath;
 		}
 	}
 
@@ -413,7 +413,7 @@ namespace Volt
 				return;
 			}
 
-			assetFilePath = assetMetaData.filePath;
+			assetFilePath = assetMetaData.filepath;
 		}
 
 		const std::filesystem::path newPath = targetDir / assetFilePath.filename();
@@ -423,7 +423,7 @@ namespace Volt
 
 		{
 			WriteLock lock{ m_assetRegistryMutex };
-			m_assetRegistry[assetHandle].filePath = newPath;
+			m_assetRegistry[assetHandle].filepath = newPath;
 		}
 	}
 
@@ -437,7 +437,7 @@ namespace Volt
 			WriteLock lock{ m_assetRegistryMutex };
 			AssetMetadata& metadata = GetMetadataFromFilePathMutable(sourcePath);
 
-			metadata.filePath = GetCleanAssetFilePath(targetPath);
+			metadata.filepath = GetCleanAssetFilePath(targetPath);
 			assetHandle = metadata.handle;
 		}
 	}
@@ -463,7 +463,7 @@ namespace Volt
 
 			for (const auto& [handle, metaData] : m_assetRegistry)
 			{
-				const std::string filePathLower = ::Utility::ToLower(metaData.filePath.string());
+				const std::string filePathLower = ::Utility::ToLower(metaData.filepath.string());
 
 				if (auto it = filePathLower.find(sourceDirLower); it != std::string::npos)
 				{
@@ -478,7 +478,7 @@ namespace Volt
 			{
 				auto& metadata = GetMetadataFromHandleMutable(handle);
 
-				std::string newPath = metadata.filePath.string();
+				std::string newPath = metadata.filepath.string();
 				const size_t directoryStringLoc = ::Utility::ToLower(newPath).find(::Utility::ToLower(sourceDir.string()));
 
 				if (directoryStringLoc == std::string::npos)
@@ -488,7 +488,7 @@ namespace Volt
 
 				newPath.erase(directoryStringLoc, sourceDir.string().length());
 				newPath.insert(directoryStringLoc, targetDir.string());
-				metadata.filePath = GetCleanAssetFilePath(newPath);
+				metadata.filepath = GetCleanAssetFilePath(newPath);
 			}
 		}
 	}
@@ -507,7 +507,7 @@ namespace Volt
 				return;
 			}
 
-			m_assetRegistry.at(assetHandle).filePath = newPath;
+			m_assetRegistry.at(assetHandle).filepath = newPath;
 		}
 
 		{
@@ -532,7 +532,7 @@ namespace Volt
 			return;
 		}
 
-		metadata.filePath = GetCleanAssetFilePath(targetFilePath);
+		metadata.filepath = GetCleanAssetFilePath(targetFilePath);
 	}
 
 	void AssetManager::DeleteAsset(AssetHandle assetHandle)
@@ -547,7 +547,7 @@ namespace Volt
 		WriteLock lock{ m_assetRegistryMutex };
 		m_assetRegistry.erase(assetHandle);
 
-		const std::filesystem::path filePath = metadata.filePath;
+		const std::filesystem::path filePath = metadata.filepath;
 		const auto projDir = GetContextPath(filePath);
 
 		{
@@ -657,7 +657,7 @@ namespace Volt
 		}
 
 #ifdef VT_DEBUG
-		const auto cleanFilePath = GetCleanAssetFilePath(metadata.filePath);
+		const auto cleanFilePath = GetCleanAssetFilePath(metadata.filepath);
 		VT_LOGC(Trace, LogAssetSystem, "Removed asset {0} with handle {1} from registry!", assetHandle, cleanFilePath);
 #endif
 	}
@@ -688,7 +688,7 @@ namespace Volt
 		}
 
 #ifdef VT_DEBUG
-		const auto cleanFilePath = GetCleanAssetFilePath(metadata.filePath);
+		const auto cleanFilePath = GetCleanAssetFilePath(metadata.filepath);
 		VT_LOGC(Trace, LogAssetSystem, "Removed asset {0} with handle {1} from registry!", metadata.handle, cleanFilePath);
 #endif
 	}
@@ -708,7 +708,7 @@ namespace Volt
 
 			for (const auto& [handle, metaData] : m_assetRegistry)
 			{
-				const std::string filePathLower = ::Utility::ToLower(metaData.filePath.string());
+				const std::string filePathLower = ::Utility::ToLower(metaData.filepath.string());
 
 				if (auto it = filePathLower.find(sourceDirLower); it != std::string::npos)
 				{
@@ -789,7 +789,7 @@ namespace Volt
 			WriteLock lock{ m_assetRegistryMutex };
 			AssetMetadata& metadata = m_assetRegistry[newHandle];
 			metadata.handle = newHandle;
-			metadata.filePath = cleanFilePath;
+			metadata.filepath = cleanFilePath;
 			metadata.type = type;
 			//TODO_Fabian write custom metadata
 			//metadata.customData
@@ -969,7 +969,7 @@ namespace Volt
 			return {};
 		}
 
-		return metadata.filePath;
+		return metadata.filepath;
 	}
 
 	const std::filesystem::path AssetManager::GetContextPath(const std::filesystem::path& path)
@@ -1000,9 +1000,9 @@ namespace Volt
 
 		for (const auto& [handle, metadata] : instance.m_assetRegistry)
 		{
-			if (metadata.filePath.filename() == filename)
+			if (metadata.filepath.filename() == filename)
 			{
-				return metadata.filePath;
+				return metadata.filepath;
 			}
 		}
 
@@ -1120,16 +1120,16 @@ namespace Volt
 					asset->handle = handle;
 				}
 
-				asset->assetName = metadata.filePath.stem().string();
+				asset->assetName = metadata.filepath.stem().string();
 
 				{
 #ifndef VT_DIST
 					ScopedTimer timer{};
 #endif
-					AssetSerializerRegistry::Get().GetSerializer(metadata.type).Deserialize(metadata, asset);
+					//AssetSerializerRegistry::Get().GetSerializer(metadata.type).Deserialize(metadata, asset);
 
 #ifndef VT_DIST
-					VT_LOGC(Trace, LogAssetSystem, "Loaded asset {0} with handle {1} in {2} seconds!", metadata.filePath.string().c_str(), asset->handle, timer.GetTime<Time::Seconds>());
+					VT_LOGC(Trace, LogAssetSystem, "Loaded asset {0} with handle {1} in {2} seconds!", metadata.filepath.string().c_str(), asset->handle, timer.GetTime<Time::Seconds>());
 #endif
 				}
 
@@ -1152,7 +1152,7 @@ namespace Volt
 			JobSystem::RunJob(loadJob);
 
 #ifndef VT_DIST
-			VT_LOGC(Trace, LogAssetSystem, "Queued asset {0} for loading!", metadata.filePath);
+			VT_LOGC(Trace, LogAssetSystem, "Queued asset {0} for loading!", metadata.filepath);
 #endif
 		}
 	}
@@ -1175,7 +1175,7 @@ namespace Volt
 
 		for (auto& [handle, metaData] : instance.m_assetRegistry)
 		{
-			if (metaData.filePath == filePath)
+			if (metaData.filepath == filePath)
 			{
 				return metaData;
 			}
@@ -1204,7 +1204,7 @@ namespace Volt
 
 		for (const auto& [handle, metaData] : instance.m_assetRegistry)
 		{
-			if (metaData.filePath == cleanPath)
+			if (metaData.filepath == cleanPath)
 			{
 				return metaData;
 			}
@@ -1221,7 +1221,7 @@ namespace Volt
 			return {};
 		}
 
-		return !metadata.filePath.empty();
+		return !metadata.filepath.empty();
 	}
 
 	const std::filesystem::path AssetManager::GetCleanAssetFilePath(const std::filesystem::path& filePath)
@@ -1264,7 +1264,7 @@ namespace Volt
 			return;
 		}
 
-		if (metadata.filePath.empty())
+		if (metadata.filepath.empty())
 		{
 			VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that that does not have a path. ", asset->assetName, handle);
 			return;
@@ -1275,10 +1275,10 @@ namespace Volt
 			ScopedTimer timer{};
 #endif
 
-			AssetSerializerRegistry::Get().GetSerializer(metadata.type).Serialize(metadata, metadata.customData, asset);
+			//AssetSerializerRegistry::Get().GetSerializer(metadata.type).Serialize(metadata, metadata.customData, asset);
 
 #ifndef VT_DIST
-			VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", metadata.handle, metadata.filePath, timer.GetTime<Time::Seconds>());
+			VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", metadata.handle, metadata.filepath, timer.GetTime<Time::Seconds>());
 #endif
 		}
 
@@ -1317,13 +1317,13 @@ namespace Volt
 				return;
 			}
 
-			if (!metadata.filePath.empty())
+			if (!metadata.filepath.empty())
 			{
 				VT_LOGC(Warning, LogAssetSystem, "Tried to create a file for an asset '{0}' that already has an assigned file path. Target file path: '{1}'", handle, targetFilePath.string().c_str());
 			}
 			else
 			{
-				metadata.filePath = targetFilePath;
+				metadata.filepath = targetFilePath;
 			}
 		}
 		SaveAssetImpl(handle);

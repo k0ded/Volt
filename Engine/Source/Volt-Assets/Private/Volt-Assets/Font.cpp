@@ -322,7 +322,7 @@ namespace Volt
 			}
 		}
 
-		std::string fontName = AssetManager::GetMetadataFromHandle(handle).filePath.stem().string(); // #TODO_Ivar: change font constructor
+		const std::string fontName = std::string(GetAssetName());
 		const std::filesystem::path cachePath = Utility::GetCachePath(fontName);
 
 		Ref<Texture2D> texture;

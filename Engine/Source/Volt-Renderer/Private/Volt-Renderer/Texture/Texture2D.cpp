@@ -44,7 +44,6 @@ namespace Volt
 		m_image = image;
 	}
 
-
 	Ref<Texture2D> Texture2D::Create(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data)
 	{
 		return CreateRef<Texture2D>(format, width, height, data);

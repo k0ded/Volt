@@ -30,7 +30,7 @@ void ConvertToWorldEngineModal::DrawModalContent()
 		const auto& metadata = Volt::AssetManager::GetMetadataFromHandle(m_scene->handle);
 		if (metadata.IsValid())
 		{
-			const std::filesystem::path directoryPath = Volt::AssetManager::GetFilesystemPath(metadata.filePath);
+			const std::filesystem::path directoryPath = Volt::AssetManager::GetFilesystemPath(metadata.filepath);
 			const std::filesystem::path layersPath = directoryPath / "Layers";
 
 			if (std::filesystem::exists(directoryPath) && std::filesystem::exists(layersPath))

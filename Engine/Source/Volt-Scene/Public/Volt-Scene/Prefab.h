@@ -8,14 +8,14 @@
 #include <EntitySystem/Entity.h>
 #include <EntitySystem/Scripting/CoreComponents.h>
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 #include <AssetSystem/AssetFactory.h>
 
 namespace Volt
 {
 	class Scene;
 
-	class VTS_API Prefab : public Asset
+	class VTS_API Prefab : public Asset_New
 	{
 	public:
 		struct PrefabReferenceData
@@ -47,7 +47,7 @@ namespace Volt
 		uint32_t GetPrefabVersion() const { return m_version; }
 
 		static AssetType GetStaticType() { return AssetTypes::Prefab; }
-		AssetType GetType() override { return GetStaticType(); };
+		AssetType GetType() const override { return GetStaticType(); };
 
 	private:
 		friend class PrefabImporter;

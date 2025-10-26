@@ -124,7 +124,7 @@ namespace Volt
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
 
 		outMetadata.handle = serializedMetadata.handle;
-		outMetadata.filePath = GetRelativeAssetFilepath(assetFilepath);
+		outMetadata.filepath = GetRelativeAssetFilepath(assetFilepath);
 		outMetadata.type = serializedMetadata.type;
 		outMetadata.customData = serializedMetadata.customData;
 	}

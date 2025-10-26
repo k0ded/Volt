@@ -5,8 +5,9 @@
 
 #include "Volt-Renderer/Mesh/Mesh.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
 #include <AssetSystem/Serialization/AssetSerializationCommon.h>
+#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -49,12 +50,13 @@ namespace Volt
 		}
 	};
 
-	void MeshSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void MeshSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
 	{
-		Ref<MeshAsset> meshAsset = std::reinterpret_pointer_cast<MeshAsset>(asset);
+		AssetReference<MeshAsset> meshAsset = asset.ConvertTo<MeshAsset>();
+		ScopedAssetReferenceLock meshLock{ meshAsset };
 
 		BinaryStreamWriter streamWriter{};
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), streamWriter);
+		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
 
 		MeshSerializationData_V2 serializationData{};
 
@@ -71,17 +73,17 @@ namespace Volt
 
 		streamWriter.Write(serializationData);
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool MeshSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool MeshSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
 	{
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
@@ -90,12 +92,13 @@ namespace Volt
 
 		if (!streamReader.IsStreamValid())
 		{
-			VT_LOG(Error, "Failed to open file: {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
 
-		Ref<MeshAsset> meshAsset = std::reinterpret_pointer_cast<MeshAsset>(destinationAsset);
+		AssetReference<MeshAsset> meshAsset = destinationAsset.ConvertTo<MeshAsset>();
+		ScopedAssetReferenceLock meshLock{ meshAsset };
 
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
 
@@ -108,7 +111,7 @@ namespace Volt
 
 			for (const auto& mat : serializationData.materials)
 			{
-				AssetManager::AddDependencyToAsset(metadata.handle, mat);
+				g_assetManager->AddDependencyToAsset(metadata->handle, mat);
 			}
 
 			meshInitializer.SetVertices(

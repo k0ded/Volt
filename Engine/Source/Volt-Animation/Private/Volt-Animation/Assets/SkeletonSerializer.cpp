@@ -4,6 +4,7 @@
 #include "Volt-Animation/Assets/Skeleton.h"
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -37,9 +38,11 @@ namespace Volt
 		}
 	};
 
-	void SkeletonSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void SkeletonSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
 	{
-		Ref<Skeleton> skeleton = std::reinterpret_pointer_cast<Skeleton>(asset);
+		AssetReference<Skeleton> skeleton = asset.ConvertTo<Skeleton>();
+		ScopedAssetReferenceLock skeletonLock{ skeleton };
+
 		BinaryStreamWriter streamWriter{};
 	
 		SkeletonSerializationData serializationData{};
@@ -50,20 +53,20 @@ namespace Volt
 		serializationData.restPose = skeleton->m_restPose;
 		serializationData.jointNameToIndex = skeleton->m_jointNameToIndex;
 
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), streamWriter);
+		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
 		streamWriter.Write(serializationData);
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = AssetManager::GetFilesystemPath(metadata->filepath);
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool SkeletonSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool SkeletonSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
 	{
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = AssetManager::GetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
@@ -72,7 +75,7 @@ namespace Volt
 
 		if (!streamReader.IsStreamValid())
 		{
-			VT_LOG(Error, "Failed to open file: {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
@@ -83,7 +86,8 @@ namespace Volt
 		SkeletonSerializationData serializationData{};
 		streamReader.Read(serializationData);
 
-		Ref<Skeleton> skeleton = std::reinterpret_pointer_cast<Skeleton>(destinationAsset);
+		AssetReference<Skeleton> skeleton = destinationAsset.ConvertTo<Skeleton>();
+		ScopedAssetReferenceLock skeletonLock{ skeleton };
 
 		skeleton->m_name = serializationData.name;
 		skeleton->m_joints = serializationData.joints;

@@ -439,7 +439,7 @@ void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, cons
 
 Ref<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, Ref<Volt::Prefab>>& prefabs)
 {
-	const std::filesystem::path absoluteScenePath = project.rootDirectory / metadata.filePath;
+	const std::filesystem::path absoluteScenePath = project.rootDirectory / metadata.filepath;
 
 	if (!FileSystem::Exists(absoluteScenePath))
 	{
@@ -661,7 +661,7 @@ Ref<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Volt::Project&
 		glm::vec4 weights;
 	};
 
-	const std::filesystem::path absoluteMeshPath = project.rootDirectory / metadata.filePath;
+	const std::filesystem::path absoluteMeshPath = project.rootDirectory / metadata.filepath;
 
 	if (!FileSystem::Exists(absoluteMeshPath))
 	{
@@ -778,7 +778,7 @@ Ref<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Volt::Project&
 
 Ref<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata)
 {
-	const std::filesystem::path absolutePrefabPath = project.rootDirectory / metadata.filePath;
+	const std::filesystem::path absolutePrefabPath = project.rootDirectory / metadata.filepath;
 	
 	if (!FileSystem::Exists(absolutePrefabPath))
 	{
@@ -919,7 +919,7 @@ Ref<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Project& projec
 
 	Ref<Prefab> prefab = CreateRef<Prefab>(prefabScene, rootEntityId, version);
 
-	VT_LOG(Trace, "Converted Prefab with name {}", metadata.filePath.stem().string());
+	VT_LOG(Trace, "Converted Prefab with name {}", metadata.filepath.stem().string());
 	return prefab;
 }
 
@@ -955,10 +955,10 @@ void ProjectConversionPanel::LoadAssetMetadataFromMetaFiles(const Volt::Project&
 				}
 
 				newMetadata.handle = metadataReader.ReadAtKey("Handle", AssetHandle(0));
-				newMetadata.filePath = metadataReader.ReadAtKey("Path", std::filesystem::path(""));
+				newMetadata.filepath = metadataReader.ReadAtKey("Path", std::filesystem::path(""));
 				newMetadata.type = AssetTypes::None;
 
-				const std::filesystem::path absoluteAssetPath = project.rootDirectory / newMetadata.filePath;
+				const std::filesystem::path absoluteAssetPath = project.rootDirectory / newMetadata.filepath;
 				if (FileSystem::Exists(absoluteAssetPath))
 				{
 					const std::string fileExtension = absoluteAssetPath.extension().string();

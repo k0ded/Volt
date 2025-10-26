@@ -6,7 +6,7 @@
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
 
 #include <CoreUtilities/Math/Math.h>
 
@@ -27,8 +27,8 @@ namespace Volt
 	void BlueNoise::LoadBlueNoiseTextures()
 	{
 		// Spatiotemporal
-		s_blueNoiseData.scalarBlueNoise = AssetManager::GetAsset<Texture2D>("Engine/Textures/STBlueNoise_scalar_128x128x64.vtasset");
-		s_blueNoiseData.vec2BlueNoise = AssetManager::GetAsset<Texture2D>("Engine/Textures/STBlueNoise_vec2_128x128x64.vtasset");
+		s_blueNoiseData.scalarBlueNoise = g_assetManager->GetAssetImmediately<Texture2D>("Engine/Textures/STBlueNoise_scalar_128x128x64.vtasset");
+		s_blueNoiseData.vec2BlueNoise = g_assetManager->GetAssetImmediately<Texture2D>("Engine/Textures/STBlueNoise_vec2_128x128x64.vtasset");
 
 		const uint32_t width = s_blueNoiseData.scalarBlueNoise->GetWidth();
 		const uint32_t height = s_blueNoiseData.scalarBlueNoise->GetHeight();
@@ -40,7 +40,7 @@ namespace Volt
 			(1u << Math::FloorLog2(s_blueNoiseData.dimensions.z)) - 1);
 
 		// RGBA
-		s_blueNoiseData.rgbaBlueNoise = AssetManager::GetAsset<Texture2D>("Engine/Textures/BlueNoise_rgba_512x512.vtasset");
+		s_blueNoiseData.rgbaBlueNoise = g_assetManager->GetAssetImmediately<Texture2D>("Engine/Textures/BlueNoise_rgba_512x512.vtasset");
 	}
 
 	BlueNoiseShaderParameters BlueNoise::GetBlueNoiseParameters(RenderGraph& renderGraph)

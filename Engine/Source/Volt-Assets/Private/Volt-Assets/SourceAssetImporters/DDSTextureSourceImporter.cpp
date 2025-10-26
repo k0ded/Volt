@@ -11,7 +11,7 @@
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Utility/ResourceUtility.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -82,7 +82,7 @@ namespace Volt
 		return RHI::PixelFormat::R8G8B8A8_UNORM;
 	}
 
-	Vector<Ref<Asset>> DDSTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset_New>> DDSTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const TextureSourceImportConfig& importConfig = *reinterpret_cast<const TextureSourceImportConfig*>(config);
@@ -199,15 +199,15 @@ namespace Volt
 
 		RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
 
-		Ref<Texture2D> voltTexture;
+		AssetReference<Texture2D> voltTexture;
 
 		if (importConfig.createAsMemoryAsset)
 		{
-			voltTexture = AssetManager::CreateMemoryAsset<Texture2D>(importConfig.destinationFilename);
+			voltTexture = g_assetManager->CreateMemoryAsset<Texture2D>(importConfig.destinationFilename);
 		}
 		else
 		{
-			voltTexture = AssetManager::CreateAsset<Texture2D>(importConfig.destinationFilename);
+			voltTexture = g_assetManager->CreateAsset<Texture2D>(importConfig.destinationFilename);
 		}
 
 		voltTexture->SetImage(image);

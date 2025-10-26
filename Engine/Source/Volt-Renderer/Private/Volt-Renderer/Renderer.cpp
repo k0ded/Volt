@@ -7,7 +7,8 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
@@ -160,10 +161,26 @@ namespace Volt
 
 	Renderer::EnvironmentTextures Renderer::GenerateEnvironmentTextures(AssetHandle baseTextureHandle)
 	{
-		Ref<Texture2D> environmentTexture = AssetManager::GetAsset<Texture2D>(baseTextureHandle);
-		if (!environmentTexture || !environmentTexture->IsValid())
+		AssetReference<Texture2D> environmentTexture = g_assetManager->GetAssetImmediately<Texture2D>(baseTextureHandle);
+
+		// Texture doesn't exist.
+		if (!environmentTexture)
 		{
 			return {};
+		}
+
+		RefPtr<RHI::Image> environmentTextureImage;
+
+		// Get the image from the environment texture.
+		{
+			ScopedAssetReferenceLock assetLock{ environmentTexture };
+
+			if (!environmentTexture->IsValid())
+			{
+				return {};
+			}
+
+			environmentTextureImage = environmentTexture->GetImage();
 		}
 
 		constexpr uint32_t CubeMapSize = 1024;
@@ -291,8 +308,7 @@ namespace Volt
 		// Full white 1x1
 		{
 			constexpr uint32_t PIXEL_DATA = 0xffffffff;
-			m_defaultResources.whiteTexture = Texture2D::Create(RHI::PixelFormat::R8G8B8A8_UNORM, 1, 1, &PIXEL_DATA);
-			m_defaultResources.whiteTexture->handle = 0;
+			m_defaultResources.whiteTexture = g_assetManager->CreateMemoryAsset<Texture2D>("White1x1", RHI::PixelFormat::R8G8B8A8_UNORM, 1, 1, &PIXEL_DATA);
 		}
 
 		// Full black cube 1x1

@@ -68,7 +68,7 @@ namespace Volt
 
 		friend class AssetManager_New;
 
-		std::shared_mutex m_assetMutex;
+		mutable std::shared_mutex m_assetMutex;
 	};
 
 	class Asset_New : public AssetRefCounter, public AssetLocks
@@ -105,6 +105,7 @@ namespace Volt
 
 	private:
 		friend class AssetAllocator;
+		friend class AssetManager_New;
 
 		VT_INLINE void AssignAssetHandle(AssetHandle assetHandle);
 

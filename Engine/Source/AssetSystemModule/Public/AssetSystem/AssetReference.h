@@ -2,6 +2,8 @@
 
 #include "AssetSystem/AssetManagerCommon.h"
 
+#include <CoreUtilities/Pointers/RefPtr.h>
+
 namespace Volt
 {
 	template<typename T>
@@ -12,6 +14,12 @@ namespace Volt
 
 		AssetReference(RefPtr<T> asset) noexcept
 			: m_asset(asset)
+		{
+		}
+
+		template<std::derived_from<T> U>
+		AssetReference(const AssetReference<U>& other) noexcept
+			: m_asset(other.m_asset)
 		{
 		}
 
@@ -45,29 +53,52 @@ namespace Volt
 			return *this;
 		}
 
-		T* operator->() noexcept
+		AssetReference& operator=(std::nullptr_t) noexcept
+		{
+			Reset();
+			return *this;
+		}
+
+		VT_INLINE T* operator->() noexcept
 		{
 			VT_ENSURE(m_isLocked);
 			return m_asset.GetRaw();
 		}
 
-		T& operator*() noexcept
+		VT_INLINE T& operator*() noexcept
 		{
 			VT_ENSURE(m_isLocked);
 			return *m_asset;
 		}
-		
-		bool operator==(std::nullptr_t) const noexcept
+
+		VT_INLINE const T* operator->() const noexcept
+		{
+			VT_ENSURE(m_isLocked);
+			return m_asset.GetRaw();
+		}
+
+		VT_INLINE const T& operator*() const noexcept
+		{
+			VT_ENSURE(m_isLocked);
+			return *m_asset;
+		}
+
+		VT_INLINE bool operator==(std::nullptr_t) const noexcept
 		{
 			return m_asset == nullptr;
 		}
 
-		bool operator==(const AssetReference& other) noexcept
+		VT_INLINE bool operator==(const AssetReference& other) noexcept
 		{
 			return m_asset == other.m_asset;
 		}
 
-		void Lock()
+		VT_INLINE explicit operator bool() const
+		{
+			return m_asset != nullptr;
+		}
+
+		VT_INLINE void Lock() const
 		{
 			VT_ENSURE(m_asset != nullptr);
 			VT_ENSURE(m_isLocked == false);
@@ -75,7 +106,7 @@ namespace Volt
 			m_isLocked = true;
 		}
 
-		void Unlock()
+		VT_INLINE void Unlock() const
 		{
 			VT_ENSURE(m_asset != nullptr);
 			VT_ENSURE(m_isLocked == true);
@@ -83,8 +114,30 @@ namespace Volt
 			m_isLocked = false;
 		}
 
+		VT_INLINE void Reset()
+		{
+			VT_ENSURE(m_isLocked == false);
+			m_asset = nullptr;
+		}
+
+		VT_INLINE bool IsValid() const
+		{
+			return m_asset != nullptr;
+		}
+
+		template<std::derived_from<T> U>
+		VT_INLINE AssetReference<U> ConvertTo() const
+		{
+			AssetReference<U> result{ m_asset.As<U>() };
+			return result;
+		}
+
 	private:
+
+		template<typename U>
+		friend class AssetReference;
+
 		RefPtr<T> m_asset;
-		bool m_isLocked = false;
+		mutable bool m_isLocked = false;
 	};
 }

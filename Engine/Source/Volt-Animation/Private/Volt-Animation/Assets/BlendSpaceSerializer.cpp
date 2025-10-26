@@ -3,7 +3,8 @@
 #include "Volt-Animation/Assets/BlendSpaceSerializer.h"
 #include "Volt-Animation/BlendSpace.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -38,9 +39,10 @@ namespace Volt
 		}
 	};
 
-	void BlendSpaceSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void BlendSpaceSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
 	{
-		Ref<BlendSpace> blendSpace = std::reinterpret_pointer_cast<BlendSpace>(asset);
+		AssetReference<BlendSpace> blendSpace = asset.ConvertTo<BlendSpace>();
+		ScopedAssetReferenceLock blendSpaceLock{ blendSpace };
 
 		BlendSpaceSerializationData serializationData{};
 		serializationData.dimension = blendSpace->m_dimension;
@@ -55,21 +57,21 @@ namespace Volt
 		}
 
 		BinaryStreamWriter streamWriter{};
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), streamWriter);
+		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
 
 		streamWriter.Write(serializationData);
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool BlendSpaceSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool BlendSpaceSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
 	{
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
@@ -78,7 +80,7 @@ namespace Volt
 
 		if (!streamReader.IsStreamValid())
 		{
-			VT_LOG(Error, "Failed to open file: {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
@@ -89,7 +91,9 @@ namespace Volt
 		BlendSpaceSerializationData serializationData{};
 		streamReader.Read(serializationData);
 
-		Ref<BlendSpace> blendSpace = std::reinterpret_pointer_cast<BlendSpace>(destinationAsset);
+		AssetReference<BlendSpace> blendSpace = destinationAsset.ConvertTo<BlendSpace>();
+		ScopedAssetReferenceLock blendSpaceLock{ blendSpace };
+
 		for (const auto& serAnim : serializationData.animations)
 		{
 			blendSpace->myAnimations.emplace_back(serAnim.value, serAnim.handle);

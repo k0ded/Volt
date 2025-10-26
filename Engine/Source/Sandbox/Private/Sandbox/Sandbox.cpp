@@ -529,7 +529,7 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 	{
 		Volt::AssetMetadata metadata = Volt::AssetManager::GetMetadataFromHandle(sceneHandle);
 		UI::Notify(UI::NotificationType::Error,
-			std::format("Failed to open Scene '{0}'", metadata.filePath.stem().string()),
+			std::format("Failed to open Scene '{0}'", metadata.filepath.stem().string()),
 			std::format("Failed to open scene with handle '{0}'", std::to_string(sceneHandle)));
 		return;
 	}

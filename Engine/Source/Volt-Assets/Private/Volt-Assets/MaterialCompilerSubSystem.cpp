@@ -26,7 +26,7 @@ namespace Volt
 		m_workerThread = nullptr;
 	}
 
-	void MaterialCompilerSubSystem::RequestMaterialCompilation(Ref<MaterialAsset> materialAsset)
+	void MaterialCompilerSubSystem::RequestMaterialCompilation(AssetReference<MaterialAsset> materialAsset)
 	{
 		CompilationJob job;
 		job.material = materialAsset;

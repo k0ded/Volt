@@ -1,7 +1,8 @@
 #include "vrpch.h"
 #include "Volt-Renderer/Texture/TextureSerializer.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
@@ -66,9 +67,11 @@ namespace Volt
 		Vector<Mip> mips;
 	};
 
-	void TextureSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void TextureSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
 	{
-		Ref<Texture2D> texture = std::reinterpret_pointer_cast<Texture2D>(asset);
+		AssetReference<Texture2D> texture = asset.ConvertTo<Texture2D>();
+		ScopedAssetReferenceLock textureLock{ texture };
+
 		RefPtr<RHI::Image> image = texture->GetImage();
 
 		TextureHeader header{};
@@ -86,23 +89,23 @@ namespace Volt
 		}
 
 		BinaryStreamWriter streamWriter{};
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), streamWriter);
+		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
 
 		streamWriter.Write(header);
 		streamWriter.Write(dataBuffer);
 		dataBuffer.Release();
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool TextureSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool TextureSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
 	{
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
@@ -111,7 +114,7 @@ namespace Volt
 
 		if (!streamReader.IsStreamValid())
 		{
-			VT_LOG(Error, "Failed to open file: {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
@@ -125,7 +128,8 @@ namespace Volt
 		Buffer textureDataBuffer{};
 		streamReader.Read(textureDataBuffer);
 
-		Ref<Texture2D> texture = std::reinterpret_pointer_cast<Texture2D>(destinationAsset);
+		AssetReference<Texture2D> texture = destinationAsset.ConvertTo<Texture2D>();
+		ScopedAssetReferenceLock textureLock{ texture };
 
 		RefPtr<RHI::Image> image;
 

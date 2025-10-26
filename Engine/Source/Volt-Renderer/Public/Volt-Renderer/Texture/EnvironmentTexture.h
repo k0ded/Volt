@@ -4,13 +4,13 @@
 
 #include <AssetSystem/AssetTypes.h>
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 #include <RHIModule/Images/Image.h>
 
 namespace Volt
 {
-	class VTR_API EnvironmentTexture : public Asset
+	class VTR_API EnvironmentTexture : public Asset_New
 	{
 	public:
 		EnvironmentTexture() = default;
@@ -20,7 +20,7 @@ namespace Volt
 		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetSpecularImage() const { return m_specularImage; }
 
 		static AssetType GetStaticType() { return AssetTypes::EnvironmentTexture; }
-		AssetType GetType() override { return GetStaticType(); }
+		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 	private:
 		friend class EnvironmentTextureSerializer;
