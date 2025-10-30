@@ -27,7 +27,9 @@
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
+
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
 
@@ -45,7 +47,7 @@ namespace Utility
 	}
 }
 
-SceneViewPanel::SceneViewPanel(Ref<Volt::Scene>& scene, const std::string& id)
+SceneViewPanel::SceneViewPanel(AssetReference<Volt::Scene>& scene, const std::string& id)
 	: EditorWindow("Scene View", false, id), m_scene(scene)
 {
 	Open();
@@ -64,6 +66,9 @@ void SceneViewPanel::UpdateMainContent()
 		return;
 	}
 
+	// Lock the scene for the duration of the update function.
+	ScopedAssetReferenceLock sceneLock{ m_scene };
+	
 	if (!m_scene->IsFinishedLoadingEntities())
 	{
 		ImGui::Text("Scene is still loading entitites, please wait.");
@@ -139,6 +144,7 @@ void SceneViewPanel::UpdateMainContent()
 
 				for (const auto& id : m_entityDrawList)
 				{
+
 					Volt::Entity entity = m_scene->GetEntityFromID(id);
 					DrawEntity(entity, m_searchQuery);
 				}
@@ -187,8 +193,8 @@ void SceneViewPanel::UpdateMainContent()
 						data->myChild = child;
 						undoData.push_back(data);
 
-						EditorUtils::MarkEntityAsEdited(m_scene, child);
-						EditorUtils::MarkEntityAsEdited(m_scene, child.GetParent());
+						EditorUtils::MarkEntityAsEdited(*m_scene, child);
+						EditorUtils::MarkEntityAsEdited(*m_scene, child.GetParent());
 						child.UnparentEntity();
 					}
 
@@ -212,27 +218,28 @@ void SceneViewPanel::UpdateMainContent()
 	Volt::AssetHandle handle;
 	if (UI::DragDropTarget({ "ASSET_BROWSER_ITEM" }, handle))
 	{
-		const AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(handle);
+		Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
 
-		if (type == AssetTypes::Mesh)
+		if (assetMetadata->type == AssetTypes::Mesh)
 		{
 			Volt::Entity newEntity = m_scene->CreateEntity();
 
 			auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
-			auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(handle);
+			auto mesh = g_assetManager->GetAssetImmediately<Volt::MeshAsset>(handle);
 			if (mesh)
 			{
-				meshComp.handle = mesh->handle;
+				meshComp.handle = handle;
 			}
 
-			newEntity.GetComponent<Volt::TagComponent>().tag = Volt::AssetManager::Get().GetFilePathFromAssetHandle(handle).stem().string();
+			newEntity.GetComponent<Volt::TagComponent>().tag = assetMetadata->filepath.stem().string();
 		}
-		else if (type == AssetTypes::Prefab)
+		else if (assetMetadata->type == AssetTypes::Prefab)
 		{
-			auto prefab = Volt::AssetManager::GetAsset<Volt::Prefab>(handle);
-			if (prefab && prefab->IsValid())
+			AssetReference<Volt::Prefab> prefab;
+			if (g_assetManager->TryGetAssetImmediately(handle, prefab))
 			{
-				Volt::Entity prefabEntity = prefab->Instantiate(m_scene);
+				ScopedAssetReferenceLock prefabLock{ prefab };
+				Volt::Entity prefabEntity = prefab->Instantiate(*m_scene);
 
 				Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(prefabEntity, m_scene, ObjectStateAction::Create);
 				EditorCommandStack::GetInstance().PushUndo(command);
@@ -249,10 +256,10 @@ void SceneViewPanel::HighlightEntity(Volt::Entity entity)
 	m_scrollToEntity = entity.GetID();
 }
 
-void RecursiveUnpackPrefab(Ref<Volt::Scene> scene, Volt::EntityID id)
+void RecursiveUnpackPrefab(AssetReference<Volt::Scene> scene, Volt::EntityID id)
 {
 	Volt::Entity entity = scene->GetEntityFromID(id);
-	EditorUtils::MarkEntityAsEdited(scene, entity);
+	EditorUtils::MarkEntityAsEdited(*scene, entity);
 
 	if (entity.HasComponent<Volt::PrefabComponent>())
 	{
@@ -297,7 +304,9 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 				SelectionManager::GetLastSelectedRow() = -1;
 			}
 
-			EditorUtils::DestroyEntities(m_scene, entitiesToRemove);
+			ScopedAssetReferenceLock sceneLock{ m_scene };
+
+			EditorUtils::DestroyEntities(*m_scene, entitiesToRemove);
 
 			break;
 		}
@@ -311,7 +320,9 @@ void SceneViewPanel::DrawSceneName()
 	ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x / 2.f) - (ImGui::CalcTextSize(m_scene->GetName().c_str()).x / 2.f));
 	ImGui::Text("%s", m_scene->GetName().c_str());
 
-	std::string tooltipText = Volt::AssetManager::GetFilePathFromAssetHandle(m_scene->handle).string();
+	Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(m_scene->GetAssetHandle());
+
+	std::string tooltipText = sceneMetadata->filepath.string();
 	if (tooltipText.empty())
 	{
 		tooltipText = "Scene has not yet been saved to a file, it has no path.";
@@ -390,12 +401,13 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 	if (isPrefab)
 	{
 		auto& prefabComp = entity.GetComponent<Volt::PrefabComponent>();
-		Ref<Volt::Prefab> prefabAsset = Volt::AssetManager::QueueAsset<Volt::Prefab>(prefabComp.prefabAsset);
 
 		bool hasValidLink = false;
 
-		if (prefabAsset && prefabAsset->IsValid())
+		AssetReference<Volt::Prefab> prefabAsset;
+		if (g_assetManager->TryGetAsset(prefabComp.prefabAsset, prefabAsset))
 		{
+			ScopedAssetReferenceLock prefabLock{ prefabAsset };
 			hasValidLink = prefabAsset->IsEntityValidInPrefab(entity);
 		}
 
@@ -629,8 +641,8 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 				newParent.AddChild(child);
 
-				EditorUtils::MarkEntityAsEdited(m_scene, child);
-				EditorUtils::MarkEntityAsEdited(m_scene, newParent);
+				EditorUtils::MarkEntityAsEdited(*m_scene, child);
+				EditorUtils::MarkEntityAsEdited(*m_scene, newParent);
 			}
 
 			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(undoData, ParentingAction::Parent);
@@ -653,24 +665,27 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 		{
 			const auto& prefabComp = entity.GetComponent<Volt::PrefabComponent>();
 
-			Ref<Volt::Prefab> prefabAsset = Volt::AssetManager::QueueAsset<Volt::Prefab>(prefabComp.prefabAsset);
-			if (prefabAsset && prefabAsset->IsValid())
+			AssetReference<Volt::Prefab> prefabAsset;
+			if (g_assetManager->TryGetAsset(prefabComp.prefabAsset, prefabAsset))
 			{
+				ScopedAssetReferenceLock prefabLock{ prefabAsset };
+
 				const std::string menuId = "Update Prefab Entity##" + entity.ToString();
 				if (ImGui::MenuItem(menuId.c_str()))
 				{
-					const auto prefabPath = Volt::AssetManager::GetFilePathFromAssetHandle(prefabComp.prefabAsset);
-					if (!FileSystem::IsWriteable(prefabPath))
+					Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(prefabComp.prefabAsset);
+					if (!FileSystem::IsWriteable(g_assetManager->GetFilesystemPath(assetMetadata->filepath)))
 					{
-						UI::Notify(UI::NotificationType::Error, "Unable to update prefab!", std::format("The prefab file {0} is not writeable!", prefabPath.string()));
+						UI::Notify(UI::NotificationType::Error, "Unable to update prefab!", std::format("The prefab file {0} is not writeable!", assetMetadata->filepath.string()));
 					}
 					else
 					{
 						prefabAsset->UpdateEntityInPrefab(entity);
-						UpdatePrefabsInScene(prefabAsset, entity);
+						UpdatePrefabsInScene(*prefabAsset, entity);
 
-						Volt::AssetManager::SaveAsset(prefabAsset->handle);
-						UI::Notify(UI::NotificationType::Success, "Prefab updated!", std::format("The prefab file {0} has been updated!", prefabPath.string()));
+						g_assetManager->SaveAsset(prefabAsset);
+
+						UI::Notify(UI::NotificationType::Success, "Prefab updated!", std::format("The prefab file {0} has been updated!", assetMetadata->filepath.string()));
 					}
 				}
 			}
@@ -731,7 +746,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 		for (const auto& i : entitiesToRemove)
 		{
-			EditorUtils::DestroyEntity(m_scene, i);
+			EditorUtils::DestroyEntity(*m_scene, i);
 		}
 		return;
 	}
@@ -755,7 +770,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 		{
 			auto& transformComponent = entity.GetComponent<Volt::TransformComponent>();
 
-			Ref<Volt::Texture2D> visibleIcon = transformComponent.visible ? EditorResources::GetEditorIcon(EditorIcon::Visible) : EditorResources::GetEditorIcon(EditorIcon::Hidden);
+			RefPtr<Volt::RHI::Image> visibleIcon = transformComponent.visible ? EditorResources::GetEditorIcon(EditorIcon::Visible) : EditorResources::GetEditorIcon(EditorIcon::Hidden);
 			std::string visibleId = "##visible" + entity.ToString();
 			if (UI::ImageButton(visibleId, UI::GetTextureID(visibleIcon), { imageSize, imageSize }))
 			{
@@ -791,7 +806,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 			ImGui::SameLine();
 
-			Ref<Volt::Texture2D> lockedIcon = transformComponent.locked ? EditorResources::GetEditorIcon(EditorIcon::Locked) : EditorResources::GetEditorIcon(EditorIcon::Unlocked);
+			RefPtr<Volt::RHI::Image> lockedIcon = transformComponent.locked ? EditorResources::GetEditorIcon(EditorIcon::Locked) : EditorResources::GetEditorIcon(EditorIcon::Unlocked);
 			std::string lockedId = "##locked" + entity.ToString();
 			if (UI::ImageButton(lockedId, UI::GetTextureID(lockedIcon), { imageSize, imageSize }))
 			{
@@ -849,44 +864,18 @@ void SceneViewPanel::CreatePrefabAndSetupEntities(Volt::Entity entity)
 	noSpacesPrefabName.erase(std::remove_if(noSpacesPrefabName.begin(), noSpacesPrefabName.end(), ::isspace), noSpacesPrefabName.end());
 
 	const std::filesystem::path basePath = "Assets/Prefabs/";
-	Ref<Volt::Prefab> prefab = Volt::AssetManager::CreateAssetAndFile<Volt::Prefab>(basePath, noSpacesPrefabName, entity);
+	g_assetManager->CreateAssetAndFile<Volt::Prefab>(basePath, noSpacesPrefabName, entity);
 
-	EditorUtils::MarkEntityAndChildrenAsEdited(m_scene, entity);
+	EditorUtils::MarkEntityAndChildrenAsEdited(*m_scene, entity);
 }
 
-void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity srcEntity)
+void SceneViewPanel::UpdatePrefabsInScene(Volt::Prefab& prefab, Volt::Entity srcEntity)
 {
-	Ref<Volt::Prefab> prefabAsset = Volt::AssetManager::GetAsset<Volt::Prefab>(srcEntity.GetComponent<Volt::PrefabComponent>().prefabAsset);
-	if (!prefabAsset || !prefabAsset->IsValid())
+	AssetReference<Volt::Prefab> prefabAsset;
+	if (g_assetManager->TryGetAssetImmediately(srcEntity.GetComponent<Volt::PrefabComponent>().prefabAsset, prefabAsset))
 	{
-		return;
-	}
+		ScopedAssetReferenceLock prefabLock{ prefabAsset };
 
-	m_scene->ForEachWithComponents<const Volt::PrefabComponent, const Volt::IDComponent>([&](const entt::entity id, const Volt::PrefabComponent& prefabComp, const Volt::IDComponent& idComponent)
-	{
-		if (idComponent.id == srcEntity.GetID())
-		{
-			return;
-		}
-
-		if (prefabComp.prefabAsset != prefabAsset->handle)
-		{
-			return;
-		}
-
-		if (prefabComp.prefabEntity != srcEntity.GetComponent<Volt::PrefabComponent>().prefabEntity)
-		{
-			return;
-		}
-
-		auto entity = Volt::Entity{ id, m_scene->GetEntityScene() };
-		prefabAsset->UpdateEntityInScene(m_scene, entity);
-
-		EditorUtils::MarkEntityAsEdited(m_scene, entity);
-	});
-
-	if (prefabAsset->IsReference(srcEntity))
-	{
 		m_scene->ForEachWithComponents<const Volt::PrefabComponent, const Volt::IDComponent>([&](const entt::entity id, const Volt::PrefabComponent& prefabComp, const Volt::IDComponent& idComponent)
 		{
 			if (idComponent.id == srcEntity.GetID())
@@ -894,24 +883,50 @@ void SceneViewPanel::UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity
 				return;
 			}
 
-			const auto& prefabRefData = prefabAsset->GetReferenceData(srcEntity);
-
-			if (prefabComp.prefabAsset != prefabRefData.prefabAsset || prefabComp.prefabEntity != prefabRefData.prefabReferenceEntity)
+			if (prefabComp.prefabAsset != prefabAsset->GetAssetHandle())
 			{
 				return;
 			}
 
-			Ref<Volt::Prefab> prefabRefAsset = Volt::AssetManager::GetAsset<Volt::Prefab>(prefabRefData.prefabAsset);
-			if (!prefabRefAsset || !prefabRefAsset->IsValid())
+			if (prefabComp.prefabEntity != srcEntity.GetComponent<Volt::PrefabComponent>().prefabEntity)
 			{
 				return;
 			}
 
 			auto entity = Volt::Entity{ id, m_scene->GetEntityScene() };
-			prefabRefAsset->UpdateEntityInScene(m_scene, entity);
+			prefabAsset->UpdateEntityInScene(*m_scene, entity);
 
-			EditorUtils::MarkEntityAsEdited(m_scene, entity);
+			EditorUtils::MarkEntityAsEdited(*m_scene, entity);
 		});
+
+		if (prefabAsset->IsReference(srcEntity))
+		{
+			m_scene->ForEachWithComponents<const Volt::PrefabComponent, const Volt::IDComponent>([&](const entt::entity id, const Volt::PrefabComponent& prefabComp, const Volt::IDComponent& idComponent)
+			{
+				if (idComponent.id == srcEntity.GetID())
+				{
+					return;
+				}
+
+				const auto& prefabRefData = prefabAsset->GetReferenceData(srcEntity);
+
+				if (prefabComp.prefabAsset != prefabRefData.prefabAsset || prefabComp.prefabEntity != prefabRefData.prefabReferenceEntity)
+				{
+					return;
+				}
+
+				AssetReference<Volt::Prefab> prefabRefAsset;
+				if (g_assetManager->TryGetAssetImmediately(prefabRefData.prefabAsset, prefabRefAsset))
+				{
+					ScopedAssetReferenceLock refPrefabLock{ prefabRefAsset };
+
+					auto entity = Volt::Entity{ id, m_scene->GetEntityScene() };
+					prefabRefAsset->UpdateEntityInScene(*m_scene, entity);
+
+					EditorUtils::MarkEntityAsEdited(*m_scene, entity);
+				}
+			});
+		}
 	}
 }
 
@@ -1052,14 +1067,13 @@ void SceneViewPanel::DrawMainRightClickPopup()
 		{
 			if (ImGui::BeginMenu(VT_ICON_FA_CUBES " Primitives"))
 			{
-
 				auto newPrimitiveMenuItem = [&](std::string primitiveName, std::string_view primitivePath)
 				{
 					if (ImGui::MenuItem((VT_ICON_FA_CUBE " " + primitiveName).c_str()))
 					{
 						auto ent = m_scene->CreateEntity();
 						auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
-						meshComp.handle = Volt::AssetManager::GetAssetHandleFromFilePath(primitivePath);
+						meshComp.handle = g_assetManager->GetAssetHandleFromFilepath(primitivePath);
 						Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent));
 
 						ent.SetTag("New " + primitiveName);

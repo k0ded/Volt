@@ -3,8 +3,12 @@
 
 #include "Volt-Scene/EntityDescCustomMetadata.h"
 
+#include <AssetSystem/AssetFactory.h>
+
 namespace Volt
 {
+	VT_REGISTER_ASSET_FACTORY(AssetTypes::EntityDesc, EntityDesc);
+
 	EntityDesc::EntityDesc(EntityID entityID, AssetHandle sceneHandle)
 		:m_sceneHandle(sceneHandle), m_entityID(entityID)
 	{}

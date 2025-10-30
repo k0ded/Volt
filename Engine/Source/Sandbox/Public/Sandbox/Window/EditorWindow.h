@@ -33,7 +33,7 @@ public:
 
 	virtual void UpdateMainContent() = 0;
 	virtual void UpdateContent() {}
-	virtual void OpenAsset(Ref<Volt::Asset> asset) {}
+	virtual void OpenAsset(AssetReference<Volt::Asset_New> asset) {}
 
 	inline const std::string& GetTitle() const { return m_title; }
 	inline const bool& IsOpen() const { return m_isOpen; }

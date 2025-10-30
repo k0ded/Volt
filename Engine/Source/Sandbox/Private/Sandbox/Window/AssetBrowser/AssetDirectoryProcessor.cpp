@@ -6,7 +6,7 @@
 #include "Sandbox/Window/AssetBrowser/AssetCommon.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -51,7 +51,7 @@ Ref<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(con
 		}
 	}
 
-	auto relStartPath = Volt::AssetManager::GetRelativePath(path);
+	auto relStartPath = g_assetManager->GetRelativeAssetFilepath(path);
 	Ref<AssetBrowser::DirectoryItem> resultItem = CreateRef<AssetBrowser::DirectoryItem>(m_selectionManager.Get(), relStartPath);
 	std::unordered_map<std::filesystem::path, Ref<AssetBrowser::DirectoryItem>> directoryItems;
 	directoryItems[relStartPath] = resultItem;
@@ -65,30 +65,31 @@ Ref<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(con
 
 			if (entry.isDirectory)
 			{
-				auto relPath = Volt::AssetManager::GetRelativePath(entry.path);
+				auto relPath = g_assetManager->GetRelativeAssetFilepath(path);
 				Ref<AssetBrowser::DirectoryItem> dirData = CreateRef<AssetBrowser::DirectoryItem>(m_selectionManager.Get(), relPath);
 				directoryItems[relPath] = dirData;
-				const auto parentPath = Volt::AssetManager::GetRelativePath(entry.path.parent_path());
+				const auto parentPath = g_assetManager->GetRelativeAssetFilepath(entry.path.parent_path());
 				directoryItems[parentPath]->subDirectories.emplace_back(dirData);
 				dirData->parentDirectory = directoryItems[parentPath].get();
 			}
 			else
 			{
-				AssetType type = Volt::AssetManager::GetAssetTypeFromPath(entry.path);
-				if (type == AssetTypes::None)
+				Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(g_assetManager->GetAssetHandleFromFilepath(path));
+
+				if (!assetMetadata.IsValid())
 				{
-					type = GetAssetTypeRegistry().GetTypeFromExtension(entry.path.extension().string());
+					continue;
 				}
 
 				const auto filename = entry.path.filename().string();
 
-				if (type != AssetTypes::None && !Utility::StringContains(filename, ".vtthumb.png"))
+				if (assetMetadata->type != AssetTypes::None)
 				{
-					if (m_assetMask.empty() || m_assetMask.contains(type))
+					if (m_assetMask.empty() || m_assetMask.contains(assetMetadata->type))
 					{
-						auto relPath = Volt::AssetManager::GetRelativePath(entry.path);
+						auto relPath = g_assetManager->GetRelativeAssetFilepath(path);
 						Ref<AssetBrowser::AssetItem> assetItem = CreateRef<AssetBrowser::AssetItem>(m_selectionManager.Get(), relPath, meshToImportData);
-						const auto parentPath = Volt::AssetManager::GetRelativePath(entry.path.parent_path());
+						const auto parentPath = g_assetManager->GetRelativeAssetFilepath(entry.path.parent_path());
 						directoryItems[parentPath]->assets.emplace_back(assetItem);
 					}
 				}

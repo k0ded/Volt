@@ -9,7 +9,7 @@
 
 #include <EntitySystem/Entity.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
 
 #include <stack>
 #include "EditorCommand.h"
@@ -70,7 +70,7 @@ struct GizmoCommand : EditorCommand
 		glm::quat previousRotationValue;
 		glm::vec3 previousScaleValue;
 
-		Weak<Volt::Scene> scene;
+		AssetReference<Volt::Scene> scene;
 		Volt::EntityID id;
 	};
 
@@ -144,7 +144,7 @@ private:
 	const glm::vec3 myPreviousScaleValue;
 
 	Volt::EntityID myID;
-	Weak<Volt::Scene> myScene;
+	AssetReference<Volt::Scene> myScene;
 };
 
 struct MultiGizmoCommand : EditorCommand
@@ -338,7 +338,7 @@ private:
 			reader.ConsumeBuffer(buffer);
 
 			Volt::Entity entity;
-			if (Volt::AssetManager::ExistsInRegistry(entityDescHandle))
+			if (g_assetManager->IsValidAssetHandle(entityDescHandle))
 			{
 				entity = m_targetScene->CreateEntityWithIDForExistingDescription(entityID, entityDescHandle);
 			}

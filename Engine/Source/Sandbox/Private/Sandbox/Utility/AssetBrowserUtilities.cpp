@@ -17,7 +17,8 @@
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <RHIModule/Images/Image.h>
 
@@ -96,28 +97,6 @@ namespace AssetBrowser
 		return true;
 	}
 
-	void AssetBrowserUtilities::SetMeshExport(AssetItem* item)
-	{
-		if (item->type == AssetTypes::Mesh)
-		{
-			meshesToExport.emplace_back(Volt::AssetManager::GetAsset<Volt::MeshAsset>(item->handle));
-		}
-		else if (item->type == AssetTypes::Prefab)
-		{
-			auto scene = CreateRef<Volt::Scene>("ExportMeshScene");
-
-			Volt::AssetManager::GetAsset<Volt::Prefab>(item->handle)->Instantiate(scene);
-			Vector<Volt::Entity> meshEntities;
-
-			for (const auto& ent : scene->GetAllEntitiesWith<Volt::MeshComponent>())
-			{
-				meshEntities.emplace_back(ent);
-			}
-
-			//meshesToExport = Volt::MeshExporterUtilities::GetMeshes(meshEntities);
-		}
-	}
-
 	const std::unordered_map<AssetType, std::function<void(AssetItem*, SelectionManager*)>>& AssetBrowserUtilities::GetPopupRenderFunctions()
 	{
 		static std::unordered_map<AssetType, std::function<void(AssetItem*, SelectionManager*)>> renderFunctions;
@@ -151,11 +130,6 @@ namespace AssetBrowser
 
 			renderFunctions[AssetTypes::Mesh] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
-				if (ImGui::MenuItem("Export Mesh"))
-				{
-					SetMeshExport(item);
-					UI::OpenModal(std::format("Mesh Export##assetBrowser{0}", std::to_string(item->handle)));
-				}
 			};
 
 			renderFunctions[AssetTypes::Animation] = [](AssetItem* item, SelectionManager* selectionManager)
@@ -173,11 +147,6 @@ namespace AssetBrowser
 
 			renderFunctions[AssetTypes::Prefab] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
-				if (ImGui::MenuItem("Export Meshes"))
-				{
-					SetMeshExport(item);
-					UI::OpenModal(std::format("Mesh Export##assetBrowser{0}", std::to_string(item->handle)));
-				}
 			};
 
 			renderFunctions[AssetTypes::TextureSource] = [](AssetItem* item, SelectionManager* selectionManager)
@@ -209,13 +178,12 @@ namespace AssetBrowser
 			{
 				if (ImGui::MenuItem("Generate Mips"))
 				{
-					Ref<Volt::Texture2D> texture = Volt::AssetManager::GetAsset<Volt::Texture2D>(item->handle);
-					if (!texture || !texture->IsValid())
+					AssetReference<Volt::Texture2D> texture;
+					if (g_assetManager->TryGetAsset(item->handle, texture))
 					{
-						return;
+						ScopedAssetReferenceLock lock{ texture };
+						texture->GetImage()->GenerateMips();
 					}
-
-					texture->GetImage()->GenerateMips();
 				}
 			};
 		}

@@ -505,7 +505,7 @@ float Sandbox::DrawTitlebar()
 		ImGui::SameLine();
 
 		const bool isMaximized = Volt::WindowManager::Get().GetMainWindow().IsMaximized();
-		Ref<Volt::Texture2D> maximizeTexture = isMaximized ? EditorResources::GetEditorIcon(EditorIcon::Windowize) : EditorResources::GetEditorIcon(EditorIcon::Maximize);
+		RefPtr<Volt::RHI::Image> maximizeTexture = isMaximized ? EditorResources::GetEditorIcon(EditorIcon::Windowize) : EditorResources::GetEditorIcon(EditorIcon::Maximize);
 
 		if (UI::ImageButton("##maximize", UI::GetTextureID(maximizeTexture), { buttonSize, buttonSize }))
 		{
@@ -779,93 +779,4 @@ void Sandbox::DrawDirtyAssetsExternalActionModal()
 		}
 		UI::EndModal();
 	}*/
-}
-
-void Sandbox::BuildGameModal()
-{
-	UI::ScopedStyleFloat buttonRounding{ ImGuiStyleVar_FrameRounding, 2.f };
-	static bool compileCS = true;
-	bool abort = false;
-
-	if (UI::BeginModal("Build", ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		UI::PushID();
-		if (UI::BeginProperties("buildData"))
-		{
-			UI::PropertyDirectory("Build Path", m_buildInfo.buildDirectory);
-
-			ImGui::Separator();
-
-			for (auto& handle : m_buildInfo.sceneHandles)
-			{
-				EditorUtils::Property("Scene", handle, AssetTypes::Scene);
-			}
-
-			UI::EndProperties();
-		}
-		UI::PopID();
-
-		if (ImGui::Button("Add Scene"))
-		{
-			m_buildInfo.sceneHandles.emplace_back();
-		}
-
-		UI::PushID();
-		ImGui::Checkbox("Compile C# ##buildmodal", &compileCS);
-		UI::PopID();
-
-		ImGui::PushItemWidth(80.f);
-		if (ImGui::Button("Build"))
-		{
-			if (compileCS)
-			{
-				if (Volt::PremadeCommands::RunBuildCSProjectCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor))
-				{
-					UI::Notify(UI::NotificationType::Success, "Compilation succeeded!", "Successfully compiled Project solution in DIST config!");
-				}
-				else
-				{
-					UI::Notify(UI::NotificationType::Error, "Compilation failed!", "Build has been aborted!");
-					abort = true;
-				}
-			}
-
-			if (!abort)
-			{
-				GameBuilder::BuildGame(m_buildInfo);
-				m_buildStarted = true;
-			}
-			ImGui::CloseCurrentPopup();
-		}
-
-		ImGui::SameLine();
-
-		if (ImGui::Button("Cancel"))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::PopItemWidth();
-
-		UI::EndModal();
-	}
-}
-
-void Sandbox::RenderProgressBar(float progress)
-{
-	const auto vp_size = ImGui::GetMainViewport()->Size;
-
-	constexpr auto windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing;
-
-	ImGui::SetNextWindowBgAlpha(1.f);
-	ImGui::SetNextWindowPos(ImVec2(vp_size.x - 20.f, 100.f), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
-	ImGui::Begin("##progressBar", nullptr, windowFlags);
-
-	{
-		ImGui::TextUnformatted("Build Progress");
-		ImGui::ProgressBar(progress);
-
-		ImGui::Text("Current File: %s", GameBuilder::GetCurrentFile().c_str());
-	}
-
-	ImGui::End();
 }

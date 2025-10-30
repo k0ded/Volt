@@ -61,7 +61,7 @@ void ComponentPropertyUtility::Initialize()
 	RegisterPropertyType<std::filesystem::path>(s_propertyFunctions);
 }
 
-void ComponentPropertyUtility::DrawComponents(Weak<Volt::Scene> scene, Volt::Entity entity)
+void ComponentPropertyUtility::DrawComponents(Volt::Scene& scene, Volt::Entity entity)
 {
 	if (!s_initialized)
 	{
@@ -69,8 +69,7 @@ void ComponentPropertyUtility::DrawComponents(Weak<Volt::Scene> scene, Volt::Ent
 		s_initialized = true;
 	}
 
-	auto scenePtr = scene;
-	auto& registry = scenePtr->GetEntityScene().GetRegistry();
+	auto& registry = scene.GetEntityScene().GetRegistry();
 
 	for (auto&& curr : registry.storage())
 	{
@@ -118,7 +117,7 @@ void ComponentPropertyUtility::DrawComponents(Weak<Volt::Scene> scene, Volt::Ent
 
 					if (removeComp)
 					{
-						Volt::ComponentRegistry::Helpers::RemoveComponentWithGUID(compTypeDesc->GetGUID(), scene->GetEntityScene().GetRegistry(), entity);
+						Volt::ComponentRegistry::Helpers::RemoveComponentWithGUID(compTypeDesc->GetGUID(), scene.GetEntityScene().GetRegistry(), entity);
 						EditorUtils::MarkEntityAsEdited(scene, entity);
 					}
 
@@ -129,7 +128,7 @@ void ComponentPropertyUtility::DrawComponents(Weak<Volt::Scene> scene, Volt::Ent
 	}
 }
 
-bool ComponentPropertyUtility::DrawComponent(Weak<Volt::Scene> scene, Volt::Entity entity, const Volt::IComponentTypeDesc* componentType, void* data, const size_t offset, bool isOpen, bool isSubSection)
+bool ComponentPropertyUtility::DrawComponent(Volt::Scene& scene, Volt::Entity entity, const Volt::IComponentTypeDesc* componentType, void* data, const size_t offset, bool isOpen, bool isSubSection)
 {
 	if (isSubSection)
 	{
@@ -202,7 +201,7 @@ bool ComponentPropertyUtility::DrawComponent(Weak<Volt::Scene> scene, Volt::Enti
 	return edited;
 }
 
-bool ComponentPropertyUtility::DrawComponentDefaultMember(Weak<Volt::Scene> scene, Volt::Entity entity, const Volt::ComponentMember& member, void* data, const size_t offset)
+bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Volt::Entity entity, const Volt::ComponentMember& member, void* data, const size_t offset)
 {
 	uint8_t* bytePtr = reinterpret_cast<uint8_t*>(data); 
 
@@ -265,7 +264,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Weak<Volt::Scene> scen
 	return false;
 }
 
-bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Weak<Volt::Scene> scene, Volt::Entity entity, const Volt::ComponentMember& arrayMember, void* elementData, const size_t index, const TypeTraits::TypeIndex& typeIndex, AssetType arrayAssetType)
+bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scene, Volt::Entity entity, const Volt::ComponentMember& arrayMember, void* elementData, const size_t index, const TypeTraits::TypeIndex& typeIndex, AssetType arrayAssetType)
 {
 	const std::string label = std::format("Element {0}", index);
 
@@ -334,7 +333,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Weak<Volt::Scene>
 	return false;
 }
 
-bool ComponentPropertyUtility::DrawComponentEnum(Weak<Volt::Scene> scene, Volt::Entity entity, const Volt::ComponentMember& member, const Volt::IEnumTypeDesc* enumType, void* data, const size_t offset)
+bool ComponentPropertyUtility::DrawComponentEnum(Volt::Scene& scene, Volt::Entity entity, const Volt::ComponentMember& member, const Volt::IEnumTypeDesc* enumType, void* data, const size_t offset)
 {
 	uint8_t* bytePtr = reinterpret_cast<uint8_t*>(data);
 	const auto& constants = enumType->GetConstants();
@@ -431,7 +430,7 @@ bool ComponentPropertyUtility::DrawComponentEnum(Weak<Volt::Scene> scene, Volt::
 	return changed;
 }
 
-bool ComponentPropertyUtility::DrawComponentArray(Weak<Volt::Scene> scene, Volt::Entity entity, const Volt::ComponentMember& member, const Volt::IArrayTypeDesc* arrayDesc, void* data, const size_t offset)
+bool ComponentPropertyUtility::DrawComponentArray(Volt::Scene& scene, Volt::Entity entity, const Volt::ComponentMember& member, const Volt::IArrayTypeDesc* arrayDesc, void* data, const size_t offset)
 {
 	uint8_t* bytePtr = reinterpret_cast<uint8_t*>(data);
 	void* arrayPtr = &bytePtr[offset];
@@ -509,7 +508,7 @@ bool ComponentPropertyUtility::DrawComponentArray(Weak<Volt::Scene> scene, Volt:
 	return edited;
 }
 
-void ComponentPropertyUtility::AddLocalChangeToEntity(Weak<Volt::Scene> scene, Volt::Entity entity, const VoltGUID& componentGuid, std::string_view memberName)
+void ComponentPropertyUtility::AddLocalChangeToEntity(Volt::Scene& scene, Volt::Entity entity, const VoltGUID& componentGuid, std::string_view memberName)
 {
 	if (!entity.HasComponent<Volt::PrefabComponent>())
 	{

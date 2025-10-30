@@ -2,6 +2,8 @@
 
 #include <EntitySystem/EntityID.h>
 
+#include <AssetSystem/AssetReference.h>
+
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/Containers/Vector.h>
 
@@ -36,9 +38,9 @@ public:
 	static bool IsAnySelected(SelectionContext context = SelectionContext::Scene);
 	static bool IsSelected(Volt::EntityID entity, SelectionContext context = SelectionContext::Scene);
 
-	static void Update(Ref<Volt::Scene> scene);
+	static void Update(AssetReference<Volt::Scene> scene);
 
-	static bool IsAnyParentSelected(Volt::EntityID entity, Ref<Volt::Scene> scene);
+	static bool IsAnyParentSelected(Volt::EntityID entity, AssetReference<Volt::Scene> scene);
 
 	inline static int32_t& GetFirstSelectedRow() { return m_firstSelectedRow; }
 	inline static int32_t& GetLastSelectedRow() { return m_lastSelectedRow; }

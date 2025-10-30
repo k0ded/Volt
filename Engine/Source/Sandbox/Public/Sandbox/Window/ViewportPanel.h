@@ -33,7 +33,7 @@ class EditorCameraController;
 class ViewportPanel : public EditorWindow
 {
 public:
-	ViewportPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::Scene>& editorScene, EditorCameraController* cameraController, SceneState& aSceneState);
+	ViewportPanel(Ref<Volt::SceneRenderer>& sceneRenderer, AssetReference<Volt::Scene>& editorScene, EditorCameraController* cameraController, SceneState& aSceneState);
 
 	void UpdateMainContent() override;
 	void UpdateContent() override;
@@ -67,7 +67,7 @@ private:
 	glm::mat4 CalculateAverageTransform();
 
 	Ref<Volt::SceneRenderer>& m_sceneRenderer;
-	Ref<Volt::Scene>& m_editorScene;
+	AssetReference<Volt::Scene>& m_editorScene;
 
 	AnimatedIcon m_animatedPhysicsIcon;
 	EditorCameraController* m_editorCameraController;

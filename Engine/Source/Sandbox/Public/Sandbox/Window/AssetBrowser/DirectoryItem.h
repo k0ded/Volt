@@ -29,9 +29,5 @@ namespace AssetBrowser
 		bool RenderRightClickPopup() override;
 		bool Rename(const std::string& newName) override;
 		void Open() override;
-		
-		
-	private:
-		void RecursivlyRenameAssets(DirectoryItem* directory, const std::filesystem::path& targetDirectory);
 	};
 }

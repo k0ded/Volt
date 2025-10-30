@@ -4,7 +4,7 @@
 
 #include <CoreUtilities/FileSystem.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
 
 #include <SubSystem/SubSystemManager.h>
 #include <Volt-Core/Project/ProjectManager.h>
@@ -314,8 +314,13 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 		}
 		case CreateFilesTableColumns::Name:
 		{
-			const std::string assetName = Volt::AssetManager::Get().GetAssetRaw(handle)->assetName;
-			ImGui::Text(assetName.c_str());
+			AssetReference<Volt::Asset_New> asset;
+			if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(handle, asset))
+			{
+				ImGui::TextUnformatted(asset->GetAssetName().data());
+			}
+
+			ImGui::Text("Invalid Asset (Handle: %u)!", handle.Get());
 			break;
 		}
 		case CreateFilesTableColumns::AssetHandle:
@@ -326,8 +331,8 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 		}
 		case CreateFilesTableColumns::Type:
 		{
-			AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(handle);
-			ImGui::Text(type->GetName().data());
+			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+			ImGui::Text(assetMetadata->type->GetName().data());
 			break;
 		}
 		case CreateFilesTableColumns::Path:
@@ -346,8 +351,8 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 			}
 			else
 			{
-				const std::filesystem::path path = Volt::AssetManager::GetFilePathFromAssetHandle(handle);
-				ImGui::Text(path.string().c_str());
+				Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+				ImGui::Text(assetMetadata->filepath.string().c_str());
 			}
 			break;
 		}

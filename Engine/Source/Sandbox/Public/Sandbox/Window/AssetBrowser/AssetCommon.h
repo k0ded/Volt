@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Sandbox/Utility/AssetPreview.h"
-
 #include <AssetSystem/Asset.h>
 
 struct AssetData

@@ -25,7 +25,6 @@ namespace AssetBrowser
 }
 
 class AssetPreview;
-class PreviewRenderer;
 class AssetBrowserPanel : public EditorWindow
 {
 public:
@@ -67,7 +66,6 @@ private:
 
 	///// Asset Creation /////	
 	void CreateNewAssetInCurrentDirectory(AssetType type);
-	void CreateNewShaderModal();
 
 	struct NewShaderData
 	{
@@ -83,7 +81,6 @@ private:
 	//////////////////////////
 
 	Ref<Volt::Scene>& myEditorScene;
-	Ref<PreviewRenderer> myPreviewRenderer;
 
 	Vector<AssetBrowser::DirectoryItem*> myDirectoryButtons;
 

@@ -6,7 +6,8 @@
 
 #include <EntitySystem/Entity.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <glm/glm.hpp>
 #include <imgui.h>
@@ -448,10 +449,12 @@ public:
 	{
 		std::string assetFileName = "Null";
 
-		const Ref<Volt::Asset> rawAsset = Volt::AssetManager::Get().GetAssetRaw(assetHandle);
-		if (rawAsset)
+		AssetReference<Volt::Asset_New> rawAsset;
+		if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(assetHandle, rawAsset))
 		{
-			assetFileName = rawAsset->assetName;
+			ScopedAssetReferenceLock assetLock{ rawAsset };
+
+			assetFileName = rawAsset->GetAssetName();
 
 			if (supportedTypes != AssetTypes::None)
 			{

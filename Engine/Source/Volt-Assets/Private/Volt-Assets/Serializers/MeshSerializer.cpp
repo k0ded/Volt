@@ -81,10 +81,13 @@ namespace Volt
 	{
 		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
+		AssetReference<MeshAsset> meshAsset = destinationAsset.ConvertTo<MeshAsset>();
+		ScopedAssetReferenceLock meshLock{ meshAsset };
+
 		if (!std::filesystem::exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
-			destinationAsset->SetFlag(AssetFlag::Missing, true);
+			meshAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
 
@@ -93,12 +96,9 @@ namespace Volt
 		if (!streamReader.IsStreamValid())
 		{
 			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
-			destinationAsset->SetFlag(AssetFlag::Invalid, true);
+			meshAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
-
-		AssetReference<MeshAsset> meshAsset = destinationAsset.ConvertTo<MeshAsset>();
-		ScopedAssetReferenceLock meshLock{ meshAsset };
 
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
 

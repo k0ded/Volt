@@ -235,7 +235,7 @@ namespace Volt
 
 
 
-	Entity EntityDescSerializer::DeserializeEntity(const Ref<Scene>& scene, YAMLMemoryStreamReader& streamReader) const
+	Entity EntityDescSerializer::DeserializeEntity(AssetReference<Scene> scene, YAMLMemoryStreamReader& streamReader) const
 	{
 		streamReader.EnterScope("Entity");
 
@@ -423,7 +423,7 @@ namespace Volt
 		return g_assetManager->GetFilesystemPath(relativePath);
 	}
 
-	Entity EntityDescSerializer::CreateEntityFromUUIDThreadSafe(EntityID entityId, const Ref<Scene>& scene) const
+	Entity EntityDescSerializer::CreateEntityFromUUIDThreadSafe(EntityID entityId, AssetReference<Scene> scene) const
 	{
 		static std::mutex createEntityMutex;
 		std::scoped_lock lock{ createEntityMutex };

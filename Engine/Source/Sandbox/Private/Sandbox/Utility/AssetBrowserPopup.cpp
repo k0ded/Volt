@@ -5,7 +5,7 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
 
 #include <Volt-Application/UI/UIUtility.h>
 
@@ -72,19 +72,20 @@ AssetBrowserPopup::State AssetBrowserPopup::RenderView(const Vector<Volt::AssetH
 
 	for (const auto& handle : items)
 	{
-		const auto& metadata = Volt::AssetManager::GetMetadataFromHandle(handle);
-		if (!metadata.IsValid())
+		Volt::ReadOnlyAssetMetadata metadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+
+		if (!metadata->IsValid())
 		{
 			continue;
 		}
 
-		if (metadata.type->IsSourceType())
+		if (metadata->type->IsSourceType())
 		{
 			continue;
 		}
 
-		const std::string assetName = metadata.filepath.stem().string();
-		nameHandle.emplace_back(assetName, metadata.handle);
+		const std::string assetName = metadata->filepath.stem().string();
+		nameHandle.emplace_back(assetName, metadata->handle);
 	}
 
 	Vector<std::string> searchNames{};

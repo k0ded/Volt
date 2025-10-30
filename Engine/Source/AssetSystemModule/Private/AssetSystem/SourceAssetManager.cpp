@@ -1,6 +1,8 @@
 #include "aspch.h"
 
 #include "AssetSystem/SourceAssetImporter.h"
+#include "AssetSystem/AssetLocks.h"
+
 #include "SourceAssetManager.h"
 
 #include <Volt-Platforms/Platform.h>
@@ -11,18 +13,20 @@ VT_DEFINE_LOG_CATEGORY(LogSourceAssetManager);
 
 namespace Volt
 {
-	inline std::filesystem::path GetNonExistingFilePath(const std::filesystem::path& directory, const std::string& fileName)
+	inline std::filesystem::path GetNonExistingFilePath(const std::filesystem::path& directory, std::string_view filename)
 	{
-		std::filesystem::path filePath = AssetManager::GetFilesystemPath(directory / (fileName + ".vtasset"));
+		std::string filenameStr = std::string(filename);
+
+		std::filesystem::path filePath = g_assetManager->GetFilesystemPath(directory / (filenameStr + ".vtasset"));
 		uint32_t counter = 0;
 
 		while (std::filesystem::exists(filePath))
 		{
-			filePath = AssetManager::GetFilesystemPath(directory / (fileName + "_" + std::to_string(counter) + ".vtasset"));
+			filePath = g_assetManager->GetFilesystemPath(directory / (filenameStr + "_" + std::to_string(counter) + ".vtasset"));
 			counter++;
 		}
 
-		return AssetManager::GetRelativePath(filePath);
+		return g_assetManager->GetRelativeAssetFilepath(filePath);
 	}
 
 	SourceAssetManager::SourceAssetManager()
@@ -45,7 +49,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	JobFuture<Vector<Ref<Asset>>> SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath)
+	JobFuture<Vector<AssetReference<Asset_New>>> SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath)
 	{
 		const std::string extension = filepath.extension().string();
 
@@ -55,7 +59,7 @@ namespace Volt
 			return {};
 		}
 
-		auto resultPromise = CreateRef<JobPromise<Vector<Ref<Asset>>>>();
+		auto resultPromise = CreateRef<JobPromise<Vector<AssetReference<Asset_New>>>>();
 
 		// Create a counter which we supply to the promise.
 		JobCounterRef importCounter = JobSystem::CreateCounter();
@@ -65,20 +69,23 @@ namespace Volt
 
 			if (importConfig.createAsMemoryAsset)
 			{
-				for (const auto asset : result)
+				for (const auto& asset : result)
 				{
-					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} with handle {} was imported!", asset->assetName, asset->handle);
+					ScopedAssetReferenceLock assetLock{ asset };
+
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} (Handle: {}) was imported!", asset->GetAssetName(), asset->GetAssetHandle());
 				}
 			}
 			else
 			{
-				for (const auto asset : result)
+				for (const auto& asset : result)
 				{
-					std::filesystem::path filePath = AssetManager::GetFilePathFromAssetHandle(asset->handle);
-					filePath = GetNonExistingFilePath(filePath.parent_path(), filePath.stem().string());
-					AssetManager::CreateFileForAsset(asset->handle, filePath);
+					ScopedAssetReferenceLock assetLock{ asset };
 
-					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->assetName, filePath);
+					std::filesystem::path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, std::string(asset->GetAssetName()));
+					g_assetManager->CreateFileForAsset(asset->GetAssetHandle(), filepath);
+
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->GetAssetName(), filepath);
 				}
 			}
 
@@ -121,18 +128,21 @@ namespace Volt
 			{
 				for (const auto asset : result)
 				{
-					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} with handle {} was imported!", asset->assetName, asset->handle);
+					ScopedAssetReferenceLock assetLock{ asset };
+
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} (Handle: {}) was imported!", asset->GetAssetName(), asset->GetAssetHandle());
 				}
 			}
 			else
 			{
 				for (const auto asset : result)
 				{
-					std::filesystem::path filePath = AssetManager::GetFilePathFromAssetHandle(asset->handle);
-					filePath = GetNonExistingFilePath(filePath.parent_path(), filePath.stem().string());
-					AssetManager::CreateFileForAsset(asset->handle, filePath);
+					ScopedAssetReferenceLock assetLock{ asset };
 
-					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->assetName, filePath);
+					std::filesystem::path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, std::string(asset->GetAssetName()));
+					g_assetManager->CreateFileForAsset(asset->GetAssetHandle(), filepath);
+
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} (Handle: {}) was imported and saved to {}", asset->GetAssetName(), asset->GetAssetHandle(), filepath);
 				}
 			}
 

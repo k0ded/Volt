@@ -4,7 +4,7 @@
 
 #include "AssetSystem/SourceAssetImporterRegistry.h"
 #include "AssetSystem/SourceAssetImporter.h"
-#include "AssetSystem/AssetManager.h"
+#include "AssetSystem/AssetManager_New.h"
 #include "AssetSystem/SourceAssetImportConfig.h"
 
 #include <JobSystem/JobPromise.h>
@@ -19,24 +19,24 @@ namespace Volt
 	class VTAS_API SourceAssetManager
 	{
 	public:
-		using ImportedCallbackFunc = std::function<void(Vector<Ref<Asset>>)>;
+		using ImportedCallbackFunc = std::function<void(Vector<AssetReference<Asset_New>>)>;
 
 		SourceAssetManager();
 		~SourceAssetManager();
 
 		template<typename ConfigType>
-		static JobFuture<Vector<Ref<Asset>>> ImportSourceAsset(const std::filesystem::path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
+		static JobFuture<Vector<AssetReference<Asset_New>>> ImportSourceAsset(const std::filesystem::path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
 		{
 			static_assert(std::is_base_of_v<SourceAssetImportConfig, ConfigType>);
 
 			VT_ENSURE(s_instance);
 			VT_ENSURE(!filepath.empty());
 
-			auto importFunc = [=]() -> Vector<Ref<Asset>>
+			auto importFunc = [=]() -> Vector<AssetReference<Asset_New>>
 			{
 				const std::string extension = filepath.extension().string();
 				auto& importer = GetSourceAssetImporterRegistry().GetImporterForExtension(extension);
-				return importer.Import(AssetManager::GetFilesystemPath(filepath), config, userData);
+				return importer.Import(g_assetManager->GetFilesystemPath(filepath), config, userData);
 			};
 
 			return s_instance->ImportSourceAssetInternal(std::move(importFunc), config, filepath);
@@ -51,11 +51,11 @@ namespace Volt
 			VT_ENSURE(importedCallback);
 			VT_ENSURE(!filepath.empty());
 
-			auto importFunc = [=]() -> Vector<Ref<Asset>>
+			auto importFunc = [=]() -> Vector<AssetReference<Asset_New>>
 			{
 				const std::string extension = filepath.extension().string();
 				auto& importer = GetSourceAssetImporterRegistry().GetImporterForExtension(extension);
-				return importer.Import(AssetManager::GetFilesystemPath(filepath), config, userData);
+				return importer.Import(g_assetManager->GetFilesystemPath(filepath), config, userData);
 			};
 
 			s_instance->ImportSourceAssetInternal(std::move(importFunc), importedCallback, config, filepath);
@@ -64,17 +64,17 @@ namespace Volt
 		static SourceAssetFileInformation GetSourceAssetFileInformation(const std::filesystem::path& filepath);
 
 	private:
-		using ImportJobFunc = std::function<Vector<Ref<Asset>>()>;
+		using ImportJobFunc = std::function<Vector<AssetReference<Asset_New>>()>;
 
 		struct ImportJob
 		{
 			JobRef job = nullptr;
-			Ref<JobPromise<Vector<Ref<Asset>>>> resultPromise;
+			Ref<JobPromise<Vector<AssetReference<Asset_New>>>> resultPromise;
 		
 			std::string debugString;
 		};
 
-		JobFuture<Vector<Ref<Asset>>> ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
+		JobFuture<Vector<AssetReference<Asset_New>>> ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
 		void ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
 
 		WorkQueue<ImportJob, QueueThreadingPolicy::MPSC>& GetOrCreateQueue(const std::string& extension);

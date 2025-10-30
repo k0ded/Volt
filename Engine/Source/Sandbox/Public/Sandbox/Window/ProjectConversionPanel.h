@@ -26,9 +26,9 @@ private:
 	bool TryLoadProject(Volt::Project& project);
 	void TryConvertAssets(const Volt::Project& project, const ArrayView<Volt::AssetMetadata>& assetMetadata);
 
-	Ref<Volt::Scene> TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, Ref<Volt::Prefab>>& prefabs);
-	Ref<Volt::MeshAsset> TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata);
-	Ref<Volt::Prefab> TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata);
+	AssetReference<Volt::Scene> TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs);
+	AssetReference<Volt::MeshAsset> TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata);
+	AssetReference<Volt::Prefab> TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata);
 
 	void PrintMissingMembers();
 

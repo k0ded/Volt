@@ -10,7 +10,7 @@
 namespace UI
 {
 
-	bool PropertyEntity(const std::string& text, Weak<Volt::Scene> scene, Volt::EntityID& value, const std::string& toolTip)
+	bool PropertyEntity(const std::string& text, Volt::Scene& scene, Volt::EntityID& value, const std::string& toolTip)
 	{
 		bool changed = false;
 
@@ -22,7 +22,7 @@ namespace UI
 		ImGui::TableNextColumn();
 		std::string id = MakePropertyID();
 
-		Volt::Entity entity = scene->GetEntityFromID(value);
+		Volt::Entity entity = scene.GetEntityFromID(value);
 
 		std::string entityName;
 		if (entity)
@@ -45,14 +45,14 @@ namespace UI
 		return changed;
 	}
 
-	bool PropertyEntity(Weak<Volt::Scene> scene, Volt::EntityID& value, const float width, const std::string& toolTip)
+	bool PropertyEntity(Volt::Scene& scene, Volt::EntityID& value, const float width, const std::string& toolTip)
 	{
 		bool changed = false;
 
 		SimpleToolTip(toolTip);
 		std::string id = MakePropertyID();
 
-		Volt::Entity entity = scene->GetEntityFromID(value);
+		Volt::Entity entity = scene.GetEntityFromID(value);
 
 		std::string entityName;
 		if (entity)

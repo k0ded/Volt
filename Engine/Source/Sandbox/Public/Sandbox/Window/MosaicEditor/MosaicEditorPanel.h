@@ -46,7 +46,7 @@ public:
 	bool SaveNodeSettings(const UUID64 nodeId, const std::string& data);
 	size_t LoadNodeSettings(const UUID64 nodeId, std::string& data);
 
-	void OpenAsset(Ref<Volt::Asset> asset) override;
+	void OpenAsset(AssetReference<Volt::Asset_New> asset) override;
 	void OnClose() override;
 
 private:
@@ -82,8 +82,7 @@ private:
 
 	MosaicEditorContext m_context;
 
-	Ref<Volt::Texture2D> m_headerTexture;
-	Ref<Volt::MaterialAsset> m_material;
+	AssetReference<Volt::MaterialAsset> m_material;
 
 	Map<VoltGUID, Ref<MosaicNodeExtension>> m_nodeExtensions;
 

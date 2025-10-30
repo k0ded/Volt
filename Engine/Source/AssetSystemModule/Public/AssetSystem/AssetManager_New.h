@@ -10,7 +10,8 @@
 
 #include "AssetSystem/AssetManager.h"
 
-#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/RefPtr.h> 
+#include <CoreUtilities/WorkQueue.h>
 
 #include <filesystem>
 
@@ -24,7 +25,7 @@ namespace Volt
 		using AssetRegistryIteratorFunc = std::function<bool(ReadOnlyAssetMetadata)>;
 
 		VTAS_API AssetManager_New(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName);
-		~AssetManager_New();
+		VTAS_API ~AssetManager_New();
 
 		///// Asset Metadata /////
 		VTAS_API WriteableAssetMetadata GetWriteableAssetMetadata(AssetHandle assetHandle) const;
@@ -39,6 +40,11 @@ namespace Volt
 		// Will trigger a serialization of the asset, if it has an assigned filepath.
 		VTAS_API void SaveAsset(AssetHandle assetHandle);
 		VTAS_API void SaveAsset(AssetReference<Asset_New> asset);
+
+		// Will remove the asset from the asset registry, asset cache, and will send out
+		// deleted events. The asset is not guaranteed to be destroyed immediatley, as there
+		// may still be other references. This will NOT remove the asset from disk.
+		VTAS_API void RemoveAsset(AssetHandle assetHandle);
 
 		// Returns whether or not the asset exists in the asset registry.
 		VTAS_API bool IsValidAssetHandle(AssetHandle assetHandle) const;
@@ -63,6 +69,10 @@ namespace Volt
 		// This will NOT queue the asset for loading.
 		template<VoltAssetType T> bool TryGetAssetIfLoaded(AssetHandle assetHandle, AssetReference<T>& outAsset);
 
+		// Will return true and the asset if it is loaded. This method returns a non typed asset,
+		// instead of the default typed asset.
+		bool TryGetAssetIfLoadedAsAnonymous(AssetHandle assetHandle, AssetReference<Asset_New>& outAsset);
+
 		// Creates an asset that only lives in memory during the current application run, is not serializable to disk.
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateMemoryAsset(std::string_view assetName, Args&&... args);
 		// Creates an asset that does not have a filepath yet.
@@ -79,6 +89,8 @@ namespace Volt
 		VTAS_API void AddDependencyToAsset(AssetHandle dependant, AssetHandle dependency);
 		VTAS_API Vector<AssetHandle> GetAssetsDependentOn(AssetHandle assetHandle) const;
 
+		void QueueAssetChanged(AssetHandle assetHandle, AssetChangedState state);
+
 		///// Asset Registry /////
 		// Iterates the asset registry with a filter, return false to exit the loop.
 		VTAS_API void IterateAssetRegistryWithFilter(const AssetRegistryIteratorFilter& filter, AssetRegistryIteratorFunc&& func) const;
@@ -86,6 +98,8 @@ namespace Volt
 		///// File System /////
 		VTAS_API std::filesystem::path GetContextPath(const std::filesystem::path& path) const;
 		VTAS_API std::filesystem::path GetFilesystemPath(const std::filesystem::path& path) const;
+		VTAS_API std::filesystem::path GetFilesystemPath(AssetHandle assetHandle) const;
+		VTAS_API std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& path) const;
 		VTAS_API bool IsEngineAsset(const std::filesystem::path& path) const;
 
 	private:
@@ -107,6 +121,12 @@ namespace Volt
 			std::string_view assetsDirectoryName;
 		};
 
+		struct AssetChangedQueueInfo
+		{
+			AssetHandle handle;
+			AssetChangedState state;
+		};
+
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, Args&&... args);
 
 		VTAS_API void LoadAsset(AssetHandle assetHandle, RefPtr<Asset_New> asset);
@@ -120,6 +140,7 @@ namespace Volt
 		AssetCache m_assetCache;
 
 		Scope<AssetDependencyGraph> m_dependencyGraph;
+		WorkQueue<AssetChangedQueueInfo, QueueThreadingPolicy::MPSC> m_assetChangedQueue;
 		AssetManagerRoot m_root;
 	};
 
@@ -150,6 +171,10 @@ namespace Volt
 
 		// Asset wasn't in the cache, create and load it.
 		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
+		// Setup a link back to the asset manager.
+		newAsset->m_referencedAssetManager = this;
+
+		AssetReference resultReference{ newAsset };
 
 		{
 			ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
@@ -163,7 +188,7 @@ namespace Volt
 
 		LoadAsset(assetHandle, newAsset);
 
-		return AssetReference(newAsset);
+		return resultReference;
 	}
 
 	template<VoltAssetType T> AssetReference<T>
@@ -210,7 +235,20 @@ namespace Volt
 		return TryGetAssetImmediately(assetHandle, outAsset);
 	}
 
-	template<VoltAssetType T, typename... Args> 
+	template<VoltAssetType T>
+	bool AssetManager_New::TryGetAssetIfLoaded(AssetHandle assetHandle, AssetReference<T>& outAsset)
+	{
+		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+		if (assetMetadata->isLoaded)
+		{
+			outAsset = GetAssetImmediately<T>(assetHandle);
+			return true;
+		}
+
+		return false;
+	}
+
+	template<VoltAssetType T, typename... Args>
 	AssetReference<T> AssetManager_New::CreateMemoryAsset(std::string_view assetName, Args&&... args)
 	{
 		constexpr bool IsMemoryAsset = true;
@@ -231,6 +269,8 @@ namespace Volt
 
 		std::filesystem::path targetPath = targetDirectory / (std::string(assetName) + ".vtasset");
 		CreateFileForAsset(asset->GetAssetHandle(), targetPath);
+
+		return asset;
 	}
 
 	template<VoltAssetType T, typename... Args> 
@@ -262,6 +302,5 @@ namespace Volt
 
 		return newAsset;
 	}
-
-	VTAS_API extern Scope<AssetManager_New> g_assetManager;
 }
+VTAS_API extern Scope<Volt::AssetManager_New> g_assetManager;

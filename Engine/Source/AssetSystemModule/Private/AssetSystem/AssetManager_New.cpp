@@ -7,10 +7,10 @@
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/StringUtility.h>
 
+Scope<Volt::AssetManager_New> g_assetManager;
+
 namespace Volt
 {
-	Scope<AssetManager_New> g_assetManager;
-
 	AssetManager_New::AssetManager_New(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName)
 		: m_assetRegistry(engineDirectoryPath, projectDirectoryPath, assetsDirectoryName)
 	{
@@ -100,11 +100,30 @@ namespace Volt
 
 		{
 			ScopedTimer timer{};
-			// #TODO_AssetSystem: Uncomment once assets have been converted.
-			//AssetSerializerRegistry::Get().GetSerializer(assetMetadata->type).Serialize(*assetMetadata, assetMetadata->customData, asset);
+		
+			// #TODO_AssetSystem: Resolve this situation.
+			AssetSerializerRegistry::Get().GetSerializer(assetMetadata->type).Serialize(assetMetadata, const_cast<CustomAssetMetadataVector&>(assetMetadata->customData), asset);
 
 			VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", assetMetadata->handle, assetMetadata->filepath, timer.GetTime<Time::Seconds>());
 		}
+	}
+
+	void AssetManager_New::RemoveAsset(AssetHandle assetHandle)
+	{
+		VT_ENSURE(m_assetRegistry.IsValidAssetHandle(assetHandle));
+
+		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+
+		// Lock metadata mutex here.
+		assetMetadata->m_assetMetadataMutex.lock();
+
+		m_assetCache.RemoveAsset(assetHandle);
+		m_assetRegistry.RemoveAssetMetadata(assetHandle, true);
+
+		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Deleted);
+		QueueAssetChanged(assetHandle, AssetChangedState::Deleted);
+
+		m_dependencyGraph->RemoveAssetFromGraph(assetHandle);
 	}
 
 	bool AssetManager_New::IsValidAssetHandle(AssetHandle assetHandle) const
@@ -116,6 +135,23 @@ namespace Volt
 	{
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
 		return assetMetadata->isLoaded;
+	}
+
+	bool AssetManager_New::TryGetAssetIfLoadedAsAnonymous(AssetHandle assetHandle, AssetReference<Asset_New>& outAsset)
+	{
+		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+		if (assetMetadata->isLoaded)
+		{
+			// Try to get the asset from the asset cache.
+			RefPtr<Asset_New> tempAsset;
+			if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
+			{
+				outAsset = { tempAsset };
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	void AssetManager_New::CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath)
@@ -156,6 +192,11 @@ namespace Volt
 		return {};
 	}
 
+	void AssetManager_New::UnregisterAssetUpdatedCallback(AssetType assetType, UUID64 callbackId)
+	{
+
+	}
+
 	void AssetManager_New::AddDependencyToAsset(AssetHandle dependant, AssetHandle dependency)
 	{
 		m_dependencyGraph->AddDependencyToAsset(dependant, dependency);
@@ -164,6 +205,11 @@ namespace Volt
 	Vector<AssetHandle> AssetManager_New::GetAssetsDependentOn(AssetHandle assetHandle) const
 	{
 		return {};
+	}
+
+	void AssetManager_New::QueueAssetChanged(AssetHandle assetHandle, AssetChangedState state)
+	{
+		m_assetChangedQueue.Emplace(assetHandle, state);
 	}
 
 	void AssetManager_New::IterateAssetRegistryWithFilter(const AssetRegistryIteratorFilter& filter, AssetRegistryIteratorFunc&& func) const
@@ -175,6 +221,11 @@ namespace Volt
 			ReadOnlyAssetMetadata assetMetadata = *it;
 
 			if (!filter.includeMemoryAssets && assetMetadata->isMemoryAsset)
+			{
+				continue;
+			}
+
+			if (!filter.includeWithoutFilepath && !assetMetadata->isMemoryAsset && !assetMetadata->HasFilepath())
 			{
 				continue;
 			}
@@ -208,6 +259,17 @@ namespace Volt
 		return GetContextPath(path) / path;
 	}
 
+	std::filesystem::path AssetManager_New::GetFilesystemPath(AssetHandle assetHandle) const
+	{
+		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(assetHandle);
+		return GetFilesystemPath(assetMetadata->filepath);
+	}
+
+	std::filesystem::path AssetManager_New::GetRelativeAssetFilepath(const std::filesystem::path& path) const
+	{
+		return m_assetRegistry.GetRelativeAssetFilepath(path);
+	}
+
 	bool AssetManager_New::IsEngineAsset(const std::filesystem::path& path) const
 	{
 		const auto pathSplit = ::Utility::SplitStringsByCharacter(path.string(), '/');
@@ -229,11 +291,14 @@ namespace Volt
 
 		m_dependencyGraph->AddAssetToGraph(assetHandle);
 
+		{
+			ReadOnlyAssetMetadata readOnlyAssetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+			AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(readOnlyAssetMetadata, asset);
+		}
+
+		m_assetCache.AddAsset(asset);
+
 		WriteableAssetMetadata assetMetadata = GetWriteableAssetMetadata(assetHandle);
-
-		// #TODO_AssetSystem: Uncomment once assets have been converted.
-		//AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(assetHandle, asset);
-
 		assetMetadata->isLoaded = true;
 
 		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
@@ -248,7 +313,10 @@ namespace Volt
 		const AssetHandle assetHandle = asset->GetAssetHandle();
 		const std::string nameCopy(asset->GetAssetName());
 
+		const AssetType assetType = asset->GetType();
+
 		// Make sure we lock the metadata
+		if (m_assetRegistry.IsValidAssetHandle(assetHandle))
 		{
 			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 
@@ -261,8 +329,6 @@ namespace Volt
 			VT_ENSURE(asset->GetRefCount() == 0);
 
 			// Call destructor and free.
-			const AssetType assetType = asset->GetType();
-
 			asset->~Asset_New();
 			m_assetAllocator.FreeAsset(assetType, asset);
 
@@ -282,8 +348,17 @@ namespace Volt
 				m_assetRegistry.RemoveAssetMetadata(assetHandle, true);
 			}
 		}
+		// The asset has been removed from the registry, just destroy it.
+		else
+		{
+			// At this point there should be zero references left.
+			VT_ENSURE(asset->GetRefCount() == 0);
+
+			asset->~Asset_New();
+			m_assetAllocator.FreeAsset(assetType, asset);
+		}
 		
-		VT_LOGC(Trace, LogAssetSystem, "Asset '{}' (Handle: '{}') was unloaded!", nameCopy, assetHandle);
+		VT_LOGC(Trace, LogAssetSystem, "Asset '{}' (Handle: '{}', Type: '{}') was unloaded!", nameCopy, assetHandle, assetType->GetName());
 	}
 
 	void AssetManager_New::CreateDependencyGraphAndAddAssetsFromRegistry()
@@ -323,9 +398,11 @@ namespace Volt
 
 		AssetHandle resultAssetHandle = Asset_New::Null();
 
-		IterateAssetRegistryWithFilter(filter, [&resultAssetHandle, filepath](ReadOnlyAssetMetadata assetMetadata) 
+		std::filesystem::path relativeFilepath = GetRelativeAssetFilepath(filepath);
+
+		IterateAssetRegistryWithFilter(filter, [&resultAssetHandle, relativeFilepath](ReadOnlyAssetMetadata assetMetadata)
 		{
-			if (assetMetadata->filepath == filepath)
+			if (assetMetadata->filepath == relativeFilepath)
 			{
 				resultAssetHandle = assetMetadata->handle;
 				return false;

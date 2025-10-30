@@ -21,7 +21,11 @@ namespace Volt
 		CreatePrefab(srcRootEntity);
 	}
 
-	Entity Prefab::Instantiate(Weak<Scene> targetScene)
+	Prefab::Prefab(AssetReference<Scene> prefabScene, EntityID rootEntityId, uint32_t version)
+		: m_prefabScene(prefabScene), m_rootEntityId(rootEntityId), m_version(version)
+	{}
+
+	Entity Prefab::Instantiate(Scene& targetScene)
 	{
 		if (!IsPrefabValid())
 		{
@@ -36,7 +40,7 @@ namespace Volt
 		}
 
 		Entity newEntity = DuplicateEntity(rootEntity, targetScene, Entity::Null(), CreateSkipComponentOnCopySet<CommonComponent>());
-		if (targetScene->IsPlaying())
+		if (targetScene.IsPlaying())
 		{
 			InitializeComponents(newEntity);
 		}
@@ -65,7 +69,7 @@ namespace Volt
 			}
 		}
 
-		targetScene->InvalidateEntityTransform(newEntity.GetID());
+		targetScene.InvalidateEntityTransform(newEntity.GetID());
 		return newEntity;
 	}
 
@@ -100,7 +104,7 @@ namespace Volt
 		return updateSucceded;
 	}
 
-	void Prefab::UpdateEntityInScene(Weak<Scene> targetScene, Entity sceneEntity)
+	void Prefab::UpdateEntityInScene(Scene& targetScene, Entity sceneEntity)
 	{
 		UpdateEntityInSceneInternal(targetScene, sceneEntity, Entity::NullID());
 	}
@@ -230,7 +234,7 @@ namespace Volt
 			return;
 		}
 
-		m_prefabScene = CreateRef<Scene>();
+		m_prefabScene = g_assetManager->CreateMemoryAsset<Scene>("PrefabScene");
 		m_rootEntityId = srcRootEntity.GetID();
 
 		AddEntityToPrefabRecursive(srcRootEntity, Entity::Null());
@@ -422,7 +426,7 @@ namespace Volt
 		return true;
 	}
 
-	void Prefab::UpdateEntityInSceneInternal(Ref<Scene> scene, Entity sceneEntity, EntityID forcedPrefabEntity)
+	void Prefab::UpdateEntityInSceneInternal(Scene& scene, Entity sceneEntity, EntityID forcedPrefabEntity)
 	{
 		if (!sceneEntity.HasComponent<PrefabComponent>())
 		{
@@ -505,17 +509,17 @@ namespace Volt
 		}
 	}
 
-	Entity Prefab::InstantiateEntity(Ref<Scene> scene, Entity prefabEntity)
+	Entity Prefab::InstantiateEntity(Scene& scene, Entity prefabEntity)
 	{
 		Entity newEntity = DuplicateEntity(prefabEntity, scene);
-		if (scene->IsPlaying())
+		if (scene.IsPlaying())
 		{
 			InitializeComponents(newEntity);
 		}
 
 		UpdatePrefabVersion(newEntity, m_version);
 
-		scene->InvalidateEntityTransform(newEntity.GetID());
+		scene.InvalidateEntityTransform(newEntity.GetID());
 		return newEntity;
 	}
 
@@ -537,8 +541,4 @@ namespace Volt
 
 		return result;
 	}
-
-	Prefab::Prefab(Ref<Scene> prefabScene, EntityID rootEntityId, uint32_t version)
-		: m_prefabScene(prefabScene), m_rootEntityId(rootEntityId), m_version(version)
-	{}
 }

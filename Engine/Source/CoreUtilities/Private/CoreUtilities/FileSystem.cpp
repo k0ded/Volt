@@ -114,6 +114,39 @@ namespace FileSystem
 		return false;
 	}
 
+	bool IsFilepathInDirectory(const std::filesystem::path& directoryPath, const std::filesystem::path& filepath, bool checkSubDirectories /*= false*/)
+	{
+		std::filesystem::path canonicalFilepath = std::filesystem::weakly_canonical(filepath);
+		std::filesystem::path canonicalDirectoryPath = std::filesystem::weakly_canonical(directoryPath);
+
+		if (canonicalFilepath == canonicalDirectoryPath)
+		{
+			return true;
+		}
+
+		if (checkSubDirectories)
+		{
+			std::filesystem::path directoryIterator = canonicalFilepath;
+			while (directoryIterator.has_parent_path())
+			{
+				directoryIterator = directoryIterator.parent_path();
+				if (directoryIterator == canonicalDirectoryPath)
+				{
+					return true;
+				}
+			}
+		}
+		else
+		{
+			if (filepath.parent_path() == directoryPath)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	bool ShowDirectoryInExplorer(const std::filesystem::path& dir)
 	{
 		auto absolutePath = std::filesystem::canonical(dir);

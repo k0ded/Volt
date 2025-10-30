@@ -5,6 +5,9 @@
 
 #include <atomic>
 
+template<typename T>
+class AssetReference;
+
 namespace Volt
 {
 	class AssetRefCounter

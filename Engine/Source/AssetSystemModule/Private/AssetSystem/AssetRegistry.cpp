@@ -57,7 +57,7 @@ namespace Volt
 	bool AssetRegistry::IsValidAssetHandle(AssetHandle assetHandle) const
 	{
 		uint64_t temp;
-		return m_hashTable.Get(assetHandle, temp);
+		return assetHandle != Asset::Null() && m_hashTable.Get(assetHandle, temp);
 	}
 
 	void AssetRegistry::Initialize()
@@ -161,7 +161,7 @@ namespace Volt
 		}
 	}
 
-	std::filesystem::path AssetRegistry::GetRelativeAssetFilepath(const std::filesystem::path& filepath)
+	std::filesystem::path AssetRegistry::GetRelativeAssetFilepath(const std::filesystem::path& filepath) const
 	{
 		const std::filesystem::path normalizedFilepath = filepath.lexically_normal();
 		const std::filesystem::path assetsDirectoryFilepath = m_projectDirectoryPath / m_assetsDirectoryName;

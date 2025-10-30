@@ -3,7 +3,7 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
 
 void EditorLibrary::Clear()
 {
@@ -33,15 +33,17 @@ Ref<EditorWindow> EditorLibrary::GetPanel(const std::string& panelName)
 
 bool EditorLibrary::OpenAsset(Volt::AssetHandle handle)
 {
-	const AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(handle);
+	Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+
+	const AssetType type = assetMetadata->type;
 	auto it = std::find_if(s_editors.begin(), s_editors.end(), [type](const auto& lhs) { return lhs.assetType->GetGUID() == type->GetGUID(); });
 	if (it == s_editors.end())
 	{
 		return false;
 	}
 
-	Ref<Volt::Asset> asset = Volt::AssetManager::Get().GetAssetRaw(handle);
-	if (!asset)
+	AssetReference<Volt::Asset_New> asset;
+	if (!g_assetManager->TryGetAssetIfLoadedAsAnonymous(handle, asset))
 	{
 		return false;
 	}

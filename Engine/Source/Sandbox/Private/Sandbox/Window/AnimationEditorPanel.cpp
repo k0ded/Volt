@@ -1,7 +1,7 @@
 #include "sbpch.h"
 #include "Window/AnimationEditorPanel.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
 
 #include <Volt-Application/UI/UIUtility.h>
 
@@ -24,7 +24,7 @@ void AnimationEditorPanel::UpdateMainContent()
 
 	if (ImGui::Button("Save"))
 	{
-		Volt::AssetManager::SaveAsset(m_animation->handle);
+		g_assetManager->SaveAsset(m_animation);
 	}
 
 	if (ImGui::BeginTable("timelineTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
@@ -149,14 +149,14 @@ void AnimationEditorPanel::UpdateMainContent()
 	AddAnimationEventModal();
 }
 
-void AnimationEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
+void AnimationEditorPanel::OpenAsset(AssetReference<Volt::Asset_New> asset)
 {
 	if (m_animation)
 	{
-		Volt::AssetManager::SaveAsset(m_animation->handle);
+		g_assetManager->SaveAsset(asset);
 	}
 
-	m_animation = std::reinterpret_pointer_cast<Volt::Animation>(asset);
+	m_animation = asset.ConvertTo<Volt::Animation>();
 }
 
 void AnimationEditorPanel::OnOpen()

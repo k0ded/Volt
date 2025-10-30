@@ -10,7 +10,8 @@
 
 #include <Volt-Assets/SourceAssetImporters/ImportConfigs.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 #include <AssetSystem/SourceAssetManager.h>
 
 #include <Volt-Scene/AssetTypes.h>
@@ -27,7 +28,6 @@ void EditorResources::Initialize()
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_animation.dds", &m_assetIcons[AssetTypes::Animation]);
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_scene.dds", &m_assetIcons[AssetTypes::Scene]);
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_prefab.dds", &m_assetIcons[AssetTypes::Prefab]);
-		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_monoscript.dds", &m_assetIcons[AssetTypes::MonoScript]);
 		TryLoadIcon("Editor/Textures/Icons/AssetIcons/icon_behaviorTree.dds", &m_assetIcons[AssetTypes::BehaviorGraph]);
 	}
 
@@ -104,7 +104,7 @@ void EditorResources::Shutdown()
 	m_editorMeshes.clear();
 }
 
-Ref<Volt::Texture2D> EditorResources::GetAssetIcon(AssetType type)
+RefPtr<Volt::RHI::Image> EditorResources::GetAssetIcon(AssetType type)
 {
 	if (!m_assetIcons.contains(type))
 	{
@@ -114,11 +114,14 @@ Ref<Volt::Texture2D> EditorResources::GetAssetIcon(AssetType type)
 	return m_assetIcons.at(type);
 }
 
-Ref<Volt::Texture2D> EditorResources::GetEditorIcon(EditorIcon icon)
+RefPtr<Volt::RHI::Image> EditorResources::GetEditorIcon(EditorIcon icon)
 {
 	if (!m_editorIcons.contains(icon))
 	{
-		return Volt::Renderer::GetDefaultResources().whiteTexture;
+		AssetReference<Volt::Texture2D> whiteTexture = Volt::Renderer::GetDefaultResources().whiteTexture;
+		ScopedAssetReferenceLock textureLock{ whiteTexture };
+
+		return whiteTexture->GetImage();
 	}
 
 	return m_editorIcons.at(icon);
@@ -134,9 +137,12 @@ Ref<Volt::Mesh> EditorResources::GetEditorMesh(EditorMesh mesh)
 	return m_editorMeshes.at(mesh);
 }
 
-void EditorResources::TryLoadIcon(const std::filesystem::path& path, Ref<Volt::Texture2D>* outTexture)
+void EditorResources::TryLoadIcon(const std::filesystem::path& path, RefPtr<Volt::RHI::Image>* outTexture)
 {
-	*outTexture = Volt::Renderer::GetDefaultResources().whiteTexture;
+	AssetReference<Volt::Texture2D> whiteTexture = Volt::Renderer::GetDefaultResources().whiteTexture;
+	ScopedAssetReferenceLock textureLock{ whiteTexture };
+
+	*outTexture = whiteTexture->GetImage();
 
 	Volt::TextureSourceImportConfig importConfig{};
 	importConfig.createAsMemoryAsset = true;
@@ -144,35 +150,34 @@ void EditorResources::TryLoadIcon(const std::filesystem::path& path, Ref<Volt::T
 	importConfig.importMipMaps = true;
 	importConfig.destinationFilename = path.stem().string();
 
-	Volt::SourceAssetManager::ImportSourceAsset(path, importConfig, [outTexture](Vector<Ref<Volt::Asset>> importedAssets)
+	Volt::SourceAssetManager::ImportSourceAsset(path, importConfig, [outTexture](Vector<AssetReference<Volt::Asset_New>> importedAssets)
 	{
 		if (importedAssets.empty())
 		{
 			return;
 		}
 
-		auto importedTexture = importedAssets.front();
-		if (!importedTexture || !importedTexture->IsValid())
-		{
-			return;
-		}
+		AssetReference<Volt::Texture2D> textureAsset = importedAssets.front().ConvertTo<Volt::Texture2D>();
+		ScopedAssetReferenceLock textureLock{ textureAsset };
 
-		*outTexture = std::reinterpret_pointer_cast<Volt::Texture2D>(importedTexture);
+		*outTexture = textureAsset->GetImage();
 	});
 }
 
 Ref<Volt::Mesh> EditorResources::TryLoadMesh(const std::filesystem::path& path)
 {
-	Ref<Volt::MeshAsset> meshAsset = Volt::AssetManager::QueueAsset<Volt::MeshAsset>(Volt::AssetManager::GetAssetHandleFromFilePath(path));
+	AssetReference<Volt::MeshAsset> meshAsset;
+
 	Ref<Volt::Mesh> mesh;
 
-	if (!meshAsset)
+	if (g_assetManager->TryGetAsset(g_assetManager->GetAssetHandleFromFilepath(path), meshAsset))
 	{
-		mesh = Volt::ShapeLibrary::GetCube();
+		ScopedAssetReferenceLock lock{ meshAsset };
+		mesh = meshAsset->GetMesh();
 	}
 	else
 	{
-		mesh = meshAsset->GetMesh();
+		mesh = Volt::ShapeLibrary::GetCube();
 	}
 
 	return mesh;

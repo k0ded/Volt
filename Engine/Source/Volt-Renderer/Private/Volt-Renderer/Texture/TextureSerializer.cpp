@@ -101,12 +101,15 @@ namespace Volt
 
 	bool TextureSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
 	{
+		AssetReference<Texture2D> texture = destinationAsset.ConvertTo<Texture2D>();
+		ScopedAssetReferenceLock textureLock{ texture };
+
 		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
-			destinationAsset->SetFlag(AssetFlag::Missing, true);
+			texture->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
 
@@ -115,12 +118,12 @@ namespace Volt
 		if (!streamReader.IsStreamValid())
 		{
 			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
-			destinationAsset->SetFlag(AssetFlag::Invalid, true);
+			texture->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
 
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
-		VT_ASSERT_MSG(serializedMetadata.version == destinationAsset->GetVersion(), "Incompatible version!");
+		VT_ASSERT_MSG(serializedMetadata.version == texture->GetVersion(), "Incompatible version!");
 
 		TextureHeader textureHeader{};
 		streamReader.Read(textureHeader);
@@ -128,8 +131,7 @@ namespace Volt
 		Buffer textureDataBuffer{};
 		streamReader.Read(textureDataBuffer);
 
-		AssetReference<Texture2D> texture = destinationAsset.ConvertTo<Texture2D>();
-		ScopedAssetReferenceLock textureLock{ texture };
+
 
 		RefPtr<RHI::Image> image;
 

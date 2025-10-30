@@ -20,6 +20,10 @@ namespace Volt
 		VTAS_API void InsertAssetMetadata(AssetMetadata&& assetMetadata);
 		void RemoveAssetMetadata(AssetHandle assetHandle, bool unlockMutex = false);
 
+		// Returns a file path relative to either an engine asset directory,
+		// or the project asset directory.
+		std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& filepath) const;
+
 	private:
 		friend class AssetRegistryIterator;
 		friend class AssetRegistryConstIterator;
@@ -30,10 +34,6 @@ namespace Volt
 		
 		void LoadAssetMetadata();
 		void DeserializeAssetMetadata(const std::filesystem::path& filepath, AssetMetadata& outMetadata);
-
-		// Returns a file path relative to either an engine asset directory,
-		// or the project asset directory.
-		std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& filepath);
 
 		// Returns all asset filepaths located within engine and project asset directories.
 		// #TODO_AssetSystem: Change to take a vector reference instead.
@@ -246,6 +246,9 @@ namespace Volt
 	{
 		// Wether or not to include memory assets.
 		bool includeMemoryAssets = true;
+
+		// Wether or not to include non memory assets without filepaths
+		bool includeWithoutFilepath = true;
 
 		// If empty, all types are considered. Otherwise only the ones in this list.
 		std::set<AssetType> filteredAssetTypes;

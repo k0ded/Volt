@@ -2,29 +2,28 @@
 
 #include "AssetSystem/AssetReference.h"
 
-namespace Volt
+// Note: Kept outside of Volt namespace for ease of use.
+
+template<typename T>
+class ScopedAssetReferenceLock
 {
-	template<typename T>
-	class ScopedAssetReferenceLock
+public:
+	ScopedAssetReferenceLock(const AssetReference<T>& assetReference) noexcept
+		: m_assetReference(assetReference)
 	{
-	public:
-		ScopedAssetReferenceLock(const AssetReference<T>& assetReference) noexcept
-			: m_assetReference(assetReference)
-		{
-			m_assetReference.Lock();
-		}
+		m_assetReference.Lock();
+	}
 
-		~ScopedAssetReferenceLock() noexcept
-		{
-			m_assetReference.Unlock();
-		}
+	~ScopedAssetReferenceLock() noexcept
+	{
+		m_assetReference.Unlock();
+	}
 
-		ScopedAssetReferenceLock(ScopedAssetReferenceLock&&) = delete;
-		ScopedAssetReferenceLock(const ScopedAssetReferenceLock&) = delete;
-		ScopedAssetReferenceLock& operator=(ScopedAssetReferenceLock&&) = delete;
-		ScopedAssetReferenceLock& operator=(const ScopedAssetReferenceLock&) = delete;
+	ScopedAssetReferenceLock(ScopedAssetReferenceLock&&) = delete;
+	ScopedAssetReferenceLock(const ScopedAssetReferenceLock&) = delete;
+	ScopedAssetReferenceLock& operator=(ScopedAssetReferenceLock&&) = delete;
+	ScopedAssetReferenceLock& operator=(const ScopedAssetReferenceLock&) = delete;
 
-	private:
-		const AssetReference<T>& m_assetReference;
-	};
-}
+private:
+	const AssetReference<T>& m_assetReference;
+};

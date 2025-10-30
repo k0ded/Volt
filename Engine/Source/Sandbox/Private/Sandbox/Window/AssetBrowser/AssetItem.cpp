@@ -2,6 +2,7 @@
 #include "Window/AssetBrowser/AssetItem.h"
 
 #include "Sandbox/Sandbox.h"
+#include "Sandbox/EditorAssetManager.h"
 #include "Sandbox/Window/AssetBrowser/AssetBrowserSelectionManager.h"
 
 #include "Sandbox/Utility/EditorResources.h"
@@ -16,7 +17,9 @@
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/Window/AssetBrowser/EditorAssetRegistry.h"
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
+
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <Volt-Scene/AssetTypes.h>
@@ -28,13 +31,13 @@ namespace AssetBrowser
 	AssetItem::AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& aMeshToImportData)
 		: Item(selectionManager, path), meshToImportData(aMeshToImportData)
 	{
-		type = Volt::AssetManager::GetAssetTypeFromPath(path);
-		if (type == AssetTypes::None)
+		handle = g_assetManager->GetAssetHandleFromFilepath(path);
+
+		// Assign a random handle to non registered assets
+		if (handle == Volt::Asset_New::Null())
 		{
-			type = GetAssetTypeRegistry().GetTypeFromExtension(path.extension().string());
+			handle = {};
 		}
-		
-		handle = Volt::AssetManager::Get().GetOrAddAssetToRegistry(path, type);
 	}
 
 	bool AssetItem::Render()
@@ -81,7 +84,7 @@ namespace AssetBrowser
 
 		if (ImGui::MenuItem("Reload"))
 		{
-			Volt::AssetManager::Get().ReloadAsset(handle);
+			g_assetManager->ReloadAsset(handle);
 		}
 
 		ImGui::Separator();
@@ -105,7 +108,7 @@ namespace AssetBrowser
 
 		if (ImGui::MenuItem("Checkout"))
 		{
-			VersionControl::Edit(Volt::AssetManager::GetFilesystemPath(handle));
+			VersionControl::Edit(g_assetManager->GetFilesystemPath(handle));
 		}
 
 		return removed;
@@ -115,7 +118,7 @@ namespace AssetBrowser
 	{
 		if (aNewName.empty()) { return false; }
 
-		Volt::AssetManager::Get().RenameAsset(handle, aNewName);
+		g_editorAssetManager->RenameAsset(handle, aNewName);
 
 		return true;
 	}
@@ -127,13 +130,6 @@ namespace AssetBrowser
 			if (type == AssetTypes::Scene)
 			{
 				Sandbox::Get().OpenScene(handle);
-			}
-			else if (type == AssetTypes::MonoScript)
-			{
-				if (!Volt::PremadeCommands::RunOpenVSFileCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor, Volt::AssetManager::GetFilePathFromAssetHandle(handle)))
-				{
-					UI::Notify(UI::NotificationType::Error, "Open file failed!", "External script editor is not valid!");
-				}
 			}
 		}
 	}
@@ -166,17 +162,19 @@ namespace AssetBrowser
 		RefPtr<Volt::RHI::Image> icon = previewImage ? previewImage : nullptr;
 		if (!icon && EditorResources::GetAssetIcon(type))
 		{
-			icon = EditorResources::GetAssetIcon(type)->GetImage();
+			icon = EditorResources::GetAssetIcon(type);
 		}
 
 		if (type == AssetTypes::Texture)
 		{
 			if (EditorUtils::HasThumbnail(path))
 			{
-				auto image = Volt::AssetManager::GetAsset<Volt::Texture2D>(EditorUtils::GetThumbnailPathFromPath(path));
-				if (image && image->IsValid())
+				AssetReference<Volt::Texture2D> texture;
+
+				if (g_assetManager->TryGetAssetImmediately<Volt::Texture2D>(g_assetManager->GetAssetHandleFromFilepath(EditorUtils::GetThumbnailPathFromPath(path)), texture))
 				{
-					icon = image->GetImage();
+					ScopedAssetReferenceLock textureLock{ texture };
+					icon = texture->GetImage();
 				}
 			}
 			else
@@ -187,7 +185,7 @@ namespace AssetBrowser
 
 		if (!icon)
 		{
-			icon = EditorResources::GetEditorIcon(EditorIcon::GenericFile)->GetImage();
+			icon = EditorResources::GetEditorIcon(EditorIcon::GenericFile);
 		}
 
 		return icon;
@@ -225,7 +223,6 @@ namespace AssetBrowser
 		if (assetType == AssetTypes::Material) return { 0.26f, 0.35f, 0.9f, 1.f };
 		if (assetType == AssetTypes::Scene) return { 0.9f, 0.54f, 0.26f, 1.f };
 		if (assetType == AssetTypes::Prefab) return { 0.25f, 0.93f, 0.92f, 1.f };
-		if (assetType == AssetTypes::MonoScript) return { 0.f, 0.6f, 0.f, 1.f };
 		if (assetType == AssetTypes::BehaviorGraph) return { 0.75f, 0.04f, 0.83f, 1.f };
 		if (assetType == AssetTypes::EnvironmentTexture) return { 0.5f, 0.26f, 0.8f, 1.f };
 

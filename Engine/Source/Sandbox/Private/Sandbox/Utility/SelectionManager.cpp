@@ -5,6 +5,7 @@
 
 #include <Volt-Scene/Scene.h>
 #include <EntitySystem/Entity.h>
+#include <AssetSystem/AssetLocks.h>
 
 void SelectionManager::Initialize()
 {
@@ -93,8 +94,10 @@ bool SelectionManager::IsSelected(Volt::EntityID entity, SelectionContext contex
 	return std::find(m_entities.at(context).begin(), m_entities.at(context).end(), entity) != m_entities.at(context).end();
 }
 
-void SelectionManager::Update(Ref<Volt::Scene> scene)
+void SelectionManager::Update(AssetReference<Volt::Scene> scene)
 {
+	ScopedAssetReferenceLock sceneLock{ scene };
+
 	for (const auto& ent : GetSelectedEntities())
 	{
 		if (!scene->IsEntityValid(ent))
@@ -104,8 +107,10 @@ void SelectionManager::Update(Ref<Volt::Scene> scene)
 	}
 }
 
-bool SelectionManager::IsAnyParentSelected(Volt::EntityID id, Ref<Volt::Scene> scene)
+bool SelectionManager::IsAnyParentSelected(Volt::EntityID id, AssetReference<Volt::Scene> scene)
 {
+	ScopedAssetReferenceLock sceneLock{ scene };
+
 	Volt::Entity entity = scene->GetEntityFromID(id);
 
 	if (entity.GetParent())

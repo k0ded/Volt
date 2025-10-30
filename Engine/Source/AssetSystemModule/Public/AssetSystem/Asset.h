@@ -61,6 +61,7 @@ namespace Volt
 
 		VT_INLINE bool IsValid() const { return handle != 0; }
 		VT_INLINE bool HasFilepath() const { return !filepath.empty(); }
+		VT_INLINE bool IsMemoryAsset() const { return isMemoryAsset; }
 
 		template<typename CustomMetadataType> 
 	 	VT_INLINE const CustomMetadataType& GetCustomData() const

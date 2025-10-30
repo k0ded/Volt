@@ -18,7 +18,7 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicNode.h>
@@ -290,9 +290,9 @@ size_t MosaicEditorPanel::LoadNodeSettings(const UUID64 nodeId, std::string& dat
 	return data.size();
 }
 
-void MosaicEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
+void MosaicEditorPanel::OpenAsset(AssetReference<Volt::Asset_New> asset)
 {
-	m_material = std::reinterpret_pointer_cast<Volt::MaterialAsset>(asset);
+	m_material = asset.ConvertTo<Volt::MaterialAsset>();
 }
 
 void MosaicEditorPanel::OnClose()
@@ -464,19 +464,19 @@ void MosaicEditorPanel::DrawMenuBar()
 		{
 			if (ImGui::MenuItem("Create"))
 			{
-				std::filesystem::path path = FileSystem::SaveFileDialogue({{ "Mosaic Graph (*.vtmat)", "vtmat" }}, Volt::ProjectManager::GetAssetsDirectory());
-				m_material = Volt::AssetManager::CreateAssetAndFile<Volt::MaterialAsset>(path.parent_path(), path.stem().string());
+				std::filesystem::path path = FileSystem::SaveFileDialogue({{ "Mosaic Graph (*.vtasset)", "vtasset" }}, Volt::ProjectManager::GetAssetsDirectory());
+				m_material = g_assetManager->CreateAssetAndFile<Volt::MaterialAsset>(path.parent_path(), path.stem().string());
 			}
 
 			if (ImGui::MenuItem("Save") && m_material)
 			{
-				Volt::AssetManager::SaveAsset(m_material->handle);
+				g_assetManager->SaveAsset(m_material);
 			}
 
 			if (ImGui::MenuItem("Load"))
 			{
-				std::filesystem::path path = FileSystem::OpenFileDialogue({ { "Mosaic Graph (*.vtmat)", "vtmat" }}, Volt::ProjectManager::GetAssetsDirectory());
-				m_material = Volt::AssetManager::GetAsset<Volt::MaterialAsset>(path);
+				std::filesystem::path path = FileSystem::OpenFileDialogue({ { "Mosaic Graph (*.vtasset)", "vtasset" }}, Volt::ProjectManager::GetAssetsDirectory());
+				m_material = g_assetManager->GetAssetImmediately<Volt::MaterialAsset>(g_assetManager->GetAssetHandleFromFilepath(path));
 			}
 
 			if (ImGui::MenuItem("Compile") && m_material)
@@ -594,13 +594,6 @@ void MosaicEditorPanel::DrawNodes()
 	ImTextureID textureId = 0;
 	int32_t width = 0;
 	int32_t height = 0;
-
-	if (m_headerTexture && m_headerTexture->IsValid())
-	{
-		textureId = UI::GetTextureID(m_headerTexture);
-		width = m_headerTexture->GetWidth();
-		height = m_headerTexture->GetHeight();
-	}
 
 	utils::BlueprintNodeBuilder builder{ textureId, width, height };
 

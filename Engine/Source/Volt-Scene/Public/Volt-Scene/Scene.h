@@ -5,6 +5,7 @@
 #include "Volt-Scene/AssetTypes.h"
 
 #include <AssetSystem/Asset_New.h>
+#include <AssetSystem/AssetReference.h>
 
 #include <EventSystem/EventListener.h>
 #include <EntitySystem/EntityScene.h>

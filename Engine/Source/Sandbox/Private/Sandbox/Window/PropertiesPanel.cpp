@@ -20,8 +20,9 @@
 #include <InputModule/MouseButtonCodes.h>
 
 #include <Volt-Application/UI/UIUtility.h>
+#include <AssetSystem/AssetLocks.h>
 
-PropertiesPanel::PropertiesPanel(Ref<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id)
+PropertiesPanel::PropertiesPanel(AssetReference<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id)
 	: EditorWindow("Properties", false, id), myCurrentScene(currentScene), myCurrentSceneRenderer(currentSceneRenderer), mySceneState(sceneState)
 {
 	Open();
@@ -44,6 +45,8 @@ void PropertiesPanel::UpdateMainContent()
 		return;
 	}
 
+	ScopedAssetReferenceLock sceneLock{ myCurrentScene };
+
 	const bool singleSelected = !(SelectionManager::GetSelectedCount() > 1);
 	auto firstEntity = myCurrentScene->GetEntityFromID(SelectionManager::GetSelectedEntities().front());
 	const auto& entities = SelectionManager::GetSelectedEntities();
@@ -55,7 +58,7 @@ void PropertiesPanel::UpdateMainContent()
 			auto& tag = firstEntity.GetComponent<Volt::TagComponent>();
 			if (UI::InputText("Name", tag.tag))
 			{
-				EditorUtils::MarkEntityAsEdited(myCurrentScene, firstEntity);
+				EditorUtils::MarkEntityAsEdited(*myCurrentScene, firstEntity);
 			}
 		}
 	}
@@ -105,7 +108,7 @@ void PropertiesPanel::UpdateMainContent()
 				if (entity.HasComponent<Volt::TagComponent>())
 				{
 					entity.GetComponent<Volt::TagComponent>().tag = inputText;
-					EditorUtils::MarkEntityAsEdited(myCurrentScene, entity);
+					EditorUtils::MarkEntityAsEdited(*myCurrentScene, entity);
 				}
 			}
 		}
@@ -139,7 +142,7 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalPosition(transform.position);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAndChildrenAsEdited(myCurrentScene, ent);
+						EditorUtils::MarkEntityAndChildrenAsEdited(*myCurrentScene, ent);
 					}
 				}
 
@@ -163,7 +166,7 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalRotation(transform.rotation);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAsEdited(myCurrentScene, ent);
+						EditorUtils::MarkEntityAsEdited(*myCurrentScene, ent);
 					}
 				}
 
@@ -182,7 +185,7 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalScale(transform.scale);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAsEdited(myCurrentScene, ent);
+						EditorUtils::MarkEntityAsEdited(*myCurrentScene, ent);
 					}
 				}
 			}
@@ -197,7 +200,7 @@ void PropertiesPanel::UpdateMainContent()
 		const auto id = SelectionManager::GetSelectedEntities().front();
 		Volt::Entity entity = myCurrentScene->GetEntityFromID(id);
 
-		ComponentPropertyUtility::DrawComponents(myCurrentScene, entity);
+		ComponentPropertyUtility::DrawComponents(*myCurrentScene, entity);
 	}
 
 	ImGui::PushStyleColor(ImGuiCol_Button, { 0.2f, 0.2f, 0.2f, 1.f });
@@ -290,7 +293,7 @@ void PropertiesPanel::AddComponentPopup()
 									componentTypeDesc->OnInitialize(entity);
 								}
 
-								EditorUtils::MarkEntityAsEdited(myCurrentScene, entity);
+								EditorUtils::MarkEntityAsEdited(*myCurrentScene, entity);
 							}
 						}
 

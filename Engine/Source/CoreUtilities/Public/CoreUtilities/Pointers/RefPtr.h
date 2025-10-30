@@ -160,8 +160,6 @@ public:
 		requires (std::is_convertible_v<U*, T*>)
 	{
 		// Add a ref here as the constructor will not.
-		VT_ASSERT(dynamic_cast<U*>(m_object) != nullptr);
-		
 		if (m_object)
 		{
 			m_object->IncRef();

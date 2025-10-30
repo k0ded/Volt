@@ -33,17 +33,12 @@ namespace AssetBrowser
 
 		static const ImVec4 GetBackgroundColor(bool isHovered, bool isSeleted);
 
-		static Vector<Ref<Volt::MeshAsset>> GetMeshesExport() { return meshesToExport; };
-		static void ResetMeshExport() { meshesToExport.clear(); };
 		static bool RenderAssetTypePopup(AssetItem* item, SelectionManager* selectionManager);
 		
 	private:
 		AssetBrowserUtilities() = delete;
-		static void SetMeshExport(AssetItem* item);
 
 		static constexpr float myItemHeightModifier = 90.f;
-
-		inline static Vector<Ref<Volt::MeshAsset>> meshesToExport;
 
 		static const std::unordered_map<AssetType, std::function<void(AssetItem*, SelectionManager*)>>& GetPopupRenderFunctions();
 	};

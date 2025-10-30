@@ -23,7 +23,8 @@
 
 #include <EntitySystem/Entity.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/FileSystem.h>
 
@@ -39,12 +40,14 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 	std::string assetFileName = "Null";
 
-	const Ref<Volt::Asset> rawAsset = Volt::AssetManager::Get().GetAssetRaw(assetHandle);
-	if (rawAsset)
+	AssetReference<Volt::Asset_New> asset;
+	if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(assetHandle, asset))
 	{
-		assetFileName = rawAsset->assetName;
+		ScopedAssetReferenceLock assetLock{ asset };
 
-		if (wantedType != AssetTypes::None && wantedType != rawAsset->GetType())
+		assetFileName = asset->GetAssetName();
+
+		if (wantedType != AssetTypes::None && wantedType != asset->GetType())
 		{
 			assetHandle = Volt::Asset::Null();
 		}
@@ -61,9 +64,8 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 	Volt::AssetHandle newHandle;
 	if (UI::DragDropTarget("ASSET_BROWSER_ITEM", newHandle))
 	{
-		auto droppedAssetType = Volt::AssetManager::GetAssetTypeFromHandle(newHandle);
-
-		if (droppedAssetType == wantedType)
+		Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(newHandle);
+		if (assetMetadata->type == wantedType)
 		{
 			assetHandle = newHandle;
 			changed = true;
@@ -236,11 +238,11 @@ SaveReturnState EditorUtils::SaveFilePopup(const std::string& aId)
 
 Ref<Volt::Texture2D> EditorUtils::GenerateThumbnail(const std::filesystem::path& path)
 {
-	Ref<Volt::Texture2D> srcTexture = Volt::AssetManager::GetAsset<Volt::Texture2D>(path);
-	if (!srcTexture || !srcTexture->IsValid())
-	{
-		return nullptr;
-	}
+	//Ref<Volt::Texture2D> srcTexture = Volt::AssetManager::GetAsset<Volt::Texture2D>(path);
+	//if (!srcTexture || !srcTexture->IsValid())
+	//{
+	//	return nullptr;
+	//}
 
 	//Volt::RenderPass renderPass;
 	//Volt::FramebufferSpecification spec{};
@@ -312,18 +314,14 @@ std::string EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)
 	return originalName;
 }
 
-void EditorUtils::MarkEntityAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity)
+void EditorUtils::MarkEntityAsEdited(const Volt::Scene& scene, const Volt::Entity& entity)
 {
-	VT_ENSURE(scene);
-
-	const Volt::AssetHandle descHandle = scene->GetEntityDescHandleFromEntityID(entity.GetID());
+	const Volt::AssetHandle descHandle = scene.GetEntityDescHandleFromEntityID(entity.GetID());
 	DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
 }
 
-void EditorUtils::MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity)
+void EditorUtils::MarkEntityAndChildrenAsEdited(const Volt::Scene& scene, const Volt::Entity& entity)
 {
-	VT_ENSURE(scene);
-
 	MarkEntityAsEdited(scene, entity);
 
 	for (const auto& child : entity.GetChildren())
@@ -332,12 +330,12 @@ void EditorUtils::MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, c
 	}
 }
 
-void EditorUtils::DestroyEntity(Weak<Volt::Scene> scene, const Volt::Entity& entity)
+void EditorUtils::DestroyEntity(Volt::Scene& scene, const Volt::Entity& entity)
 {
 	DestroyEntities(scene, { entity });
 }
 
-void EditorUtils::DestroyEntities(Weak<Volt::Scene> scene, const Vector<Volt::Entity>& entities)
+void EditorUtils::DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>& entities)
 {
 	//only the parentmost entities should be called delete on
 	FrameStackVector<Volt::Entity> parentmostEntities;
@@ -385,7 +383,7 @@ void EditorUtils::DestroyEntities(Weak<Volt::Scene> scene, const Vector<Volt::En
 	for (Volt::Entity& entity : parentmostEntities)
 	{
 		Vector<Volt::AssetHandle> destroyedEntityDescs;
-		scene->DestroyEntity(entity, destroyedEntityDescs);
+		scene.DestroyEntity(entity, destroyedEntityDescs);
 		for (Volt::AssetHandle asset : destroyedEntityDescs)
 		{
 			DirtyAssetsManager::Get().MarkAssetDirty(asset);

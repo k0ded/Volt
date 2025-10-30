@@ -7,6 +7,7 @@
 #include <RenderCore/RenderGraph/RenderGraph.h>
 
 #include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Math/Math.h>
 
@@ -30,6 +31,8 @@ namespace Volt
 		s_blueNoiseData.scalarBlueNoise = g_assetManager->GetAssetImmediately<Texture2D>("Engine/Textures/STBlueNoise_scalar_128x128x64.vtasset");
 		s_blueNoiseData.vec2BlueNoise = g_assetManager->GetAssetImmediately<Texture2D>("Engine/Textures/STBlueNoise_vec2_128x128x64.vtasset");
 
+		ScopedAssetReferenceLock blueNoiseLock{ s_blueNoiseData.scalarBlueNoise };
+
 		const uint32_t width = s_blueNoiseData.scalarBlueNoise->GetWidth();
 		const uint32_t height = s_blueNoiseData.scalarBlueNoise->GetHeight();
 
@@ -45,6 +48,10 @@ namespace Volt
 
 	BlueNoiseShaderParameters BlueNoise::GetBlueNoiseParameters(RenderGraph& renderGraph)
 	{
+		ScopedAssetReferenceLock scalarBlueNoiseLock{ s_blueNoiseData.scalarBlueNoise };
+		ScopedAssetReferenceLock vec2BlueNoiseLock{ s_blueNoiseData.vec2BlueNoise };
+		ScopedAssetReferenceLock rgbaBlueNoiseLock{ s_blueNoiseData.rgbaBlueNoise };
+
 		RGTextureRef scalarBlueNoise = renderGraph.RegisterExternalTexture(s_blueNoiseData.scalarBlueNoise->GetImage());
 		RGTextureRef vec2BlueNoise = renderGraph.RegisterExternalTexture(s_blueNoiseData.vec2BlueNoise->GetImage());
 		RGTextureRef rgbaBlueNoise = renderGraph.RegisterExternalTexture(s_blueNoiseData.rgbaBlueNoise->GetImage());
