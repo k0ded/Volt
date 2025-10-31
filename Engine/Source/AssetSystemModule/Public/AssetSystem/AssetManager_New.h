@@ -71,7 +71,7 @@ namespace Volt
 
 		// Will return true and the asset if it is loaded. This method returns a non typed asset,
 		// instead of the default typed asset.
-		bool TryGetAssetIfLoadedAsAnonymous(AssetHandle assetHandle, AssetReference<Asset_New>& outAsset);
+		VTAS_API bool TryGetAssetIfLoadedAsAnonymous(AssetHandle assetHandle, AssetReference<Asset_New>& outAsset);
 
 		// Creates an asset that only lives in memory during the current application run, is not serializable to disk.
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateMemoryAsset(std::string_view assetName, Args&&... args);

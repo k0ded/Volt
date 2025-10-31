@@ -65,7 +65,7 @@ Ref<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(con
 
 			if (entry.isDirectory)
 			{
-				auto relPath = g_assetManager->GetRelativeAssetFilepath(path);
+				auto relPath = g_assetManager->GetRelativeAssetFilepath(entry.path);
 				Ref<AssetBrowser::DirectoryItem> dirData = CreateRef<AssetBrowser::DirectoryItem>(m_selectionManager.Get(), relPath);
 				directoryItems[relPath] = dirData;
 				const auto parentPath = g_assetManager->GetRelativeAssetFilepath(entry.path.parent_path());
@@ -74,7 +74,7 @@ Ref<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(con
 			}
 			else
 			{
-				Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(g_assetManager->GetAssetHandleFromFilepath(path));
+				Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(g_assetManager->GetAssetHandleFromFilepath(entry.path));
 
 				if (!assetMetadata.IsValid())
 				{
@@ -87,7 +87,7 @@ Ref<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(con
 				{
 					if (m_assetMask.empty() || m_assetMask.contains(assetMetadata->type))
 					{
-						auto relPath = g_assetManager->GetRelativeAssetFilepath(path);
+						auto relPath = g_assetManager->GetRelativeAssetFilepath(entry.path);
 						Ref<AssetBrowser::AssetItem> assetItem = CreateRef<AssetBrowser::AssetItem>(m_selectionManager.Get(), relPath, meshToImportData);
 						const auto parentPath = g_assetManager->GetRelativeAssetFilepath(entry.path.parent_path());
 						directoryItems[parentPath]->assets.emplace_back(assetItem);

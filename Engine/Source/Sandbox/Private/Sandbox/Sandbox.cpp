@@ -286,6 +286,8 @@ void Sandbox::SetupNewSceneData()
 		Volt::SceneRendererCreateInfo spec{};
 		Volt::SceneRendererCreateInfo gameSpec{};
 
+		ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
+
 		spec.debugName = "Editor Viewport";
 		spec.renderScene = m_runtimeScene->GetRenderScene();
 		spec.drawDebug = true;
@@ -678,6 +680,8 @@ bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
 
 	if (m_runtimeScene)
 	{
+		ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
+
 		if (m_runtimeScene->IsFinishedLoadingEntities())
 		{
 			switch (m_sceneState)
@@ -764,6 +768,9 @@ void Sandbox::RenderGameView(float timestep)
 			{
 				break;
 			}
+
+			ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
+
 			if (!m_runtimeScene->IsFinishedLoadingEntities())
 			{
 				break;
@@ -957,6 +964,8 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 
 bool Sandbox::OnViewportResizeEvent(Volt::ViewportResizeEvent& e)
 {
+	ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
+
 	m_runtimeScene->SetRenderSize(e.GetWidth(), e.GetHeight());
 	m_viewportSize = { e.GetWidth(), e.GetHeight() };
 	m_viewportPosition = { e.GetX(), e.GetY() };
@@ -973,19 +982,13 @@ bool Sandbox::OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e)
 		m_gameSceneRenderer->Resize(m_viewportSize.x, m_viewportSize.y);
 	}
 
-	e.GetScene()->SetRenderSize(m_viewportSize.x, m_viewportSize.y);
+	AssetReference<Volt::Scene> scene = e.GetScene();
+	ScopedAssetReferenceLock sceneLock{ scene };
+
+	scene->SetRenderSize(m_viewportSize.x, m_viewportSize.y);
 
 	Volt::ViewportResizeEvent e2 = { Volt::WindowManager::Get().GetMainWindow(), m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
 	Volt::EventSystem::DispatchEvent(e2);
-
-	auto scene = e.GetScene();
-
-	/*DiscordPlugin::GetInstance().GetManager().SetState(scene->GetName());
-	DiscordPlugin::GetInstance().GetManager().SetPartySize(m_runtimeScene->GetActiveLayer() + 1);
-	DiscordPlugin::GetInstance().GetManager().SetMaxPartySize(static_cast<int32_t>(m_runtimeScene->GetLayers().size()));
-	DiscordPlugin::GetInstance().GetManager().SetStartTime(std::time(nullptr));
-
-	DiscordPlugin::GetInstance().GetManager().UpdateChanges();*/
 
 	return false;
 }

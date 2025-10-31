@@ -28,7 +28,7 @@ class AssetPreview;
 class AssetBrowserPanel : public EditorWindow
 {
 public:
-	AssetBrowserPanel(Ref<Volt::Scene>& aScene, const std::string& id);
+	AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const std::string& id);
 
 	void UpdateMainContent() override;
 	void Reload();
@@ -80,7 +80,7 @@ private:
 
 	//////////////////////////
 
-	Ref<Volt::Scene>& myEditorScene;
+	AssetReference<Volt::Scene>& myEditorScene;
 
 	Vector<AssetBrowser::DirectoryItem*> myDirectoryButtons;
 

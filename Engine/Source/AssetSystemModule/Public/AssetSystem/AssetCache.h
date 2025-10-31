@@ -11,7 +11,7 @@ namespace Volt
 	{
 	public:
 		VTAS_API void AddAsset(RefPtr<Asset_New> asset);
-		void RemoveAsset(AssetHandle assetHandle);
+		VTAS_API void RemoveAsset(AssetHandle assetHandle);
 
 		RefPtr<Asset_New> GetAsset(AssetHandle assetHandle);
 		VTAS_API bool TryGetAsset(AssetHandle assetHandle, RefPtr<Asset_New>& outAsset);

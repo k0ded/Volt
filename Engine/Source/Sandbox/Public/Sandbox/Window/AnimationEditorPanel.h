@@ -2,6 +2,8 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
+#include <Volt-Animation/Assets/Animation.h>
+
 namespace Volt
 {
 	class Animation;

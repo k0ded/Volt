@@ -26,13 +26,23 @@ namespace Volt
 
 	WriteableAssetMetadata AssetManager_New::GetWriteableAssetMetadata(AssetHandle assetHandle) const
 	{
+		if (assetHandle == Asset_New::Null())
+		{
+			return { nullptr };
+		}
+
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 		return { assetMetadata};
 	}
 
 	ReadOnlyAssetMetadata AssetManager_New::GetReadOnlyAssetMetadata(AssetHandle assetHandle) const
 	{
-		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+		if (assetHandle == Asset_New::Null())
+		{
+			return { nullptr };
+		}
+
+ 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 		return { assetMetadata };
 	}
 
@@ -298,7 +308,7 @@ namespace Volt
 
 		m_assetCache.AddAsset(asset);
 
-		WriteableAssetMetadata assetMetadata = GetWriteableAssetMetadata(assetHandle);
+		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 		assetMetadata->isLoaded = true;
 
 		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);

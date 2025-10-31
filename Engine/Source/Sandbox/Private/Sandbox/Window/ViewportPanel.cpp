@@ -724,7 +724,7 @@ void ViewportPanel::CheckDragDrop()
 	{
 		Volt::Entity newEntity = m_editorScene->CreateEntity();
 
-		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, m_editorScene, ObjectStateAction::Create);
+		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, *m_editorScene, ObjectStateAction::Create);
 		EditorCommandStack::GetInstance().PushUndo(command);
 
 		auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
@@ -824,7 +824,7 @@ void ViewportPanel::DuplicateSelection()
 		toCheck.append(children);
 	}
 
-	Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(duplicated, m_editorScene, ObjectStateAction::Create);
+	Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(duplicated, *m_editorScene, ObjectStateAction::Create);
 	EditorCommandStack::GetInstance().PushUndo(command);
 }
 

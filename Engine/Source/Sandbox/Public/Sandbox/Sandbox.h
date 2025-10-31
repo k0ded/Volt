@@ -184,7 +184,6 @@ private:
 	bool m_isInitialized = false;
 	bool m_wantsToOpenCheckoutFilesModal = false;
 
-	Ref<Volt::Scene> m_storedScene;
 	bool m_shouldLoadNewScene = false;
 	uint32_t m_assetBrowserCount = 0;
 

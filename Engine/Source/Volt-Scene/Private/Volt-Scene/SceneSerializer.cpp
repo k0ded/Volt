@@ -92,7 +92,7 @@ namespace Volt
 		if (!std::filesystem::exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
-			destinationAsset->SetFlag(AssetFlag::Missing, true);
+			scene->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
 
@@ -100,12 +100,12 @@ namespace Volt
 		if (!streamReader.IsStreamValid())
 		{
 			VT_LOG(Error, "Failed to open file {0}!", metadata->filepath);
-			destinationAsset->SetFlag(AssetFlag::Invalid, true);
+			scene->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
 
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
-		VT_ASSERT_MSG(serializedMetadata.version == destinationAsset->GetVersion(), "Incompatible version!");
+		VT_ASSERT_MSG(serializedMetadata.version == scene->GetVersion(), "Incompatible version!");
 
 		// Scene File
 		{
@@ -115,7 +115,7 @@ namespace Volt
 			YAMLMemoryStreamReader yamlStreamReader{};
 			if (!yamlStreamReader.ConsumeBuffer(buffer))
 			{
-				destinationAsset->SetFlag(AssetFlag::Invalid, true);
+				scene->SetFlag(AssetFlag::Invalid, true);
 				return false;
 			}
 

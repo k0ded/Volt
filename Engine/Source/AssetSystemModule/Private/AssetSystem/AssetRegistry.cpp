@@ -34,6 +34,8 @@ namespace Volt
 
 	AssetMetadata* AssetRegistry::GetAssetMetadata(AssetHandle assetHandle)
 	{
+		VT_ENSURE(assetHandle != Asset_New::Null());
+
 		uint64_t metadataIndirectionIndex;
 		if (m_hashTable.Get(assetHandle, metadataIndirectionIndex))
 		{
@@ -45,6 +47,8 @@ namespace Volt
 
 	AssetMetadata* AssetRegistry::GetAssetMetadata(AssetHandle assetHandle) const
 	{
+		VT_ENSURE(assetHandle != Asset_New::Null());
+
 		uint64_t metadataIndirectionIndex;
 		if (m_hashTable.Get(assetHandle, metadataIndirectionIndex))
 		{
@@ -143,6 +147,8 @@ namespace Volt
 
 	void AssetRegistry::RemoveAssetMetadata(AssetHandle assetHandle, bool unlockMutex)
 	{
+		VT_ENSURE(assetHandle != Asset_New::Null());
+
 		// Remove the metadata from the hash table and get it's indirection index.
 		// It should now be safe to release the mutex and remove the references.
 		uint64_t metadataIndex = UINT64_MAX;
@@ -170,7 +176,7 @@ namespace Volt
 
 		if (normalizedFilepathString.find(assetsDirectoryFilepath.string()) != std::string::npos)
 		{
-			return std::filesystem::proximate(normalizedFilepath, assetsDirectoryFilepath).generic_string();
+			return std::filesystem::proximate(normalizedFilepath, m_projectDirectoryPath).generic_string();
 		}
 
 		if (normalizedFilepathString.find(m_engineDirectoryPath.string()) != std::string::npos)

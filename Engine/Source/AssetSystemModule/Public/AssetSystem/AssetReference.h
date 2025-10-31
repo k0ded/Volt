@@ -102,7 +102,6 @@ public:
 	VT_INLINE void Lock() const
 	{
 		VT_ENSURE(m_asset != nullptr);
-		VT_ENSURE(m_isLocked == false);
 		m_asset->m_assetMutex.lock_shared();
 		m_isLocked = true;
 	}
@@ -110,7 +109,6 @@ public:
 	VT_INLINE void Unlock() const
 	{
 		VT_ENSURE(m_asset != nullptr);
-		VT_ENSURE(m_isLocked == true);
 		m_asset->m_assetMutex.unlock_shared();
 		m_isLocked = false;
 	}

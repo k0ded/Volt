@@ -241,7 +241,7 @@ void SceneViewPanel::UpdateMainContent()
 				ScopedAssetReferenceLock prefabLock{ prefab };
 				Volt::Entity prefabEntity = prefab->Instantiate(*m_scene);
 
-				Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(prefabEntity, m_scene, ObjectStateAction::Create);
+				Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(prefabEntity, *m_scene, ObjectStateAction::Create);
 				EditorCommandStack::GetInstance().PushUndo(command);
 			}
 		}
@@ -741,7 +741,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 			SelectionManager::Deselect(tempEnt.GetID());
 		}
 
-		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, m_scene, ObjectStateAction::Delete);
+		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(entitiesToRemove, *m_scene, ObjectStateAction::Delete);
 		EditorCommandStack::GetInstance().PushUndo(command);
 
 		for (const auto& i : entitiesToRemove)
@@ -786,7 +786,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 						recursiveSetVisible(e, visible, recursiveSetVisible);
 					}
 
-					EditorUtils::MarkEntityAsEdited(scene, entity);
+					EditorUtils::MarkEntityAsEdited(*scene, entity);
 					return false;
 				};
 
@@ -1051,7 +1051,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 	{
 		auto postCreateNewEntityFromMenu = [&](Volt::Entity ent)
 		{
-			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(ent, m_scene, ObjectStateAction::Create);
+			Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(ent, *m_scene, ObjectStateAction::Create);
 			EditorCommandStack::GetInstance().PushUndo(command);
 			SelectionManager::DeselectAll();
 			SelectionManager::Select(ent.GetID());

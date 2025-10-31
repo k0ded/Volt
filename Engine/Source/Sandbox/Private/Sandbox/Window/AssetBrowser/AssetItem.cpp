@@ -38,6 +38,11 @@ namespace AssetBrowser
 		{
 			handle = {};
 		}
+		else
+		{
+			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+			type = assetMetadata->type;
+		}
 	}
 
 	bool AssetItem::Render()

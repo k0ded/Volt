@@ -15,9 +15,6 @@ namespace Volt
 	class Vision;
 	class Entity;
 
-	class Animation;
-	class Skeleton;
-
 	class Entity;
 	class RenderScene;
 	class EntityPhysicsScene;

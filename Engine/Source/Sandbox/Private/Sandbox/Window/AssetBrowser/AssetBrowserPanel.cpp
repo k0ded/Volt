@@ -48,7 +48,7 @@
 
 #undef CreateDirectory
 
-AssetBrowserPanel::AssetBrowserPanel(Ref<Volt::Scene>& aScene, const std::string& id)
+AssetBrowserPanel::AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const std::string& id)
 	: EditorWindow("Asset Browser" + id), myEditorScene(aScene)
 {
 	m_windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;

@@ -87,8 +87,9 @@ namespace VoltSharpmake
                 "Bcrypt.lib",
 
                 "Winmm.lib",
-                "Version.lib"
-                );
+                "Version.lib",
+				"ws2_32.lib"
+				);
 		}
 
 		public override void ConfigureMSVC(Configuration conf, CommonTarget target)

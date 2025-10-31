@@ -39,8 +39,8 @@ namespace Volt
 		{
 			handle = other.handle;
 			type = other.type;
-			isLoaded = other.isLoaded;
-			isQueued = other.isQueued;
+			isLoaded = other.isLoaded.load();
+			isQueued = other.isQueued.load();
 			isMemoryAsset = other.isMemoryAsset;
 			filepath = other.filepath;
 			customData = other.customData;
@@ -50,8 +50,8 @@ namespace Volt
 		{
 			handle = other.handle;
 			type = other.type;
-			isLoaded = other.isLoaded;
-			isQueued = other.isQueued;
+			isLoaded = other.isLoaded.load();
+			isQueued = other.isQueued.load();
 			isMemoryAsset = other.isMemoryAsset;
 			filepath = other.filepath;
 			customData = other.customData;
@@ -75,8 +75,8 @@ namespace Volt
 		AssetHandle handle = 0;
 		AssetType type;
 
-		bool isLoaded = false;
-		bool isQueued = false;
+		std::atomic_bool isLoaded = false;
+		std::atomic_bool isQueued = false;
 		//a memory asset is an asset that is not saved to a file on the disk
 		bool isMemoryAsset = false;
 

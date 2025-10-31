@@ -37,7 +37,7 @@ namespace Volt
 
 		void CopyPrefabEntity(Entity dstEntity, EntityID srcPrefabEntityId, const std::set<VoltGUID> componentsToSkip = CreateSkipComponentOnCopySet<RelationshipComponent>()) const;
 
-		[[nodiscard]] inline const bool IsPrefabValid() { return m_prefabScene != nullptr && m_rootEntityId != Entity::NullID(); }
+		[[nodiscard]] inline const bool IsPrefabValid() { return m_prefabScene.IsValid() && m_rootEntityId != Entity::NullID(); }
 		[[nodiscard]] const bool IsEntityValidInPrefab(Entity entity) const;
 		[[nodiscard]] const bool IsEntityValidInPrefab(EntityID prefabEntityId) const;
 		[[nodiscard]] const bool IsEntityRoot(Entity entity) const;

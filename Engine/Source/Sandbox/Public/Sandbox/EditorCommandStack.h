@@ -149,7 +149,7 @@ private:
 
 struct MultiGizmoCommand : EditorCommand
 {
-	MultiGizmoCommand(Weak<Volt::Scene> scene, const Vector<std::pair<Volt::EntityID, Volt::TransformComponent>>& entities)
+	MultiGizmoCommand(AssetReference<Volt::Scene> scene, const Vector<std::pair<Volt::EntityID, Volt::TransformComponent>>& entities)
 		: myPreviousTransforms(entities), myScene(scene)
 	{}
 
@@ -207,7 +207,7 @@ struct MultiGizmoCommand : EditorCommand
 
 private:
 	Vector<std::pair<Volt::EntityID, Volt::TransformComponent>> myPreviousTransforms;
-	Weak<Volt::Scene> myScene;
+	AssetReference<Volt::Scene> myScene;
 };
 
 enum class ObjectStateAction
@@ -218,11 +218,11 @@ enum class ObjectStateAction
 
 struct ObjectStateCommand : EditorCommand
 {
-	ObjectStateCommand(Vector<Volt::Entity> entityList, Weak<Volt::Scene> targetScene, ObjectStateAction action) :
+	ObjectStateCommand(Vector<Volt::Entity> entityList, Volt::Scene& targetScene, ObjectStateAction action) :
 		m_Action(action), m_targetScene(targetScene)
 	{
 		VT_ENSURE(entityList.size() > 0);
-		VT_ENSURE(&m_targetScene->GetEntityScene() == entityList[0].GetSceneReference());
+		VT_ENSURE(&m_targetScene.GetEntityScene() == entityList[0].GetSceneReference());
 
 		m_entityIDs.reserve(entityList.size());
 		for (Volt::Entity& entity : entityList)
@@ -237,10 +237,10 @@ struct ObjectStateCommand : EditorCommand
 		}
 	}
 
-	ObjectStateCommand(Volt::Entity entity, Weak<Volt::Scene> targetScene, ObjectStateAction action) :
+	ObjectStateCommand(Volt::Entity entity, Volt::Scene& targetScene, ObjectStateAction action) :
 		m_Action(action), m_targetScene(targetScene)
 	{
-		VT_ENSURE(&m_targetScene->GetEntityScene() == entity.GetSceneReference());
+		VT_ENSURE(&m_targetScene.GetEntityScene() == entity.GetSceneReference());
 		m_entityIDs.push_back(entity.GetID());
 
 		//if the action is delete, we need to save the data so that we can recreate the actor later
@@ -250,7 +250,7 @@ struct ObjectStateCommand : EditorCommand
 		}
 	}
 
-	ObjectStateCommand(Vector<Volt::EntityID> entityIDs, Weak<Volt::Scene> targetScene, ObjectStateAction action) :
+	ObjectStateCommand(Vector<Volt::EntityID> entityIDs, Volt::Scene& targetScene, ObjectStateAction action) :
 		m_entityIDs(entityIDs), m_targetScene(targetScene), m_Action(action)
 	{
 		//if the action is delete, we need to save the data so that we can recreate the actor later
@@ -290,8 +290,8 @@ private:
 
 			for (Volt::EntityID& id : m_entityIDs)
 			{
-				Volt::Entity entity = m_targetScene->GetEntityFromID(id);
-				m_targetScene->DestroyEntity(entity, true);
+				Volt::Entity entity = m_targetScene.GetEntityFromID(id);
+				m_targetScene.DestroyEntity(entity, true);
 			}
 		}
 		else if (m_Action == ObjectStateAction::Delete)
@@ -316,8 +316,8 @@ private:
 		m_idToSerializedData.clear();
 		for (Volt::EntityID& entityID : m_entityIDs)
 		{
-			m_idToAssociatedEntityDesc.insert({ entityID, m_targetScene->GetEntityDescHandleFromEntityID(entityID) });
-			Volt::Entity entity = m_targetScene->GetEntityFromID(entityID);
+			m_idToAssociatedEntityDesc.insert({ entityID, m_targetScene.GetEntityDescHandleFromEntityID(entityID) });
+			Volt::Entity entity = m_targetScene.GetEntityFromID(entityID);
 
 			YAMLMemoryStreamWriter writer{};
 
@@ -340,11 +340,11 @@ private:
 			Volt::Entity entity;
 			if (g_assetManager->IsValidAssetHandle(entityDescHandle))
 			{
-				entity = m_targetScene->CreateEntityWithIDForExistingDescription(entityID, entityDescHandle);
+				entity = m_targetScene.CreateEntityWithIDForExistingDescription(entityID, entityDescHandle);
 			}
 			else
 			{
-				entity = m_targetScene->CreateEntityWithID(entityID);
+				entity = m_targetScene.CreateEntityWithID(entityID);
 			}
 
 			Volt::EntityDescSerializer::Get().DeserializeEntityInPlace(entity, reader);
@@ -357,7 +357,7 @@ private:
 		m_idToSerializedData.clear();
 	}
 
-	Weak<Volt::Scene> m_targetScene;
+	Volt::Scene& m_targetScene;
 	Vector<Volt::EntityID> m_entityIDs;
 	std::unordered_map<Volt::EntityID, Buffer> m_idToSerializedData;
 	std::unordered_map<Volt::EntityID, Volt::AssetHandle> m_idToAssociatedEntityDesc;

@@ -2,6 +2,8 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
+#include <Volt-Animation/Assets/Skeleton.h>
+
 namespace Volt
 {
 	class Skeleton;

@@ -17,6 +17,7 @@
 
 #define TINYDDSLOADER_IMPLEMENTATION
 #include <tinyddsloader.h>
+#include <AssetSystem/AssetLocks.h>
 
 namespace tdl = tinyddsloader;
 
@@ -210,6 +211,7 @@ namespace Volt
 			voltTexture = g_assetManager->CreateAsset<Texture2D>(importConfig.destinationFilename);
 		}
 
+		ScopedAssetReferenceLock textureLock{ voltTexture };
 		voltTexture->SetImage(image);
 
 		return { voltTexture };
