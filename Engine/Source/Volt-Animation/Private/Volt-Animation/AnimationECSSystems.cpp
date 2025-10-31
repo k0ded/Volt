@@ -21,7 +21,7 @@ namespace Volt
 	{
 		AnimationPlayerComponent& animPlayerComp = entity.GetComponent<AnimationPlayerComponent>();
 
-		if (animPlayerComp.animationHandle == Asset::Null())
+		if (animPlayerComp.animationHandle == Asset_New::Null())
 		{
 			return;
 		}

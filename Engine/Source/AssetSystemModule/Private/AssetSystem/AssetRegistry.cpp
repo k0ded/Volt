@@ -61,7 +61,7 @@ namespace Volt
 	bool AssetRegistry::IsValidAssetHandle(AssetHandle assetHandle) const
 	{
 		uint64_t temp;
-		return assetHandle != Asset::Null() && m_hashTable.Get(assetHandle, temp);
+		return assetHandle != Asset_New::Null() && m_hashTable.Get(assetHandle, temp);
 	}
 
 	void AssetRegistry::Initialize()
@@ -107,7 +107,7 @@ namespace Volt
 
 		constexpr size_t assetHeaderSize = SerializedAssetMetadata::HeaderSize;
 
-		outMetadata.handle = Asset::Null();
+		outMetadata.handle = Asset_New::Null();
 
 		BinaryStreamReader streamReader{ assetFilepath, assetHeaderSize };
 		if (!streamReader.IsStreamValid())

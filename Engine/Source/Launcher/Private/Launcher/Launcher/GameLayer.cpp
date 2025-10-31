@@ -1,14 +1,12 @@
 #include "Launcher/GameLayer.h"
 
 #include <Volt-Scene/Scene.h>
-#include <Volt-Scene/SceneManager.h>
 #include <Volt-Scene/SceneEvents.h>
 
 #include <Volt-Renderer/SceneRenderer.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <AssetSystem/AssetManager.h>
 #include <Navigation/Core/NavigationSystem.h>
 
 #include <WindowModule/Events/WindowEvents.h>

@@ -2,7 +2,7 @@
 
 #include "Sandbox/Modals/Modal.h"
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetHandle.h>
 #include <AssetSystem/SourceAssetImporter.h>
 
 #include <CoreUtilities/Containers/Vector.h>
@@ -26,7 +26,7 @@ private:
 		bool isSkeletalMesh = false;
 		bool combineMeshes = false;
 		bool importVertexColors = false;
-		Volt::AssetHandle targetSkeleton = Volt::Asset::Null();
+		Volt::AssetHandle targetSkeleton = Volt::Asset_New::Null();
 
 		bool importAnimations = true;
 

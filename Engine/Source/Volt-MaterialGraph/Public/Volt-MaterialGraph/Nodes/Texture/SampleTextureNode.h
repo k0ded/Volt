@@ -2,7 +2,7 @@
 
 #include "Volt-MaterialGraph/Config.h"
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 #include <Mosaic/MosaicNode.h>
 
@@ -39,7 +39,7 @@ namespace Volt::MosaicNodes
 
 	private:
 		uint32_t m_textureIndex = 0;
-		AssetHandle m_textureHandle = Asset::Null();
+		AssetHandle m_textureHandle = Asset_New::Null();
 
 		mutable bool m_evaluated = false;
 		mutable Mosaic::ResultInfo m_evaluatedResultInfo;

@@ -9,7 +9,7 @@
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
 
 #include <AssetSystem/AssetTypes.h>
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 namespace Volt
 {
@@ -24,7 +24,7 @@ namespace Volt
 			::WriteIfExists<AnimationPlayerComponent>
 			::As<ECS::Type::Entity>;
 
-		AssetHandle handle = Asset::Null();
+		AssetHandle handle = Asset_New::Null();
 		Vector<AssetHandle> materials;
 
 		[[nodiscard]] inline const AssetHandle& GetHandle() const { return handle; }
@@ -33,8 +33,8 @@ namespace Volt
 		{
 			reflect.SetGUID("{45D008BE-65C9-4D6F-A0C6-377F7B384E47}"_guid);
 			reflect.SetLabel("Mesh Component");
-			reflect.AddMember(&MeshComponent::handle, "handle", "Mesh", "", Asset::Null(), AssetTypes::Mesh);
-			reflect.AddMember(&MeshComponent::materials, "materials", "Materials", "", Asset::Null(), AssetTypes::Material);
+			reflect.AddMember(&MeshComponent::handle, "handle", "Mesh", "", Asset_New::Null(), AssetTypes::Mesh);
+			reflect.AddMember(&MeshComponent::materials, "materials", "Materials", "", Asset_New::Null(), AssetTypes::Material);
 			reflect.SetOnMemberChangedCallback(&MeshComponent::OnMemberChanged);
 			reflect.SetOnInitializeCallback(&MeshComponent::OnIntitialize);
 			reflect.SetOnDestroyCallback(&MeshComponent::OnDestroy);
@@ -87,7 +87,7 @@ namespace Volt
 	struct TextRendererComponent
 	{
 		std::string text = "Text";
-		AssetHandle font = Asset::Null();
+		AssetHandle font = Asset_New::Null();
 		float maxWidth = 100.f;
 		glm::vec4 color = { 1.f };
 
@@ -96,7 +96,7 @@ namespace Volt
 			reflect.SetGUID("{8AAA0646-40D2-47E6-B83F-72EA26BD8C01}"_guid);
 			reflect.SetLabel("Text Renderer Component");
 			reflect.AddMember(&TextRendererComponent::text, "text", "Text", "", std::string("Text"));
-			reflect.AddMember(&TextRendererComponent::font, "font", "Font", "", Asset::Null(), AssetTypes::Font);
+			reflect.AddMember(&TextRendererComponent::font, "font", "Font", "", Asset_New::Null(), AssetTypes::Font);
 			reflect.AddMember(&TextRendererComponent::maxWidth, "maxWidth", "Max Width", "", 100.f);
 			reflect.AddMember(&TextRendererComponent::color, "color", "Color", "", glm::vec4{ 1.f }, ComponentMemberFlag::Color4);
 		}
@@ -106,13 +106,13 @@ namespace Volt
 
 	struct SpriteComponent
 	{
-		AssetHandle materialHandle = Asset::Null();
+		AssetHandle materialHandle = Asset_New::Null();
 
 		static void ReflectType(TypeDesc<SpriteComponent>& reflect)
 		{
 			reflect.SetGUID("{FDB47734-1B69-4558-B460-0975365DB400}"_guid);
 			reflect.SetLabel("Sprite Component");
-			reflect.AddMember(&SpriteComponent::materialHandle, "materialHandle", "Material", "", Asset::Null(), AssetTypes::Material);
+			reflect.AddMember(&SpriteComponent::materialHandle, "materialHandle", "Material", "", Asset_New::Null(), AssetTypes::Material);
 		}
 
 		REGISTER_COMPONENT(SpriteComponent);
@@ -120,7 +120,7 @@ namespace Volt
 
 	struct VertexPaintedComponent
 	{
-		AssetHandle meshHandle = Asset::Null();
+		AssetHandle meshHandle = Asset_New::Null();
 		Vector<uint32_t> vertexColors;
 
 		static void ReflectType(TypeDesc<VertexPaintedComponent>& reflect)
@@ -134,13 +134,13 @@ namespace Volt
 
 	struct PostProcessingStackComponent
 	{
-		AssetHandle postProcessingStack = Asset::Null();
+		AssetHandle postProcessingStack = Asset_New::Null();
 
 		static void ReflectType(TypeDesc<PostProcessingStackComponent>& reflect)
 		{
 			reflect.SetGUID("{09340235-CDA0-496E-BEB5-A2F38BCE0033}"_guid);
 			reflect.SetLabel("Post Processing Stack Component");
-			reflect.AddMember(&PostProcessingStackComponent::postProcessingStack, "postProcessingStack", "Post Processing Stack", "", Asset::Null(), AssetTypes::PostProcessingStack);
+			reflect.AddMember(&PostProcessingStackComponent::postProcessingStack, "postProcessingStack", "Post Processing Stack", "", Asset_New::Null(), AssetTypes::PostProcessingStack);
 		}
 
 		REGISTER_COMPONENT(PostProcessingStackComponent);
@@ -148,13 +148,13 @@ namespace Volt
 
 	struct DecalComponent
 	{
-		AssetHandle decalMaterial = Asset::Null();
+		AssetHandle decalMaterial = Asset_New::Null();
 
 		static void ReflectType(TypeDesc<DecalComponent>& reflect)
 		{
 			reflect.SetGUID("{09FA1C73-D508-4ADA-A101-A63703E91345}"_guid);
 			reflect.SetLabel("Decal Component");
-			reflect.AddMember(&DecalComponent::decalMaterial, "decalMaterial", "Material", "", Asset::Null(), AssetTypes::Material);
+			reflect.AddMember(&DecalComponent::decalMaterial, "decalMaterial", "Material", "", Asset_New::Null(), AssetTypes::Material);
 		}
 
 		REGISTER_COMPONENT(DecalComponent);

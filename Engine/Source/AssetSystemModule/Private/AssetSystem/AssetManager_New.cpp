@@ -11,6 +11,8 @@ Scope<Volt::AssetManager_New> g_assetManager;
 
 namespace Volt
 {
+	VT_DEFINE_LOG_CATEGORY(LogAssetSystem);
+
 	AssetManager_New::AssetManager_New(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName)
 		: m_assetRegistry(engineDirectoryPath, projectDirectoryPath, assetsDirectoryName)
 	{
@@ -373,7 +375,7 @@ namespace Volt
 
 	void AssetManager_New::CreateDependencyGraphAndAddAssetsFromRegistry()
 	{
-		m_dependencyGraph = CreateScope<AssetDependencyGraph>();
+		m_dependencyGraph = CreateScope<AssetDependencyGraph>(*this);
 	
 		for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
 		{

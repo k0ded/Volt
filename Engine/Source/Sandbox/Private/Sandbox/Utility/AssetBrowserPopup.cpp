@@ -39,12 +39,18 @@ AssetBrowserPopup::State AssetBrowserPopup::Update()
 		UI::ScopedColor background{ ImGuiCol_ChildBg, EditorTheme::DarkGreyBackground };
 		if (ImGui::BeginChild("##scrolling", ImGui::GetContentRegionAvail())) //#TODO_Ivar: Optimize!
 		{
-			Vector<Volt::AssetHandle> items = Volt::AssetManager::GetAllAssetsOfType(myWantedType);
-			//items.erase(std::remove_if(items.begin(), items.end(), [](Volt::AssetHandle handle)
-			//{
-			//	return Volt::AssetManager::IsMemoryAsset(handle);
-			//}));
-			
+			Vector<Volt::AssetHandle> items;
+
+			Volt::AssetRegistryIteratorFilter filter;
+			filter.includeMemoryAssets = false;
+			filter.filteredAssetTypes.insert(myWantedType);
+
+			g_assetManager->IterateAssetRegistryWithFilter(filter, [&items](Volt::ReadOnlyAssetMetadata assetMetadata) 
+			{
+				items.emplace_back(assetMetadata->handle);
+				return true;
+			});
+
 			state = RenderView(items);
 			ImGui::EndChild();
 		}

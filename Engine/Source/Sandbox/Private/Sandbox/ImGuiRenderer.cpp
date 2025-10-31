@@ -16,7 +16,6 @@
 
 #include <EventSystem/EventSystem.h>
 
-#include <AssetSystem/AssetManager.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <WindowModule/WindowManager.h>

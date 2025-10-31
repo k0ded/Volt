@@ -1,6 +1,6 @@
 #pragma once
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetType.h>
 
 namespace AssetBrowser
 {

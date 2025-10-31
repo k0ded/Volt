@@ -3,7 +3,7 @@
 
 #include <AssetSystem/AssetTypes.h>
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 #include <EntitySystem/EntityID.h>
 #include <EntitySystem/ComponentRegistry.h>
@@ -35,7 +35,7 @@ namespace Volt
 
 	struct PrefabComponent
 	{
-		AssetHandle prefabAsset = Asset::Null();
+		AssetHandle prefabAsset = Asset_New::Null();
 		EntityID prefabEntity = EntityID(0);
 		EntityID sceneRootEntity = EntityID(0);
 		uint32_t version = 0;
@@ -49,7 +49,7 @@ namespace Volt
 			reflect.SetGUID("{B8A83ACF-F1CA-4C9F-8D1E-408B5BB388D2}"_guid);
 			reflect.SetLabel("Prefab Component");
 			reflect.SetHidden();
-			reflect.AddMember(&PrefabComponent::prefabAsset, "prefabAsset", "Prefab Asset", "", Asset::Null(), AssetTypes::Prefab);
+			reflect.AddMember(&PrefabComponent::prefabAsset, "prefabAsset", "Prefab Asset", "", Asset_New::Null(), AssetTypes::Prefab);
 			reflect.AddMember(&PrefabComponent::prefabEntity, "prefabEntity", "Prefab Entity", "", EntityID(0));
 			reflect.AddMember(&PrefabComponent::sceneRootEntity, "sceneRootEntity", "Scene Root Entity", "", EntityID(0));
 			reflect.AddMember(&PrefabComponent::version, "version", "Version", "", 0);

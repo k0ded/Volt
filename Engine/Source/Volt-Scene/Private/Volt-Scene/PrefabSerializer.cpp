@@ -128,7 +128,7 @@ namespace Volt
 			yamlStreamReader.ForEach("PrefabReferences", [&]()
 			{
 				EntityID entityId = yamlStreamReader.ReadAtKey("entity", Entity::NullID());
-				AssetHandle prefabHandle = yamlStreamReader.ReadAtKey("prefabHandle", Asset::Null());
+				AssetHandle prefabHandle = yamlStreamReader.ReadAtKey("prefabHandle", Asset_New::Null());
 				EntityID prefabEntityReference = yamlStreamReader.ReadAtKey("prefabEntityReferences", Entity::NullID());
 
 				auto& prefabRefData = prefab->m_prefabReferencesMap[entityId];

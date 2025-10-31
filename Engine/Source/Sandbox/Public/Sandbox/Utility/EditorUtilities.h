@@ -2,7 +2,8 @@
 
 #include "Sandbox/Utility/AssetBrowserPopup.h"
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetHandle.h>
+#include <AssetSystem/AssetType.h>
 
 #include <filesystem>
 
@@ -30,10 +31,6 @@ public:
 	static bool SearchBar(std::string& outSearchQuery, bool& outHasSearchQuery, bool setAsActive = false);
 
 	static SaveReturnState SaveFilePopup(const std::string& aId);
-
-	static Ref<Volt::Texture2D> GenerateThumbnail(const std::filesystem::path& path);
-	static bool HasThumbnail(const std::filesystem::path& path);
-	static std::filesystem::path GetThumbnailPathFromPath(const std::filesystem::path& path);
 
 	static std::string GetDuplicatedNameFromEntity(const Volt::Entity& entity);
 

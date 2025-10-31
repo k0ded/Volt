@@ -26,6 +26,8 @@
 
 #include <Volt-Application/UI/UIUtility.h>
 
+#include <CoreUtilities/StringUtility.h>
+
 namespace AssetBrowser
 {
 	AssetItem::AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& aMeshToImportData)
@@ -57,7 +59,7 @@ namespace AssetBrowser
 			}
 
 			Sandbox::Get().OpenScene(Volt::AssetManager::GetFilePathFromAssetHandle(mySceneToOpen));
-			mySceneToOpen = Volt::Asset::Null();
+			mySceneToOpen = Volt::Asset_New::Null();
 		}*/
 
 		return reload;
@@ -170,29 +172,7 @@ namespace AssetBrowser
 			icon = EditorResources::GetAssetIcon(type);
 		}
 
-		if (type == AssetTypes::Texture)
-		{
-			if (EditorUtils::HasThumbnail(path))
-			{
-				AssetReference<Volt::Texture2D> texture;
-
-				if (g_assetManager->TryGetAssetImmediately<Volt::Texture2D>(g_assetManager->GetAssetHandleFromFilepath(EditorUtils::GetThumbnailPathFromPath(path)), texture))
-				{
-					ScopedAssetReferenceLock textureLock{ texture };
-					icon = texture->GetImage();
-				}
-			}
-			else
-			{
-				//icon = EditorUtils::GenerateThumbnail(path)->GetImage();
-			}
-		}
-
-		if (!icon)
-		{
-			icon = EditorResources::GetEditorIcon(EditorIcon::GenericFile);
-		}
-
+		icon = EditorResources::GetEditorIcon(EditorIcon::GenericFile);
 		return icon;
 	}
 

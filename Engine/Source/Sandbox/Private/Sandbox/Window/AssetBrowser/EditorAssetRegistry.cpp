@@ -18,6 +18,8 @@
 #include <AssetSystem/AssetManager_New.h>
 #include <AssetSystem/AssetLocks.h>
 
+#include <CoreUtilities/StringUtility.h>
+
 #define ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandleVarName) [](Volt::AssetHandle aAssetHandleVarName)->Vector<std::pair<std::string, std::string>>
 
 

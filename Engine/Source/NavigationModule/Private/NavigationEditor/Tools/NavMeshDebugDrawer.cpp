@@ -3,8 +3,6 @@
 
 #include <Volt-Assets/MaterialAsset.h>
 
-#include <AssetSystem/AssetManager.h>
-
 #include <glm/glm.hpp>
 
 #include <DetourDebugDraw.h>

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <AssetSystem/Asset.h>
-
 #include <RHIModule/Images/Image.h>
 
 #include <imgui.h>

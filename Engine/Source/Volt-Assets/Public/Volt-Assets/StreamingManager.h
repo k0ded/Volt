@@ -2,11 +2,13 @@
 
 #include "Volt-Assets/Config.h"
 #include "Volt-Assets/StreamingInstanceID.h"
+#include "Volt-Assets/MeshAsset.h"
+#include "Volt-Assets/MaterialAsset.h"
 
 #include "Volt-Renderer/RenderScene/SceneLightData.h"
+#include "Volt-Renderer/Texture/EnvironmentTexture.h"
 
-#include <AssetSystem/Asset.h>
-#include <AssetSystem/AssetHandle.h>
+#include <AssetSystem/AssetManager_New.h>
 
 #include <EntitySystem/EntityID.h>
 #include <SubSystem/SubSystem.h>
@@ -36,7 +38,8 @@ namespace Volt
 		Ref<SceneLightData> sceneLightData;
 	};
 
-	class VTASSETS_API StreamingInstanceAssetReferenceCounter
+	template<VoltAssetType T>
+	class StreamingInstanceAssetReferenceCounter
 	{
 	public:
 		using AssetUpdatedFunc = std::function<void(AssetHandle, const std::unordered_set<StreamingInstanceID>&, AssetChangedState)>;
@@ -50,8 +53,15 @@ namespace Volt
 		void SetAssetUpdatedCallback(AssetUpdatedFunc callbackFunc);
 
 	private:
+		struct AssetStreamingReference
+		{
+			AssetReference<T> asset;
+			std::unordered_set<StreamingInstanceID> referencers;
+		};
+		
 		std::mutex m_streamingInstancesMapMutex;
-		Map<AssetHandle, std::unordered_set<StreamingInstanceID>> m_streamingInstancesFromAssetHandle;
+
+		Map<AssetHandle, AssetStreamingReference> m_assetReferenceFromAssetHandle;
 		AssetUpdatedFunc m_callbackFunction;
 		AssetType m_assetType;
 		UUID64 m_assetUpdatedCallback = 0;
@@ -107,10 +117,65 @@ namespace Volt
 		void InitializeSceneLightDataFromInstance(const StreamingInstanceMap::StreamingInstance& instance);
 
 		StreamingInstanceMap m_streamingInstances;
-		StreamingInstanceAssetReferenceCounter m_meshReferenceCounter;
-		StreamingInstanceAssetReferenceCounter m_materialReferenceCounter;
-		StreamingInstanceAssetReferenceCounter m_environmentTextureReferenceCounter;
+		StreamingInstanceAssetReferenceCounter<MeshAsset> m_meshReferenceCounter;
+		StreamingInstanceAssetReferenceCounter<MaterialAsset> m_materialReferenceCounter;
+		StreamingInstanceAssetReferenceCounter<EnvironmentTexture> m_environmentTextureReferenceCounter;
 
 		inline static StreamingManager* s_instance = nullptr;
 	};
+
+	template<VoltAssetType T>
+	inline StreamingInstanceAssetReferenceCounter<T>::StreamingInstanceAssetReferenceCounter(AssetType assetType)
+		: m_assetType(assetType)
+	{
+		m_assetUpdatedCallback = g_assetManager->RegisterAssetUpdatedCallback(assetType, [&](AssetHandle assetHandle, AssetChangedState state)
+		{
+			std::scoped_lock lock{ m_streamingInstancesMapMutex };
+			if (m_callbackFunction && m_assetReferenceFromAssetHandle.contains(assetHandle))
+			{
+				m_callbackFunction(assetHandle, m_assetReferenceFromAssetHandle[assetHandle].referencers, state);
+			}
+		});
+	}
+
+	template<VoltAssetType T>
+	StreamingInstanceAssetReferenceCounter<T>::~StreamingInstanceAssetReferenceCounter()
+	{
+		g_assetManager->UnregisterAssetUpdatedCallback(m_assetType, m_assetUpdatedCallback);
+	}
+
+	template<VoltAssetType T>
+	void StreamingInstanceAssetReferenceCounter<T>::AddReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
+	{
+		std::scoped_lock lock{ m_streamingInstancesMapMutex };
+
+		if (!m_assetReferenceFromAssetHandle.contains(assetHandle))
+		{
+			g_assetManager->TryGetAsset(assetHandle, m_assetReferenceFromAssetHandle[assetHandle].asset);
+		}
+
+		m_assetReferenceFromAssetHandle[assetHandle].referencers.emplace(instanceId);
+	}
+
+	template<VoltAssetType T>
+	void StreamingInstanceAssetReferenceCounter<T>::RemoveReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
+	{
+		std::scoped_lock lock{ m_streamingInstancesMapMutex };
+
+		VT_ENSURE(m_assetReferenceFromAssetHandle.contains(assetHandle));
+		VT_ENSURE(m_assetReferenceFromAssetHandle.at(assetHandle).referencers.contains(instanceId));
+
+		m_assetReferenceFromAssetHandle.at(assetHandle).referencers.erase(instanceId);
+
+		if (m_assetReferenceFromAssetHandle.at(assetHandle).referencers.empty())
+		{
+			m_assetReferenceFromAssetHandle.erase(assetHandle);
+		}
+	}
+
+	template<VoltAssetType T>
+	void StreamingInstanceAssetReferenceCounter<T>::SetAssetUpdatedCallback(AssetUpdatedFunc callbackFunc)
+	{
+		m_callbackFunction = callbackFunc;
+	}
 }

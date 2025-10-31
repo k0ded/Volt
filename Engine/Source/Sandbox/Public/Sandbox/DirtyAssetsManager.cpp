@@ -372,7 +372,7 @@ bool DirtyAssetsManager::IsAssetDirty(Volt::AssetHandle handle)
 
 void DirtyAssetsManager::MarkAssetDirty(Volt::AssetHandle handle)
 {
-	VT_ENSURE(handle != Volt::Asset::Null());
+	VT_ENSURE(handle != Volt::Asset_New::Null());
 	m_dirtyAssets.insert(handle);
 }
 

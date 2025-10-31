@@ -4,7 +4,6 @@
 //#include "Volt/Utility/UIUtility.h"
 
 #include <RHIModule/Images/Image.h>
-#include <AssetSystem/AssetManager.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/NodeRegistry.h>
@@ -80,7 +79,7 @@ namespace Volt::MosaicNodes
 
 	void SampleTextureNode::DeserializeCustom(YAMLStreamReader& streamReader)
 	{
-		m_textureHandle = streamReader.ReadAtKey("textureHandle", Asset::Null());
+		m_textureHandle = streamReader.ReadAtKey("textureHandle", Asset_New::Null());
 	}
 
 	const Mosaic::ResultInfo SampleTextureNode::Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const

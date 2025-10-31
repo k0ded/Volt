@@ -7,7 +7,7 @@
 
 #include <Volt-Assets/StreamingInstanceID.h>
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 #include <EntitySystem/ComponentRegistry.h>
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
@@ -191,7 +191,7 @@ namespace Volt
 			::Read<IDComponent>
 			::As<ECS::Type::Entity>;
 
-		AssetHandle environmentTextureHandle = Asset::Null();
+		AssetHandle environmentTextureHandle = Asset_New::Null();
 		bool show = true;
 		float lod = 0.f;
 		float intensity = 1.f;
@@ -200,7 +200,7 @@ namespace Volt
 		{
 			reflect.SetGUID("{29F75381-2873-4734-A074-3F3640E54C84}"_guid);
 			reflect.SetLabel("Skylight Component");
-			reflect.AddMember(&SkylightComponent::environmentTextureHandle, "environmentHandle", "Environment", "", Asset::Null(), AssetTypes::EnvironmentTexture);
+			reflect.AddMember(&SkylightComponent::environmentTextureHandle, "environmentHandle", "Environment", "", Asset_New::Null(), AssetTypes::EnvironmentTexture);
 			reflect.AddMember(&SkylightComponent::intensity, "intensity", "Intensity", "", 1.f);
 			reflect.AddMember(&SkylightComponent::lod, "lod", "LOD", "", 0.f);
 			reflect.AddMember(&SkylightComponent::show, "show", "Show", "", true);

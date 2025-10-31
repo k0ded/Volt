@@ -8,7 +8,7 @@
 #include "AssetSystem/AssetSerializerRegistry.h"
 #include "AssetSystem/AssetDependencyGraph.h"
 
-#include "AssetSystem/AssetManager.h"
+#include <LogModule/Log.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h> 
 #include <CoreUtilities/WorkQueue.h>
@@ -17,6 +17,8 @@
 
 namespace Volt
 {
+	VT_DECLARE_LOG_CATEGORY_EXPORT(VTAS_API, LogAssetSystem, LogVerbosity::Trace);
+
 	class AssetManager_New
 	{
 	public:
@@ -195,7 +197,7 @@ namespace Volt
 	AssetManager_New::GetAssetImmediately(const std::filesystem::path& assetFilepath)
 	{
 		AssetHandle assetHandle = GetAssetHandleFromFilepath(assetFilepath);
-		if (assetHandle != Asset::Null())
+		if (assetHandle != Asset_New::Null())
 		{
 			return GetAssetImmediately<T>(assetHandle);
 		}
@@ -215,7 +217,7 @@ namespace Volt
 	bool AssetManager_New::TryGetAssetImmediately(const std::filesystem::path& assetFilepath, AssetReference<T>& outAsset)
 	{
 		AssetHandle assetHandle = GetAssetHandleFromFilepath(assetFilepath);
-		if (assetHandle != Asset::Null())
+		if (assetHandle != Asset_New::Null())
 		{
 			outAsset = GetAssetImmediately<T>(assetHandle);
 		}

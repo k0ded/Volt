@@ -234,7 +234,7 @@ namespace Volt
 
 		for (const auto& materialHandle : instance.materialHandles)
 		{
-			if (materialHandle == Asset::Null())
+			if (materialHandle == Asset_New::Null())
 			{
 				continue;
 			}
@@ -292,45 +292,6 @@ namespace Volt
 		}
 
 		instance.sceneLightData->InitializeFromDescription(lightDescription);
-	}
-
-	StreamingInstanceAssetReferenceCounter::StreamingInstanceAssetReferenceCounter(AssetType assetType)
-		: m_assetType(assetType)
-	{
-		m_assetUpdatedCallback = g_assetManager->RegisterAssetUpdatedCallback(assetType, [&](AssetHandle assetHandle, AssetChangedState state)
-		{
-			std::scoped_lock lock{ m_streamingInstancesMapMutex };
-			if (m_callbackFunction && m_streamingInstancesFromAssetHandle.contains(assetHandle))
-			{
-				m_callbackFunction(assetHandle, m_streamingInstancesFromAssetHandle[assetHandle], state);
-			}
-		});
-	}
-
-	StreamingInstanceAssetReferenceCounter::~StreamingInstanceAssetReferenceCounter()
-	{
-		g_assetManager->UnregisterAssetUpdatedCallback(m_assetType, m_assetUpdatedCallback);
-	}
-
-	void StreamingInstanceAssetReferenceCounter::AddReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
-	{
-		std::scoped_lock lock{ m_streamingInstancesMapMutex };
-		m_streamingInstancesFromAssetHandle[assetHandle].emplace(instanceId);
-	}
-	
-	void StreamingInstanceAssetReferenceCounter::RemoveReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
-	{
-		std::scoped_lock lock{ m_streamingInstancesMapMutex };
-
-		VT_ENSURE(m_streamingInstancesFromAssetHandle.contains(assetHandle));
-		VT_ENSURE(m_streamingInstancesFromAssetHandle.at(assetHandle).contains(instanceId));
-	
-		m_streamingInstancesFromAssetHandle.at(assetHandle).erase(instanceId);
-	}
-
-	void StreamingInstanceAssetReferenceCounter::SetAssetUpdatedCallback(AssetUpdatedFunc callbackFunc)
-	{
-		m_callbackFunction = callbackFunc;
 	}
 
 	StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Get(StreamingInstanceID id)

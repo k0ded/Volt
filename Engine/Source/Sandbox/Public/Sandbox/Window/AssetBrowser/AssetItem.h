@@ -3,6 +3,8 @@
 #include "Sandbox/Window/AssetBrowser/BrowserItems.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
+#include <AssetSystem/Asset_New.h>
+
 #include <RHIModule/Images/Image.h>
 
 #include <imgui.h>
@@ -42,7 +44,7 @@ namespace AssetBrowser
 		void Open() override;
 		void DrawAdditionalHoverInfo() override;
 	private:
-		Volt::AssetHandle mySceneToOpen = Volt::Asset::Null();
+		Volt::AssetHandle mySceneToOpen = Volt::Asset_New::Null();
 
 		const ImVec4 GetBackgroundColorFromType(AssetType type) const;
 	};

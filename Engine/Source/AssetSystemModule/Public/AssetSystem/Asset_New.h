@@ -1,7 +1,7 @@
 #pragma once
 
-#include "AssetSystem/Asset.h"
 #include "AssetSystem/Config.h"
+#include "AssetSystem/AssetMetadata.h"
 
 #include <atomic>
 

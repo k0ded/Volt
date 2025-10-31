@@ -16,8 +16,6 @@
 //#include <Volt/Physics/PhysicsControllerActor.h>
 //#include <Volt/Components/PhysicsComponents.h>
 
-#include <AssetSystem/AssetManager.h>
-
 #include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt

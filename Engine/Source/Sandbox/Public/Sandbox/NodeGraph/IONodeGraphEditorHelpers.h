@@ -460,7 +460,7 @@ public:
 			{
 				if (rawAsset->GetType() == supportedTypes)
 				{
-					assetHandle = Volt::Asset::Null();
+					assetHandle = Volt::Asset_New::Null();
 				}
 			}
 		}

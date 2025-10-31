@@ -67,11 +67,6 @@
 #include <Volt-Core/Project/ProjectManager.h>
 #include <Volt-CoreComponents/RenderingComponents.h>
 
-#include <AssetSystem/AssetManager.h>
-
-//#include <DiscordPlugin/Plugin.h>
-//#include <DiscordPlugin/DiscordManagerInterface.h>
-
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -130,7 +125,7 @@ void Sandbox::OnAttach()
 	UserSettingsManager::LoadUserSettings();
 	const auto& userSettings = UserSettingsManager::GetSettings();
 
-	if (userSettings.sceneSettings.defaultOpenScene != Volt::Asset::Null())
+	if (userSettings.sceneSettings.defaultOpenScene != Volt::Asset_New::Null())
 	{
 		OpenScene(userSettings.sceneSettings.defaultOpenScene);
 		if (m_runtimeScene)
@@ -494,7 +489,7 @@ void Sandbox::OpenScene(const std::filesystem::path& path)
 
 void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 {
-	if (sceneHandle == Volt::Asset::Null())
+	if (sceneHandle == Volt::Asset_New::Null())
 	{
 		return;
 	}

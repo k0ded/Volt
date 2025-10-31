@@ -10,6 +10,8 @@
 #include <AssetSystem/AssetManager_New.h>
 #include <AssetSystem/AssetLocks.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Mesh, MeshAsset);
@@ -52,7 +54,7 @@ namespace Volt
 				const AssetHandle materialHandle = m_materials.at(i);
 				if (materialHandle == dependencyHandle)
 				{
-					m_materials[i] = Asset::Null();
+					m_materials[i] = Asset_New::Null();
 					m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, i);
 					break;
 				}

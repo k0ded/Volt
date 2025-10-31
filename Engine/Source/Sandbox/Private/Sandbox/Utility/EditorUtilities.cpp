@@ -49,7 +49,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 		if (wantedType != AssetTypes::None && wantedType != asset->GetType())
 		{
-			assetHandle = Volt::Asset::Null();
+			assetHandle = Volt::Asset_New::Null();
 		}
 	}
 
@@ -77,7 +77,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 	std::string buttonId = "X" + UI::MakePropertyID();
 	if (ImGui::Button(buttonId.c_str(), { 24.5f, 24.5f }))
 	{
-		assetHandle = Volt::Asset::Null();
+		assetHandle = Volt::Asset_New::Null();
 		changed = true;
 	}
 
@@ -234,64 +234,6 @@ SaveReturnState EditorUtils::SaveFilePopup(const std::string& aId)
 	}
 
 	return returnState;
-}
-
-Ref<Volt::Texture2D> EditorUtils::GenerateThumbnail(const std::filesystem::path& path)
-{
-	//Ref<Volt::Texture2D> srcTexture = Volt::AssetManager::GetAsset<Volt::Texture2D>(path);
-	//if (!srcTexture || !srcTexture->IsValid())
-	//{
-	//	return nullptr;
-	//}
-
-	//Volt::RenderPass renderPass;
-	//Volt::FramebufferSpecification spec{};
-	//spec.width = 128;
-	//spec.height = 128;
-	//spec.attachments =
-	//{
-	//	{ Volt::ImageFormat::RGBA }
-	//};
-
-	//renderPass.framebuffer = Volt::Framebuffer::Create(spec);
-
-	//Volt::Renderer::BeginFullscreenPass(renderPass, nullptr);
-
-	//// #TODO_Ivar: Reimplement
-
-	////Volt::Renderer::BindTexturesToStage(Volt::ShaderStage::Pixel, { srcTexture->GetImage() }, 0);
-	//Volt::Renderer::DrawFullscreenTriangleWithShader(Volt::ShaderRegistry::Get("CopyTextureToTarget"));
-	//Volt::Renderer::EndFullscreenPass();
-
-	//const std::filesystem::path thumbnailPath = GetThumbnailPathFromPath(path);
-	//Ref<Volt::Texture2D> thumbnailAsset = Volt::AssetManager::CreateAsset<Volt::Texture2D>(thumbnailPath.parent_path(), thumbnailPath.filename().string());
-
-	//Volt::Renderer::SubmitPostExcecution([=]()
-	//	{
-	//		const Ref<Volt::Image2D> image = renderPass.framebuffer->GetColorAttachment(0);
-	//		const auto& imageSpec = image->GetSpecification();
-
-	//		Volt::Buffer buffer = renderPass.framebuffer->GetColorAttachment(0)->GetDataBuffer();
-
-	//		constexpr int32_t channels = 4;
-	//		stbi_write_png((Volt::ProjectManager::GetDirectory() / thumbnailPath).string().c_str(), imageSpec.width, imageSpec.height, channels, buffer.As<void>(), imageSpec.width * Volt::Utility::PerPixelSizeFromFormat(imageSpec.format));
-
-	//		//thumbnailAsset->SetImage(image);
-	//		buffer.Release();
-	//	});
-
-
-	return nullptr;
-}
-
-bool EditorUtils::HasThumbnail(const std::filesystem::path& path)
-{
-	return FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / GetThumbnailPathFromPath(path));
-}
-
-std::filesystem::path EditorUtils::GetThumbnailPathFromPath(const std::filesystem::path& path)
-{
-	return path.string() + ".vtthumb.png";
 }
 
 std::string EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)

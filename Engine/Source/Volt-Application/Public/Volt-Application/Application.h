@@ -12,7 +12,6 @@
 
 #include <EntitySystem/Scripting/ScriptingSystem.h>
 #include <SubSystem/SubSystemManager.h>
-#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/SourceAssetManager.h>
 #include <Navigation/Core/NavigationSystem.h>
 
@@ -90,7 +89,6 @@ namespace Volt
 		MultiTimer m_frameTimer;
 
 		Scope<SubSystemManager> m_subSystemManager;
-		Scope<AssetManager> m_assetManager;
 		Scope<SourceAssetManager> m_sourceAssetManager;
 		Scope<ScriptingSystem> m_scriptingSystem;
 		Scope<ApplicationEventListener> m_eventListener;

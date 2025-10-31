@@ -91,7 +91,6 @@ namespace Volt
 
 		CreateGraphicsContext(commandLineBuilder);
 
-		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineRootDirectory());
 		m_sourceAssetManager = CreateScope<SourceAssetManager>();
 		// #TODO_AssetSystem: Move to a sub system.
 		g_assetManager = CreateScope<AssetManager_New>(ProjectManager::GetEngineRootDirectory(), ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectoryName());
@@ -158,11 +157,9 @@ namespace Volt
 
 		//Amp::WWiseEngine::Get().TermWwise();
 
-		m_assetManager->Clear();
+		g_assetManager = nullptr;
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
-
-		m_assetManager = nullptr;
 
 		m_windowManager->DestroyMainWindow();
 

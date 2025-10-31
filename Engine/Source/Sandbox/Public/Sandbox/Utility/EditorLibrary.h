@@ -1,6 +1,7 @@
 #pragma once
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetType.h>
+#include <AssetSystem/AssetHandle.h>
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Profiling/Profiling.h>

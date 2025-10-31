@@ -3,7 +3,6 @@
 #include <Volt-Application/UI/UIUtility.h>
 #include <concepts> // Required for std::derived_from
 
-#include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetManager_New.h>
 #include <AssetSystem/AssetLocks.h>
 

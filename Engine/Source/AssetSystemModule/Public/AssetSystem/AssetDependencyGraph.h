@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AssetSystem/Asset.h"
+#include "AssetSystem/AssetMetadata.h"
 
 #include <CoreUtilities/Containers/Graph.h>
 
@@ -17,13 +17,15 @@ namespace Volt
 	{
 	};
 
+	class AssetManager_New;
+
 	class AssetDependencyGraph
 	{
 	public:
 		using WriteLock = std::unique_lock<std::shared_mutex>;
 		using ReadLock = std::shared_lock<std::shared_mutex>;
 
-		AssetDependencyGraph();
+		AssetDependencyGraph(AssetManager_New& referencedAssetManager);
 		~AssetDependencyGraph();
 
 		// #TODO_Ivar: Implement removing nodes
@@ -46,5 +48,7 @@ namespace Volt
 		
 		std::unordered_map<AssetHandle, UUID64> m_assetNodeIds;
 		Graph<AssetDependencyInfo, EdgeInfo> m_graph;
+	
+		AssetManager_New& m_referencedAssetManager;
 	};
 }

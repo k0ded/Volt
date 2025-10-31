@@ -12,8 +12,6 @@
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <AssetSystem/AssetManager.h>
-
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <CoreUtilities/FileSystem.h>

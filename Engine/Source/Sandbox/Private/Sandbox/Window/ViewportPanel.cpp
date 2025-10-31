@@ -670,7 +670,7 @@ bool ViewportPanel::OnMouseReleased(Volt::MouseButtonReleasedEvent& e)
 
 		GlobalEditorStates::isDragging = false;
 		GlobalEditorStates::dragStartedInAssetBrowser = false;
-		GlobalEditorStates::dragAsset = Volt::Asset::Null();
+		GlobalEditorStates::dragAsset = Volt::Asset_New::Null();
 	}
 
 	return false;
@@ -705,7 +705,7 @@ void ViewportPanel::CheckDragDrop()
 	}
 
 
-	if (!GlobalEditorStates::isDragging || !GlobalEditorStates::dragStartedInAssetBrowser || m_createdAssetOnDrag || GlobalEditorStates::dragAsset == Volt::Asset::Null())
+	if (!GlobalEditorStates::isDragging || !GlobalEditorStates::dragStartedInAssetBrowser || m_createdAssetOnDrag || GlobalEditorStates::dragAsset == Volt::Asset_New::Null())
 	{
 		return;
 	}
@@ -1049,7 +1049,7 @@ void ViewportPanel::UpdateModals()
 
 		Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(m_sceneToOpen);
 		Sandbox::Get().OpenScene(sceneMetadata->filepath);
-		m_sceneToOpen = Volt::Asset::Null();
+		m_sceneToOpen = Volt::Asset_New::Null();
 	}
 }
 

@@ -323,7 +323,7 @@ bool AssetBrowserPanel::OnMouseReleasedEvent(Volt::MouseButtonReleasedEvent& e)
 		{
 			GlobalEditorStates::isDragging = false;
 			GlobalEditorStates::dragStartedInAssetBrowser = false;
-			GlobalEditorStates::dragAsset = Volt::Asset::Null();
+			GlobalEditorStates::dragAsset = Volt::Asset_New::Null();
 		}
 	}
 

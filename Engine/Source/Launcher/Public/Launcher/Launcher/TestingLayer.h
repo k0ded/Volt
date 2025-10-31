@@ -31,7 +31,7 @@ private:
 	bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
 	bool OnWindowResizeEvent(Volt::WindowResizeEvent& e);
 
-	Volt::AssetReference<Volt::Scene> m_scene;
+	AssetReference<Volt::Scene> m_scene;
 	Ref<Volt::SceneRenderer> m_sceneRenderer;
 	Ref<Volt::Camera> m_camera;
 };

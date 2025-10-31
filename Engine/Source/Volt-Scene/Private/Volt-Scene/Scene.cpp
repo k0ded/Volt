@@ -389,7 +389,7 @@ namespace Volt
 	{
 		if (!m_entityIDToDescHandle.contains(entityID))
 		{
-			return Volt::Asset::Null();
+			return Volt::Asset_New::Null();
 		}
 		return m_entityIDToDescHandle.at(entityID);
 	}

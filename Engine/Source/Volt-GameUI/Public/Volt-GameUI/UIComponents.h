@@ -4,7 +4,7 @@
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 #include <EntitySystem/EntityID.h>
 #include <EntitySystem/ComponentRegistry.h>
@@ -115,7 +115,7 @@ namespace Volt
 			reflect.SetGUID("{5FAF4CED-38A8-4B80-8C6B-786651E72EEF}"_guid);
 			reflect.SetLabel("UI Image Component");
 			reflect.SetHidden();
-			reflect.AddMember(&UIImageComponent::imageHandle, "image", "Image", "", Asset::Null(), AssetTypes::Texture);
+			reflect.AddMember(&UIImageComponent::imageHandle, "image", "Image", "", Asset_New::Null(), AssetTypes::Texture);
 			reflect.AddMember(&UIImageComponent::tint, "tint", "Tint", "", glm::vec3{ 1.f });
 			reflect.AddMember(&UIImageComponent::alpha, "alpha", "Alpha", "", 1.f);
 		}

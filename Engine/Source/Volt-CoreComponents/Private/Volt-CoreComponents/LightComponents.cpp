@@ -166,7 +166,7 @@ namespace Volt
 	{
 		VT_ENSURE(m_sceneLightData);
 
-		if (environmentTextureHandle == Asset::Null())
+		if (environmentTextureHandle == Asset_New::Null())
 		{
 			return;
 		}

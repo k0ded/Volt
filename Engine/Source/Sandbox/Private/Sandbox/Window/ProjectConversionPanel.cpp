@@ -20,11 +20,12 @@
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
 
+#include <AssetSystem/AssetSerializerRegistry.h>
+#include <SubSystem/SubSystemManager.h>
+
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
-#include <SubSystem/SubSystemManager.h>
-#include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetSerializerRegistry.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 using namespace Volt;
 
@@ -900,7 +901,7 @@ AssetReference<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Proj
 		{
 			const PrefabComponent& prefabComponent = prefabEntity.GetComponent<PrefabComponent>();
 			VT_ENSURE(prefabComponent.prefabEntity != EntityID::Null());
-			VT_ENSURE(prefabComponent.prefabAsset != Asset::Null());
+			VT_ENSURE(prefabComponent.prefabAsset != Asset_New::Null());
 		}
 
 		if (rootEntityId == EntityID::Null())

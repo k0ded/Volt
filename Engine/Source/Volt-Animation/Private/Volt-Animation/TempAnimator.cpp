@@ -8,12 +8,12 @@ namespace Volt
 {
 	TempAnimator::TempAnimator(AssetHandle skeletonHandle, AssetHandle initialAnimationHandle)
 	{
-		if (skeletonHandle != Asset::Null())
+		if (skeletonHandle != Asset_New::Null())
 		{
 			m_skeleton = g_assetManager->GetAssetImmediately<Skeleton>(skeletonHandle);
 		}
 
-		if (initialAnimationHandle != Asset::Null())
+		if (initialAnimationHandle != Asset_New::Null())
 		{
 			m_animation = g_assetManager->GetAssetImmediately<Animation>(initialAnimationHandle);
 		}

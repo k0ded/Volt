@@ -9,8 +9,6 @@
 //#include "Volt/GameUI/UIScene.h"
 //#include "Volt/GameUI/UIComponents.h"
 
-#include <AssetSystem/AssetManager.h>
-
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #if 0

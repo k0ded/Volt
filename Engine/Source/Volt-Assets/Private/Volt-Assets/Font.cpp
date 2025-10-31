@@ -7,10 +7,9 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <AssetSystem/AssetManager.h>
-
 #include <CoreUtilities/Buffer/Buffer.h>
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/StringUtility.h>
 
 namespace Volt
 {

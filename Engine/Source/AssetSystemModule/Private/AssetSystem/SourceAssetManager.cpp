@@ -178,7 +178,7 @@ namespace Volt
 			return {};
 		}
 
-		return GetSourceAssetImporterRegistry().GetImporterForExtension(extension).GetSourceFileInformation(AssetManager::GetFilesystemPath(filepath));
+		return GetSourceAssetImporterRegistry().GetImporterForExtension(extension).GetSourceFileInformation(g_assetManager->GetFilesystemPath(filepath));
 	}
 
 	WorkQueue<SourceAssetManager::ImportJob, QueueThreadingPolicy::MPSC>& SourceAssetManager::GetOrCreateQueue(const std::string& extension)

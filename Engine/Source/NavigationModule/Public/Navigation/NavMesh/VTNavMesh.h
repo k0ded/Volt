@@ -8,13 +8,13 @@
 #include <Volt-Renderer/Mesh/Mesh.h>
 
 #include <AssetSystem/AssetTypes.h>
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 
 namespace Volt
 {
 	namespace AI
 	{
-		class NavMesh : public Asset
+		class NavMesh : public Asset_New
 		{
 		public:
 			NavMesh() = default;
@@ -26,7 +26,7 @@ namespace Volt
 			Ref<DtCrowd>& GetCrowd() { return myCrowd; }
 
 			static AssetType GetStaticType() { return AssetTypes::NavMesh; }
-			AssetType GetType() override { return GetStaticType(); }
+			AssetType GetType() const override { return GetStaticType(); }
 			uint32_t GetVersion() const override { return 1; }
 
 		private:
