@@ -21,8 +21,9 @@ namespace VoltSharpmake
             conf.PrecompHeader = "vppch.h";
             conf.PrecompSource = "vppch.cpp";
 
+			conf.AddPublicDependency<PhysicsInterface>(target);
+
 			conf.AddPrivateDependency<LogModule>(target);
-			conf.AddPrivateDependency<PhysicsInterface>(target);
 			conf.AddPrivateDependency<AssetSystemModule>(target);
 			conf.AddPrivateDependency<EntitySystemModule>(target);
 			conf.AddPrivateDependency<SubSystemModule>(target);

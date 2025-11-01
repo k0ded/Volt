@@ -2,20 +2,20 @@
 
 #include <AssetSystem/AssetTypes.h>
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/Asset_New.h>
 #include <AssetSystem/AssetFactory.h>
 
 namespace Volt
 {
 	class Mesh;
-	class MeshSource : public Asset
+	class MeshSource : public Asset_New
 	{
 	public:
 		MeshSource();
 		~MeshSource() override = default;
 
 		static AssetType GetStaticType() { return AssetTypes::MeshSource; }
-		AssetType GetType() override { return GetStaticType(); }
+		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 	
 		inline Ref<Mesh> GetUnderlyingMesh() const { return m_underlyingMesh; }
