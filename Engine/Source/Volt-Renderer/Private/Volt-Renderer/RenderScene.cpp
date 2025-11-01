@@ -119,7 +119,6 @@ namespace Volt
 		UpdateInvalidLights(renderGraph);
 		UpdateInvalidPrimitiveData(renderGraph);
 		CompactValidPrimitiveDrawDatas(renderGraph);
-		BuildPerMeshIndirectDrawCommands(renderGraph);
 
 		if (m_currentBoneCount > 0)
 		{
@@ -154,29 +153,6 @@ namespace Volt
 		RGBufferRef dstPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource());
 
 		AddCopyBufferPass(renderGraph, srcPrimitiveData, 0, dstPrimitiveData, 0, m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize(), "Copy PrimitiveDrawData");
-	}
-
-	void RenderScene::InvalidateMesh(Ref<Mesh> mesh)
-	{
-		std::scoped_lock lock{ m_meshUpdateMutex };
-		for (uint32_t index = 0; index < mesh->GetNumSubMeshes(); index++)
-		{
-			const size_t hash = Math::HashCombine(mesh->GetHash(), std::hash<uint32_t>()(index));
-			if (m_meshSubMeshToGPUMeshIndex.contains(hash))
-			{
-				m_invalidMeshes.emplace_back(mesh, index, m_meshSubMeshToGPUMeshIndex.at(hash));
-			}
-		}
-	}
-
-	void RenderScene::InvalidateMaterial(Ref<RenderMaterial> material)
-	{
-		std::scoped_lock lock{ m_materialUpdateMutex };
-		const size_t hash = material->GetHash();
-		if (m_gpuMaterialIndexFromMaterialHash.contains(hash))
-		{
-			m_invalidMaterials.emplace_back(material, m_gpuMaterialIndexFromMaterialHash.at(hash));
-		}
 	}
 
 	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
@@ -270,22 +246,6 @@ namespace Volt
 		}
 	}
 
-	Weak<RenderMaterial> RenderScene::GetMaterialFromID(const uint32_t materialId) const
-	{
-		if (static_cast<size_t>(materialId) >= m_individualMaterials.size())
-		{
-			return {};
-		}
-
-		return m_individualMaterials.at(materialId);
-	}
-
-	const uint32_t RenderScene::GetMeshID(Weak<Mesh> mesh, uint32_t subMeshIndex) const
-	{
-		const size_t hash = Math::HashCombine(mesh->GetHash(), std::hash<uint32_t>()(subMeshIndex));
-		return m_meshSubMeshToGPUMeshIndex.contains(hash) ? m_meshSubMeshToGPUMeshIndex.at(hash) : std::numeric_limits<uint32_t>::max();
-	}
-
 	const uint32_t RenderScene::GetMaterialIndex(Weak<RenderMaterial> material) const
 	{
 		auto it = std::find_if(m_individualMaterials.begin(), m_individualMaterials.end(), [&](Weak<RenderMaterial> lhs)
@@ -296,21 +256,6 @@ namespace Volt
 		if (it != m_individualMaterials.end())
 		{
 			return static_cast<uint32_t>(std::distance(m_individualMaterials.begin(), it));
-		}
-
-		return std::numeric_limits<uint32_t>::max();
-	}
-
-	const uint32_t RenderScene::GetMeshIndex(Weak<Mesh> mesh) const
-	{
-		auto it = std::find_if(m_individualMeshes.begin(), m_individualMeshes.end(), [&](Weak<Mesh> lhs)
-		{
-			return lhs.Get() == mesh.Get();
-		});
-
-		if (it != m_individualMeshes.end())
-		{
-			return static_cast<uint32_t>(std::distance(m_individualMeshes.begin(), it));
 		}
 
 		return std::numeric_limits<uint32_t>::max();
@@ -566,21 +511,6 @@ namespace Volt
 		}
 	}
 
-	Vector<uint32_t> RenderScene::GetPrimitiveIndicesFromEntityID(EntityID entityId) const
-	{
-		Vector<uint32_t> result;
-
-		for (const auto& primitive : m_renderPrimitives)
-		{
-			if (primitive.entityId == entityId)
-			{
-				result.emplace_back(static_cast<uint32_t>(m_primitiveIndicesContainer.GetIndexFromID(primitive.id)));
-			}
-		}
-
-		return result;
-	}
-
 	void RenderScene::BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial)
 	{
 		gpuMaterial.textureCount = 0;
@@ -714,7 +644,6 @@ namespace Volt
 		const size_t newMeshIndex = m_individualMeshes.size();
 
 		m_individualMeshes.emplace_back(mesh);
-		m_currentIndividualMeshCount += static_cast<uint32_t>(mesh->GetSubMeshes().size());
 
 		size_t currentIndex = m_gpuMeshes.size();
 
@@ -920,49 +849,6 @@ namespace Volt
 
 			bufferUpload.UploadTo(renderGraph, drawDataBuffer->GetResource());
 		}
-	}
-
-	void RenderScene::BuildPerMeshIndirectDrawCommands(RenderGraph& renderGraph)
-	{
-		VT_PROFILE_FUNCTION();
-
-		m_buffers.perMeshIndirectDrawCommands = renderGraph.CreateBuffer(RGBufferDesc::CreateIndirectDesc<RHI::DrawIndexedIndirectCommand>(m_gpuMeshes.size(), "RenderScene.PerMeshIndirectDrawCommands", RHI::MemoryUsage::CPUToGPU));
-		
-		Vector<RHI::DrawIndexedIndirectCommand> commands;
-		commands.reserve(m_gpuMeshes.size());
-
-		for (uint32_t index = 0; const auto& gpuMesh : m_gpuMeshes)
-		{
-			VT_UNUSED(gpuMesh);
-
-			auto& newCommand = commands.emplace_back();
-
-			if (m_gpuMeshIndexToMeshAndSubMeshIndex.contains(index))
-			{
-				MeshAndSubMeshIndex indices = m_gpuMeshIndexToMeshAndSubMeshIndex.at(index);
-
-				Weak<Mesh> mesh = m_individualMeshes.at(indices.meshIndex);
-				const SubMesh& subMesh = mesh->GetSubMeshes().at(indices.subMeshIndex);
-
-				newCommand.indexCount = subMesh.indexCount;
-				newCommand.instanceCount = 0;
-				newCommand.firstIndex = subMesh.indexStartOffset;
-				newCommand.vertexOffset = subMesh.vertexStartOffset;
-				newCommand.firstInstance = 0;
-			}
-			else
-			{
-				newCommand.indexCount = 0;
-				newCommand.instanceCount = 0;
-				newCommand.firstIndex = 0;
-				newCommand.vertexOffset = 0;
-				newCommand.firstInstance = 0;
-			}
-
-			index++;
-		}
-
-		AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(m_buffers.perMeshIndirectDrawCommands, RHI::PixelFormat::R32_UINT), commands.data(), sizeof(RHI::DrawIndexedIndirectCommand) * commands.size());
 	}
 
 	struct CompactValidDrawCallCS : public GlobalShader

@@ -58,8 +58,6 @@ namespace Volt
 		void EndFrame(RenderGraph& renderGraph);
 
 		void InvalidatePrimitiveInstance(UUID64 renderObject);
-		void InvalidateMesh(Ref<Mesh> mesh);
-		void InvalidateMaterial(Ref<RenderMaterial> material);
 
 		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
 		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<TempAnimator> animator, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
@@ -77,36 +75,24 @@ namespace Volt
 		void UnregisterOnRenderPrimitiveAddedCallback(UUID32 callbackId);
 		void UnregisterOnRenderPrimitiveRemovedCallback(UUID32 callbackId);
 
-		VT_INLINE VT_NODISCARD uint32_t GetNumRenderPrimitives() const { return static_cast<uint32_t>(m_renderPrimitives.size()); }
-		VT_INLINE VT_NODISCARD uint32_t GetIndividualMeshCount() const { return m_currentIndividualMeshCount; }
-		VT_INLINE VT_NODISCARD uint32_t GetIndividualMaterialCount() const { return static_cast<uint32_t>(m_individualMaterials.size()); }
-		VT_INLINE VT_NODISCARD uint32_t GetMeshletCount() const { return m_currentMeshletCount; }
-		VT_INLINE VT_NODISCARD uint32_t GetDrawCount() const { return m_renderPrimitives.empty() ? 0u : static_cast<uint32_t>(m_primitiveDrawData.size()); }
 		VT_INLINE VT_NODISCARD uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
-		VT_INLINE VT_NODISCARD size_t GetMaxPrimitiveIndex() const { return m_primitiveIndicesContainer.GetMaxIndex(); }
 
-		VT_NODISCARD Weak<RenderMaterial> GetMaterialFromID(const uint32_t materialId) const;
-
-		VT_NODISCARD const uint32_t GetMeshID(Weak<Mesh> mesh, uint32_t subMeshIndex) const;
 		VT_NODISCARD const uint32_t GetMaterialIndex(Weak<RenderMaterial> material) const;
-		VT_NODISCARD const uint32_t GetMeshIndex(Weak<Mesh> mesh) const;
 		VT_NODISCARD const uint32_t GetPrimitiveIndexFromID(UUID64 primitiveId) const;
 
 		VT_INLINE VT_NODISCARD const GPUSceneBuffers GetGPUSceneBuffers() const { return m_buffers; }
 		VT_NODISCARD GPUSceneParameters GetGPUSceneParameters(RenderGraph& renderGraph) const;
 
+		VT_NODISCARD VT_INLINE const Vector<RenderLightData>& GetRenderLightData() const { return m_renderLights; }
+
 		VT_NODISCARD Vector<RenderPrimitiveData>::iterator begin() { return m_renderPrimitives.begin(); }
 		VT_NODISCARD Vector<RenderPrimitiveData>::iterator end() { return m_renderPrimitives.end(); }
-
-		VT_NODISCARD VT_INLINE const Vector<RenderLightData>& GetRenderLightData() const { return m_renderLights; }
-		VT_NODISCARD VT_INLINE const Vector<RenderPrimitiveData>& GetRenderPrimitives() const { return m_renderPrimitives; }
 
 		VT_NODISCARD const Vector<RenderPrimitiveData>::const_iterator cbegin() const { return m_renderPrimitives.cbegin(); }
 		VT_NODISCARD const Vector<RenderPrimitiveData>::const_iterator cend() const { return m_renderPrimitives.cend(); }
 
 		VT_NODISCARD const RenderPrimitiveData& GetPrimitiveDataFromID(UUID64 id) const;
 		VT_NODISCARD const RenderLightData& GetLightDataFromID(UUID64 id) const;
-		VT_NODISCARD Vector<uint32_t> GetPrimitiveIndicesFromEntityID(EntityID entityId) const;
 
 		VT_NODISCARD VT_INLINE std::span<const GPUMesh> GetGPUMeshes() const { return m_gpuMeshes; }
 		VT_NODISCARD VT_INLINE std::span<const PrimitiveDrawData> GetPrimitiveDrawData() const { return m_primitiveDrawData; }
@@ -127,7 +113,6 @@ namespace Volt
 		void UpdateInvalidMeshes(RenderGraph& renderGraph);
 		void UpdateInvalidPrimitiveData(RenderGraph& renderGraph);
 		void CompactValidPrimitiveDrawDatas(RenderGraph& renderGraph);
-		void BuildPerMeshIndirectDrawCommands(RenderGraph& renderGraph);
 
 		void UpdateInvalidLights(RenderGraph& renderGraph);
 
@@ -226,8 +211,8 @@ namespace Volt
 		Map<size_t, uint32_t> m_meshSubMeshToGPUMeshIndex;
 		Map<uint32_t, MeshAndSubMeshIndex> m_gpuMeshIndexToMeshAndSubMeshIndex;
 
-		Vector<Weak<Mesh>> m_individualMeshes;
-		Vector<Weak<RenderMaterial>> m_individualMaterials;
+		Vector<Ref<Mesh>> m_individualMeshes;
+		Vector<Ref<RenderMaterial>> m_individualMaterials;
 		Vector<glm::mat4> m_animationBufferStorage;
 		std::mutex m_materialUpdateMutex;
 		std::mutex m_meshUpdateMutex;
@@ -256,9 +241,7 @@ namespace Volt
 
 		EntityScene* m_scene = nullptr;
 
-		uint32_t m_currentIndividualMeshCount = 0;
 		uint32_t m_currentBoneCount = 0;
-		uint32_t m_currentMeshletCount = 0;
 		uint32_t m_frameIndex = 0;
 	};
 }
