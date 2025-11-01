@@ -39,6 +39,8 @@ public:
 	static void DestroyEntity(Volt::Scene& scene, const Volt::Entity& entity);
 	static void DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>& entities);
 
+	static bool IsAssetTypeFileExtension(AssetType assetType, const std::filesystem::path& filepath);
+
 private:
 	static bool AssetBrowserPopupInternal(const std::string& id, Volt::AssetHandle& assetHandle, bool startState, AssetType wantedType = AssetTypes::None);
 	struct DefaultFalse

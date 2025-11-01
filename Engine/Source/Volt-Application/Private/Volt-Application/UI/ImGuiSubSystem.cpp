@@ -96,6 +96,7 @@ namespace Volt
 		if (m_imguiImplementation)
 		{
 			m_imguiImplementation->Begin();
+			m_isWithinImGuiUpdate = true;
 		}
 	}
 
@@ -103,6 +104,7 @@ namespace Volt
 	{
 		if (m_imguiImplementation)
 		{
+			m_isWithinImGuiUpdate = false;
 			m_imguiImplementation->End();
 		}
 	}

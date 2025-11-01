@@ -93,7 +93,7 @@ namespace Volt
 		passParameters->RWDstBuffer = renderGraph.CreateUAV(dstBuffer);
 		passParameters->SrcBuffer = renderGraph.CreateSRV(srcBuffer);
 		passParameters->ScatterIndices = renderGraph.CreateSRV(indicesBuffer, RHI::PixelFormat::R32_UINT);
-		passParameters->TypeSizeInUINT = static_cast<uint32_t>(sizeInUINT);
+		passParameters->TypeSizeInUINT = static_cast<uint32_t>(sizeInUINT);  
 		passParameters->CopyCount = static_cast<uint32_t>(m_data.size());
 
 		const uint32_t groupSize = Math::DivideRoundUp(static_cast<uint32_t>(sizeInUINT * passParameters->CopyCount), 64u);

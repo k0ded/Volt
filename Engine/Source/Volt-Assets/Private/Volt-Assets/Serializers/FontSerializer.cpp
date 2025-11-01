@@ -15,7 +15,7 @@ namespace Volt
 
 	bool FontSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
-		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{

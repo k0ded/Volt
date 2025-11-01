@@ -295,7 +295,7 @@ namespace Volt
 		RenderGraphResourceAllocator m_resourceAccessorAllocator; // Allocator for resource accessors (SRVs, UAVs)
 		RenderGraphResourceAllocator m_passParametersAllocator; // Allocator for pass parameters
 		RenderGraphPassAllocator m_passAllocator; // Allocator for RenderGraph passes.
-		PagedLinearAllocator<65536> m_temporaryDataAllocator; // Allocator for temporary data that needs to live during the execution of the render graph.
+		PagedLinearAllocator<524288> m_temporaryDataAllocator; // Allocator for temporary data that needs to live during the execution of the render graph.
 	
 		Vector<TextureExtractionInfo> m_textureExtractions;
 		Vector<BufferExtractionInfo> m_bufferExtractions;

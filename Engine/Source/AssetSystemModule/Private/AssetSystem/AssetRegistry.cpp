@@ -91,6 +91,20 @@ namespace Volt
 				DeserializeAssetMetadata(assetFilepath, assetMetadata);
 				if (assetMetadata.IsValid())
 				{
+					if (s_assetRegistryLogAssetScan.GetValue())
+					{
+						std::string logMessage = std::format(
+							"AssetMetadata with handle {} added: \n"
+							"	- Filepath: {}\n"
+							"	- Type: {}\n",
+							assetMetadata.handle,
+							assetMetadata.filepath,
+							assetMetadata.type->GetName()
+						);
+
+						VT_LOGC_UNFORMATTED(Trace, LogAssetSystem, logMessage);
+					}
+
 					InsertAssetMetadata(std::move(assetMetadata));
 				}
 			});

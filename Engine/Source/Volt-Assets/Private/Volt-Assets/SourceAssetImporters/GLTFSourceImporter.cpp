@@ -367,6 +367,8 @@ namespace Volt
 				CreateVoltMeshFromGLTFMesh(gltfModel.meshes[gltfNode.mesh], gltfNode, gltfModel, meshInitializer, materials);
 			}
 
+			ScopedAssetReferenceLock meshLock{ voltMesh };
+
 			voltMesh->Initialize(meshInitializer, materials);
 			result.emplace_back(voltMesh);
 		}

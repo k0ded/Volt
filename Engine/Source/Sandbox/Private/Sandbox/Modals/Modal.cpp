@@ -18,10 +18,17 @@ Modal::Modal(const std::string& strId, ImGuiWindowFlags flags)
 
 void Modal::Open()
 {
-	UI::OpenModal(m_strId);
-	m_wasOpenLastFrame = false;
+	if (SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>()->IsWithinImGuiUpdate())
+	{
+		UI::OpenModal(m_strId);
+		m_wasOpenLastFrame = false;
 
-	OnOpen();
+		OnOpen();
+	}
+	else
+	{
+		m_shouldOpenNextFrame = true;
+	}
 }
 
 void Modal::OpenBlocking()
@@ -57,6 +64,13 @@ void Modal::Close()
 
 bool Modal::Update()
 {
+	if (m_shouldOpenNextFrame)
+	{
+		Open();
+
+		m_shouldOpenNextFrame = false;
+	}
+
 	if (!m_wasOpenLastFrame)
 	{
 		//const auto viewport = ImGui::GetMainViewport();

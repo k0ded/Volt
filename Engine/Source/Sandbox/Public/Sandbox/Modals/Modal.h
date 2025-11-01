@@ -36,6 +36,7 @@ private:
 
 	bool m_wasOpenLastFrame = false;
 	bool m_isBlocking = false;
+	bool m_shouldOpenNextFrame = false;
 
 	ModalID m_id;
 	std::string m_strId;

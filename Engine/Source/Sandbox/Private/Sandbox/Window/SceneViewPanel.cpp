@@ -675,7 +675,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 				if (ImGui::MenuItem(menuId.c_str()))
 				{
 					Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(prefabComp.prefabAsset);
-					if (!FileSystem::IsWriteable(g_assetManager->GetFilesystemPath(assetMetadata->filepath)))
+					if (!FileSystem::IsWriteable(g_assetManager->GetAssetFilesystemPath(assetMetadata->filepath)))
 					{
 						UI::Notify(UI::NotificationType::Error, "Unable to update prefab!", std::format("The prefab file {0} is not writeable!", assetMetadata->filepath.string()));
 					}

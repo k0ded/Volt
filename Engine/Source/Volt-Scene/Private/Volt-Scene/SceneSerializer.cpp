@@ -38,7 +38,7 @@ namespace Volt
 		const AssetReference<Scene> scene = asset.ConvertTo<Scene>();
 		ScopedAssetReferenceLock sceneLock{ scene };
 
-		std::filesystem::path directoryPath = g_assetManager->GetFilesystemPath(metadata->filepath);
+		std::filesystem::path directoryPath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 		if (!std::filesystem::is_directory(directoryPath))
 		{
 			directoryPath = directoryPath.parent_path();
@@ -87,7 +87,7 @@ namespace Volt
 		AssetReference<Scene> scene = destinationAsset.ConvertTo<Scene>();
 		ScopedAssetReferenceLock sceneLock{ scene };
 
-		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{

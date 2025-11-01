@@ -126,25 +126,10 @@ namespace FileSystem
 
 		if (checkSubDirectories)
 		{
-			std::filesystem::path directoryIterator = canonicalFilepath;
-			while (directoryIterator.has_parent_path())
-			{
-				directoryIterator = directoryIterator.parent_path();
-				if (directoryIterator == canonicalDirectoryPath)
-				{
-					return true;
-				}
-			}
-		}
-		else
-		{
-			if (filepath.parent_path() == directoryPath)
-			{
-				return true;
-			}
+			return std::mismatch(canonicalDirectoryPath.begin(), canonicalDirectoryPath.end(), canonicalFilepath.begin()).first == canonicalDirectoryPath.end();
 		}
 
-		return false;
+		return canonicalFilepath.parent_path() == canonicalDirectoryPath;
 	}
 
 	bool ShowDirectoryInExplorer(const std::filesystem::path& dir)

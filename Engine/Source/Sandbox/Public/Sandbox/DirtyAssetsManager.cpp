@@ -310,7 +310,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 		FrameStackVector<Volt::AssetHandle> readOnlyAssets;
 		for (const Volt::AssetHandle& asset : assetsToSave)
 		{
-			const std::filesystem::path assetPath = g_assetManager->GetFilesystemPath(asset);
+			const std::filesystem::path assetPath = g_assetManager->GetAssetFilesystemPath(asset);
 			if (!FileSystem::IsWriteable(assetPath))
 			{
 				readOnlyAssets.push_back(asset);
@@ -338,7 +338,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 			{
 				for (Volt::AssetHandle asset : outSelectedAssetsToCheckOut)
 				{
-					const std::filesystem::path assetPath = g_assetManager->GetFilesystemPath(asset);
+					const std::filesystem::path assetPath = g_assetManager->GetAssetFilesystemPath(asset);
 					FileSystem::MakeWriteable(assetPath);
 				}
 			}
@@ -346,7 +346,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 			// remove the assets that are still read-only from the assets to save
 			for (int32_t i = static_cast<int32_t>(assetsToSave.size() - 1); i >= 0; i--)
 			{
-				const std::filesystem::path assetPath = g_assetManager->GetFilesystemPath(assetsToSave[i]);
+				const std::filesystem::path assetPath = g_assetManager->GetAssetFilesystemPath(assetsToSave[i]);
 				if (!FileSystem::IsWriteable(assetPath))
 				{
 					assetsToSave.erase(assetsToSave.begin() + i);

@@ -103,31 +103,6 @@ namespace AssetBrowser
 
 		if (renderFunctions.empty())
 		{
-			renderFunctions[AssetTypes::MeshSource] = [](AssetItem* item, SelectionManager* selectionManager)
-			{
-				if (ImGui::MenuItem("Import"))
-				{
-					Vector<std::filesystem::path> importFilePaths;
-					importFilePaths.emplace_back(item->path);
-
-					for (const Item* selectedItem : selectionManager->GetSelectedItems())
-					{
-						if (!selectedItem->isDirectory && selectedItem != item)
-						{
-							const AssetItem* selectedAssetItem = reinterpret_cast<const AssetItem*>(selectedItem);
-							if (selectedAssetItem->type == AssetTypes::MeshSource)
-							{
-								importFilePaths.emplace_back(selectedAssetItem->path);
-							}
-						}
-					}
-
-					auto& modal = ModalSystem::GetModal<MeshImportModal>(Sandbox::Get().GetMeshImportModalID());
-					modal.SetImportMeshes(importFilePaths);
-					modal.Open();
-				}
-			};
-
 			renderFunctions[AssetTypes::Mesh] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
 			};
@@ -147,31 +122,6 @@ namespace AssetBrowser
 
 			renderFunctions[AssetTypes::Prefab] = [](AssetItem* item, SelectionManager* selectionManager)
 			{
-			};
-
-			renderFunctions[AssetTypes::TextureSource] = [](AssetItem* item, SelectionManager* selectionManager)
-			{
-				if (ImGui::MenuItem("Import"))
-				{
-					Vector<std::filesystem::path> importFilePaths;
-					importFilePaths.emplace_back(item->path);
-
-					for (const Item* selectedItem : selectionManager->GetSelectedItems())
-					{
-						if (!selectedItem->isDirectory && selectedItem != item)
-						{
-							const AssetItem* selectedAssetItem = reinterpret_cast<const AssetItem*>(selectedItem);
-							if (selectedAssetItem->type == AssetTypes::TextureSource)
-							{
-								importFilePaths.emplace_back(selectedAssetItem->path);
-							}
-						}
-					}
-
-					auto& modal = ModalSystem::GetModal<TextureImportModal>(Sandbox::Get().GetTextureImportModalID());
-					modal.SetImportTextures(importFilePaths);
-					modal.Open();
-				}
 			};
 
 			renderFunctions[AssetTypes::Texture] = [](AssetItem* item, SelectionManager* selectionManager)

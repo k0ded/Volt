@@ -68,7 +68,7 @@ namespace Volt
 		streamWriter.Write(buffer);
 		buffer.Release();
 
-		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 		const auto directory = filePath.parent_path();
 		if (!std::filesystem::exists(directory))
 		{
@@ -79,7 +79,7 @@ namespace Volt
 
 	bool PrefabSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
-		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{

@@ -155,7 +155,7 @@ namespace Volt
 		entityDescFileWriter.Write(buffer);
 		buffer.Release();
 
-		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 		entityDescFileWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
@@ -169,7 +169,7 @@ namespace Volt
 		entityDesc->m_sceneHandle = customMeta.sceneHandle;
 		entityDesc->m_entityID = customMeta.entityID;
 
-		BinaryStreamReader streamReader{ g_assetManager->GetFilesystemPath(metadata->filepath) };
+		BinaryStreamReader streamReader{ g_assetManager->GetAssetFilesystemPath(metadata->filepath) };
 		AssetSerializer::ReadMetadata(streamReader);
 
 		entityDesc->m_entitySpawnData.Clear();
@@ -420,7 +420,7 @@ namespace Volt
 		const std::string owningSceneName = owningScenePath.stem().string();
 
 		const std::filesystem::path relativePath = owningScenePath.parent_path() / (owningSceneName + "_Entities") / (std::to_string(entityMetadata.entityID) + ".vtasset");
-		return g_assetManager->GetFilesystemPath(relativePath);
+		return g_assetManager->GetAssetFilesystemPath(relativePath);
 	}
 
 	Entity EntityDescSerializer::CreateEntityFromUUIDThreadSafe(EntityID entityId, AssetReference<Scene> scene) const

@@ -161,7 +161,6 @@ namespace Volt
 	void StreamingInstanceAssetReferenceCounter<T>::RemoveReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
 	{
 		std::scoped_lock lock{ m_streamingInstancesMapMutex };
-
 		VT_ENSURE(m_assetReferenceFromAssetHandle.contains(assetHandle));
 		VT_ENSURE(m_assetReferenceFromAssetHandle.at(assetHandle).referencers.contains(instanceId));
 

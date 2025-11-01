@@ -36,7 +36,7 @@ namespace Volt
 			{
 				const std::string extension = filepath.extension().string();
 				auto& importer = GetSourceAssetImporterRegistry().GetImporterForExtension(extension);
-				return importer.Import(g_assetManager->GetFilesystemPath(filepath), config, userData);
+				return importer.Import(g_assetManager->GetAssetFilesystemPath(filepath), config, userData);
 			};
 
 			return s_instance->ImportSourceAssetInternal(std::move(importFunc), config, filepath);
@@ -55,7 +55,7 @@ namespace Volt
 			{
 				const std::string extension = filepath.extension().string();
 				auto& importer = GetSourceAssetImporterRegistry().GetImporterForExtension(extension);
-				return importer.Import(g_assetManager->GetFilesystemPath(filepath), config, userData);
+				return importer.Import(g_assetManager->GetAssetFilesystemPath(filepath), config, userData);
 			};
 
 			s_instance->ImportSourceAssetInternal(std::move(importFunc), importedCallback, config, filepath);

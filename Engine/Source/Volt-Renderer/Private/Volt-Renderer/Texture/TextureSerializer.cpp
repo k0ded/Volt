@@ -95,7 +95,7 @@ namespace Volt
 		streamWriter.Write(dataBuffer);
 		dataBuffer.Release();
 
-		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
@@ -104,7 +104,7 @@ namespace Volt
 		AssetReference<Texture2D> texture = destinationAsset.ConvertTo<Texture2D>();
 		ScopedAssetReferenceLock textureLock{ texture };
 
-		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{

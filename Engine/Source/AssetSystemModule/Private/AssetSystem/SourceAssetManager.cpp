@@ -17,12 +17,12 @@ namespace Volt
 	{
 		std::string filenameStr = std::string(filename);
 
-		std::filesystem::path filePath = g_assetManager->GetFilesystemPath(directory / (filenameStr + ".vtasset"));
+		std::filesystem::path filePath = g_assetManager->GetAssetFilesystemPath(directory / (filenameStr + ".vtasset"));
 		uint32_t counter = 0;
 
 		while (std::filesystem::exists(filePath))
 		{
-			filePath = g_assetManager->GetFilesystemPath(directory / (filenameStr + "_" + std::to_string(counter) + ".vtasset"));
+			filePath = g_assetManager->GetAssetFilesystemPath(directory / (filenameStr + "_" + std::to_string(counter) + ".vtasset"));
 			counter++;
 		}
 
@@ -178,7 +178,7 @@ namespace Volt
 			return {};
 		}
 
-		return GetSourceAssetImporterRegistry().GetImporterForExtension(extension).GetSourceFileInformation(g_assetManager->GetFilesystemPath(filepath));
+		return GetSourceAssetImporterRegistry().GetImporterForExtension(extension).GetSourceFileInformation(g_assetManager->GetAssetFilesystemPath(filepath));
 	}
 
 	WorkQueue<SourceAssetManager::ImportJob, QueueThreadingPolicy::MPSC>& SourceAssetManager::GetOrCreateQueue(const std::string& extension)

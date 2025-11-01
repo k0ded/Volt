@@ -115,7 +115,7 @@ namespace AssetBrowser
 
 		if (ImGui::MenuItem("Checkout"))
 		{
-			VersionControl::Edit(g_assetManager->GetFilesystemPath(handle));
+			VersionControl::Edit(g_assetManager->GetAssetFilesystemPath(handle));
 		}
 
 		return removed;
@@ -171,8 +171,10 @@ namespace AssetBrowser
 		{
 			icon = EditorResources::GetAssetIcon(type);
 		}
-
-		icon = EditorResources::GetEditorIcon(EditorIcon::GenericFile);
+		else
+		{
+			icon = EditorResources::GetEditorIcon(EditorIcon::GenericFile);
+		}
 		return icon;
 	}
 

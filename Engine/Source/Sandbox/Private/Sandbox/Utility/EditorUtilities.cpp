@@ -341,3 +341,20 @@ void EditorUtils::DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>
 		}
 	}
 }
+
+bool EditorUtils::IsAssetTypeFileExtension(AssetType assetType, const std::filesystem::path& filepath)
+{
+	const Vector<std::string>& extensions = assetType->GetExtensions();
+
+	std::string filepathExtension = filepath.extension().string();
+
+	for (const std::string& ext : extensions)
+	{
+		if (filepathExtension == ext)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}

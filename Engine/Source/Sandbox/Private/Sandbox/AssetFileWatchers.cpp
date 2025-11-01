@@ -31,6 +31,10 @@ void Sandbox::CreateModifiedWatch()
 		m_fileChangeQueue.emplace_back([newPath, oldPath, this]()
 		{
 			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(g_assetManager->GetAssetHandleFromFilepath(newPath));
+			if (!assetMetadata.IsValid())
+			{
+				return;
+			}
 
 			if (assetMetadata->type == AssetTypes::Mesh ||
 				assetMetadata->type == AssetTypes::Prefab ||

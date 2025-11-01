@@ -99,8 +99,8 @@ namespace Volt
 
 		///// File System /////
 		VTAS_API std::filesystem::path GetContextPath(const std::filesystem::path& path) const;
-		VTAS_API std::filesystem::path GetFilesystemPath(const std::filesystem::path& path) const;
-		VTAS_API std::filesystem::path GetFilesystemPath(AssetHandle assetHandle) const;
+		VTAS_API std::filesystem::path GetAssetFilesystemPath(const std::filesystem::path& path) const;
+		VTAS_API std::filesystem::path GetAssetFilesystemPath(AssetHandle assetHandle) const;
 		VTAS_API std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& path) const;
 		VTAS_API bool IsEngineAsset(const std::filesystem::path& path) const;
 

@@ -305,19 +305,28 @@ namespace Volt
 		{
 			projDir = m_root.projectDirectoryPath;
 		}
+		else
+		{
+			projDir = m_root.engineDirectoryPath;
+		}
 
 		return projDir;
 	}
 
-	std::filesystem::path AssetManager::GetFilesystemPath(const std::filesystem::path& path) const
+	std::filesystem::path AssetManager::GetAssetFilesystemPath(const std::filesystem::path& path) const
 	{
+		if (path.is_absolute())
+		{
+			return path;
+		}
+
 		return GetContextPath(path) / path;
 	}
 
-	std::filesystem::path AssetManager::GetFilesystemPath(AssetHandle assetHandle) const
+	std::filesystem::path AssetManager::GetAssetFilesystemPath(AssetHandle assetHandle) const
 	{
 		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(assetHandle);
-		return GetFilesystemPath(assetMetadata->filepath);
+		return GetAssetFilesystemPath(assetMetadata->filepath);
 	}
 
 	std::filesystem::path AssetManager::GetRelativeAssetFilepath(const std::filesystem::path& path) const

@@ -6,11 +6,14 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/GlobalEditorStates.h"
 #include "Sandbox/Utility/Theme.h"
+#include "Sandbox/Sandbox.h"
 
 #include "Sandbox/Window/AssetBrowser/AssetItem.h"
 #include "Sandbox/Window/AssetBrowser/DirectoryItem.h"
 #include "Sandbox/Window/AssetBrowser/AssetBrowserSelectionManager.h"
 #include "Sandbox/Window/AssetBrowser/AssetDirectoryProcessor.h"
+#include "Sandbox/Modals/MeshImportModal.h"
+#include "Sandbox/Modals/TextureImportModal.h"
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/DirtyAssetsManager.h"
 #include "Sandbox/EditorAssetManager.h"
@@ -258,37 +261,23 @@ bool AssetBrowserPanel::OnDragDropEvent(Volt::WindowDragDropEvent& e)
 	{
 		for (const auto& path : e.GetPaths())
 		{
-			if (!std::filesystem::is_directory(path))
+			// #TODO_Editor: Add better support for drag dropping
+			if (EditorUtils::IsAssetTypeFileExtension(AssetTypes::MeshSource, path))
 			{
-				const std::string originalName = path.stem().string();
-				std::string tempName = originalName;
-
-				uint32_t i = 1;
-				const auto absolutePath = Volt::ProjectManager::GetRootDirectory() / myCurrentDirectory->path;
-
-				while (FileSystem::Exists(absolutePath / (tempName + path.extension().string())))
-				{
-					tempName = originalName + " (" + std::to_string(i) + ")";
-					i++;
-				}
-
-				const std::filesystem::path targetPath = absolutePath / (tempName + path.extension().string());
-
-				Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(g_assetManager->GetAssetHandleFromFilepath(targetPath));
-				if (assetMetadata->type == AssetTypes::MeshSource)
-				{
-					myDragDroppedMeshes.emplace_back(g_assetManager->GetRelativeAssetFilepath(targetPath));
-					FileSystem::Copy(path, targetPath);
-				}
-				//else if (type == AssetType::Texture)
-				//{
-				//	myDragDroppedTextures.emplace_back(path);
-				//}
-				else
-				{
-					FileSystem::Copy(path, targetPath);
-				}
+				auto& modal = ModalSystem::GetModal<MeshImportModal>(Sandbox::Get().GetMeshImportModalID());
+				modal.SetImportMeshes({ path });
+				modal.SetDestinationDirectory(g_assetManager->GetAssetFilesystemPath(myCurrentDirectory->path));
+				modal.Open();
 			}
+			else if (EditorUtils::IsAssetTypeFileExtension(AssetTypes::TextureSource, path))
+			{
+				auto& modal = ModalSystem::GetModal<TextureImportModal>(Sandbox::Get().GetTextureImportModalID());
+				modal.SetImportTextures({ path });
+				modal.SetDestinationDirectory(g_assetManager->GetAssetFilesystemPath(myCurrentDirectory->path));
+				modal.Open();
+			}
+
+			break;
 		}
 
 		Reload();

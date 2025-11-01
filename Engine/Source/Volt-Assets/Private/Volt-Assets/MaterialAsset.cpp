@@ -6,10 +6,13 @@
 #include <Volt-Renderer/RenderMaterial.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
+#include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
 
 namespace Volt
 {
+	VT_REGISTER_ASSET_FACTORY(AssetTypes::Material, MaterialAsset);
+
 	MaterialAsset::MaterialAsset()
 	{
 		m_graph = CreateRef<MaterialGraph>();

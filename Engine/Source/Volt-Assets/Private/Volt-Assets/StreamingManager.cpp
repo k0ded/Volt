@@ -96,17 +96,26 @@ namespace Volt
 
 			for (const auto& materialHandle : description.materialHandles)
 			{
-				m_materialReferenceCounter.AddReference(materialHandle, newId);
+				if (materialHandle != Asset::Null())
+				{
+					m_materialReferenceCounter.AddReference(materialHandle, newId);
+				}
 			}
 
-			m_meshReferenceCounter.AddReference(description.meshHandle, newId);
+			if (description.meshHandle != Asset::Null())
+			{
+				m_meshReferenceCounter.AddReference(description.meshHandle, newId);
+			}
 
 			if (s_logStreamingManagerUpdates.GetValue())
 			{
 				VT_LOGC(Trace, LogStreamingManager, "Added a new instance linked to entity {} with mesh {} and gave it ID {}", description.entityId, description.meshHandle, newId);
 			}
 
-			InitializeScenePrimitiveFromInstance(m_streamingInstances.Get(newId));
+			if (description.meshHandle != Asset::Null())
+			{
+				InitializeScenePrimitiveFromInstance(m_streamingInstances.Get(newId));
+			}
 		}
 		// It's a skylight
 		else if (description.sceneLightData)
@@ -145,16 +154,25 @@ namespace Volt
 
 		if (instance.primitiveData)
 		{
-			m_meshReferenceCounter.RemoveReference(instance.meshHandle, instanceId);
+			if (instance.meshHandle != Asset::Null())
+			{
+				m_meshReferenceCounter.RemoveReference(instance.meshHandle, instanceId);
+			}
 
 			for (const auto& materialHandle : instance.materialHandles)
 			{
-				m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+				if (materialHandle != Asset::Null())
+				{
+					m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+				}
 			}
 		}
 		else if (instance.sceneLightData)
 		{
-			m_environmentTextureReferenceCounter.RemoveReference(instance.environmentTextureHandle, instanceId);
+			if (instance.environmentTextureHandle != Asset::Null())
+			{
+				m_environmentTextureReferenceCounter.RemoveReference(instance.environmentTextureHandle, instanceId);
+			}
 		}
 
 		if (m_streamingInstances.Contains(instanceId))
@@ -176,22 +194,37 @@ namespace Volt
 		{
 			for (const auto& materialHandle : streamingInstance.materialHandles)
 			{
-				m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+				if (materialHandle != Asset::Null())
+				{
+					m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+				}
 			}
 
-			m_meshReferenceCounter.RemoveReference(streamingInstance.meshHandle, instanceId);
+			if (streamingInstance.meshHandle != Asset::Null())
+			{
+				m_meshReferenceCounter.RemoveReference(streamingInstance.meshHandle, instanceId);
+			}
 
 			for (const auto& materialHandle : description.materialHandles)
 			{
-				m_materialReferenceCounter.AddReference(materialHandle, instanceId);
+				if (materialHandle != Asset::Null())
+				{
+					m_materialReferenceCounter.AddReference(materialHandle, instanceId);
+				}
 			}
 
-			m_meshReferenceCounter.AddReference(description.meshHandle, instanceId);
+			if (description.meshHandle != Asset::Null())
+			{
+				m_meshReferenceCounter.AddReference(description.meshHandle, instanceId);
+			}
 
 			streamingInstance.meshHandle = description.meshHandle;
 			streamingInstance.materialHandles = description.materialHandles;
 
-			InitializeScenePrimitiveFromInstance(streamingInstance);
+			if (streamingInstance.meshHandle != Asset::Null())
+			{
+				InitializeScenePrimitiveFromInstance(streamingInstance);
+			}
 
 			if (s_logStreamingManagerUpdates.GetValue())
 			{
