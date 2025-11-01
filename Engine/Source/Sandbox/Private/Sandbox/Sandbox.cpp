@@ -29,6 +29,7 @@
 #include "Sandbox/Window/TextureViewerPanel.h"
 #include "Sandbox/Window/DebugToolsPanel.h"
 #include "Sandbox/Window/ProjectConversionPanel.h"
+#include "Sandbox/Window/Animation/AnimationGraphEditorPanel.h"
 
 #include "Sandbox/SceneRendererExtensions/GridSceneRendererExtension.h"
 #include "Sandbox/SceneRendererExtensions/OutlineSceneRendererExtension.h"
@@ -231,6 +232,7 @@ void Sandbox::RegisterPanels()
 
 	EditorLibrary::RegisterWithType<SkeletonEditorPanel>("Animation", AssetTypes::Skeleton);
 	EditorLibrary::RegisterWithType<AnimationEditorPanel>("Animation", AssetTypes::Animation);
+	EditorLibrary::RegisterWithType<AnimationGraphEditorPanel>("Animation", AssetTypes::AnimationGraph);
 
 	m_assetBrowserPanel = EditorLibrary::Register<AssetBrowserPanel>("Asset Browser", m_runtimeScene, "##Main");
 

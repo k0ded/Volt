@@ -28,6 +28,8 @@
 
 #include <CoreUtilities/StringUtility.h>
 
+#include <Volt-Animation/Assets/AssetTypes.h>
+
 namespace AssetBrowser
 {
 	AssetItem::AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& aMeshToImportData)

@@ -14,7 +14,6 @@ namespace Volt
 {
 	using AnimationPlayerEntity = ECS::Access
 		::Write<AnimationPlayerComponent>
-		//::Write on the component that displays the pose
 		::As<ECS::Type::Entity>;
 
 	void AnimationPlayerSystem(AnimationPlayerEntity entity, const env::VariableUpdate& variableUpdate)

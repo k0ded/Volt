@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Volt-Animation/Config.h"
-
-#include <AssetSystem/AssetTypes.h>
+#include "Volt-Animation/Assets/AssetTypes.h"
 
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>

@@ -8,6 +8,7 @@
 #include <Volt-Renderer/ShapeLibrary.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
+
 #include <Volt-Assets/SourceAssetImporters/ImportConfigs.h>
 
 #include <AssetSystem/AssetManager.h>
@@ -15,6 +16,7 @@
 #include <AssetSystem/SourceAssetManager.h>
 
 #include <Volt-Scene/AssetTypes.h>
+#include <Volt-Animation/Assets/AssetTypes.h>
 
 void EditorResources::Initialize()
 {

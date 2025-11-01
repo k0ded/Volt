@@ -26,6 +26,10 @@ namespace Volt
 
 	Vector<glm::mat4x4> TempAnimator::Sample()
 	{
+		if (!m_animation)
+		{
+			return Vector<glm::mat4x4>();
+		}
 		return m_animation->Sample(m_fraction / m_animation->GetDuration(), *m_skeleton, true);
 	}
 }
