@@ -6,6 +6,7 @@
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/DirtyAssetsManager.h"
 #include "Sandbox/EditorCommandStack.h"
+#include "Sandbox/EditorAssetManager.h"
 
 #include <Volt-Assets/MeshAsset.h>
 
@@ -20,6 +21,7 @@
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <Volt-Scene/Scene.h>
+#include <Volt-Scene/EntityDescription.h>
 
 #include <EntitySystem/Entity.h>
 
@@ -259,7 +261,14 @@ std::string EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)
 void EditorUtils::MarkEntityAsEdited(const Volt::Scene& scene, const Volt::Entity& entity)
 {
 	const Volt::AssetHandle descHandle = scene.GetEntityDescHandleFromEntityID(entity.GetID());
-	DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
+
+	AssetReference<Volt::EntityDesc> entityDesc;
+
+	// Make sure the entity is loaded.
+	if (g_editorAssetManager->TryGetAssetImmediatelyAndCache(descHandle, entityDesc))
+	{
+		DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
+	}
 }
 
 void EditorUtils::MarkEntityAndChildrenAsEdited(const Volt::Scene& scene, const Volt::Entity& entity)

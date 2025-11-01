@@ -39,11 +39,11 @@ inline AssetReference<T> EditorAssetManager::GetAssetImmediatelyAndCache(Volt::A
 	RefPtr<Volt::Asset_New> asset;
 	if (m_assetCache.TryGetAsset(assetHandle, asset))
 	{
-		return { asset };
+		return { asset.As<T>() };
 	}
 
-	AssetReference<T> assetReference = m_referencedAssetManager.GetAssetImmediately(assetHandle);
-	m_assetCache.AddAsset(asset.GetRaw());
+	AssetReference<T> assetReference = m_referencedAssetManager.GetAssetImmediately<T>(assetHandle);
+	m_assetCache.AddAsset(assetReference.GetRaw());
 
 	return assetReference;
 }

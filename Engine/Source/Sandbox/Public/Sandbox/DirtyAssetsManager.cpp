@@ -400,9 +400,6 @@ void DirtyAssetsManager::SaveAssetsImpl(const FrameStackVector<Volt::AssetHandle
 		if (m_dirtySaveCustomizations[type].ShouldDeleteInstead(handle))
 		{
 			g_editorAssetManager->DeleteAsset(handle);
-
-			// #TODO_AssetSystem: Reimplement with EditorAssetManager
-			//Volt::AssetManager::Get().DeleteAsset(handle);
 			continue;
 		}
 

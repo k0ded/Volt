@@ -152,6 +152,11 @@ namespace Volt
 	bool AssetManager_New::TryGetAssetIfLoadedAsAnonymous(AssetHandle assetHandle, AssetReference<Asset_New>& outAsset)
 	{
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+		if (!assetMetadata.IsValid())
+		{
+			return false;
+		}
+		
 		if (assetMetadata->isLoaded)
 		{
 			// Try to get the asset from the asset cache.

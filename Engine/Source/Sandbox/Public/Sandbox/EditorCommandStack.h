@@ -10,6 +10,7 @@
 #include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <stack>
 #include "EditorCommand.h"
@@ -106,6 +107,8 @@ struct GizmoCommand : EditorCommand
 
 		if (myScene)
 		{
+			ScopedAssetReferenceLock sceneLock{ myScene };
+
 			myScene->InvalidateEntityTransform(myID);
 		}
 	}
@@ -131,6 +134,8 @@ struct GizmoCommand : EditorCommand
 
 		if (myScene)
 		{
+			ScopedAssetReferenceLock sceneLock{ myScene };
+
 			myScene->InvalidateEntityTransform(myID);
 		}
 	}
