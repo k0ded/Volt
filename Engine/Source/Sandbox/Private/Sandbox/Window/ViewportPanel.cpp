@@ -307,12 +307,11 @@ void ViewportPanel::UpdateContent()
 	ImGui::SameLine();
 
 	AssetReference<Volt::Texture2D> physicsIcon = m_animatedPhysicsIcon.GetCurrentFrame();
-	static AssetReference<Volt::Texture2D> physicsId = physicsIcon;
-
-	ScopedAssetReferenceLock physicsIdLock{ physicsId };
 	ScopedAssetReferenceLock physicsIconLock{ physicsIcon };
 
-	if (ImGui::ImageButtonAnimated(UI::GetTextureID(physicsId->GetImage()), UI::GetTextureID(physicsIcon->GetImage()), { buttonSize, buttonSize }))
+	static ImTextureID physicsId = UI::GetTextureID(physicsIcon->GetImage());
+
+	if (ImGui::ImageButtonAnimated(physicsId, UI::GetTextureID(physicsIcon->GetImage()), { buttonSize, buttonSize }))
 	{
 		if (m_sceneState == SceneState::Edit)
 		{

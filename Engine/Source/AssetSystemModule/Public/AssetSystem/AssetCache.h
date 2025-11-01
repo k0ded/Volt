@@ -10,14 +10,21 @@ namespace Volt
 	class AssetCache
 	{
 	public:
+		VTAS_API AssetCache();
+		VTAS_API ~AssetCache();
+
+		VTAS_API void Clear();
+
 		VTAS_API void AddAsset(RefPtr<Asset_New> asset);
 		VTAS_API void RemoveAsset(AssetHandle assetHandle);
 
-		RefPtr<Asset_New> GetAsset(AssetHandle assetHandle);
+		VTAS_API RefPtr<Asset_New> GetAsset(AssetHandle assetHandle);
 		VTAS_API bool TryGetAsset(AssetHandle assetHandle, RefPtr<Asset_New>& outAsset);
 
 	private:
-		// Replace
-		Map<AssetHandle, RefPtr<Asset_New>> m_assetMap;
+		void Initialize();
+
+		AtomicHashTable<> m_hashTable;
+		Vector<RefPtr<Asset_New>> m_cache;
 	};
 }

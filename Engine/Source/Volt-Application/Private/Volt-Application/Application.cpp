@@ -157,9 +157,9 @@ namespace Volt
 
 		//Amp::WWiseEngine::Get().TermWwise();
 
-		g_assetManager = nullptr;
-
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
+
+		g_assetManager = nullptr;
 
 		m_windowManager->DestroyMainWindow();
 

@@ -24,7 +24,9 @@ namespace Volt
 	}
 
 	AssetManager_New::~AssetManager_New()
-	{}
+	{
+		m_assetCache.Clear();
+	}
 
 	WriteableAssetMetadata AssetManager_New::GetWriteableAssetMetadata(AssetHandle assetHandle) const
 	{
@@ -334,7 +336,7 @@ namespace Volt
 
 		// Make sure we lock the metadata
 		if (m_assetRegistry.IsValidAssetHandle(assetHandle))
-		{
+		{ 
 			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 
 			// Lock metadata mutex here.

@@ -13,7 +13,9 @@ EditorAssetManager::EditorAssetManager(Volt::AssetManager_New& referencedAssetMa
 {}
 
 EditorAssetManager::~EditorAssetManager()
-{}
+{
+	m_assetCache.Clear();
+}
 
 void EditorAssetManager::RemoveAssetFromCache(Volt::AssetHandle assetHandle)
 {

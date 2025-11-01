@@ -24,6 +24,8 @@ namespace Volt
 		// or the project asset directory.
 		std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& filepath) const;
 
+		static int32_t GetNumMaxAssets();
+
 	private:
 		friend class AssetRegistryIterator;
 		friend class AssetRegistryConstIterator;

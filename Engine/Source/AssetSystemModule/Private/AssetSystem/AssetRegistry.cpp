@@ -187,6 +187,11 @@ namespace Volt
 		return normalizedFilepath.generic_string();
 	}
 
+	int32_t AssetRegistry::GetNumMaxAssets()
+	{
+		return s_assetRegistryNumMaxAssets.GetValue();
+	}
+
 	Vector<std::filesystem::path> AssetRegistry::ScanForAssets()
 	{
 		VT_PROFILE_FUNCTION();
