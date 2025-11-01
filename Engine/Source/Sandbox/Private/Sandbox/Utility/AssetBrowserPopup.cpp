@@ -5,7 +5,7 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <Volt-Application/UI/UIUtility.h>
 

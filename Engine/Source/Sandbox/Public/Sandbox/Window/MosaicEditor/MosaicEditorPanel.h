@@ -46,7 +46,7 @@ public:
 	bool SaveNodeSettings(const UUID64 nodeId, const std::string& data);
 	size_t LoadNodeSettings(const UUID64 nodeId, std::string& data);
 
-	void OpenAsset(AssetReference<Volt::Asset_New> asset) override;
+	void OpenAsset(AssetReference<Volt::Asset> asset) override;
 	void OnClose() override;
 
 private:

@@ -6,7 +6,7 @@
 
 #include <EntitySystem/Entity.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <glm/glm.hpp>
@@ -449,7 +449,7 @@ public:
 	{
 		std::string assetFileName = "Null";
 
-		AssetReference<Volt::Asset_New> rawAsset;
+		AssetReference<Volt::Asset> rawAsset;
 		if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(assetHandle, rawAsset))
 		{
 			ScopedAssetReferenceLock assetLock{ rawAsset };
@@ -460,7 +460,7 @@ public:
 			{
 				if (rawAsset->GetType() == supportedTypes)
 				{
-					assetHandle = Volt::Asset_New::Null();
+					assetHandle = Volt::Asset::Null();
 				}
 			}
 		}

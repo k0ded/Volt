@@ -12,7 +12,7 @@ namespace Volt
 	struct MSDFData;
 	class Texture2D;
 
-	class Font : public Asset_New
+	class Font : public Asset
 	{
 	public:
 		struct FontHeader

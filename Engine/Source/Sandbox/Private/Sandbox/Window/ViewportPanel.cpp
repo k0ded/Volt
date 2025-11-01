@@ -32,7 +32,7 @@
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <EntitySystem/Entity.h>
 #include <EventSystem/EventSystem.h>
@@ -669,7 +669,7 @@ bool ViewportPanel::OnMouseReleased(Volt::MouseButtonReleasedEvent& e)
 
 		GlobalEditorStates::isDragging = false;
 		GlobalEditorStates::dragStartedInAssetBrowser = false;
-		GlobalEditorStates::dragAsset = Volt::Asset_New::Null();
+		GlobalEditorStates::dragAsset = Volt::Asset::Null();
 	}
 
 	return false;
@@ -704,7 +704,7 @@ void ViewportPanel::CheckDragDrop()
 	}
 
 
-	if (!GlobalEditorStates::isDragging || !GlobalEditorStates::dragStartedInAssetBrowser || m_createdAssetOnDrag || GlobalEditorStates::dragAsset == Volt::Asset_New::Null())
+	if (!GlobalEditorStates::isDragging || !GlobalEditorStates::dragStartedInAssetBrowser || m_createdAssetOnDrag || GlobalEditorStates::dragAsset == Volt::Asset::Null())
 	{
 		return;
 	}
@@ -1048,7 +1048,7 @@ void ViewportPanel::UpdateModals()
 
 		Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(m_sceneToOpen);
 		Sandbox::Get().OpenScene(sceneMetadata->filepath);
-		m_sceneToOpen = Volt::Asset_New::Null();
+		m_sceneToOpen = Volt::Asset::Null();
 	}
 }
 

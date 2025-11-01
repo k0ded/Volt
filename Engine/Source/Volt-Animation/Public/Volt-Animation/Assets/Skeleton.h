@@ -11,7 +11,7 @@
 
 namespace Volt
 {
-	class VTA_API Skeleton : public Asset_New
+	class VTA_API Skeleton : public Asset
 	{
 	public:
 		struct Joint

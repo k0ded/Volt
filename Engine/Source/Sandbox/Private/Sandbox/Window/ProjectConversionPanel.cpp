@@ -380,7 +380,7 @@ void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, cons
 	struct AssetAndMetadataPair
 	{
 		AssetMetadata metadata;
-		AssetReference<Asset_New> asset;
+		AssetReference<Asset> asset;
 	};
 
 	Vector<AssetAndMetadataPair> assetAndMetadatas;
@@ -901,7 +901,7 @@ AssetReference<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Proj
 		{
 			const PrefabComponent& prefabComponent = prefabEntity.GetComponent<PrefabComponent>();
 			VT_ENSURE(prefabComponent.prefabEntity != EntityID::Null());
-			VT_ENSURE(prefabComponent.prefabAsset != Asset_New::Null());
+			VT_ENSURE(prefabComponent.prefabAsset != Asset::Null());
 		}
 
 		if (rootEntityId == EntityID::Null())

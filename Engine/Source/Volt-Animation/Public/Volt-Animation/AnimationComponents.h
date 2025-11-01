@@ -17,8 +17,8 @@ namespace Volt
 			::Write<AnimationPlayerComponent>
 			::As<ECS::Type::Entity>;
 
-		AssetHandle skeletonHandle = Asset_New::Null();
-		AssetHandle animationHandle = Asset_New::Null();
+		AssetHandle skeletonHandle = Asset::Null();
+		AssetHandle animationHandle = Asset::Null();
 		float currentPlayTime = 0.f;
 
 		Ref<TempAnimator> animator;
@@ -27,9 +27,9 @@ namespace Volt
 		{
 			reflect.SetGUID("{45673840-5218-417D-A1C7-800A46711F23}"_guid);
 			reflect.SetLabel("Animation Player Component");
-			AssetHandle animationHandle = Asset_New::Null();
-			reflect.AddMember(&AnimationPlayerComponent::skeletonHandle, "skeleton", "Skeleton", "", Asset_New::Null(), AssetTypes::Skeleton);
-			reflect.AddMember(&AnimationPlayerComponent::animationHandle, "animationHandle", "Animation", "", Asset_New::Null(), AssetTypes::Animation);
+			AssetHandle animationHandle = Asset::Null();
+			reflect.AddMember(&AnimationPlayerComponent::skeletonHandle, "skeleton", "Skeleton", "", Asset::Null(), AssetTypes::Skeleton);
+			reflect.AddMember(&AnimationPlayerComponent::animationHandle, "animationHandle", "Animation", "", Asset::Null(), AssetTypes::Animation);
 			reflect.AddMember(&AnimationPlayerComponent::currentPlayTime, "currentPlayTime", "Current Play Time", "", 0.f);
 			reflect.SetOnMemberChangedCallback(&AnimationPlayerComponent::OnMemberChanged);
 		}

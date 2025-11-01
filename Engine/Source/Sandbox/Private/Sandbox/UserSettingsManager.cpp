@@ -53,7 +53,7 @@ void UserSettingsManager::LoadUserSettings()
 	s_editorSettings.sceneSettings.showEnvironmentProbes = streamReader.ReadAtKey("showEnvironmentProbes", false);
 	s_editorSettings.sceneSettings.navMeshViewMode = (NavMeshViewMode)streamReader.ReadAtKey("navMeshViewMode", 0u);
 
-	s_editorSettings.sceneSettings.defaultOpenScene = streamReader.ReadAtKey("defaultOpenScene", Volt::Asset_New::Null());
+	s_editorSettings.sceneSettings.defaultOpenScene = streamReader.ReadAtKey("defaultOpenScene", Volt::Asset::Null());
 	streamReader.ExitScope();
 
 	streamReader.EnterScope("VersionControlSettings");

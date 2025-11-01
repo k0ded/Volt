@@ -27,7 +27,7 @@
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <WindowModule/WindowManager.h>

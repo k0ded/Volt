@@ -17,7 +17,7 @@
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <RHIModule/Images/Image.h>

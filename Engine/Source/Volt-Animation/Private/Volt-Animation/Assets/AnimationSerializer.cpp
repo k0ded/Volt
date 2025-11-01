@@ -3,7 +3,7 @@
 #include "Volt-Animation/Assets/AnimationSerializer.h"
 #include "Volt-Animation/Assets/Animation.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 namespace Volt
@@ -32,7 +32,7 @@ namespace Volt
 		}
 	};
 
-	void AnimationSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void AnimationSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<Animation> animation = asset.ConvertTo<Animation>();
 		ScopedAssetReferenceLock animationLock{ animation };
@@ -52,7 +52,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool AnimationSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool AnimationSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filepath = g_assetManager->GetFilesystemPath(metadata->filepath);
 

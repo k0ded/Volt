@@ -2,18 +2,18 @@
 
 #include "Volt-Animation/TempAnimator.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 namespace Volt
 {
 	TempAnimator::TempAnimator(AssetHandle skeletonHandle, AssetHandle initialAnimationHandle)
 	{
-		if (skeletonHandle != Asset_New::Null())
+		if (skeletonHandle != Asset::Null())
 		{
 			m_skeleton = g_assetManager->GetAssetImmediately<Skeleton>(skeletonHandle);
 		}
 
-		if (initialAnimationHandle != Asset_New::Null())
+		if (initialAnimationHandle != Asset::Null())
 		{
 			m_animation = g_assetManager->GetAssetImmediately<Animation>(initialAnimationHandle);
 		}

@@ -4,7 +4,7 @@
 
 #include "Volt-Renderer/Texture/Texture2D.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetReference.h>
 
 #include <RHIModule/Images/Image.h>
@@ -20,7 +20,7 @@ namespace Volt
 {
 	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".jpeg", ".jpg", ".png", ".tga", ".bmp", ".psd", ".gif", ".hdr", ".pic", ".pnm" }), CommonTextureSourceImporter);
 
-	Vector<AssetReference<Asset_New>> CommonTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> CommonTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const TextureSourceImportConfig& importConfig = *reinterpret_cast<const TextureSourceImportConfig*>(config);

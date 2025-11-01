@@ -52,7 +52,7 @@ void TextureViewerPanel::OnClose()
 	m_viewingTexture = nullptr;
 }
 
-void TextureViewerPanel::OpenAsset(AssetReference<Volt::Asset_New> asset)
+void TextureViewerPanel::OpenAsset(AssetReference<Volt::Asset> asset)
 {
 	VT_ENSURE(asset->GetType()->GetGUID() == AssetTypes::Texture->GetGUID());
 	m_viewingTexture = asset.ConvertTo<Volt::Texture2D>();

@@ -16,7 +16,7 @@ public:
 	~AnimationEditorPanel() override = default;
 
 	void UpdateMainContent() override;
-	void OpenAsset(AssetReference<Volt::Asset_New> asset) override;
+	void OpenAsset(AssetReference<Volt::Asset> asset) override;
 
 	void OnOpen() override;
 	void OnClose() override;

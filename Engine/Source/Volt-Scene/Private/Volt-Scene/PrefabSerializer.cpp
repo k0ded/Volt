@@ -4,7 +4,7 @@
 #include "Volt-Scene/SceneSerializer.h"
 #include "Volt-Scene/Scene.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <Volt-Scene/EntityDescriptionSerializer.h>
 
@@ -24,7 +24,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void PrefabSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void PrefabSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		const AssetReference<Prefab> prefab = asset.ConvertTo<Prefab>();
 		ScopedAssetReferenceLock prefabLock{ prefab };
@@ -77,7 +77,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool PrefabSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool PrefabSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 
@@ -128,7 +128,7 @@ namespace Volt
 			yamlStreamReader.ForEach("PrefabReferences", [&]()
 			{
 				EntityID entityId = yamlStreamReader.ReadAtKey("entity", Entity::NullID());
-				AssetHandle prefabHandle = yamlStreamReader.ReadAtKey("prefabHandle", Asset_New::Null());
+				AssetHandle prefabHandle = yamlStreamReader.ReadAtKey("prefabHandle", Asset::Null());
 				EntityID prefabEntityReference = yamlStreamReader.ReadAtKey("prefabEntityReferences", Entity::NullID());
 
 				auto& prefabRefData = prefab->m_prefabReferencesMap[entityId];

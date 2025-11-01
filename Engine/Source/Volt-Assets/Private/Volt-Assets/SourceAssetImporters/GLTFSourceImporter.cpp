@@ -8,7 +8,7 @@
 #include <Volt-Assets/MaterialAsset.h>
 #include <Volt-Assets/MeshAsset.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -93,7 +93,7 @@ namespace Volt
 		return result;
 	}
 
-	Vector<AssetReference<Asset_New>> GLTFSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> GLTFSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const MeshSourceImportConfig& importConfig = *reinterpret_cast<const MeshSourceImportConfig*>(config);
@@ -129,7 +129,7 @@ namespace Volt
 			userData.OnWarning(outWarning);
 		}
 
-		Vector<AssetReference<Asset_New>> result;
+		Vector<AssetReference<Asset>> result;
 
 		switch (importConfig.importType)
 		{
@@ -339,7 +339,7 @@ namespace Volt
 		}
 	}
 
-	Vector<AssetReference<Asset_New>> GLTFSourceImporter::ImportAsStaticMesh(tinygltf::Model& gltfModel, const MeshSourceImportConfig importConfig, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> GLTFSourceImporter::ImportAsStaticMesh(tinygltf::Model& gltfModel, const MeshSourceImportConfig importConfig, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -353,7 +353,7 @@ namespace Volt
 		MaterialTable materialTable;
 		Vector<AssetReference<MaterialAsset>> materials = CreateSceneMaterials(gltfModel, materialTable, importConfig);
 		
-		Vector<AssetReference<Asset_New>> result;
+		Vector<AssetReference<Asset>> result;
 		if (importConfig.combineMeshes)
 		{
 			MeshInitializer meshInitializer;

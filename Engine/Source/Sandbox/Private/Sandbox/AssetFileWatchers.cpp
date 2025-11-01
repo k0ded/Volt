@@ -10,7 +10,7 @@
 #include <Volt-Core/Project/ProjectManager.h>
 #include <AssetSystem/AssetTypes.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 
 void Sandbox::CreateModifiedWatch()

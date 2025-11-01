@@ -7,7 +7,7 @@
 #include <Volt-MaterialGraph/Nodes/ConstantNodes.h>
 #include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 void ColorNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
@@ -30,7 +30,7 @@ void SampleTextureNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 
 	Volt::AssetHandle textureHandle = sampleTextureNode->GetTextureHandle();
 
-	AssetReference<Volt::Asset_New> rawAsset;
+	AssetReference<Volt::Asset> rawAsset;
 	if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(textureHandle, rawAsset))
 	{
 		ScopedAssetReferenceLock assetLock{ rawAsset };

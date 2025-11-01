@@ -5,7 +5,7 @@
 #include "Volt-Scene/EntityDescCustomMetadata.h"
 #include "Volt-Scene/Scene.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetSerializerRegistry.h>
 #include <AssetSystem/AssetLocks.h>
 
@@ -121,7 +121,7 @@ namespace Volt
 	EntityDescSerializer::~EntityDescSerializer()
 	{}
 
-	void EntityDescSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void EntityDescSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		const AssetReference<EntityDesc> entityDesc = asset.ConvertTo<EntityDesc>();
 		ScopedAssetReferenceLock entityLock{ entityDesc };
@@ -159,7 +159,7 @@ namespace Volt
 		entityDescFileWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool EntityDescSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool EntityDescSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const EntityDescCustomMetadata& customMeta = metadata->GetCustomData<EntityDescCustomMetadata>();
 		

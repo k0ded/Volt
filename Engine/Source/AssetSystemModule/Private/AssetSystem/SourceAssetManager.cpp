@@ -49,7 +49,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	JobFuture<Vector<AssetReference<Asset_New>>> SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath)
+	JobFuture<Vector<AssetReference<Asset>>> SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath)
 	{
 		const std::string extension = filepath.extension().string();
 
@@ -59,7 +59,7 @@ namespace Volt
 			return {};
 		}
 
-		auto resultPromise = CreateRef<JobPromise<Vector<AssetReference<Asset_New>>>>();
+		auto resultPromise = CreateRef<JobPromise<Vector<AssetReference<Asset>>>>();
 
 		// Create a counter which we supply to the promise.
 		JobCounterRef importCounter = JobSystem::CreateCounter();

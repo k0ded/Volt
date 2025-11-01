@@ -9,7 +9,7 @@
 
 #include <EntitySystem/Entity.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <stack>

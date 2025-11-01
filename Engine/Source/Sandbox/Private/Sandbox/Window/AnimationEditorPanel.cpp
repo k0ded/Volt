@@ -1,7 +1,7 @@
 #include "sbpch.h"
 #include "Window/AnimationEditorPanel.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <Volt-Application/UI/UIUtility.h>
 
@@ -149,7 +149,7 @@ void AnimationEditorPanel::UpdateMainContent()
 	AddAnimationEventModal();
 }
 
-void AnimationEditorPanel::OpenAsset(AssetReference<Volt::Asset_New> asset)
+void AnimationEditorPanel::OpenAsset(AssetReference<Volt::Asset> asset)
 {
 	if (m_animation)
 	{

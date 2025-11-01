@@ -5,7 +5,7 @@
 
 #include "Volt-Renderer/Mesh/Mesh.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/Serialization/AssetSerializationCommon.h>
 #include <AssetSystem/AssetLocks.h>
 
@@ -50,7 +50,7 @@ namespace Volt
 		}
 	};
 
-	void MeshSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void MeshSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<MeshAsset> meshAsset = asset.ConvertTo<MeshAsset>();
 		ScopedAssetReferenceLock meshLock{ meshAsset };
@@ -77,7 +77,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool MeshSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool MeshSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 

@@ -3,7 +3,7 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 void EditorLibrary::Clear()
 {
@@ -42,7 +42,7 @@ bool EditorLibrary::OpenAsset(Volt::AssetHandle handle)
 		return false;
 	}
 
-	AssetReference<Volt::Asset_New> asset;
+	AssetReference<Volt::Asset> asset;
 	if (!g_assetManager->TryGetAssetIfLoadedAsAnonymous(handle, asset))
 	{
 		return false;

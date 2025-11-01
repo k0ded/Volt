@@ -10,7 +10,7 @@
 
 namespace Volt
 {
-	class VTR_API EnvironmentTexture : public Asset_New
+	class VTR_API EnvironmentTexture : public Asset
 	{
 	public:
 		EnvironmentTexture() = default;

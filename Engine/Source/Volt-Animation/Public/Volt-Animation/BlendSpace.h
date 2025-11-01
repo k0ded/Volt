@@ -16,7 +16,7 @@ namespace Volt
 		TwoD
 	};
 
-	class BlendSpace : public Asset_New
+	class BlendSpace : public Asset
 	{
 	public:
 		BlendSpace() = default;

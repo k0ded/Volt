@@ -29,7 +29,7 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>
@@ -323,7 +323,7 @@ bool AssetBrowserPanel::OnMouseReleasedEvent(Volt::MouseButtonReleasedEvent& e)
 		{
 			GlobalEditorStates::isDragging = false;
 			GlobalEditorStates::dragStartedInAssetBrowser = false;
-			GlobalEditorStates::dragAsset = Volt::Asset_New::Null();
+			GlobalEditorStates::dragAsset = Volt::Asset::Null();
 		}
 	}
 

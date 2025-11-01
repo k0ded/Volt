@@ -6,7 +6,7 @@
 
 #include <Volt-Application/UI/UIUtility.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <Volt-Animation/Assets/Skeleton.h>
 
@@ -111,7 +111,7 @@ void SkeletonEditorPanel::UpdateMainContent()
 	AddJointAttachmentPopup();
 }
 
-void SkeletonEditorPanel::OpenAsset(AssetReference<Volt::Asset_New> asset)
+void SkeletonEditorPanel::OpenAsset(AssetReference<Volt::Asset> asset)
 {
 	if (m_skeleton)
 	{

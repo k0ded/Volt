@@ -10,7 +10,7 @@
 
 #include <Volt-Assets/SourceAssetImporters/ImportConfigs.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 #include <AssetSystem/SourceAssetManager.h>
 
@@ -150,7 +150,7 @@ void EditorResources::TryLoadIcon(const std::filesystem::path& path, RefPtr<Volt
 	importConfig.importMipMaps = true;
 	importConfig.destinationFilename = path.stem().string();
 
-	Volt::SourceAssetManager::ImportSourceAsset(path, importConfig, [outTexture](Vector<AssetReference<Volt::Asset_New>> importedAssets)
+	Volt::SourceAssetManager::ImportSourceAsset(path, importConfig, [outTexture](Vector<AssetReference<Volt::Asset>> importedAssets)
 	{
 		if (importedAssets.empty())
 		{

@@ -10,7 +10,7 @@
 
 namespace Volt
 {
-	class PhysicsMaterialAsset : public Asset_New
+	class PhysicsMaterialAsset : public Asset
 	{
 	public:
 		PhysicsMaterialAsset();

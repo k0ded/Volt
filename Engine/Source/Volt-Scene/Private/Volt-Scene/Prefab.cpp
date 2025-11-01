@@ -7,7 +7,7 @@
 #include <Volt-Physics/RigidbodyComponent.h>
 #include <Volt-Physics/CharacterControllerComponent.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Random.h>

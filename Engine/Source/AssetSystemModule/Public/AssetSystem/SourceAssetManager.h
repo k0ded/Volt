@@ -4,7 +4,7 @@
 
 #include "AssetSystem/SourceAssetImporterRegistry.h"
 #include "AssetSystem/SourceAssetImporter.h"
-#include "AssetSystem/AssetManager_New.h"
+#include "AssetSystem/AssetManager.h"
 #include "AssetSystem/SourceAssetImportConfig.h"
 
 #include <JobSystem/JobPromise.h>
@@ -19,20 +19,20 @@ namespace Volt
 	class VTAS_API SourceAssetManager
 	{
 	public:
-		using ImportedCallbackFunc = std::function<void(Vector<AssetReference<Asset_New>>)>;
+		using ImportedCallbackFunc = std::function<void(Vector<AssetReference<Asset>>)>;
 
 		SourceAssetManager();
 		~SourceAssetManager();
 
 		template<typename ConfigType>
-		static JobFuture<Vector<AssetReference<Asset_New>>> ImportSourceAsset(const std::filesystem::path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
+		static JobFuture<Vector<AssetReference<Asset>>> ImportSourceAsset(const std::filesystem::path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
 		{
 			static_assert(std::is_base_of_v<SourceAssetImportConfig, ConfigType>);
 
 			VT_ENSURE(s_instance);
 			VT_ENSURE(!filepath.empty());
 
-			auto importFunc = [=]() -> Vector<AssetReference<Asset_New>>
+			auto importFunc = [=]() -> Vector<AssetReference<Asset>>
 			{
 				const std::string extension = filepath.extension().string();
 				auto& importer = GetSourceAssetImporterRegistry().GetImporterForExtension(extension);
@@ -51,7 +51,7 @@ namespace Volt
 			VT_ENSURE(importedCallback);
 			VT_ENSURE(!filepath.empty());
 
-			auto importFunc = [=]() -> Vector<AssetReference<Asset_New>>
+			auto importFunc = [=]() -> Vector<AssetReference<Asset>>
 			{
 				const std::string extension = filepath.extension().string();
 				auto& importer = GetSourceAssetImporterRegistry().GetImporterForExtension(extension);
@@ -64,17 +64,17 @@ namespace Volt
 		static SourceAssetFileInformation GetSourceAssetFileInformation(const std::filesystem::path& filepath);
 
 	private:
-		using ImportJobFunc = std::function<Vector<AssetReference<Asset_New>>()>;
+		using ImportJobFunc = std::function<Vector<AssetReference<Asset>>()>;
 
 		struct ImportJob
 		{
 			JobRef job = nullptr;
-			Ref<JobPromise<Vector<AssetReference<Asset_New>>>> resultPromise;
+			Ref<JobPromise<Vector<AssetReference<Asset>>>> resultPromise;
 		
 			std::string debugString;
 		};
 
-		JobFuture<Vector<AssetReference<Asset_New>>> ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
+		JobFuture<Vector<AssetReference<Asset>>> ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
 		void ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
 
 		WorkQueue<ImportJob, QueueThreadingPolicy::MPSC>& GetOrCreateQueue(const std::string& extension);

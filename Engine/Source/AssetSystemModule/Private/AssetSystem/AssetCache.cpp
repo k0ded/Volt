@@ -20,9 +20,9 @@ namespace Volt
 		m_cache.clear();
 	}
 
-	void AssetCache::AddAsset(RefPtr<Asset_New> asset)
+	void AssetCache::AddAsset(RefPtr<Asset> asset)
 	{
-		VT_ENSURE(asset->GetAssetHandle() != Asset_New::Null());
+		VT_ENSURE(asset->GetAssetHandle() != Asset::Null());
 
 		uint64_t hashIndex;
 		if (m_hashTable.Insert(asset->GetAssetHandle(), hashIndex))
@@ -33,7 +33,7 @@ namespace Volt
 
 	void AssetCache::RemoveAsset(AssetHandle assetHandle)
 	{
-		VT_ENSURE(assetHandle != Asset_New::Null());
+		VT_ENSURE(assetHandle != Asset::Null());
 
 		uint64_t hashIndex;
 		if (m_hashTable.GetAndRemove(assetHandle, hashIndex))
@@ -46,9 +46,9 @@ namespace Volt
 		}
 	}
 
-	RefPtr<Asset_New> AssetCache::GetAsset(AssetHandle assetHandle)
+	RefPtr<Asset> AssetCache::GetAsset(AssetHandle assetHandle)
 	{
-		VT_ENSURE(assetHandle != Asset_New::Null());
+		VT_ENSURE(assetHandle != Asset::Null());
 
 		uint64_t hashIndex;
 		if (m_hashTable.Get(assetHandle, hashIndex))
@@ -59,7 +59,7 @@ namespace Volt
 		return nullptr;
 	}
 
-	bool AssetCache::TryGetAsset(AssetHandle assetHandle, RefPtr<Asset_New>& outAsset)
+	bool AssetCache::TryGetAsset(AssetHandle assetHandle, RefPtr<Asset>& outAsset)
 	{
 		uint64_t hashIndex;
 		bool found = m_hashTable.Get(assetHandle, hashIndex);

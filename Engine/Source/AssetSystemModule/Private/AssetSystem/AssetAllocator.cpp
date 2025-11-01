@@ -22,7 +22,7 @@ namespace Volt
 		}
 	}
 
-	void AssetAllocator::FreeAsset(AssetType assetType, Asset_New* asset)
+	void AssetAllocator::FreeAsset(AssetType assetType, Asset* asset)
 	{
 		const VoltGUID assetTypeGUID = assetType->GetGUID();
 		VT_ENSURE(m_assetAllocator.contains(assetTypeGUID));

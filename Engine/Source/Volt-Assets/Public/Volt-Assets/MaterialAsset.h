@@ -11,7 +11,7 @@ namespace Volt
 	class MaterialGraph;
 	class RenderMaterial;
 
-	class VTASSETS_API MaterialAsset : public Asset_New
+	class VTASSETS_API MaterialAsset : public Asset
 	{
 	public:
 		MaterialAsset();

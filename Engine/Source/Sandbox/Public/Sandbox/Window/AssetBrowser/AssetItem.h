@@ -44,7 +44,7 @@ namespace AssetBrowser
 		void Open() override;
 		void DrawAdditionalHoverInfo() override;
 	private:
-		Volt::AssetHandle mySceneToOpen = Volt::Asset_New::Null();
+		Volt::AssetHandle mySceneToOpen = Volt::Asset::Null();
 
 		const ImVec4 GetBackgroundColorFromType(AssetType type) const;
 	};

@@ -3,17 +3,17 @@
 #include "Volt-Assets/Serializers/FontSerializer.h"
 #include "Volt-Assets/Font.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
-	void FontSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void FontSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		VT_ASSERT_MSG(false, "[FontSerializer]: Asset it not serializable");
 	}
 
-	bool FontSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool FontSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 

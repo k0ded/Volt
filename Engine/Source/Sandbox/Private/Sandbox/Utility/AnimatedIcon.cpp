@@ -23,7 +23,7 @@ AnimatedIcon::AnimatedIcon(const std::filesystem::path& firstFrame, uint32_t fra
 
 	const std::filesystem::path dirPath = firstFrame.parent_path();
 
-	Vector<Volt::JobFuture<Vector<AssetReference<Volt::Asset_New>>>> futures;
+	Vector<Volt::JobFuture<Vector<AssetReference<Volt::Asset>>>> futures;
 
 	for (uint32_t frame = 1; frame <= frameCount; frame++)
 	{

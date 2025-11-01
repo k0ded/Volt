@@ -1,36 +1,43 @@
 #include "aspch.h"
-#include "AssetManager_New.h"
+#include "AssetManager.h"
 
 #include "AssetSystem/AssetLocks.h"
+
+#include <JobSystem/JobSystem.h>
+
+#include <EventSystem/ApplicationEvents.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/StringUtility.h>
 
-Scope<Volt::AssetManager_New> g_assetManager;
+Scope<Volt::AssetManager> g_assetManager;
 
 namespace Volt
 {
 	VT_DEFINE_LOG_CATEGORY(LogAssetSystem);
 
-	AssetManager_New::AssetManager_New(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName)
+	AssetManager::AssetManager(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName)
 		: m_assetRegistry(engineDirectoryPath, projectDirectoryPath, assetsDirectoryName)
 	{
+		RegisterListener<AppTickEvent>(VT_BIND_EVENT_FN(AssetManager::UpdateInternal));
+
 		m_root.engineDirectoryPath = engineDirectoryPath;
 		m_root.projectDirectoryPath = projectDirectoryPath;
 		m_root.assetsDirectoryName = assetsDirectoryName;
 
 		CreateDependencyGraphAndAddAssetsFromRegistry();
+		m_assetChangedQueue.Allocate(1024);
 	}
 
-	AssetManager_New::~AssetManager_New()
+	AssetManager::~AssetManager()
 	{
 		m_assetCache.Clear();
 	}
 
-	WriteableAssetMetadata AssetManager_New::GetWriteableAssetMetadata(AssetHandle assetHandle) const
+	WriteableAssetMetadata AssetManager::GetWriteableAssetMetadata(AssetHandle assetHandle) const
 	{
-		if (assetHandle == Asset_New::Null())
+		if (assetHandle == Asset::Null())
 		{
 			return { nullptr };
 		}
@@ -39,9 +46,9 @@ namespace Volt
 		return { assetMetadata};
 	}
 
-	ReadOnlyAssetMetadata AssetManager_New::GetReadOnlyAssetMetadata(AssetHandle assetHandle) const
+	ReadOnlyAssetMetadata AssetManager::GetReadOnlyAssetMetadata(AssetHandle assetHandle) const
 	{
-		if (assetHandle == Asset_New::Null())
+		if (assetHandle == Asset::Null())
 		{
 			return { nullptr };
 		}
@@ -50,7 +57,7 @@ namespace Volt
 		return { assetMetadata };
 	}
 
-	AssetMetadata AssetManager_New::GetAssetMetadataCopy(AssetHandle assetHandle) const
+	AssetMetadata AssetManager::GetAssetMetadataCopy(AssetHandle assetHandle) const
 	{
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 		if (assetMetadata)
@@ -61,20 +68,20 @@ namespace Volt
 		return {};
 	}
 	
-	void AssetManager_New::ReloadAsset(AssetHandle assetHandle)
+	void AssetManager::ReloadAsset(AssetHandle assetHandle)
 	{
-		RefPtr<Asset_New> asset = m_assetCache.GetAsset(assetHandle);
+		RefPtr<Asset> asset = m_assetCache.GetAsset(assetHandle);
 		ScopedAssetLock assetLock(asset);
 
 		
 	}
 
-	void AssetManager_New::SaveAsset(AssetHandle assetHandle)
+	void AssetManager::SaveAsset(AssetHandle assetHandle)
 	{
-		RefPtr<Asset_New> asset;
+		RefPtr<Asset> asset;
 		if (m_assetCache.TryGetAsset(assetHandle, asset))
 		{
-			SaveAsset(AssetReference<Asset_New>(asset));
+			SaveAsset(AssetReference<Asset>(asset));
 		}
 		else
 		{
@@ -82,7 +89,7 @@ namespace Volt
 		}
 	}
 
-	void AssetManager_New::SaveAsset(AssetReference<Asset_New> asset)
+	void AssetManager::SaveAsset(AssetReference<Asset> asset)
 	{
 		ScopedAssetReferenceLock lock{ asset };
 
@@ -122,7 +129,7 @@ namespace Volt
 		}
 	}
 
-	void AssetManager_New::RemoveAsset(AssetHandle assetHandle)
+	void AssetManager::RemoveAsset(AssetHandle assetHandle)
 	{
 		VT_ENSURE(m_assetRegistry.IsValidAssetHandle(assetHandle));
 
@@ -140,18 +147,18 @@ namespace Volt
 		m_dependencyGraph->RemoveAssetFromGraph(assetHandle);
 	}
 
-	bool AssetManager_New::IsValidAssetHandle(AssetHandle assetHandle) const
+	bool AssetManager::IsValidAssetHandle(AssetHandle assetHandle) const
 	{
 		return m_assetRegistry.IsValidAssetHandle(assetHandle);
 	}
 
-	bool AssetManager_New::IsAssetLoaded(AssetHandle assetHandle) const
+	bool AssetManager::IsAssetLoaded(AssetHandle assetHandle) const
 	{
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
 		return assetMetadata->isLoaded;
 	}
 
-	bool AssetManager_New::TryGetAssetIfLoadedAsAnonymous(AssetHandle assetHandle, AssetReference<Asset_New>& outAsset)
+	bool AssetManager::TryGetAssetIfLoadedAsAnonymous(AssetHandle assetHandle, AssetReference<Asset>& outAsset)
 	{
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
 		if (!assetMetadata.IsValid())
@@ -162,7 +169,7 @@ namespace Volt
 		if (assetMetadata->isLoaded)
 		{
 			// Try to get the asset from the asset cache.
-			RefPtr<Asset_New> tempAsset;
+			RefPtr<Asset> tempAsset;
 			if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
 			{
 				outAsset = { tempAsset };
@@ -173,7 +180,7 @@ namespace Volt
 		return false;
 	}
 
-	void AssetManager_New::CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath)
+	void AssetManager::CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath)
 	{
 		if (FileSystem::FilePathIsOnlyExtension(filepath) || filepath.stem().empty())
 		{
@@ -206,32 +213,61 @@ namespace Volt
 		SaveAsset(assetHandle);
 	}
 
-	AssetManager_New::AssetUpdatedCallbackID AssetManager_New::RegisterAssetUpdatedCallback(AssetType assetType, AssetChangedCallback&& callback)
+	AssetManager::AssetUpdatedCallbackID AssetManager::RegisterAssetUpdatedCallback(AssetType assetType, AssetChangedCallback&& callback)
 	{
-		return {};
+		std::scoped_lock lock{ m_assetCallbackMutex };
+
+		UUID64 id = UUID64{};
+		m_assetChangedCallbacks[assetType].push_back({ id, std::move(callback) });
+		return id;
 	}
 
-	void AssetManager_New::UnregisterAssetUpdatedCallback(AssetType assetType, UUID64 callbackId)
+	void AssetManager::UnregisterAssetUpdatedCallback(AssetType assetType, UUID64 callbackId)
 	{
+		std::scoped_lock lock{ m_assetCallbackMutex };
 
+		auto& callbacks = m_assetChangedCallbacks[assetType];
+
+		auto it = std::find_if(callbacks.begin(), callbacks.end(), [&](const AssetChangedCallbackInfo& callbackInfo)
+		{
+			return callbackInfo.id == callbackId;
+		});
+
+		if (it != callbacks.end())
+		{
+			callbacks.erase(it);
+		}
 	}
 
-	void AssetManager_New::AddDependencyToAsset(AssetHandle dependant, AssetHandle dependency)
+	void AssetManager::AddDependencyToAsset(AssetHandle dependant, AssetHandle dependency)
 	{
 		m_dependencyGraph->AddDependencyToAsset(dependant, dependency);
 	}
 
-	Vector<AssetHandle> AssetManager_New::GetAssetsDependentOn(AssetHandle assetHandle) const
+	Vector<AssetHandle> AssetManager::GetAssetsDependentOn(AssetHandle assetHandle) const
 	{
 		return {};
 	}
 
-	void AssetManager_New::QueueAssetChanged(AssetHandle assetHandle, AssetChangedState state)
+	void AssetManager::QueueAssetChanged(AssetHandle assetHandle, AssetChangedState state)
 	{
 		m_assetChangedQueue.Emplace(assetHandle, state);
 	}
 
-	void AssetManager_New::IterateAssetRegistryWithFilter(const AssetRegistryIteratorFilter& filter, AssetRegistryIteratorFunc&& func) const
+	bool AssetManager::UpdateInternal(class AppTickEvent& e)
+	{
+		std::scoped_lock lock{ m_assetCallbackMutex };
+
+		AssetChangedQueueInfo info;
+		while (m_assetChangedQueue.Pop(info))
+		{
+			OnAssetChanged(info.handle, info.state);
+		}
+
+		return false;
+	}
+
+	void AssetManager::IterateAssetRegistryWithFilter(const AssetRegistryIteratorFilter& filter, AssetRegistryIteratorFunc&& func) const
 	{
 		VT_ENSURE(func != nullptr);
 
@@ -261,7 +297,7 @@ namespace Volt
 		}
 	}
 
-	std::filesystem::path AssetManager_New::GetContextPath(const std::filesystem::path& path) const
+	std::filesystem::path AssetManager::GetContextPath(const std::filesystem::path& path) const
 	{
 		std::filesystem::path projDir;
 
@@ -273,23 +309,23 @@ namespace Volt
 		return projDir;
 	}
 
-	std::filesystem::path AssetManager_New::GetFilesystemPath(const std::filesystem::path& path) const
+	std::filesystem::path AssetManager::GetFilesystemPath(const std::filesystem::path& path) const
 	{
 		return GetContextPath(path) / path;
 	}
 
-	std::filesystem::path AssetManager_New::GetFilesystemPath(AssetHandle assetHandle) const
+	std::filesystem::path AssetManager::GetFilesystemPath(AssetHandle assetHandle) const
 	{
 		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(assetHandle);
 		return GetFilesystemPath(assetMetadata->filepath);
 	}
 
-	std::filesystem::path AssetManager_New::GetRelativeAssetFilepath(const std::filesystem::path& path) const
+	std::filesystem::path AssetManager::GetRelativeAssetFilepath(const std::filesystem::path& path) const
 	{
 		return m_assetRegistry.GetRelativeAssetFilepath(path);
 	}
 
-	bool AssetManager_New::IsEngineAsset(const std::filesystem::path& path) const
+	bool AssetManager::IsEngineAsset(const std::filesystem::path& path) const
 	{
 		const auto pathSplit = ::Utility::SplitStringsByCharacter(path.string(), '/');
 		if (!pathSplit.empty())
@@ -304,7 +340,7 @@ namespace Volt
 		return false;
 	}
 
-	void AssetManager_New::LoadAsset(AssetHandle assetHandle, RefPtr<Asset_New> asset)
+	void AssetManager::LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset)
 	{
 		ScopedTimer timer{};
 
@@ -320,15 +356,48 @@ namespace Volt
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 		assetMetadata->isLoaded = true;
 
+		QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
 		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
 
-		VT_LOGC(Trace, LogAssetSystem, "Loaded asset {0} with handle {1} in {2} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
+		VT_LOGC(Trace, LogAssetSystem, "Loaded asset '{}' (Handle: '{}') in {} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
 	}
 
-	void AssetManager_New::UnloadAndFreeAsset(AssetRefCounter* assetRefCounter)
+	void AssetManager::QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset)
+	{
+		asset->SetFlag(AssetFlag::Queued, true);
+
+		m_dependencyGraph->AddAssetToGraph(assetHandle);
+		m_assetCache.AddAsset(asset);
+
+		JobRef loadJob = JobSystem::CreateJob("Load Asset", ExecutionPriority::Latent, [this, asset, assetHandle]() 
+		{
+			ScopedTimer timer{};
+
+			{
+				ReadOnlyAssetMetadata readOnlyAssetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+				AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(readOnlyAssetMetadata, asset);
+			}
+
+			asset->SetFlag(AssetFlag::Queued, false);
+
+			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+			assetMetadata->isLoaded = true;
+
+			QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
+			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
+
+			VT_LOGC(Trace, LogAssetSystem, "Loaded asset '{}' (Handle: '{}') in {} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
+		});
+
+		JobSystem::RunJob(loadJob);
+
+		VT_LOGC(Trace, LogAssetSystem, "Queued asset '{}' (Handle: '{}') for loading!", asset->GetAssetName(), asset->GetAssetHandle());
+	}
+
+	void AssetManager::UnloadAndFreeAsset(AssetRefCounter* assetRefCounter)
 	{
 		// Safe to upcast like this, because AssetRefCounter should only be derived by Asset.
-		Asset_New* asset = reinterpret_cast<Asset_New*>(assetRefCounter);
+		Asset* asset = reinterpret_cast<Asset*>(assetRefCounter);
 		const AssetHandle assetHandle = asset->GetAssetHandle();
 		const std::string nameCopy(asset->GetAssetName());
 
@@ -348,7 +417,7 @@ namespace Volt
 			VT_ENSURE(asset->GetRefCount() == 0);
 
 			// Call destructor and free.
-			asset->~Asset_New();
+			asset->~Asset();
 			m_assetAllocator.FreeAsset(assetType, asset);
 
 			if (!assetMetadata->isMemoryAsset)
@@ -373,14 +442,44 @@ namespace Volt
 			// At this point there should be zero references left.
 			VT_ENSURE(asset->GetRefCount() == 0);
 
-			asset->~Asset_New();
+			asset->~Asset();
 			m_assetAllocator.FreeAsset(assetType, asset);
 		}
 		
+		QueueAssetChanged(assetHandle, AssetChangedState::Unloaded);
 		VT_LOGC(Trace, LogAssetSystem, "Asset '{}' (Handle: '{}', Type: '{}') was unloaded!", nameCopy, assetHandle, assetType->GetName());
 	}
 
-	void AssetManager_New::CreateDependencyGraphAndAddAssetsFromRegistry()
+	void AssetManager::OnAssetChanged(AssetHandle assetHandle, AssetChangedState state)
+	{
+		auto broadcast = [&](const AssetType type)
+		{
+			const auto& callbacks = m_assetChangedCallbacks.at(type);
+			for (const auto& callback : callbacks)
+			{
+				if (!callback.callback)
+				{
+					continue;
+				}
+
+				callback.callback(assetHandle, state);
+			}
+		};
+
+		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+		if (assetMetadata.IsValid())
+		{
+			if (m_assetChangedCallbacks.contains(assetMetadata->type))
+			{
+				broadcast(assetMetadata->type);
+			}
+
+			//also call all the ones registered to AssetTypes::None
+			broadcast(AssetTypes::None);
+		}
+	}
+
+	void AssetManager::CreateDependencyGraphAndAddAssetsFromRegistry()
 	{
 		m_dependencyGraph = CreateScope<AssetDependencyGraph>(*this);
 	
@@ -390,7 +489,7 @@ namespace Volt
 		}
 	}
 
-	ReadOnlyAssetMetadata AssetManager_New::GetAssetMetadataFromFilepath(const std::filesystem::path& filepath)
+	ReadOnlyAssetMetadata AssetManager::GetAssetMetadataFromFilepath(const std::filesystem::path& filepath)
 	{
 		AssetRegistryIteratorFilter filter{};
 
@@ -410,12 +509,12 @@ namespace Volt
 		return { AssetMetadataInit::Null };
 	}
 
-	AssetHandle AssetManager_New::GetAssetHandleFromFilepath(const std::filesystem::path& filepath) const
+	AssetHandle AssetManager::GetAssetHandleFromFilepath(const std::filesystem::path& filepath) const
 	{
 		AssetRegistryIteratorFilter filter{};
 		filter.includeMemoryAssets = false;
 
-		AssetHandle resultAssetHandle = Asset_New::Null();
+		AssetHandle resultAssetHandle = Asset::Null();
 
 		std::filesystem::path relativeFilepath = GetRelativeAssetFilepath(filepath);
 
@@ -433,13 +532,13 @@ namespace Volt
 		return resultAssetHandle;
 	}
 
-	AssetManager_New::ScopedAssetLock::ScopedAssetLock(RefPtr<Asset_New> asset)
+	AssetManager::ScopedAssetLock::ScopedAssetLock(RefPtr<Asset> asset)
 		: m_asset(asset)
 	{
 		m_asset->m_assetMutex.lock();
 	}
 
-	AssetManager_New::ScopedAssetLock::~ScopedAssetLock()
+	AssetManager::ScopedAssetLock::~ScopedAssetLock()
 	{
 		m_asset->m_assetMutex.unlock();
 	}

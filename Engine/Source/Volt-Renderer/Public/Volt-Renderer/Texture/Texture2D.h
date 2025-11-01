@@ -17,7 +17,7 @@ namespace Volt
 		class Image;
 	}
 
-	class VTR_API Texture2D : public Asset_New
+	class VTR_API Texture2D : public Asset
 	{
 	public:
 		Texture2D(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data);

@@ -24,7 +24,7 @@ namespace Volt
 		bool useWorldEngine = true;
 	};
 
-	class VTS_API Scene : public Asset_New, public EventListener
+	class VTS_API Scene : public Asset, public EventListener
 	{
 	public:
 		struct Statistics

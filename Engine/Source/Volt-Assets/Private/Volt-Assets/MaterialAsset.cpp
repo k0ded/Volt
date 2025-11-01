@@ -6,7 +6,7 @@
 #include <Volt-Renderer/RenderMaterial.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 namespace Volt
 {

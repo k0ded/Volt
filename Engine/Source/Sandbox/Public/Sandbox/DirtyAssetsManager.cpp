@@ -6,7 +6,7 @@
 #include "Sandbox/Modals/AssetsModal.h"
 #include "Sandbox/EditorAssetManager.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/Events/AssetEvents.h>
 
 #include <CoreUtilities/Containers/VectorVariants.h>
@@ -372,7 +372,7 @@ bool DirtyAssetsManager::IsAssetDirty(Volt::AssetHandle handle)
 
 void DirtyAssetsManager::MarkAssetDirty(Volt::AssetHandle handle)
 {
-	VT_ENSURE(handle != Volt::Asset_New::Null());
+	VT_ENSURE(handle != Volt::Asset::Null());
 	m_dirtyAssets.insert(handle);
 }
 

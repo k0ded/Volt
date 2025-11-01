@@ -10,8 +10,8 @@ namespace Volt
 	class MeshSerializer : public AssetSerializer
 	{
 	public:
-		void Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const override;
-		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const override;
+		void Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const override;
+		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const override;
 	};
 
 	VT_REGISTER_ASSET_SERIALIZER(AssetTypes::Mesh, MeshSerializer);

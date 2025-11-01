@@ -4,7 +4,7 @@
 #include "Volt-Renderer/Texture/EnvironmentTexture.h"
 #include "Volt-Renderer/Texture/TextureSerializer.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 namespace Volt
@@ -30,7 +30,7 @@ namespace Volt
 		}
 	};
 
-	void EnvironmentTextureSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void EnvironmentTextureSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<EnvironmentTexture> environmentTexture = asset.ConvertTo<EnvironmentTexture>();
 		ScopedAssetReferenceLock textureLock{ environmentTexture };
@@ -63,7 +63,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool EnvironmentTextureSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool EnvironmentTextureSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 

@@ -23,7 +23,7 @@
 #include <EntitySystem/Entity.h>
 #include <EntitySystem/Scripting/CommonComponent.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetSerializerRegistry.h>
 #include <AssetSystem/AssetLocks.h>
@@ -199,7 +199,7 @@ namespace Volt
 				parseEntityDescTasks.push_back(taskGraph.AddTask("Parse EntityDesc Data", [descHandle, entityID, reader, entityToComponentTypes]
 				{
 					AssetReference<EntityDesc> entityDesc;
-					if (g_assetManager->TryGetAsset(descHandle, entityDesc))
+					if (g_assetManager->TryGetAssetImmediately(descHandle, entityDesc))
 					{
 						ScopedAssetReferenceLock assetLock{ entityDesc };
 
@@ -389,7 +389,7 @@ namespace Volt
 	{
 		if (!m_entityIDToDescHandle.contains(entityID))
 		{
-			return Volt::Asset_New::Null();
+			return Volt::Asset::Null();
 		}
 		return m_entityIDToDescHandle.at(entityID);
 	}

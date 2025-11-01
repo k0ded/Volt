@@ -3,7 +3,7 @@
 #include "Volt-Animation/Assets/BlendSpaceSerializer.h"
 #include "Volt-Animation/BlendSpace.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 namespace Volt
@@ -39,7 +39,7 @@ namespace Volt
 		}
 	};
 
-	void BlendSpaceSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void BlendSpaceSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<BlendSpace> blendSpace = asset.ConvertTo<BlendSpace>();
 		ScopedAssetReferenceLock blendSpaceLock{ blendSpace };
@@ -65,7 +65,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool BlendSpaceSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool BlendSpaceSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 

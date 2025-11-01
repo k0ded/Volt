@@ -20,8 +20,8 @@ namespace Volt
 		EntityDescSerializer();
 		~EntityDescSerializer() override;
 
-		void Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const override;
-		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const override;
+		void Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const override;
+		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const override;
 
 		void SerializeEntity(Entity entity, YAMLMemoryStreamWriter& streamWriter) const;
 		Entity DeserializeEntity(AssetReference<Scene> scene, YAMLMemoryStreamReader& streamReader) const;

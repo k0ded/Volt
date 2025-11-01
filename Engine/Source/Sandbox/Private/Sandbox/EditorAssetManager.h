@@ -1,13 +1,13 @@
 #pragma once
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 VT_DECLARE_LOG_CATEGORY(LogEditorAssetSystem, LogVerbosity::Trace);
 
 class EditorAssetManager
 {
 public:
-	EditorAssetManager(Volt::AssetManager_New& referencedAssetManager);
+	EditorAssetManager(Volt::AssetManager& referencedAssetManager);
 	~EditorAssetManager();
 
 	// Will return the requested asset if loaded, will otherwise stall until the asset has been loaded, will also cache the asset.
@@ -29,14 +29,14 @@ public:
 	void DeleteDirectory(const std::filesystem::path& directoryPath);
 
 private:
-	Volt::AssetManager_New& m_referencedAssetManager;
+	Volt::AssetManager& m_referencedAssetManager;
 	Volt::AssetCache m_assetCache;
 };
 
 template<Volt::VoltAssetType T>
 inline AssetReference<T> EditorAssetManager::GetAssetImmediatelyAndCache(Volt::AssetHandle assetHandle)
 {
-	RefPtr<Volt::Asset_New> asset;
+	RefPtr<Volt::Asset> asset;
 	if (m_assetCache.TryGetAsset(assetHandle, asset))
 	{
 		return { asset.As<T>() };

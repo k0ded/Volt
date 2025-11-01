@@ -79,7 +79,7 @@ namespace Volt::MosaicNodes
 
 	void SampleTextureNode::DeserializeCustom(YAMLStreamReader& streamReader)
 	{
-		m_textureHandle = streamReader.ReadAtKey("textureHandle", Asset_New::Null());
+		m_textureHandle = streamReader.ReadAtKey("textureHandle", Asset::Null());
 	}
 
 	const Mosaic::ResultInfo SampleTextureNode::Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const

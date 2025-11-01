@@ -87,7 +87,7 @@ namespace Volt
 	private:
 		friend class WriteableAssetMetadata;
 		friend class ReadOnlyAssetMetadata;
-		friend class AssetManager_New;
+		friend class AssetManager;
 		friend class AssetRegistry;
 
 		std::shared_mutex m_assetMetadataMutex;

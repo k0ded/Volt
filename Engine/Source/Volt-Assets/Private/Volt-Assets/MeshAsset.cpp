@@ -7,7 +7,7 @@
 #include <Volt-Renderer/Renderer.h>
 
 #include <AssetSystem/AssetFactory.h>
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -54,7 +54,7 @@ namespace Volt
 				const AssetHandle materialHandle = m_materials.at(i);
 				if (materialHandle == dependencyHandle)
 				{
-					m_materials[i] = Asset_New::Null();
+					m_materials[i] = Asset::Null();
 					m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, i);
 					break;
 				}

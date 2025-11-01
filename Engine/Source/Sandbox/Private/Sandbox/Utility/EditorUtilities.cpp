@@ -25,7 +25,7 @@
 
 #include <EntitySystem/Entity.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/FileSystem.h>
@@ -42,7 +42,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 	std::string assetFileName = "Null";
 
-	AssetReference<Volt::Asset_New> asset;
+	AssetReference<Volt::Asset> asset;
 	if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(assetHandle, asset))
 	{
 		ScopedAssetReferenceLock assetLock{ asset };
@@ -51,7 +51,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 		if (wantedType != AssetTypes::None && wantedType != asset->GetType())
 		{
-			assetHandle = Volt::Asset_New::Null();
+			assetHandle = Volt::Asset::Null();
 		}
 	}
 
@@ -79,7 +79,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 	std::string buttonId = "X" + UI::MakePropertyID();
 	if (ImGui::Button(buttonId.c_str(), { 24.5f, 24.5f }))
 	{
-		assetHandle = Volt::Asset_New::Null();
+		assetHandle = Volt::Asset::Null();
 		changed = true;
 	}
 

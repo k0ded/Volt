@@ -2,7 +2,7 @@
 #include "Volt-Physics/PhysicsMaterialSerializer.h"
 #include "Volt-Physics/PhysicsMaterialAsset.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <PhysicsInterface/PhysicsMaterial.h>
@@ -16,7 +16,7 @@ namespace Volt
 		float bounciness;
 	};
 
-	void PhysicsMaterialSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void PhysicsMaterialSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<PhysicsMaterialAsset> material = asset.ConvertTo<PhysicsMaterialAsset>();
 		ScopedAssetReferenceLock materialLock{ material };
@@ -35,7 +35,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool PhysicsMaterialSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool PhysicsMaterialSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 

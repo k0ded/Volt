@@ -1,7 +1,7 @@
 #include "aspch.h"
 
 #include "AssetSystem/Asset_New.h"
-#include "AssetSystem/AssetManager_New.h"
+#include "AssetSystem/AssetManager.h"
 
 namespace Volt
 {

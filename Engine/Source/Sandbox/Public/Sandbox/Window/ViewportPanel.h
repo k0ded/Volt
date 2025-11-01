@@ -99,7 +99,7 @@ private:
 	Volt::EntityID m_entityToAddMesh = Volt::Entity::NullID();
 	std::filesystem::path m_meshToImport;
 
-	Volt::AssetHandle m_sceneToOpen = Volt::Asset_New::Null();
+	Volt::AssetHandle m_sceneToOpen = Volt::Asset::Null();
 
 	///// Modals /////
 	UUID64 m_meshImportModal = 0;

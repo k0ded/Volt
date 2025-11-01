@@ -1,6 +1,6 @@
 #include "ApplicationFixture.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetType.h>
 #include <AssetSystem/Asset_New.h>
 #include <AssetSystem/AssetFactory.h>
@@ -16,7 +16,7 @@ namespace IntergrationTests
 	class AssetManagerFixture : public ApplicationFixture
 	{};
 
-	class TestAsset : public Asset_New
+	class TestAsset : public Asset
 	{
 	public:
 		TestAsset() = default;
@@ -33,7 +33,7 @@ namespace IntergrationTests
 
 	TEST_F(AssetManagerFixture, CreateMemoryAsset)
 	{
-		AssetHandle newAssetHandle = Asset_New::Null();
+		AssetHandle newAssetHandle = Asset::Null();
 		{
 			AssetReference<TestAsset> newAsset = g_assetManager->CreateMemoryAsset<TestAsset>("TestingAsset", 1001);
 			EXPECT_NE(newAsset, nullptr);
@@ -41,7 +41,7 @@ namespace IntergrationTests
 			ScopedAssetReferenceLock assetLock{ newAsset };
 
 			newAssetHandle = newAsset->GetAssetHandle();
-			EXPECT_NE(newAssetHandle, Asset_New::Null());
+			EXPECT_NE(newAssetHandle, Asset::Null());
 
 			EXPECT_EQ(newAsset->testValue, 1001);
 
@@ -56,7 +56,7 @@ namespace IntergrationTests
 
 	TEST_F(AssetManagerFixture, CreateAsset)
 	{
-		AssetHandle newAssetHandle = Asset_New::Null();
+		AssetHandle newAssetHandle = Asset::Null();
 		{
 			AssetReference<TestAsset> newAsset = g_assetManager->CreateAsset<TestAsset>("TestingAsset", 1001);
 			EXPECT_NE(newAsset, nullptr);
@@ -64,7 +64,7 @@ namespace IntergrationTests
 			ScopedAssetReferenceLock assetLock{ newAsset };
 
 			newAssetHandle = newAsset->GetAssetHandle();
-			EXPECT_NE(newAssetHandle, Asset_New::Null());
+			EXPECT_NE(newAssetHandle, Asset::Null());
 
 			EXPECT_EQ(newAsset->testValue, 1001);
 

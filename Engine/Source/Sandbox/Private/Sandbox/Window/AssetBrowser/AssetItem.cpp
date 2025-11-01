@@ -17,7 +17,7 @@
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/Window/AssetBrowser/EditorAssetRegistry.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
@@ -36,7 +36,7 @@ namespace AssetBrowser
 		handle = g_assetManager->GetAssetHandleFromFilepath(path);
 
 		// Assign a random handle to non registered assets
-		if (handle == Volt::Asset_New::Null())
+		if (handle == Volt::Asset::Null())
 		{
 			handle = {};
 		}

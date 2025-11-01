@@ -28,7 +28,7 @@ namespace Volt
 	class FbxSourceImporter final : public SourceAssetImporter
 	{
 	protected:
-		Vector<AssetReference<Asset_New>> ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const override;
+		Vector<AssetReference<Asset>> ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const override;
 		SourceAssetFileInformation GetSourceFileInformation(const std::filesystem::path& filepath) const override;
 
 	private:
@@ -50,8 +50,8 @@ namespace Volt
 
 		AssetReference<Animation> CreateAnimationFromFbxAnimation(fbxsdk::FbxScene* fbxScene, const FbxSkeletonContainer& fbxSkeleton, const fbxsdk::FbxString& animStackName, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const;
 
-		Vector<AssetReference<Asset_New>> ImportAsStaticMesh(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const;
-		Vector<AssetReference<Asset_New>> ImportAsSkeletalMesh(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const;
-		Vector<AssetReference<Asset_New>> ImportAsAnimation(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const;
+		Vector<AssetReference<Asset>> ImportAsStaticMesh(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const;
+		Vector<AssetReference<Asset>> ImportAsSkeletalMesh(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const;
+		Vector<AssetReference<Asset>> ImportAsAnimation(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const;
 	};
 }

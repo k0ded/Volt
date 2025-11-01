@@ -15,7 +15,7 @@
 namespace Volt
 {
 	class Skeleton;
-	class VTA_API Animation : public Asset_New
+	class VTA_API Animation : public Asset
 	{
 	public:
 		struct TRS

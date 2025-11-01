@@ -39,7 +39,7 @@ namespace Volt::MosaicNodes
 
 	private:
 		uint32_t m_textureIndex = 0;
-		AssetHandle m_textureHandle = Asset_New::Null();
+		AssetHandle m_textureHandle = Asset::Null();
 
 		mutable bool m_evaluated = false;
 		mutable Mosaic::ResultInfo m_evaluatedResultInfo;

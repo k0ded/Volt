@@ -7,7 +7,7 @@
 
 namespace Volt
 {
-	class VTS_API EntityDesc : public Asset_New
+	class VTS_API EntityDesc : public Asset
 	{
 	public:
 		EntityDesc() = default;

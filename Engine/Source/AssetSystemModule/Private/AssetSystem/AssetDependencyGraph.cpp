@@ -1,12 +1,12 @@
 #include "aspch.h"
 #include "AssetDependencyGraph.h"
 
-#include "AssetSystem/AssetManager_New.h"
+#include "AssetSystem/AssetManager.h"
 #include "AssetSystem/AssetLocks.h"
 
 namespace Volt
 {
-	AssetDependencyGraph::AssetDependencyGraph(AssetManager_New& referencedAssetManager)
+	AssetDependencyGraph::AssetDependencyGraph(AssetManager& referencedAssetManager)
 		: m_referencedAssetManager(referencedAssetManager)
 	{
 	}
@@ -69,7 +69,7 @@ namespace Volt
 		{
 			ReadOnlyAssetMetadata assetMetadata = m_referencedAssetManager.GetReadOnlyAssetMetadata(dependants.at(i));
 
-			AssetReference<Asset_New> asset;
+			AssetReference<Asset> asset;
 			if (m_referencedAssetManager.TryGetAssetIfLoadedAsAnonymous(dependants.at(i), asset))
 			{
 				ScopedAssetReferenceLock assetLock{ asset };

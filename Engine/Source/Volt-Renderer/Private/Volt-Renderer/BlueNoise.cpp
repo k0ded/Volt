@@ -6,7 +6,7 @@
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Math/Math.h>

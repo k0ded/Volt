@@ -80,7 +80,7 @@
 
 #include <EntitySystem/Entity.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/FileSystem.h>
@@ -125,7 +125,7 @@ void Sandbox::OnAttach()
 	UserSettingsManager::LoadUserSettings();
 	const auto& userSettings = UserSettingsManager::GetSettings();
 
-	if (userSettings.sceneSettings.defaultOpenScene != Volt::Asset_New::Null())
+	if (userSettings.sceneSettings.defaultOpenScene != Volt::Asset::Null())
 	{
 		OpenScene(userSettings.sceneSettings.defaultOpenScene);
 		if (m_runtimeScene)
@@ -489,7 +489,7 @@ void Sandbox::OpenScene(const std::filesystem::path& path)
 
 void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 {
-	if (sceneHandle == Volt::Asset_New::Null())
+	if (sceneHandle == Volt::Asset::Null())
 	{
 		return;
 	}
@@ -658,6 +658,8 @@ bool Sandbox::PromptUnloadCurrentScene()
 		//if the user cancels the save, dont load the new scene
 		return false;
 	}
+
+	ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
 
 	m_runtimeScene->UnloadEntities();
 	m_runtimeScene = nullptr;

@@ -17,7 +17,7 @@ namespace Volt
 	{
 	};
 
-	class AssetManager_New;
+	class AssetManager;
 
 	class AssetDependencyGraph
 	{
@@ -25,12 +25,10 @@ namespace Volt
 		using WriteLock = std::unique_lock<std::shared_mutex>;
 		using ReadLock = std::shared_lock<std::shared_mutex>;
 
-		AssetDependencyGraph(AssetManager_New& referencedAssetManager);
+		AssetDependencyGraph(AssetManager& referencedAssetManager);
 		~AssetDependencyGraph();
 
-		// #TODO_Ivar: Implement removing nodes
-
-		UUID64 AddAssetToGraph(AssetHandle handle);
+		VTAS_API UUID64 AddAssetToGraph(AssetHandle handle);
 		void RemoveAssetFromGraph(AssetHandle handle);
 
 		void AddDependencyToAsset(AssetHandle handle, AssetHandle dependency);
@@ -49,6 +47,6 @@ namespace Volt
 		std::unordered_map<AssetHandle, UUID64> m_assetNodeIds;
 		Graph<AssetDependencyInfo, EdgeInfo> m_graph;
 	
-		AssetManager_New& m_referencedAssetManager;
+		AssetManager& m_referencedAssetManager;
 	};
 }

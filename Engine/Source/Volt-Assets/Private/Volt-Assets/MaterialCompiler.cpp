@@ -12,7 +12,7 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>

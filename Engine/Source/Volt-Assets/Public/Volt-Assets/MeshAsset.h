@@ -12,7 +12,7 @@ namespace Volt
 	class MeshInitializer;
 	class MaterialAsset;
 
-	class VTASSETS_API MeshAsset : public Asset_New
+	class VTASSETS_API MeshAsset : public Asset
 	{
 	public:
 		MeshAsset();

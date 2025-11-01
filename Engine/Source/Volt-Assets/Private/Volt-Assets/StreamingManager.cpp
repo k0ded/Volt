@@ -12,7 +12,7 @@
 #include <AssetSystem/AssetTypes.h>
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 VT_DEFINE_LOG_CATEGORY(LogStreamingManager);
@@ -234,7 +234,7 @@ namespace Volt
 
 		for (const auto& materialHandle : instance.materialHandles)
 		{
-			if (materialHandle == Asset_New::Null())
+			if (materialHandle == Asset::Null())
 			{
 				continue;
 			}

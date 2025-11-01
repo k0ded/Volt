@@ -5,7 +5,7 @@
 #include "Volt-Scene/EntityDescription.h"
 #include "Volt-Scene/WorldEngine/WorldCell.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
@@ -33,7 +33,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void SceneSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void SceneSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		const AssetReference<Scene> scene = asset.ConvertTo<Scene>();
 		ScopedAssetReferenceLock sceneLock{ scene };
@@ -82,7 +82,7 @@ namespace Volt
 		}
 	}
 
-	bool SceneSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool SceneSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		AssetReference<Scene> scene = destinationAsset.ConvertTo<Scene>();
 		ScopedAssetReferenceLock sceneLock{ scene };

@@ -52,11 +52,11 @@ namespace Volt
 		}
 
 	private:
-		friend class AssetManager_New;
+		friend class AssetManager;
 
 		VTAS_API void Unload() const;
 
-		mutable class AssetManager_New* m_referencedAssetManager = nullptr;
+		mutable class AssetManager* m_referencedAssetManager = nullptr;
 		mutable std::atomic<int32_t> m_refCount = 1;
 	};
 
@@ -69,20 +69,20 @@ namespace Volt
 		template<typename T>
 		friend class AssetReference;
 
-		friend class AssetManager_New;
+		friend class AssetManager;
 
 		mutable std::shared_mutex m_assetMutex;
 	};
 
-	class Asset_New : public AssetRefCounter, public AssetLocks
+	class Asset : public AssetRefCounter, public AssetLocks
 	{
 	public:
-		Asset_New(const Asset_New&) noexcept = delete;
-		Asset_New& operator=(const Asset_New&) noexcept = delete;
-		Asset_New(Asset_New&&) noexcept = delete;
-		Asset_New& operator=(Asset_New&&) noexcept = delete;
+		Asset(const Asset&) noexcept = delete;
+		Asset& operator=(const Asset&) noexcept = delete;
+		Asset(Asset&&) noexcept = delete;
+		Asset& operator=(Asset&&) noexcept = delete;
 
-		~Asset_New() override = default;
+		~Asset() override = default;
 
 		virtual AssetType GetType() const { return AssetTypes::None; }
 		virtual uint32_t GetVersion() const { return 1; }
@@ -97,18 +97,18 @@ namespace Volt
 		VT_INLINE void SetName(const std::string& name);
 		VT_INLINE void SetFlag(AssetFlag flag, bool state);
 
-		VT_INLINE bool operator==(const Asset_New& other) { return m_handle == other.m_handle; }
-		VT_INLINE bool operator!=(const Asset_New& other) { return m_handle != other.m_handle; }
+		VT_INLINE bool operator==(const Asset& other) { return m_handle == other.m_handle; }
+		VT_INLINE bool operator!=(const Asset& other) { return m_handle != other.m_handle; }
 
 		VT_NODISCARD VT_INLINE static const AssetHandle Null() { return AssetHandle(0); }
 		VT_NODISCARD VT_INLINE bool IsValid() const { return (!IsFlagSet(AssetFlag::Invalid) && !IsFlagSet(AssetFlag::Missing) && !IsFlagSet(AssetFlag::Queued)); }
 
 	protected:
-		Asset_New() noexcept = default;
+		Asset() noexcept = default;
 
 	private:
 		friend class AssetAllocator;
-		friend class AssetManager_New;
+		friend class AssetManager;
 
 		VT_INLINE void AssignAssetHandle(AssetHandle assetHandle);
 
@@ -117,13 +117,13 @@ namespace Volt
 		std::atomic_uint8_t m_assetFlags = static_cast<uint8_t>(AssetFlag::None);
 	};
 
-	VT_NODISCARD VT_INLINE bool Asset_New::IsFlagSet(AssetFlag flag) const
+	VT_NODISCARD VT_INLINE bool Asset::IsFlagSet(AssetFlag flag) const
 	{
 		AssetFlag value = static_cast<AssetFlag>(m_assetFlags.load(std::memory_order::relaxed) & static_cast<uint8_t>(flag));
 		return value != AssetFlag::None;
 	}
 
-	VT_INLINE void Asset_New::SetName(const std::string& name)
+	VT_INLINE void Asset::SetName(const std::string& name)
 	{
 		if (name == m_name)
 		{
@@ -134,7 +134,7 @@ namespace Volt
 		OnAssetNameChanged();
 	}
 
-	VT_INLINE void Asset_New::SetFlag(AssetFlag flag, bool state)
+	VT_INLINE void Asset::SetFlag(AssetFlag flag, bool state)
 	{
 		if (state)
 		{
@@ -146,7 +146,7 @@ namespace Volt
 		}
 	}
 
-	VT_INLINE void Asset_New::AssignAssetHandle(AssetHandle assetHandle)
+	VT_INLINE void Asset::AssignAssetHandle(AssetHandle assetHandle)
 	{
 		m_handle = assetHandle;
 	}

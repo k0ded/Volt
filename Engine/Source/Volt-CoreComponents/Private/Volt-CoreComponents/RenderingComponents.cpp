@@ -56,7 +56,7 @@ namespace Volt
 	{
 		auto& component = entity.GetComponent<MeshComponent>();
 
-		if (component.handle == Asset_New::Null())
+		if (component.handle == Asset::Null())
 		{
 			return;
 		}

@@ -125,9 +125,9 @@ void TextureImportModal::Import(const std::filesystem::path filepath)
 		// which we use to create the environment texture asset.
 		importConfig.createAsMemoryAsset = true;
 
-		auto importCallback = [importConfig](Vector<AssetReference<Volt::Asset_New>> assets)
+		auto importCallback = [importConfig](Vector<AssetReference<Volt::Asset>> assets)
 		{
-			AssetReference<Volt::Asset_New> textureAsset = assets.back();
+			AssetReference<Volt::Asset> textureAsset = assets.back();
 			ScopedAssetReferenceLock textureLock{ textureAsset };
 
 			Volt::AssetHandle textureHandle = textureAsset->GetAssetHandle();

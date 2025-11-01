@@ -1,7 +1,7 @@
 #include "vrpch.h"
 #include "Volt-Renderer/Texture/TextureSerializer.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
@@ -67,7 +67,7 @@ namespace Volt
 		Vector<Mip> mips;
 	};
 
-	void TextureSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void TextureSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<Texture2D> texture = asset.ConvertTo<Texture2D>();
 		ScopedAssetReferenceLock textureLock{ texture };
@@ -99,7 +99,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool TextureSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool TextureSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		AssetReference<Texture2D> texture = destinationAsset.ConvertTo<Texture2D>();
 		ScopedAssetReferenceLock textureLock{ texture };

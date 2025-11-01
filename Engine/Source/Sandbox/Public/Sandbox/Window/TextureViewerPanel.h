@@ -15,7 +15,7 @@ public:
 	void UpdateMainContent() override;
 
 	void OnClose() override;
-	void OpenAsset(AssetReference<Volt::Asset_New> asset) override;
+	void OpenAsset(AssetReference<Volt::Asset> asset) override;
 
 private:
 	AssetReference<Volt::Texture2D> m_viewingTexture;

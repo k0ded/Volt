@@ -4,7 +4,7 @@
 #include "Volt-Animation/Assets/Animation.h"
 #include "Volt-Animation/TempAnimator.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <EntitySystem/Scripting/ECSBuilder.h>
@@ -21,7 +21,7 @@ namespace Volt
 	{
 		AnimationPlayerComponent& animPlayerComp = entity.GetComponent<AnimationPlayerComponent>();
 
-		if (animPlayerComp.animationHandle == Asset_New::Null())
+		if (animPlayerComp.animationHandle == Asset::Null())
 		{
 			return;
 		}

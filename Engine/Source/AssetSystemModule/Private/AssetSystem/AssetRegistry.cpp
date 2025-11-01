@@ -34,7 +34,7 @@ namespace Volt
 
 	AssetMetadata* AssetRegistry::GetAssetMetadata(AssetHandle assetHandle)
 	{
-		VT_ENSURE(assetHandle != Asset_New::Null());
+		VT_ENSURE(assetHandle != Asset::Null());
 
 		uint64_t metadataIndirectionIndex;
 		if (m_hashTable.Get(assetHandle, metadataIndirectionIndex))
@@ -47,7 +47,7 @@ namespace Volt
 
 	AssetMetadata* AssetRegistry::GetAssetMetadata(AssetHandle assetHandle) const
 	{
-		VT_ENSURE(assetHandle != Asset_New::Null());
+		VT_ENSURE(assetHandle != Asset::Null());
 
 		uint64_t metadataIndirectionIndex;
 		if (m_hashTable.Get(assetHandle, metadataIndirectionIndex))
@@ -61,7 +61,7 @@ namespace Volt
 	bool AssetRegistry::IsValidAssetHandle(AssetHandle assetHandle) const
 	{
 		uint64_t temp;
-		return assetHandle != Asset_New::Null() && m_hashTable.Get(assetHandle, temp);
+		return assetHandle != Asset::Null() && m_hashTable.Get(assetHandle, temp);
 	}
 
 	void AssetRegistry::Initialize()
@@ -107,7 +107,7 @@ namespace Volt
 
 		constexpr size_t assetHeaderSize = SerializedAssetMetadata::HeaderSize;
 
-		outMetadata.handle = Asset_New::Null();
+		outMetadata.handle = Asset::Null();
 
 		BinaryStreamReader streamReader{ assetFilepath, assetHeaderSize };
 		if (!streamReader.IsStreamValid())
@@ -147,7 +147,7 @@ namespace Volt
 
 	void AssetRegistry::RemoveAssetMetadata(AssetHandle assetHandle, bool unlockMutex)
 	{
-		VT_ENSURE(assetHandle != Asset_New::Null());
+		VT_ENSURE(assetHandle != Asset::Null());
 
 		// Remove the metadata from the hash table and get it's indirection index.
 		// It should now be safe to release the mutex and remove the references.

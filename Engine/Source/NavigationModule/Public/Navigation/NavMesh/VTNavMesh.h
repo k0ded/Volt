@@ -14,7 +14,7 @@ namespace Volt
 {
 	namespace AI
 	{
-		class NavMesh : public Asset_New
+		class NavMesh : public Asset
 		{
 		public:
 			NavMesh() = default;

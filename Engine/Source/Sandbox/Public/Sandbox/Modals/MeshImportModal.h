@@ -26,7 +26,7 @@ private:
 		bool isSkeletalMesh = false;
 		bool combineMeshes = false;
 		bool importVertexColors = false;
-		Volt::AssetHandle targetSkeleton = Volt::Asset_New::Null();
+		Volt::AssetHandle targetSkeleton = Volt::Asset::Null();
 
 		bool importAnimations = true;
 

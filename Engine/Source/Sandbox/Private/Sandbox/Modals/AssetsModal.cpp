@@ -4,7 +4,7 @@
 
 #include <CoreUtilities/FileSystem.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <SubSystem/SubSystemManager.h>
 #include <Volt-Core/Project/ProjectManager.h>
@@ -314,7 +314,7 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 		}
 		case CreateFilesTableColumns::Name:
 		{
-			AssetReference<Volt::Asset_New> asset;
+			AssetReference<Volt::Asset> asset;
 			if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(handle, asset))
 			{
 				ImGui::TextUnformatted(asset->GetAssetName().data());

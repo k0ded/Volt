@@ -16,7 +16,7 @@ namespace Volt
 {
 	class Scene;
 
-	class VTS_API Prefab : public Asset_New
+	class VTS_API Prefab : public Asset
 	{
 	public:
 		struct PrefabReferenceData

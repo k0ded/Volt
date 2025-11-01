@@ -3,7 +3,7 @@
 #include <Volt-Application/UI/UIUtility.h>
 #include <concepts> // Required for std::derived_from
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Assets/MeshAsset.h>
@@ -22,7 +22,7 @@ namespace UI
 	bool PropertyEntity(const std::string& text, Volt::Scene& scene, Volt::EntityID& value, const std::string& toolTip = "");
 	bool PropertyEntity(Volt::Scene& scene, Volt::EntityID& value, const float width, const std::string& toolTip = "");
 
-	template<typename T, typename = std::enable_if_t<std::is_base_of<Volt::Asset_New, T>::value>>
+	template<typename T, typename = std::enable_if_t<std::is_base_of<Volt::Asset, T>::value>>
 	bool Property(const std::string& text, AssetReference<T>& asset, const std::string& toolTip = "")
 	{
 		bool changed = false;

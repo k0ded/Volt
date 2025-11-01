@@ -3,7 +3,7 @@
 #include "Volt-Animation/Assets/SkeletonSerializer.h"
 #include "Volt-Animation/Assets/Skeleton.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
 
 namespace Volt
@@ -38,7 +38,7 @@ namespace Volt
 		}
 	};
 
-	void SkeletonSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset_New>& asset) const
+	void SkeletonSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<Skeleton> skeleton = asset.ConvertTo<Skeleton>();
 		ScopedAssetReferenceLock skeletonLock{ skeleton };
@@ -60,7 +60,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool SkeletonSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset_New> destinationAsset) const
+	bool SkeletonSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetFilesystemPath(metadata->filepath);
 

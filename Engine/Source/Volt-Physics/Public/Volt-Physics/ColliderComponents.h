@@ -17,11 +17,11 @@ namespace Volt
 		glm::vec3 halfSize = { 50.f, 50.f, 50.f };
 		glm::vec3 offset = { 0.f, 0.f, 0.f };
 		bool isTrigger = false;
-		AssetHandle material = Asset_New::Null();
+		AssetHandle material = Asset::Null();
 
 		PhysicsColliderID colliderId;
 
-		inline BoxColliderComponent(const glm::vec3& aHalfSize = { 50.f, 50.f, 50.f }, const glm::vec3& aOffset = { 0.f }, bool aIsTrigger = false, AssetHandle aMaterial = Asset_New::Null())
+		inline BoxColliderComponent(const glm::vec3& aHalfSize = { 50.f, 50.f, 50.f }, const glm::vec3& aOffset = { 0.f }, bool aIsTrigger = false, AssetHandle aMaterial = Asset::Null())
 			: halfSize(aHalfSize), offset(aOffset), isTrigger(aIsTrigger), material(aMaterial)
 		{
 		}
@@ -33,7 +33,7 @@ namespace Volt
 			reflect.AddMember(&BoxColliderComponent::halfSize, "halfSize", "Half Size", "", glm::vec3{ 50.f });
 			reflect.AddMember(&BoxColliderComponent::offset, "offset", "Offset", "", glm::vec3{ 0.f });
 			reflect.AddMember(&BoxColliderComponent::isTrigger, "isTrigger", "Is Trigger", "", false);
-			reflect.AddMember(&BoxColliderComponent::material, "material", "Material", "", Asset_New::Null(), AssetTypes::PhysicsMaterial);
+			reflect.AddMember(&BoxColliderComponent::material, "material", "Material", "", Asset::Null(), AssetTypes::PhysicsMaterial);
 			reflect.SetOnInitializeCallback(&BoxColliderComponent::OnInitialize);
 			reflect.SetOnDestroyCallback(&BoxColliderComponent::OnDestroy);
 		}
@@ -54,11 +54,11 @@ namespace Volt
 		float radius = 50.f;
 		glm::vec3 offset = { 0.f, 0.f, 0.f };
 		bool isTrigger = false;
-		AssetHandle material = Asset_New::Null();
+		AssetHandle material = Asset::Null();
 
 		PhysicsColliderID colliderId;
 
-		inline SphereColliderComponent(float aRadius = 50.f, const glm::vec3& aOffset = { 0.f }, bool aIsTrigger = false, AssetHandle aMaterial = Asset_New::Null())
+		inline SphereColliderComponent(float aRadius = 50.f, const glm::vec3& aOffset = { 0.f }, bool aIsTrigger = false, AssetHandle aMaterial = Asset::Null())
 			: radius(aRadius), offset(aOffset), isTrigger(aIsTrigger), material(aMaterial)
 		{
 		}
@@ -70,7 +70,7 @@ namespace Volt
 			reflect.AddMember(&SphereColliderComponent::radius, "radius", "Radius", "", 50.f);
 			reflect.AddMember(&SphereColliderComponent::offset, "offset", "Offset", "", glm::vec3{ 0.f });
 			reflect.AddMember(&SphereColliderComponent::isTrigger, "isTrigger", "Is Trigger", "", false);
-			reflect.AddMember(&SphereColliderComponent::material, "material", "Material", "", Asset_New::Null(), AssetTypes::PhysicsMaterial);
+			reflect.AddMember(&SphereColliderComponent::material, "material", "Material", "", Asset::Null(), AssetTypes::PhysicsMaterial);
 			reflect.SetOnInitializeCallback(&SphereColliderComponent::OnInitialize);
 			reflect.SetOnDestroyCallback(&SphereColliderComponent::OnDestroy);
 		}
@@ -92,11 +92,11 @@ namespace Volt
 		float height = 50.f;
 		glm::vec3 offset = { 0.f, 0.f, 0.f };
 		bool isTrigger = false;
-		AssetHandle material = Asset_New::Null();
+		AssetHandle material = Asset::Null();
 
 		PhysicsColliderID colliderId;
 
-		inline CapsuleColliderComponent(float aRadius = 50.f, float aHeight = 50.f, const glm::vec3& aOffset = { 0.f }, bool aIsTrigger = false, AssetHandle aMaterial = Asset_New::Null())
+		inline CapsuleColliderComponent(float aRadius = 50.f, float aHeight = 50.f, const glm::vec3& aOffset = { 0.f }, bool aIsTrigger = false, AssetHandle aMaterial = Asset::Null())
 			: radius(aRadius), height(aHeight), offset(aOffset), isTrigger(aIsTrigger), material(aMaterial)
 		{
 		}
@@ -109,7 +109,7 @@ namespace Volt
 			reflect.AddMember(&CapsuleColliderComponent::height, "height", "Height", "", 50.f);
 			reflect.AddMember(&CapsuleColliderComponent::offset, "offset", "Offset", "", glm::vec3{ 0.f });
 			reflect.AddMember(&CapsuleColliderComponent::isTrigger, "isTrigger", "Is Trigger", "", false);
-			reflect.AddMember(&CapsuleColliderComponent::material, "material", "Material", "", Asset_New::Null(), AssetTypes::PhysicsMaterial);
+			reflect.AddMember(&CapsuleColliderComponent::material, "material", "Material", "", Asset::Null(), AssetTypes::PhysicsMaterial);
 			reflect.SetOnInitializeCallback(&CapsuleColliderComponent::OnInitialize);
 			reflect.SetOnDestroyCallback(&CapsuleColliderComponent::OnDestroy);
 		}
@@ -127,15 +127,15 @@ namespace Volt
 
 	struct MeshColliderComponent
 	{
-		AssetHandle colliderMesh = Asset_New::Null();
-		AssetHandle material = Asset_New::Null();
+		AssetHandle colliderMesh = Asset::Null();
+		AssetHandle material = Asset::Null();
 		int32_t subMeshIndex = -1;
 		bool isConvex = true;
 		bool isTrigger = false;
 
 		PhysicsColliderID colliderId;
 
-		inline MeshColliderComponent(AssetHandle aColliderMesh = Asset_New::Null(), bool aIsConvex = false, bool aIsTrigger = false, AssetHandle aMaterial = Asset_New::Null(), int32_t aSubMeshIndex = -1)
+		inline MeshColliderComponent(AssetHandle aColliderMesh = Asset::Null(), bool aIsConvex = false, bool aIsTrigger = false, AssetHandle aMaterial = Asset::Null(), int32_t aSubMeshIndex = -1)
 			: colliderMesh(aColliderMesh), material(aMaterial), subMeshIndex(aSubMeshIndex), isConvex(aIsConvex), isTrigger(aIsTrigger)
 		{
 		}
@@ -144,8 +144,8 @@ namespace Volt
 		{
 			reflect.SetGUID("{E709C708-ED3C-4F68-BC1D-2FE32B897722}"_guid);
 			reflect.SetLabel("Mesh Collider Component");
-			reflect.AddMember(&MeshColliderComponent::colliderMesh, "colliderMesh", "Collider Mesh", "", Asset_New::Null(), AssetTypes::Mesh);
-			reflect.AddMember(&MeshColliderComponent::material, "material", "Material", "", Asset_New::Null(), AssetTypes::PhysicsMaterial);
+			reflect.AddMember(&MeshColliderComponent::colliderMesh, "colliderMesh", "Collider Mesh", "", Asset::Null(), AssetTypes::Mesh);
+			reflect.AddMember(&MeshColliderComponent::material, "material", "Material", "", Asset::Null(), AssetTypes::PhysicsMaterial);
 			reflect.AddMember(&MeshColliderComponent::subMeshIndex, "subMeshIndex", "subMeshIndex", "", -1);
 			reflect.AddMember(&MeshColliderComponent::isConvex, "isConvex", "Is Convex", "", true);
 			reflect.AddMember(&MeshColliderComponent::isTrigger, "isTrigger", "Is Trigger", "", false);

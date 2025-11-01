@@ -18,7 +18,7 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicNode.h>
@@ -290,7 +290,7 @@ size_t MosaicEditorPanel::LoadNodeSettings(const UUID64 nodeId, std::string& dat
 	return data.size();
 }
 
-void MosaicEditorPanel::OpenAsset(AssetReference<Volt::Asset_New> asset)
+void MosaicEditorPanel::OpenAsset(AssetReference<Volt::Asset> asset)
 {
 	m_material = asset.ConvertTo<Volt::MaterialAsset>();
 }

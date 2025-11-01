@@ -9,7 +9,7 @@
 #include <Volt-Assets/MaterialAsset.h>
 #include <Volt-Assets/MeshAsset.h>
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Packing.h>
@@ -918,7 +918,7 @@ namespace Volt
 		}
 	}
 
-	Vector<AssetReference<Asset_New>> FbxSourceImporter::ImportAsStaticMesh(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> FbxSourceImporter::ImportAsStaticMesh(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -939,7 +939,7 @@ namespace Volt
 		MaterialTable materialTable;
 		Vector<AssetReference<MaterialAsset>> materials = CreateSceneMaterials(fbxScene, materialTable, importConfig);
 
-		Vector<AssetReference<Asset_New>> result;
+		Vector<AssetReference<Asset>> result;
 
 		if (importConfig.combineMeshes)
 		{
@@ -980,7 +980,7 @@ namespace Volt
 		return result;
 	}
 
-	Vector<AssetReference<Asset_New>> FbxSourceImporter::ImportAsSkeletalMesh(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> FbxSourceImporter::ImportAsSkeletalMesh(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1011,7 +1011,7 @@ namespace Volt
 		MaterialTable materialTable;
 		Vector<AssetReference<MaterialAsset>> materials = CreateSceneMaterials(fbxScene, materialTable, importConfig);
 
-		Vector<AssetReference<Asset_New>> result;
+		Vector<AssetReference<Asset>> result;
 
 		if (importConfig.combineMeshes)
 		{
@@ -1058,7 +1058,7 @@ namespace Volt
 
 		CreateVoltSkeletonFromFbxSkeleton(fbxSkeleton, *voltSkeleton);
 
-		Vector<AssetReference<Asset_New>> animations;
+		Vector<AssetReference<Asset>> animations;
 
 		if (importConfig.importAnimationIfSkeletalMesh)
 		{
@@ -1086,7 +1086,7 @@ namespace Volt
 		return result;
 	}
 
-	Vector<AssetReference<Asset_New>> FbxSourceImporter::ImportAsAnimation(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> FbxSourceImporter::ImportAsAnimation(fbxsdk::FbxScene* fbxScene, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1106,7 +1106,7 @@ namespace Volt
 			return {};
 		}
 
-		Vector<AssetReference<Asset_New>> result;
+		Vector<AssetReference<Asset>> result;
 
 		for (int32_t i = 0; i < animStackNames.Size(); i++)
 		{
@@ -1120,7 +1120,7 @@ namespace Volt
 		return result;
 	}
 
-	Vector<AssetReference<Asset_New>> FbxSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> FbxSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const MeshSourceImportConfig& importConfig = *reinterpret_cast<const MeshSourceImportConfig*>(config);
@@ -1214,7 +1214,7 @@ namespace Volt
 
 		PostProccessFbxScene(fbxScene.get(), importConfig, userData);
 
-		Vector<AssetReference<Asset_New>> result;
+		Vector<AssetReference<Asset>> result;
 
 		switch (importConfig.importType)
 		{

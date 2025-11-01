@@ -8,7 +8,7 @@
 #include "Volt-Renderer/RenderScene/SceneLightData.h"
 #include "Volt-Renderer/Texture/EnvironmentTexture.h"
 
-#include <AssetSystem/AssetManager_New.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <EntitySystem/EntityID.h>
 #include <SubSystem/SubSystem.h>
