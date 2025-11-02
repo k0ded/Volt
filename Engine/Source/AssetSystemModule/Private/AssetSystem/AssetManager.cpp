@@ -70,10 +70,55 @@ namespace Volt
 	
 	void AssetManager::ReloadAsset(AssetHandle assetHandle)
 	{
-		RefPtr<Asset> asset = m_assetCache.GetAsset(assetHandle);
-		ScopedAssetLock assetLock(asset);
+		if (!IsValidAssetHandle(assetHandle))
+		{
+			VT_LOGC(Warning, LogAssetSystem, "Tried to reload asset with handle '{}', but that is not a valid asset handle!", assetHandle);
+			return;
+		}
 
-		
+		RefPtr<Asset> asset;
+		if (m_assetCache.TryGetAsset(assetHandle, asset))
+		{
+			ScopedAssetLock assetLock(asset);
+
+			// Get the previous state
+			const int32_t assetRefCount = asset->GetRefCount();
+			const std::string assetName = asset->m_name;
+			const uint8_t assetFlags = asset->m_assetFlags.load(std::memory_order::relaxed);
+			std::shared_mutex* assetMutex = asset->m_assetMutex;
+
+			asset->m_refCount = 0;
+			m_assetAllocator.ReallocateAsset(asset->GetType(), asset.GetRaw());
+
+			// Restore the state
+			asset->m_refCount = assetRefCount;
+			asset->m_name = assetName;
+			asset->m_assetFlags = assetFlags;
+			asset->m_handle = assetHandle;
+			asset->m_referencedAssetManager = this;
+
+			// Assign a temp mutex to make sure deserialization works
+			asset->m_assetMutex = new std::shared_mutex();
+
+			// Deserialize the asset again.
+			{
+				ReadOnlyAssetMetadata readOnlyAssetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+				AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(readOnlyAssetMetadata, asset);
+			}
+
+			// Delete the temp mutex again.
+			delete asset->m_assetMutex;
+			asset->m_assetMutex = assetMutex;
+
+			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
+			QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
+
+			VT_LOGC(Trace, LogAssetSystem, "Reloaded asset '{}' (Handle: '{}', Type: '{}')!", asset->GetAssetName(), asset->GetAssetHandle(), asset->GetType()->GetName());
+		}
+		else
+		{
+			VT_LOGC(Warning, LogAssetSystem, "Tried to reload asset with handle '{}', but it is not loaded!", assetHandle);
+		}
 	}
 
 	void AssetManager::SaveAsset(AssetHandle assetHandle)
@@ -85,7 +130,7 @@ namespace Volt
 		}
 		else
 		{
-			VT_LOGC(Warning, LogAssetSystem, "Tried to save asset with handle {}, but it is not loaded.", assetHandle);
+			VT_LOGC(Warning, LogAssetSystem, "Tried to save asset with handle '{}', but it is not loaded!", assetHandle);
 		}
 	}
 
@@ -95,7 +140,7 @@ namespace Volt
 
 		if (!AssetSerializerRegistry::Get().HasSerializer(asset->GetType()))
 		{
-			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset '{}' (Handle: {}) with type {} was found!", asset->GetAssetName(), asset->GetAssetHandle(), asset->GetType()->GetName());
+			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset '{}' (Handle: '{}') with type '{}' was found!", asset->GetAssetName(), asset->GetAssetHandle(), asset->GetType()->GetName());
 			return;
 		}
 
@@ -439,6 +484,7 @@ namespace Volt
 			VT_ENSURE(asset->GetRefCount() == 0);
 
 			// Call destructor and free.
+			delete asset->m_assetMutex;
 			asset->~Asset();
 			m_assetAllocator.FreeAsset(assetType, asset);
 
@@ -464,6 +510,7 @@ namespace Volt
 			// At this point there should be zero references left.
 			VT_ENSURE(asset->GetRefCount() == 0);
 
+			delete asset->m_assetMutex;
 			asset->~Asset();
 			m_assetAllocator.FreeAsset(assetType, asset);
 		}
@@ -558,11 +605,11 @@ namespace Volt
 	AssetManager::ScopedAssetLock::ScopedAssetLock(RefPtr<Asset> asset)
 		: m_asset(asset)
 	{
-		m_asset->m_assetMutex.lock();
+		m_asset->m_assetMutex->lock();
 	}
 
 	AssetManager::ScopedAssetLock::~ScopedAssetLock()
 	{
-		m_asset->m_assetMutex.unlock();
+		m_asset->m_assetMutex->unlock();
 	}
 }

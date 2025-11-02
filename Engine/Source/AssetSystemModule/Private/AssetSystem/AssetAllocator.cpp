@@ -29,4 +29,12 @@ namespace Volt
 
 		m_assetAllocator.at(assetTypeGUID)->Free(asset);
 	}
+
+	void AssetAllocator::ReallocateAsset(AssetType assetType, Asset* asset)
+	{
+		const VoltGUID assetTypeGUID = assetType->GetGUID();
+		VT_ENSURE(m_assetAllocator.contains(assetTypeGUID));
+
+		m_assetAllocator.at(assetTypeGUID)->Reallocate(asset);
+	}
 }

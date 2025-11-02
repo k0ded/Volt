@@ -139,6 +139,26 @@ public:
 		return allocation;
 	}
 
+	template<typename... Args>
+	Type* Reallocate(Type* allocation, Args&&... args)
+	{
+		Type* newAllocation = nullptr;
+
+		PageHeader* currentPage = m_basePage;
+		while (currentPage != nullptr)
+		{
+			if (currentPage->arena.IsPointerWithinArena(allocation))
+			{
+				currentPage->arena.Free(allocation);
+				newAllocation = currentPage->arena.Reallocate(allocation, std::forward<Args>(args)...);
+
+				break;
+			}
+		}
+		
+		return newAllocation;
+	}
+
 	void Free(Type* allocation)
 	{
 		PageHeader* currentPage = m_basePage;

@@ -953,6 +953,7 @@ namespace Volt
 				CreateVoltMeshFromFbxMesh(*fbxMesh, meshInitializer, materials, importConfig, nullptr);
 			}
 
+			ScopedAssetReferenceLock meshLock{ voltMesh };
 			voltMesh->Initialize(meshInitializer, materials);
 			result.emplace_back(voltMesh);
 		}
@@ -967,6 +968,8 @@ namespace Volt
 
 				const uint32_t materialIndex = meshInitializer.GetSubMeshes().at(0).materialIndex;
 				meshInitializer.AddMaterial(materialTable.GetMaterial(materialIndex), materialIndex);
+
+				ScopedAssetReferenceLock meshLock{ voltMesh };
 				voltMesh->Initialize(meshInitializer, { materials.at(materialIndex) });
 				result.emplace_back(voltMesh);
 			}
@@ -1028,6 +1031,7 @@ namespace Volt
 				jointVertexLinkMap.clear();
 			}
 
+			ScopedAssetReferenceLock meshLock{ voltMesh };
 			voltMesh->Initialize(meshInitializer, materials);
 			result.emplace_back(voltMesh);
 		}
@@ -1044,6 +1048,7 @@ namespace Volt
 				const uint32_t materialIndex = meshInitializer.GetSubMeshes().at(0).materialIndex;
 				meshInitializer.AddMaterial(materialTable.GetMaterial(materialIndex), materialIndex);
 
+				ScopedAssetReferenceLock meshLock{ voltMesh };
 				voltMesh->Initialize(meshInitializer, { materials.at(materialIndex) });
 
 				result.emplace_back(voltMesh);

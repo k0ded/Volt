@@ -12,6 +12,7 @@ namespace Volt
 	public:
 		virtual ~AssetTypeAllocator() = default;
 		virtual void Free(void* allocation) = 0;
+		virtual void Reallocate(void* allocation) = 0;
 	};
 
 	template<typename T>
@@ -24,6 +25,12 @@ namespace Volt
 		T* Allocate(Args&&... args)
 		{
 			return m_allocator.Allocate(std::forward<Args>(args)...);
+		}
+
+		void Reallocate(void* allocation) override
+		{
+			VT_MAYBE_UNUSED void* newAlloc = m_allocator.Reallocate(reinterpret_cast<T*>(allocation));
+			VT_ENSURE(allocation == newAlloc);
 		}
 
 		void Free(void* allocation) override

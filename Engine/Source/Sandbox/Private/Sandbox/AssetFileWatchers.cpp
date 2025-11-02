@@ -30,36 +30,9 @@ void Sandbox::CreateModifiedWatch()
 		std::scoped_lock lock(m_fileWatcherMutex);
 		m_fileChangeQueue.emplace_back([newPath, oldPath, this]()
 		{
-			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(g_assetManager->GetAssetHandleFromFilepath(newPath));
-			if (!assetMetadata.IsValid())
+			if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
 			{
-				return;
-			}
-
-			if (assetMetadata->type == AssetTypes::Mesh ||
-				assetMetadata->type == AssetTypes::Prefab ||
-				assetMetadata->type == AssetTypes::Material ||
-				assetMetadata->type == AssetTypes::Texture)
-			{
-				g_assetManager->ReloadAsset(g_assetManager->GetAssetHandleFromFilepath(newPath));
-			}
-			else if (assetMetadata->type == AssetTypes::MeshSource)
-			{
-				/*const auto assets = Volt::AssetManager::GetAllAssetsWithDependency(Volt::AssetManager::Get().GetRelativePath(newPath));
-for (const auto& asset : assets)
-{
-	if (EditorUtils::ReimportSourceMesh(asset))
-	{
-		UI::Notify(UI::NotificationType::Success, "Re imported mesh!", std::format("Mesh {0} has been reimported!", Volt::AssetManager::GetFilePathFromAssetHandle(asset).string()));
-	}
-}*/
-			}
-			else
-			{
-				if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
-				{
-					Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
-				}
+				Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
 			}
 		});
 	});

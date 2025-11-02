@@ -102,14 +102,14 @@ public:
 	VT_INLINE void Lock() const
 	{
 		VT_ENSURE(m_asset != nullptr);
-		m_asset->m_assetMutex.lock_shared();
+		m_asset->m_assetMutex->lock_shared();
 		m_isLocked = true;
 	}
 
 	VT_INLINE void Unlock() const
 	{
 		VT_ENSURE(m_asset != nullptr);
-		m_asset->m_assetMutex.unlock_shared();
+		m_asset->m_assetMutex->unlock_shared();
 		m_isLocked = false;
 	}
 

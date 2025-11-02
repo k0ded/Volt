@@ -195,6 +195,7 @@ namespace Volt
 		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;
+		newAsset->m_assetMutex = new std::shared_mutex();
 
 		AssetReference resultReference{ newAsset };
 
@@ -283,6 +284,7 @@ namespace Volt
 		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;
+		newAsset->m_assetMutex = new std::shared_mutex();
 
 		AssetReference resultReference{ newAsset };
 
@@ -368,6 +370,7 @@ namespace Volt
 
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;
+		newAsset->m_assetMutex = new std::shared_mutex();
 
 		m_assetRegistry.InsertAssetMetadata(std::move(metadata));
 

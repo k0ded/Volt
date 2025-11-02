@@ -71,7 +71,7 @@ namespace Volt
 
 		friend class AssetManager;
 
-		mutable std::shared_mutex m_assetMutex;
+		mutable std::shared_mutex* m_assetMutex = nullptr;
 	};
 
 	class Asset : public AssetRefCounter, public AssetLocks

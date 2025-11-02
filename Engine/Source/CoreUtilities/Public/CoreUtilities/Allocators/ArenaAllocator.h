@@ -108,6 +108,17 @@ public:
 		return newAllocation;
 	}
 
+	template<typename... Args>
+	Type* Reallocate(Type* allocation, Args&&... args)
+	{
+		VT_ENSURE(IsPointerWithinArena(allocation));
+
+		std::ptrdiff_t allocationIndex = allocation - reinterpret_cast<Type*>(m_dataBuffer);
+		allocation->~Type();
+
+		return ::new(allocation) Type(std::forward<Args>(args)...);
+	}
+
 	void Free(Type* allocation)
 	{
 		VT_ENSURE(IsPointerWithinArena(allocation));

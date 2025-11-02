@@ -892,6 +892,8 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 		{
 			if (SelectionManager::IsAnySelected())
 			{
+				ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
+
 				glm::vec3 avgPos = 0.f;
 
 				for (const auto& id : SelectionManager::GetSelectedEntities())
