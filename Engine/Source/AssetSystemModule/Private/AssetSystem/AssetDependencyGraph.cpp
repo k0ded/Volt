@@ -70,7 +70,7 @@ namespace Volt
 			ReadOnlyAssetMetadata assetMetadata = m_referencedAssetManager.GetReadOnlyAssetMetadata(dependants.at(i));
 
 			AssetReference<Asset> asset;
-			if (m_referencedAssetManager.TryGetAssetIfLoadedAsAnonymous(dependants.at(i), asset))
+			if (m_referencedAssetManager.TryGetTypelessAssetIfLoaded(dependants.at(i), asset))
 			{
 				ScopedAssetReferenceLock assetLock{ asset };
 				asset->OnAssetDependencyChanged(handle, state);

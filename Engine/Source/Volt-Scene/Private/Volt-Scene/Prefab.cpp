@@ -234,7 +234,7 @@ namespace Volt
 			return;
 		}
 
-		m_prefabScene = g_assetManager->CreateMemoryAsset<Scene>("PrefabScene");
+		m_prefabScene = g_assetManager->CreateAnonymousAsset<Scene>("PrefabScene");
 		m_rootEntityId = srcRootEntity.GetID();
 
 		AddEntityToPrefabRecursive(srcRootEntity, Entity::Null());

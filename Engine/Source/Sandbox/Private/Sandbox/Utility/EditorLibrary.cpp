@@ -43,7 +43,7 @@ bool EditorLibrary::OpenAsset(Volt::AssetHandle handle)
 	}
 
 	AssetReference<Volt::Asset> asset;
-	if (!g_assetManager->TryGetAssetIfLoadedAsAnonymous(handle, asset))
+	if (!g_assetManager->TryGetTypelessAssetIfLoaded(handle, asset))
 	{
 		return false;
 	}

@@ -43,7 +43,7 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 	std::string assetFileName = "Null";
 
 	AssetReference<Volt::Asset> asset;
-	if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(assetHandle, asset))
+	if (g_assetManager->TryGetTypelessAssetIfLoaded(assetHandle, asset))
 	{
 		ScopedAssetReferenceLock assetLock{ asset };
 

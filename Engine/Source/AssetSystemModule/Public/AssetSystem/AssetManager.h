@@ -75,10 +75,12 @@ namespace Volt
 
 		// Will return true and the asset if it is loaded. This method returns a non typed asset,
 		// instead of the default typed asset.
-		VTAS_API bool TryGetAssetIfLoadedAsAnonymous(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
+		VTAS_API bool TryGetTypelessAssetIfLoaded(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
 
 		// Creates an asset that only lives in memory during the current application run, is not serializable to disk.
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateMemoryAsset(std::string_view assetName, Args&&... args);
+		// Creates an asset that only lives in memory, and will not show up when iterating the asset registry.
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAnonymousAsset(std::string_view assetName, Args&&... args);
 		// Creates an asset that does not have a filepath yet.
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAsset(std::string_view assetName, Args&&... args);
 		// Creates an asset, assigns a filepath and creates the asset disk file itself.
@@ -135,7 +137,7 @@ namespace Volt
 			AssetChangedCallback callback;
 		};
 
-		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, Args&&... args);
 
 		VTAS_API void LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset);
 		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset);
@@ -304,7 +306,7 @@ namespace Volt
 	bool AssetManager::TryGetAssetIfLoaded(AssetHandle assetHandle, AssetReference<T>& outAsset)
 	{
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
-		if (assetMetadata->isLoaded)
+		if (assetMetadata->IsLoaded())
 		{
 			outAsset = GetAssetImmediately<T>(assetHandle);
 			return true;
@@ -317,14 +319,24 @@ namespace Volt
 	AssetReference<T> AssetManager::CreateMemoryAsset(std::string_view assetName, Args&&... args)
 	{
 		constexpr bool IsMemoryAsset = true;
-		return CreateAssetImpl<T>(assetName, IsMemoryAsset, std::forward<Args>(args)...);
+		constexpr bool IsAnonymous = false;
+		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, std::forward<Args>(args)...);
 	}
 
-	template<VoltAssetType T, typename... Args> 
+	template<VoltAssetType T, typename... Args> AssetReference<T>
+	AssetManager::CreateAnonymousAsset(std::string_view assetName, Args&&... args)
+	{
+		constexpr bool IsMemoryAsset = true;
+		constexpr bool IsAnonymous = true;
+		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, std::forward<Args>(args)...);
+	}
+
+	template<VoltAssetType T, typename... Args>
 	AssetReference<T> AssetManager::CreateAsset(std::string_view assetName, Args&&... args)
 	{
 		constexpr bool IsMemoryAsset = false;
-		return CreateAssetImpl<T>(assetName, IsMemoryAsset, std::forward<Args>(args)...);
+		constexpr bool IsAnonymous = false;
+		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, std::forward<Args>(args)...);
 	}
 
 	template<VoltAssetType T, typename... Args> 
@@ -339,7 +351,7 @@ namespace Volt
 	}
 
 	template<VoltAssetType T, typename... Args> 
-	AssetReference<T> AssetManager::CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, Args&&... args)
+	AssetReference<T> AssetManager::CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, Args&&... args)
 	{
 		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>(std::forward<Args>(args)...);
 
@@ -347,16 +359,12 @@ namespace Volt
 		metadata.filepath = ""; // Assets that are not saved will not have a file path
 		metadata.handle = newAsset->GetAssetHandle();
 		metadata.type = T::GetStaticType();
-		metadata.isLoaded = true;
-		metadata.isMemoryAsset = isMemoryAsset;
+		metadata.SetFlag(AssetMetadataFlag::Loaded, true);
+		metadata.SetFlag(AssetMetadataFlag::MemoryOnly, isMemoryAsset);
+		metadata.SetFlag(AssetMetadataFlag::Anonymous, isAnonymous);
 
 		newAsset->SetupInitialCustomMetadata(metadata.customData);
 		newAsset->SetName(std::string(assetName));
-
-		if (isMemoryAsset)
-		{
-			newAsset->SetFlag(AssetFlag::MemoryOnly, true);
-		}
 
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;

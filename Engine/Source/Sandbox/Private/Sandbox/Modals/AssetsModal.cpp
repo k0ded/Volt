@@ -315,7 +315,7 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 		case CreateFilesTableColumns::Name:
 		{
 			AssetReference<Volt::Asset> asset;
-			if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(handle, asset))
+			if (g_assetManager->TryGetTypelessAssetIfLoaded(handle, asset))
 			{
 				ImGui::TextUnformatted(asset->GetAssetName().data());
 			}

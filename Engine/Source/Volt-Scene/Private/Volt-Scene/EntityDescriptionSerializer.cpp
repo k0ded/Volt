@@ -129,9 +129,9 @@ namespace Volt
 		ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(entityDesc->GetSceneHandle());
 
 		//if the scene is not loaded here, the entity is not supposed to be loaded, and cannot be saved
-		VT_ENSURE(sceneMetadata->isLoaded);
+		VT_ENSURE(sceneMetadata->IsLoaded());
 		//if the scene is a memory asset it doesnt have a path yet, and will thus fail the save of this entity
-		VT_ENSURE(!sceneMetadata->isMemoryAsset);
+		VT_ENSURE(!sceneMetadata->IsMemoryAsset());
 
 		const std::filesystem::path directoryPath = metadata->filepath.parent_path();
 		if (!std::filesystem::exists(directoryPath))
@@ -161,15 +161,31 @@ namespace Volt
 
 	bool EntityDescSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
-		const EntityDescCustomMetadata& customMeta = metadata->GetCustomData<EntityDescCustomMetadata>();
-		
 		AssetReference<EntityDesc> entityDesc = destinationAsset.ConvertTo<EntityDesc>();
-		ScopedAssetReferenceLock entityLock{ entityDesc };
+		ScopedAssetReferenceLock entityDescLock{ entityDesc };
+
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
+
+		if (!std::filesystem::exists(filePath))
+		{
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
+			entityDesc->SetFlag(AssetFlag::Missing, true);
+			return false;
+		}
+
+		BinaryStreamReader streamReader{ filePath };
+		if (!streamReader.IsStreamValid())
+		{
+			VT_LOG(Error, "Failed to open file {0}!", metadata->filepath);
+			entityDesc->SetFlag(AssetFlag::Invalid, true);
+			return false;
+		}
+
+		const EntityDescCustomMetadata& customMeta = metadata->GetCustomData<EntityDescCustomMetadata>();
 		
 		entityDesc->m_sceneHandle = customMeta.sceneHandle;
 		entityDesc->m_entityID = customMeta.entityID;
 
-		BinaryStreamReader streamReader{ g_assetManager->GetAssetFilesystemPath(metadata->filepath) };
 		AssetSerializer::ReadMetadata(streamReader);
 
 		entityDesc->m_entitySpawnData.Clear();

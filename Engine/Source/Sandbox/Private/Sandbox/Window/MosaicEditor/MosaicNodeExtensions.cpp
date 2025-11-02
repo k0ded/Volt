@@ -31,7 +31,7 @@ void SampleTextureNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 	Volt::AssetHandle textureHandle = sampleTextureNode->GetTextureHandle();
 
 	AssetReference<Volt::Asset> rawAsset;
-	if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(textureHandle, rawAsset))
+	if (g_assetManager->TryGetTypelessAssetIfLoaded(textureHandle, rawAsset))
 	{
 		ScopedAssetReferenceLock assetLock{ rawAsset };
 

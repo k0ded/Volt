@@ -134,6 +134,7 @@ namespace Volt
 		bool couldReadValue = streamReader.TryRead(value);
 		if (!couldReadValue || value != SerializedAssetMetadata::AssetMagic)
 		{
+			VT_LOGC(Error, LogAssetSystem, "File {} is not a valid Volt asset!", assetFilepath);
 			return;
 		}
 

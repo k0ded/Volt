@@ -46,8 +46,8 @@ namespace IntergrationTests
 			EXPECT_EQ(newAsset->testValue, 1001);
 
 			ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(newAssetHandle);
-			EXPECT_TRUE(assetMetadata->isMemoryAsset);
-			EXPECT_TRUE(assetMetadata->isLoaded);
+			EXPECT_TRUE(assetMetadata->IsMemoryAsset());
+			EXPECT_TRUE(assetMetadata->IsLoaded());
 		}
 
 		// At this point the asset should have been released/removed
@@ -69,8 +69,8 @@ namespace IntergrationTests
 			EXPECT_EQ(newAsset->testValue, 1001);
 
 			ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(newAssetHandle);
-			EXPECT_FALSE(assetMetadata->isMemoryAsset);
-			EXPECT_TRUE(assetMetadata->isLoaded);
+			EXPECT_FALSE(assetMetadata->IsMemoryAsset());
+			EXPECT_TRUE(assetMetadata->IsLoaded());
 		}
 
 		// At this point the asset should have been released, but the metadata still valid.
@@ -78,7 +78,7 @@ namespace IntergrationTests
 
 		{
 			ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(newAssetHandle);
-			EXPECT_FALSE(assetMetadata->isLoaded);
+			EXPECT_FALSE(assetMetadata->IsLoaded());
 		}
 	}
 

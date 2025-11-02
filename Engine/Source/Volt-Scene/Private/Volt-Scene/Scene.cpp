@@ -451,8 +451,6 @@ namespace Volt
 		{
 			*outDestroyedEntities = destroyedEntities;
 		}
-
-
 	}
 
 	void Scene::InvalidateEntityTransform(const EntityID& entityId)

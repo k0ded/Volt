@@ -450,7 +450,7 @@ public:
 		std::string assetFileName = "Null";
 
 		AssetReference<Volt::Asset> rawAsset;
-		if (g_assetManager->TryGetAssetIfLoadedAsAnonymous(assetHandle, rawAsset))
+		if (g_assetManager->TryGetTypelessAssetIfLoaded(assetHandle, rawAsset))
 		{
 			ScopedAssetReferenceLock assetLock{ rawAsset };
 

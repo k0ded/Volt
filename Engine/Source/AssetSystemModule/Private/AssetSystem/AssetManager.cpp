@@ -107,7 +107,7 @@ namespace Volt
 
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
 
-		if (assetMetadata->isMemoryAsset)
+		if (assetMetadata->IsMemoryAsset())
 		{
 			VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that is a memory asset. ", asset->GetAssetName(), asset->GetAssetHandle());
 			return;
@@ -127,6 +127,9 @@ namespace Volt
 
 			VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", assetMetadata->handle, assetMetadata->filepath, timer.GetTime<Time::Seconds>());
 		}
+
+		m_dependencyGraph->OnAssetChanged(asset->GetAssetHandle(), AssetChangedState::Saved);
+		QueueAssetChanged(asset->GetAssetHandle(), AssetChangedState::Saved);
 	}
 
 	void AssetManager::RemoveAsset(AssetHandle assetHandle)
@@ -155,10 +158,10 @@ namespace Volt
 	bool AssetManager::IsAssetLoaded(AssetHandle assetHandle) const
 	{
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
-		return assetMetadata->isLoaded;
+		return assetMetadata->IsLoaded();
 	}
 
-	bool AssetManager::TryGetAssetIfLoadedAsAnonymous(AssetHandle assetHandle, AssetReference<Asset>& outAsset)
+	bool AssetManager::TryGetTypelessAssetIfLoaded(AssetHandle assetHandle, AssetReference<Asset>& outAsset)
 	{
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
 		if (!assetMetadata.IsValid())
@@ -166,7 +169,7 @@ namespace Volt
 			return false;
 		}
 		
-		if (assetMetadata->isLoaded)
+		if (assetMetadata->IsLoaded())
 		{
 			// Try to get the asset from the asset cache.
 			RefPtr<Asset> tempAsset;
@@ -196,7 +199,7 @@ namespace Volt
 				return;
 			}
 
-			if (assetMetadata->isMemoryAsset)
+			if (assetMetadata->IsMemoryAsset())
 			{
 				VT_LOGC(Error, LogAssetSystem, "Tried to create a file for an asset '{0}' that is marked as a memory asset. Target file path: '{1}'", assetHandle, filepath.string().c_str());
 				return;
@@ -275,12 +278,18 @@ namespace Volt
 		{
 			ReadOnlyAssetMetadata assetMetadata = *it;
 
-			if (!filter.includeMemoryAssets && assetMetadata->isMemoryAsset)
+			// Skip all anonymous assets.
+			if (assetMetadata->IsFlagSet(AssetMetadataFlag::Anonymous))
 			{
 				continue;
 			}
 
-			if (!filter.includeWithoutFilepath && !assetMetadata->isMemoryAsset && !assetMetadata->HasFilepath())
+			if (!filter.includeMemoryAssets && assetMetadata->IsMemoryAsset())
+			{
+				continue;
+			}
+
+			if (!filter.includeWithoutFilepath && !assetMetadata->IsMemoryAsset() && !assetMetadata->HasFilepath())
 			{
 				continue;
 			}
@@ -363,7 +372,7 @@ namespace Volt
 		m_assetCache.AddAsset(asset);
 
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-		assetMetadata->isLoaded = true;
+		assetMetadata->SetFlag(AssetMetadataFlag::Loaded, true);
 
 		QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
 		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
@@ -374,6 +383,9 @@ namespace Volt
 	void AssetManager::QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset)
 	{
 		asset->SetFlag(AssetFlag::Queued, true);
+
+		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+		assetMetadata->SetFlag(AssetMetadataFlag::Queued, true);
 
 		m_dependencyGraph->AddAssetToGraph(assetHandle);
 		m_assetCache.AddAsset(asset);
@@ -390,7 +402,8 @@ namespace Volt
 			asset->SetFlag(AssetFlag::Queued, false);
 
 			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-			assetMetadata->isLoaded = true;
+			assetMetadata->SetFlag(AssetMetadataFlag::Loaded, true);
+			assetMetadata->SetFlag(AssetMetadataFlag::Queued, false);
 
 			QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
 			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
@@ -429,10 +442,10 @@ namespace Volt
 			asset->~Asset();
 			m_assetAllocator.FreeAsset(assetType, asset);
 
-			if (!assetMetadata->isMemoryAsset)
+			if (!assetMetadata->IsMemoryAsset())
 			{
-				assetMetadata->isLoaded = false;
-				assetMetadata->isQueued = false;
+				assetMetadata->SetFlag(AssetMetadataFlag::Loaded, false);
+				assetMetadata->SetFlag(AssetMetadataFlag::Queued, false);
 
 				// Unlock it here as we are finished with it.
 				assetMetadata->m_assetMetadataMutex.unlock();
@@ -455,6 +468,7 @@ namespace Volt
 			m_assetAllocator.FreeAsset(assetType, asset);
 		}
 		
+		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Unloaded);
 		QueueAssetChanged(assetHandle, AssetChangedState::Unloaded);
 		VT_LOGC(Trace, LogAssetSystem, "Asset '{}' (Handle: '{}', Type: '{}') was unloaded!", nameCopy, assetHandle, assetType->GetName());
 	}

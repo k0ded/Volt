@@ -113,7 +113,7 @@ namespace Volt
 		AssetReference<Prefab> prefab = destinationAsset.ConvertTo<Prefab>();
 		ScopedAssetReferenceLock prefabLock{ prefab };
 
-		AssetReference<Scene> prefabScene = g_assetManager->CreateMemoryAsset<Scene>("PrefabScene");
+		AssetReference<Scene> prefabScene = g_assetManager->CreateAnonymousAsset<Scene>("PrefabScene");
 
 		yamlStreamReader.EnterScope("Prefab");
 		{
