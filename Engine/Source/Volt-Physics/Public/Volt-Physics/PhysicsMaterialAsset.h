@@ -6,7 +6,7 @@
 
 #include <PhysicsInterface/PhysicsMaterial.h>
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 namespace Volt
 {

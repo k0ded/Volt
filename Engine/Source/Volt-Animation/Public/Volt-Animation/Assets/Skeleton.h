@@ -2,7 +2,7 @@
 
 #include "Volt-Animation/Assets/Animation.h"
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>
 
 #include <CoreUtilities/Containers/Map.h>

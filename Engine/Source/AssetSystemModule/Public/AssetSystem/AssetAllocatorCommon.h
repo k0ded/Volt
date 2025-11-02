@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AssetSystem/Asset_New.h"
+#include "AssetSystem/Asset.h"
 #include "AssetSystem/AssetManagerCommon.h"
 
 #include <CoreUtilities/Allocators/PagedArenaAllocator.h>

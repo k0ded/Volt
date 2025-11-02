@@ -1,7 +1,7 @@
 #pragma once
 #include "Volt-Scene/AssetTypes.h"
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 #include <EntitySystem/EntityID.h>
 

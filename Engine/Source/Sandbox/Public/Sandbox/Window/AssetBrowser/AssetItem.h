@@ -3,7 +3,7 @@
 #include "Sandbox/Window/AssetBrowser/BrowserItems.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 #include <RHIModule/Images/Image.h>
 

@@ -5,7 +5,7 @@
 #include <EntitySystem/ComponentRegistry.h>
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 namespace Volt
 {

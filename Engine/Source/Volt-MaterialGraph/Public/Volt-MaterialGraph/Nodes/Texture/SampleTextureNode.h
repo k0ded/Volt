@@ -2,7 +2,7 @@
 
 #include "Volt-MaterialGraph/Config.h"
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 #include <Mosaic/MosaicNode.h>
 

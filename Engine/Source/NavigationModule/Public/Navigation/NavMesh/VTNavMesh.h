@@ -8,7 +8,7 @@
 #include <Volt-Renderer/Mesh/Mesh.h>
 
 #include <AssetSystem/AssetTypes.h>
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 namespace Volt
 {

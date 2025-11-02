@@ -4,7 +4,7 @@
 
 #include <AssetSystem/AssetTypes.h>
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>
 
 #include <CoreUtilities/FileIO/BinaryStreamWriter.h>

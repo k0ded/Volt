@@ -7,7 +7,7 @@
 
 #include <Volt-Assets/StreamingInstanceID.h>
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 #include <EntitySystem/ComponentRegistry.h>
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>

@@ -8,7 +8,7 @@
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
 #include <PhysicsInterface/PhysicsTypes.h>
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 namespace Volt
 {

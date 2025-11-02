@@ -9,7 +9,7 @@
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
 
 #include <AssetSystem/AssetTypes.h>
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 namespace Volt
 {

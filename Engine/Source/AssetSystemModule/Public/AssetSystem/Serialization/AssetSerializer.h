@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AssetSystem/Asset_New.h"
+#include "AssetSystem/Asset.h"
 #include "AssetSystem/AssetReference.h"
 #include "AssetSystem/Serialization/AssetSerializationCommon.h"
 #include "AssetSystem/AssetRegistry.h"

@@ -2,7 +2,7 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 #include <CoreUtilities/Containers/ArrayView.h>
 
 namespace Volt

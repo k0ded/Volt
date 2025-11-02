@@ -2,7 +2,7 @@
 #include "Volt-Animation/Config.h"
 
 #include <AssetSystem/AssetTypes.h>
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 #include <EntitySystem/ComponentRegistry.h>
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>

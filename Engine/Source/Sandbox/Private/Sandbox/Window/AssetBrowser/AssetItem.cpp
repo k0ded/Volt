@@ -59,7 +59,7 @@ namespace AssetBrowser
 			}
 
 			Sandbox::Get().OpenScene(Volt::AssetManager::GetFilePathFromAssetHandle(mySceneToOpen));
-			mySceneToOpen = Volt::Asset_New::Null();
+			mySceneToOpen = Volt::Asset::Null();
 		}*/
 
 		return reload;

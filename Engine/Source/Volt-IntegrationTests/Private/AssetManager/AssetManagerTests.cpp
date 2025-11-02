@@ -2,7 +2,7 @@
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetType.h>
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetLocks.h>
 

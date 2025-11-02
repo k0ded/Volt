@@ -4,7 +4,7 @@
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 
 #include <EntitySystem/EntityID.h>
 #include <EntitySystem/ComponentRegistry.h>

@@ -4,7 +4,7 @@
 #include "Volt-Scene/Config.h"
 #include "Volt-Scene/AssetTypes.h"
 
-#include <AssetSystem/Asset_New.h>
+#include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetReference.h>
 
 #include <EventSystem/EventListener.h>

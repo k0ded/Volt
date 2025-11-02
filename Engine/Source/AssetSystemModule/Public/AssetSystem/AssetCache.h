@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AssetSystem/Asset_New.h"
+#include "AssetSystem/Asset.h"
 
 #include <CoreUtilities/Containers/AtomicHashTable.h>
 #include <CoreUtilities/Pointers/RefPtr.h>
