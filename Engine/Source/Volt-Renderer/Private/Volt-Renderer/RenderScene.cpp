@@ -93,7 +93,7 @@ namespace Volt
 			{
 				ScopedAssetReferenceLock skeletonLock{ skeleton };
 				
-				m_currentBoneCount += static_cast<uint32_t>(renderObject.animator->GetSkeleton()->GetJointCount());
+				m_currentBoneCount += static_cast<uint32_t>(skeleton->GetJointCount());
 				// Mark primitive as invalid.
 				InvalidatePrimitiveInstance(animatedObject);
 			}

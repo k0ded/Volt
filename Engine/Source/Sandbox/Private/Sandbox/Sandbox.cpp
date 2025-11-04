@@ -661,10 +661,12 @@ bool Sandbox::PromptUnloadCurrentScene()
 		return false;
 	}
 
-	ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
 
+	m_runtimeScene.Lock();
 	m_runtimeScene->UnloadEntities();
-	m_runtimeScene = nullptr;
+	m_runtimeScene.Unlock();
+
+	m_runtimeScene.Reset();
 	return true;
 }
 

@@ -64,6 +64,8 @@ namespace Volt
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
+		ScopedAssetReferenceLock skeleLock = { destinationAsset };
+
 		if (!std::filesystem::exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
