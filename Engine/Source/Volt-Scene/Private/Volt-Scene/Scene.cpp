@@ -206,11 +206,6 @@ namespace Volt
 						reader->ReadBuffer(entityDesc->GetEntitySpawnData());
 						entityToComponentTypes->at(entityID) = EntityDescSerializer::FindComponentTypes(*reader);
 					}
-
-					//todo_fabian: we probably want to be able to have the
-					// entity descriptions not loaded but the entity present...
-					//for now DirtyAssetManager relies on the desc being loaded
-					//AssetManager::Get().UnloadAsset(descHandle);
 				}));
 			}
 

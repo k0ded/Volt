@@ -18,6 +18,7 @@ namespace Volt
 	class Entity;
 	class RenderScene;
 	class EntityPhysicsScene;
+	class EntityDesc;
 
 	struct SceneSettings
 	{

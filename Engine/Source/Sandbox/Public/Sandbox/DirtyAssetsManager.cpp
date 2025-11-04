@@ -7,6 +7,7 @@
 #include "Sandbox/EditorAssetManager.h"
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/Asset.h>
 #include <AssetSystem/Events/AssetEvents.h>
 
 #include <CoreUtilities/Containers/VectorVariants.h>
@@ -42,7 +43,7 @@ void DirtyAssetsManager::Initialize()
 	m_assetChangedCallbackID = g_assetManager->RegisterAssetUpdatedCallback(AssetTypes::None,
 		[this](Volt::AssetHandle assetHandle, Volt::AssetChangedState state)
 	{
-		OnAssetChanged(assetHandle, state); 
+		OnAssetChanged(assetHandle, state);
 	});
 }
 
@@ -75,6 +76,10 @@ void DirtyAssetsManager::OnAssetChanged(Volt::AssetHandle assetHandle, Volt::Ass
 				MarkAssetDirty(assetHandle);
 				break;
 			}
+			else
+			{
+				MarkAssetNotDirty(assetHandle);
+			}
 			break;
 		}
 	}
@@ -98,7 +103,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 
 	FrameStackVector<Volt::AssetHandle> assetsToSave;
 	assetsToSave.reserve(m_dirtyAssets.size());
-	for (const Volt::AssetHandle& dirtyAssetHandle : m_dirtyAssets)
+	for (auto& [dirtyAssetHandle, assetReference] : m_dirtyAssets)
 	{
 		if (filter.includeAssetDelegate)
 		{
@@ -215,10 +220,10 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 				}
 			}
 
-			
-				//cannot save assets without a path, instead prompt to create
-				assetsNeedUserAssignedPath.push_back(asset);
-				assetsToSave.erase(assetsToSave.begin() + i);
+
+			//cannot save assets without a path, instead prompt to create
+			assetsNeedUserAssignedPath.push_back(asset);
+			assetsToSave.erase(assetsToSave.begin() + i);
 		}
 
 		Vector<std::pair<Volt::AssetHandle, std::filesystem::path>> assetsToCreate;
@@ -373,7 +378,9 @@ bool DirtyAssetsManager::IsAssetDirty(Volt::AssetHandle handle)
 void DirtyAssetsManager::MarkAssetDirty(Volt::AssetHandle handle)
 {
 	VT_ENSURE(handle != Volt::Asset::Null());
-	m_dirtyAssets.insert(handle);
+	AssetReference<Volt::Asset> LoadedAsset;
+	VT_ENSURE_MSG(g_assetManager->TryGetTypelessAssetIfLoaded(handle, LoadedAsset), "Tried to mark an unloaded asset as dirty! This is not allowed!");
+	m_dirtyAssets[handle] = LoadedAsset;
 }
 
 void DirtyAssetsManager::MarkAssetNotDirty(Volt::AssetHandle handle)
@@ -385,7 +392,7 @@ void DirtyAssetsManager::MarkAssetNotDirty(Volt::AssetHandle handle)
 	m_dirtyAssets.erase(handle);
 }
 
-const std::set<Volt::AssetHandle>& DirtyAssetsManager::GetDirtyAssets()
+const Map<Volt::AssetHandle, AssetReference<Volt::Asset>>& DirtyAssetsManager::GetDirtyAssets()
 {
 	return m_dirtyAssets;
 }

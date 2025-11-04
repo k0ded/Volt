@@ -501,12 +501,13 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 		return;
 	}
 
-	Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(sceneHandle);
-
-	if (sceneMetadata->type != AssetTypes::Scene)
 	{
-		UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with handle {}.\nAsset is not a Scene!", sceneHandle));
-		return;
+		Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(sceneHandle);
+		if (sceneMetadata->type != AssetTypes::Scene)
+		{
+			UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with handle {}.\nAsset is not a Scene!", sceneHandle));
+			return;
+		}
 	}
 
 	if (!PromptUnloadCurrentScene())

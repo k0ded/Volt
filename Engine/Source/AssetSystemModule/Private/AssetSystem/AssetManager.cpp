@@ -43,7 +43,7 @@ namespace Volt
 		}
 
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-		return { assetMetadata};
+		return { assetMetadata };
 	}
 
 	ReadOnlyAssetMetadata AssetManager::GetReadOnlyAssetMetadata(AssetHandle assetHandle) const
@@ -53,7 +53,7 @@ namespace Volt
 			return { nullptr };
 		}
 
- 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 		return { assetMetadata };
 	}
 
@@ -67,7 +67,7 @@ namespace Volt
 
 		return {};
 	}
-	
+
 	void AssetManager::ReloadAsset(AssetHandle assetHandle)
 	{
 		if (!IsValidAssetHandle(assetHandle))
@@ -166,7 +166,7 @@ namespace Volt
 
 		{
 			ScopedTimer timer{};
-		
+
 			// #TODO_AssetSystem: Resolve this situation.
 			AssetSerializerRegistry::Get().GetSerializer(assetMetadata->type).Serialize(assetMetadata, const_cast<CustomAssetMetadataVector&>(assetMetadata->customData), asset);
 
@@ -213,7 +213,7 @@ namespace Volt
 		{
 			return false;
 		}
-		
+
 		if (assetMetadata->IsLoaded())
 		{
 			// Try to get the asset from the asset cache.
@@ -254,7 +254,7 @@ namespace Volt
 			{
 				VT_LOGC(Warning, LogAssetSystem, "Tried to create a file for an asset '{0}' that already has an assigned file path, overriding!. Target file path: '{1}'", assetHandle, filepath.string().c_str());
 			}
-	
+
 			assetMetadata->filepath = filepath;
 		}
 
@@ -277,9 +277,9 @@ namespace Volt
 		auto& callbacks = m_assetChangedCallbacks[assetType];
 
 		auto it = std::find_if(callbacks.begin(), callbacks.end(), [&](const AssetChangedCallbackInfo& callbackInfo)
-		{
-			return callbackInfo.id == callbackId;
-		});
+			{
+				return callbackInfo.id == callbackId;
+			});
 
 		if (it != callbacks.end())
 		{
@@ -435,26 +435,26 @@ namespace Volt
 		m_dependencyGraph->AddAssetToGraph(assetHandle);
 		m_assetCache.AddAsset(asset);
 
-		JobRef loadJob = JobSystem::CreateJob("Load Asset", ExecutionPriority::Latent, [this, asset, assetHandle]() 
-		{
-			ScopedTimer timer{};
-
+		JobRef loadJob = JobSystem::CreateJob("Load Asset", ExecutionPriority::Latent, [this, asset, assetHandle]()
 			{
-				ReadOnlyAssetMetadata readOnlyAssetMetadata = GetReadOnlyAssetMetadata(assetHandle);
-				AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(readOnlyAssetMetadata, asset);
-			}
+				ScopedTimer timer{};
 
-			asset->SetFlag(AssetFlag::Queued, false);
+				{
+					ReadOnlyAssetMetadata readOnlyAssetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+					AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(readOnlyAssetMetadata, asset);
+				}
 
-			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-			assetMetadata->SetFlag(AssetMetadataFlag::Loaded, true);
-			assetMetadata->SetFlag(AssetMetadataFlag::Queued, false);
+				asset->SetFlag(AssetFlag::Queued, false);
 
-			QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
-			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
+				AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+				assetMetadata->SetFlag(AssetMetadataFlag::Loaded, true);
+				assetMetadata->SetFlag(AssetMetadataFlag::Queued, false);
 
-			VT_LOGC(Trace, LogAssetSystem, "Loaded asset '{}' (Handle: '{}') in {} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
-		});
+				QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
+				m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
+
+				VT_LOGC(Trace, LogAssetSystem, "Loaded asset '{}' (Handle: '{}') in {} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
+			});
 
 		JobSystem::RunJob(loadJob);
 
@@ -472,7 +472,7 @@ namespace Volt
 
 		// Make sure we lock the metadata
 		if (m_assetRegistry.IsValidAssetHandle(assetHandle))
-		{ 
+		{
 			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 
 			// Lock metadata mutex here.
@@ -514,7 +514,7 @@ namespace Volt
 			asset->~Asset();
 			m_assetAllocator.FreeAsset(assetType, asset);
 		}
-		
+
 		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Unloaded);
 		QueueAssetChanged(assetHandle, AssetChangedState::Unloaded);
 		VT_LOGC(Trace, LogAssetSystem, "Asset '{}' (Handle: '{}', Type: '{}') was unloaded!", nameCopy, assetHandle, assetType->GetName());
@@ -523,18 +523,18 @@ namespace Volt
 	void AssetManager::OnAssetChanged(AssetHandle assetHandle, AssetChangedState state)
 	{
 		auto broadcast = [&](const AssetType type)
-		{
-			const auto& callbacks = m_assetChangedCallbacks.at(type);
-			for (const auto& callback : callbacks)
 			{
-				if (!callback.callback)
+				const auto& callbacks = m_assetChangedCallbacks.at(type);
+				for (const auto& callback : callbacks)
 				{
-					continue;
-				}
+					if (!callback.callback)
+					{
+						continue;
+					}
 
-				callback.callback(assetHandle, state);
-			}
-		};
+					callback.callback(assetHandle, state);
+				}
+			};
 
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
 		if (assetMetadata.IsValid())
@@ -552,7 +552,7 @@ namespace Volt
 	void AssetManager::CreateDependencyGraphAndAddAssetsFromRegistry()
 	{
 		m_dependencyGraph = CreateScope<AssetDependencyGraph>(*this);
-	
+
 		for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
 		{
 			m_dependencyGraph->AddAssetToGraph((*it)->handle);
@@ -566,15 +566,15 @@ namespace Volt
 		ReadOnlyAssetMetadata resultAssetMetadata{ AssetMetadataInit::Null };
 
 		IterateAssetRegistryWithFilter(filter, [filepath, &resultAssetMetadata](ReadOnlyAssetMetadata assetMetadata)
-		{
-			if (assetMetadata->filepath == filepath)
 			{
-				resultAssetMetadata = assetMetadata;
-				return false;
-			}
+				if (assetMetadata->filepath == filepath)
+				{
+					resultAssetMetadata = assetMetadata;
+					return false;
+				}
 
-			return true;
-		});
+				return true;
+			});
 
 		return { AssetMetadataInit::Null };
 	}
@@ -589,15 +589,15 @@ namespace Volt
 		std::filesystem::path relativeFilepath = GetRelativeAssetFilepath(filepath);
 
 		IterateAssetRegistryWithFilter(filter, [&resultAssetHandle, relativeFilepath](ReadOnlyAssetMetadata assetMetadata)
-		{
-			if (assetMetadata->filepath == relativeFilepath)
 			{
-				resultAssetHandle = assetMetadata->handle;
-				return false;
-			}
+				if (assetMetadata->filepath == relativeFilepath)
+				{
+					resultAssetHandle = assetMetadata->handle;
+					return false;
+				}
 
-			return true;
-		});
+				return true;
+			});
 
 		return resultAssetHandle;
 	}

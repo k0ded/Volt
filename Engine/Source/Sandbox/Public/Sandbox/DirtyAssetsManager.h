@@ -2,6 +2,7 @@
 
 #include <AssetSystem/AssetHandle.h>
 #include <AssetSystem/AssetType.h>
+#include <AssetSystem/AssetReference.h>
 
 #include <SubSystem/SubSystem.h>
 
@@ -16,6 +17,7 @@ namespace Volt
 {
 	class AssetCreatedEvent;
 	class AssetSavedEvent;
+	class Asset;
 	enum class AssetChangedState : uint8_t;
 }
 
@@ -71,7 +73,7 @@ public:
 	void MarkAssetDirty(Volt::AssetHandle handle);
 	void MarkAssetNotDirty(Volt::AssetHandle handle);
 
-	const std::set<Volt::AssetHandle>& GetDirtyAssets();
+	const Map<Volt::AssetHandle, AssetReference<Volt::Asset>>& GetDirtyAssets();
 
 private:
 	static DirtyAssetsManager* s_instance;
@@ -81,7 +83,7 @@ private:
 	void SaveAssetsImpl(const FrameStackVector<Volt::AssetHandle>& assetsToSave);
 	void CreateAssetsImpl(const Vector<std::pair<Volt::AssetHandle, std::filesystem::path>>& assetsToCreate);
 
-	std::set<Volt::AssetHandle> m_dirtyAssets;
+	Map<Volt::AssetHandle, AssetReference<Volt::Asset>> m_dirtyAssets;
 	Map<AssetType, DirtySaveCustomization> m_dirtySaveCustomizations;
 
 	UUID64 m_assetsModalID;

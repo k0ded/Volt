@@ -714,7 +714,7 @@ void Sandbox::DrawMenuBar()
 
 void Sandbox::DrawUnsavedAssetsBlock()
 {
-	const std::set<Volt::AssetHandle>& dirtyAssets = DirtyAssetsManager::Get().GetDirtyAssets();
+	const Map<Volt::AssetHandle, AssetReference<Volt::Asset>>& dirtyAssets = DirtyAssetsManager::Get().GetDirtyAssets();
 
 	if (dirtyAssets.empty())
 	{
