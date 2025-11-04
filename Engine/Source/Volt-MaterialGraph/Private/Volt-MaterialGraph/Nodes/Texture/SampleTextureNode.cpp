@@ -4,7 +4,6 @@
 //#include "Volt/Utility/UIUtility.h"
 
 #include <RHIModule/Images/Image.h>
-#include <AssetSystem/AssetManager.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/NodeRegistry.h>

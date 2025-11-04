@@ -12,7 +12,7 @@ namespace Volt
 	class DDSTextureSourceImporter final : public SourceAssetImporter
 	{
 	protected:
-		Vector<Ref<Asset>> ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const override;
+		Vector<AssetReference<Asset>> ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const override;
 		SourceAssetFileInformation GetSourceFileInformation(const std::filesystem::path& filepath) const override;
 	};
 }

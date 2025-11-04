@@ -5,6 +5,7 @@
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <Volt-Application/UI/UIUtility.h>
+#include <AssetSystem/AssetLocks.h>
 
 TextureViewerPanel::TextureViewerPanel()
 	: EditorWindow("Texture Viewer")
@@ -39,7 +40,9 @@ void TextureViewerPanel::UpdateMainContent()
 
 	if (ImGui::BeginChild("Child"))
 	{
-		ImGui::Image(UI::GetTextureID(m_viewingTexture, currentMip), ImVec2{ std::floor(static_cast<float>(width) * zoomLevel * 0.01f), std::floor(static_cast<float>(height) * zoomLevel * 0.01f) });
+		ScopedAssetReferenceLock textureLock{ m_viewingTexture };
+
+		ImGui::Image(UI::GetTextureID(m_viewingTexture->GetImage(), currentMip), ImVec2{ std::floor(static_cast<float>(width) * zoomLevel * 0.01f), std::floor(static_cast<float>(height) * zoomLevel * 0.01f) });
 	}
 	ImGui::EndChild();
 }
@@ -49,8 +52,8 @@ void TextureViewerPanel::OnClose()
 	m_viewingTexture = nullptr;
 }
 
-void TextureViewerPanel::OpenAsset(Ref<Volt::Asset> asset)
+void TextureViewerPanel::OpenAsset(AssetReference<Volt::Asset> asset)
 {
 	VT_ENSURE(asset->GetType()->GetGUID() == AssetTypes::Texture->GetGUID());
-	m_viewingTexture = std::reinterpret_pointer_cast<Volt::Texture2D>(asset);
+	m_viewingTexture = asset.ConvertTo<Volt::Texture2D>();
 }

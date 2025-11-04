@@ -5,8 +5,6 @@
 
 #include <EntitySystem/EntityID.h>
 
-
-
 namespace Volt
 {
 	class VTS_API EntityDesc : public Asset
@@ -17,16 +15,14 @@ namespace Volt
 		~EntityDesc() override = default;
 
 		static AssetType GetStaticType() { return AssetTypes::EntityDesc; }
-		AssetType GetType() override { return GetStaticType(); }
+		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 		void SetupInitialCustomMetadata(CustomAssetMetadataVector& customMetadata) override;
 
-		const Buffer& GetEntitySpawnData() { return m_entitySpawnData; }
+		const Buffer& GetEntitySpawnData() const { return m_entitySpawnData; }
 
-
-
-		__forceinline AssetHandle GetSceneHandle() { return m_sceneHandle; }
-		__forceinline EntityID GetEntityID() { return m_entityID; }
+		VT_INLINE AssetHandle GetSceneHandle() const { return m_sceneHandle; }
+		VT_INLINE EntityID GetEntityID() const { return m_entityID; }
 
 	private:
 		friend class EntityDescSerializer;
@@ -35,6 +31,5 @@ namespace Volt
 		EntityID m_entityID;
 
 		Buffer m_entitySpawnData;
-
 	};
 }

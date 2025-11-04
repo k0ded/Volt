@@ -6,8 +6,8 @@
 #include "Volt-Scene/Scene.h"
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetSerializerRegistry.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
@@ -121,50 +121,71 @@ namespace Volt
 	EntityDescSerializer::~EntityDescSerializer()
 	{}
 
-	void EntityDescSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void EntityDescSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
-		const Ref<EntityDesc> entityDesc = std::reinterpret_pointer_cast<EntityDesc>(asset);
+		const AssetReference<EntityDesc> entityDesc = asset.ConvertTo<EntityDesc>();
+		ScopedAssetReferenceLock entityLock{ entityDesc };
+
+		ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(entityDesc->GetSceneHandle());
 
 		//if the scene is not loaded here, the entity is not supposed to be loaded, and cannot be saved
-		VT_ENSURE(AssetManager::Get().IsLoaded(entityDesc->GetSceneHandle()));
+		VT_ENSURE(sceneMetadata->IsLoaded());
 		//if the scene is a memory asset it doesnt have a path yet, and will thus fail the save of this entity
-		VT_ENSURE(!AssetManager::Get().IsMemoryAsset(entityDesc->GetSceneHandle()));
+		VT_ENSURE(!sceneMetadata->IsMemoryAsset());
 
-		const std::filesystem::path directoryPath = metadata.filePath.parent_path();
+		const std::filesystem::path directoryPath = metadata->filepath.parent_path();
 		if (!std::filesystem::exists(directoryPath))
 		{
 			std::filesystem::create_directories(directoryPath);
 		}
 
-
 		//serialize entity data
+		AssetReference<Scene> scene = g_assetManager->GetAssetImmediately<Scene>(entityDesc->GetSceneHandle());
+		ScopedAssetReferenceLock assetLock{ scene };
+
 		YAMLMemoryStreamWriter streamWriter{};
-		Ref<Scene> scene = AssetManager::Get().GetAsset<Scene>(entityDesc->GetSceneHandle());
+
 		SerializeEntity(scene->GetEntityFromID(entityDesc->m_entityID), streamWriter);
 
 		//write to file
 		BinaryStreamWriter entityDescFileWriter{};
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), entityDescFileWriter);
+		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), entityDescFileWriter);
 
 		Buffer buffer = streamWriter.WriteAndGetBuffer();
 		entityDescFileWriter.Write(buffer);
 		buffer.Release();
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 		entityDescFileWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool EntityDescSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool EntityDescSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
-		const EntityDescCustomMetadata& customMeta = metadata.GetCustomData<EntityDescCustomMetadata>();
-		Ref<EntityDesc> entityDesc = std::reinterpret_pointer_cast<EntityDesc>(destinationAsset);
+		AssetReference<EntityDesc> entityDesc = destinationAsset.ConvertTo<EntityDesc>();
+		ScopedAssetReferenceLock entityDescLock{ entityDesc };
+
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
+
+		if (!std::filesystem::exists(filePath))
+		{
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
+			entityDesc->SetFlag(AssetFlag::Missing, true);
+			return false;
+		}
+
+		BinaryStreamReader streamReader{ filePath };
+		if (!streamReader.IsStreamValid())
+		{
+			VT_LOG(Error, "Failed to open file {0}!", metadata->filepath);
+			entityDesc->SetFlag(AssetFlag::Invalid, true);
+			return false;
+		}
+
+		const EntityDescCustomMetadata& customMeta = metadata->GetCustomData<EntityDescCustomMetadata>();
+		
 		entityDesc->m_sceneHandle = customMeta.sceneHandle;
 		entityDesc->m_entityID = customMeta.entityID;
 
-
-
-
-		BinaryStreamReader streamReader{ AssetManager::GetFilesystemPath(metadata.filePath) };
 		AssetSerializer::ReadMetadata(streamReader);
 
 		entityDesc->m_entitySpawnData.Clear();
@@ -230,7 +251,7 @@ namespace Volt
 
 
 
-	Entity EntityDescSerializer::DeserializeEntity(const Ref<Scene>& scene, YAMLMemoryStreamReader& streamReader) const
+	Entity EntityDescSerializer::DeserializeEntity(AssetReference<Scene> scene, YAMLMemoryStreamReader& streamReader) const
 	{
 		streamReader.EnterScope("Entity");
 
@@ -402,21 +423,23 @@ namespace Volt
 
 	std::filesystem::path EntityDescSerializer::GetSavePathForEntity_ThreadSafe(const Volt::AssetHandle& handle)
 	{
-		const Volt::AssetMetadata metadata = Volt::AssetManager::GetMetadataFromHandle(handle);
-		VT_ENSURE(metadata.type == AssetTypes::EntityDesc);
-		const EntityDescCustomMetadata& entityMetadata = metadata.GetCustomData<EntityDescCustomMetadata>();
+		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+		VT_ENSURE(assetMetadata->type == AssetTypes::EntityDesc);
 
-		const Volt::AssetHandle& sceneHandle = entityMetadata.sceneHandle;
-		VT_ENSURE(Volt::AssetManager::HasFilePath(sceneHandle));
+		const EntityDescCustomMetadata& entityMetadata = assetMetadata->GetCustomData<EntityDescCustomMetadata>();
 
-		const std::filesystem::path owningScenePath = AssetManager::GetFilePathFromAssetHandle(sceneHandle);
+		ReadOnlyAssetMetadata sceneAssetMetadata = g_assetManager->GetReadOnlyAssetMetadata(entityMetadata.sceneHandle);
+
+		VT_ENSURE(sceneAssetMetadata->HasFilepath());
+
+		const std::filesystem::path& owningScenePath = sceneAssetMetadata->filepath;
 		const std::string owningSceneName = owningScenePath.stem().string();
 
 		const std::filesystem::path relativePath = owningScenePath.parent_path() / (owningSceneName + "_Entities") / (std::to_string(entityMetadata.entityID) + ".vtasset");
-		return AssetManager::GetFilesystemPath(relativePath);
+		return g_assetManager->GetAssetFilesystemPath(relativePath);
 	}
 
-	Entity EntityDescSerializer::CreateEntityFromUUIDThreadSafe(EntityID entityId, const Ref<Scene>& scene) const
+	Entity EntityDescSerializer::CreateEntityFromUUIDThreadSafe(EntityID entityId, AssetReference<Scene> scene) const
 	{
 		static std::mutex createEntityMutex;
 		std::scoped_lock lock{ createEntityMutex };

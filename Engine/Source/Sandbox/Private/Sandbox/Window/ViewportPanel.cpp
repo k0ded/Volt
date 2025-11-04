@@ -43,8 +43,9 @@
 
 #include <CoreUtilities/Math/Math.h>
 #include <CoreUtilities/FileSystem.h>
+#include <AssetSystem/AssetLocks.h>
 
-ViewportPanel::ViewportPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::Scene>& editorScene, EditorCameraController* cameraController,
+ViewportPanel::ViewportPanel(Ref<Volt::SceneRenderer>& sceneRenderer, AssetReference<Volt::Scene>& editorScene, EditorCameraController* cameraController,
 	SceneState& aSceneState)
 	: EditorWindow("Viewport"), m_sceneRenderer(sceneRenderer), m_editorCameraController(cameraController), m_editorScene(editorScene),
 	m_sceneState(aSceneState), m_animatedPhysicsIcon("Editor/Textures/Icons/Physics/LampPhysicsAnim1.dds", 30)
@@ -70,6 +71,8 @@ void ViewportPanel::UpdateMainContent()
 		ImGui::Text("No Scene Loaded.");
 		return;
 	}
+
+	ScopedAssetReferenceLock sceneLock{ m_editorScene };
 
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{ 0.07f, 0.07f, 0.07f, 1.f });
 
@@ -165,7 +168,7 @@ void ViewportPanel::UpdateMainContent()
 				for (const auto& entId : SelectionManager::GetSelectedEntities())
 				{
 					auto entity = m_editorScene->GetEntityFromID(entId);
-					EditorUtils::MarkEntityAndChildrenAsEdited(m_editorScene, entity);
+					EditorUtils::MarkEntityAndChildrenAsEdited(*m_editorScene, entity);
 				}
 			}
 
@@ -260,7 +263,7 @@ void ViewportPanel::UpdateContent()
 
 	auto& settings = UserSettingsManager::GetSettings();
 
-	Ref<Volt::Texture2D> playIcon = EditorResources::GetEditorIcon(EditorIcon::Play);
+	RefPtr<Volt::RHI::Image> playIcon = EditorResources::GetEditorIcon(EditorIcon::Play);
 	if (m_sceneState == SceneState::Play)
 	{
 		playIcon = EditorResources::GetEditorIcon(EditorIcon::Stop);
@@ -303,10 +306,12 @@ void ViewportPanel::UpdateContent()
 
 	ImGui::SameLine();
 
-	Ref<Volt::Texture2D> physicsIcon = m_animatedPhysicsIcon.GetCurrentFrame();
-	static Weak<Volt::Texture2D> physicsId = physicsIcon;
+	AssetReference<Volt::Texture2D> physicsIcon = m_animatedPhysicsIcon.GetCurrentFrame();
+	ScopedAssetReferenceLock physicsIconLock{ physicsIcon };
 
-	if (ImGui::ImageButtonAnimated(UI::GetTextureID(physicsId), UI::GetTextureID(physicsIcon), { buttonSize, buttonSize }))
+	static ImTextureID physicsId = UI::GetTextureID(physicsIcon->GetImage());
+
+	if (ImGui::ImageButtonAnimated(physicsId, UI::GetTextureID(physicsIcon->GetImage()), { buttonSize, buttonSize }))
 	{
 		if (m_sceneState == SceneState::Edit)
 		{
@@ -322,7 +327,7 @@ void ViewportPanel::UpdateContent()
 
 	ImGui::SameLine(ImGui::GetContentRegionAvail().x - (rightButtonCount * buttonSize));
 
-	Ref<Volt::Texture2D> localWorldIcon;
+	RefPtr<Volt::RHI::Image> localWorldIcon;
 	if (settings.sceneSettings.worldSpace)
 	{
 		localWorldIcon = EditorResources::GetEditorIcon(EditorIcon::WorldSpace);
@@ -607,6 +612,8 @@ bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 		case Volt::InputCode::Backspace:
 		case Volt::InputCode::Delete:
 		{
+			ScopedAssetReferenceLock sceneLock{ m_editorScene };
+
 			Vector<Volt::Entity> entitiesToRemove;
 
 			auto selection = SelectionManager::GetSelectedEntities();
@@ -622,7 +629,7 @@ bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 
 			for (const auto& i : entitiesToRemove)
 			{
-				EditorUtils::DestroyEntity(m_editorScene, i);
+				EditorUtils::DestroyEntity(*m_editorScene, i);
 			}
 
 			break;
@@ -689,7 +696,7 @@ void ViewportPanel::CheckDragDrop()
 	{
 		if (m_createdAssetOnDrag && m_createdEntity)
 		{
-			EditorUtils::DestroyEntity(m_editorScene, m_createdEntity);
+			EditorUtils::DestroyEntity(*m_editorScene, m_createdEntity);
 			m_createdAssetOnDrag = false;
 		}
 
@@ -705,23 +712,25 @@ void ViewportPanel::CheckDragDrop()
 	m_isInViewport = true;
 
 	const Volt::AssetHandle handle = GlobalEditorStates::dragAsset;
-	const AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(handle);
 
-	if (type == AssetTypes::Mesh)
+	Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+	if (!assetMetadata.IsValid())
+	{
+		return;
+	}
+
+	if (assetMetadata->type == AssetTypes::Mesh)
 	{
 		Volt::Entity newEntity = m_editorScene->CreateEntity();
 
-		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, m_editorScene, ObjectStateAction::Create);
+		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, *m_editorScene, ObjectStateAction::Create);
 		EditorCommandStack::GetInstance().PushUndo(command);
 
 		auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
-		auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(handle);
-		if (mesh)
-		{
-			meshComp.handle = mesh->handle;
-		}
 
-		newEntity.GetComponent<Volt::TagComponent>().tag = Volt::AssetManager::GetFilePathFromAssetHandle(handle).stem().string();
+			meshComp.handle = handle;
+
+		newEntity.GetComponent<Volt::TagComponent>().tag = assetMetadata->filepath.stem().string();
 
 		SelectionManager::DeselectAll();
 		SelectionManager::Select(newEntity.GetID());
@@ -729,44 +738,6 @@ void ViewportPanel::CheckDragDrop()
 		m_createdEntity = newEntity;
 
 		Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity));
-	}
-	else if (type == AssetTypes::MeshSource)
-	{
-		const std::filesystem::path meshSourcePath = Volt::AssetManager::GetFilePathFromAssetHandle(handle);
-		const std::filesystem::path vtMeshPath = meshSourcePath.parent_path() / (meshSourcePath.stem().string() + ".vtasset");
-
-		Volt::AssetHandle resultHandle = handle;
-		Volt::Entity newEntity = m_editorScene->CreateEntity();
-
-		Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(newEntity, m_editorScene, ObjectStateAction::Create);
-		EditorCommandStack::GetInstance().PushUndo(command);
-
-		if (FileSystem::Exists(vtMeshPath))
-		{
-			Ref<Volt::MeshAsset> meshAsset = Volt::AssetManager::GetAsset<Volt::MeshAsset>(vtMeshPath);
-			if (meshAsset && meshAsset->IsValid())
-			{
-				resultHandle = meshAsset->handle;
-			}
-
-			auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
-			auto mesh = Volt::AssetManager::GetAsset<Volt::MeshAsset>(resultHandle);
-			if (mesh)
-			{
-				meshComp.handle = mesh->handle;
-			}
-			Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity));
-		}
-		else
-		{
-			m_entityToAddMesh = newEntity.GetID();
-
-			ModalSystem::GetModal<MeshImportModal>(m_meshImportModal).SetImportMeshes({ meshSourcePath });
-			ModalSystem::GetModal<MeshImportModal>(m_meshImportModal).Open();
-		}
-
-		newEntity.GetComponent<Volt::TagComponent>().tag = meshSourcePath.stem().string();
-		m_createdEntity = newEntity;
 	}
 
 	ImGui::SetWindowFocus();
@@ -816,7 +787,7 @@ void ViewportPanel::DuplicateSelection()
 			continue;
 		}
 
-		auto duplicatedEntity = Volt::DuplicateEntity(m_editorScene->GetEntityFromID(ent), m_editorScene);
+		auto duplicatedEntity = Volt::DuplicateEntity(m_editorScene->GetEntityFromID(ent), *m_editorScene);
 		duplicatedEntity.SetTag(EditorUtils::GetDuplicatedNameFromEntity(m_editorScene->GetEntityFromID(ent)));
 
 		duplicated.emplace_back(duplicatedEntity);
@@ -852,7 +823,7 @@ void ViewportPanel::DuplicateSelection()
 		toCheck.append(children);
 	}
 
-	Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(duplicated, m_editorScene, ObjectStateAction::Create);
+	Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(duplicated, *m_editorScene, ObjectStateAction::Create);
 	EditorCommandStack::GetInstance().PushUndo(command);
 }
 
@@ -1075,7 +1046,8 @@ void ViewportPanel::UpdateModals()
 			Sandbox::Get().SaveScene();
 		}
 
-		Sandbox::Get().OpenScene(Volt::AssetManager::GetFilePathFromAssetHandle(m_sceneToOpen));
+		Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(m_sceneToOpen);
+		Sandbox::Get().OpenScene(sceneMetadata->filepath);
 		m_sceneToOpen = Volt::Asset::Null();
 	}
 }
@@ -1085,34 +1057,9 @@ void ViewportPanel::HandleNonMeshDragDrop()
 	Volt::AssetHandle handle;
 	if (UI::DragDropTarget({ "ASSET_BROWSER_ITEM" }, handle))
 	{
-		const AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(handle);
+		Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
 
-		if (type == AssetTypes::Material)
-		{
-			//auto material = Volt::AssetManager::GetAsset<Volt::Material>(handle);
-				//if (!material || !material->IsValid())
-				//{
-				//	break;
-				//}
-
-				//glm::vec2 perspectiveSize = myPerspectiveBounds[1] - myPerspectiveBounds[0];
-
-				//int32_t mouseX = (int32_t)myViewportMouseCoords.x;
-				//int32_t mouseY = (int32_t)myViewportMouseCoords.y;
-
-				/*if (mouseX >= 0 && mouseY >= 0 && mouseX < (int32_t)perspectiveSize.x && mouseY < (int32_t)perspectiveSize.y)
-				{
-					uint32_t pixelData = m_sceneRenderer->GetIDImage()->ReadPixel<uint32_t>(mouseX, mouseY);
-					Volt::Entity entity{ pixelData, m_editorScene };
-
-					if (entity.HasComponent<Volt::MeshComponent>())
-					{
-						auto& meshComponent = entity.GetComponent<Volt::MeshComponent>();
-						meshComponent.material = material->handle;
-					}
-				}*/
-		}
-		else if (type == AssetTypes::Scene)
+		if (sceneMetadata->type == AssetTypes::Scene)
 		{
 			UI::OpenModal("Do you want to save scene?##OpenSceneViewport");
 			m_sceneToOpen = handle;

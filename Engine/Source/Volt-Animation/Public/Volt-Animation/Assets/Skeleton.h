@@ -85,7 +85,7 @@ namespace Volt
 		const std::string GetNameFromJointIndex(int32_t index);
 
 		static AssetType GetStaticType() { return AssetTypes::Skeleton; }
-		AssetType GetType() override { return GetStaticType(); };
+		AssetType GetType() const override { return GetStaticType(); };
 		uint32_t GetVersion() const override { return 1; }
 
 	private:

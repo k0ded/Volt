@@ -23,12 +23,16 @@ namespace VoltSharpmake
 
 			conf.AddPrivateDependency<yaml>(target);
 
-			conf.AddPublicDependency<LogModule>(target);
-			conf.AddPublicDependency<EventSystemModule>(target);
-			conf.AddPublicDependency<AssetSystemModule>(target);
-			conf.AddPublicDependency<EntitySystemModule>(target);
-			conf.AddPublicDependency<WindowModule>(target);
-			conf.AddPublicDependency<RHIModule>(target);
+			conf.AddPrivateDependency<VoltPlatforms>(target);
+
+			conf.AddPrivateDependency<LogModule>(target);
+			conf.AddPrivateDependency<EventSystemModule>(target);
+			conf.AddPrivateDependency<JobSystemModule>(target);
+			conf.AddPrivateDependency<SubSystemModule>(target);
+			//conf.AddPrivateDependency<AssetSystemModule>(target);
+			//conf.AddPrivateDependency<EntitySystemModule>(target);
+			conf.AddPrivateDependency<WindowModule>(target);
+			conf.AddPrivateDependency<RHIModule>(target);
 		}
     }
 }

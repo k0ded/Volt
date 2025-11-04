@@ -6,6 +6,7 @@
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/DirtyAssetsManager.h"
 #include "Sandbox/EditorCommandStack.h"
+#include "Sandbox/EditorAssetManager.h"
 
 #include <Volt-Assets/MeshAsset.h>
 
@@ -20,10 +21,12 @@
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <Volt-Scene/Scene.h>
+#include <Volt-Scene/EntityDescription.h>
 
 #include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/FileSystem.h>
 
@@ -39,12 +42,14 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 
 	std::string assetFileName = "Null";
 
-	const Ref<Volt::Asset> rawAsset = Volt::AssetManager::Get().GetAssetRaw(assetHandle);
-	if (rawAsset)
+	AssetReference<Volt::Asset> asset;
+	if (g_assetManager->TryGetTypelessAssetIfLoaded(assetHandle, asset))
 	{
-		assetFileName = rawAsset->assetName;
+		ScopedAssetReferenceLock assetLock{ asset };
 
-		if (wantedType != AssetTypes::None && wantedType != rawAsset->GetType())
+		assetFileName = asset->GetAssetName();
+
+		if (wantedType != AssetTypes::None && wantedType != asset->GetType())
 		{
 			assetHandle = Volt::Asset::Null();
 		}
@@ -61,9 +66,8 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 	Volt::AssetHandle newHandle;
 	if (UI::DragDropTarget("ASSET_BROWSER_ITEM", newHandle))
 	{
-		auto droppedAssetType = Volt::AssetManager::GetAssetTypeFromHandle(newHandle);
-
-		if (droppedAssetType == wantedType)
+		Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(newHandle);
+		if (assetMetadata->type == wantedType)
 		{
 			assetHandle = newHandle;
 			changed = true;
@@ -234,64 +238,6 @@ SaveReturnState EditorUtils::SaveFilePopup(const std::string& aId)
 	return returnState;
 }
 
-Ref<Volt::Texture2D> EditorUtils::GenerateThumbnail(const std::filesystem::path& path)
-{
-	Ref<Volt::Texture2D> srcTexture = Volt::AssetManager::GetAsset<Volt::Texture2D>(path);
-	if (!srcTexture || !srcTexture->IsValid())
-	{
-		return nullptr;
-	}
-
-	//Volt::RenderPass renderPass;
-	//Volt::FramebufferSpecification spec{};
-	//spec.width = 128;
-	//spec.height = 128;
-	//spec.attachments =
-	//{
-	//	{ Volt::ImageFormat::RGBA }
-	//};
-
-	//renderPass.framebuffer = Volt::Framebuffer::Create(spec);
-
-	//Volt::Renderer::BeginFullscreenPass(renderPass, nullptr);
-
-	//// #TODO_Ivar: Reimplement
-
-	////Volt::Renderer::BindTexturesToStage(Volt::ShaderStage::Pixel, { srcTexture->GetImage() }, 0);
-	//Volt::Renderer::DrawFullscreenTriangleWithShader(Volt::ShaderRegistry::Get("CopyTextureToTarget"));
-	//Volt::Renderer::EndFullscreenPass();
-
-	//const std::filesystem::path thumbnailPath = GetThumbnailPathFromPath(path);
-	//Ref<Volt::Texture2D> thumbnailAsset = Volt::AssetManager::CreateAsset<Volt::Texture2D>(thumbnailPath.parent_path(), thumbnailPath.filename().string());
-
-	//Volt::Renderer::SubmitPostExcecution([=]()
-	//	{
-	//		const Ref<Volt::Image2D> image = renderPass.framebuffer->GetColorAttachment(0);
-	//		const auto& imageSpec = image->GetSpecification();
-
-	//		Volt::Buffer buffer = renderPass.framebuffer->GetColorAttachment(0)->GetDataBuffer();
-
-	//		constexpr int32_t channels = 4;
-	//		stbi_write_png((Volt::ProjectManager::GetDirectory() / thumbnailPath).string().c_str(), imageSpec.width, imageSpec.height, channels, buffer.As<void>(), imageSpec.width * Volt::Utility::PerPixelSizeFromFormat(imageSpec.format));
-
-	//		//thumbnailAsset->SetImage(image);
-	//		buffer.Release();
-	//	});
-
-
-	return nullptr;
-}
-
-bool EditorUtils::HasThumbnail(const std::filesystem::path& path)
-{
-	return FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / GetThumbnailPathFromPath(path));
-}
-
-std::filesystem::path EditorUtils::GetThumbnailPathFromPath(const std::filesystem::path& path)
-{
-	return path.string() + ".vtthumb.png";
-}
-
 std::string EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)
 {
 	std::string originalName = entity.GetTag();
@@ -312,18 +258,21 @@ std::string EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)
 	return originalName;
 }
 
-void EditorUtils::MarkEntityAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity)
+void EditorUtils::MarkEntityAsEdited(const Volt::Scene& scene, const Volt::Entity& entity)
 {
-	VT_ENSURE(scene);
+	const Volt::AssetHandle descHandle = scene.GetEntityDescHandleFromEntityID(entity.GetID());
 
-	const Volt::AssetHandle descHandle = scene->GetEntityDescHandleFromEntityID(entity.GetID());
-	DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
+	AssetReference<Volt::EntityDesc> entityDesc;
+
+	// Make sure the entity is loaded.
+	if (g_editorAssetManager->TryGetAssetImmediatelyAndCache(descHandle, entityDesc))
+	{
+		DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
+	}
 }
 
-void EditorUtils::MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity)
+void EditorUtils::MarkEntityAndChildrenAsEdited(const Volt::Scene& scene, const Volt::Entity& entity)
 {
-	VT_ENSURE(scene);
-
 	MarkEntityAsEdited(scene, entity);
 
 	for (const auto& child : entity.GetChildren())
@@ -332,12 +281,12 @@ void EditorUtils::MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, c
 	}
 }
 
-void EditorUtils::DestroyEntity(Weak<Volt::Scene> scene, const Volt::Entity& entity)
+void EditorUtils::DestroyEntity(Volt::Scene& scene, const Volt::Entity& entity)
 {
 	DestroyEntities(scene, { entity });
 }
 
-void EditorUtils::DestroyEntities(Weak<Volt::Scene> scene, const Vector<Volt::Entity>& entities)
+void EditorUtils::DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>& entities)
 {
 	//only the parentmost entities should be called delete on
 	FrameStackVector<Volt::Entity> parentmostEntities;
@@ -385,10 +334,27 @@ void EditorUtils::DestroyEntities(Weak<Volt::Scene> scene, const Vector<Volt::En
 	for (Volt::Entity& entity : parentmostEntities)
 	{
 		Vector<Volt::AssetHandle> destroyedEntityDescs;
-		scene->DestroyEntity(entity, destroyedEntityDescs);
+		scene.DestroyEntity(entity, destroyedEntityDescs);
 		for (Volt::AssetHandle asset : destroyedEntityDescs)
 		{
 			DirtyAssetsManager::Get().MarkAssetDirty(asset);
 		}
 	}
+}
+
+bool EditorUtils::IsAssetTypeFileExtension(AssetType assetType, const std::filesystem::path& filepath)
+{
+	const Vector<std::string>& extensions = assetType->GetExtensions();
+
+	std::string filepathExtension = filepath.extension().string();
+
+	for (const std::string& ext : extensions)
+	{
+		if (filepathExtension == ext)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

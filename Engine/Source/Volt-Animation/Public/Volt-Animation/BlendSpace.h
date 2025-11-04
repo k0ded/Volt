@@ -2,7 +2,7 @@
 
 #include "Volt-Animation/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Asset.h>
 
@@ -32,7 +32,7 @@ namespace Volt
 		inline void SetDimension(BlendSpaceDimension dim) { m_dimension = dim; }
 
 		static AssetType GetStaticType() { return AssetTypes::BlendSpace; }
-		virtual AssetType GetType() override { return AssetTypes::BlendSpace; }
+		virtual AssetType GetType() const override { return AssetTypes::BlendSpace; }
 		uint32_t GetVersion() const override { return 1; }
 
 	private:

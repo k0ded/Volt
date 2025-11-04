@@ -1,12 +1,14 @@
 #include "sbpch.h"
 #include "Sandbox.h"
 
+#include "Sandbox/EditorAssetManager.h"
+
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -28,31 +30,9 @@ void Sandbox::CreateModifiedWatch()
 		std::scoped_lock lock(m_fileWatcherMutex);
 		m_fileChangeQueue.emplace_back([newPath, oldPath, this]()
 		{
-			AssetType assetType = Volt::AssetManager::GetAssetTypeFromPath(newPath);
-			if (assetType == AssetTypes::Mesh ||
-				assetType == AssetTypes::Prefab ||
-				assetType == AssetTypes::Material ||
-				assetType == AssetTypes::Texture)
+			if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
 			{
-				Volt::AssetManager::Get().ReloadAsset(Volt::AssetManager::GetRelativePath(newPath));
-			}
-			else if (assetType == AssetTypes::MeshSource)
-			{
-				/*const auto assets = Volt::AssetManager::GetAllAssetsWithDependency(Volt::AssetManager::Get().GetRelativePath(newPath));
-for (const auto& asset : assets)
-{
-	if (EditorUtils::ReimportSourceMesh(asset))
-	{
-		UI::Notify(UI::NotificationType::Success, "Re imported mesh!", std::format("Mesh {0} has been reimported!", Volt::AssetManager::GetFilePathFromAssetHandle(asset).string()));
-	}
-}*/
-			}
-			else
-			{
-				if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
-				{
-					Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
-				}
+				Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
 			}
 		});
 	});
@@ -72,17 +52,14 @@ void Sandbox::CreateDeleteWatch()
 		{
 			if (!newPath.has_extension())
 			{
-				Volt::AssetManager::Get().RemoveFullFolderFromRegistry(Volt::AssetManager::GetRelativePath(newPath));
+				g_editorAssetManager->DeleteDirectory(newPath);
 			}
 			else
 			{
-				AssetType assetType = Volt::AssetManager::GetAssetTypeFromPath(Volt::AssetManager::GetRelativePath(newPath));
-				if (assetType != AssetTypes::None)
+				Volt::AssetHandle assetHandle = g_assetManager->GetAssetHandleFromFilepath(newPath);
+				if (g_assetManager->IsValidAssetHandle(assetHandle))
 				{
-					if (Volt::AssetManager::ExistsInRegistry(Volt::AssetManager::GetRelativePath(newPath)))
-					{
-						Volt::AssetManager::Get().RemoveAssetFromRegistry(Volt::AssetManager::GetRelativePath(newPath));
-					}
+					g_editorAssetManager->DeleteAsset(assetHandle);
 				}
 			}
 		});
@@ -106,11 +83,11 @@ void Sandbox::CreateMovedWatch()
 		{
 			if (!newPath.has_extension())
 			{
-				Volt::AssetManager::Get().MoveFullFolder(oldPath, newPath);
+				g_editorAssetManager->MoveDirectoryTo(oldPath, newPath);
 			}
 			else
 			{
-				Volt::AssetManager::Get().MoveAssetInRegistry(oldPath, newPath);
+				g_editorAssetManager->MoveAssetTo(g_assetManager->GetAssetHandleFromFilepath(oldPath), newPath);
 			}
 		});
 	});

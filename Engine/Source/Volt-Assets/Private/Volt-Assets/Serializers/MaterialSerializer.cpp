@@ -8,6 +8,7 @@
 #include <Volt-Renderer/RenderMaterial.h>
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicNode.h>
@@ -19,9 +20,11 @@
 
 namespace Volt
 {
-	void MaterialSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void MaterialSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
-		const Ref<MaterialAsset> mosaicAsset = std::reinterpret_pointer_cast<MaterialAsset>(asset);
+		const AssetReference<MaterialAsset> mosaicAsset = asset.ConvertTo<MaterialAsset>();
+		ScopedAssetReferenceLock materialLock{ mosaicAsset };
+
 		const auto& graph = mosaicAsset->GetMaterialGraph()->GetMosaicGraph();
 
 		YAMLMemoryStreamWriter streamWriter{};
@@ -93,13 +96,13 @@ namespace Volt
 		streamWriter.EndMap();
 
 		BinaryStreamWriter binaryStreamWriter{};
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), binaryStreamWriter);
+		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), binaryStreamWriter);
 
 		auto buffer = streamWriter.WriteAndGetBuffer();
 		binaryStreamWriter.Write(buffer);
 		buffer.Release();
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 		binaryStreamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
@@ -109,13 +112,13 @@ namespace Volt
 		memcpy_s(&outData, sizeof(T), buffer.As<void>(), buffer.GetSize());
 	}
 
-	bool MaterialSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool MaterialSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
@@ -124,7 +127,7 @@ namespace Volt
 
 		if (!binaryStreamReader.IsStreamValid())
 		{
-			VT_LOG(Error, "Failed to open file: {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
@@ -138,14 +141,16 @@ namespace Volt
 		YAMLMemoryStreamReader streamReader{};
 		if (!streamReader.ConsumeBuffer(buffer))
 		{
-			VT_LOG(Error, "Failed to read file {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to read file {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
 
-		Ref<MaterialAsset> materialAsset = std::reinterpret_pointer_cast<MaterialAsset>(destinationAsset);
+		AssetReference<MaterialAsset> materialAsset = destinationAsset.ConvertTo<MaterialAsset>();
+		ScopedAssetReferenceLock materialLock{ materialAsset };
+
 		materialAsset->m_graph = CreateRef<MaterialGraph>();
-		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(materialAsset->assetName);
+		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(std::string(materialAsset->GetAssetName()));
 		materialAsset->m_graph->m_graph->Clear();
 
 		streamReader.EnterScope("MosaicGraph");
@@ -209,13 +214,13 @@ namespace Volt
 
 		streamReader.ExitScope();
 
-		std::string logStr = std::format("Loaded material {0} with textures: \n", (uint64_t)metadata.handle);
+		std::string logStr = std::format("Loaded material {0} with textures: \n", (uint64_t)metadata->handle);
 
 		// #TODO_Ivar: This should probably happen automatically while deserializing the texture nodes
 		for (const auto tex : materialAsset->m_graph->GetTextureHandles())
 		{
 			logStr += std::format("		- {0}\n", (uint64_t)tex);
-			AssetManager::AddDependencyToAsset(metadata.handle, tex);
+			g_assetManager->AddDependencyToAsset(metadata->handle, tex);
 		}
 
 		SubSystemManager::GetSubSystem<Volt::MaterialCompilerSubSystem>()->RequestMaterialCompilation(materialAsset);

@@ -437,7 +437,7 @@ namespace UI
 		}
 	}
 
-	bool TreeNodeImage(Ref<Volt::Texture2D> texture, const std::string& text, ImGuiTreeNodeFlags flags, bool setOpen)
+	bool TreeNodeImage(RefPtr<Volt::RHI::Image> texture, const std::string& text, ImGuiTreeNodeFlags flags, bool setOpen)
 	{
 		ScopedStyleFloat2 frame{ ImGuiStyleVar_FramePadding, { 0.f, 0.f } };
 		ScopedStyleFloat2 spacing{ ImGuiStyleVar_ItemSpacing, { 0.f, 0.f } };

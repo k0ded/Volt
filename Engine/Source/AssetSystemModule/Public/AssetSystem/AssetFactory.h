@@ -1,6 +1,7 @@
 #pragma once
 
-#include "AssetSystem/Asset.h"
+#include "AssetSystem/AssetManagerCommon.h"
+#include "AssetSystem/AssetAllocatorCommon.h"
 
 #include <functional>
 
@@ -12,17 +13,37 @@ namespace Volt
 	{
 	public:
 		using AssetCreateFunction = std::function<Ref<Asset>()>;
+		using CreateAssetTypeAllocatorFunction = std::function<Ref<AssetTypeAllocator>()>;
 
-		bool RegisterAssetType(VoltGUID typeGuid, const AssetCreateFunction& func);
+		struct FactoryData
+		{
+			AssetCreateFunction createFunction;
+			CreateAssetTypeAllocatorFunction createAllocatorFunction;
+			uint64_t assetTypeSize;
+		};
+
+		template<typename T> bool RegisterAssetType(VoltGUID typeGuid);
 		VT_NODISCARD Ref<Asset> CreateAssetOfType(AssetType type) const;
+
+		VT_NODISCARD VT_INLINE const Map<VoltGUID, FactoryData>& GetFactoryMap() const { return m_assetFactoryFunctions; }
 
 		static AssetFactory& Get();
 
 	private:
-		std::unordered_map<VoltGUID, AssetCreateFunction> m_assetFactoryFunctions;
+		Map<VoltGUID, FactoryData> m_assetFactoryFunctions;
 	};
 
+	template<typename T>
+	bool AssetFactory::RegisterAssetType(VoltGUID typeGuid)
+	{
+		FactoryData& factoryData = m_assetFactoryFunctions[typeGuid];
+		//factoryData.createFunction = []() { return CreateRef<T>(); };
+		factoryData.createAllocatorFunction = []() { return CreateRef<AssetTypeAllocatorImpl<T>>(); };
+		factoryData.assetTypeSize = sizeof(T);
+
+		return true;
+	}
 }
 
 #define VT_REGISTER_ASSET_FACTORY(assetType, type) \
-	inline static bool AssetFactory_ ## type ## _Registered = AssetFactory::Get().RegisterAssetType(assetType ## Type ##::guid, []() { return CreateRef<type>(); })
+	inline static bool AssetFactory_ ## type ## _Registered = AssetFactory::Get().RegisterAssetType<type>(assetType ## Type ##::guid)

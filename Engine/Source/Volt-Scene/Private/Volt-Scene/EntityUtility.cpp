@@ -56,11 +56,9 @@ namespace Volt
 		}
 	}
 
-	Entity DuplicateEntity(Entity srcEntity, Ref<Scene> targetScene, Entity parent, std::set<VoltGUID> componentsToSkip)
+	Entity DuplicateEntity(Entity srcEntity, Scene& targetScene, Entity parent, std::set<VoltGUID> componentsToSkip)
 	{
-		VT_ENSURE(targetScene);
-
-		Entity newEntity = targetScene->CreateEntity();
+		Entity newEntity = targetScene.CreateEntity();
 
 		auto allSkipComponents = CreateSkipComponentOnCopySet<IDComponent, RelationshipComponent>();
 		allSkipComponents.insert(componentsToSkip.begin(), componentsToSkip.end());
@@ -79,7 +77,7 @@ namespace Volt
 		//initialize all components after the entity has spawned
 		newEntity.InitializeComponents();
 
-		targetScene->InvalidateEntityTransform(newEntity.GetID());
+		targetScene.InvalidateEntityTransform(newEntity.GetID());
 
 		return newEntity;
 	}

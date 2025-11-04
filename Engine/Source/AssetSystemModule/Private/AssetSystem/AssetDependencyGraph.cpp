@@ -2,10 +2,12 @@
 #include "AssetDependencyGraph.h"
 
 #include "AssetSystem/AssetManager.h"
+#include "AssetSystem/AssetLocks.h"
 
 namespace Volt
 {
-	AssetDependencyGraph::AssetDependencyGraph()
+	AssetDependencyGraph::AssetDependencyGraph(AssetManager& referencedAssetManager)
+		: m_referencedAssetManager(referencedAssetManager)
 	{
 	}
 	AssetDependencyGraph::~AssetDependencyGraph()
@@ -65,14 +67,13 @@ namespace Volt
 
 		for (size_t i = 1; i < dependants.size(); i++)
 		{
-			const auto isLoaded = Volt::AssetManager::IsLoaded(dependants.at(i));
-			if (isLoaded)
+			ReadOnlyAssetMetadata assetMetadata = m_referencedAssetManager.GetReadOnlyAssetMetadata(dependants.at(i));
+
+			AssetReference<Asset> asset;
+			if (m_referencedAssetManager.TryGetTypelessAssetIfLoaded(dependants.at(i), asset))
 			{
-				const auto rawAsset = Volt::AssetManager::Get().GetAssetRaw(dependants.at(i));
-				if (rawAsset && rawAsset->IsValid())
-				{
-					rawAsset->OnDependencyChanged(handle, state);
-				}
+				ScopedAssetReferenceLock assetLock{ asset };
+				asset->OnAssetDependencyChanged(handle, state);
 			}
 		}
 	}

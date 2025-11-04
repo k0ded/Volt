@@ -15,6 +15,7 @@
 #include <CoreUtilities/StringUtility.h>
 
 #include <AssetSystem/SourceAssetManager.h>
+#include <AssetSystem/AssetLocks.h>
 
 TextureImportModal::TextureImportModal(const std::string& strId)
 	: Modal(strId)
@@ -54,7 +55,7 @@ void TextureImportModal::DrawModalContent()
 		{
 			for (const auto& path : m_importFilePaths)
 			{
-				Import(path);
+				Import(path, m_destinationDirectory);
 			}
 
 			Close();
@@ -65,7 +66,7 @@ void TextureImportModal::DrawModalContent()
 
 	if (ImGui::Button("Import"))
 	{
-		Import(m_importFilePaths.front());
+		Import(m_importFilePaths.front(), m_destinationDirectory);
 		m_importFilePaths.erase(m_importFilePaths.begin());
 
 		if (m_importFilePaths.empty())
@@ -103,9 +104,10 @@ std::string TextureImportModal::GetImportTypeStringFromFilepath(const std::files
 	return Utility::ToUpper(extension);
 }
 
-void TextureImportModal::Import(const std::filesystem::path filepath)
+void TextureImportModal::Import(const std::filesystem::path& filepath, const std::filesystem::path& destinationDirectory)
 {
-	const std::filesystem::path destinationDirectory = filepath.parent_path();
+	VT_ENSURE(!destinationDirectory.empty());
+
 	const std::string destinationFileName = filepath.stem().string();
 
 	Volt::TextureSourceImportConfig importConfig;
@@ -124,17 +126,18 @@ void TextureImportModal::Import(const std::filesystem::path filepath)
 		// which we use to create the environment texture asset.
 		importConfig.createAsMemoryAsset = true;
 
-		auto importCallback = [importConfig](Vector<Ref<Volt::Asset>> assets)
+		auto importCallback = [importConfig](Vector<AssetReference<Volt::Asset>> assets)
 		{
-			Volt::AssetHandle textureHandle = assets.back()->handle;
+			AssetReference<Volt::Asset> textureAsset = assets.back();
+			ScopedAssetReferenceLock textureLock{ textureAsset };
+
+			Volt::AssetHandle textureHandle = textureAsset->GetAssetHandle();
 
 			Volt::JobRef job = Volt::JobSystem::CreateJob("Generate Environment Texture", Volt::ExecutionPriority::Latent,
 			[textureHandle, importConfig]()
 			{
 				Volt::Renderer::EnvironmentTextures envTextures = Volt::Renderer::GenerateEnvironmentTextures(textureHandle);
-				Volt::AssetManager::CreateAssetAndFile<Volt::EnvironmentTexture>(importConfig.destinationDirectory, importConfig.destinationFilename, envTextures.diffuse, envTextures.specular);
-
-				Volt::AssetManager::Get().UnloadMemoryAsset(textureHandle);
+				g_assetManager->CreateAssetAndFile<Volt::EnvironmentTexture>(importConfig.destinationDirectory, importConfig.destinationFilename, envTextures.diffuse, envTextures.specular);
 			});
 
 			Volt::JobSystem::RunJob(job);

@@ -8,7 +8,9 @@
 
 #include <Volt-Application/UI/UIUtility.h>
 
-EngineStatisticsPanel::EngineStatisticsPanel(Ref<Volt::Scene>& aScene, Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::SceneRenderer>& gameSceneRenderer)
+#include <AssetSystem/AssetLocks.h>
+
+EngineStatisticsPanel::EngineStatisticsPanel(AssetReference<Volt::Scene>& aScene, Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::SceneRenderer>& gameSceneRenderer)
 	: EditorWindow("Engine Statistics"), myScene(aScene), mySceneRenderer(sceneRenderer), myGameSceneRenderer(gameSceneRenderer)
 {}
 
@@ -61,6 +63,8 @@ void EngineStatisticsPanel::UpdateMainContent()
 	{
 		if (myScene)
 		{
+			ScopedAssetReferenceLock sceneLock{ myScene };
+
 			const auto& stats = myScene->GetStatistics();
 			ImGui::Text("Entity count: %d", stats.entityCount);
 		}

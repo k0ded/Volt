@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>
@@ -33,7 +33,7 @@ namespace Volt
 		inline MSDFData* GetMSDFData() const { return myMSDFData; }
 
 		static AssetType GetStaticType() { return AssetTypes::Font; }
-		AssetType GetType() override { return GetStaticType(); };
+		AssetType GetType() const override { return GetStaticType(); };
 		uint32_t GetVersion() const override { return 1; }
 
 	private:

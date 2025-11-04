@@ -5,6 +5,7 @@
 #include "Volt-Renderer/Texture/Texture2D.h"
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetReference.h>
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Images/ImageUtility.h>
@@ -19,7 +20,7 @@ namespace Volt
 {
 	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".jpeg", ".jpg", ".png", ".tga", ".bmp", ".psd", ".gif", ".hdr", ".pic", ".pnm" }), CommonTextureSourceImporter);
 
-	Vector<Ref<Asset>> CommonTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> CommonTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
 		VT_PROFILE_FUNCTION();
 		const TextureSourceImportConfig& importConfig = *reinterpret_cast<const TextureSourceImportConfig*>(config);
@@ -78,15 +79,15 @@ namespace Volt
 
 		RefPtr<RHI::Image> image = RHI::Image::Create(specification, data);
 
-		Ref<Texture2D> voltTexture;
+		AssetReference<Texture2D> voltTexture;
 
 		if (importConfig.createAsMemoryAsset)
 		{
-			voltTexture = AssetManager::CreateMemoryAsset<Texture2D>(importConfig.destinationFilename);
+			voltTexture = g_assetManager->CreateMemoryAsset<Texture2D>(importConfig.destinationFilename);
 		}
 		else
 		{
-			voltTexture = AssetManager::CreateAssetAndFile<Texture2D>(importConfig.destinationDirectory, importConfig.destinationFilename);
+			voltTexture = g_assetManager->CreateAsset<Texture2D>(importConfig.destinationFilename);
 		}
 
 		voltTexture->SetImage(image);

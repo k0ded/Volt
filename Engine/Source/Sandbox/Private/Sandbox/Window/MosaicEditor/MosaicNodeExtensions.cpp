@@ -8,6 +8,7 @@
 #include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetLocks.h>
 
 void ColorNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 {
@@ -29,10 +30,12 @@ void SampleTextureNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 
 	Volt::AssetHandle textureHandle = sampleTextureNode->GetTextureHandle();
 
-	const Ref<Volt::Asset> rawAsset = Volt::AssetManager::Get().GetAssetRaw(textureHandle);
-	if (rawAsset)
+	AssetReference<Volt::Asset> rawAsset;
+	if (g_assetManager->TryGetTypelessAssetIfLoaded(textureHandle, rawAsset))
 	{
-		assetFileName = rawAsset->assetName;
+		ScopedAssetReferenceLock assetLock{ rawAsset };
+
+		assetFileName = rawAsset->GetAssetName();
 	}
 
 	const ImVec2 width = ImGui::CalcTextSize(assetFileName.c_str());

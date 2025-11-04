@@ -7,10 +7,9 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <AssetSystem/AssetManager.h>
-
 #include <CoreUtilities/Buffer/Buffer.h>
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/StringUtility.h>
 
 namespace Volt
 {
@@ -322,7 +321,7 @@ namespace Volt
 			}
 		}
 
-		std::string fontName = AssetManager::GetMetadataFromHandle(handle).filePath.stem().string(); // #TODO_Ivar: change font constructor
+		const std::string fontName = std::string(GetAssetName());
 		const std::filesystem::path cachePath = Utility::GetCachePath(fontName);
 
 		Ref<Texture2D> texture;

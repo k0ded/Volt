@@ -10,6 +10,7 @@
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
+#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -23,9 +24,10 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void PrefabSerializer::Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const
+	void PrefabSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
-		const Ref<Prefab> prefab = std::reinterpret_pointer_cast<Prefab>(asset);
+		const AssetReference<Prefab> prefab = asset.ConvertTo<Prefab>();
+		ScopedAssetReferenceLock prefabLock{ prefab };
 
 		YAMLMemoryStreamWriter yamlStreamWriter{};
 		yamlStreamWriter.BeginMap();
@@ -60,13 +62,13 @@ namespace Volt
 		yamlStreamWriter.EndMap();
 
 		BinaryStreamWriter streamWriter{};
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(metadata, asset->GetVersion(), streamWriter);
+		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
 
 		Buffer buffer = yamlStreamWriter.WriteAndGetBuffer();
 		streamWriter.Write(buffer);
 		buffer.Release();
 
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 		const auto directory = filePath.parent_path();
 		if (!std::filesystem::exists(directory))
 		{
@@ -75,13 +77,13 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool PrefabSerializer::Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const
+	bool PrefabSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
 	{
-		const auto filePath = AssetManager::GetFilesystemPath(metadata.filePath);
+		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
 		if (!std::filesystem::exists(filePath))
 		{
-			VT_LOG(Error, "File {0} not found!", metadata.filePath);
+			VT_LOG(Error, "File {0} not found!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
@@ -90,7 +92,7 @@ namespace Volt
 
 		if (!streamReader.IsStreamValid())
 		{
-			VT_LOG(Error, "Failed to open file: {0}!", metadata.filePath);
+			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
 			destinationAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
@@ -108,8 +110,10 @@ namespace Volt
 			return false;
 		}
 
-		Ref<Prefab> prefab = std::reinterpret_pointer_cast<Prefab>(destinationAsset);
-		Ref<Scene> prefabScene = CreateRef<Scene>();
+		AssetReference<Prefab> prefab = destinationAsset.ConvertTo<Prefab>();
+		ScopedAssetReferenceLock prefabLock{ prefab };
+
+		AssetReference<Scene> prefabScene = g_assetManager->CreateAnonymousAsset<Scene>("PrefabScene");
 
 		yamlStreamReader.EnterScope("Prefab");
 		{

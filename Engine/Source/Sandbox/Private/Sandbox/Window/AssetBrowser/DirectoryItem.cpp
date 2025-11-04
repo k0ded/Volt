@@ -1,6 +1,7 @@
 #include "sbpch.h"
 #include "Window/AssetBrowser/DirectoryItem.h"
 
+#include "Sandbox/EditorAssetManager.h"
 #include "Sandbox/Window/AssetBrowser/AssetBrowserSelectionManager.h"
 #include "Sandbox/Window/AssetBrowser/AssetItem.h"
 
@@ -10,8 +11,6 @@
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
-
-#include <AssetSystem/AssetManager.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
 
@@ -37,8 +36,7 @@ namespace AssetBrowser
 				if (item->isDirectory && item != this)
 				{
 					const std::filesystem::path newPath = path / item->path.stem();
-					Volt::AssetManager::Get().MoveFullFolder(item->path, newPath);
-					FileSystem::MoveDirectory(Volt::ProjectManager::GetRootDirectory() / item->path, newPath);
+					g_editorAssetManager->MoveDirectoryTo(item->path, newPath);
 				}
 			}
 
@@ -46,8 +44,7 @@ namespace AssetBrowser
 			{
 				if (!item->isDirectory && item != this && FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / item->path))
 				{
-
-					Volt::AssetManager::Get().MoveAsset(Volt::AssetManager::GetAssetHandleFromFilePath(item->path), path);
+					g_editorAssetManager->MoveAssetTo(g_assetManager->GetAssetHandleFromFilepath(item->path), path);
 				}
 			}
 
@@ -61,8 +58,7 @@ namespace AssetBrowser
 				if (item->isDirectory && item != this)
 				{
 					const std::filesystem::path newPath = path / item->path.stem();
-					Volt::AssetManager::Get().MoveFullFolder(item->path, newPath);
-					FileSystem::MoveDirectory(Volt::ProjectManager::GetRootDirectory() / item->path, newPath);
+					g_editorAssetManager->MoveDirectoryTo(item->path, newPath);
 				}
 			}
 
@@ -70,17 +66,7 @@ namespace AssetBrowser
 			{
 				if (!item->isDirectory && item != this && FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / item->path))
 				{
-					// Check for thumbnail PNG
-					if (Volt::AssetManager::Get().GetAssetTypeFromPath(item->path) == AssetTypes::Texture)
-					{
-						const std::filesystem::path thumbnailPath = item->path.parent_path() / (item->path.stem().string() + ".vtthumb.png");
-						if (FileSystem::Exists(thumbnailPath))
-						{
-							FileSystem::Move(Volt::ProjectManager::GetRootDirectory() / thumbnailPath, path);
-						}
-					}
-
-					Volt::AssetManager::Get().MoveAsset(Volt::AssetManager::GetAssetHandleFromFilePath(item->path), path);
+					g_editorAssetManager->MoveAssetTo(g_assetManager->GetAssetHandleFromFilepath(item->path), path);
 				}
 			}
 
@@ -97,7 +83,7 @@ namespace AssetBrowser
 
 	RefPtr<Volt::RHI::Image> DirectoryItem::GetIcon() const
 	{
-		return EditorResources::GetEditorIcon(EditorIcon::Directory)->GetImage();
+		return EditorResources::GetEditorIcon(EditorIcon::Directory);
 	}
 
 	ImVec4 DirectoryItem::GetBackgroundColor() const
@@ -155,30 +141,13 @@ namespace AssetBrowser
 	{
 		if (newName.empty()) { return false; }
 
-		const std::filesystem::path newDir = path.parent_path() / m_currentRenamingName;
-		RecursivlyRenameAssets(this, newDir);
+		g_editorAssetManager->RenameDirectory(path, newName);
 
-		FileSystem::Rename(Volt::ProjectManager::GetRootDirectory() / path, m_currentRenamingName);
 		return true;
 	}
 
 	void DirectoryItem::Open()
 	{
 		isNext = true;
-	}
-
-	void DirectoryItem::RecursivlyRenameAssets(DirectoryItem* directory, const std::filesystem::path& targetDirectory)
-	{
-		for (const auto& asset : directory->assets)
-		{
-			const std::filesystem::path newPath = targetDirectory / asset->path.filename();
-			Volt::AssetManager::Get().RenameAssetFolder(asset->handle, newPath);
-		}
-
-		for (const auto& dir : directory->subDirectories)
-		{
-			const std::filesystem::path newPath = targetDirectory / dir->path.stem();
-			RecursivlyRenameAssets(dir.get(), newPath);
-		}
 	}
 }

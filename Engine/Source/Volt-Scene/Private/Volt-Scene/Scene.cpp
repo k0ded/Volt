@@ -26,6 +26,7 @@
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetSerializerRegistry.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Math/Math.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -147,19 +148,22 @@ namespace Volt
 		JobRef job = JobSystem::CreateJob("Register Entities", ExecutionPriority::Latent, [this]()
 		{
 			//collect all entity descriptions to spawn
-			const Vector<AssetHandle> allEntityDescAssetsForScene = Volt::AssetManager::GetAllAssetsOfType<Volt::EntityDesc>();
-			for (const AssetHandle& entityHandle : allEntityDescAssetsForScene)
+			AssetRegistryIteratorFilter iteratorFilter;
+			iteratorFilter.AddAssetType<Volt::EntityDesc>();
+
+			g_assetManager->IterateAssetRegistryWithFilter(iteratorFilter, [this](ReadOnlyAssetMetadata assetMetadata)
 			{
-				const AssetMetadata meta = Volt::AssetManager::GetMetadataFromHandle(entityHandle);
-				const EntityDescCustomMetadata& customMeta = meta.GetCustomData<EntityDescCustomMetadata>();
+				const EntityDescCustomMetadata& customMeta = assetMetadata->GetCustomData<EntityDescCustomMetadata>();
 
-				if (customMeta.sceneHandle != this->handle)
+				if (customMeta.sceneHandle != this->GetAssetHandle())
 				{
-					continue;
+					return true;
 				}
-				m_entityIDToDescHandle.emplace(customMeta.entityID, entityHandle);
-			}
 
+				m_entityIDToDescHandle.emplace(customMeta.entityID, assetMetadata->handle);
+
+				return true;
+			});
 
 			TaskGraph taskGraph{ ExecutionPriority::Latent };
 			TaskGraph::Task* createEntitiesTask = taskGraph.AddTask("Create Entities", [this]()
@@ -194,16 +198,19 @@ namespace Volt
 
 				parseEntityDescTasks.push_back(taskGraph.AddTask("Parse EntityDesc Data", [descHandle, entityID, reader, entityToComponentTypes]
 				{
-					Ref<EntityDesc> entityDesc = AssetManager::GetAsset<EntityDesc>(descHandle);
+					AssetReference<EntityDesc> entityDesc;
+					if (g_assetManager->TryGetAssetImmediately(descHandle, entityDesc))
+					{
+						ScopedAssetReferenceLock assetLock{ entityDesc };
 
-					reader->ReadBuffer(entityDesc->GetEntitySpawnData());
+						reader->ReadBuffer(entityDesc->GetEntitySpawnData());
+						entityToComponentTypes->at(entityID) = EntityDescSerializer::FindComponentTypes(*reader);
+					}
 
 					//todo_fabian: we probably want to be able to have the
 					// entity descriptions not loaded but the entity present...
 					//for now DirtyAssetManager relies on the desc being loaded
 					//AssetManager::Get().UnloadAsset(descHandle);
-
-					entityToComponentTypes->at(entityID) = EntityDescSerializer::FindComponentTypes(*reader);
 				}));
 			}
 
@@ -291,13 +298,15 @@ namespace Volt
 
 	void Scene::UnloadEntities()
 	{
+		// #TODO_AssetSystem: We need to verify this behaviour
+
 		//todo_fabian: we probably want to be able to have the
 		// entity descriptions not loaded but the entity present...
 		//for now DirtyAssetManager relies on the desc being loaded
-		for (const auto& [id, descHandle] : m_entityIDToDescHandle)
-		{
-			AssetManager::Get().UnloadAsset(descHandle);
-		}
+		//for (const auto& [id, descHandle] : m_entityIDToDescHandle)
+		//{
+		//	AssetManager::Get().UnloadAsset(descHandle);
+		//}
 		Clear();
 
 	}
@@ -329,10 +338,10 @@ namespace Volt
 
 	Entity Scene::CreateEntityWithIDForExistingDescription(const EntityID& id, Volt::AssetHandle existingEntityDescHandle)
 	{
-		AssetMetadata meta = AssetManager::GetMetadataFromHandle(existingEntityDescHandle);
-		const EntityDescCustomMetadata& customMeta = meta.GetCustomData<EntityDescCustomMetadata>();
+		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(existingEntityDescHandle);
+		const EntityDescCustomMetadata& customMeta = assetMetadata->GetCustomData<EntityDescCustomMetadata>();
 
-		VT_ENSURE(customMeta.sceneHandle == this->handle);
+		VT_ENSURE(customMeta.sceneHandle == this->GetAssetHandle());
 		VT_ENSURE(customMeta.entityID == id);
 
 		Entity newEntity = m_entityScene.CreateEntityWithID(id);
@@ -343,23 +352,27 @@ namespace Volt
 		return newEntity;
 	}
 
-	Volt::AssetHandle Scene::CreateEntityDescForEntity(const EntityID& id)
+	AssetHandle Scene::CreateEntityDescForEntity(const EntityID& id)
 	{
 		VT_ENSURE(!m_entityIDToDescHandle.contains(id));
 		VT_ENSURE(m_entityScene.IsEntityValid(id));
 
 		std::string name = std::to_string(id);
-		Ref<Volt::EntityDesc> asset;
-		if (Volt::AssetManager::IsMemoryAsset(this->handle))
+		
+		AssetReference<EntityDesc> asset;
+		if (this->IsFlagSet(AssetFlag::MemoryOnly))
 		{
-			asset = Volt::AssetManager::CreateMemoryAsset<Volt::EntityDesc>(name, id, this->handle);
+			asset = g_assetManager->CreateMemoryAsset<EntityDesc>(name, id, GetAssetHandle());
 		}
 		else
 		{
-			asset = Volt::AssetManager::CreateAsset<Volt::EntityDesc>(name, id, this->handle);
+			asset = g_assetManager->CreateAsset<EntityDesc>(name, id, GetAssetHandle());
 		}
-		m_entityIDToDescHandle.emplace(id, asset->handle);
-		return asset->handle;
+
+		ScopedAssetReferenceLock assetLock{ asset };
+
+		m_entityIDToDescHandle.emplace(id, asset->GetAssetHandle());
+		return asset->GetAssetHandle();
 	}
 
 	Entity Scene::GetEntityFromID(const EntityID id) const
@@ -414,10 +427,13 @@ namespace Volt
 			//so might need to change the unload below
 
 			//if the entity doesnt have a filepath, it is not part of the saved scene
+
+			// #TODO_AssetSystem: Check how this behaves with new system.
+#if 0
 			const Volt::AssetHandle entityDescHandle = m_entityIDToDescHandle[destroyedEnt];
 			if (!Volt::AssetManager::HasFilePath(entityDescHandle))
 			{
-				if (Volt::AssetManager::IsMemoryAsset(this->handle))
+				if (Volt::AssetManager::IsMemoryAsset(GetAssetHandle()))
 				{
 					Volt::AssetManager::Get().UnloadMemoryAsset(entityDescHandle);
 				}
@@ -426,6 +442,7 @@ namespace Volt
 					Volt::AssetManager::Get().UnloadAsset(entityDescHandle);
 				}
 			}
+#endif
 
 			m_entityIDToDescHandle.erase(destroyedEnt);
 		}
@@ -434,8 +451,6 @@ namespace Volt
 		{
 			*outDestroyedEntities = destroyedEntities;
 		}
-
-
 	}
 
 	void Scene::InvalidateEntityTransform(const EntityID& entityId)
@@ -460,17 +475,19 @@ namespace Volt
 		return m_entityScene.IsEntityValid(entityId);
 	}
 
-	Ref<Scene> Scene::CreateDefaultScene(const std::string& name, bool createDefaultMesh, bool asMemoryAsset)
+	AssetReference<Scene> Scene::CreateDefaultScene(const std::string& name, bool createDefaultMesh, bool asMemoryAsset)
 	{
-		Ref<Scene> newScene;
+		AssetReference<Scene> newScene;
 		if (asMemoryAsset)
 		{
-			newScene = Volt::AssetManager::CreateMemoryAsset<Scene>(name);
+			newScene = g_assetManager->CreateMemoryAsset<Scene>(name);
 		}
 		else
 		{
-			newScene = Volt::AssetManager::CreateAsset<Scene>(name);
+			newScene = g_assetManager->CreateAsset<Scene>(name);
 		}
+
+		ScopedAssetReferenceLock assetLock{ newScene };
 
 		// Setup
 		{
@@ -480,7 +497,7 @@ namespace Volt
 				auto ent = newScene->CreateEntity("Cube");
 
 				auto& meshComp = ent.AddComponent<MeshComponent>();
-				meshComp.handle = AssetManager::GetAssetHandleFromFilePath("Engine/Meshes/Primitives/SM_Cube.vtasset");
+				meshComp.handle = g_assetManager->GetAssetHandleFromFilepath("Engine/Meshes/Primitives/SM_Cube.vtasset");
 				MeshComponent::OnMemberChanged(MeshComponent::MeshEntity(ent));
 			}
 
@@ -497,7 +514,7 @@ namespace Volt
 			{
 				auto ent = newScene->CreateEntity("Skylight");
 				SkylightComponent& skyComp = ent.AddComponent<SkylightComponent>();
-				skyComp.environmentTextureHandle = AssetManager::GetAssetHandleFromFilePath("Engine/Textures/HDRIs/defaultHDRI.vtasset");
+				skyComp.environmentTextureHandle = g_assetManager->GetAssetHandleFromFilepath("Engine/Textures/HDRIs/defaultHDRI.vtasset");
 				SkylightComponent::OnMemberChanged(SkylightComponent::LightEntity(ent));
 			}
 
@@ -516,9 +533,12 @@ namespace Volt
 		return newScene;
 	}
 
-	void Scene::CopyEntitiesTo(Ref<Scene> otherScene)
+	void Scene::CopyEntitiesTo(AssetReference<Scene> otherScene)
 	{
 		VT_PROFILE_FUNCTION();
+	
+		ScopedAssetReferenceLock assetLock{ otherScene };
+
 		otherScene->Clear();
 
 		auto& registry = m_entityScene.GetRegistry();

@@ -27,6 +27,7 @@
 #include "Volt-Renderer/MeshPassProcessors/CascadedShadowMapsMeshProcessor.h"
 
 #include <JobSystem/JobSystem.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/GPUReadbackBuffer.h>
@@ -214,8 +215,11 @@ namespace Volt
 
 	void SceneRenderer::AddDefaultTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 	{
+		AssetReference<Texture2D> whiteTexture = Renderer::GetDefaultResources().whiteTexture;
+		ScopedAssetReferenceLock whiteTextureLock{ whiteTexture };
+
 		DefaultTextures& defaultTextures = blackboard.Add<DefaultTextures>();
-		defaultTextures.white1x1 = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().whiteTexture->GetImage());
+		defaultTextures.white1x1 = renderGraph.RegisterExternalTexture(whiteTexture->GetImage());
 		defaultTextures.black1x1Cube = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
 	}
 

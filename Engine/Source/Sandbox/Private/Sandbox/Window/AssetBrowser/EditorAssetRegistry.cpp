@@ -2,6 +2,8 @@
 
 #include "Window/AssetBrowser/EditorAssetRegistry.h"
 
+#include "Sandbox/EditorAssetManager.h"
+
 #include <Volt-Assets/MeshAsset.h>
 #include <Volt-Assets/MaterialAsset.h>
 
@@ -14,6 +16,9 @@
 #include "Volt-Scene/Scene.h"
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetLocks.h>
+
+#include <CoreUtilities/StringUtility.h>
 
 #define ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandleVarName) [](Volt::AssetHandle aAssetHandleVarName)->Vector<std::pair<std::string, std::string>>
 
@@ -39,34 +44,25 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 		EditorAssetData(
 			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
 			{
-				auto asset = Volt::AssetManager::QueueAsset<Volt::MeshAsset>(aAssetHandle);
-				if (!asset || !asset->IsValid())
+				AssetReference<Volt::MeshAsset> meshAsset;
+				if (g_assetManager->TryGetAsset(aAssetHandle, meshAsset))
 				{
-					return {};
+					ScopedAssetReferenceLock meshLock{ meshAsset };
+
+					std::filesystem::path sourceMeshPath = "Could not find the source mesh path";
+
+					Vector<std::pair<std::string, std::string>> data =
+					{
+						std::make_pair("Submesh Count", std::to_string(meshAsset->GetMesh()->GetSubMeshes().size())),
+
+						std::make_pair("Vertex Count", Utility::ToStringWithThousandSeparator(meshAsset->GetMesh()->GetVertexCount())),
+						std::make_pair("Index Count", Utility::ToStringWithThousandSeparator(meshAsset->GetMesh()->GetIndexCount())),
+						std::make_pair("Source Mesh Path", sourceMeshPath.string())
+					};
+					return data;
 				}
-
-				std::filesystem::path sourceMeshPath = "Could not find the source mesh path";
-
-				//const auto& dependencies = Volt::AssetManager::GetMetadataFromHandle(aAssetHandle).dependencies;
-
-				//for (const auto& d : dependencies)
-				//{
-				//	if (d.extension().string() == ".fbx")
-				//	{
-				//		sourceMeshPath = d;
-				//		break;
-				//	}
-				//}
-
-				Vector<std::pair<std::string, std::string>> data =
-				{
-					std::make_pair("Submesh Count", std::to_string(asset->GetMesh()->GetSubMeshes().size())),
-					
-					std::make_pair("Vertex Count", Utility::ToStringWithThousandSeparator(asset->GetMesh()->GetVertexCount())),
-					std::make_pair("Index Count", Utility::ToStringWithThousandSeparator(asset->GetMesh()->GetIndexCount())),
-					std::make_pair("Source Mesh Path", sourceMeshPath.string())
-				};
-				return data;
+			
+				return {};
 			})
 	},
 	{
@@ -74,14 +70,21 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 		EditorAssetData(
 			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
 			{
-				auto asset = Volt::AssetManager::GetAsset<Volt::Animation>(aAssetHandle);
-				Vector<std::pair<std::string, std::string>> data =
+				AssetReference<Volt::Animation> animationAsset;
+				if (g_assetManager->TryGetAsset(aAssetHandle, animationAsset))
 				{
-					std::make_pair("Duration", std::to_string(asset->GetDuration()) + " seconds"),
-					std::make_pair("Frame Count", Utility::ToStringWithThousandSeparator(asset->GetFrameCount())),
-					std::make_pair("Frames Per Second", std::to_string(asset->GetFramesPerSecond())),
-				};
-				return data;
+					ScopedAssetReferenceLock lock{ animationAsset };
+
+					Vector<std::pair<std::string, std::string>> data =
+					{
+						std::make_pair("Duration", std::to_string(animationAsset->GetDuration()) + " seconds"),
+						std::make_pair("Frame Count", Utility::ToStringWithThousandSeparator(animationAsset->GetFrameCount())),
+						std::make_pair("Frames Per Second", std::to_string(animationAsset->GetFramesPerSecond())),
+					};
+					return data;
+				}
+
+				return {};
 			})
 	},
 	{
@@ -89,12 +92,19 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 		EditorAssetData(
 			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
 			{
-				auto asset = Volt::AssetManager::GetAsset<Volt::Skeleton>(aAssetHandle);
-				Vector<std::pair<std::string, std::string>> data =
+				AssetReference<Volt::Skeleton> skeletonAsset;
+				if (g_assetManager->TryGetAsset(aAssetHandle, skeletonAsset))
 				{
-					std::make_pair("Joint Count", std::to_string(asset->GetJointCount()))
-				};
-				return data;
+					ScopedAssetReferenceLock lock{ skeletonAsset };
+
+					Vector<std::pair<std::string, std::string>> data =
+					{
+						std::make_pair("Joint Count", std::to_string(skeletonAsset->GetJointCount()))
+					};
+					return data;
+				}
+
+				return {};
 			})
 	},
 	{
@@ -102,18 +112,20 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 		EditorAssetData(
 			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
 			{
-				auto asset = Volt::AssetManager::QueueAsset<Volt::Texture2D>(aAssetHandle);
-				if (!asset || !asset->IsValid())
+				AssetReference<Volt::Texture2D> textureAsset;
+				if (g_assetManager->TryGetAsset(aAssetHandle, textureAsset))
 				{
-					return {};
+					ScopedAssetReferenceLock lock{ textureAsset };
+
+					Vector<std::pair<std::string, std::string>> data =
+					{
+						std::make_pair("Width", std::to_string(textureAsset->GetWidth())),
+						std::make_pair("Height", std::to_string(textureAsset->GetHeight())),
+					};
+					return data;
 				}
 
-				Vector<std::pair<std::string, std::string>> data =
-				{
-					std::make_pair("Width", std::to_string(asset->GetWidth())),
-					std::make_pair("Height", std::to_string(asset->GetHeight())),
-				};
-				return data;
+				return {};
 			})
 	},
 	{
@@ -121,11 +133,7 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 		EditorAssetData(
 			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
 			{
-				auto asset = Volt::AssetManager::GetAsset<Volt::MaterialAsset>(aAssetHandle);
-				Vector<std::pair<std::string, std::string>> data =
-				{
-				};
-				return data;
+				return {};
 			})
 	},
 	{
@@ -133,14 +141,21 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 		EditorAssetData(
 			ASSET_BROWSER_POPUP_DATA_FUNCTION_IDENTIFIER(aAssetHandle)
 			{
-				auto asset = Volt::AssetManager::GetAsset<Volt::Scene>(aAssetHandle);
-				const auto& stats = asset->GetStatistics();
-				Vector<std::pair<std::string, std::string>> data =
+				AssetReference<Volt::Scene> sceneAsset;
+				if (g_assetManager->TryGetAsset(aAssetHandle, sceneAsset))
 				{
-					std::make_pair("Entity Count", Utility::ToStringWithThousandSeparator(stats.entityCount)),
-				};
+					ScopedAssetReferenceLock lock{ sceneAsset };
 
-				return data;
+					const auto& stats = sceneAsset->GetStatistics();
+					Vector<std::pair<std::string, std::string>> data =
+					{
+						std::make_pair("Entity Count", Utility::ToStringWithThousandSeparator(stats.entityCount)),
+					};
+
+					return data;
+				}
+
+				return {};
 			})
 	},
 	{

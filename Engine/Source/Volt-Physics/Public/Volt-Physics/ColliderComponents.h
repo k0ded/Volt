@@ -3,7 +3,7 @@
 #include "Volt-Physics/PhysicsMaterialAsset.h"
 #include "Volt-Physics/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
 #include <PhysicsInterface/PhysicsTypes.h>

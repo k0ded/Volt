@@ -10,8 +10,8 @@ namespace Volt
 	class BlendSpaceSerializer : public AssetSerializer
 	{
 	public:
-		void Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const override;
-		bool Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const override;
+		void Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const override;
+		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const override;
 	};
 
 	VT_REGISTER_ASSET_SERIALIZER(AssetTypes::BlendSpace, BlendSpaceSerializer);

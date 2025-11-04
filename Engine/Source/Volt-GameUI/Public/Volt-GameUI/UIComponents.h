@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 

@@ -1,169 +1,133 @@
 #pragma once
 
-#include "AssetSystem/Asset.h"
-#include "AssetSystem/Events/AssetEvents.h"
+#include "AssetSystem/Config.h"
+#include "AssetSystem/AssetRegistry.h"
+#include "AssetSystem/AssetAllocator.h"
+#include "AssetSystem/AssetCache.h"
+#include "AssetSystem/AssetReference.h"
+#include "AssetSystem/AssetSerializerRegistry.h"
+#include "AssetSystem/AssetDependencyGraph.h"
+
+#include <EventSystem/EventListener.h>
 
 #include <LogModule/Log.h>
 
-#include <SubSystem/SubSystem.h>
-
-#include <CoreUtilities/Containers/Map.h>
-#include <CoreUtilities/StringUtility.h>
-#include <CoreUtilities/Profiling/Profiling.h>
-
-#include <EventSystem/EventSystem.h>
-#include <EventSystem/EventListener.h>
+#include <CoreUtilities/Pointers/RefPtr.h> 
+#include <CoreUtilities/WorkQueue.h>
 
 #include <filesystem>
-#include <unordered_map>
-#include <shared_mutex>
-#include <functional>
-#include <concepts>
-#include <type_traits>
 
 namespace Volt
 {
 	VT_DECLARE_LOG_CATEGORY_EXPORT(VTAS_API, LogAssetSystem, LogVerbosity::Trace);
 
-	class AssetFactory;
-	class AssetSerializer;
-	class AssetDependencyGraph;
-	class AppUpdateEvent;
-
-	template<typename T>
-	concept IsVoltAsset = std::is_base_of_v<Volt::Asset, T>;
-
-	class VTAS_API AssetManager : public EventListener
+	class AssetManager : public EventListener
 	{
 	public:
-		using WriteLock = std::unique_lock<std::shared_mutex>;
-		using ReadLock = std::shared_lock<std::shared_mutex>;
-		using AssetCreateFunction = std::function<Ref<Asset>()>;
+		using AssetUpdatedCallbackID = UUID64;
 		using AssetChangedCallback = std::function<void(AssetHandle assetHandle, AssetChangedState state)>;
+		using AssetRegistryIteratorFunc = std::function<bool(ReadOnlyAssetMetadata)>;
 
-		using AssetRegistry = Map<AssetHandle, AssetMetadata>;
-		using AssetCache = Map<AssetHandle, Ref<Asset>>;
+		VTAS_API AssetManager(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName);
+		VTAS_API ~AssetManager();
 
-		AssetManager(const std::filesystem::path& projectDirectory, const std::filesystem::path& assetsDirectory, const std::filesystem::path& engineDirectory);
-		~AssetManager() override;
+		///// Asset Metadata /////
+		// Returns a single thread writeable accessor, locks for the
+		// duration of the WriteableAssetMetadata object.
+		VTAS_API WriteableAssetMetadata GetWriteableAssetMetadata(AssetHandle assetHandle) const;
 
-		void Initialize();
-		void Shutdown();
-		void Clear();
+		// Returns a multi thread readable accessor, locks for the
+		// duration of the ReadOnlyAssetMetadata object.
+		VTAS_API ReadOnlyAssetMetadata GetReadOnlyAssetMetadata(AssetHandle assetHandle) const;
+		VTAS_API AssetMetadata GetAssetMetadataCopy(AssetHandle assetHandle) const;
 
-		void UnloadAsset(AssetHandle assetHandle);
-		void UnloadMemoryAsset(AssetHandle assetHandle);
+		///// Asset /////
+		// Will unload and load the asset again, the pointer to the asset will remain the same,
+		// to allow other systems to keep a reference to the asset.
+		VTAS_API void ReloadAsset(AssetHandle assetHandle);
 
-		void MoveAsset(Ref<Asset> asset, const std::filesystem::path& targetDir);
-		void MoveAsset(AssetHandle asset, const std::filesystem::path& targetDir);
-		void MoveAssetInRegistry(const std::filesystem::path& sourcePath, const std::filesystem::path& targetPath);
-		void MoveFullFolder(const std::filesystem::path& sourceDir, const std::filesystem::path& targetDir);
+		// Will trigger a serialization of the asset, if it has an assigned filepath.
+		VTAS_API void SaveAsset(AssetHandle assetHandle);
+		VTAS_API void SaveAsset(AssetReference<Asset> asset);
 
-		void RenameAsset(AssetHandle asset, const std::string& newName);
-		void RenameAssetFolder(AssetHandle asset, const std::filesystem::path& targetFilePath);
+		// Will remove the asset from the asset registry, asset cache, and will send out
+		// deleted events. The asset is not guaranteed to be destroyed immediatley, as there
+		// may still be other references. This will NOT remove the asset from disk.
+		VTAS_API void RemoveAsset(AssetHandle assetHandle);
 
-		void DeleteAsset(AssetHandle asset);
-		void DeleteAsset(const std::filesystem::path& path);
+		// Returns whether or not the asset exists in the asset registry.
+		VTAS_API bool IsValidAssetHandle(AssetHandle assetHandle) const;
 
-		void RemoveAssetFromRegistry(AssetHandle asset);
-		void RemoveAssetFromRegistry(const std::filesystem::path& path);
-		void RemoveFullFolderFromRegistry(const std::filesystem::path& path);
+		// Returns whether or not the asset is loaded.
+		VTAS_API bool IsAssetLoaded(AssetHandle assetHandle) const;
 
-		void AddAssetToRegistry(const std::filesystem::path& path, AssetHandle handle, AssetType type);
-		AssetHandle GetOrAddAssetToRegistry(const std::filesystem::path& path, AssetType type);
+		// Returns the asset handle corresponding to the asset file.
+		// Has to be a relative file path.
+		VTAS_API AssetHandle GetAssetHandleFromFilepath(const std::filesystem::path& filepath) const;
 
-		void ReloadAsset(AssetHandle handle);
-		void ReloadAsset(const std::filesystem::path& path);
+		// Will return the requested asset if loaded, will otherwise stall until the asset has been loaded.
+		template<VoltAssetType T> AssetReference<T> GetAssetImmediately(AssetHandle assetHandle);
+		template<VoltAssetType T> AssetReference<T> GetAssetImmediately(const std::filesystem::path& assetFilepath);
+		template<VoltAssetType T> bool TryGetAssetImmediately(AssetHandle assetHandle, AssetReference<T>& outAsset);
+		template<VoltAssetType T> bool TryGetAssetImmediately(const std::filesystem::path& assetFilepath, AssetReference<T>& outAsset);
 
-		Ref<Asset> GetAssetRaw(AssetHandle assetHandle);
-		Ref<Asset> QueueAssetRaw(AssetHandle assetHandle);
+		// Will return true and the asset if it is loaded, if the asset is not loaded it will queue it for loading.
+		template<VoltAssetType T> bool TryGetAsset(AssetHandle assetHandle, AssetReference<T>& outAsset);
 
-		static UUID64 RegisterAssetUpdatedCallback(AssetType assetType, AssetChangedCallback&& callbackFunction);
-		static void UnregisterAssetUpdatedCallback(AssetType assetType, UUID64 id);
+		// Will return true and the asset if is is loaded, otherwise it will return false.
+		// This will NOT queue the asset for loading.
+		template<VoltAssetType T> bool TryGetAssetIfLoaded(AssetHandle assetHandle, AssetReference<T>& outAsset);
 
-		static void AddDependencyToAsset(AssetHandle handle, AssetHandle dependency);
-		static Vector<AssetHandle> GetAssetsDependentOn(AssetHandle handle);
+		// Will return true and the asset if it is loaded. This method returns a non typed asset,
+		// instead of the default typed asset.
+		VTAS_API bool TryGetTypelessAssetIfLoaded(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
 
-		static bool IsLoaded(AssetHandle handle);
+		// Creates an asset that only lives in memory during the current application run, is not serializable to disk.
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateMemoryAsset(std::string_view assetName, Args&&... args);
+		// Creates an asset that only lives in memory, and will not show up when iterating the asset registry.
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAnonymousAsset(std::string_view assetName, Args&&... args);
+		// Creates an asset that does not have a filepath yet.
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAsset(std::string_view assetName, Args&&... args);
+		// Creates an asset, assigns a filepath and creates the asset disk file itself.
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args);
 
-		static bool IsEngineAsset(const std::filesystem::path& path);
-		static bool IsMemoryAsset(AssetHandle handle);
-		static bool ExistsInRegistry(AssetHandle handle);
-		static bool ExistsInRegistry(const std::filesystem::path& path);
+		VTAS_API void CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath);
 
-		static void SaveAsset(AssetHandle handle);
+		///// Management /////
+		VTAS_API AssetUpdatedCallbackID RegisterAssetUpdatedCallback(AssetType assetType, AssetChangedCallback&& callback);
+		VTAS_API void UnregisterAssetUpdatedCallback(AssetType assetType, UUID64 callbackId);
 
-		static const std::filesystem::path GetFilesystemPath(AssetHandle handle);
-		static const std::filesystem::path GetFilesystemPath(const std::filesystem::path& path);
-		static const std::filesystem::path GetRelativePath(const std::filesystem::path& path);
-		static const std::filesystem::path GetFilePathFromAssetHandle(AssetHandle handle);
-		static const std::filesystem::path GetContextPath(const std::filesystem::path& path);
-		static const bool HasFilePath(AssetHandle handle);
+		VTAS_API void AddDependencyToAsset(AssetHandle dependant, AssetHandle dependency);
+		VTAS_API Vector<AssetHandle> GetAssetsDependentOn(AssetHandle assetHandle) const;
 
-		static AssetType GetAssetTypeFromHandle(const AssetHandle& handle);
-		static AssetType GetAssetTypeFromPath(const std::filesystem::path& path);
-		static AssetHandle GetAssetHandleFromFilePath(const std::filesystem::path& path);
+		///// Asset Registry /////
+		// Iterates the asset registry with a filter, return false to exit the loop.
+		VTAS_API void IterateAssetRegistryWithFilter(const AssetRegistryIteratorFilter& filter, AssetRegistryIteratorFunc&& func) const;
 
-		static AssetMetadata GetMetadataFromHandle(AssetHandle handle);
-		static AssetMetadata GetMetadataFromFilePath(const std::filesystem::path filePath);
-
-		static const AssetRegistry& GetAssetRegistry();
-		static AssetRegistry& GetAssetRegistryMutable();
-
-		// Is not guaranteed to return the "correct" asset if there are multiple assets with the same name and type
-		static const std::filesystem::path GetFilePathFromFilename(const std::string& filename);
-
-		[[nodiscard]] inline static AssetManager& Get() { return *s_instance; }
-
-		template<IsVoltAsset T>
-		static Ref<T> GetAsset(AssetHandle assetHandle);
-
-		template<IsVoltAsset T>
-		static Ref<T> GetAsset(const std::filesystem::path& path);
-
-		template<IsVoltAsset T>
-		static Ref<T> GetAssetLocking(AssetHandle assetHandle);
-
-		template<IsVoltAsset T>
-		static Ref<T> GetAssetLocking(const std::filesystem::path& path);
-
-		template<IsVoltAsset T>
-		static Ref<T> QueueAsset(AssetHandle handle);
-
-		template<IsVoltAsset T>
-		static Ref<T> QueueAsset(const std::filesystem::path& filepath);
-
-		//a memory asset is an asset that can never be saved to disk, it is meant to be only in memory
-		template<typename T, typename... Args>
-		static Ref<T> CreateMemoryAsset(const std::string& name, Args&&... args);
-
-		//create an asset that doesnt have a path assigned yet
-		template<IsVoltAsset T, typename... Args>
-		static Ref<T> CreateAsset(const std::string& name, Args&&... args);
-
-		//create an asset and a corresponding file at a path
-		template<IsVoltAsset T, typename... Args>
-		static Ref<T> CreateAssetAndFile(const std::filesystem::path& targetDir, const std::string& name, Args&&... args);
-
-		//asset must not already have a representing file
-		VT_INLINE static void CreateFileForAsset(Volt::AssetHandle asset, const std::filesystem::path& path);
-
-		template<typename ImporterType, typename Type>
-		static const ImporterType& GetImporterForType();
-
-		template<IsVoltAsset T>
-		static const Vector<Ref<T>> GetAllCachedAssetsOfType();
-
-		template<IsVoltAsset T>
-		static const Vector<AssetHandle> GetAllAssetsOfType();
-
-		static const Vector<AssetHandle> GetAllAssetsOfType(AssetType assetType);
+		///// File System /////
+		VTAS_API std::filesystem::path GetContextPath(const std::filesystem::path& path) const;
+		VTAS_API std::filesystem::path GetAssetFilesystemPath(const std::filesystem::path& path) const;
+		VTAS_API std::filesystem::path GetAssetFilesystemPath(AssetHandle assetHandle) const;
+		VTAS_API std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& path) const;
+		VTAS_API bool IsEngineAsset(const std::filesystem::path& path) const;
 
 	private:
-		struct AssetChangedCallbackInfo
+		friend class AssetRefCounter;
+
+		struct ScopedAssetLock
 		{
-			UUID64 id;
-			AssetChangedCallback callback;
+			ScopedAssetLock(RefPtr<Asset> asset);
+			~ScopedAssetLock();
+
+		private:
+			RefPtr<Asset> m_asset;
+		};
+
+		struct AssetManagerRoot
+		{
+			std::filesystem::path engineDirectoryPath;
+			std::filesystem::path projectDirectoryPath;
+			std::string_view assetsDirectoryName;
 		};
 
 		struct AssetChangedQueueInfo
@@ -172,279 +136,255 @@ namespace Volt
 			AssetChangedState state;
 		};
 
-		inline static AssetManager* s_instance = nullptr;
-		inline static AssetMetadata s_nullMetadata = {};
+		struct AssetChangedCallbackInfo
+		{
+			UUID64 id;
+			AssetChangedCallback callback;
+		};
 
-		bool UpdateInternal(AppUpdateEvent& event);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, Args&&... args);
 
-		void LoadAsset(AssetHandle assetHandle, Ref<Asset>& asset);
+		VTAS_API void LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset);
+		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset);
 
-		void LoadAllAssetMetadata();
-		void DeserializeAssetMetadata(const std::filesystem::path& assetPath, AssetMetadata& outMetadata);
+		void UnloadAndFreeAsset(AssetRefCounter* assetRefCounter);
 
 		void OnAssetChanged(AssetHandle assetHandle, AssetChangedState state);
-		void QueueAssetChanged(AssetHandle assetHandle, AssetChangedState state);
+		VTAS_API void QueueAssetChanged(AssetHandle assetHandle, AssetChangedState state);
+		bool UpdateInternal(class AppTickEvent& e);
 
-		void QueueAssetInternal(AssetHandle assetHandle, Ref<Asset>& asset);
+		void CreateDependencyGraphAndAddAssetsFromRegistry();
+		ReadOnlyAssetMetadata GetAssetMetadataFromFilepath(const std::filesystem::path& filepath);
 
-		static bool ValidateAssetType(AssetHandle handle, Ref<Asset> asset);
-		static AssetMetadata& GetMetadataFromHandleMutable(AssetHandle handle);
-		static AssetMetadata& GetMetadataFromFilePathMutable(const std::filesystem::path filePath);
-		static const AssetMetadata& GetMetadataFromHandleLockless(AssetHandle handle);
-		static const AssetMetadata& GetMetadataFromFilePathLockless(const std::filesystem::path filePath);
-		static const bool HasFilePathLockless(AssetHandle handle);
-
-		static const std::filesystem::path GetCleanAssetFilePath(const std::filesystem::path& path);
-
-		void SaveAssetImpl(AssetHandle handle);
-		template<IsVoltAsset T, typename... Args>
-		Ref<T> CreateAssetImpl(const std::string& name, bool isMemoryAsset, Args&&... args);
-		void CreateFileForAssetImpl(AssetHandle asset, const std::filesystem::path& targetFilePath);
-
-		Vector<std::filesystem::path> GetEngineAssetFiles();
-		Vector<std::filesystem::path> GetProjectAssetFiles();
-
-		AssetCache m_assetCache;
-		AssetCache m_memoryAssets;
 		AssetRegistry m_assetRegistry;
+		AssetAllocator m_assetAllocator;
+		AssetCache m_assetCache;
 
-		std::filesystem::path m_projectDirectory;
-		std::filesystem::path m_assetsDirectory;
-		std::filesystem::path m_engineDirectory;
-
-		std::unordered_map<AssetType, Vector<AssetChangedCallbackInfo>> m_assetChangedCallbacks;
-		Vector<AssetChangedQueueInfo> m_assetChangedQueue;
-		std::mutex m_assetChangedQueueMutex;
 		Scope<AssetDependencyGraph> m_dependencyGraph;
+		AssetManagerRoot m_root;
 
+		// Asset changes callbacks
+		WorkQueue<AssetChangedQueueInfo, QueueThreadingPolicy::MPSC> m_assetChangedQueue;
+		Map<AssetType, Vector<AssetChangedCallbackInfo>> m_assetChangedCallbacks;
 		std::mutex m_assetCallbackMutex;
-		mutable std::shared_mutex m_assetRegistryMutex;
-		mutable std::shared_mutex m_assetCacheMutex;
 	};
 
-	template<IsVoltAsset T>
-	inline Ref<T> AssetManager::GetAsset(AssetHandle assetHandle)
+	template<VoltAssetType T> 
+	AssetReference<T> AssetManager::GetAssetImmediately(AssetHandle assetHandle)
 	{
-		VT_PROFILE_FUNCTION();
+		VT_ENSURE(assetHandle != Asset::Null());
 
-		if (assetHandle == Asset::Null())
+		// Make sure the asset exists.
+		if (!m_assetRegistry.IsValidAssetHandle(assetHandle))
 		{
-			return nullptr;
+			VT_LOGC(Warning, LogAssetSystem, "Asset handle '{}' is not a valid asset handle!", assetHandle);
+			return {};
 		}
 
+		// Try to get the asset from the asset cache.
+		RefPtr<Asset> tempAsset;
+		if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
 		{
-			ReadLock lock{ Get().m_assetRegistryMutex };
-			const auto& metadata = GetMetadataFromHandle(assetHandle);
-			if (!metadata.IsValid())
-			{
-				VT_LOGC(Error, LogAssetSystem, "Trying to load asset {} which has invalid metadata!", assetHandle);
-				return nullptr;
-			}
+			VT_ENSURE(T::GetStaticType() == tempAsset->GetType());
+			return AssetReference<T>(tempAsset.As<T>());
 		}
 
-		Ref<Asset> asset = CreateRef<T>();
-		if (!ValidateAssetType(assetHandle, asset))
+		// Check if we can actually load this asset.
+		if (!AssetSerializerRegistry::Get().HasSerializer(T::GetStaticType()))
 		{
-			VT_LOGC(Critical, LogAssetSystem, "Asset type does not match!");
-			return nullptr;
+			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, T::GetStaticType()->GetName());
+			return {};
 		}
 
-		Get().LoadAsset(assetHandle, asset);
-		return std::reinterpret_pointer_cast<T>(asset);
+		// Asset wasn't in the cache, create and load it.
+		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
+		// Setup a link back to the asset manager.
+		newAsset->m_referencedAssetManager = this;
+		newAsset->m_assetMutex = new std::shared_mutex();
+
+		AssetReference resultReference{ newAsset };
+
+		{
+			ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+
+			// All metadatas should be valid.
+			VT_ENSURE(metadata->IsValid());
+
+			newAsset->AssignAssetHandle(metadata->handle);
+			newAsset->SetName(metadata->filepath.stem().string());
+		}
+
+		LoadAsset(assetHandle, newAsset);
+
+		return resultReference;
 	}
 
-	template<IsVoltAsset T>
-	inline Ref<T> AssetManager::GetAsset(const std::filesystem::path& path)
+	template<VoltAssetType T> AssetReference<T>
+	AssetManager::GetAssetImmediately(const std::filesystem::path& assetFilepath)
 	{
-		return GetAsset<T>(GetAssetHandleFromFilePath(path));
+		AssetHandle assetHandle = GetAssetHandleFromFilepath(assetFilepath);
+		if (assetHandle != Asset::Null())
+		{
+			return GetAssetImmediately<T>(assetHandle);
+		}
+		
+		VT_LOGC(Error, LogAssetSystem, "Unable to load asset from filepath '{}'!", assetFilepath);
+		return {};
 	}
 
-	template<IsVoltAsset T>
-	inline Ref<T> AssetManager::GetAssetLocking(AssetHandle assetHandle)
+	template<VoltAssetType T>
+	bool AssetManager::TryGetAssetImmediately(AssetHandle assetHandle, AssetReference<T>& outAsset)
 	{
-		VT_PROFILE_FUNCTION();
-
-		if (assetHandle == Asset::Null())
-		{
-			return nullptr;
-		}
-
-		{
-			ReadLock lock{ Get().m_assetRegistryMutex };
-			const auto& metadata = GetMetadataFromHandle(assetHandle);
-			if (!metadata.IsValid())
-			{
-				VT_LOGC(Error, LogAssetSystem, "Trying to load asset which has invalid metadata!");
-				return nullptr;
-			}
-		}
-
-		Ref<Asset> asset = QueueAsset<T>(assetHandle);
-
-		if (!asset)
-		{
-			return nullptr;
-		}
-
-		while (!asset->IsValid())
-		{
-		}
-		return std::reinterpret_pointer_cast<T>(asset);
+		outAsset = GetAssetImmediately<T>(assetHandle);
+		return outAsset.IsValid();
 	}
 
-	template<IsVoltAsset T>
-	inline Ref<T> AssetManager::GetAssetLocking(const std::filesystem::path& path)
+	template<VoltAssetType T>
+	bool AssetManager::TryGetAssetImmediately(const std::filesystem::path& assetFilepath, AssetReference<T>& outAsset)
 	{
-		return GetAssetLocking<T>(GetAssetHandleFromFilePath(path));
-	}
-
-	template<IsVoltAsset T>
-	inline Ref<T> AssetManager::QueueAsset(AssetHandle handle)
-	{
-		VT_PROFILE_FUNCTION();
-
-		if (handle == Asset::Null())
+		AssetHandle assetHandle = GetAssetHandleFromFilepath(assetFilepath);
+		if (assetHandle != Asset::Null())
 		{
-			return nullptr;
+			outAsset = GetAssetImmediately<T>(assetHandle);
+		}
+		else
+		{
+			outAsset = {};
+			VT_LOGC(Error, LogAssetSystem, "Unable to load asset from filepath '{}'!", assetFilepath);
 		}
 
-		const auto metadata = GetMetadataFromHandle(handle);
-		if (!metadata.IsValid())
-		{
-			VT_LOGC(Error, LogAssetSystem, "Trying to load asset which has invalid metadata!");
-			return nullptr;
-		}
-
-		// If it's a memory asset, return it
-		if (Get().m_memoryAssets.contains(handle))
-		{
-			return std::reinterpret_pointer_cast<T>(Get().m_memoryAssets.at(handle));
-		}
-
-		// If it's already loaded, return it
-		{
-			if (IsLoaded(handle))
-			{
-				return GetAsset<T>(handle);
-			}
-		}
-
-		Ref<Asset> asset = CreateRef<T>();
-		if (!ValidateAssetType(handle, asset))
-		{
-			VT_LOGC(Critical, LogAssetSystem, "Asset type does not match!");
-			return nullptr;
-		}
-
-		asset->SetFlag(AssetFlag::Queued, true);
-		Get().QueueAssetInternal(handle, asset);
-
-		return std::reinterpret_pointer_cast<T>(asset);
+		return outAsset.IsValid();
 	}
 
-	template<IsVoltAsset T>
-	inline Ref<T> AssetManager::QueueAsset(const std::filesystem::path& filepath)
+	template<VoltAssetType T>
+	bool AssetManager::TryGetAsset(AssetHandle assetHandle, AssetReference<T>& outAsset)
 	{
-		return QueueAsset<T>(GetAssetHandleFromFilePath(filepath));
+		VT_ENSURE(assetHandle != Asset::Null());
+
+		// Make sure the asset exists.
+		if (!m_assetRegistry.IsValidAssetHandle(assetHandle))
+		{
+			VT_LOGC(Warning, LogAssetSystem, "Asset handle '{}' is not a valid asset handle!", assetHandle);
+			return false;
+		}
+
+		// Try to get the asset from the asset cache.
+		RefPtr<Asset> tempAsset;
+		if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
+		{
+			VT_ENSURE(T::GetStaticType() == tempAsset->GetType());
+			outAsset = AssetReference<T>(tempAsset.As<T>());
+
+			return true;
+		}
+
+		// Check if we can actually load this asset.
+		if (!AssetSerializerRegistry::Get().HasSerializer(T::GetStaticType()))
+		{
+			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, T::GetStaticType()->GetName());
+			return false;
+		}
+	
+		// Asset wasn't in the cache, create and load it.
+		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
+		// Setup a link back to the asset manager.
+		newAsset->m_referencedAssetManager = this;
+		newAsset->m_assetMutex = new std::shared_mutex();
+
+		AssetReference resultReference{ newAsset };
+
+		{
+			ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+
+			// All metadatas should be valid.
+			VT_ENSURE(metadata->IsValid());
+
+			newAsset->AssignAssetHandle(metadata->handle);
+			newAsset->SetName(metadata->filepath.stem().string());
+		}
+
+		QueueAssetForLoading(assetHandle, newAsset);
+
+		outAsset = resultReference;
+		return false;
 	}
 
-	template<typename T, typename ...Args>
-	inline Ref<T> AssetManager::CreateMemoryAsset(const std::string& name, Args&& ...args)
+	template<VoltAssetType T>
+	bool AssetManager::TryGetAssetIfLoaded(AssetHandle assetHandle, AssetReference<T>& outAsset)
 	{
-		return Get().CreateAssetImpl<T>(name, /*isMemoryAsset*/ true, std::forward<Args>(args)...);
+		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+		if (assetMetadata->IsLoaded())
+		{
+			outAsset = GetAssetImmediately<T>(assetHandle);
+			return true;
+		}
+
+		return false;
 	}
 
-	template<IsVoltAsset T, typename ...Args>
-	inline Ref<T> AssetManager::CreateAsset(const std::string& name, Args && ...args)
+	template<VoltAssetType T, typename... Args>
+	AssetReference<T> AssetManager::CreateMemoryAsset(std::string_view assetName, Args&&... args)
 	{
-		return Get().CreateAssetImpl<T>(name, /*isMemoryAsset*/ false, std::forward<Args>(args)...);
+		constexpr bool IsMemoryAsset = true;
+		constexpr bool IsAnonymous = false;
+		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, std::forward<Args>(args)...);
 	}
 
-	template<IsVoltAsset T, typename ...Args>
-	inline Ref<T> AssetManager::CreateAssetImpl(const std::string& name, bool isMemoryAsset, Args && ...args)
+	template<VoltAssetType T, typename... Args> AssetReference<T>
+	AssetManager::CreateAnonymousAsset(std::string_view assetName, Args&&... args)
 	{
-		Ref<T> asset = CreateRef<T>(std::forward<Args>(args)...);
+		constexpr bool IsMemoryAsset = true;
+		constexpr bool IsAnonymous = true;
+		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, std::forward<Args>(args)...);
+	}
 
-		//#TODO_Ivar: Move to clean name function
-		std::string cleanName = name;
-		cleanName.erase(std::remove_if(cleanName.begin(), cleanName.end(), [](char c) { return c == ':'; }), cleanName.end());
+	template<VoltAssetType T, typename... Args>
+	AssetReference<T> AssetManager::CreateAsset(std::string_view assetName, Args&&... args)
+	{
+		constexpr bool IsMemoryAsset = false;
+		constexpr bool IsAnonymous = false;
+		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, std::forward<Args>(args)...);
+	}
+
+	template<VoltAssetType T, typename... Args> 
+	AssetReference<T> AssetManager::CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args)
+	{
+		AssetReference<T> asset = CreateAsset<T>(assetName, std::forward<Args>(args)...);
+
+		std::filesystem::path targetPath = targetDirectory / (std::string(assetName) + ".vtasset");
+		CreateFileForAsset(asset->GetAssetHandle(), targetPath);
+
+		return asset;
+	}
+
+	template<VoltAssetType T, typename... Args> 
+	AssetReference<T> AssetManager::CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, Args&&... args)
+	{
+		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>(std::forward<Args>(args)...);
 
 		AssetMetadata metadata{};
-		metadata.filePath = ""; // assets that are not saved will not have a file path
-		metadata.handle = asset->handle; // handle will have generated on asset creation
+		metadata.filepath = ""; // Assets that are not saved will not have a file path
+		metadata.handle = newAsset->GetAssetHandle();
 		metadata.type = T::GetStaticType();
-		metadata.isLoaded = true;
-		metadata.isMemoryAsset = isMemoryAsset;
+		metadata.SetFlag(AssetMetadataFlag::Loaded, true);
+		metadata.SetFlag(AssetMetadataFlag::MemoryOnly, isMemoryAsset);
+		metadata.SetFlag(AssetMetadataFlag::Anonymous, isAnonymous);
 
-		asset->SetupInitialCustomMetadata(metadata.customData);
+		newAsset->SetupInitialCustomMetadata(metadata.customData);
+		newAsset->SetName(std::string(assetName));
 
-		asset->assetName = cleanName;
+		// Setup a link back to the asset manager.
+		newAsset->m_referencedAssetManager = this;
+		newAsset->m_assetMutex = new std::shared_mutex();
 
-		{
-			WriteLock lockCache{ m_assetCacheMutex };
-			WriteLock lockRegistry{ m_assetRegistryMutex };
+		m_assetRegistry.InsertAssetMetadata(std::move(metadata));
 
-			m_assetRegistry.emplace(asset->handle, metadata);
-			if (isMemoryAsset)
-			{
-				m_memoryAssets.emplace(asset->handle, asset);
-			}
-			else
-			{
-				m_assetCache.emplace(asset->handle, asset);
-			}
-		}
+		m_assetCache.AddAsset(newAsset);
 
-		QueueAssetChanged(asset->handle, AssetChangedState::Loaded);
-		return asset;
+		m_dependencyGraph->AddAssetToGraph(newAsset->GetAssetHandle());
+		QueueAssetChanged(newAsset->GetAssetHandle(), AssetChangedState::Loaded);
+
+		return newAsset;
 	}
-
-	template<IsVoltAsset T, typename ...Args>
-	inline Ref<T> AssetManager::CreateAssetAndFile(const std::filesystem::path& targetDir, const std::string& name, Args && ...args)
-	{
-		Ref<T> asset = CreateAsset<T>(name, std::forward<Args>(args)...);
-
-		std::filesystem::path targetPath = targetDir / (name + ".vtasset");
-		CreateFileForAsset(asset->handle, targetPath);
-
-		return asset;
-	}
-
-	void AssetManager::CreateFileForAsset(Volt::AssetHandle asset, const std::filesystem::path& path)
-	{
-		Get().CreateFileForAssetImpl(asset, path);
-	}
-
-	template<typename ImporterType, typename Type>
-	inline const ImporterType& AssetManager::GetImporterForType()
-	{
-		const auto type = Type::GetStaticType();
-		VT_ASSERT_MSG(Get().m_assetSerializers.contains(type), "Importer for type does not exist!");
-
-		return (ImporterType&)*Get().m_assetSerializers.at(type);
-	}
-	template<IsVoltAsset T>
-	inline const Vector<Ref<T>> AssetManager::GetAllCachedAssetsOfType()
-	{
-		ReadLock lock{ Get().m_assetCacheMutex };
-
-		Vector<Ref<T>> result{};
-
-		for (const auto& [handle, asset] : Get().m_assetCache)
-		{
-			if (asset->GetType() == T::GetStaticType())
-			{
-				result.push_back(reinterpret_pointer_cast<T>(asset));
-			}
-		}
-
-		return result;
-	}
-
-	template<IsVoltAsset T>
-	inline const Vector<AssetHandle> AssetManager::GetAllAssetsOfType()
-	{
-		return GetAllAssetsOfType(T::GetStaticType());
-	}
-
 }
+VTAS_API extern Scope<Volt::AssetManager> g_assetManager;

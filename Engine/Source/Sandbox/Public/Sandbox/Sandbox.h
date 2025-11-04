@@ -1,13 +1,15 @@
 #pragma once
 
 #include "Sandbox/FileWatcher/FileWatcher.h"
-#include "Sandbox/GameBuilder.h"
 
 #include "Sandbox/UISystems/ModalSystem.h"
 
 #include <EntitySystem/Entity.h>
 
 #include <Volt-Application/ApplicationLayer.h>
+#include <Volt-Scene/Scene.h>
+
+#include <AssetSystem/AssetReference.h>
 
 #include <EventSystem/EventListener.h>
 
@@ -16,7 +18,6 @@
 namespace Volt
 {
 	class SceneRenderer;
-	class Scene;
 	class Mesh;
 	class Camera;
 	class Texture2D;
@@ -74,7 +75,7 @@ public:
 
 	Ref<Volt::SceneRenderer>& GetSceneRenderer() { return m_sceneRenderer; }
 	VT_NODISCARD VT_INLINE const SceneState GetSceneState() const { return m_sceneState; }
-	VT_NODISCARD VT_INLINE Ref<Volt::Scene> GetRuntimeScene() const { return m_runtimeScene; }
+	VT_NODISCARD VT_INLINE AssetReference<Volt::Scene> GetRuntimeScene() const { return m_runtimeScene; }
 	
 	VT_NODISCARD VT_INLINE UUID64 GetMeshImportModalID() const { return m_meshImportModal; }
 	VT_NODISCARD VT_INLINE UUID64 GetTextureImportModalID() const { return m_textureImportModal; }
@@ -123,9 +124,6 @@ private:
 	/////ImGui/////
 	void UpdateDockSpace();
 
-	void BuildGameModal();
-	void RenderProgressBar(float progress);
-
 	void RenderWindowOuterBorders(ImGuiWindow* window);
 	void HandleManualWindowResize();
 	bool UpdateWindowManualResize(ImGuiWindow* window, ImVec2& newSize, ImVec2& newPosition);
@@ -139,19 +137,12 @@ private:
 	void RenderGameView(float timestep);
 	///////////////
 
-	///// Debug Rendering /////
-	void RenderSelection(Ref<Volt::Camera> camera);
-	void RenderGizmos(Ref<Volt::Scene> scene, Ref<Volt::Camera> camera);
-	///////////////////////////
-
 	///// File Watchers /////
 	void CreateModifiedWatch();
 	void CreateDeleteWatch();
 	void CreateAddWatch();
 	void CreateMovedWatch();
 	/////////////////////////
-
-	BuildInfo m_buildInfo;
 
 	Ref<EditorCameraController> m_editorCameraController;
 
@@ -172,8 +163,8 @@ private:
 	UUID64 m_textureImportModal;
 	//////////////////
 
-	Ref<Volt::Scene> m_runtimeScene;
-	Ref<Volt::Scene> m_intermediateScene;
+	AssetReference<Volt::Scene> m_runtimeScene;
+	AssetReference<Volt::Scene> m_intermediateScene;
 
 	SceneState m_sceneState = SceneState::Edit;
 
@@ -189,12 +180,10 @@ private:
 	bool m_openShouldSaveScenePopup = false;
 	bool m_shouldResetLayout = false;
 	bool m_titlebarHovered = false;
-	bool m_buildStarted = false;
 	bool m_playHasMouseControl = false;
 	bool m_isInitialized = false;
 	bool m_wantsToOpenCheckoutFilesModal = false;
 
-	Ref<Volt::Scene> m_storedScene;
 	bool m_shouldLoadNewScene = false;
 	uint32_t m_assetBrowserCount = 0;
 

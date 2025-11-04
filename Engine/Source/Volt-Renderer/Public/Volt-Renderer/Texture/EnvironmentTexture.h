@@ -2,7 +2,7 @@
 
 #include "Volt-Renderer/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Asset.h>
 
@@ -20,7 +20,7 @@ namespace Volt
 		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetSpecularImage() const { return m_specularImage; }
 
 		static AssetType GetStaticType() { return AssetTypes::EnvironmentTexture; }
-		AssetType GetType() override { return GetStaticType(); }
+		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 	private:
 		friend class EnvironmentTextureSerializer;

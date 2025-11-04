@@ -2,7 +2,7 @@
 
 #include "Volt-Animation/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>
@@ -72,15 +72,15 @@ namespace Volt
 			}
 		};
 
-		const Vector<glm::mat4> SampleStartTime(float aStartTime, Ref<Skeleton> aSkeleton, bool looping);
-		const Vector<glm::mat4> Sample(float samplePercent, Ref<Skeleton> skeleton, bool looping);
-		const Vector<glm::mat4> Sample(uint32_t frameIndex, Ref<Skeleton> aSkeleton);
+		const Vector<glm::mat4> SampleStartTime(float aStartTime, const Skeleton& aSkeleton, bool looping);
+		const Vector<glm::mat4> Sample(float samplePercent, const Skeleton& skeleton, bool looping);
+		const Vector<glm::mat4> Sample(uint32_t frameIndex, const Skeleton& aSkeleton);
 
-		static Vector<glm::mat4> LocalPoseToGlobalMatrices(const Pose& localPose, Ref<Skeleton> aSkeleton);
+		static Vector<glm::mat4> LocalPoseToGlobalMatrices(const Pose& localPose, const Skeleton& aSkeleton);
 		static void BlendPoseWith(Pose& target, const Pose& poseToBlendWith, float blendFactor);
 		static Pose GetBlendedPose(const Pose& target, const Pose& poseToBlendWith, float blendFactor);
 
-		const Vector<TRS> SampleTRS(float aStartTime, Ref<Skeleton> aSkeleton, bool looping, float speed = 1.f) const;
+		const Vector<TRS> SampleTRS(float aStartTime, const Skeleton& aSkeleton, bool looping, float speed = 1.f) const;
 		const bool IsAtEnd(float startTime, float speed);
 		const bool HasPassedTime(float startTime, float speed, float time);
 
@@ -97,7 +97,7 @@ namespace Volt
 		inline const Vector<Event>& GetEvents() const { return m_events; }
 
 		static AssetType GetStaticType() { return AssetTypes::Animation; }
-		AssetType GetType() override { return GetStaticType(); };
+		AssetType GetType() const override { return GetStaticType(); };
 		uint32_t GetVersion() const override { return 1; }
 
 	private:

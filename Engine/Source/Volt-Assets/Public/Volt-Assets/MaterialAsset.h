@@ -2,7 +2,7 @@
 
 #include "Volt-Assets/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Asset.h>
 
@@ -19,11 +19,10 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE Ref<MaterialGraph> GetMaterialGraph() const { return m_graph; }
 		VT_NODISCARD VT_INLINE Ref<RenderMaterial> GetRenderMaterial() const { return m_renderMaterial; }
-		VT_NODISCARD VT_INLINE const std::string& GetName() const { return assetName; }
 
 		static AssetType GetStaticType() { return AssetTypes::Material; }
-		AssetType GetType() override { return GetStaticType(); };
-		void OnDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state) override;
+		AssetType GetType() const override { return GetStaticType(); };
+		void OnAssetDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state) override;
 
 	private:
 		friend class MaterialSerializer;

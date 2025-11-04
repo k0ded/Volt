@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Sandbox/Utility/AssetPreview.h"
-
-#include <AssetSystem/Asset.h>
+#include <RHIModule/Images/Image.h>
 
 #include <imgui.h>
 

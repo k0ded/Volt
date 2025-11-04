@@ -20,11 +20,11 @@ namespace Volt
 		EntityDescSerializer();
 		~EntityDescSerializer() override;
 
-		void Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const override;
-		bool Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const override;
+		void Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const override;
+		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const override;
 
 		void SerializeEntity(Entity entity, YAMLMemoryStreamWriter& streamWriter) const;
-		Entity DeserializeEntity(const Ref<Scene>& scene, YAMLMemoryStreamReader& streamReader) const;
+		Entity DeserializeEntity(AssetReference<Scene> scene, YAMLMemoryStreamReader& streamReader) const;
 
 		//if the entity and it's components have already been created, apply the data from the stream reader to them
 		void DeserializeEntityInPlace(Volt::Entity entity, YAMLMemoryStreamReader& streamReader) const;
@@ -39,7 +39,7 @@ namespace Volt
 	private:
 		inline static EntityDescSerializer* s_instance = nullptr;
 
-		Entity CreateEntityFromUUIDThreadSafe(EntityID entityId, const Ref<Scene>& scene) const;
+		Entity CreateEntityFromUUIDThreadSafe(EntityID entityId, AssetReference<Scene> scene) const;
 
 		void SerializeClass(const uint8_t* data, const size_t offset, const IComponentTypeDesc* compDesc, YAMLMemoryStreamWriter& streamWriter, bool isSubComponent) const;
 		void SerializeArray(const uint8_t* data, const size_t offset, const IArrayTypeDesc* arrayDesc, YAMLMemoryStreamWriter& streamWriter) const;

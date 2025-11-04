@@ -8,6 +8,7 @@
 #include <Volt-Physics/CharacterControllerComponent.h>
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Random.h>
 
@@ -20,7 +21,11 @@ namespace Volt
 		CreatePrefab(srcRootEntity);
 	}
 
-	Entity Prefab::Instantiate(Weak<Scene> targetScene)
+	Prefab::Prefab(AssetReference<Scene> prefabScene, EntityID rootEntityId, uint32_t version)
+		: m_prefabScene(prefabScene), m_rootEntityId(rootEntityId), m_version(version)
+	{}
+
+	Entity Prefab::Instantiate(Scene& targetScene)
 	{
 		if (!IsPrefabValid())
 		{
@@ -35,7 +40,7 @@ namespace Volt
 		}
 
 		Entity newEntity = DuplicateEntity(rootEntity, targetScene, Entity::Null(), CreateSkipComponentOnCopySet<CommonComponent>());
-		if (targetScene->IsPlaying())
+		if (targetScene.IsPlaying())
 		{
 			InitializeComponents(newEntity);
 		}
@@ -49,8 +54,13 @@ namespace Volt
 				{
 					const auto& prefabRefData = m_prefabReferencesMap.at(entity.GetID());
 
-					Ref<Prefab> prefabRefAsset = AssetManager::GetAsset<Prefab>(prefabRefData.prefabAsset);
-					prefabRefAsset->UpdateEntityInSceneInternal(targetScene, entity, prefabRefData.prefabReferenceEntity);
+					AssetReference<Prefab> prefabRefAsset;
+					if (g_assetManager->TryGetAssetImmediately<Prefab>(prefabRefData.prefabAsset, prefabRefAsset))
+					{
+						ScopedAssetReferenceLock assetLock{ prefabRefAsset };
+						prefabRefAsset->UpdateEntityInSceneInternal(targetScene, entity, prefabRefData.prefabReferenceEntity);
+
+					}
 				}
 				else
 				{
@@ -59,7 +69,7 @@ namespace Volt
 			}
 		}
 
-		targetScene->InvalidateEntityTransform(newEntity.GetID());
+		targetScene.InvalidateEntityTransform(newEntity.GetID());
 		return newEntity;
 	}
 
@@ -94,7 +104,7 @@ namespace Volt
 		return updateSucceded;
 	}
 
-	void Prefab::UpdateEntityInScene(Weak<Scene> targetScene, Entity sceneEntity)
+	void Prefab::UpdateEntityInScene(Scene& targetScene, Entity sceneEntity)
 	{
 		UpdateEntityInSceneInternal(targetScene, sceneEntity, Entity::NullID());
 	}
@@ -119,7 +129,7 @@ namespace Volt
 
 		const auto& prefabComponent = entity.GetComponent<PrefabComponent>();
 
-		if (prefabComponent.prefabAsset != handle)
+		if (prefabComponent.prefabAsset != GetAssetHandle())
 		{
 			return false;
 		}
@@ -145,7 +155,7 @@ namespace Volt
 
 		const auto& prefabComponent = entity.GetComponent<PrefabComponent>();
 
-		if (prefabComponent.prefabAsset != handle)
+		if (prefabComponent.prefabAsset != GetAssetHandle())
 		{
 			return false;
 		}
@@ -224,7 +234,7 @@ namespace Volt
 			return;
 		}
 
-		m_prefabScene = CreateRef<Scene>();
+		m_prefabScene = g_assetManager->CreateAnonymousAsset<Scene>("PrefabScene");
 		m_rootEntityId = srcRootEntity.GetID();
 
 		AddEntityToPrefabRecursive(srcRootEntity, Entity::Null());
@@ -244,7 +254,7 @@ namespace Volt
 		if (srcEntity.HasComponent<PrefabComponent>())
 		{
 			const auto& prefabComp = srcEntity.GetComponent<PrefabComponent>();
-			if (prefabComp.prefabAsset != handle)
+			if (prefabComp.prefabAsset != GetAssetHandle())
 			{
 				auto& prefabRefData = m_prefabReferencesMap[newEntity.GetID()];
 				prefabRefData.prefabReferenceEntity = prefabComp.prefabEntity;
@@ -257,7 +267,7 @@ namespace Volt
 		}
 
 		auto& srcPrefabComp = srcEntity.GetComponent<PrefabComponent>();
-		srcPrefabComp.prefabAsset = handle;
+		srcPrefabComp.prefabAsset = GetAssetHandle();
 		srcPrefabComp.prefabEntity = newEntity.GetID();
 		srcPrefabComp.version = m_version;
 
@@ -354,17 +364,18 @@ namespace Volt
 			{
 				const auto& prefabRefData = m_prefabReferencesMap.at(srcPrefabComp.prefabEntity);
 
-				Ref<Prefab> prefabRefAsset = AssetManager::GetAsset<Prefab>(prefabRefData.prefabAsset);
-				if (!prefabRefAsset || !prefabRefAsset->IsValid())
+				AssetReference<Prefab> prefabRefAsset;
+				if (g_assetManager->TryGetAssetImmediately<Prefab>(prefabRefData.prefabAsset, prefabRefAsset))
 				{
-					return false;
+					ScopedAssetReferenceLock assetLock{ prefabRefAsset };
+					return prefabRefAsset->UpdateEntityInPrefabInternal(srcEntity, sceneRootId, prefabRefData.prefabReferenceEntity);
 				}
 
-				return prefabRefAsset->UpdateEntityInPrefabInternal(srcEntity, sceneRootId, prefabRefData.prefabReferenceEntity);
+				return false;
 			}
 
 			// Make sure we are not updating from another prefab
-			if (srcEntity.GetComponent<PrefabComponent>().prefabAsset != handle && forcedPrefabEntity == Entity::NullID())
+			if (srcEntity.GetComponent<PrefabComponent>().prefabAsset != GetAssetHandle() && forcedPrefabEntity == Entity::NullID())
 			{
 				shouldAddEntity = true;
 			}
@@ -415,7 +426,7 @@ namespace Volt
 		return true;
 	}
 
-	void Prefab::UpdateEntityInSceneInternal(Ref<Scene> scene, Entity sceneEntity, EntityID forcedPrefabEntity)
+	void Prefab::UpdateEntityInSceneInternal(Scene& scene, Entity sceneEntity, EntityID forcedPrefabEntity)
 	{
 		if (!sceneEntity.HasComponent<PrefabComponent>())
 		{
@@ -427,8 +438,12 @@ namespace Volt
 
 		if (m_prefabReferencesMap.contains(prefabEntityId))
 		{
-			Ref<Prefab> prefabRefAsset = AssetManager::GetAsset<Prefab>(scenePrefabComp.prefabAsset);
-			prefabRefAsset->UpdateEntityInSceneInternal(scene, sceneEntity, m_prefabReferencesMap.at(prefabEntityId).prefabReferenceEntity);
+			AssetReference<Prefab> prefabRefAsset;
+			if (g_assetManager->TryGetAssetImmediately<Prefab>(scenePrefabComp.prefabAsset, prefabRefAsset))
+			{
+				ScopedAssetReferenceLock assetLock{ prefabRefAsset };
+				prefabRefAsset->UpdateEntityInSceneInternal(scene, sceneEntity, m_prefabReferencesMap.at(prefabEntityId).prefabReferenceEntity);
+			}
 
 			return;
 		}
@@ -494,17 +509,17 @@ namespace Volt
 		}
 	}
 
-	Entity Prefab::InstantiateEntity(Ref<Scene> scene, Entity prefabEntity)
+	Entity Prefab::InstantiateEntity(Scene& scene, Entity prefabEntity)
 	{
 		Entity newEntity = DuplicateEntity(prefabEntity, scene);
-		if (scene->IsPlaying())
+		if (scene.IsPlaying())
 		{
 			InitializeComponents(newEntity);
 		}
 
 		UpdatePrefabVersion(newEntity, m_version);
 
-		scene->InvalidateEntityTransform(newEntity.GetID());
+		scene.InvalidateEntityTransform(newEntity.GetID());
 		return newEntity;
 	}
 
@@ -526,8 +541,4 @@ namespace Volt
 
 		return result;
 	}
-
-	Prefab::Prefab(Ref<Scene> prefabScene, EntityID rootEntityId, uint32_t version)
-		: m_prefabScene(prefabScene), m_rootEntityId(rootEntityId), m_version(version)
-	{}
 }

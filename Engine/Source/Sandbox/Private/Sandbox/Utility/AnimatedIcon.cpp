@@ -23,7 +23,7 @@ AnimatedIcon::AnimatedIcon(const std::filesystem::path& firstFrame, uint32_t fra
 
 	const std::filesystem::path dirPath = firstFrame.parent_path();
 
-	Vector<Volt::JobFuture<Vector<Ref<Volt::Asset>>>> futures;
+	Vector<Volt::JobFuture<Vector<AssetReference<Volt::Asset>>>> futures;
 
 	for (uint32_t frame = 1; frame <= frameCount; frame++)
 	{
@@ -43,7 +43,7 @@ AnimatedIcon::AnimatedIcon(const std::filesystem::path& firstFrame, uint32_t fra
 		auto assets = result.Get();
 		if (!assets.empty())
 		{
-			m_textures.emplace_back(std::reinterpret_pointer_cast<Volt::Texture2D>(assets.front()));
+			m_textures.emplace_back(assets.front().ConvertTo<Volt::Texture2D>());
 		}
 	}
 

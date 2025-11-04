@@ -2,7 +2,7 @@
 
 #include "Volt-Scene/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Serialization/AssetSerializer.h>
 #include <AssetSystem/AssetSerializerRegistry.h>
@@ -25,8 +25,8 @@ namespace Volt
 		SceneSerializer();
 		~SceneSerializer() override;
 
-		void Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const override;
-		bool Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const override;
+		void Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const override;
+		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const override;
 
 		//void LoadWorldCell(const Ref<Scene>& scene, const WorldCell& worldCell) const;
 

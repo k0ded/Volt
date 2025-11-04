@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Volt-Scene/Scene.h"
+
 #include <EventSystem/Event.h>
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetReference.h>
 
 namespace Volt
 {
@@ -22,21 +24,19 @@ namespace Volt
 		EVENT_CLASS(OnSceneStopEvent, "{BA8D9CF7-7AF9-465E-ACF7-58205BF1C21D}"_guid);
 	};
 
-	class Scene;
 	class OnSceneLoadedEvent : public Event
 	{
 	public:
-		OnSceneLoadedEvent(Ref<Volt::Scene> aScene)
-			: myScene(aScene)
+		OnSceneLoadedEvent(AssetReference<Volt::Scene> aScene)
+			: m_scene(aScene)
 		{
 		}
 
-		inline Ref<Volt::Scene> GetScene() const { return myScene; }
+		inline AssetReference<Volt::Scene> GetScene() const { return m_scene; }
 
 		EVENT_CLASS(OnSceneLoadedEvent, "{D8C1545C-373E-4D0D-A546-9D382ED3AE3C}"_guid);
 
-
 	private:
-		Ref<Volt::Scene> myScene;
+		AssetReference<Volt::Scene> m_scene;
 	};
 }

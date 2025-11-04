@@ -7,8 +7,6 @@
 
 #include <RHIModule/RHIFeatures.h>
 
-#include <AssetSystem/AssetManager.h>
-
 VT_DEFINE_LOG_CATEGORY(LogScenePrimitiveData);
 
 namespace Volt

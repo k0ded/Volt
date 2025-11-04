@@ -21,10 +21,13 @@ namespace VoltSharpmake
             conf.PrecompHeader = "vapch.h";
             conf.PrecompSource = "vapch.cpp";
 
-			conf.AddPublicDependency<LogModule>(target);
-			conf.AddPublicDependency<AssetSystemModule>(target);
+			conf.AddPrivateDependency<LogModule>(target);
+			conf.AddPrivateDependency<AssetSystemModule>(target);
+			conf.AddPrivateDependency<EventSystemModule>(target);
+			conf.AddPrivateDependency<EntitySystemModule>(target);
 
-			conf.AddPublicDependency<VoltCore>(target);
+			conf.AddPrivateDependency<VoltCore>(target);
+			conf.AddPrivateDependency<VoltPlatforms>(target);
 		}
 
         public override void ConfigureClangCl(Configuration conf, CommonTarget target)

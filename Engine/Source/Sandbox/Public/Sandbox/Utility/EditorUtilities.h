@@ -2,7 +2,8 @@
 
 #include "Sandbox/Utility/AssetBrowserPopup.h"
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetHandle.h>
+#include <AssetSystem/AssetType.h>
 
 #include <filesystem>
 
@@ -31,16 +32,14 @@ public:
 
 	static SaveReturnState SaveFilePopup(const std::string& aId);
 
-	static Ref<Volt::Texture2D> GenerateThumbnail(const std::filesystem::path& path);
-	static bool HasThumbnail(const std::filesystem::path& path);
-	static std::filesystem::path GetThumbnailPathFromPath(const std::filesystem::path& path);
-
 	static std::string GetDuplicatedNameFromEntity(const Volt::Entity& entity);
 
-	static void MarkEntityAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity);
-	static void MarkEntityAndChildrenAsEdited(Weak<const Volt::Scene> scene, const Volt::Entity& entity);
-	static void DestroyEntity(Weak<Volt::Scene> scene, const Volt::Entity& entity);
-	static void DestroyEntities(Weak<Volt::Scene> scene, const Vector<Volt::Entity>& entities);
+	static void MarkEntityAsEdited(const Volt::Scene& scene, const Volt::Entity& entity);
+	static void MarkEntityAndChildrenAsEdited(const Volt::Scene& scene, const Volt::Entity& entity);
+	static void DestroyEntity(Volt::Scene& scene, const Volt::Entity& entity);
+	static void DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>& entities);
+
+	static bool IsAssetTypeFileExtension(AssetType assetType, const std::filesystem::path& filepath);
 
 private:
 	static bool AssetBrowserPopupInternal(const std::string& id, Volt::AssetHandle& assetHandle, bool startState, AssetType wantedType = AssetTypes::None);

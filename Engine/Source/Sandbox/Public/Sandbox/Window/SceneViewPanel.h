@@ -18,7 +18,7 @@ namespace Volt
 class SceneViewPanel : public EditorWindow
 {
 public:
-	SceneViewPanel(Ref<Volt::Scene>& scene, const std::string& id);
+	SceneViewPanel(AssetReference<Volt::Scene>& scene, const std::string& id);
 	void UpdateMainContent() override;
 
 	void HighlightEntity(Volt::Entity entity);
@@ -29,7 +29,7 @@ private:
 	void DrawSceneName();
 	void DrawEntity(Volt::Entity entity, const std::string& filter);
 	void CreatePrefabAndSetupEntities(Volt::Entity entity);
-	void UpdatePrefabsInScene(Ref<Volt::Prefab> prefab, Volt::Entity srcEntity);
+	void UpdatePrefabsInScene(Volt::Prefab& prefab, Volt::Entity srcEntity);
 
 	void RebuildEntityDrawList();
 	void RebuildEntityDrawListRecursive(Volt::Entity entityId, const std::string& filter);
@@ -54,5 +54,5 @@ private:
 
 	bool m_showEntityUUIDs = false;
 
-	Ref<Volt::Scene>& m_scene;
+	AssetReference<Volt::Scene>& m_scene;
 };

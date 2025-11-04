@@ -2,6 +2,8 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
+#include <Volt-Animation/Assets/Skeleton.h>
+
 namespace Volt
 {
 	class Skeleton;
@@ -14,7 +16,7 @@ public:
 	~SkeletonEditorPanel() override = default;
 
 	void UpdateMainContent() override;
-	void OpenAsset(Ref<Volt::Asset> asset) override;
+	void OpenAsset(AssetReference<Volt::Asset> asset) override;
 
 	void OnOpen() override;
 	void OnClose() override;
@@ -22,7 +24,7 @@ public:
 private:
 	void AddJointAttachmentPopup();
 
-	Ref<Volt::Skeleton> m_skeleton;
+	AssetReference<Volt::Skeleton> m_skeleton;
 
 	bool m_activateJointSearch = false;
 	std::string m_jointSearchQuery;

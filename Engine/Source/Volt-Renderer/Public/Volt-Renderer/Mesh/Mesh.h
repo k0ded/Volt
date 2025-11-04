@@ -12,7 +12,6 @@
 
 #include <CoreUtilities/Containers/Map.h>
 
-#include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetType.h>
 
 namespace Volt

@@ -25,11 +25,10 @@ namespace AssetBrowser
 }
 
 class AssetPreview;
-class PreviewRenderer;
 class AssetBrowserPanel : public EditorWindow
 {
 public:
-	AssetBrowserPanel(Ref<Volt::Scene>& aScene, const std::string& id);
+	AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const std::string& id);
 
 	void UpdateMainContent() override;
 	void Reload();
@@ -67,7 +66,6 @@ private:
 
 	///// Asset Creation /////	
 	void CreateNewAssetInCurrentDirectory(AssetType type);
-	void CreateNewShaderModal();
 
 	struct NewShaderData
 	{
@@ -82,8 +80,7 @@ private:
 
 	//////////////////////////
 
-	Ref<Volt::Scene>& myEditorScene;
-	Ref<PreviewRenderer> myPreviewRenderer;
+	AssetReference<Volt::Scene>& myEditorScene;
 
 	Vector<AssetBrowser::DirectoryItem*> myDirectoryButtons;
 

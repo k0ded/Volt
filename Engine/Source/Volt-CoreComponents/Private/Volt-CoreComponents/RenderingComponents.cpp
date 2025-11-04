@@ -10,8 +10,6 @@
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Animation/TempAnimator.h>
 
-#include <AssetSystem/AssetManager.h>
-
 namespace Volt
 {
 	StreamingInstanceDescription CreateStreamingInstanceDescription(const MeshComponent& meshComponent, EntityID entityId, Ref<ScenePrimitiveData> scenePrimitiveData)

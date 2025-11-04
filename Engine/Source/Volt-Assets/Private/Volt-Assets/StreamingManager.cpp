@@ -9,10 +9,11 @@
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/Texture/EnvironmentTexture.h>
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetLocks.h>
 
 VT_DEFINE_LOG_CATEGORY(LogStreamingManager);
 
@@ -95,17 +96,26 @@ namespace Volt
 
 			for (const auto& materialHandle : description.materialHandles)
 			{
-				m_materialReferenceCounter.AddReference(materialHandle, newId);
+				if (materialHandle != Asset::Null())
+				{
+					m_materialReferenceCounter.AddReference(materialHandle, newId);
+				}
 			}
 
-			m_meshReferenceCounter.AddReference(description.meshHandle, newId);
+			if (description.meshHandle != Asset::Null())
+			{
+				m_meshReferenceCounter.AddReference(description.meshHandle, newId);
+			}
 
 			if (s_logStreamingManagerUpdates.GetValue())
 			{
 				VT_LOGC(Trace, LogStreamingManager, "Added a new instance linked to entity {} with mesh {} and gave it ID {}", description.entityId, description.meshHandle, newId);
 			}
 
-			InitializeScenePrimitiveFromInstance(m_streamingInstances.Get(newId));
+			if (description.meshHandle != Asset::Null())
+			{
+				InitializeScenePrimitiveFromInstance(m_streamingInstances.Get(newId));
+			}
 		}
 		// It's a skylight
 		else if (description.sceneLightData)
@@ -144,16 +154,25 @@ namespace Volt
 
 		if (instance.primitiveData)
 		{
-			m_meshReferenceCounter.RemoveReference(instance.meshHandle, instanceId);
+			if (instance.meshHandle != Asset::Null())
+			{
+				m_meshReferenceCounter.RemoveReference(instance.meshHandle, instanceId);
+			}
 
 			for (const auto& materialHandle : instance.materialHandles)
 			{
-				m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+				if (materialHandle != Asset::Null())
+				{
+					m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+				}
 			}
 		}
 		else if (instance.sceneLightData)
 		{
-			m_environmentTextureReferenceCounter.RemoveReference(instance.environmentTextureHandle, instanceId);
+			if (instance.environmentTextureHandle != Asset::Null())
+			{
+				m_environmentTextureReferenceCounter.RemoveReference(instance.environmentTextureHandle, instanceId);
+			}
 		}
 
 		if (m_streamingInstances.Contains(instanceId))
@@ -175,22 +194,37 @@ namespace Volt
 		{
 			for (const auto& materialHandle : streamingInstance.materialHandles)
 			{
-				m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+				if (materialHandle != Asset::Null())
+				{
+					m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+				}
 			}
 
-			m_meshReferenceCounter.RemoveReference(streamingInstance.meshHandle, instanceId);
+			if (streamingInstance.meshHandle != Asset::Null())
+			{
+				m_meshReferenceCounter.RemoveReference(streamingInstance.meshHandle, instanceId);
+			}
 
 			for (const auto& materialHandle : description.materialHandles)
 			{
-				m_materialReferenceCounter.AddReference(materialHandle, instanceId);
+				if (materialHandle != Asset::Null())
+				{
+					m_materialReferenceCounter.AddReference(materialHandle, instanceId);
+				}
 			}
 
-			m_meshReferenceCounter.AddReference(description.meshHandle, instanceId);
+			if (description.meshHandle != Asset::Null())
+			{
+				m_meshReferenceCounter.AddReference(description.meshHandle, instanceId);
+			}
 
 			streamingInstance.meshHandle = description.meshHandle;
 			streamingInstance.materialHandles = description.materialHandles;
 
-			InitializeScenePrimitiveFromInstance(streamingInstance);
+			if (streamingInstance.meshHandle != Asset::Null())
+			{
+				InitializeScenePrimitiveFromInstance(streamingInstance);
+			}
 
 			if (s_logStreamingManagerUpdates.GetValue())
 			{
@@ -215,11 +249,12 @@ namespace Volt
 
 	void StreamingManager::InitializeScenePrimitiveFromInstance(const StreamingInstanceMap::StreamingInstance& instance)
 	{
-		Ref<MeshAsset> meshAsset = AssetManager::QueueAsset<MeshAsset>(instance.meshHandle);
 		Ref<Mesh> mesh;
 
-		if (meshAsset && meshAsset->IsValid())
+		AssetReference<MeshAsset> meshAsset;
+		if (g_assetManager->TryGetAsset<MeshAsset>(instance.meshHandle, meshAsset))
 		{
+			ScopedAssetReferenceLock assetLock{ meshAsset };
 			mesh = meshAsset->GetMesh();
 		}
 		else
@@ -237,11 +272,12 @@ namespace Volt
 				continue;
 			}
 
-			Ref<MaterialAsset> materialAsset = AssetManager::QueueAsset<MaterialAsset>(materialHandle);
 			Ref<RenderMaterial> renderMaterial;
 			
-			if (materialAsset && materialAsset->IsValid())
+			AssetReference<MaterialAsset> materialAsset;
+			if (g_assetManager->TryGetAsset(materialHandle, materialAsset))
 			{
+				ScopedAssetReferenceLock assetLock{ materialAsset };
 				renderMaterial = materialAsset->GetRenderMaterial();
 			}
 			else
@@ -272,12 +308,13 @@ namespace Volt
 
 	void StreamingManager::InitializeSceneLightDataFromInstance(const StreamingInstanceMap::StreamingInstance& instance)
 	{
-		Ref<EnvironmentTexture> environmentTexture = AssetManager::QueueAsset<EnvironmentTexture>(instance.environmentTextureHandle);
-
 		SceneLightDescription lightDescription = instance.sceneLightDescription;
 		
-		if (environmentTexture && environmentTexture->IsValid())
+		AssetReference<EnvironmentTexture> environmentTexture;
+		if (g_assetManager->TryGetAsset(instance.environmentTextureHandle, environmentTexture))
 		{
+			ScopedAssetReferenceLock assetLock{ environmentTexture };
+
 			lightDescription.diffuseIBL = environmentTexture->GetDiffuseImage();
 			lightDescription.specularIBL = environmentTexture->GetSpecularImage();
 		}
@@ -288,45 +325,6 @@ namespace Volt
 		}
 
 		instance.sceneLightData->InitializeFromDescription(lightDescription);
-	}
-
-	StreamingInstanceAssetReferenceCounter::StreamingInstanceAssetReferenceCounter(AssetType assetType)
-		: m_assetType(assetType)
-	{
-		m_assetUpdatedCallback = AssetManager::RegisterAssetUpdatedCallback(assetType, [&](AssetHandle assetHandle, AssetChangedState state)
-		{
-			std::scoped_lock lock{ m_streamingInstancesMapMutex };
-			if (m_callbackFunction && m_streamingInstancesFromAssetHandle.contains(assetHandle))
-			{
-				m_callbackFunction(assetHandle, m_streamingInstancesFromAssetHandle[assetHandle], state);
-			}
-		});
-	}
-
-	StreamingInstanceAssetReferenceCounter::~StreamingInstanceAssetReferenceCounter()
-	{
-		AssetManager::UnregisterAssetUpdatedCallback(m_assetType, m_assetUpdatedCallback);
-	}
-
-	void StreamingInstanceAssetReferenceCounter::AddReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
-	{
-		std::scoped_lock lock{ m_streamingInstancesMapMutex };
-		m_streamingInstancesFromAssetHandle[assetHandle].emplace(instanceId);
-	}
-	
-	void StreamingInstanceAssetReferenceCounter::RemoveReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
-	{
-		std::scoped_lock lock{ m_streamingInstancesMapMutex };
-
-		VT_ENSURE(m_streamingInstancesFromAssetHandle.contains(assetHandle));
-		VT_ENSURE(m_streamingInstancesFromAssetHandle.at(assetHandle).contains(instanceId));
-	
-		m_streamingInstancesFromAssetHandle.at(assetHandle).erase(instanceId);
-	}
-
-	void StreamingInstanceAssetReferenceCounter::SetAssetUpdatedCallback(AssetUpdatedFunc callbackFunc)
-	{
-		m_callbackFunction = callbackFunc;
 	}
 
 	StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Get(StreamingInstanceID id)

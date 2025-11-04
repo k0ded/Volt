@@ -2,7 +2,7 @@
 
 #include "Volt-Renderer/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Asset.h>
 
@@ -32,7 +32,7 @@ namespace Volt
 		void SetImage(RefPtr<RHI::Image> image);
 
 		static AssetType GetStaticType() { return AssetTypes::Texture; }
-		AssetType GetType() override { return GetStaticType(); }
+		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 
 		static Ref<Texture2D> Create(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data = nullptr);

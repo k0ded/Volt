@@ -13,6 +13,7 @@
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 
@@ -68,10 +69,11 @@ namespace Volt
 		shaderString.replace(evaluateMaterialTagOffset, tagLength, shaderWriter.GetAsString());
 	}
 
-	void MaterialCompiler::CompileMaterial(Ref<MaterialAsset> materialAsset)
+	void MaterialCompiler::CompileMaterial(AssetReference<MaterialAsset> materialAsset)
 	{
-		VT_LOGC(Trace, LogMaterialCompiler, "Started compilation of material {}", materialAsset->assetName);
+		VT_LOGC(Trace, LogMaterialCompiler, "Started compilation of material {}", materialAsset->GetAssetName());
 
+		ScopedAssetReferenceLock materialAssetLock{ materialAsset };
 		ScopedTimer timer;
 
 		constexpr const char* BaseOutputPath = "Generated\\Materials";
@@ -89,7 +91,7 @@ namespace Volt
 		InsertTextureDeclarations(shaderString, compilationResult);
 		InsertMaterialEvaluation(shaderString, compilationResult);
 
-		const std::filesystem::path outShaderPath = ProjectManager::GetProjectDirectory() / BaseOutputPath / std::filesystem::path(materialAsset->assetName + "-" + materialAsset->GetMaterialGraph()->GetMaterialGUID().ToString() + ".hlsl");
+		const std::filesystem::path outShaderPath = ProjectManager::GetProjectDirectory() / BaseOutputPath / std::filesystem::path(std::string(materialAsset->GetAssetName()) + "-" + materialAsset->GetMaterialGraph()->GetMaterialGUID().ToString() + ".hlsl");
 		if (!std::filesystem::exists(outShaderPath.parent_path()))
 		{
 			std::filesystem::create_directories(outShaderPath.parent_path());
@@ -121,14 +123,17 @@ namespace Volt
 			
 				RefPtr<RHI::Image> image;
 
-				Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(textureInfo.textureHandle);
+				AssetReference<Texture2D> texture = g_assetManager->GetAssetImmediately<Texture2D>(textureInfo.textureHandle);
 				if (texture && texture->IsValid())
 				{
 					image = texture->GetImage();
 				}
 				else
 				{
-					image = Renderer::GetDefaultResources().whiteTexture->GetImage();
+					AssetReference<Texture2D> defaultTexture = Renderer::GetDefaultResources().whiteTexture;
+					ScopedAssetReferenceLock assetLock{ defaultTexture };
+
+					image = defaultTexture->GetImage();
 				}
 				
 
@@ -139,6 +144,6 @@ namespace Volt
 		// Create new pipeline based on compiled shader
 		materialAsset->GetRenderMaterial()->Invalidate(outShaderPath);
 
-		VT_LOGC(Trace, LogMaterialCompiler, "Compiled material {} in {} seconds!", materialAsset->assetName, timer.GetTime<Time::Seconds>());
+		VT_LOGC(Trace, LogMaterialCompiler, "Compiled material {} in {} seconds!", materialAsset->GetAssetName(), timer.GetTime<Time::Seconds>());
 	}
 }

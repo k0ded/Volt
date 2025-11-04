@@ -21,6 +21,7 @@
 
 #include <AssetSystem/AssetSerializerRegistry.h>
 #include <AssetSystem/AssetFactory.h>
+#include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/FileSystem.h>
 
@@ -90,8 +91,9 @@ namespace Volt
 
 		CreateGraphicsContext(commandLineBuilder);
 
-		m_assetManager = CreateScope<AssetManager>(ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectory(), ProjectManager::GetEngineRootDirectory());
 		m_sourceAssetManager = CreateScope<SourceAssetManager>();
+		// #TODO_AssetSystem: Move to a sub system.
+		g_assetManager = CreateScope<AssetManager>(ProjectManager::GetEngineRootDirectory(), ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectoryName());
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 
@@ -155,11 +157,9 @@ namespace Volt
 
 		//Amp::WWiseEngine::Get().TermWwise();
 
-		m_assetManager->Clear();
-
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
-		m_assetManager = nullptr;
+		g_assetManager = nullptr;
 
 		m_windowManager->DestroyMainWindow();
 

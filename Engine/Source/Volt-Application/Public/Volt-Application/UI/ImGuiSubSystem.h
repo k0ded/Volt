@@ -40,6 +40,7 @@ namespace Volt
 		ImTextureID GetTextureID(RefPtr<RHI::Image> image, int32_t mipIndex = -1);
 
 		VT_NODISCARD VT_INLINE bool IsInitialized() const { return m_imguiImplementation != nullptr; }
+		VT_NODISCARD VT_INLINE bool IsWithinImGuiUpdate() const { return m_isWithinImGuiUpdate; }
 
 		VT_DECLARE_SUBSYSTEM("{482BA05C-2FFA-4457-9FFD-7B14833C8212}"_guid);
 
@@ -49,6 +50,7 @@ namespace Volt
 
 		bool m_isBlockingActive = false;
 		bool m_isWithinFrame = false;
+		bool m_isWithinImGuiUpdate = false;
 		Ref<ImGuiImplementation> m_imguiImplementation;
 	};
 }

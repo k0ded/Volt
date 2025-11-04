@@ -3,8 +3,8 @@
 #include <Volt-Application/UI/UIUtility.h>
 #include <concepts> // Required for std::derived_from
 
-#include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Assets/MeshAsset.h>
 
@@ -19,11 +19,11 @@ namespace Volt
 
 namespace UI
 {
-	bool PropertyEntity(const std::string& text, Weak<Volt::Scene> scene, Volt::EntityID& value, const std::string& toolTip = "");
-	bool PropertyEntity(Weak<Volt::Scene> scene, Volt::EntityID& value, const float width, const std::string& toolTip = "");
+	bool PropertyEntity(const std::string& text, Volt::Scene& scene, Volt::EntityID& value, const std::string& toolTip = "");
+	bool PropertyEntity(Volt::Scene& scene, Volt::EntityID& value, const float width, const std::string& toolTip = "");
 
 	template<typename T, typename = std::enable_if_t<std::is_base_of<Volt::Asset, T>::value>>
-	bool Property(const std::string& text, Ref<T>& asset, const std::string& toolTip = "")
+	bool Property(const std::string& text, AssetReference<T>& asset, const std::string& toolTip = "")
 	{
 		bool changed = false;
 
@@ -37,9 +37,11 @@ namespace UI
 
 		std::string assetFileName = "Null";
 
+		ScopedAssetReferenceLock assetLock{ asset };
+
 		if (asset)
 		{
-			assetFileName = asset->assetName;
+			assetFileName = asset->GetAssetName();
 		}
 
 		std::string textId = MakePropertyID();
@@ -49,15 +51,7 @@ namespace UI
 		if (auto ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))
 		{
 			Volt::AssetHandle newHandle = *(Volt::AssetHandle*)ptr;
-			Ref<T> newAsset = Volt::AssetManager::GetAsset<T>(newHandle);
-			if (newAsset)
-			{
-				asset = newAsset;
-			}
-			else
-			{
-				asset = nullptr;
-			}
+			asset = g_assetManager->TryGetAssetImmediately<T>(newHandle);
 
 			changed = true;
 		}
@@ -69,7 +63,6 @@ namespace UI
 		{
 			asset = nullptr;
 			changed = true;
-
 		}
 
 		return changed;

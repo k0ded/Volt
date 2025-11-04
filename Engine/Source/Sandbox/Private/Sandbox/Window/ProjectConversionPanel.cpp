@@ -20,11 +20,12 @@
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
 
+#include <AssetSystem/AssetSerializerRegistry.h>
+#include <SubSystem/SubSystemManager.h>
+
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
-#include <SubSystem/SubSystemManager.h>
-#include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetSerializerRegistry.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 using namespace Volt;
 
@@ -70,7 +71,6 @@ static Map<std::string, AssetType> g_fileExtensionToAssetType
 	//{ ".vtrp", AssetTypes::RenderPipeline },
 	//{ ".vtgk", AssetTypes::GraphKey },
 
-	{ ".cs", AssetTypes::MonoScript },
 	{ ".vtbt", AssetTypes::BehaviorGraph},
 	{ ".vtblend", AssetTypes::BlendSpace },
 
@@ -332,10 +332,10 @@ bool ProjectConversionPanel::TryLoadProject(Volt::Project& project)
 	project.name = projectFileReader.ReadAtKey("Name", std::string("None"));
 	project.companyName = projectFileReader.ReadAtKey("CompanyName", std::string("None"));
 
-	project.assetsDirectory = projectFileReader.ReadAtKey("AssetsDirectory", std::string(""));
-	if (project.assetsDirectory.empty())
+	project.assetsDirectoryName = projectFileReader.ReadAtKey("AssetsDirectory", std::string(""));
+	if (project.assetsDirectoryName.empty())
 	{
-		project.assetsDirectory = projectFileReader.ReadAtKey("AssetsPath", std::string("Assets"));
+		project.assetsDirectoryName = projectFileReader.ReadAtKey("AssetsPath", std::string("Assets"));
 	}
 
 	project.audioDirectory = projectFileReader.ReadAtKey("AudioBanksDirectory", std::string(""));
@@ -380,20 +380,20 @@ void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, cons
 	struct AssetAndMetadataPair
 	{
 		AssetMetadata metadata;
-		Ref<Asset> asset;
+		AssetReference<Asset> asset;
 	};
 
 	Vector<AssetAndMetadataPair> assetAndMetadatas;
 	assetAndMetadatas.reserve(assetMetadata.size());
 
-	Map<AssetHandle, Ref<Prefab>> assetHandleToPrefab;
+	Map<AssetHandle, AssetReference<Prefab>> assetHandleToPrefab;
 
 	// Make sure all prefabs are processed first.
 	for (const AssetMetadata& metadata : assetMetadata)
 	{
 		if (metadata.type == AssetTypes::Prefab)
 		{
-			Ref<Prefab> prefab = TryConvertPrefab(project, metadata);
+			AssetReference<Prefab> prefab = TryConvertPrefab(project, metadata);
 			if (prefab)
 			{
 				assetAndMetadatas.emplace_back(metadata, prefab);
@@ -406,7 +406,7 @@ void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, cons
 	{
 		if (metadata.type == AssetTypes::Scene)
 		{
-			Ref<Scene> scene = TryConvertScene(project, metadata, assetHandleToPrefab);
+			AssetReference<Scene> scene = TryConvertScene(project, metadata, assetHandleToPrefab);
 			if (scene)
 			{
 				assetAndMetadatas.emplace_back(metadata, scene);
@@ -414,7 +414,7 @@ void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, cons
 		}
 		else if (metadata.type == AssetTypes::Mesh)
 		{
-			Ref<MeshAsset> mesh = TryConvertMesh(project, metadata);
+			AssetReference<MeshAsset> mesh = TryConvertMesh(project, metadata);
 			if (mesh)
 			{
 				assetAndMetadatas.emplace_back(metadata, mesh);
@@ -424,22 +424,22 @@ void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, cons
 
 	for (auto& [metadata, asset] : assetAndMetadatas)
 	{
-		metadata.filePath.replace_extension(".vtasset");
+		metadata.filepath.replace_extension(".vtasset");
 
-		const std::filesystem::path absoluteFilepath = ProjectManager::GetRootDirectory() / metadata.filePath;
+		const std::filesystem::path absoluteFilepath = ProjectManager::GetRootDirectory() / metadata.filepath;
 
 		if (!FileSystem::Exists(absoluteFilepath.parent_path()))
 		{
 			std::filesystem::create_directories(absoluteFilepath.parent_path());
 		}
 		Volt::CustomAssetMetadataVector OutCustomMetadata;
-		AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Serialize(metadata, OutCustomMetadata, asset);
+		//AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Serialize(metadata, OutCustomMetadata, asset);
 	}
 }
 
-Ref<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, Ref<Volt::Prefab>>& prefabs)
+AssetReference<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs)
 {
-	const std::filesystem::path absoluteScenePath = project.rootDirectory / metadata.filePath;
+	const std::filesystem::path absoluteScenePath = project.rootDirectory / metadata.filepath;
 
 	if (!FileSystem::Exists(absoluteScenePath))
 	{
@@ -478,7 +478,7 @@ Ref<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project,
 		}
 	}
 
-	Ref<Scene> scene = CreateRef<Scene>(sceneName);
+	AssetReference<Scene> scene = g_assetManager->CreateMemoryAsset<Scene>(sceneName);
 
 	for (const std::filesystem::path& layerFilepath : layerFilepaths)
 	{
@@ -504,7 +504,7 @@ Ref<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project,
 			EntityID entityId = layerReader.ReadAtKey("id", 0u);
 
 			Entity newEntity = scene->CreateEntityWithID(entityId);
-			EditorUtils::MarkEntityAsEdited(scene, newEntity);
+			EditorUtils::MarkEntityAsEdited(*scene, newEntity);
 
 			layerReader.ForEach("components", [&]() 
 			{
@@ -636,7 +636,7 @@ Ref<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project,
 					auto prefabIt = prefabs.find(prefabComponent.prefabAsset);
 					if (prefabIt != prefabs.end())
 					{
-						Ref<Prefab> prefab = prefabIt->second;
+						AssetReference<Prefab> prefab = prefabIt->second;
 						prefab->CopyPrefabEntity(entity, prefabComponent.prefabEntity,
 							Volt::CreateSkipComponentOnCopySet<RelationshipComponent, TransformComponent, IDComponent, PrefabComponent>());
 					}
@@ -649,7 +649,7 @@ Ref<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project,
 	return scene;
 }
 
-Ref<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata)
+AssetReference<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata)
 {
 	struct LegacyVertex
 	{
@@ -661,7 +661,7 @@ Ref<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Volt::Project&
 		glm::vec4 weights;
 	};
 
-	const std::filesystem::path absoluteMeshPath = project.rootDirectory / metadata.filePath;
+	const std::filesystem::path absoluteMeshPath = project.rootDirectory / metadata.filepath;
 
 	if (!FileSystem::Exists(absoluteMeshPath))
 	{
@@ -671,7 +671,7 @@ Ref<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Volt::Project&
 	Buffer dataBuffer = Buffer::ReadFromFile(absoluteMeshPath);
 
 	const std::string meshName = absoluteMeshPath.stem().string();
-	Ref<MeshAsset> newMesh = CreateRef<MeshAsset>();
+	AssetReference<MeshAsset> newMesh = g_assetManager->CreateMemoryAsset<MeshAsset>("");
 
 	size_t offset = 0;
 
@@ -776,9 +776,9 @@ Ref<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Volt::Project&
 	return newMesh;
 }
 
-Ref<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata)
+AssetReference<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata)
 {
-	const std::filesystem::path absolutePrefabPath = project.rootDirectory / metadata.filePath;
+	const std::filesystem::path absolutePrefabPath = project.rootDirectory / metadata.filepath;
 	
 	if (!FileSystem::Exists(absolutePrefabPath))
 	{
@@ -796,7 +796,7 @@ Ref<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Project& projec
 		return nullptr;
 	}
 
-	Ref<Scene> prefabScene = CreateRef<Scene>();
+	AssetReference<Scene> prefabScene = g_assetManager->CreateMemoryAsset<Scene>("");
 	EntityID rootEntityId = EntityID::Null();
 
 	streamReader.EnterScope("Prefab");
@@ -917,9 +917,9 @@ Ref<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Project& projec
 
 	VT_ENSURE(rootEntityId != EntityID::Null());
 
-	Ref<Prefab> prefab = CreateRef<Prefab>(prefabScene, rootEntityId, version);
+	AssetReference<Prefab> prefab = g_assetManager->CreateMemoryAsset<Prefab>("", prefabScene, rootEntityId, version);
 
-	VT_LOG(Trace, "Converted Prefab with name {}", metadata.filePath.stem().string());
+	VT_LOG(Trace, "Converted Prefab with name {}", metadata.filepath.stem().string());
 	return prefab;
 }
 
@@ -938,7 +938,7 @@ void ProjectConversionPanel::PrintMissingMembers()
 
 void ProjectConversionPanel::LoadAssetMetadataFromMetaFiles(const Volt::Project& project, Vector<Volt::AssetMetadata>& outMetadata)
 {
-	const std::filesystem::path assetsDirectoryPath = project.rootDirectory / project.assetsDirectory;
+	const std::filesystem::path assetsDirectoryPath = project.rootDirectory / project.assetsDirectoryName;
 
 	if (FileSystem::Exists(assetsDirectoryPath))
 	{
@@ -955,10 +955,10 @@ void ProjectConversionPanel::LoadAssetMetadataFromMetaFiles(const Volt::Project&
 				}
 
 				newMetadata.handle = metadataReader.ReadAtKey("Handle", AssetHandle(0));
-				newMetadata.filePath = metadataReader.ReadAtKey("Path", std::filesystem::path(""));
+				newMetadata.filepath = metadataReader.ReadAtKey("Path", std::filesystem::path(""));
 				newMetadata.type = AssetTypes::None;
 
-				const std::filesystem::path absoluteAssetPath = project.rootDirectory / newMetadata.filePath;
+				const std::filesystem::path absoluteAssetPath = project.rootDirectory / newMetadata.filepath;
 				if (FileSystem::Exists(absoluteAssetPath))
 				{
 					const std::string fileExtension = absoluteAssetPath.extension().string();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Serialization/AssetSerializer.h>
 #include <AssetSystem/AssetSerializerRegistry.h>
@@ -10,8 +10,8 @@ namespace Volt
 	class EnvironmentTextureSerializer : public AssetSerializer
 	{
 	public:
-		void Serialize(const AssetMetadata& metadata, CustomAssetMetadataVector& customData, const Ref<Asset>& asset) const override;
-		bool Deserialize(const AssetMetadata& metadata, Ref<Asset> destinationAsset) const override;
+		void Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const override;
+		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const override;
 	};
 
 	VT_REGISTER_ASSET_SERIALIZER(AssetTypes::EnvironmentTexture, EnvironmentTextureSerializer);

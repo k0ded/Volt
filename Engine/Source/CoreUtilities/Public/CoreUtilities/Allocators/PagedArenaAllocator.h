@@ -139,6 +139,26 @@ public:
 		return allocation;
 	}
 
+	template<typename... Args>
+	Type* Reallocate(Type* allocation, Args&&... args)
+	{
+		Type* newAllocation = nullptr;
+
+		PageHeader* currentPage = m_basePage;
+		while (currentPage != nullptr)
+		{
+			if (currentPage->arena.IsPointerWithinArena(allocation))
+			{
+				currentPage->arena.Free(allocation);
+				newAllocation = currentPage->arena.Reallocate(allocation, std::forward<Args>(args)...);
+
+				break;
+			}
+		}
+		
+		return newAllocation;
+	}
+
 	void Free(Type* allocation)
 	{
 		PageHeader* currentPage = m_basePage;
@@ -221,4 +241,59 @@ private:
 
 	std::atomic<PageHeader*> m_basePage = nullptr;
 	SecondaryAllocator::template ForElementType<uint8_t> m_allocator;
+
+public:
+	class Iterator
+	{
+	public:
+		Iterator()
+			: m_arenaAllocator(nullptr)
+		{}
+
+		Iterator(const PagedArenaAllocator& arenaAllocator)
+			: m_arenaAllocator(&arenaAllocator)
+		{
+			m_currentPage = m_arenaAllocator->m_basePage;
+			if (m_currentPage)
+			{
+				m_iterator = ArenaAllocator<Type>::Iterator(m_currentPage->arena);
+			}
+		}
+
+		VT_INLINE void operator++()
+		{
+			++m_iterator;
+
+			// Iterator is invalid, move to the next page
+			if (!m_iterator)
+			{
+				m_currentPage = m_currentPage->next;
+
+				if (m_currentPage)
+				{
+					m_iterator = ArenaAllocator<Type>::Iterator(m_currentPage->arena);
+				}
+			}
+		}
+
+		VT_INLINE Type* operator->() const
+		{
+			return *m_iterator;
+		}
+
+		VT_INLINE Type* operator*() const
+		{
+			return *m_iterator;
+		}
+
+		VT_INLINE explicit operator bool() const
+		{
+			return m_arenaAllocator != nullptr && m_iterator;
+		}
+
+	private:
+		ArenaAllocator<Type>::Iterator m_iterator;
+		PageHeader* m_currentPage = nullptr;
+		const PagedArenaAllocator* m_arenaAllocator;
+	};
 };

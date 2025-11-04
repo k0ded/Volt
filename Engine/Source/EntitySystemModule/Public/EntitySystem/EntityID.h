@@ -2,7 +2,10 @@
 
 #include "EntitySystem/Config.h"
 
+#include <CoreUtilities/CompilerTraits.h>
+
 #include <yaml-cpp/yaml.h>
+#include <format>
 
 class BinaryStreamReader;
 class BinaryStreamWriter;

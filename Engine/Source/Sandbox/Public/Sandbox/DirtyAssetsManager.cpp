@@ -4,13 +4,13 @@
 #include "Sandbox/UISystems/ModalSystem.h"
 
 #include "Sandbox/Modals/AssetsModal.h"
+#include "Sandbox/EditorAssetManager.h"
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/Events/AssetEvents.h>
 
 #include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/FileSystem.h>
-
 
 
 VT_REGISTER_SUBSYSTEM(DirtyAssetsManager, Default, Engine, 0);
@@ -39,7 +39,7 @@ void DirtyAssetsManager::Initialize()
 {
 	auto& assetsModal = ModalSystem::AddModal<AssetsModal>("Assets Modal##sandbox");
 	m_assetsModalID = assetsModal.GetID();
-	m_assetChangedCallbackID = Volt::AssetManager::RegisterAssetUpdatedCallback(AssetTypes::None,
+	m_assetChangedCallbackID = g_assetManager->RegisterAssetUpdatedCallback(AssetTypes::None,
 		[this](Volt::AssetHandle assetHandle, Volt::AssetChangedState state)
 	{
 		OnAssetChanged(assetHandle, state); 
@@ -48,12 +48,14 @@ void DirtyAssetsManager::Initialize()
 
 void DirtyAssetsManager::Shutdown()
 {
-	Volt::AssetManager::UnregisterAssetUpdatedCallback(AssetTypes::None, m_assetChangedCallbackID);
+	g_assetManager->UnregisterAssetUpdatedCallback(AssetTypes::None, m_assetChangedCallbackID);
 }
 
 void DirtyAssetsManager::OnAssetChanged(Volt::AssetHandle assetHandle, Volt::AssetChangedState state)
 {
-	if (Volt::AssetManager::IsMemoryAsset(assetHandle))
+	Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(assetHandle);
+
+	if (assetMetadata->IsMemoryAsset())
 	{
 		return;
 	}
@@ -68,7 +70,7 @@ void DirtyAssetsManager::OnAssetChanged(Volt::AssetHandle assetHandle, Volt::Ass
 
 		case Volt::AssetChangedState::Loaded:
 		{
-			if (!Volt::AssetManager::HasFilePath(assetHandle))
+			if (!assetMetadata->HasFilepath())
 			{
 				MarkAssetDirty(assetHandle);
 				break;
@@ -119,7 +121,10 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 		for (int32_t i = static_cast<int32_t>(assetsToSave.size() - 1); i >= 0; i--)
 		{
 			const Volt::AssetHandle& handle = assetsToSave[i];
-			AssetType assetType = Volt::AssetManager::GetAssetTypeFromHandle(handle);
+			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+
+			const AssetType assetType = assetMetadata->type;
+
 			if (!m_dirtySaveCustomizations.contains(assetType))
 			{
 				continue;
@@ -184,16 +189,17 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 		for (int32_t i = static_cast<int32_t>(assetsToSave.size()) - 1; i >= 0; i--)
 		{
 			const Volt::AssetHandle& asset = assetsToSave[i];
+			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(asset);
 
 			//only assets that dont have a file path need to be created
-			if (Volt::AssetManager::HasFilePath(asset))
+			if (assetMetadata->HasFilepath())
 			{
 				continue;
 			}
 
 			// check if the asset has a save customization, if it does, check if the user is allowed to assign a path
 			// if the user is not allowed to assign a path, we might still be able to save the asset post create
-			AssetType assetType = Volt::AssetManager::GetAssetTypeFromHandle(asset);
+			const AssetType assetType = assetMetadata->type;
 			if (m_dirtySaveCustomizations.contains(assetType))
 			{
 				const DirtySaveCustomization& customization = m_dirtySaveCustomizations[assetType];
@@ -261,7 +267,8 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 		//all the assets that were not allowed to be assigned a user path need to check if they can be saved now with a custom behaviour
 		for (const Volt::AssetHandle& handle : assetsNotAllowedUserAssignPath)
 		{
-			AssetType assetType = Volt::AssetManager::GetAssetTypeFromHandle(handle);
+			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+			const AssetType assetType = assetMetadata->type;
 			if (!m_dirtySaveCustomizations.contains(assetType))
 			{
 				continue;
@@ -303,7 +310,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 		FrameStackVector<Volt::AssetHandle> readOnlyAssets;
 		for (const Volt::AssetHandle& asset : assetsToSave)
 		{
-			const std::filesystem::path assetPath = Volt::AssetManager::GetFilesystemPath(asset);
+			const std::filesystem::path assetPath = g_assetManager->GetAssetFilesystemPath(asset);
 			if (!FileSystem::IsWriteable(assetPath))
 			{
 				readOnlyAssets.push_back(asset);
@@ -331,7 +338,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 			{
 				for (Volt::AssetHandle asset : outSelectedAssetsToCheckOut)
 				{
-					const std::filesystem::path assetPath = Volt::AssetManager::GetFilesystemPath(asset);
+					const std::filesystem::path assetPath = g_assetManager->GetAssetFilesystemPath(asset);
 					FileSystem::MakeWriteable(assetPath);
 				}
 			}
@@ -339,7 +346,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 			// remove the assets that are still read-only from the assets to save
 			for (int32_t i = static_cast<int32_t>(assetsToSave.size() - 1); i >= 0; i--)
 			{
-				const std::filesystem::path assetPath = Volt::AssetManager::GetFilesystemPath(assetsToSave[i]);
+				const std::filesystem::path assetPath = g_assetManager->GetAssetFilesystemPath(assetsToSave[i]);
 				if (!FileSystem::IsWriteable(assetPath))
 				{
 					assetsToSave.erase(assetsToSave.begin() + i);
@@ -387,14 +394,16 @@ void DirtyAssetsManager::SaveAssetsImpl(const FrameStackVector<Volt::AssetHandle
 {
 	for (const Volt::AssetHandle& handle : assetsToSave)
 	{
-		AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(handle);
+		Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+
+		const AssetType type = assetMetadata->type;
 		if (m_dirtySaveCustomizations[type].ShouldDeleteInstead(handle))
 		{
-			Volt::AssetManager::Get().DeleteAsset(handle);
+			g_editorAssetManager->DeleteAsset(handle);
 			continue;
 		}
 
-		Volt::AssetManager::SaveAsset(handle);
+		g_assetManager->SaveAsset(handle);
 	}
 }
 
@@ -402,6 +411,6 @@ void DirtyAssetsManager::CreateAssetsImpl(const Vector<std::pair<Volt::AssetHand
 {
 	for (const auto& [asset, path] : assetsToCreate)
 	{
-		Volt::AssetManager::CreateFileForAsset(asset, path);
+		g_assetManager->CreateFileForAsset(asset, path);
 	}
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AssetSystem/Config.h"
+#include "AssetSystem/AssetReference.h"
 
 #include <LogModule/LogCommon.h>
 #include <CoreUtilities/Containers/Vector.h>
@@ -72,12 +73,12 @@ namespace Volt
 		virtual SourceAssetFileInformation GetSourceFileInformation(const std::filesystem::path& filepath) const = 0;
 
 		template<typename ConfigType>
-		Vector<Ref<Asset>> Import(const std::filesystem::path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
+		Vector<AssetReference<Asset>> Import(const std::filesystem::path& filepath, const ConfigType& config, const SourceAssetUserImportData& userData = {})
 		{
 			return ImportInternal(filepath, reinterpret_cast<const void*>(&config), userData);
 		}
 
 	protected:
-		virtual Vector<Ref<Asset>> ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const = 0;
+		virtual Vector<AssetReference<Asset>> ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const = 0;
 	};
 }

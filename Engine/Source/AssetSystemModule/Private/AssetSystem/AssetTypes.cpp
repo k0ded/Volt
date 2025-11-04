@@ -1,5 +1,5 @@
-#include "vtcorepch.h"
-#include "Volt-Core/AssetTypes.h"
+#include "aspch.h"
+#include "AssetSystem/AssetTypes.h"
 
 VT_REGISTER_ASSET_TYPE(Mesh);
 VT_REGISTER_ASSET_TYPE(Material);
@@ -12,7 +12,6 @@ VT_REGISTER_ASSET_TYPE(NetContract);
 VT_REGISTER_ASSET_TYPE(TextureSource);
 VT_REGISTER_ASSET_TYPE(MeshSource);
 VT_REGISTER_ASSET_TYPE(BehaviorGraph);
-VT_REGISTER_ASSET_TYPE(MonoScript);
 VT_REGISTER_ASSET_TYPE(BlendSpace);
 VT_REGISTER_ASSET_TYPE(Animation);
 VT_REGISTER_ASSET_TYPE(Skeleton);

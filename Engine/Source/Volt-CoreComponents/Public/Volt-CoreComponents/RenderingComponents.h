@@ -2,14 +2,13 @@
 
 #include "Volt-CoreComponents/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
-
 #include <Volt-Assets/StreamingInstanceID.h>
 #include <Volt-Animation/AnimationComponents.h>
 
 #include <EntitySystem/ComponentRegistry.h>
 #include <EntitySystem/Scripting/ECSAccessBuilder.h>
 
+#include <AssetSystem/AssetTypes.h>
 #include <AssetSystem/Asset.h>
 
 namespace Volt

@@ -9,8 +9,9 @@
 #include <Volt-Scene/AssetTypes.h>
 #include <Volt-Scene/Scene.h>
 
-#include <imgui.h>
+#include <AssetSystem/AssetLocks.h>
 
+#include <imgui.h>
 
 DebugToolsPanel::DebugToolsPanel()
 	: EditorWindow("Debug Tools")
@@ -77,9 +78,11 @@ void DebugToolsPanel::UpdateSceneLoading()
 
 	bool loadLevel = true;
 	{
-		Ref<Volt::Scene> scene = Sandbox::Get().GetRuntimeScene();
+		AssetReference<Volt::Scene> scene = Sandbox::Get().GetRuntimeScene();
 		if (scene)
 		{
+			ScopedAssetReferenceLock sceneLock{ scene };
+
 			loadLevel = scene->IsFinishedLoadingEntities();
 		}
 	}

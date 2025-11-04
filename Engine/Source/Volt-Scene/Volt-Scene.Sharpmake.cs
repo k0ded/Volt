@@ -28,6 +28,8 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<VoltPhysics>(target);
 			conf.AddPublicDependency<VoltCoreComponents>(target);
 
+			conf.AddPrivateDependency<PhysicsInterface>(target);
+
 			conf.AddPublicDependency<yaml>(target);
 		}
 

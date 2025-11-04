@@ -26,6 +26,7 @@ namespace Volt
 		void SerializeProject();
 
 		static const std::filesystem::path GetAssetsDirectory();
+		static const std::string_view GetAssetsDirectoryName();
 		static const std::filesystem::path GetAudioBanksDirectory();
 		static const std::filesystem::path GetProjectDirectory();
 		static const std::filesystem::path GetEngineRootDirectory();

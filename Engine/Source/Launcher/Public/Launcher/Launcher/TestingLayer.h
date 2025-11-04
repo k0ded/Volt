@@ -1,6 +1,9 @@
 #pragma once
 
 #include <Volt-Application/ApplicationLayer.h>
+#include <Volt-Scene/Scene.h>
+
+#include <AssetSystem/AssetReference.h>
 
 #include <EventSystem/EventListener.h>
 #include <EventSystem/ApplicationEvents.h>
@@ -9,7 +12,6 @@
 
 namespace Volt
 {
-	class Scene;
 	class SceneRenderer;
 	class Camera;
 }
@@ -29,7 +31,7 @@ private:
 	bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
 	bool OnWindowResizeEvent(Volt::WindowResizeEvent& e);
 
-	Ref<Volt::Scene> m_scene;
+	AssetReference<Volt::Scene> m_scene;
 	Ref<Volt::SceneRenderer> m_sceneRenderer;
 	Ref<Volt::Camera> m_camera;
 };
