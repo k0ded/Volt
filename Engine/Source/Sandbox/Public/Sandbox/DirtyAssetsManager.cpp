@@ -74,11 +74,6 @@ void DirtyAssetsManager::OnAssetChanged(Volt::AssetHandle assetHandle, Volt::Ass
 			if (!assetMetadata->HasFilepath())
 			{
 				MarkAssetDirty(assetHandle);
-				break;
-			}
-			else
-			{
-				MarkAssetNotDirty(assetHandle);
 			}
 			break;
 		}

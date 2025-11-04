@@ -262,13 +262,11 @@ void EditorUtils::MarkEntityAsEdited(const Volt::Scene& scene, const Volt::Entit
 {
 	const Volt::AssetHandle descHandle = scene.GetEntityDescHandleFromEntityID(entity.GetID());
 
-	AssetReference<Volt::EntityDesc> entityDesc;
+	// Make sure the entity is loaded. Dirty Assets manager depends on the asset being loaded
+	AssetReference<Volt::EntityDesc> entityDesc = g_assetManager->GetAssetImmediately<Volt::EntityDesc>(descHandle);
+	VT_ENSURE(entityDesc.IsValid());
 
-	// Make sure the entity is loaded.
-	if (g_editorAssetManager->TryGetAssetImmediatelyAndCache(descHandle, entityDesc))
-	{
-		DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
-	}
+	DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
 }
 
 void EditorUtils::MarkEntityAndChildrenAsEdited(const Volt::Scene& scene, const Volt::Entity& entity)
