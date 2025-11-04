@@ -74,43 +74,81 @@ namespace Volt
 
 	void AssetRegistry::LoadAssetMetadata()
 	{
-		// #TODO_AssetSystem: Seperate out, so that engine asset meta data loading stalls, but project asset meta data continues in the background.
-
 		VT_LOGC(Info, LogAssetSystem, "Fetching asset meta data...");
 		ScopedTimer timer{};
 
-		Vector<std::filesystem::path> foundAssets = ScanForAssets();
+		Vector<std::filesystem::path> engineAssetFilepaths;
+		Vector<std::filesystem::path> projectAssetFilepaths;
 
-		TaskGraph taskGraph{ ExecutionPriority::Immediate };
+		ScanForAssets(engineAssetFilepaths, projectAssetFilepaths);
 
-		for (const std::filesystem::path& assetFilepath : foundAssets)
+		// Project assets
 		{
-			taskGraph.AddTask("Deserialize Asset Metadata", [this, &assetFilepath]()
+			TaskGraph taskGraph{ ExecutionPriority::Critical, static_cast<uint32_t>(projectAssetFilepaths.size()) };
+			
+			for (const std::filesystem::path& assetFilepath : projectAssetFilepaths)
 			{
-				AssetMetadata assetMetadata{};
-				DeserializeAssetMetadata(assetFilepath, assetMetadata);
-				if (assetMetadata.IsValid())
+				taskGraph.AddTask("Deserialize Project Asset Metadata", [this, assetFilepath]() 
 				{
-					if (s_assetRegistryLogAssetScan.GetValue())
+					AssetMetadata assetMetadata{};
+					DeserializeAssetMetadata(assetFilepath, assetMetadata);
+					if (assetMetadata.IsValid())
 					{
-						std::string logMessage = std::format(
-							"AssetMetadata with handle {} added: \n"
-							"	- Filepath: {}\n"
-							"	- Type: {}\n",
-							assetMetadata.handle,
-							assetMetadata.filepath,
-							assetMetadata.type->GetName()
-						);
+						if (s_assetRegistryLogAssetScan.GetValue())
+						{
+							std::string logMessage = std::format(
+								"AssetMetadata with handle {} added: \n"
+								"	- Filepath: {}\n"
+								"	- Type: {}\n",
+								assetMetadata.handle,
+								assetMetadata.filepath,
+								assetMetadata.type->GetName()
+							);
 
-						VT_LOGC_UNFORMATTED(Trace, LogAssetSystem, logMessage);
+							VT_LOGC_UNFORMATTED(Trace, LogAssetSystem, logMessage);
+						}
+
+						InsertAssetMetadata(std::move(assetMetadata));
 					}
+				});
+			}
 
-					InsertAssetMetadata(std::move(assetMetadata));
-				}
-			});
+			taskGraph.Execute();
 		}
 
-		taskGraph.ExecuteAndWait();
+		// Engine assets
+		{
+			TaskGraph taskGraph{ ExecutionPriority::Immediate };
+
+			for (const std::filesystem::path& assetFilepath : engineAssetFilepaths)
+			{
+				taskGraph.AddTask("Deserialize Engine Asset Metadata", [this, &assetFilepath]() 
+				{
+					AssetMetadata assetMetadata{};
+					DeserializeAssetMetadata(assetFilepath, assetMetadata);
+					if (assetMetadata.IsValid())
+					{
+						if (s_assetRegistryLogAssetScan.GetValue())
+						{
+							std::string logMessage = std::format(
+								"AssetMetadata with handle {} added: \n"
+								"	- Filepath: {}\n"
+								"	- Type: {}\n",
+								assetMetadata.handle,
+								assetMetadata.filepath,
+								assetMetadata.type->GetName()
+							);
+
+							VT_LOGC_UNFORMATTED(Trace, LogAssetSystem, logMessage);
+						}
+
+						InsertAssetMetadata(std::move(assetMetadata));
+					}
+				});
+			}
+
+			taskGraph.ExecuteAndWait();
+		}
 
 		VT_LOGC(Info, LogAssetSystem, "Finished fetching meta data in {} seconds!", timer.GetTime<Time::Seconds>());
 	}
@@ -207,25 +245,26 @@ namespace Volt
 		return s_assetRegistryNumMaxAssets.GetValue();
 	}
 
-	Vector<std::filesystem::path> AssetRegistry::ScanForAssets()
+	void AssetRegistry::ScanForAssets(Vector<std::filesystem::path>& outEngineAssets, Vector<std::filesystem::path>& outProjectAssets)
 	{
 		VT_PROFILE_FUNCTION();
 
 		constexpr std::string_view AssetExtension = ".vtasset";
+		constexpr uint32_t NumEngineFilepaths = 2;
 
-		const Vector<std::filesystem::path> filepathsToScan =
+		const Array<std::filesystem::path, NumEngineFilepaths> engineFilepathsToScan =
 		{
 			m_engineDirectoryPath / "Engine",
 			m_engineDirectoryPath / "Editor",
-			m_projectDirectoryPath / m_assetsDirectoryName
 		};
+
+		const std::filesystem::path projectFilepathToScan = m_projectDirectoryPath / m_assetsDirectoryName;
 
 		TaskGraph scanGraph{ ExecutionPriority::Immediate };
 
-		Vector<Vector<std::filesystem::path>> intermediateFilepaths;
-		intermediateFilepaths.resize(filepathsToScan.size());
+		Array<Vector<std::filesystem::path>, NumEngineFilepaths> engineIntermediateFilepaths;
 
-		for (uint32_t index = 0; const std::filesystem::path& filepathToScan : filepathsToScan)
+		for (uint32_t index = 0; const std::filesystem::path& filepathToScan : engineFilepathsToScan)
 		{
 			// If the directory does not exist, we skip.
 			if (!FileSystem::Exists(filepathToScan))
@@ -233,13 +272,13 @@ namespace Volt
 				continue;
 			}
 
-			scanGraph.AddTask("Scan Assets", [&intermediateFilepaths, &filepathToScan, index]() 
+			scanGraph.AddTask("Scan Engine Assets", [&engineIntermediateFilepaths, &filepathToScan, index]() 
 			{
 				for (const auto& pathIt : std::filesystem::recursive_directory_iterator(filepathToScan))
 				{
 					if (pathIt.path().extension() == AssetExtension)
 					{
-						intermediateFilepaths[index].emplace_back(pathIt.path());
+						engineIntermediateFilepaths[index].emplace_back(pathIt.path());
 					}
 				}
 			});
@@ -247,15 +286,26 @@ namespace Volt
 			index++;
 		}
 
-		scanGraph.ExecuteAndWait();
-
-		Vector<std::filesystem::path> resultFilepaths;
-	
-		for (const Vector<std::filesystem::path>& intermediate : intermediateFilepaths)
+		// Make sure the project assets directory exists.
+		if (FileSystem::Exists(projectFilepathToScan))
 		{
-			resultFilepaths.append(intermediate);
+			scanGraph.AddTask("Scan Project Assets", [&outProjectAssets, &projectFilepathToScan]() 
+			{
+				for (const auto& pathIt : std::filesystem::recursive_directory_iterator(projectFilepathToScan))
+				{
+					if (pathIt.path().extension() == AssetExtension)
+					{
+						outProjectAssets.emplace_back(pathIt.path());
+					}
+				}
+			});
 		}
 
-		return resultFilepaths;
+		scanGraph.ExecuteAndWait();
+
+		for (const Vector<std::filesystem::path>& intermediate : engineIntermediateFilepaths)
+		{
+			outEngineAssets.append(intermediate);
+		}
 	}
 }

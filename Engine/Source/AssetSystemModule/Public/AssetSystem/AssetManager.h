@@ -32,7 +32,12 @@ namespace Volt
 		VTAS_API ~AssetManager();
 
 		///// Asset Metadata /////
+		// Returns a single thread writeable accessor, locks for the
+		// duration of the WriteableAssetMetadata object.
 		VTAS_API WriteableAssetMetadata GetWriteableAssetMetadata(AssetHandle assetHandle) const;
+
+		// Returns a multi thread readable accessor, locks for the
+		// duration of the ReadOnlyAssetMetadata object.
 		VTAS_API ReadOnlyAssetMetadata GetReadOnlyAssetMetadata(AssetHandle assetHandle) const;
 		VTAS_API AssetMetadata GetAssetMetadataCopy(AssetHandle assetHandle) const;
 

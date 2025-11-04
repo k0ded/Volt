@@ -38,8 +38,7 @@ namespace Volt
 		void DeserializeAssetMetadata(const std::filesystem::path& filepath, AssetMetadata& outMetadata);
 
 		// Returns all asset filepaths located within engine and project asset directories.
-		// #TODO_AssetSystem: Change to take a vector reference instead.
-		Vector<std::filesystem::path> ScanForAssets();
+		void ScanForAssets(Vector<std::filesystem::path>& outEngineAssets, Vector<std::filesystem::path>& outProjectAssets);
 
 		std::filesystem::path m_engineDirectoryPath;
 		std::filesystem::path m_projectDirectoryPath;
@@ -107,6 +106,9 @@ namespace Volt
 		AssetMetadata* m_metadata;
 	};
 
+	// A wrapper of the asset metadata that allows multiple threads to read the same
+	// asset metadata at the same time. Will make sure asset metadata
+	// can't be written at the same time as it's being read.
 	class ReadOnlyAssetMetadata
 	{
 	public:

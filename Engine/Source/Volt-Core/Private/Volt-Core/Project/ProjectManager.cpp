@@ -76,7 +76,6 @@ namespace Volt
 		streamWriter.SetKey("EngineVersion", VT_VERSION.ToString());
 		streamWriter.SetKey("Name", m_currentProject->name);
 		streamWriter.SetKey("CompanyName", m_currentProject->companyName);
-		streamWriter.SetKey("AssetsDirectory", m_currentProject->assetsDirectory);
 		streamWriter.SetKey("AudioBanksDirectory", m_currentProject->audioDirectory);
 		streamWriter.SetKey("IconPath", m_currentProject->iconFilepath);
 		streamWriter.SetKey("CursorPath", m_currentProject->cursorFilepath);
@@ -108,13 +107,11 @@ namespace Volt
 		m_currentProject->engineVersion = streamReader.ReadAtKey("EngineVersion", std::string(""));
 		m_currentProject->name = streamReader.ReadAtKey("Name", std::string("None"));
 		m_currentProject->companyName = streamReader.ReadAtKey("CompanyName", std::string("None"));
-		m_currentProject->assetsDirectory = streamReader.ReadAtKey("AssetsDirectory", std::filesystem::path("Assets"));
+		m_currentProject->assetsDirectoryName = streamReader.ReadAtKey("AssetsDirectory", std::string("Assets"));
 		m_currentProject->audioDirectory = streamReader.ReadAtKey("AudioBanksDirectory", std::filesystem::path("Audio/Banks"));
 		m_currentProject->iconFilepath = streamReader.ReadAtKey("IconPath", std::filesystem::path(""));
 		m_currentProject->cursorFilepath = streamReader.ReadAtKey("CursorPath", std::filesystem::path(""));
 		m_currentProject->startSceneFilepath = streamReader.ReadAtKey("StartScene", std::filesystem::path(""));
-
-		m_currentProject->assetsDirectoryName = m_currentProject->assetsDirectory.stem().string();
 
 		streamReader.ForEach("Plugins", [&]() 
 		{
@@ -138,10 +135,9 @@ namespace Volt
 		}
 	}
 
-	// #TODO_AssetSystem: Deprecate, other code is misusing it. Use project directory + asset directory name instead.
 	const std::filesystem::path ProjectManager::GetAssetsDirectory()
 	{
-		return s_instance->m_currentProject->isDeprecated ? "./" : s_instance->m_currentProject->rootDirectory / s_instance->m_currentProject->assetsDirectory;
+		return s_instance->m_currentProject->isDeprecated ? "./" : GetProjectDirectory() / GetAssetsDirectoryName();
 	}
 
 	const std::string_view ProjectManager::GetAssetsDirectoryName()

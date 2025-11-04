@@ -15,7 +15,6 @@ namespace Volt
 
 		std::filesystem::path filepath; // Filepath to the .vtproj file
 		std::filesystem::path rootDirectory; // The directory containing the .vtproj file
-		std::filesystem::path assetsDirectory; // The directory containing the project assets, relative to the rootDirectory
 		std::string assetsDirectoryName;
 		std::filesystem::path audioDirectory; // The directory containing the audio banks, relative to the rootDirectory
 

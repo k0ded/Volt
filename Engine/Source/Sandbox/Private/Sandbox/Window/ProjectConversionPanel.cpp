@@ -332,10 +332,10 @@ bool ProjectConversionPanel::TryLoadProject(Volt::Project& project)
 	project.name = projectFileReader.ReadAtKey("Name", std::string("None"));
 	project.companyName = projectFileReader.ReadAtKey("CompanyName", std::string("None"));
 
-	project.assetsDirectory = projectFileReader.ReadAtKey("AssetsDirectory", std::string(""));
-	if (project.assetsDirectory.empty())
+	project.assetsDirectoryName = projectFileReader.ReadAtKey("AssetsDirectory", std::string(""));
+	if (project.assetsDirectoryName.empty())
 	{
-		project.assetsDirectory = projectFileReader.ReadAtKey("AssetsPath", std::string("Assets"));
+		project.assetsDirectoryName = projectFileReader.ReadAtKey("AssetsPath", std::string("Assets"));
 	}
 
 	project.audioDirectory = projectFileReader.ReadAtKey("AudioBanksDirectory", std::string(""));
@@ -938,7 +938,7 @@ void ProjectConversionPanel::PrintMissingMembers()
 
 void ProjectConversionPanel::LoadAssetMetadataFromMetaFiles(const Volt::Project& project, Vector<Volt::AssetMetadata>& outMetadata)
 {
-	const std::filesystem::path assetsDirectoryPath = project.rootDirectory / project.assetsDirectory;
+	const std::filesystem::path assetsDirectoryPath = project.rootDirectory / project.assetsDirectoryName;
 
 	if (FileSystem::Exists(assetsDirectoryPath))
 	{
