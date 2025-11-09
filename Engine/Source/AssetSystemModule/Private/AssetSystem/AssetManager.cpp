@@ -228,6 +228,129 @@ namespace Volt
 		return false;
 	}
 
+	bool AssetManager::TryGetTypelessAssetImmediately(AssetHandle assetHandle, AssetReference<Asset>& outAsset)
+	{
+		VT_ENSURE(assetHandle != Asset::Null());
+
+		// Make sure the asset exists.
+		if (!m_assetRegistry.IsValidAssetHandle(assetHandle))
+		{
+			VT_LOGC(Warning, LogAssetSystem, "Asset handle '{}' is not a valid asset handle!", assetHandle);
+			return false;
+		}
+
+		// Try to get the asset from the asset cache.
+		RefPtr<Asset> tempAsset;
+		if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
+		{
+			outAsset = { tempAsset };
+			return true;
+		}
+
+		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+
+		// All metadatas should be valid.
+		VT_ENSURE(assetMetadata->IsValid());
+
+		// Check if we can actually load this asset.
+		if (!AssetSerializerRegistry::Get().HasSerializer(assetMetadata->type))
+		{
+			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, assetMetadata->type->GetName());
+			return false;
+		}
+
+		// Asset wasn't in the cache, create and load it.
+		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(assetMetadata->type);
+		// Setup a link back to the asset manager.
+		newAsset->m_referencedAssetManager = this;
+		newAsset->m_assetMutex = new std::shared_mutex();
+
+		AssetReference resultReference{ newAsset };
+
+		newAsset->AssignAssetHandle(assetMetadata->handle);
+		newAsset->SetName(assetMetadata->filepath.stem().string());
+
+		LoadAsset(assetHandle, newAsset);
+
+		outAsset = resultReference;
+		return true;
+	}
+
+	bool AssetManager::TryGetTypelessAsset(AssetHandle assetHandle, AssetReference<Asset>& outAsset)
+	{
+		VT_ENSURE(assetHandle != Asset::Null());
+
+		// Make sure the asset exists.
+		if (!m_assetRegistry.IsValidAssetHandle(assetHandle))
+		{
+			VT_LOGC(Warning, LogAssetSystem, "Asset handle '{}' is not a valid asset handle!", assetHandle);
+			return false;
+		}
+
+		// Try to get the asset from the asset cache.
+		RefPtr<Asset> tempAsset;
+		if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
+		{
+			outAsset = tempAsset;
+			return true;
+		}
+
+		ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+		// All metadatas should be valid.
+		VT_ENSURE(metadata->IsValid());
+
+		// Check if we can actually load this asset.
+		if (!AssetSerializerRegistry::Get().HasSerializer(metadata->type))
+		{
+			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, metadata->type->GetName());
+			return false;
+		}
+
+		// Asset wasn't in the cache, create and load it.
+		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(metadata->type);
+		// Setup a link back to the asset manager.
+		newAsset->m_referencedAssetManager = this;
+		newAsset->m_assetMutex = new std::shared_mutex();
+
+		AssetReference resultReference{ newAsset };
+		newAsset->AssignAssetHandle(metadata->handle);
+		newAsset->SetName(metadata->filepath.stem().string());
+
+		QueueAssetForLoading(assetHandle, newAsset);
+
+		outAsset = resultReference;
+		return false;
+	}
+
+	AssetReference<Asset> AssetManager::CreateAssetTypeless(std::string_view assetName, AssetType assetType)
+	{
+		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(assetType);
+
+		AssetMetadata metadata{};
+		metadata.filepath = ""; // Assets that are not saved will not have a file path
+		metadata.handle = newAsset->GetAssetHandle();
+		metadata.type = assetType;
+		metadata.SetFlag(AssetMetadataFlag::Loaded, true);
+		metadata.SetFlag(AssetMetadataFlag::MemoryOnly, false);
+		metadata.SetFlag(AssetMetadataFlag::Anonymous, false);
+
+		newAsset->SetupInitialCustomMetadata(metadata.customData);
+		newAsset->SetName(std::string(assetName));
+
+		// Setup a link back to the asset manager.
+		newAsset->m_referencedAssetManager = this;
+		newAsset->m_assetMutex = new std::shared_mutex();
+
+		m_assetRegistry.InsertAssetMetadata(std::move(metadata));
+
+		m_assetCache.AddAsset(newAsset);
+
+		m_dependencyGraph->AddAssetToGraph(newAsset->GetAssetHandle());
+		QueueAssetChanged(newAsset->GetAssetHandle(), AssetChangedState::Loaded);
+		
+		return newAsset;
+	}
+
 	void AssetManager::CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath)
 	{
 		if (FileSystem::FilePathIsOnlyExtension(filepath) || filepath.stem().empty())
@@ -545,7 +668,10 @@ namespace Volt
 			}
 
 			//also call all the ones registered to AssetTypes::None
-			broadcast(AssetTypes::None);
+			if (m_assetChangedCallbacks.contains(AssetTypes::None))
+			{
+				broadcast(AssetTypes::None);
+			}
 		}
 	}
 

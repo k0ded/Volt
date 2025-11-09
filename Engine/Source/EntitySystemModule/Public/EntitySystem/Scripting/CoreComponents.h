@@ -3,6 +3,8 @@
 #include "EntitySystem/ComponentRegistry.h"
 #include "EntitySystem/EntityID.h"
 
+#include <CoreUtilities/EnumUtils.h>
+
 #include <glm/glm.hpp>
 
 namespace Volt
@@ -25,6 +27,7 @@ namespace Volt
 	}
 
 	REGISTER_ENUM(Movability);
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(Movability);
 
 	struct VTES_API TagComponent
 	{

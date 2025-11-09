@@ -12,19 +12,15 @@ namespace Volt
 	class VTAS_API AssetFactory
 	{
 	public:
-		using AssetCreateFunction = std::function<Ref<Asset>()>;
 		using CreateAssetTypeAllocatorFunction = std::function<Ref<AssetTypeAllocator>()>;
 
 		struct FactoryData
 		{
-			AssetCreateFunction createFunction;
 			CreateAssetTypeAllocatorFunction createAllocatorFunction;
 			uint64_t assetTypeSize;
 		};
 
 		template<typename T> bool RegisterAssetType(VoltGUID typeGuid);
-		VT_NODISCARD Ref<Asset> CreateAssetOfType(AssetType type) const;
-
 		VT_NODISCARD VT_INLINE const Map<VoltGUID, FactoryData>& GetFactoryMap() const { return m_assetFactoryFunctions; }
 
 		static AssetFactory& Get();
@@ -37,7 +33,6 @@ namespace Volt
 	bool AssetFactory::RegisterAssetType(VoltGUID typeGuid)
 	{
 		FactoryData& factoryData = m_assetFactoryFunctions[typeGuid];
-		//factoryData.createFunction = []() { return CreateRef<T>(); };
 		factoryData.createAllocatorFunction = []() { return CreateRef<AssetTypeAllocatorImpl<T>>(); };
 		factoryData.assetTypeSize = sizeof(T);
 

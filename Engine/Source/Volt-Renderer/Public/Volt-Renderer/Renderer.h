@@ -31,20 +31,20 @@ namespace Volt
 
 	struct DefaultResources
 	{
-		AssetReference<Texture2D> whiteTexture;
 		Ref<RenderMaterial> defaultMaterial;
 		Ref<Mesh> defaultMesh;
 
 		RefPtr<RHI::Image> DFGLuT;
 		RefPtr<RHI::Image> blackCubeTexture;
 		RefPtr<RHI::Image> black1x1x1;
+		RefPtr<RHI::Image> white1x1;
 
 		VT_INLINE void Clear()
 		{
-			whiteTexture = nullptr;
 			defaultMaterial = nullptr;
 			defaultMesh = nullptr;
 
+			white1x1 = nullptr;
 			DFGLuT = nullptr;
 			blackCubeTexture = nullptr;
 			black1x1x1 = nullptr;

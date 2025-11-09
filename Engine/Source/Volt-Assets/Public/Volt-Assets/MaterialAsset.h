@@ -23,6 +23,7 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::Material; }
 		AssetType GetType() const override { return GetStaticType(); };
 		void OnAssetDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state) override;
+		void Serialize(Archive& archive) override;
 
 	private:
 		friend class MaterialSerializer;

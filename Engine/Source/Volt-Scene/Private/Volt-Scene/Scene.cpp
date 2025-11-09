@@ -251,7 +251,7 @@ namespace Volt
 
 							ComponentRegistry::Helpers::AddComponentWithGUID(componentType, registry, entityHandle);
 						}
-					}
+					}	
 					));
 				}
 

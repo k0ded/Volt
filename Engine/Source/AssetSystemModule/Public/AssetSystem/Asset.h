@@ -3,6 +3,8 @@
 #include "AssetSystem/Config.h"
 #include "AssetSystem/AssetMetadata.h"
 
+#include <CoreUtilities/Archive/Archive.h>
+
 #include <atomic>
 
 template<typename T>
@@ -89,6 +91,7 @@ namespace Volt
 		virtual void OnAssetDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state) {}
 		virtual void OnAssetNameChanged() {}
 		virtual void SetupInitialCustomMetadata(CustomAssetMetadataVector& customMetadata) {}
+		virtual void Serialize(Archive& archive) {}
 
 		VT_NODISCARD VT_INLINE const AssetHandle& GetAssetHandle() const { return m_handle; }
 		VT_NODISCARD VT_INLINE std::string_view GetAssetName() const { return m_name; }

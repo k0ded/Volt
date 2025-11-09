@@ -92,6 +92,64 @@ namespace Volt
 		m_subMeshes = initializer.GetSubMeshes();
 		m_materialTable = initializer.GetMaterialTable();
 
+		InitializeInternal();
+	}
+
+	void Mesh::Serialize(Archive& archive)
+	{
+		size_t numVertices = m_vertexContainer.Size();
+
+		archive << numVertices;
+		archive << m_vertexContainer.positions;
+
+		// Requires manual serialization.
+		if (archive.IsLoading())
+		{
+			m_vertexContainer.materialData.resize_uninitialized(numVertices);
+			m_vertexContainer.animationData.resize_uninitialized(numVertices);
+		}
+
+		archive.SerializeBytes(m_vertexContainer.materialData.data(), m_vertexContainer.materialData.byte_size());
+		archive.SerializeBytes(m_vertexContainer.animationData.data(), m_vertexContainer.animationData.byte_size());
+
+		archive << m_indices;
+		archive << m_subMeshes;
+
+		InitializeInternal();
+	}
+
+	void Mesh::SetMaterial(Ref<RenderMaterial> material, uint32_t index)
+	{
+		m_materialTable.SetMaterial(material, index);
+	}
+
+	void Mesh::CreateBoundingSpheres()
+	{
+		m_subMeshBoundingSpheres.resize(m_subMeshes.size());
+		for (uint32_t subMeshIndex = 0; SubMesh& subMesh : m_subMeshes)
+		{
+			glm::vec3 t, r, s;
+			Math::Decompose(subMesh.transform, t, r, s);
+
+			const glm::vec3* positionData = &m_vertexContainer.positions.at(subMesh.vertexStartOffset);
+			const uint32_t* indices = &m_indices[subMesh.indexStartOffset];
+
+			BoundingSphere boundingSphere = GetBoundingSphereFromVertices(positionData, indices, subMesh.indexCount);
+
+			const float maxScale = glm::max(glm::max(s.x, s.y), s.z);
+			boundingSphere.center = subMesh.transform * glm::vec4(boundingSphere.center, 1.f);
+			boundingSphere.radius = maxScale * boundingSphere.radius;
+
+			m_subMeshBoundingSpheres[subMeshIndex] = boundingSphere;
+
+			subMeshIndex++;
+		}
+	}
+
+	void Mesh::InitializeInternal()
+	{
+		VT_PROFILE_FUNCTION();
+
 		const std::string meshName = !m_name.empty() ? m_name + "." : "";
 
 		RHI::BufferUsage bufferRayTracingFlags = RHI::BufferUsage::None;
@@ -158,7 +216,7 @@ namespace Volt
 		}
 
 		CreateBoundingSpheres();
-	
+
 		// Create GPU Meshes
 		for (uint32_t i = 0; const auto& subMesh : m_subMeshes)
 		{
@@ -199,34 +257,6 @@ namespace Volt
 		for (const auto& subMesh : m_subMeshes)
 		{
 			m_hash = Math::HashCombine(m_hash, subMesh.GetHash());
-		}
-	}
-
-	void Mesh::SetMaterial(Ref<RenderMaterial> material, uint32_t index)
-	{
-		m_materialTable.SetMaterial(material, index);
-	}
-
-	void Mesh::CreateBoundingSpheres()
-	{
-		m_subMeshBoundingSpheres.resize(m_subMeshes.size());
-		for (uint32_t subMeshIndex = 0; SubMesh& subMesh : m_subMeshes)
-		{
-			glm::vec3 t, r, s;
-			Math::Decompose(subMesh.transform, t, r, s);
-
-			const glm::vec3* positionData = &m_vertexContainer.positions.at(subMesh.vertexStartOffset);
-			const uint32_t* indices = &m_indices[subMesh.indexStartOffset];
-
-			BoundingSphere boundingSphere = GetBoundingSphereFromVertices(positionData, indices, subMesh.indexCount);
-
-			const float maxScale = glm::max(glm::max(s.x, s.y), s.z);
-			boundingSphere.center = subMesh.transform * glm::vec4(boundingSphere.center, 1.f);
-			boundingSphere.radius = maxScale * boundingSphere.radius;
-
-			m_subMeshBoundingSpheres[subMeshIndex] = boundingSphere;
-
-			subMeshIndex++;
 		}
 	}
 

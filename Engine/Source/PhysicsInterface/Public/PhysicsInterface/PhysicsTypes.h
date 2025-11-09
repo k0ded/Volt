@@ -2,6 +2,7 @@
 
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/UUID.h>
+#include <CoreUtilities/EnumUtils.h>
 
 #include <cstdint>
 
@@ -16,6 +17,7 @@ namespace Volt
 		MultiBoxPrune,
 		AutomaticBoxPrune
 	};
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(BroadphaseType);
 
 	enum class FrictionType : uint8_t
 	{
@@ -23,6 +25,7 @@ namespace Volt
 		OneDirectional,
 		TwoDirectional
 	};
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(FrictionType);
 
 	enum class DebugType : uint8_t
 	{
@@ -38,6 +41,7 @@ namespace Volt
 		VelocityChange,
 		Acceleration
 	};
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(ForceMode);
 
 	enum class PhysicsActorLockFlags : uint8_t
 	{
@@ -51,6 +55,7 @@ namespace Volt
 		Translation = TranslationX | TranslationY | TranslationZ,
 		Rotation = RotationX | RotationY | RotationZ
 	};
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(PhysicsActorLockFlags);
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(PhysicsActorLockFlags)
 
@@ -59,6 +64,7 @@ namespace Volt
 		Static = 0,
 		Dynamic
 	};
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(PhysicsBodyType);
 
 	enum class CollisionDetectionType : uint8_t
 	{
@@ -66,12 +72,14 @@ namespace Volt
 		Continuous,
 		ContinuousSpeculative
 	};
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(CollisionDetectionType);
 
 	enum class PhysicsControllerActorNonWalkableMode : uint8_t
 	{
 		PreventClimbing,
 		PreventClimbingAndForceSlide
 	};
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(PhysicsControllerActorNonWalkableMode);
 
 	enum class ColliderType : uint8_t
 	{
@@ -81,4 +89,5 @@ namespace Volt
 		ConvexMesh,
 		TriangleMesh
 	};
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(ColliderType);
 }

@@ -19,6 +19,14 @@ namespace Volt
 			std::string name;
 			int32_t parentIndex = -1;
 
+			VT_INLINE friend Archive& operator<<(Archive& archive, Joint& value)
+			{
+				archive << value.name;
+				archive << value.parentIndex;
+
+				return archive;
+			}
+
 			static void Serialize(BinaryStreamWriter& streamWriter, const Joint& data)
 			{
 				streamWriter.Write(data.name);
@@ -43,6 +51,17 @@ namespace Volt
 
 			inline const bool IsValid() const { return id != 0; }
 
+			VT_INLINE friend Archive& operator<<(Archive& archive, JointAttachment& value)
+			{
+				archive << value.name;
+				archive << value.jointIndex;
+				archive << value.id;
+				archive << value.positionOffset;
+				archive << value.rotationOffset;
+
+				return archive;
+			}
+
 			static void Serialize(BinaryStreamWriter& streamWriter, const JointAttachment& data)
 			{
 				streamWriter.Write(data.name);
@@ -63,11 +82,7 @@ namespace Volt
 		};
 
 		Skeleton() = default;
-		~Skeleton() override
-		{
-			m_joints.clear();
-			m_inverseBindPose.clear();
-		}
+		~Skeleton() override;
 
 		inline const size_t GetJointCount() const { return m_joints.size(); }
 		inline const Vector<glm::mat4>& GetInverseBindPose() const { return m_inverseBindPose; }
@@ -87,6 +102,7 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::Skeleton; }
 		AssetType GetType() const override { return GetStaticType(); };
 		uint32_t GetVersion() const override { return 1; }
+		void Serialize(Archive& archive) override;
 
 	private:
 		friend class FbxSourceImporter;

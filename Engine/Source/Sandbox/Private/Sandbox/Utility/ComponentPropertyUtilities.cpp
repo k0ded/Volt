@@ -370,7 +370,7 @@ bool ComponentPropertyUtility::DrawComponentEnum(Volt::Scene& scene, Volt::Entit
 
 	int32_t currentIndex = 0;
 
-	Map<int32_t, int32_t> indexToValueMap;
+	Map<int32_t, uint64_t> indexToValueMap;
 	Vector<std::string> constantNames;
 
 	for (uint32_t index = 0; const auto & constant : constants)
@@ -392,7 +392,7 @@ bool ComponentPropertyUtility::DrawComponentEnum(Volt::Scene& scene, Volt::Entit
 
 	if (UI::ComboProperty(std::string(member.label), currentValue, constantNames))
 	{
-		currentValue = indexToValueMap.at(currentValue);
+		currentValue = static_cast<int32_t>(indexToValueMap.at(currentValue));
 		AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.name);
 		EditorUtils::MarkEntityAsEdited(scene, entity);
 

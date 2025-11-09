@@ -116,10 +116,13 @@ namespace Volt
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
+		AssetReference<MaterialAsset> materialAsset = destinationAsset.ConvertTo<MaterialAsset>();
+		ScopedAssetReferenceLock materialLock{ materialAsset };
+
 		if (!std::filesystem::exists(filePath))
 		{
 			VT_LOG(Error, "File {0} not found!", metadata->filepath);
-			destinationAsset->SetFlag(AssetFlag::Missing, true);
+			materialAsset->SetFlag(AssetFlag::Missing, true);
 			return false;
 		}
 
@@ -128,12 +131,12 @@ namespace Volt
 		if (!binaryStreamReader.IsStreamValid())
 		{
 			VT_LOG(Error, "Failed to open file: {0}!", metadata->filepath);
-			destinationAsset->SetFlag(AssetFlag::Invalid, true);
+			materialAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
 
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(binaryStreamReader);
-		VT_ASSERT_MSG(serializedMetadata.version == destinationAsset->GetVersion(), "Incompatible version!");
+		VT_ASSERT_MSG(serializedMetadata.version == materialAsset->GetVersion(), "Incompatible version!");
 
 		Buffer buffer{};
 		binaryStreamReader.Read(buffer);
@@ -142,12 +145,9 @@ namespace Volt
 		if (!streamReader.ConsumeBuffer(buffer))
 		{
 			VT_LOG(Error, "Failed to read file {0}!", metadata->filepath);
-			destinationAsset->SetFlag(AssetFlag::Invalid, true);
+			materialAsset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
-
-		AssetReference<MaterialAsset> materialAsset = destinationAsset.ConvertTo<MaterialAsset>();
-		ScopedAssetReferenceLock materialLock{ materialAsset };
 
 		materialAsset->m_graph = CreateRef<MaterialGraph>();
 		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(std::string(materialAsset->GetAssetName()));
@@ -223,7 +223,10 @@ namespace Volt
 			g_assetManager->AddDependencyToAsset(metadata->handle, tex);
 		}
 
-		SubSystemManager::GetSubSystem<Volt::MaterialCompilerSubSystem>()->RequestMaterialCompilation(materialAsset);
+		if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)
+		{
+			compilerSubSystem->RequestMaterialCompilation(materialAsset);
+		}
 
 		VT_LOG(Trace, logStr);
 		return true;

@@ -102,6 +102,8 @@ namespace Volt
 		~Mesh();
 
 		void Initialize(const MeshInitializer& initializer);
+		void Serialize(Archive& archive);
+		void SetMaterial(Ref<RenderMaterial> material, uint32_t index);
 
 		VT_INLINE void SetName(const std::string& name) { m_name = name; }
 		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
@@ -111,8 +113,6 @@ namespace Volt
 		inline uint32_t GetNumSubMeshes() const { return static_cast<uint32_t>(m_subMeshes.size()); }
 
 		inline const MaterialTable& GetMaterialTable() const { return m_materialTable; }
-		void SetMaterial(Ref<RenderMaterial> material, uint32_t index);
-
 		inline const size_t GetVertexCount() const { return m_vertexContainer.Size(); }
 		inline const size_t GetIndexCount() const { return m_indices.size(); }
 
@@ -142,6 +142,7 @@ namespace Volt
 		friend class GLTFSourceImporter;
 
 		void CreateBoundingSpheres();
+		void InitializeInternal();
 
 		VertexContainer m_vertexContainer{};
 		Vector<uint32_t> m_indices;

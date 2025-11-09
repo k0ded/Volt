@@ -1,5 +1,6 @@
 #pragma once
 #include "Volt-Scene/AssetTypes.h"
+#include "Volt-Scene/EntityDescSerializationCommon.h"
 
 #include <AssetSystem/Asset.h>
 
@@ -18,6 +19,7 @@ namespace Volt
 		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 		void SetupInitialCustomMetadata(CustomAssetMetadataVector& customMetadata) override;
+		void Serialize(Archive& archive) override;
 
 		const Buffer& GetEntitySpawnData() const { return m_entitySpawnData; }
 
@@ -30,6 +32,7 @@ namespace Volt
 		AssetHandle m_sceneHandle;
 		EntityID m_entityID;
 
+		EntityDescSerialization::SerializationData m_entitySerializationData;
 		Buffer m_entitySpawnData;
 	};
 }

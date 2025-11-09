@@ -4,9 +4,9 @@
 
 #include <AssetSystem/AssetType.h>
 
-#include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Concepts.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
+#include <CoreUtilities/Archive/Archive.h>
 
 #include <entt.hpp>
 
@@ -118,6 +118,7 @@ namespace Volt
 	struct ComponentMember
 	{
 		ptrdiff_t offset;
+		size_t size;
 		std::string_view name;
 		std::string_view label;
 		std::string_view description;
@@ -132,6 +133,7 @@ namespace Volt
 		Scope<IDefaultValueType> defaultValue;
 
 		std::function<void(void* lhs, const void* rhs)> copyFunction;
+		std::function<void(Archive& archive, void* data)> serializeFunction;
 
 		VT_INLINE AssetType GetAssetType() const
 		{
@@ -141,7 +143,7 @@ namespace Volt
 
 	struct EnumConstant
 	{
-		int32_t value;
+		uint64_t value;
 		std::string_view name;
 		std::string_view label;
 	};
@@ -181,6 +183,7 @@ namespace Volt
 		VT_NODISCARD virtual const Vector<EnumConstant>& GetConstants() const = 0;
 		VT_NODISCARD virtual const Vector<std::string> GetConstantNames() const = 0;
 		VT_NODISCARD virtual UnderlyingTypeInfo GetUnderlyingTypeInfo() const = 0;
+		virtual void Serialize(Archive& archive, void* data) const = 0;
 	};
 
 	class IArrayTypeDesc : public CommonTypeDesc<ValueType::Array>
@@ -200,6 +203,7 @@ namespace Volt
 		VT_NODISCARD virtual const void* At(const void* array, size_t pos) const = 0;
 		virtual void* EmplaceBack(void* array, const void* value) const = 0;
 		virtual void Erase(void* array, size_t pos) const = 0;
+		virtual void Serialize(Archive& archive, void* array) const = 0;
 
 		~IArrayTypeDesc() override = default;
 	};
@@ -246,6 +250,11 @@ namespace Volt
 			m_eraseFunction = std::move(func);
 		}
 
+		void SetSerializeFunction(std::function<void(Archive& archive, void* array)>&& func)
+		{
+			m_serializeFunction = std::move(func);
+		}
+
 		VT_NODISCARD const size_t Size(const void* array) const override
 		{
 			return m_sizeFunction(array);
@@ -289,6 +298,11 @@ namespace Volt
 			value = nullptr;
 		}
 
+		void Serialize(Archive& archive, void* array) const override
+		{
+			m_serializeFunction(archive, array);
+		}
+
 		VT_NODISCARD inline const VoltGUID& GetGUID() const override { return m_guid; }
 		VT_NODISCARD inline const std::string_view GetLabel() const override { return m_label; }
 		VT_NODISCARD inline const std::string_view GetDescription() const override { return m_description; }
@@ -320,6 +334,7 @@ namespace Volt
 		std::function<void(void* pArray, const void* pValue)> m_pushBackFunction;
 		std::function<void* (void* pArray, const void* pValue)> m_emplaceBackFunction;
 		std::function<void(void* pArray, size_t pos)> m_eraseFunction;
+		std::function<void(Archive& archive, void* array)> m_serializeFunction;
 	};
 
 	template<typename T>
@@ -386,9 +401,27 @@ namespace Volt
 				return *nullMember;
 			}
 
-			auto copyFunction = [](void* lhs, const void* rhs)
+			ComponentMember& componentMember = m_members.emplace_back();
+			componentMember.offset = offset;
+			componentMember.size = sizeof(Type);
+			componentMember.name = name;
+			componentMember.label = label;
+			componentMember.description = description;
+			componentMember.assetTypeGuid = AssetTypeType::element_type::guid;
+			componentMember.flags = flags;
+			componentMember.typeDesc = nullptr;
+			componentMember.ownerTypeDesc = this;
+			componentMember.typeIndex = TypeTraits::TypeIndex::FromType<Type>();
+			componentMember.defaultValue = CreateScope<DefaultValueType<DefaultValueT>>(defaultValue);
+			componentMember.copyFunction = [](void* lhs, const void* rhs)
 			{
 				*reinterpret_cast<Type*>(lhs) = *reinterpret_cast<const Type*>(rhs);
+			};
+
+			componentMember.serializeFunction = [](Archive& archive, void* data) 
+			{
+				Type& value = *reinterpret_cast<Type*>(data);
+				archive << value;
 			};
 
 			if constexpr (IsArrayType<Type>() || IsReflectedType<Type>())
@@ -398,13 +431,8 @@ namespace Volt
 					static_assert(std::is_same_v<DefaultValueT, typename ArrayTraits<Type>::element_type>, "In array types, the default type is expected to be of the element type!");
 				}
 
-				m_members.emplace_back(offset, name, label, description, AssetTypeType::element_type::guid, flags, GetTypeDesc<Type>(), this, TypeTraits::TypeIndex::FromType<Type>(), CreateScope<DefaultValueType<DefaultValueT>>(defaultValue), copyFunction);
+				componentMember.typeDesc = GetTypeDesc<Type>();
 			}
-			else
-			{
-				m_members.emplace_back(offset, name, label, description, AssetTypeType::element_type::guid, flags, nullptr, this, TypeTraits::TypeIndex::FromType<Type>(), CreateScope<DefaultValueType<DefaultValueT>>(defaultValue), copyFunction);
-			}
-
 
 			return m_members.back();
 		}
@@ -496,6 +524,7 @@ namespace Volt
 		void SetDescription(std::string_view description);
 		void SetGUID(const VoltGUID& guid);
 		void SetDefaultValue(const T& value);
+		void Serialize(Archive& archive, void* data) const override;
 
 		void AddConstant(const T& constant, std::string_view name, std::string_view label);
 
@@ -692,9 +721,25 @@ namespace Volt
 	}
 
 	template<Enum T>
+	void EnumTypeDesc<T>::Serialize(Archive& archive, void* data) const
+	{
+		using UnderlyingType = std::underlying_type_t<T>;
+
+		T& value = *reinterpret_cast<T*>(data);
+		UnderlyingType tempValue = static_cast<UnderlyingType>(value);
+
+		archive << tempValue;
+
+		if (archive.IsLoading())
+		{
+			value = static_cast<T>(tempValue);
+		}
+	}
+
+	template<Enum T>
 	inline void EnumTypeDesc<T>::AddConstant(const T& constant, std::string_view name, std::string_view label)
 	{
-		m_constants.emplace_back(static_cast<int32_t>(constant), name, label);
+		m_constants.emplace_back(static_cast<uint64_t>(constant), name, label);
 	}
 
 	template<Enum T>
@@ -839,6 +884,12 @@ namespace Volt
 		{
 			Vector<ELEMENT_TYPE>& vecRef = *reinterpret_cast<Vector<ELEMENT_TYPE>*>(array);
 			vecRef.erase(vecRef.begin() + pos);
+		});
+
+		desc.SetSerializeFunction([](Archive& archive, void* array) 
+		{
+			Vector<ELEMENT_TYPE>& vecRef = *reinterpret_cast<Vector<ELEMENT_TYPE>*>(array);
+			archive << vecRef;
 		});
 	}
 }

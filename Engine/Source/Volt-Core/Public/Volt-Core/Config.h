@@ -1,6 +1,6 @@
 #pragma once
 
-#define VT_VERSION Version::Create(0, 1, 6)
+#define VT_VERSION Version::Create(0, 1, 7)
 
 #ifdef VOLT_CORE_DLL_EXPORT
 #define VTCORE_API __declspec(dllexport)

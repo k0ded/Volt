@@ -37,6 +37,8 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<imgui>(target);
 			conf.AddPrivateDependency<yaml>(target);
 			conf.AddPrivateDependency<WindowModule>(target);
+			conf.AddPrivateDependency<AssetSystemModule>(target);
+			conf.AddPrivateDependency<LogModule>(target);
 
 			conf.AddPrivateDependency<VoltApplication>(target);
 

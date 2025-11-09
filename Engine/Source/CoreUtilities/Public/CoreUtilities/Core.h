@@ -13,7 +13,7 @@
 	inline constexpr enumType  operator& (enumType  Lhs, enumType Rhs) { return (enumType)((__underlying_type(enumType))Lhs & (__underlying_type(enumType))Rhs); } \
 	inline constexpr enumType  operator^ (enumType  Lhs, enumType Rhs) { return (enumType)((__underlying_type(enumType))Lhs ^ (__underlying_type(enumType))Rhs); } \
 	inline constexpr bool  operator! (enumType  E)             { return !(__underlying_type(enumType))E; } \
-	inline constexpr enumType  operator~ (enumType  E)             { return (enumType)~(__underlying_type(enumType))E; }
+	inline constexpr enumType  operator~ (enumType  E)             { return (enumType)~(__underlying_type(enumType))E; } \
 
 #define BIT(X) (1 << (X))
 

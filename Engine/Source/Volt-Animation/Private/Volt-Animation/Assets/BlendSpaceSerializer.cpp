@@ -49,11 +49,11 @@ namespace Volt
 		serializationData.horizontalValues = blendSpace->m_horizontalValues;
 		serializationData.verticalValues = blendSpace->m_verticalValues;
 
-		for (const auto& anim : blendSpace->myAnimations)
+		for (const auto& anim : blendSpace->m_animations)
 		{
 			auto& serAnim = serializationData.animations.emplace_back();
-			serAnim.handle = anim.second;
-			serAnim.value = anim.first;
+			serAnim.handle = anim.handle;
+			serAnim.value = anim.value;
 		}
 
 		BinaryStreamWriter streamWriter{};
@@ -96,7 +96,7 @@ namespace Volt
 
 		for (const auto& serAnim : serializationData.animations)
 		{
-			blendSpace->myAnimations.emplace_back(serAnim.value, serAnim.handle);
+			blendSpace->m_animations.emplace_back(serAnim.handle, serAnim.value);
 		}
 
 		blendSpace->m_dimension = serializationData.dimension;

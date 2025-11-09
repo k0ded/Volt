@@ -412,6 +412,14 @@ namespace Volt
 		}
 	}
 
+	void Animation::Serialize(Archive& archive)
+	{
+		archive << m_duration;
+		archive << m_framesPerSecond;
+		archive << m_frames;
+		archive << m_events;
+	}
+
 	const Animation::PoseData Animation::GetFrameDataFromAnimation(Animation& animation, const float aNormalizedTime)
 	{
 		PoseData animData{};

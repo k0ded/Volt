@@ -36,6 +36,19 @@ namespace Volt
 		static void Serialize(BinaryStreamWriter& streamWriter, const SubMesh& data);
 		static void Deserialize(BinaryStreamReader& streamReader, SubMesh& outData);
 
+		VT_INLINE friend Archive& operator<<(Archive& archive, SubMesh& value)
+		{
+			archive << value.materialIndex;
+			archive << value.vertexCount;
+			archive << value.indexCount;
+			archive << value.vertexStartOffset;
+			archive << value.indexStartOffset;
+			archive << value.transform;
+			archive << value.name;
+
+			return archive;
+		}
+
 	private:
 		size_t m_hash = 0;
 	};

@@ -81,6 +81,10 @@ namespace Volt
 		// Will return true and the asset if it is loaded. This method returns a non typed asset,
 		// instead of the default typed asset.
 		VTAS_API bool TryGetTypelessAssetIfLoaded(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
+		VTAS_API bool TryGetTypelessAssetImmediately(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
+
+		// Will return true and the asset if it is loaded, if the asset is not loaded it will queue it for loading.
+		VTAS_API bool TryGetTypelessAsset(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
 
 		// Creates an asset that only lives in memory during the current application run, is not serializable to disk.
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateMemoryAsset(std::string_view assetName, Args&&... args);
@@ -90,6 +94,9 @@ namespace Volt
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAsset(std::string_view assetName, Args&&... args);
 		// Creates an asset, assigns a filepath and creates the asset disk file itself.
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args);
+
+		// Creates an asset of a type without arguments.
+		VTAS_API AssetReference<Asset> CreateAssetTypeless(std::string_view assetName, AssetType assetType);
 
 		VTAS_API void CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath);
 

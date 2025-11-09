@@ -42,4 +42,9 @@ namespace Volt
 			index++;
 		}
 	}
+
+	void MaterialAsset::Serialize(Archive& archive)
+	{
+		
+	}
 }

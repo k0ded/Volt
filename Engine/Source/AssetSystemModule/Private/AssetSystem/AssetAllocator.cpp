@@ -22,6 +22,18 @@ namespace Volt
 		}
 	}
 
+	RefPtr<Asset> AssetAllocator::AllocateAssetWithType(AssetType type)
+	{
+		VT_ENSURE(m_assetAllocator.contains(type->GetGUID()));
+
+		Ref<AssetTypeAllocator> allocator = m_assetAllocator.at(type->GetGUID());
+
+		Asset* assetPtr = allocator->AllocateDefault();
+		assetPtr->AssignAssetHandle(AssetHandle{});
+
+		return RefPtr<Asset>::AttachNoRef(assetPtr);
+	}
+
 	void AssetAllocator::FreeAsset(AssetType assetType, Asset* asset)
 	{
 		const VoltGUID assetTypeGUID = assetType->GetGUID();

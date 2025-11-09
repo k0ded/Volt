@@ -24,12 +24,11 @@ namespace Volt
 		VoltGUID componentGUID = VoltGUID::Null();
 		std::string memberName;
 		
-		static void ReflectType(TypeDesc<PrefabComponentLocalChange>& reflect)
+		VT_INLINE friend Archive& operator<<(Archive& archive, PrefabComponentLocalChange& value)
 		{
-			reflect.SetGUID("{C78B94DD-B814-4155-B9DE-072B91DE02B3}"_guid);
-			reflect.SetLabel("Prefab Component Local Change");
-			reflect.AddMember(&PrefabComponentLocalChange::componentGUID, "componentGUID", "Component GUID", "", VoltGUID::Null());
-			reflect.AddMember(&PrefabComponentLocalChange::memberName, "memberName", "Member Name", "", std::string(""));
+			archive << value.componentGUID;
+			archive << value.memberName;
+			return archive;
 		}
 	};
 

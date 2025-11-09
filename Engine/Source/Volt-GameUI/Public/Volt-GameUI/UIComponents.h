@@ -9,6 +9,8 @@
 #include <EntitySystem/EntityID.h>
 #include <EntitySystem/ComponentRegistry.h>
 
+#include <CoreUtilities/EnumUtils.h>
+
 namespace Volt
 {
 	enum class UIAnchor : uint32_t
@@ -25,6 +27,7 @@ namespace Volt
 		BottomMiddle,
 		BottomRight
 	};
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(UIAnchor);
 
 	static void ReflectType(TypeDesc<UIAnchor>& reflect)
 	{
