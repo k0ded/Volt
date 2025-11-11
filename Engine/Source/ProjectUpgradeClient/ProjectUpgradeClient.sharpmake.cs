@@ -34,10 +34,12 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<VoltRenderer>(target);
 			conf.AddPrivateDependency<VoltPlatforms>(target);
 			conf.AddPrivateDependency<VoltCore>(target);
+			conf.AddPrivateDependency<VoltScene>(target);
 			conf.AddPrivateDependency<imgui>(target);
 			conf.AddPrivateDependency<yaml>(target);
 			conf.AddPrivateDependency<WindowModule>(target);
 			conf.AddPrivateDependency<AssetSystemModule>(target);
+			conf.AddPrivateDependency<JobSystemModule>(target);
 			conf.AddPrivateDependency<LogModule>(target);
 
 			conf.AddPrivateDependency<VoltApplication>(target);

@@ -7,6 +7,7 @@
 
 #include <EventSystem/ApplicationEvents.h>
 
+#include <CoreUtilities/Archive/FileArchive.h>
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/StringUtility.h>
@@ -102,8 +103,7 @@ namespace Volt
 
 			// Deserialize the asset again.
 			{
-				ReadOnlyAssetMetadata readOnlyAssetMetadata = GetReadOnlyAssetMetadata(assetHandle);
-				AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(readOnlyAssetMetadata, asset);
+				DeserializeAsset(asset);
 			}
 
 			// Delete the temp mutex again.
@@ -138,12 +138,6 @@ namespace Volt
 	{
 		ScopedAssetReferenceLock lock{ asset };
 
-		if (!AssetSerializerRegistry::Get().HasSerializer(asset->GetType()))
-		{
-			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset '{}' (Handle: '{}') with type '{}' was found!", asset->GetAssetName(), asset->GetAssetHandle(), asset->GetType()->GetName());
-			return;
-		}
-
 		if (!asset->IsValid())
 		{
 			VT_LOGC(Error, LogAssetSystem, "Unable to save invalid asset '{0}' (Handle: '{1}')!", asset->GetAssetName(), asset->GetAssetHandle());
@@ -167,10 +161,10 @@ namespace Volt
 		{
 			ScopedTimer timer{};
 		
-			// #TODO_AssetSystem: Resolve this situation.
-			AssetSerializerRegistry::Get().GetSerializer(assetMetadata->type).Serialize(assetMetadata, const_cast<CustomAssetMetadataVector&>(assetMetadata->customData), asset);
-
-			VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", assetMetadata->handle, assetMetadata->filepath, timer.GetTime<Time::Seconds>());
+			if (SerializeAsset(asset))
+			{
+				VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", assetMetadata->handle, assetMetadata->filepath, timer.GetTime<Time::Seconds>());
+			}
 		}
 
 		m_dependencyGraph->OnAssetChanged(asset->GetAssetHandle(), AssetChangedState::Saved);
@@ -252,13 +246,6 @@ namespace Volt
 		// All metadatas should be valid.
 		VT_ENSURE(assetMetadata->IsValid());
 
-		// Check if we can actually load this asset.
-		if (!AssetSerializerRegistry::Get().HasSerializer(assetMetadata->type))
-		{
-			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, assetMetadata->type->GetName());
-			return false;
-		}
-
 		// Asset wasn't in the cache, create and load it.
 		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(assetMetadata->type);
 		// Setup a link back to the asset manager.
@@ -298,13 +285,6 @@ namespace Volt
 		ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 		// All metadatas should be valid.
 		VT_ENSURE(metadata->IsValid());
-
-		// Check if we can actually load this asset.
-		if (!AssetSerializerRegistry::Get().HasSerializer(metadata->type))
-		{
-			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, metadata->type->GetName());
-			return false;
-		}
 
 		// Asset wasn't in the cache, create and load it.
 		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(metadata->type);
@@ -533,8 +513,7 @@ namespace Volt
 		m_dependencyGraph->AddAssetToGraph(assetHandle);
 
 		{
-			ReadOnlyAssetMetadata readOnlyAssetMetadata = GetReadOnlyAssetMetadata(assetHandle);
-			AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(readOnlyAssetMetadata, asset);
+			DeserializeAsset(asset);
 		}
 
 		m_assetCache.AddAsset(asset);
@@ -563,8 +542,7 @@ namespace Volt
 			ScopedTimer timer{};
 
 			{
-				ReadOnlyAssetMetadata readOnlyAssetMetadata = GetReadOnlyAssetMetadata(assetHandle);
-				AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(readOnlyAssetMetadata, asset);
+				DeserializeAsset(asset);
 			}
 
 			asset->SetFlag(AssetFlag::Queued, false);
@@ -641,6 +619,124 @@ namespace Volt
 		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Unloaded);
 		QueueAssetChanged(assetHandle, AssetChangedState::Unloaded);
 		VT_LOGC(Trace, LogAssetSystem, "Asset '{}' (Handle: '{}', Type: '{}') was unloaded!", nameCopy, assetHandle, assetType->GetName());
+	}
+
+	bool AssetManager::DeserializeAsset(AssetReference<Asset> asset)
+	{
+		ScopedAssetReferenceLock assetLock{ asset };
+		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
+
+		const std::filesystem::path filepath = GetAssetFilesystemPath(assetMetadata->filepath);
+
+		if (!FileSystem::Exists(filepath))
+		{
+			VT_LOGC(Error, LogAssetSystem, "Failed to load asset '{}' (Handle: '{}', Type: '{}')\nError: The filepath does not exist.", 
+				filepath, 
+				assetMetadata->handle, 
+				assetMetadata->type->GetName());
+			asset->SetFlag(AssetFlag::Missing, true);
+			return false;
+		}
+
+		FileReader fileReader;
+		if (!fileReader.Open(filepath))
+		{
+			VT_LOGC(Error, LogAssetSystem, "Failed to load asset '{}' (Handle: '{}', Type: '{}')\nError: {}", 
+				filepath, 
+				assetMetadata->handle, 
+				assetMetadata->type->GetName(), 
+				fileReader.GetError());
+			asset->SetFlag(AssetFlag::Invalid, true);
+			return false;
+		}
+
+		// Load the asset header and verify the asset.
+		AssetMetadata storedAssetMetadata;
+		AssetRegistry::AssetHeaderDeserializationResult assetHeaderResult = AssetRegistry::DeserializeAssetHeader(fileReader, storedAssetMetadata, asset->GetVersion(), true);
+
+		if (assetHeaderResult == AssetRegistry::AssetHeaderDeserializationResult::InvalidAssetFile)
+		{
+			VT_LOGC(Error, LogAssetSystem, "Failed to load asset '{}' (Handle: '{}', Type: '{}')\nError: Invalid asset file.", 
+				filepath, 
+				assetMetadata->handle, 
+				assetMetadata->type->GetName());
+			asset->SetFlag(AssetFlag::Invalid, true);
+			return false;
+		}
+		else if (assetHeaderResult == AssetRegistry::AssetHeaderDeserializationResult::InvalidVersion)
+		{
+			VT_LOGC(Warning, LogAssetSystem, "Asset '{}' (Handle: '{}', Type: '{}', Current Version: '{}') has a different version in the file, might not load correctly!", 
+				filepath, 
+				assetMetadata->handle, 
+				assetMetadata->type->GetName(), 
+				asset->GetVersion());
+		}
+
+		if (storedAssetMetadata.handle != assetMetadata->handle)
+		{
+			VT_LOGC(Error, LogAssetSystem, "Failed to load asset '{}' (Handle: '{}', Type: '{}')\nError: Asset Handle mismatch! Expected: {}, Actual: {}.", 
+				filepath, 
+				assetMetadata->handle, 
+				assetMetadata->type->GetName(),
+				assetMetadata->handle,
+				storedAssetMetadata.handle);
+
+			asset->SetFlag(AssetFlag::Invalid, true);
+			return false;
+		}
+
+		if (storedAssetMetadata.type != assetMetadata->type)
+		{
+			VT_LOGC(Error, LogAssetSystem, "Failed to load asset '{}' (Handle: '{}', Type: '{}')\nError: Asset Type mismatch! Expected: {}, Actual: {}.", 
+				filepath, 
+				assetMetadata->handle, 
+				assetMetadata->type->GetName(),
+				assetMetadata->type->GetName(),
+				storedAssetMetadata.type->GetName());
+
+			asset->SetFlag(AssetFlag::Invalid, true);
+			return false;
+		}
+
+		// Deserialize the asset.
+		asset->Serialize(fileReader);
+		return true;
+	}
+
+	bool AssetManager::SerializeAsset(AssetReference<Asset> asset)
+	{
+		ScopedAssetReferenceLock assetLock{ asset };
+		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(asset->GetAssetHandle());
+
+		if (!assetMetadata->HasFilepath())
+		{
+			VT_LOGC(Error, LogAssetSystem, "Unable to save asset '{}' (Handle: '{}', Type: '{}')\nError: It does not have a filepath!", asset->GetAssetName(), assetMetadata->handle, assetMetadata->type->GetName());
+			return false;
+		}
+
+		const std::filesystem::path destinationFilepath = g_assetManager->GetAssetFilesystemPath(assetMetadata->filepath);
+
+		FileWriter fileWriter;
+		if (!fileWriter.Open(destinationFilepath))
+		{
+			VT_LOGC(Error, LogAssetSystem, "Unable to save asset '{}' (Handle: '{}', Type: '{}')\nError: {}", asset->GetAssetName(), assetMetadata->handle, assetMetadata->type->GetName(), fileWriter.GetError());
+			return false;
+		}
+
+		SerializeAssetHeader(fileWriter, *assetMetadata, asset->GetVersion());
+		asset->Serialize(fileWriter);
+
+		fileWriter.Close();
+		return true;
+	}
+
+	void AssetManager::SerializeAssetHeader(Archive& archive, AssetMetadata assetMetadata, uint32_t assetVersion)
+	{
+		uint32_t assetMagic = AssetFileMagic;
+	
+		archive << assetMagic;
+		archive << assetVersion;
+		archive << assetMetadata;
 	}
 
 	void AssetManager::OnAssetChanged(AssetHandle assetHandle, AssetChangedState state)

@@ -1,5 +1,6 @@
 #include "aspch.h"
 #include "AssetSystem/AssetRegistry.h"
+#include "AssetSystem/AssetManager.h"
 #include "AssetSystem/Serialization/AssetSerializationCommon.h"
 #include "AssetSystem/Serialization/AssetSerializer.h"
 
@@ -10,6 +11,7 @@
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Time/ScopedTimer.h>
+#include <CoreUtilities/Archive/FileArchive.h>
 
 namespace Volt
 {
@@ -157,33 +159,22 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		constexpr size_t assetHeaderSize = SerializedAssetMetadata::HeaderSize;
-
-		outMetadata.handle = Asset::Null();
-
-		BinaryStreamReader streamReader{ assetFilepath, assetHeaderSize };
-		if (!streamReader.IsStreamValid())
+		FileReader fileReader;
+		if (!fileReader.Open(assetFilepath))
 		{
-			VT_LOGC(Error, LogAssetSystem, "Failed to open asset file: {0}!", assetFilepath);
+			VT_LOGC(Error, LogAssetSystem, "Failed to open asset file: '{}'\nError: {}", assetFilepath, fileReader.GetError());
 			return;
 		}
 
-		uint32_t value = 0;
-		bool couldReadValue = streamReader.TryRead(value);
-		if (!couldReadValue || value != SerializedAssetMetadata::AssetMagic)
+		AssetHeaderDeserializationResult assetHeaderResult = AssetRegistry::DeserializeAssetHeader(fileReader, outMetadata, 0, false);
+
+		if (assetHeaderResult == AssetHeaderDeserializationResult::InvalidAssetFile)
 		{
-			VT_LOGC(Error, LogAssetSystem, "File {} is not a valid Volt asset!", assetFilepath);
+			VT_LOGC(Error, LogAssetSystem, "Failed to open asset file: '{}'\nError: Invalid asset file.", assetFilepath);
 			return;
 		}
 
-		streamReader.ResetHead();
-
-		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
-
-		outMetadata.handle = serializedMetadata.handle;
 		outMetadata.filepath = GetRelativeAssetFilepath(assetFilepath);
-		outMetadata.type = serializedMetadata.type;
-		outMetadata.customData = serializedMetadata.customData;
 	}
 
 	void AssetRegistry::InsertAssetMetadata(AssetMetadata&& assetMetadata)
@@ -243,6 +234,32 @@ namespace Volt
 	int32_t AssetRegistry::GetNumMaxAssets()
 	{
 		return s_assetRegistryNumMaxAssets.GetValue();
+	}
+
+	AssetRegistry::AssetHeaderDeserializationResult AssetRegistry::DeserializeAssetHeader(Archive& archive, AssetMetadata& outAssetMetadata, uint32_t expectedAssetVersion, bool checkAssetVersion)
+	{
+		VT_ENSURE(archive.IsLoading());
+
+		uint32_t assetMagic;
+		uint32_t assetVersion;
+
+		archive << assetMagic;
+
+		if (assetMagic != AssetManager::AssetFileMagic)
+		{
+			return AssetHeaderDeserializationResult::InvalidAssetFile;
+		}
+
+		archive << assetVersion;
+
+		if (checkAssetVersion && assetVersion != expectedAssetVersion)
+		{
+			return AssetHeaderDeserializationResult::InvalidVersion;
+		}
+
+		archive << outAssetMetadata;
+
+		return AssetHeaderDeserializationResult::Success;
 	}
 
 	void AssetRegistry::ScanForAssets(Vector<std::filesystem::path>& outEngineAssets, Vector<std::filesystem::path>& outProjectAssets)

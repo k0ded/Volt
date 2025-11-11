@@ -31,6 +31,7 @@ namespace Volt
 
 		void ProcessFile(AssetHandle asset);
 		void ProcessAsset(AssetHandle asset);
+		void LoadAssetMetadatas();
 
 		UpgradeStage m_currentStage;
 
@@ -38,5 +39,7 @@ namespace Volt
 		size_t m_numActionsCompleted;
 
 		Vector<AssetHandle> m_assetsToProcess;
+		Vector<AssetReference<Asset>> m_assetsToKeepLoaded;
+		Map<AssetHandle, AssetMetadata> m_assetHandleToMetadata;
 	};
 }

@@ -24,6 +24,8 @@ namespace Volt
 	class AssetManager : public EventListener
 	{
 	public:
+		inline static constexpr uint32_t AssetFileMagic = 252525;
+
 		using AssetUpdatedCallbackID = UUID64;
 		using AssetChangedCallback = std::function<void(AssetHandle assetHandle, AssetChangedState state)>;
 		using AssetRegistryIteratorFunc = std::function<bool(ReadOnlyAssetMetadata)>;
@@ -155,6 +157,10 @@ namespace Volt
 		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset);
 
 		void UnloadAndFreeAsset(AssetRefCounter* assetRefCounter);
+		bool DeserializeAsset(AssetReference<Asset> asset);
+
+		bool SerializeAsset(AssetReference<Asset> asset);
+		void SerializeAssetHeader(Archive& archive, AssetMetadata assetMetadata, uint32_t assetVersion);
 
 		void OnAssetChanged(AssetHandle assetHandle, AssetChangedState state);
 		VTAS_API void QueueAssetChanged(AssetHandle assetHandle, AssetChangedState state);

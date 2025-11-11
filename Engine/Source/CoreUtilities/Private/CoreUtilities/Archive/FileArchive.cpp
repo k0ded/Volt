@@ -15,6 +15,7 @@ bool FileWriter::Open(const std::filesystem::path& destinationFilepath)
 {
 	if (FileSystem::Exists(destinationFilepath) && !FileSystem::IsWriteable(destinationFilepath))
 	{
+		m_error = std::format("Filepath '{}' is not writeable!", destinationFilepath.string());
 		return false;
 	}
 
@@ -27,7 +28,18 @@ bool FileWriter::Open(const std::filesystem::path& destinationFilepath)
 	m_outputStream.open(destinationFilepath, std::ios::out | std::ios::trunc | std::ios::binary);
 	m_isOpen = m_outputStream.is_open();
 
+	if (m_outputStream.bad())
+	{
+		m_error = std::format("I/O error while writing '{}'", destinationFilepath.string());
+		return false;
+	}
+
 	return m_outputStream.is_open();
+}
+
+std::string_view FileWriter::GetError() const
+{
+	return m_error;
 }
 
 void FileWriter::SerializeBytes(void* value, size_t size)
@@ -50,10 +62,21 @@ void FileWriter::Seek(size_t position)
 	VT_ENSURE(false);
 }
 
+void FileWriter::SetBasePosition(size_t position)
+{
+	VT_ENSURE(false);
+}
+
 void FileWriter::Close()
 {
 	SerializeVersions();
 
+	FileArchiveHeader header;
+	header.magic = FileArchiveHeader::MagicValue;
+	header.isCompressed = false;
+	header.compressedSize = 0;
+
+	m_outputStream.write(reinterpret_cast<const char*>(&header), sizeof(FileArchiveHeader));
 	m_outputStream.write(reinterpret_cast<const char*>(m_allocator.data()), m_allocator.size());
 	m_outputStream.close();
 
@@ -118,10 +141,22 @@ bool FileReader::Open(const std::filesystem::path& filepath)
 	m_inputStream.open(filepath, std::ios::in | std::ios::binary | std::ios::ate);
 	m_isOpen = m_inputStream.is_open();
 
-	if (m_inputStream.is_open())
+	if (m_isOpen)
 	{
 		size_t size = m_inputStream.tellg();
+		size -= sizeof(FileArchiveHeader);
 		m_inputStream.seekg(0);
+
+		FileArchiveHeader fileWriterHeader;
+		m_inputStream.read(reinterpret_cast<char*>(&fileWriterHeader), sizeof(FileArchiveHeader));
+
+		// Make sure this is a file written by the file writer.
+		if (fileWriterHeader.magic != FileArchiveHeader::MagicValue)
+		{
+			m_isOpen = false;
+			m_error = std::format("File '{}' was not written with a file archive!", filepath.string());
+			return false;
+		}
 
 		m_storage.resize_uninitialized(size);
 		m_inputStream.read(reinterpret_cast<char*>(m_storage.data()), size);
@@ -129,9 +164,28 @@ bool FileReader::Open(const std::filesystem::path& filepath)
 
 		// Deserialize version info.
 		(*this) << m_versions;
+
+		// Make sure all Seek calls gets the correct positions.
+		SetBasePosition(m_readPointer);
+	}
+	else
+	{
+		if (m_inputStream.bad())
+		{
+			m_error = std::format("I/O error while reading '{}'", filepath.string());
+		}
+		else
+		{
+			m_error = std::format("Failed to open file '{}'", filepath.string());
+		}
 	}
 
 	return m_isOpen;
+}
+
+std::string_view FileReader::GetError() const
+{
+	return m_error;
 }
 
 void FileReader::SerializeBytes(void* value, size_t size)
@@ -150,7 +204,16 @@ void FileReader::Reserve(size_t numBytes)
 void FileReader::Seek(size_t position)
 {
 	VT_ENSURE(position < m_storage.size());
-	m_readPointer = position;
+	m_readPointer = m_basePosition + position;
+}
+
+void FileReader::SetBasePosition(size_t position)
+{
+	m_basePosition = position;
+	if (m_readPointer < m_basePosition)
+	{
+		m_readPointer = m_basePosition;
+	}
 }
 
 void FileReader::Close()

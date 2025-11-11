@@ -20,6 +20,7 @@ public:
 	virtual void SerializeBytes(void* value, size_t size) = 0;
 	virtual void Reserve(size_t numBytes) = 0;
 	virtual void Seek(size_t position) = 0;
+	virtual void SetBasePosition(size_t position) = 0;
 	virtual void Close() = 0;
 	virtual size_t GetHeadLocation() const = 0;
 	virtual size_t GetSize() const = 0;
@@ -42,7 +43,10 @@ public:
 			value.resize(size);
 		}
 
-		archive.SerializeBytes(value.data(), value.size());
+		if (size > 0)
+		{
+			archive.SerializeBytes(value.data(), value.size());
+		}
 		return archive;
 	}
 
@@ -95,7 +99,10 @@ public:
 			value.resize_uninitialized(size);
 		}
 
-		archive.SerializeBytes(value.data(), value.byte_size());
+		if (size > 0)
+		{
+			archive.SerializeBytes(value.data(), value.byte_size());
+		}
 		return archive;
 	}
 
@@ -159,7 +166,10 @@ public:
 			buffer.Allocate(size);
 		}
 
-		archive.SerializeBytes(buffer.As<void*>(), size);
+		if (size > 0)
+		{
+			archive.SerializeBytes(buffer.As<void*>(), size);
+		}
 	}
 
 	VT_INLINE friend Archive& operator<<(Archive& archive, Archive& value)
@@ -172,7 +182,10 @@ public:
 			value.Reserve(size);
 		}
 
-		archive.SerializeBytes(value.GetData(), size);
+		if (size > 0)
+		{
+			archive.SerializeBytes(value.GetData(), size);
+		}
 	}
 
 	template<Arithmetic T>

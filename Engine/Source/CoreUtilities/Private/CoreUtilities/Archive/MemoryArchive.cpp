@@ -25,6 +25,11 @@ void MemoryWriter::Seek(size_t position)
 	VT_ENSURE(false);
 }
 
+void MemoryWriter::SetBasePosition(size_t position)
+{
+	VT_ENSURE(false);
+}
+
 void MemoryWriter::Close()
 {
 	SerializeVersions();
@@ -92,6 +97,9 @@ MemoryReader::MemoryReader(const void* srcData, size_t srcSize)
 
 	// Deserialize version info.
 	(*this) << m_versions;
+
+	// Make sure all Seek calls gets the correct positions.
+	SetBasePosition(m_readPointer);
 }
 
 void MemoryReader::SerializeBytes(void* value, size_t size)
@@ -110,7 +118,16 @@ void MemoryReader::Reserve(size_t numBytes)
 void MemoryReader::Seek(size_t position)
 {
 	VT_ENSURE(position < m_storage.size());
-	m_readPointer = position;
+	m_readPointer = m_basePosition + position;
+}
+
+void MemoryReader::SetBasePosition(size_t position)
+{
+	m_basePosition = position;
+	if (m_readPointer < m_basePosition)
+	{
+		m_readPointer = m_basePosition;
+	}
 }
 
 void MemoryReader::Close()
