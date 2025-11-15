@@ -262,6 +262,8 @@ namespace Volt
 			return Entity::Null();
 		}
 
+		ScopedAssetReferenceLock sceneLock{ scene };
+
 		Entity entity = scene->CreateEntityWithID(entityId);
 
 		streamReader.ForEach("components", [&]()
@@ -339,8 +341,6 @@ namespace Volt
 		//}
 
 		streamReader.ExitScope();
-
-		entity.InitializeComponents();
 
 		return entity;
 	}

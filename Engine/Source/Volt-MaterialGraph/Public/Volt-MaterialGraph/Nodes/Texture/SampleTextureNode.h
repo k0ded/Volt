@@ -27,7 +27,7 @@ namespace Volt::MosaicNodes
 		inline const glm::vec4 GetColor() const override { return 1.f; }
 
 		void Reset() override;
-		void SerializeCustom(YAMLStreamWriter& streamWriter) const override;
+		void SerializeCustom(Archive& archive) override;
 		void DeserializeCustom(YAMLStreamReader& streamReader) override;
 
 		const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override;

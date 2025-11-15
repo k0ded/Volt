@@ -57,6 +57,8 @@ namespace Volt::EntityDescSerialization
 			}
 		}
 
+		componentMemberDataWriter.Close();
+
 		archive << memberHeaders;
 		archive << componentMemberDataWriter;
 	}
@@ -87,7 +89,7 @@ namespace Volt::EntityDescSerialization
 				{
 					case ValueType::Component:
 					{
-						SerializeClass(componentMemberDataReader, static_cast<const IComponentTypeDesc*>(componentMember->typeDesc), componentMemberDataPtr);
+						DeserializeClass(componentMemberDataReader, static_cast<const IComponentTypeDesc*>(componentMember->typeDesc), componentMemberDataPtr);
 						break;
 					}
 
@@ -118,7 +120,7 @@ namespace Volt::EntityDescSerialization
 		}
 	}
 
-	void SerializeEntity(Archive& archive, Entity entity)
+	void SerializeEntity(Archive& archive, Entity entity, AssetHandle ownerSceneAssetHandle)
 	{
 		// This should only be used for SAVING out entities.
 		if (archive.IsLoading())
@@ -129,6 +131,7 @@ namespace Volt::EntityDescSerialization
 		EntityID entityId = entity.GetID();
 
 		archive << entityId;
+		archive << ownerSceneAssetHandle;
 
 		entt::registry& registry = entity.GetSceneReference()->GetRegistry();
 
@@ -158,6 +161,8 @@ namespace Volt::EntityDescSerialization
 			const uint8_t* componentPtr = reinterpret_cast<const uint8_t*>(storage.get(entity.GetHandle()));
 			SerializeClass(componentDataWriter, componentDesc, componentPtr);
 		}
+
+		componentDataWriter.Close();
 
 		archive << componentHeaders;
 		archive << componentDataWriter;
@@ -196,11 +201,33 @@ namespace Volt::EntityDescSerialization
 		}
 	}
 
+	void DeserializeEntity(Entity entity, SerializationData& serializationData)
+	{
+		auto& registry = entity.GetSceneReference()->GetRegistry();
+
+		for (const ComponentHeader& componentHeader : serializationData.componentHeaders)
+		{
+			const IComponentTypeDesc* typeDesc = reinterpret_cast<const IComponentTypeDesc*>(GetComponentRegistry().GetTypeDescFromGUID(componentHeader.componentGUID));
+			if (!typeDesc)
+			{
+				continue;
+			}
+
+			void* voidCompPtr = ComponentRegistry::Helpers::GetComponentWithGUID(componentHeader.componentGUID, registry, entity.GetHandle());
+			uint8_t* componentData = reinterpret_cast<uint8_t*>(voidCompPtr);
+
+			serializationData.componentData.Seek(componentHeader.componentDataOffset);
+
+			DeserializeClass(serializationData.componentData, typeDesc, componentData);
+		}
+	}
+
 	void DeserializeEntityData(Archive& archive, SerializationData& outSerializationData)
 	{
 		VT_ENSURE(archive.IsLoading());
 
 		archive << outSerializationData.entityId;
+		archive << outSerializationData.ownerSceneAssetHandle;
 		archive << outSerializationData.componentHeaders;
 		archive << outSerializationData.componentData;
 	}

@@ -145,9 +145,12 @@ void SceneViewPanel::UpdateMainContent()
 
 				for (const auto& id : m_entityDrawList)
 				{
-
 					Volt::Entity entity = m_scene->GetEntityFromID(id);
-					DrawEntity(entity, m_searchQuery);
+
+					if (entity.IsValid())
+					{
+						DrawEntity(entity, m_searchQuery);
+					}
 				}
 			}
 			ImGui::EndTable();

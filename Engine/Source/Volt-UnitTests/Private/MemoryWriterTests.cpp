@@ -204,4 +204,48 @@ namespace UnitTests
 			ASSERT_STREQ(outputMap.at(i).c_str(), "Test");
 		}
 	}
+
+	TEST(MemoryArchive, OperatorArchive)
+	{
+		Vector<ComplexStruct> inputVector;
+		inputVector.resize(50);
+
+		for (size_t i = 0; i < inputVector.size(); ++i)
+		{
+			inputVector[i].str = "This is a test";
+			inputVector[i].num = i;
+		}
+
+		MemoryWriter mainWriter;
+		mainWriter << inputVector;
+
+		MemoryWriter subWriter;
+		subWriter << inputVector;
+		subWriter.Close();
+
+		mainWriter << subWriter;
+		mainWriter.Close();
+
+		MemoryReader mainReader(mainWriter.GetData(), mainWriter.GetSize());
+	
+		Vector<ComplexStruct> outputVector;
+		mainReader << outputVector;
+
+		for (size_t i = 0; i < outputVector.size(); ++i)
+		{
+			ASSERT_STREQ(outputVector[i].str.c_str(), "This is a test");
+			ASSERT_EQ(outputVector[i].num, i);
+		}
+
+		MemoryReader subReader;
+		mainReader << subReader;
+
+		subReader << outputVector;
+
+		for (size_t i = 0; i < outputVector.size(); ++i)
+		{
+			ASSERT_STREQ(outputVector[i].str.c_str(), "This is a test");
+			ASSERT_EQ(outputVector[i].num, i);
+		}
+	}
 }

@@ -28,5 +28,6 @@ template<typename T>
 concept MathType = std::_Is_any_of_v<std::remove_cv_t<T>,
 	glm::vec2, glm::vec3, glm::vec4, 
 	glm::uvec2, glm::uvec3, glm::uvec4,
+	glm::ivec2, glm::ivec3, glm::ivec4,
 	glm::mat4, glm::mat3, glm::mat3x4,
 	glm::quat>;

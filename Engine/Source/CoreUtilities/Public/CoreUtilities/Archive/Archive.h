@@ -22,6 +22,7 @@ public:
 	virtual void Seek(size_t position) = 0;
 	virtual void SetBasePosition(size_t position) = 0;
 	virtual void Close() = 0;
+	virtual void Serialize(Archive& arhive) {}
 	virtual size_t GetHeadLocation() const = 0;
 	virtual size_t GetSize() const = 0;
 	virtual const void* GetData() const = 0;
@@ -174,18 +175,11 @@ public:
 
 	VT_INLINE friend Archive& operator<<(Archive& archive, Archive& value)
 	{
-		size_t size = value.GetSize();
-		archive << size;
-
-		if (archive.IsLoading())
+		if (&archive != &value)
 		{
-			value.Reserve(size);
+			value.Serialize(archive);
 		}
-
-		if (size > 0)
-		{
-			archive.SerializeBytes(value.GetData(), size);
-		}
+		return archive;
 	}
 
 	template<Arithmetic T>

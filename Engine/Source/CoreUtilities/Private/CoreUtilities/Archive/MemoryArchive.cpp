@@ -37,6 +37,17 @@ void MemoryWriter::Close()
 	m_isOpen = false;
 }
 
+void MemoryWriter::Serialize(Archive& archive)
+{
+	size_t size = GetSize();
+	archive << size;
+
+	if (size > 0)
+	{
+		archive.SerializeBytes(GetData(), size);
+	}
+}
+
 size_t MemoryWriter::GetHeadLocation() const
 {
 	return m_allocator.size();
@@ -133,6 +144,25 @@ void MemoryReader::SetBasePosition(size_t position)
 void MemoryReader::Close()
 {
 
+}
+
+void MemoryReader::Serialize(Archive& archive)
+{
+	size_t size;
+	archive << size;
+
+	m_storage.resize_uninitialized(size);
+
+	if (size > 0)
+	{
+		archive.SerializeBytes(GetData(), size);
+	}
+
+	// Deserialize version info.
+	(*this) << m_versions;
+
+	// Make sure all Seek calls gets the correct positions.
+	SetBasePosition(m_readPointer);
 }
 
 size_t MemoryReader::GetHeadLocation() const

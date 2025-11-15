@@ -39,6 +39,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<yaml>(target);
 			conf.AddPrivateDependency<WindowModule>(target);
 			conf.AddPrivateDependency<AssetSystemModule>(target);
+			conf.AddPrivateDependency<EntitySystemModule>(target);
 			conf.AddPrivateDependency<JobSystemModule>(target);
 			conf.AddPrivateDependency<LogModule>(target);
 

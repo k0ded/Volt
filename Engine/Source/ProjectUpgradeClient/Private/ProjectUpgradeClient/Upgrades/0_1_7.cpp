@@ -4,7 +4,9 @@
 
 #include <Volt-Scene/AssetTypes.h>
 #include <Volt-Scene/EntityDescription.h>
+#include <Volt-Scene/EntityDescCustomMetadata.h>
 #include <Volt-Scene/Scene.h>
+#include <Volt-Scene/EntityDescriptionSerializer.h>
 
 #include <Volt-Core/Project/Project.h>
 #include <Volt-Core/Project/ProjectManager.h>
@@ -16,10 +18,13 @@
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetLocks.h>
 
+#include <EntitySystem/Entity.h>
+
 #include <JobSystem/TaskGraph.h>
 
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Archive/FileArchive.h>
+#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 
 namespace Volt
 {
@@ -69,6 +74,7 @@ namespace Volt
 
 	Upgrade_0_1_7::~Upgrade_0_1_7()
 	{
+		m_assetsToKeepLoaded.clear();
 		g_assetManager.reset();
 	}
 
@@ -153,12 +159,13 @@ namespace Volt
 
 		// If it's a entity desc asset the scene must be loaded when serialized.
 		// Make sure the scene is loaded.
-		AssetReference<Asset> sceneAsset;
-
+		AssetReference<Scene> sceneAsset;
 		if (asset->GetType() == AssetTypes::EntityDesc)
 		{
 			AssetReference<EntityDesc> entityDescAsset = asset.ConvertTo<EntityDesc>();
 			ScopedAssetReferenceLock entityDescLock{ entityDescAsset };
+
+			const EntityDescCustomMetadata& customMeta = assetMetadata.GetCustomData<EntityDescCustomMetadata>();
 
 			bool sceneIsLoaded = false;
 
@@ -166,28 +173,45 @@ namespace Volt
 			{
 				ScopedAssetReferenceLock loadedAssetLock{ loadedAsset };
 
-				if (loadedAsset->GetAssetHandle() == entityDescAsset->GetSceneHandle())
+				if (loadedAsset->GetAssetHandle() == customMeta.sceneHandle)
 				{
 					sceneIsLoaded = true;
 					break;
 				}
 			}
 
-			if (!sceneIsLoaded)
+			if (!sceneIsLoaded && m_assetHandleToMetadata.contains(customMeta.sceneHandle))
 			{
-				sceneAsset = g_assetManager->CreateAssetTypeless("TempAsset", AssetTypes::Scene);
-				AssetMetadata& sceneMetadata = m_assetHandleToMetadata.at(entityDescAsset->GetSceneHandle());
+				sceneAsset = g_assetManager->CreateAssetTypeless("TempAsset", AssetTypes::Scene).ConvertTo<Scene>();
+				AssetMetadata& sceneMetadata = m_assetHandleToMetadata.at(customMeta.sceneHandle);
 
-				AssetSerializerRegistry::Get().GetSerializer(assetMetadata.type).Deserialize(ReadOnlyAssetMetadata(&sceneMetadata), sceneAsset);
+				AssetSerializerRegistry::Get().GetSerializer(sceneMetadata.type).Deserialize(ReadOnlyAssetMetadata(&sceneMetadata), sceneAsset);
+				m_assetsToKeepLoaded.emplace_back(sceneAsset);
 			}
 
 			if (!sceneAsset.IsValid())
 			{
 				return;
 			}
+
+			entityDescAsset->AssignOwnerScene(sceneAsset);
+		}
+		else if (asset->GetType() == AssetTypes::Scene)
+		{
+			m_assetsToKeepLoaded.emplace_back(asset);
 		}
 
 		AssetSerializerRegistry::Get().GetSerializer(assetMetadata.type).Deserialize(ReadOnlyAssetMetadata(&assetMetadata), asset);
+
+		if (asset->GetType() == AssetTypes::EntityDesc)
+		{
+			AssetReference<EntityDesc> entityDescAsset = asset.ConvertTo<EntityDesc>();
+			ScopedAssetReferenceLock entityDescLock{ entityDescAsset };
+
+			YAMLMemoryStreamReader yamlStreamReader;
+			yamlStreamReader.ReadBuffer(entityDescAsset->GetEntitySpawnData());
+			EntityDescSerializer::Get().DeserializeEntity(sceneAsset, yamlStreamReader);
+		}
 
 		FileWriter fileWriter;
 		if (!fileWriter.Open(g_assetManager->GetAssetFilesystemPath(assetMetadata.filepath)))

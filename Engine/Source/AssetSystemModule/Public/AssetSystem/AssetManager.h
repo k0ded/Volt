@@ -220,6 +220,15 @@ namespace Volt
 		{
 			ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 
+			if (!metadata->HasFilepath())
+			{
+				VT_LOGC(Error, LogAssetSystem, 
+					"Failed to load asset (Handle: '{}', Type: '{}')\n"
+					"		Error: File does not have an assigned filepath!.",
+					metadata->handle,
+					metadata->type->GetName());
+			}
+
 			// All metadatas should be valid.
 			VT_ENSURE(metadata->IsValid());
 
@@ -326,6 +335,11 @@ namespace Volt
 	bool AssetManager::TryGetAssetIfLoaded(AssetHandle assetHandle, AssetReference<T>& outAsset)
 	{
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+		if (!assetMetadata.IsValid())
+		{
+			return false;
+		}
+		
 		if (assetMetadata->IsLoaded())
 		{
 			outAsset = GetAssetImmediately<T>(assetHandle);

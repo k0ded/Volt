@@ -53,7 +53,7 @@ namespace Volt
 			reflect.SetGUID("{663E0E0B-43EC-4973-8A9B-FF8A0BA566AA}"_guid);
 			reflect.SetLabel("ID Component");
 			reflect.SetHidden();
-			reflect.AddMember(&IDComponent::id, "id", "ID", "", EntityID{}, ComponentMemberFlag::NoSerialize);
+			reflect.AddMember(&IDComponent::id, "id", "ID", "", EntityID{});
 		}
 
 		REGISTER_COMPONENT(IDComponent);

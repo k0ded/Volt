@@ -1,6 +1,7 @@
 #include "vtassetspch.h"
 
 #include "Volt-Assets/MaterialAsset.h"
+#include "Volt-Assets/MaterialCompilerSubSystem.h"
 
 #include <Volt-MaterialGraph/MaterialGraph.h>
 #include <Volt-Renderer/RenderMaterial.h>
@@ -8,6 +9,7 @@
 
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
+#include <SubSystem/SubSystemManager.h>
 
 namespace Volt
 {
@@ -45,6 +47,13 @@ namespace Volt
 
 	void MaterialAsset::Serialize(Archive& archive)
 	{
-		
+		m_graph->Serialize(archive);
+
+		if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)
+		{
+			// #TODO_AssetSystem: Add asset reference from this function
+			RefPtr<MaterialAsset> thisAsset = RefPtr<MaterialAsset>::Attach(this);
+			compilerSubSystem->RequestMaterialCompilation(AssetReference<MaterialAsset>(thisAsset));
+		}
 	}
 }

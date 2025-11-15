@@ -14,6 +14,7 @@ public:
 	VTCOREUTIL_API void Seek(size_t position) override;
 	VTCOREUTIL_API void SetBasePosition(size_t position) override;
 	VTCOREUTIL_API void Close() override;
+	VTCOREUTIL_API void Serialize(Archive& archive) override;
 	VTCOREUTIL_API size_t GetHeadLocation() const override;
 	VTCOREUTIL_API size_t GetSize() const override;
 	VTCOREUTIL_API const void* GetData() const override;
@@ -38,6 +39,7 @@ public:
 	VTCOREUTIL_API void Seek(size_t position) override;
 	VTCOREUTIL_API void SetBasePosition(size_t position) override;
 	VTCOREUTIL_API void Close() override;
+	VTCOREUTIL_API void Serialize(Archive& archive) override;
 	VTCOREUTIL_API size_t GetHeadLocation() const override;
 	VTCOREUTIL_API size_t GetSize() const override;
 	VTCOREUTIL_API const void* GetData() const override;

@@ -4,7 +4,6 @@
 
 namespace Volt
 {
-#if 0
 	void BlendSpace::Serialize(Archive& archive)
 	{
 		uint32_t dimUint = static_cast<uint32_t>(m_dimension);
@@ -20,5 +19,4 @@ namespace Volt
 		archive << m_verticalValues;
 		archive << m_animations;
 	}
-#endif
 }

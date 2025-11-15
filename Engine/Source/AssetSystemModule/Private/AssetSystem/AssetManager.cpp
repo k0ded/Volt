@@ -512,8 +512,9 @@ namespace Volt
 
 		m_dependencyGraph->AddAssetToGraph(assetHandle);
 
+		if (!DeserializeAsset(asset))
 		{
-			DeserializeAsset(asset);
+			return;
 		}
 
 		m_assetCache.AddAsset(asset);
@@ -630,7 +631,9 @@ namespace Volt
 
 		if (!FileSystem::Exists(filepath))
 		{
-			VT_LOGC(Error, LogAssetSystem, "Failed to load asset '{}' (Handle: '{}', Type: '{}')\nError: The filepath does not exist.", 
+			VT_LOGC(Error, LogAssetSystem, 
+				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
+				"		Error: The filepath does not exist.", 
 				filepath, 
 				assetMetadata->handle, 
 				assetMetadata->type->GetName());
@@ -641,7 +644,9 @@ namespace Volt
 		FileReader fileReader;
 		if (!fileReader.Open(filepath))
 		{
-			VT_LOGC(Error, LogAssetSystem, "Failed to load asset '{}' (Handle: '{}', Type: '{}')\nError: {}", 
+			VT_LOGC(Error, LogAssetSystem, 
+				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
+				"		Error: {}", 
 				filepath, 
 				assetMetadata->handle, 
 				assetMetadata->type->GetName(), 
@@ -656,7 +661,9 @@ namespace Volt
 
 		if (assetHeaderResult == AssetRegistry::AssetHeaderDeserializationResult::InvalidAssetFile)
 		{
-			VT_LOGC(Error, LogAssetSystem, "Failed to load asset '{}' (Handle: '{}', Type: '{}')\nError: Invalid asset file.", 
+			VT_LOGC(Error, LogAssetSystem, 
+				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n" 
+				"		Error: Invalid asset file.", 
 				filepath, 
 				assetMetadata->handle, 
 				assetMetadata->type->GetName());
@@ -674,7 +681,9 @@ namespace Volt
 
 		if (storedAssetMetadata.handle != assetMetadata->handle)
 		{
-			VT_LOGC(Error, LogAssetSystem, "Failed to load asset '{}' (Handle: '{}', Type: '{}')\nError: Asset Handle mismatch! Expected: {}, Actual: {}.", 
+			VT_LOGC(Error, LogAssetSystem, 
+				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
+				"		Error: Asset Handle mismatch! Expected: {}, Actual: {}.", 
 				filepath, 
 				assetMetadata->handle, 
 				assetMetadata->type->GetName(),
@@ -687,7 +696,9 @@ namespace Volt
 
 		if (storedAssetMetadata.type != assetMetadata->type)
 		{
-			VT_LOGC(Error, LogAssetSystem, "Failed to load asset '{}' (Handle: '{}', Type: '{}')\nError: Asset Type mismatch! Expected: {}, Actual: {}.", 
+			VT_LOGC(Error, LogAssetSystem, 
+				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
+				"		Error: Asset Type mismatch! Expected: {}, Actual: {}.", 
 				filepath, 
 				assetMetadata->handle, 
 				assetMetadata->type->GetName(),
@@ -710,7 +721,12 @@ namespace Volt
 
 		if (!assetMetadata->HasFilepath())
 		{
-			VT_LOGC(Error, LogAssetSystem, "Unable to save asset '{}' (Handle: '{}', Type: '{}')\nError: It does not have a filepath!", asset->GetAssetName(), assetMetadata->handle, assetMetadata->type->GetName());
+			VT_LOGC(Error, LogAssetSystem, 
+				"Unable to save asset '{}' (Handle: '{}', Type: '{}')\n"
+				"		Error: It does not have a filepath!", 
+				asset->GetAssetName(), 
+				assetMetadata->handle, 
+				assetMetadata->type->GetName());
 			return false;
 		}
 
@@ -719,7 +735,14 @@ namespace Volt
 		FileWriter fileWriter;
 		if (!fileWriter.Open(destinationFilepath))
 		{
-			VT_LOGC(Error, LogAssetSystem, "Unable to save asset '{}' (Handle: '{}', Type: '{}')\nError: {}", asset->GetAssetName(), assetMetadata->handle, assetMetadata->type->GetName(), fileWriter.GetError());
+			VT_LOGC(Error, LogAssetSystem, 
+				"Unable to save asset '{}' (Handle: '{}', Type: '{}')\n"
+				"		Error: {}", 
+				asset->GetAssetName(), 
+				assetMetadata->handle, 
+				assetMetadata->type->GetName(),
+				fileWriter.GetError());
+			
 			return false;
 		}
 

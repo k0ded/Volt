@@ -1,5 +1,7 @@
 #pragma once
 
+#include <AssetSystem/AssetHandle.h>
+
 #include <EntitySystem/EntityID.h>
 #include <CoreUtilities/Archive/MemoryArchive.h>
 
@@ -16,6 +18,7 @@ namespace Volt::EntityDescSerialization
 		{
 			archive << value.name;
 			archive << value.size;
+			archive << value.offset;
 
 			return archive;
 		}
@@ -38,6 +41,7 @@ namespace Volt::EntityDescSerialization
 	struct SerializationData
 	{
 		EntityID entityId;
+		AssetHandle ownerSceneAssetHandle;
 		Vector<ComponentHeader, InlineAllocator<32u>> componentHeaders;
 		MemoryReader componentData;
 	};

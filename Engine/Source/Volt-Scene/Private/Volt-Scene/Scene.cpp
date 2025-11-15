@@ -1,7 +1,7 @@
 #include "vspch.h"
 
 #include "Volt-Scene/Scene.h"
-#include "Volt-Scene/EntityDescriptionSerializer.h"
+#include "Volt-Scene/EntityDescSerialization.h"
 #include "Volt-Scene/EntityDescription.h"
 #include "Volt-Scene/EntityDescCustomMetadata.h"
 #include "Volt-Scene/EntityUtility.h"
@@ -37,12 +37,14 @@ namespace Volt
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Scene, Scene);
 
 	Scene::Scene(const std::string& name)
-		: m_name(name)
+		: m_name(name),
+		m_sceneExtensionManager(*this)
 	{
 		Initialize();
 	}
 
 	Scene::Scene()
+		: m_sceneExtensionManager(*this)
 	{
 		Initialize();
 	}
@@ -97,7 +99,6 @@ namespace Volt
 
 		AnimationManager::Update(aDeltaTime);
 		m_entityPhysicsScene->Update(aDeltaTime);
-		//m_visionSystem->Update(aDeltaTime); // #TODO_Scene
 
 		m_timeSinceStart += aDeltaTime;
 		m_currentDeltaTime = aDeltaTime;
@@ -176,47 +177,58 @@ namespace Volt
 				}
 			});
 
+			using EntitySerializationDataMap = Map<EntityID, const EntityDescSerialization::SerializationData*>;
+			using ComponentTypeToOwningEntitiesMap = Map<VoltGUID, Vector<EntityID>>;
+			using EntityToComponentTypesMap = Map<EntityID, Vector<VoltGUID>>;
+
 			//parse entity descriptions to YAML
 			Vector<TaskGraph::Task*> parseEntityDescTasks;
 			parseEntityDescTasks.reserve(m_entityIDToDescHandle.size());
 
 			//keep track of all the parsed yamlReaders
-			Ref<std::unordered_map<EntityID, Ref<YAMLMemoryStreamReader>>> yamlReaders = CreateRef<std::unordered_map<EntityID, Ref<YAMLMemoryStreamReader>>>();
-			yamlReaders->reserve(m_entityIDToDescHandle.size());
+			Ref<EntitySerializationDataMap> entitySerializationData = CreateRef<EntitySerializationDataMap>();
+			entitySerializationData->reserve(m_entityIDToDescHandle.size());
 
 			//keep track of what components each entity needs
-			Ref<Map<EntityID, Vector<VoltGUID>>> entityToComponentTypes = CreateRef<Map<EntityID, Vector<VoltGUID>>>();
+			Ref<EntityToComponentTypesMap> entityToComponentTypes = CreateRef<EntityToComponentTypesMap>();
 			entityToComponentTypes->reserve(m_entityIDToDescHandle.size());
-			for (const auto& [entityID, descHandle] : m_entityIDToDescHandle)
+
+			// Keep entity desc assets alive during loading
+			Ref<Vector<AssetReference<EntityDesc>>> loadedEntityDescs = CreateRef<Vector<AssetReference<EntityDesc>>>();
+			loadedEntityDescs->resize(m_entityIDToDescHandle.size());
+
+			for (uint32_t index = 0; const auto& [entityID, descHandle] : m_entityIDToDescHandle)
 			{
 				//create the reader for this entity
-				Ref<YAMLMemoryStreamReader> reader = CreateRef<YAMLMemoryStreamReader>();
-				yamlReaders->insert({ entityID,reader });
+				entitySerializationData->insert({ entityID, nullptr });
 
 				//create the entry for this entity
 				entityToComponentTypes->insert({ entityID,  {} });
 
-				parseEntityDescTasks.push_back(taskGraph.AddTask("Parse EntityDesc Data", [descHandle, entityID, reader, entityToComponentTypes]
+				parseEntityDescTasks.push_back(taskGraph.AddTask("Parse EntityDesc Data", [descHandle, entityID, entitySerializationData, entityToComponentTypes, loadedEntityDescs, index]
 				{
 					AssetReference<EntityDesc> entityDesc;
 					if (g_assetManager->TryGetAssetImmediately(descHandle, entityDesc))
 					{
 						ScopedAssetReferenceLock assetLock{ entityDesc };
 
-						reader->ReadBuffer(entityDesc->GetEntitySpawnData());
-						entityToComponentTypes->at(entityID) = EntityDescSerializer::FindComponentTypes(*reader);
-					}
+						(*loadedEntityDescs)[index] = entityDesc;
 
-					//todo_fabian: we probably want to be able to have the
-					// entity descriptions not loaded but the entity present...
-					//for now DirtyAssetManager relies on the desc being loaded
-					//AssetManager::Get().UnloadAsset(descHandle);
+						entitySerializationData->at(entityID) = &entityDesc->GetSerializationData();
+
+						for (const EntityDescSerialization::ComponentHeader& componentHeader : entityDesc->GetSerializationData().componentHeaders)
+						{
+							entityToComponentTypes->at(entityID).emplace_back(componentHeader.componentGUID);
+						}
+					}
 				}));
+
+				index++;
 			}
 
 
 			//arrange component types to map from type to entityIDs to quickly create them concurrently later
-			Ref<Map<VoltGUID, Vector<EntityID>>> componentTypeToOwningEntities = CreateRef<Map<VoltGUID, Vector<EntityID>>>();
+			Ref<ComponentTypeToOwningEntitiesMap> componentTypeToOwningEntities = CreateRef<ComponentTypeToOwningEntitiesMap>();
 			TaskGraph::Task* arrangeComponentsToEntityIDTask = taskGraph.AddTaskWithDependencies("Arrange Components To EntityIDs", parseEntityDescTasks, [componentTypeToOwningEntities, entityToComponentTypes]()
 			{
 				VT_LOG(Warning, "Arranging components to entityIDs");
@@ -230,7 +242,7 @@ namespace Volt
 			});
 
 			//new task graph to be able to create a separate task per component type
-			taskGraph.AddTaskWithDependencies("Launch Component Creation and Serialization Jobs", { arrangeComponentsToEntityIDTask, createEntitiesTask }, [this, componentTypeToOwningEntities, entityToComponentTypes, yamlReaders]()
+			taskGraph.AddTaskWithDependencies("Launch Component Creation and Serialization Jobs", { arrangeComponentsToEntityIDTask, createEntitiesTask }, [this, componentTypeToOwningEntities, entityToComponentTypes, entitySerializationData, loadedEntityDescs]()
 			{
 				VT_LOG(Warning, "Launch Component Creation and Serialization Jobs");
 
@@ -256,14 +268,14 @@ namespace Volt
 				}
 
 				//todo_fabian: this can be multiple jobs when some issues are fixed with the task graph
-				TaskGraph::Task* deserializeComponentsTask = componentTaskGraph.AddTaskWithDependencies("Deserialize Entities Component Datas", createComponentsTasks, [this, entityToComponentTypes, yamlReaders]()
+				TaskGraph::Task* deserializeComponentsTask = componentTaskGraph.AddTaskWithDependencies("Deserialize Entities Component Datas", createComponentsTasks, [this, entityToComponentTypes, entitySerializationData]()
 				{
 					for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
 					{
-						const EntityDescSerializer& serializer = reinterpret_cast<const EntityDescSerializer&>(AssetSerializerRegistry::Get().GetSerializer(AssetTypes::EntityDesc));
+						const EntityDescSerialization::SerializationData* serializationData = entitySerializationData->at(entityID);
+
 						Volt::Entity entity = m_entityScene.GetEntityFromID(entityID);
-						YAMLMemoryStreamReader& reader = *yamlReaders->at(entityID);
-						serializer.DeserializeEntityInPlace(entity, reader);
+						EntityDescSerialization::DeserializeEntity(entity, const_cast<EntityDescSerialization::SerializationData&>(*serializationData));
 					}
 				});
 
@@ -282,7 +294,7 @@ namespace Volt
 					}
 				});
 
-				componentTaskGraph.AddTaskWithDependencies("Finished loading entities", { initializeComponentsTask }, [this]()
+				componentTaskGraph.AddTaskWithDependencies("Finished loading entities", { initializeComponentsTask }, [this, loadedEntityDescs]()
 				{
 					VT_PROFILE_MESSAGE("FINISH LOADING ENTITIES");
 					m_isFinishedLoadingEntities = true;
@@ -298,17 +310,7 @@ namespace Volt
 
 	void Scene::UnloadEntities()
 	{
-		// #TODO_AssetSystem: We need to verify this behaviour
-
-		//todo_fabian: we probably want to be able to have the
-		// entity descriptions not loaded but the entity present...
-		//for now DirtyAssetManager relies on the desc being loaded
-		//for (const auto& [id, descHandle] : m_entityIDToDescHandle)
-		//{
-		//	AssetManager::Get().UnloadAsset(descHandle);
-		//}
 		Clear();
-
 	}
 
 	Entity Scene::CreateEntity(const std::string& tag)
@@ -316,10 +318,8 @@ namespace Volt
 		Entity newEntity = m_entityScene.CreateEntity(tag);
 		VT_ENSURE(newEntity);
 
-		//todo: World Engine
-		//m_worldEngine.AddEntity(newEntity);
-
 		CreateEntityDescForEntity(newEntity.GetID());
+		m_sceneExtensionManager.OnEntityCreated(newEntity);
 
 		return newEntity;
 	}
@@ -330,8 +330,7 @@ namespace Volt
 		VT_ENSURE(newEntity);
 
 		CreateEntityDescForEntity(newEntity.GetID());
-		//todo: World Engine
-		//m_worldEngine.AddEntity(newEntity);
+		m_sceneExtensionManager.OnEntityCreated(newEntity);
 
 		return newEntity;
 	}
@@ -348,6 +347,7 @@ namespace Volt
 		VT_ENSURE(newEntity);
 
 		m_entityIDToDescHandle.emplace(id, existingEntityDescHandle);
+		m_sceneExtensionManager.OnEntityCreated(newEntity);
 
 		return newEntity;
 	}
@@ -372,6 +372,9 @@ namespace Volt
 		ScopedAssetReferenceLock assetLock{ asset };
 
 		m_entityIDToDescHandle.emplace(id, asset->GetAssetHandle());
+		m_createdEntityDescs.emplace_back(asset);
+		asset->AssignOwnerScene(AssetReference<Scene>(RefPtr<Scene>::Attach(this)));
+
 		return asset->GetAssetHandle();
 	}
 
@@ -421,29 +424,7 @@ namespace Volt
 				outDestroyedEntityDescs->push_back(m_entityIDToDescHandle[destroyedEnt]);
 			}
 
-
-			//todo_fabian: we probably want to be able to have the
-			// entity descriptions not loaded but the entity present...
-			//so might need to change the unload below
-
-			//if the entity doesnt have a filepath, it is not part of the saved scene
-
-			// #TODO_AssetSystem: Check how this behaves with new system.
-#if 0
-			const Volt::AssetHandle entityDescHandle = m_entityIDToDescHandle[destroyedEnt];
-			if (!Volt::AssetManager::HasFilePath(entityDescHandle))
-			{
-				if (Volt::AssetManager::IsMemoryAsset(GetAssetHandle()))
-				{
-					Volt::AssetManager::Get().UnloadMemoryAsset(entityDescHandle);
-				}
-				else
-				{
-					Volt::AssetManager::Get().UnloadAsset(entityDescHandle);
-				}
-			}
-#endif
-
+			m_sceneExtensionManager.OnEntityDestroyed(destroyedEnt);
 			m_entityIDToDescHandle.erase(destroyedEnt);
 		}
 
@@ -533,6 +514,12 @@ namespace Volt
 		return newScene;
 	}
 
+	void Scene::Serialize(Archive& archive)
+	{
+		archive << m_name;
+		archive << m_sceneSettings.useWorldEngine;
+	}
+
 	void Scene::CopyEntitiesTo(AssetReference<Scene> otherScene)
 	{
 		VT_PROFILE_FUNCTION();
@@ -558,6 +545,7 @@ namespace Volt
 
 	void Scene::Clear()
 	{
+		m_createdEntityDescs.clear();
 		m_entityIDToDescHandle.clear();
 		m_entityScene.ClearScene();
 	}
@@ -593,7 +581,6 @@ namespace Volt
 
 	void Scene::Initialize()
 	{
-		//m_visionSystem = CreateRef<Vision>(this); // #TODO_Scene
 		m_renderScene = CreateRef<RenderScene>(&m_entityScene);
 
 		m_entityScene.SetRenderScene(m_renderScene.get());

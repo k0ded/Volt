@@ -49,7 +49,8 @@ namespace Mosaic
 		virtual const VoltGUID GetGUID() const = 0;
 		virtual void Reset() {}
 
-		virtual void SerializeCustom(YAMLStreamWriter& streamWriter) const {}
+		virtual void SerializeCustom(Archive& archive) {}
+		// Note: Deprecated
 		virtual void DeserializeCustom(YAMLStreamReader& streamReader) {}
 
 		virtual const ResultInfo Compile(const GraphNode<Ref<class MosaicNode>, Ref<MosaicEdge>>& underlyingNode, uint32_t outputIndex, MosaicShaderWriter& shaderWriter) const = 0;
@@ -99,9 +100,10 @@ namespace Mosaic
 		param.showAttribute = showAttribute;
 		param.Get<T>() = defaultValue;
 
-		param.serializationFunc = [](YAMLStreamWriter& streamWriter, const Parameter& parameter)
+		param.serializationFunc = [](Archive& archive, Parameter& parameter)
 		{
-			streamWriter.SetKey("data", parameter.Get<T>());
+			T& data = parameter.Get<T>();
+			archive << data;
 		};
 
 		param.deserializationFunc = [](YAMLStreamReader& streamReader, Parameter& parameter)
@@ -122,9 +124,10 @@ namespace Mosaic
 		param.showAttribute = showAttribute;
 		param.Get<T>() = defaultValue;
 
-		param.serializationFunc = [](YAMLStreamWriter& streamWriter, const Parameter& parameter)
+		param.serializationFunc = [](Archive& archive, Parameter& parameter)
 		{
-			streamWriter.SetKey("data", parameter.Get<T>());
+			T& data = parameter.Get<T>();
+			archive << data;
 		};
 
 		param.deserializationFunc = [](YAMLStreamReader& streamReader, Parameter& parameter)

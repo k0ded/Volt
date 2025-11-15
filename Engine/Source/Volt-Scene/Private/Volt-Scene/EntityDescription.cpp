@@ -14,7 +14,7 @@ namespace Volt
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::EntityDesc, EntityDesc);
 
 	EntityDesc::EntityDesc(EntityID entityID, AssetHandle sceneHandle)
-		:m_sceneHandle(sceneHandle), m_entityID(entityID)
+		: m_sceneHandle(sceneHandle), m_entityID(entityID)
 	{}
 
 	void EntityDesc::SetupInitialCustomMetadata(CustomAssetMetadataVector& customMetadata)
@@ -30,21 +30,38 @@ namespace Volt
 	{
 		if (!archive.IsLoading())
 		{
-			ReadOnlyAssetMetadata ownerSceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(m_sceneHandle);
+			// Either use the assigned owner scene, or get it from the asset handle.
+			// Need to rethink this at some point. #Scene_TODO
+			AssetReference<Scene> sceneReference;
 
-			//if the scene is not loaded here, the entity is not supposed to be loaded, and cannot be saved
-			VT_ENSURE(ownerSceneMetadata->IsLoaded());
+			if (m_ownerScene.IsValid())
+			{
+				sceneReference = m_ownerScene;
+
+				ScopedAssetReferenceLock sceneLock{ m_ownerScene };
+			}
+			else
+			{
+				ReadOnlyAssetMetadata ownerSceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(m_sceneHandle);
+
+				//if the scene is not loaded here, the entity is not supposed to be loaded, and cannot be saved
+				VT_ENSURE(ownerSceneMetadata->IsLoaded());
+				VT_ENSURE(ownerSceneMetadata->HasFilepath());
+
+				sceneReference = g_assetManager->GetAssetImmediately<Scene>(m_sceneHandle);
+			}
+
+			ScopedAssetReferenceLock sceneLock{ sceneReference };
+
 			//if the scene is a memory asset it doesnt have a path yet, and will thus fail the save of this entity
-			VT_ENSURE(!ownerSceneMetadata->IsMemoryAsset());
+			VT_ENSURE(!sceneReference->IsFlagSet(AssetFlag::MemoryOnly));
 
-			AssetReference<Scene> scene = g_assetManager->GetAssetImmediately<Scene>(m_sceneHandle);
-			ScopedAssetReferenceLock sceneLock{ scene };
-
-			EntityDescSerialization::SerializeEntity(archive, scene->GetEntityFromID(m_entityID));
+			EntityDescSerialization::SerializeEntity(archive, sceneReference->GetEntityFromID(m_entityID), m_sceneHandle);
 		}
 		else
 		{
 			EntityDescSerialization::DeserializeEntityData(archive, m_entitySerializationData);
+			m_sceneHandle = m_entitySerializationData.ownerSceneAssetHandle;
 		}
 	}
 }

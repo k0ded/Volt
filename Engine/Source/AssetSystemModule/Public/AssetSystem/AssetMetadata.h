@@ -75,8 +75,8 @@ namespace Volt
 		template<typename CustomMetadataType>
 		VT_INLINE const CustomMetadataType& GetCustomData() const
 		{
-			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(type), std::format("Custom metadata type is not for type %s!", type->GetName()));
-			VT_ENSURE_MSG(customData.size() == sizeof(CustomMetadataType), std::format("Custom metadata size is not correct, for type: %s!", type->GetName()));
+			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(type), std::format("Custom metadata type is not for type {}!", type->GetName()));
+			VT_ENSURE_MSG(customData.size() == sizeof(CustomMetadataType), std::format("Custom metadata size is not correct, for type: {}!", type->GetName()));
 
 			return reinterpret_cast<const CustomMetadataType&>(*customData.data());
 		}

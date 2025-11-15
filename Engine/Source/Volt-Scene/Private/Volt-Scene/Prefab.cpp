@@ -210,7 +210,7 @@ namespace Volt
 				entityHeader.entityId = entity.GetID();
 
 				MemoryWriter entityArchive;
-				EntityDescSerialization::SerializeEntity(entityArchive, entity);
+				EntityDescSerialization::SerializeEntity(entityArchive, entity, 0);
 
 				archive << entityArchive;
 			}

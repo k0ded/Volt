@@ -352,6 +352,7 @@ void Sandbox::OnDetach()
 	VersionControl::Shutdown();
 	SelectionManager::Shutdown();
 
+	g_editorAssetManager = nullptr;
 }
 
 void Sandbox::OnScenePlay()

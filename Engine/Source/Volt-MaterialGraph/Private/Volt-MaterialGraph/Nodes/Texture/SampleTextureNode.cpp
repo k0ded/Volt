@@ -72,9 +72,9 @@ namespace Volt::MosaicNodes
 		m_evaluated = false;
 	}
 
-	void SampleTextureNode::SerializeCustom(YAMLStreamWriter& streamWriter) const
+	void SampleTextureNode::SerializeCustom(Archive& archive)
 	{
-		streamWriter.SetKey("textureHandle", m_textureHandle);
+		archive << m_textureHandle;
 	}
 
 	void SampleTextureNode::DeserializeCustom(YAMLStreamReader& streamReader)
