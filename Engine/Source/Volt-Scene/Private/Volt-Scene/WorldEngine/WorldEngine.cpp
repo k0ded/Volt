@@ -4,8 +4,6 @@
 #include "Volt-Scene/WorldEngine/WorldEngine.h"
 #include "Volt-Scene/Components/CoreComponents.h"
 
-#include "Volt-Scene/SceneSerializer.h"
-
 #include <JobSystem/JobSystem.h>
 
 #include <EntitySystem/Entity.h>

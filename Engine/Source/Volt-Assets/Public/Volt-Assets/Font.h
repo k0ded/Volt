@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Volt-Assets/Config.h"
+
 #include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Asset.h>
@@ -24,7 +26,7 @@ namespace Volt
 		Font() = default;
 		~Font() override;
 
-		void Initialize(const std::filesystem::path& filePath);
+		VTASSETS_API void Initialize(const std::filesystem::path& filePath);
 
 		float GetStringWidth(const std::string& string, const glm::vec2& scale, float maxWidth);
 		float GetStringHeight(const std::string& string, const glm::vec2& scale, float maxWidth);

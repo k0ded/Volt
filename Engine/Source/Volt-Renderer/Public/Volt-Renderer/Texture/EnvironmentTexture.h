@@ -25,8 +25,6 @@ namespace Volt
 		void Serialize(Archive& archive) override;
 
 	private:
-		friend class EnvironmentTextureSerializer;
-
 		RefPtr<RHI::Image> m_diffuseImage;
 		RefPtr<RHI::Image> m_specularImage;
 	};

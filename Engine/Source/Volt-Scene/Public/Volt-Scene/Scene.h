@@ -122,7 +122,6 @@ namespace Volt
 	private:
 		friend class Entity;
 		friend class SceneImporter;
-		friend class SceneSerializer;
 
 		void Initialize();
 		void CreatePhysicsScene();

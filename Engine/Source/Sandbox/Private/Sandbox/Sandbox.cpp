@@ -52,9 +52,8 @@
 
 #include <Volt-Scene/Scene.h>
 #include <Volt-Scene/SceneEvents.h>
-#include <Volt-Scene/EntityDescription.h>
 #include <Volt-Scene/EntityDescCustomMetadata.h>
-#include <Volt-Scene/EntityDescriptionSerializer.h>	
+#include <Volt-Scene/EntityDescSerialization.h>
 
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
@@ -171,7 +170,7 @@ void Sandbox::OnAttach()
 		}
 
 		//make the path just the filename we want the entity to have, the entity desc serializer will handle the rest of the path
-		outAssetNewPath = Volt::EntityDescSerializer::GetSavePathForEntity_ThreadSafe(asset);
+		outAssetNewPath = Volt::EntityDescSerialization::GetSavePathForEntity(asset);
 
 		return true;
 	};

@@ -51,7 +51,6 @@ namespace Volt
 
 	private:
 		friend class BlendSpaceImporter;
-		friend class BlendSpaceSerializer;
 
 		BlendSpaceDimension m_dimension = BlendSpaceDimension::OneD;
 

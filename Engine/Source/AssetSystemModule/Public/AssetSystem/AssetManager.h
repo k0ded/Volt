@@ -5,7 +5,6 @@
 #include "AssetSystem/AssetAllocator.h"
 #include "AssetSystem/AssetCache.h"
 #include "AssetSystem/AssetReference.h"
-#include "AssetSystem/AssetSerializerRegistry.h"
 #include "AssetSystem/AssetDependencyGraph.h"
 
 #include <EventSystem/EventListener.h>
@@ -202,13 +201,6 @@ namespace Volt
 			return AssetReference<T>(tempAsset.As<T>());
 		}
 
-		// Check if we can actually load this asset.
-		if (!AssetSerializerRegistry::Get().HasSerializer(T::GetStaticType()))
-		{
-			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, T::GetStaticType()->GetName());
-			return {};
-		}
-
 		// Asset wasn't in the cache, create and load it.
 		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
 		// Setup a link back to the asset manager.
@@ -300,13 +292,6 @@ namespace Volt
 			return true;
 		}
 
-		// Check if we can actually load this asset.
-		if (!AssetSerializerRegistry::Get().HasSerializer(T::GetStaticType()))
-		{
-			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, T::GetStaticType()->GetName());
-			return false;
-		}
-	
 		// Asset wasn't in the cache, create and load it.
 		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
 		// Setup a link back to the asset manager.

@@ -24,8 +24,6 @@ namespace Volt
 		Ref<PhysicsMaterial> GetMaterial() const { return m_material; }
 
 	private:
-		friend class PhysicsMaterialSerializer;
-
 		Ref<PhysicsMaterial> m_material;
 	};
 }

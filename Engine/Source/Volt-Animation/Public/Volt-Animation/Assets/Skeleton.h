@@ -107,7 +107,6 @@ namespace Volt
 	private:
 		friend class FbxSourceImporter;
 		friend class SkeletonImporter;
-		friend class SkeletonSerializer;
 
 		Vector<Joint> m_joints;
 		Vector<JointAttachment> m_jointAttachments;

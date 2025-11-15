@@ -30,8 +30,6 @@ namespace Volt
 		VT_INLINE void AssignOwnerScene(AssetReference<Scene> ownerScene) { m_ownerScene = ownerScene; }
 
 	private:
-		friend class EntityDescSerializer;
-
 		AssetHandle m_sceneHandle;
 		EntityID m_entityID;
 

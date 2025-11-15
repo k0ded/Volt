@@ -25,7 +25,6 @@
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetFactory.h>
-#include <AssetSystem/AssetSerializerRegistry.h>
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Math/Math.h>
@@ -373,7 +372,6 @@ namespace Volt
 
 		m_entityIDToDescHandle.emplace(id, asset->GetAssetHandle());
 		m_createdEntityDescs.emplace_back(asset);
-		asset->AssignOwnerScene(AssetReference<Scene>(RefPtr<Scene>::Attach(this)));
 
 		return asset->GetAssetHandle();
 	}

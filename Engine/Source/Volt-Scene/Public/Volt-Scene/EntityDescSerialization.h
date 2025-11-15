@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Volt-Scene/Config.h"
+
 #include "Volt-Scene/EntityDescSerializationCommon.h"
 
 #include <EntitySystem/Entity.h>
@@ -7,7 +9,9 @@
 
 namespace Volt::EntityDescSerialization
 {
-	void SerializeEntity(Archive& archive, Entity entity);
+	VTS_API void SerializeEntity(Archive& archive, Entity entity, AssetHandle ownerSceneAssetHandle);
 	void DeserializeEntityData(Archive& archive, SerializationData& outSerializationData);
-	void DeserializeEntity(Archive& archive, Entity entity);
+	VTS_API void DeserializeEntity(Archive& archive, Entity entity);
+	VTS_API void DeserializeEntity(Entity entity, SerializationData& serializationData);
+	VTS_API std::filesystem::path GetSavePathForEntity(const Volt::AssetHandle& handle);
 }

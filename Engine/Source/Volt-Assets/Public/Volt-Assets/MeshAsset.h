@@ -31,8 +31,6 @@ namespace Volt
 		void Initialize(MeshInitializer& meshInitializer, const Vector<AssetHandle>& materials);
 
 	private:
-		friend class MeshSerializer;
-
 		Ref<Mesh> m_mesh;
 		Vector<AssetHandle> m_materials;
 

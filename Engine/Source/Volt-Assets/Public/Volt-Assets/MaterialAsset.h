@@ -26,8 +26,6 @@ namespace Volt
 		void Serialize(Archive& archive) override;
 
 	private:
-		friend class MaterialSerializer;
-
 		Ref<MaterialGraph> m_graph;
 		Ref<RenderMaterial> m_renderMaterial;
 	};

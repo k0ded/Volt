@@ -1,8 +1,11 @@
 #include "vspch.h"
 
 #include "Volt-Scene/EntityDescSerialization.h"
+#include "Volt-Scene/EntityDescCustomMetadata.h"
 
 #include <EntitySystem/ComponentRegistry.h>
+#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <CoreUtilities/Archive/MemoryArchive.h>
 
@@ -230,5 +233,23 @@ namespace Volt::EntityDescSerialization
 		archive << outSerializationData.ownerSceneAssetHandle;
 		archive << outSerializationData.componentHeaders;
 		archive << outSerializationData.componentData;
+	}
+
+	std::filesystem::path GetSavePathForEntity(const Volt::AssetHandle& handle)
+	{
+		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+		VT_ENSURE(assetMetadata->type == AssetTypes::EntityDesc);
+
+		const EntityDescCustomMetadata& entityMetadata = assetMetadata->GetCustomData<EntityDescCustomMetadata>();
+
+		ReadOnlyAssetMetadata sceneAssetMetadata = g_assetManager->GetReadOnlyAssetMetadata(entityMetadata.sceneHandle);
+
+		VT_ENSURE(sceneAssetMetadata->HasFilepath());
+
+		const std::filesystem::path& owningScenePath = sceneAssetMetadata->filepath;
+		const std::string owningSceneName = owningScenePath.stem().string();
+
+		const std::filesystem::path relativePath = owningScenePath.parent_path() / (owningSceneName + "_Entities") / (std::to_string(entityMetadata.entityID) + ".vtasset");
+		return g_assetManager->GetAssetFilesystemPath(relativePath);
 	}
 }

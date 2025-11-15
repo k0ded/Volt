@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Volt-Scene/Components/CoreComponents.h>
-#include <Volt-Scene/EntityDescriptionSerializer.h>
+#include <Volt-Scene/EntityDescSerialization.h>
 #include <Volt-Scene/Scene.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
@@ -324,11 +324,12 @@ private:
 			m_idToAssociatedEntityDesc.insert({ entityID, m_targetScene.GetEntityDescHandleFromEntityID(entityID) });
 			Volt::Entity entity = m_targetScene.GetEntityFromID(entityID);
 
-			YAMLMemoryStreamWriter writer{};
+			MemoryWriter writer{};
+			Volt::EntityDescSerialization::SerializeEntity(writer, entity, Volt::Asset::Null());
+			writer.Close();
 
-			Volt::EntityDescSerializer::Get().SerializeEntity(entity, writer);
+			m_idToSerializedData.insert({ entityID, writer });
 
-			m_idToSerializedData.insert({ entityID, writer.WriteAndGetBuffer() });
 		}
 	}
 
@@ -337,10 +338,9 @@ private:
 		for (Volt::EntityID entityID : m_entityIDs)
 		{
 			Volt::AssetHandle entityDescHandle = m_idToAssociatedEntityDesc.at(entityID);
-			Buffer& buffer = m_idToSerializedData.at(entityID);
 
-			YAMLMemoryStreamReader reader;
-			reader.ConsumeBuffer(buffer);
+			MemoryWriter& writer = m_idToSerializedData.at(entityID);
+			MemoryReader reader(writer.GetData(), writer.GetSize());
 
 			Volt::Entity entity;
 			if (g_assetManager->IsValidAssetHandle(entityDescHandle))
@@ -352,7 +352,8 @@ private:
 				entity = m_targetScene.CreateEntityWithID(entityID);
 			}
 
-			Volt::EntityDescSerializer::Get().DeserializeEntityInPlace(entity, reader);
+			Volt::EntityDescSerialization::DeserializeEntity(reader, entity);
+
 			//since we manually deserialize these entities in place, we have to initialize their components manually aswell
 			entity.InitializeComponents();
 		}
@@ -364,7 +365,7 @@ private:
 
 	Volt::Scene& m_targetScene;
 	Vector<Volt::EntityID> m_entityIDs;
-	std::unordered_map<Volt::EntityID, Buffer> m_idToSerializedData;
+	std::unordered_map<Volt::EntityID, MemoryWriter> m_idToSerializedData;
 	std::unordered_map<Volt::EntityID, Volt::AssetHandle> m_idToAssociatedEntityDesc;
 
 	ObjectStateAction m_Action;

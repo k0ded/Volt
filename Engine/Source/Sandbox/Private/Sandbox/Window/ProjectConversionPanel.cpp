@@ -20,7 +20,6 @@
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
 
-#include <AssetSystem/AssetSerializerRegistry.h>
 #include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/FileSystem.h>

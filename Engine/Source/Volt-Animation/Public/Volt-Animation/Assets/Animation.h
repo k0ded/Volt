@@ -134,7 +134,6 @@ namespace Volt
 
 		friend class FbxSourceImporter;
 		friend class AnimationImporter;
-		friend class AnimationSerializer;
 
 		Vector<Pose> m_frames;
 		Vector<Event> m_events;
