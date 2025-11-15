@@ -184,40 +184,47 @@ namespace Volt
 			Vector<TaskGraph::Task*> parseEntityDescTasks;
 			parseEntityDescTasks.reserve(m_entityIDToDescHandle.size());
 
+			struct EntitySerializationTaskGraphData
+			{
+				EntitySerializationDataMap entitySerializationData;
+				EntityToComponentTypesMap entityToComponentTypes;
+				ComponentTypeToOwningEntitiesMap componentTypeToOwningEntities;
+				Vector<AssetReference<EntityDesc>> loadedEntityDescs;
+			};
+
+			EntitySerializationTaskGraphData* taskGraphData = new EntitySerializationTaskGraphData;
+
 			//keep track of all the parsed yamlReaders
-			Ref<EntitySerializationDataMap> entitySerializationData = CreateRef<EntitySerializationDataMap>();
-			entitySerializationData->reserve(m_entityIDToDescHandle.size());
+			taskGraphData->entitySerializationData.reserve(m_entityIDToDescHandle.size());
 
 			//keep track of what components each entity needs
-			Ref<EntityToComponentTypesMap> entityToComponentTypes = CreateRef<EntityToComponentTypesMap>();
-			entityToComponentTypes->reserve(m_entityIDToDescHandle.size());
+			taskGraphData->entityToComponentTypes.reserve(m_entityIDToDescHandle.size());
 
 			// Keep entity desc assets alive during loading
-			Ref<Vector<AssetReference<EntityDesc>>> loadedEntityDescs = CreateRef<Vector<AssetReference<EntityDesc>>>();
-			loadedEntityDescs->resize(m_entityIDToDescHandle.size());
+			taskGraphData->loadedEntityDescs.resize(m_entityIDToDescHandle.size());
 
 			for (uint32_t index = 0; const auto& [entityID, descHandle] : m_entityIDToDescHandle)
 			{
 				//create the reader for this entity
-				entitySerializationData->insert({ entityID, nullptr });
+				taskGraphData->entitySerializationData.insert({ entityID, nullptr });
 
 				//create the entry for this entity
-				entityToComponentTypes->insert({ entityID,  {} });
+				taskGraphData->entityToComponentTypes.insert({ entityID,  {} });
 
-				parseEntityDescTasks.push_back(taskGraph.AddTask("Parse EntityDesc Data", [descHandle, entityID, entitySerializationData, entityToComponentTypes, loadedEntityDescs, index]
+				parseEntityDescTasks.push_back(taskGraph.AddTask("Parse EntityDesc Data", [descHandle, entityID, taskGraphData, index]
 				{
 					AssetReference<EntityDesc> entityDesc;
 					if (g_assetManager->TryGetAssetImmediately(descHandle, entityDesc))
 					{
 						ScopedAssetReferenceLock assetLock{ entityDesc };
 
-						(*loadedEntityDescs)[index] = entityDesc;
+						taskGraphData->loadedEntityDescs[index] = entityDesc;
 
-						entitySerializationData->at(entityID) = &entityDesc->GetSerializationData();
+						taskGraphData->entitySerializationData.at(entityID) = &entityDesc->GetSerializationData();
 
 						for (const EntityDescSerialization::ComponentHeader& componentHeader : entityDesc->GetSerializationData().componentHeaders)
 						{
-							entityToComponentTypes->at(entityID).emplace_back(componentHeader.componentGUID);
+							taskGraphData->entityToComponentTypes.at(entityID).emplace_back(componentHeader.componentGUID);
 						}
 					}
 				}));
@@ -227,21 +234,20 @@ namespace Volt
 
 
 			//arrange component types to map from type to entityIDs to quickly create them concurrently later
-			Ref<ComponentTypeToOwningEntitiesMap> componentTypeToOwningEntities = CreateRef<ComponentTypeToOwningEntitiesMap>();
-			TaskGraph::Task* arrangeComponentsToEntityIDTask = taskGraph.AddTaskWithDependencies("Arrange Components To EntityIDs", parseEntityDescTasks, [componentTypeToOwningEntities, entityToComponentTypes]()
+			TaskGraph::Task* arrangeComponentsToEntityIDTask = taskGraph.AddTaskWithDependencies("Arrange Components To EntityIDs", parseEntityDescTasks, [taskGraphData]()
 			{
 				VT_LOG(Warning, "Arranging components to entityIDs");
-				for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
+				for (const auto& [entityID, componentTypes] : taskGraphData->entityToComponentTypes)
 				{
 					for (VoltGUID componentType : componentTypes)
 					{
-						(*componentTypeToOwningEntities)[componentType].push_back(entityID);
+						taskGraphData->componentTypeToOwningEntities[componentType].push_back(entityID);
 					}
 				}
 			});
 
 			//new task graph to be able to create a separate task per component type
-			taskGraph.AddTaskWithDependencies("Launch Component Creation and Serialization Jobs", { arrangeComponentsToEntityIDTask, createEntitiesTask }, [this, componentTypeToOwningEntities, entityToComponentTypes, entitySerializationData, loadedEntityDescs]()
+			taskGraph.AddTaskWithDependencies("Launch Component Creation and Serialization Jobs", { arrangeComponentsToEntityIDTask, createEntitiesTask }, [this, taskGraphData]()
 			{
 				VT_LOG(Warning, "Launch Component Creation and Serialization Jobs");
 
@@ -249,14 +255,14 @@ namespace Volt
 
 				//create all components
 				Vector<TaskGraph::Task*> createComponentsTasks;
-				createComponentsTasks.reserve(componentTypeToOwningEntities->size());
-				for (const auto& [componentType, entityIDs] : *componentTypeToOwningEntities)
+				createComponentsTasks.reserve(taskGraphData->componentTypeToOwningEntities.size());
+				for (const auto& [componentType, entityIDs] : taskGraphData->componentTypeToOwningEntities)
 				{
-					createComponentsTasks.push_back(componentTaskGraph.AddTask("Create Components", [this, componentType, componentTypeToOwningEntities]()
+					createComponentsTasks.push_back(componentTaskGraph.AddTask("Create Components", [this, componentType, taskGraphData]()
 					{
 						entt::registry& registry = m_entityScene.GetRegistry();
 
-						for (EntityID entityID : componentTypeToOwningEntities->at(componentType))
+						for (EntityID entityID : taskGraphData->componentTypeToOwningEntities.at(componentType))
 						{
 							entt::entity entityHandle = m_entityScene.GetEntityHandleFromID(entityID);
 
@@ -267,11 +273,11 @@ namespace Volt
 				}
 
 				//todo_fabian: this can be multiple jobs when some issues are fixed with the task graph
-				TaskGraph::Task* deserializeComponentsTask = componentTaskGraph.AddTaskWithDependencies("Deserialize Entities Component Datas", createComponentsTasks, [this, entityToComponentTypes, entitySerializationData]()
+				TaskGraph::Task* deserializeComponentsTask = componentTaskGraph.AddTaskWithDependencies("Deserialize Entities Component Datas", createComponentsTasks, [this, taskGraphData]()
 				{
-					for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
+					for (const auto& [entityID, componentTypes] : taskGraphData->entityToComponentTypes)
 					{
-						const EntityDescSerialization::SerializationData* serializationData = entitySerializationData->at(entityID);
+						const EntityDescSerialization::SerializationData* serializationData = taskGraphData->entitySerializationData.at(entityID);
 
 						Volt::Entity entity = m_entityScene.GetEntityFromID(entityID);
 						EntityDescSerialization::DeserializeEntity(entity, const_cast<EntityDescSerialization::SerializationData&>(*serializationData));
@@ -280,9 +286,9 @@ namespace Volt
 
 				//todo_fabian: this can be multiple jobs when some issues are fixed with the task graph
 				//we initialize all components after all components have gotten 
-				TaskGraph::Task* initializeComponentsTask = componentTaskGraph.AddTaskWithDependencies("Initialize All Components", { deserializeComponentsTask }, [this, entityToComponentTypes]()
+				TaskGraph::Task* initializeComponentsTask = componentTaskGraph.AddTaskWithDependencies("Initialize All Components", { deserializeComponentsTask }, [this, taskGraphData]()
 				{
-					for (const auto& [entityID, componentTypes] : *entityToComponentTypes)
+					for (const auto& [entityID, componentTypes] : taskGraphData->entityToComponentTypes)
 					{
 						for (const VoltGUID& componentType : componentTypes)
 						{
@@ -293,10 +299,12 @@ namespace Volt
 					}
 				});
 
-				componentTaskGraph.AddTaskWithDependencies("Finished loading entities", { initializeComponentsTask }, [this, loadedEntityDescs]()
+				componentTaskGraph.AddTaskWithDependencies("Finished loading entities", { initializeComponentsTask }, [this, taskGraphData]()
 				{
 					VT_PROFILE_MESSAGE("FINISH LOADING ENTITIES");
 					m_isFinishedLoadingEntities = true;
+
+					delete taskGraphData;
 				});
 
 				componentTaskGraph.Execute();
