@@ -9,17 +9,20 @@ AnimationGraphEditorPanel::AnimationGraphEditorPanel()
 	: EditorWindow("Animation Graph Editor")
 {
 	m_cameraPos = { 0,0 };
-	m_cameraZoom = 2.f;
+	m_cameraZoom = 1.f;
 	m_movingCamera = false;
 }
 
 void AnimationGraphEditorPanel::UpdateMainContent()
 {
+	constexpr float lineThickness = 1.f;
+	constexpr ImU32 lineColor = 0x383030ff;
+
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
-	//ImU32 lineColor = 0xff222222;
 
 	ImVec2 gridScreenTopLeft = ImGui::GetWindowPos();
 	ImVec2 gridScreenSize = ImGui::GetWindowSize();
+	ImVec2 visibleWorldSize = gridScreenSize / m_cameraZoom;
 
 	if (ImGui::IsMouseDragging(ImGuiMouseButton_Right))
 	{
@@ -57,7 +60,7 @@ void AnimationGraphEditorPanel::UpdateMainContent()
 
 	auto screenToWorldPos = [&](const ImVec2& screenPos)
 	{
-		return (screenPos - gridScreenTopLeft - (gridScreenSize / 2.f)) + m_cameraPos * m_cameraZoom;
+		return (screenPos - gridScreenTopLeft - (visibleWorldSize / 2.f)) + m_cameraPos ;
 	};
 
 	auto drawHorizontalGridLine = [&](float worldY)
@@ -70,24 +73,34 @@ void AnimationGraphEditorPanel::UpdateMainContent()
 		}
 		const ImVec2 p1 = { gridScreenTopLeft.x , screenY };
 		const ImVec2 p2 = { gridScreenTopLeft.x + gridScreenSize.x ,screenY };
-		drawList->AddLine(p1, p2, 0xff0000ff, 2.f);
+		drawList->AddLine(p1, p2, lineColor, lineThickness);
 	};
 
 	auto drawVerticalGridLine = [&](float worldX)
 	{
 		const float screenX = worldToScreenXPos(worldX);
-		if (screenX >= gridScreenTopLeft.x &&
-			screenX <= (gridScreenTopLeft.x + gridScreenSize.x))
+		if (screenX <= gridScreenTopLeft.x &&
+			screenX >= (gridScreenTopLeft.x + gridScreenSize.x))
 		{
 			return;
 		}
 		const ImVec2 p1 = { worldToScreenXPos(worldX), gridScreenTopLeft.y };
 		const ImVec2 p2 = { worldToScreenXPos(worldX), gridScreenTopLeft.y + gridScreenSize.y };
-		drawList->AddLine(p1, p2, 0xff0000ff, 2.f);
+		drawList->AddLine(p1, p2, lineColor, lineThickness);
 	};
-	drawHorizontalGridLine(0);
-	drawVerticalGridLine(0);
-	
+
+	for (float x = m_cameraPos.x - std::floor(visibleWorldSize.x/10.f) * 10.f; x < m_cameraPos.x + visibleWorldSize.x; x += 10.f)
+	{
+		float useX = x - (std::fmod(m_cameraPos.x, 10.f));
+		drawVerticalGridLine(useX);
+	}
+
+	for (float y = m_cameraPos.y - std::floor(visibleWorldSize.x / 10.f) * 10.f; y < m_cameraPos.y + visibleWorldSize.y; y += 10.f)
+	{
+		float useY = y - (std::fmod(m_cameraPos.y, 10.f));
+		drawHorizontalGridLine(useY);
+	}
+
 	drawList->AddCircleFilled(worldToScreenPos(m_cameraPos), 5, 0xff0000ff);
 
 
