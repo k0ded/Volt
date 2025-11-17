@@ -7,6 +7,7 @@
 #include <CoreUtilities/Concepts.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
 #include <CoreUtilities/Archive/Archive.h>
+#include <CoreUtilities/Containers/ArrayView.h>
 
 #include <entt.hpp>
 
@@ -119,7 +120,7 @@ namespace Volt
 	{
 		ptrdiff_t offset;
 		size_t size;
-		std::string_view name;
+		uint32_t identifier;
 		std::string_view label;
 		std::string_view description;
 
@@ -153,11 +154,11 @@ namespace Volt
 	public:
 		~IComponentTypeDesc() override = default;
 
-		VT_NODISCARD virtual const Vector<ComponentMember>& GetMembers() const = 0;
+		VT_NODISCARD virtual const ArrayView<ComponentMember> GetMembers() const = 0;
 		VT_NODISCARD virtual const bool IsHidden() const = 0;
 		VT_NODISCARD virtual ComponentMember* FindMemberByOffset(const ptrdiff_t offset) = 0;
-		VT_NODISCARD virtual ComponentMember* FindMemberByName(std::string_view name) = 0;
-		VT_NODISCARD virtual const ComponentMember* FindMemberByName(std::string_view name) const = 0;
+		VT_NODISCARD virtual ComponentMember* FindMemberByIdentifier(uint32_t identifier) = 0;
+		VT_NODISCARD virtual const ComponentMember* FindMemberByIdentifier(uint32_t identifier) const = 0;
 		VT_NODISCARD virtual ComponentMember* FindMemberByLabel(std::string_view label) = 0;
 		VT_NODISCARD virtual const ComponentMember* FindMemberByLabel(std::string_view label) const = 0;
 		
@@ -180,7 +181,7 @@ namespace Volt
 
 		~IEnumTypeDesc() override = default;
 
-		VT_NODISCARD virtual const Vector<EnumConstant>& GetConstants() const = 0;
+		VT_NODISCARD virtual ArrayView<EnumConstant> GetConstants() const = 0;
 		VT_NODISCARD virtual const Vector<std::string> GetConstantNames() const = 0;
 		VT_NODISCARD virtual UnderlyingTypeInfo GetUnderlyingTypeInfo() const = 0;
 		virtual void Serialize(Archive& archive, void* data) const = 0;
@@ -353,7 +354,7 @@ namespace Volt
 		VT_NODISCARD inline const VoltGUID& GetGUID() const override { return m_guid; }
 		VT_NODISCARD inline const std::string_view GetLabel() const override { return m_componentLabel; }
 		VT_NODISCARD inline const std::string_view GetDescription() const override { return m_componentDescription; }
-		VT_NODISCARD inline const Vector<ComponentMember>& GetMembers() const override { return m_members; }
+		VT_NODISCARD inline const ArrayView<ComponentMember> GetMembers() const override { return m_members; }
 		VT_NODISCARD inline const bool IsHidden() const override { return m_isHidden; }
 
 		void OnInitialize(const Entity& entityHelper) const override;
@@ -364,25 +365,25 @@ namespace Volt
 		void OnTransformChanged(const Entity& entityHelper) const override;
 
 		VT_NODISCARD ComponentMember* FindMemberByOffset(const ptrdiff_t offset) override;
-		VT_NODISCARD ComponentMember* FindMemberByName(std::string_view name) override;
-		VT_NODISCARD const ComponentMember* FindMemberByName(std::string_view name) const override;
+		VT_NODISCARD ComponentMember* FindMemberByIdentifier(uint32_t identifier) override;
+		VT_NODISCARD const ComponentMember* FindMemberByIdentifier(uint32_t identifier) const override;
 		VT_NODISCARD ComponentMember* FindMemberByLabel(std::string_view label) override;
 		VT_NODISCARD const ComponentMember* FindMemberByLabel(std::string_view label) const override;
 
 		template<typename Type, typename DefaultValueT, typename TypeParent = T>
-		const ComponentMember& AddMember(Type TypeParent::* memberPtr, std::string_view name, std::string_view label, std::string_view description, const DefaultValueT& defaultValue)
+		const ComponentMember& AddMember(Type TypeParent::* memberPtr, uint32_t identifier, std::string_view label, std::string_view description, const DefaultValueT& defaultValue)
 		{
-			return AddMember(memberPtr, name, label, description, defaultValue, ::AssetTypes::None);
+			return AddMember(memberPtr, identifier, label, description, defaultValue, ::AssetTypes::None);
 		}
 
 		template<typename Type, typename DefaultValueT, typename TypeParent = T>
-		const ComponentMember& AddMember(Type TypeParent::* memberPtr, std::string_view name, std::string_view label, std::string_view description, const DefaultValueT& defaultValue, ComponentMemberFlag flags)
+		const ComponentMember& AddMember(Type TypeParent::* memberPtr, uint32_t identifier, std::string_view label, std::string_view description, const DefaultValueT& defaultValue, ComponentMemberFlag flags)
 		{
-			return AddMember(memberPtr, name, label, description, defaultValue, ::AssetTypes::None, flags);
+			return AddMember(memberPtr, identifier, label, description, defaultValue, ::AssetTypes::None, flags);
 		}
 
 		template<typename Type, typename DefaultValueT, typename AssetTypeType, typename TypeParent = T>
-		const ComponentMember& AddMember(Type TypeParent::* memberPtr, std::string_view name, std::string_view label, std::string_view description, const DefaultValueT& defaultValue, AssetTypeType assetType, ComponentMemberFlag flags = ComponentMemberFlag::None)
+		const ComponentMember& AddMember(Type TypeParent::* memberPtr, uint32_t identifier, std::string_view label, std::string_view description, const DefaultValueT& defaultValue, AssetTypeType assetType, ComponentMemberFlag flags = ComponentMemberFlag::None)
 		{
 			static ComponentMember* nullMember = nullptr;
 
@@ -394,7 +395,7 @@ namespace Volt
 				return *nullMember;
 			}
 
-			const bool hasMemberWithName = FindMemberByName(name) != nullptr;
+			const bool hasMemberWithName = FindMemberByIdentifier(identifier) != nullptr;
 			VT_ASSERT_MSG(!hasMemberWithName, "Member with name has already been registered!");
 			if (hasMemberWithName)
 			{    
@@ -404,7 +405,7 @@ namespace Volt
 			ComponentMember& componentMember = m_members.emplace_back();
 			componentMember.offset = offset;
 			componentMember.size = sizeof(Type);
-			componentMember.name = name;
+			componentMember.identifier = identifier;
 			componentMember.label = label;
 			componentMember.description = description;
 			componentMember.assetTypeGuid = AssetTypeType::element_type::guid;
@@ -531,7 +532,7 @@ namespace Volt
 		VT_NODISCARD inline const VoltGUID& GetGUID() const override { return m_guid; }
 		VT_NODISCARD inline const std::string_view GetLabel() const override { return m_enumLabel; }
 		VT_NODISCARD inline const std::string_view GetDescription() const override { return m_enumDescription; }
-		VT_NODISCARD inline const Vector<EnumConstant>& GetConstants() const override { return m_constants; }
+		VT_NODISCARD inline ArrayView<EnumConstant> GetConstants() const override { return m_constants; }
 		VT_NODISCARD inline UnderlyingTypeInfo GetUnderlyingTypeInfo() const override { return UnderlyingTypeInfo{ sizeof(std::underlying_type_t<T>), std::is_signed_v<std::underlying_type_t<T>> }; }
 		VT_NODISCARD const Vector<std::string> GetConstantNames() const override;
 
@@ -633,11 +634,11 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline ComponentMember* ComponentTypeDesc<T>::FindMemberByName(std::string_view name)
+	inline ComponentMember* ComponentTypeDesc<T>::FindMemberByIdentifier(uint32_t identifier)
 	{
-		auto it = std::find_if(m_members.begin(), m_members.end(), [name](const auto& member)
+		auto it = std::find_if(m_members.begin(), m_members.end(), [identifier](const auto& member)
 		{
-			return member.name == name;
+			return member.identifier == identifier;
 		});
 
 		if (it == m_members.end())
@@ -649,11 +650,11 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline const ComponentMember* ComponentTypeDesc<T>::FindMemberByName(std::string_view name) const
+	inline const ComponentMember* ComponentTypeDesc<T>::FindMemberByIdentifier(uint32_t identifier) const
 	{
-		auto it = std::find_if(m_members.begin(), m_members.end(), [name](const auto& member)
+		auto it = std::find_if(m_members.begin(), m_members.end(), [identifier](const auto& member)
 		{
-			return member.name == name;
+			return member.identifier == identifier;
 		});
 
 		if (it == m_members.end())

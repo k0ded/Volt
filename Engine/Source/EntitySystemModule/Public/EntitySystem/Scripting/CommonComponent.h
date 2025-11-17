@@ -18,7 +18,7 @@ namespace Volt
 			reflect.SetGUID("{A6789316-2D82-46FC-8138-B7BCBB9EA5B8}"_guid);
 			reflect.SetLabel("Common Component");
 			reflect.SetHidden();
-			reflect.AddMember(&CommonComponent::timeCreatedID, "timecreatedid", "Time Created", "", 0u);
+			reflect.AddMember(&CommonComponent::timeCreatedID, 'time', "Time Created", "", 0u);
 			reflect.SetOnStartCallback(&CommonComponent::OnStart);
 		}
 

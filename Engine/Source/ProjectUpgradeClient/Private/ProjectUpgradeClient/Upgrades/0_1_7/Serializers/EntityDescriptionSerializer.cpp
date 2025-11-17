@@ -21,9 +21,254 @@
 
 #include <Volt-Platforms/Windows/WindowsPlatformThread.h>
 
+#include <CoreUtilities/Containers/Map.h>
 
 namespace Volt
 {
+	Map<VoltGUID, Map<std::string, uint32_t>> g_componentMemberRemap =
+	{
+		// TagComponent
+		{
+			"{282FA5FB-6A77-47DB-8340-3D34F1A1FBBD}"_guid,
+			{
+				{ "tag", 'tag' }
+			}
+		},
+		// IDComponent
+		{
+			"{663E0E0B-43EC-4973-8A9B-FF8A0BA566AA}"_guid,
+			{
+				{ "id", 'id' }
+			}
+		},
+		// TransformComponent
+		{
+			"{E1B8016B-1CAA-4782-927E-C17C29B25893}"_guid,
+			{
+				{ "position", 'pos' },
+				{ "rotation", 'rot' },
+				{ "scale", 'scal' },
+				{ "visible", 'vis' },
+				{ "locked", 'lock' },
+				{ "movability", 'mvbl' },
+			}
+		},
+		// RelationshipComponent
+		{
+			"{4A5FEDD2-4D0B-4696-A9E6-DCDFFB25B32C}"_guid,
+			{
+				{ "parent", 'par' },
+				{ "children", 'chld' },
+			}
+		},
+		// CommonComponent
+		{
+			"{A6789316-2D82-46FC-8138-B7BCBB9EA5B8}"_guid,
+			{
+				{ "timecreatedid", 'time' }
+			}
+		},
+		// RigidbodyComponent
+		{
+			"{460B7722-00C0-48BE-8B3E-B549BCC9269B}"_guid,
+			{
+				{ "bodyType", 'bdtp' },
+				{ "layerId", 'lyrd' },
+				{ "mass", 'mass' },
+				{ "linearDrag", 'lndr' },
+				{ "lockFlags", 'lcfl' },
+				{ "angularDrag", 'andr' },
+				{ "collisionType", 'colt' },
+				{ "disableGravity", 'dsgr' },
+				{ "isKinematic", 'iskn' }
+			}
+		},
+		// BoxColliderComponent
+		{
+			"{29707475-D536-4DA4-8D3A-A98948C89A5}"_guid,
+			{
+				{ "halfSize", 'hasi' },
+				{ "offset", 'offs' },
+				{ "isTrigger", 'istr' },
+				{ "material", 'mat' }
+			}
+		},
+		// SphereColliderComponent
+		{
+			"{90246BCE-FF83-41A2-A076-AB0A947C0D6A}"_guid,
+			{
+				{ "radius", 'radi' },
+				{ "offset", 'offs' },
+				{ "isTrigger", 'istr' },
+				{ "material", 'mat' }
+			}
+		},
+		// CapsuleColliderComponent
+		{
+			"{54A48952-7A77-492B-8A9C-2440D82EE5E2}"_guid,
+			{
+				{ "radius", 'radi' },
+				{ "height", 'heig' },
+				{ "offset", 'offs' },
+				{ "isTrigger", 'istr' },
+				{ "material", 'mat' }
+			}
+		},
+		// MeshColliderComponent
+		{
+			"{E709C708-ED3C-4F68-BC1D-2FE32B897722}"_guid,
+			{
+				{ "colliderMesh", 'clme' },
+				{ "material", 'mat' },
+				{ "subMeshIndex", 'smi' },
+				{ "isConvex", 'isco' },
+				{ "isTrigger", 'istr' }
+			}
+		},
+		// CharacterControllerComponent
+		{
+			"{DC5C002A-B72E-42A0-83FC-FFBE1FB2DEF2}"_guid,
+			{
+				{ "climbingMode", 'clim' },
+				{ "slopeLimit", 'slli' },
+				{ "invisibleWallHeight", 'iwh' },
+				{ "maxJumpHeight", 'mjh' },
+				{ "contactOffset", 'coff' },
+				{ "stepOffset", 'soff' },
+				{ "density", 'dens' },
+				{ "layer", 'layr' },
+				{ "hasGravity", 'hasg' }
+			}
+		},
+		// PointLightComponent
+		{
+			"{A30A8848-A30B-41DD-80F9-4E163C01ABC2}"_guid,
+			{
+				{ "intensity", 'inte' },
+				{ "radius", 'radi' },
+				{ "falloff", 'fall' },
+				{ "color", 'col' },
+				{ "castShadows", 'shdw' }
+			}
+		},
+		// SpotLightComponent
+		{
+			"{D35F915F-53E5-4E15-AE5B-769F4D79B6F8}"_guid,
+			{
+				{ "intensity", 'inte' },
+				{ "innerAngle", 'angi' },
+				{ "outerAngle", 'ango' },
+				{ "range", 'rang' },
+				{ "falloff", 'fall' },
+				{ "color", 'col' },
+				{ "castShadows", 'shdw' }
+			}
+		},
+		// SphereLightComponent
+		{
+			"{0D0CEEE2-A331-442A-BB4B-FBDB8E06C692}"_guid,
+			{
+				{ "intensity", 'inte' },
+				{ "radius", 'radi' },
+				{ "color", 'col' }
+			}
+		},
+		// RectangleLightComponent
+		{
+			"{5AEF9201-4A86-45F1-85F3-E95577E45BF2}"_guid,
+			{
+				{ "intensity", 'inte' },
+				{ "color", 'col' },
+				{ "width", 'wid' },
+				{ "height", 'heig' }
+			}
+		},
+		// DirectionalLightComponent
+		{
+			"{EC5514FF-9DE7-44CA-BCD9-8A9F08883F59}"_guid,
+			{
+				{ "intensity", 'inte' },
+				{ "color", 'col' },
+				{ "lightSize", 'lisz' },
+				{ "sunRadius", 'snrd' },
+				{ "softShadows", 'sfsh' },
+				{ "castShadows", 'shdw' }
+			}
+		},
+		// SkylightComponent
+		{
+			"{29F75381-2873-4734-A074-3F3640E54C84}"_guid,
+			{
+				{ "environmentHandle", 'env' },
+				{ "intensity", 'inte' },
+				{ "lod", 'lod' },
+				{ "show", 'show' }
+			}
+		},
+		// AnimationPlayerComponent
+		{
+			"{45673840-5218-417D-A1C7-800A46711F23}"_guid,
+			{
+				{ "skeleton", 'skel' },
+				{ "animationHandle", 'anim' },
+				{ "currentPlayTime", 'play' }
+			}
+		},
+		// MeshComponent
+		{
+			"{45D008BE-65C9-4D6F-A0C6-377F7B384E47}"_guid,
+			{
+				{ "handle", 'hndl' },
+				{ "materials", 'mats' }
+			}
+		},
+		// CameraComponent
+		{
+			"{9258BEEC-3A31-4CAB-AB1E-654524E1C398}"_guid,
+			{
+				{ "fieldOfView", 'fov' },
+				{ "nearPlane", 'nrpl' },
+				{ "farPlane", 'frpl' },
+				{ "priority", 'prio' }
+			}
+		},
+		// TextRendererComponent
+		{
+			"{8AAA0646-40D2-47E6-B83F-72EA26BD8C01}"_guid,
+			{
+				{ "text", 'text' },
+				{ "font", 'font' },
+				{ "maxWidth", 'mxwd' },
+				{ "color", 'col' }
+			}
+		},
+		// SpriteComponent
+		{
+			"{FDB47734-1B69-4558-B460-0975365DB400}"_guid,
+			{
+				{ "materialHandle", 'hndl' }
+			}
+		},
+		// DecalComponent
+		{
+			"{09FA1C73-D508-4ADA-A101-A63703E91345}"_guid,
+			{
+				{ "decalMaterial", 'dcl' }
+			}
+		},
+		// PrefabComponent
+		{
+			"{B8A83ACF-F1CA-4C9F-8D1E-408B5BB388D2}"_guid,
+			{
+				{ "prefabAsset", 'prea' },
+				{ "prefabEntity", 'pree' },
+				{ "sceneRootEntity", 'sre' },
+				{ "version", 'ver' },
+				{ "componentLocalChanges", 'clc' }
+			}
+		},
+	};
+
 	VT_REGISTER_ASSET_SERIALIZER(AssetTypes::EntityDesc, EntityDescSerializer);
 
 	template<typename T>
@@ -51,39 +296,6 @@ namespace Volt
 
 	EntityDescSerializer::EntityDescSerializer()
 	{
-		RegisterSerializationFunction<int8_t>(m_typeSerializers);
-		RegisterSerializationFunction<uint8_t>(m_typeSerializers);
-		RegisterSerializationFunction<int16_t>(m_typeSerializers);
-		RegisterSerializationFunction<uint16_t>(m_typeSerializers);
-		RegisterSerializationFunction<int32_t>(m_typeSerializers);
-		RegisterSerializationFunction<uint32_t>(m_typeSerializers);
-
-		RegisterSerializationFunction<float>(m_typeSerializers);
-		RegisterSerializationFunction<double>(m_typeSerializers);
-		RegisterSerializationFunction<bool>(m_typeSerializers);
-
-		RegisterSerializationFunction<glm::vec2>(m_typeSerializers);
-		RegisterSerializationFunction<glm::vec3>(m_typeSerializers);
-		RegisterSerializationFunction<glm::vec4>(m_typeSerializers);
-
-		RegisterSerializationFunction<glm::uvec2>(m_typeSerializers);
-		RegisterSerializationFunction<glm::uvec3>(m_typeSerializers);
-		RegisterSerializationFunction<glm::uvec4>(m_typeSerializers);
-
-		RegisterSerializationFunction<glm::ivec2>(m_typeSerializers);
-		RegisterSerializationFunction<glm::ivec3>(m_typeSerializers);
-		RegisterSerializationFunction<glm::ivec4>(m_typeSerializers);
-
-		RegisterSerializationFunction<glm::quat>(m_typeSerializers);
-		RegisterSerializationFunction<glm::mat4>(m_typeSerializers);
-		RegisterSerializationFunction<VoltGUID>(m_typeSerializers);
-
-		RegisterSerializationFunction<std::string>(m_typeSerializers);
-		RegisterSerializationFunction<std::filesystem::path>(m_typeSerializers);
-
-		RegisterSerializationFunction<Volt::EntityID>(m_typeSerializers);
-		RegisterSerializationFunction<AssetHandle>(m_typeSerializers);
-
 		RegisterDeserializationFunction<int8_t>(m_typeDeserializers);
 		RegisterDeserializationFunction<uint8_t>(m_typeDeserializers);
 		RegisterDeserializationFunction<int16_t>(m_typeDeserializers);
@@ -125,40 +337,6 @@ namespace Volt
 
 	void EntityDescSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
-		const AssetReference<EntityDesc> entityDesc = asset.ConvertTo<EntityDesc>();
-		ScopedAssetReferenceLock entityLock{ entityDesc };
-
-		ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(entityDesc->GetSceneHandle());
-
-		//if the scene is not loaded here, the entity is not supposed to be loaded, and cannot be saved
-		VT_ENSURE(sceneMetadata->IsLoaded());
-		//if the scene is a memory asset it doesnt have a path yet, and will thus fail the save of this entity
-		VT_ENSURE(!sceneMetadata->IsMemoryAsset());
-
-		const std::filesystem::path directoryPath = metadata->filepath.parent_path();
-		if (!std::filesystem::exists(directoryPath))
-		{
-			std::filesystem::create_directories(directoryPath);
-		}
-
-		//serialize entity data
-		AssetReference<Scene> scene = g_assetManager->GetAssetImmediately<Scene>(entityDesc->GetSceneHandle());
-		ScopedAssetReferenceLock assetLock{ scene };
-
-		YAMLMemoryStreamWriter streamWriter{};
-
-		SerializeEntity(scene->GetEntityFromID(entityDesc->m_entityID), streamWriter);
-
-		//write to file
-		BinaryStreamWriter entityDescFileWriter{};
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), entityDescFileWriter);
-
-		Buffer buffer = streamWriter.WriteAndGetBuffer();
-		entityDescFileWriter.Write(buffer);
-		buffer.Release();
-
-		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
-		entityDescFileWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
 	bool EntityDescSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
@@ -194,64 +372,6 @@ namespace Volt
 		streamReader.Read(entityDesc->m_entitySpawnData);		
 		return true;
 	}
-
-	void EntityDescSerializer::SerializeEntity(Entity entity, YAMLMemoryStreamWriter& streamWriter) const
-	{
-		streamWriter.BeginMap();
-		streamWriter.BeginMapNamned("Entity");
-
-		entt::registry& registry = entity.GetSceneReference()->GetRegistry();
-
-		streamWriter.SetKey("id", entity.GetID());
-		streamWriter.BeginSequence("components");
-		{
-			for (auto&& curr : registry.storage())
-			{
-				auto& storage = curr.second;
-
-				if (!storage.contains(entity.GetHandle()))
-				{
-					continue;
-				}
-
-				const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(GetComponentRegistry().GetTypeDescFromName(storage.type().name()));
-				if (!componentDesc)
-				{
-					continue;
-				}
-
-				const uint8_t* componentPtr = reinterpret_cast<const uint8_t*>(storage.get(entity.GetHandle()));
-				SerializeClass(componentPtr, 0, componentDesc, streamWriter, false);
-			}
-		}
-		streamWriter.EndSequence();
-
-		// #TODO_Scene
-		//if (registry.any_of<VertexPaintedComponent>(id))
-		//{
-		//	std::filesystem::path vpPath = (ProjectManager::GetRootDirectory() / metadata.filePath.parent_path() / "Layers" / ("ent_" + std::to_string((uint32_t)id) + ".entVp"));
-		//	auto& vpComp = registry.get<VertexPaintedComponent>(id);
-		//
-		//	// #TODO_Ivar: This is kind of questionable after TGA
-		//	if (std::filesystem::exists(vpPath))
-		//	{
-		//		using std::filesystem::perms;
-		//		std::filesystem::permissions(vpPath, perms::_All_write);
-		//	}
-		//
-		//	BinaryStreamWriter vpStreamWriter;
-		//
-		//	vpStreamWriter.Write(vpComp.vertexColors.data(), sizeof(uint32_t) * vpComp.vertexColors.size());
-		//	vpStreamWriter.Write(vpComp.meshHandle);
-		//
-		//	vpStreamWriter.WriteToDisk(vpPath, false, 0);
-		//}
-
-		streamWriter.EndMap();
-		streamWriter.EndMap();
-	}
-
-
 
 	Entity EntityDescSerializer::DeserializeEntity(AssetReference<Scene> scene, YAMLMemoryStreamReader& streamReader) const
 	{
@@ -306,91 +426,9 @@ namespace Volt
 
 		});
 
-		// #TODO_Scene
-		//if (scene->GetRegistry().any_of<VertexPaintedComponent>(entity))
-		//{
-		//	std::filesystem::path vpPath = metadata.filePath.parent_path();
-		//	vpPath = ProjectManager::GetRootDirectory() / vpPath / "Layers" / ("ent_" + std::to_string((uint32_t)entityId) + ".entVp");
-
-		//	if (std::filesystem::exists(vpPath))
-		//	{
-		//		auto& vpComp = scene->GetRegistry().get<VertexPaintedComponent>(entity);
-
-		//		std::ifstream vpFile(vpPath, std::ios::in | std::ios::binary);
-		//		if (!vpFile.is_open())
-		//		{
-		//			VT_LOG(Error, "Could not open entVp file!");
-		//		}
-
-		//		Vector<uint8_t> totalData;
-		//		const size_t srcSize = vpFile.seekg(0, std::ios::end).tellg();
-		//		totalData.resize_uninitialized(srcSize);
-		//		vpFile.seekg(0, std::ios::beg);
-		//		vpFile.read(reinterpret_cast<char*>(totalData.data()), totalData.size());
-		//		vpFile.close();
-
-		//		memcpy_s(&vpComp.meshHandle, sizeof(vpComp.meshHandle), totalData.data() + totalData.size() - sizeof(vpComp.meshHandle), sizeof(vpComp.meshHandle));
-		//		totalData.resize_uninitialized(totalData.size() - sizeof(vpComp.meshHandle));
-
-		//		vpComp.vertexColors.reserve(totalData.size() / sizeof(uint32_t));
-		//		for (size_t offset = 0; offset < totalData.size(); offset += sizeof(uint32_t))
-		//		{
-		//			uint32_t vpColor;
-		//			memcpy_s(&vpColor, sizeof(uint32_t), totalData.data() + offset, sizeof(uint32_t));
-		//			vpComp.vertexColors.push_back(vpColor);
-		//		}
-		//	}
-		//}
-
 		streamReader.ExitScope();
 
 		return entity;
-	}
-
-	void EntityDescSerializer::DeserializeEntityInPlace(Volt::Entity entity, YAMLMemoryStreamReader& streamReader) const
-	{
-		streamReader.EnterScope("Entity");
-
-		EntityID entityId = streamReader.ReadAtKey("id", Entity::NullID());
-		if (!entity.HasComponent<IDComponent>())
-		{
-			entity.AddComponent<IDComponent>();
-		}
-		entity.GetComponent<IDComponent>().id = entityId;
-		
-		streamReader.ForEach("components", [&]()
-		{
-			VoltGUID compGuid = streamReader.ReadAtKey("guid", VoltGUID::Null());
-			if (compGuid == VoltGUID::Null())
-			{
-				return;
-			}
-
-			const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromGUID(compGuid);
-			if (!typeDesc)
-			{
-				return;
-			}
-			switch (typeDesc->GetValueType())
-			{
-				case ValueType::Component:
-				{
-					entt::registry& registry = entity.GetSceneReference()->GetRegistry();
-					const bool hasComponent = ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, registry, entity.GetHandle());
-					if (!hasComponent)
-					{
-						ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, registry, entity.GetHandle());
-					}
-
-					void* voidCompPtr = ComponentRegistry::Helpers::GetComponentWithGUID(compGuid, registry, entity.GetHandle());
-					uint8_t* componentData = reinterpret_cast<uint8_t*>(voidCompPtr);
-
-					const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
-					DeserializeClass(componentData, 0, componentDesc, entity, streamReader);
-					break;
-				}
-			}
-		});
 	}
 
 	Vector<VoltGUID> EntityDescSerializer::FindComponentTypes(YAMLMemoryStreamReader& streamReader)
@@ -449,116 +487,6 @@ namespace Volt
 		return scene->CreateEntityWithID(entityId);
 	}
 
-	void EntityDescSerializer::SerializeClass(const uint8_t* data, const size_t offset, const IComponentTypeDesc* compDesc, YAMLMemoryStreamWriter& streamWriter, bool isSubComponent) const
-	{
-		if (!isSubComponent)
-		{
-			streamWriter.BeginMap();
-		}
-
-		streamWriter.SetKey("guid", compDesc->GetGUID());
-		streamWriter.BeginSequence("members");
-
-		for (const auto& member : compDesc->GetMembers())
-		{
-			if ((member.flags & ComponentMemberFlag::NoSerialize) != ComponentMemberFlag::None)
-			{
-				continue;
-			}
-
-			streamWriter.BeginMap();
-			streamWriter.SetKey("name", member.name);
-
-			if (member.typeDesc != nullptr)
-			{
-				switch (member.typeDesc->GetValueType())
-				{
-					case ValueType::Component:
-						streamWriter.SetKey("data", "component");
-						SerializeClass(data, offset + member.offset, reinterpret_cast<const IComponentTypeDesc*>(member.typeDesc), streamWriter, true);
-						break;
-
-					case ValueType::Enum:
-						streamWriter.SetKey("data", "enum");
-						streamWriter.SetKey("enumValue", *reinterpret_cast<const int32_t*>(&data[offset + member.offset]));
-						break;
-
-					case ValueType::Array:
-					{
-						streamWriter.SetKey("data", "array");
-						SerializeArray(data, offset + member.offset, reinterpret_cast<const IArrayTypeDesc*>(member.typeDesc), streamWriter);
-						break;
-					}
-				}
-			}
-			else
-			{
-				if (m_typeSerializers.contains(member.typeIndex))
-				{
-					m_typeSerializers.at(member.typeIndex)(streamWriter, data, offset + member.offset);
-				}
-			}
-
-			streamWriter.EndMap();
-		}
-
-		streamWriter.EndSequence();
-
-		if (!isSubComponent)
-		{
-			streamWriter.EndMap();
-		}
-	}
-
-	void EntityDescSerializer::SerializeArray(const uint8_t* data, const size_t offset, const IArrayTypeDesc* arrayDesc, YAMLMemoryStreamWriter& streamWriter) const
-	{
-		const void* arrayPtr = &data[offset];
-
-		const bool isNonDefaultType = arrayDesc->GetElementTypeDesc() != nullptr;
-		const auto& typeIndex = arrayDesc->GetElementTypeIndex();
-
-		if (!isNonDefaultType && !m_typeSerializers.contains(typeIndex))
-		{
-			return;
-		}
-
-		streamWriter.BeginSequence("values");
-		for (size_t i = 0; i < arrayDesc->Size(arrayPtr); i++)
-		{
-			const uint8_t* elementData = reinterpret_cast<const uint8_t*>(arrayDesc->At(arrayPtr, i));
-
-			streamWriter.BeginMap();
-			if (isNonDefaultType)
-			{
-				switch (arrayDesc->GetElementTypeDesc()->GetValueType())
-				{
-					case ValueType::Component:
-						streamWriter.SetKey("value", "component");
-						SerializeClass(elementData, 0, reinterpret_cast<const IComponentTypeDesc*>(arrayDesc->GetElementTypeDesc()), streamWriter, true);
-						break;
-
-					case ValueType::Enum:
-						streamWriter.SetKey("value", *reinterpret_cast<const int32_t*>(elementData));
-						break;
-
-					case ValueType::Array:
-						streamWriter.SetKey("value", "array");
-						SerializeArray(elementData, 0, reinterpret_cast<const IArrayTypeDesc*>(arrayDesc->GetElementTypeDesc()), streamWriter);
-						break;
-				}
-			}
-			else
-			{
-				if (m_typeSerializers.contains(typeIndex))
-				{
-					m_typeSerializers.at(typeIndex)(streamWriter, elementData, 0);
-				}
-			}
-			streamWriter.EndMap();
-		}
-		streamWriter.EndSequence();
-	}
-
 	void EntityDescSerializer::DeserializeClass(uint8_t* data, const size_t offset, const IComponentTypeDesc* compDesc, Entity dstEntity, YAMLMemoryStreamReader& streamReader) const
 	{
 		streamReader.ForEach("members", [&]()
@@ -569,7 +497,17 @@ namespace Volt
 				return;
 			}
 
-			const ComponentMember* componentMember = const_cast<IComponentTypeDesc*>(compDesc)->FindMemberByName(memberName);
+			if (!g_componentMemberRemap.contains(compDesc->GetGUID()))
+			{
+				return;
+			}
+
+			if (!g_componentMemberRemap.at(compDesc->GetGUID()).contains(memberName))
+			{
+				return;
+			}
+
+			const ComponentMember* componentMember = const_cast<IComponentTypeDesc*>(compDesc)->FindMemberByIdentifier(g_componentMemberRemap.at(compDesc->GetGUID()).at(memberName));
 			if (!componentMember)
 			{
 				return;
@@ -617,7 +555,7 @@ namespace Volt
 		const bool isNonDefaultType = arrayDesc->GetElementTypeDesc() != nullptr;
 		const auto& typeIndex = arrayDesc->GetElementTypeIndex();
 
-		if (!isNonDefaultType && !m_typeSerializers.contains(typeIndex))
+		if (!isNonDefaultType && !m_typeDeserializers.contains(typeIndex))
 		{
 			return;
 		}

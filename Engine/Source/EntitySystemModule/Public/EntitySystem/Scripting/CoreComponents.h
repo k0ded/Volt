@@ -38,7 +38,7 @@ namespace Volt
 			reflect.SetGUID("{282FA5FB-6A77-47DB-8340-3D34F1A1FBBD}"_guid);
 			reflect.SetLabel("Tag Component");
 			reflect.SetHidden();
-			reflect.AddMember(&TagComponent::tag, "tag", "Tag", "", std::string(""));
+			reflect.AddMember(&TagComponent::tag, 'tag', "Tag", "", std::string(""));
 		}
 
 		REGISTER_COMPONENT(TagComponent);
@@ -53,7 +53,7 @@ namespace Volt
 			reflect.SetGUID("{663E0E0B-43EC-4973-8A9B-FF8A0BA566AA}"_guid);
 			reflect.SetLabel("ID Component");
 			reflect.SetHidden();
-			reflect.AddMember(&IDComponent::id, "id", "ID", "", EntityID{});
+			reflect.AddMember(&IDComponent::id, 'id', "ID", "", EntityID{}, ComponentMemberFlag::NoSerialize);
 		}
 
 		REGISTER_COMPONENT(IDComponent);
@@ -96,12 +96,12 @@ namespace Volt
 			reflect.SetGUID("{E1B8016B-1CAA-4782-927E-C17C29B25893}"_guid);
 			reflect.SetLabel("Transform Component");
 			reflect.SetHidden();
-			reflect.AddMember(&TransformComponent::position, "position", "Position", "", glm::vec3{ 0.f });
-			reflect.AddMember(&TransformComponent::rotation, "rotation", "Rotation", "", glm::identity<glm::quat>());
-			reflect.AddMember(&TransformComponent::scale, "scale", "Scale", "", glm::vec3{ 1.f });
-			reflect.AddMember(&TransformComponent::visible, "visible", "Visible", "", true);
-			reflect.AddMember(&TransformComponent::locked, "locked", "Locked", "", false);
-			reflect.AddMember(&TransformComponent::movability, "movability", "Movability", "", Movability::Static);
+			reflect.AddMember(&TransformComponent::position, 'pos', "Position", "", glm::vec3{0.f});
+			reflect.AddMember(&TransformComponent::rotation, 'rot', "Rotation", "", glm::identity<glm::quat>());
+			reflect.AddMember(&TransformComponent::scale, 'scal', "Scale", "", glm::vec3{1.f});
+			reflect.AddMember(&TransformComponent::visible, 'vis', "Visible", "", true);
+			reflect.AddMember(&TransformComponent::locked, 'lock', "Locked", "", false);
+			reflect.AddMember(&TransformComponent::movability, 'mvbl', "Movability", "", Movability::Static);
 		}
 
 		REGISTER_COMPONENT(TransformComponent);
@@ -117,8 +117,8 @@ namespace Volt
 			reflect.SetGUID("{4A5FEDD2-4D0B-4696-A9E6-DCDFFB25B32C}"_guid);
 			reflect.SetLabel("Relationship Component");
 			reflect.SetHidden();
-			reflect.AddMember(&RelationshipComponent::parent, "parent", "Parent", "", EntityID(0));
-			reflect.AddMember(&RelationshipComponent::children, "children", "Children", "", EntityID(0));
+			reflect.AddMember(&RelationshipComponent::parent, 'par', "Parent", "", EntityID(0));
+			reflect.AddMember(&RelationshipComponent::children, 'chld', "Children", "", EntityID(0));
 		}
 
 		REGISTER_COMPONENT(RelationshipComponent);

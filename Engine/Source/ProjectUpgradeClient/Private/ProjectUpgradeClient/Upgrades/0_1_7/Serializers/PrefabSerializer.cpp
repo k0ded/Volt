@@ -27,55 +27,6 @@ namespace Volt
 
 	void PrefabSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
-		const AssetReference<Prefab> prefab = asset.ConvertTo<Prefab>();
-		ScopedAssetReferenceLock prefabLock{ prefab };
-
-		YAMLMemoryStreamWriter yamlStreamWriter{};
-		yamlStreamWriter.BeginMap();
-		yamlStreamWriter.BeginMapNamned("Prefab");
-
-		yamlStreamWriter.SetKey("version", prefab->m_version);
-		yamlStreamWriter.SetKey("rootEntityId", prefab->m_rootEntityId);
-
-		yamlStreamWriter.BeginSequence("Entities");
-		{
-			for (const auto entity : prefab->m_prefabScene->GetAllEntities())
-			{
-				EntityDescSerializer::Get().SerializeEntity(entity, yamlStreamWriter);
-			}
-		}
-		yamlStreamWriter.EndSequence();
-
-		yamlStreamWriter.BeginSequence("PrefabReferences");
-		{
-			for (const auto& ref : prefab->m_prefabReferencesMap)
-			{
-				yamlStreamWriter.BeginMap();
-				yamlStreamWriter.SetKey("entity", ref.first);
-				yamlStreamWriter.SetKey("prefabHandle", ref.second.prefabAsset);
-				yamlStreamWriter.SetKey("prefabEntityReference", ref.second.prefabReferenceEntity);
-				yamlStreamWriter.EndMap();
-			}
-		}
-		yamlStreamWriter.EndSequence();
-
-		yamlStreamWriter.EndMap();
-		yamlStreamWriter.EndMap();
-
-		BinaryStreamWriter streamWriter{};
-		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
-
-		Buffer buffer = yamlStreamWriter.WriteAndGetBuffer();
-		streamWriter.Write(buffer);
-		buffer.Release();
-
-		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
-		const auto directory = filePath.parent_path();
-		if (!std::filesystem::exists(directory))
-		{
-			std::filesystem::create_directories(directory);
-		}
-		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
 	bool PrefabSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const

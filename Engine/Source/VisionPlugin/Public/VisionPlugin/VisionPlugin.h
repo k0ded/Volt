@@ -32,9 +32,9 @@ struct VisionTest
 		reflect.SetGUID("{688379F2-1D63-473C-9A13-A72065822774}"_guid);
 		reflect.SetLabel("TestThing");
 
-		reflect.AddMember(&VisionTest::yoooyo, "testYo", "TEST YO", "", 500.f);
+		reflect.AddMember(&VisionTest::yoooyo, 'yo', "TEST YO", "", 500.f);
 	}
-	
+
 	REGISTER_COMPONENT(VisionTest);
 };
 

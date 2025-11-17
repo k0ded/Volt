@@ -131,13 +131,13 @@ void RegisterVectorDeserializationFunction(Map<TypeTraits::TypeIndex, std::funct
 Map<TypeTraits::TypeIndex, std::function<void(YAMLFileStreamReader&, uint8_t*, const size_t)>> g_deserializationFunctions;
 Map<TypeTraits::TypeIndex, std::function<void(YAMLFileStreamReader&, uint8_t*, const size_t)>> g_vectorDeserializationFunctions;
 
-Map<VoltGUID, Map<std::string_view, std::string_view>> g_componentPropertyRemapping;
+Map<VoltGUID, Map<std::string_view, uint32_t>> g_componentPropertyRemapping;
 Map<const IComponentTypeDesc*, std::unordered_set<std::string>> g_missingMembers;
 
 template<typename T>
-void AddRemapping(std::string_view oldName, std::string_view newName)
+void AddRemapping(std::string_view oldName, uint32_t identifier)
 {
-	g_componentPropertyRemapping[GetTypeGUID<T>()][oldName] = newName;
+	g_componentPropertyRemapping[GetTypeGUID<T>()][oldName] = identifier;
 }
 
 const ComponentMember* TryGetComponentMemberFromName(const IComponentTypeDesc* typeDesc, std::string_view name)
@@ -151,7 +151,7 @@ const ComponentMember* TryGetComponentMemberFromName(const IComponentTypeDesc* t
 		auto memberIt = componentIt->second.find(name);
 		if (memberIt != componentIt->second.end())
 		{
-			componentMember = typeDesc->FindMemberByName(memberIt->second);
+			componentMember = typeDesc->FindMemberByIdentifier(memberIt->second);
 		}
 	}
 
@@ -159,12 +159,6 @@ const ComponentMember* TryGetComponentMemberFromName(const IComponentTypeDesc* t
 	if (componentMember == nullptr)
 	{
 		componentMember = typeDesc->FindMemberByLabel(name);
-	}
-
-	// If not found, try finding by name
-	if (componentMember == nullptr)
-	{
-		componentMember = typeDesc->FindMemberByName(name);
 	}
 
 	// If still null, log a warning
@@ -238,30 +232,30 @@ ProjectConversionPanel::ProjectConversionPanel()
 
 	// Component remapping
 	{
-		AddRemapping<PrefabComponent>("PrefabAsset", "prefabAsset");
-		AddRemapping<PrefabComponent>("PrefabEntity", "prefabEntity");
-		AddRemapping<PrefabComponent>("Version", "version");
+		AddRemapping<PrefabComponent>("PrefabAsset", 'prea');
+		AddRemapping<PrefabComponent>("PrefabEntity", 'pree');
+		AddRemapping<PrefabComponent>("Version", 'ver');
 	
-		AddRemapping<BoxColliderComponent>("Physics Material", "material");
+		AddRemapping<BoxColliderComponent>("Physics Material", 'mat');
 
-		AddRemapping<RigidbodyComponent>("Type", "bodyType");
-		AddRemapping<RigidbodyComponent>("Disable Gravity", "disableGravity");
+		AddRemapping<RigidbodyComponent>("Type", 'bdtp');
+		AddRemapping<RigidbodyComponent>("Disable Gravity", 'dsgr');
 
-		AddRemapping<MeshColliderComponent>("Physics Material", "material");
-		AddRemapping<MeshColliderComponent>("Sub Mesh Index", "subMeshIndex");
+		AddRemapping<MeshColliderComponent>("Physics Material", 'mat');
+		AddRemapping<MeshColliderComponent>("Sub Mesh Index", 'smi');
 
-		AddRemapping<CapsuleColliderComponent>("Physics Material", "material");
+		AddRemapping<CapsuleColliderComponent>("Physics Material", 'mat');
 
-		AddRemapping<SphereColliderComponent>("Physics Material", "material");
+		AddRemapping<SphereColliderComponent>("Physics Material", 'mat');
 
-		AddRemapping<CameraComponent>("Field of View", "fieldOfView");
-		AddRemapping<CameraComponent>("Near plane", "nearPlane");
-		AddRemapping<CameraComponent>("Far plane", "farPlane");
+		AddRemapping<CameraComponent>("Field of View", 'fov');
+		AddRemapping<CameraComponent>("Near plane", 'nrpl');
+		AddRemapping<CameraComponent>("Far plane", 'frpl');
 	
-		AddRemapping<SpotLightComponent>("Angle", "outerAngle");
-		AddRemapping<SpotLightComponent>("Angle Attenuation", "falloff");
+		AddRemapping<SpotLightComponent>("Angle", 'ango');
+		AddRemapping<SpotLightComponent>("Angle Attenuation", 'fall');
 
-		AddRemapping<SkylightComponent>("Environment Map", "environmentHandle");
+		AddRemapping<SkylightComponent>("Environment Map", 'env');
 	}
 }
 

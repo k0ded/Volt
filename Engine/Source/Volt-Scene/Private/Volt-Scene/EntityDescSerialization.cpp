@@ -4,6 +4,8 @@
 #include "Volt-Scene/EntityDescCustomMetadata.h"
 
 #include <EntitySystem/ComponentRegistry.h>
+#include <EntitySystem/Scripting/CoreComponents.h>
+
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetTypes.h>
 
@@ -25,7 +27,7 @@ namespace Volt::EntityDescSerialization
 			}
 
 			// Write the header.
-			memberHeaders.emplace_back(std::string(member.name), member.size, componentMemberDataWriter.GetHeadLocation());
+			memberHeaders.emplace_back(member.identifier, member.size, componentMemberDataWriter.GetHeadLocation());
 
 			const uint8_t* componentMemberDataPtr = componentDataPtr + member.offset;
 
@@ -76,7 +78,7 @@ namespace Volt::EntityDescSerialization
 
 		for (const auto& member : memberHeaders)
 		{
-			const ComponentMember* componentMember = componentDesc->FindMemberByName(member.name);
+			const ComponentMember* componentMember = componentDesc->FindMemberByIdentifier(member.identifier);
 			if (!componentMember)
 			{
 				continue;
@@ -223,6 +225,8 @@ namespace Volt::EntityDescSerialization
 
 			DeserializeClass(serializationData.componentData, typeDesc, componentData);
 		}
+
+		entity.GetComponent<IDComponent>().id = serializationData.entityId;
 	}
 
 	void DeserializeEntityData(Archive& archive, SerializationData& outSerializationData)

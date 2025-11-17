@@ -297,6 +297,8 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 		{
 			Vector<Volt::Entity> entitiesToRemove;
 
+			ScopedAssetReferenceLock sceneLock{ m_scene };
+
 			auto selection = SelectionManager::GetSelectedEntities();
 			for (const auto& selectedEntity : selection)
 			{
@@ -307,8 +309,6 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 				SelectionManager::GetFirstSelectedRow() = -1;
 				SelectionManager::GetLastSelectedRow() = -1;
 			}
-
-			ScopedAssetReferenceLock sceneLock{ m_scene };
 
 			EditorUtils::DestroyEntities(*m_scene, entitiesToRemove);
 

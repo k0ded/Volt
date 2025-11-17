@@ -9,14 +9,13 @@ namespace Volt::EntityDescSerialization
 {
 	struct MemberHeader
 	{
-		// #TODO_AssetSystem: Replace with uint identifier.
-		std::string name;
+		uint32_t identifier;
 		size_t size;
 		size_t offset;
 
 		VT_INLINE friend Archive& operator<<(Archive& archive, MemberHeader& value)
 		{
-			archive << value.name;
+			archive << value.identifier;
 			archive << value.size;
 			archive << value.offset;
 
