@@ -228,7 +228,7 @@ namespace Volt
 		m_targetProject.engineVersion = streamReader.ReadAtKey("EngineVersion", std::string(""));
 		m_targetProject.name = streamReader.ReadAtKey("Name", std::string("None"));
 		m_targetProject.companyName = streamReader.ReadAtKey("CompanyName", std::string("None"));
-		m_targetProject.assetsDirectory = streamReader.ReadAtKey("AssetsDirectory", std::filesystem::path("Assets"));
+		m_targetProject.assetsDirectoryName = streamReader.ReadAtKey("AssetsDirectory", std::string("Assets"));
 		m_targetProject.audioDirectory = streamReader.ReadAtKey("AudioBanksDirectory", std::filesystem::path("Audio/Banks"));
 		m_targetProject.iconFilepath = streamReader.ReadAtKey("IconPath", std::filesystem::path(""));
 		m_targetProject.cursorFilepath = streamReader.ReadAtKey("CursorPath", std::filesystem::path(""));
@@ -285,7 +285,7 @@ namespace Volt
 		streamWriter.SetKey("EngineVersion", VT_VERSION.ToString());
 		streamWriter.SetKey("Name", m_targetProject.name);
 		streamWriter.SetKey("CompanyName", m_targetProject.companyName);
-		streamWriter.SetKey("AssetsDirectory", m_targetProject.assetsDirectory);
+		streamWriter.SetKey("AssetsDirectory", m_targetProject.assetsDirectoryName);
 		streamWriter.SetKey("AudioBanksDirectory", m_targetProject.audioDirectory);
 		streamWriter.SetKey("IconPath", m_targetProject.iconFilepath);
 		streamWriter.SetKey("CursorPath", m_targetProject.cursorFilepath);

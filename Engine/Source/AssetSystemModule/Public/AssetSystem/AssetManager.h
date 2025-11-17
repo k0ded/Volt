@@ -5,7 +5,6 @@
 #include "AssetSystem/AssetAllocator.h"
 #include "AssetSystem/AssetCache.h"
 #include "AssetSystem/AssetReference.h"
-#include "AssetSystem/AssetSerializerRegistry.h"
 #include "AssetSystem/AssetDependencyGraph.h"
 
 #include <EventSystem/EventListener.h>
@@ -24,6 +23,8 @@ namespace Volt
 	class AssetManager : public EventListener
 	{
 	public:
+		inline static constexpr uint32_t AssetFileMagic = 252525;
+
 		using AssetUpdatedCallbackID = UUID64;
 		using AssetChangedCallback = std::function<void(AssetHandle assetHandle, AssetChangedState state)>;
 		using AssetRegistryIteratorFunc = std::function<bool(ReadOnlyAssetMetadata)>;
@@ -81,6 +82,10 @@ namespace Volt
 		// Will return true and the asset if it is loaded. This method returns a non typed asset,
 		// instead of the default typed asset.
 		VTAS_API bool TryGetTypelessAssetIfLoaded(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
+		VTAS_API bool TryGetTypelessAssetImmediately(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
+
+		// Will return true and the asset if it is loaded, if the asset is not loaded it will queue it for loading.
+		VTAS_API bool TryGetTypelessAsset(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
 
 		// Creates an asset that only lives in memory during the current application run, is not serializable to disk.
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateMemoryAsset(std::string_view assetName, Args&&... args);
@@ -90,6 +95,9 @@ namespace Volt
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAsset(std::string_view assetName, Args&&... args);
 		// Creates an asset, assigns a filepath and creates the asset disk file itself.
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args);
+
+		// Creates an asset of a type without arguments.
+		VTAS_API AssetReference<Asset> CreateAssetTypeless(std::string_view assetName, AssetType assetType);
 
 		VTAS_API void CreateFileForAsset(AssetHandle assetHandle, const std::filesystem::path& filepath);
 
@@ -148,6 +156,10 @@ namespace Volt
 		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset);
 
 		void UnloadAndFreeAsset(AssetRefCounter* assetRefCounter);
+		bool DeserializeAsset(AssetReference<Asset> asset);
+
+		bool SerializeAsset(AssetReference<Asset> asset);
+		void SerializeAssetHeader(Archive& archive, AssetMetadata assetMetadata, uint32_t assetVersion);
 
 		void OnAssetChanged(AssetHandle assetHandle, AssetChangedState state);
 		VTAS_API void QueueAssetChanged(AssetHandle assetHandle, AssetChangedState state);
@@ -189,13 +201,6 @@ namespace Volt
 			return AssetReference<T>(tempAsset.As<T>());
 		}
 
-		// Check if we can actually load this asset.
-		if (!AssetSerializerRegistry::Get().HasSerializer(T::GetStaticType()))
-		{
-			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, T::GetStaticType()->GetName());
-			return {};
-		}
-
 		// Asset wasn't in the cache, create and load it.
 		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
 		// Setup a link back to the asset manager.
@@ -206,6 +211,15 @@ namespace Volt
 
 		{
 			ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+
+			if (!metadata->HasFilepath())
+			{
+				VT_LOGC(Error, LogAssetSystem, 
+					"Failed to load asset (Handle: '{}', Type: '{}')\n"
+					"		Error: File does not have an assigned filepath!.",
+					metadata->handle,
+					metadata->type->GetName());
+			}
 
 			// All metadatas should be valid.
 			VT_ENSURE(metadata->IsValid());
@@ -278,13 +292,6 @@ namespace Volt
 			return true;
 		}
 
-		// Check if we can actually load this asset.
-		if (!AssetSerializerRegistry::Get().HasSerializer(T::GetStaticType()))
-		{
-			VT_LOGC(Warning, LogAssetSystem, "No serializer for asset {} with type {} was found!", assetHandle, T::GetStaticType()->GetName());
-			return false;
-		}
-	
 		// Asset wasn't in the cache, create and load it.
 		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
 		// Setup a link back to the asset manager.
@@ -313,6 +320,11 @@ namespace Volt
 	bool AssetManager::TryGetAssetIfLoaded(AssetHandle assetHandle, AssetReference<T>& outAsset)
 	{
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
+		if (!assetMetadata.IsValid())
+		{
+			return false;
+		}
+		
 		if (assetMetadata->IsLoaded())
 		{
 			outAsset = GetAssetImmediately<T>(assetHandle);

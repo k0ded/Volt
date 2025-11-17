@@ -23,6 +23,7 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::Mesh; }
 		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 2; }
+		void Serialize(Archive& archive) override;
 
 		VT_NODISCARD VT_INLINE Ref<Mesh> GetMesh() const { return m_mesh; }
 
@@ -30,8 +31,6 @@ namespace Volt
 		void Initialize(MeshInitializer& meshInitializer, const Vector<AssetHandle>& materials);
 
 	private:
-		friend class MeshSerializer;
-
 		Ref<Mesh> m_mesh;
 		Vector<AssetHandle> m_materials;
 

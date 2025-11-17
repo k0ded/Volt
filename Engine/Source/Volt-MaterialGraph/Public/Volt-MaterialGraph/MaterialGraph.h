@@ -19,6 +19,8 @@ namespace Volt
 
 		Vector<AssetHandle> GetTextureHandles() const;
 
+		void Serialize(class Archive& archive);
+
 	private:
 		friend class MaterialSerializer;
 

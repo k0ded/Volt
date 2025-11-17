@@ -19,7 +19,6 @@
 
 #include <Volt-Renderer/Renderer.h>
 
-#include <AssetSystem/AssetSerializerRegistry.h>
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
 

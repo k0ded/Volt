@@ -3,6 +3,7 @@
 #include "EntitySystem/Config.h"
 
 #include <CoreUtilities/CompilerTraits.h>
+#include <CoreUtilities/Archive/Archive.h>
 
 #include <yaml-cpp/yaml.h>
 #include <format>
@@ -30,6 +31,12 @@ namespace Volt
 		static void Deserialize(BinaryStreamReader& streamReader, EntityID& outData);
 
 		VT_NODISCARD VT_INLINE const uint32_t Get() const { return m_uuid; }
+
+		VT_INLINE friend Archive& operator<<(Archive& archive, EntityID& value)
+		{
+			archive << value.m_uuid;
+			return archive;
+		}
 
 		static EntityID Null();
 

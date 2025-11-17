@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 
 // Note: These are special values that can be used in shaders

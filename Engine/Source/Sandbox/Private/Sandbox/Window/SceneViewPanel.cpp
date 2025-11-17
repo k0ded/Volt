@@ -145,9 +145,12 @@ void SceneViewPanel::UpdateMainContent()
 
 				for (const auto& id : m_entityDrawList)
 				{
-
 					Volt::Entity entity = m_scene->GetEntityFromID(id);
-					DrawEntity(entity, m_searchQuery);
+
+					if (entity.IsValid())
+					{
+						DrawEntity(entity, m_searchQuery);
+					}
 				}
 			}
 			ImGui::EndTable();
@@ -294,6 +297,8 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 		{
 			Vector<Volt::Entity> entitiesToRemove;
 
+			ScopedAssetReferenceLock sceneLock{ m_scene };
+
 			auto selection = SelectionManager::GetSelectedEntities();
 			for (const auto& selectedEntity : selection)
 			{
@@ -304,8 +309,6 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 				SelectionManager::GetFirstSelectedRow() = -1;
 				SelectionManager::GetLastSelectedRow() = -1;
 			}
-
-			ScopedAssetReferenceLock sceneLock{ m_scene };
 
 			EditorUtils::DestroyEntities(*m_scene, entitiesToRemove);
 

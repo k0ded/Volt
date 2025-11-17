@@ -9,6 +9,8 @@
 #include <EntitySystem/EntityID.h>
 #include <EntitySystem/ComponentRegistry.h>
 
+#include <CoreUtilities/EnumUtils.h>
+
 namespace Volt
 {
 	enum class UIAnchor : uint32_t
@@ -25,6 +27,7 @@ namespace Volt
 		BottomMiddle,
 		BottomRight
 	};
+	VT_SETUP_ENUM_SERIALIZE_OPERATOR(UIAnchor);
 
 	static void ReflectType(TypeDesc<UIAnchor>& reflect)
 	{
@@ -54,8 +57,8 @@ namespace Volt
 			reflect.SetGUID("{C6427474-18D0-406E-8082-A15D19EFEB43}"_guid);
 			reflect.SetLabel("UI ID Component");
 			reflect.SetHidden();
-			reflect.AddMember(&UIIDComponent::id, "id", "ID", "", EntityID{}, ComponentMemberFlag::NoSerialize);
-			reflect.AddMember(&UIIDComponent::timeCreateID, "timecreatedid", "Time Created", "", 0u);
+			reflect.AddMember(&UIIDComponent::id, 'id', "ID", "", EntityID{}, ComponentMemberFlag::NoSerialize);
+			reflect.AddMember(&UIIDComponent::timeCreateID, 'time', "Time Created", "", 0u);
 		}
 
 		REGISTER_COMPONENT(UIIDComponent);
@@ -77,13 +80,13 @@ namespace Volt
 			reflect.SetGUID("{2496CEA6-8D13-4BF0-8E6D-DF959E4C0C44}"_guid);
 			reflect.SetLabel("UI Transform Component");
 			reflect.SetHidden();
-			reflect.AddMember(&UITransformComponent::anchor, "anchor", "Anchor", "", UIAnchor::TopLeft);
-			reflect.AddMember(&UITransformComponent::position, "position", "Position", "", glm::vec2{ 0.f });
-			reflect.AddMember(&UITransformComponent::size, "size", "Size", "", glm::vec2{ 100.f });
-			reflect.AddMember(&UITransformComponent::alignment, "alignment", "Alignment", "", glm::vec2{ 0.f });
-			reflect.AddMember(&UITransformComponent::rotation, "rotation", "Rotation", "", 0.f);
-			reflect.AddMember(&UITransformComponent::zOrder, "zorder", "Z Order", "", 0);
-			reflect.AddMember(&UITransformComponent::visible, "visible", "Visible", "", false);
+			reflect.AddMember(&UITransformComponent::anchor, 'anch', "Anchor", "", UIAnchor::TopLeft);
+			reflect.AddMember(&UITransformComponent::position, 'pos', "Position", "", glm::vec2{0.f});
+			reflect.AddMember(&UITransformComponent::size, 'size', "Size", "", glm::vec2{100.f});
+			reflect.AddMember(&UITransformComponent::alignment, 'alig', "Alignment", "", glm::vec2{0.f});
+			reflect.AddMember(&UITransformComponent::rotation, 'rot', "Rotation", "", 0.f);
+			reflect.AddMember(&UITransformComponent::zOrder, 'zord', "Z Order", "", 0);
+			reflect.AddMember(&UITransformComponent::visible, 'vis', "Visible", "", false);
 		}
 
 		REGISTER_COMPONENT(UITransformComponent);
@@ -98,7 +101,7 @@ namespace Volt
 			reflect.SetGUID("{813B1914-C653-485F-96F5-87578F6916B5}"_guid);
 			reflect.SetLabel("UI Tag Component");
 			reflect.SetHidden();
-			reflect.AddMember(&UITagComponent::tag, "tag", "Tag", "", std::string());
+			reflect.AddMember(&UITagComponent::tag, 'tag', "Tag", "", std::string());
 		}
 
 		REGISTER_COMPONENT(UITagComponent);
@@ -115,9 +118,9 @@ namespace Volt
 			reflect.SetGUID("{5FAF4CED-38A8-4B80-8C6B-786651E72EEF}"_guid);
 			reflect.SetLabel("UI Image Component");
 			reflect.SetHidden();
-			reflect.AddMember(&UIImageComponent::imageHandle, "image", "Image", "", Asset::Null(), AssetTypes::Texture);
-			reflect.AddMember(&UIImageComponent::tint, "tint", "Tint", "", glm::vec3{ 1.f });
-			reflect.AddMember(&UIImageComponent::alpha, "alpha", "Alpha", "", 1.f);
+			reflect.AddMember(&UIImageComponent::imageHandle, 'img', "Image", "", Asset::Null(), AssetTypes::Texture);
+			reflect.AddMember(&UIImageComponent::tint, 'tint', "Tint", "", glm::vec3{1.f});
+			reflect.AddMember(&UIImageComponent::alpha, 'alph', "Alpha", "", 1.f);
 		}
 
 		REGISTER_COMPONENT(UIImageComponent);

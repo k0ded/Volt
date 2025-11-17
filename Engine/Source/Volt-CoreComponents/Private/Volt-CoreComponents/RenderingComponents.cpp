@@ -26,7 +26,10 @@ namespace Volt
 	{
 		auto& component = entity.GetComponent<MeshComponent>();
 
-		StreamingManager::Get().RemoveInstance(component.m_streamingInstanceID);
+		if (StreamingManager::IsValid())
+		{
+			StreamingManager::Get().RemoveInstance(component.m_streamingInstanceID);
+		}
 		component.m_scenePrimitiveData = nullptr;
 	}
 

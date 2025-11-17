@@ -32,7 +32,18 @@ namespace VoltSharpmake
         public BuildSystem BuildSystem;
         public Sharpmake.DotNetFramework Framework;
 
-        public CommonTarget() { }
+		public CommonTarget() { }
+
+		public CommonTarget(CommonTarget inTarget) 
+		{
+			Platform = inTarget.Platform;
+			DevEnv = inTarget.DevEnv;
+			Optimization = inTarget.Optimization;
+			Blob = inTarget.Blob;
+			BuildSystem = inTarget.BuildSystem;
+			Framework = inTarget.Framework;
+			Compiler = inTarget.Compiler;
+		}
 
         public CommonTarget(
             Platform platform,

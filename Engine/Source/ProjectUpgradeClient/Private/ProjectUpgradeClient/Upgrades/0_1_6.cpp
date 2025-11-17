@@ -29,7 +29,7 @@ namespace Volt
 		{
 			case UpgradeStage::Collecting:
 			{
-				const auto assetsDir = GetTargetProject().rootDirectory / GetTargetProject().assetsDirectory;
+				const auto assetsDir = GetTargetProject().rootDirectory / GetTargetProject().assetsDirectoryName;
 				if (FileSystem::Exists(assetsDir))
 				{
 					for (auto& p : std::filesystem::recursive_directory_iterator(assetsDir))

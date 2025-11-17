@@ -10,6 +10,13 @@ namespace Volt
 	class AssetRegistry
 	{
 	public:
+		enum class AssetHeaderDeserializationResult
+		{
+			InvalidAssetFile,
+			InvalidVersion,
+			Success
+		};
+
 		AssetRegistry(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName);
 
 		VTAS_API AssetMetadata* GetAssetMetadata(AssetHandle assetHandle);
@@ -25,6 +32,7 @@ namespace Volt
 		std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& filepath) const;
 
 		static int32_t GetNumMaxAssets();
+		static AssetHeaderDeserializationResult DeserializeAssetHeader(Archive& archive, AssetMetadata& outAssetMetadata, uint32_t expectedAssetVersion, bool checkAssetVersion);
 
 	private:
 		friend class AssetRegistryIterator;

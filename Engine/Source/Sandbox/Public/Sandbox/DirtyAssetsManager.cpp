@@ -35,7 +35,6 @@ DirtyAssetsManager::~DirtyAssetsManager()
 	s_instance = nullptr;
 }
 
-
 void DirtyAssetsManager::Initialize()
 {
 	auto& assetsModal = ModalSystem::AddModal<AssetsModal>("Assets Modal##sandbox");
@@ -396,9 +395,9 @@ void DirtyAssetsManager::SaveAssetsImpl(const FrameStackVector<Volt::AssetHandle
 {
 	for (const Volt::AssetHandle& handle : assetsToSave)
 	{
-		Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+		Volt::AssetMetadata assetMetadata = g_assetManager->GetAssetMetadataCopy(handle);
 
-		const AssetType type = assetMetadata->type;
+		const AssetType type = assetMetadata.type;
 		if (m_dirtySaveCustomizations[type].ShouldDeleteInstead(handle))
 		{
 			g_editorAssetManager->DeleteAsset(handle);

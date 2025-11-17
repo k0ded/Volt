@@ -209,7 +209,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Vo
 	{
 		if (EditorUtils::Property(std::string(member.label), *reinterpret_cast<Volt::AssetHandle*>(&bytePtr[offset + member.offset]), member.GetAssetType()))
 		{
-			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.name);
+			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 			return true;
 		}
 
@@ -220,7 +220,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Vo
 	{
 		if (UI::PropertyColor(std::string(member.label), *reinterpret_cast<glm::vec3*>(&bytePtr[offset + member.offset])))
 		{
-			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.name);
+			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 			return true;
 		}
 
@@ -231,7 +231,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Vo
 	{
 		if (UI::PropertyColor(std::string(member.label), *reinterpret_cast<glm::vec4*>(&bytePtr[offset + member.offset])))
 		{
-			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.name);
+			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 			return true;
 		}
 
@@ -243,7 +243,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Vo
 	{
 		if (UI::PropertyEntity(std::string(member.label), scene, *reinterpret_cast<Volt::EntityID*>(&bytePtr[offset + member.offset])))
 		{
-			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.name);
+			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 			return true;
 		}
 
@@ -257,7 +257,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMember(Volt::Scene& scene, Vo
 
 	if (s_propertyFunctions.at(member.typeIndex)(member.label, data, offset + member.offset))
 	{
-		AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.name);
+		AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 		return true;
 	}
 
@@ -272,7 +272,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scen
 	{
 		if (EditorUtils::Property(label, *reinterpret_cast<Volt::AssetHandle*>(elementData), arrayMember.GetAssetType() != AssetTypes::None ? arrayMember.GetAssetType() : arrayAssetType))
 		{
-			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
+			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.identifier);
 			EditorUtils::MarkEntityAsEdited(scene, entity);
 		
 			return true;
@@ -284,7 +284,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scen
 	{
 		if (UI::PropertyColor(label, *reinterpret_cast<glm::vec3*>(elementData)))
 		{
-			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
+			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.identifier);
 			EditorUtils::MarkEntityAsEdited(scene, entity);
 		
 			return true;
@@ -296,7 +296,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scen
 	{
 		if (UI::PropertyColor(label, *reinterpret_cast<glm::vec4*>(elementData)))
 		{
-			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
+			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.identifier);
 			EditorUtils::MarkEntityAsEdited(scene, entity);
 			
 			return true;
@@ -309,7 +309,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scen
 	{
 		if (UI::PropertyEntity(label, scene, *reinterpret_cast<Volt::EntityID*>(elementData)))
 		{
-			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
+			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.identifier);
 			EditorUtils::MarkEntityAsEdited(scene, entity);
 		
 			return true;
@@ -324,7 +324,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scen
 
 	if (s_propertyFunctions.at(typeIndex)(label, elementData, 0))
 	{
-		AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.name);
+		AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.identifier);
 		EditorUtils::MarkEntityAsEdited(scene, entity);
 
 		return true;
@@ -370,7 +370,7 @@ bool ComponentPropertyUtility::DrawComponentEnum(Volt::Scene& scene, Volt::Entit
 
 	int32_t currentIndex = 0;
 
-	Map<int32_t, int32_t> indexToValueMap;
+	Map<int32_t, uint64_t> indexToValueMap;
 	Vector<std::string> constantNames;
 
 	for (uint32_t index = 0; const auto & constant : constants)
@@ -392,8 +392,8 @@ bool ComponentPropertyUtility::DrawComponentEnum(Volt::Scene& scene, Volt::Entit
 
 	if (UI::ComboProperty(std::string(member.label), currentValue, constantNames))
 	{
-		currentValue = indexToValueMap.at(currentValue);
-		AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.name);
+		currentValue = static_cast<int32_t>(indexToValueMap.at(currentValue));
+		AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 		EditorUtils::MarkEntityAsEdited(scene, entity);
 
 		changed = true;
@@ -491,7 +491,7 @@ bool ComponentPropertyUtility::DrawComponentArray(Volt::Scene& scene, Volt::Enti
 		if (ImGui::Button((std::string("Add##add_") + std::string(member.label)).c_str()))
 		{
 			arrayDesc->EmplaceBack(arrayPtr, member.defaultValue->Get());
-			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.name);
+			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 
 			EditorUtils::MarkEntityAsEdited(scene, entity);
 			edited = true;
@@ -508,7 +508,7 @@ bool ComponentPropertyUtility::DrawComponentArray(Volt::Scene& scene, Volt::Enti
 	return edited;
 }
 
-void ComponentPropertyUtility::AddLocalChangeToEntity(Volt::Scene& scene, Volt::Entity entity, const VoltGUID& componentGuid, std::string_view memberName)
+void ComponentPropertyUtility::AddLocalChangeToEntity(Volt::Scene& scene, Volt::Entity entity, const VoltGUID& componentGuid, uint32_t memberIdentifier)
 {
 	if (!entity.HasComponent<Volt::PrefabComponent>())
 	{
@@ -516,11 +516,10 @@ void ComponentPropertyUtility::AddLocalChangeToEntity(Volt::Scene& scene, Volt::
 	}
 
 	auto& prefabComp = entity.GetComponent<Volt::PrefabComponent>();
-	const std::string strMemberName = std::string(memberName);
 
-	auto it = std::find_if(prefabComp.componentLocalChanges.begin(), prefabComp.componentLocalChanges.end(), [&](const auto& lhs)
+	auto it = std::find_if(prefabComp.componentLocalChanges.begin(), prefabComp.componentLocalChanges.end(), [memberIdentifier, &componentGuid](const auto& lhs)
 	{
-		return lhs.memberName == strMemberName && lhs.componentGUID == componentGuid;
+		return lhs.memberIdentifier == memberIdentifier && lhs.componentGUID == componentGuid;
 	});
 
 	if (it != prefabComp.componentLocalChanges.end())
@@ -530,7 +529,7 @@ void ComponentPropertyUtility::AddLocalChangeToEntity(Volt::Scene& scene, Volt::
 
 	auto& newChange = prefabComp.componentLocalChanges.emplace_back();
 	newChange.componentGUID = componentGuid;
-	newChange.memberName = strMemberName;
+	newChange.memberIdentifier = memberIdentifier;
 
 	EditorUtils::MarkEntityAsEdited(scene, entity);
 }

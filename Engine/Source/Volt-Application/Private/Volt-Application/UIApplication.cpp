@@ -11,6 +11,8 @@
 
 #include <RHIModule/RHIModuleLoader.h>
 
+#include <AssetSystem/AssetManager.h>
+
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -61,6 +63,7 @@ namespace Volt
 		// This is required because glfwInit must be called before setting up graphics device
 		CreateGraphicsContext(commandLineBuilder);
 
+		// #TODO_AssetSystem: Move to a sub system.
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 
 		if (m_appCreateInfo.createMainWindow)

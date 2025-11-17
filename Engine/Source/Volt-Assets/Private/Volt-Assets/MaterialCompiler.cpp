@@ -130,10 +130,7 @@ namespace Volt
 				}
 				else
 				{
-					AssetReference<Texture2D> defaultTexture = Renderer::GetDefaultResources().whiteTexture;
-					ScopedAssetReferenceLock assetLock{ defaultTexture };
-
-					image = defaultTexture->GetImage();
+					image = Renderer::GetDefaultResources().white1x1;
 				}
 				
 

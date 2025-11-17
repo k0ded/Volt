@@ -23,6 +23,14 @@ namespace Volt
 		{
 			AssetHandle prefabAsset;
 			EntityID prefabReferenceEntity;
+
+			friend Archive& operator<<(Archive& archive, PrefabReferenceData& value)
+			{
+				archive << value.prefabAsset;
+				archive << value.prefabReferenceEntity;
+
+				return archive;
+			}
 		};
 
 		Prefab() = default;
@@ -49,10 +57,10 @@ namespace Volt
 
 		static AssetType GetStaticType() { return AssetTypes::Prefab; }
 		AssetType GetType() const override { return GetStaticType(); };
+		void Serialize(Archive& archive) override;
 
 	private:
 		friend class PrefabImporter;
-		friend class PrefabSerializer;
 
 		[[nodiscard]] const Entity GetRootEntity() const;
 
@@ -70,7 +78,7 @@ namespace Volt
 		const Vector<Entity> FlattenEntityHeirarchy(Entity entity);
 
 		AssetReference<Scene> m_prefabScene;
-		std::unordered_map<EntityID, PrefabReferenceData> m_prefabReferencesMap; // Maps this prefabs entity to an entity in another prefab
+		Map<EntityID, PrefabReferenceData> m_prefabReferencesMap; // Maps this prefabs entity to an entity in another prefab
 
 		EntityID m_rootEntityId = Entity::NullID();
 		uint32_t m_version = 0;

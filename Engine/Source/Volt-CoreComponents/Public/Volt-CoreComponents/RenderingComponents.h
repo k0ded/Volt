@@ -33,8 +33,8 @@ namespace Volt
 		{
 			reflect.SetGUID("{45D008BE-65C9-4D6F-A0C6-377F7B384E47}"_guid);
 			reflect.SetLabel("Mesh Component");
-			reflect.AddMember(&MeshComponent::handle, "handle", "Mesh", "", Asset::Null(), AssetTypes::Mesh);
-			reflect.AddMember(&MeshComponent::materials, "materials", "Materials", "", Asset::Null(), AssetTypes::Material);
+			reflect.AddMember(&MeshComponent::handle, 'hndl', "Mesh", "", Asset::Null(), AssetTypes::Mesh);
+			reflect.AddMember(&MeshComponent::materials, 'mats', "Materials", "", Asset::Null(), AssetTypes::Material);
 			reflect.SetOnMemberChangedCallback(&MeshComponent::OnMemberChanged);
 			reflect.SetOnInitializeCallback(&MeshComponent::OnIntitialize);
 			reflect.SetOnDestroyCallback(&MeshComponent::OnDestroy);
@@ -67,10 +67,10 @@ namespace Volt
 		{
 			reflect.SetGUID("{9258BEEC-3A31-4CAB-AB1E-654524E1C398}"_guid);
 			reflect.SetLabel("Camera Component");
-			reflect.AddMember(&CameraComponent::fieldOfView, "fieldOfView", "Field Of View", "", 60.f);
-			reflect.AddMember(&CameraComponent::nearPlane, "nearPlane", "Near Plane", "", 1.f);
-			reflect.AddMember(&CameraComponent::farPlane, "farPlane", "Far Plane", "", 100'000.f);
-			reflect.AddMember(&CameraComponent::priority, "priority", "Priority", "", 0);
+			reflect.AddMember(&CameraComponent::fieldOfView, 'fov', "Field Of View", "", 60.f);
+			reflect.AddMember(&CameraComponent::nearPlane, 'nrpl', "Near Plane", "", 1.f);
+			reflect.AddMember(&CameraComponent::farPlane, 'frpl', "Far Plane", "", 100'000.f);
+			reflect.AddMember(&CameraComponent::priority, 'prio', "Priority", "", 0);
 			reflect.SetOnInitializeCallback(&CameraComponent::OnInitialize);
 		}
 
@@ -95,10 +95,10 @@ namespace Volt
 		{
 			reflect.SetGUID("{8AAA0646-40D2-47E6-B83F-72EA26BD8C01}"_guid);
 			reflect.SetLabel("Text Renderer Component");
-			reflect.AddMember(&TextRendererComponent::text, "text", "Text", "", std::string("Text"));
-			reflect.AddMember(&TextRendererComponent::font, "font", "Font", "", Asset::Null(), AssetTypes::Font);
-			reflect.AddMember(&TextRendererComponent::maxWidth, "maxWidth", "Max Width", "", 100.f);
-			reflect.AddMember(&TextRendererComponent::color, "color", "Color", "", glm::vec4{ 1.f }, ComponentMemberFlag::Color4);
+			reflect.AddMember(&TextRendererComponent::text, 'text', "Text", "", std::string("Text"));
+			reflect.AddMember(&TextRendererComponent::font, 'font', "Font", "", Asset::Null(), AssetTypes::Font);
+			reflect.AddMember(&TextRendererComponent::maxWidth, 'mxwd', "Max Width", "", 100.f);
+			reflect.AddMember(&TextRendererComponent::color, 'col', "Color", "", glm::vec4{1.f}, ComponentMemberFlag::Color4);
 		}
 
 		REGISTER_COMPONENT(TextRendererComponent);
@@ -112,38 +112,10 @@ namespace Volt
 		{
 			reflect.SetGUID("{FDB47734-1B69-4558-B460-0975365DB400}"_guid);
 			reflect.SetLabel("Sprite Component");
-			reflect.AddMember(&SpriteComponent::materialHandle, "materialHandle", "Material", "", Asset::Null(), AssetTypes::Material);
+			reflect.AddMember(&SpriteComponent::materialHandle, 'hndl', "Material", "", Asset::Null(), AssetTypes::Material);
 		}
 
 		REGISTER_COMPONENT(SpriteComponent);
-	};
-
-	struct VertexPaintedComponent
-	{
-		AssetHandle meshHandle = Asset::Null();
-		Vector<uint32_t> vertexColors;
-
-		static void ReflectType(TypeDesc<VertexPaintedComponent>& reflect)
-		{
-			reflect.SetGUID("{480B6514-05CB-4532-A366-B5DFD419E310}"_guid);
-			reflect.SetLabel("Vertex Painted Component");
-		}
-
-		REGISTER_COMPONENT(VertexPaintedComponent);
-	};
-
-	struct PostProcessingStackComponent
-	{
-		AssetHandle postProcessingStack = Asset::Null();
-
-		static void ReflectType(TypeDesc<PostProcessingStackComponent>& reflect)
-		{
-			reflect.SetGUID("{09340235-CDA0-496E-BEB5-A2F38BCE0033}"_guid);
-			reflect.SetLabel("Post Processing Stack Component");
-			reflect.AddMember(&PostProcessingStackComponent::postProcessingStack, "postProcessingStack", "Post Processing Stack", "", Asset::Null(), AssetTypes::PostProcessingStack);
-		}
-
-		REGISTER_COMPONENT(PostProcessingStackComponent);
 	};
 
 	struct DecalComponent
@@ -154,7 +126,7 @@ namespace Volt
 		{
 			reflect.SetGUID("{09FA1C73-D508-4ADA-A101-A63703E91345}"_guid);
 			reflect.SetLabel("Decal Component");
-			reflect.AddMember(&DecalComponent::decalMaterial, "decalMaterial", "Material", "", Asset::Null(), AssetTypes::Material);
+			reflect.AddMember(&DecalComponent::decalMaterial, 'dcl', "Material", "", Asset::Null(), AssetTypes::Material);
 		}
 
 		REGISTER_COMPONENT(DecalComponent);

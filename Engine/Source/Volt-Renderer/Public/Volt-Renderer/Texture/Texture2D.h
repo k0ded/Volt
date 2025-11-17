@@ -34,6 +34,7 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::Texture; }
 		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
+		void Serialize(Archive& archive) override;
 
 		static Ref<Texture2D> Create(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data = nullptr);
 		static Ref<Texture2D> Create(RefPtr<RHI::Image> image);

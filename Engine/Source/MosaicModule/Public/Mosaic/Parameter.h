@@ -56,7 +56,8 @@ namespace Mosaic
 			return *reinterpret_cast<const T*>(dataArray);
 		}
 
-		std::function<void(YAMLStreamWriter& streamWriter, const Parameter& parameter)> serializationFunc;
+		std::function<void(Archive& archive, Parameter& parameter)> serializationFunc;
+		// Note: Deprecated.
 		std::function<void(YAMLStreamReader& streamReader, Parameter& parameter)> deserializationFunc;
 	};
 

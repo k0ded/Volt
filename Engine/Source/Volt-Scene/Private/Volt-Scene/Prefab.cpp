@@ -1,8 +1,9 @@
 #include "vspch.h"
 #include "Volt-Scene/Prefab.h"
 
-#include <Volt-Scene/Components/CoreComponents.h>
-#include <Volt-Scene/Scene.h>
+#include "Volt-Scene/Components/CoreComponents.h"
+#include "Volt-Scene/Scene.h"
+#include "Volt-Scene/EntityDescSerialization.h"
 
 #include <Volt-Physics/RigidbodyComponent.h>
 #include <Volt-Physics/CharacterControllerComponent.h>
@@ -11,6 +12,7 @@
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Random.h>
+#include <CoreUtilities/Archive/MemoryArchive.h>
 
 namespace Volt
 {
@@ -176,6 +178,63 @@ namespace Volt
 	const Prefab::PrefabReferenceData& Prefab::GetReferenceData(Entity entity) const
 	{
 		return m_prefabReferencesMap.at(entity.GetComponent<PrefabComponent>().prefabEntity);
+	}
+
+	struct EntityHeader
+	{
+		EntityID entityId;
+		size_t startOffset;
+
+		friend Archive& operator<<(Archive& archive, EntityHeader& value)
+		{
+			archive << value.entityId;
+			archive << value.startOffset;
+
+			return archive;
+		}
+	};
+
+	void Prefab::Serialize(Archive& archive)
+	{
+		archive << m_version;
+		archive << m_rootEntityId;
+
+		Vector<EntityHeader> entityHeaders;
+
+		if (!archive.IsLoading())
+		{
+			for (const Entity& entity : m_prefabScene->GetAllEntities())
+			{
+				EntityHeader& entityHeader = entityHeaders.emplace_back();
+				entityHeader.startOffset = archive.GetHeadLocation();
+				entityHeader.entityId = entity.GetID();
+
+				MemoryWriter entityArchive;
+				EntityDescSerialization::SerializeEntity(entityArchive, entity, 0);
+
+				archive << entityArchive;
+			}
+		}
+
+		archive << entityHeaders;
+
+		if (archive.IsLoading())
+		{
+			m_prefabScene = g_assetManager->CreateAnonymousAsset<Scene>("PrefabScene");
+
+			for (const EntityHeader& entityHeader : entityHeaders)
+			{
+				archive.Seek(entityHeader.startOffset);
+				
+				MemoryReader entityArchive;
+				archive << entityArchive;
+
+				Entity entity = m_prefabScene->CreateEntityWithID(entityHeader.entityId);
+				EntityDescSerialization::DeserializeEntity(entityArchive, entity);
+			}
+		}
+
+		archive << m_prefabReferencesMap;
 	}
 
 	const Entity Prefab::GetRootEntity() const

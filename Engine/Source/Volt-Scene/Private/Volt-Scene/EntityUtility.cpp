@@ -1,7 +1,6 @@
 #include "vspch.h"
 
 #include "Volt-Scene/EntityUtility.h"
-#include "Volt-Scene/EntityDescriptionSerializer.h"
 #include "Volt-Scene/Scene.h"
 
 #include <EntitySystem/ComponentRegistry.h>

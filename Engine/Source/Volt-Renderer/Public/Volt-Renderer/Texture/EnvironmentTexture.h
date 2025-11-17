@@ -22,9 +22,9 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::EnvironmentTexture; }
 		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
-	private:
-		friend class EnvironmentTextureSerializer;
+		void Serialize(Archive& archive) override;
 
+	private:
 		RefPtr<RHI::Image> m_diffuseImage;
 		RefPtr<RHI::Image> m_specularImage;
 	};

@@ -308,7 +308,15 @@ namespace Volt
 		// Full white 1x1
 		{
 			constexpr uint32_t PIXEL_DATA = 0xffffffff;
-			m_defaultResources.whiteTexture = g_assetManager->CreateMemoryAsset<Texture2D>("White1x1", RHI::PixelFormat::R8G8B8A8_UNORM, 1, 1, &PIXEL_DATA);
+
+			RHI::ImageDesc imageSpec{};
+			imageSpec.format = RHI::PixelFormat::R8G8B8A8_UNORM;
+			imageSpec.usage = RHI::ImageUsage::Texture;
+			imageSpec.width = 1;
+			imageSpec.height = 1;
+			imageSpec.debugName = "White1x1";
+
+			m_defaultResources.white1x1 = RHI::Image::Create(imageSpec, &PIXEL_DATA);
 		}
 
 		// Full black cube 1x1

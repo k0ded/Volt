@@ -120,10 +120,7 @@ RefPtr<Volt::RHI::Image> EditorResources::GetEditorIcon(EditorIcon icon)
 {
 	if (!m_editorIcons.contains(icon))
 	{
-		AssetReference<Volt::Texture2D> whiteTexture = Volt::Renderer::GetDefaultResources().whiteTexture;
-		ScopedAssetReferenceLock textureLock{ whiteTexture };
-
-		return whiteTexture->GetImage();
+		return Volt::Renderer::GetDefaultResources().white1x1;
 	}
 
 	return m_editorIcons.at(icon);
@@ -141,10 +138,7 @@ Ref<Volt::Mesh> EditorResources::GetEditorMesh(EditorMesh mesh)
 
 void EditorResources::TryLoadIcon(const std::filesystem::path& path, RefPtr<Volt::RHI::Image>* outTexture)
 {
-	AssetReference<Volt::Texture2D> whiteTexture = Volt::Renderer::GetDefaultResources().whiteTexture;
-	ScopedAssetReferenceLock textureLock{ whiteTexture };
-
-	*outTexture = whiteTexture->GetImage();
+	*outTexture = Volt::Renderer::GetDefaultResources().white1x1;
 
 	Volt::TextureSourceImportConfig importConfig{};
 	importConfig.createAsMemoryAsset = true;

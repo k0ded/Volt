@@ -24,7 +24,10 @@ public:
 	static T* GetSubSystem()
 	{
 		constexpr VoltGUID guid = T::GetStaticSubSystemGUID();
-		VT_ENSURE(s_instance->m_subSystemsMap.contains(guid));
+		if (!s_instance->m_subSystemsMap.contains(guid))
+		{
+			return nullptr;
+		}
 
 		return reinterpret_cast<T*>(s_instance->m_subSystemsMap.at(guid).get());
 	}

@@ -39,6 +39,7 @@ public:
 
 	constexpr bool empty() const noexcept;
 	constexpr size_type size() const noexcept;
+	constexpr size_type byte_size() const noexcept;
 	constexpr size_type max_size() const noexcept;
 
 	constexpr T* data() noexcept;
@@ -162,6 +163,12 @@ template<typename T, size_t N>
 inline constexpr Array<T, N>::size_type Array<T, N>::size() const noexcept
 {
 	return static_cast<size_type>(N);
+}
+
+template<typename T, size_t N /*= 1*/>
+inline constexpr Array<T, N>::size_type Array<T, N>::byte_size() const noexcept
+{
+	return static_cast<size_type>(N) * sizeof(T);
 }
 
 template<typename T, size_t N>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Volt-Scene/WorldEngine/WorldEngine.h"
+#include "Volt-Scene/SceneExtension.h"
 #include "Volt-Scene/Config.h"
 #include "Volt-Scene/AssetTypes.h"
 
@@ -110,15 +111,18 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::Scene; }
 		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
+		void Serialize(Archive& archive) override;
 
 		//copy all the entities into another scene, first removing all entities in the other scene
 		void CopyEntitiesTo(AssetReference<Scene> otherScene);
 		void Clear();
 
+		template<typename T, typename... Args>
+		void AddExtension(Args&&... args);
+
 	private:
 		friend class Entity;
 		friend class SceneImporter;
-		friend class SceneSerializer;
 
 		void Initialize();
 		void CreatePhysicsScene();
@@ -135,6 +139,7 @@ namespace Volt
 		SceneSettings m_sceneSettings;
 		Statistics m_statistics;
 		WorldEngine m_worldEngine;
+		SceneExtensionManager m_sceneExtensionManager;
 
 		bool m_isPlaying = false;
 		float m_timeSinceStart = 0.f;
@@ -148,6 +153,7 @@ namespace Volt
 		EntityScene m_entityScene;
 
 		Map<Volt::EntityID, Volt::AssetHandle> m_entityIDToDescHandle;
+		Vector<AssetReference<class EntityDesc>> m_createdEntityDescs;
 
 		Ref<RenderScene> m_renderScene;
 		Scope<EntityPhysicsScene> m_entityPhysicsScene;
@@ -203,5 +209,11 @@ namespace Volt
 	inline Entity Scene::GetSceneEntityFromScriptingEntity(EntityType scriptingEntity)
 	{
 		return Entity{ scriptingEntity.GetHandle(), this };
+	}
+
+	template<typename T, typename... Args>
+	void Scene::AddExtension(Args&&... args)
+	{
+		m_sceneExtensionManager.AddExtension<T>(std::forward<Args>(args)...);
 	}
 }

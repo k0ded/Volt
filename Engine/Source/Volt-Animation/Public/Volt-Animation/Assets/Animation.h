@@ -36,6 +36,14 @@ namespace Volt
 				streamReader.Read(outData.rotation);
 				streamReader.Read(outData.scale);
 			}
+
+			VT_INLINE friend Archive& operator<<(Archive& archive, TRS& value)
+			{
+				archive << value.translation;
+				archive << value.rotation;
+				archive << value.scale;
+				return archive;
+			}
 		};
 
 		struct Pose
@@ -50,6 +58,12 @@ namespace Volt
 			static void Deserialize(BinaryStreamReader& streamReader, Pose& outData)
 			{
 				streamReader.ReadRaw(outData.localTRS);
+			}
+
+			VT_INLINE friend Archive& operator<<(Archive& archive, Pose& value)
+			{
+				archive << value.localTRS;
+				return archive;
 			}
 		};
 
@@ -68,6 +82,13 @@ namespace Volt
 			{
 				streamReader.Read(outData.frame);
 				streamReader.Read(outData.name);
+			}
+
+			VT_INLINE friend Archive& operator<<(Archive& archive, Event& value)
+			{
+				archive << value.frame;
+				archive << value.name;
+				return archive;
 			}
 		};
 
@@ -98,6 +119,7 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::Animation; }
 		AssetType GetType() const override { return GetStaticType(); };
 		uint32_t GetVersion() const override { return 1; }
+		void Serialize(Archive& archive) override;
 
 	private:
 		struct PoseData
@@ -111,7 +133,6 @@ namespace Volt
 
 		friend class FbxSourceImporter;
 		friend class AnimationImporter;
-		friend class AnimationSerializer;
 
 		Vector<Pose> m_frames;
 		Vector<Event> m_events;

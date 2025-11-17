@@ -69,6 +69,17 @@ namespace VoltSharpmake
             conf.Options.Add(Options.Vc.General.CharacterSet.Unicode);
         }
 
+		[ConfigurePriority(ConfigurePriorities.Blobbing)]
+		[Configure(Blob.Blob)]
+		public virtual void ConfigureBlob(Configuration conf, CommonTarget target)
+		{
+			conf.IsBlobbed = true;
+			conf.ProjectName += "_Blob";
+			conf.SolutionFolder = "Blob";
+			conf.ProjectFileName += ".blob";
+			conf.IncludeBlobbedSourceFiles = false;
+		}
+
         ////////////////////////////////////////////////////////////////////////
         #region Platfoms
         [ConfigurePriority(ConfigurePriorities.Platform)]

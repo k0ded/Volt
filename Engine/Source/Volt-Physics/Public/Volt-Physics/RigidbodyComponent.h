@@ -181,15 +181,15 @@ namespace Volt
 		{
 			reflect.SetGUID("{460B7722-00C0-48BE-8B3E-B549BCC9269B}"_guid);
 			reflect.SetLabel("Rigidbody Component");
-			reflect.AddMember(&RigidbodyComponent::m_bodyType, "bodyType", "Body Type", "", PhysicsBodyType::Static);
-			reflect.AddMember(&RigidbodyComponent::m_layerId, "layerId", "Layer ID", "", 0);
-			reflect.AddMember(&RigidbodyComponent::m_mass, "mass", "Mass", "", 1.f);
-			reflect.AddMember(&RigidbodyComponent::m_linearDrag, "linearDrag", "Linear Drag", "", 0.01f);
-			reflect.AddMember(&RigidbodyComponent::m_lockFlags, "lockFlags", "Lock Flags", "", 0);
-			reflect.AddMember(&RigidbodyComponent::m_angularDrag, "angularDrag", "Angular Drag", "", 0.05f);
-			reflect.AddMember(&RigidbodyComponent::m_collisionType, "collisionType", "Collision Type", "", CollisionDetectionType::Discrete);
-			reflect.AddMember(&RigidbodyComponent::m_disableGravity, "disableGravity", "Disable Gravity", "", false);
-			reflect.AddMember(&RigidbodyComponent::m_isKinematic, "isKinematic", "Is Kinematic", "", false);
+			reflect.AddMember(&RigidbodyComponent::m_bodyType, 'bdtp', "Body Type", "", PhysicsBodyType::Static);
+			reflect.AddMember(&RigidbodyComponent::m_layerId, 'lyrd', "Layer ID", "", 0);
+			reflect.AddMember(&RigidbodyComponent::m_mass, 'mass', "Mass", "", 1.f);
+			reflect.AddMember(&RigidbodyComponent::m_linearDrag, 'lndr', "Linear Drag", "", 0.01f);
+			reflect.AddMember(&RigidbodyComponent::m_lockFlags, 'lcfl', "Lock Flags", "", 0);
+			reflect.AddMember(&RigidbodyComponent::m_angularDrag, 'andr', "Angular Drag", "", 0.05f);
+			reflect.AddMember(&RigidbodyComponent::m_collisionType, 'colt', "Collision Type", "", CollisionDetectionType::Discrete);
+			reflect.AddMember(&RigidbodyComponent::m_disableGravity, 'dsgr', "Disable Gravity", "", false);
+			reflect.AddMember(&RigidbodyComponent::m_isKinematic, 'iskn', "Is Kinematic", "", false);
 		}
 
 		REGISTER_COMPONENT(RigidbodyComponent);

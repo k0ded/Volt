@@ -184,7 +184,10 @@ namespace Volt
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
 
-		StreamingManager::Get().RemoveInstance(component.m_streamingInstanceID);
+		if (StreamingManager::IsValid())
+		{
+			StreamingManager::Get().RemoveInstance(component.m_streamingInstanceID);
+		}
 		component.m_sceneLightData = nullptr;
 	}
 

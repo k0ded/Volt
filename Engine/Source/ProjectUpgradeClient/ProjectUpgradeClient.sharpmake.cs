@@ -28,19 +28,30 @@ namespace VoltSharpmake
         {
             base.ConfigureWin64(conf, target);
 
-			conf.AddPrivateDependency<SubSystemModule>(target);
-			conf.AddPrivateDependency<EventSystemModule>(target);
 			conf.AddPrivateDependency<VoltEntryPoint>(target);
 			conf.AddPrivateDependency<VoltRenderer>(target);
 			conf.AddPrivateDependency<VoltPlatforms>(target);
 			conf.AddPrivateDependency<VoltCore>(target);
+			conf.AddPrivateDependency<VoltScene>(target);
+			conf.AddPrivateDependency<VoltAssets>(target);
+			conf.AddPrivateDependency<VoltMaterialGraph>(target);
+			conf.AddPrivateDependency<VoltApplication>(target);
+			conf.AddPrivateDependency<VoltRenderCore>(target);
+
+			conf.AddPrivateDependency<WindowModule>(target);
+			conf.AddPrivateDependency<AssetSystemModule>(target);
+			conf.AddPrivateDependency<EntitySystemModule>(target);
+			conf.AddPrivateDependency<SubSystemModule>(target);
+			conf.AddPrivateDependency<EventSystemModule>(target);
+			conf.AddPrivateDependency<JobSystemModule>(target);
+			conf.AddPrivateDependency<LogModule>(target);
+			conf.AddPrivateDependency<RHIModule>(target);
+			conf.AddPrivateDependency<MosaicModule>(target);
+
 			conf.AddPrivateDependency<imgui>(target);
 			conf.AddPrivateDependency<yaml>(target);
-			conf.AddPrivateDependency<WindowModule>(target);
 
-			conf.AddPrivateDependency<VoltApplication>(target);
-
-            conf.LibraryFiles.Add(
+			conf.LibraryFiles.Add(
                 "crypt32.lib",
                 "Bcrypt.lib",
 

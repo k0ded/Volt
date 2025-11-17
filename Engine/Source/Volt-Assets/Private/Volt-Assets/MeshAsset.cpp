@@ -62,6 +62,37 @@ namespace Volt
 		}
 	}
 
+	void MeshAsset::Serialize(Archive& archive)
+	{
+		archive << m_materials;
+	
+		// Setup materials
+		if (archive.IsLoading())
+		{
+			for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
+			{
+				const AssetHandle materialHandle = m_materials.at(i);
+
+				Ref<RenderMaterial> renderMaterial;
+
+				AssetReference<MaterialAsset> materialAsset;
+				if (g_assetManager->TryGetAssetIfLoaded(materialHandle, materialAsset))
+				{
+					ScopedAssetReferenceLock assetLock{ materialAsset };
+					renderMaterial = materialAsset->GetRenderMaterial();
+				}
+				else
+				{
+					renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
+				}
+				m_mesh->SetMaterial(renderMaterial, i);
+			}
+		}
+		
+		// Mesh serialize will initialize the mesh.
+		m_mesh->Serialize(archive);
+	}
+
 	void MeshAsset::Initialize(const MeshInitializer& meshInitializer, const Vector<AssetReference<MaterialAsset>>& materials)
 	{
 		VT_PROFILE_FUNCTION();
@@ -88,6 +119,7 @@ namespace Volt
 		for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
 		{
 			const AssetHandle materialHandle = materials.at(i);
+			m_materials[i] = materialHandle;
 
 			Ref<RenderMaterial> renderMaterial;
 

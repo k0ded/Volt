@@ -75,10 +75,31 @@ namespace Volt
 		template<typename CustomMetadataType>
 		VT_INLINE const CustomMetadataType& GetCustomData() const
 		{
-			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(type), std::format("Custom metadata type is not for type %s!", type->GetName()));
-			VT_ENSURE_MSG(customData.size() == sizeof(CustomMetadataType), std::format("Custom metadata size is not correct, for type: %s!", type->GetName()));
+			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(type), std::format("Custom metadata type is not for type {}!", type->GetName()));
+			VT_ENSURE_MSG(customData.size() == sizeof(CustomMetadataType), std::format("Custom metadata size is not correct, for type: {}!", type->GetName()));
 
 			return reinterpret_cast<const CustomMetadataType&>(*customData.data());
+		}
+
+		VT_INLINE friend Archive& operator<<(Archive& archive, AssetMetadata& value)
+		{
+			archive << value.handle;
+			VoltGUID assetTypeGUID;
+			
+			if (!archive.IsLoading())
+			{
+				assetTypeGUID = value.type->GetGUID();
+			}
+
+			archive << assetTypeGUID;
+
+			if (archive.IsLoading())
+			{
+				value.type = GetAssetTypeRegistry().GetTypeFromGUID(assetTypeGUID);
+			}
+
+			archive << value.customData;
+			return archive;
 		}
 
 		AssetHandle handle = 0;

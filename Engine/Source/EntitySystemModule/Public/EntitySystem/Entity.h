@@ -76,7 +76,6 @@ namespace Volt
 		VT_NODISCARD EntityID GetID() const;
 		VT_NODISCARD VT_INLINE entt::entity GetHandle() const { return m_handle; }
 
-
 		//utility
 		VT_NODISCARD const std::string ToString() const;
 		VT_NODISCARD bool IsValid() const { return m_handle != entt::null && m_sceneReference != nullptr && m_sceneReference->GetRegistry().valid(m_handle); }
@@ -93,8 +92,6 @@ namespace Volt
 		VT_NODISCARD VT_INLINE explicit operator std::string() const { return ToString(); }
 		VT_NODISCARD VT_INLINE operator entt::entity() const { return m_handle; }
 		VT_NODISCARD VT_INLINE operator uint32_t() const { return static_cast<uint32_t>(m_handle); }
-
-
 
 		//component handling
 		template<typename T> VT_NODISCARD T& GetComponent();
@@ -117,7 +114,6 @@ namespace Volt
 
 		void ConvertToWorldSpace();
 		void ConvertToLocalSpace();
-
 
 		EntityScene* m_sceneReference = nullptr;
 		entt::entity m_handle = entt::null;
