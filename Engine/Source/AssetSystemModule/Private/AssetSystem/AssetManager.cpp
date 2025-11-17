@@ -160,7 +160,7 @@ namespace Volt
 
 		{
 			ScopedTimer timer{};
-		
+
 			if (SerializeAsset(asset))
 			{
 				VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", assetMetadata->handle, assetMetadata->filepath, timer.GetTime<Time::Seconds>());
@@ -327,7 +327,7 @@ namespace Volt
 
 		m_dependencyGraph->AddAssetToGraph(newAsset->GetAssetHandle());
 		QueueAssetChanged(newAsset->GetAssetHandle(), AssetChangedState::Loaded);
-		
+
 		return newAsset;
 	}
 
@@ -380,9 +380,9 @@ namespace Volt
 		auto& callbacks = m_assetChangedCallbacks[assetType];
 
 		auto it = std::find_if(callbacks.begin(), callbacks.end(), [&](const AssetChangedCallbackInfo& callbackInfo)
-			{
-				return callbackInfo.id == callbackId;
-			});
+		{
+			return callbackInfo.id == callbackId;
+		});
 
 		if (it != callbacks.end())
 		{
@@ -539,26 +539,24 @@ namespace Volt
 		m_assetCache.AddAsset(asset);
 
 		JobRef loadJob = JobSystem::CreateJob("Load Asset", ExecutionPriority::Latent, [this, asset, assetHandle]()
+		{
+			ScopedTimer timer{};
+
 			{
 				DeserializeAsset(asset);
 			}
 
-				{
-					ReadOnlyAssetMetadata readOnlyAssetMetadata = GetReadOnlyAssetMetadata(assetHandle);
-					AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Deserialize(readOnlyAssetMetadata, asset);
-				}
+			asset->SetFlag(AssetFlag::Queued, false);
 
-				asset->SetFlag(AssetFlag::Queued, false);
+			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+			assetMetadata->SetFlag(AssetMetadataFlag::Loaded, true);
+			assetMetadata->SetFlag(AssetMetadataFlag::Queued, false);
 
-				AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-				assetMetadata->SetFlag(AssetMetadataFlag::Loaded, true);
-				assetMetadata->SetFlag(AssetMetadataFlag::Queued, false);
+			QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
+			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
 
-				QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
-				m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
-
-				VT_LOGC(Trace, LogAssetSystem, "Loaded asset '{}' (Handle: '{}') in {} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
-			});
+			VT_LOGC(Trace, LogAssetSystem, "Loaded asset '{}' (Handle: '{}') in {} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
+		});
 
 		JobSystem::RunJob(loadJob);
 
@@ -633,11 +631,11 @@ namespace Volt
 
 		if (!FileSystem::Exists(filepath))
 		{
-			VT_LOGC(Error, LogAssetSystem, 
+			VT_LOGC(Error, LogAssetSystem,
 				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
-				"		Error: The filepath does not exist.", 
-				filepath, 
-				assetMetadata->handle, 
+				"		Error: The filepath does not exist.",
+				filepath,
+				assetMetadata->handle,
 				assetMetadata->type->GetName());
 			asset->SetFlag(AssetFlag::Missing, true);
 			return false;
@@ -646,12 +644,12 @@ namespace Volt
 		FileReader fileReader;
 		if (!fileReader.Open(filepath))
 		{
-			VT_LOGC(Error, LogAssetSystem, 
+			VT_LOGC(Error, LogAssetSystem,
 				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
-				"		Error: {}", 
-				filepath, 
-				assetMetadata->handle, 
-				assetMetadata->type->GetName(), 
+				"		Error: {}",
+				filepath,
+				assetMetadata->handle,
+				assetMetadata->type->GetName(),
 				fileReader.GetError());
 			asset->SetFlag(AssetFlag::Invalid, true);
 			return false;
@@ -663,31 +661,31 @@ namespace Volt
 
 		if (assetHeaderResult == AssetRegistry::AssetHeaderDeserializationResult::InvalidAssetFile)
 		{
-			VT_LOGC(Error, LogAssetSystem, 
-				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n" 
-				"		Error: Invalid asset file.", 
-				filepath, 
-				assetMetadata->handle, 
+			VT_LOGC(Error, LogAssetSystem,
+				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
+				"		Error: Invalid asset file.",
+				filepath,
+				assetMetadata->handle,
 				assetMetadata->type->GetName());
 			asset->SetFlag(AssetFlag::Invalid, true);
 			return false;
 		}
 		else if (assetHeaderResult == AssetRegistry::AssetHeaderDeserializationResult::InvalidVersion)
 		{
-			VT_LOGC(Warning, LogAssetSystem, "Asset '{}' (Handle: '{}', Type: '{}', Current Version: '{}') has a different version in the file, might not load correctly!", 
-				filepath, 
-				assetMetadata->handle, 
-				assetMetadata->type->GetName(), 
+			VT_LOGC(Warning, LogAssetSystem, "Asset '{}' (Handle: '{}', Type: '{}', Current Version: '{}') has a different version in the file, might not load correctly!",
+				filepath,
+				assetMetadata->handle,
+				assetMetadata->type->GetName(),
 				asset->GetVersion());
 		}
 
 		if (storedAssetMetadata.handle != assetMetadata->handle)
 		{
-			VT_LOGC(Error, LogAssetSystem, 
+			VT_LOGC(Error, LogAssetSystem,
 				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
-				"		Error: Asset Handle mismatch! Expected: {}, Actual: {}.", 
-				filepath, 
-				assetMetadata->handle, 
+				"		Error: Asset Handle mismatch! Expected: {}, Actual: {}.",
+				filepath,
+				assetMetadata->handle,
 				assetMetadata->type->GetName(),
 				assetMetadata->handle,
 				storedAssetMetadata.handle);
@@ -698,11 +696,11 @@ namespace Volt
 
 		if (storedAssetMetadata.type != assetMetadata->type)
 		{
-			VT_LOGC(Error, LogAssetSystem, 
+			VT_LOGC(Error, LogAssetSystem,
 				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
-				"		Error: Asset Type mismatch! Expected: {}, Actual: {}.", 
-				filepath, 
-				assetMetadata->handle, 
+				"		Error: Asset Type mismatch! Expected: {}, Actual: {}.",
+				filepath,
+				assetMetadata->handle,
 				assetMetadata->type->GetName(),
 				assetMetadata->type->GetName(),
 				storedAssetMetadata.type->GetName());
@@ -723,11 +721,11 @@ namespace Volt
 
 		if (!assetMetadata->HasFilepath())
 		{
-			VT_LOGC(Error, LogAssetSystem, 
+			VT_LOGC(Error, LogAssetSystem,
 				"Unable to save asset '{}' (Handle: '{}', Type: '{}')\n"
-				"		Error: It does not have a filepath!", 
-				asset->GetAssetName(), 
-				assetMetadata->handle, 
+				"		Error: It does not have a filepath!",
+				asset->GetAssetName(),
+				assetMetadata->handle,
 				assetMetadata->type->GetName());
 			return false;
 		}
@@ -737,14 +735,14 @@ namespace Volt
 		FileWriter fileWriter;
 		if (!fileWriter.Open(destinationFilepath))
 		{
-			VT_LOGC(Error, LogAssetSystem, 
+			VT_LOGC(Error, LogAssetSystem,
 				"Unable to save asset '{}' (Handle: '{}', Type: '{}')\n"
-				"		Error: {}", 
-				asset->GetAssetName(), 
-				assetMetadata->handle, 
+				"		Error: {}",
+				asset->GetAssetName(),
+				assetMetadata->handle,
 				assetMetadata->type->GetName(),
 				fileWriter.GetError());
-			
+
 			return false;
 		}
 
@@ -758,7 +756,7 @@ namespace Volt
 	void AssetManager::SerializeAssetHeader(Archive& archive, AssetMetadata assetMetadata, uint32_t assetVersion)
 	{
 		uint32_t assetMagic = AssetFileMagic;
-	
+
 		archive << assetMagic;
 		archive << assetVersion;
 		archive << assetMetadata;
@@ -767,18 +765,18 @@ namespace Volt
 	void AssetManager::OnAssetChanged(AssetHandle assetHandle, AssetChangedState state)
 	{
 		auto broadcast = [&](const AssetType type)
+		{
+			const auto& callbacks = m_assetChangedCallbacks.at(type);
+			for (const auto& callback : callbacks)
 			{
-				const auto& callbacks = m_assetChangedCallbacks.at(type);
-				for (const auto& callback : callbacks)
+				if (!callback.callback)
 				{
-					if (!callback.callback)
-					{
-						continue;
-					}
-
-					callback.callback(assetHandle, state);
+					continue;
 				}
-			};
+
+				callback.callback(assetHandle, state);
+			}
+		};
 
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
 		if (assetMetadata.IsValid())
@@ -813,15 +811,15 @@ namespace Volt
 		ReadOnlyAssetMetadata resultAssetMetadata{ AssetMetadataInit::Null };
 
 		IterateAssetRegistryWithFilter(filter, [filepath, &resultAssetMetadata](ReadOnlyAssetMetadata assetMetadata)
+		{
+			if (assetMetadata->filepath == filepath)
 			{
-				if (assetMetadata->filepath == filepath)
-				{
-					resultAssetMetadata = assetMetadata;
-					return false;
-				}
+				resultAssetMetadata = assetMetadata;
+				return false;
+			}
 
-				return true;
-			});
+			return true;
+		});
 
 		return { AssetMetadataInit::Null };
 	}
@@ -836,15 +834,15 @@ namespace Volt
 		std::filesystem::path relativeFilepath = GetRelativeAssetFilepath(filepath);
 
 		IterateAssetRegistryWithFilter(filter, [&resultAssetHandle, relativeFilepath](ReadOnlyAssetMetadata assetMetadata)
+		{
+			if (assetMetadata->filepath == relativeFilepath)
 			{
-				if (assetMetadata->filepath == relativeFilepath)
-				{
-					resultAssetHandle = assetMetadata->handle;
-					return false;
-				}
+				resultAssetHandle = assetMetadata->handle;
+				return false;
+			}
 
-				return true;
-			});
+			return true;
+		});
 
 		return resultAssetHandle;
 	}
