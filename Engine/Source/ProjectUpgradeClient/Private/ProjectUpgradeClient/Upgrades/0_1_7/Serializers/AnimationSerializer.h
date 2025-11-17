@@ -3,7 +3,7 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/AssetSerializer.h"
 #include "ProjectUpgradeClient/Upgrades/0_1_7/AssetSerializerRegistry.h"
 
-#include <AssetSystem/AssetTypes.h>
+#include <Volt-Animation/Assets/AssetTypes.h>
 
 namespace Volt
 {
@@ -14,5 +14,5 @@ namespace Volt
 		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const override;
 	};
 
-	VT_REGISTER_ASSET_SERIALIZER(AssetTypes::Animation, AnimationSerializer);
+	inline static bool AssetSerializer_AnimationSerializer_Registered = AssetSerializerRegistry::Get().RegisterAssetSerializer(AssetTypes::AnimationType::guid, CreateRef<AnimationSerializer>());
 }

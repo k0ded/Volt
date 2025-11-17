@@ -3,7 +3,7 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/AssetSerializer.h"
 #include "ProjectUpgradeClient/Upgrades/0_1_7/AssetSerializerRegistry.h"
 
-#include <AssetSystem/AssetTypes.h>
+#include <Volt-Animation/Assets/AssetTypes.h>
 
 namespace Volt
 {

@@ -74,7 +74,9 @@ namespace Volt
 		}
 
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
+		destinationAsset.Lock();
 		VT_ASSERT_MSG(serializedMetadata.version == destinationAsset->GetVersion(), "Incompatible version!");
+		destinationAsset.Unlock();
 
 		AnimationSerializationData serializationData{};
 		streamReader.Read(serializationData);

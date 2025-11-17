@@ -185,6 +185,7 @@ inline static std::string ToString(enumName aEnumValue) \
 		{ \
 			value = static_cast<enumType>(tempValue); \
 		} \
+		return archive; \
 	} \
 
 template<Enum T>

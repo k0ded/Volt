@@ -171,6 +171,7 @@ public:
 		{
 			archive.SerializeBytes(buffer.As<void*>(), size);
 		}
+		return archive;
 	}
 
 	VT_INLINE friend Archive& operator<<(Archive& archive, Archive& value)
