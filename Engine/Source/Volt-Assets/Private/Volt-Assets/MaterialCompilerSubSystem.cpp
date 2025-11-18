@@ -5,6 +5,8 @@
 
 #include <Volt-Platforms/Platform.h>
 
+#include <JobSystem/JobSystem.h>
+
 namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(MaterialCompilerSubSystem, Default, PostEngine, 0);
@@ -51,7 +53,12 @@ namespace Volt
 
 	void MaterialCompilerSubSystem::ExecuteJob(const CompilationJob& job)
 	{
-		MaterialCompiler compiler;
-		compiler.CompileMaterial(job.material);
+		JobRef compileJob = JobSystem::CreateJob("Compile Material", ExecutionPriority::Latent, [internalJob = std::move(job)]() 
+		{
+			MaterialCompiler compiler;
+			compiler.CompileMaterial(internalJob.material);
+		});
+
+		JobSystem::RunJob(compileJob);
 	}
 }

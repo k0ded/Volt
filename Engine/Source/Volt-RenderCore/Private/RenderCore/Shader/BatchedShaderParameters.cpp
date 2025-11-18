@@ -60,6 +60,11 @@ namespace Volt
 		
 		for (const RHI::ShaderParameterMap& parameterMap : shaderParameterMaps)
 		{
+			if (!parameterMap.HasShaderBindings())
+			{
+				continue;
+			}
+
 			for (const BatchedShaderBinding* binding : m_bindings)
 			{
 				const RHI::ShaderResourceBinding* resourceBinding = parameterMap.GetResourceBindingFromName(binding->bindingName);

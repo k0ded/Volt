@@ -1444,6 +1444,111 @@ namespace Volt::RHI
 		m_activeRenderPipeline.Reset();
 	}
 
+	static void SetupShaderBinding(VkDevice vkDevice, const ShaderBindingMap::ResourceBinding& binding, uint8_t* outDescriptorPtr)
+	{
+		switch (binding.registerType)
+		{
+			case ShaderRegisterType::CBV:
+			{
+				VulkanBufferView& vkBufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<VulkanBufferView>();
+				const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
+
+				// If dynamic offsets were provided it's a special case, because the descriptor is
+				// hard coded in the view.
+				if (binding.uniformBufferOffset > 0 || binding.uniformBufferSize > 0)
+				{
+					// Copy the descriptor and set it's size and offset to the correct values.
+					const uint64_t offset = binding.uniformBufferSize > 0 ? binding.uniformBufferOffset : vkBufferView.GetDesc().offset;
+					const uint64_t size = binding.uniformBufferSize > 0 ? binding.uniformBufferSize : vkBufferView.GetDesc().size;
+
+					VulkanBufferView::DescriptorDescription descriptorCopy = srvDescriptor;
+					descriptorCopy.addressInfo.address = vkBufferView.GetDeviceAddress() + offset;
+					descriptorCopy.addressInfo.range = size;
+					descriptorCopy.vkDescriptorInfo.data.pUniformBuffer = &descriptorCopy.addressInfo;
+
+					vkGetDescriptorEXT(vkDevice, &descriptorCopy.vkDescriptorInfo, descriptorCopy.descriptorSize, outDescriptorPtr);
+				}
+				else
+				{
+					vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
+				}
+
+				break;
+			}
+			case ShaderRegisterType::Sampler:
+			{
+				VulkanSamplerState& vkSampler = binding.resource.Get<RefPtr<RHI::SamplerState>>()->AsRef<VulkanSamplerState>();
+				const VulkanSamplerState::DescriptorDescription& descriptor = vkSampler.GetDescriptor();
+				vkGetDescriptorEXT(vkDevice, &descriptor.vkDescriptorInfo, descriptor.descriptorSize, outDescriptorPtr);
+
+				break;
+			}
+			case ShaderRegisterType::SRV:
+			{
+				switch (binding.resourceType)
+				{
+					case ShaderResourceType::TexelBuffer:
+					case ShaderResourceType::StructuredBuffer:
+					{
+						VulkanBufferView& vkBufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<VulkanBufferView>();
+
+						const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
+						vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
+						break;
+					};
+					case ShaderResourceType::Texture:
+					{
+						VulkanImageView& vkImageView = binding.resource.Get<RefPtr<RHI::ImageView>>()->AsRef<VulkanImageView>();
+
+						const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetSRVDescriptor();
+						vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
+						break;
+					}
+					case ShaderResourceType::AccelerationStructure:
+					{
+						VkDescriptorGetInfoEXT descriptorInfo;
+						descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+						descriptorInfo.pNext = nullptr;
+						descriptorInfo.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+						descriptorInfo.data.accelerationStructure = binding.resource.Get<RefPtr<RHI::AccelerationStructure>>()->GetDeviceAddress();
+
+						const uint64_t descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.accelerationStructureDescriptorSize;
+
+						vkGetDescriptorEXT(vkDevice, &descriptorInfo, descriptorSize, outDescriptorPtr);
+						break;
+					}
+				}
+				break;
+			}
+
+			case ShaderRegisterType::UAV:
+			{
+				switch (binding.resourceType)
+				{
+					case ShaderResourceType::TexelBuffer:
+					case ShaderResourceType::StructuredBuffer:
+					{
+						VulkanBufferView& vkBufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<VulkanBufferView>();
+
+						const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetUAVDescriptor();
+						vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
+						break;
+					};
+
+					case ShaderResourceType::Texture:
+					{
+						VulkanImageView& vkImageView = binding.resource.Get<RefPtr<RHI::ImageView>>()->AsRef<VulkanImageView>();
+
+						const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetUAVDescriptor();
+						vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
+						break;
+					}
+				}
+				break;
+			}
+		}
+	}
+
 	void VulkanCommandBuffer::BindShaderBindings(const ShaderBindingMap& shaderBindingsMap)
 	{
 		VT_PROFILE_FUNCTION();
@@ -1467,121 +1572,33 @@ namespace Volt::RHI
 		uint8_t* descriptorHeapPointer = descriptorHeap.GetHeapPointer();
 		VkDevice vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();
 
-		for (const auto& [shaderStage, bindings] : shaderBindings)
+		auto begin = shaderBindings.begin();
+		auto end = shaderBindings.end();
+
+		VT_UNUSED(begin);
+		VT_UNUSED(end);
+
+		for (const auto& bindings : shaderBindings)
 		{
-			const uint32_t shaderStageSetIndex = GetDescriptorSetIndexFromShaderStage(shaderStage);
+			// There are no bindings, so we skip it.
+			if (bindings.resourceBindings.empty())
+			{
+				continue;
+			}
+
+			const uint32_t shaderStageSetIndex = GetDescriptorSetIndexFromShaderStage(bindings.shaderStage);
 
 			BindingInfo& bindingInfo = perShaderStageSetOffsets.emplace_back();
 			bindingInfo.offset = descriptorHeap.AllocateDescriptorSet(activePipelineDescriptorSets.descriptorSetLayoutSizes.at(shaderStageSetIndex));
-			bindingInfo.shaderStage = shaderStage;
-			bindingInfo.setIndex = GetDescriptorSetIndexFromShaderStage(shaderStage);
+			bindingInfo.shaderStage = bindings.shaderStage;
+			bindingInfo.setIndex = shaderStageSetIndex;
 
-			for (const auto& binding : bindings)
+			for (const auto& binding : bindings.resourceBindings)
 			{
 				const uint64_t descriptorOffset = activePipelineDescriptorSets.descriptorSetLayoutBindings.at(shaderStageSetIndex).at(binding.bindingIndex).offset + bindingInfo.offset;
 				uint8_t* outDescriptorPtr = descriptorHeapPointer + descriptorOffset;
 
-				switch (binding.registerType)
-				{
-					case ShaderRegisterType::CBV:
-					{
-						VulkanBufferView& vkBufferView = binding.bufferView->AsRef<VulkanBufferView>();
-						const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
-
-						// If dynamic offsets were provided it's a special case, because the descriptor is
-						// hard coded in the view.
-						if (binding.uniformBufferOffset > 0 || binding.uniformBufferSize > 0)
-						{
-							// Copy the descriptor and set it's size and offset to the correct values.
-							const uint64_t offset = binding.uniformBufferSize > 0 ? binding.uniformBufferOffset : binding.bufferView->GetDesc().offset;
-							const uint64_t size = binding.uniformBufferSize > 0 ? binding.uniformBufferSize : binding.bufferView->GetDesc().size;
-
-							VulkanBufferView::DescriptorDescription descriptorCopy = srvDescriptor;
-							descriptorCopy.addressInfo.address = vkBufferView.GetDeviceAddress() + offset;
-							descriptorCopy.addressInfo.range = size;
-							descriptorCopy.vkDescriptorInfo.data.pUniformBuffer = &descriptorCopy.addressInfo;
-						
-							vkGetDescriptorEXT(vkDevice, &descriptorCopy.vkDescriptorInfo, descriptorCopy.descriptorSize, outDescriptorPtr);
-						}
-						else
-						{
-							vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
-						}
-
-						break;
-					}
-					case ShaderRegisterType::Sampler:
-					{
-						VulkanSamplerState& vkSampler = binding.samplerState->AsRef<VulkanSamplerState>();
-						const VulkanSamplerState::DescriptorDescription& descriptor = vkSampler.GetDescriptor();
-						vkGetDescriptorEXT(vkDevice, &descriptor.vkDescriptorInfo, descriptor.descriptorSize, outDescriptorPtr);
-
-						break;
-					}
-					case ShaderRegisterType::SRV:
-					{
-						switch (binding.resourceType)
-						{
-							case ShaderResourceType::TexelBuffer:
-							case ShaderResourceType::StructuredBuffer:
-							{
-								VulkanBufferView& vkBufferView = binding.bufferView->AsRef<VulkanBufferView>();
-
-								const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetSRVDescriptor();
-								vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
-								break;
-							};
-							case ShaderResourceType::Texture:
-							{
-								VulkanImageView& vkImageView = binding.imageView->AsRef<VulkanImageView>();
-
-								const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetSRVDescriptor();
-								vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
-								break;
-							}
-							case ShaderResourceType::AccelerationStructure:
-							{
-								VkDescriptorGetInfoEXT descriptorInfo;
-								descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
-								descriptorInfo.pNext = nullptr;
-								descriptorInfo.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-								descriptorInfo.data.accelerationStructure = binding.accelerationStructure->GetDeviceAddress();
-
-								const uint64_t descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.accelerationStructureDescriptorSize;
-
-								vkGetDescriptorEXT(vkDevice, &descriptorInfo, descriptorSize, outDescriptorPtr);
-								break;
-							}
-						}
-						break;
-					}
-
-					case ShaderRegisterType::UAV:
-					{
-						switch (binding.resourceType)
-						{
-							case ShaderResourceType::TexelBuffer:
-							case ShaderResourceType::StructuredBuffer:
-							{
-								VulkanBufferView& vkBufferView = binding.bufferView->AsRef<VulkanBufferView>();
-
-								const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetUAVDescriptor();
-								vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
-								break;
-							};
-
-							case ShaderResourceType::Texture:
-							{
-								VulkanImageView& vkImageView = binding.imageView->AsRef<VulkanImageView>();
-
-								const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetUAVDescriptor();
-								vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
-								break;
-							}
-						}
-						break;
-					}
-				}
+				SetupShaderBinding(vkDevice, binding, outDescriptorPtr);
 			}
 		}
 

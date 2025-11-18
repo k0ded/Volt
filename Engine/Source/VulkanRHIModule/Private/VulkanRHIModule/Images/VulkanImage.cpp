@@ -465,8 +465,7 @@ namespace Volt::RHI
 		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
 		commandBuffer->Begin();
 
-		RHI::ResourceBarrierInfo barrier{};
-		barrier.type = RHI::BarrierType::Image;
+		RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 		ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), this);
 
 		if (targetLayout == ImageLayout::ShaderRead)
@@ -524,11 +523,10 @@ namespace Volt::RHI
 		commandBuffer->Begin();
 
 		{
-			RHI::ResourceBarrierInfo barrier{};
-			barrier.type = RHI::BarrierType::Image;
+			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), this);
 
-			barrier.imageBarrier().dstStage = RHI::BarrierStage::Copy;
+			barrier.imageBarrier().dstStage = RHI::BarrierStage::Copy; 
 			barrier.imageBarrier().dstAccess = RHI::BarrierAccess::CopyDest;
 			barrier.imageBarrier().dstLayout = RHI::ImageLayout::CopyDest;
 			barrier.imageBarrier().resource = this;
@@ -539,8 +537,7 @@ namespace Volt::RHI
 		commandBuffer->CopyBufferToImage(stagingAlloc, this, m_desc.width, m_desc.height, m_desc.depth);
 
 		{
-			RHI::ResourceBarrierInfo barrier{};
-			barrier.type = RHI::BarrierType::Image;
+			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), this);
 
 			barrier.imageBarrier().dstStage = RHI::BarrierStage::PixelShader | RHI::BarrierStage::ComputeShader;

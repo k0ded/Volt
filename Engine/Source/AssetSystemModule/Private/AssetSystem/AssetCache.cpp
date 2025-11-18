@@ -42,7 +42,7 @@ namespace Volt
 		}
 		else
 		{
-			VT_LOGC(Warning, LogAssetSystem, "Trying to remove asset with handle '{}' from the asset cache, but it has not beed cached!", assetHandle);
+			VT_LOGC(Warning, LogAssetSystem, "Trying to remove asset with handle '{}' from the asset cache, but it has not been cached!", assetHandle);
 		}
 	}
 
@@ -53,6 +53,11 @@ namespace Volt
 		uint64_t hashIndex;
 		if (m_hashTable.Get(assetHandle, hashIndex))
 		{
+			if (m_cache[hashIndex]->IsFlagSet(AssetFlag::Removed))
+			{
+				return nullptr;
+			}
+
 			return m_cache[hashIndex];
 		}
 
@@ -65,6 +70,11 @@ namespace Volt
 		bool found = m_hashTable.Get(assetHandle, hashIndex);
 		if (found)
 		{
+			if (m_cache[hashIndex]->IsFlagSet(AssetFlag::Removed))
+			{
+				return false;
+			}
+
 			outAsset = m_cache[hashIndex];
 		}
 

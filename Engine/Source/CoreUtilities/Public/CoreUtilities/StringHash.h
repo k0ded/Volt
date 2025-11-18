@@ -7,7 +7,10 @@
 #include <xhash>
 #include <string_view>
 
-#ifndef VT_DIST
+// Enable to get and std::string in the StringHash to debug the actual value.
+#define WITH_STRING_HASH_DEBUG 0
+
+#if WITH_STRING_HASH_DEBUG
 	#define STRING_HASH_CONSTEXPR
 #else
 	#define STRING_HASH_CONSTEXPR constexpr
@@ -21,7 +24,7 @@ struct StringHash
 
 	STRING_HASH_CONSTEXPR StringHash(const StringHash& rhs)
 		: hash(rhs.hash)
-#ifndef VT_DIST
+#if WITH_STRING_HASH_DEBUG
 		, string(rhs.string)
 #endif
 	{}
@@ -30,7 +33,7 @@ struct StringHash
 		: hash(inHash)
 	{}
 
-#ifndef VT_DIST
+#if WITH_STRING_HASH_DEBUG
 	StringHash(const size_t& inHash, const std::string& inString)
 		: hash(inHash), string(inString)
 	{ }
@@ -54,7 +57,7 @@ struct StringHash
 			val *= FNVPrime;
 		}
 
-#ifndef VT_DIST
+#if WITH_STRING_HASH_DEBUG
 		return StringHash(val, std::string(str));
 #else
 		return StringHash(val);
@@ -70,7 +73,7 @@ struct StringHash
 	constexpr StringHash& operator=(const StringHash& rhs) 
 	{ 
 		hash = rhs.hash;
-#ifndef VT_DIST
+#if WITH_STRING_HASH_DEBUG
 		string = rhs.string;
 #endif
 		return *this;
@@ -88,7 +91,7 @@ struct StringHash
 		streamReader.Read(outData.hash);
 	}
 
-#ifndef VT_DIST
+#if WITH_STRING_HASH_DEBUG
 	std::string string;
 #endif
 };

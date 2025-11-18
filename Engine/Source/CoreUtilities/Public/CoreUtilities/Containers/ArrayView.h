@@ -136,7 +136,7 @@ constexpr ArrayView<T>::const_iterator ArrayView<T>::begin() const noexcept
 template<typename T>
 constexpr ArrayView<T>::const_iterator ArrayView<T>::end() const noexcept
 {
-	return m_size > 0 ? m_data + (m_size - 1ull) : nullptr;
+	return m_size > 0 ? m_data + m_size : nullptr;
 }
 
 template<typename T>

@@ -29,6 +29,10 @@ namespace Volt::RHI
 		Amplification = 0x00000040,
 		Mesh = 0x00000080,
 
+		// Note: Update when adding more shader stages.
+		Num = 14,
+		NumBindable = 9,
+
 		All = Vertex | Pixel | Hull | Domain | Geometry | Compute,
 		Common = Vertex | Pixel | Geometry | Compute
 	};
@@ -36,16 +40,41 @@ namespace Volt::RHI
 
 	inline constexpr uint32_t GetNumShaderStages()
 	{
-		constexpr uint32_t NumShaderStages = 13;
+		constexpr uint32_t NumShaderStages = static_cast<uint32_t>(ShaderStage::Num);
 		return NumShaderStages;
+	}
+
+	inline constexpr uint32_t GetNumBindableShaderStages()
+	{
+		constexpr uint32_t NumShaderStages = static_cast<uint32_t>(ShaderStage::NumBindable);
+		return NumShaderStages;
+	}
+
+	inline constexpr uint32_t GetShaderStageIndex(ShaderStage shaderStage)
+	{
+		switch (shaderStage)
+		{
+			case ShaderStage::Vertex: return 0;
+			case ShaderStage::Amplification: return 1;
+			case ShaderStage::Mesh: return 2;
+			case ShaderStage::Pixel: return 3;
+			case ShaderStage::Compute: return 4;
+			case ShaderStage::RayGen: return 5;
+			case ShaderStage::Hull: return 6;
+			case ShaderStage::Domain: return 7;
+			case ShaderStage::Geometry: return 8;
+		}
+
+		return 0;
 	}
 
 	enum class ShaderRegisterType : uint8_t
 	{
-		CBV,
+		CBV = 0,
 		UAV,
 		SRV,
-		Sampler
+		Sampler,
+		Max
 	};
 
 	enum class ShaderResourceType : uint8_t

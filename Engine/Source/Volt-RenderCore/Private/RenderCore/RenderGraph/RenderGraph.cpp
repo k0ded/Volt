@@ -1514,7 +1514,7 @@ namespace Volt
 		PrepareResourcesForExecution();
 		CreateResourceViews();
 
-		constexpr size_t NumPassesPerJob = 4;
+		constexpr size_t NumPassesPerJob = 1;
 
 		struct PassExecutionRange
 		{

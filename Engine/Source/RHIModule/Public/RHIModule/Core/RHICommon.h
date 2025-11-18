@@ -803,13 +803,40 @@ namespace Volt::RHI
 
 		BarrierType type = BarrierType::None;
 
-		ImageBarrier& imageBarrier() { return m_barrier.Get<ImageBarrier>(); }
-		BufferBarrier& bufferBarrier() { return m_barrier.Get<BufferBarrier>(); }
-		GlobalBarrier& globalBarrier() { return m_barrier.Get<GlobalBarrier>(); }
+		VT_INLINE ImageBarrier& imageBarrier() { return m_barrier.Get<ImageBarrier>(); }
+		VT_INLINE BufferBarrier& bufferBarrier() { return m_barrier.Get<BufferBarrier>(); }
+		VT_INLINE GlobalBarrier& globalBarrier() { return m_barrier.Get<GlobalBarrier>(); }
 
-		const ImageBarrier& imageBarrier() const { return m_barrier.Get<ImageBarrier>(); }
-		const BufferBarrier& bufferBarrier() const { return m_barrier.Get<BufferBarrier>(); }
-		const GlobalBarrier& globalBarrier() const { return m_barrier.Get<GlobalBarrier>(); }
+		VT_INLINE const ImageBarrier& imageBarrier() const { return m_barrier.Get<ImageBarrier>(); }
+		VT_INLINE const BufferBarrier& bufferBarrier() const { return m_barrier.Get<BufferBarrier>(); }
+		VT_INLINE const GlobalBarrier& globalBarrier() const { return m_barrier.Get<GlobalBarrier>(); }
+
+		VT_INLINE static ResourceBarrierInfo InitializeAsImageBarrier()
+		{
+			ResourceBarrierInfo result;
+			result.type = BarrierType::Image;
+			result.m_barrier.Emplace<ImageBarrier>();
+
+			return result;
+		}
+
+		VT_INLINE static ResourceBarrierInfo InitializeAsBufferBarrier()
+		{
+			ResourceBarrierInfo result;
+			result.type = BarrierType::Buffer;
+			result.m_barrier.Emplace<BufferBarrier>();
+
+			return result;
+		}
+
+		VT_INLINE static ResourceBarrierInfo InitializeAsGlobalBarrier()
+		{
+			ResourceBarrierInfo result;
+			result.type = BarrierType::Global;
+			result.m_barrier.Emplace<GlobalBarrier>();
+
+			return result;
+		}
 
 	private:
 		Variant<ImageBarrier, BufferBarrier, GlobalBarrier> m_barrier;

@@ -166,8 +166,7 @@ namespace Volt
 		commandBuffer->BeginMarker(std::format("Import Texture {}", filepath.string()), { 1.f, 1.f, 1.f, 1.f });
 
 		{
-			RHI::ResourceBarrierInfo barrier{};
-			barrier.type = RHI::BarrierType::Image;
+			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			RHI::ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), image);
 
 			barrier.imageBarrier().dstStage = RHI::BarrierStage::Copy;
@@ -181,8 +180,7 @@ namespace Volt
 		commandBuffer->UploadTextureData(image, stagingAlloc, copyData);
 
 		{
-			RHI::ResourceBarrierInfo barrier{};
-			barrier.type = RHI::BarrierType::Image;
+			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			RHI::ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), image);
 
 			barrier.imageBarrier().dstStage = RHI::BarrierStage::PixelShader;

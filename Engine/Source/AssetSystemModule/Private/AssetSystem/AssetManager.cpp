@@ -29,11 +29,13 @@ namespace Volt
 
 		CreateDependencyGraphAndAddAssetsFromRegistry();
 		m_assetChangedQueue.Allocate(1024);
+		m_assetDestructionQueue.Allocate(1024);
 	}
 
 	AssetManager::~AssetManager()
 	{
 		m_assetCache.Clear();
+		FlushDestructionQueue();
 	}
 
 	WriteableAssetMetadata AssetManager::GetWriteableAssetMetadata(AssetHandle assetHandle) const
@@ -176,17 +178,21 @@ namespace Volt
 		VT_ENSURE(m_assetRegistry.IsValidAssetHandle(assetHandle));
 
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+		if (assetMetadata)
+		{
+			assetMetadata->SetFlag(AssetMetadataFlag::Removed, true);
+		}
 
-		// Lock metadata mutex here.
-		assetMetadata->m_assetMetadataMutex.lock();
+		RefPtr<Asset> asset;
+		if (m_assetCache.TryGetAsset(assetHandle, asset))
+		{
+			asset->SetFlag(AssetFlag::Removed, true);
 
-		m_assetCache.RemoveAsset(assetHandle);
-		m_assetRegistry.RemoveAssetMetadata(assetHandle, true);
+			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Deleted);
+			QueueAssetChanged(assetHandle, AssetChangedState::Deleted);
 
-		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Deleted);
-		QueueAssetChanged(assetHandle, AssetChangedState::Deleted);
-
-		m_dependencyGraph->RemoveAssetFromGraph(assetHandle);
+			m_dependencyGraph->RemoveAssetFromGraph(assetHandle);
+		}
 	}
 
 	bool AssetManager::IsValidAssetHandle(AssetHandle assetHandle) const
@@ -242,9 +248,10 @@ namespace Volt
 		}
 
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
-
-		// All metadatas should be valid.
-		VT_ENSURE(assetMetadata->IsValid());
+		if (!assetMetadata->IsValid())
+		{
+			return false;
+		}
 
 		// Asset wasn't in the cache, create and load it.
 		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(assetMetadata->type);
@@ -283,8 +290,10 @@ namespace Volt
 		}
 
 		ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-		// All metadatas should be valid.
-		VT_ENSURE(metadata->IsValid());
+		if (!metadata->IsValid())
+		{
+			return false;
+		}
 
 		// Asset wasn't in the cache, create and load it.
 		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(metadata->type);
@@ -407,12 +416,16 @@ namespace Volt
 
 	bool AssetManager::UpdateInternal(class AppTickEvent& e)
 	{
-		std::scoped_lock lock{ m_assetCallbackMutex };
+		FlushDestructionQueue();
 
-		AssetChangedQueueInfo info;
-		while (m_assetChangedQueue.Pop(info))
 		{
-			OnAssetChanged(info.handle, info.state);
+			std::scoped_lock lock{ m_assetCallbackMutex };
+
+			AssetChangedQueueInfo info;
+			while (m_assetChangedQueue.Pop(info))
+			{
+				OnAssetChanged(info.handle, info.state);
+			}
 		}
 
 		return false;
@@ -561,6 +574,11 @@ namespace Volt
 		JobSystem::RunJob(loadJob);
 
 		VT_LOGC(Trace, LogAssetSystem, "Queued asset '{}' (Handle: '{}') for loading!", asset->GetAssetName(), asset->GetAssetHandle());
+	}
+
+	void AssetManager::QueueAssetForDestruction(AssetRefCounter* assetRefCounter)
+	{
+		m_assetDestructionQueue.Emplace(assetRefCounter);
 	}
 
 	void AssetManager::UnloadAndFreeAsset(AssetRefCounter* assetRefCounter)
@@ -712,6 +730,21 @@ namespace Volt
 		// Deserialize the asset.
 		asset->Serialize(fileReader);
 		return true;
+	}
+
+	void AssetManager::FlushDestructionQueue()
+	{
+		VT_PROFILE_FUNCTION();
+
+		AssetRefCounter* assetRefCounter = nullptr;
+		while (m_assetDestructionQueue.Pop(assetRefCounter))
+		{
+			// Make sure the asset hasn't been referenced again.
+			if (assetRefCounter->GetRefCount() < 2)
+			{
+				UnloadAndFreeAsset(assetRefCounter);
+			}
+		}
 	}
 
 	bool AssetManager::SerializeAsset(AssetReference<Asset> asset)

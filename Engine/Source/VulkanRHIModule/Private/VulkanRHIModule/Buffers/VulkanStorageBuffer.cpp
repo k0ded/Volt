@@ -89,8 +89,7 @@ namespace Volt::RHI
 
 		commandBuffer->Begin();
 
-		ResourceBarrierInfo barrierInfo{};
-		barrierInfo.type = BarrierType::Global;
+		ResourceBarrierInfo barrierInfo = ResourceBarrierInfo::InitializeAsGlobalBarrier();
 		barrierInfo.globalBarrier().srcStage = BarrierStage::All;
 		barrierInfo.globalBarrier().dstStage = BarrierStage::Copy;
 		barrierInfo.globalBarrier().srcAccess = BarrierAccess::None;
@@ -154,8 +153,7 @@ namespace Volt::RHI
 		cmdBuffer->Begin();
 		cmdBuffer->BeginMarker(std::format("Updating data in {}", m_desc.debugName), {1.f, 1.f, 1.f, 1.f});
 
-		ResourceBarrierInfo barrier{};
-		barrier.type = BarrierType::Buffer;
+		ResourceBarrierInfo barrier = ResourceBarrierInfo::InitializeAsBufferBarrier();
 		barrier.bufferBarrier().srcStage = BarrierStage::ComputeShader | BarrierStage::VertexShader | BarrierStage::PixelShader;
 		barrier.bufferBarrier().srcAccess = BarrierAccess::None;
 		barrier.bufferBarrier().dstStage = BarrierStage::Copy;
@@ -197,8 +195,7 @@ namespace Volt::RHI
 		memcpy_s(mappedPtr, m_byteSize, data, size);
 		stagingAllocation->Unmap();
 
-		ResourceBarrierInfo barrier{};
-		barrier.type = BarrierType::Buffer;
+		ResourceBarrierInfo barrier = ResourceBarrierInfo::InitializeAsBufferBarrier();
 		barrier.bufferBarrier().srcStage = BarrierStage::All;
 		barrier.bufferBarrier().srcAccess = BarrierAccess::None;
 		barrier.bufferBarrier().dstStage = BarrierStage::Copy;

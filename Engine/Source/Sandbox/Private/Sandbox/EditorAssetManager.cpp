@@ -140,7 +140,11 @@ void EditorAssetManager::DeleteAsset(Volt::AssetHandle asset)
 	}
 
 	m_referencedAssetManager.RemoveAsset(asset);
-	FileSystem::MoveToRecycleBin(assetFilepath);
+
+	if (FileSystem::Exists(assetFilepath))
+	{
+		FileSystem::MoveToRecycleBin(assetFilepath);
+	}
 
 	VT_LOGC(Trace, LogEditorAssetSystem, "Deleted asset {} (Handle: {})!", assetFilepath, asset);
 }

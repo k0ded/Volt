@@ -155,8 +155,11 @@ namespace Volt
 		VTAS_API void LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset);
 		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset);
 
+		void QueueAssetForDestruction(AssetRefCounter* assetRefCounter);
 		void UnloadAndFreeAsset(AssetRefCounter* assetRefCounter);
 		bool DeserializeAsset(AssetReference<Asset> asset);
+
+		void FlushDestructionQueue();
 
 		bool SerializeAsset(AssetReference<Asset> asset);
 		void SerializeAssetHeader(Archive& archive, AssetMetadata assetMetadata, uint32_t assetVersion);
@@ -177,6 +180,7 @@ namespace Volt
 
 		// Asset changes callbacks
 		WorkQueue<AssetChangedQueueInfo, QueueThreadingPolicy::MPSC> m_assetChangedQueue;
+		WorkQueue<AssetRefCounter*, QueueThreadingPolicy::MPSC> m_assetDestructionQueue;
 		Map<AssetType, Vector<AssetChangedCallbackInfo>> m_assetChangedCallbacks;
 		std::mutex m_assetCallbackMutex;
 	};

@@ -16,6 +16,7 @@
 #include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 VT_DEFINE_LOG_CATEGORY(LogMaterialCompiler);
 
@@ -71,9 +72,12 @@ namespace Volt
 
 	void MaterialCompiler::CompileMaterial(AssetReference<MaterialAsset> materialAsset)
 	{
-		VT_LOGC(Trace, LogMaterialCompiler, "Started compilation of material {}", materialAsset->GetAssetName());
+		VT_PROFILE_FUNCTION();
 
 		ScopedAssetReferenceLock materialAssetLock{ materialAsset };
+
+		VT_LOGC(Trace, LogMaterialCompiler, "Started compilation of material {}", materialAsset->GetAssetName());
+
 		ScopedTimer timer;
 
 		constexpr const char* BaseOutputPath = "Generated\\Materials";

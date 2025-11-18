@@ -24,7 +24,8 @@ namespace Volt
 		Missing = BIT(0),
 		Invalid = BIT(1),
 		Queued = BIT(2),
-		MemoryOnly = BIT(3)
+		MemoryOnly = BIT(3),
+		Removed = BIT(4)
 	};
 	VT_SETUP_ENUM_CLASS_OPERATORS(AssetFlag);
 
@@ -34,7 +35,8 @@ namespace Volt
 		Loaded = BIT(0),
 		Queued = BIT(1),
 		MemoryOnly = BIT(2),
-		Anonymous = BIT(3)
+		Anonymous = BIT(3),
+		Removed = BIT(4)
 	};
 	VT_SETUP_ENUM_CLASS_OPERATORS(AssetMetadataFlag);
 
@@ -67,7 +69,7 @@ namespace Volt
 		VT_NODISCARD VT_INLINE bool IsFlagSet(AssetMetadataFlag flag) const;
 		VT_INLINE void SetFlag(AssetMetadataFlag flag, bool state);
 
-		VT_INLINE bool IsValid() const { return handle != 0; }
+		VT_INLINE bool IsValid() const { return handle != 0 && !IsFlagSet(AssetMetadataFlag::Removed); }
 		VT_INLINE bool HasFilepath() const { return !filepath.empty(); }
 		VT_INLINE bool IsMemoryAsset() const { return IsFlagSet(AssetMetadataFlag::MemoryOnly); }
 		VT_INLINE bool IsLoaded() const { return IsFlagSet(AssetMetadataFlag::Loaded); }

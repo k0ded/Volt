@@ -194,8 +194,7 @@ namespace Volt
 		const auto& currentResourceState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
 
 		{
-			RHI::ResourceBarrierInfo barrier{};
-			barrier.type = RHI::BarrierType::Image;
+			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			barrier.imageBarrier().srcStage = currentResourceState.stage;
 			barrier.imageBarrier().srcAccess = currentResourceState.access;
 			barrier.imageBarrier().srcLayout = currentResourceState.layout;
@@ -223,8 +222,7 @@ namespace Volt
 		}
 
 		{
-			RHI::ResourceBarrierInfo barrier{};
-			barrier.type = RHI::BarrierType::Image;
+			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			barrier.imageBarrier().srcAccess = RHI::BarrierAccess::CopySource;
 			barrier.imageBarrier().srcLayout = RHI::ImageLayout::CopySource;
 			barrier.imageBarrier().srcStage = RHI::BarrierStage::Copy;
@@ -301,8 +299,7 @@ namespace Volt
 		commandBuffer->Begin();
 
 		{
-			RHI::ResourceBarrierInfo barrier{};
-			barrier.type = RHI::BarrierType::Image;
+			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			RHI::ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), image);
 
 			barrier.imageBarrier().dstStage = RHI::BarrierStage::Copy;
@@ -316,8 +313,7 @@ namespace Volt
 		commandBuffer->UploadTextureData(image, stagingAlloc, copyData);
 
 		{
-			RHI::ResourceBarrierInfo barrier{};
-			barrier.type = RHI::BarrierType::Image;
+			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			RHI::ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), image);
 
 			barrier.imageBarrier().dstStage = RHI::BarrierStage::PixelShader;

@@ -127,8 +127,7 @@ namespace Volt
 			auto& swapchain = window->GetSwapchain();
 
 			{
-				RHI::ResourceBarrierInfo barrier{};
-				barrier.type = RHI::BarrierType::Image;
+				RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 				barrier.imageBarrier().srcAccess = RHI::BarrierAccess::None;
 				barrier.imageBarrier().srcStage = RHI::BarrierStage::All;
 				barrier.imageBarrier().srcLayout = RHI::ImageLayout::Undefined;
@@ -141,8 +140,7 @@ namespace Volt
 			}
 
 			{
-				RHI::ResourceBarrierInfo barrier{};
-				barrier.type = RHI::BarrierType::Image;
+				RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 				barrier.imageBarrier().srcAccess = RHI::BarrierAccess::RenderTarget;
 				barrier.imageBarrier().srcStage = RHI::BarrierStage::RenderTarget;
 				barrier.imageBarrier().srcLayout = RHI::ImageLayout::RenderTarget;
@@ -188,7 +186,7 @@ namespace Volt
 			commandBuffer->BindPipeline(m_copyRenderPipeline);
 			commandBuffer->SetScissors({ scissor });
 
-			RHI::ShaderBindingMap shaderBindingMap;
+			RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(m_copyRenderPipeline);
 			shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 0, renderTarget.image->GetView());
 
 			commandBuffer->BindShaderBindings(shaderBindingMap);
@@ -196,8 +194,7 @@ namespace Volt
 			commandBuffer->EndRendering();
 
 			{
-				RHI::ResourceBarrierInfo barrier{};
-				barrier.type = RHI::BarrierType::Image;
+				RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 				barrier.imageBarrier().srcAccess = RHI::BarrierAccess::ShaderRead;
 				barrier.imageBarrier().srcStage = RHI::BarrierStage::PixelShader;
 				barrier.imageBarrier().srcLayout = RHI::ImageLayout::ShaderRead;

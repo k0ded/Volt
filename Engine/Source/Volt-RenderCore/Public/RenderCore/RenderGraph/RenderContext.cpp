@@ -183,7 +183,7 @@ namespace Volt
 		m_currentRenderPipeline = pipeline;
 		m_commandBuffer->BindPipeline(pipeline);
 
-		AllocatePerStageShaderParameterBuffers();
+		SetupPipelineData();
 	}
 
 	void RenderContext::BindPipeline(RefPtr<RHI::ComputePipeline> pipeline)
@@ -191,7 +191,7 @@ namespace Volt
 		m_currentComputePipeline = pipeline;
 		m_commandBuffer->BindPipeline(pipeline);
 
-		AllocatePerStageShaderParameterBuffers();
+		SetupPipelineData();
 	}
 
 	void RenderContext::BindIndexBuffer(RGBufferRef indexBuffer)
@@ -256,21 +256,23 @@ namespace Volt
 		m_commandBuffer->BindShaderBindings(m_shaderBindingMap);
 	}
 
-	void RenderContext::AllocatePerStageShaderParameterBuffers()
+	void RenderContext::SetupPipelineData()
 	{
 		m_perStageShaderParameters.clear();
 
 		if (m_currentComputePipeline)
 		{
-			m_perStageShaderParameters = AllocatePerStageShaderParameterBuffers(m_currentComputePipeline);
+			m_perStageShaderParameters = SetupPipelineData(m_currentComputePipeline);
+			m_shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(m_currentComputePipeline);
 		}
 		else
 		{
-			m_perStageShaderParameters = AllocatePerStageShaderParameterBuffers(m_currentRenderPipeline);
+			m_perStageShaderParameters = SetupPipelineData(m_currentRenderPipeline);
+			m_shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(m_currentRenderPipeline);
 		}
 	}
 
-	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::AllocatePerStageShaderParameterBuffers(RawPtr<RHI::RenderPipeline> renderPipeline)
+	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::SetupPipelineData(RawPtr<RHI::RenderPipeline> renderPipeline)
 	{
 		ArrayView<RHI::ShaderParameterMap> shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
 
@@ -292,7 +294,7 @@ namespace Volt
 		return result;
 	}
 
-	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::AllocatePerStageShaderParameterBuffers(RawPtr<RHI::ComputePipeline> computePipeline)
+	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::SetupPipelineData(RawPtr<RHI::ComputePipeline> computePipeline)
 	{
 		const RHI::ShaderParameterMap& shaderParameterMap = computePipeline->GetShaderParameterMap();
 

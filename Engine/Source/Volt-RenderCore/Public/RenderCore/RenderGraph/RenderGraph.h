@@ -157,7 +157,19 @@ namespace Volt
 				VT_NODISCARD VT_INLINE RHI::ResourceBarrierInfo& AddBarrier(RHI::BarrierType type, RGResourceRef resource = nullptr, bool requiresExternalSrcState = false)
 				{
 					auto& barrierInfo = m_barriers.emplace_back();
-					barrierInfo.barrier.type = type;
+					if (type == RHI::BarrierType::Image)
+					{
+						barrierInfo.barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
+					}
+					else if (type == RHI::BarrierType::Buffer)
+					{
+						barrierInfo.barrier = RHI::ResourceBarrierInfo::InitializeAsBufferBarrier();
+					}
+					else if (type == RHI::BarrierType::Global)
+					{
+						barrierInfo.barrier = RHI::ResourceBarrierInfo::InitializeAsGlobalBarrier();
+					}
+
 					barrierInfo.resource = resource;
 					barrierInfo.requiresExternalSrcState = requiresExternalSrcState;
 					return barrierInfo.barrier;

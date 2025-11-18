@@ -373,8 +373,10 @@ void DirtyAssetsManager::MarkAssetDirty(Volt::AssetHandle handle)
 {
 	VT_ENSURE(handle != Volt::Asset::Null());
 	AssetReference<Volt::Asset> LoadedAsset;
-	VT_ENSURE_MSG(g_assetManager->TryGetTypelessAssetIfLoaded(handle, LoadedAsset), "Tried to mark an unloaded asset as dirty! This is not allowed!");
-	m_dirtyAssets[handle] = LoadedAsset;
+	if (g_assetManager->TryGetTypelessAssetImmediately(handle, LoadedAsset))
+	{
+		m_dirtyAssets[handle] = LoadedAsset;
+	}
 }
 
 void DirtyAssetsManager::MarkAssetNotDirty(Volt::AssetHandle handle)

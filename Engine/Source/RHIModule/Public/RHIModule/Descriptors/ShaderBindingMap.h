@@ -11,29 +11,42 @@
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/Containers/BitArray.h>
+#include <CoreUtilities/Containers/ArrayView.h>
 
 namespace Volt::RHI
 {
+	class RenderPipeline;
+	class ComputePipeline;
+
 	class VTRHI_API ShaderBindingMap
 	{
 	public:
 		inline static constexpr uint32_t NumMaxBindings = 32u;
 		struct ResourceBinding
 		{
-			RefPtr<RHI::BufferView> bufferView;
-			RefPtr<RHI::ImageView> imageView;
-			RefPtr<RHI::SamplerState> samplerState;
-			RefPtr<RHI::AccelerationStructure> accelerationStructure;
-			ShaderRegisterType registerType;
-			ShaderResourceType resourceType;
-			uint32_t bindingIndex;
+			Variant<
+				RefPtr<RHI::BufferView>,
+				RefPtr<RHI::ImageView>,
+				RefPtr<RHI::SamplerState>,
+				RefPtr<RHI::AccelerationStructure>
+			> resource;
 
 			uint64_t uniformBufferSize = 0;
 			uint64_t uniformBufferOffset = 0;
+
+			uint32_t bindingIndex;
+			ShaderRegisterType registerType;
+			ShaderResourceType resourceType;
 		};
 
-		using ResourceBindingsMap = Map<ShaderStage, InlineVector<ResourceBinding, NumMaxBindings>>;
-		using ResourceIsSetMap = Map<ShaderStage, Map<ShaderRegisterType, BitArray<NumMaxBindings>>>;
+		struct PerShaderStageResourceBindings
+		{
+			ShaderStage shaderStage;
+			InlineVector<ResourceBinding, NumMaxBindings> resourceBindings;
+			Array<BitArray<NumMaxBindings>, static_cast<size_t>(ShaderRegisterType::Max)> resourceIsSet;
+		};
+
+		ShaderBindingMap() = default;
 
 		void SetUniformBuffer(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView);
 		void SetUniformBufferWithSizeAndOffset(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::BufferView> bufferView, uint64_t size, uint64_t offset);
@@ -46,10 +59,20 @@ namespace Volt::RHI
 		void SetTextureUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView);
 		void SetAccelerationStructure(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::AccelerationStructure> accelerationStructure);
 
-		VT_NODISCARD VT_INLINE const ResourceBindingsMap& GetBindings() const { return m_resourceBindings; }
+		VT_NODISCARD VT_INLINE const ArrayView<PerShaderStageResourceBindings> GetBindings() const { return m_resourceBindings; }
+
+		static ShaderBindingMap InitializeFromPipeline(RawPtr<RenderPipeline> renderPipeline);
+		static ShaderBindingMap InitializeFromPipeline(RawPtr<ComputePipeline> computePipeline);
 
 	private:
-		ResourceBindingsMap m_resourceBindings;
-		ResourceIsSetMap m_resourceIsSet;
+		ShaderBindingMap(const InlineVector<ShaderStage, GetNumBindableShaderStages()>& shaderStages);
+
+		bool IsResourceSet(ShaderStage shaderStage, ShaderRegisterType registerType, uint32_t bindingIndex) const;
+		void MarkResourceAsSet(ShaderStage shaderStage, ShaderRegisterType registerType, uint32_t bindingIndex);
+
+		InlineVector<ResourceBinding, NumMaxBindings>& GetResourceBindingsForShaderStage(ShaderStage shaderStage);
+
+		BitArray<GetNumBindableShaderStages(), uint32_t> m_activeShaderStagesBitArray;
+		Vector<PerShaderStageResourceBindings> m_resourceBindings;
 	};
 }

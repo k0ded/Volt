@@ -14,13 +14,13 @@ VTCOREUTIL_API void AssertionFailure(std::string_view expression);
 	do { \
 		VT_ANALASYS_ASSUME(expression); \
 		(void)((expression) || (AssertionFailure(#expression), 0)); \
-	} while(0)
+	} while(false)
 
 #define VT_ASSERT_MSG(expression, message) \
 	do { \
 		VT_ANALASYS_ASSUME(expression); \
 		(void)((expression) || (AssertionFailure(message), 0)); \
-	} while(0)
+	} while(false)
 #else
 #define VT_ASSERT(expression)
 #define VT_ASSERT_MSG(expression, message)
@@ -31,13 +31,13 @@ VTCOREUTIL_API void AssertionFailure(std::string_view expression);
 	do { \
 		VT_ANALASYS_ASSUME(expression); \
 		if (!(expression)) { AssertionFailure(#expression); } \
-	} while(0)
+	} while(false)
 
 #define VT_ENSURE_MSG(expression, message) \
 	do { \
 		VT_ANALASYS_ASSUME(expression); \
 		if (!(expression)) { AssertionFailure(message); } \
-	} while(0)
+	} while(false)
 
 #else
 #define VT_ENSURE(expression)

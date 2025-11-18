@@ -154,6 +154,11 @@ namespace Volt
 		counter = nullptr;
 	}
 
+	uint32_t JobSystem::GetNumWorkers()
+	{
+		return s_instance->m_numWorkers;
+	}
+
 	void JobSystem::Initialize()
     {
 		m_isAlive = true;

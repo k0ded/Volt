@@ -139,14 +139,16 @@ namespace Volt
 		uint64_t primitiveOffset = 0;
 		for (const MeshDrawCommandBucket& drawCommandBucket : m_meshDrawCommandBuckets)
 		{
+			VT_PROFILE_SCOPE("DrawCommandBucket");
+
 			for (const MeshDrawCommandBucket::InstancingRange& instancingRange : drawCommandBucket.instancingRanges)
 			{
 				const MeshDrawCommand& firstDrawComamnd = drawCommandBucket.drawCommands.at(instancingRange.offset);
 
 				ArrayView<RHI::ShaderParameterMap> shaderParametersMaps = firstDrawComamnd.renderPipeline->GetShaderParameterMaps();
-				InlineVector<RenderContext::PerStageShaderParameters, 8> perShaderStageParameters = renderContext.AllocatePerStageShaderParameterBuffers(firstDrawComamnd.renderPipeline);
+				InlineVector<RenderContext::PerStageShaderParameters, 8> perShaderStageParameters = renderContext.SetupPipelineData(firstDrawComamnd.renderPipeline);
 
-				RHI::ShaderBindingMap shaderBindings;
+				RHI::ShaderBindingMap shaderBindings = RHI::ShaderBindingMap::InitializeFromPipeline(firstDrawComamnd.renderPipeline);
 				batchedShaderParameters.BindShaderBindings(shaderParametersMaps, shaderBindings);
 				batchedShaderParameters.PopulateShaderParameterUniformBuffers(shaderParametersMaps, perShaderStageParameters);
 

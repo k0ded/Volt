@@ -231,41 +231,41 @@ namespace Volt
 	void Upgrade_0_1_7::LoadAssetMetadatas()
 	{
 		constexpr std::string_view AssetExtension = ".vtasset";
-		//constexpr uint32_t NumEngineFilepaths = 2;
+		constexpr uint32_t NumEngineFilepaths = 2;
 
-		//const Array<std::filesystem::path, NumEngineFilepaths> engineFilepathsToScan =
-		//{
-		//	std::filesystem::current_path() / "Engine",
-		//	GetTargetProject().rootDirectory / "Editor",
-		//};
+		const Array<std::filesystem::path, NumEngineFilepaths> engineFilepathsToScan =
+		{
+			std::filesystem::current_path() / "Engine",
+			GetTargetProject().rootDirectory / "Editor",
+		};
 
 		const std::filesystem::path projectFilepathToScan = GetTargetProject().rootDirectory / GetTargetProject().assetsDirectoryName;
 
 		TaskGraph scanGraph{ ExecutionPriority::Immediate };
 
-		//Array<Vector<std::filesystem::path>, NumEngineFilepaths> engineIntermediateFilepaths;
+		Array<Vector<std::filesystem::path>, NumEngineFilepaths> engineIntermediateFilepaths;
 
-		//for (uint32_t index = 0; const std::filesystem::path& filepathToScan : engineFilepathsToScan)
-		//{
-		//	// If the directory does not exist, we skip.
-		//	if (!FileSystem::Exists(filepathToScan))
-		//	{
-		//		continue;
-		//	}
+		for (uint32_t index = 0; const std::filesystem::path& filepathToScan : engineFilepathsToScan)
+		{
+			// If the directory does not exist, we skip.
+			if (!FileSystem::Exists(filepathToScan))
+			{
+				continue;
+			}
 
-		//	scanGraph.AddTask("Scan Engine Assets", [&engineIntermediateFilepaths, &filepathToScan, index]()
-		//	{
-		//		for (const auto& pathIt : std::filesystem::recursive_directory_iterator(filepathToScan))
-		//		{
-		//			if (pathIt.path().extension() == AssetExtension)
-		//			{
-		//				engineIntermediateFilepaths[index].emplace_back(pathIt.path());
-		//			}
-		//		}
-		//	});
+			scanGraph.AddTask("Scan Engine Assets", [&engineIntermediateFilepaths, &filepathToScan, index]()
+			{
+				for (const auto& pathIt : std::filesystem::recursive_directory_iterator(filepathToScan))
+				{
+					if (pathIt.path().extension() == AssetExtension)
+					{
+						engineIntermediateFilepaths[index].emplace_back(pathIt.path());
+					}
+				}
+			});
 
-		//	index++;
-		//}
+			index++;
+		}
 
 		Vector<std::filesystem::path> assets;
 
@@ -286,18 +286,21 @@ namespace Volt
 
 		scanGraph.ExecuteAndWait();
 
-		/*for (const Vector<std::filesystem::path>& intermediate : engineIntermediateFilepaths)
+		for (const Vector<std::filesystem::path>& intermediate : engineIntermediateFilepaths)
 		{
 			assets.append(intermediate);
-		}*/
+		}
 
 		for (const std::filesystem::path& assetFilepath : assets)
 		{
 			AssetMetadata metadata;
 			DeserializeAssetMetadata(metadata, assetFilepath);
 
-			m_assetsToProcess.emplace_back(metadata.handle);
-			m_assetHandleToMetadata[metadata.handle] = metadata;
+			if (metadata.handle != Asset::Null())
+			{
+				m_assetsToProcess.emplace_back(metadata.handle);
+				m_assetHandleToMetadata[metadata.handle] = metadata;
+			}
 		}
 	}
 }

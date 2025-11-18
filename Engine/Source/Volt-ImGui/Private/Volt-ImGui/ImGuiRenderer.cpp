@@ -161,8 +161,7 @@ namespace Volt
 		RefPtr<RHI::Image> renderTarget = m_renderTargetManager->GetRenderTargetForWindow(window, renderWidth, renderHeight);
 
 		{
-			RHI::ResourceBarrierInfo barrier{};
-			barrier.type = RHI::BarrierType::Image;
+			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			barrier.imageBarrier().srcAccess = RHI::BarrierAccess::None;
 			barrier.imageBarrier().srcStage = RHI::BarrierStage::All;
 			barrier.imageBarrier().srcLayout = RHI::ImageLayout::Undefined;
@@ -247,7 +246,7 @@ namespace Volt
 				RefPtr<RHI::ImageView> imageView = image->GetView();
 				m_activeImageViews.at(frameIndex).emplace_back(imageView);
 
-				RHI::ShaderBindingMap shaderBindingMap;
+				RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(m_imguiRenderPipeline);
 				shaderBindingMap.SetUniformBufferWithSizeAndOffset(RHI::ShaderStage::Vertex, 0, renderContext.globalsUniformBuffer->GetView(), renderContext.globalsUniformBuffer->GetSize(), 0);
 				shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, textureResourceBinding->binding, imageView);
 				shaderBindingMap.SetSampler(RHI::ShaderStage::Pixel, samplerResourceBinding->binding, m_textureSampler);
@@ -369,8 +368,7 @@ namespace Volt
 
 			RHI::ResourceState resourceState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
 
-			RHI::ResourceBarrierInfo barrierInfo{};
-			barrierInfo.type = RHI::BarrierType::Image;
+			RHI::ResourceBarrierInfo barrierInfo = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			barrierInfo.imageBarrier().srcAccess = resourceState.access;
 			barrierInfo.imageBarrier().srcStage = resourceState.stage;
 			barrierInfo.imageBarrier().srcLayout = resourceState.layout;

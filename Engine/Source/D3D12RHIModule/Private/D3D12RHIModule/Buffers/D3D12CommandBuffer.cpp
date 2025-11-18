@@ -977,8 +977,8 @@ namespace Volt::RHI
 		InlineVector<D3D12_CPU_DESCRIPTOR_HANDLE, ShaderBindingMap::NumMaxBindings> dstDescriptors;
 		InlineVector<D3D12_CPU_DESCRIPTOR_HANDLE, ShaderBindingMap::NumMaxBindings> dstSamplerDescriptors;
 
-		Array<D3D12DescriptorPointer, GetNumShaderStages()> perShaderStageBaseDescriptor;
-		Array<D3D12DescriptorPointer, GetNumShaderStages()> perShaderStageSamplerBaseDescriptor;
+		Array<D3D12DescriptorPointer, GetNumBindableShaderStages()> perShaderStageBaseDescriptor;
+		Array<D3D12DescriptorPointer, GetNumBindableShaderStages()> perShaderStageSamplerBaseDescriptor;
 
 		// Unfortunately we need to make a special case here, as D3D12 doesn't allow offsets
 		// of views.
@@ -987,23 +987,31 @@ namespace Volt::RHI
 			uint64_t deviceAddress = 0;
 		};
 
-		Array<OffsetCBVDescriptor, GetNumShaderStages()> perShaderStageOffsetCBVDescriptors;
+		Array<OffsetCBVDescriptor, GetNumBindableShaderStages()> perShaderStageOffsetCBVDescriptors;
 
 		uint32_t descriptorBaseOffset = 0;
 		uint32_t samplerDescriptorBaseOffset = 0;
 
-		for (const auto& [shaderStage, bindings] : shaderBindings)
+		for (const auto& bindings : shaderBindings)
 		{
+			// There are no bindings, so we skip it.
+			if (bindings.resourceBindings.empty())
+			{
+				continue;
+			}
+
 			uint32_t numSamplerDescriptors = 0;
 			uint32_t numMainDescriptors = 0;
 
-			for (const ShaderBindingMap::ResourceBinding& binding : bindings)
+			const uint32_t shaderStageDescriptorSetIndex = GetDescriptorSetIndexFromShaderStage(bindings.shaderStage);
+
+			for (const ShaderBindingMap::ResourceBinding& binding : bindings.resourceBindings)
 			{
 				// Special case for offset uniform buffers
 				if ((binding.uniformBufferOffset > 0 || binding.uniformBufferSize > 0) && binding.registerType == ShaderRegisterType::CBV)
 				{
-					D3D12BufferView& d3d12BufferView = binding.bufferView->AsRef<D3D12BufferView>();
-					perShaderStageOffsetCBVDescriptors[GetDescriptorSetIndexFromShaderStage(shaderStage)].deviceAddress = d3d12BufferView.GetDeviceAddress() + binding.uniformBufferOffset;
+					D3D12BufferView& d3d12BufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<D3D12BufferView>();
+					perShaderStageOffsetCBVDescriptors[shaderStageDescriptorSetIndex].deviceAddress = d3d12BufferView.GetDeviceAddress() + binding.uniformBufferOffset;
 					continue;
 				}
 
@@ -1011,13 +1019,13 @@ namespace Volt::RHI
 
 				if (binding.registerType != ShaderRegisterType::Sampler)
 				{
-					descriptorIndex = rootSignature->GetFlatDescriptorIndexFromBindingAndType(shaderStage, binding.registerType, binding.bindingIndex);
+					descriptorIndex = rootSignature->GetFlatDescriptorIndexFromBindingAndType(bindings.shaderStage, binding.registerType, binding.bindingIndex);
 					srcDescriptors.resize_uninitialized(std::max(descriptorBaseOffset + descriptorIndex + 1, static_cast<uint32_t>(srcDescriptors.size())));
 					numMainDescriptors++;
 				}
 				else
 				{
-					descriptorIndex = rootSignature->GetFlatSamplerDescriptorIndexFromBinding(shaderStage, binding.bindingIndex);
+					descriptorIndex = rootSignature->GetFlatSamplerDescriptorIndexFromBinding(bindings.shaderStage, binding.bindingIndex);
 					srcSamplerDescriptors.resize_uninitialized(std::max(samplerDescriptorBaseOffset + descriptorIndex + 1, static_cast<uint32_t>(srcSamplerDescriptors.size())));
 					numSamplerDescriptors++;
 				}
@@ -1026,7 +1034,7 @@ namespace Volt::RHI
 				{
 					case ShaderRegisterType::CBV:
 					{
-						D3D12BufferView& d3d12BufferView = binding.bufferView->AsRef<D3D12BufferView>();
+						D3D12BufferView& d3d12BufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<D3D12BufferView>();
 						srcDescriptors[descriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12BufferView.GetCBVDescriptor().GetCPUPointer());
 						break;
 					}
@@ -1038,14 +1046,14 @@ namespace Volt::RHI
 							case ShaderResourceType::StructuredBuffer:
 							case ShaderResourceType::TexelBuffer:
 							{
-								D3D12BufferView& d3d12BufferView = binding.bufferView->AsRef<D3D12BufferView>();
+								D3D12BufferView& d3d12BufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<D3D12BufferView>();
 								srcDescriptors[descriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12BufferView.GetSRVDescriptor().GetCPUPointer());
 								break;
 							}
 
 							case ShaderResourceType::Texture:
 							{
-								D3D12ImageView& d3d12ImageView = binding.imageView->AsRef<D3D12ImageView>();
+								D3D12ImageView& d3d12ImageView = binding.resource.Get<RefPtr<RHI::ImageView>>()->AsRef<D3D12ImageView>();
 								srcDescriptors[descriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12ImageView.GetSRVDescriptor().GetCPUPointer());
 								break;
 							}
@@ -1066,14 +1074,14 @@ namespace Volt::RHI
 							case ShaderResourceType::StructuredBuffer:
 							case ShaderResourceType::TexelBuffer:
 							{
-								D3D12BufferView& d3d12BufferView = binding.bufferView->AsRef<D3D12BufferView>();
+								D3D12BufferView& d3d12BufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<D3D12BufferView>();
 								srcDescriptors[descriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12BufferView.GetUAVDescriptor().GetCPUPointer());
 								break;
 							}
 
 							case ShaderResourceType::Texture:
 							{
-								D3D12ImageView& d3d12ImageView = binding.imageView->AsRef<D3D12ImageView>();
+								D3D12ImageView& d3d12ImageView = binding.resource.Get<RefPtr<RHI::ImageView>>()->AsRef<D3D12ImageView>();
 								srcDescriptors[descriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12ImageView.GetUAVDescriptor().GetCPUPointer());
 								break;
 							}
@@ -1084,7 +1092,7 @@ namespace Volt::RHI
 
 					case ShaderRegisterType::Sampler:
 					{
-						D3D12SamplerState& d3d12SamplerState = binding.samplerState->AsRef<D3D12SamplerState>();
+						D3D12SamplerState& d3d12SamplerState = binding.resource.Get<RefPtr<RHI::SamplerState>>()->AsRef<D3D12SamplerState>();
 						srcSamplerDescriptors[samplerDescriptorBaseOffset + descriptorIndex] = D3D12_CPU_DESCRIPTOR_HANDLE(d3d12SamplerState.GetDescriptor().GetCPUPointer());
 						break;
 					}
@@ -1102,7 +1110,7 @@ namespace Volt::RHI
 				D3D12DescriptorPointer baseDescriptor = g_descriptorManager.AllocateOnStack(D3D12DescriptorType::CBV_SRV_UAV, numMainDescriptors);
 				const uint64_t descriptorSize = g_descriptorManager.GetDescriptorSize(D3D12DescriptorType::CBV_SRV_UAV);
 
-				perShaderStageBaseDescriptor[GetDescriptorSetIndexFromShaderStage(shaderStage)] = baseDescriptor;
+				perShaderStageBaseDescriptor[shaderStageDescriptorSetIndex] = baseDescriptor;
 
 				for (size_t i = 0; i < numMainDescriptors; ++i)
 				{
@@ -1118,7 +1126,7 @@ namespace Volt::RHI
 				D3D12DescriptorPointer baseDescriptor = g_descriptorManager.AllocateOnStack(D3D12DescriptorType::Sampler, numSamplerDescriptors);
 				const uint64_t descriptorSize = g_descriptorManager.GetDescriptorSize(D3D12DescriptorType::Sampler);
 
-				perShaderStageSamplerBaseDescriptor[GetDescriptorSetIndexFromShaderStage(shaderStage)] = baseDescriptor;
+				perShaderStageSamplerBaseDescriptor[shaderStageDescriptorSetIndex] = baseDescriptor;
 
 				for (size_t i = 0; i < numSamplerDescriptors; ++i)
 				{
@@ -1165,47 +1173,51 @@ namespace Volt::RHI
 
 		if (m_activeComputePipeline)
 		{
-			for (const auto& [shaderStage, bindings] : shaderBindings)
+			for (const auto& bindings : shaderBindings)
 			{
-				const D3D12DescriptorPointer& descriptorPointer = perShaderStageBaseDescriptor[GetDescriptorSetIndexFromShaderStage(shaderStage)];
+				const uint32_t shaderStageDescriptorSetIndex = GetDescriptorSetIndexFromShaderStage(bindings.shaderStage);
+
+				const D3D12DescriptorPointer& descriptorPointer = perShaderStageBaseDescriptor[shaderStageDescriptorSetIndex];
 				if (descriptorPointer.IsValid())
 				{
-					m_commandListData.commandList->SetComputeRootDescriptorTable(rootSignature->GetDescriptorTableIndexFromShaderStage(shaderStage), D3D12_GPU_DESCRIPTOR_HANDLE(descriptorPointer.GetGPUPointer()));
+					m_commandListData.commandList->SetComputeRootDescriptorTable(rootSignature->GetDescriptorTableIndexFromShaderStage(bindings.shaderStage), D3D12_GPU_DESCRIPTOR_HANDLE(descriptorPointer.GetGPUPointer()));
 				}
 
-				const D3D12DescriptorPointer& samplerDescriptorPointer = perShaderStageSamplerBaseDescriptor[GetDescriptorSetIndexFromShaderStage(shaderStage)];
+				const D3D12DescriptorPointer& samplerDescriptorPointer = perShaderStageSamplerBaseDescriptor[shaderStageDescriptorSetIndex];
 				if (samplerDescriptorPointer.IsValid())
 				{
-					m_commandListData.commandList->SetComputeRootDescriptorTable(rootSignature->GetSamplerDescriptorTableIndexFromShaderStage(shaderStage), D3D12_GPU_DESCRIPTOR_HANDLE(samplerDescriptorPointer.GetGPUPointer()));
+					m_commandListData.commandList->SetComputeRootDescriptorTable(rootSignature->GetSamplerDescriptorTableIndexFromShaderStage(bindings.shaderStage), D3D12_GPU_DESCRIPTOR_HANDLE(samplerDescriptorPointer.GetGPUPointer()));
 				}
 
-				const OffsetCBVDescriptor& offsetCBVDescriptor = perShaderStageOffsetCBVDescriptors[GetDescriptorSetIndexFromShaderStage(shaderStage)];
+				const OffsetCBVDescriptor& offsetCBVDescriptor = perShaderStageOffsetCBVDescriptors[shaderStageDescriptorSetIndex];
 				if (offsetCBVDescriptor.deviceAddress != 0)
 				{
-					m_commandListData.commandList->SetComputeRootConstantBufferView(rootSignature->GetGlobalsRootIndexFromShaderStage(shaderStage), D3D12_GPU_VIRTUAL_ADDRESS(offsetCBVDescriptor.deviceAddress));
+					m_commandListData.commandList->SetComputeRootConstantBufferView(rootSignature->GetGlobalsRootIndexFromShaderStage(bindings.shaderStage), D3D12_GPU_VIRTUAL_ADDRESS(offsetCBVDescriptor.deviceAddress));
 				}
 			}
 		}
 		else if (m_activeRenderPipeline)
 		{
-			for (const auto& [shaderStage, bindings] : shaderBindings)
+			for (const auto& bindings : shaderBindings)
 			{
-				const D3D12DescriptorPointer& descriptorPointer = perShaderStageBaseDescriptor[GetDescriptorSetIndexFromShaderStage(shaderStage)];
+				const uint32_t shaderStageDescriptorSetIndex = GetDescriptorSetIndexFromShaderStage(bindings.shaderStage);
+
+				const D3D12DescriptorPointer& descriptorPointer = perShaderStageBaseDescriptor[shaderStageDescriptorSetIndex];
 				if (descriptorPointer.IsValid())
 				{
-					m_commandListData.commandList->SetGraphicsRootDescriptorTable(rootSignature->GetDescriptorTableIndexFromShaderStage(shaderStage), D3D12_GPU_DESCRIPTOR_HANDLE(descriptorPointer.GetGPUPointer()));
+					m_commandListData.commandList->SetGraphicsRootDescriptorTable(rootSignature->GetDescriptorTableIndexFromShaderStage(bindings.shaderStage), D3D12_GPU_DESCRIPTOR_HANDLE(descriptorPointer.GetGPUPointer()));
 				}
 
-				const D3D12DescriptorPointer& samplerDescriptorPointer = perShaderStageSamplerBaseDescriptor[GetDescriptorSetIndexFromShaderStage(shaderStage)];
+				const D3D12DescriptorPointer& samplerDescriptorPointer = perShaderStageSamplerBaseDescriptor[shaderStageDescriptorSetIndex];
 				if (samplerDescriptorPointer.IsValid())
 				{
-					m_commandListData.commandList->SetGraphicsRootDescriptorTable(rootSignature->GetSamplerDescriptorTableIndexFromShaderStage(shaderStage), D3D12_GPU_DESCRIPTOR_HANDLE(samplerDescriptorPointer.GetGPUPointer()));
+					m_commandListData.commandList->SetGraphicsRootDescriptorTable(rootSignature->GetSamplerDescriptorTableIndexFromShaderStage(bindings.shaderStage), D3D12_GPU_DESCRIPTOR_HANDLE(samplerDescriptorPointer.GetGPUPointer()));
 				}
 
-				const OffsetCBVDescriptor& offsetCBVDescriptor = perShaderStageOffsetCBVDescriptors[GetDescriptorSetIndexFromShaderStage(shaderStage)];
+				const OffsetCBVDescriptor& offsetCBVDescriptor = perShaderStageOffsetCBVDescriptors[shaderStageDescriptorSetIndex];
 				if (offsetCBVDescriptor.deviceAddress != 0)
 				{
-					m_commandListData.commandList->SetGraphicsRootConstantBufferView(rootSignature->GetGlobalsRootIndexFromShaderStage(shaderStage), D3D12_GPU_VIRTUAL_ADDRESS(offsetCBVDescriptor.deviceAddress));
+					m_commandListData.commandList->SetGraphicsRootConstantBufferView(rootSignature->GetGlobalsRootIndexFromShaderStage(bindings.shaderStage), D3D12_GPU_VIRTUAL_ADDRESS(offsetCBVDescriptor.deviceAddress));
 				}
 			}
 		}

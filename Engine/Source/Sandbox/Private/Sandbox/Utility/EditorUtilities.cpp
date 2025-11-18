@@ -286,6 +286,11 @@ void EditorUtils::DestroyEntity(Volt::Scene& scene, const Volt::Entity& entity)
 
 void EditorUtils::DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>& entities)
 {
+	if (entities.empty())
+	{
+		return;
+	}
+
 	//only the parentmost entities should be called delete on
 	FrameStackVector<Volt::Entity> parentmostEntities;
 	for (const Volt::Entity& entity : entities)

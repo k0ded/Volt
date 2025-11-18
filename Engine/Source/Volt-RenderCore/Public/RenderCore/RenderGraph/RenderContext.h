@@ -87,12 +87,12 @@ namespace Volt
 
 		RefPtr<RHI::CommandBuffer> GetRHICommandBuffer();
 
-		InlineVector<PerStageShaderParameters, 8> AllocatePerStageShaderParameterBuffers(RawPtr<RHI::RenderPipeline> renderPipeline);
-		InlineVector<PerStageShaderParameters, 8> AllocatePerStageShaderParameterBuffers(RawPtr<RHI::ComputePipeline> computePipeline);
+		InlineVector<PerStageShaderParameters, 8> SetupPipelineData(RawPtr<RHI::RenderPipeline> renderPipeline);
+		InlineVector<PerStageShaderParameters, 8> SetupPipelineData(RawPtr<RHI::ComputePipeline> computePipeline);
 
 	private:
 		void BindShaderBindings();
-		void AllocatePerStageShaderParameterBuffers();
+		void SetupPipelineData();
 
 		template<typename ParameterStruct>
 		void VerifyShaderParameters(RefPtr<RHI::Shader> shader, const ParameterStruct* parameters);
