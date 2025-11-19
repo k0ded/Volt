@@ -59,6 +59,8 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 	}
 
 	{
+		VT_PROFILE_SCOPE("Find Assets");
+
 		Volt::AssetRegistryIteratorFilter filter;
 		filter.includeMemoryAssets = false;
 		filter.includeWithoutFilepath = false;
@@ -90,8 +92,6 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 
 		for (const auto& entry : assetEntries)
 		{
-			VT_PROFILE_SCOPE("Create item");
-
 			if (entry.isDirectory)
 			{
 				VT_PROFILE_SCOPE("Create Directory Item");
@@ -105,6 +105,7 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 			else if (entry.handle != Volt::Asset::Null())
 			{
 				VT_PROFILE_SCOPE("Create Asset Item");
+
 				Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(entry.handle);
 
 				if (!assetMetadata.IsValid())
@@ -116,14 +117,13 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 				{
 					if (m_assetMask.empty() || m_assetMask.contains(assetMetadata->type))
 					{
-						VT_PROFILE_SCOPE("Allocate Asset Item");
 						RawPtr<AssetBrowser::AssetItem> assetItem = m_assetItemAllocatorRef.Allocate(m_selectionManager.Get(), entry.path, meshToImportData, entry.handle);
 						const auto parentPath = entry.path.parent_path();
 						directoryItems[parentPath]->assets.emplace_back(assetItem);
 					}
 				}
 			}
-			//we want to show source assets aswell...
+			//todo: we want to show source assets aswell...
 			/*else
 			{
 				VT_PROFILE_SCOPE("Create Non Asset Item");
@@ -152,6 +152,7 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 		}
 	}
 
+	VT_PROFILE_SCOPE("Sort Items");
 	for (const auto& [dirPath, dirData] : directoryItems)
 	{
 		std::sort(dirData->subDirectories.begin(), dirData->subDirectories.end(), [](const RawPtr<AssetBrowser::DirectoryItem>& a, const RawPtr<AssetBrowser::DirectoryItem>& b) { return a->path.string() < b->path.string(); });
