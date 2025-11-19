@@ -108,6 +108,9 @@ private:
 	Vector<std::filesystem::path> myDragDroppedTextures;
 
 	bool myIsImporting = false;
+	std::atomic_bool m_reloadingAssetManager = false;
+	bool m_reloadQueued = false;
+	bool m_doingMainUpdate = false;
 
 	Volt::AssetHandle myAnimationReimportTargetSkeleton;
 

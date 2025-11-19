@@ -5,6 +5,8 @@
 #include <CoreUtilities/Containers/AtomicHashTable.h>
 #include <CoreUtilities/Allocators/PagedArenaAllocator.h>
 
+#include <JobSystem/Job.h>
+
 namespace Volt
 {
 	class AssetRegistry
@@ -18,6 +20,7 @@ namespace Volt
 		};
 
 		AssetRegistry(const std::filesystem::path& engineDirectoryPath, const std::filesystem::path& projectDirectoryPath, std::string_view assetsDirectoryName);
+		~AssetRegistry();
 
 		VTAS_API AssetMetadata* GetAssetMetadata(AssetHandle assetHandle);
 		VTAS_API AssetMetadata* GetAssetMetadata(AssetHandle assetHandle) const;
@@ -30,6 +33,8 @@ namespace Volt
 		// Returns a file path relative to either an engine asset directory,
 		// or the project asset directory.
 		std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& filepath) const;
+
+		JobCounterRef GetMetadataLoadingCounter() { return m_metadataLoadingCounter; }
 
 		static int32_t GetNumMaxAssets();
 		static AssetHeaderDeserializationResult DeserializeAssetHeader(Archive& archive, AssetMetadata& outAssetMetadata, uint32_t expectedAssetVersion, bool checkAssetVersion);
@@ -55,6 +60,7 @@ namespace Volt
 		AtomicHashTable<> m_hashTable;
 		Vector<AssetMetadata*> m_metadataIndirection;
 		AssetMetadataAllocator m_metadata;
+		JobCounterRef m_metadataLoadingCounter;
 	};
 
 	enum class AssetMetadataInit

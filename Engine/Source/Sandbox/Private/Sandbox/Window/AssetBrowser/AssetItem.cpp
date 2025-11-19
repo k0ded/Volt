@@ -32,11 +32,9 @@
 
 namespace AssetBrowser
 {
-	AssetItem::AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& aMeshToImportData)
-		: Item(selectionManager, path), meshToImportData(aMeshToImportData)
+	AssetItem::AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& aMeshToImportData, Volt::AssetHandle inHandle)
+		: Item(selectionManager, path), meshToImportData(aMeshToImportData), handle(inHandle)
 	{
-		handle = g_assetManager->GetAssetHandleFromFilepath(path);
-
 		// Assign a random handle to non registered assets
 		if (handle == Volt::Asset::Null())
 		{

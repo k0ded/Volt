@@ -21,7 +21,7 @@ namespace AssetBrowser
 	class AssetItem : public Item
 	{
 	public:
-		AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& meshToImportData);
+		AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& meshToImportData, Volt::AssetHandle inHandle);
 		~AssetItem() override = default;
 		bool Render() override;
 

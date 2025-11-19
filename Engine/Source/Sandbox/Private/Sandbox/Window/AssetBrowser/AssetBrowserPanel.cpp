@@ -49,6 +49,8 @@
 #include <InputModule/Events/KeyboardEvents.h>
 #include <InputModule/Events/MouseEvents.h>
 
+#include <JobSystem/JobSystem.h>
+
 #undef CreateDirectory
 
 AssetBrowserPanel::AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const std::string& id)
@@ -66,31 +68,34 @@ AssetBrowserPanel::AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const 
 
 	mySelectionManager = CreateRef<AssetBrowser::SelectionManager>();
 
-	if (!Volt::ProjectManager::GetProject().isDeprecated)
-	{
-		{
-			AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask, m_directoryItemPool, m_assetItemPool};
-			myDirectories[Volt::ProjectManager::GetAssetsDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetAssetsDirectory(), myMeshToImport);
-		}
 
-		// Note: Disabled for now, as there is no way to actually see the engine assets.
-#if 0
-		{
-			AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask };
-			myDirectories[Volt::ProjectManager::GetEngineAssetsDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetEngineAssetsDirectory(), myMeshToImport);
-		}
-#endif
-
-		myAssetsDirectory = myDirectories[Volt::ProjectManager::GetAssetsDirectory()].GetRaw();
-	}
-
-	myCurrentDirectory = myAssetsDirectory;
-
-	myDirectoryButtons.emplace_back(myCurrentDirectory);
+	Reload();
 }
 
 void AssetBrowserPanel::UpdateMainContent()
 {
+	//we need to reload again if we request a reload during another reload
+	if (m_reloadQueued && !m_reloadingAssetManager)
+	{
+		m_reloadQueued = false;
+		Reload();
+		return;
+	}
+
+	if (m_reloadingAssetManager)
+	{
+		ImGui::Text("Discovering Assets...");
+		return;
+	}
+
+	if (myDirectories.empty())
+	{
+		ImGui::Text("No directory... Try refreshing :)");
+		return;
+	}
+
+	m_doingMainUpdate = true;
+
 	float cellSize = GetThumbnailSize() + myThumbnailPadding;
 
 	if (myNextDirectory)
@@ -246,6 +251,8 @@ void AssetBrowserPanel::UpdateMainContent()
 		myShouldDeleteSelected = false;
 	}
 	DeleteFilesModal();
+
+	m_doingMainUpdate = false;
 }
 
 bool AssetBrowserPanel::OnDragDropEvent(Volt::WindowDragDropEvent& e)
@@ -874,63 +881,77 @@ void AssetBrowserPanel::DeleteFilesModal()
 
 void AssetBrowserPanel::Reload()
 {
-	Vector<AssetBrowser::DirectoryItem*> directoriesToClear;
+	if (!g_assetManager->GetMetadataLoadingCounter()->IsCompleted() ||
+		m_reloadingAssetManager ||
+		m_doingMainUpdate)
 	{
-		Vector<AssetBrowser::DirectoryItem*> directoriesToTraverse;
-		for (auto& [path, dir] : myDirectories)
-		{
-			directoriesToTraverse.emplace_back(dir.GetRaw());
-		}
+		m_reloadQueued = true;
+		return;
+	}
+	m_reloadingAssetManager = true;
 
-		while (!directoriesToTraverse.empty())
+	Volt::JobSystem::RunJob(Volt::JobSystem::CreateJob("Reload Asset Browser...", Volt::ExecutionPriority::Latent, [this]()
+	{
+		Vector<AssetBrowser::DirectoryItem*> directoriesToClear;
 		{
-			AssetBrowser::DirectoryItem* dir = directoriesToTraverse.back();
-			directoriesToTraverse.pop_back();
-			directoriesToClear.emplace_back(dir);
-			for (RawPtr<AssetBrowser::DirectoryItem> subDir : dir->subDirectories)
+			Vector<AssetBrowser::DirectoryItem*> directoriesToTraverse;
+			for (auto& [path, dir] : myDirectories)
 			{
-				directoriesToTraverse.emplace_back(subDir.GetRaw());
+				directoriesToTraverse.emplace_back(dir.GetRaw());
+			}
+
+			while (!directoriesToTraverse.empty())
+			{
+				AssetBrowser::DirectoryItem* dir = directoriesToTraverse.back();
+				directoriesToTraverse.pop_back();
+				directoriesToClear.emplace_back(dir);
+				for (RawPtr<AssetBrowser::DirectoryItem> subDir : dir->subDirectories)
+				{
+					directoriesToTraverse.emplace_back(subDir.GetRaw());
+				}
 			}
 		}
-	}
 
-	for (AssetBrowser::DirectoryItem* dir : directoriesToClear)
-	{
-		for (RawPtr<AssetBrowser::AssetItem> assetItem : dir->assets)
+		for (AssetBrowser::DirectoryItem* dir : directoriesToClear)
 		{
-			m_assetItemPool.Free(assetItem.GetRaw());
+			for (RawPtr<AssetBrowser::AssetItem> assetItem : dir->assets)
+			{
+				m_assetItemPool.Free(assetItem.GetRaw());
+			}
+
+			m_directoryItemPool.Free(dir);
 		}
 
-		m_directoryItemPool.Free(dir);
-	}
 
+		const std::filesystem::path currentPath = myCurrentDirectory ? myCurrentDirectory->path : Volt::ProjectManager::GetAssetsDirectory();
 
-	const std::filesystem::path currentPath = myCurrentDirectory ? myCurrentDirectory->path : Volt::ProjectManager::GetAssetsDirectory();
+		myCurrentDirectory = nullptr;
+		myNextDirectory = nullptr;
+		mySelectionManager->DeselectAll();
 
-	myCurrentDirectory = nullptr;
-	myNextDirectory = nullptr;
-	mySelectionManager->DeselectAll();
+		ClearAssetPreviewsInCurrentDirectory();
 
-	ClearAssetPreviewsInCurrentDirectory();
+		if (!Volt::ProjectManager::GetProject().isDeprecated)
+		{
+			AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask, m_directoryItemPool, m_assetItemPool };
+			myDirectories[Volt::ProjectManager::GetAssetsDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetAssetsDirectory(), myMeshToImport);
+		}
 
-	if (!Volt::ProjectManager::GetProject().isDeprecated)
-	{
-		AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask, m_directoryItemPool, m_assetItemPool};
-		myDirectories[Volt::ProjectManager::GetAssetsDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetAssetsDirectory(), myMeshToImport);
-	}
+		myAssetsDirectory = myDirectories[Volt::ProjectManager::GetAssetsDirectory()].GetRaw();
 
-	myAssetsDirectory = myDirectories[Volt::ProjectManager::GetAssetsDirectory()].GetRaw();
+		//Find directory
+		myCurrentDirectory = FindDirectoryWithPath(currentPath);
+		if (!myCurrentDirectory)
+		{
+			myCurrentDirectory = myAssetsDirectory;
+		}
 
-	//Find directory
-	myCurrentDirectory = FindDirectoryWithPath(currentPath);
-	if (!myCurrentDirectory)
-	{
-		myCurrentDirectory = myAssetsDirectory;
-	}
+		//Setup new file path buttons
+		myDirectoryButtons.clear();
+		myDirectoryButtons = FindParentDirectoriesOfDirectory(myCurrentDirectory);
 
-	//Setup new file path buttons
-	myDirectoryButtons.clear();
-	myDirectoryButtons = FindParentDirectoriesOfDirectory(myCurrentDirectory);
+		m_reloadingAssetManager = false;
+	}));
 }
 
 void AssetBrowserPanel::Search(const std::string& inQuery)

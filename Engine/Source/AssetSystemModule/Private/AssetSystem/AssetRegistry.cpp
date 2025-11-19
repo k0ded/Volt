@@ -32,6 +32,11 @@ namespace Volt
 		Initialize();
 	}
 
+	AssetRegistry::~AssetRegistry()
+	{
+		Volt::JobSystem::DestroyCounter(m_metadataLoadingCounter);
+	}
+
 	AssetMetadata* AssetRegistry::GetAssetMetadata(AssetHandle assetHandle)
 	{
 		VT_ENSURE(assetHandle != Asset::Null());
@@ -113,7 +118,7 @@ namespace Volt
 				});
 			}
 
-			taskGraph.Execute();
+			m_metadataLoadingCounter = taskGraph.ExecuteAndExtractCounter();
 		}
 
 		// Engine assets

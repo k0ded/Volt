@@ -519,6 +519,11 @@ namespace Volt
 		return false;
 	}
 
+	JobCounterRef AssetManager::GetMetadataLoadingCounter()
+	{
+		return m_assetRegistry.GetMetadataLoadingCounter();
+	}
+
 	void AssetManager::LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset)
 	{
 		ScopedTimer timer{};

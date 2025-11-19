@@ -20,8 +20,9 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 
 	struct AssetEntryData
 	{
-		std::filesystem::path path;
-		bool isDirectory;
+		std::filesystem::path path = "";
+		bool isDirectory = false;
+		Volt::AssetHandle handle = Volt::Asset::Null();
 	};
 
 	Vector<AssetEntryData> assetEntries;
@@ -39,6 +40,12 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 
 			for (const auto& entry : std::filesystem::directory_iterator(currentPath))
 			{
+				constexpr std::string_view AssetExtension = ".vtasset";
+				if (entry.path().extension() == AssetExtension)
+				{
+					continue;
+				}
+
 				auto& assetEntry = assetEntries.emplace_back();
 				assetEntry.path = entry.path();
 				assetEntry.isDirectory = entry.is_directory();
@@ -50,6 +57,28 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 			}
 		}
 	}
+
+	{
+		Volt::AssetRegistryIteratorFilter filter;
+		filter.includeMemoryAssets = false;
+		filter.includeWithoutFilepath = false;
+		g_assetManager->IterateAssetRegistryWithFilter(filter, [&](Volt::ReadOnlyAssetMetadata metadata) -> bool
+		{
+			std::filesystem::path filesystemPath = g_assetManager->GetAssetFilesystemPath(metadata->handle);
+			//!filesystemPath.starts_with(path)
+			if (path.compare(filesystemPath) > 0)
+			{
+				return true;
+			}
+
+			auto& assetEntry = assetEntries.emplace_back();
+			assetEntry.path = metadata->filepath;
+			assetEntry.isDirectory = false;
+			assetEntry.handle = metadata->handle;
+			return true;
+		});
+	}
+
 
 	auto relStartPath = g_assetManager->GetRelativeAssetFilepath(path);
 	RawPtr<AssetBrowser::DirectoryItem> resultItem = m_directoryItemAllocatorRef.Allocate(m_selectionManager.Get(), relStartPath);
@@ -73,9 +102,31 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 				directoryItems[parentPath]->subDirectories.emplace_back(dirData);
 				dirData->parentDirectory = directoryItems[parentPath].GetRaw();
 			}
-			else
+			else if (entry.handle != Volt::Asset::Null())
 			{
 				VT_PROFILE_SCOPE("Create Asset Item");
+				Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(entry.handle);
+
+				if (!assetMetadata.IsValid())
+				{
+					continue;
+				}
+
+				if (assetMetadata->type != AssetTypes::None)
+				{
+					if (m_assetMask.empty() || m_assetMask.contains(assetMetadata->type))
+					{
+						VT_PROFILE_SCOPE("Allocate Asset Item");
+						RawPtr<AssetBrowser::AssetItem> assetItem = m_assetItemAllocatorRef.Allocate(m_selectionManager.Get(), entry.path, meshToImportData, entry.handle);
+						const auto parentPath = entry.path.parent_path();
+						directoryItems[parentPath]->assets.emplace_back(assetItem);
+					}
+				}
+			}
+			//we want to show source assets aswell...
+			/*else
+			{
+				VT_PROFILE_SCOPE("Create Non Asset Item");
 
 				Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(g_assetManager->GetAssetHandleFromFilepath(entry.path));
 
@@ -97,7 +148,7 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 						directoryItems[parentPath]->assets.emplace_back(assetItem);
 					}
 				}
-			}
+			}*/
 		}
 	}
 

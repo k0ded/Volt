@@ -122,6 +122,7 @@ namespace Volt
 		VTAS_API std::filesystem::path GetRelativeAssetFilepath(const std::filesystem::path& path) const;
 		VTAS_API bool IsEngineAsset(const std::filesystem::path& path) const;
 
+		VTAS_API JobCounterRef GetMetadataLoadingCounter();
 	private:
 		friend class AssetRefCounter;
 
