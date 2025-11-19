@@ -15,8 +15,8 @@ namespace AssetBrowser
 
 		DirectoryItem* parentDirectory = nullptr;
 
-		Vector<Ref<AssetItem>> assets;
-		Vector<Ref<DirectoryItem>> subDirectories;
+		Vector<RawPtr<AssetItem>> assets;
+		Vector<RawPtr<DirectoryItem>> subDirectories;
 
 		bool isNext = false;
 

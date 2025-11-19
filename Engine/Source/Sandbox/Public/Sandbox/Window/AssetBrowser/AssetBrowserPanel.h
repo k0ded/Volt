@@ -1,8 +1,12 @@
 #pragma once
 #include "Sandbox/Window/EditorWindow.h"
 #include "Sandbox/Window/AssetBrowser/AssetCommon.h"
+#include "Sandbox/Window/AssetBrowser/AssetBrowserConstants.h"
 
 #include "Sandbox/Utility/EditorUtilities.h"
+
+
+#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
 
 #include <glm/glm.hpp>
 
@@ -42,17 +46,17 @@ private:
 	Vector<AssetBrowser::DirectoryItem*> FindParentDirectoriesOfDirectory(AssetBrowser::DirectoryItem* directory);
 
 	void RenderControlsBar(float height);
-	bool RenderDirectory(const Ref<AssetBrowser::DirectoryItem> dirData);
-	void RenderView(Vector<Ref<AssetBrowser::DirectoryItem>>& directories, Vector<Ref<AssetBrowser::AssetItem>>& assets);
+	bool RenderDirectory(const RawPtr<AssetBrowser::DirectoryItem> dirData);
+	void RenderView(Vector<RawPtr<AssetBrowser::DirectoryItem>>& directories, Vector<RawPtr<AssetBrowser::AssetItem>>& assets);
 	void RenderWindowRightClickPopup();
 
 	void DeleteFilesModal();
 
 	void Search(const std::string& query);
-	void FindFoldersAndFilesWithQuery(const Vector<Ref<AssetBrowser::DirectoryItem>>& dirList, Vector<Ref<AssetBrowser::DirectoryItem>>& directories, Vector<Ref<AssetBrowser::AssetItem>>& assets, const std::string& query);
+	void FindFoldersAndFilesWithQuery(const Vector<RawPtr<AssetBrowser::DirectoryItem>>& dirList, Vector<RawPtr<AssetBrowser::DirectoryItem>>& directories, Vector<RawPtr<AssetBrowser::AssetItem>>& assets, const std::string& query);
 
 	AssetBrowser::DirectoryItem* FindDirectoryWithPath(const std::filesystem::path& path);
-	AssetBrowser::DirectoryItem* FindDirectoryWithPathRecursivly(const Vector<Ref<AssetBrowser::DirectoryItem>> dirList, const std::filesystem::path& path);
+	AssetBrowser::DirectoryItem* FindDirectoryWithPathRecursivly(const Vector<RawPtr<AssetBrowser::DirectoryItem>> dirList, const std::filesystem::path& path);
 
 	void CreatePrefabAndSetupEntities(Volt::EntityID entity);
 	void SetupEntityAsPrefab(Volt::EntityID entity, Volt::AssetHandle prefabId);
@@ -93,8 +97,8 @@ private:
 	glm::vec2 myViewBounds[2];
 
 	std::string mySearchQuery;
-	Vector<Ref<AssetBrowser::DirectoryItem>> mySearchDirectories;
-	Vector<Ref<AssetBrowser::AssetItem>> mySearchAssets;
+	Vector<RawPtr<AssetBrowser::DirectoryItem>> mySearchDirectories;
+	Vector<RawPtr<AssetBrowser::AssetItem>> mySearchAssets;
 
 	///// Mesh import data //////
 	AssetData myMeshToImport;
@@ -107,7 +111,10 @@ private:
 
 	Volt::AssetHandle myAnimationReimportTargetSkeleton;
 
-	std::unordered_map <std::filesystem::path, Ref<AssetBrowser::DirectoryItem>> myDirectories;
+	AssetBrowser::DirectoryItemAllocator m_directoryItemPool;
+	AssetBrowser::AssetItemAllocator m_assetItemPool;
+
+	std::unordered_map <std::filesystem::path, RawPtr<AssetBrowser::DirectoryItem>> myDirectories;
 	Ref<AssetBrowser::SelectionManager> mySelectionManager;
 
 	AssetBrowser::DirectoryItem* myCurrentDirectory = nullptr;

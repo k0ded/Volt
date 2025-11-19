@@ -69,7 +69,7 @@ AssetBrowserPanel::AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const 
 	if (!Volt::ProjectManager::GetProject().isDeprecated)
 	{
 		{
-			AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask };
+			AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask, m_directoryItemPool, m_assetItemPool};
 			myDirectories[Volt::ProjectManager::GetAssetsDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetAssetsDirectory(), myMeshToImport);
 		}
 
@@ -81,7 +81,7 @@ AssetBrowserPanel::AssetBrowserPanel(AssetReference<Volt::Scene>& aScene, const 
 		}
 #endif
 
-		myAssetsDirectory = myDirectories[Volt::ProjectManager::GetAssetsDirectory()].get();
+		myAssetsDirectory = myDirectories[Volt::ProjectManager::GetAssetsDirectory()].GetRaw();
 	}
 
 	myCurrentDirectory = myAssetsDirectory;
@@ -534,13 +534,13 @@ void AssetBrowserPanel::RenderControlsBar(float height)
 	ImGui::EndChild();
 }
 
-bool AssetBrowserPanel::RenderDirectory(const Ref<AssetBrowser::DirectoryItem> dirData)
+bool AssetBrowserPanel::RenderDirectory(const RawPtr<AssetBrowser::DirectoryItem> dirData)
 {
 	bool reload = false;
 
-	auto isAnyDecendantActive = [&](Ref<AssetBrowser::DirectoryItem> dirData, auto isAnyDecendantActive, bool first)
+	auto isAnyDecendantActive = [&](RawPtr<AssetBrowser::DirectoryItem> dirData, auto isAnyDecendantActive, bool first)
 	{
-		if (myCurrentDirectory == dirData.get() && !first)
+		if (myCurrentDirectory == dirData.GetRaw() && !first)
 		{
 			return true;
 		}
@@ -557,7 +557,7 @@ bool AssetBrowserPanel::RenderDirectory(const Ref<AssetBrowser::DirectoryItem> d
 	};
 
 	const bool isDecendantActive = isAnyDecendantActive(dirData, isAnyDecendantActive, true);
-	const bool selected = mySelectionManager->IsSelected(dirData.get()) || myCurrentDirectory == dirData.get() || isDecendantActive;
+	const bool selected = mySelectionManager->IsSelected(dirData.GetRaw()) || myCurrentDirectory == dirData.GetRaw() || isDecendantActive;
 	const auto flags = (selected ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None) | ImGuiTreeNodeFlags_OpenOnArrow;
 
 	bool hovered = false;
@@ -594,8 +594,8 @@ bool AssetBrowserPanel::RenderDirectory(const Ref<AssetBrowser::DirectoryItem> d
 
 	if (ImGui::IsItemClicked() && !selected)
 	{
-		mySelectionManager->Select(dirData.get());
-		myNextDirectory = dirData.get();
+		mySelectionManager->Select(dirData.GetRaw());
+		myNextDirectory = dirData.GetRaw();
 	}
 
 	bool temp;
@@ -603,7 +603,7 @@ bool AssetBrowserPanel::RenderDirectory(const Ref<AssetBrowser::DirectoryItem> d
 	{
 		for (const auto& item : mySelectionManager->GetSelectedItems())
 		{
-			if (item->isDirectory && item != dirData.get())
+			if (item->isDirectory && item != dirData.GetRaw())
 			{
 				const std::filesystem::path newPath = dirData->path / item->path.stem();
 				g_editorAssetManager->MoveDirectoryTo(item->path, newPath);
@@ -612,7 +612,7 @@ bool AssetBrowserPanel::RenderDirectory(const Ref<AssetBrowser::DirectoryItem> d
 
 		for (const auto& item : mySelectionManager->GetSelectedItems())
 		{
-			if (!item->isDirectory && item != dirData.get() && std::filesystem::exists(Volt::ProjectManager::GetRootDirectory() / item->path))
+			if (!item->isDirectory && item != dirData.GetRaw() && std::filesystem::exists(Volt::ProjectManager::GetRootDirectory() / item->path))
 			{
 				g_editorAssetManager->MoveAssetTo(g_assetManager->GetAssetHandleFromFilepath(item->path), dirData->path);
 			}
@@ -640,7 +640,7 @@ bool AssetBrowserPanel::RenderDirectory(const Ref<AssetBrowser::DirectoryItem> d
 	return reload;
 }
 
-void AssetBrowserPanel::RenderView(Vector<Ref<AssetBrowser::DirectoryItem>>& directories, Vector<Ref<AssetBrowser::AssetItem>>& assets)
+void AssetBrowserPanel::RenderView(Vector<RawPtr<AssetBrowser::DirectoryItem>>& directories, Vector<RawPtr<AssetBrowser::AssetItem>>& assets)
 {
 	bool reload = false;
 
@@ -662,7 +662,7 @@ void AssetBrowserPanel::RenderView(Vector<Ref<AssetBrowser::DirectoryItem>>& dir
 
 		if (dir->isNext)
 		{
-			myNextDirectory = dir.get();
+			myNextDirectory = dir.GetRaw();
 			dir->isNext = false;
 		}
 	}
@@ -795,7 +795,7 @@ void AssetBrowserPanel::RenderWindowRightClickPopup()
 				FileSystem::CreateDirectories(Volt::ProjectManager::GetRootDirectory() / myCurrentDirectory->path / tempName);
 				Reload();
 
-				auto dirIt = std::find_if(myCurrentDirectory->subDirectories.begin(), myCurrentDirectory->subDirectories.end(), [tempName](const Ref<AssetBrowser::DirectoryItem> data)
+				auto dirIt = std::find_if(myCurrentDirectory->subDirectories.begin(), myCurrentDirectory->subDirectories.end(), [tempName](const RawPtr<AssetBrowser::DirectoryItem> data)
 				{
 					return data->path.stem().string() == tempName;
 				});
@@ -804,7 +804,7 @@ void AssetBrowserPanel::RenderWindowRightClickPopup()
 				{
 					(*dirIt)->StartRename();
 
-					mySelectionManager->Select((*dirIt).get());
+					mySelectionManager->Select((*dirIt).GetRaw());
 				}
 			}
 
@@ -874,6 +874,37 @@ void AssetBrowserPanel::DeleteFilesModal()
 
 void AssetBrowserPanel::Reload()
 {
+	Vector<AssetBrowser::DirectoryItem*> directoriesToClear;
+	{
+		Vector<AssetBrowser::DirectoryItem*> directoriesToTraverse;
+		for (auto& [path, dir] : myDirectories)
+		{
+			directoriesToTraverse.emplace_back(dir.GetRaw());
+		}
+
+		while (!directoriesToTraverse.empty())
+		{
+			AssetBrowser::DirectoryItem* dir = directoriesToTraverse.back();
+			directoriesToTraverse.pop_back();
+			directoriesToClear.emplace_back(dir);
+			for (RawPtr<AssetBrowser::DirectoryItem> subDir : dir->subDirectories)
+			{
+				directoriesToTraverse.emplace_back(subDir.GetRaw());
+			}
+		}
+	}
+
+	for (AssetBrowser::DirectoryItem* dir : directoriesToClear)
+	{
+		for (RawPtr<AssetBrowser::AssetItem> assetItem : dir->assets)
+		{
+			m_assetItemPool.Free(assetItem.GetRaw());
+		}
+
+		m_directoryItemPool.Free(dir);
+	}
+
+
 	const std::filesystem::path currentPath = myCurrentDirectory ? myCurrentDirectory->path : Volt::ProjectManager::GetAssetsDirectory();
 
 	myCurrentDirectory = nullptr;
@@ -884,11 +915,11 @@ void AssetBrowserPanel::Reload()
 
 	if (!Volt::ProjectManager::GetProject().isDeprecated)
 	{
-		AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask };
+		AssetDirectoryProcessor processor{ mySelectionManager, m_assetMask, m_directoryItemPool, m_assetItemPool};
 		myDirectories[Volt::ProjectManager::GetAssetsDirectory()] = processor.ProcessDirectories(Volt::ProjectManager::GetAssetsDirectory(), myMeshToImport);
 	}
 
-	myAssetsDirectory = myDirectories[Volt::ProjectManager::GetAssetsDirectory()].get();
+	myAssetsDirectory = myDirectories[Volt::ProjectManager::GetAssetsDirectory()].GetRaw();
 
 	//Find directory
 	myCurrentDirectory = FindDirectoryWithPath(currentPath);
@@ -939,7 +970,7 @@ void AssetBrowserPanel::Search(const std::string& inQuery)
 	}
 }
 
-void AssetBrowserPanel::FindFoldersAndFilesWithQuery(const Vector<Ref<AssetBrowser::DirectoryItem>>& dirList, Vector<Ref<AssetBrowser::DirectoryItem>>& directories, Vector<Ref<AssetBrowser::AssetItem>>& assets, const std::string& query)
+void AssetBrowserPanel::FindFoldersAndFilesWithQuery(const Vector<RawPtr<AssetBrowser::DirectoryItem>>& dirList, Vector<RawPtr<AssetBrowser::DirectoryItem>>& directories, Vector<RawPtr<AssetBrowser::AssetItem>>& assets, const std::string& query)
 {
 	for (const auto& dir : dirList)
 	{
@@ -974,7 +1005,7 @@ void AssetBrowserPanel::FindFoldersAndFilesWithQuery(const Vector<Ref<AssetBrows
 
 AssetBrowser::DirectoryItem* AssetBrowserPanel::FindDirectoryWithPath(const std::filesystem::path& path)
 {
-	Vector<Ref<AssetBrowser::DirectoryItem>> dirList;
+	Vector<RawPtr<AssetBrowser::DirectoryItem>> dirList;
 	for (const auto& dir : myDirectories)
 	{
 		dirList.emplace_back(dir.second);
@@ -983,13 +1014,13 @@ AssetBrowser::DirectoryItem* AssetBrowserPanel::FindDirectoryWithPath(const std:
 	return FindDirectoryWithPathRecursivly(dirList, path);
 }
 
-AssetBrowser::DirectoryItem* AssetBrowserPanel::FindDirectoryWithPathRecursivly(const Vector<Ref<AssetBrowser::DirectoryItem>> dirList, const std::filesystem::path& path)
+AssetBrowser::DirectoryItem* AssetBrowserPanel::FindDirectoryWithPathRecursivly(const Vector<RawPtr<AssetBrowser::DirectoryItem>> dirList, const std::filesystem::path& path)
 {
 	for (const auto& dir : dirList)
 	{
 		if (dir->path == path)
 		{
-			return dir.get();
+			return dir.GetRaw();
 		}
 	}
 
@@ -1158,6 +1189,6 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 	{
 		(*assetIt)->StartRename();
 
-		mySelectionManager->Select((*assetIt).get());
+		mySelectionManager->Select((*assetIt).GetRaw());
 	}
 }
