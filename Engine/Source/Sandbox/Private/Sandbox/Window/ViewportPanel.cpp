@@ -1125,6 +1125,8 @@ glm::mat4 ViewportPanel::CalculateAverageTransform()
 	glm::quat avgRotation = glm::identity<glm::quat>();
 	glm::vec3 avgScale = 0.f;
 
+	ScopedAssetReferenceLock sceneLock{ m_editorScene };
+
 	for (const auto& ent : SelectionManager::GetSelectedEntities())
 	{
 		const auto trs = m_editorScene->GetEntityWorldTQS(m_editorScene->GetEntityFromID(ent));

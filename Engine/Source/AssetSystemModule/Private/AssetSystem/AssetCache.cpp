@@ -3,8 +3,15 @@
 #include "AssetSystem/AssetCache.h"
 #include "AssetSystem/AssetRegistry.h"
 
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
 namespace Volt
 {
+	static ConsoleVariable<int32_t> s_assetCacheLog(
+		"a.AssetCache.Log",
+		0,
+		"Whether or not to log asset cache interactions.");
+
 	AssetCache::AssetCache()
 	{
 		Initialize();
@@ -28,6 +35,15 @@ namespace Volt
 		if (m_hashTable.Insert(asset->GetAssetHandle(), hashIndex))
 		{
 			m_cache[hashIndex] = asset;
+
+			if (s_assetCacheLog.GetValue())
+			{
+				VT_LOGC(Trace, LogAssetSystem,
+					"Added asset '{}' (Handle: '{}', Type: '{}') to cache",
+					asset->GetAssetName(),
+					asset->GetAssetHandle(),
+					asset->GetType()->GetName());
+			}
 		}
 		else
 		{
@@ -42,6 +58,15 @@ namespace Volt
 		uint64_t hashIndex;
 		if (m_hashTable.GetAndRemove(assetHandle, hashIndex))
 		{
+			if (s_assetCacheLog.GetValue())
+			{
+				VT_LOGC(Trace, LogAssetSystem,
+					"Removed asset '{}' (Handle: '{}', Type: '{}') from cache",
+					m_cache[hashIndex]->GetAssetName(),
+					m_cache[hashIndex]->GetAssetHandle(),
+					m_cache[hashIndex]->GetType()->GetName());
+			}
+
 			m_cache[hashIndex].Reset();
 		}
 		else

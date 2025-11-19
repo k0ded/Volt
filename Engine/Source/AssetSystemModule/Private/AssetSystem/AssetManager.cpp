@@ -555,11 +555,16 @@ namespace Volt
 		{
 			ScopedTimer timer{};
 
+			if (!DeserializeAsset(asset))
 			{
-				DeserializeAsset(asset);
+				AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+				assetMetadata->SetFlag(AssetMetadataFlag::Queued, false);
+				asset->SetFlag(AssetFlag::Queued, false);
+				return;
 			}
 
 			asset->SetFlag(AssetFlag::Queued, false);
+
 
 			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 			assetMetadata->SetFlag(AssetMetadataFlag::Loaded, true);
@@ -739,7 +744,6 @@ namespace Volt
 		AssetRefCounter* assetRefCounter = nullptr;
 		while (m_assetDestructionQueue.Pop(assetRefCounter))
 		{
-			// Make sure the asset hasn't been referenced again.
 			if (assetRefCounter->GetRefCount() < 2)
 			{
 				UnloadAndFreeAsset(assetRefCounter);

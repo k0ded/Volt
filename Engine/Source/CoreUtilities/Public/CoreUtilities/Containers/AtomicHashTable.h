@@ -28,7 +28,7 @@ public:
 
 		uint64_t checksum = 0;
 
-		constexpr uint32_t NumMaxIterations = 20;
+		constexpr uint32_t NumMaxIterations = 32;
 
 		uint32_t iteration = 0;
 		while (iteration++ < NumMaxIterations)
@@ -61,7 +61,7 @@ public:
 
 		uint64_t checksum = 0;
 
-		constexpr uint32_t NumMaxIterations = 20;
+		constexpr uint32_t NumMaxIterations = 32;
 
 		uint32_t iteration = 0;
 		while (iteration++ < NumMaxIterations)
@@ -74,10 +74,6 @@ public:
 			if (replaced)
 			{
 				return true;
-			}
-			else if (expected == 0)
-			{
-				return false;
 			}
 			else
 			{
@@ -98,7 +94,7 @@ public:
 
 		uint64_t checksum = 0;
 
-		constexpr uint32_t NumMaxIterations = 20;
+		constexpr uint32_t NumMaxIterations = 32;
 
 		uint32_t iteration = 0;
 		while (iteration++ < NumMaxIterations)
