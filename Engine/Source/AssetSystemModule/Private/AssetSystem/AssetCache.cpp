@@ -29,6 +29,10 @@ namespace Volt
 		{
 			m_cache[hashIndex] = asset;
 		}
+		else
+		{
+			VT_LOGC(Error, LogAssetSystem, "Unable to cache asset with handle '{}'", asset->GetAssetHandle());
+		}
 	}
 
 	void AssetCache::RemoveAsset(AssetHandle assetHandle)

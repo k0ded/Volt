@@ -113,6 +113,7 @@ namespace Volt
 
 	void Prefab::CopyPrefabEntity(Entity dstEntity, EntityID srcPrefabEntityId, std::set<VoltGUID> componentsToSkip) const
 	{
+		ScopedAssetReferenceLock sceneLock{ m_prefabScene };
 		Entity prefabEntity = m_prefabScene->GetEntityFromID(srcPrefabEntityId);
 		if (!prefabEntity)
 		{
@@ -138,8 +139,11 @@ namespace Volt
 
 		const EntityID prefabEntityId = entity.GetComponent<PrefabComponent>().prefabEntity;
 
+		ScopedAssetReferenceLock sceneLock{ m_prefabScene };
 		Entity prefabEntity = m_prefabScene->GetEntityFromID(prefabEntityId);
+		
 		const bool isValid = prefabEntity.IsValid();
+		
 		return isValid;
 	}
 
@@ -201,36 +205,44 @@ namespace Volt
 
 		Vector<EntityHeader> entityHeaders;
 
+		MemoryWriter entityDataWriter;
+		MemoryReader entityDataReader;
+
 		if (!archive.IsLoading())
 		{
+			ScopedAssetReferenceLock prefabSceneLock{ m_prefabScene };
+
 			for (const Entity& entity : m_prefabScene->GetAllEntities())
 			{
 				EntityHeader& entityHeader = entityHeaders.emplace_back();
-				entityHeader.startOffset = archive.GetHeadLocation();
+				entityHeader.startOffset = entityDataWriter.GetHeadLocation();
 				entityHeader.entityId = entity.GetID();
 
-				MemoryWriter entityArchive;
-				EntityDescSerialization::SerializeEntity(entityArchive, entity, 0);
-
-				archive << entityArchive;
+				EntityDescSerialization::SerializeEntity(entityDataWriter, entity, 0);
 			}
+
+			entityDataWriter.Close();
 		}
 
 		archive << entityHeaders;
 
-		if (archive.IsLoading())
+		if (!archive.IsLoading())
 		{
+			archive << entityDataWriter;
+		}
+		else
+		{
+			archive << entityDataReader;
+
 			m_prefabScene = g_assetManager->CreateAnonymousAsset<Scene>("PrefabScene");
+			ScopedAssetReferenceLock prefabSceneLock{ m_prefabScene };
 
 			for (const EntityHeader& entityHeader : entityHeaders)
 			{
-				archive.Seek(entityHeader.startOffset);
-				
-				MemoryReader entityArchive;
-				archive << entityArchive;
+				entityDataReader.Seek(entityHeader.startOffset);
 
 				Entity entity = m_prefabScene->CreateEntityWithID(entityHeader.entityId);
-				EntityDescSerialization::DeserializeEntity(entityArchive, entity);
+				EntityDescSerialization::DeserializeEntity(entityDataReader, entity);
 			}
 		}
 

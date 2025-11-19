@@ -495,7 +495,7 @@ namespace Volt
 
 	std::filesystem::path AssetManager::GetAssetFilesystemPath(AssetHandle assetHandle) const
 	{
-		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(assetHandle);
+		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
 		return GetAssetFilesystemPath(assetMetadata->filepath);
 	}
 
@@ -750,7 +750,7 @@ namespace Volt
 	bool AssetManager::SerializeAsset(AssetReference<Asset> asset)
 	{
 		ScopedAssetReferenceLock assetLock{ asset };
-		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(asset->GetAssetHandle());
+		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
 
 		if (!assetMetadata->HasFilepath())
 		{
@@ -763,7 +763,7 @@ namespace Volt
 			return false;
 		}
 
-		const std::filesystem::path destinationFilepath = g_assetManager->GetAssetFilesystemPath(assetMetadata->filepath);
+		const std::filesystem::path destinationFilepath = GetAssetFilesystemPath(assetMetadata->filepath);
 
 		FileWriter fileWriter;
 		if (!fileWriter.Open(destinationFilepath))

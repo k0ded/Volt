@@ -74,7 +74,6 @@ namespace Volt
 
 		inline static constexpr size_t NumMaxWorkers = 32;
 		inline static constexpr size_t NumMaxJobsPerQueue = 4096;
-		inline static constexpr size_t NumMaxJobs = 16384;
 		inline static constexpr size_t NumMaxWaitingJobs = 1024;
 
 		inline static JobSystem* s_instance = nullptr;
@@ -92,8 +91,8 @@ namespace Volt
 
 		LinearAllocator<DefaultHeapAllocator> m_workerAllocator;
 
-		JobAllocator<Job, NumMaxJobs> m_jobAllocator;
-		JobAllocator<JobCounter, NumMaxJobs * 2> m_counterAllocator;
+		JobAllocator<Job> m_jobAllocator;
+		JobAllocator<JobCounter> m_counterAllocator;
 		Array<AtomicStack<Job*>, static_cast<size_t>(ExecutionPriority::Num)> m_waitingList;
 	};
 

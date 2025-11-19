@@ -359,6 +359,22 @@ namespace Volt
 		return newEntity;
 	}
 
+	Entity Scene::AddEntityToScene(AssetReference<EntityDesc> entityDescription)
+	{
+		entityDescription.Lock();
+
+		Entity newEntity = m_entityScene.CreateEntityWithID(entityDescription->GetEntityID());
+		VT_ENSURE(newEntity);
+
+		m_entityIDToDescHandle.emplace(newEntity.GetID(), entityDescription->GetAssetHandle());
+		entityDescription->AssignOwnerScene(AssetReference<Scene>(RefPtr<Scene>::Attach(this)));
+		entityDescription.Unlock();
+		
+		m_sceneExtensionManager.OnEntityCreated(newEntity);
+
+		return newEntity;
+	}
+
 	AssetHandle Scene::CreateEntityDescForEntity(const EntityID& id)
 	{
 		VT_ENSURE(!m_entityIDToDescHandle.contains(id));

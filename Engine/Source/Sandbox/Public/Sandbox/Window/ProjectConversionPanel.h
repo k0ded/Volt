@@ -2,7 +2,7 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetManager.h>
 #include <CoreUtilities/Containers/ArrayView.h>
 
 namespace Volt
@@ -26,7 +26,7 @@ private:
 	bool TryLoadProject(Volt::Project& project);
 	void TryConvertAssets(const Volt::Project& project, const ArrayView<Volt::AssetMetadata>& assetMetadata);
 
-	AssetReference<Volt::Scene> TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs);
+	Vector<AssetReference<Volt::Asset>> TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs);
 	AssetReference<Volt::MeshAsset> TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata);
 	AssetReference<Volt::Prefab> TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata);
 
@@ -36,4 +36,6 @@ private:
 
 	std::filesystem::path m_projectToConvertFilepath;
 	std::filesystem::path m_targetDirectory;
+
+	Scope<Volt::AssetManager> m_assetManager;
 };

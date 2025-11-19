@@ -6,6 +6,7 @@
 #include "AssetSystem/AssetCache.h"
 #include "AssetSystem/AssetReference.h"
 #include "AssetSystem/AssetDependencyGraph.h"
+#include "AssetSystem/AssetLocks.h"
 
 #include <EventSystem/EventListener.h>
 
@@ -93,8 +94,10 @@ namespace Volt
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAnonymousAsset(std::string_view assetName, Args&&... args);
 		// Creates an asset that does not have a filepath yet.
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAsset(std::string_view assetName, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetWithAssetHandle(std::string_view assetName, AssetHandle assetHandle, Args&&... args);
 		// Creates an asset, assigns a filepath and creates the asset disk file itself.
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetAndFileWithAssetHandle(const std::filesystem::path& targetDirectory, std::string_view assetName, AssetHandle assetHandle, Args&&... args);
 
 		// Creates an asset of a type without arguments.
 		VTAS_API AssetReference<Asset> CreateAssetTypeless(std::string_view assetName, AssetType assetType);
@@ -150,7 +153,7 @@ namespace Volt
 			AssetChangedCallback callback;
 		};
 
-		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, Args&&... args);
+		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args);
 
 		VTAS_API void LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset);
 		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset);
@@ -293,7 +296,8 @@ namespace Volt
 			VT_ENSURE(T::GetStaticType() == tempAsset->GetType());
 			outAsset = AssetReference<T>(tempAsset.As<T>());
 
-			return true;
+			// Make sure the asset is loaded
+			return !tempAsset->IsFlagSet(AssetFlag::Queued);
 		}
 
 		// Asset wasn't in the cache, create and load it.
@@ -343,7 +347,7 @@ namespace Volt
 	{
 		constexpr bool IsMemoryAsset = true;
 		constexpr bool IsAnonymous = false;
-		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, std::forward<Args>(args)...);
+		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, {}, std::forward<Args>(args)...);
 	}
 
 	template<VoltAssetType T, typename... Args> AssetReference<T>
@@ -351,7 +355,7 @@ namespace Volt
 	{
 		constexpr bool IsMemoryAsset = true;
 		constexpr bool IsAnonymous = true;
-		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, std::forward<Args>(args)...);
+		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, {}, std::forward<Args>(args)...);
 	}
 
 	template<VoltAssetType T, typename... Args>
@@ -359,13 +363,22 @@ namespace Volt
 	{
 		constexpr bool IsMemoryAsset = false;
 		constexpr bool IsAnonymous = false;
-		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, std::forward<Args>(args)...);
+		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, {}, std::forward<Args>(args)...);
 	}
 
-	template<VoltAssetType T, typename... Args> 
+	template<VoltAssetType T, typename... Args> AssetReference<T>
+	AssetManager::CreateAssetWithAssetHandle(std::string_view assetName, AssetHandle assetHandle, Args&&... args)
+	{
+		constexpr bool IsMemoryAsset = false;
+		constexpr bool IsAnonymous = false;
+		return CreateAssetImpl<T>(assetName, IsMemoryAsset, IsAnonymous, assetHandle, std::forward<Args>(args)...);
+	}
+
+	template<VoltAssetType T, typename... Args>
 	AssetReference<T> AssetManager::CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args)
 	{
 		AssetReference<T> asset = CreateAsset<T>(assetName, std::forward<Args>(args)...);
+		ScopedAssetReferenceLock lock{ asset };
 
 		std::filesystem::path targetPath = targetDirectory / (std::string(assetName) + ".vtasset");
 		CreateFileForAsset(asset->GetAssetHandle(), targetPath);
@@ -373,14 +386,27 @@ namespace Volt
 		return asset;
 	}
 
-	template<VoltAssetType T, typename... Args> 
-	AssetReference<T> AssetManager::CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, Args&&... args)
+	template<VoltAssetType T, typename... Args> AssetReference<T>
+	AssetManager::CreateAssetAndFileWithAssetHandle(const std::filesystem::path& targetDirectory, std::string_view assetName, AssetHandle assetHandle, Args&&... args)
+	{
+		AssetReference<T> asset = CreateAssetWithAssetHandle<T>(assetName, assetHandle, std::forward<Args>(args)...);
+		ScopedAssetReferenceLock lock{ asset };
+
+		std::filesystem::path targetPath = targetDirectory / (std::string(assetName) + ".vtasset");
+		CreateFileForAsset(asset->GetAssetHandle(), targetPath);
+
+		return asset;
+	}
+
+	template<VoltAssetType T, typename... Args>
+	AssetReference<T> AssetManager::CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args)
 	{
 		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>(std::forward<Args>(args)...);
+		newAsset->AssignAssetHandle(assetHandle);
 
 		AssetMetadata metadata{};
 		metadata.filepath = ""; // Assets that are not saved will not have a file path
-		metadata.handle = newAsset->GetAssetHandle();
+		metadata.handle = assetHandle;
 		metadata.type = T::GetStaticType();
 		metadata.SetFlag(AssetMetadataFlag::Loaded, true);
 		metadata.SetFlag(AssetMetadataFlag::MemoryOnly, isMemoryAsset);

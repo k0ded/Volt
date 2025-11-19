@@ -115,7 +115,10 @@ namespace Volt
 		archive << m_indices;
 		archive << m_subMeshes;
 
-		InitializeInternal();
+		if (archive.IsLoading())
+		{
+			InitializeInternal();
+		}
 	}
 
 	void Mesh::SetMaterial(Ref<RenderMaterial> material, uint32_t index)

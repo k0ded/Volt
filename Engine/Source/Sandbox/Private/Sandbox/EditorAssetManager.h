@@ -58,11 +58,11 @@ inline bool EditorAssetManager::TryGetAssetImmediatelyAndCache(Volt::AssetHandle
 template<Volt::VoltAssetType T>
 inline bool EditorAssetManager::TryGetAssetAndCache(Volt::AssetHandle assetHandle, AssetReference<T>& outAsset)
 {
-	RefPtr<T> asset;
+	RefPtr<Volt::Asset> asset;
 	if (m_assetCache.TryGetAsset(assetHandle, asset))
 	{
-		outAsset = { asset };
-		return true;
+		outAsset = { asset.As<T>() };
+		return !asset->IsFlagSet(Volt::AssetFlag::Queued);
 	}
 
 	bool loaded = m_referencedAssetManager.TryGetAsset<T>(assetHandle, outAsset);

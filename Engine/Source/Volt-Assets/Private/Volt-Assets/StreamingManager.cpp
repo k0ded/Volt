@@ -145,6 +145,11 @@ namespace Volt
 
 	void StreamingManager::RemoveInstance(StreamingInstanceID instanceId)
 	{
+		if (!m_streamingInstances.Contains(instanceId))
+		{
+			return;
+		}
+
 		const auto& instance = m_streamingInstances.Get(instanceId);
 
 		if (s_logStreamingManagerUpdates.GetValue())

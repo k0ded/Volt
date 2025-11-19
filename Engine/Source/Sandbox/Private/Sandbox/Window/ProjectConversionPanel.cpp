@@ -13,9 +13,11 @@
 #include <Volt-Assets/MeshAsset.h>
 #include <Volt-Scene/Prefab.h>
 #include <Volt-Scene/EntityUtility.h>
+#include <Volt-Scene/EntityDescription.h>
 
 #include <Volt-Physics/ColliderComponents.h>
 #include <Volt-Physics/RigidbodyComponent.h>
+#include <Volt-Physics/CharacterControllerComponent.h>
 
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
@@ -232,30 +234,151 @@ ProjectConversionPanel::ProjectConversionPanel()
 
 	// Component remapping
 	{
-		AddRemapping<PrefabComponent>("PrefabAsset", 'prea');
-		AddRemapping<PrefabComponent>("PrefabEntity", 'pree');
-		AddRemapping<PrefabComponent>("Version", 'ver');
-	
-		AddRemapping<BoxColliderComponent>("Physics Material", 'mat');
+		// TagComponent
+		AddRemapping<TagComponent>("tag", 'tag');
 
+		// IDComponent
+		AddRemapping<IDComponent>("id", 'id');
+
+		// TransformComponent
+		AddRemapping<TransformComponent>("position", 'pos');
+		AddRemapping<TransformComponent>("rotation", 'rot');
+		AddRemapping<TransformComponent>("scale", 'scal');
+		AddRemapping<TransformComponent>("visible", 'vis');
+		AddRemapping<TransformComponent>("locked", 'lock');
+		AddRemapping<TransformComponent>("movability", 'mvbl');
+
+		// RelationshipComponent
+		AddRemapping<RelationshipComponent>("parent", 'par');
+		AddRemapping<RelationshipComponent>("children", 'chld');
+
+		// CommonComponent
+		AddRemapping<CommonComponent>("timecreatedid", 'time');
+
+		// RigidbodyComponent
 		AddRemapping<RigidbodyComponent>("Type", 'bdtp');
 		AddRemapping<RigidbodyComponent>("Disable Gravity", 'dsgr');
+		AddRemapping<RigidbodyComponent>("layerId", 'lyrd');
+		AddRemapping<RigidbodyComponent>("mass", 'mass');
+		AddRemapping<RigidbodyComponent>("linearDrag", 'lndr');
+		AddRemapping<RigidbodyComponent>("lockFlags", 'lcfl');
+		AddRemapping<RigidbodyComponent>("angularDrag", 'andr');
+		AddRemapping<RigidbodyComponent>("collisionType", 'colt');
+		AddRemapping<RigidbodyComponent>("isKinematic", 'iskn');
 
+		// BoxColliderComponent
+		AddRemapping<BoxColliderComponent>("halfSize", 'hasi');
+		AddRemapping<BoxColliderComponent>("offset", 'offs');
+		AddRemapping<BoxColliderComponent>("isTrigger", 'istr');
+		AddRemapping<BoxColliderComponent>("Physics Material", 'mat');
+
+		// SphereColliderComponent
+		AddRemapping<SphereColliderComponent>("radius", 'radi');
+		AddRemapping<SphereColliderComponent>("offset", 'offs');
+		AddRemapping<SphereColliderComponent>("isTrigger", 'istr');
+		AddRemapping<SphereColliderComponent>("Physics Material", 'mat');
+
+		// CapsuleColliderComponent
+		AddRemapping<CapsuleColliderComponent>("radius", 'radi');
+		AddRemapping<CapsuleColliderComponent>("height", 'heig');
+		AddRemapping<CapsuleColliderComponent>("offset", 'offs');
+		AddRemapping<CapsuleColliderComponent>("isTrigger", 'istr');
+		AddRemapping<CapsuleColliderComponent>("Physics Material", 'mat');
+
+		// MeshColliderComponent
+		AddRemapping<MeshColliderComponent>("colliderMesh", 'clme');
+		AddRemapping<MeshColliderComponent>("isConvex", 'isco');
+		AddRemapping<MeshColliderComponent>("isTrigger", 'istr');
 		AddRemapping<MeshColliderComponent>("Physics Material", 'mat');
 		AddRemapping<MeshColliderComponent>("Sub Mesh Index", 'smi');
 
-		AddRemapping<CapsuleColliderComponent>("Physics Material", 'mat');
+		// CharacterControllerComponent
+		AddRemapping<CharacterControllerComponent>("climbingMode", 'clim');
+		AddRemapping<CharacterControllerComponent>("slopeLimit", 'slli');
+		AddRemapping<CharacterControllerComponent>("invisibleWallHeight", 'iwh');
+		AddRemapping<CharacterControllerComponent>("maxJumpHeight", 'mjh');
+		AddRemapping<CharacterControllerComponent>("contactOffset", 'coff');
+		AddRemapping<CharacterControllerComponent>("stepOffset", 'soff');
+		AddRemapping<CharacterControllerComponent>("density", 'dens');
+		AddRemapping<CharacterControllerComponent>("layer", 'layr');
+		AddRemapping<CharacterControllerComponent>("hasGravity", 'hasg');
 
-		AddRemapping<SphereColliderComponent>("Physics Material", 'mat');
+		// PointLightComponent
+		AddRemapping<PointLightComponent>("intensity", 'inte');
+		AddRemapping<PointLightComponent>("radius", 'radi');
+		AddRemapping<PointLightComponent>("falloff", 'fall');
+		AddRemapping<PointLightComponent>("color", 'col');
+		AddRemapping<PointLightComponent>("castShadows", 'shdw');
 
-		AddRemapping<CameraComponent>("Field of View", 'fov');
-		AddRemapping<CameraComponent>("Near plane", 'nrpl');
-		AddRemapping<CameraComponent>("Far plane", 'frpl');
-	
+		// SpotLightComponent
+		AddRemapping<SpotLightComponent>("intensity", 'inte');
+		AddRemapping<SpotLightComponent>("innerAngle", 'angi');
+		AddRemapping<SpotLightComponent>("range", 'rang');
+		AddRemapping<SpotLightComponent>("color", 'col');
+		AddRemapping<SpotLightComponent>("castShadows", 'shdw');
 		AddRemapping<SpotLightComponent>("Angle", 'ango');
 		AddRemapping<SpotLightComponent>("Angle Attenuation", 'fall');
 
+		// SphereLightComponent
+		AddRemapping<SphereLightComponent>("intensity", 'inte');
+		AddRemapping<SphereLightComponent>("radius", 'radi');
+		AddRemapping<SphereLightComponent>("color", 'col');
+
+		// RectangleLightComponent
+		AddRemapping<RectangleLightComponent>("intensity", 'inte');
+		AddRemapping<RectangleLightComponent>("color", 'col');
+		AddRemapping<RectangleLightComponent>("width", 'wid');
+		AddRemapping<RectangleLightComponent>("height", 'heig');
+
+		// DirectionalLightComponent
+		AddRemapping<DirectionalLightComponent>("intensity", 'inte');
+		AddRemapping<DirectionalLightComponent>("color", 'col');
+		AddRemapping<DirectionalLightComponent>("lightSize", 'lisz');
+		AddRemapping<DirectionalLightComponent>("sunRadius", 'snrd');
+		AddRemapping<DirectionalLightComponent>("softShadows", 'sfsh');
+		AddRemapping<DirectionalLightComponent>("castShadows", 'shdw');
+
+		// SkylightComponent
+		AddRemapping<SkylightComponent>("intensity", 'inte');
+		AddRemapping<SkylightComponent>("lod", 'lod');
+		AddRemapping<SkylightComponent>("show", 'show');
 		AddRemapping<SkylightComponent>("Environment Map", 'env');
+
+
+		// AnimationPlayerComponent
+		AddRemapping<AnimationPlayerComponent>("skeleton", 'skel');
+		AddRemapping<AnimationPlayerComponent>("animationHandle", 'anim');
+		AddRemapping<AnimationPlayerComponent>("currentPlayTime", 'play');
+
+		// MeshComponent
+		AddRemapping<MeshComponent>("handle", 'hndl');
+		AddRemapping<MeshComponent>("materials", 'mats');
+
+		// CameraComponent
+		AddRemapping<CameraComponent>("priority", 'prio');
+		AddRemapping<CameraComponent>("Field of View", 'fov');
+		AddRemapping<CameraComponent>("Near plane", 'nrpl');
+		AddRemapping<CameraComponent>("Far plane", 'frpl');
+
+		// TextRendererComponent
+		AddRemapping<TextRendererComponent>("text", 'text');
+		AddRemapping<TextRendererComponent>("font", 'font');
+		AddRemapping<TextRendererComponent>("maxWidth", 'mxwd');
+		AddRemapping<TextRendererComponent>("color", 'col');
+
+		// SpriteComponent
+		AddRemapping<SpriteComponent>("materialHandle", 'hndl');
+
+		// DecalComponent
+		AddRemapping<DecalComponent>("decalMaterial", 'dcl');
+
+		// PrefabComponent
+		AddRemapping<PrefabComponent>("PrefabAsset", 'prea');
+		AddRemapping<PrefabComponent>("prefabEntity", 'pree');
+		AddRemapping<PrefabComponent>("PrefabEntity", 'pree');
+		AddRemapping<PrefabComponent>("Version", 'ver');
+		AddRemapping<PrefabComponent>("sceneRootEntity", 'sre');
+		AddRemapping<PrefabComponent>("componentLocalChanges", 'clc');
 	}
 }
 
@@ -285,6 +408,8 @@ void ProjectConversionPanel::TryConvertProject()
 	{
 		return;
 	}
+
+	m_assetManager = CreateScope<AssetManager>(ProjectManager::GetEngineRootDirectory(), m_targetDirectory, project.assetsDirectoryName);
 
 	const bool hasMetafiles = project.engineVersion.GetMinor() < 5;
 
@@ -370,15 +495,7 @@ bool ProjectConversionPanel::TryLoadProject(Volt::Project& project)
 
 void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, const ArrayView<Volt::AssetMetadata>& assetMetadata)
 {
-	struct AssetAndMetadataPair
-	{
-		AssetMetadata metadata;
-		AssetReference<Asset> asset;
-	};
-
-	Vector<AssetAndMetadataPair> assetAndMetadatas;
-	assetAndMetadatas.reserve(assetMetadata.size());
-
+	Vector<AssetReference<Asset>> assetsToSave;
 	Map<AssetHandle, AssetReference<Prefab>> assetHandleToPrefab;
 
 	// Make sure all prefabs are processed first.
@@ -389,7 +506,7 @@ void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, cons
 			AssetReference<Prefab> prefab = TryConvertPrefab(project, metadata);
 			if (prefab)
 			{
-				assetAndMetadatas.emplace_back(metadata, prefab);
+				assetsToSave.emplace_back(prefab);
 				assetHandleToPrefab[metadata.handle] = prefab;
 			}
 		}
@@ -399,55 +516,43 @@ void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, cons
 	{
 		if (metadata.type == AssetTypes::Scene)
 		{
-			AssetReference<Scene> scene = TryConvertScene(project, metadata, assetHandleToPrefab);
-			if (scene)
-			{
-				assetAndMetadatas.emplace_back(metadata, scene);
-			}
+			Vector<AssetReference<Asset>> assets = TryConvertScene(project, metadata, assetHandleToPrefab);
+			assetsToSave.append(assets);
 		}
 		else if (metadata.type == AssetTypes::Mesh)
 		{
 			AssetReference<MeshAsset> mesh = TryConvertMesh(project, metadata);
 			if (mesh)
 			{
-				assetAndMetadatas.emplace_back(metadata, mesh);
+				assetsToSave.emplace_back(mesh);
 			}
 		}
 	}
 
-	for (auto& [metadata, asset] : assetAndMetadatas)
+	for (auto& asset : assetsToSave)
 	{
-		metadata.filepath.replace_extension(".vtasset");
-
-		const std::filesystem::path absoluteFilepath = ProjectManager::GetRootDirectory() / metadata.filepath;
-
-		if (!FileSystem::Exists(absoluteFilepath.parent_path()))
-		{
-			std::filesystem::create_directories(absoluteFilepath.parent_path());
-		}
-		Volt::CustomAssetMetadataVector OutCustomMetadata;
-		//AssetSerializerRegistry::Get().GetSerializer(asset->GetType()).Serialize(metadata, OutCustomMetadata, asset);
+		m_assetManager->SaveAsset(asset);
 	}
 }
 
-AssetReference<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs)
+Vector<AssetReference<Asset>> ProjectConversionPanel::TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs)
 {
 	const std::filesystem::path absoluteScenePath = project.rootDirectory / metadata.filepath;
 
 	if (!FileSystem::Exists(absoluteScenePath))
 	{
-		return nullptr;
+		return {};
 	}
 
 	YAMLFileStreamReader streamReader;
 	if (!streamReader.OpenFile(absoluteScenePath))
 	{
-		return nullptr;
+		return {};
 	}
 
 	if (!streamReader.HasKey("Scene"))
 	{
-		return nullptr;
+		return {};
 	}
 
 	streamReader.EnterScope("Scene");
@@ -458,7 +563,7 @@ AssetReference<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Projec
 
 	if (!FileSystem::Exists(layersDirectoryPath))
 	{
-		return nullptr;
+		return {};
 	}
 
 	Vector<std::filesystem::path> layerFilepaths;
@@ -471,7 +576,13 @@ AssetReference<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Projec
 		}
 	}
 
-	AssetReference<Scene> scene = g_assetManager->CreateMemoryAsset<Scene>(sceneName);
+	AssetReference<Scene> scene = m_assetManager->CreateAssetAndFileWithAssetHandle<Scene>(metadata.filepath.parent_path(), sceneName, metadata.handle);
+	scene.Lock();
+
+	Vector<AssetReference<Asset>> resultAssets;
+	resultAssets.emplace_back(scene);
+
+	const std::filesystem::path entitiesTargetDir = metadata.filepath.parent_path() / (metadata.filepath.stem().string() + "_Entities");
 
 	for (const std::filesystem::path& layerFilepath : layerFilepaths)
 	{
@@ -496,8 +607,14 @@ AssetReference<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Projec
 			// Entity id is serialized as a uint32_t.
 			EntityID entityId = layerReader.ReadAtKey("id", 0u);
 
-			Entity newEntity = scene->CreateEntityWithID(entityId);
-			EditorUtils::MarkEntityAsEdited(*scene, newEntity);
+			const std::string entityDescName = std::to_string(entityId);
+			AssetReference<EntityDesc> entityDescription = m_assetManager->CreateAsset<EntityDesc>(entityDescName, entityId, scene->GetAssetHandle());
+			resultAssets.emplace_back(entityDescription);
+
+			Entity newEntity = scene->AddEntityToScene(entityDescription);
+			entityDescription.Lock();
+			m_assetManager->CreateFileForAsset(entityDescription->GetAssetHandle(), entitiesTargetDir / (entityDescName + ".vtasset"));
+			entityDescription.Unlock();
 
 			layerReader.ForEach("components", [&]() 
 			{
@@ -630,6 +747,8 @@ AssetReference<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Projec
 					if (prefabIt != prefabs.end())
 					{
 						AssetReference<Prefab> prefab = prefabIt->second;
+						ScopedAssetReferenceLock prefabLock{ prefab };
+
 						prefab->CopyPrefabEntity(entity, prefabComponent.prefabEntity,
 							Volt::CreateSkipComponentOnCopySet<RelationshipComponent, TransformComponent, IDComponent, PrefabComponent>());
 					}
@@ -638,8 +757,10 @@ AssetReference<Scene> ProjectConversionPanel::TryConvertScene(const Volt::Projec
 		}
 	}
 
+	scene.Unlock();
+
 	VT_LOG(Trace, "Converted Scene with name {}", sceneName);
-	return scene;
+	return resultAssets;
 }
 
 AssetReference<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata)
@@ -664,108 +785,113 @@ AssetReference<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Vol
 	Buffer dataBuffer = Buffer::ReadFromFile(absoluteMeshPath);
 
 	const std::string meshName = absoluteMeshPath.stem().string();
-	AssetReference<MeshAsset> newMesh = g_assetManager->CreateMemoryAsset<MeshAsset>("");
+	AssetReference<MeshAsset> newMesh = m_assetManager->CreateAssetAndFileWithAssetHandle<MeshAsset>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle);
 
-	size_t offset = 0;
-
-	const uint32_t numSubMeshes = *dataBuffer.As<uint32_t>(offset);
-	offset += sizeof(uint32_t);
-
-	const AssetHandle materialHandle = *dataBuffer.As<AssetHandle>(offset);
-	offset += sizeof(AssetHandle);
-
-	const uint32_t numVertices = *dataBuffer.As<uint32_t>(offset);
-	offset += sizeof(uint32_t);
-
-	Vector<LegacyVertex> legacyVertices;
-	legacyVertices.resize_uninitialized(numVertices);
-
-	memcpy_s(legacyVertices.data(), legacyVertices.byte_size(), dataBuffer.As<LegacyVertex>(offset), sizeof(LegacyVertex) * numVertices);
-	offset += sizeof(LegacyVertex) * numVertices;
-
-	const uint32_t numIndices = *dataBuffer.As<uint32_t>(offset);
-	offset += sizeof(uint32_t);
-
-	Vector<uint32_t> indices;
-	indices.resize_uninitialized(numIndices);
-
-	memcpy_s(indices.data(), indices.byte_size(), dataBuffer.As<uint32_t>(offset), sizeof(uint32_t) * numIndices);
-	offset += sizeof(uint32_t) * numIndices;
-
-	// Skip bounding sphere
-	offset += sizeof(glm::vec3) + sizeof(float);
-
-	const uint32_t numSubMeshNames = *dataBuffer.As<uint32_t>(offset);
-	offset += sizeof(uint32_t);
-
-	Vector<std::string> names;
-	names.reserve(numSubMeshNames);
-
-	for (uint32_t i = 0; i < numSubMeshNames; ++i)
 	{
-		const uint32_t nameSize = *dataBuffer.As<uint32_t>(offset);
+		ScopedAssetReferenceLock meshLock{ newMesh };
+
+		size_t offset = 0;
+
+		const uint32_t numSubMeshes = *dataBuffer.As<uint32_t>(offset);
 		offset += sizeof(uint32_t);
 
-		const char* nameData = dataBuffer.As<const char>(offset);
-		names.emplace_back(nameData);
+		const AssetHandle materialHandle = *dataBuffer.As<AssetHandle>(offset);
+		offset += sizeof(AssetHandle);
 
-		offset += nameSize;
-	}
-
-	MeshInitializer meshInitializer;
-
-	for (uint32_t i = 0; i < numSubMeshes; ++i)
-	{
-		SubMesh newSubMesh;
-	
-		// Note: All sub meshes get the same material as we no longer have sub materials.
-		//newSubMesh.materialIndex = *dataBuffer.As<uint32_t>(offset);
-		newSubMesh.materialIndex = 0;
+		const uint32_t numVertices = *dataBuffer.As<uint32_t>(offset);
 		offset += sizeof(uint32_t);
 
-		newSubMesh.vertexCount = *dataBuffer.As<uint32_t>(offset);
+		Vector<LegacyVertex> legacyVertices;
+		legacyVertices.resize_uninitialized(numVertices);
+
+		memcpy_s(legacyVertices.data(), legacyVertices.byte_size(), dataBuffer.As<LegacyVertex>(offset), sizeof(LegacyVertex)* numVertices);
+		offset += sizeof(LegacyVertex) * numVertices;
+
+		const uint32_t numIndices = *dataBuffer.As<uint32_t>(offset);
 		offset += sizeof(uint32_t);
 
-		newSubMesh.indexCount = *dataBuffer.As<uint32_t>(offset);
+		Vector<uint32_t> indices;
+		indices.resize_uninitialized(numIndices);
+
+		memcpy_s(indices.data(), indices.byte_size(), dataBuffer.As<uint32_t>(offset), sizeof(uint32_t)* numIndices);
+		offset += sizeof(uint32_t) * numIndices;
+
+		// Skip bounding sphere
+		offset += sizeof(glm::vec3) + sizeof(float);
+
+		const uint32_t numSubMeshNames = *dataBuffer.As<uint32_t>(offset);
 		offset += sizeof(uint32_t);
 
-		newSubMesh.vertexStartOffset = *dataBuffer.As<uint32_t>(offset);
-		offset += sizeof(uint32_t);
+		Vector<std::string> names;
+		names.reserve(numSubMeshNames);
 
-		newSubMesh.indexStartOffset = *dataBuffer.As<uint32_t>(offset);
-		offset += sizeof(uint32_t);
-
-		newSubMesh.transform = *dataBuffer.As<glm::mat4>(offset);
-		offset += sizeof(glm::mat4);
-
-		if (i < static_cast<uint32_t>(names.size()))
+		for (uint32_t i = 0; i < numSubMeshNames; ++i)
 		{
-			newSubMesh.name = names.at(i);
+			const uint32_t nameSize = *dataBuffer.As<uint32_t>(offset);
+			offset += sizeof(uint32_t);
+
+			const char* nameData = dataBuffer.As<const char>(offset);
+			names.emplace_back(nameData);
+
+			offset += nameSize;
 		}
 
-		meshInitializer.AddSubMesh(newSubMesh);
-	}
+		MeshInitializer meshInitializer;
 
-	meshInitializer.SetIndices(indices);
-	
-	// Convert vertices
-	{
-		VertexContainer vertexContainer;
-	
-		for (const LegacyVertex& vertex : legacyVertices)
+		for (uint32_t i = 0; i < numSubMeshes; ++i)
 		{
-			const VertexMaterialData materialData = VertexMaterialData::Pack(vertex.normal, { vertex.tangent, 0.f }, vertex.texCoords);
-			const VertexAnimationData animationData = { vertex.influences, vertex.weights };
+			SubMesh newSubMesh;
 
-			vertexContainer.Add(vertex.position, materialData, animationData);
+			// Note: All sub meshes get the same material as we no longer have sub materials.
+			//newSubMesh.materialIndex = *dataBuffer.As<uint32_t>(offset);
+			newSubMesh.materialIndex = 0;
+			offset += sizeof(uint32_t);
+
+			newSubMesh.vertexCount = *dataBuffer.As<uint32_t>(offset);
+			offset += sizeof(uint32_t);
+
+			newSubMesh.indexCount = *dataBuffer.As<uint32_t>(offset);
+			offset += sizeof(uint32_t);
+
+			newSubMesh.vertexStartOffset = *dataBuffer.As<uint32_t>(offset);
+			offset += sizeof(uint32_t);
+
+			newSubMesh.indexStartOffset = *dataBuffer.As<uint32_t>(offset);
+			offset += sizeof(uint32_t);
+
+			newSubMesh.transform = *dataBuffer.As<glm::mat4>(offset);
+			offset += sizeof(glm::mat4);
+
+			if (i < static_cast<uint32_t>(names.size()))
+			{
+				newSubMesh.name = names.at(i);
+			}
+
+			meshInitializer.AddSubMesh(newSubMesh);
 		}
-	
-		meshInitializer.AddVertices(vertexContainer);
-	}
-	
-	newMesh->Initialize(meshInitializer, { materialHandle });
 
-	VT_LOG(Trace, "Converted Mesh with name {}", meshName);
+		meshInitializer.SetIndices(indices);
+
+		// Convert vertices
+		{
+			VertexContainer vertexContainer;
+
+			for (const LegacyVertex& vertex : legacyVertices)
+			{
+				const VertexMaterialData materialData = VertexMaterialData::Pack(vertex.normal, { vertex.tangent, 0.f }, vertex.texCoords);
+				const VertexAnimationData animationData = { vertex.influences, vertex.weights };
+
+				vertexContainer.Add(vertex.position, materialData, animationData);
+			}
+
+			meshInitializer.AddVertices(vertexContainer);
+		}
+
+		newMesh->Initialize(meshInitializer, { materialHandle });
+
+		VT_LOG(Trace, "Converted Mesh with name {}", meshName);
+	}
+
 	return newMesh;
 }
 
@@ -789,7 +915,9 @@ AssetReference<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Proj
 		return nullptr;
 	}
 
-	AssetReference<Scene> prefabScene = g_assetManager->CreateMemoryAsset<Scene>("");
+	AssetReference<Scene> prefabScene = m_assetManager->CreateMemoryAsset<Scene>("");
+	ScopedAssetReferenceLock prefabLock{ prefabScene };
+
 	EntityID rootEntityId = EntityID::Null();
 
 	streamReader.EnterScope("Prefab");
@@ -910,7 +1038,7 @@ AssetReference<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Proj
 
 	VT_ENSURE(rootEntityId != EntityID::Null());
 
-	AssetReference<Prefab> prefab = g_assetManager->CreateMemoryAsset<Prefab>("", prefabScene, rootEntityId, version);
+	AssetReference<Prefab> prefab = m_assetManager->CreateAssetAndFileWithAssetHandle<Prefab>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle, prefabScene, rootEntityId, version);
 
 	VT_LOG(Trace, "Converted Prefab with name {}", metadata.filepath.stem().string());
 	return prefab;

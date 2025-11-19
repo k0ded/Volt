@@ -510,32 +510,56 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 		}
 	}
 
-	if (!PromptUnloadCurrentScene())
+	Volt::AssetHandle oldAssetHandle = Volt::Asset::Null();
+
+	// Check if we are trying to load the same scene.
+	if (m_runtimeScene)
 	{
-		return;
+		m_runtimeScene.Lock();
+		oldAssetHandle = m_runtimeScene->GetAssetHandle();
+		m_runtimeScene.Unlock();
 	}
+
+	const bool isSameScene = sceneHandle == oldAssetHandle;
+
+	if (!isSameScene)
+	{
+		if (!PromptUnloadCurrentScene())
+		{
+			return;
+		}
+	}
+
 
 	SelectionManager::DeselectAll();
 
 	//load new scene
-	AssetReference<Volt::Scene> newScene = g_assetManager->GetAssetImmediately<Volt::Scene>(sceneHandle);
-	if (!newScene)
+	if (!isSameScene)
 	{
-		Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(sceneHandle);
+		AssetReference<Volt::Scene> newScene = g_assetManager->GetAssetImmediately<Volt::Scene>(sceneHandle);
+		if (!newScene)
+		{
+			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(sceneHandle);
 
-		UI::Notify(UI::NotificationType::Error,
-			std::format("Failed to open Scene '{0}'", assetMetadata->filepath.stem().string()),
-			std::format("Failed to open scene with handle '{0}'", std::to_string(sceneHandle)));
-		return;
+			UI::Notify(UI::NotificationType::Error,
+				std::format("Failed to open Scene '{0}'", assetMetadata->filepath.stem().string()),
+				std::format("Failed to open scene with handle '{0}'", std::to_string(sceneHandle)));
+			return;
+		}
+
+		m_runtimeScene = newScene;
 	}
-
-	m_runtimeScene = newScene;
+	else
+	{
+		// Reload the scene.
+		g_assetManager->ReloadAsset(sceneHandle);
+	}
 
 	SetupNewSceneData();
 
 	{
-		ScopedAssetReferenceLock sceneLock{ newScene };
-		newScene->LoadEntities();
+		ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
+		m_runtimeScene->LoadEntities();
 	}
 }
 

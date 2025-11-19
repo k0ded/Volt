@@ -46,6 +46,12 @@ void FileWriter::SerializeBytes(void* value, size_t size)
 {
 	VT_ENSURE_MSG(m_isOpen, "Writer must be open to be writeable!");
 
+	// No need to serialize nothing.
+	if (size == 0)
+	{
+		return;
+	}
+
 	size_t offset = m_allocator.size();
 	m_allocator.resize_uninitialized(offset + size);
 

@@ -3,6 +3,8 @@
 #include "JobSystem/Config.h"
 #include "JobSystem/JobSystem.h"
 
+#include <CoreUtilities/Allocators/PagedLinearAllocator.h>
+
 #include <unordered_set>
 
 namespace Volt
@@ -14,8 +16,6 @@ namespace Volt
 		~TaskGraphAllocator();
 
 		VT_DELETE_COPY_MOVE(TaskGraphAllocator);
-
-		void Allocate(size_t numBytes);
 
 		template<typename T, typename... Args>
 		T* CreateTask(Args&&... args)
@@ -42,8 +42,7 @@ namespace Volt
 
 		void* AllocateBytes(size_t size);
 
-		size_t m_offset = 0;
-		uint8_t* m_dataPtr = nullptr;
+		PagedLinearAllocator<1024> m_allocator;
 		Vector<TaskDestructor> m_taskDestructors;
 	};
 
@@ -87,7 +86,7 @@ namespace Volt
 		
 		};
 
-		TaskGraph(ExecutionPriority priority, size_t numMaxTasks = 128);
+		TaskGraph(ExecutionPriority priority, size_t numExpectedTasks = 128);
 		~TaskGraph();
 
 		VT_DELETE_COPY_MOVE(TaskGraph);
@@ -134,7 +133,7 @@ namespace Volt
 
 		bool m_isExecuted = false;
 		ExecutionPriority m_priority;
-		size_t m_numMaxTasks;
+		size_t m_numExpectedTasks;
 		JobCounterRef m_graphCounter = nullptr;
 		TaskGraphAllocator m_allocator;
 

@@ -6,11 +6,9 @@
 
 namespace Volt
 {
-	TaskGraph::TaskGraph(ExecutionPriority priority, size_t numMaxTasks)
-		: m_numMaxTasks(numMaxTasks), m_priority(priority)
+	TaskGraph::TaskGraph(ExecutionPriority priority, size_t numExpectedTasks)
+		: m_numExpectedTasks(numExpectedTasks), m_priority(priority)
 	{
-		// Allocate enough space for tasks and the worst case task func size.
-		m_allocator.Allocate(numMaxTasks * sizeof(Task) + numMaxTasks * Job::MaxJobFuncSize);
 	}
 
 	TaskGraph::~TaskGraph()
@@ -82,7 +80,7 @@ namespace Volt
 			}
 		}
 
-		m_jobs.reserve(m_numMaxTasks);
+		m_jobs.reserve(m_numExpectedTasks);
 
 		// Now iterate through all unreferenced tasks and 
 		// iterate though their dependency trees, creating
@@ -126,25 +124,11 @@ namespace Volt
 		{
 			destructor.destructor(destructor.dataPtr);
 		}
-
-		if (m_dataPtr)
-		{
-			Memory::Free(m_dataPtr);
-		}
-	}
-
-	void TaskGraphAllocator::Allocate(size_t numBytes)
-	{
-		VT_ENSURE_MSG(m_dataPtr == nullptr, "Allocate should only be called once!");
-		m_dataPtr = reinterpret_cast<uint8_t*>(Memory::Malloc(numBytes));
 	}
 
 	void* TaskGraphAllocator::AllocateBytes(size_t size)
 	{
-		void* ptr = &m_dataPtr[m_offset];
-		m_offset += size;
-
-		return ptr;
+		return m_allocator.Allocate(size);
 	}
 
 	void TaskGraph::Task::AddDependency(Task* dependency)

@@ -6,6 +6,7 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Utility/EditorSearchBar.h"
+#include "Sandbox/EditorAssetManager.h"
 #include "Sandbox/Sandbox.h"
 
 #include <Volt-Scene/Prefab.h>
@@ -409,7 +410,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 		bool hasValidLink = false;
 
 		AssetReference<Volt::Prefab> prefabAsset;
-		if (g_assetManager->TryGetAsset(prefabComp.prefabAsset, prefabAsset))
+		if (g_editorAssetManager->TryGetAssetAndCache(prefabComp.prefabAsset, prefabAsset))
 		{
 			ScopedAssetReferenceLock prefabLock{ prefabAsset };
 			hasValidLink = prefabAsset->IsEntityValidInPrefab(entity);

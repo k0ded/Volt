@@ -48,6 +48,7 @@ public:
 				outIndex = hash % m_checksum.size();
 			}
 		}
+		VT_ENSURE(iteration <= NumMaxIterations);
 
 		return iteration <= NumMaxIterations;
 	}
@@ -84,6 +85,7 @@ public:
 				outIndex = hash % m_checksum.size();
 			}
 		}
+		VT_ENSURE(iteration <= NumMaxIterations);
 
 		return iteration <= NumMaxIterations;
 	}
@@ -119,6 +121,7 @@ public:
 				outIndex = hash % m_checksum.size();
 			}
 		}
+		VT_ENSURE(iteration <= NumMaxIterations);
 
 		return iteration <= NumMaxIterations;
 	}
