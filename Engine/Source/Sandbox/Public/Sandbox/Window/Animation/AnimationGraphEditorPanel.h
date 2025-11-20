@@ -1,6 +1,8 @@
 #pragma once
 #include "Sandbox/Window/EditorWindow.h"
 
+#include "Sandbox/NodeGraph/EditorNodeGraph.h"
+
 namespace Volt
 {
 	class AnimationGraph;
@@ -15,10 +17,6 @@ public:
 	void OpenAsset(AssetReference<Volt::Asset> asset) override;
 private:
 	Ref<Volt::AnimationGraph> m_openAnimationGraph;
-
-	glm::vec2 m_cameraPos;
-	float m_cameraZoom;
-
-	bool m_movingCamera;
-	glm::vec2 m_startMovingCameraPos;
+	
+	EditorNodeGraph m_editorNodeGraph;
 };
