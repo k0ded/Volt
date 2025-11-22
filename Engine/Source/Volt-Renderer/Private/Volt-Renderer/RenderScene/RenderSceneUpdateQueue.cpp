@@ -7,7 +7,7 @@ namespace Volt
 
 	RenderSceneUpdateQueue::RenderSceneUpdateQueue()
 	{
-		constexpr size_t NumMaxUpdates = 8192;
+		constexpr size_t NumMaxUpdates = 65536;
 		m_updateQueue.Allocate(NumMaxUpdates);
 	}
 
@@ -23,7 +23,8 @@ namespace Volt
 		queuedUpdate.primitiveInfo.material = material;
 		queuedUpdate.primitiveInfo.subMeshIndex = subMeshIndex;
 
-		m_updateQueue.Emplace(queuedUpdate);
+		VT_MAYBE_UNUSED bool wasEmplaced = m_updateQueue.Emplace(queuedUpdate);
+		VT_ENSURE(wasEmplaced);
 
 		return queuedUpdate.primitiveInfo.id;
 	}
@@ -36,7 +37,8 @@ namespace Volt
 		queuedUpdate.lightInfo.entityId = entityId;
 		queuedUpdate.lightInfo.lightDescription = description;
 
-		m_updateQueue.Emplace(queuedUpdate);
+		VT_MAYBE_UNUSED bool wasEmplaced = m_updateQueue.Emplace(queuedUpdate);
+		VT_ENSURE(wasEmplaced);
 
 		return queuedUpdate.lightInfo.id;
 	}
@@ -48,7 +50,8 @@ namespace Volt
 		queuedUpdate.type = UpdateType::Primitive;
 		queuedUpdate.id = id;
 
-		m_updateQueue.Emplace(queuedUpdate);
+		VT_MAYBE_UNUSED bool wasEmplaced = m_updateQueue.Emplace(queuedUpdate);
+		VT_ENSURE(wasEmplaced);
 	}
 
 	void RenderSceneUpdateQueue::RemoveLightInstance(UUID64 id)
@@ -58,7 +61,8 @@ namespace Volt
 		queuedUpdate.type = UpdateType::Light;
 		queuedUpdate.id = id;
 
-		m_updateQueue.Emplace(queuedUpdate);
+		VT_MAYBE_UNUSED bool wasEmplaced = m_updateQueue.Emplace(queuedUpdate);
+		VT_ENSURE(wasEmplaced);
 	}
 
 	void RenderSceneUpdateQueue::InvalidatePrimitiveInstance(UUID64 renderObject)
@@ -68,7 +72,8 @@ namespace Volt
 		queuedUpdate.type = UpdateType::Primitive;
 		queuedUpdate.id = renderObject;
 
-		m_updateQueue.Emplace(queuedUpdate);
+		VT_MAYBE_UNUSED bool wasEmplaced = m_updateQueue.Emplace(queuedUpdate);
+		VT_ENSURE(wasEmplaced);
 	}
 
 	void RenderSceneUpdateQueue::InvalidateLightInstance(UUID64 id)
@@ -78,7 +83,8 @@ namespace Volt
 		queuedUpdate.type = UpdateType::Light;
 		queuedUpdate.id = id;
 
-		m_updateQueue.Emplace(queuedUpdate);
+		VT_MAYBE_UNUSED bool wasEmplaced = m_updateQueue.Emplace(queuedUpdate);
+		VT_ENSURE(wasEmplaced);
 	}
 
 	bool RenderSceneUpdateQueue::TryPop(QueuedUpdate& outQueuedUpdate)

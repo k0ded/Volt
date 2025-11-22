@@ -2,7 +2,7 @@
 
 #include "CoreUtilities/Config.h"
 
-#include "CoreUtilities/Allocators/LinearAllocator.h"
+#include "CoreUtilities/Allocators/FixedSizeLinearAllocator.h"
 
 
 class VTCOREUTIL_API FrameStackAllocator
@@ -61,7 +61,7 @@ public:
 private:
 	inline static constexpr size_t FrameStackSize = 128 * 1024 * 1024; // 32MB
 
-	LinearAllocator<DefaultHeapAllocator> m_linearAllocator;
+	FixedSizeLinearAllocator<DefaultHeapAllocator> m_linearAllocator;
 	std::atomic_size_t m_numAllocations = 0;
 
 };

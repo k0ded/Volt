@@ -10,7 +10,7 @@
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
 
-#include <CoreUtilities/Allocators/LinearAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeLinearAllocator.h>
 #include <CoreUtilities/Containers/ArrayView.h>
 #include <CoreUtilities/DestructorHelper.h>
 
@@ -39,7 +39,7 @@ namespace Volt
 
 	private:
 		inline static constexpr size_t MaxBatchedShaderParameterSize = 1024;
-		LinearAllocator<> m_allocator;
+		FixedSizeLinearAllocator<> m_allocator;
 		Vector<DestructorHelper> m_destructors;
 	};
 

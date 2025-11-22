@@ -56,7 +56,7 @@ namespace Volt
 			// ID is used for all remove and invalidation operations.
 			PrimitiveAddInfo primitiveInfo;
 			LightAddInfo lightInfo;
-			UUID64 id;
+			UUID64 id = 0;
 		};
 
 		RenderSceneUpdateQueue();

@@ -8,7 +8,7 @@
 #include <RHIModule/Core/RHICommon.h>
 
 #include <CoreUtilities/Containers/Vector.h>
-#include <CoreUtilities/Allocators/LinearAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeLinearAllocator.h>
 #include <CoreUtilities/DestructorHelper.h>
 #include <CoreUtilities/UUID.h>
 
@@ -151,7 +151,7 @@ namespace Volt
 	private:
 		void VTR_API AddPrimitivesToMeshPassProcessor(MeshPassProcessor* meshPassProcessor);
 
-		LinearAllocator<> m_meshPassProcessorAllocator;
+		FixedSizeLinearAllocator<> m_meshPassProcessorAllocator;
 		Vector<MeshPassProcessor*> m_meshPassProcessors;
 		Vector<DestructorHelper> m_meshPassDestructors;
 

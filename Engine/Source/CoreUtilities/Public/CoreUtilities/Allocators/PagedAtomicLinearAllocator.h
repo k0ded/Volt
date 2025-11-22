@@ -7,12 +7,12 @@
 #include "CoreUtilities/VoltAssert.h"
 
 template<uint64_t PageSize, typename SecondaryAllocator = DefaultHeapAllocator>
-class PagedLinearAllocator
+class PagedAtomicLinearAllocator
 {
 public:
-	PagedLinearAllocator() = default;
+	PagedAtomicLinearAllocator() = default;
 
-	~PagedLinearAllocator()
+	~PagedAtomicLinearAllocator()
 	{
 		PageHeader* currentPage = m_basePage;
 
@@ -41,7 +41,7 @@ public:
 		FreePage(m_basePage);
 	}
 
-	PagedLinearAllocator(PagedLinearAllocator&& other) noexcept
+	PagedAtomicLinearAllocator(PagedAtomicLinearAllocator&& other) noexcept
 	{
 		m_allocator = std::move(other.m_allocator);
 		m_basePage.store(other.m_basePage);
@@ -49,7 +49,7 @@ public:
 		other.m_basePage = nullptr;
 	}
 
-	PagedLinearAllocator& operator=(PagedLinearAllocator&& other) noexcept
+	PagedAtomicLinearAllocator& operator=(PagedAtomicLinearAllocator&& other) noexcept
 	{
 		m_allocator = std::move(other.m_allocator);
 		m_basePage.store(other.m_basePage);

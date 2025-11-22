@@ -6,7 +6,7 @@
 #include <RHIModule/Memory/GPUAllocator.h>
 #include <RHIModule/Memory/AllocationCache.h>
 
-#include <CoreUtilities/Allocators/ArenaAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeArenaAllocator.h>
 
 struct VmaAllocator_T;
 
@@ -39,7 +39,7 @@ namespace Volt::RHI
 
 		AllocationCache m_allocationCache{};
 
-		ArenaAllocator<VulkanBufferAllocation> m_bufferAllocationArena;
-		ArenaAllocator<VulkanImageAllocation> m_imageAllocationArena;
+		FixedSizeArenaAllocator<VulkanBufferAllocation> m_bufferAllocationArena;
+		FixedSizeArenaAllocator<VulkanImageAllocation> m_imageAllocationArena;
 	};
 }

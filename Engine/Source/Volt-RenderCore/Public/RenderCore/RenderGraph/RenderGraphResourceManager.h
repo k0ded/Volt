@@ -3,7 +3,7 @@
 #include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 #include "RenderCore/TransientResourceSystem/PersistantResource.h"
 
-#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 
 namespace Volt
 {
@@ -27,9 +27,9 @@ namespace Volt
 		void AllocateResource(RGUniformBufferRef resource);
 
 	private:
-		PagedArenaAllocator<PersistantBufferResource, 512> m_persistantBufferResources;
-		PagedArenaAllocator<PersistantTextureResource, 512> m_persistantTextureResources;
-		PagedArenaAllocator<PersistantUniformBufferResource, 512> m_persistantUniformBufferResources;
+		PagedAtomicArenaAllocator<PersistantBufferResource, 512> m_persistantBufferResources;
+		PagedAtomicArenaAllocator<PersistantTextureResource, 512> m_persistantTextureResources;
+		PagedAtomicArenaAllocator<PersistantUniformBufferResource, 512> m_persistantUniformBufferResources;
 
 		Vector<TransientBufferResource*> m_allocatedBuffers;
 		Vector<TransientTextureResource*> m_allocatedTextures;

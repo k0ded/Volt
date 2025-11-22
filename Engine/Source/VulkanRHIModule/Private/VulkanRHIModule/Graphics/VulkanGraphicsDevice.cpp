@@ -3,6 +3,7 @@
 #include "VulkanRHIModule/Common/VulkanCommon.h"	
 #include "VulkanRHIModule/Graphics/VulkanDeviceQueue.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
+#include "VulkanRHIModule/VulkanResourceCast.h"
 #include "VulkanRHIModule/Core.h"
 
 #include <RHIModule/RHICapabilities.h>
@@ -415,9 +416,9 @@ namespace Volt::RHI
 
 	void VulkanGraphicsDevice::WaitForIdle()
 	{
-		RefPtr<VulkanDeviceQueue> graphicsQueue = m_deviceQueues[QueueType::Graphics].As<VulkanDeviceQueue>();
-		RefPtr<VulkanDeviceQueue> transferQueue = m_deviceQueues[QueueType::TransferCopy].As<VulkanDeviceQueue>();
-		RefPtr<VulkanDeviceQueue> computeQueue = m_deviceQueues[QueueType::Compute].As<VulkanDeviceQueue>();
+		RefPtr<VulkanDeviceQueue> graphicsQueue = ResourceCast(m_deviceQueues[QueueType::Graphics]);
+		RefPtr<VulkanDeviceQueue> transferQueue = ResourceCast(m_deviceQueues[QueueType::TransferCopy]);
+		RefPtr<VulkanDeviceQueue> computeQueue = ResourceCast(m_deviceQueues[QueueType::Compute]);
 
 		graphicsQueue->AquireLock();
 		transferQueue->AquireLock();

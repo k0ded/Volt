@@ -5,7 +5,7 @@
 #include <RHIModule/Memory/TransientHeap.h>
 #include <RHIModule/Memory/Allocation.h>
 
-#include <CoreUtilities/Allocators/ArenaAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeArenaAllocator.h>
 
 struct VkDeviceMemory_T;
 struct VkImageCreateInfo;
@@ -47,7 +47,7 @@ namespace Volt::RHI
 		std::mutex m_allocationMutex;
 		UUID64 m_heapId;
 
-		ArenaAllocator<VulkanTransientBufferAllocation> m_bufferAllocationArena;
-		ArenaAllocator<VulkanTransientImageAllocation> m_imageAllocationArena;
+		FixedSizeArenaAllocator<VulkanTransientBufferAllocation> m_bufferAllocationArena;
+		FixedSizeArenaAllocator<VulkanTransientImageAllocation> m_imageAllocationArena;
 	};
 }

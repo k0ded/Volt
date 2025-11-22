@@ -115,10 +115,11 @@ namespace Volt::EntityDescSerialization
 			}
 			else
 			{
-				if (componentMember->size != member.size)
-				{
-					continue;
-				}
+				// #TODO_Ivar: Disabled for now as some types can have different sizes depending on configuration.
+				//if (componentMember->size != member.size)
+				//{
+				//	continue;
+				//}
 
 				componentMember->serializeFunction(componentMemberDataReader, componentMemberDataPtr);
 			}

@@ -138,6 +138,7 @@ namespace Volt
 		m_entityScene.SortScene();
 	}
 
+	VT_OPTIMIZE_OFF
 	void Scene::LoadEntities()
 	{
 		if (m_isFinishedLoadingEntities)
@@ -314,6 +315,7 @@ namespace Volt
 		});
 		JobSystem::RunJob(job);
 	}
+	VT_OPTIMIZE_ON
 
 	void Scene::UnloadEntities()
 	{

@@ -198,6 +198,7 @@ namespace Volt
 		}
 	};
 
+	VT_OPTIMIZE_OFF
 	void Prefab::Serialize(Archive& archive)
 	{
 		archive << m_version;
@@ -248,6 +249,7 @@ namespace Volt
 
 		archive << m_prefabReferencesMap;
 	}
+	VT_OPTIMIZE_ON
 
 	const Entity Prefab::GetRootEntity() const
 	{

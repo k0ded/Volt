@@ -25,6 +25,6 @@ namespace Volt
 		void Initialize();
 
 		AtomicHashTable<> m_hashTable;
-		Vector<RefPtr<Asset>> m_cache;
+		Vector<Asset*> m_cache;
 	};
 }

@@ -4,6 +4,27 @@
 
 VT_DECLARE_LOG_CATEGORY(LogEditorAssetSystem, LogVerbosity::Trace);
 
+class EditorAssetCache
+{
+public:
+	EditorAssetCache();
+	~EditorAssetCache();
+
+	void Clear();
+
+	void AddAsset(RefPtr<Volt::Asset> asset);
+	void RemoveAsset(Volt::AssetHandle assetHandle);
+
+	RefPtr<Volt::Asset> GetAsset(Volt::AssetHandle assetHandle);
+	bool TryGetAsset(Volt::AssetHandle assetHandle, RefPtr<Volt::Asset>& outAsset);
+
+private:
+	void Initialize();
+
+	AtomicHashTable<> m_hashTable;
+	Vector<RefPtr<Volt::Asset>> m_cache;
+};
+
 class EditorAssetManager
 {
 public:
@@ -30,7 +51,7 @@ public:
 
 private:
 	Volt::AssetManager& m_referencedAssetManager;
-	Volt::AssetCache m_assetCache;
+	EditorAssetCache m_assetCache;
 };
 
 template<Volt::VoltAssetType T>

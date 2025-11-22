@@ -10,7 +10,8 @@ Scope<EditorAssetManager> g_editorAssetManager;
 
 EditorAssetManager::EditorAssetManager(Volt::AssetManager& referencedAssetManager)
 	: m_referencedAssetManager(referencedAssetManager)
-{}
+{
+}
 
 EditorAssetManager::~EditorAssetManager()
 {
@@ -176,4 +177,97 @@ void EditorAssetManager::DeleteDirectory(const std::filesystem::path& directoryP
 
 	FileSystem::MoveToRecycleBin(m_referencedAssetManager.GetAssetFilesystemPath(relativeDirectoryPath));
 	VT_LOGC(Trace, LogEditorAssetSystem, "Deleted directory {}!", relativeDirectoryPath);
+}
+
+EditorAssetCache::EditorAssetCache()
+{
+	Initialize();
+}
+
+EditorAssetCache::~EditorAssetCache()
+{
+	VT_ENSURE_MSG(m_cache.empty(), "Cache should have been cleared before destruction!");
+}
+
+void EditorAssetCache::Clear()
+{
+	m_cache.clear();
+}
+
+void EditorAssetCache::AddAsset(RefPtr<Volt::Asset> asset)
+{
+	VT_ENSURE(asset->GetAssetHandle() != Volt::Asset::Null());
+
+	uint64_t hashIndex;
+	if (m_hashTable.Insert(asset->GetAssetHandle(), hashIndex))
+	{
+		m_cache[hashIndex] = asset;
+	}
+	else
+	{
+		VT_LOG(Error, "Unable to cache asset with handle '{}'", asset->GetAssetHandle());
+	}
+}
+
+void EditorAssetCache::RemoveAsset(Volt::AssetHandle assetHandle)
+{
+	VT_ENSURE(assetHandle != Volt::Asset::Null());
+
+	uint64_t hashIndex;
+	if (m_hashTable.GetAndRemove(assetHandle, hashIndex))
+	{
+		m_cache[hashIndex].Reset();
+	}
+	else
+	{
+		VT_LOG(Warning, "Trying to remove asset with handle '{}' from the asset cache, but it has not been cached!", assetHandle);
+	}
+}
+
+RefPtr<Volt::Asset> EditorAssetCache::GetAsset(Volt::AssetHandle assetHandle)
+{
+	VT_ENSURE(assetHandle != Volt::Asset::Null());
+
+	uint64_t hashIndex;
+	if (m_hashTable.Get(assetHandle, hashIndex))
+	{
+		if (m_cache[hashIndex]->IsFlagSet(Volt::AssetFlag::Removed))
+		{
+			return nullptr;
+		}
+
+		return m_cache[hashIndex];
+	}
+
+	return nullptr;
+}
+
+bool EditorAssetCache::TryGetAsset(Volt::AssetHandle assetHandle, RefPtr<Volt::Asset>& outAsset)
+{
+	uint64_t hashIndex;
+	bool found = m_hashTable.Get(assetHandle, hashIndex);
+	if (found)
+	{
+		if (m_cache[hashIndex]->IsFlagSet(Volt::AssetFlag::Removed))
+		{
+			return false;
+		}
+
+		if (m_cache[hashIndex]->GetRefCount() > 0)
+		{
+			outAsset = m_cache[hashIndex];
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	return found;
+}
+
+void EditorAssetCache::Initialize()
+{
+	m_hashTable.Reserve(Volt::AssetRegistry::GetNumMaxAssets());
+	m_cache.resize(Volt::AssetRegistry::GetNumMaxAssets());
 }

@@ -34,7 +34,7 @@ namespace Volt
 		uint64_t hashIndex;
 		if (m_hashTable.Insert(asset->GetAssetHandle(), hashIndex))
 		{
-			m_cache[hashIndex] = asset;
+			m_cache[hashIndex] = asset.GetRaw();
 
 			if (s_assetCacheLog.GetValue())
 			{
@@ -67,7 +67,7 @@ namespace Volt
 					m_cache[hashIndex]->GetType()->GetName());
 			}
 
-			m_cache[hashIndex].Reset();
+			m_cache[hashIndex] = nullptr;
 		}
 		else
 		{
@@ -87,7 +87,7 @@ namespace Volt
 				return nullptr;
 			}
 
-			return m_cache[hashIndex];
+			return RefPtr<Asset>::Attach(m_cache[hashIndex]);
 		}
 
 		return nullptr;
@@ -104,7 +104,14 @@ namespace Volt
 				return false;
 			}
 
-			outAsset = m_cache[hashIndex];
+			if (m_cache[hashIndex]->GetRefCount() > 0)
+			{
+				outAsset = RefPtr<Asset>::Attach(m_cache[hashIndex]);
+			}
+			else
+			{
+				return false;
+			}
 		}
 
 		return found;

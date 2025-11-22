@@ -6,7 +6,7 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 
 
-#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 
 #include <glm/glm.hpp>
 

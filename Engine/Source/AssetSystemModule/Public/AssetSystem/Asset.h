@@ -33,7 +33,7 @@ namespace Volt
 
 			// In the case of assets, the asset manager should always keep a reference,
 			// meaning that when there is one reference left, the asset should be unloaded and destroyed.
-			if (oldCount == 2)
+			if (oldCount == 1)
 			{
 				std::atomic_thread_fence(std::memory_order::acquire);
 				Unload();

@@ -1,40 +1,40 @@
 #include <CoreUtilities/Containers/Vector.h>
-#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 #include <CoreUtilities/Core.h>
 
 #include <gtest/gtest.h>
 
 namespace UnitTests
 {
-	TEST(PagedArenaAllocator, ReservePages_1)
+	TEST(PagedAtomicArenaAllocator, ReservePages_1)
 	{
-		PagedArenaAllocator<uint32_t, 1> allocator;
+		PagedAtomicArenaAllocator<uint32_t, 1> allocator;
 		allocator.ReservePages(1);
 
 		ASSERT_EQ(allocator.GetNumAllocatedPages(), 1);
 	}
 
-	TEST(PagedArenaAllocator, ReservePages_10)
+	TEST(PagedAtomicArenaAllocator, ReservePages_10)
 	{
-		PagedArenaAllocator<uint32_t, 1> allocator;
+		PagedAtomicArenaAllocator<uint32_t, 1> allocator;
 		allocator.ReservePages(10);
 
 		ASSERT_EQ(allocator.GetNumAllocatedPages(), 10);
 	}
 
-	TEST(PagedArenaAllocator, Allocate_1)
+	TEST(PagedAtomicArenaAllocator, Allocate_1)
 	{
-		PagedArenaAllocator<uint32_t, 1> allocator;
+		PagedAtomicArenaAllocator<uint32_t, 1> allocator;
 		uint32_t* allocation = allocator.Allocate();
 
 		VT_UNUSED(allocation);
 	}
 
-	TEST(PagedArenaAllocator, Allocate_FillPage)
+	TEST(PagedAtomicArenaAllocator, Allocate_FillPage)
 	{
 		constexpr uint32_t PageSize = 10;
 
-		PagedArenaAllocator<uint32_t, PageSize> allocator;
+		PagedAtomicArenaAllocator<uint32_t, PageSize> allocator;
 
 		for (uint32_t i = 0; i < PageSize; ++i)
 		{
@@ -45,11 +45,11 @@ namespace UnitTests
 		ASSERT_EQ(allocator.GetNumAllocatedPages(), 1);
 	}
 
-	TEST(PagedArenaAllocator, Allocate_TwoPages)
+	TEST(PagedAtomicArenaAllocator, Allocate_TwoPages)
 	{
 		constexpr uint32_t PageSize = 10;
 
-		PagedArenaAllocator<uint32_t, PageSize> allocator;
+		PagedAtomicArenaAllocator<uint32_t, PageSize> allocator;
 
 		for (uint32_t i = 0; i < PageSize * 2; ++i)
 		{
@@ -60,12 +60,12 @@ namespace UnitTests
 		ASSERT_EQ(allocator.GetNumAllocatedPages(), 2);
 	}
 
-	TEST(PagedArenaAllocator, Allocate_Multithreaded)
+	TEST(PagedAtomicArenaAllocator, Allocate_Multithreaded)
 	{
 		constexpr uint32_t NumWorkers = 100;
 		constexpr uint32_t PageSize = 10;
 
-		PagedArenaAllocator<uint32_t, PageSize> allocator;
+		PagedAtomicArenaAllocator<uint32_t, PageSize> allocator;
 
 		auto allocateWorkerFunc = [&allocator]()
 		{
@@ -88,11 +88,11 @@ namespace UnitTests
 		ASSERT_EQ(allocator.GetNumAllocatedPages(), 10);
 	}
 
-	TEST(PagedArenaAllocator, Iterate)
+	TEST(PagedAtomicArenaAllocator, Iterate)
 	{
 		constexpr uint32_t PageSize = 10;
 
-		PagedArenaAllocator<uint32_t, PageSize> allocator;
+		PagedAtomicArenaAllocator<uint32_t, PageSize> allocator;
 
 		Vector<uint32_t*> allocations;
 
@@ -121,7 +121,7 @@ namespace UnitTests
 		const uint32_t numExpectedIterations = PageSize * 2 - numFreed;
 
 		uint32_t numIterations = 0;
-		for (PagedArenaAllocator<uint32_t, PageSize>::Iterator it(allocator); it; ++it)
+		for (PagedAtomicArenaAllocator<uint32_t, PageSize>::Iterator it(allocator); it; ++it)
 		{
 			ASSERT_NE(*it, nullptr);
 			numIterations++;

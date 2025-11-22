@@ -1,14 +1,14 @@
 #pragma once
 
-#include "CoreUtilities/Allocators/ArenaAllocator.h"
+#include "CoreUtilities/Allocators/FixedSizeArenaAllocator.h"
 
 template<typename Type, uint64_t PageSize, typename SecondaryAllocator = DefaultHeapAllocator>
-class PagedArenaAllocator
+class PagedAtomicArenaAllocator
 {
 public:
-	PagedArenaAllocator() = default;
+	PagedAtomicArenaAllocator() = default;
 
-	~PagedArenaAllocator()
+	~PagedAtomicArenaAllocator()
 	{
 		PageHeader* currentPage = m_basePage;
 
@@ -37,7 +37,7 @@ public:
 		FreePage(m_basePage);
 	}
 
-	PagedArenaAllocator(PagedArenaAllocator&& other) noexcept
+	PagedAtomicArenaAllocator(PagedAtomicArenaAllocator&& other) noexcept
 	{
 		m_allocator = std::move(other.m_allocator);
 		m_basePage.store(other.m_basePage);
@@ -45,7 +45,7 @@ public:
 		other.m_basePage = nullptr;
 	}
 
-	PagedArenaAllocator& operator=(PagedArenaAllocator&& other) noexcept
+	PagedAtomicArenaAllocator& operator=(PagedAtomicArenaAllocator&& other) noexcept
 	{
 		m_allocator = std::move(other.m_allocator);
 		m_basePage.store(other.m_basePage);
@@ -214,7 +214,7 @@ private:
 		std::atomic<PageHeader*> next = nullptr;
 		PageHeader* prev = nullptr;
 	
-		ArenaAllocator<Type, SecondaryAllocator> arena;
+		FixedSizeArenaAllocator<Type, SecondaryAllocator> arena;
 
 		template<typename... Args>
 		Type* TryAllocate(Args&&... args)
@@ -250,13 +250,13 @@ public:
 			: m_arenaAllocator(nullptr)
 		{}
 
-		Iterator(const PagedArenaAllocator& arenaAllocator)
+		Iterator(const PagedAtomicArenaAllocator& arenaAllocator)
 			: m_arenaAllocator(&arenaAllocator)
 		{
 			m_currentPage = m_arenaAllocator->m_basePage;
 			if (m_currentPage)
 			{
-				m_iterator = ArenaAllocator<Type>::Iterator(m_currentPage->arena);
+				m_iterator = FixedSizeArenaAllocator<Type>::Iterator(m_currentPage->arena);
 			}
 		}
 
@@ -271,7 +271,7 @@ public:
 
 				if (m_currentPage)
 				{
-					m_iterator = ArenaAllocator<Type>::Iterator(m_currentPage->arena);
+					m_iterator = FixedSizeArenaAllocator<Type>::Iterator(m_currentPage->arena);
 				}
 			}
 		}
@@ -292,8 +292,8 @@ public:
 		}
 
 	private:
-		ArenaAllocator<Type>::Iterator m_iterator;
+		FixedSizeArenaAllocator<Type>::Iterator m_iterator;
 		PageHeader* m_currentPage = nullptr;
-		const PagedArenaAllocator* m_arenaAllocator;
+		const PagedAtomicArenaAllocator* m_arenaAllocator;
 	};
 };

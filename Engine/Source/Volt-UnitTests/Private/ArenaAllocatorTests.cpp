@@ -1,22 +1,22 @@
 #include <CoreUtilities/Containers/Vector.h>
-#include <CoreUtilities/Allocators/ArenaAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeArenaAllocator.h>
 #include <CoreUtilities/Core.h>
 
 #include <gtest/gtest.h>
 
 namespace UnitTests
 {
-	TEST(ArenaAllocator, Reserve)
+	TEST(FixedSizeArenaAllocator, Reserve)
 	{
-		ArenaAllocator<uint32_t> allocator;
+		FixedSizeArenaAllocator<uint32_t> allocator;
 		allocator.Reserve(100);
 
 		ASSERT_EQ(allocator.GetNumMaxAllocations(), 100);
 	}
 
-	TEST(ArenaAllocator, Allocate)
+	TEST(FixedSizeArenaAllocator, Allocate)
 	{
-		ArenaAllocator<uint32_t> allocator;
+		FixedSizeArenaAllocator<uint32_t> allocator;
 		allocator.Reserve(100);
 
 		ASSERT_EQ(allocator.GetNumMaxAllocations(), 100);
@@ -34,9 +34,9 @@ namespace UnitTests
 		ASSERT_EQ(allocator.GetNumAllocations(), numToAllocate);
 	}
 
-	TEST(ArenaAllocator, AllocateAndFree)
+	TEST(FixedSizeArenaAllocator, AllocateAndFree)
 	{
-		ArenaAllocator<uint32_t> allocator;
+		FixedSizeArenaAllocator<uint32_t> allocator;
 		allocator.Reserve(100);
 
 		ASSERT_EQ(allocator.GetNumMaxAllocations(), 100);
@@ -64,9 +64,9 @@ namespace UnitTests
 		ASSERT_EQ(allocator.GetNumAllocations(), 0);
 	}
 
-	TEST(ArenaAllocator, Iterate)
+	TEST(FixedSizeArenaAllocator, Iterate)
 	{
-		ArenaAllocator<uint32_t> allocator;
+		FixedSizeArenaAllocator<uint32_t> allocator;
 		allocator.Reserve(100);
 
 		ASSERT_EQ(allocator.GetNumMaxAllocations(), 100);
@@ -99,7 +99,7 @@ namespace UnitTests
 		const uint32_t numExpectedIterations = numToAllocate - numFreed;
 
 		uint32_t numIterations = 0;
-		for (ArenaAllocator<uint32_t>::Iterator it(allocator); it; ++it)
+		for (FixedSizeArenaAllocator<uint32_t>::Iterator it(allocator); it; ++it)
 		{
 			ASSERT_NE(*it, nullptr);
 			numIterations++;

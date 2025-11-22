@@ -1,11 +1,13 @@
 #pragma once
 
 #include "CoreUtilities/Allocators/ContainerAllocators.h"
-#include "CoreUtilities/VoltAssert.h"
 
-#include <atomic>
+/*
+	A non-thread safe linear allocator.
+	Uses pages internally for allocation, allows larger-than page size allocations.
+*/
 
-template<typename SecondaryAllocator = DefaultHeapAllocator>
+template<uint64_t MinPageSize, typename SecondaryAllocator = DefaultHeapAllocator>
 class LinearAllocator
 {
 public:
@@ -13,87 +15,111 @@ public:
 	{}
 
 	~LinearAllocator()
-	{
-		if (m_dataBuffer)
-		{
-			m_allocator.Free(m_dataBuffer);
-		}
-	}
-
-	LinearAllocator(const LinearAllocator& other) noexcept
-	{
-		m_allocator = other.m_allocator;
-		m_dataBuffer = reinterpret_cast<uint8_t*>(m_allocator.Allocate(other.m_size, 0));
-
-		m_dataPointer.store(other.m_dataPointer.load());
-		memcpy(m_dataBuffer, other.m_dataBuffer, other.m_size);
-	}
+	{}
 
 	LinearAllocator(LinearAllocator&& other) noexcept
 	{
-		m_allocator = std::move(other.m_allocator);
-		m_dataPointer.store(other.m_dataPointer.load());
-		m_dataBuffer = std::move(other.m_dataBuffer);
-
-		other.m_dataBuffer = nullptr;
-	}
-
-	LinearAllocator& operator=(const LinearAllocator& other) noexcept
-	{
-		m_allocator = other.m_allocator;
-		m_dataBuffer = reinterpret_cast<uint8_t*>(m_allocator.Allocate(other.m_size, 0));
-
-		m_dataPointer.store(other.m_dataPointer.load());
-		memcpy(m_dataBuffer, other.m_dataBuffer, other.m_size);
-
-		return *this;
+		m_basePage = other.m_basePage;
+		other.m_basePage = nullptr;
 	}
 
 	LinearAllocator& operator=(LinearAllocator&& other) noexcept
 	{
-		m_allocator = std::move(other.m_allocator);
-		m_dataPointer.store(other.m_dataPointer.load());
-		m_dataBuffer = std::move(other.m_dataBuffer);
-
-		other.m_dataBuffer = nullptr;
+		if (this != &other)
+		{
+			m_basePage = other.m_basePage;
+			other.m_basePage = nullptr;
+		}
 
 		return *this;
 	}
 
-	size_t GetAllocatedSize()
-	{
-		return m_dataPointer;
-	}
+	LinearAllocator(const LinearAllocator&) noexcept = delete;
+	LinearAllocator& operator=(const LinearAllocator&) noexcept = delete;
 
-	void* Allocate(size_t allocationSize)
+	void* Allocate(uint64_t allocationSize)
 	{
-		size_t allocationOffset = m_dataPointer.fetch_add(allocationSize);
-		VT_ENSURE(m_dataPointer <= m_size);
-		 
-		return &m_dataBuffer[allocationOffset];
-	}
+		if (m_basePage == nullptr)
+		{
+			m_basePage = AllocatePage(std::max(MinPageSize, allocationSize));
+		}
 
-	void Reserve(size_t size)
-	{
-		VT_ENSURE(!m_dataBuffer);
-		m_dataBuffer = reinterpret_cast<uint8_t*>(m_allocator.Allocate(size, 0));
-		m_size = size;
-	}
+		PageHeader* currentPage = m_basePage;
 
-	uint8_t* GetData() const
-	{
-		return m_dataBuffer;
-	}
+		void* allocation = nullptr;
 
-	void Reset()
-	{
-		m_dataPointer = 0;
+		while (true)
+		{
+			if (currentPage->TryAllocate(allocationSize, allocation))
+			{
+				break;
+			}
+			else
+			{
+				if (currentPage->next == nullptr)
+				{
+					PageHeader* newPage = AllocatePage(allocationSize);
+					currentPage->next = newPage;
+					newPage->prev = currentPage;
+				}
+
+				currentPage = currentPage->next;
+			}
+		}
+
+		return allocation;
 	}
 
 private:
-	uint8_t* m_dataBuffer = nullptr;
-	size_t m_size = 0;
-	std::atomic_size_t m_dataPointer = 0;
+	struct PageHeader
+	{
+		PageHeader* next = nullptr;
+		PageHeader* prev = nullptr;
+		uint64_t size = 0;
+		uint64_t dataPointer = 0;
+
+		uint8_t* GetData()
+		{
+			return reinterpret_cast<uint8_t*>(this) + sizeof(PageHeader);
+		}
+
+		constexpr uint64_t GetDataSize()
+		{
+			return size - sizeof(PageHeader);
+		}
+
+		uint64_t GetAvailableSize()
+		{
+			return dataPointer >= GetDataSize() ? 0 : GetDataSize() - dataPointer;
+		}
+
+		bool TryAllocate(uint64_t allocationSize, void*& outDataPtr)
+		{
+			if (GetAvailableSize() < allocationSize)
+			{
+				return false;
+			}
+
+			uint64_t dataOffset = dataPointer;
+			dataPointer += allocationSize;
+
+			outDataPtr = GetData() + dataOffset;
+			return true;
+		}
+	};
+
+	PageHeader* AllocatePage(uint64_t pageSize)
+	{
+		const uint64_t allocationSize = pageSize + sizeof(PageHeader);
+
+		uint8_t* newPageAlloc = reinterpret_cast<uint8_t*>(m_allocator.Allocate(allocationSize, 0));
+		PageHeader* newPage = new(newPageAlloc) PageHeader();
+
+		newPage->size = allocationSize;
+
+		return newPage;
+	}
 
 	SecondaryAllocator::template ForElementType<uint8_t> m_allocator;
+	PageHeader* m_basePage = nullptr;
 };

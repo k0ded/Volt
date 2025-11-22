@@ -69,13 +69,13 @@ namespace Volt::RHI
 		uint32_t m_frameIndex = 0;
 
 		// Arenas
-		mutable ArenaAllocator<D3D12BufferView> m_bufferViewArena;
-		mutable ArenaAllocator<D3D12ImageView> m_imageViewArena;
+		mutable FixedSizeArenaAllocator<D3D12BufferView> m_bufferViewArena;
+		mutable FixedSizeArenaAllocator<D3D12ImageView> m_imageViewArena;
 
-		mutable ArenaAllocator<D3D12StorageBuffer> m_storageBufferArena;
-		mutable ArenaAllocator<D3D12UniformBuffer> m_uniformBufferArena;
-		mutable ArenaAllocator<D3D12Image> m_imageArena;
-		mutable ArenaAllocator<D3D12SamplerState> m_samplerStateArena;
+		mutable FixedSizeArenaAllocator<D3D12StorageBuffer> m_storageBufferArena;
+		mutable FixedSizeArenaAllocator<D3D12UniformBuffer> m_uniformBufferArena;
+		mutable FixedSizeArenaAllocator<D3D12Image> m_imageArena;
+		mutable FixedSizeArenaAllocator<D3D12SamplerState> m_samplerStateArena;
 	};
 }
 

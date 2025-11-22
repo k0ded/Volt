@@ -2,10 +2,10 @@
 #include "Sandbox/Window/AssetBrowser/DirectoryItem.h"
 #include "Sandbox/Window/AssetBrowser/AssetItem.h"
 
-#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 
 namespace AssetBrowser
 {
-	typedef PagedArenaAllocator<AssetBrowser::DirectoryItem, 256> DirectoryItemAllocator;
-	typedef PagedArenaAllocator<AssetBrowser::AssetItem, 1024> AssetItemAllocator;
+	typedef PagedAtomicArenaAllocator<AssetBrowser::DirectoryItem, 256> DirectoryItemAllocator;
+	typedef PagedAtomicArenaAllocator<AssetBrowser::AssetItem, 1024> AssetItemAllocator;
 }

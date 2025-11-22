@@ -3,7 +3,7 @@
 #include "AssetSystem/Asset.h"
 #include "AssetSystem/AssetManagerCommon.h"
 
-#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 
 namespace Volt
 {
@@ -45,6 +45,6 @@ namespace Volt
 		}
 
 	private:
-		PagedArenaAllocator<T, 512> m_allocator;
+		PagedAtomicArenaAllocator<T, 512> m_allocator;
 	};
 }

@@ -14,7 +14,7 @@
 #include <SubSystem/SubSystem.h>
 
 #include <CoreUtilities/UUID.h>
-#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 
 #include <unordered_set>
 #include <functional>
@@ -49,6 +49,7 @@ namespace Volt
 
 		void AddReference(AssetHandle assetHandle, StreamingInstanceID instanceId);
 		void RemoveReference(AssetHandle assetHandle, StreamingInstanceID instanceId);
+		AssetReference<T> GetAsset(AssetHandle assetHandle);
 
 		void SetAssetUpdatedCallback(AssetUpdatedFunc callbackFunc);
 
@@ -67,19 +68,25 @@ namespace Volt
 		UUID64 m_assetUpdatedCallback = 0;
 	};
 
+	template<VoltAssetType T>
+	AssetReference<T> StreamingInstanceAssetReferenceCounter<T>::GetAsset(AssetHandle assetHandle)
+	{
+		return m_assetReferenceFromAssetHandle.at(assetHandle).asset;
+	}
+
 	class VTASSETS_API StreamingInstanceMap
 	{
 	public:
 		struct StreamingInstance
 		{
 			EntityID entityId;
-			AssetHandle meshHandle;
+			AssetHandle meshHandle = 0;
 			Vector<AssetHandle> materialHandles;
 			Ref<ScenePrimitiveData> primitiveData;
 		
 			// For skylight
 			SceneLightDescription sceneLightDescription;
-			AssetHandle environmentTextureHandle;
+			AssetHandle environmentTextureHandle = 0;
 			Ref<SceneLightData> sceneLightData;
 		};
 
@@ -93,7 +100,7 @@ namespace Volt
 
 	private:
 		Map<StreamingInstanceID, StreamingInstance*> m_streamingInstances;
-		PagedArenaAllocator<StreamingInstance, 1024> m_instanceAllocator;
+		PagedAtomicArenaAllocator<StreamingInstance, 1024> m_instanceAllocator;
 		mutable std::mutex m_mutex;
 	};
 
@@ -132,9 +139,13 @@ namespace Volt
 		m_assetUpdatedCallback = g_assetManager->RegisterAssetUpdatedCallback(assetType, [&](AssetHandle assetHandle, AssetChangedState state)
 		{
 			std::scoped_lock lock{ m_streamingInstancesMapMutex };
-			if (m_callbackFunction && m_assetReferenceFromAssetHandle.contains(assetHandle))
+			auto assetReferenceIt = m_assetReferenceFromAssetHandle.find(assetHandle);
+
+			if (m_callbackFunction && assetReferenceIt != m_assetReferenceFromAssetHandle.end())
 			{
-				m_callbackFunction(assetHandle, m_assetReferenceFromAssetHandle[assetHandle].referencers, state);
+				AssetStreamingReference& reference = assetReferenceIt->second;
+				VT_ENSURE(reference.asset.IsValid());
+				m_callbackFunction(assetHandle, reference.referencers, state);
 			}
 		});
 	}

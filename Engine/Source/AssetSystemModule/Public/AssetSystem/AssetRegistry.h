@@ -3,7 +3,7 @@
 #include "AssetSystem/Asset.h"
 
 #include <CoreUtilities/Containers/AtomicHashTable.h>
-#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 
 #include <JobSystem/Job.h>
 
@@ -36,14 +36,14 @@ namespace Volt
 
 		JobCounterRef GetMetadataLoadingCounter() { return m_metadataLoadingCounter; }
 
-		static int32_t GetNumMaxAssets();
+		VTAS_API static int32_t GetNumMaxAssets();
 		static AssetHeaderDeserializationResult DeserializeAssetHeader(Archive& archive, AssetMetadata& outAssetMetadata, uint32_t expectedAssetVersion, bool checkAssetVersion);
 
 	private:
 		friend class AssetRegistryIterator;
 		friend class AssetRegistryConstIterator;
 
-		using AssetMetadataAllocator = PagedArenaAllocator<AssetMetadata, 2048>;
+		using AssetMetadataAllocator = PagedAtomicArenaAllocator<AssetMetadata, 2048>;
 
 		void Initialize();
 		

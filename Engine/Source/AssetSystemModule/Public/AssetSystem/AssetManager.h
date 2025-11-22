@@ -154,13 +154,18 @@ namespace Volt
 			AssetChangedCallback callback;
 		};
 
+		struct AssetUnloadData
+		{
+			AssetRefCounter* asset;
+		};
+
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args);
 
 		VTAS_API void LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset);
 		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset);
 
 		void QueueAssetForDestruction(AssetRefCounter* assetRefCounter);
-		void UnloadAndFreeAsset(AssetRefCounter* assetRefCounter);
+		void UnloadAndFreeAsset(AssetUnloadData& assetUnloadData);
 		bool DeserializeAsset(AssetReference<Asset> asset);
 
 		void FlushDestructionQueue();
@@ -182,11 +187,14 @@ namespace Volt
 		Scope<AssetDependencyGraph> m_dependencyGraph;
 		AssetManagerRoot m_root;
 
+		uint64_t m_frameIndex = 0;
+
 		// Asset changes callbacks
 		WorkQueue<AssetChangedQueueInfo, QueueThreadingPolicy::MPSC> m_assetChangedQueue;
-		WorkQueue<AssetRefCounter*, QueueThreadingPolicy::MPSC> m_assetDestructionQueue;
-		Map<AssetType, Vector<AssetChangedCallbackInfo>> m_assetChangedCallbacks;
+		WorkQueue<AssetUnloadData, QueueThreadingPolicy::MPSC> m_assetDestructionQueue;
+
 		std::mutex m_assetCallbackMutex;
+		Map<AssetType, Vector<AssetChangedCallbackInfo>> m_assetChangedCallbacks;
 	};
 
 	template<VoltAssetType T> 

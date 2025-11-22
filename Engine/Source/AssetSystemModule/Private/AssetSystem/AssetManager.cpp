@@ -3,6 +3,8 @@
 
 #include "AssetSystem/AssetLocks.h"
 
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
 #include <JobSystem/JobSystem.h>
 
 #include <EventSystem/ApplicationEvents.h>
@@ -28,8 +30,8 @@ namespace Volt
 		m_root.assetsDirectoryName = assetsDirectoryName;
 
 		CreateDependencyGraphAndAddAssetsFromRegistry();
-		m_assetChangedQueue.Allocate(1024);
-		m_assetDestructionQueue.Allocate(1024);
+		m_assetChangedQueue.Allocate(4096);
+		m_assetDestructionQueue.Allocate(4096);
 	}
 
 	AssetManager::~AssetManager()
@@ -416,7 +418,7 @@ namespace Volt
 
 	bool AssetManager::UpdateInternal(class AppTickEvent& e)
 	{
-		FlushDestructionQueue();
+		m_frameIndex = e.GetFrameIndex();
 
 		{
 			std::scoped_lock lock{ m_assetCallbackMutex };
@@ -427,6 +429,8 @@ namespace Volt
 				OnAssetChanged(info.handle, info.state);
 			}
 		}
+
+		FlushDestructionQueue();
 
 		return false;
 	}
@@ -588,13 +592,30 @@ namespace Volt
 
 	void AssetManager::QueueAssetForDestruction(AssetRefCounter* assetRefCounter)
 	{
+		AssetUnloadData unloadData;
+		unloadData.asset = assetRefCounter;
+
+		// Set the asset to not loaded and remove it from the asset cache.
+		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(reinterpret_cast<Asset*>(assetRefCounter)->GetAssetHandle());
+		if (assetMetadata)
+		{
+			// The asset might not be loaded, it might have failed to load.
+			// In which case the asset isn't cached.
+			if (assetMetadata->IsFlagSet(AssetMetadataFlag::Loaded) || assetMetadata->IsFlagSet(AssetMetadataFlag::Queued))
+			{
+				assetMetadata->SetFlag(AssetMetadataFlag::Loaded, false);
+				m_assetCache.RemoveAsset(assetMetadata->handle);
+			}
+		}
+
 		m_assetDestructionQueue.Emplace(assetRefCounter);
 	}
 
-	void AssetManager::UnloadAndFreeAsset(AssetRefCounter* assetRefCounter)
+	void AssetManager::UnloadAndFreeAsset(AssetUnloadData& assetUnloadData)
 	{
 		// Safe to upcast like this, because AssetRefCounter should only be derived by Asset.
-		Asset* asset = reinterpret_cast<Asset*>(assetRefCounter);
+		Asset* asset = reinterpret_cast<Asset*>(assetUnloadData.asset);
+
 		const AssetHandle assetHandle = asset->GetAssetHandle();
 		const std::string nameCopy(asset->GetAssetName());
 
@@ -608,8 +629,6 @@ namespace Volt
 			// Lock metadata mutex here.
 			assetMetadata->m_assetMetadataMutex.lock();
 
-			m_assetCache.RemoveAsset(assetHandle);
-
 			// At this point there should be zero references left.
 			VT_ENSURE(asset->GetRefCount() == 0);
 
@@ -620,9 +639,6 @@ namespace Volt
 
 			if (!assetMetadata->IsMemoryAsset())
 			{
-				assetMetadata->SetFlag(AssetMetadataFlag::Loaded, false);
-				assetMetadata->SetFlag(AssetMetadataFlag::Queued, false);
-
 				// Unlock it here as we are finished with it.
 				assetMetadata->m_assetMetadataMutex.unlock();
 			}
@@ -746,13 +762,10 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		AssetRefCounter* assetRefCounter = nullptr;
-		while (m_assetDestructionQueue.Pop(assetRefCounter))
+		AssetUnloadData unloadData;
+		while (m_assetDestructionQueue.Pop(unloadData))
 		{
-			if (assetRefCounter->GetRefCount() < 2)
-			{
-				UnloadAndFreeAsset(assetRefCounter);
-			}
+			UnloadAndFreeAsset(unloadData);
 		}
 	}
 

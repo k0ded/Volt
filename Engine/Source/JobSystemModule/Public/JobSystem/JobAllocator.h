@@ -2,7 +2,7 @@
 
 #include <CoreUtilities/Containers/AtomicStack.h>
 #include <CoreUtilities/Profiling/Profiling.h>
-#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 
 namespace Volt
 {
@@ -16,7 +16,7 @@ namespace Volt
 		void Free(Type* job);
 
 	private:
-		PagedArenaAllocator<Type, 1024> m_allocator;
+		PagedAtomicArenaAllocator<Type, 1024> m_allocator;
 	};
 
 	template<typename Type>

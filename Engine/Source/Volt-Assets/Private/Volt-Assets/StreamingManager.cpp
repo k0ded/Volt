@@ -127,12 +127,19 @@ namespace Volt
 			instance.sceneLightDescription = description.sceneLightDescription;
 			instance.entityId = description.entityId;
 
-			m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, newId);
-			InitializeSceneLightDataFromInstance(m_streamingInstances.Get(newId));
+			if (description.environmentTextureHandle != Asset::Null())
+			{
+				m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, newId);
+			}
 
 			if (s_logStreamingManagerUpdates.GetValue())
 			{
 				VT_LOGC(Trace, LogStreamingManager, "Added a new instance linked to entity {} with environment texture {} and gave it ID {}", description.entityId, description.environmentTextureHandle, newId);
+			}
+
+			if (description.environmentTextureHandle != Asset::Null())
+			{
+				InitializeSceneLightDataFromInstance(m_streamingInstances.Get(newId));
 			}
 		}
 		else
@@ -197,20 +204,42 @@ namespace Volt
 
 		if (streamingInstance.primitiveData)
 		{
-			for (const auto& materialHandle : streamingInstance.materialHandles)
+			if (streamingInstance.meshHandle != description.meshHandle)
 			{
-				if (materialHandle != Asset::Null())
+				if (streamingInstance.meshHandle != Asset::Null())
 				{
-					m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+					m_meshReferenceCounter.RemoveReference(streamingInstance.meshHandle, instanceId);
+				}
+
+				if (description.meshHandle != Asset::Null())
+				{
+					m_meshReferenceCounter.AddReference(description.meshHandle, instanceId);
 				}
 			}
 
-			if (streamingInstance.meshHandle != Asset::Null())
+			std::unordered_set<AssetHandle> newMaterialsSet(description.materialHandles.begin(), description.materialHandles.end());
+			std::unordered_set<AssetHandle> oldMaterialsSet(streamingInstance.materialHandles.begin(), streamingInstance.materialHandles.end());
+
+			Vector<AssetHandle> materialsToAdd;
+			Vector<AssetHandle> materialsToRemove;
+
+			for (const AssetHandle& materialHandle : description.materialHandles)
 			{
-				m_meshReferenceCounter.RemoveReference(streamingInstance.meshHandle, instanceId);
+				if (!oldMaterialsSet.count(materialHandle))
+				{
+					materialsToAdd.emplace_back(materialHandle);
+				}
 			}
 
-			for (const auto& materialHandle : description.materialHandles)
+			for (const AssetHandle& materialHandle : streamingInstance.materialHandles)
+			{
+				if (!newMaterialsSet.count(materialHandle))
+				{
+					materialsToRemove.emplace_back(materialHandle);
+				}
+			}
+
+			for (const auto& materialHandle : materialsToAdd)
 			{
 				if (materialHandle != Asset::Null())
 				{
@@ -218,9 +247,12 @@ namespace Volt
 				}
 			}
 
-			if (description.meshHandle != Asset::Null())
+			for (const auto& materialHandle : materialsToRemove)
 			{
-				m_meshReferenceCounter.AddReference(description.meshHandle, instanceId);
+				if (materialHandle != Asset::Null())
+				{
+					m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
+				}
 			}
 
 			streamingInstance.meshHandle = description.meshHandle;
@@ -238,8 +270,8 @@ namespace Volt
 		}
 		else if (streamingInstance.sceneLightData)
 		{
-			m_environmentTextureReferenceCounter.RemoveReference(streamingInstance.environmentTextureHandle, instanceId);
 			m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, instanceId);
+			m_environmentTextureReferenceCounter.RemoveReference(streamingInstance.environmentTextureHandle, instanceId);
 
 			streamingInstance.environmentTextureHandle = description.environmentTextureHandle;
 
@@ -257,6 +289,7 @@ namespace Volt
 		Ref<Mesh> mesh;
 
 		AssetReference<MeshAsset> meshAsset;
+
 		if (g_assetManager->TryGetAsset<MeshAsset>(instance.meshHandle, meshAsset))
 		{
 			ScopedAssetReferenceLock assetLock{ meshAsset };

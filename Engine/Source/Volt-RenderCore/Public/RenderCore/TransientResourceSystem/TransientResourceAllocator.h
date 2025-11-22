@@ -7,7 +7,7 @@
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Images/Image.h>
 
-#include <CoreUtilities/Allocators/PagedArenaAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 
 namespace Volt
 {
@@ -43,8 +43,8 @@ namespace Volt
 		Vector<TransientTextureResourceRef> m_textureCache;
 		Vector<TransientUniformBufferResourceRef> m_uniformBufferCache;
 
-		PagedArenaAllocator<TransientBufferResource, 512> m_transientBufferAllocator;
-		PagedArenaAllocator<TransientTextureResource, 512> m_transientTextureAllocator;
-		PagedArenaAllocator<TransientUniformBufferResource, 512> m_transientUniformBufferAllocator;
+		PagedAtomicArenaAllocator<TransientBufferResource, 512> m_transientBufferAllocator;
+		PagedAtomicArenaAllocator<TransientTextureResource, 512> m_transientTextureAllocator;
+		PagedAtomicArenaAllocator<TransientUniformBufferResource, 512> m_transientUniformBufferAllocator;
 	};
 }

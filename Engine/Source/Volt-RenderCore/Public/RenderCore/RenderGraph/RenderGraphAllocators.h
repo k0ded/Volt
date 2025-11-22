@@ -5,8 +5,8 @@
 #include "RenderCore/RenderGraph/RenderGraphPass.h"
 
 #include <CoreUtilities/Allocators/Handle.h>
-#include <CoreUtilities/Allocators/LinearAllocator.h>
-#include <CoreUtilities/Allocators/PagedLinearAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeLinearAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicLinearAllocator.h>
 #include <CoreUtilities/DestructorHelper.h>
 #include <CoreUtilities/Containers/Vector.h>
 
@@ -41,7 +41,7 @@ namespace Volt
 		}
 
 	private:
-		PagedLinearAllocator<65536> m_allocator;
+		PagedAtomicLinearAllocator<65536> m_allocator;
 		Vector<DestructorHelper> m_nodeDestructors;
 	};
 	
@@ -100,8 +100,8 @@ namespace Volt
 
 		PassAllocation AllocatePass(PassExecFunc execWrapperFunc, size_t execFuncSize);
 
-		PagedLinearAllocator<65536> m_passExecutionFunctionAllocator;
-		PagedLinearAllocator<65536> m_passNodeAllocator;
+		PagedAtomicLinearAllocator<65536> m_passExecutionFunctionAllocator;
+		PagedAtomicLinearAllocator<65536> m_passNodeAllocator;
 
 		uint32_t m_numPasses = 0;
 		Vector<DestructorHelper> m_passDestructors;

@@ -163,6 +163,7 @@ namespace Volt
 
 			VT_INLINE size_t GetIndexFromID(UUID64 id) const { return m_primitiveIndexFromPrimitiveID.at(id); }
 			VT_INLINE size_t GetMaxIndex() const { return m_nextIndex; }
+			VT_INLINE bool Contains(UUID64 id) const { return m_primitiveIndexFromPrimitiveID.contains(id); }
 
 			VT_INLINE Vector<size_t> GetAndClearRemovedIndices() 
 			{ 

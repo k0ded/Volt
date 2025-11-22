@@ -5,7 +5,7 @@
 #include <RHIModule/Memory/TransientHeap.h>
 #include <RHIModule/Memory/Allocation.h>
 
-#include <CoreUtilities/Allocators/ArenaAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeArenaAllocator.h>
 
 struct ID3D12Heap;
 
@@ -46,7 +46,7 @@ namespace Volt::RHI
 		std::mutex m_allocationMutex;
 		UUID64 m_heapId;
 
-		ArenaAllocator<D3D12TransientBufferAllocation> m_bufferAllocationArena;
-		ArenaAllocator<D3D12TransientImageAllocation> m_imageAllocationArena;
+		FixedSizeArenaAllocator<D3D12TransientBufferAllocation> m_bufferAllocationArena;
+		FixedSizeArenaAllocator<D3D12TransientImageAllocation> m_imageAllocationArena;
 	};
 }

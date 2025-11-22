@@ -3,7 +3,7 @@
 #include "JobSystem/Config.h"
 #include "JobSystem/JobSystem.h"
 
-#include <CoreUtilities/Allocators/PagedLinearAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicLinearAllocator.h>
 
 #include <unordered_set>
 
@@ -42,7 +42,7 @@ namespace Volt
 
 		void* AllocateBytes(size_t size);
 
-		PagedLinearAllocator<1024> m_allocator;
+		PagedAtomicLinearAllocator<1024> m_allocator;
 		Vector<TaskDestructor> m_taskDestructors;
 	};
 

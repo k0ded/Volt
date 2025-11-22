@@ -5,7 +5,7 @@
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
 
-#include <CoreUtilities/Allocators/LinearAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeLinearAllocator.h>
 
 namespace Volt
 {
@@ -71,7 +71,7 @@ namespace Volt
 
 		inline static constexpr size_t BlackboardSize = 2048;
 
-		LinearAllocator<> m_allocator;
+		FixedSizeLinearAllocator<> m_allocator;
 		Map<TypeTraits::TypeIndex, TypeInfo> m_typeInfos;
 	};
 }

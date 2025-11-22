@@ -9,7 +9,7 @@
 
 #include <CoreUtilities/WorkQueue.h>
 #include <CoreUtilities/Containers/Array.h>
-#include <CoreUtilities/Allocators/LinearAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeLinearAllocator.h>
 
 namespace Volt
 {
@@ -89,7 +89,7 @@ namespace Volt
 		WorkQueue<Job*, QueueThreadingPolicy::MPSC> m_mainThreadQueue;
 		Map<std::thread::id, uint32_t> m_workerThreadIDToIndex;
 
-		LinearAllocator<DefaultHeapAllocator> m_workerAllocator;
+		FixedSizeLinearAllocator<DefaultHeapAllocator> m_workerAllocator;
 
 		JobAllocator<Job> m_jobAllocator;
 		JobAllocator<JobCounter> m_counterAllocator;

@@ -4,7 +4,7 @@
 
 #include <RenderCore/RenderGraph/Resources/ResourceDeclarations.h>
 
-#include <CoreUtilities/Allocators/LinearAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeLinearAllocator.h>
 
 namespace Volt
 {
@@ -35,6 +35,6 @@ namespace Volt
 
 		} m_lineSphere;
 
-		LinearAllocator<> m_lineVerticesAllocator;
+		FixedSizeLinearAllocator<> m_lineVerticesAllocator;
 	};
 }

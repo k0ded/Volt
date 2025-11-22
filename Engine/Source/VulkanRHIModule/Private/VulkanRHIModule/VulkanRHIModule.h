@@ -70,13 +70,13 @@ namespace Volt::RHI
 		uint32_t m_frameIndex = 0;
 
 		// Arenas
-		mutable ArenaAllocator<VulkanBufferView> m_bufferViewArena;
-		mutable ArenaAllocator<VulkanImageView> m_imageViewArena;
+		mutable FixedSizeArenaAllocator<VulkanBufferView> m_bufferViewArena;
+		mutable FixedSizeArenaAllocator<VulkanImageView> m_imageViewArena;
 
-		mutable ArenaAllocator<VulkanStorageBuffer> m_storageBufferArena;
-		mutable ArenaAllocator<VulkanUniformBuffer> m_uniformBufferArena;
-		mutable ArenaAllocator<VulkanImage> m_imageArena;
-		mutable ArenaAllocator<VulkanSamplerState> m_samplerStateArena;
+		mutable FixedSizeArenaAllocator<VulkanStorageBuffer> m_storageBufferArena;
+		mutable FixedSizeArenaAllocator<VulkanUniformBuffer> m_uniformBufferArena;
+		mutable FixedSizeArenaAllocator<VulkanImage> m_imageArena;
+		mutable FixedSizeArenaAllocator<VulkanSamplerState> m_samplerStateArena;
 
 		Ref<VulkanCPUAllocator> m_vulkanCpuAllocator;
 	};

@@ -5,7 +5,7 @@
 #include <RHIModule/Memory/GPUAllocator.h>
 #include <RHIModule/Memory/AllocationCache.h>
 
-#include <CoreUtilities/Allocators/ArenaAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeArenaAllocator.h>
 
 namespace D3D12MA
 {
@@ -42,7 +42,7 @@ namespace Volt::RHI
 
 		AllocationCache m_allocationCache{};
 
-		ArenaAllocator<D3D12BufferAllocation> m_bufferAllocationArena;
-		ArenaAllocator<D3D12ImageAllocation> m_imageAllocationArena;
+		FixedSizeArenaAllocator<D3D12BufferAllocation> m_bufferAllocationArena;
+		FixedSizeArenaAllocator<D3D12ImageAllocation> m_imageAllocationArena;
 	};
 }

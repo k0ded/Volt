@@ -9,13 +9,13 @@
 #include <mutex>
 
 template<typename Type, typename SecondaryAllocator = DefaultHeapAllocator>
-class ArenaAllocator
+class FixedSizeArenaAllocator
 {
 public:
-	ArenaAllocator()
+	FixedSizeArenaAllocator()
 	{}
 
-	ArenaAllocator(ArenaAllocator&& other)
+	FixedSizeArenaAllocator(FixedSizeArenaAllocator&& other)
 	{ 
 		m_availableIndices = std::move(other.m_availableIndices);
 		m_allocatedEntriesBitmask = std::move(other.m_allocatedEntriesBitmask);
@@ -28,7 +28,7 @@ public:
 		other.m_nextIndex = 0;
 	}
 
-	ArenaAllocator& operator=(ArenaAllocator&& other)
+	FixedSizeArenaAllocator& operator=(FixedSizeArenaAllocator&& other)
 	{ 
 		m_availableIndices = std::move(other.m_availableIndices);
 		m_allocatedEntriesBitmask = std::move(other.m_allocatedEntriesBitmask);
@@ -43,7 +43,7 @@ public:
 		return *this;
 	}
 
-	~ArenaAllocator()
+	~FixedSizeArenaAllocator()
 	{
 		auto activeAllocations = GetActiveAllocations();
 
@@ -176,7 +176,7 @@ public:
 			: m_arenaAllocator(nullptr)
 		{}
 
-		Iterator(const ArenaAllocator& arenaAllocator)
+		Iterator(const FixedSizeArenaAllocator& arenaAllocator)
 			: m_arenaAllocator(&arenaAllocator)
 		{
 			// Store max index on create, to not move the end of the iterator during iteration.
@@ -225,7 +225,7 @@ public:
 		}
 
 	private:
-		const ArenaAllocator* m_arenaAllocator;
+		const FixedSizeArenaAllocator* m_arenaAllocator;
 		size_t m_maxIndex = 0;
 		size_t m_currentIndex = 0;
 	};
