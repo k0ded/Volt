@@ -57,16 +57,18 @@ namespace Volt
 		void Update(RenderGraph& renderGraph);
 		void EndFrame(RenderGraph& renderGraph);
 
-		void InvalidatePrimitiveInstance(UUID64 renderObject);
-
 		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
 		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<TempAnimator> animator, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
 		void RemovePrimitiveInstance(UUID64 id);
-
-		void InvalidateLightInstance(UUID64 id);
+		void InvalidatePrimitiveInstance(UUID64 renderObject);
 
 		UUID64 AddLightInstance(EntityID entityId, const SceneLightDescription& description);
 		void RemoveLightInstance(UUID64 id);
+		void InvalidateLightInstance(UUID64 id);
+
+		RayTracingInstanceID AddRayTracingInstance(EntityID entityId, Ref<Mesh> mesh, RenderPrimitiveID primitiveId);
+		void RemoveRayTracingInstance(RayTracingInstanceID instanceId);
+		void InvalidateRayTracingInstance(RayTracingInstanceID instanceId);
 
 		void OnRenderPrimitiveAdded(const RenderPrimitiveData& renderPrimitive);
 		void OnRenderPrimitiveRemoved(const RenderPrimitiveData& renderPrimitive);
@@ -126,6 +128,7 @@ namespace Volt
 		void ProcessQueuedUpdateOperations();
 		void ProcessAddPrimitiveInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
 		void ProcessAddLightInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
+		void ProcessAddRayTracingInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
 		void ProcessQueuedRemove(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
 		void ProcessQueuedInvalidation(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
 

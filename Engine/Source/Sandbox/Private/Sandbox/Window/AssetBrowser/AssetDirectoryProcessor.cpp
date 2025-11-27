@@ -119,7 +119,10 @@ RawPtr<AssetBrowser::DirectoryItem> AssetDirectoryProcessor::ProcessDirectories(
 					{
 						RawPtr<AssetBrowser::AssetItem> assetItem = m_assetItemAllocatorRef.Allocate(m_selectionManager.Get(), entry.path, meshToImportData, entry.handle);
 						const auto parentPath = entry.path.parent_path();
-						directoryItems[parentPath]->assets.emplace_back(assetItem);
+						if (directoryItems.contains(parentPath))
+						{
+							directoryItems[parentPath]->assets.emplace_back(assetItem);
+						}
 					}
 				}
 			}

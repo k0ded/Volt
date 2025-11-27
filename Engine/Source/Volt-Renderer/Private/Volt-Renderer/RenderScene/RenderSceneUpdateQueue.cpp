@@ -43,6 +43,21 @@ namespace Volt
 		return queuedUpdate.lightInfo.id;
 	}
 
+	UUID64 RenderSceneUpdateQueue::AddRayTracingInstance(EntityID entityId, Ref<Mesh> mesh, RenderPrimitiveID primitiveId)
+	{
+		QueuedUpdate queuedUpdate{};
+		queuedUpdate.operation = UpdateOperation::Add;
+		queuedUpdate.type = UpdateType::RayTracingInstance;
+		queuedUpdate.rayTracingInstanceInfo.entityId = entityId;
+		queuedUpdate.rayTracingInstanceInfo.mesh = mesh;
+		queuedUpdate.rayTracingInstanceInfo.renderScenePrimitiveId = primitiveId;
+
+		VT_MAYBE_UNUSED bool wasEmplaced = m_updateQueue.Emplace(queuedUpdate);
+		VT_ENSURE(wasEmplaced);
+
+		return queuedUpdate.rayTracingInstanceInfo.id;
+	}
+
 	void RenderSceneUpdateQueue::RemovePrimitiveInstance(UUID64 id)
 	{
 		QueuedUpdate queuedUpdate{};
@@ -65,6 +80,17 @@ namespace Volt
 		VT_ENSURE(wasEmplaced);
 	}
 
+	void RenderSceneUpdateQueue::RemoveRayTracingInstance(RayTracingInstanceID id)
+	{
+		QueuedUpdate queuedUpdate{};
+		queuedUpdate.operation = UpdateOperation::Remove;
+		queuedUpdate.type = UpdateType::RayTracingInstance;
+		queuedUpdate.id = id;
+
+		VT_MAYBE_UNUSED bool wasEmplaced = m_updateQueue.Emplace(queuedUpdate);
+		VT_ENSURE(wasEmplaced);
+	}
+
 	void RenderSceneUpdateQueue::InvalidatePrimitiveInstance(UUID64 renderObject)
 	{
 		QueuedUpdate queuedUpdate{};
@@ -81,6 +107,17 @@ namespace Volt
 		QueuedUpdate queuedUpdate{};
 		queuedUpdate.operation = UpdateOperation::Invalidate;
 		queuedUpdate.type = UpdateType::Light;
+		queuedUpdate.id = id;
+
+		VT_MAYBE_UNUSED bool wasEmplaced = m_updateQueue.Emplace(queuedUpdate);
+		VT_ENSURE(wasEmplaced);
+	}
+
+	void RenderSceneUpdateQueue::InvalidateRayTracingInstance(RayTracingInstanceID id)
+	{
+		QueuedUpdate queuedUpdate{};
+		queuedUpdate.operation = UpdateOperation::Invalidate;
+		queuedUpdate.type = UpdateType::RayTracingInstance;
 		queuedUpdate.id = id;
 
 		VT_MAYBE_UNUSED bool wasEmplaced = m_updateQueue.Emplace(queuedUpdate);

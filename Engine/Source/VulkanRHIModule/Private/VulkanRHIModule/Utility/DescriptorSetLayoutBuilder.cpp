@@ -21,6 +21,8 @@ namespace Volt::RHI
 	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindings& resourceBindings, bool accessesRayTracingResourceTable)
 	{
 		DescriptorSets result;
+		result.accessesRayTracingResources = accessesRayTracingResourceTable;
+
 		auto device = GraphicsContext::GetDevice();
 
 		std::map<uint32_t, Vector<VkDescriptorSetLayoutBinding>> descriptorSetBindings;
@@ -123,7 +125,7 @@ namespace Volt::RHI
 			result.pipelineLayoutDescriptorSetLayouts.resize(RayTracingTableDescriptorSetManager::Set + 1);
 
 			// Fill all null descriptor set layouts with empty layouts.
-			for (uint32_t i = 0; i < RayTracingTableDescriptorSetManager::Set + 1u; ++i)
+			for (uint32_t i = 0; i < RayTracingTableDescriptorSetManager::Set; ++i)
 			{
 				if (result.pipelineLayoutDescriptorSetLayouts[i] == nullptr)
 				{
@@ -132,7 +134,7 @@ namespace Volt::RHI
 					info.pNext = nullptr;
 					info.bindingCount = 0;
 					info.pBindings = nullptr;
-					info.flags = 0;
+					info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 
 					VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &result.pipelineLayoutDescriptorSetLayouts[i]));
 				}

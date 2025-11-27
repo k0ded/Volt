@@ -95,8 +95,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		{
-			ResourceBarrierInfo barrier{};
-			barrier.type = BarrierType::Image;
+			ResourceBarrierInfo barrier = ResourceBarrierInfo::InitializeAsImageBarrier();
 			ResourceUtility::InitializeBarrierSrcFromCurrentState(barrier.imageBarrier(), m_perImageData.at(m_currentImageIndex).imageReference);
 			barrier.imageBarrier().dstAccess = BarrierAccess::AllRead;
 			barrier.imageBarrier().dstStage = BarrierStage::AllGraphics;

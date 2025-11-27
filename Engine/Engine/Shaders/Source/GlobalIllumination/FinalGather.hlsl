@@ -5,10 +5,11 @@
 
 #include "RenderScene/GPUScene.hlsli"
 
-#include "PBR/BRDF.hlsli"
-#include "PBR/LightEvaluation.hlsli"
-
 #include "Utility/Utility.hlsli"
+#include "Utility/Packing.hlsli"
+
+#include "GlobalIlluminationCommon.hlsli"
+#include "SpatialHashTable.hlsli"
 
 #include "BlueNoise.hlsli"
 #include "MonteCarlo.hlsli"
@@ -22,6 +23,8 @@ Texture2D<float2> GBufferMaterial;
 Texture2D<float> SceneDepth;
 
 RaytracingAccelerationStructure TLAS;
+
+StructuredBuffer<uint> WorldRadianceCacheCellCache;
 
 // Random number generation using pcg32i_random_t, using inc = 1. Our random state is a uint.
 uint StepRNG(uint rngState)
@@ -37,6 +40,18 @@ float StepAndOutputRNGFloat(inout uint rngState)
   uint word = ((rngState >> ((rngState >> 28) + 4)) ^ rngState) * 277803737;
   word      = (word >> 22) ^ word;
   return float(word) / 4294967295.0f;
+}
+
+float3 SkyColor(float3 direction)
+{
+	if (direction.y > 0.f)
+	{
+		return lerp(1.f, float3(0.25f, 0.5f, 1.f), direction.y);
+	}
+	else	
+	{
+		return 0.03f;
+	}
 }
 
 [numthreads(8, 8, 1)]
@@ -79,47 +94,18 @@ void FinalGatherCS(uint2 DispatchThreadID : SV_DispatchThreadID)
 		if (inlineTraceResult.IsHit() && inlineTraceResult.IsFrontFace())
 		{
 			const float3 hitPosition = rayDesc.origin + rayDesc.direction * inlineTraceResult.GetHitT();
-			const uint primitiveIndex = inlineTraceResult.GetInstanceID();
+		
+			SpatialHashTable worldRadianceCacheHashTable;
 
-			const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[primitiveIndex];
-			const GPUMesh gpuMesh = GPUMeshes[primitiveData.meshId];
-
-			TriangleAttributes triangleAttribs = LoadTriangleAttributes(gpuMesh, inlineTraceResult.GetBarycentrics(), inlineTraceResult.GetPrimitiveIndex());
-
-			const float3 albedo = 0.8f;
-			const float metallic = 0.f;
-			const float roughness = 0.8f;
-
-			BRDFInput brdfInput;
-			brdfInput.V = raySample;
-			brdfInput.N = triangleAttribs.normal;
-			brdfInput.diffuseColor = CalculateDiffuseColor(albedo, metallic);
-			brdfInput.f0 = CalculateF0(albedo, metallic);
-			brdfInput.f90 = CalculateF90(albedo, metallic);
-			brdfInput.roughness = roughness;
-			brdfInput.metalness = metallic;
-
-			// Evaluate lights
-			for (uint i = 0; i < View.lightCount; ++i)
+			uint hashIndex;
+			if (worldRadianceCacheHashTable.Get(hitPosition, hashIndex))
 			{
-				const LightDrawData light = SceneLights[i];
-				if (light.lightType == SceneLightType::SLT_Point)
-				{
-				    indirectLight.rgb += EvaluatePointLight(light, brdfInput, triangleAttribs.position);
-				}
-				else if (light.lightType == SceneLightType::SLT_Spot)
-				{
-				    indirectLight.rgb += EvaluateSpotLight(light, brdfInput, triangleAttribs.position);
-				}
-				else if (light.lightType == SceneLightType::SLT_Directional)
-				{
-				    indirectLight.rgb += EvaluateDirectionalLight(light, brdfInput, triangleAttribs.position);
-				}
-				//else if (light.lightType == SceneLightType::SLT_Sky)
-				//{
-				//    indirectLight.rgb += EvaluateIBL(brdfInput, light);
-				//}
-			}
+				indirectLight.rgb = UnpackRGBE(WorldRadianceCacheCellCache[hashIndex]);
+			}	
+		}
+		else
+		{
+			indirectLight.rgb = SkyColor(raySample);
 		}
 	}
 

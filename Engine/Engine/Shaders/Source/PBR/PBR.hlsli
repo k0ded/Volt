@@ -80,7 +80,7 @@ float3 EvaluateLights(float3 dirToCamera, float ao, uint lightCount)
         }
         else if (light.lightType == SceneLightType::SLT_Sky)
         {
-            output += EvaluateIBL(brdfInput, light) * ao;
+           // output += EvaluateIBL(brdfInput, light) * ao;
         }
     }
 

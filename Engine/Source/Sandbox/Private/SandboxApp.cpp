@@ -103,6 +103,11 @@ public:
 	SandboxApp(const Volt::CommandLineBuilder& commandLineBuilder, const Volt::ApplicationCreationInfo& appInfo)
 		: Volt::Application(commandLineBuilder, appInfo)
 	{
+		if (commandLineBuilder.IsArgDefined("waitfordebugger"))
+		{
+			while (!Volt::PlatformMisc::IsDebuggerPresent()) {}
+		}
+
 		Sandbox* sandbox = new Sandbox();
 		PushLayer(sandbox);
 	}

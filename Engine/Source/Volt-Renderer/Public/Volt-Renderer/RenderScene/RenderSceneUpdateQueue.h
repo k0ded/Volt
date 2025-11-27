@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Volt-Renderer/RenderScene/SceneLightData.h"
+#include "Volt-Renderer/RayTracing/RayTracingInstance.h"
+#include "Volt-Renderer/RenderPrimitiveData.h"
 
 #include <EntitySystem/EntityID.h>
 
@@ -26,7 +28,8 @@ namespace Volt
 		enum class UpdateType : uint8_t
 		{
 			Primitive,
-			Light
+			Light,
+			RayTracingInstance
 		};
 
 		struct PrimitiveAddInfo
@@ -48,6 +51,15 @@ namespace Volt
 			UUID64 id;
 		};
 
+		struct RayTracingAddInfo
+		{
+			Ref<Mesh> mesh;
+			EntityID entityId;
+			RenderPrimitiveID renderScenePrimitiveId;
+
+			RayTracingInstanceID id;
+		};
+
 		struct QueuedUpdate
 		{
 			UpdateOperation operation;
@@ -56,6 +68,7 @@ namespace Volt
 			// ID is used for all remove and invalidation operations.
 			PrimitiveAddInfo primitiveInfo;
 			LightAddInfo lightInfo;
+			RayTracingAddInfo rayTracingInstanceInfo;
 			UUID64 id = 0;
 		};
 
@@ -63,12 +76,15 @@ namespace Volt
 
 		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<TempAnimator> animator, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
 		UUID64 AddLightInstance(EntityID entityId, const SceneLightDescription& description);
+		UUID64 AddRayTracingInstance(EntityID entityId, Ref<Mesh> mesh, RenderPrimitiveID primitiveId);
 
 		void RemovePrimitiveInstance(UUID64 id);
 		void RemoveLightInstance(UUID64 id);
+		void RemoveRayTracingInstance(RayTracingInstanceID id);
 
 		void InvalidatePrimitiveInstance(UUID64 renderObject);
 		void InvalidateLightInstance(UUID64 id);
+		void InvalidateRayTracingInstance(RayTracingInstanceID id);
 
 		bool TryPop(QueuedUpdate& outQueuedUpdate);
 

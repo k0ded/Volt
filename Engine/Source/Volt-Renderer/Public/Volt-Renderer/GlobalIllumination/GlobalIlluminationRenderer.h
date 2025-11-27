@@ -18,12 +18,21 @@ namespace Volt
 	public:
 		struct Output
 		{
-			RGTextureRef indirectLight;
+			RGTextureRef indirectLight = nullptr;
 		};
+
+		GlobalIlluminationRenderer();
 
 		Output Execute(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 
+		void Visualize(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+
 	private:
+		RGUniformBufferRef SetupIrradianceVolumeUniformBuffer(RenderGraph& renderGraph, const RenderView& view);
+
+		RefPtr<RHI::StorageBuffer> m_spatialHashTableChecksumBuffer;
+		RefPtr<RHI::StorageBuffer> m_worldRadianceCacheCellCache;
+		
 		RefPtr<RHI::Image> m_prevIndirectLight;
 	};
 }

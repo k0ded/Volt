@@ -21,5 +21,10 @@ struct Barycentrics
 		return float2(u, v);
 	}
 
+	float2 GetRaw()
+	{
+		return barycentrics.yz;
+	}
+
 	float3 barycentrics;
 };

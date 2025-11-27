@@ -246,7 +246,7 @@ namespace Volt
 
 	Ref<Mesh> ShapeLibrary::GetSphere()
 	{
-		if (s_meshData.sphereMesh)
+		if (!s_meshData.sphereMesh)
 		{
 			s_meshData.sphereMesh = CreateSphere();
 		}

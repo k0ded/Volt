@@ -83,6 +83,25 @@ float2 UnpackHalf2FromUInt(uint packedValue)
     );
 }
 
+uint PackHalf2ToUint32(float2 value)
+{
+    return ((f32tof16(value.x) & 0xFFFF) << 16u) | (f32tof16(value.y) & 0xFFFF);
+}
+
+uint PackUnorm2x16(float2 v)
+{
+    uint x = (uint)round(saturate(v.x) * 65535.0);
+    uint y = (uint)round(saturate(v.y) * 65535.0);
+    return (y << 16) | x;
+}
+
+float2 UnpackUnorm2x16(uint packed)
+{
+    float x = (packed & 0xFFFF) / 65535.0;
+    float y = (packed >> 16) / 65535.0;
+    return float2(x, y);
+}
+
 float2 UnitVectorToOctahedron(float3 n)
 {
 	n.xy /= dot(1, abs(n));
@@ -116,4 +135,38 @@ float3 UnpackNormalFromUInt32(uint packedNormal)
 	float2 worldNormalAsOctahedron = ((quantizedOctahedron / 65535.0) - 0.5) * 2.0;
 	float3 worldNormal = OctahedronToUnitVector(worldNormalAsOctahedron);
 	return worldNormal;
+}
+
+// From https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/PixelPacking_RGBE.hlsli
+uint PackRGBE(float3 rgb)
+{
+    // To determine the shared exponent, we must clamp the channels to an expressible range
+    const float kMaxVal = asfloat(0x477F8000); // 1.FF x 2^+15
+    const float kMinVal = asfloat(0x37800000); // 1.00 x 2^-16
+
+    // Non-negative and <= kMaxVal
+    rgb = clamp(rgb, 0, kMaxVal);
+
+    // From the maximum channel we will determine the exponent.  We clamp to a min value
+    // so that the exponent is within the valid 5-bit range.
+    float MaxChannel = max(max(kMinVal, rgb.r), max(rgb.g, rgb.b));
+
+    // 'Bias' has to have the biggest exponent plus 15 (and nothing in the mantissa).  When
+    // added to the three channels, it shifts the explicit '1' and the 8 most significant
+    // mantissa bits into the low 9 bits.  IEEE rules of float addition will round rather
+    // than truncate the discarded bits.  Channels with smaller natural exponents will be
+    // shifted further to the right (discarding more bits).
+    float Bias = asfloat((asuint(MaxChannel) + 0x07804000) & 0x7F800000);
+
+    // Shift bits into the right places
+    uint3 RGB = asuint(rgb + Bias);
+    uint E = (asuint(Bias) << 4) + 0x10000000;
+    return E | RGB.b << 18 | RGB.g << 9 | (RGB.r & 0x1FF);
+}
+
+// From https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/PixelPacking_RGBE.hlsli
+float3 UnpackRGBE(uint p)
+{
+    float3 rgb = uint3(p, p >> 9, p >> 18) & 0x1FF;
+    return ldexp(rgb, (int)(p >> 27) - 24);
 }

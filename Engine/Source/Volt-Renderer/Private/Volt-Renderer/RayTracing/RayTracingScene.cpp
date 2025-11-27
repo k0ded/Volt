@@ -27,6 +27,12 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		// No instances, we don't need to build the TLAS.
+		if (m_instances.empty())
+		{
+			return;
+		}
+
 		Vector<RHI::AccelerationStructureInstance> instances;
 		instances.reserve(m_instances.size());
 
@@ -222,19 +228,26 @@ namespace Volt
 	
 	RayTracingInstanceID RayTracingScene::AddInstance(Ref<Mesh> mesh, EntityID entityId, uint32_t renderScenePrimitiveIndex)
 	{
+		RayTracingInstanceID newId{};
+
+		AddInstanceWithID(mesh, entityId, renderScenePrimitiveIndex, newId);
+
+		return newId;
+	}
+
+	void RayTracingScene::AddInstanceWithID(Ref<Mesh> mesh, EntityID entityId, uint32_t renderScenePrimitiveIndex, RayTracingInstanceID id)
+	{
 		auto& instance = m_instances.emplace_back();
 
 		instance.entityId = entityId;
 		instance.renderScenePrimitiveIndex = renderScenePrimitiveIndex;
 		instance.mesh = mesh;
-		instance.id = {};
+		instance.id = id;
 
 		auto& newOperation = m_frameOperations.emplace_back();
 		newOperation.index = m_instances.size() - 1;
 		newOperation.instanceId = instance.id;
 		newOperation.operationType = OperationType::Add;
-
-		return instance.id;
 	}
 
 	void RayTracingScene::RemoveInstance(RayTracingInstanceID instanceId)

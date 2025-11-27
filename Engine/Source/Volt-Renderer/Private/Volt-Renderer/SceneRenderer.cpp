@@ -182,11 +182,12 @@ namespace Volt
 
 		AddSkyboxPass(renderGraph, blackboard, renderView);
 
-#if 0
 		auto giOutput = m_globalIlluminationRenderer.Execute(renderGraph, blackboard, renderView);
-#endif
 
-		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer, nullptr);
+		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer, giOutput.indirectLight);
+
+		m_globalIlluminationRenderer.Visualize(renderGraph, blackboard, renderView);
+
 		AddPostProcessingPasses(renderGraph, blackboard, renderView, outputTexture);
 
 		if (m_createInfo.drawDebug)
@@ -593,8 +594,12 @@ namespace Volt
 				{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
 		}
 
-#if 0
 		{
+			if (!indirectLightTexture)
+			{
+				indirectLightTexture = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().black1x1x1);
+			}
+
 			CompositeLightingCS::Parameters* passParameters = renderGraph.AllocParameters<CompositeLightingCS::Parameters>();
 			passParameters->RWSceneColor = sceneColorUAV;
 			passParameters->IndirectLight = renderGraph.CreateSRV(indirectLightTexture);
@@ -607,7 +612,6 @@ namespace Volt
 				RenderGraphPassFlags::None,
 				{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
 		}
-#endif
 	}
 
 	void SceneRenderer::Invalidate()

@@ -221,4 +221,9 @@ namespace Volt::RHI
 		const uint32_t bindingsIndex = m_activeShaderStagesBitArray.Rank(GetShaderStageIndex(shaderStage));
 		return m_resourceBindings[bindingsIndex].resourceBindings;
 	}
+
+	void ShaderBindingMap::SetRayTracingResourceTable(RefPtr<RayTracingResourceTable> rayTracingResourceTable)
+	{
+		m_rayTracingResourceTable = rayTracingResourceTable;
+	}
 }

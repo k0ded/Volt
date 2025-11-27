@@ -779,6 +779,8 @@ void ViewportPanel::DuplicateSelection()
 {
 	m_editorCameraController->ForceDisable();
 
+	ScopedAssetReferenceLock sceneLock{ m_editorScene };
+
 	Vector<Volt::Entity> duplicated;
 	for (const auto& ent : SelectionManager::GetSelectedEntities())
 	{
@@ -829,6 +831,8 @@ void ViewportPanel::DuplicateSelection()
 
 void ViewportPanel::HandleSingleSelect()
 {
+	ScopedAssetReferenceLock sceneLock{ m_editorScene };
+
 	glm::vec2 perspectiveSize = m_perspectiveBounds[1] - m_perspectiveBounds[0];
 
 	int32_t mouseX = (int32_t)m_viewportMouseCoords.x;

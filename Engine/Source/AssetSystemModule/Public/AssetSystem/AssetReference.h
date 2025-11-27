@@ -26,7 +26,7 @@ public:
 
 	~AssetReference() noexcept
 	{
-		VT_ENSURE_MSG(m_isLocked == false, "Must be unlocked before destroyed!");
+		VT_ENSURE_MSG(IsLocked() == false, "Must be unlocked before destroyed!");
 	}
 
 	AssetReference(AssetReference&& other) noexcept
@@ -62,25 +62,25 @@ public:
 
 	VT_INLINE T* operator->() noexcept
 	{
-		VT_ENSURE_MSG(m_isLocked, "AssetReference must be locked when accessed!");
+		VT_ENSURE_MSG(IsLocked(), "AssetReference must be locked when accessed!");
 		return m_asset.GetRaw();
 	}
 
 	VT_INLINE T& operator*() noexcept
 	{
-		VT_ENSURE_MSG(m_isLocked, "AssetReference must be locked when accessed!");
+		VT_ENSURE_MSG(IsLocked(), "AssetReference must be locked when accessed!");
 		return *m_asset;
 	}
 
 	VT_INLINE const T* operator->() const noexcept
 	{
-		VT_ENSURE_MSG(m_isLocked, "AssetReference must be locked when accessed!");
+		VT_ENSURE_MSG(IsLocked(), "AssetReference must be locked when accessed!");
 		return m_asset.GetRaw();
 	}
 
 	VT_INLINE const T& operator*() const noexcept
 	{
-		VT_ENSURE_MSG(m_isLocked, "AssetReference must be locked when accessed!");
+		VT_ENSURE_MSG(IsLocked(), "AssetReference must be locked when accessed!");
 		return *m_asset;
 	}
 
@@ -102,20 +102,31 @@ public:
 	VT_INLINE void Lock() const
 	{
 		VT_ENSURE(m_asset != nullptr);
-		m_asset->m_assetMutex->lock_shared();
-		m_isLocked = true;
+
+		int32_t prevLockCount = m_lockCounter.fetch_add(1, std::memory_order::relaxed);
+
+		if (prevLockCount == 0)
+		{
+			m_asset->m_assetMutex->lock_shared();
+		}
 	}
 
 	VT_INLINE void Unlock() const
 	{
 		VT_ENSURE(m_asset != nullptr);
-		m_asset->m_assetMutex->unlock_shared();
-		m_isLocked = false;
+
+		int32_t prevLockCount = m_lockCounter.fetch_sub(1, std::memory_order::relaxed);
+		VT_ENSURE(prevLockCount > 0);
+
+		if (prevLockCount == 1)
+		{
+			m_asset->m_assetMutex->unlock_shared();
+		}
 	}
 
 	VT_INLINE void Reset()
 	{
-		VT_ENSURE(m_isLocked == false);
+		VT_ENSURE(IsLocked() == false);
 		m_asset = nullptr;
 	}
 
@@ -127,6 +138,11 @@ public:
 	VT_INLINE RefPtr<T> GetRaw() const
 	{
 		return m_asset;
+	}
+
+	VT_INLINE bool IsLocked() const
+	{
+		return m_lockCounter.load(std::memory_order::relaxed) > 0;
 	}
 
 	template<std::derived_from<T> U>
@@ -142,5 +158,5 @@ private:
 	friend class AssetReference;
 
 	RefPtr<T> m_asset;
-	mutable bool m_isLocked = false;
+	mutable std::atomic_int32_t m_lockCounter = 0;
 };

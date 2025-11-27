@@ -351,6 +351,7 @@ namespace Volt
 				case ShaderParameterType::TextureUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
 				case ShaderParameterType::UniformBuffer:  
 				{
+					// #TODO_Ivar: This is a temporary fix until we have proper permutation support.
 					RGUniformBufferRef uniformBuffer = *reinterpret_cast<RGUniformBufferRef*>(dataPtr);
 					if (uniformBuffer != nullptr)
 					{

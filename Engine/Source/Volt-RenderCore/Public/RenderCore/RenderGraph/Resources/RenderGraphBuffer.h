@@ -90,6 +90,22 @@ namespace Volt
 			return desc;
 		}
 
+		template<typename SizeType>
+		static RGBufferDesc CreateByteAddressDesc(const SizeType byteSize, const std::string& name = "Buffer")
+		{
+			VT_ASSERT_MSG(byteSize > 0, "Size must not be zero!");
+			VT_ASSERT_MSG(byteSize % 4 == 0, "Size must be 4 byte aligned");
+
+			RGBufferDesc desc{};
+			desc.count = static_cast<uint32_t>(byteSize);
+			desc.elementSize = 1u;
+			desc.usage = RHI::BufferUsage::StorageBuffer;
+			desc.memoryUsage = RHI::MemoryUsage::GPU;
+			desc.debugName = name;
+
+			return desc;
+		}
+
 		template<typename CommandType, typename SizeType>
 		static RGBufferDesc CreateIndirectDesc(const SizeType numCommands, const std::string& name = "Buffer", const RHI::MemoryUsage memoryUsage = RHI::MemoryUsage::GPU)
 		{
@@ -139,8 +155,39 @@ namespace Volt
 	{
 		RGBufferRef bufferResource;
 
+		uint64_t size = std::numeric_limits<uint64_t>::max();
+		uint64_t offset = 0;
+
 		// Used for texel buffers
 		RHI::PixelFormat format = RHI::PixelFormat::UNDEFINED;
+
+		static RGBufferSRVDesc Create(RGBufferRef buffer, uint64_t size)
+		{
+			return RGBufferSRVDesc{
+				.bufferResource = buffer,
+				.size = size
+			};
+		}
+
+		static RGBufferSRVDesc Create(RGBufferRef buffer, uint64_t size, uint64_t offset)
+		{
+			return RGBufferSRVDesc{
+				.bufferResource = buffer,
+				.size = size,
+				.offset = offset
+			};
+		}
+
+		template<RHI::PixelFormat Format>
+		static RGBufferSRVDesc Create(RGBufferRef buffer, uint64_t size, uint64_t offset)
+		{
+			return RGBufferSRVDesc{
+				.bufferResource = buffer,
+				.size = size,
+				.offset = offset,
+				.format = Format
+			};
+		}
 	};
 
 	class VTRC_API RGBufferSRV : public RGResourceSRV
@@ -164,8 +211,39 @@ namespace Volt
 	{ 
 		RGBufferRef bufferResource;
 
+		uint64_t size = std::numeric_limits<uint64_t>::max();
+		uint64_t offset = 0;
+
 		// Used for texel buffers
 		RHI::PixelFormat format = RHI::PixelFormat::UNDEFINED;
+
+		static RGBufferUAVDesc Create(RGBufferRef buffer, uint64_t size)
+		{
+			return RGBufferUAVDesc {
+				.bufferResource = buffer,
+				.size = size
+			};
+		}
+
+		static RGBufferUAVDesc Create(RGBufferRef buffer, uint64_t size, uint64_t offset)
+		{
+			return RGBufferUAVDesc{
+				.bufferResource = buffer,
+				.size = size,
+				.offset = offset
+			};
+		}
+
+		template<RHI::PixelFormat Format>
+		static RGBufferUAVDesc Create(RGBufferRef buffer, uint64_t size, uint64_t offset)
+		{
+			return RGBufferUAVDesc{
+				.bufferResource = buffer,
+				.size = size,
+				.offset = offset,
+				.format = Format
+			};
+		}
 	};
 
 	class VTRC_API RGBufferUAV : public RGResourceUAV

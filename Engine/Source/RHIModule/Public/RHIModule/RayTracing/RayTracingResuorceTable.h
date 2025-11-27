@@ -45,7 +45,7 @@ namespace Volt::RHI
 			AtomicStack<uint32_t> m_availableIndices;
 		};
 
-		template<typename ResourceType>
+		template<typename ResourceType, typename ViewType>
 		class ResourceTable
 		{
 		public:
@@ -57,7 +57,7 @@ namespace Volt::RHI
 			uint32_t GetSlotForResource(RefPtr<ResourceType> resource);
 
 			RefPtr<ResourceType> GetAtSlot(uint32_t slot);
-			RefPtr<ImageView> GetViewAtSlot(uint32_t slot);
+			RefPtr<ViewType> GetViewAtSlot(uint32_t slot);
 
 			Vector<uint32_t> GetAndClearDirtySlots(uint32_t index);
 
@@ -69,7 +69,7 @@ namespace Volt::RHI
 			};
 
 			Vector<RefPtr<ResourceType>> m_table;
-			Vector<RefPtr<ImageView>> m_viewTable;
+			Vector<RefPtr<ViewType>> m_viewTable;
 			Map<RefPtr<ResourceType>, Slot> m_resourceToIndex;
 			Vector<Vector<uint32_t>> m_dirtySlots;
 
@@ -77,16 +77,17 @@ namespace Volt::RHI
 		};
 	};
 
-	template<typename ResourceType>
-	RayTracingResourceTable::ResourceTable<ResourceType>::ResourceTable()
+	template<typename ResourceType, typename ViewType>
+	RayTracingResourceTable::ResourceTable<ResourceType, ViewType>::ResourceTable()
 	{
 		m_table.resize(RayTracingResourceTable::MaxSize);
+		m_viewTable.resize(RayTracingResourceTable::MaxSize);
 		m_resourceToIndex.reserve(RayTracingResourceTable::MaxSize);
 		m_dirtySlots.resize(RHI::RHICapabilities::NumFramesInFlight);
 	}
 
-	template<typename ResourceType>
-	void RayTracingResourceTable::ResourceTable<ResourceType>::Add(RefPtr<ResourceType> resource)
+	template<typename ResourceType, typename ViewType>
+	void RayTracingResourceTable::ResourceTable<ResourceType, ViewType>::Add(RefPtr<ResourceType> resource)
 	{
 		auto it = m_resourceToIndex.find(resource);
 		if (it != m_resourceToIndex.end())
@@ -106,8 +107,8 @@ namespace Volt::RHI
 		}
 	}
 
-	template<typename ResourceType>
-	void RayTracingResourceTable::ResourceTable<ResourceType>::Remove(RefPtr<ResourceType> resource)
+	template<typename ResourceType, typename ViewType>
+	void RayTracingResourceTable::ResourceTable<ResourceType, ViewType>::Remove(RefPtr<ResourceType> resource)
 	{
 		auto it = m_resourceToIndex.find(resource);
 		if (it != m_resourceToIndex.end())
@@ -128,14 +129,14 @@ namespace Volt::RHI
 		}
 	}
 
-	template<typename ResourceType>
-	uint32_t RayTracingResourceTable::ResourceTable<ResourceType>::GetSlotForResource(RefPtr<ResourceType> resource)
+	template<typename ResourceType, typename ViewType>
+	uint32_t RayTracingResourceTable::ResourceTable<ResourceType, ViewType>::GetSlotForResource(RefPtr<ResourceType> resource)
 	{
 		return m_resourceToIndex.at(resource).index;
 	}
 
-	template<typename ResourceType>
-	Vector<uint32_t> RayTracingResourceTable::ResourceTable<ResourceType>::GetAndClearDirtySlots(uint32_t index)
+	template<typename ResourceType, typename ViewType>
+	Vector<uint32_t> RayTracingResourceTable::ResourceTable<ResourceType, ViewType>::GetAndClearDirtySlots(uint32_t index)
 	{
 		Vector<uint32_t> dirtySlots = m_dirtySlots.at(index);
 		m_dirtySlots.at(index).clear();
@@ -143,15 +144,20 @@ namespace Volt::RHI
 		return dirtySlots;
 	}
 
-	template<typename ResourceType>
-	RefPtr<ResourceType> RayTracingResourceTable::ResourceTable<ResourceType>::GetAtSlot(uint32_t slot)
+	template<typename ResourceType, typename ViewType>
+	RefPtr<ResourceType> RayTracingResourceTable::ResourceTable<ResourceType, ViewType>::GetAtSlot(uint32_t slot)
 	{
 		return m_table.at(slot);
 	}
 
-	template<typename ResourceType>
-	RefPtr<ImageView> RayTracingResourceTable::ResourceTable<ResourceType>::GetViewAtSlot(uint32_t slot)
+	template<typename ResourceType, typename ViewType>
+	RefPtr<ViewType> RayTracingResourceTable::ResourceTable<ResourceType, ViewType>::GetViewAtSlot(uint32_t slot)
 	{
+		if (m_viewTable[slot] != nullptr)
+		{
+			return m_viewTable[slot];
+		}
+
 		auto view = m_table.at(slot)->GetView();
 		m_viewTable[slot] = view;
 

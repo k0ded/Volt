@@ -15,7 +15,33 @@ public:
 	{}
 
 	~LinearAllocator()
-	{}
+	{
+		PageHeader* currentPage = m_basePage;
+
+		// No pages have been allocated
+		if (currentPage == nullptr)
+		{
+			return;
+		}
+
+		// Find the last page.
+		while (currentPage->next != nullptr)
+		{
+			currentPage = currentPage->next;
+		}
+
+		// Walk backwards and free the pages along the ways
+		while (currentPage->prev != nullptr)
+		{
+			PageHeader* tempPage = currentPage;
+			currentPage = currentPage->prev;
+
+			FreePage(tempPage);
+		}
+
+		// Finally free the base page.
+		FreePage(m_basePage);
+	}
 
 	LinearAllocator(LinearAllocator&& other) noexcept
 	{
@@ -118,6 +144,12 @@ private:
 		newPage->size = allocationSize;
 
 		return newPage;
+	}
+
+	void FreePage(PageHeader* page)
+	{
+		page->~PageHeader();
+		m_allocator.Free(page);
 	}
 
 	SecondaryAllocator::template ForElementType<uint8_t> m_allocator;

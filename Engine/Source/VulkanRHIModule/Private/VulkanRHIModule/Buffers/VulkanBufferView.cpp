@@ -66,6 +66,9 @@ namespace Volt::RHI
 			maxRange = std::min((uint64_t)vkUniformBuffer.GetSize(), m_desc.size);
 		}
 
+		memset(&m_srvDescriptor, 0, sizeof(m_srvDescriptor));
+		memset(&m_uavDescriptor, 0, sizeof(m_uavDescriptor));
+
 		// All buffer views has the same address info.
 		m_srvDescriptor.vkDescriptorInfo.sType = m_uavDescriptor.vkDescriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
 		m_srvDescriptor.vkDescriptorInfo.pNext = m_uavDescriptor.vkDescriptorInfo.pNext = nullptr;

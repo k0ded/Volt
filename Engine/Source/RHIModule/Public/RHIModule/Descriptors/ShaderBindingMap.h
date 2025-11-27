@@ -6,6 +6,7 @@
 #include "RHIModule/Images/ImageView.h"
 #include "RHIModule/Images/SamplerState.h"
 #include "RHIModule/RayTracing/AccelerationStructure.h"
+#include "RHIModule/RayTracing/RayTracingResuorceTable.h"
 #include "RHIModule/Shader/ShaderCommon.h"
 
 #include <CoreUtilities/Containers/Map.h>
@@ -58,8 +59,11 @@ namespace Volt::RHI
 		void SetTextureSRV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView);
 		void SetTextureUAV(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::ImageView> imageView);
 		void SetAccelerationStructure(ShaderStage shaderStage, uint32_t bindingIndex, RefPtr<RHI::AccelerationStructure> accelerationStructure);
+		void SetRayTracingResourceTable(RefPtr<RayTracingResourceTable> rayTracingResourceTable);
 
 		VT_NODISCARD VT_INLINE const ArrayView<PerShaderStageResourceBindings> GetBindings() const { return m_resourceBindings; }
+		VT_NODISCARD VT_INLINE RefPtr<RayTracingResourceTable> GetRayTracingResourceTable() const { return m_rayTracingResourceTable; }
+		VT_NODISCARD VT_INLINE bool HasRayTracingResourceTable() const { return m_rayTracingResourceTable != nullptr; }
 
 		static ShaderBindingMap InitializeFromPipeline(RawPtr<RenderPipeline> renderPipeline);
 		static ShaderBindingMap InitializeFromPipeline(RawPtr<ComputePipeline> computePipeline);
@@ -74,5 +78,7 @@ namespace Volt::RHI
 
 		BitArray<GetNumBindableShaderStages(), uint32_t> m_activeShaderStagesBitArray;
 		Vector<PerShaderStageResourceBindings> m_resourceBindings;
+
+		RefPtr<RayTracingResourceTable> m_rayTracingResourceTable;
 	};
 }

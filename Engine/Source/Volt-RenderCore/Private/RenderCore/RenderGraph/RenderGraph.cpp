@@ -501,6 +501,8 @@ namespace Volt
 				{
 					RHI::BufferViewDesc viewDesc{};
 					viewDesc.bufferFormat = bufferSRV->GetDesc().format;
+					viewDesc.size = bufferSRV->GetDesc().size;
+					viewDesc.offset = bufferSRV->GetDesc().offset;
 					bufferSRV->AssignRHIView(bufferResource->GetRHIResource()->GetOrCreateView(viewDesc));
 				}
 			}
@@ -550,6 +552,8 @@ namespace Volt
 				{
 					RHI::BufferViewDesc viewDesc{};
 					viewDesc.bufferFormat = bufferUAV->GetDesc().format;
+					viewDesc.size = bufferUAV->GetDesc().size;
+					viewDesc.offset = bufferUAV->GetDesc().offset;
 					bufferUAV->AssignRHIView(bufferResource->GetRHIResource()->GetOrCreateView(viewDesc));
 				}
 			}

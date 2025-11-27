@@ -35,7 +35,8 @@ namespace Volt
 	static ConsoleVariable<int32_t> s_logRenderSceneUpdatedCVar(
 		"r.RenderScene.LogUpdates", 
 		0,
-		"Whether or not to log Render Scene updates");
+		"Whether or not to log Render Scene updates"
+	);
 
 	static ConsoleVariable<int32_t> s_visualizeRenderScenePrimitiveBoundingSpheres(
 		"r.RenderScene.VisualizePrimitiveBoundingSpheres",
@@ -183,6 +184,21 @@ namespace Volt
 	void RenderScene::RemoveLightInstance(UUID64 id)
 	{
 		return m_updateQueue.RemoveLightInstance(id);
+	}
+
+	RayTracingInstanceID RenderScene::AddRayTracingInstance(EntityID entityId, Ref<Mesh> mesh, RenderPrimitiveID primitiveId)
+	{
+		return m_updateQueue.AddRayTracingInstance(entityId, mesh, primitiveId);
+	}
+
+	void RenderScene::RemoveRayTracingInstance(RayTracingInstanceID instanceId)
+	{
+		m_updateQueue.RemoveRayTracingInstance(instanceId);
+	}
+
+	void RenderScene::InvalidateRayTracingInstance(RayTracingInstanceID instanceId)
+	{
+		m_updateQueue.InvalidateRayTracingInstance(instanceId);
 	}
 
 	void RenderScene::InvalidateLightInstance(UUID64 id)
@@ -364,6 +380,10 @@ namespace Volt
 				{
 					ProcessAddLightInstance(queuedUpdate);
 				}
+				else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::RayTracingInstance)
+				{
+					ProcessAddRayTracingInstance(queuedUpdate);
+				}
 			}
 			else if (queuedUpdate.operation == RenderSceneUpdateQueue::UpdateOperation::Remove)
 			{
@@ -434,6 +454,16 @@ namespace Volt
 		InvalidateLightInstance(id);
 	}
 
+	void RenderScene::ProcessAddRayTracingInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
+	{
+		m_rayTracingScene->AddInstanceWithID(
+			queuedUpdate.rayTracingInstanceInfo.mesh,
+			queuedUpdate.rayTracingInstanceInfo.entityId,
+			GetPrimitiveIndexFromID(queuedUpdate.rayTracingInstanceInfo.renderScenePrimitiveId),
+			queuedUpdate.rayTracingInstanceInfo.id
+		);
+	}
+
 	void RenderScene::ProcessQueuedRemove(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
 	{
 		if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Primitive)
@@ -494,6 +524,10 @@ namespace Volt
 				m_renderLights.erase(it);
 			}
 		}
+		else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::RayTracingInstance)
+		{
+			m_rayTracingScene->RemoveInstance(queuedUpdate.id);
+		}
 	}
 
 	void RenderScene::ProcessQueuedInvalidation(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
@@ -508,6 +542,10 @@ namespace Volt
 			{
 				m_invalidLightDataIndices.emplace_back(queuedUpdate.id, m_lightIndexFromLightID.at(queuedUpdate.id));
 			}
+		}
+		else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::RayTracingInstance)
+		{
+			m_rayTracingScene->InvalidateInstance(queuedUpdate.id);
 		}
 	}
 

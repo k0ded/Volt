@@ -1,11 +1,15 @@
 #include "vkpch.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+
 #include "VulkanRHIModule/Graphics/VulkanGraphicsContext.h"
+#include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
 
 #include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
+#include "VulkanRHIModule/Common/VulkanFunctions.h"
 
 #include <CoreUtilities/Containers/Array.h>
+#include <CoreUtilities/MemoryUtility.h>
 
 #include <vulkan/vulkan.h>
 
@@ -31,8 +35,6 @@ namespace Volt::RHI
 
 	void RayTracingTableDescriptorSetManager::CreateDescriptorSetLayout()
 	{
-		constexpr uint32_t DescriptorTypeCount = 2;
-
 		Array<VkDescriptorType, DescriptorTypeCount> descriptorTypes =
 		{
 			VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
@@ -59,29 +61,35 @@ namespace Volt::RHI
 			buffersBinding.stageFlags = VK_SHADER_STAGE_ALL;
 		}
 
-		constexpr VkDescriptorBindingFlags Flags =
-			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
-			VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-
-		Array<VkDescriptorBindingFlags, DescriptorTypeCount> bindingFlags =
-		{
-			Flags,
-			Flags
-		};
-
 		VkDescriptorSetLayoutBindingFlagsCreateInfo extendedInfo{};
 		extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
 		extendedInfo.pNext = nullptr;
-		extendedInfo.bindingCount = DescriptorTypeCount;
-		extendedInfo.pBindingFlags = bindingFlags.data();
+		extendedInfo.bindingCount = 0;
+		extendedInfo.pBindingFlags = nullptr;
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		createInfo.bindingCount = DescriptorTypeCount;
 		createInfo.pBindings = descriptorSetLayoutBindings.data();
-		createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+		createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 		createInfo.pNext = &extendedInfo;
 
-		VT_VK_CHECK(vkCreateDescriptorSetLayout(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), &createInfo, VT_VULKAN_ALLOCATOR, &m_descriptorSetLayout));
+		auto device = GraphicsContext::GetDevice();
+		VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &createInfo, VT_VULKAN_ALLOCATOR, &m_descriptorSetLayout));
+
+		// Get descriptor set layout size, and make sure it's aligned
+		vkGetDescriptorSetLayoutSizeEXT(device->GetHandle<VkDevice>(), m_descriptorSetLayout, &m_descriptorSetLayoutSize);
+		m_descriptorSetLayoutSize = ::Utility::Align(m_descriptorSetLayoutSize, g_physicalDeviceProperties.descriptorBufferProperties.descriptorBufferOffsetAlignment);
+
+		Array<uint32_t, DescriptorTypeCount> bindings =
+		{
+			TexturesBinding,
+			BuffersBinding
+		};
+
+		for (size_t i = 0; i < m_bindingOffsets.size(); ++i)
+		{
+			vkGetDescriptorSetLayoutBindingOffsetEXT(device->GetHandle<VkDevice>(), m_descriptorSetLayout, bindings[i], &m_bindingOffsets[i]);
+		}
 	}
 }

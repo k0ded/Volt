@@ -70,6 +70,9 @@ float2 UniformSampleDiskConcentric( float2 e )
 }
 
 // Replace these
+// Based on: [Clarberg 2008, "Fast Equal-Area Mapping of the (Hemi)Sphere using SIMD"]
+// Fixed sign bit for UV.y == 0 and removed branch before division by using a small epsilon
+// https://fileadmin.cs.lth.se/graphics/research/papers/2008/simdmapping/clarberg_simdmapping08_preprint.pdf
 float3 EquiAreaSphericalMapping(float2 UV)
 {
 	UV = 2 * UV - 1;
@@ -86,6 +89,9 @@ float3 EquiAreaSphericalMapping(float2 UV)
 	);
 }
 
+// Based on: [Clarberg 2008, "Fast Equal-Area Mapping of the (Hemi)Sphere using SIMD"]
+// Removed branch before division by using a small epsilon
+// https://fileadmin.cs.lth.se/graphics/research/papers/2008/simdmapping/clarberg_simdmapping08_preprint.pdf
 float2 InverseEquiAreaSphericalMapping(float3 Direction)
 {
 	// Most use cases of this func generate Direction by diffing two positions and thus unnormalized

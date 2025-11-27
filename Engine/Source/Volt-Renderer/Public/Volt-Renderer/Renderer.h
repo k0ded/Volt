@@ -39,6 +39,8 @@ namespace Volt
 		RefPtr<RHI::Image> black1x1x1;
 		RefPtr<RHI::Image> white1x1;
 
+		RefPtr<RHI::StorageBuffer> cubeIndexBuffer;
+
 		VT_INLINE void Clear()
 		{
 			defaultMaterial = nullptr;
@@ -48,6 +50,8 @@ namespace Volt
 			DFGLuT = nullptr;
 			blackCubeTexture = nullptr;
 			black1x1x1 = nullptr;
+
+			cubeIndexBuffer = nullptr;
 		}
 	};
 

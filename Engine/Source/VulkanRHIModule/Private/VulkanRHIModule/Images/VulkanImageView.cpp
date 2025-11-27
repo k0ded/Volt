@@ -114,6 +114,9 @@ namespace Volt::RHI
 
 	void VulkanImageView::CreateDescriptors()
 	{
+		memset(&m_srvDescriptor, 0, sizeof(m_srvDescriptor));
+		memset(&m_uavDescriptor, 0, sizeof(m_uavDescriptor));
+
 		m_srvDescriptor.vkDescriptorInfo.sType = m_uavDescriptor.vkDescriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
 		m_srvDescriptor.vkDescriptorInfo.pNext = m_uavDescriptor.vkDescriptorInfo.pNext = nullptr;
 
@@ -121,7 +124,7 @@ namespace Volt::RHI
 		m_srvDescriptor.vkDescriptorInfo.data.pSampledImage = &m_srvDescriptor.vkImageDescriptor;
 
 		m_uavDescriptor.vkDescriptorInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		m_uavDescriptor.vkDescriptorInfo.data.pSampledImage = &m_uavDescriptor.vkImageDescriptor;
+		m_uavDescriptor.vkDescriptorInfo.data.pStorageImage = &m_uavDescriptor.vkImageDescriptor;
 
 		m_srvDescriptor.vkImageDescriptor.imageView = m_imageView;
 		m_srvDescriptor.vkImageDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

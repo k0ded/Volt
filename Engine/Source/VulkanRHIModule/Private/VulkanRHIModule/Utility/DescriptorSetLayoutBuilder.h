@@ -23,6 +23,8 @@ namespace Volt::RHI
 
 			Map<uint32_t, uint64_t> descriptorSetLayoutSizes;
 			Map<uint32_t, Map<uint32_t, Binding>> descriptorSetLayoutBindings;
+
+			bool accessesRayTracingResources;
 		};
 
 		DescriptorSets BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindings& resourceBindings, bool accessesRayTracingResourceTable);

@@ -366,6 +366,7 @@ namespace Volt
 
 			auto it = std::find_if(result.begin(), result.end(), [name](const auto mat)
 			{
+				ScopedAssetReferenceLock materialLock{ mat };
 				return mat->GetAssetName() == name;
 			});
 

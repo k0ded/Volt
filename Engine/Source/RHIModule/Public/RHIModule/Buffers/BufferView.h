@@ -10,8 +10,8 @@ namespace Volt::RHI
 
 	struct BufferViewDesc
 	{
-		size_t offset = 0;
-		size_t size = std::numeric_limits<size_t>::max();
+		uint64_t offset = 0;
+		uint64_t size = std::numeric_limits<uint64_t>::max();
 
 		// Used for texel buffers.
 		RHI::PixelFormat bufferFormat = RHI::PixelFormat::UNDEFINED;

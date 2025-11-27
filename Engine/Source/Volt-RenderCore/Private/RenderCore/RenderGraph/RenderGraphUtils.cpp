@@ -108,4 +108,36 @@ namespace Volt
 			context.ClearUAV(parameters->RWBuffer, clearValue);
 		});
 	}
+
+	BEGIN_SHADER_PARAMETER_STRUCT(ClearTextureUAVParameters)
+		SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWTexture)
+	END_SHADER_PARAMETER_STRUCT()
+
+	void AddClearUAVPass(RenderGraph& renderGraph, RGTextureUAVRef textureUAV, const glm::uvec4& clearValue)
+	{
+		ClearTextureUAVParameters* parameters = renderGraph.AllocParameters<ClearTextureUAVParameters>();
+		parameters->RWTexture = textureUAV;
+
+		renderGraph.AddPass("Clear Texture UAV",
+			RenderGraphPassFlags::Compute,
+			parameters,
+			[parameters, clearValue](RenderContext& context)
+		{
+			context.ClearUAV(parameters->RWTexture, clearValue);
+		});
+	}
+
+	void AddClearUAVPass(RenderGraph& renderGraph, RGTextureUAVRef textureUAV, const glm::vec4& clearValue)
+	{
+		ClearTextureUAVParameters* parameters = renderGraph.AllocParameters<ClearTextureUAVParameters>();
+		parameters->RWTexture = textureUAV;
+
+		renderGraph.AddPass("Clear Texture UAV",
+			RenderGraphPassFlags::Compute,
+			parameters,
+			[parameters, clearValue](RenderContext& context)
+		{
+			context.ClearUAV(parameters->RWTexture, clearValue);
+		});
+	}
 }

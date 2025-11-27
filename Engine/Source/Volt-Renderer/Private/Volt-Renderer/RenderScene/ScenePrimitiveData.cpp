@@ -58,7 +58,7 @@ namespace Volt
 
 		if (RHI::RHICanUseRayTracing())
 		{
-			m_renderScene->GetRayTracingScene()->InvalidateInstance(m_rayTracingInstance);
+			m_renderScene->InvalidateRayTracingInstance(m_rayTracingInstance);
 		}
 	}
 
@@ -101,7 +101,7 @@ namespace Volt
 
 		if (RHI::RHICanUseRayTracing())
 		{
-			m_rayTracingInstance = m_renderScene->GetRayTracingScene()->AddInstance(m_primitiveMesh, m_relatedEntity, m_renderScene->GetPrimitiveIndexFromID(m_renderObjects.front()));
+			m_rayTracingInstance = m_renderScene->AddRayTracingInstance(m_relatedEntity, m_primitiveMesh, m_renderObjects.front());
 		}
 	}
 
@@ -111,7 +111,7 @@ namespace Volt
 
 		if (RHI::RHICanUseRayTracing())
 		{
-			m_renderScene->GetRayTracingScene()->RemoveInstance(m_rayTracingInstance);
+			m_renderScene->RemoveRayTracingInstance(m_rayTracingInstance);
 		}
 
 		for (const auto& id : m_renderObjects)

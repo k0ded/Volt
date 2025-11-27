@@ -3,9 +3,11 @@
 #include <VulkanRHIModule/Descriptors/VulkanDescriptorCommon.h>
 
 #include <RHIModule/RayTracing/RayTracingResuorceTable.h>
+#include <RHIModule/Memory/Allocation.h>
 
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/Containers/AtomicBitVector.h>
+#include <CoreUtilities/Allocators/Handle.h>
 
 struct VkDescriptorSet_T;
 struct VkDescriptorPool_T;
@@ -28,26 +30,28 @@ namespace Volt::RHI
 		uint32_t GetTextureSlotIndex(RefPtr<Image> texture) override;
 
 		void Update(uint32_t index) override;
-		VkDescriptorSet_T* GetDescriptorSet() const;
+
+		uint8_t* GetHeapPointer();
+		uint64_t GetBaseOffset() const;
+		uint64_t GetDeviceAddress() const;
 
 	private:
 		void* GetHandleImpl() const override;
 
-		void CreateDescriptorSets();
+		void Initialize();
+		void Release();
 
 		ResourceIndices m_textureResourceIndices;
 		ResourceIndices m_bufferResourceIndices;
 
-		VkDescriptorPool_T* m_descriptorPool;
-		Vector<VkDescriptorSet_T*> m_descriptorSets;
-
-		ResourceTable<StorageBuffer> m_bufferTable;
-		ResourceTable<Image> m_textureTable;
-	
-		Vector<DescriptorWrite> m_writeDescriptors;
-		Vector<DescriptorBufferInfo> m_bufferDescriptorInfo;
-		Vector<DescriptorImageInfo> m_imageDescriptorInfo;
+		ResourceTable<StorageBuffer, BufferView> m_bufferTable;
+		ResourceTable<Image, ImageView> m_textureTable;
 	
 		uint32_t m_lastUpdateIndex = 0;
+		uint32_t m_currentBufferIndex = 0;
+
+		Handle<Allocation> m_descriptorHeapAllocation;
+		uint64_t m_descriptorSetLayoutSize = 0;
+		uint8_t* m_mappedPtr = nullptr;
 	};
 }

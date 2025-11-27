@@ -358,7 +358,7 @@ namespace Volt::RHI
 		}
 
 		// We only need to bind the descriptor buffer once.
-		BindDescriptorBuffer();
+		BindDescriptorBuffer(nullptr);
 	}
 
 	void VulkanCommandBuffer::End()
@@ -1005,8 +1005,8 @@ namespace Volt::RHI
 		subResourceRange.aspectMask = Utility::GetVkImageAspect(imageView->GetImageAspect());
 		subResourceRange.baseArrayLayer = desc.baseArrayLayer;
 		subResourceRange.baseMipLevel = desc.baseMipLevel;
-		subResourceRange.layerCount = desc.layerCount;
-		subResourceRange.levelCount = desc.mipCount;
+		subResourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? VK_REMAINING_ARRAY_LAYERS : desc.layerCount;
+		subResourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? VK_REMAINING_MIP_LEVELS : desc.mipCount;
 
 		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
 
@@ -1043,8 +1043,8 @@ namespace Volt::RHI
 		subResourceRange.aspectMask = Utility::GetVkImageAspect(imageView->GetImageAspect());
 		subResourceRange.baseArrayLayer = desc.baseArrayLayer;
 		subResourceRange.baseMipLevel = desc.baseMipLevel;
-		subResourceRange.layerCount = desc.layerCount;
-		subResourceRange.levelCount = desc.mipCount;
+		subResourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? VK_REMAINING_ARRAY_LAYERS : desc.layerCount;
+		subResourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? VK_REMAINING_MIP_LEVELS : desc.mipCount;
 
 		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
 
@@ -1530,8 +1530,8 @@ namespace Volt::RHI
 					{
 						VulkanBufferView& vkBufferView = binding.resource.Get<RefPtr<RHI::BufferView>>()->AsRef<VulkanBufferView>();
 
-						const VulkanBufferView::DescriptorDescription& srvDescriptor = vkBufferView.GetUAVDescriptor();
-						vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
+						const VulkanBufferView::DescriptorDescription& uavDescriptor = vkBufferView.GetUAVDescriptor();
+						vkGetDescriptorEXT(vkDevice, &uavDescriptor.vkDescriptorInfo, uavDescriptor.descriptorSize, outDescriptorPtr);
 						break;
 					};
 
@@ -1539,8 +1539,8 @@ namespace Volt::RHI
 					{
 						VulkanImageView& vkImageView = binding.resource.Get<RefPtr<RHI::ImageView>>()->AsRef<VulkanImageView>();
 
-						const VulkanImageView::DescriptorDescription& srvDescriptor = vkImageView.GetUAVDescriptor();
-						vkGetDescriptorEXT(vkDevice, &srvDescriptor.vkDescriptorInfo, srvDescriptor.descriptorSize, outDescriptorPtr);
+						const VulkanImageView::DescriptorDescription& uavDescriptor = vkImageView.GetUAVDescriptor();
+						vkGetDescriptorEXT(vkDevice, &uavDescriptor.vkDescriptorInfo, uavDescriptor.descriptorSize, outDescriptorPtr);
 						break;
 					}
 				}
@@ -1608,10 +1608,33 @@ namespace Volt::RHI
 		const uint32_t bufferIndex = 0;
 		const uint64_t descriptorHeapBaseOffset = descriptorHeap.GetBaseOffset();
 
+		// If we need the ray tracing resource table, we need to rebind the descriptor buffers.
+		if (RHI::RHICanUseRayTracing() && activePipelineDescriptorSets.accessesRayTracingResources)
+		{
+			if (shaderBindingsMap.HasRayTracingResourceTable())
+			{
+				BindDescriptorBuffer(shaderBindingsMap.GetRayTracingResourceTable());
+			}
+		}
+
 		for (const BindingInfo& bindingInfo : perShaderStageSetOffsets)
 		{
 			const uint64_t offset = bindingInfo.offset + descriptorHeapBaseOffset;
 			vkCmdSetDescriptorBufferOffsetsEXT(m_commandBufferData.commandBuffer, bindPoint, activePipelineLayout, bindingInfo.setIndex, 1, &bufferIndex, &offset);
+		}
+
+		if (RHI::RHICanUseRayTracing() && activePipelineDescriptorSets.accessesRayTracingResources)
+		{
+			RefPtr<RayTracingResourceTable> rayTracingResourceTable = shaderBindingsMap.GetRayTracingResourceTable();
+			if (rayTracingResourceTable != nullptr)
+			{
+				VulkanRayTracingResourceTable& vkRayTracingResourceTable = rayTracingResourceTable->AsRef<VulkanRayTracingResourceTable>();
+
+				const uint64_t rayTracingResourceDescriptorOffset = vkRayTracingResourceTable.GetBaseOffset();
+				const uint32_t rayTracingBufferIndex = 1;
+
+				vkCmdSetDescriptorBufferOffsetsEXT(m_commandBufferData.commandBuffer, bindPoint, activePipelineLayout, RayTracingTableDescriptorSetManager::Set, 1, &rayTracingBufferIndex, &rayTracingResourceDescriptorOffset);
+			}
 		}
 	}
 
@@ -1653,17 +1676,37 @@ namespace Volt::RHI
 		return true;
 	}
 
-	void VulkanCommandBuffer::BindDescriptorBuffer()
+	void VulkanCommandBuffer::BindDescriptorBuffer(RefPtr<RayTracingResourceTable> rayTracingResourceTable)
 	{
 		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
 		VulkanDescriptorHeap& descriptorHeap = vkGraphicsContext.GetDescriptorHeap();
 
-		VkDescriptorBufferBindingInfoEXT vkBindingInfo;
-		vkBindingInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
-		vkBindingInfo.pNext = nullptr;
-		vkBindingInfo.address = descriptorHeap.GetDeviceAddress();
-		vkBindingInfo.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+		constexpr uint32_t NumMaxDescriptorBuffers = 2;
+		uint32_t numDescriptorBuffersToBind = 1;
 
-		vkCmdBindDescriptorBuffersEXT(m_commandBufferData.commandBuffer, 1, &vkBindingInfo);
+		Array<VkDescriptorBufferBindingInfoEXT, NumMaxDescriptorBuffers> bindingInfo;
+		
+		{
+			VkDescriptorBufferBindingInfoEXT& vkBindingInfo = bindingInfo[0];
+			vkBindingInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
+			vkBindingInfo.pNext = nullptr;
+			vkBindingInfo.address = descriptorHeap.GetDeviceAddress();
+			vkBindingInfo.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+		}
+
+		if (rayTracingResourceTable)
+		{
+			VulkanRayTracingResourceTable& vkRayTracingResourceTable = rayTracingResourceTable->AsRef<VulkanRayTracingResourceTable>();
+
+			VkDescriptorBufferBindingInfoEXT& vkBindingInfo = bindingInfo[1];
+			vkBindingInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;
+			vkBindingInfo.pNext = nullptr;
+			vkBindingInfo.address = vkRayTracingResourceTable.GetDeviceAddress();
+			vkBindingInfo.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+		
+			numDescriptorBuffersToBind++;
+		}
+
+		vkCmdBindDescriptorBuffersEXT(m_commandBufferData.commandBuffer, numDescriptorBuffersToBind, bindingInfo.data());
 	}
 }
