@@ -103,7 +103,7 @@ private:
 
 	void InstallMayaTools();
 	void RegisterEventListeners();
-	//return wether to procced
+	//return whether to procced
 	//false when user cancels unload
 	bool PromptUnloadCurrentScene();
 

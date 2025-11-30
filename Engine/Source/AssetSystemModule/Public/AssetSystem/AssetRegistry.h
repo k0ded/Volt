@@ -262,10 +262,10 @@ namespace Volt
 
 	struct AssetRegistryIteratorFilter
 	{
-		// Wether or not to include memory assets.
+		// Whether or not to include memory assets.
 		bool includeMemoryAssets = true;
 
-		// Wether or not to include non memory assets without filepaths
+		// Whether or not to include non memory assets without filepaths
 		bool includeWithoutFilepath = true;
 
 		// If empty, all types are considered. Otherwise only the ones in this list.

@@ -38,6 +38,7 @@ namespace Volt
 		RefPtr<RHI::Image> blackCubeTexture;
 		RefPtr<RHI::Image> black1x1x1;
 		RefPtr<RHI::Image> white1x1;
+		RefPtr<RHI::Image> black1x1;
 
 		RefPtr<RHI::StorageBuffer> cubeIndexBuffer;
 
@@ -47,6 +48,7 @@ namespace Volt
 			defaultMesh = nullptr;
 
 			white1x1 = nullptr;
+			black1x1 = nullptr;
 			DFGLuT = nullptr;
 			blackCubeTexture = nullptr;
 			black1x1x1 = nullptr;

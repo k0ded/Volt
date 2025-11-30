@@ -67,5 +67,8 @@ void PropagateRaysFromWorldRadianceCacheCS(uint DispatchThreadID : SV_DispatchTh
 	const float2 rayUV = InverseEquiAreaSphericalMapping(rayDirection);
 	const uint2 localTexelCoords = rayUV * float(IrradianceVolumeProbeResolution);
 
-	RWProbeAtlas[probeAtlasCoords + localTexelCoords + 1] = radiance;
+	const float alpha = 0.5f;
+
+	float3 prevRadiance = RWProbeAtlas[probeAtlasCoords + localTexelCoords + 1];
+	RWProbeAtlas[probeAtlasCoords + localTexelCoords + 1] = alpha * radiance + (1.f - alpha) * prevRadiance;
 }

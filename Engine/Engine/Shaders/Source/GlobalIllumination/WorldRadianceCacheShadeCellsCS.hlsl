@@ -20,11 +20,16 @@ struct RayInfoData
 };
 
 RWStructuredBuffer<uint> RWWorldRadianceCacheCellCache;
+RWStructuredBuffer<uint> RWWorldRadianceCacheCellInfo;
 
 ByteAddressBuffer RayInfo;
 
 StructuredBuffer<uint> WorldRadianceCacheCellsToShade;
 StructuredBuffer<uint2> WorldRadianceCacheCellShadingInfo;
+
+Texture2D<float3> ProbeAtlas;
+
+uint WorldRadianceCacheCellLifetime;
 
 [numthreads(64, 1, 1)]
 void WorldRadianceCacheShadeCellsCS(uint DispatchThreadID : SV_DispatchThreadID)
@@ -55,7 +60,7 @@ void WorldRadianceCacheShadeCellsCS(uint DispatchThreadID : SV_DispatchThreadID)
 
 	BRDFInput brdfInput;
 	brdfInput.V = UnpackNormalFromUInt32(rayInfo.rayDirection);
-	brdfInput.N = triangleAttribs.normal;
+	brdfInput.N = triangleAttribs.normal; 
 	brdfInput.diffuseColor = CalculateDiffuseColor(albedo, metallic);
 	brdfInput.f0 = CalculateF0(albedo, metallic);
 	brdfInput.f90 = CalculateF90(albedo, metallic);
@@ -80,11 +85,12 @@ void WorldRadianceCacheShadeCellsCS(uint DispatchThreadID : SV_DispatchThreadID)
 		{
 		    radiance += EvaluateDirectionalLight(light, brdfInput, worldPosition);
 		}
-		else if (light.lightType == SceneLightType::SLT_Sky)
-		{
-		    radiance += EvaluateIBL(brdfInput, light);
-		}
+		//else if (light.lightType == SceneLightType::SLT_Sky)
+		//{
+		//    radiance += EvaluateIBL(brdfInput, light);
+		//}
 	}
 
+	RWWorldRadianceCacheCellInfo[cellHashIndex] = WorldRadianceCacheCellLifetime;
 	RWWorldRadianceCacheCellCache[cellHashIndex] = PackRGBE(radiance);
 }

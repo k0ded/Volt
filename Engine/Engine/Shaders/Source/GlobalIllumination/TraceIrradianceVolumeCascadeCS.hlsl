@@ -58,7 +58,6 @@ void TraceIrradianceVolumeCascadeCS(uint GroupID : SV_GroupID, uint GroupThreadI
 
 	const uint3 probeCoords = IrradianceVolume::GetProbeCoordsFromProbeIndex(GroupID);
 	const float3 probePosition = IrradianceVolume::GetProbeWorldPositionFromProbeCoords(probeCoords, IrradianceVolumeCascadeIndex);
-	//const uint2 probeAtlasCoords = IrradianceVolume::GetProbeAtlasPixelCoordsFromProbeIndex(GroupID, IrradianceVolumeCascadeIndex);
 	
 	const uint2 threadLocalPixelCoords = uint2(
 		GroupThreadIndex % IrradianceVolumeProbeResolution,
@@ -67,8 +66,6 @@ void TraceIrradianceVolumeCascadeCS(uint GroupID : SV_GroupID, uint GroupThreadI
 
 	uint randomSeed = uint(uint(1973) + DispatchThreadID * uint(9277) + View.frameIndex * uint(26699)) | uint(1);
 	const float2 texelCenterOffset = float2(StepAndOutputRNGFloat(randomSeed), StepAndOutputRNGFloat(randomSeed));
-	
-	//const float2 texelCenterOffset = BlueNoiseVec2(threadLocalPixelCoords, View.frameIndex);
 
 	const float2 threadUV = (threadLocalPixelCoords + texelCenterOffset) / float(IrradianceVolumeProbeResolution);
 	const float3 rayDirection = EquiAreaSphericalMapping(threadUV);

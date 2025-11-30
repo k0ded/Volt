@@ -101,7 +101,11 @@ void FinalGatherCS(uint2 DispatchThreadID : SV_DispatchThreadID)
 			if (worldRadianceCacheHashTable.Get(hitPosition, hashIndex))
 			{
 				indirectLight.rgb = UnpackRGBE(WorldRadianceCacheCellCache[hashIndex]);
-			}	
+			}
+			else
+			{
+				indirectLight.r = 1.f;
+			}
 		}
 		else
 		{

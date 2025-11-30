@@ -10,6 +10,7 @@
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/Camera/Camera.h"
 #include "Volt-Renderer/ShapeLibrary.h"
+#include "Volt-Renderer/SystemTextures.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
@@ -43,6 +44,24 @@ namespace Volt
 		"The base size of a cell in the world radiance cache."
 	);
 
+	static ConsoleVariable<int32_t> s_giWorldRadianceCacheCellLifetime(
+		"r.GI.WorldRadianceCache.CellLifetime",
+		5,
+		"The number of frames a cell is valid."
+	);
+
+	static ConsoleVariable<int32_t> s_giVisualizeWorldRadianceCache(
+		"r.GI.Visualize.WorldRadianceCache",
+		0,
+		"Whether or not to visualize the world radiance cache"
+	);
+
+	static ConsoleVariable<int32_t> s_giVisualizeIrradianceVolume(
+		"r.GI.Visualize.IrradianceVolume",
+		0,
+		"Whether or not to visualize the irradiance volume"
+	);
+
 	static ConsoleVariable<float> s_giIrradianceVolumeSpacing(
 		"r.GI.IrradianceVolume.Spacing",
 		50,
@@ -70,27 +89,8 @@ namespace Volt
 	static ConsoleVariable<int32_t> s_giIrradianceVolumeFreezeAtWorldOrigin(
 		"r.GI.IrradianceVolume.FreezeAtWorldOrigin",
 		1,
-		"Wether or not to freeze the irradiance volume at world origin."
+		"Whether or not to freeze the irradiance volume at world origin."
 	);
-
-	BEGIN_SHADER_PARAMETER_STRUCT(WorldRadianceCacheParameters)
-		SHADER_PARAMETER(float, WorldRadianceCacheLodDistance)
-		SHADER_PARAMETER(float, WorldRadianceCacheCellSize)
-	END_SHADER_PARAMETER_STRUCT()
-
-	BEGIN_SHADER_PARAMETER_STRUCT(SpatialHashTableParameters)
-		SHADER_PARAMETER_BUFFER_UAV(RWBuffer<uint>, RWSpatialHashTableChecksum)
-		SHADER_PARAMETER(uint, SpatialHashTableSize)
-	END_SHADER_PARAMETER_STRUCT()
-
-	BEGIN_SHADER_PARAMETER_STRUCT(IrradianceVolumeParameters)
-		SHADER_PARAMETER_UNIFORM_BUFFER(IrradianceVolumeConstants, IrradianceVolumeConstantData)
-		SHADER_PARAMETER(float, IrradianceVolumeBaseSpacing)
-		SHADER_PARAMETER(uint32_t, IrradianceVolumeResolution)
-		SHADER_PARAMETER(uint32_t, IrradianceVolumeNumCascades)
-		SHADER_PARAMETER(uint32_t, IrradianceVolumeProbeResolution)
-		SHADER_PARAMETER(uint32_t, IrradianceVolumeProbeAtlasResolution)
-	END_SHADER_PARAMETER_STRUCT()
 
 	struct FinalGatherCS : public GlobalShader
 	{
@@ -123,6 +123,17 @@ namespace Volt
 		END_SHADER_PARAMETER_STRUCT()
 	};
 	REGISTER_SHADER(TemporalAccumulationCS, "Engine/Shaders/Source/GlobalIllumination/TemporalAccumulation.hlsl", "TemporalAccumulationCS", Compute);
+	
+	struct WorldRadianceCacheUpdateCS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(WorldRadianceCacheUpdateCS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER_UAV(RWStructuredBuffer<uint>, RWWorldRadianceCacheCellCache)
+			SHADER_PARAMETER_BUFFER_UAV(RWStructuredBuffer<uint>, RWWorldRadianceCacheCellInfo)
+			SHADER_PARAMETER_STRUCT_INCLUDE(SpatialHashTableParameters, SpatialHashTableParams)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(WorldRadianceCacheUpdateCS, "Engine/Shaders/Source/GlobalIllumination/WorldRadianceCacheUpdateCS.hlsl", "WorldRadianceCacheUpdateCS", Compute);
 
 	struct TraceIrradianceVolumeCascadeCS : public GlobalShader
 	{
@@ -152,9 +163,12 @@ namespace Volt
 			RG_BUFFER_ACCESS(IndirectArgs, RGResourceAccess::IndirectArg)
 			SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
 			SHADER_PARAMETER_BUFFER_UAV(RWStructuredBuffer<uint>, RWWorldRadianceCacheCellCache)
+			SHADER_PARAMETER_BUFFER_UAV(RWStructuredBuffer<uint>, RWWorldRadianceCacheCellInfo)
 			SHADER_PARAMETER_BUFFER_SRV(ByteAddressBuffer, RayInfo)
 			SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<uint>, WorldRadianceCacheCellsToShade)
 			SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<uint2>, WorldRadianceCacheCellShadingInfo)
+
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float3>, ProbeAtlas)
 
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, DFGLuT)
 			SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightIrradiance)
@@ -187,9 +201,9 @@ namespace Volt
 	};
 	REGISTER_SHADER(PropagateRaysFromWorldRadianceCacheCS, "Engine/Shaders/Source/GlobalIllumination/PropagateRaysFromWorldRadianceCacheCS.hlsl", "PropagateRaysFromWorldRadianceCacheCS", Compute);
 
-	struct VisualizeSpatialHashTableCS : public GlobalShader
+	struct VisualizeWorldRadianceCacheCS : public GlobalShader
 	{
-		DECLARE_GLOBAL_SHADER(VisualizeSpatialHashTableCS)
+		DECLARE_GLOBAL_SHADER(VisualizeWorldRadianceCacheCS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 			SHADER_PARAMETER_UNIFORM_BUFFER(ConstantBuffer<ViewData>, View)
 			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float4>, RWSceneColor)
@@ -199,7 +213,7 @@ namespace Volt
 			SHADER_PARAMETER_STRUCT_INCLUDE(SpatialHashTableParameters, SpatialHashTableParams)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(VisualizeSpatialHashTableCS, "Engine/Shaders/Source/GlobalIllumination/GlobalIlluminationDebug.hlsl", "VisualizeSpatialHashTableCS", Compute);
+	REGISTER_SHADER(VisualizeWorldRadianceCacheCS, "Engine/Shaders/Source/GlobalIllumination/VisualizeWorldRadianceCacheCS.hlsl", "VisualizeWorldRadianceCacheCS", Compute);
 
 	struct VisualizeIrradianceVolumeVS : public GlobalShader
 	{
@@ -220,6 +234,9 @@ namespace Volt
 		DECLARE_GLOBAL_SHADER(VisualizeIrradianceVolumePS)
 
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float3>, ProbeAtlas)
+			SHADER_PARAMETER_STRUCT_INCLUDE(IrradianceVolumeParameters, IrrVolumeParameters)
+			SHADER_PARAMETER(uint32_t, IrradianceVolumeCascadeIndex)
 			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
 	};
@@ -242,6 +259,49 @@ namespace Volt
 		return glm::min(IrradianceVolumeConstants::NumMaxCascades, static_cast<uint32_t>(s_giIrradianceVolumeNumCascades.GetValue()));
 	}
 
+	static uint32_t GetIrradianceVolumeProbeAtlasResolution()
+	{
+		return 2048;
+	}
+
+	static bool AnyVisualizationEnabled()
+	{
+		return s_giVisualizeIrradianceVolume.GetValue()
+			|| s_giVisualizeWorldRadianceCache.GetValue();	
+	}
+
+	WorldRadianceCacheParameters GlobalIlluminationRenderer::GetWorldRadianceCacheParameters()
+	{
+		WorldRadianceCacheParameters worldRadianceCacheParameters;
+		worldRadianceCacheParameters.WorldRadianceCacheLodDistance = s_giWorldRadianceCacheLodDistance.GetValue();
+		worldRadianceCacheParameters.WorldRadianceCacheCellSize = s_giWorldRadianceCacheCellSize.GetValue();
+		worldRadianceCacheParameters.WorldRadianceCacheCellLifetime = s_giWorldRadianceCacheCellLifetime.GetValue();
+
+		return worldRadianceCacheParameters;
+	}
+
+	IrradianceVolumeParameters GlobalIlluminationRenderer::GetIrradianceVolumeParameters(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	{
+		IrradianceVolumeParameters irradianceVolumeParameters;
+		irradianceVolumeParameters.IrradianceVolumeBaseSpacing = s_giIrradianceVolumeSpacing.GetValue();
+		irradianceVolumeParameters.IrradianceVolumeResolution = s_giIrradianceVolumeResolution.GetValue();
+		irradianceVolumeParameters.IrradianceVolumeNumCascades = s_giIrradianceVolumeNumCascades.GetValue();
+		irradianceVolumeParameters.IrradianceVolumeProbeResolution = s_giIrradianceVolumeProbeResolution.GetValue();
+		irradianceVolumeParameters.IrradianceVolumeConstantData = SetupIrradianceVolumeUniformBuffer(renderGraph, view);
+		irradianceVolumeParameters.IrradianceVolumeProbeAtlasResolution = 2048;
+
+		return irradianceVolumeParameters;
+	}
+
+	SpatialHashTableParameters GlobalIlluminationRenderer::GetSpatialHashTableParameters(RenderGraph& renderGraph)
+	{
+		SpatialHashTableParameters spatialHashTableParameters;
+		spatialHashTableParameters.RWSpatialHashTableChecksum = renderGraph.CreateUAV(renderGraph.RegisterExternalBuffer(m_spatialHashTableChecksumBuffer), RHI::PixelFormat::R32_UINT);
+		spatialHashTableParameters.SpatialHashTableSize = s_giSpatialHashTableSize.GetValue();
+
+		return spatialHashTableParameters;
+	}
+
 	GlobalIlluminationRenderer::GlobalIlluminationRenderer()
 	{
 		{
@@ -261,32 +321,50 @@ namespace Volt
 			desc.elementSize = sizeof(uint32_t);
 			desc.memoryUsage = RHI::MemoryUsage::GPU;
 			desc.usage = RHI::BufferUsage::StorageBuffer;
-			desc.debugName = "GI.SpatialHashTableChecksum";
+			desc.debugName = "GI.WorldRadianceCacheCellCache";
 
 			m_worldRadianceCacheCellCache = RHI::StorageBuffer::Create(desc);
+		}
+
+		{
+			RHI::BufferDesc desc{};
+			desc.count = s_giSpatialHashTableSize.GetValue();
+			desc.elementSize = sizeof(uint32_t);
+			desc.memoryUsage = RHI::MemoryUsage::GPU;
+			desc.usage = RHI::BufferUsage::StorageBuffer;
+			desc.debugName = "GI.WorldRadianceCacheCellInfo";
+
+			m_worldRadianceCacheCellInfo = RHI::StorageBuffer::Create(desc);
+		}
+
+		{
+			RHI::ImageDesc desc{};
+			desc.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
+			desc.usage = RHI::ImageUsage::Storage;
+			desc.width = GetIrradianceVolumeProbeAtlasResolution();
+			desc.height = GetIrradianceVolumeProbeAtlasResolution();
+			desc.debugName = "GI.ProbeAtlas";
+
+			m_irradianceVolumeProbeAtlas = RHI::Image::Create(desc);
 		}
 	}
 
 	void GlobalIlluminationRenderer::Visualize(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
 	{
-		WorldRadianceCacheParameters worldRadianceCacheParameters;
-		worldRadianceCacheParameters.WorldRadianceCacheLodDistance = s_giWorldRadianceCacheLodDistance.GetValue();
-		worldRadianceCacheParameters.WorldRadianceCacheCellSize = s_giWorldRadianceCacheCellSize.GetValue();
+		if (!AnyVisualizationEnabled())
+		{
+			return;
+		}
 
-		SpatialHashTableParameters spatialHashTableParameters;
-		spatialHashTableParameters.RWSpatialHashTableChecksum = renderGraph.CreateUAV(renderGraph.RegisterExternalBuffer(m_spatialHashTableChecksumBuffer), RHI::PixelFormat::R32_UINT);
-		spatialHashTableParameters.SpatialHashTableSize = s_giSpatialHashTableSize.GetValue();
-
-		IrradianceVolumeParameters irradianceVolumeParameters;
-		irradianceVolumeParameters.IrradianceVolumeBaseSpacing = s_giIrradianceVolumeSpacing.GetValue();
-		irradianceVolumeParameters.IrradianceVolumeResolution = s_giIrradianceVolumeResolution.GetValue();
-		irradianceVolumeParameters.IrradianceVolumeNumCascades = s_giIrradianceVolumeNumCascades.GetValue();
-		irradianceVolumeParameters.IrradianceVolumeConstantData = SetupIrradianceVolumeUniformBuffer(renderGraph, view);
+		WorldRadianceCacheParameters worldRadianceCacheParameters = GetWorldRadianceCacheParameters();
+		SpatialHashTableParameters spatialHashTableParameters = GetSpatialHashTableParameters(renderGraph);
+		IrradianceVolumeParameters irradianceVolumeParameters = GetIrradianceVolumeParameters(renderGraph, blackboard, view);
 
 		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 
+		if (s_giVisualizeWorldRadianceCache.GetValue())
 		{
-			VisualizeSpatialHashTableCS::Parameters* passParameters = renderGraph.AllocParameters<VisualizeSpatialHashTableCS::Parameters>();
+			VisualizeWorldRadianceCacheCS::Parameters* passParameters = renderGraph.AllocParameters<VisualizeWorldRadianceCacheCS::Parameters>();
 			passParameters->View = view.viewUniformBuffer;
 			passParameters->RWSceneColor = renderGraph.CreateUAV(sceneTextures.sceneColor);
 			passParameters->WorldRadianceCacheCellCache = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_worldRadianceCacheCellCache));
@@ -294,8 +372,8 @@ namespace Volt
 			passParameters->SpatialHashTableParams = spatialHashTableParameters;
 			passParameters->WRCParameters = worldRadianceCacheParameters;
 
-			auto shader = ShaderMap::Get<VisualizeSpatialHashTableCS>();
-			ComputeShaderUtils::AddPass<VisualizeSpatialHashTableCS>(renderGraph,
+			auto shader = ShaderMap::Get<VisualizeWorldRadianceCacheCS>();
+			ComputeShaderUtils::AddPass<VisualizeWorldRadianceCacheCS>(renderGraph,
 				"VisualizeSpatialHashTable",
 				shader,
 				passParameters,
@@ -303,53 +381,59 @@ namespace Volt
 			);
 		}
 
-		Ref<Mesh> sphereMesh = ShapeLibrary::GetSphere();
-
-		RGBufferRef indexBuffer = renderGraph.RegisterExternalBuffer(sphereMesh->GetIndexBuffer());
-		RGBufferRef vertexBuffer = renderGraph.RegisterExternalBuffer(sphereMesh->GetVertexPositionsBuffer());
-		const uint32_t numIndices = static_cast<uint32_t>(sphereMesh->GetIndexCount());
-
-		for (int32_t i = 0; i < 1; ++i)
+		if (s_giVisualizeIrradianceVolume.GetValue())
 		{
-			VisualizeIrradianceVolumeParameters* passParameters = renderGraph.AllocParameters<VisualizeIrradianceVolumeParameters>();
-			passParameters->VS.IndexBuffer = indexBuffer;
-			passParameters->VS.VertexBuffer = vertexBuffer;
-			passParameters->VS.IrrVolumeParameters = irradianceVolumeParameters;
-			passParameters->VS.IrradianceVolumeCascadeIndex = i;
-			passParameters->VS.View = view.viewUniformBuffer;
-			passParameters->PS.renderTargets.renderTargets[0] = sceneTextures.sceneColor;
-			passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
+			Ref<Mesh> sphereMesh = ShapeLibrary::GetSphere();
 
-			auto vertexShader = ShaderMap::Get<VisualizeIrradianceVolumeVS>();
-			auto pixelShader = ShaderMap::Get<VisualizeIrradianceVolumePS>();
+			RGBufferRef indexBuffer = renderGraph.RegisterExternalBuffer(sphereMesh->GetIndexBuffer());
+			RGBufferRef vertexBuffer = renderGraph.RegisterExternalBuffer(sphereMesh->GetVertexPositionsBuffer());
+			const uint32_t numIndices = static_cast<uint32_t>(sphereMesh->GetIndexCount());
 
-			renderGraph.AddPass("VisualizeIrradianceVolume",
-				RenderGraphPassFlags::None,
-				passParameters,
-				[passParameters, view, vertexShader, pixelShader, indexBuffer, vertexBuffer, numIndices](RenderContext& context)
+			for (uint32_t i = 0; i < GetNumCascades(); ++i)
 			{
-				RHI::RenderPipelineCreateInfo pipelineInfo{};
-				pipelineInfo.shaders = { vertexShader, pixelShader };
-				pipelineInfo.cullMode = RHI::CullMode::Back;
-				pipelineInfo.depthMode = RHI::DepthMode::ReadWrite;
+				VisualizeIrradianceVolumeParameters* passParameters = renderGraph.AllocParameters<VisualizeIrradianceVolumeParameters>();
+				passParameters->VS.IndexBuffer = indexBuffer;
+				passParameters->VS.VertexBuffer = vertexBuffer;
+				passParameters->VS.IrrVolumeParameters = irradianceVolumeParameters;
+				passParameters->VS.IrradianceVolumeCascadeIndex = i;
+				passParameters->VS.View = view.viewUniformBuffer;
+				passParameters->PS.renderTargets.renderTargets[0] = sceneTextures.sceneColor;
+				passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
+				passParameters->PS.IrrVolumeParameters = irradianceVolumeParameters;
+				passParameters->PS.ProbeAtlas = renderGraph.CreateSRV(renderGraph.RegisterExternalTexture(m_irradianceVolumeProbeAtlas));
+				passParameters->PS.IrradianceVolumeCascadeIndex = i;
 
-				auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+				auto vertexShader = ShaderMap::Get<VisualizeIrradianceVolumeVS>();
+				auto pixelShader = ShaderMap::Get<VisualizeIrradianceVolumePS>();
 
-				RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
-				renderingInfo.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
-				renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
+				renderGraph.AddPass("VisualizeIrradianceVolume",
+					RenderGraphPassFlags::None,
+					passParameters,
+					[passParameters, view, vertexShader, pixelShader, indexBuffer, vertexBuffer, numIndices](RenderContext& context)
+				{
+					RHI::RenderPipelineCreateInfo pipelineInfo{};
+					pipelineInfo.shaders = { vertexShader, pixelShader };
+					pipelineInfo.cullMode = RHI::CullMode::Back;
+					pipelineInfo.depthMode = RHI::DepthMode::ReadWrite;
 
-				const uint32_t numProbesPerClipmap = s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue();
+					auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
 
-				context.BeginRendering(renderingInfo);
-				context.BindPipeline(pipeline);
-				context.BindIndexBuffer(indexBuffer);
-				context.BindVertexBuffers({ vertexBuffer }, 0);
-				context.SetParameters<VisualizeIrradianceVolumeVS>(vertexShader, &passParameters->VS);
-				context.SetParameters<VisualizeIrradianceVolumePS>(pixelShader, &passParameters->PS);
-				context.DrawIndexed(numIndices, numProbesPerClipmap, 0, 0, 0);
-				context.EndRendering();
-			});
+					RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
+					renderingInfo.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
+					renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
+
+					const uint32_t numProbesPerClipmap = s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue();
+
+					context.BeginRendering(renderingInfo);
+					context.BindPipeline(pipeline);
+					context.BindIndexBuffer(indexBuffer);
+					context.BindVertexBuffers({ vertexBuffer }, 0);
+					context.SetParameters<VisualizeIrradianceVolumeVS>(vertexShader, &passParameters->VS);
+					context.SetParameters<VisualizeIrradianceVolumePS>(pixelShader, &passParameters->PS);
+					context.DrawIndexed(numIndices, numProbesPerClipmap, 0, 0, 0);
+					context.EndRendering();
+				});
+			}
 		}
 	}
 
@@ -360,26 +444,40 @@ namespace Volt
 			return {};
 		}
 
-		WorldRadianceCacheParameters worldRadianceCacheParameters;
-		worldRadianceCacheParameters.WorldRadianceCacheLodDistance = s_giWorldRadianceCacheLodDistance.GetValue();
-		worldRadianceCacheParameters.WorldRadianceCacheCellSize = s_giWorldRadianceCacheCellSize.GetValue();
-
-		SpatialHashTableParameters spatialHashTableParameters;
-		spatialHashTableParameters.RWSpatialHashTableChecksum = renderGraph.CreateUAV(renderGraph.RegisterExternalBuffer(m_spatialHashTableChecksumBuffer), RHI::PixelFormat::R32_UINT);
-		spatialHashTableParameters.SpatialHashTableSize = s_giSpatialHashTableSize.GetValue();
-
-		IrradianceVolumeParameters irradianceVolumeParameters;
-		irradianceVolumeParameters.IrradianceVolumeBaseSpacing = s_giIrradianceVolumeSpacing.GetValue();
-		irradianceVolumeParameters.IrradianceVolumeResolution = s_giIrradianceVolumeResolution.GetValue();
-		irradianceVolumeParameters.IrradianceVolumeNumCascades = s_giIrradianceVolumeNumCascades.GetValue();
-		irradianceVolumeParameters.IrradianceVolumeProbeResolution = s_giIrradianceVolumeProbeResolution.GetValue();
-		irradianceVolumeParameters.IrradianceVolumeConstantData = SetupIrradianceVolumeUniformBuffer(renderGraph, view);
-		irradianceVolumeParameters.IrradianceVolumeProbeAtlasResolution = 2048;
+		WorldRadianceCacheParameters worldRadianceCacheParameters = GetWorldRadianceCacheParameters();
+		SpatialHashTableParameters spatialHashTableParameters = GetSpatialHashTableParameters(renderGraph);
+		IrradianceVolumeParameters irradianceVolumeParameters = GetIrradianceVolumeParameters(renderGraph, blackboard, view);
 
 		BlueNoiseShaderParameters blueNoiseParameters = BlueNoise::GetBlueNoiseParameters(renderGraph);
 
+		SystemTextures& systemTextures = blackboard.Get<SystemTextures>();
+
 		const uint32_t numProbesPerCascade = s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue();
 		const uint32_t numTotalRays = numProbesPerCascade * 64;
+
+		const uint32_t cascadeToUpdateIndex = view.frameIndex % GetNumCascades();
+
+		RGBufferRef worldRadianceCacheCellCacheBuffer = renderGraph.RegisterExternalBuffer(m_worldRadianceCacheCellCache);
+		RGBufferRef worldRadianceCacheCellInfoBuffer = renderGraph.RegisterExternalBuffer(m_worldRadianceCacheCellInfo);
+
+		RGBufferUAVRef worldRadianceCacheCellCacheUAV = renderGraph.CreateUAV(worldRadianceCacheCellCacheBuffer);
+		RGBufferUAVRef worldRadianceCacheCellInfoUAV = renderGraph.CreateUAV(worldRadianceCacheCellInfoBuffer);
+
+		{
+			WorldRadianceCacheUpdateCS::Parameters* passParameters = renderGraph.AllocParameters<WorldRadianceCacheUpdateCS::Parameters>();
+			passParameters->RWWorldRadianceCacheCellCache = worldRadianceCacheCellCacheUAV;
+			passParameters->RWWorldRadianceCacheCellInfo = worldRadianceCacheCellInfoUAV;
+			passParameters->SpatialHashTableParams = spatialHashTableParameters;
+
+			auto shader = ShaderMap::Get<WorldRadianceCacheUpdateCS>();
+			ComputeShaderUtils::AddPass<WorldRadianceCacheUpdateCS>(renderGraph,
+				"WorldRadianceCacheUpdateCS",
+				shader,
+				passParameters,
+				RenderGraphPassFlags::NeverCull,
+				{ Math::DivideRoundUp(static_cast<uint32_t>(s_giSpatialHashTableSize.GetValue()), 64u), 1u, 1u }
+			);
+		}
 
 		RGBufferRef rayInfoBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateByteAddressDesc(numTotalRays * sizeof(uint32_t) * 6, "GI.RayInfo"));
 		RGBufferRef worldRadianceCacheCellMarkBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(Math::DivideRoundUp(s_giSpatialHashTableSize.GetValue(), 32), "GI.WorldRadianceCache.Mark"));
@@ -407,7 +505,7 @@ namespace Volt
 			passParameters->IrrVolumeParameters = irradianceVolumeParameters;
 			passParameters->SpatialHashTableParams = spatialHashTableParameters;
 			passParameters->WRCParameters = worldRadianceCacheParameters;
-			passParameters->IrradianceVolumeCascadeIndex = 0;
+			passParameters->IrradianceVolumeCascadeIndex = cascadeToUpdateIndex;
 			passParameters->BlueNoise = blueNoiseParameters;
 
 			auto shader = ShaderMap::Get<TraceIrradianceVolumeCascadeCS>();
@@ -420,8 +518,8 @@ namespace Volt
 			);
 		}
 
-		RGBufferRef worldRadianceCacheCellCacheBuffer = renderGraph.RegisterExternalBuffer(m_worldRadianceCacheCellCache);
 		RGBufferSRVRef worldRadianceCacheCellCacheSRV = renderGraph.CreateSRV(worldRadianceCacheCellCacheBuffer);
+		RGTextureRef probeAtlas = renderGraph.RegisterExternalTexture(m_irradianceVolumeProbeAtlas);
 
 		RGBufferSRVRef rayInfoSRV = renderGraph.CreateSRV(rayInfoBuffer);
 
@@ -437,7 +535,10 @@ namespace Volt
 			passParameters->RayInfo = rayInfoSRV;
 			passParameters->WorldRadianceCacheCellsToShade = renderGraph.CreateSRV(worldRadianceCacheCellsToShadeBuffer);
 			passParameters->WorldRadianceCacheCellShadingInfo = renderGraph.CreateSRV(worldRadianceCacheCellShadingInfoBuffer);
-			passParameters->RWWorldRadianceCacheCellCache = renderGraph.CreateUAV(worldRadianceCacheCellCacheBuffer);
+			passParameters->RWWorldRadianceCacheCellCache = worldRadianceCacheCellCacheUAV;
+			passParameters->RWWorldRadianceCacheCellInfo = worldRadianceCacheCellInfoUAV;
+
+			passParameters->ProbeAtlas = renderGraph.CreateSRV(probeAtlas);
 
 			passParameters->DFGLuT = renderGraph.CreateSRV(environmentTextures.DFGLuT);
 			passParameters->SkylightIrradiance = renderGraph.CreateSRV(environmentTextures.irradiance);
@@ -449,13 +550,13 @@ namespace Volt
 
 			if (!directionalShadowTexture)
 			{
-				directionalShadowTexture = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+				directionalShadowTexture = systemTextures.blackCubeTexture;
 			}
 
 			passParameters->CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowTexture);
 			passParameters->ShadowSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>();
 			passParameters->CascadedDirectionalLightShadowMapping = directionalShadowMap.uniformBuffer;
-		
+
 			auto shader = ShaderMap::Get<WorldRadianceCacheShadeCellsCS>();
 			ComputeShaderUtils::AddPass<WorldRadianceCacheShadeCellsCS>(renderGraph,
 				"WorldRadianceCacheShadeCellsCS",
@@ -467,12 +568,8 @@ namespace Volt
 			);
 		}
 
-		RGTextureRef probeAtlas = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(irradianceVolumeParameters.IrradianceVolumeProbeAtlasResolution, irradianceVolumeParameters.IrradianceVolumeProbeAtlasResolution, RHI::ImageUsage::Storage, "GI.ProbeAtlas"));
-
 		{
 			RGTextureUAVRef probeAtlasUAV = renderGraph.CreateUAV(probeAtlas);
-
-			AddClearUAVPass(renderGraph, probeAtlasUAV, glm::vec4(0.f));
 
 			PropagateRaysFromWorldRadianceCacheCS::Parameters* passParameters = renderGraph.AllocParameters<PropagateRaysFromWorldRadianceCacheCS::Parameters>();
 			passParameters->View = view.viewUniformBuffer;
@@ -482,7 +579,7 @@ namespace Volt
 			passParameters->IrrVolumeParameters = irradianceVolumeParameters;
 			passParameters->SpatialHashTableParams = spatialHashTableParameters;
 			passParameters->WRCParameters = worldRadianceCacheParameters;
-			passParameters->IrradianceVolumeCascadeIndex = 0;
+			passParameters->IrradianceVolumeCascadeIndex = cascadeToUpdateIndex;
 
 			auto shader = ShaderMap::Get<PropagateRaysFromWorldRadianceCacheCS>();
 			ComputeShaderUtils::AddPass<PropagateRaysFromWorldRadianceCacheCS>(renderGraph,
@@ -490,7 +587,7 @@ namespace Volt
 				shader,
 				passParameters,
 				RenderGraphPassFlags::NeverCull,
-				{ Math::DivideRoundUp(numTotalRays, 64u), 1u, 1u}
+				{ Math::DivideRoundUp(numTotalRays, 64u), 1u, 1u }
 			);
 		}
 

@@ -72,10 +72,13 @@ namespace IrradianceVolume
 	uint2 GetProbeAtlasPixelCoordsFromProbeIndex(uint probeIndex, uint cascadeIndex)
 	{
 		const uint borderSize = 2;
-		const uint realResolution = IrradianceVolumeProbeResolution + borderSize;
+		const uint realResolution = IrradianceVolumeProbeResolution + borderSize; 
 		const uint numProbesPerRow = IrradianceVolumeProbeAtlasResolution / realResolution;
+
+		// Add cascade offset.
+		probeIndex += cascadeIndex * (IrradianceVolumeResolution * IrradianceVolumeResolution * IrradianceVolumeResolution);
 
 		const uint2 probeAtlasCoords = uint2(probeIndex % numProbesPerRow, probeIndex / numProbesPerRow) * realResolution;
 		return probeAtlasCoords;
 	}
-}
+} 

@@ -13,6 +13,6 @@ void TemporalAccumulationCS(uint2 DispatchThreadID : SV_DispatchThreadID)
 	float3 indirectLight = RWIndirectLight[DispatchThreadID].rgb;
 
 	float3 newIndirectLight = lerp(prevIndirectLight, indirectLight, 0.01f);
-	RWIndirectLight[DispatchThreadID].rgb = newIndirectLight;
+	RWIndirectLight[DispatchThreadID].rgb = indirectLight;//newIndirectLight;
 	RWPrevFrameIndirectLight[DispatchThreadID].rgb = newIndirectLight;
 }

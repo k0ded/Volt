@@ -92,7 +92,7 @@ namespace Volt
 	static ConsoleVariable<int32_t> g_renderGraphForceSingleThreadedExecution(
 		"r.RenderGraph.ForceSingleThreadedExecution",
 		0,
-		"Wether or not to force single threaded execution of the RenderGraph.");
+		"Whether or not to force single threaded execution of the RenderGraph.");
 
 	static ConsoleVariable<int32_t> g_renderGraphForceFullBarriersBetweenPasses(
 		"r.RenderGraph.ForceFullBarriersBetweenPasses",

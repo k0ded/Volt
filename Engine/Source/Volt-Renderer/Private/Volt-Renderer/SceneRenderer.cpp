@@ -14,6 +14,7 @@
 #include "Volt-Renderer/SceneRendererRenderGraphData.h"
 #include "Volt-Renderer/SceneRendererShaderDefinitions.h"
 #include "Volt-Renderer/RenderView.h"
+#include "Volt-Renderer/SystemTextures.h"
 
 #include "Volt-Renderer/Debug/DebugRenderer.h"
 
@@ -117,6 +118,8 @@ namespace Volt
 
 		RenderGraphBlackboard blackboard;
 		RenderGraph renderGraph{};
+
+		SystemTextures::SetupSystemTextures(renderGraph, blackboard);
 
 		RGTextureRef outputTexture = renderGraph.RegisterExternalTexture(m_outputImage);
 
@@ -597,7 +600,7 @@ namespace Volt
 		{
 			if (!indirectLightTexture)
 			{
-				indirectLightTexture = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().black1x1x1);
+				indirectLightTexture = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().black1x1);
 			}
 
 			CompositeLightingCS::Parameters* passParameters = renderGraph.AllocParameters<CompositeLightingCS::Parameters>();

@@ -319,6 +319,20 @@ namespace Volt
 			m_defaultResources.white1x1 = RHI::Image::Create(imageSpec, &PIXEL_DATA);
 		}
 
+		// Full black 1x1
+		{
+			constexpr uint32_t PIXEL_DATA = 0x000000ff;
+
+			RHI::ImageDesc imageSpec{};
+			imageSpec.format = RHI::PixelFormat::R8G8B8A8_UNORM;
+			imageSpec.usage = RHI::ImageUsage::Texture;
+			imageSpec.width = 1;
+			imageSpec.height = 1;
+			imageSpec.debugName = "Blax1x1";
+
+			m_defaultResources.black1x1 = RHI::Image::Create(imageSpec, &PIXEL_DATA);
+		}
+
 		// Full black cube 1x1
 		{
 			constexpr uint32_t PIXEL_DATA[6] = { 0, 0, 0, 0, 0, 0 };
