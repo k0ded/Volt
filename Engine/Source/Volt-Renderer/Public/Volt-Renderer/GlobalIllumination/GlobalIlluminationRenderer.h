@@ -57,9 +57,14 @@ namespace Volt
 		RefPtr<RHI::StorageBuffer> m_spatialHashTableChecksumBuffer;
 		RefPtr<RHI::StorageBuffer> m_worldRadianceCacheCellCache;
 		RefPtr<RHI::StorageBuffer> m_worldRadianceCacheCellInfo;
-		
-		RefPtr<RHI::Image> m_irradianceVolumeProbeAtlas;
+
+		RefPtr<RHI::Image> m_irradianceVolumeProbeRadianceAtlas;
+		RefPtr<RHI::Image> m_irradianceVolumeProbeVisibilityAtlas;
+		RefPtr<RHI::StorageBuffer> m_irradianceVolumeProbeOffsets;
+		RefPtr<RHI::StorageBuffer> m_irradianceVolumeProbeStatus;
 
 		RefPtr<RHI::Image> m_prevIndirectLight;
+	
+		glm::vec3 m_prevCameraPosition = 0.f;
 	};
 }

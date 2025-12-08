@@ -147,14 +147,7 @@ namespace Volt
 		LightTileBinningTechnique tileBinningTechnique{ renderGraph, blackboard };
 		tileBinningTechnique.Execute(renderView);
 
-		if (m_sceneRendererExtensions.contains(SceneRendererExtensionStage::PreGBuffer))
-		{
-			for (const auto& ext : m_sceneRendererExtensions.at(SceneRendererExtensionStage::PreGBuffer))
-			{
-				// There is no output image yet
-				ext->OnRender(renderGraph, blackboard, renderView, nullptr);
-			}
-		}
+		ExecuteSceneRendererExtensions(SceneRendererExtensionStage::PreGBuffer, renderGraph, blackboard, renderView, nullptr);
 
 		AddBasePass(renderGraph, blackboard, renderView);
 
@@ -268,14 +261,8 @@ namespace Volt
 
 		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 
-		if (m_sceneRendererExtensions.contains(SceneRendererExtensionStage::PostPostProcessing))
-		{
-			for (const auto& ext : m_sceneRendererExtensions.at(SceneRendererExtensionStage::PostPostProcessing))
-			{
-				sceneTextures.sceneColor = ext->OnRender(renderGraph, blackboard, view, sceneTextures.sceneColor);
-			}
-		}
-	
+		ExecuteSceneRendererExtensions(SceneRendererExtensionStage::PostPostProcessing, renderGraph, blackboard, view, sceneTextures.sceneColor);
+
 		AddTonemappingPass(renderGraph, blackboard, view, outputTexture);
 	}
 
@@ -300,6 +287,24 @@ namespace Volt
 	{
 		JobSystem::WaitForAndDestroyCounter(m_renderGraphExecutionCounter);
 		return false;
+	}
+
+	RGTextureRef SceneRenderer::ExecuteSceneRendererExtensions(SceneRendererExtensionStage stage, RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef prevOutputImage)
+	{
+		RGTextureRef output = prevOutputImage;
+
+		if (m_sceneRendererExtensions.contains(stage))
+		{
+			for (const auto& ext : m_sceneRendererExtensions.at(stage))
+			{
+				if (ext->ShouldRender())
+				{
+					output = ext->OnRender(renderGraph, blackboard, view, output);
+				}
+			}
+		}
+
+		return output;
 	}
 
 	struct TonemapPS : public GlobalShader

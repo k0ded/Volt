@@ -76,7 +76,7 @@ void TraceIrradianceVolumeCascadeCS(uint GroupID : SV_GroupID, uint GroupThreadI
 	rayDesc.tMin = 0.f;
 	rayDesc.tMax = 100000.f;
 
-	const uint rayFlags = RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_CULL_BACK_FACING_TRIANGLES;
+	const uint rayFlags = RAY_FLAG_FORCE_OPAQUE;
 	const uint instanceMask = 0xFF;
 
 	RayTraceInlineResult inlineTraceResult = TraceInlineRay(TLAS, rayFlags, instanceMask, rayDesc);
@@ -91,47 +91,57 @@ void TraceIrradianceVolumeCascadeCS(uint GroupID : SV_GroupID, uint GroupThreadI
 		- ray direction
 	*/
 
+	// We need to do this check since hitT is -1 if it's a miss.
+	const float rayHitT = inlineTraceResult.IsHit() ? inlineTraceResult.GetHitT() : 10000.f;
+
 	RayInfoData rayInfo;
 	rayInfo.instanceId = inlineTraceResult.GetInstanceID();
-	rayInfo.hitT = asuint(inlineTraceResult.hitT);
+	rayInfo.hitT = asuint(rayHitT);
 	rayInfo.packedBarycentrics = PackUnorm2x16(inlineTraceResult.barycentrics.GetRaw());
 	rayInfo.primitiveIndex = inlineTraceResult.GetPrimitiveIndex();
 	rayInfo.probeId = GroupID;
 	rayInfo.rayDirection = PackNormalToUInt32(rayDirection);
 
-	RWRayInfo.Store<RayInfoData>(DispatchThreadID * sizeof(RayInfoData), rayInfo);
-
 	if (inlineTraceResult.IsHit())
 	{
-		const float3 hitPosition = rayDesc.origin + rayDesc.direction * inlineTraceResult.hitT;
-
-		SpatialHashTable worldRadianceCacheHashTable;
-
-		uint hashIndex;
-		if (worldRadianceCacheHashTable.Insert(hitPosition, hashIndex))
+		if (inlineTraceResult.IsBackFace())
 		{
-			const uint bitmaskIndex = hashIndex / 32;
-			const uint bitIndex = hashIndex % 32u;
+			rayInfo.hitT = asuint(rayHitT * -0.2f);
+		}
+		else
+		{
+			const float3 hitPosition = rayDesc.origin + rayDesc.direction * rayHitT;
 
-			uint prevBitmask;
-			InterlockedOr(RWWorldRadianceCacheCellMark[bitmaskIndex], 1u << bitIndex, prevBitmask);
+			SpatialHashTable worldRadianceCacheHashTable;
 
-			const bool shouldAddToList = (prevBitmask & (1u << bitIndex)) == 0;
-
-			const uint numToAdd = WaveActiveCountBits(shouldAddToList);
-			const uint lanePrefix = WavePrefixCountBits(shouldAddToList);
-
-			uint storeOffset;
-			if (WaveIsFirstLane())
+			uint hashIndex;
+			if (worldRadianceCacheHashTable.Insert(hitPosition, hashIndex))
 			{
-				InterlockedAdd(RWWorldRadianceCacheCellsToShade[0], numToAdd, storeOffset);
-				InterlockedMax(RWShadingIndirectArgs[0], DivideRoundUp(storeOffset + numToAdd, 64u));
+				const uint bitmaskIndex = hashIndex / 32;
+				const uint bitIndex = hashIndex % 32u;
+
+				uint prevBitmask;
+				InterlockedOr(RWWorldRadianceCacheCellMark[bitmaskIndex], 1u << bitIndex, prevBitmask);
+
+				const bool shouldAddToList = (prevBitmask & (1u << bitIndex)) == 0;
+
+				const uint numToAdd = WaveActiveCountBits(shouldAddToList);
+				const uint lanePrefix = WavePrefixCountBits(shouldAddToList);
+
+				uint storeOffset;
+				if (WaveIsFirstLane())
+				{
+					InterlockedAdd(RWWorldRadianceCacheCellsToShade[0], numToAdd, storeOffset);
+					InterlockedMax(RWShadingIndirectArgs[0], DivideRoundUp(storeOffset + numToAdd, 64u));
+				}
+				storeOffset = WaveReadLaneFirst(storeOffset) + lanePrefix + 1;
+				
+				RWWorldRadianceCacheCellsToShade[storeOffset] = hashIndex;
+				// Maybe pack probe id (12 bits) + ray id (22 bits) together?
+				RWWorldRadianceCacheCellShadingInfo[hashIndex] = uint2(DispatchThreadID, GroupID);
 			}
-			storeOffset = WaveReadLaneFirst(storeOffset) + lanePrefix + 1;
-			
-			RWWorldRadianceCacheCellsToShade[storeOffset] = hashIndex;
-			// Maybe pack probe id (12 bits) + ray id (22 bits) together?
-			RWWorldRadianceCacheCellShadingInfo[hashIndex] = uint2(DispatchThreadID, GroupID);
 		}
 	}
+
+	RWRayInfo.Store<RayInfoData>(DispatchThreadID * sizeof(RayInfoData), rayInfo);
 }  

@@ -103,8 +103,8 @@ namespace Volt
 
 		const uint64_t GetFrameTotalGPUAllocationSize() const;
 
-		template<typename T>
-		Ref<T> AddExtension(SceneRendererExtensionStage stage);
+		template<typename T, typename... Args>
+		Ref<T> AddExtension(SceneRendererExtensionStage stage, Args&&... args);
 
 	private:
 		using SceneRendererExtensionMap = Map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>>;
@@ -131,6 +131,7 @@ namespace Volt
 		bool IsMeshPassVisualizationMode() const;
 
 		bool OnPostFrameUpdateEvent(AppPostFrameUpdateEvent& event);
+		RGTextureRef ExecuteSceneRendererExtensions(SceneRendererExtensionStage stage, RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef prevOutputImage);
 
 		bool m_enabled = false;
 
@@ -187,12 +188,12 @@ namespace Volt
 		class CascadedShadowMapMeshProcessor* m_cascadedShadowMapMeshProcessor = nullptr;
 	};
 
-	template<typename T>
-	Ref<T> SceneRenderer::AddExtension(SceneRendererExtensionStage stage)
+	template<typename T, typename... Args>
+	Ref<T> SceneRenderer::AddExtension(SceneRendererExtensionStage stage, Args&&... args)
 	{
 		static_assert(std::is_base_of_v<SceneRendererExtension, T>);
 
-		Ref<T> instance = CreateRef<T>(m_renderScene);
+		Ref<T> instance = CreateRef<T>(m_renderScene, std::forward(args)...);
 		instance->OnRegistered(m_meshPassProcessorRegistry);
 
 		m_sceneRendererExtensions[stage].emplace_back(instance);

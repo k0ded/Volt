@@ -46,7 +46,7 @@ PSOutput VisualizeIrradianceVolumePS(VSToPS input)
 	const float3 direction = normalize(input.localPosition);
 	const float2 uv = InverseEquiAreaSphericalMapping(direction);
 
-	const uint2 probeAtlasCoords = IrradianceVolume::GetProbeAtlasPixelCoordsFromProbeIndex(input.probeId, IrradianceVolumeCascadeIndex);
+	const uint2 probeAtlasCoords = IrradianceVolume::GetProbeAtlasTexelCoordsFromProbeIndex(input.probeId, IrradianceVolumeCascadeIndex);
 
 	const uint2 localTexelCoords = uv * float(IrradianceVolumeProbeResolution);
 	const float3 texelRadiance = ProbeAtlas[probeAtlasCoords + localTexelCoords + 1];

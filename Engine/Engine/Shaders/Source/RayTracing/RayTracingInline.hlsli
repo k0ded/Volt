@@ -32,6 +32,11 @@ struct RayTraceInlineResult
 		return isFrontFace != 0;
 	}
 
+	bool IsBackFace()
+	{
+		return isFrontFace == 0;
+	}
+
 	Barycentrics GetBarycentrics()
 	{
 		return barycentrics;

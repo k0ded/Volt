@@ -52,7 +52,38 @@ float3 EvaluateSpotLight(in LightDrawData light, in BRDFInput brdfInput, float3 
     attenuation *= GetAngleAttenuation(L, normalize(light.direction), light.lightSpecific.z, light.lightSpecific.w);
     
     return BRDF(brdfInput, L) * light.color * attenuation * light.intensity;   
-} 
+}
+
+float3 GetLightContribution(in LightDrawData light, float3 worldPosition, float3 normal)
+{
+    if (light.lightType == SceneLightType::SLT_Point)
+    {
+        float3 unnormalizedLightVector = light.position - worldPosition;
+        float3 L = normalize(unnormalizedLightVector);
+        float invSqrRadius = 1.f / (light.lightSpecific.x * light.lightSpecific.x);
+
+        float attenuation = GetDistanceAttenuation(unnormalizedLightVector, invSqrRadius);
+        return light.color * attenuation * light.intensity * saturate(dot(normal, L));
+    }
+    else if (light.lightType == SceneLightType::SLT_Spot)
+    {
+        float3 unnormalizedLightVector = light.position - worldPosition;
+        float3 L = normalize(unnormalizedLightVector);
+        float invSqrRadius = 1.f / (light.lightSpecific.x * light.lightSpecific.x);
+
+        float attenuation = GetDistanceAttenuation(unnormalizedLightVector, invSqrRadius);
+        attenuation *= GetAngleAttenuation(L, normalize(light.direction), light.lightSpecific.z, light.lightSpecific.w);
+
+        return light.color * attenuation * light.intensity * saturate(dot(normal, L));
+    }
+    else if (light.lightType == SceneLightType::SLT_Directional)
+    {
+        const float NdotD = saturate(dot(light.direction.xyz, normal));
+        return light.color * light.intensity * NdotD;
+    }
+
+    return 0.f;
+}
 
 ///// ----- Directional light ----- /////
 float EvaluateDirectionalShadow(in LightDrawData light, in float4x4 viewMatrix, float3 normal, float3 worldPosition)

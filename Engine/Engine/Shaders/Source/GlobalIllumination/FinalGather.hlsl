@@ -8,7 +8,7 @@
 #include "Utility/Utility.hlsli"
 #include "Utility/Packing.hlsli"
 
-#include "GlobalIlluminationCommon.hlsli"
+#include "IrradianceVolumeSampling.hlsli"
 #include "SpatialHashTable.hlsli"
 
 #include "BlueNoise.hlsli"
@@ -93,8 +93,14 @@ void FinalGatherCS(uint2 DispatchThreadID : SV_DispatchThreadID)
 
 		if (inlineTraceResult.IsHit() && inlineTraceResult.IsFrontFace())
 		{
+			const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[inlineTraceResult.GetInstanceID()];
+			const GPUMesh gpuMesh = GPUMeshes[primitiveData.meshId];
+
 			const float3 hitPosition = rayDesc.origin + rayDesc.direction * inlineTraceResult.GetHitT();
 		
+			TriangleAttributes triangleAttribs = LoadTriangleAttributes(gpuMesh, inlineTraceResult.GetBarycentrics(), inlineTraceResult.GetPrimitiveIndex());
+			ConvertTriangleAttributesToWorldSpace(triangleAttribs, primitiveData.transform);
+
 			SpatialHashTable worldRadianceCacheHashTable;
 
 			uint hashIndex;
@@ -104,12 +110,8 @@ void FinalGatherCS(uint2 DispatchThreadID : SV_DispatchThreadID)
 			}
 			else
 			{
-				indirectLight.r = 1.f;
+				indirectLight.rgb = SampleIrradiance(pixelWorldPosition, pixelNormal);
 			}
-		}
-		else
-		{
-			indirectLight.rgb = SkyColor(raySample);
 		}
 	}
 

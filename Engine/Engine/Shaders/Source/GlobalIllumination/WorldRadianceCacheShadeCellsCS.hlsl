@@ -1,10 +1,12 @@
 #include "RayTracing/RayTracingResourceTable.hlsli"
 #include "RayTracing/RayTracingTriangleAttributes.hlsli"
+#include "RayTracing/RayTracingInline.hlsli"
 
 #include "Utility/Packing.hlsli"
 #include "RenderScene/GPUScene.hlsli"
 
 #include "GlobalIlluminationCommon.hlsli"
+#include "IrradianceVolumeSampling.hlsli"
 
 #include "PBR/BRDF.hlsli"
 #include "PBR/LightEvaluation.hlsli"
@@ -27,9 +29,40 @@ ByteAddressBuffer RayInfo;
 StructuredBuffer<uint> WorldRadianceCacheCellsToShade;
 StructuredBuffer<uint2> WorldRadianceCacheCellShadingInfo;
 
-Texture2D<float3> ProbeAtlas;
+RaytracingAccelerationStructure TLAS;
 
 uint WorldRadianceCacheCellLifetime;
+
+float TraceLightVisibility(in LightDrawData light, float3 origin)
+{
+	const float visibilityBias = 1.f;
+
+	RayDescription rayDesc;
+	rayDesc.origin = origin;
+	rayDesc.tMin = visibilityBias;
+	rayDesc.tMax = 10000.f;
+
+	if (light.lightType == SceneLightType::SLT_Point ||
+		light.lightType == SceneLightType::SLT_Spot)
+	{
+		rayDesc.direction = normalize(light.position - origin);
+	}
+	else if (light.lightType == SceneLightType::SLT_Directional)
+	{
+		rayDesc.direction = light.direction;
+	}
+	else
+	{
+		rayDesc.tMax = 0.f;
+	}
+
+	const uint rayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH;
+	const uint instanceMask = 0xFF;
+
+	RayTraceInlineResult inlineTraceResult = TraceInlineRay(TLAS, rayFlags, instanceMask, rayDesc);
+
+	return inlineTraceResult.IsHit() ? 0.f : 1.f;
+}
 
 [numthreads(64, 1, 1)]
 void WorldRadianceCacheShadeCellsCS(uint DispatchThreadID : SV_DispatchThreadID)
@@ -52,20 +85,10 @@ void WorldRadianceCacheShadeCellsCS(uint DispatchThreadID : SV_DispatchThreadID)
 	barycentrics.Initialize(UnpackUnorm2x16(rayInfo.packedBarycentrics));
 
 	TriangleAttributes triangleAttribs = LoadTriangleAttributes(gpuMesh, barycentrics, rayInfo.primitiveIndex);
-	const float3 worldPosition = primitiveData.transform.GetWorldPosition(triangleAttribs.position);
+	ConvertTriangleAttributesToWorldSpace(triangleAttribs, primitiveData.transform);
 
 	const float3 albedo = 0.8f;
-	const float metallic = 0.f;
-	const float roughness = 0.8f;
-
-	BRDFInput brdfInput;
-	brdfInput.V = UnpackNormalFromUInt32(rayInfo.rayDirection);
-	brdfInput.N = triangleAttribs.normal; 
-	brdfInput.diffuseColor = CalculateDiffuseColor(albedo, metallic);
-	brdfInput.f0 = CalculateF0(albedo, metallic);
-	brdfInput.f90 = CalculateF90(albedo, metallic);
-	brdfInput.roughness = roughness;
-	brdfInput.metalness = metallic;
+	const float3 diffuse = LambertDiffuse(albedo);
 
 	float3 radiance = 0.f;
 
@@ -73,23 +96,14 @@ void WorldRadianceCacheShadeCellsCS(uint DispatchThreadID : SV_DispatchThreadID)
 	for (uint i = 0; i < View.lightCount; ++i)
 	{
 		const LightDrawData light = SceneLights[i];
-		if (light.lightType == SceneLightType::SLT_Point)
-		{
-		    radiance += EvaluatePointLight(light, brdfInput, worldPosition);
-		}
-		else if (light.lightType == SceneLightType::SLT_Spot)
-		{
-		    radiance += EvaluateSpotLight(light, brdfInput, worldPosition);
-		}
-		else if (light.lightType == SceneLightType::SLT_Directional)
-		{
-		    radiance += EvaluateDirectionalLight(light, brdfInput, worldPosition);
-		}
-		//else if (light.lightType == SceneLightType::SLT_Sky)
-		//{
-		//    radiance += EvaluateIBL(brdfInput, light);
-		//}
+
+		const float3 lightContribution = GetLightContribution(light, triangleAttribs.position, triangleAttribs.normal);
+		const float visibility = TraceLightVisibility(light, triangleAttribs.position);
+
+		radiance += lightContribution * visibility * diffuse;
 	}
+
+	radiance += SampleIrradiance(triangleAttribs.position, triangleAttribs.normal) * diffuse;
 
 	RWWorldRadianceCacheCellInfo[cellHashIndex] = WorldRadianceCacheCellLifetime;
 	RWWorldRadianceCacheCellCache[cellHashIndex] = PackRGBE(radiance);

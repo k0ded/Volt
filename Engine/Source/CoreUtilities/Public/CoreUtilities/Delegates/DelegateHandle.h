@@ -1,8 +1,8 @@
 #pragma once
 
-#include "CoreUtilities/VoltGUID.h"
+#include "CoreUtilities/UUID.h"
 
 namespace Volt
 {
-	typedef VoltGUID DelegateHandle;
+	typedef UUID64 DelegateHandle;
 }

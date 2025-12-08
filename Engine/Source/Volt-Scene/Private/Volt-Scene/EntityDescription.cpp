@@ -62,6 +62,7 @@ namespace Volt
 		{
 			EntityDescSerialization::DeserializeEntityData(archive, m_entitySerializationData);
 			m_sceneHandle = m_entitySerializationData.ownerSceneAssetHandle;
+			m_entityID = m_entitySerializationData.entityId;
 		}
 	}
 }
