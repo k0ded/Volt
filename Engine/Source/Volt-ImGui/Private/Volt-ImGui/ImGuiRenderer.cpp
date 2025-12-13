@@ -326,6 +326,7 @@ namespace Volt
 			m_images.insert(image);
 
 			textureData->SetTexID((ImTextureID)image.GetRaw());
+			textureData->SetStatus(ImTextureStatus_OK);
 		}
 
 		if (textureData->Status == ImTextureStatus_WantCreate || textureData->Status == ImTextureStatus_WantUpdates)
@@ -404,6 +405,9 @@ namespace Volt
 			RHI::Image* image = (RHI::Image*)textureData->GetTexID();
 			RefPtr<RHI::Image> refImage = RefPtr<RHI::Image>::Attach(image);
 			m_images.erase(refImage);
+
+			textureData->SetTexID(ImTextureID_Invalid);
+			textureData->SetStatus(ImTextureStatus_Destroyed);
 		}
 	}
 
