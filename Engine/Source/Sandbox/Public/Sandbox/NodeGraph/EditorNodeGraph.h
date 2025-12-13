@@ -8,10 +8,11 @@
 #include <CoreUtilities/Containers/Map.h>
 
 #include <cstdint> 
+#include <set>
 
 #include <glm/fwd.hpp>
 
-typedef int32_t NodeInstanceID;
+typedef uint32_t NodeInstanceID;
 
 class EditorNodeGraph
 {
@@ -28,17 +29,42 @@ public:
 	NodeInstanceID SpawnNodeOfType();
 	NodeInstanceID SpawnNodeOfType(VoltGUID typeID);
 
+	bool IsNodeSelected(NodeInstanceID instanceID) const;
+	bool IsNodeHovered(NodeInstanceID instanceID) const;
+
+protected:
+	struct NodeInstanceInfo
+	{
+		NodeInstanceID instanceID;
+
+		glm::vec2 position;
+		Ref<EditorNodeTypeBase> nodeInstance;
+	};
+
+	struct NodeConnection
+	{
+		NodeInstanceID from;
+		NodeInstanceID to;
+	};
 protected:
 	virtual void DrawGraph();
+	virtual void DrawNode(const NodeInstanceInfo& nodeInstanceInfo);
+	virtual void DrawNodeContent(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& contentAreaScreenMin, const glm::vec2& contentAreaScreenMax) const;
+	//modify the given rect to set the new content area
+	virtual void DrawNodeHeader(const NodeInstanceInfo& nodeInstanceInfo, glm::vec2& minScreenPos, glm::vec2& maxScreenPos) const;
+	virtual void DrawConnection(const NodeConnection& nodeConnection) const;
 
-	void DrawGrid();
+	//manages moving, selecting, deleting etc for the node
+	virtual void GraphManageNode(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos);
 
-	glm::vec2 SceenToWorldPos(const glm::vec2& screenPos);
-	float SceenToWorldXPos(float screenPos);
-	float SceenToWorldYPos(float screenPos);
-	glm::vec2 WorldToScreenPos(const glm::vec2& worldPos);
-	float WorldToScreenXPos(float worldPos);
-	float WorldToScreenYPos(float worldPos);
+	virtual void DrawGrid();
+
+	glm::vec2 ScreenToWorldPos(const glm::vec2& screenPos) const;
+	float ScreenToWorldXPos(float screenPos) const;
+	float ScreenToWorldYPos(float screenPos) const;
+	glm::vec2 WorldToScreenPos(const glm::vec2& worldPos) const;
+	float WorldToScreenXPos(float worldPos) const;
+	float WorldToScreenYPos(float worldPos) const;
 
 	glm::vec2 m_cameraPos;
 	float m_zoom;
@@ -49,22 +75,42 @@ protected:
 	glm::vec2 m_graphVisibleWorldSize;
 
 private:
+	void UserNodeHandling();
+	void UserCameraHandling();
+
 	struct NodeTypeInfo
 	{
-		VoltGUID TypeGUID;
-		std::string TypeName;
-		std::function<Ref<EditorNodeTypeBase>()> CreateInstanceFunc;
+		VoltGUID typeGUID;
+		std::string typeName;
+		std::function<Ref<EditorNodeTypeBase>()> createInstanceFunc;
 	};
 	Map<VoltGUID, NodeTypeInfo> m_registeredNodeTypes;
-	Vector<Ref<EditorNodeTypeBase>> m_spawnedNodes;
 
+	
+	//start at 1 to reserve 0 as null/invalid ID
+	NodeInstanceID m_nextNodeInstanceID = 1;
+	Map<NodeInstanceID, NodeInstanceInfo> m_nodeInstances;
+
+	std::set<NodeInstanceID> m_selectedNodes;
+	NodeInstanceID m_lastUpdateHoveredNode= 0;
+	NodeInstanceID m_hoveredNode = 0;
+	NodeInstanceID m_holdingNode = 0;
+	NodeInstanceID m_toolMenuPopupNode = 0;
+
+	Vector<NodeConnection> m_nodeConnections;
+
+	bool m_draggingNodes = false;
+	Map<NodeInstanceID, glm::vec2> m_startDraggingNodePositions;
+
+	bool m_lastFrameMovingCamera;
 	bool m_movingCamera;
 	glm::vec2 m_startMovingCameraPos;
 	std::string m_imGuiID;
 
+
 	//style settings
 	static constexpr int32_t GRID_LINE_COLOR = 0x444455ff;
-	static constexpr float GRID_LINE_THICKNESS = 1.f;
+	static constexpr float GRID_LINE_THICKNESS = 2.f;
 };
 
 
@@ -73,10 +119,10 @@ inline void EditorNodeGraph::RegisterNodeType()
 {
 	static_assert(std::is_base_of<EditorNodeTypeBase, T>::value, "T must be derived from EditorNodeBase");
 
-	NodeTypeInfo& typeInfo = m_registeredNodeTypes[typeInfo.TypeGUID];
-	typeInfo.TypeGUID = T::GetStaticTypeGUID();
-	typeInfo.TypeName = T::GetStaticTypeName();
-	typeInfo.CreateInstanceFunc = []() -> Ref<EditorNodeTypeBase> { return CreateRef<T>(); };
+	NodeTypeInfo& typeInfo = m_registeredNodeTypes[T::GetStaticTypeGUID()];
+	typeInfo.typeGUID = T::GetStaticTypeGUID();
+	typeInfo.typeName = T::GetStaticTypeName();
+	typeInfo.createInstanceFunc = []() -> Ref<EditorNodeTypeBase> { return CreateRef<T>(); };
 }
 
 template<typename T>
