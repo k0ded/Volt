@@ -326,7 +326,6 @@ namespace Volt
 			m_images.insert(image);
 
 			textureData->SetTexID((ImTextureID)image.GetRaw());
-			textureData->SetStatus(ImTextureStatus_OK);
 		}
 
 		if (textureData->Status == ImTextureStatus_WantCreate || textureData->Status == ImTextureStatus_WantUpdates)
