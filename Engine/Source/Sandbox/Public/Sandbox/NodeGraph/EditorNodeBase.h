@@ -1,8 +1,12 @@
 #pragma once
 
+
 #include <CoreUtilities/VoltGUID.h>
 
 #include <string>
+
+class EditorNodeTypeDefinitionBuilder;
+class EditorNodeBuilder;
 
 class EditorNodeTypeBase
 {
@@ -15,9 +19,15 @@ public:
 	//should be created using EDITOR_NODE_TYPE define
 	virtual std::string GetTypeName() const = 0;
 
-	virtual void OnCreate() {};
-	virtual void Draw() {};
-	virtual void OnDestroy() {};
+	// pin types definition
+	virtual void MakeTypeDefinition(EditorNodeTypeDefinitionBuilder& builder) = 0;
+	// create all pins using this function
+	virtual void Build(EditorNodeBuilder& builder) = 0;
+
+	VT_INLINE bool WantsRebuild() const { return m_wantsRebuild; }
+	VT_INLINE void RequestRebuild() { m_wantsRebuild = true; }
+private:
+	bool m_wantsRebuild = true;
 };
 
 #define EDITOR_NODE_TYPE(class_name, type_guid) \
@@ -31,6 +41,8 @@ class NothingNode : public EditorNodeTypeBase
 {
 	EDITOR_NODE_TYPE(NothingNode, "{947F14F5-709F-4C7F-BE5C-4A24E63A241C}"_guid)
 public:
+	void Build(EditorNodeBuilder& nodeBuilder) override;
+	void MakeTypeDefinition(EditorNodeTypeDefinitionBuilder& builder) override;
 
 };
 
