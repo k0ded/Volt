@@ -15,6 +15,7 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE Mosaic::MosaicGraph& GetMosaicGraph() { return *m_graph; }
 		VT_NODISCARD VT_INLINE const Mosaic::MosaicGraph& GetMosaicGraph() const { return *m_graph; }
+		VT_NODISCARD VT_INLINE Mosaic::MosaicGraph& GetMosaicGraphMutable() { return *m_graph; }
 		VT_NODISCARD VT_INLINE const VoltGUID& GetMaterialGUID() const { return m_materialGUID; }
 
 		Vector<AssetHandle> GetTextureHandles() const;

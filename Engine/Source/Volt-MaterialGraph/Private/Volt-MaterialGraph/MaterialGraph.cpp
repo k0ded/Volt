@@ -17,7 +17,7 @@ namespace Volt
 		MemoryWriter parameterSerializationDataWriter;
 		MemoryReader parameterSerializationDataReader;
 
-		VT_INLINE friend Archive& operator<<(Archive& archive, SerializedParameter& serializedParameter)
+		friend Archive& operator<<(Archive& archive, SerializedParameter& serializedParameter)
 		{
 			archive << serializedParameter.index;
 
@@ -46,7 +46,7 @@ namespace Volt
 		Vector<SerializedParameter> inputParameters;
 		Vector<SerializedParameter> outputParameters;
 
-		VT_INLINE friend Archive& operator<<(Archive& archive, SerializedNode& serializedNode)
+		friend Archive& operator<<(Archive& archive, SerializedNode& serializedNode)
 		{
 			archive << serializedNode.id;
 			archive << serializedNode.nodeTypeGUID;
@@ -75,7 +75,7 @@ namespace Volt
 		uint32_t inputIndex;
 		uint32_t outputIndex;
 
-		VT_INLINE friend Archive& operator<<(Archive& archive, SerializedEdge& serializedEdge)
+		friend Archive& operator<<(Archive& archive, SerializedEdge& serializedEdge)
 		{
 			archive << serializedEdge.id;
 			archive << serializedEdge.startNode;
@@ -122,6 +122,7 @@ namespace Volt
 				serializedNode.nodeTypeGUID = node.nodeData->GetGUID();
 				serializedNode.editorState = node.nodeData->GetEditorState();
 				node.nodeData->SerializeCustom(serializedNode.customSerializationDataWriter);
+				serializedNode.customSerializationDataWriter.Close();
 			
 				for (auto& input : node.nodeData->GetInputParameters())
 				{

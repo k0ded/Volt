@@ -223,7 +223,7 @@ namespace Volt
 			{
 				if (drawCommands[drawCommandIndex].renderPrimitiveID == renderPrimitive.id)
 				{
-					drawCommands.erase(drawCommands.begin() + drawCommandIndex);
+					drawCommands.erase_unsorted(drawCommands.begin() + drawCommandIndex);
 					MarkBucketDirty(hashKey);
 					break;
 				}

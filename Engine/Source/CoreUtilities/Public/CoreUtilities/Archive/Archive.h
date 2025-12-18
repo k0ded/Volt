@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CoreUtilities/Config.h>
 #include <CoreUtilities/CompilerTraits.h>
 #include <CoreUtilities/Concepts.h>
 #include <CoreUtilities/Containers/Vector.h>
@@ -27,9 +28,10 @@ public:
 	virtual size_t GetSize() const = 0;
 	virtual const void* GetData() const = 0;
 	virtual void* GetData() = 0;
+	virtual bool IsClosed() const = 0;
 
-	void UseVersion(const VoltGUID& guid);
-	int32_t GetVersion(const VoltGUID& guid) const;
+	VTCOREUTIL_API void UseVersion(const VoltGUID& guid);
+	VTCOREUTIL_API int32_t GetVersion(const VoltGUID& guid) const;
 
 	VT_NODISCARD VT_INLINE bool IsLoading() const { return m_isLoading; }
 

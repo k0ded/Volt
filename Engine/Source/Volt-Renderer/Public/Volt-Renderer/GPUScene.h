@@ -29,26 +29,24 @@ namespace Volt
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(LightFlags);
 
+	struct GPUTransform
+	{
+		GPUTransform()
+			: rotation(glm::identity<glm::quat>()),
+			position(0.f),
+			scale(0.f)
+		{}
+
+		glm::quat rotation;
+		glm::vec3 position;
+		glm::vec3 scale;
+	};
+
 	struct GPUMesh
 	{
 		inline static constexpr uint32_t MAX_LOD_COUNT = 8;
 
-#if 0
-		ResourceHandle vertexPositionsBuffer;
-		ResourceHandle vertexMaterialBuffer;
-		ResourceHandle vertexAnimationInfoBuffer;
-		ResourceHandle vertexBoneInfluencesBuffer;
-		ResourceHandle indexBuffer;
-
-		ResourceHandle vertexBoneWeightsBuffer;
-		ResourceHandle meshletDataBuffer;
-		ResourceHandle meshletsBuffer;
-
-		uint32_t vertexStartOffset;
-		uint32_t meshletCount;
-		uint32_t meshletStartOffset;
-		uint32_t meshletIndexStartOffset;
-#endif
+		GPUTransform transform;
 
 		glm::vec3 center;
 		float radius;
@@ -76,9 +74,7 @@ namespace Volt
 
 	struct PrimitiveDrawData
 	{
-		glm::quat rotation;
-		glm::vec3 position;
-		glm::vec3 scale;
+		GPUTransform transform;
 
 		uint32_t meshId;
 		uint32_t materialId;

@@ -8,8 +8,16 @@
 #include <Volt-Assets/MaterialAsset.h>
 #include <Volt-Assets/MeshAsset.h>
 
+#include <Volt-MaterialGraph/MaterialGraph.h>
+#include <Volt-MaterialGraph/Nodes/PBROutputNode.h>
+#include <Volt-MaterialGraph/Nodes/ConstantNodes.h>
+#include <Volt-MaterialGraph/Nodes/MathNodes.h>
+#include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
+
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
+
+#include <Mosaic/MosaicGraphBuilder.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Packing.h>
@@ -18,7 +26,6 @@
 
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE_WRITE
-#define TINYGLTF_NO_EXTERNAL_IMAGE
 #include <tiny_gltf.h>
 
 VT_DEFINE_LOG_CATEGORY(LogGLTFSourceImporter);
@@ -28,6 +35,81 @@ namespace Volt
 	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".gltf", ".glb" }), GLTFSourceImporter);
 
 	using GLTFNodeIndex = size_t;
+
+	static bool LoadImageData(tinygltf::Image* image, const int imageIdx, std::string* err, std::string* warn, int reqWidth, int reqHeight, const unsigned char* bytes, int size, void* userData)
+	{
+		return false;
+	}
+
+	Vector<AssetReference<Asset>> ImportGLTFMaterialWithTextures(const tinygltf::Material& gltfMaterial, AssetReference<MaterialAsset> material)
+	{
+		ScopedAssetReferenceLock materialLock{ material };
+
+		Ref<MaterialGraph> materialGraph = material->GetMaterialGraph();
+
+		Mosaic::MosaicGraphBuilder mosaicBuilder(materialGraph->GetMosaicGraphMutable());
+
+		UUID64 baseColorFactorNode = 0;
+		if (!gltfMaterial.pbrMetallicRoughness.baseColorFactor.empty())
+		{
+			const glm::vec4 baseColor =
+			{
+				gltfMaterial.pbrMetallicRoughness.baseColorFactor[0],
+				gltfMaterial.pbrMetallicRoughness.baseColorFactor[1],
+				gltfMaterial.pbrMetallicRoughness.baseColorFactor[2],
+				gltfMaterial.pbrMetallicRoughness.baseColorFactor[3]
+			};
+
+			baseColorFactorNode = mosaicBuilder.AddNode<MosaicNodes::Color4>();
+			mosaicBuilder.SetNodeParameterData(baseColorFactorNode, "RGBA", baseColor);
+		}
+
+		// Metallic and Roughness
+		UUID64 metallicFactorNode = 0;
+		UUID64 roughnessFactorNode = 0;
+		{
+			const float metallicFactor = static_cast<float>(gltfMaterial.pbrMetallicRoughness.metallicFactor);
+			const float roughnessFactor = static_cast<float>(gltfMaterial.pbrMetallicRoughness.roughnessFactor);
+
+			metallicFactorNode = mosaicBuilder.AddNode<MosaicNodes::ConstantFloat>();
+			mosaicBuilder.SetNodeParameterData(metallicFactorNode, "Value", metallicFactor);
+
+			roughnessFactorNode = mosaicBuilder.AddNode<MosaicNodes::ConstantFloat>();
+			mosaicBuilder.SetNodeParameterData(roughnessFactorNode, "Value", roughnessFactor);
+		}
+
+		// Emissive
+		UUID64 emissiveFactorNode = 0;
+		if (!gltfMaterial.emissiveFactor.empty())
+		{
+			const glm::vec3 emissive =
+			{
+				gltfMaterial.emissiveFactor[0],
+				gltfMaterial.emissiveFactor[1],
+				gltfMaterial.emissiveFactor[2]
+			};
+
+			emissiveFactorNode = mosaicBuilder.AddNode<MosaicNodes::ConstantFloat3>();
+			mosaicBuilder.SetNodeParameterData(emissiveFactorNode, "Value", emissive);
+		}
+
+		UUID64 pbrOutputNode = mosaicBuilder.AddNode<MosaicNodes::PBROutputNode>();
+
+		if (baseColorFactorNode != 0)
+		{
+			mosaicBuilder.LinkNodeParameters(baseColorFactorNode, pbrOutputNode, "RGBA", "Base Color");
+		}
+
+		mosaicBuilder.LinkNodeParameters(metallicFactorNode, pbrOutputNode, "Value", "Metallic");
+		mosaicBuilder.LinkNodeParameters(roughnessFactorNode, pbrOutputNode, "Value", "Roughness");
+
+		if (emissiveFactorNode != 0)
+		{
+			mosaicBuilder.LinkNodeParameters(emissiveFactorNode, pbrOutputNode, "Value", "Emissive");
+		}
+
+		return {};
+	}
 
 	inline Vector<AssetReference<MaterialAsset>> CreateSceneMaterials(tinygltf::Model& gltfModel, MaterialTable& materialTable, const MeshSourceImportConfig& importConfig)
 	{
@@ -46,8 +128,9 @@ namespace Volt
 			AssetReference<MaterialAsset> material = g_assetManager->CreateAsset<MaterialAsset>(matName);
 			ScopedAssetReferenceLock materialLock{ material };
 
+			ImportGLTFMaterialWithTextures(mat, material);
+
 			result.emplace_back(material);
-		
 			materialTable.SetMaterial(material->GetRenderMaterial(), static_cast<uint32_t>(result.size() - 1));
 		}
 
@@ -101,6 +184,8 @@ namespace Volt
 		tinygltf::Model gltfInput;
 		tinygltf::TinyGLTF gltfContext;
 
+		gltfContext.SetImageLoader(&LoadImageData, nullptr);
+
 		std::string error, warning;
 		bool loaded = false;
 
@@ -112,6 +197,7 @@ namespace Volt
 		{
 			loaded = gltfContext.LoadASCIIFromFile(&gltfInput, &error, &warning, filepath.string());
 		}
+
 
 		if (!loaded && !error.empty())
 		{
@@ -163,8 +249,9 @@ namespace Volt
 	template<typename T>
 	struct GLTFView
 	{
-		const T* ptr = nullptr;
+		const uint8_t* ptr = nullptr;
 		size_t count = 0;
+		size_t stride = 0;
 
 		VT_NODISCARD VT_INLINE bool Empty() const
 		{
@@ -176,7 +263,7 @@ namespace Volt
 			static T nullValue = T(0);
 			if (index < count)
 			{
-				return ptr[index];
+				return *reinterpret_cast<const T*>(ptr + index * stride);
 			}
 
 			return nullValue;
@@ -194,10 +281,11 @@ namespace Volt
 		const tinygltf::Accessor& accessor = gltfModel.accessors[gltfPrimitive.attributes.at(attributeName)];
 		const tinygltf::BufferView& view = gltfModel.bufferViews[accessor.bufferView];
 		const tinygltf::Buffer& buffer = gltfModel.buffers[view.buffer];
-		
+
 		GLTFView<T> resultView;
-		resultView.ptr = reinterpret_cast<const T*>(&(buffer.data[accessor.byteOffset + view.byteOffset]));
+		resultView.ptr = reinterpret_cast<const uint8_t*>(&(buffer.data[accessor.byteOffset + view.byteOffset]));
 		resultView.count = accessor.count;
+		resultView.stride = accessor.ByteStride(view) ? accessor.ByteStride(view) : sizeof(T);
 
 		return resultView;
 	}
@@ -216,8 +304,9 @@ namespace Volt
 		const tinygltf::Buffer& buffer = gltfModel.buffers[view.buffer];
 
 		GLTFView<T> resultView;
-		resultView.ptr = reinterpret_cast<const T*>(&(buffer.data[accessor.byteOffset + view.byteOffset]));
+		resultView.ptr = reinterpret_cast<const uint8_t*>(&(buffer.data[accessor.byteOffset + view.byteOffset]));
 		resultView.count = accessor.count;
+		resultView.stride = accessor.ByteStride(view) ? accessor.ByteStride(view) : sizeof(T);
 
 		return resultView;
 	}
@@ -246,27 +335,27 @@ namespace Volt
 
 		if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_BYTE)
 		{
-			convertIndices.template operator()<int8_t>();
+			convertIndices.template operator() < int8_t > ();
 		}
 		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
 		{
-			convertIndices.template operator()<uint8_t>();
+			convertIndices.template operator() < uint8_t > ();
 		}
 		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_SHORT)
 		{
-			convertIndices.template operator()<int16_t>();
+			convertIndices.template operator() < int16_t > ();
 		}
 		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
 		{
-			convertIndices.template operator()<uint16_t>();
+			convertIndices.template operator() < uint16_t > ();
 		}
 		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_INT)
 		{
-			convertIndices.template operator()<int32_t>();
+			convertIndices.template operator() < int32_t > ();
 		}
 		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
 		{
-			convertIndices.template operator()<uint32_t>();
+			convertIndices.template operator() < uint32_t > ();
 		}
 		else
 		{
@@ -278,49 +367,69 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		glm::mat4 nodeTransform = glm::identity<glm::mat4>();
+		glm::quat nodeRotation = glm::identity<glm::quat>();
+		glm::vec3 nodePosition = 0.f;
+		glm::vec3 nodeScale = 1.f;
 
 		if (gltfNode.translation.size() >= 3)
 		{
-			nodeTransform = glm::translate(glm::mat4(1.f), glm::vec3(gltfNode.translation[0], gltfNode.translation[1], gltfNode.translation[2]));
+			nodePosition = glm::vec3(gltfNode.translation[0], gltfNode.translation[1], gltfNode.translation[2]);
 		}
 
 		if (gltfNode.rotation.size() >= 4)
 		{
-			glm::quat rotation(static_cast<float>(gltfNode.rotation[0]), static_cast<float>(gltfNode.rotation[1]), static_cast<float>(gltfNode.rotation[2]), static_cast<float>(gltfNode.rotation[3]));
-			nodeTransform = nodeTransform * glm::mat4_cast(rotation);
+			nodeRotation.x = static_cast<float>(gltfNode.rotation[0]);
+			nodeRotation.y = static_cast<float>(gltfNode.rotation[1]);
+			nodeRotation.z = static_cast<float>(gltfNode.rotation[2]);
+			nodeRotation.w = static_cast<float>(gltfNode.rotation[3]);
 		}
 
 		if (gltfNode.scale.size() >= 3)
 		{
-			glm::vec3 scale(gltfNode.scale[0], gltfNode.scale[1], gltfNode.scale[2]);
-			nodeTransform = nodeTransform * glm::scale(glm::mat4(1.f), scale);
+			nodeScale = glm::vec3(gltfNode.scale[0], gltfNode.scale[1], gltfNode.scale[2]);
+		}
+
+		if (gltfNode.matrix.size() == 16)
+		{
+			Math::Decompose(glm::make_mat4(gltfNode.matrix.data()), nodePosition, nodeRotation, nodeScale);
 		}
 
 		for (const tinygltf::Primitive& gltfPrimitive : gltfMesh.primitives)
 		{
+			// Only allow triangle meshes for now.
+			if (gltfPrimitive.mode != TINYGLTF_MODE_TRIANGLES)
+			{
+				continue;
+			}
+
 			GLTFView<glm::vec3> vertexPositions = GetAttributeViewFromName<glm::vec3>("POSITION", gltfPrimitive, gltfModel);
 
 			Vector<uint32_t> indices;
 			GetIndices(gltfPrimitive, gltfModel, indices);
 
-			if (vertexPositions.Empty() || indices.empty())
+			// It's a non indexed mesh, generate a linear index buffer.
+			if (indices.empty())
 			{
-				// We must have vertex positions and indices to create the mesh.
-				continue;
+				indices.resize_uninitialized(vertexPositions.count);
+				std::iota(indices.begin(), indices.end(), 0);
 			}
 
 			GLTFView<glm::vec3> vertexNormals = GetAttributeViewFromName<glm::vec3>("NORMAL", gltfPrimitive, gltfModel);
 			GLTFView<glm::vec4> vertexTangents = GetAttributeViewFromName<glm::vec4>("TANGENT", gltfPrimitive, gltfModel);
 			GLTFView<glm::vec2> vertexTexCoords = GetAttributeViewFromName<glm::vec2>("TEXCOORD_0", gltfPrimitive, gltfModel);
-		
+
 			VertexContainer vertexContainer{};
 			vertexContainer.Resize(vertexPositions.count);
 
 			for (size_t i = 0; i < vertexPositions.count; i++)
 			{
 				vertexContainer.positions[i] = vertexPositions.GetAt(i);
-				vertexContainer.materialData[i] = VertexMaterialData::Pack(vertexNormals.GetAt(i), vertexTangents.GetAt(i), vertexTexCoords.GetAt(i));
+
+				const glm::vec3 normal = vertexNormals.Empty() ? glm::vec3(0.f, 1.f, 0.f) : vertexNormals.GetAt(i);
+				const glm::vec4 tangent = vertexTangents.Empty() ? glm::vec4(1.f, 0.f, 0.f, 1.f) : vertexTangents.GetAt(i);
+				const glm::vec2 uv = vertexTexCoords.Empty() ? 0.f : vertexTexCoords.GetAt(i);
+
+				vertexContainer.materialData[i] = VertexMaterialData::Pack(normal, tangent, uv);
 			}
 
 			SubMesh subMesh;
@@ -330,7 +439,9 @@ namespace Volt
 			subMesh.vertexCount = static_cast<uint32_t>(vertexPositions.count);
 			subMesh.materialIndex = gltfPrimitive.material == -1 ? 0u : static_cast<uint32_t>(gltfPrimitive.material);
 			subMesh.name = gltfNode.name;
-			subMesh.transform = nodeTransform;
+			subMesh.transform.position = nodePosition;
+			subMesh.transform.rotation = nodeRotation;
+			subMesh.transform.scale = nodeScale;
 			subMesh.GenerateHash();
 
 			meshInitializer.AddSubMesh(subMesh);
@@ -352,7 +463,7 @@ namespace Volt
 
 		MaterialTable materialTable;
 		Vector<AssetReference<MaterialAsset>> materials = CreateSceneMaterials(gltfModel, materialTable, importConfig);
-		
+
 		Vector<AssetReference<Asset>> result;
 		if (importConfig.combineMeshes)
 		{

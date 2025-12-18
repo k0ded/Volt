@@ -271,7 +271,11 @@ namespace Volt
 		else if (streamingInstance.sceneLightData)
 		{
 			m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, instanceId);
-			m_environmentTextureReferenceCounter.RemoveReference(streamingInstance.environmentTextureHandle, instanceId);
+
+			if (streamingInstance.environmentTextureHandle != Asset::Null())
+			{
+				m_environmentTextureReferenceCounter.RemoveReference(streamingInstance.environmentTextureHandle, instanceId);
+			}
 
 			streamingInstance.environmentTextureHandle = description.environmentTextureHandle;
 

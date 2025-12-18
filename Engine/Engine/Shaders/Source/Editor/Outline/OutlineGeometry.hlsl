@@ -1,5 +1,7 @@
-#include "RenderScene/GPUScene.hlsli"
 #include "ViewData.hlsli"
+
+#include "Utility/VertexShaderHelpers.hlsli"
+
 
 struct Vertex
 {
@@ -14,10 +16,11 @@ struct VSToPS
 
 VSToPS MainVS(in Vertex input)
 {
-    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[input.primitiveIndex];
+    const PrimitiveDrawData primitiveData = GetPrimitiveDrawDataFromID(input.primitiveIndex);
+    const GPUMesh gpuMesh = GetGPUMeshFromID(primitiveData.meshId);
 
     VSToPS result;
-    result.position = mul(View.viewProjection, float4(primitiveData.transform.GetWorldPosition(input.position), 1.f));
+    result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, input.position), 1.f));
 
     return result;
 }

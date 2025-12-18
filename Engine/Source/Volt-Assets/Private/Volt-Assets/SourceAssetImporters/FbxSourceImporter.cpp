@@ -510,6 +510,19 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(outVertices.empty());
 
+		const fbxsdk::FbxVector4 geoTranslation = fbxMesh.GetNode()->GetGeometricTranslation(FbxNode::eSourcePivot);
+		const fbxsdk::FbxVector4 geoRotation = fbxMesh.GetNode()->GetGeometricRotation(FbxNode::eSourcePivot);
+		const fbxsdk::FbxVector4 geoScale = fbxMesh.GetNode()->GetGeometricScaling(FbxNode::eSourcePivot);
+
+		FbxAMatrix geoMat;
+		geoMat.SetT(geoTranslation);
+		geoMat.SetR(geoRotation);
+		geoMat.SetS(geoScale);
+
+		FbxAMatrix geoRotOnlyMat = geoMat;
+		geoRotOnlyMat.SetT(fbxsdk::FbxVector4(0.0, 0.0, 0.0));
+		geoRotOnlyMat = geoRotOnlyMat.Inverse().Transpose();
+
 		const int32_t indexCount = fbxMesh.GetPolygonVertexCount();
 		const int32_t faceCount = fbxMesh.GetPolygonCount();
 
@@ -593,11 +606,22 @@ namespace Volt
 				outVertices[i].material = -1;
 			}
 
-			outVertices[i].position = FbxUtility::ToVec3(fbxMesh.GetControlPointAt(fatIndices[i].elements[ElementType::Position]));
+			{
+				fbxsdk::FbxVector4 fbxPos = fbxMesh.GetControlPointAt(fatIndices[i].elements[ElementType::Position]);
+				fbxPos[3] = 1.0;
+				fbxPos = geoMat.MultT(fbxPos);
+
+				outVertices[i].position = FbxUtility::ToVec3(fbxPos);
+			}
 
 			if (hasNormals)
 			{
-				outVertices[i].normal = FbxUtility::ToVec3(inputNormals->GetDirectArray().GetAt(fatIndices[i].elements[ElementType::Normal]));
+				fbxsdk::FbxVector4 fbxNormal = inputNormals->GetDirectArray().GetAt(fatIndices[i].elements[ElementType::Normal]);
+				fbxNormal = geoRotOnlyMat.MultT(fbxNormal);
+				fbxNormal.Normalize();
+
+				outVertices[i].normal = FbxUtility::ToVec3(fbxNormal);
+			
 			}
 			else
 			{
@@ -606,7 +630,11 @@ namespace Volt
 
 			if (hasTangents)
 			{
-				outVertices[i].tangent = FbxUtility::ToVec4(inputTangents->GetDirectArray().GetAt(fatIndices[i].elements[ElementType::Tangent]));
+				fbxsdk::FbxVector4 fbxTangent = inputTangents->GetDirectArray().GetAt(fatIndices[i].elements[ElementType::Tangent]);
+				float handedness = (float)fbxTangent[3];
+				fbxTangent = geoRotOnlyMat.MultT(fbxTangent);
+
+				outVertices[i].tangent = glm::vec4(FbxUtility::ToVec3(fbxTangent), handedness);
 			}
 			else
 			{
@@ -704,7 +732,7 @@ namespace Volt
 		return voltAnimation;
 	}
 
-	void FbxSourceImporter::CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const MeshSourceImportConfig& importConfig, const FbxVertex* vertices, size_t indexCount, const std::string& name) const
+	void FbxSourceImporter::CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const GPUTransform& transform, const FbxVertex* vertices, size_t indexCount, const std::string& name) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -761,7 +789,7 @@ namespace Volt
 		subMesh.indexCount = static_cast<uint32_t>(indices.size());
 		subMesh.name = name;
 		subMesh.materialIndex = static_cast<uint32_t>(uniqueVertices.front().material);
-		subMesh.transform = glm::translate(glm::mat4{ 1.f }, importConfig.translation) * glm::scale(glm::mat4{ 1.f }, importConfig.scale);
+		subMesh.transform = transform;
 		subMesh.GenerateHash();
 
 		meshInitializer.AddSubMesh(subMesh);
@@ -803,11 +831,22 @@ namespace Volt
 		}
 		subMeshRanges.emplace_back(firstVertex, vertices.size());
 
+		const glm::vec3 nodeTranslation = FbxUtility::ToVec3(fbxMesh.GetNode()->LclTranslation.Get());
+		const glm::quat nodeRotation = glm::quat(glm::radians(FbxUtility::ToVec3(fbxMesh.GetNode()->LclRotation.Get())));
+		const glm::vec3 nodeScale = FbxUtility::ToVec3(fbxMesh.GetNode()->LclScaling.Get());
+
+		const glm::quat configRotation = glm::quat(glm::radians(importConfig.rotation));
+
+		GPUTransform transform;
+		transform.position = glm::rotate(configRotation, nodeTranslation * importConfig.scale) + importConfig.translation;
+		transform.rotation = configRotation * nodeRotation;
+		transform.scale = importConfig.scale * nodeScale;
+
 		// Create sub meshes
 		for (const auto& [first, last] : subMeshRanges)
 		{
 			const size_t indexCount = last - first;
-			CreateSubMeshFromVertexRange(meshInitializer, importConfig, &vertices[first], indexCount, fbxMesh.GetName());
+			CreateSubMeshFromVertexRange(meshInitializer, transform, &vertices[first], indexCount, fbxMesh.GetName());
 		}
 	}
 
@@ -843,15 +882,8 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		Vector<FbxAMatrix> bindPoses;
-		bindPoses.resize(inOutSkeleton.joints.size());
-
-		FbxNode* fbxNode = fbxMesh.GetNode();
-
-		const FbxVector4 fbxTranslation = fbxNode->GetGeometricTranslation(FbxNode::eSourcePivot);
-		const FbxVector4 fbxRotation = fbxNode->GetGeometricRotation(FbxNode::eSourcePivot);
-		const FbxVector4 fbxScale = fbxNode->GetGeometricScaling(FbxNode::eSourcePivot);
-		const FbxAMatrix rootTransform = FbxAMatrix(fbxTranslation, fbxRotation, fbxScale);
+		Vector<FbxAMatrix> globalBindPoses;
+		globalBindPoses.resize(inOutSkeleton.joints.size());
 
 		for (int32_t deformerIndex = 0; deformerIndex < fbxMesh.GetDeformerCount(FbxDeformer::eSkin); deformerIndex++)
 		{
@@ -882,9 +914,9 @@ namespace Volt
 				fbxCluster->GetTransformMatrix(transform);
 				fbxCluster->GetTransformLinkMatrix(linkTransform);
 
-				inverseBindPose = linkTransform.Inverse() * transform * rootTransform;
+				inverseBindPose = linkTransform.Inverse() * transform;
 
-				bindPoses[jointIndex] = inverseBindPose.Inverse();
+				globalBindPoses[jointIndex] = inverseBindPose.Inverse();
 
 				inverseBindPose.Transpose();
 				inOutSkeleton.joints[jointIndex].inverseBindPose = FbxUtility::ToMatrix(inverseBindPose);
@@ -908,10 +940,10 @@ namespace Volt
 			FbxAMatrix parentTransform;
 			if (joint.parentIndex >= 0)
 			{
-				parentTransform = bindPoses[joint.parentIndex];
+				parentTransform = globalBindPoses[joint.parentIndex];
 			}
 
-			const FbxAMatrix localPose = parentTransform.Inverse() * bindPoses[i];
+			const FbxAMatrix localPose = parentTransform.Inverse() * globalBindPoses[i];
 
 			joint.restPose.translation = FbxUtility::ToVec3(localPose.GetT());
 			joint.restPose.rotation = FbxUtility::ToQuat(localPose.GetQ());

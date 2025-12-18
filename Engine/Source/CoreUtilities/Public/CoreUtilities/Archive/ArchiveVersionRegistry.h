@@ -1,9 +1,10 @@
 #pragma once
 
+#include "CoreUtilities/Config.h"
 #include "CoreUtilities/VoltGUID.h"
 #include "CoreUtilities/Containers/Map.h"
 
-class ArchiveVersionRegistry
+class VTCOREUTIL_API ArchiveVersionRegistry
 {
 public:
 	ArchiveVersionRegistry() = default;

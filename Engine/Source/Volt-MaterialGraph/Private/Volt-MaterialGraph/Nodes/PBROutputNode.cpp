@@ -13,10 +13,11 @@ namespace Volt::MosaicNodes
 	PBROutputNode::PBROutputNode(Mosaic::MosaicGraph* ownerGraph)
 		: Mosaic::MosaicNode(ownerGraph)
 	{
-		AddInputParameter("Base Color", Mosaic::ValueBaseType::Float, 4, 1.f, false);
+		AddInputParameter("Base Color", Mosaic::ValueBaseType::Float, 4, glm::vec4(1.f, 1.f, 1.f, 1.f), false);
 		AddInputParameter("Metallic", Mosaic::ValueBaseType::Float, 1, 0.f, false);
 		AddInputParameter("Roughness", Mosaic::ValueBaseType::Float, 1, 0.9f, false);
 		AddInputParameter("Normal", Mosaic::ValueBaseType::Float, 3, glm::vec3(0.5f, 0.5f, 1.f), false);
+		AddInputParameter("Emissive", Mosaic::ValueBaseType::Float, 3, glm::vec3(0.f), false);
 	}
 
 	const Mosaic::ResultInfo PBROutputNode::Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const
@@ -31,12 +32,13 @@ namespace Volt::MosaicNodes
 			
 										"return materialResult;\n";
 
-		std::string paramStrings[4];
+		std::string paramStrings[5];
 
 		paramStrings[0] = std::format("{}", GetInputParameter(0).Get<glm::vec4>());
 		paramStrings[1] = std::format("{}", GetInputParameter(1).Get<float>());
 		paramStrings[2] = std::format("{}", GetInputParameter(2).Get<float>());
 		paramStrings[3] = std::format("{}", GetInputParameter(3).Get<glm::vec3>());
+		paramStrings[4] = std::format("{}", GetInputParameter(4).Get<glm::vec3>());
 
 		for (const auto& edgeId : underlyingNode.GetInputEdges())
 		{
@@ -49,7 +51,7 @@ namespace Volt::MosaicNodes
 			paramStrings[paramIndex] = info.resultParamName;
 		}
 
-		std::string result = std::format(nodeStr, paramStrings[0], paramStrings[1], paramStrings[2], paramStrings[3], glm::vec3(0.f));
+		std::string result = std::format(nodeStr, paramStrings[0], paramStrings[1], paramStrings[2], paramStrings[3], paramStrings[4]);
 		shaderWriter.AppendCodeBlock(result);
 
 		Mosaic::ResultInfo resultInfo{};

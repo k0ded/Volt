@@ -39,6 +39,8 @@ void MemoryWriter::Close()
 
 void MemoryWriter::Serialize(Archive& archive)
 {
+	VT_ENSURE_MSG(!m_isOpen, "Archive must be closed to be serialized!");
+
 	size_t size = GetSize();
 	archive << size;
 
@@ -68,6 +70,11 @@ void* MemoryWriter::GetData()
 {
 	VT_ENSURE_MSG(!m_isOpen, "Archive must be closed before it can be accessed!");
 	return m_allocator.data();
+}
+
+bool MemoryWriter::IsClosed() const
+{
+	return !m_isOpen;
 }
 
 void MemoryWriter::SerializeVersions()
@@ -183,4 +190,9 @@ const void* MemoryReader::GetData() const
 void* MemoryReader::GetData()
 {
 	return m_storage.data();
+}
+
+bool MemoryReader::IsClosed() const
+{
+	return true;
 }

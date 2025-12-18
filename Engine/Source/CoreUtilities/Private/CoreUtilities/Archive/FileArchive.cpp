@@ -111,6 +111,11 @@ void* FileWriter::GetData()
 	return m_allocator.data();
 }
 
+bool FileWriter::IsClosed() const
+{
+	return !m_isOpen;
+}
+
 void FileWriter::SerializeVersions()
 {
 	// Fill the versions
@@ -245,4 +250,9 @@ const void* FileReader::GetData() const
 void* FileReader::GetData()
 {
 	return m_storage.data();
+}
+
+bool FileReader::IsClosed() const
+{
+	return false;
 }

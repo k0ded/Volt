@@ -89,7 +89,6 @@ namespace Volt
 		subMesh.indexStartOffset = 0;
 		subMesh.vertexStartOffset = 0;
 		subMesh.materialIndex = 0;
-		subMesh.transform = glm::identity<glm::mat4>();
 
 		MeshInitializer meshInitializer;
 		meshInitializer.AddVertices(vertices);
@@ -216,7 +215,6 @@ namespace Volt
 		subMesh.indexStartOffset = 0;
 		subMesh.vertexStartOffset = 0;
 		subMesh.materialIndex = 0;
-		subMesh.transform = glm::identity<glm::mat4>();
 
 		MeshInitializer meshInitializer;
 		meshInitializer.AddVertices(vertices);

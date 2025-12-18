@@ -24,6 +24,7 @@ namespace Volt
 
 	struct FbxVertex;
 	struct FbxSkeletonContainer;
+	struct GPUTransform;
 
 	class FbxSourceImporter final : public SourceAssetImporter
 	{
@@ -44,7 +45,7 @@ namespace Volt
 		void CreateVoltSkeletonFromFbxSkeleton(const FbxSkeletonContainer& fbxSkeleton, Skeleton& destinationSkeleton) const;
 
 		void FindJointVertexLinksAndSetupSkeleton(const fbxsdk::FbxMesh& fbxMesh, FbxSkeletonContainer& inOutSkeleton, JointVertexLinkMap& outVertexLinks) const;
-		void CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const MeshSourceImportConfig& importConfig, const FbxVertex* vertices, size_t indexCount, const std::string& name) const;
+		void CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const GPUTransform& transform, const FbxVertex* vertices, size_t indexCount, const std::string& name) const;
 
 		void CreateNonIndexedMesh(const fbxsdk::FbxMesh& fbxMesh, Vector<FbxVertex>& outVertices, const JointVertexLinkMap* jointVertexLinks) const;
 

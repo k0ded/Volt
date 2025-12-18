@@ -2,7 +2,7 @@
 #include "ViewData.hlsli"
 #include "Animation.hlsli"
 
-#include "RenderScene/GPUScene.hlsli"
+#include "Utility/VertexShaderHelpers.hlsli"
 
 struct DepthVertex
 {
@@ -24,8 +24,9 @@ struct VSToPS
 
 VSToPS MainVS(in DepthVertex input)
 {
-    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[input.primitiveIndex];
-    const PrimitiveDrawData prevPrimitiveData = PrevPrimitiveDrawDataBuffer[input.primitiveIndex];
+    const PrimitiveDrawData primitiveData = GetPrimitiveDrawDataFromID(input.primitiveIndex);
+    const PrimitiveDrawData prevPrimitiveData = GetPrevPrimitiveDrawDataFromID(input.primitiveIndex);
+    const GPUMesh gpuMesh = GetGPUMeshFromID(primitiveData.meshId);
 
     float4x4 skinningMatrix = IDENTITY_MATRIX;
     if (primitiveData.isAnimated)
@@ -36,8 +37,8 @@ VSToPS MainVS(in DepthVertex input)
     const float3 skinnedPosition = mul(skinningMatrix, float4(input.position, 1.f)).xyz;
 
     VSToPS result;
-    result.position = mul(View.viewProjection, float4(primitiveData.transform.GetWorldPosition(skinnedPosition), 1.f));
-    result.prevPosition = mul(View.prevViewProjection, float4(prevPrimitiveData.transform.GetWorldPosition(input.position), 1.f));
+    result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, skinnedPosition), 1.f));
+    result.prevPosition = mul(View.prevViewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, skinnedPosition), 1.f));
     result.currPosition = result.position;
 
     return result;

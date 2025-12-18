@@ -859,7 +859,16 @@ AssetReference<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Vol
 			newSubMesh.indexStartOffset = *dataBuffer.As<uint32_t>(offset);
 			offset += sizeof(uint32_t);
 
-			newSubMesh.transform = *dataBuffer.As<glm::mat4>(offset);
+			glm::mat4 transform = *dataBuffer.As<glm::mat4>(offset);
+
+			glm::quat r;
+			glm::vec3 t, s;
+			Math::Decompose(transform, t, r, s);
+
+			newSubMesh.transform.position = t;
+			newSubMesh.transform.rotation = r;
+			newSubMesh.transform.scale = s;
+
 			offset += sizeof(glm::mat4);
 
 			if (i < static_cast<uint32_t>(names.size()))

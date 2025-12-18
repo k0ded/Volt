@@ -1,8 +1,9 @@
-#include "RenderScene/GPUScene.hlsli"
-#include "Utility/Packing.hlsli"
 #include "ViewData.hlsli"
 #include "GBufferCommon.hlsli"
 #include "Animation.hlsli"
+
+#include "Utility/VertexShaderHelpers.hlsli"
+#include "Utility/Packing.hlsli"
 
 struct GBufferVertex
 {
@@ -22,7 +23,8 @@ struct GBufferVertex
 
 GBufferPixelShaderInput MainVS(in GBufferVertex input)
 {
-    const PrimitiveDrawData primitiveData = PrimitiveDrawDataBuffer[input.primitiveIndex];
+    const PrimitiveDrawData primitiveData = GetPrimitiveDrawDataFromID(input.primitiveIndex);
+    const GPUMesh gpuMesh = GetGPUMeshFromID(primitiveData.meshId);
 
     const float3 normal = UnpackNormalFromUInt32(input.normal);
     const float3 tangent = DecodeTangent(normal, input.tangent);
@@ -36,7 +38,7 @@ GBufferPixelShaderInput MainVS(in GBufferVertex input)
     const float3 skinnedPosition = mul(skinningMatrix, float4(input.position, 1.f)).xyz;
 
     GBufferPixelShaderInput result;
-    result.position = mul(View.viewProjection, float4(primitiveData.transform.GetWorldPosition(skinnedPosition), 1.f));
+    result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, skinnedPosition), 1.f));
     result.texCoords = input.texCoords;
     result.normal = normalize(primitiveData.transform.RotateVector(normal));
     result.tangent = float4(normalize(primitiveData.transform.RotateVector(tangent)), input.tangentW);

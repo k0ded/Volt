@@ -32,6 +32,7 @@ public:
 	VTCOREUTIL_API size_t GetSize() const override;
 	VTCOREUTIL_API const void* GetData() const override;
 	VTCOREUTIL_API void* GetData() override;
+	VTCOREUTIL_API bool IsClosed() const override;
 
 private:
 	void SerializeVersions();
@@ -61,6 +62,7 @@ public:
 	VTCOREUTIL_API size_t GetSize() const override;
 	VTCOREUTIL_API const void* GetData() const override;
 	VTCOREUTIL_API void* GetData() override;
+	VTCOREUTIL_API bool IsClosed() const override;
 
 private:
 	std::ifstream m_inputStream;

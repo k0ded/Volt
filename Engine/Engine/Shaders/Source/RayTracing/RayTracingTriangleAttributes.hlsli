@@ -97,7 +97,7 @@ TriangleAttributes LoadTriangleAttributes(in GPUMesh mesh, in Barycentrics trian
 
 void ConvertTriangleAttributesToWorldSpace(inout TriangleAttributes attribs, in Transform transform)
 {
-	attribs.position = transform.GetWorldPosition(attribs.position);
+	attribs.position = transform.TransformPosition(attribs.position);
 	attribs.normal = transform.RotateVector(attribs.normal);
 	attribs.tangent = transform.RotateVector(attribs.tangent);
 }

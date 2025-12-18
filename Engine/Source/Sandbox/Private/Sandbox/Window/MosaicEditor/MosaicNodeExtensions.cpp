@@ -12,11 +12,11 @@
 
 void ColorNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 {
-	if (node->GetGUID() == Volt::MosaicNodes::Color3Node::GetStaticGUID())
+	if (node->GetGUID() == Volt::MosaicNodes::Color3::GetStaticGUID())
 	{
 		ImGui::ColorEdit3("##colorEdit3", glm::value_ptr(node->GetOutputParameter(0).Get<glm::vec3>()));
 	}
-	else if (node->GetGUID() == Volt::MosaicNodes::Color4Node::GetStaticGUID())
+	else if (node->GetGUID() == Volt::MosaicNodes::Color4::GetStaticGUID())
 	{
 		ImGui::ColorEdit4("##colorEdit4", glm::value_ptr(node->GetOutputParameter(0).Get<glm::vec4>()));
 	}

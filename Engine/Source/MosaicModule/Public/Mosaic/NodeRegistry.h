@@ -70,4 +70,9 @@ VT_INLINE Mosaic::NodeRegistry& GetMosaicNodeRegistry()
 
 #define UNPACK(...) __VA_ARGS__
 #define REGISTER_NODE(nodeType) inline static bool nodeType ## _node_registered = GetMosaicNodeRegistry().RegisterNode<nodeType>()
-#define REGISTER_NODE_TEMPLATE(varName, nodeType) inline static bool varName ## _node_registered = GetMosaicNodeRegistry().RegisterNode<UNPACK nodeType>()
+
+#define DECLARE_NODE_TEMPLATE(varName, nodeType) \
+	using varName = UNPACK nodeType
+
+#define REGISTER_NODE_TEMPLATE(nodeType) \
+	inline static bool nodeType ## _node_registered = GetMosaicNodeRegistry().RegisterNode<nodeType>()

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Utility/BoundingVolumes.hlsli"
-#include "Utility/Transform.hlsli"
 #include "Lights/Lights.hlsli"
+#include "Math/Transform.hlsli"
 
 #define MAX_LOD_COUNT 8
 
@@ -85,6 +85,7 @@ struct PrimitiveDrawData
 
 struct GPUMesh
 {
+    Transform transform;
     BoundingSphere boundingSphere;
 
 	uint32_t vertexStartOffset;
@@ -102,3 +103,18 @@ StructuredBuffer<PrimitiveDrawData> PrevPrimitiveDrawDataBuffer;
 StructuredBuffer<GPUMesh> GPUMeshes;
 StructuredBuffer<LightDrawData> SceneLights;
 StructuredBuffer<float4x4> AnimatedBones;
+
+GPUMesh GetGPUMeshFromID(uint meshId)
+{
+    return GPUMeshes[meshId];
+}
+
+PrimitiveDrawData GetPrimitiveDrawDataFromID(uint primitiveDrawDataId)
+{
+    return PrimitiveDrawDataBuffer[primitiveDrawDataId];
+}
+
+PrimitiveDrawData GetPrevPrimitiveDrawDataFromID(uint primitiveDrawDataId)
+{
+    return PrevPrimitiveDrawDataBuffer[primitiveDrawDataId];
+}

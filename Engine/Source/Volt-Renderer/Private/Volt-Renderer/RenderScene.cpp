@@ -329,8 +329,8 @@ namespace Volt
 			{
 				const GPUMesh& gpuMesh = m_gpuMeshes.at(primitive.meshId);
 
-				const float maxScale = glm::max(glm::max(primitive.scale.x, primitive.scale.y), primitive.scale.z);
-				const glm::vec3 center = transformPosition(gpuMesh.center, primitive.position, primitive.scale, primitive.rotation);
+				const float maxScale = glm::max(glm::max(primitive.transform.scale.x, primitive.transform.scale.y), primitive.transform.scale.z);
+				const glm::vec3 center = transformPosition(gpuMesh.center, primitive.transform.position, primitive.transform.scale, primitive.transform.rotation);
 
 				Renderer::GetDebugRenderer().DrawLineSphere(center, maxScale * gpuMesh.radius, 1.f);
 			}
@@ -588,19 +588,15 @@ namespace Volt
 		const size_t hash = Math::HashCombine(renderObject.mesh->GetHash(), std::hash<uint32_t>()(renderObject.subMeshIndex));
 		const uint32_t meshId = m_meshSubMeshToGPUMeshIndex.contains(hash) ? m_meshSubMeshToGPUMeshIndex.at(hash) : 0;
 
-		primitiveDrawData.position = entity.GetPosition();
-		primitiveDrawData.scale = entity.GetScale();
-		primitiveDrawData.rotation = entity.GetRotation();
+		primitiveDrawData.transform.position = entity.GetPosition();
+		primitiveDrawData.transform.scale = entity.GetScale();
+		primitiveDrawData.transform.rotation = entity.GetRotation();
 		primitiveDrawData.meshId = meshId;
 		primitiveDrawData.entityId = entity.GetID();
 		primitiveDrawData.materialId = GetMaterialIndex(renderObject.material);
 		primitiveDrawData.meshletStartOffset = renderObject.meshletStartOffset;
 		primitiveDrawData.isAnimated = renderObject.IsAnimated();
 		primitiveDrawData.flags = PrimitiveFlags::Valid;
-
-#if 0
-		m_currentMeshletCount += m_gpuMeshes.at(meshId).meshletCount;
-#endif
 	}
 
 	void RenderScene::BuildSingleLightDrawData(LightDrawData& lightDrawData, RenderLightData& renderLight)
@@ -863,9 +859,9 @@ namespace Volt
 						invalidPrimitive.id,
 						data.entityId,
 						invalidPrimitive.index,
-						data.position,
-						data.rotation,
-						data.scale
+						data.transform.position,
+						data.transform.rotation,
+						data.transform.scale
 					);
 
 					VT_LOGC_UNFORMATTED(Trace, LogRenderScene, logMessage);

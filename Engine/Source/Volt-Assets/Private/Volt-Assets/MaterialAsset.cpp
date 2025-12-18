@@ -49,11 +49,14 @@ namespace Volt
 	{
 		m_graph->Serialize(archive);
 
-		if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)
+		if (archive.IsLoading())
 		{
-			// #TODO_AssetSystem: Add asset reference from this function
-			RefPtr<MaterialAsset> thisAsset = RefPtr<MaterialAsset>::Attach(this);
-			compilerSubSystem->RequestMaterialCompilation(AssetReference<MaterialAsset>(thisAsset));
+			if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)
+			{
+				// #TODO_AssetSystem: Add asset reference from this function
+				RefPtr<MaterialAsset> thisAsset = RefPtr<MaterialAsset>::Attach(this);
+				compilerSubSystem->RequestMaterialCompilation(AssetReference<MaterialAsset>(thisAsset));
+			}
 		}
 	}
 }

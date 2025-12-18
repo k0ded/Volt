@@ -4,6 +4,7 @@
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicHelpers.h>
 #include <Mosaic/MosaicShaderWriter.h>
+#include <Mosaic/NodeRegistry.h>
 
 #include <CoreUtilities/FormatterExtension.h>
 
@@ -148,4 +149,7 @@ namespace Volt::MosaicNodes
 	private:
 		inline static constexpr Mosaic::TypeInfo TYPE_INFO{ BASE_TYPE, 4 };
 	};
+
+	DECLARE_NODE_TEMPLATE(ConversionMakeFloat3, (MakeVec3Node<float, 0.f, Mosaic::ValueBaseType::Float, "{D7F668BB-AB49-431F-BD4A-A1CA4C623EF2}"_guid>));
+	DECLARE_NODE_TEMPLATE(ConversionMakeFloat4, (MakeVec4Node<float, 0.f, Mosaic::ValueBaseType::Float, "{FC283A78-CF51-4651-9835-ACFE527FD07E}"_guid>));
 }
