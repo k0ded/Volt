@@ -28,7 +28,7 @@ namespace Volt
 {
 	REGISTER_UPGRADE(Version::Create(0, 1, 7), Upgrade_0_1_7);
 	
-	static void DeserializeAssetMetadata(AssetMetadata& outMetadata, const std::filesystem::path& assetFilepath)
+	static void DeserializeAssetMetadata(AssetMetadata_0_1_7& outMetadata, const std::filesystem::path& assetFilepath)
 	{
 		constexpr size_t assetHeaderSize = SerializedAssetMetadata::HeaderSize;
 
@@ -145,7 +145,7 @@ namespace Volt
 
 	void Upgrade_0_1_7::ProcessAsset(AssetHandle assetHandle)
 	{
-		AssetMetadata& assetMetadata = m_assetHandleToMetadata.at(assetHandle);
+		AssetMetadata_0_1_7& assetMetadata = m_assetHandleToMetadata.at(assetHandle);
 
 		if (!AssetSerializerRegistry::Get().HasSerializer(assetMetadata.type))
 		{
@@ -181,9 +181,9 @@ namespace Volt
 			if (!sceneIsLoaded && m_assetHandleToMetadata.contains(customMeta.sceneHandle))
 			{
 				sceneAsset = g_assetManager->CreateAssetTypeless("TempAsset", AssetTypes::Scene).ConvertTo<Scene>();
-				AssetMetadata& sceneMetadata = m_assetHandleToMetadata.at(customMeta.sceneHandle);
+				AssetMetadata_0_1_7& sceneMetadata = m_assetHandleToMetadata.at(customMeta.sceneHandle);
 
-				AssetSerializerRegistry::Get().GetSerializer(sceneMetadata.type).Deserialize(ReadOnlyAssetMetadata(&sceneMetadata), sceneAsset);
+				AssetSerializerRegistry::Get().GetSerializer(sceneMetadata.type).Deserialize(&sceneMetadata, sceneAsset);
 				m_assetsToKeepLoaded.emplace_back(sceneAsset);
 			}
 
@@ -199,7 +199,7 @@ namespace Volt
 			m_assetsToKeepLoaded.emplace_back(asset);
 		}
 
-		AssetSerializerRegistry::Get().GetSerializer(assetMetadata.type).Deserialize(ReadOnlyAssetMetadata(&assetMetadata), asset);
+		AssetSerializerRegistry::Get().GetSerializer(assetMetadata.type).Deserialize(&assetMetadata, asset);
 
 		if (asset->GetType() == AssetTypes::EntityDesc)
 		{
@@ -293,7 +293,7 @@ namespace Volt
 
 		for (const std::filesystem::path& assetFilepath : assets)
 		{
-			AssetMetadata metadata;
+			AssetMetadata_0_1_7 metadata;
 			DeserializeAssetMetadata(metadata, assetFilepath);
 
 			if (metadata.handle != Asset::Null())

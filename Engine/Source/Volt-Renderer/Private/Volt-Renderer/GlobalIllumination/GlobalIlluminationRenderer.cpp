@@ -268,16 +268,9 @@ namespace Volt
 		SHADER_PARAMETER_STRUCT_INCLUDE(VisualizeIrradianceVolumePS::Parameters, PS)
 	END_SHADER_PARAMETER_STRUCT()
 
-	struct IrradianceVolumeConstants
-	{
-		inline static constexpr uint32_t NumMaxCascades = 10;
-
-		float4 cascadeMinCornerAndSpacing[NumMaxCascades];
-	};
-
 	static uint32_t GetNumCascades()
 	{
-		return glm::min(IrradianceVolumeConstants::NumMaxCascades, static_cast<uint32_t>(s_giIrradianceVolumeNumCascades.GetValue()));
+		return glm::min(GlobalIlluminationRenderer::IrradianceVolumeConstants::NumMaxCascades, static_cast<uint32_t>(s_giIrradianceVolumeNumCascades.GetValue()));
 	}
 
 	static uint32_t GetIrradianceVolumeProbeAtlasResolution()
@@ -371,7 +364,7 @@ namespace Volt
 
 		{
 			RHI::ImageDesc desc{};
-			desc.format = RHI::PixelFormat::R16G16_SFLOAT;
+			desc.format = RHI::PixelFormat::R32G32_SFLOAT;
 			desc.usage = RHI::ImageUsage::Storage;
 			desc.width = GetIrradianceVolumeProbeAtlasResolution();
 			desc.height = GetIrradianceVolumeProbeAtlasResolution();
@@ -736,8 +729,6 @@ namespace Volt
 	{
 		RGUniformBufferRef uniformBuffer = renderGraph.CreateUniformBuffer(RGUniformBufferDesc::Create<IrradianceVolumeConstants>("GI.IrradianceVolumeConstants"));
 
-		IrradianceVolumeConstants constants{};
-
 		glm::vec3 cameraPosition = view.camera->GetPosition();
 
 		if (s_giIrradianceVolumeFreezeAtWorldOrigin.GetValue())
@@ -749,12 +740,12 @@ namespace Volt
 		{
 			cameraPosition = m_prevCameraPosition;
 		}
-		else
-		{
+
+		// Set prev camera position to current camera position in the first frame.
+		if (view.frameIndex == 0)
+		{ 
 			m_prevCameraPosition = cameraPosition;
 		}
-
-		m_prevCameraPosition = cameraPosition;
 
 		for (uint32_t i = 0; i < GetNumCascades(); ++i)
 		{
@@ -766,10 +757,27 @@ namespace Volt
 			origin *= cascadeSpacing;
 
 			const glm::vec3 gridMin = origin - cascadeSpacing * (s_giIrradianceVolumeResolution.GetValue() * 0.5f);
-			constants.cascadeMinCornerAndSpacing[i] = glm::vec4(gridMin, cascadeSpacing);
+			m_irradianceVolumeConstants.cascadeMinCornerAndSpacing[i] = glm::vec4(gridMin, cascadeSpacing);
+
+			{
+				const glm::vec3 delta = (cameraPosition - m_prevCameraPosition) / cascadeSpacing;
+
+				glm::ivec3 shift =
+				{
+					delta.x >= 0.f ? int32_t(glm::floor(delta.x)) : int32_t(glm::ceil(delta.x)),
+					delta.y >= 0.f ? int32_t(glm::floor(delta.y)) : int32_t(glm::ceil(delta.y)),
+					delta.z >= 0.f ? int32_t(glm::floor(delta.z)) : int32_t(glm::ceil(delta.z)),
+				};
+
+				m_irradianceVolumeConstants.cascadeScrollOffset[i].x += shift.x;
+				m_irradianceVolumeConstants.cascadeScrollOffset[i].y += shift.y;
+				m_irradianceVolumeConstants.cascadeScrollOffset[i].z += shift.z;
+			}
 		}
 
-		AddMappedBufferUpload(renderGraph, uniformBuffer, &constants, sizeof(IrradianceVolumeConstants));
+		m_prevCameraPosition = cameraPosition;
+
+		AddMappedBufferUpload(renderGraph, uniformBuffer, &m_irradianceVolumeConstants, sizeof(IrradianceVolumeConstants));
 
 		return uniformBuffer;
 	}

@@ -10,8 +10,8 @@ namespace Volt
 	class FontSerializer : public AssetSerializer
 	{
 	public:
-		void Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const override;
-		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const override;
+		void Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const override;
+		bool Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const override;
 	};
 
 	VT_REGISTER_ASSET_SERIALIZER(AssetTypes::Font, FontSerializer);

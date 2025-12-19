@@ -44,6 +44,9 @@ namespace Volt
 		friend bool operator>(const SubMesh& lhs, const SubMesh& rhs);
 		friend bool operator<(const SubMesh& lhs, const SubMesh& rhs);
 
+		static void Serialize(BinaryStreamWriter& streamWriter, const SubMesh& data);
+		static void Deserialize(BinaryStreamReader& streamReader, SubMesh& outData);
+
 		uint32_t materialIndex = 0;
 		uint32_t vertexCount = 0;
 		uint32_t indexCount = 0;

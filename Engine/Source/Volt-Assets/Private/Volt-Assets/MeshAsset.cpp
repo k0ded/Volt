@@ -15,6 +15,7 @@
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Mesh, MeshAsset);
+	REGISTER_CUSTOM_ASSET_METADATA_TYPE(MeshCustomMetadata, AssetTypes::Mesh);
 
 	MeshAsset::MeshAsset()
 	{
@@ -62,6 +63,12 @@ namespace Volt
 		}
 	}
 
+	void MeshAsset::OnPreSave(CustomAssetMetadata& customMetadata)
+	{
+		MeshCustomMetadata& meshCustomMetadata = customMetadata.GetMutableCustomMetadata<MeshCustomMetadata>();
+		meshCustomMetadata.materials = m_materials;
+	}
+
 	void MeshAsset::Serialize(Archive& archive)
 	{
 		archive << m_materials;
@@ -76,7 +83,7 @@ namespace Volt
 				Ref<RenderMaterial> renderMaterial;
 
 				AssetReference<MaterialAsset> materialAsset;
-				if (g_assetManager->TryGetAssetIfLoaded(materialHandle, materialAsset))
+				if (g_assetManager->TryGetAsset(materialHandle, materialAsset))
 				{
 					ScopedAssetReferenceLock assetLock{ materialAsset };
 					renderMaterial = materialAsset->GetRenderMaterial();
@@ -85,6 +92,12 @@ namespace Volt
 				{
 					renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
 				}
+
+				if (materialAsset.IsValid())
+				{
+					m_materialReferences.emplace_back(materialAsset);
+				}
+
 				m_mesh->SetMaterial(renderMaterial, i);
 			}
 		}

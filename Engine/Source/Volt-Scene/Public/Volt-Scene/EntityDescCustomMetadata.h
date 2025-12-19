@@ -5,6 +5,7 @@
 
 #include <AssetSystem/AssetType.h>
 #include <AssetSystem/AssetHandle.h>
+#include <AssetSystem/CustomAssetMetadataRegistry.h>
 
 
 namespace Volt
@@ -15,5 +16,13 @@ namespace Volt
 
 		Volt::AssetHandle sceneHandle;
 		EntityID entityID;
+
+		VT_INLINE friend Archive& operator<<(Archive& archive, EntityDescCustomMetadata& value)
+		{
+			archive << value.sceneHandle;
+			archive << value.entityID;
+
+			return archive;
+		}
 	};
 }

@@ -27,6 +27,31 @@ namespace Volt
 		m_hash = Math::HashCombine(m_hash, std::hash<uint64_t>()(UUID64()));
 	}
 
+	void SubMesh::Serialize(BinaryStreamWriter& streamWriter, const SubMesh& data)
+	{
+	}
+
+	void SubMesh::Deserialize(BinaryStreamReader& streamReader, SubMesh& outData)
+	{
+		streamReader.Read(outData.materialIndex);
+		streamReader.Read(outData.vertexCount);
+		streamReader.Read(outData.indexCount);
+		streamReader.Read(outData.vertexStartOffset);
+		streamReader.Read(outData.indexStartOffset);
+		glm::mat4 transform;
+		streamReader.Read(transform);
+
+		glm::quat r;
+		glm::vec3 t, s;
+		Math::Decompose(transform, t, r, s);
+
+		outData.transform.position = t;
+		outData.transform.scale = s;
+		outData.transform.rotation = r;
+
+		streamReader.Read(outData.name);
+	}
+
 	const bool SubMesh::operator==(const SubMesh& rhs) const
 	{
 		return m_hash == rhs.m_hash;

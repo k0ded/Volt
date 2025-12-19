@@ -40,7 +40,7 @@ namespace Volt
 		}
 	};
 
-	void BlendSpaceSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
+	void BlendSpaceSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<BlendSpace> blendSpace = asset.ConvertTo<BlendSpace>();
 		ScopedAssetReferenceLock blendSpaceLock{ blendSpace };
@@ -66,7 +66,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool BlendSpaceSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
+	bool BlendSpaceSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 

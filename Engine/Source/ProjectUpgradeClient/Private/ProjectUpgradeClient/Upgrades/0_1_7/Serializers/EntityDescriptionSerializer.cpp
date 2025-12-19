@@ -335,11 +335,11 @@ namespace Volt
 	EntityDescSerializer::~EntityDescSerializer()
 	{}
 
-	void EntityDescSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
+	void EntityDescSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 	}
 
-	bool EntityDescSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
+	bool EntityDescSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		AssetReference<EntityDesc> entityDesc = destinationAsset.ConvertTo<EntityDesc>();
 		ScopedAssetReferenceLock entityDescLock{ entityDesc };

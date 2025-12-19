@@ -1,6 +1,8 @@
 #pragma once
 #include "UpgradeInterface.h"
 
+#include "Upgrades/0_1_7/AssetMetadata_0_1_7.h"
+
 #include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/Containers/Vector.h>
@@ -40,6 +42,6 @@ namespace Volt
 
 		Vector<AssetHandle> m_assetsToProcess;
 		Vector<AssetReference<Asset>> m_assetsToKeepLoaded;
-		Map<AssetHandle, AssetMetadata> m_assetHandleToMetadata;
+		Map<AssetHandle, AssetMetadata_0_1_7> m_assetHandleToMetadata;
 	};
 }

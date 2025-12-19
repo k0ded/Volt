@@ -25,11 +25,11 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void PrefabSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
+	void PrefabSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 	}
 
-	bool PrefabSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
+	bool PrefabSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 

@@ -39,7 +39,7 @@ namespace Volt
 		}
 	};
 
-	void SkeletonSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
+	void SkeletonSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<Skeleton> skeleton = asset.ConvertTo<Skeleton>();
 		ScopedAssetReferenceLock skeletonLock{ skeleton };
@@ -61,7 +61,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool SkeletonSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
+	bool SkeletonSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 

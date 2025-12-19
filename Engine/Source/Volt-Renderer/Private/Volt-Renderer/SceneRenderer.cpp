@@ -178,9 +178,11 @@ namespace Volt
 
 		AddSkyboxPass(renderGraph, blackboard, renderView);
 
+#if 0
 		auto giOutput = m_globalIlluminationRenderer.Execute(renderGraph, blackboard, renderView);
+#endif
 
-		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer, giOutput.indirectLight);
+		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer, nullptr);
 
 		m_globalIlluminationRenderer.Visualize(renderGraph, blackboard, renderView);
 

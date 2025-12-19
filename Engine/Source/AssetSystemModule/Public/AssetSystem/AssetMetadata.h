@@ -2,8 +2,10 @@
 
 #include "AssetSystem/AssetType.h"
 #include "AssetSystem/AssetHandle.h"
+#include "AssetSystem/CustomAssetMetadataRegistry.h"
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Any.h>
 
 #include <shared_mutex>
 #include <filesystem>
@@ -40,13 +42,149 @@ namespace Volt
 	};
 	VT_SETUP_ENUM_CLASS_OPERATORS(AssetMetadataFlag);
 
-	inline static constexpr size_t ASSET_CUSTOM_METADATA_SIZE = 256;
-	typedef Vector<uint8_t, InlineAllocator<ASSET_CUSTOM_METADATA_SIZE>> CustomAssetMetadataVector;
+	struct AssetMetadataArchiveVersion
+	{
+		enum Type
+		{
+			BaseVersion = 0,
+
+			// Switched to dynamic storage for custom asset metadata
+			NewCustomMetadataStorage = 1,
+
+			VersionPlusOne,
+			LatestVersion = VersionPlusOne - 1
+		};
+
+		inline static constexpr VoltGUID guid = "{24A3A5FF-8FBE-4FBC-BF7E-362AD00D0183}"_guid;
+
+	private:
+		AssetMetadataArchiveVersion() {}
+	};
+
+	struct CustomAssetMetadataArchiveVersion
+	{
+		enum Type
+		{
+			BaseVersion = 0,
+
+			AddedCheckIfDataIsSaved = 1,
+
+			VersionPlusOne,
+			LatestVersion = VersionPlusOne - 1
+		};
+
+		inline static constexpr VoltGUID guid = "{8BAC14B2-A3E8-4872-A5A3-C036FD2CE383}"_guid;
+
+	private:
+		CustomAssetMetadataArchiveVersion() {}
+	};
+
+	class CustomAssetMetadata
+	{
+	public:
+		CustomAssetMetadata(const AssetType& assetType)
+			: m_assetType(assetType)
+		{}
+
+		CustomAssetMetadata(const CustomAssetMetadata& other)
+			: m_assetType(other.m_assetType),
+			m_storage(other.m_storage)
+		{}
+
+		CustomAssetMetadata(CustomAssetMetadata&& other)
+			: m_assetType(other.m_assetType),
+			m_storage(std::move(other.m_storage))
+		{}
+
+		CustomAssetMetadata& operator=(const CustomAssetMetadata& other)
+		{
+			if (this != &other)
+			{
+				m_storage = other.m_storage;
+			}
+
+			return *this;
+		}
+
+		CustomAssetMetadata& operator=(CustomAssetMetadata&& other)
+		{
+			if (this != &other)
+			{
+				m_storage = std::move(other.m_storage);
+			}
+
+			return *this;
+		}
+
+		template<typename CustomMetadataType>
+		VT_INLINE const CustomMetadataType& GetCustomMetadata() const
+		{
+			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(m_assetType), std::format("Custom metadata type is not for type {}!", m_assetType->GetName()));
+
+			return m_storage.Cast<CustomMetadataType>();
+		}
+
+		template<typename CustomMetadataType>
+		VT_INLINE CustomMetadataType& GetMutableCustomMetadata()
+		{
+			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(m_assetType), std::format("Custom metadata type is not for type {}!", m_assetType->GetName()));
+
+			return m_storage.Cast<CustomMetadataType>();
+		}
+
+		template<typename CustomMetadataType>
+		VT_INLINE void InitializeWithType()
+		{
+			m_storage.Emplace<CustomMetadataType>(CustomMetadataType());
+		}
+
+		VT_INLINE Any& GetStorage()
+		{
+			return m_storage;
+		}
+
+		VT_INLINE friend Archive& operator<<(Archive& archive, CustomAssetMetadata& value)
+		{
+			archive.UseVersion(CustomAssetMetadataArchiveVersion::guid);
+
+			bool hasData = value.m_storage.HasValue();
+
+			if (!archive.IsLoading())
+			{
+				archive << hasData;
+			}
+			else
+			{
+				if (archive.GetVersion(CustomAssetMetadataArchiveVersion::guid) >= CustomAssetMetadataArchiveVersion::AddedCheckIfDataIsSaved)
+				{
+					archive << hasData;
+				}
+			}
+
+			if (hasData)
+			{
+				if (CustomAssetMetadataRegistry::Get().AssetTypeHasCustomMetadata(value.m_assetType))
+				{
+					CustomAssetMetadataRegistry::Get().SerializeAny(value.m_assetType, value.m_storage, archive);
+				}
+			}
+
+			return archive;
+		}
+
+	private:
+		Any m_storage;
+		const AssetType& m_assetType;
+	};
 
 	struct AssetMetadata
 	{
-		AssetMetadata() = default;
+		AssetMetadata()
+			: customData(type)
+		{}
+
 		AssetMetadata(const AssetMetadata& other)
+			: customData(other.customData)
 		{
 			handle = other.handle;
 			type = other.type;
@@ -78,13 +216,14 @@ namespace Volt
 		VT_INLINE const CustomMetadataType& GetCustomData() const
 		{
 			VT_ENSURE_MSG(CustomMetadataType::IsForAssetType(type), std::format("Custom metadata type is not for type {}!", type->GetName()));
-			VT_ENSURE_MSG(customData.size() == sizeof(CustomMetadataType), std::format("Custom metadata size is not correct, for type: {}!", type->GetName()));
 
-			return reinterpret_cast<const CustomMetadataType&>(*customData.data());
+			return customData.GetCustomMetadata<CustomMetadataType>();
 		}
 
 		VT_INLINE friend Archive& operator<<(Archive& archive, AssetMetadata& value)
 		{
+			archive.UseVersion(AssetMetadataArchiveVersion::guid);
+
 			archive << value.handle;
 			VoltGUID assetTypeGUID;
 			
@@ -100,7 +239,18 @@ namespace Volt
 				value.type = GetAssetTypeRegistry().GetTypeFromGUID(assetTypeGUID);
 			}
 
-			archive << value.customData;
+			if (archive.IsLoading() && archive.GetVersion(AssetMetadataArchiveVersion::guid) < AssetMetadataArchiveVersion::NewCustomMetadataStorage)
+			{
+				constexpr size_t ASSET_CUSTOM_METADATA_SIZE = 256;
+				typedef Vector<uint8_t, InlineAllocator<ASSET_CUSTOM_METADATA_SIZE>> CustomAssetMetadataVector;
+				CustomAssetMetadataVector tempVector;
+				archive << tempVector;
+			}
+			else
+			{
+				archive << value.customData;
+			}
+
 			return archive;
 		}
 
@@ -110,7 +260,7 @@ namespace Volt
 		std::atomic_uint8_t flags = static_cast<uint8_t>(AssetMetadataFlag::None);
 		std::filesystem::path filepath;
 
-		CustomAssetMetadataVector customData;
+		CustomAssetMetadata customData;
 
 	private:
 		friend class WriteableAssetMetadata;

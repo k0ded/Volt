@@ -3,7 +3,7 @@
 
 namespace Volt
 {
-	size_t AssetSerializer::WriteMetadata(const AssetMetadata& metadata, const uint32_t version, BinaryStreamWriter& streamWriter)
+	size_t AssetSerializer::WriteMetadata(const AssetMetadata_0_1_7& metadata, const uint32_t version, BinaryStreamWriter& streamWriter)
 	{
 		SerializedAssetMetadata serializedMetadata{};
 		serializedMetadata.handle = metadata.handle;

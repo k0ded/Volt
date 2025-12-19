@@ -31,7 +31,7 @@ namespace Volt
 		}
 	};
 
-	void EnvironmentTextureSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
+	void EnvironmentTextureSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<EnvironmentTexture> environmentTexture = asset.ConvertTo<EnvironmentTexture>();
 		ScopedAssetReferenceLock textureLock{ environmentTexture };
@@ -64,7 +64,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool EnvironmentTextureSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
+	bool EnvironmentTextureSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 

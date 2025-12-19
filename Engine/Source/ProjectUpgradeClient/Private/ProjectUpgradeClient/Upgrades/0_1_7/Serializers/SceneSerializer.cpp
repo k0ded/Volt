@@ -35,7 +35,7 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void SceneSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
+	void SceneSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		const AssetReference<Scene> scene = asset.ConvertTo<Scene>();
 		ScopedAssetReferenceLock sceneLock{ scene };
@@ -84,7 +84,7 @@ namespace Volt
 		}
 	}
 
-	bool SceneSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
+	bool SceneSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		AssetReference<Scene> scene = destinationAsset.ConvertTo<Scene>();
 		ScopedAssetReferenceLock sceneLock{ scene };

@@ -1,7 +1,8 @@
 #pragma once
 
+#include "Upgrades/0_1_7/AssetMetadata_0_1_7.h"
+
 #include <AssetSystem/Config.h>
-#include <AssetSystem/AssetMetadata.h>
 
 class BinaryStreamWriter;
 class BinaryStreamReader;

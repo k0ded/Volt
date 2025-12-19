@@ -48,17 +48,12 @@ namespace Volt
 		inline const auto& GetRegistry() { return m_registry; }
 		inline const auto& GetUpgradeInfo(const Volt::Version version) { return m_registry.at(version); }
 
+		static UpgradesRegistry& Get();
+
 	private:
 		Map<Volt::Version, UpgradeInfo> m_registry;
 	};
 }
 
-extern Volt::UpgradesRegistry g_upgradesRegistry;
-
-VT_INLINE Volt::UpgradesRegistry& GetUpgradesRegistry()
-{
-	return g_upgradesRegistry;
-}
-
 #define UNPACK(...) __VA_ARGS__
-#define REGISTER_UPGRADE(targetVersion, classType) inline static bool classType ## _upgrade_registered = GetUpgradesRegistry().RegisterUpgrade<classType>(targetVersion)
+#define REGISTER_UPGRADE(targetVersion, classType) inline static bool classType ## _upgrade_registered = Volt::UpgradesRegistry::Get().RegisterUpgrade<classType>(targetVersion)

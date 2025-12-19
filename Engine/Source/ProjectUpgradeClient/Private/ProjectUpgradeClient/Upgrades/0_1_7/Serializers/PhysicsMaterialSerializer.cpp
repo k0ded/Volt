@@ -18,7 +18,7 @@ namespace Volt
 		float bounciness;
 	};
 
-	void PhysicsMaterialSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
+	void PhysicsMaterialSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<PhysicsMaterialAsset> material = asset.ConvertTo<PhysicsMaterialAsset>();
 		ScopedAssetReferenceLock materialLock{ material };
@@ -37,7 +37,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool PhysicsMaterialSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
+	bool PhysicsMaterialSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 

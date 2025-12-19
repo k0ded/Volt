@@ -66,7 +66,7 @@ namespace Volt
 		Vector<Mip> mips;
 	};
 
-	void TextureSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
+	void TextureSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<Texture2D> texture = asset.ConvertTo<Texture2D>();
 		ScopedAssetReferenceLock textureLock{ texture };
@@ -98,7 +98,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool TextureSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
+	bool TextureSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		AssetReference<Texture2D> texture = destinationAsset.ConvertTo<Texture2D>();
 		ScopedAssetReferenceLock textureLock{ texture };

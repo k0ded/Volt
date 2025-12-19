@@ -21,7 +21,7 @@
 
 namespace Volt
 {
-	void MaterialSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
+	void MaterialSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		const AssetReference<MaterialAsset> mosaicAsset = asset.ConvertTo<MaterialAsset>();
 		ScopedAssetReferenceLock materialLock{ mosaicAsset };
@@ -117,7 +117,7 @@ namespace Volt
 		memcpy_s(&outData, sizeof(T), buffer.As<void>(), buffer.GetSize());
 	}
 
-	bool MaterialSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
+	bool MaterialSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 

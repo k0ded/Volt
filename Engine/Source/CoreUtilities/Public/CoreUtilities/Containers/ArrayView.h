@@ -43,7 +43,7 @@ public:
 
 private:
 	const T* m_data;
-	const size_t m_size;
+	size_t m_size;
 };
 
 template<typename T>

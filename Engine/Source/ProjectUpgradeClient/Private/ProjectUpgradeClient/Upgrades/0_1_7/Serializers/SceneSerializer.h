@@ -25,8 +25,8 @@ namespace Volt
 		SceneSerializer();
 		~SceneSerializer() override;
 
-		void Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const override;
-		bool Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const override;
+		void Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const override;
+		bool Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const override;
 
 		//void LoadWorldCell(const Ref<Scene>& scene, const WorldCell& worldCell) const;
 

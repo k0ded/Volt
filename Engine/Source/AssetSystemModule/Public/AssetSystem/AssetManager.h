@@ -421,7 +421,11 @@ namespace Volt
 		metadata.SetFlag(AssetMetadataFlag::MemoryOnly, isMemoryAsset);
 		metadata.SetFlag(AssetMetadataFlag::Anonymous, isAnonymous);
 
-		newAsset->SetupInitialCustomMetadata(metadata.customData);
+		if (CustomAssetMetadataRegistry::Get().AssetTypeHasCustomMetadata(metadata.type))
+		{
+			CustomAssetMetadataRegistry::Get().SetupInitalCustomMetadata(metadata.type, metadata.customData);
+		}
+
 		newAsset->SetName(std::string(assetName));
 
 		// Setup a link back to the asset manager.

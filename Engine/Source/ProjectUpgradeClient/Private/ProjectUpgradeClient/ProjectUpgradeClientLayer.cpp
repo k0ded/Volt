@@ -137,7 +137,7 @@ namespace Volt
 			m_currentUpgradeTargetVersion = m_availableUpgradeVersions.back();
 			m_availableUpgradeVersions.pop_back();
 
-			m_currentUpgrade = GetUpgradesRegistry().CreateUpgrade(m_currentUpgradeTargetVersion, m_targetProject);
+			m_currentUpgrade = UpgradesRegistry::Get().CreateUpgrade(m_currentUpgradeTargetVersion, m_targetProject);
 		}
 
 		bool doneProcessing = m_currentUpgrade->ProcessUpgrade();
@@ -191,7 +191,7 @@ namespace Volt
 
 	void ProjectUpgradeClientLayer::CollectAndOrganizeUpgrades()
 	{
-		auto& upgradeRegistryMap = GetUpgradesRegistry().GetRegistry();
+		auto& upgradeRegistryMap =  UpgradesRegistry::Get().GetRegistry();
 
 		for (auto [version, upgradeInfo] : upgradeRegistryMap)
 		{

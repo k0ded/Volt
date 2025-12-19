@@ -36,8 +36,8 @@ namespace Volt
 
 	AssetManager::~AssetManager()
 	{
-		m_assetCache.Clear();
 		FlushDestructionQueue();
+		m_assetCache.Clear();
 	}
 
 	WriteableAssetMetadata AssetManager::GetWriteableAssetMetadata(AssetHandle assetHandle) const
@@ -148,25 +148,33 @@ namespace Volt
 			return;
 		}
 
-		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
-
-		if (assetMetadata->IsMemoryAsset())
 		{
-			VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that is a memory asset. ", asset->GetAssetName(), asset->GetAssetHandle());
-			return;
-		}
+			ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
 
-		if (assetMetadata->filepath.empty())
-		{
-			VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that that does not have a path. ", asset->GetAssetHandle(), asset->GetAssetHandle());
-			return;
+			if (assetMetadata->IsMemoryAsset())
+			{
+				VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that is a memory asset. ", asset->GetAssetName(), asset->GetAssetHandle());
+				return;
+			}
+
+			if (assetMetadata->filepath.empty())
+			{
+				VT_LOGC(Error, LogAssetSystem, "Tried to save an asset '{0}' (Handle: '{1}') that that does not have a path. ", asset->GetAssetHandle(), asset->GetAssetHandle());
+				return;
+			}
 		}
 
 		{
 			ScopedTimer timer{};
 
+			{
+				WriteableAssetMetadata assetMetadata = GetWriteableAssetMetadata(asset->GetAssetHandle());
+				asset->OnPreSave(assetMetadata->customData);
+			}
+
 			if (SerializeAsset(asset))
 			{
+				ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
 				VT_LOGC(Trace, LogAssetSystem, "Saved asset {0} to {1} in {2} seconds!", assetMetadata->handle, assetMetadata->filepath, timer.GetTime<Time::Seconds>());
 			}
 		}
@@ -325,7 +333,11 @@ namespace Volt
 		metadata.SetFlag(AssetMetadataFlag::MemoryOnly, false);
 		metadata.SetFlag(AssetMetadataFlag::Anonymous, false);
 
-		newAsset->SetupInitialCustomMetadata(metadata.customData);
+		if (CustomAssetMetadataRegistry::Get().AssetTypeHasCustomMetadata(assetType))
+		{
+			CustomAssetMetadataRegistry::Get().SetupInitalCustomMetadata(assetType, metadata.customData);
+		}
+
 		newAsset->SetName(std::string(assetName));
 
 		// Setup a link back to the asset manager.

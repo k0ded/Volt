@@ -1,4 +1,5 @@
 #include "Upgrades/0_1_6.h"
+#include "Upgrades/0_1_8.h"
 
 #include "UpgradesRegistry.h"
 
@@ -14,6 +15,8 @@
 namespace Volt
 {
 	REGISTER_UPGRADE(Volt::Version::Create(0, 1, 6), Upgrade_0_1_6);
+	// Crashes when in the 0_1_8 cpp file for some reason...
+	REGISTER_UPGRADE(Volt::Version::Create(0, 1, 8), Upgrade_0_1_8);
 
 	Upgrade_0_1_6::Upgrade_0_1_6(const Project& inProject)
 		: Upgrade(inProject)

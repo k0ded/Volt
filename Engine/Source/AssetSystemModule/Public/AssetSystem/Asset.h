@@ -88,9 +88,26 @@ namespace Volt
 
 		virtual AssetType GetType() const { return AssetTypes::None; }
 		virtual uint32_t GetVersion() const { return 1; }
+
+		/*
+			Called when a dependency of this asset has changed state (loaded, unloaded, etc).
+		*/
 		virtual void OnAssetDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state) {}
+
+		/*
+			Called when the name of the asset is changed.
+		*/
 		virtual void OnAssetNameChanged() {}
-		virtual void SetupInitialCustomMetadata(CustomAssetMetadataVector& customMetadata) {}
+
+		/*
+			Allows the asset to fill the custom asset metadata before it is saved.
+			Or perform other pre save actions.
+		*/
+		virtual void OnPreSave(CustomAssetMetadata& customMetadata) {}
+
+		/*
+			Called when the asset is saved/loaded.
+		*/
 		virtual void Serialize(Archive& archive) {}
 
 		VT_NODISCARD VT_INLINE const AssetHandle& GetAssetHandle() const { return m_handle; }

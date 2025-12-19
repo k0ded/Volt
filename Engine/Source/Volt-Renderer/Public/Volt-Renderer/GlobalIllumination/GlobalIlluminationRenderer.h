@@ -37,6 +37,14 @@ namespace Volt
 	class GlobalIlluminationRenderer
 	{
 	public:
+		struct IrradianceVolumeConstants
+		{
+			inline static constexpr uint32_t NumMaxCascades = 10;
+
+			int4 cascadeScrollOffset[NumMaxCascades];
+			float4 cascadeMinCornerAndSpacing[NumMaxCascades];
+		};
+
 		struct Output
 		{
 			RGTextureRef indirectLight = nullptr;
@@ -66,5 +74,7 @@ namespace Volt
 		RefPtr<RHI::Image> m_prevIndirectLight;
 	
 		glm::vec3 m_prevCameraPosition = 0.f;
+
+		IrradianceVolumeConstants m_irradianceVolumeConstants;
 	};
 }

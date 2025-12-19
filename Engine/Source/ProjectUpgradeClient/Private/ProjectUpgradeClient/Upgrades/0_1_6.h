@@ -70,7 +70,6 @@ namespace Volt
 		void ProcessAssetFile(std::filesystem::path inPath);
 		void MoveSceneFileAndEntities(std::filesystem::path inPath);
 
-
 		UpgradeStage m_currentStage;
 		//absolute paths
 		Vector<std::filesystem::path> m_filesToProcess;

@@ -33,7 +33,7 @@ namespace Volt
 		}
 	};
 
-	void AnimationSerializer::Serialize(ReadOnlyAssetMetadata metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
+	void AnimationSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<Animation> animation = asset.ConvertTo<Animation>();
 		ScopedAssetReferenceLock animationLock{ animation };
@@ -53,7 +53,7 @@ namespace Volt
 		streamWriter.WriteToDisk(filePath, true, compressedDataOffset);
 	}
 
-	bool AnimationSerializer::Deserialize(ReadOnlyAssetMetadata metadata, AssetReference<Asset> destinationAsset) const
+	bool AnimationSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filepath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 

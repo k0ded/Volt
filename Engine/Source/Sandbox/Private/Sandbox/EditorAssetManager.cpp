@@ -175,7 +175,13 @@ void EditorAssetManager::DeleteDirectory(const std::filesystem::path& directoryP
 		DeleteAsset(assetHandle);
 	}
 
-	FileSystem::MoveToRecycleBin(m_referencedAssetManager.GetAssetFilesystemPath(relativeDirectoryPath));
+	// The directory might have been deleted in the file system already, just make sure that it exists.
+	const std::filesystem::path absoluteDirectory = m_referencedAssetManager.GetAssetFilesystemPath(relativeDirectoryPath);
+	if (FileSystem::Exists(absoluteDirectory))
+	{
+		FileSystem::MoveToRecycleBin(absoluteDirectory);
+	}
+
 	VT_LOGC(Trace, LogEditorAssetSystem, "Deleted directory {}!", relativeDirectoryPath);
 }
 
