@@ -29,7 +29,7 @@ namespace IntegrationTests
 
 		void AddImageBarrier(uint32_t passIndex, RGResourceRef resource, RHI::BarrierStage srcStage, RHI::BarrierAccess srcAccess, RHI::ImageLayout srcLayout, RHI::BarrierStage dstStage, RHI::BarrierAccess dstAccess, RHI::ImageLayout dstLayout)
 		{
-			m_barriers[passIndex][resource].type = RHI::BarrierType::Image;
+			m_barriers[passIndex][resource] = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			m_barriers[passIndex][resource].imageBarrier().srcStage = srcStage;
 			m_barriers[passIndex][resource].imageBarrier().dstStage = dstStage;
 			m_barriers[passIndex][resource].imageBarrier().srcAccess = srcAccess;
@@ -46,7 +46,7 @@ namespace IntegrationTests
 
 		void AddBufferBarrier(uint32_t passIndex, RGResourceRef resource, RHI::BarrierStage srcStage, RHI::BarrierAccess srcAccess, RHI::BarrierStage dstStage, RHI::BarrierAccess dstAccess)
 		{
-			m_barriers[passIndex][resource].type = RHI::BarrierType::Buffer;
+			m_barriers[passIndex][resource] = RHI::ResourceBarrierInfo::InitializeAsBufferBarrier();
 			m_barriers[passIndex][resource].bufferBarrier().srcStage = srcStage;
 			m_barriers[passIndex][resource].bufferBarrier().dstStage = dstStage;
 			m_barriers[passIndex][resource].bufferBarrier().srcAccess = srcAccess;
@@ -62,7 +62,7 @@ namespace IntegrationTests
 		{
 			ASSERT_FALSE(m_barriers[passIndex].contains(BarrierTypeGlobal));
 
-			m_barriers[passIndex][BarrierTypeGlobal].type = RHI::BarrierType::Global;
+			m_barriers[passIndex][BarrierTypeGlobal] = RHI::ResourceBarrierInfo::InitializeAsGlobalBarrier();
 			m_barriers[passIndex][BarrierTypeGlobal].globalBarrier().srcStage = srcStage;
 			m_barriers[passIndex][BarrierTypeGlobal].globalBarrier().dstStage = dstStage;
 			m_barriers[passIndex][BarrierTypeGlobal].globalBarrier().srcAccess = srcAccess;

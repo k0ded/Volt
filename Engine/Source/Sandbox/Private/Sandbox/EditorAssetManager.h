@@ -83,7 +83,7 @@ inline bool EditorAssetManager::TryGetAssetAndCache(Volt::AssetHandle assetHandl
 	if (m_assetCache.TryGetAsset(assetHandle, asset))
 	{
 		outAsset = { asset.As<T>() };
-		return !asset->IsFlagSet(Volt::AssetFlag::Queued);
+		return true;
 	}
 
 	bool loaded = m_referencedAssetManager.TryGetAsset<T>(assetHandle, outAsset);

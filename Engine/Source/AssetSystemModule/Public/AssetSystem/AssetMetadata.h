@@ -25,22 +25,28 @@ namespace Volt
 		None = 0,
 		Missing = BIT(0),
 		Invalid = BIT(1),
-		Queued = BIT(2),
-		MemoryOnly = BIT(3),
-		Removed = BIT(4)
+		MemoryOnly = BIT(3)
 	};
 	VT_SETUP_ENUM_CLASS_OPERATORS(AssetFlag);
 
 	enum class AssetMetadataFlag : uint8_t
 	{
 		None = 0,
-		Loaded = BIT(0),
-		Queued = BIT(1),
+		Missing = BIT(0),
+		Invalid = BIT(1),
 		MemoryOnly = BIT(2),
-		Anonymous = BIT(3),
-		Removed = BIT(4)
+		Anonymous = BIT(3)
 	};
 	VT_SETUP_ENUM_CLASS_OPERATORS(AssetMetadataFlag);
+
+	enum class AssetLoadState : uint8_t
+	{
+		Unloaded,
+		Queued,
+		Loading,
+		Loaded,
+		Unloading
+	};
 
 	struct AssetMetadataArchiveVersion
 	{
@@ -191,6 +197,8 @@ namespace Volt
 			flags = other.flags.load();
 			filepath = other.filepath;
 			customData = other.customData;
+			m_loadState = other.m_loadState.load();
+			m_generation = other.m_generation.load();
 		}
 
 		AssetMetadata& operator=(const AssetMetadata& other)
@@ -200,6 +208,8 @@ namespace Volt
 			flags = other.flags.load();
 			filepath = other.filepath;
 			customData = other.customData;
+			m_loadState = other.m_loadState.load();
+			m_generation = other.m_generation.load();
 
 			return *this;
 		}
@@ -207,10 +217,10 @@ namespace Volt
 		VT_NODISCARD VT_INLINE bool IsFlagSet(AssetMetadataFlag flag) const;
 		VT_INLINE void SetFlag(AssetMetadataFlag flag, bool state);
 
-		VT_INLINE bool IsValid() const { return handle != 0 && !IsFlagSet(AssetMetadataFlag::Removed); }
+		VT_INLINE bool IsValid() const { return handle != 0; }
 		VT_INLINE bool HasFilepath() const { return !filepath.empty(); }
 		VT_INLINE bool IsMemoryAsset() const { return IsFlagSet(AssetMetadataFlag::MemoryOnly); }
-		VT_INLINE bool IsLoaded() const { return IsFlagSet(AssetMetadataFlag::Loaded); }
+		VT_INLINE bool IsLoaded() const { return m_loadState.load(std::memory_order::relaxed) == AssetLoadState::Loaded; }
 
 		template<typename CustomMetadataType>
 		VT_INLINE const CustomMetadataType& GetCustomData() const
@@ -267,6 +277,21 @@ namespace Volt
 		friend class ReadOnlyAssetMetadata;
 		friend class AssetManager;
 		friend class AssetRegistry;
+
+		VT_INLINE bool TryTransitionLoadState(AssetLoadState& expectedLoadState, AssetLoadState desiredLoadState)
+		{
+			const bool succeeded = m_loadState.compare_exchange_strong(expectedLoadState, desiredLoadState, std::memory_order::acq_rel);
+			return succeeded;
+		}
+
+		VT_INLINE uint64_t GetGeneration(std::memory_order memoryOrder = std::memory_order::relaxed)
+		{
+			return m_generation.load(memoryOrder);
+		}
+
+		std::atomic<AssetLoadState> m_loadState = AssetLoadState::Unloaded;
+		std::atomic<uint64_t> m_generation = 1;
+		std::atomic<uint64_t> m_publishedGeneration = 0;
 
 		std::shared_mutex m_assetMetadataMutex;
 	};

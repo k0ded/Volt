@@ -918,7 +918,8 @@ namespace Volt::RHI
 		}
 
 		const uint32_t numSubresources = static_cast<uint32_t>(subResources.size());
-		VT_ENSURE(UpdateSubresources(m_commandListData.commandList.Get(), d3d12Image, stagingAllocation->GetResourceHandle<ID3D12Resource*>(), 0, 0, numSubresources, subResources.data()) > 0);
+		VT_MAYBE_UNUSED const uint64_t result = UpdateSubresources(m_commandListData.commandList.Get(), d3d12Image, stagingAllocation->GetResourceHandle<ID3D12Resource*>(), 0, 0, numSubresources, subResources.data());
+		VT_ENSURE(result > 0);
 	}
 
 	const QueueType D3D12CommandBuffer::GetQueueType() const

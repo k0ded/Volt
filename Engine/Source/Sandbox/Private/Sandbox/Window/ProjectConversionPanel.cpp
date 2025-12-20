@@ -1029,7 +1029,7 @@ AssetReference<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Proj
 		// Verify
 		if (prefabEntity.HasComponent<PrefabComponent>())
 		{
-			const PrefabComponent& prefabComponent = prefabEntity.GetComponent<PrefabComponent>();
+			VT_MAYBE_UNUSED const PrefabComponent& prefabComponent = prefabEntity.GetComponent<PrefabComponent>();
 			VT_ENSURE(prefabComponent.prefabEntity != EntityID::Null());
 			VT_ENSURE(prefabComponent.prefabAsset != Asset::Null());
 		}

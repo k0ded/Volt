@@ -345,7 +345,7 @@ namespace Volt
 	Entity Scene::CreateEntityWithIDForExistingDescription(const EntityID& id, Volt::AssetHandle existingEntityDescHandle)
 	{
 		ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(existingEntityDescHandle);
-		const EntityDescCustomMetadata& customMeta = assetMetadata->GetCustomData<EntityDescCustomMetadata>();
+		VT_MAYBE_UNUSED const EntityDescCustomMetadata& customMeta = assetMetadata->GetCustomData<EntityDescCustomMetadata>();
 
 		VT_ENSURE(customMeta.sceneHandle == this->GetAssetHandle());
 		VT_ENSURE(customMeta.entityID == id);
@@ -500,8 +500,7 @@ namespace Volt
 				auto ent = newScene->CreateEntity("Cube");
 
 				auto& meshComp = ent.AddComponent<MeshComponent>();
-				meshComp.handle = g_assetManager->GetAssetHandleFromFilepath("Engine/Meshes/Primitives/SM_Cube.vtasset");
-				MeshComponent::OnMemberChanged(MeshComponent::MeshEntity(ent));
+				meshComp.SetMesh(g_assetManager->GetAssetHandleFromFilepath("Engine/Meshes/Primitives/SM_Cube.vtasset"), ent.GetID());
 			}
 
 			// Light

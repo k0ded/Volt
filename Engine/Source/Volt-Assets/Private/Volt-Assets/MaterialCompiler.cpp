@@ -101,11 +101,13 @@ namespace Volt
 			std::filesystem::create_directories(outShaderPath.parent_path());
 		}
 
-		std::ofstream output(outShaderPath);
-		VT_ASSERT_MSG(output.is_open(), "Could not open file!");
+		{
+			std::ofstream output(outShaderPath);
+			VT_ASSERT_MSG(output.is_open(), "Could not open file!");
 
-		output.write(shaderString.c_str(), shaderString.size());
-		output.close();
+			output.write(shaderString.c_str(), shaderString.size());
+			output.close();
+		}
 
 		// Add textures
 		const Vector<Mosaic::MosaicShaderWriter::TextureDeclaration>& textureDeclarations = compilationResult.GetTextureDeclarations();

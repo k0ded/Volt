@@ -237,11 +237,6 @@ RefPtr<Volt::Asset> EditorAssetCache::GetAsset(Volt::AssetHandle assetHandle)
 	uint64_t hashIndex;
 	if (m_hashTable.Get(assetHandle, hashIndex))
 	{
-		if (m_cache[hashIndex]->IsFlagSet(Volt::AssetFlag::Removed))
-		{
-			return nullptr;
-		}
-
 		return m_cache[hashIndex];
 	}
 
@@ -254,11 +249,6 @@ bool EditorAssetCache::TryGetAsset(Volt::AssetHandle assetHandle, RefPtr<Volt::A
 	bool found = m_hashTable.Get(assetHandle, hashIndex);
 	if (found)
 	{
-		if (m_cache[hashIndex]->IsFlagSet(Volt::AssetFlag::Removed))
-		{
-			return false;
-		}
-
 		if (m_cache[hashIndex]->GetRefCount() > 0)
 		{
 			outAsset = m_cache[hashIndex];

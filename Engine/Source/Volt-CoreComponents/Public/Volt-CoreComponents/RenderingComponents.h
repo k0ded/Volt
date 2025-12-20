@@ -29,6 +29,8 @@ namespace Volt
 
 		[[nodiscard]] inline const AssetHandle& GetHandle() const { return handle; }
 
+		VTCC_API void SetMesh(AssetHandle meshHandle, EntityID owningEntityId);
+
 		static void ReflectType(TypeDesc<MeshComponent>& reflect)
 		{
 			reflect.SetGUID("{45D008BE-65C9-4D6F-A0C6-377F7B384E47}"_guid);
@@ -39,19 +41,22 @@ namespace Volt
 			reflect.SetOnInitializeCallback(&MeshComponent::OnIntitialize);
 			reflect.SetOnDestroyCallback(&MeshComponent::OnDestroy);
 			reflect.SetOnTransformChangedCallback(&MeshComponent::OnTransformChanged);
-		}
-
-		REGISTER_COMPONENT(MeshComponent);
+		} 
 
 		VTCC_API static void OnMemberChanged(MeshEntity entity);
+
+		REGISTER_COMPONENT(MeshComponent);
 
 	private:
 		VTCC_API static void OnDestroy(MeshEntity entity);
 		VTCC_API static void OnIntitialize(MeshEntity entity);
 		VTCC_API static void OnTransformChanged(MeshEntity entity);
 
+		VTCC_API void UpdateMesh();
+
 		Ref<ScenePrimitiveData> m_scenePrimitiveData;
 		StreamingInstanceID m_streamingInstanceID;
+		AssetHandle m_prevHandle = Asset::Null();
 	};
 
 	struct CameraComponent

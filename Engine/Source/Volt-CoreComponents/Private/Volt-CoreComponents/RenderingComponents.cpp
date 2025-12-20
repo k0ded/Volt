@@ -37,6 +37,8 @@ namespace Volt
 	{
 		auto& meshComponent = entity.GetComponent<MeshComponent>();
 
+		meshComponent.m_prevHandle = meshComponent.handle;
+
 		Ref<TempAnimator> animator;
 		if (entity.HasComponent<AnimationPlayerComponent>())
 		{
@@ -55,13 +57,34 @@ namespace Volt
 		meshComponent.m_streamingInstanceID = StreamingManager::Get().AddInstance(CreateStreamingInstanceDescription(meshComponent, entity.GetID(), meshComponent.m_scenePrimitiveData));
 	}
 
+	void MeshComponent::SetMesh(AssetHandle meshHandle, EntityID owningEntityId)
+	{
+		if (meshHandle == handle)
+		{
+			return;
+		}
+
+		handle = meshHandle;
+		m_prevHandle = handle;
+
+		UpdateMesh();
+		StreamingManager::Get().InvalidateInstance(m_streamingInstanceID, CreateStreamingInstanceDescription(*this, owningEntityId, m_scenePrimitiveData));
+	}
+
 	void MeshComponent::OnMemberChanged(MeshEntity entity)
 	{
 		auto& component = entity.GetComponent<MeshComponent>();
 
 		if (component.handle == Asset::Null())
 		{
+			component.materials.clear();
 			return;
+		}
+
+		if (component.handle != component.m_prevHandle)
+		{
+			component.m_prevHandle = component.handle;
+			component.UpdateMesh();
 		}
 
 		StreamingManager::Get().InvalidateInstance(component.m_streamingInstanceID, CreateStreamingInstanceDescription(component, entity.GetID(), component.m_scenePrimitiveData));
@@ -71,6 +94,19 @@ namespace Volt
 	{
 		auto& meshComponent = entity.GetComponent<MeshComponent>();
 		meshComponent.m_scenePrimitiveData->Invalidate();
+	}
+
+	void MeshComponent::UpdateMesh()
+	{
+		// When changing mesh we need to setup the correct materials for it.
+		materials.clear();
+
+		ReadOnlyAssetMetadata meshMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+		if (meshMetadata.IsValid())
+		{
+			const MeshCustomMetadata& customMeshMetadata = meshMetadata->GetCustomData<MeshCustomMetadata>();
+			materials = customMeshMetadata.materials;
+		}
 	}
 
 	void CameraComponent::OnInitialize(CameraEntity entity)

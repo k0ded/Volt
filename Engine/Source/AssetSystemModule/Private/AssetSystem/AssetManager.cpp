@@ -82,6 +82,7 @@ namespace Volt
 		}
 
 		RefPtr<Asset> asset;
+#if 0
 		if (m_assetCache.TryGetAsset(assetHandle, asset))
 		{
 			ScopedAssetLock assetLock(asset);
@@ -123,18 +124,28 @@ namespace Volt
 		{
 			VT_LOGC(Warning, LogAssetSystem, "Tried to reload asset with handle '{}', but it is not loaded!", assetHandle);
 		}
+#endif
 	}
 
 	void AssetManager::SaveAsset(AssetHandle assetHandle)
 	{
-		RefPtr<Asset> asset;
-		if (m_assetCache.TryGetAsset(assetHandle, asset))
+		AssetMetadata* metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+
+		if (metadata != nullptr)
 		{
-			SaveAsset(AssetReference<Asset>(asset));
+			RefPtr<Asset> asset = TryGetOrTryWaitForPublishedAsset(assetHandle);
+			if (asset)
+			{
+				SaveAsset(AssetReference<Asset>(asset));
+			}
+			else
+			{
+				VT_LOGC(Warning, LogAssetSystem, "Tried to save asset with handle '{}', but it is not loaded!", assetHandle);
+			}
 		}
 		else
 		{
-			VT_LOGC(Warning, LogAssetSystem, "Tried to save asset with handle '{}', but it is not loaded!", assetHandle);
+			VT_LOGC(Warning, LogAssetSystem, "Unable to save asset with handle '{}', is is not valid!", assetHandle);
 		}
 	}
 
@@ -190,18 +201,11 @@ namespace Volt
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 		if (assetMetadata)
 		{
-			assetMetadata->SetFlag(AssetMetadataFlag::Removed, true);
-		}
-
-		RefPtr<Asset> asset;
-		if (m_assetCache.TryGetAsset(assetHandle, asset))
-		{
-			asset->SetFlag(AssetFlag::Removed, true);
-
 			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Deleted);
 			QueueAssetChanged(assetHandle, AssetChangedState::Deleted);
 
 			m_dependencyGraph->RemoveAssetFromGraph(assetHandle);
+			m_assetRegistry.RemoveAssetMetadata(assetHandle);
 		}
 	}
 
@@ -224,18 +228,14 @@ namespace Volt
 			return false;
 		}
 
-		if (assetMetadata->IsLoaded())
+		RefPtr<Asset> tempAsset = TryGetOrTryWaitForPublishedAsset(assetHandle);
+		if (!tempAsset)
 		{
-			// Try to get the asset from the asset cache.
-			RefPtr<Asset> tempAsset;
-			if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
-			{
-				outAsset = { tempAsset };
-				return true;
-			}
+			return false;
 		}
 
-		return false;
+		outAsset = tempAsset;
+		return true;
 	}
 
 	bool AssetManager::TryGetTypelessAssetImmediately(AssetHandle assetHandle, AssetReference<Asset>& outAsset)
@@ -249,35 +249,17 @@ namespace Volt
 			return false;
 		}
 
-		// Try to get the asset from the asset cache.
-		RefPtr<Asset> tempAsset;
-		if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
+		bool wasCreated = false;
+		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Loading, wasCreated);
+
+		if (wasCreated)
 		{
-			outAsset = { tempAsset };
-			return true;
+			// The asset was created by this thread, let's load it.
+			LoadAsset(assetHandle, newAsset, AssetLoadState::Loading);
 		}
 
-		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(assetHandle);
-		if (!assetMetadata->IsValid())
-		{
-			return false;
-		}
-
-		// Asset wasn't in the cache, create and load it.
-		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(assetMetadata->type);
-		// Setup a link back to the asset manager.
-		newAsset->m_referencedAssetManager = this;
-		newAsset->m_assetMutex = new std::shared_mutex();
-
-		AssetReference resultReference{ newAsset };
-
-		newAsset->AssignAssetHandle(assetMetadata->handle);
-		newAsset->SetName(assetMetadata->filepath.stem().string());
-
-		LoadAsset(assetHandle, newAsset);
-
-		outAsset = resultReference;
-		return true;
+		outAsset = newAsset;
+		return newAsset != nullptr;
 	}
 
 	bool AssetManager::TryGetTypelessAsset(AssetHandle assetHandle, AssetReference<Asset>& outAsset)
@@ -291,34 +273,17 @@ namespace Volt
 			return false;
 		}
 
-		// Try to get the asset from the asset cache.
-		RefPtr<Asset> tempAsset;
-		if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
+		bool wasCreated = false;
+		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Queued, wasCreated);
+
+		if (wasCreated)
 		{
-			outAsset = tempAsset;
-			return true;
+			// The asset was created by this thread, let's queue it for load.
+			QueueAssetForLoading(assetHandle, newAsset, AssetLoadState::Queued);
 		}
 
-		ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-		if (!metadata->IsValid())
-		{
-			return false;
-		}
-
-		// Asset wasn't in the cache, create and load it.
-		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(metadata->type);
-		// Setup a link back to the asset manager.
-		newAsset->m_referencedAssetManager = this;
-		newAsset->m_assetMutex = new std::shared_mutex();
-
-		AssetReference resultReference{ newAsset };
-		newAsset->AssignAssetHandle(metadata->handle);
-		newAsset->SetName(metadata->filepath.stem().string());
-
-		QueueAssetForLoading(assetHandle, newAsset);
-
-		outAsset = resultReference;
-		return false;
+		outAsset = newAsset;
+		return newAsset != nullptr;
 	}
 
 	AssetReference<Asset> AssetManager::CreateAssetTypeless(std::string_view assetName, AssetType assetType)
@@ -329,7 +294,7 @@ namespace Volt
 		metadata.filepath = ""; // Assets that are not saved will not have a file path
 		metadata.handle = newAsset->GetAssetHandle();
 		metadata.type = assetType;
-		metadata.SetFlag(AssetMetadataFlag::Loaded, true);
+		metadata.m_loadState = AssetLoadState::Loaded;
 		metadata.SetFlag(AssetMetadataFlag::MemoryOnly, false);
 		metadata.SetFlag(AssetMetadataFlag::Anonymous, false);
 
@@ -343,10 +308,10 @@ namespace Volt
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;
 		newAsset->m_assetMutex = new std::shared_mutex();
+		newAsset->m_generation = metadata.m_generation;
 
 		m_assetRegistry.InsertAssetMetadata(std::move(metadata));
-
-		m_assetCache.AddAsset(newAsset);
+		AddAssetToCache(newAsset);
 
 		m_dependencyGraph->AddAssetToGraph(newAsset->GetAssetHandle());
 		QueueAssetChanged(newAsset->GetAssetHandle(), AssetChangedState::Loaded);
@@ -540,21 +505,19 @@ namespace Volt
 		return m_assetRegistry.GetMetadataLoadingCounter();
 	}
 
-	void AssetManager::LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset)
+	void AssetManager::LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState)
 	{
 		ScopedTimer timer{};
 
-		m_dependencyGraph->AddAssetToGraph(assetHandle);
-
-		if (!DeserializeAsset(asset))
-		{
-			return;
-		}
-
-		m_assetCache.AddAsset(asset);
+		DeserializeAsset(asset);
 
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-		assetMetadata->SetFlag(AssetMetadataFlag::Loaded, true);
+		if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Loaded))
+		{
+			// We should never enter this point, since that means that another thread has
+			// changed the state while we were loading.
+			VT_ENSURE(false);
+		}
 
 		QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
 		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
@@ -562,34 +525,23 @@ namespace Volt
 		VT_LOGC(Trace, LogAssetSystem, "Loaded asset '{}' (Handle: '{}') in {} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
 	}
 
-	void AssetManager::QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset)
+	void AssetManager::QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState)
 	{
-		asset->SetFlag(AssetFlag::Queued, true);
-
-		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-		assetMetadata->SetFlag(AssetMetadataFlag::Queued, true);
-
-		m_dependencyGraph->AddAssetToGraph(assetHandle);
-		m_assetCache.AddAsset(asset);
-
-		JobRef loadJob = JobSystem::CreateJob("Load Asset", ExecutionPriority::Latent, [this, asset, assetHandle]()
+		JobRef loadJob = JobSystem::CreateJob("Load Asset", ExecutionPriority::Latent, [this, asset, assetHandle, expectedLoadState]()
 		{
 			ScopedTimer timer{};
 
-			if (!DeserializeAsset(asset))
-			{
-				AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-				assetMetadata->SetFlag(AssetMetadataFlag::Queued, false);
-				asset->SetFlag(AssetFlag::Queued, false);
-				return;
-			}
-
-			asset->SetFlag(AssetFlag::Queued, false);
-
+			DeserializeAsset(asset);
 
 			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-			assetMetadata->SetFlag(AssetMetadataFlag::Loaded, true);
-			assetMetadata->SetFlag(AssetMetadataFlag::Queued, false);
+
+			AssetLoadState tempExpectedLoadState = expectedLoadState;
+			if (!assetMetadata->TryTransitionLoadState(tempExpectedLoadState, AssetLoadState::Loaded))
+			{
+				// We should never enter this point, since that means that another thread has
+				// changed the state while we were loading.
+				VT_ENSURE(false);
+			}
 
 			QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
 			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
@@ -602,6 +554,84 @@ namespace Volt
 		VT_LOGC(Trace, LogAssetSystem, "Queued asset '{}' (Handle: '{}') for loading!", asset->GetAssetName(), asset->GetAssetHandle());
 	}
 
+	RefPtr<Asset> AssetManager::TryCreateAsset(AssetHandle assetHandle, AssetLoadState dstLoadState, bool& wasCreated)
+	{
+		AssetMetadata* metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+
+		uint64_t currentGeneration = metadata->GetGeneration(std::memory_order::acquire);
+
+		AssetLoadState expectedLoadState = AssetLoadState::Unloaded;
+		if (!metadata->TryTransitionLoadState(expectedLoadState, dstLoadState))
+		{
+			// The asset was not in the unloaded state.
+			wasCreated = false;
+			return TryGetOrTryWaitForPublishedAsset(assetHandle);
+		}
+
+		// The asset should now be created and loaded.
+
+		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(metadata->type);
+		// Setup a link back to the asset manager.
+		newAsset->m_referencedAssetManager = this;
+		newAsset->m_assetMutex = new std::shared_mutex();
+		newAsset->m_generation = currentGeneration;
+		newAsset->AssignAssetHandle(metadata->handle);
+		newAsset->SetName(metadata->filepath.stem().string());
+
+		AddAssetToCache(newAsset);
+		m_dependencyGraph->AddAssetToGraph(assetHandle);
+
+		wasCreated = true;
+
+		return newAsset;
+	}
+
+	void AssetManager::AddAssetToCache(RefPtr<Asset> asset)
+	{
+		if (!m_assetCache.TryPublish(asset->GetAssetHandle(), asset, asset->m_generation))
+		{
+			// Should always succeed.
+			VT_ENSURE(false);
+		}
+
+		AssetMetadata* metadata = m_assetRegistry.GetAssetMetadata(asset->GetAssetHandle());
+		metadata->m_publishedGeneration.store(asset->m_generation, std::memory_order::release);
+		metadata->m_publishedGeneration.notify_all();
+	}
+
+	RefPtr<Asset> AssetManager::TryGetOrTryWaitForPublishedAsset(AssetHandle assetHandle)
+	{
+		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+		uint64_t currentGeneration = assetMetadata->GetGeneration(std::memory_order::acquire);
+
+		RefPtr<Asset> resultAsset;
+		if (m_assetCache.TryGet(assetHandle, currentGeneration, resultAsset))
+		{
+			return resultAsset;
+		}
+
+		while (true)
+		{
+			// The asset was/is unloaded, stop.
+			if (assetMetadata->m_loadState.load(std::memory_order::acquire) == AssetLoadState::Unloaded)
+			{
+				return nullptr;
+			}
+
+			uint64_t publishedGeneration = assetMetadata->m_publishedGeneration.load(std::memory_order::acquire);
+
+			if (publishedGeneration >= currentGeneration)
+			{
+				if (m_assetCache.TryGet(assetHandle, currentGeneration, resultAsset))
+				{
+					return resultAsset;
+				}
+			}
+
+			assetMetadata->m_publishedGeneration.wait(publishedGeneration, std::memory_order::relaxed);
+		}
+	}
+
 	void AssetManager::QueueAssetForDestruction(AssetRefCounter* assetRefCounter)
 	{
 		AssetUnloadData unloadData;
@@ -609,15 +639,26 @@ namespace Volt
 
 		// Set the asset to not loaded and remove it from the asset cache.
 		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(reinterpret_cast<Asset*>(assetRefCounter)->GetAssetHandle());
-		if (assetMetadata)
+
+		AssetLoadState expectedLoadState = AssetLoadState::Loaded;
+		if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloading))
 		{
-			// The asset might not be loaded, it might have failed to load.
-			// In which case the asset isn't cached.
-			if (assetMetadata->IsFlagSet(AssetMetadataFlag::Loaded) || assetMetadata->IsFlagSet(AssetMetadataFlag::Queued))
-			{
-				assetMetadata->SetFlag(AssetMetadataFlag::Loaded, false);
-				m_assetCache.RemoveAsset(assetMetadata->handle);
-			}
+			VT_ENSURE(false);
+		}
+
+		uint64_t oldGeneration = assetMetadata->m_generation.fetch_add(1, std::memory_order::acq_rel);
+
+		if (m_assetCache.TryRemove(assetMetadata->handle, oldGeneration))
+		{
+		}
+
+		m_dependencyGraph->OnAssetChanged(assetMetadata->handle, AssetChangedState::Unloaded);
+		QueueAssetChanged(assetMetadata->handle, AssetChangedState::Unloaded);
+
+		expectedLoadState = AssetLoadState::Unloading;
+		if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloaded))
+		{
+			VT_ENSURE(false);
 		}
 
 		m_assetDestructionQueue.Emplace(assetRefCounter);
@@ -673,8 +714,6 @@ namespace Volt
 			m_assetAllocator.FreeAsset(assetType, asset);
 		}
 
-		m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Unloaded);
-		QueueAssetChanged(assetHandle, AssetChangedState::Unloaded);
 		VT_LOGC(Trace, LogAssetSystem, "Asset '{}' (Handle: '{}', Type: '{}') was unloaded!", nameCopy, assetHandle, assetType->GetName());
 	}
 

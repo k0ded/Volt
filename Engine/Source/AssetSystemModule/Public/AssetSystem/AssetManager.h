@@ -161,8 +161,13 @@ namespace Volt
 
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args);
 
-		VTAS_API void LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset);
-		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset);
+		VTAS_API void LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState);
+		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState);
+
+		VTAS_API RefPtr<Asset> TryCreateAsset(AssetHandle assetHandle, AssetLoadState dstLoadState, bool& wasCreated);
+
+		VTAS_API void AddAssetToCache(RefPtr<Asset> asset);
+		RefPtr<Asset> TryGetOrTryWaitForPublishedAsset(AssetHandle assetHandle);
 
 		void QueueAssetForDestruction(AssetRefCounter* assetRefCounter);
 		void UnloadAndFreeAsset(AssetUnloadData& assetUnloadData);
@@ -209,48 +214,20 @@ namespace Volt
 			return {};
 		}
 
-		// Try to get the asset from the asset cache.
-		RefPtr<Asset> tempAsset;
-		if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
+		bool wasCreated = false;
+		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Loading, wasCreated);
+
+		if (wasCreated)
 		{
-			VT_ENSURE(T::GetStaticType() == tempAsset->GetType());
-			return AssetReference<T>(tempAsset.As<T>());
+			// The asset was created by this thread, let's load it.
+			LoadAsset(assetHandle, newAsset, AssetLoadState::Loading);
 		}
 
-		// Asset wasn't in the cache, create and load it.
-		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
-		// Setup a link back to the asset manager.
-		newAsset->m_referencedAssetManager = this;
-		newAsset->m_assetMutex = new std::shared_mutex();
-
-		AssetReference resultReference{ newAsset };
-
-		{
-			ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-
-			if (!metadata->HasFilepath())
-			{
-				VT_LOGC(Error, LogAssetSystem, 
-					"Failed to load asset (Handle: '{}', Type: '{}')\n"
-					"		Error: File does not have an assigned filepath!.",
-					metadata->handle,
-					metadata->type->GetName());
-			}
-
-			// All metadatas should be valid.
-			VT_ENSURE(metadata->IsValid());
-
-			newAsset->AssignAssetHandle(metadata->handle);
-			newAsset->SetName(metadata->filepath.stem().string());
-		}
-
-		LoadAsset(assetHandle, newAsset);
-
-		return resultReference;
+		return newAsset.As<T>();
 	}
 
-	template<VoltAssetType T> AssetReference<T>
-	AssetManager::GetAssetImmediately(const std::filesystem::path& assetFilepath)
+	template<VoltAssetType T> 
+	AssetReference<T> AssetManager::GetAssetImmediately(const std::filesystem::path& assetFilepath)
 	{
 		AssetHandle assetHandle = GetAssetHandleFromFilepath(assetFilepath);
 		if (assetHandle != Asset::Null())
@@ -298,39 +275,17 @@ namespace Volt
 			return false;
 		}
 
-		// Try to get the asset from the asset cache.
-		RefPtr<Asset> tempAsset;
-		if (m_assetCache.TryGetAsset(assetHandle, tempAsset))
-		{
-			VT_ENSURE(T::GetStaticType() == tempAsset->GetType());
-			outAsset = AssetReference<T>(tempAsset.As<T>());
+		bool wasCreated = false;
+		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Queued, wasCreated);
 
-			// Make sure the asset is loaded
-			return !tempAsset->IsFlagSet(AssetFlag::Queued);
+		if (wasCreated)
+		{
+			// The asset was created by this thread, let's queue it for load.
+			QueueAssetForLoading(assetHandle, newAsset, AssetLoadState::Queued);
 		}
 
-		// Asset wasn't in the cache, create and load it.
-		RefPtr<T> newAsset = m_assetAllocator.AllocateAsset<T>();
-		// Setup a link back to the asset manager.
-		newAsset->m_referencedAssetManager = this;
-		newAsset->m_assetMutex = new std::shared_mutex();
-
-		AssetReference resultReference{ newAsset };
-
-		{
-			ReadOnlyAssetMetadata metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
-
-			// All metadatas should be valid.
-			VT_ENSURE(metadata->IsValid());
-
-			newAsset->AssignAssetHandle(metadata->handle);
-			newAsset->SetName(metadata->filepath.stem().string());
-		}
-
-		QueueAssetForLoading(assetHandle, newAsset);
-
-		outAsset = resultReference;
-		return false;
+		outAsset = newAsset.As<T>();
+		return newAsset != nullptr;
 	}
 
 	template<VoltAssetType T>
@@ -417,7 +372,7 @@ namespace Volt
 		metadata.filepath = ""; // Assets that are not saved will not have a file path
 		metadata.handle = assetHandle;
 		metadata.type = T::GetStaticType();
-		metadata.SetFlag(AssetMetadataFlag::Loaded, true);
+		metadata.m_loadState = AssetLoadState::Loaded;
 		metadata.SetFlag(AssetMetadataFlag::MemoryOnly, isMemoryAsset);
 		metadata.SetFlag(AssetMetadataFlag::Anonymous, isAnonymous);
 
@@ -431,10 +386,10 @@ namespace Volt
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;
 		newAsset->m_assetMutex = new std::shared_mutex();
+		newAsset->m_generation = metadata.m_generation;
 
 		m_assetRegistry.InsertAssetMetadata(std::move(metadata));
-
-		m_assetCache.AddAsset(newAsset);
+		AddAssetToCache(newAsset),
 
 		m_dependencyGraph->AddAssetToGraph(newAsset->GetAssetHandle());
 		QueueAssetChanged(newAsset->GetAssetHandle(), AssetChangedState::Loaded);

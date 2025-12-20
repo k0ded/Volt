@@ -5,12 +5,19 @@
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
+#include <CoreUtilities/Math/Hash.h>
+
 namespace Volt
 {
 	static ConsoleVariable<int32_t> s_assetCacheLog(
 		"a.AssetCache.Log",
 		0,
 		"Whether or not to log asset cache interactions.");
+
+	static size_t GetAssetHash(AssetHandle assetHandle, uint64_t generation)
+	{
+		return Math::HashCombine(assetHandle, std::hash<uint64_t>()(generation));
+	}
 
 	AssetCache::AssetCache()
 	{
@@ -27,44 +34,52 @@ namespace Volt
 		m_cache.clear();
 	}
 
-	void AssetCache::AddAsset(RefPtr<Asset> asset)
+	bool AssetCache::TryPublish(AssetHandle assetHandle, RefPtr<Asset> asset, uint64_t generation)
 	{
-		VT_ENSURE(asset->GetAssetHandle() != Asset::Null());
+		const size_t hash = GetAssetHash(assetHandle, generation);
 
 		uint64_t hashIndex;
-		if (m_hashTable.Insert(asset->GetAssetHandle(), hashIndex))
+		const bool inserted = m_hashTable.Insert(hash, hashIndex);
+		if (inserted)
 		{
 			m_cache[hashIndex] = asset.GetRaw();
 
 			if (s_assetCacheLog.GetValue())
 			{
 				VT_LOGC(Trace, LogAssetSystem,
-					"Added asset '{}' (Handle: '{}', Type: '{}') to cache",
+					"Added asset '{}' (Handle: '{}', Type: '{}', Generation: '{}') to cache",
 					asset->GetAssetName(),
 					asset->GetAssetHandle(),
-					asset->GetType()->GetName());
+					asset->GetType()->GetName(),
+					generation);
 			}
 		}
 		else
 		{
-			VT_LOGC(Error, LogAssetSystem, "Unable to cache asset with handle '{}'", asset->GetAssetHandle());
+			VT_LOGC(Error, LogAssetSystem, "Unable to cache asset with handle '{}'", assetHandle);
 		}
+
+		return inserted;
 	}
 
-	void AssetCache::RemoveAsset(AssetHandle assetHandle)
+	bool AssetCache::TryRemove(AssetHandle assetHandle, uint64_t generation)
 	{
 		VT_ENSURE(assetHandle != Asset::Null());
 
+		const size_t hash = GetAssetHash(assetHandle, generation);
+
 		uint64_t hashIndex;
-		if (m_hashTable.GetAndRemove(assetHandle, hashIndex))
+		const bool found = m_hashTable.GetAndRemove(hash, hashIndex);
+		if (found)
 		{
 			if (s_assetCacheLog.GetValue())
 			{
 				VT_LOGC(Trace, LogAssetSystem,
-					"Removed asset '{}' (Handle: '{}', Type: '{}') from cache",
+					"Removed asset '{}' (Handle: '{}', Type: '{}', Generation: '{}') from cache",
 					m_cache[hashIndex]->GetAssetName(),
 					m_cache[hashIndex]->GetAssetHandle(),
-					m_cache[hashIndex]->GetType()->GetName());
+					m_cache[hashIndex]->GetType()->GetName(),
+					generation);
 			}
 
 			m_cache[hashIndex] = nullptr;
@@ -73,40 +88,29 @@ namespace Volt
 		{
 			VT_LOGC(Warning, LogAssetSystem, "Trying to remove asset with handle '{}' from the asset cache, but it has not been cached!", assetHandle);
 		}
+
+		return found;
 	}
 
-	RefPtr<Asset> AssetCache::GetAsset(AssetHandle assetHandle)
+	bool AssetCache::TryGet(AssetHandle assetHandle, uint64_t generation, RefPtr<Asset>& outAsset)
 	{
-		VT_ENSURE(assetHandle != Asset::Null());
+		const size_t hash = GetAssetHash(assetHandle, generation);
 
 		uint64_t hashIndex;
-		if (m_hashTable.Get(assetHandle, hashIndex))
-		{
-			if (m_cache[hashIndex]->IsFlagSet(AssetFlag::Removed))
-			{
-				return nullptr;
-			}
-
-			return RefPtr<Asset>::Attach(m_cache[hashIndex]);
-		}
-
-		return nullptr;
-	}
-
-	bool AssetCache::TryGetAsset(AssetHandle assetHandle, RefPtr<Asset>& outAsset)
-	{
-		uint64_t hashIndex;
-		bool found = m_hashTable.Get(assetHandle, hashIndex);
+		bool found = m_hashTable.Get(hash, hashIndex);
 		if (found)
 		{
-			if (m_cache[hashIndex]->IsFlagSet(AssetFlag::Removed))
+			Asset* assetPtr = m_cache[hashIndex];
+
+			// Make sure the asset has the correct generation (should be correct, since it is baked into the hash)
+			if (assetPtr->m_generation < generation)
 			{
 				return false;
 			}
-
-			if (m_cache[hashIndex]->GetRefCount() > 0)
+	
+			if (assetPtr->GetRefCount() > 0)
 			{
-				outAsset = RefPtr<Asset>::Attach(m_cache[hashIndex]);
+				outAsset = RefPtr<Asset>::Attach(assetPtr);
 			}
 			else
 			{

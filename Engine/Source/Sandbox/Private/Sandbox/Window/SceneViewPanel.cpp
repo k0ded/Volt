@@ -1078,8 +1078,7 @@ void SceneViewPanel::DrawMainRightClickPopup()
 					{
 						auto ent = m_scene->CreateEntity();
 						auto& meshComp = ent.AddComponent<Volt::MeshComponent>();
-						meshComp.handle = g_assetManager->GetAssetHandleFromFilepath(primitivePath);
-						Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(ent));
+						meshComp.SetMesh(g_assetManager->GetAssetHandleFromFilepath(primitivePath), ent.GetID());
 
 						ent.SetTag("New " + primitiveName);
 

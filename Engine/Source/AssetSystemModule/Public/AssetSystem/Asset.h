@@ -121,7 +121,7 @@ namespace Volt
 		VT_INLINE bool operator!=(const Asset& other) { return m_handle != other.m_handle; }
 
 		VT_NODISCARD VT_INLINE static const AssetHandle Null() { return AssetHandle(0); }
-		VT_NODISCARD VT_INLINE bool IsValid() const { return (!IsFlagSet(AssetFlag::Invalid) && !IsFlagSet(AssetFlag::Missing) && !IsFlagSet(AssetFlag::Queued)); }
+		VT_NODISCARD VT_INLINE bool IsValid() const { return (!IsFlagSet(AssetFlag::Invalid) && !IsFlagSet(AssetFlag::Missing)); }
 
 	protected:
 		Asset() noexcept = default;
@@ -129,11 +129,13 @@ namespace Volt
 	private:
 		friend class AssetAllocator;
 		friend class AssetManager;
+		friend class AssetCache;
 
 		VT_INLINE void AssignAssetHandle(AssetHandle assetHandle);
 
 		std::string m_name;
 		AssetHandle m_handle = Null();
+		uint64_t m_generation;
 		std::atomic_uint8_t m_assetFlags = static_cast<uint8_t>(AssetFlag::None);
 	};
 

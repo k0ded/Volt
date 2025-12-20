@@ -15,11 +15,9 @@ namespace Volt
 
 		VTAS_API void Clear();
 
-		VTAS_API void AddAsset(RefPtr<Asset> asset);
-		VTAS_API void RemoveAsset(AssetHandle assetHandle);
-
-		VTAS_API RefPtr<Asset> GetAsset(AssetHandle assetHandle);
-		VTAS_API bool TryGetAsset(AssetHandle assetHandle, RefPtr<Asset>& outAsset);
+		VTAS_API bool TryPublish(AssetHandle assetHandle, RefPtr<Asset> asset, uint64_t generation);
+		VTAS_API bool TryRemove(AssetHandle assetHandle, uint64_t generation);
+		VTAS_API bool TryGet(AssetHandle assetHandle, uint64_t generation, RefPtr<Asset>& outAsset);
 
 	private:
 		void Initialize();

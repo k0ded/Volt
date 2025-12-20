@@ -36,7 +36,6 @@ namespace Volt
 		VT_INLINE bool IsValid() const { return handle != 0 && !IsFlagSet(AssetMetadataFlag::Removed); }
 		VT_INLINE bool HasFilepath() const { return !filepath.empty(); }
 		VT_INLINE bool IsMemoryAsset() const { return IsFlagSet(AssetMetadataFlag::MemoryOnly); }
-		VT_INLINE bool IsLoaded() const { return IsFlagSet(AssetMetadataFlag::Loaded); }
 
 		template<typename CustomMetadataType>
 		VT_INLINE const CustomMetadataType& GetCustomData() const

@@ -163,7 +163,11 @@ namespace Volt
 
 		if (!m_assetReferenceFromAssetHandle.contains(assetHandle))
 		{
-			g_assetManager->TryGetAsset(assetHandle, m_assetReferenceFromAssetHandle[assetHandle].asset);
+			AssetReference<T> asset;
+			g_assetManager->TryGetAsset(assetHandle, asset);
+			VT_ENSURE(asset.IsValid());
+
+			m_assetReferenceFromAssetHandle[assetHandle].asset = asset;
 		}
 
 		m_assetReferenceFromAssetHandle[assetHandle].referencers.emplace(instanceId);

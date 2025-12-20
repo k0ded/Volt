@@ -727,8 +727,7 @@ void ViewportPanel::CheckDragDrop()
 		EditorCommandStack::GetInstance().PushUndo(command);
 
 		auto& meshComp = newEntity.AddComponent<Volt::MeshComponent>();
-
-			meshComp.handle = handle;
+		meshComp.SetMesh(handle, newEntity.GetID());
 
 		newEntity.GetComponent<Volt::TagComponent>().tag = assetMetadata->filepath.stem().string();
 
@@ -736,8 +735,6 @@ void ViewportPanel::CheckDragDrop()
 		SelectionManager::Select(newEntity.GetID());
 
 		m_createdEntity = newEntity;
-
-		Volt::MeshComponent::OnMemberChanged(Volt::MeshComponent::MeshEntity(newEntity));
 	}
 
 	ImGui::SetWindowFocus();
