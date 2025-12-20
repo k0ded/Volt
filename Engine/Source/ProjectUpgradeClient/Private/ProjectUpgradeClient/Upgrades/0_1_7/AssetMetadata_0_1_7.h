@@ -33,7 +33,6 @@ namespace Volt
 		VT_NODISCARD VT_INLINE bool IsFlagSet(AssetMetadataFlag flag) const;
 		VT_INLINE void SetFlag(AssetMetadataFlag flag, bool state);
 
-		VT_INLINE bool IsValid() const { return handle != 0 && !IsFlagSet(AssetMetadataFlag::Removed); }
 		VT_INLINE bool HasFilepath() const { return !filepath.empty(); }
 		VT_INLINE bool IsMemoryAsset() const { return IsFlagSet(AssetMetadataFlag::MemoryOnly); }
 
