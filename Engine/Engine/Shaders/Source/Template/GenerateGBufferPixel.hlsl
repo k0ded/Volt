@@ -50,6 +50,7 @@ GBufferPixelShaderOutput MainPS(in GBufferPixelShaderInput input)
     result.albedo = evaluatedMaterial.albedo;
     result.normal = float4(resultNormal * 0.5f + 0.5f, 1.f);
     result.material = float2(evaluatedMaterial.roughness, evaluatedMaterial.metallic);
+    result.emissive = evaluatedMaterial.emissive;
 
     return result;
 }

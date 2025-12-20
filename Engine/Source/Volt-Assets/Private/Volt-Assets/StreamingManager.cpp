@@ -315,20 +315,21 @@ namespace Volt
 
 		for (const auto& materialHandle : instance.materialHandles)
 		{
-			if (materialHandle == Asset::Null())
-			{
-				continue;
-			}
-
 			Ref<RenderMaterial> renderMaterial;
 			
 			AssetReference<MaterialAsset> materialAsset;
-			if (g_assetManager->TryGetAsset(materialHandle, materialAsset))
+
+			if (materialHandle != Asset::Null())
 			{
-				ScopedAssetReferenceLock assetLock{ materialAsset };
-				renderMaterial = materialAsset->GetRenderMaterial();
+				if (g_assetManager->TryGetAsset(materialHandle, materialAsset))
+				{
+					ScopedAssetReferenceLock assetLock{ materialAsset };
+					renderMaterial = materialAsset->GetRenderMaterial();
+				}
 			}
-			else
+
+			// Material handle was null, or material was not loaded/found.
+			if (renderMaterial == nullptr)
 			{
 				renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
 			}

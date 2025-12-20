@@ -414,6 +414,7 @@ namespace Volt
 		sceneTextures.gBufferAlbedo = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferAlbedo"));
 		sceneTextures.gBufferNormals = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferNormals"));
 		sceneTextures.gBufferMaterial = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferMaterial"));
+		sceneTextures.gBufferEmissive = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferEmissive"));
 
 		GenerateGBufferParameters* passParameters = renderGraph.AllocParameters<GenerateGBufferParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;
@@ -421,6 +422,7 @@ namespace Volt
 		passParameters->PS.renderTargets.renderTargets[0] = sceneTextures.gBufferAlbedo;
 		passParameters->PS.renderTargets.renderTargets[1] = sceneTextures.gBufferNormals;
 		passParameters->PS.renderTargets.renderTargets[2] = sceneTextures.gBufferMaterial;
+		passParameters->PS.renderTargets.renderTargets[3] = sceneTextures.gBufferEmissive;
 		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
 
 		m_basePassMeshProcessor->PrepareRenderCommands(renderGraph);
@@ -529,6 +531,7 @@ namespace Volt
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, GBufferAlbedo)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, GBufferNormal)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float2>, GBufferMaterial)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float3>, GBufferEmissive)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SceneDepth)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<uint>, SceneAO)
 			SHADER_PARAMETER_BUFFER_SRV(Buffer<int>, VisibleLightIndices)
@@ -575,6 +578,7 @@ namespace Volt
 			passParameters->GBufferAlbedo = renderGraph.CreateSRV(sceneTextures.gBufferAlbedo);
 			passParameters->GBufferNormal = renderGraph.CreateSRV(sceneTextures.gBufferNormals);
 			passParameters->GBufferMaterial = renderGraph.CreateSRV(sceneTextures.gBufferMaterial);
+			passParameters->GBufferEmissive = renderGraph.CreateSRV(sceneTextures.gBufferEmissive);
 			passParameters->SceneDepth = renderGraph.CreateSRV(sceneTextures.sceneDepth);
 			passParameters->SceneAO = renderGraph.CreateSRV(sceneTextures.sceneAO);
 			passParameters->GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);

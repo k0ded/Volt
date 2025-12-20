@@ -43,6 +43,7 @@ namespace Volt
 		for (uint32_t index = 0; const auto& renderMaterial : description.materials)
 		{
 			m_primitiveMaterialTable.SetMaterial(renderMaterial, index);
+			index++;
 		}
 
 		m_primitiveMesh = description.primitiveMesh;
