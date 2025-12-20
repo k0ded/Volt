@@ -5,6 +5,10 @@
 #include <WindowModule/Window.h>
 
 #include <RenderCore/CommandBufferPool.h>
+#include <RenderCore/CopyToSwapchainShaders.h>
+#include <RenderCore/Shader/ShaderMap.h>
+#include <RenderCore/Shader/DefaultShaders.h>
+#include <RenderCore/Shader/PipelineStateCache.h>
 
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Descriptors/ShaderBindingMap.h>
@@ -182,11 +186,30 @@ namespace Volt
 			scissor.offset.x = 0;
 			scissor.offset.y = 0;
 
+			RefPtr<RHI::Shader> vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
+			RefPtr<RHI::Shader> pixelShader;
+
+			if (swapchain.IsHDREnabled())
+			{
+				pixelShader = ShaderMap::Get<CopyToSwapchain_HDR>();
+			}
+			else
+			{
+				pixelShader = ShaderMap::Get<CopyToSwapchain_SDR>();
+			}
+
+			RHI::RenderPipelineCreateInfo pipelineInfo{};
+			pipelineInfo.shaders = { vertexShader, pixelShader };
+			pipelineInfo.cullMode = RHI::CullMode::None;
+			pipelineInfo.depthMode = RHI::DepthMode::None;
+
+			auto copyPipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+
 			commandBuffer->SetViewports({ viewport });
-			commandBuffer->BindPipeline(m_copyRenderPipeline);
+			commandBuffer->BindPipeline(copyPipeline);
 			commandBuffer->SetScissors({ scissor });
 
-			RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(m_copyRenderPipeline);
+			RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(copyPipeline);
 			shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 0, renderTarget.image->GetView());
 
 			commandBuffer->BindShaderBindings(shaderBindingMap);
@@ -280,45 +303,12 @@ namespace Volt
 		IMGUI_CHECKVERSION();
 		
 		m_renderTargetManager = CreateScope<ImGuiRenderTargetManager>();
-		CreateCopyRenderPipeline();
 
 		// Create and add the default context
 		m_contextStack.emplace_back() = CreateAndInitializeNewContext();
 
 		const std::filesystem::path iniPath = GetOrCreateIniPath();
 		ImGui::LoadIniSettingsFromDisk(iniPath.string().c_str());
-	}
-
-	void ImGuiImplementation::CreateCopyRenderPipeline()
-	{
-		RefPtr<RHI::Shader> vertexShader;
-		RefPtr<RHI::Shader> pixelShader;
-
-		RHI::ShaderCreateInfo shaderCreateInfo{};
-
-		{
-			shaderCreateInfo.entryPoint = "MainVS";
-			shaderCreateInfo.name = "CopyVS";
-			shaderCreateInfo.sourceFilepath = "Engine/Shaders/Source/Utility/FullscreenTriangle.hlsl";
-			shaderCreateInfo.stage = RHI::ShaderStage::Vertex;
-
-			vertexShader = RHI::Shader::Create(shaderCreateInfo);
-		}
-
-		{
-			shaderCreateInfo.entryPoint = "MainPS";
-			shaderCreateInfo.name = "CopyPS";
-			shaderCreateInfo.sourceFilepath = "Engine/Shaders/Source/Utility/CopyImage.hlsl";
-			shaderCreateInfo.stage = RHI::ShaderStage::Pixel;
-
-			pixelShader = RHI::Shader::Create(shaderCreateInfo);
-		}
-
-		RHI::RenderPipelineCreateInfo pipelineCreateInfo{};
-		pipelineCreateInfo.shaders = { vertexShader, pixelShader };
-		pipelineCreateInfo.cullMode = RHI::CullMode::None;
-
-		m_copyRenderPipeline = RHI::RenderPipeline::Create(pipelineCreateInfo);
 	}
 
 	ImGuiImplementation::ContextData ImGuiImplementation::CreateAndInitializeNewContext()

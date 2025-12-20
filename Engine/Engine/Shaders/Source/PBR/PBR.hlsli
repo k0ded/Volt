@@ -44,18 +44,31 @@ struct LightOutput
 
 static PBRInput m_pbrInput;
 
+float EvaluateVisibility(in LightDrawData lightData, float3 worldPosition, float3 normal)
+{
+    if ((lightData.flags & LightFlags::LF_CastShadows) == 0)
+    {
+        return 1.f;
+    }
+
+    if (lightData.lightType == SceneLightType::SLT_Directional)
+    {
+        return EvaluateDirectionalShadow_Hard(lightData, normal, worldPosition);
+    }
+
+    return 1.f;
+}
+
 float3 EvaluateLights(float3 dirToCamera, float ao, uint lightCount)
 {
-    float3 output = 0.f;
-
     BRDFInput brdfInput; 
     brdfInput.V = dirToCamera;
     brdfInput.N = m_pbrInput.normal;
-    brdfInput.diffuseColor = CalculateDiffuseColor(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
-    brdfInput.f0 = CalculateF0(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
-    brdfInput.f90 = CalculateF90(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
+    brdfInput.baseColor = m_pbrInput.albedo.rgb;
     brdfInput.roughness = m_pbrInput.roughness;
     brdfInput.metalness = m_pbrInput.metallic;
+
+    float3 radiance = 0.f;
 
     for (uint i = 0; i < lightCount; i++)
     {
@@ -68,23 +81,23 @@ float3 EvaluateLights(float3 dirToCamera, float ao, uint lightCount)
         const LightDrawData light = SceneLights[lightIndex];
         if (light.lightType == SceneLightType::SLT_Point)
         {
-            output += EvaluatePointLight(light, brdfInput, m_pbrInput.worldPosition);
+            radiance += EvaluatePointLight(light, brdfInput, m_pbrInput.worldPosition);
         }
         else if (light.lightType == SceneLightType::SLT_Spot)
         {
-            output += EvaluateSpotLight(light, brdfInput, m_pbrInput.worldPosition);
+            radiance += EvaluateSpotLight(light, brdfInput, m_pbrInput.worldPosition);
         }
         else if (light.lightType == SceneLightType::SLT_Directional)
         {
-            output += EvaluateDirectionalLight(light, brdfInput, m_pbrInput.worldPosition);
+            radiance += EvaluateDirectionalLight(light, brdfInput, m_pbrInput.worldPosition);
         }
         else if (light.lightType == SceneLightType::SLT_Sky)
         {
-           // output += EvaluateIBL(brdfInput, light) * ao;
+            radiance += EvaluateIBL(brdfInput, light) * ao;
         }
     }
 
-    return output;
+    return radiance;
 }
 
 float3 EvaluatePBR(in PBRInput input)
@@ -94,16 +107,6 @@ float3 EvaluatePBR(in PBRInput input)
     const float3 dirToCamera = normalize(View.cameraPosition.xyz - m_pbrInput.worldPosition);
     
     float3 lightOutput = 0.f;
-     
-    BRDFInput brdfInput; 
-    brdfInput.V = dirToCamera;
-    brdfInput.N = m_pbrInput.normal;
-    brdfInput.diffuseColor = CalculateDiffuseColor(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
-    brdfInput.f0 = CalculateF0(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
-    brdfInput.f90 = CalculateF90(m_pbrInput.albedo.rgb, m_pbrInput.metallic);
-    brdfInput.roughness = m_pbrInput.roughness;
-    brdfInput.metalness = m_pbrInput.metallic;
-
     lightOutput += EvaluateLights(dirToCamera, m_pbrInput.ao, View.lightCount);
 
     const float3 compositeLighting = lightOutput + m_pbrInput.emissive;

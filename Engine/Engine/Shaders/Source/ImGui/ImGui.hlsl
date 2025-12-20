@@ -1,3 +1,5 @@
+#include "Utility/Utility.hlsli"
+
 struct ImGuiVertex
 {
     float2 position : POSITION;
@@ -30,11 +32,16 @@ SamplerState Sampler;
 
 struct Output
 {
-    [[vt::rgba8]] float4 color : SV_Target0;
+    [[vt::rgba16f]] float4 color : SV_Target0;
 };
 
 Output MainPS(VSToPS input)
 {
+    // Since ImGui is using sRGB colors internally, we need to convert
+    // them to linear space here. This is because we apply gamma correction when
+    // copying to the swapchain.
+    input.color.rgb = SRGBToLinear(input.color.rgb);
+
     Output output;
     output.color = input.color * Tex.Sample(Sampler, input.uv); 
 

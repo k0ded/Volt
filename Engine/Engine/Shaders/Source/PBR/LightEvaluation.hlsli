@@ -5,20 +5,21 @@
 #include "Utility/ShadowMapping.hlsli"
 
 ///// ----- Punctual lights ----- /////
-float SmoothDistanceAttenuation(float squaredDistance, float invSqrAttRadius)
+float GetDistanceAttenuation(float3 L, float radius)
 {
-    float factor = squaredDistance * invSqrAttRadius;
-    float smoothFactor = saturate(1.f - factor * factor);
-    return smoothFactor * smoothFactor;
-}
+    L *= CM_To_M;
+    radius *= CM_To_M;
 
-float GetDistanceAttenuation(float3 unormalizedLightVector, float invSqrAttRadius)
-{
-    float sqrDist = dot(unormalizedLightVector, unormalizedLightVector);
-    float attenuation = 1.f / max(sqrDist, 1.f);
-    attenuation *= SmoothDistanceAttenuation(sqrDist, invSqrAttRadius);
+    float distSq = dot(L, L);
+    float invDistSq = rcp(max(distSq, 1e-4));
 
-    return attenuation;
+    float dist = sqrt(distSq);
+    float fade = saturate(1.0 - dist / radius);
+
+    // smoothstep
+    fade = fade * fade * (3.0 - 2.0 * fade);
+
+    return invDistSq * fade;
 }
 
 float GetAngleAttenuation(float3 normalizedLightVector, float3 lightDirection, float lightAngleScale, float lightAngleOffset)
@@ -34,24 +35,22 @@ float3 EvaluatePointLight(in LightDrawData light, in BRDFInput brdfInput, float3
 { 
     float3 unormalizedLightVector = light.position - worldPosition;
     float3 L = normalize(unormalizedLightVector);
-    float invSqrRadius = 1.f / (light.lightSpecific.x * light.lightSpecific.x);
 
-    float attenuation = GetDistanceAttenuation(unormalizedLightVector, invSqrRadius);
+    float attenuation = GetDistanceAttenuation(unormalizedLightVector, light.lightSpecific.x);
 
-    return BRDF(brdfInput, L) * light.color * light.intensity * attenuation;   
+    return BRDF_DisneyDiffuse(brdfInput, L) * light.color * light.intensity * attenuation;   
 } 
 
 float3 EvaluateSpotLight(in LightDrawData light, in BRDFInput brdfInput, float3 worldPosition)
 {
     float3 unormalizedLightVector = light.position - worldPosition;
     float3 L = normalize(unormalizedLightVector);
-    float invSqrRadius = 1.f / (light.lightSpecific.x * light.lightSpecific.x);
     
     float attenuation = 1.f;
-    attenuation *= GetDistanceAttenuation(unormalizedLightVector, invSqrRadius);
+    attenuation *= GetDistanceAttenuation(unormalizedLightVector, light.lightSpecific.x);
     attenuation *= GetAngleAttenuation(L, normalize(light.direction), light.lightSpecific.z, light.lightSpecific.w);
     
-    return BRDF(brdfInput, L) * light.color * attenuation * light.intensity;   
+    return BRDF_DisneyDiffuse(brdfInput, L) * light.color * attenuation * light.intensity;   
 }
 
 float3 GetLightContribution(in LightDrawData light, float3 worldPosition, float3 normal)
@@ -60,18 +59,16 @@ float3 GetLightContribution(in LightDrawData light, float3 worldPosition, float3
     {
         float3 unnormalizedLightVector = light.position - worldPosition;
         float3 L = normalize(unnormalizedLightVector);
-        float invSqrRadius = 1.f / (light.lightSpecific.x * light.lightSpecific.x);
 
-        float attenuation = GetDistanceAttenuation(unnormalizedLightVector, invSqrRadius);
+        float attenuation = GetDistanceAttenuation(unnormalizedLightVector, light.lightSpecific.x);
         return light.color * attenuation * light.intensity * saturate(dot(normal, L));
     }
     else if (light.lightType == SceneLightType::SLT_Spot)
     {
         float3 unnormalizedLightVector = light.position - worldPosition;
         float3 L = normalize(unnormalizedLightVector);
-        float invSqrRadius = 1.f / (light.lightSpecific.x * light.lightSpecific.x);
 
-        float attenuation = GetDistanceAttenuation(unnormalizedLightVector, invSqrRadius);
+        float attenuation = GetDistanceAttenuation(unnormalizedLightVector, light.lightSpecific.x);
         attenuation *= GetAngleAttenuation(L, normalize(light.direction), light.lightSpecific.z, light.lightSpecific.w);
 
         return light.color * attenuation * light.intensity * saturate(dot(normal, L));
@@ -107,14 +104,14 @@ float3 EvaluateDirectionalLight(in LightDrawData light, in BRDFInput brdfInput, 
 
     float illuminance = light.intensity * NdotD; 
 
-    float shadow = 1.f;
+    float shadow = 1.f; 
 
     if (light.flags & LightFlags::LF_CastShadows)
     {
         shadow = EvaluateDirectionalShadow(light, View.view, brdfInput.N, worldPosition);
     }
 
-    return BRDF(brdfInput, D, L) * light.color * illuminance * shadow;
+    return BRDF_DisneyDiffuse(brdfInput, L) * light.color * illuminance * shadow;
 }
 
 ///// ----- IBL ----- /////
@@ -143,7 +140,7 @@ float LinearRoughnessToMipLevel(float linearRoughness, float mipCount)
 
 static const float DFGTextureSize = 512.f;
 
-Texture2D<float4> DFGLuT;
+Texture2D<float2> DFGLuT;
 TextureCube<float3> SkylightIrradiance;
 TextureCube<float3> SkylightRadiance;
 SamplerState LinearSampler;
@@ -153,7 +150,7 @@ uint NumRadianceMipLevels;
 float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
 {
     float NdotV = saturate(dot(brdfInput.N, brdfInput.V));
-    float3 DFG = DFGLuT.SampleLevel(LinearSampler, float2(NdotV, brdfInput.roughness), 0.f).xyz;
+    float2 DFG = DFGLuT.SampleLevel(LinearSampler, float2(NdotV, brdfInput.roughness), 0.f);
 
     float3 diffuse = 0.f;
     float3 specular = 0.f;
@@ -163,7 +160,7 @@ float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
         float3 dominantN = GetDiffuseDominantDirection(brdfInput.N, brdfInput.V, NdotV, brdfInput.roughness);
         float3 diffuseLighting = SkylightIrradiance.SampleLevel(LinearSampler, dominantN, light.lightSpecific.x);
 
-        diffuse = brdfInput.diffuseColor * diffuseLighting * DFG.z;
+        diffuse = brdfInput.baseColor * diffuseLighting;
     }
 
     // Specular IBL
@@ -175,7 +172,9 @@ float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
         float mipLevel = LinearRoughnessToMipLevel(brdfInput.roughness, NumRadianceMipLevels);
         float3 preLD = SkylightRadiance.SampleLevel(LinearSampler, dominantR, mipLevel);
 
-        specular = preLD * (brdfInput.f0 * DFG.x + brdfInput.f90 * DFG.y);
+
+        const float3 f0 = lerp(DielectricF0, brdfInput.baseColor, brdfInput.metalness);
+        specular = preLD * (f0 * DFG.x + DFG.y);
     }
 
     return (diffuse + specular) * light.intensity;

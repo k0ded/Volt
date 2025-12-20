@@ -1037,7 +1037,7 @@ namespace Volt::RHI
 		}
 		else if (tempStr == "rgb10_a2")
 		{
-			return PixelFormat::A2R10G10B10_UNORM_PACK32;
+			return PixelFormat::A2B10G10R10_UNORM_PACK32;
 		}
 
 		// Signed int

@@ -4,7 +4,7 @@
 
 #include <RHIModule/Shader/ShaderCommon.h>
 
-Volt::ShaderRegistry g_shaderRegistry;
+static Volt::ShaderRegistry g_shaderRegistry;
 
 namespace Volt
 {

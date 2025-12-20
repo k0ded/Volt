@@ -383,7 +383,7 @@ namespace Volt
 		constexpr uint32_t DFGSize = 512;
 
 		RHI::ImageDesc spec{};
-		spec.format = RHI::PixelFormat::R16G16B16A16_SFLOAT;
+		spec.format = RHI::PixelFormat::R16G16_SFLOAT;
 		spec.usage = RHI::ImageUsage::AttachmentStorage;
 		spec.width = DFGSize;
 		spec.height = DFGSize;

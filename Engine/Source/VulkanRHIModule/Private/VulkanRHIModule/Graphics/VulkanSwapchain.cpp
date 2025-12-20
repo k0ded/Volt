@@ -426,8 +426,16 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		const VkSurfaceFormatKHR surfaceFormat = Utility::ChooseSwapchainFormat(m_capabilities.surfaceFormats, m_createInfo.useHDRIfAvailable);
-		if (surfaceFormat.colorSpace )
+
+		if (surfaceFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT ||
+			surfaceFormat.format == VK_FORMAT_A2R10G10B10_UNORM_PACK32 ||
+			surfaceFormat.format == VK_FORMAT_A2B10G10R10_UNORM_PACK32)
 		{
+			m_isHDREnabled = true;
+		}
+		else
+		{
+			m_isHDREnabled = false;
 		}
 
 		const VkPresentModeKHR presentMode = Utility::ChooseSwapchainPresentMode(enableVSync, m_capabilities.presentModes);

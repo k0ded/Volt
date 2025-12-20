@@ -650,7 +650,7 @@ namespace Volt
 		spec.height = height;
 		spec.usage = RHI::ImageUsage::AttachmentStorage;
 		spec.generateMips = false;
-		spec.format = RHI::PixelFormat::R8G8B8A8_UNORM;
+		spec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
 		spec.debugName = "Final Image";
 		spec.initializeImage = false;
 

@@ -146,7 +146,7 @@ namespace Volt
 			createInfo.width = m_data.width;
 			createInfo.height = m_data.height;
 			createInfo.platformWindow = m_window;
-			createInfo.useHDRIfAvailable = false;
+			createInfo.useHDRIfAvailable = true;
 			createInfo.enableVSync = m_data.vsync;
 
 			m_swapchain = RHI::Swapchain::Create(createInfo);

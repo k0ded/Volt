@@ -22,19 +22,24 @@ void Sandbox::CreateModifiedWatch()
 			return;
 		}
 
-		if (std::filesystem::is_directory(newPath))
-		{
-			return;
-		}
-
-		std::scoped_lock lock(m_fileWatcherMutex);
-		m_fileChangeQueue.emplace_back([newPath, oldPath, this]()
-		{
-			if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
-			{
-				Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
-			}
-		});
+		//if (!std::filesystem::exists(newPath))
+		//{
+		//	return;
+		//}
+		//
+		//if (std::filesystem::is_directory(newPath))
+		//{
+		//	return;
+		//}
+		//
+		//std::scoped_lock lock(m_fileWatcherMutex);
+		//m_fileChangeQueue.emplace_back([newPath, oldPath, this]()
+		//{
+		//	if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
+		//	{
+		//		Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
+		//	}
+		//});
 	});
 }
 
@@ -81,13 +86,21 @@ void Sandbox::CreateMovedWatch()
 		std::scoped_lock lock(m_fileWatcherMutex);
 		m_fileChangeQueue.emplace_back([newPath, oldPath]()
 		{
-			if (!newPath.has_extension())
+			// It's a shader file.
+			if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
 			{
-				g_editorAssetManager->MoveDirectoryTo(oldPath, newPath);
+				Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
 			}
 			else
 			{
-				g_editorAssetManager->MoveAssetTo(g_assetManager->GetAssetHandleFromFilepath(oldPath), newPath);
+				if (!newPath.has_extension())
+				{
+					g_editorAssetManager->MoveDirectoryTo(oldPath, newPath);
+				}
+				else
+				{
+					g_editorAssetManager->MoveAssetTo(g_assetManager->GetAssetHandleFromFilepath(oldPath), newPath);
+				}
 			}
 		});
 	});

@@ -38,7 +38,7 @@ namespace Volt
 	RefPtr<RHI::Image> ImGuiRenderTargetManager::CreateRenderTargetForWindow(Window* window, uint32_t desiredWidth, uint32_t desiredHeight)
 	{
 		RHI::ImageDesc desc{};
-		desc.format = RHI::PixelFormat::R8G8B8A8_UNORM;
+		desc.format = RHI::PixelFormat::R16G16B16A16_SFLOAT;
 		desc.width = desiredWidth;
 		desc.height = desiredHeight;
 		desc.imageType = RHI::ResourceType::Image2D;

@@ -56,7 +56,6 @@ namespace Volt
 		};
 
 		void Initialize();
-		void CreateCopyRenderPipeline();
 		ContextData CreateAndInitializeNewContext();
 
 		Ref<ImGuiRenderer> GetActiveRenderer() const { return m_contextStack.back().renderer; }
@@ -70,6 +69,5 @@ namespace Volt
 		Vector<ContextData> m_contextStack;
 
 		Scope<ImGuiRenderTargetManager> m_renderTargetManager;
-		RefPtr<RHI::RenderPipeline> m_copyRenderPipeline;
 	};
 }
