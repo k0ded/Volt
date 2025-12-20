@@ -1,6 +1,7 @@
 #include "vtassetspch.h"
 
 #include "Volt-Assets/MaterialCompiler.h"
+#include "Volt-Assets/MaterialCompilerSubSystem.h"
 #include "Volt-Assets/MaterialAsset.h"
 
 #include <Volt-MaterialGraph/MaterialGraph.h>
@@ -14,6 +15,8 @@
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
+
+#include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -44,6 +47,8 @@ namespace Volt
 
 	inline void InsertTextureDeclarations(std::string& shaderString, const Mosaic::MosaicShaderWriter& shaderWriter)
 	{
+		VT_PROFILE_FUNCTION();
+
 		constexpr const char* TextureDeclarationTag = "$(TextureDeclarations)";
 
 		const Vector<Mosaic::MosaicShaderWriter::TextureDeclaration>& textureDeclarations = shaderWriter.GetTextureDeclarations();
@@ -62,6 +67,8 @@ namespace Volt
 
 	inline void InsertMaterialEvaluation(std::string& shaderString, const Mosaic::MosaicShaderWriter& shaderWriter)
 	{
+		VT_PROFILE_FUNCTION();
+
 		constexpr const char* EvaluateMaterialTag = "$(EvaluateMaterial)";
 		
 		auto evaluateMaterialTagOffset = shaderString.find(EvaluateMaterialTag);
@@ -146,6 +153,11 @@ namespace Volt
 
 		// Create new pipeline based on compiled shader
 		materialAsset->GetRenderMaterial()->Invalidate(outShaderPath);
+
+		if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)
+		{
+			compilerSubSystem->GetMaterialCompiledDelegate().ExecuteIfBound(materialAsset->GetAssetHandle());
+		}
 
 		VT_LOGC(Trace, LogMaterialCompiler, "Compiled material {} in {} seconds!", materialAsset->GetAssetName(), timer.GetTime<Time::Seconds>());
 	}

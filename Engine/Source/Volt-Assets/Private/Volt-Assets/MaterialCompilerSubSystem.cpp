@@ -13,50 +13,18 @@ namespace Volt
 
 	void MaterialCompilerSubSystem::Initialize()
 	{
-		m_queue.Allocate(4096);
-
-		m_workerThread = CreateScope<std::thread>(std::bind(&MaterialCompilerSubSystem::RunWorker, this));
-		PlatformThread::SetThreadName(m_workerThread->native_handle(), "MaterialCompilerWorker");
-		PlatformThread::SetThreadPriority(m_workerThread->native_handle(), ThreadPriority::Low);
 	}
 
 	void MaterialCompilerSubSystem::Shutdown()
 	{
-		m_isRunning = false;
-		m_wakeCondition.notify_all();
-		m_workerThread->join();
-		m_workerThread = nullptr;
 	}
 
 	void MaterialCompilerSubSystem::RequestMaterialCompilation(AssetReference<MaterialAsset> materialAsset)
 	{
-		CompilationJob job;
-		job.material = materialAsset;
-		m_queue.Emplace(job);
-		m_wakeCondition.notify_all();
-	}
-
-	void MaterialCompilerSubSystem::RunWorker()
-	{
-		while (m_isRunning)
-		{
-			CompilationJob job;
-			while (m_queue.Pop(job))
-			{
-				ExecuteJob(job);
-			}
-
-			std::unique_lock lock(m_wakeMutex);
-			m_wakeCondition.wait(lock);
-		}
-	}
-
-	void MaterialCompilerSubSystem::ExecuteJob(const CompilationJob& job)
-	{
-		JobRef compileJob = JobSystem::CreateJob("Compile Material", ExecutionPriority::Latent, [internalJob = std::move(job)]() 
+		JobRef compileJob = JobSystem::CreateJob("Compile Material", ExecutionPriority::Latent, [materialAsset = std::move(materialAsset)]()
 		{
 			MaterialCompiler compiler;
-			compiler.CompileMaterial(internalJob.material);
+			compiler.CompileMaterial(materialAsset);
 		});
 
 		JobSystem::RunJob(compileJob);

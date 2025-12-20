@@ -77,3 +77,14 @@ void SubSystemManager::ShutdownSubSystems(SubSystemInitializationStage initializ
 		subSystem = nullptr;
 	}
 }
+
+void SubSystemManager::OnPostInitialization()
+{
+	for (const auto& [initializationStage, subSystems] : m_subSystems)
+	{
+		for (const auto& subSystem : subSystems)
+		{
+			subSystem->OnPostInitialization();
+		}
+	}
+}

@@ -5,6 +5,8 @@
 #include "Mosaic/MosaicNode.h"
 #include "Mosaic/MosaicShaderWriter.h"
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Mosaic
 {
 	MosaicGraph::MosaicGraph()
@@ -17,6 +19,8 @@ namespace Mosaic
 
 	const MosaicShaderWriter MosaicGraph::Compile() const
 	{
+		VT_PROFILE_FUNCTION();
+
 		constexpr VoltGUID OUTPUT_GUID = "{343B2C0A-C4E3-41BB-8629-F9939795AC76}"_guid;
 
 		for (auto& node : m_graph.GetNodes())

@@ -12,6 +12,7 @@
 #include <RHIModule/RHICapabilities.h>
 
 #include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #ifdef _WIN32
 #include <wrl.h>
@@ -146,6 +147,8 @@ namespace Volt::RHI
 
 	ShaderCompiler::CompilationResultData VulkanShaderCompiler::TryCompileImpl(const Specification& specification)
 	{
+		VT_PROFILE_FUNCTION();
+
 		if (!specification.forceCompile)
 		{
 			const auto cachedResult = m_shaderCache->TryGetCachedShader(specification);
@@ -176,6 +179,8 @@ namespace Volt::RHI
 
 	ShaderCompiler::CompilationResultData VulkanShaderCompiler::CompileShader(const Specification& specification)
 	{
+		VT_PROFILE_FUNCTION();
+
 		CompilationResultData result;
 
 		const ShaderSourceEntry& sourceEntry = specification.shaderSourceInfo.sourceEntry;
@@ -280,6 +285,8 @@ namespace Volt::RHI
 
 	bool VulkanShaderCompiler::PreprocessSource(const Specification& specification, std::string& outProcessedSource, CompilationResultData& compilationResult)
 	{
+		VT_PROFILE_FUNCTION();
+
 		const ShaderSourceEntry& sourceEntry = specification.shaderSourceInfo.sourceEntry;
 
 		Vector<std::wstring> wIncludeDirs;
@@ -448,6 +455,8 @@ namespace Volt::RHI
 
 	void VulkanShaderCompiler::ReflectShader(const Specification& specification, CompilationResultData& inOutData)
 	{
+		VT_PROFILE_FUNCTION();
+
 		SpvReflectShaderModule spirvModule{};
 		SpvReflectResult result = spvReflectCreateShaderModule(inOutData.shaderBinary.size() * sizeof(uint32_t), inOutData.shaderBinary.data(), &spirvModule);
 		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
@@ -629,6 +638,8 @@ namespace Volt::RHI
 
 	VulkanShaderCompiler::DxcCompilationResult VulkanShaderCompiler::InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source, HLSLIncluder* includer)
 	{
+		VT_PROFILE_FUNCTION();
+
 		IDxcBlobEncoding* sourceBlob = nullptr;
 		// Use first null character as size, as the string might contain many, which is invalid.
 		size_t firstNullChar = source.find('\0');
@@ -669,6 +680,8 @@ namespace Volt::RHI
 
   	VulkanShaderCompiler::RewriteResult VulkanShaderCompiler::RewriteHLSL(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source)
 	{
+		VT_PROFILE_FUNCTION();
+
 		IDxcBlobEncoding* sourceBlob = nullptr;
 		// Use first null character as size, as the string might contain many, which is invalid.
 		size_t firstNullChar = source.find('\0');

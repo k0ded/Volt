@@ -3,6 +3,9 @@
 #include "Volt-Assets/StreamingManager.h"
 #include "Volt-Assets/MeshAsset.h"
 #include "Volt-Assets/MaterialAsset.h"
+#include "Volt-Assets/MaterialCompilerSubSystem.h"
+
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <Volt-Renderer/RenderScene/ScenePrimitiveData.h>
 #include <Volt-Renderer/Renderer.h>
@@ -10,10 +13,12 @@
 #include <Volt-Renderer/Texture/EnvironmentTexture.h>
 
 #include <AssetSystem/AssetTypes.h>
-#include <Volt-Core/Console/ConsoleVariableRegistry.h>
-
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetLocks.h>
+
+#include <SubSystem/SubSystemManager.h>
+
+#include <CoreUtilities/Profiling/Profiling.h>
 
 VT_DEFINE_LOG_CATEGORY(LogStreamingManager);
 
@@ -36,11 +41,7 @@ namespace Volt
 		{
 			if (state == AssetChangedState::Loaded)
 			{
-				for (const auto& instanceId : streamingInstances)
-				{
-					const auto& instance = m_streamingInstances.Get(instanceId);
-					InitializeScenePrimitiveFromInstance(instance);
-				}
+				m_streamingInstancesToInvalidate.insert(streamingInstances.begin(), streamingInstances.end());
 			}
 		});
 
@@ -48,11 +49,7 @@ namespace Volt
 		{
 			if (state == AssetChangedState::Loaded)
 			{
-				for (const auto& instanceId : streamingInstances)
-				{
-					const auto& instance = m_streamingInstances.Get(instanceId);
-					InitializeScenePrimitiveFromInstance(instance);
-				}
+				m_streamingInstancesToInvalidate.insert(streamingInstances.begin(), streamingInstances.end());
 			}
 		});
 
@@ -67,11 +64,20 @@ namespace Volt
 				}
 			}
 		});
+
+		m_materialInvalidationQueue.Allocate(1024);
+
+		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(StreamingManager::OnPreRenderEvent));
 	}
 
 	StreamingManager::~StreamingManager()
 	{
 		s_instance = nullptr;
+	}
+
+	void StreamingManager::OnPostInitialization()
+	{
+		BindToMaterialCompiledDelegate();
 	}
 
 	StreamingInstanceID StreamingManager::AddInstance(const StreamingInstanceDescription& description)
@@ -367,6 +373,45 @@ namespace Volt
 		}
 
 		instance.sceneLightData->InitializeFromDescription(lightDescription);
+	}
+
+	void StreamingManager::BindToMaterialCompiledDelegate()
+	{
+		if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)
+		{
+			compilerSubSystem->GetMaterialCompiledDelegate().BindRaw(this, &StreamingManager::OnMaterialCompiled);
+		}
+	}
+
+	void StreamingManager::OnMaterialCompiled(AssetHandle materialHandle)
+	{
+		// Since the delegate call may come from any worker,
+		// we queue the invalidation, and perform it later in the OnPreRenderEvent.
+		m_materialInvalidationQueue.Emplace(materialHandle);
+	}
+
+	bool StreamingManager::OnPreRenderEvent(AppPreRenderEvent& event)
+	{
+		VT_PROFILE_FUNCTION();
+
+		AssetHandle materialHandle;
+		while (m_materialInvalidationQueue.Pop(materialHandle))
+		{
+			if (m_materialReferenceCounter.ContainsAsset(materialHandle))
+			{
+				const std::unordered_set<StreamingInstanceID>& referencers = m_materialReferenceCounter.GetAssetReferencers(materialHandle);
+				m_streamingInstancesToInvalidate.insert(referencers.begin(), referencers.end());
+			}
+		}
+
+		for (const StreamingInstanceID& referencerId : m_streamingInstancesToInvalidate)
+		{
+			const auto& instance = m_streamingInstances.Get(referencerId);
+			InitializeScenePrimitiveFromInstance(instance);
+		}
+		m_streamingInstancesToInvalidate.clear();
+
+		return false;
 	}
 
 	StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Get(StreamingInstanceID id)

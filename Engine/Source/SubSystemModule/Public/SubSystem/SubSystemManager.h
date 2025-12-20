@@ -19,6 +19,7 @@ public:
 
 	void InitializeSubSystems(SubSystemInitializationStage initializationStage);
 	void ShutdownSubSystems(SubSystemInitializationStage initializationStage);
+	void OnPostInitialization();
 
 	template<typename T>
 	static T* GetSubSystem()

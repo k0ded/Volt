@@ -73,6 +73,7 @@ namespace Volt
 
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::Engine);
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PostEngine);
+		m_subSystemManager->OnPostInitialization();
 
 		m_imguiSubSystem = SubSystemManager::GetSubSystem<ImGuiSubSystem>();
 		// Make sure that the main window exits, it is required to initialize ImGui.

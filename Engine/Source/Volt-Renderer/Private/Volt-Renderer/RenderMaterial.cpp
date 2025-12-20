@@ -5,6 +5,7 @@
 #include <RHIModule/Pipelines/ComputePipeline.h>
 
 #include <CoreUtilities/Math/Hash.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
@@ -47,6 +48,8 @@ namespace Volt
 
 	void RenderMaterial::Invalidate(const std::filesystem::path& filepath)
     {
+		VT_PROFILE_FUNCTION();
+
 		if (!m_pixelShader)
 		{
 			RHI::ShaderCreateInfo shaderSpecification;

@@ -10,6 +10,9 @@
 
 #include <AssetSystem/AssetManager.h>
 
+#include <EventSystem/EventListener.h>
+#include <EventSystem/ApplicationEvents.h>
+
 #include <EntitySystem/EntityID.h>
 #include <SubSystem/SubSystem.h>
 
@@ -50,6 +53,9 @@ namespace Volt
 		void AddReference(AssetHandle assetHandle, StreamingInstanceID instanceId);
 		void RemoveReference(AssetHandle assetHandle, StreamingInstanceID instanceId);
 		AssetReference<T> GetAsset(AssetHandle assetHandle);
+		
+		bool ContainsAsset(AssetHandle assetHandle) const;
+		const std::unordered_set<StreamingInstanceID>& GetAssetReferencers(AssetHandle assetHandle) const;
 
 		void SetAssetUpdatedCallback(AssetUpdatedFunc callbackFunc);
 
@@ -67,6 +73,19 @@ namespace Volt
 		AssetType m_assetType;
 		UUID64 m_assetUpdatedCallback = 0;
 	};
+
+	template<VoltAssetType T>
+	bool StreamingInstanceAssetReferenceCounter<T>::ContainsAsset(AssetHandle assetHandle) const
+	{
+		return m_assetReferenceFromAssetHandle.contains(assetHandle);
+	}
+
+	template<VoltAssetType T>
+	const std::unordered_set<StreamingInstanceID>& StreamingInstanceAssetReferenceCounter<T>::GetAssetReferencers(AssetHandle assetHandle) const
+	{
+		VT_ENSURE(m_assetReferenceFromAssetHandle.contains(assetHandle));
+		return m_assetReferenceFromAssetHandle.at(assetHandle).referencers;
+	}
 
 	template<VoltAssetType T>
 	AssetReference<T> StreamingInstanceAssetReferenceCounter<T>::GetAsset(AssetHandle assetHandle)
@@ -104,11 +123,13 @@ namespace Volt
 		mutable std::mutex m_mutex;
 	};
 
-	class VTASSETS_API StreamingManager : public SubSystem
+	class VTASSETS_API StreamingManager : public SubSystem, public EventListener
 	{
 	public:
 		StreamingManager();
 		~StreamingManager();
+
+		void OnPostInitialization() override;
 
 		StreamingInstanceID AddInstance(const StreamingInstanceDescription& description);
 		void RemoveInstance(StreamingInstanceID instanceId);
@@ -124,10 +145,18 @@ namespace Volt
 		void InitializeScenePrimitiveFromInstance(const StreamingInstanceMap::StreamingInstance& instance);
 		void InitializeSceneLightDataFromInstance(const StreamingInstanceMap::StreamingInstance& instance);
 
+		void BindToMaterialCompiledDelegate();
+		void OnMaterialCompiled(AssetHandle materialHandle);
+
+		bool OnPreRenderEvent(AppPreRenderEvent& event);
+
 		StreamingInstanceMap m_streamingInstances;
 		StreamingInstanceAssetReferenceCounter<MeshAsset> m_meshReferenceCounter;
 		StreamingInstanceAssetReferenceCounter<MaterialAsset> m_materialReferenceCounter;
 		StreamingInstanceAssetReferenceCounter<EnvironmentTexture> m_environmentTextureReferenceCounter;
+
+		WorkQueue<AssetHandle, QueueThreadingPolicy::MPSC> m_materialInvalidationQueue;
+		std::unordered_set<StreamingInstanceID> m_streamingInstancesToInvalidate;
 
 		inline static StreamingManager* s_instance = nullptr;
 	};
