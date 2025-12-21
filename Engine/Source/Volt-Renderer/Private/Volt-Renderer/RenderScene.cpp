@@ -19,8 +19,6 @@
 #include <EntitySystem/EntityScene.h>
 #include <EntitySystem/Entity.h>
 
-#include <AssetSystem/AssetLocks.h>
-
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/RHIFeatures.h>
 
@@ -92,8 +90,6 @@ namespace Volt
 
 			if (skeleton.IsValid())
 			{
-				ScopedAssetReferenceLock skeletonLock{ skeleton };
-				
 				m_currentBoneCount += static_cast<uint32_t>(skeleton->GetJointCount());
 				// Mark primitive as invalid.
 				InvalidatePrimitiveInstance(animatedObject);

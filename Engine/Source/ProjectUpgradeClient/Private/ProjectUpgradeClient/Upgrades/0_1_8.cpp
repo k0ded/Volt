@@ -223,8 +223,6 @@ namespace Volt
 
 		if (asset)
 		{
-			ScopedAssetReferenceLock lock{ asset };
-
 			if (asset->GetType() == AssetTypes::EntityDesc)
 			{
 				if (m_assetHandleToCustomMetadata.contains(assetHandle))

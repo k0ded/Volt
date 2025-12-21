@@ -9,7 +9,6 @@
 #include <Volt-Physics/CharacterControllerComponent.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Random.h>
 #include <CoreUtilities/Archive/MemoryArchive.h>
@@ -59,7 +58,6 @@ namespace Volt
 					AssetReference<Prefab> prefabRefAsset;
 					if (g_assetManager->TryGetAssetImmediately<Prefab>(prefabRefData.prefabAsset, prefabRefAsset))
 					{
-						ScopedAssetReferenceLock assetLock{ prefabRefAsset };
 						prefabRefAsset->UpdateEntityInSceneInternal(targetScene, entity, prefabRefData.prefabReferenceEntity);
 
 					}
@@ -113,7 +111,6 @@ namespace Volt
 
 	void Prefab::CopyPrefabEntity(Entity dstEntity, EntityID srcPrefabEntityId, std::set<VoltGUID> componentsToSkip) const
 	{
-		ScopedAssetReferenceLock sceneLock{ m_prefabScene };
 		Entity prefabEntity = m_prefabScene->GetEntityFromID(srcPrefabEntityId);
 		if (!prefabEntity)
 		{
@@ -139,7 +136,6 @@ namespace Volt
 
 		const EntityID prefabEntityId = entity.GetComponent<PrefabComponent>().prefabEntity;
 
-		ScopedAssetReferenceLock sceneLock{ m_prefabScene };
 		Entity prefabEntity = m_prefabScene->GetEntityFromID(prefabEntityId);
 		
 		const bool isValid = prefabEntity.IsValid();
@@ -211,8 +207,6 @@ namespace Volt
 
 		if (!archive.IsLoading())
 		{
-			ScopedAssetReferenceLock prefabSceneLock{ m_prefabScene };
-
 			for (const Entity& entity : m_prefabScene->GetAllEntities())
 			{
 				EntityHeader& entityHeader = entityHeaders.emplace_back();
@@ -236,7 +230,6 @@ namespace Volt
 			archive << entityDataReader;
 
 			m_prefabScene = g_assetManager->CreateAnonymousAsset<Scene>("PrefabScene");
-			ScopedAssetReferenceLock prefabSceneLock{ m_prefabScene };
 
 			for (const EntityHeader& entityHeader : entityHeaders)
 			{
@@ -440,7 +433,6 @@ namespace Volt
 				AssetReference<Prefab> prefabRefAsset;
 				if (g_assetManager->TryGetAssetImmediately<Prefab>(prefabRefData.prefabAsset, prefabRefAsset))
 				{
-					ScopedAssetReferenceLock assetLock{ prefabRefAsset };
 					return prefabRefAsset->UpdateEntityInPrefabInternal(srcEntity, sceneRootId, prefabRefData.prefabReferenceEntity);
 				}
 
@@ -514,7 +506,6 @@ namespace Volt
 			AssetReference<Prefab> prefabRefAsset;
 			if (g_assetManager->TryGetAssetImmediately<Prefab>(scenePrefabComp.prefabAsset, prefabRefAsset))
 			{
-				ScopedAssetReferenceLock assetLock{ prefabRefAsset };
 				prefabRefAsset->UpdateEntityInSceneInternal(scene, sceneEntity, m_prefabReferencesMap.at(prefabEntityId).prefabReferenceEntity);
 			}
 

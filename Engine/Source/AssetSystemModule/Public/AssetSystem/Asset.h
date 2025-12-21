@@ -62,21 +62,7 @@ namespace Volt
 		mutable std::atomic<int32_t> m_refCount = 1;
 	};
 
-	class AssetLocks
-	{
-	public:
-		virtual ~AssetLocks() = default;
-
-	private:
-		template<typename T>
-		friend class AssetReference;
-
-		friend class AssetManager;
-
-		mutable std::shared_mutex* m_assetMutex = nullptr;
-	};
-
-	class Asset : public AssetRefCounter, public AssetLocks
+	class Asset : public AssetRefCounter
 	{
 	public:
 		Asset(const Asset&) noexcept = delete;

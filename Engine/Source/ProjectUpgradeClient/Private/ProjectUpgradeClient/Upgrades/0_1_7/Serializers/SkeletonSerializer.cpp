@@ -5,7 +5,6 @@
 #undef private
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -42,7 +41,6 @@ namespace Volt
 	void SkeletonSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<Skeleton> skeleton = asset.ConvertTo<Skeleton>();
-		ScopedAssetReferenceLock skeletonLock{ skeleton };
 
 		BinaryStreamWriter streamWriter{};
 	
@@ -64,8 +62,6 @@ namespace Volt
 	bool SkeletonSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
-
-		ScopedAssetReferenceLock skeleLock = { destinationAsset };
 
 		if (!std::filesystem::exists(filePath))
 		{
@@ -90,7 +86,6 @@ namespace Volt
 		streamReader.Read(serializationData);
 
 		AssetReference<Skeleton> skeleton = destinationAsset.ConvertTo<Skeleton>();
-		ScopedAssetReferenceLock skeletonLock{ skeleton };
 
 		skeleton->m_name = serializationData.name;
 		skeleton->m_joints = serializationData.joints;

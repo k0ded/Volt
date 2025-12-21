@@ -1,8 +1,6 @@
 #include "aspch.h"
 #include "AssetManager.h"
 
-#include "AssetSystem/AssetLocks.h"
-
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <JobSystem/JobSystem.h>
@@ -81,50 +79,28 @@ namespace Volt
 			return;
 		}
 
-		RefPtr<Asset> asset;
-#if 0
-		if (m_assetCache.TryGetAsset(assetHandle, asset))
-		{
-			ScopedAssetLock assetLock(asset);
+		AssetMetadata* metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 
-			// Get the previous state
-			const int32_t assetRefCount = asset->GetRefCount();
-			const std::string assetName = asset->m_name;
-			const uint8_t assetFlags = asset->m_assetFlags.load(std::memory_order::relaxed);
-			std::shared_mutex* assetMutex = asset->m_assetMutex;
-
-			asset->m_refCount = 0;
-			m_assetAllocator.ReallocateAsset(asset->GetType(), asset.GetRaw());
-
-			// Restore the state
-			asset->m_refCount = assetRefCount;
-			asset->m_name = assetName;
-			asset->m_assetFlags = assetFlags;
-			asset->m_handle = assetHandle;
-			asset->m_referencedAssetManager = this;
-
-			// Assign a temp mutex to make sure deserialization works
-			asset->m_assetMutex = new std::shared_mutex();
-
-			// Deserialize the asset again.
-			{
-				DeserializeAsset(asset);
-			}
-
-			// Delete the temp mutex again.
-			delete asset->m_assetMutex;
-			asset->m_assetMutex = assetMutex;
-
-			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
-			QueueAssetChanged(assetHandle, AssetChangedState::Loaded);
-
-			VT_LOGC(Trace, LogAssetSystem, "Reloaded asset '{}' (Handle: '{}', Type: '{}')!", asset->GetAssetName(), asset->GetAssetHandle(), asset->GetType()->GetName());
-		}
-		else
+		AssetLoadState expectedLoadState = AssetLoadState::Loaded;
+		if (!metadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloading))
 		{
 			VT_LOGC(Warning, LogAssetSystem, "Tried to reload asset with handle '{}', but it is not loaded!", assetHandle);
+			return;
 		}
-#endif
+
+		// Bump the generation to invalidate old asset.
+		metadata->m_generation.fetch_add(1, std::memory_order::acq_rel);
+
+		bool wasCreated = false;
+		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloading, AssetLoadState::Queued, wasCreated);
+
+		if (wasCreated)
+		{
+			// The asset was created by this thread, let's queue it for load.
+			QueueAssetForLoading(assetHandle, newAsset, AssetLoadState::Queued);
+		}
+
+		VT_LOGC(Trace, LogAssetSystem, "Reloaded asset '{}' (Handle: '{}', Type: '{}')!", newAsset->GetAssetName(), newAsset->GetAssetHandle(), newAsset->GetType()->GetName());
 	}
 
 	void AssetManager::SaveAsset(AssetHandle assetHandle)
@@ -151,8 +127,6 @@ namespace Volt
 
 	void AssetManager::SaveAsset(AssetReference<Asset> asset)
 	{
-		ScopedAssetReferenceLock lock{ asset };
-
 		if (!asset->IsValid())
 		{
 			VT_LOGC(Error, LogAssetSystem, "Unable to save invalid asset '{0}' (Handle: '{1}')!", asset->GetAssetName(), asset->GetAssetHandle());
@@ -250,7 +224,7 @@ namespace Volt
 		}
 
 		bool wasCreated = false;
-		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Loading, wasCreated);
+		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Loading, wasCreated);
 
 		if (wasCreated)
 		{
@@ -274,7 +248,7 @@ namespace Volt
 		}
 
 		bool wasCreated = false;
-		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Queued, wasCreated);
+		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Queued, wasCreated);
 
 		if (wasCreated)
 		{
@@ -307,7 +281,6 @@ namespace Volt
 
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;
-		newAsset->m_assetMutex = new std::shared_mutex();
 		newAsset->m_generation = metadata.m_generation;
 
 		m_assetRegistry.InsertAssetMetadata(std::move(metadata));
@@ -554,13 +527,12 @@ namespace Volt
 		VT_LOGC(Trace, LogAssetSystem, "Queued asset '{}' (Handle: '{}') for loading!", asset->GetAssetName(), asset->GetAssetHandle());
 	}
 
-	RefPtr<Asset> AssetManager::TryCreateAsset(AssetHandle assetHandle, AssetLoadState dstLoadState, bool& wasCreated)
+	RefPtr<Asset> AssetManager::TryCreateAsset(AssetHandle assetHandle, AssetLoadState expectedLoadState, AssetLoadState dstLoadState, bool& wasCreated)
 	{
 		AssetMetadata* metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 
 		uint64_t currentGeneration = metadata->GetGeneration(std::memory_order::acquire);
 
-		AssetLoadState expectedLoadState = AssetLoadState::Unloaded;
 		if (!metadata->TryTransitionLoadState(expectedLoadState, dstLoadState))
 		{
 			// The asset was not in the unloaded state.
@@ -573,7 +545,6 @@ namespace Volt
 		RefPtr<Asset> newAsset = m_assetAllocator.AllocateAssetWithType(metadata->type);
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;
-		newAsset->m_assetMutex = new std::shared_mutex();
 		newAsset->m_generation = currentGeneration;
 		newAsset->AssignAssetHandle(metadata->handle);
 		newAsset->SetName(metadata->filepath.stem().string());
@@ -612,8 +583,15 @@ namespace Volt
 
 		while (true)
 		{
+			if (assetMetadata->GetGeneration(std::memory_order::acquire) != currentGeneration)
+			{
+				return nullptr;
+			}
+
 			// The asset was/is unloaded, stop.
-			if (assetMetadata->m_loadState.load(std::memory_order::acquire) == AssetLoadState::Unloaded)
+			const AssetLoadState currentLoadState = assetMetadata->m_loadState.load(std::memory_order::acquire);
+
+			if (currentLoadState == AssetLoadState::Unloaded)
 			{
 				return nullptr;
 			}
@@ -634,34 +612,39 @@ namespace Volt
 
 	void AssetManager::QueueAssetForDestruction(AssetRefCounter* assetRefCounter)
 	{
-		AssetUnloadData unloadData;
-		unloadData.asset = assetRefCounter;
+		Asset* asset = reinterpret_cast<Asset*>(assetRefCounter);
 
-		// Set the asset to not loaded and remove it from the asset cache.
-		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(reinterpret_cast<Asset*>(assetRefCounter)->GetAssetHandle());
+		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(asset->GetAssetHandle());
 
-		AssetLoadState expectedLoadState = AssetLoadState::Loaded;
-		if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloading))
+		// This is an old instance, it shouldn't change any state on the metadata.
+		if (asset->m_generation < assetMetadata->GetGeneration())
 		{
-			VT_ENSURE(false);
+			// We'll just queue it for destruction.
+			m_assetDestructionQueue.Emplace(assetRefCounter);
 		}
-
-		uint64_t oldGeneration = assetMetadata->m_generation.fetch_add(1, std::memory_order::acq_rel);
-
-		if (m_assetCache.TryRemove(assetMetadata->handle, oldGeneration))
+		else
 		{
+			AssetLoadState expectedLoadState = AssetLoadState::Loaded;
+			if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloading))
+			{
+				VT_ENSURE(false);
+			}
+
+			uint64_t oldGeneration = assetMetadata->m_generation.fetch_add(1, std::memory_order::acq_rel);
+
+			VT_CHECK(m_assetCache.TryRemove(assetMetadata->handle, oldGeneration));
+
+			m_dependencyGraph->OnAssetChanged(assetMetadata->handle, AssetChangedState::Unloaded);
+			QueueAssetChanged(assetMetadata->handle, AssetChangedState::Unloaded);
+
+			expectedLoadState = AssetLoadState::Unloading;
+			if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloaded))
+			{
+				VT_ENSURE(false);
+			}
+
+			m_assetDestructionQueue.Emplace(assetRefCounter);
 		}
-
-		m_dependencyGraph->OnAssetChanged(assetMetadata->handle, AssetChangedState::Unloaded);
-		QueueAssetChanged(assetMetadata->handle, AssetChangedState::Unloaded);
-
-		expectedLoadState = AssetLoadState::Unloading;
-		if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloaded))
-		{
-			VT_ENSURE(false);
-		}
-
-		m_assetDestructionQueue.Emplace(assetRefCounter);
 	}
 
 	void AssetManager::UnloadAndFreeAsset(AssetUnloadData& assetUnloadData)
@@ -686,7 +669,6 @@ namespace Volt
 			VT_ENSURE(asset->GetRefCount() == 0);
 
 			// Call destructor and free.
-			delete asset->m_assetMutex;
 			asset->~Asset();
 			m_assetAllocator.FreeAsset(assetType, asset);
 
@@ -709,7 +691,6 @@ namespace Volt
 			// At this point there should be zero references left.
 			VT_ENSURE(asset->GetRefCount() == 0);
 
-			delete asset->m_assetMutex;
 			asset->~Asset();
 			m_assetAllocator.FreeAsset(assetType, asset);
 		}
@@ -719,7 +700,6 @@ namespace Volt
 
 	bool AssetManager::DeserializeAsset(AssetReference<Asset> asset)
 	{
-		ScopedAssetReferenceLock assetLock{ asset };
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
 
 		const std::filesystem::path filepath = GetAssetFilesystemPath(assetMetadata->filepath);
@@ -822,7 +802,6 @@ namespace Volt
 
 	bool AssetManager::SerializeAsset(AssetReference<Asset> asset)
 	{
-		ScopedAssetReferenceLock assetLock{ asset };
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
 
 		if (!assetMetadata->HasFilepath())
@@ -951,16 +930,5 @@ namespace Volt
 		});
 
 		return resultAssetHandle;
-	}
-
-	AssetManager::ScopedAssetLock::ScopedAssetLock(RefPtr<Asset> asset)
-		: m_asset(asset)
-	{
-		m_asset->m_assetMutex->lock();
-	}
-
-	AssetManager::ScopedAssetLock::~ScopedAssetLock()
-	{
-		m_asset->m_assetMutex->unlock();
 	}
 }

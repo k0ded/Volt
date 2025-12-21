@@ -18,7 +18,6 @@
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <RHIModule/Images/Image.h>
 
@@ -131,7 +130,6 @@ namespace AssetBrowser
 					AssetReference<Volt::Texture2D> texture;
 					if (g_assetManager->TryGetAsset(item->handle, texture))
 					{
-						ScopedAssetReferenceLock lock{ texture };
 						texture->GetImage()->GenerateMips();
 					}
 				}

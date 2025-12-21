@@ -6,7 +6,6 @@
 #include "AssetSystem/AssetCache.h"
 #include "AssetSystem/AssetReference.h"
 #include "AssetSystem/AssetDependencyGraph.h"
-#include "AssetSystem/AssetLocks.h"
 
 #include <EventSystem/EventListener.h>
 
@@ -126,15 +125,6 @@ namespace Volt
 	private:
 		friend class AssetRefCounter;
 
-		struct ScopedAssetLock
-		{
-			ScopedAssetLock(RefPtr<Asset> asset);
-			~ScopedAssetLock();
-
-		private:
-			RefPtr<Asset> m_asset;
-		};
-
 		struct AssetManagerRoot
 		{
 			std::filesystem::path engineDirectoryPath;
@@ -164,7 +154,7 @@ namespace Volt
 		VTAS_API void LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState);
 		VTAS_API void QueueAssetForLoading(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState);
 
-		VTAS_API RefPtr<Asset> TryCreateAsset(AssetHandle assetHandle, AssetLoadState dstLoadState, bool& wasCreated);
+		VTAS_API RefPtr<Asset> TryCreateAsset(AssetHandle assetHandle, AssetLoadState expectedLoadState, AssetLoadState dstLoadState, bool& wasCreated);
 
 		VTAS_API void AddAssetToCache(RefPtr<Asset> asset);
 		RefPtr<Asset> TryGetOrTryWaitForPublishedAsset(AssetHandle assetHandle);
@@ -215,7 +205,7 @@ namespace Volt
 		}
 
 		bool wasCreated = false;
-		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Loading, wasCreated);
+		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Loading, wasCreated);
 
 		if (wasCreated)
 		{
@@ -276,7 +266,7 @@ namespace Volt
 		}
 
 		bool wasCreated = false;
-		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Queued, wasCreated);
+		RefPtr<Asset> newAsset = TryCreateAsset(assetHandle, AssetLoadState::Unloaded, AssetLoadState::Queued, wasCreated);
 
 		if (wasCreated)
 		{
@@ -342,7 +332,6 @@ namespace Volt
 	AssetReference<T> AssetManager::CreateAssetAndFile(const std::filesystem::path& targetDirectory, std::string_view assetName, Args&&... args)
 	{
 		AssetReference<T> asset = CreateAsset<T>(assetName, std::forward<Args>(args)...);
-		ScopedAssetReferenceLock lock{ asset };
 
 		std::filesystem::path targetPath = targetDirectory / (std::string(assetName) + ".vtasset");
 		CreateFileForAsset(asset->GetAssetHandle(), targetPath);
@@ -354,7 +343,6 @@ namespace Volt
 	AssetManager::CreateAssetAndFileWithAssetHandle(const std::filesystem::path& targetDirectory, std::string_view assetName, AssetHandle assetHandle, Args&&... args)
 	{
 		AssetReference<T> asset = CreateAssetWithAssetHandle<T>(assetName, assetHandle, std::forward<Args>(args)...);
-		ScopedAssetReferenceLock lock{ asset };
 
 		std::filesystem::path targetPath = targetDirectory / (std::string(assetName) + ".vtasset");
 		CreateFileForAsset(asset->GetAssetHandle(), targetPath);
@@ -385,7 +373,6 @@ namespace Volt
 
 		// Setup a link back to the asset manager.
 		newAsset->m_referencedAssetManager = this;
-		newAsset->m_assetMutex = new std::shared_mutex();
 		newAsset->m_generation = metadata.m_generation;
 
 		m_assetRegistry.InsertAssetMetadata(std::move(metadata));

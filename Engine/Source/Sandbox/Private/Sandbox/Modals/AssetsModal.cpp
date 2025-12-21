@@ -317,7 +317,6 @@ void AssetsModal::DrawRowColumn(CreateFilesTableColumns column, Volt::AssetHandl
 			AssetReference<Volt::Asset> asset;
 			if (g_assetManager->TryGetTypelessAssetIfLoaded(handle, asset))
 			{
-				ScopedAssetReferenceLock lock{ asset };
 				ImGui::TextUnformatted(asset->GetAssetName().data());
 			}
 

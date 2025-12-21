@@ -18,7 +18,6 @@
 #include "Sandbox/Window/AssetBrowser/EditorAssetRegistry.h"
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 

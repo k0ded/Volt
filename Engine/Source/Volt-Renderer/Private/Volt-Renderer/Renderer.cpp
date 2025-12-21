@@ -8,7 +8,6 @@
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
@@ -173,8 +172,6 @@ namespace Volt
 
 		// Get the image from the environment texture.
 		{
-			ScopedAssetReferenceLock assetLock{ environmentTexture };
-
 			if (!environmentTexture->IsValid())
 			{
 				return {};

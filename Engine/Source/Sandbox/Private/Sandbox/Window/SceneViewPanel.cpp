@@ -29,7 +29,6 @@
 #include <InputModule/InputCodes.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -68,9 +67,6 @@ void SceneViewPanel::UpdateMainContent()
 		return;
 	}
 
-	// Lock the scene for the duration of the update function.
-	ScopedAssetReferenceLock sceneLock{ m_scene };
-	
 	if (!m_scene->IsFinishedLoadingEntities())
 	{
 		ImGui::Text("Scene is still loading entitites, please wait.");
@@ -243,7 +239,6 @@ void SceneViewPanel::UpdateMainContent()
 			AssetReference<Volt::Prefab> prefab;
 			if (g_assetManager->TryGetAssetImmediately(handle, prefab))
 			{
-				ScopedAssetReferenceLock prefabLock{ prefab };
 				Volt::Entity prefabEntity = prefab->Instantiate(*m_scene);
 
 				Ref<ObjectStateCommand> command = CreateRef<ObjectStateCommand>(prefabEntity, *m_scene, ObjectStateAction::Create);
@@ -297,8 +292,6 @@ bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 		case Volt::InputCode::Delete:
 		{
 			Vector<Volt::Entity> entitiesToRemove;
-
-			ScopedAssetReferenceLock sceneLock{ m_scene };
 
 			auto selection = SelectionManager::GetSelectedEntities();
 			for (const auto& selectedEntity : selection)
@@ -412,7 +405,6 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 		AssetReference<Volt::Prefab> prefabAsset;
 		if (g_editorAssetManager->TryGetAssetAndCache(prefabComp.prefabAsset, prefabAsset))
 		{
-			ScopedAssetReferenceLock prefabLock{ prefabAsset };
 			hasValidLink = prefabAsset->IsEntityValidInPrefab(entity);
 		}
 
@@ -673,8 +665,6 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 			AssetReference<Volt::Prefab> prefabAsset;
 			if (g_assetManager->TryGetAsset(prefabComp.prefabAsset, prefabAsset))
 			{
-				ScopedAssetReferenceLock prefabLock{ prefabAsset };
-
 				const std::string menuId = "Update Prefab Entity##" + entity.ToString();
 				if (ImGui::MenuItem(menuId.c_str()))
 				{
@@ -879,8 +869,6 @@ void SceneViewPanel::UpdatePrefabsInScene(Volt::Prefab& prefab, Volt::Entity src
 	AssetReference<Volt::Prefab> prefabAsset;
 	if (g_assetManager->TryGetAssetImmediately(srcEntity.GetComponent<Volt::PrefabComponent>().prefabAsset, prefabAsset))
 	{
-		ScopedAssetReferenceLock prefabLock{ prefabAsset };
-
 		m_scene->ForEachWithComponents<const Volt::PrefabComponent, const Volt::IDComponent>([&](const entt::entity id, const Volt::PrefabComponent& prefabComp, const Volt::IDComponent& idComponent)
 		{
 			if (idComponent.id == srcEntity.GetID())
@@ -923,8 +911,6 @@ void SceneViewPanel::UpdatePrefabsInScene(Volt::Prefab& prefab, Volt::Entity src
 				AssetReference<Volt::Prefab> prefabRefAsset;
 				if (g_assetManager->TryGetAssetImmediately(prefabRefData.prefabAsset, prefabRefAsset))
 				{
-					ScopedAssetReferenceLock refPrefabLock{ prefabRefAsset };
-
 					auto entity = Volt::Entity{ id, m_scene->GetEntityScene() };
 					prefabRefAsset->UpdateEntityInScene(*m_scene, entity);
 

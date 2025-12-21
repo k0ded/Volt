@@ -5,7 +5,6 @@
 #undef private
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <PhysicsInterface/PhysicsMaterial.h>
 
@@ -21,7 +20,6 @@ namespace Volt
 	void PhysicsMaterialSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<PhysicsMaterialAsset> material = asset.ConvertTo<PhysicsMaterialAsset>();
-		ScopedAssetReferenceLock materialLock{ material };
 
 		BinaryStreamWriter streamWriter{};
 		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
@@ -64,7 +62,6 @@ namespace Volt
 		streamReader.Read(serializationData);
 
 		AssetReference<PhysicsMaterialAsset> physicsMat = destinationAsset.ConvertTo<PhysicsMaterialAsset>();
-		ScopedAssetReferenceLock materialLock{ physicsMat };
 
 		physicsMat->GetMaterial()->SetStaticFriction(serializationData.staticFriction);
 		physicsMat->GetMaterial()->SetDynamicFriction(serializationData.dynamicFriction);

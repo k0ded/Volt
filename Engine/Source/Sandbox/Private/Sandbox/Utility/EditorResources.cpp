@@ -12,7 +12,6 @@
 #include <Volt-Assets/SourceAssetImporters/ImportConfigs.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 #include <AssetSystem/SourceAssetManager.h>
 
 #include <Volt-Scene/AssetTypes.h>
@@ -154,8 +153,6 @@ void EditorResources::TryLoadIcon(const std::filesystem::path& path, RefPtr<Volt
 		}
 
 		AssetReference<Volt::Texture2D> textureAsset = importedAssets.front().ConvertTo<Volt::Texture2D>();
-		ScopedAssetReferenceLock textureLock{ textureAsset };
-
 		*outTexture = textureAsset->GetImage();
 	});
 }
@@ -168,7 +165,6 @@ Ref<Volt::Mesh> EditorResources::TryLoadMesh(const std::filesystem::path& path)
 
 	if (g_assetManager->TryGetAsset(g_assetManager->GetAssetHandleFromFilepath(path), meshAsset))
 	{
-		ScopedAssetReferenceLock lock{ meshAsset };
 		mesh = meshAsset->GetMesh();
 	}
 	else

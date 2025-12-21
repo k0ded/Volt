@@ -8,7 +8,6 @@
 #include <Volt-Scene/WorldEngine/WorldCell.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
 #include <Volt-Core/Algorithms.h>
@@ -38,7 +37,6 @@ namespace Volt
 	void SceneSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		const AssetReference<Scene> scene = asset.ConvertTo<Scene>();
-		ScopedAssetReferenceLock sceneLock{ scene };
 
 		std::filesystem::path directoryPath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 		if (!std::filesystem::is_directory(directoryPath))
@@ -87,7 +85,6 @@ namespace Volt
 	bool SceneSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		AssetReference<Scene> scene = destinationAsset.ConvertTo<Scene>();
-		ScopedAssetReferenceLock sceneLock{ scene };
 
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 

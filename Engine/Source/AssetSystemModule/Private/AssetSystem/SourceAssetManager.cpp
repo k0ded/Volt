@@ -1,7 +1,6 @@
 #include "aspch.h"
 
 #include "AssetSystem/SourceAssetImporter.h"
-#include "AssetSystem/AssetLocks.h"
 
 #include "SourceAssetManager.h"
 
@@ -71,8 +70,6 @@ namespace Volt
 			{
 				for (const auto& asset : result)
 				{
-					ScopedAssetReferenceLock assetLock{ asset };
-
 					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} (Handle: {}) was imported!", asset->GetAssetName(), asset->GetAssetHandle());
 				}
 			}
@@ -80,8 +77,6 @@ namespace Volt
 			{
 				for (const auto& asset : result)
 				{
-					ScopedAssetReferenceLock assetLock{ asset };
-
 					std::filesystem::path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, std::string(asset->GetAssetName()));
 					g_assetManager->CreateFileForAsset(asset->GetAssetHandle(), filepath);
 
@@ -128,8 +123,6 @@ namespace Volt
 			{
 				for (const auto asset : result)
 				{
-					ScopedAssetReferenceLock assetLock{ asset };
-
 					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} (Handle: {}) was imported!", asset->GetAssetName(), asset->GetAssetHandle());
 				}
 			}
@@ -137,8 +130,6 @@ namespace Volt
 			{
 				for (const auto asset : result)
 				{
-					ScopedAssetReferenceLock assetLock{ asset };
-
 					std::filesystem::path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, std::string(asset->GetAssetName()));
 					g_assetManager->CreateFileForAsset(asset->GetAssetHandle(), filepath);
 

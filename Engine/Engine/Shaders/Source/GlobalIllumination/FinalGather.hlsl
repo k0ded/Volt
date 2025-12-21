@@ -99,19 +99,19 @@ void FinalGatherCS(uint2 DispatchThreadID : SV_DispatchThreadID)
 			const float3 hitPosition = rayDesc.origin + rayDesc.direction * inlineTraceResult.GetHitT();
 		
 			TriangleAttributes triangleAttribs = LoadTriangleAttributes(gpuMesh, inlineTraceResult.GetBarycentrics(), inlineTraceResult.GetPrimitiveIndex());
-			ConvertTriangleAttributesToWorldSpace(triangleAttribs, primitiveData.transform);
+			ConvertTriangleAttributesToWorldSpace(triangleAttribs, primitiveData.transform.Combine(gpuMesh.transform));
 
 			SpatialHashTable worldRadianceCacheHashTable;
 
-			uint hashIndex;
-			if (worldRadianceCacheHashTable.Get(hitPosition, hashIndex))
-			{
-				indirectLight.rgb = UnpackRGBE(WorldRadianceCacheCellCache[hashIndex]);
-			}
-			else
-			{
+			//uint hashIndex;
+			//if (worldRadianceCacheHashTable.Get(hitPosition, hashIndex))
+			//{
+			//	indirectLight.rgb = UnpackRGBE(WorldRadianceCacheCellCache[hashIndex]);
+			//}
+			//else
+			//{
 				indirectLight.rgb = SampleIrradiance(pixelWorldPosition, pixelNormal);
-			}
+			//}
 		}
 	}
 

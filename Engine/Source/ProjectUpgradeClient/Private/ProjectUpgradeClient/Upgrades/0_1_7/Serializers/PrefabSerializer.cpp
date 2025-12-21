@@ -11,7 +11,6 @@
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
-#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -63,7 +62,6 @@ namespace Volt
 		}
 
 		AssetReference<Prefab> prefab = destinationAsset.ConvertTo<Prefab>();
-		ScopedAssetReferenceLock prefabLock{ prefab };
 
 		AssetReference<Scene> prefabScene = g_assetManager->CreateAnonymousAsset<Scene>("PrefabScene");
 

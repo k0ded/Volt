@@ -5,7 +5,6 @@
 #include "Volt-Animation/TempAnimator.h"
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <EntitySystem/Scripting/ECSBuilder.h>
 #include <EntitySystem/Scripting/ECSSystemRegistry.h>
@@ -30,8 +29,6 @@ namespace Volt
 		{
 			return;
 		}
-
-		ScopedAssetReferenceLock animationLock{ animation };
 
 		animPlayerComp.currentPlayTime += variableUpdate.deltaTime;
 		if (animPlayerComp.currentPlayTime >= animation->GetDuration())

@@ -7,6 +7,9 @@
 #include <type_traits>
 #include <xutility>
 
+template<typename T, typename... Ts>
+concept IsInVariant = (std::is_same_v<std::decay_t<T>, Ts> || ...);
+
 template<typename... Ts>
 class Variant
 {
@@ -17,6 +20,8 @@ public:
 	VT_INLINE ~Variant() noexcept;
 
 	template<typename T>
+	requires (!std::is_same_v<std::decay_t<T>, Variant<Ts...>> &&
+		IsInVariant<T, Ts...>)
 	VT_INLINE Variant(T&& value) noexcept;
 
 	VT_INLINE Variant(const Variant& other) noexcept;
@@ -26,6 +31,8 @@ public:
 	VT_INLINE Variant& operator=(Variant&& other) noexcept;
 
 	template<typename T>
+	requires (!std::is_same_v<std::decay_t<T>, Variant<Ts...>>&&
+		IsInVariant<T, Ts...>)
 	VT_INLINE Variant& operator=(T&& value) noexcept;
 
 	template<typename T, typename... Args>
@@ -77,6 +84,8 @@ VT_INLINE Variant<Ts...>::~Variant() noexcept
 
 template<typename... Ts>
 template<typename T>
+	requires (!std::is_same_v<std::decay_t<T>, Variant<Ts...>> &&
+		IsInVariant<T, Ts...>)
 VT_INLINE Variant<Ts...>::Variant(T&& value) noexcept
 {
 	Emplace<std::decay_t<T>>(std::forward<T>(value));
@@ -113,8 +122,6 @@ VT_INLINE Variant<Ts...>& Variant<Ts...>::operator=(const Variant& other) noexce
 {
 	if (this != &other)
 	{
-		Destroy();
-
 		if (other.IsValid())
 		{
 			other.CopyInto(m_storage, m_typeIndex);
@@ -150,6 +157,8 @@ VT_INLINE Variant<Ts...>& Variant<Ts...>::operator=(Variant&& other) noexcept
 
 template<typename... Ts>
 template<typename T>
+requires (!std::is_same_v<std::decay_t<T>, Variant<Ts...>>&&
+	IsInVariant<T, Ts...>)
 VT_INLINE Variant<Ts...>& Variant<Ts...>::operator=(T&& value) noexcept
 {
 	Emplace<std::decay_t<T>>(std::forward<T>(value));

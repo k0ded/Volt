@@ -32,3 +32,32 @@ void AssertionFailure(std::string_view expression)
 {
 	AssertionFailure(expression.data());
 }
+
+bool CheckExpression(bool expression, const char* str)
+{
+	if (!expression)
+	{
+#if defined(VT_ENABLE_CHECKS)
+#ifdef VT_PLATFORM_WINDOWS
+		printf("CHECK FAILURE: %s\n", str);
+		if (::IsDebuggerPresent())
+		{
+			OutputDebugStringA(str);
+		}
+#else	
+		printf("%s\n", str);
+#endif
+#else
+		VT_UNUSED(str);
+#endif
+
+		VT_DEBUGBREAK();
+	}
+
+	return expression;
+}
+
+bool CheckExpression(bool expression, std::string_view str)
+{
+	return CheckExpression(expression, str.data());
+}

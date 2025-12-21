@@ -4,7 +4,6 @@
 #include <AssetSystem/AssetType.h>
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>
-#include <AssetSystem/AssetLocks.h>
 
 using namespace Volt;
 
@@ -38,8 +37,6 @@ namespace IntergrationTests
 			AssetReference<TestAsset> newAsset = g_assetManager->CreateMemoryAsset<TestAsset>("TestingAsset", 1001);
 			EXPECT_NE(newAsset, nullptr);
 
-			ScopedAssetReferenceLock assetLock{ newAsset };
-
 			newAssetHandle = newAsset->GetAssetHandle();
 			EXPECT_NE(newAssetHandle, Asset::Null());
 
@@ -60,8 +57,6 @@ namespace IntergrationTests
 		{
 			AssetReference<TestAsset> newAsset = g_assetManager->CreateAsset<TestAsset>("TestingAsset", 1001);
 			EXPECT_NE(newAsset, nullptr);
-
-			ScopedAssetReferenceLock assetLock{ newAsset };
 
 			newAssetHandle = newAsset->GetAssetHandle();
 			EXPECT_NE(newAssetHandle, Asset::Null());

@@ -81,7 +81,6 @@
 #include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -185,8 +184,6 @@ void Sandbox::OnAttach()
 		VT_ENSURE(g_assetManager->IsAssetLoaded(owningSceneHandle));
 		AssetReference<Volt::Scene> scene = g_assetManager->GetAssetImmediately<Volt::Scene>(owningSceneHandle);
 
-		ScopedAssetReferenceLock sceneLock{ scene };
-
 		if (!scene->IsEntityValid(customMetadata.entityID))
 		{
 			return true;
@@ -282,8 +279,6 @@ void Sandbox::SetupNewSceneData()
 		Volt::SceneRendererCreateInfo spec{};
 		Volt::SceneRendererCreateInfo gameSpec{};
 
-		ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
-
 		spec.debugName = "Editor Viewport";
 		spec.renderScene = m_runtimeScene->GetRenderScene();
 		spec.drawDebug = true;
@@ -369,11 +364,7 @@ void Sandbox::OnScenePlay()
 	m_intermediateScene = m_runtimeScene;
 
 	m_runtimeScene = g_assetManager->CreateMemoryAsset<Volt::Scene>("PlayInEditorScene");
-
-	{
-		ScopedAssetReferenceLock intermediateLock{ m_intermediateScene };
-		m_intermediateScene->CopyEntitiesTo(m_runtimeScene);
-	}
+	m_intermediateScene->CopyEntitiesTo(m_runtimeScene);
 
 	SetupNewSceneData();
 
@@ -519,9 +510,7 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 	// Check if we are trying to load the same scene.
 	if (m_runtimeScene)
 	{
-		m_runtimeScene.Lock();
 		oldAssetHandle = m_runtimeScene->GetAssetHandle();
-		m_runtimeScene.Unlock();
 	}
 
 	const bool isSameScene = sceneHandle == oldAssetHandle;
@@ -560,11 +549,7 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 	}
 
 	SetupNewSceneData();
-
-	{
-		ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
-		m_runtimeScene->LoadEntities();
-	}
+	m_runtimeScene->LoadEntities();
 }
 
 bool Sandbox::SaveScene(bool showDialog, bool allowDiscard)
@@ -574,8 +559,6 @@ bool Sandbox::SaveScene(bool showDialog, bool allowDiscard)
 	{
 		return true;
 	}
-
-	ScopedAssetReferenceLock runtimeSceneLock{ m_runtimeScene };
 
 	SaveDirtyAssetsFilter filter;
 	filter.includeAssetDelegate = [sceneHandle = m_runtimeScene->GetAssetHandle()](Volt::AssetHandle handle) -> bool
@@ -691,10 +674,7 @@ bool Sandbox::PromptUnloadCurrentScene()
 	}
 
 
-	m_runtimeScene.Lock();
 	m_runtimeScene->UnloadEntities();
-	m_runtimeScene.Unlock();
-
 	m_runtimeScene.Reset();
 	return true;
 }
@@ -710,8 +690,6 @@ bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
 
 	if (m_runtimeScene)
 	{
-		ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
-
 		if (m_runtimeScene->IsFinishedLoadingEntities())
 		{
 			switch (m_sceneState)
@@ -798,8 +776,6 @@ void Sandbox::RenderGameView(float timestep)
 			{
 				break;
 			}
-
-			ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
 
 			if (!m_runtimeScene->IsFinishedLoadingEntities())
 			{
@@ -925,8 +901,6 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 		{
 			if (SelectionManager::IsAnySelected())
 			{
-				ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
-
 				glm::vec3 avgPos = 0.f;
 
 				for (const auto& id : SelectionManager::GetSelectedEntities())
@@ -996,8 +970,6 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 
 bool Sandbox::OnViewportResizeEvent(Volt::ViewportResizeEvent& e)
 {
-	ScopedAssetReferenceLock sceneLock{ m_runtimeScene };
-
 	m_runtimeScene->SetRenderSize(e.GetWidth(), e.GetHeight());
 	m_viewportSize = { e.GetWidth(), e.GetHeight() };
 	m_viewportPosition = { e.GetX(), e.GetY() };
@@ -1015,8 +987,6 @@ bool Sandbox::OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e)
 	}
 
 	AssetReference<Volt::Scene> scene = e.GetScene();
-	ScopedAssetReferenceLock sceneLock{ scene };
-
 	scene->SetRenderSize(m_viewportSize.x, m_viewportSize.y);
 
 	Volt::ViewportResizeEvent e2 = { Volt::WindowManager::Get().GetMainWindow(), m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };

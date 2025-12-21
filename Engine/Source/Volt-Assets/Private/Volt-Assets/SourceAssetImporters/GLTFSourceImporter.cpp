@@ -15,7 +15,7 @@
 #include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
+#include <AssetSystem/SourceAssetManager.h>
 
 #include <Mosaic/MosaicGraphBuilder.h>
 
@@ -36,15 +36,33 @@ namespace Volt
 
 	using GLTFNodeIndex = size_t;
 
+	struct ImportImageUserData
+	{
+		std::filesystem::path importDirectory;
+		std::filesystem::path destinationDirectory;
+		Vector<JobFuture<Vector<AssetReference<Asset>>>> importedTextures;
+	};
+
 	static bool LoadImageData(tinygltf::Image* image, const int imageIdx, std::string* err, std::string* warn, int reqWidth, int reqHeight, const unsigned char* bytes, int size, void* userData)
 	{
-		return false;
+		ImportImageUserData& importUserData = *reinterpret_cast<ImportImageUserData*>(userData);
+		VT_UNUSED(importUserData);
+
+		std::filesystem::path sourceFilepath = std::filesystem::absolute(importUserData.importDirectory / image->uri);
+
+		Volt::TextureSourceImportConfig importConfig;
+		importConfig.destinationDirectory = importUserData.destinationDirectory;
+		importConfig.destinationFilename = sourceFilepath.stem().string();
+		importConfig.generateMipMaps = true;
+		importConfig.importMipMaps = true;
+
+		importUserData.importedTextures.emplace_back(SourceAssetManager::ImportSourceAsset(sourceFilepath, importConfig));
+
+		return true;
 	}
 
-	Vector<AssetReference<Asset>> ImportGLTFMaterialWithTextures(const tinygltf::Material& gltfMaterial, AssetReference<MaterialAsset> material)
+	void ImportGLTFMaterialWithTextures(const tinygltf::Material& gltfMaterial, AssetReference<MaterialAsset> material, const Vector<AssetReference<Asset>>& importedTextures)
 	{
-		ScopedAssetReferenceLock materialLock{ material };
-
 		Ref<MaterialGraph> materialGraph = material->GetMaterialGraph();
 
 		Mosaic::MosaicGraphBuilder mosaicBuilder(materialGraph->GetMosaicGraphMutable());
@@ -64,6 +82,16 @@ namespace Volt
 			mosaicBuilder.SetNodeParameterData(baseColorFactorNode, "RGBA", baseColor);
 		}
 
+		UUID64 baseColorTextureNode = 0;
+		if (gltfMaterial.pbrMetallicRoughness.baseColorTexture.index != -1)
+		{
+			baseColorTextureNode = mosaicBuilder.AddNode<MosaicNodes::SampleTextureNode>();
+			MosaicNodes::SampleTextureNode& textureNode = mosaicBuilder.GetNodeAsType<MosaicNodes::SampleTextureNode>(baseColorTextureNode);
+		
+			AssetReference<Asset> texture = importedTextures.at(gltfMaterial.pbrMetallicRoughness.baseColorTexture.index);
+			textureNode.SetTextureHandle(texture->GetAssetHandle());
+		}
+
 		// Metallic and Roughness
 		UUID64 metallicFactorNode = 0;
 		UUID64 roughnessFactorNode = 0;
@@ -76,6 +104,17 @@ namespace Volt
 
 			roughnessFactorNode = mosaicBuilder.AddNode<MosaicNodes::ConstantFloat>();
 			mosaicBuilder.SetNodeParameterData(roughnessFactorNode, "Value", roughnessFactor);
+		}
+
+		// Metallic roughness texture
+		UUID64 metallicRoughnessTextureNode = 0;
+		if (gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index != -1)
+		{
+			metallicRoughnessTextureNode = mosaicBuilder.AddNode<MosaicNodes::SampleTextureNode>();
+			MosaicNodes::SampleTextureNode& textureNode = mosaicBuilder.GetNodeAsType<MosaicNodes::SampleTextureNode>(metallicRoughnessTextureNode);
+
+			AssetReference<Asset> texture = importedTextures.at(gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index);
+			textureNode.SetTextureHandle(texture->GetAssetHandle());
 		}
 
 		// Emissive
@@ -93,6 +132,27 @@ namespace Volt
 			mosaicBuilder.SetNodeParameterData(emissiveFactorNode, "Value", emissive);
 		}
 
+		// Emissive texture
+		UUID64 emissiveTextureNode = 0;
+		if (gltfMaterial.emissiveTexture.index != -1)
+		{
+			emissiveTextureNode = mosaicBuilder.AddNode<MosaicNodes::SampleTextureNode>();
+			MosaicNodes::SampleTextureNode& textureNode = mosaicBuilder.GetNodeAsType<MosaicNodes::SampleTextureNode>(emissiveTextureNode);
+
+			AssetReference<Asset> texture = importedTextures.at(gltfMaterial.emissiveTexture.index);
+			textureNode.SetTextureHandle(texture->GetAssetHandle());
+		}
+
+		UUID64 normalTextureNode = 0;
+		if (gltfMaterial.normalTexture.index != -1)
+		{
+			normalTextureNode = mosaicBuilder.AddNode<MosaicNodes::SampleTextureNode>();
+			MosaicNodes::SampleTextureNode& textureNode = mosaicBuilder.GetNodeAsType<MosaicNodes::SampleTextureNode>(normalTextureNode);
+
+			AssetReference<Asset> texture = importedTextures.at(gltfMaterial.normalTexture.index);
+			textureNode.SetTextureHandle(texture->GetAssetHandle());
+		}
+
 		UUID64 pbrOutputNode = mosaicBuilder.AddNode<MosaicNodes::PBROutputNode>();
 
 		if (baseColorFactorNode != 0)
@@ -107,11 +167,9 @@ namespace Volt
 		{
 			mosaicBuilder.LinkNodeParameters(emissiveFactorNode, pbrOutputNode, "Value", "Emissive");
 		}
-
-		return {};
 	}
 
-	inline Vector<AssetReference<MaterialAsset>> CreateSceneMaterials(tinygltf::Model& gltfModel, MaterialTable& materialTable, const MeshSourceImportConfig& importConfig)
+	inline Vector<AssetReference<MaterialAsset>> CreateSceneMaterials(tinygltf::Model& gltfModel, MaterialTable& materialTable, const MeshSourceImportConfig& importConfig, const Vector<AssetReference<Asset>>& importedTextures)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -126,9 +184,7 @@ namespace Volt
 			}
 
 			AssetReference<MaterialAsset> material = g_assetManager->CreateAsset<MaterialAsset>(matName);
-			ScopedAssetReferenceLock materialLock{ material };
-
-			ImportGLTFMaterialWithTextures(mat, material);
+			ImportGLTFMaterialWithTextures(mat, material, importedTextures);
 
 			result.emplace_back(material);
 			materialTable.SetMaterial(material->GetRenderMaterial(), static_cast<uint32_t>(result.size() - 1));
@@ -137,8 +193,6 @@ namespace Volt
 		if (result.empty())
 		{
 			AssetReference<MaterialAsset> material = g_assetManager->CreateAsset<MaterialAsset>(importConfig.destinationFilename + "_DummyMaterial");
-			ScopedAssetReferenceLock materialLock{ material };
-
 			result.emplace_back(material);
 
 			materialTable.SetMaterial(material->GetRenderMaterial(), 0);
@@ -184,7 +238,11 @@ namespace Volt
 		tinygltf::Model gltfInput;
 		tinygltf::TinyGLTF gltfContext;
 
-		gltfContext.SetImageLoader(&LoadImageData, nullptr);
+		ImportImageUserData importImageUserData;
+		importImageUserData.importDirectory = filepath.parent_path();
+		importImageUserData.destinationDirectory = importConfig.destinationDirectory;
+
+		gltfContext.SetImageLoader(&LoadImageData, &importImageUserData);
 
 		std::string error, warning;
 		bool loaded = false;
@@ -215,13 +273,19 @@ namespace Volt
 			userData.OnWarning(outWarning);
 		}
 
+		Vector<AssetReference<Asset>> importedTextures;
+		for (auto& future : importImageUserData.importedTextures)
+		{
+			importedTextures.append(future.Get());
+		}
+
 		Vector<AssetReference<Asset>> result;
 
 		switch (importConfig.importType)
 		{
 			case MeshSourceImportType::StaticMesh:
 			{
-				result = ImportAsStaticMesh(gltfInput, importConfig, userData);
+				result = ImportAsStaticMesh(gltfInput, importConfig, userData, importedTextures);
 				break;
 			}
 
@@ -450,7 +514,7 @@ namespace Volt
 		}
 	}
 
-	Vector<AssetReference<Asset>> GLTFSourceImporter::ImportAsStaticMesh(tinygltf::Model& gltfModel, const MeshSourceImportConfig importConfig, const SourceAssetUserImportData& userData) const
+	Vector<AssetReference<Asset>> GLTFSourceImporter::ImportAsStaticMesh(tinygltf::Model& gltfModel, const MeshSourceImportConfig importConfig, const SourceAssetUserImportData& userData, const Vector<AssetReference<Asset>>& importedTextures) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -462,7 +526,7 @@ namespace Volt
 		}
 
 		MaterialTable materialTable;
-		Vector<AssetReference<MaterialAsset>> materials = CreateSceneMaterials(gltfModel, materialTable, importConfig);
+		Vector<AssetReference<MaterialAsset>> materials = CreateSceneMaterials(gltfModel, materialTable, importConfig, importedTextures);
 
 		Vector<AssetReference<Asset>> result;
 		if (importConfig.combineMeshes)
@@ -478,8 +542,6 @@ namespace Volt
 				CreateVoltMeshFromGLTFMesh(gltfModel.meshes[gltfNode.mesh], gltfNode, gltfModel, meshInitializer, materials);
 			}
 
-			ScopedAssetReferenceLock meshLock{ voltMesh };
-
 			voltMesh->Initialize(meshInitializer, materials);
 			result.emplace_back(voltMesh);
 		}
@@ -490,7 +552,6 @@ namespace Volt
 				const auto& gltfNode = gltfModel.nodes[nodeIndex];
 
 				AssetReference<MeshAsset> voltMesh = g_assetManager->CreateAsset<MeshAsset>(importConfig.destinationFilename + "_" + gltfNode.name);
-				ScopedAssetReferenceLock meshLock{ voltMesh };
 
 				MeshInitializer meshInitializer;
 

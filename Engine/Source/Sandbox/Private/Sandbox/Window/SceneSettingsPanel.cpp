@@ -4,7 +4,6 @@
 #include "Sandbox/UISystems/ModalSystem.h"
 
 #include <Volt-Application/UI/UIUtility.h>
-#include <AssetSystem/AssetLocks.h>
 
 SceneSettingsPanel::SceneSettingsPanel(AssetReference<Volt::Scene>& editorScene)
 	: EditorWindow("Scene Settings"), m_editorScene(editorScene)
@@ -13,8 +12,6 @@ SceneSettingsPanel::SceneSettingsPanel(AssetReference<Volt::Scene>& editorScene)
 
 void SceneSettingsPanel::UpdateMainContent()
 {
-	ScopedAssetReferenceLock sceneLock{ m_editorScene };
-
 	auto& sceneSettings = m_editorScene->GetSceneSettingsMutable();
 
 	if (UI::BeginProperties("sceneSettings"))

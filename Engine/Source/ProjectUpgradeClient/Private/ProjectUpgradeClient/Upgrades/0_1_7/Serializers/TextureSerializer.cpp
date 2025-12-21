@@ -1,7 +1,6 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/Serializers/TextureSerializer.h"
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
@@ -69,7 +68,6 @@ namespace Volt
 	void TextureSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<Texture2D> texture = asset.ConvertTo<Texture2D>();
-		ScopedAssetReferenceLock textureLock{ texture };
 
 		RefPtr<RHI::Image> image = texture->GetImage();
 
@@ -101,7 +99,6 @@ namespace Volt
 	bool TextureSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		AssetReference<Texture2D> texture = destinationAsset.ConvertTo<Texture2D>();
-		ScopedAssetReferenceLock textureLock{ texture };
 
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 

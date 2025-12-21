@@ -6,7 +6,6 @@
 #undef private
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -34,7 +33,6 @@ namespace Volt
 	void EnvironmentTextureSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<EnvironmentTexture> environmentTexture = asset.ConvertTo<EnvironmentTexture>();
-		ScopedAssetReferenceLock textureLock{ environmentTexture };
 
 		RefPtr<RHI::Image> diffuseImage = environmentTexture->m_diffuseImage;
 		RefPtr<RHI::Image> specularImage = environmentTexture->m_specularImage;
@@ -69,7 +67,6 @@ namespace Volt
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
 		AssetReference<EnvironmentTexture> environmentTexture = destinationAsset.ConvertTo<EnvironmentTexture>();
-		ScopedAssetReferenceLock textureLock{ environmentTexture };
 
 		if (!std::filesystem::exists(filePath))
 		{

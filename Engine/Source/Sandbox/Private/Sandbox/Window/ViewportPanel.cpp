@@ -43,7 +43,6 @@
 
 #include <CoreUtilities/Math/Math.h>
 #include <CoreUtilities/FileSystem.h>
-#include <AssetSystem/AssetLocks.h>
 
 ViewportPanel::ViewportPanel(Ref<Volt::SceneRenderer>& sceneRenderer, AssetReference<Volt::Scene>& editorScene, EditorCameraController* cameraController,
 	SceneState& aSceneState)
@@ -71,8 +70,6 @@ void ViewportPanel::UpdateMainContent()
 		ImGui::Text("No Scene Loaded.");
 		return;
 	}
-
-	ScopedAssetReferenceLock sceneLock{ m_editorScene };
 
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{ 0.07f, 0.07f, 0.07f, 1.f });
 
@@ -307,7 +304,6 @@ void ViewportPanel::UpdateContent()
 	ImGui::SameLine();
 
 	AssetReference<Volt::Texture2D> physicsIcon = m_animatedPhysicsIcon.GetCurrentFrame();
-	ScopedAssetReferenceLock physicsIconLock{ physicsIcon };
 
 	static ImTextureID physicsId = UI::GetTextureID(physicsIcon->GetImage());
 
@@ -612,8 +608,6 @@ bool ViewportPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 		case Volt::InputCode::Backspace:
 		case Volt::InputCode::Delete:
 		{
-			ScopedAssetReferenceLock sceneLock{ m_editorScene };
-
 			Vector<Volt::Entity> entitiesToRemove;
 
 			auto selection = SelectionManager::GetSelectedEntities();
@@ -776,8 +770,6 @@ void ViewportPanel::DuplicateSelection()
 {
 	m_editorCameraController->ForceDisable();
 
-	ScopedAssetReferenceLock sceneLock{ m_editorScene };
-
 	Vector<Volt::Entity> duplicated;
 	for (const auto& ent : SelectionManager::GetSelectedEntities())
 	{
@@ -828,8 +820,6 @@ void ViewportPanel::DuplicateSelection()
 
 void ViewportPanel::HandleSingleSelect()
 {
-	ScopedAssetReferenceLock sceneLock{ m_editorScene };
-
 	glm::vec2 perspectiveSize = m_perspectiveBounds[1] - m_perspectiveBounds[0];
 
 	int32_t mouseX = (int32_t)m_viewportMouseCoords.x;
@@ -1125,8 +1115,6 @@ glm::mat4 ViewportPanel::CalculateAverageTransform()
 	glm::vec3 avgTranslation = 0.f;
 	glm::quat avgRotation = glm::identity<glm::quat>();
 	glm::vec3 avgScale = 0.f;
-
-	ScopedAssetReferenceLock sceneLock{ m_editorScene };
 
 	for (const auto& ent : SelectionManager::GetSelectedEntities())
 	{

@@ -25,7 +25,6 @@
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetFactory.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Math/Math.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -216,8 +215,6 @@ namespace Volt
 					AssetReference<EntityDesc> entityDesc;
 					if (g_assetManager->TryGetAssetImmediately(descHandle, entityDesc))
 					{
-						ScopedAssetReferenceLock assetLock{ entityDesc };
-
 						taskGraphData->loadedEntityDescs[index] = entityDesc;
 
 						taskGraphData->entitySerializationData.at(entityID) = &entityDesc->GetSerializationData();
@@ -361,14 +358,11 @@ namespace Volt
 
 	Entity Scene::AddEntityToScene(AssetReference<EntityDesc> entityDescription)
 	{
-		entityDescription.Lock();
-
 		Entity newEntity = m_entityScene.CreateEntityWithID(entityDescription->GetEntityID());
 		VT_ENSURE(newEntity);
 
 		m_entityIDToDescHandle.emplace(newEntity.GetID(), entityDescription->GetAssetHandle());
 		entityDescription->AssignOwnerScene(AssetReference<Scene>(RefPtr<Scene>::Attach(this)));
-		entityDescription.Unlock();
 		
 		m_sceneExtensionManager.OnEntityCreated(newEntity);
 
@@ -391,8 +385,6 @@ namespace Volt
 		{
 			asset = g_assetManager->CreateAsset<EntityDesc>(name, id, GetAssetHandle());
 		}
-
-		ScopedAssetReferenceLock assetLock{ asset };
 
 		m_entityIDToDescHandle.emplace(id, asset->GetAssetHandle());
 		m_createdEntityDescs.emplace_back(asset);
@@ -490,8 +482,6 @@ namespace Volt
 			newScene = g_assetManager->CreateAsset<Scene>(name);
 		}
 
-		ScopedAssetReferenceLock assetLock{ newScene };
-
 		// Setup
 		{
 			// Cube
@@ -545,8 +535,6 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 	
-		ScopedAssetReferenceLock assetLock{ otherScene };
-
 		otherScene->Clear();
 
 		auto& registry = m_entityScene.GetRegistry();

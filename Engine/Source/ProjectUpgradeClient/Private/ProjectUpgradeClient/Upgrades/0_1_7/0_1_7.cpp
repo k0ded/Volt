@@ -14,7 +14,6 @@
 
 #include <AssetSystem/AssetMetadata.h>
 #include <AssetSystem/AssetFactory.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <EntitySystem/Entity.h>
 
@@ -153,7 +152,6 @@ namespace Volt
 		}
 
 		AssetReference<Asset> asset = g_assetManager->CreateAssetTypeless("TempAsset", assetMetadata.type);
-		ScopedAssetReferenceLock assetLock{ asset };
 
 		// If it's a entity desc asset the scene must be loaded when serialized.
 		// Make sure the scene is loaded.
@@ -161,7 +159,6 @@ namespace Volt
 		if (asset->GetType() == AssetTypes::EntityDesc)
 		{
 			AssetReference<EntityDesc> entityDescAsset = asset.ConvertTo<EntityDesc>();
-			ScopedAssetReferenceLock entityDescLock{ entityDescAsset };
 
 			const EntityDescCustomMetadata& customMeta = assetMetadata.GetCustomData<EntityDescCustomMetadata>();
 
@@ -169,8 +166,6 @@ namespace Volt
 
 			for (AssetReference<Asset> loadedAsset : m_assetsToKeepLoaded)
 			{
-				ScopedAssetReferenceLock loadedAssetLock{ loadedAsset };
-
 				if (loadedAsset->GetAssetHandle() == customMeta.sceneHandle)
 				{
 					sceneIsLoaded = true;
@@ -204,7 +199,6 @@ namespace Volt
 		if (asset->GetType() == AssetTypes::EntityDesc)
 		{
 			AssetReference<EntityDesc> entityDescAsset = asset.ConvertTo<EntityDesc>();
-			ScopedAssetReferenceLock entityDescLock{ entityDescAsset };
 
 			YAMLMemoryStreamReader yamlStreamReader;
 			yamlStreamReader.ReadBuffer(entityDescAsset->GetEntitySpawnData());

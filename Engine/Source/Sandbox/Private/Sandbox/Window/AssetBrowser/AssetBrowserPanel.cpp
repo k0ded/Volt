@@ -33,7 +33,6 @@
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>
 #include <CoreUtilities/FileSystem.h>
@@ -1072,7 +1071,6 @@ void AssetBrowserPanel::CreatePrefabAndSetupEntities(Volt::EntityID id)
 	name.erase(std::remove_if(name.begin(), name.end(), ::isspace), name.end());
 
 	AssetReference<Volt::Prefab> prefab = g_assetManager->CreateAssetAndFile<Volt::Prefab>(g_assetManager->GetRelativeAssetFilepath(myCurrentDirectory->path), name, entity);
-	ScopedAssetReferenceLock prefabLock{ prefab };
 
 	SetupEntityAsPrefab(entity.GetID(), prefab->GetAssetHandle());
 	Reload();
@@ -1189,7 +1187,6 @@ void AssetBrowserPanel::CreateNewAssetInCurrentDirectory(AssetType type)
 		FileSystem::CreateDirectories(g_assetManager->GetRelativeAssetFilepath(myCurrentDirectory->path) / tempName);
 
 		AssetReference<Volt::Scene> scene = Volt::Scene::CreateDefaultScene("New Scene");
-		ScopedAssetReferenceLock sceneLock{ scene };
 
 		const std::filesystem::path targetFilePath = (g_assetManager->GetRelativeAssetFilepath(myCurrentDirectory->path / tempName / (tempName + ext)));
 		g_assetManager->CreateFileForAsset(scene->GetAssetHandle(), targetFilePath);

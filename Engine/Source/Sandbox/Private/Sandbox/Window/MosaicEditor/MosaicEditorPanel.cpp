@@ -240,7 +240,6 @@ bool MosaicEditorPanel::SaveSettings(const std::string& data)
 		return false;
 	}
 
-	ScopedAssetReferenceLock lock{ m_material };
 	m_material->GetMaterialGraph()->GetMosaicGraph().GetEditorState() = data;
 	return true;
 }
@@ -252,7 +251,6 @@ size_t MosaicEditorPanel::LoadSettings(std::string& data)
 		return 0;
 	}
 
-	ScopedAssetReferenceLock lock{ m_material };
 	data = m_material->GetMaterialGraph()->GetMosaicGraph().GetEditorState();
 	return data.size();
 }
@@ -264,7 +262,6 @@ bool MosaicEditorPanel::SaveNodeSettings(const UUID64 nodeId, const std::string&
 		return false;
 	}
 
-	ScopedAssetReferenceLock lock{ m_material };
 	auto& node = m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph().GetNodeFromID(nodeId);
 	if (!node.IsValid())
 	{
@@ -282,7 +279,6 @@ size_t MosaicEditorPanel::LoadNodeSettings(const UUID64 nodeId, std::string& dat
 		return 0;
 	}
 
-	ScopedAssetReferenceLock lock{ m_material };
 	const auto& node = m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph().GetNodeFromID(nodeId);
 	if (!node.IsValid())
 	{
@@ -334,7 +330,6 @@ const MosaicEditorPanel::IncompatiblePinReason MosaicEditorPanel::CanLinkPins(co
 
 Mosaic::Parameter& MosaicEditorPanel::GetParameterFromID(const UUID64 paramId)
 {
-	ScopedAssetReferenceLock lock{ m_material };
 	for (auto& node : m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph().GetNodes())
 	{
 		for (auto& param : node.nodeData->GetInputParameters())
@@ -602,7 +597,6 @@ void MosaicEditorPanel::DrawNodes()
 
 	utils::BlueprintNodeBuilder builder{ textureId, width, height };
 
-	ScopedAssetReferenceLock lock{ m_material };
 	auto& graph = m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph();
 
 	for (const auto& node : graph.GetNodes())
@@ -711,7 +705,6 @@ void MosaicEditorPanel::DrawLinks()
 		return;
 	}
 
-	ScopedAssetReferenceLock lock{ m_material };
 	const auto& graph = m_material->GetMaterialGraph()->GetMosaicGraph().GetUnderlyingGraph();
 
 	for (const auto& edge : graph.GetEdges())
@@ -843,7 +836,6 @@ void MosaicEditorPanel::OnBeginCreate()
 
 void MosaicEditorPanel::OnBeginDelete()
 {
-	ScopedAssetReferenceLock lock{ m_material };
 	ed::LinkId linkId;
 	while (ed::QueryDeletedLink(&linkId))
 	{

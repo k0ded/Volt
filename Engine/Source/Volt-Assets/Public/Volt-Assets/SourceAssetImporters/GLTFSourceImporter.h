@@ -31,6 +31,6 @@ namespace Volt
 	private:
 		void CreateVoltMeshFromGLTFMesh(const tinygltf::Mesh& gltfMesh, const tinygltf::Node& gltfNode, const tinygltf::Model& gltfModel, MeshInitializer& meshInitializer, const Vector<AssetReference<MaterialAsset>>& materials) const;
 
-		Vector<AssetReference<Asset>> ImportAsStaticMesh(tinygltf::Model& gltfModel, const MeshSourceImportConfig importConfig, const SourceAssetUserImportData& userData) const;
+		Vector<AssetReference<Asset>> ImportAsStaticMesh(tinygltf::Model& gltfModel, const MeshSourceImportConfig importConfig, const SourceAssetUserImportData& userData, const Vector<AssetReference<Asset>>& importedTextures) const;
 	};
 }

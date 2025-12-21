@@ -5,7 +5,6 @@
 #undef private
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -43,7 +42,6 @@ namespace Volt
 	void BlendSpaceSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<BlendSpace> blendSpace = asset.ConvertTo<BlendSpace>();
-		ScopedAssetReferenceLock blendSpaceLock{ blendSpace };
 
 		BlendSpaceSerializationData serializationData{};
 		serializationData.dimension = blendSpace->m_dimension;
@@ -93,7 +91,6 @@ namespace Volt
 		streamReader.Read(serializationData);
 
 		AssetReference<BlendSpace> blendSpace = destinationAsset.ConvertTo<BlendSpace>();
-		ScopedAssetReferenceLock blendSpaceLock{ blendSpace };
 
 		for (const auto& serAnim : serializationData.animations)
 		{

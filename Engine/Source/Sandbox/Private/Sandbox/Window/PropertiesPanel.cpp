@@ -20,7 +20,6 @@
 #include <InputModule/MouseButtonCodes.h>
 
 #include <Volt-Application/UI/UIUtility.h>
-#include <AssetSystem/AssetLocks.h>
 
 PropertiesPanel::PropertiesPanel(AssetReference<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id)
 	: EditorWindow("Properties", false, id), myCurrentScene(currentScene), myCurrentSceneRenderer(currentSceneRenderer), mySceneState(sceneState)
@@ -44,8 +43,6 @@ void PropertiesPanel::UpdateMainContent()
 	{
 		return;
 	}
-
-	ScopedAssetReferenceLock sceneLock{ myCurrentScene };
 
 	const bool singleSelected = !(SelectionManager::GetSelectedCount() > 1);
 	auto firstEntity = myCurrentScene->GetEntityFromID(SelectionManager::GetSelectedEntities().front());

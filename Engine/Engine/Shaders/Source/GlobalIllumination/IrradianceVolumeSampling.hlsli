@@ -16,7 +16,8 @@ float3 SampleIrradiance(float3 worldPosition, float3 normal)
 	const uint4 probeCoordsAndCascade = IrradianceVolume::GetProbeCoordsAndCascadeIndexFromWorldPosition(biasedWorldPosition);
 	const float3 baseProbeWorldPosition = IrradianceVolume::GetProbeWorldPositionFromProbeCoords(probeCoordsAndCascade.xyz, probeCoordsAndCascade.w);
 
-	const float3 alpha = frac(float3(probeCoordsAndCascade.xyz) - 0.5f);
+	const float3 gridSpaceDistance = biasedWorldPosition - baseProbeWorldPosition;
+	const float3 alpha = clamp((gridSpaceDistance / IrradianceVolume::GetCascadeProbeSpacing(probeCoordsAndCascade.w)), 0.f, 1.f);
 
 	float3 irradianceSum = 0.f;
 	float weightSum = 0.f;
@@ -24,7 +25,7 @@ float3 SampleIrradiance(float3 worldPosition, float3 normal)
 	for (uint i = 0; i < 8; ++i)
 	{
 		uint3 offset = uint3(i, i >> 1, i >> 2) & 1u;
-		uint3 probeGridCoord = clamp(probeCoordsAndCascade.xyz + offset, 0, IrradianceVolumeResolution);
+		uint3 probeGridCoord = clamp(probeCoordsAndCascade.xyz + offset, 0, IrradianceVolumeResolution - 1);
 
 		const float3 probeWorldPosition = IrradianceVolume::GetProbeWorldPositionFromProbeCoords(probeGridCoord, probeCoordsAndCascade.w);
 		const uint probeIndex = IrradianceVolume::GetProbeIndexFromProbeCoords(probeGridCoord);
@@ -60,9 +61,6 @@ float3 SampleIrradiance(float3 worldPosition, float3 normal)
 		float distToBiasedPos = length(biasedDirToProbe);
 		biasedDirToProbe *= 1.f / distToBiasedPos;
 
-		// Move distance to a larger unit, due to how visibility is stored.
-		distToBiasedPos *= 0.01f;
-
 		// Visibility
 		{
 			const float2 visibilitySamplingUv = IrradianceVolume::GetProbeSamplingUVFromNormal(probeIndex, probeCoordsAndCascade.w, biasedDirToProbe);
@@ -82,13 +80,13 @@ float3 SampleIrradiance(float3 worldPosition, float3 normal)
 			}
 
 			chebyshevWeight = max(0.05f, chebyshevWeight);
-			//weight *= chebyshevWeight;
+			weight *= chebyshevWeight;
 		}
 
 		const float2 samplingUv = IrradianceVolume::GetProbeSamplingUVFromNormal(probeIndex, probeCoordsAndCascade.w, normal);
 		const float3 radiance = ProbeAtlas.SampleLevel(BilinearSampler, samplingUv, 0);
 
-		weight *= trilinearWeights.x * trilinearWeights.y * trilinearWeights.z + 0.001f;
+		weight *= trilinearWeights.x * trilinearWeights.y * trilinearWeights.z;
 		irradianceSum += weight * radiance;
 		weightSum += weight;
 	}

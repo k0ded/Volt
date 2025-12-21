@@ -14,7 +14,6 @@
 
 #include <AssetSystem/AssetTypes.h>
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <SubSystem/SubSystemManager.h>
 
@@ -302,7 +301,6 @@ namespace Volt
 
 		if (g_assetManager->TryGetAsset<MeshAsset>(instance.meshHandle, meshAsset))
 		{
-			ScopedAssetReferenceLock assetLock{ meshAsset };
 			mesh = meshAsset->GetMesh();
 		}
 		else
@@ -323,7 +321,6 @@ namespace Volt
 			{
 				if (g_assetManager->TryGetAsset(materialHandle, materialAsset))
 				{
-					ScopedAssetReferenceLock assetLock{ materialAsset };
 					renderMaterial = materialAsset->GetRenderMaterial();
 				}
 			}
@@ -362,8 +359,6 @@ namespace Volt
 		AssetReference<EnvironmentTexture> environmentTexture;
 		if (g_assetManager->TryGetAsset(instance.environmentTextureHandle, environmentTexture))
 		{
-			ScopedAssetReferenceLock assetLock{ environmentTexture };
-
 			lightDescription.diffuseIBL = environmentTexture->GetDiffuseImage();
 			lightDescription.specularIBL = environmentTexture->GetSpecularImage();
 		}

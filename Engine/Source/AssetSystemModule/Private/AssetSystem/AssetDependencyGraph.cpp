@@ -2,7 +2,6 @@
 #include "AssetDependencyGraph.h"
 
 #include "AssetSystem/AssetManager.h"
-#include "AssetSystem/AssetLocks.h"
 
 namespace Volt
 {
@@ -72,7 +71,6 @@ namespace Volt
 			AssetReference<Asset> asset;
 			if (m_referencedAssetManager.TryGetTypelessAssetIfLoaded(dependants.at(i), asset))
 			{
-				ScopedAssetReferenceLock assetLock{ asset };
 				asset->OnAssetDependencyChanged(handle, state);
 			}
 		}

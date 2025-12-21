@@ -5,7 +5,6 @@
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <Volt-Application/UI/UIUtility.h>
-#include <AssetSystem/AssetLocks.h>
 
 TextureViewerPanel::TextureViewerPanel()
 	: EditorWindow("Texture Viewer")
@@ -40,8 +39,6 @@ void TextureViewerPanel::UpdateMainContent()
 
 	if (ImGui::BeginChild("Child"))
 	{
-		ScopedAssetReferenceLock textureLock{ m_viewingTexture };
-
 		ImGui::Image(UI::GetTextureID(m_viewingTexture->GetImage(), currentMip), ImVec2{ std::floor(static_cast<float>(width) * zoomLevel * 0.01f), std::floor(static_cast<float>(height) * zoomLevel * 0.01f) });
 	}
 	ImGui::EndChild();

@@ -5,8 +5,6 @@
 
 #include <CoreUtilities/Math/Math.h>
 
-#include <AssetSystem/AssetLocks.h>
-
 WorldEnginePanel::WorldEnginePanel(AssetReference<Volt::Scene>& editorScene)
 	: EditorWindow("World Engine"), m_editorScene(editorScene)
 {
@@ -19,8 +17,6 @@ void WorldEnginePanel::UpdateMainContent()
 		ImGui::Text("No Scene Loaded.");
 		return;
 	}
-
-	ScopedAssetReferenceLock sceneLock{ m_editorScene };
 
 	auto& worldEngine = m_editorScene->GetWorldEngineMutable();
 

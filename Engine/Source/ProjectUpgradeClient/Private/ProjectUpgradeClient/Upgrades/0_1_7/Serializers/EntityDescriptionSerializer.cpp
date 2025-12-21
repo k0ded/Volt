@@ -9,7 +9,6 @@
 #include <Volt-Scene/Scene.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 #include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
@@ -342,7 +341,6 @@ namespace Volt
 	bool EntityDescSerializer::Deserialize(const AssetMetadata_0_1_7* metadata, AssetReference<Asset> destinationAsset) const
 	{
 		AssetReference<EntityDesc> entityDesc = destinationAsset.ConvertTo<EntityDesc>();
-		ScopedAssetReferenceLock entityDescLock{ entityDesc };
 
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
@@ -383,8 +381,6 @@ namespace Volt
 		{
 			return Entity::Null();
 		}
-
-		ScopedAssetReferenceLock sceneLock{ scene };
 
 		Entity entity = scene->CreateEntityWithID(entityId);
 

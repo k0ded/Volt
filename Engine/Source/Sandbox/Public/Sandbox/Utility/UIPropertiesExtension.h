@@ -4,7 +4,6 @@
 #include <concepts> // Required for std::derived_from
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <Volt-Assets/MeshAsset.h>
 
@@ -36,8 +35,6 @@ namespace UI
 		ImGui::PushItemWidth(ImGui::GetColumnWidth() - 20.f);
 
 		std::string assetFileName = "Null";
-
-		ScopedAssetReferenceLock assetLock{ asset };
 
 		if (asset)
 		{

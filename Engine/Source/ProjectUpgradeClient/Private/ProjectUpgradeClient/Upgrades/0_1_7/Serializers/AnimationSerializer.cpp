@@ -5,7 +5,6 @@
 #undef private
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -36,7 +35,6 @@ namespace Volt
 	void AnimationSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		AssetReference<Animation> animation = asset.ConvertTo<Animation>();
-		ScopedAssetReferenceLock animationLock{ animation };
 
 		BinaryStreamWriter streamWriter{};
 
@@ -74,15 +72,12 @@ namespace Volt
 		}
 
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
-		destinationAsset.Lock();
 		VT_ASSERT_MSG(serializedMetadata.version == destinationAsset->GetVersion(), "Incompatible version!");
-		destinationAsset.Unlock();
 
 		AnimationSerializationData serializationData{};
 		streamReader.Read(serializationData);
 
 		AssetReference<Animation> animation = destinationAsset.ConvertTo<Animation>();
-		ScopedAssetReferenceLock animationLock{ animation };
 
 		animation->m_duration = serializationData.duration;
 		animation->m_framesPerSecond = serializationData.framesPerSecond;

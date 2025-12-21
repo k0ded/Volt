@@ -15,7 +15,6 @@
 #include <CoreUtilities/StringUtility.h>
 
 #include <AssetSystem/SourceAssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 TextureImportModal::TextureImportModal(const std::string& strId)
 	: Modal(strId)
@@ -129,7 +128,6 @@ void TextureImportModal::Import(const std::filesystem::path& filepath, const std
 		auto importCallback = [importConfig](Vector<AssetReference<Volt::Asset>> assets)
 		{
 			AssetReference<Volt::Asset> textureAsset = assets.back();
-			ScopedAssetReferenceLock textureLock{ textureAsset };
 
 			Volt::AssetHandle textureHandle = textureAsset->GetAssetHandle();
 

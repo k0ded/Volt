@@ -25,9 +25,6 @@
 
 #include <InputModule/Events/KeyboardEvents.h>
 
-#include <AssetSystem/AssetLocks.h>
-
-
 GameViewPanel::GameViewPanel(Ref<Volt::SceneRenderer>& sceneRenderer, AssetReference<Volt::Scene>& editorScene, SceneState& aSceneState)
 	: EditorWindow(GAMEVIEWPANEL_TITLE), m_sceneRenderer(sceneRenderer), m_editorScene(editorScene),
 	m_sceneState(aSceneState)
@@ -162,7 +159,5 @@ void GameViewPanel::Resize(const glm::vec2& viewportSize)
 	}
 
 	m_sceneRenderer->Resize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
-
-	ScopedAssetReferenceLock sceneLock{ m_editorScene };
 	m_editorScene->SetRenderSize((uint32_t)m_viewportSize.x, (uint32_t)m_viewportSize.y);
 }

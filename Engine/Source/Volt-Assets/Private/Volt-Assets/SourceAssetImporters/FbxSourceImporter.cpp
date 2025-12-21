@@ -15,7 +15,6 @@
 #include <CoreUtilities/Packing.h>
 
 #include <fbxsdk.h>
-#include <AssetSystem/AssetLocks.h>
 
 VT_DEFINE_LOG_CATEGORY(LogFbxSourceImporter);
 
@@ -366,7 +365,6 @@ namespace Volt
 
 			auto it = std::find_if(result.begin(), result.end(), [name](const auto mat)
 			{
-				ScopedAssetReferenceLock materialLock{ mat };
 				return mat->GetAssetName() == name;
 			});
 
@@ -377,7 +375,6 @@ namespace Volt
 			}
 
 			AssetReference<MaterialAsset> material = g_assetManager->CreateAsset<MaterialAsset>(name);
-			ScopedAssetReferenceLock materialLock{ material };
 
 			result.emplace_back(material);
 
@@ -389,7 +386,6 @@ namespace Volt
 		{
 			AssetReference<MaterialAsset> material = g_assetManager->CreateAsset<MaterialAsset>(importConfig.destinationFilename + "_DummyMat");
 
-			ScopedAssetReferenceLock materialLock{ material };
 			result.emplace_back(material);
 
 			materialTable.SetMaterial(material->GetRenderMaterial(), 0);
@@ -419,8 +415,6 @@ namespace Volt
 						int32_t j = 0;
 						while (j < static_cast<int32_t>(materials.size()))
 						{
-							ScopedAssetReferenceLock materialLock{ materials[j] };
-
 							// Required because ':' is not allowed in asset names
 							std::string fbxMatName = fbxMaterial->GetName();
 							fbxMatName.erase(std::remove_if(fbxMatName.begin(), fbxMatName.end(), [](char c) { return c == ':'; }), fbxMatName.end());
@@ -702,7 +696,6 @@ namespace Volt
 		const FbxLongLong animationLength = endFrame - startFrame + 1;
 
 		AssetReference<Animation> voltAnimation = g_assetManager->CreateAsset<Animation>(importConfig.destinationFilename + "_" + std::string(animStackName.Buffer()));
-		ScopedAssetReferenceLock animationLock{ voltAnimation };
 
 		voltAnimation->m_framesPerSecond = FbxUtility::GetFramesPerSecond(timeMode);
 		voltAnimation->m_duration = static_cast<float>(animationLength) / static_cast<float>(voltAnimation->m_framesPerSecond);
@@ -986,7 +979,6 @@ namespace Volt
 				CreateVoltMeshFromFbxMesh(*fbxMesh, meshInitializer, materials, importConfig, nullptr);
 			}
 
-			ScopedAssetReferenceLock meshLock{ voltMesh };
 			voltMesh->Initialize(meshInitializer, materials);
 			result.emplace_back(voltMesh);
 		}
@@ -1002,7 +994,6 @@ namespace Volt
 				const uint32_t materialIndex = meshInitializer.GetSubMeshes().at(0).materialIndex;
 				meshInitializer.AddMaterial(materialTable.GetMaterial(materialIndex), materialIndex);
 
-				ScopedAssetReferenceLock meshLock{ voltMesh };
 				voltMesh->Initialize(meshInitializer, { materials.at(materialIndex) });
 				result.emplace_back(voltMesh);
 			}
@@ -1064,7 +1055,6 @@ namespace Volt
 				jointVertexLinkMap.clear();
 			}
 
-			ScopedAssetReferenceLock meshLock{ voltMesh };
 			voltMesh->Initialize(meshInitializer, materials);
 			result.emplace_back(voltMesh);
 		}
@@ -1081,7 +1071,6 @@ namespace Volt
 				const uint32_t materialIndex = meshInitializer.GetSubMeshes().at(0).materialIndex;
 				meshInitializer.AddMaterial(materialTable.GetMaterial(materialIndex), materialIndex);
 
-				ScopedAssetReferenceLock meshLock{ voltMesh };
 				voltMesh->Initialize(meshInitializer, { materials.at(materialIndex) });
 
 				result.emplace_back(voltMesh);
@@ -1092,7 +1081,6 @@ namespace Volt
 
 		// Create skeleton
 		AssetReference<Skeleton> voltSkeleton = g_assetManager->CreateAsset<Skeleton>(importConfig.destinationFilename + "_Skeleton");
-		ScopedAssetReferenceLock skeletonLock{ voltSkeleton };
 
 		CreateVoltSkeletonFromFbxSkeleton(fbxSkeleton, *voltSkeleton);
 

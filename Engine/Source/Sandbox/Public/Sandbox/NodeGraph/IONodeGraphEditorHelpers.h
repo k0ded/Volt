@@ -7,7 +7,6 @@
 #include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <glm/glm.hpp>
 #include <imgui.h>
@@ -452,8 +451,6 @@ public:
 		AssetReference<Volt::Asset> rawAsset;
 		if (g_assetManager->TryGetTypelessAssetIfLoaded(assetHandle, rawAsset))
 		{
-			ScopedAssetReferenceLock assetLock{ rawAsset };
-
 			assetFileName = rawAsset->GetAssetName();
 
 			if (supportedTypes != AssetTypes::None)

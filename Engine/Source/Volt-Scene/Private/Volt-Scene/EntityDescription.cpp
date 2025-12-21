@@ -7,7 +7,6 @@
 
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -36,8 +35,6 @@ namespace Volt
 			if (m_ownerScene.IsValid())
 			{
 				sceneReference = m_ownerScene;
-
-				ScopedAssetReferenceLock sceneLock{ m_ownerScene };
 			}
 			else
 			{
@@ -49,8 +46,6 @@ namespace Volt
 
 				sceneReference = g_assetManager->GetAssetImmediately<Scene>(m_sceneHandle);
 			}
-
-			ScopedAssetReferenceLock sceneLock{ sceneReference };
 
 			//if the scene is a memory asset it doesnt have a path yet, and will thus fail the save of this entity
 			VT_ENSURE(!sceneReference->IsFlagSet(AssetFlag::MemoryOnly));

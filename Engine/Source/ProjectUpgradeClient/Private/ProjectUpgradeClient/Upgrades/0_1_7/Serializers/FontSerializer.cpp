@@ -3,7 +3,6 @@
 #include <Volt-Assets/Font.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 namespace Volt
 {
@@ -24,7 +23,6 @@ namespace Volt
 		}
 
 		AssetReference<Font> font = destinationAsset.ConvertTo<Font>();
-		ScopedAssetReferenceLock fontLock{ font };
 
 		font->Initialize(filePath);
 

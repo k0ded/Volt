@@ -16,7 +16,6 @@
 #include "Volt-Scene/Scene.h"
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/StringUtility.h>
 
@@ -47,8 +46,6 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				AssetReference<Volt::MeshAsset> meshAsset;
 				if (g_assetManager->TryGetAsset(aAssetHandle, meshAsset))
 				{
-					ScopedAssetReferenceLock meshLock{ meshAsset };
-
 					std::filesystem::path sourceMeshPath = "Could not find the source mesh path";
 
 					Vector<std::pair<std::string, std::string>> data =
@@ -73,8 +70,6 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				AssetReference<Volt::Animation> animationAsset;
 				if (g_assetManager->TryGetAsset(aAssetHandle, animationAsset))
 				{
-					ScopedAssetReferenceLock lock{ animationAsset };
-
 					Vector<std::pair<std::string, std::string>> data =
 					{
 						std::make_pair("Duration", std::to_string(animationAsset->GetDuration()) + " seconds"),
@@ -95,8 +90,6 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				AssetReference<Volt::Skeleton> skeletonAsset;
 				if (g_assetManager->TryGetAsset(aAssetHandle, skeletonAsset))
 				{
-					ScopedAssetReferenceLock lock{ skeletonAsset };
-
 					Vector<std::pair<std::string, std::string>> data =
 					{
 						std::make_pair("Joint Count", std::to_string(skeletonAsset->GetJointCount()))
@@ -115,8 +108,6 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				AssetReference<Volt::Texture2D> textureAsset;
 				if (g_assetManager->TryGetAsset(aAssetHandle, textureAsset))
 				{
-					ScopedAssetReferenceLock lock{ textureAsset };
-
 					Vector<std::pair<std::string, std::string>> data =
 					{
 						std::make_pair("Width", std::to_string(textureAsset->GetWidth())),
@@ -144,8 +135,6 @@ std::unordered_map<AssetType, EditorAssetData> EditorAssetRegistry::myAssetData 
 				AssetReference<Volt::Scene> sceneAsset;
 				if (g_assetManager->TryGetAsset(aAssetHandle, sceneAsset))
 				{
-					ScopedAssetReferenceLock lock{ sceneAsset };
-
 					const auto& stats = sceneAsset->GetStatistics();
 					Vector<std::pair<std::string, std::string>> data =
 					{

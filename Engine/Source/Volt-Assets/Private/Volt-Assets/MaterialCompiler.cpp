@@ -14,7 +14,6 @@
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <SubSystem/SubSystemManager.h>
 
@@ -80,8 +79,6 @@ namespace Volt
 	void MaterialCompiler::CompileMaterial(AssetReference<MaterialAsset> materialAsset)
 	{
 		VT_PROFILE_FUNCTION();
-
-		ScopedAssetReferenceLock materialAssetLock{ materialAsset };
 
 		VT_LOGC(Trace, LogMaterialCompiler, "Started compilation of material {}", materialAsset->GetAssetName());
 

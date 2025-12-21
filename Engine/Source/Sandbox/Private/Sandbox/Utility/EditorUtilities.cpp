@@ -26,7 +26,6 @@
 #include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/FileSystem.h>
 
@@ -45,8 +44,6 @@ bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHand
 	AssetReference<Volt::Asset> asset;
 	if (g_assetManager->TryGetTypelessAssetIfLoaded(assetHandle, asset))
 	{
-		ScopedAssetReferenceLock assetLock{ asset };
-
 		assetFileName = asset->GetAssetName();
 
 		if (wantedType != AssetTypes::None && wantedType != asset->GetType())

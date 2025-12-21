@@ -8,7 +8,6 @@
 
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -36,7 +35,6 @@ namespace Volt
 					AssetReference<MaterialAsset> materialAsset;
 					if (g_assetManager->TryGetAssetIfLoaded(materialHandle, materialAsset))
 					{
-						ScopedAssetReferenceLock assetLock{ materialAsset };
 						renderMaterial = materialAsset->GetRenderMaterial();
 					}
 					else
@@ -85,7 +83,6 @@ namespace Volt
 				AssetReference<MaterialAsset> materialAsset;
 				if (g_assetManager->TryGetAsset(materialHandle, materialAsset))
 				{
-					ScopedAssetReferenceLock assetLock{ materialAsset };
 					renderMaterial = materialAsset->GetRenderMaterial();
 				}
 				else
@@ -114,7 +111,6 @@ namespace Volt
 		m_materials.resize(materials.size());
 		for (size_t i = 0; i < m_materials.size(); ++i)
 		{
-			ScopedAssetReferenceLock lock{ materials[i] };
 			m_materials[i] = materials[i]->GetAssetHandle();
 		}
 
@@ -139,7 +135,6 @@ namespace Volt
 			AssetReference<MaterialAsset> materialAsset;
 			if (g_assetManager->TryGetAssetIfLoaded(materialHandle, materialAsset))
 			{
-				ScopedAssetReferenceLock assetLock{ materialAsset };
 				renderMaterial = materialAsset->GetRenderMaterial();
 			}
 			else

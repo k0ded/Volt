@@ -12,8 +12,6 @@
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/RenderGraph/RenderContext.h>
 
-#include <AssetSystem/AssetLocks.h>
-
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
 
@@ -46,8 +44,6 @@ void TestingLayer::OnAttach()
 
 	m_scene = Scene::CreateDefaultScene("Test");
 
-	ScopedAssetReferenceLock sceneLock{ m_scene };
-	
 	SceneRendererCreateInfo createInfo{};
 	createInfo.renderScene = m_scene->GetRenderScene();
 	createInfo.drawDebug = true;

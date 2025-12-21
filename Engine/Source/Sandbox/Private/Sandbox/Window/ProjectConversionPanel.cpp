@@ -577,7 +577,6 @@ Vector<AssetReference<Asset>> ProjectConversionPanel::TryConvertScene(const Volt
 	}
 
 	AssetReference<Scene> scene = m_assetManager->CreateAssetAndFileWithAssetHandle<Scene>(metadata.filepath.parent_path(), sceneName, metadata.handle);
-	scene.Lock();
 
 	Vector<AssetReference<Asset>> resultAssets;
 	resultAssets.emplace_back(scene);
@@ -612,9 +611,7 @@ Vector<AssetReference<Asset>> ProjectConversionPanel::TryConvertScene(const Volt
 			resultAssets.emplace_back(entityDescription);
 
 			Entity newEntity = scene->AddEntityToScene(entityDescription);
-			entityDescription.Lock();
 			m_assetManager->CreateFileForAsset(entityDescription->GetAssetHandle(), entitiesTargetDir / (entityDescName + ".vtasset"));
-			entityDescription.Unlock();
 
 			layerReader.ForEach("components", [&]() 
 			{
@@ -747,7 +744,6 @@ Vector<AssetReference<Asset>> ProjectConversionPanel::TryConvertScene(const Volt
 					if (prefabIt != prefabs.end())
 					{
 						AssetReference<Prefab> prefab = prefabIt->second;
-						ScopedAssetReferenceLock prefabLock{ prefab };
 
 						prefab->CopyPrefabEntity(entity, prefabComponent.prefabEntity,
 							Volt::CreateSkipComponentOnCopySet<RelationshipComponent, TransformComponent, IDComponent, PrefabComponent>());
@@ -756,8 +752,6 @@ Vector<AssetReference<Asset>> ProjectConversionPanel::TryConvertScene(const Volt
 			}
 		}
 	}
-
-	scene.Unlock();
 
 	VT_LOG(Trace, "Converted Scene with name {}", sceneName);
 	return resultAssets;
@@ -788,8 +782,6 @@ AssetReference<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Vol
 	AssetReference<MeshAsset> newMesh = m_assetManager->CreateAssetAndFileWithAssetHandle<MeshAsset>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle);
 
 	{
-		ScopedAssetReferenceLock meshLock{ newMesh };
-
 		size_t offset = 0;
 
 		const uint32_t numSubMeshes = *dataBuffer.As<uint32_t>(offset);
@@ -925,7 +917,6 @@ AssetReference<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Proj
 	}
 
 	AssetReference<Scene> prefabScene = m_assetManager->CreateMemoryAsset<Scene>("");
-	ScopedAssetReferenceLock prefabLock{ prefabScene };
 
 	EntityID rootEntityId = EntityID::Null();
 

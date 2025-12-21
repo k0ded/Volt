@@ -9,7 +9,6 @@
 #include <Volt-Renderer/RenderMaterial.h>
 
 #include <AssetSystem/AssetManager.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicNode.h>
@@ -24,7 +23,6 @@ namespace Volt
 	void MaterialSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{
 		const AssetReference<MaterialAsset> mosaicAsset = asset.ConvertTo<MaterialAsset>();
-		ScopedAssetReferenceLock materialLock{ mosaicAsset };
 
 		const auto& graph = mosaicAsset->GetMaterialGraph()->GetMosaicGraph();
 
@@ -122,7 +120,6 @@ namespace Volt
 		const auto filePath = g_assetManager->GetAssetFilesystemPath(metadata->filepath);
 
 		AssetReference<MaterialAsset> materialAsset = destinationAsset.ConvertTo<MaterialAsset>();
-		ScopedAssetReferenceLock materialLock{ materialAsset };
 
 		if (!std::filesystem::exists(filePath))
 		{

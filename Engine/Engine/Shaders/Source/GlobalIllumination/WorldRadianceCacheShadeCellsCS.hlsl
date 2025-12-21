@@ -85,10 +85,10 @@ void WorldRadianceCacheShadeCellsCS(uint DispatchThreadID : SV_DispatchThreadID)
 	barycentrics.Initialize(UnpackUnorm2x16(rayInfo.packedBarycentrics));
 
 	TriangleAttributes triangleAttribs = LoadTriangleAttributes(gpuMesh, barycentrics, rayInfo.primitiveIndex);
-	ConvertTriangleAttributesToWorldSpace(triangleAttribs, primitiveData.transform);
+	ConvertTriangleAttributesToWorldSpace(triangleAttribs, primitiveData.transform.Combine(gpuMesh.transform));
 
 	const float3 albedo = 0.8f;
-	const float3 diffuse = LambertDiffuse(albedo);
+	const float3 diffuse = Diffuse_Lambert(albedo);
 
 	float3 radiance = 0.f;
 

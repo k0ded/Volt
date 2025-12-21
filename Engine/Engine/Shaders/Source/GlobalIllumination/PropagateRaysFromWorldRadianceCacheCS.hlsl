@@ -74,7 +74,7 @@ void PropagateRaysFromWorldRadianceCacheCS(uint DispatchThreadID : SV_DispatchTh
 		radiance = PackRGBE(SkyColor(rayDirection));
 	}
 
-	GroupHitT[GroupThreadIndex] = rayHitT * 0.01f;
+	GroupHitT[GroupThreadIndex] = rayHitT;
 	GroupRadianceAndRayDirection[GroupThreadIndex] = uint2(radiance, rayInfo.rayDirection);
 
 	GroupMemoryBarrierWithGroupSync();

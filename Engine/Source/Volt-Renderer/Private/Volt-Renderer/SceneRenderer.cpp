@@ -28,7 +28,6 @@
 #include "Volt-Renderer/MeshPassProcessors/CascadedShadowMapsMeshProcessor.h"
 
 #include <JobSystem/JobSystem.h>
-#include <AssetSystem/AssetLocks.h>
 
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
 #include <RenderCore/RenderGraph/GPUReadbackBuffer.h>

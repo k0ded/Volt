@@ -40,6 +40,7 @@ struct IrradianceVolumeConstants
 {
 	static const uint32_t NumMaxCascades = 10;
 
+	int4 cascadeScrollOffset[NumMaxCascades];
 	float4 cascadeMinCornerAndSpacing[NumMaxCascades];
 };
 

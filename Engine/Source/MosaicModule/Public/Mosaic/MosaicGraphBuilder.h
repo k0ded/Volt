@@ -20,6 +20,13 @@ namespace Mosaic
 			return underlyingGraph.AddNode(GetMosaicNodeRegistry().CreateNode(NodeType::GetStaticGUID(), &m_graph));
 		}
 
+		template<typename NodeType>
+		NodeType& GetNodeAsType(UUID64 nodeId)
+		{
+			auto& underlyingGraph = m_graph.GetUnderlyingGraph();
+			return *std::static_pointer_cast<NodeType>(underlyingGraph.GetNodeFromID(nodeId).nodeData);
+		}
+
 		template<typename ParamDataType>
 		void SetNodeParameterData(UUID64 nodeId, const std::string& parameterName, const ParamDataType& data)
 		{
