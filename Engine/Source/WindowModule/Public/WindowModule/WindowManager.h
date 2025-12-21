@@ -49,6 +49,7 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE bool HasMainWindow() const { return m_mainWindowHandle != 0; }
 		VT_NODISCARD VT_INLINE const Vector<Ref<Monitor>>& GetMonitors() const { return m_monitors; }
+		VT_NODISCARD VT_INLINE void SetForceSDR(bool state) { m_forceSDR = state; }
 
 		static WindowManager& Get();
 
@@ -64,6 +65,8 @@ namespace Volt
 		Ref<Monitor> TryGetMonitor(GLFWmonitor* nativeMonitor);
 		Ref<Monitor> AddMonitor(GLFWmonitor* nativeMonitor);
 		void RemoveMonitor(Ref<Monitor> monitor);
+
+		bool m_forceSDR = false;
 
 		WindowHandle m_mainWindowHandle = 0;
 		std::unordered_map<WindowHandle, Scope<Window>> m_windows;

@@ -95,6 +95,9 @@ namespace Volt
 		g_assetManager = CreateScope<AssetManager>(ProjectManager::GetEngineRootDirectory(), ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectoryName());
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
+		{
+			m_windowManager->SetForceSDR(m_commandLineBuilder.IsArgDefined("forcesdr"));
+		}
 
 		if (m_appCreateInfo.createMainWindow)
 		{

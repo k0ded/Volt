@@ -42,7 +42,7 @@ namespace Volt
 	public:
 		using EventCallbackFn = std::function<void(Event&)>;
 
-		Window(const WindowProperties& aProperties);
+		Window(const WindowProperties& aProperties, bool forceSDR);
 		~Window();
 
 		void Shutdown();
@@ -109,7 +109,7 @@ namespace Volt
 		inline const RHI::Swapchain& GetSwapchain() const { return *m_swapchain; }
 		inline const RawPtr<RHI::Swapchain> GetSwapchainPtr() const { return m_swapchain; }
 
-		static Scope<Window> Create(const WindowProperties& aProperties = WindowProperties());
+		static Scope<Window> Create(const WindowProperties& aProperties, bool forceSDR);
 
 	private:
 		class WindowEventListener : public EventListener
@@ -138,6 +138,7 @@ namespace Volt
 			uint32_t height;
 			bool vsync;
 			WindowMode windowMode;
+			bool forceSDR;
 
 		} m_data;
 

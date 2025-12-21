@@ -63,8 +63,10 @@ namespace Volt
 		// This is required because glfwInit must be called before setting up graphics device
 		CreateGraphicsContext(commandLineBuilder);
 
-		// #TODO_AssetSystem: Move to a sub system.
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
+		{
+			m_windowManager->SetForceSDR(m_commandLineBuilder.IsArgDefined("forcesdr"));
+		}
 
 		if (m_appCreateInfo.createMainWindow)
 		{

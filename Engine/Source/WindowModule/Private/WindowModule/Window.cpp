@@ -22,7 +22,7 @@
 
 namespace Volt
 {
-	Window::Window(const WindowProperties& properties)
+	Window::Window(const WindowProperties& properties, bool forceSDR)
 	{
 		m_data.height = properties.height;
 		m_data.width = properties.width;
@@ -31,6 +31,7 @@ namespace Volt
 		m_data.windowMode = properties.windowMode;
 		m_data.iconPath = properties.iconPath;
 		m_data.cursorPath = properties.cursorPath;
+		m_data.forceSDR = forceSDR;
 
 		m_properties = properties;
 
@@ -146,7 +147,7 @@ namespace Volt
 			createInfo.width = m_data.width;
 			createInfo.height = m_data.height;
 			createInfo.platformWindow = m_window;
-			createInfo.useHDRIfAvailable = true;
+			createInfo.useHDRIfAvailable = !m_data.forceSDR;
 			createInfo.enableVSync = m_data.vsync;
 
 			m_swapchain = RHI::Swapchain::Create(createInfo);
@@ -651,9 +652,9 @@ namespace Volt
 		return m_data.title;
 	}
 
-	Scope<Window> Window::Create(const WindowProperties& aProperties)
+	Scope<Window> Window::Create(const WindowProperties& aProperties, bool forceSDR)
 	{
-		return CreateScope<Window>(aProperties);
+		return CreateScope<Window>(aProperties, forceSDR);
 	}
 
 	void Window::CreateDefaultCursors()
