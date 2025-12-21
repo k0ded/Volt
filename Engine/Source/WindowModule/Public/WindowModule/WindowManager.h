@@ -49,7 +49,9 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE bool HasMainWindow() const { return m_mainWindowHandle != 0; }
 		VT_NODISCARD VT_INLINE const Vector<Ref<Monitor>>& GetMonitors() const { return m_monitors; }
-		VT_NODISCARD VT_INLINE void SetForceSDR(bool state) { m_forceSDR = state; }
+		VT_NODISCARD VT_INLINE float GetPeakNits() const { return m_peakNits; }
+		VT_INLINE void SetForceSDR(bool state) { m_forceSDR = state; }
+		VT_INLINE void SetPeakNits(float peakNits) { m_peakNits = peakNits; }
 
 		static WindowManager& Get();
 
@@ -67,6 +69,7 @@ namespace Volt
 		void RemoveMonitor(Ref<Monitor> monitor);
 
 		bool m_forceSDR = false;
+		float m_peakNits = 250.f;
 
 		WindowHandle m_mainWindowHandle = 0;
 		std::unordered_map<WindowHandle, Scope<Window>> m_windows;

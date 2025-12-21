@@ -84,6 +84,8 @@ struct EditorSettings
 	AssetBrowserSettings assetBrowserSettings;
 
 	Vector<PanelState> panelStates;
+
+	float peakNits = 250.f;
 };
 
 class EditorWindow;

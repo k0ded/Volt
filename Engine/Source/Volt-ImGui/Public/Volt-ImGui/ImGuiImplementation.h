@@ -56,6 +56,7 @@ namespace Volt
 		};
 
 		void Initialize();
+		void CreateCopyGlobalsUniformBuffer();
 		ContextData CreateAndInitializeNewContext();
 
 		Ref<ImGuiRenderer> GetActiveRenderer() const { return m_contextStack.back().renderer; }
@@ -67,6 +68,8 @@ namespace Volt
 		ImFontAtlas* m_sharedFontAtlas = nullptr;
 
 		Vector<ContextData> m_contextStack;
+
+		RefPtr<RHI::UniformBuffer> m_copyGlobalsUniformBuffer;
 
 		Scope<ImGuiRenderTargetManager> m_renderTargetManager;
 	};

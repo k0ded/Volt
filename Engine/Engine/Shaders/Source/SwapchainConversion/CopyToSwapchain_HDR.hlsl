@@ -2,6 +2,8 @@
 
 Texture2D<float4> SrcColor;
 
+float PeakNits;
+
 struct Output
 {
     [[vt::rgb10_a2]] float4 output : SV_Target0;
@@ -40,7 +42,7 @@ Output MainPS(FullscreenTriangleVertex input)
     float3 color = SrcColor.Load(int3(input.position.xy, 0)).rgb;
 
     color = BT709_to_BT2020(color);
-    color = TonemapHDR(color, 500.f);
+    color = TonemapHDR(color, PeakNits);
 
     Output output;
     output.output.r = ST2084_Encode(color.r);

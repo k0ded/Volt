@@ -4,6 +4,8 @@
 #include "Sandbox/Window/EditorWindow.h"
 #include "Sandbox/Utility/EditorLibrary.h"
 
+#include <WindowModule/WindowManager.h>
+
 #include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
 #include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>
 
@@ -32,6 +34,9 @@ void UserSettingsManager::LoadUserSettings()
 			s_editorSettings.panelStates.emplace_back(panelTitle, state);
 		}
 	});
+
+	s_editorSettings.peakNits = streamReader.ReadAtKey("peakNits", 250.f);
+	Volt::WindowManager::Get().SetPeakNits(s_editorSettings.peakNits);
 
 	streamReader.EnterScope("SceneSettings");
 	s_editorSettings.sceneSettings.worldSpace = streamReader.ReadAtKey("worldSpace", true);
@@ -113,6 +118,8 @@ void UserSettingsManager::SaveUserSettings()
 	streamWriter.BeginMap();
 	streamWriter.BeginMapNamned("Settings");
 	{
+		streamWriter.SetKey("peakNits", s_editorSettings.peakNits);
+
 		streamWriter.BeginSequence("Windows");
 		for (const auto& window : EditorLibrary::GetPanels())
 		{

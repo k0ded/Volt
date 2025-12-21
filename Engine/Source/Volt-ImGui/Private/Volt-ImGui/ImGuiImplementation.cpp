@@ -3,6 +3,7 @@
 #include "Volt-ImGui/FontAwesome.h"
 
 #include <WindowModule/Window.h>
+#include <WindowModule/WindowManager.h>
 
 #include <RenderCore/CommandBufferPool.h>
 #include <RenderCore/CopyToSwapchainShaders.h>
@@ -123,6 +124,13 @@ namespace Volt
 		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
 		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 
+		// Update globals
+		{
+			float* data = m_copyGlobalsUniformBuffer->Map<float>();
+			*data = WindowManager::Get().GetPeakNits();
+			m_copyGlobalsUniformBuffer->Unmap();
+		}
+
 		commandBuffer->Begin();
 
 		const Map<Window*, ImGuiRenderTargetManager::RenderTarget>& renderTargets = m_renderTargetManager->GetAllRenderTargets();
@@ -210,7 +218,12 @@ namespace Volt
 			commandBuffer->SetScissors({ scissor });
 
 			RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(copyPipeline);
-			shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 0, renderTarget.image->GetView());
+			shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 1, renderTarget.image->GetView());
+
+			if (swapchain.IsHDREnabled())
+			{
+				shaderBindingMap.SetUniformBufferWithSizeAndOffset(RHI::ShaderStage::Pixel, 0, m_copyGlobalsUniformBuffer->GetView(), m_copyGlobalsUniformBuffer->GetSize(), 0);
+			}
 
 			commandBuffer->BindShaderBindings(shaderBindingMap);
 			commandBuffer->Draw(3, 1, 0, 0);
@@ -302,6 +315,8 @@ namespace Volt
 	{
 		IMGUI_CHECKVERSION();
 		
+		CreateCopyGlobalsUniformBuffer();
+
 		m_renderTargetManager = CreateScope<ImGuiRenderTargetManager>();
 
 		// Create and add the default context
@@ -309,6 +324,14 @@ namespace Volt
 
 		const std::filesystem::path iniPath = GetOrCreateIniPath();
 		ImGui::LoadIniSettingsFromDisk(iniPath.string().c_str());
+	}
+
+	void ImGuiImplementation::CreateCopyGlobalsUniformBuffer()
+	{
+		RHI::UniformBufferDesc desc{};
+		desc.size = sizeof(float);
+		desc.debugName = "ImGuiImplementation.GlobalsBuffer";
+		m_copyGlobalsUniformBuffer = RHI::UniformBuffer::Create(desc);
 	}
 
 	ImGuiImplementation::ContextData ImGuiImplementation::CreateAndInitializeNewContext()

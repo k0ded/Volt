@@ -200,6 +200,16 @@ void EditorSettingsPanel::DrawStyleSettings()
 		{
 			Volt::WindowManager::Get().GetMainWindow().SetOpacity(currentWindowOpacity);
 		}
+
+		UI::Header("HDR");
+
+		float currentPeakNits = Volt::WindowManager::Get().GetPeakNits();
+
+		if (UI::Property("Peak Nits", currentPeakNits))
+		{
+			Volt::WindowManager::Get().SetPeakNits(currentPeakNits);
+			m_editorSettings.peakNits = currentPeakNits;
+		}
 		UI::EndProperties();
 	}
 	UI::PopID();
