@@ -33,6 +33,9 @@ namespace Volt
 		virtual bool ExecuteIfSafe(ParamTypes...) const = 0;
 
 		virtual DelegateInstance<ReturnType(ParamTypes...)>* CreateCopy() const = 0;
+
+		VT_NODISCARD VT_INLINE DelegateHandle GetHandle() const { return m_handle; }
+
 	protected:
 		std::tuple<ParamTypes...> m_paramTypes;
 

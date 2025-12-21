@@ -2,8 +2,6 @@
 
 #include "CoreUtilities/Delegates/DelegateInstance.h"
 
-#include "CoreUtilities/Delegates/DelegateDeclarationHelpers.h"
-
 namespace Volt
 {
 
@@ -167,13 +165,7 @@ namespace Volt
 			return m_delegateInstance->Execute(std::forward<ParamTypes>(params)...);
 		}
 
-
-		template <
-			// This construct is intended to disable this function when ReturnType != void.
-			typename DummyRetValType = ReturnType,
-			std::enable_if_t<std::is_void<DummyRetValType>::value>* = nullptr
-		>
-		bool ExecuteIfBound(ParamTypes... params) const
+		bool ExecuteIfBound(ParamTypes... params) const requires (std::is_same_v<ReturnType, void>)
 		{
 			if (IsBound())
 			{
