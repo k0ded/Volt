@@ -14,6 +14,7 @@
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Descriptors/ShaderBindingMap.h>
 #include <RHIModule/Core/RenderingInfo.h>
+#include <RHIModule/Globals.h>
 
 #include <LogModule/Log.h>
 
@@ -218,11 +219,16 @@ namespace Volt
 			commandBuffer->SetScissors({ scissor });
 
 			RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(copyPipeline);
-			shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, 1, renderTarget.image->GetView());
+
+			const RHI::ShaderResourceBinding* srcTextureBinding = pixelShader->GetParameterMap().GetResourceBindingFromName("SrcColor"_sh);
+			if (srcTextureBinding)
+			{
+				shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, srcTextureBinding->binding, renderTarget.image->GetView());
+			}
 
 			if (swapchain.IsHDREnabled())
 			{
-				shaderBindingMap.SetUniformBufferWithSizeAndOffset(RHI::ShaderStage::Pixel, 0, m_copyGlobalsUniformBuffer->GetView(), m_copyGlobalsUniformBuffer->GetSize(), 0);
+				shaderBindingMap.SetUniformBufferWithSizeAndOffset(RHI::ShaderStage::Pixel, RHI::Globals::SHADER_GLOBALS_BINDING, m_copyGlobalsUniformBuffer->GetView(), m_copyGlobalsUniformBuffer->GetSize(), 0);
 			}
 
 			commandBuffer->BindShaderBindings(shaderBindingMap);

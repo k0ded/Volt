@@ -17,11 +17,11 @@ namespace Volt
 	{
 		static bool IsForAssetType(const AssetType& assetType) { return assetType->GetGUID() == AssetTypes::Mesh->GetGUID(); }
 		
-		Vector<AssetHandle> materials;
+		Vector<AssetHandle> materialReferences;
 
 		VT_INLINE friend Archive& operator<<(Archive& archive, MeshCustomMetadata& value)
 		{
-			archive << value.materials;
+			archive << value.materialReferences;
 			return archive;
 		}
 	};
@@ -38,7 +38,8 @@ namespace Volt
 		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 2; }
 		void OnPreSave(CustomAssetMetadata& customMetadata) override;
-		void Serialize(Archive& archive) override;
+		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
+		void GatherAssetDependencies(AssetDependencyGatherContext& gatherContext, ReadOnlyAssetMetadata assetMetadata) override;
 
 		VT_NODISCARD VT_INLINE Ref<Mesh> GetMesh() const { return m_mesh; }
 

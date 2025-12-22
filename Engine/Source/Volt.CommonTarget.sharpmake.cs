@@ -143,7 +143,7 @@ namespace VoltSharpmake
 
         public static CommonTarget[] GetWin64Targets()
         {
-			DevEnv devEnv = DevEnv.vs2022;
+			DevEnv devEnv = DevEnv.vs2022 | DevEnv.vs2026;
 
 			List<CommonTarget> result = new List<CommonTarget>();
 

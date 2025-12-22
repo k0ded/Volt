@@ -25,10 +25,10 @@ namespace Volt::RHI
 		VT_INLINE ArrayView<uint64_t> GetBindingOffsets() const { return m_bindingOffsets; }
 
 	private:
-		void CreateDescriptorSetLayout();
-
 		inline static RayTracingTableDescriptorSetManager* s_instance;
 	
+		void CreateDescriptorSetLayout();
+
 		VkDescriptorSetLayout_T* m_descriptorSetLayout = nullptr;
 		Array<uint64_t, DescriptorTypeCount> m_bindingOffsets;
 		uint64_t m_descriptorSetLayoutSize = 0;

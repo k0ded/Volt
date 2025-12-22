@@ -15,7 +15,7 @@ namespace Volt
 	{
 	}
 
-	void PhysicsMaterialAsset::Serialize(Archive& archive)
+	void PhysicsMaterialAsset::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		if (archive.IsLoading())
 		{

@@ -66,7 +66,7 @@ namespace Volt
 
 		RefPtr<RHI::RenderPipeline> renderPipeline;
 
-		UUID64 renderPrimitiveID;
+		const RenderPrimitiveData* renderPrimitive = nullptr;
 		MeshDrawCommandSortKey sortKey;
 		MeshDrawCommandHashKey hashKey;
 
@@ -86,12 +86,12 @@ namespace Volt
 
 		void ExecuteCommands(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters);
 
-		virtual void AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive) = 0;
-		virtual void RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive) = 0;
+		virtual void AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive) = 0;
+		virtual void RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive) = 0;
 
 	protected:
-		void BuildMeshDrawCommand(const RenderPrimitiveData& renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
-		void RemoveMeshDrawCommand(const RenderPrimitiveData& renderPrimitive);
+		void BuildMeshDrawCommand(const RenderPrimitiveData* renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
+		void RemoveMeshDrawCommand(const RenderPrimitiveData* renderPrimitive);
 
 	private:
 		struct MeshDrawCommandBucket
@@ -112,7 +112,7 @@ namespace Volt
 
 		void MarkBucketDirty(MeshDrawCommandHashKey hashKey);
 
-		MeshDrawCommandHashKey GetHashKeyFromRenderPrimitive(const RenderPrimitiveData& renderPrimitive);
+		MeshDrawCommandHashKey GetHashKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive);
 
 		Vector<MeshDrawCommandBucket> m_meshDrawCommandBuckets;
 		Map<MeshDrawCommandHashKey, size_t> m_hashKeyToBucketIndex;
@@ -145,8 +145,8 @@ namespace Volt
 			return processor;
 		}
 
-		void AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive);
-		void RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive);
+		void AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive);
+		void RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive);
 
 	private:
 		void VTR_API AddPrimitivesToMeshPassProcessor(MeshPassProcessor* meshPassProcessor);

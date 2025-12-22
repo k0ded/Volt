@@ -15,11 +15,6 @@ RendererSettingsPanel::RendererSettingsPanel(Ref<Volt::SceneRenderer>& sceneRend
 
 void RendererSettingsPanel::UpdateMainContent()
 {
-	if (ImGui::Button("Invalidate Render Scene"))
-	{
-		m_sceneRenderer->Invalidate();
-	}
-
 	static const Vector<std::string> visualizationStrings =
 	{
 		"None",

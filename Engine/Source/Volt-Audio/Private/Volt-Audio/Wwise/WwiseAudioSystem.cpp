@@ -8,7 +8,6 @@
 #include <AK/MusicEngine/Common/AkMusicEngine.h>
 #include <AK/Tools/Common/AkPlatformFuncs.h>
 
-#include "ThirdParty/WWiseEngine/SoundEngine/Win32/AkFilePackageLowLevelIOBlocking.h"
 #include "ThirdParty/WWiseEngine/SoundEngine/Common/AkJobWorkerMgr.h"
 
 #include "AK/SoundEngine/Common/AkMemoryMgr.h"		// Memory Manager

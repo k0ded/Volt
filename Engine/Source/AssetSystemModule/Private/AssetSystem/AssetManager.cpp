@@ -157,6 +157,12 @@ namespace Volt
 				asset->OnPreSave(assetMetadata->customData);
 			}
 
+			{
+				AssetMetadata* assetMetadataPtr = m_assetRegistry.GetAssetMetadata(asset->GetAssetHandle());
+				AssetDependencyGatherContext gatherContext(assetMetadataPtr->handle, assetMetadataPtr->assetDependencyList);
+				asset->GatherAssetDependencies(gatherContext, GetReadOnlyAssetMetadata(asset->GetAssetHandle()));
+			}
+
 			if (SerializeAsset(asset))
 			{
 				ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
@@ -349,11 +355,6 @@ namespace Volt
 		{
 			callbacks.erase(it);
 		}
-	}
-
-	void AssetManager::AddDependencyToAsset(AssetHandle dependant, AssetHandle dependency)
-	{
-		m_dependencyGraph->AddDependencyToAsset(dependant, dependency);
 	}
 
 	Vector<AssetHandle> AssetManager::GetAssetsDependentOn(AssetHandle assetHandle) const
@@ -662,15 +663,15 @@ namespace Volt
 		{
 			AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(assetHandle);
 
-			// Lock metadata mutex here.
-			assetMetadata->m_assetMetadataMutex.lock();
-
 			// At this point there should be zero references left.
 			VT_ENSURE(asset->GetRefCount() == 0);
 
 			// Call destructor and free.
 			asset->~Asset();
 			m_assetAllocator.FreeAsset(assetType, asset);
+
+			// Lock metadata mutex here.
+			assetMetadata->m_assetMetadataMutex.lock();
 
 			if (!assetMetadata->IsMemoryAsset())
 			{
@@ -785,7 +786,7 @@ namespace Volt
 		}
 
 		// Deserialize the asset.
-		asset->Serialize(fileReader);
+		asset->Serialize(fileReader, assetMetadata);
 		return true;
 	}
 
@@ -832,7 +833,7 @@ namespace Volt
 		}
 
 		SerializeAssetHeader(fileWriter, *assetMetadata, asset->GetVersion());
-		asset->Serialize(fileWriter);
+		asset->Serialize(fileWriter, assetMetadata);
 
 		fileWriter.Close();
 		return true;
@@ -883,9 +884,21 @@ namespace Volt
 	{
 		m_dependencyGraph = CreateScope<AssetDependencyGraph>(*this);
 
+		// Add all assets to the graph
 		for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
 		{
 			m_dependencyGraph->AddAssetToGraph((*it)->handle);
+		}
+
+		// Link all dependencies
+		for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
+		{
+			ReadOnlyAssetMetadata assetMetadata = *it;
+
+			for (const AssetDependency& dependency : assetMetadata->assetDependencyList.dependencies)
+			{
+				m_dependencyGraph->AddDependencyToAsset(assetMetadata->handle, dependency.assetHandle);
+			}
 		}
 	}
 

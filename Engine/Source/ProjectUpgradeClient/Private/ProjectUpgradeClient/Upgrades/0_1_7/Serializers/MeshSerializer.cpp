@@ -107,11 +107,6 @@ namespace Volt
 
 			MeshInitializer meshInitializer;
 
-			for (const auto& mat : serializationData.materials)
-			{
-				g_assetManager->AddDependencyToAsset(metadata->handle, mat);
-			}
-
 			meshInitializer.SetVertices(
 				serializationData.vertexPositions,
 				serializationData.vertexMaterialData,

@@ -47,7 +47,7 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::BlendSpace; }
 		virtual AssetType GetType() const override { return AssetTypes::BlendSpace; }
 		uint32_t GetVersion() const override { return 1; }
-		VTA_API void Serialize(Archive& archive) override;
+		VTA_API void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
 	private:
 		friend class BlendSpaceImporter;

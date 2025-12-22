@@ -2,7 +2,7 @@
 
 #include <RenderCore/RenderGraph/Resources/ResourceDeclarations.h>
 
-#include <CoreUtilities/Delegates/Delegate.h>
+#include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
 
 namespace Volt
 {

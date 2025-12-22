@@ -218,7 +218,7 @@ namespace Volt
 		fileWriter << assetVersion;
 		fileWriter << assetMetadata;
 
-		asset->Serialize(fileWriter);
+		asset->Serialize(fileWriter, ReadOnlyAssetMetadata(AssetMetadataInit::Null));
 		fileWriter.Close();
 	}
 

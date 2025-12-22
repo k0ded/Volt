@@ -7,7 +7,7 @@ namespace Volt
 	class DepthPrePassMeshProcessor : public MeshPassProcessor
 	{
 	public:
-		void AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive) override;
-		void RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive) override;
+		void AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive) override;
+		void RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive) override;
 	};
 }

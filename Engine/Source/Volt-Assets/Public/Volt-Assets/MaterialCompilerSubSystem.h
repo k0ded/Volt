@@ -7,7 +7,7 @@
 #include <SubSystem/SubSystem.h>
 
 #include <CoreUtilities/WorkQueue.h>
-#include <CoreUtilities/Delegates/Delegate.h>
+#include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
 
 namespace Volt
 {
@@ -32,8 +32,6 @@ namespace Volt
 			AssetReference<MaterialAsset> material;
 		};
 		
-		void ExecuteJob(const CompilationJob& job);
-
 		MaterialCompiledDelegate m_materialCompiledDelegate;
 	};
 }

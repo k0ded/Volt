@@ -3,8 +3,6 @@
 #include <thread>
 
 #include "ThirdParty/WWiseEngine/WWiseEngine.h"
-#include "ThirdParty/WWiseEngine/SoundEngine/Win32/AkFilePackageLowLevelIOBlocking.h"
-
 #include <AK/SoundEngine/Common/AkMemoryMgr.h>
 #include <AK/SoundEngine/Common/AkSoundEngine.h>
 #include <AK/SoundEngine/Common/AkModule.h>

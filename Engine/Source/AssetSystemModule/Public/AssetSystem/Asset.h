@@ -1,7 +1,8 @@
 #pragma once
 
 #include "AssetSystem/Config.h"
-#include "AssetSystem/AssetMetadata.h"
+#include "AssetSystem/AssetMetadataWrappers.h"
+#include "AssetSystem/AssetDependencyGatherContext.h"
 
 #include <CoreUtilities/Archive/Archive.h>
 
@@ -94,7 +95,13 @@ namespace Volt
 		/*
 			Called when the asset is saved/loaded.
 		*/
-		virtual void Serialize(Archive& archive) {}
+		virtual void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) {}
+
+		/*
+			Called when asset dependencies are gathered.
+			Assets should define all of it's dependencies here.
+		*/
+		virtual void GatherAssetDependencies(AssetDependencyGatherContext& gatherContext, ReadOnlyAssetMetadata assetMetadata) {}
 
 		VT_NODISCARD VT_INLINE const AssetHandle& GetAssetHandle() const { return m_handle; }
 		VT_NODISCARD VT_INLINE std::string_view GetAssetName() const { return m_name; }

@@ -2,6 +2,7 @@
 
 #include "AssetSystem/AssetType.h"
 #include "AssetSystem/AssetHandle.h"
+#include "AssetSystem/AssetDependency.h"
 #include "AssetSystem/CustomAssetMetadataRegistry.h"
 
 #include <CoreUtilities/Containers/Vector.h>
@@ -56,6 +57,9 @@ namespace Volt
 
 			// Switched to dynamic storage for custom asset metadata
 			NewCustomMetadataStorage = 1,
+
+			// Added serialization of an asset dependency list.
+			AddAssetDependencyList = 2,
 
 			VersionPlusOne,
 			LatestVersion = VersionPlusOne - 1
@@ -174,6 +178,13 @@ namespace Volt
 					CustomAssetMetadataRegistry::Get().SerializeAny(value.m_assetType, value.m_storage, archive);
 				}
 			}
+			else
+			{
+				if (CustomAssetMetadataRegistry::Get().AssetTypeHasCustomMetadata(value.m_assetType))
+				{
+					CustomAssetMetadataRegistry::Get().SetupInitalCustomMetadata(value.m_assetType, value);
+				}
+			}
 
 			return archive;
 		}
@@ -181,6 +192,17 @@ namespace Volt
 	private:
 		Any m_storage;
 		const AssetType& m_assetType;
+	};
+
+	struct AssetDependencyList
+	{
+		Vector<AssetDependency> dependencies;
+
+		VT_INLINE friend Archive& operator<<(Archive& archive, AssetDependencyList& value)
+		{
+			archive << value.dependencies;
+			return archive;
+		}
 	};
 
 	struct AssetMetadata
@@ -197,6 +219,7 @@ namespace Volt
 			flags = other.flags.load();
 			filepath = other.filepath;
 			customData = other.customData;
+			assetDependencyList = other.assetDependencyList;
 			m_loadState = other.m_loadState.load();
 			m_generation = other.m_generation.load();
 		}
@@ -208,6 +231,7 @@ namespace Volt
 			flags = other.flags.load();
 			filepath = other.filepath;
 			customData = other.customData;
+			assetDependencyList = other.assetDependencyList;
 			m_loadState = other.m_loadState.load();
 			m_generation = other.m_generation.load();
 
@@ -230,7 +254,7 @@ namespace Volt
 			return customData.GetCustomMetadata<CustomMetadataType>();
 		}
 
-		VT_INLINE friend Archive& operator<<(Archive& archive, AssetMetadata& value)
+		friend Archive& operator<<(Archive& archive, AssetMetadata& value)
 		{
 			archive.UseVersion(AssetMetadataArchiveVersion::guid);
 
@@ -261,6 +285,11 @@ namespace Volt
 				archive << value.customData;
 			}
 
+			if (!archive.IsLoading() || archive.GetVersion(AssetMetadataArchiveVersion::guid) >= AssetMetadataArchiveVersion::AddAssetDependencyList)
+			{
+				archive << value.assetDependencyList;
+			}
+
 			return archive;
 		}
 
@@ -271,6 +300,7 @@ namespace Volt
 		std::filesystem::path filepath;
 
 		CustomAssetMetadata customData;
+		AssetDependencyList assetDependencyList;
 
 	private:
 		friend class WriteableAssetMetadata;

@@ -199,6 +199,15 @@ public:
 		return archive;
 	}
 
+	template<Enum T>
+	VT_INLINE friend Archive& operator<<(Archive& archive, T& value)
+	{ 
+		using UnderlyingType = std::underlying_type_t<T>;
+		UnderlyingType& tempValue = *reinterpret_cast<UnderlyingType*>(&value);
+		archive << tempValue;
+		return archive;
+	}
+
 protected:
 	struct VersionInfo
 	{

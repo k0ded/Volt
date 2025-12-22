@@ -135,7 +135,7 @@ struct VoltGUID
 	uint64_t loPart;
 };
 
-constexpr VoltGUID operator"" _guid(const char* input, size_t)
+constexpr VoltGUID operator""_guid(const char* input, size_t)
 {
 	return (input[0] == '{') ? VoltGUID::FromStringInternal(input + 1) : VoltGUID::FromStringInternal(input);
 }

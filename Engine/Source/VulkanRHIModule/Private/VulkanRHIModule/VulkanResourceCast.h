@@ -167,7 +167,7 @@ namespace Volt::RHI
 	}
 
 	template<typename RHIType>
-	VT_INLINE static const typename VulkanTypeTraits<RHIType>::ConcreteType* ResourceCast(RHIType* resource)
+	VT_INLINE static const typename VulkanTypeTraits<RHIType>::ConcreteType* ResourceCast(const RHIType* resource)
 	{
 		return static_cast<const typename VulkanTypeTraits<RHIType>::ConcreteType*>(resource);
 	}

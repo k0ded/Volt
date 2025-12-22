@@ -107,7 +107,6 @@ namespace Volt
 		VTAS_API AssetUpdatedCallbackID RegisterAssetUpdatedCallback(AssetType assetType, AssetChangedCallback&& callback);
 		VTAS_API void UnregisterAssetUpdatedCallback(AssetType assetType, UUID64 callbackId);
 
-		VTAS_API void AddDependencyToAsset(AssetHandle dependant, AssetHandle dependency);
 		VTAS_API Vector<AssetHandle> GetAssetsDependentOn(AssetHandle assetHandle) const;
 
 		///// Asset Registry /////

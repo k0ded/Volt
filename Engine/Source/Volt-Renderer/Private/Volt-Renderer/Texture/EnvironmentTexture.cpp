@@ -38,7 +38,7 @@ namespace Volt
 
 	}
 
-	void EnvironmentTexture::Serialize(Archive& archive)
+	void EnvironmentTexture::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		EnvironmentTextureHeader diffuseHeader{};
 		EnvironmentTextureHeader specularHeader{};

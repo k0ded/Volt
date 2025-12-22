@@ -6,6 +6,7 @@
 
 #include "Volt-Renderer/MeshPassProcessor.h"
 #include "Volt-Renderer/RenderScene/RenderSceneUpdateQueue.h"
+#include "Volt-Renderer/RenderPrimitiveDataContainer.h"
 
 #include <RenderCore/Resources/GrowingGPUBuffer.h>
 #include <RHIModule/RayTracing/RayTracingResuorceTable.h>
@@ -13,6 +14,8 @@
 
 #include <EventSystem/EventListener.h>
 #include <EventSystem/ApplicationEvents.h>
+
+#include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
 
 #include <span>
 
@@ -51,55 +54,52 @@ namespace Volt
 	class VTR_API RenderScene : public EventListener
 	{
 	public:
+		DECLARE_MULTICAST_DELEGATE_OneParam(RenderPrimitiveAddedDelegate, const RenderPrimitiveData*);
+		DECLARE_MULTICAST_DELEGATE_OneParam(RenderPrimitiveRemovedDelegate, const RenderPrimitiveData*);
+
 		RenderScene(EntityScene* sceneRef);
 		~RenderScene();
 
 		void Update(RenderGraph& renderGraph);
 		void EndFrame(RenderGraph& renderGraph);
 
-		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
-		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<TempAnimator> animator, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
-		void RemovePrimitiveInstance(UUID64 id);
-		void InvalidatePrimitiveInstance(UUID64 renderObject);
+		RenderPrimitiveID AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
+		RenderPrimitiveID AddPrimitiveInstance(EntityID entityId, Ref<TempAnimator> animator, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
+		void RemovePrimitiveInstance(RenderPrimitiveID id);
+		void InvalidatePrimitiveInstance(RenderPrimitiveID renderObject);
 
-		UUID64 AddLightInstance(EntityID entityId, const SceneLightDescription& description);
-		void RemoveLightInstance(UUID64 id);
-		void InvalidateLightInstance(UUID64 id);
+		RenderPrimitiveID AddLightInstance(EntityID entityId, const SceneLightDescription& description);
+		void RemoveLightInstance(RenderPrimitiveID id);
+		void InvalidateLightInstance(RenderPrimitiveID id);
 
 		RayTracingInstanceID AddRayTracingInstance(EntityID entityId, Ref<Mesh> mesh, RenderPrimitiveID primitiveId);
 		void RemoveRayTracingInstance(RayTracingInstanceID instanceId);
 		void InvalidateRayTracingInstance(RayTracingInstanceID instanceId);
 
-		void OnRenderPrimitiveAdded(const RenderPrimitiveData& renderPrimitive);
-		void OnRenderPrimitiveRemoved(const RenderPrimitiveData& renderPrimitive);
-		UUID32 RegisterOnRenderPrimitiveAddedCallback(std::function<void(const RenderPrimitiveData& renderPrimitive)>&& callback);
-		UUID32 RegisterOnRenderPrimitiveRemovedCallback(std::function<void(const RenderPrimitiveData& renderPrimitive)>&& callback);
-		void UnregisterOnRenderPrimitiveAddedCallback(UUID32 callbackId);
-		void UnregisterOnRenderPrimitiveRemovedCallback(UUID32 callbackId);
+		void OnRenderPrimitiveAdded(const RenderPrimitiveData* renderPrimitive);
+		void OnRenderPrimitiveRemoved(const RenderPrimitiveData* renderPrimitive);
+		Vector<RenderPrimitiveData*> GetRenderPrimitives() const;
 
 		VT_INLINE VT_NODISCARD uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
 
 		VT_NODISCARD const uint32_t GetMaterialIndex(Weak<RenderMaterial> material) const;
-		VT_NODISCARD const uint32_t GetPrimitiveIndexFromID(UUID64 primitiveId) const;
+		VT_NODISCARD const uint32_t GetPrimitiveIndexFromID(RenderPrimitiveID primitiveId) const;
 
 		VT_INLINE VT_NODISCARD const GPUSceneBuffers GetGPUSceneBuffers() const { return m_buffers; }
 		VT_NODISCARD GPUSceneParameters GetGPUSceneParameters(RenderGraph& renderGraph) const;
 
 		VT_NODISCARD VT_INLINE const Vector<RenderLightData>& GetRenderLightData() const { return m_renderLights; }
 
-		VT_NODISCARD Vector<RenderPrimitiveData>::iterator begin() { return m_renderPrimitives.begin(); }
-		VT_NODISCARD Vector<RenderPrimitiveData>::iterator end() { return m_renderPrimitives.end(); }
-
-		VT_NODISCARD const Vector<RenderPrimitiveData>::const_iterator cbegin() const { return m_renderPrimitives.cbegin(); }
-		VT_NODISCARD const Vector<RenderPrimitiveData>::const_iterator cend() const { return m_renderPrimitives.cend(); }
-
-		VT_NODISCARD const RenderPrimitiveData& GetPrimitiveDataFromID(UUID64 id) const;
-		VT_NODISCARD const RenderLightData& GetLightDataFromID(UUID64 id) const;
+		VT_NODISCARD const RenderPrimitiveData* GetPrimitiveDataFromID(RenderPrimitiveID id) const;
+		VT_NODISCARD const RenderLightData& GetLightDataFromID(RenderPrimitiveID id) const;
 
 		VT_NODISCARD VT_INLINE std::span<const GPUMesh> GetGPUMeshes() const { return m_gpuMeshes; }
 		VT_NODISCARD VT_INLINE std::span<const PrimitiveDrawData> GetPrimitiveDrawData() const { return m_primitiveDrawData; }
 		VT_NODISCARD VT_INLINE Ref<RayTracingScene> GetRayTracingScene() const { return m_rayTracingScene; }
 		VT_NODISCARD VT_INLINE RefPtr<RHI::RayTracingResourceTable> GetRayTracingResourceTable() const { return m_rayTracingResourceTable; }
+
+		VT_NODISCARD VT_INLINE RenderPrimitiveAddedDelegate& GetRenderPrimitiveAddedDelegate() { return m_renderPrimitiveAddedDelegate; }
+		VT_NODISCARD VT_INLINE RenderPrimitiveRemovedDelegate& GetRenderPrimitiveRemovedDelegate() { return m_renderPrimitiveRemovedDelegate; }
 
 	private:
 		void BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial);
@@ -202,7 +202,6 @@ namespace Volt
 		Ref<RayTracingScene> m_rayTracingScene;
 
 		Vector<UUID64> m_animatedRenderObjects;
-		Vector<RenderPrimitiveData> m_renderPrimitives;
 		Vector<RenderLightData> m_renderLights;
 
 		Vector<GPUMesh> m_gpuMeshes;
@@ -218,13 +217,13 @@ namespace Volt
 		Vector<Ref<Mesh>> m_individualMeshes;
 		Vector<Ref<RenderMaterial>> m_individualMaterials;
 		Vector<glm::mat4> m_animationBufferStorage;
-		std::mutex m_materialUpdateMutex;
-		std::mutex m_meshUpdateMutex;
 
 		RefPtr<RHI::RayTracingResourceTable> m_rayTracingResourceTable;
 
-		Vector<Callback<std::function<void(const RenderPrimitiveData&)>>> m_onRenderPrimitiveAddedCallbacks;
-		Vector<Callback<std::function<void(const RenderPrimitiveData&)>>> m_onRenderPrimitiveRemovedCallbacks;
+		// Render primitives
+		RenderPrimitiveAddedDelegate m_renderPrimitiveAddedDelegate;
+		RenderPrimitiveRemovedDelegate m_renderPrimitiveRemovedDelegate;
+		RenderPrimitiveDataContainer m_renderPrimitiveDataContainer;
 
 		RenderSceneUpdateQueue m_updateQueue;
 

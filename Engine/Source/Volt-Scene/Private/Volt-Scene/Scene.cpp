@@ -525,7 +525,7 @@ namespace Volt
 		return newScene;
 	}
 
-	void Scene::Serialize(Archive& archive)
+	void Scene::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		archive << m_name;
 		archive << m_sceneSettings.useWorldEngine;

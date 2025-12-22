@@ -9,13 +9,14 @@
 #include "Volt-Renderer/MeshPassProcessor.h"
 
 #include <RenderCore/RenderGraph/RenderGraphDebugger.h>
+#include <RenderCore/Resources/GrowingGPUBuffer.h>
 
 #include <JobSystem/Job.h>
 
 #include <EventSystem/EventListener.h>
 #include <EventSystem/ApplicationEvents.h>
 
-#include <RenderCore/Resources/GrowingGPUBuffer.h>
+#include <CoreUtilities/Delegates/DelegateHandle.h>
 
 namespace Volt
 {
@@ -95,9 +96,6 @@ namespace Volt
 		inline const RenderGraphDebugger& GetRenderGraphDebugger() const { return m_renderGraphDebugger; }
 
 		RefPtr<RHI::Image> GetFinalImage();
-
-		// #TODO_Ivar: TEMP, Should not be public!
-		void Invalidate();
 
 		void Enable();
 
@@ -180,8 +178,8 @@ namespace Volt
 
 		// Mesh passes
 		MeshPassProcessorRegistry m_meshPassProcessorRegistry;
-		UUID32 m_onRenderPrimitiveAddedCallbackId = 0;
-		UUID32 m_onRenderPrimitiveRemovedCallbackId = 0;
+		DelegateHandle m_renderPrimitiveAddedDelegateHandle = 0;
+		DelegateHandle m_renderPrimitiveRemovedDelegateHandle = 0;
 
 		class DepthPrePassMeshProcessor* m_depthPrePassMeshProcessor = nullptr;
 		class BasePassMeshProcessor* m_basePassMeshProcessor = nullptr;

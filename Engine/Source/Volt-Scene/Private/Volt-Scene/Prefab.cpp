@@ -194,8 +194,7 @@ namespace Volt
 		}
 	};
 
-	VT_OPTIMIZE_OFF
-	void Prefab::Serialize(Archive& archive)
+	void Prefab::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		archive << m_version;
 		archive << m_rootEntityId;
@@ -242,7 +241,6 @@ namespace Volt
 
 		archive << m_prefabReferencesMap;
 	}
-	VT_OPTIMIZE_ON
 
 	const Entity Prefab::GetRootEntity() const
 	{

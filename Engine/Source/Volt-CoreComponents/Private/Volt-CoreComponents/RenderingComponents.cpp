@@ -105,7 +105,7 @@ namespace Volt
 		if (meshMetadata.IsValid())
 		{
 			const MeshCustomMetadata& customMeshMetadata = meshMetadata->GetCustomData<MeshCustomMetadata>();
-			materials = customMeshMetadata.materials;
+			materials = customMeshMetadata.materialReferences;
 		}
 	}
 

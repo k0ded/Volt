@@ -198,12 +198,12 @@ namespace Volt
 	template<typename T, typename EntityType>
 	inline T& GetOrCreateComponent(EntityType& entity)
 	{
-		if (!entity.HasComponent<T>())
+		if (!entity.template HasComponent<T>())
 		{
-			return entity.AddComponent<T>();
+			return entity.template AddComponent<T>();
 		}
 
-		return entity.GetComponentUnsafe<T>();
+		return entity.template GetComponentUnsafe<T>();
 	}
 
 	template<typename EntityType>

@@ -5,6 +5,7 @@
 
 struct VkInstance_T;
 struct VkDebugUtilsMessengerEXT_T;
+struct VkDescriptorSetLayout_T;
 
 namespace Volt::RHI
 {
@@ -13,6 +14,7 @@ namespace Volt::RHI
 	class VulkanDebugLayer;
 	class VulkanDescriptorHeap;
 	class RayTracingTableDescriptorSetManager;
+	class StaticSamplerDescriptorSetManager;
 
 	class VulkanGraphicsContext final : public GraphicsContext
 	{
@@ -21,6 +23,7 @@ namespace Volt::RHI
 		~VulkanGraphicsContext() override;
 
 		VT_NODISCARD VT_INLINE VulkanDescriptorHeap& GetDescriptorHeap() const { return *m_descriptorHeap; }
+		VT_NODISCARD VT_INLINE VkDescriptorSetLayout_T* GetEmptyDescriptorSetLayout() const { return m_emptyDescriptorSetLayout; }
 
 	protected:
 		RefPtr<GPUAllocator> GetDefaultAllocatorImpl() override;
@@ -37,10 +40,14 @@ namespace Volt::RHI
 		void Shutdown();
 		void CreateInstance();
 
+		void CreateEmptyDescriptorSetLayout();
+		void DestroyEmptyDescriptorSetLayout();
+
 		const Vector<const char*> GetRequiredExtensions() const;
 
 		VkInstance_T* m_instance = nullptr;
 		VkDebugUtilsMessengerEXT_T* m_debugMessenger = nullptr;
+		VkDescriptorSetLayout_T* m_emptyDescriptorSetLayout = nullptr;
 
 		RefPtr<GraphicsDevice> m_graphicsDevice;
 		RefPtr<PhysicalGraphicsDevice> m_physicalDevice;
@@ -52,6 +59,7 @@ namespace Volt::RHI
 		Ref<VulkanDebugLayer> m_debugLayer;
 		Ref<VulkanDescriptorHeap> m_descriptorHeap;
 		Ref<RayTracingTableDescriptorSetManager> m_rayTracingTableDescriptorSetManager;
+		Ref<StaticSamplerDescriptorSetManager> m_staticSamplerDescriptorSetManager;
 
 		GraphicsContextCreateInfo m_createInfo{};
 	};

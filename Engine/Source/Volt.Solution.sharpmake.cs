@@ -19,6 +19,8 @@ namespace VoltSharpmake
         {
             base.ConfigureAll(conf, target);
 
+			conf.SolutionFileName = "[solution.Name]_[target.DevEnv]";
+
             //Sharpmake project, special case since it isnt a CommonProject
             conf.AddProject<SharpmakeProject>(target, true);
 

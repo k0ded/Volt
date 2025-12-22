@@ -1,7 +1,6 @@
 #include "RenderPipelineLegacy/GBufferCommon.hlsli"
 #include "Utility/Utility.hlsli"
-
-SamplerState TextureSamplerState;
+#include "StaticSamplerStates.hlsli"
 
 $(TextureDeclarations)
 

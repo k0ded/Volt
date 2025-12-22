@@ -9,6 +9,7 @@
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 
 #include <RHIModule/Graphics/PhysicalGraphicsDevice.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
@@ -82,12 +83,17 @@ namespace Volt::RHI
 			m_rayTracingTableDescriptorSetManager = CreateRef<RayTracingTableDescriptorSetManager>();
 		}
 
+		m_staticSamplerDescriptorSetManager = CreateRef<StaticSamplerDescriptorSetManager>();
 		m_descriptorHeap = CreateRef<VulkanDescriptorHeap>();
+
+		CreateEmptyDescriptorSetLayout();
 	}
 
 	void VulkanGraphicsContext::Shutdown()
 	{
+		DestroyEmptyDescriptorSetLayout();
 		m_descriptorHeap = nullptr;
+		m_staticSamplerDescriptorSetManager = nullptr;
 
 		if (RHI::RHICanUseRayTracing())
 		{
@@ -173,5 +179,22 @@ namespace Volt::RHI
 		extensionsVector.push_back(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
 
 		return extensionsVector;
+	}
+
+	void VulkanGraphicsContext::CreateEmptyDescriptorSetLayout()
+	{
+		VkDescriptorSetLayoutCreateInfo info{};
+		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		info.pNext = nullptr;
+		info.bindingCount = 0;
+		info.pBindings = nullptr;
+		info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+		VT_VK_CHECK(vkCreateDescriptorSetLayout(m_graphicsDevice->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_emptyDescriptorSetLayout));
+	}
+
+	void VulkanGraphicsContext::DestroyEmptyDescriptorSetLayout()
+	{
+		vkDestroyDescriptorSetLayout(m_graphicsDevice->GetHandle<VkDevice>(), m_emptyDescriptorSetLayout, VT_VULKAN_ALLOCATOR);
 	}
 }

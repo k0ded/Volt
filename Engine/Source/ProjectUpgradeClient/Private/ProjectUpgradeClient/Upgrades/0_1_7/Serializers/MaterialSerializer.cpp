@@ -222,7 +222,6 @@ namespace Volt
 		for (const auto tex : materialAsset->m_graph->GetTextureHandles())
 		{
 			logStr += std::format("		- {0}\n", (uint64_t)tex);
-			g_assetManager->AddDependencyToAsset(metadata->handle, tex);
 		}
 
 		if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)

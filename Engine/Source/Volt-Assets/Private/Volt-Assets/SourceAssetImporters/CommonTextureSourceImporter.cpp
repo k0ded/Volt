@@ -2,7 +2,7 @@
 #include "Volt-Assets/SourceAssetImporters/CommonTextureSourceImporter.h"
 #include "Volt-Assets/SourceAssetImporters/ImportConfigs.h"
 
-#include "Volt-Renderer/Texture/Texture2D.h"
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <AssetSystem/AssetManager.h>
 #include <AssetSystem/AssetReference.h>
@@ -18,7 +18,7 @@ VT_DEFINE_LOG_CATEGORY(LogCommonTextureSourceImporter);
 
 namespace Volt
 {
-	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".jpeg", ".jpg", ".png", ".tga", ".bmp", ".psd", ".gif", ".hdr", ".pic", ".pnm" }), CommonTextureSourceImporter);
+	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".jpeg", ".jpg", ".tga", ".bmp", ".psd", ".gif", ".hdr", ".pic", ".pnm" }), CommonTextureSourceImporter);
 
 	Vector<AssetReference<Asset>> CommonTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{

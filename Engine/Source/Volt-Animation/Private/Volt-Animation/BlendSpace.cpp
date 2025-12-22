@@ -4,7 +4,7 @@
 
 namespace Volt
 {
-	void BlendSpace::Serialize(Archive& archive)
+	void BlendSpace::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		uint32_t dimUint = static_cast<uint32_t>(m_dimension);
 

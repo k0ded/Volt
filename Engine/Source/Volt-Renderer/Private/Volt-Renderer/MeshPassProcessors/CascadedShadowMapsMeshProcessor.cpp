@@ -7,7 +7,7 @@
 
 namespace Volt
 {
-	void CascadedShadowMapMeshProcessor::AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	void CascadedShadowMapMeshProcessor::AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
 		auto vertexShader = ShaderMap::Get<CascadedDirectionalShadowVS>();
 		auto pixelShader = ShaderMap::Get<CascadedDirectionalShadowPS>();
@@ -21,7 +21,7 @@ namespace Volt
 		BuildMeshDrawCommand(renderPrimitive, pipelineCreateInfo, vertexShader, pixelShader);
 	}
 
-	void CascadedShadowMapMeshProcessor::RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	void CascadedShadowMapMeshProcessor::RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
 		RemoveMeshDrawCommand(renderPrimitive);
 	}

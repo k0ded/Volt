@@ -76,7 +76,7 @@ namespace Volt
 		m_image = image;
 	}
 
-	void Texture2D::Serialize(Archive& archive)
+	void Texture2D::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		TextureHeader textureHeader;
 		Buffer dataBuffer;

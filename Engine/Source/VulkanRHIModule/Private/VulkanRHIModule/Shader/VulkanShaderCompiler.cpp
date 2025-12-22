@@ -4,6 +4,7 @@
 #include "VulkanRHIModule/Shader/HLSLIncluder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 
 #include <RHIModule/Shader/ShaderUtility.h>
 #include <RHIModule/Shader/ShaderPreProcessor.h>
@@ -551,6 +552,11 @@ namespace Volt::RHI
 				continue;
 			}
 
+			if (binding->set == StaticSamplerDescriptorSetManager::Set)
+			{
+				continue;
+			}
+
 			result = spvReflectChangeDescriptorBindingNumbers(&spirvModule, binding, bindingIndex, shaderStageDescriptorSetIndex);
 			VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
 
@@ -621,7 +627,11 @@ namespace Volt::RHI
 
 		for (SpvReflectDescriptorBinding* sampler : samplers)
 		{
-			shaderParameterMap.AddSampler(sampler->name, sampler->set, sampler->binding, currentShaderStage);
+			// Make sure static samplers aren't included.
+			if (sampler->set != StaticSamplerDescriptorSetManager::Set)
+			{
+				shaderParameterMap.AddSampler(sampler->name, sampler->set, sampler->binding, currentShaderStage);
+			}
 		}
 
 		for (SpvReflectDescriptorBinding* accelerationStructure : accelerationStructures)

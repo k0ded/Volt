@@ -64,10 +64,10 @@ namespace Volt
 	void MeshAsset::OnPreSave(CustomAssetMetadata& customMetadata)
 	{
 		MeshCustomMetadata& meshCustomMetadata = customMetadata.GetMutableCustomMetadata<MeshCustomMetadata>();
-		meshCustomMetadata.materials = m_materials;
+		meshCustomMetadata.materialReferences = m_materials;
 	}
 
-	void MeshAsset::Serialize(Archive& archive)
+	void MeshAsset::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		archive << m_materials;
 	
@@ -101,6 +101,16 @@ namespace Volt
 		
 		// Mesh serialize will initialize the mesh.
 		m_mesh->Serialize(archive);
+	}
+
+	void MeshAsset::GatherAssetDependencies(AssetDependencyGatherContext& gatherContext, ReadOnlyAssetMetadata assetMetadata)
+	{
+		const MeshCustomMetadata& meshCustomMetadata = assetMetadata->GetCustomData<MeshCustomMetadata>();
+
+		for (const AssetHandle& materialHandle : meshCustomMetadata.materialReferences)
+		{
+			gatherContext.AddDependency(materialHandle, AssetDependencyType::Hard);
+		}
 	}
 
 	void MeshAsset::Initialize(const MeshInitializer& meshInitializer, const Vector<AssetReference<MaterialAsset>>& materials)

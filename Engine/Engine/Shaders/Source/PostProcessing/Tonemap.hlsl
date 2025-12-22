@@ -17,9 +17,14 @@ struct Output
     [[vt::r11f_g11f_b10f]] float4 output : SV_Target0;
 };
 
+float3 ReinhardTonemap(float3 color)
+{
+    return color / (color + 1.f);
+}
+
 Output MainPS(FullscreenTriangleVertex input)
 {
-    float3 pixelColor = FinalColor.Load(int3(input.position.xy, 0));
+    float3 pixelColor = ReinhardTonemap(FinalColor.Load(int3(input.position.xy, 0)));
 
     float blueNoise = BlueNoiseScalar(input.position.xy, FrameIndex);
 

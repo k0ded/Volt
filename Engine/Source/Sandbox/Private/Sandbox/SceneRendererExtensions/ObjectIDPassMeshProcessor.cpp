@@ -7,7 +7,7 @@
 
 #include <RHIModule/Pipelines/RenderPipeline.h>
 
-void ObjectIDPassMeshProcessor::AddRenderPrimitive(const Volt::RenderPrimitiveData& renderPrimitive)
+void ObjectIDPassMeshProcessor::AddRenderPrimitive(const Volt::RenderPrimitiveData* renderPrimitive)
 {
 	auto vertexShader = Volt::ShaderMap::Get<ObjectIDVS>();
 	auto pixelShader = Volt::ShaderMap::Get<ObjectIDPS>();
@@ -18,7 +18,7 @@ void ObjectIDPassMeshProcessor::AddRenderPrimitive(const Volt::RenderPrimitiveDa
 	BuildMeshDrawCommand(renderPrimitive, pipelineInfo, vertexShader, pixelShader);
 }
 
-void ObjectIDPassMeshProcessor::RemoveRenderPrimitive(const Volt::RenderPrimitiveData& renderPrimitive)
+void ObjectIDPassMeshProcessor::RemoveRenderPrimitive(const Volt::RenderPrimitiveData* renderPrimitive)
 {
 	RemoveMeshDrawCommand(renderPrimitive);
 }

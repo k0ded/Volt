@@ -7,7 +7,7 @@
 
 namespace Volt
 {
-	void DepthPrePassMeshProcessor::AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	void DepthPrePassMeshProcessor::AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
 		auto vertexShader = ShaderMap::Get<DepthPrePassVS>();
 		auto pixelShader = ShaderMap::Get<DepthPrePassPS>();
@@ -15,7 +15,7 @@ namespace Volt
 		BuildMeshDrawCommand(renderPrimitive, {}, vertexShader, pixelShader);
 	}
 
-	void DepthPrePassMeshProcessor::RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	void DepthPrePassMeshProcessor::RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
 		RemoveMeshDrawCommand(renderPrimitive);
 	}

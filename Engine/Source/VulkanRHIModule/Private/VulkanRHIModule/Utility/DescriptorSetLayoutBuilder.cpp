@@ -6,6 +6,9 @@
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
+#include "VulkanRHIModule/Graphics/VulkanGraphicsContext.h"
+#include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
+#include "VulkanRHIModule/VulkanResourceCast.h"
 
 #include <RHIModule/Globals.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -76,6 +79,8 @@ namespace Volt::RHI
 			}
 		}
 
+		VulkanGraphicsContext* vulkanGraphicsContext = ResourceCast(&GraphicsContext::Get());
+
 		int32_t lastSet = -1;
 		for (const auto& [set, bindings] : descriptorSetBindings)
 		{
@@ -83,14 +88,7 @@ namespace Volt::RHI
 			// Required because descriptor sets are required to be bound in order.
 			while (static_cast<int32_t>(set) > lastSet + 1)
 			{
-				VkDescriptorSetLayoutCreateInfo info{};
-				info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-				info.pNext = nullptr;
-				info.bindingCount = 0;
-				info.pBindings = nullptr;
-				info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-
-				VT_VK_CHECK(vkCreateDescriptorSetLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &result.pipelineLayoutDescriptorSetLayouts.emplace_back()));
+				result.pipelineLayoutDescriptorSetLayouts.emplace_back(vulkanGraphicsContext->GetEmptyDescriptorSetLayout());
 				lastSet++;
 			}
 
@@ -142,6 +140,18 @@ namespace Volt::RHI
 
 			result.descriptorSetLayouts[RayTracingTableDescriptorSetManager::Set] = RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout();
 			result.pipelineLayoutDescriptorSetLayouts[RayTracingTableDescriptorSetManager::Set] = RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout();
+		}
+
+		// Static samplers.
+		{
+			// Add all 'in-between' descriptor set layouts.
+			for (size_t i = result.pipelineLayoutDescriptorSetLayouts.size(); i < StaticSamplerDescriptorSetManager::Set; ++i)
+			{
+				result.pipelineLayoutDescriptorSetLayouts.emplace_back(vulkanGraphicsContext->GetEmptyDescriptorSetLayout());
+			}
+
+			result.pipelineLayoutDescriptorSetLayouts.resize(StaticSamplerDescriptorSetManager::Set + 1);
+			result.pipelineLayoutDescriptorSetLayouts[StaticSamplerDescriptorSetManager::Set] = StaticSamplerDescriptorSetManager::Get().GetDescriptorSetLayout();
 		}
 
 		return result;

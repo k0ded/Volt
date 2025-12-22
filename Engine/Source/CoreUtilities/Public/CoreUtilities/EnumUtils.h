@@ -179,12 +179,8 @@ inline static std::string ToString(enumName aEnumValue) \
 	VT_INLINE Archive& operator<<(Archive& archive, enumType& value) \
 	{ \
 		using UnderlyingType = std::underlying_type_t<enumType>; \
-		UnderlyingType tempValue = static_cast<UnderlyingType>(value); \
+		UnderlyingType& tempValue = *reinterpret_cast<UnderlyingType*>(&value); \
 		archive << tempValue; \
-		if (archive.IsLoading()) \
-		{ \
-			value = static_cast<enumType>(tempValue); \
-		} \
 		return archive; \
 	} \
 

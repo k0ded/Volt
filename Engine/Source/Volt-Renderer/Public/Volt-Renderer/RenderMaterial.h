@@ -4,6 +4,7 @@
 
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/Shader/Shader.h>
+#include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Descriptors/ResourceHandle.h>
 #include <RHIModule/Images/Image.h>
 
@@ -11,6 +12,11 @@
 
 namespace Volt
 {
+	namespace RHI
+	{
+		class ShaderBindingMap;
+	}
+
 	class RenderTexture
 	{
 	public:
@@ -36,8 +42,8 @@ namespace Volt
 	public:
 		struct TextureInfo
 		{
+			StringHash bindingName;
 			RenderTexture texture;
-			std::string bindingName;
 		};
 
 		using TexturesMap = Map<uint32_t, TextureInfo>;
@@ -47,11 +53,14 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE const TexturesMap& GetTextures() const { return m_textures; }
 
-		void AddTexture(uint32_t index, const std::string& name);
 		void SetTexture(uint32_t index, RenderTexture resource);
 
 		bool DoMaterialRequireUpdate() const;
+		void UpdateTextures();
 		void ClearStatus();
+
+		// Note: This function may be called from any thread during rendering.
+		void BindToShaderBindingMap(RHI::ShaderBindingMap& shaderBindingMap, RefPtr<RHI::RenderPipeline> renderPipeline) const;
 
 		VT_NODISCARD VT_INLINE size_t GetHash() const { return m_hash; }
 		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
@@ -64,6 +73,8 @@ namespace Volt
 		void GenerateHash();
 
 		TexturesMap m_textures;
+		// Textures used while rendering.
+		TexturesMap m_renderableTextures;
 
 		RefPtr<RHI::Shader> m_pixelShader;
 

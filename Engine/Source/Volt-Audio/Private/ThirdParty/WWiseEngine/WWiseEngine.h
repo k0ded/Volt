@@ -1,7 +1,9 @@
 #pragma once
 #include <map>
 
+VT_DISABLE_WARNING(4723)
 #include "ThirdParty/WWiseEngine/SoundEngine/Win32/AkFilePackageLowLevelIOBlocking.h"
+VT_RESTORE_WARNING()
 #include "SoundEngine/Common/AkJobWorkerMgr.h"
 
 #include <CoreUtilities/Containers/Vector.h>

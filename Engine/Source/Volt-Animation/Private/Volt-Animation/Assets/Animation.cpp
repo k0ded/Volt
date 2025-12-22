@@ -412,7 +412,7 @@ namespace Volt
 		}
 	}
 
-	void Animation::Serialize(Archive& archive)
+	void Animation::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		archive << m_duration;
 		archive << m_framesPerSecond;

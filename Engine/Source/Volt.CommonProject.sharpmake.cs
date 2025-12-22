@@ -36,7 +36,9 @@ namespace VoltSharpmake
         {
             conf.ProjectFileName = "[project.Name]_[target.Platform]";
             if (target.DevEnv != DevEnv.xcode)
-                conf.ProjectFileName += "_[target.DevEnv]";
+			{
+				conf.ProjectFileName += "_[target.DevEnv]";
+			}
 
 			conf.IntermediatePath = Path.Combine(Globals.EngineTempDirectory, @"obj\[target.DirectoryName]\[project.Name]");
 

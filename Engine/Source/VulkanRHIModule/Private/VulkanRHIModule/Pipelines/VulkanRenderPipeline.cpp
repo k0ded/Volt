@@ -1,9 +1,11 @@
 #include "vkpch.h"
 
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
+#include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/VulkanResourceCast.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/RHIModule.h>
@@ -391,13 +393,20 @@ namespace Volt::RHI
 
 		RHIModule::GetInstance().DestroyResource([pipeline = m_pipeline, pipelineLayout = m_pipelineLayout, descriptorSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts]()
 		{
+			VulkanGraphicsContext* vulkanGraphicsContext = ResourceCast(&GraphicsContext::Get());
 			auto device = GraphicsContext::GetDevice();
+
 			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, VT_VULKAN_ALLOCATOR);
 			vkDestroyPipelineLayout(device->GetHandle<VkDevice>(), pipelineLayout, VT_VULKAN_ALLOCATOR);
 
+			// Make sure we don't destroy any shared descriptor set layouts.
 			for (const auto& descriptorSetLayout : descriptorSetLayouts)
 			{
-				vkDestroyDescriptorSetLayout(device->GetHandle<VkDevice>(), descriptorSetLayout, VT_VULKAN_ALLOCATOR);
+				if (descriptorSetLayout != StaticSamplerDescriptorSetManager::Get().GetDescriptorSetLayout() &&
+					descriptorSetLayout != vulkanGraphicsContext->GetEmptyDescriptorSetLayout())
+				{
+					vkDestroyDescriptorSetLayout(device->GetHandle<VkDevice>(), descriptorSetLayout, VT_VULKAN_ALLOCATOR);
+				}
 			}
 		});
 

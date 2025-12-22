@@ -10,10 +10,10 @@
 
 namespace Volt
 {
-	void BasePassMeshProcessor::AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	void BasePassMeshProcessor::AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
 		auto vertexShader = ShaderMap::Get<BasePassVS>();
-		auto pixelShader = renderPrimitive.material->GetPixelShader();
+		auto pixelShader = renderPrimitive->material->GetPixelShader();
 
 		if (!pixelShader)
 		{
@@ -23,7 +23,7 @@ namespace Volt
 		BuildMeshDrawCommand(renderPrimitive, {}, vertexShader, pixelShader);
 	}
 
-	void BasePassMeshProcessor::RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	void BasePassMeshProcessor::RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
 		RemoveMeshDrawCommand(renderPrimitive);
 	}

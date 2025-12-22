@@ -173,7 +173,21 @@ public:
 	constexpr reverse_iterator erase_unsorted(const_reverse_iterator position);
 
 	template<typename PredicateFunctor>
-	constexpr void erase_with_predicate(PredicateFunctor functor);
+	constexpr void erase_with_predicate(PredicateFunctor&& functor);
+
+	constexpr bool contains(const T& value) const;
+	
+	template<typename PredicateFunctor>
+	constexpr bool contains_with_predicate(PredicateFunctor&& functor) const;
+
+	constexpr iterator find(const T& value);
+	constexpr const_iterator find(const T& value) const;
+
+	template<typename PredicateFunctor>
+	constexpr iterator find_with_predicate(PredicateFunctor&& functor);
+
+	template<typename PredicateFunctor>
+	constexpr const_iterator find_with_predicate(PredicateFunctor&& functor) const;
 
 	constexpr void clear() noexcept;
 
@@ -908,7 +922,7 @@ inline constexpr Vector<T, AllocatorType>::reverse_iterator Vector<T, AllocatorT
 
 template<typename T, typename AllocatorType>
 template<typename PredicateFunctor>
-inline constexpr void Vector<T, AllocatorType>::erase_with_predicate(PredicateFunctor functor)
+inline constexpr void Vector<T, AllocatorType>::erase_with_predicate(PredicateFunctor&& functor)
 {
 	for (auto it = rbegin(); it != rend(); ++it)
 	{
@@ -917,6 +931,93 @@ inline constexpr void Vector<T, AllocatorType>::erase_with_predicate(PredicateFu
 			erase(it);
 		}
 	}
+}
+
+template<typename T, typename AllocatorType>
+constexpr bool Vector<T, AllocatorType>::contains(const T& value) const
+{
+	for (auto it = cbegin(); it != cend(); ++it)
+	{
+		if (value == (*it))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+template<typename T, typename AllocatorType>
+template<typename PredicateFunctor>
+inline constexpr bool Vector<T, AllocatorType>::contains_with_predicate(PredicateFunctor&& functor) const
+{
+	for (auto it = cbegin(); it != cend(); ++it)
+	{
+		if (functor(*it))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+template<typename T, typename AllocatorType>
+inline constexpr Vector<T, AllocatorType>::iterator Vector<T, AllocatorType>::find(const T& value)
+{
+	for (auto it = begin(); it != end(); ++it)
+	{
+		if (value == (*it))
+		{
+			return it;
+		}
+	}
+
+	return end();
+}
+
+template<typename T, typename AllocatorType>
+inline constexpr Vector<T, AllocatorType>::const_iterator Vector<T, AllocatorType>::find(const T& value) const
+{
+	for (auto it = cbegin(); it != cend(); ++it)
+	{
+		if (value == (*it))
+		{
+			return it;
+		}
+	}
+
+	return cend();
+}
+
+template<typename T, typename AllocatorType>
+template<typename PredicateFunctor>
+inline constexpr Vector<T, AllocatorType>::iterator Vector<T, AllocatorType>::find_with_predicate(PredicateFunctor&& functor)
+{
+	for (auto it = begin(); it != end(); ++it)
+	{
+		if (functor(*it))
+		{
+			return it;
+		}
+	}
+
+	return end();
+}
+
+template<typename T, typename AllocatorType>
+template<typename PredicateFunctor>
+inline constexpr Vector<T, AllocatorType>::const_iterator Vector<T, AllocatorType>::find_with_predicate(PredicateFunctor&& functor) const
+{
+	for (auto it = cbegin(); it != cend(); ++it)
+	{
+		if (functor(*it))
+		{
+			return it;
+		}
+	}
+
+	return cend();
 }
 
 template<typename T, typename AllocatorType>

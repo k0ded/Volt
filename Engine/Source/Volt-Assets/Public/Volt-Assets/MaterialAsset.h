@@ -2,14 +2,41 @@
 
 #include "Volt-Assets/Config.h"
 
-#include <AssetSystem/AssetTypes.h>
+#include <Volt-Renderer/Texture/Texture2D.h>
 
+#include <AssetSystem/AssetTypes.h>
 #include <AssetSystem/Asset.h>
 
 namespace Volt
 {
 	class MaterialGraph;
 	class RenderMaterial;
+
+	struct MaterialCustomMetadata
+	{
+		struct TextureInfo
+		{
+			AssetHandle handle;
+			uint32_t index;
+
+			VT_INLINE friend Archive& operator<<(Archive& archive, TextureInfo& value)
+			{
+				archive << value.handle;
+				archive << value.index;
+				return archive;
+			}
+		};
+
+		static bool IsForAssetType(const AssetType& assetType) { return assetType->GetGUID() == AssetTypes::Material->GetGUID(); }
+		
+		Vector<TextureInfo> textureReferences;
+
+		VT_INLINE friend Archive& operator<<(Archive& archive, MaterialCustomMetadata& value)
+		{
+			archive << value.textureReferences;
+			return archive;
+		}
+	};
 
 	class VTASSETS_API MaterialAsset : public Asset
 	{
@@ -23,10 +50,14 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::Material; }
 		AssetType GetType() const override { return GetStaticType(); };
 		void OnAssetDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state) override;
-		void Serialize(Archive& archive) override;
+		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
+		void OnPreSave(CustomAssetMetadata& customMetadata) override;
+		void GatherAssetDependencies(AssetDependencyGatherContext& gatherContext, ReadOnlyAssetMetadata assetMetadata) override;
 
 	private:
 		Ref<MaterialGraph> m_graph;
 		Ref<RenderMaterial> m_renderMaterial;
+	
+		Vector<AssetReference<Texture2D>> m_referencedTextures;
 	};
 }

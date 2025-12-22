@@ -68,8 +68,8 @@ namespace Volt
 
 	SceneRenderer::~SceneRenderer()
 	{
-		m_renderScene->UnregisterOnRenderPrimitiveAddedCallback(m_onRenderPrimitiveAddedCallbackId);
-		m_renderScene->UnregisterOnRenderPrimitiveRemovedCallback(m_onRenderPrimitiveRemovedCallbackId);
+		m_renderScene->GetRenderPrimitiveAddedDelegate().Remove(m_renderPrimitiveAddedDelegateHandle);
+		m_renderScene->GetRenderPrimitiveRemovedDelegate().Remove(m_renderPrimitiveRemovedDelegateHandle);
 
 		if (m_renderGraphExecutionCounter)
 		{
@@ -273,12 +273,12 @@ namespace Volt
 		m_basePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<BasePassMeshProcessor>();
 		m_cascadedShadowMapMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<CascadedShadowMapMeshProcessor>();
 
-		m_onRenderPrimitiveAddedCallbackId = m_renderScene->RegisterOnRenderPrimitiveAddedCallback([this](const RenderPrimitiveData& renderPrimitives)
+		m_renderPrimitiveAddedDelegateHandle = m_renderScene->GetRenderPrimitiveAddedDelegate().AddLambda([this](const RenderPrimitiveData* renderPrimitive)
 		{
-			m_meshPassProcessorRegistry.AddRenderPrimitive(renderPrimitives);
+			m_meshPassProcessorRegistry.AddRenderPrimitive(renderPrimitive);
 		});
 
-		m_onRenderPrimitiveRemovedCallbackId = m_renderScene->RegisterOnRenderPrimitiveRemovedCallback([this](const RenderPrimitiveData& renderPrimitive)
+		m_renderPrimitiveRemovedDelegateHandle = m_renderScene->GetRenderPrimitiveRemovedDelegate().AddLambda([this](const RenderPrimitiveData* renderPrimitive)
 		{
 			m_meshPassProcessorRegistry.RemoveRenderPrimitive(renderPrimitive);
 		});
@@ -625,11 +625,6 @@ namespace Volt
 				RenderGraphPassFlags::None,
 				{ Math::DivideRoundUp(view.width, 8u), Math::DivideRoundUp(view.height, 8u), 1u });
 		}
-	}
-
-	void SceneRenderer::Invalidate()
-	{
-		VT_PROFILE_FUNCTION();
 	}
 
 	void SceneRenderer::Enable()

@@ -114,12 +114,12 @@ namespace Volt
 		}
 
 		// Add textures
-		const Vector<Mosaic::MosaicShaderWriter::TextureDeclaration>& textureDeclarations = compilationResult.GetTextureDeclarations();
-
-		for (const Mosaic::MosaicShaderWriter::TextureDeclaration& texture : textureDeclarations)
-		{
-			materialAsset->GetRenderMaterial()->AddTexture(texture.index, texture.name);
-		}
+		//const Vector<Mosaic::MosaicShaderWriter::TextureDeclaration>& textureDeclarations = compilationResult.GetTextureDeclarations();
+		//
+		//for (const Mosaic::MosaicShaderWriter::TextureDeclaration& texture : textureDeclarations)
+		//{
+		//	materialAsset->GetRenderMaterial()->AddTexture(texture.index, texture.name);
+		//}
 
 		// Set textures
 		// #TODO_Ivar: This is a temporary way of settings the textures.

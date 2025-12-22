@@ -20,7 +20,7 @@ namespace Volt
 		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
 		void OnPreSave(CustomAssetMetadata& customMetadata) override;
-		void Serialize(Archive& archive) override;
+		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
 		const Buffer& GetEntitySpawnData() const { return m_entitySpawnData; }
 

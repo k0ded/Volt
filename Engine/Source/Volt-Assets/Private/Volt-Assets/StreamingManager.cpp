@@ -275,15 +275,22 @@ namespace Volt
 		}
 		else if (streamingInstance.sceneLightData)
 		{
-			m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, instanceId);
-
-			if (streamingInstance.environmentTextureHandle != Asset::Null())
+			if (description.environmentTextureHandle != streamingInstance.environmentTextureHandle)
 			{
-				m_environmentTextureReferenceCounter.RemoveReference(streamingInstance.environmentTextureHandle, instanceId);
+				if (description.environmentTextureHandle != Asset::Null())
+				{
+					m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, instanceId);
+				}
+			
+				if (streamingInstance.environmentTextureHandle != Asset::Null())
+				{
+					m_environmentTextureReferenceCounter.RemoveReference(streamingInstance.environmentTextureHandle, instanceId);
+				}
+
+				streamingInstance.environmentTextureHandle = description.environmentTextureHandle;
 			}
 
-			streamingInstance.environmentTextureHandle = description.environmentTextureHandle;
-
+			streamingInstance.sceneLightDescription = description.sceneLightDescription;
 			InitializeSceneLightDataFromInstance(streamingInstance);
 
 			if (s_logStreamingManagerUpdates.GetValue())

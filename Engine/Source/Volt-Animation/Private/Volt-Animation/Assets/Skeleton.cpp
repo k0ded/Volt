@@ -96,7 +96,7 @@ namespace Volt
 		return m_joints.at(index).name;
 	}
 
-	void Skeleton::Serialize(Archive& archive)
+	void Skeleton::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		archive << m_name;
 		archive << m_joints;

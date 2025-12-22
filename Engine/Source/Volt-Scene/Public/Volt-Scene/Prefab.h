@@ -57,7 +57,7 @@ namespace Volt
 
 		static AssetType GetStaticType() { return AssetTypes::Prefab; }
 		AssetType GetType() const override { return GetStaticType(); };
-		void Serialize(Archive& archive) override;
+		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
 	private:
 		friend class PrefabImporter;

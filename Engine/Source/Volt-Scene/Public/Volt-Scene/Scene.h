@@ -112,7 +112,7 @@ namespace Volt
 		static AssetType GetStaticType() { return AssetTypes::Scene; }
 		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
-		void Serialize(Archive& archive) override;
+		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
 		//copy all the entities into another scene, first removing all entities in the other scene
 		void CopyEntitiesTo(AssetReference<Scene> otherScene);

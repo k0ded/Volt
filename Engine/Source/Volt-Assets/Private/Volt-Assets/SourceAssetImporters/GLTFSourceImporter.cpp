@@ -2,6 +2,7 @@
 
 #include "Volt-Assets/SourceAssetImporters/GLTFSourceImporter.h"
 #include "Volt-Assets/SourceAssetImporters/ImportConfigs.h"
+#include "Volt-Assets/SourceAssetImporters/TangentGenerator.h"
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 
@@ -155,17 +156,82 @@ namespace Volt
 
 		UUID64 pbrOutputNode = mosaicBuilder.AddNode<MosaicNodes::PBROutputNode>();
 
-		if (baseColorFactorNode != 0)
+		// Base color
+		if (baseColorTextureNode != 0)
 		{
-			mosaicBuilder.LinkNodeParameters(baseColorFactorNode, pbrOutputNode, "RGBA", "Base Color");
+			if (baseColorFactorNode != 0)
+			{
+				UUID64 multiplyNode = mosaicBuilder.AddNode<MosaicNodes::MultiplyNode>();
+				mosaicBuilder.LinkNodeParameters(baseColorTextureNode, multiplyNode, "RGBA", "A");
+				mosaicBuilder.LinkNodeParameters(baseColorFactorNode, multiplyNode, "RGBA", "B");
+				mosaicBuilder.LinkNodeParameters(multiplyNode, pbrOutputNode, "", "Base Color");
+			}
+			else
+			{
+				mosaicBuilder.LinkNodeParameters(baseColorTextureNode, pbrOutputNode, "RGBA", "Base Color");
+			}
+		}
+		else
+		{
+			if (baseColorFactorNode != 0)
+			{
+				mosaicBuilder.LinkNodeParameters(baseColorFactorNode, pbrOutputNode, "RGBA", "Base Color");
+			}
 		}
 
-		mosaicBuilder.LinkNodeParameters(metallicFactorNode, pbrOutputNode, "Value", "Metallic");
-		mosaicBuilder.LinkNodeParameters(roughnessFactorNode, pbrOutputNode, "Value", "Roughness");
-
-		if (emissiveFactorNode != 0)
+		// Metallic roughness
+		if (metallicRoughnessTextureNode != 0)
 		{
-			mosaicBuilder.LinkNodeParameters(emissiveFactorNode, pbrOutputNode, "Value", "Emissive");
+			// Metallic
+			{
+				UUID64 multiplyNode = mosaicBuilder.AddNode<MosaicNodes::MultiplyNode>();
+				mosaicBuilder.LinkNodeParameters(metallicRoughnessTextureNode, multiplyNode, "R", "A");
+				mosaicBuilder.LinkNodeParameters(metallicFactorNode, multiplyNode, "Value", "B");
+				mosaicBuilder.LinkNodeParameters(multiplyNode, pbrOutputNode, "", "Metallic");
+			}
+
+			// Roughness
+			{
+				UUID64 multiplyNode = mosaicBuilder.AddNode<MosaicNodes::MultiplyNode>();
+				mosaicBuilder.LinkNodeParameters(metallicRoughnessTextureNode, multiplyNode, "G", "A");
+				mosaicBuilder.LinkNodeParameters(roughnessFactorNode, multiplyNode, "Value", "B");
+				mosaicBuilder.LinkNodeParameters(multiplyNode, pbrOutputNode, "", "Roughness");
+			}
+			
+		}
+		else
+		{
+			mosaicBuilder.LinkNodeParameters(metallicFactorNode, pbrOutputNode, "Value", "Metallic");
+			mosaicBuilder.LinkNodeParameters(roughnessFactorNode, pbrOutputNode, "Value", "Roughness");
+		}
+
+		// Emissive
+		if (emissiveTextureNode != 0)
+		{
+			if (emissiveFactorNode != 0)
+			{
+				UUID64 multiplyNode = mosaicBuilder.AddNode<MosaicNodes::MultiplyNode>();
+				mosaicBuilder.LinkNodeParameters(emissiveTextureNode, multiplyNode, "RGB", "A");
+				mosaicBuilder.LinkNodeParameters(emissiveFactorNode, multiplyNode, "Value", "B");
+				mosaicBuilder.LinkNodeParameters(multiplyNode, pbrOutputNode, "", "Emissive");
+			}
+			else
+			{
+				mosaicBuilder.LinkNodeParameters(emissiveTextureNode, pbrOutputNode, "RGB", "Emissive");
+			}
+		}
+		else
+		{
+			if (emissiveFactorNode != 0)
+			{
+				mosaicBuilder.LinkNodeParameters(emissiveFactorNode, pbrOutputNode, "Value", "Emissive");
+			}
+		}
+
+		// Normal
+		if (normalTextureNode != 0)
+		{
+			mosaicBuilder.LinkNodeParameters(normalTextureNode, pbrOutputNode, "RGB", "Normal");
 		}
 	}
 
@@ -332,6 +398,11 @@ namespace Volt
 
 			return nullValue;
 		}
+		
+		VT_NODISCARD VT_INLINE const T* GetData() const
+		{
+			return reinterpret_cast<const T*>(ptr);
+		}
 	};
 
 	template<typename T>
@@ -482,6 +553,27 @@ namespace Volt
 			GLTFView<glm::vec4> vertexTangents = GetAttributeViewFromName<glm::vec4>("TANGENT", gltfPrimitive, gltfModel);
 			GLTFView<glm::vec2> vertexTexCoords = GetAttributeViewFromName<glm::vec2>("TEXCOORD_0", gltfPrimitive, gltfModel);
 
+			// There are no tangents, generate them
+			Vector<glm::vec4> generatedTangents;
+			if (vertexTangents.Empty())
+			{
+				// Normals and tex coords are required for generation.
+				if (!vertexNormals.Empty() && !vertexTexCoords.Empty())
+				{
+					generatedTangents.resize_uninitialized(vertexPositions.count);
+
+					TangentGenerator::GenerationData generationData;
+					generationData.vertexPositions = vertexPositions.GetData();
+					generationData.vertexNormals = vertexNormals.GetData();
+					generationData.vertexUvs = vertexTexCoords.GetData();
+					generationData.indices = indices.data();
+					generationData.indexCount = static_cast<uint32_t>(indices.size());
+					generationData.outTangents = generatedTangents.data();
+
+					TangentGenerator::GenerateTangents(generationData);
+				}
+			}
+
 			VertexContainer vertexContainer{};
 			vertexContainer.Resize(vertexPositions.count);
 
@@ -490,8 +582,17 @@ namespace Volt
 				vertexContainer.positions[i] = vertexPositions.GetAt(i);
 
 				const glm::vec3 normal = vertexNormals.Empty() ? glm::vec3(0.f, 1.f, 0.f) : vertexNormals.GetAt(i);
-				const glm::vec4 tangent = vertexTangents.Empty() ? glm::vec4(1.f, 0.f, 0.f, 1.f) : vertexTangents.GetAt(i);
 				const glm::vec2 uv = vertexTexCoords.Empty() ? 0.f : vertexTexCoords.GetAt(i);
+
+				glm::vec4 tangent = glm::vec4(1.f, 0.f, 0.f, 1.f);
+				if (!vertexTangents.Empty())
+				{
+					tangent = vertexTangents.GetAt(i);
+				}
+				else if (!generatedTangents.empty())
+				{
+					tangent = generatedTangents[i];
+				}
 
 				vertexContainer.materialData[i] = VertexMaterialData::Pack(normal, tangent, uv);
 			}

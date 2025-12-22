@@ -86,7 +86,7 @@ namespace Volt
 			primitiveDrawData.boneOffset = m_currentBoneCount;
 
 			const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
-			AssetReference<Skeleton> skeleton = renderObject.animator->GetSkeleton();
+			AssetReference<Skeleton> skeleton = renderObject->animator->GetSkeleton();
 
 			if (skeleton.IsValid())
 			{
@@ -104,7 +104,7 @@ namespace Volt
 				const auto& primitiveDrawData = m_primitiveDrawData.at(m_primitiveIndicesContainer.GetIndexFromID(animatedObject));
 				const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
 
-				const auto sample = renderObject.animator->Sample();
+				const auto sample = renderObject->animator->Sample();
 				memcpy_s(m_animationBufferStorage.data() + primitiveDrawData.boneOffset, sizeof(glm::mat4) * sample.size(), sample.data(), sizeof(glm::mat4) * sample.size());
 			}
 		}
@@ -116,6 +116,7 @@ namespace Volt
 		UpdateInvalidLights(renderGraph);
 		UpdateInvalidPrimitiveData(renderGraph);
 		CompactValidPrimitiveDrawDatas(renderGraph);
+
 
 		if (m_currentBoneCount > 0)
 		{
@@ -162,12 +163,12 @@ namespace Volt
 		return m_updateQueue.AddPrimitiveInstance(entityId, animator, mesh, material, subMeshIndex);
 	}
 
-	void RenderScene::RemovePrimitiveInstance(UUID64 id)
+	void RenderScene::RemovePrimitiveInstance(RenderPrimitiveID id)
 	{
 		m_updateQueue.RemovePrimitiveInstance(id);
 	}
 
-	void RenderScene::InvalidatePrimitiveInstance(UUID64 renderObject)
+	void RenderScene::InvalidatePrimitiveInstance(RenderPrimitiveID renderObject)
 	{
 		m_updateQueue.InvalidatePrimitiveInstance(renderObject);
 	}
@@ -177,7 +178,7 @@ namespace Volt
 		return m_updateQueue.AddLightInstance(entityId, description);
 	}
 
-	void RenderScene::RemoveLightInstance(UUID64 id)
+	void RenderScene::RemoveLightInstance(RenderPrimitiveID id)
 	{
 		return m_updateQueue.RemoveLightInstance(id);
 	}
@@ -202,60 +203,19 @@ namespace Volt
 		m_updateQueue.InvalidateLightInstance(id);
 	}
 
-	void RenderScene::OnRenderPrimitiveAdded(const RenderPrimitiveData& renderPrimitive)
+	void RenderScene::OnRenderPrimitiveAdded(const RenderPrimitiveData* renderPrimitive)
 	{
-		for (auto& callback : m_onRenderPrimitiveAddedCallbacks)
-		{
-			callback.callback(renderPrimitive);
-		}
+		m_renderPrimitiveAddedDelegate.Broadcast(renderPrimitive);
 	}
 
-	void RenderScene::OnRenderPrimitiveRemoved(const RenderPrimitiveData& renderPrimitive)
+	void RenderScene::OnRenderPrimitiveRemoved(const RenderPrimitiveData* renderPrimitive)
 	{
-		for (auto& callback : m_onRenderPrimitiveRemovedCallbacks)
-		{
-			callback.callback(renderPrimitive);
-		}
+		m_renderPrimitiveRemovedDelegate.Broadcast(renderPrimitive);
 	}
 
-	UUID32 RenderScene::RegisterOnRenderPrimitiveAddedCallback(std::function<void(const RenderPrimitiveData& renderPrimitive)>&& callback)
+	Vector<RenderPrimitiveData*> RenderScene::GetRenderPrimitives() const
 	{
-		auto& newCallback = m_onRenderPrimitiveAddedCallbacks.emplace_back();
-		newCallback.callback = std::move(callback);
-		
-		return newCallback.id;
-	}
-
-	UUID32 RenderScene::RegisterOnRenderPrimitiveRemovedCallback(std::function<void(const RenderPrimitiveData& renderPrimitive)>&& callback)
-	{
-		auto& newCallback = m_onRenderPrimitiveRemovedCallbacks.emplace_back();
-		newCallback.callback = std::move(callback);
-
-		return newCallback.id;
-	}
-
-	void RenderScene::UnregisterOnRenderPrimitiveAddedCallback(UUID32 callbackId)
-	{
-		for (int32_t i = static_cast<int32_t>(m_onRenderPrimitiveAddedCallbacks.size()) - 1; i >= 0; --i)
-		{
-			if (m_onRenderPrimitiveAddedCallbacks.at(i).id == callbackId)
-			{
-				m_onRenderPrimitiveAddedCallbacks.erase_unsorted(m_onRenderPrimitiveAddedCallbacks.begin() + i);
-				break;
-			}
-		}
-	}
-
-	void RenderScene::UnregisterOnRenderPrimitiveRemovedCallback(UUID32 callbackId)
-	{
-		for (int32_t i = static_cast<int32_t>(m_onRenderPrimitiveRemovedCallbacks.size()) - 1; i >= 0; --i)
-		{
-			if (m_onRenderPrimitiveRemovedCallbacks.at(i).id == callbackId)
-			{
-				m_onRenderPrimitiveRemovedCallbacks.erase_unsorted(m_onRenderPrimitiveRemovedCallbacks.begin() + i);
-				break;
-			}
-		}
+		return m_renderPrimitiveDataContainer.GetRenderPrimitives();
 	}
 
 	const uint32_t RenderScene::GetMaterialIndex(Weak<RenderMaterial> material) const
@@ -273,7 +233,7 @@ namespace Volt
 		return std::numeric_limits<uint32_t>::max();
 	}
 
-	const uint32_t RenderScene::GetPrimitiveIndexFromID(UUID64 primitiveId) const
+	const uint32_t RenderScene::GetPrimitiveIndexFromID(RenderPrimitiveID primitiveId) const
 	{
 		return static_cast<uint32_t>(m_primitiveIndicesContainer.GetIndexFromID(primitiveId));
 	}
@@ -290,20 +250,9 @@ namespace Volt
 		return result;
 	}
 
-	const RenderPrimitiveData& RenderScene::GetPrimitiveDataFromID(UUID64 id) const
+	const RenderPrimitiveData* RenderScene::GetPrimitiveDataFromID(RenderPrimitiveID id) const
 	{
-		auto it = std::ranges::find_if(m_renderPrimitives, [id](const auto& renderObject)
-		{
-			return renderObject.id == id;
-		});
-
-		if (it == m_renderPrimitives.end())
-		{
-			static RenderPrimitiveData nullObject;
-			return nullObject;
-		}
-
-		return *it;
+		return m_renderPrimitiveDataContainer.GetFromID(id);
 	}
 
 	void RenderScene::VisualizeRenderPrimitives()
@@ -343,7 +292,7 @@ namespace Volt
 		return false;
 	}
 
-	VT_NODISCARD const RenderLightData& RenderScene::GetLightDataFromID(UUID64 id) const
+	VT_NODISCARD const RenderLightData& RenderScene::GetLightDataFromID(RenderPrimitiveID id) const
 	{
 		auto it = std::ranges::find_if(m_renderLights, [id](const auto& light)
 		{
@@ -395,33 +344,32 @@ namespace Volt
 	void RenderScene::ProcessAddPrimitiveInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
 	{
 		UUID64 newId = queuedUpdate.primitiveInfo.id;
-		auto& newObj = m_renderPrimitives.emplace_back();
+		RenderPrimitiveData* newRenderPrimitive = m_renderPrimitiveDataContainer.Create(newId);
 
 		if (queuedUpdate.primitiveInfo.animator)
 		{
 			m_animatedRenderObjects.emplace_back(newId);
 		}
 
-		newObj.id = newId;
-		newObj.entityId = queuedUpdate.primitiveInfo.entityId;
-		newObj.mesh = queuedUpdate.primitiveInfo.mesh;
-		newObj.material = queuedUpdate.primitiveInfo.material;
-		newObj.subMeshIndex = queuedUpdate.primitiveInfo.subMeshIndex;
-		newObj.animator = queuedUpdate.primitiveInfo.animator;
+		newRenderPrimitive->entityId = queuedUpdate.primitiveInfo.entityId;
+		newRenderPrimitive->mesh = queuedUpdate.primitiveInfo.mesh;
+		newRenderPrimitive->material = queuedUpdate.primitiveInfo.material;
+		newRenderPrimitive->subMeshIndex = queuedUpdate.primitiveInfo.subMeshIndex;
+		newRenderPrimitive->animator = queuedUpdate.primitiveInfo.animator;
 
 		TryAddMaterial(queuedUpdate.primitiveInfo.material);
 		TryAddMesh(queuedUpdate.primitiveInfo.mesh);
 
 		size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
 
-		newObj.primitiveIndex = static_cast<uint32_t>(primitiveDrawDataIndex);
+		newRenderPrimitive->primitiveIndex = static_cast<uint32_t>(primitiveDrawDataIndex);
 
 		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
 
-		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
+		BuildSinglePrimitiveDrawData(primitiveDrawData, *newRenderPrimitive);
 		InvalidatePrimitiveInstance(newId);
 
-		OnRenderPrimitiveAdded(newObj);
+		OnRenderPrimitiveAdded(newRenderPrimitive);
 	}
 
 	void RenderScene::ProcessAddLightInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
@@ -466,24 +414,12 @@ namespace Volt
 		{
 			m_primitiveIndicesContainer.FreeIndexWithID(queuedUpdate.id);
 
-			auto it = std::find_if(m_renderPrimitives.begin(), m_renderPrimitives.end(), [id = queuedUpdate.id](const auto& obj)
-			{
-				return obj.id == id;
-			});
+			RenderPrimitiveData* renderPrimitiveData = m_renderPrimitiveDataContainer.GetFromID(queuedUpdate.id);
+			const bool isAnimated = renderPrimitiveData->IsAnimated();
 
-			if (it == m_renderPrimitives.end())
-			{
-				return;
-			}
+			OnRenderPrimitiveRemoved(renderPrimitiveData);
 
-			OnRenderPrimitiveRemoved(*it);
-
-			const bool isAnimated = (*it).IsAnimated();
-
-			if (it != m_renderPrimitives.end())
-			{
-				m_renderPrimitives.erase(it);
-			}
+			m_renderPrimitiveDataContainer.Destroy(renderPrimitiveData);
 
 			if (isAnimated)
 			{
@@ -677,9 +613,10 @@ namespace Volt
 
 		size_t currentIndex = m_gpuMeshes.size();
 
-		std::scoped_lock lock{ m_meshUpdateMutex };
-		for (uint32_t subMeshIndex = 0; auto gpuMesh : mesh->GetGPUMeshes())
+		for (size_t i = 0; i < mesh->GetGPUMeshes().size(); ++i)
 		{
+			const uint32_t subMeshIndex = static_cast<uint32_t>(i);
+
 			BuildGPUMesh(mesh, subMeshIndex, m_gpuMeshes.emplace_back());
 
 			const size_t meshHash = Math::HashCombine(mesh->GetHash(), std::hash<uint32_t>()(subMeshIndex));
@@ -688,7 +625,6 @@ namespace Volt
 			m_invalidMeshes.emplace_back(mesh, subMeshIndex, currentIndex);
 
 			currentIndex++;
-			subMeshIndex++;
 		}
 
 		if (s_logRenderSceneUpdatedCVar.GetValue())
@@ -717,7 +653,6 @@ namespace Volt
 		GPUMaterial& gpuMaterial = m_gpuMaterials.emplace_back();
 		BuildGPUMaterial(material, gpuMaterial);
 
-		std::scoped_lock lock{ m_materialUpdateMutex };
 		m_individualMaterials.emplace_back(material);
 		m_gpuMaterialIndexFromMaterialHash[material->GetHash()] = gpuMaterialIndex;
 		m_invalidMaterials.emplace_back(material, gpuMaterialIndex);
@@ -744,12 +679,12 @@ namespace Volt
 		auto materialsBuffer = m_buffers.materialsBuffer;
 		materialsBuffer->GrowIfRequired(m_individualMaterials.size());
 
-		std::scoped_lock lock{ m_materialUpdateMutex };
 		for (const auto& material : m_individualMaterials)
 		{
 			if (material->DoMaterialRequireUpdate())
 			{
 				m_invalidMaterials.emplace_back(material, m_gpuMaterialIndexFromMaterialHash.at(material->GetHash()));
+				material->UpdateTextures();
 				material->ClearStatus();
 			}
 		}
@@ -780,8 +715,6 @@ namespace Volt
 
 		auto meshesBuffer = m_buffers.meshesBuffer;
 		meshesBuffer->GrowIfRequired(m_gpuMeshes.size());
-
-		std::scoped_lock lock{ m_meshUpdateMutex };
 
 		for (const auto& mesh : m_individualMeshes)
 		{
@@ -835,9 +768,9 @@ namespace Volt
 
 			for (const auto& invalidPrimitive : invalidPrimitiveDataIndices)
 			{
-				const auto& renderObject = GetPrimitiveDataFromID(invalidPrimitive.id);
-				auto& data = bufferUpload.AddUploadItem(invalidPrimitive.index);
-				BuildSinglePrimitiveDrawData(data, renderObject);
+				const RenderPrimitiveData* renderObject = GetPrimitiveDataFromID(invalidPrimitive.id);
+				PrimitiveDrawData& data = bufferUpload.AddUploadItem(invalidPrimitive.index);
+				BuildSinglePrimitiveDrawData(data, *renderObject);
 
 				// Copy the bone offset which is set before this is run.
 				data.boneOffset = m_primitiveDrawData[invalidPrimitive.index].boneOffset;

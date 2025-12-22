@@ -40,7 +40,7 @@ namespace Volt
 		}
 	}
 
-	void MeshPassProcessorRegistry::AddRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	void MeshPassProcessorRegistry::AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
 		for (MeshPassProcessor* meshPassProcessor : m_meshPassProcessors)
 		{
@@ -48,7 +48,7 @@ namespace Volt
 		}
 	}
 
-	void MeshPassProcessorRegistry::RemoveRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	void MeshPassProcessorRegistry::RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
 		for (MeshPassProcessor* meshPassProcessor : m_meshPassProcessors)
 		{
@@ -58,7 +58,9 @@ namespace Volt
 
 	void MeshPassProcessorRegistry::AddPrimitivesToMeshPassProcessor(MeshPassProcessor* meshPassProcessor)
 	{
-		for (const RenderPrimitiveData& renderPrimitive : (*m_renderScene))
+		Vector<RenderPrimitiveData*> renderPrimitives = m_renderScene->GetRenderPrimitives();
+
+		for (const RenderPrimitiveData* renderPrimitive : renderPrimitives)
 		{
 			meshPassProcessor->AddRenderPrimitive(renderPrimitive);
 		}
@@ -157,6 +159,8 @@ namespace Volt
 					shaderBindings.SetUniformBufferWithSizeAndOffset(shaderParameters.shaderStage, RHI::Globals::SHADER_GLOBALS_BINDING, shaderParameters.uniformBufferSRV->GetRHIView(), shaderParameters.size, shaderParameters.offset);
 				}
 
+				firstDrawComamnd.renderPrimitive->material->BindToShaderBindingMap(shaderBindings, firstDrawComamnd.renderPipeline);
+
 				VT_ENSURE_MSG(firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
 
 				const uint32_t perInstanceBindingIndex = firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
@@ -175,7 +179,7 @@ namespace Volt
 		}
 	}
 
-	void MeshPassProcessor::BuildMeshDrawCommand(const RenderPrimitiveData& renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader)
+	void MeshPassProcessor::BuildMeshDrawCommand(const RenderPrimitiveData* renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader)
 	{
 		VT_ENSURE_MSG(vertexShader && pixelShader, "Valid shaders must be supplied!");
 
@@ -183,7 +187,7 @@ namespace Volt
 
 		RefPtr<RHI::RenderPipeline> renderPipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
 
-		const SubMesh& subMesh = renderPrimitive.mesh->GetSubMeshes().at(renderPrimitive.subMeshIndex);
+		const SubMesh& subMesh = renderPrimitive->mesh->GetSubMeshes().at(renderPrimitive->subMeshIndex);
 
 		const MeshDrawCommandHashKey hashKey = GetHashKeyFromRenderPrimitive(renderPrimitive);
 
@@ -191,12 +195,12 @@ namespace Volt
 
 		MeshDrawCommand& newDrawCommand = drawCommandBucket.drawCommands.emplace_back();
 		newDrawCommand.renderPipeline = renderPipeline;
-		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexPositionsBuffer());
-		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexMaterialBuffer());
-		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive.mesh->GetVertexAnimationInfoBuffer());
-		newDrawCommand.indexBuffer = renderPrimitive.mesh->GetIndexBuffer();
-		newDrawCommand.primitiveIndex = renderPrimitive.primitiveIndex;
-		newDrawCommand.renderPrimitiveID = renderPrimitive.id;
+		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive->mesh->GetVertexPositionsBuffer());
+		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive->mesh->GetVertexMaterialBuffer());
+		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive->mesh->GetVertexAnimationInfoBuffer());
+		newDrawCommand.indexBuffer = renderPrimitive->mesh->GetIndexBuffer();
+		newDrawCommand.primitiveIndex = renderPrimitive->primitiveIndex;
+		newDrawCommand.renderPrimitive = renderPrimitive;
 		newDrawCommand.drawCommand.indexCount = subMesh.indexCount;
 		newDrawCommand.drawCommand.instanceCount = 1;
 		newDrawCommand.drawCommand.firstIndex = subMesh.indexStartOffset;
@@ -209,7 +213,7 @@ namespace Volt
 		MarkBucketDirty(hashKey);
    	}
 
-	void MeshPassProcessor::RemoveMeshDrawCommand(const RenderPrimitiveData& renderPrimitive)
+	void MeshPassProcessor::RemoveMeshDrawCommand(const RenderPrimitiveData* renderPrimitive)
 	{
 		const MeshDrawCommandHashKey hashKey = GetHashKeyFromRenderPrimitive(renderPrimitive);
 
@@ -221,7 +225,7 @@ namespace Volt
 
 			for (int32_t drawCommandIndex = static_cast<int32_t>(drawCommands.size()) - 1; drawCommandIndex >= 0; --drawCommandIndex)
 			{
-				if (drawCommands[drawCommandIndex].renderPrimitiveID == renderPrimitive.id)
+				if (drawCommands[drawCommandIndex].renderPrimitive->id == renderPrimitive->id)
 				{
 					drawCommands.erase_unsorted(drawCommands.begin() + drawCommandIndex);
 					MarkBucketDirty(hashKey);
@@ -328,13 +332,13 @@ namespace Volt
 		}
 	}
 
-	MeshDrawCommandHashKey MeshPassProcessor::GetHashKeyFromRenderPrimitive(const RenderPrimitiveData& renderPrimitive)
+	MeshDrawCommandHashKey MeshPassProcessor::GetHashKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
-		const SubMesh& subMesh = renderPrimitive.mesh->GetSubMeshes().at(renderPrimitive.subMeshIndex);
+		const SubMesh& subMesh = renderPrimitive->mesh->GetSubMeshes().at(renderPrimitive->subMeshIndex);
 
 		MeshDrawCommandHashKey hashKey;
-		hashKey.hashKeyContents.vertexBufferHash = renderPrimitive.mesh->GetVertexPositionsBuffer().GetHash();
-		hashKey.hashKeyContents.indexBufferHash = renderPrimitive.mesh->GetIndexBuffer().GetHash();
+		hashKey.hashKeyContents.vertexBufferHash = renderPrimitive->mesh->GetVertexPositionsBuffer().GetHash();
+		hashKey.hashKeyContents.indexBufferHash = renderPrimitive->mesh->GetIndexBuffer().GetHash();
 		hashKey.hashKeyContents.subMeshHash = subMesh.GetHash();
 
 

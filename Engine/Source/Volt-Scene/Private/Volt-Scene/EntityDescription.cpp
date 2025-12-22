@@ -24,7 +24,7 @@ namespace Volt
 		entityDescCustomMeta.entityID = m_entityID;
 	}
 
-	void EntityDesc::Serialize(Archive& archive)
+	void EntityDesc::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		if (!archive.IsLoading())
 		{

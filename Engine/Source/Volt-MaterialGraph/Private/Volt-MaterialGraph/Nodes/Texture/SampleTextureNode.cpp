@@ -95,7 +95,7 @@ namespace Volt::MosaicNodes
 			return tempInfo;
 		}
 
-		const std::string texSamplerVarName = "TextureSamplerState"; //m_graph->GetNextVariableName();
+		const std::string texSamplerVarName = "StaticAnisotropicSampler"; //m_graph->GetNextVariableName();
 		const std::string textureVarName = shaderWriter.AddTexture(m_textureIndex);
 		const std::string valueVarName = m_graph->GetNextVariableName();
 		const std::string tilingVarName = m_graph->GetNextVariableName();
