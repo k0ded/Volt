@@ -23,6 +23,15 @@ namespace Volt
 		OverwriteHard // Overwrite with hard normals
 	};
 
+	enum class TextureCompressionType : uint8_t
+	{
+		None,
+		BC7, // Base color
+		BC5, // Normal maps
+		BC3, // Mask + alpha
+		BC1 // Mask
+	};
+
 	struct MeshSourceImportConfig : public SourceAssetImportConfig
 	{
 		std::string password;
@@ -47,6 +56,8 @@ namespace Volt
 
 	struct TextureSourceImportConfig : public SourceAssetImportConfig
 	{
+		TextureCompressionType compressionType = TextureCompressionType::None;
+
 		bool importMipMaps = true;
 		bool generateMipMaps = true;
 	};

@@ -142,7 +142,7 @@ namespace Volt::TextureSerializerCommon
 		return dataBuffer;
 	}
 
-	void UploadImageData(RefPtr<RHI::Image> image, RHI::PixelFormat format, const Vector<struct TextureMip>& mips, const Buffer& dataBuffer)
+	void UploadImageData(RefPtr<RHI::Image> image, RHI::PixelFormat format, const Vector<struct TextureMip>& mips, const Buffer& dataBuffer, bool waitForGPU)
 	{
 		TextureData texData{};
 		texData.SetupMips(mips, dataBuffer);
@@ -209,7 +209,15 @@ namespace Volt::TextureSerializerCommon
 		}
 
 		commandBuffer->End();
-		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+
+		if (waitForGPU)
+		{
+			RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
+		}
+		else
+		{
+			RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
+		}
 
 		RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
 	}

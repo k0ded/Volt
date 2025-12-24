@@ -35,6 +35,8 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<msdf_atlas_gen>(target);
 			conf.AddPrivateDependency<libpng>(target);
 			conf.AddPrivateDependency<MikkTSpace>(target);
+			conf.AddPrivateDependency<DirectXTex>(target);
+			conf.AddPrivateDependency<Compressonator>(target);
 
 			conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "tinyddsloader"));
 			conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "tiny_gltf"));

@@ -41,6 +41,7 @@ VTCOREUTIL_API bool CheckExpression(bool expression, std::string_view str);
 		if (!(expression)) { AssertionFailure(message); } \
 	} while(false)
 
+#define VT_ENSURE_NO_ENTRY() VT_ENSURE_MSG(false, "Code path should never be reached!")
 #else
 #define VT_ENSURE(expression)
 #define VT_ENSURE_MSG(expression, message)

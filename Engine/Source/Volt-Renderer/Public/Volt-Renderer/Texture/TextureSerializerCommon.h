@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Volt-Renderer/Config.h"
+
 #include <RHIModule/Images/Image.h>
 
 #include <CoreUtilities/Buffer/Buffer.h>
@@ -15,5 +17,5 @@ namespace Volt::TextureSerializerCommon
 	};
 
 	Buffer GetImageDataBuffer(RefPtr<RHI::Image> image, Vector<TextureMip>& outMips);
-	void UploadImageData(RefPtr<Volt::RHI::Image> image, Volt::RHI::PixelFormat format, const Vector<struct TextureMip>& mips, const Buffer& dataBuffer);
+	VTR_API void UploadImageData(RefPtr<Volt::RHI::Image> image, Volt::RHI::PixelFormat format, const Vector<struct TextureMip>& mips, const Buffer& dataBuffer, bool waitForGPU = false);
 }

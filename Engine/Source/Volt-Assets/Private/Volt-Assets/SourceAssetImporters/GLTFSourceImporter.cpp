@@ -3,11 +3,12 @@
 #include "Volt-Assets/SourceAssetImporters/GLTFSourceImporter.h"
 #include "Volt-Assets/SourceAssetImporters/ImportConfigs.h"
 #include "Volt-Assets/SourceAssetImporters/TangentGenerator.h"
+#include "Volt-Assets/SourceAssetImporters/TextureImportCommon.h"
+
+#include "Volt-Assets/MaterialAsset.h"
+#include "Volt-Assets/MeshAsset.h"
 
 #include <Volt-Renderer/Mesh/Mesh.h>
-
-#include <Volt-Assets/MaterialAsset.h>
-#include <Volt-Assets/MeshAsset.h>
 
 #include <Volt-MaterialGraph/MaterialGraph.h>
 #include <Volt-MaterialGraph/Nodes/PBROutputNode.h>
@@ -56,6 +57,7 @@ namespace Volt
 		importConfig.destinationFilename = sourceFilepath.stem().string();
 		importConfig.generateMipMaps = true;
 		importConfig.importMipMaps = true;
+		importConfig.compressionType = TextureImport::TryGetTextureCompressionTypeFromFilename(sourceFilepath.stem().string());
 
 		importUserData.importedTextures.emplace_back(SourceAssetManager::ImportSourceAsset(sourceFilepath, importConfig));
 

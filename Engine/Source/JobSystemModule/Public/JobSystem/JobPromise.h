@@ -23,7 +23,7 @@ namespace Volt
 			}
 		}
 
-		JobFuture(JobFuture&& other)
+		JobFuture(JobFuture&& other) noexcept
 			: m_associatedCounter(std::move(other.m_associatedCounter)),
 			m_value(std::move(other.m_value))
 		{ 
@@ -41,23 +41,40 @@ namespace Volt
 
 		VT_INLINE JobFuture& operator=(const JobFuture& other)
 		{
-			m_associatedCounter = other.m_associatedCounter;
-			m_value = other.m_value;
-
-			if (m_associatedCounter)
+			if (this != &other)
 			{
-				m_associatedCounter->IncRef();
+				// Remove reference from current counter
+				if (m_associatedCounter)
+				{
+					m_associatedCounter->DecRef();
+				}
+
+				m_associatedCounter = other.m_associatedCounter;
+				m_value = other.m_value;
+
+				if (m_associatedCounter)
+				{
+					m_associatedCounter->IncRef();
+				}
 			}
 
 			return *this;
 		}
 
-		VT_INLINE JobFuture& operator=(JobFuture&& other)
+		VT_INLINE JobFuture& operator=(JobFuture&& other) noexcept
 		{
-			m_associatedCounter = std::move(other.m_associatedCounter);
-			m_value = std::move(other.m_value);
+			if (this != &other)
+			{
+				if (m_associatedCounter)
+				{
+					m_associatedCounter->DecRef();
+				}
 
-			other.m_associatedCounter = nullptr;
+				m_associatedCounter = std::move(other.m_associatedCounter);
+				m_value = std::move(other.m_value);
+
+				other.m_associatedCounter = nullptr;
+			}
 
 			return *this;
 		}

@@ -92,6 +92,8 @@ namespace Volt
 
 		voltTexture->SetImage(image);
 
+		stbi_image_free(data);
+
 		return { voltTexture };
 	}
 
