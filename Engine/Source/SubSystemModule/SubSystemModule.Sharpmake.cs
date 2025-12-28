@@ -20,6 +20,8 @@ namespace VoltSharpmake
 
             conf.PrecompHeader = "sspch.h";
             conf.PrecompSource = "sspch.cpp";
+
+			conf.AddPrivateDependency<LogModule>(target);
 		}
     }
 }

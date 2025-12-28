@@ -17,6 +17,7 @@
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/RenderGraph/ShaderRegistryMacros.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
+#include <RenderCore/Shader/ShaderSubSystem.h>
 
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Graphics/Swapchain.h>
@@ -37,7 +38,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(Renderer, Minimal, Engine, 3);
+	VT_REGISTER_SUBSYSTEM(Renderer, Minimal, Engine);
 
 	struct EquirectangularToCubemapCS : public GlobalShader
 	{
@@ -142,7 +143,6 @@ namespace Volt
 
 		ShapeLibrary::Shutdown();
 
-		m_shaderMap = nullptr;
 		m_samplerStateCache = nullptr;
 		m_debugRenderer = nullptr;
 		m_transientResourceAllocator = nullptr;
@@ -421,6 +421,11 @@ namespace Volt
 	DebugRenderer& Renderer::GetDebugRenderer()
 	{
 		return *s_instance->m_debugRenderer;
+	}
+
+	void Renderer::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<ShaderSubSystem>();
 	}
 
 	static Vector<std::filesystem::path> FindShaderIncludes(const std::filesystem::path& filePath)

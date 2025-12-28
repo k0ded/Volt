@@ -50,6 +50,7 @@ struct DirtySaveCustomization
 class DirtyAssetsManager : public SubSystem
 {
 public:
+	static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 	VT_DECLARE_SUBSYSTEM("{DEFEC05B-66E0-45D9-8D1A-694DD2166407}"_guid)
 
 public:

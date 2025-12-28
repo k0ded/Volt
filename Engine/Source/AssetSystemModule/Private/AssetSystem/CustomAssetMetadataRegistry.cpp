@@ -5,8 +5,6 @@
 
 namespace Volt
 {
-	CustomAssetMetadataRegistry g_registry;
-
 	bool CustomAssetMetadataRegistry::AssetTypeHasCustomMetadata(AssetType assetType) const
 	{
 		return m_registry.contains(assetType);
@@ -26,6 +24,7 @@ namespace Volt
 
 	CustomAssetMetadataRegistry& CustomAssetMetadataRegistry::Get()
 	{
-		return g_registry;
+		static CustomAssetMetadataRegistry registry;
+		return registry;
 	}
 }

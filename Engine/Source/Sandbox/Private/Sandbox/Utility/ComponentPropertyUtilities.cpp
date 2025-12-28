@@ -76,7 +76,7 @@ void ComponentPropertyUtility::DrawComponents(Volt::Scene& scene, Volt::Entity e
 		if (auto& storage = curr.second; storage.contains(entity))
 		{
 			std::string_view typeName = storage.type().name();
-			const Volt::ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromName(typeName);
+			const Volt::ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 			if (!typeDesc)
 			{
 				continue;

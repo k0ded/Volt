@@ -88,6 +88,7 @@ namespace Volt
 		static const DefaultResources& GetDefaultResources();
 		static EnvironmentTextures GenerateEnvironmentTextures(AssetHandle baseTextureHandle);
 
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{2E420D68-01AC-47D5-B7F4-F31F13D57ABF}"_guid);
 
 	private:
@@ -101,7 +102,6 @@ namespace Volt
 
 		DefaultResources m_defaultResources;
 
-		Scope<ShaderMap> m_shaderMap;
 		Scope<BlueNoise> m_blueNoise;
 		Scope<SamplerStateCache> m_samplerStateCache;
 		Scope<CommandBufferPool> m_commandBufferPool;

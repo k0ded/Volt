@@ -35,7 +35,7 @@ namespace Volt
 		BaseApplication* app = CreateApplication(commandLineBuilder);
 		if (!app)
 		{
-			return 0;
+			return 1;
 		}
 		app->Run();
 

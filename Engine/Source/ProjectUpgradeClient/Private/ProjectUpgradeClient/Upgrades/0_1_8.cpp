@@ -55,7 +55,7 @@ namespace Volt
 		VoltGUID assetTypeGUID;
 		fileReader << assetTypeGUID;
 
-		outMetadata.type = GetAssetTypeRegistry().GetTypeFromGUID(assetTypeGUID);
+		outMetadata.type = AssetTypeRegistry::Get().GetTypeFromGUID(assetTypeGUID);
 
 		if (fileReader.GetVersion(AssetMetadataArchiveVersion::guid) < AssetMetadataArchiveVersion::NewCustomMetadataStorage)
 		{

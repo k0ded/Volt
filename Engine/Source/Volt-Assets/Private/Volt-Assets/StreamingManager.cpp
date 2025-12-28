@@ -23,7 +23,7 @@ VT_DEFINE_LOG_CATEGORY(LogStreamingManager);
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(StreamingManager, Default, Engine, 0);
+	VT_REGISTER_SUBSYSTEM(StreamingManager, Default, Engine);
 
 	static ConsoleVariable<int32_t> s_logStreamingManagerUpdates("r.StreamingManager.LogUpdates", 0, "Whether or not to log Streaming Manager updates");
 

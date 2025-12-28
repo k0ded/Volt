@@ -17,7 +17,7 @@ namespace Mosaic
 		UUID64 AddNode()
 		{
 			auto& underlyingGraph = m_graph.GetUnderlyingGraph();
-			return underlyingGraph.AddNode(GetMosaicNodeRegistry().CreateNode(NodeType::GetStaticGUID(), &m_graph));
+			return underlyingGraph.AddNode(NodeRegistry::Get().CreateNode(NodeType::GetStaticGUID(), &m_graph));
 		}
 
 		template<typename NodeType>

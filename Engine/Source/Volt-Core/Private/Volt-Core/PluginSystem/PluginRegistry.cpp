@@ -10,7 +10,7 @@ VT_DEFINE_LOG_CATEGORY(LogPluginSystem);
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(PluginRegistry, Default, PreEngine, 0);
+	VT_REGISTER_SUBSYSTEM(PluginRegistry, Default, PreEngine);
 
 	constexpr std::string_view PLUGIN_EXTENSION = ".vtconfig";
 

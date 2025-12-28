@@ -5,7 +5,7 @@
 
 #include <EventSystem/ApplicationEvents.h>
 
-VT_REGISTER_SUBSYSTEM(ModalSystem, Default, Engine, 1);
+VT_REGISTER_SUBSYSTEM(ModalSystem, Default, Engine);
 
 ModalSystem::ModalSystem()
 {

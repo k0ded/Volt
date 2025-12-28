@@ -2,6 +2,8 @@
 
 #include "SubSystem/SubSystemRegistry.h"
 
+class SubSystemDependencyList;
+
 class SubSystem
 {
 public:
@@ -22,4 +24,12 @@ public:
 		Called once all subsystems has been initialized.
 	*/
 	virtual void OnPostInitialization() {}
+
+	/*
+		SubSystems can implement
+		
+		SubSystemClass::GetDependencies(SubSystemDependencyList& outDependencies)
+
+		to define it's dependencies.
+	*/
 };

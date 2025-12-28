@@ -245,7 +245,7 @@ void LogPanel::RenderBottomBar()
 
 void LogPanel::SetupLogCategories()
 {
-	const Vector<LogCategoryBase*>& logCategories = g_logCategoryRegistry.GetRegisteredLogCategories();
+	const Vector<LogCategoryBase*>& logCategories = LogCategoryRegistry::Get().GetRegisteredLogCategories();
 
 	for (LogCategoryBase* category : logCategories)
 	{

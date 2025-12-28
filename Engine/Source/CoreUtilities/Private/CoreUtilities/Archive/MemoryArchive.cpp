@@ -7,6 +7,24 @@ MemoryWriter::MemoryWriter()
 	: Archive(false), m_isOpen(true)
 {}
 
+MemoryWriter::MemoryWriter(const MemoryWriter& other)
+	: Archive(false), 
+	m_isOpen(other.m_isOpen),
+	m_allocator(other.m_allocator)
+{
+}
+
+MemoryWriter& MemoryWriter::operator=(const MemoryWriter& other)
+{
+	if (this != &other)
+	{
+		m_isOpen = other.m_isOpen;
+		m_allocator = other.m_allocator;
+	}
+
+	return *this;
+}
+
 void MemoryWriter::SerializeBytes(void* value, size_t size)
 {
 	size_t offset = m_allocator.size();
@@ -110,14 +128,7 @@ MemoryReader::MemoryReader()
 MemoryReader::MemoryReader(const void* srcData, size_t srcSize)
 	: Archive(true)
 {
-	m_storage.resize_uninitialized(srcSize);
-	memcpy_s(m_storage.data(), srcSize, srcData, srcSize);
-
-	// Deserialize version info.
-	(*this) << m_versions;
-
-	// Make sure all Seek calls gets the correct positions.
-	SetBasePosition(m_readPointer);
+	Parse(srcData, srcSize);
 }
 
 void MemoryReader::SerializeBytes(void* value, size_t size)
@@ -195,4 +206,16 @@ void* MemoryReader::GetData()
 bool MemoryReader::IsClosed() const
 {
 	return true;
+}
+
+void MemoryReader::Parse(const void* srcData, size_t srcSize)
+{
+	m_storage.resize_uninitialized(srcSize);
+	memcpy_s(m_storage.data(), srcSize, srcData, srcSize);
+
+	// Deserialize version info.
+	(*this) << m_versions;
+
+	// Make sure all Seek calls gets the correct positions.
+	SetBasePosition(m_readPointer);
 }

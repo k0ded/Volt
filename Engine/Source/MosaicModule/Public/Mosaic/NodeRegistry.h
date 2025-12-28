@@ -56,23 +56,18 @@ namespace Mosaic
 		inline const auto& GetRegistry() { return m_registry; }
 		inline const auto& GetNodeInfo(const VoltGUID guid) { return m_registry.at(guid); }
 
+		static NodeRegistry& Get();
+
 	private:
 		std::unordered_map<VoltGUID, NodeInfo> m_registry;
 	};
 }
 
-extern VTMOSAIC_API Mosaic::NodeRegistry g_mosaicNodeRegistry;
-
-VT_INLINE Mosaic::NodeRegistry& GetMosaicNodeRegistry()
-{
-	return g_mosaicNodeRegistry;
-}
-
 #define UNPACK(...) __VA_ARGS__
-#define REGISTER_NODE(nodeType) inline static bool nodeType ## _node_registered = GetMosaicNodeRegistry().RegisterNode<nodeType>()
+#define REGISTER_NODE(nodeType) inline static bool nodeType ## _node_registered = ::Mosaic::NodeRegistry::Get().RegisterNode<nodeType>()
 
 #define DECLARE_NODE_TEMPLATE(varName, nodeType) \
 	using varName = UNPACK nodeType
 
 #define REGISTER_NODE_TEMPLATE(nodeType) \
-	inline static bool nodeType ## _node_registered = GetMosaicNodeRegistry().RegisterNode<nodeType>()
+	inline static bool nodeType ## _node_registered = ::Mosaic::NodeRegistry::Get().RegisterNode<nodeType>()

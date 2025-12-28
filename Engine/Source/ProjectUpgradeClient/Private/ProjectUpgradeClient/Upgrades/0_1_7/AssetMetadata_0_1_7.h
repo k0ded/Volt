@@ -59,7 +59,7 @@ namespace Volt
 
 			if (archive.IsLoading())
 			{
-				value.type = GetAssetTypeRegistry().GetTypeFromGUID(assetTypeGUID);
+				value.type = AssetTypeRegistry::Get().GetTypeFromGUID(assetTypeGUID);
 			}
 
 			archive << value.customData;

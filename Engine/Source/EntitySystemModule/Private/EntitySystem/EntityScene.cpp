@@ -255,7 +255,7 @@ namespace Volt
 				auto& storage = curr.second;
 				std::string_view typeName = storage.type().name();
 
-				const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromName(typeName);
+				const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 				if (!typeDesc)
 				{
 					continue;
@@ -393,7 +393,7 @@ namespace Volt
 		m_registry.set_user_data(this);
 
 		ComponentRegistry::Helpers::SetupComponentCallbacks(m_registry);
-		GetECSSystemRegistry().Build(*m_ecsBuilder);
+		ECSSystemRegistry::Get().Build(*m_ecsBuilder);
 		m_ecsBuilder->Compile();
 	}
 
@@ -406,7 +406,7 @@ namespace Volt
 			auto& storage = curr.second;
 			std::string_view typeName = storage.type().name();
 
-			const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromName(typeName);
+			const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 			if (!typeDesc)
 			{
 				continue;
@@ -435,7 +435,7 @@ namespace Volt
 			auto& storage = curr.second;
 			std::string_view typeName = storage.type().name();
 
-			const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromName(typeName);
+			const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 			if (!typeDesc)
 			{
 				continue;

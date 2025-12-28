@@ -16,7 +16,7 @@ ScriptingEngine::~ScriptingEngine()
 
 void ScriptingEngine::OnRuntimeStart()
 {
-	m_ecsEnvironmentStorage.InitializeWith(GetECSSystemRegistry().GetEnvironmentDefinitions());
+	m_ecsEnvironmentStorage.InitializeWith(ECSSystemRegistry::Get().GetEnvironmentDefinitions());
 	m_ecsEventDispatcher->OnRuntimeStart();
 }
 

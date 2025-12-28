@@ -4,13 +4,14 @@
 #include "RHIModule/Graphics/DeviceQueue.h"
 
 #include <EventSystem/ApplicationEvents.h>
+#include <EventSystem/EventSystem.h>
 
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 #include <CoreUtilities/StringUtility.h>
 
 namespace Volt::RHI
 {
-	VT_REGISTER_SUBSYSTEM(RHIModuleLoader, Minimal, PreEngine, 2);
+	VT_REGISTER_SUBSYSTEM(RHIModuleLoader, Minimal, PreEngine);
 
 	RHIModuleLoader::RHIModuleLoader()
 	{
@@ -92,5 +93,10 @@ namespace Volt::RHI
 	{
 		m_rhiModule->EndFrame();
 		return false;
+	}
+
+	void RHIModuleLoader::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<EventSystem>();
 	}
 }

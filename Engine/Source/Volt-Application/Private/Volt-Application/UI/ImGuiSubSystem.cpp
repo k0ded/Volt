@@ -25,7 +25,7 @@ VT_DEFINE_LOG_CATEGORY(LogImGuiSubSystem);
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(ImGuiSubSystem, Minimal, PostEngine, -1);
+	VT_REGISTER_SUBSYSTEM(ImGuiSubSystem, Minimal, PostEngine);
 
 	static ConsoleVariable<int32_t> s_imguiEnabled("e.imguiEnabled", 1, "Whether or not imgui is enabled");;
 

@@ -7,7 +7,11 @@ class MemoryWriter : public Archive
 {
 public:
 	VTCOREUTIL_API MemoryWriter();
+	VTCOREUTIL_API MemoryWriter(const MemoryWriter& other);
+
 	~MemoryWriter() override = default;
+
+	VTCOREUTIL_API MemoryWriter& operator=(const MemoryWriter& other);
 
 	VTCOREUTIL_API void SerializeBytes(void* value, size_t size) override;
 	VTCOREUTIL_API void Reserve(size_t numBytes) override;
@@ -46,6 +50,8 @@ public:
 	VTCOREUTIL_API const void* GetData() const override;
 	VTCOREUTIL_API void* GetData() override;
 	VTCOREUTIL_API bool IsClosed() const override;
+
+	VTCOREUTIL_API void Parse(const void* srcData, size_t srcSize);
 
 private:
 	Vector<uint8_t> m_storage;

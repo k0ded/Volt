@@ -289,7 +289,7 @@ namespace Volt
 					{
 						for (const VoltGUID& componentType : componentTypes)
 						{
-							const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromGUID(componentType);
+							const ICommonTypeDesc* typeDesc = ComponentRegistry::Get().GetTypeDescFromGUID(componentType);
 							const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
 							componentDesc->OnInitialize(m_entityScene.GetEntityFromID(entityID));
 						}

@@ -15,7 +15,7 @@ VT_DEFINE_LOG_CATEGORY(LogShaderSubSystem);
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(ShaderSubSystem, Minimal, Engine, 0);
+	VT_REGISTER_SUBSYSTEM(ShaderSubSystem, Minimal, Engine);
 
 	void ShaderSubSystem::Initialize()
 	{

@@ -4,12 +4,11 @@
 
 #include <RHIModule/Shader/ShaderCommon.h>
 
-static Volt::ShaderRegistry g_shaderRegistry;
-
 namespace Volt
 {
 	ShaderRegistry& ShaderRegistry::Get()
 	{
-		return g_shaderRegistry;
+		static ShaderRegistry registry;
+		return registry;
 	}
 }

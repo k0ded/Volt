@@ -12,6 +12,6 @@ ScriptingSystem::~ScriptingSystem()
 {
 	// #TODO_Ivar: We probably don't want to clear the registry like this.
 	// We probably would want the systems to unregister themselves somehow. Same with components.
-	GetECSSystemRegistry().ClearRegistry();
-	GetComponentRegistry().ClearRegistry();
+	ECSSystemRegistry::Get().ClearRegistry();
+	Volt::ComponentRegistry::Get().ClearRegistry();
 }

@@ -14,9 +14,14 @@
 #include <CoreUtilities/FileSystem.h>
 
 
-VT_REGISTER_SUBSYSTEM(DirtyAssetsManager, Default, Engine, 0);
+VT_REGISTER_SUBSYSTEM(DirtyAssetsManager, Default, Engine);
 
 DirtyAssetsManager* DirtyAssetsManager::s_instance = nullptr;
+
+void DirtyAssetsManager::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+{
+	outDependencies.AddDependency<ModalSystem>();
+}
 
 DirtyAssetsManager& DirtyAssetsManager::Get()
 {

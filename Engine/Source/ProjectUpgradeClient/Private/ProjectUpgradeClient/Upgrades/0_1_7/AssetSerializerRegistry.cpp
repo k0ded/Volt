@@ -1,7 +1,5 @@
 #include "AssetSerializerRegistry.h"
 
-AssetSerializerRegistry g_assetSerializerRegistry;
-
 bool AssetSerializerRegistry::RegisterAssetSerializer(VoltGUID typeGuid, Ref<Volt::AssetSerializer> serializer)
 {
 	VT_ASSERT(!m_serializers.contains(typeGuid));
@@ -17,5 +15,6 @@ Volt::AssetSerializer& AssetSerializerRegistry::GetSerializer(AssetType type) co
 
 AssetSerializerRegistry& AssetSerializerRegistry::Get()
 {
-	return g_assetSerializerRegistry;
+	static AssetSerializerRegistry registry;
+	return registry;
 }

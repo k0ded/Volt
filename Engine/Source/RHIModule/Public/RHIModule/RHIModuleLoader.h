@@ -38,6 +38,7 @@ namespace Volt::RHI
 		void Shutdown() override;
 		void LoadRHI(const RHIConfig& rhiConfig, const RHI::RHICallbackInfo& callbackInfo);
 
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{3E52F9E9-B7E0-4FAC-B728-0BBEE5CDE831}"_guid);
 	private:
 		typedef void* RHIModuleHandle;

@@ -21,6 +21,6 @@ namespace Volt
 		streamReader.Read(guid);
 		streamReader.Read(outData.version);
 		streamReader.Read(outData.customData);
-		outData.type = GetAssetTypeRegistry().GetTypeFromGUID(guid);
+		outData.type = AssetTypeRegistry::Get().GetTypeFromGUID(guid);
 	}
 }

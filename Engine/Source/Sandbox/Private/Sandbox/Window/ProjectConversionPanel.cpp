@@ -621,7 +621,7 @@ Vector<AssetReference<Asset>> ProjectConversionPanel::TryConvertScene(const Volt
 					return;
 				}
 
-				const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromGUID(componentGUID);
+				const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromGUID(componentGUID);
 				if (!typeDesc)
 				{
 					return;
@@ -941,7 +941,7 @@ AssetReference<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Proj
 				return;
 			}
 
-			const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromGUID(componentGUID);
+			const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromGUID(componentGUID);
 			if (!typeDesc)
 			{
 				return;

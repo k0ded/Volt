@@ -6,7 +6,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(DynamicLibraryManager, Default, PreEngine, 0);
+	VT_REGISTER_SUBSYSTEM(DynamicLibraryManager, Default, PreEngine);
 
 	DynamicLibraryManager::DynamicLibraryManager()
 	{

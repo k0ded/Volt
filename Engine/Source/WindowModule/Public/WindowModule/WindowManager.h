@@ -55,6 +55,7 @@ namespace Volt
 
 		static WindowManager& Get();
 
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{DD8C1066-AA16-40C6-929D-282F15D11AC2}"_guid);
 
 	private:

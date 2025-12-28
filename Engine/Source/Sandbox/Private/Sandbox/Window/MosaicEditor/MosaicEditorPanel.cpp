@@ -728,7 +728,7 @@ void MosaicEditorPanel::DrawNodesPanel()
 
 		std::unordered_map<std::string, Vector<VoltGUID>> categorizedNodes;
 
-		for (const auto& [guid, info] : GetMosaicNodeRegistry().GetRegistry())
+		for (const auto& [guid, info] : Mosaic::NodeRegistry::Get().GetRegistry())
 		{
 			categorizedNodes[info.category].emplace_back(guid);
 		}
@@ -753,7 +753,7 @@ void MosaicEditorPanel::DrawNodesPanel()
 					{
 						for (const auto& guid : nodeGuids)
 						{
-							const auto& nodeInfo = GetMosaicNodeRegistry().GetNodeInfo(guid);
+							const auto& nodeInfo = Mosaic::NodeRegistry::Get().GetNodeInfo(guid);
 							
 							if (ImGui::MenuItem(nodeInfo.name.c_str()) && m_material)
 							{

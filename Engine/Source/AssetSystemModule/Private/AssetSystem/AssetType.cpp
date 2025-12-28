@@ -4,8 +4,6 @@
 #include <CoreUtilities/FileIO/BinaryStreamWriter.h>
 #include <CoreUtilities/FileIO/BinaryStreamReader.h>
 
-AssetTypeRegistry g_assetTypeRegistry;
-
 VT_REGISTER_ASSET_TYPE(None);
 
 bool AssetTypeRegistry::RegisterAssetType(const VoltGUID& guid, AssetType type)
@@ -41,4 +39,10 @@ AssetType AssetTypeRegistry::GetTypeFromExtension(const std::string& extension) 
 	}
 
 	return AssetTypes::None;
+}
+
+AssetTypeRegistry& AssetTypeRegistry::Get()
+{
+	static AssetTypeRegistry registry;
+	return registry;
 }

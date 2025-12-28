@@ -4,12 +4,13 @@
 #include <Volt-Platforms/Platform.h>
 
 #include <EventSystem/ApplicationEvents.h>
+#include <EventSystem/EventSystem.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(JobSystem, Minimal, PreEngine, 3);
+	VT_REGISTER_SUBSYSTEM(JobSystem, Minimal, PreEngine);
 
     JobSystem::JobSystem()
     {
@@ -157,6 +158,11 @@ namespace Volt
 	uint32_t JobSystem::GetNumWorkers()
 	{
 		return s_instance->m_numWorkers;
+	}
+
+	void JobSystem::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<EventSystem>();
 	}
 
 	void JobSystem::Initialize()

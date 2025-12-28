@@ -1,6 +1,7 @@
 #include "sspch.h"
 
 #include "SubSystem/SubSystemManager.h"
+#include "SubSystem/SubSystemDependencyList.h"
 #include "SubSystem/SubSystem.h"
 
 SubSystemManager::SubSystemManager(SubSystemInclusionLevel inclusionLevel)
@@ -8,6 +9,8 @@ SubSystemManager::SubSystemManager(SubSystemInclusionLevel inclusionLevel)
 {
 	VT_ASSERT(!s_instance);
 	s_instance = this;
+
+	BuildDependencyTree();
 }
 
 SubSystemManager::~SubSystemManager()
@@ -17,47 +20,19 @@ SubSystemManager::~SubSystemManager()
 
 void SubSystemManager::InitializeSubSystems(SubSystemInitializationStage initializationStage)
 {
-	struct SortedSubSystem
-	{
-		VoltGUID guid;
-		int32_t initializationOrder;
-	};
-
-	const auto& registeredSubSystems = GetSubSystemRegistry().GetRegisteredSubSystems();
-
-	Vector<SortedSubSystem> sortedSubSystems;
-
-	for (const auto& [guid, registeredSubSystem] : registeredSubSystems)
-	{
-		if (registeredSubSystem.initializationStage != initializationStage || registeredSubSystem.inclusionLevel > m_inclusionLevel)
-		{
-			continue;
-		}
-
-		auto& sortedSubSystem = sortedSubSystems.emplace_back();
-		sortedSubSystem.guid = guid;
-		sortedSubSystem.initializationOrder = registeredSubSystem.initializationOrder;
-	}
-
-	// There are no sub systems at this stage.
-	if (sortedSubSystems.empty())
+	if (!m_sortedSubSystems.contains(initializationStage))
 	{
 		return;
 	}
 
-	std::sort(sortedSubSystems.begin(), sortedSubSystems.end(), [](const SortedSubSystem& lhs, const SortedSubSystem& rhs)
-	{
-		return lhs.initializationOrder < rhs.initializationOrder;
-	});
+	const auto& registeredSubSystems = SubSystemRegistry::Get().GetRegisteredSubSystems();
+	const Vector<VoltGUID>& sortedSubSystems = m_sortedSubSystems.at(initializationStage);
 
-	for (const auto& sortedSubSystem : sortedSubSystems)
+	for (const VoltGUID& subSystemGUID : sortedSubSystems)
 	{
-		m_subSystems[initializationStage].emplace_back(registeredSubSystems.at(sortedSubSystem.guid).factoryFunction());
-		m_subSystemsMap[sortedSubSystem.guid] = m_subSystems[initializationStage].back();
-	}
-
-	for (auto subSystem : m_subSystems[initializationStage])
-	{
+		Ref<SubSystem> subSystem = registeredSubSystems.at(subSystemGUID).factoryFunction();
+		m_subSystemsMap[subSystemGUID] = subSystem;
+		
 		subSystem->Initialize();
 	}
 }
@@ -65,26 +40,126 @@ void SubSystemManager::InitializeSubSystems(SubSystemInitializationStage initial
 void SubSystemManager::ShutdownSubSystems(SubSystemInitializationStage initializationStage)
 {
 	// Ensure correct destructor order (event listeners may depend on this)
-	m_subSystemsMap.clear();
-
-	for (auto& subSystem : std::ranges::reverse_view(m_subSystems[initializationStage]))
+	if (!m_sortedSubSystems.contains(initializationStage))
 	{
-		subSystem->Shutdown();
+		return;
 	}
 
-	for (auto& subSystem : std::ranges::reverse_view(m_subSystems[initializationStage]))
+	const Vector<VoltGUID>& sortedSubSystems = m_sortedSubSystems.at(initializationStage);
+
+	for (const VoltGUID& subSystemGUID : std::ranges::reverse_view(sortedSubSystems))
 	{
-		subSystem = nullptr;
+		m_subSystemsMap[subSystemGUID]->Shutdown();
+		m_subSystemsMap.erase(subSystemGUID);
 	}
 }
 
 void SubSystemManager::OnPostInitialization()
 {
-	for (const auto& [initializationStage, subSystems] : m_subSystems)
+	for (const auto& [guid, subSystem] : m_subSystemsMap)
 	{
-		for (const auto& subSystem : subSystems)
+		subSystem->OnPostInitialization();
+	}
+}
+
+void SubSystemManager::BuildDependencyTree()
+{
+	struct SubSystemReference
+	{
+		VoltGUID guid;
+		uint32_t referenceCount;
+
+		Vector<SubSystemReference*> dependants;
+	};
+
+	struct SubSystemInitializationStageData
+	{
+		Map<VoltGUID, size_t> subSystemGUIDToIndex;
+		Vector<SubSystemReference> subSystemReferences;
+	};
+
+	Map<SubSystemInitializationStage, SubSystemInitializationStageData> subSystemInitializationStageData;
+
+	const auto& registeredSubSystems = SubSystemRegistry::Get().GetRegisteredSubSystems();
+
+	// Initialize map and list.
+	for (const auto& [guid, registeredSubSystem] : registeredSubSystems)
+	{
+		SubSystemInitializationStageData& stageData = subSystemInitializationStageData[registeredSubSystem.initializationStage];
+
+		SubSystemReference& reference = stageData.subSystemReferences.emplace_back();
+		reference.guid = guid;
+		reference.referenceCount = 0;
+
+		stageData.subSystemGUIDToIndex[guid] = stageData.subSystemReferences.size() - 1;
+	}
+
+	// Resolve dependencies
+	for (const auto& [guid, registeredSubSystem] : registeredSubSystems)
+	{
+		SubSystemInitializationStageData& stageData = subSystemInitializationStageData[registeredSubSystem.initializationStage];
+		SubSystemReference& reference = stageData.subSystemReferences.at(stageData.subSystemGUIDToIndex[guid]);
+
+		// Gather possible dependencies
+		SubSystemDependencyList dependencyList;
+		registeredSubSystem.getDependenciesFunction(dependencyList);
+	
+		// Resolve dependency pointers.
+		for (const VoltGUID& dependencyGUID : dependencyList.GetDependencyList())
 		{
-			subSystem->OnPostInitialization();
+			if (stageData.subSystemGUIDToIndex.contains(dependencyGUID))
+			{
+				SubSystemReference* depReference = &stageData.subSystemReferences.at(stageData.subSystemGUIDToIndex.at(dependencyGUID));
+
+				depReference->dependants.emplace_back(&reference);
+				reference.referenceCount++;
+			}
+			// Dependency sub system is not in the same initialization stage.
+			// It's invalid to have a dependency in a stage later than itself.
+			else
+			{
+				for (const auto& [depStage, depStageData] : subSystemInitializationStageData)
+				{
+					if (static_cast<std::underlying_type_t<SubSystemInitializationStage>>(depStage) >
+						static_cast<std::underlying_type_t<SubSystemInitializationStage>>(registeredSubSystem.initializationStage))
+					{
+						VT_ENSURE_MSG(!depStageData.subSystemGUIDToIndex.contains(dependencyGUID), "Dependency SubSystem is in a later initialization stage than it's dependant! This is not allowed!");
+					}
+				}
+			}
+		}
+	}
+
+	// Topological sort
+	for (auto& [stage, stageData] : subSystemInitializationStageData)
+	{
+		Vector<SubSystemReference*> unreferencedSubSystems;
+		for (size_t i = 0; i < stageData.subSystemReferences.size(); ++i)
+		{
+			if (stageData.subSystemReferences[i].referenceCount == 0)
+			{
+				unreferencedSubSystems.emplace_back(&stageData.subSystemReferences[i]);
+			}
+		}
+
+		Vector<VoltGUID>& sortedSubSystems = m_sortedSubSystems[stage];
+		sortedSubSystems.reserve(stageData.subSystemReferences.size());
+
+		while (!unreferencedSubSystems.empty())
+		{
+			SubSystemReference* subSystemReference = unreferencedSubSystems.back();
+			unreferencedSubSystems.pop_back();
+
+			sortedSubSystems.emplace_back(subSystemReference->guid);
+
+			for (SubSystemReference* dependantSubSystem : subSystemReference->dependants)
+			{
+				dependantSubSystem->referenceCount--;
+				if (dependantSubSystem->referenceCount == 0)
+				{
+					unreferencedSubSystems.emplace_back(dependantSubSystem);
+				}
+			}
 		}
 	}
 }

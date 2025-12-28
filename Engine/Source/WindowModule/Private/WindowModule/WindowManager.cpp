@@ -16,7 +16,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(WindowManager, Minimal, PreEngine, 4);
+	VT_REGISTER_SUBSYSTEM(WindowManager, Minimal, PreEngine);
 
 	static bool s_glfwIsInitialized = false;
 
@@ -65,6 +65,11 @@ namespace Volt
 	WindowManager& WindowManager::Get()
 	{
 		return *s_instance;
+	}
+
+	void WindowManager::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<Log>();
 	}
 
 	void WindowManager::InitializeMonitors()

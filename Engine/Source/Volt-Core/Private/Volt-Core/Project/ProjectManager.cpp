@@ -13,7 +13,7 @@ VT_DEFINE_LOG_CATEGORY(LogProject);
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(ProjectManager, Default, PreEngine, 0);
+	VT_REGISTER_SUBSYSTEM(ProjectManager, Default, PreEngine);
 
 	ProjectManager::ProjectManager()
 	{

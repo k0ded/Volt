@@ -54,6 +54,8 @@ namespace Volt
 			Helpers() = default;
 		};
 
+		static ComponentRegistry& Get();
+
 	private:
 		friend class Helpers;
 
@@ -167,12 +169,5 @@ namespace Volt
 	}
 }
 
-extern VTES_API Volt::ComponentRegistry g_componentRegistry;
-
-VT_INLINE Volt::ComponentRegistry& GetComponentRegistry()
-{
-	return g_componentRegistry;
-}
-
-#define REGISTER_COMPONENT(compType) inline static bool compType ## _comp_registered = ::GetComponentRegistry().RegisterComponent<compType>()
-#define REGISTER_ENUM(enumType) inline static bool enumType ## _enum_registered = ::GetComponentRegistry().RegisterEnum<enumType>()
+#define REGISTER_COMPONENT(compType) inline static bool compType ## _comp_registered = ::Volt::ComponentRegistry::Get().RegisterComponent<compType>()
+#define REGISTER_ENUM(enumType) inline static bool enumType ## _enum_registered = ::Volt::ComponentRegistry::Get().RegisterEnum<enumType>()

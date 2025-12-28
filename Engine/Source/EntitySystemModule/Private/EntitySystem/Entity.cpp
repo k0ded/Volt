@@ -374,7 +374,7 @@ namespace Volt
 		VT_ENSURE(IsValid());
 
 		//const std::string lowerCompName = ::Utility::ToLower(std::string(componentName));
-		const ICommonTypeDesc* compType = GetComponentRegistry().GetTypeDescFromName(componentName);
+		const ICommonTypeDesc* compType = ComponentRegistry::Get().GetTypeDescFromName(componentName);
 		return ComponentRegistry::Helpers::HasComponentWithGUID(compType->GetGUID(), m_sceneReference->GetRegistry(), m_handle);
 	}
 
@@ -396,7 +396,7 @@ namespace Volt
 				continue;
 			}
 
-			const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(GetComponentRegistry().GetTypeDescFromName(storage.type().name()));
+			const IComponentTypeDesc* componentDesc = reinterpret_cast<const IComponentTypeDesc*>(ComponentRegistry::Get().GetTypeDescFromName(storage.type().name()));
 			if (!componentDesc)
 			{
 				continue;

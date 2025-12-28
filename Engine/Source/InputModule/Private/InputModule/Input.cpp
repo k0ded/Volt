@@ -10,7 +10,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(Input, Minimal, PreEngine, 2);
+	VT_REGISTER_SUBSYSTEM(Input, Minimal, PreEngine);
 
 	Input::Input()
 	{
@@ -152,6 +152,11 @@ namespace Volt
 	const glm::vec2& Input::GetViewportMousePosition()
 	{
 		return s_instance->m_viewportMousePos;
+	}
+
+	void Input::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<EventSystem>();
 	}
 
 	bool Input::OnPostFrameUpdateEvent(AppPostFrameUpdateEvent& event)

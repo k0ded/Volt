@@ -34,15 +34,18 @@ public:
 	}
 
 private:
-	inline static SubSystemManager* s_instance = nullptr;
-
 	struct SubSystemAccelerationStructure
 	{
 		SubSystemInitializationStage stage;
 		size_t index;
 	};
 
-	Map <VoltGUID, Ref<SubSystem>> m_subSystemsMap;
-	Map<SubSystemInitializationStage, Vector<Ref<SubSystem>>> m_subSystems;
+	void BuildDependencyTree();
+
+	inline static SubSystemManager* s_instance = nullptr;
+
+	Map<VoltGUID, Ref<SubSystem>> m_subSystemsMap;
+	Map<SubSystemInitializationStage, Vector<VoltGUID>> m_sortedSubSystems;
+
 	SubSystemInclusionLevel m_inclusionLevel;
 };

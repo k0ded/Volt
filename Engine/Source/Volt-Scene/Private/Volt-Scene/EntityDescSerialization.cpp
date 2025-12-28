@@ -154,7 +154,7 @@ namespace Volt::EntityDescSerialization
 				continue;
 			}
 
-			const IComponentTypeDesc* componentDesc = static_cast<const IComponentTypeDesc*>(GetComponentRegistry().GetTypeDescFromName(storage.type().name()));
+			const IComponentTypeDesc* componentDesc = static_cast<const IComponentTypeDesc*>(ComponentRegistry::Get().GetTypeDescFromName(storage.type().name()));
 			if (!componentDesc)
 			{
 				// Component isn't registered, skip
@@ -187,7 +187,7 @@ namespace Volt::EntityDescSerialization
 
 		for (const ComponentHeader& componentHeader : serializationData.componentHeaders)
 		{
-			const IComponentTypeDesc* typeDesc = reinterpret_cast<const IComponentTypeDesc*>(GetComponentRegistry().GetTypeDescFromGUID(componentHeader.componentGUID));
+			const IComponentTypeDesc* typeDesc = reinterpret_cast<const IComponentTypeDesc*>(ComponentRegistry::Get().GetTypeDescFromGUID(componentHeader.componentGUID));
 			if (!typeDesc)
 			{
 				continue;
@@ -213,7 +213,7 @@ namespace Volt::EntityDescSerialization
 
 		for (const ComponentHeader& componentHeader : serializationData.componentHeaders)
 		{
-			const IComponentTypeDesc* typeDesc = reinterpret_cast<const IComponentTypeDesc*>(GetComponentRegistry().GetTypeDescFromGUID(componentHeader.componentGUID));
+			const IComponentTypeDesc* typeDesc = reinterpret_cast<const IComponentTypeDesc*>(ComponentRegistry::Get().GetTypeDescFromGUID(componentHeader.componentGUID));
 			if (!typeDesc)
 			{
 				continue;

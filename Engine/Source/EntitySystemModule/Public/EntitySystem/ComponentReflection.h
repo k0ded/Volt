@@ -138,7 +138,7 @@ namespace Volt
 
 		VT_INLINE AssetType GetAssetType() const
 		{
-			return g_assetTypeRegistry.GetTypeFromGUID(assetTypeGuid);
+			return AssetTypeRegistry::Get().GetTypeFromGUID(assetTypeGuid);
 		}
 	};
 

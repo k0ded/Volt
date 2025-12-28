@@ -8,7 +8,9 @@
 
 #include <SubSystem/SubSystemManager.h>
 #include <SubSystem/SubSystem.h>
+
 #include <EventSystem/ApplicationEvents.h>
+#include <EventSystem/EventSystem.h>
 
 #include <CoreUtilities/StringUtility.h>
 
@@ -37,9 +39,14 @@ namespace UI
 			});
 		}
 
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+		{
+			outDependencies.AddDependency<Volt::EventSystem>();
+		}
+
 		VT_DECLARE_SUBSYSTEM("{549B4945-CFF4-4DC3-9B9E-7F495425EBED}"_guid);
 	};
-	VT_REGISTER_SUBSYSTEM(ResetStackEventListener, Minimal, PreEngine, 0);
+	VT_REGISTER_SUBSYSTEM(ResetStackEventListener, Default, PreEngine);
 
 	ImTextureID GetTextureID(Ref<Volt::Texture2D> texture, int32_t mipIndex)
 	{

@@ -111,17 +111,11 @@ namespace Volt
 
 		static std::unordered_map<std::string, Ref<RegisteredConsoleVariableBase>>& GetRegisteredVariables();
 
+		static ConsoleVariableRegistry& Get();
+
 	private:
 		std::unordered_map<std::string, Ref<RegisteredConsoleVariableBase>> m_registeredVariables;
 	};
-
-	// Must be declared before usage
-	extern VTCORE_API ConsoleVariableRegistry g_consoleVariableRegistry;
-
-	VT_INLINE ConsoleVariableRegistry& GetConsoleVariableRegistry()
-	{
-		return g_consoleVariableRegistry;
-	}
 
 	template<ValidConsoleVariableType T>
 	inline RegisteredConsoleVariable<T>::RegisteredConsoleVariable(const std::string& variableName, const T& defaultValue, std::string_view description)
@@ -154,8 +148,8 @@ namespace Volt
 
 		Ref<RegisteredConsoleVariable<T>> consoleVariable = CreateRef<RegisteredConsoleVariable<T>>(tempVarName, defaultValue, description);
 
-		VT_ASSERT_MSG(!g_consoleVariableRegistry.m_registeredVariables.contains(tempVarName), "Command variable with name already registered!");
-		g_consoleVariableRegistry.m_registeredVariables[tempVarName] = consoleVariable;
+		VT_ASSERT_MSG(!ConsoleVariableRegistry::Get().m_registeredVariables.contains(tempVarName), "Command variable with name already registered!");
+		ConsoleVariableRegistry::Get().m_registeredVariables[tempVarName] = consoleVariable;
 
 		return consoleVariable;
 	}
@@ -165,9 +159,9 @@ namespace Volt
 	{
 		const std::string tempVarName = ::Utility::ToLower(variableName);
 
-		if (g_consoleVariableRegistry.m_registeredVariables.contains(tempVarName))
+		if (ConsoleVariableRegistry::Get().m_registeredVariables.contains(tempVarName))
 		{
-			return g_consoleVariableRegistry.m_registeredVariables.at(tempVarName);
+			return ConsoleVariableRegistry::Get().m_registeredVariables.at(tempVarName);
 		}
 
 		return Weak<RegisteredConsoleVariable<T>>();

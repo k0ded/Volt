@@ -2,8 +2,6 @@
 
 #include "CoreUtilities/Archive/ArchiveVersionRegistry.h"
 
-ArchiveVersionRegistry g_archiveVersionRegistry;
-
 int32_t ArchiveVersionRegistry::TryGetVersion(const VoltGUID& guid)
 {
 	if (m_registeredVersions.contains(guid))
@@ -16,7 +14,8 @@ int32_t ArchiveVersionRegistry::TryGetVersion(const VoltGUID& guid)
 
 ArchiveVersionRegistry& ArchiveVersionRegistry::Get()
 {
-	return g_archiveVersionRegistry;
+	static ArchiveVersionRegistry registry;
+	return registry;
 }
 
 void ArchiveVersionRegistry::RegisterVersion(const VoltGUID& guid, int32_t currentVersion, std::string_view name)

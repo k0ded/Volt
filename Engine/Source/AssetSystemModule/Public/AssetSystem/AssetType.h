@@ -43,16 +43,11 @@ public:
 	AssetType GetTypeFromExtension(const std::string& extension) const;
 	VT_INLINE const Map<VoltGUID, AssetType>& GetTypeMap() const { return m_typeMap; }
 
+	static AssetTypeRegistry& Get();
+
 private:
 	Map<VoltGUID, AssetType> m_typeMap;
 };
-
-extern VTAS_API AssetTypeRegistry g_assetTypeRegistry;
-
-VT_INLINE AssetTypeRegistry& GetAssetTypeRegistry()
-{
-	return g_assetTypeRegistry;
-}
 
 namespace std
 {
@@ -123,6 +118,6 @@ namespace AssetTypes \
 
 #define VT_REGISTER_ASSET_TYPE(typeName) \
 	namespace AssetTypes { Ref<typeName ## Type> typeName = CreateRef<typeName ## Type>(); } \
-	bool AssetType_ ## typeName ## _Registered = GetAssetTypeRegistry().RegisterAssetType(AssetTypes::typeName ## Type::guid, AssetTypes::typeName);
+	bool AssetType_ ## typeName ## _Registered = AssetTypeRegistry::Get().RegisterAssetType(AssetTypes::typeName ## Type::guid, AssetTypes::typeName);
 
 VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(None, false, (Vector<std::string>{}), VoltGUID::Null(), VTAS_API);

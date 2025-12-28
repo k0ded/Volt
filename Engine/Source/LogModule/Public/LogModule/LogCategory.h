@@ -39,11 +39,11 @@ public:
 
 	VT_NODISCARD VT_INLINE const Vector<LogCategoryBase*> GetRegisteredLogCategories() const { return m_registeredCategories; }
 
+	static LogCategoryRegistry& Get();
+
 private:
 	Vector<LogCategoryBase*> m_registeredCategories;
 };
-
-extern VTLOG_API LogCategoryRegistry g_logCategoryRegistry;
 
 #define VT_DECLARE_LOG_CATEGORY(categoryName, verbosity) \
 	extern class LogCategory##categoryName : public LogCategory<verbosity> \
@@ -51,11 +51,11 @@ extern VTLOG_API LogCategoryRegistry g_logCategoryRegistry;
 	public: \
 		VT_INLINE LogCategory##categoryName() : LogCategory(#categoryName) \
 		{ \
-			g_logCategoryRegistry.RegisterLogCategory(this); \
+			LogCategoryRegistry::Get().RegisterLogCategory(this); \
 		} \
 		VT_INLINE ~LogCategory##categoryName() \
 		{ \
-			g_logCategoryRegistry.UnregisterLogCategory(this); \
+			LogCategoryRegistry::Get().UnregisterLogCategory(this); \
 		} \
 	} categoryName
 
@@ -65,11 +65,11 @@ extern VTLOG_API LogCategoryRegistry g_logCategoryRegistry;
 	public: \
 		VT_INLINE LogCategory##categoryName() : LogCategory(#categoryName) \
 		{ \
-			g_logCategoryRegistry.RegisterLogCategory(this); \
+			LogCategoryRegistry::Get().RegisterLogCategory(this); \
 		} \
 		VT_INLINE ~LogCategory##categoryName() \
 		{ \
-			g_logCategoryRegistry.UnregisterLogCategory(this); \
+			LogCategoryRegistry::Get().UnregisterLogCategory(this); \
 		} \
 	} exportKeyword categoryName
 

@@ -38,6 +38,7 @@ namespace Volt
 
 		static uint32_t GetNumWorkers();
 
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{74BD3121-6E60-4372-8100-A1D4BA37EF54}"_guid)
 	
 	private:

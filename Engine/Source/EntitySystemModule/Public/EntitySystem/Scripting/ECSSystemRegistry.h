@@ -51,17 +51,12 @@ public:
 
 	VT_NODISCARD VT_INLINE const Vector<ECSEnvironmentDefinition>& GetEnvironmentDefinitions() const { return m_registeredEnvironmentDefinitions; }
 
+	static ECSSystemRegistry& Get();
+
 private:
 	Vector<std::function<void(ECSBuilder& builder)>> m_registeredModules;
 	Vector<ECSEnvironmentDefinition> m_registeredEnvironmentDefinitions;
 };
 
-extern VTES_API ECSSystemRegistry g_ecsSystemRegistry;
-
-VT_INLINE ECSSystemRegistry& GetECSSystemRegistry()
-{
-	return g_ecsSystemRegistry;
-}
-
-#define VT_REGISTER_ECS_MODULE(func) inline static bool func ## _registered = ::GetECSSystemRegistry().RegisterECSModule(func)
-#define VT_REGISTER_ECS_ENV_TYPE(type) inline static bool type ## _envRegistered = ::GetECSSystemRegistry().RegisterECSEnvType<type>()
+#define VT_REGISTER_ECS_MODULE(func) inline static bool func ## _registered = ::ECSSystemRegistry::Get().RegisterECSModule(func)
+#define VT_REGISTER_ECS_ENV_TYPE(type) inline static bool type ## _envRegistered = ::ECSSystemRegistry::Get().RegisterECSEnvType<type>()

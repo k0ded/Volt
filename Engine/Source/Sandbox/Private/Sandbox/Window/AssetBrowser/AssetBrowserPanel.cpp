@@ -491,7 +491,7 @@ void AssetBrowserPanel::RenderControlsBar(float height)
 						Reload();
 					}
 
-					for (const auto& [guid, type] : GetAssetTypeRegistry().GetTypeMap())
+					for (const auto& [guid, type] : AssetTypeRegistry::Get().GetTypeMap())
 					{
 						bool selected = m_assetMask.contains(type);
 						if (ImGui::Checkbox(type->GetName().data(), &selected))

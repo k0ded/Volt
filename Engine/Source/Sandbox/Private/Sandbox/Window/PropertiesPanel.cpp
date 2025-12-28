@@ -226,7 +226,7 @@ void PropertiesPanel::AddComponentPopup()
 		Vector<std::string> componentNames;
 		std::unordered_map<std::string, VoltGUID> nameToGUIDMap;
 
-		const auto& componentRegistry = GetComponentRegistry().GetRegistry();
+		const auto& componentRegistry = Volt::ComponentRegistry::Get().GetRegistry();
 		for (const auto& [guid, typeDesc] : componentRegistry)
 		{
 			if (typeDesc->GetValueType() == Volt::ValueType::Component)
@@ -284,7 +284,7 @@ void PropertiesPanel::AddComponentPopup()
 							{
 								Volt::ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, myCurrentScene->GetEntityScene().GetRegistry(), entity);
 
-								const Volt::IComponentTypeDesc* componentTypeDesc = reinterpret_cast<const Volt::IComponentTypeDesc*>(GetComponentRegistry().GetTypeDescFromGUID(compGuid));
+								const Volt::IComponentTypeDesc* componentTypeDesc = reinterpret_cast<const Volt::IComponentTypeDesc*>(Volt::ComponentRegistry::Get().GetTypeDescFromGUID(compGuid));
 								if (componentTypeDesc)
 								{
 									componentTypeDesc->OnInitialize(entity);

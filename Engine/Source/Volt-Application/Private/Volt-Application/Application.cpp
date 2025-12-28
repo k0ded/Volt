@@ -22,11 +22,11 @@
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
 
-#include <CoreUtilities/FileSystem.h>
-
 #include <RHIModule/FrameCapture.h>
 #include <RHIModule/RHIModuleLoader.h>
 
+#include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {

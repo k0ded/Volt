@@ -1,7 +1,5 @@
 #include "LogCategory.h"
 
-LogCategoryRegistry g_logCategoryRegistry;
-
 LogCategoryBase::LogCategoryBase(std::string_view categoryName, LogVerbosity categoryVerbosity)
 	: m_verbosity(categoryVerbosity), m_name(categoryName)
 {
@@ -35,4 +33,10 @@ void LogCategoryRegistry::UnregisterLogCategory(LogCategoryBase* category)
 	{
 		m_registeredCategories.erase_unsorted(it);
 	}
+}
+
+LogCategoryRegistry& LogCategoryRegistry::Get()
+{
+	static LogCategoryRegistry registry;
+	return registry;
 }

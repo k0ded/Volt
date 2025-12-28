@@ -6,6 +6,8 @@
 
 #include <EntitySystem/EntityID.h>
 
+#include <CoreUtilities/UUID.h>
+
 #include <glm/glm.hpp>
 
 namespace Volt

@@ -394,7 +394,7 @@ namespace Volt
 				return;
 			}
 
-			const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromGUID(compGuid);
+			const ICommonTypeDesc* typeDesc = ComponentRegistry::Get().GetTypeDescFromGUID(compGuid);
 			if (!typeDesc)
 			{
 				return;
@@ -443,7 +443,7 @@ namespace Volt
 				return;
 			}
 
-			const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromGUID(compGuid);
+			const ICommonTypeDesc* typeDesc = ComponentRegistry::Get().GetTypeDescFromGUID(compGuid);
 			if (!typeDesc)
 			{
 				return;
