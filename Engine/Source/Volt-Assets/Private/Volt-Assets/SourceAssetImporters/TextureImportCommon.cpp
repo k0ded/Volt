@@ -14,7 +14,8 @@ namespace Volt::TextureImport
 		// It's a base color texture
 		if (lowerFilename.contains("_basecolor") || 
 			lowerFilename.contains("_bc") ||
-			lowerFilename.contains("_diff"))
+			lowerFilename.contains("_diff") ||
+			lowerFilename.contains("_base_color"))
 		{
 			return TextureCompressionType::BC1;
 		}
@@ -42,6 +43,7 @@ namespace Volt::TextureImport
 			return TextureCompressionType::BC1;
 		}
 
-		return TextureCompressionType::None;
+		// Default to BC5
+		return TextureCompressionType::BC1;
 	}
 }

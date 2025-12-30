@@ -133,16 +133,19 @@ namespace Volt
 			
 				RefPtr<RHI::Image> image;
 
-				AssetReference<Texture2D> texture = g_assetManager->GetAssetImmediately<Texture2D>(textureInfo.textureHandle);
-				if (texture && texture->IsValid())
+				if (textureInfo.textureHandle != Asset::Null())
 				{
-					image = texture->GetImage();
+					AssetReference<Texture2D> texture = g_assetManager->GetAssetImmediately<Texture2D>(textureInfo.textureHandle);
+					if (texture && texture->IsValid())
+					{
+						image = texture->GetImage();
+					}
 				}
-				else
+
+				if (image == nullptr)
 				{
 					image = Renderer::GetDefaultResources().white1x1;
 				}
-				
 
 				materialAsset->GetRenderMaterial()->SetTexture(textureInfo.textureIndex, RenderTexture(image));
 			}

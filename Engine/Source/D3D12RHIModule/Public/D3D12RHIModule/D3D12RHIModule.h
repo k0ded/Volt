@@ -12,6 +12,8 @@
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/ResourceDeletionQueue.h>
 
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
+
 namespace Volt::RHI
 {
 	class D3D12RHIModule : public RHIModule
@@ -69,13 +71,13 @@ namespace Volt::RHI
 		uint32_t m_frameIndex = 0;
 
 		// Arenas
-		mutable FixedSizeArenaAllocator<D3D12BufferView> m_bufferViewArena;
-		mutable FixedSizeArenaAllocator<D3D12ImageView> m_imageViewArena;
+		mutable PagedAtomicArenaAllocator<D3D12BufferView, 1024> m_bufferViewArena;
+		mutable PagedAtomicArenaAllocator<D3D12ImageView, 1024> m_imageViewArena;
 
-		mutable FixedSizeArenaAllocator<D3D12StorageBuffer> m_storageBufferArena;
-		mutable FixedSizeArenaAllocator<D3D12UniformBuffer> m_uniformBufferArena;
-		mutable FixedSizeArenaAllocator<D3D12Image> m_imageArena;
-		mutable FixedSizeArenaAllocator<D3D12SamplerState> m_samplerStateArena;
+		mutable PagedAtomicArenaAllocator<D3D12StorageBuffer, 1024> m_storageBufferArena;
+		mutable PagedAtomicArenaAllocator<D3D12UniformBuffer, 1024> m_uniformBufferArena;
+		mutable PagedAtomicArenaAllocator<D3D12Image, 1024> m_imageArena;
+		mutable PagedAtomicArenaAllocator<D3D12SamplerState, 1024> m_samplerStateArena;
 	};
 }
 

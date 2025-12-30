@@ -150,6 +150,8 @@ namespace Volt
 
 		bool OnPreRenderEvent(AppPreRenderEvent& event);
 
+		bool IsValidAssetHandle(AssetHandle assetHandle) const;
+
 		StreamingInstanceMap m_streamingInstances;
 		StreamingInstanceAssetReferenceCounter<MeshAsset> m_meshReferenceCounter;
 		StreamingInstanceAssetReferenceCounter<MaterialAsset> m_materialReferenceCounter;

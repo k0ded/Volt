@@ -13,6 +13,8 @@
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/ResourceDeletionQueue.h>
 
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
+
 namespace Volt::RHI
 {
 	class VulkanCPUAllocator;
@@ -70,13 +72,13 @@ namespace Volt::RHI
 		uint32_t m_frameIndex = 0;
 
 		// Arenas
-		mutable FixedSizeArenaAllocator<VulkanBufferView> m_bufferViewArena;
-		mutable FixedSizeArenaAllocator<VulkanImageView> m_imageViewArena;
+		mutable PagedAtomicArenaAllocator<VulkanBufferView, 1024> m_bufferViewArena;
+		mutable PagedAtomicArenaAllocator<VulkanImageView, 1024> m_imageViewArena;
 
-		mutable FixedSizeArenaAllocator<VulkanStorageBuffer> m_storageBufferArena;
-		mutable FixedSizeArenaAllocator<VulkanUniformBuffer> m_uniformBufferArena;
-		mutable FixedSizeArenaAllocator<VulkanImage> m_imageArena;
-		mutable FixedSizeArenaAllocator<VulkanSamplerState> m_samplerStateArena;
+		mutable PagedAtomicArenaAllocator<VulkanStorageBuffer, 1024> m_storageBufferArena;
+		mutable PagedAtomicArenaAllocator<VulkanUniformBuffer, 1024> m_uniformBufferArena;
+		mutable PagedAtomicArenaAllocator<VulkanImage, 1024> m_imageArena;
+		mutable PagedAtomicArenaAllocator<VulkanSamplerState, 1024> m_samplerStateArena;
 
 		Ref<VulkanCPUAllocator> m_vulkanCpuAllocator;
 	};

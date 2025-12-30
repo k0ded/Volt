@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CoreUtilities/Allocators/FixedSizeArenaAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 
 #include <atomic>
 
@@ -41,14 +41,14 @@ public:
 	}
 
 	template<typename T>
-	VT_INLINE void SetArena(FixedSizeArenaAllocator<T>* arena)
+	VT_INLINE void SetArena(PagedAtomicArenaAllocator<T, 1024>* arena)
 	{
 		VT_ENSURE_MSG(m_arenaFreeFunc == nullptr, "An arena has already been assigned!");
 		if (!m_arenaFreeFunc)
 		{
 			constexpr auto arenaFreeFunc = [](void* ptr, void* arenaPtr)
 			{
-				reinterpret_cast<FixedSizeArenaAllocator<T>*>(arenaPtr)->Free(reinterpret_cast<T*>(ptr));
+				reinterpret_cast<PagedAtomicArenaAllocator<T, 1024>*>(arenaPtr)->Free(reinterpret_cast<T*>(ptr));
 			};
 
 			m_arenaFreeFunc = arenaFreeFunc;

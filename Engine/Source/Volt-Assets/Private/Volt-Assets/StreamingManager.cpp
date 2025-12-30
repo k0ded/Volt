@@ -101,13 +101,15 @@ namespace Volt
 
 			for (const auto& materialHandle : description.materialHandles)
 			{
-				if (materialHandle != Asset::Null())
+				if (IsValidAssetHandle(materialHandle))
 				{
 					m_materialReferenceCounter.AddReference(materialHandle, newId);
 				}
 			}
 
-			if (description.meshHandle != Asset::Null())
+			const bool isValidMeshAsset = IsValidAssetHandle(description.meshHandle);
+
+			if (isValidMeshAsset)
 			{
 				m_meshReferenceCounter.AddReference(description.meshHandle, newId);
 			}
@@ -117,7 +119,7 @@ namespace Volt
 				VT_LOGC(Trace, LogStreamingManager, "Added a new instance linked to entity {} with mesh {} and gave it ID {}", description.entityId, description.meshHandle, newId);
 			}
 
-			if (description.meshHandle != Asset::Null())
+			if (isValidMeshAsset)
 			{
 				InitializeScenePrimitiveFromInstance(m_streamingInstances.Get(newId));
 			}
@@ -132,7 +134,9 @@ namespace Volt
 			instance.sceneLightDescription = description.sceneLightDescription;
 			instance.entityId = description.entityId;
 
-			if (description.environmentTextureHandle != Asset::Null())
+			const bool environmentTextureIsValidAsset = IsValidAssetHandle(description.environmentTextureHandle);
+
+			if (environmentTextureIsValidAsset)
 			{
 				m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, newId);
 			}
@@ -142,7 +146,7 @@ namespace Volt
 				VT_LOGC(Trace, LogStreamingManager, "Added a new instance linked to entity {} with environment texture {} and gave it ID {}", description.entityId, description.environmentTextureHandle, newId);
 			}
 
-			if (description.environmentTextureHandle != Asset::Null())
+			if (environmentTextureIsValidAsset)
 			{
 				InitializeSceneLightDataFromInstance(m_streamingInstances.Get(newId));
 			}
@@ -171,14 +175,14 @@ namespace Volt
 
 		if (instance.primitiveData)
 		{
-			if (instance.meshHandle != Asset::Null())
+			if (IsValidAssetHandle(instance.meshHandle))
 			{
 				m_meshReferenceCounter.RemoveReference(instance.meshHandle, instanceId);
 			}
 
 			for (const auto& materialHandle : instance.materialHandles)
 			{
-				if (materialHandle != Asset::Null())
+				if (IsValidAssetHandle(materialHandle))
 				{
 					m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
 				}
@@ -186,7 +190,7 @@ namespace Volt
 		}
 		else if (instance.sceneLightData)
 		{
-			if (instance.environmentTextureHandle != Asset::Null())
+			if (IsValidAssetHandle(instance.environmentTextureHandle))
 			{
 				m_environmentTextureReferenceCounter.RemoveReference(instance.environmentTextureHandle, instanceId);
 			}
@@ -211,12 +215,12 @@ namespace Volt
 		{
 			if (streamingInstance.meshHandle != description.meshHandle)
 			{
-				if (streamingInstance.meshHandle != Asset::Null())
+				if (IsValidAssetHandle(streamingInstance.meshHandle))
 				{
 					m_meshReferenceCounter.RemoveReference(streamingInstance.meshHandle, instanceId);
 				}
 
-				if (description.meshHandle != Asset::Null())
+				if (IsValidAssetHandle(description.meshHandle))
 				{
 					m_meshReferenceCounter.AddReference(description.meshHandle, instanceId);
 				}
@@ -246,7 +250,7 @@ namespace Volt
 
 			for (const auto& materialHandle : materialsToAdd)
 			{
-				if (materialHandle != Asset::Null())
+				if (IsValidAssetHandle(materialHandle))
 				{
 					m_materialReferenceCounter.AddReference(materialHandle, instanceId);
 				}
@@ -254,7 +258,7 @@ namespace Volt
 
 			for (const auto& materialHandle : materialsToRemove)
 			{
-				if (materialHandle != Asset::Null())
+				if (IsValidAssetHandle(materialHandle))
 				{
 					m_materialReferenceCounter.RemoveReference(materialHandle, instanceId);
 				}
@@ -277,12 +281,12 @@ namespace Volt
 		{
 			if (description.environmentTextureHandle != streamingInstance.environmentTextureHandle)
 			{
-				if (description.environmentTextureHandle != Asset::Null())
+				if (IsValidAssetHandle(description.environmentTextureHandle))
 				{
 					m_environmentTextureReferenceCounter.AddReference(description.environmentTextureHandle, instanceId);
 				}
-			
-				if (streamingInstance.environmentTextureHandle != Asset::Null())
+
+				if (IsValidAssetHandle(streamingInstance.environmentTextureHandle))
 				{
 					m_environmentTextureReferenceCounter.RemoveReference(streamingInstance.environmentTextureHandle, instanceId);
 				}
@@ -324,7 +328,7 @@ namespace Volt
 			
 			AssetReference<MaterialAsset> materialAsset;
 
-			if (materialHandle != Asset::Null())
+			if (IsValidAssetHandle(materialHandle))
 			{
 				if (g_assetManager->TryGetAsset(materialHandle, materialAsset))
 				{
@@ -415,6 +419,11 @@ namespace Volt
 		m_streamingInstancesToInvalidate.clear();
 
 		return false;
+	}
+
+	bool StreamingManager::IsValidAssetHandle(AssetHandle assetHandle) const
+	{
+		return g_assetManager->IsValidAssetHandle(assetHandle);
 	}
 
 	StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Get(StreamingInstanceID id)

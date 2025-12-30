@@ -1,6 +1,8 @@
 #include "vtassetspch.h"
 #include "Volt-Assets/SourceAssetImporters/CommonTextureSourceImporter.h"
 #include "Volt-Assets/SourceAssetImporters/ImportConfigs.h"
+#include "Volt-Assets/SourceAssetImporters/TextureCompression.h"
+#include "Volt-Assets/SourceAssetImporters/TextureImportCommon.h"
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
@@ -66,18 +68,53 @@ namespace Volt
 			format = RHI::PixelFormat::R32G32B32A32_SFLOAT;
 		}
 
-		const uint32_t mipLevelCount = importConfig.generateMipMaps ? RHI::Utility::CalculateMipCount(width, height) : 1u;
+		const bool shouldCompressTexture = importConfig.compressionType != TextureCompressionType::None;
+		uint32_t numMipMaps = 1;
+
+		Vector<TextureSerializerCommon::TextureMip> compressedMips;
+		Buffer compressedPixelData;
+		if (shouldCompressTexture)
+		{
+			const RHI::PixelFormat dstFormat = TextureImport::GetFormatFromTextureCompressionType(importConfig.compressionType);
+
+			TextureCompression::Compress(width,
+				height,
+				format,
+				reinterpret_cast<uint8_t*>(data),
+				dstFormat,
+				true,
+				true,
+				compressedPixelData,
+				compressedMips);
+
+			format = dstFormat;
+			numMipMaps = static_cast<uint32_t>(compressedMips.size());
+		}
+		else if (importConfig.generateMipMaps)
+		{
+			numMipMaps = RHI::Utility::CalculateMipCount(width, height);
+		}
 
 		RHI::ImageDesc specification{};
 		specification.format = format;
 		specification.usage = RHI::ImageUsage::Texture;
 		specification.width = width;
 		specification.height = height;
-		specification.mips = mipLevelCount;
-		specification.generateMips = importConfig.generateMipMaps;
+		specification.mips = numMipMaps;
+		specification.generateMips = shouldCompressTexture ? false : importConfig.generateMipMaps;
 		specification.debugName = importConfig.destinationFilename;
 
-		RefPtr<RHI::Image> image = RHI::Image::Create(specification, data);
+		RefPtr<RHI::Image> image = nullptr;
+
+		if (shouldCompressTexture)
+		{
+			image = RHI::Image::Create(specification);
+			TextureSerializerCommon::UploadImageData(image, format, compressedMips, compressedPixelData, true);
+		}
+		else
+		{
+			image = RHI::Image::Create(specification, data);
+		}
 
 		AssetReference<Texture2D> voltTexture;
 

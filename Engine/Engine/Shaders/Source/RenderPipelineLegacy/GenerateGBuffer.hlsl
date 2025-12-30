@@ -21,6 +21,25 @@ struct GBufferVertex
     uint instanceId : SV_InstanceID;    
 };
 
+struct TransformedVertAttribs
+{
+    float3 position;
+    float3 normal;
+    float3 tangent;
+};
+
+TransformedVertAttribs GetTransformedVertAttribs(PrimitiveDrawData primitiveData, GPUMesh gpuMesh, float3 skinnedPosition, float3 normal, float3 tangent)
+{
+    Transform combinedTransform = primitiveData.transform.Combine(gpuMesh.transform);
+
+    TransformedVertAttribs result;
+    result.position = combinedTransform.TransformPosition(skinnedPosition);
+    result.normal = combinedTransform.RotateVector(normal);
+    result.tangent = combinedTransform.RotateVector(tangent);
+
+    return result;
+}
+
 GBufferPixelShaderInput MainVS(in GBufferVertex input)
 {
     const PrimitiveDrawData primitiveData = GetPrimitiveDrawDataFromID(input.primitiveIndex);
@@ -37,11 +56,13 @@ GBufferPixelShaderInput MainVS(in GBufferVertex input)
 
     const float3 skinnedPosition = mul(skinningMatrix, float4(input.position, 1.f)).xyz;
 
+    TransformedVertAttribs transformedVertAttribs = GetTransformedVertAttribs(primitiveData, gpuMesh, skinnedPosition, normal, tangent);
+
     GBufferPixelShaderInput result;
-    result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, skinnedPosition), 1.f));
+    result.position = mul(View.viewProjection, float4(transformedVertAttribs.position, 1.f));
     result.texCoords = input.texCoords;
-    result.normal = normalize(primitiveData.transform.RotateVector(normal));
-    result.tangent = float4(normalize(primitiveData.transform.RotateVector(tangent)), input.tangentW);
+    result.normal = normalize(transformedVertAttribs.normal);
+    result.tangent = float4(normalize(transformedVertAttribs.tangent), input.tangentW);
     result.primitiveIndex = input.primitiveIndex;
 
     return result;

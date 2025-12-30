@@ -1,7 +1,6 @@
 #pragma once
 
 static const float3 m_dielectricBase = 0.04f;
-static const float PI = 3.14159265359f;
 static const float HALF_PI = 1.57079f;
 static const float EPSILON = 0.0001f;
 

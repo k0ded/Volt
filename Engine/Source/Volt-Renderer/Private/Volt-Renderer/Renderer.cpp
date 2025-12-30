@@ -88,6 +88,16 @@ namespace Volt
 	};
 	REGISTER_SHADER(GeneratePreIntegratedDFGPS, "Engine/Shaders/Source/PBR/GeneratePreIntegratedDFG.hlsl", "MainPS", Pixel);
 
+	struct GeneratePreIntegratedBRDFPS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(GeneratePreIntegratedBRDFPS)
+
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			RG_RENDER_TARGETS()
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	REGISTER_SHADER(GeneratePreIntegratedBRDFPS, "Engine/Shaders/Source/PBR/GenerateBRDF.hlsl", "MainPS", Pixel);
+
 	namespace Utility
 	{
 		inline static const size_t GetHashFromSamplerDesc(const RHI::SamplerStateDesc& info)
@@ -390,11 +400,11 @@ namespace Volt
 
 		RenderGraph renderGraph{};
 
-		GeneratePreIntegratedDFGPS::Parameters* passParameters = renderGraph.AllocParameters<GeneratePreIntegratedDFGPS::Parameters>();
+		GeneratePreIntegratedBRDFPS::Parameters* passParameters = renderGraph.AllocParameters<GeneratePreIntegratedBRDFPS::Parameters>();
 		passParameters->renderTargets.renderTargets[0] = renderGraph.RegisterExternalTexture(m_defaultResources.DFGLuT);
 
 		RefPtr<RHI::Shader> vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
-		RefPtr<RHI::Shader> pixelShader = ShaderMap::Get<GeneratePreIntegratedDFGPS>();
+		RefPtr<RHI::Shader> pixelShader = ShaderMap::Get<GeneratePreIntegratedBRDFPS>();
 
 		renderGraph.AddPass("Pre integrate DFG Pass",
 			RenderGraphPassFlags::None,

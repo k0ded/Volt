@@ -125,6 +125,8 @@ constexpr ArrayView<T>& ArrayView<T>::operator=(const Array<T, N>& arr) noexcept
 {
 	m_data = arr.data();
 	m_size = arr.size();
+
+	return *this;
 }
 
 template<typename T>

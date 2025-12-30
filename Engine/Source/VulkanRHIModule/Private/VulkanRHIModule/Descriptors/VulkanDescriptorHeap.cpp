@@ -13,7 +13,7 @@
 namespace Volt::RHI
 {
 	// 1 MB per ring.
-	constexpr uint64_t DescriptorRingBufferSize = (1ull << 22);
+	constexpr uint64_t DescriptorRingBufferSize = (1ull << 24);
 
 	VulkanDescriptorHeap::VulkanDescriptorHeap()
 	{

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BRDF.hlsli"
+#include "PBRHelpers.hlsli"
 #include "Lights/Lights.hlsli"
 #include "Utility/ShadowMapping.hlsli"
 
@@ -155,6 +156,11 @@ float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
     float3 diffuse = 0.f;
     float3 specular = 0.f;
 
+    const float3 F = FresnelSchlickRoughness(DielectricF0, NdotV, brdfInput.roughness);
+    const float3 kS = F;
+    float3 kD = 1.f - kS;
+    kD *= 1.f - brdfInput.metalness;
+
     // Diffuse IBL
     {
         float3 dominantN = GetDiffuseDominantDirection(brdfInput.N, brdfInput.V, NdotV, brdfInput.roughness);
@@ -172,10 +178,8 @@ float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
         float mipLevel = LinearRoughnessToMipLevel(brdfInput.roughness, NumRadianceMipLevels);
         float3 preLD = SkylightRadiance.SampleLevel(LinearSampler, dominantR, mipLevel);
 
-
-        const float3 f0 = lerp(DielectricF0, brdfInput.baseColor, brdfInput.metalness);
-        specular = preLD * (f0 * DFG.x + DFG.y);
+        specular = preLD * (F * DFG.x + DFG.y);
     }
 
-    return (diffuse + specular) * light.intensity;
+    return (kD * diffuse + specular) * light.intensity; 
 }

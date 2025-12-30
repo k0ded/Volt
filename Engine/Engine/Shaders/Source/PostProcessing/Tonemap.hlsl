@@ -19,7 +19,8 @@ struct Output
 
 float3 ReinhardTonemap(float3 color)
 {
-    return color / (color + 1.f);
+    //return color / (color + 1.f);
+    return color;
 }
 
 Output MainPS(FullscreenTriangleVertex input)

@@ -5,16 +5,15 @@
 #include <AssetSystem/SourceAssetImporter.h>
 #include <AssetSystem/SourceAssetImporterRegistry.h>
 
-#include <LogModule/LogCategory.h>
-
 VT_DECLARE_LOG_CATEGORY(LogGLTFSourceImporter, LogVerbosity::Trace);
 
-namespace tinygltf
+namespace fastgltf
 {
-	class Model;
-	class Node;
-	struct Mesh;
+	class Asset;
+	struct Node;
 }
+
+struct TQS;
 
 namespace Volt
 {
@@ -29,8 +28,9 @@ namespace Volt
 		SourceAssetFileInformation GetSourceFileInformation(const std::filesystem::path& filepath) const override;
 
 	private:
-		void CreateVoltMeshFromGLTFMesh(const tinygltf::Mesh& gltfMesh, const tinygltf::Node& gltfNode, const tinygltf::Model& gltfModel, MeshInitializer& meshInitializer, const Vector<AssetReference<MaterialAsset>>& materials) const;
-
-		Vector<AssetReference<Asset>> ImportAsStaticMesh(tinygltf::Model& gltfModel, const MeshSourceImportConfig importConfig, const SourceAssetUserImportData& userData, const Vector<AssetReference<Asset>>& importedTextures) const;
+		Vector<AssetReference<Asset>> ProcessTextures(fastgltf::Asset& gltfAsset, const std::filesystem::path& srcDirectory, const MeshSourceImportConfig& config) const;
+		Vector<AssetReference<Asset>> ImportAsStaticMesh(fastgltf::Asset& gltfAsset, const MeshSourceImportConfig& config, const SourceAssetUserImportData& userData, const Vector<AssetReference<Asset>>& importedTextures) const;
+		
+		void CreateVoltMeshFromGLTFMesh(size_t gltfNodeIndex, const fastgltf::Asset& gltfAsset, const Map<size_t, TQS>& nodeGlobalTransform, MeshInitializer& meshInitializer, const MeshSourceImportConfig& importConfig, const Vector<AssetReference<MaterialAsset>>& materials) const;
 	};
 }

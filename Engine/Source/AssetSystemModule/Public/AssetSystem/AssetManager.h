@@ -374,6 +374,8 @@ namespace Volt
 		newAsset->m_referencedAssetManager = this;
 		newAsset->m_generation = metadata.m_generation;
 
+		newAsset->OnPreSave(metadata.customData);
+
 		m_assetRegistry.InsertAssetMetadata(std::move(metadata));
 		AddAssetToCache(newAsset),
 
