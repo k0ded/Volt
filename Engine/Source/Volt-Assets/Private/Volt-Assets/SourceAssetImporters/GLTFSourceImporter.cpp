@@ -1,6 +1,6 @@
 #include "vtassetspch.h"
 
-#include "Volt-Assets/SourceAssetImporters/GLTFSourceImporter_New.h"
+#include "Volt-Assets/SourceAssetImporters/GLTFSourceImporter.h"
 #include "Volt-Assets/SourceAssetImporters/ImportConfigs.h"
 #include "Volt-Assets/SourceAssetImporters/TangentGenerator.h"
 #include "Volt-Assets/SourceAssetImporters/TextureImportCommon.h"

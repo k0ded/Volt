@@ -57,12 +57,18 @@ public:
 
 		ForElementType(const ForElementType& other) noexcept
 		{
-			memcpy_s(m_data, TotalSize, other.m_data, TotalSize);
+			if (!other.m_heapAllocation)
+			{
+				memcpy_s(m_data, TotalSize, other.m_data, TotalSize);
+			}
 		}
 
 		ForElementType(ForElementType&& other) noexcept
 		{
-			memmove_s(m_data, TotalSize, other.m_data, TotalSize);
+			if (!other.m_heapAllocation)
+			{
+				memmove_s(m_data, TotalSize, other.m_data, TotalSize);
+			}
 		}
 
 		ForElementType& operator=(const ForElementType& other) noexcept
@@ -85,17 +91,39 @@ public:
 
 		void* Allocate(size_t size, size_t alignment) noexcept
 		{
-			VT_ENSURE(size <= TotalSize);
+			// Allocate on heap
+			if (size > TotalSize)
+			{
+				void* newAllocation = Memory::Malloc(size, alignment);
+				m_heapAllocation = newAllocation;
+				return newAllocation;
+			}
+
+			// Make sure the heap pointer is null.
+			// The pointer will be freed by a call from the container.
+			m_heapAllocation = nullptr;
+
+			// Local storage
 			return m_data;
 		}
 
-		void Free(void* pointer) noexcept
+		void Free(void* allocation) noexcept
 		{
-
+			// Allocation is not the local storage,
+			// let's free it.
+			if (allocation != m_data)
+			{
+				if (allocation == m_heapAllocation)
+				{
+					m_heapAllocation = nullptr;
+				}
+				Memory::Free(allocation);
+			}
 		}
 
 		VT_INLINE void Swap(ForElementType& other)
 		{
+			std::swap(m_heapAllocation, other.m_heapAllocation);
 			std::swap(m_data, other.m_data);
 		}
 
@@ -105,5 +133,6 @@ public:
 		inline static constexpr size_t TotalSize = sizeof(ValueType) * NumValues;
 
 		uint8_t m_data[TotalSize];
+		void* m_heapAllocation = nullptr;
 	};
 };

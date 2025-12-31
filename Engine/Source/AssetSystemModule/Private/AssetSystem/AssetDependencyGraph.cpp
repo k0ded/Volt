@@ -28,6 +28,22 @@ namespace Volt
 		return newId;
 	}
 
+	void AssetDependencyGraph::ClearAssetDependencies(AssetHandle handle)
+	{
+		if (!DoAssetExistInGraph(handle))
+		{
+			VT_LOG(Warning, "[AssetDependencyGraph]: Trying to clear asset dependencies of asset not in the graph!");
+			return;
+		}
+
+		const auto& node = m_graph.GetNodeFromID(m_assetNodeIds.at(handle));
+
+		for (int32_t i = static_cast<int32_t>(node.GetOutputEdges().size()) - 1; i >= 0; --i)
+		{
+			m_graph.RemoveEdge(node.GetOutputEdges()[i]);
+		}
+	}
+
 	void AssetDependencyGraph::RemoveAssetFromGraph(AssetHandle handle)
 	{
 		WriteLock lock{ m_mutex };

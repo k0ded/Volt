@@ -891,6 +891,8 @@ void AssetBrowserPanel::Reload()
 
 	Volt::JobSystem::RunJob(Volt::JobSystem::CreateJob("Reload Asset Browser...", Volt::ExecutionPriority::Latent, [this]()
 	{
+		const std::filesystem::path currentPath = myCurrentDirectory ? myCurrentDirectory->path : Volt::ProjectManager::GetAssetsDirectory();
+
 		Vector<AssetBrowser::DirectoryItem*> directoriesToClear;
 		{
 			Vector<AssetBrowser::DirectoryItem*> directoriesToTraverse;
@@ -920,9 +922,6 @@ void AssetBrowserPanel::Reload()
 
 			m_directoryItemPool.Free(dir);
 		}
-
-
-		const std::filesystem::path currentPath = myCurrentDirectory ? myCurrentDirectory->path : Volt::ProjectManager::GetAssetsDirectory();
 
 		myCurrentDirectory = nullptr;
 		myNextDirectory = nullptr;

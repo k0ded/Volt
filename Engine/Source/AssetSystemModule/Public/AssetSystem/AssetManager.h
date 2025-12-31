@@ -73,6 +73,7 @@ namespace Volt
 		template<VoltAssetType T> bool TryGetAssetImmediately(const std::filesystem::path& assetFilepath, AssetReference<T>& outAsset);
 
 		// Will return true and the asset if it is loaded, if the asset is not loaded it will queue it for loading.
+		// The outAsset value might be filled with a valid asset.
 		template<VoltAssetType T> bool TryGetAsset(AssetHandle assetHandle, AssetReference<T>& outAsset);
 
 		// Will return true and the asset if is is loaded, otherwise it will return false.
@@ -85,6 +86,7 @@ namespace Volt
 		VTAS_API bool TryGetTypelessAssetImmediately(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
 
 		// Will return true and the asset if it is loaded, if the asset is not loaded it will queue it for loading.
+		// The outAsset value might be filled with a valid asset.
 		VTAS_API bool TryGetTypelessAsset(AssetHandle assetHandle, AssetReference<Asset>& outAsset);
 
 		// Creates an asset that only lives in memory during the current application run, is not serializable to disk.
@@ -273,8 +275,10 @@ namespace Volt
 			QueueAssetForLoading(assetHandle, newAsset, AssetLoadState::Queued);
 		}
 
+		AssetMetadata* metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+
 		outAsset = newAsset.As<T>();
-		return newAsset != nullptr;
+		return newAsset != nullptr && metadata->IsLoaded();
 	}
 
 	template<VoltAssetType T>

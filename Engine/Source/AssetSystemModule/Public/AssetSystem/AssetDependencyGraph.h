@@ -29,6 +29,7 @@ namespace Volt
 		~AssetDependencyGraph();
 
 		VTAS_API UUID64 AddAssetToGraph(AssetHandle handle);
+		VTAS_API void ClearAssetDependencies(AssetHandle handle);
 		void RemoveAssetFromGraph(AssetHandle handle);
 
 		void AddDependencyToAsset(AssetHandle handle, AssetHandle dependency);

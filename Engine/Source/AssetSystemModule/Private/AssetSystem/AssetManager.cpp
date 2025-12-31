@@ -161,6 +161,13 @@ namespace Volt
 				AssetMetadata* assetMetadataPtr = m_assetRegistry.GetAssetMetadata(asset->GetAssetHandle());
 				AssetDependencyGatherContext gatherContext(assetMetadataPtr->handle, assetMetadataPtr->assetDependencyList);
 				asset->GatherAssetDependencies(gatherContext, GetReadOnlyAssetMetadata(asset->GetAssetHandle()));
+			
+				m_dependencyGraph->ClearAssetDependencies(assetMetadataPtr->handle);
+				
+				for (const auto& assetDependency : assetMetadataPtr->assetDependencyList.dependencies)
+				{
+					m_dependencyGraph->AddDependencyToAsset(asset->GetAssetHandle(), assetDependency.assetHandle);
+				}
 			}
 
 			if (SerializeAsset(asset))
@@ -262,8 +269,10 @@ namespace Volt
 			QueueAssetForLoading(assetHandle, newAsset, AssetLoadState::Queued);
 		}
 
+		AssetMetadata* metadata = m_assetRegistry.GetAssetMetadata(assetHandle);
+
 		outAsset = newAsset;
-		return newAsset != nullptr;
+		return newAsset != nullptr && metadata->IsLoaded();
 	}
 
 	AssetReference<Asset> AssetManager::CreateAssetTypeless(std::string_view assetName, AssetType assetType)
