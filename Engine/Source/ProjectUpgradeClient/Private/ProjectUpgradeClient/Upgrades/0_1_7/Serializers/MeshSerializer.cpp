@@ -24,31 +24,55 @@ namespace Volt
 		float boundingSphereRadius;
 
 		Vector<SubMesh> subMeshes;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const MeshSerializationData_V2& data)
-		{
-			streamWriter.WriteRaw(data.vertexPositions);
-			streamWriter.WriteRaw(data.vertexMaterialData);
-			streamWriter.WriteRaw(data.vertexAnimationData);
-			streamWriter.WriteRaw(data.indices);
-			streamWriter.WriteRaw(data.materials);
-			streamWriter.Write(data.boundingSphereCenter);
-			streamWriter.Write(data.boundingSphereRadius);
-			streamWriter.Write(data.subMeshes);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, MeshSerializationData_V2& outData)
-		{
-			streamReader.ReadRaw(outData.vertexPositions);
-			streamReader.ReadRaw(outData.vertexMaterialData);
-			streamReader.ReadRaw(outData.vertexAnimationData);
-			streamReader.ReadRaw(outData.indices);
-			streamReader.ReadRaw(outData.materials);
-			streamReader.Read(outData.boundingSphereCenter);
-			streamReader.Read(outData.boundingSphereRadius);
-			streamReader.Read(outData.subMeshes);
-		}
 	};
+
+	static void Serialize(BinaryStreamWriter& streamWriter, const MeshSerializationData_V2& data)
+	{
+		streamWriter.WriteRaw(data.vertexPositions);
+		streamWriter.WriteRaw(data.vertexMaterialData);
+		streamWriter.WriteRaw(data.vertexAnimationData);
+		streamWriter.WriteRaw(data.indices);
+		streamWriter.WriteRaw(data.materials);
+		streamWriter.Write(data.boundingSphereCenter);
+		streamWriter.Write(data.boundingSphereRadius);
+		streamWriter.Write(data.subMeshes);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, MeshSerializationData_V2& outData)
+	{
+		streamReader.ReadRaw(outData.vertexPositions);
+		streamReader.ReadRaw(outData.vertexMaterialData);
+		streamReader.ReadRaw(outData.vertexAnimationData);
+		streamReader.ReadRaw(outData.indices);
+		streamReader.ReadRaw(outData.materials);
+		streamReader.Read(outData.boundingSphereCenter);
+		streamReader.Read(outData.boundingSphereRadius);
+		streamReader.Read(outData.subMeshes);
+	}
+
+	void Serialize(BinaryStreamWriter& streamWriter, const SubMesh& data)
+	{}
+
+	void Deserialize(BinaryStreamReader& streamReader, SubMesh& outData)
+	{
+		streamReader.Read(outData.materialIndex);
+		streamReader.Read(outData.vertexCount);
+		streamReader.Read(outData.indexCount);
+		streamReader.Read(outData.vertexStartOffset);
+		streamReader.Read(outData.indexStartOffset);
+		glm::mat4 transform;
+		streamReader.Read(transform);
+
+		glm::quat r;
+		glm::vec3 t, s;
+		Math::Decompose(transform, t, r, s);
+
+		outData.transform.position = t;
+		outData.transform.scale = s;
+		outData.transform.rotation = r;
+
+		streamReader.Read(outData.name);
+	}
 
 	void MeshSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{

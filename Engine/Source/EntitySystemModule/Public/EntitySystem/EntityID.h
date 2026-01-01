@@ -8,9 +8,6 @@
 #include <yaml-cpp/yaml.h>
 #include <format>
 
-class BinaryStreamReader;
-class BinaryStreamWriter;
-
 namespace Volt
 {
 	class VTES_API EntityID
@@ -26,9 +23,6 @@ namespace Volt
 		~EntityID() = default;
 
 		operator uint32_t() const { return m_uuid; }
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const EntityID& data);
-		static void Deserialize(BinaryStreamReader& streamReader, EntityID& outData);
 
 		VT_NODISCARD VT_INLINE const uint32_t Get() const { return m_uuid; }
 

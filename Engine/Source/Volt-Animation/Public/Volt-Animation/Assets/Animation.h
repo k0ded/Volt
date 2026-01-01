@@ -6,9 +6,6 @@
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>
 
-#include <CoreUtilities/FileIO/BinaryStreamWriter.h>
-#include <CoreUtilities/FileIO/BinaryStreamReader.h>
-
 #include <glm/glm.hpp>
 
 namespace Volt
@@ -23,20 +20,6 @@ namespace Volt
 			glm::quat rotation = { 1.f, 0.f, 0.f, 0.f };
 			glm::vec3 scale = { 1.f };
 
-			static void Serialize(BinaryStreamWriter& streamWriter, const TRS& data)
-			{
-				streamWriter.Write(data.translation);
-				streamWriter.Write(data.rotation);
-				streamWriter.Write(data.scale);
-			}
-
-			static void Deserialize(BinaryStreamReader& streamReader, TRS& outData)
-			{
-				streamReader.Read(outData.translation);
-				streamReader.Read(outData.rotation);
-				streamReader.Read(outData.scale);
-			}
-
 			VT_INLINE friend Archive& operator<<(Archive& archive, TRS& value)
 			{
 				archive << value.translation;
@@ -50,16 +33,6 @@ namespace Volt
 		{
 			Vector<TRS> localTRS;
 
-			static void Serialize(BinaryStreamWriter& streamWriter, const Pose& data)
-			{
-				streamWriter.WriteRaw(data.localTRS);
-			}
-
-			static void Deserialize(BinaryStreamReader& streamReader, Pose& outData)
-			{
-				streamReader.ReadRaw(outData.localTRS);
-			}
-
 			VT_INLINE friend Archive& operator<<(Archive& archive, Pose& value)
 			{
 				archive << value.localTRS;
@@ -71,18 +44,6 @@ namespace Volt
 		{
 			uint32_t frame;
 			std::string name;
-
-			static void Serialize(BinaryStreamWriter& streamWriter, const Event& data)
-			{
-				streamWriter.Write(data.frame);
-				streamWriter.Write(data.name);
-			}
-
-			static void Deserialize(BinaryStreamReader& streamReader, Event& outData)
-			{
-				streamReader.Read(outData.frame);
-				streamReader.Read(outData.name);
-			}
 
 			VT_INLINE friend Archive& operator<<(Archive& archive, Event& value)
 			{

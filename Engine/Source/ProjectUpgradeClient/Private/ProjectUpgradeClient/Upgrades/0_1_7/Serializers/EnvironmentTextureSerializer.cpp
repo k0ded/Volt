@@ -14,21 +14,21 @@ namespace Volt
 		RHI::PixelFormat format;
 		Vector<TextureSerializer::TextureMip> mips;
 		uint32_t numLayers;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const EnvironmentTextureHeader& data)
-		{
-			streamWriter.Write(data.format);
-			streamWriter.Write(data.mips);
-			streamWriter.Write(data.numLayers);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, EnvironmentTextureHeader& outData)
-		{
-			streamReader.Read(outData.format);
-			streamReader.Read(outData.mips);
-			streamReader.Read(outData.numLayers);
-		}
 	};
+
+	static void Serialize(BinaryStreamWriter& streamWriter, const EnvironmentTextureHeader& data)
+	{
+		streamWriter.Write(data.format);
+		streamWriter.Write(data.mips);
+		streamWriter.Write(data.numLayers);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, EnvironmentTextureHeader& outData)
+	{
+		streamReader.Read(outData.format);
+		streamReader.Read(outData.mips);
+		streamReader.Read(outData.numLayers);
+	}
 
 	void EnvironmentTextureSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{

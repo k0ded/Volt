@@ -1,11 +1,9 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/AssetSerializationCommon.h"
-
-#include <CoreUtilities/FileIO/BinaryStreamWriter.h>
-#include <CoreUtilities/FileIO/BinaryStreamReader.h>
+#include "ProjectUpgradeClient/Upgrades/Common/CommonSerializeFuncs.h"
 
 namespace Volt
 {
-	void SerializedAssetMetadata::Serialize(BinaryStreamWriter& streamWriter, const SerializedAssetMetadata& data)
+	void Serialize(BinaryStreamWriter& streamWriter, const SerializedAssetMetadata& data)
 	{
 		streamWriter.Write(data.handle);
 		streamWriter.Write(data.type->GetGUID());
@@ -13,7 +11,7 @@ namespace Volt
 		streamWriter.Write(data.customData);
 	}
 
-	void SerializedAssetMetadata::Deserialize(BinaryStreamReader& streamReader, SerializedAssetMetadata& outData)
+	void Deserialize(BinaryStreamReader& streamReader, SerializedAssetMetadata& outData)
 	{
 		VoltGUID guid{};
 

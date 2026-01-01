@@ -7,9 +7,6 @@
 #include <stdint.h>
 #include <format>
 
-class BinaryStreamReader;
-class BinaryStreamWriter;
-
 class VTCOREUTIL_API UUID64
 {
 public:
@@ -18,9 +15,6 @@ public:
 
 	UUID64(const UUID64&) = default;
 	~UUID64() = default;
-
-	static void Serialize(BinaryStreamWriter& streamWriter, const UUID64& data);
-	static void Deserialize(BinaryStreamReader& streamReader, UUID64& outData);
 
 	operator uint64_t() const;
 
@@ -44,9 +38,6 @@ public:
 
 	UUID32(const UUID32&) = default;
 	~UUID32() = default;
-
-	static void Serialize(BinaryStreamWriter& streamWriter, const UUID32& data);
-	static void Deserialize(BinaryStreamReader& streamReader, UUID32& outData);
 
 	operator uint32_t() const;
 

@@ -98,5 +98,6 @@ namespace Volt::RHI
 	void RHIModuleLoader::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 	{
 		outDependencies.AddDependency<EventSystem>();
+		outDependencies.AddDependency<Log>();
 	}
 }

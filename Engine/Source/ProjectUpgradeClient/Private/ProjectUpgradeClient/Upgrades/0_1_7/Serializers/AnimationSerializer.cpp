@@ -14,23 +14,59 @@ namespace Volt
 		uint32_t framesPerSecond;
 		Vector<Animation::Pose> frames;
 		Vector<Animation::Event> events;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const AnimationSerializationData& data)
-		{
-			streamWriter.Write(data.duration);
-			streamWriter.Write(data.framesPerSecond);
-			streamWriter.Write(data.frames);
-			streamWriter.Write(data.events);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, AnimationSerializationData& outData)
-		{
-			streamReader.Read(outData.duration);
-			streamReader.Read(outData.framesPerSecond);
-			streamReader.Read(outData.frames);
-			streamReader.Read(outData.events);
-		}
 	};
+
+	static void Serialize(BinaryStreamWriter& streamWriter, const AnimationSerializationData& data)
+	{
+		streamWriter.Write(data.duration);
+		streamWriter.Write(data.framesPerSecond);
+		streamWriter.Write(data.frames);
+		streamWriter.Write(data.events);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, AnimationSerializationData& outData)
+	{
+		streamReader.Read(outData.duration);
+		streamReader.Read(outData.framesPerSecond);
+		streamReader.Read(outData.frames);
+		streamReader.Read(outData.events);
+	}
+
+	static void Serialize(BinaryStreamWriter& streamWriter, const Animation::TRS& data)
+	{
+		streamWriter.Write(data.translation);
+		streamWriter.Write(data.rotation);
+		streamWriter.Write(data.scale);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, Animation::TRS& outData)
+	{
+		streamReader.Read(outData.translation);
+		streamReader.Read(outData.rotation);
+		streamReader.Read(outData.scale);
+	}
+
+	static void Serialize(BinaryStreamWriter& streamWriter, const Animation::Pose& data)
+	{
+		streamWriter.WriteRaw(data.localTRS);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, Animation::Pose& outData)
+	{
+		streamReader.ReadRaw(outData.localTRS);
+	}
+
+	static void Serialize(BinaryStreamWriter& streamWriter, const Animation::Event& data)
+	{
+		streamWriter.Write(data.frame);
+		streamWriter.Write(data.name);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, Animation::Event& outData)
+	{
+		streamReader.Read(outData.frame);
+		streamReader.Read(outData.name);
+	}
 
 	void AnimationSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{

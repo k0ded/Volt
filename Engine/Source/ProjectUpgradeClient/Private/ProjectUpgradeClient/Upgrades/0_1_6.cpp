@@ -1,5 +1,7 @@
-#include "Upgrades/0_1_6.h"
-#include "Upgrades/0_1_8.h"
+#include "ProjectUpgradeClient/Upgrades/0_1_6.h"
+#include "ProjectUpgradeClient/Upgrades/0_1_8.h"
+
+#include "ProjectUpgradeClient/Upgrades/Common/CommonSerializeFuncs.h"
 
 #include "UpgradesRegistry.h"
 
@@ -333,7 +335,7 @@ namespace Volt
 		FileSystem::Remove(inPath.parent_path());
 	}
 
-	void Upgrade_0_1_6::NewSerializedAssetMetadata::Serialize(BinaryStreamWriter& streamWriter, const NewSerializedAssetMetadata& data)
+	void Serialize(BinaryStreamWriter& streamWriter, const NewSerializedAssetMetadata& data)
 	{
 		streamWriter.Write(data.handle);
 		streamWriter.Write(data.type);
@@ -341,7 +343,7 @@ namespace Volt
 		streamWriter.Write(data.customData);
 	}
 
-	void Upgrade_0_1_6::OldSerializedAssetMetadata::Deserialize(BinaryStreamReader& streamReader, OldSerializedAssetMetadata& outData)
+	void Deserialize(BinaryStreamReader& streamReader, OldSerializedAssetMetadata& outData)
 	{
 		streamReader.Read(outData.handle);
 		streamReader.Read(outData.type);

@@ -1,6 +1,9 @@
 #pragma once
 #include "UpgradeInterface.h"
 
+#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamReader.h"
+#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamWriter.h"
+
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/UUID.h>
@@ -9,6 +12,31 @@
 
 namespace Volt
 {
+	struct OldSerializedAssetMetadata
+	{
+		inline static constexpr uint32_t AssetMagic = 9999;
+		inline static constexpr size_t HeaderSize = sizeof(VoltGUID) + sizeof(uint32_t) + sizeof(UUID64) + sizeof(TypeHeader) * 9;
+
+		VoltGUID type;
+		uint32_t version;
+		UUID64 handle;
+	};
+	static void Deserialize(BinaryStreamReader& streamReader, OldSerializedAssetMetadata& outData);
+
+	static constexpr size_t ASSET_CUSTOM_METADATA_SIZE = 256;
+	struct NewSerializedAssetMetadata
+	{
+		inline static constexpr uint32_t AssetMagic = 9999;
+		inline static constexpr size_t HeaderSize = sizeof(VoltGUID) + sizeof(uint32_t) + sizeof(UUID64) + sizeof(TypeHeader) * 9 + ASSET_CUSTOM_METADATA_SIZE + sizeof(TypeHeader) * 2;
+
+		VoltGUID type;
+		uint32_t version;
+		UUID64 handle;
+
+		Vector<uint8_t, InlineAllocator<ASSET_CUSTOM_METADATA_SIZE>> customData; // asset specific Metadata
+	};
+	static void Serialize(BinaryStreamWriter& streamWriter, const NewSerializedAssetMetadata& data);
+
 	class Upgrade_0_1_6 : public Upgrade
 	{
 	public:
@@ -30,33 +58,6 @@ namespace Volt
 			Converting,
 			MovingSceneFiles,
 			Done
-		};
-
-		struct OldSerializedAssetMetadata
-		{
-			inline static constexpr uint32_t AssetMagic = 9999;
-			inline static constexpr size_t HeaderSize = sizeof(VoltGUID) + sizeof(uint32_t) + sizeof(UUID64) + sizeof(TypeHeader) * 9 ;
-
-			VoltGUID type;
-			uint32_t version;
-			UUID64 handle;
-
-			static void Deserialize(BinaryStreamReader& streamReader, OldSerializedAssetMetadata& outData);
-		};
-
-		static constexpr size_t ASSET_CUSTOM_METADATA_SIZE = 256;
-		struct NewSerializedAssetMetadata
-		{
-			inline static constexpr uint32_t AssetMagic = 9999;
-			inline static constexpr size_t HeaderSize = sizeof(VoltGUID) + sizeof(uint32_t) + sizeof(UUID64) + sizeof(TypeHeader) * 9 + ASSET_CUSTOM_METADATA_SIZE + sizeof(TypeHeader) * 2;
-
-			VoltGUID type;
-			uint32_t version;
-			UUID64 handle;
-
-			Vector<uint8_t, InlineAllocator<ASSET_CUSTOM_METADATA_SIZE>> customData; // asset specific Metadata
-
-			static void Serialize(BinaryStreamWriter& streamWriter, const NewSerializedAssetMetadata& data);
 		};
 
 		struct EntityDescCustomMetadata

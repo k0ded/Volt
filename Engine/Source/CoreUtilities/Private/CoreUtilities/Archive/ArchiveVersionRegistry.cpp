@@ -1,6 +1,7 @@
 #include "cupch.h"
 
 #include "CoreUtilities/Archive/ArchiveVersionRegistry.h"
+#include "CoreUtilities/VoltAssert.h"
 
 int32_t ArchiveVersionRegistry::TryGetVersion(const VoltGUID& guid)
 {

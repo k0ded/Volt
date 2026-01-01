@@ -192,18 +192,13 @@ namespace Volt::RHI
 			return false;
 		}
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderUniformType& data)
+		friend Archive& operator<<(Archive& archive, ShaderUniformType& value)
 		{
-			streamWriter.Write(data.baseType);
-			streamWriter.Write(data.vecsize);
-			streamWriter.Write(data.columns);
-		}
+			archive << value.baseType;
+			archive << value.vecsize;
+			archive << value.columns;
 
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderUniformType& outData)
-		{
-			streamReader.Read(outData.baseType);
-			streamReader.Read(outData.vecsize);
-			streamReader.Read(outData.columns);
+			return archive;
 		}
 	};
 
@@ -220,84 +215,13 @@ namespace Volt::RHI
 
 		std::string name;
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderUniform& data)
+		friend Archive& operator<<(Archive& archive, ShaderUniform& value)
 		{
-			streamWriter.Write(data.type);
-			streamWriter.Write(data.size);
-			streamWriter.Write(data.offset);
-		}
+			archive << value.type;
+			archive << value.size;
+			archive << value.offset;
 
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderUniform& outData)
-		{
-			streamReader.Read(outData.type);
-			streamReader.Read(outData.size);
-			streamReader.Read(outData.offset);
-		}
-	};
-
-	class VTRHI_API ShaderDataBuffer
-	{
-	public:
-		ShaderDataBuffer() = default;
-		ShaderDataBuffer(const ShaderDataBuffer& rhs);
-
-		void AddMember(const std::string& name, ShaderUniformType type, size_t size, size_t offset);
-		void SetSize(const size_t size);
-
-		VT_NODISCARD VT_INLINE const bool HasMember(const std::string& memberName) const { return !m_uniforms.contains(memberName); }
-		VT_NODISCARD VT_INLINE const bool IsValid() const { return !m_uniforms.empty(); }
-
-		VT_NODISCARD VT_INLINE const ShaderUniform& GetMember(const std::string& memberName) const { return m_uniforms.at(memberName); }
-		VT_NODISCARD VT_INLINE const size_t GetSize() const { return m_size; }
-		VT_NODISCARD VT_INLINE const uint8_t* GetBuffer() const { return m_data; }
-
-		VT_NODISCARD VT_INLINE std::unordered_map<std::string, ShaderUniform>::iterator begin() { return m_uniforms.begin(); }
-		VT_NODISCARD VT_INLINE std::unordered_map<std::string, ShaderUniform>::iterator end() { return m_uniforms.end(); }
-
-		template<typename T>
-		T& GetMemberData(const std::string& memberName);
-
-		template<typename T>
-		void SetMemberData(const std::string& memberName, const T& value);
-
-		ShaderDataBuffer& operator=(const ShaderDataBuffer& rhs);
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderDataBuffer& data);
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderDataBuffer& outData);
-
-	private:
-		std::unordered_map<std::string, ShaderUniform> m_uniforms;
-		uint8_t m_data[128]; // Max push constant size for all platforms are 128 bytes
-		size_t m_size = 0;
-	};
-
-	struct VTRHI_API ShaderConstantData
-	{
-		uint32_t size = 0;
-		uint32_t offset = 0;
-		ShaderStage	stageFlags = ShaderStage::None;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderConstantData& data);
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderConstantData& outData);
-	};
-
-	struct VTRHI_API ShaderUniforms
-	{
-		VT_NODISCARD VT_INLINE bool IsValid() const { return !uniforms.empty() && size > 0; }
-
-		std::unordered_map<StringHash, ShaderUniform> uniforms;
-		size_t size = 0;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderUniforms& data)
-		{
-			streamWriter.Write(data.uniforms);
-			streamWriter.Write(data.size);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderUniforms& outData)
-		{
-			streamReader.Read(outData.uniforms);
-			streamReader.Read(outData.size);
+			return archive;
 		}
 	};
 
@@ -351,8 +275,7 @@ namespace Volt::RHI
 
 		inline const bool IsValid() const { return set != std::numeric_limits<uint32_t>::max() && binding != std::numeric_limits<uint32_t>::max(); }
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderResourceBinding& data);
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderResourceBinding& outData);
+		friend Archive& operator<<(Archive& archive, ShaderResourceBinding& value);
 	};
 
 	struct ShaderSourceEntry

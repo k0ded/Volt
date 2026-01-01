@@ -26,18 +26,6 @@ namespace Volt
 
 				return archive;
 			}
-
-			static void Serialize(BinaryStreamWriter& streamWriter, const Joint& data)
-			{
-				streamWriter.Write(data.name);
-				streamWriter.Write(data.parentIndex);
-			}
-
-			static void Deserialize(BinaryStreamReader& streamReader, Joint& outData)
-			{
-				streamReader.Read(outData.name);
-				streamReader.Read(outData.parentIndex);
-			}
 		};
 
 		struct JointAttachment
@@ -60,24 +48,6 @@ namespace Volt
 				archive << value.rotationOffset;
 
 				return archive;
-			}
-
-			static void Serialize(BinaryStreamWriter& streamWriter, const JointAttachment& data)
-			{
-				streamWriter.Write(data.name);
-				streamWriter.Write(data.jointIndex);
-				streamWriter.Write(data.id);
-				streamWriter.Write(data.positionOffset);
-				streamWriter.Write(data.rotationOffset);
-			}
-
-			static void Deserialize(BinaryStreamReader& streamReader, JointAttachment& outData)
-			{
-				streamReader.Read(outData.name);
-				streamReader.Read(outData.jointIndex);
-				streamReader.Read(outData.id);
-				streamReader.Read(outData.positionOffset);
-				streamReader.Read(outData.rotationOffset);
 			}
 		};
 

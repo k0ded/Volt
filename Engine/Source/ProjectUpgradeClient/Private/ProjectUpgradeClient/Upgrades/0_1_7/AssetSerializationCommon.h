@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Upgrades/0_1_7/AssetMetadata_0_1_7.h"
+#include "Upgrades/Common/StreamCommon.h"
 
 #include <AssetSystem/Config.h>
 
@@ -19,8 +20,8 @@ namespace Volt
 		AssetHandle handle;
 
 		CustomAssetMetadataVector customData; // asset specific Metadata
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const SerializedAssetMetadata& data);
-		static void Deserialize(BinaryStreamReader& streamReader, SerializedAssetMetadata& outData);
 	};
+
+	void Serialize(BinaryStreamWriter& streamWriter, const SerializedAssetMetadata& data);
+	void Deserialize(BinaryStreamReader& streamReader, SerializedAssetMetadata& outData);
 }

@@ -4,6 +4,7 @@
 
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/VoltGUID.h>
+#include <CoreUtilities/VoltAssert.h>
 
 #include <unordered_map>
 #include <functional>

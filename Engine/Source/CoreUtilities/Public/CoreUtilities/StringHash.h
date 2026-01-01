@@ -1,7 +1,6 @@
 #pragma once
 
-#include "CoreUtilities/FileIO/BinaryStreamWriter.h"
-#include "CoreUtilities/FileIO/BinaryStreamReader.h"
+#include "CoreUtilities/Archive/Archive.h"
 
 #include <cstdint>
 #include <xhash>
@@ -81,14 +80,10 @@ struct StringHash
 
 	size_t hash;
 
-	static void Serialize(BinaryStreamWriter& streamWriter, const StringHash& data)
+	friend Archive& operator<<(Archive& archive, StringHash& value)
 	{
-		streamWriter.Write(data.hash);
-	}
-
-	static void Deserialize(BinaryStreamReader& streamReader, StringHash& outData)
-	{
-		streamReader.Read(outData.hash);
+		archive << value.hash;
+		return archive;
 	}
 
 #if WITH_STRING_HASH_DEBUG

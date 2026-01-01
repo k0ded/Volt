@@ -1,9 +1,6 @@
 #include "cupch.h"
 #include "UUID.h"
 
-#include "CoreUtilities/FileIO/BinaryStreamWriter.h"
-#include "CoreUtilities/FileIO/BinaryStreamReader.h"
-
 #include <random>
 #include <unordered_map>
 
@@ -22,16 +19,6 @@ UUID64::UUID64(uint64_t uuid)
 {
 }
 
-void UUID64::Serialize(BinaryStreamWriter& streamWriter, const UUID64& data)
-{
-	streamWriter.Write(data.m_uuid);
-}
-
-void UUID64::Deserialize(BinaryStreamReader& streamReader, UUID64& outData)
-{
-	streamReader.Read(outData.m_uuid);
-}
-
 UUID64::operator uint64_t() const
 {
 	return m_uuid;
@@ -45,16 +32,6 @@ UUID32::UUID32()
 UUID32::UUID32(uint32_t uuid)
 	: m_uuid(uuid)
 {
-}
-
-void UUID32::Serialize(BinaryStreamWriter& streamWriter, const UUID32& data)
-{
-	streamWriter.Write(data.m_uuid);
-}
-
-void UUID32::Deserialize(BinaryStreamReader& streamReader, UUID32& outData)
-{
-	streamReader.Read(outData.m_uuid);
 }
 
 UUID32::operator uint32_t() const

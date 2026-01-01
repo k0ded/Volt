@@ -21,23 +21,23 @@ namespace Volt
 		glm::vec2 verticalValues;
 
 		Vector<SerializedAnimation> animations;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const BlendSpaceSerializationData& data)
-		{
-			streamWriter.Write(data.dimension);
-			streamWriter.Write(data.horizontalValues);
-			streamWriter.Write(data.verticalValues);
-			streamWriter.WriteRaw(data.animations);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, BlendSpaceSerializationData& outData)
-		{
-			streamReader.Read(outData.dimension);
-			streamReader.Read(outData.horizontalValues);
-			streamReader.Read(outData.verticalValues);
-			streamReader.ReadRaw(outData.animations);
-		}
 	};
+
+	static void Serialize(BinaryStreamWriter& streamWriter, const BlendSpaceSerializationData& data)
+	{
+		streamWriter.Write(data.dimension);
+		streamWriter.Write(data.horizontalValues);
+		streamWriter.Write(data.verticalValues);
+		streamWriter.WriteRaw(data.animations);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, BlendSpaceSerializationData& outData)
+	{
+		streamReader.Read(outData.dimension);
+		streamReader.Read(outData.horizontalValues);
+		streamReader.Read(outData.verticalValues);
+		streamReader.ReadRaw(outData.animations);
+	}
 
 	void BlendSpaceSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{

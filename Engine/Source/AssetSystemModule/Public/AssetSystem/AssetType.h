@@ -4,6 +4,7 @@
 
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Containers/Vector.h>
 
 #include <string>
 

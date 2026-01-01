@@ -1,12 +1,12 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/Serializers/TextureSerializer.h"
+#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamWriter.h"
+#include "ProjectUpgradeClient/Upgrades/Common//BinaryStreamReader.h"
 
 #include <AssetSystem/AssetManager.h>
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <RenderCore/CommandBufferPool.h>
-
-#include <CoreUtilities/FileIO/BinaryStreamWriter.h>
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Images/ImageUtility.h>
@@ -24,19 +24,18 @@ namespace Volt
 	{
 		RHI::PixelFormat format; // Should be one of the BC formats
 		Vector<TextureSerializer::TextureMip> mips;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const TextureHeader& data)
-		{
-			streamWriter.Write(data.format);
-			streamWriter.Write(data.mips);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, TextureHeader& outData)
-		{
-			streamReader.Read(outData.format);
-			streamReader.Read(outData.mips);
-		}
 	};
+	static void Serialize(BinaryStreamWriter& streamWriter, const TextureHeader& data)
+	{
+		streamWriter.Write(data.format);
+		streamWriter.Write(data.mips);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, TextureHeader& outData)
+	{
+		streamReader.Read(outData.format);
+		streamReader.Read(outData.mips);
+	}
 
 	struct TextureData
 	{

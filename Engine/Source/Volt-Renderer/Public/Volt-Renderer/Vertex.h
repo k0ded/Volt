@@ -1,7 +1,5 @@
 #pragma once
 
-#include <CoreUtilities/FileIO/BinaryStreamWriter.h>
-
 #include <glm/glm.hpp>
 
 namespace Volt

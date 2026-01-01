@@ -1,9 +1,8 @@
 #pragma once
 
-#include "RHIModule/Shader/ShaderCommon.h"
+#include <CoreUtilities/Archive/Archive.h>
 
-class BinaryStreamReader;
-class BinaryStreamWriter;
+#include "RHIModule/Shader/ShaderCommon.h"
 
 namespace Volt::RHI
 {
@@ -17,8 +16,7 @@ namespace Volt::RHI
 			ShaderResourceBinding binding;
 			StringHash hash;
 
-			static void Serialize(BinaryStreamWriter& streamWriter, const ResourceBinding& data);
-			static void Deserialize(BinaryStreamReader& streamReader, ResourceBinding& outData);
+			friend Archive& operator<<(Archive& archive, ResourceBinding& value);
 		};
 
 		using ResourceBindings = Vector<ResourceBinding>;
@@ -49,13 +47,12 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE bool IsValid() const { return !m_resourceBindings.empty() || !m_shaderParameters.empty() || m_accessesRayTracingResourceTable; }
 		VT_NODISCARD VT_INLINE bool HasShaderBindings() const { return !m_resourceBindings.empty(); }
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderParameterMap& data);
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderParameterMap& outData);
+		friend Archive& operator<<(Archive& archive, ShaderParameterMap& value);
 
 	private:
 		ResourceBindings m_resourceBindings;
 		ParameterMap m_shaderParameters;
-		ShaderStage m_shaderStage;
+		ShaderStage m_shaderStage = ShaderStage::None;
 
 		uint32_t m_shaderParameterSize = 0;
 		bool m_accessesRayTracingResourceTable = false;

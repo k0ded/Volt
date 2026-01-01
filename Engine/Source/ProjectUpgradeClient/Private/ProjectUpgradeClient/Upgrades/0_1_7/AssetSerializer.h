@@ -2,13 +2,12 @@
 
 #include "ProjectUpgradeClient/Upgrades/0_1_7/AssetSerializationCommon.h"
 #include "ProjectUpgradeClient/Upgrades/0_1_7/AssetMetadata_0_1_7.h"
+#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamWriter.h"
+#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamReader.h"
 
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetReference.h>
 #include <AssetSystem/AssetRegistry.h>
-
-#include <CoreUtilities/FileIO/BinaryStreamWriter.h>
-#include <CoreUtilities/FileIO/BinaryStreamReader.h>
 
 namespace Volt
 {

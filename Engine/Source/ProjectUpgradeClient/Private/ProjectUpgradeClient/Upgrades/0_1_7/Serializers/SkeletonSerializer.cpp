@@ -1,4 +1,5 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/Serializers/SkeletonSerializer.h"
+#include "ProjectUpgradeClient/Upgrades/Common/CommonSerializeFuncs.h"
 
 #define private public
 #include <Volt-Animation/Assets/Skeleton.h>
@@ -16,27 +17,57 @@ namespace Volt
 		Vector<Skeleton::JointAttachment> jointAttachments;
 		Vector<glm::mat4> inverseBindPose;
 		Vector<Animation::TRS> restPose;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const SkeletonSerializationData& data)
-		{
-			streamWriter.Write(data.name);
-			streamWriter.Write(data.joints);
-			streamWriter.Write(data.jointNameToIndex);
-			streamWriter.Write(data.jointAttachments);
-			streamWriter.Write(data.inverseBindPose);
-			streamWriter.WriteRaw(data.restPose);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, SkeletonSerializationData& outData)
-		{
-			streamReader.Read(outData.name);
-			streamReader.Read(outData.joints);
-			streamReader.Read(outData.jointNameToIndex);
-			streamReader.Read(outData.jointAttachments);
-			streamReader.Read(outData.inverseBindPose);
-			streamReader.ReadRaw(outData.restPose);
-		}
 	};
+
+	static void Serialize(BinaryStreamWriter& streamWriter, const SkeletonSerializationData& data)
+	{
+		streamWriter.Write(data.name);
+		streamWriter.Write(data.joints);
+		streamWriter.Write(data.jointNameToIndex);
+		streamWriter.Write(data.jointAttachments);
+		streamWriter.Write(data.inverseBindPose);
+		streamWriter.WriteRaw(data.restPose);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, SkeletonSerializationData& outData)
+	{
+		streamReader.Read(outData.name);
+		streamReader.Read(outData.joints);
+		streamReader.Read(outData.jointNameToIndex);
+		streamReader.Read(outData.jointAttachments);
+		streamReader.Read(outData.inverseBindPose);
+		streamReader.ReadRaw(outData.restPose);
+	}
+
+	static void Serialize(BinaryStreamWriter& streamWriter, const Skeleton::Joint& data)
+	{
+		streamWriter.Write(data.name);
+		streamWriter.Write(data.parentIndex);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, Skeleton::Joint& outData)
+	{
+		streamReader.Read(outData.name);
+		streamReader.Read(outData.parentIndex);
+	}
+
+	static void Serialize(BinaryStreamWriter& streamWriter, const Skeleton::JointAttachment& data)
+	{
+		streamWriter.Write(data.name);
+		streamWriter.Write(data.jointIndex);
+		streamWriter.Write(data.id);
+		streamWriter.Write(data.positionOffset);
+		streamWriter.Write(data.rotationOffset);
+	}
+
+	static void Deserialize(BinaryStreamReader& streamReader, Skeleton::JointAttachment& outData)
+	{
+		streamReader.Read(outData.name);
+		streamReader.Read(outData.jointIndex);
+		streamReader.Read(outData.id);
+		streamReader.Read(outData.positionOffset);
+		streamReader.Read(outData.rotationOffset);
+	}
 
 	void SkeletonSerializer::Serialize(const AssetMetadata_0_1_7* metadata, CustomAssetMetadataVector& customData, const AssetReference<Asset>& asset) const
 	{

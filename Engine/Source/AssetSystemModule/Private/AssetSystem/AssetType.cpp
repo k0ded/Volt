@@ -1,9 +1,6 @@
 #include "aspch.h"
 #include "AssetType.h"
 
-#include <CoreUtilities/FileIO/BinaryStreamWriter.h>
-#include <CoreUtilities/FileIO/BinaryStreamReader.h>
-
 VT_REGISTER_ASSET_TYPE(None);
 
 bool AssetTypeRegistry::RegisterAssetType(const VoltGUID& guid, AssetType type)

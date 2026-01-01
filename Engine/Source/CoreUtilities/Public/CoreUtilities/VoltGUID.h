@@ -2,12 +2,9 @@
 
 #include "CoreUtilities/Core.h"
 
-// #TODO_Ivar: Remove there headers from here.
-#include "CoreUtilities/FileIO/BinaryStreamReader.h"
-#include "CoreUtilities/FileIO/BinaryStreamWriter.h"
-
 #include <cstdint>
 #include <xhash>
+#include <string>
 
 // Based on CryEngines CryGUID
 struct VoltGUID
@@ -112,18 +109,6 @@ struct VoltGUID
 			StringUtils::HexStringToUInt8(string + 32),
 			StringUtils::HexStringToUInt8(string + 34)
 		);
-	}
-
-	static void Serialize(BinaryStreamWriter& streamWriter, const VoltGUID& data)
-	{
-		streamWriter.Write(data.loPart);
-		streamWriter.Write(data.hiPart);
-	}
-
-	static void Deserialize(BinaryStreamReader& streamReader, VoltGUID& data)
-	{
-		streamReader.Read(data.loPart);
-		streamReader.Read(data.hiPart);
 	}
 
 	std::string ToString() const

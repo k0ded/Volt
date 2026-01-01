@@ -12,8 +12,6 @@
 
 namespace Volt
 {
-	struct ShaderUniforms;
-
 	class VTRC_API ShaderRegistry
 	{
 	public:

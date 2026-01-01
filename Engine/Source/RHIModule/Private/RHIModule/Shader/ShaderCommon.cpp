@@ -8,81 +8,17 @@ namespace Volt::RHI
 	{
 	}
 
-	ShaderDataBuffer::ShaderDataBuffer(const ShaderDataBuffer& rhs)
+	Archive& operator<<(Archive& archive, ShaderResourceBinding& value)
 	{
-		m_uniforms = rhs.m_uniforms;
-		m_size = rhs.m_size;
-		memcpy_s(m_data, m_size, rhs.m_data, rhs.m_size);
-	}
+		archive << value.set;
+		archive << value.binding;
+		archive << value.arraySize;
+		archive << value.registerType;
+		archive << value.resourceType;
+		archive << value.shaderStage;
+		archive << value.name;
 
-	void ShaderDataBuffer::AddMember(const std::string& name, ShaderUniformType type, size_t size, size_t offset)
-	{
-		m_uniforms[name] = { type, size, offset };
-	}
-
-	void ShaderDataBuffer::SetSize(const size_t size)
-	{
-		VT_ASSERT(size <= 128);
-		m_size = size;
-	}
-
-	ShaderDataBuffer& ShaderDataBuffer::operator=(const ShaderDataBuffer& rhs)
-	{
-		m_uniforms = rhs.m_uniforms;
-		m_size = rhs.m_size;
-		memcpy_s(m_data, m_size, rhs.m_data, rhs.m_size);
-
-		return *this;
-	}
-
-	void ShaderDataBuffer::Serialize(BinaryStreamWriter& streamWriter, const ShaderDataBuffer& data)
-	{
-		streamWriter.Write(data.m_uniforms);
-		streamWriter.Write(data.m_data);
-		streamWriter.Write(data.m_size);
-	}
-
-	void ShaderDataBuffer::Deserialize(BinaryStreamReader& streamReader, ShaderDataBuffer& outData)
-	{
-		streamReader.Read(outData.m_uniforms);
-		streamReader.Read(outData.m_data);
-		streamReader.Read(outData.m_size);
-	}
-
-	void ShaderConstantData::Serialize(BinaryStreamWriter& streamWriter, const ShaderConstantData& data)
-	{
-		streamWriter.Write(data.size);
-		streamWriter.Write(data.offset);
-		streamWriter.Write(data.stageFlags);
-	}
-
-	void ShaderConstantData::Deserialize(BinaryStreamReader& streamReader, ShaderConstantData& outData)
-	{
-		streamReader.Read(outData.size);
-		streamReader.Read(outData.offset);
-		streamReader.Read(outData.stageFlags);
-	}
-
-	void ShaderResourceBinding::Serialize(BinaryStreamWriter& streamWriter, const ShaderResourceBinding& data)
-	{
-		streamWriter.Write(data.set);
-		streamWriter.Write(data.binding);
-		streamWriter.Write(data.arraySize);
-		streamWriter.Write(static_cast<uint8_t>(data.registerType));
-		streamWriter.Write(static_cast<uint8_t>(data.resourceType));
-		streamWriter.Write(static_cast<uint32_t>(data.shaderStage));
-		streamWriter.Write(data.name);
-	}
-
-	void ShaderResourceBinding::Deserialize(BinaryStreamReader& streamReader, ShaderResourceBinding& outData)
-	{
-		streamReader.Read(outData.set);
-		streamReader.Read(outData.binding);
-		streamReader.Read(outData.arraySize);
-		streamReader.Read(*reinterpret_cast<uint8_t*>(&outData.registerType));
-		streamReader.Read(*reinterpret_cast<uint8_t*>(&outData.resourceType));
-		streamReader.Read(*reinterpret_cast<uint32_t*>(&outData.shaderStage));
-		streamReader.Read(outData.name);
+		return archive;
 	}
 }
 
