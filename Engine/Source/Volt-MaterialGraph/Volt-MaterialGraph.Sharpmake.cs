@@ -29,7 +29,6 @@ namespace VoltSharpmake
 
 			conf.AddPrivateDependency<VoltPlatforms>(target);
 
-			conf.AddPublicDependency<yaml>(target);
 			conf.AddPrivateDependency<imgui>(target);
 		}
     }

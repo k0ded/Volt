@@ -7,9 +7,6 @@
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Containers/Graph.h>
 
-#include <CoreUtilities/FileIO/YAMLStreamWriter.h>
-#include <CoreUtilities/FileIO/YAMLStreamReader.h>
-
 #include <glm/glm.hpp>
 
 #define MOSAIC_NODE_DECLARE_GUID(guid) \
@@ -50,8 +47,6 @@ namespace Mosaic
 		virtual void Reset() {}
 
 		virtual void SerializeCustom(Archive& archive) {}
-		// Note: Deprecated
-		virtual void DeserializeCustom(YAMLStreamReader& streamReader) {}
 
 		virtual const ResultInfo Compile(const GraphNode<Ref<class MosaicNode>, Ref<MosaicEdge>>& underlyingNode, uint32_t outputIndex, MosaicShaderWriter& shaderWriter) const = 0;
 
@@ -105,11 +100,6 @@ namespace Mosaic
 			T& data = parameter.Get<T>();
 			archive << data;
 		};
-
-		param.deserializationFunc = [](YAMLStreamReader& streamReader, Parameter& parameter)
-		{
-			parameter.Get<T>() = streamReader.ReadAtKey("data", T{});
-		};
 	}
 
 	template<typename T>
@@ -128,11 +118,6 @@ namespace Mosaic
 		{
 			T& data = parameter.Get<T>();
 			archive << data;
-		};
-
-		param.deserializationFunc = [](YAMLStreamReader& streamReader, Parameter& parameter)
-		{
-			parameter.Get<T>() = streamReader.ReadAtKey("data", T{});
 		};
 	}
 }

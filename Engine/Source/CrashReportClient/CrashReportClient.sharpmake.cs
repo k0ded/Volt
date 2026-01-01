@@ -36,7 +36,6 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<VoltCore>(target);
 			conf.AddPrivateDependency<VoltPlatforms>(target);
 			conf.AddPrivateDependency<imgui>(target);
-			conf.AddPrivateDependency<yaml>(target);
 
             conf.LibraryFiles.Add(
                 "crypt32.lib",

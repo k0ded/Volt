@@ -29,7 +29,6 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<VoltScene>(target);
 
             conf.AddPublicDependency<imgui>(target);
-            conf.AddPublicDependency<yaml>(target);
             conf.AddPublicDependency<MosaicModule>(target);
 
             conf.AddPublicDependency<glm>(target);

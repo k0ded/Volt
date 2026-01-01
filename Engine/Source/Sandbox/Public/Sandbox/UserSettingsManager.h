@@ -51,12 +51,6 @@ struct SceneSettings
 	Volt::AssetHandle defaultOpenScene;
 };
 
-struct ExternalToolsSettings
-{
-	std::unordered_map<std::string, std::filesystem::path> scriptEditorPaths;
-	std::filesystem::path customExternalScriptEditor;
-};
-
 struct NetworkSettings
 {
 	bool enableNetworking = false;
@@ -78,8 +72,6 @@ struct EditorSettings
 	WindowSettings windowSettings;
 	SceneSettings sceneSettings;
 	VersionControlSettings versionControlSettings;
-	ExternalToolsSettings externalToolsSettings;
-	RecastBuildSettings navmeshBuildSettings;
 	NetworkSettings networkSettings;
 	AssetBrowserSettings assetBrowserSettings;
 

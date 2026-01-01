@@ -15,7 +15,6 @@ private:
 	enum class SettingsMenu
 	{
 		VersionControl,
-		ExternalTools,
 		StyleSettings,
 		EditorSettings
 	};
@@ -24,7 +23,6 @@ private:
 	void DrawView();
 
 	void DrawVersionControl();
-	void DrawExternalTools();
 	void DrawStyleSettings();
 	void DrawEditorSettings();
 

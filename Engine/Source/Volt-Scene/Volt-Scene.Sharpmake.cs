@@ -29,8 +29,6 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<VoltCoreComponents>(target);
 
 			conf.AddPrivateDependency<PhysicsInterface>(target);
-
-			conf.AddPublicDependency<yaml>(target);
 		}
 
 		public override void ConfigureClangCl(Configuration conf, CommonTarget target)

@@ -28,7 +28,6 @@ namespace Volt::MosaicNodes
 
 		void Reset() override;
 		void SerializeCustom(Archive& archive) override;
-		void DeserializeCustom(YAMLStreamReader& streamReader) override;
 
 		const Mosaic::ResultInfo Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const override;
 

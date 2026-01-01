@@ -27,7 +27,6 @@ namespace VoltSharpmake
 
 			conf.AddPublicDependency<VoltCore>(target);
 			conf.AddPublicDependency<AssetSystemModule>(target);
-			conf.AddPublicDependency<yaml>(target);
         }
 
         public override void ConfigureClangCl(Configuration conf, CommonTarget target)

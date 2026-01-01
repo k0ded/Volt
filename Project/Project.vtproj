@@ -1,12 +1,14 @@
-Project:
-  EngineVersion: 0.1.8
-  Name: Project
-  CompanyName: Default
-  AssetsDirectory: Assets
-  AudioBanksDirectory: Audio/Banks
-  IconPath: ""
-  CursorPath: ""
-  StartScenePath: ""
-  Plugins:
-    - Game
-    - DiscordPlugin
+{
+	"EngineVersion": "0.1.8",
+	"Name": "Project",
+	"CompanyName": "Default",
+	"AssetsDirectory": "Assets",
+	"AudioBanksDirectory": "Audio/Banks",
+	"IconPath": "",
+	"CursorPath": "",
+	"StartScenePath": "",
+	"Plugins": [
+		"Game",
+		"DiscordPlugin"
+	]
+}

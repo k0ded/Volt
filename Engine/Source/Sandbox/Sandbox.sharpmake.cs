@@ -51,7 +51,6 @@ namespace VoltSharpmake
             conf.AddPrivateDependency<OpenSSL>(target);
 
             conf.AddPrivateDependency<nfd_extended>(target);
-            conf.AddPrivateDependency<yaml>(target);
             conf.AddPrivateDependency<MosaicModule>(target);
 
             conf.AddPrivateDependency<glm>(target);

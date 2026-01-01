@@ -2,9 +2,10 @@
 
 #include "Volt-Core/PluginSystem/PluginRegistry.h"
 
-#include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/FileIO/FileUtility.h>
+#include <CoreUtilities/JSON/JSONReader.h>
 
 VT_DEFINE_LOG_CATEGORY(LogPluginSystem);
 
@@ -92,38 +93,35 @@ namespace Volt
 
 	void PluginRegistry::DeserializePlugin(const std::filesystem::path& filepath)
 	{
-		YAMLFileStreamReader streamReader{};
-
-		if (!streamReader.OpenFile(filepath))
+		std::string jsonString;
+		if (!FileUtility::ReadStringFromFile(filepath, jsonString))
 		{
 			VT_LOGC(Warning, LogPluginSystem, "Unable to open file {}!", filepath.string());
 			return;
 		}
 
-		if (!streamReader.HasKey("Plugin"))
+		JSONReader jsonReader;
+		
+		if (!jsonReader.Parse(jsonString))
 		{
 			VT_LOGC(Warning, LogPluginSystem, "Plugin file {} is invalid!", filepath.string());
 		}
 
 		PluginDefinition newPlugin{};
 
-		streamReader.EnterScope("Plugin");
-
-		newPlugin.name = streamReader.ReadAtKey("name", std::string(""));
-		if (newPlugin.name.empty())
+		jsonReader.TryGet("name", newPlugin.name);
+		
+		std::string guidString;
+		if (jsonReader.TryGet("guid", guidString))
 		{
-			VT_LOGC(Error, LogPluginSystem, "Plugin {} does not have a name defined!", filepath.string());
-			return;
-		}
-
-		std::string guidString = streamReader.ReadAtKey("guid", std::string(""));
-		if (guidString.empty())
-		{
-			newPlugin.guid = VoltGUID::Null();
-		}
-		else
-		{
-			newPlugin.guid = VoltGUID::FromStringInternal(guidString.c_str());
+			if (guidString.empty())
+			{
+				newPlugin.guid = VoltGUID::Null();
+			}
+			else
+			{
+				newPlugin.guid = VoltGUID::FromStringInternal(guidString.c_str());
+			}
 		}
 
 		if (newPlugin.guid == VoltGUID::Null())
@@ -153,12 +151,10 @@ namespace Volt
 			newPlugin.binaryFilepath = pluginsDirBinaryPath;
 		}
 
-		streamReader.ForEach("Plugins", [&]() 
+		jsonReader.IterateArray("Plugins", [&]() 
 		{
-			newPlugin.pluginDependencies.emplace_back(streamReader.ReadValue<std::string>());
+			jsonReader.Get(newPlugin.pluginDependencies.emplace_back());
 		});
-
-		streamReader.ExitScope();
 
 		m_registeredPlugins[newPlugin.guid] = newPlugin;
 		VT_LOGC(Info, LogPluginSystem, "Plugin {} has been registered!", newPlugin.name);

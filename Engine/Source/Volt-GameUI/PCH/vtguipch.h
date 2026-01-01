@@ -24,8 +24,6 @@
 
 #include <glm/glm.hpp>
 
-#include <yaml-cpp/yaml.h>
-
 #include <CoreUtilities/Profiling/Profiling.h>
 
 #include <LogModule/Log.h>

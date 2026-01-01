@@ -1,8 +1,6 @@
 #pragma once
 
 #include <CoreUtilities/UUID.h>
-#include <CoreUtilities/FileIO/YAMLStreamWriter.h>
-#include <CoreUtilities/FileIO/YAMLStreamReader.h>
 
 #include <string>
 #include <functional>
@@ -57,8 +55,6 @@ namespace Mosaic
 		}
 
 		std::function<void(Archive& archive, Parameter& parameter)> serializationFunc;
-		// Note: Deprecated.
-		std::function<void(YAMLStreamReader& streamReader, Parameter& parameter)> deserializationFunc;
 	};
 
 	struct ResultInfo

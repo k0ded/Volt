@@ -54,11 +54,6 @@ void EditorSettingsPanel::DrawOutline()
 		m_currentMenu = SettingsMenu::VersionControl;
 	}
 	UI::ShiftCursor(5.f, 5.f);
-	if (ImGui::Selectable("External Tools"))
-	{
-		m_currentMenu = SettingsMenu::ExternalTools;
-	}
-	UI::ShiftCursor(5.f, 5.f);
 	if (ImGui::Selectable("Style Settings"))
 	{
 		m_currentMenu = SettingsMenu::StyleSettings;
@@ -81,7 +76,6 @@ void EditorSettingsPanel::DrawView()
 		switch (m_currentMenu)
 		{
 			case SettingsMenu::VersionControl: DrawVersionControl(); break;
-			case SettingsMenu::ExternalTools: DrawExternalTools(); break;
 			case SettingsMenu::StyleSettings: DrawStyleSettings(); break;
 			case SettingsMenu::EditorSettings: DrawEditorSettings(); break;
 			default: break;
@@ -172,20 +166,6 @@ void EditorSettingsPanel::DrawVersionControl()
 		ImGui::SameLine();
 	}
 
-	UI::PopID();
-}
-
-void EditorSettingsPanel::DrawExternalTools()
-{
-
-	UI::PushID();
-	auto& externalToolsSettings = m_editorSettings.externalToolsSettings;
-	if (UI::BeginProperties())
-	{
-		UI::Property("External Script Editor", externalToolsSettings.customExternalScriptEditor);
-
-		UI::EndProperties();
-	}
 	UI::PopID();
 }
 

@@ -10,7 +10,8 @@
 #include <Volt-Platforms/Platform.h>
 
 #include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
+#include <CoreUtilities/JSON/JSONReader.h>
+#include <CoreUtilities/FileIO/FileUtility.h>
 
 std::filesystem::path GetProjectPath(const Volt::CommandLineBuilder& commandLineBuilder)
 {
@@ -43,25 +44,29 @@ std::filesystem::path GetProjectPath(const Volt::CommandLineBuilder& commandLine
 
 bool PeekProjectVersionIsDeprecated(const std::filesystem::path& projectPath)
 {
-	YAMLFileStreamReader streamReader{};
-
-	if (!streamReader.OpenFile(projectPath))
+	std::string jsonString;
+	if (!FileUtility::ReadStringFromFile(projectPath, jsonString))
 	{
 		const std::string error = std::format("Failed to open file: {0}!", projectPath.string());
 		throw std::runtime_error(error.c_str());
 		return false;
 	}
 
-	if (!streamReader.HasKey("Project"))
+	JSONReader jsonReader;
+	if (!jsonReader.Parse(jsonString))
 	{
 		const std::string error = std::format("Project file {0} is invalid!", projectPath.string());
 		throw std::runtime_error(error.c_str());
 		return false;
 	}
 
-	streamReader.EnterScope("Project");
+	std::string engineVersionStr;
+	Volt::Version projectVersion;
 
-	Volt::Version projectVersion = streamReader.ReadAtKey("EngineVersion", std::string(""));
+	if (jsonReader.TryGet("EngineVersion", engineVersionStr))
+	{
+		projectVersion = engineVersionStr;
+	}
 
 	if (projectVersion != Volt::VT_VERSION)
 	{

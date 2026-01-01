@@ -23,7 +23,6 @@ namespace VoltSharpmake
 
 			conf.AddPublicDependency<LogModule>(target);
 			conf.AddPublicDependency<AssetSystemModule>(target);
-			conf.AddPublicDependency<yaml>(target);
 
 			conf.AddPublicDependency<VoltCore>(target);
 			conf.AddPublicDependency<VoltRenderer>(target);

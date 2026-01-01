@@ -13,7 +13,7 @@ namespace Volt
 	class Prefab;
 	class MeshAsset;
 }
-
+#if 0
 class ProjectConversionPanel : public EditorWindow
 {
 public:
@@ -39,3 +39,4 @@ private:
 
 	Scope<Volt::AssetManager> m_assetManager;
 };
+#endif

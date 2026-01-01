@@ -34,7 +34,6 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>
 #include <CoreUtilities/FileSystem.h>
 
 #include <EventSystem/Event.h>

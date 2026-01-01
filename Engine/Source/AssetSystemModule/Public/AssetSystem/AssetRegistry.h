@@ -7,6 +7,8 @@
 
 #include <JobSystem/Job.h>
 
+#include <set>
+
 namespace Volt
 {
 	class AssetRegistry

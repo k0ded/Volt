@@ -30,8 +30,6 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<RHIModule>(target);
 			conf.AddPublicDependency<VoltAnimation>(target);
 
-			conf.AddPublicDependency<yaml>(target);
-
 			conf.AddPrivateDependency<libacc>(target);
 			conf.AddPrivateDependency<meshoptimizer>(target);
 			conf.AddPrivateDependency<METIS>(target);

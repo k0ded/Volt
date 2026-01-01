@@ -4,9 +4,6 @@
 #include <Volt-Scene/EntityDescSerialization.h>
 #include <Volt-Scene/Scene.h>
 
-#include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
-#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
-
 #include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>

@@ -5,8 +5,7 @@
 #include <Volt-Application/BaseApplication.h>
 #include <Volt-Application/UI/UIUtility.h>
 
-#include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
-
+#include <fstream>
 #include <nlohmann/json.hpp>
 #include <imgui.h>
 #include <imgui_stdlib.h>

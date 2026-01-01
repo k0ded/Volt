@@ -21,8 +21,6 @@ namespace VoltSharpmake
             conf.PrecompHeader = "vtcorepch.h";
             conf.PrecompSource = "vtcorepch.cpp";
 
-			conf.AddPrivateDependency<yaml>(target);
-
 			conf.AddPrivateDependency<VoltPlatforms>(target);
 
 			conf.AddPrivateDependency<LogModule>(target);

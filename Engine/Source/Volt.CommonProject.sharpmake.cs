@@ -373,7 +373,7 @@ namespace VoltSharpmake
             {
                 string pluginDir = Globals.PluginsDirectory + "\\" + Name;
                 conf.EventPostBuild.Add(@"mkdir " + "\"" + pluginDir + "\"");
-                conf.EventPostBuild.Add(@"copy /Y " + "\"" + SourceRootPath + "\\" + Name + ".vtconfig\"" + " \"" + pluginDir + "\"");
+                conf.EventPostBuild.Add(@"copy /Y " + "\"" + SourceRootPath + "\\" + Name + ".vtplugin\"" + " \"" + pluginDir + "\"");
                 conf.EventPostBuild.Add(@"copy /Y " + "\"" + conf.TargetPath + "\\" + Name + ".dll\"" + " \"" + pluginDir + "\"");
             }
 

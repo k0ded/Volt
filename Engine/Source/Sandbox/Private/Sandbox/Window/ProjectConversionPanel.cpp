@@ -25,7 +25,6 @@
 #include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
 using namespace Volt;
@@ -111,6 +110,8 @@ namespace Wire::ComponentRegistry
 		Quaternion = 25
 	};
 }
+
+#if 0
 
 template<typename T>
 void RegisterDeserializationFunction(Map<TypeTraits::TypeIndex, std::function<void(YAMLFileStreamReader&, uint8_t*, const size_t)>>& outTypes)
@@ -1092,3 +1093,4 @@ void ProjectConversionPanel::LoadAssetMetadataFromMetaFiles(const Volt::Project&
 		}
 	}
 }
+#endif

@@ -679,23 +679,6 @@ void Sandbox::DrawMenuBar()
 				Volt::ShaderMap::ReloadAll();
 			}
 
-			if (ImGui::MenuItem("Compile Project"))
-			{
-				if (Volt::PremadeCommands::RunBuildCSProjectCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor))
-				{
-					UI::Notify(UI::NotificationType::Success, "Build succeeded!", "Successfully compiled Project.sln in DIST config!");
-				}
-				else
-				{
-					UI::Notify(UI::NotificationType::Error, "Build failed!", "Could not find visual studio build tools!");
-				}
-			}
-
-			if (ImGui::MenuItem("Open Project Solution"))
-			{
-				Volt::PremadeCommands::RunOpenProjectSolutionCommand();
-			}
-
 			if (ImGui::MenuItem("Clear Collider Cache"))
 			{
 				const auto path = Volt::ProjectManager::GetCachePath() / "Colliders";

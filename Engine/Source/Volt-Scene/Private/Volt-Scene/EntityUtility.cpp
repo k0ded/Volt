@@ -5,8 +5,6 @@
 
 #include <EntitySystem/ComponentRegistry.h>
 
-#include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>
-#include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
 #include <EntitySystem/Scripting/CoreComponents.h>
 
 namespace Volt
