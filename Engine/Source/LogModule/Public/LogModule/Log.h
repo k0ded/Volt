@@ -9,6 +9,7 @@
 #include <CoreUtilities/UUID.h>
 
 #include <SubSystem/SubSystem.h>
+#include "SubSystem/SubSystemRegistry.h"
 
 #include <memory>
 #include <mutex>

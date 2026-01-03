@@ -4,7 +4,9 @@
 #include "Volt-Assets/MaterialAsset.h"
 
 #include <AssetSystem/AssetReference.h>
+
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
 #include <CoreUtilities/WorkQueue.h>
 #include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>

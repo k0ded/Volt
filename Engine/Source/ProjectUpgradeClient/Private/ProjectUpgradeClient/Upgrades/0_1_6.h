@@ -1,8 +1,8 @@
 #pragma once
 #include "UpgradeInterface.h"
 
-#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamReader.h"
-#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamWriter.h"
+#include "ProjectUpgradeClient/Common/BinaryStreamReader.h"
+#include "ProjectUpgradeClient/Common/BinaryStreamWriter.h"
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/VoltGUID.h>

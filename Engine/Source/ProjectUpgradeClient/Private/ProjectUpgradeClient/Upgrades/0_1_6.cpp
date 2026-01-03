@@ -1,16 +1,16 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_6.h"
 #include "ProjectUpgradeClient/Upgrades/0_1_8.h"
 
-#include "ProjectUpgradeClient/Upgrades/Common/CommonSerializeFuncs.h"
+#include "ProjectUpgradeClient/Common/CommonSerializeFuncs.h"
+#include "ProjectUpgradeClient/Common/YAMLFileStreamWriter.h"
+#include "ProjectUpgradeClient/Common/YAMLFileStreamReader.h"
+#include "ProjectUpgradeClient/Common/YAMLMemoryStreamReader.h"
 
 #include "UpgradesRegistry.h"
 
 #include "Volt-Platforms/Windows/WindowsPlatformThread.h"
 
 #include <CoreUtilities/FileSystem.h>
-
-#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
-#include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
 
 #include <Volt-Core/Project/Project.h>
 

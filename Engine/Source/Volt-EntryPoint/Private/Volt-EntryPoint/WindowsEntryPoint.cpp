@@ -2,10 +2,13 @@
 #include <Volt-Application/BaseApplication.h>
 
 #include <Volt-Application/Application.h>
+#include <Volt-Core/ConfigManager.h>
 
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/CommandLineBuilder.h>
 #include <CoreUtilities/Malloc.h>
+
+#include <SubSystem/SubSystemManager.h>
 
 #include <cstdint>
 #include <iostream>
@@ -25,7 +28,27 @@ namespace Volt
 
 	void ReportApplicationCrash(LPEXCEPTION_POINTERS exceptionInfo, const Volt::CommandLineBuilder& commandLineBuilder)
 	{
-		g_crashReportingThread.NotifyCrash(exceptionInfo, commandLineBuilder);
+		CrashReporterConnectionInfo connectionInfo;
+		ConfigManager* configManager = SubSystemManager::GetSubSystem<ConfigManager>();
+		if (configManager)
+		{
+			if (const ConfigValue* url = configManager->TryGetConfigValue("CrashReporter", "ServerURL"); url != nullptr)
+			{
+				connectionInfo.serverURL = url->Get<std::string>();
+			}
+
+			if (const ConfigValue* username = configManager->TryGetConfigValue("CrashReporter", "ServerUser"); username != nullptr)
+			{
+				connectionInfo.serverUser = username->Get<std::string>();
+			}
+
+			if (const ConfigValue* password = configManager->TryGetConfigValue("CrashReporter", "ServerPassword"); password != nullptr)
+			{
+				connectionInfo.serverPassword = password->Get<std::string>();
+			}
+		}
+
+		g_crashReportingThread.NotifyCrash(exceptionInfo, commandLineBuilder, connectionInfo);
 	}
 
 	int32_t Main(const CommandLineBuilder& commandLineBuilder)

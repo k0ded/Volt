@@ -1,4 +1,6 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/Serializers/MaterialSerializer.h"
+#include "ProjectUpgradeClient/Common/YAMLMemoryStreamReader.h"
+#include "ProjectUpgradeClient/Common/YAMLMemoryStreamWriter.h"
 
 #define private public
 #include <Volt-Assets/MaterialAsset.h>
@@ -14,9 +16,6 @@
 #include <Mosaic/MosaicNode.h>
 
 #include <SubSystem/SubSystemManager.h>
-
-#include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
-#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 
 namespace Volt
 {
@@ -173,6 +172,7 @@ namespace Volt
 
 			node.nodeData->GetEditorState() = state;
 
+#if 0
 			if (streamReader.HasKey("custom"))
 			{
 				streamReader.EnterScope("custom");
@@ -190,7 +190,7 @@ namespace Volt
 					param.deserializationFunc(streamReader, param);
 				}
 			});
-
+			
 			streamReader.ForEach("outputParams", [&]()
 			{
 				const uint32_t index = streamReader.ReadAtKey("index", 0u);
@@ -201,6 +201,7 @@ namespace Volt
 					param.deserializationFunc(streamReader, param);
 				}
 			});
+#endif
 		});
 
 		streamReader.ForEach("Edges", [&]()

@@ -1,10 +1,12 @@
 #include "vtcorepch.h"
 
 #include "Volt-Core/Project/ProjectManager.h"
+#include "Volt-Core/PluginSystem/PluginSystem.h"
 #include "Volt-Core/PluginSystem/PluginRegistry.h"
 #include "Volt-Core/Version.h"
+#include "Volt-Core/GlobalCommandLine.h"
 
-#include <CoreUtilities/StringUtility.h>
+#include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/JSON/JSONWriter.h>
 #include <CoreUtilities/JSON/JSONReader.h>
@@ -27,7 +29,27 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void ProjectManager::LoadProject(const std::filesystem::path projectPath, PluginRegistry& pluginRegistry)
+	void ProjectManager::Initialize()
+	{
+		m_pluginRegistry = SubSystemManager::GetSubSystem<PluginRegistry>();
+		m_pluginSystem = SubSystemManager::GetSubSystem<PluginSystem>();
+
+		// Get the project from the global command line.
+		std::filesystem::path projectFilepath;
+		if (GlobalCommandLine::Get().IsArgDefined("project"))
+		{
+			projectFilepath = GlobalCommandLine::Get().GetArgValue("project");
+		}
+
+		LoadProject(projectFilepath);
+	}
+
+	void ProjectManager::OnPostStageInitializaton()
+	{
+		m_pluginSystem->LoadPlugins(*m_currentProject);
+	}
+
+	void ProjectManager::LoadProject(const std::filesystem::path projectPath)
 	{
 		m_currentProject = CreateScope<Project>();
 
@@ -53,13 +75,13 @@ namespace Volt
 		// Correct working directory should have been setup at this point.
 		m_currentEngineDirectory = std::filesystem::current_path();
 
-		pluginRegistry.FindAndRegisterPluginsInDirectory(m_currentProject->rootDirectory / "Plugins");
-		pluginRegistry.FindAndRegisterPluginsInDirectory(m_currentEngineDirectory / "Plugins");
+		m_pluginRegistry->FindAndRegisterPluginsInDirectory(m_currentProject->rootDirectory / "Plugins");
+		m_pluginRegistry->FindAndRegisterPluginsInDirectory(m_currentEngineDirectory / "Plugins");
 
 		if (!projectPath.empty())
 		{
 			VT_LOGC(Info, LogProject, "Loading project {0}", projectPath);
-			DeserializeProject(pluginRegistry);
+			DeserializeProject();
 		}
 		else
 		{
@@ -84,7 +106,7 @@ namespace Volt
 		FileUtility::WriteStringToFile(m_currentProject->filepath, prettyJson, true);
 	}
 
-	void ProjectManager::DeserializeProject(PluginRegistry& pluginRegistry)
+	void ProjectManager::DeserializeProject()
 	{
 		std::string jsonString;
 		if (!FileUtility::ReadStringFromFile(m_currentProject->filepath, jsonString))
@@ -116,12 +138,9 @@ namespace Volt
 		jsonReader.IterateArray("Plugins", [&]() 
 		{
 			std::string pluginName;
-			if (!jsonReader.TryGet("Name", pluginName))
-			{
-				return;
-			}
+			jsonReader.Get(pluginName);
 
-			const auto& definition = pluginRegistry.GetPluginDefinitionByName(pluginName);
+			const auto& definition = m_pluginRegistry->GetPluginDefinitionByName(pluginName);
 			if (definition.guid != VoltGUID::Null())
 			{
 				m_currentProject->pluginDefinitions.emplace_back(definition);
@@ -228,5 +247,12 @@ namespace Volt
 	void ProjectManager::OnProjectUpgraded()
 	{
 		s_instance->m_currentProject->isDeprecated = false;
+	}
+
+	void ProjectManager::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<PluginSystem>();
+		outDependencies.AddDependency<PluginRegistry>();
+		outDependencies.AddDependency<Log>();
 	}
 }

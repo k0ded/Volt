@@ -13,13 +13,11 @@ namespace Volt
 {
 	VT_REGISTER_SUBSYSTEM(PluginRegistry, Default, PreEngine);
 
-	constexpr std::string_view PLUGIN_EXTENSION = ".vtconfig";
+	constexpr std::string_view PLUGIN_EXTENSION = ".vtplugin";
 
-	PluginRegistry::PluginRegistry()
+	void PluginRegistry::OnPostStageInitializaton()
 	{
-	}
-	PluginRegistry::~PluginRegistry()
-	{
+		BuildPluginDependencies();
 	}
 
 	void PluginRegistry::FindAndRegisterPluginsInDirectory(const std::filesystem::path& directory)
@@ -38,7 +36,7 @@ namespace Volt
 				continue;
 			}
 
-			const auto filepath = path.path();
+			const auto& filepath = path.path();
 			if (filepath.extension().string() != PLUGIN_EXTENSION)
 			{
 				continue;
@@ -109,10 +107,10 @@ namespace Volt
 
 		PluginDefinition newPlugin{};
 
-		jsonReader.TryGet("name", newPlugin.name);
+		jsonReader.TryGet("Name", newPlugin.name);
 		
 		std::string guidString;
-		if (jsonReader.TryGet("guid", guidString))
+		if (jsonReader.TryGet("GUID", guidString))
 		{
 			if (guidString.empty())
 			{

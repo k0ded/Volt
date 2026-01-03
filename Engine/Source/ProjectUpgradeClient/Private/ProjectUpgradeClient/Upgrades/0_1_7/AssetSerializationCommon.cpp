@@ -1,5 +1,5 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/AssetSerializationCommon.h"
-#include "ProjectUpgradeClient/Upgrades/Common/CommonSerializeFuncs.h"
+#include "ProjectUpgradeClient/Common/CommonSerializeFuncs.h"
 
 namespace Volt
 {

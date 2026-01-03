@@ -1,12 +1,17 @@
 #pragma once
 
+#include "SubSystem/SubSystem.h"
+
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/VoltGUID.h>
+
+template<typename T>
+concept SubSystemType = std::is_base_of_v<SubSystem, T>;
 
 class SubSystemDependencyList
 {
 public:
-	template<typename T>
+	template<SubSystemType T>
 	void AddDependency()
 	{
 		constexpr VoltGUID SubSystemGUID = T::GetStaticSubSystemGUID();

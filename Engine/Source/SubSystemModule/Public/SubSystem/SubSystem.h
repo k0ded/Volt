@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SubSystem/SubSystemRegistry.h"
-
 class SubSystemDependencyList;
 
 class SubSystem
@@ -21,14 +19,25 @@ public:
 	virtual void Shutdown() {}
 
 	/*
+		Called once all subsystems in the current initialization stage has been initialized.
+		Will be called in the initialization order.
+	*/
+	virtual void OnPostStageInitializaton() {}
+
+	/*
 		Called once all subsystems has been initialized.
 	*/
 	virtual void OnPostInitialization() {}
 
 	/*
+		Called before subsystems begin shutting down.
+	*/
+	virtual void OnPreShutdown() {}
+
+	/*
 		SubSystems can implement
 		
-		SubSystemClass::GetDependencies(SubSystemDependencyList& outDependencies)
+		static void SubSystemClass::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
 
 		to define it's dependencies.
 	*/

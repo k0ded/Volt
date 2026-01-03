@@ -1,6 +1,7 @@
 #include "Upgrades/0_1_7/0_1_7.h"
 #include "Upgrades/0_1_7/Serializers/EntityDescriptionSerializer.h"
 #include "Upgrades/0_1_7/AssetSerializerRegistry.h"
+#include "Common/YAMLMemoryStreamReader.h"
 
 #include "UpgradesRegistry.h"
 
@@ -21,7 +22,6 @@
 
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Archive/FileArchive.h>
-#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 
 namespace Volt
 {

@@ -1,5 +1,5 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/Serializers/SkeletonSerializer.h"
-#include "ProjectUpgradeClient/Upgrades/Common/CommonSerializeFuncs.h"
+#include "ProjectUpgradeClient/Common/CommonSerializeFuncs.h"
 
 #define private public
 #include <Volt-Animation/Assets/Skeleton.h>

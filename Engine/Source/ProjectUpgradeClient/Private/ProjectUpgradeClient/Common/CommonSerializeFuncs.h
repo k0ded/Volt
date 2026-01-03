@@ -1,10 +1,14 @@
 #pragma once
 
-#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamWriter.h"
-#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamReader.h"
+#include "ProjectUpgradeClient/Common/BinaryStreamWriter.h"
+#include "ProjectUpgradeClient/Common/BinaryStreamReader.h"
+
+#include <EntitySystem/EntityID.h>
 
 #include <CoreUtilities/UUID.h>
 #include <CoreUtilities/VoltGUID.h>
+
+#include <yaml-cpp/yaml.h>
 
 static void Serialize(BinaryStreamWriter& streamWriter, const UUID32& data)
 {
@@ -38,3 +42,28 @@ static void Deserialize(BinaryStreamReader& streamReader, VoltGUID& outData)
 	streamReader.Read(outData.hiPart);
 }
 
+inline YAML::Emitter& operator<<(YAML::Emitter& out, const Volt::AssetHandle& handle)
+{
+	out << static_cast<uint64_t>(handle);
+	return out;
+}
+
+namespace YAML
+{
+	template<>
+	struct convert<Volt::EntityID>
+	{
+		static Node encode(const Volt::EntityID& rhs)
+		{
+			Node node;
+			node.push_back((uint32_t)rhs);
+			return node;
+		};
+
+		static bool decode(const Node& node, Volt::EntityID& v)
+		{
+			v = node.as<uint32_t>();
+			return true;
+		};
+	};
+}

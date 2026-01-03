@@ -1,4 +1,6 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/Serializers/SceneSerializer.h"
+#include "ProjectUpgradeClient/Common/YAMLMemoryStreamReader.h"
+#include "ProjectUpgradeClient/Common/YAMLMemoryStreamWriter.h"
 
 #define private public
 #include <Volt-Scene/Scene.h>
@@ -15,8 +17,6 @@
 #include <EntitySystem/Entity.h>
 #include <EntitySystem/ComponentRegistry.h>
 
-#include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
-#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/FileSystem.h>
 

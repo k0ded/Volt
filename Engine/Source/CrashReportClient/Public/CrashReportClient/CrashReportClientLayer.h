@@ -3,14 +3,13 @@
 #include <Volt-Application/ApplicationLayer.h>
 
 #include <Volt-Platforms/ProcessHandle.h>
+#include <Volt-Platforms/CrashContext.h>
 
 #include <EventSystem/EventListener.h>
 #include <EventSystem/ApplicationEvents.h>
 
-
 namespace Volt
 {
-	class CrashContext;
 	class CrashReportClientLayer : public Volt::ApplicationLayer, public Volt::EventListener
 	{
 	public:
@@ -27,7 +26,6 @@ namespace Volt
 
 		void SendCrashReport();
 		void RestartEngineAfterCrash();
-		void LoadEngineConfig();
 
 		ProcessHandle m_monitoredProcessHandle;
 		void* m_monitoredReadPipe = nullptr;
@@ -36,10 +34,6 @@ namespace Volt
 		bool m_isDisplayingCrash = false;
 		std::string m_crashMessage;
 
-		std::string m_connectionURL;
-		std::string m_connectionUsername;
-		std::string m_connectionPassword;
-
-		Scope<CrashContext> m_crashContext;
+		CrashContext m_crashContext;
 	};
 }

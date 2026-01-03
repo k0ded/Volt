@@ -9,6 +9,7 @@
 #include <CoreUtilities/Platform/Windows/VoltWindows.h>
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/CommandLineBuilder.h>
+#include <CoreUtilities/Archive/MemoryArchive.h>
 
 #include <cpptrace/cpptrace.hpp>
 
@@ -43,8 +44,6 @@ namespace Volt
 			PlatformThread::SetThreadPriority(m_thread.native_handle(), ThreadPriority::Low);
 
 			LaunchCrashReportClient();
-
-			m_crashContext = new CrashContext();
 		}
 	}
 
@@ -56,18 +55,17 @@ namespace Volt
 			m_conditionVariable.notify_one();
 
 			m_thread.join();
-
-			delete m_crashContext;
 		}
 	}
 
-	void WindowsCrashReportingThread::NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo, const CommandLineBuilder& commandLineBuilder)
+	void WindowsCrashReportingThread::NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo, const CommandLineBuilder& commandLineBuilder, const CrashReporterConnectionInfo& connectionInfo)
 	{
 		if (m_isEnabled)
 		{
 			m_exceptionInfo = exceptionInfo;
 			m_crashingThread = GetCurrentThreadId();
 			m_crashingThreadHandle = GetCurrentThread();
+			m_crashReporterConnectionInfo = connectionInfo;
 
 			// Get timestamp
 			m_crashTimestamp = GetTimestampString();
@@ -176,29 +174,24 @@ namespace Volt
 
 	void WindowsCrashReportingThread::HandleCrash()
 	{
-		m_crashContext->platformCrashContext = m_exceptionInfo;
-		m_crashContext->crashingThreadId = m_crashingThread;
+		CrashContext crashContext;
 
-		// Stack trace
-		memcpy_s(m_crashContext->stackTrace, CrashContext::MAX_STACK_TRACE_SIZE, m_crashingThreadStackTrace.data(), m_crashingThreadStackTrace.size());
+		crashContext.platformCrashContext = m_exceptionInfo;
+		crashContext.crashingThreadId = m_crashingThread;
+		crashContext.stackTrace = m_crashingThreadStackTrace;
+		crashContext.username = PlatformMisc::GetCurrentUserName();
+		crashContext.timestamp = m_crashTimestamp;
+		crashContext.commandLine = m_crashCommandLine;
+		crashContext.errorString = CreateExceptionString();
+		crashContext.serverURL = m_crashReporterConnectionInfo.serverURL;
+		crashContext.serverUser = m_crashReporterConnectionInfo.serverUser;
+		crashContext.serverPassword = m_crashReporterConnectionInfo.serverPassword;
 
-		// User name
-		const std::string activeUser = PlatformMisc::GetCurrentUserName();
-		memcpy_s(m_crashContext->userName, CrashContext::MAX_USER_NAME_SIZE, activeUser.data(), activeUser.size());
+		MemoryWriter archive{};
+		archive << crashContext;
+		archive.Close();
 
-		// Timestamp
-		memcpy_s(m_crashContext->timestamp, CrashContext::MAX_TIMESTAMP_SIZE, m_crashTimestamp.data(), m_crashTimestamp.size());
-
-		// Command line
-		memcpy_s(m_crashContext->commandLine, CrashContext::MAX_COMMAND_LINE_SIZE, m_crashCommandLine.data(), m_crashCommandLine.size());
-
-		const std::string errorString = CreateExceptionString();
-		memcpy_s(m_crashContext->errorString, CrashContext::MAX_ERROR_STRING_SIZE, errorString.data(), errorString.size());
-
-		const uint8_t* dataPtr = reinterpret_cast<uint8_t*>(m_crashContext);
-		const size_t dataSize = sizeof(CrashContext);
-
-		PlatformProcess::WritePipe(m_crashReporterWritePipe, dataPtr, static_cast<uint32_t>(dataSize));
+		PlatformProcess::WritePipe(m_crashReporterWritePipe, reinterpret_cast<const uint8_t*>(archive.GetData()), static_cast<uint32_t>(archive.GetSize()));
 	}
 
 	std::string WindowsCrashReportingThread::CreateExceptionString()

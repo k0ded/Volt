@@ -5,8 +5,15 @@
 #include <Volt-Application/BaseApplication.h>
 #include <Volt-Application/UI/UIUtility.h>
 
+#include <Volt-Core/ConfigManager.h>
+
+#include <SubSystem/SubSystemManager.h>
+
+#include <CoreUtilities/JSON/JSONWriter.h>
+#include <CoreUtilities/FileIO/FileUtility.h>
+#include <CoreUtilities/Archive/MemoryArchive.h>
+
 #include <fstream>
-#include <nlohmann/json.hpp>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
@@ -42,8 +49,6 @@ namespace Volt
 		{
 			m_monitoredWritePipe = reinterpret_cast<void*>(std::stoull(commandLineBuilder.GetArgValue("writepipe")));
 		}
-
-		m_crashContext = CreateScope<CrashContext>();
 	}
 
 	void CrashReportClientLayer::OnDetach()
@@ -92,7 +97,7 @@ namespace Volt
 			ImGui::Text("Stack Trace");
 
 			const ImVec2 stackTraceSize = { ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 50.f };
-			ImGui::InputTextMultiline("##StackTrace", m_crashContext->stackTrace, strlen(m_crashContext->stackTrace), stackTraceSize, ImGuiInputTextFlags_ReadOnly);
+			ImGui::InputTextMultilineString("##StackTrace", &m_crashContext.stackTrace, stackTraceSize, ImGuiInputTextFlags_ReadOnly);
 
 			{
 				UI::ScopedButtonColor color{ DefaultButton };
@@ -138,12 +143,8 @@ namespace Volt
 		Vector<uint8_t> data;
 		if (PlatformProcess::ReadPipe(m_monitoredReadPipe, data))
 		{
-			if (data.size() == sizeof(CrashContext))
-			{
-				memcpy_s(m_crashContext.get(), sizeof(CrashContext), data.data(), data.size());
-			}
-
-			LoadEngineConfig();
+			MemoryReader memoryReader;
+			memoryReader << m_crashContext;
 
 			BaseApplication::Get().LaunchMainWindow();
 			m_isDisplayingCrash = true;
@@ -155,63 +156,35 @@ namespace Volt
 
 	void CrashReportClientLayer::SendCrashReport()
 	{
-		using json = nlohmann::json;
+		const std::filesystem::path logFilepath = "Log/Log.txt";
 
-		// Our working directory is in the Engine directory.
-		std::ifstream istream("Log/Log.txt");
+		std::string logStr;
+		FileUtility::ReadStringFromFile(logFilepath, logStr);
 
-		std::stringstream logStr;
-		if (istream.is_open())
-		{
-			logStr << istream.rdbuf();
-		}
-
-		json j;
-		j["user"] = std::string(m_crashContext->userName);
-		j["timestamp"] = std::string(m_crashContext->timestamp);
-		j["log"] = logStr.str();
-		j["stackTrace"] = std::string(m_crashContext->stackTrace);
-		j["message"] = m_crashMessage;
-		j["error"] = std::string(m_crashContext->errorString);
-
-		std::stringstream sstream;
-		sstream << j;
+		JSONWriter jsonWriter;
+		jsonWriter.AppendKeyValue("user", m_crashContext.username);
+		jsonWriter.AppendKeyValue("timestamp", m_crashContext.timestamp);
+		jsonWriter.AppendKeyValue("log", logStr);
+		jsonWriter.AppendKeyValue("stackTrace", m_crashContext.stackTrace);
+		jsonWriter.AppendKeyValue("message", m_crashMessage);
+		jsonWriter.AppendKeyValue("error", m_crashContext.errorString);
 
 		PlatformFTPClient ftpClient;
 
 		FTPClientConnectInfo connectInfo;
-		connectInfo.username = m_connectionUsername;
-		connectInfo.password = m_connectionPassword;
-		connectInfo.url = m_connectionURL;
+		connectInfo.username = m_crashContext.serverUser;
+		connectInfo.password = m_crashContext.serverPassword;
+		connectInfo.url = m_crashContext.serverURL;
 		ftpClient.Connect(connectInfo);
 
-		const std::string fileame = "VoltCrashLogs/CrashReport_" + std::string(m_crashContext->timestamp) + ".json";
-		ftpClient.UploadStringAsFile(fileame, sstream.str());
+		const std::string fileame = "VoltCrashLogs/CrashReport_" + m_crashContext.timestamp + ".json";
+		ftpClient.UploadStringAsFile(fileame, jsonWriter.View());
 	}
 
 	void CrashReportClientLayer::RestartEngineAfterCrash()
 	{
 		// As we have inherited the working directory from the engine we need to enter the binaries directory.
 		const auto sandboxFilepath = std::filesystem::current_path() / "Binaries\\Sandbox.exe";
-		PlatformProcess::CreateProc(sandboxFilepath, std::string(m_crashContext->commandLine), true, false, nullptr);
-	}
-
-	void CrashReportClientLayer::LoadEngineConfig()
-	{
-		CommandLineBuilder commandLineBuilder;
-		commandLineBuilder.BuildFromString(m_crashContext->commandLine);
-
-		std::filesystem::path projectFilepath = commandLineBuilder.GetArgValue("project");
-		std::filesystem::path projectDirectory = projectFilepath.parent_path();
-
-		YAMLFileStreamReader fileReader{};
-		if (fileReader.OpenFile(projectDirectory / "EngineConfig.vtconfig"))
-		{
-			fileReader.EnterScope("EngineConfig");
-			m_connectionURL = fileReader.ReadAtKey("crashReporterServerURL", std::string());
-			m_connectionUsername = fileReader.ReadAtKey("crashReporterServerUsername", std::string());
-			m_connectionPassword = fileReader.ReadAtKey("crashReporterServerPassword", std::string());
-			fileReader.ExitScope();
-		}
+		PlatformProcess::CreateProc(sandboxFilepath, m_crashContext.commandLine, true, false, nullptr);
 	}
 }

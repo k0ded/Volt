@@ -4,6 +4,7 @@
 #include "EventSystem/Event.h"
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
 #include <CoreUtilities/Containers/Map.h>
 #include <CoreUtilities/VoltGUID.h>

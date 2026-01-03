@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Upgrades/0_1_7/AssetMetadata_0_1_7.h"
-#include "Upgrades/Common/StreamCommon.h"
+#include "Common/StreamCommon.h"
 
 #include <AssetSystem/Config.h>
 

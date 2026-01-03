@@ -6,7 +6,9 @@
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <EventSystem/EventListener.h>
+
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
 
 #include <LogModule/LogCategory.h>
 

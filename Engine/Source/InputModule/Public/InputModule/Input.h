@@ -8,6 +8,8 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
+
 #include <CoreUtilities/Containers/Vector.h>
 
 #include <glm/fwd.hpp>

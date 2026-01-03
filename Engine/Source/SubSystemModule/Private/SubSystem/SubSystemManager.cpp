@@ -2,6 +2,7 @@
 
 #include "SubSystem/SubSystemManager.h"
 #include "SubSystem/SubSystemDependencyList.h"
+#include "SubSystem/SubSystemRegistry.h"
 #include "SubSystem/SubSystem.h"
 
 SubSystemManager::SubSystemManager(SubSystemInclusionLevel inclusionLevel)
@@ -35,6 +36,11 @@ void SubSystemManager::InitializeSubSystems(SubSystemInitializationStage initial
 		
 		subSystem->Initialize();
 	}
+
+	for (const VoltGUID& subSystemGUID : sortedSubSystems)
+	{
+		m_subSystemsMap.at(subSystemGUID)->OnPostStageInitializaton();
+	}
 }
 
 void SubSystemManager::ShutdownSubSystems(SubSystemInitializationStage initializationStage)
@@ -59,6 +65,14 @@ void SubSystemManager::OnPostInitialization()
 	for (const auto& [guid, subSystem] : m_subSystemsMap)
 	{
 		subSystem->OnPostInitialization();
+	}
+}
+
+void SubSystemManager::OnPreShutdown()
+{
+	for (const auto& [guid, subSystem] : m_subSystemsMap)
+	{
+		subSystem->OnPreShutdown();
 	}
 }
 

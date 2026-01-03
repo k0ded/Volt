@@ -17,8 +17,9 @@ namespace Volt
 	class VTCORE_API PluginRegistry : public SubSystem
 	{
 	public:
-		PluginRegistry();
-		~PluginRegistry();
+		~PluginRegistry() override = default;
+
+		void OnPostStageInitializaton() override;
 
 		void FindAndRegisterPluginsInDirectory(const std::filesystem::path& directory);
 		VT_NODISCARD const PluginDefinition& GetPluginDefinitionByName(const std::string& name) const;

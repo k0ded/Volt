@@ -13,8 +13,6 @@
 #include <EventSystem/ApplicationEvents.h>
 #include <EventSystem/EventSystem.h>
 
-#include <Volt-Core/PluginSystem/PluginSystem.h>
-#include <Volt-Core/PluginSystem/PluginRegistry.h>
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <Volt-Renderer/Renderer.h>
@@ -72,22 +70,6 @@ namespace Volt
 		m_logSubSystem = SubSystemManager::GetSubSystem<Log>();
 		m_logSubSystem->EnableLogging(IsLoggingEnabled());
 
-		m_pluginSystem = SubSystemManager::GetSubSystem<PluginSystem>();
-		m_pluginRegistry = SubSystemManager::GetSubSystem<PluginRegistry>();
-		m_projectManager = SubSystemManager::GetSubSystem<ProjectManager>();
-
-		m_pluginSystem->SetPluginRegistry(m_pluginRegistry);
-
-		std::filesystem::path projectFilepath;
-		if (m_commandLineBuilder.IsArgDefined("project"))
-		{
-			projectFilepath = m_commandLineBuilder.GetArgValue("project");
-		}
-
-		m_projectManager->LoadProject(projectFilepath, *m_pluginRegistry);
-		m_pluginRegistry->BuildPluginDependencies();
-		m_pluginSystem->LoadPlugins(ProjectManager::GetProject());
-
 		CreateGraphicsContext(commandLineBuilder);
 
 		m_sourceAssetManager = CreateScope<SourceAssetManager>();
@@ -139,8 +121,6 @@ namespace Volt
 		}
 
 		m_scriptingSystem = CreateScope<ScriptingSystem>();
-
-		m_pluginSystem->InitializePlugins();
 		m_eventListener = CreateScope<ApplicationEventListener>(*this);
 
 		SetupFrameCapture();
@@ -149,10 +129,9 @@ namespace Volt
 	Application::~Application()
 	{
 		m_eventListener = nullptr;
-		m_pluginSystem->ShutdownPlugins();
-
 		m_scriptingSystem = nullptr;
 
+		m_subSystemManager->OnPreShutdown();
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PostEngine);
 
 		m_navigationSystem = nullptr;
@@ -165,11 +144,6 @@ namespace Volt
 		g_assetManager = nullptr;
 
 		m_windowManager->DestroyMainWindow();
-
-		m_pluginSystem->UnloadPlugins();
-		m_pluginSystem = nullptr;
-		m_pluginRegistry = nullptr;
-		m_projectManager = nullptr;
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::PreEngine);
 

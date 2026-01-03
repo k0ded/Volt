@@ -1,6 +1,9 @@
 #include "EntityDescriptionSerializer.h"
 
 #include "ProjectUpgradeClient/Upgrades/0_1_7/AssetSerializerRegistry.h"
+#include "ProjectUpgradeClient/Common/YAMLMemoryStreamReader.h"
+#include "ProjectUpgradeClient/Common/YAMLMemoryStreamWriter.h"
+#include "ProjectUpgradeClient/Common/CommonSerializeFuncs.h"
 
 #define private public
 #include <Volt-Scene/EntityDescription.h>
@@ -9,9 +12,6 @@
 #include <Volt-Scene/Scene.h>
 
 #include <AssetSystem/AssetManager.h>
-
-#include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
-#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
 #include <EntitySystem/Entity.h>

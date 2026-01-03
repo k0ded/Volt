@@ -1,6 +1,9 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/Serializers/PrefabSerializer.h"
 #include "ProjectUpgradeClient/Upgrades/0_1_7/Serializers/SceneSerializer.h"
 #include "ProjectUpgradeClient/Upgrades/0_1_7/Serializers/EntityDescriptionSerializer.h"
+#include "ProjectUpgradeClient/Common/YAMLMemoryStreamReader.h"
+#include "ProjectUpgradeClient/Common/YAMLMemoryStreamWriter.h"
+#include "ProjectUpgradeClient/Common/CommonSerializeFuncs.h"
 
 #define private public
 #include <Volt-Scene/Prefab.h>
@@ -8,9 +11,6 @@
 #include <Volt-Scene/Scene.h>
 
 #include <AssetSystem/AssetManager.h>
-
-#include <CoreUtilities/FileIO/YAMLMemoryStreamWriter.h>
-#include <CoreUtilities/FileIO/YAMLMemoryStreamReader.h>
 
 namespace Volt
 {

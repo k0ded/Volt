@@ -1,4 +1,4 @@
-#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamWriter.h"
+#include "ProjectUpgradeClient/Common/BinaryStreamWriter.h"
 
 #include "zlib.h"
 

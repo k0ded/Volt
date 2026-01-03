@@ -94,9 +94,6 @@ namespace Volt
 		Scope<ApplicationEventListener> m_eventListener;
 		Scope<AI::NavigationSystem> m_navigationSystem; //is this in use anywhere?
 
-		ProjectManager* m_projectManager = nullptr;
-		PluginRegistry* m_pluginRegistry = nullptr;
-		PluginSystem* m_pluginSystem = nullptr;
 		WindowManager* m_windowManager = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;
 		Log* m_logSubSystem = nullptr;

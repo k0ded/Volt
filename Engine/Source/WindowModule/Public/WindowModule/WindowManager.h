@@ -8,6 +8,8 @@
 #include <EventSystem/EventListener.h>
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
+
 #include <CoreUtilities/Core.h>
 
 #include <unordered_map>

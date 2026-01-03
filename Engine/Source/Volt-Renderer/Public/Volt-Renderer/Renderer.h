@@ -15,6 +15,8 @@
 #include <RHIModule/Core/RHICommon.h>
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
+
 #include <EventSystem/EventListener.h>
 
 namespace Volt

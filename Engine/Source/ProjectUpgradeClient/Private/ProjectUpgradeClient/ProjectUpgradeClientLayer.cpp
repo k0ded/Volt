@@ -1,4 +1,6 @@
 #include "ProjectUpgradeClient/ProjectUpgradeClientLayer.h"
+#include "ProjectUpgradeClient/Common/YAMLFileStreamWriter.h"
+#include "ProjectUpgradeClient/Common/YAMLFileStreamReader.h"
 
 #include "ProjectUpgradeClient/UpgradesRegistry.h"
 #include "ProjectUpgradeClient/UpgradeInterface.h"
@@ -11,7 +13,6 @@
 
 #include <SubSystem/SubSystemManager.h>
 
-#include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
 #include <CoreUtilities/FileSystem.h>
 
 #include <WindowModule/WindowManager.h>
@@ -19,7 +20,6 @@
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
-#include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>
 
 namespace Volt
 {

@@ -1,6 +1,6 @@
 #include "ProjectUpgradeClient/Upgrades/0_1_7/Serializers/TextureSerializer.h"
-#include "ProjectUpgradeClient/Upgrades/Common/BinaryStreamWriter.h"
-#include "ProjectUpgradeClient/Upgrades/Common//BinaryStreamReader.h"
+#include "ProjectUpgradeClient/Common/BinaryStreamWriter.h"
+#include "ProjectUpgradeClient/Common//BinaryStreamReader.h"
 
 #include <AssetSystem/AssetManager.h>
 

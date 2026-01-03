@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ProjectUpgradeClient/Upgrades/Common/StreamCommon.h"
+#include "ProjectUpgradeClient/Common/StreamCommon.h"
 
 #include <CoreUtilities/Buffer/Buffer.h>
 #include <CoreUtilities/Containers/Vector.h>

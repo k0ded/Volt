@@ -5,6 +5,8 @@
 #include "JobSystem/Job.h"
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
+
 #include <EventSystem/EventListener.h>
 
 #include <CoreUtilities/WorkQueue.h>

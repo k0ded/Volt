@@ -15,13 +15,20 @@ namespace Volt
 {
 	class CommandLineBuilder;
 
+	struct CrashReporterConnectionInfo
+	{
+		std::string serverURL;
+		std::string serverUser;
+		std::string serverPassword;
+	};
+
 	class VTPL_API WindowsCrashReportingThread
 	{
 	public:
 		WindowsCrashReportingThread(bool isEnabled);
 		~WindowsCrashReportingThread();
 
-		void NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo, const CommandLineBuilder& commandLineBuilder);
+		void NotifyCrash(_EXCEPTION_POINTERS* exceptionInfo, const CommandLineBuilder& commandLineBuilder, const CrashReporterConnectionInfo& connectionInfo);
 
 	private:
 		void RunThread();
@@ -55,7 +62,7 @@ namespace Volt
 		std::string m_crashingThreadStackTrace;
 		std::string m_crashCommandLine;
 		std::string m_crashTimestamp;
-		CrashContext* m_crashContext = nullptr;
+		CrashReporterConnectionInfo m_crashReporterConnectionInfo;
 	};
 }
 #endif
