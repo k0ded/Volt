@@ -19,8 +19,8 @@
 
 using namespace Volt;
 
-REGISTER_SHADER(ObjectIDVS, "Engine/Shaders/Source/Editor/ObjectID.hlsl", "MainVS", Vertex);
-REGISTER_SHADER(ObjectIDPS, "Engine/Shaders/Source/Editor/ObjectID.hlsl", "MainPS", Pixel);
+VT_REGISTER_SHADER(ObjectIDVS, "Engine/Shaders/Source/Editor/ObjectID.hlsl", "MainVS", Vertex);
+VT_REGISTER_SHADER(ObjectIDPS, "Engine/Shaders/Source/Editor/ObjectID.hlsl", "MainPS", Pixel);
 
 BEGIN_SHADER_PARAMETER_STRUCT(ObjectIDParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(ObjectIDVS::Parameters, VS)

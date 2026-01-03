@@ -823,7 +823,7 @@ namespace Volt
 			SHADER_PARAMETER(uint32_t, PrimitiveDrawDataCount)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(CompactValidDrawCallCS, "Engine/Shaders/Source/RenderScene/CompactValidDrawCalls.hlsl", "MainCS", Compute);
+	VT_REGISTER_SHADER(CompactValidDrawCallCS, "Engine/Shaders/Source/RenderScene/CompactValidDrawCalls.hlsl", "MainCS", Compute);
 
 	void RenderScene::CompactValidPrimitiveDrawDatas(RenderGraph& renderGraph)
 	{

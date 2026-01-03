@@ -44,8 +44,8 @@ namespace Volt
 	void RegisterAudioModule(ECSBuilder& builder)
 	{
 		builder.GetGameLoop(GameLoop::Variable).RegisterSystem(AudioListenerSystem);
-		builder.GetGameLoop(GameLoop::Variable).RegisterSystem(AudioSourceSystem);
+		builder.GetGameLoop(GameLoop::Variable).RegisterSystem(AudioSourceSystem); 
 	}
 
-	VT_REGISTER_ECS_MODULE(RegisterAudioModule);
+	VT_REGISTER_ECS_MODULE(RegisterAudioModule, "{354158B7-91D5-4039-8171-8513CDAA6141}"_guid);
 }

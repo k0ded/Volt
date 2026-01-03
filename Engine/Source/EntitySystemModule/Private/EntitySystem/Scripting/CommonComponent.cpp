@@ -4,6 +4,8 @@
 
 namespace Volt
 {
+	VT_REGISTER_COMPONENT(CommonComponent);
+
 	void CommonComponent::OnStart(CommonEntity entity)
 	{
 		auto& component = entity.GetComponent<CommonComponent>();

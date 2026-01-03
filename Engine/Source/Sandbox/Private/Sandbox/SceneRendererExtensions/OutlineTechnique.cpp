@@ -47,8 +47,8 @@ void OutlineTechnique::Execute(RGTextureRef dstImage, RenderScene& renderScene, 
 	m_renderGraph.EndMarker();
 }
 
-REGISTER_SHADER(OutlineGeometryVS, "Engine/Shaders/Source/Editor/Outline/OutlineGeometry.hlsl", "MainVS", Vertex);
-REGISTER_SHADER(OutlineGeometryPS, "Engine/Shaders/Source/Editor/Outline/OutlineGeometry.hlsl", "MainPS", Pixel);
+VT_REGISTER_SHADER(OutlineGeometryVS, "Engine/Shaders/Source/Editor/Outline/OutlineGeometry.hlsl", "MainVS", Vertex);
+VT_REGISTER_SHADER(OutlineGeometryPS, "Engine/Shaders/Source/Editor/Outline/OutlineGeometry.hlsl", "MainPS", Pixel);
 
 BEGIN_SHADER_PARAMETER_STRUCT(OutlineGeometryParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(OutlineGeometryVS::Parameters, VS)
@@ -96,7 +96,7 @@ struct JumpFloodInitPS : public GlobalShader
 		RG_RENDER_TARGETS()
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER(JumpFloodInitPS, "Engine/Shaders/Source/Editor/Outline/JumpFlood.hlsl", "JumpFloodInitPS", Pixel);
+VT_REGISTER_SHADER(JumpFloodInitPS, "Engine/Shaders/Source/Editor/Outline/JumpFlood.hlsl", "JumpFloodInitPS", Pixel);
 
 RGTextureRef OutlineTechnique::AddJumpFloodInitPass(RGTextureRef outlineGeometryImage, const Volt::RenderView& view)
 {
@@ -141,7 +141,7 @@ struct JumpFloodVS : public GlobalShader
 		SHADER_PARAMETER(int, Step)
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER(JumpFloodVS, "Engine/Shaders/Source/Editor/Outline/JumpFlood.hlsl", "JumpFloodPassVS", Vertex);
+VT_REGISTER_SHADER(JumpFloodVS, "Engine/Shaders/Source/Editor/Outline/JumpFlood.hlsl", "JumpFloodPassVS", Vertex);
 
 struct JumpFloodPS : public GlobalShader
 {
@@ -152,7 +152,7 @@ struct JumpFloodPS : public GlobalShader
 		RG_RENDER_TARGETS()
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER(JumpFloodPS, "Engine/Shaders/Source/Editor/Outline/JumpFlood.hlsl", "JumpFloodPassPS", Pixel);
+VT_REGISTER_SHADER(JumpFloodPS, "Engine/Shaders/Source/Editor/Outline/JumpFlood.hlsl", "JumpFloodPassPS", Pixel);
 
 BEGIN_SHADER_PARAMETER_STRUCT(JumpFloodParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(JumpFloodVS::Parameters, VS)
@@ -206,7 +206,7 @@ struct OutlineCompositeCS : GlobalShader
 		SHADER_PARAMETER(uint2, RenderSize)
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER(OutlineCompositeCS, "Engine/Shaders/Source/Editor/Outline/OutlineComposite.hlsl", "OutlineCompositeCS", Compute);
+VT_REGISTER_SHADER(OutlineCompositeCS, "Engine/Shaders/Source/Editor/Outline/OutlineComposite.hlsl", "OutlineCompositeCS", Compute);
 
 void OutlineTechnique::AddOutlineCompositePass(RGTextureRef dstImage, const Volt::RenderView& view, RGTextureRef jumpfloodOutput)
 {

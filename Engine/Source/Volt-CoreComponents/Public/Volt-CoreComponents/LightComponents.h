@@ -42,8 +42,6 @@ namespace Volt
 			reflect.SetOnTransformChangedCallback(&PointLightComponent::OnTransformChanged);
 		}
 
-		REGISTER_COMPONENT(PointLightComponent);
-
 	private:
 		using LightEntity = ECS::Access
 			::Write<PointLightComponent>
@@ -86,8 +84,6 @@ namespace Volt
 			reflect.SetOnTransformChangedCallback(&SpotLightComponent::OnTransformChanged);
 		}
 
-		REGISTER_COMPONENT(SpotLightComponent);
-
 	private:
 		using LightEntity = ECS::Access
 			::Write<SpotLightComponent>
@@ -118,7 +114,7 @@ namespace Volt
 			reflect.AddMember(&SphereLightComponent::color, 'col', "Color", "", glm::vec3{1.f}, ComponentMemberFlag::Color3);
 		}
 
-		REGISTER_COMPONENT(SphereLightComponent);
+		VT_REGISTER_COMPONENT(SphereLightComponent);
 	};
 
 	struct RectangleLightComponent
@@ -137,8 +133,6 @@ namespace Volt
 			reflect.AddMember(&RectangleLightComponent::width, 'wid', "Width", "", 50.f);
 			reflect.AddMember(&RectangleLightComponent::height, 'heig', "Height", "", 50.f);
 		}
-
-		REGISTER_COMPONENT(RectangleLightComponent);
 	};
 
 	struct DirectionalLightComponent
@@ -166,8 +160,6 @@ namespace Volt
 			reflect.SetOnInitializeCallback(&DirectionalLightComponent::OnInitialize);
 			reflect.SetOnTransformChangedCallback(&DirectionalLightComponent::OnTransformChanged);
 		}
-
-		REGISTER_COMPONENT(DirectionalLightComponent);
 
 	private:
 		using LightEntity = ECS::Access
@@ -211,8 +203,6 @@ namespace Volt
 		}
 
 		VTCC_API static void OnMemberChanged(LightEntity entity);
-
-		REGISTER_COMPONENT(SkylightComponent);
 
 	private:
 

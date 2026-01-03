@@ -28,7 +28,7 @@ struct WriteFullscreenColorPS : public GlobalShader
 		RG_RENDER_TARGETS()
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER(WriteFullscreenColorPS, "Engine/Shaders/Source/Tests/WriteFullscreenColor.hlsl", "MainPS", Pixel);
+VT_REGISTER_SHADER(WriteFullscreenColorPS, "Engine/Shaders/Source/Tests/WriteFullscreenColor.hlsl", "MainPS", Pixel);
 
 BEGIN_SHADER_PARAMETER_STRUCT(WriteFullscreenColorParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(FullscreenTriangleVS::Parameters, VS)

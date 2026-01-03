@@ -54,7 +54,5 @@ namespace Volt
 			reflect.AddMember(&PrefabComponent::version, 'ver', "Version", "", 0);
 			reflect.AddMember(&PrefabComponent::componentLocalChanges, 'clc', "Component Local Changes", "", PrefabComponentLocalChange());
 		}
-
-		REGISTER_COMPONENT(PrefabComponent);
 	};
 }

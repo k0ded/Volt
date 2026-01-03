@@ -12,6 +12,12 @@
 
 namespace Volt
 {
+	VT_REGISTER_COMPONENT(MeshComponent);
+	VT_REGISTER_COMPONENT(CameraComponent);
+	VT_REGISTER_COMPONENT(TextRendererComponent);
+	VT_REGISTER_COMPONENT(SpriteComponent);
+	VT_REGISTER_COMPONENT(DecalComponent);
+
 	StreamingInstanceDescription CreateStreamingInstanceDescription(const MeshComponent& meshComponent, EntityID entityId, Ref<ScenePrimitiveData> scenePrimitiveData)
 	{
 		StreamingInstanceDescription streamingInstanceDescription;

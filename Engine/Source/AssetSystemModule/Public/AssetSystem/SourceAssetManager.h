@@ -35,7 +35,7 @@ namespace Volt
 			auto importFunc = [=]() -> Vector<AssetReference<Asset>>
 			{
 				const std::string extension = filepath.extension().string();
-				auto& importer = GetSourceAssetImporterRegistry().GetImporterForExtension(extension);
+				auto& importer = SourceAssetImporterRegistry::Get().GetImporterForExtension(extension);
 				return importer.Import(g_assetManager->GetAssetFilesystemPath(filepath), config, userData);
 			};
 
@@ -54,7 +54,7 @@ namespace Volt
 			auto importFunc = [=]() -> Vector<AssetReference<Asset>>
 			{
 				const std::string extension = filepath.extension().string();
-				auto& importer = GetSourceAssetImporterRegistry().GetImporterForExtension(extension);
+				auto& importer = SourceAssetImporterRegistry::Get().GetImporterForExtension(extension);
 				return importer.Import(g_assetManager->GetAssetFilesystemPath(filepath), config, userData);
 			};
 

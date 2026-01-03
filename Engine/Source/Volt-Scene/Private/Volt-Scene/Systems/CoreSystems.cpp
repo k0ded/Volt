@@ -48,5 +48,5 @@ namespace Volt
 		builder.GetGameLoop(GameLoop::Variable).RegisterSystem(CameraSystem);
 	}
 
-	VT_REGISTER_ECS_MODULE(RegisterModule);
+	VT_REGISTER_ECS_MODULE(RegisterModule, "{33D9303D-D8E7-4A0B-933C-B4328E4F4BA2}"_guid);
 }

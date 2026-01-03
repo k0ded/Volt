@@ -20,7 +20,7 @@ namespace Volt
 			RG_BUFFER_ACCESS(VertexBuffer, RGResourceAccess::VertexBuffer)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(DrawDebugLinesVS, "Engine/Shaders/Source/Debug/DrawDebugLines.hlsl", "MainVS", Vertex);
+	VT_REGISTER_SHADER(DrawDebugLinesVS, "Engine/Shaders/Source/Debug/DrawDebugLines.hlsl", "MainVS", Vertex);
 
 	struct DrawDebugLinesPS : public GlobalShader
 	{
@@ -29,7 +29,7 @@ namespace Volt
 			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(DrawDebugLinesPS, "Engine/Shaders/Source/Debug/DrawDebugLines.hlsl", "MainPS", Pixel);
+	VT_REGISTER_SHADER(DrawDebugLinesPS, "Engine/Shaders/Source/Debug/DrawDebugLines.hlsl", "MainPS", Pixel);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(DrawDebugLinesParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(DrawDebugLinesVS::Parameters, VS)

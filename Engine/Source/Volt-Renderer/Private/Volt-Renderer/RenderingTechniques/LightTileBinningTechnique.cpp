@@ -25,7 +25,7 @@ namespace Volt
 			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(LightTileBinningCS, "Engine/Shaders/Source/Lights/LightTileBinning.hlsl", "MainCS", Compute);
+	VT_REGISTER_SHADER(LightTileBinningCS, "Engine/Shaders/Source/Lights/LightTileBinning.hlsl", "MainCS", Compute);
 
 	LightTileBinningTechnique::LightTileBinningTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 		: m_renderGraph(renderGraph), m_blackboard(blackboard)

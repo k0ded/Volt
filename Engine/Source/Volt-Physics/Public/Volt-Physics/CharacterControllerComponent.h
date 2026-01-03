@@ -46,7 +46,5 @@ namespace Volt
 			reflect.AddMember(&CharacterControllerComponent::layer, 'layr', "Layer", "", 0);
 			reflect.AddMember(&CharacterControllerComponent::hasGravity, 'hasg', "Has Gravity", "", true);
 		}
-
-		REGISTER_COMPONENT(CharacterControllerComponent);
 	};
 }

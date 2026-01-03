@@ -3,4 +3,5 @@
 
 namespace Volt
 {
+	VT_REGISTER_COMPONENT(RigidbodyComponent);
 }

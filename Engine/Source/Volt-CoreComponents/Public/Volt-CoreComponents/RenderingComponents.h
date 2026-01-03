@@ -45,8 +45,6 @@ namespace Volt
 
 		VTCC_API static void OnMemberChanged(MeshEntity entity);
 
-		REGISTER_COMPONENT(MeshComponent);
-
 	private:
 		VTCC_API static void OnDestroy(MeshEntity entity);
 		VTCC_API static void OnIntitialize(MeshEntity entity);
@@ -79,8 +77,6 @@ namespace Volt
 			reflect.SetOnInitializeCallback(&CameraComponent::OnInitialize);
 		}
 
-		REGISTER_COMPONENT(CameraComponent);
-
 	private:
 		using CameraEntity = ECS::Access
 			::Write<CameraComponent>
@@ -105,8 +101,6 @@ namespace Volt
 			reflect.AddMember(&TextRendererComponent::maxWidth, 'mxwd', "Max Width", "", 100.f);
 			reflect.AddMember(&TextRendererComponent::color, 'col', "Color", "", glm::vec4{1.f}, ComponentMemberFlag::Color4);
 		}
-
-		REGISTER_COMPONENT(TextRendererComponent);
 	};
 
 	struct SpriteComponent
@@ -119,8 +113,6 @@ namespace Volt
 			reflect.SetLabel("Sprite Component");
 			reflect.AddMember(&SpriteComponent::materialHandle, 'hndl', "Material", "", Asset::Null(), AssetTypes::Material);
 		}
-
-		REGISTER_COMPONENT(SpriteComponent);
 	};
 
 	struct DecalComponent
@@ -133,7 +125,5 @@ namespace Volt
 			reflect.SetLabel("Decal Component");
 			reflect.AddMember(&DecalComponent::decalMaterial, 'dcl', "Material", "", Asset::Null(), AssetTypes::Material);
 		}
-
-		REGISTER_COMPONENT(DecalComponent);
 	};
 }

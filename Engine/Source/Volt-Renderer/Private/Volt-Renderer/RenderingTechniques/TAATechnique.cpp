@@ -30,7 +30,7 @@ namespace Volt
 			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(TAAResolvePS, "Engine/Shaders/Source/PostProcessing/TAA/TAAResolve.hlsl", "MainPS", Pixel);
+	VT_REGISTER_SHADER(TAAResolvePS, "Engine/Shaders/Source/PostProcessing/TAA/TAAResolve.hlsl", "MainPS", Pixel);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(TAAResolveParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(FullscreenTriangleVS::Parameters, VS)

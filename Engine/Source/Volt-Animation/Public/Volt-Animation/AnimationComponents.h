@@ -34,8 +34,6 @@ namespace Volt
 			reflect.SetOnMemberChangedCallback(&AnimationPlayerComponent::OnMemberChanged);
 		}
 
-		REGISTER_COMPONENT(AnimationPlayerComponent);
-
 		VTA_API static void OnMemberChanged(AnimationPlayerEntity entity);
 	};
 }

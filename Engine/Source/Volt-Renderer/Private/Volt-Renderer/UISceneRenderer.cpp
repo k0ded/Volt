@@ -32,7 +32,7 @@ namespace Volt
 			SHADER_PARAMETER(float, Scale)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(UI2DGridVSPS)
+	VT_REGISTER_SHADER(UI2DGridVSPS)
 
 	struct UIWidgetIDVSPS
 	{
@@ -45,7 +45,7 @@ namespace Volt
 			SHADER_PARAMETER(float4x4, ViewProjection)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(UIWidgetIDVSPS)
+	VT_REGISTER_SHADER(UIWidgetIDVSPS)
 
 	struct UIMainVSPS
 	{
@@ -59,7 +59,7 @@ namespace Volt
 			SHADER_PARAMETER_SAMPLER(vt::TextureSampler, LinearSampler)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(UIMainVSPS)
+	VT_REGISTER_SHADER(UIMainVSPS)
 
 	struct UIRenderingData
 	{

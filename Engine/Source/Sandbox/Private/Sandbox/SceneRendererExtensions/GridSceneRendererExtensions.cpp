@@ -26,7 +26,7 @@ struct EditorGridVS : public GlobalShader
 		SHADER_PARAMETER(float4x4, NonReversedInverseProjection)
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER(EditorGridVS, "Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridVS", Vertex);
+VT_REGISTER_SHADER(EditorGridVS, "Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridVS", Vertex);
 
 struct EditorGridPS : public GlobalShader
 {
@@ -37,7 +37,7 @@ struct EditorGridPS : public GlobalShader
 		RG_RENDER_TARGETS()
 	END_SHADER_PARAMETER_STRUCT()
 };
-REGISTER_SHADER(EditorGridPS, "Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridPS", Pixel);
+VT_REGISTER_SHADER(EditorGridPS, "Engine/Shaders/Source/Editor/3DGrid.hlsl", "GridPS", Pixel);
 
 BEGIN_SHADER_PARAMETER_STRUCT(EditorGridParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(EditorGridVS::Parameters, VS)

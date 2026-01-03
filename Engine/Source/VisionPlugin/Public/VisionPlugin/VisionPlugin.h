@@ -34,8 +34,6 @@ struct VisionTest
 
 		reflect.AddMember(&VisionTest::yoooyo, 'yo', "TEST YO", "", 500.f);
 	}
-
-	REGISTER_COMPONENT(VisionTest);
 };
 
 VT_REGISTER_PLUGIN(VisionPlugin);

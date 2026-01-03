@@ -21,7 +21,7 @@ namespace Volt
 			SHADER_PARAMETER(uint, ValueCount)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(PrefixSumCS, "Engine/Shaders/Source/Utility/PrefixSum.hlsl", "MainCS", Compute);
+	VT_REGISTER_SHADER(PrefixSumCS, "Engine/Shaders/Source/Utility/PrefixSum.hlsl", "MainCS", Compute);
 
 	PrefixSumTechnique::PrefixSumTechnique(RenderGraph& renderGraph)
 		: m_renderGraph(renderGraph)

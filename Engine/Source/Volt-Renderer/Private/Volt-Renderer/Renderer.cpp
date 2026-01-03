@@ -50,7 +50,7 @@ namespace Volt
 			SHADER_PARAMETER_SAMPLER(LinearSampler)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(EquirectangularToCubemapCS, "Engine/Shaders/Source/Environment/EquirectangularToCubemap.hlsl", "MainCS", Compute);
+	VT_REGISTER_SHADER(EquirectangularToCubemapCS, "Engine/Shaders/Source/Environment/EquirectangularToCubemap.hlsl", "MainCS", Compute);
 
 	struct IntegrateSpecularCubeCS : public GlobalShader
 	{
@@ -64,7 +64,7 @@ namespace Volt
 			SHADER_PARAMETER(uint, MipCount)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(IntegrateSpecularCubeCS, "Engine/Shaders/Source/PBR/IntegrateSpecularCube.hlsl", "MainCS", Compute);
+	VT_REGISTER_SHADER(IntegrateSpecularCubeCS, "Engine/Shaders/Source/PBR/IntegrateSpecularCube.hlsl", "MainCS", Compute);
 
 	struct IntegrateDiffuseCubeCS : public GlobalShader
 	{
@@ -76,7 +76,7 @@ namespace Volt
 			SHADER_PARAMETER_SAMPLER(LinearSampler)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(IntegrateDiffuseCubeCS, "Engine/Shaders/Source/PBR/IntegrateDiffuseCube.hlsl", "MainCS", Compute);
+	VT_REGISTER_SHADER(IntegrateDiffuseCubeCS, "Engine/Shaders/Source/PBR/IntegrateDiffuseCube.hlsl", "MainCS", Compute);
 
 	struct GeneratePreIntegratedDFGPS : public GlobalShader
 	{
@@ -86,7 +86,7 @@ namespace Volt
 			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(GeneratePreIntegratedDFGPS, "Engine/Shaders/Source/PBR/GeneratePreIntegratedDFG.hlsl", "MainPS", Pixel);
+	VT_REGISTER_SHADER(GeneratePreIntegratedDFGPS, "Engine/Shaders/Source/PBR/GeneratePreIntegratedDFG.hlsl", "MainPS", Pixel);
 
 	struct GeneratePreIntegratedBRDFPS : public GlobalShader
 	{
@@ -96,7 +96,7 @@ namespace Volt
 			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(GeneratePreIntegratedBRDFPS, "Engine/Shaders/Source/PBR/GenerateBRDF.hlsl", "MainPS", Pixel);
+	VT_REGISTER_SHADER(GeneratePreIntegratedBRDFPS, "Engine/Shaders/Source/PBR/GenerateBRDF.hlsl", "MainPS", Pixel);
 
 	namespace Utility
 	{

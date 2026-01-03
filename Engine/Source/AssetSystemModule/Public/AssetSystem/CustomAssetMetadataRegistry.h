@@ -14,7 +14,9 @@ namespace Volt
 	{
 	public:
 		template<typename T>
-		bool RegisterCustomMetadata(AssetType assetType);
+		void RegisterCustomMetadata(AssetType assetType);
+
+		VTAS_API void UnregisterCustomMetadata(AssetType assetType);
 
 		VTAS_API bool AssetTypeHasCustomMetadata(AssetType assetType) const;
 		VTAS_API void SerializeAny(AssetType assetType, Any& value, Archive& archive) const;
@@ -35,7 +37,7 @@ namespace Volt
 	};
 
 	template<typename T> 
-	bool CustomAssetMetadataRegistry::RegisterCustomMetadata(AssetType assetType)
+	void CustomAssetMetadataRegistry::RegisterCustomMetadata(AssetType assetType)
 	{
 		RegisteredCustomMetadata& registeredData = m_registry[assetType];
 		registeredData.assetType = assetType;
@@ -55,10 +57,20 @@ namespace Volt
 		{
 			any = Any(T());
 		};
-
-		return true;
 	}
 }
 
-#define REGISTER_CUSTOM_ASSET_METADATA_TYPE(type, assetType) \
-	inline static bool type ## _customAssetMetadataRegistered = Volt::CustomAssetMetadataRegistry::Get().RegisterCustomMetadata<type>(assetType)
+// Must lie in a compilation unit (cpp file)
+#define VT_REGISTER_CUSTOM_ASSET_METADATA_TYPE(type, assetType) \
+	class CustomAssetMetadataRegistrar_##type \
+	{ \
+	public: \
+		VT_INLINE CustomAssetMetadataRegistrar_##type() \
+		{ \
+			CustomAssetMetadataRegistry::Get().RegisterCustomMetadata<type>(assetType); \
+		} \
+		VT_INLINE ~CustomAssetMetadataRegistrar_##type() \
+		{ \
+			CustomAssetMetadataRegistry::Get().UnregisterCustomMetadata(assetType); \
+		} \
+	} g_customAssetMetadataRegistrar_##type

@@ -5,6 +5,7 @@
 
 #include <CoreUtilities/CompilerTraits.h>
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Containers/Map.h>
 
 #include <functional>
 
@@ -13,24 +14,20 @@ class ECSBuilder;
 class VTES_API ECSSystemRegistry
 {
 public:
-	bool RegisterECSModule(std::function<void(ECSBuilder& builder)> func);
+	void RegisterECSModule(std::function<void(ECSBuilder& builder)> func, const VoltGUID& guid);
+	void UnregisterECSModule(const VoltGUID& guid);
+
 	void Build(ECSBuilder& builder);
 	void ClearRegistry();
 
 	template<typename EnvType>
-	bool RegisterECSEnvType()
+	void RegisterECSEnvType()
 	{
 		constexpr TypeTraits::TypeIndex envTypeIndex = TypeTraits::TypeIndex::FromType<EnvType>();
 
 		auto it = std::find_if(m_registeredEnvironmentDefinitions.begin(), m_registeredEnvironmentDefinitions.end(), [](const auto& def) { return def.typeIndex == envTypeIndex; });
 		const bool hasBeenRegistered = it != m_registeredEnvironmentDefinitions.end();
-		// #TODO_Ivar: Because static lib reasons this will happen for now.
-		//VT_ENSURE_MSG(!hasBeenRegistered, "Type can not be registered more than once!");
-
-		if (hasBeenRegistered)
-		{
-			return false;
-		}
+		VT_ENSURE_MSG(!hasBeenRegistered, "Type can not be registered more than once!");
 
 		auto& newDefinition = m_registeredEnvironmentDefinitions.emplace_back();
 		newDefinition.typeIndex = envTypeIndex;
@@ -45,8 +42,17 @@ public:
 			EnvType* envPtr = reinterpret_cast<EnvType*>(dataPtr);
 			envPtr->~EnvType();
 		};
+	}
 
-		return true;
+	template<typename EnvType>
+	void UnregisterECSEnvType()
+	{
+		constexpr TypeTraits::TypeIndex envTypeIndex = TypeTraits::TypeIndex::FromType<EnvType>();
+
+		if (VT_CHECK(m_registeredEnvironmentDefinitions.contains_with_predicate([](const ECSEnvironmentDefinition& env) { return env.typeIndex == envTypeIndex; })))
+		{
+			m_registeredEnvironmentDefinitions.erase_with_predicate([](const ECSEnvironmentDefinition& env) { return env.typeIndex == envTypeIndex; });
+		}
 	}
 
 	VT_NODISCARD VT_INLINE const Vector<ECSEnvironmentDefinition>& GetEnvironmentDefinitions() const { return m_registeredEnvironmentDefinitions; }
@@ -54,9 +60,41 @@ public:
 	static ECSSystemRegistry& Get();
 
 private:
-	Vector<std::function<void(ECSBuilder& builder)>> m_registeredModules;
+	struct RegisteredModule
+	{
+		std::function<void(ECSBuilder& builder)> func;
+		VoltGUID guid;
+	};
+
+	Map<VoltGUID, RegisteredModule> m_registeredModules;
 	Vector<ECSEnvironmentDefinition> m_registeredEnvironmentDefinitions;
 };
 
-#define VT_REGISTER_ECS_MODULE(func) inline static bool func ## _registered = ::ECSSystemRegistry::Get().RegisterECSModule(func)
-#define VT_REGISTER_ECS_ENV_TYPE(type) inline static bool type ## _envRegistered = ::ECSSystemRegistry::Get().RegisterECSEnvType<type>()
+// Must lie in a compilation unit (cpp file)
+#define VT_REGISTER_ECS_MODULE(func, guid) \
+	static class ECSModuleRegistrar_##func \
+	{ \
+	public: \
+		VT_INLINE ECSModuleRegistrar_##func() \
+		{ \
+			ECSSystemRegistry::Get().RegisterECSModule(func, guid); \
+		} \
+		VT_INLINE ~ECSModuleRegistrar_##func() \
+		{ \
+			ECSSystemRegistry::Get().UnregisterECSModule(guid); \
+		} \
+	} g_ecsModuleRegistrar_##func
+
+#define VT_REGISTER_ECS_ENV_TYPE(type) \
+	static class ECSEnvTypeRegistrar_##type \
+	{ \
+	public: \
+		VT_INLINE ECSEnvTypeRegistrar_##type() \
+		{ \
+			ECSSystemRegistry::Get().RegisterECSEnvType<type>(); \
+		} \
+		VT_INLINE ~ECSEnvTypeRegistrar_##type() \
+		{ \
+			ECSSystemRegistry::Get().UnregisterECSEnvType<type>(); \
+		} \
+	} g_ecsEnvTypeRegistrar_##type

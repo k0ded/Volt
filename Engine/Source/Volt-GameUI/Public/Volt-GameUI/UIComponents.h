@@ -60,8 +60,6 @@ namespace Volt
 			reflect.AddMember(&UIIDComponent::id, 'id', "ID", "", EntityID{}, ComponentMemberFlag::NoSerialize);
 			reflect.AddMember(&UIIDComponent::timeCreateID, 'time', "Time Created", "", 0u);
 		}
-
-		REGISTER_COMPONENT(UIIDComponent);
 	};
 
 	struct UITransformComponent
@@ -88,8 +86,6 @@ namespace Volt
 			reflect.AddMember(&UITransformComponent::zOrder, 'zord', "Z Order", "", 0);
 			reflect.AddMember(&UITransformComponent::visible, 'vis', "Visible", "", false);
 		}
-
-		REGISTER_COMPONENT(UITransformComponent);
 	};
 
 	struct UITagComponent
@@ -103,8 +99,6 @@ namespace Volt
 			reflect.SetHidden();
 			reflect.AddMember(&UITagComponent::tag, 'tag', "Tag", "", std::string());
 		}
-
-		REGISTER_COMPONENT(UITagComponent);
 	};
 
 	struct UIImageComponent
@@ -122,7 +116,5 @@ namespace Volt
 			reflect.AddMember(&UIImageComponent::tint, 'tint', "Tint", "", glm::vec3{1.f});
 			reflect.AddMember(&UIImageComponent::alpha, 'alph', "Alpha", "", 1.f);
 		}
-
-		REGISTER_COMPONENT(UIImageComponent);
 	};
 }

@@ -4,6 +4,11 @@
 
 namespace Volt
 {
+	VT_REGISTER_COMPONENT(BoxColliderComponent);
+	VT_REGISTER_COMPONENT(SphereColliderComponent);
+	VT_REGISTER_COMPONENT(CapsuleColliderComponent);
+	VT_REGISTER_COMPONENT(MeshColliderComponent);
+
 	void BoxColliderComponent::OnInitialize(PhysicsEntity entity)
 	{
 		//if (!SceneManager::IsPlaying())

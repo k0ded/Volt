@@ -14,7 +14,7 @@
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Mesh, MeshAsset);
-	REGISTER_CUSTOM_ASSET_METADATA_TYPE(MeshCustomMetadata, AssetTypes::Mesh);
+	VT_REGISTER_CUSTOM_ASSET_METADATA_TYPE(MeshCustomMetadata, AssetTypes::Mesh);
 
 	MeshAsset::MeshAsset()
 	{

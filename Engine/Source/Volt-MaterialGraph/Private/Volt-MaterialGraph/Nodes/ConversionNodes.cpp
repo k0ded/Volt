@@ -3,6 +3,6 @@
 
 namespace Volt::MosaicNodes
 {
-	REGISTER_NODE_TEMPLATE(ConversionMakeFloat3);
-	REGISTER_NODE_TEMPLATE(ConversionMakeFloat4);
+	REGISTER_NODE(ConversionMakeFloat3);
+	REGISTER_NODE(ConversionMakeFloat4);
 }

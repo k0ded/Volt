@@ -44,5 +44,5 @@ namespace Volt
 		builder.GetGameLoop(GameLoop::Variable).RegisterSystem(AnimationPlayerSystem);
 	}
 
-	VT_REGISTER_ECS_MODULE(RegisterModule);
+	VT_REGISTER_ECS_MODULE(RegisterModule, "{30D43EE9-9E18-4527-9766-3436D6042199}"_guid);
 }

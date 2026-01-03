@@ -122,7 +122,7 @@ namespace Volt
 			SHADER_PARAMETER_STRUCT_INCLUDE(IrradianceVolumeParameters, IrrVolumeParameters)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(FinalGatherCS, "Engine/Shaders/Source/GlobalIllumination/FinalGather.hlsl", "FinalGatherCS", Compute);
+	VT_REGISTER_SHADER(FinalGatherCS, "Engine/Shaders/Source/GlobalIllumination/FinalGather.hlsl", "FinalGatherCS", Compute);
 
 	struct TemporalAccumulationCS : public GlobalShader
 	{
@@ -133,7 +133,7 @@ namespace Volt
 			SHADER_PARAMETER(float, AccumulationAlpha)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(TemporalAccumulationCS, "Engine/Shaders/Source/GlobalIllumination/TemporalAccumulation.hlsl", "TemporalAccumulationCS", Compute);
+	VT_REGISTER_SHADER(TemporalAccumulationCS, "Engine/Shaders/Source/GlobalIllumination/TemporalAccumulation.hlsl", "TemporalAccumulationCS", Compute);
 	
 	struct WorldRadianceCacheUpdateCS : public GlobalShader
 	{
@@ -144,7 +144,7 @@ namespace Volt
 			SHADER_PARAMETER_STRUCT_INCLUDE(SpatialHashTableParameters, SpatialHashTableParams)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(WorldRadianceCacheUpdateCS, "Engine/Shaders/Source/GlobalIllumination/WorldRadianceCacheUpdateCS.hlsl", "WorldRadianceCacheUpdateCS", Compute);
+	VT_REGISTER_SHADER(WorldRadianceCacheUpdateCS, "Engine/Shaders/Source/GlobalIllumination/WorldRadianceCacheUpdateCS.hlsl", "WorldRadianceCacheUpdateCS", Compute);
 
 	struct IrradianceVolumeTraceCascadeCS : public GlobalShader
 	{
@@ -165,7 +165,7 @@ namespace Volt
 			SHADER_PARAMETER(uint32_t, IrradianceVolumeCascadeIndex)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(IrradianceVolumeTraceCascadeCS, "Engine/Shaders/Source/GlobalIllumination/IrradianceVolumeTraceCascadeCS.hlsl", "TraceIrradianceVolumeCascadeCS", Compute);
+	VT_REGISTER_SHADER(IrradianceVolumeTraceCascadeCS, "Engine/Shaders/Source/GlobalIllumination/IrradianceVolumeTraceCascadeCS.hlsl", "TraceIrradianceVolumeCascadeCS", Compute);
 
 	struct WorldRadianceCacheShadeCellsCS : public GlobalShader
 	{
@@ -190,7 +190,7 @@ namespace Volt
 			SHADER_PARAMETER_STRUCT_INCLUDE(GPUSceneParameters, GPUScene)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(WorldRadianceCacheShadeCellsCS, "Engine/Shaders/Source/GlobalIllumination/WorldRadianceCacheShadeCellsCS.hlsl", "WorldRadianceCacheShadeCellsCS", Compute);
+	VT_REGISTER_SHADER(WorldRadianceCacheShadeCellsCS, "Engine/Shaders/Source/GlobalIllumination/WorldRadianceCacheShadeCellsCS.hlsl", "WorldRadianceCacheShadeCellsCS", Compute);
 
 	struct PropagateRaysFromWorldRadianceCacheCS : public GlobalShader
 	{
@@ -208,7 +208,7 @@ namespace Volt
 			SHADER_PARAMETER(uint32_t, IrradianceVolumeCascadeIndex)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(PropagateRaysFromWorldRadianceCacheCS, "Engine/Shaders/Source/GlobalIllumination/PropagateRaysFromWorldRadianceCacheCS.hlsl", "PropagateRaysFromWorldRadianceCacheCS", Compute);
+	VT_REGISTER_SHADER(PropagateRaysFromWorldRadianceCacheCS, "Engine/Shaders/Source/GlobalIllumination/PropagateRaysFromWorldRadianceCacheCS.hlsl", "PropagateRaysFromWorldRadianceCacheCS", Compute);
 
 	struct IrradianceVolumeFillProbeBordersCS : public GlobalShader
 	{
@@ -220,7 +220,7 @@ namespace Volt
 			SHADER_PARAMETER(uint32_t, IrradianceVolumeCascadeIndex)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(IrradianceVolumeFillProbeBordersCS, "Engine/Shaders/Source/GlobalIllumination/IrradianceVolumeFillProbeBordersCS.hlsl", "IrradianceVolumeFillProbeBordersCS", Compute);
+	VT_REGISTER_SHADER(IrradianceVolumeFillProbeBordersCS, "Engine/Shaders/Source/GlobalIllumination/IrradianceVolumeFillProbeBordersCS.hlsl", "IrradianceVolumeFillProbeBordersCS", Compute);
 
 	struct WorldRadianceCacheVisualizeCS : public GlobalShader
 	{
@@ -234,7 +234,7 @@ namespace Volt
 			SHADER_PARAMETER_STRUCT_INCLUDE(SpatialHashTableParameters, SpatialHashTableParams)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(WorldRadianceCacheVisualizeCS, "Engine/Shaders/Source/GlobalIllumination/WorldRadianceCacheVisualizeCS.hlsl", "VisualizeWorldRadianceCacheCS", Compute);
+	VT_REGISTER_SHADER(WorldRadianceCacheVisualizeCS, "Engine/Shaders/Source/GlobalIllumination/WorldRadianceCacheVisualizeCS.hlsl", "VisualizeWorldRadianceCacheCS", Compute);
 
 	struct VisualizeIrradianceVolumeVS : public GlobalShader
 	{
@@ -248,7 +248,7 @@ namespace Volt
 			SHADER_PARAMETER(uint32_t, IrradianceVolumeCascadeIndex)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(VisualizeIrradianceVolumeVS, "Engine/Shaders/Source/GlobalIllumination/IrradianceVolumeVisualization.hlsl", "VisualizeIrradianceVolumeVS", Vertex);
+	VT_REGISTER_SHADER(VisualizeIrradianceVolumeVS, "Engine/Shaders/Source/GlobalIllumination/IrradianceVolumeVisualization.hlsl", "VisualizeIrradianceVolumeVS", Vertex);
 
 	struct VisualizeIrradianceVolumePS : public GlobalShader
 	{
@@ -261,7 +261,7 @@ namespace Volt
 			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(VisualizeIrradianceVolumePS, "Engine/Shaders/Source/GlobalIllumination/IrradianceVolumeVisualization.hlsl", "VisualizeIrradianceVolumePS", Pixel);
+	VT_REGISTER_SHADER(VisualizeIrradianceVolumePS, "Engine/Shaders/Source/GlobalIllumination/IrradianceVolumeVisualization.hlsl", "VisualizeIrradianceVolumePS", Pixel);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(VisualizeIrradianceVolumeParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(VisualizeIrradianceVolumeVS::Parameters, VS)

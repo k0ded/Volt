@@ -25,12 +25,6 @@ namespace Volt
 				reflect.SetGUID("{D47FC3B6-1316-4008-B69F-15EBD2A6796A}"_guid);
 				reflect.SetLabel("Audio Listener Component");
 			}
-
-			static void OnCreate(AudioListenerEntity entity);
-			static void OnDestroy(AudioListenerEntity entity);
-
-
-			REGISTER_COMPONENT(AudioListenerComponent);
 		};
 
 		struct AudioSourceComponent
@@ -47,11 +41,6 @@ namespace Volt
 				reflect.SetGUID("{047C646B-62A8-4A46-86E6-A9A0B7306B56}"_guid);
 				reflect.SetLabel("Audio Source Component");
 			}
-
-			static void OnCreate(AudioSourceEntity entity);
-			static void OnDestroy(AudioSourceEntity entity);
-
-			REGISTER_COMPONENT(AudioSourceComponent);
 		};
 	}
 }

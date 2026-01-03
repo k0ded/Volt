@@ -29,7 +29,7 @@ namespace Volt
 		};
 
 		template<typename T>
-		bool RegisterShader(const std::filesystem::path& filepath, const std::string& entryPoint, RHI::ShaderStage shaderStage)
+		void RegisterShader(const std::filesystem::path& filepath, const std::string& entryPoint, RHI::ShaderStage shaderStage)
 		{
 			static_assert(std::is_base_of_v<GlobalShader, T>);
 
@@ -42,8 +42,26 @@ namespace Volt
 			registrationInfo.stageInfos.filePath = filepath;
 			registrationInfo.stageInfos.shaderStage = shaderStage;
 			registrationInfo.stageInfos.entryPoint = entryPoint;
+		}
 
-			return true;
+		template<typename T>
+		void UnregisterShader()
+		{
+			static_assert(std::is_base_of_v<GlobalShader, T>);
+
+			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
+
+			// #Note_Ivar: The registry may already have been destroyed due to
+			// DLL ordering.
+			if (m_shaderRegistrationInfo.empty())
+			{
+				return;
+			}
+
+			if (VT_CHECK(m_shaderRegistrationInfo.contains(typeIndex)))
+			{
+				m_shaderRegistrationInfo.erase(typeIndex);
+			}
 		}
 
 		VT_INLINE VT_NODISCARD const Map<TypeTraits::TypeIndex, ShaderRegistrationInfo>& GetRegisteredShaders() const { return m_shaderRegistrationInfo; }
@@ -63,6 +81,17 @@ namespace Volt
  	};
 }
 
-#define REGISTER_SHADER(klass, filepath, entryPoint, shaderStage) \
-	inline static bool ShaderRegistry_## klass ## _Registered = Volt::ShaderRegistry::Get().RegisterShader<klass>(filepath, entryPoint, Volt::RHI::ShaderStage::shaderStage)
-	
+// Must lie in a compilation unit (cpp file)
+#define VT_REGISTER_SHADER(klass, filepath, entryPoint, shaderStage) \
+	class ShaderRegistrar_##klass \
+	{ \
+	public: \
+		VT_INLINE ShaderRegistrar_##klass() \
+		{ \
+			Volt::ShaderRegistry::Get().RegisterShader<klass>(filepath, entryPoint, Volt::RHI::ShaderStage::shaderStage); \
+		} \
+		VT_INLINE ~ShaderRegistrar_##klass() \
+		{ \
+			Volt::ShaderRegistry::Get().UnregisterShader<klass>(); \
+		} \
+	} g_shaderRegistrar_##klass

@@ -23,6 +23,8 @@ namespace VoltSharpmake
 
             conf.AddPublicDependency<LogModule>(target);
 
+			conf.AddPrivateDependency<EntitySystemModule>(target);
+
             conf.AddPublicDependency<wwise>(target);
             conf.AddPublicDependency<fmod>(target);
         }

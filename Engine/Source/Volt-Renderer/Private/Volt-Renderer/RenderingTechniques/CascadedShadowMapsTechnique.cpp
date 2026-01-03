@@ -19,8 +19,8 @@
 
 namespace Volt
 {
-	REGISTER_SHADER(CascadedDirectionalShadowVS, "Engine/Shaders/Source/RenderPipelineLegacy/CascadedDirectionalShadowMap.hlsl", "MainVS", Vertex);
-	REGISTER_SHADER(CascadedDirectionalShadowPS, "Engine/Shaders/Source/RenderPipelineLegacy/CascadedDirectionalShadowMap.hlsl", "MainPS", Pixel);
+	VT_REGISTER_SHADER(CascadedDirectionalShadowVS, "Engine/Shaders/Source/RenderPipelineLegacy/CascadedDirectionalShadowMap.hlsl", "MainVS", Vertex);
+	VT_REGISTER_SHADER(CascadedDirectionalShadowPS, "Engine/Shaders/Source/RenderPipelineLegacy/CascadedDirectionalShadowMap.hlsl", "MainPS", Pixel);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(CascadedDirectionalShadowParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(CascadedDirectionalShadowVS::Parameters, VS)

@@ -17,6 +17,7 @@ public:
 private:
 	friend class ArchiveVersionRegistrar;
 	void RegisterVersion(const VoltGUID& guid, int32_t currentVersion, std::string_view name);
+	void UnregisterVersion(const VoltGUID& guid);
 
 	struct VersionInfo
 	{
@@ -31,7 +32,15 @@ class ArchiveVersionRegistrar
 {
 public:
 	ArchiveVersionRegistrar(const VoltGUID& guid, int32_t currentVersion, std::string_view name)
+		: m_guid(guid)
 	{
 		ArchiveVersionRegistry::Get().RegisterVersion(guid, currentVersion, name);
 	}
+	~ArchiveVersionRegistrar()
+	{
+		ArchiveVersionRegistry::Get().UnregisterVersion(m_guid);
+	}
+
+private:
+	VoltGUID m_guid;
 };

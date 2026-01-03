@@ -22,8 +22,6 @@ namespace Volt
 			reflect.SetOnStartCallback(&CommonComponent::OnStart);
 		}
 
-		REGISTER_COMPONENT(CommonComponent);
-
 	private:
 		using CommonEntity = ECS::Access
 			::Write<CommonComponent>

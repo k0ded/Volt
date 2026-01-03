@@ -52,7 +52,7 @@ namespace Volt
 	{
 		const std::string extension = filepath.extension().string();
 
-		if (!GetSourceAssetImporterRegistry().ImporterForExtensionExists(extension))
+		if (!SourceAssetImporterRegistry::Get().ImporterForExtensionExists(extension))
 		{
 			VT_LOGC(Warning, LogSourceAssetManager, "Trying to import and asset but no importer for the extension {} exists!", extension);
 			return {};
@@ -109,7 +109,7 @@ namespace Volt
 	{
 		const std::string extension = filepath.extension().string();
 
-		if (!GetSourceAssetImporterRegistry().ImporterForExtensionExists(extension))
+		if (!SourceAssetImporterRegistry::Get().ImporterForExtensionExists(extension))
 		{
 			VT_LOGC(Warning, LogSourceAssetManager, "Trying to import and asset but no importer for the extension {} exists!", extension);
 			return;
@@ -163,13 +163,13 @@ namespace Volt
 
 		const std::string extension = filepath.extension().string();
 
-		if (!GetSourceAssetImporterRegistry().ImporterForExtensionExists(extension))
+		if (!SourceAssetImporterRegistry::Get().ImporterForExtensionExists(extension))
 		{
 			VT_LOGC(Warning, LogSourceAssetManager, "Trying to get file information of asset but no importer for the extension {} exists!", extension);
 			return {};
 		}
 
-		return GetSourceAssetImporterRegistry().GetImporterForExtension(extension).GetSourceFileInformation(g_assetManager->GetAssetFilesystemPath(filepath));
+		return SourceAssetImporterRegistry::Get().GetImporterForExtension(extension).GetSourceFileInformation(g_assetManager->GetAssetFilesystemPath(filepath));
 	}
 
 	WorkQueue<SourceAssetManager::ImportJob, QueueThreadingPolicy::MPSC>& SourceAssetManager::GetOrCreateQueue(const std::string& extension)

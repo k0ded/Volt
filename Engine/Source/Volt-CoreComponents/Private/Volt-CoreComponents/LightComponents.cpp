@@ -8,6 +8,12 @@
 
 namespace Volt
 {
+	VT_REGISTER_COMPONENT(PointLightComponent);
+	VT_REGISTER_COMPONENT(SpotLightComponent);
+	VT_REGISTER_COMPONENT(RectangleLightComponent);
+	VT_REGISTER_COMPONENT(DirectionalLightComponent);
+	VT_REGISTER_COMPONENT(SkylightComponent);
+
 	namespace Utility
 	{
 		SceneLightDescription InitializeLightDescription(const PointLightComponent& component)

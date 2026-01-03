@@ -191,8 +191,6 @@ namespace Volt
 			reflect.AddMember(&RigidbodyComponent::m_disableGravity, 'dsgr', "Disable Gravity", "", false);
 			reflect.AddMember(&RigidbodyComponent::m_isKinematic, 'iskn', "Is Kinematic", "", false);
 		}
-
-		REGISTER_COMPONENT(RigidbodyComponent);
 	};
 
 	template<typename T, typename EntityType>

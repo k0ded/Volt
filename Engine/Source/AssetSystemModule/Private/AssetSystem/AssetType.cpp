@@ -3,18 +3,18 @@
 
 VT_REGISTER_ASSET_TYPE(None);
 
-bool AssetTypeRegistry::RegisterAssetType(const VoltGUID& guid, AssetType type)
+void AssetTypeRegistry::RegisterAssetType(const VoltGUID& guid, AssetType type)
 {
-	// #TODO_Ivar: HACK
-	if (m_typeMap.contains(guid))
-	{
-		return false;
-	}
-
 	VT_ENSURE(!m_typeMap.contains(guid));
 	m_typeMap[guid] = type;
+}
 
-	return true;
+void AssetTypeRegistry::UnregisterAssetType(const VoltGUID& guid)
+{
+	if (VT_CHECK(m_typeMap.contains(guid)))
+	{
+		m_typeMap.erase(guid);
+	}
 }
 
 AssetType AssetTypeRegistry::GetTypeFromGUID(const VoltGUID& guid) const

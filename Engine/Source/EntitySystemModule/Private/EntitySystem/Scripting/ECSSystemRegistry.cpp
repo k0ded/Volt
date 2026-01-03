@@ -1,17 +1,34 @@
 #include "espch.h"
 #include "EntitySystem/Scripting/ECSSystemRegistry.h"
 
-bool ECSSystemRegistry::RegisterECSModule(std::function<void(ECSBuilder& builder)> func)
+void ECSSystemRegistry::RegisterECSModule(std::function<void(ECSBuilder& builder)> func, const VoltGUID& guid)
 {
-	m_registeredModules.emplace_back(func);
-	return true;
+	VT_ENSURE(!m_registeredModules.contains(guid));
+	RegisteredModule& registeredModule = m_registeredModules[guid];
+	registeredModule.func = std::move(func);
+	registeredModule.guid = guid;
+}
+
+void ECSSystemRegistry::UnregisterECSModule(const VoltGUID& guid)
+{
+	// #Note_Ivar: The registry may already have been destroyed due to
+	// DLL ordering.
+	if (m_registeredModules.empty())
+	{
+		return;
+	}
+
+	if (VT_CHECK(m_registeredModules.contains(guid)))
+	{
+		m_registeredModules.erase(guid);
+	}
 }
 
 void ECSSystemRegistry::Build(ECSBuilder& builder)
 {
-	for (auto& module : m_registeredModules)
+	for (const auto& [guid, module] : m_registeredModules)
 	{
-		module(builder);
+		module.func(builder);
 	}
 }
 

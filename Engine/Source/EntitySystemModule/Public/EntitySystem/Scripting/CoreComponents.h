@@ -26,7 +26,6 @@ namespace Volt
 		reflect.AddConstant(Movability::Movable, "movable", "Movable");
 	}
 
-	REGISTER_ENUM(Movability);
 	VT_SETUP_ENUM_SERIALIZE_OPERATOR(Movability);
 
 	struct VTES_API TagComponent
@@ -40,8 +39,6 @@ namespace Volt
 			reflect.SetHidden();
 			reflect.AddMember(&TagComponent::tag, 'tag', "Tag", "", std::string(""));
 		}
-
-		REGISTER_COMPONENT(TagComponent);
 	};
 
 	struct VTES_API IDComponent
@@ -55,8 +52,6 @@ namespace Volt
 			reflect.SetHidden();
 			reflect.AddMember(&IDComponent::id, 'id', "ID", "", EntityID{}, ComponentMemberFlag::NoSerialize);
 		}
-
-		REGISTER_COMPONENT(IDComponent);
 	};
 
 	struct VTES_API TransformComponent
@@ -103,8 +98,6 @@ namespace Volt
 			reflect.AddMember(&TransformComponent::locked, 'lock', "Locked", "", false);
 			reflect.AddMember(&TransformComponent::movability, 'mvbl', "Movability", "", Movability::Static);
 		}
-
-		REGISTER_COMPONENT(TransformComponent);
 	};
 
 	struct VTES_API RelationshipComponent
@@ -120,7 +113,5 @@ namespace Volt
 			reflect.AddMember(&RelationshipComponent::parent, 'par', "Parent", "", EntityID(0));
 			reflect.AddMember(&RelationshipComponent::children, 'chld', "Children", "", EntityID(0));
 		}
-
-		REGISTER_COMPONENT(RelationshipComponent);
 	};
 }

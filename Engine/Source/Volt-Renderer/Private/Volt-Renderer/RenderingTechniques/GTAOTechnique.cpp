@@ -30,7 +30,7 @@ namespace Volt
 			SHADER_PARAMETER_UNIFORM_BUFFER(GTAOConstants, Constants)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(GTAODepthPrefilterCS, "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_DepthPrefilter.hlsl", "MainCS", Compute);
+	VT_REGISTER_SHADER(GTAODepthPrefilterCS, "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_DepthPrefilter.hlsl", "MainCS", Compute);
 
 	struct GTAOMainPassCS : public GlobalShader
 	{
@@ -45,7 +45,7 @@ namespace Volt
 			SHADER_PARAMETER(float4x4, ViewMatrix)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(GTAOMainPassCS, "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_MainPass.hlsl", "MainCS", Compute);
+	VT_REGISTER_SHADER(GTAOMainPassCS, "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_MainPass.hlsl", "MainCS", Compute);
 
 	struct GTAODenoiseCS : public GlobalShader
 	{
@@ -58,7 +58,7 @@ namespace Volt
 			SHADER_PARAMETER_UNIFORM_BUFFER(GTAOConstants, Constants)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(GTAODenoiseCS, "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_Denoise.hlsl", "MainCS", Compute);
+	VT_REGISTER_SHADER(GTAODenoiseCS, "Engine/Shaders/Source/PostProcessing/GTAO/GTAO_Denoise.hlsl", "MainCS", Compute);
 
 	GTAOTechnique::GTAOTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 		: m_renderGraph(renderGraph), m_blackboard(blackboard)

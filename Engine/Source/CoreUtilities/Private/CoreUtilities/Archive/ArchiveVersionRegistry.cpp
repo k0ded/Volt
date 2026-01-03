@@ -24,3 +24,11 @@ void ArchiveVersionRegistry::RegisterVersion(const VoltGUID& guid, int32_t curre
 	VT_ENSURE(!m_registeredVersions.contains(guid));
 	m_registeredVersions[guid] = { name, currentVersion };
 }
+
+void ArchiveVersionRegistry::UnregisterVersion(const VoltGUID& guid)
+{
+	if (VT_CHECK(m_registeredVersions.contains(guid)))
+	{
+		m_registeredVersions.erase(guid);
+	}
+}

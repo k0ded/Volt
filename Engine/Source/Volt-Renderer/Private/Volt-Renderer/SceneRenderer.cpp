@@ -321,7 +321,7 @@ namespace Volt
 			SHADER_PARAMETER_STRUCT_INCLUDE(BlueNoiseShaderParameters, BlueNoise)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(TonemapPS, "Engine/Shaders/Source/PostProcessing/Tonemap.hlsl", "MainPS", Pixel);
+	VT_REGISTER_SHADER(TonemapPS, "Engine/Shaders/Source/PostProcessing/Tonemap.hlsl", "MainPS", Pixel);
 
 	void SceneRenderer::AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture)
 	{
@@ -452,7 +452,7 @@ namespace Volt
 			RG_BUFFER_ACCESS(IndexBuffer, RGResourceAccess::IndexBuffer)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(SkyboxVS, "Engine/Shaders/Source/RenderPipelineLegacy/Skybox.hlsl", "MainVS", Vertex);
+	VT_REGISTER_SHADER(SkyboxVS, "Engine/Shaders/Source/RenderPipelineLegacy/Skybox.hlsl", "MainVS", Vertex);
 
 	struct SkyboxPS : public GlobalShader
 	{
@@ -466,7 +466,7 @@ namespace Volt
 			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(SkyboxPS, "Engine/Shaders/Source/RenderPipelineLegacy/Skybox.hlsl", "MainPS", Pixel);
+	VT_REGISTER_SHADER(SkyboxPS, "Engine/Shaders/Source/RenderPipelineLegacy/Skybox.hlsl", "MainPS", Pixel);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(SkyboxParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(SkyboxVS::Parameters, VS)
@@ -547,7 +547,7 @@ namespace Volt
 			SHADER_PARAMETER(uint, NumRadianceMipLevels)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(RenderDeferredShadingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "MainCS", Compute);
+	VT_REGISTER_SHADER(RenderDeferredShadingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "MainCS", Compute);
 
 	struct CompositeLightingCS : public GlobalShader
 	{
@@ -557,7 +557,7 @@ namespace Volt
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, IndirectLight)
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	REGISTER_SHADER(CompositeLightingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "CompositeLightingCS", Compute);
+	VT_REGISTER_SHADER(CompositeLightingCS, "Engine/Shaders/Source/RenderPipelineLegacy/RenderDeferredShading.hlsl", "CompositeLightingCS", Compute);
 
 	void SceneRenderer::AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, 
 		RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer, RGTextureRef indirectLightTexture)

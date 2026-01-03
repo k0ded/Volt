@@ -11,7 +11,7 @@
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::EntityDesc, EntityDesc);
-	REGISTER_CUSTOM_ASSET_METADATA_TYPE(EntityDescCustomMetadata, AssetTypes::EntityDesc);
+	VT_REGISTER_CUSTOM_ASSET_METADATA_TYPE(EntityDescCustomMetadata, AssetTypes::EntityDesc);
 
 	EntityDesc::EntityDesc(EntityID entityID, AssetHandle sceneHandle)
 		: m_sceneHandle(sceneHandle), m_entityID(entityID)

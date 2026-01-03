@@ -17,7 +17,7 @@
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Material, MaterialAsset);
-	REGISTER_CUSTOM_ASSET_METADATA_TYPE(MaterialCustomMetadata, AssetTypes::Material);
+	VT_REGISTER_CUSTOM_ASSET_METADATA_TYPE(MaterialCustomMetadata, AssetTypes::Material);
 
 	MaterialAsset::MaterialAsset()
 	{

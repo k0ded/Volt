@@ -4,5 +4,5 @@
 
 namespace Volt
 {
-
+	VT_REGISTER_COMPONENT(PrefabComponent);
 }

@@ -38,7 +38,8 @@ using AssetType = Ref<AssetTypeBase>;
 class VTAS_API AssetTypeRegistry
 {
 public:
-	bool RegisterAssetType(const VoltGUID& guid, AssetType type);
+	void RegisterAssetType(const VoltGUID& guid, AssetType type);
+	void UnregisterAssetType(const VoltGUID& guid);
 
 	AssetType GetTypeFromGUID(const VoltGUID& guid) const;
 	AssetType GetTypeFromExtension(const std::string& extension) const;
@@ -117,8 +118,20 @@ namespace AssetTypes \
 
 #define EXPAND(...) __VA_OPT__(__VA_ARGS__)
 
+// Must lie in a compilation unit (cpp file)
 #define VT_REGISTER_ASSET_TYPE(typeName) \
 	namespace AssetTypes { Ref<typeName ## Type> typeName = CreateRef<typeName ## Type>(); } \
-	bool AssetType_ ## typeName ## _Registered = AssetTypeRegistry::Get().RegisterAssetType(AssetTypes::typeName ## Type::guid, AssetTypes::typeName);
+	class AssetTypeRegistrar_##typeName \
+	{ \
+	public: \
+		VT_INLINE AssetTypeRegistrar_##typeName() \
+		{ \
+			AssetTypeRegistry::Get().RegisterAssetType(AssetTypes::typeName ## Type::guid, AssetTypes::typeName); \
+		} \
+		VT_INLINE ~AssetTypeRegistrar_##typeName() \
+		{ \
+			AssetTypeRegistry::Get().UnregisterAssetType(AssetTypes::typeName ## Type::guid); \
+		} \
+	} g_assetTypeRegistrar_##typeName
 
 VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(None, false, (Vector<std::string>{}), VoltGUID::Null(), VTAS_API);

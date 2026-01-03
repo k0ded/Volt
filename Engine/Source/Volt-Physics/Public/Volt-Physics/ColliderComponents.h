@@ -38,8 +38,6 @@ namespace Volt
 			reflect.SetOnDestroyCallback(&BoxColliderComponent::OnDestroy);
 		}
 
-		REGISTER_COMPONENT(BoxColliderComponent);
-
 	private:
 		using PhysicsEntity = ECS::Access
 			::Write<BoxColliderComponent>
@@ -74,8 +72,6 @@ namespace Volt
 			reflect.SetOnInitializeCallback(&SphereColliderComponent::OnInitialize);
 			reflect.SetOnDestroyCallback(&SphereColliderComponent::OnDestroy);
 		}
-
-		REGISTER_COMPONENT(SphereColliderComponent);
 
 	private:
 		using PhysicsEntity = ECS::Access
@@ -114,8 +110,6 @@ namespace Volt
 			reflect.SetOnDestroyCallback(&CapsuleColliderComponent::OnDestroy);
 		}
 
-		REGISTER_COMPONENT(CapsuleColliderComponent);
-
 	private:
 		using PhysicsEntity = ECS::Access
 			::Write<CapsuleColliderComponent>
@@ -152,8 +146,6 @@ namespace Volt
 			reflect.SetOnInitializeCallback(&MeshColliderComponent::OnInitialize);
 			reflect.SetOnDestroyCallback(&MeshColliderComponent::OnDestroy);
 		}
-
-		REGISTER_COMPONENT(MeshColliderComponent);
 
 	private:
 		using PhysicsEntity = ECS::Access
