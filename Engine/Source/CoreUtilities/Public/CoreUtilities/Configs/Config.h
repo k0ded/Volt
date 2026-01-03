@@ -27,6 +27,12 @@ public:
 		return m_value.Get<T>();
 	}
 
+	template<typename T>
+	bool Is() const
+	{
+		return m_value.Is<T>();
+	}
+
 private:
 	ValueType m_value;
 };

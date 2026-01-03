@@ -7,7 +7,10 @@ Engine/Intermediate/
 Engine/Source/SharpmakeProject/obj
 Engine/Source/SharpmakeProject/bin
 Engine/Source/SharpmakeProject/output
-Source/Properties
+Engine/Source/obj
+Engine/Source/output
+Engine/Source/Properties
+Engine/Source/sharpmakeautocleanupdb_debugsolution.json
 
 Engine/User
 Engine/Engine/Shaders/Cache

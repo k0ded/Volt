@@ -25,6 +25,8 @@ namespace Volt
 
 	private:
 		void LoadConfigs();
+		void SetupConsoleVariables();
+
 		bool LoadConfig(const std::filesystem::path& configFilepath, Config& outConfig);
 
 		Config m_combinedConfig;

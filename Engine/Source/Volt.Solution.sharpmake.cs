@@ -3,6 +3,7 @@ using System.Reflection;
 using System;
 using System.Linq;
 using System.IO;
+using System.Collections.Generic;
 
 namespace VoltSharpmake
 { 
@@ -14,6 +15,47 @@ namespace VoltSharpmake
             AddTargets(CommonTarget.GetDefaultTargets());
             Name = "Volt";
         }
+
+		private void AddConfigFiles(Configuration conf)
+		{
+			List<string> configFilesToAdd = new List<string>();
+
+			// Check engine config directory
+			{
+				string configDir = Path.Combine(Globals.EngineDirectory, "Config");
+				if (Directory.Exists(configDir))
+				{
+					string[] filesInDirectory = Directory.GetFiles(configDir);
+
+					foreach (string filePath in filesInDirectory)
+					{
+						if (Path.GetExtension(filePath) == ".ini")
+						{
+							configFilesToAdd.Add(filePath);
+						}
+					}
+				}
+			}
+
+			// Check game config directory
+			{
+				string configDir = Path.Combine(Globals.VtProjectDirectory, "Config");
+				if (Directory.Exists(configDir))
+				{
+					string[] filesInDirectory = Directory.GetFiles(configDir);
+
+					foreach (string filePath in filesInDirectory)
+					{
+						if (Path.GetExtension(filePath) == ".ini")
+						{
+							configFilesToAdd.Add(filePath);
+						}
+					}
+				}
+			}
+
+			conf.Solution.ExtraItems["Configs"] = new Strings(configFilesToAdd);
+		}
 
         public override void ConfigureAll(Configuration conf, CommonTarget target)
         {
@@ -30,6 +72,8 @@ namespace VoltSharpmake
 			}
 
 			conf.Solution.ExtraItems["Solution Items"] = new Strings(Path.Combine(Globals.RootDirectory, ".editorconfig"));
+			AddConfigFiles(conf);
+
 			conf.SetStartupProject<Sandbox>();
 		}
 	}
