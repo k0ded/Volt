@@ -115,6 +115,7 @@ namespace Volt
 		MeshDrawCommandHashKey GetHashKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive);
 
 		Vector<MeshDrawCommandBucket> m_meshDrawCommandBuckets;
+		Vector<uint32_t> m_meshDrawCommandBucketPrimitiveOffsets;
 		Map<MeshDrawCommandHashKey, size_t> m_hashKeyToBucketIndex;
 
 		JobCounter* m_sortTaskCounter = nullptr;

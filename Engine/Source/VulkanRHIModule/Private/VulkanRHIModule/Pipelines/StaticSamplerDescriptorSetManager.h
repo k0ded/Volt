@@ -1,5 +1,7 @@
 #pragma once
 
+#include <RHIModule/Shader/ShaderCommon.h>
+
 #include <CoreUtilities/CompilerTraits.h>
 
 struct VkDescriptorSetLayout_T;
@@ -10,7 +12,7 @@ namespace Volt::RHI
 	class StaticSamplerDescriptorSetManager
 	{
 	public:
-		inline static constexpr uint32_t Set = 10;
+		inline static constexpr uint32_t Set = GetNumBindableShaderStages() + 1;
 
 		StaticSamplerDescriptorSetManager();
 		~StaticSamplerDescriptorSetManager();

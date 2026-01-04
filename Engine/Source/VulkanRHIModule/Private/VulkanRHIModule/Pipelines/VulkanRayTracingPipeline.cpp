@@ -1,10 +1,13 @@
 #include <vkpch.h>
 
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
+#include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
+#include "VulkanRHIModule/VulkanResourceCast.h"
+#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/RHIModule.h>
@@ -189,18 +192,35 @@ namespace Volt::RHI
 		auto device = GraphicsContext::GetDevice();
 
 		// Create pipeline layout
-#if 0
+		// Create descriptor set layouts
+		bool anyAccessesRayTracingResourceTable = false;
+		{
+			Vector<ShaderParameterMap::ResourceBindings> shaderResourceBindings;
+
+			for (const auto shader : m_createInfo.rayGenTable)
+			{
+				const ShaderParameterMap& parameterMap = shader->GetParameterMap();
+
+				shaderResourceBindings.emplace_back(parameterMap.GetResourceBindings());
+				anyAccessesRayTracingResourceTable |= parameterMap.AccessesRayTracingTable();
+			}
+
+			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
+			m_descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderResourceBindings, anyAccessesRayTracingResourceTable);
+		}
+
+		// Create pipeline layout
 		{
 			VkPipelineLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			info.setLayoutCount = 2;
-			info.pSetLayouts = descriptorSetLayouts.data();
+			info.pNext = nullptr;
+			info.setLayoutCount = static_cast<uint32_t>(m_descriptorSets.pipelineLayoutDescriptorSetLayouts.size());
+			info.pSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.data();
 			info.pushConstantRangeCount = 0;
 			info.pPushConstantRanges = nullptr;
 
 			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_pipelineLayout));
 		}
-#endif
 
 		VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo{};
 		pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
@@ -213,7 +233,25 @@ namespace Volt::RHI
 		pipelineCreateInfo.layout = m_pipelineLayout;
 		pipelineCreateInfo.flags = 0;
 
-		VT_VK_CHECK(vkCreateRayTracingPipelinesKHR(device->GetHandle<VkDevice>(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &m_pipeline));
+		VT_VK_CHECK(vkCreateRayTracingPipelinesKHR(device->GetHandle<VkDevice>(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipelineCreateInfo, VT_VULKAN_ALLOCATOR, &m_pipeline));
+
+		if (anyAccessesRayTracingResourceTable)
+		{
+			// Erase the ray tracing pipelines from the lists, as they should not be accessed outside of the pipeline.
+			if (m_descriptorSets.descriptorSetLayouts.contains(RayTracingTableDescriptorSetManager::Set))
+			{
+				m_descriptorSets.descriptorSetLayouts.erase(RayTracingTableDescriptorSetManager::Set);
+			}
+
+			for (auto it = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.begin(); it != m_descriptorSets.pipelineLayoutDescriptorSetLayouts.end(); ++it)
+			{
+				if (*it == RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout())
+				{
+					m_descriptorSets.pipelineLayoutDescriptorSetLayouts.erase(it);
+					break;
+				}
+			}
+		}
 
 		// Get shader handles
 		{
@@ -305,13 +343,6 @@ namespace Volt::RHI
 		return false;
 	}
 
-	const ShaderUniform& VulkanRayTracingPipeline::GetRenderGraphConstants() const
-	{
-		static ShaderUniform s;
-
-		return s;//m_rayGenData.shaders.front()->GetResources().renderGraphConstantsData;
-	}
-
 	void* VulkanRayTracingPipeline::GetHandleImpl() const
 	{
 		return m_pipeline;
@@ -324,11 +355,23 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([pipelineLayout = m_pipelineLayout, pipeline = m_pipeline]()
+		RHIModule::GetInstance().DestroyResource([pipelineLayout = m_pipelineLayout, pipeline = m_pipeline, descriptorSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts]()
 		{
+			VulkanGraphicsContext* vulkanGraphicsContext = ResourceCast(&GraphicsContext::Get());
 			auto device = GraphicsContext::GetDevice();
+
 			vkDestroyPipelineLayout(device->GetHandle<VkDevice>(), pipelineLayout, VT_VULKAN_ALLOCATOR);
 			vkDestroyPipeline(device->GetHandle<VkDevice>(), pipeline, VT_VULKAN_ALLOCATOR);
+
+			// Make sure we don't destroy any shared descriptor set layouts.
+			for (const auto& descriptorSetLayout : descriptorSetLayouts)
+			{
+				if (descriptorSetLayout != StaticSamplerDescriptorSetManager::Get().GetDescriptorSetLayout() &&
+					descriptorSetLayout != vulkanGraphicsContext->GetEmptyDescriptorSetLayout())
+				{
+					vkDestroyDescriptorSetLayout(device->GetHandle<VkDevice>(), descriptorSetLayout, VT_VULKAN_ALLOCATOR);
+				}
+			}
 		});
 
 		m_pipelineLayout = nullptr;

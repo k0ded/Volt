@@ -87,9 +87,13 @@ namespace Volt
 		uint32_t numPrimitivesToRender = 0;
 
 		Vector<uint32_t> primitiveIndices;
+
+		m_meshDrawCommandBucketPrimitiveOffsets.clear();
+
 		for (const auto& meshDrawCommandBucket : m_meshDrawCommandBuckets)
 		{
 			primitiveIndices.reserve(primitiveIndices.size() + meshDrawCommandBucket.drawCommands.size());
+			m_meshDrawCommandBucketPrimitiveOffsets.emplace_back(numPrimitivesToRender);
 
 			for (const auto& drawCommand : meshDrawCommandBucket.drawCommands)
 			{
@@ -131,51 +135,139 @@ namespace Volt
 			return;
 		}
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = renderContext.GetRHICommandBuffer();
+		RefPtr<RHI::CommandBuffer> mainCommandBuffer = renderContext.GetRHICommandBuffer();
 		RefPtr<RHI::StorageBuffer> primitiveIndexVertexBuffer = m_primitiveIndexVertexBuffer->GetRHIResource()->GetRHIBuffer();
 
-		RHI::VertexBufferVector primitiveIndexVertexBufferVector;
-		primitiveIndexVertexBufferVector.resize(1);
-		primitiveIndexVertexBufferVector[0].buffer = primitiveIndexVertexBuffer;
+		RHI::RenderingAttachmentDeclaration renderingAttachmentDeclaration;
+		renderContext.FillRenderingAttachmentDeclaration(renderingAttachmentDeclaration);
 
-		uint64_t primitiveOffset = 0;
-		for (const MeshDrawCommandBucket& drawCommandBucket : m_meshDrawCommandBuckets)
+		constexpr uint32_t NumMaxBucketsPerCommandBuffer = 128;
+		//constexpr uint32_t NumMaxCommandBuffers = 512;
+
+		const RenderingInfo& activeRenderingInfo = renderContext.GetActiveRenderingInfo();
+
+		auto recordBucketRange = [&]<bool IsSecondary>(uint32_t startIndex, uint32_t num, uint32_t primitiveOffset, RefPtr<RHI::CommandBuffer> commandBuffer, std::bool_constant<IsSecondary>)
 		{
-			VT_PROFILE_SCOPE("DrawCommandBucket");
+			VT_PROFILE_SCOPE("Record DrawCommandBucket Range");
 
-			for (const MeshDrawCommandBucket::InstancingRange& instancingRange : drawCommandBucket.instancingRanges)
+			if constexpr (IsSecondary)
 			{
-				const MeshDrawCommand& firstDrawComamnd = drawCommandBucket.drawCommands.at(instancingRange.offset);
-
-				ArrayView<RHI::ShaderParameterMap> shaderParametersMaps = firstDrawComamnd.renderPipeline->GetShaderParameterMaps();
-				InlineVector<RenderContext::PerStageShaderParameters, 8> perShaderStageParameters = renderContext.SetupPipelineData(firstDrawComamnd.renderPipeline);
-
-				RHI::ShaderBindingMap shaderBindings = RHI::ShaderBindingMap::InitializeFromPipeline(firstDrawComamnd.renderPipeline);
-				batchedShaderParameters.BindShaderBindings(shaderParametersMaps, shaderBindings);
-				batchedShaderParameters.PopulateShaderParameterUniformBuffers(shaderParametersMaps, perShaderStageParameters);
-
-				for (auto& shaderParameters : perShaderStageParameters)
-				{
-					shaderBindings.SetUniformBufferWithSizeAndOffset(shaderParameters.shaderStage, RHI::Globals::SHADER_GLOBALS_BINDING, shaderParameters.uniformBufferSRV->GetRHIView(), shaderParameters.size, shaderParameters.offset);
-				}
-
-				firstDrawComamnd.renderPrimitive->material->BindToShaderBindingMap(shaderBindings, firstDrawComamnd.renderPipeline);
-
-				VT_ENSURE_MSG(firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
-
-				const uint32_t perInstanceBindingIndex = firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
-
-				primitiveIndexVertexBufferVector[0].offset = (primitiveOffset + instancingRange.offset) * sizeof(uint32_t);
-
-				commandBuffer->BindPipeline(firstDrawComamnd.renderPipeline);
-				commandBuffer->BindShaderBindings(shaderBindings);
-				commandBuffer->BindVertexBuffers(firstDrawComamnd.vertexBuffers, 0);
-				commandBuffer->BindVertexBuffers(primitiveIndexVertexBufferVector, perInstanceBindingIndex);
-				commandBuffer->BindIndexBuffer(firstDrawComamnd.indexBuffer);
-				commandBuffer->DrawIndexed(firstDrawComamnd.drawCommand.indexCount, instancingRange.count, firstDrawComamnd.drawCommand.firstIndex, firstDrawComamnd.drawCommand.vertexOffset, firstDrawComamnd.drawCommand.firstInstance);
+				commandBuffer->Begin(true);
+				commandBuffer->SetScissors({ activeRenderingInfo.scissor });
+				commandBuffer->SetViewports({ activeRenderingInfo.viewport });
 			}
 
-			primitiveOffset += drawCommandBucket.drawCommands.size();
+			RHI::VertexBufferVector primitiveIndexVertexBufferVector;
+			primitiveIndexVertexBufferVector.resize(1);
+			primitiveIndexVertexBufferVector[0].buffer = primitiveIndexVertexBuffer;
+
+			RawPtr<RHI::RenderPipeline> prevRenderPipeline;
+
+			for (uint32_t i = startIndex; i < startIndex + num; ++i)
+			{
+				const MeshDrawCommandBucket currentBucket = m_meshDrawCommandBuckets.at(i);
+
+				 for (const MeshDrawCommandBucket::InstancingRange& instancingRange : currentBucket.instancingRanges)
+				 {
+					 const MeshDrawCommand& firstDrawComamnd = currentBucket.drawCommands.at(instancingRange.offset);
+					 VT_ENSURE_MSG(firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
+					 const uint32_t perInstanceBindingIndex = firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
+
+					 primitiveIndexVertexBufferVector[0].offset = (primitiveOffset + instancingRange.offset) * sizeof(uint32_t);
+
+					 // We don't need to rebind the same pipeline.
+					 const bool shouldBindPipeline = (prevRenderPipeline == nullptr || prevRenderPipeline != firstDrawComamnd.renderPipeline);
+					 if (shouldBindPipeline)
+					 {
+						 prevRenderPipeline = firstDrawComamnd.renderPipeline;
+						 commandBuffer->BindPipeline(firstDrawComamnd.renderPipeline);
+
+						 ArrayView<RHI::ShaderParameterMap> shaderParametersMaps = firstDrawComamnd.renderPipeline->GetShaderParameterMaps();
+						 InlineVector<RenderContext::PerStageShaderParameters, 8> perShaderStageParameters = renderContext.SetupPipelineData(firstDrawComamnd.renderPipeline);
+
+						 RHI::ShaderBindingMap shaderBindings = RHI::ShaderBindingMap::InitializeFromPipeline(firstDrawComamnd.renderPipeline);
+						 batchedShaderParameters.BindShaderBindings(shaderParametersMaps, shaderBindings);
+						 batchedShaderParameters.PopulateShaderParameterUniformBuffers(shaderParametersMaps, perShaderStageParameters);
+
+						 for (auto& shaderParameters : perShaderStageParameters)
+						 {
+							 shaderBindings.SetUniformBufferWithSizeAndOffset(shaderParameters.shaderStage, RHI::Globals::SHADER_GLOBALS_BINDING, shaderParameters.uniformBufferSRV->GetRHIView(), shaderParameters.size, shaderParameters.offset);
+						 }
+
+						 firstDrawComamnd.renderPrimitive->material->BindToShaderBindingMap(shaderBindings, firstDrawComamnd.renderPipeline);
+
+						 commandBuffer->BindShaderBindings(shaderBindings);
+					 }
+
+					 commandBuffer->BindVertexBuffers(firstDrawComamnd.vertexBuffers, 0);
+					 commandBuffer->BindVertexBuffers(primitiveIndexVertexBufferVector, perInstanceBindingIndex);
+					 commandBuffer->BindIndexBuffer(firstDrawComamnd.indexBuffer);
+					 
+					 commandBuffer->DrawIndexed(
+						 firstDrawComamnd.drawCommand.indexCount,
+						 instancingRange.count,
+						 firstDrawComamnd.drawCommand.firstIndex,
+						 firstDrawComamnd.drawCommand.vertexOffset,
+						 firstDrawComamnd.drawCommand.firstInstance);
+				 }
+
+				 primitiveOffset += static_cast<uint32_t>(currentBucket.drawCommands.size());
+			}
+
+			if constexpr (IsSecondary)
+			{
+				commandBuffer->End();
+			}
+		};
+
+		const uint32_t numDrawBuckets = static_cast<uint32_t>(m_meshDrawCommandBuckets.size());
+
+		// Record into the main command buffer
+		if (m_meshDrawCommandBuckets.size() < NumMaxBucketsPerCommandBuffer)
+		{
+			recordBucketRange(0, numDrawBuckets, 0, mainCommandBuffer, std::bool_constant<false>{});
+		}
+		// Dispatch jobs to record the secondary command buffers.
+		else
+		{
+			struct RecordingRange
+			{
+				uint32_t offset;
+				uint32_t num;
+			};
+
+			const uint32_t numCommandBuffers = Math::DivideRoundUp(numDrawBuckets, NumMaxBucketsPerCommandBuffer);
+
+			Vector<RefPtr<RHI::CommandBuffer>> commandBuffers;
+			Vector<RecordingRange> commandBufferRanges;
+
+			commandBuffers.resize(numCommandBuffers);
+			commandBufferRanges.resize(numCommandBuffers);
+
+			uint32_t currentOffset = 0;
+			for (uint32_t i = 0; i < numCommandBuffers; ++i)
+			{
+				commandBuffers[i] = RHI::CommandBuffer::CreateSecondary(&renderingAttachmentDeclaration);
+
+				commandBufferRanges[i].offset = currentOffset;
+				commandBufferRanges[i].num = (currentOffset + NumMaxBucketsPerCommandBuffer) < numDrawBuckets ? NumMaxBucketsPerCommandBuffer : (numDrawBuckets - currentOffset);
+			
+				currentOffset += commandBufferRanges[i].num;
+			}
+
+			TaskGraph taskGraph{ ExecutionPriority::Render };
+
+			for (size_t i = 0; i < commandBuffers.size(); ++i)
+			{
+				taskGraph.AddTask("Record Mesh Pass", [i, this, &commandBufferRanges, &recordBucketRange, &commandBuffers]() 
+				{
+					const uint32_t primitiveOffset = m_meshDrawCommandBucketPrimitiveOffsets.at(commandBufferRanges[i].offset);
+					recordBucketRange(commandBufferRanges[i].offset, commandBufferRanges[i].num, primitiveOffset, commandBuffers[i], std::bool_constant<true>{});
+				});
+			}
+
+			taskGraph.ExecuteAndWait();
+			mainCommandBuffer->ExecuteSecondaryCommandBuffers(commandBuffers);
 		}
 	}
 

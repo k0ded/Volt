@@ -1,5 +1,7 @@
 #pragma once
 
+#include <RHIModule/Shader/ShaderCommon.h>
+
 #include <CoreUtilities/CompilerTraits.h>
 #include <CoreUtilities/Containers/ArrayView.h>
 
@@ -11,7 +13,7 @@ namespace Volt::RHI
 	{
 	public:
 		inline static constexpr uint32_t MaxSize = 8192;
-		inline static constexpr uint32_t Set = 9;
+		inline static constexpr uint32_t Set = GetNumBindableShaderStages();
 		inline static constexpr uint32_t TexturesBinding = 0;
 		inline static constexpr uint32_t BuffersBinding = 1;
 		inline static constexpr uint32_t DescriptorTypeCount = 2;
