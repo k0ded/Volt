@@ -7,6 +7,7 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Any.h>
+#include <CoreUtilities/EnumUtils.h>
 
 #include <shared_mutex>
 #include <filesystem>
@@ -30,24 +31,22 @@ namespace Volt
 	};
 	VT_SETUP_ENUM_CLASS_OPERATORS(AssetFlag);
 
-	enum class AssetMetadataFlag : uint8_t
-	{
+	CREATE_ENUM_TYPED(AssetMetadataFlag, uint8_t,
 		None = 0,
-		Missing = BIT(0),
-		Invalid = BIT(1),
-		MemoryOnly = BIT(2),
-		Anonymous = BIT(3)
-	};
+		Missing = 1 << 0,
+		Invalid = 1 << 1,
+		MemoryOnly = 1 << 2,
+		Anonymous = 1 << 3
+	);
 	VT_SETUP_ENUM_CLASS_OPERATORS(AssetMetadataFlag);
 
-	enum class AssetLoadState : uint8_t
-	{
+	CREATE_ENUM_TYPED(AssetLoadState, uint8_t,
 		Unloaded,
 		Queued,
 		Loading,
 		Loaded,
 		Unloading
-	};
+	);
 
 	struct AssetMetadataArchiveVersion
 	{
@@ -245,6 +244,7 @@ namespace Volt
 		VT_INLINE bool HasFilepath() const { return !filepath.empty(); }
 		VT_INLINE bool IsMemoryAsset() const { return IsFlagSet(AssetMetadataFlag::MemoryOnly); }
 		VT_INLINE bool IsLoaded() const { return m_loadState.load(std::memory_order::relaxed) == AssetLoadState::Loaded; }
+		VT_INLINE AssetLoadState GetLoadState() const { return m_loadState.load(std::memory_order::relaxed); }
 
 		template<typename CustomMetadataType>
 		VT_INLINE const CustomMetadataType& GetCustomData() const
@@ -314,7 +314,7 @@ namespace Volt
 			return succeeded;
 		}
 
-		VT_INLINE uint64_t GetGeneration(std::memory_order memoryOrder = std::memory_order::relaxed)
+		VT_INLINE uint64_t GetGeneration(std::memory_order memoryOrder = std::memory_order::relaxed) const
 		{
 			return m_generation.load(memoryOrder);
 		}
