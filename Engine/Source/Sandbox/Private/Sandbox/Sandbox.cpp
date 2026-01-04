@@ -29,6 +29,7 @@
 #include "Sandbox/Window/TextureViewerPanel.h"
 #include "Sandbox/Window/DebugToolsPanel.h"
 #include "Sandbox/Window/ProjectConversionPanel.h"
+#include "Sandbox/Window/AssetRegistryPanel.h"
 #include "Sandbox/Window/Animation/AnimationGraphEditorPanel.h"
 
 #include "Sandbox/SceneRendererExtensions/GridSceneRendererExtension.h"
@@ -222,6 +223,7 @@ void Sandbox::RegisterPanels()
 	EditorLibrary::Register<RendererSettingsPanel>("Advanced", m_sceneRenderer);
 	EditorLibrary::Register<RenderGraphDebuggerPanel>("Advanced", m_sceneRenderer);
 	EditorLibrary::Register<EngineStatisticsPanel>("Advanced", m_runtimeScene, m_sceneRenderer, m_gameSceneRenderer);
+	EditorLibrary::Register<AssetRegistryPanel>("Advanced");
 	EditorLibrary::RegisterWithType<TextureViewerPanel>("Advanced", AssetTypes::Texture);
 
 #if 0
