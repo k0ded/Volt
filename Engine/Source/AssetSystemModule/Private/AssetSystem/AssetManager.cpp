@@ -623,23 +623,17 @@ namespace Volt
 	void AssetManager::QueueAssetForDestruction(AssetRefCounter* assetRefCounter)
 	{
 		Asset* asset = reinterpret_cast<Asset*>(assetRefCounter);
-		
-		bool oldInstance = false;
-		{
-			ReadOnlyAssetMetadata readOnlyAssetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
 
-			// This is an old instance, it shouldn't change any state on the metadata.
-			if (asset->m_generation < readOnlyAssetMetadata->GetGeneration())
-			{
-				oldInstance = true;
-				// We'll just queue it for destruction.
-				m_assetDestructionQueue.Emplace(assetRefCounter, readOnlyAssetMetadata->IsMemoryAsset());
-			}
+		AssetMetadata* assetMetadata = m_assetRegistry.GetAssetMetadata(asset->GetAssetHandle());
+
+		// This is an old instance, it shouldn't change any state on the metadata.
+		if (asset->m_generation < assetMetadata->GetGeneration())
+		{
+			// We'll just queue it for destruction.
+			m_assetDestructionQueue.Emplace(assetRefCounter);
 		}
-
-		if(!oldInstance)
+		else
 		{
-			WriteableAssetMetadata assetMetadata = GetWriteableAssetMetadata(asset->GetAssetHandle());
 			AssetLoadState expectedLoadState = AssetLoadState::Loaded;
 			if (!assetMetadata->TryTransitionLoadState(expectedLoadState, AssetLoadState::Unloading))
 			{
@@ -659,7 +653,7 @@ namespace Volt
 				VT_ENSURE(false);
 			}
 
-			m_assetDestructionQueue.Emplace(assetRefCounter, assetMetadata->IsMemoryAsset());
+			m_assetDestructionQueue.Emplace(assetRefCounter);
 		}
 	}
 
@@ -685,9 +679,16 @@ namespace Volt
 			asset->~Asset();
 			m_assetAllocator.FreeAsset(assetType, asset);
 
-			if (assetUnloadData.isMemoryAsset)
+			// Lock metadata mutex here.
+			assetMetadata->m_assetMetadataMutex.lock();
+
+			if (!assetMetadata->IsMemoryAsset())
 			{
-				assetMetadata->m_assetMetadataMutex.lock();
+				// Unlock it here as we are finished with it.
+				assetMetadata->m_assetMetadataMutex.unlock();
+			}
+			else
+			{
 				// If the asset is a memory asset, we will also remove it from the registry.
 				// There is no reason to keep it around.
 				// The mutex gets unlocked in here.

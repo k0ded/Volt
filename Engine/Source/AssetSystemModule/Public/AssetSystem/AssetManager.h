@@ -148,7 +148,6 @@ namespace Volt
 		struct AssetUnloadData
 		{
 			AssetRefCounter* asset;
-			bool isMemoryAsset;
 		};
 
 		template<VoltAssetType T, typename... Args> AssetReference<T> CreateAssetImpl(std::string_view assetName, bool isMemoryAsset, bool isAnonymous, AssetHandle assetHandle, Args&&... args);
