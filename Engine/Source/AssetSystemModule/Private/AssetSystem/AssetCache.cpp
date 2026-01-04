@@ -42,7 +42,7 @@ namespace Volt
 		const bool inserted = m_hashTable.Insert(hash, hashIndex);
 		if (inserted)
 		{
-			m_cache[hashIndex] = asset.GetRaw();
+			m_cache[hashIndex].asset.store(asset.GetRaw(), std::memory_order::relaxed);
 
 			if (s_assetCacheLog.GetValue())
 			{
@@ -72,17 +72,20 @@ namespace Volt
 		const bool found = m_hashTable.GetAndRemove(hash, hashIndex);
 		if (found)
 		{
-			if (s_assetCacheLog.GetValue())
-			{
-				VT_LOGC(Trace, LogAssetSystem,
-					"Removed asset '{}' (Handle: '{}', Type: '{}', Generation: '{}') from cache",
-					m_cache[hashIndex]->GetAssetName(),
-					m_cache[hashIndex]->GetAssetHandle(),
-					m_cache[hashIndex]->GetType()->GetName(),
-					generation);
-			}
+			Asset* asset = m_cache[hashIndex].asset.exchange(nullptr, std::memory_order::relaxed);
 
-			m_cache[hashIndex] = nullptr;
+			if (asset)
+			{
+				if (s_assetCacheLog.GetValue())
+				{
+					VT_LOGC(Trace, LogAssetSystem,
+						"Removed asset '{}' (Handle: '{}', Type: '{}', Generation: '{}') from cache",
+						asset->GetAssetName(),
+						asset->GetAssetHandle(),
+						asset->GetType()->GetName(),
+						generation);
+				}
+			}
 		}
 		else
 		{
@@ -100,7 +103,13 @@ namespace Volt
 		bool found = m_hashTable.Get(hash, hashIndex);
 		if (found)
 		{
-			Asset* assetPtr = m_cache[hashIndex];
+			Asset* assetPtr = m_cache[hashIndex].asset.load(std::memory_order::relaxed);
+
+			// Asset hasn't been stored yet.
+			if (assetPtr == nullptr)
+			{
+				return false;
+			}
 
 			// Make sure the asset has the correct generation (should be correct, since it is baked into the hash)
 			if (assetPtr->m_generation < generation)

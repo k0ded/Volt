@@ -20,9 +20,29 @@ namespace Volt
 		VTAS_API bool TryGet(AssetHandle assetHandle, uint64_t generation, RefPtr<Asset>& outAsset);
 
 	private:
+		struct Container
+		{
+			Container() = default;
+			Container(const Container& other)
+				: asset(other.asset.load(std::memory_order::relaxed))
+			{}
+
+			Container& operator=(const Container& other)
+			{
+				if (this != &other)
+				{
+					asset = other.asset.load(std::memory_order::relaxed);
+				}
+
+				return *this;
+			}
+
+			std::atomic<Asset*> asset = nullptr;
+		};
+
 		void Initialize();
 
 		AtomicHashTable<> m_hashTable;
-		Vector<Asset*> m_cache;
+		Vector<Container> m_cache;
 	};
 }
