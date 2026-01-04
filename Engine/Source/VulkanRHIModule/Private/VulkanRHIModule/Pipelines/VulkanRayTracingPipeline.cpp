@@ -305,9 +305,9 @@ namespace Volt::RHI
 		return false;
 	}
 
-	const ShaderUniforms& VulkanRayTracingPipeline::GetRenderGraphConstants() const
+	const ShaderUniform& VulkanRayTracingPipeline::GetRenderGraphConstants() const
 	{
-		static ShaderUniforms s;
+		static ShaderUniform s;
 
 		return s;//m_rayGenData.shaders.front()->GetResources().renderGraphConstantsData;
 	}
