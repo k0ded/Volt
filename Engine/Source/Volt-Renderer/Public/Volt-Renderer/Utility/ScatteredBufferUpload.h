@@ -60,7 +60,7 @@ namespace Volt
 	template<IsTrivial T>
 	inline T& ScatteredBufferUpload<T>::AddUploadItem(size_t bufferIndex)
 	{
-		const uint32_t index = m_currentIndex++;
+		const uint32_t index = m_currentIndex.fetch_add(1, std::memory_order::relaxed);
 
 		m_dataIndices[index] = static_cast<uint32_t>(bufferIndex);
 		return m_data[index];

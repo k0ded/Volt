@@ -17,15 +17,12 @@ namespace Volt::RHI
 		Vector<RefPtr<Shader>> callableTable;
 	};
 
-	struct ShaderUniform;
-
 	class VTRHI_API RayTracingPipeline : public RHIInterface
 	{
 	public:
 		virtual void Invalidate() = 0;
 		virtual bool IsValid() const = 0;
 		virtual bool IsShaderInPipeline(RefPtr<Shader> shader) const = 0;
-		virtual const ShaderUniform& GetRenderGraphConstants() const = 0;
 
 		static RefPtr<RayTracingPipeline> Create(const RayTracingPipelineCreateInfo& createInfo);
 

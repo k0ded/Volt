@@ -15,13 +15,13 @@ VTCOREUTIL_API bool CheckExpression(bool expression, std::string_view str);
 #define VT_ASSERT(expression) \
 	do { \
 		VT_ANALASYS_ASSUME(expression); \
-		(void)((expression) || (AssertionFailure(#expression), 0)); \
+		if (!(expression)) { AssertionFailure(#expression); } \
 	} while(false)
 
 #define VT_ASSERT_MSG(expression, message) \
 	do { \
 		VT_ANALASYS_ASSUME(expression); \
-		(void)((expression) || (AssertionFailure(message), 0)); \
+		if (!(expression)) { AssertionFailure(message); } \
 	} while(false)
 #else
 #define VT_ASSERT(expression)

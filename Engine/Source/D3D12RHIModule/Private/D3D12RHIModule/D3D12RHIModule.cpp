@@ -233,6 +233,11 @@ namespace Volt::RHI
 
 	}
 
+	RefPtr<CommandBuffer> D3D12RHIModule::CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const
+	{
+		return nullptr;
+	}
+
 }
 
 Volt::RHI::RHIModule* CreateRHIModule()

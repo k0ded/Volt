@@ -79,6 +79,7 @@ namespace Volt::RHI
 	struct ShaderCreateInfo;
 	struct BufferDesc;
 	struct UniformBufferDesc;
+	struct RenderingAttachmentDeclaration;
 
 	struct RHICallbackInfo
 	{
@@ -94,6 +95,7 @@ namespace Volt::RHI
 		virtual RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const = 0;
 
 		virtual RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const = 0;
+		virtual RefPtr<CommandBuffer> CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const = 0;
 
 		virtual RefPtr<StorageBuffer> CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const = 0;
 		virtual RefPtr<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData = nullptr) const = 0;

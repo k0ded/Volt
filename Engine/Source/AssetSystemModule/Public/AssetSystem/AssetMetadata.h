@@ -5,6 +5,7 @@
 #include "AssetSystem/AssetDependency.h"
 #include "AssetSystem/CustomAssetMetadataRegistry.h"
 
+#include <CoreUtilities/Locks/RecursiveSharedMutex.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Any.h>
 #include <CoreUtilities/EnumUtils.h>
@@ -323,7 +324,7 @@ namespace Volt
 		std::atomic<uint64_t> m_generation = 1;
 		std::atomic<uint64_t> m_publishedGeneration = 0;
 
-		std::shared_mutex m_assetMetadataMutex;
+		RecursiveSharedMutex m_assetMetadataMutex;
 	};
 
 	bool AssetMetadata::IsFlagSet(AssetMetadataFlag flag) const

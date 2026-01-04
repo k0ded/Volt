@@ -15,6 +15,7 @@
 #include <Volt-Animation/Assets/Skeleton.h>
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <Volt-Core/Algorithms.h>
 
 #include <EntitySystem/EntityScene.h>
 #include <EntitySystem/Entity.h>
@@ -766,8 +767,10 @@ namespace Volt
 		{
 			ScatteredBufferUpload<PrimitiveDrawData> bufferUpload{ invalidPrimitiveDataIndices.size() + removedPrimitiveDataIndices.size() };
 
-			for (const auto& invalidPrimitive : invalidPrimitiveDataIndices)
+			Algo::ForEachParalellBlocking([&](uint32_t threadIdx, uint32_t elementIdx) 
 			{
+				const InvalidDrawData& invalidPrimitive = invalidPrimitiveDataIndices.at(elementIdx);
+
 				const RenderPrimitiveData* renderObject = GetPrimitiveDataFromID(invalidPrimitive.id);
 				PrimitiveDrawData& data = bufferUpload.AddUploadItem(invalidPrimitive.index);
 				BuildSinglePrimitiveDrawData(data, *renderObject);
@@ -795,7 +798,8 @@ namespace Volt
 
 					VT_LOGC_UNFORMATTED(Trace, LogRenderScene, logMessage);
 				}
-			}
+			
+			}, static_cast<uint32_t>(invalidPrimitiveDataIndices.size()));
 
 			for (const auto& removedPrimitiveIndex : removedPrimitiveDataIndices)
 			{

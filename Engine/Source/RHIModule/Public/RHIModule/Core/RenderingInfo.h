@@ -52,4 +52,10 @@ namespace Volt::RHI
 		Rect2D renderArea{};
 		uint32_t layerCount = 1;
 	};
+
+	struct RenderingAttachmentDeclaration
+	{
+		InlineVector<PixelFormat, MAX_COLOR_ATTACHMENT_COUNT> colorAttachmentFormats;
+		PixelFormat depthAttachmentFormat = PixelFormat::UNDEFINED;
+	};
 }

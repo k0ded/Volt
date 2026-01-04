@@ -31,6 +31,7 @@ namespace Volt::RHI
 	class AccelerationStructure;
 
 	struct RenderingInfo;
+	struct RenderingAttachmentDeclaration;
 
 	enum class CommandBufferLevel
 	{
@@ -122,6 +123,7 @@ namespace Volt::RHI
 
 		static RefPtr<CommandBuffer> Create(QueueType queueType);
 		static RefPtr<CommandBuffer> Create();
+		static RefPtr<CommandBuffer> CreateSecondary(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration);
 
 	protected:
 		CommandBuffer() = default;

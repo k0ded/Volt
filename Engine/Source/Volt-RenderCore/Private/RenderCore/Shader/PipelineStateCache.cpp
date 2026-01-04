@@ -2,11 +2,18 @@
 
 #include "RenderCore/Shader/PipelineStateCache.h"
 
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
 #include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
+	static ConsoleVariable<int32_t> g_pipelineStateCacheMaxPipelines(
+		"r.PipelineStateCache.MaxPipelines",
+		4096,
+		"The maximum number of pipelines allowed in the cache.");
+
 	namespace Utility
 	{
 		inline static const size_t GetComputeShaderHash(RefPtr<RHI::Shader> shader)
@@ -51,6 +58,9 @@ namespace Volt
 	{
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
+
+		m_renderPipelineCache.Resize(g_pipelineStateCacheMaxPipelines.GetValue());
+		m_computePipelineCache.Resize(g_pipelineStateCacheMaxPipelines.GetValue());
 	}
 	
 	PipelineStateCache::~PipelineStateCache()
@@ -62,70 +72,98 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		std::scoped_lock lock{ s_instance->m_renderPipelineCacheMutex };
 		const size_t hash = Utility::GetRenderPipelineHash(pipelineInfo);
 
-		if (s_instance->m_renderPipelineCache.contains(hash))
-		{
-			auto pipeline = s_instance->m_renderPipelineCache.at(hash);
-			VT_ENSURE(pipeline->IsValid());
+		auto& cacheEntry = s_instance->m_renderPipelineCache.Get(hash);
 
-			return pipeline;
+		PipelineCreationState expected = PipelineCreationState::Invalid;
+		if (cacheEntry.state.compare_exchange_strong(expected, PipelineCreationState::Creating, std::memory_order::acq_rel))
+		{
+			// We should create the pipeline and fill the cache.
+			cacheEntry.pipeline = RHI::RenderPipeline::Create(pipelineInfo);
+			cacheEntry.state.store(PipelineCreationState::Created);
+
+			return cacheEntry.pipeline;
+		}
+		else
+		{
+			if (expected == PipelineCreationState::Created)
+			{
+				return cacheEntry.pipeline;
+			}
+			else if (expected == PipelineCreationState::Creating)
+			{
+				// The cache is being created, let's create a temporary pipeline instead of waiting.
+				return RHI::RenderPipeline::Create(pipelineInfo);
+			}
 		}
 
-		RefPtr<RHI::RenderPipeline> pipeline = RHI::RenderPipeline::Create(pipelineInfo);
-		s_instance->m_renderPipelineCache[hash] = pipeline;
-
-		VT_ENSURE(pipeline->IsValid());
-		return pipeline;
+		VT_ENSURE_NO_ENTRY();
+		return nullptr;
 	}
 
 	RefPtr<RHI::ComputePipeline> PipelineStateCache::GetComputePipeline(RefPtr<RHI::Shader> computeShader)
 	{
 		VT_PROFILE_FUNCTION();
 
-		std::scoped_lock lock{ s_instance->m_computePipelineCacheMutex };
 		const size_t hash = Utility::GetComputeShaderHash(computeShader);
 
-		if (s_instance->m_computePipelineCache.contains(hash))
-		{
-			auto pipeline = s_instance->m_computePipelineCache.at(hash);
-			VT_ENSURE(pipeline->IsValid());
+		auto& cacheEntry = s_instance->m_computePipelineCache.Get(hash);
 
-			return pipeline;
+		PipelineCreationState expected = PipelineCreationState::Invalid;
+		if (cacheEntry.state.compare_exchange_strong(expected, PipelineCreationState::Creating, std::memory_order::acq_rel))
+		{
+			// We should create the pipeline and fill the cache.
+			cacheEntry.pipeline = RHI::ComputePipeline::Create(computeShader);
+			cacheEntry.state.store(PipelineCreationState::Created);
+
+			return cacheEntry.pipeline;
+		}
+		else
+		{
+			if (expected == PipelineCreationState::Created)
+			{
+				return cacheEntry.pipeline;
+			}
+			else if (expected == PipelineCreationState::Creating)
+			{
+				// The cache is being created, let's create a temporary pipeline instead of waiting.
+				return RHI::ComputePipeline::Create(computeShader);
+			}
 		}
 
-		RefPtr<RHI::ComputePipeline> pipeline = RHI::ComputePipeline::Create(computeShader);
-		s_instance->m_computePipelineCache[hash] = pipeline;
-
-		VT_ENSURE(pipeline->IsValid());
-		return pipeline;
+		VT_ENSURE_NO_ENTRY();
+		return nullptr;
 	}
 
 	void PipelineStateCache::InvalidatePipelinesWithReferenceToShader(RefPtr<RHI::Shader> shader)
 	{
 		if (shader->GetShaderStage() == RHI::ShaderStage::Compute)
 		{
-			std::scoped_lock lock{ s_instance->m_computePipelineCacheMutex };
-			for (const auto& [hash, computePipeline] : s_instance->m_computePipelineCache)
+			for (const auto& entry : s_instance->m_computePipelineCache.GetCache())
 			{
-				if (computePipeline->GetShader() == shader)
+				if (entry.pipeline)
 				{
-					computePipeline->Invalidate();
+					if (entry.pipeline->GetShader() == shader)
+					{
+						entry.pipeline->Invalidate();
+					}
 				}
 			}
 		}
 		else
 		{
-			std::scoped_lock lock{ s_instance->m_renderPipelineCacheMutex };
-			for (const auto& [hash, renderPipeline] : s_instance->m_renderPipelineCache)
+			for (const auto& entry : s_instance->m_renderPipelineCache.GetCache())
 			{
-				for (const auto& pipelineShader : renderPipeline->GetShaders())
+				if (entry.pipeline)
 				{
-					if (pipelineShader == shader)
+					for (const auto& pipelineShader : entry.pipeline->GetShaders())
 					{
-						renderPipeline->Invalidate();
-						break;
+						if (pipelineShader == shader)
+						{
+							entry.pipeline->Invalidate();
+							break;
+						}
 					}
 				}
 			}

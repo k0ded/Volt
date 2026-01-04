@@ -8,7 +8,7 @@ namespace Volt::Algo
 {
 	void ForEachParalellBlocking(std::function<void(uint32_t threadIdx, uint32_t elementIdx)>&& func, uint32_t iterationCount)
 	{
-		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfPhysicalCores());
+		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfLogicalCores());
 		const uint32_t perThreadIterationCount = iterationCount / threadCount;
 
 		TaskGraph taskGraph{ ExecutionPriority::Immediate };
@@ -40,7 +40,7 @@ namespace Volt::Algo
 	{
 		VT_ASSERT_MSG(iterationCount > 0, "Iteration count must be greater than zero!");
 
-		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfPhysicalCores());
+		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfLogicalCores());
 		const uint32_t perThreadIterationCount = iterationCount / threadCount;
 
 		Vector<JobRef, InlineAllocator<32>> jobs;
@@ -72,7 +72,7 @@ namespace Volt::Algo
 	{
 		VT_ASSERT_MSG(iterationCount > 0, "Iteration count must be greater than zero!");
 
-		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfPhysicalCores());
+		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfLogicalCores());
 	
 		return threadCount;
 	}

@@ -30,12 +30,17 @@ namespace Volt
 		m_commandBuffer->SetViewports({ renderingInfo.viewport });
 		m_commandBuffer->SetScissors({ renderingInfo.scissor });
 		m_commandBuffer->BeginRendering(renderingInfo.renderingInfo);
+
+		m_activeRenderingInfo = renderingInfo;
+		m_isWithinRenderingScope = true;
 	}
 
 	void RenderContext::EndRendering()
 	{
 		VT_PROFILE_FUNCTION();
 
+		m_isWithinRenderingScope = false;
+		m_activeRenderingInfo = {};
 		m_commandBuffer->EndRendering();
 	}
 
@@ -86,6 +91,18 @@ namespace Volt
 		result.viewport = viewport;
 
 		return result;
+	}
+
+	void RenderContext::FillRenderingAttachmentDeclaration(RHI::RenderingAttachmentDeclaration& outDeclaration) const
+	{
+		outDeclaration.colorAttachmentFormats.resize(m_activeRenderingInfo.renderingInfo.colorAttachments.size());
+
+		for (size_t i = 0; i < m_activeRenderingInfo.renderingInfo.colorAttachments.size(); ++i)
+		{
+			outDeclaration.colorAttachmentFormats[i] = m_activeRenderingInfo.renderingInfo.colorAttachments[i].view->GetImage()->GetFormat();
+		}
+
+		outDeclaration.depthAttachmentFormat = m_activeRenderingInfo.renderingInfo.depthAttachmentInfo.view ? m_activeRenderingInfo.renderingInfo.depthAttachmentInfo.view->GetImage()->GetFormat() : RHI::PixelFormat::UNDEFINED;
 	}
 
 	void RenderContext::DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
@@ -274,6 +291,8 @@ namespace Volt
 
 	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::SetupPipelineData(RawPtr<RHI::RenderPipeline> renderPipeline)
 	{
+		VT_PROFILE_FUNCTION();
+
 		ArrayView<RHI::ShaderParameterMap> shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
 
 		InlineVector<RenderContext::PerStageShaderParameters, 8> result;

@@ -6,6 +6,7 @@
 #include <RHIModule/RayTracing/RayTracingResuorceTable.h>
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Core/RenderingInfo.h>
 
 struct VkCommandBuffer_T;
 struct VkCommandPool_T;
@@ -23,6 +24,9 @@ namespace Volt::RHI
 	public:
 		VulkanCommandBuffer(QueueType queueType);
 		VulkanCommandBuffer(const CommandBuffer* parentCommandBuffer);
+
+		VulkanCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration);
+
 		~VulkanCommandBuffer() override;
 
 		void Begin(bool oneTimeSubmit) override;
@@ -146,6 +150,8 @@ namespace Volt::RHI
 
 		// Secondary command buffer
 		CommandBufferLevel m_commandBufferLevel = CommandBufferLevel::Primary;
+		RenderingAttachmentDeclaration m_renderingAttachmentDeclaraion;
+		bool m_hasRenderingAttachmentDeclaration = false;
 		const CommandBuffer* m_parentCommandBuffer;
 	};
 }

@@ -235,6 +235,11 @@ namespace Volt::RHI
 		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
 		vkGraphicsContext.GetDescriptorHeap().Flush();
 	}
+
+	RefPtr<CommandBuffer> VulkanRHIModule::CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const
+	{
+		return RefPtr<VulkanCommandBuffer>::Create(renderingAttachmentDeclaration);
+	}
 }
 
 Volt::RHI::RHIModule* CreateRHIModule()

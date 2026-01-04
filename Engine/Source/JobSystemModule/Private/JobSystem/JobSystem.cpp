@@ -168,7 +168,8 @@ namespace Volt
 	void JobSystem::Initialize()
     {
 		m_isAlive = true;
-		const uint32_t hardwareConcurrency = PlatformMisc::GetNumberOfLogicalCores();
+		// Allow the main thread to run on one core.
+		const uint32_t hardwareConcurrency = PlatformMisc::GetNumberOfLogicalCores() - 1;
 		m_numWorkers = hardwareConcurrency;
 
 		m_mainThreadQueue.Allocate(1024);

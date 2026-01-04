@@ -142,6 +142,16 @@ private:
 			atomic.store(other.atomic);
 		}
 
+		AtomicWrapper& operator=(const AtomicWrapper& other)
+		{
+			if (this != &other)
+			{
+				atomic.store(other.atomic);
+			}
+
+			return *this;
+		}
+
 		std::atomic_uint64_t atomic;
 	};
 

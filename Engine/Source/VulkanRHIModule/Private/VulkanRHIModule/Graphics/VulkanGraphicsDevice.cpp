@@ -35,6 +35,7 @@ namespace Volt::RHI
 		VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeaturesKHR{};
 		VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeaturesKHR{};
 		VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR physicalDeviceRayTracingMaintenance1FeaturesKHR{};
+		VkPhysicalDeviceMaintenance7FeaturesKHR physicalDeviceMaintenance7FeaturesKHR{};
 	};
 
 	static EnabledFeatures s_enabledFeatures{};
@@ -195,6 +196,15 @@ namespace Volt::RHI
 				chainEntryPoint = &s_enabledFeatures.descriptorBufferFeaturesEXT;
 			}
 
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_MAINTENANCE_7_EXTENSION_NAME))
+			{
+				s_enabledFeatures.physicalDeviceMaintenance7FeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_7_FEATURES_KHR;
+				s_enabledFeatures.physicalDeviceMaintenance7FeaturesKHR.pNext = chainEntryPoint;
+				s_enabledFeatures.physicalDeviceMaintenance7FeaturesKHR.maintenance7 = VK_TRUE;
+
+				chainEntryPoint = &s_enabledFeatures.physicalDeviceMaintenance7FeaturesKHR;
+			}
+
 #ifdef VT_ENABLE_NV_AFTERMATH
 			s_enabledFeatures.aftermathDiagInfo.sType = VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV;
 			s_enabledFeatures.aftermathDiagInfo.pNext = chainEntryPoint;
@@ -307,6 +317,11 @@ namespace Volt::RHI
 			if (physicalDevice->IsExtensionAvailable(VK_EXT_DEVICE_FAULT_EXTENSION_NAME))
 			{
 				enabledExtensions.emplace_back(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+			}
+
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_MAINTENANCE_7_EXTENSION_NAME))
+			{
+				enabledExtensions.emplace_back(VK_KHR_MAINTENANCE_7_EXTENSION_NAME);
 			}
 
 			return enabledExtensions;

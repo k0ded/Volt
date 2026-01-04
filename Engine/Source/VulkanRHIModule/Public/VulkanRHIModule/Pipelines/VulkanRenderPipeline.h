@@ -27,7 +27,6 @@ namespace Volt::RHI
 		const VertexBufferLayout& GetVertexBufferLayout() const override;
 
 		VT_NODISCARD VT_INLINE const Map<uint32_t, VkDescriptorSetLayout_T*>& GetDescriptorSetLayouts() const { return m_descriptorSets.descriptorSetLayouts; }
-		VT_NODISCARD VT_INLINE const Vector<std::pair<uint32_t, uint32_t>>& GetDescriptorPoolSizes() const { return m_descriptorPoolSizes; }
 		VT_NODISCARD VT_INLINE const DescriptorSetLayoutBuilder::DescriptorSets& GetDescriptorSets() const { return m_descriptorSets; }
 		VT_NODISCARD VT_INLINE VkPipelineLayout_T* GetPipelineLayout() const { return m_pipelineLayout; }
 
@@ -49,6 +48,5 @@ namespace Volt::RHI
 
 		Array<ShaderParameterMap, GetNumShaderStages()> m_shaderParameterMaps;
 		VertexBufferLayout m_vertexBufferLayout;
-		Vector<std::pair<uint32_t, uint32_t>> m_descriptorPoolSizes;
 	};
 }

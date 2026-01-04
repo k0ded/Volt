@@ -49,6 +49,7 @@ namespace Volt
 		void EndRendering();
 
 		const RenderingInfo CreateRenderingInfo(const uint32_t width, const uint32_t height, const ShaderParameterRenderTargetBindings& rtBindings);
+		void FillRenderingAttachmentDeclaration(RHI::RenderingAttachmentDeclaration& outDeclaration) const;
 
 		void DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ);
 		void DispatchMeshTasksIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride);
@@ -90,6 +91,8 @@ namespace Volt
 		InlineVector<PerStageShaderParameters, 8> SetupPipelineData(RawPtr<RHI::RenderPipeline> renderPipeline);
 		InlineVector<PerStageShaderParameters, 8> SetupPipelineData(RawPtr<RHI::ComputePipeline> computePipeline);
 
+		VT_INLINE const RenderingInfo& GetActiveRenderingInfo() const { VT_ASSERT(m_isWithinRenderingScope); return m_activeRenderingInfo; }
+
 	private:
 		void BindShaderBindings();
 		void SetupPipelineData();
@@ -129,6 +132,8 @@ namespace Volt
 		RenderGraph& m_renderGraph;
 		RenderGraphPass* m_currentPass;
 		RenderGraphShaderParameterUniformBuffer& m_shaderParameterUniformBuffer;
+		RenderingInfo m_activeRenderingInfo{};
+		bool m_isWithinRenderingScope = false;
 	};
 
 	template<typename T>

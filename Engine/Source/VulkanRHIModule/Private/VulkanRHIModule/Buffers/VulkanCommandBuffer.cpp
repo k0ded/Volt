@@ -26,6 +26,8 @@
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
 
+#include "VulkanRHIModule/VulkanResourceCast.h"
+
 #include <RHIModule/Descriptors/ShaderBindingMap.h>
 
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -323,6 +325,19 @@ namespace Volt::RHI
 		Invalidate();
 	}
 
+	VulkanCommandBuffer::VulkanCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration)
+		: m_queueType(QueueType::Graphics),
+		m_commandBufferLevel(CommandBufferLevel::Secondary),
+		m_hasRenderingAttachmentDeclaration(renderingAttachmentDeclaration != nullptr)
+	{
+		if (renderingAttachmentDeclaration != nullptr)
+		{
+			m_renderingAttachmentDeclaraion = *renderingAttachmentDeclaration;
+		}
+
+		Invalidate();
+	}
+
 	VulkanCommandBuffer::~VulkanCommandBuffer()
 	{
 		Release();
@@ -604,6 +619,7 @@ namespace Volt::RHI
 
 		VkRenderingInfo vkRenderingInfo{};
 		vkRenderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+		vkRenderingInfo.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT | VK_RENDERING_CONTENTS_INLINE_BIT_KHR;
 		vkRenderingInfo.renderArea = { renderingInfo.renderArea.offset.x, renderingInfo.renderArea.offset.y, renderingInfo.renderArea.extent.width, renderingInfo.renderArea.extent.height };
 		vkRenderingInfo.layerCount = renderingInfo.layerCount;
 		vkRenderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfo.size());
@@ -1418,9 +1434,30 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
+		InlineVector<VkFormat, MAX_COLOR_ATTACHMENT_COUNT> colorAttachmentFormats;
+		VkCommandBufferInheritanceRenderingInfo renderingInfo;
+
+		if (m_hasRenderingAttachmentDeclaration)
+		{
+			for (PixelFormat format : m_renderingAttachmentDeclaraion.colorAttachmentFormats)
+			{
+				colorAttachmentFormats.emplace_back(Utility::VoltToVulkanFormat(format));
+			}
+
+			renderingInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO;
+			renderingInfo.pNext = nullptr;
+			renderingInfo.flags = VK_RENDERING_CONTENTS_INLINE_BIT_KHR | VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+			renderingInfo.viewMask = 0;
+			renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentFormats.size());
+			renderingInfo.pColorAttachmentFormats = colorAttachmentFormats.data();
+			renderingInfo.depthAttachmentFormat = Utility::VoltToVulkanFormat(m_renderingAttachmentDeclaraion.depthAttachmentFormat);
+			renderingInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+			renderingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		}
+
 		VkCommandBufferInheritanceInfo inheritanceInfo{};
 		inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-		inheritanceInfo.pNext = nullptr;
+		inheritanceInfo.pNext = m_hasRenderingAttachmentDeclaration ? &renderingInfo : nullptr;
 		inheritanceInfo.renderPass = nullptr;
 		inheritanceInfo.subpass = 0;
 		inheritanceInfo.framebuffer = nullptr;
@@ -1431,8 +1468,19 @@ namespace Volt::RHI
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.pNext = nullptr;
-		beginInfo.flags = oneTimeSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0;
+		beginInfo.flags = 0;
 		beginInfo.pInheritanceInfo = &inheritanceInfo;
+
+		if (oneTimeSubmit)
+		{
+			beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		}
+
+		// We are inside of a render pass.
+		if (m_hasRenderingAttachmentDeclaration)
+		{
+			beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+		}
 
 		VT_VK_CHECK(vkBeginCommandBuffer(m_commandBufferData.commandBuffer, &beginInfo));
 	}
