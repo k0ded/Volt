@@ -156,17 +156,16 @@ float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
     float3 diffuse = 0.f;
     float3 specular = 0.f;
 
+    const float3 F0 = lerp(DielectricF0, brdfInput.baseColor, brdfInput.metalness);
     const float3 F = FresnelSchlickRoughness(DielectricF0, NdotV, brdfInput.roughness);
-    const float3 kS = F;
-    float3 kD = 1.f - kS;
-    kD *= 1.f - brdfInput.metalness;
+    const float3 kD = lerp(1.f - F, 0.f, brdfInput.metalness);
 
     // Diffuse IBL
     {
         float3 dominantN = GetDiffuseDominantDirection(brdfInput.N, brdfInput.V, NdotV, brdfInput.roughness);
         float3 diffuseLighting = SkylightIrradiance.SampleLevel(LinearSampler, dominantN, light.lightSpecific.x);
 
-        diffuse = brdfInput.baseColor * diffuseLighting;
+        diffuse = brdfInput.baseColor * diffuseLighting * kD;
     }
 
     // Specular IBL
@@ -178,8 +177,8 @@ float3 EvaluateIBL(in BRDFInput brdfInput, in LightDrawData light)
         float mipLevel = LinearRoughnessToMipLevel(brdfInput.roughness, NumRadianceMipLevels);
         float3 preLD = SkylightRadiance.SampleLevel(LinearSampler, dominantR, mipLevel);
 
-        specular = preLD * (F * DFG.x + DFG.y);
+        specular = preLD * (F0 * DFG.x + DFG.y);
     }
 
-    return (kD * diffuse + specular) * light.intensity; 
+    return (diffuse + specular) * light.intensity; 
 }
