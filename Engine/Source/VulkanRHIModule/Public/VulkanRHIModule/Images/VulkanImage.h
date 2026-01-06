@@ -1,6 +1,7 @@
 #pragma once
 
 #include <RHIModule/Images/Image.h>
+#include <RHIModule/ResourceViewCache.h>
 
 struct VkImage_T;
 
@@ -56,6 +57,7 @@ namespace Volt::RHI
 
 		ImageDesc m_desc;
 		SwapchainImageData m_swapchainImageData;
+		ImageViewCache m_viewCache;
 
 		Handle<Allocation> m_allocation;
 		RawPtr<GPUAllocator> m_allocator;

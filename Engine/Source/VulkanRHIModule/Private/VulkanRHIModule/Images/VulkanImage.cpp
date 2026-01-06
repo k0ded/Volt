@@ -23,7 +23,7 @@
 namespace Volt::RHI
 {
 	VulkanImage::VulkanImage(const ImageDesc& desc, const void* data, RefPtr<GPUAllocator> allocator)
-		: m_desc(desc), m_allocator(allocator)
+		: m_desc(desc), m_allocator(allocator), m_viewCache(this)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -37,7 +37,7 @@ namespace Volt::RHI
 	}
 
 	VulkanImage::VulkanImage(const SwapchainImageDesc& desc)
-		: m_isSwapchainImage(true)
+		: m_isSwapchainImage(true), m_viewCache(this)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
 
@@ -305,7 +305,7 @@ namespace Volt::RHI
 			}
 		}
 
-		return ImageView::Create(tempDesc, this);
+		return m_viewCache.GetOrCreateView(tempDesc);
 	}
 
 	const uint32_t VulkanImage::CalculateMipCount() const

@@ -20,9 +20,6 @@ namespace Volt::RHI
 	VulkanImageView::VulkanImageView(const ImageViewDesc& desc, RawPtr<Image> image)
 		: m_desc(desc), m_image(image)
 	{
-		// Keep a reference to the image, as it should be alive until all views have been destroyed.
-		m_image->IncRef();
-
 		m_format = image->GetFormat();
 		m_imageUsage = image->GetUsage();
 		m_imageAspect = image->GetImageAspect();
@@ -55,9 +52,6 @@ namespace Volt::RHI
 
 	VulkanImageView::~VulkanImageView()
 	{
-		// Remove the reference we add on creation.
-		m_image->DecRef();
-
 		RHIModule::GetInstance().DestroyResource([imageView = m_imageView]()
 		{
 			auto device = GraphicsContext::GetDevice();
