@@ -5,6 +5,8 @@
 #include "ProjectUpgradeClient/UpgradesRegistry.h"
 #include "ProjectUpgradeClient/UpgradeInterface.h"
 
+#include "ProjectUpgradeClient/LegacyUpgrades/LegacyUpgrade.h"
+
 #include <EventSystem/ApplicationEvents.h>
 
 #include <Volt-Application/BaseApplication.h>
@@ -30,8 +32,14 @@ namespace Volt
 		RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(ProjectUpgradeClientLayer::OnUpdateEvent));
 		RegisterListener<Volt::AppImGuiUpdateEvent>(VT_BIND_EVENT_FN(ProjectUpgradeClientLayer::OnImGuiUpdateEvent));
 
-		DeserializeProject();
-		CollectAndOrganizeUpgrades();
+		const CommandLineBuilder& commandLineBuilder = BaseApplication::Get().GetCommandLineBuilder();
+		m_isLegacyProject = commandLineBuilder.IsArgDefined("legacy");
+
+		if (!m_isLegacyProject)
+		{
+			DeserializeProject();
+			CollectAndOrganizeUpgrades();
+		}
 	}
 
 	void ProjectUpgradeClientLayer::OnDetach()
@@ -132,12 +140,24 @@ namespace Volt
 
 		ImGui::Separator();
 
-		if (!m_currentUpgrade)
+		if (m_isLegacyProject)
 		{
-			m_currentUpgradeTargetVersion = m_availableUpgradeVersions.back();
-			m_availableUpgradeVersions.pop_back();
+			const CommandLineBuilder& commandLineBuilder = BaseApplication::Get().GetCommandLineBuilder();
 
-			m_currentUpgrade = UpgradesRegistry::Get().CreateUpgrade(m_currentUpgradeTargetVersion, m_targetProject);
+			Ref<LegacyProjectUpgrade> legacyUpgrade = CreateRef<LegacyProjectUpgrade>(m_targetProject);
+			legacyUpgrade->TryConvertProject(commandLineBuilder.GetArgValue("project"), commandLineBuilder.GetArgValue("target"));
+
+			m_currentUpgrade = legacyUpgrade;
+		}
+		else
+		{
+			if (!m_currentUpgrade)
+			{
+				m_currentUpgradeTargetVersion = m_availableUpgradeVersions.back();
+				m_availableUpgradeVersions.pop_back();
+
+				m_currentUpgrade = UpgradesRegistry::Get().CreateUpgrade(m_currentUpgradeTargetVersion, m_targetProject);
+			}
 		}
 
 		bool doneProcessing = m_currentUpgrade->ProcessUpgrade();

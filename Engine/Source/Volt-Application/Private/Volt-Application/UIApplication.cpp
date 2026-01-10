@@ -19,6 +19,9 @@
 #include <EventSystem/EventSystem.h>
 #include <EventSystem/ApplicationEvents.h>
 
+// #TODO: Temporary!
+#include <Volt-Core/Project/ProjectManager.h>
+
 namespace Volt
 {
 	UIApplicationEventListener::UIApplicationEventListener(UIApplication& application)
@@ -62,6 +65,9 @@ namespace Volt
 		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
 		// This is required because glfwInit must be called before setting up graphics device
 		CreateGraphicsContext(commandLineBuilder);
+
+		// #TODO: Temporary
+		g_assetManager = CreateScope<AssetManager>(ProjectManager::GetEngineRootDirectory(), ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectoryName());
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 		{

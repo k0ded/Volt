@@ -61,15 +61,13 @@ namespace Volt
 
 		void UpdateProjectVersion(Volt::Version newVersion);
 
-
-
 		Vector<Version> m_availableUpgradeVersions;
 
 		UpgradeStage m_upgradeStage;
-
 		Project m_targetProject;
-
 		Version m_currentUpgradeTargetVersion;
 		Ref<Upgrade> m_currentUpgrade;
+
+		bool m_isLegacyProject = false;
 	};
 }

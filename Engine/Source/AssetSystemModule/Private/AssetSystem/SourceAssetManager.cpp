@@ -87,7 +87,7 @@ namespace Volt
 			resultPromise->SetValue(result);
 
 			*m_isImporterInUseMap[extension] = false;
-			m_wakeCondition.notify_one();
+			m_wakeCondition.notify_all();
 		});
 
 		resultPromise->SetAssociatedCounter(importCounter);
@@ -100,7 +100,7 @@ namespace Volt
 		auto& importQueue = GetOrCreateQueue(extension);
 		importQueue.Emplace(importJob);
 
-		m_wakeCondition.notify_one();
+		m_wakeCondition.notify_all();
 
 		return resultPromise->GetFuture();
 	}
@@ -138,7 +138,7 @@ namespace Volt
 			}
 
 			*m_isImporterInUseMap[extension] = false;
-			m_wakeCondition.notify_one();
+			m_wakeCondition.notify_all();
 
 			JobRef callbackJob = JobSystem::CreateJob("Import Callback", ExecutionPriority::Latent, ExecutionPolicy::MainThread, [importedCallback, result]()
 			{
@@ -154,7 +154,7 @@ namespace Volt
 		auto& importQueue = GetOrCreateQueue(extension);
 		importQueue.Emplace(importJob);
 
-		m_wakeCondition.notify_one();
+		m_wakeCondition.notify_all();
 	}
 
 	SourceAssetFileInformation SourceAssetManager::GetSourceAssetFileInformation(const std::filesystem::path& filepath)

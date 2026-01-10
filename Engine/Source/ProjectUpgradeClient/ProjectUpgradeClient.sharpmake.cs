@@ -38,6 +38,8 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<VoltApplication>(target);
 			conf.AddPrivateDependency<VoltRenderCore>(target);
 			conf.AddPrivateDependency<VoltAnimation>(target);
+			conf.AddPrivateDependency<VoltPhysics>(target);
+			conf.AddPrivateDependency<VoltCoreComponents>(target);
 
 			conf.AddPrivateDependency<WindowModule>(target);
 			conf.AddPrivateDependency<AssetSystemModule>(target);

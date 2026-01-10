@@ -614,9 +614,13 @@ namespace Volt
 				{
 					return resultAsset;
 				}
+				else
+				{
+					return nullptr;
+				}
 			}
 
-			assetMetadata->m_publishedGeneration.wait(publishedGeneration, std::memory_order::relaxed);
+			assetMetadata->m_publishedGeneration.wait(publishedGeneration, std::memory_order::acquire);
 		}
 	}
 

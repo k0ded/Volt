@@ -1,6 +1,9 @@
-#include "sbpch.h"
-#include "Sandbox/Window/ProjectConversionPanel.h"
-#include "Sandbox/Utility/EditorUtilities.h"
+#include "ProjectUpgradeClient/LegacyUpgrades/LegacyUpgrade.h"
+
+#include "ProjectUpgradeClient/Common/CommonSerializeFuncs.h"
+#include "ProjectUpgradeClient/Common/YAMLFileStreamWriter.h"
+#include "ProjectUpgradeClient/Common/YAMLFileStreamReader.h"
+#include "ProjectUpgradeClient/Common/YAMLMemoryStreamReader.h"
 
 #include <Volt-Application/UI/UIUtility.h>
 
@@ -14,6 +17,7 @@
 #include <Volt-Scene/Prefab.h>
 #include <Volt-Scene/EntityUtility.h>
 #include <Volt-Scene/EntityDescription.h>
+#include <Volt-Scene/Components/CoreComponents.h>
 
 #include <Volt-Physics/ColliderComponents.h>
 #include <Volt-Physics/RigidbodyComponent.h>
@@ -23,6 +27,8 @@
 #include <Volt-CoreComponents/LightComponents.h>
 
 #include <SubSystem/SubSystemManager.h>
+
+#include <EntitySystem/Scripting/CommonComponent.h>
 
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -111,8 +117,6 @@ namespace Wire::ComponentRegistry
 	};
 }
 
-#if 0
-
 template<typename T>
 void RegisterDeserializationFunction(Map<TypeTraits::TypeIndex, std::function<void(YAMLFileStreamReader&, uint8_t*, const size_t)>>& outTypes)
 {
@@ -174,8 +178,8 @@ const ComponentMember* TryGetComponentMemberFromName(const IComponentTypeDesc* t
 	return componentMember;
 }
 
-ProjectConversionPanel::ProjectConversionPanel()
-	: EditorWindow("ProjectConversionPanel")
+LegacyProjectUpgrade::LegacyProjectUpgrade(const Project& inProject)
+	: Upgrade(inProject)
 {
 	{
 		RegisterDeserializationFunction<int8_t>(g_deserializationFunctions);
@@ -383,7 +387,8 @@ ProjectConversionPanel::ProjectConversionPanel()
 	}
 }
 
-void ProjectConversionPanel::UpdateMainContent()
+#if 0
+void LegacyProjectUpgrade::UpdateMainContent()
 {
 	if (UI::BeginProperties(""))
 	{
@@ -401,13 +406,20 @@ void ProjectConversionPanel::UpdateMainContent()
 		}
 	}
 }
+#endif
 
-void ProjectConversionPanel::TryConvertProject()
+void LegacyProjectUpgrade::TryConvertProject(const std::filesystem::path& projectFilepath, const std::filesystem::path& targetDirectory)
+{
+	m_projectToConvertFilepath = projectFilepath;
+	m_targetDirectory = targetDirectory;
+}
+
+bool LegacyProjectUpgrade::ProcessUpgrade()
 {
 	Project project;
 	if (!TryLoadProject(project))
 	{
-		return;
+		return true;
 	}
 
 	m_assetManager = CreateScope<AssetManager>(ProjectManager::GetEngineRootDirectory(), m_targetDirectory, project.assetsDirectoryName);
@@ -428,9 +440,26 @@ void ProjectConversionPanel::TryConvertProject()
 	TryConvertAssets(project, assetMetadata);
 
 	PrintMissingMembers();
+
+	return true;
 }
 
-bool ProjectConversionPanel::TryLoadProject(Volt::Project& project)
+size_t LegacyProjectUpgrade::GetNumTotalActions()
+{
+	return 1;
+}
+
+size_t LegacyProjectUpgrade::GetNumActionsCompleted()
+{
+	return 1;
+}
+
+std::string LegacyProjectUpgrade::GetCurrentActionText()
+{
+	return "Upgrading";
+}
+
+bool LegacyProjectUpgrade::TryLoadProject(Volt::Project& project)
 {
 	YAMLFileStreamReader projectFileReader;
 	if (!projectFileReader.OpenFile(m_projectToConvertFilepath))
@@ -494,7 +523,7 @@ bool ProjectConversionPanel::TryLoadProject(Volt::Project& project)
 	return true;
 }
 
-void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, const ArrayView<Volt::AssetMetadata>& assetMetadata)
+void LegacyProjectUpgrade::TryConvertAssets(const Volt::Project& project, const ArrayView<Volt::AssetMetadata>& assetMetadata)
 {
 	Vector<AssetReference<Asset>> assetsToSave;
 	Map<AssetHandle, AssetReference<Prefab>> assetHandleToPrefab;
@@ -536,7 +565,7 @@ void ProjectConversionPanel::TryConvertAssets(const Volt::Project& project, cons
 	}
 }
 
-Vector<AssetReference<Asset>> ProjectConversionPanel::TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs)
+Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs)
 {
 	const std::filesystem::path absoluteScenePath = project.rootDirectory / metadata.filepath;
 
@@ -758,7 +787,7 @@ Vector<AssetReference<Asset>> ProjectConversionPanel::TryConvertScene(const Volt
 	return resultAssets;
 }
 
-AssetReference<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata)
+AssetReference<Volt::MeshAsset> LegacyProjectUpgrade::TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata)
 {
 	struct LegacyVertex
 	{
@@ -897,7 +926,7 @@ AssetReference<Volt::MeshAsset> ProjectConversionPanel::TryConvertMesh(const Vol
 	return newMesh;
 }
 
-AssetReference<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata)
+AssetReference<Prefab> LegacyProjectUpgrade::TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata)
 {
 	const std::filesystem::path absolutePrefabPath = project.rootDirectory / metadata.filepath;
 	
@@ -1045,7 +1074,7 @@ AssetReference<Prefab> ProjectConversionPanel::TryConvertPrefab(const Volt::Proj
 	return prefab;
 }
 
-void ProjectConversionPanel::PrintMissingMembers()
+void LegacyProjectUpgrade::PrintMissingMembers()
 {
 	for (const auto& [typeDesc, missingMembers] : g_missingMembers)
 	{
@@ -1058,7 +1087,7 @@ void ProjectConversionPanel::PrintMissingMembers()
 	}
 }
 
-void ProjectConversionPanel::LoadAssetMetadataFromMetaFiles(const Volt::Project& project, Vector<Volt::AssetMetadata>& outMetadata)
+void LegacyProjectUpgrade::LoadAssetMetadataFromMetaFiles(const Volt::Project& project, Vector<Volt::AssetMetadata>& outMetadata)
 {
 	const std::filesystem::path assetsDirectoryPath = project.rootDirectory / project.assetsDirectoryName;
 
@@ -1093,4 +1122,3 @@ void ProjectConversionPanel::LoadAssetMetadataFromMetaFiles(const Volt::Project&
 		}
 	}
 }
-#endif

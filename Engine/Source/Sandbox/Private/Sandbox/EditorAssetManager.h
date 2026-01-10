@@ -83,7 +83,9 @@ inline bool EditorAssetManager::TryGetAssetAndCache(Volt::AssetHandle assetHandl
 	if (m_assetCache.TryGetAsset(assetHandle, asset))
 	{
 		outAsset = { asset.As<T>() };
-		return true;
+
+		Volt::ReadOnlyAssetMetadata metadata = m_referencedAssetManager.GetReadOnlyAssetMetadata(assetHandle);
+		return metadata->IsLoaded();
 	}
 
 	bool loaded = m_referencedAssetManager.TryGetAsset<T>(assetHandle, outAsset);
