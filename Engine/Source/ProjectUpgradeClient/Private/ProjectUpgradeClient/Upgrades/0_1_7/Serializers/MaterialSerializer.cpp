@@ -8,9 +8,12 @@
 #include <Volt-Assets/MaterialCompilerSubSystem.h>
 
 #include <Volt-MaterialGraph/MaterialGraph.h>
-#include <Volt-Renderer/RenderMaterial.h>
+#include <Volt-Renderer/Material/RenderMaterial.h>
 
 #include <AssetSystem/AssetManager.h>
+
+#include <RenderCore/Shader/DefaultShaders.h>
+#include <RenderCore/Shader/ShaderMap.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicNode.h>
@@ -151,7 +154,7 @@ namespace Volt
 		}
 
 		materialAsset->m_graph = CreateRef<MaterialGraph>();
-		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(std::string(materialAsset->GetAssetName()));
+		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(std::string(materialAsset->GetAssetName()), ShaderMap::Get<OpaqueDefaultPixelPS>());
 		materialAsset->m_graph->m_graph->Clear();
 
 		streamReader.EnterScope("MosaicGraph");

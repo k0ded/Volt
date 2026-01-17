@@ -119,7 +119,7 @@ namespace Volt
 			}
 
 			yamlStreamReader.EnterScope("Scene");
-			scene->m_name = yamlStreamReader.ReadAtKey("name", std::string("New Scene"));
+			scene->m_sceneInitializer.name = yamlStreamReader.ReadAtKey("name", std::string("New Scene"));
 
 			yamlStreamReader.EnterScope("Settings");
 			{

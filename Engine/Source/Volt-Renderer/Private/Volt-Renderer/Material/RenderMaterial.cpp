@@ -1,6 +1,6 @@
 #include "vrpch.h"
-#include "RenderMaterial.h"
 
+#include "Volt-Renderer/Material/RenderMaterial.h"
 #include "Volt-Renderer/Renderer.h"
 
 #include <RHIModule/Shader/Shader.h>
@@ -12,17 +12,13 @@
 
 namespace Volt
 {
-	RenderMaterial::RenderMaterial(const std::string& name)
-		: m_name(name)
+	RenderMaterial::RenderMaterial(const std::string& name, RefPtr<RHI::Shader> defaultShader)
+		: m_name(name),
+		m_defaultShader(defaultShader)
 	{
-		GenerateHash();
-	}
+		VT_ENSURE(defaultShader);
 
-	RenderMaterial::RenderMaterial(const std::string& name, RefPtr<RHI::Shader> shader)
-		: m_name(name)
-	{
-		VT_ENSURE(shader);
-		m_pixelShader = shader;
+		m_shaderMap.Initialize(name, "", defaultShader);
 		GenerateHash();
 	}
 
@@ -81,24 +77,7 @@ namespace Volt
 
 	void RenderMaterial::Invalidate(const std::filesystem::path& filepath)
     {
-		VT_PROFILE_FUNCTION();
-
-		if (!m_pixelShader)
-		{
-			RHI::ShaderCreateInfo shaderSpecification;
-			shaderSpecification.name = m_name;
-			shaderSpecification.sourceFilepath = filepath;
-			shaderSpecification.forceCompile = true;
-			shaderSpecification.entryPoint = "MainPS";
-			shaderSpecification.stage = RHI::ShaderStage::Pixel;
-			shaderSpecification.failureIsFatal = false;
-
-			m_pixelShader = RHI::Shader::Create(shaderSpecification);
-		}
-		else
-		{
-			m_pixelShader->Reload(false);
-		}
+		m_shaderMap.Initialize(m_name, filepath, m_defaultShader);
     }
 
 	void RenderMaterial::GenerateHash()

@@ -7,7 +7,7 @@
 #include <Volt-Core/MultiTimer.h>
 
 #include <SubSystem/SubSystemManager.h>
-
+#include <AssetSystem/SourceAssetManager.h>
 #include <EventSystem/EventListener.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
@@ -74,6 +74,7 @@ namespace Volt
 
 		Scope<SubSystemManager> m_subSystemManager;
 		Scope<UIApplicationEventListener> m_eventListener;
+		Scope<SourceAssetManager> m_sourceAssetManager;
 
 		WindowManager* m_windowManager = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Volt-Renderer/Config.h"
-#include "Volt-Renderer/RenderMaterial.h"
+#include "Volt-Renderer/Material/RenderMaterial.h"
 
 #include <AssetSystem/AssetHandle.h>
 

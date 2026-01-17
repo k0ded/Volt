@@ -90,7 +90,7 @@ namespace Volt::RHI
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		createInfo.bindingCount = static_cast<uint32_t>(descriptorSetLayoutBindings.size());
 		createInfo.pBindings = descriptorSetLayoutBindings.data();
-		createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+		createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT;
 		createInfo.pNext = &extendedInfo;
 
 		auto device = GraphicsContext::GetDevice();

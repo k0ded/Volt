@@ -320,8 +320,6 @@ namespace Volt
 		Vector<CompiledPass> m_compiledPasses;
 
 		RefPtr<RHI::Fence> m_executionFence;
-
-		std::mutex m_tempMutex;
 	}; 
 
 	template<typename ParameterStruct, typename ExecFunc>

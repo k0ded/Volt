@@ -47,4 +47,17 @@ void SampleTextureNodeExtension::Render(Ref<Mosaic::MosaicNode> node)
 	{
 		sampleTextureNode->SetTextureHandle(newHandle);
 	}
+
+	bool isNormalType = sampleTextureNode->GetTextureType() == Volt::MosaicNodes::TextureType::Normal;
+	if (ImGui::Checkbox("Normal Texture", &isNormalType))
+	{
+		if (isNormalType)
+		{
+			sampleTextureNode->SetTextureType(Volt::MosaicNodes::TextureType::Normal);
+		}
+		else
+		{
+			sampleTextureNode->SetTextureType(Volt::MosaicNodes::TextureType::Color);
+		}
+	}
 }

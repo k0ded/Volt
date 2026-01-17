@@ -3,6 +3,7 @@
 #include "Volt-Assets/Config.h"
 
 #include <Volt-Renderer/Texture/Texture2D.h>
+#include <Volt-Renderer/Material/RenderMaterial.h>
 
 #include <AssetSystem/AssetTypes.h>
 #include <AssetSystem/Asset.h>
@@ -54,10 +55,13 @@ namespace Volt
 		void OnPreSave(CustomAssetMetadata& customMetadata) override;
 		void GatherAssetDependencies(AssetDependencyGatherContext& gatherContext, ReadOnlyAssetMetadata assetMetadata) override;
 
+		VT_INLINE void SetMaterialBlendMode(MaterialBlendMode materialBlendMode) { m_materialBlendMode = materialBlendMode; }
+
 	private:
 		Ref<MaterialGraph> m_graph;
 		Ref<RenderMaterial> m_renderMaterial;
 	
+		MaterialBlendMode m_materialBlendMode = MaterialBlendMode::Opaque;
 		Vector<AssetReference<Texture2D>> m_referencedTextures;
 	};
 }

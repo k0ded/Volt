@@ -36,6 +36,8 @@ namespace Volt
 		m_assetImporterWorkerThread = CreateScope<std::thread>(std::bind(&SourceAssetManager::RunAssetImportWorker, this));
 		PlatformThread::SetThreadName(m_assetImporterWorkerThread->native_handle(), "AssetImporterWorker");
 		PlatformThread::SetThreadPriority(m_assetImporterWorkerThread->native_handle(), ThreadPriority::Low);
+
+		m_importQueue.Allocate(2048);
 	}
 
 	SourceAssetManager::~SourceAssetManager()
@@ -85,9 +87,6 @@ namespace Volt
 			}
 
 			resultPromise->SetValue(result);
-
-			*m_isImporterInUseMap[extension] = false;
-			m_wakeCondition.notify_all();
 		});
 
 		resultPromise->SetAssociatedCounter(importCounter);
@@ -97,9 +96,7 @@ namespace Volt
 		importJob.job = importJobRef;
 		importJob.debugString = filepath.string();
 
-		auto& importQueue = GetOrCreateQueue(extension);
-		importQueue.Emplace(importJob);
-
+		m_importQueue.Emplace(importJob);
 		m_wakeCondition.notify_all();
 
 		return resultPromise->GetFuture();
@@ -137,9 +134,6 @@ namespace Volt
 				}
 			}
 
-			*m_isImporterInUseMap[extension] = false;
-			m_wakeCondition.notify_all();
-
 			JobRef callbackJob = JobSystem::CreateJob("Import Callback", ExecutionPriority::Latent, ExecutionPolicy::MainThread, [importedCallback, result]()
 			{
 				importedCallback(result);
@@ -151,9 +145,7 @@ namespace Volt
 		importJob.job = importJobRef;
 		importJob.debugString = filepath.string();
 
-		auto& importQueue = GetOrCreateQueue(extension);
-		importQueue.Emplace(importJob);
-
+		m_importQueue.Emplace(importJob);
 		m_wakeCondition.notify_all();
 	}
 
@@ -172,44 +164,15 @@ namespace Volt
 		return SourceAssetImporterRegistry::Get().GetImporterForExtension(extension).GetSourceFileInformation(g_assetManager->GetAssetFilesystemPath(filepath));
 	}
 
-	WorkQueue<SourceAssetManager::ImportJob, QueueThreadingPolicy::MPSC>& SourceAssetManager::GetOrCreateQueue(const std::string& extension)
-	{
-		if (m_importQueues.contains(extension))
-		{
-			return *m_importQueues.at(extension);
-		}
-
-		constexpr uint32_t NumMaxImportJobs = 2048;
-
-		m_importQueues[extension] = CreateScope<WorkQueue<ImportJob, QueueThreadingPolicy::MPSC>>();
-		m_importQueues[extension]->Allocate(NumMaxImportJobs);
-
-		return *m_importQueues.at(extension);
-	}
-
 	void SourceAssetManager::RunAssetImportWorker()
 	{
 		while (m_isRunning)
 		{
-			for (auto& [ext, queue] : m_importQueues)
+			ImportJob jobHolder;
+			while (m_importQueue.Pop(jobHolder))
 			{
-				if (!m_isImporterInUseMap.contains(ext))
-				{
-					m_isImporterInUseMap[ext] = CreateScope<std::atomic_bool>();
-					*m_isImporterInUseMap[ext] = false;
-				}
-
-				if (*m_isImporterInUseMap[ext])
-				{
-					continue;
-				}
-
-				ImportJob jobHolder;
-				if (queue->Pop(jobHolder))
-				{
-					*m_isImporterInUseMap[ext] = true;
-					JobSystem::RunJob(jobHolder.job);
-				}
+				JobSystem::RunJob(jobHolder.job);
+				VT_LOGC(Trace, LogSourceAssetManager, "Dispatched Import job for '{}'", jobHolder.debugString);
 			}
 
 			std::unique_lock lock{ m_wakeMutex };

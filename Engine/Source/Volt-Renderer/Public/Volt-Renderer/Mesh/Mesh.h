@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Volt-Renderer/Mesh/SubMesh.h"
-#include "Volt-Renderer/MaterialTable.h"
+#include "Volt-Renderer/Material/MaterialTable.h"
 
 #include "Volt-Renderer/Vertex.h"
 #include "Volt-Renderer/BoundingStructures.h"

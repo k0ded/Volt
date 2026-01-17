@@ -26,6 +26,11 @@ namespace Volt
 		1,
 		"Whether or not force immediate sorting of mesh draw commands.");
 
+	static ConsoleVariable<int32_t> s_forceSingleThreadedRecording(
+		"r.MeshPassProcessor.ForceSingleThreadedRecording",
+		0,
+		"Whether or not force single threaded recording of mesh draw commands.");
+
 	MeshPassProcessorRegistry::MeshPassProcessorRegistry(RenderScene* renderScene)
 		: m_renderScene(renderScene)
 	{
@@ -165,10 +170,14 @@ namespace Volt
 
 			for (uint32_t i = startIndex; i < startIndex + num; ++i)
 			{
-				const MeshDrawCommandBucket currentBucket = m_meshDrawCommandBuckets.at(i);
+				VT_PROFILE_SCOPE("Draw Command Bucket");
+
+				const MeshDrawCommandBucket& currentBucket = m_meshDrawCommandBuckets.at(i);
 
 				 for (const MeshDrawCommandBucket::InstancingRange& instancingRange : currentBucket.instancingRanges)
 				 {
+					 VT_PROFILE_SCOPE("Instancing Range");
+
 					 const MeshDrawCommand& firstDrawComamnd = currentBucket.drawCommands.at(instancingRange.offset);
 					 VT_ENSURE_MSG(firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
 					 const uint32_t perInstanceBindingIndex = firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
@@ -255,18 +264,32 @@ namespace Volt
 				currentOffset += commandBufferRanges[i].num;
 			}
 
-			TaskGraph taskGraph{ ExecutionPriority::Render };
-
-			for (size_t i = 0; i < commandBuffers.size(); ++i)
+			// Job system recording
+			if (!s_forceSingleThreadedRecording.GetValue())
 			{
-				taskGraph.AddTask("Record Mesh Pass", [i, this, &commandBufferRanges, &recordBucketRange, &commandBuffers]() 
+				TaskGraph taskGraph{ ExecutionPriority::Render };
+
+				for (size_t i = 0; i < commandBuffers.size(); ++i)
+				{
+					taskGraph.AddTask("Record Mesh Pass", [i, this, &commandBufferRanges, &recordBucketRange, &commandBuffers]()
+					{
+						const uint32_t primitiveOffset = m_meshDrawCommandBucketPrimitiveOffsets.at(commandBufferRanges[i].offset);
+						recordBucketRange(commandBufferRanges[i].offset, commandBufferRanges[i].num, primitiveOffset, commandBuffers[i], std::bool_constant<true>{});
+					});
+				}
+
+				taskGraph.ExecuteAndWait();
+			}
+			// Pass execution thread recording (might be in a worker thread)
+			else
+			{
+				for (size_t i = 0; i < commandBuffers.size(); ++i)
 				{
 					const uint32_t primitiveOffset = m_meshDrawCommandBucketPrimitiveOffsets.at(commandBufferRanges[i].offset);
 					recordBucketRange(commandBufferRanges[i].offset, commandBufferRanges[i].num, primitiveOffset, commandBuffers[i], std::bool_constant<true>{});
-				});
+				}
 			}
 
-			taskGraph.ExecuteAndWait();
 			mainCommandBuffer->ExecuteSecondaryCommandBuffers(commandBuffers);
 		}
 	}

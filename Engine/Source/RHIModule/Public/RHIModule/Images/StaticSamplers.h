@@ -23,21 +23,24 @@ namespace Volt::RHI
 	{
 		.minFilter = TextureFilter::Nearest,
 		.magFilter = TextureFilter::Nearest,
-		.mipFilter = TextureFilter::Nearest
+		.mipFilter = TextureFilter::Nearest,
+		.wrapMode = TextureWrap::Repeat
 	};
 
 	inline static StaticSamplerDeclaration g_staticBilinearSampler =
 	{
 		.minFilter = TextureFilter::Linear,
 		.magFilter = TextureFilter::Linear,
-		.mipFilter = TextureFilter::Nearest
+		.mipFilter = TextureFilter::Nearest,
+		.wrapMode = TextureWrap::Repeat
 	};
 
 	inline static StaticSamplerDeclaration g_staticTrilinearSampler =
 	{
 		.minFilter = TextureFilter::Linear,
 		.magFilter = TextureFilter::Linear,
-		.mipFilter = TextureFilter::Linear
+		.mipFilter = TextureFilter::Linear,
+		.wrapMode = TextureWrap::Repeat
 	};
 
 	inline static StaticSamplerDeclaration g_staticAnisotropicSampler =
@@ -45,6 +48,7 @@ namespace Volt::RHI
 		.minFilter = TextureFilter::Linear,
 		.magFilter = TextureFilter::Linear,
 		.mipFilter = TextureFilter::Linear,
+		.wrapMode = TextureWrap::Repeat,
 		.anisotropyLevel = AnisotropyLevel::X16
 	};
 }

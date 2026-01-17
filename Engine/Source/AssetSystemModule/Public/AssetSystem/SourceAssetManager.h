@@ -70,14 +70,12 @@ namespace Volt
 		{
 			JobRef job = nullptr;
 			Ref<JobPromise<Vector<AssetReference<Asset>>>> resultPromise;
-		
 			std::string debugString;
 		};
 
 		JobFuture<Vector<AssetReference<Asset>>> ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
 		void ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath);
 
-		WorkQueue<ImportJob, QueueThreadingPolicy::MPSC>& GetOrCreateQueue(const std::string& extension);
 		void RunAssetImportWorker();
 
 		inline static SourceAssetManager* s_instance = nullptr;
@@ -87,7 +85,6 @@ namespace Volt
 		std::condition_variable m_wakeCondition;
 		Scope<std::thread> m_assetImporterWorkerThread;
 
-		Map<std::string, Scope<std::atomic_bool>> m_isImporterInUseMap;
-		Map<std::string, Scope<WorkQueue<ImportJob, QueueThreadingPolicy::MPSC>>> m_importQueues;
+		WorkQueue<ImportJob, QueueThreadingPolicy::MPSC> m_importQueue;
 	};
 }

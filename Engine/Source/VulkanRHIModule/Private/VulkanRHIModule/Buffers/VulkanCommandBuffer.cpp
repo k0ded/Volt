@@ -12,6 +12,7 @@
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
+#include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 
@@ -543,7 +544,10 @@ namespace Volt::RHI
 
 		ClearActivePipeline();
 
+		VulkanRenderPipeline* vkPipeline = ResourceCast(pipeline.GetRaw());
+
 		m_activeRenderPipeline = pipeline;
+		vkCmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->GetPipelineLayout(), StaticSamplerDescriptorSetManager::Set);
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetHandle<VkPipeline>());
 	}
 
@@ -553,7 +557,10 @@ namespace Volt::RHI
 
 		ClearActivePipeline();
 
+		VulkanComputePipeline* vkPipeline = ResourceCast(pipeline.GetRaw());
+
 		m_activeComputePipeline = pipeline;
+		vkCmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline->GetPipelineLayout(), StaticSamplerDescriptorSetManager::Set);
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->GetHandle<VkPipeline>());
 	}
 
@@ -563,7 +570,10 @@ namespace Volt::RHI
 
 		ClearActivePipeline();
 
+		VulkanRayTracingPipeline* vkPipeline = ResourceCast(pipeline.GetRaw());
+
 		m_activeRayTracingPipeline = pipeline;
+		vkCmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vkPipeline->GetPipelineLayout(), StaticSamplerDescriptorSetManager::Set);
 		vkCmdBindPipeline(m_commandBufferData.commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->GetHandle<VkPipeline>());
 	}
 

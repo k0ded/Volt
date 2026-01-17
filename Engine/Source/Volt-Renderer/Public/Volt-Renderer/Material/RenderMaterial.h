@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Volt-Renderer/Config.h"
+#include "Volt-Renderer/Material/MaterialShaderMap.h"
 
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/Shader/Shader.h>
@@ -48,10 +49,7 @@ namespace Volt
 
 		using TexturesMap = Map<uint32_t, TextureInfo>;
 
-		RenderMaterial(const std::string& name);
-		RenderMaterial(const std::string& name, RefPtr<RHI::Shader> shader);
-
-		VT_NODISCARD VT_INLINE const TexturesMap& GetTextures() const { return m_textures; }
+		RenderMaterial(const std::string& name, RefPtr<RHI::Shader> defaultShader);
 
 		void SetTexture(uint32_t index, RenderTexture resource);
 
@@ -62,9 +60,13 @@ namespace Volt
 		// Note: This function may be called from any thread during rendering.
 		void BindToShaderBindingMap(RHI::ShaderBindingMap& shaderBindingMap, RefPtr<RHI::RenderPipeline> renderPipeline) const;
 
+		VT_INLINE void SetMaterialBlendMode(MaterialBlendMode materialBlendMode) { m_materialBlendMode = materialBlendMode; }
+
+		VT_NODISCARD VT_INLINE const TexturesMap& GetTextures() const { return m_textures; }
 		VT_NODISCARD VT_INLINE size_t GetHash() const { return m_hash; }
 		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
-		VT_NODISCARD VT_INLINE RefPtr<RHI::Shader> GetPixelShader() const { return m_pixelShader; }
+		VT_NODISCARD VT_INLINE RefPtr<RHI::Shader> GetPixelShader() { return m_shaderMap.GetShader(m_materialBlendMode); }
+		VT_NODISCARD VT_INLINE MaterialBlendMode GetMaterialBlendMode() const { return m_materialBlendMode; }
 
 	private:
 		friend class MaterialCompiler;
@@ -76,7 +78,9 @@ namespace Volt
 		// Textures used while rendering.
 		TexturesMap m_renderableTextures;
 
-		RefPtr<RHI::Shader> m_pixelShader;
+		MaterialBlendMode m_materialBlendMode = MaterialBlendMode::Opaque;
+		MaterialShaderMap m_shaderMap;
+		RefPtr<RHI::Shader> m_defaultShader;
 
 		std::string m_name;
 		size_t m_hash = 0;

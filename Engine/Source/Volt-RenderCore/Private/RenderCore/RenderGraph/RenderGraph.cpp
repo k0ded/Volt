@@ -302,8 +302,6 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		std::scoped_lock lock{ m_tempMutex };
-
 		RGUniformBufferRef uniformBuffer = m_resourceAllocator.Allocate<RGUniformBuffer>(desc);
 		m_resources.emplace_back(uniformBuffer);
 

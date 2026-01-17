@@ -16,6 +16,7 @@ namespace Volt::RHI
 	inline PFN_vkGetDescriptorSetLayoutSizeEXT vkGetDescriptorSetLayoutSizeEXT;
 	inline PFN_vkGetDescriptorEXT vkGetDescriptorEXT;
 	inline PFN_vkCmdBindDescriptorBuffersEXT vkCmdBindDescriptorBuffersEXT;
+	inline PFN_vkCmdBindDescriptorBufferEmbeddedSamplersEXT vkCmdBindDescriptorBufferEmbeddedSamplersEXT;
 	inline PFN_vkCmdSetDescriptorBufferOffsetsEXT vkCmdSetDescriptorBufferOffsetsEXT;
 	inline PFN_vkGetDescriptorSetLayoutBindingOffsetEXT vkGetDescriptorSetLayoutBindingOffsetEXT;
 
@@ -50,6 +51,7 @@ namespace Volt::RHI
 		VT_GET_VULKAN_FUNCTION(vkGetDescriptorSetLayoutBindingOffsetEXT);
 		VT_GET_VULKAN_FUNCTION(vkGetDescriptorEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdBindDescriptorBuffersEXT);
+		VT_GET_VULKAN_FUNCTION(vkCmdBindDescriptorBufferEmbeddedSamplersEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdSetDescriptorBufferOffsetsEXT);
 
 		// Mesh shaders

@@ -8,6 +8,11 @@ namespace Volt::Algo
 {
 	void ForEachParalellBlocking(std::function<void(uint32_t threadIdx, uint32_t elementIdx)>&& func, uint32_t iterationCount)
 	{
+		if (iterationCount == 0)
+		{
+			return;
+		}
+
 		const uint32_t threadCount = std::min(iterationCount, PlatformMisc::GetNumberOfLogicalCores());
 		const uint32_t perThreadIterationCount = iterationCount / threadCount;
 

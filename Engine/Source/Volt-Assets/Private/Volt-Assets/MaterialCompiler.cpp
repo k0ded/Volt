@@ -7,7 +7,7 @@
 #include <Volt-MaterialGraph/MaterialGraph.h>
 #include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
-#include <Volt-Renderer/RenderMaterial.h>
+#include <Volt-Renderer/Material/RenderMaterial.h>
 #include <Volt-Renderer/Renderer.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 

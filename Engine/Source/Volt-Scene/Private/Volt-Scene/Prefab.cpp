@@ -228,7 +228,10 @@ namespace Volt
 		{
 			archive << entityDataReader;
 
-			m_prefabScene = g_assetManager->CreateAnonymousAsset<Scene>("PrefabScene");
+			SceneInitializer sceneInitializer = SceneInitializer::Create("PrefabScene");
+			sceneInitializer.shouldHaveRenderScene = false;
+
+			m_prefabScene = g_assetManager->CreateAnonymousAsset<Scene>("PrefabScene", sceneInitializer);
 
 			for (const EntityHeader& entityHeader : entityHeaders)
 			{

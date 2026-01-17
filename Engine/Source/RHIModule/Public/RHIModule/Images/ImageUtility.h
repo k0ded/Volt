@@ -204,6 +204,7 @@ namespace Volt::RHI
 				case PixelFormat::R8G8B8A8_UNORM: return 4 * 1;
 				case PixelFormat::R8G8B8A8_SRGB: return 4 * 1;
 				case PixelFormat::R16G16B16A16_SFLOAT: return 4 * 2;
+				case PixelFormat::R16G16B16A16_UNORM: return 4 * 2;
 				case PixelFormat::R32G32B32A32_SFLOAT: return 4 * 4;
 
 				case PixelFormat::B10G11R11_UFLOAT_PACK32: return 4 * 1;
@@ -258,6 +259,7 @@ namespace Volt::RHI
 				case PixelFormat::R32G32_UINT:
 				case PixelFormat::R32G32_SFLOAT: 
 				case PixelFormat::R16G16B16A16_SFLOAT:
+				case PixelFormat::R16G16B16A16_UNORM:
 					return 8;
 				
 				case PixelFormat::R32G32B32A32_SFLOAT: 
@@ -314,6 +316,7 @@ namespace Volt::RHI
 				case PixelFormat::R8G8B8A8_UNORM:
 				case PixelFormat::R8G8B8A8_SRGB:
 				case PixelFormat::R16G16B16A16_SFLOAT:
+				case PixelFormat::R16G16B16A16_UNORM:
 				case PixelFormat::R32G32B32A32_SFLOAT:
 				case PixelFormat::B10G11R11_UFLOAT_PACK32:
 					return 1;

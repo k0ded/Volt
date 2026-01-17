@@ -20,7 +20,7 @@ VT_DEFINE_LOG_CATEGORY(LogCommonTextureSourceImporter);
 
 namespace Volt
 {
-	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".jpeg", ".jpg", ".tga", ".bmp", ".psd", ".gif", ".hdr", ".pic", ".pnm" }), CommonTextureSourceImporter);
+	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".png", ".jpeg", ".jpg", ".tga", ".bmp", ".psd", ".gif", ".hdr", ".pic", ".pnm" }), CommonTextureSourceImporter);
 
 	Vector<AssetReference<Asset>> CommonTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
@@ -58,7 +58,7 @@ namespace Volt
 
 		RHI::PixelFormat format = RHI::PixelFormat::R8G8B8A8_UNORM;
 
-		if (is16Bit)
+		if (is16Bit && isHDR)
 		{
 			format = isHDR ? RHI::PixelFormat::R16G16B16A16_SFLOAT : RHI::PixelFormat::R16G16B16A16_UNORM;
 		}
@@ -120,11 +120,19 @@ namespace Volt
 
 		if (importConfig.createAsMemoryAsset)
 		{
+			VT_CHECK_MSG(importConfig.targetAssetHandle == Asset::Null(), "Target asset handle with memory assets are not supported!");
 			voltTexture = g_assetManager->CreateMemoryAsset<Texture2D>(importConfig.destinationFilename);
 		}
 		else
 		{
-			voltTexture = g_assetManager->CreateAsset<Texture2D>(importConfig.destinationFilename);
+			if (importConfig.targetAssetHandle != Asset::Null())
+			{
+				voltTexture = g_assetManager->CreateAssetWithAssetHandle<Texture2D>(importConfig.destinationFilename, importConfig.targetAssetHandle);
+			}
+			else
+			{
+				voltTexture = g_assetManager->CreateAsset<Texture2D>(importConfig.destinationFilename);
+			}
 		}
 
 		voltTexture->SetImage(image);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Volt-Renderer/Config.h"
-#include "Volt-Renderer/MaterialTable.h"
+#include "Volt-Renderer/Material/MaterialTable.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
 #include "Volt-Renderer/RayTracing/RayTracingInstance.h"
 

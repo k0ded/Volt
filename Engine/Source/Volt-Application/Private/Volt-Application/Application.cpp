@@ -141,6 +141,7 @@ namespace Volt
 
 		m_subSystemManager->ShutdownSubSystems(SubSystemInitializationStage::Engine);
 
+		m_sourceAssetManager = nullptr;
 		g_assetManager = nullptr;
 
 		m_windowManager->DestroyMainWindow();

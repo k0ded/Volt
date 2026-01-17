@@ -33,8 +33,8 @@ namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Scene, Scene);
 
-	Scene::Scene(const std::string& name)
-		: m_name(name),
+	Scene::Scene(const SceneInitializer& sceneInitializer)
+		: m_sceneInitializer(sceneInitializer),
 		m_sceneExtensionManager(*this)
 	{
 		Initialize();
@@ -526,7 +526,7 @@ namespace Volt
 
 	void Scene::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
-		archive << m_name;
+		archive << m_sceneInitializer.name;
 		archive << m_sceneSettings.useWorldEngine;
 	}
 
@@ -589,9 +589,11 @@ namespace Volt
 
 	void Scene::Initialize()
 	{
-		m_renderScene = CreateRef<RenderScene>(&m_entityScene);
-
-		m_entityScene.SetRenderScene(m_renderScene.get());
+		if (m_sceneInitializer.shouldHaveRenderScene)
+		{
+			m_renderScene = CreateRef<RenderScene>(&m_entityScene);
+			m_entityScene.SetRenderScene(m_renderScene.get());
+		}
 
 		m_worldEngine.Reset(this, 16, 4);
 	}

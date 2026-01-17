@@ -1,5 +1,8 @@
 #include "vrpch.h"
-#include "Volt-Renderer/MaterialTable.h"
+#include "Volt-Renderer/Material/MaterialTable.h"
+
+#include <RenderCore/Shader/DefaultShaders.h>
+#include <RenderCore/Shader/ShaderMap.h>
 
 namespace Volt
 {
@@ -22,7 +25,7 @@ namespace Volt
 
 		if (!m_materials.at(index))
 		{
-			m_materials[index] = CreateRef<RenderMaterial>("Null");
+			m_materials[index] = CreateRef<RenderMaterial>("Null", ShaderMap::Get<OpaqueDefaultPixelPS>());
 		}
 	}
 

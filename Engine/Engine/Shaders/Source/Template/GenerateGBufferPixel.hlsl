@@ -1,6 +1,7 @@
 #include "RenderPipelineLegacy/GBufferCommon.hlsli"
 #include "Utility/Utility.hlsli"
 #include "StaticSamplerStates.hlsli"
+#include "MaterialCommon.hlsli"
 
 $(TextureDeclarations)
 
@@ -40,16 +41,18 @@ GBufferPixelShaderOutput MainPS(in GBufferPixelShaderInput input)
     EvaluatedMaterial evaluatedMaterial = EvaluateMaterial(evaluationData);
 
     const float3x3 TBN = CalculateTBN(input.normal, input.tangent.xyz, input.tangent.w);
-
-    float3 resultNormal = evaluatedMaterial.normal.xyz * 2.f - 1.f;
-    resultNormal.z = sqrt(1.f - saturate(resultNormal.x * resultNormal.x + resultNormal.y * resultNormal.y));
-    resultNormal = normalize(mul(TBN, normalize(resultNormal)));
+    const float3 resultNormal = normalize(mul(TBN, normalize(evaluatedMaterial.normal)));
 
     GBufferPixelShaderOutput result;
     result.albedo = evaluatedMaterial.albedo;
     result.normal = float4(resultNormal * 0.5f + 0.5f, 1.f);
     result.material = float2(evaluatedMaterial.roughness, evaluatedMaterial.metallic);
     result.emissive = evaluatedMaterial.emissive;
+
+#if MATERIAL_BLEND_MODE == MATERIAL_BLEND_MODE_ALPHA_MASKED
+    result.albedo.a = step(0.5f, result.albedo.a);
+    clip(result.albedo.a < 0.01f ? -1.f : 1.f);
+#endif
 
     return result;
 }

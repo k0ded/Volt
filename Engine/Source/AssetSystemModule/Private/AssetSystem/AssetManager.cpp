@@ -490,6 +490,8 @@ namespace Volt
 
 	void AssetManager::LoadAsset(AssetHandle assetHandle, RefPtr<Asset> asset, AssetLoadState expectedLoadState)
 	{
+		VT_PROFILE_FUNCTION();
+
 		ScopedTimer timer{};
 
 		DeserializeAsset(asset);
@@ -714,6 +716,8 @@ namespace Volt
 
 	bool AssetManager::DeserializeAsset(AssetReference<Asset> asset)
 	{
+		VT_PROFILE_FUNCTION();
+
 		ReadOnlyAssetMetadata assetMetadata = GetReadOnlyAssetMetadata(asset->GetAssetHandle());
 
 		const std::filesystem::path filepath = GetAssetFilesystemPath(assetMetadata->filepath);
@@ -731,17 +735,21 @@ namespace Volt
 		}
 
 		FileReader fileReader;
-		if (!fileReader.Open(filepath))
 		{
-			VT_LOGC(Error, LogAssetSystem,
-				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
-				"		Error: {}",
-				filepath,
-				assetMetadata->handle,
-				assetMetadata->type->GetName(),
-				fileReader.GetError());
-			asset->SetFlag(AssetFlag::Invalid, true);
-			return false;
+			VT_PROFILE_SCOPE("Read Asset File");
+			
+			if (!fileReader.Open(filepath))
+			{
+				VT_LOGC(Error, LogAssetSystem,
+					"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
+					"		Error: {}",
+					filepath,
+					assetMetadata->handle,
+					assetMetadata->type->GetName(),
+					fileReader.GetError());
+				asset->SetFlag(AssetFlag::Invalid, true);
+				return false;
+			}
 		}
 
 		// Load the asset header and verify the asset.
@@ -799,7 +807,10 @@ namespace Volt
 		}
 
 		// Deserialize the asset.
-		asset->Serialize(fileReader, assetMetadata);
+		{
+			VT_PROFILE_SCOPE("Asset Serialize");
+			asset->Serialize(fileReader, assetMetadata);
+		}
 		return true;
 	}
 
@@ -897,22 +908,27 @@ namespace Volt
 	{
 		m_dependencyGraph = CreateScope<AssetDependencyGraph>(*this);
 
-		// Add all assets to the graph
-		for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
+		JobRef insertIntoDependencyGraphJob = JobSystem::CreateJob("Insert Assets Into Dependency Graph", ExecutionPriority::Latent, ExecutionPolicy::MainThread, nullptr, m_assetRegistry.GetMetadataLoadingCounter(), [&]() 
 		{
-			m_dependencyGraph->AddAssetToGraph((*it)->handle);
-		}
-
-		// Link all dependencies
-		for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
-		{
-			ReadOnlyAssetMetadata assetMetadata = *it;
-
-			for (const AssetDependency& dependency : assetMetadata->assetDependencyList.dependencies)
+			// Add all assets to the graph
+			for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
 			{
-				m_dependencyGraph->AddDependencyToAsset(assetMetadata->handle, dependency.assetHandle);
+				m_dependencyGraph->AddAssetToGraph((*it)->handle);
 			}
-		}
+
+			// Link all dependencies
+			for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
+			{
+				ReadOnlyAssetMetadata assetMetadata = *it;
+
+				for (const AssetDependency& dependency : assetMetadata->assetDependencyList.dependencies)
+				{
+					m_dependencyGraph->AddDependencyToAsset(assetMetadata->handle, dependency.assetHandle);
+				}
+			}
+		});
+
+		JobSystem::RunJob(insertIntoDependencyGraphJob);
 	}
 
 	ReadOnlyAssetMetadata AssetManager::GetAssetMetadataFromFilepath(const std::filesystem::path& filepath)

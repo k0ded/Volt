@@ -1,8 +1,8 @@
 #include "vrpch.h"
 
 #include "Volt-Renderer/MeshPassProcessors/BasePassMeshProcessor.h"
+#include "Volt-Renderer/Material/RenderMaterial.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
-#include "Volt-Renderer/RenderMaterial.h"
 #include "Volt-Renderer/SceneRendererShaderDefinitions.h"
 #include "Volt-Renderer/Renderer.h"
 

@@ -11,6 +11,7 @@ public:
 
 	// Returns the current version linked to the GUID, otherwise returns -1
 	int32_t TryGetVersion(const VoltGUID& guid);
+	bool IsVersionRegistered(const VoltGUID& guid);
 
 	static ArchiveVersionRegistry& Get();
 

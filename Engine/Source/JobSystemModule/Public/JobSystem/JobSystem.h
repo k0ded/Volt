@@ -27,7 +27,9 @@ namespace Volt
 		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func);
 		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func);
 		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, JobCounter* waitCounter, Func&& func);
 		template<typename Func> VT_NODISCARD static Job* CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func);
+		template<typename Func> VT_NODISCARD static Job* CreateJobWithDependency(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Job* dependencyJob, Func&& func);
 
 		static JobCounter* CreateCounter();
 		static void DestroyCounter(JobCounter*& counter);
@@ -114,19 +116,34 @@ namespace Volt
 	template<typename Func>
 	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func)
 	{
-		// We skip adding a ref to the counter here because
-		// it's ref will be added later.
-		JobCounter* associatedCounter = s_instance->AllocateCounter(false);
-		return CreateJob(jobName, priority, executionPolicy, associatedCounter, std::move(func));
+		return CreateJob(jobName, priority, executionPolicy, nullptr, std::move(func));
 	}
 
 	template<typename Func>
 	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func)
 	{
+		// Will create a wait counter for us
+		return CreateJob(jobName, priority, executionPolicy, associatedCounter, nullptr, std::move(func));
+	}
+
+	template<typename Func>
+	Job* JobSystem::CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, JobCounter* waitCounter, Func&& func)
+	{
 		VT_PROFILE_FUNCTION();
+		if (!associatedCounter)
+		{
+			associatedCounter = s_instance->AllocateCounter(false);
+		}
 		VT_ENSURE(associatedCounter->IsActive());
 
-		JobCounter* waitCounter = s_instance->AllocateCounter();
+		if (!waitCounter)
+		{
+			waitCounter = s_instance->AllocateCounter();
+		}
+		else
+		{
+			waitCounter->IncRef();
+		}
 
 		VT_ENSURE(waitCounter != associatedCounter);
 
@@ -144,5 +161,11 @@ namespace Volt
 	{
 		// Inherit the priority.
 		return CreateJob(jobName, dependantJob->GetPriority(), dependantJob->GetWaitCounter(), std::move(func));
+	}
+
+	template<typename Func>
+	Job* JobSystem::CreateJobWithDependency(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Job* dependencyJob, Func&& func)
+	{
+		return CreateJob(jobName, priority, executionPolicy, nullptr, dependencyJob->GetCounter(), std::move(func));
 	}
 }

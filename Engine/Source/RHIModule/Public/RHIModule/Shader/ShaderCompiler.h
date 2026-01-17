@@ -17,8 +17,8 @@ namespace Volt::RHI
 
 	enum class ShaderCompilerFlags : uint32_t
 	{
-		None = BIT(0),
-		WarningsAsErrors = BIT(1),
+		None = 0,
+		WarningsAsErrors = BIT(0),
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(ShaderCompilerFlags);
@@ -72,7 +72,7 @@ namespace Volt::RHI
 		{
 			ShaderSourceInfo shaderSourceInfo;
 			ShaderPermutationConfig permutationConfig;
-			OptimizationLevel optimizationLevel = OptimizationLevel::Disable;
+			OptimizationLevel optimizationLevel = OptimizationLevel::Dist;
 			bool forceCompile;
 		};
 

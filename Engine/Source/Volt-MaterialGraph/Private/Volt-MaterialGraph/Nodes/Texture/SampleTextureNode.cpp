@@ -1,7 +1,6 @@
 #include "vtmgpch.h"
 
 #include "Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h"
-//#include "Volt/Utility/UIUtility.h"
 
 #include <RHIModule/Images/Image.h>
 
@@ -9,8 +8,27 @@
 #include <Mosaic/NodeRegistry.h>
 #include <Mosaic/MosaicShaderWriter.h>
 
+#include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
+
 namespace Volt::MosaicNodes
 {
+	struct SampleTextureNodeCustomVersion
+	{
+		enum Type
+		{
+			BaseVersion = 0,
+			AddedTextureType = 1,
+
+			VersionPlusOne,
+			LatestVersion = VersionPlusOne - 1
+		};
+
+		inline static constexpr VoltGUID guid = "{DAE8ACDF-30A8-4AD6-B00B-3E441F823B9E}"_guid;
+	private:
+		SampleTextureNodeCustomVersion() = default;
+	};
+	ArchiveVersionRegistrar g_registerSampleTextureNodeCustomVersion(SampleTextureNodeCustomVersion::guid, SampleTextureNodeCustomVersion::LatestVersion, "SampleTextureNodeCustomVersion");
+
 	static void GetCorrectedVariableName(Mosaic::ResultInfo& resultInfo, uint32_t outputIndex)
 	{
 		if (outputIndex == 0)
@@ -74,13 +92,23 @@ namespace Volt::MosaicNodes
 
 	void SampleTextureNode::SerializeCustom(Archive& archive)
 	{
+		archive.UseVersion(SampleTextureNodeCustomVersion::guid);
+
 		archive << m_textureHandle;
+	
+		if (!archive.IsLoading() || archive.GetVersion(SampleTextureNodeCustomVersion::guid) >= SampleTextureNodeCustomVersion::AddedTextureType)
+		{
+			archive << m_textureType;
+		}
 	}
 
 	const Mosaic::ResultInfo SampleTextureNode::Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const
 	{
-		constexpr const char* nodeStr = "const float2 {} = {}; \n"
-										"const float4 {} = {}.Sample({}, {} * {}); \n";
+		constexpr const char* colorTypeNodeStr = "const float2 {} = {}; \n"
+												 "const float4 {} = {}.Sample({}, {} * {}); \n";
+
+		constexpr const char* normalTypeNodeStr = "const float2 {} = {}; \n"
+												  "const float4 {} = {}.Sample({}, {} * {}) * 2.f - 1.f; \n";
 
 		if (m_evaluated)
 		{
@@ -118,7 +146,16 @@ namespace Volt::MosaicNodes
 			}
 		}
 
-		std::string result = std::format(nodeStr, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName);
+		std::string result;
+		if (m_textureType == TextureType::Color)
+		{
+			result = std::format(colorTypeNodeStr, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName);
+		}
+		else if (m_textureType == TextureType::Normal)
+		{
+			result = std::format(normalTypeNodeStr, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName);
+		}
+
 		shaderWriter.AppendCodeBlock(result);
 
 		Mosaic::ResultInfo resultInfo{};

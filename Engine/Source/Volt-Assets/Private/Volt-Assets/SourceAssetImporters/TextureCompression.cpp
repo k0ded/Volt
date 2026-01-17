@@ -38,6 +38,14 @@ namespace Volt::TextureCompression
 		{
 			srcDXGIFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		}
+		else if (srcFormat == RHI::PixelFormat::R16G16B16A16_UNORM)
+		{
+			srcDXGIFormat = DXGI_FORMAT_R16G16B16A16_UNORM;
+		}
+		else if (srcFormat == RHI::PixelFormat::R32G32B32A32_SFLOAT)
+		{
+			srcDXGIFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		}
 		else
 		{
 			VT_ENSURE(false);
@@ -198,8 +206,6 @@ namespace Volt::TextureCompression
 
 		const uint32_t formatTexelBlockSize = RHI::Utility::GetFormatTexelBlockSize(srcFormat);
 		const uint32_t formatTexelsPerBlock = RHI::Utility::GetFormatTexelsPerBlock(srcFormat);
-
-
 
 #if 0
 		if (convertToSRGBIfRequired)

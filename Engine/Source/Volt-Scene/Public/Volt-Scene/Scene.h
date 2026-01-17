@@ -26,6 +26,23 @@ namespace Volt
 		bool useWorldEngine = true;
 	};
 
+	struct SceneInitializer
+	{
+		std::string name = "New Scene";
+
+		/*
+			Can be set to false if the scene will never be renderered.
+		*/
+		bool shouldHaveRenderScene = true;
+	
+		static SceneInitializer Create(const std::string& name)
+		{
+			SceneInitializer result;
+			result.name = name;
+			return result;
+		}
+	};
+
 	class VTS_API Scene : public Asset, public EventListener
 	{
 	public:
@@ -35,7 +52,7 @@ namespace Volt
 		};
 
 		Scene();
-		Scene(const std::string& name);
+		Scene(const SceneInitializer& initializer);
 		~Scene() override;
 
 		void OnRuntimeStart();
@@ -58,7 +75,7 @@ namespace Volt
 
 		//VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_entityScene.GetRegistry(); }
 		VT_NODISCARD VT_INLINE EntityScene& GetEntityScene() { return m_entityScene; }
-		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
+		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_sceneInitializer.name; }
 		VT_NODISCARD VT_INLINE const Statistics& GetStatistics() const { return m_statistics; }
 		VT_NODISCARD VT_INLINE bool IsPlaying() const { return m_isPlaying; }
 		VT_NODISCARD VT_INLINE float GetDeltaTime() const { return m_currentDeltaTime; }
@@ -137,6 +154,7 @@ namespace Volt
 
 		bool m_isFinishedLoadingEntities = false;
 
+		SceneInitializer m_sceneInitializer;
 		SceneSettings m_sceneSettings;
 		Statistics m_statistics;
 		WorldEngine m_worldEngine;
@@ -145,8 +163,6 @@ namespace Volt
 		bool m_isPlaying = false;
 		float m_timeSinceStart = 0.f;
 		float m_currentDeltaTime = 0.f;
-
-		std::string m_name = "New Scene";
 
 		uint32_t m_viewportWidth = 1;
 		uint32_t m_viewportHeight = 1;

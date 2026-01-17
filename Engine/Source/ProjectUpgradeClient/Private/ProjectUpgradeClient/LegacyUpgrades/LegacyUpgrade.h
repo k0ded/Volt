@@ -26,12 +26,22 @@ namespace Volt
 		std::string GetCurrentActionText() override;
 
 	private:
+		struct MaterialDeclaration
+		{
+			Vector<AssetHandle> subMaterials;
+		};
+
+		using MaterialsMap = Map<AssetHandle, MaterialDeclaration>;
+
 		bool TryLoadProject(Volt::Project& project);
 		void TryConvertAssets(const Volt::Project& project, const ArrayView<Volt::AssetMetadata>& assetMetadata);
 
+		Vector<AssetReference<Volt::Asset>> CreateMaterials(const Volt::Project& project, const Volt::AssetMetadata& metadata, MaterialsMap& materialsMap);
+
 		Vector<AssetReference<Volt::Asset>> TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs);
-		AssetReference<Volt::MeshAsset> TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata);
+		Vector<AssetReference<Volt::Asset>> TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata, const ArrayView<Volt::AssetMetadata>& assetMetadatas, MaterialsMap& materialsMap);
 		AssetReference<Volt::Prefab> TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata);
+		AssetReference<Volt::Asset> TryConvertTexture(const Volt::Project& project, const Volt::AssetMetadata& metadata);
 
 		void PrintMissingMembers();
 

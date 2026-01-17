@@ -2,7 +2,7 @@
 
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/Mesh/SubMesh.h"
-#include "Volt-Renderer/MaterialTable.h"
+#include "Volt-Renderer/Material/MaterialTable.h"
 #include "Volt-Renderer/Mesh/MeshCommon.h"
 #include "Volt-Renderer/RayTracing/RayTracingSceneGeometry.h"
 #include "Volt-Renderer/BoundingStructures.h"

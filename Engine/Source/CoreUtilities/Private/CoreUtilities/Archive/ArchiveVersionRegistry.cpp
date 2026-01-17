@@ -13,6 +13,11 @@ int32_t ArchiveVersionRegistry::TryGetVersion(const VoltGUID& guid)
 	return -1;
 }
 
+bool ArchiveVersionRegistry::IsVersionRegistered(const VoltGUID& guid)
+{
+	return m_registeredVersions.contains(guid);
+}
+
 ArchiveVersionRegistry& ArchiveVersionRegistry::Get()
 {
 	static ArchiveVersionRegistry registry;

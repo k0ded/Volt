@@ -1150,6 +1150,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 		const MeshSourceImportConfig& importConfig = *reinterpret_cast<const MeshSourceImportConfig*>(config);
+		VT_CHECK_MSG(importConfig.targetAssetHandle == Asset::Null(), "Target asset handle is not supported!");
 
 		FbxManagerPtr fbxManager(FbxManager::Create());
 		if (!fbxManager)

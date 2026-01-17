@@ -14,6 +14,9 @@
 #include <Volt-Renderer/Mesh/Mesh.h>
 
 #include <Volt-Assets/MeshAsset.h>
+#include <Volt-Assets/MaterialAsset.h>
+#include <Volt-Assets/SourceAssetImporters/ImportConfigs.h>
+
 #include <Volt-Scene/Prefab.h>
 #include <Volt-Scene/EntityUtility.h>
 #include <Volt-Scene/EntityDescription.h>
@@ -25,6 +28,20 @@
 
 #include <Volt-CoreComponents/RenderingComponents.h>
 #include <Volt-CoreComponents/LightComponents.h>
+
+#include <Volt-MaterialGraph/MaterialGraph.h>
+#include <Volt-MaterialGraph/Nodes/PBROutputNode.h>
+#include <Volt-MaterialGraph/Nodes/ConstantNodes.h>
+#include <Volt-MaterialGraph/Nodes/Normal/NormalStrengthNode.h>
+#include <Volt-MaterialGraph/Nodes/MathNodes.h>
+#include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
+#include <Volt-MaterialGraph/Nodes/Normal/DeriveNormalZNode.h>
+#include <Volt-MaterialGraph/Nodes/Normal/NormalStrengthNode.h>
+#include <Volt-MaterialGraph/Nodes/ConversionNodes.h>
+
+#include <AssetSystem/SourceAssetManager.h>
+
+#include <Mosaic/MosaicGraphBuilder.h>
 
 #include <SubSystem/SubSystemManager.h>
 
@@ -527,6 +544,7 @@ void LegacyProjectUpgrade::TryConvertAssets(const Volt::Project& project, const 
 {
 	Vector<AssetReference<Asset>> assetsToSave;
 	Map<AssetHandle, AssetReference<Prefab>> assetHandleToPrefab;
+	MaterialsMap materialsMap;
 
 	// Make sure all prefabs are processed first.
 	for (const AssetMetadata& metadata : assetMetadata)
@@ -551,17 +569,39 @@ void LegacyProjectUpgrade::TryConvertAssets(const Volt::Project& project, const 
 		}
 		else if (metadata.type == AssetTypes::Mesh)
 		{
-			AssetReference<MeshAsset> mesh = TryConvertMesh(project, metadata);
-			if (mesh)
+			Vector<AssetReference<Asset>> assets = TryConvertMesh(project, metadata, assetMetadata, materialsMap);
+			assetsToSave.append(assets);
+		}
+		else if (metadata.type == AssetTypes::Material)
+		{
+			if (!materialsMap.contains(metadata.handle))
 			{
-				assetsToSave.emplace_back(mesh);
+				Vector<AssetReference<Asset>> assets = CreateMaterials(project, metadata, materialsMap);
+				assetsToSave.append(assets);
 			}
+		}
+		else if (metadata.type == AssetTypes::Texture)
+		{
+			assetsToSave.emplace_back(TryConvertTexture(project, metadata));
 		}
 	}
 
 	for (auto& asset : assetsToSave)
 	{
-		m_assetManager->SaveAsset(asset);
+		// Default to true to skip imported assets.
+		bool isMemoryAsset = true;
+		{
+			ReadOnlyAssetMetadata metadata = m_assetManager->GetReadOnlyAssetMetadata(asset->GetAssetHandle());
+			if (metadata.IsValid())
+			{
+				isMemoryAsset = metadata->IsMemoryAsset();
+			}
+		}
+		
+		if (!isMemoryAsset)
+		{
+			m_assetManager->SaveAsset(asset);
+		}
 	}
 }
 
@@ -787,7 +827,7 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 	return resultAssets;
 }
 
-AssetReference<Volt::MeshAsset> LegacyProjectUpgrade::TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata)
+Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata, const ArrayView<Volt::AssetMetadata>& assetMetadatas, MaterialsMap& materialsMap)
 {
 	struct LegacyVertex
 	{
@@ -803,13 +843,16 @@ AssetReference<Volt::MeshAsset> LegacyProjectUpgrade::TryConvertMesh(const Volt:
 
 	if (!FileSystem::Exists(absoluteMeshPath))
 	{
-		return nullptr;
+		return {};
 	}
+
+	Vector<AssetReference<Volt::Asset>> assets;
 
 	Buffer dataBuffer = Buffer::ReadFromFile(absoluteMeshPath);
 
 	const std::string meshName = absoluteMeshPath.stem().string();
 	AssetReference<MeshAsset> newMesh = m_assetManager->CreateAssetAndFileWithAssetHandle<MeshAsset>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle);
+	assets.emplace_back(newMesh);
 
 	{
 		size_t offset = 0;
@@ -860,14 +903,17 @@ AssetReference<Volt::MeshAsset> LegacyProjectUpgrade::TryConvertMesh(const Volt:
 
 		MeshInitializer meshInitializer;
 
+		uint32_t requiredMaterialCount = 0;
+
 		for (uint32_t i = 0; i < numSubMeshes; ++i)
 		{
 			SubMesh newSubMesh;
 
 			// Note: All sub meshes get the same material as we no longer have sub materials.
-			//newSubMesh.materialIndex = *dataBuffer.As<uint32_t>(offset);
-			newSubMesh.materialIndex = 0;
+			newSubMesh.materialIndex = *dataBuffer.As<uint32_t>(offset);
 			offset += sizeof(uint32_t);
+
+			requiredMaterialCount = glm::max(requiredMaterialCount, newSubMesh.materialIndex + 1);
 
 			newSubMesh.vertexCount = *dataBuffer.As<uint32_t>(offset);
 			offset += sizeof(uint32_t);
@@ -909,7 +955,7 @@ AssetReference<Volt::MeshAsset> LegacyProjectUpgrade::TryConvertMesh(const Volt:
 
 			for (const LegacyVertex& vertex : legacyVertices)
 			{
-				const VertexMaterialData materialData = VertexMaterialData::Pack(vertex.normal, { vertex.tangent, 0.f }, vertex.texCoords);
+				const VertexMaterialData materialData = VertexMaterialData::Pack(vertex.normal, { vertex.tangent, 1.f }, vertex.texCoords);
 				const VertexAnimationData animationData = { vertex.influences, vertex.weights };
 
 				vertexContainer.Add(vertex.position, materialData, animationData);
@@ -918,12 +964,54 @@ AssetReference<Volt::MeshAsset> LegacyProjectUpgrade::TryConvertMesh(const Volt:
 			meshInitializer.AddVertices(vertexContainer);
 		}
 
-		newMesh->Initialize(meshInitializer, { materialHandle });
+		if (!materialsMap.contains(materialHandle))
+		{
+			for (const Volt::AssetMetadata& matMetadata : assetMetadatas)
+			{
+				if (matMetadata.handle == materialHandle)
+				{
+					Vector<AssetReference<Volt::Asset>> createdMaterials = CreateMaterials(project, matMetadata, materialsMap);
+					assets.append(createdMaterials);
+					break;
+				}
+			}
+		}
+
+		Vector<AssetHandle> materials;
+		if (materialsMap.contains(materialHandle))
+		{
+			materials = materialsMap.at(materialHandle).subMaterials;
+		
+			if (materials.size() < requiredMaterialCount)
+			{
+				const size_t prevSize = materials.size();
+				materials.resize(requiredMaterialCount);
+
+				for (size_t i = prevSize; i < materials.size(); ++i)
+				{
+					materials[i] = materials.at(materials.size() - 1);
+				}
+			}
+		}
+		else
+		{
+			// Material doesn't exist. Create fallback
+			for (uint32_t i = 0; i < requiredMaterialCount; ++i)
+			{
+				std::string materialName = std::format("{}_Mat_{}", meshName, i);
+				AssetReference<Asset> newMaterial = m_assetManager->CreateAssetAndFile<MaterialAsset>(metadata.filepath.parent_path(), materialName);
+				
+				materials.emplace_back(newMaterial->GetAssetHandle());
+				assets.emplace_back(newMaterial);
+			}
+		}
+
+		newMesh->Initialize(meshInitializer, materials);
 
 		VT_LOG(Trace, "Converted Mesh with name {}", meshName);
 	}
 
-	return newMesh;
+	return assets;
 }
 
 AssetReference<Prefab> LegacyProjectUpgrade::TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata)
@@ -1122,3 +1210,228 @@ void LegacyProjectUpgrade::LoadAssetMetadataFromMetaFiles(const Volt::Project& p
 		}
 	}
 }
+
+Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const Volt::Project& project, const Volt::AssetMetadata& metadata, MaterialsMap& materialsMap)
+{
+	// Since materials at this time had sub materials, 
+	// we will create a material per sub material.
+	
+	const std::filesystem::path absoluteMaterialPath = project.rootDirectory / metadata.filepath;
+
+	if (!FileSystem::Exists(absoluteMaterialPath))
+	{
+		return {};
+	}
+
+	YAMLFileStreamReader streamReader;
+	if (!streamReader.OpenFile(absoluteMaterialPath))
+	{
+		return {};
+	}
+
+	if (!streamReader.HasKey("Material"))
+	{
+		return {};
+	}
+
+	streamReader.EnterScope("Material");
+
+	const std::string materialName = streamReader.ReadAtKey("name", std::string("Null"));
+	VT_LOG(Trace, "Material {}", materialName);
+
+	MaterialDeclaration& materialDeclaration = materialsMap[metadata.handle];
+	Vector<AssetReference<Volt::Asset>> newMaterials;
+
+	streamReader.ForEach("materials", [&]() 
+	{
+		const std::string subMaterialName = streamReader.ReadAtKey("material", std::string("Null"));
+		const uint32_t materialIndex = streamReader.ReadAtKey("index", 0u);
+		//const std::string shaderName = streamReader.ReadAtKey("shader", std::string("None"));
+		//const uint32_t materialFlags = streamReader.ReadAtKey("flags", 0);
+		//const bool isPermutation = streamReader.ReadAtKey("isPermutation", false);
+
+		const std::string assetName = materialName + "_" + subMaterialName;
+		AssetReference<Volt::MaterialAsset> material = m_assetManager->CreateAssetAndFile<Volt::MaterialAsset>(metadata.filepath.parent_path(), assetName);
+		// Since all materials were assumued to be alpha masked, we will set all materials to be
+		// alpha masked here as well.
+		material->SetMaterialBlendMode(MaterialBlendMode::AlphaMasked);
+
+		Ref<MaterialGraph> materialGraph = material->GetMaterialGraph();
+		Mosaic::MosaicGraphBuilder mosaicBuilder(materialGraph->GetMosaicGraphMutable());
+
+		UUID64 albedoTextureNode = 0;
+		UUID64 materialTextureNode = 0;
+		UUID64 normalTextureNode = 0;
+
+		if (streamReader.HasKey("textures"))
+		{
+			streamReader.ForEach("textures", [&]()
+			{
+				const std::string binding = streamReader.ReadAtKey("binding", std::string());
+				const AssetHandle handle = streamReader.ReadAtKey("handle", Asset::Null());
+
+				// Skip null textures.
+				if (handle == 0)
+				{
+					return;
+				}
+
+				if (binding == "albedo")
+				{
+					albedoTextureNode = mosaicBuilder.AddNode<MosaicNodes::SampleTextureNode>();
+					MosaicNodes::SampleTextureNode& textureNode = mosaicBuilder.GetNodeAsType<MosaicNodes::SampleTextureNode>(albedoTextureNode);
+					textureNode.SetTextureHandle(handle);
+				}
+				else if (binding == "material")
+				{
+					materialTextureNode = mosaicBuilder.AddNode<MosaicNodes::SampleTextureNode>();
+					MosaicNodes::SampleTextureNode& textureNode = mosaicBuilder.GetNodeAsType<MosaicNodes::SampleTextureNode>(materialTextureNode);
+					textureNode.SetTextureHandle(handle);
+				}
+				else if (binding == "normal")
+				{
+					normalTextureNode = mosaicBuilder.AddNode<MosaicNodes::SampleTextureNode>();
+					MosaicNodes::SampleTextureNode& textureNode = mosaicBuilder.GetNodeAsType<MosaicNodes::SampleTextureNode>(normalTextureNode);
+					textureNode.SetTextureType(MosaicNodes::TextureType::Normal);
+					textureNode.SetTextureHandle(handle);
+				}
+			});
+		}
+
+		// Optional
+		UUID64 baseColorFactorNode = 0;
+		UUID64 roughnessFactorNode = 0;
+		UUID64 metalnessNode = 0;
+
+		UUID64 emissiveColorNode = mosaicBuilder.AddNode<MosaicNodes::Color3>();
+		UUID64 emissiveStrengthColorNode = mosaicBuilder.AddNode<MosaicNodes::ConstantFloat>();
+		UUID64 normalStrengthNode = mosaicBuilder.AddNode<MosaicNodes::NormalStrengthNode>();
+
+		if (streamReader.HasKey("data"))
+		{
+			streamReader.EnterScope("data");
+
+			// No albedo texture
+			if (albedoTextureNode == 0)
+			{
+				baseColorFactorNode = mosaicBuilder.AddNode<MosaicNodes::Color4>();
+				mosaicBuilder.SetNodeParameterData(baseColorFactorNode, "RGBA", streamReader.ReadAtKey("color", glm::vec4(1.f)));
+			}
+
+			// No material texture
+			if (materialTextureNode == 0)
+			{
+				roughnessFactorNode = mosaicBuilder.AddNode<MosaicNodes::ConstantFloat>();
+				metalnessNode = mosaicBuilder.AddNode<MosaicNodes::ConstantFloat>();
+				mosaicBuilder.SetNodeParameterData(roughnessFactorNode, "Value", streamReader.ReadAtKey("roughness", 0.5f));
+				mosaicBuilder.SetNodeParameterData(metalnessNode, "Value", streamReader.ReadAtKey("metalness", 0.f));
+			}
+
+			mosaicBuilder.SetNodeParameterData(emissiveColorNode, "RGB", streamReader.ReadAtKey("emissiveColor", glm::vec3(1.f)));
+			mosaicBuilder.SetNodeParameterData(emissiveStrengthColorNode, "Value", streamReader.ReadAtKey("emissiveStrength", 1.f));
+			mosaicBuilder.SetNodeParameterData(normalStrengthNode, "Strength", streamReader.ReadAtKey("normalStrength", 0.f));
+			streamReader.ExitScope();
+		}
+
+		UUID64 pbrOutputNode = mosaicBuilder.AddNode<MosaicNodes::PBROutputNode>();
+
+		// Base color
+		{
+			if (albedoTextureNode != 0)
+			{
+				mosaicBuilder.LinkNodeParameters(albedoTextureNode, pbrOutputNode, "RGBA", "Base Color");
+			}
+			else
+			{
+				mosaicBuilder.LinkNodeParameters(baseColorFactorNode, pbrOutputNode, "RGBA", "Base Color");
+			}
+		}
+
+		// Material
+		{
+			if (materialTextureNode != 0)
+			{
+				mosaicBuilder.LinkNodeParameters(materialTextureNode, pbrOutputNode, "R", "Metallic");
+				mosaicBuilder.LinkNodeParameters(materialTextureNode, pbrOutputNode, "G", "Roughness");
+			}
+			else
+			{
+				mosaicBuilder.LinkNodeParameters(metalnessNode, pbrOutputNode, "Value", "Metallic");
+				mosaicBuilder.LinkNodeParameters(roughnessFactorNode, pbrOutputNode, "Value", "Roughness");
+			}
+
+			UUID64 multiplyNode0 = mosaicBuilder.AddNode<MosaicNodes::MultiplyNode>();
+			mosaicBuilder.LinkNodeParameters(emissiveColorNode, multiplyNode0, "RGB", "A");
+			mosaicBuilder.LinkNodeParameters(emissiveStrengthColorNode, multiplyNode0, "Value", "B");
+
+			if (materialTextureNode != 0)
+			{
+				UUID64 multiplyNode1 = mosaicBuilder.AddNode<MosaicNodes::MultiplyNode>();
+				mosaicBuilder.LinkNodeParameters(multiplyNode0, multiplyNode1, "", "A");
+				mosaicBuilder.LinkNodeParameters(materialTextureNode, multiplyNode1, "B", "B");
+				mosaicBuilder.LinkNodeParameters(multiplyNode1, pbrOutputNode, "", "Emissive");
+			}
+			else
+			{
+				mosaicBuilder.LinkNodeParameters(multiplyNode0, pbrOutputNode, "", "Emissive");
+			}
+		}
+
+		// Normal
+		{
+			UUID64 makeFloat2Node = mosaicBuilder.AddNode<MosaicNodes::ConversionMakeFloat2>();
+
+			if (normalTextureNode != 0)
+			{
+				mosaicBuilder.LinkNodeParameters(normalTextureNode, makeFloat2Node, "A", "R");
+				mosaicBuilder.LinkNodeParameters(normalTextureNode, makeFloat2Node, "G", "G");
+			}
+			else
+			{
+				mosaicBuilder.SetNodeInputParameterData(makeFloat2Node, "R", 0.5f);
+				mosaicBuilder.SetNodeInputParameterData(makeFloat2Node, "G", 0.5f);
+			}
+
+			UUID64 deriveNormalZNode = mosaicBuilder.AddNode<MosaicNodes::DeriveNormalZNode>();
+			mosaicBuilder.LinkNodeParameters(makeFloat2Node, deriveNormalZNode, "Result", "XY");
+			mosaicBuilder.LinkNodeParameters(deriveNormalZNode, normalStrengthNode, "Result", "Normal");
+			mosaicBuilder.LinkNodeParameters(normalStrengthNode, pbrOutputNode, "Result", "Normal");
+		}
+
+		if (materialDeclaration.subMaterials.size() <= materialIndex)
+		{
+			materialDeclaration.subMaterials.resize(materialIndex + 1);
+		}
+
+		materialDeclaration.subMaterials[materialIndex] = material->GetAssetHandle();
+		newMaterials.emplace_back(material);
+
+		VT_LOG(Trace, "Sub Material {}", subMaterialName);
+	});
+
+
+	streamReader.ExitScope();
+
+	return newMaterials;
+ }
+
+ AssetReference<Volt::Asset> LegacyProjectUpgrade::TryConvertTexture(const Volt::Project& project, const Volt::AssetMetadata& metadata)
+ {
+	 const std::filesystem::path absoluteTexturePath = project.rootDirectory / metadata.filepath;
+
+	 if (!FileSystem::Exists(absoluteTexturePath))
+	 {
+		 return {};
+	 }
+
+	 Volt::TextureSourceImportConfig importConfig;
+	 importConfig.destinationDirectory = m_targetDirectory / metadata.filepath.parent_path();
+	 importConfig.destinationFilename = metadata.filepath.stem().string();
+	 importConfig.generateMipMaps = true;
+	 importConfig.importMipMaps = true;
+	 importConfig.compressionType = TextureCompressionType::BC5;
+	 importConfig.targetAssetHandle = metadata.handle;
+
+	 JobFuture<Vector<AssetReference<Asset>>> future = SourceAssetManager::ImportSourceAsset(absoluteTexturePath, importConfig);
+	 return future.Get().front();
+ }

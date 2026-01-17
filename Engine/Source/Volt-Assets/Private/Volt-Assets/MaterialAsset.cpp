@@ -6,23 +6,45 @@
 #include <Volt-MaterialGraph/MaterialGraph.h>
 #include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
-#include <Volt-Renderer/RenderMaterial.h>
+#include <Volt-Renderer/Material/RenderMaterial.h>
 #include <Volt-Renderer/Renderer.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
+
+#include <RenderCore/Shader/DefaultShaders.h>
+#include <RenderCore/Shader/ShaderMap.h>
 
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
 #include <SubSystem/SubSystemManager.h>
+
+#include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Material, MaterialAsset);
 	VT_REGISTER_CUSTOM_ASSET_METADATA_TYPE(MaterialCustomMetadata, AssetTypes::Material);
 
+	struct MaterialAssetCustomVersion
+	{
+		enum Type
+		{
+			BaseVersion = 0,
+			AddedMaterialBlendMode = 1,
+
+			VersionPlusOne,
+			LatestVersion = VersionPlusOne - 1
+		};
+
+		inline static constexpr VoltGUID guid = "{DEBF3641-8728-4993-B65D-20B876E2D6E5}"_guid;
+	private:
+		MaterialAssetCustomVersion() = default;
+	};
+	ArchiveVersionRegistrar g_registerMaterialAssetCustomVersion(MaterialAssetCustomVersion::guid, MaterialAssetCustomVersion::LatestVersion, "MaterialAssetCustomVersion");
+
 	MaterialAsset::MaterialAsset()
 	{
 		m_graph = CreateRef<MaterialGraph>();
-		m_renderMaterial = CreateRef<RenderMaterial>(std::string(GetAssetName()));
+		m_renderMaterial = CreateRef<RenderMaterial>(std::string(GetAssetName()), ShaderMap::Get<OpaqueDefaultPixelPS>());
 	}
 
 	void MaterialAsset::OnAssetDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state)
@@ -51,7 +73,17 @@ namespace Volt
 
 	void MaterialAsset::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
+		archive.UseVersion(MaterialAssetCustomVersion::guid);
+
 		m_graph->Serialize(archive);
+
+		if (!archive.IsLoading() || archive.GetVersion(MaterialAssetCustomVersion::guid) >= MaterialAssetCustomVersion::AddedMaterialBlendMode)
+		{
+			archive << m_materialBlendMode;
+		}
+
+		// Set the render materials blend mode.
+		m_renderMaterial->SetMaterialBlendMode(m_materialBlendMode);
 
 		if (archive.IsLoading())
 		{
@@ -84,8 +116,7 @@ namespace Volt
 
 					m_renderMaterial->SetTexture(textureInfo.index, RenderTexture(image));
 				}
-			}
-			
+			}	
 
 			if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)
 			{
@@ -108,11 +139,7 @@ namespace Volt
 			{
 				Ref<MosaicNodes::SampleTextureNode> sampleTextureNode = std::reinterpret_pointer_cast<MosaicNodes::SampleTextureNode>(node.nodeData);
 				const auto textureInfo = sampleTextureNode->GetTextureInfo();
-
-				if (g_assetManager->IsValidAssetHandle(textureInfo.textureHandle))
-				{
-					materialCustomMetadata.textureReferences.emplace_back(textureInfo.textureHandle, textureInfo.textureIndex);
-				}
+				materialCustomMetadata.textureReferences.emplace_back(textureInfo.textureHandle, textureInfo.textureIndex);
 			}
 		}
 	}

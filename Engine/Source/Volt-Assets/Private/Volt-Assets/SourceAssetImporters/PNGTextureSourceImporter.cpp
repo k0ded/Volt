@@ -21,7 +21,7 @@ VT_DEFINE_LOG_CATEGORY(LogPNGTextureSourceImporter);
 
 namespace Volt
 {
-	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".png" }), PNGTextureSourceImporter);
+	//VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".png" }), PNGTextureSourceImporter);
 
 	Vector<AssetReference<Asset>> PNGTextureSourceImporter::ImportInternal(const std::filesystem::path& filepath, const void* config, const SourceAssetUserImportData& userData) const
 	{
@@ -187,11 +187,19 @@ namespace Volt
 
 		if (importConfig.createAsMemoryAsset)
 		{
+			VT_CHECK_MSG(importConfig.targetAssetHandle == Asset::Null(), "Target asset handle for memory assets are not supported!");
 			voltTexture = g_assetManager->CreateMemoryAsset<Texture2D>(importConfig.destinationFilename);
 		}
 		else
 		{
-			voltTexture = g_assetManager->CreateAsset<Texture2D>(importConfig.destinationFilename);
+			if (importConfig.targetAssetHandle != Asset::Null())
+			{
+				voltTexture = g_assetManager->CreateAssetWithAssetHandle<Texture2D>(importConfig.destinationFilename, importConfig.targetAssetHandle);
+			}
+			else
+			{
+				voltTexture = g_assetManager->CreateAsset<Texture2D>(importConfig.destinationFilename);
+			}
 		}
 
 		voltTexture->SetImage(image);

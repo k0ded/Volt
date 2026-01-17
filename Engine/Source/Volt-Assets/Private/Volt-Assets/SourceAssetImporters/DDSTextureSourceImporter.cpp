@@ -51,6 +51,7 @@ namespace Volt
 
 			case tdl::DDSFile::DXGIFormat::R32G32B32A32_Float: return RHI::PixelFormat::R32G32B32A32_SFLOAT;
 			case tdl::DDSFile::DXGIFormat::R16G16B16A16_Float: return RHI::PixelFormat::R16G16B16A16_SFLOAT;
+			case tdl::DDSFile::DXGIFormat::R16G16B16A16_UNorm: return RHI::PixelFormat::R16G16B16A16_UNORM;
 
 			case tdl::DDSFile::DXGIFormat::R32G32_Float: return RHI::PixelFormat::R32G32_SFLOAT;
 			case tdl::DDSFile::DXGIFormat::R16G16_Float: return RHI::PixelFormat::R16G16_SFLOAT;
@@ -79,6 +80,7 @@ namespace Volt
 			case tdl::DDSFile::DXGIFormat::BC7_UNorm_SRGB: return RHI::PixelFormat::BC7_SRGB_BLOCK;
 		}
 
+		VT_ENSURE_NO_ENTRY();
 		return RHI::PixelFormat::R8G8B8A8_UNORM;
 	}
 
@@ -201,11 +203,19 @@ namespace Volt
 
 		if (importConfig.createAsMemoryAsset)
 		{
+			VT_CHECK_MSG(importConfig.targetAssetHandle == Asset::Null(), "Target asset handle with memory assets are not supported!");
 			voltTexture = g_assetManager->CreateMemoryAsset<Texture2D>(importConfig.destinationFilename);
 		}
 		else
 		{
-			voltTexture = g_assetManager->CreateAsset<Texture2D>(importConfig.destinationFilename);
+			if (importConfig.targetAssetHandle != Asset::Null())
+			{
+				voltTexture = g_assetManager->CreateAssetWithAssetHandle<Texture2D>(importConfig.destinationFilename, importConfig.targetAssetHandle);
+			}
+			else
+			{
+				voltTexture = g_assetManager->CreateAsset<Texture2D>(importConfig.destinationFilename);
+			}
 		}
 
 		voltTexture->SetImage(image);
