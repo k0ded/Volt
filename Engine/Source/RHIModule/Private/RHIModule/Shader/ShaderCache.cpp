@@ -109,6 +109,11 @@ namespace Volt::RHI
 
 	CachedShaderResult ShaderCache::TryGetCachedShader(const ShaderCompiler::Specification& shaderSpecification)
 	{
+		if (shaderSpecification.shaderSourceInfo.sourceEntry.filepath.empty())
+		{
+			return {};
+		}
+
 		const std::filesystem::path cachedPath = GetCachedFilePath(shaderSpecification);
 		const uint64_t lastWriteTime = TimeUtility::GetLastWriteTime(shaderSpecification.shaderSourceInfo.sourceEntry.filepath);
 

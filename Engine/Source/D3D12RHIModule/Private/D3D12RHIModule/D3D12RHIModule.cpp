@@ -238,6 +238,12 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
+	RefPtr<Shader> D3D12RHIModule::CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const
+	{
+		VT_ENSURE_NO_ENTRY();
+		return nullptr;
+	}
+
 }
 
 Volt::RHI::RHIModule* CreateRHIModule()

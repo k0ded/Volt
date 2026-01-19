@@ -120,6 +120,7 @@ namespace Volt::RHI
 		virtual RefPtr<RayTracingPipeline> CreateRayTracingPipeline(const RayTracingPipelineCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<Shader> CreateShader(const ShaderCreateInfo& specification) const = 0;
+		virtual RefPtr<Shader> CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const = 0;
 		virtual RefPtr<ShaderCompiler> CreateShaderCompiler(const ShaderCompilerCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<Fence> CreateFence() const = 0;

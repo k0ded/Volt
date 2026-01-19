@@ -7,6 +7,11 @@
 struct DepthVertex
 {
     [[vt::inputIndex(0)]] float3 position : POSITION;
+
+    [[vt::inputIndex(1)]] uint normal : NORMAL;
+    [[vt::inputIndex(1)]] float tangent : TANGENT;
+    [[vt::inputIndex(1)]] float tangentW : TANGENTW;
+    [[vt::inputIndex(1)]] [[vt::half2]] float2 texCoords : TEXCOORD;
     
     [[vt::inputIndex(2)]] uint4 influences : INFLUENCES;
     [[vt::inputIndex(2)]] float4 weights : WEIGHTS;
@@ -20,6 +25,7 @@ struct VSToPS
     float4 position : SV_Position;
     float4 currPosition : CURR_POSITION;
     float4 prevPosition : PREV_POSITION;
+    float2 texCoords : TEXCOORD;
 };
 
 VSToPS MainVS(in DepthVertex input)
@@ -40,6 +46,7 @@ VSToPS MainVS(in DepthVertex input)
     result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, skinnedPosition), 1.f));
     result.prevPosition = mul(View.prevViewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, skinnedPosition), 1.f));
     result.currPosition = result.position;
+    result.texCoords = input.texCoords;
 
     return result;
 }

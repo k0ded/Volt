@@ -48,6 +48,7 @@ namespace Volt::RHI
 		virtual bool IsValid() const = 0;
 
 		static RefPtr<Shader> Create(const ShaderCreateInfo& createInfo);
+		static RefPtr<Shader> CreateWithSource(const ShaderCreateInfo& createInfo, const std::string& source);
 
 	protected:
 		Shader() = default;

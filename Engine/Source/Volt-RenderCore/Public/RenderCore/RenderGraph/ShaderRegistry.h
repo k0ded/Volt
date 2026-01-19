@@ -12,6 +12,12 @@
 
 namespace Volt
 {
+	template<typename T>
+	concept HasshaderPermutations = requires
+	{
+		typename T::PermutationVector;
+	};
+
 	class VTRC_API ShaderRegistry
 	{
 	public:
@@ -20,6 +26,7 @@ namespace Volt
 			std::filesystem::path filePath;
 			std::string entryPoint;
 			RHI::ShaderStage shaderStage;
+			bool hasPermutations;
 		};
 
 		struct ShaderRegistrationInfo
@@ -42,6 +49,12 @@ namespace Volt
 			registrationInfo.stageInfos.filePath = filepath;
 			registrationInfo.stageInfos.shaderStage = shaderStage;
 			registrationInfo.stageInfos.entryPoint = entryPoint;
+			registrationInfo.stageInfos.hasPermutations = false;
+
+			if constexpr (HasshaderPermutations<T>)
+			{
+				registrationInfo.stageInfos.hasPermutations = true;
+			}
 		}
 
 		template<typename T>

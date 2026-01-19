@@ -84,28 +84,60 @@ namespace Volt
 		// Find all shaders that have any reference to the file.
 		if (isSourceFile)
 		{
-			for (const auto& [typeIndex, shader] : s_instance->m_shaderMap)
+			for (const auto& [typeIndex, shaderBucket] : s_instance->m_shaderMap)
 			{
-				std::filesystem::path absoluteSourcePath = std::filesystem::absolute(shader->GetShaderSourceInfo().sourceEntry.filepath);
-
-				if (absoluteSourcePath == filepath)
+				if (shaderBucket.hasPermutations)
 				{
-					touchedShaders.emplace_back(shader);
+					for (const auto& [permutationHash, shader] : shaderBucket.permutationMap)
+					{
+						std::filesystem::path absoluteSourcePath = std::filesystem::absolute(shader->GetShaderSourceInfo().sourceEntry.filepath);
+						if (absoluteSourcePath == filepath)
+						{
+							touchedShaders.emplace_back(shader);
+						}
+					}
+				}
+				else
+				{
+					std::filesystem::path absoluteSourcePath = std::filesystem::absolute(shaderBucket.baseShader->GetShaderSourceInfo().sourceEntry.filepath);
+					if (absoluteSourcePath == filepath)
+					{
+						touchedShaders.emplace_back(shaderBucket.baseShader);
+					}
 				}
 			}
 		}
 		else
 		{
-			for (const auto& [typeIndex, shader] : s_instance->m_shaderMap)
+			for (const auto& [typeIndex, shaderBucket] : s_instance->m_shaderMap)
 			{
-				for (const auto& includeDependency : shader->GetShaderIncludeDependencies())
+				if (shaderBucket.hasPermutations)
 				{
-					std::filesystem::path absoluteDependencyPath = std::filesystem::absolute(includeDependency);
-
-					if (absoluteDependencyPath == filepath)
+					for (const auto& [permutationHash, shader] : shaderBucket.permutationMap)
 					{
-						touchedShaders.emplace_back(shader);
-						break;
+						for (const auto& includeDependency : shader->GetShaderIncludeDependencies())
+						{
+							std::filesystem::path absoluteDependencyPath = std::filesystem::absolute(includeDependency);
+
+							if (absoluteDependencyPath == filepath)
+							{
+								touchedShaders.emplace_back(shader);
+								break;
+							}
+						}
+					}
+				}
+				else
+				{
+					for (const auto& includeDependency : shaderBucket.baseShader->GetShaderIncludeDependencies())
+					{
+						std::filesystem::path absoluteDependencyPath = std::filesystem::absolute(includeDependency);
+
+						if (absoluteDependencyPath == filepath)
+						{
+							touchedShaders.emplace_back(shaderBucket.baseShader);
+							break;
+						}
 					}
 				}
 			}
@@ -121,11 +153,15 @@ namespace Volt
 		return true;
 	}
 
-	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader)
+	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader, bool hasPermutations)
 	{
 		std::scoped_lock lock{ s_instance->m_registerMutex };
-		s_instance->m_shaderMap[typeIndex] = shader;
+
+		ShaderBucket& shaderBucket = s_instance->m_shaderMap[typeIndex];
+		shaderBucket.hasPermutations = hasPermutations;
+		shaderBucket.baseShader = shader;
 	}
+	  
 	RefPtr<RHI::RayTracingPipeline> ShaderMap::GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo)
 	{
 		std::scoped_lock lock{ s_instance->m_rayTracingCacheMutex };
@@ -161,5 +197,53 @@ namespace Volt
 		s_instance->m_shaderBindingTableCache[hash] = sbt;
 
 		return sbt;
+	}
+
+	RefPtr<RHI::Shader> ShaderMap::GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationHash)
+	{
+		VT_ENSURE(m_shaderMap.contains(typeIndex));
+	
+		const ShaderBucket& shaderBucket = m_shaderMap.at(typeIndex);
+
+		VT_ENSURE_MSG((permutationHash == 0 && !shaderBucket.hasPermutations) || (permutationHash != 0 && shaderBucket.hasPermutations), "If shader has permutations, the permutation vector version must be used!");
+	
+		if (shaderBucket.hasPermutations)
+		{
+			if (shaderBucket.permutationMap.contains(permutationHash))
+			{
+				return shaderBucket.permutationMap.at(permutationHash);
+			}
+			else
+			{
+				return nullptr;
+			}
+		}
+		else
+		{
+			return shaderBucket.baseShader;
+		}
+	}
+
+	RefPtr<RHI::Shader> ShaderMap::CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationHash, RHI::ShaderPermutationConfig&& permutationConfig)
+	{
+		const ShaderBucket& shaderBucket = m_shaderMap.at(typeIndex);
+		const RHI::ShaderSourceInfo& sourceInfo = shaderBucket.baseShader->GetShaderSourceInfo();
+
+		RHI::ShaderCreateInfo createInfo;
+		createInfo.name = shaderBucket.baseShader->GetName();
+		createInfo.entryPoint = sourceInfo.sourceEntry.entryPoint;
+		createInfo.sourceFilepath = sourceInfo.sourceEntry.filepath;
+		createInfo.stage = sourceInfo.sourceEntry.shaderStage;
+		createInfo.permutationConfig = std::move(permutationConfig);
+		createInfo.forceCompile = false;
+
+		RefPtr<RHI::Shader> shader;
+		{
+			VT_PROFILE_SCOPE("Compile shader permutation");
+			shader = RHI::Shader::Create(createInfo);
+		}
+
+		m_shaderMap.at(typeIndex).permutationMap[permutationHash] = shader;
+		return shader;
 	}
 }

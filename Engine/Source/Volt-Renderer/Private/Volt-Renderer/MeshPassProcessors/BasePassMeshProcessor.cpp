@@ -5,6 +5,7 @@
 #include "Volt-Renderer/RenderPrimitiveData.h"
 #include "Volt-Renderer/SceneRendererShaderDefinitions.h"
 #include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/MainMaterialShaders.h"
 
 #include <RenderCore/Shader/ShaderMap.h>
 
@@ -13,11 +14,11 @@ namespace Volt
 	void BasePassMeshProcessor::AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive)
 	{
 		auto vertexShader = ShaderMap::Get<BasePassVS>();
-		auto pixelShader = renderPrimitive->material->GetPixelShader();
+		auto pixelShader = renderPrimitive->material->GetPixelShader<BasePassMaterialShader>();
 
 		if (!pixelShader)
 		{
-			pixelShader = Renderer::GetDefaultResources().defaultMaterial->GetPixelShader();
+			pixelShader = Renderer::GetDefaultResources().defaultMaterial->GetPixelShader<BasePassMaterialShader>();
 		}
 
 		BuildMeshDrawCommand(renderPrimitive, {}, vertexShader, pixelShader);

@@ -2,6 +2,8 @@
 
 #include "Volt-Renderer/Config.h"
 #include "Volt-Renderer/Material/MaterialShaderMap.h"
+#include "Volt-Renderer/Material/CompiledMaterialShaders.h"
+#include "Volt-Renderer/Material/MaterialShader.h"
 
 #include <RHIModule/Pipelines/ComputePipeline.h>
 #include <RHIModule/Shader/Shader.h>
@@ -65,13 +67,27 @@ namespace Volt
 		VT_NODISCARD VT_INLINE const TexturesMap& GetTextures() const { return m_textures; }
 		VT_NODISCARD VT_INLINE size_t GetHash() const { return m_hash; }
 		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
-		VT_NODISCARD VT_INLINE RefPtr<RHI::Shader> GetPixelShader() { return m_shaderMap.GetShader(m_materialBlendMode); }
 		VT_NODISCARD VT_INLINE MaterialBlendMode GetMaterialBlendMode() const { return m_materialBlendMode; }
+
+		template<typename T>
+		VT_NODISCARD RefPtr<RHI::Shader> GetPixelShader() 
+		{ 
+			typename T::PermutationVector permutationVector;
+
+			SetupPermutations<T>(permutationVector);
+			return m_shaderMap.GetShader<T>(permutationVector); 
+		}
 
 	private:
 		friend class MaterialCompiler;
 
-		void Invalidate(const std::filesystem::path& shaderFilepath);
+		template<typename T>
+		void SetupPermutations(typename T::PermutationVector& permutationVector)
+		{
+			permutationVector.template Set<MaterialShader::MaterialBlendModeDim>(m_materialBlendMode);
+		}
+
+		void Invalidate(CompiledMaterialShaders&& compiledMaterialShaders);
 		void GenerateHash();
 
 		TexturesMap m_textures;

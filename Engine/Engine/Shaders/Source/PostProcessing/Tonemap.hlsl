@@ -6,7 +6,6 @@
 #include "Utility/FullscreenTriangleVertex.hlsli"
 
 Texture2D<float3> FinalColor;
-//vt::Tex2D<float> AverageLuminance;
 
 float MiddleGray;
 float WhitePoint;

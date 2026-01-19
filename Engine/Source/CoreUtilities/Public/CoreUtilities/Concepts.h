@@ -3,6 +3,42 @@
 #include <type_traits>
 #include <glm/glm.hpp>
 
+namespace Impl
+{
+	template<typename T>
+	struct UniquenessBase
+	{};
+
+	template<typename... Ts>
+	struct UniquenessTypeSet : UniquenessBase<Ts>...
+	{
+		template<typename T>
+		constexpr auto operator+(UniquenessBase<T>)
+		{
+			if constexpr (std::is_base_of_v<UniquenessBase<T>, UniquenessTypeSet>)
+			{
+				return UniquenessTypeSet{};
+			}
+			else
+			{
+				return UniquenessTypeSet<Ts..., T>{};
+			}
+		}
+
+		constexpr size_t size() const
+		{
+			return sizeof...(Ts);
+		}
+	};
+
+	template<typename... Ts>
+	constexpr bool AreUnique()
+	{
+		constexpr auto set = (UniquenessTypeSet<>{} + ... + UniquenessBase<Ts>{});
+		return set.size() == sizeof...(Ts);
+	}
+}
+
 template<typename T>
 concept Integer = std::is_integral_v<T>;
 
@@ -31,3 +67,6 @@ concept MathType = std::_Is_any_of_v<std::remove_cv_t<T>,
 	glm::ivec2, glm::ivec3, glm::ivec4,
 	glm::mat4, glm::mat3, glm::mat3x4,
 	glm::quat>;
+
+template<typename... T>
+concept AreTypesUnique = Impl::AreUnique<T...>;

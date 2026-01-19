@@ -25,6 +25,20 @@ namespace Volt::RHI
 		LoadAndCompileShader(createInfo.forceCompile);
 	}
 
+	VulkanShader::VulkanShader(const ShaderCreateInfo& createInfo, const std::string& source)
+		: m_name(createInfo.name), m_failureIsFatal(createInfo.failureIsFatal)
+	{
+		VT_ENSURE(!source.empty());
+		VT_ENSURE(!createInfo.entryPoint.empty());
+
+		m_sourceInfo.source = source;
+		m_sourceInfo.sourceEntry.entryPoint = createInfo.entryPoint;
+		m_sourceInfo.sourceEntry.shaderStage = createInfo.stage;
+		m_permutationConfig = createInfo.permutationConfig;
+
+		LoadAndCompileShader(createInfo.forceCompile);
+	}
+
 	VulkanShader::~VulkanShader()
 	{
 		Release();
@@ -57,7 +71,10 @@ namespace Volt::RHI
 
 	void VulkanShader::LoadAndCompileShader(bool forceCompile)
 	{
-		m_sourceInfo.source = Utility::ReadStringFromFile(m_sourceInfo.sourceEntry.filepath);
+		if (!m_sourceInfo.sourceEntry.filepath.empty())
+		{
+			m_sourceInfo.source = Utility::ReadStringFromFile(m_sourceInfo.sourceEntry.filepath);
+		}
 	
 		if (m_sourceInfo.source.empty())
 		{
@@ -94,6 +111,12 @@ namespace Volt::RHI
 		// Create shader module
 		CreateShader(compilationResult.shaderBinary);
 		GenerateHash();
+
+		// Clean up
+		if (!m_sourceInfo.sourceEntry.filepath.empty())
+		{
+			m_sourceInfo.source.clear();
+		}
 	}
 
 	void VulkanShader::Release()

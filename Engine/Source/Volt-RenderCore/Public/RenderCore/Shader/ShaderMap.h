@@ -31,7 +31,7 @@ namespace Volt
 		static void ReloadAll();
 		static bool ReloadAllWithReferenceToFile(const std::filesystem::path& filepath);
 
-		static void RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader);
+		static void RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader, bool hasPermutations);
 
 		static RefPtr<RHI::RayTracingPipeline> GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo);
 		static RefPtr<RHI::ShaderBindingTable> GetShaderBindingTable(RefPtr<RHI::RayTracingPipeline> pipeline);
@@ -40,15 +40,43 @@ namespace Volt
 		static RefPtr<RHI::Shader> Get()
 		{
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
-			VT_ENSURE(s_instance->m_shaderMap.contains(typeIndex));
+			return s_instance->GetInternal(typeIndex, 0);
+		}
 
-			return s_instance->m_shaderMap.at(typeIndex);
+		template<typename T>
+		static RefPtr<RHI::Shader> Get(const T::PermutationVector& permutationVector)
+		{
+			permutationVector.Validate();
+			const size_t permutationHash = permutationVector.GetHash();
+
+			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
+			RefPtr<RHI::Shader> shader = s_instance->GetInternal(typeIndex, permutationHash);
+		
+			if (!shader)
+			{
+
+				RHI::ShaderPermutationConfig permutationConfig;
+				permutationVector.ResolvePermutations(permutationConfig);
+
+				shader = s_instance->CompileShaderPermutation(typeIndex, permutationHash, std::move(permutationConfig));
+			}
 		}
 
 	private:
+		struct ShaderBucket
+		{
+			Map<size_t, RefPtr<RHI::Shader>> permutationMap;
+
+			RefPtr<RHI::Shader> baseShader;
+			bool hasPermutations = false;
+		};
+		
 		inline static ShaderMap* s_instance = nullptr;
 
-		Map<TypeTraits::TypeIndex, RefPtr<RHI::Shader>> m_shaderMap;
+		RefPtr<RHI::Shader> GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationHash);
+		RefPtr<RHI::Shader> CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationHash, RHI::ShaderPermutationConfig&& permutationConfig);
+
+		Map<TypeTraits::TypeIndex, ShaderBucket> m_shaderMap;
 
 		Map<size_t, RefPtr<RHI::RayTracingPipeline>> m_rayTracingPipelineCache;
 		Map<size_t, RefPtr<RHI::ShaderBindingTable>> m_shaderBindingTableCache;

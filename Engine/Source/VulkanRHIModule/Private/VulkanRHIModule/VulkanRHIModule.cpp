@@ -220,6 +220,11 @@ namespace Volt::RHI
 		return RefPtr<VulkanShader>::Create(specification);
 	}
 
+	RefPtr<Shader> VulkanRHIModule::CreateShaderWithSource(const ShaderCreateInfo& specification, const std::string& source) const
+	{
+		return RefPtr<VulkanShader>::Create(specification, source);
+	}
+
 	RefPtr<RenderPipeline> VulkanRHIModule::CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanRenderPipeline>::Create(createInfo);

@@ -8,6 +8,8 @@
 #include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
 
 #include <Volt-Renderer/Material/RenderMaterial.h>
+#include <Volt-Renderer/Material/CompiledMaterialShaders.h>
+#include <Volt-Renderer/Material/MaterialShaderRegistry.h>
 #include <Volt-Renderer/Renderer.h>
 #include <Volt-Renderer/Texture/Texture2D.h>
 
@@ -19,31 +21,12 @@
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/FileIO/FileUtility.h>
 
 VT_DEFINE_LOG_CATEGORY(LogMaterialCompiler);
 
 namespace Volt
 {
-	std::string ReadBaseFile()
-	{
-		constexpr const char* BaseShaderPath = "Shaders\\Source\\Template\\GenerateGBufferPixel.hlsl";
-		const auto baseShaderPath = ProjectManager::GetEngineAssetsDirectory() / BaseShaderPath;
-
-		std::ifstream input(baseShaderPath, std::ios::in | std::ios::binary);
-		VT_ASSERT_MSG(input.is_open(), "Could not open file!");
-
-		std::string resultShader;
-
-		input.seekg(0, std::ios::end);
-		resultShader.resize(input.tellg());
-		input.seekg(0, std::ios::beg);
-		input.read(&resultShader[0], resultShader.size());
-
-		input.close();
-
-		return resultShader;
-	}
-
 	inline void InsertTextureDeclarations(std::string& shaderString, const Mosaic::MosaicShaderWriter& shaderWriter)
 	{
 		VT_PROFILE_FUNCTION();
@@ -76,6 +59,37 @@ namespace Volt
 		shaderString.replace(evaluateMaterialTagOffset, tagLength, shaderWriter.GetAsString());
 	}
 
+	struct IncludeDirective
+	{
+		std::filesystem::path filepath;
+		size_t begin;
+		size_t end;
+	};
+
+	inline Vector<IncludeDirective> FindIncludeDirectives(std::string_view shaderString)
+	{
+		Vector<IncludeDirective> includeDirectives;
+
+		size_t offset = shaderString.find("#include", 0);
+		while (offset != std::string_view::npos)
+		{
+			// Move to first "
+			size_t firstQuote = shaderString.find_first_of('"', offset);
+
+			IncludeDirective& includeDirective = includeDirectives.emplace_back();
+			includeDirective.begin = offset;
+			includeDirective.end = shaderString.find_first_of('"', firstQuote + 1);
+
+			std::string_view filepathString = shaderString.substr(firstQuote + 1, includeDirective.end - firstQuote - 1);
+		
+			includeDirective.filepath = std::filesystem::path(filepathString);
+
+			offset = shaderString.find("#include", includeDirective.end);
+		}
+
+		return includeDirectives;
+	}
+
 	void MaterialCompiler::CompileMaterial(AssetReference<MaterialAsset> materialAsset)
 	{
 		VT_PROFILE_FUNCTION();
@@ -84,7 +98,8 @@ namespace Volt
 
 		ScopedTimer timer;
 
-		constexpr const char* BaseOutputPath = "Generated\\Materials";
+		MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>();
+		VT_ENSURE_MSG(compilerSubSystem != nullptr, "The MaterialCompilerSubSystem must exist!");
 
 		const Mosaic::MosaicShaderWriter compilationResult = materialAsset->GetMaterialGraph()->GetMosaicGraph().Compile();
 
@@ -94,32 +109,45 @@ namespace Volt
 			return;
 		}
 
-		// Write shader file
-		std::string shaderString = ReadBaseFile();
-		InsertTextureDeclarations(shaderString, compilationResult);
-		InsertMaterialEvaluation(shaderString, compilationResult);
+		const std::filesystem::path materialShaderFilepath = "Material/MaterialShader.hlsli";
+		const std::string& materialShaderFileContents = compilerSubSystem->GetMaterialShaderFileContents();
 
-		const std::filesystem::path outShaderPath = ProjectManager::GetProjectDirectory() / BaseOutputPath / std::filesystem::path(std::string(materialAsset->GetAssetName()) + "-" + materialAsset->GetMaterialGraph()->GetMaterialGUID().ToString() + ".hlsl");
-		if (!std::filesystem::exists(outShaderPath.parent_path()))
+		CompiledMaterialShaders result;
+
+		// Compile for each material shader type.
+		for (const auto& [typeIndex, registeredShader] : MaterialShaderRegistry::Get().GetRegisteredShaders())
 		{
-			std::filesystem::create_directories(outShaderPath.parent_path());
+			const std::filesystem::path absoluteFilepath = ProjectManager::GetEngineRootDirectory() / registeredShader.baseFilepath;
+
+			std::string materialShaderString;
+			FileUtility::ReadStringFromFile(absoluteFilepath, materialShaderString);
+
+			// Remove the MaterialShader.hlsli include if it exists.
+			Vector<IncludeDirective> includeDirectives = FindIncludeDirectives(materialShaderString);
+		
+			bool replaced = false;
+			for (const IncludeDirective& includeDirective : includeDirectives)
+			{
+				if (includeDirective.filepath == materialShaderFilepath)
+				{
+					materialShaderString.replace(includeDirective.begin, includeDirective.end - includeDirective.begin + 1, materialShaderFileContents);
+					replaced = true;
+					break;
+				}
+			}
+
+			// Include didn't exist in shader, we'll insert it at the top.
+			if (!replaced)
+			{
+				materialShaderString.insert(0, materialShaderFileContents);
+			}
+
+			// Insert material specific code.
+			InsertTextureDeclarations(materialShaderString, compilationResult);
+			InsertMaterialEvaluation(materialShaderString, compilationResult);
+
+			result.Add(typeIndex, std::move(materialShaderString), registeredShader.entryPoint);
 		}
-
-		{
-			std::ofstream output(outShaderPath);
-			VT_ASSERT_MSG(output.is_open(), "Could not open file!");
-
-			output.write(shaderString.c_str(), shaderString.size());
-			output.close();
-		}
-
-		// Add textures
-		//const Vector<Mosaic::MosaicShaderWriter::TextureDeclaration>& textureDeclarations = compilationResult.GetTextureDeclarations();
-		//
-		//for (const Mosaic::MosaicShaderWriter::TextureDeclaration& texture : textureDeclarations)
-		//{
-		//	materialAsset->GetRenderMaterial()->AddTexture(texture.index, texture.name);
-		//}
 
 		// Set textures
 		// #TODO_Ivar: This is a temporary way of settings the textures.
@@ -130,7 +158,7 @@ namespace Volt
 			{
 				Ref<MosaicNodes::SampleTextureNode> sampleTextureNode = std::reinterpret_pointer_cast<MosaicNodes::SampleTextureNode>(node.nodeData);
 				const auto textureInfo = sampleTextureNode->GetTextureInfo();
-			
+
 				RefPtr<RHI::Image> image;
 
 				if (textureInfo.textureHandle != Asset::Null())
@@ -151,13 +179,8 @@ namespace Volt
 			}
 		}
 
-		// Create new pipeline based on compiled shader
-		materialAsset->GetRenderMaterial()->Invalidate(outShaderPath);
-
-		if (MaterialCompilerSubSystem* compilerSubSystem = SubSystemManager::GetSubSystem<MaterialCompilerSubSystem>(); compilerSubSystem != nullptr)
-		{
-			compilerSubSystem->GetMaterialCompiledDelegate().ExecuteIfBound(materialAsset->GetAssetHandle());
-		}
+		materialAsset->GetRenderMaterial()->Invalidate(std::move(result));
+		compilerSubSystem->GetMaterialCompiledDelegate().ExecuteIfBound(materialAsset->GetAssetHandle());
 
 		VT_LOGC(Trace, LogMaterialCompiler, "Compiled material {} in {} seconds!", materialAsset->GetAssetName(), timer.GetTime<Time::Seconds>());
 	}

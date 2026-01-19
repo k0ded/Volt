@@ -12,6 +12,7 @@ namespace Volt::RHI
 	{
 	public:
 		VulkanShader(const ShaderCreateInfo& createInfo);
+		VulkanShader(const ShaderCreateInfo& createInfo, const std::string& source);
 		~VulkanShader() override;
 
 		void Reload(bool forceCompile /* = false */) override;

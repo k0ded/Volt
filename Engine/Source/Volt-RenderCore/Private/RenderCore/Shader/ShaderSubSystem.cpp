@@ -76,7 +76,7 @@ namespace Volt
 					VT_PROFILE_SCOPE("Create Shader");
 					shader = RHI::Shader::Create(createInfo);
 				}
-				ShaderMap::RegisterShader(typeIndex, shader);
+				ShaderMap::RegisterShader(typeIndex, shader, registrationInfo.stageInfos.hasPermutations);
 			});
 		}
 
