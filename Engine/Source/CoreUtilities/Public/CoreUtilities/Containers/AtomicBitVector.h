@@ -70,6 +70,22 @@ public:
 		}
 	}
 
+	/*
+		Note: Quite expensive as it will copy all the data.
+	*/
+	Vector<IndexType> ToVector() const
+	{
+		Vector<IndexType> result;
+		result.resize_uninitialized(m_bitArray.size());
+
+		for (size_t i = 0; i < m_bitArray.size(); ++i)
+		{
+			result[i] = m_bitArray[i].atomic.load();
+		}
+
+		return result;
+	}
+
 private:
 	template<typename T>
 	struct AtomicWrapper

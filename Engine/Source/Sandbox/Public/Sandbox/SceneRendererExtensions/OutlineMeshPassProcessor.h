@@ -2,7 +2,7 @@
 
 #include <Volt-Renderer/MeshPassProcessor.h>
 
-class OutlinePassMeshProcessor : public Volt::MeshPassProcessor
+class OutlineMeshPassProcessor : public Volt::MeshPassProcessor
 {
 public:
 	void AddRenderPrimitive(const Volt::RenderPrimitiveData* renderPrimitive) override;

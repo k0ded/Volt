@@ -2,12 +2,14 @@
 #include "sbpch.h"
 
 #include "Sandbox/SceneRendererExtensions/OutlineTechnique.h"
-#include "Sandbox/SceneRendererExtensions/OutlinePassMeshProcessor.h"
+#include "Sandbox/SceneRendererExtensions/OutlineMeshPassProcessor.h"
 
 #include <Volt-Renderer/GPUScene.h>
 #include <Volt-Renderer/SceneRendererRenderGraphData.h>
 #include <Volt-Renderer/RenderView.h>
 #include <Volt-Renderer/RenderScene.h>
+
+#include <Volt-Core/Algorithms.h>
 
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderContext.h>
@@ -19,18 +21,20 @@
 #include <RenderCore/SamplerStateCache.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 
+#include <CoreUtilities/Containers/AtomicBitVector.h>
+
 using namespace Volt;
 
-OutlineTechnique::OutlineTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, OutlinePassMeshProcessor* meshPassProcessor)
+OutlineTechnique::OutlineTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, OutlineMeshPassProcessor* meshPassProcessor)
 	: m_renderGraph(renderGraph), m_blackboard(blackboard), m_meshPassProcessor(meshPassProcessor)
 {
 }
 
-void OutlineTechnique::Execute(RGTextureRef dstImage, RenderScene& renderScene, const RenderView& view)
+void OutlineTechnique::Execute(RGTextureRef dstImage, RenderScene& renderScene, const RenderView& view, const std::unordered_set<Volt::EntityID>& selectedEntities)
 {
 	m_renderGraph.BeginMarker("Outline");
 
-	RGTextureRef outlineGeometryTexture = AddDrawOutlineGeometryPass(renderScene, view);
+	RGTextureRef outlineGeometryTexture = AddDrawOutlineGeometryPass(renderScene, view, selectedEntities);
 	RGTextureRef jumpFloodTexture = AddJumpFloodInitPass(outlineGeometryTexture, view);
 
 	const int32_t numSteps = 2;
@@ -55,14 +59,35 @@ BEGIN_SHADER_PARAMETER_STRUCT(OutlineGeometryParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(OutlineGeometryPS::Parameters, PS)
 END_SHADER_PARAMETER_STRUCT()
 
-RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& renderScene, const RenderView& view)
+RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& renderScene, const RenderView& view, const std::unordered_set<Volt::EntityID>& selectedEntities)
 {
+	Vector<RenderPrimitiveData*> renderPrimitives = renderScene.GetRenderPrimitives();
+	AtomicBitVector<uint32_t> bitVector;
+	bitVector.Resize(renderScene.GetMaxPrimitiveIndex() + 1);
+
+	Algo::ForEachParalellBlocking([&](uint32_t threadIdx, uint32_t elementIdx)
+	{
+		RenderPrimitiveData* primitiveData = renderPrimitives[elementIdx];
+
+		if (selectedEntities.contains(primitiveData->entityId))
+		{
+			bitVector.SetBit(renderScene.GetPrimitiveIndexFromID(primitiveData->id), true, std::memory_order::relaxed);
+		}
+
+	}, static_cast<uint32_t>(renderPrimitives.size()), 128);
+
+	Vector<uint32_t> bitVectorCopy = bitVector.ToVector();
+
+	RGBufferRef primitivesToDraw = m_renderGraph.CreateBuffer(RGBufferDesc::CreateMappableBufferDesc<uint32_t>(renderScene.GetMaxPrimitiveIndex() + 1, RHI::BufferUsage::StorageBuffer, "Outline.PrimitivesToDraw"));
+	AddMappedBufferUpload(m_renderGraph, m_renderGraph.CreateUAV(primitivesToDraw), bitVectorCopy.data(), bitVectorCopy.byte_size());
+
 	RGTextureRef colorTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::Attachment, "OutlineGeometryColor"));
 	RGTextureRef depthTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::Attachment, "OutlineGeometryDepth"));
 
 	OutlineGeometryParameters* passParameters = m_renderGraph.AllocParameters<OutlineGeometryParameters>();
 	passParameters->VS.View = view.viewUniformBuffer;
 	passParameters->VS.GPUScene = renderScene.GetGPUSceneParameters(m_renderGraph);
+	passParameters->VS.PrimitivesToDraw = m_renderGraph.CreateSRV(primitivesToDraw);
 	passParameters->PS.renderTargets.renderTargets[0] = colorTexture;
 	passParameters->PS.renderTargets.depthTarget = depthTexture;
 

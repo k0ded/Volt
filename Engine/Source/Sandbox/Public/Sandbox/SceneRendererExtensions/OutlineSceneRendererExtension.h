@@ -23,5 +23,5 @@ private:
 	std::unordered_set<Volt::EntityID> m_selectedPrimitivesSet;
 	bool m_isSelectionDirty = false;
 
-	class OutlinePassMeshProcessor* m_meshPassProcessor = nullptr;
+	class OutlineMeshPassProcessor* m_meshPassProcessor = nullptr;
 };

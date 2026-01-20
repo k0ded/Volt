@@ -7,7 +7,7 @@
 namespace Volt::Algo
 {
 	//will dispatch the iterations to the job system and wait until they finish
-	extern VTCORE_API void ForEachParalellBlocking(std::function<void(uint32_t threadIdx, uint32_t elementIdx)>&& func, uint32_t iterationCount);
+	extern VTCORE_API void ForEachParalellBlocking(std::function<void(uint32_t threadIdx, uint32_t elementIdx)>&& func, uint32_t iterationCount, uint32_t minIterations = 0);
 	//will dispatch the iterations to the job system but will not wait for them to finish
 	extern VTCORE_API void ForEachParallelAsync(std::function<void(uint32_t, uint32_t)>&& func, uint32_t iterationCount);
 	extern VTCORE_API VT_NODISCARD uint32_t GetThreadCountFromIterationCount(uint32_t iterationCount);

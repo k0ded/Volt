@@ -219,7 +219,7 @@ namespace Volt
 		return m_renderPrimitiveDataContainer.GetRenderPrimitives();
 	}
 
-	const uint32_t RenderScene::GetMaterialIndex(Weak<RenderMaterial> material) const
+	uint32_t RenderScene::GetMaterialIndex(Weak<RenderMaterial> material) const
 	{
 		auto it = std::find_if(m_individualMaterials.begin(), m_individualMaterials.end(), [&](Weak<RenderMaterial> lhs)
 		{
@@ -234,7 +234,7 @@ namespace Volt
 		return std::numeric_limits<uint32_t>::max();
 	}
 
-	const uint32_t RenderScene::GetPrimitiveIndexFromID(RenderPrimitiveID primitiveId) const
+	uint32_t RenderScene::GetPrimitiveIndexFromID(RenderPrimitiveID primitiveId) const
 	{
 		return static_cast<uint32_t>(m_primitiveIndicesContainer.GetIndexFromID(primitiveId));
 	}

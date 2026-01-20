@@ -96,7 +96,6 @@ namespace Volt
 				"BloomDownsampleCS",
 				shader,
 				passParameters,
-				RenderGraphPassFlags::NeverCull,
 				{ Math::DivideRoundUp(targetResolution.x, 8u), Math::DivideRoundUp(targetResolution.y, 8u), 1u });
 
 			if (i == 0)
@@ -155,7 +154,6 @@ namespace Volt
 				"BloomUpsampleCS",
 				shader,
 				passParameters,
-				RenderGraphPassFlags::NeverCull,
 				{ Math::DivideRoundUp(targetWidth, 8u), Math::DivideRoundUp(targetHeight, 8u), 1u });
 		}
 

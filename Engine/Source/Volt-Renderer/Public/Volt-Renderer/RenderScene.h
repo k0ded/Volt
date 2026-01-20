@@ -82,8 +82,9 @@ namespace Volt
 
 		VT_INLINE VT_NODISCARD uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
 
-		VT_NODISCARD const uint32_t GetMaterialIndex(Weak<RenderMaterial> material) const;
-		VT_NODISCARD const uint32_t GetPrimitiveIndexFromID(RenderPrimitiveID primitiveId) const;
+		VT_NODISCARD uint32_t GetMaterialIndex(Weak<RenderMaterial> material) const;
+		VT_NODISCARD uint32_t GetPrimitiveIndexFromID(RenderPrimitiveID primitiveId) const;
+		VT_NODISCARD VT_INLINE uint32_t GetMaxPrimitiveIndex() const { return static_cast<uint32_t>(m_primitiveIndicesContainer.GetMaxIndex()); }
 
 		VT_INLINE VT_NODISCARD const GPUSceneBuffers GetGPUSceneBuffers() const { return m_buffers; }
 		VT_NODISCARD GPUSceneParameters GetGPUSceneParameters(RenderGraph& renderGraph) const;
