@@ -51,7 +51,7 @@ namespace Volt
 
 		using TexturesMap = Map<uint32_t, TextureInfo>;
 
-		RenderMaterial(const std::string& name, RefPtr<RHI::Shader> defaultShader);
+		RenderMaterial(const std::string& name);
 
 		void SetTexture(uint32_t index, RenderTexture resource);
 
@@ -96,7 +96,6 @@ namespace Volt
 
 		MaterialBlendMode m_materialBlendMode = MaterialBlendMode::Opaque;
 		MaterialShaderMap m_shaderMap;
-		RefPtr<RHI::Shader> m_defaultShader;
 
 		std::string m_name;
 		size_t m_hash = 0;

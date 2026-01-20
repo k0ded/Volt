@@ -44,7 +44,7 @@ namespace Volt
 	MaterialAsset::MaterialAsset()
 	{
 		m_graph = CreateRef<MaterialGraph>();
-		m_renderMaterial = CreateRef<RenderMaterial>(std::string(GetAssetName()), ShaderMap::Get<OpaqueDefaultPixelPS>());
+		m_renderMaterial = CreateRef<RenderMaterial>(std::string(GetAssetName()));
 	}
 
 	void MaterialAsset::OnAssetDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state)

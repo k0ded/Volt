@@ -431,7 +431,7 @@ namespace Volt
 
 	template<typename T>
 	inline RHI::ImageViewDesc GetImageViewDesc(const RGTextureDesc& textureDesc, const T& desc)
-	{
+ 	{
 		RHI::ImageViewDesc viewDesc{};
 		viewDesc.baseMipLevel = desc.baseMipLevel;
 		viewDesc.baseArrayLayer = desc.baseArrayLayer;
@@ -577,6 +577,11 @@ namespace Volt
 		}
 	}
 
+	void RenderGraph::ValidateTextureUAV(const RGTextureUAVDesc& uavDesc)
+	{
+		VT_ENSURE_MSG(uavDesc.textureResource->GetDesc().usage == RHI::ImageUsage::AttachmentStorage || uavDesc.textureResource->GetDesc().usage == RHI::ImageUsage::Storage, "Texture does not support UAVs!");
+	}
+
 	RGBufferSRVRef RenderGraph::CreateSRV(const RGBufferSRVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
@@ -682,6 +687,8 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		ValidateTextureUAV(desc);
+
 		RGTextureUAVRef textureUAV = m_resourceAccessorAllocator.Allocate<RGTextureUAV>(desc);
 		m_resourceUAVs.emplace_back(textureUAV);
 		return textureUAV;
@@ -707,6 +714,8 @@ namespace Volt
 
 		RGTextureUAVDesc desc{};
 		desc.textureResource = texture;
+
+		ValidateTextureUAV(desc);
 
 		RGTextureUAVRef textureUAV = m_resourceAccessorAllocator.Allocate<RGTextureUAV>(desc);
 		m_resourceUAVs.emplace_back(textureUAV);

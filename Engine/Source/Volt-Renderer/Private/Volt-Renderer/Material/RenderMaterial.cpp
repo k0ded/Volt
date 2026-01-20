@@ -12,14 +12,11 @@
 
 namespace Volt
 {
-	RenderMaterial::RenderMaterial(const std::string& name, RefPtr<RHI::Shader> defaultShader)
-		: m_name(name),
-		m_defaultShader(defaultShader)
+	RenderMaterial::RenderMaterial(const std::string& name)
+		: m_name(name)
 	{
-		VT_ENSURE(defaultShader);
-
 		CompiledMaterialShaders tempMaterialShaders;
-		m_shaderMap.Initialize(name, std::move(tempMaterialShaders), defaultShader);
+		m_shaderMap.Initialize(name, std::move(tempMaterialShaders));
 		GenerateHash();
 	}
 
@@ -78,7 +75,7 @@ namespace Volt
 
 	void RenderMaterial::Invalidate(CompiledMaterialShaders&& compiledMaterialShaders)
 	{
-		m_shaderMap.Initialize(m_name, std::move(compiledMaterialShaders), m_defaultShader);
+		m_shaderMap.Initialize(m_name, std::move(compiledMaterialShaders));
 	}
 
 	void RenderMaterial::GenerateHash()

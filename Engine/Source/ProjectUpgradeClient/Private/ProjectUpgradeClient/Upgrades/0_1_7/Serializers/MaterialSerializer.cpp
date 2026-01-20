@@ -154,7 +154,7 @@ namespace Volt
 		}
 
 		materialAsset->m_graph = CreateRef<MaterialGraph>();
-		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(std::string(materialAsset->GetAssetName()), ShaderMap::Get<OpaqueDefaultPixelPS>());
+		materialAsset->m_renderMaterial = CreateRef<RenderMaterial>(std::string(materialAsset->GetAssetName()));
 		materialAsset->m_graph->m_graph->Clear();
 
 		streamReader.EnterScope("MosaicGraph");

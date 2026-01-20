@@ -22,6 +22,7 @@
 #include "Volt-Renderer/RenderingTechniques/LightTileBinningTechnique.h"
 #include "Volt-Renderer/RenderingTechniques/GTAOTechnique.h"
 #include "Volt-Renderer/RenderingTechniques/CascadedShadowMapsTechnique.h"
+#include "Volt-Renderer/RenderingTechniques/BloomTechnique.h"
 
 #include "Volt-Renderer/MeshPassProcessors/DepthPrePassMeshProcessor.h"
 #include "Volt-Renderer/MeshPassProcessors/BasePassMeshProcessor.h"
@@ -249,6 +250,11 @@ namespace Volt
 	void SceneRenderer::AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture)
 	{
 		renderGraph.BeginMarker("Post Processing");
+
+		{
+			BloomTechnique bloomTechnique{ renderGraph, blackboard };
+			bloomTechnique.Execute(view);
+		}
 
 		if (m_antiAliasingMethod == AntiAliasingMethod::TAA)
 		{

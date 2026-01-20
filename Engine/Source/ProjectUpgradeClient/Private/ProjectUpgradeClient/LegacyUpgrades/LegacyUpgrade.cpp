@@ -11,7 +11,9 @@
 #include <Volt-Core/PluginSystem/PluginRegistry.h>
 #include <Volt-Core/Project/ProjectManager.h>
 
+#include <Volt-Renderer/Texture/EnvironmentTexture.h>
 #include <Volt-Renderer/Mesh/Mesh.h>
+#include <Volt-Renderer/Renderer.h>
 
 #include <Volt-Assets/MeshAsset.h>
 #include <Volt-Assets/MaterialAsset.h>
@@ -1427,11 +1429,24 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 	 Volt::TextureSourceImportConfig importConfig;
 	 importConfig.destinationDirectory = m_targetDirectory / metadata.filepath.parent_path();
 	 importConfig.destinationFilename = metadata.filepath.stem().string();
-	 importConfig.generateMipMaps = true;
-	 importConfig.importMipMaps = true;
-	 importConfig.compressionType = TextureCompressionType::BC5;
-	 importConfig.targetAssetHandle = metadata.handle;
 
-	 JobFuture<Vector<AssetReference<Asset>>> future = SourceAssetManager::ImportSourceAsset(absoluteTexturePath, importConfig);
-	 return future.Get().front();
+	 // If it's a HDR file, it should be imported as an environment texture.
+	 if (metadata.filepath.extension() == ".hdr")
+	 {
+		 importConfig.createAsMemoryAsset = true;
+		 JobFuture<Vector<AssetReference<Asset>>> future = SourceAssetManager::ImportSourceAsset(absoluteTexturePath, importConfig);
+
+		 Volt::Renderer::EnvironmentTextures envTextures = Volt::Renderer::GenerateEnvironmentTextures(future.Get().front()->GetAssetHandle());
+		 return m_assetManager->CreateAssetAndFileWithAssetHandle<Volt::EnvironmentTexture>(importConfig.destinationDirectory, importConfig.destinationFilename, metadata.handle, envTextures.diffuse, envTextures.specular);
+	 }
+	 else
+	 {
+		 importConfig.generateMipMaps = true;
+		 importConfig.importMipMaps = true;
+		 importConfig.compressionType = TextureCompressionType::BC5;
+		 importConfig.targetAssetHandle = metadata.handle;
+
+		 JobFuture<Vector<AssetReference<Asset>>> future = SourceAssetManager::ImportSourceAsset(absoluteTexturePath, importConfig);
+		 return future.Get().front();
+	 }
  }

@@ -1,6 +1,9 @@
 #include "vrpch.h"
 
 #include "Volt-Renderer/Material/MaterialShaderMap.h"
+#include "Volt-Renderer/Material/MaterialShaderRegistry.h"
+
+#include <RenderCore/Shader/ShaderMap.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -11,21 +14,15 @@ namespace Volt
 		return std::hash<std::underlying_type_t<MaterialBlendMode>>()(std::to_underlying(blendMode));
 	}
 
-	void MaterialShaderMap::Initialize(const std::string& name, CompiledMaterialShaders&& compiledShaders, RefPtr<RHI::Shader> defaultShader)
+	void MaterialShaderMap::Initialize(const std::string& name, CompiledMaterialShaders&& compiledShaders)
 	{
 		m_shaderMap.clear();
 
 		m_name = name;
-		m_defaultShader = defaultShader;
 		m_compiledMaterialShaders = std::move(compiledShaders);
 	}
 
-	void MaterialShaderMap::SetupShaderPermutations(RHI::ShaderPermutationConfig& permutationConfig, MaterialBlendMode blendMode) const
-	{
-		permutationConfig.AddPermutation("MATERIAL_BLEND_MODE", std::to_string(std::to_underlying(blendMode)));
-	}
-
-	RefPtr<RHI::Shader> MaterialShaderMap::GetShaderInternal(TypeTraits::TypeIndex shaderType, size_t permutationHash)
+	RefPtr<RHI::Shader> MaterialShaderMap::GetShaderInternal(TypeTraits::TypeIndex shaderType, size_t permutationHash, bool& isDefaultShader)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -34,7 +31,9 @@ namespace Volt
 
 		if (it == m_shaderMap.end())
 		{
-			return nullptr;
+			isDefaultShader = true;
+			const MaterialShaderRegistry::ShaderRegistrationInfo& registrationInfo = MaterialShaderRegistry::Get().GetShaderRegistrationInfoForShader(shaderType);
+			return ShaderMap::Get(registrationInfo.defaultShaderClass);
 		}
 
 		const ShaderBucket& shaderBucket = it->second;
@@ -42,9 +41,11 @@ namespace Volt
 		auto shaderIt = shaderBucket.permutations.find(permutationHash);
 		if (shaderIt == shaderBucket.permutations.end())
 		{
-			return nullptr;
+			isDefaultShader = true;
+			return shaderBucket.defaultShader;
 		}
 
+		isDefaultShader = false;
 		return shaderIt->second;
 	}
 
@@ -53,7 +54,12 @@ namespace Volt
 		std::unique_lock lock{ m_mutex };
 
 		ShaderBucket& shaderBucket = m_shaderMap[shaderType];
-		
+		if (!shaderBucket.defaultShader)
+		{
+			const MaterialShaderRegistry::ShaderRegistrationInfo& registrationInfo = MaterialShaderRegistry::Get().GetShaderRegistrationInfoForShader(shaderType);
+			shaderBucket.defaultShader = ShaderMap::Get(registrationInfo.defaultShaderClass);
+		}
+
 		RefPtr<RHI::Shader> shader;
 		{
 			VT_PROFILE_SCOPE("Compile Shader");

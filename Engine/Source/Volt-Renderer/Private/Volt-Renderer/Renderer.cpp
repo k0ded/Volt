@@ -376,7 +376,7 @@ namespace Volt
 
 		// Default material
 		{
-			m_defaultResources.defaultMaterial = CreateRef<RenderMaterial>("DefaultMaterial", ShaderMap::Get<OpaqueDefaultPixelPS>());
+			m_defaultResources.defaultMaterial = CreateRef<RenderMaterial>("DefaultMaterial");
 		}
 
 		// Default mesh

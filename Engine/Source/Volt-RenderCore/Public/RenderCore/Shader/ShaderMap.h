@@ -60,6 +60,13 @@ namespace Volt
 
 				shader = s_instance->CompileShaderPermutation(typeIndex, permutationHash, std::move(permutationConfig));
 			}
+
+			return shader;
+		}
+
+		static RefPtr<RHI::Shader> Get(TypeTraits::TypeIndex typeIndex)
+		{
+			return s_instance->GetInternal(typeIndex, 0);
 		}
 
 	private:

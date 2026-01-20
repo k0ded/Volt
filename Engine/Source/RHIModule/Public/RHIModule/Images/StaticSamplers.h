@@ -51,4 +51,37 @@ namespace Volt::RHI
 		.wrapMode = TextureWrap::Repeat,
 		.anisotropyLevel = AnisotropyLevel::X16
 	};
+
+	inline static StaticSamplerDeclaration g_staticPointSamplerClamp =
+	{
+		.minFilter = TextureFilter::Nearest,
+		.magFilter = TextureFilter::Nearest,
+		.mipFilter = TextureFilter::Nearest,
+		.wrapMode = TextureWrap::Clamp
+	};
+
+	inline static StaticSamplerDeclaration g_staticBilinearSamplerClamp =
+	{
+		.minFilter = TextureFilter::Linear,
+		.magFilter = TextureFilter::Linear,
+		.mipFilter = TextureFilter::Nearest,
+		.wrapMode = TextureWrap::Clamp
+	};
+
+	inline static StaticSamplerDeclaration g_staticTrilinearSamplerClamp =
+	{
+		.minFilter = TextureFilter::Linear,
+		.magFilter = TextureFilter::Linear,
+		.mipFilter = TextureFilter::Linear,
+		.wrapMode = TextureWrap::Clamp
+	};
+
+	inline static StaticSamplerDeclaration g_staticAnisotropicSamplerClamp =
+	{
+		.minFilter = TextureFilter::Linear,
+		.magFilter = TextureFilter::Linear,
+		.mipFilter = TextureFilter::Linear,
+		.wrapMode = TextureWrap::Clamp,
+		.anisotropyLevel = AnisotropyLevel::X16
+	};
 }

@@ -103,5 +103,10 @@ namespace Volt::RHI
 		m_staticSamplers.emplace_back(CreateSamplerFromDeclaration(g_staticBilinearSampler));
 		m_staticSamplers.emplace_back(CreateSamplerFromDeclaration(g_staticTrilinearSampler));
 		m_staticSamplers.emplace_back(CreateSamplerFromDeclaration(g_staticAnisotropicSampler));
+
+		m_staticSamplers.emplace_back(CreateSamplerFromDeclaration(g_staticPointSamplerClamp));
+		m_staticSamplers.emplace_back(CreateSamplerFromDeclaration(g_staticBilinearSamplerClamp));
+		m_staticSamplers.emplace_back(CreateSamplerFromDeclaration(g_staticTrilinearSamplerClamp));
+		m_staticSamplers.emplace_back(CreateSamplerFromDeclaration(g_staticAnisotropicSamplerClamp));
 	}
 }

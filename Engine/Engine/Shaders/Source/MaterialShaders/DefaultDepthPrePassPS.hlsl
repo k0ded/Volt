@@ -1,6 +1,4 @@
-#include "Material/MaterialShader.hlsli"
-
-#include "Utility/Utility.hlsli"
+#include "ViewData.hlsli"
 
 struct VSToPS
 {
@@ -23,12 +21,6 @@ PSOutput MainPS(in VSToPS input)
 
     PSOutput result;
     result.velocity = ((previousPosNDC.xy - View.prevFrameJitter) - (currentPosNDC.xy - View.currentFrameJitter)) * 0.5f;
-
-    MaterialEvaluationData evaluationData;
-    evaluationData.texCoords = input.texCoords;
-
-    EvaluatedMaterial evaluatedMaterial = EvaluateMaterial(evaluationData);
-    EvaluateAlphaMask(evaluatedMaterial.albedo.a);
 
     return result;
 }

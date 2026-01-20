@@ -293,6 +293,9 @@ namespace Volt
 
 		RefPtr<RHI::RHIResource> GetRHIResource(RGResourceRef resource);
 
+		// Validation
+		void ValidateTextureUAV(const RGTextureUAVDesc& uavDesc);
+
 		// Private because we don't need to create a uniform buffer SRV
 		// outside of the Render Graph.
 		RGUniformBufferSRVRef CreateSRV(const RGUniformBufferSRVDesc& desc);

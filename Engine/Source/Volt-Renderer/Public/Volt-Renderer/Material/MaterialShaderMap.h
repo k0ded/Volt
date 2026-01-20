@@ -12,7 +12,7 @@ namespace Volt
 	class MaterialShaderMap
 	{
 	public:
-		void Initialize(const std::string& name, CompiledMaterialShaders&& compiledMaterialShaders, RefPtr<RHI::Shader> defaultShader);
+		void Initialize(const std::string& name, CompiledMaterialShaders&& compiledMaterialShaders);
 
 		template<typename T>
 		RefPtr<RHI::Shader> GetShader(const T::PermutationVector& permutationVector)
@@ -21,9 +21,12 @@ namespace Volt
 			const size_t permutationHash = permutationVector.GetHash();
 
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
-			RefPtr<RHI::Shader> shader = GetShaderInternal(typeIndex, permutationHash);
 
-			if (!shader)
+			bool isDefaultShader = false;
+			RefPtr<RHI::Shader> shader = GetShaderInternal(typeIndex, permutationHash, isDefaultShader);
+
+			// Try to compile the permutation if we got the default shader.
+			if (isDefaultShader)
 			{
 				if (!m_compiledMaterialShaders.Empty())
 				{
@@ -32,11 +35,8 @@ namespace Volt
 
 					shader = CompileShaderPermutation(typeIndex, permutationHash, std::move(permutationConfig));
 				}
-				else
-				{
-					shader = m_defaultShader;
-				}
 			}
+			VT_ENSURE(shader);
 
 			return shader;
 		}
@@ -45,15 +45,13 @@ namespace Volt
 		struct ShaderBucket
 		{
 			Map<size_t, RefPtr<RHI::Shader>> permutations;
+			RefPtr<RHI::Shader> defaultShader;
 		};
 
-		void SetupShaderPermutations(RHI::ShaderPermutationConfig& permutationConfig, MaterialBlendMode blendMode) const;
-
-		RefPtr<RHI::Shader> GetShaderInternal(TypeTraits::TypeIndex shaderType, size_t permutationHash);
+		RefPtr<RHI::Shader> GetShaderInternal(TypeTraits::TypeIndex shaderType, size_t permutationHash, bool& isDefaultShader);
 		RefPtr<RHI::Shader> CompileShaderPermutation(TypeTraits::TypeIndex shaderType, size_t permutationHash, RHI::ShaderPermutationConfig&& permutationConfig);
 
 		Map<TypeTraits::TypeIndex, ShaderBucket> m_shaderMap;
-		RefPtr<RHI::Shader> m_defaultShader;
 
 		CompiledMaterialShaders m_compiledMaterialShaders;
 		std::string m_name;

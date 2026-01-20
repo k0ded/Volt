@@ -3,6 +3,8 @@
 #include "RenderCore/Shader/ShaderSubSystem.h"
 #include "RenderCore/RenderGraph/ShaderRegistry.h"
 
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
 #include <RHIModule/Shader/ShaderCompiler.h>
 #include <RHIModule/Shader/ShaderCache.h>
 #include <RHIModule/Shader/Shader.h>
@@ -15,6 +17,11 @@ VT_DEFINE_LOG_CATEGORY(LogShaderSubSystem);
 
 namespace Volt
 {
+	static ConsoleVariable<int32_t> s_forceSingleThreadedCompilation(
+		"r.Shader.ForceSingleThreadedCompilation",
+		0,
+		"Whether or not force single threaded compilation of shaders.");
+
 	VT_REGISTER_SUBSYSTEM(ShaderSubSystem, Minimal, Engine);
 
 	void ShaderSubSystem::Initialize()
@@ -57,30 +64,45 @@ namespace Volt
 	{
 		const auto& registeredShaders = ShaderRegistry::Get().GetRegisteredShaders();
 
+		auto compileFunc = [=](TypeTraits::TypeIndex typeIndex, ShaderRegistry::ShaderRegistrationInfo registrationInfo)
+		{
+			RHI::ShaderCreateInfo createInfo;
+			createInfo.name = registrationInfo.name;
+			createInfo.entryPoint = registrationInfo.stageInfos.entryPoint;
+			createInfo.sourceFilepath = registrationInfo.stageInfos.filePath;
+			createInfo.stage = registrationInfo.stageInfos.shaderStage;
+			createInfo.forceCompile = false;
+
+			RefPtr<RHI::Shader> shader;
+			{
+				VT_PROFILE_SCOPE("Create Shader");
+				shader = RHI::Shader::Create(createInfo);
+			}
+			ShaderMap::RegisterShader(typeIndex, shader, registrationInfo.stageInfos.hasPermutations);
+		};
+
 		TaskGraph taskGraph{ ExecutionPriority::Immediate };
 		ScopedTimer timer{};
 
 		for (const auto& [typeIndex, registrationInfo] : registeredShaders)
 		{
-			taskGraph.AddTask("Load and Register Shader", [=]()
+			if (!s_forceSingleThreadedCompilation.GetValue())
 			{
-				RHI::ShaderCreateInfo createInfo;
-				createInfo.name = registrationInfo.name;
-				createInfo.entryPoint = registrationInfo.stageInfos.entryPoint;
-				createInfo.sourceFilepath = registrationInfo.stageInfos.filePath;
-				createInfo.stage = registrationInfo.stageInfos.shaderStage;
-				createInfo.forceCompile = false;
-
-				RefPtr<RHI::Shader> shader;
+				taskGraph.AddTask("Load and Register Shader", [typeIndex, registrationInfo, compileFunc]()
 				{
-					VT_PROFILE_SCOPE("Create Shader");
-					shader = RHI::Shader::Create(createInfo);
-				}
-				ShaderMap::RegisterShader(typeIndex, shader, registrationInfo.stageInfos.hasPermutations);
-			});
+					compileFunc(typeIndex, registrationInfo);
+				});
+			}
+			else
+			{
+				compileFunc(typeIndex, registrationInfo);
+			}
 		}
 
-		taskGraph.ExecuteAndWait();
+		if (!s_forceSingleThreadedCompilation.GetValue())
+		{
+			taskGraph.ExecuteAndWait();
+		}
 		VT_LOGC(Info, LogRender, "Shader compilation finished in {} seconds!", timer.GetTime<Time::Seconds>());
 	}
 }

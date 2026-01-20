@@ -25,7 +25,7 @@ namespace Volt
 
 		if (!m_materials.at(index))
 		{
-			m_materials[index] = CreateRef<RenderMaterial>("Null", ShaderMap::Get<OpaqueDefaultPixelPS>());
+			m_materials[index] = CreateRef<RenderMaterial>("Null");
 		}
 	}
 
