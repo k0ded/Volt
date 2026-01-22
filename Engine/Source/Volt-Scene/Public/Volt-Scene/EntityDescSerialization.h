@@ -5,6 +5,7 @@
 #include "Volt-Scene/EntityDescSerializationCommon.h"
 
 #include <EntitySystem/Entity.h>
+#include <CoreUtilities/Containers/Vector.h>
 
 namespace Volt::EntityDescSerialization
 {

@@ -545,17 +545,25 @@ private:
 
 	void AddComponent()
 	{
-		if (!Volt::ComponentRegistry::Helpers::HasComponentWithGUID(m_componentGuid, m_targetScene.GetEntityScene().GetRegistry(), m_targetEntity))
-		{
-			Volt::ComponentRegistry::Helpers::AddComponentWithGUID(m_componentGuid, m_targetScene.GetEntityScene().GetRegistry(), m_targetEntity);
+		VT_ENSURE(!m_targetEntity.HasComponent(m_componentGuid));
 
-			const Volt::IComponentTypeDesc* componentTypeDesc = reinterpret_cast<const Volt::IComponentTypeDesc*>(Volt::ComponentRegistry::Get().GetTypeDescFromGUID(m_componentGuid));
-			if (componentTypeDesc)
-			{
-				componentTypeDesc->OnInitialize(m_targetEntity);
-				EditorUtils::MarkEntityComponentAsEdited(m_targetScene, m_targetEntity, componentTypeDesc->GetGUID());
-			}
+		Volt::EntityDescSerialization::ComponentData data;
+		Volt::EntityDescSerialization::GatherComponentData(m_targetEntity, data);
+
+		data.headers.emplace_back(m_componentGuid, data.data.size(), m_removedComponentData.size());
+
+		VersionlessMemoryWriterExternal componentDataWriter(data.data);
+		componentDataWriter.SerializeBytes(m_removedComponentData.data(), m_removedComponentData.size());
+
+		Volt::EntityDescSerialization::ApplyComponentData(m_targetEntity, data);
+		
+		const Volt::IComponentTypeDesc* componentTypeDesc = reinterpret_cast<const Volt::IComponentTypeDesc*>(Volt::ComponentRegistry::Get().GetTypeDescFromGUID(m_componentGuid));
+		if (componentTypeDesc)
+		{
+			componentTypeDesc->OnInitialize(m_targetEntity);
 		}
+
+		EditorUtils::MarkEntityComponentAsEdited(m_targetScene, m_targetEntity, m_componentGuid);
 	}
 
 	void RemoveComponent()

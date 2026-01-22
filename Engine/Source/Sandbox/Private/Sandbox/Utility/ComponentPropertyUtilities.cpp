@@ -118,7 +118,7 @@ void ComponentPropertyUtility::DrawComponents(Volt::Scene& scene, Volt::Entity e
 
 					if (removeComp)
 					{
-						Ref<AddOrRemoveComponentCommand> command = CreateRef<AddOrRemoveComponentCommand>(compTypeDesc->GetGUID(), AddOrRemoveComponentAction::Add, scene, entity);
+						Ref<AddOrRemoveComponentCommand> command = CreateRef<AddOrRemoveComponentCommand>(compTypeDesc->GetGUID(), AddOrRemoveComponentAction::Remove, scene, entity);
 						EditorCommandStack::PushUndo(command);
 
 						Volt::ComponentRegistry::Helpers::RemoveComponentWithGUID(compTypeDesc->GetGUID(), scene.GetEntityScene().GetRegistry(), entity);
