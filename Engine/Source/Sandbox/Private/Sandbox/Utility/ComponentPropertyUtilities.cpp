@@ -2,6 +2,7 @@
 #include "Utility/ComponentPropertyUtilities.h"
 
 #include "Sandbox/Sandbox.h"
+#include "Sandbox/EditorCommandStack.h"
 
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Utility/EditorUtilities.h"
@@ -117,8 +118,11 @@ void ComponentPropertyUtility::DrawComponents(Volt::Scene& scene, Volt::Entity e
 
 					if (removeComp)
 					{
+						Ref<AddOrRemoveComponentCommand> command = CreateRef<AddOrRemoveComponentCommand>(compTypeDesc->GetGUID(), AddOrRemoveComponentAction::Add, scene, entity);
+						EditorCommandStack::PushUndo(command);
+
 						Volt::ComponentRegistry::Helpers::RemoveComponentWithGUID(compTypeDesc->GetGUID(), scene.GetEntityScene().GetRegistry(), entity);
-						EditorUtils::MarkEntityAsEdited(scene, entity);
+						EditorUtils::MarkEntityComponentAsEdited(scene, entity, compTypeDesc->GetGUID());
 					}
 
 					break;
@@ -195,7 +199,7 @@ bool ComponentPropertyUtility::DrawComponent(Volt::Scene& scene, Volt::Entity en
 	{
 		componentType->OnMemberChanged(entity);
 
-		EditorUtils::MarkEntityAsEdited(scene, entity);
+		EditorUtils::MarkEntityComponentAsEdited(scene, entity, componentType->GetGUID());
 	}
 
 	return edited;
@@ -273,7 +277,8 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scen
 		if (EditorUtils::Property(label, *reinterpret_cast<Volt::AssetHandle*>(elementData), arrayMember.GetAssetType() != AssetTypes::None ? arrayMember.GetAssetType() : arrayAssetType))
 		{
 			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.identifier);
-			EditorUtils::MarkEntityAsEdited(scene, entity);
+			EditorUtils::MarkEntityComponentAsEdited(scene, entity, arrayMember.ownerTypeDesc->GetGUID());
+
 		
 			return true;
 		}
@@ -285,7 +290,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scen
 		if (UI::PropertyColor(label, *reinterpret_cast<glm::vec3*>(elementData)))
 		{
 			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.identifier);
-			EditorUtils::MarkEntityAsEdited(scene, entity);
+			EditorUtils::MarkEntityComponentAsEdited(scene, entity, arrayMember.ownerTypeDesc->GetGUID());
 		
 			return true;
 		}
@@ -297,7 +302,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scen
 		if (UI::PropertyColor(label, *reinterpret_cast<glm::vec4*>(elementData)))
 		{
 			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.identifier);
-			EditorUtils::MarkEntityAsEdited(scene, entity);
+			EditorUtils::MarkEntityComponentAsEdited(scene, entity, arrayMember.ownerTypeDesc->GetGUID());
 			
 			return true;
 		}
@@ -310,7 +315,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scen
 		if (UI::PropertyEntity(label, scene, *reinterpret_cast<Volt::EntityID*>(elementData)))
 		{
 			AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.identifier);
-			EditorUtils::MarkEntityAsEdited(scene, entity);
+			EditorUtils::MarkEntityComponentAsEdited(scene, entity, arrayMember.ownerTypeDesc->GetGUID());
 		
 			return true;
 		}
@@ -325,7 +330,7 @@ bool ComponentPropertyUtility::DrawComponentDefaultMemberArray(Volt::Scene& scen
 	if (s_propertyFunctions.at(typeIndex)(label, elementData, 0))
 	{
 		AddLocalChangeToEntity(scene, entity, arrayMember.ownerTypeDesc->GetGUID(), arrayMember.identifier);
-		EditorUtils::MarkEntityAsEdited(scene, entity);
+		EditorUtils::MarkEntityComponentAsEdited(scene, entity, arrayMember.ownerTypeDesc->GetGUID());
 
 		return true;
 	}
@@ -394,7 +399,7 @@ bool ComponentPropertyUtility::DrawComponentEnum(Volt::Scene& scene, Volt::Entit
 	{
 		currentValue = static_cast<int32_t>(indexToValueMap.at(currentValue));
 		AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
-		EditorUtils::MarkEntityAsEdited(scene, entity);
+		EditorUtils::MarkEntityComponentAsEdited(scene, entity, member.ownerTypeDesc->GetGUID());
 
 		changed = true;
 	}
@@ -493,7 +498,7 @@ bool ComponentPropertyUtility::DrawComponentArray(Volt::Scene& scene, Volt::Enti
 			arrayDesc->EmplaceBack(arrayPtr, member.defaultValue->Get());
 			AddLocalChangeToEntity(scene, entity, member.ownerTypeDesc->GetGUID(), member.identifier);
 
-			EditorUtils::MarkEntityAsEdited(scene, entity);
+			EditorUtils::MarkEntityComponentAsEdited(scene, entity, member.ownerTypeDesc->GetGUID());
 			edited = true;
 		}
 
@@ -531,5 +536,6 @@ void ComponentPropertyUtility::AddLocalChangeToEntity(Volt::Scene& scene, Volt::
 	newChange.componentGUID = componentGuid;
 	newChange.memberIdentifier = memberIdentifier;
 
-	EditorUtils::MarkEntityAsEdited(scene, entity);
+	const VoltGUID prefabComponentGuid = Volt::GetTypeGUID<Volt::PrefabComponent>();
+	EditorUtils::MarkEntityComponentAsEdited(scene, entity, prefabComponentGuid);
 }

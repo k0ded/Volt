@@ -679,11 +679,9 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 			EntityID entityId = layerReader.ReadAtKey("id", 0u);
 
 			const std::string entityDescName = std::to_string(entityId);
-			AssetReference<EntityDesc> entityDescription = m_assetManager->CreateAsset<EntityDesc>(entityDescName, entityId, scene->GetAssetHandle());
-			resultAssets.emplace_back(entityDescription);
 
-			Entity newEntity = scene->AddEntityToScene(entityDescription);
-			m_assetManager->CreateFileForAsset(entityDescription->GetAssetHandle(), entitiesTargetDir / (entityDescName + ".vtasset"));
+			Entity newEntity = scene->CreateEntityWithID(entityId);
+			m_assetManager->CreateFileForAsset(scene->GetEntityDescHandleFromEntityID(entityId), entitiesTargetDir / (entityDescName + ".vtasset"));
 
 			layerReader.ForEach("components", [&]() 
 			{

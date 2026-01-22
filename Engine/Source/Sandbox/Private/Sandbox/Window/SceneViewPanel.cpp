@@ -168,6 +168,7 @@ void SceneViewPanel::UpdateMainContent()
 				}
 			}
 
+			//drop on the window, not on an entity to unparent the dropped entity
 			if (ImGui::BeginDragDropTargetCustom(windowRect, ImGui::GetCurrentWindow()->ID))
 			{
 				const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("scene_entity_hierarchy", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
@@ -194,15 +195,20 @@ void SceneViewPanel::UpdateMainContent()
 						data->myChild = child;
 						undoData.push_back(data);
 
-						EditorUtils::MarkEntityAsEdited(*m_scene, child);
-						EditorUtils::MarkEntityAsEdited(*m_scene, child.GetParent());
+
 						child.UnparentEntity();
+						//the old parent, and the moved entity get changes to their relationship components
+						EditorUtils::MarkEntityComponentAsEdited(*m_scene, data->myParent, Volt::GetTypeGUID<Volt::RelationshipComponent>());
+						EditorUtils::MarkEntityComponentAsEdited(*m_scene, child, Volt::GetTypeGUID<Volt::RelationshipComponent>());
+
+						//since unparenting an entity changes it's transform all children also get their transforms changed
+						EditorUtils::MarkEntityAndChildrenComponentAsEdited(*m_scene, child, Volt::GetTypeGUID<Volt::TransformComponent>());
 					}
 
 					//undo data can be empty when trying to unchild an entity with no parent
 					if (!undoData.empty())
 					{
-						Ref<ParentingCommand> command = CreateRef<ParentingCommand>(undoData, ParentingAction::Unparent);
+						Ref<ParentingCommand> command = CreateRef<ParentingCommand>(undoData, ParentingAction::Unparent, *m_scene);
 						EditorCommandStack::PushUndo(command);
 					}
 				}
@@ -259,7 +265,6 @@ void SceneViewPanel::HighlightEntity(Volt::Entity entity)
 void RecursiveUnpackPrefab(AssetReference<Volt::Scene> scene, Volt::EntityID id)
 {
 	Volt::Entity entity = scene->GetEntityFromID(id);
-	EditorUtils::MarkEntityAsEdited(*scene, entity);
 
 	if (entity.HasComponent<Volt::PrefabComponent>())
 	{
@@ -277,6 +282,8 @@ void RecursiveUnpackPrefab(AssetReference<Volt::Scene> scene, Volt::EntityID id)
 
 		RecursiveUnpackPrefab(scene, childId);
 	}
+
+	EditorUtils::MarkEntityAsEdited(*scene, entity);
 };
 
 bool SceneViewPanel::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
@@ -630,6 +637,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 				Volt::EntityID id = *(((Volt::EntityID*)payload->Data) + i);
 				Volt::Entity newParent = entity;
 				Volt::Entity child = m_scene->GetEntityFromID(id);
+				Volt::Entity oldParent = child.GetParent();
 
 				Ref<ParentChildData> data = CreateRef<ParentChildData>();
 				data->myParent = newParent;
@@ -638,11 +646,19 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 
 				newParent.AddChild(child);
 
-				EditorUtils::MarkEntityAsEdited(*m_scene, child);
-				EditorUtils::MarkEntityAsEdited(*m_scene, newParent);
+				//oldParent, newParent and child all get changes to their relationship components
+				if (oldParent)
+				{
+					EditorUtils::MarkEntityComponentAsEdited(*m_scene, oldParent, Volt::GetTypeGUID<Volt::RelationshipComponent>());
+				}
+				EditorUtils::MarkEntityComponentAsEdited(*m_scene, child, Volt::GetTypeGUID<Volt::RelationshipComponent>());
+				EditorUtils::MarkEntityComponentAsEdited(*m_scene, newParent, Volt::GetTypeGUID<Volt::RelationshipComponent>());
+
+				//the entity that got a new parent got it's transform edited, thus causing all it's childrens' transforms to get edited
+				EditorUtils::MarkEntityAndChildrenComponentAsEdited(*m_scene, child, Volt::GetTypeGUID<Volt::TransformComponent>());
 			}
 
-			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(undoData, ParentingAction::Parent);
+			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(undoData, ParentingAction::Parent,*m_scene);
 			EditorCommandStack::PushUndo(command);
 		}
 
@@ -781,7 +797,7 @@ void SceneViewPanel::DrawEntity(Volt::Entity entity, const std::string& filter)
 						recursiveSetVisible(e, visible, recursiveSetVisible);
 					}
 
-					EditorUtils::MarkEntityAsEdited(*scene, entity);
+					EditorUtils::MarkEntityComponentAsEdited(*scene, entity, Volt::GetTypeGUID<Volt::TransformComponent>());
 					return false;
 				};
 
@@ -1046,6 +1062,8 @@ void SceneViewPanel::DrawMainRightClickPopup()
 			EditorCommandStack::GetInstance().PushUndo(command);
 			SelectionManager::DeselectAll();
 			SelectionManager::Select(ent.GetID());
+
+			EditorUtils::MarkEntityAsEdited(*m_scene, ent);
 		};
 		if (ImGui::MenuItem(VT_ICON_FA_PLUS " Create Empty Entity"))
 		{

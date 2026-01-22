@@ -36,6 +36,10 @@ public:
 
 	static void MarkEntityAsEdited(const Volt::Scene& scene, const Volt::Entity& entity);
 	static void MarkEntityAndChildrenAsEdited(const Volt::Scene& scene, const Volt::Entity& entity);
+
+	static void MarkEntityComponentAsEdited(const Volt::Scene& scene, const Volt::Entity& entity, const VoltGUID& componentGUID);
+	static void MarkEntityAndChildrenComponentAsEdited(const Volt::Scene& scene, const Volt::Entity& entity, const VoltGUID& componentGUID);
+
 	static void DestroyEntity(Volt::Scene& scene, const Volt::Entity& entity);
 	static void DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>& entities);
 

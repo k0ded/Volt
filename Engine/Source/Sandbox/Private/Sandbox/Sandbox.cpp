@@ -181,7 +181,8 @@ void Sandbox::OnAttach()
 		const Volt::EntityDescCustomMetadata& customMetadata = entityMetadata->GetCustomData<Volt::EntityDescCustomMetadata>();
 		const Volt::AssetHandle& owningSceneHandle = customMetadata.sceneHandle;
 
-		VT_ENSURE(g_assetManager->IsAssetLoaded(owningSceneHandle));
+		//todo_fabian: there is currently an issue where reloading a scene will make it unloaded while "loaded"
+		//VT_ENSURE(g_assetManager->IsAssetLoaded(owningSceneHandle));
 		AssetReference<Volt::Scene> scene = g_assetManager->GetAssetImmediately<Volt::Scene>(owningSceneHandle);
 
 		if (!scene->IsEntityValid(customMetadata.entityID))

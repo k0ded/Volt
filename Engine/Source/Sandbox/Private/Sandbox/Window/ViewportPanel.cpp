@@ -165,7 +165,7 @@ void ViewportPanel::UpdateMainContent()
 				for (const auto& entId : SelectionManager::GetSelectedEntities())
 				{
 					auto entity = m_editorScene->GetEntityFromID(entId);
-					EditorUtils::MarkEntityAndChildrenAsEdited(*m_editorScene, entity);
+					EditorUtils::MarkEntityAndChildrenComponentAsEdited(*m_editorScene, entity, Volt::GetTypeGUID<Volt::TransformComponent>());
 				}
 			}
 

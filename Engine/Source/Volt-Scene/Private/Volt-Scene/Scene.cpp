@@ -143,6 +143,9 @@ namespace Volt
 			return;
 		}
 		VT_PROFILE_MESSAGE("START LOADING ENTITIES");
+
+		bool apa =  m_entityScene.IsEntityValid(EntityID::Null());
+		apa;
 		JobRef job = JobSystem::CreateJob("Register Entities", ExecutionPriority::Latent, [this]()
 		{
 			//collect all entity descriptions to spawn
@@ -174,7 +177,7 @@ namespace Volt
 				}
 			});
 
-			using EntitySerializationDataMap = Map<EntityID, const EntityDescSerialization::SerializationData*>;
+			using EntityComponentDataMap = Map<EntityID, const EntityDescSerialization::ComponentData*>;
 			using ComponentTypeToOwningEntitiesMap = Map<VoltGUID, Vector<EntityID>>;
 			using EntityToComponentTypesMap = Map<EntityID, Vector<VoltGUID>>;
 
@@ -184,7 +187,7 @@ namespace Volt
 
 			struct EntitySerializationTaskGraphData
 			{
-				EntitySerializationDataMap entitySerializationData;
+				EntityComponentDataMap entityComponentDataMap;
 				EntityToComponentTypesMap entityToComponentTypes;
 				ComponentTypeToOwningEntitiesMap componentTypeToOwningEntities;
 				Vector<AssetReference<EntityDesc>> loadedEntityDescs;
@@ -193,7 +196,7 @@ namespace Volt
 			EntitySerializationTaskGraphData* taskGraphData = new EntitySerializationTaskGraphData;
 
 			//keep track of all the parsed yamlReaders
-			taskGraphData->entitySerializationData.reserve(m_entityIDToDescHandle.size());
+			taskGraphData->entityComponentDataMap.reserve(m_entityIDToDescHandle.size());
 
 			//keep track of what components each entity needs
 			taskGraphData->entityToComponentTypes.reserve(m_entityIDToDescHandle.size());
@@ -204,7 +207,7 @@ namespace Volt
 			for (uint32_t index = 0; const auto& [entityID, descHandle] : m_entityIDToDescHandle)
 			{
 				//create the reader for this entity
-				taskGraphData->entitySerializationData.insert({ entityID, nullptr });
+				taskGraphData->entityComponentDataMap.insert({ entityID, nullptr });
 
 				//create the entry for this entity
 				taskGraphData->entityToComponentTypes.insert({ entityID,  {} });
@@ -216,9 +219,9 @@ namespace Volt
 					{
 						taskGraphData->loadedEntityDescs[index] = entityDesc;
 
-						taskGraphData->entitySerializationData.at(entityID) = &entityDesc->GetSerializationData();
+						taskGraphData->entityComponentDataMap.at(entityID) = &entityDesc->GetComponentData();
 
-						for (const EntityDescSerialization::ComponentHeader& componentHeader : entityDesc->GetSerializationData().componentHeaders)
+						for (const EntityDescSerialization::ComponentHeader& componentHeader : entityDesc->GetComponentData().headers)
 						{
 							taskGraphData->entityToComponentTypes.at(entityID).emplace_back(componentHeader.componentGUID);
 						}
@@ -232,7 +235,6 @@ namespace Volt
 			//arrange component types to map from type to entityIDs to quickly create them concurrently later
 			TaskGraph::Task* arrangeComponentsToEntityIDTask = taskGraph.AddTaskWithDependencies("Arrange Components To EntityIDs", parseEntityDescTasks, [taskGraphData]()
 			{
-				VT_LOG(Warning, "Arranging components to entityIDs");
 				for (const auto& [entityID, componentTypes] : taskGraphData->entityToComponentTypes)
 				{
 					for (VoltGUID componentType : componentTypes)
@@ -245,8 +247,6 @@ namespace Volt
 			//new task graph to be able to create a separate task per component type
 			taskGraph.AddTaskWithDependencies("Launch Component Creation and Serialization Jobs", { arrangeComponentsToEntityIDTask, createEntitiesTask }, [this, taskGraphData]()
 			{
-				VT_LOG(Warning, "Launch Component Creation and Serialization Jobs");
-
 				TaskGraph componentTaskGraph{ ExecutionPriority::Latent };
 
 				//create all components
@@ -273,10 +273,13 @@ namespace Volt
 				{
 					for (const auto& [entityID, componentTypes] : taskGraphData->entityToComponentTypes)
 					{
-						const EntityDescSerialization::SerializationData* serializationData = taskGraphData->entitySerializationData.at(entityID);
+						const EntityDescSerialization::ComponentData* componentData = taskGraphData->entityComponentDataMap.at(entityID);
 
 						Volt::Entity entity = m_entityScene.GetEntityFromID(entityID);
-						EntityDescSerialization::DeserializeEntity(entity, const_cast<EntityDescSerialization::SerializationData&>(*serializationData));
+						//since the component data doesnt have the entity ID we have to set it manually here
+						entity.GetComponent<IDComponent>().id = entityID;
+
+						EntityDescSerialization::ApplyComponentData(entity, const_cast<EntityDescSerialization::ComponentData&>(*componentData));
 					}
 				});
 
@@ -350,19 +353,6 @@ namespace Volt
 		VT_ENSURE(newEntity);
 
 		m_entityIDToDescHandle.emplace(id, existingEntityDescHandle);
-		m_sceneExtensionManager.OnEntityCreated(newEntity);
-
-		return newEntity;
-	}
-
-	Entity Scene::AddEntityToScene(AssetReference<EntityDesc> entityDescription)
-	{
-		Entity newEntity = m_entityScene.CreateEntityWithID(entityDescription->GetEntityID());
-		VT_ENSURE(newEntity);
-
-		m_entityIDToDescHandle.emplace(newEntity.GetID(), entityDescription->GetAssetHandle());
-		entityDescription->AssignOwnerScene(AssetReference<Scene>(RefPtr<Scene>::Attach(this)));
-		
 		m_sceneExtensionManager.OnEntityCreated(newEntity);
 
 		return newEntity;

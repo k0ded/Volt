@@ -22,19 +22,21 @@ namespace Volt
 		void OnPreSave(CustomAssetMetadata& customMetadata) override;
 		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
-		const Buffer& GetEntitySpawnData() const { return m_entitySpawnData; }
-
-		VT_INLINE const EntityDescSerialization::SerializationData& GetSerializationData() const { return m_entitySerializationData; }
+		VT_INLINE const EntityDescSerialization::ComponentData& GetComponentData() const { return m_componentData; }
 		VT_INLINE AssetHandle GetSceneHandle() const { return m_sceneHandle; }
 		VT_INLINE EntityID GetEntityID() const { return m_entityID; }
-		VT_INLINE void AssignOwnerScene(AssetReference<Scene> ownerScene) { m_ownerScene = ownerScene; }
+
+		// update the component data 
+		// if the owning scene is not loaded or does not contain the entity, this will return false and do nothing
+		bool UpdateComponentData();
+		// update the component data accordingly for the specified component
+		// if the owning scene is not loaded or does not contain the entity, this will return false and do nothing
+		bool UpdateComponentData(VoltGUID changedComponent);
 
 	private:
 		AssetHandle m_sceneHandle = 0;
 		EntityID m_entityID = 0;
 
-		EntityDescSerialization::SerializationData m_entitySerializationData;
-		AssetReference<Scene> m_ownerScene;
-		Buffer m_entitySpawnData;
+		EntityDescSerialization::ComponentData m_componentData;
 	};
 }

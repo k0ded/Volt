@@ -8,11 +8,10 @@ MemoryWriter::MemoryWriter()
 {}
 
 MemoryWriter::MemoryWriter(const MemoryWriter& other)
-	: Archive(false), 
+	: Archive(false),
 	m_isOpen(other.m_isOpen),
 	m_allocator(other.m_allocator)
-{
-}
+{}
 
 MemoryWriter& MemoryWriter::operator=(const MemoryWriter& other)
 {
@@ -218,4 +217,168 @@ void MemoryReader::Parse(const void* srcData, size_t srcSize)
 
 	// Make sure all Seek calls gets the correct positions.
 	SetBasePosition(m_readPointer);
+}
+
+VersionlessMemoryWriterExternal::VersionlessMemoryWriterExternal(Vector<uint8_t>& targetBytes)
+	: Archive(false),
+	m_bytes(targetBytes),
+	m_isOpen(true)
+{}
+
+VersionlessMemoryWriterExternal::VersionlessMemoryWriterExternal(const VersionlessMemoryWriterExternal& other)
+	: Archive(false),
+	m_bytes(other.m_bytes),
+	m_isOpen(other.m_isOpen)
+{}
+
+void VersionlessMemoryWriterExternal::SerializeBytes(void* value, size_t size)
+{
+	size_t offset = m_bytes.size();
+	m_bytes.resize_uninitialized(offset + size);
+
+	memcpy_s(&m_bytes[offset], size, value, size);
+}
+
+void VersionlessMemoryWriterExternal::Reserve(size_t numBytes)
+{
+	m_bytes.reserve(numBytes);
+}
+
+void VersionlessMemoryWriterExternal::Seek(size_t position)
+{
+	VT_ENSURE(false);
+}
+
+void VersionlessMemoryWriterExternal::SetBasePosition(size_t position)
+{
+	VT_ENSURE(false);
+}
+
+void VersionlessMemoryWriterExternal::Close()
+{
+	m_isOpen = false;
+}
+
+void VersionlessMemoryWriterExternal::Serialize(Archive& archive)
+{
+	VT_ENSURE_MSG(!m_isOpen, "Archive must be closed to be serialized!");
+
+	size_t size = GetSize();
+	archive << size;
+
+	if (size > 0)
+	{
+		archive.SerializeBytes(GetData(), size);
+	}
+}
+
+size_t VersionlessMemoryWriterExternal::GetHeadLocation() const
+{
+	return m_bytes.size();
+}
+
+size_t VersionlessMemoryWriterExternal::GetSize() const
+{
+	return m_bytes.size();
+}
+
+const void* VersionlessMemoryWriterExternal::GetData() const
+{
+	VT_ENSURE_MSG(!m_isOpen, "Archive must be closed before it can be accessed!");
+	return m_bytes.data();
+}
+
+void* VersionlessMemoryWriterExternal::GetData()
+{
+	VT_ENSURE_MSG(!m_isOpen, "Archive must be closed before it can be accessed!");
+	return m_bytes.data();
+}
+
+bool VersionlessMemoryWriterExternal::IsClosed() const
+{
+	return !m_isOpen;
+}
+
+VersionlessMemoryReaderExternal::VersionlessMemoryReaderExternal(Vector<uint8_t>& targetBytes)
+	: Archive(true),
+	m_bytes(targetBytes)
+{}
+
+VersionlessMemoryReaderExternal::VersionlessMemoryReaderExternal(const VersionlessMemoryReaderExternal& other)
+	: Archive(true),
+	m_bytes(other.m_bytes)
+{}
+
+void VersionlessMemoryReaderExternal::SerializeBytes(void* value, size_t size)
+{
+	VT_ENSURE(m_readPointer + size <= m_bytes.size());
+
+	memcpy_s(value, size, &m_bytes[m_readPointer], size);
+	m_readPointer += size;
+}
+
+void VersionlessMemoryReaderExternal::Reserve(size_t numBytes)
+{
+	m_bytes.resize_uninitialized(numBytes);
+}
+
+void VersionlessMemoryReaderExternal::Seek(size_t position)
+{
+	VT_ENSURE(position < m_bytes.size());
+	m_readPointer = position;
+}
+
+void VersionlessMemoryReaderExternal::SetBasePosition(size_t position)
+{
+	VT_ENSURE(false);
+}
+
+void VersionlessMemoryReaderExternal::Close()
+{}
+
+void VersionlessMemoryReaderExternal::Serialize(Archive& archive)
+{
+	size_t size = m_bytes.size();
+	archive << size;
+
+	if (archive.IsLoading())
+	{
+		m_bytes.resize_uninitialized(size);
+	}
+
+	if (size > 0)
+	{
+		archive.SerializeBytes(GetData(), size);
+	}
+}
+
+size_t VersionlessMemoryReaderExternal::GetHeadLocation() const
+{
+	return m_readPointer;
+}
+
+size_t VersionlessMemoryReaderExternal::GetSize() const
+{
+	return m_bytes.size();
+}
+
+const void* VersionlessMemoryReaderExternal::GetData() const
+{
+	return m_bytes.data();
+}
+
+void* VersionlessMemoryReaderExternal::GetData()
+{
+	return m_bytes.data();
+}
+
+bool VersionlessMemoryReaderExternal::IsClosed() const
+{
+	return true;
+}
+
+void VersionlessMemoryReaderExternal::Parse(const void* srcData, size_t srcSize)
+{
+	m_bytes.resize_uninitialized(srcSize);
+	memcpy_s(m_bytes.data(), srcSize, srcData, srcSize);
 }

@@ -10,6 +10,7 @@
 
 #include <stack>
 #include "EditorCommand.h"
+#include "Sandbox/Utility/EditorUtilities.h"
 
 
 #include <tuple>
@@ -33,26 +34,37 @@ private:
 template<typename T>
 struct ValueCommand : EditorCommand
 {
-	ValueCommand(T* aValueAdress, T aPreviousValue) : myValueAdress(aValueAdress), myPreviousValue(aPreviousValue) {}
+	ValueCommand(T* aValueAdress, T aPreviousValue, Volt::Scene& targetScene, Volt::EntityID targetEntityID)
+		: myValueAdress(aValueAdress), myPreviousValue(aPreviousValue), m_targetScene(targetScene), m_targetEntityID(targetEntityID)
+	{}
 	void Execute() override {}
 
 	void Undo() override
 	{
-		Ref<ValueCommand<T>> command = CreateRef<ValueCommand<T>>(myValueAdress, *myValueAdress);
+		Ref<ValueCommand<T>> command = CreateRef<ValueCommand<T>>(myValueAdress, *myValueAdress, m_targetScene, m_targetEntityID);
 		EditorCommandStack::GetInstance().PushRedo(command);
 		*myValueAdress = myPreviousValue;
+
+		Volt::Entity entity = m_targetScene.GetEntityFromID(m_targetEntityID);
+		EditorUtils::MarkEntityAsEdited(m_targetScene, entity);
 	}
 
 	void Redo() override
 	{
-		Ref<ValueCommand<T>> command = CreateRef<ValueCommand<T>>(myValueAdress, *myValueAdress);
+		Ref<ValueCommand<T>> command = CreateRef<ValueCommand<T>>(myValueAdress, *myValueAdress, m_targetScene, m_targetEntityID);
 		EditorCommandStack::GetInstance().PushUndo(command, true);
 		*myValueAdress = myPreviousValue;
+
+		Volt::Entity entity = m_targetScene.GetEntityFromID(m_targetEntityID);
+		EditorUtils::MarkEntityAsEdited(m_targetScene, entity);
 	}
 
 private:
 	T* myValueAdress;
 	const T myPreviousValue;
+
+	Volt::EntityID m_targetEntityID;
+	Volt::Scene& m_targetScene;
 };
 
 struct GizmoCommand : EditorCommand
@@ -104,6 +116,7 @@ struct GizmoCommand : EditorCommand
 		if (myScene)
 		{
 			myScene->InvalidateEntityTransform(myID);
+			EditorUtils::MarkEntityAndChildrenComponentAsEdited(*myScene, myScene->GetEntityFromID(myID), Volt::GetTypeGUID<Volt::TransformComponent>());
 		}
 	}
 
@@ -129,6 +142,7 @@ struct GizmoCommand : EditorCommand
 		if (myScene)
 		{
 			myScene->InvalidateEntityTransform(myID);
+			EditorUtils::MarkEntityAndChildrenComponentAsEdited(*myScene, myScene->GetEntityFromID(myID), Volt::GetTypeGUID<Volt::TransformComponent>());
 		}
 	}
 
@@ -171,6 +185,7 @@ struct MultiGizmoCommand : EditorCommand
 			entity.GetComponent<Volt::TransformComponent>() = oldComp;
 
 			scenePtr->InvalidateEntityTransform(entity.GetID());
+			EditorUtils::MarkEntityAndChildrenComponentAsEdited(*myScene, myScene->GetEntityFromID(id), Volt::GetTypeGUID<Volt::TransformComponent>());
 		}
 
 		Ref<MultiGizmoCommand> command = CreateRef<MultiGizmoCommand>(myScene, currentTransforms);
@@ -196,6 +211,7 @@ struct MultiGizmoCommand : EditorCommand
 			entity.GetComponent<Volt::TransformComponent>() = oldComp;
 
 			scenePtr->InvalidateEntityTransform(entity.GetID());
+			EditorUtils::MarkEntityAndChildrenComponentAsEdited(*myScene, myScene->GetEntityFromID(id), Volt::GetTypeGUID<Volt::TransformComponent>());
 		}
 
 		Ref<MultiGizmoCommand> command = CreateRef<MultiGizmoCommand>(myScene, currentTransforms);
@@ -289,6 +305,7 @@ private:
 			{
 				Volt::Entity entity = m_targetScene.GetEntityFromID(id);
 				m_targetScene.DestroyEntity(entity, true);
+				EditorUtils::MarkEntityAsEdited(m_targetScene, entity);
 			}
 		}
 		else if (m_Action == ObjectStateAction::Delete)
@@ -348,6 +365,8 @@ private:
 
 			//since we manually deserialize these entities in place, we have to initialize their components manually aswell
 			entity.InitializeComponents();
+
+			EditorUtils::MarkEntityAsEdited(m_targetScene, entity);
 		}
 
 
@@ -377,8 +396,8 @@ struct ParentChildData
 
 struct ParentingCommand : EditorCommand
 {
-	ParentingCommand(Vector<Ref<ParentChildData>> aData, ParentingAction anAction) :
-		myData(aData), myAction(anAction)
+	ParentingCommand(Vector<Ref<ParentChildData>> aData, ParentingAction anAction, Volt::Scene& targetScene) :
+		myData(aData), myAction(anAction), m_targetScene(targetScene)
 	{}
 
 	void Execute() override
@@ -388,22 +407,28 @@ struct ParentingCommand : EditorCommand
 	{
 		if (myAction == ParentingAction::Parent)
 		{
-			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(myData, ParentingAction::Unparent);
+			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(myData, ParentingAction::Unparent, m_targetScene);
 			EditorCommandStack::PushRedo(command);
 
 			for (int i = 0; i < myData.size(); i++)
 			{
 				myData[i]->myChild.UnparentEntity();
+				EditorUtils::MarkEntityAndChildrenComponentAsEdited(m_targetScene, myData[i]->myChild, Volt::GetTypeGUID<Volt::TransformComponent>());
+				EditorUtils::MarkEntityComponentAsEdited(m_targetScene, myData[i]->myChild, Volt::GetTypeGUID<Volt::RelationshipComponent>());
+				EditorUtils::MarkEntityComponentAsEdited(m_targetScene, myData[i]->myParent, Volt::GetTypeGUID<Volt::RelationshipComponent>());
 			}
 		}
 		else if (myAction == ParentingAction::Unparent)
 		{
-			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(myData, ParentingAction::Parent);
+			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(myData, ParentingAction::Parent, m_targetScene);
 			EditorCommandStack::PushRedo(command);
 
 			for (int i = 0; i < myData.size(); i++)
 			{
 				myData[i]->myChild.SetParent(myData[i]->myParent);
+				EditorUtils::MarkEntityAndChildrenComponentAsEdited(m_targetScene, myData[i]->myChild, Volt::GetTypeGUID<Volt::TransformComponent>());
+				EditorUtils::MarkEntityComponentAsEdited(m_targetScene, myData[i]->myChild, Volt::GetTypeGUID<Volt::RelationshipComponent>());
+				EditorUtils::MarkEntityComponentAsEdited(m_targetScene, myData[i]->myParent, Volt::GetTypeGUID<Volt::RelationshipComponent>());
 			}
 		}
 	}
@@ -412,22 +437,28 @@ struct ParentingCommand : EditorCommand
 	{
 		if (myAction == ParentingAction::Parent)
 		{
-			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(myData, ParentingAction::Unparent);
+			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(myData, ParentingAction::Unparent, m_targetScene);
 			EditorCommandStack::PushUndo(command, true);
 
 			for (int i = 0; i < myData.size(); i++)
 			{
 				myData[i]->myChild.UnparentEntity();
+				EditorUtils::MarkEntityAndChildrenComponentAsEdited(m_targetScene, myData[i]->myChild, Volt::GetTypeGUID<Volt::TransformComponent>());
+				EditorUtils::MarkEntityComponentAsEdited(m_targetScene, myData[i]->myChild, Volt::GetTypeGUID<Volt::RelationshipComponent>());
+				EditorUtils::MarkEntityComponentAsEdited(m_targetScene, myData[i]->myParent, Volt::GetTypeGUID<Volt::RelationshipComponent>());
 			}
 		}
 		else if (myAction == ParentingAction::Unparent)
 		{
-			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(myData, ParentingAction::Parent);
+			Ref<ParentingCommand> command = CreateRef<ParentingCommand>(myData, ParentingAction::Parent, m_targetScene);
 			EditorCommandStack::PushUndo(command, true);
 
 			for (int i = 0; i < myData.size(); i++)
 			{
 				myData[i]->myChild.SetParent(myData[i]->myParent);
+				EditorUtils::MarkEntityAndChildrenComponentAsEdited(m_targetScene, myData[i]->myChild, Volt::GetTypeGUID<Volt::TransformComponent>());
+				EditorUtils::MarkEntityComponentAsEdited(m_targetScene, myData[i]->myChild, Volt::GetTypeGUID<Volt::RelationshipComponent>());
+				EditorUtils::MarkEntityComponentAsEdited(m_targetScene, myData[i]->myParent, Volt::GetTypeGUID<Volt::RelationshipComponent>());
 			}
 		}
 	}
@@ -435,4 +466,112 @@ struct ParentingCommand : EditorCommand
 private:
 	Vector<Ref<ParentChildData>> myData;
 	ParentingAction myAction;
+	Volt::Scene& m_targetScene;
+};
+
+enum class AddOrRemoveComponentAction : uint8_t
+{
+	Add,
+	Remove,
+};
+struct AddOrRemoveComponentCommand : EditorCommand
+{
+	AddOrRemoveComponentCommand(VoltGUID componentGuid, AddOrRemoveComponentAction action, Volt::Scene& targetScene, Volt::Entity targetEntity) :
+		m_componentGuid(componentGuid), m_action(action), m_targetScene(targetScene), m_targetEntity(targetEntity)
+	{
+		if (m_action == AddOrRemoveComponentAction::Remove)
+		{
+			VT_ENSURE(m_targetEntity.HasComponent(m_componentGuid));
+
+			//todo_fabian: maybe a bit wasteful to gather whole entity, but just make it work for now
+			Volt::EntityDescSerialization::ComponentData data;
+			Volt::EntityDescSerialization::GatherComponentData(m_targetEntity, data);
+
+			for (Volt::EntityDescSerialization::ComponentHeader& header : data.headers)
+			{
+				if (header.componentGUID != m_componentGuid)
+				{
+					continue;
+				}
+
+				uint8_t* const startComponentDataPtr = data.data.data() + header.componentDataOffset;
+				m_removedComponentData.resize_uninitialized(header.componentDataSize);
+				memcpy_s(m_removedComponentData.data(), m_removedComponentData.size(), startComponentDataPtr, header.componentDataSize);
+			}
+		}	
+	}
+
+
+	void Execute() override
+	{}
+
+	void Undo() override
+	{
+		if (m_action == AddOrRemoveComponentAction::Add)
+		{
+			Ref<AddOrRemoveComponentCommand> command = CreateRef<AddOrRemoveComponentCommand>(m_componentGuid, AddOrRemoveComponentAction::Remove, m_targetScene, m_targetEntity);
+			EditorCommandStack::PushRedo(command);
+
+			RemoveComponent();
+		}
+		else if (m_action == AddOrRemoveComponentAction::Remove)
+		{
+			Ref<AddOrRemoveComponentCommand> command = CreateRef<AddOrRemoveComponentCommand>(m_componentGuid, AddOrRemoveComponentAction::Add, m_targetScene, m_targetEntity);
+			EditorCommandStack::PushRedo(command);
+
+			AddComponent();
+		}
+	}
+
+	void Redo() override
+	{
+		if (m_action == AddOrRemoveComponentAction::Add)
+		{
+			Ref<AddOrRemoveComponentCommand> command = CreateRef<AddOrRemoveComponentCommand>(m_componentGuid, AddOrRemoveComponentAction::Remove, m_targetScene, m_targetEntity);
+			EditorCommandStack::PushUndo(command, true);
+
+			RemoveComponent();
+		}
+		else if (m_action == AddOrRemoveComponentAction::Remove)
+		{
+			Ref<AddOrRemoveComponentCommand> command = CreateRef<AddOrRemoveComponentCommand>(m_componentGuid, AddOrRemoveComponentAction::Add, m_targetScene, m_targetEntity);
+			EditorCommandStack::PushUndo(command, true);
+
+			AddComponent();
+		}
+	}
+
+private:
+
+	void AddComponent()
+	{
+		if (!Volt::ComponentRegistry::Helpers::HasComponentWithGUID(m_componentGuid, m_targetScene.GetEntityScene().GetRegistry(), m_targetEntity))
+		{
+			Volt::ComponentRegistry::Helpers::AddComponentWithGUID(m_componentGuid, m_targetScene.GetEntityScene().GetRegistry(), m_targetEntity);
+
+			const Volt::IComponentTypeDesc* componentTypeDesc = reinterpret_cast<const Volt::IComponentTypeDesc*>(Volt::ComponentRegistry::Get().GetTypeDescFromGUID(m_componentGuid));
+			if (componentTypeDesc)
+			{
+				componentTypeDesc->OnInitialize(m_targetEntity);
+				EditorUtils::MarkEntityComponentAsEdited(m_targetScene, m_targetEntity, componentTypeDesc->GetGUID());
+			}
+		}
+	}
+
+	void RemoveComponent()
+	{
+		if (Volt::ComponentRegistry::Helpers::HasComponentWithGUID(m_componentGuid, m_targetScene.GetEntityScene().GetRegistry(), m_targetEntity))
+		{
+			Volt::ComponentRegistry::Helpers::RemoveComponentWithGUID(m_componentGuid, m_targetScene.GetEntityScene().GetRegistry(), m_targetEntity);
+			EditorUtils::MarkEntityComponentAsEdited(m_targetScene, m_targetEntity, m_componentGuid);
+		}
+	}
+
+	Vector<uint8_t> m_removedComponentData;
+	VoltGUID m_componentGuid;
+	AddOrRemoveComponentAction m_action;
+	Volt::Scene& m_targetScene;
+	Volt::Entity m_targetEntity;
+
+	
 };

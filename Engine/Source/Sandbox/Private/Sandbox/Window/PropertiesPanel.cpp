@@ -55,7 +55,7 @@ void PropertiesPanel::UpdateMainContent()
 			auto& tag = firstEntity.GetComponent<Volt::TagComponent>();
 			if (UI::InputText("Name", tag.tag))
 			{
-				EditorUtils::MarkEntityAsEdited(*myCurrentScene, firstEntity);
+				EditorUtils::MarkEntityComponentAsEdited(*myCurrentScene, firstEntity, Volt::GetTypeGUID<Volt::TagComponent>());
 			}
 		}
 	}
@@ -105,7 +105,7 @@ void PropertiesPanel::UpdateMainContent()
 				if (entity.HasComponent<Volt::TagComponent>())
 				{
 					entity.GetComponent<Volt::TagComponent>().tag = inputText;
-					EditorUtils::MarkEntityAsEdited(*myCurrentScene, entity);
+					EditorUtils::MarkEntityComponentAsEdited(*myCurrentScene, firstEntity, Volt::GetTypeGUID<Volt::TagComponent>());
 				}
 			}
 		}
@@ -128,7 +128,7 @@ void PropertiesPanel::UpdateMainContent()
 				{
 					if (myMidEvent == false)
 					{
-						Ref<ValueCommand<glm::vec3>> command = CreateRef<ValueCommand<glm::vec3>>(&transform.position, transform.position);
+						Ref<ValueCommand<glm::vec3>> command = CreateRef<ValueCommand<glm::vec3>>(&transform.position, transform.position, *myCurrentScene, entityId);
 						EditorCommandStack::PushUndo(command);
 						myMidEvent = true;
 					}
@@ -139,7 +139,7 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalPosition(transform.position);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAndChildrenAsEdited(*myCurrentScene, ent);
+						EditorUtils::MarkEntityAndChildrenComponentAsEdited(*myCurrentScene, ent, Volt::GetTypeGUID<Volt::TransformComponent>());
 					}
 				}
 
@@ -152,7 +152,7 @@ void PropertiesPanel::UpdateMainContent()
 
 					if (myMidEvent == false)
 					{
-						Ref<ValueCommand<glm::quat>> command = CreateRef<ValueCommand<glm::quat>>(&transform.rotation, transform.rotation);
+						Ref<ValueCommand<glm::quat>> command = CreateRef<ValueCommand<glm::quat>>(&transform.rotation, transform.rotation, *myCurrentScene, entityId);
 						EditorCommandStack::PushUndo(command);
 						myMidEvent = true;
 					}
@@ -163,7 +163,7 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalRotation(transform.rotation);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAsEdited(*myCurrentScene, ent);
+						EditorUtils::MarkEntityAndChildrenComponentAsEdited(*myCurrentScene, ent, Volt::GetTypeGUID<Volt::TransformComponent>());
 					}
 				}
 
@@ -171,7 +171,7 @@ void PropertiesPanel::UpdateMainContent()
 				{
 					if (myMidEvent == false)
 					{
-						Ref<ValueCommand<glm::vec3>> command = CreateRef<ValueCommand<glm::vec3>>(&transform.scale, transform.scale);
+						Ref<ValueCommand<glm::vec3>> command = CreateRef<ValueCommand<glm::vec3>>(&transform.scale, transform.scale, *myCurrentScene, entityId);
 						EditorCommandStack::PushUndo(command);
 						myMidEvent = true;
 					}
@@ -182,7 +182,7 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalScale(transform.scale);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAsEdited(*myCurrentScene, ent);
+						EditorUtils::MarkEntityAndChildrenComponentAsEdited(*myCurrentScene, ent, Volt::GetTypeGUID<Volt::TransformComponent>());
 					}
 				}
 			}
@@ -288,10 +288,11 @@ void PropertiesPanel::AddComponentPopup()
 								if (componentTypeDesc)
 								{
 									componentTypeDesc->OnInitialize(entity);
+									EditorUtils::MarkEntityComponentAsEdited(*myCurrentScene, entity, componentTypeDesc->GetGUID());
 								}
-
-								EditorUtils::MarkEntityAsEdited(*myCurrentScene, entity);
 							}
+							Ref<AddOrRemoveComponentCommand> command = CreateRef<AddOrRemoveComponentCommand>(compGuid, AddOrRemoveComponentAction::Add, *myCurrentScene, entity);
+							EditorCommandStack::PushUndo(command);
 						}
 
 						ImGui::CloseCurrentPopup();

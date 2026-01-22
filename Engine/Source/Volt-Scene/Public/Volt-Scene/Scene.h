@@ -93,7 +93,6 @@ namespace Volt
 		Entity CreateEntity(const std::string& tag = "");
 		Entity CreateEntityWithID(const EntityID& id);
 		Entity CreateEntityWithIDForExistingDescription(const EntityID& id, Volt::AssetHandle existingEntityDescHandle);
-		Entity AddEntityToScene(AssetReference<EntityDesc> entityDescription);
 
 		Volt::AssetHandle CreateEntityDescForEntity(const EntityID& id);
 

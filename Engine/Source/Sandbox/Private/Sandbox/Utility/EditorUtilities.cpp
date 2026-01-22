@@ -28,6 +28,7 @@
 #include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 bool EditorUtils::Property(const std::string& text, Volt::AssetHandle& assetHandle, AssetType wantedType)
 {
@@ -257,17 +258,20 @@ std::string EditorUtils::GetDuplicatedNameFromEntity(const Volt::Entity& entity)
 
 void EditorUtils::MarkEntityAsEdited(const Volt::Scene& scene, const Volt::Entity& entity)
 {
+	VT_PROFILE_FUNCTION();
 	const Volt::AssetHandle descHandle = scene.GetEntityDescHandleFromEntityID(entity.GetID());
 
-	// Make sure the entity is loaded. Dirty Assets manager depends on the asset being loaded
 	AssetReference<Volt::EntityDesc> entityDesc = g_assetManager->GetAssetImmediately<Volt::EntityDesc>(descHandle);
 	VT_ENSURE(entityDesc.IsValid());
+	//need to update all the component data since its unclear what has been updated
+	entityDesc->UpdateComponentData();
 
 	DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
 }
 
 void EditorUtils::MarkEntityAndChildrenAsEdited(const Volt::Scene& scene, const Volt::Entity& entity)
 {
+	VT_PROFILE_FUNCTION();
 	MarkEntityAsEdited(scene, entity);
 
 	for (const auto& child : entity.GetChildren())
@@ -275,6 +279,32 @@ void EditorUtils::MarkEntityAndChildrenAsEdited(const Volt::Scene& scene, const 
 		MarkEntityAndChildrenAsEdited(scene, child);
 	}
 }
+
+void EditorUtils::MarkEntityComponentAsEdited(const Volt::Scene& scene, const Volt::Entity& entity, const VoltGUID& componentGUID)
+{
+	VT_PROFILE_FUNCTION();
+
+	const Volt::AssetHandle descHandle = scene.GetEntityDescHandleFromEntityID(entity.GetID());
+
+	AssetReference<Volt::EntityDesc> entityDesc = g_assetManager->GetAssetImmediately<Volt::EntityDesc>(descHandle);
+	VT_ENSURE(entityDesc.IsValid());
+
+	entityDesc->UpdateComponentData(componentGUID);
+
+	DirtyAssetsManager::Get().MarkAssetDirty(descHandle);
+}
+
+void EditorUtils::MarkEntityAndChildrenComponentAsEdited(const Volt::Scene& scene, const Volt::Entity& entity, const VoltGUID& componentGUID)
+{
+	VT_PROFILE_FUNCTION();
+	MarkEntityComponentAsEdited(scene, entity, componentGUID);
+
+	for (const auto& child : entity.GetChildren())
+	{
+		MarkEntityAndChildrenComponentAsEdited(scene, child, componentGUID);
+	}
+}
+
 
 void EditorUtils::DestroyEntity(Volt::Scene& scene, const Volt::Entity& entity)
 {

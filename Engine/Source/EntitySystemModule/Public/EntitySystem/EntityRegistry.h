@@ -14,6 +14,8 @@ namespace Volt
 	class EntityRegistry
 	{
 	public:
+		EntityRegistry() = default;
+		~EntityRegistry() = default;
 		void AddEntity(const EntityID& entityId, entt::entity entityHandle);
 		void RemoveEntity(const EntityID& entityId, entt::entity entityHandle);
 
