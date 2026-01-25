@@ -80,7 +80,7 @@ struct PrimitiveDrawData
     uint isAnimated;
     uint boneOffset;
     uint flags;
-    uint2 padding;
+    uint padding;
 };
 
 struct GPUMesh
@@ -90,6 +90,7 @@ struct GPUMesh
 
 	uint32_t vertexStartOffset;
 	uint32_t indexStartOffset;
+    float2 padding;
 	
 	// Ray Tracing
 	uint32_t RT_vertexPositionsBuffer;

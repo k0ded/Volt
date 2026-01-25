@@ -5,14 +5,6 @@
 
 namespace Volt
 {
-	struct OpaqueDefaultPixelPS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(OpaqueDefaultPixelPS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			RG_RENDER_TARGETS()
-		END_SHADER_PARAMETER_STRUCT()
-	};
-
 	struct FullscreenTriangleVS : public GlobalShader
 	{
 		DECLARE_GLOBAL_SHADER(FullscreenTriangleVS)

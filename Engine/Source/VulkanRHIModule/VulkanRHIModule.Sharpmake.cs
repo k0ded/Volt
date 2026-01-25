@@ -26,12 +26,12 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<GLFW>(target);
 			conf.AddPublicDependency<LogModule>(target);
 			conf.AddPublicDependency<imgui>(target);
+			conf.AddPublicDependency<SPIRV_Tools>(target);
 
 			conf.AddPrivateDependency<VulkanMemoryAllocator>(target);
 			conf.AddPrivateDependency<Aftermath>(target);
 			conf.AddPrivateDependency<DXC>(target);
 			conf.AddPrivateDependency<spirv_reflect>(target);
-			conf.AddPrivateDependency<SPIRV_Tools>(target);
 			conf.AddPrivateDependency<VoltPlatforms>(target);
 
 			string vulkanSDKPath = Path.Combine(Environment.GetEnvironmentVariable("VULKAN_SDK"), "Include");

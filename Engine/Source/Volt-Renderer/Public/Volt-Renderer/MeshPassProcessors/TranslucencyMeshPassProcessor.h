@@ -4,7 +4,7 @@
 
 namespace Volt
 {
-	class BasePassMeshProcessor : public MeshPassProcessor
+	class TranslucencyMeshPassProcessor : public MeshPassProcessor
 	{
 	public:
 		void AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive) override;

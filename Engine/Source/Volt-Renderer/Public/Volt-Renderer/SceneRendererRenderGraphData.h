@@ -30,6 +30,12 @@ namespace Volt
 		RGTextureRef white1x1;
 	};
 
+	struct TranslucencyTextures
+	{
+		RGTextureRef accumulation;
+		RGTextureRef revealage;
+	};
+
 	struct LightScene
 	{
 		RGBufferRef visibleLightIndices;

@@ -1,4 +1,4 @@
-// #NOTE: No pragma and absolute include, since this file will be inlined.
+// #NOTE: No pragma and absolute include path, since this file will be inlined.
 
 #include "Material/MaterialCommon.hlsli"
 #include "StaticSamplerStates.hlsli"

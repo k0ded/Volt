@@ -40,17 +40,17 @@ namespace Volt
 		static RefPtr<RHI::Shader> Get()
 		{
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
-			return s_instance->GetInternal(typeIndex, 0);
+			return s_instance->GetInternal(typeIndex, 0, false);
 		}
 
 		template<typename T>
 		static RefPtr<RHI::Shader> Get(const T::PermutationVector& permutationVector)
 		{
 			permutationVector.Validate();
-			const size_t permutationHash = permutationVector.GetHash();
+			const size_t permutationIndex = permutationVector.GetPermutationIndex();
 
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
-			RefPtr<RHI::Shader> shader = s_instance->GetInternal(typeIndex, permutationHash);
+			RefPtr<RHI::Shader> shader = s_instance->GetInternal(typeIndex, permutationIndex, true);
 		
 			if (!shader)
 			{
@@ -58,7 +58,7 @@ namespace Volt
 				RHI::ShaderPermutationConfig permutationConfig;
 				permutationVector.ResolvePermutations(permutationConfig);
 
-				shader = s_instance->CompileShaderPermutation(typeIndex, permutationHash, std::move(permutationConfig));
+				shader = s_instance->CompileShaderPermutation(typeIndex, permutationIndex, std::move(permutationConfig));
 			}
 
 			return shader;
@@ -66,7 +66,7 @@ namespace Volt
 
 		static RefPtr<RHI::Shader> Get(TypeTraits::TypeIndex typeIndex)
 		{
-			return s_instance->GetInternal(typeIndex, 0);
+			return s_instance->GetInternal(typeIndex, 0, false);
 		}
 
 	private:
@@ -80,8 +80,8 @@ namespace Volt
 		
 		inline static ShaderMap* s_instance = nullptr;
 
-		RefPtr<RHI::Shader> GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationHash);
-		RefPtr<RHI::Shader> CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationHash, RHI::ShaderPermutationConfig&& permutationConfig);
+		RefPtr<RHI::Shader> GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, bool hasPermutationDefined);
+		RefPtr<RHI::Shader> CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig);
 
 		Map<TypeTraits::TypeIndex, ShaderBucket> m_shaderMap;
 

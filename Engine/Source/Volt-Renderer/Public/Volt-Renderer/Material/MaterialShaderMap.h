@@ -18,12 +18,12 @@ namespace Volt
 		RefPtr<RHI::Shader> GetShader(const T::PermutationVector& permutationVector)
 		{
 			permutationVector.Validate();
-			const size_t permutationHash = permutationVector.GetHash();
+			const size_t permutationIndex = permutationVector.GetPermutationIndex();
 
 			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
 
 			bool isDefaultShader = false;
-			RefPtr<RHI::Shader> shader = GetShaderInternal(typeIndex, permutationHash, isDefaultShader);
+			RefPtr<RHI::Shader> shader = GetShaderInternal(typeIndex, permutationIndex, isDefaultShader);
 
 			// Try to compile the permutation if we got the default shader.
 			if (isDefaultShader)
@@ -33,7 +33,7 @@ namespace Volt
 					RHI::ShaderPermutationConfig permutationConfig;
 					permutationVector.ResolvePermutations(permutationConfig);
 
-					shader = CompileShaderPermutation(typeIndex, permutationHash, std::move(permutationConfig));
+					shader = CompileShaderPermutation(typeIndex, permutationIndex, std::move(permutationConfig));
 				}
 			}
 			VT_ENSURE(shader);
@@ -48,8 +48,8 @@ namespace Volt
 			RefPtr<RHI::Shader> defaultShader;
 		};
 
-		RefPtr<RHI::Shader> GetShaderInternal(TypeTraits::TypeIndex shaderType, size_t permutationHash, bool& isDefaultShader);
-		RefPtr<RHI::Shader> CompileShaderPermutation(TypeTraits::TypeIndex shaderType, size_t permutationHash, RHI::ShaderPermutationConfig&& permutationConfig);
+		RefPtr<RHI::Shader> GetShaderInternal(TypeTraits::TypeIndex shaderType, size_t permutationIndex, bool& isDefaultShader);
+		RefPtr<RHI::Shader> CompileShaderPermutation(TypeTraits::TypeIndex shaderType, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig);
 
 		Map<TypeTraits::TypeIndex, ShaderBucket> m_shaderMap;
 

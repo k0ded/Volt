@@ -1,12 +1,5 @@
 #include "ViewData.hlsli"
-
-struct VSToPS
-{
-    float4 position : SV_Position;
-    float4 currPosition : CURR_POSITION;
-    float4 prevPosition : PREV_POSITION;
-    float2 texCoords : TEXCOORD;
-};
+#include "DepthPrePassCommon.hlsli"
 
 struct PSOutput
 {
@@ -14,7 +7,7 @@ struct PSOutput
     [[vt::d32f]];
 };
 
-PSOutput MainPS(in VSToPS input)
+PSOutput MainPS(in DepthPrePassPixelShaderInput input)
 {
     float3 currentPosNDC = input.currPosition.xyz / input.currPosition.w;
     float3 previousPosNDC = input.prevPosition.xyz / input.prevPosition.w;

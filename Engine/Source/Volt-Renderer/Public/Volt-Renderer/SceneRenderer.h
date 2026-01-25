@@ -116,6 +116,8 @@ namespace Volt
 		void AddBasePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer, RGTextureRef indirectLightTexture);
+		void AddTranslucencyPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer);
+		void AddTranslucencyCompositePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
 		void AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture);
 		void AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture);
 		/////////////////////////
@@ -184,6 +186,7 @@ namespace Volt
 		class DepthPrePassMeshProcessor* m_depthPrePassMeshProcessor = nullptr;
 		class BasePassMeshProcessor* m_basePassMeshProcessor = nullptr;
 		class CascadedShadowMapMeshProcessor* m_cascadedShadowMapMeshProcessor = nullptr;
+		class TranslucencyMeshPassProcessor* m_translucencyMeshPassProcessor = nullptr;
 	};
 
 	template<typename T, typename... Args>

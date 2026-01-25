@@ -199,19 +199,19 @@ namespace Volt
 		return sbt;
 	}
 
-	RefPtr<RHI::Shader> ShaderMap::GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationHash)
+	RefPtr<RHI::Shader> ShaderMap::GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, bool hasPermutationDefined)
 	{
 		VT_ENSURE(m_shaderMap.contains(typeIndex));
 	
 		const ShaderBucket& shaderBucket = m_shaderMap.at(typeIndex);
 
-		VT_ENSURE_MSG((permutationHash == 0 && !shaderBucket.hasPermutations) || (permutationHash != 0 && shaderBucket.hasPermutations), "If shader has permutations, the permutation vector version must be used!");
-	
+		VT_ENSURE_MSG((!hasPermutationDefined && !shaderBucket.hasPermutations) || (hasPermutationDefined && shaderBucket.hasPermutations), "Shaders with permutations must get it using it's permutation vector!");
+
 		if (shaderBucket.hasPermutations)
 		{
-			if (shaderBucket.permutationMap.contains(permutationHash))
+			if (shaderBucket.permutationMap.contains(permutationIndex))
 			{
-				return shaderBucket.permutationMap.at(permutationHash);
+				return shaderBucket.permutationMap.at(permutationIndex);
 			}
 			else
 			{
@@ -224,7 +224,7 @@ namespace Volt
 		}
 	}
 
-	RefPtr<RHI::Shader> ShaderMap::CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationHash, RHI::ShaderPermutationConfig&& permutationConfig)
+	RefPtr<RHI::Shader> ShaderMap::CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig)
 	{
 		const ShaderBucket& shaderBucket = m_shaderMap.at(typeIndex);
 		const RHI::ShaderSourceInfo& sourceInfo = shaderBucket.baseShader->GetShaderSourceInfo();
@@ -243,7 +243,7 @@ namespace Volt
 			shader = RHI::Shader::Create(createInfo);
 		}
 
-		m_shaderMap.at(typeIndex).permutationMap[permutationHash] = shader;
+		m_shaderMap.at(typeIndex).permutationMap[permutationIndex] = shader;
 		return shader;
 	}
 }

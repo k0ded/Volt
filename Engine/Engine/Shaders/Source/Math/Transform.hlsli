@@ -6,7 +6,9 @@ struct Transform
 {
     Quaternion rotation;
     float3 position;
+    float padding0;
     float3 scale;
+    float padding1;
 
     float3 RotateVector(float3 v)
     {

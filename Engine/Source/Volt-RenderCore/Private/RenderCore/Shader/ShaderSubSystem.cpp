@@ -22,6 +22,33 @@ namespace Volt
 		0,
 		"Whether or not force single threaded compilation of shaders.");
 
+	static ConsoleVariable<int32_t> s_outputShaderDebugInfo(
+		"r.Shader.OutputShaderDebugInfo",
+		0,
+		"Whether or not to output shader debug info."
+	);
+
+	static ConsoleVariable<int32_t> s_shaderOptimizationLevel(
+		"r.Shader.Optimization",
+		0,
+		"Shader Optimization level\n"
+		"0. Disabled\n"
+		"1. Release\n"
+		"2. Dist\n"
+	);
+
+	static ConsoleVariable<int32_t> s_shaderWarningsAsErrors(
+		"r.Shader.WarningsAsErrors",
+		1,
+		"Whether or not to use warnings as errors."
+	);
+
+	static ConsoleVariable<std::string> s_shaderDebugInfoPath(
+		"r.Shader.ShaderDebugInfoPath",
+		"Engine/Shaders/Debug/",
+		"Where to output shader debug info."
+	);
+
 	VT_REGISTER_SUBSYSTEM(ShaderSubSystem, Minimal, Engine);
 
 	void ShaderSubSystem::Initialize()
@@ -35,8 +62,33 @@ namespace Volt
 
 		{
 			RHI::ShaderCompilerCreateInfo shaderCompilerInfo{};
-			shaderCompilerInfo.flags = RHI::ShaderCompilerFlags::WarningsAsErrors;
+			shaderCompilerInfo.flags = RHI::ShaderCompilerFlags::None;
+
+			if (s_shaderWarningsAsErrors.GetValue())
+			{
+				shaderCompilerInfo.flags |= RHI::ShaderCompilerFlags::WarningsAsErrors;
+			}
+
+			if (s_outputShaderDebugInfo.GetValue())
+			{
+				shaderCompilerInfo.flags |= RHI::ShaderCompilerFlags::OutputShaderDebugInfo;
+			}
+
+			if (s_shaderOptimizationLevel.GetValue() == 0)
+			{
+				shaderCompilerInfo.optimizationLevel = RHI::ShaderOptimizationLevel::Disable;
+			}
+			else if (s_shaderOptimizationLevel.GetValue() == 1)
+			{
+				shaderCompilerInfo.optimizationLevel = RHI::ShaderOptimizationLevel::Release;
+			}
+			else if (s_shaderOptimizationLevel.GetValue() == 2)
+			{
+				shaderCompilerInfo.optimizationLevel = RHI::ShaderOptimizationLevel::Dist;
+			}
+
 			shaderCompilerInfo.shaderCache = m_shaderCache;
+			shaderCompilerInfo.shaderDebugInfoPath = s_shaderDebugInfoPath.GetValue();
 
 			const std::filesystem::path engineShaderIncludeDirectory = "Engine/Shaders/Source/Includes";
 			const std::filesystem::path engineShaderDirectory = "Engine/Shaders/Source/";

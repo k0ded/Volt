@@ -22,7 +22,7 @@ namespace Volt
 		m_compiledMaterialShaders = std::move(compiledShaders);
 	}
 
-	RefPtr<RHI::Shader> MaterialShaderMap::GetShaderInternal(TypeTraits::TypeIndex shaderType, size_t permutationHash, bool& isDefaultShader)
+	RefPtr<RHI::Shader> MaterialShaderMap::GetShaderInternal(TypeTraits::TypeIndex shaderType, size_t permutationIndex, bool& isDefaultShader)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -38,7 +38,7 @@ namespace Volt
 
 		const ShaderBucket& shaderBucket = it->second;
 
-		auto shaderIt = shaderBucket.permutations.find(permutationHash);
+		auto shaderIt = shaderBucket.permutations.find(permutationIndex);
 		if (shaderIt == shaderBucket.permutations.end())
 		{
 			isDefaultShader = true;
@@ -49,7 +49,7 @@ namespace Volt
 		return shaderIt->second;
 	}
 
-	RefPtr<RHI::Shader> MaterialShaderMap::CompileShaderPermutation(TypeTraits::TypeIndex shaderType, size_t permutationHash, RHI::ShaderPermutationConfig&& permutationConfig)
+	RefPtr<RHI::Shader> MaterialShaderMap::CompileShaderPermutation(TypeTraits::TypeIndex shaderType, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig)
 	{
 		std::unique_lock lock{ m_mutex };
 
@@ -77,7 +77,7 @@ namespace Volt
 			shader = RHI::Shader::CreateWithSource(shaderSpecification, compiledShader.compiledShader);
 		}
 
-		shaderBucket.permutations[permutationHash] = shader;
+		shaderBucket.permutations[permutationIndex] = shader;
 		return shader;
 	}
 }

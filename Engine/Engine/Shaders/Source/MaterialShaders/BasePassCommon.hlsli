@@ -1,6 +1,6 @@
 #pragma once
 
-struct GBufferPixelShaderInput
+struct BasePassPixelShaderInput
 {
     float4 position : SV_Position;
     float4 tangent : TANGENT;
@@ -10,7 +10,7 @@ struct GBufferPixelShaderInput
     uint primitiveIndex : PRIMITIVE_INDEX;
 };
 
-struct GBufferPixelShaderOutput
+struct BasePassPixelShaderOutput
 {
     [[vt::rgba8]] float4 albedo : SV_Target0;
     [[vt::rgba16]] float4 normal : SV_Target1;

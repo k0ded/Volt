@@ -12,9 +12,9 @@
 #include "Volt-Renderer/ShadowMappingUtility.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/SceneRendererRenderGraphData.h"
-#include "Volt-Renderer/SceneRendererShaderDefinitions.h"
 #include "Volt-Renderer/RenderView.h"
 #include "Volt-Renderer/SystemTextures.h"
+#include "Volt-Renderer/MainMaterialShaders.h"
 
 #include "Volt-Renderer/Debug/DebugRenderer.h"
 
@@ -27,6 +27,7 @@
 #include "Volt-Renderer/MeshPassProcessors/DepthPrePassMeshProcessor.h"
 #include "Volt-Renderer/MeshPassProcessors/BasePassMeshProcessor.h"
 #include "Volt-Renderer/MeshPassProcessors/CascadedShadowMapsMeshProcessor.h"
+#include "Volt-Renderer/MeshPassProcessors/TranslucencyMeshPassProcessor.h"
 
 #include <JobSystem/JobSystem.h>
 
@@ -184,6 +185,9 @@ namespace Volt
 
 		AddShadingPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer, nullptr);
 
+		AddTranslucencyPass(renderGraph, blackboard, renderView, directionalShadowMap.shadowMap, directionalShadowMap.uniformBuffer);
+		AddTranslucencyCompositePass(renderGraph, blackboard, renderView);
+
 		m_globalIlluminationRenderer.Visualize(renderGraph, blackboard, renderView);
 
 		AddPostProcessingPasses(renderGraph, blackboard, renderView, outputTexture);
@@ -247,6 +251,114 @@ namespace Volt
 		}
 	}
 
+	BEGIN_SHADER_PARAMETER_STRUCT(TranslucencyPassParameters)
+		SHADER_PARAMETER_STRUCT_INCLUDE(TranslucencyPassVS::Parameters, VS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(TranslucencyPassMaterialShader::Parameters, PS)
+	END_SHADER_PARAMETER_STRUCT()
+
+	void SceneRenderer::AddTranslucencyPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer)
+	{
+		VT_PROFILE_FUNCTION();
+
+		TranslucencyTextures& translucencyTextures = blackboard.Add<TranslucencyTextures>();
+		translucencyTextures.accumulation = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "Translucency.Accumulation"));
+		translucencyTextures.revealage = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "Translucency.Revealage"));
+
+		const LightScene& lightScene = blackboard.Get<LightScene>();
+		const EnvironmentTextures& environmentTextures = blackboard.Get<EnvironmentTextures>();
+		const SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
+
+		TranslucencyPassParameters* passParameters = renderGraph.AllocParameters<TranslucencyPassParameters>();
+		passParameters->VS.View = view.viewUniformBuffer;
+		passParameters->VS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
+		passParameters->PS.View = view.viewUniformBuffer;
+		passParameters->PS.VisibleLightIndices = renderGraph.CreateSRV(lightScene.visibleLightIndices, RHI::PixelFormat::R32_SINT);
+
+		passParameters->PS.DFGLuT = renderGraph.CreateSRV(environmentTextures.DFGLuT);
+		passParameters->PS.SkylightIrradiance = renderGraph.CreateSRV(environmentTextures.irradiance);
+		passParameters->PS.SkylightRadiance = renderGraph.CreateSRV(environmentTextures.radiance);
+		passParameters->PS.LinearSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>();
+		passParameters->PS.NumRadianceMipLevels = environmentTextures.radiance->GetDesc().mips;
+
+		if (!directionalShadowMap)
+		{
+			directionalShadowMap = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
+		}
+
+		passParameters->PS.CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMap);
+		passParameters->PS.ShadowSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>();
+		passParameters->PS.CascadedDirectionalLightShadowMapping = directionalShadowUniformBuffer;
+		passParameters->PS.renderTargets.renderTargets[0] = translucencyTextures.accumulation;
+		passParameters->PS.renderTargets.renderTargets[1] = translucencyTextures.revealage;
+		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
+
+		m_translucencyMeshPassProcessor->PrepareRenderCommands(renderGraph);
+
+		renderGraph.AddPass("TranslucencyPass",
+			RenderGraphPassFlags::None,
+			passParameters,
+			[passParameters, view, meshPassProcessor = m_translucencyMeshPassProcessor](RenderContext& context)
+		{
+			BatchedShaderParameters batchedShaderParameters;
+			context.CollectParameters(passParameters, batchedShaderParameters);
+
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
+			renderingInfo.renderingInfo.colorAttachments[1].SetClearColor(1.f, 1.f, 1.f, 1.f);
+			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
+
+			context.BeginRendering(renderingInfo);
+			meshPassProcessor->ExecuteCommands(context, batchedShaderParameters);
+			context.EndRendering();
+		});
+	}
+
+	struct TranslucencyCompositePS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(TranslucencyCompositePS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Accumulation)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Revealage)
+			RG_RENDER_TARGETS()
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	VT_REGISTER_SHADER(TranslucencyCompositePS, "Engine/Shaders/Source/RenderPipelineLegacy/TranslucencyCompositePS.hlsl", "MainPS", Pixel);
+
+	void SceneRenderer::AddTranslucencyCompositePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
+	{
+		const TranslucencyTextures& translucencyTextures = blackboard.Get<TranslucencyTextures>();
+		const SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
+
+		TranslucencyCompositePS::Parameters* passParameters = renderGraph.AllocParameters<TranslucencyCompositePS::Parameters>();
+		passParameters->Accumulation = renderGraph.CreateSRV(translucencyTextures.accumulation);
+		passParameters->Revealage = renderGraph.CreateSRV(translucencyTextures.revealage);
+		passParameters->renderTargets.renderTargets[0] = sceneTextures.sceneColor;
+
+		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
+		auto pixelShader = ShaderMap::Get<TranslucencyCompositePS>();
+
+		renderGraph.AddPass("Tonemap",
+			RenderGraphPassFlags::None,
+			passParameters,
+			[passParameters, view, pixelShader, vertexShader](RenderContext& context)
+		{
+			RHI::RenderPipelineCreateInfo pipelineInfo{};
+			pipelineInfo.shaders = { vertexShader, pixelShader };
+			pipelineInfo.cullMode = RHI::CullMode::None;
+			pipelineInfo.depthMode = RHI::DepthMode::None;
+			pipelineInfo.attachmentBlendStates[0] = DefaultBlendStates::OneMinusSrcAlpha();
+
+			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->renderTargets);
+			renderingInfo.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
+
+			context.BeginRendering(renderingInfo);
+			context.BindPipeline(pipeline);
+			context.SetParameters<TranslucencyCompositePS>(pixelShader, passParameters);
+			context.Draw(3, 1, 0, 0);
+			context.EndRendering();
+		});
+	}
+
 	void SceneRenderer::AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture)
 	{
 		renderGraph.BeginMarker("Post Processing");
@@ -278,6 +390,7 @@ namespace Volt
 		m_depthPrePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<DepthPrePassMeshProcessor>();
 		m_basePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<BasePassMeshProcessor>();
 		m_cascadedShadowMapMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<CascadedShadowMapMeshProcessor>();
+		m_translucencyMeshPassProcessor = m_meshPassProcessorRegistry.AddProcessor<TranslucencyMeshPassProcessor>();
 
 		m_renderPrimitiveAddedDelegateHandle = m_renderScene->GetRenderPrimitiveAddedDelegate().AddLambda([this](const RenderPrimitiveData* renderPrimitive)
 		{
@@ -371,7 +484,8 @@ namespace Volt
 
 	BEGIN_SHADER_PARAMETER_STRUCT(DepthPrePassParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(DepthPrePassVS::Parameters, VS)
-		SHADER_PARAMETER_STRUCT_INCLUDE(DepthPrePassPS::Parameters, PS)
+		SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
+		RG_RENDER_TARGETS()
 	END_SHADER_PARAMETER_STRUCT()
 
 	void SceneRenderer::AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
@@ -385,9 +499,9 @@ namespace Volt
 		DepthPrePassParameters* passParameters = renderGraph.AllocParameters<DepthPrePassParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;
 		passParameters->VS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
-		passParameters->PS.View = view.viewUniformBuffer;
-		passParameters->PS.renderTargets.renderTargets[0] = sceneTextures.sceneVelocity;
-		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
+		passParameters->View = view.viewUniformBuffer;
+		passParameters->renderTargets.renderTargets[0] = sceneTextures.sceneVelocity;
+		passParameters->renderTargets.depthTarget = sceneTextures.sceneDepth;
 
 		m_depthPrePassMeshProcessor->PrepareRenderCommands(renderGraph);
 
@@ -399,7 +513,7 @@ namespace Volt
 			BatchedShaderParameters batchedShaderParameters;
 			context.CollectParameters(passParameters, batchedShaderParameters);
 
-			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->renderTargets);
 			context.BeginRendering(renderingInfo);
 			meshPassProcessor->ExecuteCommands(context, batchedShaderParameters);
 			context.EndRendering();
@@ -408,7 +522,7 @@ namespace Volt
 
 	BEGIN_SHADER_PARAMETER_STRUCT(GenerateGBufferParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(BasePassVS::Parameters, VS)
-		SHADER_PARAMETER_STRUCT_INCLUDE(BasePassPS::Parameters, PS)
+		RG_RENDER_TARGETS()
 	END_SHADER_PARAMETER_STRUCT()
 
 	void SceneRenderer::AddBasePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
@@ -424,11 +538,11 @@ namespace Volt
 		GenerateGBufferParameters* passParameters = renderGraph.AllocParameters<GenerateGBufferParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;
 		passParameters->VS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
-		passParameters->PS.renderTargets.renderTargets[0] = sceneTextures.gBufferAlbedo;
-		passParameters->PS.renderTargets.renderTargets[1] = sceneTextures.gBufferNormals;
-		passParameters->PS.renderTargets.renderTargets[2] = sceneTextures.gBufferMaterial;
-		passParameters->PS.renderTargets.renderTargets[3] = sceneTextures.gBufferEmissive;
-		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
+		passParameters->renderTargets.renderTargets[0] = sceneTextures.gBufferAlbedo;
+		passParameters->renderTargets.renderTargets[1] = sceneTextures.gBufferNormals;
+		passParameters->renderTargets.renderTargets[2] = sceneTextures.gBufferMaterial;
+		passParameters->renderTargets.renderTargets[3] = sceneTextures.gBufferEmissive;
+		passParameters->renderTargets.depthTarget = sceneTextures.sceneDepth;
 
 		m_basePassMeshProcessor->PrepareRenderCommands(renderGraph);
 
@@ -440,7 +554,7 @@ namespace Volt
 			BatchedShaderParameters batchedShaderParameters;
 			context.CollectParameters(passParameters, batchedShaderParameters);
 
-			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->renderTargets);
 			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
 			context.BeginRendering(renderingInfo);

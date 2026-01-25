@@ -209,12 +209,12 @@ namespace Volt::RHI
 
 		switch (specification.optimizationLevel)
 		{
-			case ShaderCompiler::OptimizationLevel::Disable: arguments.push_back(L"-Od"); break;
-			case ShaderCompiler::OptimizationLevel::Release: arguments.push_back(L"-O1"); break;
-			case ShaderCompiler::OptimizationLevel::Dist: arguments.push_back(L"-O3"); break;
+			case ShaderOptimizationLevel::Disable: arguments.push_back(L"-Od"); break;
+			case ShaderOptimizationLevel::Release: arguments.push_back(L"-O1"); break;
+			case ShaderOptimizationLevel::Dist: arguments.push_back(L"-O3"); break;
 		}
 
-		if (specification.optimizationLevel != ShaderCompiler::OptimizationLevel::Dist)
+		if (specification.optimizationLevel != ShaderOptimizationLevel::Dist)
 		{
 			arguments.push_back(DXC_ARG_DEBUG);
 			arguments.push_back(L"-Qembed_debug");

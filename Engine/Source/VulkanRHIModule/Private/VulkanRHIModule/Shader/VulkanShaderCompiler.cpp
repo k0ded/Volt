@@ -25,6 +25,7 @@
 #include <dxc/dxctools.h>
 
 #include <spirv_reflect.h>
+#include <spirv-tools/optimizer.hpp>
 
 #include <codecvt>
 #include <locale>
@@ -102,7 +103,9 @@ namespace Volt::RHI
 	}
 
 	VulkanShaderCompiler::VulkanShaderCompiler(const ShaderCompilerCreateInfo& createInfo)
-		: m_includeDirectories(createInfo.includeDirectories), m_macros(createInfo.initialMacros), m_flags(createInfo.flags),
+		: m_createInfo(createInfo),
+		m_includeDirectories(createInfo.includeDirectories),
+		m_macros(createInfo.initialMacros),
 		m_shaderCache(createInfo.shaderCache)
 	{
 		VT_LOGC(Trace, LogVulkanRHI, "Initializing VulkanShaderCompiler");
@@ -228,22 +231,33 @@ namespace Volt::RHI
 			arguments.push_back(L"-enable-16bit-types");
 		}
 
-		if ((m_flags & ShaderCompilerFlags::WarningsAsErrors) != ShaderCompilerFlags::None)
+		if ((m_createInfo.flags & ShaderCompilerFlags::WarningsAsErrors) != ShaderCompilerFlags::None)
 		{
 			arguments.push_back(DXC_ARG_WARNINGS_ARE_ERRORS);
 		}
 
-		switch (specification.optimizationLevel)
+		ShaderOptimizationLevel optimizationLevel = m_createInfo.optimizationLevel;
+
+		// If we want shader debug into, switch the optimization level to debug
+		if ((m_createInfo.flags & ShaderCompilerFlags::OutputShaderDebugInfo) != ShaderCompilerFlags::None)
 		{
-			case ShaderCompiler::OptimizationLevel::Disable: arguments.push_back(L"-Od"); break;
-			case ShaderCompiler::OptimizationLevel::Release: arguments.push_back(L"-O1"); break;
-			case ShaderCompiler::OptimizationLevel::Dist: arguments.push_back(L"-O3"); break;
+			optimizationLevel = ShaderOptimizationLevel::Disable;
 		}
 
-		if (specification.optimizationLevel != ShaderCompiler::OptimizationLevel::Dist)
+		switch (optimizationLevel)
+		{
+			case ShaderOptimizationLevel::Disable: arguments.push_back(L"-Od"); break;
+			case ShaderOptimizationLevel::Release: arguments.push_back(L"-O1"); break;
+			case ShaderOptimizationLevel::Dist: arguments.push_back(L"-O3"); break;
+		}
+
+		if (optimizationLevel == ShaderOptimizationLevel::Disable)
 		{
 			arguments.push_back(DXC_ARG_DEBUG);
-			//arguments.push_back(L"-fspv-debug=vulkan");
+			//arguments.push_back(DXC_ARG_DEBUG_NAME_FOR_SOURCE);
+			//arguments.push_back(DXC_ARG_SKIP_OPTIMIZATIONS);
+			//arguments.push_back(L"-Qembed_debug");
+			arguments.push_back(L"-fspv-debug=source");
 		}
 
 		const ShaderStage shaderStage = sourceEntry.shaderStage;
@@ -341,7 +355,7 @@ namespace Volt::RHI
 		}
 
 		// Append compile flags
-		if ((m_flags & ShaderCompilerFlags::WarningsAsErrors) != ShaderCompilerFlags::None)
+		if ((m_createInfo.flags & ShaderCompilerFlags::WarningsAsErrors) != ShaderCompilerFlags::None)
 		{
 			definesAndIncludes.push_back(DXC_ARG_WARNINGS_ARE_ERRORS);
 		}
@@ -458,192 +472,11 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		SpvReflectShaderModule spirvModule{};
-		SpvReflectResult result = spvReflectCreateShaderModule(inOutData.shaderBinary.size() * sizeof(uint32_t), inOutData.shaderBinary.data(), &spirvModule);
-		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+		Vector<uint32_t> optimizedSpirv;
+		OptimizeSpirvForReflection(specification, inOutData, optimizedSpirv);
+		inOutData.shaderBinary = std::move(optimizedSpirv);
 
-		uint32_t count;
-		result = spvReflectEnumerateDescriptorSets(&spirvModule, &count, nullptr);
-		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
-
-		Vector<SpvReflectDescriptorSet*> sets(count);
-		result = spvReflectEnumerateDescriptorSets(&spirvModule, &count, sets.data());
-		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
-
-		Vector<SpvReflectDescriptorBinding*> uniformBuffers;
-		Vector<SpvReflectDescriptorBinding*> storageBuffers;
-		Vector<SpvReflectDescriptorBinding*> uniformTexelBuffers;
-		Vector<SpvReflectDescriptorBinding*> storageTexelBuffers;
-		Vector<SpvReflectDescriptorBinding*> storageImages;
-		Vector<SpvReflectDescriptorBinding*> images;
-		Vector<SpvReflectDescriptorBinding*> samplers;
-		Vector<SpvReflectDescriptorBinding*> accelerationStructures;
-
-		for (size_t i = 0; i < sets.size(); ++i)
-		{
-			const SpvReflectDescriptorSet* spvSet = sets[i];
-
-			// First find the globals UB, to make sure that it always gets binding 0
-			for (uint32_t binding = 0; binding < spvSet->binding_count; ++binding)
-			{
-				SpvReflectDescriptorBinding* spvBinding = spvSet->bindings[binding];
-				if (strcmp(spvBinding->name, "$Globals") == 0)
-				{
-					uniformBuffers.emplace_back(spvBinding);
-					break;
-				}
-			}
-
-			for (uint32_t binding = 0; binding < spvSet->binding_count; ++binding)
-			{
-				SpvReflectDescriptorBinding* spvBinding = spvSet->bindings[binding];
-
-				if (spvBinding->accessed && strcmp(spvBinding->name, "$Globals") != 0)
-				{
-					switch (spvBinding->resource_type)
-					{
-						case SPV_REFLECT_RESOURCE_FLAG_CBV: uniformBuffers.emplace_back(spvBinding); break;
-						case SPV_REFLECT_RESOURCE_FLAG_SAMPLER: samplers.emplace_back(spvBinding); break;
-						case SPV_REFLECT_RESOURCE_FLAG_SRV:
-						{
-							switch (spvBinding->descriptor_type)
-							{
-								case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE: images.emplace_back(spvBinding); break;
-								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER: storageBuffers.emplace_back(spvBinding); break;
-								case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER: uniformTexelBuffers.emplace_back(spvBinding); break;
-								case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructures.emplace_back(spvBinding); break;
-							}
-							break;
-						}
-
-						case SPV_REFLECT_RESOURCE_FLAG_UAV:
-						{
-							switch (spvBinding->descriptor_type)
-							{
-								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE: storageImages.emplace_back(spvBinding); break;
-								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER: storageBuffers.emplace_back(spvBinding); break;
-								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: storageTexelBuffers.emplace_back(spvBinding); break;;
-							}
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		Vector<SpvReflectDescriptorBinding*> allBindings;
-		allBindings.append(uniformBuffers);
-		allBindings.append(storageBuffers);
-		allBindings.append(uniformTexelBuffers);
-		allBindings.append(storageTexelBuffers);
-		allBindings.append(storageImages);
-		allBindings.append(images);
-		allBindings.append(samplers);
-		allBindings.append(accelerationStructures);
-
-		// Change all descriptor set indices to be the same
-		// Because we always add uniform buffers first, the globals UB will always end up at binding index 0.
-		const ShaderStage currentShaderStage = specification.shaderSourceInfo.sourceEntry.shaderStage;
-		const uint32_t shaderStageDescriptorSetIndex = GetDescriptorSetIndexFromShaderStage(currentShaderStage);
-		for (uint32_t bindingIndex = 0; SpvReflectDescriptorBinding* binding : allBindings)
-		{
-			if (binding->set == RayTracingTableDescriptorSetManager::Set && (binding->binding == RayTracingTableDescriptorSetManager::BuffersBinding || binding->binding == RayTracingTableDescriptorSetManager::TexturesBinding))
-			{
-				continue;
-			}
-
-			if (binding->set == StaticSamplerDescriptorSetManager::Set)
-			{
-				continue;
-			}
-
-			result = spvReflectChangeDescriptorBindingNumbers(&spirvModule, binding, bindingIndex, shaderStageDescriptorSetIndex);
-			VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
-
-			bindingIndex++;
-		}
-
-		ShaderParameterMap& shaderParameterMap = inOutData.shaderParameterMap;
-		shaderParameterMap.SetShaderStage(currentShaderStage);
-
-		for (SpvReflectDescriptorBinding* uniformBuffer : uniformBuffers)
-		{
-			shaderParameterMap.AddUniformBuffer(uniformBuffer->name, uniformBuffer->set, uniformBuffer->binding, currentShaderStage);
-
-			// If it's the globals uniform buffer we will extract the members
-			// as they are the shaders parameters.
-			if (std::string_view(uniformBuffer->name) == "$Globals")
-			{
-				for (uint32_t memberIndex = 0; memberIndex < uniformBuffer->block.member_count; memberIndex++)
-				{
-					const SpvReflectBlockVariable& member = uniformBuffer->block.members[memberIndex];
-					const ShaderUniformType uniformType = Utility::GetShaderUniformTypeFromSpvTypeDesc(member.type_description);
-
-					shaderParameterMap.AddParameter(member.name, uniformType, member.size, member.absolute_offset);
-				}
-			}
-		}
-
-		for (SpvReflectDescriptorBinding* storageBuffer : storageBuffers)
-		{
-			// Special case for ray tracing resource table
-			if (storageBuffer->set == RayTracingTableDescriptorSetManager::Set && storageBuffer->binding == RayTracingTableDescriptorSetManager::BuffersBinding)
-			{
-				shaderParameterMap.SetAccessesRayTracingResourceTable();
-			}
-			else
-			{
-				shaderParameterMap.AddStructuredBufferSRV(storageBuffer->name, storageBuffer->set, storageBuffer->binding, currentShaderStage);
-			}
-		}
-
-		for (SpvReflectDescriptorBinding* uniformTexelBuffer : uniformTexelBuffers)
-		{
-			shaderParameterMap.AddTexelBufferSRV(uniformTexelBuffer->name, uniformTexelBuffer->set, uniformTexelBuffer->binding, currentShaderStage);
-		}
-
-		for (SpvReflectDescriptorBinding* storageTexelBuffer : storageTexelBuffers)
-		{
-			shaderParameterMap.AddTexelBufferUAV(storageTexelBuffer->name, storageTexelBuffer->set, storageTexelBuffer->binding, currentShaderStage);
-		}
-
-		for (SpvReflectDescriptorBinding* storageImage : storageImages)
-		{
-			shaderParameterMap.AddTextureUAV(storageImage->name, storageImage->set, storageImage->binding, currentShaderStage);
-		}
-
-		for (SpvReflectDescriptorBinding* image : images)
-		{
-			// Special case for ray tracing resource table
-			if (image->set == RayTracingTableDescriptorSetManager::Set && image->binding == RayTracingTableDescriptorSetManager::TexturesBinding)
-			{
-				shaderParameterMap.SetAccessesRayTracingResourceTable();
-			}
-			else
-			{
-				shaderParameterMap.AddTextureSRV(image->name, image->set, image->binding, currentShaderStage);
-			}
-		}
-
-		for (SpvReflectDescriptorBinding* sampler : samplers)
-		{
-			// Make sure static samplers aren't included.
-			if (sampler->set != StaticSamplerDescriptorSetManager::Set)
-			{
-				shaderParameterMap.AddSampler(sampler->name, sampler->set, sampler->binding, currentShaderStage);
-			}
-		}
-
-		for (SpvReflectDescriptorBinding* accelerationStructure : accelerationStructures)
-		{
-			shaderParameterMap.AddAccelerationStructure(accelerationStructure->name, accelerationStructure->set, accelerationStructure->binding, currentShaderStage);
-		}
-
-		const uint32_t spirvSize = spvReflectGetCodeSize(&spirvModule);
-		inOutData.shaderBinary.resize(spirvSize / sizeof(uint32_t));
-		memcpy(inOutData.shaderBinary.data(), spvReflectGetCode(&spirvModule), spirvSize);
-
-		spvReflectDestroyShaderModule(&spirvModule);
+		ReflectAndRewriteSpirv(specification.shaderSourceInfo.sourceEntry.shaderStage, inOutData.shaderBinary, inOutData.shaderParameterMap);
 	}
 
 	VulkanShaderCompiler::DxcCompilationResult VulkanShaderCompiler::InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source, HLSLIncluder* includer)
@@ -732,5 +565,235 @@ namespace Volt::RHI
 		rewriteResult->Release();
 
 		return result;
+	}
+
+	void VulkanShaderCompiler::OptimizeSpirvForReflection(const Specification& specification, CompilationResultData& inOutData, Vector<uint32_t>& outSpirv)
+	{
+		spvtools::SpirvTools tools(SPV_ENV_VULKAN_1_3);
+		tools.SetMessageConsumer([](spv_message_level_t messageLevel, const char* source, const spv_position_t& position, const char* message)
+		{
+			VT_LOG(Error, "{}", message);
+		});
+
+
+		bool result = tools.Validate(inOutData.shaderBinary.data(), inOutData.shaderBinary.size());
+
+		VT_ENSURE(result);
+
+		spvtools::Optimizer optimizer(SPV_ENV_VULKAN_1_3);
+		optimizer.SetMessageConsumer([](spv_message_level_t messageLevel, const char* source, const spv_position_t& position, const char* message) 
+		{
+			VT_LOG(Error, "{}", message);
+		});
+
+		optimizer.RegisterPass(spvtools::CreateDeadVariableEliminationPass());
+		optimizer.RegisterPass(spvtools::CreateEliminateDeadConstantPass());
+		optimizer.RegisterPass(spvtools::CreateEliminateDeadFunctionsPass());
+		optimizer.RegisterPass(spvtools::CreateEliminateDeadInputComponentsSafePass());
+		optimizer.RegisterPass(spvtools::CreateEliminateDeadMembersPass());
+		optimizer.RegisterPass(spvtools::CreateEliminateDeadOutputComponentsPass());
+		optimizer.RegisterPass(spvtools::CreateAggressiveDCEPass());
+
+		std::vector<uint32_t> optimized;
+		result = optimizer.Run(inOutData.shaderBinary.data(), inOutData.shaderBinary.size(), &optimized);
+
+		VT_ENSURE(result);
+
+		result = tools.Validate(optimized);
+
+		VT_ENSURE(result);
+
+		outSpirv.resize_uninitialized(optimized.size());
+		memcpy_s(outSpirv.data(), outSpirv.byte_size(), optimized.data(), optimized.size() * sizeof(uint32_t));
+	}
+
+	void VulkanShaderCompiler::ReflectAndRewriteSpirv(ShaderStage currentShaderStage, Vector<uint32_t>& spirv, ShaderParameterMap& shaderParameterMap)
+	{
+		VT_PROFILE_FUNCTION();
+
+		SpvReflectShaderModule spirvModule{};
+		SpvReflectResult result = spvReflectCreateShaderModule(spirv.size() * sizeof(uint32_t), spirv.data(), &spirvModule);
+		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+
+		uint32_t count;
+		result = spvReflectEnumerateDescriptorSets(&spirvModule, &count, nullptr);
+		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+
+		Vector<SpvReflectDescriptorSet*> sets(count);
+		result = spvReflectEnumerateDescriptorSets(&spirvModule, &count, sets.data());
+		VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+
+		Vector<SpvReflectDescriptorBinding*> uniformBuffers;
+		Vector<SpvReflectDescriptorBinding*> storageBuffers;
+		Vector<SpvReflectDescriptorBinding*> uniformTexelBuffers;
+		Vector<SpvReflectDescriptorBinding*> storageTexelBuffers;
+		Vector<SpvReflectDescriptorBinding*> storageImages;
+		Vector<SpvReflectDescriptorBinding*> images;
+		Vector<SpvReflectDescriptorBinding*> samplers;
+		Vector<SpvReflectDescriptorBinding*> accelerationStructures;
+
+		for (size_t i = 0; i < sets.size(); ++i)
+		{
+			const SpvReflectDescriptorSet* spvSet = sets[i];
+
+			// First find the globals UB, to make sure that it always gets binding 0
+			for (uint32_t binding = 0; binding < spvSet->binding_count; ++binding)
+			{
+				SpvReflectDescriptorBinding* spvBinding = spvSet->bindings[binding];
+				if (strcmp(spvBinding->name, "$Globals") == 0)
+				{
+					uniformBuffers.emplace_back(spvBinding);
+					break;
+				}
+			}
+
+			for (uint32_t binding = 0; binding < spvSet->binding_count; ++binding)
+			{
+				SpvReflectDescriptorBinding* spvBinding = spvSet->bindings[binding];
+
+				if (spvBinding->accessed && strcmp(spvBinding->name, "$Globals") != 0)
+				{
+					switch (spvBinding->resource_type)
+					{
+						case SPV_REFLECT_RESOURCE_FLAG_CBV: uniformBuffers.emplace_back(spvBinding); break;
+						case SPV_REFLECT_RESOURCE_FLAG_SAMPLER: samplers.emplace_back(spvBinding); break;
+						case SPV_REFLECT_RESOURCE_FLAG_SRV:
+						{
+							switch (spvBinding->descriptor_type)
+							{
+								case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE: images.emplace_back(spvBinding); break;
+								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER: storageBuffers.emplace_back(spvBinding); break;
+								case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER: uniformTexelBuffers.emplace_back(spvBinding); break;
+								case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructures.emplace_back(spvBinding); break;
+							}
+							break;
+						}
+
+						case SPV_REFLECT_RESOURCE_FLAG_UAV:
+						{
+							switch (spvBinding->descriptor_type)
+							{
+								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE: storageImages.emplace_back(spvBinding); break;
+								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER: storageBuffers.emplace_back(spvBinding); break;
+								case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: storageTexelBuffers.emplace_back(spvBinding); break;;
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		Vector<SpvReflectDescriptorBinding*> allBindings;
+		allBindings.append(uniformBuffers);
+		allBindings.append(storageBuffers);
+		allBindings.append(uniformTexelBuffers);
+		allBindings.append(storageTexelBuffers);
+		allBindings.append(storageImages);
+		allBindings.append(images);
+		allBindings.append(samplers);
+		allBindings.append(accelerationStructures);
+
+		// Change all descriptor set indices to be the same
+		// Because we always add uniform buffers first, the globals UB will always end up at binding index 0.
+		const uint32_t shaderStageDescriptorSetIndex = GetDescriptorSetIndexFromShaderStage(currentShaderStage);
+		for (uint32_t bindingIndex = 0; SpvReflectDescriptorBinding* binding : allBindings)
+		{
+			if (binding->set == RayTracingTableDescriptorSetManager::Set && (binding->binding == RayTracingTableDescriptorSetManager::BuffersBinding || binding->binding == RayTracingTableDescriptorSetManager::TexturesBinding))
+			{
+				continue;
+			}
+
+			if (binding->set == StaticSamplerDescriptorSetManager::Set)
+			{
+				continue;
+			}
+
+			result = spvReflectChangeDescriptorBindingNumbers(&spirvModule, binding, bindingIndex, shaderStageDescriptorSetIndex);
+			VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+
+			bindingIndex++;
+		}
+
+		shaderParameterMap.SetShaderStage(currentShaderStage);
+
+		for (SpvReflectDescriptorBinding* uniformBuffer : uniformBuffers)
+		{
+			shaderParameterMap.AddUniformBuffer(uniformBuffer->name, uniformBuffer->set, uniformBuffer->binding, currentShaderStage);
+
+			// If it's the globals uniform buffer we will extract the members
+			// as they are the shaders parameters.
+			if (std::string_view(uniformBuffer->name) == "$Globals")
+			{
+				for (uint32_t memberIndex = 0; memberIndex < uniformBuffer->block.member_count; memberIndex++)
+				{
+					const SpvReflectBlockVariable& member = uniformBuffer->block.members[memberIndex];
+					const ShaderUniformType uniformType = Utility::GetShaderUniformTypeFromSpvTypeDesc(member.type_description);
+
+					shaderParameterMap.AddParameter(member.name, uniformType, member.size, member.absolute_offset);
+				}
+			}
+		}
+
+		for (SpvReflectDescriptorBinding* storageBuffer : storageBuffers)
+		{
+			// Special case for ray tracing resource table
+			if (storageBuffer->set == RayTracingTableDescriptorSetManager::Set && storageBuffer->binding == RayTracingTableDescriptorSetManager::BuffersBinding)
+			{
+				shaderParameterMap.SetAccessesRayTracingResourceTable();
+			}
+			else
+			{
+				shaderParameterMap.AddStructuredBufferSRV(storageBuffer->name, storageBuffer->set, storageBuffer->binding, currentShaderStage);
+			}
+		}
+
+		for (SpvReflectDescriptorBinding* uniformTexelBuffer : uniformTexelBuffers)
+		{
+			shaderParameterMap.AddTexelBufferSRV(uniformTexelBuffer->name, uniformTexelBuffer->set, uniformTexelBuffer->binding, currentShaderStage);
+		}
+
+		for (SpvReflectDescriptorBinding* storageTexelBuffer : storageTexelBuffers)
+		{
+			shaderParameterMap.AddTexelBufferUAV(storageTexelBuffer->name, storageTexelBuffer->set, storageTexelBuffer->binding, currentShaderStage);
+		}
+
+		for (SpvReflectDescriptorBinding* storageImage : storageImages)
+		{
+			shaderParameterMap.AddTextureUAV(storageImage->name, storageImage->set, storageImage->binding, currentShaderStage);
+		}
+
+		for (SpvReflectDescriptorBinding* image : images)
+		{
+			// Special case for ray tracing resource table
+			if (image->set == RayTracingTableDescriptorSetManager::Set && image->binding == RayTracingTableDescriptorSetManager::TexturesBinding)
+			{
+				shaderParameterMap.SetAccessesRayTracingResourceTable();
+			}
+			else
+			{
+				shaderParameterMap.AddTextureSRV(image->name, image->set, image->binding, currentShaderStage);
+			}
+		}
+
+		for (SpvReflectDescriptorBinding* sampler : samplers)
+		{
+			// Make sure static samplers aren't included.
+			if (sampler->set != StaticSamplerDescriptorSetManager::Set)
+			{
+				shaderParameterMap.AddSampler(sampler->name, sampler->set, sampler->binding, currentShaderStage);
+			}
+		}
+
+		for (SpvReflectDescriptorBinding* accelerationStructure : accelerationStructures)
+		{
+			shaderParameterMap.AddAccelerationStructure(accelerationStructure->name, accelerationStructure->set, accelerationStructure->binding, currentShaderStage);
+		}
+
+		const uint32_t spirvSize = spvReflectGetCodeSize(&spirvModule);
+		spirv.resize(spirvSize / sizeof(uint32_t));
+		memcpy(spirv.data(), spvReflectGetCode(&spirvModule), spirvSize);
+
+		spvReflectDestroyShaderModule(&spirvModule);
 	}
 }

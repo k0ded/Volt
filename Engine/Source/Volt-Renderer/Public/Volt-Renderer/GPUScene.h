@@ -39,7 +39,9 @@ namespace Volt
 
 		glm::quat rotation;
 		glm::vec3 position;
+		float padding0;
 		glm::vec3 scale;
+		float padding1;
 	};
 
 	struct GPUMesh
@@ -53,7 +55,8 @@ namespace Volt
 
 		uint32_t vertexStartOffset;
 		uint32_t indexStartOffset;
-		
+		glm::uvec2 padding;
+
 		// Ray Tracing
 		uint32_t RT_vertexPositionsBuffer;
 		uint32_t RT_vertexMaterialBuffer;
@@ -84,7 +87,7 @@ namespace Volt
 		uint32_t isAnimated;
 		uint32_t boneOffset;
 		PrimitiveFlags flags;
-		glm::uvec2 padding;
+		float padding;
 	};
 
 	struct SDFPrimitiveDrawData

@@ -446,12 +446,14 @@ namespace Volt
 
 	void RenderContext::CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
 	{
-		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::StructuredBuffer, bufferSRV->GetRHIView());
+		const RHI::ShaderResourceType resourceType = bufferSRV->IsTexelBufferSRV() ? RHI::ShaderResourceType::TexelBuffer : RHI::ShaderResourceType::StructuredBuffer;
+		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, resourceType, bufferSRV->GetRHIView());
 	}
 
 	void RenderContext::CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
 	{
-		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::StructuredBuffer, bufferUAV->GetRHIView());
+		const RHI::ShaderResourceType resourceType = bufferUAV->IsTexelBufferUAV() ? RHI::ShaderResourceType::TexelBuffer : RHI::ShaderResourceType::StructuredBuffer;
+		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, resourceType, bufferUAV->GetRHIView());
 	}
 
 	void RenderContext::CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
@@ -471,8 +473,11 @@ namespace Volt
 
 	void RenderContext::CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
 	{
-		RefPtr<RHI::BufferView> bufferView = uniformBuffer->GetRHIResource()->GetOrCreateView({});
-		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::UniformBuffer, bufferView);
+		if (uniformBuffer)
+		{
+			RefPtr<RHI::BufferView> bufferView = uniformBuffer->GetRHIResource()->GetOrCreateView({});
+			batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::UniformBuffer, bufferView);
+		}
 	}
 
 	void RenderContext::CollectShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)

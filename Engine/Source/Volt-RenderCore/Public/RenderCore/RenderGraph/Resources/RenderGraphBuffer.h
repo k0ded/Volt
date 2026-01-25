@@ -201,6 +201,7 @@ namespace Volt
 
 		VT_INLINE void AssignRHIView(RefPtr<RHI::BufferView> view) { m_rhiView = view; }
 		VT_INLINE RefPtr<RHI::BufferView> GetRHIView() { return m_rhiView; }
+		VT_INLINE bool IsTexelBufferSRV() const { return m_desc.format != RHI::PixelFormat::UNDEFINED; }
 
 	private:
 		RefPtr<RHI::BufferView> m_rhiView;
@@ -257,6 +258,7 @@ namespace Volt
 	
 		VT_INLINE void AssignRHIView(RefPtr<RHI::BufferView> view) { m_rhiView = view; }
 		VT_INLINE RefPtr<RHI::BufferView> GetRHIView() { return m_rhiView; }
+		VT_INLINE bool IsTexelBufferUAV() const { return m_desc.format != RHI::PixelFormat::UNDEFINED; }
 
 	private:
 		RefPtr<RHI::BufferView> m_rhiView;

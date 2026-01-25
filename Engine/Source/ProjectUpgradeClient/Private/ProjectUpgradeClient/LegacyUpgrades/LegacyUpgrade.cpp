@@ -548,7 +548,6 @@ void LegacyProjectUpgrade::TryConvertAssets(const Volt::Project& project, const 
 	Map<AssetHandle, AssetReference<Prefab>> assetHandleToPrefab;
 	MaterialsMap materialsMap;
 
-	// Make sure all prefabs are processed first.
 	for (const AssetMetadata& metadata : assetMetadata)
 	{
 		if (metadata.type == AssetTypes::Prefab)
@@ -560,20 +559,6 @@ void LegacyProjectUpgrade::TryConvertAssets(const Volt::Project& project, const 
 				assetHandleToPrefab[metadata.handle] = prefab;
 			}
 		}
-	}
-
-	for (const AssetMetadata& metadata : assetMetadata)
-	{
-		if (metadata.type == AssetTypes::Scene)
-		{
-			Vector<AssetReference<Asset>> assets = TryConvertScene(project, metadata, assetHandleToPrefab);
-			assetsToSave.append(assets);
-		}
-		else if (metadata.type == AssetTypes::Mesh)
-		{
-			Vector<AssetReference<Asset>> assets = TryConvertMesh(project, metadata, assetMetadata, materialsMap);
-			assetsToSave.append(assets);
-		}
 		else if (metadata.type == AssetTypes::Material)
 		{
 			if (!materialsMap.contains(metadata.handle))
@@ -582,9 +567,24 @@ void LegacyProjectUpgrade::TryConvertAssets(const Volt::Project& project, const 
 				assetsToSave.append(assets);
 			}
 		}
+		else if (metadata.type == AssetTypes::Mesh)
+		{
+			Vector<AssetReference<Asset>> assets = TryConvertMesh(project, metadata, assetMetadata, materialsMap);
+			assetsToSave.append(assets);
+		}
 		else if (metadata.type == AssetTypes::Texture)
 		{
 			assetsToSave.emplace_back(TryConvertTexture(project, metadata));
+		}
+	}
+
+	// Convert scenes last.
+	for (const AssetMetadata& metadata : assetMetadata)
+	{
+		if (metadata.type == AssetTypes::Scene)
+		{
+			Vector<AssetReference<Asset>> assets = TryConvertScene(project, metadata, assetHandleToPrefab, materialsMap);
+			assetsToSave.append(assets);
 		}
 	}
 
@@ -607,7 +607,7 @@ void LegacyProjectUpgrade::TryConvertAssets(const Volt::Project& project, const 
 	}
 }
 
-Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs)
+Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs, const MaterialsMap& materialsMap)
 {
 	const std::filesystem::path absoluteScenePath = project.rootDirectory / metadata.filepath;
 
@@ -722,6 +722,21 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 								return;
 							}
 
+							// Special handling for MeshComponent, we wan't to expand the single material, into the
+							// multiple materials the previous sub materials represents
+							if (componentGUID == Volt::GetTypeGUID<MeshComponent>() && name == "material")
+							{
+								AssetHandle materialHandle = layerReader.ReadAtKey("data", AssetHandle(0));
+								if (materialHandle != Asset::Null())
+								{
+									if (materialsMap.contains(materialHandle))
+									{
+										MeshComponent& meshComponent = newEntity.GetComponent<MeshComponent>();
+										meshComponent.materials = materialsMap.at(materialHandle).subMaterials;
+									}
+								}
+							}
+
 							const ComponentMember* componentMember = TryGetComponentMemberFromName(componentDesc, name);
 							if (!componentMember)
 							{
@@ -817,6 +832,29 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 
 						prefab->CopyPrefabEntity(entity, prefabComponent.prefabEntity,
 							Volt::CreateSkipComponentOnCopySet<RelationshipComponent, TransformComponent, IDComponent, PrefabComponent>());
+					}
+				}
+			}
+		}
+
+		// Fixup MeshComponents
+		{
+			auto view = scene->GetEntityScene().GetRegistry().view<MeshComponent>();
+
+			for (const auto& entId : view)
+			{
+				Entity entity = scene->GetEntityFromHandle(entId);
+				if (entity)
+				{
+					MeshComponent& meshComponent = entity.GetComponent<MeshComponent>();
+
+					if (meshComponent.materials.empty())
+					{
+						if (m_assetManager->IsValidAssetHandle(meshComponent.handle))
+						{
+							AssetReference<MeshAsset> mesh = m_assetManager->GetAssetImmediately<MeshAsset>(meshComponent.handle);
+							meshComponent.materials = mesh->GetMaterials();
+						}
 					}
 				}
 			}
@@ -1246,7 +1284,8 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 	{
 		const std::string subMaterialName = streamReader.ReadAtKey("material", std::string("Null"));
 		const uint32_t materialIndex = streamReader.ReadAtKey("index", 0u);
-		//const std::string shaderName = streamReader.ReadAtKey("shader", std::string("None"));
+		const std::string shaderName = streamReader.ReadAtKey("shader", std::string("None"));
+
 		//const uint32_t materialFlags = streamReader.ReadAtKey("flags", 0);
 		//const bool isPermutation = streamReader.ReadAtKey("isPermutation", false);
 
@@ -1254,7 +1293,15 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 		AssetReference<Volt::MaterialAsset> material = m_assetManager->CreateAssetAndFile<Volt::MaterialAsset>(metadata.filepath.parent_path(), assetName);
 		// Since all materials were assumued to be alpha masked, we will set all materials to be
 		// alpha masked here as well.
-		material->SetMaterialBlendMode(MaterialBlendMode::AlphaMasked);
+
+		if (shaderName == "IllumTransparent")
+		{
+			material->SetMaterialBlendMode(MaterialBlendMode::Translucent);
+		}
+		else
+		{
+			material->SetMaterialBlendMode(MaterialBlendMode::AlphaMasked);
+		}
 
 		Ref<MaterialGraph> materialGraph = material->GetMaterialGraph();
 		Mosaic::MosaicGraphBuilder mosaicBuilder(materialGraph->GetMosaicGraphMutable());
@@ -1311,8 +1358,7 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 		{
 			streamReader.EnterScope("data");
 
-			// No albedo texture
-			if (albedoTextureNode == 0)
+			// Color
 			{
 				baseColorFactorNode = mosaicBuilder.AddNode<MosaicNodes::Color4>();
 				mosaicBuilder.SetNodeParameterData(baseColorFactorNode, "RGBA", streamReader.ReadAtKey("color", glm::vec4(1.f)));
@@ -1337,9 +1383,13 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 
 		// Base color
 		{
+
 			if (albedoTextureNode != 0)
 			{
-				mosaicBuilder.LinkNodeParameters(albedoTextureNode, pbrOutputNode, "RGBA", "Base Color");
+				UUID64 multiplyNode = mosaicBuilder.AddNode<MosaicNodes::MultiplyNode>();
+				mosaicBuilder.LinkNodeParameters(albedoTextureNode, multiplyNode, "RGBA", "A");
+				mosaicBuilder.LinkNodeParameters(baseColorFactorNode, multiplyNode, "RGBA", "B");
+				mosaicBuilder.LinkNodeParameters(multiplyNode, pbrOutputNode, "", "Base Color");
 			}
 			else
 			{

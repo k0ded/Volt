@@ -19,9 +19,17 @@ namespace Volt::RHI
 	{
 		None = 0,
 		WarningsAsErrors = BIT(0),
+		OutputShaderDebugInfo = BIT(1)
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(ShaderCompilerFlags);
+
+	enum class ShaderOptimizationLevel : uint8_t
+	{
+		Disable = 0,
+		Release,
+		Dist,
+	};
 
 	struct ShaderCompilerCreateInfo
 	{
@@ -30,6 +38,8 @@ namespace Volt::RHI
 	
 		RefPtr<ShaderCache> shaderCache;
 		ShaderCompilerFlags flags = ShaderCompilerFlags::None;
+		ShaderOptimizationLevel optimizationLevel = ShaderOptimizationLevel::Disable;
+		std::filesystem::path shaderDebugInfoPath;
 	};
 
 	class VTRHI_API ShaderCompiler : public RHIInterface
@@ -40,13 +50,6 @@ namespace Volt::RHI
 			Success = 0,
 			PreprocessFailed,
 			Failure
-		};
-
-		enum class OptimizationLevel : uint32_t
-		{
-			Disable,
-			Release,
-			Dist,
 		};
 
 		struct CompilationResultData
@@ -72,7 +75,7 @@ namespace Volt::RHI
 		{
 			ShaderSourceInfo shaderSourceInfo;
 			ShaderPermutationConfig permutationConfig;
-			OptimizationLevel optimizationLevel = OptimizationLevel::Dist;
+			ShaderOptimizationLevel optimizationLevel = ShaderOptimizationLevel::Disable;
 			bool forceCompile;
 		};
 

@@ -230,7 +230,6 @@ namespace Volt::RHI
 				index++;
 			}
 
-			// #TODO_Ivar: Add blend attachments
 			blendInfo.attachmentCount = static_cast<uint32_t>(blendAttachments.size());
 			blendInfo.pAttachments = blendAttachments.data();
 

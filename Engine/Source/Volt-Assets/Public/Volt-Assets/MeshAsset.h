@@ -42,6 +42,7 @@ namespace Volt
 		void GatherAssetDependencies(AssetDependencyGatherContext& gatherContext, ReadOnlyAssetMetadata assetMetadata) override;
 
 		VT_NODISCARD VT_INLINE Ref<Mesh> GetMesh() const { return m_mesh; }
+		VT_NODISCARD VT_INLINE const Vector<AssetHandle>& GetMaterials() const { return m_materials; }
 
 		void Initialize(const MeshInitializer& meshInitializer, const Vector<AssetReference<MaterialAsset>>& materials);
 		void Initialize(MeshInitializer& meshInitializer, const Vector<AssetHandle>& materials);

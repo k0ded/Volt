@@ -189,7 +189,7 @@ namespace Volt::RHI
 		const size_t hash = Math::HashCombine(std::hash<std::filesystem::path>()(shaderSpec.shaderSourceInfo.sourceEntry.filepath), std::hash<std::string>()(shaderSpec.shaderSourceInfo.sourceEntry.entryPoint));
 
 		const auto cacheDir = m_info.cacheDirectory / Utility::GetShaderCacheSubDirectory();
-		const auto cachePath = cacheDir / (shaderSpec.shaderSourceInfo.sourceEntry.filepath.stem().string() + "_" + shaderSpec.shaderSourceInfo.sourceEntry.entryPoint + "_" + std::to_string(hash) + ".vtshcache");
+		const auto cachePath = cacheDir / (shaderSpec.shaderSourceInfo.sourceEntry.filepath.stem().string() + "_" + shaderSpec.shaderSourceInfo.sourceEntry.entryPoint + "_" + std::to_string(hash) + "_" + std::to_string(shaderSpec.permutationConfig.GetPermutationIndex()) + ".vtshcache");
 
 		if (!std::filesystem::exists(cacheDir))
 		{

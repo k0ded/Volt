@@ -23,44 +23,81 @@ namespace Volt
 	template<typename T, typename Tuple>
 	concept IsValidPermutation = ::Utility::TupleTypeIndex<T, Tuple>::IsValid;
 
+	template<typename T>
+	struct ShaderPermutationTraits;
+
+	template<typename T>
+	struct ShaderPermutationTraits
+	{
+		static_assert(!std::is_same_v<T, T>, "ShaderPermutationTraits not specialized for this type");
+	};
+
+	template<>
+	struct ShaderPermutationTraits<bool>
+	{
+		static constexpr size_t DomainSize = 2;
+
+		static size_t ToIndex(bool value)
+		{
+			return value ? 1 : 0;
+		}
+
+		static bool FromIndex(size_t index)
+		{
+			return index != 0;
+		}
+
+		static void Resolve(std::string_view name, bool value, RHI::ShaderPermutationConfig& permutationConfig)
+		{
+			permutationConfig.AddPermutation(std::string(name), std::to_string(value));
+		}
+	};
+
+	template<typename T>
+		requires std::is_enum_v<T>
+	struct ShaderPermutationTraits<T>
+	{
+		using UnderlyingType = std::underlying_type_t<T>;
+
+		static constexpr size_t DomainSize = static_cast<size_t>(T::Count);
+
+		static size_t ToIndex(T value)
+		{
+			return static_cast<size_t>(std::to_underlying(value));
+		}
+
+		static T FromIndex(size_t index)
+		{
+			return static_cast<T>(index);
+		}
+
+		static void Resolve(std::string_view name, T value, RHI::ShaderPermutationConfig& permutationConfig)
+		{
+			permutationConfig.AddPermutation(std::string(name), std::to_string(std::to_underlying(value)));
+		}
+	};
+
+
 	template<typename T, CompileTimeString Name>
 	struct ShaderPermutationDefinition
 	{
 		using PermutationType = T;
+		using Traits = ShaderPermutationTraits<T>;
 		inline static constexpr std::string_view PermutationName = Name;
+
+		static constexpr size_t DomainSize()
+		{
+			return Traits::DomainSize;
+		}
+
+		static size_t ToIndex(const Any& value)
+		{
+			return Traits::ToIndex(value.Cast<T>());
+		}
 
 		static void Resolve(const Any& value, RHI::ShaderPermutationConfig& permutationConfig)
 		{
-			if constexpr (std::is_same_v<PermutationType, bool>)
-			{
-				permutationConfig.AddPermutation(std::string(PermutationName), std::to_string(value.Cast<bool>()));
-			}
-			else if constexpr (std::is_enum_v<PermutationType>)
-			{
-				permutationConfig.AddPermutation(std::string(PermutationName), std::to_string(std::to_underlying(value.Cast<PermutationType>())));
-			}
-			else
-			{
-				static_assert(false, "Not implemented!");
-			}
-		}
-
-		static size_t Hash(const Any& value)
-		{
-			if constexpr (std::is_same_v<PermutationType, bool>)
-			{
-				return std::hash<bool>()(value.Cast<bool>());
-			}
-			else if constexpr (std::is_enum_v<PermutationType>)
-			{
-				using UnderlyingType = std::underlying_type_t<PermutationType>;
-
-				return std::hash<UnderlyingType>()(std::to_underlying(value.Cast<PermutationType>()));
-			}
-			else
-			{
-				static_assert(false, "Not implemented!");
-			}
+			Traits::Resolve(PermutationName, value.Cast<T>(), permutationConfig);
 		}
 	};
 
@@ -86,14 +123,6 @@ namespace Volt
 				using PermutationDefinitionType = typename std::tuple_element_t<PermutationIndex, PermutationTuple>;
 				PermutationDefinitionType::Resolve(value, permutationConfig);
 			};
-
-			m_permutations[PermutationIndex].hashPermutationFunc = [](const Any& value) -> size_t
-			{
-				using PermutationDefinitionType = typename std::tuple_element_t<PermutationIndex, PermutationTuple>;
-				return PermutationDefinitionType::Hash(value);
-			};
-
-			m_hash = 0;
 		}
 
 		template<typename U>
@@ -107,12 +136,30 @@ namespace Volt
 			return m_permutations[PermutationIndex].value.Cast<typename U::PermutationType>();
 		}
 
+		void InitializeWithPermutationIndex(size_t index)
+		{
+			ForEachIndex<std::tuple_size_v<PermutationTuple>>([this, &index]<size_t I>() 
+			{
+				using PermutationDefinition = std::tuple_element_t<I, PermutationTuple>;
+
+				constexpr size_t domain = PermutationDefinition::DomainSize();
+				const size_t valueIndex = (index / s_permutationStrides[I]) % domain;
+
+				using ValueType = typename PermutationDefinition::PermutationType;
+				const ValueType value = ShaderPermutationTraits<ValueType>::FromIndex(valueIndex);
+
+				this->template Set<PermutationDefinition>(value);
+			});
+		}
+
 		void ResolvePermutations(RHI::ShaderPermutationConfig& permutationConfig) const
 		{
 			for (const PermutationContainer& permutationContainer : m_permutations)
 			{
 				permutationContainer.resolvePermutationFunc(permutationContainer.value, permutationConfig);
 			}
+
+			permutationConfig.SetPermutationIndex(GetPermutationIndex());
 		}
 
 		void Validate() const
@@ -123,19 +170,35 @@ namespace Volt
 			}
 		}
 
-		size_t GetHash() const
+		size_t GetPermutationIndex() const
 		{
-			if (m_hash != 0)
-			{
-				return m_hash;
-			}
+			Validate();
 
-			for (const PermutationContainer& permutationContainer : m_permutations)
-			{
-				m_hash = Math::HashCombine(m_hash, permutationContainer.hashPermutationFunc(permutationContainer.value));
-			}
+			size_t index = 0;
 
-			return m_hash;
+			ForEachIndex<std::tuple_size_v<PermutationTuple>>(
+			[this, &index]<size_t I>() 
+			{
+				using PermutationType = std::tuple_element_t<I, PermutationTuple>;
+				const size_t valueIndex = PermutationType::ToIndex(m_permutations[I].value);
+
+				index += valueIndex * s_permutationStrides[I];
+			});
+
+			return index;
+		}
+
+		static constexpr size_t GetTotalPermutationCount()
+		{
+			size_t count = 1;
+			ForEachIndex<std::tuple_size_v<PermutationTuple>>(
+			[&]<size_t I>() 
+			{
+				using PermutationType = std::tuple_element_t<I, PermutationTuple>;
+				count *= PermutationType::DomainSize();
+			});
+
+			return count;
 		}
 
 	private:
@@ -143,11 +206,45 @@ namespace Volt
 		{
 			Any value;
 			std::function<void(const Any&, RHI::ShaderPermutationConfig&)> resolvePermutationFunc;
-			std::function<size_t(const Any&)> hashPermutationFunc;
 		};
 
+		template<size_t N, typename F>
+		static constexpr void ForEachIndex(F&& func)
+		{
+			[] <size_t... Is>(std::index_sequence<Is...>, F&& f)
+			{
+				(f.template operator()<Is>(), ...);
+			}(std::make_index_sequence<N>{}, std::forward<F>(func));
+		}
+
+		template<size_t I>
+		static constexpr size_t ComputePermutationStride()
+		{
+			size_t stride = 1;
+
+			ForEachIndex<I>([&]<size_t J>() 
+			{
+				using PermutationType = std::tuple_element_t<J, PermutationTuple>;
+				stride *= PermutationType::DomainSize();
+			});
+			return stride;
+		}
+
+		inline static constexpr Array<size_t, std::tuple_size_v<PermutationTuple>> s_permutationStrides =
+		[]() 
+		{
+			Array<size_t, std::tuple_size_v<PermutationTuple>> strides{};
+			
+			ForEachIndex<std::tuple_size_v<PermutationTuple>>(
+			[&]<size_t I>()
+			{
+				strides[I] = ComputePermutationStride<I>();
+			});
+
+			return strides;
+		}();
+
 		Array<PermutationContainer, std::tuple_size_v<PermutationTuple>> m_permutations;
-		mutable size_t m_hash = 0;
 	};
 }
 

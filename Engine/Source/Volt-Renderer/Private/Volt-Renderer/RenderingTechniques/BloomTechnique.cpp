@@ -28,7 +28,7 @@ namespace Volt
 
 	struct BloomUpsampleCS : public GlobalShader
 	{
-		DECLARE_GLOBAL_SHADER(BloomDownsampleCS)
+		DECLARE_GLOBAL_SHADER(BloomUpsampleCS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
 			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float3>, Source)
 			SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D<float3>, RWTarget)

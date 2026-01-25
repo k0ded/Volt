@@ -38,7 +38,7 @@ namespace Volt
 
 		Vector<AssetReference<Volt::Asset>> CreateMaterials(const Volt::Project& project, const Volt::AssetMetadata& metadata, MaterialsMap& materialsMap);
 
-		Vector<AssetReference<Volt::Asset>> TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs);
+		Vector<AssetReference<Volt::Asset>> TryConvertScene(const Volt::Project& project, const Volt::AssetMetadata& metadata, const Map<Volt::AssetHandle, AssetReference<Volt::Prefab>>& prefabs, const MaterialsMap& materialsMap);
 		Vector<AssetReference<Volt::Asset>> TryConvertMesh(const Volt::Project& project, const Volt::AssetMetadata& metadata, const ArrayView<Volt::AssetMetadata>& assetMetadatas, MaterialsMap& materialsMap);
 		AssetReference<Volt::Prefab> TryConvertPrefab(const Volt::Project& project, const Volt::AssetMetadata& metadata);
 		AssetReference<Volt::Asset> TryConvertTexture(const Volt::Project& project, const Volt::AssetMetadata& metadata);

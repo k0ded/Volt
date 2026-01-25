@@ -44,6 +44,9 @@ namespace Volt::RHI
 
 		CompilationResultData CompileShader(const Specification& specification);
 		bool PreprocessSource(const Specification& specification, std::string& outProcessedSource, CompilationResultData& compilationResult);
+
+		void OptimizeSpirvForReflection(const Specification& specification, CompilationResultData& inOutData, Vector<uint32_t>& outSpirv);
+		void ReflectAndRewriteSpirv(ShaderStage currentShaderStage, Vector<uint32_t>& spirv, ShaderParameterMap& shaderParameterMap);
 		void ReflectShader(const Specification& specification, CompilationResultData& inOutData);
 
 		DxcCompilationResult InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source, HLSLIncluder* includer);
@@ -54,10 +57,10 @@ namespace Volt::RHI
 		IDxcRewriter* m_hlslRewriter = nullptr;
 		IDxcRewriter2* m_hlslRewriter2 = nullptr;
 	
+		ShaderCompilerCreateInfo m_createInfo;
+
 		Vector<std::filesystem::path> m_includeDirectories;
 		Vector<std::string> m_macros;
-		ShaderCompilerFlags m_flags = ShaderCompilerFlags::None;
-		std::filesystem::path m_cacheDirectory;
 
 		RefPtr<ShaderCache> m_shaderCache;
 	};

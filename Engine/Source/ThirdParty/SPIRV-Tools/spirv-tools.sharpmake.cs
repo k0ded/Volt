@@ -25,7 +25,11 @@ namespace VoltSharpmake
 
             conf.IncludePaths.Add(@"[project.RootPath]\include");
             conf.LibraryPaths.Add(@"[project.RootPath]\lib\" + subDir);
-            conf.Output = Configuration.OutputType.Lib;
+			conf.LibraryFiles.Add(
+				"SPIRV-Tools_Volt.lib",
+				"SPIRV-Tools-opt_Volt.lib"
+			);
+            conf.Output = Configuration.OutputType.None;
         }
     }
 }
