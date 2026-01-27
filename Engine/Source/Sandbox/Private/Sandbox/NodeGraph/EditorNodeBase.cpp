@@ -15,11 +15,11 @@ void NothingNode::MakeTypeDefinition(EditorNodeTypeDefinitionBuilder& builder)
 	boolVariableUserData.push_back(3); // 3 is the variable type ID for bool
 
 
-	builder.Pin(PinDirection::Input, 'in', "", &flowUserData);
+	builder.Pin(PinDirection::Input, 'in', "In", &flowUserData);
 	builder.Pin(PinDirection::Input, 'cond', "Condition", &boolVariableUserData, PinType::Custom); // custom to show a checkbox if it isnt connected
 
 	builder.Pin(PinDirection::Output, 'true', "True", &flowUserData);
 	builder.Pin(PinDirection::Output, 'fals', "False", &flowUserData);
 
-	builder.MarkUsesDynamicPins();
+	//builder.MarkUsesDynamicPins();
 }

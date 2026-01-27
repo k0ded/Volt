@@ -14,6 +14,9 @@ EditorNodeGraph::EditorNodeGraph(std::string_view imGuiID)
 	, m_graphVisibleWorldSize(0, 0)
 
 {
+	memset(&m_style, 0, sizeof(m_style));
+	SetupStyle(m_style);
+
 	RegisterNodeType<NothingNode>();
 }
 
@@ -67,13 +70,38 @@ bool EditorNodeGraph::IsNodeHovered(NodeInstanceID instanceID) const
 	return instanceID == m_hoveredNode;
 }
 
+void EditorNodeGraph::SetupStyle(Style& style)
+{
+	//setup defaults
+	style.SetVar(StyleVar::Node_HeaderFontSize, 12.f);
+	style.SetVar(StyleVar::Node_HeaderTextPadding, 2.f);
+
+	style.SetVar(StyleVar::Node_EdgeRounding, 3.f);
+	style.SetVar(StyleVar::Node_ContentPadding, 3.f);
+
+	style.SetVar(StyleVar::Pin_Radius, 5.f);
+	style.SetVar(StyleVar::Pin_VPadding, 5.f);
+	style.SetVar(StyleVar::Pin_HPadding, 10.f);
+	style.SetVar(StyleVar::Pin_UnconnectedThickness, 1.5f);
+	style.SetVar(StyleVar::Pin_TextPadding, 5.f);
+	style.SetVar(StyleVar::Pin_TextFontSize, 8.f);
+
+	style.SetColor(StyleColor::Node_BgColor, glm::vec4(0.2f, 0.2f, 0.2f, 0.8f));
+	style.SetColor(StyleColor::Node_HoveredBgColor, glm::vec4(0.3f, 0.3f, 0.3f, 0.9f));
+
+	style.SetColor(StyleColor::Node_HeaderBgColor, glm::vec4(0.5f, 0.32f, 0.f, 1.f));
+	style.SetColor(StyleColor::Node_HoveredHeaderBgColor, glm::vec4(0.6f, 0.42f, 0.1f, 1.f));
+
+	style.SetColor(StyleColor::Node_SelectedOutlineColor, glm::vec4(1.f, 0.647f, 0.f, 1.f));
+}
+
 void EditorNodeGraph::DrawGraph()
 {
 	DrawGrid();
 
 	for (auto& [instanceID, nodeInstanceInfo] : m_nodeInstances)
 	{
-		DrawNode(nodeInstanceInfo);
+		DrawNode(nodeInstanceInfo, nodeInstanceInfo.desiredNodeSize);
 	}
 
 	if (!m_lastFrameMovingCamera)
@@ -117,28 +145,13 @@ void EditorNodeGraph::DrawGraph()
 		}
 	}
 }
-
-void EditorNodeGraph::DrawNodeContent(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& contentAreaScreenMin, const glm::vec2& contentAreaScreenMax) const
-{
-	//nodeInstanceInfo.nodeInstance->
-}
-
-void EditorNodeGraph::DrawNode(const NodeInstanceInfo& nodeInstanceInfo)
+void EditorNodeGraph::DrawNode(const NodeInstanceInfo& nodeInstanceInfo, glm::vec2& outDesiredNodeSize)
 {
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
+	const ImVec2 nodeSize = nodeInstanceInfo.desiredNodeSize;
+	const ImVec2 halfNodeSize = nodeSize / 2.f;
 
-	constexpr ImColor NODE_COLOR = 0xffffffff;
-	constexpr float NODE_HOVERED_COLOR_MULTIPLIER = 0.8f;
-	constexpr ImColor NODE_SELECTED_OUTLINE_COLOR = ImColor(1.f, 0.647f, 0.f);
-
-
-	constexpr float NODE_EDGE_ROUNDING = 3.f;
-	constexpr float NODE_WIDTH = 100;
-	constexpr float NODE_HEIGHT = 40;
-	constexpr ImVec2 NODE_SIZE(NODE_WIDTH, NODE_HEIGHT);
-	constexpr ImVec2 HALF_NODE_SIZE(NODE_WIDTH / 2, NODE_HEIGHT / 2);
-
-	const glm::vec2 halfNodeScreenSize = HALF_NODE_SIZE * m_zoom;
+	const glm::vec2 halfNodeScreenSize = halfNodeSize * m_zoom;
 	const glm::vec2 nodeScreenPos = WorldToScreenPos(nodeInstanceInfo.position);
 	const glm::vec2 nodeScreenMin = nodeScreenPos - halfNodeScreenSize;
 	const glm::vec2 nodeScreenMax = nodeScreenPos + halfNodeScreenSize;
@@ -151,49 +164,134 @@ void EditorNodeGraph::DrawNode(const NodeInstanceInfo& nodeInstanceInfo)
 		return;
 	}
 
-
 	GraphManageNode(nodeInstanceInfo, nodeScreenMin, nodeScreenMax);
-	ImColor nodeColor = NODE_COLOR;
 	if (IsNodeSelected(nodeInstanceInfo.instanceID))
 	{
-		drawList->AddRect(nodeScreenMin - ImVec2(3, 3), nodeScreenMax + ImVec2(3, 3), NODE_SELECTED_OUTLINE_COLOR, NODE_EDGE_ROUNDING * m_zoom, 0, 3.f);
+		drawList->AddRect(nodeScreenMin - ImVec2(3, 3), nodeScreenMax + ImVec2(3, 3), ImColor(GetStyleColor(StyleColor::Node_SelectedOutlineColor)), GetScaledStyleVar(StyleVar::Node_EdgeRounding), 0, 3.f);
 	}
+
+	ImColor nodeColor = {};
 	if (IsNodeHovered(nodeInstanceInfo.instanceID))
 	{
-		nodeColor.Value.x *= NODE_HOVERED_COLOR_MULTIPLIER;
-		nodeColor.Value.y *= NODE_HOVERED_COLOR_MULTIPLIER;
-		nodeColor.Value.z *= NODE_HOVERED_COLOR_MULTIPLIER;
+		nodeColor = ImColor(GetStyleColor(StyleColor::Node_HoveredBgColor));
 	}
-	drawList->AddRectFilled(nodeScreenMin, nodeScreenMax, nodeColor, NODE_EDGE_ROUNDING * m_zoom);
+	else
+	{
+		nodeColor = ImColor(GetStyleColor(StyleColor::Node_BgColor));
+	}
 
-	glm::vec2 nodeContentRectMin = nodeScreenMin;
-	glm::vec2 nodeContentRectMax = nodeScreenMax;
-	DrawNodeHeader(nodeInstanceInfo, nodeContentRectMin, nodeContentRectMax);
+	drawList->AddRectFilled(nodeScreenMin, nodeScreenMax, nodeColor, GetScaledStyleVar(StyleVar::Node_EdgeRounding));
 
-	DrawNodeContent(nodeInstanceInfo, nodeContentRectMin, nodeContentRectMax);
+	glm::vec2 desiredHeaderSize;
+	DrawNodeHeader(nodeInstanceInfo, nodeScreenMin, nodeScreenMax, desiredHeaderSize);
+
+	glm::vec2 desiredContentSize;
+	DrawNodeContent(nodeInstanceInfo, nodeScreenMin + ImVec2(0, desiredHeaderSize.y), nodeScreenMax, desiredContentSize);
+
+	outDesiredNodeSize.x = glm::max(desiredHeaderSize.x, desiredContentSize.x) / m_zoom;
+	outDesiredNodeSize.y = (desiredHeaderSize.y + desiredContentSize.y) / m_zoom;
 }
 
-void EditorNodeGraph::DrawNodeHeader(const NodeInstanceInfo& nodeInstanceInfo, glm::vec2& minScreenPos, glm::vec2& maxScreenPos) const
+void EditorNodeGraph::DrawNodeHeader(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos, glm::vec2& outDesiredHeaderSize) const
 {
 	//default is to draw the typename at the top of the node
 
+
+	const float fontSize = GetScaledStyleVar(StyleVar::Node_HeaderFontSize);
+	const float textPadding = GetScaledStyleVar(StyleVar::Node_HeaderTextPadding);
+	const ImVec2 textSize = ImGui::GetFont()->CalcTextSizeA(fontSize, FLT_MAX, -1, nodeInstanceInfo.nodeInstance->GetTypeName().c_str());
+	const float headerHeight = textSize.y + textPadding * 2;
+
+	ImColor headerColor = {};
+	if (IsNodeHovered(nodeInstanceInfo.instanceID))
+	{
+		headerColor = ImColor(GetStyleColor(StyleColor::Node_HoveredHeaderBgColor));
+	}
+	else
+	{
+		headerColor = ImColor(GetStyleColor(StyleColor::Node_HeaderBgColor));
+	}
+
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
-	constexpr float HEADER_HEIGHT = 14.f;
-	constexpr float HEADER_TEXT_PADDING = 2.f;
-	constexpr float HEADER_FONT_SIZE = 10.f;
-	constexpr ImColor HEADER_BACKGROUND_COLOR = ImColor(0.5f, 0.32f, 0.f, 0.7f);
-
-	const float headerHeight = HEADER_HEIGHT * m_zoom;
 	glm::vec2 headerMaxPos = { maxScreenPos.x, minScreenPos.y + headerHeight };
-	drawList->AddRectFilled(minScreenPos, headerMaxPos, HEADER_BACKGROUND_COLOR, 3.f * m_zoom, ImDrawFlags_RoundCornersTop);
+	drawList->AddRectFilled(minScreenPos, headerMaxPos, headerColor, 3.f * m_zoom, ImDrawFlags_RoundCornersTop);
 
-	const float fontSize = HEADER_FONT_SIZE * m_zoom;
-	const float textPadding = HEADER_TEXT_PADDING * m_zoom;
 	drawList->AddText(ImGui::GetFont(), fontSize, minScreenPos + glm::vec2(textPadding, textPadding), 0xffffffff, nodeInstanceInfo.nodeInstance->GetTypeName().c_str());
 
-	//modify the content bounds to account for the header
-	minScreenPos.y += headerHeight;
+	outDesiredHeaderSize.x = textSize.x + textPadding * 2;
+	outDesiredHeaderSize.y = textSize.y + textPadding * 2;
 }
+
+void EditorNodeGraph::DrawNodeContent(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& contentAreaScreenMin, const glm::vec2& contentAreaScreenMax, glm::vec2& outDesiredContentSize) const
+{
+	const VoltGUID nodeTypeGuid = nodeInstanceInfo.nodeInstance->GetTypeGUID();
+	VT_ENSURE(m_registeredNodeTypes.contains(nodeTypeGuid));
+	const NodeTypeInfo& typeInfo = m_registeredNodeTypes.at(nodeTypeGuid);
+	const EditorNodeTypeDefinition& typeDef = typeInfo.typeDefinition;
+
+	const float contentPadding = GetScaledStyleVar(StyleVar::Node_ContentPadding);
+	const float pinRadius = GetScaledStyleVar(StyleVar::Pin_Radius);
+	const float pinVPadding = GetScaledStyleVar(StyleVar::Pin_VPadding);
+	const float pinHPadding = GetScaledStyleVar(StyleVar::Pin_HPadding);
+	const float pinUnconnectedThickness = GetScaledStyleVar(StyleVar::Pin_UnconnectedThickness);
+	const float textPadding = GetScaledStyleVar(StyleVar::Pin_TextPadding);
+	const float textFontSize = GetScaledStyleVar(StyleVar::Pin_TextFontSize);
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+	ImVec2 cursorPos = contentAreaScreenMin + ImVec2(contentPadding, contentPadding);
+	const float startCursorY = cursorPos.y;
+	float widestInputPin = 0;
+	for (auto [pinID, pinDef] : typeDef.inputPins)
+	{
+		//add half diameter of pin to place the center in the correct position
+		const ImVec2 pinPos = cursorPos + ImVec2(pinRadius, pinRadius);
+		drawList->AddCircle(pinPos, pinRadius, 0xffffffff, 0, pinUnconnectedThickness);
+
+		const float textWidth = ImGui::GetFont()->CalcTextSizeA(textFontSize, FLT_MAX, -1, pinDef.pinName.c_str()).x;
+		const ImVec2 textPos = pinPos + ImVec2(pinRadius + textPadding, -textFontSize / 2);
+		drawList->AddText(ImGui::GetFont(), textFontSize, textPos, 0xffffffff, pinDef.pinName.c_str());
+
+		const float pinTotalWidth = (textPos.x + textWidth) - cursorPos.x;
+		if (widestInputPin < pinTotalWidth)
+		{
+			widestInputPin = pinTotalWidth;
+		}
+
+		cursorPos.y += pinRadius * 2;
+		cursorPos.y += pinVPadding;
+	}
+	const float inputPinsHeight = cursorPos.y - startCursorY;
+
+	cursorPos.x = contentAreaScreenMax.x - contentPadding;
+	cursorPos.y = startCursorY;
+	float widestOutputPin = 0;
+	for (auto [pinID, pinDef] : typeDef.outputPins)
+	{
+		//add half diameter of pin to place the center in the correct position
+		const ImVec2 pinPos = cursorPos + ImVec2(-pinRadius, pinRadius);
+		drawList->AddCircle(pinPos, pinRadius, 0xffffffff, 0, pinUnconnectedThickness);
+
+		const float textWidth = ImGui::GetFont()->CalcTextSizeA(textFontSize, FLT_MAX, -1, pinDef.pinName.c_str()).x;
+		const ImVec2 textPos = pinPos - ImVec2(pinRadius + textPadding + textWidth, textFontSize / 2);
+		drawList->AddText(ImGui::GetFont(), textFontSize, textPos, 0xffffffff, pinDef.pinName.c_str());
+
+		const float pinTotalWidth = cursorPos.x - (textPos.x);
+		if (widestOutputPin < pinTotalWidth)
+		{
+			widestOutputPin = pinTotalWidth;
+		}
+
+		cursorPos.y += pinRadius * 2;
+		cursorPos.y += pinVPadding;
+	}
+	const float outputPinsHeight = cursorPos.y - startCursorY;
+
+	const float desiredHeight = glm::max(inputPinsHeight, outputPinsHeight) + contentPadding * 2;
+	const float desiredWidth = widestOutputPin + widestInputPin + pinHPadding + contentPadding * 2;
+	outDesiredContentSize.x = desiredWidth;
+	outDesiredContentSize.y = desiredHeight;
+}
+
 
 void EditorNodeGraph::DrawConnection(const NodeConnection& nodeConnection) const
 {}

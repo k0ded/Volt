@@ -19,8 +19,10 @@ public:
 	//should be created using EDITOR_NODE_TYPE define
 	virtual std::string GetTypeName() const = 0;
 
-	// pin types definition
-	virtual void MakeTypeDefinition(EditorNodeTypeDefinitionBuilder& builder) = 0;
+	// All node types need to have this static function
+	//static void MakeTypeDefinition(EditorNodeTypeDefinitionBuilder& builder);
+
+
 	// create all pins using this function
 	virtual void Build(EditorNodeBuilder& builder) = 0;
 
@@ -41,8 +43,9 @@ class NothingNode : public EditorNodeTypeBase
 {
 	EDITOR_NODE_TYPE(NothingNode, "{947F14F5-709F-4C7F-BE5C-4A24E63A241C}"_guid)
 public:
+	static void MakeTypeDefinition(EditorNodeTypeDefinitionBuilder& builder);
+
 	void Build(EditorNodeBuilder& nodeBuilder) override;
-	void MakeTypeDefinition(EditorNodeTypeDefinitionBuilder& builder) override;
 
 };
 

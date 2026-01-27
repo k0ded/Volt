@@ -27,8 +27,6 @@ constexpr uint8_t PIN_USERDATA_MAX_SIZE = 32;
 typedef InlineVector<uint8_t, PIN_USERDATA_MAX_SIZE> EditorPinUserData;
 struct EditorNodePinDefinition
 {
-	static constexpr uint8_t PIN_USERDATA_MAX_SIZE = 32;
-
 	PinDirection direction;
 	PinType pinType;
 
@@ -37,20 +35,25 @@ struct EditorNodePinDefinition
 	EditorPinUserData userData;
 };
 
+struct EditorNodeTypeDefinition
+{
+	Map<EditorNodePinID, EditorNodePinDefinition> inputPins;
+	Map<EditorNodePinID, EditorNodePinDefinition> outputPins;
+	bool usesDynamicPins = false;
+};
+
 class EditorNodeTypeDefinitionBuilder
 {
 public:
 	EditorNodeTypeDefinitionBuilder();
 	~EditorNodeTypeDefinitionBuilder() = default;
 
-	VT_INLINE bool UsesDynamicPins() const { return m_usesDynamicPins; }
-	VT_INLINE void MarkUsesDynamicPins() { m_usesDynamicPins = true; }
+	VT_INLINE bool UsesDynamicPins() const { return m_nodeTypeDefinition.usesDynamicPins; }
+	VT_INLINE void MarkUsesDynamicPins() { m_nodeTypeDefinition.usesDynamicPins = true; }
 
-	void Pin(PinDirection pinDirection, EditorNodePinID pinID, std::string_view pinName, EditorPinUserData* userData = nullptr, PinType pinType = PinType::Default);
+	void Pin(PinDirection pinDirection, EditorNodePinID pinID, const char* pinName, EditorPinUserData* userData = nullptr, PinType pinType = PinType::Default);
 
+	EditorNodeTypeDefinition&& MoveDefinition() { return std::move(m_nodeTypeDefinition); }
 private:
-	Map<EditorNodePinID, EditorNodePinDefinition> m_inputPins;
-	Map<EditorNodePinID, EditorNodePinDefinition> m_outputPins;
-
-	bool m_usesDynamicPins;
+	EditorNodeTypeDefinition m_nodeTypeDefinition;
 };

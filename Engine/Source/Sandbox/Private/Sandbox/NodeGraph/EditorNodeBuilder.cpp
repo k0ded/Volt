@@ -2,17 +2,16 @@
 #include "Sandbox/NodeGraph/EditorNodeBuilder.h"
 
 EditorNodeTypeDefinitionBuilder::EditorNodeTypeDefinitionBuilder()
-	: m_usesDynamicPins(false)
 {}
 
-void EditorNodeTypeDefinitionBuilder::Pin(PinDirection pinDirection, EditorNodePinID pinID, std::string_view pinName, InlineVector<uint8_t, EditorNodePinDefinition::PIN_USERDATA_MAX_SIZE>* userData, PinType pinType)
+void EditorNodeTypeDefinitionBuilder::Pin(PinDirection pinDirection, EditorNodePinID pinID, const char* pinName, InlineVector<uint8_t, PIN_USERDATA_MAX_SIZE>* userData, PinType pinType)
 {
 	EditorNodePinDefinition definition;
 	memset(&definition, 0, sizeof(EditorNodePinDefinition));
 
 	definition.direction = pinDirection;
 	definition.pinID = pinID;
-	definition.pinName = pinName;
+	definition.pinName = std::string(pinName);
 	if (userData)
 	{
 		definition.userData.resize(userData->size());
@@ -23,10 +22,10 @@ void EditorNodeTypeDefinitionBuilder::Pin(PinDirection pinDirection, EditorNodeP
 	switch (pinDirection)
 	{
 		case PinDirection::Input:
-			m_inputPins.insert({ pinID, definition });
+			m_nodeTypeDefinition.inputPins.insert({ pinID, definition });
 			break;
 		case PinDirection::Output:
-			m_outputPins.insert({ pinID, definition });
+			m_nodeTypeDefinition.outputPins.insert({ pinID, definition });
 			break;
 		default:
 			break;
