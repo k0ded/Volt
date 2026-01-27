@@ -56,12 +56,15 @@ namespace Volt
 		void GatherAssetDependencies(AssetDependencyGatherContext& gatherContext, ReadOnlyAssetMetadata assetMetadata) override;
 
 		VT_INLINE void SetMaterialBlendMode(MaterialBlendMode materialBlendMode) { m_materialBlendMode = materialBlendMode; }
+		VT_INLINE void SetIsDoubleSided(bool isDoubleSided) { m_isDoubleSided = isDoubleSided; }
 
 	private:
 		Ref<MaterialGraph> m_graph;
 		Ref<RenderMaterial> m_renderMaterial;
 	
 		MaterialBlendMode m_materialBlendMode = MaterialBlendMode::Opaque;
+		bool m_isDoubleSided = false;
+
 		Vector<AssetReference<Texture2D>> m_referencedTextures;
 	};
 }

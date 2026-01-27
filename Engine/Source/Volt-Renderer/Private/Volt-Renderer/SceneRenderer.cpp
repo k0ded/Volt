@@ -336,7 +336,7 @@ namespace Volt
 		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
 		auto pixelShader = ShaderMap::Get<TranslucencyCompositePS>();
 
-		renderGraph.AddPass("Tonemap",
+		renderGraph.AddPass("TranslucencyComposite",
 			RenderGraphPassFlags::None,
 			passParameters,
 			[passParameters, view, pixelShader, vertexShader](RenderContext& context)

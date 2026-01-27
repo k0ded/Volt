@@ -63,19 +63,22 @@ namespace Volt
 		void BindToShaderBindingMap(RHI::ShaderBindingMap& shaderBindingMap, RefPtr<RHI::RenderPipeline> renderPipeline) const;
 
 		VT_INLINE void SetMaterialBlendMode(MaterialBlendMode materialBlendMode) { m_materialBlendMode = materialBlendMode; }
+		VT_INLINE void SetIsDoubleSided(bool isDoubleSided) { m_isDoubleSided = isDoubleSided; }
 
 		VT_NODISCARD VT_INLINE const TexturesMap& GetTextures() const { return m_textures; }
 		VT_NODISCARD VT_INLINE size_t GetHash() const { return m_hash; }
 		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
 		VT_NODISCARD VT_INLINE MaterialBlendMode GetMaterialBlendMode() const { return m_materialBlendMode; }
+		VT_NODISCARD VT_INLINE bool GetIsDoubleSided() const { return m_isDoubleSided; }
 
 		template<typename T>
 		VT_NODISCARD RefPtr<RHI::Shader> GetPixelShader() 
 		{ 
-			typename T::PermutationVector permutationVector;
-
-			SetupPermutations<T>(permutationVector);
-			return m_shaderMap.GetShader<T>(permutationVector); 
+			//typename T::PermutationVector permutationVector;
+			//
+			//SetupPermutations<T>(permutationVector);
+			//return m_shaderMap.GetShader<T>(permutationVector); 
+			return m_shaderMap.GetShader<T>(); 
 		}
 
 	private:
@@ -84,7 +87,6 @@ namespace Volt
 		template<typename T>
 		void SetupPermutations(typename T::PermutationVector& permutationVector)
 		{
-			permutationVector.template Set<MaterialShader::MaterialBlendModeDim>(m_materialBlendMode);
 		}
 
 		void Invalidate(CompiledMaterialShaders&& compiledMaterialShaders);
@@ -95,6 +97,7 @@ namespace Volt
 		TexturesMap m_renderableTextures;
 
 		MaterialBlendMode m_materialBlendMode = MaterialBlendMode::Opaque;
+		bool m_isDoubleSided = false;
 		MaterialShaderMap m_shaderMap;
 
 		std::string m_name;

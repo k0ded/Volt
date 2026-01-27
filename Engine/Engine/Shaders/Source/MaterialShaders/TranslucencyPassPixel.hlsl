@@ -6,7 +6,7 @@
 #include "Lights/Lights.hlsli"
 #include "PBR/PBR.hlsli"
 
-TranslucenyPassPixelShaderOutput MainPS(in TranslucenyPassPixelShaderInput input)
+TranslucenyPassPixelShaderOutput MainPS(in TranslucenyPassPixelShaderInput input, bool isFrontFace : SV_IsFrontFace)
 {
     MaterialEvaluationData evaluationData;
     evaluationData.texCoords = input.texCoords;
@@ -14,11 +14,13 @@ TranslucenyPassPixelShaderOutput MainPS(in TranslucenyPassPixelShaderInput input
     EvaluatedMaterial evaluatedMaterial = EvaluateMaterial(evaluationData);
 
     const float3x3 TBN = CalculateTBN(input.normal, input.tangent.xyz, input.tangent.w);
-    const float3 resultNormal = normalize(mul(TBN, normalize(evaluatedMaterial.normal)));
+    float3 resultNormal = normalize(mul(TBN, normalize(evaluatedMaterial.normal)));
     
+	EvaluateDoubleSided(resultNormal, isFrontFace);
+
 	PBRInput pbrInput;
 	pbrInput.albedo = evaluatedMaterial.albedo;
-	pbrInput.normal = evaluatedMaterial.normal;
+	pbrInput.normal = resultNormal;
 	pbrInput.roughness = evaluatedMaterial.roughness;
 	pbrInput.metallic = evaluatedMaterial.metallic;
 	pbrInput.emissive = evaluatedMaterial.emissive;

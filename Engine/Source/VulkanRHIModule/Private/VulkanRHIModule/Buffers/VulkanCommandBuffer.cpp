@@ -1630,12 +1630,6 @@ namespace Volt::RHI
 		uint8_t* descriptorHeapPointer = descriptorHeap.GetHeapPointer();
 		VkDevice vkDevice = GraphicsContext::GetDevice()->GetHandle<VkDevice>();
 
-		auto begin = shaderBindings.begin();
-		auto end = shaderBindings.end();
-
-		VT_UNUSED(begin);
-		VT_UNUSED(end);
-
 		for (const auto& bindings : shaderBindings)
 		{
 			// There are no bindings, so we skip it.
@@ -1766,5 +1760,19 @@ namespace Volt::RHI
 		}
 
 		vkCmdBindDescriptorBuffersEXT(m_commandBufferData.commandBuffer, numDescriptorBuffersToBind, bindingInfo.data());
+	}
+
+	void VulkanCommandBuffer::PushInlineParameters(const void* data, const uint32_t size, const uint32_t offset, ShaderStage shaderStages)
+	{
+		VkPushConstantsInfo pushConstantsInfo;
+		pushConstantsInfo.sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO;
+		pushConstantsInfo.pNext = nullptr;
+		pushConstantsInfo.layout = GetActivePipelineLayout();
+		pushConstantsInfo.stageFlags = Utility::VoltToVulkanShaderStage(shaderStages);
+		pushConstantsInfo.offset = offset;
+		pushConstantsInfo.size = size;
+		pushConstantsInfo.pValues = data;
+
+		vkCmdPushConstants2(m_commandBufferData.commandBuffer, &pushConstantsInfo);
 	}
 }

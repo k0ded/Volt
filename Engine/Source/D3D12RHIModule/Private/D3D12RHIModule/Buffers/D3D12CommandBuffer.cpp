@@ -1314,4 +1314,9 @@ namespace Volt::RHI
 
 		m_commandListData.commandList->SetDescriptorHeaps(2, heaps);
 	}
+
+	void D3D12CommandBuffer::PushInlineParameters(const void* data, const uint32_t size, const uint32_t offset, ShaderStage shaderStages)
+	{
+
+	}
 }

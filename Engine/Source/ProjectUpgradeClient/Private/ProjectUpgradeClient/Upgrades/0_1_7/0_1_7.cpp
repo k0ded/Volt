@@ -187,7 +187,7 @@ namespace Volt
 				return;
 			}
 
-			entityDescAsset->AssignOwnerScene(sceneAsset);
+			//entityDescAsset->AssignOwnerScene(sceneAsset);
 		}
 		else if (asset->GetType() == AssetTypes::Scene)
 		{
@@ -201,7 +201,7 @@ namespace Volt
 			AssetReference<EntityDesc> entityDescAsset = asset.ConvertTo<EntityDesc>();
 
 			YAMLMemoryStreamReader yamlStreamReader;
-			yamlStreamReader.ReadBuffer(entityDescAsset->GetEntitySpawnData());
+			//yamlStreamReader.ReadBuffer(entityDescAsset->GetEntitySpawnData());
 			EntityDescSerializer::Get().DeserializeEntity(sceneAsset, yamlStreamReader);
 		}
 

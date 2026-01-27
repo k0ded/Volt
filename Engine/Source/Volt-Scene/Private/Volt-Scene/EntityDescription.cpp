@@ -9,11 +9,14 @@
 #include <AssetSystem/AssetManager.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::EntityDesc, EntityDesc);
 	VT_REGISTER_CUSTOM_ASSET_METADATA_TYPE(EntityDescCustomMetadata, AssetTypes::EntityDesc);
+
+	ArchiveVersionRegistrar g_registerEntityDescArchiveVersion(EntityDescSerialization::EntityDescArchiveVersion::guid, EntityDescSerialization::EntityDescArchiveVersion::LatestVersion, "EntityDescArchiveVersion");
 
 	EntityDesc::EntityDesc(EntityID entityID, AssetHandle sceneHandle)
 		: m_sceneHandle(sceneHandle), m_entityID(entityID)

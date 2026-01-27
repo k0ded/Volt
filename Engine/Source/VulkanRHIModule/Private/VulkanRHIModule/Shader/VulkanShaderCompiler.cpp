@@ -790,6 +790,22 @@ namespace Volt::RHI
 			shaderParameterMap.AddAccelerationStructure(accelerationStructure->name, accelerationStructure->set, accelerationStructure->binding, currentShaderStage);
 		}
 
+		// "InlineParameterBlock"
+		{
+			result = spvReflectEnumeratePushConstantBlocks(&spirvModule, &count, nullptr);
+			VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+
+			Vector<SpvReflectBlockVariable*> pushConstants(count);
+			result = spvReflectEnumeratePushConstantBlocks(&spirvModule, &count, pushConstants.data());
+			VT_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS);
+
+			for (const SpvReflectBlockVariable* var : pushConstants)
+			{
+				const ShaderUniformType uniformType = Utility::GetShaderUniformTypeFromSpvTypeDesc(var->type_description);
+				shaderParameterMap.AddInlineParameter(var->name, uniformType, var->size, var->absolute_offset);
+			}
+		}
+
 		const uint32_t spirvSize = spvReflectGetCodeSize(&spirvModule);
 		spirv.resize(spirvSize / sizeof(uint32_t));
 		memcpy(spirv.data(), spvReflectGetCode(&spirvModule), spirvSize);

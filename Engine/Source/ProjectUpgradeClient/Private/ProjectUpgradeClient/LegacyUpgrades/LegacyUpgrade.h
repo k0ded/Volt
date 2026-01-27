@@ -16,7 +16,7 @@ namespace Volt
 	{
 	public:
 		LegacyProjectUpgrade(const Project& inProject);
-		~LegacyProjectUpgrade() override = default;
+		~LegacyProjectUpgrade() override;
 
 		void TryConvertProject(const std::filesystem::path& projectFilepath, const std::filesystem::path& targetDirectory);
 

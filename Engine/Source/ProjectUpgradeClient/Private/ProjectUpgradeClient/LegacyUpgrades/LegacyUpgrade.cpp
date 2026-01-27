@@ -441,7 +441,8 @@ bool LegacyProjectUpgrade::ProcessUpgrade()
 		return true;
 	}
 
-	m_assetManager = CreateScope<AssetManager>(ProjectManager::GetEngineRootDirectory(), m_targetDirectory, project.assetsDirectoryName);
+	g_assetManager = std::move(g_assetManager);
+	g_assetManager = CreateScope<AssetManager>(ProjectManager::GetEngineRootDirectory(), m_targetDirectory, project.assetsDirectoryName);
 
 	const bool hasMetafiles = project.engineVersion.GetMinor() < 5;
 
@@ -593,7 +594,7 @@ void LegacyProjectUpgrade::TryConvertAssets(const Volt::Project& project, const 
 		// Default to true to skip imported assets.
 		bool isMemoryAsset = true;
 		{
-			ReadOnlyAssetMetadata metadata = m_assetManager->GetReadOnlyAssetMetadata(asset->GetAssetHandle());
+			ReadOnlyAssetMetadata metadata = g_assetManager->GetReadOnlyAssetMetadata(asset->GetAssetHandle());
 			if (metadata.IsValid())
 			{
 				isMemoryAsset = metadata->IsMemoryAsset();
@@ -602,7 +603,7 @@ void LegacyProjectUpgrade::TryConvertAssets(const Volt::Project& project, const 
 		
 		if (!isMemoryAsset)
 		{
-			m_assetManager->SaveAsset(asset);
+			g_assetManager->SaveAsset(asset);
 		}
 	}
 }
@@ -648,12 +649,14 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 		}
 	}
 
-	AssetReference<Scene> scene = m_assetManager->CreateAssetAndFileWithAssetHandle<Scene>(metadata.filepath.parent_path(), sceneName, metadata.handle);
+	AssetReference<Scene> scene = g_assetManager->CreateAssetAndFileWithAssetHandle<Scene>(metadata.filepath.parent_path(), sceneName, metadata.handle);
 
 	Vector<AssetReference<Asset>> resultAssets;
 	resultAssets.emplace_back(scene);
 
 	const std::filesystem::path entitiesTargetDir = metadata.filepath.parent_path() / (metadata.filepath.stem().string() + "_Entities");
+
+	Vector<AssetReference<EntityDesc>> entityDescs;
 
 	for (const std::filesystem::path& layerFilepath : layerFilepaths)
 	{
@@ -681,7 +684,10 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 			const std::string entityDescName = std::to_string(entityId);
 
 			Entity newEntity = scene->CreateEntityWithID(entityId);
-			m_assetManager->CreateFileForAsset(scene->GetEntityDescHandleFromEntityID(entityId), entitiesTargetDir / (entityDescName + ".vtasset"));
+			AssetHandle entityDescHandle = scene->GetEntityDescHandleFromEntityID(entityId);
+			g_assetManager->CreateFileForAsset(entityDescHandle, entitiesTargetDir / (entityDescName + ".vtasset"));
+
+			entityDescs.emplace_back(g_assetManager->GetAssetImmediately<EntityDesc>(entityDescHandle));
 
 			layerReader.ForEach("components", [&]() 
 			{
@@ -850,14 +856,22 @@ Vector<AssetReference<Asset>> LegacyProjectUpgrade::TryConvertScene(const Volt::
 
 					if (meshComponent.materials.empty())
 					{
-						if (m_assetManager->IsValidAssetHandle(meshComponent.handle))
+						if (g_assetManager->IsValidAssetHandle(meshComponent.handle))
 						{
-							AssetReference<MeshAsset> mesh = m_assetManager->GetAssetImmediately<MeshAsset>(meshComponent.handle);
+							AssetReference<MeshAsset> mesh = g_assetManager->GetAssetImmediately<MeshAsset>(meshComponent.handle);
 							meshComponent.materials = mesh->GetMaterials();
 						}
 					}
 				}
 			}
+		}
+
+		for (AssetReference<EntityDesc>& entityDesc : entityDescs)
+		{
+			bool succeded = entityDesc->UpdateComponentData();
+			VT_ENSURE(succeded);
+
+			resultAssets.emplace_back(entityDesc);
 		}
 	}
 
@@ -889,7 +903,7 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::TryConvertMesh(const V
 	Buffer dataBuffer = Buffer::ReadFromFile(absoluteMeshPath);
 
 	const std::string meshName = absoluteMeshPath.stem().string();
-	AssetReference<MeshAsset> newMesh = m_assetManager->CreateAssetAndFileWithAssetHandle<MeshAsset>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle);
+	AssetReference<MeshAsset> newMesh = g_assetManager->CreateAssetAndFileWithAssetHandle<MeshAsset>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle);
 	assets.emplace_back(newMesh);
 
 	{
@@ -1037,7 +1051,7 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::TryConvertMesh(const V
 			for (uint32_t i = 0; i < requiredMaterialCount; ++i)
 			{
 				std::string materialName = std::format("{}_Mat_{}", meshName, i);
-				AssetReference<Asset> newMaterial = m_assetManager->CreateAssetAndFile<MaterialAsset>(metadata.filepath.parent_path(), materialName);
+				AssetReference<Asset> newMaterial = g_assetManager->CreateAssetAndFile<MaterialAsset>(metadata.filepath.parent_path(), materialName);
 				
 				materials.emplace_back(newMaterial->GetAssetHandle());
 				assets.emplace_back(newMaterial);
@@ -1072,7 +1086,7 @@ AssetReference<Prefab> LegacyProjectUpgrade::TryConvertPrefab(const Volt::Projec
 		return nullptr;
 	}
 
-	AssetReference<Scene> prefabScene = m_assetManager->CreateMemoryAsset<Scene>("");
+	AssetReference<Scene> prefabScene = g_assetManager->CreateMemoryAsset<Scene>("");
 
 	EntityID rootEntityId = EntityID::Null();
 
@@ -1194,7 +1208,7 @@ AssetReference<Prefab> LegacyProjectUpgrade::TryConvertPrefab(const Volt::Projec
 
 	VT_ENSURE(rootEntityId != EntityID::Null());
 
-	AssetReference<Prefab> prefab = m_assetManager->CreateAssetAndFileWithAssetHandle<Prefab>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle, prefabScene, rootEntityId, version);
+	AssetReference<Prefab> prefab = g_assetManager->CreateAssetAndFileWithAssetHandle<Prefab>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle, prefabScene, rootEntityId, version);
 
 	VT_LOG(Trace, "Converted Prefab with name {}", metadata.filepath.stem().string());
 	return prefab;
@@ -1290,13 +1304,18 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 		//const bool isPermutation = streamReader.ReadAtKey("isPermutation", false);
 
 		const std::string assetName = materialName + "_" + subMaterialName;
-		AssetReference<Volt::MaterialAsset> material = m_assetManager->CreateAssetAndFile<Volt::MaterialAsset>(metadata.filepath.parent_path(), assetName);
+		AssetReference<Volt::MaterialAsset> material = g_assetManager->CreateAssetAndFile<Volt::MaterialAsset>(metadata.filepath.parent_path(), assetName);
 		// Since all materials were assumued to be alpha masked, we will set all materials to be
 		// alpha masked here as well.
 
 		if (shaderName == "IllumTransparent")
 		{
 			material->SetMaterialBlendMode(MaterialBlendMode::Translucent);
+		}
+		else if (shaderName == "Foliage")
+		{
+			material->SetMaterialBlendMode(MaterialBlendMode::AlphaMasked);
+			material->SetIsDoubleSided(true);
 		}
 		else
 		{
@@ -1485,7 +1504,7 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 		 JobFuture<Vector<AssetReference<Asset>>> future = SourceAssetManager::ImportSourceAsset(absoluteTexturePath, importConfig);
 
 		 Volt::Renderer::EnvironmentTextures envTextures = Volt::Renderer::GenerateEnvironmentTextures(future.Get().front()->GetAssetHandle());
-		 return m_assetManager->CreateAssetAndFileWithAssetHandle<Volt::EnvironmentTexture>(importConfig.destinationDirectory, importConfig.destinationFilename, metadata.handle, envTextures.diffuse, envTextures.specular);
+		 return g_assetManager->CreateAssetAndFileWithAssetHandle<Volt::EnvironmentTexture>(importConfig.destinationDirectory, importConfig.destinationFilename, metadata.handle, envTextures.diffuse, envTextures.specular);
 	 }
 	 else
 	 {
@@ -1496,5 +1515,13 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::CreateMaterials(const 
 
 		 JobFuture<Vector<AssetReference<Asset>>> future = SourceAssetManager::ImportSourceAsset(absoluteTexturePath, importConfig);
 		 return future.Get().front();
+	 }
+ }
+
+ LegacyProjectUpgrade::~LegacyProjectUpgrade()
+ {
+	 if (m_assetManager)
+	 {
+		 g_assetManager = std::move(m_assetManager);
 	 }
  }

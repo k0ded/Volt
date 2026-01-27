@@ -212,6 +212,9 @@ namespace Volt
 					 commandBuffer->BindVertexBuffers(primitiveIndexVertexBufferVector, perInstanceBindingIndex);
 					 commandBuffer->BindIndexBuffer(firstDrawComamnd.indexBuffer);
 					 
+					 MaterialShader::InlineParameterBlock inlineParameterBlock = GetMaterialInlineParameterBlock(firstDrawComamnd.renderPrimitive);
+
+					 commandBuffer->PushInlineParameters(&inlineParameterBlock, sizeof(MaterialShader::InlineParameterBlock), 0, RHI::ShaderStage::Pixel);
 					 commandBuffer->DrawIndexed(
 						 firstDrawComamnd.drawCommand.indexCount,
 						 instancingRange.count,
@@ -322,8 +325,7 @@ namespace Volt
 		newDrawCommand.drawCommand.vertexOffset = subMesh.vertexStartOffset;
 		newDrawCommand.drawCommand.firstInstance = 0;
 
-		newDrawCommand.sortKey.sortKeyContents.pixelShaderHash = pixelShader->GetHash();
-		newDrawCommand.sortKey.sortKeyContents.vertexShaderHash = vertexShader->GetHash();
+		newDrawCommand.sortKey = GetSortKeyFromRenderPrimitive(renderPrimitive, pixelShader, vertexShader);
 
 		MarkBucketDirty(hashKey);
    	}
@@ -458,5 +460,32 @@ namespace Volt
 
 
 		return hashKey;
+	}
+
+	MeshDrawCommandSortKey MeshPassProcessor::GetSortKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader)
+	{
+		MeshDrawCommandSortKey sortKey;
+		sortKey.sortKeyContents.vertexShaderHash = vertexShader->GetHash();
+		sortKey.sortKeyContents.pixelShaderHash = pixelShader->GetHash();
+		sortKey.sortKeyContents.permutationHash = GetMaterialPermutationHash(renderPrimitive->material);
+	
+		return sortKey;
+	}
+
+	uint64_t MeshPassProcessor::GetMaterialPermutationHash(Weak<RenderMaterial> renderMaterial)
+	{
+		uint64_t result = 0;
+		result = Math::HashCombine(std::hash<std::underlying_type_t<MaterialBlendMode>>()(std::to_underlying(renderMaterial->GetMaterialBlendMode())), std::hash<bool>()(renderMaterial->GetIsDoubleSided()));
+
+		return result;
+	}
+
+	MaterialShader::InlineParameterBlock MeshPassProcessor::GetMaterialInlineParameterBlock(const RenderPrimitiveData* renderPrimitive) const
+	{
+		MaterialShader::InlineParameterBlock parameterBlock;
+		parameterBlock.materialBlendMode = std::to_underlying(renderPrimitive->material->GetMaterialBlendMode());
+		parameterBlock.isDoubleSided = renderPrimitive->material->GetIsDoubleSided();
+
+		return parameterBlock;
 	}
 }

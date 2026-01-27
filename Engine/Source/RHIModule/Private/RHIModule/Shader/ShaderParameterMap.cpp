@@ -1,8 +1,27 @@
 #include "rhipch.h"
 #include "RHIModule/Shader/ShaderParameterMap.h"
 
+#include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
+
 namespace Volt::RHI
 {
+	struct ShaderParameterMapCustomVersion
+	{
+		enum Type
+		{
+			BaseVersion = 0,
+			AddedInlineParameterBlock,
+
+			VersionPlusOne,
+			LatestVersion = VersionPlusOne - 1
+		};
+
+		inline static constexpr VoltGUID guid = "{5B9B2CC7-B9B6-437A-AED7-945F8A9C8F93}"_guid;
+	private:
+		ShaderParameterMapCustomVersion() = default;
+	};
+	ArchiveVersionRegistrar g_registerShaderParameterMapCustomVersion(ShaderParameterMapCustomVersion::guid, ShaderParameterMapCustomVersion::LatestVersion, "ShaderParameterMapCustomVersion");
+
 	void ShaderParameterMap::AddUniformBuffer(const std::string& name, uint32_t set, uint32_t binding, ShaderStage shaderStage)
 	{
 		auto& resourceBinding = m_resourceBindings.emplace_back();
@@ -144,6 +163,17 @@ namespace Volt::RHI
 		return nullptr;
 	}
 
+	void ShaderParameterMap::AddInlineParameter(const std::string& name, ShaderUniformType uniformType, uint32_t size, uint32_t offset)
+	{
+		auto& inlineParameter = m_inlineParameterBlock[StringHash::Construct(name)];
+		inlineParameter.type = uniformType;
+		inlineParameter.size = size;
+		inlineParameter.offset = offset;
+		inlineParameter.name = name;
+
+		m_inlineParameterBlockSize = std::max(m_inlineParameterBlockSize, offset + size);
+	}
+
 	Archive& operator<<(Archive& archive, ShaderParameterMap::ResourceBinding& value)
 	{
 		archive << value.binding;
@@ -153,11 +183,19 @@ namespace Volt::RHI
 
 	Archive& operator<<(Archive& archive, ShaderParameterMap& value)
 	{
+		archive.UseVersion(ShaderParameterMapCustomVersion::guid);
+
 		archive << value.m_shaderParameterSize;
 		archive << value.m_shaderStage;
 		archive << value.m_resourceBindings;
 		archive << value.m_shaderParameters;
 		archive << value.m_accessesRayTracingResourceTable;
+
+		if (!archive.IsLoading() || archive.GetVersion(ShaderParameterMapCustomVersion::guid) >= ShaderParameterMapCustomVersion::AddedInlineParameterBlock)
+		{
+			archive << value.m_inlineParameterBlockSize;
+			archive << value.m_inlineParameterBlock;
+		}
 
 		return archive;
 	}

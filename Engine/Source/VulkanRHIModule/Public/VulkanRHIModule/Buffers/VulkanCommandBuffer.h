@@ -58,6 +58,7 @@ namespace Volt::RHI
 		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer, const IndexType indexType) override;
 
 		void BindShaderBindings(const ShaderBindingMap& shaderBindingsMap) override;
+		void PushInlineParameters(const void* data, const uint32_t size, const uint32_t offset, ShaderStage shaderStages) override;
 
 		void BeginRendering(const RenderingInfo& renderingInfo) override;
 		void EndRendering() override;

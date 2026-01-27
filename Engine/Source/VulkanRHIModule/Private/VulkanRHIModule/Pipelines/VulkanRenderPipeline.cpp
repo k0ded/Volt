@@ -6,6 +6,7 @@
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 #include "VulkanRHIModule/VulkanResourceCast.h"
+#include "VulkanRHIModule/Utility/PushConstantsBuilder.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/RHIModule.h>
@@ -143,13 +144,19 @@ namespace Volt::RHI
 
 		// Create pipeline layout
 		{
+			PushConstantsBuilder pushConstantsBuilder{};
+			VkPushConstantRange pushConstantRange = pushConstantsBuilder.BuildPushConstantRange(m_shaderParameterMaps);
+			const bool hasPushConstantRange = pushConstantRange.size > 0;
+
+			VT_ENSURE_MSG(pushConstantRange.size <= 128, "Larger than 128 bytes is not allowed, since 128 bytes is the vulkan specification guaranteed amount.");
+
 			VkPipelineLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			info.pNext = nullptr;
 			info.setLayoutCount = static_cast<uint32_t>(m_descriptorSets.pipelineLayoutDescriptorSetLayouts.size());
 			info.pSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.data();
-			info.pushConstantRangeCount = 0;
-			info.pPushConstantRanges = nullptr;
+			info.pushConstantRangeCount = hasPushConstantRange ? 1 : 0;
+			info.pPushConstantRanges = hasPushConstantRange ? &pushConstantRange : nullptr;
 
 			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_pipelineLayout));
 		}

@@ -9,10 +9,12 @@ namespace Volt
 {
 	struct MaterialShader : public GlobalShader
 	{
-		struct MaterialBlendModeDim : SHADER_PERMUTATION_ENUM("MATERIAL_BLEND_MODE", MaterialBlendMode);
-		using PermutationVector = PermutationCollection<MaterialBlendModeDim>;
+		struct InlineParameterBlock
+		{
+			uint32_t materialBlendMode;
+			uint32_t isDoubleSided;
+		};
 	};
 }
 
 #define VT_DECLARE_MATERIAL_SHADER(klass)
-

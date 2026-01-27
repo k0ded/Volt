@@ -30,6 +30,7 @@ namespace Volt
 		{
 			BaseVersion = 0,
 			AddedMaterialBlendMode = 1,
+			AddedDoubleSided = 2,
 
 			VersionPlusOne,
 			LatestVersion = VersionPlusOne - 1
@@ -82,8 +83,14 @@ namespace Volt
 			archive << m_materialBlendMode;
 		}
 
+		if (!archive.IsLoading() || archive.GetVersion(MaterialAssetCustomVersion::guid) >= MaterialAssetCustomVersion::AddedDoubleSided)
+		{
+			archive << m_isDoubleSided;
+		}
+
 		// Set the render materials blend mode.
 		m_renderMaterial->SetMaterialBlendMode(m_materialBlendMode);
+		m_renderMaterial->SetIsDoubleSided(m_isDoubleSided);
 
 		if (archive.IsLoading())
 		{

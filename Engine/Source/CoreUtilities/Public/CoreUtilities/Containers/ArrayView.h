@@ -17,6 +17,7 @@ public:
 
 	template<typename Allocator> constexpr ArrayView(const Vector<T, Allocator>& v) noexcept;
 	template<size_t N> constexpr ArrayView(const Array<T, N>& arr) noexcept;
+	constexpr ArrayView(const T* data, size_t count) noexcept;
 
 	constexpr ArrayView<T>& operator=(const ArrayView<T>& other) noexcept;
 	constexpr ArrayView<T>& operator=(ArrayView<T>&& other) noexcept;
@@ -116,6 +117,13 @@ template<size_t N>
 constexpr ArrayView<T>::ArrayView(const Array<T, N>& arr) noexcept
 	: m_data(arr.data()),
 	m_size(arr.size())
+{
+}
+
+template<typename T>
+constexpr ArrayView<T>::ArrayView(const T* data, size_t count) noexcept
+	: m_data(data),
+	m_size(count)
 {
 }
 

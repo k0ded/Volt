@@ -83,6 +83,7 @@ namespace Volt::RHI
 		virtual void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer, const IndexType indexType = IndexType::UInt32) = 0;
 
 		virtual void BindShaderBindings(const ShaderBindingMap& shaderBindings) = 0;
+		virtual void PushInlineParameters(const void* data, const uint32_t size, const uint32_t offset, ShaderStage shaderStages) = 0;
 
 		virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
 		virtual void EndRendering() = 0;

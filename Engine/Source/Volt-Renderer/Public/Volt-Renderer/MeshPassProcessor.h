@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Volt-Renderer/Config.h"
+#include "Volt-Renderer/Material/RenderMaterial.h"
 
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
@@ -32,8 +33,9 @@ namespace Volt
 
 			struct SortKeyContents
 			{
-				uint64_t vertexShaderHash : 32u;
-				uint64_t pixelShaderHash : 32u;
+				uint64_t vertexShaderHash : 24u;
+				uint64_t pixelShaderHash : 24u;
+				uint64_t permutationHash : 16u;
 
 			} sortKeyContents;
 		};
@@ -113,6 +115,9 @@ namespace Volt
 		void MarkBucketDirty(MeshDrawCommandHashKey hashKey);
 
 		MeshDrawCommandHashKey GetHashKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive);
+		MeshDrawCommandSortKey GetSortKeyFromRenderPrimitive(const RenderPrimitiveData* renderPrimitive, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
+		uint64_t GetMaterialPermutationHash(Weak<RenderMaterial> renderMaterial);
+		MaterialShader::InlineParameterBlock GetMaterialInlineParameterBlock(const RenderPrimitiveData* renderPrimitive) const;
 
 		Vector<MeshDrawCommandBucket> m_meshDrawCommandBuckets;
 		Vector<uint32_t> m_meshDrawCommandBucketPrimitiveOffsets;

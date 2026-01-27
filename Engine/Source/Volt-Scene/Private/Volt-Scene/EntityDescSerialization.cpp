@@ -160,10 +160,11 @@ namespace Volt::EntityDescSerialization
 
 	VTS_API void SerializeEntityDescData(Archive& archive, SerializationData& entityData)
 	{
+		archive.UseVersion(EntityDescArchiveVersion::guid);
+
 		archive << entityData.entityId;
 		archive << entityData.ownerSceneAssetHandle;
 		const int32_t entityDescVersion = archive.GetVersion(EntityDescArchiveVersion::guid);
-
 
 		archive << entityData.components.headers;
 

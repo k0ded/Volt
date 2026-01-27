@@ -3,7 +3,7 @@
 #include "MaterialShaders/BasePassCommon.hlsli"
 #include "Utility/Utility.hlsli"
 
-BasePassPixelShaderOutput MainPS(in BasePassPixelShaderInput input)
+BasePassPixelShaderOutput MainPS(in BasePassPixelShaderInput input, bool isFrontFace : SV_IsFrontFace)
 {
     MaterialEvaluationData evaluationData;
     evaluationData.texCoords = input.texCoords;
@@ -11,7 +11,9 @@ BasePassPixelShaderOutput MainPS(in BasePassPixelShaderInput input)
     EvaluatedMaterial evaluatedMaterial = EvaluateMaterial(evaluationData);
 
     const float3x3 TBN = CalculateTBN(input.normal, input.tangent.xyz, input.tangent.w);
-    const float3 resultNormal = normalize(mul(TBN, normalize(evaluatedMaterial.normal)));
+    float3 resultNormal = normalize(mul(TBN, normalize(evaluatedMaterial.normal)));
+
+    EvaluateDoubleSided(resultNormal, isFrontFace);
 
     BasePassPixelShaderOutput result;
     result.albedo = evaluatedMaterial.albedo;

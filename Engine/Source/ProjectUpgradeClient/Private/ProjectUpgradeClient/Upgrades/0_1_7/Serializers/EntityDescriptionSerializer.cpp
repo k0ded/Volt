@@ -366,8 +366,8 @@ namespace Volt
 
 		AssetSerializer::ReadMetadata(streamReader);
 
-		entityDesc->m_entitySpawnData.Clear();
-		streamReader.Read(entityDesc->m_entitySpawnData);		
+		//entityDesc->m_entitySpawnData.Clear();
+		//streamReader.Read(entityDesc->m_entitySpawnData);		
 		return true;
 	}
 

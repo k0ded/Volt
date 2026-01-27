@@ -20,7 +20,13 @@ namespace Volt
 		auto vertexShader = ShaderMap::Get<DepthPrePassVS>();
 		auto pixelShader = renderPrimitive->material->GetPixelShader<DepthPrePassMaterialShader>();
 
-		BuildMeshDrawCommand(renderPrimitive, {}, vertexShader, pixelShader);
+		RHI::RenderPipelineCreateInfo pipelineInfo{};
+		if (renderPrimitive->material->GetIsDoubleSided())
+		{
+			pipelineInfo.cullMode = RHI::CullMode::None;
+		}
+
+		BuildMeshDrawCommand(renderPrimitive, pipelineInfo, vertexShader, pixelShader);
 	}
 
 	void DepthPrePassMeshProcessor::RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive)

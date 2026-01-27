@@ -10,6 +10,12 @@
 
 $(TextureDeclarations)
 
+INLINE_PARAMETER_BLOCK(
+{
+    uint materialBlendMode;
+    uint isDoubleSided;
+});
+
 struct MaterialEvaluationData
 {
     float2 texCoords;
@@ -40,8 +46,20 @@ EvaluatedMaterial EvaluateMaterial(in MaterialEvaluationData evalData)
 
 void EvaluateAlphaMask(inout float alpha)
 {
-#if MATERIAL_BLEND_MODE == MATERIAL_BLEND_MODE_ALPHA_MASKED
-    alpha = step(0.5f, alpha);
-    clip(alpha < 0.01f ? -1.f : 1.f);
-#endif
+    if (InlineParameters.materialBlendMode == MATERIAL_BLEND_MODE_ALPHA_MASKED)
+    {
+        alpha = step(0.5f, alpha);
+        clip(alpha < 0.01f ? -1.f : 1.f);
+    }
+}
+
+void EvaluateDoubleSided(inout float3 normal, bool isFrontFace)
+{
+    if (InlineParameters.isDoubleSided)
+    {
+        if (!isFrontFace)
+        {
+            normal *= -1.f;
+        }
+    }
 }

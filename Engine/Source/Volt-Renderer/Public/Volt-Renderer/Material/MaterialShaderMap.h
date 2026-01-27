@@ -41,6 +41,28 @@ namespace Volt
 			return shader;
 		}
 
+		template<typename T>
+		RefPtr<RHI::Shader> GetShader()
+		{
+			constexpr TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<T>();
+
+			bool isDefaultShader = false;
+			RefPtr<RHI::Shader> shader = GetShaderInternal(typeIndex, 0, isDefaultShader);
+
+			// Try to compile the permutation if we got the default shader.
+			if (isDefaultShader)
+			{
+				if (!m_compiledMaterialShaders.Empty())
+				{
+					RHI::ShaderPermutationConfig permutationConfig;
+					shader = CompileShaderPermutation(typeIndex, 0, std::move(permutationConfig));
+				}
+			}
+			VT_ENSURE(shader);
+
+			return shader;
+		}
+
 	private:
 		struct ShaderBucket
 		{
