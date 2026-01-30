@@ -67,7 +67,8 @@ enum class EditorMesh
 	Cylinder,
 	Plane,
 	Sphere,
-	Arrow
+	Arrow,
+	Camera
 };
 
 class EditorResources

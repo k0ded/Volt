@@ -7,6 +7,7 @@
 #include "Volt-Renderer/MeshPassProcessor.h"
 #include "Volt-Renderer/RenderScene/RenderSceneUpdateQueue.h"
 #include "Volt-Renderer/RenderPrimitiveDataContainer.h"
+#include "Volt-Renderer/Debug/DebugRenderer.h"
 
 #include <RenderCore/Resources/GrowingGPUBuffer.h>
 #include <RHIModule/RayTracing/RayTracingResuorceTable.h>
@@ -62,6 +63,7 @@ namespace Volt
 
 		void Update(RenderGraph& renderGraph);
 		void EndFrame(RenderGraph& renderGraph);
+		void RenderDebug(RenderGraph& renderGraph, const RenderView& renderView, RGTextureRef dstTexture, RGTextureRef dstDepth);
 
 		RenderPrimitiveID AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
 		RenderPrimitiveID AddPrimitiveInstance(EntityID entityId, Ref<TempAnimator> animator, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
@@ -247,5 +249,8 @@ namespace Volt
 
 		uint32_t m_currentBoneCount = 0;
 		uint32_t m_frameIndex = 0;
+		
+		// Debug
+		DebugRenderer m_debugRenderer;
 	};
 }

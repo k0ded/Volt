@@ -45,7 +45,7 @@ namespace Volt
 
 		const size_t dataSize = m_data.size() * sizeof(T);
 		RGBufferRef stagingBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateStagingDesc(dataSize));
-		AddMappedBufferUpload(renderGraph, stagingBuffer, m_data.data(), dataSize);
+		AddMappedBufferUploadCopyData(renderGraph, stagingBuffer, m_data.data(), dataSize);
 		AddCopyBufferPass(renderGraph, stagingBuffer, 0, dstBuffer, 0, dataSize);
 	}
 }

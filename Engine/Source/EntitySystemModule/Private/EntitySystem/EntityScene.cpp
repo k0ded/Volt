@@ -331,9 +331,12 @@ namespace Volt
 
 	TQS EntityScene::GetEntityWorldTQS(const Entity& entityHelper) const
 	{
-		if (m_transformCache.HasCachedTransform(entityHelper.GetID()))
+		VT_PROFILE_FUNCTION();
+
+		TQS resultTransform{};
+		if (m_transformCache.TryGetCachedTransform(entityHelper.GetID(), resultTransform))
 		{
-			return m_transformCache.GetCachedTransform(entityHelper.GetID());
+			return resultTransform;
 		}
 
 		Vector<Entity> hierarchy{};
@@ -347,7 +350,6 @@ namespace Volt
 			currentEntity = parent;
 		}
 
-		TQS resultTransform{};
 		for (const auto& ent : std::ranges::reverse_view(hierarchy))
 		{
 			const auto& transformComp = m_registry.get<TransformComponent>(ent.GetHandle());

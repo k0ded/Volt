@@ -388,3 +388,28 @@ bool EditorUtils::IsAssetTypeFileExtension(AssetType assetType, const std::files
 
 	return false;
 }
+
+void EditorUtils::IterateComponentsInEntity(const Volt::Entity& entity, std::function<void(const VoltGUID&)>&& func)
+{
+	entt::registry& registry = entity.GetSceneReference()->GetRegistry();
+
+	for (auto&& curr : registry.storage())
+	{
+		auto& storage = curr.second;
+
+		if (!storage.contains(entity.GetHandle()))
+		{
+			// Entity does not have this component, skip
+			continue;
+		}
+	
+		const Volt::IComponentTypeDesc* componentDesc = static_cast<const Volt::IComponentTypeDesc*>(Volt::ComponentRegistry::Get().GetTypeDescFromName(storage.type().name()));
+		if (!componentDesc)
+		{
+			// Component isn't registered, skip
+			continue;
+		}
+
+		func(componentDesc->GetGUID());
+	}
+}

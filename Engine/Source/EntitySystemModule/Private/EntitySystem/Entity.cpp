@@ -34,8 +34,8 @@ namespace Volt
 
 	void Entity::SetTag(const std::string& tag)
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TagComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TagComponent>());
 
 		GetComponent<TagComponent>().tag = tag;
 	}
@@ -62,7 +62,7 @@ namespace Volt
 
 	void Entity::SetRotation(const glm::quat& rotation)
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 
 		Entity parent = GetParent();
 		TQS parentTransform;
@@ -78,7 +78,7 @@ namespace Volt
 
 	void Entity::SetScale(const glm::vec3& scale)
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 
 		Entity parent = GetParent();
 		TQS parentTransform{};
@@ -96,8 +96,8 @@ namespace Volt
 
 	void Entity::SetLocalPosition(const glm::vec3& position)
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TransformComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TransformComponent>());
 
 		GetComponent<TransformComponent>().position = position;
 		m_sceneReference->InvalidateEntityTransform(GetID());
@@ -105,8 +105,8 @@ namespace Volt
 
 	void Entity::SetLocalRotation(const glm::quat& rotation)
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TransformComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TransformComponent>());
 
 		GetComponent<TransformComponent>().rotation = rotation;
 		m_sceneReference->InvalidateEntityTransform(GetID());
@@ -114,8 +114,8 @@ namespace Volt
 
 	void Entity::SetLocalScale(const glm::vec3& scale)
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TransformComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TransformComponent>());
 
 		GetComponent<TransformComponent>().scale = scale;
 		m_sceneReference->InvalidateEntityTransform(GetID());
@@ -157,104 +157,97 @@ namespace Volt
 		children.clear();
 	}
 
-
-
-
-
 	glm::vec3 Entity::GetForward() const
 	{
-		VT_ENSURE(IsValid());
-
+		VT_ENTITY_VALIDATE(IsValid());
 		return glm::rotate(GetRotation(), glm::vec3{ 0.f, 0.f, 1.f });
 	}
 
 	glm::vec3 Entity::GetRight() const
 	{
-		VT_ENSURE(IsValid());
-
+		VT_ENTITY_VALIDATE(IsValid());
 		return glm::rotate(GetRotation(), glm::vec3{ 1.f, 0.f, 0.f });
 	}
 
 	glm::vec3 Entity::GetUp() const
 	{
-		VT_ENSURE(IsValid());
-
+		VT_ENTITY_VALIDATE(IsValid());
 		return glm::rotate(GetRotation(), glm::vec3{ 0.f, 1.f, 0.f });
 	}
 
 	glm::vec3 Entity::GetLocalForward() const
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TransformComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TransformComponent>());
 
 		return GetComponent<TransformComponent>().GetForward();
 	}
 
 	glm::vec3 Entity::GetLocalRight() const
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TransformComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TransformComponent>());
 
 		return GetComponent<TransformComponent>().GetRight();
 	}
 
 	glm::vec3 Entity::GetLocalUp() const
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TransformComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TransformComponent>());
 
 		return GetComponent<TransformComponent>().GetUp();
 	}
 
 	glm::vec3 Entity::GetPosition() const
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 		const auto tqs = m_sceneReference->GetEntityWorldTQS(*this);
 		return tqs.translation;
 	}
 
 	glm::quat Entity::GetRotation() const
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 		const auto tqs = m_sceneReference->GetEntityWorldTQS(*this);
 		return tqs.rotation;
 	}
 
 	glm::vec3 Entity::GetScale() const
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 		const auto tqs = m_sceneReference->GetEntityWorldTQS(*this);
 		return tqs.scale;
 	}
 
 	const glm::vec3& Entity::GetLocalPosition() const
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TransformComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TransformComponent>());
 
 		return GetComponent<TransformComponent>().position;
 	}
 
 	const glm::quat& Entity::GetLocalRotation() const
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TransformComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TransformComponent>());
 
 		return GetComponent<TransformComponent>().rotation;
 	}
 
 	const glm::vec3& Entity::GetLocalScale() const
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TransformComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TransformComponent>());
 
 		return GetComponent<TransformComponent>().scale;
 	}
 
 	const std::string& Entity::GetTag() const
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<TagComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<TagComponent>());
 
 		return GetComponent<TagComponent>().tag;
 	}
@@ -278,14 +271,14 @@ namespace Volt
 
 	bool Entity::HasParent() const
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 		return GetParent().IsValid();
 	}
 
 	Entity Entity::GetParent() const
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<RelationshipComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<RelationshipComponent>());
 
 		const auto& relationshipComponent = GetComponent<RelationshipComponent>();
 		return m_sceneReference->GetEntityFromID(relationshipComponent.parent);
@@ -315,8 +308,8 @@ namespace Volt
 
 	EntityID Entity::GetID() const
 	{
-		VT_ENSURE(IsValid());
-		VT_ENSURE(HasComponent<IDComponent>());
+		VT_ENTITY_VALIDATE(IsValid());
+		VT_ENTITY_VALIDATE(HasComponent<IDComponent>());
 
 		return GetComponent<IDComponent>().id;
 	}
@@ -328,13 +321,13 @@ namespace Volt
 
 	bool Entity::IsVisible() const
 	{
-		assert(HasComponent<TransformComponent>() && "Entity must have transform component!");
+		VT_ASSERT_MSG(HasComponent<TransformComponent>(), "Entity must have transform component!");
 		return GetComponent<TransformComponent>().visible;
 	}
 
 	bool Entity::IsLocked() const
 	{
-		assert(HasComponent<TransformComponent>() && "Entity must have transform component!");
+		VT_ASSERT_MSG(HasComponent<TransformComponent>(), "Entity must have transform component!");
 		return GetComponent<TransformComponent>().locked;
 	}
 
@@ -364,14 +357,14 @@ namespace Volt
 
 	void Entity::RemoveComponent(const VoltGUID& guid)
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 
 		ComponentRegistry::Helpers::RemoveComponentWithGUID(guid, m_sceneReference->GetRegistry(), m_handle);
 	}
 
 	bool Entity::HasComponent(std::string_view componentName) const
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 
 		//const std::string lowerCompName = ::Utility::ToLower(std::string(componentName));
 		const ICommonTypeDesc* compType = ComponentRegistry::Get().GetTypeDescFromName(componentName);
@@ -385,7 +378,7 @@ namespace Volt
 
 	void Entity::InitializeComponents()
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 
 		for (auto&& curr : m_sceneReference->GetRegistry().storage())
 		{

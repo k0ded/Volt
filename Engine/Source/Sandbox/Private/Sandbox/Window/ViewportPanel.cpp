@@ -47,7 +47,7 @@
 ViewportPanel::ViewportPanel(Ref<Volt::SceneRenderer>& sceneRenderer, AssetReference<Volt::Scene>& editorScene, EditorCameraController* cameraController,
 	SceneState& aSceneState)
 	: EditorWindow("Viewport"), m_sceneRenderer(sceneRenderer), m_editorCameraController(cameraController), m_editorScene(editorScene),
-	m_sceneState(aSceneState), m_animatedPhysicsIcon("Editor/Textures/Icons/Physics/LampPhysicsAnim1.dds", 30)
+	m_sceneState(aSceneState)
 {
 	Open();
 	m_windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
@@ -301,11 +301,8 @@ void ViewportPanel::UpdateContent()
 		}
 	}
 
+#if 0
 	ImGui::SameLine();
-
-	AssetReference<Volt::Texture2D> physicsIcon = m_animatedPhysicsIcon.GetCurrentFrame();
-
-	static ImTextureID physicsId = UI::GetTextureID(physicsIcon->GetImage());
 
 	if (ImGui::ImageButtonAnimated(physicsId, UI::GetTextureID(physicsIcon->GetImage()), { buttonSize, buttonSize }))
 	{
@@ -320,6 +317,7 @@ void ViewportPanel::UpdateContent()
 			m_animatedPhysicsIcon.Stop();
 		}
 	}
+#endif
 
 	ImGui::SameLine(ImGui::GetContentRegionAvail().x - (rightButtonCount * buttonSize));
 
@@ -671,12 +669,12 @@ bool ViewportPanel::OnMouseReleased(Volt::MouseButtonReleasedEvent& e)
 
 void ViewportPanel::OnClose()
 {
-	m_animatedPhysicsIcon.SetIsEnabled(false);
+	//m_animatedPhysicsIcon.SetIsEnabled(false);
 }
 
 void ViewportPanel::OnOpen()
 {
-	m_animatedPhysicsIcon.SetIsEnabled(true);
+	//m_animatedPhysicsIcon.SetIsEnabled(true);
 }
 
 void ViewportPanel::CheckDragDrop()

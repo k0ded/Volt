@@ -135,7 +135,6 @@ namespace Volt
 		m_samplerStateCache = CreateScope<SamplerStateCache>();
 		m_commandBufferPool = CreateScope<CommandBufferPool>();
 		m_transientResourceAllocator = CreateScope<TransientResourceAllocator>();
-		m_debugRenderer = CreateScope<DebugRenderer>();
 
 		CreateDefaultResources();
 	}
@@ -154,7 +153,6 @@ namespace Volt
 		ShapeLibrary::Shutdown();
 
 		m_samplerStateCache = nullptr;
-		m_debugRenderer = nullptr;
 		m_transientResourceAllocator = nullptr;
 	}
 
@@ -297,7 +295,6 @@ namespace Volt
 
 	bool Renderer::OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event)
 	{
-		m_debugRenderer->Reset();
 		m_frameIndex++;
 		return false;
 	}
@@ -426,11 +423,6 @@ namespace Volt
 
 		renderGraph.Compile();
 		renderGraph.ExecuteImmediateAndWait();
-	}
-
-	DebugRenderer& Renderer::GetDebugRenderer()
-	{
-		return *s_instance->m_debugRenderer;
 	}
 
 	void Renderer::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)

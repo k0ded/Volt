@@ -77,11 +77,21 @@ public:
 		return &m_dataBuffer[allocationOffset];
 	}
 
+	/*
+		Note: This is not thread safe! Use with caution!
+	*/
 	void Reserve(size_t size)
 	{
-		VT_ENSURE(!m_dataBuffer);
-		m_dataBuffer = reinterpret_cast<uint8_t*>(m_allocator.Allocate(size, 0));
-		m_size = size;
+		if (size > m_size)
+		{
+			if (m_dataBuffer)
+			{
+				m_allocator.Free(m_dataBuffer);
+			}
+
+			m_dataBuffer = reinterpret_cast<uint8_t*>(m_allocator.Allocate(size, 0));
+			m_size = size;
+		}
 	}
 
 	uint8_t* GetData() const

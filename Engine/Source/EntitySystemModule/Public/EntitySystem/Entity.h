@@ -5,7 +5,6 @@
 #include "EntitySystem/EntityID.h"
 #include "EntitySystem/ComponentReflection.h"
 
-
 #include <CoreUtilities/VoltGUID.h>
 
 #include <entt.hpp>
@@ -122,7 +121,7 @@ namespace Volt
 	template<typename T>
 	inline T& Entity::GetComponent()
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 
 		auto& registry = m_sceneReference->GetRegistry();
 		VT_ENSURE(registry.any_of<T>(m_handle));
@@ -132,7 +131,7 @@ namespace Volt
 	template<typename T>
 	inline const T& Entity::GetComponent() const
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 
 		auto& registry = m_sceneReference->GetRegistry();
 		VT_ENSURE(registry.any_of<T>(m_handle));
@@ -142,7 +141,7 @@ namespace Volt
 	template<typename T>
 	inline bool Entity::HasComponent() const
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 
 		auto& registry = m_sceneReference->GetRegistry();
 		return registry.any_of<T>(m_handle);
@@ -151,10 +150,10 @@ namespace Volt
 	template<typename T, typename ...Args>
 	inline T& Entity::AddComponent(Args && ...args)
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 
 		auto& registry = m_sceneReference->GetRegistry();
-		VT_ENSURE(!registry.any_of<T>(m_handle));
+		VT_ENTITY_VALIDATE(!registry.any_of<T>(m_handle));
 		T& createdComp = registry.emplace<T>(m_handle, std::forward<Args>(args)...);
 
 		const ICommonTypeDesc* typeDesc = GetTypeDesc<T>();
@@ -167,7 +166,7 @@ namespace Volt
 	template<typename T>
 	inline void Entity::RemoveComponent()
 	{
-		VT_ENSURE(IsValid());
+		VT_ENTITY_VALIDATE(IsValid());
 
 		auto& registry = m_sceneReference->GetRegistry();
 		registry.remove<T>(m_handle);

@@ -1,17 +1,15 @@
 #pragma once
 
 #include "Sandbox/FileWatcher/FileWatcher.h"
-
 #include "Sandbox/UISystems/ModalSystem.h"
-
-#include <EntitySystem/Entity.h>
 
 #include <Volt-Application/ApplicationLayer.h>
 #include <Volt-Scene/Scene.h>
+#include <Volt-Renderer/Debug/DebugRenderer.h>
 
 #include <AssetSystem/AssetReference.h>
-
 #include <EventSystem/EventListener.h>
+#include <EntitySystem/Entity.h>
 
 #include <imgui.h>
 
@@ -107,7 +105,6 @@ private:
 	//false when user cancels unload
 	bool PromptUnloadCurrentScene();
 
-
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
 	bool OnRenderEvent(Volt::AppRenderEvent& e);
@@ -121,7 +118,7 @@ private:
 	void SetupNewSceneData();
 	void InitializeModals();
 
-	/////ImGui/////
+	///// ImGui /////
 	void UpdateDockSpace();
 
 	void RenderWindowOuterBorders(ImGuiWindow* window);
@@ -143,6 +140,13 @@ private:
 	void CreateAddWatch();
 	void CreateMovedWatch();
 	/////////////////////////
+
+	///// Debug Rendering /////
+	void DrawDebug();
+	void DrawEntityGizmos();
+
+	Volt::DebugRenderer m_debugRenderer;
+	///////////////////////////
 
 	Ref<EditorCameraController> m_editorCameraController;
 

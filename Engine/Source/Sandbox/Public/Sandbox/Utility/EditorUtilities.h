@@ -45,6 +45,8 @@ public:
 
 	static bool IsAssetTypeFileExtension(AssetType assetType, const std::filesystem::path& filepath);
 
+	static void IterateComponentsInEntity(const Volt::Entity& entity, std::function<void(const VoltGUID&)>&& func);
+
 private:
 	static bool AssetBrowserPopupInternal(const std::string& id, Volt::AssetHandle& assetHandle, bool startState, AssetType wantedType = AssetTypes::None);
 	struct DefaultFalse

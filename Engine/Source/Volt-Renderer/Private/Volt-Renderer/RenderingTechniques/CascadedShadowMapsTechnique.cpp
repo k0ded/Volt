@@ -239,7 +239,7 @@ namespace Volt
 			}
 		}
 
-		AddMappedBufferUpload(m_renderGraph, uniformBuffer, &lightInfo, sizeof(DirectionalLightShadowUniformBuffer));
+		AddMappedBufferUploadCopyData(m_renderGraph, uniformBuffer, &lightInfo, sizeof(DirectionalLightShadowUniformBuffer));
 
 		return uniformBuffer;
 	}

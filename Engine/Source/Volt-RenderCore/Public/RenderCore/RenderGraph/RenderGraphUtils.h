@@ -11,8 +11,18 @@ namespace Volt
 	class RenderGraph;
 
 	extern VTRC_API void AddCopyBufferPass(RenderGraph& renderGraph, RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size, const std::string& passName = "Copy Buffer");
+	
+	/*
+		Will copy the data into temporary storage in the Render Graph.
+	*/
+	extern VTRC_API void AddMappedBufferUploadCopyData(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
+	extern VTRC_API void AddMappedBufferUploadCopyData(RenderGraph& renderGraph, RGUniformBufferRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
+
+	/*
+		Will not copy the data into temporary storage, so the data MUST at least have the same lifetime as the Render Graph.
+	*/
 	extern VTRC_API void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
-	extern VTRC_API void AddMappedBufferUpload(RenderGraph& renderGraph, RGUniformBufferRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
+
 	extern VTRC_API void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const uint32_t clearValue);
 	extern VTRC_API void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const float clearValue);
 	extern VTRC_API void AddClearUAVPass(RenderGraph& renderGraph, RGTextureUAVRef textureUAV, const glm::uvec4& clearValue);

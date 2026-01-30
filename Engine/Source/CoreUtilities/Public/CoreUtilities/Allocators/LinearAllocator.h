@@ -96,6 +96,17 @@ public:
 		return allocation;
 	}
 
+	void Reset()
+	{
+		PageHeader* currentPage = m_basePage;
+
+		while (currentPage != nullptr)
+		{
+			currentPage->dataPointer = 0;
+			currentPage = currentPage->next;
+		}
+	}
+
 private:
 	struct PageHeader
 	{

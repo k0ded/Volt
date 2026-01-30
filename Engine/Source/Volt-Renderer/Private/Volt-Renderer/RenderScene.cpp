@@ -79,6 +79,8 @@ namespace Volt
 
 		renderGraph.BeginMarker("RenderScene::Update");
 
+		m_debugRenderer.Reset();
+
 		// Temporary animation sampling
 		m_currentBoneCount = 0;
 		for (const auto& animatedObject : m_animatedRenderObjects)
@@ -152,6 +154,11 @@ namespace Volt
 		RGBufferRef dstPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource());
 
 		AddCopyBufferPass(renderGraph, srcPrimitiveData, 0, dstPrimitiveData, 0, m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize(), "Copy PrimitiveDrawData");
+	}
+
+	void RenderScene::RenderDebug(RenderGraph& renderGraph, const RenderView& renderView, RGTextureRef dstTexture, RGTextureRef dstDepth)
+	{
+		m_debugRenderer.Render(renderGraph, renderView, dstTexture, dstDepth);
 	}
 
 	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
@@ -258,6 +265,11 @@ namespace Volt
 
 	void RenderScene::VisualizeRenderPrimitives()
 	{
+		VT_PROFILE_FUNCTION();
+
+		m_debugRenderer.ReserveLines(m_primitiveDrawData.size() * m_debugRenderer.GetNumLinesPerLineSphere());
+		m_debugRenderer.ReserveBillboards(m_primitiveDrawData.size());
+
 		auto transformPosition = [](const glm::vec3& pos, const glm::vec3& translation, const glm::vec3& scale, const glm::quat& rotation) 
 		{
 			glm::vec3 v = pos * scale;
@@ -269,8 +281,10 @@ namespace Volt
 			return v;
 		};
 
-		for (const PrimitiveDrawData& primitive : m_primitiveDrawData)
+		Algo::ForEachParalellBlocking([this, &transformPosition](uint32_t threadIdx, uint32_t elementIdx)
 		{
+			const PrimitiveDrawData& primitive = m_primitiveDrawData.at(elementIdx);
+
 			if (EnumValueContainsAnyFlag(primitive.flags, PrimitiveFlags::Valid))
 			{
 				const GPUMesh& gpuMesh = m_gpuMeshes.at(primitive.meshId);
@@ -278,9 +292,12 @@ namespace Volt
 				const float maxScale = glm::max(glm::max(primitive.transform.scale.x, primitive.transform.scale.y), primitive.transform.scale.z);
 				const glm::vec3 center = transformPosition(gpuMesh.center, primitive.transform.position, primitive.transform.scale, primitive.transform.rotation);
 
-				Renderer::GetDebugRenderer().DrawLineSphere(center, maxScale * gpuMesh.radius, 1.f);
+				m_debugRenderer.DrawLineSphere(center, maxScale * gpuMesh.radius, 1.f);
+
+				m_debugRenderer.DrawBillboard(center, 1.f, glm::vec4(1.f, 0.f, 0.f, 1.f));
 			}
-		}
+
+		}, static_cast<uint32_t>(m_primitiveDrawData.size()), 128);
 	}
 
 	bool RenderScene::OnPreRenderEvent(AppPreRenderEvent& event)

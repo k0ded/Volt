@@ -194,7 +194,7 @@ namespace Volt
 	{
 		static_assert(std::is_base_of_v<SceneRendererExtension, T>);
 
-		Ref<T> instance = CreateRef<T>(m_renderScene, std::forward(args)...);
+		Ref<T> instance = CreateRef<T>(m_renderScene, std::forward<Args>(args)...);
 		instance->OnRegistered(m_meshPassProcessorRegistry);
 
 		m_sceneRendererExtensions[stage].emplace_back(instance);

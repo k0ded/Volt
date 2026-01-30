@@ -27,7 +27,7 @@ namespace Volt
 			samplerDesc.minFilter = RHI::TextureFilter::Linear;
 			samplerDesc.magFilter = RHI::TextureFilter::Linear;
 			samplerDesc.mipFilter = RHI::TextureFilter::Linear;
-			samplerDesc.wrapMode = RHI::TextureWrap::Repeat;
+			samplerDesc.wrapMode = RHI::TextureWrap::Clamp;
 			samplerDesc.anisotropyLevel = RHI::AnisotropyLevel::X16;
 			samplerDesc.compareOperator = RHI::CompareOperator::None;
 			samplerDesc.maxLod = 2.f;

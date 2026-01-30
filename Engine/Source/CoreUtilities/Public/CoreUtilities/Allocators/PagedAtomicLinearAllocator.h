@@ -162,6 +162,20 @@ public:
 		return numCurrentPages;
 	}
 
+	/*
+		Note: This is not a thread safe operation and should be used with caution!
+	*/
+	void Reset()
+	{
+		PageHeader* currentPage = m_basePage.load(std::memory_order::relaxed);
+
+		while (currentPage != nullptr)
+		{
+			currentPage->dataPointer = 0;
+			currentPage = currentPage->next.load(std::memory_order::relaxed);
+		}
+	}
+
 private:
 	struct PageHeader
 	{

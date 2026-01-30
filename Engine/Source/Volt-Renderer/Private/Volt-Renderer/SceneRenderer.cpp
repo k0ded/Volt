@@ -39,6 +39,9 @@
 #include <RenderCore/Shader/BatchedShaderParameters.h>
 #include <RenderCore/DefaultBlendStates.h>
 
+#include <WindowModule/WindowManager.h>
+#include <WindowModule/Window.h>
+
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 
@@ -192,11 +195,7 @@ namespace Volt
 
 		AddPostProcessingPasses(renderGraph, blackboard, renderView, outputTexture);
 
-		if (m_createInfo.drawDebug)
-		{
-			Renderer::GetDebugRenderer().Render(renderGraph, renderView, outputTexture, sceneTextures.sceneDepth);
-		}
-
+		m_renderScene->RenderDebug(renderGraph, renderView, outputTexture, sceneTextures.sceneDepth);
 		m_renderScene->EndFrame(renderGraph);
 
 		{
@@ -379,8 +378,7 @@ namespace Volt
 		renderGraph.EndMarker();
 
 		SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
-
-		ExecuteSceneRendererExtensions(SceneRendererExtensionStage::PostPostProcessing, renderGraph, blackboard, view, sceneTextures.sceneColor);
+		sceneTextures.sceneColor = ExecuteSceneRendererExtensions(SceneRendererExtensionStage::PostPostProcessing, renderGraph, blackboard, view, sceneTextures.sceneColor);
 
 		AddTonemappingPass(renderGraph, blackboard, view, outputTexture);
 	}
@@ -435,6 +433,7 @@ namespace Volt
 			SHADER_PARAMETER(float, MiddleGray)
 			SHADER_PARAMETER(float, WhitePoint)
 			SHADER_PARAMETER(uint, FrameIndex)
+			SHADER_PARAMETER(uint, IsHDRMonitor)
 
 			RG_RENDER_TARGETS()
 			SHADER_PARAMETER_STRUCT_INCLUDE(BlueNoiseShaderParameters, BlueNoise)
@@ -454,6 +453,7 @@ namespace Volt
 		passParameters->MiddleGray = MiddleGray;
 		passParameters->WhitePoint = WhitePoint * WhitePoint;
 		passParameters->FrameIndex = view.frameIndex;
+		passParameters->IsHDRMonitor = WindowManager::Get().GetMainWindow().GetSwapchain().IsHDREnabled();
 		passParameters->BlueNoise = BlueNoise::GetBlueNoiseParameters(renderGraph);
 		passParameters->renderTargets.renderTargets[0] = outputTexture;
 
@@ -819,7 +819,7 @@ namespace Volt
 			viewUniformBuffer.renderSize = { m_width, m_height };
 			viewUniformBuffer.invRenderSize = { 1.f / static_cast<float>(m_width), 1.f / static_cast<float>(m_height) };
 
-			AddMappedBufferUpload(renderGraph, uniformBuffer, &viewUniformBuffer, sizeof(ViewUniformBuffer));
+			AddMappedBufferUploadCopyData(renderGraph, uniformBuffer, &viewUniformBuffer, sizeof(ViewUniformBuffer));
 
 			return uniformBuffer;
 		}

@@ -219,7 +219,7 @@ namespace Volt
 
 		RGUniformBufferRef uniformBuffer = m_renderGraph.CreateUniformBuffer(RGUniformBufferDesc::Create<GTAOConstants>("GTAOConstants"));
 
-		AddMappedBufferUpload(m_renderGraph, uniformBuffer, &gtaoConstants, sizeof(GTAOConstants));
+		AddMappedBufferUploadCopyData(m_renderGraph, uniformBuffer, &gtaoConstants, sizeof(GTAOConstants));
 
 		return uniformBuffer;
 	}

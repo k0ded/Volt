@@ -18,9 +18,8 @@ namespace Volt
 
 		void CacheTransform(EntityID entityId, const TQS& transform);
 		void InvalidateTransform(EntityID entityId);
-		const TQS& GetCachedTransform(EntityID entityId) const;
 
-		VT_NODISCARD VT_INLINE bool HasCachedTransform(EntityID entityId) const { ReadLock lock{ m_mutex }; return m_transformCache.contains(entityId); }
+		bool TryGetCachedTransform(EntityID entityId, TQS& outTransform) const;
 
 	private:
 		using WriteLock = std::unique_lock<std::shared_mutex>;

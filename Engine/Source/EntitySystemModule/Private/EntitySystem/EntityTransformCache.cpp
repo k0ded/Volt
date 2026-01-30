@@ -2,6 +2,8 @@
 
 #include "EntitySystem/EntityTransformCache.h"
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt
 {
 	void EntityTransformCache::CacheTransform(EntityID entityId, const TQS& transform)
@@ -19,11 +21,19 @@ namespace Volt
 		}
 	}
 
-	const TQS& EntityTransformCache::GetCachedTransform(EntityID entityId) const
+	bool EntityTransformCache::TryGetCachedTransform(EntityID entityId, TQS& outTransform) const
 	{
+		VT_PROFILE_FUNCTION();
+
 		ReadLock lock{ m_mutex };
 
-		VT_ENSURE(m_transformCache.contains(entityId));
-		return m_transformCache.at(entityId);
+		auto it = m_transformCache.find(entityId);
+		if (it != m_transformCache.end())
+		{
+			outTransform = it->second;
+			return true;
+		}
+
+		return false;
 	}
 }

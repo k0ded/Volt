@@ -69,7 +69,6 @@ private:
 	Ref<Volt::SceneRenderer>& m_sceneRenderer;
 	AssetReference<Volt::Scene>& m_editorScene;
 
-	AnimatedIcon m_animatedPhysicsIcon;
 	EditorCameraController* m_editorCameraController;
 
 	glm::vec2 m_perspectiveBounds[2] = { { 0.f, 0.f }, { 0.f, 0.f } };

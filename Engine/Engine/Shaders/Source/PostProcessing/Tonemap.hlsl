@@ -10,6 +10,7 @@ Texture2D<float3> FinalColor;
 float MiddleGray;
 float WhitePoint;
 uint FrameIndex;
+uint IsHDRMonitor;
 
 struct Output
 {
@@ -18,13 +19,18 @@ struct Output
 
 float3 ReinhardTonemap(float3 color)
 {
-    //return color / (color + 1.f);
+    return color / (color + 1.f);
     return color;
 }
 
 Output MainPS(FullscreenTriangleVertex input)
 {
-    float3 pixelColor = ReinhardTonemap(FinalColor.Load(int3(input.position.xy, 0)));
+    float3 pixelColor = FinalColor.Load(int3(input.position.xy, 0));
+
+    if (!IsHDRMonitor)
+    {
+        pixelColor = ReinhardTonemap(pixelColor);
+    }
 
     float blueNoise = BlueNoiseScalar(input.position.xy, FrameIndex);
 

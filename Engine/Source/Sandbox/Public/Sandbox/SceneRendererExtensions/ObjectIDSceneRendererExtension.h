@@ -31,6 +31,11 @@ struct ObjectIDPS : public Volt::GlobalShader
 	END_SHADER_PARAMETER_STRUCT()
 };
 
+struct ObjectIDTexture
+{
+	Volt::RGTextureRef texture;
+};
+
 class ObjectIDSceneRendererExtension : public Volt::SceneRendererExtension
 {
 public:

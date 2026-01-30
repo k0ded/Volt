@@ -34,6 +34,7 @@
 #include "Sandbox/SceneRendererExtensions/GridSceneRendererExtension.h"
 #include "Sandbox/SceneRendererExtensions/OutlineSceneRendererExtension.h"
 #include "Sandbox/SceneRendererExtensions/ObjectIDSceneRendererExtension.h"
+#include "Sandbox/SceneRendererExtensions/DebugSceneRendererExtension.h"
 
 #include "Sandbox/Modals/MeshImportModal.h"
 #include "Sandbox/Modals/TextureImportModal.h"
@@ -45,6 +46,7 @@
 #include "Sandbox/Utility/EditorLibrary.h"
 #include "Sandbox/Utility/SelectionManager.h"
 #include "Sandbox/Utility/NodeEditorHelpers.h"
+#include "Sandbox/ComponentVisualizersImpl.h"
 
 #include "Sandbox/UserSettingsManager.h"
 
@@ -305,6 +307,7 @@ void Sandbox::SetupNewSceneData()
 
 		m_outlineSceneRendererExtension = m_sceneRenderer->AddExtension<OutlineSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
 		m_objectIDSceneRendererExtension = m_sceneRenderer->AddExtension<ObjectIDSceneRendererExtension>(Volt::SceneRendererExtensionStage::PreGBuffer);
+		m_sceneRenderer->AddExtension<DebugSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing, m_debugRenderer);
 
 		m_gameSceneRenderer = CreateRef<Volt::SceneRenderer>(gameSpec);
 	}
@@ -812,9 +815,18 @@ void Sandbox::RenderGameView(float timestep)
 	}
 }
 
+void Sandbox::DrawDebug()
+{
+	m_debugRenderer.Reset();
+
+	DrawEntityGizmos();
+}
+
 bool Sandbox::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 	VT_PROFILE_FUNCTION();
+
+	DrawDebug();
 
 	switch (m_sceneState)
 	{

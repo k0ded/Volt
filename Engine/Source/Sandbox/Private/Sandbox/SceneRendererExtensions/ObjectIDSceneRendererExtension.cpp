@@ -36,6 +36,9 @@ Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& r
 
 	RGTextureRef objectIdTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32_UINT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "ObjectID"));
 
+	ObjectIDTexture& objectIdTextureStruct = blackboard.Add<ObjectIDTexture>();
+	objectIdTextureStruct.texture = objectIdTexture;
+
 	ObjectIDParameters* passParameters = renderGraph.AllocParameters<ObjectIDParameters>();
 	passParameters->VS.View = view.viewUniformBuffer;
 	passParameters->VS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);

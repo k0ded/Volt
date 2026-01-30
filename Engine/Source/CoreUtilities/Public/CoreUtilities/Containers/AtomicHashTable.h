@@ -75,6 +75,10 @@ public:
 			{
 				return true;
 			}
+			else if (expected == 0)
+			{
+				return false;
+			}
 			else
 			{
 				hash = std::hash<uint64_t>()(hash);

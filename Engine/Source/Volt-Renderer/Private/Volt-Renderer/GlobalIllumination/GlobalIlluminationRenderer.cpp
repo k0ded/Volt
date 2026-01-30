@@ -777,7 +777,7 @@ namespace Volt
 
 		m_prevCameraPosition = cameraPosition;
 
-		AddMappedBufferUpload(renderGraph, uniformBuffer, &m_irradianceVolumeConstants, sizeof(IrradianceVolumeConstants));
+		AddMappedBufferUploadCopyData(renderGraph, uniformBuffer, &m_irradianceVolumeConstants, sizeof(IrradianceVolumeConstants));
 
 		return uniformBuffer;
 	}

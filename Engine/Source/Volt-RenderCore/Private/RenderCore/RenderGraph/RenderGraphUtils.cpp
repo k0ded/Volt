@@ -35,7 +35,7 @@ namespace Volt
 		SHADER_PARAMETER_BUFFER_UAV(RGBufferUAV, RWBuffer)
 	END_SHADER_PARAMETER_STRUCT()
 
-	void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags)
+	void AddMappedBufferUploadCopyData(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags)
 	{
 		void* tempData = renderGraph.AllocData(dataSize);
 		memcpy_s(tempData, dataSize, data, dataSize);
@@ -54,11 +54,27 @@ namespace Volt
 		});
 	}
 
+	void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags /*= RenderGraphPassFlags::None*/)
+	{
+		MappedBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<MappedBufferUploadParameters>();
+		stagingParameters->RWBuffer = dstUAV;
+
+		renderGraph.AddPass("Mapped Upload",
+			RenderGraphPassFlags::Compute | flags,
+			stagingParameters,
+			[stagingParameters, data, dataSize](RenderContext& context)
+		{
+			uint8_t* mappedPtr = context.MapBuffer<uint8_t>(stagingParameters->RWBuffer);
+			memcpy_s(mappedPtr, dataSize, data, dataSize);
+			context.UnmapBuffer(stagingParameters->RWBuffer);
+		});
+	}
+
 	BEGIN_SHADER_PARAMETER_STRUCT(MappedUniformBufferUploadParameters)
 		RG_UNIFORM_BUFFER_ACCESS(CopyDst, RGResourceAccess::CopyDst)
 	END_SHADER_PARAMETER_STRUCT()
 
-	void AddMappedBufferUpload(RenderGraph& renderGraph, RGUniformBufferRef dstUniformBuffer, const void* data, const size_t dataSize, RenderGraphPassFlags flags)
+	void AddMappedBufferUploadCopyData(RenderGraph& renderGraph, RGUniformBufferRef dstUniformBuffer, const void* data, const size_t dataSize, RenderGraphPassFlags flags)
 	{
 		void* tempData = renderGraph.AllocData(dataSize);
 		memcpy_s(tempData, dataSize, data, dataSize);
