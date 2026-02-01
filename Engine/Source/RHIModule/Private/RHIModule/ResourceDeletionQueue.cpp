@@ -2,6 +2,8 @@
 
 #include "RHIModule/ResourceDeletionQueue.h"
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 #include <ranges>
 
 namespace Volt::RHI
@@ -14,6 +16,8 @@ namespace Volt::RHI
 
 	void ResourceDeletionQueue::FlushQueue(uint32_t index)
 	{
+		VT_PROFILE_FUNCTION();
+
 		// Run through the list in reverse order to get FIFO behaviour
 		std::scoped_lock lock{ m_queueMutex };
 

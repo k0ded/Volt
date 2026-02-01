@@ -1,13 +1,16 @@
 #pragma once
 
-#include <RHIModule/Images/Image.h>
+#include "Sandbox/ComponentVisualizers/EditorGizmoDrawer.h"
 
 class ComponentVisualizer
 {
 public:
 	virtual ~ComponentVisualizer() = default;
 
-	virtual RefPtr<Volt::RHI::Image> GetIcon() const { return nullptr; }
+	/*
+		Allows each component to have it's own gizmo. 
+	*/
+	virtual void DrawGizmo(EditorGizmoDrawer& gizmoDrawer) {};
 
 private:
 };

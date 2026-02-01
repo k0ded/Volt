@@ -4,13 +4,13 @@
 
 static const float2 offsets[6] =
 {
-    { -100.f, 100.f },
-    { 100.f, 100.f },
-    { 100.f, -100.f },
+    { -50.f, 50.f },
+    { 50.f, 50.f },
+    { 50.f, -50.f },
 
-    { 100.f, -100.f },
-    { -100.f, -100.f },
-    { -100.f, 100.f }
+    { 50.f, -50.f },
+    { -50.f, -50.f },
+    { -50.f, 50.f }
 };
 
 static const float2 uvs[6] =
@@ -31,7 +31,16 @@ BillboardVSToPS MainVS(uint vertexId : SV_VertexID, uint instanceId : SV_Instanc
     const BillboardInstanceData billboardInstanceData = BillboardInstances[instanceId];
 
 	BillboardVSToPS result;
-    result.position = mul(View.view, float4(billboardInstanceData.position, 1.f));
+
+    if (billboardInstanceData.isViewSpacePosition)
+    {
+        result.position = float4(billboardInstanceData.position, 1.f);
+    }
+    else
+    {
+        result.position = mul(View.view, float4(billboardInstanceData.position, 1.f));
+    }
+
     result.position.xy += offsets[vertexId] * billboardInstanceData.size.xy;
     result.position = mul(View.projection, result.position);
     result.color = billboardInstanceData.color;

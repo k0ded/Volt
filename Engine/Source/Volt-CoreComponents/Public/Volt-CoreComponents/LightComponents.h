@@ -113,8 +113,6 @@ namespace Volt
 			reflect.AddMember(&SphereLightComponent::radius, 'radi', "Radius", "", 50.f);
 			reflect.AddMember(&SphereLightComponent::color, 'col', "Color", "", glm::vec3{1.f}, ComponentMemberFlag::Color3);
 		}
-
-		VT_REGISTER_COMPONENT(SphereLightComponent);
 	};
 
 	struct RectangleLightComponent

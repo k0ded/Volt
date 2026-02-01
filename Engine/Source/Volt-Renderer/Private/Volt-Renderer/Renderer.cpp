@@ -301,6 +301,8 @@ namespace Volt
 
 	bool Renderer::OnPreRenderEvent(AppPreRenderEvent& event)
 	{
+		VT_PROFILE_FUNCTION();
+
 		m_transientResourceAllocator->OnPreRender(event.GetFrameIndex());
 		m_commandBufferPool->Update();
 

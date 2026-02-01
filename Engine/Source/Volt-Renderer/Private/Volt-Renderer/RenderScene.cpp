@@ -267,9 +267,6 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_debugRenderer.ReserveLines(m_primitiveDrawData.size() * m_debugRenderer.GetNumLinesPerLineSphere());
-		m_debugRenderer.ReserveBillboards(m_primitiveDrawData.size());
-
 		auto transformPosition = [](const glm::vec3& pos, const glm::vec3& translation, const glm::vec3& scale, const glm::quat& rotation) 
 		{
 			glm::vec3 v = pos * scale;
@@ -293,8 +290,6 @@ namespace Volt
 				const glm::vec3 center = transformPosition(gpuMesh.center, primitive.transform.position, primitive.transform.scale, primitive.transform.rotation);
 
 				m_debugRenderer.DrawLineSphere(center, maxScale * gpuMesh.radius, 1.f);
-
-				m_debugRenderer.DrawBillboard(center, 1.f, glm::vec4(1.f, 0.f, 0.f, 1.f));
 			}
 
 		}, static_cast<uint32_t>(m_primitiveDrawData.size()), 128);
@@ -302,6 +297,8 @@ namespace Volt
 
 	bool RenderScene::OnPreRenderEvent(AppPreRenderEvent& event)
 	{
+		VT_PROFILE_FUNCTION();
+
 		if (RHI::RHICanUseRayTracing())
 		{
 			m_rayTracingResourceTable->Update(static_cast<uint32_t>(event.GetFrameIndex()));

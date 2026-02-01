@@ -37,6 +37,8 @@
 
 #include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt::RHI
 {
 	VulkanRHIModule::VulkanRHIModule()
@@ -200,6 +202,8 @@ namespace Volt::RHI
 
 	void VulkanRHIModule::BeginFrame()
 	{
+		VT_PROFILE_FUNCTION();
+
 		GraphicsContext::GetDefaultAllocator()->Update();
 		GraphicsContext::GetTransientAllocator()->Update();
 

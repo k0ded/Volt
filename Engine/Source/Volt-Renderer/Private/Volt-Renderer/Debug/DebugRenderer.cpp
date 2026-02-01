@@ -77,9 +77,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		constexpr size_t AllocSize = sizeof(LineVertex) * 2ull;
-		LineVertex* vertex = reinterpret_cast<LineVertex*>(m_lineVerticesAllocator.Allocate(AllocSize));
-	
+		LineVertex* vertex = m_lineVerticesAllocator.AllocateCount(2);
 		DrawLineWithVertices(vertex, vertex + 1, v0, v1, color);
 	}
 
@@ -89,7 +87,7 @@ namespace Volt
 
 		const size_t numRequiredVertices = GetNumLinesPerLineSphere() * 2;
 
-		LineVertex* baseVertex = ReserveLineVertices(numRequiredVertices);
+		LineVertex* baseVertex = m_lineVerticesAllocator.AllocateCount(numRequiredVertices);
 
 		for (size_t i = 1; i < m_lineSphere.circleXZ.size(); i++)
 		{
@@ -182,7 +180,7 @@ namespace Volt
 
 	void DebugRenderer::RenderDebugLines(RenderGraph& renderGraph, const RenderView& view, RGTextureRef dstTexture, RGTextureRef depthTexture)
 	{
-		const size_t numLineVertices = m_lineVerticesAllocator.GetAllocatedSize() / sizeof(LineVertex);
+		const size_t numLineVertices = m_lineVerticesAllocator.GetNumAllocated();
 
 		if (numLineVertices == 0)
 		{
@@ -194,7 +192,11 @@ namespace Volt
 		desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 		
 		RGBufferRef linesVertexBuffer = renderGraph.CreateBuffer(desc);
-		AddMappedBufferUploadCopyData(renderGraph, renderGraph.CreateUAV(linesVertexBuffer), m_lineVerticesAllocator.GetData(), m_lineVerticesAllocator.GetAllocatedSize());
+		
+		// Copy the line vertices into linear RenderGraph owned storage, and queue an upload.
+		LineVertex* rgDataStorage = reinterpret_cast<LineVertex*>(renderGraph.AllocData(m_lineVerticesAllocator.GetAllocatedSize()));
+		m_lineVerticesAllocator.MemcopyInto(rgDataStorage, m_lineVerticesAllocator.GetAllocatedSize());
+		AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(linesVertexBuffer), rgDataStorage, m_lineVerticesAllocator.GetAllocatedSize());
 	
 		DrawDebugLinesParameters* passParameters = renderGraph.AllocParameters<DrawDebugLinesParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;
@@ -233,13 +235,9 @@ namespace Volt
 
 	void DebugRenderer::Reset()
 	{
-		m_lineVerticesAllocator.Reset();
-		m_billboardInstanceAllocator.Reset();
-	}
-
-	LineVertex* DebugRenderer::ReserveLineVertices(size_t count)
-	{
-		return reinterpret_cast<LineVertex*>(m_lineVerticesAllocator.Allocate(sizeof(LineVertex) * count));
+		m_lineVerticesAllocator.Release();
+		m_billboardDrawCommandAllocator.Release();
+		m_meshDrawCommandAllocator.Release();
 	}
 
 	void DebugRenderer::DrawLineWithVertices(LineVertex* vertex0, LineVertex* vertex1, const glm::vec3& v0, const glm::vec3& v1, const glm::vec4& color)
@@ -251,38 +249,30 @@ namespace Volt
 		vertex1->color = color;
 	}
 
-	void DebugRenderer::DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, uint32_t userData)
+	void DebugRenderer::DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, uint32_t userData, bool isViewSpacePosition)
 	{
 		VT_PROFILE_FUNCTION();
 
-		BillboardDrawCommand* billboardDrawCommand = reinterpret_cast<BillboardDrawCommand*>(m_billboardInstanceAllocator.Allocate(sizeof(BillboardDrawCommand)));
+		BillboardDrawCommand* billboardDrawCommand = m_billboardDrawCommandAllocator.Allocate();
 		billboardDrawCommand->position = position;
 		billboardDrawCommand->size = size;
 		billboardDrawCommand->color = color;
 		billboardDrawCommand->texture = nullptr;
 		billboardDrawCommand->userData = userData;
+		billboardDrawCommand->isViewSpacePosition = isViewSpacePosition;
 	}
 
-	void DebugRenderer::DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, RefPtr<RHI::Image> texture, uint32_t userData)
+	void DebugRenderer::DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, RefPtr<RHI::Image> texture, uint32_t userData, bool isViewSpacePosition)
 	{
 		VT_PROFILE_FUNCTION();
 
-		BillboardDrawCommand* billboardDrawCommand = reinterpret_cast<BillboardDrawCommand*>(m_billboardInstanceAllocator.Allocate(sizeof(BillboardDrawCommand)));
+		BillboardDrawCommand* billboardDrawCommand = m_billboardDrawCommandAllocator.Allocate();
 		billboardDrawCommand->position = position;
 		billboardDrawCommand->size = size;
 		billboardDrawCommand->color = color;
-		billboardDrawCommand->texture = texture.GetRaw();
+		billboardDrawCommand->texture = texture;
 		billboardDrawCommand->userData = userData;
-	}
-
-	void DebugRenderer::ReserveLines(size_t count)
-	{
-		m_lineVerticesAllocator.Reserve(sizeof(LineVertex) * count * 2);
-	}
-
-	void DebugRenderer::ReserveBillboards(size_t count)
-	{
-		m_billboardInstanceAllocator.Reserve(sizeof(BillboardDrawCommand) * count);
+		billboardDrawCommand->isViewSpacePosition = isViewSpacePosition;
 	}
 
 	size_t DebugRenderer::GetNumLinesPerLineSphere() const
@@ -314,7 +304,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		const size_t numBillboardCommands = m_billboardInstanceAllocator.GetAllocatedSize() / sizeof(BillboardDrawCommand);
+		const size_t numBillboardCommands = m_billboardDrawCommandAllocator.GetNumAllocated();
 	
 		if (numBillboardCommands == 0)
 		{
@@ -323,9 +313,9 @@ namespace Volt
 
 		// Copy billboard draw commands into intermediate structure to allow sorting.
 		Vector<BillboardDrawCommand, FrameStackAllocator::Mark> billboardDrawCommands;
-		billboardDrawCommands.resize_uninitialized(numBillboardCommands);
+		billboardDrawCommands.resize(numBillboardCommands);
 
-		memcpy_s(billboardDrawCommands.data(), billboardDrawCommands.byte_size(), m_billboardInstanceAllocator.GetData(), m_billboardInstanceAllocator.GetAllocatedSize());
+		m_billboardDrawCommandAllocator.CopyInto(billboardDrawCommands.data(), billboardDrawCommands.size());
 
 		std::sort(billboardDrawCommands.begin(), billboardDrawCommands.end(), [](const BillboardDrawCommand& lhs, const BillboardDrawCommand& rhs) 
 		{
@@ -347,7 +337,7 @@ namespace Volt
 
 				if (activeRange->texture == nullptr)
 				{
-					activeRange->texture = Volt::Renderer::GetDefaultResources().white1x1.GetRaw();
+					activeRange->texture = Volt::Renderer::GetDefaultResources().white1x1;
 				}
 			}
 			else
@@ -369,6 +359,7 @@ namespace Volt
 			billboardInstances[elementIdx].size = billboardDrawCommand.size;
 			billboardInstances[elementIdx].color = billboardDrawCommand.color;
 			billboardInstances[elementIdx].userData = billboardDrawCommand.userData;
+			billboardInstances[elementIdx].isViewSpacePosition = billboardDrawCommand.isViewSpacePosition;
 
 		}, static_cast<uint32_t>(numBillboardCommands), 128);
 
@@ -461,5 +452,14 @@ namespace Volt
 
 			context.EndRendering();
 		});
+	}
+
+	void DebugRenderer::DrawMesh(Ref<Mesh> mesh, Ref<RenderMaterial> material, const TQS& transform, uint32_t userData)
+	{
+		MeshDrawCommand* meshDrawCommand = m_meshDrawCommandAllocator.Allocate();
+		meshDrawCommand->mesh = mesh;
+		meshDrawCommand->material = material;
+		meshDrawCommand->transform = transform;
+		meshDrawCommand->userData = userData;
 	}
 }

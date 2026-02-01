@@ -648,7 +648,7 @@ namespace Volt
 
 			uint64_t oldGeneration = assetMetadata->m_generation.fetch_add(1, std::memory_order::acq_rel);
 
-			VT_CHECK(m_assetCache.TryRemove(assetMetadata->handle, oldGeneration));
+			m_assetCache.TryRemove(assetMetadata->handle, oldGeneration);
 
 			m_dependencyGraph->OnAssetChanged(assetMetadata->handle, AssetChangedState::Unloaded);
 			QueueAssetChanged(assetMetadata->handle, AssetChangedState::Unloaded);

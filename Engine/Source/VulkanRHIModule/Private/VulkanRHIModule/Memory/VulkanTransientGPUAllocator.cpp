@@ -279,6 +279,8 @@ namespace Volt::RHI
 
 	void VulkanTransientGPUAllocator::Update()
 	{
+		VT_PROFILE_FUNCTION();
+
 		const auto allocationsToRemove = m_allocationCache.UpdateAndGetAllocationsToDestroy();
 
 		for (const auto& alloc : allocationsToRemove.bufferAllocations)

@@ -221,7 +221,7 @@ private:
 
 	PageHeader* AllocatePage()
 	{
-		uint8_t* newPage = reinterpret_cast<uint8_t*>(m_allocator.Allocate(PageSize, 0));
+		uint8_t* newPage = reinterpret_cast<uint8_t*>(m_allocator.Allocate(PageSize + sizeof(PageHeader), 0));
 		return new(newPage) PageHeader();
 	}
 
@@ -234,4 +234,47 @@ private:
 	SecondaryAllocator::template ForElementType<uint8_t> m_allocator;
 
 	std::atomic<PageHeader*> m_basePage;
+
+	public:
+		class PageIterator
+		{
+		public:
+			PageIterator()
+			{}
+
+			PageIterator(const PagedAtomicLinearAllocator& linearAllocator)
+				: m_linearAllocator(&linearAllocator)
+			{
+				m_currentPage = m_linearAllocator->m_basePage;
+			}
+
+			VT_INLINE void operator++()
+			{
+				m_currentPage = m_currentPage->next.load(std::memory_order::relaxed);
+			}
+
+			VT_INLINE uint8_t* operator->() const
+			{
+				return m_currentPage->GetData();
+			}
+
+			VT_INLINE uint8_t* operator*() const
+			{
+				return m_currentPage->GetData();
+			}
+
+			VT_INLINE uint64_t Size() const
+			{
+				return m_currentPage->dataPointer.load(std::memory_order::relaxed);
+			}
+
+			VT_INLINE explicit operator bool() const
+			{
+				return m_linearAllocator != nullptr && m_currentPage != nullptr;
+			}
+
+		private:
+			PageHeader* m_currentPage = nullptr;
+			const PagedAtomicLinearAllocator* m_linearAllocator;
+		};
 };

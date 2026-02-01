@@ -5,7 +5,7 @@ struct BillboardInstanceData
 	float3 position;
 	uint userData;
 	float3 size;
-	float padding1;
+	uint isViewSpacePosition;
 	float4 color;
 };
 

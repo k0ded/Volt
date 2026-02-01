@@ -19,5 +19,10 @@ PSOutput MainPS(in BillboardVSToPS input)
 	output.color = textureColor * input.color;
 	output.objectId = input.userData;
 
+	if (output.color.a < 0.01f)
+	{
+		discard;
+	}
+
 	return output;
 }

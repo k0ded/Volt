@@ -33,11 +33,10 @@ void Sandbox::DrawEntityGizmos()
 	auto entityView = registry.view<Volt::IDComponent>();
 
 	const uint32_t numEntities = static_cast<uint32_t>(entityView.size());
-	m_debugRenderer.ReserveBillboards(numEntities);
-
 	const glm::vec3 editorCameraPosition = m_editorCameraController->GetCamera()->GetPosition();
+	const glm::mat4 editorCameraViewMatrix = m_editorCameraController->GetCamera()->GetView();
 
-	Volt::Algo::ForEachParalellBlocking([&entityView, &editorCameraPosition, scene = m_runtimeScene, &debugRenderer = m_debugRenderer](uint32_t threadIdx, uint32_t elementIdx)
+	Volt::Algo::ForEachParalellBlocking([&entityView, &editorCameraPosition, &editorCameraViewMatrix, scene = m_runtimeScene, &debugRenderer = m_debugRenderer](uint32_t threadIdx, uint32_t elementIdx)
 	{
 		VT_PROFILE_SCOPE("Entity");
 
@@ -63,23 +62,18 @@ void Sandbox::DrawEntityGizmos()
 		{
 			float scale = glm::max(glm::min(distance / MaxDistance * 2.f, MaxScale), MinScale);
 
-			RefPtr<Volt::RHI::Image> gizmoTexture;
+			EditorGizmoDrawer gizmoDrawer;
 
-			EditorUtils::IterateComponentsInEntity(entity, [&gizmoTexture](const VoltGUID& componentGuid) 
+			EditorUtils::IterateComponentsInEntity(entity, [&gizmoDrawer](const VoltGUID& componentGuid) 
 			{
 				if (ComponentVisualizerRegistry::Get().HasComponentVisualizer(componentGuid))
 				{
 					auto componentVisualizer = ComponentVisualizerRegistry::Get().GetComponentVisualizer(componentGuid);
-					gizmoTexture = componentVisualizer->GetIcon();
+					componentVisualizer->DrawGizmo(gizmoDrawer);
 				}
 			});
 
-			if (!gizmoTexture)
-			{
-				gizmoTexture = EditorResources::GetEditorIcon(EditorIcon::EntityGizmo);
-			}
-
-			debugRenderer.DrawBillboard(entityPosition, scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, gizmoTexture, entity.GetID());
+			gizmoDrawer.Render(debugRenderer, editorCameraViewMatrix, entity.GetID(), entityPosition, scale, alpha);
 		}
 
 	}, numEntities, 128);

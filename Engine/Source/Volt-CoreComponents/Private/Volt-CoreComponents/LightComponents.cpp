@@ -13,6 +13,7 @@ namespace Volt
 	VT_REGISTER_COMPONENT(RectangleLightComponent);
 	VT_REGISTER_COMPONENT(DirectionalLightComponent);
 	VT_REGISTER_COMPONENT(SkylightComponent);
+	VT_REGISTER_COMPONENT(SphereLightComponent);
 
 	namespace Utility
 	{
