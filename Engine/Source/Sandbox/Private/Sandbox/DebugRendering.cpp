@@ -43,14 +43,14 @@ void Sandbox::DrawEntityGizmos()
 		entt::entity entityHandle = *(entityView.begin() + elementIdx);
 		Volt::Entity entity = scene->GetEntityFromHandle(entityHandle);
 
-		const glm::vec3 entityPosition = entity.GetPosition();
+		const TQS entityTransform = entity.GetTransformTQS();
 
 		constexpr float MaxDistance = 5000.f * 5000.f;
 		constexpr float LerpStartDistance = 4000.f * 4000.f;
 		constexpr float MaxScale = 1.f;
 		constexpr float MinScale = 0.3f;
 
-		const float distance = glm::distance2(editorCameraPosition, entityPosition);
+		const float distance = glm::distance2(editorCameraPosition, entityTransform.translation);
 
 		float alpha = 1.f;
 		if (distance >= LerpStartDistance)
@@ -62,18 +62,18 @@ void Sandbox::DrawEntityGizmos()
 		{
 			float scale = glm::max(glm::min(distance / MaxDistance * 2.f, MaxScale), MinScale);
 
-			EditorGizmoDrawer gizmoDrawer;
+			EditorDrawInterface editorDrawInterface;
 
-			EditorUtils::IterateComponentsInEntity(entity, [&gizmoDrawer](const VoltGUID& componentGuid) 
+			EditorUtils::IterateComponentsInEntity(entity, [&editorDrawInterface](const VoltGUID& componentGuid) 
 			{
 				if (ComponentVisualizerRegistry::Get().HasComponentVisualizer(componentGuid))
 				{
 					auto componentVisualizer = ComponentVisualizerRegistry::Get().GetComponentVisualizer(componentGuid);
-					componentVisualizer->DrawGizmo(gizmoDrawer);
+					componentVisualizer->DrawVisualization(editorDrawInterface);
 				}
 			});
 
-			gizmoDrawer.Render(debugRenderer, editorCameraViewMatrix, entity.GetID(), entityPosition, scale, alpha);
+			editorDrawInterface.Render(debugRenderer, editorCameraViewMatrix, entity.GetID(), entityTransform, scale, alpha);
 		}
 
 	}, numEntities, 128);

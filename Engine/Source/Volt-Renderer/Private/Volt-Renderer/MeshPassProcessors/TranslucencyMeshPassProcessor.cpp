@@ -20,7 +20,7 @@ namespace Volt
 		auto vertexShader = ShaderMap::Get<TranslucencyPassVS>();
 		auto pixelShader = renderPrimitive->material->GetPixelShader<TranslucencyPassMaterialShader>();
 
-		// Enable alpha blending for attachment 0 (accumulation)
+		// Enable the correct blend states.
 		RHI::RenderPipelineCreateInfo renderPipelineInfo;
 		renderPipelineInfo.attachmentBlendStates[0] = DefaultBlendStates::Add();
 		renderPipelineInfo.attachmentBlendStates[1] = DefaultBlendStates::OneMinusSrcColor();

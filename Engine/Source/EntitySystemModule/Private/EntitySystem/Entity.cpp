@@ -269,6 +269,13 @@ namespace Volt
 		return  GetComponent<TransformComponent>().GetTransform();
 	}
 
+	TQS Entity::GetTransformTQS() const
+	{
+		VT_ENTITY_VALIDATE(IsValid());
+		const auto tqs = m_sceneReference->GetEntityWorldTQS(*this);
+		return tqs;
+	}
+
 	bool Entity::HasParent() const
 	{
 		VT_ENTITY_VALIDATE(IsValid());

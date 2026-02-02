@@ -34,7 +34,7 @@ namespace Volt
 		GPUTransform()
 			: rotation(glm::identity<glm::quat>()),
 			position(0.f),
-			scale(0.f)
+			scale(1.f)
 		{}
 
 		glm::quat rotation;

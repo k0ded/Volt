@@ -22,3 +22,8 @@ void OutlineMeshPassProcessor::RemoveRenderPrimitive(const Volt::RenderPrimitive
 {
 	RemoveMeshDrawCommand(renderPrimitive);
 }
+
+bool OutlineMeshPassProcessor::ShouldIncludePrimitive(const Volt::RenderPrimitiveData* renderPrimitive) const
+{
+	return true;
+}

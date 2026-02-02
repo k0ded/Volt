@@ -6,11 +6,12 @@
 #include "Sandbox/Utility/EditorResources.h"
 
 #include <Volt-CoreComponents/LightComponents.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 class PointLightComponentVisualizer : public ComponentVisualizer
 {
 public:
-	void DrawGizmo(EditorGizmoDrawer& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
 	{
 		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::EntityGizmo));
 	}
@@ -20,7 +21,7 @@ VT_REGISTER_COMPONENT_VISUALIZER(PointLightComponentVisualizer, Volt::PointLight
 class SpotLightComponentVisualizer : public ComponentVisualizer
 {
 public:
-	void DrawGizmo(EditorGizmoDrawer& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
 	{
 		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::Fill));
 	}
@@ -30,7 +31,7 @@ VT_REGISTER_COMPONENT_VISUALIZER(SpotLightComponentVisualizer, Volt::SpotLightCo
 class SphereLightComponentVisualizer : public ComponentVisualizer
 {
 public:
-	void DrawGizmo(EditorGizmoDrawer& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
 	{
 		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::Paint));
 	}
@@ -40,7 +41,7 @@ VT_REGISTER_COMPONENT_VISUALIZER(SphereLightComponentVisualizer, Volt::SphereLig
 class RectangleLightComponentVisualizer : public ComponentVisualizer
 {
 public:
-	void DrawGizmo(EditorGizmoDrawer& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
 	{
 		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::Directory));
 	}
@@ -50,7 +51,7 @@ VT_REGISTER_COMPONENT_VISUALIZER(RectangleLightComponentVisualizer, Volt::Rectan
 class DirectionalLightComponentVisualizer : public ComponentVisualizer
 {
 public:
-	void DrawGizmo(EditorGizmoDrawer& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
 	{
 		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
 	}
@@ -60,9 +61,19 @@ VT_REGISTER_COMPONENT_VISUALIZER(DirectionalLightComponentVisualizer, Volt::Dire
 class SkyLightComponentVisualizer : public ComponentVisualizer
 {
 public:
-	void DrawGizmo(EditorGizmoDrawer& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
 	{
 		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
 	}
 };
 VT_REGISTER_COMPONENT_VISUALIZER(SkyLightComponentVisualizer, Volt::SkylightComponent);
+
+class CameraComponentVisualizer : public ComponentVisualizer
+{
+public:
+	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
+	{
+		gizmoDrawer.DrawMesh(EditorResources::GetEditorMesh(EditorMesh::Camera), EditorResources::GetEditorMesh(EditorMesh::Camera)->GetMaterialTable().GetMaterial(0));
+	}
+};
+VT_REGISTER_COMPONENT_VISUALIZER(CameraComponentVisualizer, Volt::CameraComponent);

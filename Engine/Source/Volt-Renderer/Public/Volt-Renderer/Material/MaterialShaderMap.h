@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Volt-Renderer/Config.h"
 #include "Volt-Renderer/Material/MaterialCommon.h"
 #include "Volt-Renderer/Material/CompiledMaterialShaders.h"
 
@@ -70,8 +71,8 @@ namespace Volt
 			RefPtr<RHI::Shader> defaultShader;
 		};
 
-		RefPtr<RHI::Shader> GetShaderInternal(TypeTraits::TypeIndex shaderType, size_t permutationIndex, bool& isDefaultShader);
-		RefPtr<RHI::Shader> CompileShaderPermutation(TypeTraits::TypeIndex shaderType, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig);
+		VTR_API RefPtr<RHI::Shader> GetShaderInternal(TypeTraits::TypeIndex shaderType, size_t permutationIndex, bool& isDefaultShader);
+		VTR_API RefPtr<RHI::Shader> CompileShaderPermutation(TypeTraits::TypeIndex shaderType, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig);
 
 		Map<TypeTraits::TypeIndex, ShaderBucket> m_shaderMap;
 

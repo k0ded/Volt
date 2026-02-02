@@ -2,11 +2,13 @@
 
 #include "Volt-Renderer/Config.h"
 #include "Volt-Renderer/Debug/DebugVertices.h"
+#include "Volt-Renderer/Debug/DebugMeshRenderer.h"
 
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/Material/RenderMaterial.h"
 
 #include <RenderCore/RenderGraph/Resources/ResourceDeclarations.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
 
 #include <RHIModule/Shader/Shader.h>
 
@@ -16,6 +18,9 @@
 namespace Volt
 {
 	class RenderGraph;
+	class RenderGraphBlackboard;
+	class BatchedShaderParameters;
+
 	struct RenderView;
 	struct ShaderParameterRenderTargetBindings;
 
@@ -37,10 +42,17 @@ namespace Volt
 
 		VTR_API size_t GetNumLinesPerLineSphere() const;
 
+		template<typename T>
+		void AddDebugMeshRenderer();
+
+		template<typename T>
+		T* GetDebugMeshRenderer();
+
 		/*
 			Custom rendering
 		*/
 		VTR_API void RenderBillboards(RenderGraph& renderGraph, RefPtr<RHI::Shader> pixelShader, const RenderView& view, const ShaderParameterRenderTargetBindings& renderTargets, bool shouldClear);
+		VTR_API void PrepareMeshesForRendering(RenderGraph& renderGraph);
 
 	private:
 		template<typename T>
@@ -71,7 +83,7 @@ namespace Volt
 
 			void Release()
 			{
-				if (!std::is_trivial_v<T>)
+				if constexpr (!std::is_trivial_v<T>)
 				{
 					for (IteratorType it(m_allocator); it; ++it)
 					{
@@ -143,6 +155,11 @@ namespace Volt
 				}
 			}
 
+			VT_INLINE IteratorType GetIterator()
+			{
+				return IteratorType(m_allocator);
+			}
+
 		private:
 			PagedAtomicLinearAllocator<sizeof(T) * 1024> m_allocator;
 		};
@@ -206,5 +223,19 @@ namespace Volt
 		Allocator<MeshDrawCommand> m_meshDrawCommandAllocator;
 
 		Vector<BillboardInstancingRange> m_billboardInstancingRanges;
+
+		DebugMeshRendererRegistry m_debugMeshRendererRegistry;
 	};
+
+	template<typename T>
+	T* DebugRenderer::GetDebugMeshRenderer()
+	{
+		return m_debugMeshRendererRegistry.GetRenderer<T>();
+	}
+
+	template<typename T>
+	void DebugRenderer::AddDebugMeshRenderer()
+	{
+		m_debugMeshRendererRegistry.AddRenderer<T>();
+	}
 }

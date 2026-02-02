@@ -7,4 +7,5 @@ class OutlineMeshPassProcessor : public Volt::MeshPassProcessor
 public:
 	void AddRenderPrimitive(const Volt::RenderPrimitiveData* renderPrimitive) override;
 	void RemoveRenderPrimitive(const Volt::RenderPrimitiveData* renderPrimitive) override;
+	bool ShouldIncludePrimitive(const Volt::RenderPrimitiveData* renderPrimitive) const override;
 };

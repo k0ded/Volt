@@ -74,20 +74,17 @@ namespace Volt
 		template<typename T>
 		VT_NODISCARD RefPtr<RHI::Shader> GetPixelShader() 
 		{ 
-			//typename T::PermutationVector permutationVector;
-			//
-			//SetupPermutations<T>(permutationVector);
-			//return m_shaderMap.GetShader<T>(permutationVector); 
 			return m_shaderMap.GetShader<T>(); 
+		}
+
+		template<typename T>
+		VT_NODISCARD RefPtr<RHI::Shader> GetPixelShader(const typename T::PermutationVector& permutationVector)
+		{
+			return m_shaderMap.GetShader<T>(permutationVector); 
 		}
 
 	private:
 		friend class MaterialCompiler;
-
-		template<typename T>
-		void SetupPermutations(typename T::PermutationVector& permutationVector)
-		{
-		}
 
 		void Invalidate(CompiledMaterialShaders&& compiledMaterialShaders);
 		void GenerateHash();

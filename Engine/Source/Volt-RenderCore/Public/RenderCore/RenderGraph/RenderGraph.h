@@ -334,7 +334,6 @@ namespace Volt
 		newPass->flags = flags;
 
 		// Get all parameters accessed by shader.
-		// #TODO_Ivar: Add support for paged vector, or inline allocator
 		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
 
 		// We need to use const_cast here because the resource parameters need to be non-const pointers.
@@ -352,15 +351,13 @@ namespace Volt
 				case ShaderParameterType::TextureUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
 				case ShaderParameterType::UniformBuffer:  
 				{
-					// #TODO_Ivar: This is a temporary fix until we have proper permutation support.
 					RGUniformBufferRef uniformBuffer = *reinterpret_cast<RGUniformBufferRef*>(dataPtr);
-					if (uniformBuffer != nullptr)
-					{
-						RGUniformBufferSRVDesc srvDesc{};
-						srvDesc.bufferResource = uniformBuffer;
+					VT_ENSURE_MSG(uniformBuffer != nullptr, "Must be a valid resource!");
 
-						newPass->AddResourceRead(CreateSRV(srvDesc));
-					}
+					RGUniformBufferSRVDesc srvDesc{};
+					srvDesc.bufferResource = uniformBuffer;
+
+					newPass->AddResourceRead(CreateSRV(srvDesc));
 					break;
 				}
 				case ShaderParameterType::BufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGBufferRef*>(dataPtr), parameter.resourceAccessType); break;

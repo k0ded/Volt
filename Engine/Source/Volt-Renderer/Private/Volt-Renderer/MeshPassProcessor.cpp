@@ -34,7 +34,6 @@ namespace Volt
 	MeshPassProcessorRegistry::MeshPassProcessorRegistry(RenderScene* renderScene)
 		: m_renderScene(renderScene)
 	{
-		m_meshPassProcessorAllocator.Reserve(512 * 1024);
 	}
 
 	MeshPassProcessorRegistry::~MeshPassProcessorRegistry()
@@ -49,7 +48,10 @@ namespace Volt
 	{
 		for (MeshPassProcessor* meshPassProcessor : m_meshPassProcessors)
 		{
-			meshPassProcessor->AddRenderPrimitive(renderPrimitive);
+			if (meshPassProcessor->ShouldIncludePrimitive(renderPrimitive))
+			{
+				meshPassProcessor->AddRenderPrimitive(renderPrimitive);
+			}
 		}
 	}
 
@@ -57,7 +59,10 @@ namespace Volt
 	{
 		for (MeshPassProcessor* meshPassProcessor : m_meshPassProcessors)
 		{
-			meshPassProcessor->RemoveRenderPrimitive(renderPrimitive);
+			if (meshPassProcessor->ShouldIncludePrimitive(renderPrimitive))
+			{
+				meshPassProcessor->RemoveRenderPrimitive(renderPrimitive);
+			}
 		}
 	}
 
@@ -67,7 +72,10 @@ namespace Volt
 
 		for (const RenderPrimitiveData* renderPrimitive : renderPrimitives)
 		{
-			meshPassProcessor->AddRenderPrimitive(renderPrimitive);
+			if (meshPassProcessor->ShouldIncludePrimitive(renderPrimitive))
+			{
+				meshPassProcessor->AddRenderPrimitive(renderPrimitive);
+			}
 		}
 	}
 
@@ -178,23 +186,23 @@ namespace Volt
 				 {
 					 VT_PROFILE_SCOPE("Instancing Range");
 
-					 const MeshDrawCommand& firstDrawComamnd = currentBucket.drawCommands.at(instancingRange.offset);
-					 VT_ENSURE_MSG(firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
-					 const uint32_t perInstanceBindingIndex = firstDrawComamnd.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
+					 const MeshDrawCommand& firstDrawCommand = currentBucket.drawCommands.at(instancingRange.offset);
+					 VT_ENSURE_MSG(firstDrawCommand.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
+					 const uint32_t perInstanceBindingIndex = firstDrawCommand.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
 
 					 primitiveIndexVertexBufferVector[0].offset = (primitiveOffset + instancingRange.offset) * sizeof(uint32_t);
 
 					 // We don't need to rebind the same pipeline.
-					 const bool shouldBindPipeline = (prevRenderPipeline == nullptr || prevRenderPipeline != firstDrawComamnd.renderPipeline);
+					 const bool shouldBindPipeline = (prevRenderPipeline == nullptr || prevRenderPipeline != firstDrawCommand.renderPipeline);
 					 if (shouldBindPipeline)
 					 {
-						 prevRenderPipeline = firstDrawComamnd.renderPipeline;
-						 commandBuffer->BindPipeline(firstDrawComamnd.renderPipeline);
+						 prevRenderPipeline = firstDrawCommand.renderPipeline;
+						 commandBuffer->BindPipeline(firstDrawCommand.renderPipeline);
 
-						 ArrayView<RHI::ShaderParameterMap> shaderParametersMaps = firstDrawComamnd.renderPipeline->GetShaderParameterMaps();
-						 InlineVector<RenderContext::PerStageShaderParameters, 8> perShaderStageParameters = renderContext.SetupPipelineData(firstDrawComamnd.renderPipeline);
+						 ArrayView<RHI::ShaderParameterMap> shaderParametersMaps = firstDrawCommand.renderPipeline->GetShaderParameterMaps();
+						 InlineVector<RenderContext::PerStageShaderParameters, 8> perShaderStageParameters = renderContext.SetupPipelineData(firstDrawCommand.renderPipeline);
 
-						 RHI::ShaderBindingMap shaderBindings = RHI::ShaderBindingMap::InitializeFromPipeline(firstDrawComamnd.renderPipeline);
+						 RHI::ShaderBindingMap shaderBindings = RHI::ShaderBindingMap::InitializeFromPipeline(firstDrawCommand.renderPipeline);
 						 batchedShaderParameters.BindShaderBindings(shaderParametersMaps, shaderBindings);
 						 batchedShaderParameters.PopulateShaderParameterUniformBuffers(shaderParametersMaps, perShaderStageParameters);
 
@@ -203,24 +211,24 @@ namespace Volt
 							 shaderBindings.SetUniformBufferWithSizeAndOffset(shaderParameters.shaderStage, RHI::Globals::SHADER_GLOBALS_BINDING, shaderParameters.uniformBufferSRV->GetRHIView(), shaderParameters.size, shaderParameters.offset);
 						 }
 
-						 firstDrawComamnd.renderPrimitive->material->BindToShaderBindingMap(shaderBindings, firstDrawComamnd.renderPipeline);
+						 firstDrawCommand.renderPrimitive->material->BindToShaderBindingMap(shaderBindings, firstDrawCommand.renderPipeline);
 
 						 commandBuffer->BindShaderBindings(shaderBindings);
 					 }
 
-					 commandBuffer->BindVertexBuffers(firstDrawComamnd.vertexBuffers, 0);
+					 commandBuffer->BindVertexBuffers(firstDrawCommand.vertexBuffers, 0);
 					 commandBuffer->BindVertexBuffers(primitiveIndexVertexBufferVector, perInstanceBindingIndex);
-					 commandBuffer->BindIndexBuffer(firstDrawComamnd.indexBuffer);
+					 commandBuffer->BindIndexBuffer(firstDrawCommand.indexBuffer);
 					 
-					 MaterialShader::InlineParameterBlock inlineParameterBlock = GetMaterialInlineParameterBlock(firstDrawComamnd.renderPrimitive);
+					 MaterialShader::InlineParameterBlock inlineParameterBlock = GetMaterialInlineParameterBlock(firstDrawCommand.renderPrimitive);
 
 					 commandBuffer->PushInlineParameters(&inlineParameterBlock, sizeof(MaterialShader::InlineParameterBlock), 0, RHI::ShaderStage::Pixel);
 					 commandBuffer->DrawIndexed(
-						 firstDrawComamnd.drawCommand.indexCount,
+						 firstDrawCommand.drawCommand.indexCount,
 						 instancingRange.count,
-						 firstDrawComamnd.drawCommand.firstIndex,
-						 firstDrawComamnd.drawCommand.vertexOffset,
-						 firstDrawComamnd.drawCommand.firstInstance);
+						 firstDrawCommand.drawCommand.firstIndex,
+						 firstDrawCommand.drawCommand.vertexOffset,
+						 firstDrawCommand.drawCommand.firstInstance);
 				 }
 
 				 primitiveOffset += static_cast<uint32_t>(currentBucket.drawCommands.size());
@@ -408,7 +416,7 @@ namespace Volt
 
 							if (prevDrawCommand.sortKey.sortKey != currDrawCommand.sortKey.sortKey)
 							{
-								instancingOffsets.emplace_back(index);
+								instancingOffsets.emplace_back(index, 1);
 							}
 							else
 							{
@@ -457,7 +465,6 @@ namespace Volt
 		hashKey.hashKeyContents.vertexBufferHash = renderPrimitive->mesh->GetVertexPositionsBuffer().GetHash();
 		hashKey.hashKeyContents.indexBufferHash = renderPrimitive->mesh->GetIndexBuffer().GetHash();
 		hashKey.hashKeyContents.subMeshHash = subMesh.GetHash();
-
 
 		return hashKey;
 	}

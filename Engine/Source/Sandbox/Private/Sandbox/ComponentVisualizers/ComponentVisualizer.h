@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Sandbox/ComponentVisualizers/EditorGizmoDrawer.h"
+#include "Sandbox/ComponentVisualizers/EditorDrawInterface.h"
 
 class ComponentVisualizer
 {
@@ -10,7 +10,7 @@ public:
 	/*
 		Allows each component to have it's own gizmo. 
 	*/
-	virtual void DrawGizmo(EditorGizmoDrawer& gizmoDrawer) {};
+	virtual void DrawVisualization(EditorDrawInterface& gizmoDrawer) {};
 
 private:
 };

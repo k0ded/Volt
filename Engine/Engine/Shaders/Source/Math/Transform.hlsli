@@ -29,4 +29,14 @@ struct Transform
 
         return result;
     }
+
+    void Initialize(float3 inPosition, float3 inScale, float4 inRotation)
+    {
+        position = inPosition;
+        scale = inScale;
+        rotation.x = inRotation.x;
+        rotation.y = inRotation.y;
+        rotation.z = inRotation.z;
+        rotation.w = inRotation.w;
+    }
 };

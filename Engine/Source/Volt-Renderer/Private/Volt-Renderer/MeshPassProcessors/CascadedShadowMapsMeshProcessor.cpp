@@ -25,4 +25,9 @@ namespace Volt
 	{
 		RemoveMeshDrawCommand(renderPrimitive);
 	}
+
+	bool CascadedShadowMapMeshProcessor::ShouldIncludePrimitive(const RenderPrimitiveData* renderPrimitive) const
+	{
+		return true;
+	}
 }

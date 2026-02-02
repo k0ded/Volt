@@ -2,6 +2,7 @@
 
 #include "Volt-Renderer/Debug/DebugRenderer.h"
 #include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/Material/MaterialShaderRegistry.h"
 
 #include <Volt-Core/Algorithms.h>
 
@@ -238,6 +239,7 @@ namespace Volt
 		m_lineVerticesAllocator.Release();
 		m_billboardDrawCommandAllocator.Release();
 		m_meshDrawCommandAllocator.Release();
+		m_debugMeshRendererRegistry.Reset();
 	}
 
 	void DebugRenderer::DrawLineWithVertices(LineVertex* vertex0, LineVertex* vertex1, const glm::vec3& v0, const glm::vec3& v1, const glm::vec4& color)
@@ -461,5 +463,19 @@ namespace Volt
 		meshDrawCommand->material = material;
 		meshDrawCommand->transform = transform;
 		meshDrawCommand->userData = userData;
+	}
+
+	void DebugRenderer::PrepareMeshesForRendering(RenderGraph& renderGraph)
+	{
+		Vector<MeshDrawCommand> localMeshDrawCommands;
+		localMeshDrawCommands.resize(m_meshDrawCommandAllocator.GetNumAllocated());
+		m_meshDrawCommandAllocator.CopyInto(localMeshDrawCommands.data(), localMeshDrawCommands.size());
+
+		for (const MeshDrawCommand& meshDrawCommand : localMeshDrawCommands)
+		{
+			m_debugMeshRendererRegistry.AddMeshDraw(meshDrawCommand.mesh, meshDrawCommand.material, meshDrawCommand.transform, meshDrawCommand.userData);
+		}
+
+		m_debugMeshRendererRegistry.PrepareMeshesForRendering(renderGraph);
 	}
 }

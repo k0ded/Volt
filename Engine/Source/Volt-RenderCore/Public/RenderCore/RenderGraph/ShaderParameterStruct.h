@@ -265,7 +265,7 @@ private: \
 	struct NextMemberID##paramName {}; \
 	static FuncPtr ProcessMember(NextMemberID##paramName, Vector<Volt::ShaderParameterMetadata>& outMetadata, uint32_t offset) \
 	{ \
-		type::zzInternal_ProcessMembers(outMetadata, offsetof(CurrentStruct, paramName)); \
+		type::zzInternal_ProcessMembers(outMetadata, offset + offsetof(CurrentStruct, paramName)); \
 		FuncPtr(*prevFunc)(MemberID##paramName, Vector<Volt::ShaderParameterMetadata>&, uint32_t); \
 		prevFunc = ProcessMember; \
 		return (FuncPtr)prevFunc; \

@@ -9,7 +9,7 @@
 #include <RHIModule/Core/RHICommon.h>
 
 #include <CoreUtilities/Containers/Vector.h>
-#include <CoreUtilities/Allocators/FixedSizeLinearAllocator.h>
+#include <CoreUtilities/Allocators/PagedAtomicLinearAllocator.h>
 #include <CoreUtilities/DestructorHelper.h>
 #include <CoreUtilities/UUID.h>
 
@@ -90,6 +90,7 @@ namespace Volt
 
 		virtual void AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive) = 0;
 		virtual void RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive) = 0;
+		virtual bool ShouldIncludePrimitive(const RenderPrimitiveData* renderPrimitive) const = 0;
 
 	protected:
 		void BuildMeshDrawCommand(const RenderPrimitiveData* renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader);
@@ -157,7 +158,7 @@ namespace Volt
 	private:
 		void VTR_API AddPrimitivesToMeshPassProcessor(MeshPassProcessor* meshPassProcessor);
 
-		FixedSizeLinearAllocator<> m_meshPassProcessorAllocator;
+		PagedAtomicLinearAllocator<1024> m_meshPassProcessorAllocator;
 		Vector<MeshPassProcessor*> m_meshPassProcessors;
 		Vector<DestructorHelper> m_meshPassDestructors;
 

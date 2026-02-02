@@ -23,3 +23,7 @@ void ObjectIDPassMeshProcessor::RemoveRenderPrimitive(const Volt::RenderPrimitiv
 	RemoveMeshDrawCommand(renderPrimitive);
 }
 
+bool ObjectIDPassMeshProcessor::ShouldIncludePrimitive(const Volt::RenderPrimitiveData* renderPrimitive) const
+{
+	return true;
+}

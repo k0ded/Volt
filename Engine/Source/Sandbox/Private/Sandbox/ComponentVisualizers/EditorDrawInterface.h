@@ -17,7 +17,9 @@ namespace Volt
 	class DebugRenderer;
 }
 
-class EditorGizmoDrawer
+struct TQS;
+
+class EditorDrawInterface
 {
 public:
 	void DrawIcon(RefPtr<Volt::RHI::Image> texture);
@@ -26,7 +28,7 @@ public:
 	/*
 		Will fill the gizmo render commands into a debug renderer.
 	*/
-	void Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const glm::vec3& worlPosition, float scale, float alpha);
+	void Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const TQS& transform, float scale, float alpha);
 
 private:
 	struct GizmoDrawCommand

@@ -50,6 +50,7 @@ namespace Volt
 
 		VT_NODISCARD glm::mat4 GetTransform() const;
 		VT_NODISCARD glm::mat4 GetLocalTransform() const;
+		VT_NODISCARD TQS GetTransformTQS() const;
 
 		VT_NODISCARD glm::vec3 GetPosition() const;
 		VT_NODISCARD glm::quat GetRotation() const;

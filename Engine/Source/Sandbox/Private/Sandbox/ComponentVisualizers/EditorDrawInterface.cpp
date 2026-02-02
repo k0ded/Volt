@@ -1,32 +1,32 @@
 #include "sbpch.h"
 
 #include "Sandbox/Utility/EditorResources.h"
-#include "Sandbox/ComponentVisualizers/EditorGizmoDrawer.h"
+#include "Sandbox/ComponentVisualizers/EditorDrawInterface.h"
 
 #include <Volt-Renderer/Debug/DebugRenderer.h>
 
 #include <unordered_set>
 
-void EditorGizmoDrawer::DrawIcon(RefPtr<Volt::RHI::Image> texture)
+void EditorDrawInterface::DrawIcon(RefPtr<Volt::RHI::Image> texture)
 {
 	GizmoDrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.texture = texture;
 }
 
-void EditorGizmoDrawer::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material)
+void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material)
 {
 	GizmoDrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.mesh = mesh;
 	drawCommand.material = material;
 }
 
-void EditorGizmoDrawer::Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const glm::vec3& worlPosition, float scale, float alpha)
+void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const TQS& transform, float scale, float alpha)
 {
 	// If no draw commands are recorded, we will draw a default entity icon.
 	if (m_drawCommands.empty())
 	{
 		RefPtr<Volt::RHI::Image> gizmoTexture = EditorResources::GetEditorIcon(EditorIcon::EntityGizmo);
-		debugRenderer.DrawBillboard(worlPosition, scale, { 1.f, 1.f, 1.f, alpha }, gizmoTexture, entityId);
+		debugRenderer.DrawBillboard(transform.translation, scale, { 1.f, 1.f, 1.f, alpha }, gizmoTexture, entityId);
 	
 		return;
 	}
@@ -37,7 +37,7 @@ void EditorGizmoDrawer::Render(Volt::DebugRenderer& debugRenderer, const glm::ma
 	if (consolidatedDrawCommands.begin()->mesh != nullptr)
 	{
 		const GizmoDrawCommand& drawCommand = *consolidatedDrawCommands.begin();
-		debugRenderer.DrawMesh(drawCommand.mesh, drawCommand.material, {}, entityId);
+		debugRenderer.DrawMesh(drawCommand.mesh, drawCommand.material, transform, entityId);
 	}
 	else
 	{
@@ -48,7 +48,7 @@ void EditorGizmoDrawer::Render(Volt::DebugRenderer& debugRenderer, const glm::ma
 		const size_t numIcons = consolidatedDrawCommands.size();
 		const size_t numRows = Math::DivideRoundUp(numIcons, NumIconsPerRow);
 	
-		const glm::vec3 viewSpacePosition = viewMatrix * glm::vec4(worlPosition, 1.f);
+		const glm::vec3 viewSpacePosition = viewMatrix * glm::vec4(transform.translation, 1.f);
 
 		size_t numIconsLeft = numIcons;
 		size_t iconIndex = 0;
@@ -101,7 +101,7 @@ namespace std
 	};
 }
 
-Vector<EditorGizmoDrawer::GizmoDrawCommand> EditorGizmoDrawer::Consolidate() const
+Vector<EditorDrawInterface::GizmoDrawCommand> EditorDrawInterface::Consolidate() const
 {
 	std::unordered_set<RefPtr<Volt::RHI::Image>> individualTextures;
 	std::unordered_set<MeshAndMaterial> individualMeshes;
