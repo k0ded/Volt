@@ -138,7 +138,7 @@ void EditorResources::TryLoadIcon(const std::filesystem::path& path, RefPtr<Volt
 {
 	AssetReference<Volt::Texture2D> texture;
 
-	if (g_assetManager->TryGetAssetImmediately(g_assetManager->GetAssetHandleFromFilepath(path), texture))
+	if (g_assetManager->TryGetAssetImmediately(path, texture))
 	{
 		*outTexture = texture->GetImage();
 	}
@@ -154,7 +154,7 @@ Ref<Volt::Mesh> EditorResources::TryLoadMesh(const std::filesystem::path& path)
 
 	Ref<Volt::Mesh> mesh;
 
-	if (g_assetManager->TryGetAsset(g_assetManager->GetAssetHandleFromFilepath(path), meshAsset))
+	if (g_assetManager->TryGetAssetImmediately(path, meshAsset))
 	{
 		mesh = meshAsset->GetMesh();
 	}

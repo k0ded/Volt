@@ -32,7 +32,7 @@ DrawDebugMeshesPixelShaderOutput MainPS(in DrawDebugMeshesPixelShaderInput input
 	pbrInput.metallic = evaluatedMaterial.metallic;
 	pbrInput.emissive = evaluatedMaterial.emissive;
 	pbrInput.worldPosition = input.worldPosition;
-	pbrInput.ao = 0.f;
+	pbrInput.ao = 1.f;
 	pbrInput.tileId = input.position.xy / LIGHT_CULLING_TILE_SIZE;
 
 	const float3 outputColor = EvaluatePBR(pbrInput);
