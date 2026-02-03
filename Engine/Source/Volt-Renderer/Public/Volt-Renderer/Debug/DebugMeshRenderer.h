@@ -26,6 +26,7 @@ namespace Volt
 
 		VT_INLINE RGBufferRef GetPrimitiveIndexBuffer() const { return m_primitiveIndexDataBuffer; }
 		VT_INLINE RGBufferRef GetDebugMeshDataBuffer() const { return m_debugMeshDataBuffer; }
+		VT_INLINE bool HasAnyDraw() const { return !m_meshDrawCommandBuckets.empty(); }
 
 	protected:
 		VTR_API void BuildMeshDrawCommand(Ref<Mesh> mesh, 

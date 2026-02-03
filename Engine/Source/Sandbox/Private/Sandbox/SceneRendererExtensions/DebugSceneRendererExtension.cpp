@@ -58,12 +58,14 @@ Volt::RGTextureRef DebugSceneRendererExtension::OnRender(Volt::RenderGraph& rend
 
 	m_debugRenderer.PrepareMeshesForRendering(renderGraph);
 
+	ForwardLitDebugMeshRenderer* forwardLitDebugMeshRenderer = m_debugRenderer.GetDebugMeshRenderer<ForwardLitDebugMeshRenderer>();
+
+	if (forwardLitDebugMeshRenderer->HasAnyDraw())
 	{
 		const Volt::EnvironmentTextures& environmentTextures = blackboard.Get<Volt::EnvironmentTextures>();
 		const Volt::CascadedShadowMapsTechnique::Result directionalShadowMap = blackboard.Get<Volt::CascadedShadowMapsTechnique::Result>();
 		const Volt::LightScene& lightScene = blackboard.Get<Volt::LightScene>();
 
-		ForwardLitDebugMeshRenderer* forwardLitDebugMeshRenderer = m_debugRenderer.GetDebugMeshRenderer<ForwardLitDebugMeshRenderer>();
 
 		ForwardLitDebugMeshParameters* passParameters = renderGraph.AllocParameters<ForwardLitDebugMeshParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;

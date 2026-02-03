@@ -467,6 +467,11 @@ namespace Volt
 
 	void DebugRenderer::PrepareMeshesForRendering(RenderGraph& renderGraph)
 	{
+		if (m_meshDrawCommandAllocator.GetNumAllocated() == 0)
+		{
+			return;
+		}
+
 		Vector<MeshDrawCommand> localMeshDrawCommands;
 		localMeshDrawCommands.resize(m_meshDrawCommandAllocator.GetNumAllocated());
 		m_meshDrawCommandAllocator.CopyInto(localMeshDrawCommands.data(), localMeshDrawCommands.size());
