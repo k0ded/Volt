@@ -58,4 +58,6 @@ namespace Volt
 		Vector<RGTextureRef> m_renderTargetAccesses;
 		Vector<ResourceAccess> m_resourceAccesses;
 	};
+
+	using RenderGraphPassRef = RenderGraphPass*;
 }

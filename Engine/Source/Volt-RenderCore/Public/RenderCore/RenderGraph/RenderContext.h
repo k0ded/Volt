@@ -2,6 +2,7 @@
 
 #include "RenderCore/Config.h"
 #include "RenderCore/RenderGraph/ShaderRegistry.h"
+#include "RenderCore/RenderGraph/RenderGraphPass.h"
 
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
@@ -19,7 +20,6 @@ namespace Volt
 {
 	class RenderGraph;
 	class RenderGraphShaderParameterUniformBuffer;
-	class RenderGraphPass;
 	class BatchedShaderParameters;
 
 	struct RenderingInfo
@@ -41,7 +41,7 @@ namespace Volt
 			uint8_t* mappedPtr;
 		};
 
-		RenderContext(RenderGraph& renderGraph, RenderGraphPass* currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
+		RenderContext(RenderGraph& renderGraph, RenderGraphPassRef currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
 
 		void Flush(RefPtr<RHI::Fence> fence);
 
@@ -130,7 +130,7 @@ namespace Volt
 		InlineVector<PerStageShaderParameters, 8> m_perStageShaderParameters;
 
 		RenderGraph& m_renderGraph;
-		RenderGraphPass* m_currentPass;
+		RenderGraphPassRef m_currentPass;
 		RenderGraphShaderParameterUniformBuffer& m_shaderParameterUniformBuffer;
 		RenderingInfo m_activeRenderingInfo{};
 		bool m_isWithinRenderingScope = false;

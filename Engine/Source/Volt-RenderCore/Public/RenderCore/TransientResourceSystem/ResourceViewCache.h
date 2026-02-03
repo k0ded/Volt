@@ -28,7 +28,7 @@ namespace Volt
 		};
 
 		RGRHIBufferResource* m_buffer;
-		InlineVector<ViewPair, 8> m_views;
+		InlineVector<ViewPair, 1> m_views;
 	};
 
 	class TransientImageViewCache
@@ -45,7 +45,7 @@ namespace Volt
 		};
 
 		RGRHITextureResource* m_texture;
-		InlineVector<ViewPair, 8> m_views;
+		InlineVector<ViewPair, 1> m_views;
 	};
 
 	class TransientUniformBufferViewCache
@@ -62,6 +62,6 @@ namespace Volt
 		};
 
 		RGRHIUniformBufferResource* m_buffer;
-		InlineVector<ViewPair, 8> m_views;
+		InlineVector<ViewPair, 1> m_views;
 	};
 }

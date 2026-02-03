@@ -575,6 +575,16 @@ namespace Volt
 				VT_ENSURE(false);
 			}
 		}
+
+		// Make sure a view is created for each render target.
+		for (RenderGraphPassRef pass : m_passes)
+		{
+			for (RGTextureRef renderTarget : pass->GetResourceRenderTargetAccesses())
+			{
+				RHI::ImageViewDesc viewDesc{};
+				renderTarget->GetRHIResource()->GetOrCreateView(viewDesc);
+			}
+		}
 	}
 
 	void RenderGraph::ValidateTextureUAV(const RGTextureUAVDesc& uavDesc)
@@ -1584,7 +1594,7 @@ namespace Volt
 
 			for (uint16_t i = executionRange.begin; i < executionRange.begin + executionRange.count; ++i)
 			{
-				Handle<RenderGraphPass> pass = renderGraphPtr->m_passes.at(i);
+				RenderGraphPassRef pass = renderGraphPtr->m_passes.at(i);
 				const CompiledPass& compiledPass = renderGraphPtr->m_compiledPasses.at(pass->passIndex);
 
 				if (pass->isCulled)
@@ -1601,7 +1611,7 @@ namespace Volt
 
 				{
 					VT_PROFILE_SCOPE(pass->name.data());
-					RenderContext renderContext(*renderGraphPtr, pass.GetRaw(), commandBuffer, shaderParameterUniformBuffer);
+					RenderContext renderContext(*renderGraphPtr, pass, commandBuffer, shaderParameterUniformBuffer);
 					renderGraphPtr->m_passAllocator.ExecutePass(pass, renderContext);
 				}
 

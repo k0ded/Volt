@@ -4,7 +4,6 @@
 
 #include "RenderCore/RenderGraph/RenderGraphPass.h"
 
-#include <CoreUtilities/Allocators/Handle.h>
 #include <CoreUtilities/Allocators/FixedSizeLinearAllocator.h>
 #include <CoreUtilities/Allocators/PagedAtomicLinearAllocator.h>
 #include <CoreUtilities/DestructorHelper.h>
@@ -59,7 +58,7 @@ namespace Volt
 		typedef void(*PassExecFunc)(void*, RenderContext&);
 
 		template<typename ExecFunc>
-		Handle<RenderGraphPass> AllocatePass(const std::string& name, ExecFunc&& execFunc)
+		RenderGraphPassRef AllocatePass(const std::string& name, ExecFunc&& execFunc)
 		{
 			// Lmabda that will execute the pass
 			auto passExecWrapperFunc = [](void* funcDataPtr, RenderContext& renderContext)
@@ -88,7 +87,7 @@ namespace Volt
 			return passNode;
 		}
 
-		void ExecutePass(Handle<RenderGraphPass> pass, RenderContext& renderContext);
+		void ExecutePass(RenderGraphPassRef pass, RenderContext& renderContext);
 
 		VT_NODISCARD VT_INLINE uint32_t GetNumPasses() const { return m_numPasses; }
 

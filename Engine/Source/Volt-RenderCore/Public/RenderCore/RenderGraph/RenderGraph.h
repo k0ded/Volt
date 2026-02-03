@@ -315,7 +315,7 @@ namespace Volt
 		Vector<TextureExtractionInfo> m_textureExtractions;
 		Vector<BufferExtractionInfo> m_bufferExtractions;
 
-		Vector<Handle<RenderGraphPass>> m_passes;
+		Vector<RenderGraphPassRef> m_passes;
 		Vector<RGResourceRef> m_resources;
 		Vector<RGResourceSRVRef> m_resourceSRVs;
 		Vector<RGResourceUAVRef> m_resourceUAVs;
@@ -330,7 +330,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		Handle<RenderGraphPass> newPass = m_passAllocator.AllocatePass(name, std::forward<ExecFunc>(executeFunc));
+		RenderGraphPassRef newPass = m_passAllocator.AllocatePass(name, std::forward<ExecFunc>(executeFunc));
 		newPass->flags = flags;
 
 		// Get all parameters accessed by shader.
