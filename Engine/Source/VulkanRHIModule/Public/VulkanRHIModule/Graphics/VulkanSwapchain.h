@@ -78,13 +78,14 @@ namespace Volt::RHI
 
 		struct PerFrameInFlightData
 		{
-			VkSemaphore_T* renderSemaphore = nullptr;
 			VkSemaphore_T* presentSemaphore = nullptr;
+			VkFence_T* renderFence = nullptr;
 		};
 
 		struct PerImageData
 		{
 			VkImage_T* image = nullptr;
+			VkSemaphore_T* renderSemaphore = nullptr;
 			RefPtr<Image> imageReference;
 		};
 
@@ -104,7 +105,6 @@ namespace Volt::RHI
 		SwapchainCreateInfo m_createInfo{};
 
 		Vector<RefPtr<CommandBuffer>> m_commandBuffers;
-		Vector<VkFence_T*> m_fences;
 		Vector<PerFrameInFlightData> m_perFrameInFlightData{};
 		Vector<PerImageData> m_perImageData{};
 

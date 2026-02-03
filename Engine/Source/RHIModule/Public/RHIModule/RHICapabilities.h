@@ -13,7 +13,7 @@ namespace Volt::RHI
 			uint32_t z = 0;
 		};
 
-		inline static constexpr uint32_t NumFramesInFlight = 3;
+		inline static constexpr uint32_t NumFramesInFlight = 2;
 
 		uint32_t max2DTextureDimensions = 2048;
 		uint64_t maxBufferDimensions = (1 << 27);

@@ -144,7 +144,6 @@ namespace Volt::RHI
 		VT_ASSERT_MSG(supportsPresent, "Device does not have present support!");
 
 		m_commandBuffers.resize(RHI::RHICapabilities::NumFramesInFlight);
-		m_fences.resize(RHI::RHICapabilities::NumFramesInFlight);
 		for (uint32_t i = 0; i < RHI::RHICapabilities::NumFramesInFlight; i++)
 		{
 			m_commandBuffers[i] = CommandBuffer::Create();
@@ -172,8 +171,8 @@ namespace Volt::RHI
 		auto device = GraphicsContext::GetDevice();
 		auto& frameData = m_perFrameInFlightData.at(m_currentFrameIndex);
 
-		vkWaitForFences(device->GetHandle<VkDevice>(), 1, &m_fences.at(m_currentFrameIndex), VK_TRUE, UINT64_MAX);
-		vkResetFences(device->GetHandle<VkDevice>(), 1, &m_fences.at(m_currentFrameIndex));
+		vkWaitForFences(device->GetHandle<VkDevice>(), 1, &frameData.renderFence, VK_TRUE, UINT64_MAX);
+		vkResetFences(device->GetHandle<VkDevice>(), 1, &frameData.renderFence);
 
 		m_commandBuffers.at(m_currentFrameIndex)->Begin();
 
@@ -214,33 +213,51 @@ namespace Volt::RHI
 			return;
 		}
 
-		auto& frameData = m_perFrameInFlightData.at(m_currentFrameIndex);
-
 		const auto deviceQueue = GraphicsContext::GetDevice()->GetDeviceQueue(QueueType::Graphics);
 
 		VulkanDeviceQueue& vkQueue = deviceQueue->AsRef<VulkanDeviceQueue>();
+		PerFrameInFlightData& frameData = m_perFrameInFlightData.at(m_currentFrameIndex);
+		PerImageData& imageData = m_perImageData.at(m_currentImageIndex);
 
 		// Queue Submit
 		{
 			VkCommandBuffer cmdBuffer = m_commandBuffers.at(m_currentFrameIndex)->GetHandle<VkCommandBuffer>();
-			VkFence fence = m_fences.at(m_currentFrameIndex);
 
-			VkSubmitInfo submitInfo{};
-			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			submitInfo.commandBufferCount = 1;
-			submitInfo.pCommandBuffers = &cmdBuffer;
+			VkSemaphoreSubmitInfo waitInfo{};
+			waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+			waitInfo.pNext = nullptr;
+			waitInfo.semaphore = frameData.presentSemaphore;
+			waitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+			waitInfo.deviceIndex = 0;
+			waitInfo.value = 1;
 
-			submitInfo.signalSemaphoreCount = 1;
-			submitInfo.pSignalSemaphores = &m_perFrameInFlightData.at(m_currentImageIndex).renderSemaphore;
+			VkSemaphoreSubmitInfo signalInfo{};
+			signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+			signalInfo.pNext = nullptr;
+			signalInfo.semaphore = imageData.renderSemaphore;
+			signalInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+			signalInfo.deviceIndex = 0;
+			signalInfo.value = 1;
 
-			submitInfo.waitSemaphoreCount = 1;
-			submitInfo.pWaitSemaphores = &frameData.presentSemaphore;
+			VkCommandBufferSubmitInfo cmdBufferInfo{};
+			cmdBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+			cmdBufferInfo.pNext = nullptr;
+			cmdBufferInfo.commandBuffer = cmdBuffer;
+			cmdBufferInfo.deviceMask = 0;
 
-			const VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			submitInfo.pWaitDstStageMask = &waitStage;
+			VkSubmitInfo2 submitInfo;
+			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+			submitInfo.pNext = nullptr;
+			submitInfo.flags = 0;
+			submitInfo.waitSemaphoreInfoCount = 1;
+			submitInfo.pWaitSemaphoreInfos = &waitInfo;
+			submitInfo.signalSemaphoreInfoCount = 1;
+			submitInfo.pSignalSemaphoreInfos = &signalInfo;
+			submitInfo.commandBufferInfoCount = 1;
+			submitInfo.pCommandBufferInfos = &cmdBufferInfo;
 
 			vkQueue.AquireLock();
-			VT_VK_CHECK(vkQueueSubmit(deviceQueue->GetHandle<VkQueue>(), 1, &submitInfo, fence));
+			VT_VK_CHECK(vkQueueSubmit2(deviceQueue->GetHandle<VkQueue>(), 1, &submitInfo, frameData.renderFence));
 			vkQueue.ReleaseLock();
 
 			m_lastSubmittedFence = m_currentFrameIndex;
@@ -254,7 +271,7 @@ namespace Volt::RHI
 			presentInfo.swapchainCount = 1;
 			presentInfo.pSwapchains = &m_swapchain;
 
-			presentInfo.pWaitSemaphores = &m_perFrameInFlightData.at(m_currentImageIndex).renderSemaphore;
+			presentInfo.pWaitSemaphores = &imageData.renderSemaphore;
 			presentInfo.waitSemaphoreCount = 1;
 			presentInfo.pImageIndices = &m_currentImageIndex;
 
@@ -357,11 +374,11 @@ namespace Volt::RHI
 
 		if (m_lastSubmittedFence < RHI::RHICapabilities::NumFramesInFlight)
 		{
-			vkWaitForFences(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), 1, &m_fences.at(m_lastSubmittedFence), VK_TRUE, UINT64_MAX);
+			vkWaitForFences(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), 1, &m_perFrameInFlightData.at(m_lastSubmittedFence).renderFence, VK_TRUE, UINT64_MAX);
 		}
 
 
-		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, fences = m_fences, swapchain = m_swapchain, surface = m_surface]()
+		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, perImageData = m_perImageData, swapchain = m_swapchain, surface = m_surface]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			VkDevice vkDevice = device->GetHandle<VkDevice>();
@@ -369,12 +386,12 @@ namespace Volt::RHI
 			for (auto& perFrameData : perFrameInFlightData)
 			{
 				vkDestroySemaphore(vkDevice, perFrameData.presentSemaphore, VT_VULKAN_ALLOCATOR);
-				vkDestroySemaphore(vkDevice, perFrameData.renderSemaphore, VT_VULKAN_ALLOCATOR);
+				vkDestroyFence(vkDevice, perFrameData.renderFence, VT_VULKAN_ALLOCATOR);
 			}
 
-			for (auto& fence : fences)
+			for (auto& imageData : perImageData)
 			{
-				vkDestroyFence(vkDevice, fence, VT_VULKAN_ALLOCATOR);
+				vkDestroySemaphore(vkDevice, imageData.renderSemaphore, VT_VULKAN_ALLOCATOR);
 			}
 
 			vkDestroySwapchainKHR(vkDevice, swapchain, VT_VULKAN_ALLOCATOR);
@@ -527,27 +544,26 @@ namespace Volt::RHI
 		auto device = GraphicsContext::GetDevice();
 
 		m_perFrameInFlightData.resize(RHI::RHICapabilities::NumFramesInFlight);
-		m_fences.resize(RHI::RHICapabilities::NumFramesInFlight);
 
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-		VkDevice vkDevice = device->GetHandle<VkDevice>();
-
-		for (auto& frameData : m_perFrameInFlightData)
-		{
-			VT_VK_CHECK(vkCreateSemaphore(vkDevice, &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.presentSemaphore));
-			VT_VK_CHECK(vkCreateSemaphore(vkDevice, &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.renderSemaphore));
-		}
 
 		VkFenceCreateInfo fenceCreateInfo{};
 		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceCreateInfo.pNext = nullptr;
 		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		for (auto& fence : m_fences)
+		VkDevice vkDevice = device->GetHandle<VkDevice>();
+
+		for (auto& frameData : m_perFrameInFlightData)
 		{
-			vkCreateFence(vkDevice, &fenceCreateInfo, VT_VULKAN_ALLOCATOR, &fence);
+			VT_VK_CHECK(vkCreateSemaphore(vkDevice, &semaphoreInfo, VT_VULKAN_ALLOCATOR, &frameData.presentSemaphore));
+			VT_VK_CHECK(vkCreateFence(vkDevice, &fenceCreateInfo, VT_VULKAN_ALLOCATOR, &frameData.renderFence));
+		}
+
+		for (auto& imageData : m_perImageData)
+		{
+			VT_VK_CHECK(vkCreateSemaphore(vkDevice, &semaphoreInfo, VT_VULKAN_ALLOCATOR, &imageData.renderSemaphore));
 		}
 	}
 
