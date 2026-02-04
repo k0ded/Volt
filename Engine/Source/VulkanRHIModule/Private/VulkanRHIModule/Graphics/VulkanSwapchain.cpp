@@ -377,8 +377,15 @@ namespace Volt::RHI
 			vkWaitForFences(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), 1, &m_perFrameInFlightData.at(m_lastSubmittedFence).renderFence, VK_TRUE, UINT64_MAX);
 		}
 
+		Vector<VkSemaphore> tempRenderSemaphores;
+		tempRenderSemaphores.resize(m_perImageData.size());
 
-		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, perImageData = m_perImageData, swapchain = m_swapchain, surface = m_surface]()
+		for (size_t i = 0; i < m_perImageData.size(); ++i)
+		{
+			tempRenderSemaphores[i] = m_perImageData[i].renderSemaphore;
+		}
+
+		RHIModule::GetInstance().DestroyResource([perFrameInFlightData = m_perFrameInFlightData, tempRenderSemaphores, swapchain = m_swapchain, surface = m_surface]()
 		{
 			auto device = GraphicsContext::GetDevice();
 			VkDevice vkDevice = device->GetHandle<VkDevice>();
@@ -389,9 +396,9 @@ namespace Volt::RHI
 				vkDestroyFence(vkDevice, perFrameData.renderFence, VT_VULKAN_ALLOCATOR);
 			}
 
-			for (auto& imageData : perImageData)
+			for (VkSemaphore semaphore : tempRenderSemaphores)
 			{
-				vkDestroySemaphore(vkDevice, imageData.renderSemaphore, VT_VULKAN_ALLOCATOR);
+				vkDestroySemaphore(vkDevice, semaphore, VT_VULKAN_ALLOCATOR);
 			}
 
 			vkDestroySwapchainKHR(vkDevice, swapchain, VT_VULKAN_ALLOCATOR);
