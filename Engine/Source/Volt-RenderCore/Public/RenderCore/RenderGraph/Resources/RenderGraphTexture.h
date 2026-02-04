@@ -57,8 +57,8 @@ namespace Volt
 
 		bool HasProducer(RGResourceUAV* uav) const override;
 		bool HasProducer() const override;
-		void AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav) override;
-		void AddProducer(Handle<RenderGraphPass> pass) override;
+		void AddProducer(RenderGraphPass* pass, RGResourceUAV* uav) override;
+		void AddProducer(RenderGraphPass* pass) override;
 
 		VT_INLINE void AssignRHIResource(RGRHITextureResource* resource) { m_rhiResource = resource; }
 
@@ -71,7 +71,7 @@ namespace Volt
 		std::bitset<32> m_layersProduced;
 		std::bitset<32> m_mipsProduced;
 
-		RGRHITextureResource* m_rhiResource;
+		RGRHITextureResource* m_rhiResource = nullptr;
 	};
 
 	using RGTextureRef = RGTexture*;

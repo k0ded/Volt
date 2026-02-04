@@ -53,7 +53,7 @@ namespace Volt
 		return m_mipsProduced.any() && m_layersProduced.any();
 	}
 
-	void RGTexture::AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav)
+	void RGTexture::AddProducer(RenderGraphPass* pass, RGResourceUAV* uav)
 	{
 		const RGTextureUAVDesc& uavDesc = reinterpret_cast<RGTextureUAV*>(uav)->GetDesc();
 		if (uavDesc.baseArrayLayer == 0 && uavDesc.layerCount == RHI::ImageViewDesc::LayerCountMax)
@@ -85,7 +85,7 @@ namespace Volt
 		producers.emplace_back(pass);
 	}
 
-	void RGTexture::AddProducer(Handle<RenderGraphPass> pass)
+	void RGTexture::AddProducer(RenderGraphPass* pass)
 	{
 		// Setting bit zero means that the entire resource has been produced.
 		m_layersProduced.set(0, true);

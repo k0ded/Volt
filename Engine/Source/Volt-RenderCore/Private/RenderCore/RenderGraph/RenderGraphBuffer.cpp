@@ -25,14 +25,14 @@ namespace Volt
 		return m_isProduced;
 	}
 
-	void RGBuffer::AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav)
+	void RGBuffer::AddProducer(RenderGraphPass* pass, RGResourceUAV* uav)
 	{
 		VT_ENSURE(!m_isProduced);
 		producers.emplace_back(pass);
 		m_isProduced = true;
 	}
 
-	void RGBuffer::AddProducer(Handle<RenderGraphPass> pass)
+	void RGBuffer::AddProducer(RenderGraphPass* pass)
 	{
 		VT_ENSURE(!m_isProduced);
 		producers.emplace_back(pass);

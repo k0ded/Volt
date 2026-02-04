@@ -12,17 +12,17 @@ namespace IntegrationTests
 	{
 	};
 
-	void ExpectAllPassesToBeCulled(const Vector<Handle<RenderGraphPass>>& passes)
+	void ExpectAllPassesToBeCulled(const Vector<RenderGraphPassRef>& passes)
 	{
-		for (const Handle<RenderGraphPass>& pass : passes)
+		for (RenderGraphPassRef pass : passes)
 		{
 			EXPECT_EQ(pass->isCulled, true);
 		}
 	}
 
-	void ExpectAllPassesToBeActive(const Vector<Handle<RenderGraphPass>>& passes)
+	void ExpectAllPassesToBeActive(const Vector<RenderGraphPassRef>& passes)
 	{
-		for (const Handle<RenderGraphPass>& pass : passes)
+		for (RenderGraphPassRef pass : passes)
 		{
 			EXPECT_EQ(pass->isCulled, false);
 		}

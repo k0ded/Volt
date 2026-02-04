@@ -266,7 +266,7 @@ namespace Volt
 
 		struct RGResourceState
 		{
-			Handle<RenderGraphPass> previousUsage;
+			RenderGraphPassRef previousUsage;
 			RHI::ResourceState currentState;
 			bool isWriteState = false;
 		};

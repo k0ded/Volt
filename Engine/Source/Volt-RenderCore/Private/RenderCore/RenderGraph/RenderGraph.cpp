@@ -384,7 +384,7 @@ namespace Volt
 					RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
 					m_resourceManager.AllocateResource(textureResource);
 
-					Handle<RenderGraphPass> producer = textureResource->GetFirstProducer();
+					RenderGraphPassRef producer = textureResource->GetFirstProducer();
 					CompiledPass& compiledPass = m_compiledPasses.at(producer->passIndex);
 
 					const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(textureResource->GetRHIResource()->GetRHITexture());
@@ -406,7 +406,7 @@ namespace Volt
 
 					m_resourceManager.AllocateResource(bufferResource);
 
-					Handle<RenderGraphPass> producer = bufferResource->GetFirstProducer();
+					RenderGraphPassRef producer = bufferResource->GetFirstProducer();
 					CompiledPass& compiledPass = m_compiledPasses.at(producer->passIndex);
 
 					const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(bufferResource->GetRHIResource()->GetRHIBuffer());
@@ -1061,7 +1061,7 @@ namespace Volt
 				continue;
 			}
 
-			for (const Handle<RenderGraphPass> producer : unreferencedResource->producers)
+			for (const RenderGraphPassRef producer : unreferencedResource->producers)
 			{
 				// If the pass has been marked as never cull, we won't continue this iteration
 				if (EnumValueContainsFlag(producer->flags, RenderGraphPassFlags::NeverCull))

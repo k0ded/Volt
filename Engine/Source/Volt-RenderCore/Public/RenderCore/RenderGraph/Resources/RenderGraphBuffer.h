@@ -134,8 +134,8 @@ namespace Volt
 
 		bool HasProducer(RGResourceUAV* uav) const override;
 		bool HasProducer() const override;
-		void AddProducer(Handle<RenderGraphPass> pass, RGResourceUAV* uav) override;
-		void AddProducer(Handle<RenderGraphPass> pass) override;
+		void AddProducer(RenderGraphPass* pass, RGResourceUAV* uav) override;
+		void AddProducer(RenderGraphPass* pass) override;
 
 		VT_INLINE void AssignRHIResource(RGRHIBufferResource* resource) { m_rhiResource = resource; }
 
