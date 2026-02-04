@@ -18,7 +18,6 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		// Run through the list in reverse order to get FIFO behaviour
 		std::scoped_lock lock{ m_queueMutex };
 
 		for (const auto& func : m_queues.at(index))

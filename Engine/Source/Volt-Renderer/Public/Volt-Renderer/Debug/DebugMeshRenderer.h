@@ -21,7 +21,7 @@ namespace Volt
 		void PrepareMeshesForRendering(RenderGraph& renderGraph);
 		void Reset();
 
-		virtual void AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial> renderMaterial, const TQS& transform, uint32_t userData) = 0;
+		virtual void AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial> renderMaterial, const TQS& transform, const glm::vec4& userData) = 0;
 		virtual bool ShouldIncludeDraw(const RenderMaterial& renderMaterial) const = 0;
 
 		VT_INLINE RGBufferRef GetPrimitiveIndexBuffer() const { return m_primitiveIndexDataBuffer; }
@@ -32,7 +32,7 @@ namespace Volt
 		VTR_API void BuildMeshDrawCommand(Ref<Mesh> mesh, 
 			Ref<RenderMaterial> renderMaterial, 
 			const TQS& transform, 
-			uint32_t userData, 
+			const glm::vec4& userData,
 			RHI::RenderPipelineCreateInfo pipelineInfo, 
 			RefPtr<RHI::Shader> vertexShader, 
 			RefPtr<RHI::Shader> pixelShader);
@@ -52,7 +52,7 @@ namespace Volt
 
 				TQS transform;
 				Ref<RenderMaterial> material;
-				uint32_t userData;
+				glm::vec4 userData;
 			};
 
 			Vector<MeshDrawCommandInfo> drawCommands;
@@ -75,7 +75,7 @@ namespace Volt
 	public:
 		VTR_API ~DebugMeshRendererRegistry();
 
-		void AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial> renderMaterial, const TQS& transform, uint32_t userData);
+		void AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial> renderMaterial, const TQS& transform, const glm::vec4& userData);
 		void PrepareMeshesForRendering(RenderGraph& renderGraph);
 		void Reset();
 

@@ -3,10 +3,11 @@
 struct BillboardInstanceData
 {
 	float3 position;
-	uint userData;
+	uint padding0;
 	float3 size;
 	uint isViewSpacePosition;
 	float4 color;
+	float4 userData;
 };
 
 struct BillboardVSToPS
@@ -14,5 +15,5 @@ struct BillboardVSToPS
 	float4 position : SV_Position;
 	float4 color : COLOR;
     float2 texCoords : TEXCOORD;
-	uint userData : USERDATA;
+	nointerpolation float4 userData : USERDATA;
 };

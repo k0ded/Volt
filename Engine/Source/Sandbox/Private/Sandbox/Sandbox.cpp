@@ -307,7 +307,7 @@ void Sandbox::SetupNewSceneData()
 
 		m_outlineSceneRendererExtension = m_sceneRenderer->AddExtension<OutlineSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
 		m_objectIDSceneRendererExtension = m_sceneRenderer->AddExtension<ObjectIDSceneRendererExtension>(Volt::SceneRendererExtensionStage::PreGBuffer);
-		m_sceneRenderer->AddExtension<DebugSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing, m_debugRenderer);
+		m_debugSceneRendererExtension = m_sceneRenderer->AddExtension<DebugSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing, m_debugRenderer);
 
 		m_gameSceneRenderer = CreateRef<Volt::SceneRenderer>(gameSpec);
 	}
@@ -818,6 +818,7 @@ void Sandbox::RenderGameView(float timestep)
 void Sandbox::DrawDebug()
 {
 	m_debugRenderer.Reset();
+	m_visProxyContextManagers.clear();
 
 	DrawEntityGizmos();
 }

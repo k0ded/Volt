@@ -10,5 +10,6 @@ struct DrawDebugMeshesPixelShaderInput
 
     uint primitiveIndex : PRIMITIVE_INDEX;
     uint objectId : OBJECTID;
+    uint visProxyId : VISPROXYID;
 };
 

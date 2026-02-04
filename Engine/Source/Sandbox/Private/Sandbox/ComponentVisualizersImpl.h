@@ -8,72 +8,96 @@
 #include <Volt-CoreComponents/LightComponents.h>
 #include <Volt-CoreComponents/RenderingComponents.h>
 
-class PointLightComponentVisualizer : public ComponentVisualizer
+struct HitProxyContext
 {
-public:
-	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
-	{
-		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::EntityGizmo));
-	}
+	float a;
+	float b;
 };
-VT_REGISTER_COMPONENT_VISUALIZER(PointLightComponentVisualizer, Volt::PointLightComponent);
 
-class SpotLightComponentVisualizer : public ComponentVisualizer
+class PointLightComponentVisualizer : public ComponentVisualizer<Volt::PointLightComponent>
 {
 public:
-	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& editorDrawInterface)
 	{
-		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::Fill));
-	}
-};
-VT_REGISTER_COMPONENT_VISUALIZER(SpotLightComponentVisualizer, Volt::SpotLightComponent);
+		HitProxyContext hitProxyContext;
+		hitProxyContext.a = 1.f;
+		hitProxyContext.b = 10.f;
 
-class SphereLightComponentVisualizer : public ComponentVisualizer
-{
-public:
-	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
-	{
-		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::Paint));
+		//editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::EntityGizmo), hitProxyContext);
 	}
-};
-VT_REGISTER_COMPONENT_VISUALIZER(SphereLightComponentVisualizer, Volt::SphereLightComponent);
 
-class RectangleLightComponentVisualizer : public ComponentVisualizer
-{
-public:
-	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::PointLightComponent& component, Volt::Entity entity)
 	{
-		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::Directory));
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
 	}
 };
-VT_REGISTER_COMPONENT_VISUALIZER(RectangleLightComponentVisualizer, Volt::RectangleLightComponent);
+VT_REGISTER_COMPONENT_VISUALIZER(PointLightComponentVisualizer);
 
-class DirectionalLightComponentVisualizer : public ComponentVisualizer
+class SpotLightComponentVisualizer : public ComponentVisualizer<Volt::SpotLightComponent>
 {
 public:
-	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::SpotLightComponent& component, Volt::Entity entity)
 	{
-		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
 	}
 };
-VT_REGISTER_COMPONENT_VISUALIZER(DirectionalLightComponentVisualizer, Volt::DirectionalLightComponent);
+VT_REGISTER_COMPONENT_VISUALIZER(SpotLightComponentVisualizer);
 
-class SkyLightComponentVisualizer : public ComponentVisualizer
+class SphereLightComponentVisualizer : public ComponentVisualizer<Volt::SphereLightComponent>
 {
 public:
-	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::SphereLightComponent& component, Volt::Entity entity)
 	{
-		gizmoDrawer.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
 	}
 };
-VT_REGISTER_COMPONENT_VISUALIZER(SkyLightComponentVisualizer, Volt::SkylightComponent);
+VT_REGISTER_COMPONENT_VISUALIZER(SphereLightComponentVisualizer);
 
-class CameraComponentVisualizer : public ComponentVisualizer
+class RectangleLightComponentVisualizer : public ComponentVisualizer<Volt::RectangleLightComponent>
 {
 public:
-	void DrawVisualization(EditorDrawInterface& gizmoDrawer)
+	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::RectangleLightComponent& component, Volt::Entity entity)
 	{
-		gizmoDrawer.DrawMesh(EditorResources::GetEditorMesh(EditorMesh::Camera), EditorResources::GetEditorMesh(EditorMesh::Camera)->GetMaterialTable().GetMaterial(0));
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
 	}
 };
-VT_REGISTER_COMPONENT_VISUALIZER(CameraComponentVisualizer, Volt::CameraComponent);
+VT_REGISTER_COMPONENT_VISUALIZER(RectangleLightComponentVisualizer);
+
+class DirectionalLightComponentVisualizer : public ComponentVisualizer<Volt::DirectionalLightComponent>
+{
+public:
+	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::DirectionalLightComponent& component, Volt::Entity entity)
+	{
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
+	}
+};
+VT_REGISTER_COMPONENT_VISUALIZER(DirectionalLightComponentVisualizer);
+
+class SkyLightComponentVisualizer : public ComponentVisualizer<Volt::SkylightComponent>
+{
+public:
+	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::SkylightComponent& component, Volt::Entity entity)
+	{
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
+	}
+};
+VT_REGISTER_COMPONENT_VISUALIZER(SkyLightComponentVisualizer);
+
+class CameraComponentVisualizer : public ComponentVisualizer<Volt::CameraComponent>
+{
+public:
+	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::CameraComponent& component, Volt::Entity entity)
+	{
+		HitProxyContext testContext;
+		testContext.a = 10.f;
+		testContext.b = 5.f;
+
+		editorDrawInterface.DrawMesh<CameraComponentVisualizer>(EditorResources::GetEditorMesh(EditorMesh::Camera), EditorResources::GetEditorMesh(EditorMesh::Camera)->GetMaterialTable().GetMaterial(0), testContext);
+	}
+
+	void HandleVisProxyInteraction(const Volt::CameraComponent& component, Volt::Entity entity, const HitProxyContext& context)
+	{
+		//VT_DEBUGBREAK();
+	}
+};
+VT_REGISTER_COMPONENT_VISUALIZER(CameraComponentVisualizer);

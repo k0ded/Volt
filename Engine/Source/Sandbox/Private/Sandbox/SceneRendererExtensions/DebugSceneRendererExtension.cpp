@@ -15,11 +15,14 @@
 #include <RenderCore/RenderGraph/ShaderRegistry.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
+#include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/Shader/ShaderMap.h>
 #include <RenderCore/Shader/BatchedShaderParameters.h>
 #include <RenderCore/SamplerStateCache.h>
 
-struct EditorGizmoPS : public Volt::GlobalShader
+using namespace Volt;
+
+struct EditorGizmoPS : public GlobalShader
 {
 	DECLARE_GLOBAL_SHADER(EditorGizmoPS)
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
@@ -33,26 +36,30 @@ BEGIN_SHADER_PARAMETER_STRUCT(ForwardLitDebugMeshParameters)
 	RG_RENDER_TARGETS()
 END_SHADER_PARAMETER_STRUCT()
 
-DebugSceneRendererExtension::DebugSceneRendererExtension(Ref<Volt::RenderScene> renderScene, Volt::DebugRenderer& debugRenderer)
-	: Volt::SceneRendererExtension(renderScene),
+DebugSceneRendererExtension::DebugSceneRendererExtension(Ref<RenderScene> renderScene, DebugRenderer& debugRenderer)
+	: SceneRendererExtension(renderScene),
 	m_debugRenderer(debugRenderer)
 {
 	m_debugRenderer.AddDebugMeshRenderer<ForwardLitDebugMeshRenderer>();
 }
 
-Volt::RGTextureRef DebugSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage)
+RGTextureRef DebugSceneRendererExtension::OnRender(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef prevOutputImage)
 {
-	const Volt::SceneTextures& sceneTextures = blackboard.Get<Volt::SceneTextures>();
+	const SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 	const ObjectIDTexture& objectIdTexture = blackboard.Get<ObjectIDTexture>();
 
+	RGTextureRef visProxyIdTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32_UINT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "HitProxyID"));
 
-	Volt::ShaderParameterRenderTargetBindings renderTargets;
+	AddClearUAVPass(renderGraph, renderGraph.CreateUAV(visProxyIdTexture), glm::uvec4{ 0u });
+
+	ShaderParameterRenderTargetBindings renderTargets;
 	renderTargets.renderTargets[0] = prevOutputImage;
 	renderTargets.renderTargets[1] = objectIdTexture.texture;
+	renderTargets.renderTargets[2] = visProxyIdTexture;
 	renderTargets.depthTarget = sceneTextures.sceneDepth;
 
 	{
-		auto pixelShader = Volt::ShaderMap::Get<EditorGizmoPS>();
+		auto pixelShader = ShaderMap::Get<EditorGizmoPS>();
 		m_debugRenderer.RenderBillboards(renderGraph, pixelShader, view, renderTargets, false);
 	}
 
@@ -62,9 +69,9 @@ Volt::RGTextureRef DebugSceneRendererExtension::OnRender(Volt::RenderGraph& rend
 
 	if (forwardLitDebugMeshRenderer->HasAnyDraw())
 	{
-		const Volt::EnvironmentTextures& environmentTextures = blackboard.Get<Volt::EnvironmentTextures>();
-		const Volt::CascadedShadowMapsTechnique::Result directionalShadowMap = blackboard.Get<Volt::CascadedShadowMapsTechnique::Result>();
-		const Volt::LightScene& lightScene = blackboard.Get<Volt::LightScene>();
+		const EnvironmentTextures& environmentTextures = blackboard.Get<EnvironmentTextures>();
+		const CascadedShadowMapsTechnique::Result directionalShadowMap = blackboard.Get<CascadedShadowMapsTechnique::Result>();
+		const LightScene& lightScene = blackboard.Get<LightScene>();
 
 
 		ForwardLitDebugMeshParameters* passParameters = renderGraph.AllocParameters<ForwardLitDebugMeshParameters>();
@@ -74,42 +81,44 @@ Volt::RGTextureRef DebugSceneRendererExtension::OnRender(Volt::RenderGraph& rend
 
 		passParameters->PS.View = view.viewUniformBuffer;
 		passParameters->PS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
-		passParameters->PS.VisibleLightIndices = renderGraph.CreateSRV(lightScene.visibleLightIndices, Volt::RHI::PixelFormat::R32_SINT);
+		passParameters->PS.VisibleLightIndices = renderGraph.CreateSRV(lightScene.visibleLightIndices, RHI::PixelFormat::R32_SINT);
 		passParameters->PS.DFGLuT = renderGraph.CreateSRV(environmentTextures.DFGLuT);
 		passParameters->PS.SkylightIrradiance = renderGraph.CreateSRV(environmentTextures.irradiance);
 		passParameters->PS.SkylightRadiance = renderGraph.CreateSRV(environmentTextures.radiance);
-		passParameters->PS.LinearSampler = Volt::SamplerStateCache::GetSampler<Volt::RHI::TextureFilter::Linear, Volt::RHI::TextureFilter::Linear, Volt::RHI::TextureFilter::Linear, Volt::RHI::TextureWrap::Clamp>();
+		passParameters->PS.LinearSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>();
 		passParameters->PS.NumRadianceMipLevels = environmentTextures.radiance->GetDesc().mips;
 
-		Volt::RGTextureRef directionalShadowMapTexture = directionalShadowMap.shadowMap;
+		RGTextureRef directionalShadowMapTexture = directionalShadowMap.shadowMap;
 
 		if (!directionalShadowMapTexture)
 		{
-			directionalShadowMapTexture = renderGraph.RegisterExternalTexture(Volt::Renderer::GetDefaultResources().blackCubeTexture);
+			directionalShadowMapTexture = renderGraph.RegisterExternalTexture(Renderer::GetDefaultResources().blackCubeTexture);
 		}
 
 		passParameters->PS.CascadedDirectionalShadowMap = renderGraph.CreateSRV(directionalShadowMapTexture);
-		passParameters->PS.ShadowSampler = Volt::SamplerStateCache::GetSampler<Volt::RHI::TextureFilter::Linear, Volt::RHI::TextureFilter::Linear, Volt::RHI::TextureFilter::Linear, Volt::RHI::TextureWrap::Repeat, Volt::RHI::AnisotropyLevel::None, Volt::RHI::CompareOperator::LessEqual>();
+		passParameters->PS.ShadowSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::None, RHI::CompareOperator::LessEqual>();
 		passParameters->PS.CascadedDirectionalLightShadowMapping = directionalShadowMap.uniformBuffer;
 		passParameters->renderTargets = renderTargets;
 
 		renderGraph.AddPass("Forward Lit Debug Meshes",
-			Volt::RenderGraphPassFlags::None,
+			RenderGraphPassFlags::None,
 			passParameters,
-			[passParameters, view, forwardLitDebugMeshRenderer](Volt::RenderContext& context) 
+			[passParameters, view, forwardLitDebugMeshRenderer](RenderContext& context) 
 		{
-			Volt::BatchedShaderParameters batchedShaderParameters;
+			BatchedShaderParameters batchedShaderParameters;
 			context.CollectParameters(passParameters, batchedShaderParameters);
 
-			Volt::RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->renderTargets);
-			renderingInfo.renderingInfo.colorAttachments[0].clearMode = Volt::RHI::ClearMode::Load;
-			renderingInfo.renderingInfo.colorAttachments[1].clearMode = Volt::RHI::ClearMode::Load;
-			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = Volt::RHI::ClearMode::Load;
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->renderTargets);
+			renderingInfo.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
+			renderingInfo.renderingInfo.colorAttachments[1].clearMode = RHI::ClearMode::Load;
+			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
 			context.BeginRendering(renderingInfo);
 			forwardLitDebugMeshRenderer->ExecuteCommands(context, batchedShaderParameters);
 			context.EndRendering();
 		});
+
+		renderGraph.EnqueueTextureExtraction(visProxyIdTexture, &m_visProxyIdImage);
 	}
 
 	return prevOutputImage;

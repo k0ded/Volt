@@ -6,6 +6,7 @@ struct PSOutput
 {
     [[vt::rgba8]] float4 color : SV_Target0;
 	[[vt::r32ui]] uint objectId : SV_Target1;
+	[[vt::r32ui]] uint visProxyId : SV_Target2;
     [[vt::d32f]];
 };
 
@@ -17,7 +18,8 @@ PSOutput MainPS(in BillboardVSToPS input)
 
 	PSOutput output;
 	output.color = textureColor * input.color;
-	output.objectId = input.userData;
+	output.objectId = asuint(input.userData.x);
+	output.visProxyId = asuint(input.userData.y);
 
 	if (output.color.a < 0.01f)
 	{

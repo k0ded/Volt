@@ -32,10 +32,10 @@ namespace Volt
 		VTR_API void DrawLine(const glm::vec3& v0, const glm::vec3& v1, const glm::vec4& color);
 		VTR_API void DrawLineSphere(const glm::vec3& center, float radius, const glm::vec4& color);
 
-		VTR_API void DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, uint32_t userData = 0, bool isViewSpacePosition = false);
-		VTR_API void DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, RefPtr<RHI::Image> texture, uint32_t userData = 0, bool isViewSpacePosition = false);
+		VTR_API void DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, const glm::vec4& userData = {}, bool isViewSpacePosition = false);
+		VTR_API void DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, RefPtr<RHI::Image> texture, const glm::vec4& userData = {}, bool isViewSpacePosition = false);
 
-		VTR_API void DrawMesh(Ref<Mesh> mesh, Ref<RenderMaterial> material, const TQS& transform, uint32_t userData = 0);
+		VTR_API void DrawMesh(Ref<Mesh> mesh, Ref<RenderMaterial> material, const TQS& transform, const glm::vec4& userData = {});
 
 		VTR_API void Render(RenderGraph& renderGraph, const RenderView& renderView, RGTextureRef dstTexture, RGTextureRef depthTexture);
 		VTR_API void Reset();
@@ -175,10 +175,11 @@ namespace Volt
 		struct BillboardInstance
 		{
 			glm::vec3 position;
-			uint32_t userData;
+			uint32_t padding0;
 			glm::vec3 size;
 			uint32_t isViewSpacePosition;
 			glm::vec4 color;
+			glm::vec4 userData;
 		};
 
 		struct BillboardDrawCommand
@@ -186,7 +187,7 @@ namespace Volt
 			glm::vec3 position;
 			glm::vec3 size;
 			glm::vec4 color;
-			uint32_t userData;
+			glm::vec4 userData;
 			uint32_t isViewSpacePosition;
 
 			RefPtr<RHI::Image> texture;
@@ -206,7 +207,7 @@ namespace Volt
 			Ref<RenderMaterial> material;
 
 			TQS transform;
-			uint32_t userData;
+			glm::vec4 userData;
 		};
 
 		void IniitalizeLineSphere();

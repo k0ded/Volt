@@ -2,6 +2,7 @@
 
 #include "Sandbox/FileWatcher/FileWatcher.h"
 #include "Sandbox/UISystems/ModalSystem.h"
+#include "Sandbox/ComponentVisualizers/EditorDrawInterface.h"
 
 #include <Volt-Application/ApplicationLayer.h>
 #include <Volt-Scene/Scene.h>
@@ -12,6 +13,8 @@
 #include <EntitySystem/Entity.h>
 
 #include <imgui.h>
+
+#include <mutex>
 
 namespace Volt
 {
@@ -50,6 +53,7 @@ class EditorCameraController;
 
 class OutlineSceneRendererExtension;
 class ObjectIDSceneRendererExtension;
+class DebugSceneRendererExtension;
 
 class Sandbox : public Volt::ApplicationLayer, public Volt::EventListener
 {
@@ -79,6 +83,8 @@ public:
 	VT_NODISCARD VT_INLINE UUID64 GetTextureImportModalID() const { return m_textureImportModal; }
 
 	VT_NODISCARD VT_INLINE Ref<ObjectIDSceneRendererExtension> GetObjectIDSceneRendererExtension() const { return m_objectIDSceneRendererExtension; }
+	VT_NODISCARD VT_INLINE Ref<DebugSceneRendererExtension> GetDebugSceneRendererExtension() const { return m_debugSceneRendererExtension; }
+	VT_NODISCARD VT_INLINE const Map<Volt::EntityID, VisProxyContextManager>& GetVisProxyContextManagers() const { return m_visProxyContextManagers; }
 
 	void NewScene();
 	void OpenScene();
@@ -145,6 +151,8 @@ private:
 	void DrawDebug();
 	void DrawEntityGizmos();
 
+	Map<Volt::EntityID, VisProxyContextManager> m_visProxyContextManagers;
+	std::mutex m_visProxyContextManagersMutex;
 	Volt::DebugRenderer m_debugRenderer;
 	///////////////////////////
 
@@ -155,6 +163,7 @@ private:
 
 	Ref<OutlineSceneRendererExtension> m_outlineSceneRendererExtension;
 	Ref<ObjectIDSceneRendererExtension> m_objectIDSceneRendererExtension;
+	Ref<DebugSceneRendererExtension> m_debugSceneRendererExtension;
 
 	///// File watcher /////
 	Ref<FileWatcher> m_fileWatcher;

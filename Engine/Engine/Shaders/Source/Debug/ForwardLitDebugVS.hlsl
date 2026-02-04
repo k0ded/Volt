@@ -8,10 +8,11 @@
 struct DebugMeshData
 {
     float3 position;
-    uint userData;
-    float3 scale;
     float padding0;
+    float3 scale;
+    float padding1;
     float4 rotation;
+    float4 userData;
 };
 
 StructuredBuffer<DebugMeshData> DebugMeshDatas;
@@ -38,7 +39,8 @@ DrawDebugMeshesPixelShaderInput MainVS(in FullVertex input)
     result.normal = normalize(transformedVertAttribs.normal);
     result.tangent = float4(normalize(transformedVertAttribs.tangent), input.tangentW);
     result.primitiveIndex = input.primitiveIndex;
-    result.objectId = debugMeshData.userData;
+    result.objectId = asuint(debugMeshData.userData.x);
+    result.visProxyId = asuint(debugMeshData.userData.y);
 
     return result;
 }

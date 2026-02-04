@@ -38,6 +38,6 @@ struct ForwardLitDebugMaterialShader : public Volt::MaterialShader
 class ForwardLitDebugMeshRenderer : public Volt::DebugMeshRenderer
 {
 public:
-	void AddMeshDraw(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> renderMaterial, const TQS& transform, uint32_t userData) override;
+	void AddMeshDraw(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> renderMaterial, const TQS& transform, const glm::vec4& userData) override;
 	bool ShouldIncludeDraw(const Volt::RenderMaterial& renderMaterial) const override;
 };

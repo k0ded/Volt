@@ -251,7 +251,7 @@ namespace Volt
 		vertex1->color = color;
 	}
 
-	void DebugRenderer::DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, uint32_t userData, bool isViewSpacePosition)
+	void DebugRenderer::DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, const glm::vec4& userData, bool isViewSpacePosition)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -264,7 +264,7 @@ namespace Volt
 		billboardDrawCommand->isViewSpacePosition = isViewSpacePosition;
 	}
 
-	void DebugRenderer::DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, RefPtr<RHI::Image> texture, uint32_t userData, bool isViewSpacePosition)
+	void DebugRenderer::DrawBillboard(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color, RefPtr<RHI::Image> texture, const glm::vec4& userData, bool isViewSpacePosition)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -456,7 +456,7 @@ namespace Volt
 		});
 	}
 
-	void DebugRenderer::DrawMesh(Ref<Mesh> mesh, Ref<RenderMaterial> material, const TQS& transform, uint32_t userData)
+	void DebugRenderer::DrawMesh(Ref<Mesh> mesh, Ref<RenderMaterial> material, const TQS& transform, const glm::vec4& userData)
 	{
 		MeshDrawCommand* meshDrawCommand = m_meshDrawCommandAllocator.Allocate();
 		meshDrawCommand->mesh = mesh;

@@ -11,6 +11,7 @@ void EditorDrawInterface::DrawIcon(RefPtr<Volt::RHI::Image> texture)
 {
 	GizmoDrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.texture = texture;
+	drawCommand.visProxyId = -1;
 }
 
 void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material)
@@ -18,15 +19,18 @@ void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMateria
 	GizmoDrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.mesh = mesh;
 	drawCommand.material = material;
+	drawCommand.visProxyId = -1;
 }
 
 void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const TQS& transform, float scale, float alpha)
 {
+	const glm::vec4 userData = { std::bit_cast<float>(entityId), 0.f, 0.f, 0.f };
+
 	// If no draw commands are recorded, we will draw a default entity icon.
 	if (m_drawCommands.empty())
 	{
 		RefPtr<Volt::RHI::Image> gizmoTexture = EditorResources::GetEditorIcon(EditorIcon::EntityGizmo);
-		debugRenderer.DrawBillboard(transform.translation, scale, { 1.f, 1.f, 1.f, alpha }, gizmoTexture, entityId);
+		debugRenderer.DrawBillboard(transform.translation, scale, { 1.f, 1.f, 1.f, alpha }, gizmoTexture, userData);
 	
 		return;
 	}
@@ -37,7 +41,7 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 	if (consolidatedDrawCommands.begin()->mesh != nullptr)
 	{
 		const GizmoDrawCommand& drawCommand = *consolidatedDrawCommands.begin();
-		debugRenderer.DrawMesh(drawCommand.mesh, drawCommand.material, transform, entityId);
+		debugRenderer.DrawMesh(drawCommand.mesh, drawCommand.material, transform, userData);
 	}
 	else
 	{
@@ -68,7 +72,7 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 			{
 				// Find the x offset of this icon.
 				const float xOffset = (totalRowWidth / numIconsInRow * j) - totalRowWidth * 0.5f + Padding * j + iconSize * 0.5f;
-				debugRenderer.DrawBillboard(viewSpacePosition - glm::vec3(xOffset, yOffset, 0.f), scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, consolidatedDrawCommands[iconIndex].texture, entityId, true);
+				debugRenderer.DrawBillboard(viewSpacePosition - glm::vec3(xOffset, yOffset, 0.f), scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, consolidatedDrawCommands[iconIndex].texture, userData, true);
 			
 				iconIndex++;
 			}
@@ -135,4 +139,9 @@ Vector<EditorDrawInterface::GizmoDrawCommand> EditorDrawInterface::Consolidate()
 	}
 
 	return result;
+}
+
+int32_t EditorDrawInterface::GetNextVisProxyId()
+{
+	return m_currentVisProxyId++;
 }

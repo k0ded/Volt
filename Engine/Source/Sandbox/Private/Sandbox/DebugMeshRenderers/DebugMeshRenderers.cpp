@@ -18,7 +18,7 @@ VT_REGISTER_SHADER(ForwardLitDebugVS, "Engine/Shaders/Source/Debug/ForwardLitDeb
 
 VT_REGISTER_MATERIAL_SHADER(ForwardLitDebugMaterialShader, DefaultForwardLitDebugShaderPS, "Engine/Shaders/Source/Debug/ForwardLitDebugPixel.hlsl", "MainPS");
 
-void ForwardLitDebugMeshRenderer::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial> renderMaterial, const TQS& transform, uint32_t userData)
+void ForwardLitDebugMeshRenderer::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial> renderMaterial, const TQS& transform, const glm::vec4& userData)
 {
 	auto vertexShader = ShaderMap::Get<ForwardLitDebugVS>();
 	auto pixelShader = renderMaterial->GetPixelShader<ForwardLitDebugMaterialShader>();

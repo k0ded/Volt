@@ -14,8 +14,10 @@
 #include "Sandbox/Modals/MeshImportModal.h"
 #include "Sandbox/EditorCommandStack.h"
 #include "Sandbox/Utility/Theme.h"
+#include "Sandbox/ComponentVisualizers/ComponentVisualizerRegistry.h"
 
 #include "Sandbox/SceneRendererExtensions/ObjectIDSceneRendererExtension.h"
+#include "Sandbox/SceneRendererExtensions/DebugSceneRendererExtension.h"
 
 #include <Volt-Application/UI/UIUtility.h>
 
@@ -827,42 +829,68 @@ void ViewportPanel::HandleSingleSelect()
 	{
 		//const auto renderScale = m_sceneRenderer->GetSettings().renderScale;
 		const float renderScale = 1.f;
-		const auto ext = Sandbox::Get().GetObjectIDSceneRendererExtension();
+		
+		const auto idExt = Sandbox::Get().GetObjectIDSceneRendererExtension();
 
-		if (!ext || !ext->GetIDImage())
+		Volt::Entity clickedEntity;
+
+		if (idExt && idExt->GetIDImage())
 		{
-			return;
-		}
+			uint32_t pixelData = idExt->GetIDImage()->ReadPixel<uint32_t>(static_cast<uint32_t>(mouseX * renderScale), static_cast<uint32_t>(mouseY * renderScale), 0u);
+			const bool multiSelect = Volt::Input::IsKeyDown(Volt::InputCode::LeftShift);
+			const bool deselect = Volt::Input::IsKeyDown(Volt::InputCode::LeftControl);
 
-		uint32_t pixelData = ext->GetIDImage()->ReadPixel<uint32_t>(static_cast<uint32_t>(mouseX * renderScale), static_cast<uint32_t>(mouseY * renderScale), 0u);
-		const bool multiSelect = Volt::Input::IsKeyDown(Volt::InputCode::LeftShift);
-		const bool deselect = Volt::Input::IsKeyDown(Volt::InputCode::LeftControl);
-
-		if (!multiSelect && !deselect)
-		{
-			SelectionManager::DeselectAll();
-		}
-
-		Volt::Entity entity = m_editorScene->GetEntityFromID(pixelData);
-
-		if (entity.IsValid())
-		{
-			if (entity.HasComponent<Volt::TransformComponent>())
+			if (!multiSelect && !deselect)
 			{
-				if (entity.GetComponent<Volt::TransformComponent>().locked)
+				SelectionManager::DeselectAll();
+			}
+
+			clickedEntity = m_editorScene->GetEntityFromID(pixelData);
+
+			if (clickedEntity.IsValid())
+			{
+				if (clickedEntity.HasComponent<Volt::TransformComponent>())
 				{
-					return;
+					if (clickedEntity.GetComponent<Volt::TransformComponent>().locked)
+					{
+						return;
+					}
+				}
+
+				if (deselect)
+				{
+					SelectionManager::Deselect(clickedEntity.GetID());
+				}
+				else
+				{
+					SelectionManager::Select(clickedEntity.GetID());
+					EditorLibrary::Get<SceneViewPanel>()->HighlightEntity(clickedEntity);
 				}
 			}
+		}
 
-			if (deselect)
+		const auto debugExt = Sandbox::Get().GetDebugSceneRendererExtension();
+
+		if (debugExt && debugExt->GetVisProxyIDImage() && clickedEntity.IsValid())
+		{
+			uint32_t pixelData = debugExt->GetVisProxyIDImage()->ReadPixel<uint32_t>(static_cast<uint32_t>(mouseX * renderScale), static_cast<uint32_t>(mouseY * renderScale), 0u);
+
+			Volt::EntityID entityId = clickedEntity.GetID();
+
+			const auto& visProxyContextManagers = Sandbox::Get().GetVisProxyContextManagers();
+			if (visProxyContextManagers.contains(entityId))
 			{
-				SelectionManager::Deselect(entity.GetID());
-			}
-			else
-			{
-				SelectionManager::Select(entity.GetID());
-				EditorLibrary::Get<SceneViewPanel>()->HighlightEntity(entity);
+				const VisProxyContextManager& visProxyContextManager = visProxyContextManagers.at(entityId);
+
+				for (const VisProxyContextManager::VisProxyInfo& visProxyInfo : visProxyContextManager.GetVisProxyInfos())
+				{
+					if (visProxyInfo.visProxyId == static_cast<int32_t>(pixelData))
+					{
+						Ref<BaseComponentVisualizer> visualizer = ComponentVisualizerRegistry::Get().GetComponentVisualizer(visProxyInfo.componentGuid);
+						visProxyInfo.handleHitProxyInteractionFunc(visualizer, clickedEntity, visProxyInfo.visProxyContext);
+						break;
+					}
+				}
 			}
 		}
 	}

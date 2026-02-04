@@ -10,6 +10,7 @@ struct DrawDebugMeshesPixelShaderOutput
 {
 	[[vt::rgba8]] float4 color : SV_Target0;
 	[[vt::r32ui]] uint objectId : SV_Target1;
+	[[vt::r32ui]] uint visProxyId : SV_Target2;
     [[vt::d32f]];
 };
 
@@ -40,6 +41,7 @@ DrawDebugMeshesPixelShaderOutput MainPS(in DrawDebugMeshesPixelShaderInput input
 	DrawDebugMeshesPixelShaderOutput result;
 	result.color = float4(outputColor, pbrInput.albedo.a);
 	result.objectId = input.objectId;
+	result.visProxyId = input.visProxyId;
 
     return result;
 }

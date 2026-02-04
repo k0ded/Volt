@@ -1,16 +1,21 @@
 #pragma once
 
-#include "Sandbox/ComponentVisualizers/EditorDrawInterface.h"
-
-class ComponentVisualizer
+class BaseComponentVisualizer
 {
 public:
-	virtual ~ComponentVisualizer() = default;
+	virtual ~BaseComponentVisualizer() = default;
+};
+
+template<typename T>
+class ComponentVisualizer : public BaseComponentVisualizer
+{
+public:
+	using ComponentType = T;
+
+	virtual ~ComponentVisualizer() override = default;
 
 	/*
 		Allows each component to have it's own gizmo. 
 	*/
-	virtual void DrawVisualization(EditorDrawInterface& gizmoDrawer) {};
-
-private:
+	// void DrawVisualization(EditorDrawInterface& editorDrawInterface, <ComponentType>, Volt::Entity entity)
 };

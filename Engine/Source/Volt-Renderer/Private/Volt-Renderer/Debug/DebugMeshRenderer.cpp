@@ -17,10 +17,11 @@ namespace Volt
 	struct DebugMeshData
 	{
 		glm::vec3 position;
-		uint32_t userData;
-		glm::vec3 scale;
 		float padding0;
+		glm::vec3 scale;
+		float padding1;
 		glm::quat rotation;
+		glm::vec4 userData;
 	};
 
 	void DebugMeshRenderer::ExecuteCommands(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters)
@@ -211,7 +212,7 @@ namespace Volt
 	void DebugMeshRenderer::BuildMeshDrawCommand(Ref<Mesh> mesh,
 		Ref<RenderMaterial> renderMaterial, 
 		const TQS& transform, 
-		uint32_t userData, 
+		const glm::vec4& userData,
 		RHI::RenderPipelineCreateInfo pipelineInfo, 
 		RefPtr<RHI::Shader> vertexShader, 
 		RefPtr<RHI::Shader> pixelShader)
@@ -295,7 +296,7 @@ namespace Volt
 		}
 	}
 
-	void DebugMeshRendererRegistry::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial> renderMaterial, const TQS& transform, uint32_t userData)
+	void DebugMeshRendererRegistry::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial> renderMaterial, const TQS& transform, const glm::vec4& userData)
 	{
 		for (DebugMeshRendererContainer& container : m_debugMeshRenderers)
 		{

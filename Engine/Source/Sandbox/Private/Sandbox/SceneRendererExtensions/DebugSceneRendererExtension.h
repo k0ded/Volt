@@ -13,6 +13,10 @@ public:
 	DebugSceneRendererExtension(Ref<Volt::RenderScene> renderScene, Volt::DebugRenderer& debugRenderer);
 	Volt::RGTextureRef OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage);
 
+	VT_INLINE VT_NODISCARD RefPtr<Volt::RHI::Image> GetVisProxyIDImage() const { return m_visProxyIdImage; }
+
 private:
+	RefPtr<Volt::RHI::Image> m_visProxyIdImage;
+
 	Volt::DebugRenderer& m_debugRenderer;
 };

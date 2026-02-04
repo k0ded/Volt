@@ -36,7 +36,16 @@ void Sandbox::DrawEntityGizmos()
 	const glm::vec3 editorCameraPosition = m_editorCameraController->GetCamera()->GetPosition();
 	const glm::mat4 editorCameraViewMatrix = m_editorCameraController->GetCamera()->GetView();
 
-	Volt::Algo::ForEachParalellBlocking([&entityView, &editorCameraPosition, &editorCameraViewMatrix, scene = m_runtimeScene, &debugRenderer = m_debugRenderer](uint32_t threadIdx, uint32_t elementIdx)
+	Volt::Algo::ForEachParalellBlocking(
+		[
+			&entityView, 
+			&editorCameraPosition, 
+			&editorCameraViewMatrix, 
+			scene = m_runtimeScene, 
+			&debugRenderer = m_debugRenderer, 
+			&visProxyContextManagersMutex = m_visProxyContextManagersMutex,
+			&visProxyContextManagers = m_visProxyContextManagers
+		](uint32_t threadIdx, uint32_t elementIdx)
 	{
 		VT_PROFILE_SCOPE("Entity");
 
@@ -64,16 +73,18 @@ void Sandbox::DrawEntityGizmos()
 
 			EditorDrawInterface editorDrawInterface;
 
-			EditorUtils::IterateComponentsInEntity(entity, [&editorDrawInterface](const VoltGUID& componentGuid) 
+			EditorUtils::IterateComponentsInEntity(entity, [&editorDrawInterface, &entity](const VoltGUID& componentGuid) 
 			{
-				if (ComponentVisualizerRegistry::Get().HasComponentVisualizer(componentGuid))
-				{
-					auto componentVisualizer = ComponentVisualizerRegistry::Get().GetComponentVisualizer(componentGuid);
-					componentVisualizer->DrawVisualization(editorDrawInterface);
-				}
+				ComponentVisualizerRegistry::Get().DrawVisualizationForComponent(componentGuid, editorDrawInterface, entity);
 			});
 
 			editorDrawInterface.Render(debugRenderer, editorCameraViewMatrix, entity.GetID(), entityTransform, scale, alpha);
+
+			if (editorDrawInterface.HasAnyVisProxies())
+			{
+				std::scoped_lock lock{ visProxyContextManagersMutex };
+				visProxyContextManagers[entity.GetID()] = editorDrawInterface.ExtractVisProxyContextManager();
+			}
 		}
 
 	}, numEntities, 128);
