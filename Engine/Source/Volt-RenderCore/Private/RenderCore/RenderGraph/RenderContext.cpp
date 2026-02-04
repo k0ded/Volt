@@ -1,5 +1,5 @@
 #include "rcpch.h"
-#include "RenderContext.h"
+#include "RenderCore/RenderGraph/RenderContext.h"
 
 #include "RenderCore/RenderGraph/RenderGraph.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
@@ -332,9 +332,9 @@ namespace Volt
 		return result;
 	}
 
-	void RenderContext::SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext::SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
 		if (resourceBinding)
 		{
 			VT_ENSURE_MSG(bufferSRV, "Buffer SRV must not be null!");
@@ -353,9 +353,9 @@ namespace Volt
 		}
 	}
 
-	void RenderContext::SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext::SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
 		if (resourceBinding)
 		{
 			VT_ENSURE_MSG(bufferUAV, "Buffer SRV must not be null!");
@@ -374,9 +374,9 @@ namespace Volt
 		}
 	}
 
-	void RenderContext::SetTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext::SetTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
 		if (resourceBinding)
 		{
 			VT_ENSURE_MSG(textureSRV, "Texture SRV must not be null!");
@@ -384,9 +384,9 @@ namespace Volt
 		}
 	}
 
-	void RenderContext::SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext::SetTextureUAVParameter(RGTextureUAVRef textureUAV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
 		if (resourceBinding)
 		{
 			VT_ENSURE_MSG(textureUAV, "Texture UAV must not be null!");
@@ -394,95 +394,95 @@ namespace Volt
 		}
 	}
 
-	void RenderContext::SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext::SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
 		if (resourceBinding && uniformBuffer)
 		{
 			m_shaderBindingMap.SetUniformBuffer(shaderParameterMap.GetShaderStage(), resourceBinding->binding, uniformBuffer->GetRHIResource()->GetOrCreateView({}));
 		}
 	}
 
-	void RenderContext::SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext::SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
 		if (resourceBinding)
 		{
 			m_shaderBindingMap.SetSampler(shaderParameterMap.GetShaderStage(), resourceBinding->binding, sampler);
 		}
 	}
 
-	void RenderContext::SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext::SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterMetadata.hashedName);
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
 		if (resourceBinding)
 		{
 			m_shaderBindingMap.SetAccelerationStructure(shaderParameterMap.GetShaderStage(), resourceBinding->binding, accelerationStructure);
 		}
 	}
 
-	void RenderContext::SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext::SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
 		m_shaderBindingMap.SetRayTracingResourceTable(rayTracingResourceTable);
 	}
 
-	void RenderContext::SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext::SetShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		const RHI::ShaderUniform* shaderParameter = shaderParameterMap.GetParameterFromName(parameterMetadata.hashedName);
+		const RHI::ShaderUniform* shaderParameter = shaderParameterMap.GetParameterFromName(parameterDesc.GetParameterNameHash());
 		if (shaderParameter)
 		{
-			VT_ENSURE(shaderParameter->size == parameterMetadata.structSize);
+			VT_ENSURE(shaderParameter->size == parameterDesc.GetSize());
 
 			for (const auto& perStageParameters : m_perStageShaderParameters)
 			{
 				if (perStageParameters.shaderStage == shaderParameterMap.GetShaderStage())
 				{
-					memcpy(perStageParameters.mappedPtr + shaderParameter->offset, data, parameterMetadata.structSize);
+					memcpy(perStageParameters.mappedPtr + shaderParameter->offset, data, parameterDesc.GetSize());
 					break;
 				}
 			}
 		}
 	}
 
-	void RenderContext::CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	void RenderContext::CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
 	{
 		const RHI::ShaderResourceType resourceType = bufferSRV->IsTexelBufferSRV() ? RHI::ShaderResourceType::TexelBuffer : RHI::ShaderResourceType::StructuredBuffer;
-		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, resourceType, bufferSRV->GetRHIView());
+		batchedShaderParameters.AddBufferParameter(parameterDesc.GetParameterNameHash(), resourceType, bufferSRV->GetRHIView());
 	}
 
-	void RenderContext::CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	void RenderContext::CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
 	{
 		const RHI::ShaderResourceType resourceType = bufferUAV->IsTexelBufferUAV() ? RHI::ShaderResourceType::TexelBuffer : RHI::ShaderResourceType::StructuredBuffer;
-		batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, resourceType, bufferUAV->GetRHIView());
+		batchedShaderParameters.AddBufferParameter(parameterDesc.GetParameterNameHash(), resourceType, bufferUAV->GetRHIView());
 	}
 
-	void RenderContext::CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	void RenderContext::CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
 	{
-		batchedShaderParameters.AddTextureParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::Texture, textureSRV->GetRHIView());
+		batchedShaderParameters.AddTextureParameter(parameterDesc.GetParameterNameHash(), RHI::ShaderResourceType::Texture, textureSRV->GetRHIView());
 	}
 
-	void RenderContext::CollectTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	void RenderContext::CollectTextureUAVParameter(RGTextureUAVRef textureUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
 	{
-		batchedShaderParameters.AddTextureParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::Texture, textureUAV->GetRHIView());
+		batchedShaderParameters.AddTextureParameter(parameterDesc.GetParameterNameHash(), RHI::ShaderResourceType::Texture, textureUAV->GetRHIView());
 	}
 
-	void RenderContext::CollectSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	void RenderContext::CollectSamplerParameter(RefPtr<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
 	{
-		batchedShaderParameters.AddSamplerParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::Sampler, sampler);
+		batchedShaderParameters.AddSamplerParameter(parameterDesc.GetParameterNameHash(), RHI::ShaderResourceType::Sampler, sampler);
 	}
 
-	void RenderContext::CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	void RenderContext::CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
 	{
 		if (uniformBuffer)
 		{
 			RefPtr<RHI::BufferView> bufferView = uniformBuffer->GetRHIResource()->GetOrCreateView({});
-			batchedShaderParameters.AddBufferParameter(parameterMetadata.hashedName, RHI::ShaderResourceType::UniformBuffer, bufferView);
+			batchedShaderParameters.AddBufferParameter(parameterDesc.GetParameterNameHash(), RHI::ShaderResourceType::UniformBuffer, bufferView);
 		}
 	}
 
-	void RenderContext::CollectShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters)
+	void RenderContext::CollectShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
 	{
-		batchedShaderParameters.AddShaderParameter(parameterMetadata.hashedName, data, parameterMetadata.structSize);
+		batchedShaderParameters.AddShaderParameter(parameterDesc.GetParameterNameHash(), data, parameterDesc.GetSize());
 	}
 
 	void* RenderContext::MapInternal(RGBufferUAVRef buffer)

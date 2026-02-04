@@ -100,23 +100,23 @@ namespace Volt
 		template<typename ParameterStruct>
 		void VerifyShaderParameters(RefPtr<RHI::Shader> shader, const ParameterStruct* parameters);
 
-		void SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
-		void SetShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetTextureUAVParameter(RGTextureUAVRef textureUAV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
 
-		void CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
-		void CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
-		void CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
-		void CollectTextureUAVParameter(RGTextureUAVRef textureUAV, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
-		void CollectSamplerParameter(RefPtr<RHI::SamplerState> sampler, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
-		void CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
-		void CollectShaderParameter(const void* data, const ShaderParameterMetadata& parameterMetadata, BatchedShaderParameters& batchedShaderParameters);
+		void CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectTextureUAVParameter(RGTextureUAVRef textureUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectSamplerParameter(RefPtr<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 
 		void* MapInternal(RGBufferUAVRef buffer);
 		void* MapInternal(RGUniformBufferRef buffer);
@@ -135,175 +135,6 @@ namespace Volt
 		RenderingInfo m_activeRenderingInfo{};
 		bool m_isWithinRenderingScope = false;
 	};
-
-	template<typename T>
-	T* RenderContext::MapBuffer(RGBufferUAVRef buffer)
-	{
-		return reinterpret_cast<T*>(MapInternal(buffer));
-	}
-
-	template<typename T>
-	T* RenderContext::MapBuffer(RGUniformBufferRef buffer)
-	{
-		return reinterpret_cast<T*>(MapInternal(buffer));
-	}
-
-	template<typename ShaderType>
-	void RenderContext::SetParameters(RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* parameters)
-	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline);
-
-		using ShaderParametersType = typename ShaderType::Parameters;
-
-		VerifyShaderParameters(shader, parameters);
-
-		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ShaderParametersType::GetShaderParameterMetadata();
-		const auto& shaderParameterMap = shader->GetParameterMap();
-
-		// We need to use const_cast here because the resource parameters need to be non-const pointers.
-		uint8_t* parametersDataPtr = reinterpret_cast<uint8_t*>(const_cast<ShaderParametersType*>(parameters));
-
-		for (const auto& parameter : parameterStructMetadata)
-		{
-			uint8_t* parameterDataPtr = &parametersDataPtr[parameter.structOffset];
-
-			switch (parameter.parameterType)
-			{
-				case ShaderParameterType::BufferSRV: SetBufferSRVParameter(*reinterpret_cast<RGBufferSRVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType::BufferUAV: SetBufferUAVParameter(*reinterpret_cast<RGBufferUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType::TextureSRV: SetTextureSRVParameter(*reinterpret_cast<RGTextureSRVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType::TextureUAV: SetTextureUAVParameter(*reinterpret_cast<RGTextureUAVRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType::UniformBuffer: SetUniformBufferParameter(*reinterpret_cast<RGUniformBufferRef*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType::Sampler: SetSamplerParameter(*reinterpret_cast<RefPtr<RHI::SamplerState>*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType::AccelerationStructure: SetAccelerationStructureParameter(*reinterpret_cast<RefPtr<RHI::AccelerationStructure>*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType::RayTracingResourceTable: SetRayTracingResourceTableParameter(*reinterpret_cast<RefPtr<RHI::RayTracingResourceTable>*>(parameterDataPtr), parameter, shaderParameterMap); break;
-				case ShaderParameterType::Parameter: SetShaderParameter(parameterDataPtr, parameter, shaderParameterMap); break;
-			}
-		}
-
-	}
-
-	template<typename ParameterStruct>
-	void RenderContext::CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters)
-	{
-		VT_PROFILE_FUNCTION();
-		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
-
-		// We need to use const_cast here because the resource parameters need to be non-const pointers.
-		uint8_t* parametersStructBytePtr = reinterpret_cast<uint8_t*>(const_cast<ParameterStruct*>(parameters));
-
-		for (const auto& parameter : parameterStructMetadata)
-		{
-			uint8_t* parameterDataPtr = &parametersStructBytePtr[parameter.structOffset];
-
-			switch (parameter.parameterType)
-			{
-				case ShaderParameterType::BufferSRV: CollectBufferSRVParameter(*reinterpret_cast<RGBufferSRVRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
-				case ShaderParameterType::BufferUAV: CollectBufferUAVParameter(*reinterpret_cast<RGBufferUAVRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
-				case ShaderParameterType::TextureSRV: CollectTextureSRVParameter(*reinterpret_cast<RGTextureSRVRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
-				case ShaderParameterType::TextureUAV: CollectTextureUAVParameter(*reinterpret_cast<RGTextureUAVRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
-				case ShaderParameterType::Sampler: CollectSamplerParameter(*reinterpret_cast<RefPtr<RHI::SamplerState>*>(parameterDataPtr), parameter, batchedShaderParameters); break;
-				case ShaderParameterType::UniformBuffer: CollectUniformBufferParameter(*reinterpret_cast<RGUniformBufferRef*>(parameterDataPtr), parameter, batchedShaderParameters); break;
-				case ShaderParameterType::Parameter: CollectShaderParameter(parameterDataPtr, parameter, batchedShaderParameters); break;
-			}
-		}
-	}
-
-	template<typename ParameterStruct>
-	void RenderContext::VerifyShaderParameters(RefPtr<RHI::Shader> shader, const ParameterStruct* parameters)
-	{
-		VT_PROFILE_FUNCTION();
-
-		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
-
-		const RHI::ShaderParameterMap& shaderParameterMap = shader->GetParameterMap();
-		const RHI::ShaderParameterMap::ResourceBindings& resourceBindings = shaderParameterMap.GetResourceBindings();
-
-		struct Binding
-		{
-			StringHash hash;
-			std::string_view name;
-			bool value;
-		};
-
-		Vector<Binding> foundResourceBindings;
-		foundResourceBindings.reserve(resourceBindings.size());
-
-		STRING_HASH_CONSTEXPR StringHash GlobalsStringHash = StringHash::Construct("$Globals");
-		STRING_HASH_CONSTEXPR StringHash RayTracingBufferTableHash = StringHash::Construct("RayTracingBufferTable");
-		STRING_HASH_CONSTEXPR StringHash RayTracingTexture2DTableHash = StringHash::Construct("RayTracingTexture2DTable");
-
-		for (size_t i = 0; i < resourceBindings.size(); ++i)
-		{
-			auto& resourceBinding = resourceBindings.at(i);
-
-			if (resourceBinding.hash != GlobalsStringHash)
-			{
-				auto& foundBinding = foundResourceBindings.emplace_back();
-				foundBinding.hash = resourceBinding.hash;
-				foundBinding.name = resourceBinding.binding.name;
-				foundBinding.value = false;
-			}
-		}
-
-		for (const auto& parameter : parameterStructMetadata)
-		{
-			switch (parameter.parameterType)
-			{
-				case ShaderParameterType::BufferSRV:
-				case ShaderParameterType::BufferUAV:
-				case ShaderParameterType::TextureSRV:
-				case ShaderParameterType::TextureUAV:
-				case ShaderParameterType::UniformBuffer:
-				case ShaderParameterType::Sampler:
-				case ShaderParameterType::AccelerationStructure:
-				{
-					for (auto& foundBinding : foundResourceBindings)
-					{
-						if (foundBinding.hash == parameter.hashedName)
-						{
-							foundBinding.value = true;
-						}
-					}
-					break;
-				}
-				case ShaderParameterType::RayTracingResourceTable:
-				{
-					for (auto& foundBinding : foundResourceBindings)
-					{
-						if (foundBinding.hash == RayTracingBufferTableHash)
-						{
-							foundBinding.value = true;
-						}
-
-						if (foundBinding.hash == RayTracingTexture2DTableHash)
-						{
-							foundBinding.value = true;
-						}
-					}
-
-					break;
-				}
-			}
-		}
-
-		std::string errorMessage;
-		bool shouldError = false;
-
-		for (const auto& foundBinding : foundResourceBindings)
-		{
-			if (!foundBinding.value)
-			{
-				shouldError = true;
-				errorMessage += std::format("{}\n", foundBinding.name);
-			}
-		}
-
-		if (shouldError)
-		{
-			std::string error = std::format("Not all bindings were found in shader parameter struct!\n{}", errorMessage);
-			VT_ENSURE_MSG(false, error);
-		}
-	}
 }
+
+#include "RenderCore/RenderGraph/RenderContext.inl"

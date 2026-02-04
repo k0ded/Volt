@@ -587,6 +587,132 @@ namespace Volt
 		}
 	}
 
+	void RenderGraph::SetupPassParameters(RenderGraphPassRef pass)
+	{
+		VT_PROFILE_FUNCTION();
+
+		pass->passParameters.EnumerateParameters([pass, renderGraph = this](RenderGraphParameterDesc parameterDesc)
+		{
+			switch (parameterDesc.GetType())
+			{
+				case ShaderParameterType::BufferSRV:
+				{
+					if (RGBufferSRVRef bufferSRV = parameterDesc.GetAs<RGBufferSRVRef>())
+					{
+						pass->AddResourceRead(bufferSRV);
+					}
+
+					break;
+				}
+
+				case ShaderParameterType::BufferUAV:
+				{
+					if (RGBufferUAVRef bufferUAV = parameterDesc.GetAs<RGBufferUAVRef>())
+					{
+						pass->AddResourceWrite(bufferUAV);
+					}
+
+					break;
+				}
+
+				case ShaderParameterType::TextureSRV:
+				{
+					if (RGTextureSRVRef textureSRV = parameterDesc.GetAs<RGTextureSRVRef>())
+					{
+						pass->AddResourceRead(textureSRV);
+					}
+	
+					break;
+				}
+
+				case ShaderParameterType::TextureUAV:
+				{
+					if (RGTextureUAVRef textureUAV = parameterDesc.GetAs<RGTextureUAVRef>())
+					{
+						pass->AddResourceWrite(textureUAV);
+					}
+
+					break;
+				}
+
+				case ShaderParameterType::UniformBuffer:
+				{
+					if (RGUniformBufferRef uniformBuffer = parameterDesc.GetAs<RGUniformBufferRef>())
+					{
+						// Uniform buffers is a special case, an internal SRV must be created to have
+						// prober tracking.
+						RGUniformBufferSRVDesc srvDesc{};
+						srvDesc.bufferResource = uniformBuffer;
+
+						pass->AddResourceRead(renderGraph->CreateSRV(srvDesc));
+					}
+
+					break;
+				}
+
+				case ShaderParameterType::BufferAccess:
+				{
+					if (RGBufferRef buffer = parameterDesc.GetAs<RGBufferRef>())
+					{
+						pass->AddResourceAccess(buffer, parameterDesc.GetAccess());
+					}
+
+					break;
+				}
+
+				case ShaderParameterType::TextureAccess:
+				{
+					if (RGTextureRef texture = parameterDesc.GetAs<RGTextureRef>())
+					{
+						pass->AddResourceAccess(texture, parameterDesc.GetAccess());
+					}
+
+					break;
+				}
+
+				case ShaderParameterType::UniformBufferAccess:
+				{
+					if (RGUniformBufferRef uniformBuffer = parameterDesc.GetAs<RGUniformBufferRef>())
+					{
+						pass->AddResourceAccess(uniformBuffer, parameterDesc.GetAccess());
+					}
+
+					break;
+				}
+
+				case ShaderParameterType::RenderTargets:
+				{
+					VT_ENSURE(!EnumValueContainsFlag(pass->flags, RenderGraphPassFlags::Compute));
+
+					const ShaderParameterRenderTargetBindings& rtBindings = parameterDesc.GetAs<const ShaderParameterRenderTargetBindings&>();
+
+					for (size_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
+					{
+						if (rtBindings.renderTargets[i] != nullptr)
+						{
+							VT_ENSURE_MSG(rtBindings.renderTargets[i]->GetDesc().usage == RHI::ImageUsage::Attachment
+								|| rtBindings.renderTargets[i]->GetDesc().usage == RHI::ImageUsage::AttachmentStorage,
+								"Render Targets must have a Attachment usage type!");
+
+							pass->AddResourceRenderTargetAccess(rtBindings.renderTargets[i]);
+						}
+					}
+
+					if (rtBindings.depthTarget != nullptr)
+					{
+						VT_ENSURE_MSG(rtBindings.depthTarget->GetDesc().usage == RHI::ImageUsage::Attachment
+							|| rtBindings.depthTarget->GetDesc().usage == RHI::ImageUsage::AttachmentStorage,
+							"Render Targets must have a Attachment usage type!");
+
+						pass->AddResourceRenderTargetAccess(rtBindings.depthTarget);
+					}
+
+					break;
+				}
+			}
+		});
+	}
+
 	void RenderGraph::ValidateTextureUAV(const RGTextureUAVDesc& uavDesc)
 	{
 		VT_ENSURE_MSG(uavDesc.textureResource->GetDesc().usage == RHI::ImageUsage::AttachmentStorage || uavDesc.textureResource->GetDesc().usage == RHI::ImageUsage::Storage, "Texture does not support UAVs!");

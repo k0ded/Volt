@@ -2,6 +2,7 @@
 
 #include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 #include "RenderCore/RenderGraph/Resources/RenderGraphResource.h"
+#include "RenderCore/RenderGraph/RenderGraphParameterStruct.h"
 
 #include <CoreUtilities/Containers/VectorVariants.h>
 
@@ -27,12 +28,19 @@ namespace Volt
 			RGResourceAccess accessType;
 		};
 
+		template<typename T>
+		RenderGraphPass(const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata)
+			: passParameters(shaderParameters, shaderParameterMetadata)
+		{}
+
 		std::string name;
 		void* passAllocationStartPtr;
 		uint32_t passIndex = 0;
 		uint32_t refCount = 0;
 		bool isCulled = false;
 		RenderGraphPassFlags flags = RenderGraphPassFlags::None;
+
+		RenderGraphParameterStruct passParameters;
 
 		VT_INLINE void AddResourceRead(RGBufferSRVRef bufferSRV) { VT_ENSURE_MSG(bufferSRV != nullptr, "Must be a valid SRV!"); m_resourceReads.emplace_back(bufferSRV); }
 		VT_INLINE void AddResourceRead(RGTextureSRVRef textureSRV) { VT_ENSURE_MSG(textureSRV != nullptr, "Must be a valid SRV!"); m_resourceReads.emplace_back(textureSRV); }

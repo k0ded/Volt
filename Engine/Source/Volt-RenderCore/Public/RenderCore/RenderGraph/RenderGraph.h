@@ -284,6 +284,7 @@ namespace Volt
 		void TransitionExternalResources();
 		void PrepareResourcesForExecution();
 		void CreateResourceViews();
+		void SetupPassParameters(RenderGraphPassRef pass);
 
 		void InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer);
 		void InsertStandaloneMarkersIntoCommandBuffer(const uint32_t passIndex, const RefPtr<RHI::CommandBuffer>& commandBuffer);
@@ -330,71 +331,12 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		RenderGraphPassRef newPass = m_passAllocator.AllocatePass(name, std::forward<ExecFunc>(executeFunc));
+		const ShaderParameterMetadataDescription* shaderParameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
+
+		RenderGraphPassRef newPass = m_passAllocator.AllocatePass(name, std::forward<ExecFunc>(executeFunc), parameters, shaderParameterStructMetadata);
 		newPass->flags = flags;
-
-		// Get all parameters accessed by shader.
-		const Vector<ShaderParameterMetadata>& parameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
-
-		// We need to use const_cast here because the resource parameters need to be non-const pointers.
-		uint8_t* parametersStructBytePtr = reinterpret_cast<uint8_t*>(const_cast<ParameterStruct*>(parameters));
-
-		for (const auto& parameter : parameterStructMetadata)
-		{
-			uint8_t* dataPtr = &parametersStructBytePtr[parameter.structOffset];
-
-			switch (parameter.parameterType)
-			{
-				case ShaderParameterType::BufferSRV: newPass->AddResourceRead(*reinterpret_cast<RGBufferSRVRef*>(dataPtr)); break;
-				case ShaderParameterType::BufferUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
-				case ShaderParameterType::TextureSRV: newPass->AddResourceRead(*reinterpret_cast<RGTextureSRVRef*>(dataPtr)); break;
-				case ShaderParameterType::TextureUAV: newPass->AddResourceWrite(*reinterpret_cast<RGBufferUAVRef*>(dataPtr)); break;
-				case ShaderParameterType::UniformBuffer:  
-				{
-					RGUniformBufferRef uniformBuffer = *reinterpret_cast<RGUniformBufferRef*>(dataPtr);
-					VT_ENSURE_MSG(uniformBuffer != nullptr, "Must be a valid resource!");
-
-					RGUniformBufferSRVDesc srvDesc{};
-					srvDesc.bufferResource = uniformBuffer;
-
-					newPass->AddResourceRead(CreateSRV(srvDesc));
-					break;
-				}
-				case ShaderParameterType::BufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGBufferRef*>(dataPtr), parameter.resourceAccessType); break;
-				case ShaderParameterType::TextureAccess: newPass->AddResourceAccess(*reinterpret_cast<RGTextureRef*>(dataPtr), parameter.resourceAccessType); break;
-				case ShaderParameterType::UniformBufferAccess: newPass->AddResourceAccess(*reinterpret_cast<RGUniformBufferRef*>(dataPtr), parameter.resourceAccessType); break;
-				case ShaderParameterType::RenderTargets:
-				{
-					VT_ENSURE(!EnumValueContainsFlag(flags, RenderGraphPassFlags::Compute));
-
-					const ShaderParameterRenderTargetBindings& rtBindings = *reinterpret_cast<ShaderParameterRenderTargetBindings*>(dataPtr);
-
-					for (size_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
-					{
-						if (rtBindings.renderTargets[i] != nullptr)
-						{
-							VT_ENSURE_MSG(rtBindings.renderTargets[i]->GetDesc().usage == RHI::ImageUsage::Attachment 
-								|| rtBindings.renderTargets[i]->GetDesc().usage == RHI::ImageUsage::AttachmentStorage, 
-								"Render Targets must have a Attachment usage type!");
-							
-							newPass->AddResourceRenderTargetAccess(rtBindings.renderTargets[i]);
-						}
-					}
-
-					if (rtBindings.depthTarget != nullptr)
-					{
-						VT_ENSURE_MSG(rtBindings.depthTarget->GetDesc().usage == RHI::ImageUsage::Attachment 
-							|| rtBindings.depthTarget->GetDesc().usage == RHI::ImageUsage::AttachmentStorage, 
-							"Render Targets must have a Attachment usage type!");
-
-						newPass->AddResourceRenderTargetAccess(rtBindings.depthTarget);
-					}
-
-					break;
-				}
-			}
-		}
-
 		m_passes.emplace_back(newPass);
+
+		SetupPassParameters(newPass);
 	}
 }

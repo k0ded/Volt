@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RenderCore/Config.h"
 #include "RenderCore/RenderGraph/ShaderTypes.h"
 #include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 #include "RenderCore/Shader/GlobalShader.h"
@@ -55,6 +56,18 @@ namespace Volt
 		RGTextureRef renderTargets[RHI::MAX_COLOR_ATTACHMENT_COUNT];
 		RGTextureRef depthTarget;
 	};
+
+	class ShaderParameterMetadataDescription
+	{
+	public:
+		ShaderParameterMetadataDescription() = default;
+		VTRC_API ShaderParameterMetadataDescription(Vector<ShaderParameterMetadata>&& shaderParameterMetadata);
+
+		VT_INLINE const Vector<ShaderParameterMetadata>& GetParameterMetadata() const { return m_metadata; }
+
+	private:
+		Vector<ShaderParameterMetadata> m_metadata;
+	};
 }
 
 #define BEGIN_SHADER_PARAMETER_STRUCT(structName) \
@@ -85,18 +98,18 @@ namespace Volt
 				ptr = reinterpret_cast<MemberFunc>(ptr)(FirstMemberID(), outMetadata, offset); \
 			} while (ptr != nullptr); \
 		} \
-		struct ShaderParameters \
+		static const Volt::ShaderParameterMetadataDescription* GetShaderParameterMetadata() \
 		{ \
-			ShaderParameters() \
+			static bool isInitialized = false; \
+			static Volt::ShaderParameterMetadataDescription shaderParametersMetadataDesc; \
+			if (!isInitialized) \
 			{ \
+				Vector<Volt::ShaderParameterMetadata> parameterMetadata; \
 				zzInternal_ProcessMembers(parameterMetadata); \
+				shaderParametersMetadataDesc = Volt::ShaderParameterMetadataDescription(std::move(parameterMetadata)); \
+				isInitialized = true; \
 			} \
-			Vector<Volt::ShaderParameterMetadata> parameterMetadata; \
-		}; \
-		static const Vector<Volt::ShaderParameterMetadata>& GetShaderParameterMetadata() \
-		{ \
-			static ShaderParameters shaderParameters; \
-			return shaderParameters.parameterMetadata; \
+			return &shaderParametersMetadataDesc; \
 		} \
 	}; 
 
