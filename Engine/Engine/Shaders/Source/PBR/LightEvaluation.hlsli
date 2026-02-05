@@ -5,6 +5,10 @@
 #include "Lights/Lights.hlsli"
 #include "Utility/ShadowMapping.hlsli"
 
+#ifndef HAS_DIRECTIONAL_SHADOW
+#define HAS_DIRECTIONAL_SHADOW 0
+#endif
+
 ///// ----- Punctual lights ----- /////
 float GetDistanceAttenuation(float3 L, float radius)
 {
@@ -107,10 +111,12 @@ float3 EvaluateDirectionalLight(in LightDrawData light, in BRDFInput brdfInput, 
 
     float shadow = 1.f; 
 
+#if HAS_DIRECTIONAL_SHADOW
     if (light.flags & LightFlags::LF_CastShadows)
     {
         shadow = EvaluateDirectionalShadow(light, View.view, brdfInput.N, worldPosition);
     }
+#endif
 
     return BRDF_DisneyDiffuse(brdfInput, L) * light.color * illuminance * shadow;
 }

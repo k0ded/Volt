@@ -77,7 +77,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	inline VertexAttributeData CreateVertexLayoutFromShaders(const Vector<RefPtr<Shader>>& shaders, VertexBufferLayout& vertexBufferLayout)
+	inline VertexAttributeData CreateVertexLayoutFromShaders(const PipelineShadersVector& shaders, VertexBufferLayout& vertexBufferLayout)
 	{
 		// We will pick the first shader that contains a vertex layout (should only be one anyways)
 		for (const auto shader : shaders)
@@ -216,14 +216,8 @@ namespace Volt::RHI
 
 			Vector<VkPipelineColorBlendAttachmentState> blendAttachments{};
 
-			const Vector<PixelFormat> shaderOutputFormats = Utility::GetOutputFormatsFromShaders(m_createInfo.shaders);
-			for (size_t index = 0; const auto& outputFormat : shaderOutputFormats)
+			for (size_t index = 0; index < m_createInfo.colorAttachmentFormats.size(); ++index)
 			{
-				if (Utility::IsDepthFormat(outputFormat) || Utility::IsStencilFormat(outputFormat))
-				{
-					continue;
-				}
-
 				VkPipelineColorBlendAttachmentState& blendAttachment = blendAttachments.emplace_back();
 				blendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 				blendAttachment.blendEnable = m_createInfo.attachmentBlendStates[index].enabled;
@@ -233,8 +227,6 @@ namespace Volt::RHI
 				blendAttachment.dstAlphaBlendFactor = Utility::VoltToVulkanBlendFactor(m_createInfo.attachmentBlendStates[index].dstAlphaBlend);
 				blendAttachment.colorBlendOp = Utility::VoltToVulkanBlendOp(m_createInfo.attachmentBlendStates[index].colorBlendOp);
 				blendAttachment.alphaBlendOp = Utility::VoltToVulkanBlendOp(m_createInfo.attachmentBlendStates[index].colorBlendOp);
-
-				index++;
 			}
 
 			blendInfo.attachmentCount = static_cast<uint32_t>(blendAttachments.size());
@@ -289,30 +281,28 @@ namespace Volt::RHI
 			dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 			dynamicStateInfo.pDynamicStates = dynamicStates.data();
 
-			Vector<PixelFormat> outputFormats{};
 			PixelFormat depthFormat = PixelFormat::UNDEFINED;
 			PixelFormat stencilFormat = PixelFormat::UNDEFINED;
 
-			for (const auto& format : shaderOutputFormats)
+			if (m_createInfo.depthAttachmentFormat != PixelFormat::UNDEFINED)
 			{
-				if (Utility::IsDepthFormat(format))
+				if (Utility::IsDepthFormat(m_createInfo.depthAttachmentFormat))
 				{
-					depthFormat = format;
+					depthFormat = m_createInfo.depthAttachmentFormat;
 				}
-				else if (Utility::IsStencilFormat(format))
+
+				if (Utility::IsStencilFormat(m_createInfo.depthAttachmentFormat))
 				{
-					stencilFormat = format;
-				}
-				else
-				{
-					outputFormats.emplace_back(format);
+					stencilFormat = m_createInfo.depthAttachmentFormat;
 				}
 			}
 
+			VT_ENSURE_MSG(!m_createInfo.colorAttachmentFormats.empty() || (m_createInfo.depthAttachmentFormat != PixelFormat::UNDEFINED), "There must always be at least 1 render target!");
+
 			VkPipelineRenderingCreateInfo pipelineRenderingInfo{};
 			pipelineRenderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-			pipelineRenderingInfo.colorAttachmentCount = static_cast<uint32_t>(outputFormats.size());
-			pipelineRenderingInfo.pColorAttachmentFormats = reinterpret_cast<const VkFormat*>(outputFormats.data());
+			pipelineRenderingInfo.colorAttachmentCount = static_cast<uint32_t>(m_createInfo.colorAttachmentFormats.size());
+			pipelineRenderingInfo.pColorAttachmentFormats = reinterpret_cast<const VkFormat*>(m_createInfo.colorAttachmentFormats.data());
 			pipelineRenderingInfo.depthAttachmentFormat = static_cast<VkFormat>(depthFormat);
 			pipelineRenderingInfo.stencilAttachmentFormat = static_cast<VkFormat>(stencilFormat);
 
@@ -495,7 +485,7 @@ namespace Volt::RHI
 		return m_shaderParameterMaps;
 	}
 
-	const Vector<RefPtr<Shader>>& VulkanRenderPipeline::GetShaders() const
+	const PipelineShadersVector& VulkanRenderPipeline::GetShaders() const
 	{
 		return m_createInfo.shaders;
 	}

@@ -67,15 +67,14 @@ RGTextureRef GridSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph
 		info.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
 		info.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
-		RHI::RenderPipelineCreateInfo pipelineInfo;
-		pipelineInfo.shaders = { vertexShader, pixelShader };
-		pipelineInfo.attachmentBlendStates[0] = DefaultBlendStates::Alpha();
-		pipelineInfo.depthMode = RHI::DepthMode::Read;
-
-		auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+		GraphicsPipelineState pipelineState{};
+		pipelineState.shaders = { vertexShader, pixelShader };
+		pipelineState.attachmentBlendStates[0] = DefaultBlendStates::Alpha();
+		pipelineState.depthMode = RHI::DepthMode::Read;
+		pipelineState.renderTargets = passParameters->PS.renderTargets;
 
 		context.BeginRendering(info);
-		context.BindPipeline(pipeline);
+		context.SetPipelineState(pipelineState);
 		context.SetParameters<EditorGridVS>(vertexShader, &passParameters->VS);
 		context.SetParameters<EditorGridPS>(pixelShader, &passParameters->PS);
 		context.Draw(3, 1, 0, 0);

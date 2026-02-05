@@ -432,6 +432,8 @@ namespace Volt::RHI
 		if (formatCount > 0)
 		{
 			m_capabilities.surfaceFormats.resize(formatCount);
+			static_assert(sizeof(VkSurfaceFormatKHR) == sizeof(SurfaceFormat));
+
 			VT_VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice->GetHandle<VkPhysicalDevice>(), m_surface, &formatCount, (VkSurfaceFormatKHR*)m_capabilities.surfaceFormats.data()));
 		}
 
@@ -440,8 +442,23 @@ namespace Volt::RHI
 
 		if (presentModeCount > 0)
 		{
+			Vector<VkPresentModeKHR> vkPresentModes;
+			vkPresentModes.resize(presentModeCount);
+
+			VT_VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice->GetHandle<VkPhysicalDevice>(), m_surface, &presentModeCount, vkPresentModes.data()));
+
 			m_capabilities.presentModes.resize(presentModeCount);
-			VT_VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice->GetHandle<VkPhysicalDevice>(), m_surface, &presentModeCount, (VkPresentModeKHR*)m_capabilities.presentModes.data()));
+
+			for (VkPresentModeKHR presentMode : vkPresentModes)
+			{
+				switch (presentMode)
+				{
+					case VK_PRESENT_MODE_IMMEDIATE_KHR: m_capabilities.presentModes.emplace_back(PresentMode::Immediate); break;
+					case VK_PRESENT_MODE_MAILBOX_KHR: m_capabilities.presentModes.emplace_back(PresentMode::Mailbox); break;
+					case VK_PRESENT_MODE_FIFO_KHR: m_capabilities.presentModes.emplace_back(PresentMode::FIFO); break;
+					case VK_PRESENT_MODE_FIFO_RELAXED_KHR: m_capabilities.presentModes.emplace_back(PresentMode::FIFORelaxed); break;
+				}
+			}
 		}
 	}
 

@@ -2,6 +2,7 @@
 #include "Volt-ImGui/ImGuiRenderTargetManager.h"
 
 #include <RenderCore/CommandBufferPool.h>
+#include <RenderCore/Shader/PipelineStateCache.h>
 
 #include <RHIModule/Graphics/Swapchain.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -197,13 +198,15 @@ namespace Volt
 
 		commandBuffer->BindVertexBuffers({ { renderContext.vertexBuffers.at(frameIndex), 0ull } }, 0);
 		commandBuffer->BindIndexBuffer(renderContext.indexBuffers.at(frameIndex), sizeof(ImDrawIdx) == sizeof(uint16_t) ? RHI::IndexType::UInt16 : RHI::IndexType::UInt32);
-		commandBuffer->BindPipeline(m_imguiRenderPipeline);
+
+		RefPtr<RHI::RenderPipeline> renderPipeline = GetRenderPipeline(*renderTarget);
+		commandBuffer->BindPipeline(renderPipeline);
 
 		STRING_HASH_CONSTEXPR StringHash TextureStringHash = StringHash::Construct("Tex");
 		STRING_HASH_CONSTEXPR StringHash SamplerStringHash = StringHash::Construct("Sampler");
 
-		const RHI::ShaderResourceBinding* textureResourceBinding = m_imguiRenderPipeline->GetResourceBindingFromName(TextureStringHash, RHI::ShaderStage::Pixel);
-		const RHI::ShaderResourceBinding* samplerResourceBinding = m_imguiRenderPipeline->GetResourceBindingFromName(SamplerStringHash, RHI::ShaderStage::Pixel);
+		const RHI::ShaderResourceBinding* textureResourceBinding = renderPipeline->GetResourceBindingFromName(TextureStringHash, RHI::ShaderStage::Pixel);
+		const RHI::ShaderResourceBinding* samplerResourceBinding = renderPipeline->GetResourceBindingFromName(SamplerStringHash, RHI::ShaderStage::Pixel);
 
 		VT_ENSURE(textureResourceBinding != nullptr && samplerResourceBinding != nullptr);
 
@@ -246,7 +249,7 @@ namespace Volt
 				RefPtr<RHI::ImageView> imageView = image->GetView();
 				m_activeImageViews.at(frameIndex).emplace_back(imageView);
 
-				RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(m_imguiRenderPipeline);
+				RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(renderPipeline);
 				shaderBindingMap.SetUniformBufferWithSizeAndOffset(RHI::ShaderStage::Vertex, 0, renderContext.globalsUniformBuffer->GetView(), renderContext.globalsUniformBuffer->GetSize(), 0);
 				shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Pixel, textureResourceBinding->binding, imageView);
 				shaderBindingMap.SetSampler(RHI::ShaderStage::Pixel, samplerResourceBinding->binding, m_textureSampler);
@@ -268,9 +271,6 @@ namespace Volt
 
 	void ImGuiRenderer::CreatePipeline()
 	{
-		RefPtr<RHI::Shader> vertexShader;
-		RefPtr<RHI::Shader> pixelShader;
-
 		RHI::ShaderCreateInfo shaderCreateInfo{};
 
 		{
@@ -279,7 +279,7 @@ namespace Volt
 			shaderCreateInfo.sourceFilepath = "Engine/Shaders/Source/ImGui/ImGui.hlsl";
 			shaderCreateInfo.stage = RHI::ShaderStage::Vertex;
 
-			vertexShader = RHI::Shader::Create(shaderCreateInfo);
+			m_vertexShader = RHI::Shader::Create(shaderCreateInfo);
 		}
 
 		{
@@ -288,21 +288,8 @@ namespace Volt
 			shaderCreateInfo.sourceFilepath = "Engine/Shaders/Source/ImGui/ImGui.hlsl";
 			shaderCreateInfo.stage = RHI::ShaderStage::Pixel;
 
-			pixelShader = RHI::Shader::Create(shaderCreateInfo);
+			m_pixelShader = RHI::Shader::Create(shaderCreateInfo);
 		}
-
-		RHI::RenderPipelineCreateInfo pipelineCreateInfo{};
-		pipelineCreateInfo.shaders = { vertexShader, pixelShader };
-		pipelineCreateInfo.cullMode = RHI::CullMode::None;
-		pipelineCreateInfo.attachmentBlendStates[0].enabled = true;
-		pipelineCreateInfo.attachmentBlendStates[0].srcColorBlend = RHI::AttachmentBlendFactor::SrcAlpha;
-		pipelineCreateInfo.attachmentBlendStates[0].dstColorBlend = RHI::AttachmentBlendFactor::OneMinusSrcAlpha;
-		pipelineCreateInfo.attachmentBlendStates[0].colorBlendOp = RHI::AttachmentBlendOp::Add;
-		pipelineCreateInfo.attachmentBlendStates[0].srcAlphaBlend = RHI::AttachmentBlendFactor::One;
-		pipelineCreateInfo.attachmentBlendStates[0].dstAlphaBlend = RHI::AttachmentBlendFactor::OneMinusSrcAlpha;
-		pipelineCreateInfo.attachmentBlendStates[0].alphaBlendOp = RHI::AttachmentBlendOp::Add;
-
-		m_imguiRenderPipeline = RHI::RenderPipeline::Create(pipelineCreateInfo);
 	}
 
 	void ImGuiRenderer::UpdateTexture(ImTextureData* textureData)
@@ -408,6 +395,23 @@ namespace Volt
 			textureData->SetTexID(ImTextureID_Invalid);
 			textureData->SetStatus(ImTextureStatus_Destroyed);
 		}
+	}
+
+	RefPtr<RHI::RenderPipeline> ImGuiRenderer::GetRenderPipeline(RHI::Image& renderTarget)
+	{
+		RHI::RenderPipelineCreateInfo pipelineCreateInfo{};
+		pipelineCreateInfo.shaders = { m_vertexShader, m_pixelShader };
+		pipelineCreateInfo.cullMode = RHI::CullMode::None;
+		pipelineCreateInfo.attachmentBlendStates[0].enabled = true;
+		pipelineCreateInfo.attachmentBlendStates[0].srcColorBlend = RHI::AttachmentBlendFactor::SrcAlpha;
+		pipelineCreateInfo.attachmentBlendStates[0].dstColorBlend = RHI::AttachmentBlendFactor::OneMinusSrcAlpha;
+		pipelineCreateInfo.attachmentBlendStates[0].colorBlendOp = RHI::AttachmentBlendOp::Add;
+		pipelineCreateInfo.attachmentBlendStates[0].srcAlphaBlend = RHI::AttachmentBlendFactor::One;
+		pipelineCreateInfo.attachmentBlendStates[0].dstAlphaBlend = RHI::AttachmentBlendFactor::OneMinusSrcAlpha;
+		pipelineCreateInfo.attachmentBlendStates[0].alphaBlendOp = RHI::AttachmentBlendOp::Add;
+		pipelineCreateInfo.colorAttachmentFormats.emplace_back(renderTarget.GetFormat());
+
+		return PipelineStateCache::GetRenderPipeline(pipelineCreateInfo);
 	}
 
 	uint64_t ImGuiRenderer::AddTexture(RefPtr<RHI::Image> image)

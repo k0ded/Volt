@@ -27,16 +27,7 @@ VSToPS MainVS(in Vertex input)
     return result;
 }
 
-struct PSOutput
+uint MainPS(in VSToPS input) : SV_Target0
 {
-    [[vt::r32ui]] uint objectId : SV_Target0;
-    [[vt::d32f]];
-};
-
-PSOutput MainPS(in VSToPS input)
-{
-    PSOutput result;
-    result.objectId = input.objectId;
-
-    return result;
+    return input.objectId;
 }

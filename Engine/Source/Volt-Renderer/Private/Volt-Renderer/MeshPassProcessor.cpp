@@ -180,29 +180,34 @@ namespace Volt
 			{
 				VT_PROFILE_SCOPE("Draw Command Bucket");
 
-				const MeshDrawCommandBucket& currentBucket = m_meshDrawCommandBuckets.at(i);
+				MeshDrawCommandBucket& currentBucket = m_meshDrawCommandBuckets[i];
 
 				 for (const MeshDrawCommandBucket::InstancingRange& instancingRange : currentBucket.instancingRanges)
 				 {
 					 VT_PROFILE_SCOPE("Instancing Range");
 
-					 const MeshDrawCommand& firstDrawCommand = currentBucket.drawCommands.at(instancingRange.offset);
-					 VT_ENSURE_MSG(firstDrawCommand.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
-					 const uint32_t perInstanceBindingIndex = firstDrawCommand.renderPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
+					 MeshDrawCommand& firstDrawCommand = currentBucket.drawCommands[instancingRange.offset];
+					 firstDrawCommand.renderPipelineInfo.colorAttachmentFormats = renderingAttachmentDeclaration.colorAttachmentFormats;
+					 firstDrawCommand.renderPipelineInfo.depthAttachmentFormat = renderingAttachmentDeclaration.depthAttachmentFormat;
+
+					 RefPtr<RHI::RenderPipeline> drawCommandPipeline = PipelineStateCache::GetRenderPipeline(firstDrawCommand.renderPipelineInfo);
+
+					 VT_ENSURE_MSG(drawCommandPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.layout.IsValid(), "Mesh pass processors must have a per instance layout!");
+					 const uint32_t perInstanceBindingIndex = drawCommandPipeline->GetVertexBufferLayout().perInstanceVertexBuffer.bindingIndex;
 
 					 primitiveIndexVertexBufferVector[0].offset = (primitiveOffset + instancingRange.offset) * sizeof(uint32_t);
 
 					 // We don't need to rebind the same pipeline.
-					 const bool shouldBindPipeline = (prevRenderPipeline == nullptr || prevRenderPipeline != firstDrawCommand.renderPipeline);
+					 const bool shouldBindPipeline = (prevRenderPipeline == nullptr || prevRenderPipeline != drawCommandPipeline);
 					 if (shouldBindPipeline)
 					 {
-						 prevRenderPipeline = firstDrawCommand.renderPipeline;
-						 commandBuffer->BindPipeline(firstDrawCommand.renderPipeline);
+						 prevRenderPipeline = drawCommandPipeline;
+						 commandBuffer->BindPipeline(drawCommandPipeline);
 
-						 ArrayView<RHI::ShaderParameterMap> shaderParametersMaps = firstDrawCommand.renderPipeline->GetShaderParameterMaps();
-						 InlineVector<RenderContext::PerStageShaderParameters, 8> perShaderStageParameters = renderContext.SetupPipelineData(firstDrawCommand.renderPipeline);
+						 ArrayView<RHI::ShaderParameterMap> shaderParametersMaps = drawCommandPipeline->GetShaderParameterMaps();
+						 InlineVector<RenderContext::PerStageShaderParameters, 8> perShaderStageParameters = renderContext.SetupPipelineData(drawCommandPipeline);
 
-						 RHI::ShaderBindingMap shaderBindings = RHI::ShaderBindingMap::InitializeFromPipeline(firstDrawCommand.renderPipeline);
+						 RHI::ShaderBindingMap shaderBindings = RHI::ShaderBindingMap::InitializeFromPipeline(drawCommandPipeline);
 						 batchedShaderParameters.BindShaderBindings(shaderParametersMaps, shaderBindings);
 						 batchedShaderParameters.PopulateShaderParameterUniformBuffers(shaderParametersMaps, perShaderStageParameters);
 
@@ -211,7 +216,7 @@ namespace Volt
 							 shaderBindings.SetUniformBufferWithSizeAndOffset(shaderParameters.shaderStage, RHI::Globals::SHADER_GLOBALS_BINDING, shaderParameters.uniformBufferSRV->GetRHIView(), shaderParameters.size, shaderParameters.offset);
 						 }
 
-						 firstDrawCommand.renderPrimitive->material->BindToShaderBindingMap(shaderBindings, firstDrawCommand.renderPipeline);
+						 firstDrawCommand.renderPrimitive->material->BindToShaderBindingMap(shaderBindings, drawCommandPipeline);
 
 						 commandBuffer->BindShaderBindings(shaderBindings);
 					 }
@@ -311,8 +316,6 @@ namespace Volt
 
 		pipelineInfo.shaders = { vertexShader, pixelShader };
 
-		RefPtr<RHI::RenderPipeline> renderPipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
-
 		const SubMesh& subMesh = renderPrimitive->mesh->GetSubMeshes().at(renderPrimitive->subMeshIndex);
 
 		const MeshDrawCommandHashKey hashKey = GetHashKeyFromRenderPrimitive(renderPrimitive);
@@ -320,7 +323,7 @@ namespace Volt
 		MeshDrawCommandBucket& drawCommandBucket = GetOrCreateBucket(hashKey);
 
 		MeshDrawCommand& newDrawCommand = drawCommandBucket.drawCommands.emplace_back();
-		newDrawCommand.renderPipeline = renderPipeline;
+		newDrawCommand.renderPipelineInfo = std::move(pipelineInfo);
 		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive->mesh->GetVertexPositionsBuffer());
 		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive->mesh->GetVertexMaterialBuffer());
 		newDrawCommand.vertexBuffers.emplace_back(renderPrimitive->mesh->GetVertexAnimationInfoBuffer());

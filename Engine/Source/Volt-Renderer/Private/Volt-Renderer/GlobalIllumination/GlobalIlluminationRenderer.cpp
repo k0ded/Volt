@@ -460,12 +460,11 @@ namespace Volt
 					passParameters,
 					[passParameters, view, vertexShader, pixelShader, indexBuffer, vertexBuffer, numIndices](RenderContext& context)
 				{
-					RHI::RenderPipelineCreateInfo pipelineInfo{};
-					pipelineInfo.shaders = { vertexShader, pixelShader };
-					pipelineInfo.cullMode = RHI::CullMode::Back;
-					pipelineInfo.depthMode = RHI::DepthMode::ReadWrite;
-
-					auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+					GraphicsPipelineState pipelineState{};
+					pipelineState.shaders = { vertexShader, pixelShader };
+					pipelineState.cullMode = RHI::CullMode::Back;
+					pipelineState.depthMode = RHI::DepthMode::ReadWrite;
+					pipelineState.renderTargets = passParameters->PS.renderTargets;
 
 					RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
 					renderingInfo.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
@@ -474,7 +473,7 @@ namespace Volt
 					const uint32_t numProbesPerClipmap = s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue();
 
 					context.BeginRendering(renderingInfo);
-					context.BindPipeline(pipeline);
+					context.SetPipelineState(pipelineState);
 					context.BindIndexBuffer(indexBuffer);
 					context.BindVertexBuffers({ vertexBuffer }, 0);
 					context.SetParameters<VisualizeIrradianceVolumeVS>(vertexShader, &passParameters->VS);

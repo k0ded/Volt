@@ -57,15 +57,7 @@ void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
     }
 }
 
-struct ColorOutput
+float4 MainPS(VertexOutput input) : SV_Target0
 {
-    [[vt::rgba8]] float4 color : SV_Target0;
-    [[vt::d32f]];
-};
-
-ColorOutput MainPS(VertexOutput input)
-{
-    ColorOutput output;
-    output.color = 1.f;
-    return output;
+    return 1.f;
 }

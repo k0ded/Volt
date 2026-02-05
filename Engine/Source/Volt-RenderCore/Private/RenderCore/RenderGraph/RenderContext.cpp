@@ -4,6 +4,7 @@
 #include "RenderCore/RenderGraph/RenderGraph.h"
 #include "RenderCore/RenderGraph/RenderGraphCommon.h"
 #include "RenderCore/Shader/BatchedShaderParameters.h"
+#include "RenderCore/Shader/PipelineStateCache.h"
 
 #include <RHIModule/Buffers/UniformBuffer.h>
 #include <RHIModule/Buffers/StorageBuffer.h>
@@ -195,20 +196,31 @@ namespace Volt
 		m_commandBuffer->ClearBufferView(bufferUAV->GetRHIView(), clearValue);
 	}
 
-	void RenderContext::BindPipeline(RefPtr<RHI::RenderPipeline> pipeline)
+	void RenderContext::SetPipelineState(const GraphicsPipelineState& pipelineState)
 	{
-		m_currentRenderPipeline = pipeline;
-		m_commandBuffer->BindPipeline(pipeline);
+		m_currentRenderPipeline = CreateRenderPipeline(pipelineState);
+		m_commandBuffer->BindPipeline(m_currentRenderPipeline);
 
 		SetupPipelineData();
 	}
 
-	void RenderContext::BindPipeline(RefPtr<RHI::ComputePipeline> pipeline)
+	void RenderContext::SetPipelineState(RefPtr<RHI::Shader> computeShader)
 	{
-		m_currentComputePipeline = pipeline;
-		m_commandBuffer->BindPipeline(pipeline);
+		m_currentComputePipeline = CreateComputePipeline(computeShader);
+		m_commandBuffer->BindPipeline(m_currentComputePipeline);
 
 		SetupPipelineData();
+	}
+
+	RefPtr<RHI::RenderPipeline> RenderContext::CreateRenderPipeline(const GraphicsPipelineState& pipelineState)
+	{
+		VerifyGraphicsPipelineState(pipelineState);
+		return PipelineStateCache::GetRenderPipeline(TranslateGraphicsPipelineState(pipelineState));
+	}
+
+	RefPtr<RHI::ComputePipeline> RenderContext::CreateComputePipeline(RefPtr<RHI::Shader> computeShader)
+	{
+		return PipelineStateCache::GetComputePipeline(computeShader);
 	}
 
 	void RenderContext::BindIndexBuffer(RGBufferRef indexBuffer)
@@ -496,5 +508,53 @@ namespace Volt
 	void* RenderContext::MapInternal(RGUniformBufferRef buffer)
 	{
 		return buffer->GetRHIResource()->GetRHIUniformBuffer()->Map<void>();
+	}
+
+	RHI::RenderPipelineCreateInfo RenderContext::TranslateGraphicsPipelineState(const GraphicsPipelineState& pipelineState)
+	{
+		VT_PROFILE_FUNCTION();
+
+		RHI::RenderPipelineCreateInfo pipelineCreateInfo;
+		pipelineCreateInfo.shaders = pipelineState.shaders;
+		pipelineCreateInfo.attachmentBlendStates = pipelineState.attachmentBlendStates;
+		pipelineCreateInfo.topology = pipelineState.topology;
+		pipelineCreateInfo.cullMode = pipelineState.cullMode;
+		pipelineCreateInfo.fillMode = pipelineState.fillMode;
+		pipelineCreateInfo.depthMode = pipelineState.depthMode;
+		pipelineCreateInfo.depthCompareOperator = pipelineState.depthCompareOperator;
+		pipelineCreateInfo.enablePrimitiveRestart = pipelineState.enablePrimitiveRestart;
+		pipelineCreateInfo.enableDepthClamp = pipelineState.enableDepthClamp;
+		pipelineCreateInfo.depthBiasConstantFactor = pipelineState.depthBiasConstantFactor;
+		pipelineCreateInfo.depthBiasClamp = pipelineState.depthBiasClamp;
+		pipelineCreateInfo.depthBiasSlopeFactor = pipelineState.depthBiasSlopeFactor;
+
+		if (pipelineState.renderTargets.depthTarget != nullptr)
+		{
+			pipelineCreateInfo.depthAttachmentFormat = pipelineState.renderTargets.depthTarget->GetDesc().format;
+		}
+
+		pipelineCreateInfo.colorAttachmentFormats.reserve(RHI::MAX_COLOR_ATTACHMENT_COUNT);
+		for (uint32_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
+		{
+			RGTextureRef renderTarget = pipelineState.renderTargets.renderTargets[i];
+
+			if (renderTarget != nullptr)
+			{
+				pipelineCreateInfo.colorAttachmentFormats.emplace_back(renderTarget->GetDesc().format);
+			}
+		}
+
+		return pipelineCreateInfo;
+	}
+
+	void RenderContext::VerifyGraphicsPipelineState(const GraphicsPipelineState& pipelineState) const
+	{
+		uint32_t numRenderTargets = pipelineState.renderTargets.depthTarget != nullptr;
+		for (uint32_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
+		{
+			numRenderTargets += pipelineState.renderTargets.renderTargets[i] != nullptr;
+		}
+
+		VT_ENSURE_MSG(numRenderTargets > 0, "There must always be at least 1 render target bound!");
 	}
 }

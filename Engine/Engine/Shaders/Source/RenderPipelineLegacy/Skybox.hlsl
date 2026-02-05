@@ -30,24 +30,14 @@ VSToPS MainVS(in Vertex input)
     return result;
 }
 
-struct PSOutput
-{
-    [[vt::rgba16f]] float4 output : SV_Target0;
-    [[vt::d32f]];
-};
-
 TextureCube<float3> EnvironmentTexture;
 SamplerState LinearSampler;
 
 float LOD;
 float Intensity;
 
-PSOutput MainPS(in VSToPS input)
+float4 MainPS(in VSToPS input) : SV_Target0
 {
     const float3 resultColor = EnvironmentTexture.SampleLevel(LinearSampler, normalize(input.samplePosision), LOD) * Intensity;
-
-    PSOutput result;
-    result.output = float4(resultColor, 1.f);
-
-    return result;
+    return float4(resultColor, 1.f);
 }

@@ -5,12 +5,7 @@
 float4x4 InverseViewProjection;
 float Scale;
 
-struct Output
-{
-    [[vt::rgba8]] float4 output : SV_Target0;
-};
-
-Output main(FullscreenTriangleVertex input)
+float4 main(FullscreenTriangleVertex input) : SV_Target0
 {
     float4 worldPos = mul(InverseViewProjection, float4(float2(input.uv.x * 2.f - 1.f, (1.f - input.uv.y) * 2.f - 1.f), 0.f, 1.f));
     worldPos /= worldPos.w;
@@ -37,8 +32,5 @@ Output main(FullscreenTriangleVertex input)
         color.xyz = 0.1f;
     }
 
-    Output output; 
-    output.output = color;
-
-    return output;
+    return color;
 }

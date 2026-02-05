@@ -20,16 +20,7 @@ VSOutput MainVS(in UIVertex input)
     return output;
 }
 
-struct PSOutput
+uint MainPS(VSOutput input) : SV_Target0
 {
-    [[vt::r32ui]] uint color : SV_Target;
-    [[vt::d32f]];
-};
-
-PSOutput MainPS(VSOutput input)
-{
-    PSOutput output;
-    output.color = input.widgetId;
-
-    return output;
+    return input.widgetId;
 }

@@ -30,20 +30,13 @@ VSToPS MainVS(ImGuiVertex input)
 Texture2D<float4> Tex;
 SamplerState Sampler;
 
-struct Output
-{
-    [[vt::rgba16f]] float4 color : SV_Target0;
-};
-
-Output MainPS(VSToPS input)
+float4 MainPS(VSToPS input) : SV_Target0
 {
     // Since ImGui is using sRGB colors internally, we need to convert
     // them to linear space here. This is because we apply gamma correction when
     // copying to the swapchain.
     input.color.rgb = SRGBToLinear(input.color.rgb);
+    const float4 color = input.color * Tex.Sample(Sampler, input.uv); 
 
-    Output output;
-    output.color = input.color * Tex.Sample(Sampler, input.uv); 
-
-    return output;
+    return color;
 }

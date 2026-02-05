@@ -211,6 +211,7 @@ namespace Volt
 			pipelineInfo.shaders = { vertexShader, pixelShader };
 			pipelineInfo.cullMode = RHI::CullMode::None;
 			pipelineInfo.depthMode = RHI::DepthMode::None;
+			pipelineInfo.colorAttachmentFormats.emplace_back(swapchain.GetCurrentImage()->GetFormat());
 
 			auto copyPipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
 

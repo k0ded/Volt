@@ -141,15 +141,14 @@ RGTextureRef OutlineTechnique::AddJumpFloodInitPass(RGTextureRef outlineGeometry
 		passParameters,
 		[passParameters, vertexShader, pixelShader, view](RenderContext& context) 
 	{
-		RHI::RenderPipelineCreateInfo pipelineInfo;
-		pipelineInfo.shaders = { vertexShader, pixelShader };
-
-		auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+		GraphicsPipelineState pipelineState{};
+		pipelineState.shaders = { vertexShader, pixelShader };
+		pipelineState.renderTargets = passParameters->renderTargets;
 
 		RenderingInfo info = context.CreateRenderingInfo(view.width, view.height, passParameters->renderTargets);
 	
 		context.BeginRendering(info);
-		context.BindPipeline(pipeline);
+		context.SetPipelineState(pipelineState);
 		context.SetParameters<JumpFloodInitPS>(pixelShader, passParameters);
 		context.Draw(3, 1, 0, 0);
 		context.EndRendering();
@@ -203,15 +202,14 @@ RGTextureRef OutlineTechnique::AddJumpFloodPass(RGTextureRef prevImage, const Vo
 		passParameters,
 		[passParameters, view, vertexShader, pixelShader](RenderContext& context)
 	{
-		RHI::RenderPipelineCreateInfo pipelineInfo;
-		pipelineInfo.shaders = { vertexShader, pixelShader };
-
-		auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+		GraphicsPipelineState pipelineState{};
+		pipelineState.shaders = { vertexShader, pixelShader };
+		pipelineState.renderTargets = passParameters->PS.renderTargets;
 
 		RenderingInfo info = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
 
 		context.BeginRendering(info);
-		context.BindPipeline(pipeline);
+		context.SetPipelineState(pipelineState);
 		context.SetParameters<JumpFloodVS>(vertexShader, &passParameters->VS);
 		context.SetParameters<JumpFloodPS>(pixelShader, &passParameters->PS);
 		context.Draw(3, 1, 0, 0);

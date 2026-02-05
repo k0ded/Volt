@@ -13,9 +13,8 @@ struct TranslucenyPassPixelShaderInput
 
 struct TranslucenyPassPixelShaderOutput
 {
-	[[vt::rgba16f]] float4 accumulation : SV_Target0;
-	[[vt::r8]] float revealage : SV_Target1;
-    [[vt::d32f]];
+	float4 accumulation : SV_Target0;
+	float revealage : SV_Target1;
 };
 
 float CalculateAccumulationWeight(float4 albedo, float4 projectedPosition)

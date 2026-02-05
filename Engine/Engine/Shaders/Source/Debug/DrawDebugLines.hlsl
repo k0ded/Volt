@@ -21,16 +21,7 @@ VSToPS MainVS(in LineVertex input)
 	return result;
 }
 
-struct PSOutput
+float4 MainPS(in VSToPS input) : SV_Target0
 {
-    [[vt::rgba8]] float4 color : SV_Target0;
-    [[vt::d32f]];
-};
-
-PSOutput MainPS(in VSToPS input)
-{
-	PSOutput output;
-	output.color = input.color;
-
-	return output;
+	return input.color;
 }

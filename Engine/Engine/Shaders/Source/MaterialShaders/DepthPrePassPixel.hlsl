@@ -10,19 +10,12 @@ struct VSToPS
     float2 texCoords : TEXCOORD;
 };
 
-struct PSOutput
-{
-    [[vt::rg16f]] float2 velocity : SV_Target0;
-    [[vt::d32f]];
-};
-
-PSOutput MainPS(in VSToPS input)
+float2 MainPS(in VSToPS input) : SV_Target0
 {
     float3 currentPosNDC = input.currPosition.xyz / input.currPosition.w;
     float3 previousPosNDC = input.prevPosition.xyz / input.prevPosition.w;
 
-    PSOutput result;
-    result.velocity = ((previousPosNDC.xy - View.prevFrameJitter) - (currentPosNDC.xy - View.currentFrameJitter)) * 0.5f;
+    const float2 velocity = ((previousPosNDC.xy - View.prevFrameJitter) - (currentPosNDC.xy - View.currentFrameJitter)) * 0.5f;
 
     MaterialEvaluationData evaluationData;
     evaluationData.texCoords = input.texCoords;
@@ -30,5 +23,5 @@ PSOutput MainPS(in VSToPS input)
     EvaluatedMaterial evaluatedMaterial = EvaluateMaterial(evaluationData);
     EvaluateAlphaMask(evaluatedMaterial.albedo.a);
 
-    return result;
+    return velocity;
 }

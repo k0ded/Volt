@@ -99,14 +99,7 @@ float2 IntegrateBRDF(float NdotV, float roughness)
     return float2(A, B);
 }
 
-struct Output
+float2 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
-    [[vt::rg16f]] float2 color : SV_Target0;
-};
-
-Output MainPS(FullscreenTriangleVertex input)
-{
-    Output output;
-    output.color = IntegrateBRDF(input.uv.x, input.uv.y);
-    return output;
+    return IntegrateBRDF(input.uv.x, input.uv.y);
 }

@@ -171,9 +171,7 @@ namespace Volt
 		passParameters,
 		[passParameters, shader, dispatchX, dispatchY](RenderContext& context)
 		{
-			auto pipeline = PipelineStateCache::GetComputePipeline(shader);
-
-			context.BindPipeline(pipeline);
+			context.SetPipelineState(shader);
 			context.SetParameters<GTAODenoiseCS>(shader, passParameters);
 			context.Dispatch(dispatchX, dispatchY, 1);
 		});

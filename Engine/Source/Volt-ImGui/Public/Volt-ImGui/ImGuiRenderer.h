@@ -55,11 +55,13 @@ namespace Volt
 
 		void CreatePipeline();
 		void UpdateTexture(ImTextureData* textureData);
+		RefPtr<RHI::RenderPipeline> GetRenderPipeline(RHI::Image& renderTarget);
 
 		void InitalizeMultiViewportSupport();
 
 		RefPtr<RHI::SamplerState> m_textureSampler;
-		RefPtr<RHI::RenderPipeline> m_imguiRenderPipeline;
+		RefPtr<RHI::Shader> m_vertexShader;
+		RefPtr<RHI::Shader> m_pixelShader;
 
 		std::unordered_set<RefPtr<RHI::Image>> m_images;
 

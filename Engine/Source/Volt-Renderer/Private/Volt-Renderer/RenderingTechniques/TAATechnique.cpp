@@ -79,17 +79,16 @@ namespace Volt
 			passParameters,
 			[passParameters, view, pixelShader, vertexShader](RenderContext& context)
 		{
-			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shaders = { vertexShader, pixelShader };
-			pipelineInfo.cullMode = RHI::CullMode::None;
-			pipelineInfo.depthMode = RHI::DepthMode::None;
-
-			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+			GraphicsPipelineState pipelineState;
+			pipelineState.shaders = { vertexShader, pixelShader };
+			pipelineState.cullMode = RHI::CullMode::None;
+			pipelineState.depthMode = RHI::DepthMode::None;
+			pipelineState.renderTargets = passParameters->PS.renderTargets;
 
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
 
 			context.BeginRendering(renderingInfo);
-			context.BindPipeline(pipeline);
+			context.SetPipelineState(pipelineState);
 			context.SetParameters<TAAResolvePS>(pixelShader, &passParameters->PS);
 			context.Draw(3, 1, 0, 0);
 			context.EndRendering();

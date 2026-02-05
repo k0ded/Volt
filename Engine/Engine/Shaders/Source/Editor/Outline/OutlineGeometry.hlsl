@@ -37,15 +37,7 @@ VSToPS MainVS(in Vertex input)
     return result;
 }
 
-struct PSOutput
+float4 MainPS(VSToPS input) : SV_Target0
 {
-    [[vt::rgba8]] float4 color : SV_Target0;
-    [[vt::d32f]];
-};
-
-PSOutput MainPS(VSToPS input)
-{
-    PSOutput output;
-    output.color = 1.f;
-    return output;
+    return 1.f;
 }

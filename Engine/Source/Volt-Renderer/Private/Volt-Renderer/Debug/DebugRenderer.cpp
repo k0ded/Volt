@@ -213,19 +213,18 @@ namespace Volt
 			passParameters,
 			[passParameters, vertexShader, pixelShader, view, numLineVertices](RenderContext& context)
 		{
-			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shaders = { vertexShader, pixelShader };
-			pipelineInfo.cullMode = RHI::CullMode::Back;
-			pipelineInfo.topology = RHI::Topology::LineList;
-
-			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+			GraphicsPipelineState pipelineState{};
+			pipelineState.shaders = { vertexShader, pixelShader };
+			pipelineState.cullMode = RHI::CullMode::Back;
+			pipelineState.topology = RHI::Topology::LineList;
+			pipelineState.renderTargets = passParameters->PS.renderTargets;
 
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
 			renderingInfo.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
 			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
 			context.BeginRendering(renderingInfo);
-			context.BindPipeline(pipeline);
+			context.SetPipelineState(pipelineState);
 			context.BindVertexBuffers({ passParameters->VS.VertexBuffer }, 0);
 			context.SetParameters<DrawDebugLinesVS>(vertexShader, &passParameters->VS);
 			context.SetParameters<DrawDebugLinesPS>(pixelShader, &passParameters->PS);
@@ -396,13 +395,12 @@ namespace Volt
 			passParameters,
 			[passParameters, vertexShader, pixelShader, view, instancingRanges = m_billboardInstancingRanges, shouldClear](RenderContext& context)
 		{
-			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shaders = { vertexShader, pixelShader };
-			pipelineInfo.cullMode = RHI::CullMode::Back;
-			pipelineInfo.topology = RHI::Topology::TriangleList;
-			pipelineInfo.attachmentBlendStates[0] = Volt::DefaultBlendStates::Alpha();
-
-			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+			GraphicsPipelineState pipelineState{};
+			pipelineState.shaders = { vertexShader, pixelShader };
+			pipelineState.cullMode = RHI::CullMode::Back;
+			pipelineState.topology = RHI::Topology::TriangleList;
+			pipelineState.attachmentBlendStates[0] = Volt::DefaultBlendStates::Alpha();
+			pipelineState.renderTargets = passParameters->renderTargets;
 
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->renderTargets);
 
@@ -420,9 +418,10 @@ namespace Volt
 			context.CollectParameters(passParameters, batchedShaderParameters);
 
 			context.BeginRendering(renderingInfo);
+			
+			RefPtr<RHI::RenderPipeline> pipeline = context.CreateRenderPipeline(pipelineState);
 
 			RefPtr<RHI::CommandBuffer> commandBuffer = context.GetRHICommandBuffer();
-
 			commandBuffer->BindPipeline(pipeline);
 
 			ArrayView<RHI::ShaderParameterMap> shaderParametersMaps = pipeline->GetShaderParameterMaps();

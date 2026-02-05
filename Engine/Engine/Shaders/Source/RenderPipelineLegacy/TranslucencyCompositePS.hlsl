@@ -15,12 +15,7 @@ float max3(float3 val)
     return max(max(val.r, val.g), val.b);
 }
 
-struct Output
-{
-    [[vt::rgba16f]] float4 output : SV_Target0;
-};
-
-Output MainPS(FullscreenTriangleVertex input)
+float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
 	const uint2 pixelCoords = uint2(input.position.xy);
 
@@ -39,8 +34,5 @@ Output MainPS(FullscreenTriangleVertex input)
 
 	float3 avgColor = accumulation.rgb / max(accumulation.a, FLT_EPSILON);
 
-	Output output;
-	output.output = float4(avgColor, 1.f - revealage);
-
-	return output;
+	return float4(avgColor, 1.f - revealage);
 }

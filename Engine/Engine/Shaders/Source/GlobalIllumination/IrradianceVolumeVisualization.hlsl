@@ -33,15 +33,9 @@ VSToPS VisualizeIrradianceVolumeVS(VSInput input, uint instanceId : SV_InstanceI
 	return output;
 } 
 
-struct PSOutput
-{
-    [[vt::rgba16f]] float4 sceneColor : SV_Target0;
-    [[vt::d32f]];
-};
-
 Texture2D<float3> ProbeAtlas;
 
-PSOutput VisualizeIrradianceVolumePS(VSToPS input)
+float4 VisualizeIrradianceVolumePS(VSToPS input) : SV_Target0
 {
 	const float3 direction = normalize(input.localPosition);
 	const float2 uv = InverseEquiAreaSphericalMapping(direction);
@@ -51,9 +45,5 @@ PSOutput VisualizeIrradianceVolumePS(VSToPS input)
 	const uint2 localTexelCoords = uv * float(IrradianceVolumeProbeResolution);
 	const float3 texelRadiance = ProbeAtlas[probeAtlasCoords + localTexelCoords + 1];
 
-	PSOutput output;
-	output.sceneColor = float4(texelRadiance, 1.f);
-
-
-	return output;
+	return float4(texelRadiance, 1.f);
 }

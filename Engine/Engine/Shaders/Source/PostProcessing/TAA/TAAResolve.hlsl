@@ -13,8 +13,8 @@ uint FrameIndex;
 
 struct Output
 {
-    [[vt::rgba16f]] float4 output : SV_Target0;
-    [[vt::r11f_g11f_b10f]] float3 accumulation : SV_Target1;
+    float4 output : SV_Target0;
+    float3 accumulation : SV_Target1;
 };
 
 static const float FLT_EPS = 0.00000001f;

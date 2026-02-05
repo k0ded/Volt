@@ -12,18 +12,13 @@ float WhitePoint;
 uint FrameIndex;
 uint IsHDRMonitor;
 
-struct Output
-{
-    [[vt::r11f_g11f_b10f]] float4 output : SV_Target0;
-};
-
 float3 ReinhardTonemap(float3 color)
 {
     return color / (color + 1.f);
     return color;
 }
 
-Output MainPS(FullscreenTriangleVertex input)
+float3 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
     float3 pixelColor = FinalColor.Load(int3(input.position.xy, 0));
 
@@ -35,8 +30,5 @@ Output MainPS(FullscreenTriangleVertex input)
     float blueNoise = BlueNoiseScalar(input.position.xy, FrameIndex);
 
     pixelColor += (blueNoise - 0.5f) * (1.f / 256.f);
-
-    Output output;
-    output.output = float4(pixelColor, 1.f);
-    return output;
+    return pixelColor;
 }

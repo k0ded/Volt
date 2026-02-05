@@ -4,11 +4,6 @@ Texture2D<float4> SrcColor;
 
 float PeakNits;
 
-struct Output
-{
-    [[vt::rgb10_a2]] float4 output : SV_Target0;
-};
-
 float3 BT709_to_BT2020(float3 color) 
 {
     float3x3 mat = float3x3
@@ -37,18 +32,18 @@ float ST2084_Encode(float L)
     return pow((c1 + c2 * Lm) / (1 + c3 * Lm), m2);
 }
 
-Output MainPS(FullscreenTriangleVertex input)
+float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
     float3 color = SrcColor.Load(int3(input.position.xy, 0)).rgb;
 
     color = BT709_to_BT2020(color);
     color = TonemapHDR(color, PeakNits);
 
-    Output output;
-    output.output.r = ST2084_Encode(color.r);
-    output.output.g = ST2084_Encode(color.g);
-    output.output.b = ST2084_Encode(color.b);
-    output.output.a = 0.f;
+    float4 output;
+    output.r = ST2084_Encode(color.r);
+    output.g = ST2084_Encode(color.g);
+    output.b = ST2084_Encode(color.b);
+    output.a = 0.f;
 
     return output;
 }

@@ -38,9 +38,7 @@ namespace Volt
 				passParameters,
 				[passParameters, shader, dispatchSize](RenderContext& context)
 			{
-				auto pipeline = PipelineStateCache::GetComputePipeline(shader);
-
-				context.BindPipeline(pipeline);
+				context.SetPipelineState(shader);
 				context.SetParameters<ShaderType>(shader, passParameters);
 				context.Dispatch(dispatchSize.x, dispatchSize.y, dispatchSize.z);
 			});
@@ -60,9 +58,7 @@ namespace Volt
 				passParameters,
 				[passParameters, shader, indirectArgsBuffer, argsOffset](RenderContext& context)
 			{
-				auto pipeline = PipelineStateCache::GetComputePipeline(shader);
-
-				context.BindPipeline(pipeline);
+				context.SetPipelineState(shader);
 				context.SetParameters<ShaderType>(shader, passParameters);
 				context.DispatchIndirect(indirectArgsBuffer, argsOffset);
 			});

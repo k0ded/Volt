@@ -1279,6 +1279,10 @@ inline void Vector<T, AllocatorType>::AssignFromIterator(RandomAccessIterator be
 		{
 			Destruct(m_ptrBegin, m_ptrEnd);
 		}
+		else
+		{
+			std::copy(begin, end, newData);
+		}
 		DoFree(m_ptrBegin);
 
 		m_ptrBegin = newData;

@@ -29,6 +29,25 @@ namespace Volt
 		RHI::RenderingInfo renderingInfo{};
 	};
 
+	struct GraphicsPipelineState
+	{
+		RHI::PipelineShadersVector shaders;
+
+		Array<RHI::AttachmentBlendState, RHI::MAX_COLOR_ATTACHMENT_COUNT> attachmentBlendStates;
+		ShaderParameterRenderTargetBindings renderTargets;
+
+		RHI::Topology topology = RHI::Topology::TriangleList;
+		RHI::CullMode cullMode = RHI::CullMode::Back;
+		RHI::FillMode fillMode = RHI::FillMode::Solid;
+		RHI::DepthMode depthMode = RHI::DepthMode::ReadWrite;
+		RHI::CompareOperator depthCompareOperator = RHI::CompareOperator::GreaterEqual;
+		bool enablePrimitiveRestart = false;
+		bool enableDepthClamp = false;
+		float depthBiasConstantFactor = 0.f;
+		float depthBiasClamp = 0.f;
+		float depthBiasSlopeFactor = 0.f;
+	};
+
 	class VTRC_API RenderContext
 	{
 	public:
@@ -68,8 +87,11 @@ namespace Volt
 		void ClearUAV(RGBufferUAVRef bufferUAV, const uint32_t clearValue);
 		void ClearUAV(RGBufferUAVRef bufferUAV, const float clearValue);
 
-		void BindPipeline(RefPtr<RHI::RenderPipeline> pipeline);
-		void BindPipeline(RefPtr<RHI::ComputePipeline> pipeline);
+		void SetPipelineState(const GraphicsPipelineState& pipelineState);
+		void SetPipelineState(RefPtr<RHI::Shader> computeShader);
+
+		RefPtr<RHI::RenderPipeline> CreateRenderPipeline(const GraphicsPipelineState& pipelineState);
+		RefPtr<RHI::ComputePipeline> CreateComputePipeline(RefPtr<RHI::Shader> computeShader);
 
 		void BindIndexBuffer(RGBufferRef indexBuffer);
 		void BindVertexBuffers(const InlineVector<RGBufferRef, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
@@ -121,8 +143,11 @@ namespace Volt
 		void* MapInternal(RGBufferUAVRef buffer);
 		void* MapInternal(RGUniformBufferRef buffer);
 
-		RawPtr<RHI::RenderPipeline> m_currentRenderPipeline;
-		RawPtr<RHI::ComputePipeline> m_currentComputePipeline;
+		RHI::RenderPipelineCreateInfo TranslateGraphicsPipelineState(const GraphicsPipelineState& pipelineState);
+		void VerifyGraphicsPipelineState(const GraphicsPipelineState& pipelineState) const;
+
+		RefPtr<RHI::RenderPipeline> m_currentRenderPipeline;
+		RefPtr<RHI::ComputePipeline> m_currentComputePipeline;
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 
 		RHI::ShaderBindingMap m_shaderBindingMap;

@@ -7,11 +7,6 @@ vt::Tex2D<float3> SceneColor;
 vt::UniformBuffer<ViewData> View;
 vt::TextureSampler LinearSampler;
 
-struct Output
-{
-    [[vt::rgba16f]] float4 color : SV_Target0;
-};
-
 float RGBToLuma(float3 rgb)
 {
     return sqrt(dot(rgb, float3(0.299f, 0.587f, 0.114f)));
@@ -27,7 +22,7 @@ static const float EDGE_THRESHOLD_MIN = 0.0312f;
 static const float EDGE_THRESHOLD_MAX = 0.125f;
 static const uint ITERATIONS = 12;
 
-Output MainPS(FullscreenTriangleVertex input)
+float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
     const ViewData viewData = View.Load();
     
@@ -203,8 +198,5 @@ Output MainPS(FullscreenTriangleVertex input)
     }
 
     float3 finalColor = sceneColor.Sample(linearSampler, finalUv);
-    
-    Output output;
-    output.color = float4(finalColor, 1.f);
-    return output;
+    return float4(finalColor, 1.f);
 }

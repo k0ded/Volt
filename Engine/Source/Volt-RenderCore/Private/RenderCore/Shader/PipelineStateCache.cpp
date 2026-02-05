@@ -29,26 +29,34 @@ namespace Volt
 				hash = Math::HashCombine(hash, shader->GetHash());
 			}
 
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.topology)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.cullMode)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.fillMode)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.depthMode)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.depthCompareOperator)));
+			hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.topology));
+			hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.cullMode));
+			hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.fillMode));
+			hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.depthMode));
+			hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.depthCompareOperator));
 			hash = Math::HashCombine(hash, std::hash<bool>()(pipelineInfo.enablePrimitiveRestart));
+
+			hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.depthAttachmentFormat));
 
 			for (size_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
 			{
+				if (i < pipelineInfo.colorAttachmentFormats.size())
+				{
+					hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.colorAttachmentFormats[i]));
+				}
+
 				hash = Math::HashCombine(hash, std::hash<bool>()(pipelineInfo.attachmentBlendStates[i].enabled));
 				if (pipelineInfo.attachmentBlendStates[i].enabled)
 				{
-					hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.attachmentBlendStates[i].srcColorBlend)));
-					hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.attachmentBlendStates[i].dstColorBlend)));
-					hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.attachmentBlendStates[i].colorBlendOp)));
-					hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.attachmentBlendStates[i].srcAlphaBlend)));
-					hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.attachmentBlendStates[i].dstAlphaBlend)));
-					hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.attachmentBlendStates[i].alphaBlendOp)));
+					hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.attachmentBlendStates[i].srcColorBlend));
+					hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.attachmentBlendStates[i].dstColorBlend));
+					hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.attachmentBlendStates[i].colorBlendOp));
+					hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.attachmentBlendStates[i].srcAlphaBlend));
+					hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.attachmentBlendStates[i].dstAlphaBlend));
+					hash = Math::HashCombine(hash, Math::HashEnum(pipelineInfo.attachmentBlendStates[i].alphaBlendOp));
 				}
 			}
+
 
 			return hash;
 		}

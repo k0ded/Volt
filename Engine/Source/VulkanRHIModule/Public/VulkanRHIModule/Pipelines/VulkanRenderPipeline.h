@@ -23,7 +23,7 @@ namespace Volt::RHI
 		size_t GetHash() const override;
 		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const override;
 		ArrayView<ShaderParameterMap> GetShaderParameterMaps() const override;
-		const Vector<RefPtr<Shader>>& GetShaders() const override;
+		const PipelineShadersVector& GetShaders() const override;
 		const VertexBufferLayout& GetVertexBufferLayout() const override;
 
 		VT_NODISCARD VT_INLINE const Map<uint32_t, VkDescriptorSetLayout_T*>& GetDescriptorSetLayouts() const { return m_descriptorSets.descriptorSetLayouts; }

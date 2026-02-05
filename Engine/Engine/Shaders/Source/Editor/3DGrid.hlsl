@@ -34,8 +34,8 @@ VSToPS GridVS(const uint vertexIndex : SV_VertexID)
 
 struct PSOutput
 {
-    [[vt::rgba16f]] float4 output : SV_Target;
-    [[vt::d32f]] float depth : SV_Depth;
+    float4 output : SV_Target;
+    float depth : SV_Depth;
 };
 
 float4 EvaluateGrid(float3 position, float scale)

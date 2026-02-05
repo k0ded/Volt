@@ -46,7 +46,6 @@ VSToPS MainVS(in ShadowVertex input)
 
 struct ColorOutput
 {
-    [[vt::d32f]];
 };
 
 ColorOutput MainPS(VSToPS input)

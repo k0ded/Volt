@@ -340,18 +340,18 @@ namespace Volt
 			passParameters,
 			[passParameters, view, pixelShader, vertexShader](RenderContext& context)
 		{
-			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shaders = { vertexShader, pixelShader };
-			pipelineInfo.cullMode = RHI::CullMode::None;
-			pipelineInfo.depthMode = RHI::DepthMode::None;
-			pipelineInfo.attachmentBlendStates[0] = DefaultBlendStates::OneMinusSrcAlpha();
+			GraphicsPipelineState pipelineState{};
+			pipelineState.shaders = { vertexShader, pixelShader };
+			pipelineState.cullMode = RHI::CullMode::None;
+			pipelineState.depthMode = RHI::DepthMode::None;
+			pipelineState.attachmentBlendStates[0] = DefaultBlendStates::OneMinusSrcAlpha();
+			pipelineState.renderTargets = passParameters->renderTargets;
 
-			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->renderTargets);
 			renderingInfo.renderingInfo.colorAttachments[0].clearMode = RHI::ClearMode::Load;
 
 			context.BeginRendering(renderingInfo);
-			context.BindPipeline(pipeline);
+			context.SetPipelineState(pipelineState);
 			context.SetParameters<TranslucencyCompositePS>(pixelShader, passParameters);
 			context.Draw(3, 1, 0, 0);
 			context.EndRendering();
@@ -465,17 +465,16 @@ namespace Volt
 			passParameters,
 			[passParameters, view, pixelShader, vertexShader](RenderContext& context)
 		{
-			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shaders = { vertexShader, pixelShader };
-			pipelineInfo.cullMode = RHI::CullMode::None;
-			pipelineInfo.depthMode = RHI::DepthMode::None;
-
-			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+			GraphicsPipelineState pipelineState{};
+			pipelineState.shaders = { vertexShader, pixelShader };
+			pipelineState.cullMode = RHI::CullMode::None;
+			pipelineState.depthMode = RHI::DepthMode::None;
+			pipelineState.renderTargets = passParameters->renderTargets;
 
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->renderTargets);
 
 			context.BeginRendering(renderingInfo);
-			context.BindPipeline(pipeline);
+			context.SetPipelineState(pipelineState);
 			context.SetParameters<TonemapPS>(pixelShader, passParameters);
 			context.Draw(3, 1, 0, 0);
 			context.EndRendering();
@@ -621,18 +620,17 @@ namespace Volt
 			passParameters,
 			[passParameters, view, vertexShader, pixelShader, indexCount] (RenderContext& context)
 		{
-			RHI::RenderPipelineCreateInfo pipelineInfo{};
-			pipelineInfo.shaders = { vertexShader, pixelShader };
-			pipelineInfo.cullMode = RHI::CullMode::None;
-			pipelineInfo.depthMode = RHI::DepthMode::None;
-
-			auto pipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
+			GraphicsPipelineState pipelineState{};
+			pipelineState.shaders = { vertexShader, pixelShader };
+			pipelineState.cullMode = RHI::CullMode::None;
+			pipelineState.depthMode = RHI::DepthMode::None;
+			pipelineState.renderTargets = passParameters->PS.renderTargets;
 
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
 			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
 			context.BeginRendering(renderingInfo);
-			context.BindPipeline(pipeline);
+			context.SetPipelineState(pipelineState);
 			context.BindVertexBuffers({ passParameters->VS.VertexBuffer }, 0);
 			context.BindIndexBuffer(passParameters->VS.IndexBuffer);
 			context.SetParameters<SkyboxVS>(vertexShader, &passParameters->VS);

@@ -96,12 +96,7 @@ float2 IntegrateDFG(float3 V, float roughness)
     return acc / float(SAMPLE_COUNT);
 }
 
-struct Output
-{
-    [[vt::rg16f]] float2 color : SV_Target0;
-};
-
-Output MainPS(FullscreenTriangleVertex input)
+float2 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
     float2 uv = input.uv;
 
@@ -112,8 +107,5 @@ Output MainPS(FullscreenTriangleVertex input)
     float roughness = uv.y;
 
     float2 dfg = IntegrateDFG(V, roughness);
-
-    Output o;
-    o.color = dfg;
-    return o;
+    return dfg;
 }

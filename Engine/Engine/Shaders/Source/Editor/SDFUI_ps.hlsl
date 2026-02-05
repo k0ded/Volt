@@ -3,11 +3,6 @@
 
 static const float PI = 3.14159265359f;
 
-struct Output
-{
-    [[vt::rgba8]] float4 color : SV_Target;
-};
-
 namespace UIPrimitiveType
 {
     static const uint CIRCLE = 0;
@@ -99,12 +94,11 @@ float4 BlendColors(float4 colorA, float4 colorB)
     return result;
 }
 
-Output main(FullscreenTriangleVertex input)
+float4 main(FullscreenTriangleVertex input) : SV_Target0
 {
     const float2 pixelPos = input.uv * float2(RenderSize);
 
-    Output output;
-    output.color = float4(0.f, 0.f, 1.f, 1.f);
+    float4 resultColor = float4(0.f, 0.f, 1.f, 1.f);
 
     for (uint i = 0; i < CommandCount; i++)
     {
@@ -122,7 +116,7 @@ Output main(FullscreenTriangleVertex input)
                 const float alpha = SDF_AA(sdf);
                 if (alpha > 0.f)
                 {
-                    output.color = BlendColors(output.color, float4(1.f, 0.f, 0.f, alpha));
+                    resultColor = BlendColors(output.color, float4(1.f, 0.f, 0.f, alpha));
                 }
 
                 const float dropShadowRadius = command.radiusHalfSize.x * 0.05f;
@@ -131,7 +125,7 @@ Output main(FullscreenTriangleVertex input)
                 if (t > 0.f && t <= 1.f)
                 {
                     const float strength = 0.5f;
-                    output.color = BlendColors(output.color, float4(0.f, 0.f, 0.f, lerp(1.f, 0.f, t) * strength));
+                    resultColor = BlendColors(output.color, float4(0.f, 0.f, 0.f, lerp(1.f, 0.f, t) * strength));
                 }
 
                 break;
@@ -147,7 +141,7 @@ Output main(FullscreenTriangleVertex input)
                 const float alpha = SDF_AA(sdf);
                 if (alpha > 0.f)
                 {
-                    output.color = BlendColors(output.color, float4(0.f, 1.f, 0.f, alpha));
+                    resultColor = BlendColors(output.color, float4(0.f, 1.f, 0.f, alpha));
                 }
 
                 const float dropShadowRadius = command.radiusHalfSize.x * 0.05f;
@@ -156,7 +150,7 @@ Output main(FullscreenTriangleVertex input)
                 if (t > 0.f && t <= 1.f)
                 {
                     const float strength = 0.5f;
-                    output.color = BlendColors(output.color, float4(0.f, 0.f, 0.f, lerp(1.f, 0.f, t) * strength));
+                    resultColor = BlendColors(output.color, float4(0.f, 0.f, 0.f, lerp(1.f, 0.f, t) * strength));
                 }
 
                 break;
@@ -164,5 +158,5 @@ Output main(FullscreenTriangleVertex input)
         }
     }
 
-    return output;
+    return resultColor;
 }

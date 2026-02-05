@@ -63,10 +63,10 @@ namespace Volt
 
 	struct MeshDrawCommand
 	{
+		RHI::RenderPipelineCreateInfo renderPipelineInfo;
+
 		RHI::VertexBufferVector vertexBuffers;
 		RefPtr<RHI::StorageBuffer> indexBuffer;
-
-		RefPtr<RHI::RenderPipeline> renderPipeline;
 
 		const RenderPrimitiveData* renderPrimitive = nullptr;
 		MeshDrawCommandSortKey sortKey;

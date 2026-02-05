@@ -4,11 +4,6 @@ Texture2D<float4> InputColor;
 SamplerState PointSampler;
 float2 RenderSize;
 
-struct Output
-{
-    [[vt::rgba16f]] float4 color : SV_Target;
-};
-
 float ScreenDistance(float2 v, float2 texelSize)
 {
     float ratio = texelSize.x / texelSize.y;
@@ -17,17 +12,17 @@ float ScreenDistance(float2 v, float2 texelSize)
     return dot(v, v);
 }
 
-Output JumpFloodInitPS(FullscreenTriangleVertex input)
+float4 JumpFloodInitPS(FullscreenTriangleVertex input) : SV_Target0
 {
     float4 color = InputColor.Sample(PointSampler, input.uv);
     float2 texelSize = float2(1.f / RenderSize.x, 1.f / RenderSize.y);
 
-    Output output;
-    output.color.xy = float2(100.f, 100.f);
-    output.color.z = ScreenDistance(output.color.xy, texelSize);
-    output.color.w = color.a > 0.5f ? 1.f : 0.f;
+    float4 result;
+    result.xy = float2(100.f, 100.f);
+    result.z = ScreenDistance(result.xy, texelSize);
+    result.w = color.a > 0.5f ? 1.f : 0.f;
 
-    return output;    
+    return result;    
 }
 
 struct VSToPS
@@ -88,7 +83,7 @@ void BoundsCheck(inout float2 xy, float2 uv)
     }
 }
 
-Output JumpFloodPassPS(VSToPS input)
+float4 JumpFloodPassPS(VSToPS input) : SV_Target0
 {
     float4 pixel = InputColor.Sample(PointSampler, input.UV[0]);
 
@@ -111,8 +106,5 @@ Output JumpFloodPassPS(VSToPS input)
         }
     }
 
-    Output output;
-    output.color = pixel;
-
-    return output;
+    return pixel;
 }
