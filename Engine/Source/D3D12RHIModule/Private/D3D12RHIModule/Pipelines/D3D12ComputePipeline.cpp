@@ -123,4 +123,9 @@ namespace Volt::RHI
 	{
 		return m_shaderParameterMap;
 	}
+
+	bool D3D12ComputePipeline::HasInlineParameters() const
+	{
+		return false;
+	}
 }

@@ -20,6 +20,7 @@ namespace Volt::RHI
 
 		void Invalidate() override;
 		bool IsValid() const override;
+		bool HasInlineParameters() const override;
 		size_t GetHash() const override;
 		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const override;
 		ArrayView<ShaderParameterMap> GetShaderParameterMaps() const override;
@@ -48,5 +49,7 @@ namespace Volt::RHI
 
 		Array<ShaderParameterMap, GetNumShaderStages()> m_shaderParameterMaps;
 		VertexBufferLayout m_vertexBufferLayout;
+	
+		bool m_hasPushConstants = false;
 	};
 }

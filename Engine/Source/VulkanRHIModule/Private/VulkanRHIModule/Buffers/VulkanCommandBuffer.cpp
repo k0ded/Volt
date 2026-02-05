@@ -1764,6 +1764,10 @@ namespace Volt::RHI
 
 	void VulkanCommandBuffer::PushInlineParameters(const void* data, const uint32_t size, const uint32_t offset, ShaderStage shaderStages)
 	{
+		VT_ENSURE(m_activeRenderPipeline || m_activeComputePipeline);
+
+		ValidateInlineParameters();
+
 		VkPushConstantsInfo pushConstantsInfo;
 		pushConstantsInfo.sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO;
 		pushConstantsInfo.pNext = nullptr;
@@ -1774,5 +1778,17 @@ namespace Volt::RHI
 		pushConstantsInfo.pValues = data;
 
 		vkCmdPushConstants2(m_commandBufferData.commandBuffer, &pushConstantsInfo);
+	}
+
+	void VulkanCommandBuffer::ValidateInlineParameters()
+	{
+		if (m_activeRenderPipeline)
+		{
+			VT_ENSURE(m_activeRenderPipeline->HasInlineParameters());
+		}
+		else
+		{
+			VT_ENSURE(m_activeComputePipeline->HasInlineParameters());
+		}
 	}
 }

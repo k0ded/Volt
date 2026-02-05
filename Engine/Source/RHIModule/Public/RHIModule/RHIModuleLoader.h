@@ -28,6 +28,8 @@ namespace Volt::RHI
 	{
 		RHI::GraphicsAPI api;
 		bool enableDebugLayer = false;
+
+		std::filesystem::path pipelineCacheFilepath;
 	};
 
 	class VTRHI_API RHIModuleLoader : public SubSystem, public EventListener

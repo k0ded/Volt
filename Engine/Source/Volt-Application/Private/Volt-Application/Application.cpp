@@ -319,6 +319,7 @@ namespace Volt
 		RHI::RHIConfig rhiConfig;
 		rhiConfig.api = RHI::GraphicsAPI::Vulkan;
 		rhiConfig.enableDebugLayer = false;
+		rhiConfig.pipelineCacheFilepath = ProjectManager::GetProjectDirectory() / "Generated" / "PipelineCache.bin";
 
 		if (commandLineBuilder.IsArgDefined("vulkan"))
 		{

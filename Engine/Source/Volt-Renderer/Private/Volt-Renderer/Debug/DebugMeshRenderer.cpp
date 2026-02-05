@@ -84,11 +84,14 @@ namespace Volt
 				commandBuffer->BindVertexBuffers(primitiveIndexVertexBufferVector, perInstanceBindingIndex);
 				commandBuffer->BindIndexBuffer(firstDrawCommand.indexBuffer);
 
-				MaterialShader::InlineParameterBlock inlineParameterBlock;
-				inlineParameterBlock.materialBlendMode = std::to_underlying(drawCommandInfo.material->GetMaterialBlendMode());
-				inlineParameterBlock.isDoubleSided = drawCommandInfo.material->GetIsDoubleSided();
+				if (drawCommandPipeline->HasInlineParameters())
+				{
+					MaterialShader::InlineParameterBlock inlineParameterBlock;
+					inlineParameterBlock.materialBlendMode = std::to_underlying(drawCommandInfo.material->GetMaterialBlendMode());
+					inlineParameterBlock.isDoubleSided = drawCommandInfo.material->GetIsDoubleSided();
+					commandBuffer->PushInlineParameters(&inlineParameterBlock, sizeof(MaterialShader::InlineParameterBlock), 0, RHI::ShaderStage::Pixel);
+				}
 
-				commandBuffer->PushInlineParameters(&inlineParameterBlock, sizeof(MaterialShader::InlineParameterBlock), 0, RHI::ShaderStage::Pixel);
 				commandBuffer->DrawIndexed(
 					firstDrawCommand.drawCommand.indexCount,
 					instancingRange.count,

@@ -87,10 +87,14 @@ namespace Volt::RHI
 		m_descriptorHeap = CreateRef<VulkanDescriptorHeap>();
 
 		CreateEmptyDescriptorSetLayout();
+
+		m_pipelineCache.Initialize(m_createInfo.pipelineCacheFilepath);
 	}
 
 	void VulkanGraphicsContext::Shutdown()
 	{
+		m_pipelineCache.Shutdown();
+
 		DestroyEmptyDescriptorSetLayout();
 		m_descriptorHeap = nullptr;
 		m_staticSamplerDescriptorSetManager = nullptr;

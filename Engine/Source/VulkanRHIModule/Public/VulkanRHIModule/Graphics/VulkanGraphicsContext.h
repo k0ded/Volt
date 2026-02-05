@@ -1,6 +1,8 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
+#include "VulkanRHIModule/Common/VulkanPipelineCache.h"
+
 #include <RHIModule/Graphics/GraphicsContext.h>
 
 struct VkInstance_T;
@@ -23,6 +25,7 @@ namespace Volt::RHI
 		~VulkanGraphicsContext() override;
 
 		VT_NODISCARD VT_INLINE VulkanDescriptorHeap& GetDescriptorHeap() const { return *m_descriptorHeap; }
+		VT_NODISCARD VT_INLINE const VulkanPipelineCache& GetPipelineCache() const { return m_pipelineCache; }
 		VT_NODISCARD VT_INLINE VkDescriptorSetLayout_T* GetEmptyDescriptorSetLayout() const { return m_emptyDescriptorSetLayout; }
 
 	protected:
@@ -60,6 +63,8 @@ namespace Volt::RHI
 		Ref<VulkanDescriptorHeap> m_descriptorHeap;
 		Ref<RayTracingTableDescriptorSetManager> m_rayTracingTableDescriptorSetManager;
 		Ref<StaticSamplerDescriptorSetManager> m_staticSamplerDescriptorSetManager;
+
+		VulkanPipelineCache m_pipelineCache;
 
 		GraphicsContextCreateInfo m_createInfo{};
 	};

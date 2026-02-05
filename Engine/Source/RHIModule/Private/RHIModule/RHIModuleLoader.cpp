@@ -59,6 +59,7 @@ namespace Volt::RHI
 		RHI::GraphicsContextCreateInfo createInfo;
 		createInfo.graphicsApi = rhiConfig.api;
 		createInfo.enableDebugLayer = rhiConfig.enableDebugLayer;
+		createInfo.pipelineCacheFilepath = rhiConfig.pipelineCacheFilepath;
 
 		m_rhiModule->SetRHICallbackInfo(callbackInfo);
 		m_graphicsContext = RHI::GraphicsContext::Create(createInfo);

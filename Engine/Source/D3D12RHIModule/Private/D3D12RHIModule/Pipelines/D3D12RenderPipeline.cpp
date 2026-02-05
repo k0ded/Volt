@@ -58,7 +58,7 @@ namespace Volt::RHI
 		return result;
 	}
 
-	inline Vector<D3D12_INPUT_ELEMENT_DESC> CreateInputLayoutFromShaders(const Vector<RefPtr<Shader>>& shaders, VertexBufferLayout& vertexBufferLayout)
+	inline Vector<D3D12_INPUT_ELEMENT_DESC> CreateInputLayoutFromShaders(const PipelineShadersVector& shaders, VertexBufferLayout& vertexBufferLayout)
 	{
 		// We will pick the first shader that contains a vertex layout (should only be one anyways)
 		for (const auto shader : shaders)
@@ -142,14 +142,8 @@ namespace Volt::RHI
 			blendDesc.AlphaToCoverageEnable = FALSE;
 			blendDesc.IndependentBlendEnable = FALSE;
 
-			const Vector<PixelFormat> shaderOutputFormats = Utility::GetOutputFormatsFromShaders(m_createInfo.shaders);
-			for (size_t index = 0; const auto& outputFormat : shaderOutputFormats)
+			for (size_t index = 0; index < m_createInfo.colorAttachmentFormats.size(); ++index)
 			{
-				if (Utility::IsDepthFormat(outputFormat) || Utility::IsStencilFormat(outputFormat))
-				{
-					continue;
-				}
-
 				blendDesc.RenderTarget[index].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 				blendDesc.RenderTarget[index].BlendEnable = m_createInfo.attachmentBlendStates[index].enabled;
 				blendDesc.RenderTarget[index].SrcBlend = Utility::VoltToD3D12BlendFactor(m_createInfo.attachmentBlendStates[index].srcColorBlend);
@@ -158,8 +152,6 @@ namespace Volt::RHI
 				blendDesc.RenderTarget[index].DestBlendAlpha = Utility::VoltToD3D12BlendFactor(m_createInfo.attachmentBlendStates[index].dstAlphaBlend);
 				blendDesc.RenderTarget[index].BlendOp = Utility::VoltToD3D12BlendOp(m_createInfo.attachmentBlendStates[index].colorBlendOp);
 				blendDesc.RenderTarget[index].BlendOpAlpha = Utility::VoltToD3D12BlendOp(m_createInfo.attachmentBlendStates[index].colorBlendOp);
-
-				index++;
 			}
 
 			D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
@@ -244,30 +236,25 @@ namespace Volt::RHI
 			pipelineStateDesc.SampleDesc.Count = 1;
 			pipelineStateDesc.SampleDesc.Quality = 0;
 
-			uint32_t i = 0;
-			for (const auto& outputFormat : shaderOutputFormats)
+			// Depth format
 			{
-				if (Utility::IsDepthFormat(outputFormat) || Utility::IsStencilFormat(outputFormat))
+				DXGI_FORMAT dxgiFormat = ConvertFormatToD3D12Format(m_createInfo.depthAttachmentFormat);
+				if (Utility::IsFormatTypeless(dxgiFormat))
 				{
-					const auto d3d12Format = ConvertFormatToD3D12Format(outputFormat);
-
-					if (Utility::IsFormatTypeless(d3d12Format))
-					{
-						pipelineStateDesc.DSVFormat = Utility::GetDSVFormatFromTypeless(d3d12Format);
-					}
-					else
-					{
-						pipelineStateDesc.DSVFormat = d3d12Format;
-					}
+					pipelineStateDesc.DSVFormat = Utility::GetDSVFormatFromTypeless(dxgiFormat);
 				}
 				else
 				{
-					pipelineStateDesc.RTVFormats[i] = ConvertFormatToD3D12Format(outputFormat);
-					i++;
+					pipelineStateDesc.DSVFormat = dxgiFormat;
 				}
 			}
 
-			pipelineStateDesc.NumRenderTargets = i;
+			for (size_t i = 0; i < m_createInfo.colorAttachmentFormats.size(); ++i)
+			{
+				pipelineStateDesc.RTVFormats[i] = ConvertFormatToD3D12Format(m_createInfo.colorAttachmentFormats[i]);
+			}
+
+			pipelineStateDesc.NumRenderTargets = static_cast<uint32_t>(m_createInfo.colorAttachmentFormats.size()) + (m_createInfo.depthAttachmentFormat != PixelFormat::UNDEFINED);
 
 			auto d3d12Device = GraphicsContext::GetDevice()->AsRef<D3D12GraphicsDevice>().GetDevice10();
 
@@ -311,7 +298,7 @@ namespace Volt::RHI
 		return m_shaderParameterMaps;
 	}
 
-	const Vector<RefPtr<Shader>>& D3D12RenderPipeline::GetShaders() const
+	const PipelineShadersVector& D3D12RenderPipeline::GetShaders() const
 	{
 		return m_createInfo.shaders;
 	}
@@ -394,5 +381,10 @@ namespace Volt::RHI
 		}
 
 		VT_ENSURE_MSG(!foundMeshShader && !foundAmplificationShader, "Mesh shaders are not implemented!");
+	}
+
+	bool D3D12RenderPipeline::HasInlineParameters() const
+	{
+		return false;
 	}
 }

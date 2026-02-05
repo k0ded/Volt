@@ -117,6 +117,7 @@ namespace Volt::RHI
 		void BindDescriptorBuffer(RefPtr<RayTracingResourceTable> rayTracingResourceTable);
 
 		void ClearActivePipeline();
+		void ValidateInlineParameters();
 
 		VkPipelineLayout_T* GetActivePipelineLayout();
 		const DescriptorSetLayoutBuilder::DescriptorSets& GetActivePipelineDescriptorSets();

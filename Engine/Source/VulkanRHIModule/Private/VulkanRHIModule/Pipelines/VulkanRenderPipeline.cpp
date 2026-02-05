@@ -146,7 +146,7 @@ namespace Volt::RHI
 		{
 			PushConstantsBuilder pushConstantsBuilder{};
 			VkPushConstantRange pushConstantRange = pushConstantsBuilder.BuildPushConstantRange(m_shaderParameterMaps);
-			const bool hasPushConstantRange = pushConstantRange.size > 0;
+			m_hasPushConstants = pushConstantRange.size > 0;
 
 			VT_ENSURE_MSG(pushConstantRange.size <= 128, "Larger than 128 bytes is not allowed, since 128 bytes is the vulkan specification guaranteed amount.");
 
@@ -155,8 +155,8 @@ namespace Volt::RHI
 			info.pNext = nullptr;
 			info.setLayoutCount = static_cast<uint32_t>(m_descriptorSets.pipelineLayoutDescriptorSetLayouts.size());
 			info.pSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.data();
-			info.pushConstantRangeCount = hasPushConstantRange ? 1 : 0;
-			info.pPushConstantRanges = hasPushConstantRange ? &pushConstantRange : nullptr;
+			info.pushConstantRangeCount = m_hasPushConstants ? 1 : 0;
+			info.pPushConstantRanges = m_hasPushConstants ? &pushConstantRange : nullptr;
 
 			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_pipelineLayout));
 		}
@@ -339,7 +339,8 @@ namespace Volt::RHI
 			pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 			pipelineInfo.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 
-			VT_VK_CHECK(vkCreateGraphicsPipelines(device->GetHandle<VkDevice>(), VK_NULL_HANDLE, 1, &pipelineInfo, VT_VULKAN_ALLOCATOR, &m_pipeline));
+			VulkanGraphicsContext& vkContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
+			VT_VK_CHECK(vkCreateGraphicsPipelines(device->GetHandle<VkDevice>(), vkContext.GetPipelineCache().GetCache(), 1, &pipelineInfo, VT_VULKAN_ALLOCATOR, &m_pipeline));
 		}
 
 		if (RHI::RHICanUseRayTracing() && anyAccessesRayTracingResourceTable)
@@ -493,5 +494,10 @@ namespace Volt::RHI
 	const VertexBufferLayout& VulkanRenderPipeline::GetVertexBufferLayout() const
 	{
 		return m_vertexBufferLayout;
+	}
+
+	bool VulkanRenderPipeline::HasInlineParameters() const
+	{
+		return m_hasPushConstants;
 	}
 }

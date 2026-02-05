@@ -57,15 +57,15 @@ namespace Volt::RHI
 		{
 			PushConstantsBuilder pushConstantsBuilder{};
 			VkPushConstantRange pushConstantRange = pushConstantsBuilder.BuildPushConstantRange(ArrayView<ShaderParameterMap>{ &m_shaderParameterMap, 1 });
-			const bool hasPushConstantRange = pushConstantRange.size > 0;
+			m_hasPushConstants = pushConstantRange.size > 0;
 
 			VkPipelineLayoutCreateInfo info{};
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			info.pNext = nullptr;
 			info.setLayoutCount = static_cast<uint32_t>(m_descriptorSets.pipelineLayoutDescriptorSetLayouts.size());
 			info.pSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.data();
-			info.pushConstantRangeCount = hasPushConstantRange ? 1 : 0;
-			info.pPushConstantRanges = hasPushConstantRange ? &pushConstantRange : nullptr;
+			info.pushConstantRangeCount = m_hasPushConstants ? 1 : 0;
+			info.pPushConstantRanges = m_hasPushConstants ? &pushConstantRange : nullptr;
 
 			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_pipelineLayout));
 		}
@@ -90,7 +90,8 @@ namespace Volt::RHI
 			info.basePipelineHandle = nullptr;
 			info.basePipelineIndex = 0;
 
-			VT_VK_CHECK(vkCreateComputePipelines(device->GetHandle<VkDevice>(), nullptr, 1, &info, VT_VULKAN_ALLOCATOR, &m_pipeline));
+			VulkanGraphicsContext& vkContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
+			VT_VK_CHECK(vkCreateComputePipelines(device->GetHandle<VkDevice>(), vkContext.GetPipelineCache().GetCache(), 1, &info, VT_VULKAN_ALLOCATOR, &m_pipeline));
 		}
 
 		if (RHI::RHICanUseRayTracing() && m_shaderParameterMap.AccessesRayTracingTable())
@@ -190,5 +191,10 @@ namespace Volt::RHI
 	const ShaderParameterMap& VulkanComputePipeline::GetShaderParameterMap() const
 	{
 		return m_shaderParameterMap;
+	}
+
+	bool VulkanComputePipeline::HasInlineParameters() const
+	{
+		return m_hasPushConstants;
 	}
 }

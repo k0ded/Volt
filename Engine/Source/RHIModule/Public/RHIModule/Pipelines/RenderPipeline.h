@@ -6,9 +6,12 @@
 
 #include <CoreUtilities/Containers/Array.h>
 #include <CoreUtilities/Containers/ArrayView.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
 
 namespace Volt::RHI
 {
+	using PipelineShadersVector = InlineVector<RefPtr<RHI::Shader>, GetNumMaxBoundShaderStages()>;
+
 	struct AttachmentBlendState
 	{
 		bool enabled = false;
@@ -22,7 +25,11 @@ namespace Volt::RHI
 
 	struct RenderPipelineCreateInfo
 	{
-		Vector<RefPtr<Shader>> shaders;
+		PipelineShadersVector shaders;
+		Array<AttachmentBlendState, MAX_COLOR_ATTACHMENT_COUNT> attachmentBlendStates;
+
+		InlineVector<PixelFormat, MAX_COLOR_ATTACHMENT_COUNT> colorAttachmentFormats;
+		PixelFormat depthAttachmentFormat = PixelFormat::UNDEFINED;
 
 		Topology topology = Topology::TriangleList;
 		CullMode cullMode = CullMode::Back;
@@ -35,7 +42,6 @@ namespace Volt::RHI
 		float depthBiasClamp = 0.f;
 		float depthBiasSlopeFactor = 0.f;
 
-		Array<AttachmentBlendState, MAX_COLOR_ATTACHMENT_COUNT> attachmentBlendStates;
 		std::string name;
 	};
 
@@ -56,10 +62,11 @@ namespace Volt::RHI
 	public:
 		virtual void Invalidate() = 0;
 		virtual bool IsValid() const = 0;
+		virtual bool HasInlineParameters() const = 0;
 		virtual size_t GetHash() const = 0;
 		virtual const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const = 0;
 		virtual ArrayView<ShaderParameterMap> GetShaderParameterMaps() const = 0;
-		virtual const Vector<RefPtr<Shader>>& GetShaders() const = 0;
+		virtual const PipelineShadersVector& GetShaders() const = 0;
 		virtual const VertexBufferLayout& GetVertexBufferLayout() const = 0;
 
 		static RefPtr<RenderPipeline> Create(const RenderPipelineCreateInfo& createInfo);

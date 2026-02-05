@@ -8,6 +8,7 @@
 #include <array>
 #include <functional>
 #include <variant>
+#include <filesystem>
 
 namespace Volt::RHI
 {
@@ -21,14 +22,14 @@ namespace Volt::RHI
 	inline static constexpr size_t MAX_VERTEX_BUFFER_COUNT = 8;
 	inline static constexpr size_t MAX_VIEWPORT_COUNT = 16;
 
-	enum class QueueType
+	enum class QueueType : uint8_t
 	{
 		Graphics,
 		Compute,
 		TransferCopy
 	};
 
-	enum class GraphicsAPI
+	enum class GraphicsAPI : uint8_t
 	{
 		Vulkan,
 		D3D12,
@@ -36,7 +37,7 @@ namespace Volt::RHI
 		Mock,
 	};
 
-	enum class DeviceVendor
+	enum class DeviceVendor : uint8_t
 	{
 		AMD,
 		NVIDIA,
@@ -45,7 +46,7 @@ namespace Volt::RHI
 		Unknown
 	};
 
-	enum class PresentMode : uint32_t
+	enum class PresentMode : uint8_t
 	{
 		Immediate = 0, // duh
 		Mailbox = 1, // 
@@ -325,7 +326,7 @@ namespace Volt::RHI
 		DISPLAY_NATIVE_AMD = 1000213000,
 	};
 
-	enum class Topology : uint32_t
+	enum class Topology : uint8_t
 	{
 		TriangleList = 0,
 		LineList,
@@ -334,7 +335,7 @@ namespace Volt::RHI
 		PointList
 	};
 
-	enum class CullMode : uint32_t
+	enum class CullMode : uint8_t
 	{
 		Front = 0,
 		Back,
@@ -342,13 +343,13 @@ namespace Volt::RHI
 		None
 	};
 
-	enum class FillMode : uint32_t
+	enum class FillMode : uint8_t
 	{
 		Solid,
 		Wireframe
 	};
 
-	enum class DepthMode : uint32_t
+	enum class DepthMode : uint8_t
 	{
 		Read = 0,
 		Write,
@@ -356,7 +357,7 @@ namespace Volt::RHI
 		None
 	};
 
-	enum class CompareOperator : uint32_t
+	enum class CompareOperator : uint8_t
 	{
 		None = 0,
 		Never,
@@ -368,7 +369,7 @@ namespace Volt::RHI
 		Always
 	};
 
-	enum class ImageUsage : uint32_t
+	enum class ImageUsage : uint8_t
 	{
 		None = 0,
 		Texture,
@@ -377,14 +378,14 @@ namespace Volt::RHI
 		Storage
 	};
 
-	enum class TextureWrap : uint32_t
+	enum class TextureWrap : uint8_t
 	{
 		None = 0,
 		Clamp,
 		Repeat
 	};
 
-	enum class TextureFilter : uint32_t
+	enum class TextureFilter : uint8_t
 	{
 		None = 0,
 		Linear,
@@ -392,7 +393,7 @@ namespace Volt::RHI
 		Anisotropy
 	};
 
-	enum class AnisotropyLevel : uint32_t
+	enum class AnisotropyLevel : uint8_t
 	{
 		None = 0,
 		X2 = 2,
@@ -459,14 +460,14 @@ namespace Volt::RHI
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(ImageAspect);
 
-	enum class ClearMode
+	enum class ClearMode : uint8_t
 	{
 		Clear = 0,
 		Load,
 		DontCare
 	};
 
-	enum class ResourceType : uint32_t
+	enum class ResourceType : uint8_t
 	{
 		Image1D = 0,
 		Image2D,
@@ -478,7 +479,7 @@ namespace Volt::RHI
 		StorageBuffer
 	};
 
-	enum class ResourceBarrierType
+	enum class ResourceBarrierType : uint8_t
 	{
 		Buffer,
 		Image
@@ -561,7 +562,7 @@ namespace Volt::RHI
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(ImageLayout);
 
-	enum class BarrierType : uint64_t
+	enum class BarrierType : uint8_t
 	{
 		None = 0,
 		Image,
@@ -576,7 +577,7 @@ namespace Volt::RHI
 		UInt32
 	};
 
-	enum class AttachmentBlendFactor
+	enum class AttachmentBlendFactor : uint8_t
 	{
 		Zero = 0,
 		One = 1,
@@ -599,7 +600,7 @@ namespace Volt::RHI
 		OneMinusSrc1Alpha = 18
 	};
 
-	enum class AttachmentBlendOp
+	enum class AttachmentBlendOp : uint8_t
 	{
 		Add = 0,
 		Subtract = 1,
@@ -648,8 +649,9 @@ namespace Volt::RHI
 
 	struct GraphicsContextCreateInfo
 	{
-		GraphicsAPI graphicsApi;
+		std::filesystem::path pipelineCacheFilepath;
 
+		GraphicsAPI graphicsApi;
 		bool enableDebugLayer = false;
 	};
 

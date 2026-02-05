@@ -136,21 +136,5 @@ namespace Volt::RHI
 			in.close();
 			return result;
 		}
-
-		inline Vector<PixelFormat> GetOutputFormatsFromShaders(const Vector<RefPtr<Shader>>& shaders)
-		{
-			// We will pick the first pixel shader, there should only be one.
-			for (const auto shader : shaders)
-			{
-				if (shader->GetShaderStage() == ShaderStage::Pixel)
-				{
-					return shader->GetShaderInfo().outputFormats;
-				}
-			}
-
-			// No pixel shader is a valid case, for depth only shaders for example.
-			// For now we assume that if no pixel shader exists, the output format is D32
-			return { PixelFormat::D32_SFLOAT };
-		}
 	}
 }

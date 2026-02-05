@@ -50,6 +50,11 @@ namespace Volt::RHI
 		return NumShaderStages;
 	}
 
+	inline constexpr uint32_t GetNumMaxBoundShaderStages()
+	{
+		return 4;
+	}
+
 	inline constexpr uint32_t GetShaderStageIndex(ShaderStage shaderStage)
 	{
 		switch (shaderStage)

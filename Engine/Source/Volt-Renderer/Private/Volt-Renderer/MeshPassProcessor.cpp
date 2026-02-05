@@ -224,10 +224,13 @@ namespace Volt
 					 commandBuffer->BindVertexBuffers(firstDrawCommand.vertexBuffers, 0);
 					 commandBuffer->BindVertexBuffers(primitiveIndexVertexBufferVector, perInstanceBindingIndex);
 					 commandBuffer->BindIndexBuffer(firstDrawCommand.indexBuffer);
-					 
-					 MaterialShader::InlineParameterBlock inlineParameterBlock = GetMaterialInlineParameterBlock(firstDrawCommand.renderPrimitive);
 
-					 commandBuffer->PushInlineParameters(&inlineParameterBlock, sizeof(MaterialShader::InlineParameterBlock), 0, RHI::ShaderStage::Pixel);
+					 if (drawCommandPipeline->HasInlineParameters())
+					 {
+						 MaterialShader::InlineParameterBlock inlineParameterBlock = GetMaterialInlineParameterBlock(firstDrawCommand.renderPrimitive);
+						 commandBuffer->PushInlineParameters(&inlineParameterBlock, sizeof(MaterialShader::InlineParameterBlock), 0, RHI::ShaderStage::Pixel);
+					 }
+
 					 commandBuffer->DrawIndexed(
 						 firstDrawCommand.drawCommand.indexCount,
 						 instancingRange.count,

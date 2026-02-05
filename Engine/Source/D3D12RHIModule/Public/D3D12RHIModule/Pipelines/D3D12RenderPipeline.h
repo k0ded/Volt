@@ -18,9 +18,10 @@ namespace Volt::RHI
 		void Invalidate() override;
 		bool IsValid() const override;
 		size_t GetHash() const override;
+		bool HasInlineParameters() const override;
 		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const override;
 		ArrayView<ShaderParameterMap> GetShaderParameterMaps() const override;
-		const Vector<RefPtr<Shader>>& GetShaders() const override;
+		const PipelineShadersVector& GetShaders() const override;
 		const VertexBufferLayout& GetVertexBufferLayout() const override;
 
 		VT_NODISCARD VT_INLINE const RootSignatureBuilder::RootSignature& GetRootSignature() const { return m_rootSignature; }
