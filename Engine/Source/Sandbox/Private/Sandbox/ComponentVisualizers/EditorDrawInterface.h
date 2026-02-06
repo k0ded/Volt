@@ -71,34 +71,35 @@ void VisProxyContextManager::AddVisProxy(const VisProxyContextType& visProxyCont
 class EditorDrawInterface
 {
 public:
-	void DrawIcon(RefPtr<Volt::RHI::Image> texture);
-	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material);
-
+	void DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& transform, bool excludeFromGrid = false);
+	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform);
+	
 	template<typename ComponentVisualizerType, typename VisProxyContextType>
-	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const VisProxyContextType& visProxyContext);
+	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform, const VisProxyContextType& visProxyContext);
 
 	/*
 		Will fill the gizmo render commands into a debug renderer.
 	*/
-	void Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const TQS& transform, float scale, float alpha);
+	void Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const TQS& entityTransform, float scale, float alpha);
 
 	VisProxyContextManager&& ExtractVisProxyContextManager() { return std::move(m_visProxyContextManager); }
 	VT_INLINE bool HasAnyVisProxies() const { return m_visProxyContextManager.HasAnyVisProxies(); }
 
 private:
-	struct GizmoDrawCommand
+	struct DrawCommand
 	{
 		RefPtr<Volt::RHI::Image> texture;
 		Ref<Volt::Mesh> mesh;
 		Ref<Volt::RenderMaterial> material;
 
+		TQS transform;
 		int32_t visProxyId;
+		bool excludeFromGrid;
 	};
 
-	Vector<GizmoDrawCommand> Consolidate() const;
 	int32_t GetNextVisProxyId();
 
-	Vector<GizmoDrawCommand> m_drawCommands;
+	Vector<DrawCommand> m_drawCommands;
 
 	VisProxyContextManager m_visProxyContextManager;
 
@@ -106,12 +107,14 @@ private:
 };
 
 template<typename ComponentVisualizerType, typename VisProxyContextType>
-void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const VisProxyContextType& visProxyContext)
+void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform, const VisProxyContextType& visProxyContext)
 {
-	GizmoDrawCommand& drawCommand = m_drawCommands.emplace_back();
+	DrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.mesh = mesh;
 	drawCommand.material = material;
+	drawCommand.transform = transform;
 	drawCommand.visProxyId = GetNextVisProxyId();
+	drawCommand.excludeFromGrid = false;
 
 	if constexpr (HasHandleVisProxyInteractionFunc<ComponentVisualizerType, VisProxyContextType>)
 	{

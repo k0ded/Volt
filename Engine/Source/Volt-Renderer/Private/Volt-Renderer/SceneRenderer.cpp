@@ -49,6 +49,8 @@
 
 namespace Volt
 {
+	VT_REGISTER_SHADER(TranslucencyCompositePS, "Engine/Shaders/Source/RenderPipelineLegacy/TranslucencyCompositePS.hlsl", "MainPS", Pixel);
+
 	SceneRenderer::SceneRenderer(const SceneRendererCreateInfo& createInfo)
 		: m_renderScene(createInfo.renderScene), m_createInfo(createInfo),
 		m_meshPassProcessorRegistry(createInfo.renderScene.get())
@@ -310,17 +312,6 @@ namespace Volt
 			context.EndRendering();
 		});
 	}
-
-	struct TranslucencyCompositePS : public GlobalShader
-	{
-		DECLARE_GLOBAL_SHADER(TranslucencyCompositePS)
-		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Accumulation)
-			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Revealage)
-			RG_RENDER_TARGETS()
-		END_SHADER_PARAMETER_STRUCT()
-	};
-	VT_REGISTER_SHADER(TranslucencyCompositePS, "Engine/Shaders/Source/RenderPipelineLegacy/TranslucencyCompositePS.hlsl", "MainPS", Pixel);
 
 	void SceneRenderer::AddTranslucencyCompositePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view)
 	{

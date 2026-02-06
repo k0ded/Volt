@@ -65,6 +65,7 @@ private:
 	void DrawLinks();
 
 	void DrawNodesPanel();
+	void DrawSettingsPanel();
 
 	void DrawContextPopups();
 

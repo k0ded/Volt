@@ -7,22 +7,26 @@
 
 #include <unordered_set>
 
-void EditorDrawInterface::DrawIcon(RefPtr<Volt::RHI::Image> texture)
+void EditorDrawInterface::DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& transform, bool excludeFromGrid)
 {
-	GizmoDrawCommand& drawCommand = m_drawCommands.emplace_back();
+	DrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.texture = texture;
 	drawCommand.visProxyId = -1;
+	drawCommand.transform = transform;
+	drawCommand.excludeFromGrid = excludeFromGrid;
 }
 
-void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material)
+void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform)
 {
-	GizmoDrawCommand& drawCommand = m_drawCommands.emplace_back();
+	DrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.mesh = mesh;
 	drawCommand.material = material;
 	drawCommand.visProxyId = -1;
+	drawCommand.transform = transform;
+	drawCommand.excludeFromGrid = false;
 }
 
-void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const TQS& transform, float scale, float alpha)
+void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const TQS& entityTransform, float scale, float alpha)
 {
 	const glm::vec4 userData = { std::bit_cast<float>(entityId), 0.f, 0.f, 0.f };
 
@@ -30,39 +34,53 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 	if (m_drawCommands.empty())
 	{
 		RefPtr<Volt::RHI::Image> gizmoTexture = EditorResources::GetEditorIcon(EditorIcon::EntityGizmo);
-		debugRenderer.DrawBillboard(transform.translation, scale, { 1.f, 1.f, 1.f, alpha }, gizmoTexture, userData);
+		debugRenderer.DrawBillboard(entityTransform.translation, scale, { 1.f, 1.f, 1.f, alpha }, gizmoTexture, userData);
 	
 		return;
 	}
 
-	Vector<GizmoDrawCommand> consolidatedDrawCommands = Consolidate();
+	uint32_t numIconsInGrid = 0;
 
-	// It's a mesh draw, there is only one.
-	if (consolidatedDrawCommands.begin()->mesh != nullptr)
+	for (const DrawCommand& drawCommand : m_drawCommands)
 	{
-		const GizmoDrawCommand& drawCommand = *consolidatedDrawCommands.begin();
-		debugRenderer.DrawMesh(drawCommand.mesh, drawCommand.material, transform, userData);
+		if (drawCommand.mesh)
+		{
+			debugRenderer.DrawMesh(drawCommand.mesh, drawCommand.material, drawCommand.transform, userData);
+		}
+		else if (drawCommand.texture)
+		{
+			if (drawCommand.excludeFromGrid)
+			{
+				debugRenderer.DrawBillboard(drawCommand.transform.translation, drawCommand.transform.scale, glm::vec4{ 1.f, 1.f, 1.f, 1.f }, userData);
+			}
+			else
+			{
+				numIconsInGrid++;
+			}
+		}
 	}
-	else
+
+	// Draw icons in grid
+	if (numIconsInGrid > 0)
 	{
 		constexpr float Padding = 0.f;
 		constexpr float BaseSize = 100.f;
 
-		constexpr size_t NumIconsPerRow = 3;
-		const size_t numIcons = consolidatedDrawCommands.size();
-		const size_t numRows = Math::DivideRoundUp(numIcons, NumIconsPerRow);
-	
-		const glm::vec3 viewSpacePosition = viewMatrix * glm::vec4(transform.translation, 1.f);
+		constexpr uint32_t NumIconsPerRow = 3;
+		const uint32_t numRows = Math::DivideRoundUp(numIconsInGrid, NumIconsPerRow);
 
-		size_t numIconsLeft = numIcons;
-		size_t iconIndex = 0;
+		const glm::vec3 viewSpacePosition = viewMatrix * glm::vec4(entityTransform.translation, 1.f);
+
+		uint32_t numIconsLeft = numIconsInGrid;
 
 		const float iconSize = scale * BaseSize;
 		const float totalHeight = numRows * iconSize + Padding * (numRows - 1);
 
+		auto drawCommandIt = m_drawCommands.begin();
+
 		for (size_t i = 0; i < numRows; ++i)
 		{
-			const size_t numIconsInRow = std::min(numIconsLeft, NumIconsPerRow);
+			const uint32_t numIconsInRow = std::min(numIconsLeft, NumIconsPerRow);
 
 			// Find the y offset of this row.
 			const float totalRowWidth = numIconsInRow * iconSize + Padding * (numIconsInRow - 1);
@@ -70,11 +88,17 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 
 			for (size_t j = 0; j < numIconsInRow; ++j)
 			{
-				// Find the x offset of this icon.
-				const float xOffset = (totalRowWidth / numIconsInRow * j) - totalRowWidth * 0.5f + Padding * j + iconSize * 0.5f;
-				debugRenderer.DrawBillboard(viewSpacePosition - glm::vec3(xOffset, yOffset, 0.f), scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, consolidatedDrawCommands[iconIndex].texture, userData, true);
-			
-				iconIndex++;
+				for (; drawCommandIt != m_drawCommands.end(); ++drawCommandIt)
+				{
+					if (drawCommandIt->texture && !drawCommandIt->excludeFromGrid)
+					{
+						// Find the x offset of this icon.
+						const float xOffset = (totalRowWidth / numIconsInRow * j) - totalRowWidth * 0.5f + Padding * j + iconSize * 0.5f;
+						debugRenderer.DrawBillboard(viewSpacePosition - glm::vec3(xOffset, yOffset, 0.f), scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, drawCommandIt->texture, userData, true);
+
+						break;
+					}
+				}
 			}
 
 			numIconsLeft -= numIconsInRow;
@@ -103,42 +127,6 @@ namespace std
 			return Math::HashCombine(hash<void*>()(value.mesh.get()), hash<void*>()(value.material.get()));
 		}
 	};
-}
-
-Vector<EditorDrawInterface::GizmoDrawCommand> EditorDrawInterface::Consolidate() const
-{
-	std::unordered_set<RefPtr<Volt::RHI::Image>> individualTextures;
-	std::unordered_set<MeshAndMaterial> individualMeshes;
-
-	for (const GizmoDrawCommand& drawCommand : m_drawCommands)
-	{
-		// It's a billboard.
-		if (drawCommand.texture)
-		{
-			individualTextures.insert(drawCommand.texture);
-		}
-		// It's a mesh
-		else
-		{
-			individualMeshes.insert({ drawCommand.mesh, drawCommand.material });
-		}
-	}
-
-	// Currently if a mesh is to be drawn, no icons will be drawn. And only one mesh will be drawn.
-	if (!individualMeshes.empty())
-	{
-		const MeshAndMaterial& firstMesh = *individualMeshes.begin();
-		return { { nullptr, firstMesh.mesh, firstMesh.material } };
-	}
-
-	Vector<GizmoDrawCommand> result;
-
-	for (const RefPtr<Volt::RHI::Image>& texture : individualTextures)
-	{
-		result.emplace_back(texture, nullptr, nullptr);
-	}
-
-	return result;
 }
 
 int32_t EditorDrawInterface::GetNextVisProxyId()

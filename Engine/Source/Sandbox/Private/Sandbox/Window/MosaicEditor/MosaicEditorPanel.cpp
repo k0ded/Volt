@@ -582,6 +582,7 @@ void MosaicEditorPanel::DrawEditor()
 void MosaicEditorPanel::DrawPanels()
 {
 	DrawNodesPanel();
+	DrawSettingsPanel();
 }
 
 void MosaicEditorPanel::DrawNodes()
@@ -771,6 +772,42 @@ void MosaicEditorPanel::DrawNodesPanel()
 
 		UI::PopID();
 
+	}
+	ImGui::End();
+}
+
+void MosaicEditorPanel::DrawSettingsPanel()
+{
+	static Vector<std::string> materialBlendModeNames =
+	{
+		"Opaque",
+		"AlphaMasked",
+		"Translucent"
+	};
+
+	ImGui::SetNextWindowClass(GetWindowClass());
+	if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse))
+	{
+		ForceWindowDocked(ImGui::GetCurrentWindow());
+
+		if (m_material)
+		{
+			UI::BeginProperties("settings");
+
+			int32_t currentBlendModeInt = static_cast<int32_t>(m_material->GetMaterialBlendMode());
+			if (UI::ComboProperty("Material Blend Mode", currentBlendModeInt, materialBlendModeNames))
+			{
+				m_material->SetMaterialBlendMode(static_cast<Volt::MaterialBlendMode>(currentBlendModeInt));
+			}
+
+			bool isDoubleSided = m_material->GetIsDoubleSided();
+			if (UI::Property("Is Double Sided", isDoubleSided))
+			{
+				m_material->SetIsDoubleSided(isDoubleSided);
+			}
+
+			UI::EndProperties();
+		}
 	}
 	ImGui::End();
 }

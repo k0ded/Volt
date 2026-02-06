@@ -108,6 +108,12 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		// Nothing to render.
+		if (m_meshDrawCommandBuckets.empty())
+		{
+			return;
+		}
+
 		// Create a task graph to sort and find the instancing ranges for each bucket.
 		TaskGraph taskGraph{ ExecutionPriority::Render, m_meshDrawCommandBuckets.size() };
 

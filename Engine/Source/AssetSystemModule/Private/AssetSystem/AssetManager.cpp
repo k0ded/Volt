@@ -908,22 +908,55 @@ namespace Volt
 	{
 		m_dependencyGraph = CreateScope<AssetDependencyGraph>(*this);
 
-		JobRef insertIntoDependencyGraphJob = JobSystem::CreateJob("Insert Assets Into Dependency Graph", ExecutionPriority::Latent, ExecutionPolicy::MainThread, nullptr, m_assetRegistry.GetMetadataLoadingCounter(), [&]() 
+		// Add all engine assets to the graph.
 		{
 			// Add all assets to the graph
 			for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
 			{
-				m_dependencyGraph->AddAssetToGraph((*it)->handle);
+				ReadOnlyAssetMetadata assetMetadata = *it;
+				if (assetMetadata->isEngineAsset)
+				{
+					m_dependencyGraph->AddAssetToGraph((*it)->handle);
+				}
 			}
 
 			// Link all dependencies
 			for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
 			{
 				ReadOnlyAssetMetadata assetMetadata = *it;
-
-				for (const AssetDependency& dependency : assetMetadata->assetDependencyList.dependencies)
+				if (assetMetadata->isEngineAsset)
 				{
-					m_dependencyGraph->AddDependencyToAsset(assetMetadata->handle, dependency.assetHandle);
+					for (const AssetDependency& dependency : assetMetadata->assetDependencyList.dependencies)
+					{
+						m_dependencyGraph->AddDependencyToAsset(assetMetadata->handle, dependency.assetHandle);
+					}
+				}
+			}
+		};
+
+		// Add all non-engine assets to the graph.
+		JobRef insertIntoDependencyGraphJob = JobSystem::CreateJob("Insert Assets Into Dependency Graph", ExecutionPriority::Latent, ExecutionPolicy::MainThread, nullptr, m_assetRegistry.GetMetadataLoadingCounter(), [&]() 
+		{
+			// Add all assets to the graph
+			for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
+			{
+				ReadOnlyAssetMetadata assetMetadata = *it;
+				if (!assetMetadata->isEngineAsset)
+				{
+					m_dependencyGraph->AddAssetToGraph((*it)->handle);
+				}
+			}
+
+			// Link all dependencies
+			for (AssetRegistryConstIterator it(m_assetRegistry); it; ++it)
+			{
+				ReadOnlyAssetMetadata assetMetadata = *it;
+				if (!assetMetadata->isEngineAsset)
+				{
+					for (const AssetDependency& dependency : assetMetadata->assetDependencyList.dependencies)
+					{
+						m_dependencyGraph->AddDependencyToAsset(assetMetadata->handle, dependency.assetHandle);
+					}
 				}
 			}
 		});

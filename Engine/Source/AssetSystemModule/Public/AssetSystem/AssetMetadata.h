@@ -220,6 +220,7 @@ namespace Volt
 			filepath = other.filepath;
 			customData = other.customData;
 			assetDependencyList = other.assetDependencyList;
+			isEngineAsset = other.isEngineAsset;
 			m_loadState = other.m_loadState.load();
 			m_generation = other.m_generation.load();
 		}
@@ -232,6 +233,7 @@ namespace Volt
 			filepath = other.filepath;
 			customData = other.customData;
 			assetDependencyList = other.assetDependencyList;
+			isEngineAsset = other.isEngineAsset;
 			m_loadState = other.m_loadState.load();
 			m_generation = other.m_generation.load();
 
@@ -296,6 +298,7 @@ namespace Volt
 
 		AssetHandle handle = 0;
 		AssetType type;
+		bool isEngineAsset = false;
 
 		std::atomic_uint8_t flags = static_cast<uint8_t>(AssetMetadataFlag::None);
 		std::filesystem::path filepath;

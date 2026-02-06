@@ -34,6 +34,7 @@ public:
 	// Will return the requested asset if loaded, will otherwise stall until the asset has been loaded, will also cache the asset.
 	template<Volt::VoltAssetType T> AssetReference<T> GetAssetImmediatelyAndCache(Volt::AssetHandle assetHandle);
 	template<Volt::VoltAssetType T> bool TryGetAssetImmediatelyAndCache(Volt::AssetHandle assetHandle, AssetReference<T>& outAsset);
+	template<Volt::VoltAssetType T> bool TryGetAssetImmediatelyAndCache(const std::filesystem::path& assetFilepath, AssetReference<T>& outAsset);
 
 	// Will return true and the asset if it is loaded, if the asset is not loaded it will queue it for loading, and cache the asset.
 	template<Volt::VoltAssetType T> bool TryGetAssetAndCache(Volt::AssetHandle assetHandle, AssetReference<T>& outAsset);
@@ -64,7 +65,10 @@ inline AssetReference<T> EditorAssetManager::GetAssetImmediatelyAndCache(Volt::A
 	}
 
 	AssetReference<T> assetReference = m_referencedAssetManager.GetAssetImmediately<T>(assetHandle);
-	m_assetCache.AddAsset(assetReference.GetRaw());
+	if (assetReference.IsValid())
+	{
+		m_assetCache.AddAsset(assetReference.GetRaw());
+	}
 
 	return assetReference;
 }
@@ -73,6 +77,18 @@ template<Volt::VoltAssetType T>
 inline bool EditorAssetManager::TryGetAssetImmediatelyAndCache(Volt::AssetHandle assetHandle, AssetReference<T>& outAsset)
 {
 	outAsset = GetAssetImmediatelyAndCache<T>(assetHandle);
+	return outAsset.IsValid();
+}
+
+template<Volt::VoltAssetType T>
+bool EditorAssetManager::TryGetAssetImmediatelyAndCache(const std::filesystem::path& assetFilepath, AssetReference<T>& outAsset)
+{
+	Volt::AssetHandle assetHandle = m_referencedAssetManager.GetAssetHandleFromFilepath(assetFilepath);
+	if (assetHandle != Volt::Asset::Null())
+	{
+		outAsset = GetAssetImmediatelyAndCache<T>(assetHandle);
+	}
+
 	return outAsset.IsValid();
 }
 

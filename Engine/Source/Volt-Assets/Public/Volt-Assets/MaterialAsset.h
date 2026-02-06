@@ -47,6 +47,8 @@ namespace Volt
 
 		VT_NODISCARD VT_INLINE Ref<MaterialGraph> GetMaterialGraph() const { return m_graph; }
 		VT_NODISCARD VT_INLINE Ref<RenderMaterial> GetRenderMaterial() const { return m_renderMaterial; }
+		VT_NODISCARD VT_INLINE MaterialBlendMode GetMaterialBlendMode() const { return m_materialBlendMode; }
+		VT_NODISCARD VT_INLINE bool GetIsDoubleSided() const { return m_isDoubleSided; }
 
 		static AssetType GetStaticType() { return AssetTypes::Material; }
 		AssetType GetType() const override { return GetStaticType(); };

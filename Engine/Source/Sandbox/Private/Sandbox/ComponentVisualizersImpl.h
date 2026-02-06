@@ -28,7 +28,7 @@ public:
 
 	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::PointLightComponent& component, Volt::Entity entity)
 	{
-		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), entity.GetTransformTQS());
 	}
 };
 VT_REGISTER_COMPONENT_VISUALIZER(PointLightComponentVisualizer);
@@ -38,7 +38,7 @@ class SpotLightComponentVisualizer : public ComponentVisualizer<Volt::SpotLightC
 public:
 	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::SpotLightComponent& component, Volt::Entity entity)
 	{
-		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), entity.GetTransformTQS());
 	}
 };
 VT_REGISTER_COMPONENT_VISUALIZER(SpotLightComponentVisualizer);
@@ -48,7 +48,7 @@ class SphereLightComponentVisualizer : public ComponentVisualizer<Volt::SphereLi
 public:
 	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::SphereLightComponent& component, Volt::Entity entity)
 	{
-		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), entity.GetTransformTQS());
 	}
 };
 VT_REGISTER_COMPONENT_VISUALIZER(SphereLightComponentVisualizer);
@@ -58,7 +58,7 @@ class RectangleLightComponentVisualizer : public ComponentVisualizer<Volt::Recta
 public:
 	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::RectangleLightComponent& component, Volt::Entity entity)
 	{
-		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), entity.GetTransformTQS());
 	}
 };
 VT_REGISTER_COMPONENT_VISUALIZER(RectangleLightComponentVisualizer);
@@ -68,7 +68,7 @@ class DirectionalLightComponentVisualizer : public ComponentVisualizer<Volt::Dir
 public:
 	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::DirectionalLightComponent& component, Volt::Entity entity)
 	{
-		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), entity.GetTransformTQS());
 	}
 };
 VT_REGISTER_COMPONENT_VISUALIZER(DirectionalLightComponentVisualizer);
@@ -78,7 +78,7 @@ class SkyLightComponentVisualizer : public ComponentVisualizer<Volt::SkylightCom
 public:
 	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::SkylightComponent& component, Volt::Entity entity)
 	{
-		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo));
+		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), entity.GetTransformTQS());
 	}
 };
 VT_REGISTER_COMPONENT_VISUALIZER(SkyLightComponentVisualizer);
@@ -92,7 +92,11 @@ public:
 		testContext.a = 10.f;
 		testContext.b = 5.f;
 
-		editorDrawInterface.DrawMesh<CameraComponentVisualizer>(EditorResources::GetEditorMesh(EditorMesh::Camera), EditorResources::GetEditorMesh(EditorMesh::Camera)->GetMaterialTable().GetMaterial(0), testContext);
+		editorDrawInterface.DrawMesh<CameraComponentVisualizer>(
+			EditorResources::GetEditorMesh(EditorMesh::Camera), 
+			EditorResources::GetEditorMesh(EditorMesh::Camera)->GetMaterialTable().GetMaterial(0), 
+			entity.GetTransformTQS(),
+			testContext);
 	}
 
 	void HandleVisProxyInteraction(const Volt::CameraComponent& component, Volt::Entity entity, const HitProxyContext& context)

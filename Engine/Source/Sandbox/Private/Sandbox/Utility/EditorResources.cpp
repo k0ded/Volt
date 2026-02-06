@@ -1,5 +1,6 @@
 #include "sbpch.h"
 #include "Utility/EditorResources.h"
+#include "Sandbox/EditorAssetManager.h"
 
 #include <Volt-Assets/MeshAsset.h>
 
@@ -154,7 +155,7 @@ Ref<Volt::Mesh> EditorResources::TryLoadMesh(const std::filesystem::path& path)
 
 	Ref<Volt::Mesh> mesh;
 
-	if (g_assetManager->TryGetAssetImmediately(path, meshAsset))
+	if (g_editorAssetManager->TryGetAssetImmediatelyAndCache(path, meshAsset))
 	{
 		mesh = meshAsset->GetMesh();
 	}

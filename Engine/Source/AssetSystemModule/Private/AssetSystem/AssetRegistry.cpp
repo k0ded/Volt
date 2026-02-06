@@ -130,6 +130,8 @@ namespace Volt
 				taskGraph.AddTask("Deserialize Engine Asset Metadata", [this, &assetFilepath]() 
 				{
 					AssetMetadata assetMetadata{};
+					assetMetadata.isEngineAsset = true;
+
 					DeserializeAssetMetadata(assetFilepath, assetMetadata);
 					if (assetMetadata.IsValid())
 					{
