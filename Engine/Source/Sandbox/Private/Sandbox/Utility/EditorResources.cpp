@@ -82,6 +82,8 @@ void EditorResources::Initialize()
 		TryLoadIcon("Editor/Textures/Icons/icon_swap.vtasset", &m_editorIcons[EditorIcon::Swap]);
 		TryLoadIcon("Editor/Textures/Icons/icon_remove.vtasset", &m_editorIcons[EditorIcon::Remove]);
 
+		TryLoadIcon("Editor/Textures/Icons/icon_warning.vtasset", &m_editorIcons[EditorIcon::Warning]);
+
 		TryLoadIcon("Editor/Textures/Icons/icon_volt.vtasset", &m_editorIcons[EditorIcon::Volt]);
 	}
 

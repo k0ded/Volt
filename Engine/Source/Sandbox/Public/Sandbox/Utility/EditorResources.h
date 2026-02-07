@@ -56,6 +56,8 @@ enum class EditorIcon
 	Swap,
 	Remove,
 
+	Warning,
+
 	Volt,
 };
 
