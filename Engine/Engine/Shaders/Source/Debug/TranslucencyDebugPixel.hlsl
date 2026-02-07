@@ -28,7 +28,7 @@ TranslucenyDebugPassPixelShaderOutput MainPS(in DrawDebugMeshesPixelShaderInput 
 	EvaluateDoubleSided(resultNormal, isFrontFace);
 
 	PBRInput pbrInput;
-	pbrInput.albedo = evaluatedMaterial.albedo;
+	pbrInput.albedo = evaluatedMaterial.albedo * input.color;
 	pbrInput.normal = resultNormal;
 	pbrInput.roughness = evaluatedMaterial.roughness;
 	pbrInput.metallic = evaluatedMaterial.metallic;

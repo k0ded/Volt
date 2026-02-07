@@ -4,6 +4,7 @@
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/Material/RenderMaterial.h>
+#include <Volt-Renderer/Renderer.h>
 
 #include <RHIModule/Images/Image.h>
 
@@ -72,10 +73,15 @@ class EditorDrawInterface
 {
 public:
 	void DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& transform, bool excludeFromGrid = false);
+
 	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform);
-	
+	void DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform);
+
 	template<typename ComponentVisualizerType, typename VisProxyContextType>
 	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform, const VisProxyContextType& visProxyContext);
+
+	template<typename ComponentVisualizerType, typename VisProxyContextType>
+	void DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform, const VisProxyContextType& visProxyContext);
 
 	/*
 		Will fill the gizmo render commands into a debug renderer.
@@ -94,6 +100,7 @@ private:
 
 		TQS transform;
 		int32_t visProxyId;
+		glm::vec4 color;
 		bool excludeFromGrid;
 	};
 
@@ -115,6 +122,32 @@ void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMateria
 	drawCommand.transform = transform;
 	drawCommand.visProxyId = GetNextVisProxyId();
 	drawCommand.excludeFromGrid = false;
+	drawCommand.color = 1.f;
+
+	if constexpr (HasHandleVisProxyInteractionFunc<ComponentVisualizerType, VisProxyContextType>)
+	{
+		m_visProxyContextManager.AddVisProxy<ComponentVisualizerType>(visProxyContext, drawCommand.visProxyId);
+	}
+}
+
+template<typename ComponentVisualizerType, typename VisProxyContextType>
+void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform, const VisProxyContextType& visProxyContext)
+{
+	DrawCommand& drawCommand = m_drawCommands.emplace_back();
+	drawCommand.mesh = mesh;
+	drawCommand.transform = transform;
+	drawCommand.visProxyId = GetNextVisProxyId();
+	drawCommand.excludeFromGrid = false;
+	drawCommand.color = color;
+
+	if (color.a < 1.f)
+	{
+		drawCommand.material = Volt::Renderer::GetDefaultResources().defaultTranslucentMaterial;
+	}
+	else
+	{
+		drawCommand.material = Volt::Renderer::GetDefaultResources().defaultMaterial;
+	}
 
 	if constexpr (HasHandleVisProxyInteractionFunc<ComponentVisualizerType, VisProxyContextType>)
 	{

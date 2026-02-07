@@ -376,6 +376,9 @@ namespace Volt
 		// Default material
 		{
 			m_defaultResources.defaultMaterial = CreateRef<RenderMaterial>("DefaultMaterial");
+
+			m_defaultResources.defaultTranslucentMaterial = CreateRef<RenderMaterial>("DefaultTranslucentMaterial");
+			m_defaultResources.defaultTranslucentMaterial->SetMaterialBlendMode(MaterialBlendMode::Translucent);
 		}
 
 		// Default mesh

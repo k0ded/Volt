@@ -8,6 +8,7 @@ struct DrawDebugMeshesPixelShaderInput
     float3 normal : NORMAL;
     float2 texCoords : TEXCOORD;
 
+    float4 color : COLOR;
     uint primitiveIndex : PRIMITIVE_INDEX;
     uint objectId : OBJECTID;
     uint visProxyId : VISPROXYID;

@@ -17,7 +17,7 @@ struct TranslucenyDebugPassPixelShaderOutput
 TranslucenyDebugPassPixelShaderOutput MainPS(in DrawDebugMeshesPixelShaderInput input)
 {
 	PBRInput pbrInput;
-	pbrInput.albedo = float4(0.8f, 0.8f, 0.8f, 1.f);
+	pbrInput.albedo = input.color;
 	pbrInput.normal = input.normal;
 	pbrInput.roughness = 0.8f;
 	pbrInput.metallic = 0.f;

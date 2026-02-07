@@ -34,6 +34,7 @@ namespace Volt
 	struct DefaultResources
 	{
 		Ref<RenderMaterial> defaultMaterial;
+		Ref<RenderMaterial> defaultTranslucentMaterial;
 		Ref<Mesh> defaultMesh;
 
 		RefPtr<RHI::Image> DFGLuT;

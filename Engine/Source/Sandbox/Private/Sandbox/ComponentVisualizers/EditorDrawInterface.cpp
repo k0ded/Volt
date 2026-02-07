@@ -14,6 +14,7 @@ void EditorDrawInterface::DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& 
 	drawCommand.visProxyId = -1;
 	drawCommand.transform = transform;
 	drawCommand.excludeFromGrid = excludeFromGrid;
+	drawCommand.color = 1.f;
 }
 
 void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform)
@@ -24,6 +25,26 @@ void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMateria
 	drawCommand.visProxyId = -1;
 	drawCommand.transform = transform;
 	drawCommand.excludeFromGrid = false;
+	drawCommand.color = 1.f;
+}
+
+void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform)
+{
+	DrawCommand& drawCommand = m_drawCommands.emplace_back();
+	drawCommand.mesh = mesh;
+	drawCommand.visProxyId = -1;
+	drawCommand.transform = transform;
+	drawCommand.color = color;
+	drawCommand.excludeFromGrid = false;
+
+	if (color.a < 1.f)
+	{
+		drawCommand.material = Volt::Renderer::GetDefaultResources().defaultTranslucentMaterial;
+	}
+	else
+	{
+		drawCommand.material = Volt::Renderer::GetDefaultResources().defaultMaterial;
+	}
 }
 
 void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const TQS& entityTransform, float scale, float alpha)
@@ -44,7 +65,7 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 	{
 		if (drawCommand.mesh)
 		{
-			const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommand.visProxyId), 0.f, 0.f };
+			const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommand.visProxyId), glm::packUnorm4x8(drawCommand.color), 0.f };
 
 			debugRenderer.DrawMesh(drawCommand.mesh, drawCommand.material, drawCommand.transform, userData);
 		}
@@ -52,7 +73,7 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 		{
 			if (drawCommand.excludeFromGrid)
 			{
-				const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommand.visProxyId), 0.f, 0.f };
+				const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommand.visProxyId), glm::packUnorm4x8(drawCommand.color), 0.f };
 				debugRenderer.DrawBillboard(drawCommand.transform.translation, drawCommand.transform.scale, glm::vec4{ 1.f, 1.f, 1.f, 1.f }, userData);
 			}
 			else
@@ -97,7 +118,7 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 						// Find the x offset of this icon.
 						const float xOffset = (totalRowWidth / numIconsInRow * j) - totalRowWidth * 0.5f + Padding * j + iconSize * 0.5f;
 
-						const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommandIt->visProxyId), 0.f, 0.f };
+						const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommandIt->visProxyId), glm::packUnorm4x8(drawCommandIt->color), 0.f };
 						debugRenderer.DrawBillboard(viewSpacePosition - glm::vec3(xOffset, yOffset, 0.f), scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, drawCommandIt->texture, userData, true);
 
 						break;
