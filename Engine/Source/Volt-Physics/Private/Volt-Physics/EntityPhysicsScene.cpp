@@ -458,7 +458,7 @@ namespace Volt
 			BoxColliderCreateInfo colliderCreateInfo{};
 			colliderCreateInfo.halfSize = boxComp.halfSize;
 			colliderCreateInfo.isTrigger = boxComp.isTrigger;
-			colliderCreateInfo.offset = boxComp.offset;
+			colliderCreateInfo.offset = boxComp.offset * entity.GetScale();
 			colliderCreateInfo.scale = entity.GetScale();
 			colliderCreateInfo.targetActor = physicsActor.get();
 			colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
@@ -473,7 +473,7 @@ namespace Volt
 			SphereColliderCreateInfo colliderCreateInfo{};
 			colliderCreateInfo.radius = sphereComp.radius;
 			colliderCreateInfo.isTrigger = sphereComp.isTrigger;
-			colliderCreateInfo.offset = sphereComp.offset;
+			colliderCreateInfo.offset = sphereComp.offset * entity.GetScale();
 			colliderCreateInfo.scale = entity.GetScale();
 			colliderCreateInfo.targetActor = physicsActor.get();
 			colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
@@ -489,7 +489,7 @@ namespace Volt
 			colliderCreateInfo.height = capsuleComp.height;
 			colliderCreateInfo.radius = capsuleComp.radius;
 			colliderCreateInfo.isTrigger = capsuleComp.isTrigger;
-			colliderCreateInfo.offset = capsuleComp.offset;
+			colliderCreateInfo.offset = capsuleComp.offset * entity.GetScale();
 			colliderCreateInfo.scale = entity.GetScale();
 			colliderCreateInfo.targetActor = physicsActor.get();
 			colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
