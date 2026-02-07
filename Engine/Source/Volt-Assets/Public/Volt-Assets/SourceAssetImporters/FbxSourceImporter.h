@@ -5,6 +5,8 @@
 #include <AssetSystem/SourceAssetImporter.h>
 #include <AssetSystem/SourceAssetImporterRegistry.h>
 
+#include <CoreUtilities/Math/TQS.h>
+
 VT_DECLARE_LOG_CATEGORY(LogFbxSourceImporter, LogVerbosity::Trace);
 
 namespace fbxsdk
@@ -45,9 +47,9 @@ namespace Volt
 		void CreateVoltSkeletonFromFbxSkeleton(const FbxSkeletonContainer& fbxSkeleton, Skeleton& destinationSkeleton) const;
 
 		void FindJointVertexLinksAndSetupSkeleton(const fbxsdk::FbxMesh& fbxMesh, FbxSkeletonContainer& inOutSkeleton, JointVertexLinkMap& outVertexLinks) const;
-		void CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const GPUTransform& transform, const FbxVertex* vertices, size_t indexCount, const std::string& name) const;
+		void CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const FbxVertex* vertices, size_t indexCount, const std::string& name) const;
 
-		void CreateNonIndexedMesh(const fbxsdk::FbxMesh& fbxMesh, Vector<FbxVertex>& outVertices, const JointVertexLinkMap* jointVertexLinks) const;
+		void CreateNonIndexedMesh(const fbxsdk::FbxMesh& fbxMesh, const TQS& nodeTransform, const JointVertexLinkMap* jointVertexLinks, Vector<FbxVertex>& outVertices) const;
 
 		AssetReference<Animation> CreateAnimationFromFbxAnimation(fbxsdk::FbxScene* fbxScene, const FbxSkeletonContainer& fbxSkeleton, const fbxsdk::FbxString& animStackName, const MeshSourceImportConfig& importConfig, const SourceAssetUserImportData& userData) const;
 

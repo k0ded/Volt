@@ -62,7 +62,7 @@ RGTextureRef DebugSceneRendererExtension::OnRender(RenderGraph& renderGraph, Ren
 
 	m_rgVisProxyTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32_UINT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "HitProxyID"));
 
-	AddClearUAVPass(renderGraph, renderGraph.CreateUAV(m_rgVisProxyTexture), glm::uvec4{ 0u });
+	AddClearUAVPass(renderGraph, renderGraph.CreateUAV(m_rgVisProxyTexture), glm::uvec4{ 0xFFFFFFFF });
 
 	ShaderParameterRenderTargetBindings renderTargets;
 	renderTargets.renderTargets[0] = prevOutputImage;

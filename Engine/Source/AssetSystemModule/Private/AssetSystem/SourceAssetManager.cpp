@@ -33,11 +33,11 @@ namespace Volt
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
 
+		m_importQueue.Allocate(2048);
+
 		m_assetImporterWorkerThread = CreateScope<std::thread>(std::bind(&SourceAssetManager::RunAssetImportWorker, this));
 		PlatformThread::SetThreadName(m_assetImporterWorkerThread->native_handle(), "AssetImporterWorker");
 		PlatformThread::SetThreadPriority(m_assetImporterWorkerThread->native_handle(), ThreadPriority::Low);
-
-		m_importQueue.Allocate(2048);
 	}
 
 	SourceAssetManager::~SourceAssetManager()

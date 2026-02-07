@@ -8,7 +8,6 @@
 BasePassPixelShaderInput MainVS(in FullVertex input)
 {
     const PrimitiveDrawData primitiveData = GetPrimitiveDrawDataFromID(input.primitiveIndex);
-    const GPUMesh gpuMesh = GetGPUMeshFromID(primitiveData.meshId);
 
     const float3 normal = UnpackNormalFromUInt32(input.normal);
     const float3 tangent = DecodeTangent(normal, input.tangent);
@@ -21,7 +20,7 @@ BasePassPixelShaderInput MainVS(in FullVertex input)
 
     const float3 skinnedPosition = mul(skinningMatrix, float4(input.position, 1.f)).xyz;
 
-    TransformedVertAttribs transformedVertAttribs = GetTransformedVertAttribs(primitiveData, gpuMesh, skinnedPosition, normal, tangent);
+    TransformedVertAttribs transformedVertAttribs = GetTransformedVertAttribs(primitiveData, skinnedPosition, normal, tangent);
 
     BasePassPixelShaderInput result;
     result.position = mul(View.viewProjection, float4(transformedVertAttribs.position, 1.f));

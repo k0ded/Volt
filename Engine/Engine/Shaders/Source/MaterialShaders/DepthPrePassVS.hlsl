@@ -10,7 +10,6 @@ DepthPrePassPixelShaderInput MainVS(in FullVertex input)
 {
     const PrimitiveDrawData primitiveData = GetPrimitiveDrawDataFromID(input.primitiveIndex);
     const PrimitiveDrawData prevPrimitiveData = GetPrevPrimitiveDrawDataFromID(input.primitiveIndex);
-    const GPUMesh gpuMesh = GetGPUMeshFromID(primitiveData.meshId);
 
     float4x4 skinningMatrix = IDENTITY_MATRIX;
     if (primitiveData.isAnimated)
@@ -21,8 +20,8 @@ DepthPrePassPixelShaderInput MainVS(in FullVertex input)
     const float3 skinnedPosition = mul(skinningMatrix, float4(input.position, 1.f)).xyz;
 
     DepthPrePassPixelShaderInput result;
-    result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, skinnedPosition), 1.f));
-    result.prevPosition = mul(View.prevViewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, skinnedPosition), 1.f));
+    result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, skinnedPosition), 1.f));
+    result.prevPosition = mul(View.prevViewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, skinnedPosition), 1.f));
     result.currPosition = result.position;
     result.texCoords = input.texCoords;
 

@@ -4,9 +4,8 @@
 
 namespace VertexShaderHelpers
 {
-    float3 TransformVertexToWorldSpace(in PrimitiveDrawData primitiveData, in GPUMesh gpuMesh, float3 vertexPosition)
+    float3 TransformVertexToWorldSpace(in PrimitiveDrawData primitiveData, float3 vertexPosition)
     {
-        Transform combinedTransform = primitiveData.transform.Combine(gpuMesh.transform);
-        return combinedTransform.TransformPosition(vertexPosition);
+        return primitiveData.transform.TransformPosition(vertexPosition);
     }
 }

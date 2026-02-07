@@ -499,7 +499,7 @@ namespace Volt
 		return skeleton;
 	}
 
-	void FbxSourceImporter::CreateNonIndexedMesh(const fbxsdk::FbxMesh& fbxMesh, Vector<FbxVertex>& outVertices, const JointVertexLinkMap* jointVertexLinks) const
+	void FbxSourceImporter::CreateNonIndexedMesh(const fbxsdk::FbxMesh& fbxMesh, const TQS& transform, const JointVertexLinkMap* jointVertexLinks, Vector<FbxVertex>& outVertices) const
 	{
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(outVertices.empty());
@@ -605,7 +605,7 @@ namespace Volt
 				fbxPos[3] = 1.0;
 				fbxPos = geoMat.MultT(fbxPos);
 
-				outVertices[i].position = FbxUtility::ToVec3(fbxPos);
+				outVertices[i].position = transform.Transform(FbxUtility::ToVec3(fbxPos));
 			}
 
 			if (hasNormals)
@@ -614,7 +614,7 @@ namespace Volt
 				fbxNormal = geoRotOnlyMat.MultT(fbxNormal);
 				fbxNormal.Normalize();
 
-				outVertices[i].normal = FbxUtility::ToVec3(fbxNormal);
+				outVertices[i].normal = glm::normalize(transform.Rotate(FbxUtility::ToVec3(fbxNormal)));
 			
 			}
 			else
@@ -628,7 +628,7 @@ namespace Volt
 				float handedness = (float)fbxTangent[3];
 				fbxTangent = geoRotOnlyMat.MultT(fbxTangent);
 
-				outVertices[i].tangent = glm::vec4(FbxUtility::ToVec3(fbxTangent), handedness);
+				outVertices[i].tangent = glm::vec4(transform.Rotate(FbxUtility::ToVec3(fbxTangent)), handedness);
 			}
 			else
 			{
@@ -725,7 +725,7 @@ namespace Volt
 		return voltAnimation;
 	}
 
-	void FbxSourceImporter::CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const GPUTransform& transform, const FbxVertex* vertices, size_t indexCount, const std::string& name) const
+	void FbxSourceImporter::CreateSubMeshFromVertexRange(MeshInitializer& meshInitializer, const FbxVertex* vertices, size_t indexCount, const std::string& name) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -782,7 +782,6 @@ namespace Volt
 		subMesh.indexCount = static_cast<uint32_t>(indices.size());
 		subMesh.name = name;
 		subMesh.materialIndex = static_cast<uint32_t>(uniqueVertices.front().material);
-		subMesh.transform = transform;
 		subMesh.GenerateHash();
 
 		meshInitializer.AddSubMesh(subMesh);
@@ -794,8 +793,18 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		const glm::vec3 nodeTranslation = FbxUtility::ToVec3(fbxMesh.GetNode()->LclTranslation.Get());
+		const glm::quat nodeRotation = glm::quat(glm::radians(FbxUtility::ToVec3(fbxMesh.GetNode()->LclRotation.Get())));
+		const glm::vec3 nodeScale = FbxUtility::ToVec3(fbxMesh.GetNode()->LclScaling.Get());
+
+		const glm::quat configRotation = glm::quat(glm::radians(importConfig.rotation));
+
+		const TQS configTransform = TQS::Make(importConfig.translation, glm::radians(importConfig.rotation), importConfig.scale);
+		const TQS nodeTransform = TQS::Make(nodeTranslation, nodeRotation, nodeScale);
+		const TQS combinedTransform = TQS::Combine(configTransform, nodeTransform);
+
 		Vector<FbxVertex> vertices;
-		CreateNonIndexedMesh(fbxMesh, vertices, jointVertexLinks);
+		CreateNonIndexedMesh(fbxMesh, combinedTransform, jointVertexLinks, vertices);
 		TranslateNodeToSceneMaterials(fbxMesh.GetNode(), materials, vertices);
 
 		// Sort vertices by material
@@ -824,22 +833,13 @@ namespace Volt
 		}
 		subMeshRanges.emplace_back(firstVertex, vertices.size());
 
-		const glm::vec3 nodeTranslation = FbxUtility::ToVec3(fbxMesh.GetNode()->LclTranslation.Get());
-		const glm::quat nodeRotation = glm::quat(glm::radians(FbxUtility::ToVec3(fbxMesh.GetNode()->LclRotation.Get())));
-		const glm::vec3 nodeScale = FbxUtility::ToVec3(fbxMesh.GetNode()->LclScaling.Get());
 
-		const glm::quat configRotation = glm::quat(glm::radians(importConfig.rotation));
-
-		GPUTransform transform;
-		transform.position = glm::rotate(configRotation, nodeTranslation * importConfig.scale) + importConfig.translation;
-		transform.rotation = configRotation * nodeRotation;
-		transform.scale = importConfig.scale * nodeScale;
 
 		// Create sub meshes
 		for (const auto& [first, last] : subMeshRanges)
 		{
 			const size_t indexCount = last - first;
-			CreateSubMeshFromVertexRange(meshInitializer, transform, &vertices[first], indexCount, fbxMesh.GetName());
+			CreateSubMeshFromVertexRange(meshInitializer, &vertices[first], indexCount, fbxMesh.GetName());
 		}
 	}
 

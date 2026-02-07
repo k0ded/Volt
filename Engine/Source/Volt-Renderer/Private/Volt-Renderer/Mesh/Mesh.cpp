@@ -135,11 +135,6 @@ namespace Volt
 			const uint32_t* indices = &m_indices[subMesh.indexStartOffset];
 
 			BoundingSphere boundingSphere = GetBoundingSphereFromVertices(positionData, indices, subMesh.indexCount);
-
-			const float maxScale = glm::max(glm::max(subMesh.transform.scale.x, subMesh.transform.scale.y), subMesh.transform.scale.z);
-			boundingSphere.center = subMesh.transform.position + boundingSphere.center;
-			boundingSphere.radius = maxScale * boundingSphere.radius;
-
 			m_subMeshBoundingSpheres[subMeshIndex] = boundingSphere;
 
 			subMeshIndex++;
@@ -225,7 +220,6 @@ namespace Volt
 			gpuMesh.radius = m_subMeshBoundingSpheres[i].radius;
 			gpuMesh.vertexStartOffset = subMesh.vertexStartOffset;
 			gpuMesh.indexStartOffset = subMesh.indexStartOffset;
-			gpuMesh.transform = subMesh.transform;
 
 			i++;
 		}

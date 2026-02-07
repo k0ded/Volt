@@ -98,11 +98,8 @@ class BoxColliderComponentVisualizer : public ComponentVisualizer<Volt::BoxColli
 public:
 	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::BoxColliderComponent& component, Volt::Entity entity)
 	{
-		//todo: this should not be hard-coded!
-		const Volt::AssetHandle colliderVisMaterialHandle = 8190457749457779134;
-		AssetReference<Volt::MaterialAsset> colliderVisMaterial = g_editorAssetManager->GetAssetImmediatelyAndCache<Volt::MaterialAsset>(colliderVisMaterialHandle);
-
-		if (!colliderVisMaterial)
+		AssetReference<Volt::MaterialAsset> colliderVisMaterial;
+		if (!g_editorAssetManager->TryGetAssetImmediatelyAndCache<Volt::MaterialAsset>("Editor/Materials/M_ColliderVisualization.vtasset", colliderVisMaterial))
 		{
 			editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::Warning), entity.GetTransformTQS());
 			return;

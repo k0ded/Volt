@@ -85,7 +85,6 @@ struct PrimitiveDrawData
 
 struct GPUMesh
 {
-    Transform transform;
     BoundingSphere boundingSphere;
 
 	uint32_t vertexStartOffset;

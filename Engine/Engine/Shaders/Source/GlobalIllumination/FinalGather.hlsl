@@ -99,7 +99,7 @@ void FinalGatherCS(uint2 DispatchThreadID : SV_DispatchThreadID)
 			const float3 hitPosition = rayDesc.origin + rayDesc.direction * inlineTraceResult.GetHitT();
 		
 			TriangleAttributes triangleAttribs = LoadTriangleAttributes(gpuMesh, inlineTraceResult.GetBarycentrics(), inlineTraceResult.GetPrimitiveIndex());
-			ConvertTriangleAttributesToWorldSpace(triangleAttribs, primitiveData.transform.Combine(gpuMesh.transform));
+			ConvertTriangleAttributesToWorldSpace(triangleAttribs, primitiveData.transform);
 
 			SpatialHashTable worldRadianceCacheHashTable;
 

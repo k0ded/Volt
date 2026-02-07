@@ -17,6 +17,9 @@ namespace Volt
 			// Switched from mat4 to TRS for transform storage.
 			UseTRSAsTransform = 1,
 
+			// Removed the transform from the sub mesh.
+			RemovedTransform = 2,
+
 			VersionPlusOne,
 			LatestVersion = VersionPlusOne - 1
 		};
@@ -47,7 +50,6 @@ namespace Volt
 		uint32_t vertexStartOffset = 0;
 		uint32_t indexStartOffset = 0;
 
-		GPUTransform transform;
 		std::string name;
 
 		VT_INLINE friend Archive& operator<<(Archive& archive, SubMesh& value)
@@ -67,19 +69,20 @@ namespace Volt
 				glm::mat4 transform;
 				archive << transform;
 
+				VT_UNUSED(transform);
+			}
+			else if (archive.IsLoading() && currentVersion < SubMeshArchiveVersion::RemovedTransform)
+			{
 				glm::vec3 t, s;
 				glm::quat r;
-				Math::Decompose(transform, t, r, s);
 
-				value.transform.position = t;
-				value.transform.scale = s;
-				value.transform.rotation = r;
-			}
-			else
-			{
-				archive << value.transform.rotation;
-				archive << value.transform.position;
-				archive << value.transform.scale;
+				archive << r;
+				archive << t;
+				archive << s;
+			
+				VT_UNUSED(r);
+				VT_UNUSED(t);
+				VT_UNUSED(s);
 			}
 
 			archive << value.name;

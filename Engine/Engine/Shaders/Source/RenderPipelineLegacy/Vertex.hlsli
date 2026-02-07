@@ -33,14 +33,12 @@ struct TransformedVertAttribs
     float3 tangent;
 };
 
-TransformedVertAttribs GetTransformedVertAttribs(PrimitiveDrawData primitiveData, GPUMesh gpuMesh, float3 skinnedPosition, float3 normal, float3 tangent)
+TransformedVertAttribs GetTransformedVertAttribs(PrimitiveDrawData primitiveData, float3 skinnedPosition, float3 normal, float3 tangent)
 {
-    Transform combinedTransform = primitiveData.transform.Combine(gpuMesh.transform);
-
     TransformedVertAttribs result;
-    result.position = combinedTransform.TransformPosition(skinnedPosition);
-    result.normal = combinedTransform.RotateVector(normal);
-    result.tangent = combinedTransform.RotateVector(tangent);
+    result.position = primitiveData.transform.TransformPosition(skinnedPosition);
+    result.normal = primitiveData.transform.RotateVector(normal);
+    result.tangent = primitiveData.transform.RotateVector(tangent);
 
     return result;
 }

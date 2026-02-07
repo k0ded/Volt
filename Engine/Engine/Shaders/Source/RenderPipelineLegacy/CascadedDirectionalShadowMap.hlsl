@@ -27,7 +27,6 @@ uint CascadeIndex;
 VSToPS MainVS(in ShadowVertex input)
 {
     const PrimitiveDrawData primitiveData = GetPrimitiveDrawDataFromID(input.primitiveIndex);
-    const GPUMesh gpuMesh = GetGPUMeshFromID(primitiveData.meshId);
 
     float4x4 skinningMatrix = IDENTITY_MATRIX;
     if (primitiveData.isAnimated)
@@ -38,7 +37,7 @@ VSToPS MainVS(in ShadowVertex input)
     const float3 skinnedPosition = mul(skinningMatrix, float4(input.position, 1.f)).xyz;
 
     VSToPS result;
-    result.position = mul(CascadedDirectionalLightShadowMapping.viewProjections[CascadeIndex], float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, skinnedPosition), 1.f));
+    result.position = mul(CascadedDirectionalLightShadowMapping.viewProjections[CascadeIndex], float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, skinnedPosition), 1.f));
     result.target = CascadeIndex;
 
     return result;

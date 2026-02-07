@@ -254,8 +254,6 @@ namespace Volt
 			bucketHashKey.hashKeyContents.indexBufferHash = mesh->GetIndexBuffer().GetHash();
 			bucketHashKey.hashKeyContents.subMeshHash = subMesh.GetHash();
 
-			TQS subMeshTransform = { subMesh.transform.position, subMesh.transform.rotation, subMesh.transform.scale };
-
 			MeshDrawCommandBucket& drawCommandBucket = GetOrCreateBucket(bucketHashKey);
 			MeshDrawCommandBucket::MeshDrawCommandInfo& newDrawCommand = drawCommandBucket.drawCommands.emplace_back();
 			newDrawCommand.drawCommand.renderPipelineInfo = std::move(pipelineInfo);
@@ -268,7 +266,7 @@ namespace Volt
 			newDrawCommand.drawCommand.drawCommand.vertexOffset = subMesh.vertexStartOffset;
 			newDrawCommand.drawCommand.drawCommand.firstInstance = 0;
 			newDrawCommand.drawCommand.sortKey = sortKey;
-			newDrawCommand.transform = TQS::Combine(transform, subMeshTransform);
+			newDrawCommand.transform = transform;
 			newDrawCommand.userData = userData;
 			newDrawCommand.material = renderMaterial;
 		}

@@ -18,10 +18,9 @@ struct VSToPS
 VSToPS MainVS(in Vertex input)
 {
     const PrimitiveDrawData primitiveData = GetPrimitiveDrawDataFromID(input.primitiveIndex);
-    const GPUMesh gpuMesh = GetGPUMeshFromID(primitiveData.meshId);
 
     VSToPS result;
-    result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, input.position), 1.f));
+    result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, input.position), 1.f));
     result.objectId = primitiveData.entityId;
 
     return result;

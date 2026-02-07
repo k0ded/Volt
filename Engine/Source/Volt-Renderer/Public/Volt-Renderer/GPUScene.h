@@ -48,8 +48,6 @@ namespace Volt
 	{
 		inline static constexpr uint32_t MAX_LOD_COUNT = 8;
 
-		GPUTransform transform;
-
 		glm::vec3 center;
 		float radius;
 

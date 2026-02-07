@@ -30,9 +30,7 @@ VSToPS MainVS(in Vertex input)
         return result;        
     }
 
-    const GPUMesh gpuMesh = GetGPUMeshFromID(primitiveData.meshId);
-
-    result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, gpuMesh, input.position), 1.f));
+    result.position = mul(View.viewProjection, float4(VertexShaderHelpers::TransformVertexToWorldSpace(primitiveData, input.position), 1.f));
 
     return result;
 }

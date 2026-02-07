@@ -489,6 +489,8 @@ namespace Volt
 
 			const fastgltf::Accessor& positionAccessor = gltfAsset.accessors[positionAttr->accessorIndex];
 
+			const TQS& nodeTransform = nodeGlobalTransform.at(gltfNodeIndex);
+
 			VertexContainer vertexContainer{};
 			vertexContainer.Resize(positionAccessor.count);
 
@@ -514,7 +516,11 @@ namespace Volt
 			fastgltf::iterateAccessorWithIndex<glm::vec3>(
 				gltfAsset,
 				positionAccessor,
-				[&](glm::vec3 position, size_t index) { position.z = -position.z; vertexContainer.positions[index] = position; });
+				[&](glm::vec3 position, size_t index) 
+			{ 
+				position.z = -position.z; 
+				vertexContainer.positions[index] = nodeTransform.Transform(position); 
+			});
 
 			Vector<glm::vec3> tempNormals;
 			
@@ -526,7 +532,10 @@ namespace Volt
 				fastgltf::iterateAccessorWithIndex<glm::vec3>(
 					gltfAsset,
 					normalAccessor,
-					[&](glm::vec3 normal, size_t index) { tempNormals[index] = normal; });
+					[&](glm::vec3 normal, size_t index) 
+				{ 
+					tempNormals[index] = nodeTransform.Rotate(normal); 
+				});
 			}
 			else
 			{
@@ -559,7 +568,10 @@ namespace Volt
 				fastgltf::iterateAccessorWithIndex<glm::vec4>(
 					gltfAsset,
 					tangentAccessor,
-					[&](glm::vec4 tangent, size_t index) { tempTangents[index] = tangent; });
+					[&](glm::vec4 tangent, size_t index) 
+				{ 
+					tempTangents[index] = glm::vec4(nodeTransform.Rotate(glm::vec3(tangent)), tangent.w); 
+				});
 			}
 			else
 			{
@@ -603,12 +615,6 @@ namespace Volt
 			subMesh.vertexCount = static_cast<uint32_t>(vertexContainer.positions.size());
 			subMesh.materialIndex = primitive.materialIndex.has_value() ? static_cast<uint32_t>(primitive.materialIndex.value()) : 0;
 			subMesh.name = gltfNode.name;
-
-			const TQS& nodeTransform = nodeGlobalTransform.at(gltfNodeIndex);
-
-			subMesh.transform.rotation = nodeTransform.rotation;
-			subMesh.transform.position = nodeTransform.translation;
-			subMesh.transform.scale = nodeTransform.scale;
 
 			subMesh.GenerateHash();
 
