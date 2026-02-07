@@ -28,11 +28,10 @@ void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMateria
 
 void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::mat4& viewMatrix, Volt::EntityID entityId, const TQS& entityTransform, float scale, float alpha)
 {
-	const glm::vec4 userData = { std::bit_cast<float>(entityId), 0.f, 0.f, 0.f };
-
 	// If no draw commands are recorded, we will draw a default entity icon.
 	if (m_drawCommands.empty())
 	{
+		const glm::vec4 userData = { std::bit_cast<float>(entityId), 0.f, 0.f, 0.f };
 		RefPtr<Volt::RHI::Image> gizmoTexture = EditorResources::GetEditorIcon(EditorIcon::EntityGizmo);
 		debugRenderer.DrawBillboard(entityTransform.translation, scale, { 1.f, 1.f, 1.f, alpha }, gizmoTexture, userData);
 	
@@ -45,12 +44,15 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 	{
 		if (drawCommand.mesh)
 		{
+			const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommand.visProxyId), 0.f, 0.f };
+
 			debugRenderer.DrawMesh(drawCommand.mesh, drawCommand.material, drawCommand.transform, userData);
 		}
 		else if (drawCommand.texture)
 		{
 			if (drawCommand.excludeFromGrid)
 			{
+				const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommand.visProxyId), 0.f, 0.f };
 				debugRenderer.DrawBillboard(drawCommand.transform.translation, drawCommand.transform.scale, glm::vec4{ 1.f, 1.f, 1.f, 1.f }, userData);
 			}
 			else
@@ -94,6 +96,8 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 					{
 						// Find the x offset of this icon.
 						const float xOffset = (totalRowWidth / numIconsInRow * j) - totalRowWidth * 0.5f + Padding * j + iconSize * 0.5f;
+
+						const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommandIt->visProxyId), 0.f, 0.f };
 						debugRenderer.DrawBillboard(viewSpacePosition - glm::vec3(xOffset, yOffset, 0.f), scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, drawCommandIt->texture, userData, true);
 
 						break;

@@ -16,24 +16,9 @@
 
 #include <Volt-Physics/ColliderComponents.h>
 
-struct HitProxyContext
-{
-	float a;
-	float b;
-};
-
 class PointLightComponentVisualizer : public ComponentVisualizer<Volt::PointLightComponent>
 {
 public:
-	void DrawVisualization(EditorDrawInterface& editorDrawInterface)
-	{
-		HitProxyContext hitProxyContext;
-		hitProxyContext.a = 1.f;
-		hitProxyContext.b = 10.f;
-
-		//editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::EntityGizmo), hitProxyContext);
-	}
-
 	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::PointLightComponent& component, Volt::Entity entity)
 	{
 		editorDrawInterface.DrawIcon(EditorResources::GetEditorIcon(EditorIcon::LightGizmo), entity.GetTransformTQS());
@@ -96,20 +81,10 @@ class CameraComponentVisualizer : public ComponentVisualizer<Volt::CameraCompone
 public:
 	void DrawVisualization(EditorDrawInterface& editorDrawInterface, Volt::CameraComponent& component, Volt::Entity entity)
 	{
-		HitProxyContext testContext;
-		testContext.a = 10.f;
-		testContext.b = 5.f;
-
-		editorDrawInterface.DrawMesh<CameraComponentVisualizer>(
+		editorDrawInterface.DrawMesh(
 			EditorResources::GetEditorMesh(EditorMesh::Camera),
 			EditorResources::GetEditorMesh(EditorMesh::Camera)->GetMaterialTable().GetMaterial(0),
-			entity.GetTransformTQS(),
-			testContext);
-	}
-
-	void HandleVisProxyInteraction(const Volt::CameraComponent& component, Volt::Entity entity, const HitProxyContext& context)
-	{
-		//VT_DEBUGBREAK();
+			entity.GetTransformTQS());
 	}
 };
 VT_REGISTER_COMPONENT_VISUALIZER(CameraComponentVisualizer);
