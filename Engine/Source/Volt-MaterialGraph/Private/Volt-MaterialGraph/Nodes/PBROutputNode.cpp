@@ -16,7 +16,7 @@ namespace Volt::MosaicNodes
 		AddInputParameter("Base Color", Mosaic::ValueBaseType::Float, 4, glm::vec4(1.f, 1.f, 1.f, 1.f), false);
 		AddInputParameter("Metallic", Mosaic::ValueBaseType::Float, 1, 0.f, false);
 		AddInputParameter("Roughness", Mosaic::ValueBaseType::Float, 1, 0.9f, false);
-		AddInputParameter("Normal", Mosaic::ValueBaseType::Float, 3, glm::vec3(0.5f, 0.5f, 1.f), false);
+		AddInputParameter("Normal", Mosaic::ValueBaseType::Float, 3, glm::vec3(0.f, 0.f, 1.f), false);
 		AddInputParameter("Emissive", Mosaic::ValueBaseType::Float, 3, glm::vec3(0.f), false);
 	}
 

@@ -23,7 +23,7 @@ TranslucenyDebugPassPixelShaderOutput MainPS(in DrawDebugMeshesPixelShaderInput 
 	pbrInput.metallic = 0.f;
 	pbrInput.emissive = 0.f;
 	pbrInput.worldPosition = input.worldPosition;
-	pbrInput.ao = 0.f;
+	pbrInput.ao = 1.f;
 	pbrInput.tileId = input.position.xy / LIGHT_CULLING_TILE_SIZE;
 
 	const float3 outputColor = EvaluatePBR(pbrInput);

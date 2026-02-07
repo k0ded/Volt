@@ -54,6 +54,7 @@ void TranslucencyDebugMeshRenderer::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMateri
 	auto pixelShader = renderMaterial->GetPixelShader<TranslucencyDebugMaterialShader>();
 
 	RHI::RenderPipelineCreateInfo pipelineInfo{};
+	pipelineInfo.depthMode = RHI::DepthMode::Read;
 	pipelineInfo.attachmentBlendStates[0] = Volt::DefaultBlendStates::Add();
 	pipelineInfo.attachmentBlendStates[1] = Volt::DefaultBlendStates::OneMinusSrcColor();
 

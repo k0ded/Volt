@@ -22,6 +22,7 @@ namespace Volt
 
 		// Enable the correct blend states.
 		RHI::RenderPipelineCreateInfo renderPipelineInfo;
+		renderPipelineInfo.depthMode = RHI::DepthMode::Read;
 		renderPipelineInfo.attachmentBlendStates[0] = DefaultBlendStates::Add();
 		renderPipelineInfo.attachmentBlendStates[1] = DefaultBlendStates::OneMinusSrcColor();
 

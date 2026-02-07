@@ -34,7 +34,7 @@ struct EvaluatedMaterial
         albedo = 1.f;
         roughness = 0.9f;
         metallic = 0.f;
-        normal = float3(0.5f, 0.5f, 1.f);
+        normal = float3(0.f, 0.f, 1.f);
         emissive = 0.f;
     }
 };

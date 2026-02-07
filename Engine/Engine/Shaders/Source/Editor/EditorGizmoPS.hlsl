@@ -21,10 +21,5 @@ PSOutput MainPS(in BillboardVSToPS input)
 	output.objectId = asuint(input.userData.x);
 	output.visProxyId = asuint(input.userData.y);
 
-	if (output.color.a < 0.01f)
-	{
-		discard;
-	}
-
 	return output;
 }
