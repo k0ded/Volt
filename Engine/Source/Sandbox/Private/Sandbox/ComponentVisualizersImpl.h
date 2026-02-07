@@ -135,7 +135,6 @@ public:
 
 		constexpr float CUBE_MESH_HALF_SIDE = 50.f;
 		const glm::vec3 scaledOffset = component.offset * entity.GetScale();
-		//the cube mesh has a side of 100(cm)
 		const glm::vec3 scaledHalfSize = component.halfSize * entity.GetScale();
 		const glm::vec3 boxUnscaledExtentsMeters = component.halfSize / CUBE_MESH_HALF_SIDE;
 
