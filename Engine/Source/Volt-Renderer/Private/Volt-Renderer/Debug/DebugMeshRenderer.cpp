@@ -193,6 +193,8 @@ namespace Volt
 				debugMeshDataPtr[elementIndex].scale = drawCommandInfo.transform.scale;
 				debugMeshDataPtr[elementIndex].rotation = drawCommandInfo.transform.rotation;
 				debugMeshDataPtr[elementIndex].userData = drawCommandInfo.userData;
+			
+				elementIndex++;
 			}
 		}
 
