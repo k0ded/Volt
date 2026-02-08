@@ -7,7 +7,7 @@
 
 #include <unordered_set>
 
-void EditorDrawInterface::DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& transform, bool excludeFromGrid)
+void EditorDrawInterface::DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& transform, DebugRenderingLayer layer, bool excludeFromGrid)
 {
 	DrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.texture = texture;
@@ -15,9 +15,10 @@ void EditorDrawInterface::DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& 
 	drawCommand.transform = transform;
 	drawCommand.excludeFromGrid = excludeFromGrid;
 	drawCommand.color = 1.f;
+	drawCommand.layer = layer;
 }
 
-void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform)
+void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform, DebugRenderingLayer layer)
 {
 	DrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.mesh = mesh;
@@ -26,9 +27,10 @@ void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMateria
 	drawCommand.transform = transform;
 	drawCommand.excludeFromGrid = false;
 	drawCommand.color = 1.f;
+	drawCommand.layer = layer;
 }
 
-void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform)
+void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform, DebugRenderingLayer layer)
 {
 	DrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.mesh = mesh;
@@ -36,6 +38,7 @@ void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color,
 	drawCommand.transform = transform;
 	drawCommand.color = color;
 	drawCommand.excludeFromGrid = false;
+	drawCommand.layer = layer;
 
 	if (color.a < 1.f)
 	{
@@ -63,18 +66,25 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 
 	for (const DrawCommand& drawCommand : m_drawCommands)
 	{
+		EditorDrawInterfaceUserData userData =
+		{
+			entityId,
+			drawCommand.visProxyId,
+			drawCommand.color,
+			drawCommand.layer
+		};
+
+		const glm::vec4 packedUserData = EditorDrawInterfaceUserData::Pack(userData);
+
 		if (drawCommand.mesh)
 		{
-			const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommand.visProxyId), glm::packUnorm4x8(drawCommand.color), 0.f };
-
-			debugRenderer.DrawMesh(drawCommand.mesh, drawCommand.material, drawCommand.transform, userData);
+			debugRenderer.DrawMesh(drawCommand.mesh, drawCommand.material, drawCommand.transform, packedUserData);
 		}
 		else if (drawCommand.texture)
 		{
 			if (drawCommand.excludeFromGrid)
 			{
-				const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommand.visProxyId), glm::packUnorm4x8(drawCommand.color), 0.f };
-				debugRenderer.DrawBillboard(drawCommand.transform.translation, drawCommand.transform.scale, glm::vec4{ 1.f, 1.f, 1.f, 1.f }, userData);
+				debugRenderer.DrawBillboard(drawCommand.transform.translation, drawCommand.transform.scale, glm::vec4{ 1.f, 1.f, 1.f, 1.f }, packedUserData);
 			}
 			else
 			{
@@ -118,8 +128,17 @@ void EditorDrawInterface::Render(Volt::DebugRenderer& debugRenderer, const glm::
 						// Find the x offset of this icon.
 						const float xOffset = (totalRowWidth / numIconsInRow * j) - totalRowWidth * 0.5f + Padding * j + iconSize * 0.5f;
 
-						const glm::vec4 userData = { std::bit_cast<float>(entityId), std::bit_cast<float>(drawCommandIt->visProxyId), glm::packUnorm4x8(drawCommandIt->color), 0.f };
-						debugRenderer.DrawBillboard(viewSpacePosition - glm::vec3(xOffset, yOffset, 0.f), scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, drawCommandIt->texture, userData, true);
+						EditorDrawInterfaceUserData userData =
+						{
+							entityId,
+							drawCommandIt->visProxyId,
+							drawCommandIt->color,
+							drawCommandIt->layer
+						};
+
+						const glm::vec4 packedUserData = EditorDrawInterfaceUserData::Pack(userData);
+
+						debugRenderer.DrawBillboard(viewSpacePosition - glm::vec3(xOffset, yOffset, 0.f), scale, glm::vec4{ 1.f, 1.f, 1.f, alpha }, drawCommandIt->texture, packedUserData, true);
 
 						break;
 					}

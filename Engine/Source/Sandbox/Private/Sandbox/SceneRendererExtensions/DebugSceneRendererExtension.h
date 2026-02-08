@@ -20,7 +20,9 @@ private:
 	void RenderTranslucentDebugMeshes(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage);
 
 	RefPtr<Volt::RHI::Image> m_visProxyIdImage;
+
 	Volt::RGTextureRef m_rgVisProxyTexture;
+	Volt::RGTextureRef m_depthTexture;
 
 	Volt::DebugRenderer& m_debugRenderer;
 };

@@ -1,6 +1,7 @@
 #include "sbpch.h"
 
 #include "Sandbox/DebugMeshRenderers/DebugMeshRenderers.h"
+#include "Sandbox/ComponentVisualizers/EditorDrawInterfaceUserData.h"
 
 #include <Volt-Renderer/Material/MaterialShaderRegistry.h>
 
@@ -27,8 +28,20 @@ VT_REGISTER_SHADER(ForwardLitDebugVS, "Engine/Shaders/Source/Debug/ForwardLitDeb
 VT_REGISTER_MATERIAL_SHADER(ForwardLitDebugMaterialShader, DefaultForwardLitDebugShaderPS, "Engine/Shaders/Source/Debug/ForwardLitDebugPixel.hlsl", "MainPS");
 VT_REGISTER_MATERIAL_SHADER(TranslucencyDebugMaterialShader, DefaultTranslucencyDebugShaderPS, "Engine/Shaders/Source/Debug/TranslucencyDebugPixel.hlsl", "MainPS");
 
+void ApplyDebugRenderingLayerSettings(RHI::RenderPipelineCreateInfo& pipelineInfo, DebugRenderingLayer layer)
+{
+	// If the mesh should be rendered in the foreground or foreground world, no depth info should be used.
+	if (layer == DebugRenderingLayer::Foreground ||
+		layer == DebugRenderingLayer::ForegroundWorld)
+	{
+		pipelineInfo.depthMode = RHI::DepthMode::None;
+	}
+}
+
 void ForwardLitDebugMeshRenderer::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial> renderMaterial, const TQS& transform, const glm::vec4& userData)
 {
+	const EditorDrawInterfaceUserData unpackedUserData = EditorDrawInterfaceUserData::Unpack(userData);
+
 	auto vertexShader = ShaderMap::Get<ForwardLitDebugVS>();
 	auto pixelShader = renderMaterial->GetPixelShader<ForwardLitDebugMaterialShader>();
 
@@ -38,6 +51,7 @@ void ForwardLitDebugMeshRenderer::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial
 		pipelineInfo.cullMode = RHI::CullMode::None;
 	}
 
+	ApplyDebugRenderingLayerSettings(pipelineInfo, unpackedUserData.layer);
 	BuildMeshDrawCommand(mesh, renderMaterial, transform, userData, pipelineInfo, vertexShader, pixelShader);
 }
 
@@ -50,6 +64,8 @@ bool ForwardLitDebugMeshRenderer::ShouldIncludeDraw(const RenderMaterial& render
 
 void TranslucencyDebugMeshRenderer::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMaterial> renderMaterial, const TQS& transform, const glm::vec4& userData)
 {
+	const EditorDrawInterfaceUserData unpackedUserData = EditorDrawInterfaceUserData::Unpack(userData);
+
 	auto vertexShader = ShaderMap::Get<ForwardLitDebugVS>();
 	auto pixelShader = renderMaterial->GetPixelShader<TranslucencyDebugMaterialShader>();
 
@@ -63,6 +79,7 @@ void TranslucencyDebugMeshRenderer::AddMeshDraw(Ref<Mesh> mesh, Ref<RenderMateri
 		pipelineInfo.cullMode = RHI::CullMode::None;
 	}
 
+	ApplyDebugRenderingLayerSettings(pipelineInfo, unpackedUserData.layer);
 	BuildMeshDrawCommand(mesh, renderMaterial, transform, userData, pipelineInfo, vertexShader, pixelShader);
 }
 

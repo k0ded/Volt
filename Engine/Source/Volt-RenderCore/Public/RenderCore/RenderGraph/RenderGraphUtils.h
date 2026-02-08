@@ -10,8 +10,9 @@ namespace Volt
 {
 	class RenderGraph;
 
-	extern VTRC_API void AddCopyBufferPass(RenderGraph& renderGraph, RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size, const std::string& passName = "Copy Buffer");
-	
+	extern VTRC_API void AddCopyBufferPass(RenderGraph& renderGraph, RGBufferRef src, size_t srcOffset, RGBufferRef dst, size_t dstOffset, size_t size);
+	extern VTRC_API void AddCopyTexturePass(RenderGraph& renderGraph, RGTextureRef src, RGTextureRef dst);
+
 	/*
 		Will copy the data into temporary storage in the Render Graph.
 	*/

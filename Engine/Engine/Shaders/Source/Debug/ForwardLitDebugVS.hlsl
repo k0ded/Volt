@@ -41,7 +41,8 @@ DrawDebugMeshesPixelShaderInput MainVS(in FullVertex input)
     result.primitiveIndex = input.primitiveIndex;
     result.objectId = asuint(debugMeshData.userData.x);
     result.visProxyId = asuint(debugMeshData.userData.y);
-    result.color = UnpackUIntToFloat4(debugMeshData.userData.z);
+    result.color = UnpackUIntToFloat4(asuint(debugMeshData.userData.z));
+    result.renderingLayer = (DebugRenderingLayer)asuint(debugMeshData.userData.w);
 
     return result;
 }

@@ -16,11 +16,45 @@ namespace Volt
 		RG_BUFFER_ACCESS(CopyDst, RGResourceAccess::CopyDst)
 	END_SHADER_PARAMETER_STRUCT()
 
-	void AddCopyBufferPass(RenderGraph& renderGraph, RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size, const std::string& passName)
+	BEGIN_SHADER_PARAMETER_STRUCT(CopyTextureParameters)
+		RG_TEXTURE_ACCESS(CopySrc, RGResourceAccess::CopySrc)
+		RG_TEXTURE_ACCESS(CopyDst, RGResourceAccess::CopyDst)
+	END_SHADER_PARAMETER_STRUCT()
+
+	void ValidateTextureCopy(RGTextureRef src, RGTextureRef dst)
 	{
+		const RGTextureDesc& srcDesc = src->GetDesc();
+		const RGTextureDesc& dstDesc = dst->GetDesc();
+
+		VT_ENSURE_MSG(srcDesc.format == dstDesc.format, "Source and Destination textures must have the same format!");
+		VT_ENSURE_MSG(srcDesc.width == dstDesc.width && srcDesc.height == dstDesc.height && srcDesc.depth == dstDesc.depth, "Source and Destination textures must have the same dimensions!");
+		VT_ENSURE_MSG(srcDesc.imageType == dstDesc.imageType, "Source and Destination textures must be of the same type!");
+	}
+
+	void ValidateBufferCopy(RGBufferRef src, size_t srcOffset, RGBufferRef dst, size_t dstOffset, size_t size)
+	{
+		const RGBufferDesc srcDesc = src->GetDesc();
+		const RGBufferDesc dstDesc = dst->GetDesc();
+	
+		const size_t srcByteSize = srcDesc.count * srcDesc.elementSize;
+		const size_t dstByteSize = dstDesc.count * dstDesc.elementSize;
+
+		VT_ENSURE_MSG(srcOffset < srcByteSize, "Source offset must be less than Source size!");
+		VT_ENSURE_MSG(dstOffset < dstByteSize, "Destination offset must be less than Destination size!");
+
+		VT_ENSURE_MSG((srcByteSize - srcOffset) >= size, "Source size - Source offset must be greater than, or equal to the copied size!");
+		VT_ENSURE_MSG((dstByteSize - dstOffset) >= size, "Destination size - Destination offset must be greater than, or equal to the copied size!");
+	}
+
+	void AddCopyBufferPass(RenderGraph& renderGraph, RGBufferRef src, size_t srcOffset, RGBufferRef dst, size_t dstOffset, size_t size)
+	{
+		ValidateBufferCopy(src, srcOffset, dst, dstOffset, size);
+
 		CopyBufferParameters* parameters = renderGraph.AllocParameters<CopyBufferParameters>();
 		parameters->CopySrc = src;
 		parameters->CopyDst = dst;
+
+		const std::string passName = std::format("Copy Buffer (Src: {}, Dst: {})", src->GetDesc().debugName, dst->GetDesc().debugName);
 
 		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::None,
@@ -28,6 +62,26 @@ namespace Volt
 			[parameters, srcOffset, dstOffset, size](RenderContext& context) 
 		{
 			context.CopyBufferRegion(parameters->CopySrc, srcOffset, parameters->CopyDst, dstOffset, size);
+		});
+	}
+
+	void AddCopyTexturePass(RenderGraph& renderGraph, RGTextureRef src, RGTextureRef dst)
+	{
+		ValidateTextureCopy(src, dst);
+
+		CopyTextureParameters* parameters = renderGraph.AllocParameters<CopyTextureParameters>();
+		parameters->CopySrc = src;
+		parameters->CopyDst = dst;
+
+		const std::string passName = std::format("Copy Texture (Src: {}, Dst: {})", src->GetDesc().debugName, dst->GetDesc().debugName);
+
+		renderGraph.AddPass(passName,
+			RenderGraphPassFlags::None,
+			parameters,
+			[parameters](RenderContext& context)
+		{
+			const RGTextureDesc& srcDesc = parameters->CopySrc->GetDesc();
+			context.CopyTexture(parameters->CopySrc, parameters->CopyDst, srcDesc.width, srcDesc.height, srcDesc.depth);
 		});
 	}
 
@@ -40,10 +94,13 @@ namespace Volt
 		void* tempData = renderGraph.AllocData(dataSize);
 		memcpy_s(tempData, dataSize, data, dataSize);
 
+		RGBufferRef targetBuffer = reinterpret_cast<RGBufferRef>(dstUAV->GetResource());
+		const std::string passName = std::format("Mapped Upload (Target: {})", targetBuffer->GetDesc().debugName);
+
 		MappedBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<MappedBufferUploadParameters>();
 		stagingParameters->RWBuffer = dstUAV;
 
-		renderGraph.AddPass("Mapped Upload",
+		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::Compute | flags,
 			stagingParameters,
 			[stagingParameters, tempData, dataSize](RenderContext& context)
@@ -56,10 +113,13 @@ namespace Volt
 
 	void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags /*= RenderGraphPassFlags::None*/)
 	{
+		RGBufferRef targetBuffer = reinterpret_cast<RGBufferRef>(dstUAV->GetResource());
+		const std::string passName = std::format("Mapped Upload (Target: {})", targetBuffer->GetDesc().debugName);
+
 		MappedBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<MappedBufferUploadParameters>();
 		stagingParameters->RWBuffer = dstUAV;
 
-		renderGraph.AddPass("Mapped Upload",
+		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::Compute | flags,
 			stagingParameters,
 			[stagingParameters, data, dataSize](RenderContext& context)
@@ -79,10 +139,12 @@ namespace Volt
 		void* tempData = renderGraph.AllocData(dataSize);
 		memcpy_s(tempData, dataSize, data, dataSize);
 
+		const std::string passName = std::format("Mapped Upload (Target: {})", dstUniformBuffer->GetDesc().debugName);
+
 		MappedUniformBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<MappedUniformBufferUploadParameters>();
 		stagingParameters->CopyDst = dstUniformBuffer;
 
-		renderGraph.AddPass("Mapped Upload",
+		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::Compute | flags,
 			stagingParameters,
 			[stagingParameters, tempData, dataSize](RenderContext& context)
@@ -99,10 +161,13 @@ namespace Volt
 
 	void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const uint32_t clearValue)
 	{
+		RGBufferRef targetBuffer = reinterpret_cast<RGBufferRef>(bufferUAV->GetResource());
+		const std::string passName = std::format("Clear Buffer UAV (Target: {})", targetBuffer->GetDesc().debugName);
+
 		ClearBufferUAVParameters* parameters = renderGraph.AllocParameters<ClearBufferUAVParameters>();
 		parameters->RWBuffer = bufferUAV;
 
-		renderGraph.AddPass("Clear Buffer UAV",
+		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::Compute,
 			parameters,
 			[parameters, clearValue](RenderContext& context) 
@@ -113,10 +178,13 @@ namespace Volt
 
 	void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const float clearValue)
 	{
+		RGBufferRef targetBuffer = reinterpret_cast<RGBufferRef>(bufferUAV->GetResource());
+		const std::string passName = std::format("Clear Buffer UAV (Target: {})", targetBuffer->GetDesc().debugName);
+
 		ClearBufferUAVParameters* parameters = renderGraph.AllocParameters<ClearBufferUAVParameters>();
 		parameters->RWBuffer = bufferUAV;
 
-		renderGraph.AddPass("Clear Buffer UAV",
+		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::Compute,
 			parameters,
 			[parameters, clearValue](RenderContext& context)
@@ -131,10 +199,13 @@ namespace Volt
 
 	void AddClearUAVPass(RenderGraph& renderGraph, RGTextureUAVRef textureUAV, const glm::uvec4& clearValue)
 	{
+		RGTextureRef targetTexture = reinterpret_cast<RGTextureRef>(textureUAV->GetResource());
+		const std::string passName = std::format("Clear Texture UAV (Target: {})", targetTexture->GetDesc().debugName);
+
 		ClearTextureUAVParameters* parameters = renderGraph.AllocParameters<ClearTextureUAVParameters>();
 		parameters->RWTexture = textureUAV;
 
-		renderGraph.AddPass("Clear Texture UAV",
+		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::Compute,
 			parameters,
 			[parameters, clearValue](RenderContext& context)
@@ -145,10 +216,13 @@ namespace Volt
 
 	void AddClearUAVPass(RenderGraph& renderGraph, RGTextureUAVRef textureUAV, const glm::vec4& clearValue)
 	{
+		RGTextureRef targetTexture = reinterpret_cast<RGTextureRef>(textureUAV->GetResource());
+		const std::string passName = std::format("Clear Texture UAV (Target: {})", targetTexture->GetDesc().debugName);
+
 		ClearTextureUAVParameters* parameters = renderGraph.AllocParameters<ClearTextureUAVParameters>();
 		parameters->RWTexture = textureUAV;
 
-		renderGraph.AddPass("Clear Texture UAV",
+		renderGraph.AddPass(passName,
 			RenderGraphPassFlags::Compute,
 			parameters,
 			[parameters, clearValue](RenderContext& context)

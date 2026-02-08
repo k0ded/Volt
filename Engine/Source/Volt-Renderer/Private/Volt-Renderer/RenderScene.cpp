@@ -153,7 +153,7 @@ namespace Volt
 		RGBufferRef srcPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
 		RGBufferRef dstPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource());
 
-		AddCopyBufferPass(renderGraph, srcPrimitiveData, 0, dstPrimitiveData, 0, m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize(), "Copy PrimitiveDrawData");
+		AddCopyBufferPass(renderGraph, srcPrimitiveData, 0, dstPrimitiveData, 0, m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize());
 	}
 
 	void RenderScene::RenderDebug(RenderGraph& renderGraph, const RenderView& renderView, RGTextureRef dstTexture, RGTextureRef dstDepth)

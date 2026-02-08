@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Sandbox/ComponentVisualizers/ComponentVisualizer.h"
+#include "Sandbox/ComponentVisualizers/EditorDrawInterfaceUserData.h"
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/Material/RenderMaterial.h>
@@ -72,16 +73,16 @@ void VisProxyContextManager::AddVisProxy(const VisProxyContextType& visProxyCont
 class EditorDrawInterface
 {
 public:
-	void DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& transform, bool excludeFromGrid = false);
+	void DrawIcon(RefPtr<Volt::RHI::Image> texture, const TQS& transform, DebugRenderingLayer layer = DebugRenderingLayer::World, bool excludeFromGrid = false);
 
-	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform);
-	void DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform);
-
-	template<typename ComponentVisualizerType, typename VisProxyContextType>
-	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform, const VisProxyContextType& visProxyContext);
+	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform, DebugRenderingLayer layer = DebugRenderingLayer::World);
+	void DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform, DebugRenderingLayer layer = DebugRenderingLayer::World);
 
 	template<typename ComponentVisualizerType, typename VisProxyContextType>
-	void DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform, const VisProxyContextType& visProxyContext);
+	void DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform, const VisProxyContextType& visProxyContext, DebugRenderingLayer layer = DebugRenderingLayer::World);
+
+	template<typename ComponentVisualizerType, typename VisProxyContextType>
+	void DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform, const VisProxyContextType& visProxyContext, DebugRenderingLayer layer = DebugRenderingLayer::World);
 
 	/*
 		Will fill the gizmo render commands into a debug renderer.
@@ -102,6 +103,7 @@ private:
 		int32_t visProxyId;
 		glm::vec4 color;
 		bool excludeFromGrid;
+		DebugRenderingLayer layer;
 	};
 
 	int32_t GetNextVisProxyId();
@@ -114,7 +116,7 @@ private:
 };
 
 template<typename ComponentVisualizerType, typename VisProxyContextType>
-void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform, const VisProxyContextType& visProxyContext)
+void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMaterial> material, const TQS& transform, const VisProxyContextType& visProxyContext, DebugRenderingLayer layer)
 {
 	DrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.mesh = mesh;
@@ -123,6 +125,7 @@ void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMateria
 	drawCommand.visProxyId = GetNextVisProxyId();
 	drawCommand.excludeFromGrid = false;
 	drawCommand.color = 1.f;
+	drawCommand.layer = layer;
 
 	if constexpr (HasHandleVisProxyInteractionFunc<ComponentVisualizerType, VisProxyContextType>)
 	{
@@ -131,7 +134,7 @@ void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, Ref<Volt::RenderMateria
 }
 
 template<typename ComponentVisualizerType, typename VisProxyContextType>
-void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform, const VisProxyContextType& visProxyContext)
+void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color, const TQS& transform, const VisProxyContextType& visProxyContext, DebugRenderingLayer layer)
 {
 	DrawCommand& drawCommand = m_drawCommands.emplace_back();
 	drawCommand.mesh = mesh;
@@ -139,6 +142,7 @@ void EditorDrawInterface::DrawMesh(Ref<Volt::Mesh> mesh, const glm::vec4& color,
 	drawCommand.visProxyId = GetNextVisProxyId();
 	drawCommand.excludeFromGrid = false;
 	drawCommand.color = color;
+	drawCommand.layer = layer;
 
 	if (color.a < 1.f)
 	{

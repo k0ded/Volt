@@ -24,6 +24,8 @@ struct ForwardLitDebugMaterialShader : public Volt::MaterialShader
 		SHADER_PARAMETER_STRUCT_INCLUDE(Volt::GPUSceneParameters, GPUScene)
 		SHADER_PARAMETER_BUFFER_SRV(Buffer<int>, VisibleLightIndices)
 
+		SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SceneDepth)
+
 		SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, DFGLuT)
 		SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightIrradiance)
 		SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightRadiance)
@@ -43,6 +45,8 @@ struct TranslucencyDebugMaterialShader : public Volt::MaterialShader
 		SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
 		SHADER_PARAMETER_STRUCT_INCLUDE(Volt::GPUSceneParameters, GPUScene)
 		SHADER_PARAMETER_BUFFER_SRV(Buffer<int>, VisibleLightIndices)
+
+		SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SceneDepth)
 
 		SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, DFGLuT)
 		SHADER_PARAMETER_TEXTURE_SRV(TextureCube<float3>, SkylightIrradiance)

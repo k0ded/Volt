@@ -60,15 +60,17 @@ RGTextureRef DebugSceneRendererExtension::OnRender(RenderGraph& renderGraph, Ren
 	const SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
 	const ObjectIDTexture& objectIdTexture = blackboard.Get<ObjectIDTexture>();
 
-	m_rgVisProxyTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32_UINT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "HitProxyID"));
+	m_rgVisProxyTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R32_UINT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "Debug.VisProxyID"));
+	m_depthTexture = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::Attachment, "Debug.Depth"));
 
 	AddClearUAVPass(renderGraph, renderGraph.CreateUAV(m_rgVisProxyTexture), glm::uvec4{ 0xFFFFFFFF });
+	AddCopyTexturePass(renderGraph, sceneTextures.sceneDepth, m_depthTexture);
 
 	ShaderParameterRenderTargetBindings renderTargets;
 	renderTargets.renderTargets[0] = prevOutputImage;
 	renderTargets.renderTargets[1] = objectIdTexture.texture;
 	renderTargets.renderTargets[2] = m_rgVisProxyTexture;
-	renderTargets.depthTarget = sceneTextures.sceneDepth;
+	renderTargets.depthTarget = m_depthTexture;
 
 	{
 		auto pixelShader = ShaderMap::Get<EditorGizmoPS>();
@@ -103,6 +105,8 @@ void DebugSceneRendererExtension::RenderForwardLitDebugMeshes(Volt::RenderGraph&
 		passParameters->VS.DebugMeshDatas = renderGraph.CreateSRV(forwardLitDebugMeshRenderer->GetDebugMeshDataBuffer());
 		passParameters->VS.PrimitiveIndexVertexBuffer = forwardLitDebugMeshRenderer->GetPrimitiveIndexBuffer();
 
+		passParameters->PS.SceneDepth = renderGraph.CreateSRV(sceneTextures.sceneDepth);
+
 		passParameters->PS.View = view.viewUniformBuffer;
 		passParameters->PS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
 		passParameters->PS.VisibleLightIndices = renderGraph.CreateSRV(lightScene.visibleLightIndices, RHI::PixelFormat::R32_SINT);
@@ -126,7 +130,7 @@ void DebugSceneRendererExtension::RenderForwardLitDebugMeshes(Volt::RenderGraph&
 		passParameters->renderTargets.renderTargets[0] = prevOutputImage;
 		passParameters->renderTargets.renderTargets[1] = objectIdTexture.texture;
 		passParameters->renderTargets.renderTargets[2] = m_rgVisProxyTexture;
-		passParameters->renderTargets.depthTarget = sceneTextures.sceneDepth;
+		passParameters->renderTargets.depthTarget = m_depthTexture;
 
 		renderGraph.AddPass("ForwardLit",
 			RenderGraphPassFlags::None,
@@ -170,6 +174,8 @@ void DebugSceneRendererExtension::RenderTranslucentDebugMeshes(Volt::RenderGraph
 			passParameters->VS.DebugMeshDatas = renderGraph.CreateSRV(translucencyDebugMeshRenderer->GetDebugMeshDataBuffer());
 			passParameters->VS.PrimitiveIndexVertexBuffer = translucencyDebugMeshRenderer->GetPrimitiveIndexBuffer();
 
+			passParameters->PS.SceneDepth = renderGraph.CreateSRV(sceneTextures.sceneDepth);
+
 			passParameters->PS.View = view.viewUniformBuffer;
 			passParameters->PS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
 			passParameters->PS.VisibleLightIndices = renderGraph.CreateSRV(lightScene.visibleLightIndices, RHI::PixelFormat::R32_SINT);
@@ -194,7 +200,7 @@ void DebugSceneRendererExtension::RenderTranslucentDebugMeshes(Volt::RenderGraph
 			passParameters->renderTargets.renderTargets[1] = revealage;
 			passParameters->renderTargets.renderTargets[2] = objectIdTexture.texture;
 			passParameters->renderTargets.renderTargets[3] = m_rgVisProxyTexture;
-			passParameters->renderTargets.depthTarget = sceneTextures.sceneDepth;
+			passParameters->renderTargets.depthTarget = m_depthTexture;
 
 			renderGraph.AddPass("Translucency",
 			RenderGraphPassFlags::None,

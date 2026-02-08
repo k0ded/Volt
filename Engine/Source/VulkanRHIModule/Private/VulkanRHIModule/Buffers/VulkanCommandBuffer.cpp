@@ -1099,8 +1099,6 @@ namespace Volt::RHI
 
 	void VulkanCommandBuffer::CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size)
 	{
-		VT_PROFILE_FUNCTION();
-
 		VkBufferCopy copy{};
 		copy.srcOffset = srcOffset;
 		copy.dstOffset = dstOffset;
@@ -1196,7 +1194,7 @@ namespace Volt::RHI
 		info.dstOffset.z = 0;
 		info.extent.width = width;
 		info.extent.height = height;
-		info.extent.depth = 1;
+		info.extent.depth = depth;
 
 		const auto& currentSrcState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(srcImage);
 		const auto& currentDstState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage);

@@ -104,6 +104,7 @@ namespace Volt::RHI
 
 			s_enabledFeatures.vulkan14Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
 			s_enabledFeatures.vulkan14Features.pNext = &s_enabledFeatures.vulkan13Features;
+			s_enabledFeatures.vulkan14Features.maintenance5 = VK_TRUE;
 			s_enabledFeatures.vulkan14Features.maintenance6 = VK_TRUE;
 			s_enabledFeatures.vulkan14Features.pushDescriptor = VK_TRUE;
 
