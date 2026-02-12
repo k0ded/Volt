@@ -111,7 +111,7 @@ public:
 		const glm::vec3 boxUnscaledExtentsMeters = component.halfSize / CUBE_MESH_HALF_SIDE;
 
 		TQS boxTransform = entity.GetTransformTQS();
-		boxTransform.translation += scaledOffset;
+		boxTransform.translation += glm::rotate(boxTransform.rotation, scaledOffset);
 		boxTransform.scale.x *= boxUnscaledExtentsMeters.x;
 		boxTransform.scale.y *= boxUnscaledExtentsMeters.y;
 		boxTransform.scale.z *= boxUnscaledExtentsMeters.z;
@@ -132,37 +132,49 @@ public:
 			glm::vec3(0,1,0), glm::vec3(0,-1,0),
 			glm::vec3(0,0,1), glm::vec3(0,0,-1)
 		};
+		const Vector<glm::quat, InlineAllocator<6>> sideRotQuats =
+		{
+			glm::rotate(glm::quat(1, 0, 0, 0), glm::radians(-90.f), glm::vec3(0, 0, 1)), glm::rotate(glm::quat(1, 0, 0, 0), glm::radians(90.f), glm::vec3(0, 0, 1)),
+			glm::quat(1, 0, 0, 0)/*identity*/, glm::rotate(glm::quat(1, 0, 0, 0), glm::radians(180.f), glm::vec3(1, 0, 0)),
+			glm::rotate(glm::quat(1, 0, 0, 0), glm::radians(90.f), glm::vec3(1, 0, 0)), glm::rotate(glm::quat(1, 0, 0, 0), glm::radians(-90.f), glm::vec3(1, 0, 0))
+		};
 
 		BoxColliderComponentHitProxyContext context;
-		for (const glm::vec3& dir : sideDirs)
+		for (int32_t i = 0; i < sideDirs.size(); i++)
 		{
-			context.dir = dir;
+			const glm::vec3& locDir = sideDirs[i];
+			const glm::quat& locRotQuat = sideRotQuats[i];
+			context.dir = locDir;
 
 			float minSideScale = 1.f;
-			if (dir.x != 0)
+			if (locDir.x != 0)
 			{
-				minSideScale = glm::min(dir.y, dir.z);
+				minSideScale = glm::min(boxTransform.scale.y, boxTransform.scale.z);
 			}
-			else if (dir.y != 0)
+			else if (locDir.y != 0)
 			{
-				minSideScale = glm::min(dir.x, dir.z);
+				minSideScale = glm::min(boxTransform.scale.x, boxTransform.scale.z);
 			}
-			else if (dir.z != 0)
+			else if (locDir.z != 0)
 			{
-				minSideScale = glm::min(dir.x, dir.y);
+				minSideScale = glm::min(boxTransform.scale.x, boxTransform.scale.y);
 			}
 
-			constexpr float SPHERE_SCALE_MULTIPLIER = 0.3f;
-			constexpr float SPHERE_MIN_SCALE = 0.1f;
-			const float sphereScale = glm::max(SPHERE_MIN_SCALE, (minSideScale * SPHERE_SCALE_MULTIPLIER));
-			extendSphereTransform.scale = glm::vec3(sphereScale);
+			constexpr float CONE_SCALE_MULTIPLIER = 0.15f;
+			//constexpr float CONE_MIN_SCALE = 0.1f;
+			const float coneScale = CONE_SCALE_MULTIPLIER;//glm::max(CONE_MIN_SCALE, (minSideScale * CONE_SCALE_MULTIPLIER));
+			extendSphereTransform.scale = glm::vec3(coneScale);
 
-			constexpr float SPHERE_MESH_RADIUS = 50.f;
-			constexpr float SPHERE_OFFSET_MULTIPLIER = 1.25f;
-			extendSphereTransform.translation = boxTransform.translation + dir * (scaledHalfSize + sphereScale * SPHERE_MESH_RADIUS * SPHERE_OFFSET_MULTIPLIER);
+			constexpr float CONE_MESH_HEIGHT = 100.f;
+			constexpr float CONE_PADDING_MUL = 1.f; // one full cone mesh away
+			const float coneDistFromBox = coneScale * CONE_MESH_HEIGHT * CONE_PADDING_MUL;
+			const glm::vec3 dir = glm::rotate(boxTransform.rotation, locDir);
+			extendSphereTransform.translation = boxTransform.translation + dir * (scaledHalfSize + coneDistFromBox);
+		
+			extendSphereTransform.rotation = boxTransform.rotation * locRotQuat;
 			editorDrawInterface.DrawMesh<BoxColliderComponentVisualizer>(
-				EditorResources::GetEditorMesh(EditorMesh::Sphere),
-				EditorResources::GetEditorMesh(EditorMesh::Sphere)->GetMaterialTable().GetMaterial(0),
+				EditorResources::GetEditorMesh(EditorMesh::Cone),
+				EditorResources::GetEditorMesh(EditorMesh::Cone)->GetMaterialTable().GetMaterial(0),
 				extendSphereTransform,
 				context);
 		}
@@ -170,7 +182,8 @@ public:
 
 	void HandleVisProxyInteraction(Volt::BoxColliderComponent& component, Volt::Entity entity, const BoxColliderComponentHitProxyContext& context)
 	{
-		component.halfSize += context.dir * 10.f;
+		component.halfSize += glm::abs(context.dir) * 5.f;
+		component.offset += context.dir * 5.f;
 	}
 };
 VT_REGISTER_COMPONENT_VISUALIZER(BoxColliderComponentVisualizer);
