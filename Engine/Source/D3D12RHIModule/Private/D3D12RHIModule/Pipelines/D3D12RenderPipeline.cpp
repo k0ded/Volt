@@ -387,4 +387,12 @@ namespace Volt::RHI
 	{
 		return false;
 	}
+
+	const InlineParametersBlockInfo& D3D12RenderPipeline::GetInlineParametersBlockInfo() const
+	{
+		VT_ENSURE_NO_ENTRY();
+		static InlineParametersBlockInfo temp;
+		return temp;
+	}
+
 }

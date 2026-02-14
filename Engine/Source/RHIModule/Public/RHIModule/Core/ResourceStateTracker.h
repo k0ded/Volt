@@ -21,20 +21,23 @@ namespace Volt::RHI
 	class VTRHI_API ResourceStateTracker : public RHIInterface
 	{
 	public:
+		using SubResourceStates = Vector<ResourceState>;
+
 		ResourceStateTracker() = default;
 		~ResourceStateTracker() override = default;
 
 		void AddResource(RawPtr<RHIResource> resource, BarrierStage initialStage, BarrierAccess initialAccess, ImageLayout initialLayout = ImageLayout::Undefined);
 		void RemoveResource(RawPtr<RHIResource> resource);
 
-		void TransitionResource(RawPtr<RHIResource> resource, BarrierStage dstStage, BarrierAccess dstAccess, ImageLayout dstLayout = ImageLayout::Undefined);
-		const ResourceState& GetCurrentResourceState(RawPtr<RHIResource> resource);
+		void TransitionResource(RawPtr<RHIResource> resource, uint32_t subResourceIndex, BarrierStage dstStage, BarrierAccess dstAccess, ImageLayout dstLayout = ImageLayout::Undefined);
+		const ResourceState& GetCurrentResourceState(RawPtr<RHIResource> resource, uint32_t subResourceIndex);
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
 		std::mutex m_mutex;
-		Map<RawPtr<RHIResource>, ResourceState> m_resourceStates;
+
+		Map<RawPtr<RHIResource>, SubResourceStates> m_resourceStates;
 	};
 }

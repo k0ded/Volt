@@ -3,7 +3,7 @@
 namespace Volt
 {
 	template<typename ExecFunc, typename T>
-	RenderGraphPassRef RenderGraphPassAllocator::AllocatePass(const std::string& name, ExecFunc&& execFunc, const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata)
+	RGPassRef RenderGraphPassAllocator::AllocatePass(const std::string& name, ExecFunc&& execFunc, const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata)
 	{
 		// Lmabda that will execute the pass
 		auto passExecWrapperFunc = [](void* funcDataPtr, RenderContext& renderContext)
@@ -17,14 +17,14 @@ namespace Volt
 		auto passAllocation = AllocatePass(passExecWrapperFunc, sizeof(ExecFunc));
 		new (passAllocation.executionFunctionPtr) ExecFunc(std::forward<ExecFunc>(execFunc));
 
-		void* passNodeAllocation = m_passNodeAllocator.Allocate(sizeof(RenderGraphPass));
+		void* passNodeAllocation = m_passNodeAllocator.Allocate(sizeof(RGPass));
 
 		// Destructor for the allocated pass object, required because we are using the linear allocator.
-		m_passDestructors.emplace_back() = DestructorHelper::Create<RenderGraphPass>(passNodeAllocation);
+		m_passDestructors.emplace_back() = DestructorHelper::Create<RGPass>(passNodeAllocation);
 
-		RenderGraphPass* passNode = new(passNodeAllocation) RenderGraphPass(shaderParameters, shaderParameterMetadata);
-		passNode->name = name;
-		passNode->passAllocationStartPtr = passAllocation.passAllocationStartPtr;
+		RGPass* passNode = new(passNodeAllocation) RGPass(shaderParameters, shaderParameterMetadata);
+		passNode->m_name = name;
+		passNode->m_passAllocationStartPtr = passAllocation.passAllocationStartPtr;
 		passNode->passIndex = m_numPasses;
 
 		m_numPasses++;
@@ -32,4 +32,17 @@ namespace Volt
 		return passNode;
 	}
 
+	template<typename ResourceType, typename... Args>
+	ResourceType* RenderGraphResourceAllocator::Allocate(Args&&... args)
+
+	{
+		constexpr size_t allocationSize = sizeof(ResourceType);
+
+		void* allocationPtr = m_allocator.Allocate(allocationSize);
+		ResourceType* newResource = new (allocationPtr) ResourceType(std::forward<Args>(args)...);
+
+		// Destructor for the allocated resource object, required because we are using the linear allocator.
+		m_nodeDestructors.emplace_back() = DestructorHelper::Create<ResourceType>(allocationPtr);
+		return newResource;
+	}
 }

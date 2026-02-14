@@ -9,6 +9,16 @@
 
 namespace Volt
 {
+	class RGRHITextureResource;
+
+	struct RGTextureSubResourceRange
+	{
+		uint32_t baseMipLevel : 8;
+		uint32_t baseArrayLayer : 8;
+		uint32_t mipCount : 8;
+		uint32_t layerCount : 8;
+	};
+
 	struct RGTextureDesc : public RHI::ImageDesc
 	{
 		template<RHI::PixelFormat PixelFormat>
@@ -46,7 +56,7 @@ namespace Volt
 		}
 	};
 
-	class RGRHITextureResource;
+	using RGTextureResourceAccessState = Vector<RGResourceAccessState>;
 
 	class VTRC_API RGTexture : public RGResource
 	{
@@ -55,22 +65,18 @@ namespace Volt
 		~RGTexture() override = default;
 		RGResourceType GetResourceType() const override;
 
-		bool HasProducer(RGResourceUAV* uav) const override;
-		bool HasProducer() const override;
-		void AddProducer(RenderGraphPass* pass, RGResourceUAV* uav) override;
-		void AddProducer(RenderGraphPass* pass) override;
-
 		VT_INLINE void AssignRHIResource(RGRHITextureResource* resource) { m_rhiResource = resource; }
 
 		VT_NODISCARD VT_INLINE const RGTextureDesc& GetDesc() const { return m_desc; }
 		VT_NODISCARD VT_INLINE RGRHITextureResource* GetRHIResource() const { return m_rhiResource; }
 
+		RGTextureSubResourceState firstAccess;
+		RGTextureResourceAccessState lastAccess;
+
 	private:
+		void InitializeSubResources();
+
 		RGTextureDesc m_desc;
-
-		std::bitset<32> m_layersProduced;
-		std::bitset<32> m_mipsProduced;
-
 		RGRHITextureResource* m_rhiResource = nullptr;
 	};
 
@@ -93,6 +99,16 @@ namespace Volt
 		~RGTextureSRV() override = default;
 
 		RGResourceRef GetResource() const override { return m_desc.textureResource; }
+		VT_NODISCARD VT_INLINE RGTextureSubResourceRange GetSubResourceRange() const
+		{
+			return
+			{
+				.baseMipLevel = m_desc.baseMipLevel,
+				.baseArrayLayer = m_desc.baseArrayLayer,
+				.mipCount = m_desc.mipCount,
+				.layerCount = m_desc.layerCount
+			};
+		}
 
 		VT_NODISCARD VT_INLINE const RGTextureSRVDesc& GetDesc() const { return m_desc; }
 		VT_INLINE void AssignRHIView(RefPtr<RHI::ImageView> view) { m_rhiView = view; }
@@ -120,6 +136,16 @@ namespace Volt
 		~RGTextureUAV() override = default;
 
 		RGResourceRef GetResource() const override { return m_desc.textureResource; }
+		VT_NODISCARD VT_INLINE RGTextureSubResourceRange GetSubResourceRange() const 
+		{ 
+			return 
+			{
+				.baseMipLevel = m_desc.baseMipLevel,
+				.baseArrayLayer = m_desc.baseArrayLayer,
+				.mipCount = m_desc.mipCount,
+				.layerCount = m_desc.layerCount
+			};
+		}
 
 		VT_NODISCARD VT_INLINE const RGTextureUAVDesc& GetDesc() const { return m_desc; }
 		VT_INLINE void AssignRHIView(RefPtr<RHI::ImageView> view) { m_rhiView = view; }

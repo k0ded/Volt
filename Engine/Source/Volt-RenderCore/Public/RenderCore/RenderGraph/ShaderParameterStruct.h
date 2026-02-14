@@ -3,6 +3,7 @@
 #include "RenderCore/Config.h"
 #include "RenderCore/RenderGraph/ShaderTypes.h"
 #include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
+#include "RenderCore/RenderGraph/RenderGraphState.h"
 #include "RenderCore/Shader/GlobalShader.h"
 
 #include <RHIModule/Shader/ShaderCommon.h>
@@ -45,16 +46,22 @@ namespace Volt
 		uint32_t structSize;
 	};
 
+	struct ShaderParameterRenderTargetDecl
+	{
+		VTRC_API ShaderParameterRenderTargetDecl() = default;
+		VTRC_API ShaderParameterRenderTargetDecl(RGTextureRef inTexture);
+		VTRC_API ShaderParameterRenderTargetDecl(RGTextureRef inTexture, RGTextureSubResourceRange inSubResourceRange);
+
+		VTRC_API ShaderParameterRenderTargetDecl& operator=(RGTextureRef inTexture);
+
+		RGTextureRef texture = nullptr;
+		RGTextureSubResourceRange subResourceRange;
+	};
+
 	struct ShaderParameterRenderTargetBindings
 	{
-		ShaderParameterRenderTargetBindings()
-			: depthTarget(nullptr)
-		{ 
-			memset(renderTargets, 0, sizeof(RGTextureRef) * RHI::MAX_COLOR_ATTACHMENT_COUNT);
-		}
-
-		RGTextureRef renderTargets[RHI::MAX_COLOR_ATTACHMENT_COUNT];
-		RGTextureRef depthTarget;
+		ShaderParameterRenderTargetDecl renderTargets[RHI::MAX_COLOR_ATTACHMENT_COUNT];
+		ShaderParameterRenderTargetDecl depthTarget;
 	};
 
 	class ShaderParameterMetadataDescription

@@ -353,7 +353,7 @@ namespace Volt
 
 			commandBuffer->Begin();
 
-			RHI::ResourceState resourceState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
+			RHI::ResourceState resourceState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image, 0);
 
 			RHI::ResourceBarrierInfo barrierInfo = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			barrierInfo.imageBarrier().srcAccess = resourceState.access;

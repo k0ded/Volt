@@ -473,8 +473,6 @@ namespace Volt::RHI
 		Image2D,
 		Image3D,
 
-		IndexBuffer,
-		VertexBuffer,
 		UniformBuffer,
 		StorageBuffer
 	};
@@ -672,15 +670,13 @@ namespace Volt::RHI
 		PixelFormat format = PixelFormat::R8G8B8A8_UNORM;
 		ImageUsage usage = ImageUsage::Texture;
 		ResourceType imageType = ResourceType::Image2D;
-
 		MemoryUsage memoryUsage = MemoryUsage::GPU;
-
-		std::string debugName;
 
 		bool isCubeMap = false;
 		bool generateMips = false;
-
 		bool initializeImage = true;
+
+		std::string debugName;
 	};
 
 	struct SwapchainImageDesc

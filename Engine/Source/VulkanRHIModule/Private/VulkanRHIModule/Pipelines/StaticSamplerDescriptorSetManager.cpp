@@ -64,6 +64,8 @@ namespace Volt::RHI
 		{
 			vkDestroySampler(device, sampler, VT_VULKAN_ALLOCATOR);
 		}
+
+		s_instance = nullptr;
 	}
 
 	void StaticSamplerDescriptorSetManager::CreateDescriptorSetLayout()

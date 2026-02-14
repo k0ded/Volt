@@ -2,6 +2,7 @@
 #include "RHIModule/Core/ResourceStateTracker.h"
 
 #include "RHIModule/RHIModule.h"
+#include "RHIModule/Images/Image.h"
 
 namespace Volt::RHI
 {
@@ -10,12 +11,29 @@ namespace Volt::RHI
 		std::scoped_lock lock{ m_mutex };
 		VT_ENSURE(!m_resourceStates.contains(resource));
 
-		ResourceState state{};
-		state.stage = initialStage;
-		state.access = initialAccess;
-		state.layout = initialLayout;
+		ResourceType resourceType = resource->GetType();
+		SubResourceStates& subResourceStates = m_resourceStates[resource];
+		
+		if (resourceType == ResourceType::Image1D ||
+			resourceType == ResourceType::Image2D ||
+			resourceType == ResourceType::Image3D)
+		{
+			Image& image = resource->AsRef<Image>();
 
-		m_resourceStates[resource] = state;
+			const uint32_t numSubResources = image.GetDesc().mips * image.GetDesc().layers;
+			subResourceStates.resize(numSubResources);
+		
+			for (uint32_t i = 0; i < numSubResources; ++i)
+			{
+				subResourceStates[i].stage = initialStage;
+				subResourceStates[i].access = initialAccess;
+				subResourceStates[i].layout = initialLayout;
+			}
+		}
+		else
+		{
+			subResourceStates.emplace_back(initialStage, initialAccess, initialLayout);
+		}
 	}
 	
 	void ResourceStateTracker::RemoveResource(RawPtr<RHIResource> resource)
@@ -25,23 +43,24 @@ namespace Volt::RHI
 		m_resourceStates.erase(resource);
 	}
 	
-	void ResourceStateTracker::TransitionResource(RawPtr<RHIResource> resource, BarrierStage dstStage, BarrierAccess dstAccess, ImageLayout dstLayout)
+	void ResourceStateTracker::TransitionResource(RawPtr<RHIResource> resource, uint32_t subResourceIndex, BarrierStage dstStage, BarrierAccess dstAccess, ImageLayout dstLayout)
 	{
 		std::scoped_lock lock{ m_mutex };
 		VT_ENSURE(m_resourceStates.contains(resource));
+		VT_ENSURE(subResourceIndex < m_resourceStates.at(resource).size());
 
-		auto& state = m_resourceStates.at(resource);
+		ResourceState& state = m_resourceStates.at(resource)[subResourceIndex];
 		state.stage = dstStage;
 		state.access = dstAccess;
 		state.layout = dstLayout;
 	}
 	
-	const ResourceState& ResourceStateTracker::GetCurrentResourceState(RawPtr<RHIResource> resource)
+	const ResourceState& ResourceStateTracker::GetCurrentResourceState(RawPtr<RHIResource> resource, uint32_t subResourceIndex)
 	{
 		std::scoped_lock lock{ m_mutex };
 		VT_ENSURE(m_resourceStates.contains(resource));
 
-		return m_resourceStates.at(resource);
+		return m_resourceStates.at(resource)[subResourceIndex];
 	}
 	
 	void* ResourceStateTracker::GetHandleImpl() const

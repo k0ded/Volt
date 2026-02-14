@@ -86,10 +86,16 @@ namespace Volt
 
 				if (drawCommandPipeline->HasInlineParameters())
 				{
+					const RHI::InlineParametersBlockInfo& inlineParametersBlockInfo = drawCommandPipeline->GetInlineParametersBlockInfo();
+
 					MaterialShader::InlineParameterBlock inlineParameterBlock;
 					inlineParameterBlock.materialBlendMode = std::to_underlying(drawCommandInfo.material->GetMaterialBlendMode());
 					inlineParameterBlock.isDoubleSided = drawCommandInfo.material->GetIsDoubleSided();
-					commandBuffer->PushInlineParameters(&inlineParameterBlock, sizeof(MaterialShader::InlineParameterBlock), 0, RHI::ShaderStage::Pixel);
+
+					const uint8_t* bytePtr = reinterpret_cast<const uint8_t*>(&inlineParameterBlock);
+
+					VT_ENSURE(inlineParametersBlockInfo.offset + inlineParametersBlockInfo.size <= sizeof(MaterialShader::InlineParameterBlock));
+					commandBuffer->PushInlineParameters(bytePtr + inlineParametersBlockInfo.offset, inlineParametersBlockInfo.size, 0, RHI::ShaderStage::Pixel);
 				}
 
 				commandBuffer->DrawIndexed(

@@ -585,7 +585,7 @@ namespace Volt::RHI
 		barrier.Size = barrierInfo.size;
 		barrier.pResource = barrierInfo.resource->GetHandle<ID3D12Resource*>();
 
-		GraphicsContext::GetResourceStateTracker()->TransitionResource(barrierInfo.resource, barrierInfo.dstStage, barrierInfo.dstAccess);
+		GraphicsContext::GetResourceStateTracker()->TransitionResource(barrierInfo.resource, 0, barrierInfo.dstStage, barrierInfo.dstAccess);
 	}
 
 	inline void AddImageBarrier(const ImageBarrier& barrierInfo, D3D12_TEXTURE_BARRIER& barrier)
@@ -665,7 +665,7 @@ namespace Volt::RHI
 		barrier.Subresources.FirstPlane = 0;
 		barrier.Subresources.NumPlanes = 1;
 
-		GraphicsContext::GetResourceStateTracker()->TransitionResource(barrierInfo.resource, barrierInfo.dstStage, barrierInfo.dstAccess, barrierInfo.dstLayout);
+		GraphicsContext::GetResourceStateTracker()->TransitionResource(barrierInfo.resource, 0, barrierInfo.dstStage, barrierInfo.dstAccess, barrierInfo.dstLayout);
 	}
 
 	void D3D12CommandBuffer::ResourceBarrier(const BarrierVector& resourceBarriers)

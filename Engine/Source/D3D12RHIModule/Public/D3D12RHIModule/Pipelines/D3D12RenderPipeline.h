@@ -18,6 +18,7 @@ namespace Volt::RHI
 		void Invalidate() override;
 		bool IsValid() const override;
 		size_t GetHash() const override;
+		const InlineParametersBlockInfo& GetInlineParametersBlockInfo() const override;
 		bool HasInlineParameters() const override;
 		const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const override;
 		ArrayView<ShaderParameterMap> GetShaderParameterMaps() const override;

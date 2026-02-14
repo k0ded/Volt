@@ -1,5 +1,7 @@
 #pragma once
 
+#include <RHIModule/Core/ResourceStateTracker.h>
+
 #include <CoreUtilities/Allocators/Handle.h>
 #include <CoreUtilities/Containers/VectorVariants.h>
 
@@ -9,7 +11,9 @@
 
 namespace Volt
 {
-	class RenderGraphPass;
+	class RGPass;
+	class RGResourceSRV;
+	class RGResourceUAV;
 
 	enum class RGResourceType : uint8_t
 	{
@@ -28,8 +32,30 @@ namespace Volt
 		CopySrc
 	};
 
-	class RGResourceSRV;
-	class RGResourceUAV;
+	enum class RGResourceAccessType : uint8_t
+	{
+		Read,
+		Write
+	};
+
+	struct RGResourceAccessState
+	{
+		RGPass* pass = nullptr;
+		uint32_t stateIndex;
+		RGResourceAccessType accessType;
+	};
+
+	struct RGSubResourceState
+	{
+		RGSubResourceState();
+
+		void AddState(RHI::BarrierStage stage, RHI::BarrierAccess access, RHI::ImageLayout layout);
+
+		RHI::ResourceState state;
+		RHI::ResourceState previousState;
+	};
+
+	using RGTextureSubResourceState = Vector<RGSubResourceState*>;
 
 	class RGResource
 	{
@@ -37,34 +63,21 @@ namespace Volt
 		virtual ~RGResource() = default;
 		virtual RGResourceType GetResourceType() const = 0;
 
-		// Checks if this UAV description has been produced.
-		virtual bool HasProducer(RGResourceUAV* uav) const = 0;
-
-		// Checks if this resource has been produced at all.
-		virtual bool HasProducer() const = 0;
-
-		// Adds a producer that produces the specific UAV desc
-		virtual void AddProducer(RenderGraphPass* pass, RGResourceUAV* uav) = 0;
-
-		// Adds a producer that produces the entire resource.
-		virtual void AddProducer(RenderGraphPass* pass) = 0;
-
-		VT_INLINE bool IsProducer(RenderGraphPass* pass) { auto it = std::find(producers.begin(), producers.end(), pass); return it != producers.end(); }
-		VT_INLINE bool IsFirstProducer(RenderGraphPass* pass) { return (!producers.empty() && producers.front() == pass); }
-		VT_INLINE RenderGraphPass* GetFirstProducer() const { return producers.front(); }
-
-		VT_INLINE void AddRef() { ++m_refCount; }
-		VT_INLINE void DecRef() { --m_refCount; }
-		VT_INLINE uint32_t GetRefCount() const { return m_refCount; }
-
-		Vector<RenderGraphPass*, InlineAllocator<1>> producers;
-		RenderGraphPass* lastUser = nullptr;
-
-		bool isExternal = false;
-		bool isExtracted = false;
+		VT_NODISCARD VT_INLINE uint32_t GetRefCount() const { return m_refCount; }
+		VT_NODISCARD VT_INLINE bool IsExternal() const { return m_isExternal; }
+		VT_NODISCARD VT_INLINE bool IsExtracted() const { return m_isExtracted; }
+		VT_NODISCARD VT_INLINE bool IsProduced() const { return m_isProduced; }
 
 	private:
+		friend class RenderGraph;
+		friend class RenderGraphResourceManager;
+		friend class RenderGraphShaderParameterUniformBuffer;
+
 		uint32_t m_refCount = 0;
+
+		bool m_isExternal = false;
+		bool m_isExtracted = false;
+		bool m_isProduced = false;
 	};
 
 	using RGResourceRef = RGResource*;

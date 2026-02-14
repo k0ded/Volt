@@ -132,20 +132,16 @@ namespace Volt
 		~RGBuffer() override = default;
 		RGResourceType GetResourceType() const override;
 
-		bool HasProducer(RGResourceUAV* uav) const override;
-		bool HasProducer() const override;
-		void AddProducer(RenderGraphPass* pass, RGResourceUAV* uav) override;
-		void AddProducer(RenderGraphPass* pass) override;
-
 		VT_INLINE void AssignRHIResource(RGRHIBufferResource* resource) { m_rhiResource = resource; }
 
 		VT_NODISCARD VT_INLINE const RGBufferDesc& GetDesc() const { return m_desc; }
 		VT_NODISCARD VT_INLINE RGRHIBufferResource* GetRHIResource() const { return m_rhiResource; }
 
-	private:
-		bool m_isProduced = false;
-		RGBufferDesc m_desc;
+		RGSubResourceState* firstAccess = nullptr;
+		RGResourceAccessState lastAccess;
 
+	private:
+		RGBufferDesc m_desc;
 		RGRHIBufferResource* m_rhiResource;
 	};
 
@@ -163,7 +159,8 @@ namespace Volt
 
 		static RGBufferSRVDesc Create(RGBufferRef buffer, uint64_t size)
 		{
-			return RGBufferSRVDesc{
+			return RGBufferSRVDesc
+			{
 				.bufferResource = buffer,
 				.size = size
 			};
@@ -171,7 +168,8 @@ namespace Volt
 
 		static RGBufferSRVDesc Create(RGBufferRef buffer, uint64_t size, uint64_t offset)
 		{
-			return RGBufferSRVDesc{
+			return RGBufferSRVDesc
+			{
 				.bufferResource = buffer,
 				.size = size,
 				.offset = offset
@@ -181,7 +179,8 @@ namespace Volt
 		template<RHI::PixelFormat Format>
 		static RGBufferSRVDesc Create(RGBufferRef buffer, uint64_t size, uint64_t offset)
 		{
-			return RGBufferSRVDesc{
+			return RGBufferSRVDesc
+			{
 				.bufferResource = buffer,
 				.size = size,
 				.offset = offset,
@@ -220,7 +219,8 @@ namespace Volt
 
 		static RGBufferUAVDesc Create(RGBufferRef buffer, uint64_t size)
 		{
-			return RGBufferUAVDesc {
+			return RGBufferUAVDesc 
+			{
 				.bufferResource = buffer,
 				.size = size
 			};
@@ -228,7 +228,8 @@ namespace Volt
 
 		static RGBufferUAVDesc Create(RGBufferRef buffer, uint64_t size, uint64_t offset)
 		{
-			return RGBufferUAVDesc{
+			return RGBufferUAVDesc
+			{
 				.bufferResource = buffer,
 				.size = size,
 				.offset = offset
@@ -238,7 +239,8 @@ namespace Volt
 		template<RHI::PixelFormat Format>
 		static RGBufferUAVDesc Create(RGBufferRef buffer, uint64_t size, uint64_t offset)
 		{
-			return RGBufferUAVDesc{
+			return RGBufferUAVDesc
+			{
 				.bufferResource = buffer,
 				.size = size,
 				.offset = offset,

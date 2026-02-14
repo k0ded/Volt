@@ -88,7 +88,7 @@ namespace IntegrationTests
 			ASSERT_TRUE(expected.ContainsPass(index));
 			const auto& expectedBarriers = expected.GetPassBarriers(index);
 			const auto& barriers = pass.prePassBarriers.GetBarriers();
-
+			
 			ASSERT_EQ(barriers.size(), expectedBarriers.size());
 
 			for (const auto& barrier : pass.prePassBarriers.GetBarriers())
@@ -103,32 +103,41 @@ namespace IntegrationTests
 				{
 					case RHI::BarrierType::Image:
 					{
-						EXPECT_EQ(barrier.barrier.imageBarrier().srcAccess, expectedBarrier.imageBarrier().srcAccess);
-						EXPECT_EQ(barrier.barrier.imageBarrier().dstAccess, expectedBarrier.imageBarrier().dstAccess);
-						EXPECT_EQ(barrier.barrier.imageBarrier().srcStage, expectedBarrier.imageBarrier().srcStage);
-						EXPECT_EQ(barrier.barrier.imageBarrier().dstStage, expectedBarrier.imageBarrier().dstStage);
-						EXPECT_EQ(barrier.barrier.imageBarrier().srcLayout, expectedBarrier.imageBarrier().srcLayout);
-						EXPECT_EQ(barrier.barrier.imageBarrier().dstLayout, expectedBarrier.imageBarrier().dstLayout);
+						const RHI::ImageBarrier& actualBarrier = barrier.barrier.imageBarrier();
+						const RHI::ImageBarrier& expectedImageBarrier = expectedBarrier.imageBarrier();
+
+						EXPECT_EQ(actualBarrier.srcAccess, expectedImageBarrier.srcAccess);
+						EXPECT_EQ(actualBarrier.dstAccess, expectedImageBarrier.dstAccess);
+						EXPECT_EQ(actualBarrier.srcStage, expectedImageBarrier.srcStage);
+						EXPECT_EQ(actualBarrier.dstStage, expectedImageBarrier.dstStage);
+						EXPECT_EQ(actualBarrier.srcLayout, expectedImageBarrier.srcLayout);
+						EXPECT_EQ(actualBarrier.dstLayout, expectedImageBarrier.dstLayout);
 
 						break;
 					}
 
 					case RHI::BarrierType::Buffer:
 					{
-						EXPECT_EQ(barrier.barrier.bufferBarrier().srcAccess, expectedBarrier.bufferBarrier().srcAccess);
-						EXPECT_EQ(barrier.barrier.bufferBarrier().dstAccess, expectedBarrier.bufferBarrier().dstAccess);
-						EXPECT_EQ(barrier.barrier.bufferBarrier().srcStage, expectedBarrier.bufferBarrier().srcStage);
-						EXPECT_EQ(barrier.barrier.bufferBarrier().dstStage, expectedBarrier.bufferBarrier().dstStage);
+						const RHI::BufferBarrier& actualBarrier = barrier.barrier.bufferBarrier();
+						const RHI::BufferBarrier& expectedBufferBarrier = expectedBarrier.bufferBarrier();
+
+						EXPECT_EQ(actualBarrier.srcAccess, expectedBufferBarrier.srcAccess);
+						EXPECT_EQ(actualBarrier.dstAccess, expectedBufferBarrier.dstAccess);
+						EXPECT_EQ(actualBarrier.srcStage, expectedBufferBarrier.srcStage);
+						EXPECT_EQ(actualBarrier.dstStage, expectedBufferBarrier.dstStage);
 
 						break;
 					}
 
 					case RHI::BarrierType::Global:
 					{
-						EXPECT_EQ(barrier.barrier.globalBarrier().srcAccess, expectedBarrier.globalBarrier().srcAccess);
-						EXPECT_EQ(barrier.barrier.globalBarrier().dstAccess, expectedBarrier.globalBarrier().dstAccess);
-						EXPECT_EQ(barrier.barrier.globalBarrier().srcStage, expectedBarrier.globalBarrier().srcStage);
-						EXPECT_EQ(barrier.barrier.globalBarrier().dstStage, expectedBarrier.globalBarrier().dstStage);
+						const RHI::GlobalBarrier& globalBarrier = barrier.barrier.globalBarrier();
+						const RHI::GlobalBarrier& expectedGlobalBarrier = expectedBarrier.globalBarrier();
+
+						EXPECT_EQ(globalBarrier.srcAccess, expectedGlobalBarrier.srcAccess);
+						EXPECT_EQ(globalBarrier.dstAccess, expectedGlobalBarrier.dstAccess);
+						EXPECT_EQ(globalBarrier.srcStage,  expectedGlobalBarrier.srcStage);
+						EXPECT_EQ(globalBarrier.dstStage,  expectedGlobalBarrier.dstStage);
 
 						break;
 					}

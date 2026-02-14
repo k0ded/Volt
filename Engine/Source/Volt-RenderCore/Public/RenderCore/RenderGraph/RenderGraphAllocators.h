@@ -3,9 +3,8 @@
 #include "RenderCore/Config.h"
 
 #include "RenderCore/RenderGraph/RenderGraphPass.h"
+#include "RenderCore/RenderGraph/RenderGraphDataAllocator.h"
 
-#include <CoreUtilities/Allocators/FixedSizeLinearAllocator.h>
-#include <CoreUtilities/Allocators/PagedAtomicLinearAllocator.h>
 #include <CoreUtilities/DestructorHelper.h>
 #include <CoreUtilities/Containers/Vector.h>
 
@@ -28,17 +27,7 @@ namespace Volt
 		RenderGraphResourceAllocator& operator=(RenderGraphResourceAllocator&& other) noexcept;
 
 		template<typename ResourceType, typename... Args>
-		ResourceType* Allocate(Args&&... args)
-		{
-			constexpr size_t allocationSize = sizeof(ResourceType);
-
-			void* allocationPtr = m_allocator.Allocate(allocationSize);
-			ResourceType* newResource = new (allocationPtr) ResourceType(std::forward<Args>(args)...);
-
-			// Destructor for the allocated resource object, required because we are using the linear allocator.
-			m_nodeDestructors.emplace_back() = DestructorHelper::Create<ResourceType>(allocationPtr);
-			return newResource;
-		}
+		ResourceType* Allocate(Args&&... args);
 
 	private:
 		PagedAtomicLinearAllocator<65536> m_allocator;
@@ -59,9 +48,9 @@ namespace Volt
 		typedef void(*PassExecFunc)(void*, RenderContext&);
 
 		template<typename ExecFunc, typename T>
-		RenderGraphPassRef AllocatePass(const std::string& name, ExecFunc&& execFunc, const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata);
+		RGPassRef AllocatePass(const std::string& name, ExecFunc&& execFunc, const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata);
 
-		void ExecutePass(RenderGraphPassRef pass, RenderContext& renderContext);
+		void ExecutePass(RGPassRef pass, RenderContext& renderContext);
 
 		VT_NODISCARD VT_INLINE uint32_t GetNumPasses() const { return m_numPasses; }
 

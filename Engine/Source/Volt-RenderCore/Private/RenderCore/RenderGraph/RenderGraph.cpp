@@ -139,20 +139,6 @@ namespace Volt
 		return resultState;
 	}
 
-	inline bool GetIsWriteFromAccessMask(RHI::BarrierAccess access)
-	{
-		if (EnumValueContainsFlag(access, RHI::BarrierAccess::ShaderWrite) ||
-			EnumValueContainsFlag(access, RHI::BarrierAccess::DepthStencilWrite) ||
-			EnumValueContainsFlag(access, RHI::BarrierAccess::CopyDest) ||
-			EnumValueContainsFlag(access, RHI::BarrierAccess::VideoEncodeWrite) ||
-			EnumValueContainsFlag(access, RHI::BarrierAccess::VideoDecodeWrite))
-		{
-			return true;
-		}
-
-		return false;
-	}
-
 	inline void SetupResourceStateFromAccess(RGResourceAccess accessType, RHI::ResourceState& outState)
 	{
 		if (accessType == RGResourceAccess::IndirectArg)
@@ -182,6 +168,27 @@ namespace Volt
 			outState.stage = RHI::BarrierStage::Copy;
 			outState.layout = RHI::ImageLayout::CopySource;
 		}
+	}
+
+	inline RHI::BarrierStage GetBarrierStageFromPassFlags(RenderGraphPassFlags flags)
+	{
+		RHI::BarrierStage resultStage = RHI::BarrierStage::None;
+
+		if (EnumValueContainsFlag(RenderGraphPassFlags::Compute, flags))
+		{
+			resultStage = RHI::BarrierStage::ComputeShader;
+		}
+		else
+		{
+			resultStage = RHI::BarrierStage::VertexShader | RHI::BarrierStage::PixelShader;
+
+			if (RHI::RHICanUseMeshShaders())
+			{
+				resultStage |= RHI::BarrierStage::MeshShader | RHI::BarrierStage::AmplificationShader;
+			}
+		}
+
+		return resultStage;
 	}
 
 	inline void InitializeImageBarrierSubresourceFromSRV(RGResourceSRVRef textureSRV, RHI::ImageSubResource& subResource)
@@ -230,16 +237,15 @@ namespace Volt
 		m_resourceAccessorAllocator(std::move(other.m_resourceAccessorAllocator)),
 		m_passParametersAllocator(std::move(other.m_passParametersAllocator)),
 		m_passAllocator(std::move(other.m_passAllocator)),
-		m_passes(std::move(other.m_passes)),
+		m_renderPasses(std::move(other.m_renderPasses)),
 		m_resources(std::move(other.m_resources)),
-		m_compiledPasses(std::move(other.m_compiledPasses)),
+		m_compiledRenderPasses(std::move(other.m_compiledRenderPasses)),
 		m_executionFence(std::move(other.m_executionFence)),
 		m_textureExtractions(std::move(other.m_textureExtractions)),
 		m_bufferExtractions(std::move(other.m_bufferExtractions)),
 		m_standaloneBarriers(std::move(other.m_standaloneBarriers)),
 		m_standaloneMarkers(std::move(other.m_standaloneMarkers)),
 		m_temporaryDataAllocator(std::move(other.m_temporaryDataAllocator)),
-		m_resourceStateTracker(std::move(other.m_resourceStateTracker)),
 		m_resourceSRVs(std::move(other.m_resourceSRVs)),
 		m_resourceUAVs(std::move(other.m_resourceUAVs)),
 		m_resourceManager(std::move(other.m_resourceManager))
@@ -257,16 +263,15 @@ namespace Volt
 		m_resourceAccessorAllocator = std::move(other.m_resourceAccessorAllocator);
 		m_passParametersAllocator = std::move(other.m_passParametersAllocator);
 		m_passAllocator = std::move(other.m_passAllocator);
-		m_passes = std::move(other.m_passes);
+		m_renderPasses = std::move(other.m_renderPasses);
 		m_resources = std::move(other.m_resources);
-		m_compiledPasses = std::move(other.m_compiledPasses);
+		m_compiledRenderPasses = std::move(other.m_compiledRenderPasses);
 		m_executionFence = std::move(other.m_executionFence);
 		m_textureExtractions = std::move(other.m_textureExtractions);
 		m_bufferExtractions = std::move(other.m_bufferExtractions);
 		m_standaloneBarriers = std::move(other.m_standaloneBarriers);
 		m_standaloneMarkers = std::move(other.m_standaloneMarkers);
 		m_temporaryDataAllocator = std::move(other.m_temporaryDataAllocator);
-		m_resourceStateTracker = std::move(other.m_resourceStateTracker);
 		m_resourceSRVs = std::move(other.m_resourceSRVs);
 		m_resourceUAVs = std::move(other.m_resourceUAVs);
 		m_resourceManager = std::move(other.m_resourceManager);
@@ -316,37 +321,25 @@ namespace Volt
 
 		for (const RGResourceRef resource : m_resources)
 		{
-			RefPtr<RHI::RHIResource> rhiResource;
+			if (!resource->m_isExternal)
+			{
+				continue;
+			}
 
 			if (resource->GetResourceType() == RGResourceType::Texture)
 			{
 				RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
-				if (textureResource->GetRHIResource())
-				{
-					rhiResource = textureResource->GetRHIResource()->GetRHITexture();
-				}
+				TransitionExternalResource(textureResource);
 			}
 			else if (resource->GetResourceType() == RGResourceType::Buffer)
 			{
 				RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
-				if (bufferResource->GetRHIResource())
-				{
-					rhiResource = bufferResource->GetRHIResource()->GetRHIBuffer();
-				}
+				TransitionExternalResource(bufferResource);
 			}
 			else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
 			{
 				RGUniformBufferRef bufferResource = reinterpret_cast<RGUniformBufferRef>(resource);
-				if (bufferResource->GetRHIResource())
-				{
-					rhiResource = bufferResource->GetRHIResource()->GetRHIUniformBuffer();
-				}
-			}
-
-			if (rhiResource)
-			{
-				const RGResourceState& resourceState = m_resourceStateTracker.GetState(resource);
-				resourceTracker->TransitionResource(rhiResource, resourceState.currentState.stage, resourceState.currentState.access, resourceState.currentState.layout);
+				TransitionExternalResource(bufferResource);
 			}
 		}
 	}
@@ -355,27 +348,12 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		constexpr auto hasReferencedProducer = [](RGResourceRef resource) -> bool
-		{
-			for (const auto producer : resource->producers)
-			{
-				if (producer->refCount > 0)
-				{
-					return true;
-				}
-			}
-
-			return false;
-		};
-
-		auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
-
 		// At this point we know all resources that will be referenced, and we can create them accordingly.
 		for (auto resource : m_resources)
 		{
 			const bool shouldResourceBeCreated =
-				!resource->isExternal &&
-				(resource->GetRefCount() > 0 || resource->isExtracted || hasReferencedProducer(resource));
+				!resource->m_isExternal &&
+				(resource->m_refCount > 0 || resource->m_isExtracted);
 
 			if (shouldResourceBeCreated)
 			{
@@ -383,43 +361,11 @@ namespace Volt
 				{
 					RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
 					m_resourceManager.AllocateResource(textureResource);
-
-					RenderGraphPassRef producer = textureResource->GetFirstProducer();
-					CompiledPass& compiledPass = m_compiledPasses.at(producer->passIndex);
-
-					const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(textureResource->GetRHIResource()->GetRHITexture());
-
-					for (auto& barrier : compiledPass.prePassBarriers.GetBarriersMutable())
-					{
-						if (barrier.resource == resource)
-						{
-							barrier.barrier.imageBarrier().srcAccess = resourceState.access;
-							barrier.barrier.imageBarrier().srcStage = resourceState.stage;
-							barrier.barrier.imageBarrier().srcLayout = resourceState.layout;
-							break;
-						}
-					}
 				}
 				else if (resource->GetResourceType() == RGResourceType::Buffer)
 				{
 					RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
-
 					m_resourceManager.AllocateResource(bufferResource);
-
-					RenderGraphPassRef producer = bufferResource->GetFirstProducer();
-					CompiledPass& compiledPass = m_compiledPasses.at(producer->passIndex);
-
-					const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(bufferResource->GetRHIResource()->GetRHIBuffer());
-
-					for (auto& barrier : compiledPass.prePassBarriers.GetBarriersMutable())
-					{
-						if (barrier.resource == resource)
-						{
-							barrier.barrier.globalBarrier().srcStage |= resourceState.stage;
-							barrier.barrier.globalBarrier().srcAccess |= resourceState.access;
-							break;
-						}
-					}
 				}
 				else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
 				{
@@ -577,29 +523,46 @@ namespace Volt
 		}
 
 		// Make sure a view is created for each render target.
-		for (RenderGraphPassRef pass : m_passes)
+		// #TODO_Ivar: Need some way of knowing which textures are render targets.
+#if 0
+		for (RGPassRef pass : m_renderPasses)
 		{
 			for (RGTextureRef renderTarget : pass->GetResourceRenderTargetAccesses())
 			{
-				RHI::ImageViewDesc viewDesc{};
-				renderTarget->GetRHIResource()->GetOrCreateView(viewDesc);
+				if (renderTarget->GetRHIResource() != nullptr)
+				{
+					RHI::ImageViewDesc viewDesc{};
+					renderTarget->GetRHIResource()->GetOrCreateView(viewDesc);
+				}
 			}
 		}
+#endif
 	}
 
-	void RenderGraph::SetupPassParameters(RenderGraphPassRef pass)
+	void RenderGraph::SetupPass(RGPassRef pass)
 	{
 		VT_PROFILE_FUNCTION();
 
-		pass->passParameters.EnumerateParameters([pass, renderGraph = this](RenderGraphParameterDesc parameterDesc)
+		SetupPassParameters(pass);
+		SetupPassDependencies(pass);
+	}
+
+	void RenderGraph::SetupPassParameters(RGPassRef pass)
+	{
+		VT_PROFILE_FUNCTION();
+
+		pass->m_passParameters.EnumerateParameters([pass, this](RenderGraphParameterDesc parameterDesc) mutable
 		{
+			const RHI::BarrierStage passStage = GetBarrierStageFromPassFlags(pass->m_flags);
+
 			switch (parameterDesc.GetType())
 			{
 				case ShaderParameterType::BufferSRV:
 				{
 					if (RGBufferSRVRef bufferSRV = parameterDesc.GetAs<RGBufferSRVRef>())
 					{
-						pass->AddResourceRead(bufferSRV);
+						RGBufferState& bufferState = pass->GetOrCreateBufferState(bufferSRV);
+						bufferState.subResourceState.AddState(passStage, RHI::BarrierAccess::ShaderRead, RHI::ImageLayout::ShaderRead);
 					}
 
 					break;
@@ -609,7 +572,8 @@ namespace Volt
 				{
 					if (RGBufferUAVRef bufferUAV = parameterDesc.GetAs<RGBufferUAVRef>())
 					{
-						pass->AddResourceWrite(bufferUAV);
+						RGBufferState& bufferState = pass->GetOrCreateBufferState(bufferUAV);
+						bufferState.subResourceState.AddState(passStage, RHI::BarrierAccess::ShaderWrite, RHI::ImageLayout::ShaderWrite);
 					}
 
 					break;
@@ -619,7 +583,17 @@ namespace Volt
 				{
 					if (RGTextureSRVRef textureSRV = parameterDesc.GetAs<RGTextureSRVRef>())
 					{
-						pass->AddResourceRead(textureSRV);
+						RGTextureState& textureState = pass->GetOrCreateTextureState(textureSRV);
+
+						textureState.EnumerateSubResourceRange(textureSRV->GetSubResourceRange(), [&](RGSubResourceState*& subResourceState) 
+						{
+							if (!subResourceState)
+							{
+								subResourceState = AllocateSubResourceState();
+							}
+
+							subResourceState->AddState(passStage, RHI::BarrierAccess::ShaderRead, RHI::ImageLayout::ShaderRead);
+						});
 					}
 	
 					break;
@@ -629,7 +603,17 @@ namespace Volt
 				{
 					if (RGTextureUAVRef textureUAV = parameterDesc.GetAs<RGTextureUAVRef>())
 					{
-						pass->AddResourceWrite(textureUAV);
+						RGTextureState& textureState = pass->GetOrCreateTextureState(textureUAV);
+
+						textureState.EnumerateSubResourceRange(textureUAV->GetSubResourceRange(), [&](RGSubResourceState*& subResourceState)
+						{
+							if (!subResourceState)
+							{
+								subResourceState = AllocateSubResourceState();
+							}
+
+							subResourceState->AddState(passStage, RHI::BarrierAccess::ShaderWrite, RHI::ImageLayout::ShaderWrite);
+						});
 					}
 
 					break;
@@ -639,12 +623,8 @@ namespace Volt
 				{
 					if (RGUniformBufferRef uniformBuffer = parameterDesc.GetAs<RGUniformBufferRef>())
 					{
-						// Uniform buffers is a special case, an internal SRV must be created to have
-						// prober tracking.
-						RGUniformBufferSRVDesc srvDesc{};
-						srvDesc.bufferResource = uniformBuffer;
-
-						pass->AddResourceRead(renderGraph->CreateSRV(srvDesc));
+						RGBufferState& bufferState = pass->GetOrCreateBufferState(uniformBuffer);
+						bufferState.subResourceState.AddState(passStage, RHI::BarrierAccess::UniformBuffer, RHI::ImageLayout::Undefined);
 					}
 
 					break;
@@ -654,7 +634,12 @@ namespace Volt
 				{
 					if (RGBufferRef buffer = parameterDesc.GetAs<RGBufferRef>())
 					{
-						pass->AddResourceAccess(buffer, parameterDesc.GetAccess());
+						RGBufferState& bufferState = pass->GetOrCreateBufferState(buffer, RGResourceAccessType::Read);
+
+						RHI::ResourceState newState{};
+						SetupResourceStateFromAccess(parameterDesc.GetAccess(), newState);
+
+						bufferState.subResourceState.AddState(newState.stage, newState.access, newState.layout);
 					}
 
 					break;
@@ -664,7 +649,28 @@ namespace Volt
 				{
 					if (RGTextureRef texture = parameterDesc.GetAs<RGTextureRef>())
 					{
-						pass->AddResourceAccess(texture, parameterDesc.GetAccess());
+						const RGTextureDesc& textureDesc = texture->GetDesc();
+						const RGTextureSubResourceRange subResourceRange
+						{
+							.baseMipLevel = 0,
+							.baseArrayLayer = 0,
+							.mipCount = textureDesc.mips,
+							.layerCount = textureDesc.layers
+						};
+
+						RHI::ResourceState newState{};
+						SetupResourceStateFromAccess(parameterDesc.GetAccess(), newState);
+
+						RGTextureState& textureState = pass->GetOrCreateTextureState(texture, RGResourceAccessType::Write);
+						textureState.EnumerateSubResourceRange(subResourceRange, [&](RGSubResourceState*& subResourceState) 
+						{
+							if (!subResourceState)
+							{
+								subResourceState = AllocateSubResourceState();
+							}
+
+							subResourceState->AddState(newState.stage, newState.access, newState.layout);
+						});
 					}
 
 					break;
@@ -674,7 +680,12 @@ namespace Volt
 				{
 					if (RGUniformBufferRef uniformBuffer = parameterDesc.GetAs<RGUniformBufferRef>())
 					{
-						pass->AddResourceAccess(uniformBuffer, parameterDesc.GetAccess());
+						RGBufferState& bufferState = pass->GetOrCreateBufferState(uniformBuffer);
+						
+						RHI::ResourceState newState{};
+						SetupResourceStateFromAccess(parameterDesc.GetAccess(), newState);
+
+						bufferState.subResourceState.AddState(newState.stage, newState.access, newState.layout);
 					}
 
 					break;
@@ -682,35 +693,521 @@ namespace Volt
 
 				case ShaderParameterType::RenderTargets:
 				{
-					VT_ENSURE(!EnumValueContainsFlag(pass->flags, RenderGraphPassFlags::Compute));
+					VT_ENSURE(!EnumValueContainsFlag(pass->m_flags, RenderGraphPassFlags::Compute));
 
 					const ShaderParameterRenderTargetBindings& rtBindings = parameterDesc.GetAs<const ShaderParameterRenderTargetBindings&>();
 
 					for (size_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
 					{
-						if (rtBindings.renderTargets[i] != nullptr)
+						RGTextureRef renderTarget = rtBindings.renderTargets[i].texture;
+
+						if (renderTarget != nullptr)
 						{
-							VT_ENSURE_MSG(rtBindings.renderTargets[i]->GetDesc().usage == RHI::ImageUsage::Attachment
-								|| rtBindings.renderTargets[i]->GetDesc().usage == RHI::ImageUsage::AttachmentStorage,
+							VT_ENSURE_MSG(renderTarget->GetDesc().usage == RHI::ImageUsage::Attachment
+								|| renderTarget->GetDesc().usage == RHI::ImageUsage::AttachmentStorage,
 								"Render Targets must have a Attachment usage type!");
 
-							pass->AddResourceRenderTargetAccess(rtBindings.renderTargets[i]);
+							const RHI::ResourceState newState = GetWriteStateForRasterizedTexture(renderTarget);
+
+							RGTextureState& textureState = pass->GetOrCreateTextureState(renderTarget, RGResourceAccessType::Write);
+							textureState.EnumerateSubResourceRange(rtBindings.renderTargets[i].subResourceRange, [&](RGSubResourceState*& subResourceState) 
+							{
+								if (!subResourceState)
+								{
+									subResourceState = AllocateSubResourceState();
+								}
+
+								subResourceState->AddState(RHI::BarrierStage::RenderTarget, newState.access, newState.layout);
+							});
 						}
 					}
 
-					if (rtBindings.depthTarget != nullptr)
+					RGTextureRef depthTarget = rtBindings.depthTarget.texture;
+
+					if (depthTarget != nullptr)
 					{
-						VT_ENSURE_MSG(rtBindings.depthTarget->GetDesc().usage == RHI::ImageUsage::Attachment
-							|| rtBindings.depthTarget->GetDesc().usage == RHI::ImageUsage::AttachmentStorage,
+						VT_ENSURE_MSG(depthTarget->GetDesc().usage == RHI::ImageUsage::Attachment
+							|| depthTarget->GetDesc().usage == RHI::ImageUsage::AttachmentStorage,
 							"Render Targets must have a Attachment usage type!");
 
-						pass->AddResourceRenderTargetAccess(rtBindings.depthTarget);
+						const RHI::ResourceState newState = GetWriteStateForRasterizedTexture(depthTarget);
+
+						RGTextureState& textureState = pass->GetOrCreateTextureState(depthTarget, RGResourceAccessType::Write);
+						textureState.EnumerateSubResourceRange(rtBindings.depthTarget.subResourceRange, [&](RGSubResourceState*& subResourceState) 
+						{
+							if (!subResourceState)
+							{
+								subResourceState = AllocateSubResourceState();
+							}
+
+							subResourceState->AddState(RHI::BarrierStage::DepthStencil, newState.access, newState.layout);
+						});
 					}
 
 					break;
 				}
 			}
 		});
+	}
+
+	void RenderGraph::SetupPassDependencies(RGPassRef pass)
+	{
+		VT_PROFILE_FUNCTION();
+		/*
+			Walk through resource states and add their last accesses as dependencies to this pass.
+		*/
+
+		for (uint32_t stateIndex = 0; RGBufferState& bufferState : pass->m_bufferStates)
+		{
+			// Add pass dependency and set the new last access state.
+			{
+				RGResourceAccessState* lastAccess = nullptr;
+
+				if (bufferState.bufferType == RGResourceType::Buffer)
+				{
+					lastAccess = &bufferState.buffer->lastAccess;
+
+					if (bufferState.buffer->firstAccess == nullptr)
+					{
+						bufferState.buffer->firstAccess = &bufferState.subResourceState;
+					}
+				}
+				else
+				{
+					lastAccess = &bufferState.uniformBuffer->lastAccess;
+
+					if (bufferState.uniformBuffer->firstAccess == nullptr)
+					{
+						bufferState.uniformBuffer->firstAccess = &bufferState.subResourceState;
+					}
+				}
+
+				VT_ENSURE(lastAccess != nullptr);
+
+				AddPassDependency(pass, bufferState.bufferType, 0, bufferState.subResourceState, *lastAccess);
+
+				RGResourceAccessState accessState{};
+				accessState.pass = pass;
+				accessState.stateIndex = stateIndex++;
+				accessState.accessType = bufferState.accessType;
+
+				*lastAccess = accessState;
+			}
+
+			// Add references to the resource
+			if (bufferState.bufferType == RGResourceType::Buffer)
+			{
+				bufferState.buffer->m_refCount += bufferState.refCount;
+			}
+			else
+			{
+				bufferState.uniformBuffer->m_refCount += bufferState.refCount;
+			}
+		}
+
+		for (uint32_t stateIndex = 0; RGTextureState& textureState : pass->m_textureStates)
+		{
+			// Add pass dependency and set the new last access state.
+			{
+				RGTextureResourceAccessState& lastAccess = textureState.texture->lastAccess;
+
+				textureState.EnumerateSubResources([&](RGSubResourceState& subResource, uint32_t subResourceIndex)
+				{
+					if (textureState.texture->firstAccess[subResourceIndex] == nullptr)
+					{
+						textureState.texture->firstAccess[subResourceIndex] = &subResource;
+					}
+
+					AddPassDependency(pass, RGResourceType::Texture, subResourceIndex, subResource, lastAccess[subResourceIndex]);
+
+					RGResourceAccessState accessState{};
+					accessState.pass = pass;
+					accessState.stateIndex = stateIndex;
+					accessState.accessType = textureState.accessType;
+
+					lastAccess[subResourceIndex] = accessState;
+				});
+
+				stateIndex++;
+			}
+
+			// Add references to the resource
+			textureState.texture->m_refCount += textureState.refCount;
+		}
+	}
+
+	void RenderGraph::CullPasses()
+	{
+		VT_PROFILE_FUNCTION();
+
+		Vector<RGPassRef> unreferencedPasses{};
+		for (RGPassRef pass : m_renderPasses)
+		{
+			if (pass->m_refCount == 0)
+			{
+				unreferencedPasses.emplace_back(pass);
+			}
+		}
+
+		auto passShouldBeCulled = [](RGPassRef pass) -> bool
+		{
+			if (EnumValueContainsFlag(pass->m_flags, RenderGraphPassFlags::NeverCull))
+			{
+				return false;
+			}
+
+			for (const RGBufferState& bufferState : pass->m_bufferStates)
+			{
+				bool resourceExtractedOrExternal = false;
+
+				if (bufferState.bufferType == RGResourceType::Buffer)
+				{
+					resourceExtractedOrExternal = bufferState.buffer->m_isExtracted || bufferState.buffer->m_isExternal;
+				}
+				else
+				{
+					resourceExtractedOrExternal = bufferState.uniformBuffer->m_isExtracted || bufferState.uniformBuffer->m_isExternal;
+				}
+
+				if (resourceExtractedOrExternal)
+				{
+					return false;
+				}
+			}
+			
+			for (const RGTextureState& textureState : pass->m_textureStates)
+			{
+				if (textureState.texture->m_isExternal || textureState.texture->m_isExtracted)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		};
+
+		while (!unreferencedPasses.empty())
+		{
+			RGPassRef unreferencedPass = unreferencedPasses.back();
+			unreferencedPasses.pop_back();
+
+			// Check if any resources / flags leads to pass not being culled.
+			if (!passShouldBeCulled(unreferencedPass))
+			{
+				continue;
+			}
+
+			// Remove the resource references that this pass has
+			for (const RGBufferState& bufferState : unreferencedPass->m_bufferStates)
+			{
+				if (bufferState.bufferType == RGResourceType::Buffer)
+				{
+					bufferState.buffer->m_refCount -= bufferState.refCount;
+				}
+				else
+				{
+					bufferState.uniformBuffer->m_refCount -= bufferState.refCount;
+				}
+			}
+
+			for (const RGTextureState& textureState : unreferencedPass->m_textureStates)
+			{
+				textureState.texture->m_refCount -= textureState.refCount;
+			}
+
+			// Remove references from pass dependencies.
+			for (RGPassRef passDep : unreferencedPass->m_passDependencies)
+			{
+				passDep->m_refCount--;
+
+				// Add unreferenced passes to stack.
+				if (passDep->m_refCount == 0)
+				{
+					passDep->m_isCulled = true;
+					unreferencedPasses.emplace_back(passDep);
+				}
+			}
+		}
+	}
+
+	void RenderGraph::BuildPassBarriers()
+	{
+		VT_PROFILE_FUNCTION();
+
+		constexpr auto isBarrierRequired = [](const RGSubResourceState& subResourceState)
+		{
+			const bool bothAreUniformBuffer = IsEqualToAll(subResourceState.previousState.access, RHI::BarrierAccess::UniformBuffer) &&
+				IsEqualToAll(subResourceState.state.access, RHI::BarrierAccess::UniformBuffer);
+
+			const bool bothAreShaderRead = IsEqualToAll(subResourceState.previousState.access == RHI::BarrierAccess::ShaderRead) &&
+				IsEqualToAll(subResourceState.state.access, RHI::BarrierAccess::ShaderRead);
+
+			// If previous state was read, new state is read and the layout is the same, no barrier is required.
+			if ((bothAreUniformBuffer || bothAreShaderRead) &&
+				subResourceState.previousState.layout == subResourceState.state.layout)
+			{
+				return false;
+			}
+
+			return true;
+		};
+
+		constexpr auto isLayoutTransitionRequired = [](const RGSubResourceState& subResourceState)
+		{
+			return subResourceState.previousState.layout != subResourceState.state.layout;
+		};
+
+		constexpr auto canMergeSubResourceBarriers = [](RHI::ResourceBarrierInfo* activeBarrier, const RGSubResourceState& newState, uint32_t subResourceIndex, uint32_t prevSubResourceIndex) -> bool
+		{
+			// No previous barrier.
+			if (activeBarrier == nullptr)
+			{
+				return false;
+			}
+
+			const bool barrierIsGlobal = activeBarrier->type == RHI::BarrierType::Global;
+
+			// If a layout transition is required and the active barrier doesn't support it,
+			// we need another barrier
+			if (isLayoutTransitionRequired(newState))
+			{
+				if (barrierIsGlobal)
+				{
+					return false;
+				}
+
+				// Only merge if src and dst layout stages match.
+				if (activeBarrier->imageBarrier().dstLayout != newState.state.layout ||
+					activeBarrier->imageBarrier().srcLayout != newState.previousState.layout)
+				{
+					return false;
+				}
+			}
+
+			// Sub resource range must be continuous if the barrier isn't a global barrier.
+			if (!barrierIsGlobal && prevSubResourceIndex + 1 != subResourceIndex)
+			{
+				return false;
+			}
+
+			return true;
+		};
+
+		m_compiledRenderPasses.resize(m_renderPasses.size());
+	
+		for (size_t passIndex = 0; passIndex < m_renderPasses.size(); ++passIndex)
+		{
+			RGPassRef pass = m_renderPasses[passIndex];
+			RGCompiledPass& compiledPass = m_compiledRenderPasses[passIndex];
+
+			compiledPass.SetName(pass->m_name);
+
+			// Skip culled passes.
+			if (pass->m_isCulled)
+			{
+				continue;
+			}
+
+			for (const RGBufferState& bufferState : pass->m_bufferStates)
+			{
+				if (!isBarrierRequired(bufferState.subResourceState))
+				{
+					continue;
+				}
+
+				// Buffers only requires global barriers.
+				compiledPass.GetGlobalBarrier().srcAccess |= bufferState.subResourceState.previousState.access;
+				compiledPass.GetGlobalBarrier().srcStage |= bufferState.subResourceState.previousState.stage;
+				compiledPass.GetGlobalBarrier().dstAccess |= bufferState.subResourceState.state.access;
+				compiledPass.GetGlobalBarrier().dstStage |= bufferState.subResourceState.state.stage;
+			}
+
+			for (const RGTextureState& textureState : pass->m_textureStates)
+			{
+				const RGTextureDesc& textureDesc = textureState.texture->GetDesc();
+
+				RHI::ResourceBarrierInfo* activeBarrier = nullptr;
+
+				uint32_t prevSubResourceIndex = 0;
+
+				textureState.EnumerateSubResources([&](const RGSubResourceState& subResourceState, uint32_t subResourceIndex) 
+				{
+					if (!isBarrierRequired(subResourceState))
+					{
+						return;
+					}
+
+					// Check if a new barrier is required for some reason.
+					if (!canMergeSubResourceBarriers(activeBarrier, subResourceState, subResourceIndex, prevSubResourceIndex))
+					{
+						if (isLayoutTransitionRequired(subResourceState))
+						{
+							uint32_t mipIndex, layerIndex, planeIndex;
+							RHI::GetSubResourceFromIndex(subResourceIndex, textureDesc.mips, textureDesc.layers, mipIndex, layerIndex, planeIndex);
+
+							activeBarrier = &compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, textureState.texture);
+							activeBarrier->imageBarrier().subResource.baseMipLevel = mipIndex;
+							activeBarrier->imageBarrier().subResource.baseArrayLayer = layerIndex;
+							activeBarrier->imageBarrier().subResource.layerCount = 1;
+							activeBarrier->imageBarrier().subResource.levelCount = 1;
+						}
+						else
+						{
+							activeBarrier = &compiledPass.GetGlobalBarrierInfo();
+						}
+					}
+
+					if (activeBarrier->type == RHI::BarrierType::Image)
+					{
+						RHI::ImageBarrier& imageBarrier = activeBarrier->imageBarrier();
+						imageBarrier.srcAccess |= subResourceState.previousState.access;
+						imageBarrier.srcStage |= subResourceState.previousState.stage;
+						imageBarrier.srcLayout |= subResourceState.previousState.layout;
+						imageBarrier.dstAccess |= subResourceState.state.access;
+						imageBarrier.dstStage |= subResourceState.state.stage;
+						imageBarrier.dstLayout |= subResourceState.state.layout;
+					}
+					else
+					{
+						RHI::GlobalBarrier& globalBarrier = activeBarrier->globalBarrier();
+						globalBarrier.srcAccess |= subResourceState.previousState.access;
+						globalBarrier.srcStage |= subResourceState.previousState.stage;
+						globalBarrier.dstAccess |= subResourceState.state.access;
+						globalBarrier.dstStage |= subResourceState.state.stage;
+					}
+
+					prevSubResourceIndex = subResourceIndex;
+				});
+			}
+		}
+	}
+
+	void RenderGraph::AssignExternalResourcesSrcState()
+	{
+		VT_PROFILE_FUNCTION();
+
+		RefPtr<RHI::ResourceStateTracker> resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
+
+		for (RGResourceRef resource : m_resources)
+		{
+			if (!resource->m_isExternal || resource->m_refCount == 0)
+			{
+				continue;
+			}
+
+			// If the resource is external the RHI resource has been assigned at this point.
+			RefPtr<RHI::RHIResource> rhiResource = GetRHIResource(resource);
+
+			if (resource->GetResourceType() == RGResourceType::Buffer)
+			{
+				RGBufferRef buffer = reinterpret_cast<RGBufferRef>(resource);
+				const RHI::ResourceState& currentResourceState = resourceTracker->GetCurrentResourceState(rhiResource, 0);
+
+				if (VT_CHECK(buffer->firstAccess))
+				{
+					buffer->firstAccess->previousState = currentResourceState;
+				}
+			}
+			else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
+			{
+				RGUniformBufferRef uniformBuffer = reinterpret_cast<RGUniformBufferRef>(resource);
+				const RHI::ResourceState& currentResourceState = resourceTracker->GetCurrentResourceState(rhiResource, 0);
+
+				if (VT_CHECK(uniformBuffer->firstAccess))
+				{
+					uniformBuffer->firstAccess->previousState = currentResourceState;
+				}
+			}
+			else if (resource->GetResourceType() == RGResourceType::Texture)
+			{
+				RGTextureRef texture = reinterpret_cast<RGTextureRef>(resource);
+
+				EnumerateTextureSubResources(texture->firstAccess, [&resourceTracker, &rhiResource](RGSubResourceState& subResourceState, uint32_t subResourceIndex)
+				{
+					const RHI::ResourceState& currentResourceState = resourceTracker->GetCurrentResourceState(rhiResource, subResourceIndex);
+					subResourceState.previousState = currentResourceState;
+				});
+			}
+		}
+	}
+
+	void RenderGraph::TransitionExternalResource(RGBufferRef buffer)
+	{
+		if (!VT_CHECK(buffer->m_isExternal || buffer->m_isExtracted))
+		{
+			return;
+		}
+
+		if (buffer->GetRHIResource())
+		{
+			auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
+
+			const RGResourceAccessState& subResourceAccessState = buffer->lastAccess;
+			RGPassRef lastAccessPass = subResourceAccessState.pass;
+
+			if (lastAccessPass)
+			{
+				RefPtr<RHI::RHIResource> rhiResource = buffer->GetRHIResource()->GetRHIBuffer();
+				const RGSubResourceState& lastSubResourceState = lastAccessPass->m_bufferStates[subResourceAccessState.stateIndex].subResourceState;
+				resourceTracker->TransitionResource(rhiResource, 0, lastSubResourceState.state.stage, lastSubResourceState.state.access, lastSubResourceState.state.layout);
+			}
+		}
+	}
+
+	void RenderGraph::TransitionExternalResource(RGTextureRef texture)
+	{
+		VT_PROFILE_FUNCTION();
+
+		if (!VT_CHECK(texture->m_isExternal || texture->m_isExtracted))
+		{
+			return;
+		}
+
+		if (texture->GetRHIResource())
+		{
+			auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
+
+			RefPtr<RHI::RHIResource> rhiResource = texture->GetRHIResource()->GetRHITexture();
+
+			for (uint32_t i = 0; i < texture->lastAccess.size(); ++i)
+			{
+				const RGResourceAccessState& subResourceAccessState = texture->lastAccess[i];
+				RGPassRef lastAccessPass = subResourceAccessState.pass;
+
+				if (lastAccessPass)
+				{
+					const RGSubResourceState* lastSubResourceState = lastAccessPass->m_textureStates[subResourceAccessState.stateIndex].subResourceStates[i];
+
+					if (VT_CHECK(lastSubResourceState != nullptr))
+					{
+						resourceTracker->TransitionResource(rhiResource, i, lastSubResourceState->state.stage, lastSubResourceState->state.access, lastSubResourceState->state.layout);
+					}
+				}
+			}
+		}
+	}
+
+	void RenderGraph::TransitionExternalResource(RGUniformBufferRef buffer)
+	{
+		if (!VT_CHECK(buffer->m_isExternal || buffer->m_isExtracted))
+		{
+			return;
+		}
+
+		if (buffer->GetRHIResource())
+		{
+			auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
+
+			const RGResourceAccessState& subResourceAccessState = buffer->lastAccess;
+			RGPassRef lastAccessPass = subResourceAccessState.pass;
+
+			if (lastAccessPass)
+			{
+				RefPtr<RHI::RHIResource> rhiResource = buffer->GetRHIResource()->GetRHIUniformBuffer();
+				const RGSubResourceState& lastSubResourceState = lastAccessPass->m_bufferStates[subResourceAccessState.stateIndex].subResourceState;
+				resourceTracker->TransitionResource(rhiResource, 0, lastSubResourceState.state.stage, lastSubResourceState.state.access, lastSubResourceState.state.layout);
+			}
+		}
 	}
 
 	void RenderGraph::ValidateTextureUAV(const RGTextureUAVDesc& uavDesc)
@@ -879,7 +1376,7 @@ namespace Volt
 		rgDesc.isTexelBufferDesc = EnumValueContainsFlag(rhiDesc.usage, RHI::BufferUsage::TexelBuffer);
 
 		RGBufferRef bufferResource = m_resourceAllocator.Allocate<RGBuffer>(rgDesc);
-		bufferResource->isExternal = true;
+		bufferResource->m_isExternal = true;
 
 		m_resources.emplace_back(bufferResource);
 		m_resourceManager.AddExternalResource(bufferResource, buffer);
@@ -905,7 +1402,7 @@ namespace Volt
 		desc.debugName = uniformBuffer->GetName();
 
 		RGUniformBufferRef bufferResource = m_resourceAllocator.Allocate<RGUniformBuffer>(desc);
-		bufferResource->isExternal = true;
+		bufferResource->m_isExternal = true;
 
 		m_resources.emplace_back(bufferResource);
 		m_resourceManager.AddExternalResource(bufferResource, uniformBuffer);
@@ -939,7 +1436,7 @@ namespace Volt
 		desc.isCubeMap = texture->GetDesc().isCubeMap;
 
 		RGTextureRef textureResource = m_resourceAllocator.Allocate<RGTexture>(desc);
-		textureResource->isExternal = true;
+		textureResource->m_isExternal = true;
 
 		m_resources.emplace_back(textureResource);
 		m_resourceManager.AddExternalResource(textureResource, texture);
@@ -951,31 +1448,31 @@ namespace Volt
 
 	void RenderGraph::EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage)
 	{
-		texture->isExtracted = true;
+		texture->m_isExtracted = true;
 		m_textureExtractions.emplace_back(texture, outImage);
 	}
 
 	void RenderGraph::EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::StorageBuffer>* outBuffer)
 	{
-		buffer->isExtracted = true;
+		buffer->m_isExtracted = true;
 		m_bufferExtractions.emplace_back(buffer, outBuffer);
 	}
 
 	void RenderGraph::BeginMarker(const std::string& markerName, const glm::vec4& markerColor /*= 1.f*/)
 	{
-		m_standaloneMarkers.BeginMarker(static_cast<uint32_t>(m_passes.size()), markerName, markerColor);
+		m_standaloneMarkers.BeginMarker(static_cast<uint32_t>(m_renderPasses.size()), markerName, markerColor);
 	}
 
 	void RenderGraph::EndMarker()
 	{
-		m_standaloneMarkers.EndMarker(static_cast<uint32_t>(m_passes.size()));
+		m_standaloneMarkers.EndMarker(static_cast<uint32_t>(m_renderPasses.size()));
 	}
 
 	void RenderGraph::AddResourceBarrier(RGResourceRef resource, const RHI::ResourceState& barrierInfo)
 	{
 		VT_PROFILE_FUNCTION();
 
-		const uint32_t passIndex = m_passes.empty() ? 0u : static_cast<uint32_t>(m_passes.size() - 1);
+		const uint32_t passIndex = m_renderPasses.empty() ? 0u : static_cast<uint32_t>(m_renderPasses.size() - 1);
 
 		auto& newBarrier = m_standaloneBarriers.AddBarrier(passIndex);
 		newBarrier.resource = resource;
@@ -1064,567 +1561,9 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_compiledPasses.resize(m_passes.size());
-
-		///// Calculate Ref Count //////
-		for (auto pass : m_passes)
-		{
-			pass->refCount = static_cast<uint32_t>(pass->GetResourceWrites().size() + pass->GetResourceRenderTargetAccesses().size());
-
-			for (auto resource : pass->GetResourceReads())
-			{
-				resource->GetResource()->AddRef();
-			}
-
-			// Mark the first writer of a resource as it's producer
-			for (auto resource : pass->GetResourceWrites())
-			{
-				if (!resource->GetResource()->HasProducer(resource))
-				{
-					resource->GetResource()->AddProducer(pass, resource);
-					// #TODO_Ivar: Leaves this here for now, reference: RenderGraphCullingTests::WriteAfterWrite
-					//pass->refCount++;
-				}
-				else
-				{
-					resource->GetResource()->AddRef();
-				}
-			}
-
-			for (auto resource : pass->GetResourceRenderTargetAccesses())
-			{
-				if (!resource->HasProducer())
-				{
-					resource->AddProducer(pass);
-
-					// If this pass is the render targets producer, we need to increase the ref count of the pass.
-					// #TODO_Ivar: Leaves this here for now, reference: RenderGraphCullingTests::WriteAfterWrite
-					//pass->refCount++;
-				}
-				else if (!resource->IsProducer(pass))
-				{
-					// We add a reference if we are not the producer 
-					// of this resource, because we can then consider it being a "read"
-					resource->AddRef();
-				}
-			}
-
-			for (auto resourceAccess : pass->GetResourceAccesses())
-			{
-				// Copy Dst can be seen as a "produce" operation, as it puts data
-				// into the resource.
-				if (resourceAccess.accessType == RGResourceAccess::CopyDst)
-				{
-					if (!resourceAccess.resource->HasProducer())
-					{
-						resourceAccess.resource->AddProducer(pass);
-					}
-
-					// We need to increase the ref count of the pass as well.
-					pass->refCount++;
-				}
-				else if (!resourceAccess.resource->IsProducer(pass))
-				{
-					// Otherwise we add a reference to the resource
-					resourceAccess.resource->AddRef();
-				}
-			}
-		}
-
-		///// Cull Passes /////
-		for (auto pass : m_passes)
-		{
-			// If a pass has no references, it doesn't have any output.
-			// In this case all reads should have it's references removed.
-			// And then it should be marked as culled.
-			if (pass->refCount == 0 && !EnumValueContainsFlag(pass->flags, RenderGraphPassFlags::NeverCull))
-			{
-				for (auto resource : pass->GetResourceReads())
-				{
-					resource->GetResource()->DecRef();
-				}
-
-				// All non produced writes as well
-				for (auto resource : pass->GetResourceWrites())
-				{
-					if (!resource->GetResource()->IsProducer(pass))
-					{
-						resource->GetResource()->DecRef();
-					}
-				}
-
-				// And all non producer render target accesses
-				for (auto resource : pass->GetResourceRenderTargetAccesses())
-				{
-					if (!resource->IsProducer(pass))
-					{
-						resource->DecRef();
-					}
-				}
-
-				pass->isCulled = true;
-			}
-		}
-
-		Vector<RGResourceRef> unreferencedResources{};
-		for (auto node : m_resources)
-		{
-			if (node->GetRefCount() == 0)
-			{
-				unreferencedResources.emplace_back(node);
-			}
-		}
-
-		while (!unreferencedResources.empty())
-		{
-			RGResourceRef unreferencedResource = unreferencedResources.back();
-			unreferencedResources.pop_back();
-
-			// If the resource is external, or queued to be extracted, we will skip 
-			// the culling logic.
-			if (unreferencedResource->isExternal || unreferencedResource->isExtracted)
-			{
-				continue;
-			}
-
-			for (const RenderGraphPassRef producer : unreferencedResource->producers)
-			{
-				// If the pass has been marked as never cull, we won't continue this iteration
-				if (EnumValueContainsFlag(producer->flags, RenderGraphPassFlags::NeverCull))
-				{
-					continue;
-				}
-
-				VT_ENSURE_MSG(producer->refCount > 0, "Ref count cannot be zero at this time!");
-
-				// Decrease the reference counter on the producer, and then decrease the reference counter of it's resource reads.
-				// This might produce more unreferenced resources and continue the loop.
-				producer->refCount--;
-				if (producer->refCount == 0)
-				{
-					for (auto resourceAccess : producer->GetResourceReads())
-					{
-						auto resource = resourceAccess->GetResource();
-						resource->DecRef();
-
-						if (resource->GetRefCount() == 0)
-						{
-							unreferencedResources.emplace_back(resource);
-						}
-					}
-
-					for (auto resource : producer->GetResourceRenderTargetAccesses())
-					{
-						if (!resource->IsProducer(producer))
-						{
-							resource->DecRef();
-							if (resource->GetRefCount() == 0)
-							{
-								unreferencedResources.emplace_back(resource);
-							}
-						}
-					}
-
-					producer->isCulled = true;
-				}
-			}
-		}
-
-		///// Find last resource usages /////
-		for (auto pass : m_passes)
-		{
-			if (pass->isCulled)
-			{
-				continue;
-			}
-
-			for (auto resourceAccess : pass->GetResourceReads())
-			{
-				resourceAccess->GetResource()->lastUser = pass;
-			}
-
-			for (auto resourceAccess : pass->GetResourceWrites())
-			{
-				resourceAccess->GetResource()->lastUser = pass;
-			}
-
-			for (auto resourceAccess : pass->GetResourceRenderTargetAccesses())
-			{
-				resourceAccess->lastUser = pass;
-			}
-		}
-
-		///// Find surrenderable resources /////
-		for (auto resource : m_resources)
-		{
-			// If the resource doesn't have any last user it will not be used.
-			if (!resource->lastUser || resource->isExternal)
-			{
-				continue;
-			}
-
-			const uint32_t passIndex = resource->lastUser->passIndex;
-			m_compiledPasses[passIndex].AddSurrenderableResource(resource);
-		}
-
-		auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
-
-		// Add all external resources to the resource state tracker
-		for (auto resource : m_resources)
-		{
-			// Skip all non-external resources
-			if (!resource->isExternal)
-			{
-				continue;
-			}
-
-			const RGResourceType resourceType = resource->GetResourceType();
-
-			if (resourceType == RGResourceType::Texture)
-			{
-				RGTextureRef textureResource = reinterpret_cast<RGTextureRef>(resource);
-
-				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(textureResource->GetRHIResource()->GetRHITexture());
-
-				RGResourceState& currentState = m_resourceStateTracker.GetState(resource);
-				currentState.currentState = resourceState;
-
-				if (EnumValueContainsAnyFlag(resourceState.access, RHI::BarrierAccess::DepthStencilWrite, RHI::BarrierAccess::ShaderWrite, RHI::BarrierAccess::RenderTarget))
-				{
-					currentState.isWriteState = true;
-				}
-			}
-			else if (resourceType == RGResourceType::Buffer)
-			{
-				RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
-				const RHI::ResourceState& resourceState = resourceTracker->GetCurrentResourceState(bufferResource->GetRHIResource()->GetRHIBuffer());
-
-				RGResourceState& currentState = m_resourceStateTracker.GetState(resource);
-				currentState.currentState = resourceState;
-
-				if (EnumValueContainsAnyFlag(resourceState.access, RHI::BarrierAccess::ShaderWrite))
-				{
-					currentState.isWriteState = true;
-				}
-			}
-			else if (resourceType == RGResourceType::UniformBuffer)
-			{
-				RGUniformBufferRef uniformBufferResource = reinterpret_cast<RGUniformBufferRef>(resource);
-				m_resourceStateTracker.GetState(resource).currentState = resourceTracker->GetCurrentResourceState(uniformBufferResource->GetRHIResource()->GetRHIUniformBuffer());
-			}
-		}
-
-		///// Setup Barriers /////
-		for (auto pass : m_passes)
-		{
-			auto& compiledPass = m_compiledPasses.at(pass->passIndex);
-			compiledPass.SetName(pass->name);
-
-			if (!pass->isCulled)
-			{
-				for (auto resourceAccess : pass->GetResourceWrites())
-				{
-					const RGResourceRef resource = resourceAccess->GetResource();
-					const RGResourceType resourceType = resource->GetResourceType();
-
-					// We start by figuring out the state that we want to take the resource to.
-					RHI::ResourceState newState{};
-
-					// Compute shader.
-					if (EnumValueContainsFlag(pass->flags, RenderGraphPassFlags::Compute))
-					{
-						// For compute shaders, all the resource types have the same accesses
-						newState.access = RHI::BarrierAccess::ShaderWrite;
-						newState.stage = RHI::BarrierStage::ComputeShader;
-						newState.layout = RHI::ImageLayout::ShaderWrite;
-					}
-					else
-					{
-						if (IsEqualToAny(resourceType, RGResourceType::Buffer, RGResourceType::UniformBuffer))
-						{
-							newState.access = RHI::BarrierAccess::ShaderWrite;
-							newState.stage = RHI::BarrierStage::VertexShader | RHI::BarrierStage::PixelShader;
-							newState.layout = RHI::ImageLayout::ShaderWrite;
-
-							if (RHI::RHICanUseMeshShaders())
-							{
-								newState.stage |= RHI::BarrierStage::MeshShader | RHI::BarrierStage::AmplificationShader;
-							}
-						}
-					}
-
-					// Handle cases
-					if (!resource->IsFirstProducer(pass))
-					{
-						auto& resourceState = m_resourceStateTracker.GetState(resource);
-
-						const bool isSameLayoutType = IsEqualToAny(resourceType, RGResourceType::Texture) ? newState.layout == resourceState.currentState.layout : true;
-						const bool isBufferType = IsEqualToAny(resourceType, RGResourceType::Buffer, RGResourceType::UniformBuffer);
-
-						// Handle cases 2, 4, 5
-						if (isBufferType || isSameLayoutType)
-						{
-							compiledPass.GetGlobalBarrier().srcAccess |= resourceState.currentState.access;
-							compiledPass.GetGlobalBarrier().srcStage |= resourceState.currentState.stage;
-							compiledPass.GetGlobalBarrier().dstAccess |= newState.access;
-							compiledPass.GetGlobalBarrier().dstStage |= newState.stage;
-						}
-						// It's not a buffer and the image needs to transition layout, handle case 9.
-						else
-						{
-							const bool requireExternalSrcAccess = resource->isExternal && resourceState.previousUsage == nullptr;
-
-							VT_ENSURE(newState.layout != RHI::ImageLayout::Undefined);
-
-							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, requireExternalSrcAccess);
-							newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
-							newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
-							newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
-							newBarrier.imageBarrier().dstAccess = newState.access;
-							newBarrier.imageBarrier().dstStage = newState.stage;
-							newBarrier.imageBarrier().dstLayout = newState.layout;
-							InitializeImageBarrierSubresourceFromUAV(resourceAccess, newBarrier.imageBarrier().subResource);
-						}
-
-						resourceState.currentState = newState;
-						resourceState.isWriteState = true;
-						resourceState.previousUsage = pass;
-					}
-					// If the pass is this resources producer, we handle it a little bit different because this will be the first entry
-					// in the resource state tracker.
-					else
-					{
-						VT_ENSURE(resourceType != RGResourceType::UniformBuffer);
-
-						auto& resourceState = m_resourceStateTracker.GetState(resource);
-						resourceState.currentState = newState;
-						resourceState.previousUsage = pass;
-						resourceState.isWriteState = true;
-
-						if (IsEqualToAny(resourceType, RGResourceType::Texture))
-						{
-							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, true);
-							newBarrier.imageBarrier().dstAccess = newState.access;
-							newBarrier.imageBarrier().dstStage = newState.stage;
-							newBarrier.imageBarrier().dstLayout = newState.layout;
-							InitializeImageBarrierSubresourceFromUAV(resourceAccess, newBarrier.imageBarrier().subResource);
-						}
-						else if (resourceType == RGResourceType::Buffer)
-						{
-							compiledPass.GetGlobalBarrier().dstAccess |= newState.access;
-							compiledPass.GetGlobalBarrier().dstStage |= newState.stage;
-						}
-					}
-				}
-
-				for (auto resource : pass->GetResourceRenderTargetAccesses())
-				{
-					// For textures there are a couple of cases to consider.
-					// It could be a color image, or a depth image, and needs
-					// to be setup accordingly.
-					RHI::ResourceState newState = GetWriteStateForRasterizedTexture(resource);
-
-					if (!resource->IsFirstProducer(pass))
-					{
-						auto& resourceState = m_resourceStateTracker.GetState(resource);
-
-						const bool isSameLayoutType = newState.layout == resourceState.currentState.layout;
-
-						// If it's the same layout (read after read / write after write) then we only need a global barrier.
-						if (isSameLayoutType)
-						{
-							compiledPass.GetGlobalBarrier().srcAccess |= resourceState.currentState.access;
-							compiledPass.GetGlobalBarrier().srcStage |= resourceState.currentState.stage;
-							compiledPass.GetGlobalBarrier().dstAccess |= newState.access;
-							compiledPass.GetGlobalBarrier().dstStage |= newState.stage;
-						}
-						else
-						{
-							const bool requireExternalSrcAccess = resource->isExternal && resourceState.previousUsage == nullptr;
-
-							auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, requireExternalSrcAccess);
-							newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
-							newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
-							newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
-							newBarrier.imageBarrier().dstAccess = newState.access;
-							newBarrier.imageBarrier().dstStage = newState.stage;
-							newBarrier.imageBarrier().dstLayout = newState.layout;
-						}
-
-						resourceState.currentState = newState;
-						resourceState.isWriteState = true;
-						resourceState.previousUsage = pass;
-					}
-					// If the pass is this resources producer, we handle it a little bit different because this will be the first entry
-					// in the resource state tracker.
-					else
-					{
-						auto& resourceState = m_resourceStateTracker.GetState(resource);
-						resourceState.currentState = newState;
-						resourceState.previousUsage = pass;
-						resourceState.isWriteState = true;
-
-						auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, true);
-						newBarrier.imageBarrier().dstAccess = newState.access;
-						newBarrier.imageBarrier().dstStage = newState.stage;
-						newBarrier.imageBarrier().dstLayout = newState.layout;
-					}
-				}
-
-				for (auto resourceAccess : pass->GetResourceReads())
-				{
-					const RGResourceRef resource = resourceAccess->GetResource();
-					const RGResourceType resourceType = resource->GetResourceType();
-
-					// We start by figuring out the state that we want to take the resource to.
-					RHI::ResourceState newState{};
-
-					// When the resource is being read, the access and layout is the same
-					// for both compute and rasterization passes.
-					newState.access = RHI::BarrierAccess::ShaderRead;
-					newState.layout = RHI::ImageLayout::ShaderRead;
-
-					if (EnumValueContainsFlag(RenderGraphPassFlags::Compute, pass->flags))
-					{
-						newState.stage = RHI::BarrierStage::ComputeShader;
-					}
-					else
-					{
-						newState.stage = RHI::BarrierStage::VertexShader | RHI::BarrierStage::PixelShader;
-
-						if (RHI::RHICanUseMeshShaders())
-						{
-							newState.stage |= RHI::BarrierStage::MeshShader | RHI::BarrierStage::AmplificationShader;
-						}
-					}
-
-					// Handle cases
-					auto& resourceState = m_resourceStateTracker.GetState(resource);
-
-					// Handle case 1 and 3
-					if (!resourceState.isWriteState)
-					{
-						// As both the previous and the current access are read operations, no barrier is required.
-						continue;
-					}
-
-					const bool isBufferType = IsEqualToAny(resourceType, RGResourceType::Buffer, RGResourceType::UniformBuffer);
-
-					// Handle case 8
-					if (isBufferType)
-					{
-						compiledPass.GetGlobalBarrier().srcAccess |= resourceState.currentState.access;
-						compiledPass.GetGlobalBarrier().srcStage |= resourceState.currentState.stage;
-						compiledPass.GetGlobalBarrier().dstAccess |= newState.access;
-						compiledPass.GetGlobalBarrier().dstStage |= newState.stage;
-					}
-					// If we reach this point, it's an image that needs a layout transition.
-					else
-					{
-						const bool requireExternalSrcAccess = resource->isExternal && resourceState.previousUsage == nullptr;
-
-						auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, requireExternalSrcAccess);
-						newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
-						newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
-						newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
-						newBarrier.imageBarrier().dstAccess = newState.access;
-						newBarrier.imageBarrier().dstStage = newState.stage;
-						newBarrier.imageBarrier().dstLayout = newState.layout;
-						InitializeImageBarrierSubresourceFromSRV(resourceAccess, newBarrier.imageBarrier().subResource);
-					}
-
-					resourceState.currentState = newState;
-					resourceState.isWriteState = false;
-					resourceState.previousUsage = pass;
-				}
-
-				for (auto resourceAccess : pass->GetResourceAccesses())
-				{
-					VT_ENSURE(resourceAccess.accessType != RGResourceAccess::None);
-
-					const RGResourceRef resource = resourceAccess.resource;
-					const RGResourceType resourceType = resource->GetResourceType();
-
-					RHI::ResourceState newState{};
-					SetupResourceStateFromAccess(resourceAccess.accessType, newState);
-
-					// Handle cases
-					auto& resourceState = m_resourceStateTracker.GetState(resource);
-
-					// Handle case 1 and 3
-					if (!resourceState.isWriteState)
-					{
-						// As both the previous and the current access are read operations, no barrier is required.
-						continue;
-					}
-
-					const bool isBufferType = IsEqualToAny(resourceType, RGResourceType::Buffer, RGResourceType::UniformBuffer);
-
-					// Handle case 8
-					if (isBufferType)
-					{
-						compiledPass.GetGlobalBarrier().srcAccess |= resourceState.currentState.access;
-						compiledPass.GetGlobalBarrier().srcStage |= resourceState.currentState.stage;
-						compiledPass.GetGlobalBarrier().dstAccess |= newState.access;
-						compiledPass.GetGlobalBarrier().dstStage |= newState.stage;
-					}
-					// If we reach this point, it's an image that needs a layout transition.
-					else
-					{
-						const bool requireExternalSrcAccess = resource->isExternal && resourceState.previousUsage == nullptr;
-
-						auto& newBarrier = compiledPass.prePassBarriers.AddBarrier(RHI::BarrierType::Image, resource, requireExternalSrcAccess);
-						newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
-						newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
-						newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
-						newBarrier.imageBarrier().dstAccess = newState.access;
-						newBarrier.imageBarrier().dstStage = newState.stage;
-						newBarrier.imageBarrier().dstLayout = newState.layout;
-					}
-
-					resourceState.currentState = newState;
-					resourceState.isWriteState = false;
-					resourceState.previousUsage = pass;
-				}
-			}
-
-			// Handle standalone barriers
-			if (m_standaloneBarriers.HasPassBarriers(pass->passIndex))
-			{
-				for (const auto& barrier : m_standaloneBarriers.GetPassBarriers(pass->passIndex))
-				{
-					auto& resourceState = m_resourceStateTracker.GetState(barrier.resource);
-
-					const bool isSameLayoutType = IsEqualToAny(barrier.type, RGResourceType::Texture) ? barrier.newState.layout == resourceState.currentState.layout : true;
-					const bool isBufferType = IsEqualToAny(barrier.type, RGResourceType::Buffer, RGResourceType::UniformBuffer);
-
-					if (isBufferType || isSameLayoutType)
-					{
-						compiledPass.GetPostPassGlobalBarrier().srcAccess |= resourceState.currentState.access;
-						compiledPass.GetPostPassGlobalBarrier().srcStage |= resourceState.currentState.stage;
-						compiledPass.GetPostPassGlobalBarrier().dstAccess |= barrier.newState.access;
-						compiledPass.GetPostPassGlobalBarrier().dstStage |= barrier.newState.stage;
-					}
-					// It's not a buffer and the image needs to transition layout, handle case 9.
-					else
-					{
-						const bool requireExternalSrcAccess = barrier.resource->isExternal && resourceState.previousUsage == nullptr;
-
-						auto& newBarrier = compiledPass.postPassBarriers.AddBarrier(RHI::BarrierType::Image, barrier.resource, requireExternalSrcAccess);
-						newBarrier.imageBarrier().srcAccess = resourceState.currentState.access;
-						newBarrier.imageBarrier().srcStage = resourceState.currentState.stage;
-						newBarrier.imageBarrier().srcLayout = resourceState.currentState.layout;
-						newBarrier.imageBarrier().dstAccess = barrier.newState.access;
-						newBarrier.imageBarrier().dstStage = barrier.newState.stage;
-						newBarrier.imageBarrier().dstLayout = barrier.newState.layout;
-					}
-
-					resourceState.currentState = barrier.newState;
-					resourceState.isWriteState = GetIsWriteFromAccessMask(barrier.newState.access);
-					resourceState.previousUsage = pass;
-				}
-			}
-		}
+		CullPasses();
+		AssignExternalResourcesSrcState();
+		BuildPassBarriers();
 	}
 
 	void RenderGraph::Execute()
@@ -1651,7 +1590,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		if (m_passes.empty())
+		if (m_renderPasses.empty())
 		{
 			return nullptr;
 		}
@@ -1670,14 +1609,14 @@ namespace Volt
 		};
 
 		Vector<PassExecutionRange> passExecutionRanges;
-		passExecutionRanges.reserve(Math::DivideRoundUp(m_passes.size(), NumPassesPerJob));
+		passExecutionRanges.reserve(Math::DivideRoundUp(m_renderPasses.size(), NumPassesPerJob));
 
 		size_t currentOffset = 0;
-		while (currentOffset < m_passes.size())
+		while (currentOffset < m_renderPasses.size())
 		{
 			auto& newRange = passExecutionRanges.emplace_back();
 			newRange.begin = static_cast<uint16_t>(currentOffset);
-			newRange.count = static_cast<uint16_t>(std::min(NumPassesPerJob, (m_passes.size() - currentOffset)));
+			newRange.count = static_cast<uint16_t>(std::min(NumPassesPerJob, (m_renderPasses.size() - currentOffset)));
 
 			currentOffset += NumPassesPerJob;
 		}
@@ -1720,10 +1659,10 @@ namespace Volt
 
 			for (uint16_t i = executionRange.begin; i < executionRange.begin + executionRange.count; ++i)
 			{
-				RenderGraphPassRef pass = renderGraphPtr->m_passes.at(i);
-				const CompiledPass& compiledPass = renderGraphPtr->m_compiledPasses.at(pass->passIndex);
+				RGPassRef pass = renderGraphPtr->m_renderPasses.at(i);
+				const RGCompiledPass& compiledPass = renderGraphPtr->m_compiledRenderPasses.at(pass->passIndex);
 
-				if (pass->isCulled)
+				if (pass->m_isCulled)
 				{
 					renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.postPassBarriers, commandBuffer);
 					renderGraphPtr->InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, commandBuffer);
@@ -1732,11 +1671,11 @@ namespace Volt
 
 				renderGraphPtr->InsertStandaloneMarkersIntoCommandBuffer(pass->passIndex, commandBuffer);
 
-				commandBuffer->BeginMarker(pass->name, { 1.f, 1.f, 1.f, 1.f });
+				commandBuffer->BeginMarker(pass->m_name, { 1.f, 1.f, 1.f, 1.f });
 				renderGraphPtr->InsertBarriersIntoCommandBuffer(compiledPass.prePassBarriers, commandBuffer);
 
 				{
-					VT_PROFILE_SCOPE(pass->name.data());
+					VT_PROFILE_SCOPE(pass->m_name.data());
 					RenderContext renderContext(*renderGraphPtr, pass, commandBuffer, shaderParameterUniformBuffer);
 					renderGraphPtr->m_passAllocator.ExecutePass(pass, renderContext);
 				}
@@ -1855,8 +1794,7 @@ namespace Volt
 			*textureExtractionData.outImagePtr = textureExtractionData.texture->GetRHIResource()->GetRHITexture();
 
 			// Update resource state of extracted texture
-			const RGResourceState& resourceState = m_resourceStateTracker.GetState(textureExtractionData.texture);
-			resourceTracker->TransitionResource(*textureExtractionData.outImagePtr, resourceState.currentState.stage, resourceState.currentState.access, resourceState.currentState.layout);
+			TransitionExternalResource(textureExtractionData.texture);
 		}
 
 		for (const auto& bufferExtractionData : m_bufferExtractions)
@@ -1869,12 +1807,11 @@ namespace Volt
 			*bufferExtractionData.outBufferPtr = bufferExtractionData.buffer->GetRHIResource()->GetRHIBuffer();
 
 			// Update resource state of extracted buffer
-			const RGResourceState& resourceState = m_resourceStateTracker.GetState(bufferExtractionData.buffer);
-			resourceTracker->TransitionResource(*bufferExtractionData.outBufferPtr, resourceState.currentState.stage, resourceState.currentState.access);
+			TransitionExternalResource(bufferExtractionData.buffer);
 		}
 	}
 
-	void RenderGraph::InsertBarriersIntoCommandBuffer(const CompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer)
+	void RenderGraph::InsertBarriersIntoCommandBuffer(const RGCompiledPass::PassBarriers& passBarriers, const RefPtr<RHI::CommandBuffer>& commandBuffer)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -1898,17 +1835,7 @@ namespace Volt
 			auto& barrier = resultBarriers.emplace_back(passBarrier.barrier);
 			if (barrier.type == RHI::BarrierType::Image)
 			{
-				auto resource = GetRHIResource(passBarrier.resource);
-
-				if (passBarrier.requiresExternalSrcState)
-				{
-					const RHI::ResourceState& prevResourceState = resourceTracker->GetCurrentResourceState(resource);
-					barrier.imageBarrier().srcStage = prevResourceState.stage;
-					barrier.imageBarrier().srcAccess = prevResourceState.access;
-					barrier.imageBarrier().srcLayout = prevResourceState.layout;
-				}
-
-				barrier.imageBarrier().resource = resource;
+				barrier.imageBarrier().resource = GetRHIResource(passBarrier.resource);
 			}
 			else if (barrier.type == RHI::BarrierType::Buffer)
 			{
@@ -1997,6 +1924,38 @@ namespace Volt
 		return rhiResource;
 	}
 
+	RGSubResourceState* RenderGraph::AllocateSubResourceState()
+	{
+		// Allocate and call constructor
+		RGSubResourceState* subResourceState = reinterpret_cast<RGSubResourceState*>(m_temporaryDataAllocator.Allocate(sizeof(RGSubResourceState)));
+		new(subResourceState) RGSubResourceState();
+
+		return subResourceState;
+	}
+
+	void RenderGraph::AddPassDependency(RGPassRef pass, RGResourceType resourceType, uint32_t subResourceIndex, RGSubResourceState& subResourceState, const RGResourceAccessState& lastAccess)
+	{
+		if (lastAccess.pass != nullptr)
+		{
+			if (pass->m_passDependencies.find(lastAccess.pass) == pass->m_passDependencies.end())
+			{
+				pass->m_passDependencies.emplace_back(lastAccess.pass);
+				lastAccess.pass->m_refCount++;
+			}
+
+			if (resourceType == RGResourceType::Buffer || resourceType == RGResourceType::UniformBuffer)
+			{
+				const RGSubResourceState& prevSubResourceState = lastAccess.pass->m_bufferStates[lastAccess.stateIndex].subResourceState;
+				subResourceState.previousState = prevSubResourceState.state;
+			}
+			else
+			{
+				const RGSubResourceState& prevSubResourceState = *lastAccess.pass->m_textureStates[lastAccess.stateIndex].subResourceStates[subResourceIndex];
+				subResourceState.previousState = prevSubResourceState.state;
+			}
+		}
+	}
+
 	void RenderGraph::StandaloneMarkers::BeginMarker(uint32_t passIndex, const std::string& markerName, const glm::vec4& color)
 	{
 		auto& newMarker = m_markers[passIndex].emplace_back();
@@ -2023,7 +1982,7 @@ namespace Volt
 		desc.debugName = "ShaderParameters";
 
 		m_uniformBuffer = renderGraph.CreateUniformBuffer(desc);
-		m_uniformBuffer->AddRef();
+		m_uniformBuffer->m_refCount++;
 
 		// Create view
 		RGUniformBufferSRVDesc srvDesc{};

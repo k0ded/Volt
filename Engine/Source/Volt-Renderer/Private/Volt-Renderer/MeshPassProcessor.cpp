@@ -127,8 +127,6 @@ namespace Volt
 
 			m_primitiveIndexVertexBuffer = renderGraph.CreateBuffer(bufferDesc);
 
-			m_primitiveIndexVertexBuffer->AddRef();
-
 			AddMappedBufferUploadCopyData(renderGraph, renderGraph.CreateUAV(m_primitiveIndexVertexBuffer), primitiveIndices.data(), primitiveIndices.byte_size());
 		}
 		else
@@ -227,8 +225,13 @@ namespace Volt
 
 					 if (drawCommandPipeline->HasInlineParameters())
 					 {
+						 const RHI::InlineParametersBlockInfo& inlineParametersBlockInfo = drawCommandPipeline->GetInlineParametersBlockInfo();
+
 						 MaterialShader::InlineParameterBlock inlineParameterBlock = GetMaterialInlineParameterBlock(firstDrawCommand.renderPrimitive);
-						 commandBuffer->PushInlineParameters(&inlineParameterBlock, sizeof(MaterialShader::InlineParameterBlock), 0, RHI::ShaderStage::Pixel);
+						 const uint8_t* bytePtr = reinterpret_cast<const uint8_t*>(&inlineParameterBlock);
+
+						 VT_ENSURE(inlineParametersBlockInfo.offset + inlineParametersBlockInfo.size <= sizeof(MaterialShader::InlineParameterBlock));
+						 commandBuffer->PushInlineParameters(bytePtr + inlineParametersBlockInfo.offset, inlineParametersBlockInfo.size, 0, RHI::ShaderStage::Pixel);
 					 }
 
 					 commandBuffer->DrawIndexed(

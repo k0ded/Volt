@@ -157,7 +157,7 @@ namespace Volt::RHI
 
 		VkCommandBuffer vkCmdBuffer = commandBuffer->GetHandle<VkCommandBuffer>();
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(this);
+		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(this, 0);
 
 		// Transition to DST OPTIMAL
 		VkImageMemoryBarrier barrier{};
@@ -386,7 +386,7 @@ namespace Volt::RHI
 			aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
 		}
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(this);
+		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(this, 0);
 
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

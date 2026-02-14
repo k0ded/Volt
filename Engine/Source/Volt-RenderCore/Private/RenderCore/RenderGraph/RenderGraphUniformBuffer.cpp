@@ -15,30 +15,6 @@ namespace Volt
 		return RGResourceType::UniformBuffer;
 	}
 
-	bool RGUniformBuffer::HasProducer(RGResourceUAV* uav) const
-	{
-		return m_isProduced;
-	}
-
-	bool RGUniformBuffer::HasProducer() const
-	{
-		return m_isProduced;
-	}
-
-	void RGUniformBuffer::AddProducer(RenderGraphPass* pass, RGResourceUAV* uav)
-	{
-		VT_ENSURE(!m_isProduced);
-		producers.emplace_back(pass);
-		m_isProduced = true;
-	}
-
-	void RGUniformBuffer::AddProducer(RenderGraphPass* pass)
-	{
-		VT_ENSURE(!m_isProduced);
-		producers.emplace_back(pass);
-		m_isProduced = true;
-	}
-
 	RGUniformBufferSRV::RGUniformBufferSRV(const RGUniformBufferSRVDesc& desc)
 		: m_desc(desc)
 	{

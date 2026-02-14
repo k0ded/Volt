@@ -36,6 +36,10 @@ namespace Volt
 		Array<RHI::AttachmentBlendState, RHI::MAX_COLOR_ATTACHMENT_COUNT> attachmentBlendStates;
 		ShaderParameterRenderTargetBindings renderTargets;
 
+		float depthBiasConstantFactor = 0.f;
+		float depthBiasClamp = 0.f;
+		float depthBiasSlopeFactor = 0.f;
+
 		RHI::Topology topology = RHI::Topology::TriangleList;
 		RHI::CullMode cullMode = RHI::CullMode::Back;
 		RHI::FillMode fillMode = RHI::FillMode::Solid;
@@ -43,9 +47,6 @@ namespace Volt
 		RHI::CompareOperator depthCompareOperator = RHI::CompareOperator::GreaterEqual;
 		bool enablePrimitiveRestart = false;
 		bool enableDepthClamp = false;
-		float depthBiasConstantFactor = 0.f;
-		float depthBiasClamp = 0.f;
-		float depthBiasSlopeFactor = 0.f;
 	};
 
 	class VTRC_API RenderContext
@@ -60,7 +61,7 @@ namespace Volt
 			uint8_t* mappedPtr;
 		};
 
-		RenderContext(RenderGraph& renderGraph, RenderGraphPassRef currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
+		RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
 
 		void Flush(RefPtr<RHI::Fence> fence);
 
@@ -155,7 +156,7 @@ namespace Volt
 		InlineVector<PerStageShaderParameters, 8> m_perStageShaderParameters;
 
 		RenderGraph& m_renderGraph;
-		RenderGraphPassRef m_currentPass;
+		RGPassRef m_currentPass;
 		RenderGraphShaderParameterUniformBuffer& m_shaderParameterUniformBuffer;
 		RenderingInfo m_activeRenderingInfo{};
 		bool m_isWithinRenderingScope = false;

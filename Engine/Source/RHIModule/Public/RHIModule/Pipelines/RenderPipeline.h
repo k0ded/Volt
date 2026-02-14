@@ -57,12 +57,19 @@ namespace Volt::RHI
 		VertexBufferBinding perInstanceVertexBuffer;
 	};
 
+	struct InlineParametersBlockInfo
+	{
+		uint32_t offset;
+		uint32_t size;
+	};
+
 	class VTRHI_API RenderPipeline : public RHIInterface
 	{
 	public:
 		virtual void Invalidate() = 0;
 		virtual bool IsValid() const = 0;
 		virtual bool HasInlineParameters() const = 0;
+		virtual const InlineParametersBlockInfo& GetInlineParametersBlockInfo() const = 0;
 		virtual size_t GetHash() const = 0;
 		virtual const ShaderResourceBinding* GetResourceBindingFromName(const StringHash& name, ShaderStage shaderStage) const = 0;
 		virtual ArrayView<ShaderParameterMap> GetShaderParameterMaps() const = 0;

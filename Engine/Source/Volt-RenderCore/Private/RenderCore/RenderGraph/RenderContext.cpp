@@ -13,7 +13,7 @@
 
 namespace Volt
 {
-	RenderContext::RenderContext(RenderGraph& renderGraph, RenderGraphPassRef currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
+	RenderContext::RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
 		: m_renderGraph(renderGraph), m_currentPass(currentPass), m_commandBuffer(commandBuffer), m_shaderParameterUniformBuffer(shaderParameterUniformBuffer)
 	{
 
@@ -63,9 +63,17 @@ namespace Volt
 
 		for (size_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
 		{
-			if (rtBindings.renderTargets[i] != nullptr)
+			const ShaderParameterRenderTargetDecl& rtDecl = rtBindings.renderTargets[i];
+
+			if (rtDecl.texture != nullptr)
 			{
-				RefPtr<RHI::ImageView> view = rtBindings.renderTargets[i]->GetRHIResource()->GetOrCreateView({});
+				RHI::ImageViewDesc viewDesc{};
+				viewDesc.baseMipLevel = rtDecl.subResourceRange.baseMipLevel;
+				viewDesc.baseArrayLayer = rtDecl.subResourceRange.baseArrayLayer;
+				viewDesc.mipCount = rtDecl.subResourceRange.mipCount;
+				viewDesc.layerCount = rtDecl.subResourceRange.layerCount;
+
+				RefPtr<RHI::ImageView> view = rtDecl.texture->GetRHIResource()->GetOrCreateView(viewDesc);
 
 				RHI::AttachmentInfo& attachment = colorAttachments.emplace_back();
 				attachment.clearMode = RHI::ClearMode::Clear;
@@ -74,11 +82,19 @@ namespace Volt
 			}
 		}
 
-		if (rtBindings.depthTarget != nullptr)
+		const ShaderParameterRenderTargetDecl& depthDecl = rtBindings.depthTarget;
+
+		if (depthDecl.texture != nullptr)
 		{
+			RHI::ImageViewDesc viewDesc{};
+			viewDesc.baseMipLevel = depthDecl.subResourceRange.baseMipLevel;
+			viewDesc.baseArrayLayer = depthDecl.subResourceRange.baseArrayLayer;
+			viewDesc.mipCount = depthDecl.subResourceRange.mipCount;
+			viewDesc.layerCount = depthDecl.subResourceRange.layerCount;
+
+			depthAttachment.view = depthDecl.texture->GetRHIResource()->GetOrCreateView(viewDesc);
 			depthAttachment.clearMode = RHI::ClearMode::Clear;
 			depthAttachment.clearColor = { 0.f };
-			depthAttachment.view = rtBindings.depthTarget->GetRHIResource()->GetOrCreateView({});
 		}
 
 		RHI::RenderingInfo renderingInfo{};
@@ -528,19 +544,21 @@ namespace Volt
 		pipelineCreateInfo.depthBiasClamp = pipelineState.depthBiasClamp;
 		pipelineCreateInfo.depthBiasSlopeFactor = pipelineState.depthBiasSlopeFactor;
 
-		if (pipelineState.renderTargets.depthTarget != nullptr)
+		const ShaderParameterRenderTargetDecl& depthDecl = pipelineState.renderTargets.depthTarget;
+
+		if (depthDecl.texture != nullptr)
 		{
-			pipelineCreateInfo.depthAttachmentFormat = pipelineState.renderTargets.depthTarget->GetDesc().format;
+			pipelineCreateInfo.depthAttachmentFormat = depthDecl.texture->GetDesc().format;
 		}
 
 		pipelineCreateInfo.colorAttachmentFormats.reserve(RHI::MAX_COLOR_ATTACHMENT_COUNT);
 		for (uint32_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
 		{
-			RGTextureRef renderTarget = pipelineState.renderTargets.renderTargets[i];
+			const ShaderParameterRenderTargetDecl& rtDecl = pipelineState.renderTargets.renderTargets[i];
 
-			if (renderTarget != nullptr)
+			if (rtDecl.texture != nullptr)
 			{
-				pipelineCreateInfo.colorAttachmentFormats.emplace_back(renderTarget->GetDesc().format);
+				pipelineCreateInfo.colorAttachmentFormats.emplace_back(rtDecl.texture->GetDesc().format);
 			}
 		}
 
@@ -549,10 +567,13 @@ namespace Volt
 
 	void RenderContext::VerifyGraphicsPipelineState(const GraphicsPipelineState& pipelineState) const
 	{
-		uint32_t numRenderTargets = pipelineState.renderTargets.depthTarget != nullptr;
+		const ShaderParameterRenderTargetDecl& depthDecl = pipelineState.renderTargets.depthTarget;
+
+		uint32_t numRenderTargets = depthDecl.texture != nullptr;
 		for (uint32_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
 		{
-			numRenderTargets += pipelineState.renderTargets.renderTargets[i] != nullptr;
+			const ShaderParameterRenderTargetDecl& rtDecl = pipelineState.renderTargets.renderTargets[i];
+			numRenderTargets += rtDecl.texture != nullptr;
 		}
 
 		VT_ENSURE_MSG(numRenderTargets > 0, "There must always be at least 1 render target bound!");

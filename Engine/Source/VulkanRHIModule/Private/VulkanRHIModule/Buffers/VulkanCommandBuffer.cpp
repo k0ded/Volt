@@ -46,6 +46,7 @@
 #include <RHIModule/Core/RenderingInfo.h>
 #include <RHIModule/RHIFeatures.h>
 #include <RHIModule/RHIModule.h>
+#include <RHIModule/RHIHelpers.h>
 
 #include <RHIModule/RayTracing/AccelerationStructure.h>
 
@@ -699,14 +700,19 @@ namespace Volt::RHI
 		outBarrier.size = barrierInfo.size;
 		outBarrier.buffer = vkBuffer.GetHandle<VkBuffer>();
 
-		GraphicsContext::GetResourceStateTracker()->TransitionResource(barrierInfo.resource, barrierInfo.dstStage, barrierInfo.dstAccess);
+		GraphicsContext::GetResourceStateTracker()->TransitionResource(barrierInfo.resource, 0, barrierInfo.dstStage, barrierInfo.dstAccess);
 	}
 
 	void AddImageBarrier(const ImageBarrier& barrierInfo, VkImageMemoryBarrier2& outBarrier)
 	{
 		VT_ENSURE(barrierInfo.resource != nullptr);
 
-		VkImageAspectFlags aspectFlags = Utility::GetVkImageAspect(barrierInfo.resource->As<Image>()->GetImageAspect());
+		Image& image = barrierInfo.resource->AsRef<Image>();
+
+		const ImageDesc& imageDesc = image.GetDesc();
+		const ImageAspect imageAspect = image.GetImageAspect();
+
+		VkImageAspectFlags aspectFlags = Utility::GetVkImageAspect(imageAspect);
 		VT_ASSERT(aspectFlags != VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM && aspectFlags != VK_IMAGE_ASPECT_NONE);
 
 		outBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
@@ -747,7 +753,24 @@ namespace Volt::RHI
 		outBarrier.subresourceRange.levelCount = barrierInfo.subResource.levelCount == ALL_MIPS ? VK_REMAINING_MIP_LEVELS : barrierInfo.subResource.levelCount;
 		outBarrier.image = barrierInfo.resource->GetHandle<VkImage>();
 
-		GraphicsContext::GetResourceStateTracker()->TransitionResource(barrierInfo.resource, barrierInfo.dstStage, barrierInfo.dstAccess, barrierInfo.dstLayout);
+		const uint32_t maxMip = outBarrier.subresourceRange.levelCount == VK_REMAINING_MIP_LEVELS ? 
+			imageDesc.mips : 
+			outBarrier.subresourceRange.baseMipLevel + outBarrier.subresourceRange.levelCount;
+		
+		const uint32_t maxLayer = outBarrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS ? 
+			imageDesc.layers : 
+			outBarrier.subresourceRange.baseArrayLayer + outBarrier.subresourceRange.layerCount;
+
+		RefPtr<ResourceStateTracker> resourceStateTracker = GraphicsContext::GetResourceStateTracker();
+
+		for (uint32_t mip = outBarrier.subresourceRange.baseMipLevel; mip < maxMip; ++mip)
+		{
+			for (uint32_t layer = outBarrier.subresourceRange.baseArrayLayer; layer < maxLayer; ++layer)
+			{
+				const uint32_t subResourceIndex = RHI::GetSubResourceIndex(mip, layer, 0, imageDesc.mips, imageDesc.layers);
+				resourceStateTracker->TransitionResource(barrierInfo.resource, subResourceIndex, barrierInfo.dstStage, barrierInfo.dstAccess, barrierInfo.dstLayout);
+			}
+		}
 	}
 
 	void VulkanCommandBuffer::ResourceBarrier(const BarrierVector& resourceBarriers)
@@ -1034,7 +1057,7 @@ namespace Volt::RHI
 		subResourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? VK_REMAINING_ARRAY_LAYERS : desc.layerCount;
 		subResourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? VK_REMAINING_MIP_LEVELS : desc.mipCount;
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
+		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image, 0);
 
 		const VkImageLayout layout = EnumValueContainsFlag(currentState.stage, BarrierStage::Clear) ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Utility::GetVkImageLayoutFromImageLayout(currentState.layout);
 
@@ -1072,7 +1095,7 @@ namespace Volt::RHI
 		subResourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? VK_REMAINING_ARRAY_LAYERS : desc.layerCount;
 		subResourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? VK_REMAINING_MIP_LEVELS : desc.mipCount;
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image);
+		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image, 0);
 
 		const VkImageLayout layout = EnumValueContainsFlag(currentState.stage, BarrierStage::Clear) ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Utility::GetVkImageLayoutFromImageLayout(currentState.layout);
 
@@ -1133,7 +1156,7 @@ namespace Volt::RHI
 		region.imageOffset = { offsetX, offsetY, offsetZ };
 		region.imageExtent = { width, height, depth };
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage);
+		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage, 0);
 		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, srcBuffer->GetResourceHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), 1, &region);
 	}
 
@@ -1159,7 +1182,7 @@ namespace Volt::RHI
 		region.imageOffset = { 0, 0, 0 };
 		region.imageExtent = { width, height, 1 };
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(srcImage);
+		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(srcImage, 0);
 		vkCmdCopyImageToBuffer(m_commandBufferData.commandBuffer, srcImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), dstBuffer->GetResourceHandle<VkBuffer>(), 1, &region);
 	}
 
@@ -1196,8 +1219,8 @@ namespace Volt::RHI
 		info.extent.height = height;
 		info.extent.depth = depth;
 
-		const auto& currentSrcState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(srcImage);
-		const auto& currentDstState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage);
+		const auto& currentSrcState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(srcImage, 0);
+		const auto& currentDstState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage, 0);
 
 		VkCopyImageInfo2 cpyInfo{};
 		cpyInfo.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2;
@@ -1245,7 +1268,7 @@ namespace Volt::RHI
 
 		stagingAllocation->Unmap();
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage);
+		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage, 0);
 		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, stagingAllocation->GetResourceHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
 	}
 

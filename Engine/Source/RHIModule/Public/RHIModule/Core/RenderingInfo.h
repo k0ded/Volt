@@ -7,8 +7,15 @@ namespace Volt::RHI
 {
 	struct AttachmentInfo
 	{
-		RefPtr<ImageView> view;
+		union
+		{
+			float float32[4];
+			int32_t int32[4];
+			uint32_t uint32[4];
 
+		} clearColor;
+
+		RefPtr<ImageView> view;
 		ClearMode clearMode;
 
 		inline void SetClearColor(float r, float g, float b, float a)
@@ -34,14 +41,6 @@ namespace Volt::RHI
 			clearColor.uint32[2] = b;
 			clearColor.uint32[3] = a;
 		}
-
-		union
-		{
-			float float32[4];
-			int32_t int32[4];
-			uint32_t uint32[4];
-
-		} clearColor;
 	};
 
 	struct RenderingInfo

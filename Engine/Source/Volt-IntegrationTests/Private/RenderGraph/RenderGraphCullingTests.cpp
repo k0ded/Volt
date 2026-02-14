@@ -12,17 +12,17 @@ namespace IntegrationTests
 	{
 	};
 
-	void ExpectAllPassesToBeCulled(const Vector<RenderGraphPassRef>& passes)
+	void ExpectAllPassesToBeCulled(const Vector<RGPassRef>& passes)
 	{
-		for (RenderGraphPassRef pass : passes)
+		for (RGPassRef pass : passes)
 		{
 			EXPECT_EQ(pass->isCulled, true);
 		}
 	}
 
-	void ExpectAllPassesToBeActive(const Vector<RenderGraphPassRef>& passes)
+	void ExpectAllPassesToBeActive(const Vector<RGPassRef>& passes)
 	{
-		for (RenderGraphPassRef pass : passes)
+		for (RGPassRef pass : passes)
 		{
 			EXPECT_EQ(pass->isCulled, false);
 		}
@@ -173,6 +173,7 @@ namespace IntegrationTests
 		textureDesc.format = RHI::PixelFormat::R32G32B32A32_SFLOAT;
 		textureDesc.width = 1024;
 		textureDesc.height = 1024;
+		textureDesc.usage = RHI::ImageUsage::Storage;
 		textureDesc.mips = RHI::Utility::CalculateMipCount(textureDesc.width, textureDesc.height);
 
 		RGTextureRef texture = renderGraph.CreateTexture(textureDesc);

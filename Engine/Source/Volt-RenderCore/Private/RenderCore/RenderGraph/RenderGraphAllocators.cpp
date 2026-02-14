@@ -83,9 +83,9 @@ namespace Volt
 		return result;
 	}
 
-	void RenderGraphPassAllocator::ExecutePass(RenderGraphPassRef pass, RenderContext& renderContext)
+	void RenderGraphPassAllocator::ExecutePass(RGPassRef pass, RenderContext& renderContext)
 	{
-		uint8_t* passAllocationPtr = reinterpret_cast<uint8_t*>(pass->passAllocationStartPtr);
+		uint8_t* passAllocationPtr = reinterpret_cast<uint8_t*>(pass->m_passAllocationStartPtr);
 
 		PassExecFunc execFunc = *(PassExecFunc*)passAllocationPtr;
 		passAllocationPtr += sizeof(PassExecFunc);

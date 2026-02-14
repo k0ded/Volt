@@ -146,7 +146,8 @@ namespace Volt::RHI
 		{
 			PushConstantsBuilder pushConstantsBuilder{};
 			VkPushConstantRange pushConstantRange = pushConstantsBuilder.BuildPushConstantRange(m_shaderParameterMaps);
-			m_hasPushConstants = pushConstantRange.size > 0;
+			m_inlineParametersBlockInfo.offset = pushConstantRange.offset;
+			m_inlineParametersBlockInfo.size = pushConstantRange.size;
 
 			VT_ENSURE_MSG(pushConstantRange.size <= 128, "Larger than 128 bytes is not allowed, since 128 bytes is the vulkan specification guaranteed amount.");
 
@@ -155,8 +156,8 @@ namespace Volt::RHI
 			info.pNext = nullptr;
 			info.setLayoutCount = static_cast<uint32_t>(m_descriptorSets.pipelineLayoutDescriptorSetLayouts.size());
 			info.pSetLayouts = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.data();
-			info.pushConstantRangeCount = m_hasPushConstants ? 1 : 0;
-			info.pPushConstantRanges = m_hasPushConstants ? &pushConstantRange : nullptr;
+			info.pushConstantRangeCount = HasInlineParameters();
+			info.pPushConstantRanges = HasInlineParameters() ? &pushConstantRange : nullptr;
 
 			VT_VK_CHECK(vkCreatePipelineLayout(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_pipelineLayout));
 		}
@@ -498,6 +499,11 @@ namespace Volt::RHI
 
 	bool VulkanRenderPipeline::HasInlineParameters() const
 	{
-		return m_hasPushConstants;
+		return m_inlineParametersBlockInfo.size != 0;
+	}
+
+	const InlineParametersBlockInfo& VulkanRenderPipeline::GetInlineParametersBlockInfo() const
+	{
+		return m_inlineParametersBlockInfo;
 	}
 }

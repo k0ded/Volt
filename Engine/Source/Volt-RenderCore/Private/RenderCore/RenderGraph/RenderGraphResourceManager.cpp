@@ -92,7 +92,7 @@ namespace Volt
 
 		RGRHITextureResource* rhiResource = nullptr;
 
-		if (!resource->isExtracted)
+		if (!resource->m_isExtracted)
 		{
 			TransientTextureResourceRef texture = TransientResourceAllocator::Get().CreateTexture(desc);
 			texture->GetRHITexture()->SetName(desc.debugName);
@@ -121,7 +121,7 @@ namespace Volt
 
 		RGRHIBufferResource* rhiResource = nullptr;
 
-		if (!resource->isExtracted)
+		if (!resource->m_isExtracted)
 		{
 			TransientBufferResourceRef buffer = TransientResourceAllocator::Get().CreateBuffer(desc);
 			buffer->GetRHIBuffer()->SetName(desc.debugName);
