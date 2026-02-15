@@ -56,12 +56,12 @@ namespace Volt
 		}
 	};
 
-	using RGTextureResourceAccessState = Vector<RGResourceAccessState>;
+	using RGTextureResourceAccessState = RGVector<RGResourceAccessState>;
 
 	class VTRC_API RGTexture : public RGResource
 	{
 	public:
-		RGTexture(const RGTextureDesc& desc);
+		RGTexture(const RGTextureDesc& desc, RenderGraphDataAllocator* dataAllocator);
 		~RGTexture() override = default;
 		RGResourceType GetResourceType() const override;
 

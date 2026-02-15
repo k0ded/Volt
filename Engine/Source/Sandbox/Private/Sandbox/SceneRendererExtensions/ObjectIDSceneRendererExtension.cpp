@@ -25,6 +25,7 @@ VT_REGISTER_SHADER(ObjectIDPS, "Engine/Shaders/Source/Editor/ObjectID.hlsl", "Ma
 BEGIN_SHADER_PARAMETER_STRUCT(ObjectIDParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(ObjectIDVS::Parameters, VS)
 	SHADER_PARAMETER_STRUCT_INCLUDE(ObjectIDPS::Parameters, PS)
+	SHADER_PARAMETER_STRUCT_INCLUDE(Volt::MeshPassProcessorParameters, ProcessorParameters)
 END_SHADER_PARAMETER_STRUCT()
 
 Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard, const Volt::RenderView& view, Volt::RGTextureRef prevOutputImage)
@@ -39,13 +40,14 @@ Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& r
 	ObjectIDTexture& objectIdTextureStruct = blackboard.Add<ObjectIDTexture>();
 	objectIdTextureStruct.texture = objectIdTexture;
 
+	m_meshPassProcessor->PrepareRenderCommands(renderGraph);
+
 	ObjectIDParameters* passParameters = renderGraph.AllocParameters<ObjectIDParameters>();
 	passParameters->VS.View = view.viewUniformBuffer;
 	passParameters->VS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
 	passParameters->PS.renderTargets.renderTargets[0] = objectIdTexture;
 	passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
-
-	m_meshPassProcessor->PrepareRenderCommands(renderGraph);
+	passParameters->ProcessorParameters = m_meshPassProcessor->GetParameters(renderGraph);
 
 	renderGraph.AddPass("Render Object ID",
 		RenderGraphPassFlags::None,

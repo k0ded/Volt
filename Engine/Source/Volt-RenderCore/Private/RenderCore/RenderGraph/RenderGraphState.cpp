@@ -19,7 +19,7 @@ namespace Volt
 		previousState = state;
 	}
 
-	void RGTextureState::Initialize(RGTexture* inTexture, RGResourceAccessType inAccessType)
+	void RGTextureState::Initialize(RGTexture* inTexture, RGResourceAccessType inAccessType, RenderGraphDataAllocator* dataAllocator)
 	{
 		texture = inTexture;
 		accessType = inAccessType;
@@ -28,6 +28,8 @@ namespace Volt
 		const RGTextureDesc& desc = texture->GetDesc();
 
 		const uint32_t numSubResources = desc.mips * desc.layers;
+		
+		subResourceStates.set_allocator({ dataAllocator });
 		subResourceStates.resize(numSubResources, nullptr);
 	}
 

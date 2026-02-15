@@ -255,6 +255,7 @@ namespace Volt
 	BEGIN_SHADER_PARAMETER_STRUCT(TranslucencyPassParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(TranslucencyPassVS::Parameters, VS)
 		SHADER_PARAMETER_STRUCT_INCLUDE(TranslucencyPassMaterialShader::Parameters, PS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(MeshPassProcessorParameters, ProcessorParameters)
 	END_SHADER_PARAMETER_STRUCT()
 
 	void SceneRenderer::AddTranslucencyPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer)
@@ -268,6 +269,8 @@ namespace Volt
 		const LightScene& lightScene = blackboard.Get<LightScene>();
 		const EnvironmentTextures& environmentTextures = blackboard.Get<EnvironmentTextures>();
 		const SceneTextures& sceneTextures = blackboard.Get<SceneTextures>();
+
+		m_translucencyMeshPassProcessor->PrepareRenderCommands(renderGraph);
 
 		TranslucencyPassParameters* passParameters = renderGraph.AllocParameters<TranslucencyPassParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;
@@ -293,7 +296,7 @@ namespace Volt
 		passParameters->PS.renderTargets.renderTargets[1] = translucencyTextures.revealage;
 		passParameters->PS.renderTargets.depthTarget = sceneTextures.sceneDepth;
 
-		m_translucencyMeshPassProcessor->PrepareRenderCommands(renderGraph);
+		passParameters->ProcessorParameters = m_translucencyMeshPassProcessor->GetParameters(renderGraph);
 
 		renderGraph.AddPass("TranslucencyPass",
 			RenderGraphPassFlags::None,
@@ -376,11 +379,6 @@ namespace Volt
 
 	void SceneRenderer::AddMeshPassProcessors()
 	{
-		m_depthPrePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<DepthPrePassMeshProcessor>();
-		m_basePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<BasePassMeshProcessor>();
-		m_cascadedShadowMapMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<CascadedShadowMapMeshProcessor>();
-		m_translucencyMeshPassProcessor = m_meshPassProcessorRegistry.AddProcessor<TranslucencyMeshPassProcessor>();
-
 		m_renderPrimitiveAddedDelegateHandle = m_renderScene->GetRenderPrimitiveAddedDelegate().AddLambda([this](const RenderPrimitiveData* renderPrimitive)
 		{
 			m_meshPassProcessorRegistry.AddRenderPrimitive(renderPrimitive);
@@ -390,6 +388,11 @@ namespace Volt
 		{
 			m_meshPassProcessorRegistry.RemoveRenderPrimitive(renderPrimitive);
 		});
+
+		m_depthPrePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<DepthPrePassMeshProcessor>();
+		m_basePassMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<BasePassMeshProcessor>();
+		m_cascadedShadowMapMeshProcessor = m_meshPassProcessorRegistry.AddProcessor<CascadedShadowMapMeshProcessor>();
+		m_translucencyMeshPassProcessor = m_meshPassProcessorRegistry.AddProcessor<TranslucencyMeshPassProcessor>();
 	}
 
 	bool SceneRenderer::OnPostFrameUpdateEvent(AppPostFrameUpdateEvent& event)
@@ -474,6 +477,7 @@ namespace Volt
 
 	BEGIN_SHADER_PARAMETER_STRUCT(DepthPrePassParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(DepthPrePassVS::Parameters, VS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(MeshPassProcessorParameters, ProcessorParameters)
 		SHADER_PARAMETER_UNIFORM_BUFFER(ViewData, View)
 		RG_RENDER_TARGETS()
 	END_SHADER_PARAMETER_STRUCT()
@@ -485,15 +489,16 @@ namespace Volt
 		SceneTextures& sceneTextures = blackboard.Add<SceneTextures>();
 		sceneTextures.sceneVelocity = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "SceneVelocity"));
 		sceneTextures.sceneDepth = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::Attachment, "SceneDepth"));
+		
+		m_depthPrePassMeshProcessor->PrepareRenderCommands(renderGraph);
 
 		DepthPrePassParameters* passParameters = renderGraph.AllocParameters<DepthPrePassParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;
 		passParameters->VS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
+		passParameters->ProcessorParameters = m_depthPrePassMeshProcessor->GetParameters(renderGraph);
 		passParameters->View = view.viewUniformBuffer;
 		passParameters->renderTargets.renderTargets[0] = sceneTextures.sceneVelocity;
 		passParameters->renderTargets.depthTarget = sceneTextures.sceneDepth;
-
-		m_depthPrePassMeshProcessor->PrepareRenderCommands(renderGraph);
 
 		renderGraph.AddPass("Depth Pre Pass",
 			RenderGraphPassFlags::None,
@@ -512,6 +517,7 @@ namespace Volt
 
 	BEGIN_SHADER_PARAMETER_STRUCT(GenerateGBufferParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(BasePassVS::Parameters, VS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(MeshPassProcessorParameters, ProcessorParameters)
 		RG_RENDER_TARGETS()
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -525,16 +531,17 @@ namespace Volt
 		sceneTextures.gBufferMaterial = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8_UNORM>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferMaterial"));
 		sceneTextures.gBufferEmissive = renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "GBufferEmissive"));
 
+		m_basePassMeshProcessor->PrepareRenderCommands(renderGraph);
+
 		GenerateGBufferParameters* passParameters = renderGraph.AllocParameters<GenerateGBufferParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;
 		passParameters->VS.GPUScene = m_renderScene->GetGPUSceneParameters(renderGraph);
+		passParameters->ProcessorParameters = m_basePassMeshProcessor->GetParameters(renderGraph);
 		passParameters->renderTargets.renderTargets[0] = sceneTextures.gBufferAlbedo;
 		passParameters->renderTargets.renderTargets[1] = sceneTextures.gBufferNormals;
 		passParameters->renderTargets.renderTargets[2] = sceneTextures.gBufferMaterial;
 		passParameters->renderTargets.renderTargets[3] = sceneTextures.gBufferEmissive;
 		passParameters->renderTargets.depthTarget = sceneTextures.sceneDepth;
-
-		m_basePassMeshProcessor->PrepareRenderCommands(renderGraph);
 
 		renderGraph.AddPass("BasePass",
 			RenderGraphPassFlags::None,

@@ -316,6 +316,14 @@ namespace Volt
 		}
 	}
 
+	MeshPassProcessorParameters MeshPassProcessor::GetParameters(RenderGraph& renderGraph)
+	{
+		MeshPassProcessorParameters parameters;
+		parameters.PrimitiveIndexVertexBuffer = m_primitiveIndexVertexBuffer;
+
+		return parameters;
+	}
+
 	void MeshPassProcessor::BuildMeshDrawCommand(const RenderPrimitiveData* renderPrimitive, RHI::RenderPipelineCreateInfo pipelineInfo, RefPtr<RHI::Shader> vertexShader, RefPtr<RHI::Shader> pixelShader)
 	{
 		VT_ENSURE_MSG(vertexShader && pixelShader, "Valid shaders must be supplied!");

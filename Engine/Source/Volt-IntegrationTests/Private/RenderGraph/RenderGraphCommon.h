@@ -5,9 +5,9 @@
 class TestingRenderGraph : public Volt::RenderGraph
 {
 public:
-	VT_INLINE const Vector<Volt::RGPassRef>& GetPasses() const { return m_passes; }
-	VT_INLINE const Vector<CompiledPass>& GetCompiledPasses() const { return m_compiledPassesNew; }
-	VT_INLINE const uint32_t GetNumCompiledPasses() const { return static_cast<uint32_t>(m_compiledPassesNew.size()); }
+	VT_INLINE const Volt::RGVector<Volt::RGPassRef>& GetPasses() const { return m_renderPasses; }
+	VT_INLINE const Volt::RGVector<Volt::RGCompiledPass>& GetCompiledPasses() const { return m_compiledRenderPasses; }
+	VT_INLINE const uint32_t GetNumCompiledPasses() const { return static_cast<uint32_t>(m_compiledRenderPasses.size()); }
 };
 
 template<typename ParameterStruct>

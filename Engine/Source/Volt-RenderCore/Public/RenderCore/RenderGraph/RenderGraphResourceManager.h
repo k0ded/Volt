@@ -14,12 +14,13 @@ namespace Volt
 	class RenderGraphResourceManager
 	{
 	public:
-		RenderGraphResourceManager();
+		RenderGraphResourceManager(RenderGraphDataAllocator* dataAllocator);
 		~RenderGraphResourceManager();
 
 		RenderGraphResourceManager(RenderGraphResourceManager&& other) noexcept;
 		RenderGraphResourceManager& operator=(RenderGraphResourceManager&& other) noexcept;
 
+		void Release();
 		void AddExternalResource(RGResourceRef resource, RefPtr<RHI::RHIResource> rhiResource);
 
 		void AllocateResource(RGTextureRef resource);
@@ -31,8 +32,8 @@ namespace Volt
 		PagedAtomicArenaAllocator<PersistantTextureResource, 512> m_persistantTextureResources;
 		PagedAtomicArenaAllocator<PersistantUniformBufferResource, 512> m_persistantUniformBufferResources;
 
-		Vector<TransientBufferResource*> m_allocatedBuffers;
-		Vector<TransientTextureResource*> m_allocatedTextures;
-		Vector<TransientUniformBufferResource*> m_allocatedUniformBuffers;
+		RGVector<TransientBufferResource*> m_allocatedBuffers;
+		RGVector<TransientTextureResource*> m_allocatedTextures;
+		RGVector<TransientUniformBufferResource*> m_allocatedUniformBuffers;
 	};
 }

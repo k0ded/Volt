@@ -1,12 +1,12 @@
 #pragma once
 
+#include "RenderCore/RenderGraph/RenderGraphContainerAllocator.h"
+
 #include <RHIModule/Core/ResourceStateTracker.h>
 
 #include <CoreUtilities/Allocators/Handle.h>
 #include <CoreUtilities/Containers/VectorVariants.h>
 
-// #TODO_Ivar: Switch to our own version.
-#include <bitset>
 #include <algorithm>
 
 namespace Volt
@@ -55,7 +55,7 @@ namespace Volt
 		RHI::ResourceState previousState;
 	};
 
-	using RGTextureSubResourceState = Vector<RGSubResourceState*>;
+	using RGTextureSubResourceState = RGVector<RGSubResourceState*>;
 
 	class RGResource
 	{

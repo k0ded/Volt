@@ -21,7 +21,7 @@ namespace Volt
 
 	struct RGTextureState
 	{
-		void Initialize(RGTexture* inTexture, RGResourceAccessType inAccessType);
+		void Initialize(RGTexture* inTexture, RGResourceAccessType inAccessType, RenderGraphDataAllocator* dataAllocator);
 
 		template<typename Func>
 		void EnumerateSubResources(Func&& func);

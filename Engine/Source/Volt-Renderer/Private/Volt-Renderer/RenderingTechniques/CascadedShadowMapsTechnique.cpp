@@ -25,6 +25,7 @@ namespace Volt
 	BEGIN_SHADER_PARAMETER_STRUCT(CascadedDirectionalShadowParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(CascadedDirectionalShadowVS::Parameters, VS)
 		SHADER_PARAMETER_STRUCT_INCLUDE(CascadedDirectionalShadowPS::Parameters, PS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(MeshPassProcessorParameters, ProcessorParameters)
 	END_SHADER_PARAMETER_STRUCT()
 
 	CascadedShadowMapsTechnique::CascadedShadowMapsTechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, CascadedShadowMapMeshProcessor* meshProcessor)
@@ -68,6 +69,7 @@ namespace Volt
 			passParameters->VS.GPUScene = view.renderScene->GetGPUSceneParameters(m_renderGraph);
 			passParameters->VS.CascadeIndex = i;
 			passParameters->PS.renderTargets.depthTarget = directionalShadowTexture;
+			passParameters->ProcessorParameters = m_meshProcessor->GetParameters(m_renderGraph);
 
 			const std::string passName = std::format("CascadedDirectionalShadow Cascade: {}", i);
 

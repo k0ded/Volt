@@ -7,6 +7,7 @@
 #include "RenderCore/RenderGraph/ShaderParameterStruct.h"
 #include "RenderCore/RenderGraph/RenderGraphResourceManager.h"
 #include "RenderCore/RenderGraph/RenderGraphCompiledPass.h"
+#include "RenderCore/RenderGraph/RenderGraphContainerAllocator.h"
 
 #include <JobSystem/Job.h>
 
@@ -99,15 +100,8 @@ namespace Volt
 		void AddResourceBarrier(RGResourceRef resourceHandle, const RHI::ResourceState& barrierInfo);
 
 		template<typename T>
-		T* AllocParameters()
-		{
-			return m_passParametersAllocator.Allocate<T>();
-		}
-
-		void* AllocData(size_t size)
-		{
-			return m_temporaryDataAllocator.Allocate(size);
-		}
+		VT_INLINE T* AllocParameters();
+		VT_INLINE void* AllocData(size_t size);
 
 		template<typename ParameterStruct, typename ExecFunc>
 		void AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc);
@@ -175,7 +169,24 @@ namespace Volt
 			Map<uint32_t, Vector<MarkerInfo>> m_markers;
 		};
 
+		class RGDataAllocatorContainer
+		{
+		public:
+			RGDataAllocatorContainer();
+			~RGDataAllocatorContainer();
+
+			RGDataAllocatorContainer(RGDataAllocatorContainer&& other) noexcept;
+			RGDataAllocatorContainer& operator=(RGDataAllocatorContainer&& other) noexcept;
+
+			VT_NODISCARD VT_INLINE RenderGraphDataAllocator* Get() { return m_allocator; }
+
+		private:
+			RenderGraphDataAllocator* m_allocator;
+		};
+
 		using ExternalResourceRegistry = Map<RawPtr<RHI::RHIResource>, RGResourceRef>;
+
+		void SetupAllocators();
 
 		JobCounterRef ExecuteInternal(bool isImmediate, bool waitForSync, bool extractCounter);
 		void ExtractResources();
@@ -213,6 +224,9 @@ namespace Volt
 		// outside of the Render Graph.
 		RGUniformBufferSRVRef CreateSRV(const RGUniformBufferSRVDesc& desc);
 
+		// #NOTE: Must lay first to ensure correct construction/destruction order.
+		RGDataAllocatorContainer m_dataAllocator;
+
 		RenderGraphResourceManager m_resourceManager;
 		ExternalResourceRegistry m_registeredExternalResources;
 		StandaloneBarriers m_standaloneBarriers;
@@ -222,32 +236,22 @@ namespace Volt
 		RenderGraphResourceAllocator m_resourceAccessorAllocator; // Allocator for resource accessors (SRVs, UAVs)
 		RenderGraphResourceAllocator m_passParametersAllocator; // Allocator for pass parameters
 		RenderGraphPassAllocator m_passAllocator; // Allocator for RenderGraph passes.
-		RenderGraphDataAllocator m_temporaryDataAllocator; // Allocator for temporary data that needs to live during the execution of the render graph.
 	
-		Vector<TextureExtractionInfo> m_textureExtractions;
-		Vector<BufferExtractionInfo> m_bufferExtractions;
+		RGVector<TextureExtractionInfo> m_textureExtractions;
+		RGVector<BufferExtractionInfo> m_bufferExtractions;
 
-		Vector<RGPassRef> m_renderPasses;
-		Vector<RGResourceRef> m_resources;
-		Vector<RGResourceSRVRef> m_resourceSRVs;
-		Vector<RGResourceUAVRef> m_resourceUAVs;
+		RGVector<RGPassRef> m_renderPasses;
+		RGVector<RGResourceRef> m_resources;
+		RGVector<RGResourceSRVRef> m_resourceSRVs;
+		RGVector<RGResourceUAVRef> m_resourceUAVs;
 
-		Vector<RGCompiledPass> m_compiledRenderPasses;
+		// #TODO_Ivar: A hacky way to create views for all render targets, since they aren't UAVs
+		// or SRVs. Needs to be reworked.
+		RGVector<ShaderParameterRenderTargetDecl> m_renderTargets;
+		RGVector<RGCompiledPass> m_compiledRenderPasses;
 
 		RefPtr<RHI::Fence> m_executionFence;
-	}; 
-
-	template<typename ParameterStruct, typename ExecFunc>
-	void RenderGraph::AddPass(const std::string& name, RenderGraphPassFlags flags, const ParameterStruct* parameters, ExecFunc&& executeFunc)
-	{
-		VT_PROFILE_SCOPE(name.c_str());
-
-		const ShaderParameterMetadataDescription* shaderParameterStructMetadata = ParameterStruct::GetShaderParameterMetadata();
-
-		RGPassRef newPass = m_passAllocator.AllocatePass(name, std::forward<ExecFunc>(executeFunc), parameters, shaderParameterStructMetadata);
-		newPass->m_flags = flags;
-		m_renderPasses.emplace_back(newPass);
-
-		SetupPass(newPass);
-	}
+	};
 }
+
+#include "RenderCore/RenderGraph/RenderGraph.inl"

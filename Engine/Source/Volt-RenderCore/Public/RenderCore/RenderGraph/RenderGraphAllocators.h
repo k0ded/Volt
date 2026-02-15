@@ -18,7 +18,7 @@ namespace Volt
 	class VTRC_API RenderGraphResourceAllocator
 	{
 	public:
-		RenderGraphResourceAllocator();
+		RenderGraphResourceAllocator(RenderGraphDataAllocator* dataAllocator);
 		~RenderGraphResourceAllocator();
 
 		RenderGraphResourceAllocator(const RenderGraphResourceAllocator& other) noexcept = delete;
@@ -26,18 +26,20 @@ namespace Volt
 		RenderGraphResourceAllocator& operator=(const RenderGraphResourceAllocator& other) noexcept = delete;
 		RenderGraphResourceAllocator& operator=(RenderGraphResourceAllocator&& other) noexcept;
 
+		void Release();
+
 		template<typename ResourceType, typename... Args>
 		ResourceType* Allocate(Args&&... args);
 
 	private:
 		PagedAtomicLinearAllocator<65536> m_allocator;
-		Vector<DestructorHelper> m_nodeDestructors;
+		RGVector<DestructorHelper> m_nodeDestructors;
 	};
 	
 	class VTRC_API RenderGraphPassAllocator
 	{
 	public:
-		RenderGraphPassAllocator();
+		RenderGraphPassAllocator(RenderGraphDataAllocator* dataAllocator);
 		~RenderGraphPassAllocator();
 
 		RenderGraphPassAllocator(const RenderGraphPassAllocator& other) noexcept = delete;
@@ -46,6 +48,8 @@ namespace Volt
 		RenderGraphPassAllocator& operator=(RenderGraphPassAllocator&& other) noexcept;
 
 		typedef void(*PassExecFunc)(void*, RenderContext&);
+
+		void Release();
 
 		template<typename ExecFunc, typename T>
 		RGPassRef AllocatePass(const std::string& name, ExecFunc&& execFunc, const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata);
@@ -66,7 +70,8 @@ namespace Volt
 		PagedAtomicLinearAllocator<65536> m_passNodeAllocator;
 
 		uint32_t m_numPasses = 0;
-		Vector<DestructorHelper> m_passDestructors;
+		RenderGraphDataAllocator* m_dataAllocator;
+		RGVector<DestructorHelper> m_passDestructors;
 	};
 }
 

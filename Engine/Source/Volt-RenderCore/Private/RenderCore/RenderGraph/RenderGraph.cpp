@@ -2,9 +2,9 @@
 
 #include "RenderCore/RenderGraph/RenderGraph.h"
 #include "RenderCore/RenderGraph/RenderContext.h"
-#include "RenderCore/RenderGraph/RenderGraphCommon.h"
 #include "RenderCore/RenderGraph/GPUReadbackBuffer.h"
 #include "RenderCore/RenderGraph/GPUReadbackTexture.h"
+#include "RenderCore/RenderGraph/RenderGraphGlobalAllocator.h"
 
 #include "RenderCore/TransientResourceSystem/TransientResource.h"
 
@@ -191,45 +191,29 @@ namespace Volt
 		return resultStage;
 	}
 
-	inline void InitializeImageBarrierSubresourceFromSRV(RGResourceSRVRef textureSRV, RHI::ImageSubResource& subResource)
-	{
-		RGTextureSRVRef textureSRVRef = reinterpret_cast<RGTextureSRVRef>(textureSRV);
-		const RGTextureSRVDesc& srvDesc = textureSRVRef->GetDesc();
-
-		RGTextureRef texture = reinterpret_cast<RGTextureRef>(textureSRV->GetResource());
-		const RGTextureDesc& textureDesc = texture->GetDesc();
-
-		subResource.baseMipLevel = srvDesc.baseMipLevel;
-		subResource.levelCount = srvDesc.mipCount == RHI::ImageViewDesc::MipCountMax ? textureDesc.mips - subResource.baseMipLevel : srvDesc.mipCount;
-		subResource.layerCount = srvDesc.layerCount == RHI::ImageViewDesc::LayerCountMax ? textureDesc.layers - subResource.baseArrayLayer : srvDesc.layerCount;
-		subResource.baseArrayLayer = srvDesc.baseArrayLayer;
-		subResource.baseMipLevel = srvDesc.baseMipLevel;
-	}
-
-	inline void InitializeImageBarrierSubresourceFromUAV(RGResourceUAVRef textureUAV, RHI::ImageSubResource& subResource)
-	{
-		RGTextureUAVRef textureUAVRef = reinterpret_cast<RGTextureUAVRef>(textureUAV);
-		const RGTextureUAVDesc& srvDesc = textureUAVRef->GetDesc();
-
-		RGTextureRef texture = reinterpret_cast<RGTextureRef>(textureUAV->GetResource());
-		const RGTextureDesc& textureDesc = texture->GetDesc();
-
-		subResource.baseMipLevel = srvDesc.baseMipLevel;
-		subResource.levelCount = srvDesc.mipCount == RHI::ImageViewDesc::MipCountMax ? textureDesc.mips - subResource.baseMipLevel : srvDesc.mipCount;
-		subResource.layerCount = srvDesc.layerCount == RHI::ImageViewDesc::LayerCountMax ? textureDesc.layers - subResource.baseArrayLayer : srvDesc.layerCount;
-		subResource.baseArrayLayer = srvDesc.baseArrayLayer;
-		subResource.baseMipLevel = srvDesc.baseMipLevel;
-	}
-
 	RenderGraph::RenderGraph()
+		: m_resourceAllocator(m_dataAllocator.Get()),
+		m_resourceAccessorAllocator(m_dataAllocator.Get()),
+		m_passParametersAllocator(m_dataAllocator.Get()),
+		m_passAllocator(m_dataAllocator.Get()),
+		m_resourceManager(m_dataAllocator.Get())
 	{
 		VT_PROFILE_FUNCTION();
 
 		m_executionFence = RHI::Fence::Create();
+
+		SetupAllocators();
 	}
 
 	RenderGraph::~RenderGraph()
-	{}
+	{
+		// Need to make sure all members are destroyed before allocator is released.
+		m_resourceManager.Release();
+		m_resourceAllocator.Release();
+		m_resourceAccessorAllocator.Release();
+		m_passParametersAllocator.Release();
+		m_passAllocator.Release();
+	}
 
 	RenderGraph::RenderGraph(RenderGraph&& other) noexcept
 		: m_registeredExternalResources(std::move(other.m_registeredExternalResources)),
@@ -245,11 +229,12 @@ namespace Volt
 		m_bufferExtractions(std::move(other.m_bufferExtractions)),
 		m_standaloneBarriers(std::move(other.m_standaloneBarriers)),
 		m_standaloneMarkers(std::move(other.m_standaloneMarkers)),
-		m_temporaryDataAllocator(std::move(other.m_temporaryDataAllocator)),
+		m_dataAllocator(std::move(other.m_dataAllocator)),
 		m_resourceSRVs(std::move(other.m_resourceSRVs)),
 		m_resourceUAVs(std::move(other.m_resourceUAVs)),
 		m_resourceManager(std::move(other.m_resourceManager))
-	{}
+	{
+	}
 
 	RenderGraph& RenderGraph::operator=(RenderGraph&& other) noexcept
 	{
@@ -271,7 +256,7 @@ namespace Volt
 		m_bufferExtractions = std::move(other.m_bufferExtractions);
 		m_standaloneBarriers = std::move(other.m_standaloneBarriers);
 		m_standaloneMarkers = std::move(other.m_standaloneMarkers);
-		m_temporaryDataAllocator = std::move(other.m_temporaryDataAllocator);
+		m_dataAllocator = std::move(other.m_dataAllocator);
 		m_resourceSRVs = std::move(other.m_resourceSRVs);
 		m_resourceUAVs = std::move(other.m_resourceUAVs);
 		m_resourceManager = std::move(other.m_resourceManager);
@@ -297,7 +282,7 @@ namespace Volt
 		VT_ENSURE_MSG(RHI::Utility::IsDepthFormat(desc.format) ? (desc.usage != RHI::ImageUsage::AttachmentStorage && desc.usage != RHI::ImageUsage::Storage) : true, 
 			"A texture with a depth format may not be used for UAV access!");
 
-		RGTextureRef texture = m_resourceAllocator.Allocate<RGTexture>(desc);
+		RGTextureRef texture = m_resourceAllocator.Allocate<RGTexture>(desc, m_dataAllocator.Get());
 		m_resources.emplace_back(texture);
 
 		return texture;
@@ -522,21 +507,20 @@ namespace Volt
 			}
 		}
 
-		// Make sure a view is created for each render target.
-		// #TODO_Ivar: Need some way of knowing which textures are render targets.
-#if 0
-		for (RGPassRef pass : m_renderPasses)
+		// Create views for render targets.
+		for (const ShaderParameterRenderTargetDecl& rtDecl : m_renderTargets)
 		{
-			for (RGTextureRef renderTarget : pass->GetResourceRenderTargetAccesses())
+			if (rtDecl.texture && rtDecl.texture->GetRHIResource())
 			{
-				if (renderTarget->GetRHIResource() != nullptr)
-				{
-					RHI::ImageViewDesc viewDesc{};
-					renderTarget->GetRHIResource()->GetOrCreateView(viewDesc);
-				}
+				RHI::ImageViewDesc viewDesc{};
+				viewDesc.baseMipLevel = rtDecl.subResourceRange.baseMipLevel;
+				viewDesc.baseArrayLayer = rtDecl.subResourceRange.baseArrayLayer;
+				viewDesc.mipCount = rtDecl.subResourceRange.mipCount;
+				viewDesc.layerCount = rtDecl.subResourceRange.layerCount;
+				
+				rtDecl.texture->GetRHIResource()->GetOrCreateView(viewDesc);
 			}
 		}
-#endif
 	}
 
 	void RenderGraph::SetupPass(RGPassRef pass)
@@ -719,6 +703,8 @@ namespace Volt
 
 								subResourceState->AddState(RHI::BarrierStage::RenderTarget, newState.access, newState.layout);
 							});
+
+							m_renderTargets.emplace_back(rtBindings.renderTargets[i]);
 						}
 					}
 
@@ -742,6 +728,8 @@ namespace Volt
 
 							subResourceState->AddState(RHI::BarrierStage::DepthStencil, newState.access, newState.layout);
 						});
+
+						m_renderTargets.emplace_back(rtBindings.depthTarget);
 					}
 
 					break;
@@ -858,28 +846,34 @@ namespace Volt
 
 			for (const RGBufferState& bufferState : pass->m_bufferStates)
 			{
-				bool resourceExtractedOrExternal = false;
+				if (bufferState.accessType == RGResourceAccessType::Write)
+				{
+					bool resourceExtractedOrExternal = false;
 
-				if (bufferState.bufferType == RGResourceType::Buffer)
-				{
-					resourceExtractedOrExternal = bufferState.buffer->m_isExtracted || bufferState.buffer->m_isExternal;
-				}
-				else
-				{
-					resourceExtractedOrExternal = bufferState.uniformBuffer->m_isExtracted || bufferState.uniformBuffer->m_isExternal;
-				}
+					if (bufferState.bufferType == RGResourceType::Buffer)
+					{
+						resourceExtractedOrExternal = bufferState.buffer->m_isExtracted || bufferState.buffer->m_isExternal;
+					}
+					else
+					{
+						resourceExtractedOrExternal = bufferState.uniformBuffer->m_isExtracted || bufferState.uniformBuffer->m_isExternal;
+					}
 
-				if (resourceExtractedOrExternal)
-				{
-					return false;
+					if (resourceExtractedOrExternal)
+					{
+						return false;
+					}
 				}
 			}
 			
 			for (const RGTextureState& textureState : pass->m_textureStates)
 			{
-				if (textureState.texture->m_isExternal || textureState.texture->m_isExtracted)
+				if (textureState.accessType == RGResourceAccessType::Write)
 				{
-					return false;
+					if (textureState.texture->m_isExternal || textureState.texture->m_isExtracted)
+					{
+						return false;
+					}
 				}
 			}
 
@@ -896,6 +890,8 @@ namespace Volt
 			{
 				continue;
 			}
+
+			unreferencedPass->m_isCulled = true;
 
 			// Remove the resource references that this pass has
 			for (const RGBufferState& bufferState : unreferencedPass->m_bufferStates)
@@ -993,12 +989,12 @@ namespace Volt
 			return true;
 		};
 
-		m_compiledRenderPasses.resize(m_renderPasses.size());
+		m_compiledRenderPasses.reserve(m_renderPasses.size());
 	
 		for (size_t passIndex = 0; passIndex < m_renderPasses.size(); ++passIndex)
 		{
 			RGPassRef pass = m_renderPasses[passIndex];
-			RGCompiledPass& compiledPass = m_compiledRenderPasses[passIndex];
+			RGCompiledPass& compiledPass = m_compiledRenderPasses.emplace_back(m_dataAllocator.Get());
 
 			compiledPass.SetName(pass->m_name);
 
@@ -1435,7 +1431,7 @@ namespace Volt
 		desc.debugName = texture->GetName();
 		desc.isCubeMap = texture->GetDesc().isCubeMap;
 
-		RGTextureRef textureResource = m_resourceAllocator.Allocate<RGTexture>(desc);
+		RGTextureRef textureResource = m_resourceAllocator.Allocate<RGTexture>(desc, m_dataAllocator.Get());
 		textureResource->m_isExternal = true;
 
 		m_resources.emplace_back(textureResource);
@@ -1584,6 +1580,18 @@ namespace Volt
 	JobCounterRef RenderGraph::ExecuteAndExtractCounter()
 	{
 		return ExecuteInternal(false, false, true);
+	}
+
+	void RenderGraph::SetupAllocators()
+	{
+		m_textureExtractions.set_allocator({ m_dataAllocator.Get() });
+		m_bufferExtractions.set_allocator({ m_dataAllocator.Get() });
+		m_renderPasses.set_allocator({ m_dataAllocator.Get() });
+		m_resources.set_allocator({ m_dataAllocator.Get() });
+		m_resourceSRVs.set_allocator({ m_dataAllocator.Get() });
+		m_resourceUAVs.set_allocator({ m_dataAllocator.Get() });
+		m_compiledRenderPasses.set_allocator({ m_dataAllocator.Get() });
+		m_renderTargets.set_allocator({ m_dataAllocator.Get() });
 	}
 
 	JobCounterRef RenderGraph::ExecuteInternal(bool isImmediate, bool waitForSync, bool extractCounter)
@@ -1927,7 +1935,7 @@ namespace Volt
 	RGSubResourceState* RenderGraph::AllocateSubResourceState()
 	{
 		// Allocate and call constructor
-		RGSubResourceState* subResourceState = reinterpret_cast<RGSubResourceState*>(m_temporaryDataAllocator.Allocate(sizeof(RGSubResourceState)));
+		RGSubResourceState* subResourceState = reinterpret_cast<RGSubResourceState*>(m_dataAllocator.Get()->Allocate(sizeof(RGSubResourceState)));
 		new(subResourceState) RGSubResourceState();
 
 		return subResourceState;
@@ -2008,5 +2016,42 @@ namespace Volt
 		const uint64_t alignedSize = size + g_rhiCapabilities.minUniformBufferAlignment;
 		uint64_t allocOffset = m_head.fetch_add(alignedSize, std::memory_order::relaxed);
 		return Utility::Align(allocOffset, g_rhiCapabilities.minUniformBufferAlignment);
+	}
+
+	RenderGraph::RGDataAllocatorContainer::RGDataAllocatorContainer()
+	{
+		m_allocator = RenderGraphGlobalAllocator::Get().GetAllocator();
+	}
+
+	RenderGraph::RGDataAllocatorContainer::RGDataAllocatorContainer(RGDataAllocatorContainer&& other) noexcept
+	{
+		m_allocator = other.m_allocator;
+		other.m_allocator = nullptr;
+	}
+
+	RenderGraph::RGDataAllocatorContainer& RenderGraph::RGDataAllocatorContainer::operator=(RenderGraph::RGDataAllocatorContainer&& other) noexcept
+	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
+		if (m_allocator)
+		{
+			RenderGraphGlobalAllocator::Get().ReleaseAllocator(m_allocator);
+		}
+
+		m_allocator = other.m_allocator;
+		other.m_allocator = nullptr;
+
+		return *this;
+	}
+
+	RenderGraph::RGDataAllocatorContainer::~RGDataAllocatorContainer()
+	{
+		if (m_allocator)
+		{
+			RenderGraphGlobalAllocator::Get().ReleaseAllocator(m_allocator);
+		}
 	}
 }

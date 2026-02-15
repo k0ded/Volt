@@ -12,19 +12,19 @@ namespace IntegrationTests
 	{
 	};
 
-	void ExpectAllPassesToBeCulled(const Vector<RGPassRef>& passes)
+	void ExpectAllPassesToBeCulled(const RGVector<RGPassRef>& passes)
 	{
 		for (RGPassRef pass : passes)
 		{
-			EXPECT_EQ(pass->isCulled, true);
+			EXPECT_EQ(pass->IsCulled(), true);
 		}
 	}
 
-	void ExpectAllPassesToBeActive(const Vector<RGPassRef>& passes)
+	void ExpectAllPassesToBeActive(const RGVector<RGPassRef>& passes)
 	{
 		for (RGPassRef pass : passes)
 		{
-			EXPECT_EQ(pass->isCulled, false);
+			EXPECT_EQ(pass->IsCulled(), false);
 		}
 	}
 

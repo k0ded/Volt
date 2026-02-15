@@ -32,7 +32,7 @@ namespace Volt
 		if (!statePtr)
 		{
 			RGTextureState& newState = m_textureStates.emplace_back();
-			newState.Initialize(texture, accessType);
+			newState.Initialize(texture, accessType, m_dataAllocator);
 
 			statePtr = &newState;
 		}
@@ -107,5 +107,12 @@ namespace Volt
 
 		statePtr->refCount++;
 		return *statePtr;
+	}
+
+	void RGPass::SetupAllocators(RenderGraphDataAllocator* dataAllocator)
+	{
+		m_textureStates.set_allocator({ dataAllocator });
+		m_bufferStates.set_allocator({ dataAllocator });
+		m_passDependencies.set_allocator({ dataAllocator });
 	}
 }

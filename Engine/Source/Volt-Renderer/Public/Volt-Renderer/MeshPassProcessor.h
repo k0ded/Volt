@@ -3,6 +3,8 @@
 #include "Volt-Renderer/Config.h"
 #include "Volt-Renderer/Material/RenderMaterial.h"
 
+#include <RenderCore/RenderGraph/ShaderParameterStruct.h>
+
 #include <RHIModule/Buffers/StorageBuffer.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
@@ -78,6 +80,10 @@ namespace Volt
 		RHI::DrawIndexedIndirectCommand drawCommand;
 	};
 
+	BEGIN_SHADER_PARAMETER_STRUCT(MeshPassProcessorParameters)
+		RG_BUFFER_ACCESS(PrimitiveIndexVertexBuffer, RGResourceAccess::VertexBuffer)
+	END_SHADER_PARAMETER_STRUCT()
+
 	class VTR_API MeshPassProcessor
 	{
 	public:
@@ -87,6 +93,7 @@ namespace Volt
 		void PrepareRenderCommands(RenderGraph& renderGraph);
 
 		void ExecuteCommands(RenderContext& renderContext, BatchedShaderParameters& batchedShaderParameters);
+		MeshPassProcessorParameters GetParameters(RenderGraph& renderGraph);
 
 		virtual void AddRenderPrimitive(const RenderPrimitiveData* renderPrimitive) = 0;
 		virtual void RemoveRenderPrimitive(const RenderPrimitiveData* renderPrimitive) = 0;

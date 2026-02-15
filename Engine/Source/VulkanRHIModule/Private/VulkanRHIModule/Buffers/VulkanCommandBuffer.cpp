@@ -1057,9 +1057,7 @@ namespace Volt::RHI
 		subResourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? VK_REMAINING_ARRAY_LAYERS : desc.layerCount;
 		subResourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? VK_REMAINING_MIP_LEVELS : desc.mipCount;
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image, 0);
-
-		const VkImageLayout layout = EnumValueContainsFlag(currentState.stage, BarrierStage::Clear) ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Utility::GetVkImageLayoutFromImageLayout(currentState.layout);
+		const VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
 
 		if ((subResourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0)
 		{
@@ -1095,9 +1093,7 @@ namespace Volt::RHI
 		subResourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? VK_REMAINING_ARRAY_LAYERS : desc.layerCount;
 		subResourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? VK_REMAINING_MIP_LEVELS : desc.mipCount;
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image, 0);
-
-		const VkImageLayout layout = EnumValueContainsFlag(currentState.stage, BarrierStage::Clear) ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Utility::GetVkImageLayoutFromImageLayout(currentState.layout);
+		const VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
 
 		if ((subResourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0)
 		{
@@ -1219,16 +1215,13 @@ namespace Volt::RHI
 		info.extent.height = height;
 		info.extent.depth = depth;
 
-		const auto& currentSrcState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(srcImage, 0);
-		const auto& currentDstState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage, 0);
-
 		VkCopyImageInfo2 cpyInfo{};
 		cpyInfo.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2;
 		cpyInfo.pNext = nullptr;
 		cpyInfo.srcImage = srcVkImage.GetHandle<VkImage>();
-		cpyInfo.srcImageLayout = Utility::GetVkImageLayoutFromImageLayout(currentSrcState.layout);
+		cpyInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		cpyInfo.dstImage = dstVkImage.GetHandle<VkImage>();
-		cpyInfo.dstImageLayout = Utility::GetVkImageLayoutFromImageLayout(currentDstState.layout);
+		cpyInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		cpyInfo.pRegions = &info;
 		cpyInfo.regionCount = 1;
 

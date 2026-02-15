@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RenderCore/RenderGraph/RenderGraphContainerAllocator.h"
+
 #include <RHIModule/Core/RHICommon.h>
 
 #include <CoreUtilities/Containers/ArrayView.h>
@@ -20,8 +22,10 @@ namespace Volt
 		class PassBarriers
 		{
 		public:
+			PassBarriers(RenderGraphDataAllocator* dataAllocator);
+
 			VT_NODISCARD VT_INLINE ArrayView<BarrierInfo> GetBarriers() const { return m_barriers; }
-			VT_NODISCARD VT_INLINE Vector<BarrierInfo>& GetBarriersMutable() { return m_barriers; }
+			VT_NODISCARD VT_INLINE RGVector<BarrierInfo>& GetBarriersMutable() { return m_barriers; }
 			VT_NODISCARD VT_INLINE size_t GetBarrierCount() const { return m_barriers.size(); }
 			VT_NODISCARD VT_INLINE bool Empty() const { return m_barriers.empty(); }
 
@@ -51,12 +55,12 @@ namespace Volt
 			}
 
 		private:
-			Vector<BarrierInfo> m_barriers;
+			RGVector<BarrierInfo> m_barriers;
 		};
 
+		RGCompiledPass(RenderGraphDataAllocator* dataAllocator);
+
 		VT_INLINE void SetName(const std::string& name) { m_name = name; }
-		VT_INLINE void AddSurrenderableResource(RGResource* resource) { m_surrenderableResources.emplace_back(resource); }
-		VT_NODISCARD VT_INLINE const Vector<RGResource*>& GetSurrenderableResources() const { return m_surrenderableResources; }
 
 		// We only want maximum ONE global barrier per pass. As a single global barrier
 		// can represent multiple.
@@ -103,7 +107,6 @@ namespace Volt
 		int32_t m_globalBarrierIndex = -1;
 		int32_t m_postPassGlobalBarrierIndex = -1;
 
-		Vector<RGResource*> m_surrenderableResources;
 		std::string_view m_name;
 	};
 }

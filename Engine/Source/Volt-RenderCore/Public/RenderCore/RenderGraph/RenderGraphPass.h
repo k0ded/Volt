@@ -28,9 +28,14 @@ namespace Volt
 		};
 
 		template<typename T>
-		RGPass(const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata)
-			: m_passParameters(shaderParameters, shaderParameterMetadata)
-		{}
+		RGPass(const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata, RenderGraphDataAllocator* dataAllocator)
+			: m_passParameters(shaderParameters, shaderParameterMetadata),
+			m_dataAllocator(dataAllocator)
+		{
+			SetupAllocators(dataAllocator);
+		}
+
+		VT_NODISCARD VT_INLINE bool IsCulled() const { return m_isCulled; }
 
 		/*
 			Gets or creates a state of a texture or buffer.
@@ -45,6 +50,8 @@ namespace Volt
 		VT_NODISCARD RGBufferState& GetOrCreateBufferState(RGUniformBufferRef buffer);
 
 	private:
+		VTRC_API void SetupAllocators(RenderGraphDataAllocator* dataAllocator);
+
 		friend class RenderGraph;
 		friend class RenderGraphPassAllocator;
 
@@ -56,10 +63,11 @@ namespace Volt
 		RenderGraphPassFlags m_flags = RenderGraphPassFlags::None;
 
 		RenderGraphParameterStruct m_passParameters;
+		RenderGraphDataAllocator* m_dataAllocator;
 
-		Vector<RGTextureState> m_textureStates;
-		Vector<RGBufferState> m_bufferStates;
-		Vector<RGPass*> m_passDependencies;
+		RGVector<RGTextureState> m_textureStates;
+		RGVector<RGBufferState> m_bufferStates;
+		RGVector<RGPass*> m_passDependencies;
 	};
 
 	using RGPassRef = RGPass*;

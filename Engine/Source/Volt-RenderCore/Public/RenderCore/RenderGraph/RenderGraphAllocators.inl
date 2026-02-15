@@ -22,7 +22,7 @@ namespace Volt
 		// Destructor for the allocated pass object, required because we are using the linear allocator.
 		m_passDestructors.emplace_back() = DestructorHelper::Create<RGPass>(passNodeAllocation);
 
-		RGPass* passNode = new(passNodeAllocation) RGPass(shaderParameters, shaderParameterMetadata);
+		RGPass* passNode = new(passNodeAllocation) RGPass(shaderParameters, shaderParameterMetadata, m_dataAllocator);
 		passNode->m_name = name;
 		passNode->m_passAllocationStartPtr = passAllocation.passAllocationStartPtr;
 		passNode->passIndex = m_numPasses;

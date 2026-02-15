@@ -57,6 +57,7 @@ VT_REGISTER_SHADER(OutlineGeometryPS, "Engine/Shaders/Source/Editor/Outline/Outl
 BEGIN_SHADER_PARAMETER_STRUCT(OutlineGeometryParameters)
 	SHADER_PARAMETER_STRUCT_INCLUDE(OutlineGeometryVS::Parameters, VS)
 	SHADER_PARAMETER_STRUCT_INCLUDE(OutlineGeometryPS::Parameters, PS)
+	SHADER_PARAMETER_STRUCT_INCLUDE(Volt::MeshPassProcessorParameters, ProcessorParameters)
 END_SHADER_PARAMETER_STRUCT()
 
 RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& renderScene, const RenderView& view, const std::unordered_set<Volt::EntityID>& selectedEntities)
@@ -84,14 +85,15 @@ RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& ren
 	RGTextureRef colorTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::Attachment, "OutlineGeometryColor"));
 	RGTextureRef depthTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::Attachment, "OutlineGeometryDepth"));
 
+	m_meshPassProcessor->PrepareRenderCommands(m_renderGraph);
+
 	OutlineGeometryParameters* passParameters = m_renderGraph.AllocParameters<OutlineGeometryParameters>();
 	passParameters->VS.View = view.viewUniformBuffer;
 	passParameters->VS.GPUScene = renderScene.GetGPUSceneParameters(m_renderGraph);
 	passParameters->VS.PrimitivesToDraw = m_renderGraph.CreateSRV(primitivesToDraw);
 	passParameters->PS.renderTargets.renderTargets[0] = colorTexture;
 	passParameters->PS.renderTargets.depthTarget = depthTexture;
-
-	m_meshPassProcessor->PrepareRenderCommands(m_renderGraph);
+	passParameters->ProcessorParameters = m_meshPassProcessor->GetParameters(m_renderGraph);
 
 	m_renderGraph.AddPass("Outline Geometry",
 		RenderGraphPassFlags::None,

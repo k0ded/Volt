@@ -7,29 +7,22 @@
 
 namespace Volt
 {
-	RenderGraphResourceManager::RenderGraphResourceManager()
+	RenderGraphResourceManager::RenderGraphResourceManager(RenderGraphDataAllocator* dataAllocator)
 	{
 		m_persistantBufferResources.ReservePages(1);
 		m_persistantTextureResources.ReservePages(1);
 		m_persistantUniformBufferResources.ReservePages(1);
+
+		m_allocatedBuffers.set_allocator({ dataAllocator });
+		m_allocatedTextures.set_allocator({ dataAllocator });
+		m_allocatedUniformBuffers.set_allocator({ dataAllocator });
 	}
 
 	RenderGraphResourceManager::~RenderGraphResourceManager()
 	{
-		for (const auto& resource : m_allocatedBuffers)
-		{
-			TransientResourceAllocator::Get().FreeBuffer(resource);
-		}
-
-		for (const auto& resource : m_allocatedTextures)
-		{
-			TransientResourceAllocator::Get().FreeTexture(resource);
-		}
-
-		for (const auto& resource : m_allocatedUniformBuffers)
-		{
-			TransientResourceAllocator::Get().FreeUniformBuffer(resource);
-		}
+		VT_ASSERT(m_allocatedBuffers.empty());
+		VT_ASSERT(m_allocatedTextures.empty());
+		VT_ASSERT(m_allocatedUniformBuffers.empty());
 	}
 
 	RenderGraphResourceManager::RenderGraphResourceManager(RenderGraphResourceManager && other) noexcept
@@ -51,6 +44,28 @@ namespace Volt
 		m_allocatedTextures = std::move(other.m_allocatedTextures);
 		m_allocatedUniformBuffers = std::move(other.m_allocatedUniformBuffers);
 		return *this;
+	}
+
+	void RenderGraphResourceManager::Release()
+	{
+		for (const auto& resource : m_allocatedBuffers)
+		{
+			TransientResourceAllocator::Get().FreeBuffer(resource);
+		}
+
+		for (const auto& resource : m_allocatedTextures)
+		{
+			TransientResourceAllocator::Get().FreeTexture(resource);
+		}
+
+		for (const auto& resource : m_allocatedUniformBuffers)
+		{
+			TransientResourceAllocator::Get().FreeUniformBuffer(resource);
+		}
+
+		m_allocatedBuffers.clear();
+		m_allocatedTextures.clear();
+		m_allocatedUniformBuffers.clear();
 	}
 
 	void RenderGraphResourceManager::AddExternalResource(RGResourceRef resource, RefPtr<RHI::RHIResource> rhiResource)
