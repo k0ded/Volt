@@ -100,10 +100,10 @@ namespace Volt
 		void CopyBufferRegion(RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size);
 		void CopyTexture(RGTextureRef src, RGTextureRef dst, const uint32_t width, const uint32_t height, const uint32_t depth);
 
-		template<typename T> T* MapBuffer(RGBufferUAVRef buffer);
+		template<typename T> T* MapBuffer(RGBufferRef buffer);
 		template<typename T> T* MapBuffer(RGUniformBufferRef buffer);
 
-		void UnmapBuffer(RGBufferUAVRef buffer);
+		void UnmapBuffer(RGBufferRef buffer);
 		void UnmapBuffer(RGUniformBufferRef buffer);
 
 		template<typename ShaderType> void SetParameters(RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* parameters);
@@ -141,7 +141,7 @@ namespace Volt
 		void CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 		void CollectShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 
-		void* MapInternal(RGBufferUAVRef buffer);
+		void* MapInternal(RGBufferRef buffer);
 		void* MapInternal(RGUniformBufferRef buffer);
 
 		RHI::RenderPipelineCreateInfo TranslateGraphicsPipelineState(const GraphicsPipelineState& pipelineState);

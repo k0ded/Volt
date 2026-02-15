@@ -133,7 +133,7 @@ void DebugSceneRendererExtension::RenderForwardLitDebugMeshes(Volt::RenderGraph&
 		passParameters->renderTargets.depthTarget = m_depthTexture;
 
 		renderGraph.AddPass("ForwardLit",
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::Raster,
 			passParameters,
 			[passParameters, view, forwardLitDebugMeshRenderer](RenderContext& context)
 		{
@@ -203,7 +203,7 @@ void DebugSceneRendererExtension::RenderTranslucentDebugMeshes(Volt::RenderGraph
 			passParameters->renderTargets.depthTarget = m_depthTexture;
 
 			renderGraph.AddPass("Translucency",
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::Raster,
 			passParameters,
 			[passParameters, view, translucencyDebugMeshRenderer](RenderContext& context)
 			{
@@ -233,7 +233,7 @@ void DebugSceneRendererExtension::RenderTranslucentDebugMeshes(Volt::RenderGraph
 			auto pixelShader = ShaderMap::Get<TranslucencyCompositePS>();
 
 			renderGraph.AddPass("TranslucencyComposite",
-				RenderGraphPassFlags::None,
+				RenderGraphPassFlags::Raster,
 				passParameters,
 				[passParameters, view, pixelShader, vertexShader](RenderContext& context)
 			{

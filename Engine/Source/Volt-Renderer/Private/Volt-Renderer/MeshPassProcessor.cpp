@@ -127,7 +127,7 @@ namespace Volt
 
 			m_primitiveIndexVertexBuffer = renderGraph.CreateBuffer(bufferDesc);
 
-			AddMappedBufferUploadCopyData(renderGraph, renderGraph.CreateUAV(m_primitiveIndexVertexBuffer), primitiveIndices.data(), primitiveIndices.byte_size());
+			AddMappedBufferUploadCopyData(renderGraph, m_primitiveIndexVertexBuffer, primitiveIndices.data(), primitiveIndices.byte_size());
 		}
 		else
 		{

@@ -200,15 +200,6 @@ namespace Volt
 		m_renderScene->RenderDebug(renderGraph, renderView, outputTexture, sceneTextures.sceneDepth);
 		m_renderScene->EndFrame(renderGraph);
 
-		{
-			RHI::ResourceState barrier{};
-			barrier.stage = RHI::BarrierStage::PixelShader;
-			barrier.access = RHI::BarrierAccess::ShaderRead;
-			barrier.layout = RHI::ImageLayout::ShaderRead;
-
-			renderGraph.AddResourceBarrier(outputTexture, barrier);
-		}
-
 		//m_renderGraphDebugger.ProcessRenderGraph(renderGraph);
 
 		renderGraph.Compile();
@@ -299,7 +290,7 @@ namespace Volt
 		passParameters->ProcessorParameters = m_translucencyMeshPassProcessor->GetParameters(renderGraph);
 
 		renderGraph.AddPass("TranslucencyPass",
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::Raster,
 			passParameters,
 			[passParameters, view, meshPassProcessor = m_translucencyMeshPassProcessor](RenderContext& context)
 		{
@@ -330,7 +321,7 @@ namespace Volt
 		auto pixelShader = ShaderMap::Get<TranslucencyCompositePS>();
 
 		renderGraph.AddPass("TranslucencyComposite",
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::Raster,
 			passParameters,
 			[passParameters, view, pixelShader, vertexShader](RenderContext& context)
 		{
@@ -455,7 +446,7 @@ namespace Volt
 		auto pixelShader = ShaderMap::Get<TonemapPS>();
 
 		renderGraph.AddPass("Tonemap",
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::Raster,
 			passParameters,
 			[passParameters, view, pixelShader, vertexShader](RenderContext& context)
 		{
@@ -501,7 +492,7 @@ namespace Volt
 		passParameters->renderTargets.depthTarget = sceneTextures.sceneDepth;
 
 		renderGraph.AddPass("Depth Pre Pass",
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::Raster,
 			passParameters,
 			[passParameters, view, meshPassProcessor = m_depthPrePassMeshProcessor](RenderContext& context)
 		{
@@ -544,7 +535,7 @@ namespace Volt
 		passParameters->renderTargets.depthTarget = sceneTextures.sceneDepth;
 
 		renderGraph.AddPass("BasePass",
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::Raster,
 			passParameters,
 			[passParameters, view, meshPassProcessor = m_basePassMeshProcessor](RenderContext& context)
 		{
@@ -614,7 +605,7 @@ namespace Volt
 		auto pixelShader = ShaderMap::Get<SkyboxPS>();
 
 		renderGraph.AddPass("Skybox",
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::Raster,
 			passParameters,
 			[passParameters, view, vertexShader, pixelShader, indexCount] (RenderContext& context)
 		{

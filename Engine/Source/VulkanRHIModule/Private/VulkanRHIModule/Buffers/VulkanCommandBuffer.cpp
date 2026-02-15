@@ -658,10 +658,23 @@ namespace Volt::RHI
 	{
 		outBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
 		outBarrier.pNext = nullptr;
+
 		outBarrier.srcAccessMask = Utility::GetAccessFromBarrierAccess(barrierInfo.srcAccess);
 		outBarrier.dstAccessMask = Utility::GetAccessFromBarrierAccess(barrierInfo.dstAccess);
 		outBarrier.srcStageMask = Utility::GetStageFromBarrierStage(barrierInfo.srcStage);
 		outBarrier.dstStageMask = Utility::GetStageFromBarrierStage(barrierInfo.dstStage);
+
+		if (EnumValueContainsFlag(barrierInfo.srcStage, BarrierStage::Clear))
+		{
+			outBarrier.srcAccessMask |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
+			outBarrier.srcStageMask |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+		}
+
+		if (EnumValueContainsFlag(barrierInfo.dstStage, BarrierStage::Clear))
+		{
+			outBarrier.dstAccessMask |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
+			outBarrier.dstStageMask |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+		}
 	}
 
 	void AddBufferBarrier(const BufferBarrier& barrierInfo, VkBufferMemoryBarrier2& outBarrier)
@@ -671,27 +684,21 @@ namespace Volt::RHI
 
 		outBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
 		outBarrier.pNext = nullptr;
+		outBarrier.srcAccessMask = Utility::GetAccessFromBarrierAccess(barrierInfo.srcAccess);
+		outBarrier.srcStageMask = Utility::GetStageFromBarrierStage(barrierInfo.srcStage);
+		outBarrier.dstAccessMask = Utility::GetAccessFromBarrierAccess(barrierInfo.dstAccess);
+		outBarrier.dstStageMask = Utility::GetStageFromBarrierStage(barrierInfo.dstStage);
 
-		if (barrierInfo.srcStage == BarrierStage::Clear)
+		if (EnumValueContainsFlag(barrierInfo.srcStage, BarrierStage::Clear))
 		{
-			outBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-			outBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-		}
-		else
-		{
-			outBarrier.srcAccessMask = Utility::GetAccessFromBarrierAccess(barrierInfo.srcAccess);
-			outBarrier.srcStageMask = Utility::GetStageFromBarrierStage(barrierInfo.srcStage);
+			outBarrier.srcAccessMask |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
+			outBarrier.srcStageMask |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
 		}
 
-		if (barrierInfo.dstStage == BarrierStage::Clear)
+		if (EnumValueContainsFlag(barrierInfo.dstStage, BarrierStage::Clear))
 		{
-			outBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-			outBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-		}
-		else
-		{
-			outBarrier.dstAccessMask = Utility::GetAccessFromBarrierAccess(barrierInfo.dstAccess);
-			outBarrier.dstStageMask = Utility::GetStageFromBarrierStage(barrierInfo.dstStage);
+			outBarrier.dstAccessMask |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
+			outBarrier.dstStageMask |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
 		}
 
 		outBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -717,31 +724,25 @@ namespace Volt::RHI
 
 		outBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
 		outBarrier.pNext = nullptr;
+		outBarrier.srcAccessMask = Utility::GetAccessFromBarrierAccess(barrierInfo.srcAccess);
+		outBarrier.srcStageMask = Utility::GetStageFromBarrierStage(barrierInfo.srcStage);
+		outBarrier.oldLayout = Utility::GetVkImageLayoutFromImageLayout(barrierInfo.srcLayout);
+		outBarrier.dstAccessMask = Utility::GetAccessFromBarrierAccess(barrierInfo.dstAccess);
+		outBarrier.dstStageMask = Utility::GetStageFromBarrierStage(barrierInfo.dstStage);
+		outBarrier.newLayout = Utility::GetVkImageLayoutFromImageLayout(barrierInfo.dstLayout);
 
-		if (barrierInfo.srcStage == BarrierStage::Clear)
+		if (EnumValueContainsFlag(barrierInfo.srcStage, BarrierStage::Clear))
 		{
-			outBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-			outBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+			outBarrier.srcAccessMask |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
+			outBarrier.srcStageMask |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
 			outBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		}
-		else
-		{
-			outBarrier.srcAccessMask = Utility::GetAccessFromBarrierAccess(barrierInfo.srcAccess);
-			outBarrier.srcStageMask = Utility::GetStageFromBarrierStage(barrierInfo.srcStage);
-			outBarrier.oldLayout = Utility::GetVkImageLayoutFromImageLayout(barrierInfo.srcLayout);
-		}
 
-		if (barrierInfo.dstStage == BarrierStage::Clear)
+		if (EnumValueContainsFlag(barrierInfo.dstStage, BarrierStage::Clear))
 		{
-			outBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-			outBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+			outBarrier.dstAccessMask |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
+			outBarrier.dstStageMask |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
 			outBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		}
-		else
-		{
-			outBarrier.dstAccessMask = Utility::GetAccessFromBarrierAccess(barrierInfo.dstAccess);
-			outBarrier.dstStageMask = Utility::GetStageFromBarrierStage(barrierInfo.dstStage);
-			outBarrier.newLayout = Utility::GetVkImageLayoutFromImageLayout(barrierInfo.dstLayout);
 		}
 
 		outBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1057,7 +1058,7 @@ namespace Volt::RHI
 		subResourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? VK_REMAINING_ARRAY_LAYERS : desc.layerCount;
 		subResourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? VK_REMAINING_MIP_LEVELS : desc.mipCount;
 
-		const VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
+		const VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
 		if ((subResourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0)
 		{
@@ -1093,7 +1094,7 @@ namespace Volt::RHI
 		subResourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? VK_REMAINING_ARRAY_LAYERS : desc.layerCount;
 		subResourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? VK_REMAINING_MIP_LEVELS : desc.mipCount;
 
-		const VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
+		const VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
 		if ((subResourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0)
 		{

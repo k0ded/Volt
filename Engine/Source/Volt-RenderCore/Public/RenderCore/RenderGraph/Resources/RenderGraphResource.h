@@ -29,7 +29,8 @@ namespace Volt
 		VertexBuffer,
 		IndexBuffer,
 		CopyDst,
-		CopySrc
+		CopySrc,
+		Upload
 	};
 
 	enum class RGResourceAccessType : uint8_t

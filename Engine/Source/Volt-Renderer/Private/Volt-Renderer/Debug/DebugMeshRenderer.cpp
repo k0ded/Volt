@@ -223,8 +223,8 @@ namespace Volt
 
 		m_debugMeshDataBuffer = renderGraph.CreateBuffer(debugMeshDataBufferDesc);
 
-		AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(m_primitiveIndexDataBuffer), primitiveIndexDataPtr, primitiveIndexDataSize);
-		AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(m_debugMeshDataBuffer), debugMeshDataPtr, meshDataSize);
+		AddMappedBufferUpload(renderGraph, m_primitiveIndexDataBuffer, primitiveIndexDataPtr, primitiveIndexDataSize);
+		AddMappedBufferUpload(renderGraph, m_debugMeshDataBuffer, debugMeshDataPtr, meshDataSize);
 	}
 
 	void DebugMeshRenderer::Reset()

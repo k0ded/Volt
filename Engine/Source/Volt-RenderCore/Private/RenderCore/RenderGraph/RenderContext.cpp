@@ -12,6 +12,12 @@
 
 namespace Volt
 {
+	void ValidateClearUAV(RGPassRef pass)
+	{
+		const RenderGraphPassFlags passFlags = pass->GetFlags();
+		VT_ENSURE(EnumValueContainsFlag(passFlags, RenderGraphPassFlags::Clear));
+	}
+
 	RenderContext::RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
 		: m_renderGraph(renderGraph), m_currentPass(currentPass), m_commandBuffer(commandBuffer), m_shaderParameterUniformBuffer(shaderParameterUniformBuffer)
 	{
@@ -193,21 +199,25 @@ namespace Volt
 
 	void RenderContext::ClearUAV(RGTextureUAVRef textureUAV, const glm::uvec4& clearValues)
 	{
+		ValidateClearUAV(m_currentPass);
 		m_commandBuffer->ClearImageView(textureUAV->GetRHIView(), std::array<uint32_t, 4>{ clearValues[0], clearValues[1], clearValues[2], clearValues[3] });
 	}
 
 	void RenderContext::ClearUAV(RGTextureUAVRef textureUAV, const glm::vec4& clearValues)
 	{
+		ValidateClearUAV(m_currentPass);
 		m_commandBuffer->ClearImageView(textureUAV->GetRHIView(), std::array<float, 4>{ clearValues[0], clearValues[1], clearValues[2], clearValues[3] });
 	}
 
 	void RenderContext::ClearUAV(RGBufferUAVRef bufferUAV, const uint32_t clearValue)
 	{
+		ValidateClearUAV(m_currentPass);
 		m_commandBuffer->ClearBufferView(bufferUAV->GetRHIView(), clearValue);
 	}
 
 	void RenderContext::ClearUAV(RGBufferUAVRef bufferUAV, const float clearValue)
 	{
+		ValidateClearUAV(m_currentPass);
 		m_commandBuffer->ClearBufferView(bufferUAV->GetRHIView(), clearValue);
 	}
 
@@ -273,11 +283,9 @@ namespace Volt
 		m_commandBuffer->CopyImage(rhiSrcTexture, rhiDstTexture, width, height, depth);
 	}
 
-	void RenderContext::UnmapBuffer(RGBufferUAVRef buffer)
+	void RenderContext::UnmapBuffer(RGBufferRef buffer)
 	{
-		RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(buffer->GetResource());
-		RefPtr<RHI::StorageBuffer> rhiBuffer = bufferResource->GetRHIResource()->GetRHIBuffer();
-		rhiBuffer->Unmap();
+		buffer->GetRHIResource()->GetRHIBuffer()->Unmap();
 	}
 
 	void RenderContext::UnmapBuffer(RGUniformBufferRef buffer)
@@ -512,11 +520,9 @@ namespace Volt
 		batchedShaderParameters.AddShaderParameter(parameterDesc.GetParameterNameHash(), data, parameterDesc.GetSize());
 	}
 
-	void* RenderContext::MapInternal(RGBufferUAVRef buffer)
+	void* RenderContext::MapInternal(RGBufferRef buffer)
 	{
-		RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(buffer->GetResource());
-
-		RefPtr<RHI::StorageBuffer> rhiBuffer = bufferResource->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::StorageBuffer> rhiBuffer = buffer->GetRHIResource()->GetRHIBuffer();
 		return rhiBuffer->Map<void>();
 	}
 

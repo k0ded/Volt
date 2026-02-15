@@ -197,7 +197,7 @@ namespace Volt
 		// Copy the line vertices into linear RenderGraph owned storage, and queue an upload.
 		LineVertex* rgDataStorage = reinterpret_cast<LineVertex*>(renderGraph.AllocData(m_lineVerticesAllocator.GetAllocatedSize()));
 		m_lineVerticesAllocator.MemcopyInto(rgDataStorage, m_lineVerticesAllocator.GetAllocatedSize());
-		AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(linesVertexBuffer), rgDataStorage, m_lineVerticesAllocator.GetAllocatedSize());
+		AddMappedBufferUpload(renderGraph, linesVertexBuffer, rgDataStorage, m_lineVerticesAllocator.GetAllocatedSize());
 	
 		DrawDebugLinesParameters* passParameters = renderGraph.AllocParameters<DrawDebugLinesParameters>();
 		passParameters->VS.View = view.viewUniformBuffer;
@@ -368,7 +368,7 @@ namespace Volt
 		uploadDesc.memoryUsage |= RHI::MemoryUsage::CPUToGPU;
 
 		RGBufferRef billboardInstancesBuffer = renderGraph.CreateBuffer(uploadDesc);
-		AddMappedBufferUpload(renderGraph, renderGraph.CreateUAV(billboardInstancesBuffer), billboardInstances, billboardInstancesSize);
+		AddMappedBufferUpload(renderGraph, billboardInstancesBuffer, billboardInstances, billboardInstancesSize);
 
 		return billboardInstancesBuffer;
 	}
@@ -391,7 +391,7 @@ namespace Volt
 		auto vertexShader = ShaderMap::Get<DrawDebugBillboardsVS>();
 
 		renderGraph.AddPass("Draw Debug Billboards",
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::Raster,
 			passParameters,
 			[passParameters, vertexShader, pixelShader, view, instancingRanges = m_billboardInstancingRanges, shouldClear](RenderContext& context)
 		{

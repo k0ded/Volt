@@ -13,7 +13,10 @@ namespace Volt
 	{
 		None = 0,
 		NeverCull = BIT(0),
-		Compute = BIT(1)
+		Compute = BIT(1),
+		Clear = BIT(2),
+		Raster = BIT(3),
+		Copy = BIT(4)
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(RenderGraphPassFlags);
@@ -36,6 +39,7 @@ namespace Volt
 		}
 
 		VT_NODISCARD VT_INLINE bool IsCulled() const { return m_isCulled; }
+		VT_NODISCARD VT_INLINE RenderGraphPassFlags GetFlags() const { return m_flags; }
 
 		/*
 			Gets or creates a state of a texture or buffer.

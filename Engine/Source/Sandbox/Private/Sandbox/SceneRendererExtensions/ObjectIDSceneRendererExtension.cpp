@@ -50,7 +50,7 @@ Volt::RGTextureRef ObjectIDSceneRendererExtension::OnRender(Volt::RenderGraph& r
 	passParameters->ProcessorParameters = m_meshPassProcessor->GetParameters(renderGraph);
 
 	renderGraph.AddPass("Render Object ID",
-		RenderGraphPassFlags::None,
+		RenderGraphPassFlags::Raster,
 		passParameters, 
 		[passParameters, view, meshPassProcessor = m_meshPassProcessor](RenderContext& context)
 	{

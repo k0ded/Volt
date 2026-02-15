@@ -74,7 +74,7 @@ namespace Volt
 			const std::string passName = std::format("CascadedDirectionalShadow Cascade: {}", i);
 
 			m_renderGraph.AddPass(passName,
-				RenderGraphPassFlags::None,
+				RenderGraphPassFlags::Raster,
 				passParameters,
 				[passParameters, view, meshPassProcessor = m_meshProcessor, i](RenderContext& context) 
 			{

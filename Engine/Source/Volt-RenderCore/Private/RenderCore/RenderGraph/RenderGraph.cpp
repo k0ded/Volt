@@ -178,6 +178,10 @@ namespace Volt
 		{
 			resultStage = RHI::BarrierStage::ComputeShader;
 		}
+		else if (EnumValueContainsFlag(RenderGraphPassFlags::Clear, flags))
+		{
+			resultStage = RHI::BarrierStage::Clear;
+		}
 		else
 		{
 			resultStage = RHI::BarrierStage::VertexShader | RHI::BarrierStage::PixelShader;
@@ -527,6 +531,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		ValidateAddPass(pass);
 		SetupPassParameters(pass);
 		SetupPassDependencies(pass);
 	}
@@ -545,6 +550,8 @@ namespace Volt
 				{
 					if (RGBufferSRVRef bufferSRV = parameterDesc.GetAs<RGBufferSRVRef>())
 					{
+						VT_ENSURE_MSG(bufferSRV->GetResource()->IsProduced(), "Buffer has not been produced yet!");
+
 						RGBufferState& bufferState = pass->GetOrCreateBufferState(bufferSRV);
 						bufferState.subResourceState.AddState(passStage, RHI::BarrierAccess::ShaderRead, RHI::ImageLayout::ShaderRead);
 					}
@@ -556,8 +563,14 @@ namespace Volt
 				{
 					if (RGBufferUAVRef bufferUAV = parameterDesc.GetAs<RGBufferUAVRef>())
 					{
+						bufferUAV->GetResource()->m_isProduced = true;
+
 						RGBufferState& bufferState = pass->GetOrCreateBufferState(bufferUAV);
-						bufferState.subResourceState.AddState(passStage, RHI::BarrierAccess::ShaderWrite, RHI::ImageLayout::ShaderWrite);
+
+						const RHI::ImageLayout layout = RHI::ImageLayout::Undefined;
+						const RHI::BarrierAccess barrierAccess = passStage == RHI::BarrierStage::Clear ? RHI::BarrierAccess::None : RHI::BarrierAccess::ShaderWrite;
+
+						bufferState.subResourceState.AddState(passStage, barrierAccess, layout);
 					}
 
 					break;
@@ -567,8 +580,9 @@ namespace Volt
 				{
 					if (RGTextureSRVRef textureSRV = parameterDesc.GetAs<RGTextureSRVRef>())
 					{
-						RGTextureState& textureState = pass->GetOrCreateTextureState(textureSRV);
+						VT_ENSURE_MSG(textureSRV->GetResource()->IsProduced(), "Texture has not been produced yet!");
 
+						RGTextureState& textureState = pass->GetOrCreateTextureState(textureSRV);
 						textureState.EnumerateSubResourceRange(textureSRV->GetSubResourceRange(), [&](RGSubResourceState*& subResourceState) 
 						{
 							if (!subResourceState)
@@ -587,8 +601,12 @@ namespace Volt
 				{
 					if (RGTextureUAVRef textureUAV = parameterDesc.GetAs<RGTextureUAVRef>())
 					{
-						RGTextureState& textureState = pass->GetOrCreateTextureState(textureUAV);
+						textureUAV->GetResource()->m_isProduced = true;
 
+						const RHI::ImageLayout layout = RHI::ImageLayout::ShaderWrite;
+						const RHI::BarrierAccess barrierAccess = passStage == RHI::BarrierStage::Clear ? RHI::BarrierAccess::None : RHI::BarrierAccess::ShaderWrite;
+
+						RGTextureState& textureState = pass->GetOrCreateTextureState(textureUAV);
 						textureState.EnumerateSubResourceRange(textureUAV->GetSubResourceRange(), [&](RGSubResourceState*& subResourceState)
 						{
 							if (!subResourceState)
@@ -596,7 +614,7 @@ namespace Volt
 								subResourceState = AllocateSubResourceState();
 							}
 
-							subResourceState->AddState(passStage, RHI::BarrierAccess::ShaderWrite, RHI::ImageLayout::ShaderWrite);
+							subResourceState->AddState(passStage, barrierAccess, layout);
 						});
 					}
 
@@ -618,12 +636,20 @@ namespace Volt
 				{
 					if (RGBufferRef buffer = parameterDesc.GetAs<RGBufferRef>())
 					{
-						RGBufferState& bufferState = pass->GetOrCreateBufferState(buffer, RGResourceAccessType::Read);
+						// Upload is a CPU->GPU upload and does not require any sync, but does produce the resource.
+						if (parameterDesc.GetAccess() == RGResourceAccess::Upload)
+						{
+							buffer->m_isProduced = true;
+						}
+						else
+						{
+							RGBufferState& bufferState = pass->GetOrCreateBufferState(buffer, RGResourceAccessType::Read);
 
-						RHI::ResourceState newState{};
-						SetupResourceStateFromAccess(parameterDesc.GetAccess(), newState);
+							RHI::ResourceState newState{};
+							SetupResourceStateFromAccess(parameterDesc.GetAccess(), newState);
 
-						bufferState.subResourceState.AddState(newState.stage, newState.access, newState.layout);
+							bufferState.subResourceState.AddState(newState.stage, newState.access, newState.layout);
+						}
 					}
 
 					break;
@@ -633,28 +659,35 @@ namespace Volt
 				{
 					if (RGTextureRef texture = parameterDesc.GetAs<RGTextureRef>())
 					{
-						const RGTextureDesc& textureDesc = texture->GetDesc();
-						const RGTextureSubResourceRange subResourceRange
+						if (parameterDesc.GetAccess() == RGResourceAccess::Upload)
 						{
-							.baseMipLevel = 0,
-							.baseArrayLayer = 0,
-							.mipCount = textureDesc.mips,
-							.layerCount = textureDesc.layers
-						};
-
-						RHI::ResourceState newState{};
-						SetupResourceStateFromAccess(parameterDesc.GetAccess(), newState);
-
-						RGTextureState& textureState = pass->GetOrCreateTextureState(texture, RGResourceAccessType::Write);
-						textureState.EnumerateSubResourceRange(subResourceRange, [&](RGSubResourceState*& subResourceState) 
+							texture->m_isProduced = true;
+						}
+						else
 						{
-							if (!subResourceState)
+							const RGTextureDesc& textureDesc = texture->GetDesc();
+							const RGTextureSubResourceRange subResourceRange
 							{
-								subResourceState = AllocateSubResourceState();
-							}
+								.baseMipLevel = 0,
+								.baseArrayLayer = 0,
+								.mipCount = textureDesc.mips,
+								.layerCount = textureDesc.layers
+							};
 
-							subResourceState->AddState(newState.stage, newState.access, newState.layout);
-						});
+							RHI::ResourceState newState{};
+							SetupResourceStateFromAccess(parameterDesc.GetAccess(), newState);
+
+							RGTextureState& textureState = pass->GetOrCreateTextureState(texture, RGResourceAccessType::Write);
+							textureState.EnumerateSubResourceRange(subResourceRange, [&](RGSubResourceState*& subResourceState)
+							{
+								if (!subResourceState)
+								{
+									subResourceState = AllocateSubResourceState();
+								}
+
+								subResourceState->AddState(newState.stage, newState.access, newState.layout);
+							});
+						}
 					}
 
 					break;
@@ -664,12 +697,19 @@ namespace Volt
 				{
 					if (RGUniformBufferRef uniformBuffer = parameterDesc.GetAs<RGUniformBufferRef>())
 					{
-						RGBufferState& bufferState = pass->GetOrCreateBufferState(uniformBuffer);
-						
-						RHI::ResourceState newState{};
-						SetupResourceStateFromAccess(parameterDesc.GetAccess(), newState);
+						if (parameterDesc.GetAccess() == RGResourceAccess::Upload)
+						{
+							uniformBuffer->m_isProduced = true;
+						}
+						else
+						{
+							RGBufferState& bufferState = pass->GetOrCreateBufferState(uniformBuffer);
 
-						bufferState.subResourceState.AddState(newState.stage, newState.access, newState.layout);
+							RHI::ResourceState newState{};
+							SetupResourceStateFromAccess(parameterDesc.GetAccess(), newState);
+
+							bufferState.subResourceState.AddState(newState.stage, newState.access, newState.layout);
+						}
 					}
 
 					break;
@@ -677,7 +717,8 @@ namespace Volt
 
 				case ShaderParameterType::RenderTargets:
 				{
-					VT_ENSURE(!EnumValueContainsFlag(pass->m_flags, RenderGraphPassFlags::Compute));
+					VT_ENSURE_MSG(!EnumValueContainsAnyFlag(pass->m_flags, RenderGraphPassFlags::Compute, RenderGraphPassFlags::Clear), 
+						"Render target parameters may only be declared in raster passes!");
 
 					const ShaderParameterRenderTargetBindings& rtBindings = parameterDesc.GetAs<const ShaderParameterRenderTargetBindings&>();
 
@@ -691,6 +732,7 @@ namespace Volt
 								|| renderTarget->GetDesc().usage == RHI::ImageUsage::AttachmentStorage,
 								"Render Targets must have a Attachment usage type!");
 
+							renderTarget->m_isProduced = true;
 							const RHI::ResourceState newState = GetWriteStateForRasterizedTexture(renderTarget);
 
 							RGTextureState& textureState = pass->GetOrCreateTextureState(renderTarget, RGResourceAccessType::Write);
@@ -716,6 +758,7 @@ namespace Volt
 							|| depthTarget->GetDesc().usage == RHI::ImageUsage::AttachmentStorage,
 							"Render Targets must have a Attachment usage type!");
 
+						depthTarget->m_isProduced = true;
 						const RHI::ResourceState newState = GetWriteStateForRasterizedTexture(depthTarget);
 
 						RGTextureState& textureState = pass->GetOrCreateTextureState(depthTarget, RGResourceAccessType::Write);
@@ -1211,6 +1254,35 @@ namespace Volt
 		VT_ENSURE_MSG(uavDesc.textureResource->GetDesc().usage == RHI::ImageUsage::AttachmentStorage || uavDesc.textureResource->GetDesc().usage == RHI::ImageUsage::Storage, "Texture does not support UAVs!");
 	}
 
+	void RenderGraph::ValidateAddPass(RGPassRef pass)
+	{
+		const RenderGraphPassFlags passFlags = pass->GetFlags();
+		VT_ENSURE_MSG(EnumValueContainsAnyFlag(passFlags, RenderGraphPassFlags::Compute, RenderGraphPassFlags::Clear, RenderGraphPassFlags::Raster, RenderGraphPassFlags::Copy),
+			"Pass flags must contain either RenderGraphPassFlags::Compute, RenderGraphPassFlags::Clear, RenderGraphPassFlags::Raster or RenderGraphPassFlags::Copy");
+
+		if (EnumValueContainsFlag(passFlags, RenderGraphPassFlags::Compute))
+		{
+			VT_ENSURE_MSG(!EnumValueContainsAnyFlag(passFlags, RenderGraphPassFlags::Clear, RenderGraphPassFlags::Raster, RenderGraphPassFlags::Copy),
+				"Pass flags must only contain one pass type!");
+		}
+		else if (EnumValueContainsFlag(passFlags, RenderGraphPassFlags::Clear))
+		{
+			VT_ENSURE_MSG(!EnumValueContainsAnyFlag(passFlags, RenderGraphPassFlags::Compute, RenderGraphPassFlags::Raster, RenderGraphPassFlags::Copy),
+				"Pass flags must only contain one pass type!");
+
+		}
+		else if (EnumValueContainsFlag(passFlags, RenderGraphPassFlags::Raster))
+		{
+			VT_ENSURE_MSG(!EnumValueContainsAnyFlag(passFlags, RenderGraphPassFlags::Compute, RenderGraphPassFlags::Clear, RenderGraphPassFlags::Copy),
+				"Pass flags must only contain one pass type!");
+		}
+		else if (EnumValueContainsFlag(passFlags, RenderGraphPassFlags::Copy))
+		{
+			VT_ENSURE_MSG(!EnumValueContainsAnyFlag(passFlags, RenderGraphPassFlags::Compute, RenderGraphPassFlags::Clear, RenderGraphPassFlags::Raster),
+				"Pass flags must only contain one pass type!");
+		}
+	}
+
 	RGBufferSRVRef RenderGraph::CreateSRV(const RGBufferSRVDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
@@ -1374,6 +1446,9 @@ namespace Volt
 		RGBufferRef bufferResource = m_resourceAllocator.Allocate<RGBuffer>(rgDesc);
 		bufferResource->m_isExternal = true;
 
+		// We will assure that external buffers has been produced.
+		bufferResource->m_isProduced = true;
+
 		m_resources.emplace_back(bufferResource);
 		m_resourceManager.AddExternalResource(bufferResource, buffer);
 
@@ -1399,6 +1474,9 @@ namespace Volt
 
 		RGUniformBufferRef bufferResource = m_resourceAllocator.Allocate<RGUniformBuffer>(desc);
 		bufferResource->m_isExternal = true;
+
+		// We will assure that external buffers has been produced.
+		bufferResource->m_isProduced = true;
 
 		m_resources.emplace_back(bufferResource);
 		m_resourceManager.AddExternalResource(bufferResource, uniformBuffer);
@@ -1434,6 +1512,9 @@ namespace Volt
 		RGTextureRef textureResource = m_resourceAllocator.Allocate<RGTexture>(desc, m_dataAllocator.Get());
 		textureResource->m_isExternal = true;
 
+		// We will assure that external textures has been produced.
+		textureResource->m_isProduced = true;
+
 		m_resources.emplace_back(textureResource);
 		m_resourceManager.AddExternalResource(textureResource, texture);
 
@@ -1464,6 +1545,7 @@ namespace Volt
 		m_standaloneMarkers.EndMarker(static_cast<uint32_t>(m_renderPasses.size()));
 	}
 
+#if 0
 	void RenderGraph::AddResourceBarrier(RGResourceRef resource, const RHI::ResourceState& barrierInfo)
 	{
 		VT_PROFILE_FUNCTION();
@@ -1475,6 +1557,7 @@ namespace Volt
 		newBarrier.type = resource->GetResourceType();
 		newBarrier.newState = barrierInfo;
 	}
+#endif
 
 	BEGIN_SHADER_PARAMETER_STRUCT(ReadbackBufferParameters)
 		RG_BUFFER_ACCESS(SrcBuffer, RGResourceAccess::CopySrc)

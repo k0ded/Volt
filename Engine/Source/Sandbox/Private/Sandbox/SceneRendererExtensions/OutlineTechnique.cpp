@@ -80,7 +80,7 @@ RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& ren
 	Vector<uint32_t> bitVectorCopy = bitVector.ToVector();
 
 	RGBufferRef primitivesToDraw = m_renderGraph.CreateBuffer(RGBufferDesc::CreateMappableBufferDesc<uint32_t>(renderScene.GetMaxPrimitiveIndex() + 1, RHI::BufferUsage::StorageBuffer, "Outline.PrimitivesToDraw"));
-	AddMappedBufferUploadCopyData(m_renderGraph, m_renderGraph.CreateUAV(primitivesToDraw), bitVectorCopy.data(), bitVectorCopy.byte_size());
+	AddMappedBufferUploadCopyData(m_renderGraph, primitivesToDraw, bitVectorCopy.data(), bitVectorCopy.byte_size());
 
 	RGTextureRef colorTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R8G8B8A8_UNORM>(view.width, view.height, RHI::ImageUsage::Attachment, "OutlineGeometryColor"));
 	RGTextureRef depthTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::D32_SFLOAT>(view.width, view.height, RHI::ImageUsage::Attachment, "OutlineGeometryDepth"));
@@ -96,7 +96,7 @@ RGTextureRef OutlineTechnique::AddDrawOutlineGeometryPass(Volt::RenderScene& ren
 	passParameters->ProcessorParameters = m_meshPassProcessor->GetParameters(m_renderGraph);
 
 	m_renderGraph.AddPass("Outline Geometry",
-		RenderGraphPassFlags::None,
+		RenderGraphPassFlags::Raster,
 		passParameters,
 		[passParameters, view, &renderScene, meshPassProcessor = m_meshPassProcessor](RenderContext& context)
 	{
@@ -139,7 +139,7 @@ RGTextureRef OutlineTechnique::AddJumpFloodInitPass(RGTextureRef outlineGeometry
 	auto pixelShader = ShaderMap::Get<JumpFloodInitPS>();
 
 	m_renderGraph.AddPass("JumpFlood Init",
-		RenderGraphPassFlags::None,
+		RenderGraphPassFlags::Raster,
 		passParameters,
 		[passParameters, vertexShader, pixelShader, view](RenderContext& context) 
 	{
@@ -200,7 +200,7 @@ RGTextureRef OutlineTechnique::AddJumpFloodPass(RGTextureRef prevImage, const Vo
 	auto pixelShader = ShaderMap::Get<JumpFloodPS>();
 
 	m_renderGraph.AddPass("JumpFlood",
-		RenderGraphPassFlags::None,
+		RenderGraphPassFlags::Raster,
 		passParameters,
 		[passParameters, view, vertexShader, pixelShader](RenderContext& context)
 	{

@@ -3,7 +3,7 @@
 namespace Volt
 {
 	template<typename T>
-	T* RenderContext::MapBuffer(RGBufferUAVRef buffer)
+	T* RenderContext::MapBuffer(RGBufferRef buffer)
 	{
 		return reinterpret_cast<T*>(MapInternal(buffer));
 	}

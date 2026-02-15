@@ -86,8 +86,8 @@ namespace Volt
 		RGBufferRef indicesBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateBufferDesc<uint32_t>(m_data.size(), "Scatter Indices", RHI::MemoryUsage::CPUToGPU));
 		RGBufferRef dstBuffer = renderGraph.RegisterExternalBuffer(rhiDstBuffer);
 
-		AddMappedBufferUploadCopyData(renderGraph, renderGraph.CreateUAV(srcBuffer), m_data.data(), sizeof(T) * m_data.size());
-		AddMappedBufferUploadCopyData(renderGraph, renderGraph.CreateUAV(indicesBuffer, RHI::PixelFormat::R32_UINT), m_dataIndices.data(), sizeof(uint32_t) * m_dataIndices.size());
+		AddMappedBufferUploadCopyData(renderGraph, srcBuffer, m_data.data(), sizeof(T) * m_data.size());
+		AddMappedBufferUploadCopyData(renderGraph, indicesBuffer, m_dataIndices.data(), sizeof(uint32_t) * m_dataIndices.size());
 
 		ScatterUploadCS::Parameters* passParameters = renderGraph.AllocParameters<ScatterUploadCS::Parameters>();
 		passParameters->RWDstBuffer = renderGraph.CreateUAV(dstBuffer);

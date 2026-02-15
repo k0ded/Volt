@@ -97,7 +97,9 @@ namespace Volt
 		void BeginMarker(const std::string& markerName, const glm::vec4& markerColor = 1.f);
 		void EndMarker();
 
+#if 0
 		void AddResourceBarrier(RGResourceRef resourceHandle, const RHI::ResourceState& barrierInfo);
+#endif
 
 		template<typename T>
 		VT_INLINE T* AllocParameters();
@@ -219,6 +221,7 @@ namespace Volt
 
 		// Validation
 		void ValidateTextureUAV(const RGTextureUAVDesc& uavDesc);
+		void ValidateAddPass(RGPassRef pass);
 
 		// Private because we don't need to create a uniform buffer SRV
 		// outside of the Render Graph.

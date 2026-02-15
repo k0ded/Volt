@@ -409,7 +409,7 @@ namespace Volt
 		RefPtr<RHI::Shader> pixelShader = ShaderMap::Get<GeneratePreIntegratedBRDFPS>();
 
 		renderGraph.AddPass("Pre integrate DFG Pass",
-			RenderGraphPassFlags::None,
+			RenderGraphPassFlags::Raster,
 			passParameters,
 			[passParameters, vertexShader, pixelShader](RenderContext& context) 
 		{

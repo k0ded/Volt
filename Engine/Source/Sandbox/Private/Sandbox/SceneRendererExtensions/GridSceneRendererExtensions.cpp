@@ -59,7 +59,7 @@ RGTextureRef GridSceneRendererExtension::OnRender(Volt::RenderGraph& renderGraph
 	auto pixelShader = ShaderMap::Get<EditorGridPS>();
 
 	renderGraph.AddPass("Editor Grid",
-		RenderGraphPassFlags::None,
+		RenderGraphPassFlags::Raster,
 		passParameters,
 		[passParameters, view, vertexShader, pixelShader](RenderContext& context) 
 	{

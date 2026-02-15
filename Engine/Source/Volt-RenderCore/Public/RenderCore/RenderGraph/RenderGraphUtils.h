@@ -16,13 +16,13 @@ namespace Volt
 	/*
 		Will copy the data into temporary storage in the Render Graph.
 	*/
-	extern VTRC_API void AddMappedBufferUploadCopyData(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
-	extern VTRC_API void AddMappedBufferUploadCopyData(RenderGraph& renderGraph, RGUniformBufferRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
+	extern VTRC_API void AddMappedBufferUploadCopyData(RenderGraph& renderGraph, RGBufferRef dstBuffer, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
+	extern VTRC_API void AddMappedBufferUploadCopyData(RenderGraph& renderGraph, RGUniformBufferRef dstUniformBuffer, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
 
 	/*
 		Will not copy the data into temporary storage, so the data MUST at least have the same lifetime as the Render Graph.
 	*/
-	extern VTRC_API void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferUAVRef dstUAV, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
+	extern VTRC_API void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferRef dstBuffer, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
 
 	extern VTRC_API void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const uint32_t clearValue);
 	extern VTRC_API void AddClearUAVPass(RenderGraph& renderGraph, RGBufferUAVRef bufferUAV, const float clearValue);
