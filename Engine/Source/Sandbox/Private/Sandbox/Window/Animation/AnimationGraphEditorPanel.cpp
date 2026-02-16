@@ -9,12 +9,12 @@ AnimationGraphEditorPanel::AnimationGraphEditorPanel()
 	: EditorWindow("Animation Graph Editor")
 	, m_editorNodeGraph("Animation Node Graph")
 {
-	
+	m_openAnimationGraph = CreateRef<NodeGraphBase>();
 }
 
 void AnimationGraphEditorPanel::UpdateMainContent()
 {
-	m_editorNodeGraph.Draw();
+	m_editorNodeGraph.Draw(*m_openAnimationGraph);
 }
 
 void AnimationGraphEditorPanel::OpenAsset(AssetReference<Volt::Asset> asset)

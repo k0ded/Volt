@@ -3,6 +3,8 @@
 
 #include "Sandbox/NodeGraph/EditorNodeGraph.h"
 
+#include <NodeGraph/NodeGraphBase.h>
+
 namespace Volt
 {
 	class AnimationGraph;
@@ -16,7 +18,7 @@ public:
 
 	void OpenAsset(AssetReference<Volt::Asset> asset) override;
 private:
-	Ref<Volt::AnimationGraph> m_openAnimationGraph;
+	Ref<NodeGraphBase> m_openAnimationGraph;
 	
 	EditorNodeGraph m_editorNodeGraph;
 };

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Sandbox/NodeGraph/EditorNodeBase.h"
-#include "Sandbox/NodeGraph/EditorNodeBuilder.h"
+#include <NodeGraph/NodeGraphBase.h>
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Core.h>
@@ -24,14 +23,7 @@ public:
 	EditorNodeGraph(std::string_view imGuiID);
 	~EditorNodeGraph() = default;
 
-	void Draw();
-
-	template<typename T>
-	void RegisterNodeType();
-
-	template<typename T>
-	NodeInstanceID SpawnNodeOfType();
-	NodeInstanceID SpawnNodeOfType(VoltGUID typeID);
+	void Draw(NodeGraphBase& NodeGraph);
 
 	bool IsNodeSelected(NodeInstanceID instanceID) const;
 	bool IsNodeHovered(NodeInstanceID instanceID) const;
@@ -80,34 +72,17 @@ public:
 		void SetColor(StyleColor color, glm::vec4 value){ styleColors[static_cast<uint8_t>(color)] = value; }
 	};
 protected:
-	struct NodeInstanceInfo
-	{
-		NodeInstanceID instanceID;
-
-		glm::vec2 position;
-		glm::vec2 desiredNodeSize = { 60, 40 };
-
-		Ref<EditorNodeTypeBase> nodeInstance;
-	};
-
-	struct NodeConnection
-	{
-		NodeInstanceID from;
-		NodeInstanceID to;
-	};
-
-protected:
 	virtual void SetupStyle(Style& style);
 
-	virtual void DrawGraph();
-	virtual void DrawNode(const NodeInstanceInfo& nodeInstanceInfo, glm::vec2& outDesiredNodeSize);
+	virtual void DrawGraph(NodeGraphBase& NodeGraph);
+	virtual void DrawNode(NodeInstance& instance);
 	//modify the given rect to set the new content area
-	virtual void DrawNodeHeader(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos, glm::vec2& outDesiredHeaderSize) const;
-	virtual void DrawNodeContent(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& contentAreaScreenMin, const glm::vec2& contentAreaScreenMax, glm::vec2& outDesiredContentSize) const;
+	virtual void DrawNodeHeader(const NodeInstance& instance, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos, glm::vec2& outDesiredHeaderSize) const;
+	virtual void DrawNodeContent(const NodeInstance& instance, const glm::vec2& contentAreaScreenMin, const glm::vec2& contentAreaScreenMax, glm::vec2& outDesiredContentSize) const;
 	virtual void DrawConnection(const NodeConnection& nodeConnection) const;
 
 	//manages moving, selecting, deleting etc for the node
-	virtual void GraphManageNode(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos);
+	virtual void GraphManageNode(const NodeInstance& instance, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos);
 
 	virtual void DrawGrid();
 
@@ -127,23 +102,8 @@ protected:
 	glm::vec2 m_graphVisibleWorldSize;
 
 private:
-	void UserNodeHandling();
+	void UserNodeHandling(NodeGraphBase& NodeGraph);
 	void UserCameraHandling();
-
-	struct NodeTypeInfo
-	{
-		VoltGUID typeGUID;
-		EditorNodeTypeDefinition typeDefinition;
-
-		std::string typeName;
-		std::function<Ref<EditorNodeTypeBase>()> createInstanceFunc;
-	};
-	Map<VoltGUID, NodeTypeInfo> m_registeredNodeTypes;
-
-
-	//start at 1 to reserve 0 as null/invalid ID
-	NodeInstanceID m_nextNodeInstanceID = 1;
-	Map<NodeInstanceID, NodeInstanceInfo> m_nodeInstances;
 
 	std::set<NodeInstanceID> m_selectedNodes;
 	NodeInstanceID m_lastUpdateHoveredNode = 0;
@@ -168,25 +128,3 @@ private:
 	static constexpr int32_t GRID_LINE_COLOR = 0x444455ff;
 	static constexpr float GRID_LINE_THICKNESS = 2.f;
 };
-
-
-template<typename T>
-inline void EditorNodeGraph::RegisterNodeType()
-{
-	static_assert(std::is_base_of<EditorNodeTypeBase, T>::value, "T must be derived from EditorNodeBase");
-
-	NodeTypeInfo& typeInfo = m_registeredNodeTypes[T::GetStaticTypeGUID()];
-	typeInfo.typeGUID = T::GetStaticTypeGUID();
-	typeInfo.typeName = T::GetStaticTypeName();
-	typeInfo.createInstanceFunc = []() -> Ref<EditorNodeTypeBase> { return CreateRef<T>(); };
-
-	EditorNodeTypeDefinitionBuilder defBuilder;
-	T::MakeTypeDefinition(defBuilder);
-	typeInfo.typeDefinition = defBuilder.MoveDefinition();
-}
-
-template<typename T>
-inline NodeInstanceID EditorNodeGraph::SpawnNodeOfType()
-{
-	return SpawnNodeOfType(T::GetStaticTypeGUID());
-}

@@ -1,12 +1,15 @@
 #pragma once
 
-
 #include <CoreUtilities/VoltGUID.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
 
 #include <string>
 
 class EditorNodeTypeDefinitionBuilder;
 class EditorNodeBuilder;
+
+constexpr uint8_t NODE_CREATE_USER_DATA_SIZE = 32;
+typedef InlineVector<uint8_t, NODE_CREATE_USER_DATA_SIZE> EditorNodeCreationUserData;
 
 class EditorNodeTypeBase
 {

@@ -44,6 +44,7 @@ namespace VoltSharpmake
 			conf.AddPrivateDependency<RHIModule>(target);
 			conf.AddPrivateDependency<JobSystemModule>(target);
 			conf.AddPrivateDependency<SubSystemModule>(target);
+			conf.AddPrivateDependency<NodeGraphModule>(target);
 
 			conf.AddPrivateDependency<ImGuizmo>(target);
             conf.AddPrivateDependency<imgui_node_editor>(target);

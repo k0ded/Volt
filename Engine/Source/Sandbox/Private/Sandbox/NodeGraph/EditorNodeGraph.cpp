@@ -16,13 +16,10 @@ EditorNodeGraph::EditorNodeGraph(std::string_view imGuiID)
 {
 	memset(&m_style, 0, sizeof(m_style));
 	SetupStyle(m_style);
-
-	RegisterNodeType<NothingNode>();
 }
 
-void EditorNodeGraph::Draw()
+void EditorNodeGraph::Draw(NodeGraphBase& NodeGraph)
 {
-
 	ImGui::PushID(m_imGuiID.c_str());
 	if (ImGui::BeginChild("NodeGraph"))
 	{
@@ -31,33 +28,13 @@ void EditorNodeGraph::Draw()
 		m_graphScreenAreaBR = m_graphScreenAreaTL + m_graphScreenSize;
 		m_graphVisibleWorldSize = m_graphScreenSize / m_zoom;
 
-		UserNodeHandling();
+		UserNodeHandling(NodeGraph);
 		UserCameraHandling();
 
-		DrawGraph();
+		DrawGraph(NodeGraph);
 	}
 	ImGui::EndChild();
 	ImGui::PopID();
-}
-
-NodeInstanceID EditorNodeGraph::SpawnNodeOfType(VoltGUID typeID)
-{
-	if (!m_registeredNodeTypes.contains(typeID))
-	{
-		VT_ENSURE_MSG(m_registeredNodeTypes.contains(typeID), "Tried to spawn a node type that doesnt exist!");
-		return 0;
-	}
-
-	const NodeTypeInfo& typeInfo = m_registeredNodeTypes[typeID];
-
-	const NodeInstanceID newInstanceID = m_nextNodeInstanceID++;
-	NodeInstanceInfo info;
-	info.instanceID = newInstanceID;
-	info.nodeInstance = typeInfo.createInstanceFunc();
-	info.position = ScreenToWorldPos(ImGui::GetMousePos());
-	m_nodeInstances.insert({ info.instanceID, std::move(info) });
-
-	return newInstanceID;
 }
 
 bool EditorNodeGraph::IsNodeSelected(NodeInstanceID instanceID) const
@@ -95,13 +72,13 @@ void EditorNodeGraph::SetupStyle(Style& style)
 	style.SetColor(StyleColor::Node_SelectedOutlineColor, glm::vec4(1.f, 0.647f, 0.f, 1.f));
 }
 
-void EditorNodeGraph::DrawGraph()
+void EditorNodeGraph::DrawGraph(NodeGraphBase& NodeGraph)
 {
 	DrawGrid();
 
-	for (auto& [instanceID, nodeInstanceInfo] : m_nodeInstances)
+	for (auto& [instanceID, instance] : NodeGraph.GetNodeInstancesMap())
 	{
-		DrawNode(nodeInstanceInfo, nodeInstanceInfo.desiredNodeSize);
+		DrawNode(NodeGraph.GetMutableNodeInstance(instanceID));
 	}
 
 	if (!m_lastFrameMovingCamera)
@@ -129,7 +106,7 @@ void EditorNodeGraph::DrawGraph()
 		{
 			if (ImGui::MenuItem("Delete"))
 			{
-				m_nodeInstances.erase(m_toolMenuPopupNode);
+				NodeGraph.DeleteNode(m_toolMenuPopupNode);
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
@@ -139,20 +116,20 @@ void EditorNodeGraph::DrawGraph()
 		{
 			if (ImGui::MenuItem("New Node"))
 			{
-				SpawnNodeOfType<NothingNode>();
+				NodeGraph.SpawnNodeOfType<NothingNode>();
 			}
 			ImGui::EndPopup();
 		}
 	}
 }
-void EditorNodeGraph::DrawNode(const NodeInstanceInfo& nodeInstanceInfo, glm::vec2& outDesiredNodeSize)
+void EditorNodeGraph::DrawNode(NodeInstance& instance)
 {
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
-	const ImVec2 nodeSize = nodeInstanceInfo.desiredNodeSize;
+	const ImVec2 nodeSize = instance.desiredSize;
 	const ImVec2 halfNodeSize = nodeSize / 2.f;
 
 	const glm::vec2 halfNodeScreenSize = halfNodeSize * m_zoom;
-	const glm::vec2 nodeScreenPos = WorldToScreenPos(nodeInstanceInfo.position);
+	const glm::vec2 nodeScreenPos = WorldToScreenPos(instance.position);
 	const glm::vec2 nodeScreenMin = nodeScreenPos - halfNodeScreenSize;
 	const glm::vec2 nodeScreenMax = nodeScreenPos + halfNodeScreenSize;
 	//if the node isnt visible, dont draw it
@@ -164,14 +141,14 @@ void EditorNodeGraph::DrawNode(const NodeInstanceInfo& nodeInstanceInfo, glm::ve
 		return;
 	}
 
-	GraphManageNode(nodeInstanceInfo, nodeScreenMin, nodeScreenMax);
-	if (IsNodeSelected(nodeInstanceInfo.instanceID))
+	GraphManageNode(instance, nodeScreenMin, nodeScreenMax);
+	if (IsNodeSelected(instance.instanceID))
 	{
 		drawList->AddRect(nodeScreenMin - ImVec2(3, 3), nodeScreenMax + ImVec2(3, 3), ImColor(GetStyleColor(StyleColor::Node_SelectedOutlineColor)), GetScaledStyleVar(StyleVar::Node_EdgeRounding), 0, 3.f);
 	}
 
 	ImColor nodeColor = {};
-	if (IsNodeHovered(nodeInstanceInfo.instanceID))
+	if (IsNodeHovered(instance.instanceID))
 	{
 		nodeColor = ImColor(GetStyleColor(StyleColor::Node_HoveredBgColor));
 	}
@@ -183,27 +160,28 @@ void EditorNodeGraph::DrawNode(const NodeInstanceInfo& nodeInstanceInfo, glm::ve
 	drawList->AddRectFilled(nodeScreenMin, nodeScreenMax, nodeColor, GetScaledStyleVar(StyleVar::Node_EdgeRounding));
 
 	glm::vec2 desiredHeaderSize;
-	DrawNodeHeader(nodeInstanceInfo, nodeScreenMin, nodeScreenMax, desiredHeaderSize);
+	DrawNodeHeader(instance, nodeScreenMin, nodeScreenMax, desiredHeaderSize);
 
 	glm::vec2 desiredContentSize;
-	DrawNodeContent(nodeInstanceInfo, nodeScreenMin + ImVec2(0, desiredHeaderSize.y), nodeScreenMax, desiredContentSize);
+	DrawNodeContent(instance, nodeScreenMin + ImVec2(0, desiredHeaderSize.y), nodeScreenMax, desiredContentSize);
 
-	outDesiredNodeSize.x = glm::max(desiredHeaderSize.x, desiredContentSize.x) / m_zoom;
-	outDesiredNodeSize.y = (desiredHeaderSize.y + desiredContentSize.y) / m_zoom;
+	instance.desiredSize.x = glm::max(desiredHeaderSize.x, desiredContentSize.x) / m_zoom;
+	instance.desiredSize.y = (desiredHeaderSize.y + desiredContentSize.y) / m_zoom;
 }
 
-void EditorNodeGraph::DrawNodeHeader(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos, glm::vec2& outDesiredHeaderSize) const
+void EditorNodeGraph::DrawNodeHeader(const NodeInstance& instance, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos, glm::vec2& outDesiredHeaderSize) const
 {
 	//default is to draw the typename at the top of the node
 
+	const std::string& PrettyNodeName = NodeTypeRegistry::Get().GetTypeInfo(instance.typeGUID).prettyName;
 
 	const float fontSize = GetScaledStyleVar(StyleVar::Node_HeaderFontSize);
 	const float textPadding = GetScaledStyleVar(StyleVar::Node_HeaderTextPadding);
-	const ImVec2 textSize = ImGui::GetFont()->CalcTextSizeA(fontSize, FLT_MAX, -1, nodeInstanceInfo.nodeInstance->GetTypeName().c_str());
+	const ImVec2 textSize = ImGui::GetFont()->CalcTextSizeA(fontSize, FLT_MAX, -1, PrettyNodeName.c_str());
 	const float headerHeight = textSize.y + textPadding * 2;
 
 	ImColor headerColor = {};
-	if (IsNodeHovered(nodeInstanceInfo.instanceID))
+	if (IsNodeHovered(instance.instanceID))
 	{
 		headerColor = ImColor(GetStyleColor(StyleColor::Node_HoveredHeaderBgColor));
 	}
@@ -216,18 +194,15 @@ void EditorNodeGraph::DrawNodeHeader(const NodeInstanceInfo& nodeInstanceInfo, c
 	glm::vec2 headerMaxPos = { maxScreenPos.x, minScreenPos.y + headerHeight };
 	drawList->AddRectFilled(minScreenPos, headerMaxPos, headerColor, 3.f * m_zoom, ImDrawFlags_RoundCornersTop);
 
-	drawList->AddText(ImGui::GetFont(), fontSize, minScreenPos + glm::vec2(textPadding, textPadding), 0xffffffff, nodeInstanceInfo.nodeInstance->GetTypeName().c_str());
+	drawList->AddText(ImGui::GetFont(), fontSize, minScreenPos + glm::vec2(textPadding, textPadding), 0xffffffff, PrettyNodeName.c_str());
 
 	outDesiredHeaderSize.x = textSize.x + textPadding * 2;
 	outDesiredHeaderSize.y = textSize.y + textPadding * 2;
 }
 
-void EditorNodeGraph::DrawNodeContent(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& contentAreaScreenMin, const glm::vec2& contentAreaScreenMax, glm::vec2& outDesiredContentSize) const
+void EditorNodeGraph::DrawNodeContent(const NodeInstance& instance, const glm::vec2& contentAreaScreenMin, const glm::vec2& contentAreaScreenMax, glm::vec2& outDesiredContentSize) const
 {
-	const VoltGUID nodeTypeGuid = nodeInstanceInfo.nodeInstance->GetTypeGUID();
-	VT_ENSURE(m_registeredNodeTypes.contains(nodeTypeGuid));
-	const NodeTypeInfo& typeInfo = m_registeredNodeTypes.at(nodeTypeGuid);
-	const EditorNodeTypeDefinition& typeDef = typeInfo.typeDefinition;
+	const NodeTypeDefinition& typeDef = NodeTypeRegistry::Get().GetTypeDefinition(instance.typeGUID);
 
 	const float contentPadding = GetScaledStyleVar(StyleVar::Node_ContentPadding);
 	const float pinRadius = GetScaledStyleVar(StyleVar::Pin_Radius);
@@ -296,12 +271,12 @@ void EditorNodeGraph::DrawNodeContent(const NodeInstanceInfo& nodeInstanceInfo, 
 void EditorNodeGraph::DrawConnection(const NodeConnection& nodeConnection) const
 {}
 
-void EditorNodeGraph::GraphManageNode(const NodeInstanceInfo& nodeInstanceInfo, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos)
+void EditorNodeGraph::GraphManageNode(const NodeInstance& instance, const glm::vec2& minScreenPos, const glm::vec2& maxScreenPos)
 {
-	ImGui::ItemAdd({ minScreenPos, maxScreenPos }, nodeInstanceInfo.instanceID);
+	ImGui::ItemAdd({ minScreenPos, maxScreenPos }, instance.instanceID);
 	if (ImGui::IsItemHovered())
 	{
-		m_hoveredNode = nodeInstanceInfo.instanceID;
+		m_hoveredNode = instance.instanceID;
 	}
 }
 
@@ -370,7 +345,7 @@ float EditorNodeGraph::WorldToScreenYPos(float worldPos) const
 	return (worldPos - m_cameraPos.y) * m_zoom + m_graphScreenAreaTL.y + (m_graphScreenSize.y / 2.f);
 }
 
-void EditorNodeGraph::UserNodeHandling()
+void EditorNodeGraph::UserNodeHandling(NodeGraphBase& NodeGraph)
 {
 	if (m_hoveredNode != 0 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 	{
@@ -397,7 +372,7 @@ void EditorNodeGraph::UserNodeHandling()
 		//remember where selected nodes were when user started dragging
 		for (const NodeInstanceID& selectedNodeID : m_selectedNodes)
 		{
-			m_startDraggingNodePositions.insert({ selectedNodeID, m_nodeInstances.at(selectedNodeID).position });
+			m_startDraggingNodePositions.insert({ selectedNodeID, NodeGraph.GetNodeInstance(selectedNodeID).position});
 		}
 	}
 	if (m_draggingNodes)
@@ -405,7 +380,7 @@ void EditorNodeGraph::UserNodeHandling()
 		const ImVec2 delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left) * (1.f / m_zoom);
 		for (const NodeInstanceID& selectedNodeID : m_selectedNodes)
 		{
-			NodeInstanceInfo& instanceInfo = m_nodeInstances[selectedNodeID];
+			NodeInstance& instanceInfo = NodeGraph.GetMutableNodeInstance(selectedNodeID);
 			instanceInfo.position = m_startDraggingNodePositions[selectedNodeID] + delta;
 		}
 	}

@@ -5,6 +5,22 @@
 void NothingNode::Build(EditorNodeBuilder& nodeBuilder)
 {}
 
+
+enum class VisualScriptPinType : uint8_t
+{
+	Flow,
+	Adaptive,
+	Bool,
+	Float,
+	Int,
+	String,
+	Asset
+};
+struct VisualScriptPinData
+{
+	VisualScriptPinType pinType;
+
+};
 void NothingNode::MakeTypeDefinition(EditorNodeTypeDefinitionBuilder& builder)
 {
 	EditorPinUserData flowUserData;
@@ -17,6 +33,7 @@ void NothingNode::MakeTypeDefinition(EditorNodeTypeDefinitionBuilder& builder)
 
 	builder.Pin(PinDirection::Input, 'in', "In", &flowUserData);
 	builder.Pin(PinDirection::Input, 'cond', "Condition", &boolVariableUserData, PinType::Custom); // custom to show a checkbox if it isnt connected
+	builder.Pin(PinDirection::Input, 'paud', "Pauda", &boolVariableUserData, PinType::Custom); // custom to show a checkbox if it isnt connected
 
 	builder.Pin(PinDirection::Output, 'true', "True", &flowUserData);
 	builder.Pin(PinDirection::Output, 'fals', "False", &flowUserData);
