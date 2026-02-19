@@ -130,7 +130,8 @@ namespace AssetBrowser
 					AssetReference<Volt::Texture2D> texture;
 					if (g_assetManager->TryGetAsset(item->handle, texture))
 					{
-						texture->GetImage()->GenerateMips();
+						// #TODO_Ivar: Reimplement
+						//texture->GetImage()->GenerateMips();
 					}
 				}
 			};

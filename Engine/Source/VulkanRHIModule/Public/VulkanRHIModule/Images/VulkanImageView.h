@@ -22,14 +22,14 @@ namespace Volt::RHI
 		VulkanImageView(const ImageViewDesc& specification, RawPtr<Image> image);
 		~VulkanImageView() override;
 
-		const PixelFormat GetFormat() const;
-		const ImageAspect GetImageAspect() const override;
-		const uint64_t GetDeviceAddress() const override;
-		const ImageUsage GetImageUsage() const override;
-		const ImageViewType GetViewType() const override;
+		PixelFormat GetFormat() const override;
+		ImageAspect GetImageAspect() const override;
+		uint64_t GetDeviceAddress() const override;
+		ImageUsage GetImageUsage() const override;
+		ImageViewType GetViewType() const override;
 		const ImageViewDesc& GetDesc() const override;
 		RawPtr<Image> GetImage() const override;
-		const bool IsSwapchainView() const override;
+		bool IsSwapchainView() const override;
 
 		VT_NODISCARD VT_INLINE const DescriptorDescription& GetSRVDescriptor() const { return m_srvDescriptor; }
 		VT_NODISCARD VT_INLINE const DescriptorDescription& GetUAVDescriptor() const { return m_uavDescriptor; }

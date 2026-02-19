@@ -8,6 +8,7 @@
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Utility/ResourceUtility.h>
 
@@ -152,13 +153,13 @@ namespace Volt
 		}
 
 		RHI::BufferDesc stagingDesc{};
-		stagingDesc.count = 1;
-		stagingDesc.elementSize = RHI::GraphicsContext::GetDevice()->GetMaxRequiredStagingBufferSizeForImage(image);
+		stagingDesc.numElements = RHI::GraphicsContext::GetDevice()->GetMaxRequiredStagingBufferSizeForImage(image);
+		stagingDesc.elementSize = 1;
 		stagingDesc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc;
 		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 		stagingDesc.debugName = "Staging Alloc";
 
-		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
+		RefPtr<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
 
 		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
 		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
@@ -178,7 +179,7 @@ namespace Volt
 			commandBuffer->ResourceBarrier({ barrier });
 		}
 
-		commandBuffer->UploadTextureData(image, stagingAlloc, copyData);
+		commandBuffer->UploadTextureData(image, stagingBuffer, copyData);
 
 		{
 			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
@@ -196,8 +197,6 @@ namespace Volt
 		commandBuffer->End();
 
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
-
-		RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
 
 		AssetReference<Texture2D> voltTexture;
 

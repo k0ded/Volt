@@ -5,7 +5,7 @@
 
 namespace Memory
 {
-#define USE_MIMALLOC 0
+#define USE_MIMALLOC 1
 
 #if USE_MIMALLOC
 	#include <mimalloc.h>
@@ -30,6 +30,8 @@ namespace Memory
 
 	void* Malloc(size_t size, size_t alignment)
 	{
+		VT_PROFILE_FUNCTION();
+
 		constexpr size_t DefaultAlignment = 8;
 
 		void* resultPtr = nullptr;

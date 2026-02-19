@@ -20,13 +20,13 @@ namespace Volt::RHI
 		VulkanRayTracingResourceTable();
 		~VulkanRayTracingResourceTable() override;
 
-		void AddBuffer(RefPtr<StorageBuffer> buffer) override;
+		void AddBuffer(RefPtr<Buffer> buffer) override;
 		void AddTexture(RefPtr<Image> texture) override;
 
-		void RemoveBuffer(RefPtr<StorageBuffer> buffer) override;
+		void RemoveBuffer(RefPtr<Buffer> buffer) override;
 		void RemoveTexture(RefPtr<Image> texture) override;
 
-		uint32_t GetBufferSlotIndex(RefPtr<StorageBuffer> buffer) override;
+		uint32_t GetBufferSlotIndex(RefPtr<Buffer> buffer) override;
 		uint32_t GetTextureSlotIndex(RefPtr<Image> texture) override;
 
 		void Update(uint32_t index) override;
@@ -44,7 +44,7 @@ namespace Volt::RHI
 		ResourceIndices m_textureResourceIndices;
 		ResourceIndices m_bufferResourceIndices;
 
-		ResourceTable<StorageBuffer, BufferView> m_bufferTable;
+		ResourceTable<Buffer, BufferView> m_bufferTable;
 		ResourceTable<Image, ImageView> m_textureTable;
 	
 		uint32_t m_lastUpdateIndex = 0;

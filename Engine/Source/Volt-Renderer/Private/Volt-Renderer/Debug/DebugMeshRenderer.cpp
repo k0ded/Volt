@@ -206,7 +206,7 @@ namespace Volt
 
 		// Create buffers
 		RGBufferDesc primitiveIndexBufferDesc{};
-		primitiveIndexBufferDesc.count = numDrawCommands;
+		primitiveIndexBufferDesc.numElements = numDrawCommands;
 		primitiveIndexBufferDesc.elementSize = sizeof(uint32_t);
 		primitiveIndexBufferDesc.usage = RHI::BufferUsage::VertexBuffer | RHI::BufferUsage::StorageBuffer;
 		primitiveIndexBufferDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
@@ -215,7 +215,7 @@ namespace Volt
 		m_primitiveIndexDataBuffer = renderGraph.CreateBuffer(primitiveIndexBufferDesc);
 
 		RGBufferDesc debugMeshDataBufferDesc{};
-		debugMeshDataBufferDesc.count = numDrawCommands;
+		debugMeshDataBufferDesc.numElements = numDrawCommands;
 		debugMeshDataBufferDesc.elementSize = sizeof(DebugMeshData);
 		debugMeshDataBufferDesc.usage = RHI::BufferUsage::StorageBuffer;
 		debugMeshDataBufferDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;

@@ -2,7 +2,7 @@
 
 #include "ProjectUpgradeClient/Common/StreamCommon.h"
 
-#include <CoreUtilities/Buffer/Buffer.h>
+#include <CoreUtilities/Buffer/DataBuffer.h>
 #include <CoreUtilities/Containers/Vector.h>
 
 #include <CoreUtilities/Containers/Map.h>
@@ -37,7 +37,7 @@ public:
 	size_t Write(const std::filesystem::path& data);
 
 	template<>
-	size_t Write(const Buffer& buffer);
+	size_t Write(const DataBuffer& buffer);
 
 	template<typename F>
 	size_t Write(const Vector<F>& data);
@@ -180,7 +180,7 @@ inline size_t BinaryStreamWriter::Write(const std::filesystem::path& data)
 }
 
 template<>
-inline size_t BinaryStreamWriter::Write(const Buffer& buffer)
+inline size_t BinaryStreamWriter::Write(const DataBuffer& buffer)
 {
 	TypeHeader header{};
 	header.totalTypeSize = static_cast<uint32_t>(buffer.GetSize());

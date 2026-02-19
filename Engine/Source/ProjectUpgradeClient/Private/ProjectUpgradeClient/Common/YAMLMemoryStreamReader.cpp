@@ -1,8 +1,8 @@
 #include "ProjectUpgradeClient/Common/YAMLMemoryStreamReader.h"
 
-#include <CoreUtilities/Buffer/Buffer.h>
+#include <CoreUtilities/Buffer/DataBuffer.h>
 
-const bool YAMLMemoryStreamReader::ReadBuffer(const Buffer& buffer)
+const bool YAMLMemoryStreamReader::ReadBuffer(const DataBuffer& buffer)
 {
 	if (!buffer.IsValid())
 	{
@@ -20,7 +20,7 @@ const bool YAMLMemoryStreamReader::ReadBuffer(const Buffer& buffer)
 	return true;
 }
 
-const bool YAMLMemoryStreamReader::ConsumeBuffer(Buffer& buffer)
+const bool YAMLMemoryStreamReader::ConsumeBuffer(DataBuffer& buffer)
 {
 	const bool success = ReadBuffer(buffer);
 	buffer.Release();

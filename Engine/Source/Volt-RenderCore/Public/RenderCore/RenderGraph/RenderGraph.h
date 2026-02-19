@@ -84,7 +84,7 @@ namespace Volt
 		RGTextureSRVRef CreateSRV(RGTextureRef texture);
 		RGTextureUAVRef CreateUAV(RGTextureRef texture);
 
-		RGBufferRef RegisterExternalBuffer(RefPtr<RHI::StorageBuffer> buffer);
+		RGBufferRef RegisterExternalBuffer(RefPtr<RHI::Buffer> buffer);
 		RGUniformBufferRef RegisterExternalUniformBuffer(RefPtr<RHI::UniformBuffer> uniformBuffer);
 		RGTextureRef RegisterExternalTexture(RefPtr<RHI::Image> texture);
 
@@ -92,7 +92,7 @@ namespace Volt
 		Ref<GPUReadbackTexture> EnqueueTextureReadback(RGTextureRef srcTexture);
 
 		void EnqueueTextureExtraction(RGTextureRef texture, RefPtr<RHI::Image>* outImage);
-		void EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::StorageBuffer>* outBuffer);
+		void EnqueueBufferExtraction(RGBufferRef buffer, RefPtr<RHI::Buffer>* outBuffer);
 
 		void BeginMarker(const std::string& markerName, const glm::vec4& markerColor = 1.f);
 		void EndMarker();
@@ -129,7 +129,7 @@ namespace Volt
 		struct BufferExtractionInfo
 		{
 			RGBufferRef buffer;
-			RefPtr<RHI::StorageBuffer>* outBufferPtr = nullptr;
+			RefPtr<RHI::Buffer>* outBufferPtr = nullptr;
 		};
 
 	protected:
@@ -201,6 +201,7 @@ namespace Volt
 		void SetupPassDependencies(RGPassRef pass);
 
 		void CullPasses();
+		void FindResourceLifetimes();
 		void BuildPassBarriers();
 		void AssignExternalResourcesSrcState();
 

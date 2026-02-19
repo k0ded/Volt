@@ -5,7 +5,7 @@
 
 #include <RenderCore/RenderGraph/ShaderParameterStruct.h>
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Core/RHICommon.h>
@@ -68,7 +68,7 @@ namespace Volt
 		RHI::RenderPipelineCreateInfo renderPipelineInfo;
 
 		RHI::VertexBufferVector vertexBuffers;
-		RefPtr<RHI::StorageBuffer> indexBuffer;
+		RefPtr<RHI::Buffer> indexBuffer;
 
 		const RenderPrimitiveData* renderPrimitive = nullptr;
 		MeshDrawCommandSortKey sortKey;

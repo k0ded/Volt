@@ -320,35 +320,35 @@ namespace Volt
 	{
 		{
 			RHI::BufferDesc desc{};
-			desc.count = s_giSpatialHashTableSize.GetValue();
+			desc.numElements = s_giSpatialHashTableSize.GetValue();
 			desc.elementSize = sizeof(uint32_t);
 			desc.memoryUsage = RHI::MemoryUsage::GPU;
 			desc.usage = RHI::BufferUsage::TexelBuffer;
 			desc.debugName = "GI.SpatialHashTableChecksum";
 
-			m_spatialHashTableChecksumBuffer = RHI::StorageBuffer::Create(desc);
+			m_spatialHashTableChecksumBuffer = RHI::Buffer::Create(desc);
 		}
 
 		{
 			RHI::BufferDesc desc{};
-			desc.count = s_giSpatialHashTableSize.GetValue();
+			desc.numElements = s_giSpatialHashTableSize.GetValue();
 			desc.elementSize = sizeof(uint32_t);
 			desc.memoryUsage = RHI::MemoryUsage::GPU;
 			desc.usage = RHI::BufferUsage::StorageBuffer;
 			desc.debugName = "GI.WorldRadianceCacheCellCache";
 
-			m_worldRadianceCacheCellCache = RHI::StorageBuffer::Create(desc);
+			m_worldRadianceCacheCellCache = RHI::Buffer::Create(desc);
 		}
 
 		{
 			RHI::BufferDesc desc{};
-			desc.count = s_giSpatialHashTableSize.GetValue();
+			desc.numElements = s_giSpatialHashTableSize.GetValue();
 			desc.elementSize = sizeof(uint32_t);
 			desc.memoryUsage = RHI::MemoryUsage::GPU;
 			desc.usage = RHI::BufferUsage::StorageBuffer;
 			desc.debugName = "GI.WorldRadianceCacheCellInfo";
 
-			m_worldRadianceCacheCellInfo = RHI::StorageBuffer::Create(desc);
+			m_worldRadianceCacheCellInfo = RHI::Buffer::Create(desc);
 		}
 
 		{
@@ -375,26 +375,26 @@ namespace Volt
 
 		{
 			RHI::BufferDesc desc{};
-			desc.count = s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeNumCascades.GetValue() * 3;
+			desc.numElements = s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeNumCascades.GetValue() * 3;
 			desc.elementSize = sizeof(float);
 			desc.memoryUsage = RHI::MemoryUsage::GPU;
 			desc.usage = RHI::BufferUsage::TexelBuffer;
 			desc.debugName = "GI.IrradianceVolumeProbeOffsets";
 			
-			m_irradianceVolumeProbeOffsets = RHI::StorageBuffer::Create(desc);
+			m_irradianceVolumeProbeOffsets = RHI::Buffer::Create(desc);
 		}
 
 		{
 			const uint32_t numTotalProbes = s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeResolution.GetValue() * s_giIrradianceVolumeNumCascades.GetValue();
 
 			RHI::BufferDesc desc{};
-			desc.count = Math::DivideRoundUp(numTotalProbes, 32u);
+			desc.numElements = Math::DivideRoundUp(numTotalProbes, 32u);
 			desc.elementSize = sizeof(uint32_t);
 			desc.memoryUsage = RHI::MemoryUsage::GPU;
 			desc.usage = RHI::BufferUsage::TexelBuffer;
 			desc.debugName = "GI.IrradianceVolumeProbeStatus";
 
-			m_irradianceVolumeProbeStatus = RHI::StorageBuffer::Create(desc);
+			m_irradianceVolumeProbeStatus = RHI::Buffer::Create(desc);
 		}
 	}
 

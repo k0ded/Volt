@@ -5,7 +5,7 @@
 #include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 
 #include <RHIModule/Buffers/UniformBuffer.h>
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/RHICapabilities.h>
 #include <RHIModule/RHIModule.h>
 

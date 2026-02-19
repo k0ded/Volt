@@ -74,7 +74,7 @@ namespace Volt
 
 		if (resource->GetResourceType() == RGResourceType::Buffer)
 		{
-			PersistantBufferResource* persistantBuffer = m_persistantBufferResources.Allocate(rhiResource.As<RHI::StorageBuffer>());
+			PersistantBufferResource* persistantBuffer = m_persistantBufferResources.Allocate(rhiResource.As<RHI::Buffer>());
 			
 			RGBufferRef bufferResource = reinterpret_cast<RGBufferRef>(resource);
 			bufferResource->AssignRHIResource(persistantBuffer);
@@ -146,7 +146,7 @@ namespace Volt
 		}
 		else
 		{
-			RefPtr<RHI::StorageBuffer> buffer = RHI::StorageBuffer::Create(desc);
+			RefPtr<RHI::Buffer> buffer = RHI::Buffer::Create(desc);
 			rhiResource = m_persistantBufferResources.Allocate(buffer);
 		}
 

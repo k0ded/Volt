@@ -4,7 +4,7 @@
 #include "RenderCore/RenderGraph/Resources/ResourceDeclarations.h"
 #include "RenderCore/TransientResourceSystem/TransientResource.h"
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Images/Image.h>
 
 #include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>

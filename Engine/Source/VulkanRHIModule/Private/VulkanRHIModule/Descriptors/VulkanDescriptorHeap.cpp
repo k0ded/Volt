@@ -34,7 +34,7 @@ namespace Volt::RHI
 	void VulkanDescriptorHeap::Initialize()
 	{
 		BufferDesc bufferDesc{};
-		bufferDesc.count = 1;
+		bufferDesc.numElements = 1;
 		bufferDesc.elementSize = DescriptorRingBufferSize * RHICapabilities::NumFramesInFlight;
 		bufferDesc.usage = BufferUsage::DescriptorBuffer | BufferUsage::DeviceAddress;
 		bufferDesc.memoryUsage = MemoryUsage::CPUToGPU;

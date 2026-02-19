@@ -6,7 +6,7 @@ namespace Volt::RHI
 {
 	struct BufferDesc
 	{
-		uint32_t count;
+		uint64_t numElements;
 		uint64_t elementSize;
 
 		BufferUsage usage = BufferUsage::StorageBuffer;

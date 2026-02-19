@@ -42,6 +42,7 @@
 #include <WindowModule/WindowManager.h>
 
 #include <RHIModule/Images/Image.h>
+#include <RHIModule/Images/ImageUtility.h>
 
 #include <CoreUtilities/Math/Math.h>
 #include <CoreUtilities/FileSystem.h>
@@ -836,7 +837,9 @@ void ViewportPanel::HandleSingleSelect()
 
 		if (idExt && idExt->GetIDImage())
 		{
-			uint32_t pixelData = idExt->GetIDImage()->ReadPixel<uint32_t>(static_cast<uint32_t>(mouseX * renderScale), static_cast<uint32_t>(mouseY * renderScale), 0u);
+			DataBuffer pixelData = Volt::RHI::ImageUtility::ReadbackPixel(idExt->GetIDImage(), static_cast<uint32_t>(mouseX * renderScale), static_cast<uint32_t>(mouseY * renderScale), 0u);
+			uint32_t pixelId = *pixelData.As<uint32_t>();
+
 			const bool multiSelect = Volt::Input::IsKeyDown(Volt::InputCode::LeftShift);
 			const bool deselect = Volt::Input::IsKeyDown(Volt::InputCode::LeftControl);
 
@@ -845,7 +848,7 @@ void ViewportPanel::HandleSingleSelect()
 				SelectionManager::DeselectAll();
 			}
 
-			clickedEntity = m_editorScene->GetEntityFromID(pixelData);
+			clickedEntity = m_editorScene->GetEntityFromID(pixelId);
 
 			if (clickedEntity.IsValid())
 			{
@@ -873,7 +876,8 @@ void ViewportPanel::HandleSingleSelect()
 
 		if (debugExt && debugExt->GetVisProxyIDImage() && clickedEntity.IsValid())
 		{
-			uint32_t pixelData = debugExt->GetVisProxyIDImage()->ReadPixel<uint32_t>(static_cast<uint32_t>(mouseX * renderScale), static_cast<uint32_t>(mouseY * renderScale), 0u);
+			DataBuffer pixelData = Volt::RHI::ImageUtility::ReadbackPixel(debugExt->GetVisProxyIDImage(), static_cast<uint32_t>(mouseX * renderScale), static_cast<uint32_t>(mouseY * renderScale), 0u);
+			uint32_t pixelId = *pixelData.As<uint32_t>();
 
 			Volt::EntityID entityId = clickedEntity.GetID();
 
@@ -884,7 +888,7 @@ void ViewportPanel::HandleSingleSelect()
 
 				for (const VisProxyContextManager::VisProxyInfo& visProxyInfo : visProxyContextManager.GetVisProxyInfos())
 				{
-					if (visProxyInfo.visProxyId == static_cast<int32_t>(pixelData))
+					if (visProxyInfo.visProxyId == static_cast<int32_t>(pixelId))
 					{
 						Ref<BaseComponentVisualizer> visualizer = ComponentVisualizerRegistry::Get().GetComponentVisualizer(visProxyInfo.componentGuid);
 						visProxyInfo.handleHitProxyInteractionFunc(visualizer, clickedEntity, visProxyInfo.visProxyContext);

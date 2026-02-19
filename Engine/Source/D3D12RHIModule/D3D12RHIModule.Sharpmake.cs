@@ -17,8 +17,9 @@ namespace VoltSharpmake
             base.ConfigureAll(conf, target);
 
 			conf.SolutionFolder = "Engine/RHI";
+			conf.IsExcludedFromBuild = true;
 
-            conf.PrecompHeader = "dxpch.h";
+			conf.PrecompHeader = "dxpch.h";
             conf.PrecompSource = "dxpch.cpp";
 
             conf.AddPublicDependency<RHIModule>(target);

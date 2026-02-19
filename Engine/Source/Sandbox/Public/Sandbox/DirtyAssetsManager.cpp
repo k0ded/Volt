@@ -100,7 +100,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 		return true;
 	}
 
-	FrameStackVector<Volt::AssetHandle> assetsToSave;
+	GlobalMemoryStackVector<Volt::AssetHandle> assetsToSave;
 	assetsToSave.reserve(m_dirtyAssets.size());
 	for (auto& [dirtyAssetHandle, assetReference] : m_dirtyAssets)
 	{
@@ -188,8 +188,8 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 
 	//create assets dialog
 	{
-		FrameStackVector<Volt::AssetHandle> assetsNeedUserAssignedPath;
-		FrameStackVector<Volt::AssetHandle> assetsNotAllowedUserAssignPath;
+		GlobalMemoryStackVector<Volt::AssetHandle> assetsNeedUserAssignedPath;
+		GlobalMemoryStackVector<Volt::AssetHandle> assetsNotAllowedUserAssignPath;
 		for (int32_t i = static_cast<int32_t>(assetsToSave.size()) - 1; i >= 0; i--)
 		{
 			const Volt::AssetHandle& asset = assetsToSave[i];
@@ -311,7 +311,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 
 	//checkout assets dialog
 	{
-		FrameStackVector<Volt::AssetHandle> readOnlyAssets;
+		GlobalMemoryStackVector<Volt::AssetHandle> readOnlyAssets;
 		for (const Volt::AssetHandle& asset : assetsToSave)
 		{
 			const std::filesystem::path assetPath = g_assetManager->GetAssetFilesystemPath(asset);
@@ -398,7 +398,7 @@ const Map<Volt::AssetHandle, AssetReference<Volt::Asset>>& DirtyAssetsManager::G
 	return m_dirtyAssets;
 }
 
-void DirtyAssetsManager::SaveAssetsImpl(const FrameStackVector<Volt::AssetHandle>& assetsToSave)
+void DirtyAssetsManager::SaveAssetsImpl(const GlobalMemoryStackVector<Volt::AssetHandle>& assetsToSave)
 {
 	for (const Volt::AssetHandle& handle : assetsToSave)
 	{

@@ -18,7 +18,7 @@
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/RHIFeatures.h>
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Core/RenderingInfo.h>
 #include <RHIModule/Descriptors/ShaderBindingMap.h>

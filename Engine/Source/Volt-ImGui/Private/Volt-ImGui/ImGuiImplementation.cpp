@@ -132,6 +132,9 @@ namespace Volt
 			m_copyGlobalsUniformBuffer->Unmap();
 		}
 
+		// #Note: Memory mark for RHI::ShaderBindingMap
+		GlobalMemoryStackMark memMark;
+
 		commandBuffer->Begin();
 
 		const Map<Window*, ImGuiRenderTargetManager::RenderTarget>& renderTargets = m_renderTargetManager->GetAllRenderTargets();
@@ -211,7 +214,7 @@ namespace Volt
 			pipelineInfo.shaders = { vertexShader, pixelShader };
 			pipelineInfo.cullMode = RHI::CullMode::None;
 			pipelineInfo.depthMode = RHI::DepthMode::None;
-			pipelineInfo.colorAttachmentFormats.emplace_back(swapchain.GetCurrentImage()->GetFormat());
+			pipelineInfo.colorAttachmentFormats.emplace_back(swapchain.GetCurrentImage()->GetDesc().format);
 
 			auto copyPipeline = PipelineStateCache::GetRenderPipeline(pipelineInfo);
 

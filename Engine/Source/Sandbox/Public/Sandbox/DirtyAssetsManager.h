@@ -81,7 +81,7 @@ private:
 
 	void OnAssetChanged(Volt::AssetHandle assetHandle, Volt::AssetChangedState state);
 
-	void SaveAssetsImpl(const FrameStackVector<Volt::AssetHandle>& assetsToSave);
+	void SaveAssetsImpl(const GlobalMemoryStackVector<Volt::AssetHandle>& assetsToSave);
 	void CreateAssetsImpl(const Vector<std::pair<Volt::AssetHandle, std::filesystem::path>>& assetsToCreate);
 
 	Map<Volt::AssetHandle, AssetReference<Volt::Asset>> m_dirtyAssets;

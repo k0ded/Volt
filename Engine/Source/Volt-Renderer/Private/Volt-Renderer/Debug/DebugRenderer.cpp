@@ -16,8 +16,6 @@
 
 #include <RHIModule/Globals.h>
 
-#include <CoreUtilities/Allocators/FrameStackAllocator.h>
-
 #include "RenderView.h"
 
 namespace Volt
@@ -313,7 +311,8 @@ namespace Volt
 		}
 
 		// Copy billboard draw commands into intermediate structure to allow sorting.
-		Vector<BillboardDrawCommand, FrameStackAllocator::Mark> billboardDrawCommands;
+		GlobalMemoryStackMark memStackMark;
+		Vector<BillboardDrawCommand, GlobalMemoryStackAllocator> billboardDrawCommands;
 		billboardDrawCommands.resize(numBillboardCommands);
 
 		m_billboardDrawCommandAllocator.CopyInto(billboardDrawCommands.data(), billboardDrawCommands.size());

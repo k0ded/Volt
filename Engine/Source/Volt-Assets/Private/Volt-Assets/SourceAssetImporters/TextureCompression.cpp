@@ -20,7 +20,7 @@ namespace Volt::TextureCompression
 		RHI::PixelFormat dstFormat, 
 		bool generateMips, 
 		bool convertToSRGBIfRequired, 
-		Buffer& outPixelData,
+		DataBuffer& outPixelData,
 		Vector<Volt::TextureSerializerCommon::TextureMip>& outTextureMips)
 	{
 		VT_PROFILE_FUNCTION();

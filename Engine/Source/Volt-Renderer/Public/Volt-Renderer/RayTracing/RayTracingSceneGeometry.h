@@ -6,7 +6,7 @@ namespace Volt
 {
 	namespace RHI
 	{
-		class StorageBuffer;
+		class Buffer;
 	}
 
 	struct RayTracingSceneGeometryInfo
@@ -19,8 +19,8 @@ namespace Volt
 
 	struct RayTracingSceneGeometryCreateInfo
 	{
-		RefPtr<RHI::StorageBuffer> vertexPositionsBuffer;
-		RefPtr<RHI::StorageBuffer> indexBuffer;
+		RefPtr<RHI::Buffer> vertexPositionsBuffer;
+		RefPtr<RHI::Buffer> indexBuffer;
 
 		Vector<RayTracingSceneGeometryInfo> geometries;
 	};

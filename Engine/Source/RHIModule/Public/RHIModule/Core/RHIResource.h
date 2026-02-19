@@ -17,8 +17,8 @@ namespace Volt::RHI
 		virtual constexpr ResourceType GetType() const = 0;
 		virtual void SetName(const std::string& name) = 0;
 		virtual std::string_view GetName() const = 0;
-		virtual const uint64_t GetDeviceAddress() const = 0;
-		virtual const uint64_t GetByteSize() const = 0;
+		virtual uint64_t GetDeviceAddress() const = 0;
+		virtual const MemoryRequirement& GetMemoryRequirements() const = 0;
 
 	protected:
 		RHIResource() = default;

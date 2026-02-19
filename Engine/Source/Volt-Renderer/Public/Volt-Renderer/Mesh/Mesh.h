@@ -8,7 +8,7 @@
 #include "Volt-Renderer/Mesh/MeshCommon.h"
 #include "Volt-Renderer/GPUScene.h"
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 
 #include <CoreUtilities/Containers/Map.h>
 
@@ -123,10 +123,10 @@ namespace Volt
 
 		inline const BoundingSphere& GetSubMeshBoundingSphere(const uint32_t index) const { return m_subMeshBoundingSpheres.at(index);  }
 
-		inline RefPtr<RHI::StorageBuffer> GetVertexPositionsBuffer() const { return m_vertexPositionsBuffer; }
-		inline RefPtr<RHI::StorageBuffer> GetVertexMaterialBuffer() const { return m_vertexMaterialBuffer; }
-		inline RefPtr<RHI::StorageBuffer> GetVertexAnimationInfoBuffer() const { return m_vertexAnimationDataBuffer; }
-		inline RefPtr<RHI::StorageBuffer> GetIndexBuffer() const { return m_indexBuffer; }
+		inline RefPtr<RHI::Buffer> GetVertexPositionsBuffer() const { return m_vertexPositionsBuffer; }
+		inline RefPtr<RHI::Buffer> GetVertexMaterialBuffer() const { return m_vertexMaterialBuffer; }
+		inline RefPtr<RHI::Buffer> GetVertexAnimationInfoBuffer() const { return m_vertexAnimationDataBuffer; }
+		inline RefPtr<RHI::Buffer> GetIndexBuffer() const { return m_indexBuffer; }
 
 		VT_NODISCARD VT_INLINE const VertexContainer& GetVertexContainer() const { return m_vertexContainer; }
 		VT_NODISCARD VT_INLINE Ref<RayTracingSceneGeometry> GetRayTracingSceneGeometry() const { return m_rayTracingSceneGeometry; }
@@ -151,10 +151,10 @@ namespace Volt
 
 		MaterialTable m_materialTable;
 
-		RefPtr<RHI::StorageBuffer> m_indexBuffer;
-		RefPtr<RHI::StorageBuffer> m_vertexPositionsBuffer;
-		RefPtr<RHI::StorageBuffer> m_vertexMaterialBuffer;
-		RefPtr<RHI::StorageBuffer> m_vertexAnimationDataBuffer;
+		RefPtr<RHI::Buffer> m_indexBuffer;
+		RefPtr<RHI::Buffer> m_vertexPositionsBuffer;
+		RefPtr<RHI::Buffer> m_vertexMaterialBuffer;
+		RefPtr<RHI::Buffer> m_vertexAnimationDataBuffer;
 
 		Ref<RayTracingSceneGeometry> m_rayTracingSceneGeometry;
 

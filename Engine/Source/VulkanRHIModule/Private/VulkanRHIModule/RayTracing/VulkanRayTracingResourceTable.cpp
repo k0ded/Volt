@@ -25,7 +25,7 @@ namespace Volt::RHI
 		Release();
 	}
 
-	void VulkanRayTracingResourceTable::AddBuffer(RefPtr<StorageBuffer> buffer)
+	void VulkanRayTracingResourceTable::AddBuffer(RefPtr<Buffer> buffer)
 	{
 		m_bufferTable.Add(buffer);
 	}
@@ -35,7 +35,7 @@ namespace Volt::RHI
 		m_textureTable.Add(texture);
 	}
 
-	void VulkanRayTracingResourceTable::RemoveBuffer(RefPtr<StorageBuffer> buffer)
+	void VulkanRayTracingResourceTable::RemoveBuffer(RefPtr<Buffer> buffer)
 	{
 		m_bufferTable.Remove(buffer);
 	}
@@ -98,7 +98,7 @@ namespace Volt::RHI
 		}
 	}
 
-	uint32_t VulkanRayTracingResourceTable::GetBufferSlotIndex(RefPtr<StorageBuffer> buffer)
+	uint32_t VulkanRayTracingResourceTable::GetBufferSlotIndex(RefPtr<Buffer> buffer)
 	{
 		return m_bufferTable.GetSlotForResource(buffer);
 	}
@@ -113,7 +113,7 @@ namespace Volt::RHI
 		m_descriptorSetLayoutSize = RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayoutSize();
 
 		BufferDesc bufferDesc{};
-		bufferDesc.count = 1;
+		bufferDesc.numElements = 1;
 		bufferDesc.elementSize = m_descriptorSetLayoutSize * RHICapabilities::NumFramesInFlight;
 		bufferDesc.usage = BufferUsage::DescriptorBuffer | BufferUsage::DeviceAddress;
 		bufferDesc.memoryUsage = MemoryUsage::CPUToGPU;

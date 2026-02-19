@@ -83,7 +83,7 @@ namespace Volt::RHI
 		bufferAlloc->m_resource = buffer;
 		bufferAlloc->m_allocationBlock = blockAlloc;
 		bufferAlloc->m_heapId = m_heapId;
-		bufferAlloc->m_size = alignedSize;
+		bufferAlloc->m_memoryRequirement = Utility::GetBufferMemoryRequirement(bufferInfo);
 
 		return bufferAlloc;
 	}
@@ -125,7 +125,7 @@ namespace Volt::RHI
 		imageAlloc->m_resource = image;
 		imageAlloc->m_allocationBlock = blockAlloc;
 		imageAlloc->m_heapId = m_heapId;
-		imageAlloc->m_size = createInfo.size;
+		imageAlloc->m_memoryRequirement = Utility::GetImageMemoryRequirement(imageInfo);
 
 		return imageAlloc;
 	}

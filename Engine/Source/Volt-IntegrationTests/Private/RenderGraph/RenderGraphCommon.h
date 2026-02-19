@@ -24,7 +24,7 @@ template<typename ParameterStruct>
 inline void AddRasterPass(Volt::RenderGraph& renderGraph, Volt::RenderGraphPassFlags flags, const ParameterStruct* passParameters)
 {
 	renderGraph.AddPass("Raster Pass",
-		flags,
+		Volt::RenderGraphPassFlags::Raster | flags,
 		passParameters,
 		[](Volt::RenderContext& context)
 	{});

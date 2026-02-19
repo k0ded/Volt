@@ -474,7 +474,7 @@ namespace Volt::RHI
 		Image3D,
 
 		UniformBuffer,
-		StorageBuffer
+		Buffer
 	};
 
 	enum class ResourceBarrierType : uint8_t

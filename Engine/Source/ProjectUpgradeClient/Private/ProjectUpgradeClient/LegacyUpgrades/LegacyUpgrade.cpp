@@ -900,7 +900,7 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::TryConvertMesh(const V
 
 	Vector<AssetReference<Volt::Asset>> assets;
 
-	Buffer dataBuffer = Buffer::ReadFromFile(absoluteMeshPath);
+	DataBuffer dataBuffer = DataBuffer::ReadFromFile(absoluteMeshPath);
 
 	const std::string meshName = absoluteMeshPath.stem().string();
 	AssetReference<MeshAsset> newMesh = g_assetManager->CreateAssetAndFileWithAssetHandle<MeshAsset>(metadata.filepath.parent_path(), metadata.filepath.stem().string(), metadata.handle);

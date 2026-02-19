@@ -79,11 +79,11 @@ namespace Volt
 	void Texture2D::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
 	{
 		TextureHeader textureHeader;
-		Buffer dataBuffer;
+		DataBuffer dataBuffer;
 
 		if (!archive.IsLoading())
 		{
-			textureHeader.format = m_image->GetFormat();
+			textureHeader.format = m_image->GetDesc().format;
 			dataBuffer = TextureSerializerCommon::GetImageDataBuffer(m_image, textureHeader.mips);
 		}
 

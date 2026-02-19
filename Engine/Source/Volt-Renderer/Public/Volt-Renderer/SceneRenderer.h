@@ -29,7 +29,7 @@ namespace Volt
 		class ComputePipeline;
 
 		class UniformBufferSet;
-		class StorageBuffer;
+		class Buffer;
 
 		class SamplerState;
 

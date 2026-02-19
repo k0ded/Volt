@@ -16,6 +16,8 @@
 
 #include <Volt-Application/UI/UIUtility.h>
 
+#include <RHIModule/Images/ImageUtility.h>
+
 GameUIEditorPanel::GameUIEditorPanel()
 	: EditorWindow("Game UI Editor", true)
 {
@@ -298,7 +300,9 @@ void GameUIEditorPanel::HandleSelection()
 	
 		if (mouseX >= 0 && mouseY >= 0 && mouseX < (int32_t)viewportSize.x && mouseY < (int32_t)viewportSize.y)
 		{
-			uint32_t pixelData = m_uiSceneRenderer->GetIDImage()->ReadPixel<uint32_t>(static_cast<uint32_t>(mouseX), static_cast<uint32_t>(mouseY), 0u);
+			DataBuffer pixelData = Volt::RHI::ImageUtility::ReadbackPixel(m_uiSceneRenderer->GetIDImage(), static_cast<uint32_t>(mouseX), static_cast<uint32_t>(mouseY), 0u);
+			uint32_t pixelId = *pixelData.As<uint32_t>();
+
 			const bool multiSelect = Volt::Input::IsKeyDown(Volt::InputCode::LeftShift);
 			const bool deselect = Volt::Input::IsKeyDown(Volt::InputCode::LeftControl);
 
@@ -307,7 +311,7 @@ void GameUIEditorPanel::HandleSelection()
 				SelectionManager::DeselectAll(SelectionContext::GameUIEditor);
 			}
 
-			Volt::UIWidget widget = m_uiScene->GetWidgetFromUUID(pixelData);
+			Volt::UIWidget widget = m_uiScene->GetWidgetFromUUID(pixelId);
 
 			if (widget.IsValid())
 			{

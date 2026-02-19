@@ -7,7 +7,7 @@
 #include "CoreUtilities/Containers/Array.h"
 #include "CoreUtilities/Containers/Map.h"
 #include "CoreUtilities/VoltGUID.h"
-#include "CoreUtilities/Buffer/Buffer.h"
+#include "CoreUtilities/Buffer/DataBuffer.h"
 
 #include <concepts>
 #include <string>
@@ -160,7 +160,7 @@ public:
 		return archive;
 	}
 
-	VT_INLINE friend Archive& operator<<(Archive& archive, Buffer& buffer)
+	VT_INLINE friend Archive& operator<<(Archive& archive, DataBuffer& buffer)
 	{
 		size_t size = buffer.GetSize();
 		archive << size;

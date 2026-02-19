@@ -4,7 +4,7 @@
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
-#include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
+#include "VulkanRHIModule/Buffers/VulkanBuffer.h"
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 
@@ -49,7 +49,7 @@ namespace Volt::RHI
 		m_vulkanCpuAllocator = CreateRef<VulkanCPUAllocator>();
 	}
 
-	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<StorageBuffer> buffer) const
+	RefPtr<BufferView> VulkanRHIModule::CreateBufferView(const BufferViewDesc& specification, RawPtr<Buffer> buffer) const
 	{
 		RefPtr<BufferView> bufferView = RefPtr<VulkanBufferView>::AttachNoRef(m_bufferViewArena.Allocate(specification, buffer));
 		bufferView->SetArena(&m_bufferViewArena);
@@ -70,10 +70,10 @@ namespace Volt::RHI
 		return RefPtr<VulkanCommandBuffer>::Create(queueType);
 	}
 
-	RefPtr<StorageBuffer> VulkanRHIModule::CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const
+	RefPtr<Buffer> VulkanRHIModule::CreateBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const
 	{
-		RefPtr<StorageBuffer> storageBuffer = RefPtr<VulkanStorageBuffer>::AttachNoRef(m_storageBufferArena.Allocate(desc, allocator));
-		storageBuffer->SetArena(&m_storageBufferArena);
+		RefPtr<Buffer> storageBuffer = RefPtr<VulkanBuffer>::AttachNoRef(m_bufferArena.Allocate(desc, allocator));
+		storageBuffer->SetArena(&m_bufferArena);
 		return storageBuffer;
 	}
 

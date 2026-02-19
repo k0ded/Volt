@@ -23,7 +23,7 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE const UUID64 GetHeapID() const override { return 0; }
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
-		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE const MemoryRequirement& GetMemoryRequirements() const override { return m_memoryRequirements; }
 		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
@@ -40,7 +40,7 @@ namespace Volt::RHI
 		ID3D12Resource* m_resource = nullptr;
 		D3D12MA::Allocation* m_allocation = nullptr;
 		size_t m_allocationHash = 0;
-		uint64_t m_size = 0;
+		MemoryRequirement m_memoryRequirements;
 	};
 
 	class D3D12BufferAllocation final : public Allocation
@@ -54,7 +54,7 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE const UUID64 GetHeapID() const override { return 0; }
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
-		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE const MemoryRequirement& GetMemoryRequirements() const override { return m_memoryRequirements; }
 		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
@@ -71,7 +71,7 @@ namespace Volt::RHI
 		ID3D12Resource* m_resource = nullptr;
 		D3D12MA::Allocation* m_allocation = nullptr;
 		size_t m_allocationHash = 0;
-		uint64_t m_size = 0;
+		MemoryRequirement m_memoryRequirements;
 	};
 
 	class D3D12TransientBufferAllocation : public Allocation
@@ -85,7 +85,7 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE const UUID64 GetHeapID() const override { return m_heapId; }
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
-		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE const MemoryRequirement& GetMemoryRequirements() const override { return m_memoryRequirements; }
 		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
@@ -101,7 +101,7 @@ namespace Volt::RHI
 
 		ID3D12Resource* m_resource = nullptr;
 		size_t m_allocationHash = 0;
-		uint64_t m_size = 0;
+		MemoryRequirement m_memoryRequirements;
 
 		AllocationBlock m_allocationBlock{};
 		UUID64 m_heapId = 0;
@@ -118,7 +118,7 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE const UUID64 GetHeapID() const override { return m_heapId; }
 		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
 		VT_NODISCARD VT_INLINE const size_t GetHash() const override { return m_allocationHash; }
-		VT_NODISCARD VT_INLINE const uint64_t GetSize() const override { return m_size; }
+		VT_NODISCARD VT_INLINE const MemoryRequirement& GetMemoryRequirements() const override { return m_memoryRequirements; }
 		VT_NODISCARD VT_INLINE std::string_view GetName() const override { return m_name; }
 
 	protected:
@@ -134,7 +134,7 @@ namespace Volt::RHI
 
 		ID3D12Resource* m_resource = nullptr;
 		size_t m_allocationHash = 0;
-		uint64_t m_size = 0;
+		MemoryRequirement m_memoryRequirements;
 
 		AllocationBlock m_allocationBlock{};
 		UUID64 m_heapId = 0;

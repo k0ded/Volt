@@ -5,7 +5,7 @@
 namespace Volt
 {
 
-	PersistantBufferResource::PersistantBufferResource(RefPtr<RHI::StorageBuffer> buffer)
+	PersistantBufferResource::PersistantBufferResource(RefPtr<RHI::Buffer> buffer)
 		: m_viewCache(this),
 		m_buffer(buffer)
 	{

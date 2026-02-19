@@ -69,6 +69,8 @@ namespace Volt
 		VT_NODISCARD VT_INLINE bool IsExtracted() const { return m_isExtracted; }
 		VT_NODISCARD VT_INLINE bool IsProduced() const { return m_isProduced; }
 
+		RGPass* firstPassAccessor = nullptr;
+
 	private:
 		friend class RenderGraph;
 		friend class RenderGraphResourceManager;

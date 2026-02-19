@@ -40,7 +40,7 @@ namespace Volt
 	private:
 		inline static constexpr size_t MaxBatchedShaderParameterSize = 1024;
 		FixedSizeLinearAllocator<> m_allocator;
-		Vector<DestructorHelper> m_destructors;
+		GlobalMemoryStackVector<DestructorHelper> m_destructors;
 	};
 
 	struct BatchedShaderBinding

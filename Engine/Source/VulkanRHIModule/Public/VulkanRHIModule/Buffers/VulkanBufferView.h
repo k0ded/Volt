@@ -19,7 +19,7 @@ namespace Volt::RHI
 			uint64_t descriptorSize;
 		};
 
-		VulkanBufferView(const BufferViewDesc& desc, RawPtr<StorageBuffer> buffer);
+		VulkanBufferView(const BufferViewDesc& desc, RawPtr<Buffer> buffer);
 		VulkanBufferView(const BufferViewDesc& desc, RawPtr<UniformBuffer> buffer);
 		~VulkanBufferView() override;
 

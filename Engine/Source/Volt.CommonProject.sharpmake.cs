@@ -293,15 +293,10 @@ namespace VoltSharpmake
             conf.Options.Add(Options.Vc.General.ExternalWarningLevel.Level0);
             conf.Options.Add(Options.Vc.General.TreatAngleIncludeAsExternal.Enable);
 
-			if (this.GetType() != typeof(CoreUtilities) && this.GetType() != typeof(NewOverloadModule) && ReferenceCoreUtilities)
+			if (this.GetType() != typeof(CoreUtilities) && ReferenceCoreUtilities)
             {
                 conf.AddPublicDependency<CoreUtilities>(target);
             }
-
-			if (this.GetType() != typeof(NewOverloadModule))
-			{
-				conf.AddPrivateDependency<NewOverloadModule>(target);
-			}
 
             conf.IncludePrivatePaths.Add("Private/");
             conf.IncludePrivatePaths.Add("PCH/");

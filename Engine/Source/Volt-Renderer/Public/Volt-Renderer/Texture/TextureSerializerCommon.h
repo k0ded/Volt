@@ -4,7 +4,7 @@
 
 #include <RHIModule/Images/Image.h>
 
-#include <CoreUtilities/Buffer/Buffer.h>
+#include <CoreUtilities/Buffer/DataBuffer.h>
 
 namespace Volt::TextureSerializerCommon
 {
@@ -16,6 +16,6 @@ namespace Volt::TextureSerializerCommon
 		size_t dataOffset;
 	};
 
-	Buffer GetImageDataBuffer(RefPtr<RHI::Image> image, Vector<TextureMip>& outMips);
-	VTR_API void UploadImageData(RefPtr<Volt::RHI::Image> image, Volt::RHI::PixelFormat format, const Vector<struct TextureMip>& mips, const Buffer& dataBuffer, bool waitForGPU = false);
+	DataBuffer GetImageDataBuffer(RefPtr<RHI::Image> image, Vector<TextureMip>& outMips);
+	VTR_API void UploadImageData(RefPtr<Volt::RHI::Image> image, Volt::RHI::PixelFormat format, const Vector<struct TextureMip>& mips, const DataBuffer& dataBuffer, bool waitForGPU = false);
 }

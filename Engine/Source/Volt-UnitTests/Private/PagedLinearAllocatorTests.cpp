@@ -1,5 +1,6 @@
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Allocators/PagedAtomicLinearAllocator.h>
+#include <CoreUtilities/Allocators/PagedStackAllocator.h>
 #include <CoreUtilities/Core.h>
 
 #include <gtest/gtest.h>

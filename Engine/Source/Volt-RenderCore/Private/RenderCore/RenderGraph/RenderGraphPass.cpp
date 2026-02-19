@@ -20,6 +20,11 @@ namespace Volt
 	{
 		RGTextureState* statePtr = nullptr;
 
+		if (texture->firstPassAccessor == nullptr)
+		{
+			texture->firstPassAccessor = this;
+		}
+
 		for (RGTextureState& state : m_textureStates)
 		{
 			if (state.texture == texture)
@@ -59,6 +64,11 @@ namespace Volt
 	{
 		RGBufferState* statePtr = nullptr;
 
+		if (buffer->firstPassAccessor == nullptr)
+		{
+			buffer->firstPassAccessor = this;
+		}
+
 		for (RGBufferState& state : m_bufferStates)
 		{
 			if (state.bufferType == RGResourceType::Buffer && state.buffer == buffer)
@@ -85,6 +95,11 @@ namespace Volt
 	RGBufferState& RGPass::GetOrCreateBufferState(RGUniformBufferRef buffer)
 	{
 		RGBufferState* statePtr = nullptr;
+
+		if (buffer->firstPassAccessor == nullptr)
+		{
+			buffer->firstPassAccessor = this;
+		}
 
 		for (RGBufferState& state : m_bufferStates)
 		{

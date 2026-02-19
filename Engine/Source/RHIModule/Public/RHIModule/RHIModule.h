@@ -14,7 +14,7 @@ struct GLFWwindow;
 
 namespace Volt::RHI
 {
-	class StorageBuffer;
+	class Buffer;
 	class UniformBuffer;
 	class BufferView;
 
@@ -91,13 +91,13 @@ namespace Volt::RHI
 	public:
 		virtual ~RHIModule();
 
-		virtual RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<StorageBuffer> buffer) const = 0;
+		virtual RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<Buffer> buffer) const = 0;
 		virtual RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const = 0;
 
 		virtual RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const = 0;
 		virtual RefPtr<CommandBuffer> CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const = 0;
 
-		virtual RefPtr<StorageBuffer> CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const = 0;
+		virtual RefPtr<Buffer> CreateBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const = 0;
 		virtual RefPtr<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData = nullptr) const = 0;
 
 		virtual RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const = 0;

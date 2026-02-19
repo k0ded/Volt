@@ -5,7 +5,7 @@
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 #include "VulkanRHIModule/Images/VulkanImageView.h"
 
-#include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
+#include "VulkanRHIModule/Buffers/VulkanBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
 #include "VulkanRHIModule/Images/VulkanImage.h"
 #include "VulkanRHIModule/Images/VulkanSamplerState.h"
@@ -23,13 +23,13 @@ namespace Volt::RHI
 	public:
 		VulkanRHIModule();
 
-		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<StorageBuffer> buffer) const override;
+		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<Buffer> buffer) const override;
 		RefPtr<BufferView> CreateBufferView(const BufferViewDesc& specification, RawPtr<UniformBuffer> buffer) const override;
 
 		RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const override;
 		RefPtr<CommandBuffer> CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const override;
 
-		RefPtr<StorageBuffer> CreateStorageBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const override;
+		RefPtr<Buffer> CreateBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const override;
 		RefPtr<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData) const override;
 
 		RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const override;
@@ -77,7 +77,7 @@ namespace Volt::RHI
 		mutable PagedAtomicArenaAllocator<VulkanBufferView, 1024> m_bufferViewArena;
 		mutable PagedAtomicArenaAllocator<VulkanImageView, 1024> m_imageViewArena;
 
-		mutable PagedAtomicArenaAllocator<VulkanStorageBuffer, 1024> m_storageBufferArena;
+		mutable PagedAtomicArenaAllocator<VulkanBuffer, 1024> m_bufferArena;
 		mutable PagedAtomicArenaAllocator<VulkanUniformBuffer, 1024> m_uniformBufferArena;
 		mutable PagedAtomicArenaAllocator<VulkanImage, 1024> m_imageArena;
 		mutable PagedAtomicArenaAllocator<VulkanSamplerState, 1024> m_samplerStateArena;

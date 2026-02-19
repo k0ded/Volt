@@ -7,12 +7,12 @@
 #include <cassert>
 #include <filesystem>
 
-class VTCOREUTIL_API Buffer
+class VTCOREUTIL_API DataBuffer
 {
 public:
-	inline Buffer(size_t aSize);
-	inline Buffer() = default;
-	inline ~Buffer();
+	inline DataBuffer(size_t aSize);
+	inline DataBuffer() = default;
+	inline ~DataBuffer();
 
 	inline void Release();
 	inline void Allocate(size_t aSize);
@@ -23,8 +23,8 @@ public:
 	inline const bool IsValid() const;
 	inline const size_t GetSize() const;
 
-	inline static bool WriteToFile(Buffer buffer, const std::filesystem::path& targetPath);
-	inline static Buffer ReadFromFile(const std::filesystem::path& targetPath);
+	inline static bool WriteToFile(DataBuffer buffer, const std::filesystem::path& targetPath);
+	inline static DataBuffer ReadFromFile(const std::filesystem::path& targetPath);
 
 	template<typename T>
 	inline T* As(size_t offset = 0) const;
@@ -34,22 +34,22 @@ private:
 	size_t m_size = 0;
 };
 
-inline Buffer::Buffer(size_t aSize)
+inline DataBuffer::DataBuffer(size_t aSize)
 {
 	Allocate(aSize);
 }
 
-inline Buffer::~Buffer()
+inline DataBuffer::~DataBuffer()
 {
 }
 
-inline void Buffer::Release()
+inline void DataBuffer::Release()
 {
 	m_data.reset();
 	m_size = 0;
 }
 
-inline void Buffer::Allocate(size_t aSize)
+inline void DataBuffer::Allocate(size_t aSize)
 {
 	if (aSize == 0)
 	{
@@ -65,12 +65,12 @@ inline void Buffer::Allocate(size_t aSize)
 	m_size = aSize;
 }
 
-inline void Buffer::Clear()
+inline void DataBuffer::Clear()
 {
 	memset(m_data.get(), 0, m_size);
 }
 
-inline void Buffer::Resize(size_t aSize)
+inline void DataBuffer::Resize(size_t aSize)
 {
 	if (m_size < aSize)
 	{
@@ -89,7 +89,7 @@ inline void Buffer::Resize(size_t aSize)
 	}
 }
 
-inline void Buffer::Copy(const void* aSrcData, size_t aSize, size_t aOffset)
+inline void DataBuffer::Copy(const void* aSrcData, size_t aSize, size_t aOffset)
 {
 	if (aSize == 0)
 	{
@@ -100,17 +100,17 @@ inline void Buffer::Copy(const void* aSrcData, size_t aSize, size_t aOffset)
 	memcpy_s(m_data.get() + aOffset, m_size, aSrcData, aSize);
 }
 
-inline const bool Buffer::IsValid() const
+inline const bool DataBuffer::IsValid() const
 {
 	return m_data != nullptr;
 }
 
-inline const size_t Buffer::GetSize() const
+inline const size_t DataBuffer::GetSize() const
 {
 	return m_size;
 }
 
-inline bool Buffer::WriteToFile(Buffer buffer, const std::filesystem::path& targetPath)
+inline bool DataBuffer::WriteToFile(DataBuffer buffer, const std::filesystem::path& targetPath)
 {
 	std::ofstream file(targetPath, std::ios::out | std::ios::binary);
 	if (!file.is_open())
@@ -124,7 +124,7 @@ inline bool Buffer::WriteToFile(Buffer buffer, const std::filesystem::path& targ
 	return true;
 }
 
-inline Buffer Buffer::ReadFromFile(const std::filesystem::path& targetPath)
+inline DataBuffer DataBuffer::ReadFromFile(const std::filesystem::path& targetPath)
 {
 	if (!std::filesystem::exists(targetPath))
 	{
@@ -144,14 +144,14 @@ inline Buffer Buffer::ReadFromFile(const std::filesystem::path& targetPath)
 	file.read(reinterpret_cast<char*>(totalData.data()), totalData.size());
 	file.close();
 
-	Buffer buffer{ srcSize };
+	DataBuffer buffer{ srcSize };
 	buffer.Copy(totalData.data(), totalData.size());
 
 	return buffer;
 }
 
 template<typename T>
-inline T* Buffer::As(size_t offset) const
+inline T* DataBuffer::As(size_t offset) const
 {
 	return reinterpret_cast<T*>(m_data.get() + offset);
 }

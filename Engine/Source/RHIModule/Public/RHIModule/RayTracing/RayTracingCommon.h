@@ -60,7 +60,7 @@ namespace Volt::RHI
 		ForceNoOpaque = BIT(3),
 	};
 
-	class StorageBuffer;
+	class Buffer;
 	class AccelerationStructure;
 
 	// Copied from vulkan_core.h. Might not work with D3D12.
@@ -77,9 +77,9 @@ namespace Volt::RHI
 
 	struct AccelerationStructureGeometryInfo
 	{
-		RefPtr<StorageBuffer> vertexPositionsBuffer;
-		RefPtr<StorageBuffer> indexBuffer;
-		RefPtr<StorageBuffer> instancesBuffer;
+		RefPtr<Buffer> vertexPositionsBuffer;
+		RefPtr<Buffer> indexBuffer;
+		RefPtr<Buffer> instancesBuffer;
 
 		PixelFormat vertexFormat;
 		uint32_t vertexStride;

@@ -26,7 +26,7 @@ namespace Volt::RHI
 		const uint64_t alignedSize = Utility::Align(desc.size, deviceProperties.limits.minUniformBufferOffsetAlignment);
 
 		BufferDesc bufferDesc{};
-		bufferDesc.count = 1;
+		bufferDesc.numElements = 1;
 		bufferDesc.elementSize = alignedSize;
 		bufferDesc.usage = BufferUsage::UniformBuffer | BufferUsage::DeviceAddress;
 		bufferDesc.memoryUsage = MemoryUsage::CPUToGPU;
@@ -36,7 +36,9 @@ namespace Volt::RHI
 
 		if (initialData)
 		{
-			SetData(initialData, desc.size);
+			void* mappedData = MapInternal();
+			memcpy_s(mappedData, desc.size, initialData, desc.size);
+			Unmap();
 		}
 
 		SetName(desc.debugName);
@@ -64,17 +66,9 @@ namespace Volt::RHI
 		return BufferView::Create(desc, this);
 	}
 
-	const uint32_t VulkanUniformBuffer::GetSize() const
+	uint64_t VulkanUniformBuffer::GetSize() const
 	{
-		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
-		return Utility::Align(m_desc.size, deviceProperties.limits.minUniformBufferOffsetAlignment);
-	}
-
-	void VulkanUniformBuffer::SetData(const void* data, const uint32_t size)
-	{
-		void* bufferData = m_allocation->Map<void>();
-		memcpy_s(bufferData, m_desc.size, data, size);
-		m_allocation->Unmap();
+		return m_desc.size;
 	}
 
 	void VulkanUniformBuffer::Unmap()
@@ -104,27 +98,24 @@ namespace Volt::RHI
 		return m_desc.debugName;
 	}
 
-	const uint64_t VulkanUniformBuffer::GetDeviceAddress() const
+	uint64_t VulkanUniformBuffer::GetDeviceAddress() const
 	{
 		return m_allocation->GetDeviceAddress();
 	}
 
-	const uint64_t VulkanUniformBuffer::GetByteSize() const
+	void* VulkanUniformBuffer::MapInternal()
 	{
-		return m_allocation->GetSize();
-	}
-
-	void* VulkanUniformBuffer::MapInternal(const uint32_t index)
-	{
-		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
-		const uint32_t offset = Utility::Align(m_desc.size, deviceProperties.limits.minUniformBufferOffsetAlignment) * index;
-
 		uint8_t* bytePtr = m_allocation->Map<uint8_t>();
-		return &bytePtr[offset];
+		return bytePtr;
 	}
 
 	void* VulkanUniformBuffer::GetHandleImpl() const
 	{
 		return m_allocation->GetResourceHandle<VkBuffer>();
+	}
+
+	const MemoryRequirement& VulkanUniformBuffer::GetMemoryRequirements() const
+	{
+		return m_allocation->GetMemoryRequirements();
 	}
 }

@@ -1,7 +1,7 @@
 #include "ApplicationFixture.h"
 #include "RenderGraph/RenderGraphCommon.h"
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Images/ImageUtility.h>
 
 #include <CoreUtilities/EnumUtils.h>

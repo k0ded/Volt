@@ -3,18 +3,18 @@
 #include "RenderCore/TransientResourceSystem/ResourceViewCache.h"
 #include "RenderCore/RenderGraph/RenderGraphRHIResource.h"
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 
 namespace Volt
 {
 	class TransientBufferResource : public RGRHIBufferResource
 	{
 	public:
-		TransientBufferResource(RefPtr<RHI::StorageBuffer> buffer, size_t hash, uint64_t framesToKeepAlive);
+		TransientBufferResource(RefPtr<RHI::Buffer> buffer, size_t hash, uint64_t framesToKeepAlive);
 		~TransientBufferResource() override = default;
 
 		VT_INLINE RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
-		VT_INLINE RefPtr<RHI::StorageBuffer> GetRHIBuffer() const override { return m_buffer; }
+		VT_INLINE RefPtr<RHI::Buffer> GetRHIBuffer() const override { return m_buffer; }
 		VT_INLINE size_t GetHash() const { return m_hash; }
 		VT_INLINE uint64_t GetFrameReleased() const { return m_frameReleasedIndex; }
 		VT_INLINE bool IsAcquired() const { return m_acquired.load(std::memory_order::relaxed); }
@@ -37,7 +37,7 @@ namespace Volt
 
 	private:
 		TransientBufferViewCache m_viewCache;
-		RefPtr<RHI::StorageBuffer> m_buffer;
+		RefPtr<RHI::Buffer> m_buffer;
 		size_t m_hash;
 		uint64_t m_frameReleasedIndex;
 		uint64_t m_framesToKeepAlive;

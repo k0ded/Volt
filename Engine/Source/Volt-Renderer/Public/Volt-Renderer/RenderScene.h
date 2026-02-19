@@ -27,7 +27,7 @@ namespace Volt
 	namespace RHI
 	{
 		class BufferView;
-		class StorageBuffer;
+		class Buffer;
 	}
 
 	class EntityScene;

@@ -43,7 +43,7 @@ namespace Volt
 		RefPtr<RHI::Image> white1x1;
 		RefPtr<RHI::Image> black1x1;
 
-		RefPtr<RHI::StorageBuffer> cubeIndexBuffer;
+		RefPtr<RHI::Buffer> cubeIndexBuffer;
 
 		VT_INLINE void Clear()
 		{

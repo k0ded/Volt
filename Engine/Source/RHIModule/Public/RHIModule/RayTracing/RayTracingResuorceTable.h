@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RHIModule/Core/RHIInterface.h"
-#include "RHIModule/Buffers/StorageBuffer.h"
+#include "RHIModule/Buffers/Buffer.h"
 #include "RHIModule/Images/Image.h"
 #include "RHIModule/Graphics/Swapchain.h"
 #include "RHIModule/RHICapabilities.h"
@@ -18,13 +18,13 @@ namespace Volt::RHI
 
 		virtual ~RayTracingResourceTable() = default;
 
-		virtual void AddBuffer(RefPtr<StorageBuffer> buffer) = 0;
+		virtual void AddBuffer(RefPtr<Buffer> buffer) = 0;
 		virtual void AddTexture(RefPtr<Image> texture) = 0;
 
-		virtual void RemoveBuffer(RefPtr<StorageBuffer> buffer) = 0;
+		virtual void RemoveBuffer(RefPtr<Buffer> buffer) = 0;
 		virtual void RemoveTexture(RefPtr<Image> texture) = 0;
 
-		virtual uint32_t GetBufferSlotIndex(RefPtr<StorageBuffer> buffer) = 0;
+		virtual uint32_t GetBufferSlotIndex(RefPtr<Buffer> buffer) = 0;
 		virtual uint32_t GetTextureSlotIndex(RefPtr<Image> texture) = 0;
 
 		virtual void Update(uint32_t index) = 0;

@@ -20,6 +20,12 @@ namespace Volt
 	extern VTRC_API void AddMappedBufferUploadCopyData(RenderGraph& renderGraph, RGUniformBufferRef dstUniformBuffer, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
 
 	/*
+	* Will copy the data into temporary storage in the Render Graph.
+	* 	
+	*/
+	extern VTRC_API void AddStagedBufferUploadCopyData(RenderGraph& renderGraph, RGBufferRef dstBuffer, const void* data, uint64_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);
+
+	/*
 		Will not copy the data into temporary storage, so the data MUST at least have the same lifetime as the Render Graph.
 	*/
 	extern VTRC_API void AddMappedBufferUpload(RenderGraph& renderGraph, RGBufferRef dstBuffer, const void* data, const size_t dataSize, RenderGraphPassFlags flags = RenderGraphPassFlags::None);

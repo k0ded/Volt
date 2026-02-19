@@ -7,7 +7,7 @@
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
 #include "VulkanRHIModule/Graphics/VulkanGraphicsDevice.h"
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 
 #include <RHIModule/RHIModule.h>
@@ -87,7 +87,7 @@ namespace Volt::RHI
 				instances.arrayOfPointers = VK_FALSE;
 				instances.data.deviceAddress = geometryInfo.instancesBuffer->GetDeviceAddress();
 
-				primitiveCounts.emplace_back(geometryInfo.instancesBuffer->GetCount());
+				primitiveCounts.emplace_back(static_cast<uint32_t>(geometryInfo.instancesBuffer->GetNumElements()));
 			}
 		}
 
@@ -114,12 +114,12 @@ namespace Volt::RHI
 		vkGetAccelerationStructureBuildSizesKHR(device->GetHandle<VkDevice>(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildGeometryInfo, primitiveCounts.data(), &buildSizes);
 	
 		BufferDesc desc{};
-		desc.count = 1;
+		desc.numElements = 1;
 		desc.elementSize = buildSizes.accelerationStructureSize;
 		desc.debugName = "Acceleration Structure Backing Buffer";
 		desc.usage = BufferUsage::AccelerationStructure | BufferUsage::DeviceAddress;
 
-		m_backingBuffer = StorageBuffer::Create(desc);
+		m_backingBuffer = Buffer::Create(desc);
 		
 		VkAccelerationStructureCreateInfoKHR asCreateInfo{};
 		asCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;

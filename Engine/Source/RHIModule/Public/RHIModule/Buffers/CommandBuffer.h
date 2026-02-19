@@ -18,7 +18,7 @@
 namespace Volt::RHI
 {
 	class Image;
-	class StorageBuffer;
+	class Buffer;
 	class Allocation;
 	class Swapchain;
 	class ShaderBindingMap;
@@ -41,12 +41,12 @@ namespace Volt::RHI
 
 	struct VertexBufferBinding
 	{
-		RefPtr<RHI::StorageBuffer> buffer;
+		RefPtr<RHI::Buffer> buffer;
 		uint64_t offset = 0;
 	};
 
-	using BarrierVector = Vector<ResourceBarrierInfo, InlineAllocator<32>>;
-	using VertexBufferVector = Vector<VertexBufferBinding, InlineAllocator<MAX_VERTEX_BUFFER_COUNT>>;
+	using BarrierVector = Vector<ResourceBarrierInfo, InlineAllocator<8>>;
+	using VertexBufferVector = Vector<VertexBufferBinding, InlineAllocator<4>>;
 
 	class VTRHI_API CommandBuffer : public RHIInterface
 	{
@@ -59,17 +59,17 @@ namespace Volt::RHI
 
 		virtual void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance) = 0;
 		virtual void DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance) = 0;
-		virtual void DrawIndexedIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
-		virtual void DrawIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
-		virtual void DrawIndexedIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
-		virtual void DrawIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
+		virtual void DrawIndexedIndirect(RawPtr<Buffer> commandsBuffer, const size_t offset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
+		virtual void DrawIndirect(RawPtr<Buffer> commandsBuffer, const size_t offset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
+		virtual void DrawIndexedIndirectCount(RawPtr<Buffer> commandsBuffer, const size_t offset, RawPtr<Buffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
+		virtual void DrawIndirectCount(RawPtr<Buffer> commandsBuffer, const size_t offset, RawPtr<Buffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
 
 		virtual void Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ) = 0;
-		virtual void DispatchIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset) = 0;
+		virtual void DispatchIndirect(RawPtr<Buffer> commandsBuffer, const size_t offset) = 0;
 
 		virtual void DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ) = 0;
-		virtual void DispatchMeshTasksIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) = 0;
-		virtual void DispatchMeshTasksIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
+		virtual void DispatchMeshTasksIndirect(RawPtr<Buffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) = 0;
+		virtual void DispatchMeshTasksIndirectCount(RawPtr<Buffer> commandsBuffer, const size_t offset, RawPtr<Buffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) = 0;
 
 		virtual void TraceRays(RawPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth) = 0;
 
@@ -80,7 +80,7 @@ namespace Volt::RHI
 		virtual void BindPipeline(RawPtr<ComputePipeline> pipeline) = 0;
 		virtual void BindPipeline(RawPtr<RayTracingPipeline> pipeline) = 0;
 		virtual void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) = 0;
-		virtual void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer, const IndexType indexType = IndexType::UInt32) = 0;
+		virtual void BindIndexBuffer(RawPtr<Buffer> indexBuffer, const IndexType indexType = IndexType::UInt32) = 0;
 
 		virtual void BindShaderBindings(const ShaderBindingMap& shaderBindings) = 0;
 		virtual void PushInlineParameters(const void* data, const uint32_t size, const uint32_t offset, ShaderStage shaderStages) = 0;
@@ -105,13 +105,14 @@ namespace Volt::RHI
 		virtual void ClearImageView(RawPtr<ImageView> imageView, std::array<float, 4> clearValue) = 0;
 		virtual void ClearImageView(RawPtr<ImageView> imageView, std::array<uint32_t, 4> clearValue) = 0;
 
-		virtual void CopyBufferRegion(Handle<Allocation> srcResource, const size_t srcOffset, Handle<Allocation> dstResource, const size_t dstOffset, const size_t size) = 0;
-		virtual void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip = 0) = 0;
-		virtual void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const int32_t offsetX, const int32_t offsetY, const int32_t offsetZ, const uint32_t mip = 0) = 0;
-		virtual void CopyImageToBuffer(RawPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) = 0;
+		virtual void CopyBufferRegion(RawPtr<Buffer> srcBuffer, const size_t srcOffset, RawPtr<Buffer> dstBuffer, const size_t dstOffset, const size_t size) = 0;
+		virtual void CopyBufferToImage(RawPtr<Buffer> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip = 0) = 0;
+		virtual void CopyBufferToImage(RawPtr<Buffer> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const int32_t offsetX, const int32_t offsetY, const int32_t offsetZ, const uint32_t mip = 0) = 0;
+		virtual void CopyImageToBuffer(RawPtr<Image> srcImage, RawPtr<Buffer> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) = 0;
+		virtual void CopyImageToBuffer(RawPtr<Image> srcImage, RawPtr<Buffer> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const int32_t offsetX, const int32_t offsetY, const int32_t offsetZ, const uint32_t mip) = 0;
 		virtual void CopyImage(RawPtr<Image> srcImage, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth) = 0;
 
-		virtual void UploadTextureData(RawPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData) = 0;
+		virtual void UploadTextureData(RawPtr<Image> dstImage, RawPtr<Buffer> stagingAllocation, const ImageCopyData& copyData) = 0;
 
 		virtual bool HasFinishedExecution() const = 0;
 

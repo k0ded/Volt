@@ -288,7 +288,8 @@ namespace Volt
 		renderGraph.Compile();
 		renderGraph.ExecuteImmediateAndWait();
 
-		result.diffuse->GenerateMips();
+		// #TODO_Ivar: Reimplement
+		//result.diffuse->GenerateMips();
 
 		return result;
 	}

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <RHIModule/Buffers/BufferView.h>
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
 
 #include <RHIModule/Images/Image.h>
@@ -15,7 +15,7 @@ namespace Volt
 		virtual ~RGRHIBufferResource() = default;
 
 		virtual RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) = 0;
-		virtual RefPtr<RHI::StorageBuffer> GetRHIBuffer() const = 0;
+		virtual RefPtr<RHI::Buffer> GetRHIBuffer() const = 0;
 	};
 
 	class RGRHITextureResource

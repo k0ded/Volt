@@ -1,6 +1,7 @@
 #include "Plugin.h"
 
 #include <LogModule/Log.h>
+#include <CoreUtilities/NewOverload.inl>
 
 void ExamplePlugin::Initialize()
 {

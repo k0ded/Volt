@@ -27,7 +27,7 @@ namespace Volt
 
 	namespace RHI
 	{
-		class StorageBuffer;
+		class Buffer;
 	}
 
 	template<typename T>
@@ -40,10 +40,10 @@ namespace Volt
 		ScatteredBufferUpload(const size_t uploadCount);
 
 		T& AddUploadItem(size_t bufferIndex);
-		void UploadTo(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer);
+		void UploadTo(RenderGraph& renderGraph, RefPtr<RHI::Buffer> dstBuffer);
 
 	private:
-		void UploadToInternal(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer);
+		void UploadToInternal(RenderGraph& renderGraph, RefPtr<RHI::Buffer> dstBuffer);
 
 		Vector<T> m_data;
 		Vector<uint32_t> m_dataIndices;
@@ -67,13 +67,13 @@ namespace Volt
 	}
 
 	template<IsTrivial T>
-	inline void ScatteredBufferUpload<T>::UploadTo(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> dstBuffer)
+	inline void ScatteredBufferUpload<T>::UploadTo(RenderGraph& renderGraph, RefPtr<RHI::Buffer> dstBuffer)
 	{
 		UploadToInternal(renderGraph, dstBuffer);
 	}
 
 	template<IsTrivial T>
-	inline void ScatteredBufferUpload<T>::UploadToInternal(RenderGraph& renderGraph, RefPtr<RHI::StorageBuffer> rhiDstBuffer)
+	inline void ScatteredBufferUpload<T>::UploadToInternal(RenderGraph& renderGraph, RefPtr<RHI::Buffer> rhiDstBuffer)
 	{
 		if (m_currentIndex == 0)
 		{

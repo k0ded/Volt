@@ -20,8 +20,10 @@ namespace Volt::RHI
 	VulkanImageView::VulkanImageView(const ImageViewDesc& desc, RawPtr<Image> image)
 		: m_desc(desc), m_image(image)
 	{
-		m_format = image->GetFormat();
-		m_imageUsage = image->GetUsage();
+		const ImageDesc& imageDesc = image->GetDesc();
+
+		m_format = imageDesc.format;
+		m_imageUsage = imageDesc.usage;
 		m_imageAspect = image->GetImageAspect();
 		m_isSwapchainImage = image->IsSwapchainImage();
 
@@ -40,8 +42,8 @@ namespace Volt::RHI
 		viewInfo.subresourceRange.aspectMask = aspectMask;
 		viewInfo.subresourceRange.baseMipLevel = desc.baseMipLevel;
 		viewInfo.subresourceRange.baseArrayLayer = desc.baseArrayLayer;
-		viewInfo.subresourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? image->GetMipCount() : desc.mipCount;
-		viewInfo.subresourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? image->GetLayerCount() : desc.layerCount;
+		viewInfo.subresourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? imageDesc.mips : desc.mipCount;
+		viewInfo.subresourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? imageDesc.layers : desc.layerCount;
 		viewInfo.image = image->GetHandle<VkImage>();
 
 		auto device = GraphicsContext::GetDevice();
@@ -61,32 +63,32 @@ namespace Volt::RHI
 		m_imageView = nullptr;
 	}
 
-	const PixelFormat VulkanImageView::GetFormat() const
+	PixelFormat VulkanImageView::GetFormat() const
 	{
 		return m_format;
 	}
 
-	const ImageAspect VulkanImageView::GetImageAspect() const
+	ImageAspect VulkanImageView::GetImageAspect() const
 	{
 		return m_imageAspect;
 	}
 
-	const uint64_t VulkanImageView::GetDeviceAddress() const
+	uint64_t VulkanImageView::GetDeviceAddress() const
 	{
 		return m_image->GetDeviceAddress();
 	}
 
-	const ImageUsage VulkanImageView::GetImageUsage() const
+	ImageUsage VulkanImageView::GetImageUsage() const
 	{
 		return m_imageUsage;
 	}
 
-	const ImageViewType VulkanImageView::GetViewType() const
+	ImageViewType VulkanImageView::GetViewType() const
 	{
 		return m_desc.viewType;
 	}
 
-	const bool VulkanImageView::IsSwapchainView() const
+	bool VulkanImageView::IsSwapchainView() const
 	{
 		return m_isSwapchainImage;
 	}

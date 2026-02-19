@@ -55,7 +55,7 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		const uint64_t byteSize = desc.count * desc.elementSize;
+		const uint64_t byteSize = desc.numElements * desc.elementSize;
 
 		VT_ENSURE(byteSize > 0);
 
@@ -115,7 +115,7 @@ namespace Volt::RHI
 			vmaSetAllocationName(m_allocator, allocation->m_allocation, desc.debugName.c_str());
 		}
 
-		allocation->m_size = byteSize;
+		allocation->m_memoryRequirement.size = allocInfo.size;
 
 		return allocation;
 	}
@@ -169,12 +169,7 @@ namespace Volt::RHI
 			vmaSetAllocationName(m_allocator, allocation->m_allocation, imageSpecification.debugName.c_str());
 		}
 
-		// Get Size
-		{
-			VmaAllocationInfo info{};
-			vmaGetAllocationInfo(m_allocator, allocation->m_allocation, &info);
-			allocation->m_size = info.size;
-		}
+		allocation->m_memoryRequirement.size = allocInfo.size;
 
 		return allocation;
 	}

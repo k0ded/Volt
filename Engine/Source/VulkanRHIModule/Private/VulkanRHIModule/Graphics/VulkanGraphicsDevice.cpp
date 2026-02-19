@@ -505,10 +505,10 @@ namespace Volt::RHI
 
 		uint64_t totalImageSize = 0;
 
-		for (uint32_t i = 0; i < image->GetMipCount(); ++i)
+		for (uint32_t i = 0; i < desc.mips; ++i)
 		{
-			const uint32_t width = std::max(image->GetWidth() >> i, 1u);
-			const uint32_t height = std::max(image->GetHeight() >> i, 1u);
+			const uint32_t width = std::max(desc.width >> i, 1u);
+			const uint32_t height = std::max(desc.height >> i, 1u);
 
 			const uint32_t blockTexelSize = static_cast<uint32_t>(sqrt(formatTexelsPerBlock));
 			const uint32_t blockWidth = std::max(1u, (width + blockTexelSize - 1u) / blockTexelSize);

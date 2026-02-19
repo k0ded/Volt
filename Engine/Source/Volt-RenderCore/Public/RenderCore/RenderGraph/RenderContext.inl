@@ -86,8 +86,8 @@ namespace Volt
 			bool value;
 		};
 
-		// #TODO_Ivar: Swtich to another allocator.
-		Vector<Binding> foundResourceBindings;
+		GlobalMemoryStackMark memStackMark;
+		GlobalMemoryStackVector<Binding> foundResourceBindings;
 		foundResourceBindings.reserve(resourceBindings.size());
 
 		STRING_HASH_CONSTEXPR StringHash GlobalsStringHash = StringHash::Construct("$Globals");

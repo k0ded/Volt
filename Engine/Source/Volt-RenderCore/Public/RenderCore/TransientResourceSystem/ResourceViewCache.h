@@ -6,7 +6,7 @@
 #include <RHIModule/Images/Image.h>
 
 #include <RHIModule/Buffers/BufferView.h>
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 
 #include <CoreUtilities/Containers/Map.h>
 

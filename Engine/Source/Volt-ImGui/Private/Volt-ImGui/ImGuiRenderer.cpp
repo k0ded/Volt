@@ -11,6 +11,7 @@
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Core/RenderingInfo.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
+#include <RHIModule/Buffers/BufferUtility.h>
 #include <RHIModule/RHICapabilities.h>
 
 #include <WindowModule/Window.h>
@@ -119,8 +120,8 @@ namespace Volt
 
 		if (drawData->TotalVtxCount > 0)
 		{
-			renderContext.vertexBuffers.at(frameIndex)->Resize(drawData->TotalVtxCount * sizeof(ImDrawVert));
-			renderContext.indexBuffers.at(frameIndex)->Resize(drawData->TotalIdxCount * sizeof(ImDrawIdx));
+			renderContext.vertexBuffers[frameIndex] = RHI::BufferUtility::ResizeBufferIfRequired(renderContext.vertexBuffers[frameIndex], drawData->TotalVtxCount);
+			renderContext.indexBuffers[frameIndex] = RHI::BufferUtility::ResizeBufferIfRequired(renderContext.indexBuffers[frameIndex], drawData->TotalIdxCount);
 
 			ImDrawVert* mappedVertices = renderContext.vertexBuffers.at(frameIndex)->Map<ImDrawVert>();
 			ImDrawIdx* mappedIndices = renderContext.indexBuffers.at(frameIndex)->Map<ImDrawIdx>();
@@ -196,8 +197,8 @@ namespace Volt
 
 		commandBuffer->SetViewports({ viewport });
 
-		commandBuffer->BindVertexBuffers({ { renderContext.vertexBuffers.at(frameIndex), 0ull } }, 0);
-		commandBuffer->BindIndexBuffer(renderContext.indexBuffers.at(frameIndex), sizeof(ImDrawIdx) == sizeof(uint16_t) ? RHI::IndexType::UInt16 : RHI::IndexType::UInt32);
+		commandBuffer->BindVertexBuffers({ { renderContext.vertexBuffers[frameIndex], 0ull}}, 0);
+		commandBuffer->BindIndexBuffer(renderContext.indexBuffers[frameIndex], sizeof(ImDrawIdx) == sizeof(uint16_t) ? RHI::IndexType::UInt16 : RHI::IndexType::UInt32);
 
 		RefPtr<RHI::RenderPipeline> renderPipeline = GetRenderPipeline(*renderTarget);
 		commandBuffer->BindPipeline(renderPipeline);
@@ -213,6 +214,9 @@ namespace Volt
 		// Will project scissor/clipping rectangles into framebuffer space
 		ImVec2 clip_off = drawData->DisplayPos;         // (0,0) unless using multi-viewports
 		ImVec2 clip_scale = drawData->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+
+		// Stack mark for RHI::ShaderBindingMap.
+		GlobalMemoryStackMark memMark;
 
 		int32_t globalVertexOffset = 0;
 		int32_t globalIndexOffset = 0;
@@ -331,21 +335,21 @@ namespace Volt
 			uint64_t uploadPitchDst = RHI::GraphicsContext::GetDevice()->GetRowPitchForWidth(image, uploadW);
 
 			RHI::BufferDesc stagingDesc{};
-			stagingDesc.count = 1;
+			stagingDesc.numElements = 1;
 			stagingDesc.elementSize = RHI::GraphicsContext::GetDevice()->GetMaxRequiredStagingBufferSizeForImage(image);
 			stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			stagingDesc.usage = RHI::BufferUsage::TransferSrc;
 
-			Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
+			RefPtr<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
 
 			// Upload to buffer
 			{
-				uint8_t* ptr = stagingAlloc->Map<uint8_t>();
+				uint8_t* ptr = stagingBuffer->Map<uint8_t>();
 				for (int y = 0; y < uploadH; y++)
 				{
 					memcpy(ptr + uploadPitchDst * y, textureData->GetPixelsAt(uploadX, uploadY + y), (size_t)uploadPitchSrc);
 				}
-				stagingAlloc->Unmap();
+				stagingBuffer->Unmap();
 			}
 
 			RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
@@ -366,7 +370,7 @@ namespace Volt
 
 			commandBuffer->ResourceBarrier({ barrierInfo });
 
-			commandBuffer->CopyBufferToImage(stagingAlloc, image, uploadW, uploadH, 1, uploadX, uploadY, 0);
+			commandBuffer->CopyBufferToImage(stagingBuffer, image, uploadW, uploadH, 1, uploadX, uploadY, 0);
 
 			barrierInfo.imageBarrier().srcAccess = RHI::BarrierAccess::CopyDest;
 			barrierInfo.imageBarrier().srcStage = RHI::BarrierStage::Copy;
@@ -382,8 +386,6 @@ namespace Volt
 			RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
 
 			textureData->SetStatus(ImTextureStatus_OK);
-
-			RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
 		}
 
 		if (textureData->Status == ImTextureStatus_WantDestroy)
@@ -409,7 +411,7 @@ namespace Volt
 		pipelineCreateInfo.attachmentBlendStates[0].srcAlphaBlend = RHI::AttachmentBlendFactor::One;
 		pipelineCreateInfo.attachmentBlendStates[0].dstAlphaBlend = RHI::AttachmentBlendFactor::OneMinusSrcAlpha;
 		pipelineCreateInfo.attachmentBlendStates[0].alphaBlendOp = RHI::AttachmentBlendOp::Add;
-		pipelineCreateInfo.colorAttachmentFormats.emplace_back(renderTarget.GetFormat());
+		pipelineCreateInfo.colorAttachmentFormats.emplace_back(renderTarget.GetDesc().format);
 
 		return PipelineStateCache::GetRenderPipeline(pipelineCreateInfo);
 	}
@@ -420,7 +422,7 @@ namespace Volt
 
 		// Store a reference to the image to make sure it doesn't get destroyed until we
 		// are finished using it.
-		m_usedImages.at(m_frameIndex).push_back(image);
+		m_usedImages[m_frameIndex].push_back(image);
 		return (ImTextureID)image.GetRaw();
 	}
 
@@ -478,7 +480,7 @@ namespace Volt
 		{
 			RHI::BufferDesc desc{};
 			desc.elementSize = sizeof(ImDrawVert);
-			desc.count = 1;
+			desc.numElements = 1;
 			desc.debugName = "ImGui.VertexBuffer";
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			desc.usage = RHI::BufferUsage::VertexBuffer;
@@ -487,14 +489,14 @@ namespace Volt
 
 			for (uint32_t i = 0; i < RHI::RHICapabilities::NumFramesInFlight; ++i)
 			{
-				renderContext.vertexBuffers[i] = RHI::StorageBuffer::Create(desc);
+				renderContext.vertexBuffers[i] = RHI::Buffer::Create(desc);
 			}
 		}
 
 		{
 			RHI::BufferDesc desc{};
 			desc.elementSize = sizeof(ImDrawIdx);
-			desc.count = 1;
+			desc.numElements = 1;
 			desc.debugName = "ImGui.IndexBuffer";
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			desc.usage = RHI::BufferUsage::IndexBuffer;
@@ -503,7 +505,7 @@ namespace Volt
 
 			for (uint32_t i = 0; i < RHI::RHICapabilities::NumFramesInFlight; ++i)
 			{
-				renderContext.indexBuffers[i] = RHI::StorageBuffer::Create(desc);
+				renderContext.indexBuffers[i] = RHI::Buffer::Create(desc);
 			}
 		}
 

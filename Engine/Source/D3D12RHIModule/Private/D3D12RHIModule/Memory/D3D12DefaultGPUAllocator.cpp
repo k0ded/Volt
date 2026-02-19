@@ -103,7 +103,7 @@ namespace Volt::RHI
 		const std::wstring wDebugName = ::Utility::ToWString(desc.debugName);
 		allocation->m_allocation->SetName(wDebugName.c_str());
 
-		allocation->m_size = byteSize;
+		allocation->m_memoryRequirements.size = byteSize;
 
 		return allocation;
 	}
@@ -145,7 +145,7 @@ namespace Volt::RHI
 		const std::wstring wDebugName = ::Utility::ToWString(imageSpecification.debugName);
 		allocation->m_allocation->SetName(wDebugName.c_str());
 
-		allocation->m_size = allocation->m_allocation->GetSize();
+		allocation->m_memoryRequirements.size = allocation->m_allocation->GetSize();
 
 		return allocation;
 	}

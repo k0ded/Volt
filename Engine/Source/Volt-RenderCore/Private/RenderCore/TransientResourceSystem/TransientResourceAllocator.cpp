@@ -22,7 +22,7 @@ namespace Volt
 
 	VT_INLINE size_t GetBufferDescHash(const RHI::BufferDesc& desc)
 	{
-		size_t hash = Math::HashCombine(std::hash<uint32_t>()(desc.count), std::hash<uint64_t>()(desc.elementSize));
+		size_t hash = Math::HashCombine(std::hash<uint64_t>()(desc.numElements), std::hash<uint64_t>()(desc.elementSize));
 		hash = Math::HashCombine(hash, std::hash<uint16_t>()(static_cast<uint16_t>(desc.usage)));
 		hash = Math::HashCombine(hash, std::hash<uint16_t>()(static_cast<uint8_t>(desc.memoryUsage)));
 
@@ -87,7 +87,7 @@ namespace Volt
 		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
 		
 		RefPtr<RHI::GPUAllocator> allocator = isCpuAccessible ? nullptr : RHI::GraphicsContext::GetTransientAllocator();
-		RefPtr<RHI::StorageBuffer> rhiBbuffer = RHI::StorageBuffer::Create(desc, allocator);
+		RefPtr<RHI::Buffer> rhiBbuffer = RHI::Buffer::Create(desc, allocator);
 		
 		// Create the buffer and make sure we acquire it.
 		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1);

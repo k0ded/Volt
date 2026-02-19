@@ -77,7 +77,7 @@ namespace Volt::RHI
 		InlineVector<ResourceBinding, NumMaxBindings>& GetResourceBindingsForShaderStage(ShaderStage shaderStage);
 
 		BitArray<GetNumBindableShaderStages(), uint32_t> m_activeShaderStagesBitArray;
-		Vector<PerShaderStageResourceBindings> m_resourceBindings;
+		GlobalMemoryStackVector<PerShaderStageResourceBindings> m_resourceBindings;
 
 		RefPtr<RayTracingResourceTable> m_rayTracingResourceTable;
 	};

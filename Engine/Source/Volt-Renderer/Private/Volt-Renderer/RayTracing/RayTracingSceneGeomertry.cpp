@@ -4,7 +4,7 @@
 
 #include <RenderCore/CommandBufferPool.h>
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 

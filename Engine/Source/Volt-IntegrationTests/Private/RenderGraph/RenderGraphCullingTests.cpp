@@ -1,7 +1,7 @@
 #include "ApplicationFixture.h"
 #include "RenderGraph/RenderGraphCommon.h"
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Images/ImageUtility.h>
 
 using namespace Volt;
@@ -71,7 +71,7 @@ namespace IntegrationTests
 
 		AddComputePass(renderGraph, RenderGraphPassFlags::NeverCull, passParameters);
 
-		RefPtr<RHI::StorageBuffer> outBuffer;
+		RefPtr<RHI::Buffer> outBuffer;
 		renderGraph.EnqueueBufferExtraction(buffer, &outBuffer);
 		renderGraph.Compile();
 

@@ -6,7 +6,7 @@
 #include "RenderCore/Shader/PipelineStateCache.h"
 
 #include <RHIModule/Buffers/UniformBuffer.h>
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Images/ImageView.h>
 #include <RHIModule/Globals.h>
 
@@ -121,10 +121,10 @@ namespace Volt
 
 		for (size_t i = 0; i < m_activeRenderingInfo.renderingInfo.colorAttachments.size(); ++i)
 		{
-			outDeclaration.colorAttachmentFormats[i] = m_activeRenderingInfo.renderingInfo.colorAttachments[i].view->GetImage()->GetFormat();
+			outDeclaration.colorAttachmentFormats[i] = m_activeRenderingInfo.renderingInfo.colorAttachments[i].view->GetFormat();
 		}
 
-		outDeclaration.depthAttachmentFormat = m_activeRenderingInfo.renderingInfo.depthAttachmentInfo.view ? m_activeRenderingInfo.renderingInfo.depthAttachmentInfo.view->GetImage()->GetFormat() : RHI::PixelFormat::UNDEFINED;
+		outDeclaration.depthAttachmentFormat = m_activeRenderingInfo.renderingInfo.depthAttachmentInfo.view ? m_activeRenderingInfo.renderingInfo.depthAttachmentInfo.view->GetFormat() : RHI::PixelFormat::UNDEFINED;
 	}
 
 	void RenderContext::DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
@@ -138,7 +138,7 @@ namespace Volt
 	{
 		BindShaderBindings();
 
-		RefPtr<RHI::StorageBuffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
 		m_commandBuffer->DispatchMeshTasksIndirect(rhiCommandsBuffer, offset, drawCount, stride);
 	}
 
@@ -146,8 +146,8 @@ namespace Volt
 	{
 		BindShaderBindings();
 
-		RefPtr<RHI::StorageBuffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
-		RefPtr<RHI::StorageBuffer> rhiCountBuffer = countBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiCountBuffer = countBuffer->GetRHIResource()->GetRHIBuffer();
 		m_commandBuffer->DispatchMeshTasksIndirectCount(rhiCommandsBuffer, offset, rhiCountBuffer, countBufferOffset, maxDrawCount, stride);
 	}
 
@@ -162,7 +162,7 @@ namespace Volt
 	{
 		BindShaderBindings();
 
-		RefPtr<RHI::StorageBuffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
 		m_commandBuffer->DispatchIndirect(rhiCommandsBuffer, offset);
 	}
 
@@ -170,8 +170,8 @@ namespace Volt
 	{
 		BindShaderBindings();
 
-		RefPtr<RHI::StorageBuffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
-		RefPtr<RHI::StorageBuffer> rhiCountBuffer = countBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiCountBuffer = countBuffer->GetRHIResource()->GetRHIBuffer();
 		m_commandBuffer->DispatchMeshTasksIndirectCount(rhiCommandsBuffer, offset, rhiCountBuffer, countBufferOffset, maxDrawCount, stride);
 	}
 
@@ -179,7 +179,7 @@ namespace Volt
 	{
 		BindShaderBindings();
 
-		RefPtr<RHI::StorageBuffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
 		m_commandBuffer->DrawIndexedIndirect(rhiCommandsBuffer, offset, drawCount, stride);
 	}
 
@@ -250,7 +250,7 @@ namespace Volt
 
 	void RenderContext::BindIndexBuffer(RGBufferRef indexBuffer)
 	{
-		RefPtr<RHI::StorageBuffer> rhiIndexBuffer = indexBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiIndexBuffer = indexBuffer->GetRHIResource()->GetRHIBuffer();
 		m_commandBuffer->BindIndexBuffer(rhiIndexBuffer);
 	}
 
@@ -268,10 +268,10 @@ namespace Volt
 
 	void RenderContext::CopyBufferRegion(RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size)
 	{
-		RefPtr<RHI::StorageBuffer> rhiSrcBuffer = src->GetRHIResource()->GetRHIBuffer();
-		RefPtr<RHI::StorageBuffer> rhiDstBuffer = dst->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiSrcBuffer = src->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiDstBuffer = dst->GetRHIResource()->GetRHIBuffer();
 
-		m_commandBuffer->CopyBufferRegion(rhiSrcBuffer->GetAllocation(), srcOffset, rhiDstBuffer->GetAllocation(), dstOffset, size);
+		m_commandBuffer->CopyBufferRegion(rhiSrcBuffer, srcOffset, rhiDstBuffer, dstOffset, size);
 	}
 
 	void RenderContext::CopyTexture(RGTextureRef src, RGTextureRef dst, const uint32_t width, const uint32_t height, const uint32_t depth)
@@ -522,7 +522,7 @@ namespace Volt
 
 	void* RenderContext::MapInternal(RGBufferRef buffer)
 	{
-		RefPtr<RHI::StorageBuffer> rhiBuffer = buffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiBuffer = buffer->GetRHIResource()->GetRHIBuffer();
 		return rhiBuffer->Map<void>();
 	}
 

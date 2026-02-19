@@ -8,15 +8,15 @@ namespace Volt
 	class PersistantBufferResource : public RGRHIBufferResource
 	{
 	public:
-		PersistantBufferResource(RefPtr<RHI::StorageBuffer> buffer);
+		PersistantBufferResource(RefPtr<RHI::Buffer> buffer);
 		~PersistantBufferResource() override = default;
 
 		VT_INLINE RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
-		VT_INLINE RefPtr<RHI::StorageBuffer> GetRHIBuffer() const override { return m_buffer; }
+		VT_INLINE RefPtr<RHI::Buffer> GetRHIBuffer() const override { return m_buffer; }
 
 	private:
 		TransientBufferViewCache m_viewCache;
-		RefPtr<RHI::StorageBuffer> m_buffer;
+		RefPtr<RHI::Buffer> m_buffer;
 	};
 
 	class PersistantTextureResource : public RGRHITextureResource

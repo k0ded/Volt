@@ -80,7 +80,7 @@ namespace Volt::RHI
 		bufferAlloc->m_resource = resource;
 		bufferAlloc->m_allocationBlock = blockAlloc;
 		bufferAlloc->m_heapId = m_heapId;
-		bufferAlloc->m_size = createInfo.size;
+		bufferAlloc->m_memoryRequirements.size = createInfo.size;
 
 		return bufferAlloc;
 	}
@@ -133,7 +133,7 @@ namespace Volt::RHI
 		imageAlloc->m_resource = resource;
 		imageAlloc->m_allocationBlock = blockAlloc;
 		imageAlloc->m_heapId = m_heapId;
-		imageAlloc->m_size = createInfo.size;
+		imageAlloc->m_memoryRequirements.size;
 
 		return imageAlloc;
 	}

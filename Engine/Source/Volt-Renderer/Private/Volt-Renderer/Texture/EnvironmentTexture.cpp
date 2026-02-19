@@ -43,15 +43,18 @@ namespace Volt
 		EnvironmentTextureHeader diffuseHeader{};
 		EnvironmentTextureHeader specularHeader{};
 
-		Buffer diffuseDataBuffer;
-		Buffer specularDataBuffer;
+		DataBuffer diffuseDataBuffer;
+		DataBuffer specularDataBuffer;
 
 		if (!archive.IsLoading())
 		{
-			diffuseHeader.format = m_diffuseImage->GetFormat();
-			diffuseHeader.numLayers = m_diffuseImage->GetLayerCount();
-			specularHeader.format = m_specularImage->GetFormat();
-			specularHeader.numLayers = m_specularImage->GetLayerCount();
+			const RHI::ImageDesc& diffuseImageDesc = m_diffuseImage->GetDesc();
+			const RHI::ImageDesc& specularImageDesc = m_specularImage->GetDesc();
+
+			diffuseHeader.format = diffuseImageDesc.format;
+			diffuseHeader.numLayers = diffuseImageDesc.layers;
+			specularHeader.format = specularImageDesc.format;
+			specularHeader.numLayers = specularImageDesc.layers;
 
 			diffuseDataBuffer = TextureSerializerCommon::GetImageDataBuffer(m_diffuseImage, diffuseHeader.mips);
 			specularDataBuffer = TextureSerializerCommon::GetImageDataBuffer(m_specularImage, specularHeader.mips);

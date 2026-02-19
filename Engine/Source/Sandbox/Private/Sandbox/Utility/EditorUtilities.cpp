@@ -319,7 +319,7 @@ void EditorUtils::DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>
 	}
 
 	//only the parentmost entities should be called delete on
-	FrameStackVector<Volt::Entity> parentmostEntities;
+	GlobalMemoryStackVector<Volt::Entity> parentmostEntities;
 	for (const Volt::Entity& entity : entities)
 	{
 		bool isParentmost = true;
@@ -343,7 +343,7 @@ void EditorUtils::DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>
 	}
 
 	//pre-collect all entities about to be destroyed to create a editor command
-	FrameStackVector<Volt::Entity> toCheck = parentmostEntities;
+	GlobalMemoryStackVector<Volt::Entity> toCheck = parentmostEntities;
 	Vector<Volt::Entity> allEntitiesBeingDestroyed;
 	while (!toCheck.empty())
 	{

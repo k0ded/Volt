@@ -7,7 +7,7 @@ namespace Volt
 {
 	namespace RHI
 	{
-		class StorageBuffer;
+		class Buffer;
 	}
 
 	class GPUReadbackBuffer
@@ -15,13 +15,13 @@ namespace Volt
 	public:
 		GPUReadbackBuffer(size_t size);
 
-		VT_NODISCARD VT_INLINE RefPtr<RHI::StorageBuffer> GetBuffer() const { return m_buffer; }
+		VT_NODISCARD VT_INLINE RefPtr<RHI::Buffer> GetBuffer() const { return m_buffer; }
 		VT_NODISCARD VT_INLINE bool IsReady() const { return m_isReady.load(); }
 
 	private:
 		friend class RenderGraph;
 
 		std::atomic_bool m_isReady = false;
-		RefPtr<RHI::StorageBuffer> m_buffer;
+		RefPtr<RHI::Buffer> m_buffer;
 	};
 }

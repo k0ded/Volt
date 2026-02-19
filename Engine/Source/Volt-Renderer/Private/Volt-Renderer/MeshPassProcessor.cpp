@@ -119,7 +119,7 @@ namespace Volt
 		if (numPrimitivesToRender > 0)
 		{
 			RGBufferDesc bufferDesc{};
-			bufferDesc.count = numPrimitivesToRender;
+			bufferDesc.numElements = numPrimitivesToRender;
 			bufferDesc.elementSize = sizeof(uint32_t);
 			bufferDesc.usage = RHI::BufferUsage::VertexBuffer | RHI::BufferUsage::StorageBuffer;
 			bufferDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
@@ -147,7 +147,7 @@ namespace Volt
 		}
 
 		RefPtr<RHI::CommandBuffer> mainCommandBuffer = renderContext.GetRHICommandBuffer();
-		RefPtr<RHI::StorageBuffer> primitiveIndexVertexBuffer = m_primitiveIndexVertexBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> primitiveIndexVertexBuffer = m_primitiveIndexVertexBuffer->GetRHIResource()->GetRHIBuffer();
 
 		RHI::RenderingAttachmentDeclaration renderingAttachmentDeclaration;
 		renderContext.FillRenderingAttachmentDeclaration(renderingAttachmentDeclaration);

@@ -4,7 +4,7 @@
 
 namespace Volt
 {
-	TransientBufferResource::TransientBufferResource(RefPtr<RHI::StorageBuffer> buffer, size_t hash, uint64_t framesToKeepAlive)
+	TransientBufferResource::TransientBufferResource(RefPtr<RHI::Buffer> buffer, size_t hash, uint64_t framesToKeepAlive)
 		: m_buffer(buffer),
 		m_hash(hash),
 		m_viewCache(this),

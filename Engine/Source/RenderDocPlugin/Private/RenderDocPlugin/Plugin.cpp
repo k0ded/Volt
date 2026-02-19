@@ -7,8 +7,10 @@
 #include <RHIModule/RHIModule.h>
 #include <WindowModule/Events/WindowEvents.h>
 
-#include <CoreUtilities/DynamicLibraryHelpers.h>
 #include <LogModule/Log.h>
+
+#include <CoreUtilities/DynamicLibraryHelpers.h>
+#include <CoreUtilities/NewOverload.inl>
 
 VT_DEFINE_LOG_CATEGORY(LogRenderDoc);
 

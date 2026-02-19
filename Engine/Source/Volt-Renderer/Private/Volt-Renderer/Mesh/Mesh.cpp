@@ -11,6 +11,7 @@
 #include <Volt-Core/Algorithms.h>
 
 #include <RHIModule/RHIFeatures.h>
+#include <RHIModule/Buffers/BufferUtility.h>
 
 #include <CoreUtilities/Math/Math.h>
 #include <CoreUtilities/Packing.h>
@@ -159,13 +160,13 @@ namespace Volt
 			const auto& indices = m_indices;
 
 			RHI::BufferDesc desc{};
-			desc.count = static_cast<uint32_t>(indices.size());
+			desc.numElements = static_cast<uint32_t>(indices.size());
 			desc.elementSize = sizeof(uint32_t);
 			desc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndexBuffer | bufferRayTracingFlags;
 			desc.debugName = meshName + "IndexBuffer";
 
-			m_indexBuffer = RHI::StorageBuffer::Create(desc);
-			m_indexBuffer->SetData(indices.data(), indices.size() * sizeof(uint32_t));
+			m_indexBuffer = RHI::Buffer::Create(desc);
+			RHI::BufferUtility::StagedBufferUpload(m_indexBuffer, indices.data(), indices.byte_size());
 		}
 
 		// Vertex positions
@@ -173,13 +174,13 @@ namespace Volt
 			const auto& vertexPositions = m_vertexContainer.positions;
 
 			RHI::BufferDesc desc{};
-			desc.count = static_cast<uint32_t>(vertexPositions.size());
+			desc.numElements = static_cast<uint32_t>(vertexPositions.size());
 			desc.elementSize = sizeof(glm::vec3);
 			desc.usage = RHI::BufferUsage::VertexBuffer | bufferRayTracingFlags;
 			desc.debugName = meshName + "VertexPositions";
 
-			m_vertexPositionsBuffer = RHI::StorageBuffer::Create(desc);
-			m_vertexPositionsBuffer->SetData(vertexPositions.data(), vertexPositions.size() * sizeof(glm::vec3));
+			m_vertexPositionsBuffer = RHI::Buffer::Create(desc);
+			RHI::BufferUtility::StagedBufferUpload(m_vertexPositionsBuffer, vertexPositions.data(), vertexPositions.byte_size());
 		}
 
 		// Vertex material data
@@ -187,13 +188,13 @@ namespace Volt
 			const auto& vertexMaterialData = m_vertexContainer.materialData;
 
 			RHI::BufferDesc desc{};
-			desc.count = static_cast<uint32_t>(vertexMaterialData.size());
+			desc.numElements = static_cast<uint32_t>(vertexMaterialData.size());
 			desc.elementSize = sizeof(VertexMaterialData);
 			desc.debugName = meshName + "VertexMaterialData";
 			desc.usage = RHI::BufferUsage::VertexBuffer;
 
-			m_vertexMaterialBuffer = RHI::StorageBuffer::Create(desc);
-			m_vertexMaterialBuffer->SetData(vertexMaterialData.data(), vertexMaterialData.size() * sizeof(VertexMaterialData));
+			m_vertexMaterialBuffer = RHI::Buffer::Create(desc);
+			RHI::BufferUtility::StagedBufferUpload(m_vertexMaterialBuffer, vertexMaterialData.data(), vertexMaterialData.byte_size());
 		}
 
 		// Vertex animation data
@@ -201,13 +202,13 @@ namespace Volt
 			const auto& vertexAnimationData = m_vertexContainer.animationData;
 
 			RHI::BufferDesc desc{};
-			desc.count = static_cast<uint32_t>(vertexAnimationData.size());
+			desc.numElements = static_cast<uint32_t>(vertexAnimationData.size());
 			desc.elementSize = sizeof(VertexAnimationData);
 			desc.debugName = meshName + "VertexAnimationData";
 			desc.usage = RHI::BufferUsage::VertexBuffer;
 
-			m_vertexAnimationDataBuffer = RHI::StorageBuffer::Create(desc);
-			m_vertexAnimationDataBuffer->SetData(vertexAnimationData.data(), vertexAnimationData.size() * sizeof(VertexAnimationData));
+			m_vertexAnimationDataBuffer = RHI::Buffer::Create(desc);
+			RHI::BufferUtility::StagedBufferUpload(m_vertexAnimationDataBuffer, vertexAnimationData.data(), vertexAnimationData.byte_size());
 		}
 
 		CreateBoundingSpheres();

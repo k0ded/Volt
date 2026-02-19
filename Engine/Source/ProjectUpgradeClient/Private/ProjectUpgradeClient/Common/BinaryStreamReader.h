@@ -2,7 +2,7 @@
 
 #include "ProjectUpgradeClient/Common/StreamCommon.h"
 
-#include <CoreUtilities/Buffer/Buffer.h>
+#include <CoreUtilities/Buffer/DataBuffer.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Containers/Map.h>
 
@@ -31,7 +31,7 @@ public:
 	void Read(std::filesystem::path& data);
 
 	template<>
-	void Read(Buffer& data);
+	void Read(DataBuffer& data);
 
 	template<typename T>
 	bool TryRead(T& outData);
@@ -158,7 +158,7 @@ inline void BinaryStreamReader::Read(std::filesystem::path& data)
 }
 
 template<>
-inline void BinaryStreamReader::Read(Buffer& data)
+inline void BinaryStreamReader::Read(DataBuffer& data)
 {
 	TypeHeader typeHeader{};
 	TypeHeader serializedTypeHeader = ReadTypeHeader();

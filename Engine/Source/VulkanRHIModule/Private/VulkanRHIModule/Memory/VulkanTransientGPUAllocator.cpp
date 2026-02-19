@@ -42,7 +42,7 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		const uint64_t byteSize = desc.count * desc.elementSize;
+		const uint64_t byteSize = desc.numElements * desc.elementSize;
 
 		const size_t hash = Utility::GetHashFromBufferSpec(byteSize, desc.usage, desc.memoryUsage);
 		if (auto buffer = m_allocationCache.TryGetBufferAllocationFromHash(hash))
@@ -101,7 +101,7 @@ namespace Volt::RHI
 			return image;
 		}
 
-		MemoryRequirement memoryRequirement = Utility::GetImageRequirement(Utility::GetVkImageCreateInfo(imageSpecification));
+		MemoryRequirement memoryRequirement = Utility::GetImageMemoryRequirement(Utility::GetVkImageCreateInfo(imageSpecification));
 
 		TransientImageCreateInfo info{};
 		info.imageSpecification = imageSpecification;

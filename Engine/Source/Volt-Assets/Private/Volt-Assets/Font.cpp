@@ -7,7 +7,7 @@
 
 #include <Volt-Core/Project/ProjectManager.h>
 
-#include <CoreUtilities/Buffer/Buffer.h>
+#include <CoreUtilities/Buffer/DataBuffer.h>
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/StringUtility.h>
 
@@ -86,10 +86,10 @@ namespace Volt
 			header.width = (uint32_t)bitmap.width;
 			header.height = (uint32_t)bitmap.height;
 
-			Buffer buffer{ size + sizeof(Font::FontHeader) };
+			DataBuffer buffer{ size + sizeof(Font::FontHeader) };
 			buffer.Copy(&header, sizeof(Font::FontHeader));
 			buffer.Copy(bitmap.pixels, size, sizeof(Font::FontHeader));
-			Buffer::WriteToFile(buffer, cachePath);
+			DataBuffer::WriteToFile(buffer, cachePath);
 
 			buffer.Release();
 		}
@@ -328,7 +328,7 @@ namespace Volt
 
 		if (FileSystem::Exists(cachePath))
 		{
-			Buffer data = Buffer::ReadFromFile(cachePath);
+			DataBuffer data = DataBuffer::ReadFromFile(cachePath);
 			if (data.IsValid())
 			{
 				Font::FontHeader header = *data.As<Font::FontHeader>();

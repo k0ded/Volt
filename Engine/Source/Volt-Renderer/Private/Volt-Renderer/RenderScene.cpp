@@ -20,7 +20,7 @@
 #include <EntitySystem/EntityScene.h>
 #include <EntitySystem/Entity.h>
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/RHIFeatures.h>
 
 #include <CoreUtilities/FormatterExtension.h>
@@ -127,7 +127,8 @@ namespace Volt
 
 			bonesBuffer->GrowIfRequired(m_animationBufferStorage.size());
 
-			bonesBuffer->GetResource()->SetData(m_animationBufferStorage.data(), m_animationBufferStorage.size() * sizeof(glm::mat4));
+			RGBufferRef rgAnimationBuffer = renderGraph.RegisterExternalBuffer(bonesBuffer->GetResource());
+			AddStagedBufferUploadCopyData(renderGraph, rgAnimationBuffer, m_animationBufferStorage.data(), m_animationBufferStorage.byte_size());
 			m_animationBufferStorage.clear();
 		}
 
@@ -148,12 +149,12 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		m_buffers.prevPrimitiveDrawDataBuffer->GrowIfRequired(m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount());
+		m_buffers.prevPrimitiveDrawDataBuffer->GrowIfRequired(m_buffers.primitiveDrawDataBuffer->GetResource()->GetNumElements());
 
 		RGBufferRef srcPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
 		RGBufferRef dstPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource());
 
-		AddCopyBufferPass(renderGraph, srcPrimitiveData, 0, dstPrimitiveData, 0, m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize());
+		AddCopyBufferPass(renderGraph, srcPrimitiveData, 0, dstPrimitiveData, 0, m_buffers.primitiveDrawDataBuffer->GetByteSize());
 	}
 
 	void RenderScene::RenderDebug(RenderGraph& renderGraph, const RenderView& renderView, RGTextureRef dstTexture, RGTextureRef dstDepth)
@@ -849,7 +850,7 @@ namespace Volt
 		// the first index is used for the count.
 		auto validPrimitiveDrawDataBuffer = m_buffers.validPrimitiveDrawDatasBuffer;
 
-		const uint32_t primitiveDrawDataCount = m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount();
+		const uint32_t primitiveDrawDataCount = static_cast<uint32_t>(m_buffers.primitiveDrawDataBuffer->GetResource()->GetNumElements());
 		validPrimitiveDrawDataBuffer->GrowIfRequired(primitiveDrawDataCount + 1);
 
 		RGBufferRef validPrimitiveDrawData = renderGraph.RegisterExternalBuffer(validPrimitiveDrawDataBuffer->GetResource());

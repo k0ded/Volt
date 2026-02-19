@@ -1,7 +1,7 @@
 #include "vkpch.h"
 
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
-#include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
+#include "VulkanRHIModule/Buffers/VulkanBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
@@ -19,7 +19,7 @@
 
 namespace Volt::RHI
 {
-	VulkanBufferView::VulkanBufferView(const BufferViewDesc& desc, RawPtr<StorageBuffer> buffer)
+	VulkanBufferView::VulkanBufferView(const BufferViewDesc& desc, RawPtr<Buffer> buffer)
 		: m_desc(desc), m_resource(buffer)
 	{
 		CreateView();
@@ -54,17 +54,7 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		uint64_t maxRange = 0;
-		if (m_resource->GetType() == ResourceType::StorageBuffer)
-		{
-			VulkanStorageBuffer& vkStorageBuffer = m_resource->AsRef<VulkanStorageBuffer>();
-			maxRange = std::min(vkStorageBuffer.GetCount() * vkStorageBuffer.GetElementSize(), m_desc.size);
-		}
-		else if (m_resource->GetType() == ResourceType::UniformBuffer)
-		{
-			VulkanUniformBuffer& vkUniformBuffer = m_resource->AsRef<VulkanUniformBuffer>();
-			maxRange = std::min((uint64_t)vkUniformBuffer.GetSize(), m_desc.size);
-		}
+		uint64_t maxRange = std::min(m_resource->GetMemoryRequirements().size, m_desc.size);
 
 		memset(&m_srvDescriptor, 0, sizeof(m_srvDescriptor));
 		memset(&m_uavDescriptor, 0, sizeof(m_uavDescriptor));
@@ -82,7 +72,9 @@ namespace Volt::RHI
 		// SRV and UAV descriptors have the same address info.
 		m_uavDescriptor.addressInfo = m_srvDescriptor.addressInfo;
 
-		if (m_resource->GetType() == ResourceType::StorageBuffer)
+		const ResourceType bufferType = m_resource->GetType();
+
+		if (bufferType == ResourceType::Buffer)
 		{
 			if (IsTexelBufferView())
 			{
@@ -107,7 +99,7 @@ namespace Volt::RHI
 				m_uavDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageBufferDescriptorSize;
 			}
 		}
-		else if (m_resource->GetType() == ResourceType::UniformBuffer)
+		else if (bufferType == ResourceType::UniformBuffer)
 		{
 			// No UAV descriptor is created for uniform buffers.
 			m_srvDescriptor.vkDescriptorInfo.data.pUniformBuffer = &m_srvDescriptor.addressInfo;

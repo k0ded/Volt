@@ -355,4 +355,11 @@ namespace Volt::RHI
 			return 0;
 		}
 	}
+
+	class Image;
+
+	namespace ImageUtility
+	{
+		VTRHI_API extern DataBuffer ReadbackPixel(RefPtr<RHI::Image> image, uint32_t pixelX, uint32_t pixelY, uint32_t pixelZ);
+	}
 }

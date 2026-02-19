@@ -20,7 +20,7 @@ namespace Volt
 			VT_ASSERT_MSG(count > 0, "Count must not be zero!");
 
 			RGBufferDesc desc{};
-			desc.count = static_cast<uint32_t>(count);
+			desc.numElements = static_cast<uint64_t>(count);
 			desc.elementSize = sizeof(T);
 			desc.usage = RHI::BufferUsage::StorageBuffer;
 			desc.memoryUsage = RHI::MemoryUsage::GPU;
@@ -35,7 +35,7 @@ namespace Volt
 			VT_ASSERT_MSG(count > 0, "Count must not be zero!");
 
 			RGBufferDesc desc{};
-			desc.count = static_cast<uint32_t>(count);
+			desc.numElements = static_cast<uint64_t>(count);
 			desc.elementSize = sizeof(T);
 			desc.usage = RHI::BufferUsage::TexelBuffer;
 			desc.memoryUsage = usage;
@@ -51,7 +51,7 @@ namespace Volt
 			VT_ASSERT_MSG(count > 0, "Count must not be zero!");
 
 			RGBufferDesc desc{};
-			desc.count = static_cast<uint32_t>(count);
+			desc.numElements = static_cast<uint64_t>(count);
 			desc.elementSize = sizeof(T);
 			desc.usage = usage;
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
@@ -66,7 +66,7 @@ namespace Volt
 			VT_ASSERT_MSG(count > 0, "Count must not be zero!");
 
 			RGBufferDesc desc{};
-			desc.count = static_cast<uint32_t>(count);
+			desc.numElements = static_cast<uint64_t>(count);
 			desc.elementSize = sizeof(T);
 			desc.usage = RHI::BufferUsage::StorageBuffer;
 			desc.memoryUsage = RHI::MemoryUsage::GPU;
@@ -81,8 +81,8 @@ namespace Volt
 			VT_ASSERT_MSG(size > 0, "Size must not be zero!");
 
 			RGBufferDesc desc{};
-			desc.count = static_cast<uint32_t>(count);
-			desc.elementSize = static_cast<uint64_t>(size);
+			desc.numElements = static_cast<uint64_t>(size);
+			desc.elementSize = 1;
 			desc.usage = RHI::BufferUsage::TransferSrc | RHI::BufferUsage::StorageBuffer;
 			desc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 			desc.debugName = name;
@@ -97,7 +97,7 @@ namespace Volt
 			VT_ASSERT_MSG(byteSize % 4 == 0, "Size must be 4 byte aligned");
 
 			RGBufferDesc desc{};
-			desc.count = static_cast<uint32_t>(byteSize);
+			desc.numElements = static_cast<uint64_t>(byteSize);
 			desc.elementSize = 1u;
 			desc.usage = RHI::BufferUsage::StorageBuffer;
 			desc.memoryUsage = RHI::MemoryUsage::GPU;
@@ -112,7 +112,7 @@ namespace Volt
 			VT_ASSERT_MSG(numCommands > 0, "Num commands must not be zero!");
 
 			RGBufferDesc desc{};
-			desc.count = numCommands;
+			desc.numElements = numCommands;
 			desc.elementSize = CommandType::SizeInUInts * sizeof(uint32_t);
 			desc.usage = RHI::BufferUsage::IndirectBuffer | RHI::BufferUsage::TexelBuffer;
 			desc.memoryUsage = memoryUsage;

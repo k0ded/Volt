@@ -20,7 +20,7 @@ void TextureViewerPanel::UpdateMainContent()
 
 	const uint32_t width = m_viewingTexture->GetWidth();
 	const uint32_t height = m_viewingTexture->GetHeight();
-	const uint32_t mipCount = m_viewingTexture->GetImage()->GetMipCount();
+	const uint32_t mipCount = m_viewingTexture->GetImage()->GetDesc().mips;
 
 	Vector<std::string> mipStrings(mipCount);
 	for (uint32_t i = 0; i < mipCount; i++)

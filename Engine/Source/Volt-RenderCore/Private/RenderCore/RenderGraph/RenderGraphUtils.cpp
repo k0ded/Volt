@@ -29,6 +29,11 @@ namespace Volt
 		RG_UNIFORM_BUFFER_ACCESS(Buffer, RGResourceAccess::Upload)
 	END_SHADER_PARAMETER_STRUCT()
 
+	BEGIN_SHADER_PARAMETER_STRUCT(StagedBufferUploadParameters)
+		RG_BUFFER_ACCESS(StagingBuffer, RGResourceAccess::CopySrc)
+		RG_BUFFER_ACCESS(DstBuffer, RGResourceAccess::CopyDst)
+	END_SHADER_PARAMETER_STRUCT()
+
 	BEGIN_SHADER_PARAMETER_STRUCT(ClearBufferUAVParameters)
 		SHADER_PARAMETER_BUFFER_UAV(RWBuffer<uint>, RWBuffer)
 	END_SHADER_PARAMETER_STRUCT()
@@ -52,8 +57,8 @@ namespace Volt
 		const RGBufferDesc srcDesc = src->GetDesc();
 		const RGBufferDesc dstDesc = dst->GetDesc();
 	
-		const size_t srcByteSize = srcDesc.count * srcDesc.elementSize;
-		const size_t dstByteSize = dstDesc.count * dstDesc.elementSize;
+		const size_t srcByteSize = srcDesc.numElements * srcDesc.elementSize;
+		const size_t dstByteSize = dstDesc.numElements * dstDesc.elementSize;
 
 		VT_ENSURE_MSG(srcOffset < srcByteSize, "Source offset must be less than Source size!");
 		VT_ENSURE_MSG(dstOffset < dstByteSize, "Destination offset must be less than Destination size!");
@@ -119,6 +124,32 @@ namespace Volt
 			uint8_t* mappedPtr = context.MapBuffer<uint8_t>(stagingParameters->Buffer);
 			memcpy_s(mappedPtr, dataSize, tempData, dataSize);
 			context.UnmapBuffer(stagingParameters->Buffer);
+		});
+	}
+
+	void AddStagedBufferUploadCopyData(RenderGraph& renderGraph, RGBufferRef dstBuffer, const void* data, uint64_t dataSize, RenderGraphPassFlags flags /*= RenderGraphPassFlags::None*/)
+	{
+		void* tempData = renderGraph.AllocData(dataSize);
+		memcpy_s(tempData, dataSize, data, dataSize);
+
+		const std::string passName = std::format("Staged Upload (Target: {})", dstBuffer->GetDesc().debugName);
+
+		RGBufferRef stagingBuffer = renderGraph.CreateBuffer(RGBufferDesc::CreateStagingDesc(dataSize, "StagingBuffer"));
+
+		StagedBufferUploadParameters* stagingParameters = renderGraph.AllocParameters<StagedBufferUploadParameters>();
+		stagingParameters->DstBuffer = dstBuffer;
+		stagingParameters->StagingBuffer = stagingBuffer;
+
+		renderGraph.AddPass(passName,
+			RenderGraphPassFlags::Copy | RenderGraphPassFlags::NeverCull | flags,
+			stagingParameters,
+			[stagingParameters, tempData, dataSize](RenderContext& context) 
+		{
+			void* mappedPtr = context.MapBuffer<uint8_t>(stagingParameters->StagingBuffer);
+			memcpy_s(mappedPtr, dataSize, tempData, dataSize);
+			context.UnmapBuffer(stagingParameters->StagingBuffer);
+
+			context.CopyBufferRegion(stagingParameters->StagingBuffer, 0, stagingParameters->DstBuffer, 0, dataSize);
 		});
 	}
 

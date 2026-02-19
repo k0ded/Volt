@@ -2,7 +2,7 @@
 
 #include "Volt-ImGui/Config.h"
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Buffers/UniformBuffer.h>
 #include <RHIModule/Buffers/CommandBufferSet.h>
 #include <RHIModule/Images/SamplerState.h>
@@ -48,8 +48,8 @@ namespace Volt
 
 			RHI::CommandBufferSet commandBufferSet;
 
-			Vector<RefPtr<RHI::StorageBuffer>> vertexBuffers;
-			Vector<RefPtr<RHI::StorageBuffer>> indexBuffers;
+			Vector<RefPtr<RHI::Buffer>> vertexBuffers;
+			Vector<RefPtr<RHI::Buffer>> indexBuffers;
 			RefPtr<RHI::UniformBuffer>  globalsUniformBuffer;
 		};
 

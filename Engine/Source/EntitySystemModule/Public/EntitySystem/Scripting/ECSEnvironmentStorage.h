@@ -4,7 +4,7 @@
 
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Containers/Map.h>
-#include <CoreUtilities/Buffer/Buffer.h>
+#include <CoreUtilities/Buffer/DataBuffer.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
 
 struct ECSEnvironmentDefinition;
@@ -28,6 +28,6 @@ private:
 		ECSEnvironmentDefinition definition;
 	};
 
-	Buffer m_dataBuffer;
+	DataBuffer m_dataBuffer;
 	Map<TypeTraits::TypeIndex, EnvironmentData> m_environmentTypeIndexToEnvData;
 };

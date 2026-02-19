@@ -7,7 +7,7 @@
 
 #include <RHIModule/Images/Image.h>
 
-#include <CoreUtilities/Buffer/Buffer.h>
+#include <CoreUtilities/Buffer/DataBuffer.h>
 
 namespace Volt
 {

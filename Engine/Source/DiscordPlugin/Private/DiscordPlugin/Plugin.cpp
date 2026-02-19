@@ -5,6 +5,7 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <LogModule/Log.h>
+#include <CoreUtilities/NewOverload.inl>
 
 DiscordPlugin::DiscordPlugin()
 {

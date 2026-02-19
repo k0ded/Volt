@@ -2,7 +2,7 @@
 
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
-#include "VulkanRHIModule/Buffers/VulkanStorageBuffer.h"
+#include "VulkanRHIModule/Buffers/VulkanBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
 
 #include "VulkanRHIModule/Graphics/VulkanDeviceQueue.h"
@@ -47,9 +47,9 @@ namespace Volt::RHI
 	};
 
 	template<>
-	struct VulkanTypeTraits<StorageBuffer>
+	struct VulkanTypeTraits<Buffer>
 	{
-		using ConcreteType = VulkanStorageBuffer;
+		using ConcreteType = VulkanBuffer;
 	};
 
 	template<>

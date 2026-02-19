@@ -72,7 +72,7 @@ namespace Volt
 		uint32_t numMipMaps = 1;
 
 		Vector<TextureSerializerCommon::TextureMip> compressedMips;
-		Buffer compressedPixelData;
+		DataBuffer compressedPixelData;
 		if (shouldCompressTexture)
 		{
 			const RHI::PixelFormat dstFormat = TextureImport::GetFormatFromTextureCompressionType(importConfig.compressionType);
