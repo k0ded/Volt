@@ -98,7 +98,6 @@ namespace Volt
 			specification.width = textureHeader.mips.front().width;
 			specification.height = textureHeader.mips.front().height;
 			specification.mips = static_cast<uint32_t>(textureHeader.mips.size());
-			specification.generateMips = false;
 			specification.debugName = GetAssetName();
 			specification.initializeImage = false;
 

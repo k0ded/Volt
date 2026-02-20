@@ -45,6 +45,8 @@ namespace Volt
 
 		RefPtr<RHI::Buffer> cubeIndexBuffer;
 
+		RefPtr<RHI::Shader> generateMipMapsShader;
+
 		VT_INLINE void Clear()
 		{
 			defaultMaterial = nullptr;
@@ -57,6 +59,7 @@ namespace Volt
 			black1x1x1 = nullptr;
 
 			cubeIndexBuffer = nullptr;
+			generateMipMapsShader = nullptr;
 		}
 	};
 

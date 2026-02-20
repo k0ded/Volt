@@ -5,6 +5,7 @@
 #include "Volt-Assets/SourceAssetImporters/TextureImportCommon.h"
 
 #include <Volt-Renderer/Texture/Texture2D.h>
+#include <Volt-Renderer/Utility/ImageUtility.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -168,7 +169,6 @@ namespace Volt
 		specification.width = width;
 		specification.height = height;
 		specification.mips = numMipMaps;
-		specification.generateMips = shouldCompressTexture ? false : importConfig.generateMipMaps;
 		specification.debugName = importConfig.destinationFilename;
 
 		RefPtr<RHI::Image> image = nullptr;
@@ -181,6 +181,11 @@ namespace Volt
 		else
 		{
 			image = RHI::Image::Create(specification, imageData.data());
+
+			if (importConfig.generateMipMaps)
+			{
+				ImageUtility::GenerateMipMaps(image);
+			}
 		}
 
 		AssetReference<Texture2D> voltTexture;

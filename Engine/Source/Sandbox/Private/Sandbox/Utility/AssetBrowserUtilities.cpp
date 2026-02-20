@@ -15,7 +15,9 @@
 #include <Volt-Assets/MeshAsset.h>
 
 #include <Volt-CoreComponents/RenderingComponents.h>
+
 #include <Volt-Renderer/Texture/Texture2D.h>
+#include <Volt-Renderer/Utility/ImageUtility.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -130,8 +132,7 @@ namespace AssetBrowser
 					AssetReference<Volt::Texture2D> texture;
 					if (g_assetManager->TryGetAsset(item->handle, texture))
 					{
-						// #TODO_Ivar: Reimplement
-						//texture->GetImage()->GenerateMips();
+						Volt::ImageUtility::GenerateMipMaps(texture->GetImage());
 					}
 				}
 			};

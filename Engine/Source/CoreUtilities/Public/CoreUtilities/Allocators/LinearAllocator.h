@@ -147,7 +147,6 @@ private:
 
 	PageHeader* AllocatePage(uint64_t pageSize)
 	{
-		// #TODO_Ivar: How should this be dealt with?
 		const uint64_t allocationSize = pageSize + sizeof(PageHeader);
 
 		uint8_t* newPageAlloc = reinterpret_cast<uint8_t*>(m_allocator.Allocate(allocationSize, 0));

@@ -665,7 +665,6 @@ public:
 
 			// Queue is empty, wait for something to be pushed.
 			// Acquire: Need sync to see latest queue indices.
-			// #TODO_Ivar: Should this be relaxed?
 			m_size.wait(0, std::memory_order::acquire);
 
 			// If size is SizeMask, we should exit.

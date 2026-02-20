@@ -74,7 +74,6 @@ namespace Volt
 			specification.layers = diffuseHeader.numLayers;
 			specification.mips = static_cast<uint32_t>(diffuseHeader.mips.size());
 			specification.usage = RHI::ImageUsage::Texture;
-			specification.generateMips = false;
 			specification.isCubeMap = true;
 			specification.debugName = GetAssetName();
 

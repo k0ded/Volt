@@ -61,7 +61,6 @@ namespace Volt
 		spec.width = 1;
 		spec.height = 1;
 		spec.usage = RHI::ImageUsage::Storage;
-		spec.generateMips = false;
 		spec.format = RHI::PixelFormat::R16_SFLOAT;
 		spec.debugName = "AutoExposure.AverageLuminance";
 
@@ -750,7 +749,6 @@ namespace Volt
 		spec.width = width;
 		spec.height = height;
 		spec.usage = RHI::ImageUsage::AttachmentStorage;
-		spec.generateMips = false;
 		spec.format = RHI::PixelFormat::B10G11R11_UFLOAT_PACK32;
 		spec.debugName = "Final Image";
 		spec.initializeImage = false;

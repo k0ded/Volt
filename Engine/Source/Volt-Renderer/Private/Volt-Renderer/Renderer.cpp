@@ -386,6 +386,17 @@ namespace Volt
 		{
 			m_defaultResources.defaultMesh = ShapeLibrary::GetCube();
 		}
+
+		// Generate mip maps shader
+		{
+			RHI::ShaderCreateInfo shaderCreateInfo{};
+			shaderCreateInfo.entryPoint = "GenerateMipMapsCS";
+			shaderCreateInfo.name = "GenerateMipMapsCS";
+			shaderCreateInfo.sourceFilepath = "Engine/Shaders/Source/Utility/GenerateMipMapsCS.hlsl";
+			shaderCreateInfo.stage = RHI::ShaderStage::Compute;
+
+			m_defaultResources.generateMipMapsShader = RHI::Shader::Create(shaderCreateInfo);
+		}
 	}
 
 	void Renderer::GenerateDFGLuT()

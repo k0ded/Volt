@@ -43,7 +43,6 @@ namespace Volt
 		desc.height = desiredHeight;
 		desc.imageType = RHI::ResourceType::Image2D;
 		desc.usage = RHI::ImageUsage::AttachmentStorage;
-		desc.generateMips = false;
 		desc.initializeImage = false;
 		desc.debugName = "ImGui.RenderTarget";
 

@@ -125,11 +125,6 @@ namespace Volt::RHI
 		{
 			TransitionToLayout(targetLayout);
 		}
-
-		if (m_desc.generateMips && m_desc.mips > 1)
-		{
-			GenerateMips();
-		}
 	}
 
 	void VulkanImage::Release()

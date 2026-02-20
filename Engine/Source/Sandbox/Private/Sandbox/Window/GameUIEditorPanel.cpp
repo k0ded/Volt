@@ -334,7 +334,6 @@ void GameUIEditorPanel::CreateViewportImage(const uint32_t width, const uint32_t
 	spec.width = width;
 	spec.height = height;
 	spec.usage = Volt::RHI::ImageUsage::AttachmentStorage;
-	spec.generateMips = false;
 	spec.format = Volt::RHI::PixelFormat::R8G8B8A8_UNORM;
 	spec.debugName = "Viewport Image";
 

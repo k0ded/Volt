@@ -673,7 +673,6 @@ namespace Volt::RHI
 		MemoryUsage memoryUsage = MemoryUsage::GPU;
 
 		bool isCubeMap = false;
-		bool generateMips = false;
 		bool initializeImage = true;
 
 		std::string debugName;

@@ -3,6 +3,7 @@
 #include "Volt-Assets/SourceAssetImporters/ImportConfigs.h"
 
 #include <Volt-Renderer/Texture/Texture2D.h>
+#include <Volt-Renderer/Utility/ImageUtility.h>
 
 #include <RenderCore/CommandBufferPool.h>
 
@@ -11,6 +12,7 @@
 #include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Utility/ResourceUtility.h>
+#include <RHIModule/Images/ImageUtility.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -117,6 +119,7 @@ namespace Volt
 
 		RefPtr<RHI::Image> image;
 
+		const bool hasMips = ddsFile.GetMipCount() > 1;
 		const uint32_t mipLevelCount = importConfig.importMipMaps ? ddsFile.GetMipCount() : 1u;
 
 		// Create image
@@ -127,7 +130,12 @@ namespace Volt
 			specification.width = width;
 			specification.height = height;
 			specification.mips = mipLevelCount;
-			specification.generateMips = mipLevelCount == 1 && importConfig.generateMipMaps;
+			
+			if (!hasMips && importConfig.generateMipMaps)
+			{
+				specification.mips = RHI::Utility::CalculateMipCount(width, height);
+			}
+
 			specification.debugName = importConfig.destinationFilename;
 
 			image = RHI::Image::Create(specification);
@@ -195,6 +203,12 @@ namespace Volt
 
 		commandBuffer->EndMarker();
 		commandBuffer->End();
+
+		// Generate the required mip maps.
+		if (!hasMips && importConfig.generateMipMaps)
+		{
+			ImageUtility::GenerateMipMaps(image);
+		}
 
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 
