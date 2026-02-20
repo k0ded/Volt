@@ -6,8 +6,8 @@
 
 namespace Volt::RHI
 {
-	RefPtr<Buffer> Buffer::Create(const BufferDesc& desc, RefPtr<GPUAllocator> allocator)
+	RefPtr<Buffer> Buffer::Create(const BufferDesc& desc)
 	{
-		return RHIModule::GetInstance().CreateBuffer(desc, allocator);
+		return RHIModule::GetInstance().CreateBuffer(desc);
 	}
 }

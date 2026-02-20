@@ -23,15 +23,10 @@
 
 namespace Volt::RHI
 {
-	VulkanImage::VulkanImage(const ImageDesc& desc, const void* data, RefPtr<GPUAllocator> allocator)
-		: m_desc(desc), m_allocator(allocator), m_viewCache(this)
+	VulkanImage::VulkanImage(const ImageDesc& desc, const void* data)
+		: m_desc(desc), m_viewCache(this)
 	{
 		VT_PROFILE_FUNCTION();
-
-		if (!allocator)
-		{
-			m_allocator = GraphicsContext::GetDefaultAllocator();
-		}
 
 		Invalidate(desc.width, desc.height, desc.depth, data);
 		SetName(desc.debugName);
@@ -80,7 +75,7 @@ namespace Volt::RHI
 			VT_ENSURE_MSG(m_desc.usage != ImageUsage::Attachment && m_desc.usage != ImageUsage::AttachmentStorage, "Attachment types are not supported for 3D images!");
 		}
 
-		m_allocation = m_allocator->CreateImage(m_desc, m_desc.memoryUsage);
+		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateImage(m_desc, m_desc.memoryUsage);
 		VT_ENSURE(m_allocation);
 
 		ImageLayout targetLayout = ImageLayout::Undefined;
@@ -134,7 +129,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		m_allocator->DestroyImage(m_allocation);
+		GraphicsContext::GetDefaultAllocator()->DestroyImage(m_allocation);
 		m_allocation = nullptr;
 	}
 

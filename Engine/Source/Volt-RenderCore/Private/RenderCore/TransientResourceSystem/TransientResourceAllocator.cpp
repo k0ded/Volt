@@ -87,7 +87,7 @@ namespace Volt
 		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
 		
 		RefPtr<RHI::GPUAllocator> allocator = isCpuAccessible ? nullptr : RHI::GraphicsContext::GetTransientAllocator();
-		RefPtr<RHI::Buffer> rhiBbuffer = RHI::Buffer::Create(desc, allocator);
+		RefPtr<RHI::TransientBuffer> rhiBbuffer = RHI::TransientBuffer::Create(desc);
 		
 		// Create the buffer and make sure we acquire it.
 		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1);
@@ -127,7 +127,7 @@ namespace Volt
 		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
 
 		RefPtr<RHI::GPUAllocator> allocator = isCpuAccessible ? nullptr : RHI::GraphicsContext::GetTransientAllocator();
-		RefPtr<RHI::Image> rhiTexture = RHI::Image::Create(specification, nullptr, allocator);
+		RefPtr<RHI::TransientImage> rhiTexture = RHI::TransientImage::Create(specification);
 
 		// Create the texture and make sure we acquire it.
 		TransientTextureResourceRef transientTexture = m_transientTextureAllocator.Allocate(rhiTexture, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1);

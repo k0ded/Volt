@@ -6,8 +6,10 @@
 #include "VulkanRHIModule/Images/VulkanImageView.h"
 
 #include "VulkanRHIModule/Buffers/VulkanBuffer.h"
+#include "VulkanRHIModule/Buffers/VulkanTransientBuffer.h"
 #include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
 #include "VulkanRHIModule/Images/VulkanImage.h"
+#include "VulkanRHIModule/Images/VulkanTransientImage.h"
 #include "VulkanRHIModule/Images/VulkanSamplerState.h"
 
 #include <RHIModule/RHIModule.h>
@@ -29,7 +31,8 @@ namespace Volt::RHI
 		RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const override;
 		RefPtr<CommandBuffer> CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const override;
 
-		RefPtr<Buffer> CreateBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const override;
+		RefPtr<Buffer> CreateBuffer(const BufferDesc& desc) const override;
+		RefPtr<TransientBuffer> CreateTransientBuffer(const BufferDesc& desc) const override;
 		RefPtr<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData) const override;
 
 		RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const override;
@@ -37,8 +40,9 @@ namespace Volt::RHI
 		RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const override;
 		RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const override;
 
-		RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const override;
+		RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data) const override;
 		RefPtr<Image> CreateImage(const SwapchainImageDesc& specification) const override;
+		RefPtr<TransientImage> CreateTransientImage(const ImageDesc& desc) const override;
 
 		RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const override;
 		RefPtr<SamplerState> CreateSamplerState(const SamplerStateDesc& createInfo) const override;
@@ -78,8 +82,10 @@ namespace Volt::RHI
 		mutable PagedAtomicArenaAllocator<VulkanImageView, 1024> m_imageViewArena;
 
 		mutable PagedAtomicArenaAllocator<VulkanBuffer, 1024> m_bufferArena;
+		mutable PagedAtomicArenaAllocator<VulkanTransientBuffer, 1024> m_transientBufferArena;
 		mutable PagedAtomicArenaAllocator<VulkanUniformBuffer, 1024> m_uniformBufferArena;
 		mutable PagedAtomicArenaAllocator<VulkanImage, 1024> m_imageArena;
+		mutable PagedAtomicArenaAllocator<VulkanTransientImage, 1024> m_transientImageArena;
 		mutable PagedAtomicArenaAllocator<VulkanSamplerState, 1024> m_samplerStateArena;
 
 		Ref<VulkanCPUAllocator> m_vulkanCpuAllocator;

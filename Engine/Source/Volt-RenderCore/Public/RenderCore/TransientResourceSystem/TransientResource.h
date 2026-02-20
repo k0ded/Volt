@@ -3,14 +3,15 @@
 #include "RenderCore/TransientResourceSystem/ResourceViewCache.h"
 #include "RenderCore/RenderGraph/RenderGraphRHIResource.h"
 
-#include <RHIModule/Buffers/Buffer.h>
+#include <RHIModule/Buffers/TransientBuffer.h>
+#include <RHIModule/Images/TransientImage.h>
 
 namespace Volt
 {
 	class TransientBufferResource : public RGRHIBufferResource
 	{
 	public:
-		TransientBufferResource(RefPtr<RHI::Buffer> buffer, size_t hash, uint64_t framesToKeepAlive);
+		TransientBufferResource(RefPtr<RHI::TransientBuffer> buffer, size_t hash, uint64_t framesToKeepAlive);
 		~TransientBufferResource() override = default;
 
 		VT_INLINE RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
@@ -37,7 +38,7 @@ namespace Volt
 
 	private:
 		TransientBufferViewCache m_viewCache;
-		RefPtr<RHI::Buffer> m_buffer;
+		RefPtr<RHI::TransientBuffer> m_buffer;
 		size_t m_hash;
 		uint64_t m_frameReleasedIndex;
 		uint64_t m_framesToKeepAlive;
@@ -48,7 +49,7 @@ namespace Volt
 	class TransientTextureResource : public RGRHITextureResource
 	{
 	public:
-		TransientTextureResource(RefPtr<RHI::Image> image, size_t hash, uint64_t framesToKeepAlive);
+		TransientTextureResource(RefPtr<RHI::TransientImage> image, size_t hash, uint64_t framesToKeepAlive);
 		~TransientTextureResource() override = default;
 
 		VT_INLINE RefPtr<RHI::ImageView> GetOrCreateView(const RHI::ImageViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
@@ -75,7 +76,7 @@ namespace Volt
 
 	private:
 		TransientImageViewCache m_viewCache;
-		RefPtr<RHI::Image> m_image;
+		RefPtr<RHI::TransientImage> m_image;
 		size_t m_hash;
 		uint64_t m_frameReleasedIndex;
 		uint64_t m_framesToKeepAlive;

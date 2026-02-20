@@ -15,6 +15,7 @@ struct GLFWwindow;
 namespace Volt::RHI
 {
 	class Buffer;
+	class TransientBuffer;
 	class UniformBuffer;
 	class BufferView;
 
@@ -37,6 +38,7 @@ namespace Volt::RHI
 	class TransientHeap;
 
 	class Image;
+	class TransientImage;
 	class ImageView;
 	class SamplerState;
 
@@ -97,7 +99,8 @@ namespace Volt::RHI
 		virtual RefPtr<CommandBuffer> CreateCommandBuffer(QueueType queueType) const = 0;
 		virtual RefPtr<CommandBuffer> CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const = 0;
 
-		virtual RefPtr<Buffer> CreateBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const = 0;
+		virtual RefPtr<Buffer> CreateBuffer(const BufferDesc& desc) const = 0;
+		virtual RefPtr<TransientBuffer> CreateTransientBuffer(const BufferDesc& desc) const = 0;
 		virtual RefPtr<UniformBuffer> CreateUniformBuffer(const UniformBufferDesc& uniformBufferDesc, const void* initialData = nullptr) const = 0;
 
 		virtual RefPtr<GraphicsContext> CreateGraphicsContext(const GraphicsContextCreateInfo& createInfo) const = 0;
@@ -105,8 +108,9 @@ namespace Volt::RHI
 		virtual RefPtr<PhysicalGraphicsDevice> CreatePhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer) const = 0;
 		virtual RefPtr<Swapchain> CreateSwapchain(const SwapchainCreateInfo& createInfo) const = 0;
 
-		virtual RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const = 0;
+		virtual RefPtr<Image> CreateImage(const ImageDesc& specification, const void* data) const = 0;
 		virtual RefPtr<Image> CreateImage(const SwapchainImageDesc& specification) const = 0;
+		virtual RefPtr<TransientImage> CreateTransientImage(const ImageDesc& desc) const = 0;
 
 		virtual RefPtr<ImageView> CreateImageView(const ImageViewDesc& specification, RawPtr<Image> image) const = 0;
 		virtual RefPtr<SamplerState> CreateSamplerState(const SamplerStateDesc& createInfo) const = 0;

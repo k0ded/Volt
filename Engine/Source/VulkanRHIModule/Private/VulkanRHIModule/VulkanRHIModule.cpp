@@ -70,9 +70,9 @@ namespace Volt::RHI
 		return RefPtr<VulkanCommandBuffer>::Create(queueType);
 	}
 
-	RefPtr<Buffer> VulkanRHIModule::CreateBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator) const
+	RefPtr<Buffer> VulkanRHIModule::CreateBuffer(const BufferDesc& desc) const
 	{
-		RefPtr<Buffer> storageBuffer = RefPtr<VulkanBuffer>::AttachNoRef(m_bufferArena.Allocate(desc, allocator));
+		RefPtr<Buffer> storageBuffer = RefPtr<VulkanBuffer>::AttachNoRef(m_bufferArena.Allocate(desc));
 		storageBuffer->SetArena(&m_bufferArena);
 		return storageBuffer;
 	}
@@ -104,9 +104,9 @@ namespace Volt::RHI
 		return RefPtr<VulkanSwapchain>::Create(createInfo);
 	}
 
-	RefPtr<Image> VulkanRHIModule::CreateImage(const ImageDesc& specification, const void* data, RefPtr<GPUAllocator> allocator) const
+	RefPtr<Image> VulkanRHIModule::CreateImage(const ImageDesc& specification, const void* data) const
 	{
-		RefPtr<VulkanImage> image = RefPtr<VulkanImage>::AttachNoRef(m_imageArena.Allocate(specification, data, allocator));
+		RefPtr<VulkanImage> image = RefPtr<VulkanImage>::AttachNoRef(m_imageArena.Allocate(specification, data));
 		image->SetArena(&m_imageArena);
 
 		return image;
@@ -248,6 +248,20 @@ namespace Volt::RHI
 	RefPtr<CommandBuffer> VulkanRHIModule::CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const
 	{
 		return RefPtr<VulkanCommandBuffer>::Create(renderingAttachmentDeclaration);
+	}
+
+	RefPtr<TransientBuffer> VulkanRHIModule::CreateTransientBuffer(const BufferDesc& desc) const
+	{
+		RefPtr<TransientBuffer> buffer = RefPtr<VulkanTransientBuffer>::AttachNoRef(m_transientBufferArena.Allocate(desc));
+		buffer->SetArena(&m_transientBufferArena);
+		return buffer;
+	}
+
+	RefPtr<TransientImage> VulkanRHIModule::CreateTransientImage(const ImageDesc& desc) const
+	{
+		RefPtr<VulkanTransientImage> image = RefPtr<VulkanTransientImage>::AttachNoRef(m_transientImageArena.Allocate(desc));
+		image->SetArena(&m_transientImageArena);
+		return image;
 	}
 }
 

@@ -30,6 +30,8 @@ namespace Volt::ImageUtility
 			return;
 		}
 
+		GlobalMemoryStackMark memMark;
+
 		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
 		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
 

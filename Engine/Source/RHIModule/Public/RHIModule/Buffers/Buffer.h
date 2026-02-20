@@ -26,7 +26,7 @@ namespace Volt::RHI
 		template<typename T>
 		T* Map();
 
-		VTRHI_API static RefPtr<Buffer> Create(const BufferDesc& desc, RefPtr<GPUAllocator> allocator = nullptr);
+		VTRHI_API static RefPtr<Buffer> Create(const BufferDesc& desc);
 
 	protected:
 		virtual void* MapInternal() = 0;

@@ -24,7 +24,7 @@ namespace Volt::RHI
 		virtual const bool IsSwapchainImage() const = 0;
 		virtual const ImageDesc& GetDesc() const = 0;
 
-		VTRHI_API static RefPtr<Image> Create(const ImageDesc& specification, const void* data = nullptr, RefPtr<GPUAllocator> allocator = nullptr);
+		VTRHI_API static RefPtr<Image> Create(const ImageDesc& specification, const void* data = nullptr);
 		VTRHI_API static RefPtr<Image> Create(const SwapchainImageDesc& specification);
 
 	protected:

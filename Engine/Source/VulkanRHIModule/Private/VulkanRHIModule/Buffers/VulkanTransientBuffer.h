@@ -1,24 +1,17 @@
 #pragma once
 
-#include "VulkanRHIModule/Core.h"
-
-#include <RHIModule/Buffers/Buffer.h>
-
-#include <CoreUtilities/Containers/Map.h>
+#include <RHIModule/Buffers/TransientBuffer.h>
 
 namespace Volt::RHI
 {
-	class Allocation;
-	class GPUAllocator;
-
-	class VulkanBuffer final : public Buffer
+	class VulkanTransientBuffer final : public TransientBuffer
 	{
 	public:
-		VulkanBuffer(const BufferDesc& desc);
-		~VulkanBuffer() override;
+		VulkanTransientBuffer(const BufferDesc& desc);
+		~VulkanTransientBuffer() override;
 
 		/*
-			Buffer Interface
+		* Buffer Interface
 		*/
 		const BufferDesc& GetDesc() const override;
 		uint64_t GetElementSize() const override;
@@ -26,8 +19,8 @@ namespace Volt::RHI
 		RefPtr<BufferView> GetView(const BufferViewDesc& desc) override;
 		void Unmap() override;
 
-		/* 
-			RHIResource Interface
+		/*
+		* RHIResource Interface
 		*/
 		inline constexpr ResourceType GetType() const override { return ResourceType::Buffer; }
 		void SetName(const std::string& name) override;
@@ -40,12 +33,9 @@ namespace Volt::RHI
 		void* MapInternal() override;
 
 	private:
-		void Invalidate(const uint64_t byteSize);
-		void Release();
+		void CreateBuffer();
 
-		uint64_t m_byteSize = 0;
 		BufferDesc m_desc;
-
 		Handle<Allocation> m_allocation;
 	};
 }

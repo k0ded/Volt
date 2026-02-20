@@ -20,15 +20,10 @@
 
 namespace Volt::RHI
 {
-	VulkanBuffer::VulkanBuffer(const BufferDesc& desc, RefPtr<GPUAllocator> allocator)
-		: m_allocator(allocator), m_desc(desc)
+	VulkanBuffer::VulkanBuffer(const BufferDesc& desc)
+		: m_desc(desc)
 	{
 		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
-
-		if (!m_allocator)
-		{
-			m_allocator = GraphicsContext::GetDefaultAllocator();
-		}
 
 		// Make sure that the desc contains either storage buffer or texel buffer.
 		if (!EnumValueContainsFlag(m_desc.usage, BufferUsage::StorageBuffer) && ! EnumValueContainsFlag(m_desc.usage, BufferUsage::TexelBuffer))
@@ -111,7 +106,7 @@ namespace Volt::RHI
 	{
 		Release();
 		m_byteSize = byteSize;
-		m_allocation = m_allocator->CreateBuffer(m_desc);
+		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(m_desc);
 	}
 
 	void VulkanBuffer::Release()
@@ -121,10 +116,7 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIModule::GetInstance().DestroyResource([allocator = m_allocator, allocation = m_allocation]() 
-		{
-			allocator->DestroyBuffer(allocation);
-		});
+		GraphicsContext::GetDefaultAllocator()->DestroyBuffer(m_allocation);
 		m_allocation = nullptr;
 	}
 
