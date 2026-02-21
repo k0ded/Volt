@@ -281,11 +281,14 @@ namespace VoltSharpmake
     public abstract class CommonVoltProject : CommonProject
     {
 		protected bool ReferenceCoreUtilities = true;
+		private string newOverloadFilepath = Path.Combine(Globals.RootDirectory, "Common/NewOverload.cpp");
 
-        protected CommonVoltProject() : base()
-        { }
+		protected CommonVoltProject() : base()
+        {
+			SourceFiles.Add(newOverloadFilepath);
+		}
 
-        public override void ConfigureAll(Configuration conf, CommonTarget target)
+		public override void ConfigureAll(Configuration conf, CommonTarget target)
         {
             base.ConfigureAll(conf, target);
 
@@ -297,6 +300,11 @@ namespace VoltSharpmake
             {
                 conf.AddPublicDependency<CoreUtilities>(target);
             }
+
+			// New overload
+			{
+				conf.PrecompSourceExclude.Add(newOverloadFilepath);
+			}
 
             conf.IncludePrivatePaths.Add("Private/");
             conf.IncludePrivatePaths.Add("PCH/");

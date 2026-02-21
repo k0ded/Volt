@@ -1,7 +1,6 @@
 #include "VisionPlugin.h"
 
 #include <LogModule/Log.h>
-#include <CoreUtilities/NewOverload.inl>
 
 VT_REGISTER_COMPONENT(VisionTest);
 
