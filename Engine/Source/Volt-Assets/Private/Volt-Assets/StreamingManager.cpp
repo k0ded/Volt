@@ -429,12 +429,16 @@ namespace Volt
 	StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Get(StreamingInstanceID id)
 	{
 		std::scoped_lock lock(m_mutex);
+		VT_PROFILE_LOCK_MARK(m_mutex);
+
 		VT_ENSURE(m_streamingInstances.contains(id));
 		return *m_streamingInstances.at(id);
 	}
 	const StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Get(StreamingInstanceID id) const
 	{
 		std::scoped_lock lock(m_mutex);
+		VT_PROFILE_LOCK_MARK(m_mutex);
+
 		VT_ENSURE(m_streamingInstances.contains(id));
 		return *m_streamingInstances.at(id);
 	}
@@ -442,12 +446,16 @@ namespace Volt
 	bool StreamingInstanceMap::Contains(StreamingInstanceID id) const
 	{
 		std::scoped_lock lock(m_mutex);
+		VT_PROFILE_LOCK_MARK(m_mutex);
+
 		return m_streamingInstances.contains(id);
 	}
 
 	StreamingInstanceMap::StreamingInstance& StreamingInstanceMap::Add(StreamingInstanceID id)
 	{
 		std::scoped_lock lock(m_mutex);
+		VT_PROFILE_LOCK_MARK(m_mutex);
+
 		StreamingInstance* newInstance = m_instanceAllocator.Allocate();
 		m_streamingInstances[id] = newInstance;
 
@@ -457,6 +465,7 @@ namespace Volt
 	void StreamingInstanceMap::Erase(StreamingInstanceID id)
 	{
 		std::scoped_lock lock(m_mutex);
+		VT_PROFILE_LOCK_MARK(m_mutex);
 
 		StreamingInstance* instance = m_streamingInstances.at(id);
 		m_streamingInstances.erase(id);

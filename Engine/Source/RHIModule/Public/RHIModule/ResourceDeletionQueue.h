@@ -3,6 +3,7 @@
 #include "RHIModule/Core/Core.h"
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #include <functional>
 #include <mutex>
@@ -25,6 +26,6 @@ namespace Volt::RHI
 
 	private:
 		Vector<PerFrameQueue> m_queues;
-		std::mutex m_queueMutex;
+		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_queueMutex);
 	};
 }

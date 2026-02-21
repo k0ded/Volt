@@ -66,7 +66,7 @@ namespace Volt
 			std::unordered_set<StreamingInstanceID> referencers;
 		};
 		
-		std::mutex m_streamingInstancesMapMutex;
+		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_streamingInstancesMapMutex);
 
 		Map<AssetHandle, AssetStreamingReference> m_assetReferenceFromAssetHandle;
 		AssetUpdatedFunc m_callbackFunction;
@@ -120,7 +120,7 @@ namespace Volt
 	private:
 		Map<StreamingInstanceID, StreamingInstance*> m_streamingInstances;
 		PagedAtomicArenaAllocator<StreamingInstance, 1024> m_instanceAllocator;
-		mutable std::mutex m_mutex;
+		mutable VT_PROFILE_DECLARE_MUTEX(std::mutex, m_mutex);
 	};
 
 	class VTASSETS_API StreamingManager : public SubSystem, public EventListener
@@ -170,6 +170,8 @@ namespace Volt
 		m_assetUpdatedCallback = g_assetManager->RegisterAssetUpdatedCallback(assetType, [&](AssetHandle assetHandle, AssetChangedState state)
 		{
 			std::scoped_lock lock{ m_streamingInstancesMapMutex };
+			VT_PROFILE_LOCK_MARK(m_streamingInstancesMapMutex);
+
 			auto assetReferenceIt = m_assetReferenceFromAssetHandle.find(assetHandle);
 
 			if (m_callbackFunction && assetReferenceIt != m_assetReferenceFromAssetHandle.end())
@@ -191,6 +193,7 @@ namespace Volt
 	void StreamingInstanceAssetReferenceCounter<T>::AddReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
 	{
 		std::scoped_lock lock{ m_streamingInstancesMapMutex };
+		VT_PROFILE_LOCK_MARK(m_streamingInstancesMapMutex);
 
 		if (!m_assetReferenceFromAssetHandle.contains(assetHandle))
 		{
@@ -208,6 +211,8 @@ namespace Volt
 	void StreamingInstanceAssetReferenceCounter<T>::RemoveReference(AssetHandle assetHandle, StreamingInstanceID instanceId)
 	{
 		std::scoped_lock lock{ m_streamingInstancesMapMutex };
+		VT_PROFILE_LOCK_MARK(m_streamingInstancesMapMutex);
+
 		VT_ENSURE(m_assetReferenceFromAssetHandle.contains(assetHandle));
 		VT_ENSURE(m_assetReferenceFromAssetHandle.at(assetHandle).referencers.contains(instanceId));
 

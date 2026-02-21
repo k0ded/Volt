@@ -11,6 +11,8 @@ namespace Volt::RHI
 	void ResourceDeletionQueue::EnqueueResourceDeletion(uint32_t index, FunctionType&& deletionFunc)
 	{
 		std::scoped_lock lock{ m_queueMutex };
+		VT_PROFILE_LOCK_MARK(m_queueMutex);
+
 		m_queues.at(index).emplace_back(deletionFunc);
 	}
 
@@ -19,6 +21,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		std::scoped_lock lock{ m_queueMutex };
+		VT_PROFILE_LOCK_MARK(m_queueMutex);
 
 		for (const auto& func : m_queues.at(index))
 		{

@@ -206,6 +206,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		std::scoped_lock lock{ m_allocationMutex };
+		VT_PROFILE_LOCK_MARK(m_allocationMutex);
 
 		PageAllocation* pageAllocation = nullptr;
 		uint32_t pageIndex = 0;
@@ -276,6 +277,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		std::scoped_lock lock{ m_allocationMutex };
+		VT_PROFILE_LOCK_MARK(m_allocationMutex);
 
 		auto& pageAllocation = m_pageAllocations.at(allocBlock.pageId);
 

@@ -6,6 +6,7 @@
 #include <RHIModule/Memory/Allocation.h>
 
 #include <CoreUtilities/Allocators/FixedSizeArenaAllocator.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 struct VkDeviceMemory_T;
 struct VkImageCreateInfo;
@@ -44,7 +45,7 @@ namespace Volt::RHI
 
 		std::array<PageAllocation, MAX_PAGE_COUNT> m_pageAllocations;
 	
-		std::mutex m_allocationMutex;
+		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_allocationMutex);
 		UUID64 m_heapId;
 
 		FixedSizeArenaAllocator<VulkanTransientBufferAllocation> m_bufferAllocationArena;
