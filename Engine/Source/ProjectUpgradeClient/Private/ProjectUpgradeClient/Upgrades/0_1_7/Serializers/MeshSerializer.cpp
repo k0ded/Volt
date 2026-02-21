@@ -63,14 +63,6 @@ namespace Volt
 		glm::mat4 transform;
 		streamReader.Read(transform);
 
-		glm::quat r;
-		glm::vec3 t, s;
-		Math::Decompose(transform, t, r, s);
-
-		outData.transform.position = t;
-		outData.transform.scale = s;
-		outData.transform.rotation = r;
-
 		streamReader.Read(outData.name);
 	}
 

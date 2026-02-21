@@ -20,7 +20,7 @@ namespace Volt::RHI
 	VulkanUniformBuffer::VulkanUniformBuffer(const UniformBufferDesc& desc, const void* initialData)
 		: m_desc(desc)
 	{
-		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
+		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None);
 
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
 		const uint64_t alignedSize = Utility::Align(desc.size, deviceProperties.limits.minUniformBufferOffsetAlignment);
@@ -46,8 +46,6 @@ namespace Volt::RHI
 
 	VulkanUniformBuffer::~VulkanUniformBuffer()
 	{
-		GraphicsContext::GetResourceStateTracker()->RemoveResource(this);
-
 		if (m_allocation == nullptr)
 		{
 			return;
@@ -117,5 +115,10 @@ namespace Volt::RHI
 	const MemoryRequirement& VulkanUniformBuffer::GetMemoryRequirements() const
 	{
 		return m_allocation->GetMemoryRequirements();
+	}
+
+	uint64_t VulkanUniformBuffer::GetResourceByteSize() const
+	{
+		return m_desc.size;
 	}
 }

@@ -6,7 +6,6 @@
 #include "RHIModule/Buffers/CommandBuffer.h"
 #include "RHIModule/Buffers/CommandBufferUtility.h"
 #include "RHIModule/Graphics/GraphicsContext.h"
-#include "RHIModule/Core/ResourceStateTracker.h"
 
 namespace Volt::RHI::ImageUtility
 {
@@ -25,7 +24,7 @@ namespace Volt::RHI::ImageUtility
 
 		RefPtr<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image, 0);
+		const ResourceState currentState = image->GetResourceStateTracker().GetResourceState(0);
 
 		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
 

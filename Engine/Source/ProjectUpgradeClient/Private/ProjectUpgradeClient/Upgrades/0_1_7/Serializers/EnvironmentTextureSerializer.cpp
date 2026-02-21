@@ -37,15 +37,18 @@ namespace Volt
 		RefPtr<RHI::Image> diffuseImage = environmentTexture->m_diffuseImage;
 		RefPtr<RHI::Image> specularImage = environmentTexture->m_specularImage;
 
+		const RHI::ImageDesc& diffuseDesc = diffuseImage->GetDesc();
+		const RHI::ImageDesc& specularDesc = specularImage->GetDesc();
+
 		EnvironmentTextureHeader diffuseHeader{};
 		EnvironmentTextureHeader specularHeader{};
-		diffuseHeader.format = diffuseImage->GetFormat();
-		diffuseHeader.numLayers = diffuseImage->GetLayerCount();
-		specularHeader.format = specularImage->GetFormat();
-		specularHeader.numLayers = specularImage->GetLayerCount();
+		diffuseHeader.format = diffuseDesc.format;
+		diffuseHeader.numLayers = diffuseDesc.layers;
+		specularHeader.format = specularDesc.format;
+		specularHeader.numLayers = specularDesc.layers;
 
-		Buffer diffuseImageBuffer = TextureSerializer::GetImageDataBuffer(diffuseImage, diffuseHeader.mips);
-		Buffer specularImageBuffer = TextureSerializer::GetImageDataBuffer(specularImage, specularHeader.mips);
+		DataBuffer diffuseImageBuffer = TextureSerializer::GetImageDataBuffer(diffuseImage, diffuseHeader.mips);
+		DataBuffer specularImageBuffer = TextureSerializer::GetImageDataBuffer(specularImage, specularHeader.mips);
 
 		BinaryStreamWriter streamWriter{};
 		const size_t compressedDataOffset = AssetSerializer::WriteMetadata(*metadata, asset->GetVersion(), streamWriter);
@@ -88,7 +91,7 @@ namespace Volt
 		VT_ASSERT_MSG(serializedMetadata.version == environmentTexture->GetVersion(), "Incompatible version!");
 
 		EnvironmentTextureHeader diffuseHeader, specularHeader;
-		Buffer diffuseImageBuffer, specularImageBuffer;
+		DataBuffer diffuseImageBuffer, specularImageBuffer;
 
 		streamReader.Read(diffuseHeader);
 		streamReader.Read(specularHeader);
@@ -104,7 +107,6 @@ namespace Volt
 		specification.layers = diffuseHeader.numLayers;
 		specification.mips = static_cast<uint32_t>(diffuseHeader.mips.size());
 		specification.usage = RHI::ImageUsage::Texture;
-		specification.generateMips = false;
 		specification.isCubeMap = true;
 		specification.debugName = filePath.stem().string();
 

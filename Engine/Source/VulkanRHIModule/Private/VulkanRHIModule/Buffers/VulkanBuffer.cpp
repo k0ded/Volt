@@ -23,7 +23,7 @@ namespace Volt::RHI
 	VulkanBuffer::VulkanBuffer(const BufferDesc& desc)
 		: m_desc(desc)
 	{
-		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
+		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None);
 
 		// Make sure that the desc contains either storage buffer or texel buffer.
 		if (!EnumValueContainsFlag(m_desc.usage, BufferUsage::StorageBuffer) && ! EnumValueContainsFlag(m_desc.usage, BufferUsage::TexelBuffer))
@@ -40,7 +40,6 @@ namespace Volt::RHI
 
 	VulkanBuffer::~VulkanBuffer()
 	{
-		GraphicsContext::GetResourceStateTracker()->RemoveResource(this);
 		Release();
 	}
 
@@ -128,5 +127,10 @@ namespace Volt::RHI
 	const MemoryRequirement& VulkanBuffer::GetMemoryRequirements() const
 	{
 		return m_allocation->GetMemoryRequirements();
+	}
+
+	uint64_t VulkanBuffer::GetResourceByteSize() const
+	{
+		return m_byteSize;
 	}
 }

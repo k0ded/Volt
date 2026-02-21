@@ -86,7 +86,6 @@ namespace Volt
 
 		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
 		
-		RefPtr<RHI::GPUAllocator> allocator = isCpuAccessible ? nullptr : RHI::GraphicsContext::GetTransientAllocator();
 		RefPtr<RHI::TransientBuffer> rhiBbuffer = RHI::TransientBuffer::Create(desc);
 		
 		// Create the buffer and make sure we acquire it.
@@ -126,7 +125,6 @@ namespace Volt
 
 		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
 
-		RefPtr<RHI::GPUAllocator> allocator = isCpuAccessible ? nullptr : RHI::GraphicsContext::GetTransientAllocator();
 		RefPtr<RHI::TransientImage> rhiTexture = RHI::TransientImage::Create(specification);
 
 		// Create the texture and make sure we acquire it.

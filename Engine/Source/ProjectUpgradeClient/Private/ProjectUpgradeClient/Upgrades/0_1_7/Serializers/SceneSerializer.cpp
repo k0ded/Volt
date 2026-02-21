@@ -108,7 +108,7 @@ namespace Volt
 
 		// Scene File
 		{
-			Buffer buffer{};
+			DataBuffer buffer{};
 			streamReader.Read(buffer);
 
 			YAMLMemoryStreamReader yamlStreamReader{};

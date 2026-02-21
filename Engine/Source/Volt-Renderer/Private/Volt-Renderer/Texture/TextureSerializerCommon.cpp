@@ -78,7 +78,7 @@ namespace Volt::TextureSerializerCommon
 
 		commandBuffer->Begin();
 
-		const auto& currentResourceState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image, 0);
+		const RHI::ResourceState currentResourceState = image->GetResourceStateTracker().GetResourceState(0);
 
 		{
 			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();

@@ -4,7 +4,6 @@
 #include "RenderCore/CommandBufferPool.h"
 
 #include <RHIModule/Buffers/Buffer.h>
-#include <RHIModule/Core/ResourceStateTracker.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 
@@ -46,7 +45,7 @@ namespace Volt
 
 				commandBuffer->Begin();
 
-				const auto& currentResourceState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(m_buffer, 0);
+				const RHI::ResourceState currentResourceState = m_buffer->GetResourceStateTracker().GetResourceState(0);
 
 				{
 					RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsGlobalBarrier();
@@ -58,7 +57,7 @@ namespace Volt
 					commandBuffer->ResourceBarrier({ barrier });
 				}
 
-				commandBuffer->CopyBufferRegion(m_buffer, 0, tempBuffer, 0, m_buffer->GetMemoryRequirements().size);
+				commandBuffer->CopyBufferRegion(m_buffer, 0, tempBuffer, 0, m_buffer->GetResourceByteSize());
 
 				{
 					RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsGlobalBarrier();
@@ -70,7 +69,6 @@ namespace Volt
 					commandBuffer->ResourceBarrier({ barrier });
 				}
 
-				RHI::GraphicsContext::GetResourceStateTracker()->TransitionResource(tempBuffer, 0, currentResourceState.stage, currentResourceState.access, currentResourceState.layout);
 				commandBuffer->End();
 				RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
 			}

@@ -41,7 +41,7 @@ namespace Volt::ImageUtility
 
 		// Transition mip 0
 		{
-			RHI::ResourceState initialImageState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image, 0);
+			RHI::ResourceState initialImageState = image->GetResourceStateTracker().GetResourceState(0);
 
 			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
 			barrier.imageBarrier().srcAccess = initialImageState.access;
@@ -84,7 +84,7 @@ namespace Volt::ImageUtility
 
 			// Dst barrier
 			{
-				RHI::ResourceState initialImageState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image, dstSubResourceIndex);
+				RHI::ResourceState initialImageState = image->GetResourceStateTracker().GetResourceState(dstSubResourceIndex);
 
 				dstBarrier.imageBarrier().srcAccess = initialImageState.access;
 				dstBarrier.imageBarrier().srcStage = initialImageState.stage;

@@ -23,6 +23,9 @@
 #define VT_PROFILE_FREE(ptr) TracyFree(ptr)
 
 #define VT_PROFILE_DECLARE_MUTEX(type, name) TracyLockable(type, name)
+#define VT_PROFILE_DECLARE_MUTEX_SHARED(type, name) TracySharedLockable(type, name)
+#define VT_PROFILE_DECLARE_MUTEX_NAMED(type, name, desc) TracyLockableN(type, name, desc)
+#define VT_PROFILE_DECLARE_MUTEX_SHARED_NAMED(type, name, desc) TracySharedLockableN(type, name, desc)
 #define VT_PROFILE_LOCK_MARK(lockName) LockMark(lockName)
 
 #else
@@ -41,6 +44,9 @@
 #define VT_PROFILE_FREE(ptr)
 
 #define VT_PROFILE_DECLARE_MUTEX(type, name) type name
+#define VT_PROFILE_DECLARE_MUTEX_SHARED(type, name) type name
+#define VT_PROFILE_DECLARE_MUTEX_NAMED(type, name) type name
+#define VT_PROFILE_DECLARE_MUTEX_SHARED_NAMED(type, name) type name
 #define VT_PROFILE_LOCK_MARK(lockName)
 
 #endif

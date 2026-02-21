@@ -14,7 +14,7 @@ namespace Volt::RHI
 	VulkanTransientBuffer::VulkanTransientBuffer(const BufferDesc& desc)
 		: m_desc(desc)
 	{
-		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
+		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None);
 
 		// Make sure that the desc contains either storage buffer or texel buffer.
 		if (!EnumValueContainsFlag(m_desc.usage, BufferUsage::StorageBuffer) && !EnumValueContainsFlag(m_desc.usage, BufferUsage::TexelBuffer))
@@ -31,11 +31,18 @@ namespace Volt::RHI
 
 	VulkanTransientBuffer::~VulkanTransientBuffer()
 	{
-		GraphicsContext::GetResourceStateTracker()->RemoveResource(this);
-
 		if (m_allocation)
 		{
-			GraphicsContext::GetTransientAllocator()->DestroyBuffer(m_allocation);
+			const bool isCpuAccessible = EnumValueContainsFlag(m_desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
+
+			if (isCpuAccessible)
+			{
+				GraphicsContext::GetDefaultAllocator()->DestroyBuffer(m_allocation);
+			}
+			else
+			{
+				GraphicsContext::GetTransientAllocator()->DestroyBuffer(m_allocation);
+			}
 		}
 	}
 
@@ -109,6 +116,20 @@ namespace Volt::RHI
 
 	void VulkanTransientBuffer::CreateBuffer()
 	{
-		m_allocation = GraphicsContext::GetTransientAllocator()->CreateBuffer(m_desc);
+		const bool isCpuAccessible = EnumValueContainsFlag(m_desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
+
+		if (isCpuAccessible)
+		{
+			m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(m_desc);
+		}
+		else
+		{
+			m_allocation = GraphicsContext::GetTransientAllocator()->CreateBuffer(m_desc);
+		}
+	}
+
+	uint64_t VulkanTransientBuffer::GetResourceByteSize() const
+	{
+		return m_desc.elementSize * m_desc.numElements;
 	}
 }

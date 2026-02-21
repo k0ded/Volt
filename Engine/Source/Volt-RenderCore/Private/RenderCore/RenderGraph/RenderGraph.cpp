@@ -327,8 +327,6 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
-
 		for (const RGResourceRef resource : m_resources)
 		{
 			if (!resource->m_isExternal)
@@ -1214,8 +1212,6 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		RefPtr<RHI::ResourceStateTracker> resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
-
 		for (RGResourceRef resource : m_resources)
 		{
 			if (!resource->m_isExternal || resource->m_refCount == 0)
@@ -1229,7 +1225,7 @@ namespace Volt
 			if (resource->GetResourceType() == RGResourceType::Buffer)
 			{
 				RGBufferRef buffer = ResourceCast<RGBuffer>(resource);
-				const RHI::ResourceState& currentResourceState = resourceTracker->GetCurrentResourceState(rhiResource, 0);
+				const RHI::ResourceState& currentResourceState = rhiResource->GetResourceStateTracker().GetResourceState(0);
 
 				if (VT_CHECK(buffer->firstAccess))
 				{
@@ -1239,7 +1235,7 @@ namespace Volt
 			else if (resource->GetResourceType() == RGResourceType::UniformBuffer)
 			{
 				RGUniformBufferRef uniformBuffer = ResourceCast<RGUniformBuffer>(resource);
-				const RHI::ResourceState& currentResourceState = resourceTracker->GetCurrentResourceState(rhiResource, 0);
+				const RHI::ResourceState& currentResourceState = rhiResource->GetResourceStateTracker().GetResourceState(0);
 
 				if (VT_CHECK(uniformBuffer->firstAccess))
 				{
@@ -1250,9 +1246,9 @@ namespace Volt
 			{
 				RGTextureRef texture = ResourceCast<RGTexture>(resource);
 
-				EnumerateTextureSubResources(texture->firstAccess, [&resourceTracker, &rhiResource](RGSubResourceState& subResourceState, uint32_t subResourceIndex)
+				EnumerateTextureSubResources(texture->firstAccess, [&rhiResource](RGSubResourceState& subResourceState, uint32_t subResourceIndex)
 				{
-					const RHI::ResourceState& currentResourceState = resourceTracker->GetCurrentResourceState(rhiResource, subResourceIndex);
+					const RHI::ResourceState& currentResourceState = rhiResource->GetResourceStateTracker().GetResourceState(subResourceIndex);
 					subResourceState.previousState = currentResourceState;
 				});
 			}
@@ -1261,6 +1257,8 @@ namespace Volt
 
 	void RenderGraph::TransitionExternalResource(RGBufferRef buffer)
 	{
+		VT_PROFILE_FUNCTION();
+
 		if (!VT_CHECK(buffer->m_isExternal || buffer->m_isExtracted))
 		{
 			return;
@@ -1268,8 +1266,6 @@ namespace Volt
 
 		if (buffer->GetRHIResource())
 		{
-			auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
-
 			const RGResourceAccessState& subResourceAccessState = buffer->lastAccess;
 			RGPassRef lastAccessPass = subResourceAccessState.pass;
 
@@ -1277,7 +1273,7 @@ namespace Volt
 			{
 				RefPtr<RHI::RHIResource> rhiResource = buffer->GetRHIResource()->GetRHIBuffer();
 				const RGSubResourceState& lastSubResourceState = lastAccessPass->m_bufferStates[subResourceAccessState.stateIndex].subResourceState;
-				resourceTracker->TransitionResource(rhiResource, 0, lastSubResourceState.state.stage, lastSubResourceState.state.access, lastSubResourceState.state.layout);
+				rhiResource->GetResourceStateTrackerMutable().Transition(0, lastSubResourceState.state.stage, lastSubResourceState.state.access, lastSubResourceState.state.layout);
 			}
 		}
 	}
@@ -1293,8 +1289,6 @@ namespace Volt
 
 		if (texture->GetRHIResource())
 		{
-			auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
-
 			RefPtr<RHI::RHIResource> rhiResource = texture->GetRHIResource()->GetRHITexture();
 
 			for (uint32_t i = 0; i < texture->lastAccess.size(); ++i)
@@ -1308,7 +1302,7 @@ namespace Volt
 
 					if (VT_CHECK(lastSubResourceState != nullptr))
 					{
-						resourceTracker->TransitionResource(rhiResource, i, lastSubResourceState->state.stage, lastSubResourceState->state.access, lastSubResourceState->state.layout);
+						rhiResource->GetResourceStateTrackerMutable().Transition(i, lastSubResourceState->state.stage, lastSubResourceState->state.access, lastSubResourceState->state.layout);
 					}
 				}
 			}
@@ -1324,8 +1318,6 @@ namespace Volt
 
 		if (buffer->GetRHIResource())
 		{
-			auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
-
 			const RGResourceAccessState& subResourceAccessState = buffer->lastAccess;
 			RGPassRef lastAccessPass = subResourceAccessState.pass;
 
@@ -1333,7 +1325,7 @@ namespace Volt
 			{
 				RefPtr<RHI::RHIResource> rhiResource = buffer->GetRHIResource()->GetRHIUniformBuffer();
 				const RGSubResourceState& lastSubResourceState = lastAccessPass->m_bufferStates[subResourceAccessState.stateIndex].subResourceState;
-				resourceTracker->TransitionResource(rhiResource, 0, lastSubResourceState.state.stage, lastSubResourceState.state.access, lastSubResourceState.state.layout);
+				rhiResource->GetResourceStateTrackerMutable().Transition(0, lastSubResourceState.state.stage, lastSubResourceState.state.access, lastSubResourceState.state.layout);
 			}
 		}
 	}
@@ -1558,7 +1550,7 @@ namespace Volt
 		}
 
 		RGUniformBufferDesc desc{};
-		desc.size = static_cast<uint32_t>(uniformBuffer->GetMemoryRequirements().size);
+		desc.size = static_cast<uint32_t>(uniformBuffer->GetResourceByteSize());
 		desc.debugName = uniformBuffer->GetName();
 
 		RGUniformBufferRef bufferResource = m_resourceAllocator.Allocate<RGUniformBuffer>(desc);
@@ -1968,8 +1960,6 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
-
 		for (const auto& textureExtractionData : m_textureExtractions)
 		{
 			if (textureExtractionData.outImagePtr == nullptr)
@@ -2015,8 +2005,6 @@ namespace Volt
 		for (const auto& passBarrier : passBarriers.GetBarriers())
 		{
 			VT_ENSURE(passBarrier.barrier.type == RHI::BarrierType::Global || passBarrier.resource != nullptr);
-
-			auto resourceTracker = RHI::GraphicsContext::GetResourceStateTracker();
 
 			auto& barrier = resultBarriers.emplace_back(passBarrier.barrier);
 			if (barrier.type == RHI::BarrierType::Image)

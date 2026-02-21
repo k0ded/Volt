@@ -4,6 +4,8 @@
 
 #include <RHIModule/Graphics/DeviceQueue.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 struct VkQueue_T;
 struct VkSemaphore_T;
 
@@ -29,7 +31,7 @@ namespace Volt::RHI
 	private:
 		void CreateQueueSemaphore(class VulkanGraphicsDevice& graphicsDevice);
 
-		std::mutex m_executeMutex{};
+		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_executeMutex);
 
 		VkQueue_T* m_queue = nullptr;
 		VkSemaphore_T* m_queueSemaphore = nullptr;

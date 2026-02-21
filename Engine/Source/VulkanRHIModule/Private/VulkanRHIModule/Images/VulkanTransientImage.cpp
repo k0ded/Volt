@@ -7,6 +7,8 @@
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Memory/Allocation.h>
 
+#include <CoreUtilities/EnumUtils.h>
+
 #include <vulkan/vulkan.h>
 
 namespace Volt::RHI
@@ -22,9 +24,17 @@ namespace Volt::RHI
 	{
 		if (m_allocation)
 		{
-			GraphicsContext::GetTransientAllocator()->DestroyImage(m_allocation);
+			const bool isCpuAccessible = EnumValueContainsFlag(m_desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
+
+			if (isCpuAccessible)
+			{
+				GraphicsContext::GetDefaultAllocator()->DestroyImage(m_allocation);
+			}
+			else
+			{
+				GraphicsContext::GetTransientAllocator()->DestroyImage(m_allocation);
+			}
 		}
-		GraphicsContext::GetResourceStateTracker()->RemoveResource(this);
 	}
 
 	RefPtr<ImageView> VulkanTransientImage::GetView(const ImageViewDesc& desc)
@@ -137,9 +147,24 @@ namespace Volt::RHI
 			VT_ENSURE_MSG(m_desc.usage != ImageUsage::Attachment && m_desc.usage != ImageUsage::AttachmentStorage, "Attachment types are not supported for 3D images!");
 		}
 
-		m_allocation = GraphicsContext::GetTransientAllocator()->CreateImage(m_desc, m_desc.memoryUsage);
+		const bool isCpuAccessible = EnumValueContainsFlag(m_desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
+
+		if (isCpuAccessible)
+		{
+			m_allocation = GraphicsContext::GetDefaultAllocator()->CreateImage(m_desc, m_desc.memoryUsage);
+		}
+		else
+		{
+			m_allocation = GraphicsContext::GetTransientAllocator()->CreateImage(m_desc, m_desc.memoryUsage);
+		}
+
 		VT_ENSURE(m_allocation);
 
-		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
+		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None);
+	}
+
+	uint64_t VulkanTransientImage::GetResourceByteSize() const
+	{
+		return m_allocation->GetMemoryRequirements().size;
 	}
 }

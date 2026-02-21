@@ -3,8 +3,6 @@
 #include "RenderCore/RenderGraph/RenderGraphDataAllocator.h"
 #include "RenderCore/RenderGraph/Resources/RenderGraphTexture.h"
 
-#include <RHIModule/Core/ResourceStateTracker.h>
-
 #include <cstdint>
 
 namespace Volt

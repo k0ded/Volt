@@ -48,7 +48,7 @@ namespace Volt::RHI
 	using BarrierVector = Vector<ResourceBarrierInfo, InlineAllocator<8>>;
 	using VertexBufferVector = Vector<VertexBufferBinding, InlineAllocator<4>>;
 
-	class VTRHI_API CommandBuffer : public RHIInterface
+	class VTRHI_API CommandBuffer : public ArenaRHIInterface
 	{
 	public:
 		VT_DELETE_COPY_MOVE(CommandBuffer);

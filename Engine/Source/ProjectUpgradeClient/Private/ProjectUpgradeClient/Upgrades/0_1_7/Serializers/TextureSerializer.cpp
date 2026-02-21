@@ -11,6 +11,7 @@
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Buffers/CommandBufferUtility.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Memory/Allocation.h>
@@ -48,7 +49,7 @@ namespace Volt
 			const void* dataPtr = nullptr;
 		};
 
-		void SetupMips(const Vector<TextureSerializer::TextureMip>& inMips, const Buffer& buffer)
+		void SetupMips(const Vector<TextureSerializer::TextureMip>& inMips, const DataBuffer& buffer)
 		{
 			for (const auto& mip : inMips)
 			{
@@ -71,9 +72,9 @@ namespace Volt
 		RefPtr<RHI::Image> image = texture->GetImage();
 
 		TextureHeader header{};
-		header.format = image->GetFormat();
+		header.format = image->GetDesc().format;
 
-		Buffer dataBuffer{};
+		DataBuffer dataBuffer{};
 
 		//if (!Utility::IsEncodedFormat(texture->GetImage()->GetFormat()))
 		//{
@@ -123,7 +124,7 @@ namespace Volt
 		TextureHeader textureHeader{};
 		streamReader.Read(textureHeader);
 
-		Buffer textureDataBuffer{};
+		DataBuffer textureDataBuffer{};
 		streamReader.Read(textureDataBuffer);
 
 
@@ -138,7 +139,6 @@ namespace Volt
 			specification.width = textureHeader.mips.front().width;
 			specification.height = textureHeader.mips.front().height;
 			specification.mips = static_cast<uint32_t>(textureHeader.mips.size());
-			specification.generateMips = false;
 			specification.debugName = filePath.stem().string();
 			specification.initializeImage = false;
 
@@ -153,32 +153,34 @@ namespace Volt
 		return true;
 	}
 
-	Buffer TextureSerializer::GetImageDataBuffer(RefPtr<RHI::Image> image, Vector<TextureMip>& outMips)
+	DataBuffer TextureSerializer::GetImageDataBuffer(RefPtr<RHI::Image> image, Vector<TextureMip>& outMips)
 	{
-		const uint32_t formatTexelBlockSize = RHI::Utility::GetFormatTexelBlockSize(image->GetFormat());
-		const uint32_t formatTexelsPerBlock = RHI::Utility::GetFormatTexelsPerBlock(image->GetFormat());
+		const RHI::ImageDesc& imageDesc = image->GetDesc();
+
+		const uint32_t formatTexelBlockSize = RHI::Utility::GetFormatTexelBlockSize(imageDesc.format);
+		const uint32_t formatTexelsPerBlock = RHI::Utility::GetFormatTexelsPerBlock(imageDesc.format);
 
 		// Create per mip staging buffer
-		Vector<Handle<RHI::Allocation>> stagingBuffers;
-		stagingBuffers.resize(image->GetMipCount());
+		Vector<RefPtr<RHI::Buffer>> stagingBuffers;
+		stagingBuffers.resize(imageDesc.mips);
 
 		size_t totalImageSize = 0;
 
-		for (uint32_t i = 0; i < image->GetMipCount(); ++i)
+		for (uint32_t i = 0; i < imageDesc.mips; ++i)
 		{
 			const uint32_t width = std::max(image->GetWidth() >> i, 1u);
 			const uint32_t height = std::max(image->GetHeight() >> i, 1u);
 
-			const size_t mipSize = std::max(uint32_t(width * height * (float(formatTexelBlockSize) / float(formatTexelsPerBlock))), formatTexelBlockSize) * image->GetLayerCount();
+			const size_t mipSize = std::max(uint32_t(width * height * (float(formatTexelBlockSize) / float(formatTexelsPerBlock))), formatTexelBlockSize) * imageDesc.layers;
 
 			RHI::BufferDesc stagingDesc{};
-			stagingDesc.count = 1;
-			stagingDesc.elementSize = mipSize;
+			stagingDesc.numElements = mipSize;
+			stagingDesc.elementSize = 1;
 			stagingDesc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferDst;
 			stagingDesc.memoryUsage = RHI::MemoryUsage::GPUToCPU;
 			stagingDesc.debugName = "Staging Buffer";
 
-			stagingBuffers[i] = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
+			stagingBuffers[i] = RHI::Buffer::Create(stagingDesc);
 			totalImageSize += mipSize;
 		}
 
@@ -187,7 +189,7 @@ namespace Volt
 
 		commandBuffer->Begin();
 
-		const auto& currentResourceState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(image, 0);
+		const RHI::ResourceState currentResourceState = image->GetResourceStateTracker().GetResourceState(0);
 
 		{
 			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
@@ -203,14 +205,14 @@ namespace Volt
 		}
 
 		size_t offset = 0;
-		for (uint32_t i = 0; i < image->GetMipCount(); i++)
+		for (uint32_t i = 0; i < imageDesc.mips; i++)
 		{
 			auto& newMip = outMips.emplace_back();
 			newMip.width = std::max(image->GetWidth() >> i, 1u);
 			newMip.height = std::max(image->GetHeight() >> i, 1u);
 			newMip.dataOffset = offset;
 
-			const size_t mipSize = std::max(uint32_t(newMip.width * newMip.height * (float(formatTexelBlockSize) / float(formatTexelsPerBlock))), formatTexelBlockSize) * image->GetLayerCount();
+			const size_t mipSize = std::max(uint32_t(newMip.width * newMip.height * (float(formatTexelBlockSize) / float(formatTexelsPerBlock))), formatTexelBlockSize) * imageDesc.layers;
 			newMip.dataSize = mipSize;
 			offset += mipSize;
 
@@ -233,11 +235,11 @@ namespace Volt
 		commandBuffer->End();
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFenceAndWait(commandBuffer);
 
-		Buffer dataBuffer;
+		DataBuffer dataBuffer;
 
 		// Copy per mip data to data buffer.
 		dataBuffer.Resize(totalImageSize);
-		for (uint32_t i = 0; i < image->GetMipCount(); ++i)
+		for (uint32_t i = 0; i < imageDesc.mips; ++i)
 		{
 			const auto& mip = outMips[i];
 
@@ -246,15 +248,10 @@ namespace Volt
 			stagingBuffers[i]->Unmap();
 		}
 
-		for (const auto& stagingBuffer : stagingBuffers)
-		{
-			RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingBuffer);
-		}
-
 		return dataBuffer;
 	}
 
-	void TextureSerializer::UploadImageData(RefPtr<RHI::Image> image, RHI::PixelFormat format, const Vector<TextureMip>& mips, const Buffer& dataBuffer)
+	void TextureSerializer::UploadImageData(RefPtr<RHI::Image> image, RHI::PixelFormat format, const Vector<TextureMip>& mips, const DataBuffer& dataBuffer)
 	{
 		TextureData texData{};
 		texData.SetupMips(mips, dataBuffer);
@@ -274,20 +271,20 @@ namespace Volt
 			subData.depth = 1;
 			subData.subResource.baseArrayLayer = 0;
 			subData.subResource.baseMipLevel = mipIndex;
-			subData.subResource.layerCount = image->GetLayerCount();
+			subData.subResource.layerCount = image->GetDesc().layers;
 			subData.subResource.levelCount = 1;
 
 			mipIndex++;
 		}
 
 		RHI::BufferDesc stagingDesc{};
-		stagingDesc.count = 1;
-		stagingDesc.elementSize = RHI::GraphicsContext::GetDevice()->GetMaxRequiredStagingBufferSizeForImage(image);
+		stagingDesc.numElements = RHI::GraphicsContext::GetDevice()->GetMaxRequiredStagingBufferSizeForImage(image);
+		stagingDesc.elementSize = 1;
 		stagingDesc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferSrc;
 		stagingDesc.memoryUsage = RHI::MemoryUsage::CPUToGPU;
 		stagingDesc.debugName = "Staging Alloc";
 
-		Handle<RHI::Allocation> stagingAlloc = RHI::GraphicsContext::GetDefaultAllocator()->CreateBuffer(stagingDesc);
+		RefPtr<RHI::Buffer> stagingBuffer = RHI::Buffer::Create(stagingDesc);
 
 		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
 		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
@@ -306,7 +303,7 @@ namespace Volt
 			commandBuffer->ResourceBarrier({ barrier });
 		}
 
-		commandBuffer->UploadTextureData(image, stagingAlloc, copyData);
+		commandBuffer->UploadTextureData(image, stagingBuffer, copyData);
 
 		{
 			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
@@ -322,7 +319,5 @@ namespace Volt
 
 		commandBuffer->End();
 		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
-
-		RHI::GraphicsContext::GetDefaultAllocator()->DestroyBuffer(stagingAlloc);
 	}
 }

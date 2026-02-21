@@ -30,6 +30,7 @@ namespace Volt::RHI
 		std::string_view GetName() const override;
 		uint64_t GetDeviceAddress() const override;
 		const MemoryRequirement& GetMemoryRequirements() const override;
+		uint64_t GetResourceByteSize() const override;
 
 	protected:
 		void* GetHandleImpl() const override;

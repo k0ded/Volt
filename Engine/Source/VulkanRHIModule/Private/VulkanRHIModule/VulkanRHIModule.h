@@ -12,6 +12,9 @@
 #include "VulkanRHIModule/Images/VulkanTransientImage.h"
 #include "VulkanRHIModule/Images/VulkanSamplerState.h"
 
+#include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
+#include "VulkanRHIModule/Synchronization/VulkanFence.h"
+
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/ResourceDeletionQueue.h>
 
@@ -87,6 +90,9 @@ namespace Volt::RHI
 		mutable PagedAtomicArenaAllocator<VulkanImage, 1024> m_imageArena;
 		mutable PagedAtomicArenaAllocator<VulkanTransientImage, 1024> m_transientImageArena;
 		mutable PagedAtomicArenaAllocator<VulkanSamplerState, 1024> m_samplerStateArena;
+
+		mutable PagedAtomicArenaAllocator<VulkanFence, 1024> m_fenceArena;
+		mutable PagedAtomicArenaAllocator<VulkanCommandBuffer, 1024> m_commandBufferArena;
 
 		Ref<VulkanCPUAllocator> m_vulkanCpuAllocator;
 	};

@@ -51,7 +51,7 @@ namespace Volt
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(streamReader);
 		VT_ASSERT_MSG(serializedMetadata.version == destinationAsset->GetVersion(), "Incompatible version!");
 
-		Buffer buffer{};
+		DataBuffer buffer{};
 		streamReader.Read(buffer);
 
 		YAMLMemoryStreamReader yamlStreamReader{};

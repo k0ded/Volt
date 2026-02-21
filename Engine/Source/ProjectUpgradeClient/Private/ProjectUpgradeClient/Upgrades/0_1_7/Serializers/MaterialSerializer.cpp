@@ -112,7 +112,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	void ReadDataFromBuffer(const Buffer& buffer, T& outData)
+	void ReadDataFromBuffer(const DataBuffer& buffer, T& outData)
 	{
 		memcpy_s(&outData, sizeof(T), buffer.As<void>(), buffer.GetSize());
 	}
@@ -142,7 +142,7 @@ namespace Volt
 		SerializedAssetMetadata serializedMetadata = AssetSerializer::ReadMetadata(binaryStreamReader);
 		VT_ASSERT_MSG(serializedMetadata.version == materialAsset->GetVersion(), "Incompatible version!");
 
-		Buffer buffer{};
+		DataBuffer buffer{};
 		binaryStreamReader.Read(buffer);
 
 		YAMLMemoryStreamReader streamReader{};

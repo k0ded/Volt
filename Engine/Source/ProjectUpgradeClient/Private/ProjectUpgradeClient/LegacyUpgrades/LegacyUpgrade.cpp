@@ -981,13 +981,12 @@ Vector<AssetReference<Volt::Asset>> LegacyProjectUpgrade::TryConvertMesh(const V
 
 			glm::mat4 transform = *dataBuffer.As<glm::mat4>(offset);
 
-			glm::quat r;
-			glm::vec3 t, s;
-			Math::Decompose(transform, t, r, s);
-
-			newSubMesh.transform.position = t;
-			newSubMesh.transform.rotation = r;
-			newSubMesh.transform.scale = s;
+			for (uint32_t vertexIndex = newSubMesh.vertexStartOffset; vertexIndex < newSubMesh.vertexCount; ++vertexIndex)
+			{
+				legacyVertices[vertexIndex].position = glm::vec3(transform * glm::vec4(legacyVertices[vertexIndex].position, 1.f));
+				legacyVertices[vertexIndex].normal = glm::mat3(transform) * legacyVertices[vertexIndex].normal;
+				legacyVertices[vertexIndex].tangent = glm::mat3(transform) * legacyVertices[vertexIndex].tangent;
+			}
 
 			offset += sizeof(glm::mat4);
 

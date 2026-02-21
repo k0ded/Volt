@@ -218,7 +218,7 @@ namespace Volt
 		}
 
 		//this buffer is the entity data
-		Buffer buffer{};
+		DataBuffer buffer{};
 		streamReader.Read(buffer);
 
 

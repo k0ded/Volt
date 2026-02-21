@@ -4,7 +4,7 @@
 
 namespace Volt::RHI
 {
-	class VTRHI_API Fence : public RHIInterface
+	class VTRHI_API Fence : public ArenaRHIInterface
 	{
 	public:
 		static RefPtr<Fence> Create();

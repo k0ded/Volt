@@ -59,10 +59,12 @@ namespace Volt::RHI
 
 		VT_ENSURE_MSG(!executeInfo.commandBuffers.empty(), "Empty execution is invalid!");
 
-		InlineVector<VkCommandBufferSubmitInfo, 64> vulkanCommandBuffers;
+		GlobalMemoryStackMark memMark;
+
+		GlobalMemoryStackVector<VkCommandBufferSubmitInfo> vulkanCommandBuffers;
 		vulkanCommandBuffers.reserve(executeInfo.commandBuffers.size());
 
-		InlineVector<VkSemaphoreSubmitInfo, 64> signalSemaphoreInfos{};
+		GlobalMemoryStackVector<VkSemaphoreSubmitInfo> signalSemaphoreInfos;
 		signalSemaphoreInfos.reserve(executeInfo.signalFences.size());
 
 		for (const auto& cmdBuffer : executeInfo.commandBuffers)
@@ -108,6 +110,8 @@ namespace Volt::RHI
 		uint64_t submitSemaphoreValue;
 		{
 			std::scoped_lock lock{ m_executeMutex };
+			VT_PROFILE_LOCK_MARK(m_executeMutex);
+
 			submitSemaphoreValue = m_semaphoreValue++;
 
 			for (auto& signalSemaphoreInfo : signalSemaphoreInfos)
@@ -144,6 +148,7 @@ namespace Volt::RHI
 	void VulkanDeviceQueue::AquireLock()
 	{
 		m_executeMutex.lock();
+		VT_PROFILE_LOCK_MARK(m_executeMutex);
 	}
 
 	void VulkanDeviceQueue::ReleaseLock()

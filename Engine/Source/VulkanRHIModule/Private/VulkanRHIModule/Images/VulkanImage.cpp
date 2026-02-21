@@ -35,7 +35,7 @@ namespace Volt::RHI
 	VulkanImage::VulkanImage(const SwapchainImageDesc& desc)
 		: m_isSwapchainImage(true), m_viewCache(this)
 	{
-		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
+		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
 
 		InvalidateSwapchainImage(desc);
 		m_desc.debugName = std::format("Swapchain Image {}", desc.imageIndex);
@@ -44,7 +44,6 @@ namespace Volt::RHI
 
 	VulkanImage::~VulkanImage()
 	{
-		GraphicsContext::GetResourceStateTracker()->RemoveResource(this);
 		Release();
 	}
 
@@ -109,7 +108,7 @@ namespace Volt::RHI
 			}
 		}
 
-		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
+		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None, ImageLayout::Undefined);
 
 		if (data)
 		{
@@ -131,118 +130,6 @@ namespace Volt::RHI
 
 		GraphicsContext::GetDefaultAllocator()->DestroyImage(m_allocation);
 		m_allocation = nullptr;
-	}
-
-	void VulkanImage::GenerateMips()
-	{
-		if (m_hasGeneratedMips || m_isSwapchainImage)
-		{
-			return;
-		}
-
-		const std::string markerName = std::format("Generate Mips {}", m_desc.debugName);
-
-		RefPtr<CommandBuffer> commandBuffer = CommandBuffer::Create();
-		commandBuffer->Begin();
-		commandBuffer->BeginMarker(markerName, { 1.f, 1.f, 1.f, 1.f });
-
-		VkCommandBuffer vkCmdBuffer = commandBuffer->GetHandle<VkCommandBuffer>();
-
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(this, 0);
-
-		// Transition to DST OPTIMAL
-		VkImageMemoryBarrier barrier{};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.image = m_allocation->GetResourceHandle<VkImage>();
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.oldLayout = Utility::GetVkImageLayoutFromImageLayout(currentState.layout);
-		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		barrier.subresourceRange.baseArrayLayer = 0;
-		barrier.subresourceRange.baseMipLevel = 0;
-
-		const uint32_t mipLevels = Utility::CalculateMipCount(m_desc.width, m_desc.height);
-		m_desc.mips = mipLevels;
-
-		vkCmdPipelineBarrier(vkCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-
-		for (uint32_t i = 1; i < mipLevels; i++)
-		{
-			for (uint32_t layer = 0; layer < m_desc.layers; layer++)
-			{
-				// Transfer last mip
-				{
-					barrier.subresourceRange.baseMipLevel = i - 1;
-					barrier.subresourceRange.baseArrayLayer = layer;
-					barrier.subresourceRange.levelCount = 1;
-					barrier.subresourceRange.layerCount = 1;
-
-					barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-					barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-					barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-					barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-					vkCmdPipelineBarrier(vkCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-				}
-
-				// Perform blit
-				{
-					VkImageBlit imageBlit{};
-					imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					imageBlit.srcSubresource.layerCount = 1;
-					imageBlit.srcSubresource.mipLevel = i - 1;
-					imageBlit.srcSubresource.baseArrayLayer = layer;
-
-					imageBlit.srcOffsets[0] = { 0, 0, 0 };
-					imageBlit.srcOffsets[1] = { int32_t(m_desc.width >> (i - 1)), int32_t(m_desc.height >> (i - 1)), 1 };
-
-					imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					imageBlit.dstSubresource.layerCount = 1;
-					imageBlit.dstSubresource.mipLevel = i;
-					imageBlit.dstSubresource.baseArrayLayer = layer;
-
-					imageBlit.dstOffsets[0] = { 0, 0, 0 };
-					imageBlit.dstOffsets[1] = { int32_t(m_desc.width >> i), int32_t(m_desc.height >> i), 1 };
-
-					vkCmdBlitImage(vkCmdBuffer, m_allocation->GetResourceHandle<VkImage>(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_allocation->GetResourceHandle<VkImage>(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_LINEAR);
-				}
-
-				// Transfer last mip back
-				{
-					barrier.srcAccessMask = 0;
-					barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-					barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-					barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-					vkCmdPipelineBarrier(vkCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-				}
-			}
-		}
-
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		barrier.newLayout = Utility::GetVkImageLayoutFromImageLayout(currentState.layout);
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		barrier.subresourceRange.baseArrayLayer = 0;
-		barrier.subresourceRange.baseMipLevel = 0;
-
-		vkCmdPipelineBarrier(vkCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-
-		commandBuffer->EndMarker();
-		commandBuffer->End();
-
-		RefPtr<Fence> fence = CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
-		fence->WaitUntilSignaled();
-
-		m_hasGeneratedMips = true;
 	}
 
 	RefPtr<ImageView> VulkanImage::GetView(const ImageViewDesc& desc)
@@ -457,5 +344,10 @@ namespace Volt::RHI
 	const MemoryRequirement& VulkanImage::GetMemoryRequirements() const
 	{
 		return m_allocation->GetMemoryRequirements();
+	}
+
+	uint64_t VulkanImage::GetResourceByteSize() const
+	{
+		return m_allocation->GetMemoryRequirements().size;
 	}
 }

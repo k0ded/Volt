@@ -28,7 +28,7 @@ namespace Volt::RHI::BufferUtility
 
 		commandBuffer->Begin();
 
-		const auto& currentState = RHI::GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(buffer, 0);
+		const ResourceState currentState = buffer->GetResourceStateTracker().GetResourceState(0);
 
 		{
 			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsGlobalBarrier();

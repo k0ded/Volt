@@ -54,7 +54,7 @@ namespace Volt::RHI
 	{
 		VT_PROFILE_FUNCTION();
 
-		uint64_t maxRange = std::min(m_resource->GetMemoryRequirements().size, m_desc.size);
+		uint64_t maxRange = std::min(m_resource->GetResourceByteSize(), m_desc.size);
 
 		memset(&m_srvDescriptor, 0, sizeof(m_srvDescriptor));
 		memset(&m_uavDescriptor, 0, sizeof(m_uavDescriptor));

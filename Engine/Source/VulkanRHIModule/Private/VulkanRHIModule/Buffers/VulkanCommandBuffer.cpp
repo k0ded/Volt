@@ -683,7 +683,6 @@ namespace Volt::RHI
 	void AddBufferBarrier(const BufferBarrier& barrierInfo, VkBufferMemoryBarrier2& outBarrier)
 	{
 		VT_ENSURE(barrierInfo.resource != nullptr);
-		auto& vkBuffer = barrierInfo.resource->AsRef<VulkanBuffer>();
 
 		outBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
 		outBarrier.pNext = nullptr;
@@ -708,9 +707,9 @@ namespace Volt::RHI
 		outBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		outBarrier.offset = barrierInfo.offset;
 		outBarrier.size = barrierInfo.size;
-		outBarrier.buffer = vkBuffer.GetHandle<VkBuffer>();
+		outBarrier.buffer = barrierInfo.resource->GetHandle<VkBuffer>();
 
-		GraphicsContext::GetResourceStateTracker()->TransitionResource(barrierInfo.resource, 0, barrierInfo.dstStage, barrierInfo.dstAccess);
+		barrierInfo.resource->GetResourceStateTrackerMutable().Transition(0, barrierInfo.dstStage, barrierInfo.dstAccess);
 	}
 
 	void AddImageBarrier(const ImageBarrier& barrierInfo, VkImageMemoryBarrier2& outBarrier)
@@ -765,14 +764,15 @@ namespace Volt::RHI
 			imageDesc.layers : 
 			outBarrier.subresourceRange.baseArrayLayer + outBarrier.subresourceRange.layerCount;
 
-		RefPtr<ResourceStateTracker> resourceStateTracker = GraphicsContext::GetResourceStateTracker();
+
+		ResourceStateTracker& resourceStateTracker = barrierInfo.resource->GetResourceStateTrackerMutable();
 
 		for (uint32_t mip = outBarrier.subresourceRange.baseMipLevel; mip < maxMip; ++mip)
 		{
 			for (uint32_t layer = outBarrier.subresourceRange.baseArrayLayer; layer < maxLayer; ++layer)
 			{
 				const uint32_t subResourceIndex = RHI::GetSubResourceIndex(mip, layer, 0, imageDesc.mips, imageDesc.layers);
-				resourceStateTracker->TransitionResource(barrierInfo.resource, subResourceIndex, barrierInfo.dstStage, barrierInfo.dstAccess, barrierInfo.dstLayout);
+				resourceStateTracker.Transition(subResourceIndex, barrierInfo.dstStage, barrierInfo.dstAccess, barrierInfo.dstLayout);
 			}
 		}
 	}
@@ -1151,14 +1151,12 @@ namespace Volt::RHI
 
 		VT_ENSURE_MSG(height >= 1 && width >= 1 && depth >= 1, "All dimensions must be equal to or greater than one!");
 
-		auto& vkImage = dstImage->AsRef<VulkanImage>();
-
 		VkBufferImageCopy region{};
 		region.bufferOffset = 0;
 		region.bufferRowLength = 0;
 		region.bufferImageHeight = 0;
 
-		region.imageSubresource.aspectMask = static_cast<VkImageAspectFlags>(vkImage.GetImageAspect());
+		region.imageSubresource.aspectMask = static_cast<VkImageAspectFlags>(dstImage->GetImageAspect());
 		region.imageSubresource.mipLevel = mip;
 		region.imageSubresource.baseArrayLayer = 0;
 		region.imageSubresource.layerCount = 1;
@@ -1166,7 +1164,7 @@ namespace Volt::RHI
 		region.imageOffset = { offsetX, offsetY, offsetZ };
 		region.imageExtent = { width, height, depth };
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage, 0);
+		const ResourceState& currentState = dstImage->GetResourceStateTracker().GetResourceState(0);
 		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, srcBuffer->GetHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), 1, &region);
 	}
 
@@ -1177,14 +1175,12 @@ namespace Volt::RHI
 		VT_ENSURE_MSG(height >= 1 && width >= 1 && depth >= 1, "All dimensions must be equal to or greater than one!");
 		VT_ENSURE_MSG(mip < srcImage->GetDesc().mips, "Mip level is not valid!");
 
-		auto& vkImage = srcImage->AsRef<VulkanImage>();
-
 		VkBufferImageCopy region{};
 		region.bufferOffset = dstOffset;
 		region.bufferRowLength = 0;
 		region.bufferImageHeight = 0;
 
-		region.imageSubresource.aspectMask = static_cast<VkImageAspectFlags>(vkImage.GetImageAspect());
+		region.imageSubresource.aspectMask = static_cast<VkImageAspectFlags>(srcImage->GetImageAspect());
 		region.imageSubresource.mipLevel = mip;
 		region.imageSubresource.baseArrayLayer = 0;
 		region.imageSubresource.layerCount = srcImage->GetDesc().layers;
@@ -1192,7 +1188,7 @@ namespace Volt::RHI
 		region.imageOffset = { 0, 0, 0 };
 		region.imageExtent = { width, height, depth };
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(srcImage, 0);
+		const ResourceState& currentState = srcImage->GetResourceStateTracker().GetResourceState(0);
 		vkCmdCopyImageToBuffer(m_commandBufferData.commandBuffer, srcImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), dstBuffer->GetHandle<VkBuffer>(), 1, &region);
 	}
 
@@ -1203,14 +1199,12 @@ namespace Volt::RHI
 		VT_ENSURE_MSG(height >= 1 && width >= 1 && depth >= 1, "All dimensions must be equal to or greater than one!");
 		VT_ENSURE_MSG(mip < srcImage->GetDesc().mips, "Mip level is not valid!");
 
-		auto& vkImage = srcImage->AsRef<VulkanImage>();
-
 		VkBufferImageCopy region{};
 		region.bufferOffset = dstOffset;
 		region.bufferRowLength = 0;
 		region.bufferImageHeight = 0;
 
-		region.imageSubresource.aspectMask = static_cast<VkImageAspectFlags>(vkImage.GetImageAspect());
+		region.imageSubresource.aspectMask = static_cast<VkImageAspectFlags>(srcImage->GetImageAspect());
 		region.imageSubresource.mipLevel = mip;
 		region.imageSubresource.baseArrayLayer = 0;
 		region.imageSubresource.layerCount = srcImage->GetDesc().layers;
@@ -1218,7 +1212,7 @@ namespace Volt::RHI
 		region.imageOffset = { offsetX, offsetY, offsetZ };
 		region.imageExtent = { width, height, depth };
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(srcImage, 0);
+		const ResourceState& currentState = srcImage->GetResourceStateTracker().GetResourceState(0);
 		vkCmdCopyImageToBuffer(m_commandBufferData.commandBuffer, srcImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), dstBuffer->GetHandle<VkBuffer>(), 1, &region);
 	}
 
@@ -1228,11 +1222,8 @@ namespace Volt::RHI
 
 		VT_ENSURE_MSG(height >= 1 && width >= 1 && depth >= 1, "All dimensions must be equal to or greater than one!");
 
-		VulkanImage& srcVkImage = srcImage->AsRef<VulkanImage>();
-		VulkanImage& dstVkImage = dstImage->AsRef<VulkanImage>();
-
-		const VkImageAspectFlags srcImageAspect = static_cast<VkImageAspectFlags>(srcVkImage.GetImageAspect());
-		const VkImageAspectFlags dstImageAspect = static_cast<VkImageAspectFlags>(dstVkImage.GetImageAspect());
+		const VkImageAspectFlags srcImageAspect = static_cast<VkImageAspectFlags>(srcImage->GetImageAspect());
+		const VkImageAspectFlags dstImageAspect = static_cast<VkImageAspectFlags>(dstImage->GetImageAspect());
 
 		VkImageCopy2 info{};
 		info.sType = VK_STRUCTURE_TYPE_IMAGE_COPY_2;
@@ -1258,9 +1249,9 @@ namespace Volt::RHI
 		VkCopyImageInfo2 cpyInfo{};
 		cpyInfo.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2;
 		cpyInfo.pNext = nullptr;
-		cpyInfo.srcImage = srcVkImage.GetHandle<VkImage>();
+		cpyInfo.srcImage = srcImage->GetHandle<VkImage>();
 		cpyInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-		cpyInfo.dstImage = dstVkImage.GetHandle<VkImage>();
+		cpyInfo.dstImage = dstImage->GetHandle<VkImage>();
 		cpyInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		cpyInfo.pRegions = &info;
 		cpyInfo.regionCount = 1;
@@ -1271,8 +1262,6 @@ namespace Volt::RHI
 	void VulkanCommandBuffer::UploadTextureData(RawPtr<Image> dstImage, RawPtr<Buffer> stagingAllocation, const ImageCopyData& copyData)
 	{
 		VT_PROFILE_FUNCTION();
-
-		auto& vkImage = dstImage->AsRef<VulkanImage>();
 
 		Vector<VkBufferImageCopy> copyRegions;
 		copyRegions.reserve(copyData.copySubData.size());
@@ -1287,7 +1276,7 @@ namespace Volt::RHI
 			newRegion.bufferRowLength = 0;
 			newRegion.bufferImageHeight = 0;
 
-			newRegion.imageSubresource.aspectMask = static_cast<VkImageAspectFlags>(vkImage.GetImageAspect());
+			newRegion.imageSubresource.aspectMask = static_cast<VkImageAspectFlags>(dstImage->GetImageAspect());
 			newRegion.imageSubresource.mipLevel = subData.subResource.baseMipLevel;
 			newRegion.imageSubresource.baseArrayLayer = subData.subResource.baseArrayLayer;
 			newRegion.imageSubresource.layerCount = subData.subResource.layerCount;
@@ -1295,13 +1284,13 @@ namespace Volt::RHI
 			newRegion.imageOffset = { 0, 0, 0 };
 			newRegion.imageExtent = { subData.width, subData.height, subData.depth };
 
-			memcpy_s(&stagingPtr[offset], stagingAllocation->GetMemoryRequirements().size, subData.data, subData.slicePitch);
+			memcpy_s(&stagingPtr[offset], stagingAllocation->GetResourceByteSize(), subData.data, subData.slicePitch);
 			offset += subData.slicePitch;
 		}
 
 		stagingAllocation->Unmap();
 
-		const auto& currentState = GraphicsContext::GetResourceStateTracker()->GetCurrentResourceState(dstImage, 0);
+		const ResourceState& currentState = dstImage->GetResourceStateTracker().GetResourceState(0);
 		vkCmdCopyBufferToImage(m_commandBufferData.commandBuffer, stagingAllocation->GetHandle<VkBuffer>(), dstImage->GetHandle<VkImage>(), Utility::GetVkImageLayoutFromImageLayout(currentState.layout), static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
 	}
 

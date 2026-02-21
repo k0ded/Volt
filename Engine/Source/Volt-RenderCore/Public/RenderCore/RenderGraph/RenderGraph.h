@@ -14,7 +14,6 @@
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Synchronization/Fence.h>
-#include <RHIModule/Core/ResourceStateTracker.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h>
 #include <CoreUtilities/EnumUtils.h>

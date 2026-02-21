@@ -44,11 +44,6 @@ namespace Volt::RHI
 		return m_transientAllocator;
 	}
 
-	RefPtr<ResourceStateTracker> VulkanGraphicsContext::GetResourceStateTrackerImpl()
-	{
-		return m_resourceStateTracker;
-	}
-
 	RefPtr<GraphicsDevice> VulkanGraphicsContext::GetGraphicsDevice() const
 	{
 		return m_graphicsDevice;
@@ -74,7 +69,6 @@ namespace Volt::RHI
 		GraphicsDeviceCreateInfo graphicsDeviceInfo{};
 		m_graphicsDevice = GraphicsDevice::Create(graphicsDeviceInfo, m_physicalDevice, m_createInfo.enableDebugLayer);
 	
-		m_resourceStateTracker = RefPtr<ResourceStateTracker>::Create();
 		m_defaultAllocator = DefaultGPUAllocator::Create();
 		m_transientAllocator = TransientGPUAllocator::Create();
 

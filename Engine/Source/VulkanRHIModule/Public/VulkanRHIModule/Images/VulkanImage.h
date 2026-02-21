@@ -36,6 +36,7 @@ namespace Volt::RHI
 		std::string_view GetName() const override;
 		uint64_t GetDeviceAddress() const override;
 		const MemoryRequirement& GetMemoryRequirements() const override;
+		uint64_t GetResourceByteSize() const override;
 
 	protected:
 		void* GetHandleImpl() const override;
@@ -48,7 +49,6 @@ namespace Volt::RHI
 
 		void Invalidate(const uint32_t width, const uint32_t height, const uint32_t depth, const void* data);
 		void Release();
-		void GenerateMips();
 
 		void InvalidateSwapchainImage(const SwapchainImageDesc& specification);
 		void TransitionToLayout(ImageLayout targetLayout);
@@ -60,7 +60,6 @@ namespace Volt::RHI
 
 		Handle<Allocation> m_allocation;
 
-		bool m_hasGeneratedMips = false;
 		bool m_isSwapchainImage = false;
 
 		ImageAspect m_imageAspect = ImageAspect::None;

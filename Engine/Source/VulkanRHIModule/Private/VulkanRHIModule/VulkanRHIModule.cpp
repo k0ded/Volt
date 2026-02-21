@@ -1,11 +1,6 @@
 #include "vkpch.h"
 #include "VulkanRHIModule.h"
 
-#include "VulkanRHIModule/Buffers/VulkanBufferView.h"
-#include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
-#include "VulkanRHIModule/Buffers/VulkanUniformBuffer.h"
-#include "VulkanRHIModule/Buffers/VulkanBuffer.h"
-
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 
 #include "VulkanRHIModule/Graphics/VulkanDeviceQueue.h"
@@ -14,8 +9,6 @@
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Graphics/VulkanSwapchain.h"
 
-#include "VulkanRHIModule/Images/VulkanImage.h"
-#include "VulkanRHIModule/Images/VulkanImageView.h"
 #include "VulkanRHIModule/Images/VulkanSamplerState.h"
 
 #include "VulkanRHIModule/Memory/VulkanDefaultGPUAllocator.h"
@@ -28,8 +21,6 @@
 
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Shader/VulkanShaderCompiler.h"
-
-#include "VulkanRHIModule/Synchronization/VulkanFence.h"
 
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
@@ -69,7 +60,10 @@ namespace Volt::RHI
 
 	RefPtr<CommandBuffer> VulkanRHIModule::CreateCommandBuffer(QueueType queueType) const
 	{
-		return RefPtr<VulkanCommandBuffer>::Create(queueType);
+		RefPtr<VulkanCommandBuffer> commandBuffer = RefPtr<VulkanCommandBuffer>::AttachNoRef(m_commandBufferArena.Allocate(queueType));
+		commandBuffer->SetArena(&m_commandBufferArena);
+
+		return commandBuffer;
 	}
 
 	RefPtr<Buffer> VulkanRHIModule::CreateBuffer(const BufferDesc& desc) const
@@ -170,7 +164,10 @@ namespace Volt::RHI
 
 	RefPtr<Fence> VulkanRHIModule::CreateFence() const
 	{
-		return RefPtr<VulkanFence>::Create();
+		RefPtr<VulkanFence> fence = RefPtr<VulkanFence>::AttachNoRef(m_fenceArena.Allocate());
+		fence->SetArena(&m_fenceArena);
+
+		return fence;
 	}
 
 	RefPtr<AccelerationStructure> VulkanRHIModule::CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const
@@ -251,7 +248,10 @@ namespace Volt::RHI
 
 	RefPtr<CommandBuffer> VulkanRHIModule::CreateSecondaryCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration) const
 	{
-		return RefPtr<VulkanCommandBuffer>::Create(renderingAttachmentDeclaration);
+		RefPtr<VulkanCommandBuffer> commandBuffer = RefPtr<VulkanCommandBuffer>::AttachNoRef(m_commandBufferArena.Allocate(renderingAttachmentDeclaration));
+		commandBuffer->SetArena(&m_commandBufferArena);
+
+		return commandBuffer;
 	}
 
 	RefPtr<TransientBuffer> VulkanRHIModule::CreateTransientBuffer(const BufferDesc& desc) const
