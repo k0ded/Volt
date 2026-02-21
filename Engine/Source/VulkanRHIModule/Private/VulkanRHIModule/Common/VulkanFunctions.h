@@ -12,6 +12,9 @@ namespace Volt::RHI
 	inline PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
 	inline PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
 
+	inline PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR vkGetPhysicalDeviceCalibrateableTimeDomainsKHR;
+	inline PFN_vkGetCalibratedTimestampsKHR vkGetCalibratedTimestampsKHR;
+
 	// Descriptor Buffers
 	inline PFN_vkGetDescriptorSetLayoutSizeEXT vkGetDescriptorSetLayoutSizeEXT;
 	inline PFN_vkGetDescriptorEXT vkGetDescriptorEXT;
@@ -45,6 +48,9 @@ namespace Volt::RHI
 		VT_GET_VULKAN_FUNCTION(vkCmdEndDebugUtilsLabelEXT);
 		VT_GET_VULKAN_FUNCTION(vkCreateDebugUtilsMessengerEXT);
 		VT_GET_VULKAN_FUNCTION(vkDestroyDebugUtilsMessengerEXT);
+
+		VT_GET_VULKAN_FUNCTION(vkGetPhysicalDeviceCalibrateableTimeDomainsKHR);
+		VT_GET_VULKAN_FUNCTION(vkGetCalibratedTimestampsKHR);
 
 		// Descriptor Buffers
 		VT_GET_VULKAN_FUNCTION(vkGetDescriptorSetLayoutSizeEXT);

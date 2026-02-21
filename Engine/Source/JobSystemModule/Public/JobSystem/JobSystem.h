@@ -85,9 +85,11 @@ namespace Volt
 
 		std::atomic<bool> m_isAlive;
 		std::atomic<uint32_t> m_nextQueueToPush = 0;
-		std::condition_variable m_wakeCondition;
-		std::mutex m_wakeMutex;
-		std::mutex m_waitingListMutex;
+		std::condition_variable_any m_wakeCondition;
+
+		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_wakeMutex);
+		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_waitingListMutex);
+
 		uint32_t m_numWorkers = 0;
 
 		Vector<JobWorker*> m_workers;

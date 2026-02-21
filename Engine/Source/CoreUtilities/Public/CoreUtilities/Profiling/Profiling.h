@@ -9,7 +9,9 @@
 
 #if VT_PROFILING_METHOD == VT_PROFILING_METHOD_TRACY
 
-#define VT_PROFILE_FRAME(NAME) { FrameMark; ZoneTransientN(__tracyScope, NAME, true); }
+#define VT_PROFILE_FRAME_START(name) FrameMarkStart(name)
+#define VT_PROFILE_FRAME_END(name) FrameMarkEnd(name)
+
 #define VT_PROFILE_FUNCTION(...)  ZoneTransient(___tracy_scoped_zone, true)
 #define VT_PROFILE_TAG(NAME, ...)
 #define VT_PROFILE_SCOPE(NAME) ZoneTransientN(__tracyScope, NAME, true)
@@ -20,9 +22,13 @@
 #define VT_PROFILE_ALLOC(ptr, size) TracyAlloc(ptr, size)
 #define VT_PROFILE_FREE(ptr) TracyFree(ptr)
 
+#define VT_PROFILE_DECLARE_MUTEX(type, name) TracyLockable(type, name)
+#define VT_PROFILE_LOCK_MARK(lockName) LockMark(lockName)
+
 #else
 
-#define VT_PROFILE_FRAME(...)
+#define VT_PROFILE_FRAME_START(name)
+#define VT_PROFILE_FRAME_END(name)
 #define VT_PROFILE_FUNCTION(...)
 #define VT_PROFILE_TAG(NAME, ...)
 #define VT_PROFILE_SCOPE(NAME)
@@ -33,5 +39,8 @@
 
 #define VT_PROFILE_ALLOC(ptr, size)
 #define VT_PROFILE_FREE(ptr)
+
+#define VT_PROFILE_DECLARE_MUTEX(type, name) type name
+#define VT_PROFILE_LOCK_MARK(lockName)
 
 #endif

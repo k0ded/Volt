@@ -7,6 +7,11 @@
 
 struct VkDevice_T;
 
+namespace tracy
+{
+	class VkCtx;
+}
+
 namespace Volt::RHI
 {
 	class VulkanPhysicalGraphicsDevice;
@@ -25,17 +30,24 @@ namespace Volt::RHI
 		uint64_t GetMaxRequiredStagingBufferSizeForImage(RawPtr<Image> image) const override;
 		uint64_t GetRowPitchForWidth(RawPtr<Image> image, uint32_t width) const override;
 
+		VT_INLINE bool HasCalibratedTimeDomains() const { return m_hasCalibratedTimeDomains; }
+		VT_INLINE tracy::VkCtx* GetProfilingContext() const { return m_profilingContext; }
+
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
 		void InitializeCapabilities();
+		void InitializeProfilingContext();
 
 		VkDevice_T* m_device = nullptr;
-	
+		bool m_hasCalibratedTimeDomains = false;
+
 		std::unordered_map<QueueType, RefPtr<DeviceQueue>> m_deviceQueues;
 
 		RawPtr<VulkanPhysicalGraphicsDevice> m_physicalDevice;
 		GPUCrashTracker m_deviceCrashTracker{};
+
+		tracy::VkCtx* m_profilingContext = nullptr;
 	};
 }

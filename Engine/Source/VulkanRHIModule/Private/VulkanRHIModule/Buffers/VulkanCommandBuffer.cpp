@@ -28,6 +28,7 @@
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
 
 #include "VulkanRHIModule/VulkanResourceCast.h"
+#include "VulkanRHIModule/Utility/TracyExtension.h"
 
 #include <RHIModule/Descriptors/ShaderBindingMap.h>
 
@@ -63,6 +64,8 @@
 #endif
 
 #include <CoreUtilities/MemoryUtility.h>
+
+#include <tracy/TracyVulkan.hpp>
 
 #include <vulkan/vulkan.h>
 
@@ -968,10 +971,20 @@ namespace Volt::RHI
 
 			Volt::RHI::vkCmdBeginDebugUtilsLabelEXT(m_commandBufferData.commandBuffer, &markerInfo);
 		}
+
+#if 0
+		VulkanGraphicsDevice& vkDevice = GraphicsContext::GetDevice()->AsRef<VulkanGraphicsDevice>();
+		Tracy::BeginProfilingScope(vkDevice.GetProfilingContext(), TracyLine, TracyFile, strlen(TracyFile), TracyFunction, strlen(TracyFunction), markerLabel.data(), markerLabel.size(), m_commandBufferData.commandBuffer);
+#endif
 	}
 
 	void VulkanCommandBuffer::EndMarker()
 	{
+#if 0
+		VulkanGraphicsDevice& vkDevice = GraphicsContext::GetDevice()->AsRef<VulkanGraphicsDevice>();
+		Tracy::EndProfilingScope(vkDevice.GetProfilingContext(), m_commandBufferData.commandBuffer);
+#endif
+
 		if (Volt::RHI::vkCmdEndDebugUtilsLabelEXT)
 		{
 			Volt::RHI::vkCmdEndDebugUtilsLabelEXT(m_commandBufferData.commandBuffer);

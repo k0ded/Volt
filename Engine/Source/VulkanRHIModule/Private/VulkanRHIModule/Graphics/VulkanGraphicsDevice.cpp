@@ -1,6 +1,7 @@
 #include "vkpch.h"
 #include "VulkanRHIModule/Graphics/VulkanGraphicsDevice.h"
-#include "VulkanRHIModule/Common/VulkanCommon.h"	
+#include "VulkanRHIModule/Common/VulkanCommon.h"
+#include "VulkanRHIModule/Common/VulkanFunctions.h"
 #include "VulkanRHIModule/Graphics/VulkanDeviceQueue.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/VulkanResourceCast.h"
@@ -10,6 +11,7 @@
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Images/ImageUtility.h>
 
+#include <tracy/TracyVulkan.hpp>
 #include <vulkan/vulkan.h>
 
 namespace Volt::RHI
@@ -325,6 +327,11 @@ namespace Volt::RHI
 				enabledExtensions.emplace_back(VK_KHR_MAINTENANCE_7_EXTENSION_NAME);
 			}
 
+			if (physicalDevice->IsExtensionAvailable(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME))
+			{
+				enabledExtensions.emplace_back(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+			}
+
 			return enabledExtensions;
 		}
 	}
@@ -404,20 +411,11 @@ namespace Volt::RHI
 			VT_VK_CHECK(vkCreateDevice(physicalDevicePtr.GetHandle<VkPhysicalDevice>(), &deviceInfo, VT_VULKAN_ALLOCATOR, &m_device));
 		}
 
+		InitializeProfilingContext();
+
 		m_deviceQueues[QueueType::Graphics] = RefPtr<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Graphics });
 		m_deviceQueues[QueueType::TransferCopy] = RefPtr<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::TransferCopy });
 		m_deviceQueues[QueueType::Compute] = RefPtr<VulkanDeviceQueue>::Create(DeviceQueueCreateInfo{ this, QueueType::Compute });
-
-#ifdef VT_ENABLE_GPU_PROFILING
-		{
-			VkPhysicalDevice physicalDevice = m_physicalDevice.lock()->GetHandle<VkPhysicalDevice>();
-			VkQueue graphicsQueue = m_deviceQueues[QueueType::Graphics]->GetHandle<VkQueue>();
-
-			uint32_t graphicsFamily = static_cast<uint32_t>(queueFamilies.graphicsFamilyQueueIndex);
-
-			OPTICK_GPU_INIT_VULKAN(&m_device, &physicalDevice, &graphicsQueue, &graphicsFamily, 1, nullptr);
-		}
-#endif
 	}
 
 	VulkanGraphicsDevice::~VulkanGraphicsDevice()
@@ -425,6 +423,11 @@ namespace Volt::RHI
 		for (auto& [queueType, queue] : m_deviceQueues)
 		{
 			queue->AsRef<VulkanDeviceQueue>().DestroyQueueSemaphore(*this);
+		}
+
+		if (m_profilingContext)
+		{
+			TracyVkDestroy(m_profilingContext);
 		}
 
 		vkDestroyDevice(m_device, VT_VULKAN_ALLOCATOR);
@@ -527,5 +530,45 @@ namespace Volt::RHI
 		const ImageDesc& desc = image->GetDesc();
 		return width * RHI::Utility::GetByteSizePerPixelFromFormat(desc.format);
 	}
-}
 
+	void VulkanGraphicsDevice::InitializeProfilingContext()
+	{
+		{
+			uint32_t numTimeDomains = 0;
+			Volt::RHI::vkGetPhysicalDeviceCalibrateableTimeDomainsKHR(m_physicalDevice->GetHandle<VkPhysicalDevice>(), &numTimeDomains, nullptr);
+
+			Vector<VkTimeDomainKHR> timeDomains;
+			timeDomains.resize(numTimeDomains);
+
+			Volt::RHI::vkGetPhysicalDeviceCalibrateableTimeDomainsKHR(m_physicalDevice->GetHandle<VkPhysicalDevice>(), &numTimeDomains, timeDomains.data());
+
+			bool hasDeviceDomain = false;
+			bool hasMonotonicClock = false;
+			bool hasPerformanceCounter = false;
+
+			for (VkTimeDomainKHR domain : timeDomains)
+			{
+				if (domain == VK_TIME_DOMAIN_DEVICE_KHR)
+				{
+					hasDeviceDomain = true;
+				}
+
+				if (domain == VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR)
+				{
+					hasMonotonicClock = true;
+				}
+
+				if (domain == VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_KHR)
+				{
+					hasPerformanceCounter = true;
+				}
+			}
+			m_hasCalibratedTimeDomains = hasDeviceDomain && (hasMonotonicClock || hasPerformanceCounter);
+		}
+
+		if (m_hasCalibratedTimeDomains)
+		{
+			m_profilingContext = TracyVkContextHostCalibrated(m_physicalDevice->GetHandle<VkPhysicalDevice>(), m_device, vkResetQueryPool, Volt::RHI::vkGetPhysicalDeviceCalibrateableTimeDomainsKHR, Volt::RHI::vkGetCalibratedTimestampsKHR);
+		}
+	}
+}

@@ -121,8 +121,11 @@ namespace Volt
 
 		while (m_isRunning)
 		{
-			VT_PROFILE_FRAME("Frame");
+			VT_PROFILE_FRAME_START("Frame");
+
 			MainUpdate();
+
+			VT_PROFILE_FRAME_END("Frame");
 		}
 	}
 

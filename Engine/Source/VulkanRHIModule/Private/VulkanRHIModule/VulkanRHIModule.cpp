@@ -39,6 +39,8 @@
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
+#include <tracy/TracyVulkan.hpp>
+
 namespace Volt::RHI
 {
 	VulkanRHIModule::VulkanRHIModule()
@@ -203,9 +205,11 @@ namespace Volt::RHI
 	void VulkanRHIModule::BeginFrame()
 	{
 		VT_PROFILE_FUNCTION();
+		TracyVkCollectHost(GraphicsContext::GetDevice()->AsRef<VulkanGraphicsDevice>().GetProfilingContext());
 
 		GraphicsContext::GetDefaultAllocator()->Update();
 		GraphicsContext::GetTransientAllocator()->Update();
+
 
 		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
 		vkGraphicsContext.GetDescriptorHeap().BeginFrame();

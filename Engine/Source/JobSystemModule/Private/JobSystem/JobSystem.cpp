@@ -238,7 +238,8 @@ namespace Volt
 
 		// Wait here for all threads to be created.
 		{
-			std::unique_lock<std::mutex> spawnLock(m_wakeMutex);
+			std::unique_lock spawnLock(m_wakeMutex);
+			VT_PROFILE_LOCK_MARK(m_wakeMutex);
 			m_wakeCondition.wait(spawnLock);
 		}
 
@@ -257,7 +258,8 @@ namespace Volt
 			}
 			else
 			{
-				std::unique_lock<std::mutex> lock(m_wakeMutex);
+				std::unique_lock lock(m_wakeMutex);
+				VT_PROFILE_LOCK_MARK(m_wakeMutex);
 				m_wakeCondition.wait(lock);
 			}
 		}
@@ -388,6 +390,7 @@ namespace Volt
 
 		// Use a lock here to make sure that only one thread flushes at a time.
 		std::scoped_lock lock{ m_waitingListMutex };
+		VT_PROFILE_LOCK_MARK(m_waitingListMutex);
 
 		Vector<Job*, InlineAllocator<128>> nonReadyJobs;
 
