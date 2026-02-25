@@ -115,9 +115,12 @@ namespace Volt
 		void ExecuteImmediate();
 		void ExecuteImmediateAndWait();
 
+		VT_INLINE bool IsCompiled() const { return m_isCompiled; }
+
 	protected:
 		friend class RenderContext;
 		friend class RenderGraphShaderParameterUniformBuffer;
+		friend class RenderGraphDebugger;
 
 		struct TextureExtractionInfo
 		{
@@ -219,6 +222,8 @@ namespace Volt
 		RGSubResourceState* AllocateSubResourceState();
 		void AddPassDependency(RGPassRef pass, RGResourceType resourceType, uint32_t subResourceIndex, RGSubResourceState& subResourceState, const RGResourceAccessState& lastAccess);
 
+		uint32_t GetNextResourceID();
+
 		// Validation
 		void ValidateTextureUAV(const RGTextureUAVDesc& uavDesc);
 		void ValidateAddPass(RGPassRef pass);
@@ -253,7 +258,26 @@ namespace Volt
 		RGVector<ShaderParameterRenderTargetDecl> m_renderTargets;
 		RGVector<RGCompiledPass> m_compiledRenderPasses;
 
+
+		struct TempResourceLifetime
+		{
+			RGResourceRef resource;
+
+			uint32_t firstPassIndex;
+			uint32_t lastPassIndex;
+		};
+
+		Vector<TempResourceLifetime> resourceLifetimes;
+
+
+
+
+
+
 		RefPtr<RHI::Fence> m_executionFence;
+	
+		uint32_t m_nextResourceId = 0;
+		bool m_isCompiled : 1;
 	};
 }
 

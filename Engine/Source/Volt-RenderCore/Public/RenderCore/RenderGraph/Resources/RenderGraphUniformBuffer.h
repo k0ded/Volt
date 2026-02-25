@@ -27,7 +27,7 @@ namespace Volt
 	class VTRC_API RGUniformBuffer : public RGResource
 	{
 	public:
-		RGUniformBuffer(const RGUniformBufferDesc& desc);
+		RGUniformBuffer(const RGUniformBufferDesc& desc, uint32_t resourceId);
 		~RGUniformBuffer() override = default;
 		RGResourceType GetResourceType() const override;
 

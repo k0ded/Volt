@@ -1,11 +1,13 @@
 #pragma once
 
 #include "RenderCore/Config.h"
+#include "RenderCore/RenderGraph/RenderGraphPass.h"
 
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Buffers/Buffer.h>
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Containers/ArrayView.h>
 #include <CoreUtilities/Pointers/RefPtr.h>
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
@@ -22,14 +24,42 @@ namespace Volt
 	class VTRC_API RenderGraphDebugger
 	{
 	public:
+		struct RenderGraphPass
+		{
+			std::string passName;
+			Vector<uint32_t> resourceReads;
+			Vector<uint32_t> resourceWrites;
+
+			RenderGraphPassFlags passFlags = RenderGraphPassFlags::None;
+			bool isCulled;
+		};
+
+		struct RenderGraphResource
+		{
+			std::string name;
+			RGResourceType resourceType;
+
+			uint32_t firstUsagePass;
+			uint32_t lastUsagePass;
+
+			bool isExternal : 1;
+			bool isExtracted : 1;
+			bool isProduced : 1;
+		};
+
+		using RenderGraphResourcesMap = Map<uint32_t, RenderGraphResource>;
+
+		void Clear();
 		void ProcessRenderGraph(RenderGraph& renderGraph);
 		void WaitForFinishedExecution() const;
 
-		VT_NODISCARD VT_INLINE const Vector<RefPtr<RHI::Image>>& GetImages() const { return m_extractedImages; }
-		VT_NODISCARD VT_INLINE const Vector<RefPtr<RHI::Buffer>>& GetStorageBuffers() const { return m_extractedBuffers; }
+		VT_INLINE ArrayView<RenderGraphPass> GetPasses() const { return m_renderGraphPasses; }
+		VT_INLINE const RenderGraphResourcesMap& GetTransientResources() const { return m_transientRenderGraphResources; }
+		VT_INLINE const RenderGraphResourcesMap& GetExternalResources() const { return m_externalRenderGraphResources; }
 
 	private:
-		Vector<RefPtr<RHI::Image>> m_extractedImages;
-		Vector<RefPtr<RHI::Buffer>> m_extractedBuffers;
+		Vector<RenderGraphPass> m_renderGraphPasses;
+		RenderGraphResourcesMap m_transientRenderGraphResources;
+		RenderGraphResourcesMap m_externalRenderGraphResources;
 	};
 }

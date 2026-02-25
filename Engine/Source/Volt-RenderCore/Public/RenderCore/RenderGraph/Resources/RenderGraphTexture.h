@@ -61,7 +61,7 @@ namespace Volt
 	class VTRC_API RGTexture : public RGResource
 	{
 	public:
-		RGTexture(const RGTextureDesc& desc, RenderGraphDataAllocator* dataAllocator);
+		RGTexture(const RGTextureDesc& desc, uint32_t resourceId, RenderGraphDataAllocator* dataAllocator);
 		~RGTexture() override = default;
 		RGResourceType GetResourceType() const override;
 

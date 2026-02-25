@@ -61,6 +61,7 @@ namespace Volt
 	class RGResource
 	{
 	public:
+		RGResource(uint32_t resourceId);
 		virtual ~RGResource() = default;
 		virtual RGResourceType GetResourceType() const = 0;
 
@@ -68,19 +69,22 @@ namespace Volt
 		VT_NODISCARD VT_INLINE bool IsExternal() const { return m_isExternal; }
 		VT_NODISCARD VT_INLINE bool IsExtracted() const { return m_isExtracted; }
 		VT_NODISCARD VT_INLINE bool IsProduced() const { return m_isProduced; }
+		VT_NODISCARD VT_INLINE uint32_t GetResourceID() const { return m_resourceId; }
 
 		RGPass* firstPassAccessor = nullptr;
 
 	private:
 		friend class RenderGraph;
+		friend class RenderGraphDebugger;
 		friend class RenderGraphResourceManager;
 		friend class RenderGraphShaderParameterUniformBuffer;
 
 		uint32_t m_refCount = 0;
+		uint32_t m_resourceId;
 
-		bool m_isExternal = false;
-		bool m_isExtracted = false;
-		bool m_isProduced = false;
+		bool m_isExternal : 1 = false;
+		bool m_isExtracted : 1 = false;
+		bool m_isProduced : 1 = false;
 	};
 
 	using RGResourceRef = RGResource*;
@@ -98,4 +102,25 @@ namespace Volt
 		virtual ~RGResourceUAV() = default;
 		virtual RGResourceRef GetResource() const = 0;
 	};
+
+	template<typename T>
+		requires(std::is_base_of_v<RGResource, T>)
+	inline T* ResourceCast(RGResourceRef resource)
+	{
+		return reinterpret_cast<T*>(resource);
+	}
+
+	template<typename T>
+		requires(std::is_base_of_v<RGResourceSRV, T>)
+	inline T* ResourceSRVCast(RGResourceSRV* resource)
+	{
+		return reinterpret_cast<T*>(resource);
+	}
+
+	template<typename T>
+		requires(std::is_base_of_v<RGResourceUAV, T>)
+	inline T* ResourceUAVCast(RGResourceUAV* resource)
+	{
+		return reinterpret_cast<T*>(resource);
+	}
 }

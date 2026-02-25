@@ -100,27 +100,6 @@ namespace Volt
 		""
 	);
 
-	template<typename T>
-		requires(std::is_base_of_v<RGResource, T>)
-	inline T* ResourceCast(RGResourceRef resource)
-	{
-		return reinterpret_cast<T*>(resource);
-	}
-
-	template<typename T>
-		requires(std::is_base_of_v<RGResourceSRV, T>)
-	inline T* ResourceSRVCast(RGResourceSRVRef resource)
-	{
-		return reinterpret_cast<T*>(resource);
-	}
-
-	template<typename T>
-		requires(std::is_base_of_v<RGResourceUAV, T>)
-	inline T* ResourceUAVCast(RGResourceUAVRef resource)
-	{
-		return reinterpret_cast<T*>(resource);
-	}
-
 	inline RHI::ResourceState GetWriteStateForRasterizedTexture(RGResourceRef resource)
 	{
 		VT_ENSURE(resource->GetResourceType() == RGResourceType::Texture);
@@ -226,6 +205,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 
 		m_executionFence = RHI::Fence::Create();
+		m_isCompiled = false;
 
 		SetupAllocators();
 	}
@@ -257,7 +237,8 @@ namespace Volt
 		m_dataAllocator(std::move(other.m_dataAllocator)),
 		m_resourceSRVs(std::move(other.m_resourceSRVs)),
 		m_resourceUAVs(std::move(other.m_resourceUAVs)),
-		m_resourceManager(std::move(other.m_resourceManager))
+		m_resourceManager(std::move(other.m_resourceManager)),
+		m_isCompiled(other.m_isCompiled)
 	{
 	}
 
@@ -285,6 +266,7 @@ namespace Volt
 		m_resourceSRVs = std::move(other.m_resourceSRVs);
 		m_resourceUAVs = std::move(other.m_resourceUAVs);
 		m_resourceManager = std::move(other.m_resourceManager);
+		m_isCompiled = other.m_isCompiled;
 
 		return *this;
 	}
@@ -294,7 +276,7 @@ namespace Volt
 		VT_PROFILE_FUNCTION();
 		VT_ENSURE(desc.numElements * desc.elementSize > 0);
 
-		RGBufferRef buffer = m_resourceAllocator.Allocate<RGBuffer>(desc);
+		RGBufferRef buffer = m_resourceAllocator.Allocate<RGBuffer>(desc, GetNextResourceID());
 		m_resources.emplace_back(buffer);
 
 		return buffer;
@@ -307,7 +289,7 @@ namespace Volt
 		VT_ENSURE_MSG(RHI::Utility::IsDepthFormat(desc.format) ? (desc.usage != RHI::ImageUsage::AttachmentStorage && desc.usage != RHI::ImageUsage::Storage) : true, 
 			"A texture with a depth format may not be used for UAV access!");
 
-		RGTextureRef texture = m_resourceAllocator.Allocate<RGTexture>(desc, m_dataAllocator.Get());
+		RGTextureRef texture = m_resourceAllocator.Allocate<RGTexture>(desc, GetNextResourceID(), m_dataAllocator.Get());
 		m_resources.emplace_back(texture);
 
 		return texture;
@@ -317,7 +299,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		RGUniformBufferRef uniformBuffer = m_resourceAllocator.Allocate<RGUniformBuffer>(desc);
+		RGUniformBufferRef uniformBuffer = m_resourceAllocator.Allocate<RGUniformBuffer>(desc, GetNextResourceID());
 		m_resources.emplace_back(uniformBuffer);
 
 		return uniformBuffer;
@@ -1002,16 +984,6 @@ namespace Volt
 
 	void RenderGraph::FindResourceLifetimes()
 	{
-		struct ResourceLifetime
-		{
-			RGResourceRef resource;
-
-			uint32_t firstPassIndex;
-			uint32_t lastPassIndex;
-		};
-
-		Vector<ResourceLifetime> resourceLifetimes;
-
 		for (RGResourceRef resource : m_resources)
 		{
 			if (resource->GetRefCount() == 0 || resource->IsExternal() || resource->IsExtracted())
@@ -1524,7 +1496,7 @@ namespace Volt
 		rgDesc.debugName = rhiDesc.debugName;
 		rgDesc.isTexelBufferDesc = EnumValueContainsFlag(rhiDesc.usage, RHI::BufferUsage::TexelBuffer);
 
-		RGBufferRef bufferResource = m_resourceAllocator.Allocate<RGBuffer>(rgDesc);
+		RGBufferRef bufferResource = m_resourceAllocator.Allocate<RGBuffer>(rgDesc, GetNextResourceID());
 		bufferResource->m_isExternal = true;
 
 		// We will assure that external buffers has been produced.
@@ -1553,7 +1525,7 @@ namespace Volt
 		desc.size = static_cast<uint32_t>(uniformBuffer->GetResourceByteSize());
 		desc.debugName = uniformBuffer->GetName();
 
-		RGUniformBufferRef bufferResource = m_resourceAllocator.Allocate<RGUniformBuffer>(desc);
+		RGUniformBufferRef bufferResource = m_resourceAllocator.Allocate<RGUniformBuffer>(desc, GetNextResourceID());
 		bufferResource->m_isExternal = true;
 
 		// We will assure that external buffers has been produced.
@@ -1592,7 +1564,7 @@ namespace Volt
 		desc.debugName = imageDesc.debugName;
 		desc.isCubeMap = imageDesc.isCubeMap;
 
-		RGTextureRef textureResource = m_resourceAllocator.Allocate<RGTexture>(desc, m_dataAllocator.Get());
+		RGTextureRef textureResource = m_resourceAllocator.Allocate<RGTexture>(desc, GetNextResourceID(), m_dataAllocator.Get());
 		textureResource->m_isExternal = true;
 
 		// We will assure that external textures has been produced.
@@ -1728,6 +1700,8 @@ namespace Volt
 
 		AssignExternalResourcesSrcState();
 		BuildPassBarriers();
+
+		m_isCompiled = true;
 	}
 
 	void RenderGraph::Execute()
@@ -2128,6 +2102,11 @@ namespace Volt
 				subResourceState.previousState = prevSubResourceState.state;
 			}
 		}
+	}
+
+	uint32_t RenderGraph::GetNextResourceID()
+	{
+		return m_nextResourceId++;
 	}
 
 	void RenderGraph::StandaloneMarkers::BeginMarker(uint32_t passIndex, const std::string& markerName, const glm::vec4& color)

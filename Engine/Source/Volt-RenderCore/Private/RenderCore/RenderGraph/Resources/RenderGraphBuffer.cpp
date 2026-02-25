@@ -4,8 +4,10 @@
 
 namespace Volt
 {
-	RGBuffer::RGBuffer(const RGBufferDesc& desc)
-		: m_desc(desc), m_rhiResource(nullptr)
+	RGBuffer::RGBuffer(const RGBufferDesc& desc, uint32_t resourceId)
+		: RGResource(resourceId),
+		m_desc(desc), 
+		m_rhiResource(nullptr)
 	{
 
 	}

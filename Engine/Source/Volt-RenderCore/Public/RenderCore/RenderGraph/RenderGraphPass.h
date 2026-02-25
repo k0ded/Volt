@@ -57,6 +57,7 @@ namespace Volt
 		VTRC_API void SetupAllocators(RenderGraphDataAllocator* dataAllocator);
 
 		friend class RenderGraph;
+		friend class RenderGraphDebugger;
 		friend class RenderGraphPassAllocator;
 
 		std::string m_name;

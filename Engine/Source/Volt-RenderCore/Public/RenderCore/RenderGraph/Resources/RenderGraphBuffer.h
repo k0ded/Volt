@@ -128,7 +128,7 @@ namespace Volt
 	class VTRC_API RGBuffer : public RGResource
 	{
 	public:
-		RGBuffer(const RGBufferDesc& desc);
+		RGBuffer(const RGBufferDesc& desc, uint32_t resourceId);
 		~RGBuffer() override = default;
 		RGResourceType GetResourceType() const override;
 

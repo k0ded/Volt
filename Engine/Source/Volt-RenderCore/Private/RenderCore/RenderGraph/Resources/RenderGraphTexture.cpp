@@ -6,8 +6,9 @@
 
 namespace Volt
 {
-	RGTexture::RGTexture(const RGTextureDesc& desc, RenderGraphDataAllocator* dataAllocator)
-		: m_desc(desc)
+	RGTexture::RGTexture(const RGTextureDesc& desc, uint32_t resourceId, RenderGraphDataAllocator* dataAllocator)
+		: RGResource(resourceId),
+		m_desc(desc)
 	{
 		lastAccess.set_allocator({ dataAllocator });
 		firstAccess.set_allocator({ dataAllocator });

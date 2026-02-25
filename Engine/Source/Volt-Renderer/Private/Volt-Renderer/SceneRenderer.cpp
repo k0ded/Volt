@@ -199,9 +199,10 @@ namespace Volt
 		m_renderScene->RenderDebug(renderGraph, renderView, outputTexture, sceneTextures.sceneDepth);
 		m_renderScene->EndFrame(renderGraph);
 
-		//m_renderGraphDebugger.ProcessRenderGraph(renderGraph);
 
 		renderGraph.Compile();
+		m_renderGraphDebugger.ProcessRenderGraph(renderGraph);
+
 		m_renderGraphExecutionCounter = renderGraph.ExecuteAndExtractCounter();
 
 		m_frameIndex++;

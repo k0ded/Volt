@@ -4,8 +4,10 @@
 
 namespace Volt
 {
-	RGUniformBuffer::RGUniformBuffer(const RGUniformBufferDesc& desc)
-		: m_desc(desc), m_rhiResource(nullptr)
+	RGUniformBuffer::RGUniformBuffer(const RGUniformBufferDesc& desc, uint32_t resourceId)
+		: RGResource(resourceId),
+		m_desc(desc), 
+		m_rhiResource(nullptr)
 	{
 
 	}
