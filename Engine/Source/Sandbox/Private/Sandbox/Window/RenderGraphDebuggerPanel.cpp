@@ -132,6 +132,23 @@ void RenderGraphDebuggerPanel::UpdateMainContent()
 							}
 						}
 					}
+
+					if (ImGui::CollapsingHeader("Render Targets", nullptr, ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						for (uint32_t resourceId : selectedPass.renderTargets)
+						{
+							if (transientResources.contains(resourceId))
+							{
+								const RenderGraphDebugger::RenderGraphResource& resource = transientResources.at(resourceId);
+								ImGui::TextUnformatted(resource.name.c_str());
+							}
+							else
+							{
+								const RenderGraphDebugger::RenderGraphResource& resource = externalResources.at(resourceId);
+								ImGui::TextUnformatted(resource.name.c_str());
+							}
+						}
+					}
 				}
 			}
 
@@ -146,26 +163,32 @@ void RenderGraphDebuggerPanel::UpdateMainContent()
 			ImGuiTableFlags_ScrollX |
 			ImGuiTableFlags_ScrollY |
 			ImGuiTableFlags_BordersOuter |
+			ImGuiTableFlags_BordersInnerV |
 			ImGuiTableFlags_Hideable |
-			ImGuiTableFlags_HighlightHoveredColumn |
-			ImGuiTableFlags_NoClip;
+			ImGuiTableFlags_HighlightHoveredColumn;
 
 		constexpr ImGuiTableColumnFlags ColumnFlags =
 			ImGuiTableColumnFlags_AngledHeader |
 			ImGuiTableColumnFlags_WidthFixed;
 
-		constexpr size_t MaxPassNameLength = 15;
+		constexpr ImU32 WriteColor = IM_COL32(212, 51, 51, 255);
+		constexpr ImU32 ReadColor = IM_COL32(51, 212, 83, 255);
+		constexpr ImU32 NoAccessColor = IM_COL32(128, 128, 128, 255);
+		constexpr ImU32 ReferenceLineColor = IM_COL32(150, 150, 150, 200);
 
+		constexpr size_t MaxPassNameLength = 20;
 		constexpr float ColumnWidth = 30.f;
-
 		constexpr float RowHeight = 20.f;
 
 		UI::ScopedStyleFloat2 cellPadding{ ImGuiStyleVar_CellPadding, { 0.f } };
+		UI::ScopedStyleFloat headerAngle{ ImGuiStyleVar_TableAngledHeadersAngle, glm::radians(50.f)};
 
-		if (ImGui::BeginTable("LifetimeTable", numRenderPasses, TableFlags))
+		const int32_t numColumns = numRenderPasses + 1;
+		if (ImGui::BeginTable("LifetimeTable", numColumns, TableFlags))
 		{
-
 			ImGuiWindow* tableWindow = ImGui::GetCurrentWindow();
+
+			ImGui::TableSetupColumn("Resources", ImGuiTableColumnFlags_NoHide);
 
 			for (int32_t i = 0; i < numRenderPasses; ++i)
 			{
@@ -178,84 +201,85 @@ void RenderGraphDebuggerPanel::UpdateMainContent()
 
 				ImGui::TableSetupColumn(passName.c_str(), ColumnFlags, ColumnWidth);
 			}
-			//ImGui::TableSetupScrollFreeze(0, 1);
-			ImGui::TableAngledHeadersRow(); // Draw angled headers for all columns with the ImGuiTableColumnFlags_AngledHeader flag.
+			ImGui::TableSetupScrollFreeze(1, 2);
+			ImGui::TableAngledHeadersRow();
+			ImGui::TableHeadersRow();
 
-			const ImU32 BufferColor = IM_COL32(86, 133, 165, 255);
-			const ImU32 TextureColor = IM_COL32(93, 186, 143, 255);
+			auto DrawResourceRow = [tableWindow, numColumns](const RenderGraphDebugger::RenderGraphResource& resource, int32_t row)
+			{
+				ImGui::PushID(row);
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextUnformatted(resource.name.c_str());
+
+				for (int32_t column = 1; column < static_cast<int32_t>(resource.lastUsagePass) + 1; ++column)
+				{
+					if (ImGui::TableSetColumnIndex(column))
+					{
+						ImVec2 startPos = tableWindow->DC.CursorPos;
+						ImVec2 lineStartPos = startPos + ImVec2(0.f, RowHeight * 0.5f);
+
+						constexpr float LineSpacing = 2.f;
+						constexpr int32_t NumLines = 3;
+						const float lineWidth = (ColumnWidth / NumLines) - LineSpacing;
+
+						for (int32_t lineIndex = 0; lineIndex < NumLines; ++lineIndex)
+						{
+							ImVec2 lineEndPos = lineStartPos + ImVec2(lineWidth, 0.f);
+							tableWindow->DrawList->AddLine(lineStartPos, lineEndPos, ReferenceLineColor);
+							lineStartPos = lineEndPos + ImVec2(LineSpacing, 0.f);
+						}
+					}
+				}
+
+				for (int32_t column = resource.firstUsagePass + 1; column <= static_cast<int32_t>(resource.lastUsagePass) + 1; ++column)
+				{
+					if (ImGui::TableSetColumnIndex(column))
+					{
+						ImGui::PushID(column);
+
+						ImU32 color = NoAccessColor;
+
+						auto passAccessIt = resource.passAccesses.find_with_predicate([column](const auto& passAccess) 
+						{ 
+							return static_cast<int32_t>(passAccess.passIndex) == column - 1; 
+						});
+
+						if (passAccessIt != resource.passAccesses.end())
+						{
+							if (passAccessIt->isRead)
+							{
+								color = ReadColor;
+							}
+							else
+							{
+								color = WriteColor;
+							}
+						}
+
+						ImVec2 startPos = tableWindow->DC.CursorPos;
+						tableWindow->DrawList->AddRectFilled(startPos, startPos + ImVec2(ColumnWidth, RowHeight), color);
+
+						ImGui::PopID();
+					}
+				}
+
+				ImGui::PopID();
+			};
 
 			for (int32_t row = 0; row < numTransientResources; ++row)
 			{
-				ImGui::TableNextRow();
-
 				auto it = transientResources.begin() + row;
 				const RenderGraphDebugger::RenderGraphResource& resource = it->second;
-
-				{
-					ImGui::TableSetColumnIndex(resource.firstUsagePass);
-					ImVec2 startPos = tableWindow->DC.CursorPos;
-
-					ImGui::TableSetColumnIndex(resource.lastUsagePass);
-					ImVec2 endPos = tableWindow->DC.CursorPos + ImVec2(ColumnWidth, RowHeight);
-
-					ImU32 color = 0;
-
-					if (resource.resourceType == RGResourceType::Buffer ||
-						resource.resourceType == RGResourceType::UniformBuffer)
-					{
-						color = BufferColor;
-					}
-					else
-					{
-						color = TextureColor;
-					}
-
-					tableWindow->DrawList->AddRectFilled(startPos, endPos, color);
-
-					const ImVec2 textSize = ImGui::CalcTextSize(resource.name.c_str());
-					const ImVec2 textOffset = (startPos + ImVec2(endPos.x, endPos.y - RowHeight)) * 0.5f - ImVec2(textSize.x * 0.5f, 0.f);
-
-					tableWindow->DrawList->AddText(textOffset, IM_COL32(0, 0, 0, 255), resource.name.c_str());
-
-					ImGui::Dummy(ImVec2(ColumnWidth, RowHeight));
-				}
+				DrawResourceRow(resource, row);
 			}
 
 			for (int32_t row = 0; row < numExternalResources; ++row)
 			{
-				ImGui::TableNextRow();
-
 				auto it = externalResources.begin() + row;
 				const RenderGraphDebugger::RenderGraphResource& resource = it->second;
-
-				{
-					ImGui::TableSetColumnIndex(0);
-					ImVec2 startPos = tableWindow->DC.CursorPos;
-
-					ImGui::TableSetColumnIndex(numRenderPasses - 1);
-					ImVec2 endPos = tableWindow->DC.CursorPos + ImVec2(ColumnWidth, RowHeight);
-
-					ImU32 color = 0;
-
-					if (resource.resourceType == RGResourceType::Buffer ||
-						resource.resourceType == RGResourceType::UniformBuffer)
-					{
-						color = BufferColor;
-					}
-					else
-					{
-						color = TextureColor;
-					}
-
-					tableWindow->DrawList->AddRectFilled(startPos, endPos, color);
-
-					const ImVec2 textSize = ImGui::CalcTextSize(resource.name.c_str());
-					const ImVec2 textOffset = (startPos + ImVec2(endPos.x, endPos.y - RowHeight)) * 0.5f - ImVec2(textSize.x * 0.5f, 0.f);
-
-					tableWindow->DrawList->AddText(textOffset, IM_COL32(0, 0, 0, 255), resource.name.c_str());
-
-					ImGui::Dummy(ImVec2(ColumnWidth, RowHeight));
-				}
+				DrawResourceRow(resource, row + numTransientResources);
 			}
 
 			ImGui::EndTable();

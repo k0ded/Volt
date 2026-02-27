@@ -24,11 +24,18 @@ namespace Volt
 	class VTRC_API RenderGraphDebugger
 	{
 	public:
+		struct ResourcePassAccess
+		{
+			uint32_t passIndex;
+			bool isRead;
+		};
+
 		struct RenderGraphPass
 		{
 			std::string passName;
 			Vector<uint32_t> resourceReads;
 			Vector<uint32_t> resourceWrites;
+			Vector<uint32_t> renderTargets;
 
 			RenderGraphPassFlags passFlags = RenderGraphPassFlags::None;
 			bool isCulled;
@@ -41,6 +48,8 @@ namespace Volt
 
 			uint32_t firstUsagePass;
 			uint32_t lastUsagePass;
+
+			Vector<ResourcePassAccess> passAccesses;
 
 			bool isExternal : 1;
 			bool isExtracted : 1;

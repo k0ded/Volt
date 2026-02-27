@@ -986,7 +986,7 @@ namespace Volt
 	{
 		for (RGResourceRef resource : m_resources)
 		{
-			if (resource->GetRefCount() == 0 || resource->IsExternal() || resource->IsExtracted())
+			if (resource->GetRefCount() == 0)
 			{
 				continue;
 			}
