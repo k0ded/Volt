@@ -11,6 +11,9 @@
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 #include "VulkanRHIModule/Images/VulkanImage.h"
 
+#include "VulkanRHIModule/VulkanRHISubmissionThread.h"
+#include "VulkanRHIModule/VulkanResourceCast.h"
+
 #include <RHIModule/Core/Profiling.h>
 #include <RHIModule/Utility/ResourceUtility.h>
 #include <RHIModule/RHIModule.h>
@@ -213,83 +216,31 @@ namespace Volt::RHI
 			return;
 		}
 
-		const auto deviceQueue = GraphicsContext::GetDevice()->GetDeviceQueue(QueueType::Graphics);
 
-		VulkanDeviceQueue& vkQueue = deviceQueue->AsRef<VulkanDeviceQueue>();
 		PerFrameInFlightData& frameData = m_perFrameInFlightData.at(m_currentFrameIndex);
 		PerImageData& imageData = m_perImageData.at(m_currentImageIndex);
 
-		// Queue Submit
+		VulkanRHISubmissionThread* submissionThread = ResourceCast(&RHIModule::GetInstance().GetSubmissionThread());
 		{
-			VkCommandBuffer cmdBuffer = m_commandBuffers.at(m_currentFrameIndex)->GetHandle<VkCommandBuffer>();
-
-			VkSemaphoreSubmitInfo waitInfo{};
-			waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-			waitInfo.pNext = nullptr;
-			waitInfo.semaphore = frameData.presentSemaphore;
-			waitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-			waitInfo.deviceIndex = 0;
-			waitInfo.value = 1;
-
-			VkSemaphoreSubmitInfo signalInfo{};
-			signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-			signalInfo.pNext = nullptr;
-			signalInfo.semaphore = imageData.renderSemaphore;
-			signalInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-			signalInfo.deviceIndex = 0;
-			signalInfo.value = 1;
-
-			VkCommandBufferSubmitInfo cmdBufferInfo{};
-			cmdBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-			cmdBufferInfo.pNext = nullptr;
-			cmdBufferInfo.commandBuffer = cmdBuffer;
-			cmdBufferInfo.deviceMask = 0;
-
-			VkSubmitInfo2 submitInfo;
-			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-			submitInfo.pNext = nullptr;
-			submitInfo.flags = 0;
-			submitInfo.waitSemaphoreInfoCount = 1;
-			submitInfo.pWaitSemaphoreInfos = &waitInfo;
-			submitInfo.signalSemaphoreInfoCount = 1;
-			submitInfo.pSignalSemaphoreInfos = &signalInfo;
-			submitInfo.commandBufferInfoCount = 1;
-			submitInfo.pCommandBufferInfos = &cmdBufferInfo;
-
-			vkQueue.AquireLock();
-			VT_VK_CHECK(vkQueueSubmit2(deviceQueue->GetHandle<VkQueue>(), 1, &submitInfo, frameData.renderFence));
-			vkQueue.ReleaseLock();
+			submissionThread->QueueSwapchainSubmit(
+				frameData.presentSemaphore,
+				imageData.renderSemaphore,
+				frameData.renderFence,
+				m_commandBuffers.at(m_currentFrameIndex)->GetHandle<VkCommandBuffer>()
+			);
 
 			m_lastSubmittedFence = m_currentFrameIndex;
 		}
 
-		// Present to screen
 		{
-			VkPresentInfoKHR presentInfo{};
-			presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-			presentInfo.swapchainCount = 1;
-			presentInfo.pSwapchains = &m_swapchain;
-
-			presentInfo.pWaitSemaphores = &imageData.renderSemaphore;
-			presentInfo.waitSemaphoreCount = 1;
-			presentInfo.pImageIndices = &m_currentImageIndex;
-
-			vkQueue.AquireLock();
-			VkResult presentResult = vkQueuePresentKHR(deviceQueue->GetHandle<VkQueue>(), &presentInfo);
-			vkQueue.ReleaseLock();
+			submissionThread->QueueSwapchainPresent(
+				m_swapchain,
+				imageData.renderSemaphore,
+				m_currentImageIndex,
+				&m_swapchainMutex
+			);
 
 			GetNextFrameIndex();
-
-			if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
-			{
-				m_swapchainNeedsRebuild = true;
-				return;
-			}
-			else if (presentResult != VK_SUCCESS)
-			{
-				throw std::runtime_error("Failed to present swapchain image!");
-			}
 		}
 	}
 

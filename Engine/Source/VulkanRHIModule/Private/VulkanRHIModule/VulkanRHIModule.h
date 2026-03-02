@@ -14,6 +14,7 @@
 
 #include "VulkanRHIModule/Buffers/VulkanCommandBuffer.h"
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
+#include "VulkanRHIModule/VulkanRHISubmissionThread.h"
 
 #include <RHIModule/RHIModule.h>
 #include <RHIModule/ResourceDeletionQueue.h>
@@ -75,6 +76,9 @@ namespace Volt::RHI
 		void EndFrame() override;
 		void FlushResourceDeletionQueue() override;
 
+	protected:
+		RHISubmissionThread& GetSubmissionThreadInternal() override { return m_submissionThread; }
+
 	private:
 		RHICallbackInfo m_callbackInfo;
 		ResourceDeletionQueue m_resourceDeletionQueue;
@@ -95,6 +99,7 @@ namespace Volt::RHI
 		mutable PagedAtomicArenaAllocator<VulkanCommandBuffer, 1024> m_commandBufferArena;
 
 		Ref<VulkanCPUAllocator> m_vulkanCpuAllocator;
+		VulkanRHISubmissionThread m_submissionThread;
 	};
 }
 

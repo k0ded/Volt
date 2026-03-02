@@ -322,7 +322,7 @@ public:
 	FirstConstReference First() const { return Base::First(); }
 
 	SecondReference Second() { return Base::Second(); }
-	SecondConstReference Second() const { return Base::second(); }
+	SecondConstReference Second() const { return Base::Second(); }
 
 	void Swap(CompressedPair<T1, T2>& y) { Base::Swap(y); }
 };
@@ -359,11 +359,11 @@ public:
 	CompressedPair(FirstParamType x, SecondParamType y) : Base(x, y) {}
 	explicit CompressedPair(FirstParamType x) : Base(x) {}
 
-	FirstReference First() { return Base::first(); }
-	FirstConstReference First() const { return Base::first(); }
+	FirstReference First() { return Base::First(); }
+	FirstConstReference First() const { return Base::First(); }
 
 	SecondReference Second() { return Base::Second(); }
-	SecondConstReference Second() const { return Base::second(); }
+	SecondConstReference Second() const { return Base::Second(); }
 
 	void Swap(CompressedPair<T, T>& y) { Base::Swap(y); }
 };

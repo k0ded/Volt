@@ -89,3 +89,9 @@ inline void VTBaseUnused(const volatile T& x) { (void)x; }
 #define VT_FALLTHROUGH [[fallthrough]]
 
 #define VT_UNREACHABLE __assume(0)
+
+#ifdef VT_PLATFORM_WINDOWS
+	#define VT_RESTRICT __restrict
+#else
+	#error "Not defined!"
+#endif

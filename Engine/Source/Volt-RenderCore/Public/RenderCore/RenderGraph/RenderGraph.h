@@ -55,6 +55,14 @@ namespace Volt
 		std::atomic_uint64_t m_head;
 	};
 
+	struct ResourceLifetime
+	{
+		RGResourceRef resource;
+
+		uint32_t firstPassIndex;
+		uint32_t lastPassIndex;
+	};
+
 	class VTRC_API RenderGraph
 	{
 	public:
@@ -258,21 +266,7 @@ namespace Volt
 		RGVector<ShaderParameterRenderTargetDecl> m_renderTargets;
 		RGVector<RGCompiledPass> m_compiledRenderPasses;
 
-
-		struct TempResourceLifetime
-		{
-			RGResourceRef resource;
-
-			uint32_t firstPassIndex;
-			uint32_t lastPassIndex;
-		};
-
-		Vector<TempResourceLifetime> resourceLifetimes;
-
-
-
-
-
+		RGVector<ResourceLifetime> m_resourceLifetimes;
 
 		RefPtr<RHI::Fence> m_executionFence;
 	

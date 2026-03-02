@@ -43,7 +43,7 @@ namespace Volt::RHI
 		VkDevice_T* m_device = nullptr;
 		bool m_hasCalibratedTimeDomains = false;
 
-		std::unordered_map<QueueType, RefPtr<DeviceQueue>> m_deviceQueues;
+		Array<RefPtr<DeviceQueue>, std::to_underlying(QueueType::Num)> m_deviceQueues;
 
 		RawPtr<VulkanPhysicalGraphicsDevice> m_physicalDevice;
 		GPUCrashTracker m_deviceCrashTracker{};

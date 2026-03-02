@@ -3,6 +3,8 @@
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
 
+#include <CoreUtilities/Containers/VectorVariants.h>
+
 namespace Volt::RHI
 {
 	class CommandBuffer;
@@ -12,10 +14,10 @@ namespace Volt::RHI
 
 	struct DeviceQueueExecuteInfo
 	{
-		Vector<RawPtr<CommandBuffer>> commandBuffers;
-		Vector<RawPtr<Fence>> signalFences;
+		InlineVector<RefPtr<CommandBuffer>, 1> commandBuffers;
+		InlineVector<RefPtr<Fence>, 1> signalFences;
 	
-		RawPtr<Fence> executionFence;
+		RefPtr<Fence> executionFence;
 	};
 
 	class VTRHI_API DeviceQueue : public RHIInterface

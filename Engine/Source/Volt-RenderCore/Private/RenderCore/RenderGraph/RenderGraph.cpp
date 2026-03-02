@@ -22,6 +22,7 @@
 #include <RHIModule/Graphics/GraphicsDevice.h>
 #include <RHIModule/Graphics/DeviceQueue.h>
 #include <RHIModule/RHIFeatures.h>
+#include <RHIModule/RHIModule.h>
 
 #include <JobSystem/TaskGraph.h>
 
@@ -995,7 +996,7 @@ namespace Volt
 			{
 				RGBufferRef buffer = ResourceCast<RGBuffer>(resource);
 			
-				auto& lifetime = resourceLifetimes.emplace_back();
+				auto& lifetime = m_resourceLifetimes.emplace_back();
 				lifetime.resource = buffer;
 				lifetime.lastPassIndex = buffer->lastAccess.pass->passIndex;
 				lifetime.firstPassIndex = buffer->firstPassAccessor->passIndex;
@@ -1004,7 +1005,7 @@ namespace Volt
 			{
 				RGUniformBufferRef uniformBuffer = ResourceCast<RGUniformBuffer>(resource);
 
-				auto& lifetime = resourceLifetimes.emplace_back();
+				auto& lifetime = m_resourceLifetimes.emplace_back();
 				lifetime.resource = uniformBuffer;
 				lifetime.lastPassIndex = uniformBuffer->lastAccess.pass->passIndex;
 				lifetime.firstPassIndex = uniformBuffer->firstPassAccessor->passIndex;
@@ -1013,7 +1014,7 @@ namespace Volt
 			{
 				RGTextureRef texture = ResourceCast<RGTexture>(resource);
 
-				auto& lifetime = resourceLifetimes.emplace_back();
+				auto& lifetime = m_resourceLifetimes.emplace_back();
 				lifetime.resource = texture;
 				lifetime.firstPassIndex = texture->firstPassAccessor->passIndex;
 				lifetime.lastPassIndex = 0;
@@ -1024,8 +1025,6 @@ namespace Volt
 				}
 			}
 		}
-
-
 	}
 
 	void RenderGraph::BuildPassBarriers()
@@ -1734,6 +1733,7 @@ namespace Volt
 		m_resourceUAVs.set_allocator({ m_dataAllocator.Get() });
 		m_compiledRenderPasses.set_allocator({ m_dataAllocator.Get() });
 		m_renderTargets.set_allocator({ m_dataAllocator.Get() });
+		m_resourceLifetimes.set_allocator({ m_dataAllocator.Get() });
 	}
 
 	JobCounterRef RenderGraph::ExecuteInternal(bool isImmediate, bool waitForSync, bool extractCounter)
@@ -1858,7 +1858,7 @@ namespace Volt
 			}
 
 			executeInfo.executionFence = executionFence;
-			RHI::GraphicsContext::GetDevice()->GetDeviceQueue(RHI::QueueType::Graphics)->Execute(executeInfo);
+			RHI::RHIModule::GetSubmissionThread().QueueSubmit(std::move(executeInfo), RHI::QueueType::Graphics);
 
 			renderGraphPtr->TransitionExternalResources();
 			renderGraphPtr->ExtractResources();

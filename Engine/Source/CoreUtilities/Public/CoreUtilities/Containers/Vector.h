@@ -6,6 +6,7 @@
 #include "CoreUtilities/VoltAssert.h"
 #include "CoreUtilities/CompressedPair.h"
 
+#include "CoreUtilities/Allocators/ContainerAllocatorTraits.h"
 #include "CoreUtilities/Allocators/ContainerAllocators.h"
 
 #include <initializer_list>
@@ -15,6 +16,8 @@ template<typename T, typename Allocator>
 struct VectorBase
 {
 	using allocator_type = Allocator::template ForElementType<T>;
+	using allocator_traits = ContainerAllocatorTraits<Allocator>;
+
 	typedef size_t size_type;
 	typedef ptrdiff_t difference_type;
 
@@ -66,6 +69,7 @@ public:
 	typedef typename base_type::size_type                 size_type;
 	typedef typename base_type::difference_type           difference_type;
 	typedef typename base_type::allocator_type            allocator_type;
+	typedef typename base_type::allocator_traits		  allocator_traits;
 
 	inline static constexpr size_type npos = (size_type)-1;
 
@@ -278,6 +282,11 @@ inline constexpr Vector<T, AllocatorType>::Vector(size_type count, const T& valu
 template<typename T, typename AllocatorType>
 inline constexpr Vector<T, AllocatorType>::Vector(const Vector<T, AllocatorType>& other) noexcept
 {
+	if constexpr (allocator_traits::RequiresAllocatorCopy)
+	{
+		allocator_type::CopyAllocator(this->get_allocator(), other.get_allocator());
+	}
+
 	InitializeAllocation(other.size());
 	m_ptrEnd = UninitializedCopyPtr(other.m_ptrBegin, other.m_ptrEnd, m_ptrBegin);
 }
@@ -285,6 +294,11 @@ inline constexpr Vector<T, AllocatorType>::Vector(const Vector<T, AllocatorType>
 template<typename T, typename AllocatorType>
 inline constexpr Vector<T, AllocatorType>::Vector(Vector<T, AllocatorType>&& other) noexcept
 {
+	if constexpr (allocator_traits::RequiresAllocatorCopy)
+	{
+		allocator_type::CopyAllocator(this->get_allocator(), other.get_allocator());
+	}
+
 	swap(other);
 }
 
@@ -312,6 +326,11 @@ inline constexpr Vector<T, AllocatorType>& Vector<T, AllocatorType>::operator=(c
 {
 	if (this != &rhs)
 	{
+		if constexpr (allocator_traits::RequiresAllocatorCopy)
+		{
+			allocator_type::CopyAllocator(this->get_allocator(), rhs.get_allocator());
+		}
+
 		assign<const_iterator, false>(rhs.begin(), rhs.end(), std::false_type());
 	}
 
@@ -332,6 +351,11 @@ inline constexpr Vector<T, AllocatorType>& Vector<T, AllocatorType>::operator=(V
 {
 	if (this != &other)
 	{
+		if constexpr (allocator_traits::RequiresAllocatorCopy)
+		{
+			allocator_type::CopyAllocator(this->get_allocator(), other.get_allocator());
+		}
+
 		ClearCapacity();
 		swap(other);
 	}
@@ -1139,6 +1163,12 @@ inline Vector<T, AllocatorType>::size_type Vector<T, AllocatorType>::GetNewCapac
 template<typename T, typename AllocatorType>
 inline void Vector<T, AllocatorType>::InitializeAllocation(size_type count)
 {
+	// Should not initialize empty allocations.
+	if (count == 0)
+	{
+		return;
+	}
+
 	m_ptrBegin = Allocate(count);
 	InternalCapacityPtr() = m_ptrBegin + count;
 }

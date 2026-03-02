@@ -2,6 +2,7 @@
 
 #include "RHIModule/Core/RHICommon.h"
 #include "RHIModule/Shader/Shader.h"
+#include "RHIModule/RHISubmissionThread.h"
 
 #include <CoreUtilities/Pointers/RefCounted.h>
 #include <CoreUtilities/Pointers/RawPtr.h>
@@ -144,12 +145,14 @@ namespace Volt::RHI
 		void SetFrameCapture(Ref<FrameCapture> frameCapture);
 
 		static RHIModule& GetInstance() { return *s_instance; }
+		static RHISubmissionThread& GetSubmissionThread() { return s_instance->GetSubmissionThreadInternal(); }
 		static Weak<FrameCapture> GetFrameCapture();
 
 	protected:
 		inline static RHIModule* s_instance = nullptr;
 
 		RHIModule();
+		virtual RHISubmissionThread& GetSubmissionThreadInternal() = 0;
 
 		Ref<FrameCapture> m_frameCapture;
 	};

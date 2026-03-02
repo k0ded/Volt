@@ -69,7 +69,8 @@ namespace Volt
 	void CommandBufferPool::FreeCommandBuffer(RefPtr<RHI::CommandBuffer> commandBuffer)
 	{
 		VT_PROFILE_FUNCTION();
-		s_instance->m_waitingCommandBufferPool.at(s_instance->m_frameIndex).Push(commandBuffer);
+		VT_MAYBE_UNUSED bool succeded = s_instance->m_waitingCommandBufferPool.at(s_instance->m_frameIndex).Push(commandBuffer);
+		VT_ENSURE(succeded);
 	}
 
 	void CommandBufferPool::CreateInitialCommandBuffers()

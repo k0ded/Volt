@@ -57,6 +57,11 @@ namespace Volt
 
 			VT_INLINE ValueType* GetAllocation() { return reinterpret_cast<ValueType*>(m_allocation); }
 
+			static void CopyAllocator(ForElementType& dst, const ForElementType& src)
+			{
+				dst.m_dataAllocator = src.m_dataAllocator;
+			}
+
 		private:
 			void* m_allocation;
 			RenderGraphDataAllocator* m_dataAllocator;
@@ -66,3 +71,9 @@ namespace Volt
 	template<typename T>
 	using RGVector = Vector<T, RenderGraphContainerAllocator>;
 }
+
+template<>
+struct ContainerAllocatorTraits<Volt::RenderGraphContainerAllocator>
+{
+	inline static constexpr bool RequiresAllocatorCopy = true;
+};

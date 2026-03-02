@@ -27,6 +27,7 @@
 #include "VulkanRHIModule/Shader/VulkanShaderCompiler.h"
 
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
+#include "VulkanRHIModule/VulkanRHISubmissionThread.h"
 
 namespace Volt::RHI
 {
@@ -158,6 +159,12 @@ namespace Volt::RHI
 	struct VulkanTypeTraits<Fence>
 	{
 		using ConcreteType = VulkanFence;
+	};
+
+	template<>
+	struct VulkanTypeTraits<RHISubmissionThread>
+	{
+		using ConcreteType = VulkanRHISubmissionThread;
 	};
 
 	template<typename RHIType>

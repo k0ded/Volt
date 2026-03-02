@@ -7,6 +7,8 @@
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Synchronization/Fence.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 struct VkSwapchainKHR_T;
 struct VkRenderPass_T;
 struct VkSurfaceKHR_T;

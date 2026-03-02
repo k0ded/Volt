@@ -9,6 +9,7 @@
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Containers/VectorVariants.h>
@@ -58,6 +59,7 @@ namespace Volt::RHI
 		VT_PROFILE_FUNCTION();
 
 		VT_ENSURE_MSG(!executeInfo.commandBuffers.empty(), "Empty execution is invalid!");
+		VT_ENSURE_MSG(RHIModule::GetSubmissionThread().GetSubmissionThreadId() == std::this_thread::get_id(), "Submissions may only come from the RHI Submission Thread!");
 
 		GlobalMemoryStackMark memMark;
 
@@ -181,5 +183,76 @@ namespace Volt::RHI
 	void VulkanDeviceQueue::DestroyQueueSemaphore(class VulkanGraphicsDevice& graphicsDevice)
 	{
 		vkDestroySemaphore(graphicsDevice.GetHandle<VkDevice>(), m_queueSemaphore, VT_VULKAN_ALLOCATOR);
+	}
+
+	void VulkanDeviceQueue::SwapchainExecute(VkSemaphore_T* presentSemaphore, VkSemaphore_T* renderSemaphore, VkFence_T* renderFence, VkCommandBuffer_T* commandBuffer)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE_MSG(RHIModule::GetSubmissionThread().GetSubmissionThreadId() == std::this_thread::get_id(), "Submissions may only come from the RHI Submission Thread!");
+
+		VkSemaphoreSubmitInfo waitInfo{};
+		waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+		waitInfo.pNext = nullptr;
+		waitInfo.semaphore = presentSemaphore;
+		waitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+		waitInfo.deviceIndex = 0;
+		waitInfo.value = 1;
+
+		VkSemaphoreSubmitInfo signalInfo{};
+		signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+		signalInfo.pNext = nullptr;
+		signalInfo.semaphore = renderSemaphore;
+		signalInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+		signalInfo.deviceIndex = 0;
+		signalInfo.value = 1;
+
+		VkCommandBufferSubmitInfo cmdBufferInfo{};
+		cmdBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+		cmdBufferInfo.pNext = nullptr;
+		cmdBufferInfo.commandBuffer = commandBuffer;
+		cmdBufferInfo.deviceMask = 0;
+
+		VkSubmitInfo2 submitInfo;
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+		submitInfo.pNext = nullptr;
+		submitInfo.flags = 0;
+		submitInfo.waitSemaphoreInfoCount = 1;
+		submitInfo.pWaitSemaphoreInfos = &waitInfo;
+		submitInfo.signalSemaphoreInfoCount = 1;
+		submitInfo.pSignalSemaphoreInfos = &signalInfo;
+		submitInfo.commandBufferInfoCount = 1;
+		submitInfo.pCommandBufferInfos = &cmdBufferInfo;
+
+		{
+			std::scoped_lock lock{ m_executeMutex };
+			VT_PROFILE_LOCK_MARK(m_executeMutex);
+
+			VT_VK_CHECK(vkQueueSubmit2(m_queue, 1, &submitInfo, renderFence));
+		}
+	}
+
+	void VulkanDeviceQueue::SwapchainPresent(VkSwapchainKHR_T* swapchain, VkSemaphore_T* renderSemaphore, uint32_t imageIndex, std::mutex* swapchainMutex)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE_MSG(RHIModule::GetSubmissionThread().GetSubmissionThreadId() == std::this_thread::get_id(), "Submissions may only come from the RHI Submission Thread!");
+
+		VkPresentInfoKHR presentInfo{};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = &swapchain;
+		presentInfo.pWaitSemaphores = &renderSemaphore;
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pImageIndices = &imageIndex;
+
+		{
+			std::scoped_lock lock{ m_executeMutex };
+			VT_PROFILE_LOCK_MARK(m_executeMutex);
+
+			swapchainMutex->lock();
+			VkResult presentResult = vkQueuePresentKHR(m_queue, &presentInfo);
+			swapchainMutex->unlock();
+
+			VT_ENSURE(presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR || presentResult == VK_SUCCESS);
+		}
 	}
 }

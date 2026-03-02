@@ -304,7 +304,7 @@ void Variant<Ts...>::MoveRecursive(std::byte* dstStorage, size_t& dstIndex) cons
 		if (m_typeIndex == I)
 		{
 			using T = std::tuple_element_t<I, std::tuple<Ts...>>;
-			new (&dstStorage) T(std::move(Get<T>()));
+			new (dstStorage) T(std::move(Get<T>()));
 
 			dstIndex = I;
 		}

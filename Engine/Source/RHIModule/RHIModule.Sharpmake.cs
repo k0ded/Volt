@@ -26,6 +26,7 @@ namespace VoltSharpmake
 
             conf.AddPrivateDependency<Aftermath>(target);
 			conf.AddPrivateDependency<EventSystemModule>(target);
+			conf.AddPrivateDependency<VoltPlatforms>(target);
 
             //conf.Defines.Add("VT_ENABLE_NV_AFTERMATH");
             //conf.ExportDefines.Add("VT_ENABLE_NV_AFTERMATH");

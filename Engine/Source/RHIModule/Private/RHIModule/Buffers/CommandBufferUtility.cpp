@@ -4,6 +4,7 @@
 #include "RHIModule/Graphics/GraphicsContext.h"
 #include "RHIModule/Graphics/GraphicsDevice.h"
 #include "RHIModule/Graphics/DeviceQueue.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI::CommandBufferUtils
 {
@@ -15,7 +16,7 @@ namespace Volt::RHI::CommandBufferUtils
 		executeInfo.commandBuffers = { commandBuffer };
 		executeInfo.executionFence = fence;
 
-		GraphicsContext::GetDevice()->GetDeviceQueue(queueType)->Execute(executeInfo);
+		RHIModule::GetSubmissionThread().QueueSubmit(std::move(executeInfo), queueType);
 
 		return fence;
 	}
@@ -26,7 +27,7 @@ namespace Volt::RHI::CommandBufferUtils
 		executeInfo.commandBuffers = { commandBuffer };
 		executeInfo.executionFence = fence;
 
-		GraphicsContext::GetDevice()->GetDeviceQueue(queueType)->Execute(executeInfo);
+		RHIModule::GetSubmissionThread().QueueSubmit(std::move(executeInfo), queueType);
 	}
 
 	RefPtr<Fence> ExecuteCommandBufferWithNewFenceAndWait(RefPtr<CommandBuffer> commandBuffer, QueueType queueType /*= QueueType::Graphics*/)
@@ -37,7 +38,7 @@ namespace Volt::RHI::CommandBufferUtils
 		executeInfo.commandBuffers = { commandBuffer };
 		executeInfo.executionFence = fence;
 
-		GraphicsContext::GetDevice()->GetDeviceQueue(queueType)->Execute(executeInfo);
+		RHIModule::GetSubmissionThread().QueueSubmit(std::move(executeInfo), queueType);
 		fence->WaitUntilSignaled();
 
 		return fence;

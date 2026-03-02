@@ -51,7 +51,7 @@ namespace Volt
 			resource->isExtracted = srcResource->m_isExtracted;
 			resource->isProduced = srcResource->m_isProduced;
 
-			for (const RenderGraph::TempResourceLifetime& lifetime : renderGraph.resourceLifetimes)
+			for (const ResourceLifetime& lifetime : renderGraph.m_resourceLifetimes)
 			{
 				if (srcResource == lifetime.resource)
 				{

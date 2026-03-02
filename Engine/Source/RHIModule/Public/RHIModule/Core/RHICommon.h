@@ -24,9 +24,10 @@ namespace Volt::RHI
 
 	enum class QueueType : uint8_t
 	{
-		Graphics,
+		Graphics = 0,
 		Compute,
-		TransferCopy
+		TransferCopy,
+		Num
 	};
 
 	enum class GraphicsAPI : uint8_t
