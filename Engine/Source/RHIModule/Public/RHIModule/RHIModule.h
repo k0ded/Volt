@@ -117,7 +117,6 @@ namespace Volt::RHI
 		virtual RefPtr<SamplerState> CreateSamplerState(const SamplerStateDesc& createInfo) const = 0;
 
 		virtual RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const = 0; 
-		virtual RefPtr<TransientGPUAllocator> CreateTransientAllocator() const = 0;
 		virtual RefPtr<TransientHeap> CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const = 0;
 
 		virtual RefPtr<RenderPipeline> CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const = 0;

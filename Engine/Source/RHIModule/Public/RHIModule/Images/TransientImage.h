@@ -2,6 +2,7 @@
 
 #include "RHIModule/Core/Core.h"
 #include "RHIModule/Images/Image.h"
+#include "RHIModule/Memory/TransientHeap.h"
 
 /*
 * This is a specialization of Image, which is supposed to be used for frame transient images.
@@ -16,7 +17,8 @@ namespace Volt::RHI
 	public: 
 		~TransientImage() override = default;
 
-		// #TODO_Ivar: Implement memory assigning functions.
+		virtual void BindMemory(RefPtr<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset) = 0;
+
 		VTRHI_API static RefPtr<TransientImage> Create(const ImageDesc& desc);
 
 	protected:

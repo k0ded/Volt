@@ -1,6 +1,9 @@
 #include "rcpch.h"
 
 #include "RenderCore/RenderGraph/Resources/RenderGraphBuffer.h"
+#include "RenderCore/TransientResourceSystem/PersistantResource.h"
+
+#include <RHIModule/Graphics/GraphicsContext.h>
 
 namespace Volt
 {
@@ -9,7 +12,8 @@ namespace Volt
 		m_desc(desc), 
 		m_rhiResource(nullptr)
 	{
-
+		m_isTransient = desc.memoryUsage == RHI::MemoryUsage::GPU;
+		m_memoryRequirement = RHI::GraphicsContext::GetDevice()->GetBufferMemoryRequirement(m_desc);
 	}
 
 	RGResourceType RGBuffer::GetResourceType() const

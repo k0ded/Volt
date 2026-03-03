@@ -43,6 +43,26 @@ namespace Volt
 		return hash;
 	}
 
+	VT_INLINE size_t GetBufferDescHashWithRange(const RHI::BufferDesc& desc, const PagedAllocatedRange& range)
+	{
+		size_t hash = GetBufferDescHash(desc);
+		hash = Math::HashCombine(hash, std::hash<uint64_t>()(range.size));
+		hash = Math::HashCombine(hash, std::hash<uint64_t>()(range.offset));
+		hash = Math::HashCombine(hash, std::hash<uint32_t>()(range.pageIndex));
+	
+		return hash;
+	}
+
+	VT_INLINE size_t GetTextureDescHashWithRange(const RHI::ImageDesc& desc, const PagedAllocatedRange& range)
+	{
+		size_t hash = GetTextureDescHash(desc);
+		hash = Math::HashCombine(hash, std::hash<uint64_t>()(range.size));
+		hash = Math::HashCombine(hash, std::hash<uint64_t>()(range.offset));
+		hash = Math::HashCombine(hash, std::hash<uint32_t>()(range.pageIndex));
+
+		return hash;
+	}
+
 	VT_INLINE size_t GetUniformBufferDescHash(const RGUniformBufferDesc& desc)
 	{
 		const size_t hash = std::hash<uint32_t>()(desc.size);
@@ -57,6 +77,8 @@ namespace Volt
 		m_transientBufferAllocator.ReservePages(1);
 		m_transientTextureAllocator.ReservePages(1);
 		m_transientUniformBufferAllocator.ReservePages(1);
+
+		CreateHeaps();
 	}
 
 	TransientResourceAllocator::~TransientResourceAllocator()
@@ -64,6 +86,79 @@ namespace Volt
 		m_bufferCache.clear();
 		m_textureCache.clear();
 		s_instance = nullptr;
+	}
+
+	TransientBufferResourceRef TransientResourceAllocator::CreateTransientBuffer(const RGBufferDesc& desc, const PagedAllocatedRange& requiredRange)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_MAYBE_UNUSED const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
+		VT_ENSURE(!isCpuAccessible);
+
+		const size_t hash = GetBufferDescHashWithRange(desc, requiredRange);
+
+		for (size_t i = 0; i < m_bufferCache.size(); ++i)
+		{
+			TransientBufferResourceRef transientBuffer = m_bufferCache[i];
+
+			if (transientBuffer->GetHash() == hash)
+			{
+				if (transientBuffer->TryAcquire(m_frameIndex))
+				{
+					return transientBuffer;
+				}
+			}
+		}
+
+		RefPtr<RHI::TransientBuffer> rhiBbuffer = RHI::TransientBuffer::Create(desc);
+
+		// Create the buffer and make sure we acquire it.
+		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, 1, true);
+		transientBuffer->TryAcquire(m_frameIndex);
+
+		// Bind the buffer to it's memory range
+		rhiBbuffer->BindMemory(m_bufferHeap, requiredRange.pageIndex, requiredRange.offset);
+
+		m_bufferCache.emplace_back(transientBuffer);
+
+		return transientBuffer;
+	}
+
+	TransientTextureResourceRef TransientResourceAllocator::CreateTransientTexture(const RGTextureDesc& desc, const PagedAllocatedRange& requiredRange)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_MAYBE_UNUSED const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
+		VT_ENSURE(!isCpuAccessible);
+
+		const size_t hash = GetTextureDescHashWithRange(desc, requiredRange);
+
+		for (size_t i = 0; i < m_textureCache.size(); ++i)
+		{
+			TransientTextureResourceRef transientTexture = m_textureCache[i];
+
+			if (transientTexture->GetHash() == hash)
+			{
+				if (transientTexture->TryAcquire(m_frameIndex))
+				{
+					return transientTexture;
+				}
+			}
+		}
+
+		RHI::ImageDesc specification = desc;
+		specification.initializeImage = false;
+
+		RefPtr<RHI::TransientImage> rhiTexture = RHI::TransientImage::Create(specification);
+
+		// Create the texture and make sure we acquire it.
+		TransientTextureResourceRef transientTexture = m_transientTextureAllocator.Allocate(rhiTexture, hash, 1, true);
+		transientTexture->TryAcquire(m_frameIndex);
+
+		// Bind the texture to it's memory range
+		rhiTexture->BindMemory(m_textureHeap, requiredRange.pageIndex, requiredRange.offset);
+
+		m_textureCache.emplace_back(transientTexture);
+
+		return transientTexture;
 	}
 
 	TransientBufferResourceRef TransientResourceAllocator::CreateBuffer(const RGBufferDesc& desc)
@@ -85,11 +180,10 @@ namespace Volt
 		}
 
 		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
-		
-		RefPtr<RHI::TransientBuffer> rhiBbuffer = RHI::TransientBuffer::Create(desc);
-		
+		RefPtr<RHI::Buffer> rhiBbuffer = RHI::Buffer::Create(desc);
+
 		// Create the buffer and make sure we acquire it.
-		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1);
+		TransientBufferResourceRef transientBuffer = m_transientBufferAllocator.Allocate(rhiBbuffer, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1, false);
 		transientBuffer->TryAcquire(m_frameIndex);
 
 		m_bufferCache.emplace_back(transientBuffer);
@@ -125,10 +219,10 @@ namespace Volt
 
 		const bool isCpuAccessible = EnumValueContainsFlag(desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
 
-		RefPtr<RHI::TransientImage> rhiTexture = RHI::TransientImage::Create(specification);
+		RefPtr<RHI::Image> rhiTexture = RHI::Image::Create(specification);
 
 		// Create the texture and make sure we acquire it.
-		TransientTextureResourceRef transientTexture = m_transientTextureAllocator.Allocate(rhiTexture, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1);
+		TransientTextureResourceRef transientTexture = m_transientTextureAllocator.Allocate(rhiTexture, hash, isCpuAccessible ? RHI::RHICapabilities::NumFramesInFlight : 1, false);
 		transientTexture->TryAcquire(m_frameIndex);
 
 		m_textureCache.emplace_back(transientTexture);
@@ -209,6 +303,42 @@ namespace Volt
 				m_uniformBufferCache.erase_unsorted(m_uniformBufferCache.begin() + i);
 				m_transientUniformBufferAllocator.Free(buffer);
 			}
+		}
+	}
+
+	void TransientResourceAllocator::ReserveTexturePages(uint32_t numPages)
+	{
+		m_textureHeap->ReservePages(numPages);
+	}
+
+	void TransientResourceAllocator::ReserveBufferPages(uint32_t numPages)
+	{
+		m_bufferHeap->ReservePages(numPages);
+	}
+
+	uint64_t TransientResourceAllocator::GetPageSize() const
+	{
+		return 128 * 1024 * 1024;
+	}
+
+	void TransientResourceAllocator::CreateHeaps()
+	{
+		{
+			RHI::TransientHeapCreateInfo createInfo;
+			createInfo.alignment = 0;
+			createInfo.pageSize = GetPageSize();
+			createInfo.flags = RHI::TransientHeapFlags::AllowBuffers;
+
+			m_bufferHeap = RHI::TransientHeap::Create(createInfo);
+		}
+
+		{
+			RHI::TransientHeapCreateInfo createInfo{};
+			createInfo.alignment = 0;
+			createInfo.pageSize = GetPageSize();
+			createInfo.flags = RHI::TransientHeapFlags::AllowTextures | RHI::TransientHeapFlags::AllowRenderTargets;
+			
+			m_textureHeap = RHI::TransientHeap::Create(createInfo);
 		}
 	}
 }

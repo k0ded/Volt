@@ -5,12 +5,13 @@
 #include "RenderCore/RenderGraph/GPUReadbackBuffer.h"
 #include "RenderCore/RenderGraph/GPUReadbackTexture.h"
 #include "RenderCore/RenderGraph/RenderGraphGlobalAllocator.h"
+#include "RenderCore/TransientResourceSystem/TransientResourceAllocator.h"
 
 #include "RenderCore/TransientResourceSystem/TransientResource.h"
-
 #include "RenderCore/CommandBufferPool.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <Volt-Core/Algorithms.h>
 
 #include <RHIModule/Utility/ResourceUtility.h>
 #include <RHIModule/Images/ImageUtility.h>
@@ -31,43 +32,44 @@
 #include <CoreUtilities/ComparisonHelpers.h>
 #include <CoreUtilities/Malloc.h>
 #include <CoreUtilities/MemoryUtility.h>
+#include <CoreUtilities/PagedRangeAllocator.h>
 
 /*
 	These are the synchronization cases referenced and handeled in RenderGraph::Compile.
 
 	### Case 1:
 
-	- If it’s an image resource AND the previous AND current usage are READ operations, no barrier is required.
+	- If itï¿½s an image resource AND the previous AND current usage are READ operations, no barrier is required.
 
 	### Case 2:
 
-	- If it’s an image resource AND the previous AND current usage are WRITE operations of the same type, a global barrier should be inserted.
+	- If itï¿½s an image resource AND the previous AND current usage are WRITE operations of the same type, a global barrier should be inserted.
 
 	### Case 3:
 
-	- If it’s a buffer resource AND the previous AND current usage are READ operations, no barrier is required.
+	- If itï¿½s a buffer resource AND the previous AND current usage are READ operations, no barrier is required.
 
 	### Case 4:
 
-	- If it’s a buffer resource AND the previous AND current usage are WRITE operations, a global barrier should be inserted.
+	- If itï¿½s a buffer resource AND the previous AND current usage are WRITE operations, a global barrier should be inserted.
 
 	### Case 5:
 
-	- If it’s a buffer resource AND the previous usage was a READ operation AND the current usage is a WRITE operation, a global barrier should be inserted.
+	- If itï¿½s a buffer resource AND the previous usage was a READ operation AND the current usage is a WRITE operation, a global barrier should be inserted.
 
 	### Case 6:
 
-	- If it’s a buffer resource AND the previous usage was a WRITE operation AND the current usage is a READ operation, a global barrier should be inserted.
+	- If itï¿½s a buffer resource AND the previous usage was a WRITE operation AND the current usage is a READ operation, a global barrier should be inserted.
 
 	### Case 7: Resource A is created in render pass B
 
 	If a resource is created in a render pass, we assume that the resource will be written to in the pass.
 
-	- If it’s a depth resource AND it’s a rasterization pass -> transition to a DEPTH_WRITE state
-	- If it’s a depth resource AND it’s a compute pass -> transition to a SHADER_WRITE state
-	- If it’s a color resource AND it’s a rasterization pass -> transition to a COLOR_WRITE state
-	- If it’s a color resource AND it’s a compute pass -> transition to a SHADER_WRITE state
-	- If it’s a buffer resource -> transition to a SHADER_WRITE state
+	- If itï¿½s a depth resource AND itï¿½s a rasterization pass -> transition to a DEPTH_WRITE state
+	- If itï¿½s a depth resource AND itï¿½s a compute pass -> transition to a SHADER_WRITE state
+	- If itï¿½s a color resource AND itï¿½s a rasterization pass -> transition to a COLOR_WRITE state
+	- If itï¿½s a color resource AND itï¿½s a compute pass -> transition to a SHADER_WRITE state
+	- If itï¿½s a buffer resource -> transition to a SHADER_WRITE state
 
 	### Case 8: Resource A is read in render pass B
 
@@ -79,13 +81,13 @@
 
 	If a resource is marked as write in a render pass, but not created in that render pass, the resource will be transitioned into a write state.
 
-	- If it’s a depth resource AND it’s a rasterization pass -> transition to a DEPTH_WRITE state
-	- If it’s a depth resource AND it’s a compute pass -> transition to a SHADER_WRITE state
-	- If it’s a color resource AND it’s a rasterization pass -> transition to a COLOR_WRITE state
-	- If it’s a color resource AND it’s a compute pass -> transition to a SHADER_WRITE state
-	- If it’s a buffer resource -> transition to a SHADER_WRITE state
-	- If it’s a compute pass AND the previous pass was a compute write pass -> insert a memory barrier with the correct state.
-	- If it’s a compute pass AND the previous pass was a compute read pass -> insert a memory barrier with the correct state.
+	- If itï¿½s a depth resource AND itï¿½s a rasterization pass -> transition to a DEPTH_WRITE state
+	- If itï¿½s a depth resource AND itï¿½s a compute pass -> transition to a SHADER_WRITE state
+	- If itï¿½s a color resource AND itï¿½s a rasterization pass -> transition to a COLOR_WRITE state
+	- If itï¿½s a color resource AND itï¿½s a compute pass -> transition to a SHADER_WRITE state
+	- If itï¿½s a buffer resource -> transition to a SHADER_WRITE state
+	- If itï¿½s a compute pass AND the previous pass was a compute write pass -> insert a memory barrier with the correct state.
+	- If itï¿½s a compute pass AND the previous pass was a compute read pass -> insert a memory barrier with the correct state.
 */
 
 namespace Volt
@@ -239,6 +241,7 @@ namespace Volt
 		m_resourceSRVs(std::move(other.m_resourceSRVs)),
 		m_resourceUAVs(std::move(other.m_resourceUAVs)),
 		m_resourceManager(std::move(other.m_resourceManager)),
+		m_resourceLifetimes(std::move(other.m_resourceLifetimes)),
 		m_isCompiled(other.m_isCompiled)
 	{
 	}
@@ -267,6 +270,7 @@ namespace Volt
 		m_resourceSRVs = std::move(other.m_resourceSRVs);
 		m_resourceUAVs = std::move(other.m_resourceUAVs);
 		m_resourceManager = std::move(other.m_resourceManager);
+		m_resourceLifetimes = std::move(other.m_resourceLifetimes);
 		m_isCompiled = other.m_isCompiled;
 
 		return *this;
@@ -885,9 +889,17 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		Vector<RGPassRef> unreferencedPasses{};
+		RGVector<RGPassRef> unreferencedPasses{};
+		unreferencedPasses.set_allocator({ m_dataAllocator.Get() });
+
+		// Setup the compiled render passses.
+		m_compiledRenderPasses.resize(m_renderPasses.size(), RGCompiledPass{ m_dataAllocator.Get() });
+
 		for (RGPassRef pass : m_renderPasses)
 		{
+			m_compiledRenderPasses[pass->passIndex].SetName(pass->m_name);
+			m_compiledRenderPasses[pass->passIndex].SetPassIndex(pass->passIndex);
+
 			if (pass->m_refCount == 0)
 			{
 				unreferencedPasses.emplace_back(pass);
@@ -985,6 +997,8 @@ namespace Volt
 
 	void RenderGraph::FindResourceLifetimes()
 	{
+		VT_PROFILE_FUNCTION();
+
 		for (RGResourceRef resource : m_resources)
 		{
 			if (resource->GetRefCount() == 0)
@@ -1025,6 +1039,89 @@ namespace Volt
 				}
 			}
 		}
+	}
+
+	void RenderGraph::EvaluateResourceAliasing()
+	{
+		VT_PROFILE_FUNCTION();
+	
+		// Add resources to their respective alloc and free passes
+		// The free pass is lastUsage + 1, since that's the point at
+		// which the resource can be used again.
+
+		const uint32_t lastPassIndex = m_renderPasses.back()->passIndex;
+
+		for (const ResourceLifetime& resourceLifetime : m_resourceLifetimes)
+		{
+			// Skip non transient resources (including CPU accessesable)
+			if (!resourceLifetime.resource->IsTransient())
+			{
+				continue;
+			}
+
+			VT_ENSURE(resourceLifetime.lastPassIndex >= resourceLifetime.firstPassIndex);
+			const uint32_t totalResourceLifetime = resourceLifetime.lastPassIndex - resourceLifetime.firstPassIndex;
+			m_compiledRenderPasses[resourceLifetime.firstPassIndex].AddTransientResourceAllocation(resourceLifetime.resource, totalResourceLifetime);
+
+			// If the last access is the last pass in the render graph, then there is no
+			// reason to free it.
+			if (resourceLifetime.lastPassIndex < lastPassIndex)
+			{
+				m_compiledRenderPasses[resourceLifetime.lastPassIndex + 1].AddTransientResourceFree(resourceLifetime.resource);
+			}
+		}
+
+		// Sort the resources by total lifetime.
+		Algo::ForEachParalellBlocking([&compiledPasses = m_compiledRenderPasses](uint32_t threadIdx, uint32_t elementIdx)
+		{
+			compiledPasses[elementIdx].SortTransientResourceAllocations();
+
+		}, static_cast<uint32_t>(m_renderPasses.size()), 64);
+	
+		PagedRangeAllocator bufferRangeAllocator;
+		bufferRangeAllocator.SetPageSize(TransientResourceAllocator::Get().GetPageSize());
+
+		PagedRangeAllocator textureRangeAllocator;
+		textureRangeAllocator.SetPageSize(TransientResourceAllocator::Get().GetPageSize());
+
+		for (const RGCompiledPass& compiledPass : m_compiledRenderPasses)
+		{
+			for (RGResourceRef resourceFree : compiledPass.GetTransientResourceFrees())
+			{
+				if (resourceFree->GetResourceType() == RGResourceType::Buffer)
+				{
+					bufferRangeAllocator.Free(resourceFree->GetTransientAllocationRange());
+				}
+				else
+				{
+					textureRangeAllocator.Free(resourceFree->GetTransientAllocationRange());
+				}
+
+			}
+			bufferRangeAllocator.MergeFreeAllocations();
+			textureRangeAllocator.MergeFreeAllocations();
+
+			for (const RGCompiledPass::ResourceAllocationEvent& resourceAlloc : compiledPass.GetTransientResourceAllocations())
+			{
+				RGResourceRef resource = resourceAlloc.resource;
+				const RHI::MemoryRequirement& memoryRequirement = resource->GetMemoryRequirement();
+				const uint64_t alignedSize = Utility::Align(memoryRequirement.size, memoryRequirement.alignment);
+
+				PagedAllocatedRange allocatedRange;
+				if (resourceAlloc.resource->GetResourceType() == RGResourceType::Buffer)
+				{
+					allocatedRange = bufferRangeAllocator.Allocate(alignedSize);
+				}
+				else
+				{
+					allocatedRange = textureRangeAllocator.Allocate(alignedSize);
+				}
+				resourceAlloc.resource->AssignTransientAllocationRange(allocatedRange);
+			}
+		}
+
+		m_resourceManager.ReserveTexturePages(textureRangeAllocator.GetNumPages());
+		m_resourceManager.ReserveBufferPages(bufferRangeAllocator.GetNumPages());
 	}
 
 	void RenderGraph::BuildPassBarriers()
@@ -1090,12 +1187,10 @@ namespace Volt
 			return true;
 		};
 
-		m_compiledRenderPasses.reserve(m_renderPasses.size());
-	
 		for (size_t passIndex = 0; passIndex < m_renderPasses.size(); ++passIndex)
 		{
 			RGPassRef pass = m_renderPasses[passIndex];
-			RGCompiledPass& compiledPass = m_compiledRenderPasses.emplace_back(m_dataAllocator.Get());
+			RGCompiledPass& compiledPass = m_compiledRenderPasses[passIndex];
 
 			compiledPass.SetName(pass->m_name);
 
@@ -1696,6 +1791,7 @@ namespace Volt
 
 		CullPasses();
 		FindResourceLifetimes();
+		EvaluateResourceAliasing();
 
 		AssignExternalResourcesSrcState();
 		BuildPassBarriers();
@@ -1750,7 +1846,7 @@ namespace Volt
 		PrepareResourcesForExecution();
 		CreateResourceViews();
 
-		constexpr size_t NumPassesPerJob = 1;
+		constexpr size_t NumPassesPerJob = 4;
 
 		struct PassExecutionRange
 		{

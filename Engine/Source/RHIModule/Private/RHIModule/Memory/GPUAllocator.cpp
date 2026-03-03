@@ -5,11 +5,6 @@
 
 namespace Volt::RHI
 {
-	RefPtr<TransientGPUAllocator> TransientGPUAllocator::Create()
-	{
-		return RHIModule::GetInstance().CreateTransientAllocator();
-	}
-
 	RefPtr<DefaultGPUAllocator> DefaultGPUAllocator::Create()
 	{
 		return RHIModule::GetInstance().CreateDefaultAllocator();

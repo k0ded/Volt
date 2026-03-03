@@ -52,7 +52,6 @@ namespace Volt::RHI
 		RefPtr<SamplerState> CreateSamplerState(const SamplerStateDesc& createInfo) const override;
 
 		RefPtr<DefaultGPUAllocator> CreateDefaultAllocator() const override;
-		RefPtr<TransientGPUAllocator> CreateTransientAllocator() const override;
 		RefPtr<TransientHeap> CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const override;
 
 		RefPtr<RenderPipeline> CreateRenderPipeline(const RenderPipelineCreateInfo& createInfo) const override;

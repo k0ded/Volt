@@ -19,6 +19,12 @@ namespace Volt
 			RGResource* resource = nullptr;
 		};
 
+		struct ResourceAllocationEvent
+		{
+			RGResource* resource;
+			uint32_t lifetime;
+		};
+
 		class PassBarriers
 		{
 		public:
@@ -61,6 +67,11 @@ namespace Volt
 		RGCompiledPass(RenderGraphDataAllocator* dataAllocator);
 
 		VT_INLINE void SetName(const std::string& name) { m_name = name; }
+		VT_INLINE void SetPassIndex(uint32_t passIndex) { m_passIndex = passIndex; }
+		VT_INLINE uint32_t GetPassIndex() const { return m_passIndex; }
+
+		VT_INLINE ArrayView<ResourceAllocationEvent> GetTransientResourceAllocations() const { return m_transientResourceAllocations; }
+		VT_INLINE ArrayView<RGResource*> GetTransientResourceFrees() const { return m_transientResourceFrees; }
 
 		// We only want maximum ONE global barrier per pass. As a single global barrier
 		// can represent multiple.
@@ -100,12 +111,34 @@ namespace Volt
 			return postPassBarriers.GetBarrier(static_cast<size_t>(m_postPassGlobalBarrierIndex)).globalBarrier();
 		}
 
+		inline void AddTransientResourceAllocation(RGResource* resource, uint32_t resourceLifetime)
+		{
+			m_transientResourceAllocations.emplace_back(resource, resourceLifetime);
+		}
+
+		inline void AddTransientResourceFree(RGResource* resource)
+		{
+			m_transientResourceFrees.emplace_back(resource);
+		}
+
+		inline void SortTransientResourceAllocations()
+		{
+			std::sort(m_transientResourceAllocations.begin(), m_transientResourceAllocations.end(), [](const ResourceAllocationEvent& lhs, const ResourceAllocationEvent& rhs)
+			{
+				return lhs.lifetime > rhs.lifetime;
+			});
+		}
+
 		PassBarriers prePassBarriers;
 		PassBarriers postPassBarriers;
 
 	private:
 		int32_t m_globalBarrierIndex = -1;
 		int32_t m_postPassGlobalBarrierIndex = -1;
+		uint32_t m_passIndex = 0xFFFFFFFF;
+
+		RGVector<ResourceAllocationEvent> m_transientResourceAllocations;
+		RGVector<RGResource*> m_transientResourceFrees;
 
 		std::string_view m_name;
 	};

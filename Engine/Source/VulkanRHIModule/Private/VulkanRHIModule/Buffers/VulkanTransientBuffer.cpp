@@ -2,9 +2,13 @@
 
 #include "VulkanRHIModule/Buffers/VulkanTransientBuffer.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
+#include "VulkanRHIModule/Common/VulkanHelpers.h"
+#include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
+#include "VulkanRHIModule/VulkanResourceCast.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Memory/Allocation.h>
+#include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/EnumUtils.h>
 
@@ -12,7 +16,8 @@ namespace Volt::RHI
 {
 
 	VulkanTransientBuffer::VulkanTransientBuffer(const BufferDesc& desc)
-		: m_desc(desc)
+		: m_desc(desc),
+		m_bufferHandle(nullptr)
 	{
 		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None);
 
@@ -31,18 +36,13 @@ namespace Volt::RHI
 
 	VulkanTransientBuffer::~VulkanTransientBuffer()
 	{
-		if (m_allocation)
+		if (m_bufferHandle)
 		{
-			const bool isCpuAccessible = EnumValueContainsFlag(m_desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
-
-			if (isCpuAccessible)
+			RHIModule::GetInstance().DestroyResource([bufferHandle = m_bufferHandle]()
 			{
-				GraphicsContext::GetDefaultAllocator()->DestroyBuffer(m_allocation);
-			}
-			else
-			{
-				GraphicsContext::GetTransientAllocator()->DestroyBuffer(m_allocation);
-			}
+				auto device = GraphicsContext::GetDevice();
+				vkDestroyBuffer(device->GetHandle<VkDevice>(), bufferHandle, VT_VULKAN_ALLOCATOR);
+			});
 		}
 	}
 
@@ -69,7 +69,7 @@ namespace Volt::RHI
 
 	void VulkanTransientBuffer::Unmap()
 	{
-		m_allocation->Unmap();
+		VT_ENSURE_NO_ENTRY();
 	}
 
 	void VulkanTransientBuffer::SetName(const std::string & name)
@@ -79,7 +79,7 @@ namespace Volt::RHI
 			VkDebugUtilsObjectNameInfoEXT nameInfo{};
 			nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
 			nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-			nameInfo.objectHandle = (uint64_t)m_allocation->GetResourceHandle<VkBuffer>();
+			nameInfo.objectHandle = (uint64_t)m_bufferHandle;
 			nameInfo.pObjectName = name.data();
 
 			auto device = GraphicsContext::GetDevice();
@@ -96,40 +96,63 @@ namespace Volt::RHI
 
 	uint64_t VulkanTransientBuffer::GetDeviceAddress() const
 	{
-		return m_allocation->GetDeviceAddress();
+		return m_deviceAddress;
 	}
 
 	const MemoryRequirement& VulkanTransientBuffer::GetMemoryRequirements() const
 	{
-		return m_allocation->GetMemoryRequirements();
+		return m_memoryRequirements;
 	}
 
 	void* VulkanTransientBuffer::GetHandleImpl() const
 	{
-		return m_allocation->GetResourceHandle<VkBuffer>();
+		return m_bufferHandle;
 	}
 
 	void* VulkanTransientBuffer::MapInternal()
 	{
-		return m_allocation->Map<void>();
+		VT_ENSURE_NO_ENTRY();
+		return nullptr;
 	}
 
 	void VulkanTransientBuffer::CreateBuffer()
 	{
-		const bool isCpuAccessible = EnumValueContainsFlag(m_desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
+		// Create buffer object
+		{
+			VkBufferCreateInfo bufferInfo{};
+			bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+			bufferInfo.pNext = nullptr;
+			bufferInfo.pQueueFamilyIndices = nullptr;
+			bufferInfo.queueFamilyIndexCount = 0;
+			bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			bufferInfo.size = m_desc.elementSize * m_desc.numElements;
+			bufferInfo.usage = Utility::GetVkBufferUsageFlags(m_desc.usage);
 
-		if (isCpuAccessible)
-		{
-			m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(m_desc);
-		}
-		else
-		{
-			m_allocation = GraphicsContext::GetTransientAllocator()->CreateBuffer(m_desc);
+			m_memoryRequirements = Utility::GetBufferMemoryRequirement(bufferInfo);
+
+			auto device = GraphicsContext::GetDevice();
+
+			vkCreateBuffer(device->GetHandle<VkDevice>(), &bufferInfo, VT_VULKAN_ALLOCATOR, &m_bufferHandle);
 		}
 	}
 
 	uint64_t VulkanTransientBuffer::GetResourceByteSize() const
 	{
 		return m_desc.elementSize * m_desc.numElements;
+	}
+
+	void VulkanTransientBuffer::BindMemory(RefPtr<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset)
+	{
+		auto device = GraphicsContext::GetDevice();
+
+		RefPtr<RHI::VulkanTransientHeap> vkHeap = ResourceCast(heap);
+		vkBindBufferMemory(device->GetHandle<VkDevice>(), m_bufferHandle, vkHeap->GetPageMemoryHandle(pageIndex), offset);
+
+		VkBufferDeviceAddressInfo deviceAddressInfo{};
+		deviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+		deviceAddressInfo.pNext = nullptr;
+		deviceAddressInfo.buffer = m_bufferHandle;
+
+		m_deviceAddress = vkGetBufferDeviceAddress(device->GetHandle<VkDevice>(), &deviceAddressInfo);
 	}
 }

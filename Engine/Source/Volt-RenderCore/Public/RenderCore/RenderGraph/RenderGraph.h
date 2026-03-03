@@ -55,14 +55,6 @@ namespace Volt
 		std::atomic_uint64_t m_head;
 	};
 
-	struct ResourceLifetime
-	{
-		RGResourceRef resource;
-
-		uint32_t firstPassIndex;
-		uint32_t lastPassIndex;
-	};
-
 	class VTRC_API RenderGraph
 	{
 	public:
@@ -196,6 +188,14 @@ namespace Volt
 			RenderGraphDataAllocator* m_allocator;
 		};
 
+		struct ResourceLifetime
+		{
+			RGResourceRef resource;
+
+			uint32_t firstPassIndex;
+			uint32_t lastPassIndex;
+		};
+
 		using ExternalResourceRegistry = Map<RawPtr<RHI::RHIResource>, RGResourceRef>;
 
 		void SetupAllocators();
@@ -212,6 +212,7 @@ namespace Volt
 
 		void CullPasses();
 		void FindResourceLifetimes();
+		void EvaluateResourceAliasing();
 		void BuildPassBarriers();
 		void AssignExternalResourcesSrcState();
 

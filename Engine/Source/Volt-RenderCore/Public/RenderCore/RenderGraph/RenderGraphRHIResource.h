@@ -16,6 +16,7 @@ namespace Volt
 
 		virtual RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) = 0;
 		virtual RefPtr<RHI::Buffer> GetRHIBuffer() const = 0;
+		virtual bool IsTransientlyAllocated() const = 0;
 	};
 
 	class RGRHITextureResource
@@ -25,6 +26,7 @@ namespace Volt
 
 		virtual RefPtr<RHI::ImageView> GetOrCreateView(const RHI::ImageViewDesc& desc) = 0;
 		virtual RefPtr<RHI::Image> GetRHITexture() const = 0;
+		virtual bool IsTransientlyAllocated() const = 0;
 	};
 
 	class RGRHIUniformBufferResource

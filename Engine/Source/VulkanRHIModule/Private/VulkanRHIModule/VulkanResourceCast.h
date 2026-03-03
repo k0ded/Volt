@@ -29,6 +29,10 @@
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
 #include "VulkanRHIModule/VulkanRHISubmissionThread.h"
 
+#include "VulkanRHIModule/VulkanRHISubmissionThread.h"
+
+#include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
+
 namespace Volt::RHI
 {
 	template<class T>
@@ -165,6 +169,12 @@ namespace Volt::RHI
 	struct VulkanTypeTraits<RHISubmissionThread>
 	{
 		using ConcreteType = VulkanRHISubmissionThread;
+	};
+
+	template<>
+	struct VulkanTypeTraits<TransientHeap>
+	{
+		using ConcreteType = VulkanTransientHeap;
 	};
 
 	template<typename RHIType>

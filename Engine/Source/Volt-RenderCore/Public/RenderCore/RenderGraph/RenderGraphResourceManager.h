@@ -27,6 +27,9 @@ namespace Volt
 		void AllocateResource(RGBufferRef resource);
 		void AllocateResource(RGUniformBufferRef resource);
 
+		void ReserveTexturePages(uint32_t numPages);
+		void ReserveBufferPages(uint32_t numPages);
+
 	private:
 		PagedAtomicArenaAllocator<PersistantBufferResource, 512> m_persistantBufferResources;
 		PagedAtomicArenaAllocator<PersistantTextureResource, 512> m_persistantTextureResources;

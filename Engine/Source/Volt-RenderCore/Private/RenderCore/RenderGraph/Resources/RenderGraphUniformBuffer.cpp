@@ -1,6 +1,7 @@
 #include "rcpch.h"
 
 #include "RenderCore/RenderGraph/Resources/RenderGraphUniformBuffer.h"
+#include "RenderCore/TransientResourceSystem/TransientResource.h"
 
 namespace Volt
 {
@@ -19,7 +20,5 @@ namespace Volt
 
 	RGUniformBufferSRV::RGUniformBufferSRV(const RGUniformBufferSRVDesc& desc)
 		: m_desc(desc)
-	{
-
-	}
+	{}
 }

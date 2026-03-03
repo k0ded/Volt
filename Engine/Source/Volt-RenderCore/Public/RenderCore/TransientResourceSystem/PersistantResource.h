@@ -13,6 +13,7 @@ namespace Volt
 
 		VT_INLINE RefPtr<RHI::BufferView> GetOrCreateView(const RHI::BufferViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
 		VT_INLINE RefPtr<RHI::Buffer> GetRHIBuffer() const override { return m_buffer; }
+		VT_INLINE bool IsTransientlyAllocated() const override { return false; }
 
 	private:
 		TransientBufferViewCache m_viewCache;
@@ -27,6 +28,7 @@ namespace Volt
 
 		VT_INLINE RefPtr<RHI::ImageView> GetOrCreateView(const RHI::ImageViewDesc& desc) override { return m_viewCache.GetOrCreateView(desc); }
 		VT_INLINE RefPtr<RHI::Image> GetRHITexture() const override { return m_image; }
+		VT_INLINE bool IsTransientlyAllocated() const override { return false; }
 
 	private:
 		TransientImageViewCache m_viewCache;

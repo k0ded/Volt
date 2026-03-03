@@ -2,10 +2,14 @@
 
 #include "VulkanRHIModule/Images/VulkanTransientImage.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
+#include "VulkanRHIModule/Common/VulkanHelpers.h"
+#include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
+#include "VulkanRHIModule/VulkanResourceCast.h"
 
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Memory/Allocation.h>
+#include <RHIModule/RHIModule.h>
 
 #include <CoreUtilities/EnumUtils.h>
 
@@ -15,25 +19,21 @@ namespace Volt::RHI
 {
 	VulkanTransientImage::VulkanTransientImage(const ImageDesc& desc)
 		: m_desc(desc),
-		m_viewCache(this)
+		m_viewCache(this),
+		m_imageHandle(nullptr)
 	{
 		CreateImage();
 	}
 
 	VulkanTransientImage::~VulkanTransientImage()
 	{
-		if (m_allocation)
+		if (m_imageHandle)
 		{
-			const bool isCpuAccessible = EnumValueContainsFlag(m_desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
-
-			if (isCpuAccessible)
+			RHIModule::GetInstance().DestroyResource([imageHandle = m_imageHandle]()
 			{
-				GraphicsContext::GetDefaultAllocator()->DestroyImage(m_allocation);
-			}
-			else
-			{
-				GraphicsContext::GetTransientAllocator()->DestroyImage(m_allocation);
-			}
+				auto device = GraphicsContext::GetDevice();
+				vkDestroyImage(device->GetHandle<VkDevice>(), imageHandle, VT_VULKAN_ALLOCATOR);
+			});
 		}
 	}
 
@@ -96,7 +96,7 @@ namespace Volt::RHI
 			VkDebugUtilsObjectNameInfoEXT nameInfo{};
 			nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
 			nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
-			nameInfo.objectHandle = (uint64_t)m_allocation->GetResourceHandle<VkImage>();
+			nameInfo.objectHandle = (uint64_t)m_imageHandle;
 			nameInfo.pObjectName = name.c_str();
 
 			auto device = GraphicsContext::GetDevice();
@@ -113,17 +113,17 @@ namespace Volt::RHI
 
 	uint64_t VulkanTransientImage::GetDeviceAddress() const
 	{
-		return m_allocation->GetDeviceAddress();
+		return m_deviceAddress;
 	}
 
 	const MemoryRequirement& VulkanTransientImage::GetMemoryRequirements() const
 	{
-		return m_allocation->GetMemoryRequirements();
+		return m_memoryRequirements;
 	}
 
 	void* VulkanTransientImage::GetHandleImpl() const
 	{
-		return m_allocation->GetResourceHandle<VkImage>();
+		return m_imageHandle;
 	}
 
 	void VulkanTransientImage::CreateImage()
@@ -147,24 +147,28 @@ namespace Volt::RHI
 			VT_ENSURE_MSG(m_desc.usage != ImageUsage::Attachment && m_desc.usage != ImageUsage::AttachmentStorage, "Attachment types are not supported for 3D images!");
 		}
 
-		const bool isCpuAccessible = EnumValueContainsFlag(m_desc.memoryUsage, RHI::MemoryUsage::CPUToGPU);
-
-		if (isCpuAccessible)
 		{
-			m_allocation = GraphicsContext::GetDefaultAllocator()->CreateImage(m_desc, m_desc.memoryUsage);
-		}
-		else
-		{
-			m_allocation = GraphicsContext::GetTransientAllocator()->CreateImage(m_desc, m_desc.memoryUsage);
-		}
+			auto device = GraphicsContext::GetDevice();
 
-		VT_ENSURE(m_allocation);
+			const VkImageCreateInfo vkImageInfo = Utility::GetVkImageCreateInfo(m_desc);
+			m_memoryRequirements = Utility::GetImageMemoryRequirement(vkImageInfo);
+
+			vkCreateImage(device->GetHandle<VkDevice>(), &vkImageInfo, VT_VULKAN_ALLOCATOR, &m_imageHandle);
+		}
 
 		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None);
 	}
 
 	uint64_t VulkanTransientImage::GetResourceByteSize() const
 	{
-		return m_allocation->GetMemoryRequirements().size;
+		return m_memoryRequirements.size;
+	}
+
+	void VulkanTransientImage::BindMemory(RefPtr<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset)
+	{
+		auto device = GraphicsContext::GetDevice();
+
+		RefPtr<RHI::VulkanTransientHeap> vkHeap = ResourceCast(heap);
+		vkBindImageMemory(device->GetHandle<VkDevice>(), m_imageHandle, vkHeap->GetPageMemoryHandle(pageIndex), offset);
 	}
 }

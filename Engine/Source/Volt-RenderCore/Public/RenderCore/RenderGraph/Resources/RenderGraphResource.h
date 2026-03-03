@@ -6,6 +6,7 @@
 
 #include <CoreUtilities/Allocators/Handle.h>
 #include <CoreUtilities/Containers/VectorVariants.h>
+#include <CoreUtilities/PagedRangeAllocator.h>
 
 #include <algorithm>
 
@@ -69,15 +70,23 @@ namespace Volt
 		VT_NODISCARD VT_INLINE bool IsExternal() const { return m_isExternal; }
 		VT_NODISCARD VT_INLINE bool IsExtracted() const { return m_isExtracted; }
 		VT_NODISCARD VT_INLINE bool IsProduced() const { return m_isProduced; }
+		VT_NODISCARD VT_INLINE bool IsTransient() const { return m_isTransient && !IsExternal() && !IsExtracted(); }
 		VT_NODISCARD VT_INLINE uint32_t GetResourceID() const { return m_resourceId; }
+		VT_NODISCARD VT_INLINE const PagedAllocatedRange& GetTransientAllocationRange() const { return m_transientAllocationRange; }
+		VT_NODISCARD VT_INLINE const RHI::MemoryRequirement& GetMemoryRequirement() const { return m_memoryRequirement; }
+
+		VT_INLINE void AssignTransientAllocationRange(const PagedAllocatedRange& range) { m_transientAllocationRange = range; }
 
 		RGPass* firstPassAccessor = nullptr;
 
-	private:
+	protected:
 		friend class RenderGraph;
 		friend class RenderGraphDebugger;
 		friend class RenderGraphResourceManager;
 		friend class RenderGraphShaderParameterUniformBuffer;
+
+		PagedAllocatedRange m_transientAllocationRange;
+		RHI::MemoryRequirement m_memoryRequirement;
 
 		uint32_t m_refCount = 0;
 		uint32_t m_resourceId;
@@ -85,6 +94,7 @@ namespace Volt
 		bool m_isExternal : 1 = false;
 		bool m_isExtracted : 1 = false;
 		bool m_isProduced : 1 = false;
+		bool m_isTransient : 1 = false;
 	};
 
 	using RGResourceRef = RGResource*;

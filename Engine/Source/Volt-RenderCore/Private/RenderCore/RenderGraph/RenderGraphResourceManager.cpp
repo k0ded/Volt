@@ -105,27 +105,38 @@ namespace Volt
 
 		const RGTextureDesc& desc = resource->GetDesc();
 
-		RGRHITextureResource* rhiResource = nullptr;
-
-		if (!resource->m_isExtracted)
+		if (resource->IsTransient())
 		{
-			TransientTextureResourceRef texture = TransientResourceAllocator::Get().CreateTexture(desc);
+			TransientTextureResourceRef texture = TransientResourceAllocator::Get().CreateTransientTexture(desc, resource->GetTransientAllocationRange());
 			texture->GetRHITexture()->SetName(desc.debugName);
-			m_allocatedTextures.emplace_back(texture);
+			resource->AssignRHIResource(texture);
 
-			rhiResource = texture;
+			m_allocatedTextures.emplace_back(texture);
 		}
 		else
 		{
-			RHI::ImageDesc specification{};
-			specification = desc;
-			specification.initializeImage = false;
+			RGRHITextureResource* rhiResource = nullptr;
 
-			RefPtr<RHI::Image> image = RHI::Image::Create(specification);
-			rhiResource = m_persistantTextureResources.Allocate(image);
+			if (!resource->m_isExtracted)
+			{
+				TransientTextureResourceRef texture = TransientResourceAllocator::Get().CreateTexture(desc);
+				texture->GetRHITexture()->SetName(desc.debugName);
+				m_allocatedTextures.emplace_back(texture);
+
+				rhiResource = texture;
+			}
+			else
+			{
+				RHI::ImageDesc specification{};
+				specification = desc;
+				specification.initializeImage = false;
+
+				RefPtr<RHI::Image> image = RHI::Image::Create(specification);
+				rhiResource = m_persistantTextureResources.Allocate(image);
+			}
+
+			resource->AssignRHIResource(rhiResource);
 		}
-
-		resource->AssignRHIResource(rhiResource);
 	}
 	
 	void RenderGraphResourceManager::AllocateResource(RGBufferRef resource)
@@ -134,23 +145,34 @@ namespace Volt
 
 		const RGBufferDesc& desc = resource->GetDesc();
 
-		RGRHIBufferResource* rhiResource = nullptr;
-
-		if (!resource->m_isExtracted)
+		if (resource->IsTransient())
 		{
-			TransientBufferResourceRef buffer = TransientResourceAllocator::Get().CreateBuffer(desc);
+			TransientBufferResourceRef buffer = TransientResourceAllocator::Get().CreateTransientBuffer(desc, resource->GetTransientAllocationRange());
 			buffer->GetRHIBuffer()->SetName(desc.debugName);
-			m_allocatedBuffers.emplace_back(buffer);
+			resource->AssignRHIResource(buffer);
 
-			rhiResource = buffer;
+			m_allocatedBuffers.emplace_back(buffer);
 		}
 		else
 		{
-			RefPtr<RHI::Buffer> buffer = RHI::Buffer::Create(desc);
-			rhiResource = m_persistantBufferResources.Allocate(buffer);
-		}
+			RGRHIBufferResource* rhiResource = nullptr;
 
-		resource->AssignRHIResource(rhiResource);
+			if (!resource->m_isExtracted)
+			{
+				TransientBufferResourceRef buffer = TransientResourceAllocator::Get().CreateBuffer(desc);
+				buffer->GetRHIBuffer()->SetName(desc.debugName);
+				m_allocatedBuffers.emplace_back(buffer);
+
+				rhiResource = buffer;
+			}
+			else
+			{
+				RefPtr<RHI::Buffer> buffer = RHI::Buffer::Create(desc);
+				rhiResource = m_persistantBufferResources.Allocate(buffer);
+			}
+
+			resource->AssignRHIResource(rhiResource);
+		}
 	}
 	
 	void RenderGraphResourceManager::AllocateResource(RGUniformBufferRef resource)
@@ -164,5 +186,15 @@ namespace Volt
 
 		m_allocatedUniformBuffers.emplace_back(uniformBuffer);
 		resource->AssignRHIResource(uniformBuffer);
+	}
+
+	void RenderGraphResourceManager::ReserveTexturePages(uint32_t numPages)
+	{
+		TransientResourceAllocator::Get().ReserveTexturePages(numPages);
+	}
+
+	void RenderGraphResourceManager::ReserveBufferPages(uint32_t numPages)
+	{
+		TransientResourceAllocator::Get().ReserveBufferPages(numPages);
 	}
 }

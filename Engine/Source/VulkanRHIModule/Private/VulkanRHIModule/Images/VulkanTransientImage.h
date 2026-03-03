@@ -3,6 +3,8 @@
 #include <RHIModule/Images/TransientImage.h>
 #include <RHIModule/ResourceViewCache.h>
 
+struct VkImage_T;
+
 namespace Volt::RHI
 {
 	class VulkanTransientImage final : public TransientImage
@@ -10,6 +12,11 @@ namespace Volt::RHI
 	public:
 		VulkanTransientImage(const ImageDesc& desc);
 		~VulkanTransientImage() override;
+
+		/*
+		* TransientImage Interface
+		*/
+		void BindMemory(RefPtr<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset) override;
 
 		/*
 		* Image Interface
@@ -41,7 +48,10 @@ namespace Volt::RHI
 		ImageDesc m_desc;
 		ImageViewCache m_viewCache;
 
-		Handle<Allocation> m_allocation;
 		ImageAspect m_imageAspect = ImageAspect::None;
+
+		VkImage_T* m_imageHandle;
+		uint64_t m_deviceAddress = 0;
+		MemoryRequirement m_memoryRequirements;
 	};
 }

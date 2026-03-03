@@ -2,6 +2,8 @@
 
 #include <RHIModule/Buffers/TransientBuffer.h>
 
+struct VkBuffer_T;
+
 namespace Volt::RHI
 {
 	class VulkanTransientBuffer final : public TransientBuffer
@@ -9,6 +11,11 @@ namespace Volt::RHI
 	public:
 		VulkanTransientBuffer(const BufferDesc& desc);
 		~VulkanTransientBuffer() override;
+
+		/*
+		* TransientBuffer Interface
+		*/
+		void BindMemory(RefPtr<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset) override;
 
 		/*
 		* Buffer Interface
@@ -37,6 +44,9 @@ namespace Volt::RHI
 		void CreateBuffer();
 
 		BufferDesc m_desc;
-		Handle<Allocation> m_allocation;
+
+		VkBuffer_T* m_bufferHandle;
+		uint64_t m_deviceAddress = 0;
+		MemoryRequirement m_memoryRequirements;
 	};
 }

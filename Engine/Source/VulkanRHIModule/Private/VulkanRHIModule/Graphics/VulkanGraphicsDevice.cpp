@@ -2,6 +2,7 @@
 #include "VulkanRHIModule/Graphics/VulkanGraphicsDevice.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
+#include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Graphics/VulkanDeviceQueue.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/VulkanResourceCast.h"
@@ -570,5 +571,29 @@ namespace Volt::RHI
 		{
 			m_profilingContext = TracyVkContextHostCalibrated(m_physicalDevice->GetHandle<VkPhysicalDevice>(), m_device, vkResetQueryPool, Volt::RHI::vkGetPhysicalDeviceCalibrateableTimeDomainsKHR, Volt::RHI::vkGetCalibratedTimestampsKHR);
 		}
+	}
+
+	MemoryRequirement VulkanGraphicsDevice::GetImageMemoryRequirement(const ImageDesc& desc) const
+	{
+		VT_PROFILE_FUNCTION();
+
+		const VkImageCreateInfo vkImageInfo = Utility::GetVkImageCreateInfo(desc);
+		return Utility::GetImageMemoryRequirement(vkImageInfo);
+	}
+
+	MemoryRequirement VulkanGraphicsDevice::GetBufferMemoryRequirement(const BufferDesc& desc) const
+	{
+		VT_PROFILE_FUNCTION();
+
+		VkBufferCreateInfo vkBufferInfo{};
+		vkBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		vkBufferInfo.pNext = nullptr;
+		vkBufferInfo.pQueueFamilyIndices = nullptr;
+		vkBufferInfo.queueFamilyIndexCount = 0;
+		vkBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		vkBufferInfo.size = desc.elementSize * desc.numElements;
+		vkBufferInfo.usage = Utility::GetVkBufferUsageFlags(desc.usage);
+
+		return Utility::GetBufferMemoryRequirement(vkBufferInfo);
 	}
 }

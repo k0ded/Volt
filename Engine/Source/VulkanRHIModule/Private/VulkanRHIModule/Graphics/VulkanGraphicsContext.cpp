@@ -5,8 +5,6 @@
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
 
-#include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
-
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
 #include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
@@ -39,11 +37,6 @@ namespace Volt::RHI
 		return m_defaultAllocator;
 	}
 
-	RefPtr<GPUAllocator> VulkanGraphicsContext::GetTransientAllocatorImpl()
-	{
-		return m_transientAllocator;
-	}
-
 	RefPtr<GraphicsDevice> VulkanGraphicsContext::GetGraphicsDevice() const
 	{
 		return m_graphicsDevice;
@@ -70,7 +63,6 @@ namespace Volt::RHI
 		m_graphicsDevice = GraphicsDevice::Create(graphicsDeviceInfo, m_physicalDevice, m_createInfo.enableDebugLayer);
 	
 		m_defaultAllocator = DefaultGPUAllocator::Create();
-		m_transientAllocator = TransientGPUAllocator::Create();
 
 		if (RHI::RHICanUseRayTracing())
 		{

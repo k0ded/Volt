@@ -2,6 +2,7 @@
 
 #include "RHIModule/Core/Core.h"
 #include "RHIModule/Buffers/Buffer.h"
+#include "RHIModule/Memory/TransientHeap.h"
 
 /*
 * This is a specialization of Buffer, which is supposed to be used for frame transient buffers.
@@ -16,7 +17,7 @@ namespace Volt::RHI
 	public:
 		~TransientBuffer() override = default;
 
-		// #TODO_Ivar: Implement memory assigning functions.
+		virtual void BindMemory(RefPtr<RHI::TransientHeap> heap, uint32_t pageIndex, uint64_t offset) = 0;
 
 		VTRHI_API static RefPtr<TransientBuffer> Create(const BufferDesc& desc);
 

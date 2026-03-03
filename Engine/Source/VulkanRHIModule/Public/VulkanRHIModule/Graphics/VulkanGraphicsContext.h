@@ -30,7 +30,6 @@ namespace Volt::RHI
 
 	protected:
 		RefPtr<GPUAllocator> GetDefaultAllocatorImpl() override;
-		RefPtr<GPUAllocator> GetTransientAllocatorImpl() override;
 
 		RefPtr<GraphicsDevice> GetGraphicsDevice() const override;
 		RefPtr<PhysicalGraphicsDevice> GetPhysicalGraphicsDevice() const override;

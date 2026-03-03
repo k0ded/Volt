@@ -1,8 +1,10 @@
 #include "rcpch.h"
 
 #include "RenderCore/RenderGraph/Resources/RenderGraphTexture.h"
+#include "RenderCore/TransientResourceSystem/TransientResource.h"
 
 #include <RHIModule/RHIHelpers.h>
+#include <RHIModule/Graphics/GraphicsContext.h>
 
 namespace Volt
 {
@@ -10,6 +12,9 @@ namespace Volt
 		: RGResource(resourceId),
 		m_desc(desc)
 	{
+		m_isTransient = desc.memoryUsage == RHI::MemoryUsage::GPU;
+		m_memoryRequirement = RHI::GraphicsContext::GetDevice()->GetImageMemoryRequirement(m_desc);
+
 		lastAccess.set_allocator({ dataAllocator });
 		firstAccess.set_allocator({ dataAllocator });
 		InitializeSubResources();

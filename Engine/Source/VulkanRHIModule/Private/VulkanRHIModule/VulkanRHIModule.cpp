@@ -12,7 +12,6 @@
 #include "VulkanRHIModule/Images/VulkanSamplerState.h"
 
 #include "VulkanRHIModule/Memory/VulkanDefaultGPUAllocator.h"
-#include "VulkanRHIModule/Memory/VulkanTransientGPUAllocator.h"
 #include "VulkanRHIModule/Memory/VulkanTransientHeap.h"
 
 #include "VulkanRHIModule/Pipelines/VulkanRenderPipeline.h"
@@ -137,11 +136,6 @@ namespace Volt::RHI
 		return RefPtr<VulkanDefaultGPUAllocator>::Create();
 	}
 
-	RefPtr<TransientGPUAllocator> VulkanRHIModule::CreateTransientAllocator() const
-	{
-		return RefPtr<VulkanTransientGPUAllocator>::Create();
-	}
-
 	RefPtr<TransientHeap> VulkanRHIModule::CreateTransientHeap(const TransientHeapCreateInfo& createInfo) const
 	{
 		return RefPtr<VulkanTransientHeap>::Create(createInfo);
@@ -205,8 +199,6 @@ namespace Volt::RHI
 		TracyVkCollectHost(GraphicsContext::GetDevice()->AsRef<VulkanGraphicsDevice>().GetProfilingContext());
 
 		GraphicsContext::GetDefaultAllocator()->Update();
-		GraphicsContext::GetTransientAllocator()->Update();
-
 
 		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
 		vkGraphicsContext.GetDescriptorHeap().BeginFrame();

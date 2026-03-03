@@ -49,15 +49,4 @@ namespace Volt::RHI
 	protected:
 		DefaultGPUAllocator() = default;
 	};
-
-	class VTRHI_API TransientGPUAllocator : public GPUAllocator
-	{
-	public:
-		virtual ~TransientGPUAllocator() override = default;
-
-		static RefPtr<TransientGPUAllocator> Create();
-
-	protected:
-		TransientGPUAllocator() = default;
-	};
 }
