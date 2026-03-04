@@ -98,7 +98,7 @@ namespace Volt
 
 		RHI::ImageDesc specification{};
 		specification.format = format;
-		specification.usage = RHI::ImageUsage::Texture;
+		specification.usage = RHI::ImageUsage::Storage;
 		specification.width = width;
 		specification.height = height;
 		specification.mips = numMipMaps;

@@ -69,6 +69,7 @@ namespace Volt::RHI
 		};
 
 		void RunSubmissionThread();
+		void MarkFencesAsSubmitted(DeviceQueueExecuteInfo& executeInfo);
 
 		std::atomic_bool m_isRunning = true;
 		std::condition_variable_any m_wakeCondition;

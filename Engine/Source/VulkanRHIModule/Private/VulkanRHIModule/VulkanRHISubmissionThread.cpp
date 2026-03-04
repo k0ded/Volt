@@ -33,6 +33,8 @@ namespace Volt::RHI
 		submissionData.queueType = queueType;
 		submissionData.submissionType = SubmissionType::Normal;
 
+		MarkFencesAsSubmitted(submissionData.data.Get<DeviceQueueExecuteInfo>());
+
 		VT_MAYBE_UNUSED bool succeded = m_submissionQueue.Emplace(std::move(submissionData));
 		VT_ENSURE(succeded);
 		m_wakeCondition.notify_all();
@@ -139,5 +141,20 @@ namespace Volt::RHI
 		VT_MAYBE_UNUSED bool succeded = m_submissionQueue.Emplace(std::move(submissionData));
 		VT_ENSURE(succeded);
 		m_wakeCondition.notify_all();
+	}
+
+	void VulkanRHISubmissionThread::MarkFencesAsSubmitted(DeviceQueueExecuteInfo& executeInfo)
+	{
+		for (const auto& fence : executeInfo.signalFences)
+		{
+			VulkanFence& vkFence = fence->AsRef<VulkanFence>();
+			vkFence.m_hasBeenSubmitted.store(true, std::memory_order::relaxed);
+		}
+
+		if (executeInfo.executionFence)
+		{
+			VulkanFence& vkFence = executeInfo.executionFence->AsRef<VulkanFence>();
+			vkFence.m_hasBeenSubmitted.store(true, std::memory_order::relaxed);
+		}
 	}
 }

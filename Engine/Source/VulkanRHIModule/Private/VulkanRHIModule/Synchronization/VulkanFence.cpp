@@ -20,13 +20,23 @@ namespace Volt::RHI
 
 	void VulkanFence::WaitUntilSignaled() const
 	{
+		if (!m_hasBeenSubmitted.load(std::memory_order::relaxed))
+		{
+			return;
+		}
+
+		// Wait for the semaphore value to be set.
+		m_referencedValue.wait(0, std::memory_order::relaxed);
+
 		if (m_referencedSemaphore)
 		{
+			uint64_t tempValue = m_referencedValue.load(std::memory_order::relaxed);
+
 			VkSemaphoreWaitInfo waitInfo{};
 			waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
 			waitInfo.semaphoreCount = 1;
 			waitInfo.pSemaphores = &m_referencedSemaphore;
-			waitInfo.pValues = &m_referencedValue;
+			waitInfo.pValues = &tempValue;
 
 			auto device = GraphicsContext::GetDevice();
 			vkWaitSemaphores(device->GetHandle<VkDevice>(), &waitInfo, UINT64_MAX);
@@ -56,5 +66,12 @@ namespace Volt::RHI
 	void VulkanFence::Reset()
 	{
 		m_referencedSemaphore = nullptr;
+	}
+
+	void VulkanFence::AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value)
+	{
+		m_referencedSemaphore = semaphore;
+		m_referencedValue.store(value, std::memory_order::relaxed);
+		m_referencedValue.notify_all();
 	}
 }

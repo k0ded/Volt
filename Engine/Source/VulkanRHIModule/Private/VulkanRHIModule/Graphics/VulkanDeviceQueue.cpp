@@ -127,23 +127,20 @@ namespace Volt::RHI
 		for (const auto& fence : executeInfo.signalFences)
 		{
 			VulkanFence& vkFence = fence->AsRef<VulkanFence>();
-			vkFence.m_referencedSemaphore = m_queueSemaphore;
-			vkFence.m_referencedValue = submitSemaphoreValue;
+			vkFence.AssignSemaphore(m_queueSemaphore, submitSemaphoreValue);
 		}
 
 		if (executeInfo.executionFence)
 		{
 			VulkanFence& vkFence = executeInfo.executionFence->AsRef<VulkanFence>();
-			vkFence.m_referencedSemaphore = m_queueSemaphore;
-			vkFence.m_referencedValue = submitSemaphoreValue;
+			vkFence.AssignSemaphore(m_queueSemaphore, submitSemaphoreValue);
 		}
 
 		for (const auto& cmdBuffer : executeInfo.commandBuffers)
 		{
 			VulkanCommandBuffer& vkCmdBuffer = cmdBuffer->AsRef<VulkanCommandBuffer>();
 			VulkanFence& vkSubmissionFence = vkCmdBuffer.m_submissionFence->AsRef<VulkanFence>();
-			vkSubmissionFence.m_referencedValue = submitSemaphoreValue;
-			vkSubmissionFence.m_referencedSemaphore = m_queueSemaphore;
+			vkSubmissionFence.AssignSemaphore(m_queueSemaphore, submitSemaphoreValue);
 		}
 	}
 

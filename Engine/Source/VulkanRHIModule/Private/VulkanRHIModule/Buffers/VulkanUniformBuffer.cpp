@@ -23,6 +23,8 @@ namespace Volt::RHI
 		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None);
 
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
+		
+		VT_ENSURE_MSG(desc.size % 16u == 0, "UniformBuffers must be 16 byte aligned!");
 		const uint64_t alignedSize = Utility::Align(desc.size, deviceProperties.limits.minUniformBufferOffsetAlignment);
 
 		BufferDesc bufferDesc{};

@@ -339,7 +339,7 @@ namespace Volt
 	void ImGuiImplementation::CreateCopyGlobalsUniformBuffer()
 	{
 		RHI::UniformBufferDesc desc{};
-		desc.size = sizeof(float);
+		desc.size = sizeof(glm::vec4);
 		desc.debugName = "ImGuiImplementation.GlobalsBuffer";
 		m_copyGlobalsUniformBuffer = RHI::UniformBuffer::Create(desc);
 	}

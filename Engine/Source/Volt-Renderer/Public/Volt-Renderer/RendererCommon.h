@@ -18,6 +18,7 @@ namespace Volt
 		glm::mat4 nonJitteredViewProjection;
 		glm::vec4 cameraPosition;
 		glm::vec4 cullingFrustum;
+
 		glm::vec2 depthUnpackConsts;
 		float nearPlane;
 		float farPlane;
@@ -32,8 +33,8 @@ namespace Volt
 		// Light Culling
 		uint32_t tileCountX;
 		uint32_t lightCount;
-
 		uint32_t frameIndex;
+		uint32_t padding;
 	};
 
 	struct DirectionalLightShadowUniformBuffer

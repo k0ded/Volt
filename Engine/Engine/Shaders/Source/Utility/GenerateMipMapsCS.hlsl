@@ -1,4 +1,4 @@
-Texture2D<float4> SourceMip;
+RWTexture2D<float4> SourceMip;
 RWTexture2D<float4> RWDstMip;
 
 uint SrcWidth;
@@ -11,35 +11,37 @@ uint SrcMip;
 [numthreads(8, 8, 1)]
 void GenerateMipMapsCS(uint2 DispatchThreadID : SV_DispatchThreadID)
 {
-	if (DstWidth >= DispatchThreadID.x &&
-		DstHeight >= DispatchThreadID.y)
+	if (DispatchThreadID.x >= DstWidth ||
+		DispatchThreadID.y >= DstHeight)
 	{
 		return;
 	}
 
 	// Load 4 pixels.
 	
+	const uint2 baseSrcPixelCoord = DispatchThreadID * 2u;
+
 	float numValidSamples = 1.f;
 	float4 result = 0.f;
 	
-	result += SourceMip.Load(int3(DispatchThreadID, SrcMip));
+	result += SourceMip[baseSrcPixelCoord];
 
-	if (DispatchThreadID.y + 1 < SrcHeight)
+	if (baseSrcPixelCoord.y + 1 < SrcHeight)
 	{
-		result += SourceMip.Load(int3(DispatchThreadID + uint2(0, 1), SrcMip));
+		result += SourceMip[baseSrcPixelCoord + uint2(0, 1)];
 		numValidSamples += 1.f;
 	}
 
-	if (DispatchThreadID.x + 1 < SrcWidth)
+	if (baseSrcPixelCoord.x + 1 < SrcWidth)
 	{
-		result += SourceMip.Load(int3(DispatchThreadID + uint2(1, 0), SrcMip));
+		result += SourceMip[baseSrcPixelCoord + uint2(1, 0)];
 		numValidSamples += 1.f;
 	}
 
-	if (DispatchThreadID.x + 1 < SrcWidth && 
-		DispatchThreadID.y + 1 < SrcHeight)
+	if (baseSrcPixelCoord.x + 1 < SrcWidth && 
+		baseSrcPixelCoord.y + 1 < SrcHeight)
 	{
-		result += SourceMip.Load(int3(DispatchThreadID + uint2(1, 1), SrcMip));
+		result += SourceMip[baseSrcPixelCoord + uint2(1, 1)];
 		numValidSamples += 1.f;
 	}
 

@@ -303,6 +303,7 @@ namespace Volt
 	RGUniformBufferRef RenderGraph::CreateUniformBuffer(const RGUniformBufferDesc& desc)
 	{
 		VT_PROFILE_FUNCTION();
+		VT_ENSURE_MSG(desc.size % 16u == 0, "Uniform Buffers must be 16 byte aligned!");
 
 		RGUniformBufferRef uniformBuffer = m_resourceAllocator.Allocate<RGUniformBuffer>(desc, GetNextResourceID());
 		m_resources.emplace_back(uniformBuffer);

@@ -18,7 +18,9 @@ namespace Volt::ImageUtility
 		uint32_t srcHeight;
 		uint32_t dstWidth;
 		uint32_t dstHeight;
+		
 		uint32_t srcMip;
+		uint32_t padding[3];
 	};
 
 	void GenerateMipMaps(RefPtr<RHI::Image> image)
@@ -29,6 +31,8 @@ namespace Volt::ImageUtility
 		{
 			return;
 		}
+
+		VT_ENSURE_MSG(imageDesc.usage != RHI::ImageUsage::Texture, "ImageUsage::Texture does not support mip map generation!");
 
 		GlobalMemoryStackMark memMark;
 
@@ -47,12 +51,10 @@ namespace Volt::ImageUtility
 			barrier.imageBarrier().srcAccess = initialImageState.access;
 			barrier.imageBarrier().srcStage = initialImageState.stage;
 			barrier.imageBarrier().srcLayout = initialImageState.layout;
-			barrier.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
+			barrier.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
 			barrier.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-			barrier.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
+			barrier.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
 			barrier.imageBarrier().resource = image;
-			barrier.imageBarrier().subResource.baseMipLevel = 0;
-			barrier.imageBarrier().subResource.levelCount = 1;
 
 			commandBuffer->ResourceBarrier({ barrier });
 		}
@@ -65,11 +67,11 @@ namespace Volt::ImageUtility
 		const RHI::ShaderResourceBinding* sourceMipBinding = pipeline->GetResourceBindingFromName(SourceMipStringHash);
 		const RHI::ShaderResourceBinding* destinationMipBinding = pipeline->GetResourceBindingFromName(DestinationMipStringHash);
 
-		VT_ENSURE(sourceMipBinding && destinationMipBinding);
+		//VT_ENSURE(sourceMipBinding && destinationMipBinding);
 
 		// Create state per mip.
 		RHI::UniformBufferDesc desc{};
-		desc.size = sizeof(uint32_t) * 5 * numMips - 1;
+		desc.size = sizeof(GenerateMipMapsGlobals) * (numMips - 1);
 		desc.debugName = "GlobalsBuffer";
 
 		RefPtr<RHI::UniformBuffer> uniformBuffer = RHI::UniformBuffer::Create(desc);
@@ -78,27 +80,6 @@ namespace Volt::ImageUtility
 
 		for (uint32_t i = 1; i < numMips; ++i)
 		{
-			const uint32_t dstSubResourceIndex = RHI::GetSubResourceIndex(i - 1, 0, 0, imageDesc.mips, imageDesc.layers);
-
-			RHI::ResourceBarrierInfo dstBarrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
-
-			// Dst barrier
-			{
-				RHI::ResourceState initialImageState = image->GetResourceStateTracker().GetResourceState(dstSubResourceIndex);
-
-				dstBarrier.imageBarrier().srcAccess = initialImageState.access;
-				dstBarrier.imageBarrier().srcStage = initialImageState.stage;
-				dstBarrier.imageBarrier().srcLayout = initialImageState.layout;
-				dstBarrier.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
-				dstBarrier.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				dstBarrier.imageBarrier().dstLayout = RHI::ImageLayout::ShaderWrite;
-				dstBarrier.imageBarrier().resource = image;
-				dstBarrier.imageBarrier().subResource.baseMipLevel = i;
-				dstBarrier.imageBarrier().subResource.levelCount = 1;
-
-				commandBuffer->ResourceBarrier({ dstBarrier });
-			}
-
 			const uint32_t srcMipWidth = imageDesc.width >> (i - 1);
 			const uint32_t srcMipHeight = imageDesc.height >> (i - 1);
 			const uint32_t dstMipWidth = imageDesc.width >> i;
@@ -120,25 +101,44 @@ namespace Volt::ImageUtility
 			dstViewDesc.mipCount = 1;
 
 			RHI::ShaderBindingMap shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(pipeline);
-			shaderBindingMap.SetUniformBufferWithSizeAndOffset(RHI::ShaderStage::Compute, 0, uniformBuffer->GetView(), sizeof(GenerateMipMapsGlobals), sizeof(GenerateMipMapsGlobals) * i);
-			shaderBindingMap.SetTextureSRV(RHI::ShaderStage::Compute, sourceMipBinding->binding, image->GetView(srcViewDesc));
-			shaderBindingMap.SetTextureUAV(RHI::ShaderStage::Compute, destinationMipBinding->binding, image->GetView(dstViewDesc));
+			shaderBindingMap.SetUniformBufferWithSizeAndOffset(RHI::ShaderStage::Compute, 0, uniformBuffer->GetView(), sizeof(GenerateMipMapsGlobals), sizeof(GenerateMipMapsGlobals) * (i - 1));
+			
+			auto srcView = image->GetView(srcViewDesc);
+			auto dstView = image->GetView(dstViewDesc);
+
+			shaderBindingMap.SetTextureUAV(RHI::ShaderStage::Compute, sourceMipBinding->binding, srcView);
+			shaderBindingMap.SetTextureUAV(RHI::ShaderStage::Compute, destinationMipBinding->binding, dstView);
 
 			commandBuffer->BindPipeline(pipeline);
 			commandBuffer->BindShaderBindings(shaderBindingMap);
 			commandBuffer->Dispatch(Math::DivideRoundUp(dstMipWidth, 8u), Math::DivideRoundUp(dstMipHeight, 8u), 1);
 		
-			// Swap barriers
+			if (i < numMips - 1)
 			{
-				std::swap(dstBarrier.imageBarrier().srcAccess, dstBarrier.imageBarrier().dstAccess);
-				std::swap(dstBarrier.imageBarrier().srcStage, dstBarrier.imageBarrier().dstStage);
-				std::swap(dstBarrier.imageBarrier().srcLayout, dstBarrier.imageBarrier().dstLayout);
-				dstBarrier.imageBarrier().dstAccess = RHI::BarrierAccess::ShaderRead;
-				dstBarrier.imageBarrier().dstStage = RHI::BarrierStage::ComputeShader;
-				dstBarrier.imageBarrier().dstLayout = RHI::ImageLayout::ShaderRead;
+				RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsGlobalBarrier();
+				barrier.globalBarrier().srcStage = RHI::BarrierStage::ComputeShader;
+				barrier.globalBarrier().srcAccess = RHI::BarrierAccess::ShaderWrite;
+				barrier.globalBarrier().dstStage = RHI::BarrierStage::ComputeShader;
+				barrier.globalBarrier().dstAccess = RHI::BarrierAccess::ShaderWrite;
 
-				commandBuffer->ResourceBarrier({ dstBarrier });
+				commandBuffer->ResourceBarrier({ barrier });
 			}
+		}
+
+		// Transition back to initial state
+		{
+			RHI::ResourceState initialImageState = image->GetResourceStateTracker().GetResourceState(0);
+
+			RHI::ResourceBarrierInfo barrier = RHI::ResourceBarrierInfo::InitializeAsImageBarrier();
+			barrier.imageBarrier().srcAccess = RHI::BarrierAccess::ShaderWrite;
+			barrier.imageBarrier().srcStage = RHI::BarrierStage::ComputeShader;
+			barrier.imageBarrier().srcLayout = RHI::ImageLayout::ShaderWrite;
+			barrier.imageBarrier().dstAccess = initialImageState.access;
+			barrier.imageBarrier().dstStage = initialImageState.stage;
+			barrier.imageBarrier().dstLayout = initialImageState.layout;
+			barrier.imageBarrier().resource = image;
+
+			commandBuffer->ResourceBarrier({ barrier });
 		}
 
 		uniformBuffer->Unmap();
