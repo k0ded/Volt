@@ -28,6 +28,14 @@
 #define VT_PROFILE_DECLARE_MUTEX_SHARED_NAMED(type, name, desc) TracySharedLockableN(type, name, desc)
 #define VT_PROFILE_LOCK_MARK(lockName) LockMark(lockName)
 
+#if TRACY_FIBERS
+#define VT_PROFILE_FIBER_ENTER(identifier) TracyFiberEnter(identifier)
+#define VT_PROFILE_FIBER_LEAVE() TracyFiberLeave
+#else
+#define VT_PROFILE_FIBER_ENTER(identifier)
+#define VT_PROFILE_FIBER_LEAVE()
+#endif
+
 #else
 
 #define VT_PROFILE_FRAME_START(name)
@@ -49,4 +57,6 @@
 #define VT_PROFILE_DECLARE_MUTEX_SHARED_NAMED(type, name) type name
 #define VT_PROFILE_LOCK_MARK(lockName)
 
+#define VT_PROFILE_FIBER_ENTER(identifier)
+#define VT_PROFILE_FIBER_LEAVE()
 #endif

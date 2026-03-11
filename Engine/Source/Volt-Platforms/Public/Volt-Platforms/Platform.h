@@ -9,6 +9,7 @@
 #include "Volt-Platforms/Windows/WindowsPlatformAtomics.h"
 #include "Volt-Platforms/Windows/WindowsPlatformTime.h"
 #include "Volt-Platforms/Windows/WindowsPlatformMutex.h"
+#include "Volt-Platforms/Windows/WindowsPlatformMemory.h"
 #include "Volt-Platforms/Common/CommonPlatformFTPClient.h"
 
 namespace Volt
@@ -20,6 +21,7 @@ namespace Volt
 	using PlatformAtomics = WindowsPlatformAtomics;
 	using PlatformTime = WindowsPlatformTime;
 	using PlatformMutex = WindowsPlatformMutex;
+	using PlatformMemory = WindowsPlatformMemory;
 	using PlatformFTPClient = CommonPlatformFTPClient;
 }
 #endif

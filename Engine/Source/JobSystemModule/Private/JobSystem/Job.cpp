@@ -1,6 +1,8 @@
 #include "jspch.h"
+
 #include "JobSystem/Job.h"
 #include "JobSystem/JobSystem.h"
+#include "JobSystem/Asm/FiberContext.h"
 
 namespace Volt
 {
@@ -13,21 +15,6 @@ namespace Volt
 		{
 			std::atomic_thread_fence(std::memory_order::release);
 			JobSystem::s_instance->FreeCounter(this);
-		}
-	}
-
-	void Job::Execute()
-	{
-		VT_ENSURE(m_allocated);
-
-		if (m_allocated)
-		{
-			JobFuncBase* funcPtr = reinterpret_cast<JobFuncBase*>(&m_funcStorage);
-			funcPtr->Execute();
-
-			// Destroy the function.
-			funcPtr->~JobFuncBase();
-			m_allocated = false;
 		}
 	}
 
@@ -48,5 +35,18 @@ namespace Volt
 			std::atomic_thread_fence(std::memory_order::release);
 			JobSystem::s_instance->FreeJob(this);
 		}
+	}
+
+	void Job::ExecuteInternal()
+	{
+		Job::JobFuncBase* funcPtr = GetJobFunction();
+	
+		{
+			VT_PROFILE_SCOPE(m_jobName.data());
+			funcPtr->Execute();
+		}
+
+		// Destroy the function.
+		funcPtr->~JobFuncBase();
 	}
 }
