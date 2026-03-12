@@ -19,6 +19,7 @@ namespace Volt
 	namespace RHI
 	{
 		class Image;
+		class SamplerState;
 	}
 
 	class RenderGraph;
@@ -37,7 +38,7 @@ namespace Circuit
 		void OnRender();
 
 	private:
-		CircuitOutputData& AddCircuitPrimitivesPass(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard);
+		void AddCircuitPrimitivesPass(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard);
 
 		Circuit::CircuitWindow& m_targetCircuitWindow;
 		Volt::Window& m_targetWindow;
@@ -47,8 +48,6 @@ namespace Circuit
 
 		RefPtr<Volt::RHI::Image> m_outputImage;
 		RefPtr<Volt::RHI::SamplerState> m_linearSampler;
-		Volt::RHI::CommandBufferSet m_commandBufferSet;
-		Volt::ResourceHandle m_linearSamplerResourceHandle;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;
 	};

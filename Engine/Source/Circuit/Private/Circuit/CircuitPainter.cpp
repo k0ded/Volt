@@ -3,8 +3,10 @@
 
 #include "Circuit/Widgets/Widget.h"
 
-#include <Volt-Assets/Assets/Font.h>
-#include <Volt-Assets/Assets/MSDFData.h>
+#include <Volt-Assets/Font.h>
+#include <Volt-Assets/MSDFData.h>
+
+#include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <CoreUtilities/StringUtility.h>
 
@@ -106,7 +108,7 @@ namespace Circuit
 			return;
 		}
 		
-		std::u32string utf32string = ::Utility::ToUTF32(text);
+		std::u32string utf32string = ::Utility::To_UTF32(text);
 
 		auto& fontGeom = font->GetMSDFData()->fontGeometry;
 		const auto& metrics = fontGeom.getMetrics();
@@ -238,7 +240,7 @@ namespace Circuit
 				cmd.minMaxUV.z = static_cast<float>(r);
 				cmd.minMaxUV.w = static_cast<float>(t);
 
-				cmd.texture = font->GetAtlasResourceHandle();
+				//cmd.texture = font->GetAtlas()->GetImage()->GetHandle<Volt::ResourceHandle>(); TODO: BROKEN
 
 				double advance = glyph->getAdvance();
 				fontGeom.getAdvance(advance, character, utf32string[i + 1]);

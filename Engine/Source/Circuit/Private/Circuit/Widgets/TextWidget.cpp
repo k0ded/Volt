@@ -3,6 +3,8 @@
 
 #include "CircuitPainter.h"
 
+#include <Volt-Assets/Font.h>
+
 #include <AssetSystem/AssetManager.h>
 
 Circuit::TextWidget::TextWidget() : Circuit::Widget()

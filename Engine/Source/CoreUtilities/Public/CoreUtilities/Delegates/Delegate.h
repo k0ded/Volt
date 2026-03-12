@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreUtilities/Delegates/DelegateInstance.h"
+#include "CoreUtilities/Delegates/DelegateDeclarationHelpers.h"
 
 namespace Volt
 {

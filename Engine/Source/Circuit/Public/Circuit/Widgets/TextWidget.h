@@ -2,8 +2,6 @@
 #include "Circuit/Widgets/Widget.h"
 #include "Circuit/CircuitColor.h"
 
-#include <Volt-Assets/Assets/Font.h>
-
 namespace Volt
 {
 	class Font;

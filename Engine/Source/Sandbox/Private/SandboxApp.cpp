@@ -141,7 +141,7 @@ Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& command
 	Volt::ApplicationCreationInfo info{};
 	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
 	info.useVSync = true;
-	info.enableImGui = true;
+	info.enableImGui = false;
 	info.useTitlebar = true;
 	info.useCustomTitlebar = true;
 	info.width = 1600;

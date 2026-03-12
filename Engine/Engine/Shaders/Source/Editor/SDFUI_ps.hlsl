@@ -21,8 +21,7 @@ struct UICommand
     float2 pixelPos;
 
     uint color;
-    vt::Tex2D<float4>
-    texture;
+    vt::Tex2D<float4> texture;
     float2 padding;
 
     float4 minMaxUV;
@@ -118,7 +117,7 @@ float SDF_TextMedian(float r, float g, float b)
     return max(min(r, g), min(max(r, g), b));
 }
 
-float4 main(FullscreenTriangleVertex input) : SV_Target0
+float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
     const float2 pixelPos = input.uv * float2(RenderSize);
     
