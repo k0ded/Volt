@@ -23,7 +23,6 @@ namespace VoltSharpmake
                 "imgui_bezier_math.h",
                 "imgui_bezier_math.inl",
                 "imgui_canvas.cpp",
-                <Volt_imgui_extras/imgui_canvas.h>,
                 "imgui_extra_math.h",
                 "imgui_extra_math.inl",
                 "imgui_node_editor.cpp",
