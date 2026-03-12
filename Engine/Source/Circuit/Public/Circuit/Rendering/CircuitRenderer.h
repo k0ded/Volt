@@ -47,7 +47,6 @@ namespace Circuit
 		uint32_t m_height;
 
 		RefPtr<Volt::RHI::Image> m_outputImage;
-		RefPtr<Volt::RHI::SamplerState> m_linearSampler;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;
 	};

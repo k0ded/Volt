@@ -1790,6 +1790,12 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		// Nothing to do
+		if (m_renderPasses.empty())
+		{
+			return;
+		}
+
 		CullPasses();
 		FindResourceLifetimes();
 		EvaluateResourceAliasing();

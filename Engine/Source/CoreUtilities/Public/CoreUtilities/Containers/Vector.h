@@ -531,9 +531,11 @@ inline constexpr void Vector<T, AllocatorType>::resize(size_type count, const va
 template<typename T, typename AllocatorType>
 inline constexpr void Vector<T, AllocatorType>::resize(size_type count)
 {
-	if (count > static_cast<size_type>(m_ptrEnd - m_ptrBegin))
+	if (count > size())
 	{
-		InsertValuesAtEnd(count - (static_cast<size_type>(m_ptrEnd - m_ptrBegin)));
+		const size_type numToInsert = count - size();
+
+		InsertValuesAtEnd(numToInsert);
 	}
 	else
 	{

@@ -487,7 +487,6 @@ namespace Volt::RHI
 			VT_PROFILE_SCOPE("Get Images");
 			VT_VK_CHECK(vkGetSwapchainImagesKHR(device->GetHandle<VkDevice>(), m_swapchain, &m_totalImageCount, nullptr));
 
-			m_perImageData.clear();
 			m_perImageData.resize(m_totalImageCount);
 			images.resize(m_totalImageCount);
 

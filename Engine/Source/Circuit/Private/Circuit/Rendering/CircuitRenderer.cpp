@@ -40,13 +40,6 @@ namespace Circuit
 	{
 		m_width = 0;
 		m_height = 0;
-
-		RHI::SamplerStateDesc samplerDesc{};
-		samplerDesc.minFilter = RHI::TextureFilter::Linear;
-		samplerDesc.magFilter = RHI::TextureFilter::Linear;
-		samplerDesc.mipFilter = RHI::TextureFilter::Linear;
-		samplerDesc.wrapMode = RHI::TextureWrap::Clamp;
-		m_linearSampler = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>();
 	}
 
 	CircuitRenderer::~CircuitRenderer()
@@ -87,15 +80,14 @@ namespace Circuit
 	{
 		DECLARE_GLOBAL_SHADER(CircuitPrimitivesPS)
 		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
-			SHADER_PARAMETER_BUFFER_SRV(vt::TypedBuffer<UICommand>, Commands)
-			SHADER_PARAMETER_SAMPLER(LinearSampler)
+			SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<UICommand>, Commands)
 			SHADER_PARAMETER(uint, CommandCount)
 			SHADER_PARAMETER(uint2, RenderSize)
 
 			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
 	};
-	VT_REGISTER_SHADER(CircuitPrimitivesPS, "Engine/Shaders/Source/Editor/SDFUI_ps.hlsl", "MainPS", Pixel);
+	VT_REGISTER_SHADER(CircuitPrimitivesPS, "Engine/Shaders/Source/Editor/SDFUI.hlsl", "MainPS", Pixel);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(CircuitPrimitivesParameters)
 		SHADER_PARAMETER_STRUCT_INCLUDE(CircuitPrimitivesPS::Parameters, PS)
@@ -110,13 +102,19 @@ namespace Circuit
 
 		std::vector<Circuit::CircuitDrawCommand> cmds = m_targetCircuitWindow.GetDrawCommands();
 
+		if (cmds.empty())
+		{
+			return;
+		}
+
+		RGBufferDesc cmdsBufferDesc = RGBufferDesc::CreateMappableBufferDesc<Circuit::CircuitDrawCommand>(cmds.size(), RHI::BufferUsage::StorageBuffer, "UI Commands");
+		RGBufferRef cmdsBuffer = renderGraph.CreateBuffer(cmdsBufferDesc);
+
+		AddMappedBufferUploadCopyData(renderGraph, cmdsBuffer, cmds.data(), cmds.size() * sizeof(Circuit::CircuitDrawCommand));
+
 		CircuitPrimitivesParameters* passParameters = renderGraph.AllocParameters<CircuitPrimitivesParameters>();
 		passParameters->PS.CommandCount = static_cast<uint>(cmds.size());
 		passParameters->PS.RenderSize = uint2{ swapchainWidth, swapchainHeight };
-		passParameters->PS.LinearSampler = m_linearSampler;
-
-		RGBufferDesc cmdsBufferDesc = RGBufferDesc::CreateBufferDescGPU<Circuit::CircuitDrawCommand>(cmds.size(), "UI Commands");
-		RGBufferRef cmdsBuffer = renderGraph.CreateBuffer(cmdsBufferDesc);
 		passParameters->PS.Commands = renderGraph.CreateSRV(cmdsBuffer);
 		
 		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();

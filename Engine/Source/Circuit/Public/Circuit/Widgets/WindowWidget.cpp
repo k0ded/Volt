@@ -31,17 +31,17 @@ namespace Circuit
 		//Window titlebar
 		auto titlebar = CreateWidget(LayoutWidget).Orientation(LayoutOrientation::Horizontal);
 
-		titlebar->AddFlexibleSlice(CreateWidget(TextWidget)
-			.Text("WINDOW TITLE!")
-			.Size(21.f)
-		);
+		//titlebar->AddFlexibleSlice(CreateWidget(TextWidget)
+		//	.Text("WINDOW TITLE!")
+		//	.Size(21.f)
+		//);
 
-		titlebar->AddFixedSlice(CreateWidget(TextWidget).Text(" "), 10);
-		titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget).Content(CreateWidget(TextWidget).Text("_").Size(30)));
-		titlebar->AddFixedSlice(CreateWidget(TextWidget).Text(" "), 10);
-		titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget).Content(CreateWidget(TextWidget).Text("O").Size(30)));
-		titlebar->AddFixedSlice(CreateWidget(TextWidget).Text(" "), 10);
-		titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget).Content(CreateWidget(TextWidget).Text("X").Size(30)));
+		//titlebar->AddFixedSlice(CreateWidget(TextWidget).Text(" "), 10);
+		//titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget).Content(CreateWidget(TextWidget).Text("_").Size(30)));
+		//titlebar->AddFixedSlice(CreateWidget(TextWidget).Text(" "), 10);
+		//titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget).Content(CreateWidget(TextWidget).Text("O").Size(30)));
+		//titlebar->AddFixedSlice(CreateWidget(TextWidget).Text(" "), 10);
+		//titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget).Content(CreateWidget(TextWidget).Text("X").Size(30)));
 
 		return titlebar;
 	}

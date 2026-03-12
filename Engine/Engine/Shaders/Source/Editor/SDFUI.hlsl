@@ -1,5 +1,6 @@
-#include "Vertex.hlsli"
-#include "Resources.hlsli"
+#include "Utility/FullscreenTriangleVertex.hlsli"
+
+#include "StaticSamplerStates.hlsli"
 
 static const float PI = 3.14159265359f;
 
@@ -21,15 +22,14 @@ struct UICommand
     float2 pixelPos;
 
     uint color;
-    vt::Tex2D<float4> texture;
-    float2 padding;
+    float3 padding;
 
     float4 minMaxUV;
     float4 minMaxPx;
 };
 
-vt::TypedBuffer<UICommand> Commands;
-vt::TextureSampler LinearSampler;
+StructuredBuffer<UICommand> Commands;
+
 uint CommandCount;
 uint2 RenderSize;
 
@@ -125,14 +125,13 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 
     for (uint i = 0; i < CommandCount; i++)
     {
-        UICommand command = Commands.Load(i);
+        UICommand command = Commands[i];
         const uint mask = 0xff;
         const float4 color = float4(
         ((command.color >> 24) & mask) / 255.f,
         ((command.color >> 16) & mask) / 255.f,
         ((command.color >> 8) & mask) / 255.f,
         (command.color & mask) / 255.f);
-        
         
         switch (command.type)
         {
@@ -163,66 +162,68 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 
             case UIPrimitiveType::RECTANGLE:
             {
-                    float2 position = SDF_Translate(command.pixelPos, pixelPos);
-                    position = SDF_Rotate(position, command.rotation);
-                    position = SDF_Scale(position, command.scale);
-                    position = SDF_Translate(position, -command.radiusHalfSize);
+                float2 position = SDF_Translate(command.pixelPos, pixelPos);
+                position = SDF_Rotate(position, command.rotation);
+                position = SDF_Scale(position, command.scale);
+                position = SDF_Translate(position, -command.radiusHalfSize);
                 
-                    const float sdf = SDF_Rectangle(position, command.radiusHalfSize) * command.scale;
+                const float sdf = SDF_Rectangle(position, command.radiusHalfSize) * command.scale;
 
-                    const float alpha = SDF_AA(sdf);
-                    if (alpha > 0.f)
-                    {
-                        resultColor = BlendColors(resultColor, float4(color.rgb, alpha));
-                    }
-
-                    const float dropShadowRadius = command.radiusHalfSize.x * 0.05f;
-                    const float t = sdf / dropShadowRadius;
-
-                    if (t > 0.f && t <= 1.f)
-                    {
-                        const float strength = 0.5f;
-                        resultColor = BlendColors(resultColor, float4(0.f, 0.f, 0.f, lerp(1.f, 0.f, t) * strength));
-                    }
-
-                    break;
+                const float alpha = SDF_AA(sdf);
+                if (alpha > 0.f)
+                {
+                    resultColor = BlendColors(resultColor, float4(color.rgb, alpha));
                 }
 
+                const float dropShadowRadius = command.radiusHalfSize.x * 0.05f;
+                const float t = sdf / dropShadowRadius;
+
+                if (t > 0.f && t <= 1.f)
+                {
+                    const float strength = 0.5f;
+                    resultColor = BlendColors(resultColor, float4(0.f, 0.f, 0.f, lerp(1.f, 0.f, t) * strength));
+                }
+
+                break;
+            }
+
+#if 0
             case UIPrimitiveType::TEXT_CHARACTER:
             {
-                    if (pixelPos.x < command.minMaxPx.x || pixelPos.x > command.minMaxPx.z || pixelPos.y < command.minMaxPx.w || pixelPos.y > command.minMaxPx.y)
-                    {
-                        break;
-                    }
-
-                // Calculate UV within character quad
-                    const float xPercent = (pixelPos.x - command.minMaxPx.x) / (command.minMaxPx.z - command.minMaxPx.x);
-                    const float yPercent = (pixelPos.y - command.minMaxPx.y) / (command.minMaxPx.w - command.minMaxPx.y);
-                
-                    const float2 textTexUv = float2(lerp(command.minMaxUV.x, command.minMaxUV.z, xPercent), lerp(command.minMaxUV.y, command.minMaxUV.w, yPercent));
-                
-                // Sample UV
-                    const float3 msd = command.texture.Sample(constantsLinearSampler, textTexUv).rgb;
-                
-                    uint2 msdfSize;
-                    command.texture.GetDimensions(msdfSize.x, msdfSize.y);
-                
-                    float4 bgColor = float4(color.xyz, 0.f);
-                    float4 fgColor = color;
-                
-                    float sd = SDF_TextMedian(msd.x, msd.y, msd.z);
-                    float screenPxDistance = ScreenPxRange((float2) msdfSize, (float2) constants.renderSize) * (sd - 0.5f);
-                    float opacity = clamp(screenPxDistance + 0.5f, 0.f, 1.f);
-                
-                    if (opacity > 0.f)
-                    {
-                        resultColor = BlendColors(resultColor, float4(lerp(bgColor.rgb, fgColor.rgb, opacity), opacity));
-                    }
-
+                if (pixelPos.x < command.minMaxPx.x || pixelPos.x > command.minMaxPx.z || pixelPos.y < command.minMaxPx.w || pixelPos.y > command.minMaxPx.y)
+                {
                     break;
                 }
+
+                // Calculate UV within character quad
+                const float xPercent = (pixelPos.x - command.minMaxPx.x) / (command.minMaxPx.z - command.minMaxPx.x);
+                const float yPercent = (pixelPos.y - command.minMaxPx.y) / (command.minMaxPx.w - command.minMaxPx.y);
+                
+                const float2 textTexUv = float2(lerp(command.minMaxUV.x, command.minMaxUV.z, xPercent), lerp(command.minMaxUV.y, command.minMaxUV.w, yPercent));
+                
+                // Sample UV
+                const float3 msd = command.texture.Sample(constantsLinearSampler, textTexUv).rgb;
+                
+                uint2 msdfSize;
+                command.texture.GetDimensions(msdfSize.x, msdfSize.y);
+                
+                float4 bgColor = float4(color.xyz, 0.f);
+                float4 fgColor = color;
+                
+                float sd = SDF_TextMedian(msd.x, msd.y, msd.z);
+                float screenPxDistance = ScreenPxRange((float2) msdfSize, (float2) constants.renderSize) * (sd - 0.5f);
+                float opacity = clamp(screenPxDistance + 0.5f, 0.f, 1.f);
+                
+                if (opacity > 0.f)
+                {
+                    resultColor = BlendColors(resultColor, float4(lerp(bgColor.rgb, fgColor.rgb, opacity), opacity));
+                }
+
+                break;
+            }
+#endif
         }
     }
 
-    return output;
+    return resultColor;
 }

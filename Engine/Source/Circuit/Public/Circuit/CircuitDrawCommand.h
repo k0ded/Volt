@@ -26,8 +26,7 @@ namespace Circuit
 		glm::vec2 pixelPos;
 		
 		CircuitColor color;
-		Volt::ResourceHandle texture;
-		glm::vec2 padding;
+		glm::vec3 padding;
 
 		glm::vec4 minMaxUV;
 		glm::vec4 minMaxPx;
