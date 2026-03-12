@@ -1,5 +1,5 @@
 ﻿# define IMGUI_DEFINE_MATH_OPERATORS
-# include "imgui_canvas.h"
+# include <Volt_imgui_extras/imgui_canvas.h>
 # include <type_traits>
 
 // https://stackoverflow.com/a/36079786
@@ -104,6 +104,8 @@ bool ImGuiEx::Canvas::Begin(ImGuiID id, const ImVec2& size)
     if (ImGui::IsClippedEx(m_WidgetRect, id))
         return false;
 
+    ImGui::GetCurrentContext()->CurrentCanvas = this;
+
     // Save current channel, so we can assert when user
     // call canvas API with different one.
     m_ExpectedChannel = m_DrawList->_Splitter._Current;
@@ -137,8 +139,11 @@ bool ImGuiEx::Canvas::Begin(ImGuiID id, const ImVec2& size)
 void ImGuiEx::Canvas::End()
 {
     // If you're here your call to Begin() returned false,
-    // or Begin() wasn't called at all.
+    // or Begin() wasn't called at all. 
     IM_ASSERT(m_InBeginEnd == true);
+
+    IM_ASSERT(ImGui::GetCurrentContext()->CurrentCanvas == this);
+    ImGui::GetCurrentContext()->CurrentCanvas = nullptr;
 
     // If you're here, please make sure you do not interleave
     // channel splitter with canvas.

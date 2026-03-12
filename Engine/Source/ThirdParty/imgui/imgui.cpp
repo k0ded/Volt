@@ -1203,6 +1203,9 @@ CODE
 
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
+//BEGIN_VOLT_SOURCE_MODIFICATION
+#include "Volt_imgui_extras/imgui_canvas.h"
+//END_VOLT_SOURCE_MODIFICATION
 #include "imgui_internal.h"
 
 // System includes
@@ -4360,6 +4363,10 @@ ImGuiContext::ImGuiContext(ImFontAtlas* shared_font_atlas)
     FramerateSecPerFrameAccum = 0.0f;
     WantCaptureMouseNextFrame = WantCaptureKeyboardNextFrame = WantTextInputNextFrame = -1;
     memset(TempKeychordName, 0, sizeof(TempKeychordName));
+
+    //BEGIN_VOLT_SOURCE_MODIFICATION
+    CurrentCanvas = nullptr;
+    //END_VOLT_SOURCE_MODIFICATION
 }
 
 void ImGui::Initialize()
@@ -7658,6 +7665,12 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
     IM_ASSERT(name != NULL && name[0] != '\0');     // Window name required
     IM_ASSERT(g.WithinFrameScope);                  // Forgot to call ImGui::NewFrame()
     IM_ASSERT(g.FrameCountEnded != g.FrameCount);   // Called ImGui::Render() or ImGui::EndFrame() and haven't called ImGui::NewFrame() again yet
+    //BEGIN_VOLT_SOURCE_MODIFICATION
+    if (g.CurrentCanvas)
+    {
+        g.CurrentCanvas->Suspend();
+    }
+    //END_VOLT_SOURCE_MODIFICATION
 
     // Find or create
     ImGuiWindow* window = FindWindowByName(name);
@@ -8622,6 +8635,7 @@ void ImGui::End()
         IM_ASSERT_USER_ERROR(g.CurrentWindowStack.Size > 1, "Calling End() too many times!");
         return;
     }
+
     ImGuiWindowStackData& window_stack_data = g.CurrentWindowStack.back();
 
     // Error checking: verify that user doesn't directly call End() on a child window.
@@ -8670,6 +8684,12 @@ void ImGui::End()
     SetCurrentWindow(g.CurrentWindowStack.Size == 0 ? NULL : g.CurrentWindowStack.back().Window);
     if (g.CurrentWindow)
         SetCurrentViewport(g.CurrentWindow, g.CurrentWindow->Viewport);
+    //BEGIN_VOLT_SOURCE_MODIFICATION
+    if (g.CurrentCanvas)
+    {
+        g.CurrentCanvas->Resume();
+    }
+    //END_VOLT_SOURCE_MODIFICATION
 }
 
 void ImGui::PushItemFlag(ImGuiItemFlags option, bool enabled)

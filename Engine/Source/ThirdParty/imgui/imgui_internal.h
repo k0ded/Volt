@@ -131,7 +131,12 @@ Index of this file:
 //-----------------------------------------------------------------------------
 // [SECTION] Forward declarations
 //-----------------------------------------------------------------------------
-
+//BEGIN_VOLT_SOURCE_MODIFICATION
+namespace ImGuiEx
+{
+    struct Canvas;
+}
+//END_VOLT_SOURCE_MODIFICATION
 // Utilities
 // (other types which are not forwarded declared are: ImBitArray<>, ImSpan<>, ImSpanAllocator<>, ImStableVector<>, ImPool<>, ImChunkStream<>)
 struct ImBitVector;                 // Store 1-bit per value
@@ -2710,6 +2715,10 @@ struct ImGuiContext
     int                     WantTextInputNextFrame;             // Copied in EndFrame() from g.PlatformImeData.WanttextInput. Needs to be set for some backends (SDL3) to emit character inputs.
     ImVector<char>          TempBuffer;                         // Temporary text buffer
     char                    TempKeychordName[64];
+
+    //BEGIN_VOLT_SOURCE_MODIFICATION
+    ImGuiEx::Canvas* CurrentCanvas;
+    //END_VOLT_SOURCE_MODIFICATION
 
     ImGuiContext(ImFontAtlas* shared_font_atlas);
 };

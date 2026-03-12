@@ -22,7 +22,9 @@
 # include <imgui_internal.h>
 # include "imgui_extra_math.h"
 # include "imgui_bezier_math.h"
-# include "imgui_canvas.h"
+//BEGIN_VOLT_SOURCE_MODIFICATION
+# include <Volt_imgui_extras/imgui_canvas.h> 
+//END_VOLT_SOURCE_MODIFICATION
 
 # include "crude_json.h"
 

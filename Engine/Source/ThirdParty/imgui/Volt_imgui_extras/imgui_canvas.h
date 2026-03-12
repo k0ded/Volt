@@ -51,7 +51,7 @@
 
 namespace ImGuiEx {
 
-struct CanvasView
+struct IMGUI_API CanvasView
 {
     ImVec2 Origin;
     float  Scale  = 1.0f;
@@ -88,7 +88,7 @@ struct CanvasView
 //     Please do not interleave canvas with use of channel splitter.
 //     Keep channel splitter contained inside canvas or always
 //     call canvas functions from same channel.
-struct Canvas
+struct IMGUI_API Canvas
 {
     // Begins drawing content of canvas plane.
     //
