@@ -26,6 +26,11 @@ struct NodePinDefinition
 
 	PinTypeCustomDataVector pinTypeData;
 	VoltGUID pinTypeGUID;
+	// todo: kind of ends up being duplicated data here since many pins can use the same pin type...
+	int32_t pinTypeStorageTypeSize;
+
+	std::function<void(void*)> constructPinStorageFn;
+	std::function<void(void*)> destructPinStorageFn;
 };
 
 struct NodeTypeDefinition
@@ -58,7 +63,20 @@ public:
 		definition.pinID = pinID;
 		definition.pinName = std::string(pinName);
 		definition.pinTypeData = std::move(customPinTypeData);
-		definition.pinTypeGUID = PinType::GetStaticGUID();
+		definition.pinTypeGUID = PinType::GetStaticTypeGUID();
+		definition.pinTypeStorageTypeSize = sizeof(PinType::StorageType);
+
+		definition.constructPinStorageFn = [](void* ptr)
+		{
+			new(ptr)PinType::StorageType();
+		};
+
+		definition.destructPinStorageFn = [](void* ptr)
+		{
+			using StorageType = typename PinType::StorageType;
+			StorageType* storage = reinterpret_cast<StorageType*>(ptr);
+			storage->~StorageType();
+		};
 
 		switch (pinDirection)
 		{
@@ -71,16 +89,18 @@ public:
 			default:
 				break;
 		}
+
+		
 	}
 	template<typename PinType>
 	void Pin(PinDirection pinDirection, NodePinID pinID, const char* pinName)
 	{
-		static_assert(typeid(NoPinCustomData) == typeid(typename PinType::CustomDataType) && "Please provide the specified custom data form pin type.");
+		static_assert(typeid(PinTypeNoneCustomData) == typeid(typename PinType::CustomDataType) && "Please provide the specified custom data form pin type.");
 
 		typename PinType::CustomDataType pinTypeCustomData;
 		Pin<PinType>(pinDirection, pinID, pinName, pinTypeCustomData);
 	}
-	
+
 
 	NodeTypeDefinition&& MoveDefinition() { return std::move(m_nodeTypeDefinition); }
 private:

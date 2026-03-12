@@ -9,18 +9,28 @@
 
 #include <string>
 
-DECLARE_PIN_TYPE(Bool, "{6386E26A-677A-427B-A672-CCBA9D811DEF}"_guid);
+struct PinType_BoolStorage
+{
+	bool Value = false;
+};
+DECLARE_PIN_TYPE_STORAGE(Bool, PinType_BoolStorage, "{6386E26A-677A-427B-A672-CCBA9D811DEF}"_guid);
+
 DECLARE_PIN_TYPE(Flow, "{48A9B2EC-1584-42E3-928F-F4EF7D2E6E6F}"_guid);
 
 struct PinType_FloatCustomData
 {
 	bool isSlider = false;
+	float speed = 1.f;
 	float minBound = 0;
 	float maxBound = 0;
 };
-DECLARE_PIN_TYPE_CUSTOM_DATA(Float, PinType_FloatCustomData, "{1AB638AD-561A-4A91-AB9A-2E733BB2AAEC}"_guid);
+struct PinType_FloatStorage
+{
+	float Value = 0;
+};
+DECLARE_PIN_TYPE_STORAGE_CUSTOM_DATA(Float, PinType_FloatStorage, PinType_FloatCustomData, "{1AB638AD-561A-4A91-AB9A-2E733BB2AAEC}"_guid);
 
-#define DECLARE_NODE_TYPE(nodeTypeName, prettyName, typeGuid)	\
+#define DECLARE_NODE_TYPE(nodeTypeName, prettyName, typeGuid)			\
 class nodeTypeName														\
 {																		\
 public:																	\
@@ -30,7 +40,7 @@ public:																	\
 	}																	\
 	~nodeTypeName()														\
 	{																	\
-		NodeTypeRegistry::Get().RegisterNodeType<nodeTypeName>();		\
+		NodeTypeRegistry::Get().UnregisterNodeType<nodeTypeName>();		\
 	}																	\
 	static VoltGUID GetStaticTypeGUID() { return typeGuid; }			\
 	static std::string GetStaticTypeName() { return #nodeTypeName; }	\

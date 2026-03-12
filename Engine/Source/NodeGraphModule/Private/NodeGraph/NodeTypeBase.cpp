@@ -14,12 +14,12 @@ void NothingNode::MakeTypeDefinition(NodeTypeDefinitionBuilder& builder)
 	floatData.isSlider = true;
 	floatData.minBound = 0;
 	floatData.maxBound = 10;
-	builder.Pin<PinType_Float>(PinDirection::Input, 'flt', "In", floatData);
-
+	builder.Pin<PinType_Float>(PinDirection::Input, 'flt', "Float", floatData);
 
 	//outputs
 	builder.Pin<PinType_Flow>(PinDirection::Output, 'true', "True");
 	builder.Pin<PinType_Flow>(PinDirection::Output, 'fals', "False");
+	builder.Pin<PinType_Float>(PinDirection::Output, 'oflt', "Float", floatData);
 
 	//builder.MarkUsesDynamicPins();
 }
