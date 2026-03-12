@@ -110,13 +110,16 @@ namespace Circuit
 		RGBufferDesc cmdsBufferDesc = RGBufferDesc::CreateMappableBufferDesc<Circuit::CircuitDrawCommand>(cmds.size(), RHI::BufferUsage::StorageBuffer, "UI Commands");
 		RGBufferRef cmdsBuffer = renderGraph.CreateBuffer(cmdsBufferDesc);
 
+		RGTextureRef renderTarget = renderGraph.RegisterExternalTexture(m_targetWindow.GetSwapchain().GetCurrentImage());
+
 		AddMappedBufferUploadCopyData(renderGraph, cmdsBuffer, cmds.data(), cmds.size() * sizeof(Circuit::CircuitDrawCommand));
 
 		CircuitPrimitivesParameters* passParameters = renderGraph.AllocParameters<CircuitPrimitivesParameters>();
 		passParameters->PS.CommandCount = static_cast<uint>(cmds.size());
 		passParameters->PS.RenderSize = uint2{ swapchainWidth, swapchainHeight };
 		passParameters->PS.Commands = renderGraph.CreateSRV(cmdsBuffer);
-		
+		passParameters->PS.renderTargets.renderTargets[0] = renderTarget;
+
 		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
 		auto pixelShader = ShaderMap::Get<CircuitPrimitivesPS>();
 
@@ -132,7 +135,6 @@ namespace Circuit
 			pipelineState.renderTargets = passParameters->PS.renderTargets;
 
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(passParameters->PS.RenderSize.x, passParameters->PS.RenderSize.y, passParameters->PS.renderTargets);
-			renderingInfo.renderingInfo.depthAttachmentInfo.clearMode = RHI::ClearMode::Load;
 
 			context.BeginRendering(renderingInfo);
 			context.SetPipelineState(pipelineState);
