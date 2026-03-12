@@ -5,6 +5,9 @@
 #include <RHIModule/Core/RHICommon.h>
 #include <RHIModule/Graphics/Swapchain.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Synchronization/Fence.h>
+
+#include <CoreUtilities/Profiling/Profiling.h>
 
 struct VkSwapchainKHR_T;
 struct VkRenderPass_T;
@@ -32,8 +35,6 @@ namespace Volt::RHI
 			ColorSpace colorSpace;
 		};
 		
-		inline constexpr static uint32_t MAX_FRAMES_IN_FLIGHT = 3;
-
 		VulkanSwapchain(const SwapchainCreateInfo& createInfo);
 		~VulkanSwapchain() override;
 
@@ -44,7 +45,6 @@ namespace Volt::RHI
 		const uint32_t GetCurrentFrame() const override;
 		const uint32_t GetWidth() const override;
 		const uint32_t GetHeight() const override;
-		const uint32_t GetFramesInFlight() const override;
 		const PixelFormat GetFormat() const override;
 		RefPtr<Image> GetCurrentImage() const override;
 		bool IsHDREnabled() const override;
@@ -65,13 +65,14 @@ namespace Volt::RHI
 
 		void GetNextFrameIndex();
 
-		uint32_t m_currentImage = 0;
-		uint32_t m_currentFrame = 0;
+		uint32_t m_currentImageIndex = 0;
+		uint32_t m_currentFrameIndex = 0;
+		uint32_t m_lastSubmittedFence;
 
 		uint32_t m_width = 1280;
 		uint32_t m_height = 720;
 
-		bool m_vSyncEnabled = false;
+		bool m_VSyncEnabled = false;
 		bool m_isHDREnabled = false;
 		bool m_swapchainNeedsRebuild = false;
 
@@ -79,13 +80,14 @@ namespace Volt::RHI
 
 		struct PerFrameInFlightData
 		{
-			VkSemaphore_T* renderSemaphore = nullptr;
 			VkSemaphore_T* presentSemaphore = nullptr;
+			VkFence_T* renderFence = nullptr;
 		};
 
 		struct PerImageData
 		{
 			VkImage_T* image = nullptr;
+			VkSemaphore_T* renderSemaphore = nullptr;
 			RefPtr<Image> imageReference;
 		};
 
@@ -110,6 +112,8 @@ namespace Volt::RHI
 
 		VkSwapchainKHR_T* m_swapchain = nullptr;
 		VkSurfaceKHR_T* m_surface = nullptr;
+
+		std::mutex m_swapchainMutex;
 
 		PixelFormat m_swapchainFormat = PixelFormat::UNDEFINED;
 	};

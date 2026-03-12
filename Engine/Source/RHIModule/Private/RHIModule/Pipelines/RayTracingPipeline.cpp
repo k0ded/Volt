@@ -1,12 +1,12 @@
 #include <rhipch.h>
 
 #include "RHIModule/Pipelines/RayTracingPipeline.h"
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
 	RefPtr<RayTracingPipeline> RayTracingPipeline::Create(const RayTracingPipelineCreateInfo& createInfo)
 	{
-		return RHIProxy::GetInstance().CreateRayTracingPipeline(createInfo);
+		return RHIModule::GetInstance().CreateRayTracingPipeline(createInfo);
 	}
 }

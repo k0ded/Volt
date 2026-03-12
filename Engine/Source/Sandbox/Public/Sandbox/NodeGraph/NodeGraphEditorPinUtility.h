@@ -4,7 +4,7 @@
 
 #include "Volt-Renderer/Texture/Texture2D.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <imgui_internal.h>
 
@@ -64,19 +64,19 @@ inline static void DrawIconKey(ImDrawList* drawList, const ImVec2& a, const ImVe
 		const auto tip_bottom = ImVec2(canvas_x + canvas_w * 0.5f, bottom);
 
 		drawList->PathLineTo(ImVec2(left, top) + ImVec2(0, rounding));
-		drawList->PathBezierCurveTo(
+		drawList->PathBezierCubicCurveTo(
 			ImVec2(left, top),
 			ImVec2(left, top),
 			ImVec2(left, top) + ImVec2(rounding, 0));
 		drawList->PathLineTo(tip_top);
 		drawList->PathLineTo(tip_top + (tip_right - tip_top) * tip_round);
-		drawList->PathBezierCurveTo(
+		drawList->PathBezierCubicCurveTo(
 			tip_right,
 			tip_right,
 			tip_bottom + (tip_right - tip_bottom) * tip_round);
 		drawList->PathLineTo(tip_bottom);
 		drawList->PathLineTo(ImVec2(left, bottom) + ImVec2(rounding, 0));
-		drawList->PathBezierCurveTo(
+		drawList->PathBezierCubicCurveTo(
 			ImVec2(left, bottom),
 			ImVec2(left, bottom),
 			ImVec2(left, bottom) - ImVec2(0, rounding));
@@ -90,25 +90,6 @@ inline static void DrawIconKey(ImDrawList* drawList, const ImVec2& a, const ImVe
 		}
 		else
 			drawList->PathFillConvex(color);
-	}
-	else if (type == IconType::AnimationPose)
-	{
-		Ref<Volt::Texture2D> texture;
-		if (filled)
-		{
-			texture = EditorResources::GetEditorIcon(EditorIcon::GraphPinAnimationPoseFilled);
-		}
-		else
-		{
-			texture = EditorResources::GetEditorIcon(EditorIcon::GraphPinAnimationPose);
-		}
-		if (texture)
-		{
-			if (texture->IsValid())
-			{
-				drawList->AddImage(UI::GetTextureID(texture), rect.Min, rect.Max, ImVec2(0, 0), ImVec2(1, 1), color);
-			}
-		}
 	}
 	else
 	{

@@ -19,7 +19,7 @@ class ECSGameLoopContainer
 public:
 	ECSGameLoopContainer() = default;
 
-	void VTES_API Execute(Volt::EntityScene& scene, float deltaTime);
+	void VTES_API Execute(Volt::EntityScene& scene);
 	void VTES_API Compile();
 
 	template<typename Ret, typename... Args>
@@ -35,7 +35,7 @@ public:
 	}
 
 private:
-	vt::map<UUID64, ECSSystem> m_registeredSystems;
+	Map<UUID64, ECSSystem> m_registeredSystems;
 	Vector<Vector<UUID64>> m_executionBuckets;
 };
 

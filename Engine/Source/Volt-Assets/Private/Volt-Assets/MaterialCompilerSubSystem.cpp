@@ -3,52 +3,55 @@
 #include "Volt-Assets/MaterialCompilerSubSystem.h"
 #include "Volt-Assets/MaterialCompiler.h"
 
-#include <CoreUtilities/ThreadUtilities.h>
+#include <Volt-Platforms/Platform.h>
+#include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <Volt-Core/Project/ProjectManager.h>
+
+#include <JobSystem/JobSystem.h>
+
+#include <CoreUtilities/FileIO/FileUtility.h>
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(MaterialCompilerSubSystem, PostEngine, 0);
+	static ConsoleVariable<int32_t> s_forceSingleThreadedCompilation(
+		"r.MaterialCompiler.ForceSingleThreadedCompilation",
+		0,
+		"Whether or not force single threaded compilation of materials.");
+
+	VT_REGISTER_SUBSYSTEM(MaterialCompilerSubSystem, Default, PostEngine);
 
 	void MaterialCompilerSubSystem::Initialize()
 	{
-		m_workerThread = CreateScope<std::thread>(std::bind(&MaterialCompilerSubSystem::RunWorker, this));
-		Thread::SetThreadName(m_workerThread->native_handle(), "MaterialCompilerWorker");
-		Thread::SetThreadPriority(m_workerThread->native_handle(), ThreadPriority::Low);
+		ReadMaterialShaderFileContents();
 	}
 
 	void MaterialCompilerSubSystem::Shutdown()
 	{
-		m_isRunning = false;
-		m_wakeCondition.notify_all();
-		m_workerThread->join();
-		m_workerThread = nullptr;
 	}
 
-	void MaterialCompilerSubSystem::RequestMaterialCompilation(Ref<MaterialAsset> materialAsset)
+	void MaterialCompilerSubSystem::RequestMaterialCompilation(AssetReference<MaterialAsset> materialAsset)
 	{
-		CompilationJob job;
-		job.material = materialAsset;
-		m_queue->push(job);
-	}
-
-	void MaterialCompilerSubSystem::RunWorker()
-	{
-		while (m_isRunning)
+		if (!s_forceSingleThreadedCompilation.GetValue())
 		{
-			CompilationJob job;
-			while (m_queue->try_pop(job))
+			JobRef compileJob = JobSystem::CreateJob("Compile Material", ExecutionPriority::Latent, [materialAsset = std::move(materialAsset)]()
 			{
-				ExecuteJob(job);
-			}
+				MaterialCompiler compiler;
+				compiler.CompileMaterial(materialAsset);
+			});
 
-			std::unique_lock lock(m_wakeMutex);
-			m_wakeCondition.wait(lock);
+			JobSystem::RunJob(compileJob);
+		}
+		else
+		{
+			MaterialCompiler compiler;
+			compiler.CompileMaterial(materialAsset);
 		}
 	}
 
-	void MaterialCompilerSubSystem::ExecuteJob(const CompilationJob& job)
+	void MaterialCompilerSubSystem::ReadMaterialShaderFileContents()
 	{
-		MaterialCompiler compiler;
-		compiler.CompileMaterial(job.material);
+		const std::filesystem::path materialShaderFilepath = ProjectManager::GetEngineAssetsDirectory() / "Shaders" / "Source" / "Material" / "MaterialShader.hlsli";
+		VT_MAYBE_UNUSED bool readFile = FileUtility::ReadStringFromFile(materialShaderFilepath, m_materialShaderFileContents);
+		VT_ENSURE(readFile);
 	}
 }

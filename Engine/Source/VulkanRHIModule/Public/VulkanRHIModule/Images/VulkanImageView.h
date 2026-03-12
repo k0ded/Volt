@@ -3,34 +3,54 @@
 #include "VulkanRHIModule/Core.h"
 #include <RHIModule/Images/ImageView.h>
 	
+#include <vulkan/vulkan.h>
+
 struct VkImageView_T;
 
 namespace Volt::RHI
 {
-	class VulkanImageView : public ImageView
+	class VulkanImageView final : public ImageView
 	{
 	public:
-		VulkanImageView(const ImageViewSpecification& specification);
+		struct DescriptorDescription
+		{
+			VkDescriptorGetInfoEXT vkDescriptorInfo;
+			VkDescriptorImageInfo vkImageDescriptor;
+			uint64_t descriptorSize;
+		};
+
+		VulkanImageView(const ImageViewDesc& specification, RawPtr<Image> image);
 		~VulkanImageView() override;
 
-		const PixelFormat GetFormat() const;
-		const ImageAspect GetImageAspect() const override;
-		const uint64_t GetDeviceAddress() const override;
-		const ImageUsage GetImageUsage() const override;
-		const ImageViewType GetViewType() const override;
-		const bool IsSwapchainView() const override;
+		PixelFormat GetFormat() const override;
+		ImageAspect GetImageAspect() const override;
+		uint64_t GetDeviceAddress() const override;
+		ImageUsage GetImageUsage() const override;
+		ImageViewType GetViewType() const override;
+		const ImageViewDesc& GetDesc() const override;
+		RawPtr<Image> GetImage() const override;
+		bool IsSwapchainView() const override;
+
+		VT_NODISCARD VT_INLINE const DescriptorDescription& GetSRVDescriptor() const { return m_srvDescriptor; }
+		VT_NODISCARD VT_INLINE const DescriptorDescription& GetUAVDescriptor() const { return m_uavDescriptor; }
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
-		ImageViewSpecification m_specification{};
+		void CreateDescriptors();
+
+		ImageViewDesc m_desc{};
 
 		VkImageView_T* m_imageView = nullptr;
+		RawPtr<Image> m_image;
 
 		PixelFormat m_format;
 		ImageAspect m_imageAspect;
 		ImageUsage m_imageUsage;
 		bool m_isSwapchainImage;
+
+		DescriptorDescription m_srvDescriptor;
+		DescriptorDescription m_uavDescriptor;
 	};
 }

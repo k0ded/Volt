@@ -1,12 +1,12 @@
 #include "rhipch.h"
 
 #include "RHIModule/Graphics/PhysicalGraphicsDevice.h"
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
-	RefPtr<PhysicalGraphicsDevice> PhysicalGraphicsDevice::Create(const PhysicalDeviceCreateInfo& deviceInfo)
+	RefPtr<PhysicalGraphicsDevice> PhysicalGraphicsDevice::Create(const PhysicalDeviceCreateInfo& deviceInfo, bool enableDebugLayer)
 	{
-		return RHIProxy::GetInstance().CreatePhysicalGraphicsDevice(deviceInfo);
+		return RHIModule::GetInstance().CreatePhysicalGraphicsDevice(deviceInfo, enableDebugLayer);
 	}
 }

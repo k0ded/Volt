@@ -1,87 +1,160 @@
 #include "jspch.h"
 #include "TaskGraph.h"
 
-#include "JobSystem/JobSystem.h"
+#include <CoreUtilities/Malloc.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
-	TaskGraph::TaskGraph(size_t predictedTaskCount)
-		: m_predictedTaskCount(predictedTaskCount)
+	TaskGraph::TaskGraph(ExecutionPriority priority, size_t numExpectedTasks)
+		: m_numExpectedTasks(numExpectedTasks), m_priority(priority)
 	{
-		CreateNewSubGraph();
 	}
 
 	TaskGraph::~TaskGraph()
 	{
-		if (!m_executed)
+		if (m_graphCounter)
 		{
-			for (auto& subGraph : m_subGraphs)
+			JobSystem::DestroyCounter(m_graphCounter);
+		}
+	}
+
+	void TaskGraph::Execute()
+	{
+		VT_PROFILE_FUNCTION();
+
+		// Compile the graph, this fills the m_jobs member.
+		Compile();
+		
+		JobSystem::RunJobs(m_jobs);
+
+		m_isExecuted = true;
+
+		VT_ENSURE(m_jobs.size() == m_tasks.size());
+	}
+
+	JobCounterRef TaskGraph::ExecuteAndExtractCounter()
+	{
+		VT_PROFILE_FUNCTION();
+
+		Execute();
+		m_graphCounter->IncRef();
+		return m_graphCounter;
+	}
+
+	void TaskGraph::ExecuteAndWait()
+	{
+		VT_PROFILE_FUNCTION();
+
+		Execute();
+		Wait();
+	}
+
+	void TaskGraph::Wait()
+	{
+		VT_ENSURE_MSG(m_isExecuted, "Waiting on a graph without executing it will cause an eternal wait!");
+		JobSystem::WaitForCounter(m_graphCounter);
+	}
+
+	void TaskGraph::Compile()
+	{
+		VT_PROFILE_FUNCTION();
+
+		struct StackEntry
+		{
+			JobRef dependantJob = nullptr;
+			Task* task = nullptr;
+		};
+
+		// Create the graphs counter that is waitable.
+		m_graphCounter = JobSystem::CreateCounter();
+
+		// Find all unreferenced tasks, aka all tasks
+		// that no other task depends on.
+		Vector<Task*> unreferencedTasks;
+		for (Task* task : m_tasks)
+		{
+			if (task->GetRefCount() == 0)
 			{
-				JobSystem::DestroyJob(subGraph.parentJobId);
-				for (const auto& jobId : subGraph.createdJobs)
+				unreferencedTasks.emplace_back(task);
+			}
+		}
+
+		m_jobs.reserve(m_numExpectedTasks);
+
+		// Now iterate through all unreferenced tasks and 
+		// iterate though their dependency trees, creating
+		// the jobs as we go.
+		for (Task* unreferencedTask : unreferencedTasks)
+		{
+			JobRef initialJob = unreferencedTask->CreateJob(m_priority, m_graphCounter);
+			m_jobs.emplace_back(initialJob);
+
+			Vector<StackEntry> dependencyStack;
+			dependencyStack.reserve(unreferencedTask->GetDependencies().size());
+
+			for (Task* initialDependency : unreferencedTask->GetDependencies())
+			{
+				auto& newEntry = dependencyStack.emplace_back();
+				newEntry.task = initialDependency;
+				newEntry.dependantJob = initialJob;
+			}
+
+			while (!dependencyStack.empty())
+			{
+				StackEntry currentEntry = dependencyStack.back();
+				dependencyStack.pop_back();
+
+				JobRef job = currentEntry.task->CreateJobAsDependency(m_priority, currentEntry.dependantJob);
+				m_jobs.emplace_back(job);
+
+				for (Task* dependency : currentEntry.task->GetDependencies())
 				{
-					JobSystem::DestroyJob(jobId);
+					auto& newEntry = dependencyStack.emplace_back();
+					newEntry.task = dependency;
+					newEntry.dependantJob = job;
 				}
 			}
 		}
 	}
 
-	TaskID TaskGraph::AddTask(const std::function<void()>& task)
+	TaskGraphAllocator::~TaskGraphAllocator()
 	{
-		auto& currentSubGraph = m_subGraphs.back();
-
-		JobID newJobId = JobSystem::CreateJobAsChild(currentSubGraph.parentJobId, task);
-		currentSubGraph.createdJobs.emplace_back(newJobId);
-		return newJobId;
-	}
-
-	void TaskGraph::Barrier()
-	{
-		CreateNewSubGraph();
-	}
-
-	void TaskGraph::Execute()
-	{
-		m_executed = true;
-
-		for (size_t i = 0; auto& subGraph : m_subGraphs)
+		for (auto& destructor : m_taskDestructors)
 		{
-			for (const auto& jobId : subGraph.createdJobs)
-			{
-				JobSystem::RunJob(jobId);
-			}
-
-			JobSystem::RunJob(subGraph.parentJobId);
-
-			if (i < m_subGraphs.size() - 1)
-			{
-				JobSystem::WaitForJob(subGraph.parentJobId);
-			}
-
-			i++;
+			destructor.destructor(destructor.dataPtr);
 		}
 	}
 
-	void TaskGraph::ExecuteAndWait()
+	void* TaskGraphAllocator::AllocateBytes(size_t size)
 	{
-		Execute();
-		JobSystem::WaitForJob(m_subGraphs.back().parentJobId);
+		return m_allocator.Allocate(size);
 	}
 
-	void TaskGraph::Wait()
+	void TaskGraph::Task::AddDependency(Task* dependency)
 	{
-		VT_ENSURE(m_executed);
+		dependency->IncRef();
 
-		for (const auto& subGraph : m_subGraphs)
+		m_dependencies.emplace_back(dependency);
+	}
+	
+	void TaskGraph::Task::AddDependencies(std::span<Task*> dependencies)
+	{
+		for (Task* dependency : dependencies)
 		{
-			JobSystem::WaitForJob(subGraph.parentJobId);
+			dependency->IncRef();
 		}
+
+		m_dependencies.append(dependencies.begin(), dependencies.end());
 	}
 
-	void TaskGraph::CreateNewSubGraph()
+	void TaskGraph::Task::AddDependencies(std::initializer_list<Task*> dependencies)
 	{
-		auto& newSubGraph = m_subGraphs.emplace_back();
-		newSubGraph.createdJobs.reserve(m_predictedTaskCount);
-		newSubGraph.parentJobId = JobSystem::CreateJob([]() {});
+		for (Task* dependency : dependencies)
+		{
+			dependency->IncRef();
+		}
+
+		m_dependencies.append(dependencies.begin(), dependencies.end());
 	}
 }

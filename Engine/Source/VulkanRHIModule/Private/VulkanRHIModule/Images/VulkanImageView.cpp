@@ -4,25 +4,26 @@
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
+#include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
+
 #include <RHIModule/Images/Image.h>
 #include <RHIModule/Images/ImageUtility.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <vulkan/vulkan.h>
 
 namespace Volt::RHI
 {
-	VulkanImageView::VulkanImageView(const ImageViewSpecification& specification)
-		: m_specification(specification)
+	VulkanImageView::VulkanImageView(const ImageViewDesc& desc, RawPtr<Image> image)
+		: m_desc(desc), m_image(image)
 	{
-		auto imageRes = specification.image;
-		auto image = imageRes->As<Image>();
+		const ImageDesc& imageDesc = image->GetDesc();
 
-		m_format = image->GetFormat();
-		m_imageUsage = image->GetUsage();
+		m_format = imageDesc.format;
+		m_imageUsage = imageDesc.usage;
 		m_imageAspect = image->GetImageAspect();
 		m_isSwapchainImage = image->IsSwapchainImage();
 
@@ -34,58 +35,60 @@ namespace Volt::RHI
 
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.viewType = Utility::VoltToVulkanViewType(specification.viewType);
+		viewInfo.viewType = Utility::VoltToVulkanViewType(desc.viewType);
 		viewInfo.format = Utility::VoltToVulkanFormat(m_format);
 		viewInfo.flags = 0;
 		viewInfo.subresourceRange = {};
 		viewInfo.subresourceRange.aspectMask = aspectMask;
-		viewInfo.subresourceRange.baseMipLevel = specification.baseMipLevel;
-		viewInfo.subresourceRange.baseArrayLayer = specification.baseArrayLayer;
-		viewInfo.subresourceRange.levelCount = specification.mipCount;
-		viewInfo.subresourceRange.layerCount = specification.layerCount;
+		viewInfo.subresourceRange.baseMipLevel = desc.baseMipLevel;
+		viewInfo.subresourceRange.baseArrayLayer = desc.baseArrayLayer;
+		viewInfo.subresourceRange.levelCount = desc.mipCount == ImageViewDesc::MipCountMax ? imageDesc.mips : desc.mipCount;
+		viewInfo.subresourceRange.layerCount = desc.layerCount == ImageViewDesc::LayerCountMax ? imageDesc.layers : desc.layerCount;
 		viewInfo.image = image->GetHandle<VkImage>();
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateImageView(device->GetHandle<VkDevice>(), &viewInfo, nullptr, &m_imageView));
+		VT_VK_CHECK(vkCreateImageView(device->GetHandle<VkDevice>(), &viewInfo, VT_VULKAN_ALLOCATOR, &m_imageView));
+
+		CreateDescriptors();
 	}
 
 	VulkanImageView::~VulkanImageView()
 	{
-		RHIProxy::GetInstance().DestroyResource([imageView = m_imageView]()
+		RHIModule::GetInstance().DestroyResource([imageView = m_imageView]()
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroyImageView(device->GetHandle<VkDevice>(), imageView, nullptr);
+			vkDestroyImageView(device->GetHandle<VkDevice>(), imageView, VT_VULKAN_ALLOCATOR);
 		});
 
 		m_imageView = nullptr;
 	}
 
-	const PixelFormat VulkanImageView::GetFormat() const
+	PixelFormat VulkanImageView::GetFormat() const
 	{
 		return m_format;
 	}
 
-	const ImageAspect VulkanImageView::GetImageAspect() const
+	ImageAspect VulkanImageView::GetImageAspect() const
 	{
 		return m_imageAspect;
 	}
 
-	const uint64_t VulkanImageView::GetDeviceAddress() const
+	uint64_t VulkanImageView::GetDeviceAddress() const
 	{
-		return m_specification.image->GetDeviceAddress();
+		return m_image->GetDeviceAddress();
 	}
 
-	const ImageUsage VulkanImageView::GetImageUsage() const
+	ImageUsage VulkanImageView::GetImageUsage() const
 	{
 		return m_imageUsage;
 	}
 
-	const ImageViewType VulkanImageView::GetViewType() const
+	ImageViewType VulkanImageView::GetViewType() const
 	{
-		return m_specification.viewType;
+		return m_desc.viewType;
 	}
 
-	const bool VulkanImageView::IsSwapchainView() const
+	bool VulkanImageView::IsSwapchainView() const
 	{
 		return m_isSwapchainImage;
 	}
@@ -93,5 +96,39 @@ namespace Volt::RHI
 	void* VulkanImageView::GetHandleImpl() const
 	{
 		return m_imageView;
+	}
+
+	const ImageViewDesc& VulkanImageView::GetDesc() const
+	{
+		return m_desc;
+	}
+
+	RawPtr<Image> VulkanImageView::GetImage() const
+	{
+		return m_image;
+	}
+
+	void VulkanImageView::CreateDescriptors()
+	{
+		memset(&m_srvDescriptor, 0, sizeof(m_srvDescriptor));
+		memset(&m_uavDescriptor, 0, sizeof(m_uavDescriptor));
+
+		m_srvDescriptor.vkDescriptorInfo.sType = m_uavDescriptor.vkDescriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+		m_srvDescriptor.vkDescriptorInfo.pNext = m_uavDescriptor.vkDescriptorInfo.pNext = nullptr;
+
+		m_srvDescriptor.vkDescriptorInfo.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		m_srvDescriptor.vkDescriptorInfo.data.pSampledImage = &m_srvDescriptor.vkImageDescriptor;
+
+		m_uavDescriptor.vkDescriptorInfo.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		m_uavDescriptor.vkDescriptorInfo.data.pStorageImage = &m_uavDescriptor.vkImageDescriptor;
+
+		m_srvDescriptor.vkImageDescriptor.imageView = m_imageView;
+		m_srvDescriptor.vkImageDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+		m_uavDescriptor.vkImageDescriptor.imageView = m_imageView;
+		m_uavDescriptor.vkImageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+		m_srvDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.sampledImageDescriptorSize;
+		m_uavDescriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.storageImageDescriptorSize;
 	}
 }

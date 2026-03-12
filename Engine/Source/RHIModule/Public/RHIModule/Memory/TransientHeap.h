@@ -24,14 +24,6 @@ namespace Volt::RHI
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(TransientHeapFlags);
 
-	struct TransientBufferCreateInfo
-	{
-		uint64_t size = 0;
-		size_t hash = 0;
-		BufferUsage usage = BufferUsage::None;
-		MemoryUsage memoryUsage = MemoryUsage::None;
-	};
-
 	struct TransientHeapCreateInfo
 	{
 		uint64_t pageSize = 0;
@@ -39,24 +31,10 @@ namespace Volt::RHI
 		TransientHeapFlags flags = TransientHeapFlags::AllowAll;
 	};
 
-	struct TransientImageCreateInfo
-	{
-		ImageSpecification imageSpecification;
-		uint64_t size = 0;
-		size_t hash = 0;
-	};
-
 	class VTRHI_API TransientHeap : public RHIInterface
 	{
 	public:
-		virtual Handle<Allocation> CreateBuffer(const TransientBufferCreateInfo& createInfo, const std::string& name) = 0;
-		virtual Handle<Allocation> CreateImage(const TransientImageCreateInfo& createInfo, const std::string& name) = 0;
-
-		virtual void ForfeitBuffer(Handle<Allocation> allocation) = 0;
-		virtual void ForfeitImage(Handle<Allocation> allocation) = 0;
-
-		virtual const bool IsAllocationSupported(const uint64_t size, TransientHeapFlags heapFlags) const = 0;
-		virtual const UUID64 GetHeapID() const = 0;
+		virtual void ReservePages(uint32_t numPages) = 0;
 
 		static RefPtr<TransientHeap> Create(const TransientHeapCreateInfo& createInfo);
 	};

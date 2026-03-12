@@ -4,14 +4,14 @@
 #include "RHIModule/Graphics/GraphicsContext.h"
 #include "RHIModule/Utility/HashUtility.h"
 
-#include <CoreUtilities/FileIO/BinaryStreamWriter.h>
-#include <CoreUtilities/FileIO/BinaryStreamReader.h>
+#include <CoreUtilities/Archive/FileArchive.h>
+#include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 #include <CoreUtilities/Time/TimeUtility.h>
+
+VT_DEFINE_LOG_CATEGORY(LogShaderCache);
 
 namespace Volt::RHI
 {
-	constexpr uint32_t SHADER_CACHE_VERSION = 1; // Increase this when updating the shader cache format!
-
 	namespace Utility
 	{
 		inline static std::filesystem::path GetShaderCacheSubDirectory()
@@ -31,9 +31,32 @@ namespace Volt::RHI
 		}
 	}
 
+	struct CachedShaderArchiveVersion
+	{
+		enum Type
+		{
+			BaseVersion = 0,
+
+			VersionPlusOne,
+			LatestVersion = VersionPlusOne - 1
+		};
+
+		inline static constexpr VoltGUID guid = "{3FFD665E-16E1-4EBD-B5DA-16113C996F2F}"_guid;
+
+	private:
+		CachedShaderArchiveVersion() {}
+	};
+	ArchiveVersionRegistrar g_registerCachedShaderArchiveVersion(CachedShaderArchiveVersion::guid, CachedShaderArchiveVersion::LatestVersion, "CachedShaderArchiveVersion");
+
 	struct CachedShaderHeader
 	{
 		uint64_t timeSinceLastCompile;
+
+		friend Archive& operator<<(Archive& archive, CachedShaderHeader& value)
+		{
+			archive << value.timeSinceLastCompile;
+			return archive;
+		}
 	};
 
 	struct SerializedShaderData
@@ -41,39 +64,37 @@ namespace Volt::RHI
 		Vector<uint32_t> shaderData;
 		ShaderStage stage;
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const SerializedShaderData& data)
+		friend Archive& operator<<(Archive& archive, SerializedShaderData& value)
 		{
-			streamWriter.Write(data.stage);
-			streamWriter.Write(data.shaderData);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, SerializedShaderData& outData)
-		{
-			streamReader.Read(outData.stage);
-			streamReader.Read(outData.shaderData);
+			archive << value.shaderData;
+			archive << value.stage;
+			return archive;
 		}
 	};
 
-	template<typename T>
-	struct SerializedShaderResource
+	struct CachedShader
 	{
-		uint32_t set;
-		uint32_t binding;
+		CachedShaderHeader header;
+		SerializedShaderData serializedShaderData;
 
-		T data;
+		Vector<PixelFormat> outputFormats;
+		BufferLayoutMap vertexLayout;
+		BufferLayout instanceLayout;
+		ShaderParameterMap shaderParameterMap;
+		Vector<std::filesystem::path> includeDependencies;
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const SerializedShaderResource& data)
+		friend Archive& operator<<(Archive& archive, CachedShader& value)
 		{
-			streamWriter.Write(data.set);
-			streamWriter.Write(data.binding);
-			streamWriter.Write(&data.data, sizeof(T));
-		}
+			archive.UseVersion(CachedShaderArchiveVersion::guid);
 
-		static void Deserialize(BinaryStreamReader& streamReader, SerializedShaderResource& outData)
-		{
-			streamReader.Read(outData.set);
-			streamReader.Read(outData.binding);
-			streamReader.Read(&outData.data);
+			archive << value.header;
+			archive << value.serializedShaderData;
+			archive << value.outputFormats;
+			archive << value.vertexLayout;
+			archive << value.instanceLayout;
+			archive << value.shaderParameterMap;
+			archive << value.includeDependencies;
+			return archive;
 		}
 	};
 
@@ -88,205 +109,87 @@ namespace Volt::RHI
 
 	CachedShaderResult ShaderCache::TryGetCachedShader(const ShaderCompiler::Specification& shaderSpecification)
 	{
-		uint64_t lastWriteTime = 0;
-		for (const auto& [stage, sourceInfo] : shaderSpecification.shaderSourceInfo)
+		const std::filesystem::path cachedPath = GetCachedFilePath(shaderSpecification);
+	
+		if (shaderSpecification.shaderSourceInfo.sourceEntry.filepath.empty() || std::filesystem::exists(cachedPath) == false)
 		{
-			lastWriteTime = std::max(lastWriteTime, TimeUtility::GetLastWriteTime(sourceInfo.sourceEntry.filePath));
+			return {};
+		}
+		
+		const uint64_t lastWriteTime = TimeUtility::GetLastWriteTime(shaderSpecification.shaderSourceInfo.sourceEntry.filepath);
+
+		FileReader fileReader;
+		if (!fileReader.Open(cachedPath))
+		{
+			VT_LOGC(Error, LogShaderCache,
+				"Failed to open cached shader '{}'\n"
+				"		Error: {}",
+				cachedPath,
+				fileReader.GetError());
+
+			return {};
 		}
 
-		BinaryStreamReader streamReader{ GetCachedFilePath(shaderSpecification) };
-		if (!streamReader.IsStreamValid())
+		CachedShader cachedShader;
+		fileReader << cachedShader;
+
+		if (cachedShader.header.timeSinceLastCompile < lastWriteTime)
 		{
 			return {};
 		}
 
-		uint32_t shaderCacheVersion = 0;
-		streamReader.Read(shaderCacheVersion);
-
-		if (shaderCacheVersion != SHADER_CACHE_VERSION)
-		{
-			return {};
-		}
-
-		CachedShaderHeader cachedHeader{};
-		streamReader.Read(cachedHeader);
-
-		if (cachedHeader.timeSinceLastCompile < lastWriteTime)
-		{
-			return {};
-		}
-
-		Vector<SerializedShaderData> serializedShaderData;
-		streamReader.Read(serializedShaderData);
+		VT_ENSURE(shaderSpecification.shaderSourceInfo.sourceEntry.shaderStage == cachedShader.serializedShaderData.stage);
 
 		CachedShaderResult result{};
-		result.timeSinceLastCompile = cachedHeader.timeSinceLastCompile;
+		result.timeSinceLastCompile = cachedShader.header.timeSinceLastCompile;
 		result.data.result = ShaderCompiler::CompilationResult::Success;
 
 		ShaderCompiler::CompilationResultData& resultData = result.data;
-
-		streamReader.Read(resultData.outputFormats);
-		
-		streamReader.Read(resultData.vertexLayout);
-		streamReader.Read(resultData.instanceLayout);
-		
-		streamReader.Read(resultData.renderGraphConstants);
-		streamReader.Read(resultData.constantsBuffer);
-		streamReader.Read(resultData.constants);
-		streamReader.Read(resultData.bindings);
-
-		Vector<SerializedShaderResource<ShaderConstantBuffer>> uniformBuffers;
-		Vector<SerializedShaderResource<ShaderStorageBuffer>> storageBuffers;
-		Vector<SerializedShaderResource<ShaderStorageImage>> storageImages;
-		Vector<SerializedShaderResource<ShaderImage>> images;
-		Vector<SerializedShaderResource<ShaderSampler>> samplers;
-
-		streamReader.Read(uniformBuffers);
-		streamReader.Read(storageBuffers);
-		streamReader.Read(storageImages);
-		streamReader.Read(images);
-		streamReader.Read(samplers);
-
-		for (const auto& data : serializedShaderData)
-		{
-			resultData.shaderData[data.stage] = data.shaderData;
-		}
-		
-		for (const auto& data : uniformBuffers)
-		{
-			resultData.uniformBuffers[data.set][data.binding] = data.data;
-		}
-
-		for (const auto& data : storageBuffers)
-		{
-			resultData.storageBuffers[data.set][data.binding] = data.data;
-		}
-
-		for (const auto& data : storageImages)
-		{
-			resultData.storageImages[data.set][data.binding] = data.data;
-		}
-
-		for (const auto& data : images)
-		{
-			resultData.images[data.set][data.binding] = data.data;
-		}
-
-		for (const auto& data : samplers)
-		{
-			resultData.samplers[data.set][data.binding] = data.data;
-		}
+		resultData.shaderBinary = std::move(cachedShader.serializedShaderData.shaderData);
+		resultData.outputFormats = std::move(cachedShader.outputFormats);
+		resultData.vertexLayout = std::move(cachedShader.vertexLayout);
+		resultData.instanceLayout = std::move(cachedShader.instanceLayout);
+		resultData.shaderParameterMap = std::move(cachedShader.shaderParameterMap);
+		resultData.includeDependencies = std::move(cachedShader.includeDependencies);
 
 		return result;
 	}
 
 	void ShaderCache::CacheShader(const ShaderCompiler::Specification& shaderSpec, const ShaderCompiler::CompilationResultData& compilationResult)
 	{
-		BinaryStreamWriter streamWriter{};
+		const std::filesystem::path cachedPath = GetCachedFilePath(shaderSpec);
 
-		CachedShaderHeader cachedShaderHeader{};
-		cachedShaderHeader.timeSinceLastCompile = TimeUtility::GetTimeSinceEpoch();
-
-		streamWriter.Write(SHADER_CACHE_VERSION);
-		streamWriter.Write(cachedShaderHeader);
-
-		Vector<SerializedShaderData> serializedShaderData;
-
-		for (const auto& [stage, shaderData] : compilationResult.shaderData)
+		FileWriter archive{};
+		if (!archive.Open(cachedPath))
 		{
-			serializedShaderData.emplace_back(shaderData, stage);
+			VT_LOGC(Error, LogShaderCache,
+				"Failed to cache shader '{}'\n"
+				"		Error: {}",
+				shaderSpec.shaderSourceInfo.sourceEntry.entryPoint,
+				archive.GetError());
+
+			return;
 		}
 
-		streamWriter.Write(serializedShaderData);
+		CachedShader cachedShader;
+		cachedShader.header.timeSinceLastCompile = TimeUtility::GetTimeSinceEpoch();
+		cachedShader.serializedShaderData = { compilationResult.shaderBinary, shaderSpec.shaderSourceInfo.sourceEntry.shaderStage };
+		cachedShader.outputFormats = compilationResult.outputFormats;
+		cachedShader.vertexLayout = compilationResult.vertexLayout;
+		cachedShader.instanceLayout = compilationResult.instanceLayout;
+		cachedShader.shaderParameterMap = compilationResult.shaderParameterMap;
+		cachedShader.includeDependencies = compilationResult.includeDependencies;
 
-		// Pixel shader
-		streamWriter.Write(compilationResult.outputFormats);
-
-		// Vertex shader
-		streamWriter.Write(compilationResult.vertexLayout);
-		streamWriter.Write(compilationResult.instanceLayout);
-
-		// Common
-		streamWriter.Write(compilationResult.renderGraphConstants);
-		streamWriter.Write(compilationResult.constantsBuffer);
-		streamWriter.Write(compilationResult.constants);
-
-		streamWriter.Write(compilationResult.bindings);
-
-		Vector<SerializedShaderResource<ShaderConstantBuffer>> uniformBuffers;
-		Vector<SerializedShaderResource<ShaderStorageBuffer>> storageBuffers;
-		Vector<SerializedShaderResource<ShaderStorageImage>> storageImages;
-		Vector<SerializedShaderResource<ShaderImage>> images;
-		Vector<SerializedShaderResource<ShaderSampler>> samplers;
-
-		for (const auto& [set, bindings] : compilationResult.uniformBuffers)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				uniformBuffers.emplace_back(set, binding, data);
-			}
-		}
-
-		for (const auto& [set, bindings] : compilationResult.storageBuffers)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				storageBuffers.emplace_back(set, binding, data);
-			}
-		}
-
-		for (const auto& [set, bindings] : compilationResult.storageImages)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				storageImages.emplace_back(set, binding, data);
-			}
-		}
-
-		for (const auto& [set, bindings] : compilationResult.images)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				images.emplace_back(set, binding, data);
-			}
-		}
-
-		for (const auto& [set, bindings] : compilationResult.samplers)
-		{
-			for (const auto& [binding, data] : bindings)
-			{
-				samplers.emplace_back(set, binding, data);
-			}
-		}
-
-		streamWriter.Write(uniformBuffers);
-		streamWriter.Write(storageBuffers);
-		streamWriter.Write(storageImages);
-		streamWriter.Write(images);
-		streamWriter.Write(samplers);
-
-		streamWriter.WriteToDisk(GetCachedFilePath(shaderSpec), false, 0);
+		archive << cachedShader;
+		archive.Close();
 	}
 
 	std::filesystem::path ShaderCache::GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const
 	{
-		size_t hash = 0;
-		for (const auto& [stage, sourceInfo] : shaderSpec.shaderSourceInfo)
-		{
-			const size_t stageHash = Math::HashCombine(std::hash<std::filesystem::path>()(sourceInfo.sourceEntry.filePath), std::hash<std::string>()(sourceInfo.sourceEntry.entryPoint));
-
-			if (hash == 0)
-			{
-				hash = stageHash;
-			}
-			else
-			{
-				hash = Math::HashCombine(hash, stageHash);
-			}
-		}
+		const size_t hash = Math::HashCombine(std::hash<std::filesystem::path>()(shaderSpec.shaderSourceInfo.sourceEntry.filepath), std::hash<std::string>()(shaderSpec.shaderSourceInfo.sourceEntry.entryPoint));
 
 		const auto cacheDir = m_info.cacheDirectory / Utility::GetShaderCacheSubDirectory();
-		const auto cachePath = cacheDir / (std::to_string(hash) + ".vtshcache");
+		const auto cachePath = cacheDir / (shaderSpec.shaderSourceInfo.sourceEntry.filepath.stem().string() + "_" + shaderSpec.shaderSourceInfo.sourceEntry.entryPoint + "_" + std::to_string(hash) + "_" + std::to_string(shaderSpec.permutationConfig.GetPermutationIndex()) + ".vtshcache");
 
 		if (!std::filesystem::exists(cacheDir))
 		{

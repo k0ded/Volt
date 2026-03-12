@@ -4,7 +4,12 @@
 
 namespace Volt
 {
-	void BoxColliderComponent::OnCreate(PhysicsEntity entity)
+	VT_REGISTER_COMPONENT(BoxColliderComponent);
+	VT_REGISTER_COMPONENT(SphereColliderComponent);
+	VT_REGISTER_COMPONENT(CapsuleColliderComponent);
+	VT_REGISTER_COMPONENT(MeshColliderComponent);
+
+	void BoxColliderComponent::OnInitialize(PhysicsEntity entity)
 	{
 		//if (!SceneManager::IsPlaying())
 		//{
@@ -38,7 +43,7 @@ namespace Volt
 		//}
 	}
 
-	void SphereColliderComponent::OnCreate(PhysicsEntity entity)
+	void SphereColliderComponent::OnInitialize(PhysicsEntity entity)
 	{
 		//if (!SceneManager::IsPlaying())
 		//{
@@ -72,7 +77,7 @@ namespace Volt
 		//}
 	}
 
-	void CapsuleColliderComponent::OnCreate(PhysicsEntity entity)
+	void CapsuleColliderComponent::OnInitialize(PhysicsEntity entity)
 	{
 		//if (!SceneManager::IsPlaying())
 		//{
@@ -106,7 +111,7 @@ namespace Volt
 		//}
 	}
 
-	void MeshColliderComponent::OnCreate(PhysicsEntity entity)
+	void MeshColliderComponent::OnInitialize(PhysicsEntity entity)
 	{
 		//if (!SceneManager::IsPlaying())
 		//{

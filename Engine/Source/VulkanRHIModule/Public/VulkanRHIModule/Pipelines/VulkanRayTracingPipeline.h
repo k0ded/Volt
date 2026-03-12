@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
+
 #include <RHIModule/Pipelines/RayTracingPipeline.h>
 
 struct VkPipelineLayout_T;
@@ -28,7 +30,6 @@ namespace Volt::RHI
 		void Invalidate() override;
 		bool IsValid() const override;
 		bool IsShaderInPipeline(RefPtr<Shader> shader) const override;
-		const ShaderRenderGraphConstantsData& GetRenderGraphConstants() const override;
 
 		VT_NODISCARD VT_INLINE const RayTracingShaderData& GetRayGenData() const { return m_rayGenData; }
 		VT_NODISCARD VT_INLINE const RayTracingShaderData& GetMissData() const { return m_missData; }
@@ -51,5 +52,7 @@ namespace Volt::RHI
 		RayTracingShaderData m_missData;
 		RayTracingShaderData m_hitGroupData;
 		RayTracingShaderData m_callableData;
+	
+		DescriptorSetLayoutBuilder::DescriptorSets m_descriptorSets;
 	};
 }

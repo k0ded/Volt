@@ -1,22 +1,25 @@
 #pragma once
-#include "RHIModule/Shader/ShaderCompiler.h"
+
+#include <RHIModule/Core/RHICommon.h>
+#include <RHIModule/Shader/ShaderCompiler.h>
 
 struct IDxcCompiler3;
 struct IDxcUtils;
+struct IDxcRewriter;
+struct IDxcRewriter2;
 struct IDxcResult;
 struct ID3D12ShaderReflection;
 
 namespace Volt::RHI
 {
-	struct PreProcessorResult;
-	class D3D12Shader;
+	class HLSLIncluder;
 
 	class D3D12ShaderCompiler final : public ShaderCompiler
 	{
 	public:
 		D3D12ShaderCompiler(const ShaderCompilerCreateInfo& createInfo);
 		~D3D12ShaderCompiler() override;
-	
+
 	protected:
 		CompilationResultData TryCompileImpl(const Specification& specification) override;
 		void AddMacroImpl(const std::string& macroName) override;
@@ -24,23 +27,38 @@ namespace Volt::RHI
 		void* GetHandleImpl() const override;
 
 	private:
-		bool PreprocessSource(const ShaderStage shaderStage, const std::filesystem::path& filepath, std::string& outSource);
+		struct DxcCompilationResult
+		{
+			IDxcResult* dxcResult;
+			ID3D12ShaderReflection* reflectionData;
+			std::string error;
+			bool succeded;
+		};
 
-		CompilationResultData CompileAll(const Specification& specification, std::unordered_map<ShaderStage, ID3D12ShaderReflection*>& outReflectionData);
-		CompilationResult CompileSingle(const ShaderStage shaderStage, const std::string& source, const ShaderSourceEntry& sourceEntry, const Specification& specification, CompilationResultData& outData, ID3D12ShaderReflection** outReflectionData);
+		struct RewriteResult
+		{
+			std::string outSource;
+			std::string error;
+			bool succeded;
+		};
 
-		void ReflectAllStages(const Specification& specification, CompilationResultData& inOutData, const std::unordered_map<ShaderStage, ID3D12ShaderReflection*>& reflectionData);
-		void ReflectStage(ShaderStage stage, const Specification& specification, CompilationResultData& inOutData, ID3D12ShaderReflection* reflectionData);
+		CompilationResultData CompileShader(const Specification& specification, ID3D12ShaderReflection*& reflectionData);
+		bool PreprocessSource(const Specification& specification, std::string& outProcessedSource, CompilationResultData& compilationResult);
+		void ReflectShader(const Specification& specification, CompilationResultData& inOutData, ID3D12ShaderReflection* reflectionData);
 
-		bool TryAddShaderBinding(const std::string& name, uint32_t set, uint32_t binding, ShaderRegisterType registerType, CompilationResultData& outData);
+		DxcCompilationResult InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source, HLSLIncluder* includer);
+		RewriteResult RewriteHLSL(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source);
 
 		IDxcCompiler3* m_hlslCompiler = nullptr;
 		IDxcUtils* m_hlslUtils = nullptr;
+		IDxcRewriter* m_hlslRewriter = nullptr;
+		IDxcRewriter2* m_hlslRewriter2 = nullptr;
 
 		Vector<std::filesystem::path> m_includeDirectories;
 		Vector<std::string> m_macros;
 		ShaderCompilerFlags m_flags = ShaderCompilerFlags::None;
 		std::filesystem::path m_cacheDirectory;
+
 		RefPtr<ShaderCache> m_shaderCache;
 	};
 }

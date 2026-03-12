@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <AssetSystem/Asset.h>
 
@@ -22,14 +22,13 @@ namespace Volt
 	struct PrefabComponentLocalChange
 	{
 		VoltGUID componentGUID = VoltGUID::Null();
-		std::string memberName;
+		uint32_t memberIdentifier;
 		
-		static void ReflectType(TypeDesc<PrefabComponentLocalChange>& reflect)
+		VT_INLINE friend Archive& operator<<(Archive& archive, PrefabComponentLocalChange& value)
 		{
-			reflect.SetGUID("{C78B94DD-B814-4155-B9DE-072B91DE02B3}"_guid);
-			reflect.SetLabel("Prefab Component Local Change");
-			reflect.AddMember(&PrefabComponentLocalChange::componentGUID, "componentGUID", "Component GUID", "", VoltGUID::Null());
-			reflect.AddMember(&PrefabComponentLocalChange::memberName, "memberName", "Member Name", "", std::string(""));
+			archive << value.componentGUID;
+			archive << value.memberIdentifier;
+			return archive;
 		}
 	};
 
@@ -49,13 +48,11 @@ namespace Volt
 			reflect.SetGUID("{B8A83ACF-F1CA-4C9F-8D1E-408B5BB388D2}"_guid);
 			reflect.SetLabel("Prefab Component");
 			reflect.SetHidden();
-			reflect.AddMember(&PrefabComponent::prefabAsset, "prefabAsset", "Prefab Asset", "", Asset::Null(), AssetTypes::Prefab);
-			reflect.AddMember(&PrefabComponent::prefabEntity, "prefabEntity", "Prefab Entity", "", EntityID(0));
-			reflect.AddMember(&PrefabComponent::sceneRootEntity, "sceneRootEntity", "Scene Root Entity", "", EntityID(0));
-			reflect.AddMember(&PrefabComponent::version, "version", "Version", "", 0);
-			reflect.AddMember(&PrefabComponent::componentLocalChanges, "componentLocalChanges", "Component Local Changes", "", Vector<PrefabComponentLocalChange>{});
+			reflect.AddMember(&PrefabComponent::prefabAsset, 'prea', "Prefab Asset", "", Asset::Null(), AssetTypes::Prefab);
+			reflect.AddMember(&PrefabComponent::prefabEntity, 'pree', "Prefab Entity", "", EntityID(0));
+			reflect.AddMember(&PrefabComponent::sceneRootEntity, 'sre', "Scene Root Entity", "", EntityID(0));
+			reflect.AddMember(&PrefabComponent::version, 'ver', "Version", "", 0);
+			reflect.AddMember(&PrefabComponent::componentLocalChanges, 'clc', "Component Local Changes", "", PrefabComponentLocalChange());
 		}
-
-		REGISTER_COMPONENT(PrefabComponent);
 	};
 }

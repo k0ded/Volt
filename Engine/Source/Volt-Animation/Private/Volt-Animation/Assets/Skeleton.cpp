@@ -6,6 +6,12 @@ namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Skeleton, Skeleton);
 
+	Skeleton::~Skeleton()
+	{
+		m_joints.clear();
+		m_inverseBindPose.clear();
+	}
+
 	const Skeleton::JointAttachment& Skeleton::GetJointAttachmentFromName(std::string_view name) const
 	{
 		for (const auto& attachment : m_jointAttachments)
@@ -88,5 +94,15 @@ namespace Volt
 		}
 
 		return m_joints.at(index).name;
+	}
+
+	void Skeleton::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
+	{
+		archive << m_name;
+		archive << m_joints;
+		archive << m_jointAttachments;
+		archive << m_inverseBindPose;
+		archive << m_restPose;
+		archive << m_jointNameToIndex;
 	}
 }

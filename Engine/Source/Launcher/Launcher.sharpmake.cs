@@ -24,15 +24,16 @@ namespace VoltSharpmake
 				LocalDebuggerCommandArguments = Globals.VtProjectFilePath
 			};
 
-            conf.AddPublicDependency<Volt>(target);
 			conf.AddPublicDependency<VoltAssets>(target);
 			conf.AddPublicDependency<VoltRenderer>(target);
+			conf.AddPublicDependency<VoltScene>(target);
 
             conf.AddPublicDependency<imgui>(target);
-            conf.AddPublicDependency<yaml>(target);
             conf.AddPublicDependency<MosaicModule>(target);
 
             conf.AddPublicDependency<glm>(target);
+
+			conf.AddPrivateDependency<VoltEntryPoint>(target);
 
 			Type gameProjectType = Type.GetType("VoltSharpmake.Game");
 			if (gameProjectType != null)
@@ -55,21 +56,12 @@ namespace VoltSharpmake
                 "Winmm.lib",
                 "Version.lib"
                 );
-
-			//we have to add the d3d12 to the exe folder
-			string d3d12FolderPath = Path.Combine(Globals.ThirdPartyDirectory, "d3d12", "Binaries");
-			conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\D3D12Core.dll\"" + " \"" + conf.TargetPath + "\"");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\D3D12Core.pdb\"" + " \"" + conf.TargetPath + "\"");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\d3d12SDKLayers.dll\"" + " \"" + conf.TargetPath + "\"");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\d3d12SDKLayers.pdb\"" + " \"" + conf.TargetPath + "\"");
         }
 
         public override void ConfigureMSVC(Configuration conf, CommonTarget target)
         {
             base.ConfigureMSVC(conf, target);
             conf.AdditionalLinkerOptions.Add(
-                "/WHOLEARCHIVE:PhysX",
-                "/WHOLEARCHIVE:Volt",
                 "/WHOLEARCHIVE:MosaicModule"
                 );
 

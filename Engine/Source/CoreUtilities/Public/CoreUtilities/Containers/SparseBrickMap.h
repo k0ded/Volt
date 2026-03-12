@@ -69,7 +69,7 @@ public:
 		SONodeID parent = NullID;
 		SONodeID brickId = NullID;
 
-		vt::map<uint32_t, SONodeID> children;
+		Map<uint32_t, SONodeID> children;
 		Vector<OctreeData<T>> data;
 	};
 

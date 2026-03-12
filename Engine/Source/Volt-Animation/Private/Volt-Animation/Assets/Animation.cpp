@@ -10,7 +10,7 @@ namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Animation, Animation);
 
-	const Vector<glm::mat4> Animation::SampleStartTime(float aStartTime, Ref<Skeleton> aSkeleton, bool looping)
+	const Vector<glm::mat4> Animation::SampleStartTime(float aStartTime, const Skeleton& aSkeleton, bool looping)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -37,7 +37,7 @@ namespace Volt
 		}
 
 		Vector<glm::mat4> result;
-		result.resize(aSkeleton->GetJointCount(), glm::mat4(1.f));
+		result.resize(aSkeleton.GetJointCount(), glm::mat4(1.f));
 
 		if (result.empty())
 		{
@@ -51,8 +51,8 @@ namespace Volt
 		const Pose& currentFrame = m_frames.at(currentFrameIndex);
 		const Pose& nextFrame = m_frames.at(nextFrameIndex);
 
-		const auto& joints = aSkeleton->GetJoints();
-		const auto& invBindPoses = aSkeleton->GetInverseBindPose();
+		const auto& joints = aSkeleton.GetJoints();
+		const auto& invBindPoses = aSkeleton.GetInverseBindPose();
 
 		for (size_t i = 0; i < joints.size(); i++)
 		{
@@ -91,15 +91,10 @@ namespace Volt
 		return result;
 	}
 
-	const Vector<glm::mat4> Animation::Sample(float samplePercent, Ref<Skeleton> skeleton, bool looping)
+	const Vector<glm::mat4> Animation::Sample(float samplePercent, const Skeleton& skeleton, bool looping)
 	{
 		VT_PROFILE_FUNCTION();
 
-		if (!skeleton)
-		{
-			VT_LOG(Error, "Tried to sample animation with no skeleton");
-			return {};
-		}
 		if (samplePercent < 0.f)
 		{
 			VT_LOG(Error, "Sample percent has to be a positive value");
@@ -125,11 +120,11 @@ namespace Volt
 		const float percentageBetweenFrames = (samplePercent * frameCount) - frameIndexBeforeTime;
 
 		Vector<glm::mat4> result;
-		result.resize(skeleton->GetJointCount(), glm::mat4(1.f));
+		result.resize(skeleton.GetJointCount(), glm::mat4(1.f));
 
 		if (result.empty())
 		{
-			VT_LOG(Error, "Tried to sample using a skeleton with no joints. AssetHandle: {0}", skeleton->handle);
+			VT_LOG(Error, "Tried to sample using a skeleton with no joints. AssetHandle: {0}", skeleton.GetAssetHandle());
 			return {};
 		}
 
@@ -140,8 +135,8 @@ namespace Volt
 		const Pose blendedPose = GetBlendedPose(currentFrame, nextFrame, percentageBetweenFrames);
 		//B
 
-		const Vector<Skeleton::Joint>& joints = skeleton->GetJoints();
-		const Vector<glm::mat4>& invBindPose = skeleton->GetInverseBindPose();
+		const Vector<Skeleton::Joint>& joints = skeleton.GetJoints();
+		const Vector<glm::mat4>& invBindPose = skeleton.GetInverseBindPose();
 
 		for (size_t i = 0; i < joints.size(); i++)
 		{
@@ -170,12 +165,12 @@ namespace Volt
 		return result;
 	}
 
-	const Vector<glm::mat4> Animation::Sample(uint32_t frameIndex, Ref<Skeleton> aSkeleton)
+	const Vector<glm::mat4> Animation::Sample(uint32_t frameIndex, const Skeleton& aSkeleton)
 	{
 		VT_PROFILE_FUNCTION();
 
 		Vector<glm::mat4> result;
-		result.resize(aSkeleton->GetJointCount(), glm::mat4(1.f));
+		result.resize(aSkeleton.GetJointCount(), glm::mat4(1.f));
 
 		if (result.empty())
 		{
@@ -184,8 +179,8 @@ namespace Volt
 
 		const Pose& currentFrame = m_frames.at(frameIndex);
 
-		const auto& joints = aSkeleton->GetJoints();
-		const auto& invBindPoses = aSkeleton->GetInverseBindPose();
+		const auto& joints = aSkeleton.GetJoints();
+		const auto& invBindPoses = aSkeleton.GetInverseBindPose();
 
 		for (size_t i = 0; i < joints.size(); i++)
 		{
@@ -220,7 +215,7 @@ namespace Volt
 		return result;
 	}
 
-	Vector<glm::mat4> Animation::LocalPoseToGlobalMatrices(const Pose& localPose, Ref<Skeleton> aSkeleton)
+	Vector<glm::mat4> Animation::LocalPoseToGlobalMatrices(const Pose& localPose, const Skeleton& aSkeleton)
 	{
 		return Vector<glm::mat4>();
 	}
@@ -271,7 +266,7 @@ namespace Volt
 		return result;
 	}
 
-	const Vector<Animation::TRS> Animation::SampleTRS(float aStartTime, Ref<Skeleton> aSkeleton, bool looping, float speed) const
+	const Vector<Animation::TRS> Animation::SampleTRS(float aStartTime, const Skeleton& aSkeleton, bool looping, float speed) const
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -307,12 +302,12 @@ namespace Volt
 		}
 
 		Vector<TRS> result;
-		result.resize(aSkeleton->GetJointCount(), TRS{});
+		result.resize(aSkeleton.GetJointCount(), TRS{});
 
 		const Pose& currentFrame = m_frames.at(currentFrameIndex);
 		const Pose& nextFrame = m_frames.at(nextFrameIndex);
 
-		const auto& joints = aSkeleton->GetJoints();
+		const auto& joints = aSkeleton.GetJoints();
 
 		if (currentFrame.localTRS.size() < joints.size())
 		{
@@ -415,6 +410,14 @@ namespace Volt
 		{
 			m_events.erase(it);
 		}
+	}
+
+	void Animation::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
+	{
+		archive << m_duration;
+		archive << m_framesPerSecond;
+		archive << m_frames;
+		archive << m_events;
 	}
 
 	const Animation::PoseData Animation::GetFrameDataFromAnimation(Animation& animation, const float aNormalizedTime)

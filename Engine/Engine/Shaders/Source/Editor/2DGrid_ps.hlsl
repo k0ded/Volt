@@ -2,25 +2,15 @@
 #include "Resources.hlsli"
 #include "Utility.hlsli"
 
-struct Constants
-{
-    float4x4 inverseViewProjection;
-    float scale;
-};
+float4x4 InverseViewProjection;
+float Scale;
 
-struct Output
+float4 main(FullscreenTriangleVertex input) : SV_Target0
 {
-    [[vt::rgba8]] float4 output : SV_Target0;
-};
-
-Output main(FullscreenTriangleVertex input)
-{
-    const Constants constants = GetConstants<Constants>();
-
-    float4 worldPos = mul(constants.inverseViewProjection, float4(float2(input.uv.x * 2.f - 1.f, (1.f - input.uv.y) * 2.f - 1.f), 0.f, 1.f));
+    float4 worldPos = mul(InverseViewProjection, float4(float2(input.uv.x * 2.f - 1.f, (1.f - input.uv.y) * 2.f - 1.f), 0.f, 1.f));
     worldPos /= worldPos.w;
 
-    const float2 coords = worldPos.xy * constants.scale * 0.1;
+    const float2 coords = worldPos.xy * Scale * 0.1;
     const float2 derivative = fwidth(coords);
     const float2 grid = abs(frac(coords - 0.5f) - 0.5f) / derivative;
  
@@ -42,8 +32,5 @@ Output main(FullscreenTriangleVertex input)
         color.xyz = 0.1f;
     }
 
-    Output output; 
-    output.output = color;
-
-    return output;
+    return color;
 }

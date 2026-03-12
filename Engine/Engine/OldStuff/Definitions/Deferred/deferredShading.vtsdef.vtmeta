@@ -1,6 +1,0 @@
-Metadata:
-  assetHandle: 13870369638475006091
-  filePath: Engine/Shaders/Definitions/Deferred/deferredShading.vtsdef
-  type: 64
-  Dependencies:
-    - 12987405995556812546

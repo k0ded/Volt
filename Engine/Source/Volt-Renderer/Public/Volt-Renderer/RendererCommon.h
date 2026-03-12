@@ -4,13 +4,6 @@
 
 namespace Volt
 {
-	struct MeshTaskCommand
-	{
-		uint32_t drawId;
-		uint32_t taskCount;
-		uint32_t meshletOffset;
-	};
-
 	///// Rendering Structures /////
 	struct ViewUniformBuffer
 	{
@@ -22,8 +15,10 @@ namespace Volt
 		glm::mat4 viewProjection;
 		glm::mat4 inverseViewProjection;
 		glm::mat4 prevViewProjection;
+		glm::mat4 nonJitteredViewProjection;
 		glm::vec4 cameraPosition;
 		glm::vec4 cullingFrustum;
+
 		glm::vec2 depthUnpackConsts;
 		float nearPlane;
 		float farPlane;
@@ -38,51 +33,20 @@ namespace Volt
 		// Light Culling
 		uint32_t tileCountX;
 		uint32_t lightCount;
-
 		uint32_t frameIndex;
+		uint32_t padding;
 	};
 
 	struct DirectionalLightShadowUniformBuffer
 	{
-		inline static constexpr uint32_t CASCADE_COUNT = 4;
+		inline static constexpr uint32_t NumCascades = 4;
 
-		float cascadeDistances[CASCADE_COUNT];
-		glm::mat4 viewProjections[CASCADE_COUNT];
-	};
+		glm::mat4 viewProjections[NumCascades];
 
-	struct DirectionalLightInfo
-	{
-		DirectionalLightShadowUniformBuffer data;
-		glm::vec4 projectionBounds[DirectionalLightShadowUniformBuffer::CASCADE_COUNT];
-		glm::mat4 views[DirectionalLightShadowUniformBuffer::CASCADE_COUNT];
-		glm::vec3 direction;
-	};
-
-	struct PointLightData
-	{
-		glm::vec3 position;
-		float radius;
-
-		glm::vec3 color;
-		float intensity;
-
-		float falloff;
-		glm::vec3 padding;
-	};
-
-	struct SpotLightData
-	{
-		glm::vec3 position;
-		float lightAngleScale;
-
-		glm::vec3 color;
-		float intensity;
-
-		glm::vec3 direction;
-		float range;
-
-		float lightAngleOffset;
-		float falloff;
-		glm::vec2 padding;
+		glm::mat4 cascade0Matrix;
+		glm::vec4 cascadeScale[NumCascades - 1];
+		glm::vec4 cascadeOffset[NumCascades - 1];
+		glm::vec4 samplingOffsets[2];
+		glm::vec4 cascadeDistances[NumCascades];
 	};
 }

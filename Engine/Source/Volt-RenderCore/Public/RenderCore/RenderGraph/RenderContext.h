@@ -1,142 +1,26 @@
 #pragma once
 
-#include "RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h"
-#include "RenderCore/RenderGraph/RenderGraphCommon.h"
 #include "RenderCore/Config.h"
+#include "RenderCore/RenderGraph/ShaderRegistry.h"
+#include "RenderCore/RenderGraph/RenderGraphPass.h"
 
-#include <RHIModule/Descriptors/ResourceHandle.h>
-#include <RHIModule/Core/RHICommon.h>
-#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
-#include <RHIModule/Buffers/IndexBuffer.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/UniformBuffer.h>
+#include <RHIModule/Images/SamplerState.h>
+#include <RHIModule/Core/RenderingInfo.h>
 #include <RHIModule/Synchronization/Fence.h>
 
-#include <CoreUtilities/StringHash.h>
-#include <CoreUtilities/Containers/Map.h>
-#include <CoreUtilities/Profiling/Profiling.h>
+#include <RHIModule/Descriptors/ShaderBindingMap.h>
 
-#include <glm/glm.hpp>
-#include <half/half.hpp>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt
 {
-	namespace RHI
-	{
-		class CommandBuffer;
-		class StorageBuffer;
-		class VertexBuffer;
-
-		class BufferView;
-		class ImageView;
-	}
-
 	class RenderGraph;
-	class SharedRenderContext;
-	struct RenderGraphPassNodeBase;
-
-	template<typename T>
-	inline static constexpr RHI::ShaderUniformType TryGetTypeFromType()
-	{
-		RHI::ShaderUniformType resultType{};
-
-		if constexpr (std::is_same_v<T, bool>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Bool;
-		}
-		else if constexpr (std::is_same_v<T, int16_t>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Short;
-		}
-		else if constexpr (std::is_same_v<T, uint16_t>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::UShort;
-		}
-		else if constexpr (std::is_same_v<T, uint32_t>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::UInt;
-		}
-		else if constexpr (std::is_same_v<T, int32_t>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Int;
-		}
-		else if constexpr (std::is_same_v<T, int64_t>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Int64;
-		}
-		else if constexpr (std::is_same_v<T, uint64_t>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::UInt64;
-		}
-		else if constexpr (std::is_same_v<T, double>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Double;
-		}
-		else if constexpr (std::is_same_v<T, float>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Float;
-		}
-		else if constexpr (std::is_same_v<T, half_float::half>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Half;
-		}
-
-		else if constexpr (std::is_same_v<T, glm::vec2>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Float;
-			resultType.vecsize = 2;
-		}
-		else if constexpr (std::is_same_v<T, glm::vec3>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Float;
-			resultType.vecsize = 3;
-		}
-		else if constexpr (std::is_same_v<T, glm::vec4>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Float;
-			resultType.vecsize = 4;
-		}
-		else if constexpr (std::is_same_v<T, glm::uvec2>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::UInt;
-			resultType.vecsize = 2;
-		}
-		else if constexpr (std::is_same_v<T, glm::uvec3>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::UInt;
-			resultType.vecsize = 3;
-		}
-		else if constexpr (std::is_same_v<T, glm::uvec4>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::UInt;
-			resultType.vecsize = 4;
-		}
-		else if constexpr (std::is_same_v<T, glm::ivec2>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Int;
-			resultType.vecsize = 2;
-		}
-		else if constexpr (std::is_same_v<T, glm::ivec3>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Int;
-			resultType.vecsize = 3;
-		}
-		else if constexpr (std::is_same_v<T, glm::ivec4>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Int;
-			resultType.vecsize = 4;
-		}
-
-		else if constexpr (std::is_same_v<T, glm::mat4>)
-		{
-			resultType.baseType = RHI::ShaderUniformBaseType::Float;
-			resultType.vecsize = 4;
-			resultType.columns = 4;
-		}
-
-		return resultType;
-	}
+	class RenderGraphShaderParameterUniformBuffer;
+	class BatchedShaderParameters;
 
 	struct RenderingInfo
 	{
@@ -145,160 +29,138 @@ namespace Volt
 		RHI::RenderingInfo renderingInfo{};
 	};
 
+	struct GraphicsPipelineState
+	{
+		RHI::PipelineShadersVector shaders;
+
+		Array<RHI::AttachmentBlendState, RHI::MAX_COLOR_ATTACHMENT_COUNT> attachmentBlendStates;
+		ShaderParameterRenderTargetBindings renderTargets;
+
+		float depthBiasConstantFactor = 0.f;
+		float depthBiasClamp = 0.f;
+		float depthBiasSlopeFactor = 0.f;
+
+		RHI::Topology topology = RHI::Topology::TriangleList;
+		RHI::CullMode cullMode = RHI::CullMode::Back;
+		RHI::FillMode fillMode = RHI::FillMode::Solid;
+		RHI::DepthMode depthMode = RHI::DepthMode::ReadWrite;
+		RHI::CompareOperator depthCompareOperator = RHI::CompareOperator::GreaterEqual;
+		bool enablePrimitiveRestart = false;
+		bool enableDepthClamp = false;
+	};
+
 	class VTRC_API RenderContext
 	{
 	public:
-		struct RenderGraphConstants
+		struct PerStageShaderParameters
 		{
-			ResourceHandle constatsBufferIndex;
-			ResourceHandle shaderValidationBuffer;
-			uint32_t constantsOffset;
+			RHI::ShaderStage shaderStage;
+			uint32_t size;
+			RGUniformBufferSRVRef uniformBufferSRV;
+			uint64_t offset;
+			uint8_t* mappedPtr;
 		};
 
-		RenderContext(RenderGraph& renderGraph, RenderGraphPassNodeBase& currentPassNode, SharedRenderContext& sharedContext, RefPtr<RHI::CommandBuffer> commandBuffer);
+		RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer);
 
-		void EndContext();
-
-		void BeginMarker(std::string_view markerName, const glm::vec4& markerColor = 1.f);
-		void EndMarker();
+		void Flush(RefPtr<RHI::Fence> fence);
 
 		void BeginRendering(const RenderingInfo& renderingInfo);
 		void EndRendering();
 
-		const RenderingInfo CreateRenderingInfo(const uint32_t width, const uint32_t height, const StackVector<RenderGraphImageHandle, RHI::MAX_ATTACHMENT_COUNT>& attachments);
-
-		void ClearImage(RenderGraphImageHandle handle, const glm::vec4& clearColor);
-		void ClearBuffer(RenderGraphBufferHandle handle, uint32_t clearValue);
-
-		void CopyBuffer(RenderGraphBufferHandle src, RenderGraphBufferHandle dst, const size_t size);
-
-		void MappedBufferUpload(RenderGraphBufferHandle buffer, const void* data, const size_t size);
-		void PushConstants(const void* data, const uint32_t size);
+		const RenderingInfo CreateRenderingInfo(const uint32_t width, const uint32_t height, const ShaderParameterRenderTargetBindings& rtBindings);
+		void FillRenderingAttachmentDeclaration(RHI::RenderingAttachmentDeclaration& outDeclaration) const;
 
 		void DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ);
-		void DispatchMeshTasksIndirect(RenderGraphBufferHandle commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride);
-		void DispatchMeshTasksIndirectCount(RenderGraphBufferHandle commandsBuffer, const size_t offset, RenderGraphBufferHandle countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride);
+		void DispatchMeshTasksIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride);
+		void DispatchMeshTasksIndirectCount(RGBufferRef commandsBuffer, const size_t offset, RGBufferRef countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride);
 
 		void Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ);
-		void DispatchIndirect(RenderGraphBufferHandle commandsBuffer, const size_t offset);
+		void DispatchIndirect(RGBufferRef commandsBuffer, const size_t offset);
 
-		void TraceRays(RefPtr<RHI::ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth);
-
-		void DrawIndirectCount(RenderGraphBufferHandle commandsBuffer, const size_t offset, RenderGraphBufferHandle countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride);
-		void DrawIndexedIndirect(RenderGraphBufferHandle commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride);
+		void DrawIndirectCount(RGBufferRef commandsBuffer, const size_t offset, RGBufferRef countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride);
+		void DrawIndexedIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride);
 		void DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance);
 		void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance);
 
-		void BindPipeline(RawPtr<RHI::RenderPipeline> pipeline);
-		void BindPipeline(RawPtr<RHI::ComputePipeline> pipeline);
-		void BindPipeline(RawPtr<RHI::RayTracingPipeline> pipeline);
+		void ClearUAV(RGTextureUAVRef textureUAV, const glm::uvec4& clearValues);
+		void ClearUAV(RGTextureUAVRef textureUAV, const glm::vec4& clearValues);
+		void ClearUAV(RGBufferUAVRef bufferUAV, const uint32_t clearValue);
+		void ClearUAV(RGBufferUAVRef bufferUAV, const float clearValue);
 
-		void BindIndexBuffer(RenderGraphBufferHandle indexBuffer);
-		void BindIndexBuffer(RawPtr<RHI::IndexBuffer> indexBuffer);
-		void BindVertexBuffers(const StackVector<RawPtr<RHI::VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
-		void BindVertexBuffers(const StackVector<RenderGraphBufferHandle, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
+		void SetPipelineState(const GraphicsPipelineState& pipelineState);
+		void SetPipelineState(RefPtr<RHI::Shader> computeShader);
 
-		void SetAccelerationStructure(RawPtr<RHI::AccelerationStructure> accelerationStructure);
+		RefPtr<RHI::RenderPipeline> CreateRenderPipeline(const GraphicsPipelineState& pipelineState);
+		RefPtr<RHI::ComputePipeline> CreateComputePipeline(RefPtr<RHI::Shader> computeShader);
 
-		template<typename T>
-		void SetConstant(const StringHash& name, const T& data);
+		void BindIndexBuffer(RGBufferRef indexBuffer);
+		void BindVertexBuffers(const InlineVector<RGBufferRef, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding);
 
-		template<>
-		void SetConstant(const StringHash& name, const ResourceHandle& data);
+		void CopyBufferRegion(RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size);
+		void CopyTexture(RGTextureRef src, RGTextureRef dst, const uint32_t width, const uint32_t height, const uint32_t depth);
 
-		void SetConstant(const StringHash& name, const RenderGraphImageHandle& data, const int32_t mip = -1, const int32_t layer = -1);
+		template<typename T> T* MapBuffer(RGBufferRef buffer);
+		template<typename T> T* MapBuffer(RGUniformBufferRef buffer);
 
-		template<>
-		void SetConstant(const StringHash& name, const RenderGraphBufferHandle& data);
+		void UnmapBuffer(RGBufferRef buffer);
+		void UnmapBuffer(RGUniformBufferRef buffer);
 
-		template<>
-		void SetConstant(const StringHash& name, const RenderGraphUniformBufferHandle& data);
+		template<typename ShaderType> void SetParameters(RefPtr<RHI::Shader> shader, const typename ShaderType::Parameters* parameters);
+		template<typename ParameterStruct> void CollectParameters(const ParameterStruct* parameters, BatchedShaderParameters& batchedShaderParameters);
 
-		template<typename F>
-		void SetConstant(const StringHash& name, const Vector<F>& data);
+		RefPtr<RHI::CommandBuffer> GetRHICommandBuffer();
 
-		template<typename F, size_t COUNT>
-		void SetConstant(const StringHash& name, const std::array<F, COUNT>& data);
+		InlineVector<PerStageShaderParameters, 8> SetupPipelineData(RawPtr<RHI::RenderPipeline> renderPipeline);
+		InlineVector<PerStageShaderParameters, 8> SetupPipelineData(RawPtr<RHI::ComputePipeline> computePipeline);
+
+		VT_INLINE const RenderingInfo& GetActiveRenderingInfo() const { VT_ASSERT(m_isWithinRenderingScope); return m_activeRenderingInfo; }
 
 	private:
-		friend class RenderGraph;
+		void BindShaderBindings();
+		void SetupPipelineData();
 
-		struct BoundPipelineData
-		{
-			vt::map<StringHash, bool> uniformHasBeenSetMap;
-		};
+		template<typename ParameterStruct>
+		void VerifyShaderParameters(RefPtr<RHI::Shader> shader, const ParameterStruct* parameters);
 
-		void BindDescriptorTableIfRequired();
+		void SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetTextureUAVParameter(RGTextureUAVRef textureUAV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
+		void SetShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap);
 
-		void Flush(RefPtr<RHI::Fence> fence);
-		void CopyImage(RenderGraphImageHandle src, RenderGraphImageHandle dst, const uint32_t width, const uint32_t height, const uint32_t depth);
+		void CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectTextureUAVParameter(RGTextureUAVRef textureUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectSamplerParameter(RefPtr<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
+		void CollectShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters);
 
-		// Validation
-		void InitializeCurrentPipelineConstantsValidation();
-		void ValidateCurrentPipelineConstants();
-		void ValidatePipelineConstant(const RHI::ShaderRenderGraphConstantsData& constantsData, const RHI::ShaderUniformType& uniformType, const StringHash& constantName);
+		void* MapInternal(RGBufferRef buffer);
+		void* MapInternal(RGUniformBufferRef buffer);
 
-		// Internal state
-		const RHI::ShaderRenderGraphConstantsData& GetRenderGraphConstantsData();
-		void ClearCurrentPipeline();
+		RHI::RenderPipelineCreateInfo TranslateGraphicsPipelineState(const GraphicsPipelineState& pipelineState);
+		void VerifyGraphicsPipelineState(const GraphicsPipelineState& pipelineState) const;
 
-		bool m_descriptorTableIsBound = false; // This needs to be checked in every call that uses resources
-
-		RenderGraph& m_renderGraph;
-		RenderGraphPassNodeBase& m_currentPassNode;
-		SharedRenderContext& m_sharedContext;
-
+		RefPtr<RHI::RenderPipeline> m_currentRenderPipeline;
+		RefPtr<RHI::ComputePipeline> m_currentComputePipeline;
 		RefPtr<RHI::CommandBuffer> m_commandBuffer;
 
-		RawPtr<RHI::RenderPipeline> m_currentRenderPipeline;
-		RawPtr<RHI::ComputePipeline> m_currentComputePipeline;
-		RawPtr<RHI::RayTracingPipeline> m_currentRayTracingPipeline;
+		RHI::ShaderBindingMap m_shaderBindingMap;
 
-		RawPtr<RHI::AccelerationStructure> m_currentAccelerationStructure;
+		InlineVector<PerStageShaderParameters, 8> m_perStageShaderParameters;
 
-		uint8_t m_passConstantsData[RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE];
-
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		BoundPipelineData m_boundPipelineData;
-#endif
+		RenderGraph& m_renderGraph;
+		RGPassRef m_currentPass;
+		RenderGraphShaderParameterUniformBuffer& m_shaderParameterUniformBuffer;
+		RenderingInfo m_activeRenderingInfo{};
+		bool m_isWithinRenderingScope = false;
 	};
-
-	template<typename T>
-	inline void RenderContext::SetConstant(const StringHash& name, const T& data)
-	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
-
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		ValidatePipelineConstant(constantsData, TryGetTypeFromType<T>(), name);
-
-		const auto& uniform = constantsData.uniforms.at(name);
-		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &data, sizeof(T));
-	}
-
-	template<typename F>
-	inline void RenderContext::SetConstant(const StringHash& name, const Vector<F>& data)
-	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
-
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
-
-		const auto& uniform = constantsData.uniforms.at(name);
-		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, data.data(), data.size() * sizeof(F));
-	}
-
-	template<typename F, size_t COUNT>
-	inline void RenderContext::SetConstant(const StringHash& name, const std::array<F, COUNT>& data)
-	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
-
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		ValidatePipelineConstant(constantsData, TryGetTypeFromType<F>(), name);
-
-		const auto& uniform = constantsData.uniforms.at(name);
-		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, data.data(), COUNT * sizeof(F));
-	}
 }
+
+#include "RenderCore/RenderGraph/RenderContext.inl"

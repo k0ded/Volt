@@ -1,16 +1,34 @@
 #include "vtmgpch.h"
 
 #include "Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h"
-//#include "Volt/Utility/UIUtility.h"
 
 #include <RHIModule/Images/Image.h>
-#include <AssetSystem/AssetManager.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/NodeRegistry.h>
+#include <Mosaic/MosaicShaderWriter.h>
+
+#include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 
 namespace Volt::MosaicNodes
 {
+	struct SampleTextureNodeCustomVersion
+	{
+		enum Type
+		{
+			BaseVersion = 0,
+			AddedTextureType = 1,
+
+			VersionPlusOne,
+			LatestVersion = VersionPlusOne - 1
+		};
+
+		inline static constexpr VoltGUID guid = "{DAE8ACDF-30A8-4AD6-B00B-3E441F823B9E}"_guid;
+	private:
+		SampleTextureNodeCustomVersion() = default;
+	};
+	ArchiveVersionRegistrar g_registerSampleTextureNodeCustomVersion(SampleTextureNodeCustomVersion::guid, SampleTextureNodeCustomVersion::LatestVersion, "SampleTextureNodeCustomVersion");
+
 	static void GetCorrectedVariableName(Mosaic::ResultInfo& resultInfo, uint32_t outputIndex)
 	{
 		if (outputIndex == 0)
@@ -72,46 +90,25 @@ namespace Volt::MosaicNodes
 		m_evaluated = false;
 	}
 
-	void SampleTextureNode::RenderCustomWidget()
+	void SampleTextureNode::SerializeCustom(Archive& archive)
 	{
-		//std::string assetFileName = "Null";
-		//
-		//const Ref<Volt::Asset> rawAsset = Volt::AssetManager::Get().GetAssetRaw(m_textureHandle);
-		//if (rawAsset)
-		//{
-		//	assetFileName = rawAsset->assetName;
-		//}
-		//
-		//const ImVec2 width = ImGui::CalcTextSize(assetFileName.c_str());
-		//ImGui::PushItemWidth(std::max(width.x, 20.f) + 5.f);
-		//
-		//const std::string id = "##" + std::to_string(UI::GetID());
-		//ImGui::InputTextString(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
-		//ImGui::PopItemWidth();
-		//
-		//if (auto ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))
-		//{
-		//	Volt::AssetHandle newHandle = *(Volt::AssetHandle*)ptr;
-		//	m_textureHandle = newHandle;
-		//}
+		archive.UseVersion(SampleTextureNodeCustomVersion::guid);
+
+		archive << m_textureHandle;
+	
+		if (!archive.IsLoading() || archive.GetVersion(SampleTextureNodeCustomVersion::guid) >= SampleTextureNodeCustomVersion::AddedTextureType)
+		{
+			archive << m_textureType;
+		}
 	}
 
-	void SampleTextureNode::SerializeCustom(YAMLStreamWriter& streamWriter) const
+	const Mosaic::ResultInfo SampleTextureNode::Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const
 	{
-		streamWriter.SetKey("textureHandle", m_textureHandle);
-	}
+		constexpr const char* colorTypeNodeStr = "const float2 {} = {}; \n"
+												 "const float4 {} = {}.Sample({}, {} * {}); \n";
 
-	void SampleTextureNode::DeserializeCustom(YAMLStreamReader& streamReader)
-	{
-		m_textureHandle = streamReader.ReadAtKey("textureHandle", Asset::Null());
-	}
-
-	const Mosaic::ResultInfo SampleTextureNode::GetShaderCode(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const
-	{
-		constexpr const char* nodeStr = "vt::TextureSampler {} = material.samplers[{}]; \n"
-										"vt::Tex2D<float4> {} = material.textures[{}]; \n"
-										"const float2 {} = {}; \n"
-										"const float4 {} = {}.SampleGrad({}, {} * {}, evalData.texCoordsDX * {}.x, evalData.texCoordsDY * {}.y); \n";
+		constexpr const char* normalTypeNodeStr = "const float2 {} = {}; \n"
+												  "const float4 {} = {}.Sample({}, {} * {}) * 2.f - 1.f; \n";
 
 		if (m_evaluated)
 		{
@@ -121,15 +118,13 @@ namespace Volt::MosaicNodes
 			return tempInfo;
 		}
 
-		const std::string texSamplerVarName = m_graph->GetNextVariableName();
-		const std::string textureVarName = m_graph->GetNextVariableName();
+		const std::string texSamplerVarName = "StaticAnisotropicSampler"; //m_graph->GetNextVariableName();
+		const std::string textureVarName = shaderWriter.AddTexture(m_textureIndex);
 		const std::string valueVarName = m_graph->GetNextVariableName();
 		const std::string tilingVarName = m_graph->GetNextVariableName();
 
 		std::string texCoordsVarName = "evalData.texCoords";
 		std::string tilingParamString = std::format("{}", GetInputParameter(1).Get<glm::vec2>());
-
-		const uint32_t index = m_textureIndex;
 
 		for (const auto& edgeId : underlyingNode.GetInputEdges())
 		{
@@ -137,7 +132,7 @@ namespace Volt::MosaicNodes
 			const uint32_t paramIndex = edge.metaDataType->GetParameterInputIndex();
 			const auto& node = underlyingNode.GetNodeFromID(edge.startNode);
 
-			const Mosaic::ResultInfo info = node.nodeData->GetShaderCode(node, edge.metaDataType->GetParameterOutputIndex(), appendableShaderString);
+			const Mosaic::ResultInfo info = node.nodeData->Compile(node, edge.metaDataType->GetParameterOutputIndex(), shaderWriter);
 
 			// UV
 			if (paramIndex == 0)
@@ -151,9 +146,17 @@ namespace Volt::MosaicNodes
 			}
 		}
 
+		std::string result;
+		if (m_textureType == TextureType::Color)
+		{
+			result = std::format(colorTypeNodeStr, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName);
+		}
+		else if (m_textureType == TextureType::Normal)
+		{
+			result = std::format(normalTypeNodeStr, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName);
+		}
 
-		std::string result = std::format(nodeStr, texSamplerVarName, index, textureVarName, index, tilingVarName, tilingParamString, valueVarName, textureVarName, texSamplerVarName, texCoordsVarName, tilingVarName, tilingVarName, tilingVarName);
-		appendableShaderString.append(result);
+		shaderWriter.AppendCodeBlock(result);
 
 		Mosaic::ResultInfo resultInfo{};
 		resultInfo.resultParamName = valueVarName;

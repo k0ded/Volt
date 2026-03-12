@@ -92,9 +92,9 @@ void ThemesPanel::StyleEditor(ImGuiStyle* ref)
 			ImGui::SliderFloat("TabRounding", &style.TabRounding, 0.0f, 12.0f, "%.0f");
 			ImGui::Text("Alignment");
 			ImGui::SliderFloat2("WindowTitleAlign", (float*)&style.WindowTitleAlign, 0.0f, 1.0f, "%.2f");
-			int window_menu_button_position = style.WindowMenuButtonPosition + 1;
+			ImGuiDir window_menu_button_position = static_cast<ImGuiDir>(style.WindowMenuButtonPosition + 1);
 			if (ImGui::Combo("WindowMenuButtonPosition", (int*)&window_menu_button_position, "None\0Left\0Right\0"))
-				style.WindowMenuButtonPosition = window_menu_button_position - 1;
+				style.WindowMenuButtonPosition = static_cast<ImGuiDir>(window_menu_button_position - 1);
 			ImGui::Combo("ColorButtonPosition", (int*)&style.ColorButtonPosition, "Left\0Right\0");
 			ImGui::SliderFloat2("ButtonTextAlign", (float*)&style.ButtonTextAlign, 0.0f, 1.0f, "%.2f");
 			ImGui::SameLine();
@@ -309,7 +309,6 @@ void ThemesPanel::SetMinecraftTheme()
 	style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.4f, 0.67f, 1.000f, 1.000f);
 
 	style.Colors[ImGuiCol_Tab] = ImVec4(0.137f, 0.137f, 0.137f, 1.000f);
-	style.Colors[ImGuiCol_TabTop] = ImVec4(0.4f, 0.67f, 1.000f, 1.000f);
 	style.Colors[ImGuiCol_TabHovered] = ImVec4(0.352f, 0.352f, 0.352f, 1.000f);
 	style.Colors[ImGuiCol_TabActive] = ImVec4(0.258f, 0.258f, 0.258f, 1.000f);
 	style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.137f, 0.137f, 0.137f, 1.000f);

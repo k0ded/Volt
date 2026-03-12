@@ -6,9 +6,8 @@
 #include "Navigation/Crowd/DtCrowd.h"
 
 #include <Volt-Renderer/Mesh/Mesh.h>
-#include <Volt-Scene/Entity.h>
-#include <Volt/Components/NavigationComponents.h>
 
+#include <AssetSystem/AssetTypes.h>
 #include <AssetSystem/Asset.h>
 
 namespace Volt
@@ -27,7 +26,7 @@ namespace Volt
 			Ref<DtCrowd>& GetCrowd() { return myCrowd; }
 
 			static AssetType GetStaticType() { return AssetTypes::NavMesh; }
-			AssetType GetType() override { return GetStaticType(); }
+			AssetType GetType() const override { return GetStaticType(); }
 			uint32_t GetVersion() const override { return 1; }
 
 		private:

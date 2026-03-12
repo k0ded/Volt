@@ -36,10 +36,20 @@ namespace VoltSharpmake
         {
             conf.ProjectFileName = "[project.Name]_[target.Platform]";
             if (target.DevEnv != DevEnv.xcode)
-                conf.ProjectFileName += "_[target.DevEnv]";
+			{
+				conf.ProjectFileName += "_[target.DevEnv]";
+			}
 
-            conf.IntermediatePath = Path.Combine(Globals.EngineTempDirectory, @"obj\[target.DirectoryName]\[project.Name]");
-			conf.TargetPath = Util.SimplifyPath(Path.Combine(Globals.EngineOutputDirectory, @"[target.DirectoryName]\[project.Name]"));
+			conf.IntermediatePath = Path.Combine(Globals.EngineTempDirectory, @"obj\[target.DirectoryName]\[project.Name]");
+
+			if (Globals.ShouldBuildEngine)
+			{
+				conf.TargetPath = Util.SimplifyPath(Path.Combine(Globals.EngineOutputDirectory, @"[target.DirectoryName]\[project.Name]"));
+			}
+			else
+			{
+				conf.TargetPath = Util.SimplifyPath(Globals.BinariesDirectory);
+			}
 
 			if (Globals.ProjectTargetDirectory != null)
 			{
@@ -51,7 +61,7 @@ namespace VoltSharpmake
             conf.Output = Configuration.OutputType.Lib; // defaults to creating static libs
 			conf.IsExcludedFromBuild = !Globals.ShouldBuildEngine;
 
-            conf.Options.Add(Options.Vc.Compiler.CppLanguageStandard.CPP20);
+            conf.Options.Add(Options.Vc.Compiler.CppLanguageStandard.Latest);
             conf.Options.Add(Options.Vc.Compiler.Exceptions.Disable);
             conf.Options.Add(Options.Vc.Compiler.RTTI.Disable);
             conf.Options.Add(Options.Vc.Compiler.FloatingPointModel.Precise);
@@ -60,6 +70,17 @@ namespace VoltSharpmake
 
             conf.Options.Add(Options.Vc.General.CharacterSet.Unicode);
         }
+
+		[ConfigurePriority(ConfigurePriorities.Blobbing)]
+		[Configure(Blob.Blob)]
+		public virtual void ConfigureBlob(Configuration conf, CommonTarget target)
+		{
+			conf.IsBlobbed = true;
+			conf.ProjectName += "_Blob";
+			conf.SolutionFolder = "Blob";
+			conf.ProjectFileName += ".blob";
+			conf.IncludeBlobbedSourceFiles = false;
+		}
 
         ////////////////////////////////////////////////////////////////////////
         #region Platfoms
@@ -103,7 +124,7 @@ namespace VoltSharpmake
             conf.Defines.Add("VT_DEVELOPMENT");
 
             conf.Defines.Add("VT_ENABLE_ASSERTS");
-            conf.Defines.Add("VT_ENABLE_VALIDATION");
+            //conf.Defines.Add("VT_ENABLE_VALIDATION");
             conf.Defines.Add("VT_ENABLE_PROFILING");
 
             conf.Defines.Add("NDEBUG");
@@ -123,37 +144,37 @@ namespace VoltSharpmake
 
             conf.Options.Add(Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
 		}
-        #endregion
-        ////////////////////////////////////////////////////////////////////////
+		#endregion
+		////////////////////////////////////////////////////////////////////////
 
-        ////////////////////////////////////////////////////////////////////////
-        #region Blobs and unitys
-        //[Configure(Blob.FastBuildUnitys)]
-        //[ConfigurePriority(ConfigurePriorities.Blobbing)]
-        //public virtual void FastBuildUnitys(Configuration conf, CommonTarget target)
-        //{
-        //    conf.FastBuildBlobbed = true;
-        //    conf.FastBuildUnityPath = Path.Combine(Globals.TmpDirectory, @"unity\[project.Name]");
-        //    conf.IncludeBlobbedSourceFiles = false;
-        //    conf.IsBlobbed = false;
-        //}
+		////////////////////////////////////////////////////////////////////////
+		#region Blobs and unitys
+		//[Configure(Blob.FastBuildUnitys)]
+		//[ConfigurePriority(ConfigurePriorities.Blobbing)]
+		//public virtual void FastBuildUnitys(Configuration conf, CommonTarget target)
+		//{
+		//    conf.FastBuildBlobbed = true;
+		//    conf.FastBuildUnityPath = Path.Combine(Globals.TmpDirectory, @"unity\[project.Name]");
+		//    conf.IncludeBlobbedSourceFiles = false;
+		//    conf.IsBlobbed = false;
+		//}
 
-        //[Configure(Blob.NoBlob)]
-        //[ConfigurePriority(ConfigurePriorities.Blobbing)]
-        //public virtual void BlobNoBlob(Configuration conf, CommonTarget target)
-        //{
-        //    conf.FastBuildBlobbed = false;
-        //    conf.IsBlobbed = false;
+		//[Configure(Blob.NoBlob)]
+		//[ConfigurePriority(ConfigurePriorities.Blobbing)]
+		//public virtual void BlobNoBlob(Configuration conf, CommonTarget target)
+		//{
+		//    conf.FastBuildBlobbed = false;
+		//    conf.IsBlobbed = false;
 
-        //    if (conf.IsFastBuild)
-        //        conf.ProjectName += "_NoBlob";
-        //}
-        #endregion
-        ////////////////////////////////////////////////////////////////////////
+		//    if (conf.IsFastBuild)
+		//        conf.ProjectName += "_NoBlob";
+		//}
+		#endregion
+		////////////////////////////////////////////////////////////////////////
 
-        ////////////////////////////////////////////////////////////////////////
-        #region Build system
-        [ConfigurePriority(ConfigurePriorities.BuildSystem)]
+		////////////////////////////////////////////////////////////////////////
+		#region Build system
+		[ConfigurePriority(ConfigurePriorities.BuildSystem)]
         [Configure(BuildSystem.MSBuild)]
         public virtual void ConfigureMSBuild(Configuration conf, CommonTarget target)
         {
@@ -169,10 +190,9 @@ namespace VoltSharpmake
         [Configure(Compiler.MSVC)]
         public virtual void ConfigureMSVC(Configuration conf, CommonTarget target)
         {
-			if (target.Optimization == Optimization.Dist)
-			{
-				conf.AdditionalCompilerOptimizeOptions.Add("/O2");
-			}
+			//conf.AdditionalCompilerOptions.Add("/dynamicdeopt");
+			//conf.AdditionalLinkerOptions.Add("/dynamicdeopt");
+			//conf.AdditionalLibrarianOptions.Add("/dynamicdeopt");
 		}
 
         [ConfigurePriority(ConfigurePriorities.Compiler)]
@@ -181,8 +201,9 @@ namespace VoltSharpmake
         {
             conf.Options.Add(Options.Vc.General.PlatformToolset.ClangCL);
             conf.Options.Add(Options.Clang.Compiler.ExtraWarnings.Disable);
+			conf.Options.Add(Options.Vc.Compiler.Exceptions.Enable);
 
-            conf.AdditionalCompilerOptions.Add(
+			conf.AdditionalCompilerOptions.Add(
                 "-Wno-c++98-compat",
                 "-Wno-microsoft-include",
                 "-Wno-ignored-qualifiers",
@@ -190,7 +211,9 @@ namespace VoltSharpmake
                 "-Wno-comment",
                 "-Wno-unused-function",
                 "-Wno-missing-braces",
-                "-Wno-return-type-c-linkage"
+                "-Wno-return-type-c-linkage",
+				"-Wno-nonportable-include-path",
+				"-Wno-switch"
             );
         }
         #endregion
@@ -257,10 +280,15 @@ namespace VoltSharpmake
 
     public abstract class CommonVoltProject : CommonProject
     {
-        protected CommonVoltProject() : base()
-        { }
+		protected bool ReferenceCoreUtilities = true;
+		private string newOverloadFilepath = Path.Combine(Globals.RootDirectory, "Common/NewOverload.cpp");
 
-        public override void ConfigureAll(Configuration conf, CommonTarget target)
+		protected CommonVoltProject() : base()
+        {
+			SourceFiles.Add(newOverloadFilepath);
+		}
+
+		public override void ConfigureAll(Configuration conf, CommonTarget target)
         {
             base.ConfigureAll(conf, target);
 
@@ -268,10 +296,15 @@ namespace VoltSharpmake
             conf.Options.Add(Options.Vc.General.ExternalWarningLevel.Level0);
             conf.Options.Add(Options.Vc.General.TreatAngleIncludeAsExternal.Enable);
 
-			if (this.GetType() != typeof(CoreUtilities))
+			if (this.GetType() != typeof(CoreUtilities) && ReferenceCoreUtilities)
             {
                 conf.AddPublicDependency<CoreUtilities>(target);
             }
+
+			// New overload
+			{
+				conf.PrecompSourceExclude.Add(newOverloadFilepath);
+			}
 
             conf.IncludePrivatePaths.Add("Private/");
             conf.IncludePrivatePaths.Add("PCH/");
@@ -290,9 +323,8 @@ namespace VoltSharpmake
             conf.IncludePrivatePaths.Add("Public/" + Name);
             conf.IncludePrivatePaths.Add("Private/" + Name);
 
-            conf.Options.Add(new Sharpmake.Options.Vc.Compiler.DisableSpecificWarnings("4005", "4100", "4201", "4251", "4275", "4505"));
-            conf.Options.Add(new Sharpmake.Options.Vc.Linker.DisableSpecificWarnings("4006", "4099"));   
-            conf.Options.Add(new Sharpmake.Options.Vc.Linker.DisableSpecificWarnings("4098", "4217"));
+            conf.Options.Add(new Sharpmake.Options.Vc.Compiler.DisableSpecificWarnings("4005", "4100", "4201", "4251", "4275", "4505", "4324"));
+            conf.Options.Add(new Sharpmake.Options.Vc.Linker.DisableSpecificWarnings("4006", "4099", "4075", "4098", "4217"));   
 		}
 
 		public override void ConfigureMSVC(Configuration conf, CommonTarget target)
@@ -312,6 +344,7 @@ namespace VoltSharpmake
 
             conf.Output = Configuration.OutputType.Exe;
 			conf.Options.Add(new Sharpmake.Options.Vc.Linker.DisableSpecificWarnings("4075"));
+			conf.Options.Add(Options.Vc.Linker.SubSystem.Windows);
 
 			if (target.Platform == Platform.win64)
             {
@@ -323,8 +356,6 @@ namespace VoltSharpmake
 		public override void ConfigureDist(Configuration conf, CommonTarget target)
 		{
 			base.ConfigureDist(conf, target);
-
-			conf.Options.Add(Options.Vc.Linker.SubSystem.Windows);
 		}
 	}
 
@@ -345,7 +376,7 @@ namespace VoltSharpmake
             {
                 string pluginDir = Globals.PluginsDirectory + "\\" + Name;
                 conf.EventPostBuild.Add(@"mkdir " + "\"" + pluginDir + "\"");
-                conf.EventPostBuild.Add(@"copy /Y " + "\"" + SourceRootPath + "\\" + Name + ".vtconfig\"" + " \"" + pluginDir + "\"");
+                conf.EventPostBuild.Add(@"copy /Y " + "\"" + SourceRootPath + "\\" + Name + ".vtplugin\"" + " \"" + pluginDir + "\"");
                 conf.EventPostBuild.Add(@"copy /Y " + "\"" + conf.TargetPath + "\\" + Name + ".dll\"" + " \"" + pluginDir + "\"");
             }
 

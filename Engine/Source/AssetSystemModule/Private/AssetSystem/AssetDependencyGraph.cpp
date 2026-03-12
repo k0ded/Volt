@@ -5,7 +5,8 @@
 
 namespace Volt
 {
-	AssetDependencyGraph::AssetDependencyGraph()
+	AssetDependencyGraph::AssetDependencyGraph(AssetManager& referencedAssetManager)
+		: m_referencedAssetManager(referencedAssetManager)
 	{
 	}
 	AssetDependencyGraph::~AssetDependencyGraph()
@@ -25,6 +26,22 @@ namespace Volt
 		m_assetNodeIds[handle] = newId;
 
 		return newId;
+	}
+
+	void AssetDependencyGraph::ClearAssetDependencies(AssetHandle handle)
+	{
+		if (!DoAssetExistInGraph(handle))
+		{
+			VT_LOG(Warning, "[AssetDependencyGraph]: Trying to clear asset dependencies of asset not in the graph!");
+			return;
+		}
+
+		const auto& node = m_graph.GetNodeFromID(m_assetNodeIds.at(handle));
+
+		for (int32_t i = static_cast<int32_t>(node.GetOutputEdges().size()) - 1; i >= 0; --i)
+		{
+			m_graph.RemoveEdge(node.GetOutputEdges()[i]);
+		}
 	}
 
 	void AssetDependencyGraph::RemoveAssetFromGraph(AssetHandle handle)
@@ -65,14 +82,12 @@ namespace Volt
 
 		for (size_t i = 1; i < dependants.size(); i++)
 		{
-			const auto isLoaded = Volt::AssetManager::IsLoaded(dependants.at(i));
-			if (isLoaded)
+			ReadOnlyAssetMetadata assetMetadata = m_referencedAssetManager.GetReadOnlyAssetMetadata(dependants.at(i));
+
+			AssetReference<Asset> asset;
+			if (m_referencedAssetManager.TryGetTypelessAssetIfLoaded(dependants.at(i), asset))
 			{
-				const auto rawAsset = Volt::AssetManager::Get().GetAssetRaw(dependants.at(i));
-				if (rawAsset && rawAsset->IsValid())
-				{
-					rawAsset->OnDependencyChanged(handle, state);
-				}
+				asset->OnAssetDependencyChanged(handle, state);
 			}
 		}
 	}

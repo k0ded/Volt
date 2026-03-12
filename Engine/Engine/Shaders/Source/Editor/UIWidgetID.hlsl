@@ -1,10 +1,7 @@
 #include "Resources.hlsli"
 #include "../UI/UIVertex.hlsli"
 
-struct Constants
-{
-    float4x4 viewProjection;
-};
+float4x4 ViewProjection;
 
 struct VSOutput
 {
@@ -15,26 +12,15 @@ struct VSOutput
 
 VSOutput MainVS(in UIVertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-    
     VSOutput output;
-    output.position = mul(constants.viewProjection, input.position);
+    output.position = mul(ViewProjection, input.position);
     output.texCoords = input.texCoords;
     output.widgetId = input.widgetId;
 
     return output;
 }
 
-struct PSOutput
+uint MainPS(VSOutput input) : SV_Target0
 {
-    [[vt::r32ui]] uint color : SV_Target;
-    [[vt::d32f]];
-};
-
-PSOutput MainPS(VSOutput input)
-{
-    PSOutput output;
-    output.color = input.widgetId;
-
-    return output;
+    return input.widgetId;
 }

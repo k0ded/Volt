@@ -1,43 +1,55 @@
 #include "Log.h"
 
 #include <spdlog/spdlog.h>
+#include <spdlog/async.h>
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/msvc_sink.h>
 
-VT_REGISTER_SUBSYSTEM(Log, PreEngine, 1);
+#include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/FileSystem.h>
+
+VT_REGISTER_SUBSYSTEM(Log, Minimal, PreEngine);
 
 Log::Log()
 {
 	VT_ENSURE(s_instance == nullptr);
 	s_instance = this;
 
+	spdlog::init_thread_pool(8192, 1);
 	spdlog::set_pattern("%^[%T] %n: %v%$");
 
-	m_logger = spdlog::stdout_color_mt("VOLT");
+	std::vector<spdlog::sink_ptr> sinks;
+
+	const std::filesystem::path logDirectory = std::filesystem::current_path() / "Log";
+	if (!FileSystem::Exists(logDirectory))
+	{
+		FileSystem::CreateDirectories(logDirectory);
+	}
+
+	sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDirectory.string() + "/Log.txt", true));
+
+	if (::IsDebuggerPresent())
+	{
+		sinks.emplace_back(std::make_shared<spdlog::sinks::msvc_sink_mt>());
+	}
+
+	m_logger = std::make_shared<spdlog::async_logger>("VOLT", sinks.begin(), sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
+	spdlog::register_logger(m_logger);
+
 	m_logger->set_level(spdlog::level::trace);
 }
 
 Log::~Log()
 {
-	m_rotatingFileSink = nullptr;
+	Flush();
+
+	spdlog::shutdown();
+
 	m_logger = nullptr;
-
 	s_instance = nullptr;
-}
-
-void Log::SetLogOutputFilepath(const std::filesystem::path& path)
-{
-	auto max_size = 1048576 * 5;
-	auto max_files = 3;
-
-	if (!std::filesystem::exists(path.parent_path()))
-	{
-		std::filesystem::create_directories(path.parent_path());
-	}
-
-	m_rotatingFileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(path.string(), max_size, max_files, false);
-	m_logger->sinks().emplace_back(m_rotatingFileSink);
 }
 
 LogCallbackHandle Log::RegisterCallback(const std::function<void(const LogCallbackData& callbackData)>& callback)
@@ -61,9 +73,29 @@ void Log::UnregisterCallback(LogCallbackHandle handle)
 	}
 }
 
-void Log::LogMessage(LogVerbosity severity, const std::string& category, const std::string& message)
+void Log::Flush()
 {
-	std::string finalString = category.empty() ? "" : "[" + category + "]: ";
+	if (m_logger && m_isEnabled)
+	{
+		m_logger->flush();
+	}
+}
+
+void Log::EnableLogging(bool enable)
+{
+	m_isEnabled = enable;
+}
+
+void Log::LogMessage(LogVerbosity severity, const LogCategoryBase* category, const std::string& message)
+{
+	if (!m_isEnabled)
+	{
+		return;
+	}
+
+	std::string categoryName = std::string(category->GetName());
+
+	std::string finalString = categoryName.empty() ? "" : "[" + categoryName + "]: ";
 	finalString += message;
 
 	switch (severity)

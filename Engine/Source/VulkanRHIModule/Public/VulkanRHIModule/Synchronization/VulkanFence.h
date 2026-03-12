@@ -2,24 +2,31 @@
 
 #include <RHIModule/Synchronization/Fence.h>
 
-struct VkFence_T;
+struct VkSemaphore_T;
 
 namespace Volt::RHI
 {
 	class VulkanFence : public Fence
 	{
 	public:
-		VulkanFence(const FenceCreateInfo& createInfo);
+		VulkanFence();
 		~VulkanFence() override;
 
-		void Reset() const override;
-		FenceStatus GetStatus() const override;
 		void WaitUntilSignaled() const override;
+		bool IsSignaled() const override;
+		void Reset() override;
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
-		VkFence_T* m_fence = nullptr;
+		friend class VulkanDeviceQueue;
+		friend class VulkanRHISubmissionThread;
+
+		void AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value);
+	
+		VkSemaphore_T* m_referencedSemaphore = nullptr;
+		std::atomic_uint64_t m_referencedValue = 0;
+		std::atomic_bool m_hasBeenSubmitted = false;
 	};
 }

@@ -7,7 +7,7 @@
 
 #include <AssetSystem/AssetManager.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <CoreUtilities/Math/Hash.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -39,12 +39,18 @@ AssetBrowserPopup::State AssetBrowserPopup::Update()
 		UI::ScopedColor background{ ImGuiCol_ChildBg, EditorTheme::DarkGreyBackground };
 		if (ImGui::BeginChild("##scrolling", ImGui::GetContentRegionAvail())) //#TODO_Ivar: Optimize!
 		{
-			Vector<Volt::AssetHandle> items = Volt::AssetManager::GetAllAssetsOfType(myWantedType);
-			//items.erase(std::remove_if(items.begin(), items.end(), [](Volt::AssetHandle handle)
-			//{
-			//	return Volt::AssetManager::IsMemoryAsset(handle);
-			//}));
-			
+			Vector<Volt::AssetHandle> items;
+
+			Volt::AssetRegistryIteratorFilter filter;
+			filter.includeMemoryAssets = false;
+			filter.filteredAssetTypes.insert(myWantedType);
+
+			g_assetManager->IterateAssetRegistryWithFilter(filter, [&items](Volt::ReadOnlyAssetMetadata assetMetadata) 
+			{
+				items.emplace_back(assetMetadata->handle);
+				return true;
+			});
+
 			state = RenderView(items);
 			ImGui::EndChild();
 		}
@@ -57,7 +63,7 @@ AssetBrowserPopup::State AssetBrowserPopup::Update()
 inline static size_t GetHashFromMetadata(const Volt::AssetMetadata& metadata)
 {
 	size_t hash = 0;
-	hash = std::hash<std::string>()(metadata.filePath.stem().string());
+	hash = std::hash<std::string>()(metadata.filepath.stem().string());
 	hash = Math::HashCombine(hash, std::hash<uint64_t>()(metadata.handle));
 
 	return hash;
@@ -72,19 +78,20 @@ AssetBrowserPopup::State AssetBrowserPopup::RenderView(const Vector<Volt::AssetH
 
 	for (const auto& handle : items)
 	{
-		const auto& metadata = Volt::AssetManager::GetMetadataFromHandle(handle);
-		if (!metadata.IsValid())
+		Volt::ReadOnlyAssetMetadata metadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+
+		if (!metadata->IsValid())
 		{
 			continue;
 		}
 
-		if (metadata.type->IsSourceType())
+		if (metadata->type->IsSourceType())
 		{
 			continue;
 		}
 
-		const std::string assetName = metadata.filePath.stem().string();
-		nameHandle.emplace_back(assetName, metadata.handle);
+		const std::string assetName = metadata->filepath.stem().string();
+		nameHandle.emplace_back(assetName, metadata->handle);
 	}
 
 	Vector<std::string> searchNames{};

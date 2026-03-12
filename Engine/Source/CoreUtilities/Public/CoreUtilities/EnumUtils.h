@@ -175,41 +175,24 @@ inline static std::string ToString(enumName aEnumValue) \
 
 #define CREATE_ENUM(enumName, ...) CREATE_ENUM_TYPED(enumName, uint32_t, __VA_ARGS__)
 
-
-
-enum class yoo
-{
-	apa = 2,
-	banan
-};
-
-//CREATE_ENUM(Test, uint64_t,
-//	One = 10, Two, Three = 0x1000000000010011, Four);
-
-//enum class Test : uint64_t
-//{
-//	One = 10, Two, Three = 0x1000000000010011, Four
-//}; inline static bool Test_reg = Utils::EnumUtil::RegisterEnum("Test", "One = 10, Two, Three = 0x1000000000010011, Four"); inline static std::string ToString(Test aEnumValue)
-//{
-//	return Utils::EnumUtil::ToString("Test", static_cast<uint64_t>(aEnumValue));
-//}
-//template<> inline static Test ToEnum(const std::string& aEnumString)
-//{
-//	return Utils::EnumUtil::ToEnum<Test>("Test", aEnumString);
-//};
-
-
-
-/*
-enum class Test : uint32_t {
-	One, Two, Three
-};inline static bool Test_reg = EnumUtil::RegisterEnum("Test", "One, Two, Three"); inline static std::string ToString(Test aEnumValue) {
-	return EnumUtil::ToString("Test", static_cast<uint64_t>(aEnumValue));
-}
-*/
+#define VT_SETUP_ENUM_SERIALIZE_OPERATOR(enumType) \
+	VT_INLINE Archive& operator<<(Archive& archive, enumType& value) \
+	{ \
+		using UnderlyingType = std::underlying_type_t<enumType>; \
+		UnderlyingType& tempValue = *reinterpret_cast<UnderlyingType*>(&value); \
+		archive << tempValue; \
+		return archive; \
+	} \
 
 template<Enum T>
 inline static constexpr bool EnumValueContainsFlag(const T& value, const T& flag)
 {
 	return (value & flag) != static_cast<T>(0);
+}
+
+
+template<Enum T, typename... Args>
+inline static constexpr bool EnumValueContainsAnyFlag(const T& value, Args&&... args)
+{
+	return (((value & args) != static_cast<T>(0)) || ...);
 }

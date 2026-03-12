@@ -8,6 +8,8 @@
 #include <EventSystem/ApplicationEvents.h>
 
 #include <SubSystem/SubSystem.h>
+#include <SubSystem/SubSystemRegistry.h>
+
 #include <CoreUtilities/Containers/Vector.h>
 
 #include <glm/fwd.hpp>
@@ -61,6 +63,7 @@ namespace Volt
 		static void SetViewportMousePosition(const glm::vec2& viewportPos);
 		static const glm::vec2& GetViewportMousePosition();
 
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{A85034B9-EAED-4BAA-B1E8-AF93F5323E74}"_guid)
 
 	private:

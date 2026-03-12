@@ -2,6 +2,8 @@
 
 #include "Volt-Renderer/RenderScene/SceneLightData.h"
 
+#include <RenderCore/RenderGraph/ShaderParameterStruct.h>
+
 #include <RHIModule/Descriptors/ResourceHandle.h>
 
 #include <glm/glm.hpp>
@@ -27,27 +29,37 @@ namespace Volt
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(LightFlags);
 
+	struct GPUTransform
+	{
+		GPUTransform()
+			: rotation(glm::identity<glm::quat>()),
+			position(0.f),
+			scale(1.f)
+		{}
+
+		glm::quat rotation;
+		glm::vec3 position;
+		float padding0;
+		glm::vec3 scale;
+		float padding1;
+	};
+
 	struct GPUMesh
 	{
 		inline static constexpr uint32_t MAX_LOD_COUNT = 8;
-
-		ResourceHandle vertexPositionsBuffer;
-		ResourceHandle vertexMaterialBuffer;
-		ResourceHandle vertexAnimationInfoBuffer;
-		ResourceHandle vertexBoneInfluencesBuffer;
-		ResourceHandle indexBuffer;
-
-		ResourceHandle vertexBoneWeightsBuffer;
-		ResourceHandle meshletDataBuffer;
-		ResourceHandle meshletsBuffer;
 
 		glm::vec3 center;
 		float radius;
 
 		uint32_t vertexStartOffset;
-		uint32_t meshletCount;
-		uint32_t meshletStartOffset;
-		uint32_t meshletIndexStartOffset;
+		uint32_t indexStartOffset;
+		glm::uvec2 padding;
+
+		// Ray Tracing
+		uint32_t RT_vertexPositionsBuffer;
+		uint32_t RT_vertexMaterialBuffer;
+		uint32_t RT_vertexAnimationInfoBuffer;
+		uint32_t RT_indexBuffer;
 	};
 
 	struct GPUMeshSDF
@@ -63,9 +75,7 @@ namespace Volt
 
 	struct PrimitiveDrawData
 	{
-		glm::quat rotation;
-		glm::vec3 position;
-		glm::vec3 scale;
+		GPUTransform transform;
 
 		uint32_t meshId;
 		uint32_t materialId;
@@ -75,7 +85,7 @@ namespace Volt
 		uint32_t isAnimated;
 		uint32_t boneOffset;
 		PrimitiveFlags flags;
-		glm::uvec2 padding;
+		float padding;
 	};
 
 	struct SDFPrimitiveDrawData
@@ -123,4 +133,12 @@ namespace Volt
 		// Sky: .x=LOD
 		glm::vec4 lightSpecific;
 	};
+
+	BEGIN_SHADER_PARAMETER_STRUCT(GPUSceneParameters)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrimitiveDrawDataBuffer)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrevPrimitiveDrawDataBuffer)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<GPUMesh>, GPUMeshes)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<LightDrawData>, SceneLights)
+		SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<float4x4>, AnimatedBones)
+	END_SHADER_PARAMETER_STRUCT()
 }

@@ -3,18 +3,21 @@
 #include "RHIModule/Core/RHIInterface.h"
 #include "RHIModule/Core/RHICommon.h"
 
+#include <CoreUtilities/Containers/VectorVariants.h>
+
 namespace Volt::RHI
 {
 	class CommandBuffer;
 	class Semaphore;
 	class Fence;
+	class Fence;
 
 	struct DeviceQueueExecuteInfo
 	{
-		Vector<RawPtr<CommandBuffer>> commandBuffers;
-		Vector<RawPtr<Semaphore>> signalSemaphores;
+		InlineVector<RefPtr<CommandBuffer>, 1> commandBuffers;
+		InlineVector<RefPtr<Fence>, 1> signalFences;
 	
-		RawPtr<Fence> fence;
+		RefPtr<Fence> executionFence;
 	};
 
 	class VTRHI_API DeviceQueue : public RHIInterface
@@ -25,11 +28,7 @@ namespace Volt::RHI
 		virtual void WaitForQueue() = 0;
 		virtual void Execute(const DeviceQueueExecuteInfo& executeInfo) = 0;
 
-		static RefPtr<DeviceQueue> Create(const DeviceQueueCreateInfo& createInfo);
-
 	protected:
 		DeviceQueue() = default;
-
-		QueueType m_queueType = QueueType::Graphics;
 	};
 }

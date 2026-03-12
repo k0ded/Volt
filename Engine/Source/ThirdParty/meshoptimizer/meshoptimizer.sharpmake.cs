@@ -17,6 +17,6 @@ namespace VoltSharpmake
             base.ConfigureAll(conf, target);
 
             conf.IncludePaths.Add("src");
-        }
+		}
     }
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <RHIModule/Images/Image.h>
-#include <CoreUtilities/Containers/ThreadSafeMap.h>
+#include <RHIModule/ResourceViewCache.h>
 
 struct VkImage_T;
 
@@ -13,37 +13,33 @@ namespace Volt::RHI
 	class VulkanImage final : public Image
 	{
 	public:
-		VulkanImage(const ImageSpecification& specification, const void* data, RefPtr<GPUAllocator> allocator);
-		VulkanImage(const SwapchainImageSpecification& specification);
+		VulkanImage(const ImageDesc& specification, const void* data);
+		VulkanImage(const SwapchainImageDesc& specification);
 		~VulkanImage() override;
 
-		void Invalidate(const uint32_t width, const uint32_t height, const uint32_t depth, const void* data) override;
-		void Release() override;
-		void GenerateMips() override;
-
-		RefPtr<ImageView> GetView(const int32_t mip, const int32_t layer) override;
-		RefPtr<ImageView> GetArrayView(const int32_t mip /* = -1 */) override;
-
-		VT_INLINE const uint32_t GetWidth() const override { return m_specification.width; }
-		VT_INLINE const uint32_t GetHeight() const override { return m_specification.height; }
-		VT_INLINE const uint32_t GetDepth() const override { return m_specification.depth; }
-		VT_INLINE const uint32_t GetMipCount() const override { return m_specification.mips; }
-		VT_INLINE const uint32_t GetLayerCount() const override { return m_specification.layers; }
-		VT_INLINE const PixelFormat GetFormat() const override { return m_specification.format; }
-		VT_INLINE const ImageUsage GetUsage() const override { return m_specification.usage; }
- 		const uint32_t CalculateMipCount() const override;
+		/*
+			Image Interface
+		*/
+		RefPtr<ImageView> GetView(const ImageViewDesc& desc) override;
+		VT_INLINE const uint32_t GetWidth() const override { return m_desc.width; }
+		VT_INLINE const uint32_t GetHeight() const override { return m_desc.height; }
+		VT_INLINE const uint32_t GetDepth() const override { return m_desc.depth; }
 		VT_INLINE const bool IsSwapchainImage() const override { return m_isSwapchainImage; };
 		VT_INLINE const ImageAspect GetImageAspect() const override { return m_imageAspect; }
+		VT_INLINE const ImageDesc& GetDesc() const override { return m_desc; }
 
-		VT_INLINE ResourceType GetType() const override { return m_specification.imageType; }
+		/*
+			RHIResource Interface
+		*/
+		VT_INLINE ResourceType GetType() const override { return m_desc.imageType; }
 		void SetName(const std::string& name) override;
 		std::string_view GetName() const override;
-		const uint64_t GetDeviceAddress() const override;
-		const uint64_t GetByteSize() const override;
+		uint64_t GetDeviceAddress() const override;
+		const MemoryRequirement& GetMemoryRequirements() const override;
+		uint64_t GetResourceByteSize() const override;
 
 	protected:
 		void* GetHandleImpl() const override;
-		Buffer ReadPixelInternal(const uint32_t x, const uint32_t y, const uint32_t z, const size_t stride) override;
 
 	private:
 		struct SwapchainImageData
@@ -51,25 +47,21 @@ namespace Volt::RHI
 			VkImage_T* image = nullptr;
 		};
 
-		void InvalidateSwapchainImage(const SwapchainImageSpecification& specification);
+		void Invalidate(const uint32_t width, const uint32_t height, const uint32_t depth, const void* data);
+		void Release();
+
+		void InvalidateSwapchainImage(const SwapchainImageDesc& specification);
 		void TransitionToLayout(ImageLayout targetLayout);
 		void InitializeWithData(const void* data);
 
-		ImageSpecification m_specification;
+		ImageDesc m_desc;
 		SwapchainImageData m_swapchainImageData;
+		ImageViewCache m_viewCache;
 
 		Handle<Allocation> m_allocation;
-		RawPtr<GPUAllocator> m_allocator;
 
-		bool m_hasGeneratedMips = false;
 		bool m_isSwapchainImage = false;
 
 		ImageAspect m_imageAspect = ImageAspect::None;
-
-		vt::map<int32_t, ThreadSafeMap<int32_t, RefPtr<ImageView>>> m_imageViews;
-		vt::map<int32_t, RefPtr<ImageView>> m_arrayImageViews;
-	
-		std::mutex m_imageViewsMutex;
-		std::mutex m_arrayImageViewsMutex;
 	};
 }

@@ -1,68 +1,77 @@
 #include "vkpch.h"
+
 #include "VulkanRHIModule/Synchronization/VulkanFence.h"
 
-#include "VulkanRHIModule/Common/VulkanCommon.h"
-
 #include <RHIModule/Graphics/GraphicsContext.h>
-#include <RHIModule/Graphics/GraphicsDevice.h>
-
-#include <RHIModule/RHIProxy.h>
 
 #include <vulkan/vulkan.h>
 
 namespace Volt::RHI
 {
-	VulkanFence::VulkanFence(const FenceCreateInfo& createInfo)
+	VulkanFence::VulkanFence()
 	{
-		VkFenceCreateInfo info{};
-		info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		info.pNext = nullptr;
-		info.flags = createInfo.createSignaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
 
-		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateFence(device->GetHandle<VkDevice>(), &info, nullptr, &m_fence));
 	}
 
 	VulkanFence::~VulkanFence()
 	{
-		RHIProxy::GetInstance().DestroyResource([fence = m_fence]()
-		{
-			auto device = GraphicsContext::GetDevice();
-			vkDestroyFence(device->GetHandle<VkDevice>(), fence, nullptr);
-		});
-	}
 
-	void VulkanFence::Reset() const
-	{
-		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkResetFences(device->GetHandle<VkDevice>(), 1, &m_fence));
-	}
-
-	FenceStatus VulkanFence::GetStatus() const
-	{
-		auto device = GraphicsContext::GetDevice();
-		VkResult result = vkGetFenceStatus(device->GetHandle<VkDevice>(), m_fence);
-
-		if (result == VK_SUCCESS)
-		{
-			return FenceStatus::Signaled;
-		}
-		else if (result == VK_NOT_READY)
-		{
-			return FenceStatus::Unsignaled;
-		}
-
-		return FenceStatus::Error;
 	}
 
 	void VulkanFence::WaitUntilSignaled() const
 	{
-		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkWaitForFences(device->GetHandle<VkDevice>(), 1, &m_fence, VK_TRUE, UINT64_MAX));
+		if (!m_hasBeenSubmitted.load(std::memory_order::relaxed))
+		{
+			return;
+		}
+
+		// Wait for the semaphore value to be set.
+		m_referencedValue.wait(0, std::memory_order::relaxed);
+
+		if (m_referencedSemaphore)
+		{
+			uint64_t tempValue = m_referencedValue.load(std::memory_order::relaxed);
+
+			VkSemaphoreWaitInfo waitInfo{};
+			waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+			waitInfo.semaphoreCount = 1;
+			waitInfo.pSemaphores = &m_referencedSemaphore;
+			waitInfo.pValues = &tempValue;
+
+			auto device = GraphicsContext::GetDevice();
+			vkWaitSemaphores(device->GetHandle<VkDevice>(), &waitInfo, UINT64_MAX);
+		}
 	}
 
 	void* VulkanFence::GetHandleImpl() const
 	{
-		return m_fence;
+		return nullptr;
+	}
+
+	bool VulkanFence::IsSignaled() const
+	{
+		if (m_referencedSemaphore)
+		{
+			uint64_t value;
+			auto device = GraphicsContext::GetDevice();
+			vkGetSemaphoreCounterValue(device->GetHandle<VkDevice>(), m_referencedSemaphore, &value);
+
+			return value >= m_referencedValue;
+		}
+
+		// If no fence is referenced, we treat it as signaled.
+		return true;
+	}
+
+	void VulkanFence::Reset()
+	{
+		m_referencedSemaphore = nullptr;
+	}
+
+	void VulkanFence::AssignSemaphore(VkSemaphore_T* semaphore, uint64_t value)
+	{
+		m_referencedSemaphore = semaphore;
+		m_referencedValue.store(value, std::memory_order::relaxed);
+		m_referencedValue.notify_all();
 	}
 }

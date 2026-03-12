@@ -3,24 +3,45 @@
 #include "VulkanRHIModule/Core.h"
 #include <RHIModule/Buffers/BufferView.h>
 
-struct VkBuffer_T;
+#include <vulkan/vulkan.h>
+
+struct VkBufferView_T;
 
 namespace Volt::RHI
 {
-	class VulkanBufferView : public BufferView
+	class VulkanBufferView final : public BufferView
 	{
 	public:
-		VulkanBufferView(const BufferViewSpecification& specification);
-		~VulkanBufferView() override = default;
+		struct DescriptorDescription
+		{
+			VkDescriptorGetInfoEXT vkDescriptorInfo;
+			VkDescriptorAddressInfoEXT addressInfo;
+			uint64_t descriptorSize;
+		};
 
-		[[nodiscard]] const uint64_t GetDeviceAddress() const override;
+		VulkanBufferView(const BufferViewDesc& desc, RawPtr<Buffer> buffer);
+		VulkanBufferView(const BufferViewDesc& desc, RawPtr<UniformBuffer> buffer);
+		~VulkanBufferView() override;
 
-		RHIResource* GetResource() const { return m_buffer; }
+		VT_NODISCARD const uint64_t GetDeviceAddress() const override;
+
+		RawPtr<RHIResource> GetResource() const { return m_resource; }
+		bool IsTexelBufferView() const override;
+
+		VT_NODISCARD VT_INLINE const BufferViewDesc& GetDesc() const override { return m_desc; }
+		VT_NODISCARD VT_INLINE const DescriptorDescription& GetSRVDescriptor() const { return m_srvDescriptor; }
+		VT_NODISCARD VT_INLINE const DescriptorDescription& GetUAVDescriptor() const { return m_uavDescriptor; }
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
-		RHIResource* m_buffer = nullptr;
+		void CreateView();
+
+		BufferViewDesc m_desc;
+		RawPtr<RHIResource> m_resource;
+
+		DescriptorDescription m_srvDescriptor;
+		DescriptorDescription m_uavDescriptor;
 	};
 }

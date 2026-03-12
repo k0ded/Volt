@@ -1,7 +1,7 @@
 #pragma once
 
 #include <CoreUtilities/UUID.h>
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetType.h>
 
 #include <CoreUtilities/Containers/Vector.h>
 

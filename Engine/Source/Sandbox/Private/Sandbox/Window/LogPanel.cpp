@@ -1,9 +1,16 @@
 #include "sbpch.h"
 #include "Window/LogPanel.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include "Sandbox/Utility/EditorSearchBar.h"
+#include "Sandbox/Utility/Theme.h"
+#include "Sandbox/Utility/EditorUtilities.h"
+
+#include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/UIScopedHelpers.h>
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
+
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Utility
 {
@@ -23,9 +30,11 @@ namespace Utility
 }
 
 LogPanel::LogPanel()
-	: EditorWindow("Log")
+	: EditorWindow("Output Log")
 {
 	Open();
+
+	m_windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
 	m_callbackHandle = Log::Get().RegisterCallback([&](const LogCallbackData& message)
 	{
@@ -35,9 +44,16 @@ LogPanel::LogPanel()
 		{
 			m_logMessages.erase(m_logMessages.begin());
 		}
+
+		TryAppendLogMessage(message);
 	});
 
-	m_categories.emplace_back("Default");
+	SetupLogCategories();
+
+	for (size_t i = 0; i < m_logVerbosityActive.size(); ++i)
+	{
+		m_logVerbosityActive[i] = true;
+	}
 }
 
 LogPanel::~LogPanel()
@@ -48,143 +64,263 @@ LogPanel::~LogPanel()
 
 void LogPanel::UpdateMainContent()
 {
-	if (ImGui::Button("Clear"))
+	RenderTopBar();
+	RenderLogChildWindow();
+	RenderBottomBar();
+}
+
+void LogPanel::RenderTopBar()
+{
+	constexpr float TopBarHeight = 30.f;
+
+	UI::ScopedColor childColor{ ImGuiCol_ChildBg, { 0.2f, 0.2f, 0.2f, 1.f } };
+
+	if (ImGui::BeginChild("##topBar", { ImGui::GetContentRegionAvail().x, TopBarHeight }))
 	{
-		std::scoped_lock lock{ m_logMutex };
+		static bool active = false;
 
-		m_logMessages.clear();
-		m_categories.clear();
-		m_categories.emplace_back("Default");
-	}
-
-	ImGui::SameLine();
-	ImGui::PushItemWidth(200.f);
-
-	static std::string commandStr;
-
-	if (ImGui::InputTextWithHintString("##commandLine", "Command...", &commandStr, ImGuiInputTextFlags_EnterReturnsTrue))
-	{
-		auto strings = Utility::SplitStringsByCharacter(commandStr, ' ');
-		if (!strings.empty())
+		static EditorSearchBar searchBar({ 0.2f, 0.2f, 0.2f, 1.f }, false);
+		if (searchBar.Render(200.f))
 		{
-			if (Volt::ConsoleVariableRegistry::VariableExists(strings[0]))
+			RefilterLogMessages();
+		}
+
+		m_logSearchQuery = searchBar.GetSearchQuery();
+
+		ImGui::SameLine();
+
+		if (ImGui::BeginChild("##filtersChild", { 200.f, 0.f }, ImGuiChildFlags_None, ImGuiWindowFlags_MenuBar))
+		{
+			if (ImGui::BeginMenuBar())
 			{
-				auto variable = Volt::ConsoleVariableRegistry::GetVariable(strings[0]);
-
-				std::string message = std::string(variable->GetName()) + " = ";
-
-				if (strings.size() > 1)
+				if (ImGui::BeginMenu("Filters"))
 				{
-					if (variable->IsFloat())
+					bool requiresUpdate = false;
+
+					if (ImGui::BeginMenu("Categories"))
 					{
-						const float value = std::stof(strings[1]);
-						variable->Set(&value);
-					}
-					else if (variable->IsInteger())
-					{
-						const int32_t value = std::stoi(strings[1]);
-						variable->Set(&value);
-					}
-					else if (variable->IsString())
-					{
-						variable->Set(&strings[1]);
+						for (LogCategoryData& category : m_logCategories)
+						{
+							requiresUpdate |= ImGui::Checkbox(category.category->GetName().data(), &category.isActive);
+						}
+
+						ImGui::EndMenu();
 					}
 
-					message += strings[1];
+					static const std::vector<const char*> logVerbosityNames =
+					{
+						"Trace",
+						"Info",
+						"Warning",
+						"Error",
+						"Critical"
+					};
+
+					for (size_t i = 0; i < logVerbosityNames.size(); ++i)
+					{
+						requiresUpdate |= ImGui::Checkbox(logVerbosityNames[i], &m_logVerbosityActive[i]);
+					}
+
+					ImGui::EndMenu();
+				
+					if (requiresUpdate)
+					{
+						RefilterLogMessages();
+					}
+				}
+
+				ImGui::EndMenuBar();
+			}
+		}
+		ImGui::EndChild();
+	}
+	ImGui::EndChild();
+}
+
+void LogPanel::RenderLogChildWindow()
+{
+	VT_PROFILE_FUNCTION();
+
+	constexpr float BottomBarHeight = 30.f;
+	const float height = ImGui::GetContentRegionAvail().y - BottomBarHeight;
+
+	UI::ScopedColor childColor{ ImGuiCol_ChildBg, EditorTheme::DarkGreyBackground };
+
+	if (ImGui::BeginChild("##logChild", ImVec2{ ImGui::GetContentRegionAvail().x, height }))
+	{
+		for (const auto& msg : m_filteredLogMessages)
+		{
+			ImVec4 color = Utility::GetColorFromLevel(msg.severity);
+
+			ImGui::PushStyleColor(ImGuiCol_Text, Utility::GetColorFromLevel(msg.severity));
+			ImGui::TextWrapped("%s", msg.message.c_str());
+			ImGui::PopStyleColor();
+		}
+
+		if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+		{
+			ImGui::SetScrollHereY(1.f);
+		}
+	}
+	ImGui::EndChild();
+}
+
+void LogPanel::RenderBottomBar()
+{
+	constexpr float BottomBarHeight = 30.f;
+
+	UI::ScopedColor childColor{ ImGuiCol_ChildBg, { 0.2f, 0.2f, 0.2f, 1.f } };
+
+	if (ImGui::BeginChild("##bottomBar", { ImGui::GetContentRegionAvail().x, BottomBarHeight }))
+	{
+		static std::string query;
+
+		ImGui::PushItemWidth(350.f);
+		UI::ShiftCursor(5.f, 4.f);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.f);
+
+		if (UI::InputTextWithHint("", query, "Enter Console Command", ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			auto strings = Utility::SplitStringsByCharacter(query, ' ');
+			if (!strings.empty())
+			{
+				if (Volt::ConsoleVariableRegistry::VariableExists(strings[0]))
+				{
+					auto variable = Volt::ConsoleVariableRegistry::GetVariable(strings[0]);
+
+					std::string message = std::string(variable->GetName()) + " = ";
+
+					if (strings.size() > 1)
+					{
+						if (variable->IsFloat())
+						{
+							const float value = std::stof(strings[1]);
+							variable->Set(&value);
+						}
+						else if (variable->IsInteger())
+						{
+							const int32_t value = std::stoi(strings[1]);
+							variable->Set(&value);
+						}
+						else if (variable->IsString())
+						{
+							variable->Set(&strings[1]);
+						}
+
+						message += strings[1];
+					}
+					else
+					{
+						if (variable->IsFloat())
+						{
+							message += std::to_string(*static_cast<const float*>(variable->Get()));
+						}
+						else if (variable->IsInteger())
+						{
+							message += std::to_string(*static_cast<const int32_t*>(variable->Get()));
+						}
+						else if (variable->IsString())
+						{
+							message += *static_cast<const std::string*>(variable->Get());
+						}
+					}
+
+					VT_LOG(Trace, message);
 				}
 				else
 				{
-					if (variable->IsFloat())
-					{
-						message += std::to_string(*static_cast<const float*>(variable->Get()));
-					}
-					else if (variable->IsInteger())
-					{
-						message += std::to_string(*static_cast<const int32_t*>(variable->Get()));
-					}
-					else if (variable->IsString())
-					{
-						message += *static_cast<const std::string*>(variable->Get());
-					}
-
+					VT_LOG(Trace, "Command {0} not found!", strings[0]);
 				}
-
-				VT_LOG(Trace, message);
 			}
-			else
-			{
-				VT_LOG(Trace, "Command {0} not found!", strings[0]);
-			}
+
+			query.clear();
 		}
 
-		commandStr = "";
+		ImGui::PopStyleVar();
+		ImGui::PopItemWidth();
 	}
-
-	std::scoped_lock lock{ m_logMutex };
-
-	ImGui::SameLine();
-	static int32_t logLevel = 0;
-
-	if (ImGui::Combo("##level", &logLevel, "Trace\0Info\0Warning\0Error\0Critical"))
-	{
-	}
-	ImGui::PopItemWidth();
-
-	ImGui::SameLine();
-	static int32_t logCategory = 0;
-
-	if (logCategory > m_categories.size() - 1)
-	{
-		logCategory = 0;
-	}
-
-	ImGui::PushItemWidth(200.f);
-	UI::Combo("Category", *(int*)&logCategory, m_categories);
-	ImGui::PopItemWidth();
-
-	m_currentLogMessages.clear();
-	for (const auto msg : m_logMessages)
-	{
-		bool newCategory = true;
-
-		for (const auto& cat : m_categories)
-		{
-			if (cat == msg.category)
-			{
-				newCategory = false;
-				break;
-			}
-		}
-
-		if (newCategory)
-		{
-			m_categories.emplace_back(msg.category);
-		}
-
-		if (static_cast<int32_t>(msg.severity) >= logLevel && (logCategory == 0 || msg.category == m_categories[logCategory]))
-		{
-			m_currentLogMessages.emplace_back(msg);
-		}
-	}
-
-	UI::ScopedColor childColor(ImGuiCol_ChildBg, { 0.18f, 0.18f, 0.18f, 1.f });
-	ImGui::BeginChild("log", ImGui::GetContentRegionAvail());
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, 0.f));
-
-	for (const auto& msg : m_currentLogMessages)
-	{
-		ImVec4 color = Utility::GetColorFromLevel(msg.severity);
-
-		ImGui::PushStyleColor(ImGuiCol_Text, Utility::GetColorFromLevel(msg.severity));
-		ImGui::TextWrapped(msg.message.c_str());
-		ImGui::PopStyleColor();
-	}
-
-	if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-	{
-		ImGui::SetScrollHereY(1.f);
-	}
-
-	ImGui::PopStyleVar();
 	ImGui::EndChild();
+}
+
+void LogPanel::SetupLogCategories()
+{
+	const Vector<LogCategoryBase*>& logCategories = LogCategoryRegistry::Get().GetRegisteredLogCategories();
+
+	for (LogCategoryBase* category : logCategories)
+	{
+		auto& newCategory = m_logCategories.emplace_back();
+		newCategory.category = category;
+		newCategory.isActive = true;
+	}
+}
+
+void LogPanel::TryAppendLogMessage(const LogCallbackData& logData)
+{
+	if (DoesLogEntryPassFilters(logData))
+	{
+		m_filteredLogMessages.emplace_back(logData);
+	}
+}
+
+bool LogPanel::DoesLogEntryPassFilters(const LogCallbackData& logData)
+{
+	if (!m_logVerbosityActive[static_cast<size_t>(logData.severity)])
+	{
+		return false;
+	}
+
+	bool categoryActive = false;
+	bool categoryFound = false;
+
+	for (const LogCategoryData& category : m_logCategories)
+	{
+		if (logData.category == category.category)
+		{
+			if (category.isActive)
+			{
+				categoryActive = true;
+			}
+
+			categoryFound = true;
+			break;
+		}
+	}
+
+	// If the category is not found (was not registered for some reason, we add it)
+	if (!categoryFound)
+	{
+		auto& newCategory = m_logCategories.emplace_back();
+		newCategory.category = logData.category;
+		newCategory.isActive = true;
+
+		categoryActive = true;
+	}
+
+	if (!categoryActive)
+	{
+		return false;
+	}
+
+	if (!m_logSearchQuery.empty())
+	{
+		if (!Utility::StringContains(logData.message, m_logSearchQuery))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void LogPanel::RefilterLogMessages()
+{
+	m_filteredLogMessages.clear();
+	for (const LogCallbackData& logMessage : m_logMessages)
+	{
+		if (DoesLogEntryPassFilters(logMessage))
+		{
+			m_filteredLogMessages.emplace_back(logMessage);
+		}
+	}
 }

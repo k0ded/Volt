@@ -1,14 +1,15 @@
 #pragma once
 
 #ifdef VT_ENABLE_NV_AFTERMATH
-
 #include "VulkanRHIModule/Common/VulkanNsightAftermath.h"
-
 #endif
+
+#include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
 #include <cstdint>
 
 const char* VKResultToString(int32_t result);
+void HandleDeviceLost();
 
 #ifdef VT_ENABLE_NV_AFTERMATH
 
@@ -18,7 +19,13 @@ const char* VKResultToString(int32_t result);
 
 #ifdef VT_ENABLE_ASSERTS
 
-#define VT_VK_CHECK(x) VT_ASSERT_MSG((x) == VK_SUCCESS, std::format("Vulkan Error: {0}", VKResultToString(x)).c_str())
+#define VT_VK_CHECK(x) \
+	do { \
+		VkResult res = x; \
+		if (res == VK_ERROR_DEVICE_LOST) \
+			HandleDeviceLost(); \
+		VT_ASSERT_MSG((res) == VK_SUCCESS, std::format("Vulkan Error: {0}", VKResultToString(res)).c_str()); \
+	} while(0)
 
 #else
 #define VT_VK_CHECK(x) x

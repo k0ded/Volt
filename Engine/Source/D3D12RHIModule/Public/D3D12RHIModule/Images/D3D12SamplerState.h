@@ -8,14 +8,16 @@ namespace Volt::RHI
 {
 	class D3D12SamplerState : public SamplerState
 	{
-	public: 
-		D3D12SamplerState(const SamplerStateCreateInfo& createInfo);
+	public:
+		D3D12SamplerState(const SamplerStateDesc& createInfo);
 		~D3D12SamplerState() override;
+
+		VT_NODISCARD VT_INLINE const D3D12DescriptorPointer& GetDescriptor() const { return m_descriptor; }
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
-		mutable D3D12DescriptorPointer m_samplerDescriptor;
+		D3D12DescriptorPointer m_descriptor;
 	};
 }

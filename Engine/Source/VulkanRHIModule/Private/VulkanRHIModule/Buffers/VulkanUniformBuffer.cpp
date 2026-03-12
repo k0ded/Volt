@@ -11,39 +11,49 @@
 
 #include <RHIModule/Memory/Allocation.h>
 #include <RHIModule/Memory/MemoryUtility.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
+
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt::RHI
 {
-	VulkanUniformBuffer::VulkanUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name)
-		: m_size(size), m_name(name)
+	VulkanUniformBuffer::VulkanUniformBuffer(const UniformBufferDesc& desc, const void* initialData)
+		: m_desc(desc)
 	{
-		GraphicsContext::GetResourceStateTracker()->AddResource(this, BarrierStage::None, BarrierAccess::None);
+		m_resourceStateTracker.Initialize(this, BarrierStage::None, BarrierAccess::None);
 
 		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
-		const uint64_t alignedSize = Utility::Align(size, deviceProperties.limits.minUniformBufferOffsetAlignment);
+		
+		VT_ENSURE_MSG(desc.size % 16u == 0, "UniformBuffers must be 16 byte aligned!");
+		const uint64_t alignedSize = Utility::Align(desc.size, deviceProperties.limits.minUniformBufferOffsetAlignment);
 
-		const VkDeviceSize bufferSize = alignedSize * count;
-		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferSize, BufferUsage::UniformBuffer, MemoryUsage::CPUToGPU, m_name);
+		BufferDesc bufferDesc{};
+		bufferDesc.numElements = 1;
+		bufferDesc.elementSize = alignedSize;
+		bufferDesc.usage = BufferUsage::UniformBuffer | BufferUsage::DeviceAddress;
+		bufferDesc.memoryUsage = MemoryUsage::CPUToGPU;
+		bufferDesc.debugName = desc.debugName;
 
-		if (data)
+		m_allocation = GraphicsContext::GetDefaultAllocator()->CreateBuffer(bufferDesc);
+
+		if (initialData)
 		{
-			SetData(data, size);
+			void* mappedData = MapInternal();
+			memcpy_s(mappedData, desc.size, initialData, desc.size);
+			Unmap();
 		}
 
-		SetName(name);
+		SetName(desc.debugName);
 	}
 
 	VulkanUniformBuffer::~VulkanUniformBuffer()
 	{
-		GraphicsContext::GetResourceStateTracker()->RemoveResource(this);
-
 		if (m_allocation == nullptr)
 		{
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([allocation = m_allocation]() 
+		RHIModule::GetInstance().DestroyResource([allocation = m_allocation]() 
 		{
 			GraphicsContext::GetDefaultAllocator()->DestroyBuffer(allocation);
 		});
@@ -51,25 +61,14 @@ namespace Volt::RHI
 		m_allocation = nullptr;
 	}
 
-	RefPtr<BufferView> VulkanUniformBuffer::GetView()
+	RefPtr<BufferView> VulkanUniformBuffer::GetView(const BufferViewDesc& desc)
 	{
-		BufferViewSpecification spec{};
-		spec.bufferResource = this;
-
-		return BufferView::Create(spec);
+		return BufferView::Create(desc, this);
 	}
 
-	const uint32_t VulkanUniformBuffer::GetSize() const
+	uint64_t VulkanUniformBuffer::GetSize() const
 	{
-		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
-		return Utility::Align(m_size, deviceProperties.limits.minUniformBufferOffsetAlignment);
-	}
-
-	void VulkanUniformBuffer::SetData(const void* data, const uint32_t size)
-	{
-		void* bufferData = m_allocation->Map<void>();
-		memcpy_s(bufferData, m_size, data, size);
-		m_allocation->Unmap();
+		return m_desc.size;
 	}
 
 	void VulkanUniformBuffer::Unmap()
@@ -91,35 +90,37 @@ namespace Volt::RHI
 			Volt::RHI::vkSetDebugUtilsObjectNameEXT(device->GetHandle<VkDevice>(), &nameInfo);
 		}
 
-		m_name = name;
+		m_desc.debugName = name;
 	}
 
 	std::string_view VulkanUniformBuffer::GetName() const
 	{
-		return m_name;
+		return m_desc.debugName;
 	}
 
-	const uint64_t VulkanUniformBuffer::GetDeviceAddress() const
+	uint64_t VulkanUniformBuffer::GetDeviceAddress() const
 	{
 		return m_allocation->GetDeviceAddress();
 	}
 
-	const uint64_t VulkanUniformBuffer::GetByteSize() const
+	void* VulkanUniformBuffer::MapInternal()
 	{
-		return m_allocation->GetSize();
-	}
-
-	void* VulkanUniformBuffer::MapInternal(const uint32_t index)
-	{
-		const auto& deviceProperties = GraphicsContext::GetPhysicalDevice()->As<VulkanPhysicalGraphicsDevice>()->GetProperties();
-		const uint32_t offset = Utility::Align(m_size, deviceProperties.limits.minUniformBufferOffsetAlignment) * index;
-
 		uint8_t* bytePtr = m_allocation->Map<uint8_t>();
-		return &bytePtr[offset];
+		return bytePtr;
 	}
 
 	void* VulkanUniformBuffer::GetHandleImpl() const
 	{
 		return m_allocation->GetResourceHandle<VkBuffer>();
+	}
+
+	const MemoryRequirement& VulkanUniformBuffer::GetMemoryRequirements() const
+	{
+		return m_allocation->GetMemoryRequirements();
+	}
+
+	uint64_t VulkanUniformBuffer::GetResourceByteSize() const
+	{
+		return m_desc.size;
 	}
 }

@@ -2,7 +2,6 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
-#include <Volt/Core/Base.h>
 #include <CoreUtilities/UUID.h>
 
 #include <imgui_node_editor.h>

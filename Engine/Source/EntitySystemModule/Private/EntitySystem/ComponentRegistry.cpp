@@ -1,8 +1,6 @@
 #include "espch.h"
 #include "ComponentRegistry.h"
 
-Volt::ComponentRegistry g_componentRegistry;
-
 namespace Volt
 {
 	void ComponentRegistry::ClearRegistry()
@@ -43,37 +41,44 @@ namespace Volt
 		return m_typeNameToGUIDMap.at(typeName);
 	}
 
+
+	ComponentRegistry& ComponentRegistry::Get()
+	{
+		static ComponentRegistry registry;
+		return registry;
+	}
+
 	void ComponentRegistry::Helpers::AddComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity)
 	{
-		ComponentRegistry& componentRegistry = GetComponentRegistry();
+		ComponentRegistry& componentRegistry = ComponentRegistry::Get();
 		VT_ENSURE(componentRegistry.m_componentHelperFunctions.contains(guid));
 		componentRegistry.m_componentHelperFunctions.at(guid).addComponent(registry, entity);
 	}
 
 	void ComponentRegistry::Helpers::RemoveComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity)
 	{
-		ComponentRegistry& componentRegistry = GetComponentRegistry();
+		ComponentRegistry& componentRegistry = ComponentRegistry::Get();
 		VT_ENSURE(componentRegistry.m_componentHelperFunctions.contains(guid));
 		componentRegistry.m_componentHelperFunctions.at(guid).removeComponent(registry, entity);
 	}
 
 	const bool ComponentRegistry::Helpers::HasComponentWithGUID(const VoltGUID& guid, const entt::registry& registry, entt::entity entity)
 	{
-		ComponentRegistry& componentRegistry = GetComponentRegistry();
+		ComponentRegistry& componentRegistry = ComponentRegistry::Get();
 		VT_ENSURE(componentRegistry.m_componentHelperFunctions.contains(guid));
 		return componentRegistry.m_componentHelperFunctions.at(guid).hasComponent(registry, entity);
 	}
 
 	void* ComponentRegistry::Helpers::GetComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity)
 	{
-		ComponentRegistry& componentRegistry = GetComponentRegistry();
+		ComponentRegistry& componentRegistry = ComponentRegistry::Get();
 		VT_ENSURE(componentRegistry.m_componentHelperFunctions.contains(guid));
 		return componentRegistry.m_componentHelperFunctions.at(guid).getComponent(registry, entity);
 	}
 
 	void ComponentRegistry::Helpers::SetupComponentCallbacks(entt::registry& registry)
 	{
-		ComponentRegistry& componentRegistry = GetComponentRegistry();
+		ComponentRegistry& componentRegistry = ComponentRegistry::Get();
 		for (auto& [uuid, helpers] : componentRegistry.m_componentHelperFunctions)
 		{
 			helpers.setupOnCreate(registry);

@@ -70,6 +70,50 @@ namespace Volt::RHI
 			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		}
 
+		inline static D3D12_BLEND VoltToD3D12BlendFactor(AttachmentBlendFactor blendFactor)
+		{
+			switch (blendFactor)
+			{
+				case AttachmentBlendFactor::Zero: return D3D12_BLEND_ZERO;
+				case AttachmentBlendFactor::One: return D3D12_BLEND_ONE;
+				case AttachmentBlendFactor::SrcColor: return D3D12_BLEND_SRC_COLOR;
+				case AttachmentBlendFactor::OneMinusSrcColor: return D3D12_BLEND_INV_SRC_COLOR;
+				case AttachmentBlendFactor::DstColor: return D3D12_BLEND_DEST_COLOR;
+				case AttachmentBlendFactor::OneMinusDstColor: return D3D12_BLEND_INV_DEST_COLOR;
+				case AttachmentBlendFactor::SrcAlpha: return D3D12_BLEND_SRC_ALPHA;
+				case AttachmentBlendFactor::OneMinusSrcAlpha: return D3D12_BLEND_INV_SRC_ALPHA;
+				case AttachmentBlendFactor::DstAlpha: return D3D12_BLEND_DEST_ALPHA;
+				case AttachmentBlendFactor::OneMinusDstAlpha: return D3D12_BLEND_INV_DEST_ALPHA;
+				case AttachmentBlendFactor::ConstantColor: return D3D12_BLEND_BLEND_FACTOR;
+				case AttachmentBlendFactor::OneMinusConstantColor: return D3D12_BLEND_INV_BLEND_FACTOR;
+				case AttachmentBlendFactor::ConstantAlpha: return D3D12_BLEND_ALPHA_FACTOR;
+				case AttachmentBlendFactor::OneMinusConstantAlpha: return D3D12_BLEND_INV_ALPHA_FACTOR;
+				case AttachmentBlendFactor::SrcAlphaSaturate: return D3D12_BLEND_SRC_ALPHA_SAT;
+				case AttachmentBlendFactor::Src1Color: return D3D12_BLEND_SRC1_COLOR;
+				case AttachmentBlendFactor::OneMinusSrc1Color: return D3D12_BLEND_INV_SRC1_COLOR;
+				case AttachmentBlendFactor::Src1Alpha: return D3D12_BLEND_SRC1_ALPHA;
+				case AttachmentBlendFactor::OneMinusSrc1Alpha: return D3D12_BLEND_INV_SRC1_ALPHA;
+			}
+
+			VT_ENSURE(false);
+			return D3D12_BLEND_ZERO;
+		}
+
+		inline static D3D12_BLEND_OP VoltToD3D12BlendOp(AttachmentBlendOp blendOp)
+		{
+			switch (blendOp)
+			{
+				case AttachmentBlendOp::Add: return D3D12_BLEND_OP_ADD;
+				case AttachmentBlendOp::Subtract: return D3D12_BLEND_OP_SUBTRACT;
+				case AttachmentBlendOp::ReverseSubtract: return D3D12_BLEND_OP_REV_SUBTRACT;
+				case AttachmentBlendOp::Min: return D3D12_BLEND_OP_MIN;
+				case AttachmentBlendOp::Max: return D3D12_BLEND_OP_MAX;
+			}
+
+			VT_ENSURE(false);
+			return D3D12_BLEND_OP_ADD;
+		}
+
 		inline static DXGI_FORMAT VoltToD3D12ElementFormat(ElementType type)
 		{
 			switch (type)
@@ -383,7 +427,7 @@ namespace Volt::RHI
 			return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		}
 
-		D3D12_RESOURCE_DESC1 GetD3D12ResourceDesc(const ImageSpecification& specification);
+		D3D12_RESOURCE_DESC1 GetD3D12ResourceDesc(const ImageDesc& specification);
 		MemoryRequirement GetMemoryRequirements(const D3D12_RESOURCE_DESC1& resourceDesc);
 	}
 }

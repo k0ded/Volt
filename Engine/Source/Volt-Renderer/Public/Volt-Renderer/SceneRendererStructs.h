@@ -1,15 +1,12 @@
 #pragma once
 
-#include <RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h>
-#include <RenderCore/RenderGraph/RenderGraph.h>
+#include "Volt-Renderer/Config.h"
+
+#include <glm/glm.hpp>
 
 namespace Volt
 {
 	class Camera;
-	class RenderContext;
-	class RenderGraphPassResources;
-	class RenderGraph;
-	class RenderGraph::Builder;
 
 	enum class VisibilityVisualization
 	{
@@ -24,6 +21,7 @@ namespace Volt
 		glm::vec2 jitter = 0.f;
 	};
 
+#if 0
 	struct ExternalImagesData
 	{
 		RenderGraphImageHandle black1x1Cube;
@@ -43,20 +41,24 @@ namespace Volt
 		RenderGraphUniformBufferHandle directionalLightShadowDataBuffer;
 	};
 
-	struct GPUSceneData
-	{
-		RenderGraphBufferHandle meshesBuffer;
-		RenderGraphBufferHandle sdfMeshesBuffer;
-		RenderGraphBufferHandle materialsBuffer;
-		RenderGraphBufferHandle primitiveDrawDataBuffer;
-		RenderGraphBufferHandle prevPrimitiveDrawDataBuffer;
-		RenderGraphBufferHandle bonesBuffer;
-		RenderGraphBufferHandle validPrimitiveDrawDatasBuffer;
-		RenderGraphBufferHandle lightsBuffer;
+	BEGIN_SHADER_PARAMETER_STRUCT(GPUSceneData)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<GPUMesh>, meshesBuffer)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<GPUMeshSDF>, sdfMeshesBuffer)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<GPUMaterial>, materialsBuffer)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<PrimitiveDrawData>, primitiveDrawDataBuffer)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<PrimitiveDrawData>, prevPrimitiveDrawDataBuffer)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<float4x4>, bonesBuffer)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<LightDrawData>, lightsBuffer)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<uint>, validPrimitiveDrawDatasBuffer)
+	END_SHADER_PARAMETER_STRUCT()
 
-		static void Build(RenderGraph::Builder& builder, const GPUSceneData& data);
-		static void Setup(RenderContext& context, const GPUSceneData& data);
-	};
+	BEGIN_SHADER_PARAMETER_STRUCT(MeshShaderCommonParameters)
+		SHADER_PARAMETER_STRUCT(GPUSceneData, GPUSceneData)
+		SHADER_PARAMETER_UNIFORM_BUFFER(vt::UniformBuffer<ViewData>, View)
+		SHADER_PARAMETER_BUFFER(vt::TypedBuffer<MeshTaskCommand>, TaskCommands)
+	END_SHADER_PARAMETER_STRUCT()
+
+	void VTR_API BuildGPUSceneData(RenderGraph::Builder& builder, const GPUSceneData& data);
 
 	struct LightBuffersData
 	{
@@ -146,4 +148,5 @@ namespace Volt
 		RenderGraphImageHandle outputTextureHandle;
 		RenderGraphImageHandle uiCommandsBufferHandle;
 	};
+#endif
 }

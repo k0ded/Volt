@@ -2,8 +2,11 @@
 
 #include "Volt-Renderer/RayTracing/RayTracingSceneGeometry.h"
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RenderCore/CommandBufferPool.h>
+
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
 
 namespace Volt
 {
@@ -19,6 +22,7 @@ namespace Volt
 			asGeometry.vertexFormat = RHI::PixelFormat::R32G32B32_SFLOAT;
 			asGeometry.vertexStride = static_cast<uint32_t>(createInfo.vertexPositionsBuffer->GetElementSize());
 			asGeometry.vertexCount = geom.vertexCount;
+			asGeometry.indexCount = geom.indexCount;
 			asGeometry.indexType = RHI::IndexType::UInt32;
 			asGeometry.flags = RHI::AccelerationStructureGeometryFlags::Opaque;
 			asGeometry.vertexPositionsBuffer = createInfo.vertexPositionsBuffer;
@@ -30,7 +34,9 @@ namespace Volt
 
 		m_accelerationStructure = RHI::AccelerationStructure::Create(asCreateInfo);
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		RHI::AccelerationStructureBuildGeometryInfo buildGeometryInfo{};
@@ -54,7 +60,7 @@ namespace Volt
 		commandBuffer->BuildAccelerationStructures({ buildGeometryInfo }, { buildRanges });
 
 		commandBuffer->End();
-		commandBuffer->ExecuteAndWait();
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithNewFence(commandBuffer);
 	}
 
 	uint64_t RayTracingSceneGeometry::GetAccelerationStructureDeviceAddress() const

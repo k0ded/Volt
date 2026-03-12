@@ -1,27 +1,31 @@
 #include "aspch.h"
 
 #include "AssetSystem/SourceAssetImporter.h"
+
 #include "SourceAssetManager.h"
 
-#include <CoreUtilities/ThreadUtilities.h>
+#include <Volt-Platforms/Platform.h>
+
 #include <CoreUtilities/Profiling/Profiling.h>
 
 VT_DEFINE_LOG_CATEGORY(LogSourceAssetManager);
 
 namespace Volt
 {
-	inline std::filesystem::path GetNonExistingFilePath(const std::filesystem::path& directory, const std::string& fileName)
+	inline std::filesystem::path GetNonExistingFilePath(const std::filesystem::path& directory, std::string_view filename)
 	{
-		std::filesystem::path filePath = AssetManager::GetFilesystemPath(directory / (fileName + ".vtasset"));
+		std::string filenameStr = std::string(filename);
+
+		std::filesystem::path filePath = g_assetManager->GetAssetFilesystemPath(directory / (filenameStr + ".vtasset"));
 		uint32_t counter = 0;
 
 		while (std::filesystem::exists(filePath))
 		{
-			filePath = AssetManager::GetFilesystemPath(directory / (fileName + "_" + std::to_string(counter) + ".vtasset"));
+			filePath = g_assetManager->GetAssetFilesystemPath(directory / (filenameStr + "_" + std::to_string(counter) + ".vtasset"));
 			counter++;
 		}
 
-		return AssetManager::GetRelativePath(filePath);
+		return g_assetManager->GetRelativeAssetFilepath(filePath);
 	}
 
 	SourceAssetManager::SourceAssetManager()
@@ -29,9 +33,11 @@ namespace Volt
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
 
+		m_importQueue.Allocate(2048);
+
 		m_assetImporterWorkerThread = CreateScope<std::thread>(std::bind(&SourceAssetManager::RunAssetImportWorker, this));
-		Thread::SetThreadName(m_assetImporterWorkerThread->native_handle(), "AssetImporterWorker");
-		Thread::SetThreadPriority(m_assetImporterWorkerThread->native_handle(), ThreadPriority::Low);
+		PlatformThread::SetThreadName(m_assetImporterWorkerThread->native_handle(), "AssetImporterWorker");
+		PlatformThread::SetThreadPriority(m_assetImporterWorkerThread->native_handle(), ThreadPriority::Low);
 	}
 
 	SourceAssetManager::~SourceAssetManager()
@@ -44,95 +50,103 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	JobFuture<Vector<Ref<Asset>>> SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const std::filesystem::path& filepath)
+	JobFuture<Vector<AssetReference<Asset>>> SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath)
 	{
 		const std::string extension = filepath.extension().string();
 
-		if (!GetSourceAssetImporterRegistry().ImporterForExtensionExists(extension))
+		if (!SourceAssetImporterRegistry::Get().ImporterForExtensionExists(extension))
 		{
 			VT_LOGC(Warning, LogSourceAssetManager, "Trying to import and asset but no importer for the extension {} exists!", extension);
 			return {};
 		}
 
-		auto resultPromise = CreateRef<JobPromise<Vector<Ref<Asset>>>>();
-		JobID importJobId = JobSystem::CreateJob([this, extension, importFunc, resultPromise]()
-		{
-			VT_PROFILE_SCOPE("Import Asset Job");
+		auto resultPromise = CreateRef<JobPromise<Vector<AssetReference<Asset>>>>();
 
+		// Create a counter which we supply to the promise.
+		JobCounterRef importCounter = JobSystem::CreateCounter();
+		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", ExecutionPriority::Latent, importCounter, [this, extension, importFunc, resultPromise, importConfig]()
+		{
 			auto result = importFunc();
 
-			for (const auto asset : result)
+			if (importConfig.createAsMemoryAsset)
 			{
-				std::filesystem::path filePath = AssetManager::GetFilePathFromAssetHandle(asset->handle);
-				filePath = GetNonExistingFilePath(filePath.parent_path(), filePath.stem().string());
-				AssetManager::SaveAssetAs(asset, filePath);
+				for (const auto& asset : result)
+				{
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} (Handle: {}) was imported!", asset->GetAssetName(), asset->GetAssetHandle());
+				}
+			}
+			else
+			{
+				for (const auto& asset : result)
+				{
+					std::filesystem::path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, std::string(asset->GetAssetName()));
+					g_assetManager->CreateFileForAsset(asset->GetAssetHandle(), filepath);
 
-				VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->assetName, filePath);
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->GetAssetName(), filepath);
+				}
 			}
 
 			resultPromise->SetValue(result);
-
-			*m_isImporterInUseMap[extension] = false;
-			m_wakeCondition.notify_one();
 		});
 
-		resultPromise->SetAssociatedJob(importJobId);
+		resultPromise->SetAssociatedCounter(importCounter);
 
 		ImportJob importJob;
 		importJob.resultPromise = resultPromise;
-		importJob.jobId = importJobId;
+		importJob.job = importJobRef;
 		importJob.debugString = filepath.string();
 
-		auto& importQueue = GetOrCreateQueue(extension);
-		importQueue.push(importJob);
-
-		m_wakeCondition.notify_one();
+		m_importQueue.Emplace(importJob);
+		m_wakeCondition.notify_all();
 
 		return resultPromise->GetFuture();
 	}
 
-	void SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const std::filesystem::path& filepath)
+	void SourceAssetManager::ImportSourceAssetInternal(ImportJobFunc&& importFunc, const ImportedCallbackFunc& importedCallback, const SourceAssetImportConfig& importConfig, const std::filesystem::path& filepath)
 	{
 		const std::string extension = filepath.extension().string();
 
-		if (!GetSourceAssetImporterRegistry().ImporterForExtensionExists(extension))
+		if (!SourceAssetImporterRegistry::Get().ImporterForExtensionExists(extension))
 		{
 			VT_LOGC(Warning, LogSourceAssetManager, "Trying to import and asset but no importer for the extension {} exists!", extension);
 			return;
 		}
 
-		JobID importJobId = JobSystem::CreateJob([this, extension, importFunc, importedCallback]()
+		JobRef importJobRef = JobSystem::CreateJob("Import Source Asset", ExecutionPriority::Latent, [this, extension, importFunc, importedCallback, importConfig]()
 		{
-			VT_PROFILE_SCOPE("Import Asset Job");
-
 			auto result = importFunc();
 
-			for (const auto asset : result)
+			if (importConfig.createAsMemoryAsset)
 			{
-				std::filesystem::path filePath = AssetManager::GetFilePathFromAssetHandle(asset->handle);
-				filePath = GetNonExistingFilePath(filePath.parent_path(), filePath.stem().string());
-				AssetManager::SaveAssetAs(asset, filePath);
+				for (const auto asset : result)
+				{
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} (Handle: {}) was imported!", asset->GetAssetName(), asset->GetAssetHandle());
+				}
+			}
+			else
+			{
+				for (const auto asset : result)
+				{
+					std::filesystem::path filepath = GetNonExistingFilePath(importConfig.destinationDirectory, std::string(asset->GetAssetName()));
+					g_assetManager->CreateFileForAsset(asset->GetAssetHandle(), filepath);
 
-				VT_LOGC(Trace, LogSourceAssetManager, "Asset {} was imported and saved to {}", asset->assetName, filePath);
+					VT_LOGC(Trace, LogSourceAssetManager, "Asset {} (Handle: {}) was imported and saved to {}", asset->GetAssetName(), asset->GetAssetHandle(), filepath);
+				}
 			}
 
-			*m_isImporterInUseMap[extension] = false;
-			m_wakeCondition.notify_one();
-
-			JobSystem::CreateAndRunJob(ExecutionPolicy::MainThread, [importedCallback, result]()
+			JobRef callbackJob = JobSystem::CreateJob("Import Callback", ExecutionPriority::Latent, ExecutionPolicy::MainThread, [importedCallback, result]()
 			{
 				importedCallback(result);
 			});
+			JobSystem::RunJob(callbackJob);
 		});
 
 		ImportJob importJob;
-		importJob.jobId = importJobId;
+		importJob.job = importJobRef;
 		importJob.debugString = filepath.string();
 
-		auto& importQueue = GetOrCreateQueue(extension);
-		importQueue.push(importJob);
-
-		m_wakeCondition.notify_one();
+		m_importQueue.Emplace(importJob);
+		m_wakeCondition.notify_all();
 	}
 
 	SourceAssetFileInformation SourceAssetManager::GetSourceAssetFileInformation(const std::filesystem::path& filepath)
@@ -141,49 +155,24 @@ namespace Volt
 
 		const std::string extension = filepath.extension().string();
 
-		if (!GetSourceAssetImporterRegistry().ImporterForExtensionExists(extension))
+		if (!SourceAssetImporterRegistry::Get().ImporterForExtensionExists(extension))
 		{
 			VT_LOGC(Warning, LogSourceAssetManager, "Trying to get file information of asset but no importer for the extension {} exists!", extension);
 			return {};
 		}
 
-		return GetSourceAssetImporterRegistry().GetImporterForExtension(extension).GetSourceFileInformation(AssetManager::GetFilesystemPath(filepath));
-	}
-
-	ThreadSafeQueue<SourceAssetManager::ImportJob>& SourceAssetManager::GetOrCreateQueue(const std::string& extension)
-	{
-		if (m_importQueues.contains(extension))
-		{
-			return *m_importQueues.at(extension);
-		}
-
-		m_importQueues[extension] = CreateScope<ThreadSafeQueue<ImportJob>>();
-		return *m_importQueues.at(extension);
+		return SourceAssetImporterRegistry::Get().GetImporterForExtension(extension).GetSourceFileInformation(g_assetManager->GetAssetFilesystemPath(filepath));
 	}
 
 	void SourceAssetManager::RunAssetImportWorker()
 	{
 		while (m_isRunning)
 		{
-			for (auto& [ext, queue] : m_importQueues)
+			ImportJob jobHolder;
+			while (m_importQueue.Pop(jobHolder))
 			{
-				if (!m_isImporterInUseMap.contains(ext))
-				{
-					m_isImporterInUseMap[ext] = CreateScope<std::atomic_bool>();
-					*m_isImporterInUseMap[ext] = false;
-				}
-
-				if (*m_isImporterInUseMap[ext])
-				{
-					continue;
-				}
-
-				ImportJob jobHolder;
-				if (queue->try_pop(jobHolder))
-				{
-					*m_isImporterInUseMap[ext] = true;
-					JobSystem::RunJob(jobHolder.jobId);
-				}
+				JobSystem::RunJob(jobHolder.job);
+				VT_LOGC(Trace, LogSourceAssetManager, "Dispatched Import job for '{}'", jobHolder.debugString);
 			}
 
 			std::unique_lock lock{ m_wakeMutex };

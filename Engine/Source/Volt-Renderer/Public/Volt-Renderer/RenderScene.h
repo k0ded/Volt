@@ -4,9 +4,19 @@
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/RenderPrimitiveData.h"
 
-#include <RenderCore/Resources/GrowingGPUBuffer.h>
+#include "Volt-Renderer/MeshPassProcessor.h"
+#include "Volt-Renderer/RenderScene/RenderSceneUpdateQueue.h"
+#include "Volt-Renderer/RenderPrimitiveDataContainer.h"
+#include "Volt-Renderer/Debug/DebugRenderer.h"
 
+#include <RenderCore/Resources/GrowingGPUBuffer.h>
+#include <RHIModule/RayTracing/RayTracingResuorceTable.h>
 #include <CoreUtilities/Containers/Map.h>
+
+#include <EventSystem/EventListener.h>
+#include <EventSystem/ApplicationEvents.h>
+
+#include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
 
 #include <span>
 
@@ -17,7 +27,7 @@ namespace Volt
 	namespace RHI
 	{
 		class BufferView;
-		class StorageBuffer;
+		class Buffer;
 	}
 
 	class EntityScene;
@@ -25,13 +35,13 @@ namespace Volt
 	class RenderGraph;
 	class MotionWeaver;
 	class RayTracingScene;
+	class TempAnimator;
 
 	struct SceneLightDescription;
 
 	struct GPUSceneBuffers
 	{
 		Ref<GrowingGPUBuffer> meshesBuffer;
-		Ref<GrowingGPUBuffer> sdfMeshesBuffer;
 		Ref<GrowingGPUBuffer> materialsBuffer;
 		Ref<GrowingGPUBuffer> primitiveDrawDataBuffer;
 		Ref<GrowingGPUBuffer> prevPrimitiveDrawDataBuffer;
@@ -39,67 +49,66 @@ namespace Volt
 		Ref<GrowingGPUBuffer> lightsBuffer;
 
 		Ref<GrowingGPUBuffer> validPrimitiveDrawDatasBuffer;
+		RGBufferRef perMeshIndirectDrawCommands;
 	};
 
-	class VTR_API RenderScene
+	class VTR_API RenderScene : public EventListener
 	{
 	public:
+		DECLARE_MULTICAST_DELEGATE_OneParam(RenderPrimitiveAddedDelegate, const RenderPrimitiveData*);
+		DECLARE_MULTICAST_DELEGATE_OneParam(RenderPrimitiveRemovedDelegate, const RenderPrimitiveData*);
+
 		RenderScene(EntityScene* sceneRef);
 		~RenderScene();
 
 		void Update(RenderGraph& renderGraph);
 		void EndFrame(RenderGraph& renderGraph);
+		void RenderDebug(RenderGraph& renderGraph, const RenderView& renderView, RGTextureRef dstTexture, RGTextureRef dstDepth);
 
-		void InvalidatePrimitiveInstance(UUID64 renderObject);
-		void InvalidateMesh(Ref<Mesh> mesh);
-		void InvalidateMaterial(Ref<RenderMaterial> material);
+		RenderPrimitiveID AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
+		RenderPrimitiveID AddPrimitiveInstance(EntityID entityId, Ref<TempAnimator> animator, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
+		void RemovePrimitiveInstance(RenderPrimitiveID id);
+		void InvalidatePrimitiveInstance(RenderPrimitiveID renderObject);
 
-		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
-		UUID64 AddPrimitiveInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex);
-		void RemovePrimitiveInstance(UUID64 id);
+		RenderPrimitiveID AddLightInstance(EntityID entityId, const SceneLightDescription& description);
+		void RemoveLightInstance(RenderPrimitiveID id);
+		void InvalidateLightInstance(RenderPrimitiveID id);
 
-		void InvalidateLightInstance(UUID64 id);
+		RayTracingInstanceID AddRayTracingInstance(EntityID entityId, Ref<Mesh> mesh, RenderPrimitiveID primitiveId);
+		void RemoveRayTracingInstance(RayTracingInstanceID instanceId);
+		void InvalidateRayTracingInstance(RayTracingInstanceID instanceId);
 
-		UUID64 AddLightInstance(EntityID entityId, const SceneLightDescription& description);
-		void RemoveLightInstance(UUID64 id);
+		void OnRenderPrimitiveAdded(const RenderPrimitiveData* renderPrimitive);
+		void OnRenderPrimitiveRemoved(const RenderPrimitiveData* renderPrimitive);
+		Vector<RenderPrimitiveData*> GetRenderPrimitives() const;
 
-		VT_INLINE VT_NODISCARD const uint32_t GetRenderObjectCount() const { return static_cast<uint32_t>(m_renderPrimitives.size()); }
-		VT_INLINE VT_NODISCARD const uint32_t GetIndividualMeshCount() const { return m_currentIndividualMeshCount; }
-		VT_INLINE VT_NODISCARD const uint32_t GetIndividualMaterialCount() const { return static_cast<uint32_t>(m_individualMaterials.size()); }
-		VT_INLINE VT_NODISCARD const uint32_t GetMeshletCount() const { return m_currentMeshletCount; }
-		VT_INLINE VT_NODISCARD const uint32_t GetDrawCount() const { return m_renderPrimitives.empty() ? 0u : static_cast<uint32_t>(m_primitiveDrawData.size()); }
-		VT_INLINE VT_NODISCARD const uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
-		VT_INLINE VT_NODISCARD const uint32_t GetSDFPrimitiveCount() const { return static_cast<uint32_t>(m_sdfPrimitiveDrawData.size()); }
+		VT_INLINE VT_NODISCARD uint32_t GetLightCount() const { return static_cast<uint32_t>(m_renderLights.size()); }
 
-		VT_NODISCARD Weak<RenderMaterial> GetMaterialFromID(const uint32_t materialId) const;
-
-		VT_NODISCARD const uint32_t GetMeshID(Weak<Mesh> mesh, uint32_t subMeshIndex) const;
-		VT_NODISCARD const uint32_t GetMaterialIndex(Weak<RenderMaterial> material) const;
-		VT_NODISCARD const uint32_t GetMeshIndex(Weak<Mesh> mesh) const;
-		VT_NODISCARD const uint32_t GetPrimitiveIndexFromID(UUID64 primitiveId) const;
+		VT_NODISCARD uint32_t GetMaterialIndex(Weak<RenderMaterial> material) const;
+		VT_NODISCARD uint32_t GetPrimitiveIndexFromID(RenderPrimitiveID primitiveId) const;
+		VT_NODISCARD VT_INLINE uint32_t GetMaxPrimitiveIndex() const { return static_cast<uint32_t>(m_primitiveIndicesContainer.GetMaxIndex()); }
 
 		VT_INLINE VT_NODISCARD const GPUSceneBuffers GetGPUSceneBuffers() const { return m_buffers; }
-
-		VT_NODISCARD Vector<RenderPrimitiveData>::iterator begin() { return m_renderPrimitives.begin(); }
-		VT_NODISCARD Vector<RenderPrimitiveData>::iterator end() { return m_renderPrimitives.end(); }
+		VT_NODISCARD GPUSceneParameters GetGPUSceneParameters(RenderGraph& renderGraph) const;
 
 		VT_NODISCARD VT_INLINE const Vector<RenderLightData>& GetRenderLightData() const { return m_renderLights; }
 
-		VT_NODISCARD const Vector<RenderPrimitiveData>::const_iterator cbegin() const { return m_renderPrimitives.cbegin(); }
-		VT_NODISCARD const Vector<RenderPrimitiveData>::const_iterator cend() const { return m_renderPrimitives.cend(); }
-
-		VT_NODISCARD const RenderPrimitiveData& GetPrimitiveDataFromID(UUID64 id) const;
-		VT_NODISCARD const RenderLightData& GetLightDataFromID(UUID64 id) const;
+		VT_NODISCARD const RenderPrimitiveData* GetPrimitiveDataFromID(RenderPrimitiveID id) const;
+		VT_NODISCARD const RenderLightData& GetLightDataFromID(RenderPrimitiveID id) const;
 
 		VT_NODISCARD VT_INLINE std::span<const GPUMesh> GetGPUMeshes() const { return m_gpuMeshes; }
 		VT_NODISCARD VT_INLINE std::span<const PrimitiveDrawData> GetPrimitiveDrawData() const { return m_primitiveDrawData; }
 		VT_NODISCARD VT_INLINE Ref<RayTracingScene> GetRayTracingScene() const { return m_rayTracingScene; }
+		VT_NODISCARD VT_INLINE RefPtr<RHI::RayTracingResourceTable> GetRayTracingResourceTable() const { return m_rayTracingResourceTable; }
+
+		VT_NODISCARD VT_INLINE RenderPrimitiveAddedDelegate& GetRenderPrimitiveAddedDelegate() { return m_renderPrimitiveAddedDelegate; }
+		VT_NODISCARD VT_INLINE RenderPrimitiveRemovedDelegate& GetRenderPrimitiveRemovedDelegate() { return m_renderPrimitiveRemovedDelegate; }
 
 	private:
 		void BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial);
+		void BuildGPUMesh(Weak<Mesh> mesh, uint32_t subMeshIndex, GPUMesh& outGPUMesh);
 
 		void BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderPrimitiveData& renderPrimitive);
-		void BuildSingleSDFPrimitiveDrawData(SDFPrimitiveDrawData& primtiveDrawData, const RenderPrimitiveData& renderPrimitive);
 		void BuildSingleLightDrawData(LightDrawData& lightDrawData, RenderLightData& renderLight);
 
 		void TryAddMesh(Ref<Mesh> mesh);
@@ -112,8 +121,19 @@ namespace Volt
 
 		void UpdateInvalidLights(RenderGraph& renderGraph);
 
+		void VisualizeRenderPrimitives();
+
+		bool OnPreRenderEvent(AppPreRenderEvent& event);
+
 		VT_NODISCARD RenderLightData& GetLightDataFromID(UUID64 id);
 		VT_NODISCARD PrimitiveDrawData& GetPrimitiveDrawDataFromIndex(size_t index);
+
+		void ProcessQueuedUpdateOperations();
+		void ProcessAddPrimitiveInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
+		void ProcessAddLightInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
+		void ProcessAddRayTracingInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
+		void ProcessQueuedRemove(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
+		void ProcessQueuedInvalidation(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate);
 
 		struct InvalidMaterial
 		{
@@ -134,6 +154,12 @@ namespace Volt
 			size_t index;
 		};
 
+		struct MeshAndSubMeshIndex
+		{
+			size_t meshIndex;
+			uint32_t subMeshIndex;
+		};
+
 		class PrimitiveIndicesContainer
 		{
 		public:
@@ -142,56 +168,70 @@ namespace Volt
 			void InvalidateIndexWithID(UUID64 id);
 
 			VT_INLINE size_t GetIndexFromID(UUID64 id) const { return m_primitiveIndexFromPrimitiveID.at(id); }
-			VT_INLINE PagedVector<size_t> GetAndClearRemovedIndices() 
+			VT_INLINE size_t GetMaxIndex() const { return m_nextIndex; }
+			VT_INLINE bool Contains(UUID64 id) const { return m_primitiveIndexFromPrimitiveID.contains(id); }
+
+			VT_INLINE Vector<size_t> GetAndClearRemovedIndices() 
 			{ 
-				PagedVector<size_t> tempVector = m_removedPrimitiveDataIndices; 
+				Vector<size_t> tempVector = m_removedPrimitiveDataIndices; 
 				m_removedPrimitiveDataIndices.clear(); 
 				return tempVector; 
 			}
 
-			VT_INLINE PagedVector<InvalidDrawData> GetAndClearInvalidIndices() 
+			VT_INLINE Vector<InvalidDrawData> GetAndClearInvalidIndices() 
 			{ 
-				PagedVector<InvalidDrawData> tempVector = m_invalidPrimitiveDataIndices;
+				Vector<InvalidDrawData> tempVector = m_invalidPrimitiveDataIndices;
 				m_invalidPrimitiveDataIndices.clear();
 				return tempVector; 
 			}
 
 		private:
-			PagedVector<size_t> m_removedPrimitiveDataIndices;
-			PagedVector<size_t> m_freePrimitiveDataIndices;
+			Vector<size_t> m_removedPrimitiveDataIndices;
+			Vector<size_t> m_freePrimitiveDataIndices;
 
-			PagedVector<InvalidDrawData> m_invalidPrimitiveDataIndices;
-			vt::map<UUID64, size_t> m_primitiveIndexFromPrimitiveID;
+			Vector<InvalidDrawData> m_invalidPrimitiveDataIndices;
+			Map<UUID64, size_t> m_primitiveIndexFromPrimitiveID;
 
 			size_t m_nextIndex = 0;
+		};
+
+		template<typename Func>
+		struct Callback
+		{
+			Func callback;
+			UUID32 id;
 		};
 
 		Ref<RayTracingScene> m_rayTracingScene;
 
 		Vector<UUID64> m_animatedRenderObjects;
-		Vector<RenderPrimitiveData> m_renderPrimitives;
 		Vector<RenderLightData> m_renderLights;
 
 		Vector<GPUMesh> m_gpuMeshes;
-		Vector<GPUMeshSDF> m_gpuSDFMeshes;
 		Vector<GPUMaterial> m_gpuMaterials;
 
 		Vector<InvalidMaterial> m_invalidMaterials;
 		Vector<InvalidMesh> m_invalidMeshes;
 
-		vt::map<AssetHandle, size_t> m_materialIndexFromMaterialHash;
-		vt::map<size_t, uint32_t> m_meshSubMeshToGPUMeshIndex;
-		vt::map<size_t, uint32_t> m_meshSubMeshToGPUMeshSDFIndex;
+		Map<size_t, size_t> m_gpuMaterialIndexFromMaterialHash;
+		Map<size_t, uint32_t> m_meshSubMeshToGPUMeshIndex;
+		Map<uint32_t, MeshAndSubMeshIndex> m_gpuMeshIndexToMeshAndSubMeshIndex;
 
-		Vector<Weak<Mesh>> m_individualMeshes;
-		Vector<Weak<RenderMaterial>> m_individualMaterials;
+		Vector<Ref<Mesh>> m_individualMeshes;
+		Vector<Ref<RenderMaterial>> m_individualMaterials;
 		Vector<glm::mat4> m_animationBufferStorage;
-		std::mutex m_materialUpdateMutex;
-		std::mutex m_meshUpdateMutex;
+
+		RefPtr<RHI::RayTracingResourceTable> m_rayTracingResourceTable;
+
+		// Render primitives
+		RenderPrimitiveAddedDelegate m_renderPrimitiveAddedDelegate;
+		RenderPrimitiveRemovedDelegate m_renderPrimitiveRemovedDelegate;
+		RenderPrimitiveDataContainer m_renderPrimitiveDataContainer;
+
+		RenderSceneUpdateQueue m_updateQueue;
 
 		// Scene Primitives
 		Vector<PrimitiveDrawData> m_primitiveDrawData;
-		Vector<SDFPrimitiveDrawData> m_sdfPrimitiveDrawData;
 		PrimitiveIndicesContainer m_primitiveIndicesContainer;
 
 		// Scene Lights
@@ -201,14 +241,16 @@ namespace Volt
 
 		Vector<InvalidDrawData> m_invalidLightDataIndices;
 
-		vt::map<UUID64, uint32_t> m_lightIndexFromLightID;
+		Map<UUID64, uint32_t> m_lightIndexFromLightID;
 
 		GPUSceneBuffers m_buffers;
 
 		EntityScene* m_scene = nullptr;
 
-		uint32_t m_currentIndividualMeshCount = 0;
 		uint32_t m_currentBoneCount = 0;
-		uint32_t m_currentMeshletCount = 0;
+		uint32_t m_frameIndex = 0;
+		
+		// Debug
+		DebugRenderer m_debugRenderer;
 	};
 }

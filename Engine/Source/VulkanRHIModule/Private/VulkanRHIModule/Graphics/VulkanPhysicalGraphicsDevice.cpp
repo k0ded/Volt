@@ -30,7 +30,7 @@ namespace Volt::RHI
 			{
 				vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
-				constexpr auto VERSION = VK_API_VERSION_1_3;
+				constexpr auto VERSION = VK_API_VERSION_1_4;
 
 				if (deviceProperties.apiVersion >= VERSION)
 				{
@@ -108,9 +108,9 @@ namespace Volt::RHI
 		}
 	}
 
-	VulkanPhysicalGraphicsDevice::VulkanPhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo)
+	VulkanPhysicalGraphicsDevice::VulkanPhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer)
 	{
-		VkInstance vulkanInstance = GraphicsContext::Get().AsRef<VulkanGraphicsContext>().GetInstance();
+		VkInstance vulkanInstance = GraphicsContext::Get().AsRef<VulkanGraphicsContext>().GetHandle<VkInstance>();
 		VkPhysicalDevice selectedDevice = Utility::FindBestSuitableDevice(vulkanInstance);
 
 		m_physicalDevice = selectedDevice;
@@ -126,7 +126,7 @@ namespace Volt::RHI
 
 	const int32_t VulkanPhysicalGraphicsDevice::GetMemoryTypeIndex(const uint32_t reqMemoryTypeBits, const uint32_t requiredPropertyFlags)
 	{
-		for (const auto& memoryType : m_deviceProperties.memoryProperties.memoryTypes)
+		for (const auto& memoryType : g_physicalDeviceProperties.memoryProperties.memoryTypes)
 		{
 			const uint32_t memTypeBits = (1 << memoryType.index);
 			const bool isRequiredMemoryType = reqMemoryTypeBits & memTypeBits;
@@ -145,7 +145,7 @@ namespace Volt::RHI
 
 	const bool VulkanPhysicalGraphicsDevice::IsExtensionAvailable(const char* extensionName) const
 	{
-		for (const auto& ext : m_availiableExtensions)
+		for (const auto& ext : m_availableExtensions)
 		{
 			if (strcmp(extensionName, ext.extensionName) == 0)
 			{
@@ -154,16 +154,6 @@ namespace Volt::RHI
 		}
 
 		return false;
-	}
-
-	const bool VulkanPhysicalGraphicsDevice::AreDescriptorBuffersEnabled() const
-	{
-		return m_deviceProperties.descriptorBufferProperties.enabled;
-	}
-
-	const bool VulkanPhysicalGraphicsDevice::AreMeshShadersEnabled() const
-	{
-		return m_deviceProperties.meshShaderProperties.enabled;
 	}
 
 	void* VulkanPhysicalGraphicsDevice::GetHandleImpl() const
@@ -178,7 +168,7 @@ namespace Volt::RHI
 
 		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
 		{
-			auto& memType = m_deviceProperties.memoryProperties.memoryTypes.emplace_back();
+			auto& memType = g_physicalDeviceProperties.memoryProperties.memoryTypes.emplace_back();
 			memType.heapIndex = memoryProperties.memoryTypes[i].heapIndex;
 			memType.propertyFlags = memoryProperties.memoryTypes[i].propertyFlags;
 			memType.index = i;
@@ -186,7 +176,7 @@ namespace Volt::RHI
 
 		for (uint32_t i = 0; i < memoryProperties.memoryHeapCount; i++)
 		{
-			auto& memHeap = m_deviceProperties.memoryProperties.memoryHeaps.emplace_back();
+			auto& memHeap = g_physicalDeviceProperties.memoryProperties.memoryHeaps.emplace_back();
 			memHeap.flags = memoryProperties.memoryHeaps[i].flags;
 			memHeap.size = memoryProperties.memoryHeaps[i].size;
 		}
@@ -211,222 +201,239 @@ namespace Volt::RHI
 		rayTracingPipelineProperties.pNext = firstChainPtr;
 		firstChainPtr = &rayTracingPipelineProperties;
 
+		VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
+		accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+		accelerationStructureProperties.pNext = firstChainPtr;
+		firstChainPtr = &accelerationStructureProperties;
+
 		VkPhysicalDeviceProperties2	deviceProperties{};
 		deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 		deviceProperties.pNext = firstChainPtr;
 
 		vkGetPhysicalDeviceProperties2(m_physicalDevice, &deviceProperties);
 
-		m_deviceProperties.deviceName = deviceProperties.properties.deviceName;
-		m_deviceProperties.vendor = VendorIDToVendor(deviceProperties.properties.vendorID);
+		g_physicalDeviceProperties.deviceName = deviceProperties.properties.deviceName;
+		g_physicalDeviceProperties.vendor = VendorIDToVendor(deviceProperties.properties.vendorID);
 
 		// Limits
 		{
-			m_deviceProperties.limits.maxImageDimension1D = deviceProperties.properties.limits.maxImageDimension1D;
-			m_deviceProperties.limits.maxImageDimension2D = deviceProperties.properties.limits.maxImageDimension2D;
-			m_deviceProperties.limits.maxImageDimension3D = deviceProperties.properties.limits.maxImageDimension3D;
-			m_deviceProperties.limits.maxImageDimensionCube = deviceProperties.properties.limits.maxImageDimensionCube;
-			m_deviceProperties.limits.maxImageArrayLayers = deviceProperties.properties.limits.maxImageArrayLayers;
-			m_deviceProperties.limits.maxTexelBufferElements = deviceProperties.properties.limits.maxTexelBufferElements;
-			m_deviceProperties.limits.maxUniformBufferRange = deviceProperties.properties.limits.maxUniformBufferRange;
-			m_deviceProperties.limits.maxStorageBufferRange = deviceProperties.properties.limits.maxStorageBufferRange;
-			m_deviceProperties.limits.maxPushConstantsSize = deviceProperties.properties.limits.maxPushConstantsSize;
-			m_deviceProperties.limits.maxMemoryAllocationCount = deviceProperties.properties.limits.maxMemoryAllocationCount;
-			m_deviceProperties.limits.maxSamplerAllocationCount = deviceProperties.properties.limits.maxSamplerAllocationCount;
-			m_deviceProperties.limits.bufferImageGranularity = deviceProperties.properties.limits.bufferImageGranularity;
-			m_deviceProperties.limits.sparseAddressSpaceSize = deviceProperties.properties.limits.sparseAddressSpaceSize;
-			m_deviceProperties.limits.maxBoundDescriptorSets = deviceProperties.properties.limits.maxBoundDescriptorSets;
-			m_deviceProperties.limits.maxPerStageDescriptorSamplers = deviceProperties.properties.limits.maxPerStageDescriptorSamplers;
-			m_deviceProperties.limits.maxPerStageDescriptorUniformBuffers = deviceProperties.properties.limits.maxPerStageDescriptorUniformBuffers;
-			m_deviceProperties.limits.maxPerStageDescriptorStorageBuffers = deviceProperties.properties.limits.maxPerStageDescriptorStorageBuffers;
-			m_deviceProperties.limits.maxPerStageDescriptorSampledImages = deviceProperties.properties.limits.maxPerStageDescriptorSampledImages;
-			m_deviceProperties.limits.maxPerStageDescriptorStorageImages = deviceProperties.properties.limits.maxPerStageDescriptorStorageImages;
-			m_deviceProperties.limits.maxPerStageDescriptorInputAttachments = deviceProperties.properties.limits.maxPerStageDescriptorInputAttachments;
-			m_deviceProperties.limits.maxPerStageResources = deviceProperties.properties.limits.maxPerStageResources;
-			m_deviceProperties.limits.maxDescriptorSetSamplers = deviceProperties.properties.limits.maxDescriptorSetSamplers;
-			m_deviceProperties.limits.maxDescriptorSetUniformBuffers = deviceProperties.properties.limits.maxDescriptorSetUniformBuffers;
-			m_deviceProperties.limits.maxDescriptorSetUniformBuffersDynamic = deviceProperties.properties.limits.maxDescriptorSetUniformBuffersDynamic;
-			m_deviceProperties.limits.maxDescriptorSetStorageBuffers = deviceProperties.properties.limits.maxDescriptorSetStorageBuffers;
-			m_deviceProperties.limits.maxDescriptorSetStorageBuffersDynamic = deviceProperties.properties.limits.maxDescriptorSetStorageBuffersDynamic;
-			m_deviceProperties.limits.maxDescriptorSetSampledImages = deviceProperties.properties.limits.maxDescriptorSetSampledImages;
-			m_deviceProperties.limits.maxDescriptorSetStorageImages = deviceProperties.properties.limits.maxDescriptorSetStorageImages;
-			m_deviceProperties.limits.maxDescriptorSetInputAttachments = deviceProperties.properties.limits.maxDescriptorSetInputAttachments;
-			m_deviceProperties.limits.maxVertexInputAttributes = deviceProperties.properties.limits.maxVertexInputAttributes;
-			m_deviceProperties.limits.maxVertexInputBindings = deviceProperties.properties.limits.maxVertexInputBindings;
-			m_deviceProperties.limits.maxVertexInputAttributeOffset = deviceProperties.properties.limits.maxVertexInputAttributeOffset;
-			m_deviceProperties.limits.maxVertexInputBindingStride = deviceProperties.properties.limits.maxVertexInputBindingStride;
-			m_deviceProperties.limits.maxVertexOutputComponents = deviceProperties.properties.limits.maxVertexOutputComponents;
-			m_deviceProperties.limits.maxTessellationGenerationLevel = deviceProperties.properties.limits.maxTessellationGenerationLevel;
-			m_deviceProperties.limits.maxTessellationPatchSize = deviceProperties.properties.limits.maxTessellationPatchSize;
-			m_deviceProperties.limits.maxTessellationControlPerVertexInputComponents = deviceProperties.properties.limits.maxTessellationControlPerVertexInputComponents;
-			m_deviceProperties.limits.maxTessellationControlPerVertexOutputComponents = deviceProperties.properties.limits.maxTessellationControlPerVertexOutputComponents;
-			m_deviceProperties.limits.maxTessellationControlPerPatchOutputComponents = deviceProperties.properties.limits.maxTessellationControlPerPatchOutputComponents;
-			m_deviceProperties.limits.maxTessellationControlTotalOutputComponents = deviceProperties.properties.limits.maxTessellationControlTotalOutputComponents;
-			m_deviceProperties.limits.maxTessellationEvaluationInputComponents = deviceProperties.properties.limits.maxTessellationEvaluationInputComponents;
-			m_deviceProperties.limits.maxTessellationEvaluationOutputComponents = deviceProperties.properties.limits.maxTessellationEvaluationOutputComponents;
-			m_deviceProperties.limits.maxGeometryShaderInvocations = deviceProperties.properties.limits.maxGeometryShaderInvocations;
-			m_deviceProperties.limits.maxGeometryInputComponents = deviceProperties.properties.limits.maxGeometryInputComponents;
-			m_deviceProperties.limits.maxGeometryOutputComponents = deviceProperties.properties.limits.maxGeometryOutputComponents;
-			m_deviceProperties.limits.maxGeometryOutputVertices = deviceProperties.properties.limits.maxGeometryOutputVertices;
-			m_deviceProperties.limits.maxGeometryTotalOutputComponents = deviceProperties.properties.limits.maxGeometryTotalOutputComponents;
-			m_deviceProperties.limits.maxFragmentInputComponents = deviceProperties.properties.limits.maxFragmentInputComponents;
-			m_deviceProperties.limits.maxFragmentOutputAttachments = deviceProperties.properties.limits.maxFragmentOutputAttachments;
-			m_deviceProperties.limits.maxFragmentDualSrcAttachments = deviceProperties.properties.limits.maxFragmentDualSrcAttachments;
-			m_deviceProperties.limits.maxFragmentCombinedOutputResources = deviceProperties.properties.limits.maxFragmentCombinedOutputResources;
-			m_deviceProperties.limits.maxComputeSharedMemorySize = deviceProperties.properties.limits.maxComputeSharedMemorySize;
-			m_deviceProperties.limits.maxComputeWorkGroupCount[0] = deviceProperties.properties.limits.maxComputeWorkGroupCount[0];
-			m_deviceProperties.limits.maxComputeWorkGroupCount[1] = deviceProperties.properties.limits.maxComputeWorkGroupCount[1];
-			m_deviceProperties.limits.maxComputeWorkGroupCount[2] = deviceProperties.properties.limits.maxComputeWorkGroupCount[2];
-			m_deviceProperties.limits.maxComputeWorkGroupInvocations = deviceProperties.properties.limits.maxComputeWorkGroupInvocations;
-			m_deviceProperties.limits.maxComputeWorkGroupSize[0] = deviceProperties.properties.limits.maxComputeWorkGroupSize[0];
-			m_deviceProperties.limits.maxComputeWorkGroupSize[1] = deviceProperties.properties.limits.maxComputeWorkGroupSize[1];
-			m_deviceProperties.limits.maxComputeWorkGroupSize[2] = deviceProperties.properties.limits.maxComputeWorkGroupSize[2];
-			m_deviceProperties.limits.subPixelPrecisionBits = deviceProperties.properties.limits.subPixelPrecisionBits;
-			m_deviceProperties.limits.subTexelPrecisionBits = deviceProperties.properties.limits.subTexelPrecisionBits;
-			m_deviceProperties.limits.mipmapPrecisionBits = deviceProperties.properties.limits.mipmapPrecisionBits;
-			m_deviceProperties.limits.maxDrawIndexedIndexValue = deviceProperties.properties.limits.maxDrawIndexedIndexValue;
-			m_deviceProperties.limits.maxDrawIndirectCount = deviceProperties.properties.limits.maxDrawIndirectCount;
-			m_deviceProperties.limits.maxSamplerLodBias = deviceProperties.properties.limits.maxSamplerLodBias;
-			m_deviceProperties.limits.maxSamplerAnisotropy = deviceProperties.properties.limits.maxSamplerAnisotropy;
-			m_deviceProperties.limits.maxViewports = deviceProperties.properties.limits.maxViewports;
-			m_deviceProperties.limits.maxViewportDimensions[0] = deviceProperties.properties.limits.maxViewportDimensions[0];
-			m_deviceProperties.limits.maxViewportDimensions[1] = deviceProperties.properties.limits.maxViewportDimensions[1];
-			m_deviceProperties.limits.viewportBoundsRange[0] = deviceProperties.properties.limits.viewportBoundsRange[0];
-			m_deviceProperties.limits.viewportBoundsRange[1] = deviceProperties.properties.limits.viewportBoundsRange[1];
-			m_deviceProperties.limits.viewportSubPixelBits = deviceProperties.properties.limits.viewportSubPixelBits;
-			m_deviceProperties.limits.minMemoryMapAlignment = deviceProperties.properties.limits.minMemoryMapAlignment;
-			m_deviceProperties.limits.minTexelBufferOffsetAlignment = deviceProperties.properties.limits.minTexelBufferOffsetAlignment;
-			m_deviceProperties.limits.minUniformBufferOffsetAlignment = deviceProperties.properties.limits.minUniformBufferOffsetAlignment;
-			m_deviceProperties.limits.minStorageBufferOffsetAlignment = deviceProperties.properties.limits.minStorageBufferOffsetAlignment;
-			m_deviceProperties.limits.minTexelOffset = deviceProperties.properties.limits.minTexelOffset;
-			m_deviceProperties.limits.maxTexelOffset = deviceProperties.properties.limits.maxTexelOffset;
-			m_deviceProperties.limits.minTexelGatherOffset = deviceProperties.properties.limits.minTexelGatherOffset;
-			m_deviceProperties.limits.maxTexelGatherOffset = deviceProperties.properties.limits.maxTexelGatherOffset;
-			m_deviceProperties.limits.minInterpolationOffset = deviceProperties.properties.limits.minInterpolationOffset;
-			m_deviceProperties.limits.maxInterpolationOffset = deviceProperties.properties.limits.maxInterpolationOffset;
-			m_deviceProperties.limits.subPixelInterpolationOffsetBits = deviceProperties.properties.limits.subPixelInterpolationOffsetBits;
-			m_deviceProperties.limits.maxFramebufferWidth = deviceProperties.properties.limits.maxFramebufferWidth;
-			m_deviceProperties.limits.maxFramebufferHeight = deviceProperties.properties.limits.maxFramebufferHeight;
-			m_deviceProperties.limits.maxFramebufferLayers = deviceProperties.properties.limits.maxFramebufferLayers;
-			m_deviceProperties.limits.framebufferColorSampleCounts = deviceProperties.properties.limits.framebufferColorSampleCounts;
-			m_deviceProperties.limits.framebufferDepthSampleCounts = deviceProperties.properties.limits.framebufferDepthSampleCounts;
-			m_deviceProperties.limits.framebufferStencilSampleCounts = deviceProperties.properties.limits.framebufferStencilSampleCounts;
-			m_deviceProperties.limits.framebufferNoAttachmentsSampleCounts = deviceProperties.properties.limits.framebufferNoAttachmentsSampleCounts;
-			m_deviceProperties.limits.maxColorAttachments = deviceProperties.properties.limits.maxColorAttachments;
-			m_deviceProperties.limits.sampledImageColorSampleCounts = deviceProperties.properties.limits.sampledImageColorSampleCounts;
-			m_deviceProperties.limits.sampledImageIntegerSampleCounts = deviceProperties.properties.limits.sampledImageIntegerSampleCounts;
-			m_deviceProperties.limits.sampledImageDepthSampleCounts = deviceProperties.properties.limits.sampledImageDepthSampleCounts;
-			m_deviceProperties.limits.sampledImageStencilSampleCounts = deviceProperties.properties.limits.sampledImageStencilSampleCounts;
-			m_deviceProperties.limits.storageImageSampleCounts = deviceProperties.properties.limits.storageImageSampleCounts;
-			m_deviceProperties.limits.maxSampleMaskWords = deviceProperties.properties.limits.maxSampleMaskWords;
-			m_deviceProperties.limits.timestampComputeAndGraphics = deviceProperties.properties.limits.timestampComputeAndGraphics;
-			m_deviceProperties.limits.timestampPeriod = deviceProperties.properties.limits.timestampPeriod;
-			m_deviceProperties.limits.maxClipDistances = deviceProperties.properties.limits.maxClipDistances;
-			m_deviceProperties.limits.maxCullDistances = deviceProperties.properties.limits.maxCullDistances;
-			m_deviceProperties.limits.maxCombinedClipAndCullDistances = deviceProperties.properties.limits.maxCombinedClipAndCullDistances;
-			m_deviceProperties.limits.discreteQueuePriorities = deviceProperties.properties.limits.discreteQueuePriorities;
-			m_deviceProperties.limits.pointSizeRange[0] = deviceProperties.properties.limits.pointSizeRange[0];
-			m_deviceProperties.limits.pointSizeRange[1] = deviceProperties.properties.limits.pointSizeRange[1];
-			m_deviceProperties.limits.lineWidthRange[0] = deviceProperties.properties.limits.lineWidthRange[0];
-			m_deviceProperties.limits.lineWidthRange[1] = deviceProperties.properties.limits.lineWidthRange[1];
-			m_deviceProperties.limits.pointSizeGranularity = deviceProperties.properties.limits.pointSizeGranularity;
-			m_deviceProperties.limits.lineWidthGranularity = deviceProperties.properties.limits.lineWidthGranularity;
-			m_deviceProperties.limits.strictLines = deviceProperties.properties.limits.strictLines;
-			m_deviceProperties.limits.standardSampleLocations = deviceProperties.properties.limits.standardSampleLocations;
-			m_deviceProperties.limits.optimalBufferCopyOffsetAlignment = deviceProperties.properties.limits.optimalBufferCopyOffsetAlignment;
-			m_deviceProperties.limits.optimalBufferCopyRowPitchAlignment = deviceProperties.properties.limits.optimalBufferCopyRowPitchAlignment;
-			m_deviceProperties.limits.nonCoherentAtomSize = deviceProperties.properties.limits.nonCoherentAtomSize;
+			g_physicalDeviceProperties.limits.maxImageDimension1D = deviceProperties.properties.limits.maxImageDimension1D;
+			g_physicalDeviceProperties.limits.maxImageDimension2D = deviceProperties.properties.limits.maxImageDimension2D;
+			g_physicalDeviceProperties.limits.maxImageDimension3D = deviceProperties.properties.limits.maxImageDimension3D;
+			g_physicalDeviceProperties.limits.maxImageDimensionCube = deviceProperties.properties.limits.maxImageDimensionCube;
+			g_physicalDeviceProperties.limits.maxImageArrayLayers = deviceProperties.properties.limits.maxImageArrayLayers;
+			g_physicalDeviceProperties.limits.maxTexelBufferElements = deviceProperties.properties.limits.maxTexelBufferElements;
+			g_physicalDeviceProperties.limits.maxUniformBufferRange = deviceProperties.properties.limits.maxUniformBufferRange;
+			g_physicalDeviceProperties.limits.maxStorageBufferRange = deviceProperties.properties.limits.maxStorageBufferRange;
+			g_physicalDeviceProperties.limits.maxPushConstantsSize = deviceProperties.properties.limits.maxPushConstantsSize;
+			g_physicalDeviceProperties.limits.maxMemoryAllocationCount = deviceProperties.properties.limits.maxMemoryAllocationCount;
+			g_physicalDeviceProperties.limits.maxSamplerAllocationCount = deviceProperties.properties.limits.maxSamplerAllocationCount;
+			g_physicalDeviceProperties.limits.bufferImageGranularity = deviceProperties.properties.limits.bufferImageGranularity;
+			g_physicalDeviceProperties.limits.sparseAddressSpaceSize = deviceProperties.properties.limits.sparseAddressSpaceSize;
+			g_physicalDeviceProperties.limits.maxBoundDescriptorSets = deviceProperties.properties.limits.maxBoundDescriptorSets;
+			g_physicalDeviceProperties.limits.maxPerStageDescriptorSamplers = deviceProperties.properties.limits.maxPerStageDescriptorSamplers;
+			g_physicalDeviceProperties.limits.maxPerStageDescriptorUniformBuffers = deviceProperties.properties.limits.maxPerStageDescriptorUniformBuffers;
+			g_physicalDeviceProperties.limits.maxPerStageDescriptorStorageBuffers = deviceProperties.properties.limits.maxPerStageDescriptorStorageBuffers;
+			g_physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages = deviceProperties.properties.limits.maxPerStageDescriptorSampledImages;
+			g_physicalDeviceProperties.limits.maxPerStageDescriptorStorageImages = deviceProperties.properties.limits.maxPerStageDescriptorStorageImages;
+			g_physicalDeviceProperties.limits.maxPerStageDescriptorInputAttachments = deviceProperties.properties.limits.maxPerStageDescriptorInputAttachments;
+			g_physicalDeviceProperties.limits.maxPerStageResources = deviceProperties.properties.limits.maxPerStageResources;
+			g_physicalDeviceProperties.limits.maxDescriptorSetSamplers = deviceProperties.properties.limits.maxDescriptorSetSamplers;
+			g_physicalDeviceProperties.limits.maxDescriptorSetUniformBuffers = deviceProperties.properties.limits.maxDescriptorSetUniformBuffers;
+			g_physicalDeviceProperties.limits.maxDescriptorSetUniformBuffersDynamic = deviceProperties.properties.limits.maxDescriptorSetUniformBuffersDynamic;
+			g_physicalDeviceProperties.limits.maxDescriptorSetStorageBuffers = deviceProperties.properties.limits.maxDescriptorSetStorageBuffers;
+			g_physicalDeviceProperties.limits.maxDescriptorSetStorageBuffersDynamic = deviceProperties.properties.limits.maxDescriptorSetStorageBuffersDynamic;
+			g_physicalDeviceProperties.limits.maxDescriptorSetSampledImages = deviceProperties.properties.limits.maxDescriptorSetSampledImages;
+			g_physicalDeviceProperties.limits.maxDescriptorSetStorageImages = deviceProperties.properties.limits.maxDescriptorSetStorageImages;
+			g_physicalDeviceProperties.limits.maxDescriptorSetInputAttachments = deviceProperties.properties.limits.maxDescriptorSetInputAttachments;
+			g_physicalDeviceProperties.limits.maxVertexInputAttributes = deviceProperties.properties.limits.maxVertexInputAttributes;
+			g_physicalDeviceProperties.limits.maxVertexInputBindings = deviceProperties.properties.limits.maxVertexInputBindings;
+			g_physicalDeviceProperties.limits.maxVertexInputAttributeOffset = deviceProperties.properties.limits.maxVertexInputAttributeOffset;
+			g_physicalDeviceProperties.limits.maxVertexInputBindingStride = deviceProperties.properties.limits.maxVertexInputBindingStride;
+			g_physicalDeviceProperties.limits.maxVertexOutputComponents = deviceProperties.properties.limits.maxVertexOutputComponents;
+			g_physicalDeviceProperties.limits.maxTessellationGenerationLevel = deviceProperties.properties.limits.maxTessellationGenerationLevel;
+			g_physicalDeviceProperties.limits.maxTessellationPatchSize = deviceProperties.properties.limits.maxTessellationPatchSize;
+			g_physicalDeviceProperties.limits.maxTessellationControlPerVertexInputComponents = deviceProperties.properties.limits.maxTessellationControlPerVertexInputComponents;
+			g_physicalDeviceProperties.limits.maxTessellationControlPerVertexOutputComponents = deviceProperties.properties.limits.maxTessellationControlPerVertexOutputComponents;
+			g_physicalDeviceProperties.limits.maxTessellationControlPerPatchOutputComponents = deviceProperties.properties.limits.maxTessellationControlPerPatchOutputComponents;
+			g_physicalDeviceProperties.limits.maxTessellationControlTotalOutputComponents = deviceProperties.properties.limits.maxTessellationControlTotalOutputComponents;
+			g_physicalDeviceProperties.limits.maxTessellationEvaluationInputComponents = deviceProperties.properties.limits.maxTessellationEvaluationInputComponents;
+			g_physicalDeviceProperties.limits.maxTessellationEvaluationOutputComponents = deviceProperties.properties.limits.maxTessellationEvaluationOutputComponents;
+			g_physicalDeviceProperties.limits.maxGeometryShaderInvocations = deviceProperties.properties.limits.maxGeometryShaderInvocations;
+			g_physicalDeviceProperties.limits.maxGeometryInputComponents = deviceProperties.properties.limits.maxGeometryInputComponents;
+			g_physicalDeviceProperties.limits.maxGeometryOutputComponents = deviceProperties.properties.limits.maxGeometryOutputComponents;
+			g_physicalDeviceProperties.limits.maxGeometryOutputVertices = deviceProperties.properties.limits.maxGeometryOutputVertices;
+			g_physicalDeviceProperties.limits.maxGeometryTotalOutputComponents = deviceProperties.properties.limits.maxGeometryTotalOutputComponents;
+			g_physicalDeviceProperties.limits.maxFragmentInputComponents = deviceProperties.properties.limits.maxFragmentInputComponents;
+			g_physicalDeviceProperties.limits.maxFragmentOutputAttachments = deviceProperties.properties.limits.maxFragmentOutputAttachments;
+			g_physicalDeviceProperties.limits.maxFragmentDualSrcAttachments = deviceProperties.properties.limits.maxFragmentDualSrcAttachments;
+			g_physicalDeviceProperties.limits.maxFragmentCombinedOutputResources = deviceProperties.properties.limits.maxFragmentCombinedOutputResources;
+			g_physicalDeviceProperties.limits.maxComputeSharedMemorySize = deviceProperties.properties.limits.maxComputeSharedMemorySize;
+			g_physicalDeviceProperties.limits.maxComputeWorkGroupCount[0] = deviceProperties.properties.limits.maxComputeWorkGroupCount[0];
+			g_physicalDeviceProperties.limits.maxComputeWorkGroupCount[1] = deviceProperties.properties.limits.maxComputeWorkGroupCount[1];
+			g_physicalDeviceProperties.limits.maxComputeWorkGroupCount[2] = deviceProperties.properties.limits.maxComputeWorkGroupCount[2];
+			g_physicalDeviceProperties.limits.maxComputeWorkGroupInvocations = deviceProperties.properties.limits.maxComputeWorkGroupInvocations;
+			g_physicalDeviceProperties.limits.maxComputeWorkGroupSize[0] = deviceProperties.properties.limits.maxComputeWorkGroupSize[0];
+			g_physicalDeviceProperties.limits.maxComputeWorkGroupSize[1] = deviceProperties.properties.limits.maxComputeWorkGroupSize[1];
+			g_physicalDeviceProperties.limits.maxComputeWorkGroupSize[2] = deviceProperties.properties.limits.maxComputeWorkGroupSize[2];
+			g_physicalDeviceProperties.limits.subPixelPrecisionBits = deviceProperties.properties.limits.subPixelPrecisionBits;
+			g_physicalDeviceProperties.limits.subTexelPrecisionBits = deviceProperties.properties.limits.subTexelPrecisionBits;
+			g_physicalDeviceProperties.limits.mipmapPrecisionBits = deviceProperties.properties.limits.mipmapPrecisionBits;
+			g_physicalDeviceProperties.limits.maxDrawIndexedIndexValue = deviceProperties.properties.limits.maxDrawIndexedIndexValue;
+			g_physicalDeviceProperties.limits.maxDrawIndirectCount = deviceProperties.properties.limits.maxDrawIndirectCount;
+			g_physicalDeviceProperties.limits.maxSamplerLodBias = deviceProperties.properties.limits.maxSamplerLodBias;
+			g_physicalDeviceProperties.limits.maxSamplerAnisotropy = deviceProperties.properties.limits.maxSamplerAnisotropy;
+			g_physicalDeviceProperties.limits.maxViewports = deviceProperties.properties.limits.maxViewports;
+			g_physicalDeviceProperties.limits.maxViewportDimensions[0] = deviceProperties.properties.limits.maxViewportDimensions[0];
+			g_physicalDeviceProperties.limits.maxViewportDimensions[1] = deviceProperties.properties.limits.maxViewportDimensions[1];
+			g_physicalDeviceProperties.limits.viewportBoundsRange[0] = deviceProperties.properties.limits.viewportBoundsRange[0];
+			g_physicalDeviceProperties.limits.viewportBoundsRange[1] = deviceProperties.properties.limits.viewportBoundsRange[1];
+			g_physicalDeviceProperties.limits.viewportSubPixelBits = deviceProperties.properties.limits.viewportSubPixelBits;
+			g_physicalDeviceProperties.limits.minMemoryMapAlignment = deviceProperties.properties.limits.minMemoryMapAlignment;
+			g_physicalDeviceProperties.limits.minTexelBufferOffsetAlignment = deviceProperties.properties.limits.minTexelBufferOffsetAlignment;
+			g_physicalDeviceProperties.limits.minUniformBufferOffsetAlignment = deviceProperties.properties.limits.minUniformBufferOffsetAlignment;
+			g_physicalDeviceProperties.limits.minStorageBufferOffsetAlignment = deviceProperties.properties.limits.minStorageBufferOffsetAlignment;
+			g_physicalDeviceProperties.limits.minTexelOffset = deviceProperties.properties.limits.minTexelOffset;
+			g_physicalDeviceProperties.limits.maxTexelOffset = deviceProperties.properties.limits.maxTexelOffset;
+			g_physicalDeviceProperties.limits.minTexelGatherOffset = deviceProperties.properties.limits.minTexelGatherOffset;
+			g_physicalDeviceProperties.limits.maxTexelGatherOffset = deviceProperties.properties.limits.maxTexelGatherOffset;
+			g_physicalDeviceProperties.limits.minInterpolationOffset = deviceProperties.properties.limits.minInterpolationOffset;
+			g_physicalDeviceProperties.limits.maxInterpolationOffset = deviceProperties.properties.limits.maxInterpolationOffset;
+			g_physicalDeviceProperties.limits.subPixelInterpolationOffsetBits = deviceProperties.properties.limits.subPixelInterpolationOffsetBits;
+			g_physicalDeviceProperties.limits.maxFramebufferWidth = deviceProperties.properties.limits.maxFramebufferWidth;
+			g_physicalDeviceProperties.limits.maxFramebufferHeight = deviceProperties.properties.limits.maxFramebufferHeight;
+			g_physicalDeviceProperties.limits.maxFramebufferLayers = deviceProperties.properties.limits.maxFramebufferLayers;
+			g_physicalDeviceProperties.limits.framebufferColorSampleCounts = deviceProperties.properties.limits.framebufferColorSampleCounts;
+			g_physicalDeviceProperties.limits.framebufferDepthSampleCounts = deviceProperties.properties.limits.framebufferDepthSampleCounts;
+			g_physicalDeviceProperties.limits.framebufferStencilSampleCounts = deviceProperties.properties.limits.framebufferStencilSampleCounts;
+			g_physicalDeviceProperties.limits.framebufferNoAttachmentsSampleCounts = deviceProperties.properties.limits.framebufferNoAttachmentsSampleCounts;
+			g_physicalDeviceProperties.limits.maxColorAttachments = deviceProperties.properties.limits.maxColorAttachments;
+			g_physicalDeviceProperties.limits.sampledImageColorSampleCounts = deviceProperties.properties.limits.sampledImageColorSampleCounts;
+			g_physicalDeviceProperties.limits.sampledImageIntegerSampleCounts = deviceProperties.properties.limits.sampledImageIntegerSampleCounts;
+			g_physicalDeviceProperties.limits.sampledImageDepthSampleCounts = deviceProperties.properties.limits.sampledImageDepthSampleCounts;
+			g_physicalDeviceProperties.limits.sampledImageStencilSampleCounts = deviceProperties.properties.limits.sampledImageStencilSampleCounts;
+			g_physicalDeviceProperties.limits.storageImageSampleCounts = deviceProperties.properties.limits.storageImageSampleCounts;
+			g_physicalDeviceProperties.limits.maxSampleMaskWords = deviceProperties.properties.limits.maxSampleMaskWords;
+			g_physicalDeviceProperties.limits.timestampComputeAndGraphics = deviceProperties.properties.limits.timestampComputeAndGraphics;
+			g_physicalDeviceProperties.limits.timestampPeriod = deviceProperties.properties.limits.timestampPeriod;
+			g_physicalDeviceProperties.limits.maxClipDistances = deviceProperties.properties.limits.maxClipDistances;
+			g_physicalDeviceProperties.limits.maxCullDistances = deviceProperties.properties.limits.maxCullDistances;
+			g_physicalDeviceProperties.limits.maxCombinedClipAndCullDistances = deviceProperties.properties.limits.maxCombinedClipAndCullDistances;
+			g_physicalDeviceProperties.limits.discreteQueuePriorities = deviceProperties.properties.limits.discreteQueuePriorities;
+			g_physicalDeviceProperties.limits.pointSizeRange[0] = deviceProperties.properties.limits.pointSizeRange[0];
+			g_physicalDeviceProperties.limits.pointSizeRange[1] = deviceProperties.properties.limits.pointSizeRange[1];
+			g_physicalDeviceProperties.limits.lineWidthRange[0] = deviceProperties.properties.limits.lineWidthRange[0];
+			g_physicalDeviceProperties.limits.lineWidthRange[1] = deviceProperties.properties.limits.lineWidthRange[1];
+			g_physicalDeviceProperties.limits.pointSizeGranularity = deviceProperties.properties.limits.pointSizeGranularity;
+			g_physicalDeviceProperties.limits.lineWidthGranularity = deviceProperties.properties.limits.lineWidthGranularity;
+			g_physicalDeviceProperties.limits.strictLines = deviceProperties.properties.limits.strictLines;
+			g_physicalDeviceProperties.limits.standardSampleLocations = deviceProperties.properties.limits.standardSampleLocations;
+			g_physicalDeviceProperties.limits.optimalBufferCopyOffsetAlignment = deviceProperties.properties.limits.optimalBufferCopyOffsetAlignment;
+			g_physicalDeviceProperties.limits.optimalBufferCopyRowPitchAlignment = deviceProperties.properties.limits.optimalBufferCopyRowPitchAlignment;
+			g_physicalDeviceProperties.limits.nonCoherentAtomSize = deviceProperties.properties.limits.nonCoherentAtomSize;
 		}
 
 		// VK_EXT_descriptor_buffer
 		{
-			m_deviceProperties.descriptorBufferProperties.enabled = false; //IsExtensionAvailiable(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME); // #TODO_Ivar: Temporarily disabled
-			m_deviceProperties.descriptorBufferProperties.combinedImageSamplerDescriptorSingleArray = descriptorBufferProperties.combinedImageSamplerDescriptorSingleArray;
-			m_deviceProperties.descriptorBufferProperties.bufferlessPushDescriptors = descriptorBufferProperties.bufferlessPushDescriptors;
-			m_deviceProperties.descriptorBufferProperties.allowSamplerImageViewPostSubmitCreation = descriptorBufferProperties.allowSamplerImageViewPostSubmitCreation;
-			m_deviceProperties.descriptorBufferProperties.descriptorBufferOffsetAlignment = descriptorBufferProperties.descriptorBufferOffsetAlignment;
-			m_deviceProperties.descriptorBufferProperties.maxDescriptorBufferBindings = descriptorBufferProperties.maxDescriptorBufferBindings;
-			m_deviceProperties.descriptorBufferProperties.maxResourceDescriptorBufferBindings = descriptorBufferProperties.maxResourceDescriptorBufferBindings;
-			m_deviceProperties.descriptorBufferProperties.maxSamplerDescriptorBufferBindings = descriptorBufferProperties.maxSamplerDescriptorBufferBindings;
-			m_deviceProperties.descriptorBufferProperties.maxEmbeddedImmutableSamplerBindings = descriptorBufferProperties.maxEmbeddedImmutableSamplerBindings;
-			m_deviceProperties.descriptorBufferProperties.maxEmbeddedImmutableSamplers = descriptorBufferProperties.maxEmbeddedImmutableSamplers;
-			m_deviceProperties.descriptorBufferProperties.bufferCaptureReplayDescriptorDataSize = descriptorBufferProperties.bufferCaptureReplayDescriptorDataSize;
-			m_deviceProperties.descriptorBufferProperties.imageCaptureReplayDescriptorDataSize = descriptorBufferProperties.imageCaptureReplayDescriptorDataSize;
-			m_deviceProperties.descriptorBufferProperties.imageViewCaptureReplayDescriptorDataSize = descriptorBufferProperties.imageViewCaptureReplayDescriptorDataSize;
-			m_deviceProperties.descriptorBufferProperties.samplerCaptureReplayDescriptorDataSize = descriptorBufferProperties.samplerCaptureReplayDescriptorDataSize;
-			m_deviceProperties.descriptorBufferProperties.accelerationStructureCaptureReplayDescriptorDataSize = descriptorBufferProperties.accelerationStructureCaptureReplayDescriptorDataSize;
-			m_deviceProperties.descriptorBufferProperties.samplerDescriptorSize = descriptorBufferProperties.samplerDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.combinedImageSamplerDescriptorSize = descriptorBufferProperties.combinedImageSamplerDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.sampledImageDescriptorSize = descriptorBufferProperties.sampledImageDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.storageImageDescriptorSize = descriptorBufferProperties.storageImageDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.uniformTexelBufferDescriptorSize = descriptorBufferProperties.uniformTexelBufferDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.robustUniformTexelBufferDescriptorSize = descriptorBufferProperties.robustUniformTexelBufferDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.storageTexelBufferDescriptorSize = descriptorBufferProperties.storageTexelBufferDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.robustStorageTexelBufferDescriptorSize = descriptorBufferProperties.robustStorageTexelBufferDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.uniformBufferDescriptorSize = descriptorBufferProperties.uniformBufferDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.robustUniformBufferDescriptorSize = descriptorBufferProperties.robustUniformBufferDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.storageBufferDescriptorSize = descriptorBufferProperties.storageBufferDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.robustStorageBufferDescriptorSize = descriptorBufferProperties.robustStorageBufferDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.inputAttachmentDescriptorSize = descriptorBufferProperties.inputAttachmentDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.accelerationStructureDescriptorSize = descriptorBufferProperties.accelerationStructureDescriptorSize;
-			m_deviceProperties.descriptorBufferProperties.maxSamplerDescriptorBufferRange = descriptorBufferProperties.maxSamplerDescriptorBufferRange;
-			m_deviceProperties.descriptorBufferProperties.maxResourceDescriptorBufferRange = descriptorBufferProperties.maxResourceDescriptorBufferRange;
-			m_deviceProperties.descriptorBufferProperties.samplerDescriptorBufferAddressSpaceSize = descriptorBufferProperties.samplerDescriptorBufferAddressSpaceSize;
-			m_deviceProperties.descriptorBufferProperties.resourceDescriptorBufferAddressSpaceSize = descriptorBufferProperties.resourceDescriptorBufferAddressSpaceSize;
-			m_deviceProperties.descriptorBufferProperties.descriptorBufferAddressSpaceSize = descriptorBufferProperties.descriptorBufferAddressSpaceSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.enabled = IsExtensionAvailable(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+			g_physicalDeviceProperties.descriptorBufferProperties.combinedImageSamplerDescriptorSingleArray = descriptorBufferProperties.combinedImageSamplerDescriptorSingleArray;
+			g_physicalDeviceProperties.descriptorBufferProperties.bufferlessPushDescriptors = descriptorBufferProperties.bufferlessPushDescriptors;
+			g_physicalDeviceProperties.descriptorBufferProperties.allowSamplerImageViewPostSubmitCreation = descriptorBufferProperties.allowSamplerImageViewPostSubmitCreation;
+			g_physicalDeviceProperties.descriptorBufferProperties.descriptorBufferOffsetAlignment = descriptorBufferProperties.descriptorBufferOffsetAlignment;
+			g_physicalDeviceProperties.descriptorBufferProperties.maxDescriptorBufferBindings = descriptorBufferProperties.maxDescriptorBufferBindings;
+			g_physicalDeviceProperties.descriptorBufferProperties.maxResourceDescriptorBufferBindings = descriptorBufferProperties.maxResourceDescriptorBufferBindings;
+			g_physicalDeviceProperties.descriptorBufferProperties.maxSamplerDescriptorBufferBindings = descriptorBufferProperties.maxSamplerDescriptorBufferBindings;
+			g_physicalDeviceProperties.descriptorBufferProperties.maxEmbeddedImmutableSamplerBindings = descriptorBufferProperties.maxEmbeddedImmutableSamplerBindings;
+			g_physicalDeviceProperties.descriptorBufferProperties.maxEmbeddedImmutableSamplers = descriptorBufferProperties.maxEmbeddedImmutableSamplers;
+			g_physicalDeviceProperties.descriptorBufferProperties.bufferCaptureReplayDescriptorDataSize = descriptorBufferProperties.bufferCaptureReplayDescriptorDataSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.imageCaptureReplayDescriptorDataSize = descriptorBufferProperties.imageCaptureReplayDescriptorDataSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.imageViewCaptureReplayDescriptorDataSize = descriptorBufferProperties.imageViewCaptureReplayDescriptorDataSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.samplerCaptureReplayDescriptorDataSize = descriptorBufferProperties.samplerCaptureReplayDescriptorDataSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.accelerationStructureCaptureReplayDescriptorDataSize = descriptorBufferProperties.accelerationStructureCaptureReplayDescriptorDataSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.samplerDescriptorSize = descriptorBufferProperties.samplerDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.combinedImageSamplerDescriptorSize = descriptorBufferProperties.combinedImageSamplerDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.sampledImageDescriptorSize = descriptorBufferProperties.sampledImageDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.storageImageDescriptorSize = descriptorBufferProperties.storageImageDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.uniformTexelBufferDescriptorSize = descriptorBufferProperties.uniformTexelBufferDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.robustUniformTexelBufferDescriptorSize = descriptorBufferProperties.robustUniformTexelBufferDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.storageTexelBufferDescriptorSize = descriptorBufferProperties.storageTexelBufferDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.robustStorageTexelBufferDescriptorSize = descriptorBufferProperties.robustStorageTexelBufferDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.uniformBufferDescriptorSize = descriptorBufferProperties.uniformBufferDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.robustUniformBufferDescriptorSize = descriptorBufferProperties.robustUniformBufferDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.storageBufferDescriptorSize = descriptorBufferProperties.storageBufferDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.robustStorageBufferDescriptorSize = descriptorBufferProperties.robustStorageBufferDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.inputAttachmentDescriptorSize = descriptorBufferProperties.inputAttachmentDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.accelerationStructureDescriptorSize = descriptorBufferProperties.accelerationStructureDescriptorSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.maxSamplerDescriptorBufferRange = descriptorBufferProperties.maxSamplerDescriptorBufferRange;
+			g_physicalDeviceProperties.descriptorBufferProperties.maxResourceDescriptorBufferRange = descriptorBufferProperties.maxResourceDescriptorBufferRange;
+			g_physicalDeviceProperties.descriptorBufferProperties.samplerDescriptorBufferAddressSpaceSize = descriptorBufferProperties.samplerDescriptorBufferAddressSpaceSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.resourceDescriptorBufferAddressSpaceSize = descriptorBufferProperties.resourceDescriptorBufferAddressSpaceSize;
+			g_physicalDeviceProperties.descriptorBufferProperties.descriptorBufferAddressSpaceSize = descriptorBufferProperties.descriptorBufferAddressSpaceSize;
 		}
 
 		// VK_EXT_mesh_shader
 		{
-			m_deviceProperties.meshShaderProperties.enabled = IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupTotalCount = meshShaderProperties.maxTaskWorkGroupTotalCount;
-			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupCount[0] = meshShaderProperties.maxTaskWorkGroupCount[0];
-			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupCount[1] = meshShaderProperties.maxTaskWorkGroupCount[1];
-			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupCount[2] = meshShaderProperties.maxTaskWorkGroupCount[2];
-			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupInvocations = meshShaderProperties.maxTaskWorkGroupInvocations;
-			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupSize[0] = meshShaderProperties.maxTaskWorkGroupSize[0];
-			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupSize[1] = meshShaderProperties.maxTaskWorkGroupSize[1];
-			m_deviceProperties.meshShaderProperties.maxTaskWorkGroupSize[2] = meshShaderProperties.maxTaskWorkGroupSize[2];
-			m_deviceProperties.meshShaderProperties.maxTaskPayloadSize = meshShaderProperties.maxTaskPayloadSize;
-			m_deviceProperties.meshShaderProperties.maxTaskSharedMemorySize = meshShaderProperties.maxTaskSharedMemorySize;
-			m_deviceProperties.meshShaderProperties.maxTaskPayloadAndSharedMemorySize = meshShaderProperties.maxTaskPayloadAndSharedMemorySize;
-			m_deviceProperties.meshShaderProperties.maxMeshWorkGroupTotalCount = meshShaderProperties.maxMeshWorkGroupTotalCount;
-			m_deviceProperties.meshShaderProperties.maxMeshWorkGroupCount[0] = meshShaderProperties.maxMeshWorkGroupCount[0];
-			m_deviceProperties.meshShaderProperties.maxMeshWorkGroupCount[1] = meshShaderProperties.maxMeshWorkGroupCount[1];
-			m_deviceProperties.meshShaderProperties.maxMeshWorkGroupCount[2] = meshShaderProperties.maxMeshWorkGroupCount[2];
-			m_deviceProperties.meshShaderProperties.maxMeshWorkGroupInvocations = meshShaderProperties.maxMeshWorkGroupInvocations;
-			m_deviceProperties.meshShaderProperties.maxMeshWorkGroupSize[0] = meshShaderProperties.maxMeshWorkGroupSize[0];
-			m_deviceProperties.meshShaderProperties.maxMeshWorkGroupSize[1] = meshShaderProperties.maxMeshWorkGroupSize[1];
-			m_deviceProperties.meshShaderProperties.maxMeshWorkGroupSize[2] = meshShaderProperties.maxMeshWorkGroupSize[2];
-			m_deviceProperties.meshShaderProperties.maxMeshSharedMemorySize = meshShaderProperties.maxMeshSharedMemorySize;
-			m_deviceProperties.meshShaderProperties.maxMeshPayloadAndSharedMemorySize = meshShaderProperties.maxMeshPayloadAndSharedMemorySize;
-			m_deviceProperties.meshShaderProperties.maxMeshOutputMemorySize = meshShaderProperties.maxMeshOutputMemorySize;
-			m_deviceProperties.meshShaderProperties.maxMeshPayloadAndOutputMemorySize = meshShaderProperties.maxMeshPayloadAndOutputMemorySize;
-			m_deviceProperties.meshShaderProperties.maxMeshOutputComponents = meshShaderProperties.maxMeshOutputComponents;
-			m_deviceProperties.meshShaderProperties.maxMeshOutputVertices = meshShaderProperties.maxMeshOutputVertices;
-			m_deviceProperties.meshShaderProperties.maxMeshOutputPrimitives = meshShaderProperties.maxMeshOutputPrimitives;
-			m_deviceProperties.meshShaderProperties.maxMeshOutputLayers = meshShaderProperties.maxMeshOutputLayers;
-			m_deviceProperties.meshShaderProperties.maxMeshMultiviewViewCount = meshShaderProperties.maxMeshMultiviewViewCount;
-			m_deviceProperties.meshShaderProperties.meshOutputPerVertexGranularity = meshShaderProperties.meshOutputPerVertexGranularity;
-			m_deviceProperties.meshShaderProperties.meshOutputPerPrimitiveGranularity = meshShaderProperties.meshOutputPerPrimitiveGranularity;
-			m_deviceProperties.meshShaderProperties.maxPreferredTaskWorkGroupInvocations = meshShaderProperties.maxPreferredTaskWorkGroupInvocations;
-			m_deviceProperties.meshShaderProperties.maxPreferredMeshWorkGroupInvocations = meshShaderProperties.maxPreferredMeshWorkGroupInvocations;
-			m_deviceProperties.meshShaderProperties.prefersLocalInvocationVertexOutput = meshShaderProperties.prefersLocalInvocationVertexOutput;
-			m_deviceProperties.meshShaderProperties.prefersLocalInvocationPrimitiveOutput = meshShaderProperties.prefersLocalInvocationPrimitiveOutput;
-			m_deviceProperties.meshShaderProperties.prefersCompactVertexOutput = meshShaderProperties.prefersCompactVertexOutput;
-			m_deviceProperties.meshShaderProperties.prefersCompactPrimitiveOutput = meshShaderProperties.prefersCompactPrimitiveOutput;
+			g_physicalDeviceProperties.meshShaderProperties.enabled = IsExtensionAvailable(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskWorkGroupTotalCount = meshShaderProperties.maxTaskWorkGroupTotalCount;
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskWorkGroupCount[0] = meshShaderProperties.maxTaskWorkGroupCount[0];
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskWorkGroupCount[1] = meshShaderProperties.maxTaskWorkGroupCount[1];
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskWorkGroupCount[2] = meshShaderProperties.maxTaskWorkGroupCount[2];
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskWorkGroupInvocations = meshShaderProperties.maxTaskWorkGroupInvocations;
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskWorkGroupSize[0] = meshShaderProperties.maxTaskWorkGroupSize[0];
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskWorkGroupSize[1] = meshShaderProperties.maxTaskWorkGroupSize[1];
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskWorkGroupSize[2] = meshShaderProperties.maxTaskWorkGroupSize[2];
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskPayloadSize = meshShaderProperties.maxTaskPayloadSize;
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskSharedMemorySize = meshShaderProperties.maxTaskSharedMemorySize;
+			g_physicalDeviceProperties.meshShaderProperties.maxTaskPayloadAndSharedMemorySize = meshShaderProperties.maxTaskPayloadAndSharedMemorySize;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshWorkGroupTotalCount = meshShaderProperties.maxMeshWorkGroupTotalCount;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshWorkGroupCount[0] = meshShaderProperties.maxMeshWorkGroupCount[0];
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshWorkGroupCount[1] = meshShaderProperties.maxMeshWorkGroupCount[1];
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshWorkGroupCount[2] = meshShaderProperties.maxMeshWorkGroupCount[2];
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshWorkGroupInvocations = meshShaderProperties.maxMeshWorkGroupInvocations;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshWorkGroupSize[0] = meshShaderProperties.maxMeshWorkGroupSize[0];
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshWorkGroupSize[1] = meshShaderProperties.maxMeshWorkGroupSize[1];
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshWorkGroupSize[2] = meshShaderProperties.maxMeshWorkGroupSize[2];
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshSharedMemorySize = meshShaderProperties.maxMeshSharedMemorySize;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshPayloadAndSharedMemorySize = meshShaderProperties.maxMeshPayloadAndSharedMemorySize;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshOutputMemorySize = meshShaderProperties.maxMeshOutputMemorySize;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshPayloadAndOutputMemorySize = meshShaderProperties.maxMeshPayloadAndOutputMemorySize;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshOutputComponents = meshShaderProperties.maxMeshOutputComponents;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshOutputVertices = meshShaderProperties.maxMeshOutputVertices;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshOutputPrimitives = meshShaderProperties.maxMeshOutputPrimitives;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshOutputLayers = meshShaderProperties.maxMeshOutputLayers;
+			g_physicalDeviceProperties.meshShaderProperties.maxMeshMultiviewViewCount = meshShaderProperties.maxMeshMultiviewViewCount;
+			g_physicalDeviceProperties.meshShaderProperties.meshOutputPerVertexGranularity = meshShaderProperties.meshOutputPerVertexGranularity;
+			g_physicalDeviceProperties.meshShaderProperties.meshOutputPerPrimitiveGranularity = meshShaderProperties.meshOutputPerPrimitiveGranularity;
+			g_physicalDeviceProperties.meshShaderProperties.maxPreferredTaskWorkGroupInvocations = meshShaderProperties.maxPreferredTaskWorkGroupInvocations;
+			g_physicalDeviceProperties.meshShaderProperties.maxPreferredMeshWorkGroupInvocations = meshShaderProperties.maxPreferredMeshWorkGroupInvocations;
+			g_physicalDeviceProperties.meshShaderProperties.prefersLocalInvocationVertexOutput = meshShaderProperties.prefersLocalInvocationVertexOutput;
+			g_physicalDeviceProperties.meshShaderProperties.prefersLocalInvocationPrimitiveOutput = meshShaderProperties.prefersLocalInvocationPrimitiveOutput;
+			g_physicalDeviceProperties.meshShaderProperties.prefersCompactVertexOutput = meshShaderProperties.prefersCompactVertexOutput;
+			g_physicalDeviceProperties.meshShaderProperties.prefersCompactPrimitiveOutput = meshShaderProperties.prefersCompactPrimitiveOutput;
 		}
 
 		// VK_KHR_ray_tracing_pipeline
 		{
-			m_deviceProperties.rayTracingPipelineProperties.shaderGroupHandleSize  = rayTracingPipelineProperties.shaderGroupHandleSize;
-			m_deviceProperties.rayTracingPipelineProperties.maxRayRecursionDepth = rayTracingPipelineProperties.maxRayRecursionDepth;
-			m_deviceProperties.rayTracingPipelineProperties.maxShaderGroupStride = rayTracingPipelineProperties.maxShaderGroupStride;
-			m_deviceProperties.rayTracingPipelineProperties.shaderGroupBaseAlignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
-			m_deviceProperties.rayTracingPipelineProperties.shaderGroupHandleCaptureReplaySize = rayTracingPipelineProperties.shaderGroupHandleCaptureReplaySize;
-			m_deviceProperties.rayTracingPipelineProperties.maxRayDispatchInvocationCount = rayTracingPipelineProperties.maxRayDispatchInvocationCount;
-			m_deviceProperties.rayTracingPipelineProperties.shaderGroupHandleAlignment = rayTracingPipelineProperties.shaderGroupHandleAlignment;
-			m_deviceProperties.rayTracingPipelineProperties.maxRayHitAttributeSize = rayTracingPipelineProperties.maxRayHitAttributeSize;
+			g_physicalDeviceProperties.rayTracingPipelineProperties.shaderGroupHandleSize  = rayTracingPipelineProperties.shaderGroupHandleSize;
+			g_physicalDeviceProperties.rayTracingPipelineProperties.maxRayRecursionDepth = rayTracingPipelineProperties.maxRayRecursionDepth;
+			g_physicalDeviceProperties.rayTracingPipelineProperties.maxShaderGroupStride = rayTracingPipelineProperties.maxShaderGroupStride;
+			g_physicalDeviceProperties.rayTracingPipelineProperties.shaderGroupBaseAlignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
+			g_physicalDeviceProperties.rayTracingPipelineProperties.shaderGroupHandleCaptureReplaySize = rayTracingPipelineProperties.shaderGroupHandleCaptureReplaySize;
+			g_physicalDeviceProperties.rayTracingPipelineProperties.maxRayDispatchInvocationCount = rayTracingPipelineProperties.maxRayDispatchInvocationCount;
+			g_physicalDeviceProperties.rayTracingPipelineProperties.shaderGroupHandleAlignment = rayTracingPipelineProperties.shaderGroupHandleAlignment;
+			g_physicalDeviceProperties.rayTracingPipelineProperties.maxRayHitAttributeSize = rayTracingPipelineProperties.maxRayHitAttributeSize;
+		}
+
+		// VK_KHR_acceleration_structure
+		{
+			g_physicalDeviceProperties.accelerationStructureProperties.maxGeometryCount = accelerationStructureProperties.maxGeometryCount;
+			g_physicalDeviceProperties.accelerationStructureProperties.maxInstanceCount = accelerationStructureProperties.maxInstanceCount;
+			g_physicalDeviceProperties.accelerationStructureProperties.maxPrimitiveCount = accelerationStructureProperties.maxPrimitiveCount;
+			g_physicalDeviceProperties.accelerationStructureProperties.maxPerStageDescriptorAccelerationStructures = accelerationStructureProperties.maxPerStageDescriptorAccelerationStructures;
+			g_physicalDeviceProperties.accelerationStructureProperties.maxPerStageDescriptorUpdateAfterBindAccelerationStructures = accelerationStructureProperties.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
+			g_physicalDeviceProperties.accelerationStructureProperties.maxDescriptorSetAccelerationStructures = accelerationStructureProperties.maxDescriptorSetAccelerationStructures;
+			g_physicalDeviceProperties.accelerationStructureProperties.maxDescriptorSetUpdateAfterBindAccelerationStructures = accelerationStructureProperties.maxDescriptorSetUpdateAfterBindAccelerationStructures;
+			g_physicalDeviceProperties.accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment = accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment;
 		}
 
 		FetchMemoryProperties();
@@ -437,7 +444,7 @@ namespace Volt::RHI
 		uint32_t extCount = 0;
 		VT_VK_CHECK(vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &extCount, nullptr));
 		
-		m_availiableExtensions.resize(extCount);
-		VT_VK_CHECK(vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &extCount, reinterpret_cast<VkExtensionProperties*>(m_availiableExtensions.data())));
+		m_availableExtensions.resize(extCount);
+		VT_VK_CHECK(vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &extCount, reinterpret_cast<VkExtensionProperties*>(m_availableExtensions.data())));
 	}
 }

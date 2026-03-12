@@ -36,17 +36,15 @@ namespace Volt
 		{
 			reflect.SetGUID("{DC5C002A-B72E-42A0-83FC-FFBE1FB2DEF2}"_guid);
 			reflect.SetLabel("Character Controller Component");
-			reflect.AddMember(&CharacterControllerComponent::climbingMode, "climbingMode", "Climbing Mode", "", PhysicsControllerActorNonWalkableMode::PreventClimbingAndForceSlide);
-			reflect.AddMember(&CharacterControllerComponent::slopeLimit, "slopeLimit", "Slope Limit", "", 20.f);
-			reflect.AddMember(&CharacterControllerComponent::invisibleWallHeight, "invisibleWallHeight", "Invisible Wall Height", "", 200.f);
-			reflect.AddMember(&CharacterControllerComponent::maxJumpHeight, "maxJumpHeight", "Max Jump Height", "", 100.f);
-			reflect.AddMember(&CharacterControllerComponent::contactOffset, "contactOffset", "Contact Offset", "", 1.f);
-			reflect.AddMember(&CharacterControllerComponent::stepOffset, "stepOffset", "Step Offset", "", 10.f);
-			reflect.AddMember(&CharacterControllerComponent::density, "density", "Density", "", 1.f);
-			reflect.AddMember(&CharacterControllerComponent::layer, "layer", "Layer", "", 0);
-			reflect.AddMember(&CharacterControllerComponent::hasGravity, "hasGravity", "Has Gravity", "", true);
+			reflect.AddMember(&CharacterControllerComponent::climbingMode, 'clim', "Climbing Mode", "", PhysicsControllerActorNonWalkableMode::PreventClimbingAndForceSlide);
+			reflect.AddMember(&CharacterControllerComponent::slopeLimit, 'slli', "Slope Limit", "", 20.f);
+			reflect.AddMember(&CharacterControllerComponent::invisibleWallHeight, 'iwh', "Invisible Wall Height", "", 200.f);
+			reflect.AddMember(&CharacterControllerComponent::maxJumpHeight, 'mjh', "Max Jump Height", "", 100.f);
+			reflect.AddMember(&CharacterControllerComponent::contactOffset, 'coff', "Contact Offset", "", 1.f);
+			reflect.AddMember(&CharacterControllerComponent::stepOffset, 'soff', "Step Offset", "", 10.f);
+			reflect.AddMember(&CharacterControllerComponent::density, 'dens', "Density", "", 1.f);
+			reflect.AddMember(&CharacterControllerComponent::layer, 'layr', "Layer", "", 0);
+			reflect.AddMember(&CharacterControllerComponent::hasGravity, 'hasg', "Has Gravity", "", true);
 		}
-
-		REGISTER_COMPONENT(CharacterControllerComponent);
 	};
 }

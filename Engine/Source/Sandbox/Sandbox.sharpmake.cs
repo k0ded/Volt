@@ -10,9 +10,10 @@ namespace VoltSharpmake
         public Sandbox()
         {
             Name = "Sandbox";
-        }
+			SourceFiles.Add("Sandbox.rc");
+		}
 
-        public override void ConfigureAll(Configuration conf, CommonTarget target)
+		public override void ConfigureAll(Configuration conf, CommonTarget target)
         {
             base.ConfigureAll(conf, target);
 
@@ -27,31 +28,42 @@ namespace VoltSharpmake
                 LocalDebuggerCommandArguments = Globals.VtProjectFilePath
             };
 
-            conf.AddPublicDependency<Volt>(target);
+            conf.AddPrivateDependency<VoltApplication>(target);
+			conf.AddPrivateDependency<VoltAssets>(target);
+			conf.AddPrivateDependency<VoltScene>(target);
+			conf.AddPrivateDependency<VoltGameUI>(target);
+			conf.AddPrivateDependency<VoltEntryPoint>(target);
+			conf.AddPrivateDependency<VoltCoreComponents>(target);
+			conf.AddPrivateDependency<VoltRenderer>(target);
+			conf.AddPrivateDependency<VoltPhysics>(target);
+			conf.AddPrivateDependency<VoltAnimation>(target);
 
-			conf.AddPublicDependency<VoltAssets>(target);
-            conf.AddPublicDependency<Circuit>(target);
+			conf.AddPrivateDependency<NavigationModule>(target);
+			conf.AddPrivateDependency<InputModule>(target);
+			conf.AddPrivateDependency<WindowModule>(target);
+			conf.AddPrivateDependency<RHIModule>(target);
+			conf.AddPrivateDependency<JobSystemModule>(target);
+			conf.AddPrivateDependency<SubSystemModule>(target);
+			conf.AddPrivateDependency<NodeGraphModule>(target);
 
-            conf.AddPublicDependency<ImGuizmo>(target);
-            conf.AddPublicDependency<imgui_node_editor>(target);
-            conf.AddPublicDependency<p4>(target);
-            conf.AddPublicDependency<OpenSSL>(target);
+			conf.AddPrivateDependency<ImGuizmo>(target);
+            conf.AddPrivateDependency<imgui_node_editor>(target);
+            conf.AddPrivateDependency<p4>(target);
+            conf.AddPrivateDependency<OpenSSL>(target);
 
-            conf.AddPublicDependency<nfd_extended>(target);
-            conf.AddPublicDependency<yaml>(target);
-            conf.AddPublicDependency<MosaicModule>(target);
+            conf.AddPrivateDependency<nfd_extended>(target);
+            conf.AddPrivateDependency<MosaicModule>(target);
 
-            conf.AddPublicDependency<glm>(target);
-
+            conf.AddPrivateDependency<glm>(target);
             conf.AddPrivateDependency<esfw>(target);
 
 			Type gameProjectType = Type.GetType("VoltSharpmake.Game");
 			if (gameProjectType != null)
 			{
-				conf.AddPrivateDependency(target, gameProjectType, DependencySetting.OnlyBuildOrder);
+				conf.AddPrivateDependency(target, gameProjectType);
 			}
 
-			conf.AddPrivateDependency<PhysXPhysicsInterface>(target, DependencySetting.OnlyBuildOrder);
+			conf.AddPrivateDependency<PhysXPhysicsInterface>(target);
 
 			conf.IncludePaths.Add(
                 Path.Combine(Globals.ThirdPartyDirectory ,@"nlohmann/include"),
@@ -62,9 +74,11 @@ namespace VoltSharpmake
 
             conf.Defines.Add("CPPHTTPLIB_OPENSSL_SUPPORT");
 
-        }
+			conf.IncludePaths.Add("Public/Sandbox");
+			conf.IncludePaths.Add("Private/Sandbox");
+		}
 
-        public override void ConfigureWin64(Configuration conf, CommonTarget target)
+		public override void ConfigureWin64(Configuration conf, CommonTarget target)
         {
             base.ConfigureWin64(conf, target);
 
@@ -73,23 +87,15 @@ namespace VoltSharpmake
                 "Bcrypt.lib",
 
                 "Winmm.lib",
-                "Version.lib"
-                );
+                "Version.lib",
+				"ws2_32.lib"
+				);
+		}
 
-            // This copy should probably be moved to the D3D12RHIModule script.
-            string d3d12FolderPath = Path.Combine(Globals.ThirdPartyDirectory, "d3d12", "Binaries");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\D3D12Core.dll\"" + " \"" + conf.TargetPath + "\"");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\D3D12Core.pdb\"" + " \"" + conf.TargetPath + "\"");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\d3d12SDKLayers.dll\"" + " \"" + conf.TargetPath + "\"");
-            conf.EventPostBuild.Add(@"copy /Y " + "\"" + d3d12FolderPath + "\\d3d12SDKLayers.pdb\"" + " \"" + conf.TargetPath + "\"");
-        }
-
-        public override void ConfigureMSVC(Configuration conf, CommonTarget target)
+		public override void ConfigureMSVC(Configuration conf, CommonTarget target)
         {
             base.ConfigureMSVC(conf, target);
             conf.AdditionalLinkerOptions.Add(
-                "/WHOLEARCHIVE:PhysX",
-                "/WHOLEARCHIVE:Volt",
                 "/WHOLEARCHIVE:MosaicModule"
                 );
 

@@ -5,10 +5,10 @@
 class WorldEnginePanel : public EditorWindow
 {
 public:
-	WorldEnginePanel(Ref<Volt::Scene>& editorScene);
+	WorldEnginePanel(AssetReference<Volt::Scene>& editorScene);
 
 	void UpdateMainContent() override;
 
 private:
-	Ref<Volt::Scene>& m_editorScene;
+	AssetReference<Volt::Scene>& m_editorScene;
 };

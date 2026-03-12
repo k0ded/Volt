@@ -3,7 +3,7 @@
 
 #include "Sandbox/NodeGraph/NodeGraphEditorBackend.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 namespace ed = ax::NodeEditor;
 
@@ -234,11 +234,6 @@ namespace NodeGraph
 
 			const std::string id = "Editor##" + myContext;
 			ImGui::Begin(id.c_str());
-		
-			if (UI::DragDropTarget("ASSET_BROWSER_ITEM"))
-			{
-
-			}
 		}
 
 		ed::SetCurrentEditor(myEditorContext->editorContext);
@@ -348,7 +343,7 @@ namespace NodeGraph
 
 			if (!myGraphTypeText.empty())
 			{
-				UI::ScopedFont font{ FontType::Bold_90 };
+				UI::ScopedFont font{ UI::FontType::Bold, 90.f };
 				UI::ScopedStyleFloat alpha{ ImGuiStyleVar_Alpha, 0.2f };
 
 				const auto textSize = ImGui::CalcTextSize(myGraphTypeText.c_str());

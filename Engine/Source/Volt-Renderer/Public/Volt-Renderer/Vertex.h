@@ -1,7 +1,5 @@
 #pragma once
 
-#include <CoreUtilities/FileIO/BinaryStreamWriter.h>
-
 #include <glm/glm.hpp>
 
 namespace Volt
@@ -99,12 +97,6 @@ namespace Volt
 		glm::vec3 scale = glm::vec3(1.f);
 		uint32_t textureIndex = 0;
 		uint32_t id = 0;
-	};
-
-	struct LineVertex
-	{
-		glm::vec4 position = glm::vec4(0.f);
-		glm::vec4 color = glm::vec4(1.f);
 	};
 
 	struct TextVertex

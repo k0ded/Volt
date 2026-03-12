@@ -11,12 +11,12 @@ namespace Volt
 class EngineStatisticsPanel : public EditorWindow
 {
 public:
-	EngineStatisticsPanel(Ref<Volt::Scene>& aScene, Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::SceneRenderer>& gameSceneRenderer);
+	EngineStatisticsPanel(AssetReference<Volt::Scene>& aScene, Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::SceneRenderer>& gameSceneRenderer);
 
 	void UpdateMainContent() override;
 
 private:
-	Ref<Volt::Scene>& myScene;
+	AssetReference<Volt::Scene>& myScene;
 	Ref<Volt::SceneRenderer>& mySceneRenderer;
 	Ref<Volt::SceneRenderer>& myGameSceneRenderer;
 };

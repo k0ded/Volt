@@ -1,4 +1,0 @@
-name: "LightCull"
-internal: true
-paths:
-  - "Engine/Shaders/Source/GLSL/Compute/LightCull_cs.glsl"

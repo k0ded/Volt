@@ -4,6 +4,7 @@
 
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/VoltGUID.h>
+#include <CoreUtilities/VoltAssert.h>
 
 #include <unordered_map>
 #include <functional>
@@ -24,16 +25,13 @@ namespace Mosaic
 	{
 	public:
 		template<typename T>
-		inline bool RegisterNode()
+		inline void RegisterNode()
 		{
-			// Instantiate node to get GUID
-			Ref<T> tempNode = CreateRef<T>(nullptr);
-			const VoltGUID guid = tempNode->GetGUID();
+			const VoltGUID guid = T::GetStaticGUID();
 
-			if (m_registry.contains(guid))
-			{	
-				return false;
-			}
+			Ref<T> tempNode = CreateRef<T>(nullptr);
+
+			VT_ENSURE(!m_registry.contains(guid));
 
 			NodeInfo nodeInfo{};
 			nodeInfo.name = tempNode->GetName();
@@ -44,7 +42,24 @@ namespace Mosaic
 			};
 
 			m_registry[guid] = nodeInfo;
-			return true;
+		}
+
+		template<typename T>
+		inline void UnregisterNode()
+		{
+			const VoltGUID guid = T::GetStaticGUID();
+
+			// #Note_Ivar: The registry may already have been destroyed due to
+			// DLL ordering.
+			if (m_registry.empty())
+			{
+				return;
+			}
+
+			if (VT_CHECK(m_registry.contains(guid)))
+			{
+				m_registry.erase(guid);
+			}
 		}
 
 		inline Ref<MosaicNode> CreateNode(const VoltGUID guid, MosaicGraph* ownerGraph)
@@ -56,18 +71,28 @@ namespace Mosaic
 		inline const auto& GetRegistry() { return m_registry; }
 		inline const auto& GetNodeInfo(const VoltGUID guid) { return m_registry.at(guid); }
 
+		static NodeRegistry& Get();
+
 	private:
 		std::unordered_map<VoltGUID, NodeInfo> m_registry;
 	};
 }
 
-extern VTMOSAIC_API Mosaic::NodeRegistry g_mosaicNodeRegistry;
-
-VT_INLINE Mosaic::NodeRegistry& GetMosaicNodeRegistry()
-{
-	return g_mosaicNodeRegistry;
-}
-
 #define UNPACK(...) __VA_ARGS__
-#define REGISTER_NODE(nodeType) inline static bool nodeType ## _node_registered = GetMosaicNodeRegistry().RegisterNode<nodeType>()
-#define REGISTER_NODE_TEMPLATE(varName, nodeType) inline static bool varName ## _node_registered = GetMosaicNodeRegistry().RegisterNode<UNPACK nodeType>()
+#define DECLARE_NODE_TEMPLATE(varName, nodeType) \
+	using varName = UNPACK nodeType
+
+// Must lie in a compilation unit (cpp file)
+#define REGISTER_NODE(nodeType) \
+	class MosaicNodeRegistrar_##nodeType \
+	{ \
+	public: \
+		VT_INLINE MosaicNodeRegistrar_##nodeType() \
+		{ \
+			::Mosaic::NodeRegistry::Get().RegisterNode<nodeType>(); \
+		} \
+		VT_INLINE ~MosaicNodeRegistrar_##nodeType() \
+		{ \
+			::Mosaic::NodeRegistry::Get().UnregisterNode<nodeType>(); \
+		} \
+	} g_mosaicNodeRegistrar_##nodeType

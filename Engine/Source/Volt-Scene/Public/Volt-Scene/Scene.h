@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Volt-Scene/WorldEngine/WorldEngine.h"
+#include "Volt-Scene/SceneExtension.h"
 #include "Volt-Scene/Config.h"
-
-#include <Volt-Core/AssetTypes.h>
+#include "Volt-Scene/AssetTypes.h"
 
 #include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetReference.h>
 
 #include <EventSystem/EventListener.h>
 #include <EntitySystem/EntityScene.h>
@@ -15,19 +16,34 @@ namespace Volt
 	class Vision;
 	class Entity;
 
-	class Animation;
-	class Skeleton;
-
 	class Entity;
 	class RenderScene;
 	class EntityPhysicsScene;
+	class EntityDesc;
 
 	struct SceneSettings
 	{
-		bool useWorldEngine = false;
+		bool useWorldEngine = true;
 	};
 
-	class VTS_API Scene : public Asset, public EventListener, public std::enable_shared_from_this<Scene>
+	struct SceneInitializer
+	{
+		std::string name = "New Scene";
+
+		/*
+			Can be set to false if the scene will never be renderered.
+		*/
+		bool shouldHaveRenderScene = true;
+	
+		static SceneInitializer Create(const std::string& name)
+		{
+			SceneInitializer result;
+			result.name = name;
+			return result;
+		}
+	};
+
+	class VTS_API Scene : public Asset, public EventListener
 	{
 	public:
 		struct Statistics
@@ -36,7 +52,7 @@ namespace Volt
 		};
 
 		Scene();
-		Scene(const std::string& name);
+		Scene(const SceneInitializer& initializer);
 		~Scene() override;
 
 		void OnRuntimeStart();
@@ -46,19 +62,20 @@ namespace Volt
 		void OnSimulationEnd();
 
 		void Update(float aDeltaTime);
-		void FixedUpdate(float aDeltaTime);
 		void UpdateEditor(float aDeltaTime);
 		void UpdateSimulation(float aDeltaTime);
 
 		void SortScene();
 
-		void MarkEntityAsEdited(const Entity& entity);
-		void ClearEditedEntities();
+		void LoadEntities();
+		void UnloadEntities();
+		bool IsFinishedLoadingEntities() { return m_isFinishedLoadingEntities; }
 
 		VT_NODISCARD TQS GetEntityWorldTQS(const Entity& entity) const;
 
-		VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_entityScene.GetRegistry(); }
-		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_name; }
+		//VT_NODISCARD VT_INLINE entt::registry& GetRegistry() { return m_entityScene.GetRegistry(); }
+		VT_NODISCARD VT_INLINE EntityScene& GetEntityScene() { return m_entityScene; }
+		VT_NODISCARD VT_INLINE const std::string& GetName() const { return m_sceneInitializer.name; }
 		VT_NODISCARD VT_INLINE const Statistics& GetStatistics() const { return m_statistics; }
 		VT_NODISCARD VT_INLINE bool IsPlaying() const { return m_isPlaying; }
 		VT_NODISCARD VT_INLINE float GetDeltaTime() const { return m_currentDeltaTime; }
@@ -74,17 +91,20 @@ namespace Volt
 		void SetRenderSize(uint32_t aWidth, uint32_t aHeight);
 
 		Entity CreateEntity(const std::string& tag = "");
-		Entity CreateEntityWithID(const EntityID& id, const std::string& tag = "");
+		Entity CreateEntityWithID(const EntityID& id);
+		Entity CreateEntityWithIDForExistingDescription(const EntityID& id, Volt::AssetHandle existingEntityDescHandle);
+
+		Volt::AssetHandle CreateEntityDescForEntity(const EntityID& id);
 
 		Entity GetEntityFromID(const EntityID id) const;
 		Entity GetEntityFromHandle(entt::entity entityHandle) const;
-
-		EntityHelper GetEntityHelperFromEntityID(EntityID entityId) const;
+		Volt::AssetHandle GetEntityDescHandleFromEntityID(EntityID entityID) const;
 
 		bool IsRelatedTo(Entity entity, Entity otherEntity);
-		void DestroyEntity(Entity entity);
-		void ParentEntity(Entity parent, Entity child);
-		void UnparentEntity(Entity entity);
+		void DestroyEntity(Entity entity, bool ignoreChildren = false);
+		void DestroyEntity(Entity entity, Vector<EntityID>& outDestroyedEntities, bool ignoreChildren = false);
+		void DestroyEntity(Entity entity, Vector<Volt::AssetHandle>& outDestroyedEntityDescs, bool ignoreChildren = false);
+		void DestroyEntity(Entity entity, Vector<EntityID>* outDestroyedEntities, Vector<Volt::AssetHandle>* outDestroyedEntityDescs, bool ignoreChildren = false);
 
 		void InvalidateEntityTransform(const EntityID& entityId);
 		bool IsEntityValid(EntityID entityId) const;
@@ -102,22 +122,24 @@ namespace Volt
 		Entity GetSceneEntityFromScriptingEntity(EntityType scriptingEntity);
 
 		Vector<Entity> GetAllEntities() const;
-		Vector<Entity> GetAllEditedEntities() const;
-		Vector<EntityID> GetAllRemovedEntities() const;
 
-		static Ref<Scene> CreateDefaultScene(const std::string& name, bool createDefaultMesh = true);
+		static AssetReference<Scene> CreateDefaultScene(const std::string& name, bool createDefaultMesh = true, bool asMemoryAsset = false);
 
 		static AssetType GetStaticType() { return AssetTypes::Scene; }
-		AssetType GetType() override { return GetStaticType(); }
+		AssetType GetType() const override { return GetStaticType(); }
 		uint32_t GetVersion() const override { return 1; }
+		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
-		void CopyTo(Ref<Scene> otherScene);
+		//copy all the entities into another scene, first removing all entities in the other scene
+		void CopyEntitiesTo(AssetReference<Scene> otherScene);
 		void Clear();
+
+		template<typename T, typename... Args>
+		void AddExtension(Args&&... args);
 
 	private:
 		friend class Entity;
 		friend class SceneImporter;
-		friend class SceneSerializer;
 
 		void Initialize();
 		void CreatePhysicsScene();
@@ -129,22 +151,26 @@ namespace Volt
 		glm::mat4 GetWorldTransform(Entity entity) const;
 		Vector<Entity> FlattenEntityHeirarchy(Entity entity);
 
+		bool m_isFinishedLoadingEntities = false;
+
+		SceneInitializer m_sceneInitializer;
 		SceneSettings m_sceneSettings;
 		Statistics m_statistics;
 		WorldEngine m_worldEngine;
+		SceneExtensionManager m_sceneExtensionManager;
 
 		bool m_isPlaying = false;
 		float m_timeSinceStart = 0.f;
 		float m_currentDeltaTime = 0.f;
-
-		std::string m_name = "New Scene";
 
 		uint32_t m_viewportWidth = 1;
 		uint32_t m_viewportHeight = 1;
 
 		EntityScene m_entityScene;
 
-		//Ref<Vision> m_visionSystem; // Needs to be of ptr type because of include loop // #TODO_Scene
+		Map<Volt::EntityID, Volt::AssetHandle> m_entityIDToDescHandle;
+		Vector<AssetReference<class EntityDesc>> m_createdEntityDescs;
+
 		Ref<RenderScene> m_renderScene;
 		Scope<EntityPhysicsScene> m_entityPhysicsScene;
 	};
@@ -180,13 +206,30 @@ namespace Volt
 	template<typename... T, typename F>
 	inline void Scene::ForEachWithComponents(const F& func)
 	{
-		auto view = m_entityScene.GetRegistry().view<T...>();
-		view.each(func);
+		using ComponentTuple = std::tuple<T...>;
+		using FirstComponentType = std::tuple_element_t<0, ComponentTuple>;
+
+		if constexpr (std::tuple_size_v<ComponentTuple> > 1)
+		{
+			auto view = m_entityScene.GetRegistry().view<T...>().use<FirstComponentType>();
+			view.each(func);
+		}
+		else
+		{
+			auto view = m_entityScene.GetRegistry().view<T...>();
+			view.each(func);
+		}
 	}
 
 	template<typename EntityType>
 	inline Entity Scene::GetSceneEntityFromScriptingEntity(EntityType scriptingEntity)
 	{
 		return Entity{ scriptingEntity.GetHandle(), this };
+	}
+
+	template<typename T, typename... Args>
+	void Scene::AddExtension(Args&&... args)
+	{
+		m_sceneExtensionManager.AddExtension<T>(std::forward<Args>(args)...);
 	}
 }

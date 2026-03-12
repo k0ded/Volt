@@ -4,11 +4,21 @@
 #include <EntitySystem/EntityID.h>
 
 #include <Volt-Scene/Scene.h>
-#include <Volt-Scene/Entity.h>
+#include <EntitySystem/Entity.h>
 
 void SelectionManager::Initialize()
 {
 	m_entities[SelectionContext::Scene] = Vector<Volt::EntityID>();
+}
+
+void SelectionManager::Shutdown()
+{
+	m_callbacks.clear();
+}
+
+void SelectionManager::RegisterSelectionChangedCallback(const SelectionChangedCallback& func)
+{
+	m_callbacks.emplace_back(func);
 }
 
 bool SelectionManager::Select(Volt::EntityID entity, SelectionContext context)
@@ -24,6 +34,12 @@ bool SelectionManager::Select(Volt::EntityID entity, SelectionContext context)
 	}
 
 	m_entities.at(context).emplace_back(entity);
+
+	for (const auto& func : m_callbacks)
+	{
+		func(m_entities.at(context), context);
+	}
+
 	return true;
 }
 
@@ -41,6 +57,12 @@ bool SelectionManager::Deselect(Volt::EntityID entity, SelectionContext context)
 	}
 
 	m_entities.at(context).erase(it);
+
+	for (const auto& func : m_callbacks)
+	{
+		func(m_entities.at(context), context);
+	}
+
 	return true;
 }
 
@@ -54,6 +76,11 @@ void SelectionManager::DeselectAll(SelectionContext context)
 	m_firstSelectedRow = -1;
 	m_lastSelectedRow = -1;
 	m_entities.at(context).clear();
+
+	for (const auto& func : m_callbacks)
+	{
+		func(m_entities.at(context), context);
+	}
 }
 
 bool SelectionManager::IsAnySelected(SelectionContext context)
@@ -66,7 +93,7 @@ bool SelectionManager::IsSelected(Volt::EntityID entity, SelectionContext contex
 	return std::find(m_entities.at(context).begin(), m_entities.at(context).end(), entity) != m_entities.at(context).end();
 }
 
-void SelectionManager::Update(Ref<Volt::Scene> scene)
+void SelectionManager::Update(AssetReference<Volt::Scene> scene)
 {
 	for (const auto& ent : GetSelectedEntities())
 	{
@@ -77,7 +104,7 @@ void SelectionManager::Update(Ref<Volt::Scene> scene)
 	}
 }
 
-bool SelectionManager::IsAnyParentSelected(Volt::EntityID id, Ref<Volt::Scene> scene)
+bool SelectionManager::IsAnyParentSelected(Volt::EntityID id, AssetReference<Volt::Scene> scene)
 {
 	Volt::Entity entity = scene->GetEntityFromID(id);
 

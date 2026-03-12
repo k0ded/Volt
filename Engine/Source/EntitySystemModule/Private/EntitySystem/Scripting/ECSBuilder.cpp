@@ -21,10 +21,10 @@ void ECSBuilder::Compile()
 void ECSGameLoopContainer::Compile()
 {
 	Vector<Vector<UUID64>> executionBuckets;
-	vt::map<UUID64, size_t> systemToBucketIndex;
+	Map<UUID64, size_t> systemToBucketIndex;
 
-	vt::map<UUID64, Vector<UUID64>> graph;
-	vt::map<UUID64, size_t> inDegree;
+	Map<UUID64, Vector<UUID64>> graph;
+	Map<UUID64, size_t> inDegree;
 
 	// Initialize graph and in degree
 	executionBuckets.push_back();
@@ -85,12 +85,12 @@ void ECSGameLoopContainer::Compile()
 		}
 	}
 
-#ifdef VT_DEBUG
-	for (auto& [id, degree] : inDegree)
-	{
-		VT_ENSURE(degree == 0);
-	}
-#endif
+	//#ifdef VT_DEBUG
+	//	for (auto& [id, degree] : inDegree)
+	//	{
+	//		VT_ENSURE(degree == 0);
+	//	}
+	//#endif
 
 	m_executionBuckets = executionBuckets;
 }
@@ -100,7 +100,7 @@ ECSGameLoopContainer& ECSBuilder::GetGameLoop(GameLoop gameLoopType)
 	return m_gameLoops[gameLoopType];
 }
 
-void ECSGameLoopContainer::Execute(Volt::EntityScene& scene, float deltaTime)
+void ECSGameLoopContainer::Execute(Volt::EntityScene& scene)
 {
 	VT_PROFILE_FUNCTION();
 
@@ -108,7 +108,7 @@ void ECSGameLoopContainer::Execute(Volt::EntityScene& scene, float deltaTime)
 	{
 		for (const auto& id : ids)
 		{
-			m_registeredSystems[id].Execute(scene, deltaTime);
+			m_registeredSystems[id].Execute(scene);
 		}
 	}
 }

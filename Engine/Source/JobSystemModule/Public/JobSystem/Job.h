@@ -1,30 +1,152 @@
 #pragma once
 
-#include <atomic>
-#include <functional>
+#include "JobSystem/Config.h"
+
+#include <CoreUtilities/Core.h>
 
 namespace Volt
 {
-	using JobID = uint32_t;
-	using JobFunc = std::function<void()>;
-
-	constexpr JobID INVALID_JOB_ID = std::numeric_limits<JobID>::max();
-	constexpr size_t TARGET_SIZE = 128;
-
-	enum class ExecutionPolicy
+	enum class ExecutionPolicy : uint8_t
 	{
-		MainThread,
+		MainThread = 0,
 		WorkerThread
 	};
 
-	struct Job
+	enum class ExecutionPriority : uint8_t
 	{
-		// #TODO_Ivar: Switch to not using std::function as std::function is very large.
-		JobFunc func;
-		JobID parentJob = INVALID_JOB_ID;
-		volatile long unfinishedJobs = 0;
-		ExecutionPolicy executionPolicy = ExecutionPolicy::WorkerThread;
-
-		char alignmentPadding[TARGET_SIZE - sizeof(func) - sizeof(parentJob) - sizeof(unfinishedJobs) - sizeof(executionPolicy)];
+		Latent = 0,
+		Render,
+		Critical,
+		Immediate,
+		Num
 	};
+
+	class VTJS_API JobCounter
+	{
+	public:
+		VT_INLINE int32_t Increment(int32_t increment = 1)
+		{
+			return m_counter.fetch_add(increment);
+		}
+
+		VT_INLINE int32_t Decrement(int32_t decrement = 1)
+		{
+			return m_counter.fetch_sub(decrement);
+		}
+
+		VT_INLINE int32_t GetCounter() const
+		{
+			return m_counter.load(std::memory_order::relaxed);
+		}
+
+		VT_INLINE bool IsActive() const
+		{
+			return m_counter.load(std::memory_order::relaxed) >= 0;
+		}
+
+		VT_INLINE bool IsCompleted() const
+		{
+			return m_counter.load(std::memory_order::relaxed) <= 0;
+		}
+		
+		VT_INLINE void Reset()
+		{
+			m_counter.store(0, std::memory_order::seq_cst);
+		}
+
+		VT_INLINE uint32_t GetRefCount() const 
+		{
+			return m_referenceCount.load(std::memory_order::relaxed);
+		}
+
+		VT_INLINE void IncRef()
+		{
+			m_referenceCount.fetch_add(1, std::memory_order::relaxed);
+		}
+
+		// Needs to be in a cpp file as it interacts with 
+		// the job system.
+		void DecRef();
+
+	private:
+		std::atomic<int32_t> m_counter = 0;
+		std::atomic<uint32_t> m_referenceCount = 0;
+	};
+
+	using JobCounterRef = JobCounter*;
+
+	class VTJS_API alignas(64) Job
+	{
+	public:
+		inline static constexpr size_t MaxJobFuncSize = 1024;
+
+		Job() = default;
+
+		template<typename Func> void Create(std::string_view name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& jobFunc);
+
+		void Execute();
+		void Reset();
+
+		VT_NODISCARD VT_INLINE std::string_view GetName() const { return m_jobName; }
+		VT_NODISCARD VT_INLINE JobCounter* GetCounter() const { return m_counter; }
+		VT_NODISCARD VT_INLINE JobCounter* GetWaitCounter() const { return m_waitCounter; }
+		VT_NODISCARD VT_INLINE ExecutionPolicy GetExecutionPolicy() const { return m_executionPolicy; }
+		VT_NODISCARD VT_INLINE ExecutionPriority GetPriority() const { return m_priority; }
+
+		VT_INLINE void IncRef()
+		{
+			m_referenceCount.fetch_add(1, std::memory_order::relaxed);
+		}
+
+		// Needs to be in a cpp file as it interacts with 
+		// the job system.
+		void DecRef();
+
+	private:
+		struct JobFuncBase
+		{
+			virtual ~JobFuncBase() = default;
+			virtual void Execute() = 0;
+		};
+
+		template<typename Func>
+		struct JobFunc : public JobFuncBase
+		{
+			JobFunc(Func&& inFunc)
+				: func(std::move(inFunc))
+			{ }
+
+			~JobFunc() override = default;
+			void Execute() override { func(); }
+		
+			Func func;
+		};
+
+		bool m_allocated = false;
+		ExecutionPolicy m_executionPolicy = ExecutionPolicy::WorkerThread;
+		ExecutionPriority m_priority = ExecutionPriority::Critical;
+		std::atomic<uint32_t> m_referenceCount = 0;
+		JobCounter* m_counter = nullptr;
+		JobCounter* m_waitCounter = nullptr;
+		std::string_view m_jobName;
+		uint8_t m_funcStorage[1024];
+	};
+
+	using JobRef = Job*;
+
+	template<typename Func>
+	void Job::Create(std::string_view name, JobCounter* counter, JobCounter* waitCounter, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& jobFunc)
+	{
+		static_assert(sizeof(Func) <= Job::MaxJobFuncSize);
+
+		m_jobName = name;
+		m_counter = counter;
+		m_waitCounter = waitCounter;
+		m_executionPolicy = executionPolicy;
+		m_priority = priority;
+
+		void* storagePtr = &m_funcStorage;
+		new(storagePtr) JobFunc<std::remove_reference_t<Func>>(std::move(jobFunc));
+		m_allocated = true;
+	}
 }

@@ -7,10 +7,49 @@ namespace Volt::RHI
 		: m_count(count)
 	{
 		m_commandBuffers.resize(m_count);
+		m_fences.resize(m_count);
+
 		for (uint32_t i = 0; i < m_count; i++)
 		{
 			m_commandBuffers[i] = CommandBuffer::Create(queueType);
+			m_fences[i] = Fence::Create();
 		}
+	}
+
+	CommandBufferSet::CommandBufferSet(const CommandBufferSet& other) noexcept
+		: m_count(other.m_count),
+		m_currentIndex(other.m_currentIndex),
+		m_fences(other.m_fences),
+		m_commandBuffers(other.m_commandBuffers)
+	{
+	}
+
+	CommandBufferSet::CommandBufferSet(CommandBufferSet&& other) noexcept 
+		: m_count(other.m_count),
+		m_currentIndex(std::move(other.m_currentIndex)),
+		m_fences(std::move(other.m_fences)),
+		m_commandBuffers(std::move(other.m_commandBuffers))
+	{
+	}
+
+	CommandBufferSet& CommandBufferSet::operator=(const CommandBufferSet& other) noexcept
+	{
+		m_count = other.m_count;
+		m_currentIndex = other.m_currentIndex;
+		m_fences = other.m_fences;
+		m_commandBuffers = other.m_commandBuffers;
+
+		return *this;
+	}
+
+	CommandBufferSet& CommandBufferSet::operator=(CommandBufferSet&& other) noexcept
+	{
+		m_count = other.m_count;
+		m_currentIndex = std::move(other.m_currentIndex);
+		m_fences = std::move(other.m_fences);
+		m_commandBuffers = std::move(other.m_commandBuffers);
+
+		return *this;
 	}
 
 	RefPtr<CommandBuffer> CommandBufferSet::GetCurrentCommandBuffer() const
@@ -27,5 +66,10 @@ namespace Volt::RHI
 	void CommandBufferSet::Increment()
 	{
 		m_currentIndex = (m_currentIndex + 1) % m_count;
+	}
+
+	RefPtr<Fence> CommandBufferSet::GetCurrentFence() const
+	{
+		return m_fences.at(m_currentIndex);
 	}
 }

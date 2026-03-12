@@ -132,25 +132,15 @@ namespace Utility
 
 	void RunSetup(const std::filesystem::path& engineDir)
 	{
-		if (FileSystem::HasEnvironmentVariable("VOLT_PATH"))
-		{
-			if (FileSystem::GetEnvVariable("VOLT_PATH") != engineDir.string())
-			{
-				FileSystem::SetEnvVariable("VOLT_PATH", engineDir.string());
-			}
-		}
-		else
-		{
-			FileSystem::SetEnvVariable("VOLT_PATH", engineDir.string());
-		}
-
-		const std::string sandboxLaunchCommand = engineDir.string() + "\\Sandbox.exe %1";
+		const std::string sandboxLaunchCommand = engineDir.string() + "\\Binaries\\Sandbox.exe %1";
 
 		FileSystem::SetRegistryValue(R"(Software\Classes\.vtproj)", "Volt.Sandbox");
 		FileSystem::SetRegistryValue(R"(Software\Classes\.vtproj\Content Type)", "text/plain");
 		FileSystem::SetRegistryValue(R"(Software\Classes\.vtproj\PerceivedType)", "text");
 		FileSystem::SetRegistryValue(R"(Software\Classes\Volt.Sandbox)", "Volt Sandbox");
 		FileSystem::SetRegistryValue(R"(Software\Classes\Volt.Sandbox\Shell\Open\Command)", sandboxLaunchCommand);
+		FileSystem::SetRegistryValue(R"(Software\Classes\Volt.Sandbox)", "Volt Sandbox");
+		FileSystem::SetRegistryValue(R"(Software\Classes\Volt.Sandbox)", "EngineDirectory", engineDir.string());
 
 		SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
 	}
@@ -398,9 +388,10 @@ void LauncherLayer::UI_DrawProjectsContent()
 				{
 					if (m_data.engineInfo.IsValid() && !m_data.engineInfo.needsRepair)
 					{
-						FileSystem::StartProcess(m_data.engineInfo.engineDirectory / "Launcher.exe", project.path.wstring());
+						FileSystem::StartProcess(m_data.engineInfo.engineDirectory / "Binaries" / "Launcher.exe", project.path.wstring());
 					}
 				}
+				UI::SimpleToolTip("Play the game");
 
 				ImGui::SameLine();
 
@@ -410,8 +401,9 @@ void LauncherLayer::UI_DrawProjectsContent()
 					tempProjectPath.push_back('"');
 					tempProjectPath.insert(tempProjectPath.begin(), '"');
 
-					FileSystem::StartProcess(m_data.engineInfo.engineDirectory / "Sandbox.exe", tempProjectPath);
+					FileSystem::StartProcess(m_data.engineInfo.engineDirectory / "Binaries" / "Sandbox.exe", tempProjectPath);
 				}
+				UI::SimpleToolTip("Edit the game");
 
 				ImGui::SameLine();
 
@@ -483,6 +475,12 @@ void LauncherLayer::UI_DrawEnginesContent()
 
 	if (ImGui::Button("Locate"))
 	{
+		std::filesystem::path selectedFolder = FileSystem::PickFolderDialogue();
+
+		//todo: verify the selected folder is a Volt engine folder
+
+		Utility::RunSetup(selectedFolder);
+		m_data.engineInfo.engineDirectory = selectedFolder;
 	}
 
 	if (m_data.engineInfo.needsRepair)
@@ -507,27 +505,27 @@ void LauncherLayer::UI_DrawEnginesContent()
 			m_isInstalling = true;
 
 			m_downloadFuture = std::async(std::launch::async, [&, url]()
-			{
-				TCHAR pf[MAX_PATH];
-				SHGetSpecialFolderPath(0, pf, CSIDL_LOCAL_APPDATA, FALSE);
-
-				const std::filesystem::path targetDir = std::filesystem::path(pf) / "Programs" / "Volt" / "Engine";
-
-				Utility::DownloadFile(url, "Volt.zip", [](void*, double t, double d)
 				{
-					printf("Progress: %f", float(d / t));
+					TCHAR pf[MAX_PATH];
+					SHGetSpecialFolderPath(0, pf, CSIDL_LOCAL_APPDATA, FALSE);
 
-					return 0;
+					const std::filesystem::path targetDir = std::filesystem::path(pf) / "Programs" / "Volt" / "Engine";
+
+					Utility::DownloadFile(url, "Volt.zip", [](void*, double t, double d)
+						{
+							printf("Progress: %f", float(d / t));
+
+							return 0;
+						});
+
+					Utility::UnzipFile("Volt.zip", targetDir);
+					std::filesystem::remove("Volt.zip");
+
+					Utility::RunSetup(targetDir / "Volt");
+
+					m_data.engineInfo.engineDirectory = targetDir / "Volt";
+					m_isInstalling = false;
 				});
-
-				Utility::UnzipFile("Volt.zip", targetDir);
-				std::filesystem::remove("Volt.zip");
-
-				Utility::RunSetup(targetDir / "Volt");
-
-				m_data.engineInfo.engineDirectory = targetDir / "Volt";
-				m_isInstalling = false;
-			});
 		}
 	}
 
@@ -633,7 +631,7 @@ void LauncherLayer::CreateNewProject(const CreateProjectData& newData)
 		return;
 	}
 
-	const std::filesystem::path projectTemplatePath = m_data.engineInfo.engineDirectory / "Templates" / "Project";
+	const std::filesystem::path projectTemplatePath = m_data.engineInfo.engineDirectory / "Templates" / "TemplateProject";
 	const std::filesystem::path targetDir = newData.targetDir / newData.projectName;
 
 	if (std::filesystem::exists(targetDir))

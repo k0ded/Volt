@@ -1,38 +1,32 @@
 #include "rcpch.h"
+#include "RenderCore/RenderGraph/RenderContext.h"
 
 #include "RenderCore/RenderGraph/RenderGraph.h"
+#include "RenderCore/Shader/BatchedShaderParameters.h"
+#include "RenderCore/Shader/PipelineStateCache.h"
 
-#include "RenderCore/RenderGraph/RenderContext.h"
-#include "RenderCore/RenderGraph/SharedRenderContext.h"
-#include "RenderCore/RenderGraph/Resources/RenderGraphResource.h"
-#include "RenderCore/Resources/BindlessResourcesManager.h"
-
-#include <RHIModule/Buffers/CommandBuffer.h>
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/UniformBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Images/ImageView.h>
+#include <RHIModule/Globals.h>
 
 namespace Volt
 {
-	RenderContext::RenderContext(RenderGraph& renderGraph, RenderGraphPassNodeBase& currentPassNode, SharedRenderContext& sharedContext, RefPtr<RHI::CommandBuffer> commandBuffer)
-		: m_renderGraph(renderGraph), m_currentPassNode(currentPassNode), m_sharedContext(sharedContext), m_commandBuffer(commandBuffer)
+	void ValidateClearUAV(RGPassRef pass)
 	{
-		memset(m_passConstantsData, 0, RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE);
+		const RenderGraphPassFlags passFlags = pass->GetFlags();
+		VT_ENSURE(EnumValueContainsFlag(passFlags, RenderGraphPassFlags::Clear));
 	}
 
-	void RenderContext::EndContext()
+	RenderContext::RenderContext(RenderGraph& renderGraph, RGPassRef currentPass, RefPtr<RHI::CommandBuffer> commandBuffer, RenderGraphShaderParameterUniformBuffer& shaderParameterUniformBuffer)
+		: m_renderGraph(renderGraph), m_currentPass(currentPass), m_commandBuffer(commandBuffer), m_shaderParameterUniformBuffer(shaderParameterUniformBuffer)
 	{
-		uint8_t* passConstantsPtr = m_sharedContext.GetPassConstantsPointer(m_currentPassNode.index);
-		memcpy_s(passConstantsPtr, RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE, m_passConstantsData, RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE);
+
 	}
 
-	void RenderContext::BeginMarker(std::string_view markerName, const glm::vec4& markerColor)
+	void RenderContext::Flush(RefPtr<RHI::Fence> fence)
 	{
-		m_commandBuffer->BeginMarker(markerName, { markerColor.x, markerColor.y, markerColor.z, markerColor.w });
-	}
-
-	void RenderContext::EndMarker()
-	{
-		m_commandBuffer->EndMarker();
+		//m_commandBuffer->Flush(fence);
 	}
 
 	void RenderContext::BeginRendering(const RenderingInfo& renderingInfo)
@@ -42,16 +36,21 @@ namespace Volt
 		m_commandBuffer->SetViewports({ renderingInfo.viewport });
 		m_commandBuffer->SetScissors({ renderingInfo.scissor });
 		m_commandBuffer->BeginRendering(renderingInfo.renderingInfo);
+
+		m_activeRenderingInfo = renderingInfo;
+		m_isWithinRenderingScope = true;
 	}
-	
+
 	void RenderContext::EndRendering()
 	{
 		VT_PROFILE_FUNCTION();
 
+		m_isWithinRenderingScope = false;
+		m_activeRenderingInfo = {};
 		m_commandBuffer->EndRendering();
 	}
 
-	const RenderingInfo RenderContext::CreateRenderingInfo(const uint32_t width, const uint32_t height, const StackVector<RenderGraphImageHandle, RHI::MAX_ATTACHMENT_COUNT>& attachments)
+	const RenderingInfo RenderContext::CreateRenderingInfo(const uint32_t width, const uint32_t height, const ShaderParameterRenderTargetBindings& rtBindings)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -64,31 +63,43 @@ namespace Volt
 		viewport.minDepth = 0.f;
 		viewport.maxDepth = 1.f;
 
-		StackVector<RHI::AttachmentInfo, RHI::MAX_COLOR_ATTACHMENT_COUNT> colorAttachments;
+		InlineVector<RHI::AttachmentInfo, RHI::MAX_COLOR_ATTACHMENT_COUNT> colorAttachments;
 		RHI::AttachmentInfo depthAttachment{};
 
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-
-		for (const auto& resourceHandle : attachments)
+		for (size_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
 		{
-			resourceAccess.ValidateResourceAccess(resourceHandle);
-			const auto view = m_renderGraph.GetImageView(resourceHandle);
+			const ShaderParameterRenderTargetDecl& rtDecl = rtBindings.renderTargets[i];
 
-			if ((view->GetImageAspect() & RHI::ImageAspect::Color) != RHI::ImageAspect::None)
+			if (rtDecl.texture != nullptr)
 			{
-				RHI::AttachmentInfo attachment{};
+				RHI::ImageViewDesc viewDesc{};
+				viewDesc.baseMipLevel = rtDecl.subResourceRange.baseMipLevel;
+				viewDesc.baseArrayLayer = rtDecl.subResourceRange.baseArrayLayer;
+				viewDesc.mipCount = rtDecl.subResourceRange.mipCount;
+				viewDesc.layerCount = rtDecl.subResourceRange.layerCount;
+
+				RefPtr<RHI::ImageView> view = rtDecl.texture->GetRHIResource()->GetOrCreateView(viewDesc);
+
+				RHI::AttachmentInfo& attachment = colorAttachments.emplace_back();
 				attachment.clearMode = RHI::ClearMode::Clear;
 				attachment.clearColor = { 0.f, 0.f, 0.f, 0.f };
 				attachment.view = view;
+			}
+		}
 
-				colorAttachments.Push(attachment);
-			}
-			else
-			{
-				depthAttachment.clearMode = RHI::ClearMode::Clear;
-				depthAttachment.clearColor = { 0.f };
-				depthAttachment.view = view;
-			}
+		const ShaderParameterRenderTargetDecl& depthDecl = rtBindings.depthTarget;
+
+		if (depthDecl.texture != nullptr)
+		{
+			RHI::ImageViewDesc viewDesc{};
+			viewDesc.baseMipLevel = depthDecl.subResourceRange.baseMipLevel;
+			viewDesc.baseArrayLayer = depthDecl.subResourceRange.baseArrayLayer;
+			viewDesc.mipCount = depthDecl.subResourceRange.mipCount;
+			viewDesc.layerCount = depthDecl.subResourceRange.layerCount;
+
+			depthAttachment.view = depthDecl.texture->GetRHIResource()->GetOrCreateView(viewDesc);
+			depthAttachment.clearMode = RHI::ClearMode::Clear;
+			depthAttachment.clearColor = { 0.f };
 		}
 
 		RHI::RenderingInfo renderingInfo{};
@@ -104,561 +115,472 @@ namespace Volt
 		return result;
 	}
 
-	void RenderContext::ClearImage(RenderGraphImageHandle handle, const glm::vec4& clearColor)
+	void RenderContext::FillRenderingAttachmentDeclaration(RHI::RenderingAttachmentDeclaration& outDeclaration) const
 	{
-		VT_PROFILE_FUNCTION();
+		outDeclaration.colorAttachmentFormats.resize(m_activeRenderingInfo.renderingInfo.colorAttachments.size());
 
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(handle);
-
-		const auto image = m_renderGraph.GetImageRaw(handle);
-		m_commandBuffer->ClearImage(image, { clearColor.x, clearColor.y, clearColor.z, clearColor.w });
-	}
-
-	void RenderContext::ClearBuffer(RenderGraphBufferHandle handle, uint32_t clearValue)
-	{
-		VT_PROFILE_FUNCTION();
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(handle);
-
-		const auto buffer = m_renderGraph.GetBufferRaw(handle);
-		m_commandBuffer->ClearBuffer(buffer, clearValue);
-	}
-
-	void RenderContext::CopyBuffer(RenderGraphBufferHandle src, RenderGraphBufferHandle dst, const size_t size)
-	{
-		VT_PROFILE_FUNCTION();
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(src);
-		resourceAccess.ValidateResourceAccess(dst);
-
-		const auto srcBuffer = m_renderGraph.GetBufferRaw(src);
-		const auto dstBuffer = m_renderGraph.GetBufferRaw(dst);
-
-		VT_ENSURE_MSG(dstBuffer->GetByteSize() >= size, "Destination buffer is too small!");
-		VT_ENSURE_MSG(srcBuffer->GetByteSize() >= size, "Source buffer is smaller than the specified copy size!");
-		VT_ENSURE_MSG(size > 0, "Size must be larger than zero!");
-
-		m_commandBuffer->CopyBufferRegion(srcBuffer->GetAllocation(), 0, dstBuffer->GetAllocation(), 0, size);
-	}
-
-	void RenderContext::MappedBufferUpload(RenderGraphBufferHandle bufferHandle, const void* data, const size_t size)
-	{
-		VT_PROFILE_FUNCTION();
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(bufferHandle);
-
-		const auto buffer = m_renderGraph.GetBufferRaw(bufferHandle);
-		uint8_t* mappedPtr = buffer->Map<uint8_t>();
-		memcpy_s(mappedPtr, size, data, size);
-		buffer->Unmap();
-	}
-
-	void RenderContext::PushConstants(const void* data, const uint32_t size)
-	{
-		VT_PROFILE_FUNCTION();
-
-		BindDescriptorTableIfRequired();
-
-		bool shouldPushConstants = false;
-
-		if (m_currentRenderPipeline)
+		for (size_t i = 0; i < m_activeRenderingInfo.renderingInfo.colorAttachments.size(); ++i)
 		{
-			shouldPushConstants = m_currentRenderPipeline->GetShader()->HasConstants();
-		}
-		else if (m_currentComputePipeline)
-		{
-			shouldPushConstants = m_currentComputePipeline->GetShader()->HasConstants();
-		}
-		else if (m_currentRayTracingPipeline)
-		{
-		
+			outDeclaration.colorAttachmentFormats[i] = m_activeRenderingInfo.renderingInfo.colorAttachments[i].view->GetFormat();
 		}
 
-		if (shouldPushConstants)
-		{
-			m_commandBuffer->PushConstants(data, size, 0);
-		}
+		outDeclaration.depthAttachmentFormat = m_activeRenderingInfo.renderingInfo.depthAttachmentInfo.view ? m_activeRenderingInfo.renderingInfo.depthAttachmentInfo.view->GetFormat() : RHI::PixelFormat::UNDEFINED;
 	}
 
 	void RenderContext::DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
 	{
-		VT_PROFILE_FUNCTION();
-
-		BindDescriptorTableIfRequired();
-		ValidateCurrentPipelineConstants();
+		BindShaderBindings();
 
 		m_commandBuffer->DispatchMeshTasks(groupCountX, groupCountY, groupCountZ);
 	}
 
-	void RenderContext::DispatchMeshTasksIndirect(RenderGraphBufferHandle commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
+	void RenderContext::DispatchMeshTasksIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
-		VT_PROFILE_FUNCTION();
+		BindShaderBindings();
 
-		BindDescriptorTableIfRequired();
-		ValidateCurrentPipelineConstants();
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(commandsBuffer);
-
-		const auto cmdsBuffer = m_renderGraph.GetBufferRaw(commandsBuffer);
-		m_commandBuffer->DispatchMeshTasksIndirect(cmdsBuffer, offset, drawCount, stride);
+		RefPtr<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
+		m_commandBuffer->DispatchMeshTasksIndirect(rhiCommandsBuffer, offset, drawCount, stride);
 	}
 
-	void RenderContext::DispatchMeshTasksIndirectCount(RenderGraphBufferHandle commandsBuffer, const size_t offset, RenderGraphBufferHandle countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
+	void RenderContext::DispatchMeshTasksIndirectCount(RGBufferRef commandsBuffer, const size_t offset, RGBufferRef countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
-		VT_PROFILE_FUNCTION();
+		BindShaderBindings();
 
-		BindDescriptorTableIfRequired();
-		ValidateCurrentPipelineConstants();
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(commandsBuffer);
-		resourceAccess.ValidateResourceAccess(countBuffer);
-
-		const auto cmdsBuffer = m_renderGraph.GetBufferRaw(commandsBuffer);
-		const auto cntsBuffer = m_renderGraph.GetBufferRaw(countBuffer);
-
-		m_commandBuffer->DispatchMeshTasksIndirectCount(cmdsBuffer, offset, cntsBuffer, countBufferOffset, maxDrawCount, stride);
+		RefPtr<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiCountBuffer = countBuffer->GetRHIResource()->GetRHIBuffer();
+		m_commandBuffer->DispatchMeshTasksIndirectCount(rhiCommandsBuffer, offset, rhiCountBuffer, countBufferOffset, maxDrawCount, stride);
 	}
 
 	void RenderContext::Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ)
 	{
-		VT_PROFILE_FUNCTION();
-
-		BindDescriptorTableIfRequired();
-		ValidateCurrentPipelineConstants();
+		BindShaderBindings();
 
 		m_commandBuffer->Dispatch(groupCountX, groupCountY, groupCountZ);
 	}
 
-	void RenderContext::DispatchIndirect(RenderGraphBufferHandle commandsBuffer, const size_t offset)
+	void RenderContext::DispatchIndirect(RGBufferRef commandsBuffer, const size_t offset)
 	{
-		VT_PROFILE_FUNCTION();
+		BindShaderBindings();
 
-		BindDescriptorTableIfRequired();
-		ValidateCurrentPipelineConstants();
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(commandsBuffer);
-
-		const auto cmdsBuffer = m_renderGraph.GetBufferRaw(commandsBuffer);
-		m_commandBuffer->DispatchIndirect(cmdsBuffer, offset);
+		RefPtr<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
+		m_commandBuffer->DispatchIndirect(rhiCommandsBuffer, offset);
 	}
 
-	void RenderContext::TraceRays(RefPtr<RHI::ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth)
+	void RenderContext::DrawIndirectCount(RGBufferRef commandsBuffer, const size_t offset, RGBufferRef countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
 	{
-		VT_PROFILE_FUNCTION();
+		BindShaderBindings();
 
-		BindDescriptorTableIfRequired();
-		ValidateCurrentPipelineConstants();
-
-		m_commandBuffer->TraceRays(shaderBindingTable, width, height, depth);
+		RefPtr<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiCountBuffer = countBuffer->GetRHIResource()->GetRHIBuffer();
+		m_commandBuffer->DispatchMeshTasksIndirectCount(rhiCommandsBuffer, offset, rhiCountBuffer, countBufferOffset, maxDrawCount, stride);
 	}
 
-	void RenderContext::DrawIndirectCount(RenderGraphBufferHandle commandsBuffer, const size_t offset, RenderGraphBufferHandle countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride)
+	void RenderContext::DrawIndexedIndirect(RGBufferRef commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
 	{
-		VT_PROFILE_FUNCTION();
-		BindDescriptorTableIfRequired();
-		ValidateCurrentPipelineConstants();
+		BindShaderBindings();
 
-		if (maxDrawCount == 0)
-		{
-			return;
-		}
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(commandsBuffer);
-		resourceAccess.ValidateResourceAccess(countBuffer);
-
-		const auto cmdsBuffer = m_renderGraph.GetBufferRaw(commandsBuffer);
-		const auto cntsBuffer = m_renderGraph.GetBufferRaw(countBuffer);
-		m_commandBuffer->DrawIndirectCount(cmdsBuffer, offset, cntsBuffer, countBufferOffset, maxDrawCount, stride);
-	}
-
-	void RenderContext::DrawIndexedIndirect(RenderGraphBufferHandle commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride)
-	{
-		VT_PROFILE_FUNCTION();
-
-		BindDescriptorTableIfRequired();
-		ValidateCurrentPipelineConstants();
-
-		if (drawCount == 0)
-		{
-			return;
-		}
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(commandsBuffer);
-
-		const auto cmdsBuffer = m_renderGraph.GetBufferRaw(commandsBuffer);
-		m_commandBuffer->DrawIndexedIndirect(cmdsBuffer, offset, drawCount, stride);
+		RefPtr<RHI::Buffer> rhiCommandsBuffer = commandsBuffer->GetRHIResource()->GetRHIBuffer();
+		m_commandBuffer->DrawIndexedIndirect(rhiCommandsBuffer, offset, drawCount, stride);
 	}
 
 	void RenderContext::DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance)
 	{
-		VT_PROFILE_FUNCTION();
-
-		BindDescriptorTableIfRequired();
-		ValidateCurrentPipelineConstants();
+		BindShaderBindings();
 
 		m_commandBuffer->DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
 	void RenderContext::Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance)
 	{
-		VT_PROFILE_FUNCTION();
-
-		BindDescriptorTableIfRequired();
-		ValidateCurrentPipelineConstants();
-
+		BindShaderBindings();
+	
 		m_commandBuffer->Draw(vertexCount, instanceCount, firstVertex, firstInstance);
 	}
 
-	void RenderContext::BindPipeline(RawPtr<RHI::RenderPipeline> pipeline)
+	void RenderContext::ClearUAV(RGTextureUAVRef textureUAV, const glm::uvec4& clearValues)
 	{
-		VT_PROFILE_FUNCTION();
-
-		ClearCurrentPipeline();
-		VT_ENSURE(pipeline);
-
-		m_currentRenderPipeline = pipeline;
-		m_commandBuffer->BindPipeline(pipeline);
-
-		m_descriptorTableIsBound = false;
-
-		InitializeCurrentPipelineConstantsValidation();
+		ValidateClearUAV(m_currentPass);
+		m_commandBuffer->ClearImageView(textureUAV->GetRHIView(), std::array<uint32_t, 4>{ clearValues[0], clearValues[1], clearValues[2], clearValues[3] });
 	}
 
-	void RenderContext::BindPipeline(RawPtr<RHI::ComputePipeline> pipeline)
+	void RenderContext::ClearUAV(RGTextureUAVRef textureUAV, const glm::vec4& clearValues)
 	{
-		VT_PROFILE_FUNCTION();
-
-		ClearCurrentPipeline();
-		VT_ENSURE(pipeline);
-
-		m_currentComputePipeline = pipeline;
-		m_commandBuffer->BindPipeline(pipeline);
-
-		m_descriptorTableIsBound = false;
-
-		InitializeCurrentPipelineConstantsValidation();
+		ValidateClearUAV(m_currentPass);
+		m_commandBuffer->ClearImageView(textureUAV->GetRHIView(), std::array<float, 4>{ clearValues[0], clearValues[1], clearValues[2], clearValues[3] });
 	}
 
-	void RenderContext::BindPipeline(RawPtr<RHI::RayTracingPipeline> pipeline)
+	void RenderContext::ClearUAV(RGBufferUAVRef bufferUAV, const uint32_t clearValue)
 	{
-		VT_PROFILE_FUNCTION();
-
-		m_currentRayTracingPipeline = pipeline;
-		m_commandBuffer->BindPipeline(pipeline);
-
-		m_descriptorTableIsBound = false;
-
-		InitializeCurrentPipelineConstantsValidation();
+		ValidateClearUAV(m_currentPass);
+		m_commandBuffer->ClearBufferView(bufferUAV->GetRHIView(), clearValue);
 	}
 
-	void RenderContext::BindIndexBuffer(RenderGraphBufferHandle indexBuffer)
+	void RenderContext::ClearUAV(RGBufferUAVRef bufferUAV, const float clearValue)
 	{
-		VT_PROFILE_FUNCTION();
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(indexBuffer);
-
-		const auto idxBuffer = m_renderGraph.GetBufferRaw(indexBuffer);
-		m_commandBuffer->BindIndexBuffer(idxBuffer);
+		ValidateClearUAV(m_currentPass);
+		m_commandBuffer->ClearBufferView(bufferUAV->GetRHIView(), clearValue);
 	}
 
-	void RenderContext::BindIndexBuffer(RawPtr<RHI::IndexBuffer> indexBuffer)
+	void RenderContext::SetPipelineState(const GraphicsPipelineState& pipelineState)
 	{
-		m_commandBuffer->BindIndexBuffer(indexBuffer);
+		m_currentRenderPipeline = CreateRenderPipeline(pipelineState);
+		m_commandBuffer->BindPipeline(m_currentRenderPipeline);
+
+		SetupPipelineData();
 	}
 
-	void RenderContext::BindVertexBuffers(const StackVector<RawPtr<RHI::VertexBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	void RenderContext::SetPipelineState(RefPtr<RHI::Shader> computeShader)
 	{
-		m_commandBuffer->BindVertexBuffers(vertexBuffers, firstBinding);
+		m_currentComputePipeline = CreateComputePipeline(computeShader);
+		m_commandBuffer->BindPipeline(m_currentComputePipeline);
+
+		SetupPipelineData();
 	}
 
-	void RenderContext::BindVertexBuffers(const StackVector<RenderGraphBufferHandle, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	RefPtr<RHI::RenderPipeline> RenderContext::CreateRenderPipeline(const GraphicsPipelineState& pipelineState)
 	{
-		VT_PROFILE_FUNCTION();
+		VerifyGraphicsPipelineState(pipelineState);
+		return PipelineStateCache::GetRenderPipeline(TranslateGraphicsPipelineState(pipelineState));
+	}
 
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
+	RefPtr<RHI::ComputePipeline> RenderContext::CreateComputePipeline(RefPtr<RHI::Shader> computeShader)
+	{
+		return PipelineStateCache::GetComputePipeline(computeShader);
+	}
 
-		for (const auto& buffer : vertexBuffers)
+	void RenderContext::BindIndexBuffer(RGBufferRef indexBuffer)
+	{
+		RefPtr<RHI::Buffer> rhiIndexBuffer = indexBuffer->GetRHIResource()->GetRHIBuffer();
+		m_commandBuffer->BindIndexBuffer(rhiIndexBuffer);
+	}
+
+	void RenderContext::BindVertexBuffers(const InlineVector<RGBufferRef, RHI::MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding)
+	{
+		RHI::VertexBufferVector rhiVertexBuffers;
+		for (const RGBufferRef buffer : vertexBuffers)
 		{
-			resourceAccess.ValidateResourceAccess(buffer);
+			auto& vertexBufferBinding = rhiVertexBuffers.emplace_back();
+			vertexBufferBinding.buffer = buffer->GetRHIResource()->GetRHIBuffer();
 		}
 
-		StackVector<RawPtr<RHI::StorageBuffer>, RHI::MAX_VERTEX_BUFFER_COUNT> buffers{};
-		for (const auto& buffer : vertexBuffers)
-		{
-			buffers.EmplaceBack() = m_renderGraph.GetBufferRaw(buffer);
-		}
-
-		m_commandBuffer->BindVertexBuffers(buffers, firstBinding);
+		m_commandBuffer->BindVertexBuffers(rhiVertexBuffers, firstBinding);
 	}
 
-	void RenderContext::SetAccelerationStructure(RawPtr<RHI::AccelerationStructure> accelerationStructure)
+	void RenderContext::CopyBufferRegion(RGBufferRef src, const size_t srcOffset, RGBufferRef dst, const size_t dstOffset, const size_t size)
 	{
-		m_currentAccelerationStructure = accelerationStructure;
+		RefPtr<RHI::Buffer> rhiSrcBuffer = src->GetRHIResource()->GetRHIBuffer();
+		RefPtr<RHI::Buffer> rhiDstBuffer = dst->GetRHIResource()->GetRHIBuffer();
+
+		m_commandBuffer->CopyBufferRegion(rhiSrcBuffer, srcOffset, rhiDstBuffer, dstOffset, size);
 	}
 
-	void RenderContext::SetConstant(const StringHash& name, const RenderGraphImageHandle& data, const int32_t mip, const int32_t layer)
+	void RenderContext::CopyTexture(RGTextureRef src, RGTextureRef dst, const uint32_t width, const uint32_t height, const uint32_t depth)
 	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
-
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
-
-		const auto& uniform = constantsData.uniforms.at(name);
-
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		m_boundPipelineData.uniformHasBeenSetMap[name] = true;
-
-		VT_ENSURE(uniform.type.baseType == RHI::ShaderUniformBaseType::Texture2D ||
-				uniform.type.baseType == RHI::ShaderUniformBaseType::RWTexture2D ||
-				uniform.type.baseType == RHI::ShaderUniformBaseType::Texture2DArray ||
-				uniform.type.baseType == RHI::ShaderUniformBaseType::RWTexture2DArray ||
-				uniform.type.baseType == RHI::ShaderUniformBaseType::TextureCube ||
-				uniform.type.baseType == RHI::ShaderUniformBaseType::Texture3D ||
-				uniform.type.baseType == RHI::ShaderUniformBaseType::RWTexture3D);
-
-		auto node = m_renderGraph.m_resourceNodes.at(data);
-
-		VT_ENSURE(node->GetResourceType() == ResourceType::Image2D || node->GetResourceType() == ResourceType::Image3D);
-
-		if (node->GetResourceType() == ResourceType::Image2D)
-		{
-			VT_ENSURE(uniform.type.baseType == RHI::ShaderUniformBaseType::Texture2D ||
-					  uniform.type.baseType == RHI::ShaderUniformBaseType::RWTexture2D ||
-					  uniform.type.baseType == RHI::ShaderUniformBaseType::Texture2DArray ||
-					  uniform.type.baseType == RHI::ShaderUniformBaseType::RWTexture2DArray ||
-					  uniform.type.baseType == RHI::ShaderUniformBaseType::TextureCube);
-		}
-		else if (node->GetResourceType() == ResourceType::Image3D)
-		{
-			VT_ENSURE(uniform.type.baseType == RHI::ShaderUniformBaseType::Texture3D || uniform.type.baseType == RHI::ShaderUniformBaseType::RWTexture3D);
-		}
-
-		if (uniform.type.baseType == RHI::ShaderUniformBaseType::Texture2D ||
-			uniform.type.baseType == RHI::ShaderUniformBaseType::Texture2DArray ||
-			uniform.type.baseType == RHI::ShaderUniformBaseType::TextureCube ||
-			uniform.type.baseType == RHI::ShaderUniformBaseType::Texture3D)
-		{
-			VT_ENSURE(m_currentPassNode.ReadsResource(data));
-		}
-		else if (uniform.type.baseType == RHI::ShaderUniformBaseType::RWTexture2D ||
-				 uniform.type.baseType == RHI::ShaderUniformBaseType::RWTexture2DArray ||
-				 uniform.type.baseType == RHI::ShaderUniformBaseType::RWTexture3D)
-		{
-			VT_ENSURE(m_currentPassNode.WritesResource(data) || m_currentPassNode.CreatesResource(data));
-		}
-#endif
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		const ResourceHandle resourceHandle = resourceAccess.GetImage(data, mip, layer);
-
-		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &resourceHandle, sizeof(ResourceHandle));
+		RefPtr<RHI::Image> rhiSrcTexture = src->GetRHIResource()->GetRHITexture();
+		RefPtr<RHI::Image> rhiDstTexture = dst->GetRHIResource()->GetRHITexture();
+	
+		VT_ENSURE_MSG(width > 0 && height > 0 && depth > 0, "Width, height and depth must be greater than zero!");
+		m_commandBuffer->CopyImage(rhiSrcTexture, rhiDstTexture, width, height, depth);
 	}
 
-	void RenderContext::BindDescriptorTableIfRequired()
+	void RenderContext::UnmapBuffer(RGBufferRef buffer)
 	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentComputePipeline || m_currentRenderPipeline || m_currentRayTracingPipeline);
-
-		if (m_descriptorTableIsBound)
-		{
-			return;
-		}
-
-		// Set render graph constants
-		{
-			RenderGraphConstants renderGraphConstants;
-			renderGraphConstants.constatsBufferIndex = m_sharedContext.GetPassConstantsBufferResourceHandle();
-			renderGraphConstants.constantsOffset = m_currentPassNode.index * RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE;
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-			renderGraphConstants.shaderValidationBuffer = m_renderGraph.GetRuntimeShaderValidationErrorBuffer();
-#endif
-			{
-				uint8_t* constantsPtr = m_sharedContext.GetRenderGraphConstantsPointer(m_currentPassNode.index);
-				memcpy_s(constantsPtr, sizeof(RenderGraphConstants), &renderGraphConstants, sizeof(RenderGraphConstants));
-			}
-		}
-
-		auto descriptorTable = BindlessResourcesManager::Get().GetDescriptorTable();
-		m_commandBuffer->BindDescriptorTable(descriptorTable, m_sharedContext.GetRenderGraphConstantsBuffer(), m_currentPassNode.index, sizeof(RenderGraphConstants), m_currentAccelerationStructure);
-
-		m_descriptorTableIsBound = true;
+		buffer->GetRHIResource()->GetRHIBuffer()->Unmap();
 	}
 
-	void RenderContext::InitializeCurrentPipelineConstantsValidation()
+	void RenderContext::UnmapBuffer(RGUniformBufferRef buffer)
 	{
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		VT_ASSERT_MSG(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline, "A pipeline must be bound!");
-
-		m_boundPipelineData.uniformHasBeenSetMap.clear();
-
-		const auto& currentConstants = GetRenderGraphConstantsData();
-		for (const auto& constant : currentConstants.uniforms)
-		{
-			m_boundPipelineData.uniformHasBeenSetMap[constant.first] = false;
-		}
-#endif
+		buffer->GetRHIResource()->GetRHIUniformBuffer()->Unmap();
 	}
 
-	void RenderContext::ValidateCurrentPipelineConstants()
+	RefPtr<RHI::CommandBuffer> RenderContext::GetRHICommandBuffer()
 	{
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		for (const auto& [hash, value] : m_boundPipelineData.uniformHasBeenSetMap)
-		{
-			VT_ENSURE_MSG(value, "All constants must have been set!");
-		}
-#endif
+		return m_commandBuffer;
 	}
 
-	void RenderContext::ValidatePipelineConstant(const RHI::ShaderRenderGraphConstantsData& constantsData, const RHI::ShaderUniformType& uniformType, const StringHash& constantName)
+	void RenderContext::BindShaderBindings()
 	{
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		if (!constantsData.uniforms.contains(constantName))
+		for (const auto& shaderParameters : m_perStageShaderParameters)
 		{
-			VT_LOGC(Error, LogRenderCore, "A constant with name '{}' is not defined in the shader!", constantName.string);
-			VT_ENSURE(false);
+			m_shaderBindingMap.SetUniformBufferWithSizeAndOffset(shaderParameters.shaderStage, RHI::Globals::SHADER_GLOBALS_BINDING, shaderParameters.uniformBufferSRV->GetRHIView(), shaderParameters.size, shaderParameters.offset);
 		}
 
-		const auto& uniform = constantsData.uniforms.at(constantName);
-
-		VT_ENSURE(uniform.type == uniformType);
-		m_boundPipelineData.uniformHasBeenSetMap[constantName] = true;
-#endif
+		m_commandBuffer->BindShaderBindings(m_shaderBindingMap);
 	}
 
-	const RHI::ShaderRenderGraphConstantsData& RenderContext::GetRenderGraphConstantsData()
+	void RenderContext::SetupPipelineData()
 	{
-		VT_PROFILE_FUNCTION();
-		if (m_currentRenderPipeline)
+		m_perStageShaderParameters.clear();
+
+		if (m_currentComputePipeline)
 		{
-			return m_currentRenderPipeline->GetShader()->GetResources().renderGraphConstantsData;
-		}
-		else if (m_currentComputePipeline)
-		{
-			return m_currentComputePipeline->GetShader()->GetResources().renderGraphConstantsData;
+			m_perStageShaderParameters = SetupPipelineData(m_currentComputePipeline);
+			m_shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(m_currentComputePipeline);
 		}
 		else
 		{
-			return m_currentRayTracingPipeline->GetRenderGraphConstants();
+			m_perStageShaderParameters = SetupPipelineData(m_currentRenderPipeline);
+			m_shaderBindingMap = RHI::ShaderBindingMap::InitializeFromPipeline(m_currentRenderPipeline);
 		}
 	}
 
-	void RenderContext::ClearCurrentPipeline()
-	{
-		m_currentRenderPipeline.Reset();
-		m_currentComputePipeline.Reset();
-		m_currentRayTracingPipeline.Reset();
-	}
-
-	template<>
-	inline void RenderContext::SetConstant(const StringHash& name, const ResourceHandle& data)
+	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::SetupPipelineData(RawPtr<RHI::RenderPipeline> renderPipeline)
 	{
 		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
 
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
+		ArrayView<RHI::ShaderParameterMap> shaderParameterMaps = renderPipeline->GetShaderParameterMaps();
 
-		const auto& uniform = constantsData.uniforms.at(name);
+		InlineVector<RenderContext::PerStageShaderParameters, 8> result;
 
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		m_boundPipelineData.uniformHasBeenSetMap[name] = true;
-		VT_ENSURE(uniform.type.baseType == RHI::ShaderUniformBaseType::Sampler);
-#endif
-
-		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &data, sizeof(ResourceHandle));
-	}
-
-	template<>
-	inline void RenderContext::SetConstant(const StringHash& name, const RenderGraphBufferHandle& data)
-	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
-
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
-
-		const auto& uniform = constantsData.uniforms.at(name);
-
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		m_boundPipelineData.uniformHasBeenSetMap[name] = true;
-
-		VT_ENSURE(uniform.type.baseType == RHI::ShaderUniformBaseType::Buffer ||
-				uniform.type.baseType == RHI::ShaderUniformBaseType::RWBuffer);
-
-		if (uniform.type.baseType == RHI::ShaderUniformBaseType::Buffer)
+		for (const auto& parameterMap : shaderParameterMaps)
 		{
-			VT_ENSURE_MSG(m_currentPassNode.ReadsResource(data) || m_currentPassNode.CreatesResource(data), "Resource has not been marked for read or create!");
+			if (parameterMap.GetShaderParametersSize() > 0)
+			{
+				auto& perStageShaderParameters = result.emplace_back();
+				perStageShaderParameters.shaderStage = parameterMap.GetShaderStage();
+				perStageShaderParameters.uniformBufferSRV = m_shaderParameterUniformBuffer.GetSRV();
+				perStageShaderParameters.size = parameterMap.GetShaderParametersSize();
+				perStageShaderParameters.offset = m_shaderParameterUniformBuffer.Allocate(parameterMap.GetShaderParametersSize());
+				perStageShaderParameters.mappedPtr = m_shaderParameterUniformBuffer.GetMappedPointer() + perStageShaderParameters.offset;
+			}
 		}
-		else if (uniform.type.baseType == RHI::ShaderUniformBaseType::RWBuffer)
+
+		return result;
+	}
+
+	InlineVector<RenderContext::PerStageShaderParameters, 8> RenderContext::SetupPipelineData(RawPtr<RHI::ComputePipeline> computePipeline)
+	{
+		const RHI::ShaderParameterMap& shaderParameterMap = computePipeline->GetShaderParameterMap();
+
+		InlineVector<RenderContext::PerStageShaderParameters, 8> result;
+
+		if (shaderParameterMap.GetShaderParametersSize() > 0)
 		{
-			VT_ENSURE_MSG(m_currentPassNode.WritesResource(data) || m_currentPassNode.CreatesResource(data), "Resource has not been marked for write or create!");
+			auto& perStageShaderParameters = result.emplace_back();
+			perStageShaderParameters.shaderStage = shaderParameterMap.GetShaderStage();
+			perStageShaderParameters.uniformBufferSRV = m_shaderParameterUniformBuffer.GetSRV();
+			perStageShaderParameters.size = shaderParameterMap.GetShaderParametersSize();
+			perStageShaderParameters.offset = m_shaderParameterUniformBuffer.Allocate(shaderParameterMap.GetShaderParametersSize());
+			perStageShaderParameters.mappedPtr = m_shaderParameterUniformBuffer.GetMappedPointer() + perStageShaderParameters.offset;
 		}
-#endif
 
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		const ResourceHandle resourceHandle = resourceAccess.GetBuffer(data);
-
-		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &resourceHandle, sizeof(ResourceHandle));
+		return result;
 	}
 
-	template<>
-	inline void RenderContext::SetConstant(const StringHash& name, const RenderGraphUniformBufferHandle& data)
+	void RenderContext::SetBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
+		if (resourceBinding)
+		{
+			VT_ENSURE_MSG(bufferSRV, "Buffer SRV must not be null!");
+			
+			RefPtr<RHI::BufferView> rhiView = bufferSRV->GetRHIView();
+			const bool isTexelBufferView = rhiView->IsTexelBufferView();
+
+			if (isTexelBufferView)
+			{
+				m_shaderBindingMap.SetTexelBufferSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
+			else
+			{
+				m_shaderBindingMap.SetStructuredBufferSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
+		}
+	}
+
+	void RenderContext::SetBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
+		if (resourceBinding)
+		{
+			VT_ENSURE_MSG(bufferUAV, "Buffer SRV must not be null!");
+
+			RefPtr<RHI::BufferView> rhiView = bufferUAV->GetRHIView();
+			const bool isTexelBufferView = rhiView->IsTexelBufferView();
+
+			if (isTexelBufferView)
+			{
+				m_shaderBindingMap.SetTexelBufferUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
+			else
+			{
+				m_shaderBindingMap.SetStructuredBufferUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, rhiView);
+			}
+		}
+	}
+
+	void RenderContext::SetTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
+		if (resourceBinding)
+		{
+			VT_ENSURE_MSG(textureSRV, "Texture SRV must not be null!");
+			m_shaderBindingMap.SetTextureSRV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, textureSRV->GetRHIView());
+		}
+	}
+
+	void RenderContext::SetTextureUAVParameter(RGTextureUAVRef textureUAV, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
+		if (resourceBinding)
+		{
+			VT_ENSURE_MSG(textureUAV, "Texture UAV must not be null!");
+			m_shaderBindingMap.SetTextureUAV(shaderParameterMap.GetShaderStage(), resourceBinding->binding, textureUAV->GetRHIView());
+		}
+	}
+
+	void RenderContext::SetUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
+		if (resourceBinding && uniformBuffer)
+		{
+			m_shaderBindingMap.SetUniformBuffer(shaderParameterMap.GetShaderStage(), resourceBinding->binding, uniformBuffer->GetRHIResource()->GetOrCreateView({}));
+		}
+	}
+
+	void RenderContext::SetSamplerParameter(RefPtr<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
+		if (resourceBinding)
+		{
+			m_shaderBindingMap.SetSampler(shaderParameterMap.GetShaderStage(), resourceBinding->binding, sampler);
+		}
+	}
+
+	void RenderContext::SetAccelerationStructureParameter(RefPtr<RHI::AccelerationStructure> accelerationStructure, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		const RHI::ShaderResourceBinding* resourceBinding = shaderParameterMap.GetResourceBindingFromName(parameterDesc.GetParameterNameHash());
+		if (resourceBinding)
+		{
+			m_shaderBindingMap.SetAccelerationStructure(shaderParameterMap.GetShaderStage(), resourceBinding->binding, accelerationStructure);
+		}
+	}
+
+	void RenderContext::SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		m_shaderBindingMap.SetRayTracingResourceTable(rayTracingResourceTable);
+	}
+
+	void RenderContext::SetShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
+	{
+		const RHI::ShaderUniform* shaderParameter = shaderParameterMap.GetParameterFromName(parameterDesc.GetParameterNameHash());
+		if (shaderParameter)
+		{
+			VT_ENSURE(shaderParameter->size == parameterDesc.GetSize());
+
+			for (const auto& perStageParameters : m_perStageShaderParameters)
+			{
+				if (perStageParameters.shaderStage == shaderParameterMap.GetShaderStage())
+				{
+					memcpy(perStageParameters.mappedPtr + shaderParameter->offset, data, parameterDesc.GetSize());
+					break;
+				}
+			}
+		}
+	}
+
+	void RenderContext::CollectBufferSRVParameter(RGBufferSRVRef bufferSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
+	{
+		const RHI::ShaderResourceType resourceType = bufferSRV->IsTexelBufferSRV() ? RHI::ShaderResourceType::TexelBuffer : RHI::ShaderResourceType::StructuredBuffer;
+		batchedShaderParameters.AddBufferParameter(parameterDesc.GetParameterNameHash(), resourceType, bufferSRV->GetRHIView());
+	}
+
+	void RenderContext::CollectBufferUAVParameter(RGBufferUAVRef bufferUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
+	{
+		const RHI::ShaderResourceType resourceType = bufferUAV->IsTexelBufferUAV() ? RHI::ShaderResourceType::TexelBuffer : RHI::ShaderResourceType::StructuredBuffer;
+		batchedShaderParameters.AddBufferParameter(parameterDesc.GetParameterNameHash(), resourceType, bufferUAV->GetRHIView());
+	}
+
+	void RenderContext::CollectTextureSRVParameter(RGTextureSRVRef textureSRV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
+	{
+		batchedShaderParameters.AddTextureParameter(parameterDesc.GetParameterNameHash(), RHI::ShaderResourceType::Texture, textureSRV->GetRHIView());
+	}
+
+	void RenderContext::CollectTextureUAVParameter(RGTextureUAVRef textureUAV, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
+	{
+		batchedShaderParameters.AddTextureParameter(parameterDesc.GetParameterNameHash(), RHI::ShaderResourceType::Texture, textureUAV->GetRHIView());
+	}
+
+	void RenderContext::CollectSamplerParameter(RefPtr<RHI::SamplerState> sampler, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
+	{
+		batchedShaderParameters.AddSamplerParameter(parameterDesc.GetParameterNameHash(), RHI::ShaderResourceType::Sampler, sampler);
+	}
+
+	void RenderContext::CollectUniformBufferParameter(RGUniformBufferRef uniformBuffer, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
+	{
+		if (uniformBuffer)
+		{
+			RefPtr<RHI::BufferView> bufferView = uniformBuffer->GetRHIResource()->GetOrCreateView({});
+			batchedShaderParameters.AddBufferParameter(parameterDesc.GetParameterNameHash(), RHI::ShaderResourceType::UniformBuffer, bufferView);
+		}
+	}
+
+	void RenderContext::CollectShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, BatchedShaderParameters& batchedShaderParameters)
+	{
+		batchedShaderParameters.AddShaderParameter(parameterDesc.GetParameterNameHash(), data, parameterDesc.GetSize());
+	}
+
+	void* RenderContext::MapInternal(RGBufferRef buffer)
+	{
+		RefPtr<RHI::Buffer> rhiBuffer = buffer->GetRHIResource()->GetRHIBuffer();
+		return rhiBuffer->Map<void>();
+	}
+
+	void* RenderContext::MapInternal(RGUniformBufferRef buffer)
+	{
+		return buffer->GetRHIResource()->GetRHIUniformBuffer()->Map<void>();
+	}
+
+	RHI::RenderPipelineCreateInfo RenderContext::TranslateGraphicsPipelineState(const GraphicsPipelineState& pipelineState)
 	{
 		VT_PROFILE_FUNCTION();
 
-		VT_ENSURE(m_currentRenderPipeline || m_currentComputePipeline || m_currentRayTracingPipeline);
+		RHI::RenderPipelineCreateInfo pipelineCreateInfo;
+		pipelineCreateInfo.shaders = pipelineState.shaders;
+		pipelineCreateInfo.attachmentBlendStates = pipelineState.attachmentBlendStates;
+		pipelineCreateInfo.topology = pipelineState.topology;
+		pipelineCreateInfo.cullMode = pipelineState.cullMode;
+		pipelineCreateInfo.fillMode = pipelineState.fillMode;
+		pipelineCreateInfo.depthMode = pipelineState.depthMode;
+		pipelineCreateInfo.depthCompareOperator = pipelineState.depthCompareOperator;
+		pipelineCreateInfo.enablePrimitiveRestart = pipelineState.enablePrimitiveRestart;
+		pipelineCreateInfo.enableDepthClamp = pipelineState.enableDepthClamp;
+		pipelineCreateInfo.depthBiasConstantFactor = pipelineState.depthBiasConstantFactor;
+		pipelineCreateInfo.depthBiasClamp = pipelineState.depthBiasClamp;
+		pipelineCreateInfo.depthBiasSlopeFactor = pipelineState.depthBiasSlopeFactor;
 
-		const RHI::ShaderRenderGraphConstantsData& constantsData = GetRenderGraphConstantsData();
-		VT_ENSURE(constantsData.uniforms.contains(name));
+		const ShaderParameterRenderTargetDecl& depthDecl = pipelineState.renderTargets.depthTarget;
 
-		const auto& uniform = constantsData.uniforms.at(name);
+		if (depthDecl.texture != nullptr)
+		{
+			pipelineCreateInfo.depthAttachmentFormat = depthDecl.texture->GetDesc().format;
+		}
 
-#ifdef VT_ENABLE_RENDERGRAPH_VALIDATION
-		m_boundPipelineData.uniformHasBeenSetMap[name] = true;
-		VT_ENSURE(uniform.type.baseType == RHI::ShaderUniformBaseType::UniformBuffer);
-		VT_ENSURE(m_currentPassNode.ReadsResource(data));
-#endif
+		pipelineCreateInfo.colorAttachmentFormats.reserve(RHI::MAX_COLOR_ATTACHMENT_COUNT);
+		for (uint32_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
+		{
+			const ShaderParameterRenderTargetDecl& rtDecl = pipelineState.renderTargets.renderTargets[i];
 
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		const ResourceHandle resourceHandle = resourceAccess.GetUniformBuffer(data);
+			if (rtDecl.texture != nullptr)
+			{
+				pipelineCreateInfo.colorAttachmentFormats.emplace_back(rtDecl.texture->GetDesc().format);
+			}
+		}
 
-		memcpy_s(&m_passConstantsData[uniform.offset], RenderGraphCommon::MAX_PASS_CONSTANTS_SIZE - uniform.offset, &resourceHandle, sizeof(ResourceHandle));
+		return pipelineCreateInfo;
 	}
 
-	void RenderContext::Flush(RefPtr<RHI::Fence> fence)
+	void RenderContext::VerifyGraphicsPipelineState(const GraphicsPipelineState& pipelineState) const
 	{
-		VT_PROFILE_FUNCTION();
+		const ShaderParameterRenderTargetDecl& depthDecl = pipelineState.renderTargets.depthTarget;
 
-		// Setup state and execute command buffer
-		//UploadConstantsData();
-		//BindlessResourcesManager::Get().PrepareForRender();
-		//
-		//m_commandBuffer->Flush(fence);
-	}
+		uint32_t numRenderTargets = depthDecl.texture != nullptr;
+		for (uint32_t i = 0; i < RHI::MAX_COLOR_ATTACHMENT_COUNT; ++i)
+		{
+			const ShaderParameterRenderTargetDecl& rtDecl = pipelineState.renderTargets.renderTargets[i];
+			numRenderTargets += rtDecl.texture != nullptr;
+		}
 
-	void RenderContext::CopyImage(RenderGraphImageHandle src, RenderGraphImageHandle dst, const uint32_t width, const uint32_t height, const uint32_t depth)
-	{
-		VT_PROFILE_FUNCTION();
-
-		RenderGraphPassResources resourceAccess{ m_renderGraph, m_currentPassNode };
-		resourceAccess.ValidateResourceAccess(src);
-		resourceAccess.ValidateResourceAccess(dst);
-
-		const auto srcImage = m_renderGraph.GetImageRaw(src);
-		const auto dstImage = m_renderGraph.GetImageRaw(dst);
-
-		VT_ENSURE_MSG(width > 0 && height > 0 && depth > 0, "Width, height and depth must be greater than zero!");
-		m_commandBuffer->CopyImage(srcImage, dstImage, width, height, depth);
+		VT_ENSURE_MSG(numRenderTargets > 0, "There must always be at least 1 render target bound!");
 	}
 }

@@ -16,8 +16,6 @@ namespace Volt
 		reflect.AddConstant(CollisionDetectionType::ContinuousSpeculative, "continuousSpeculative", "Continuous Speculative");
 	}
 
-	REGISTER_ENUM(CollisionDetectionType);
-
 	static void ReflectType(TypeDesc<PhysicsBodyType>& reflect)
 	{
 		reflect.SetGUID("{98C6CC44-5B1A-4E20-BFA1-9DEBD31BE418}"_guid);
@@ -27,8 +25,6 @@ namespace Volt
 		reflect.AddConstant(PhysicsBodyType::Dynamic, "dynamic", "Dynamic");
 	}
 
-	REGISTER_ENUM(PhysicsBodyType);
-
 	static void ReflectType(TypeDesc<PhysicsControllerActorNonWalkableMode>& reflect)
 	{
 		reflect.SetGUID("{0871B88E-30A5-4082-B057-D088D4B1DD23}"_guid);
@@ -37,6 +33,4 @@ namespace Volt
 		reflect.AddConstant(PhysicsControllerActorNonWalkableMode::PreventClimbing, "preventClimbing", "Prevent Climbing");
 		reflect.AddConstant(PhysicsControllerActorNonWalkableMode::PreventClimbingAndForceSlide, "preventClimbingAndForceSlide", "Prevent Climbing And Force Slide");
 	}
-
-	REGISTER_ENUM(PhysicsControllerActorNonWalkableMode);
 }

@@ -12,6 +12,8 @@
 
 #include <EventSystem/EventSystem.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
@@ -20,23 +22,25 @@
 
 namespace Volt
 {
-	Window::Window(const WindowProperties& properties)
+	Window::Window(const WindowProperties& properties, bool forceSDR)
 	{
-		m_data.Height = properties.Height;
-		m_data.Width = properties.Width;
-		m_data.Title = properties.Title;
-		m_data.VSync = properties.VSync;
-		m_data.WindowMode = properties.WindowMode;
-		m_data.IconPath = properties.IconPath;
-		m_data.CursorPath = properties.CursorPath;
+		m_data.height = properties.height;
+		m_data.width = properties.width;
+		m_data.title = properties.title;
+		m_data.vsync = properties.vsync;
+		m_data.windowMode = properties.windowMode;
+		m_data.iconPath = properties.iconPath;
+		m_data.cursorPath = properties.cursorPath;
+		m_data.forceSDR = forceSDR;
 
 		m_properties = properties;
 
 		Invalidate();
+		CreateDefaultCursors();
 
-		if (!m_data.CursorPath.empty())
+		if (!m_data.cursorPath.empty())
 		{
-			SetCursor(m_data.CursorPath);
+			ReplaceCursor(CursorType::Arrow, m_data.cursorPath);
 		}
 	}
 
@@ -50,35 +54,43 @@ namespace Volt
 		m_swapchain = nullptr;
 		Release();
 
-		for (auto [path, cursor] : m_cursors)
+		for (size_t i = 0; i < static_cast<size_t>(CursorType::Num); ++i)
 		{
-			glfwDestroyCursor(cursor);
+			glfwDestroyCursor(m_cursors[i]);
 		}
-
-		m_cursors.clear();
 	}
 
 	void Window::Invalidate()
 	{
+		VT_PROFILE_FUNCTION();
+
 		if (m_window)
 		{
 			Release();
 		}
 
-		glfwWindowHint(GLFW_SAMPLES, 0);
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_TITLEBAR, (m_properties.UseTitlebar && !m_properties.UseCustomTitlebar) ? GLFW_TRUE : GLFW_FALSE);
-		glfwWindowHint(GLFW_AUTO_ICONIFY, false);
+		// Setup window hints
+		{
+			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+			glfwWindowHint(GLFW_TITLEBAR, (m_properties.useTitlebar && !m_properties.useCustomTitlebar) ? GLFW_TRUE : GLFW_FALSE);
+			glfwWindowHint(GLFW_AUTO_ICONIFY, false);
+
+			glfwWindowHint(GLFW_VISIBLE, m_properties.createAsVisible);
+			glfwWindowHint(GLFW_FOCUSED, m_properties.createAsFocused);
+			glfwWindowHint(GLFW_FOCUS_ON_SHOW, m_properties.focusOnShow);
+			glfwWindowHint(GLFW_DECORATED, m_properties.createAsDecorated);
+			glfwWindowHint(GLFW_FLOATING, m_properties.createAsAlwaysOnTop);
+		}
 
 		GLFWmonitor* primaryMonitor = nullptr;
 
-		if (m_data.WindowMode != WindowMode::Windowed)
+		if (m_data.windowMode != WindowMode::Windowed)
 		{
 			primaryMonitor = glfwGetPrimaryMonitor();
 		}
 
-		int32_t createWidth = (uint32_t)m_data.Width;
-		int32_t createHeight = (uint32_t)m_data.Height;
+		int32_t createWidth = (uint32_t)m_data.width;
+		int32_t createHeight = (uint32_t)m_data.height;
 
 		if (primaryMonitor)
 		{
@@ -87,12 +99,33 @@ namespace Volt
 			createHeight = mode->height;
 		}
 
-		m_window = glfwCreateWindow(createWidth, createHeight, m_data.Title.c_str(), primaryMonitor, nullptr);
+		m_window = glfwCreateWindow(createWidth, createHeight, m_data.title.c_str(), primaryMonitor, nullptr);
 		m_windowHandle = glfwGetWin32Window(m_window);
 
-		if (!m_data.IconPath.empty() && std::filesystem::exists(m_data.IconPath))
+		// If we have no title bar, or use a custom one, we need to add the window frame size to
+		// the window size, this is to make sure the swapchain is created in the correct size.
+		if (!m_properties.useTitlebar || (m_properties.useTitlebar && m_properties.useCustomTitlebar))
 		{
-			SetIcon(m_data.IconPath);
+			int32_t actualWidth;
+			int32_t actualHeight;
+
+			glfwGetWindowSize(m_window, &actualWidth, &actualHeight);
+
+			int32_t left, right, bottom, top;
+			glfwGetWindowFrameSize(m_window, &left, &top, &right, &bottom);
+
+			m_data.width = static_cast<uint32_t>(actualWidth + left + right);
+			m_data.height = static_cast<uint32_t>(actualHeight + bottom + top);
+
+			// For some reason we need to force a resize of the window for
+			// the titlebar to actually disappear.
+			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth + 1), static_cast<int32_t>(createHeight + 1));
+			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth), static_cast<int32_t>(createHeight));
+		}
+
+		if (!m_data.iconPath.empty() && std::filesystem::exists(m_data.iconPath))
+		{
+			SetIcon(m_data.iconPath);
 		}
 
 		bool isRawMouseMotionSupported = glfwRawMouseMotionSupported();
@@ -101,109 +134,128 @@ namespace Volt
 			glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 		}
 
-		if (m_data.WindowMode == WindowMode::Fullscreen)
+		if (m_data.windowMode == WindowMode::Fullscreen)
 		{
 			m_isFullscreen = true;
 		}
 
 		if (!m_hasBeenInitialized)
 		{
+			VT_PROFILE_SCOPE("Create Swapchain");
+
 			RHI::SwapchainCreateInfo createInfo{};
+			createInfo.width = m_data.width;
+			createInfo.height = m_data.height;
 			createInfo.platformWindow = m_window;
-			createInfo.useHDRIfAvailable = false;
+			createInfo.useHDRIfAvailable = !m_data.forceSDR;
+			createInfo.enableVSync = m_data.vsync;
 
 			m_swapchain = RHI::Swapchain::Create(createInfo);
-			m_swapchain->Resize(m_data.Width, m_data.Height, m_data.VSync);
 			m_hasBeenInitialized = true;
 		}
 
-		if (m_data.WindowMode != WindowMode::Windowed)
+		if (m_data.windowMode != WindowMode::Windowed)
 		{
-			SetWindowMode(m_data.WindowMode, true);
+			SetWindowMode(m_data.windowMode, true);
 		}
 
-		glfwSetWindowUserPointer(m_window, &m_data);
+		glfwSetWindowUserPointer(m_window, this);
 
 		glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int32_t width, int32_t height)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
 
-			data.Width = width;
-			data.Height = height;
+			if (!voltWindow.m_shouldSkipDispatchResizeEvent)
+			{
+				int32_t x, y;
+				glfwGetWindowPos(window, &x, &y);
 
-			int32_t x, y;
-			glfwGetWindowPos(window, &x, &y);
+				WindowResizeEvent event(voltWindow, (uint32_t)x, (uint32_t)y, width, height);
+				EventSystem::DispatchEvent(event);
 
-			WindowResizeEvent event((uint32_t)x, (uint32_t)y, width, height);
-			EventSystem::DispatchEvent(event);
+				voltWindow.m_data.width = width;
+				voltWindow.m_data.height = height;
+			}
+
+			voltWindow.m_shouldSkipDispatchResizeEvent = false;
 		});
 
 		glfwSetWindowCloseCallback(m_window, [](GLFWwindow* window)
 		{
-			WindowCloseEvent event{};
+			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
+
+			WindowCloseEvent event{ voltWindow };
 			EventSystem::DispatchEvent(event);
 		});
 
-		if (m_properties.UseTitlebar && m_properties.UseCustomTitlebar)
+		if (m_properties.useTitlebar && m_properties.useCustomTitlebar)
 		{
 			glfwSetTitlebarHitTestCallback(m_window, [](GLFWwindow* window, int x, int y, int* hit)
 			{
-				WindowTitlebarHittestEvent event{ x, y, *hit };
+				Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
+
+				WindowTitlebarHittestEvent event{ voltWindow, x, y, *hit };
 				EventSystem::DispatchEvent(event);
 			});
 		}
 
-		glfwSetKeyCallback(m_window, [](GLFWwindow* window, int32_t key, int32_t, int32_t action, int32_t)
+		glfwSetKeyCallback(m_window, [](GLFWwindow* window, int32_t key, int32_t scanCode, int32_t action, int32_t modifiers)
 		{
 			if (key == -1)
 			{
 				return;
 			}
 
+			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
+
 			switch (action)
 			{
 				case GLFW_PRESS:
 				{
-					KeyPressedEvent event(key, 0);
+					KeyPressedEvent event(voltWindow, key, scanCode, 0, modifiers);
 					EventSystem::DispatchEvent(event);
 					break;
 				}
 
 				case GLFW_RELEASE:
 				{
-					KeyReleasedEvent event(key);
+					KeyReleasedEvent event(voltWindow, key, scanCode, modifiers);
 					EventSystem::DispatchEvent(event);
 					break;
 				}
 
 				case GLFW_REPEAT:
 				{
-					KeyPressedEvent event(key, 1);
+					KeyPressedEvent event(voltWindow, key, scanCode, 1, modifiers);
 					EventSystem::DispatchEvent(event);
 					break;
 				}
 			}
-		});
+		});		
 
-		glfwSetCharCallback(m_window, [](GLFWwindow* window, uint32_t key)
+		glfwSetCharCallback(m_window, [](GLFWwindow* window, uint32_t character)
 		{
-			KeyTypedEvent event(key);
+			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
+
+			KeyTypedEvent event(voltWindow, character);
 			EventSystem::DispatchEvent(event);
 		});
 
-		glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int)
+		glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int modifiers)
 		{
+			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
+
 			switch (action)
 			{
 				case GLFW_PRESS:
 				{
-					MouseButtonPressedEvent event(button);
+					MouseButtonPressedEvent event(voltWindow, button, modifiers);
 					EventSystem::DispatchEvent(event);
 					break;
 				}
 				case GLFW_RELEASE:
 				{
-					MouseButtonReleasedEvent event(button);
+					MouseButtonReleasedEvent event(voltWindow, button, modifiers);
 					EventSystem::DispatchEvent(event);
 					break;
 				}
@@ -212,29 +264,43 @@ namespace Volt
 
 		glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xOffset, double yOffset)
 		{
-			MouseScrolledEvent event((float)xOffset, (float)yOffset);
+			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
+
+			MouseScrolledEvent event(voltWindow, (float)xOffset, (float)yOffset);
 			EventSystem::DispatchEvent(event);
 		});
 
 		glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xPos, double yPos)
 		{
-			int32_t x, y;
-			glfwGetWindowPos(window, &x, &y);
-			MouseMovedEvent event((float)xPos + x, (float)yPos + y);
+			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
+
+			MouseMovedEvent event(voltWindow, (float)xPos, (float)yPos);
 			EventSystem::DispatchEvent(event);
 		});
 
 		glfwSetDropCallback(m_window, [](GLFWwindow* window, int32_t count, const char** paths)
 		{
-			WindowDragDropEvent event(count, paths);
+			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
+
+			WindowDragDropEvent event(voltWindow, count, paths);
 			EventSystem::DispatchEvent(event);
 		});
 
-		if (!m_properties.UseTitlebar || (m_properties.UseTitlebar && m_properties.UseCustomTitlebar))
+		glfwSetWindowFocusCallback(m_window, [](GLFWwindow* window, int32_t focused)
 		{
-			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth + 1), static_cast<int32_t>(createHeight + 1));
-			glfwSetWindowSize(m_window, static_cast<int32_t>(createWidth), static_cast<int32_t>(createHeight));
-		}
+			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
+
+			WindowFocusChangedEvent event(voltWindow, focused == GLFW_TRUE);
+			EventSystem::DispatchEvent(event);
+		});
+
+		glfwSetCursorEnterCallback(m_window, [](GLFWwindow* window, int32_t entered) 
+		{
+			Window& voltWindow = *(Window*)glfwGetWindowUserPointer(window);
+
+			WindowCursorEnteredEvent event(voltWindow, entered == GLFW_TRUE);
+			EventSystem::DispatchEvent(event);
+		});
 
 		m_eventListener = CreateScope<WindowEventListener>(m_window);
 	}
@@ -252,7 +318,7 @@ namespace Volt
 
 	void Window::SetWindowMode(WindowMode aWindowMode, bool first)
 	{
-		m_data.WindowMode = aWindowMode;
+		m_data.windowMode = aWindowMode;
 
 		switch (aWindowMode)
 		{
@@ -295,10 +361,10 @@ namespace Volt
 				glfwSetWindowAttrib(m_window, GLFW_AUTO_ICONIFY, false);
 				glfwSetWindowAttrib(m_window, GLFW_RESIZABLE, true);
 
-				glfwSetWindowMonitor(m_window, nullptr, 0, 0, m_properties.Width, m_properties.Height, GLFW_DONT_CARE);
+				glfwSetWindowMonitor(m_window, nullptr, 0, 0, m_properties.width, m_properties.height, GLFW_DONT_CARE);
 
-				const int32_t xPos = (int32_t)((mode->width / 2) - (m_properties.Width / 2));
-				const int32_t yPos = (int32_t)((mode->height / 2) - (m_properties.Height / 2));
+				const int32_t xPos = (int32_t)((mode->width / 2) - (m_properties.width / 2));
+				const int32_t yPos = (int32_t)((mode->height / 2) - (m_properties.height / 2));
 
 				glfwSetWindowPos(m_window, xPos, yPos);
 
@@ -306,7 +372,7 @@ namespace Volt
 
 				if (first)
 				{
-					Resize(m_properties.Width, m_properties.Height);
+					Resize(m_properties.width, m_properties.height);
 				}
 				else
 				{
@@ -345,14 +411,20 @@ namespace Volt
 
 	void Window::SetVsync(bool aState)
 	{
-		m_data.VSync = aState;
+		m_data.vsync = aState;
+	}
+
+	void Window::SetTitle(const std::string& title)
+	{
+		m_data.title = title;
+		glfwSetWindowTitle(m_window, m_data.title.c_str());
 	}
 
 	void Window::SetIcon(const std::filesystem::path& path)
 	{
-		m_data.IconPath = path;
+		m_data.iconPath = path;
 
-		auto textureData = DDSUtility::GetRawDataFromDDS(m_data.IconPath);
+		auto textureData = DDSUtility::GetRawDataFromDDS(m_data.iconPath);
 
 		GLFWimage image;
 		image.width = (int32_t)textureData.width;
@@ -364,26 +436,37 @@ namespace Volt
 		textureData.dataBuffer.Release();
 	}
 
+	void Window::EnableMousePassthrough(bool state)
+	{
+		glfwSetWindowAttrib(m_window, GLFW_MOUSE_PASSTHROUGH, state);
+	}
+
 	void Window::BeginFrame()
 	{
-		WindowBeginFrameEvent beginFrameEvent;
+		WindowBeginFrameEvent beginFrameEvent(*this);
 		EventSystem::DispatchEvent(beginFrameEvent);
 		m_swapchain->BeginFrame();
+
+		m_frameHasStarted = true;
 	}
 
 	void Window::Render(float timestep)
 	{
-		WindowRenderEvent renderEvent(timestep);
+		WindowRenderEvent renderEvent(*this, timestep);
 		EventSystem::DispatchEvent(renderEvent);
 	}
 
 	void Window::Present()
 	{
-		m_swapchain->Present();
-		glfwPollEvents();
+		if (m_frameHasStarted)
+		{
+			m_swapchain->Present();
 
-		WindowPresentFrameEvent presentFrameEvent;
-		EventSystem::DispatchEvent(presentFrameEvent);
+			WindowPresentFrameEvent presentFrameEvent(*this);
+			EventSystem::DispatchEvent(presentFrameEvent);
+		}
+
+		m_frameHasStarted = false;
 	}
 
 	void Window::Resize(uint32_t aWidth, uint32_t aHeight)
@@ -398,30 +481,31 @@ namespace Volt
 			}
 		}
 
-		m_data.Width = aWidth;
-		m_data.Height = aHeight;
-
-		if (m_data.WindowMode == WindowMode::Windowed)
-		{
-			glfwSetWindowSize(m_window, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight));
-		}
-		else if (m_data.WindowMode == WindowMode::Fullscreen)
-		{
-			glfwSetWindowMonitor(m_window, glfwGetPrimaryMonitor(), 0, 0, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight), GLFW_DONT_CARE);
-		}
-		else
+		// No resize required
+		if (m_data.width == aWidth && m_data.height == aHeight)
 		{
 			return;
 		}
 
-		m_swapchain->Resize(aWidth, aHeight, m_data.VSync);
+		m_data.width = aWidth;
+		m_data.height = aHeight;
+
+		// Make sure that we don't end up in a recursive resize.
+		m_shouldSkipDispatchResizeEvent = true;
+		//glfwSetWindowSize(m_window, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight));
+
+		m_swapchain->Resize(aWidth, aHeight, m_data.vsync);
 	}
 
 	void Window::SetViewportSize(uint32_t width, uint32_t height)
 	{
 		m_viewportWidth = width;
-
 		m_viewportHeight = height;
+	}
+
+	void Window::SetPosition(int32_t x, int32_t y)
+	{
+		glfwSetWindowPos(m_window, x, y);
 	}
 
 	void Window::Maximize() const
@@ -439,27 +523,56 @@ namespace Volt
 		glfwRestoreWindow(m_window);
 	}
 
+	void Window::Show() const
+	{
+		glfwShowWindow(m_window);
+	}
+
+	void Window::Hide() const
+	{
+		glfwHideWindow(m_window);
+	}
+
+	void Window::ShowCursor(bool state)
+	{
+		glfwSetInputMode(m_window, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+	}
+
+	void Window::Focus() const
+	{
+		glfwFocusWindow(m_window);
+	}
+
 	bool Window::IsFocused() const
 	{
 		int32_t focused = glfwGetWindowAttrib(m_window, GLFW_FOCUSED);
-		return focused == GLFW_FOCUSED;
+		return focused != 0;
 	}
 
-	const bool Window::IsMaximized() const
+	bool Window::IsHovered() const
 	{
-		return (bool)glfwGetWindowAttrib(m_window, GLFW_MAXIMIZED);
+		return glfwGetWindowAttrib(m_window, GLFW_HOVERED) != 0;
 	}
 
-	void Window::SetCursor(const std::filesystem::path& path)
+	bool Window::IsMaximized() const
+	{
+		return glfwGetWindowAttrib(m_window, GLFW_MAXIMIZED) == GLFW_MAXIMIZED;
+	}
+
+	bool Window::IsMinimized() const
+	{
+		return glfwGetWindowAttrib(m_window, GLFW_ICONIFIED) != 0;
+	}
+
+	bool Window::IsCursorEnabled() const
+	{
+		return glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL;
+	}
+
+	void Window::ReplaceCursor(CursorType cursorType, const std::filesystem::path& path)
 	{
 		if (!std::filesystem::exists(path))
 		{
-			return;
-		}
-
-		if (m_cursors.contains(path))
-		{
-			glfwSetCursor(m_window, m_cursors.at(path));
 			return;
 		}
 
@@ -471,10 +584,17 @@ namespace Volt
 		image.pixels = textureData.dataBuffer.As<uint8_t>();
 
 		GLFWcursor* cursor = glfwCreateCursor(&image, 0, 0);
-		m_cursors.emplace(path, cursor);
+		glfwDestroyCursor(m_cursors[static_cast<size_t>(CursorType::Arrow)]);
+
+		m_cursors[static_cast<size_t>(CursorType::Arrow)] = cursor;
 
 		textureData.dataBuffer.Release();
 		glfwSetCursor(m_window, cursor);
+	}
+
+	void Window::SetCursor(CursorType cursorType)
+	{
+		glfwSetCursor(m_window, m_cursors[static_cast<size_t>(cursorType)]);
 	}
 
 	void Window::SetOpacity(float opacity) const
@@ -483,14 +603,14 @@ namespace Volt
 		glfwSetWindowOpacity(m_window, opacity);
 	}
 
-	std::string Window::GetClipboard() const
+	std::string_view Window::GetClipboard() const
 	{
 		return glfwGetClipboardString(m_window);
 	}
 
-	void Window::SetClipboard(const std::string& string)
+	void Window::SetClipboard(std::string_view string)
 	{
-		glfwSetClipboardString(m_window, string.c_str());
+		glfwSetClipboardString(m_window, string.data());
 	}
 
 	const std::pair<float, float> Window::GetPosition() const
@@ -499,6 +619,22 @@ namespace Volt
 		glfwGetWindowPos(m_window, &x, &y);
 
 		return { (float)x, (float)y };
+	}
+
+	const std::pair<int32_t, int32_t> Window::GetFramebufferSize() const
+	{
+		int32_t x, y;
+		glfwGetFramebufferSize(m_window, &x, &y);
+
+		return { x, y };
+	}
+
+	const std::pair<float, float> Window::GetCursorPos() const
+	{
+		double xpos, ypos;
+		glfwGetCursorPos(m_window, &xpos, &ypos);
+
+		return { static_cast<float>(xpos), static_cast<float>(ypos) };
 	}
 
 	const float Window::GetOpacity() const
@@ -513,12 +649,27 @@ namespace Volt
 
 	WINDOWMODULE_API const std::string& Window::GetTitle()
 	{
-		return m_data.Title;
+		return m_data.title;
 	}
 
-	Scope<Window> Window::Create(const WindowProperties& aProperties)
+	Scope<Window> Window::Create(const WindowProperties& aProperties, bool forceSDR)
 	{
-		return CreateScope<Window>(aProperties);
+		return CreateScope<Window>(aProperties, forceSDR);
+	}
+
+	void Window::CreateDefaultCursors()
+	{
+		m_cursors[static_cast<size_t>(CursorType::Arrow)] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+		m_cursors[static_cast<size_t>(CursorType::TextInput)] = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
+		m_cursors[static_cast<size_t>(CursorType::ResizeNS)] = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
+		m_cursors[static_cast<size_t>(CursorType::ResizeEW)] = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+		m_cursors[static_cast<size_t>(CursorType::ResizeAll)] = glfwCreateStandardCursor(GLFW_RESIZE_ALL_CURSOR);
+		m_cursors[static_cast<size_t>(CursorType::ResizeNESW)] = glfwCreateStandardCursor(GLFW_RESIZE_NESW_CURSOR);
+		m_cursors[static_cast<size_t>(CursorType::ResizeNWSE)] = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR);
+		m_cursors[static_cast<size_t>(CursorType::NotAllowed)] = glfwCreateStandardCursor(GLFW_NOT_ALLOWED_CURSOR);
+		m_cursors[static_cast<size_t>(CursorType::Hand)] = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
+
+		glfwSetCursor(m_window, m_cursors[0]);
 	}
 
 	Window::WindowEventListener::WindowEventListener(GLFWwindow* glfwWindow)

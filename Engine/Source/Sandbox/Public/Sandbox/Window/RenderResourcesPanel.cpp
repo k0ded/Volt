@@ -34,7 +34,7 @@ void RenderResourcesPanel::UpdateMainContent()
 		{
 			auto& allocInfo = allocInfos.emplace_back();
 			allocInfo.name = allocation->GetName();
-			allocInfo.size = allocation->GetSize();
+			allocInfo.size = allocation->GetMemoryRequirements().size;
 		}
 
 		std::sort(allocInfos.begin(), allocInfos.end(), [](const auto& lhs, const auto& rhs) { return lhs.size > rhs.size; });
@@ -57,7 +57,7 @@ void RenderResourcesPanel::UpdateMainContent()
 		{
 			auto& allocInfo = allocInfos.emplace_back();
 			allocInfo.name = allocation->GetName();
-			allocInfo.size = allocation->GetSize();
+			allocInfo.size = allocation->GetMemoryRequirements().size;
 		}
 
 		std::sort(allocInfos.begin(), allocInfos.end(), [](const auto& lhs, const auto& rhs) { return lhs.size > rhs.size; });

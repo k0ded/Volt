@@ -6,10 +6,10 @@
 #include "Sandbox/Utility/GlobalEditorStates.h"
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/UserSettingsManager.h"
+#include "Sandbox/EditorCommandStack.h"
 #include "Sandbox/Sandbox.h"
 
-#include <Volt/Asset/ParticlePreset.h>
-#include <Volt/Asset/Prefab.h>
+#include <Volt-Scene/Prefab.h>
 
 #include <Volt-Renderer/Mesh/Mesh.h>
 #include <Volt-Renderer/SceneRenderer.h>
@@ -19,18 +19,16 @@
 #include <InputModule/InputCodes.h>
 #include <InputModule/MouseButtonCodes.h>
 
-#include <Volt-Scene/Entity.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <InputModule/Events/KeyboardEvents.h>
 
-#include "Sandbox/EditorCommandStack.h"
-
-GameViewPanel::GameViewPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::Scene>& editorScene, SceneState& aSceneState)
+GameViewPanel::GameViewPanel(Ref<Volt::SceneRenderer>& sceneRenderer, AssetReference<Volt::Scene>& editorScene, SceneState& aSceneState)
 	: EditorWindow(GAMEVIEWPANEL_TITLE), m_sceneRenderer(sceneRenderer), m_editorScene(editorScene),
 	m_sceneState(aSceneState)
 {
-	Open();
 	m_windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 	m_isFullscreenImage = true;
 
@@ -42,6 +40,13 @@ GameViewPanel::GameViewPanel(Ref<Volt::SceneRenderer>& sceneRenderer, Ref<Volt::
 
 void GameViewPanel::UpdateMainContent()
 {
+	if (!m_editorScene)
+	{
+		UI::ScopedFont font(UI::FontType::Regular, 90.f);
+		ImGui::Text("No Scene Loaded.");
+		return;
+	}
+
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{ 0.07f, 0.07f, 0.07f, 1.f });
 
 	auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
@@ -58,7 +63,7 @@ void GameViewPanel::UpdateMainContent()
 		Resize({ viewportSize.x, viewportSize.y });
 	}
 
-	if (m_sceneRenderer)
+	if (m_sceneRenderer && m_sceneRenderer->GetFinalImage())
 	{
 		ImGui::Image(UI::GetTextureID(m_sceneRenderer->GetFinalImage()), { m_viewportSize.x, m_viewportSize.y });
 	}
@@ -70,8 +75,11 @@ void GameViewPanel::OnOpen()
 {
 	Volt::SceneRendererCreateInfo spec{};
 	spec.debugName = "Game Viewport";
-	spec.renderScene = m_editorScene->GetRenderScene();
-	m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
+	if (m_editorScene)
+	{
+		spec.renderScene = m_editorScene->GetRenderScene();
+		m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
+	}
 }
 
 void GameViewPanel::OnClose()

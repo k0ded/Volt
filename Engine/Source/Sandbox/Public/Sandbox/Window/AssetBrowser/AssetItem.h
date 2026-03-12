@@ -3,6 +3,8 @@
 #include "Sandbox/Window/AssetBrowser/BrowserItems.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
+#include <AssetSystem/Asset.h>
+
 #include <RHIModule/Images/Image.h>
 
 #include <imgui.h>
@@ -19,7 +21,7 @@ namespace AssetBrowser
 	class AssetItem : public Item
 	{
 	public:
-		AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& meshToImportData);
+		AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& meshToImportData, Volt::AssetHandle inHandle);
 		~AssetItem() override = default;
 		bool Render() override;
 

@@ -8,19 +8,21 @@ namespace Volt
 {
 	struct WINDOWMODULE_API WindowProperties
 	{
-		WindowProperties(const std::string& title = "VoltWindow", uint32_t width = 1280, uint32_t height = 720, bool vSync = true, WindowMode windowMode = WindowMode::Windowed)
-			: Title(title), Width(width), Height(height), VSync(vSync), UseTitlebar(false), UseCustomTitlebar(false), WindowMode(windowMode)
-		{
-		}
+		std::string title = "Volt";
+		uint32_t width = 1280;
+		uint32_t height = 720;
+		bool vsync = true;
+		
+		bool useTitlebar = false;
+		bool useCustomTitlebar = false;
+		bool createAsVisible = true;
+		bool createAsFocused = true;
+		bool focusOnShow = true;
+		bool createAsDecorated = true;
+		bool createAsAlwaysOnTop = false;
 
-		std::string Title;
-		uint32_t Width;
-		uint32_t Height;
-		bool VSync;
-		bool UseTitlebar;
-		bool UseCustomTitlebar;
-		WindowMode WindowMode;
-		std::filesystem::path IconPath;
-		std::filesystem::path CursorPath;
+		WindowMode windowMode = WindowMode::Windowed;
+		std::filesystem::path iconPath;
+		std::filesystem::path cursorPath;
 	};
 }

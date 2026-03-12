@@ -1,51 +1,47 @@
 #include "rhipch.h"
-#include "RHIModule/Core/ResourceStateTracker.h"
 
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/Core/ResourceStateTracker.h"
+#include "RHIModule/Images/Image.h"
 
 namespace Volt::RHI
 {
-	void ResourceStateTracker::AddResource(RawPtr<RHIResource> resource, BarrierStage initialStage, BarrierAccess initialAccess, ImageLayout initialLayout)
+	void ResourceStateTracker::Initialize(RHIResource* resource, BarrierStage stage, BarrierAccess access, ImageLayout layout)
 	{
-		std::scoped_lock lock{ m_mutex };
-		VT_ENSURE(!m_resourceStates.contains(resource));
+		ResourceType resourceType = resource->GetType();
 
-		ResourceState state{};
-		state.stage = initialStage;
-		state.access = initialAccess;
-		state.layout = initialLayout;
+		if (resourceType == ResourceType::Image1D ||
+			resourceType == ResourceType::Image2D ||
+			resourceType == ResourceType::Image3D)
+		{
+			Image& image = resource->AsRef<Image>();
 
-		m_resourceStates[resource] = state;
-	}
-	
-	void ResourceStateTracker::RemoveResource(RawPtr<RHIResource> resource)
-	{
-		std::scoped_lock lock{ m_mutex };
-		VT_ENSURE(m_resourceStates.contains(resource));
-		m_resourceStates.erase(resource);
-	}
-	
-	void ResourceStateTracker::TransitionResource(RawPtr<RHIResource> resource, BarrierStage dstStage, BarrierAccess dstAccess, ImageLayout dstLayout)
-	{
-		std::scoped_lock lock{ m_mutex };
-		VT_ENSURE(m_resourceStates.contains(resource));
+			const uint32_t numSubResources = image.GetDesc().mips * image.GetDesc().layers;
+			m_subResourceStates.resize(numSubResources);
 
-		auto& state = m_resourceStates.at(resource);
-		state.stage = dstStage;
-		state.access = dstAccess;
-		state.layout = dstLayout;
+			for (uint32_t i = 0; i < numSubResources; ++i)
+			{
+				m_subResourceStates[i].stage = stage;
+				m_subResourceStates[i].access = access;
+				m_subResourceStates[i].layout = layout;
+			}
+		}
+		else
+		{
+			m_subResourceStates.emplace_back(stage, access, layout);
+		}
 	}
-	
-	const ResourceState& ResourceStateTracker::GetCurrentResourceState(RawPtr<RHIResource> resource)
-	{
-		std::scoped_lock lock{ m_mutex };
-		VT_ENSURE(m_resourceStates.contains(resource));
 
-		return m_resourceStates.at(resource);
-	}
-	
-	void* ResourceStateTracker::GetHandleImpl() const
+	void ResourceStateTracker::Transition(uint32_t subResourceIndex, BarrierStage stage, BarrierAccess access, ImageLayout layout /*= ImageLayout::Undefined*/)
 	{
-		return nullptr;
+		VT_ENSURE_MSG(!m_subResourceStates.empty(), "The resource state tracker has not been initialized!");
+		VT_ENSURE(subResourceIndex < m_subResourceStates.size());
+
+		std::scoped_lock lock{ m_resourceTrackerMutex };
+		VT_PROFILE_LOCK_MARK(m_resourceTrackerMutex);
+
+		ResourceState& state = m_subResourceStates[subResourceIndex];
+		state.stage = stage;
+		state.access = access;
+		state.layout = layout;
 	}
 }

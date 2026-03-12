@@ -4,10 +4,13 @@
 #include "Volt-Renderer/RayTracing/RayTracingSceneGeometry.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 
+#include <RenderCore/CommandBufferPool.h>
+
 #include <EntitySystem/EntityScene.h>
-#include <EntitySystem/EntityHelper.h>
+#include <EntitySystem/Entity.h>
 
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers//CommandBufferUtility.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -16,23 +19,26 @@ namespace Volt
 	RayTracingScene::RayTracingScene(EntityScene* scene)
 		: m_scene(scene)
 	{
-		RHI::FenceCreateInfo fenceInfo{};
-		fenceInfo.createSignaled = true;
-
-		m_buildFence = RHI::Fence::Create(fenceInfo);
-		m_updateFence = RHI::Fence::Create(fenceInfo);
+		m_buildFence = RHI::Fence::Create();
+		m_updateFence = RHI::Fence::Create();
 	}
 
 	void RayTracingScene::RebuildAccelerationStructure()
 	{
 		VT_PROFILE_FUNCTION();
 
+		// No instances, we don't need to build the TLAS.
+		if (m_instances.empty())
+		{
+			return;
+		}
+
 		Vector<RHI::AccelerationStructureInstance> instances;
 		instances.reserve(m_instances.size());
 
 		for (const auto& instance : m_instances)
 		{
-			auto entity = m_scene->GetEntityHelperFromEntityID(instance.entityId);
+			auto entity = m_scene->GetEntityFromID(instance.entityId);
 			if (!entity)
 			{
 				continue;
@@ -79,7 +85,9 @@ namespace Volt
 
 		m_accelerationStructure = RHI::AccelerationStructure::Create(asCreateInfo);
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		RHI::AccelerationStructureBuildGeometryInfo buildGeometryInfo{};
@@ -102,9 +110,7 @@ namespace Volt
 		commandBuffer->End();
 
 		m_buildFence->WaitUntilSignaled();
-		m_buildFence->Reset();
-
-		commandBuffer->ExecuteWithFence(m_buildFence);
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, m_buildFence);
 
 		// #TODO_Ivar: Remove when design is finalized
 		m_buildFence->WaitUntilSignaled();
@@ -119,7 +125,7 @@ namespace Volt
 
 		for (const auto& instance : m_instances)
 		{
-			auto entity = m_scene->GetEntityHelperFromEntityID(instance.entityId);
+			auto entity = m_scene->GetEntityFromID(instance.entityId);
 			if (!entity)
 			{
 				continue;
@@ -146,7 +152,9 @@ namespace Volt
 			m_instancesBuffer->GetResource()->Unmap();
 		}
 
-		RefPtr<RHI::CommandBuffer> commandBuffer = RHI::CommandBuffer::Create();
+		RefPtr<PooledCommandBuffer> pooledCommandBuffer = CommandBufferPool::GetCommandBuffer();
+		RefPtr<RHI::CommandBuffer> commandBuffer = pooledCommandBuffer->Get();
+
 		commandBuffer->Begin();
 
 		RHI::AccelerationStructureBuildGeometryInfo buildGeometryInfo{};
@@ -173,9 +181,7 @@ namespace Volt
 		commandBuffer->End();
 		
 		m_updateFence->WaitUntilSignaled();
-		m_updateFence->Reset();
-		
-		commandBuffer->ExecuteWithFence(m_updateFence);
+		RHI::CommandBufferUtils::ExecuteCommandBufferWithFence(commandBuffer, m_updateFence);
 
 		m_updateFence->WaitUntilSignaled();
 	}
@@ -222,19 +228,26 @@ namespace Volt
 	
 	RayTracingInstanceID RayTracingScene::AddInstance(Ref<Mesh> mesh, EntityID entityId, uint32_t renderScenePrimitiveIndex)
 	{
+		RayTracingInstanceID newId{};
+
+		AddInstanceWithID(mesh, entityId, renderScenePrimitiveIndex, newId);
+
+		return newId;
+	}
+
+	void RayTracingScene::AddInstanceWithID(Ref<Mesh> mesh, EntityID entityId, uint32_t renderScenePrimitiveIndex, RayTracingInstanceID id)
+	{
 		auto& instance = m_instances.emplace_back();
 
 		instance.entityId = entityId;
 		instance.renderScenePrimitiveIndex = renderScenePrimitiveIndex;
 		instance.mesh = mesh;
-		instance.id = {};
+		instance.id = id;
 
 		auto& newOperation = m_frameOperations.emplace_back();
 		newOperation.index = m_instances.size() - 1;
 		newOperation.instanceId = instance.id;
 		newOperation.operationType = OperationType::Add;
-
-		return instance.id;
 	}
 
 	void RayTracingScene::RemoveInstance(RayTracingInstanceID instanceId)

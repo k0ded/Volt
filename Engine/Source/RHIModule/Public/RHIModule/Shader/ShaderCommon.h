@@ -29,11 +29,68 @@ namespace Volt::RHI
 		Amplification = 0x00000040,
 		Mesh = 0x00000080,
 
+		// Note: Update when adding more shader stages.
+		Num = 14,
+		NumBindable = 9,
+
 		All = Vertex | Pixel | Hull | Domain | Geometry | Compute,
 		Common = Vertex | Pixel | Geometry | Compute
 	};
-
 	VT_SETUP_ENUM_CLASS_OPERATORS(ShaderStage);
+
+	inline constexpr uint32_t GetNumShaderStages()
+	{
+		constexpr uint32_t NumShaderStages = static_cast<uint32_t>(ShaderStage::Num);
+		return NumShaderStages;
+	}
+
+	inline constexpr uint32_t GetNumBindableShaderStages()
+	{
+		constexpr uint32_t NumShaderStages = static_cast<uint32_t>(ShaderStage::NumBindable);
+		return NumShaderStages;
+	}
+
+	inline constexpr uint32_t GetNumMaxBoundShaderStages()
+	{
+		return 4;
+	}
+
+	inline constexpr uint32_t GetShaderStageIndex(ShaderStage shaderStage)
+	{
+		switch (shaderStage)
+		{
+			case ShaderStage::Vertex: return 0;
+			case ShaderStage::Amplification: return 1;
+			case ShaderStage::Mesh: return 2;
+			case ShaderStage::Pixel: return 3;
+			case ShaderStage::Compute: return 4;
+			case ShaderStage::RayGen: return 5;
+			case ShaderStage::Hull: return 6;
+			case ShaderStage::Domain: return 7;
+			case ShaderStage::Geometry: return 8;
+		}
+
+		return 0;
+	}
+
+	enum class ShaderRegisterType : uint8_t
+	{
+		CBV = 0,
+		UAV,
+		SRV,
+		Sampler,
+		Max
+	};
+
+	enum class ShaderResourceType : uint8_t
+	{
+		UniformBuffer,
+		StructuredBuffer,
+		TexelBuffer,
+		Texture,
+		Sampler,
+		AccelerationStructure
+	};
 
 	enum class ShaderUniformBaseType : uint8_t
 	{
@@ -68,14 +125,6 @@ namespace Volt::RHI
 		Texture3D,
 		RWTexture3D,
 
-		Sampler
-	};
-
-	enum class ShaderRegisterType : uint32_t
-	{
-		Texture = 0,
-		UniformBuffer,
-		UnorderedAccess,
 		Sampler
 	};
 
@@ -128,18 +177,33 @@ namespace Volt::RHI
 			return baseType == rhs.baseType && vecsize == rhs.vecsize && columns == rhs.columns;
 		}
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderUniformType& data)
+		inline bool IsArithmeticType() const
 		{
-			streamWriter.Write(data.baseType);
-			streamWriter.Write(data.vecsize);
-			streamWriter.Write(data.columns);
+			switch (baseType)
+			{
+				case ShaderUniformBaseType::Bool:
+				case ShaderUniformBaseType::Short:
+				case ShaderUniformBaseType::UShort:
+				case ShaderUniformBaseType::UInt:
+				case ShaderUniformBaseType::Int:
+				case ShaderUniformBaseType::Int64:
+				case ShaderUniformBaseType::UInt64:
+				case ShaderUniformBaseType::Double:
+				case ShaderUniformBaseType::Float:
+				case ShaderUniformBaseType::Half:
+					return true;
+			}
+
+			return false;
 		}
 
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderUniformType& outData)
+		friend Archive& operator<<(Archive& archive, ShaderUniformType& value)
 		{
-			streamReader.Read(outData.baseType);
-			streamReader.Read(outData.vecsize);
-			streamReader.Read(outData.columns);
+			archive << value.baseType;
+			archive << value.vecsize;
+			archive << value.columns;
+
+			return archive;
 		}
 	};
 
@@ -154,84 +218,15 @@ namespace Volt::RHI
 		size_t size = 0;
 		size_t offset = 0;
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderUniform& data)
+		std::string name;
+
+		friend Archive& operator<<(Archive& archive, ShaderUniform& value)
 		{
-			streamWriter.Write(data.type);
-			streamWriter.Write(data.size);
-			streamWriter.Write(data.offset);
-		}
+			archive << value.type;
+			archive << value.size;
+			archive << value.offset;
 
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderUniform& outData)
-		{
-			streamReader.Read(outData.type);
-			streamReader.Read(outData.size);
-			streamReader.Read(outData.offset);
-		}
-	};
-
-	class VTRHI_API ShaderDataBuffer
-	{
-	public:
-		ShaderDataBuffer() = default;
-		ShaderDataBuffer(const ShaderDataBuffer& rhs);
-
-		void AddMember(const std::string& name, ShaderUniformType type, size_t size, size_t offset);
-		void SetSize(const size_t size);
-
-		VT_NODISCARD VT_INLINE const bool HasMember(const std::string& memberName) const { return !m_uniforms.contains(memberName); }
-		VT_NODISCARD VT_INLINE const bool IsValid() const { return !m_uniforms.empty(); }
-
-		VT_NODISCARD VT_INLINE const ShaderUniform& GetMember(const std::string& memberName) const { return m_uniforms.at(memberName); }
-		VT_NODISCARD VT_INLINE const size_t GetSize() const { return m_size; }
-		VT_NODISCARD VT_INLINE const uint8_t* GetBuffer() const { return m_data; }
-
-		VT_NODISCARD VT_INLINE std::unordered_map<std::string, ShaderUniform>::iterator begin() { return m_uniforms.begin(); }
-		VT_NODISCARD VT_INLINE std::unordered_map<std::string, ShaderUniform>::iterator end() { return m_uniforms.end(); }
-
-		template<typename T>
-		T& GetMemberData(const std::string& memberName);
-
-		template<typename T>
-		void SetMemberData(const std::string& memberName, const T& value);
-
-		ShaderDataBuffer& operator=(const ShaderDataBuffer& rhs);
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderDataBuffer& data);
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderDataBuffer& outData);
-
-	private:
-		std::unordered_map<std::string, ShaderUniform> m_uniforms;
-		uint8_t m_data[128]; // Max push constant size for all platforms are 128 bytes
-		size_t m_size = 0;
-	};
-
-	struct VTRHI_API ShaderConstantData
-	{
-		uint32_t size = 0;
-		uint32_t offset = 0;
-		ShaderStage	stageFlags = ShaderStage::None;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderConstantData& data);
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderConstantData& outData);
-	};
-
-	struct VTRHI_API ShaderRenderGraphConstantsData
-	{
-		VT_NODISCARD VT_INLINE bool IsValid() const { return !uniforms.empty() && size > 0; }
-
-		std::unordered_map<StringHash, ShaderUniform> uniforms;
-		size_t size = 0;
-
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderRenderGraphConstantsData& data)
-		{
-			streamWriter.Write(data.uniforms);
-			streamWriter.Write(data.size);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderRenderGraphConstantsData& outData)
-		{
-			streamReader.Read(outData.uniforms);
-			streamReader.Read(outData.size);
+			return archive;
 		}
 	};
 
@@ -277,19 +272,22 @@ namespace Volt::RHI
 	{
 		uint32_t set = std::numeric_limits<uint32_t>::max();
 		uint32_t binding = std::numeric_limits<uint32_t>::max();
+		uint32_t arraySize = 1;
 		ShaderRegisterType registerType;
+		ShaderResourceType resourceType;
+		ShaderStage shaderStage;
+		std::string name;
 
 		inline const bool IsValid() const { return set != std::numeric_limits<uint32_t>::max() && binding != std::numeric_limits<uint32_t>::max(); }
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const ShaderResourceBinding& data);
-		static void Deserialize(BinaryStreamReader& streamReader, ShaderResourceBinding& outData);
+		friend Archive& operator<<(Archive& archive, ShaderResourceBinding& value);
 	};
 
 	struct ShaderSourceEntry
 	{
 		std::string entryPoint = "main";
 		RHI::ShaderStage shaderStage;
-		std::filesystem::path filePath;
+		std::filesystem::path filepath;
 	};
 
 	struct ShaderSourceInfo
@@ -297,4 +295,23 @@ namespace Volt::RHI
 		ShaderSourceEntry sourceEntry;
 		std::string source;
 	};
+
+	inline static uint32_t GetDescriptorSetIndexFromShaderStage(ShaderStage shaderStage)
+	{
+		switch (shaderStage)
+		{
+			case ShaderStage::Vertex: return 0;
+			case ShaderStage::Amplification: return 1;
+			case ShaderStage::Mesh: return 2;
+			case ShaderStage::Pixel: return 3;
+			case ShaderStage::Compute: return 4;
+			case ShaderStage::RayGen: return 5;
+			case ShaderStage::Hull: return 6;
+			case ShaderStage::Domain: return 7;
+			case ShaderStage::Geometry: return 8;
+		}
+
+		VT_ASSERT(false);
+		return 0;
+	}
 }

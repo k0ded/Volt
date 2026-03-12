@@ -15,8 +15,8 @@ namespace AssetBrowser
 
 		DirectoryItem* parentDirectory = nullptr;
 
-		Vector<Ref<AssetItem>> assets;
-		Vector<Ref<DirectoryItem>> subDirectories;
+		Vector<RawPtr<AssetItem>> assets;
+		Vector<RawPtr<DirectoryItem>> subDirectories;
 
 		bool isNext = false;
 
@@ -29,9 +29,5 @@ namespace AssetBrowser
 		bool RenderRightClickPopup() override;
 		bool Rename(const std::string& newName) override;
 		void Open() override;
-		
-		
-	private:
-		void RecursivlyRenameAssets(DirectoryItem* directory, const std::filesystem::path& targetDirectory);
 	};
 }

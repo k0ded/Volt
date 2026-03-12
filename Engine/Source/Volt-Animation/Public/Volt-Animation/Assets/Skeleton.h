@@ -19,16 +19,12 @@ namespace Volt
 			std::string name;
 			int32_t parentIndex = -1;
 
-			static void Serialize(BinaryStreamWriter& streamWriter, const Joint& data)
+			VT_INLINE friend Archive& operator<<(Archive& archive, Joint& value)
 			{
-				streamWriter.Write(data.name);
-				streamWriter.Write(data.parentIndex);
-			}
+				archive << value.name;
+				archive << value.parentIndex;
 
-			static void Deserialize(BinaryStreamReader& streamReader, Joint& outData)
-			{
-				streamReader.Read(outData.name);
-				streamReader.Read(outData.parentIndex);
+				return archive;
 			}
 		};
 
@@ -43,31 +39,20 @@ namespace Volt
 
 			inline const bool IsValid() const { return id != 0; }
 
-			static void Serialize(BinaryStreamWriter& streamWriter, const JointAttachment& data)
+			VT_INLINE friend Archive& operator<<(Archive& archive, JointAttachment& value)
 			{
-				streamWriter.Write(data.name);
-				streamWriter.Write(data.jointIndex);
-				streamWriter.Write(data.id);
-				streamWriter.Write(data.positionOffset);
-				streamWriter.Write(data.rotationOffset);
-			}
+				archive << value.name;
+				archive << value.jointIndex;
+				archive << value.id;
+				archive << value.positionOffset;
+				archive << value.rotationOffset;
 
-			static void Deserialize(BinaryStreamReader& streamReader, JointAttachment& outData)
-			{
-				streamReader.Read(outData.name);
-				streamReader.Read(outData.jointIndex);
-				streamReader.Read(outData.id);
-				streamReader.Read(outData.positionOffset);
-				streamReader.Read(outData.rotationOffset);
+				return archive;
 			}
 		};
 
 		Skeleton() = default;
-		~Skeleton() override
-		{
-			m_joints.clear();
-			m_inverseBindPose.clear();
-		}
+		~Skeleton() override;
 
 		inline const size_t GetJointCount() const { return m_joints.size(); }
 		inline const Vector<glm::mat4>& GetInverseBindPose() const { return m_inverseBindPose; }
@@ -85,20 +70,20 @@ namespace Volt
 		const std::string GetNameFromJointIndex(int32_t index);
 
 		static AssetType GetStaticType() { return AssetTypes::Skeleton; }
-		AssetType GetType() override { return GetStaticType(); };
+		AssetType GetType() const override { return GetStaticType(); };
 		uint32_t GetVersion() const override { return 1; }
+		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
 	private:
 		friend class FbxSourceImporter;
 		friend class SkeletonImporter;
-		friend class SkeletonSerializer;
 
 		Vector<Joint> m_joints;
 		Vector<JointAttachment> m_jointAttachments;
 		Vector<Animation::TRS> m_restPose;
 		Vector<glm::mat4> m_inverseBindPose;
 
-		vt::map<std::string, size_t> m_jointNameToIndex;
+		Map<std::string, size_t> m_jointNameToIndex;
 
 		std::string m_name = "Skeleton";
 	};

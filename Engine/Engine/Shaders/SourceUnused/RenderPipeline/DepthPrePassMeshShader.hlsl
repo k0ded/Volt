@@ -1,0 +1,87 @@
+#include "PushConstant.hlsli"
+#include "MeshShaderCommon.hlsli"
+#include "MeshShaderCullCommon.hlsli"
+
+struct VertexOutput
+{
+    float4 position : SV_Position;
+    float4 currentPosition : CURRENT_POSITION;
+    float4 prevPosition : PREV_POSITION;
+    float3 normal : NORMAL;
+};
+
+[numthreads(NUM_MS_THREADS, 1, 1)]
+[outputtopology("triangle")]
+void MainMS(uint groupThreadId : SV_GroupThreadID, uint groupId : SV_GroupID,
+            in payload MeshAmplificationPayload payload,
+            out indices uint3 tris[NUM_MAX_OUT_TRIS],
+            out vertices VertexOutput vertices[NUM_MAX_OUT_VERTS],
+            out primitives DefaultPrimitiveOutput primitives[NUM_MAX_OUT_TRIS])
+{
+    const ViewData viewData = View.Load();
+
+    const PrimitiveDrawData drawData = GPUSceneData.primitiveDrawDataBuffer.Load(payload.drawId);    
+    const PrimitiveDrawData prevDrawData = GPUSceneData.prevPrimitiveDrawDataBuffer.Load(payload.drawId);
+    const GPUMesh mesh = GPUSceneData.meshesBuffer.Load(drawData.meshId);
+
+    uint meshletIndex = payload.meshletIndices[groupId];
+
+    const Meshlet meshlet = mesh.meshletsBuffer.Load(mesh.meshletStartOffset + meshletIndex);
+    const uint vertexCount = meshlet.GetVertexCount();
+    const uint triCount = meshlet.GetTriangleCount();    
+
+    SetMeshOutputCounts(vertexCount, triCount);
+
+    if (groupThreadId < vertexCount)
+    {
+        const uint vertexIndex = mesh.meshletDataBuffer[meshlet.GetVertexOffset() + groupThreadId] + mesh.vertexStartOffset;
+        const float3x3 cameraNormalRotation = (float3x3)viewData.view;
+        
+        float4x4 skinningMatrix = IDENTITY_MATRIX;
+        if (drawData.isAnimated)
+        {
+            skinningMatrix = GetSkinningMatrix(mesh, vertexIndex, drawData.boneOffset, GPUSceneData.bonesBuffer);
+        }
+
+        const float3 skinnedPosition = mul(skinningMatrix, float4(mesh.vertexPositionsBuffer.Load(vertexIndex), 1.f)).xyz;
+        const float4 position = TransformClipPosition(mul(viewData.viewProjection, float4(drawData.transform.GetWorldPosition(skinnedPosition), 1.f)));
+        const float4 prevPosition = TransformClipPosition(mul(viewData.prevViewProjection, float4(prevDrawData.transform.GetWorldPosition(skinnedPosition), 1.f)));
+
+        SetupCullingPositions(groupThreadId, position, viewData.renderSize);
+
+        vertices[groupThreadId].position = position;
+        vertices[groupThreadId].prevPosition = prevPosition;
+        vertices[groupThreadId].currentPosition = position;
+        vertices[groupThreadId].normal = normalize(mul(cameraNormalRotation, drawData.transform.RotateVector(GetNormal(mesh, vertexIndex))));
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+    if (groupThreadId < triCount)
+    {
+        const uint primitive = mesh.meshletDataBuffer.Load(meshlet.GetIndexOffset() + groupThreadId);
+        const uint3 indices = UnpackPrimitive(primitive);        
+        tris[groupThreadId] = indices;
+        primitives[groupThreadId].cullPrimitive = IsPrimitiveCulled(indices);
+    }
+}
+
+struct ColorOutput
+{
+    [[vt::rgba16f]] float4 normal : SV_Target0;
+    [[vt::rg16f]] float2 velocity : SV_Target1;
+    [[vt::d32f]];
+};
+
+ColorOutput MainPS(VertexOutput input)
+{
+    const ViewData viewData = View.Load();
+
+    float3 currentPosNDC = input.currentPosition.xyz / input.currentPosition.w;
+    float3 previousPosNDC = input.prevPosition.xyz / input.prevPosition.w;
+
+    ColorOutput output;
+    output.velocity = ((previousPosNDC.xy - viewData.prevFrameJitter) - (currentPosNDC.xy - viewData.currentFrameJitter)) * 0.5f;
+    output.normal = float4(normalize(input.normal), 1.f);
+    return output;
+}

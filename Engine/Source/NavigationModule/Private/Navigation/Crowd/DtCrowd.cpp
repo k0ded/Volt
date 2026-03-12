@@ -3,6 +3,8 @@
 
 #include "Navigation/Core/CoreInterfaces.h"
 
+#include <EntitySystem/Entity.h>
+
 #include <DetourCommon.h>
 
 namespace Volt
@@ -70,11 +72,11 @@ namespace Volt
 
 		const dtCrowdAgent* DtCrowd::GetAgent(Volt::Entity entity)
 		{
-			if (!myCrowd || !entity.HasComponent<Volt::NavAgentComponent>() || !myEntityToAgentMap.contains(entity.GetID()))
-			{
-				VT_LOG(Warning, "Could not get agent from entity: {0}", entity.GetID());
-				return nullptr;
-			}
+			//if (!myCrowd || !entity.HasComponent<Volt::NavAgentComponent>() || !myEntityToAgentMap.contains(entity.GetID()))
+			//{
+			//	VT_LOG(Warning, "Could not get agent from entity: {0}", entity.GetID());
+			//	return nullptr;
+			//}
 
 			return myCrowd->getAgent(myEntityToAgentMap.at(entity.GetID()));
 		}
@@ -163,27 +165,27 @@ namespace Volt
 		{
 			dtCrowdAgentParams ap;
 			memset(&ap, 0, sizeof(ap));
-			if (!entity.HasComponent<Volt::NavAgentComponent>())
-			{
-				return ap;
-			}
+			//if (!entity.HasComponent<Volt::NavAgentComponent>())
+			//{
+			//	return ap;
+			//}
 
-			auto& agentComponent = entity.GetComponent<Volt::NavAgentComponent>();
+			//auto& agentComponent = entity.GetComponent<Volt::NavAgentComponent>();
 
-			ap.radius = agentComponent.radius;
-			ap.height = agentComponent.height;
-			ap.maxAcceleration = agentComponent.acceleration;
-			ap.maxSpeed = agentComponent.maxSpeed;
-			ap.collisionQueryRange = ap.radius * 12.0f;
-			ap.pathOptimizationRange = ap.radius * 30.0f;
-			ap.updateFlags = 0;
-			//ap.updateFlags |= DT_CROWD_ANTICIPATE_TURNS;
-			ap.updateFlags |= DT_CROWD_OPTIMIZE_VIS;
-			ap.updateFlags |= DT_CROWD_OPTIMIZE_TOPO;
-			ap.updateFlags |= DT_CROWD_OBSTACLE_AVOIDANCE;
-			ap.updateFlags |= DT_CROWD_SEPARATION;
-			ap.obstacleAvoidanceType = (unsigned char)agentComponent.obstacleAvoidanceQuality;
-			ap.separationWeight = agentComponent.separationWeight;
+			//ap.radius = agentComponent.radius;
+			//ap.height = agentComponent.height;
+			//ap.maxAcceleration = agentComponent.acceleration;
+			//ap.maxSpeed = agentComponent.maxSpeed;
+			//ap.collisionQueryRange = ap.radius * 12.0f;
+			//ap.pathOptimizationRange = ap.radius * 30.0f;
+			//ap.updateFlags = 0;
+			////ap.updateFlags |= DT_CROWD_ANTICIPATE_TURNS;
+			//ap.updateFlags |= DT_CROWD_OPTIMIZE_VIS;
+			//ap.updateFlags |= DT_CROWD_OPTIMIZE_TOPO;
+			//ap.updateFlags |= DT_CROWD_OBSTACLE_AVOIDANCE;
+			//ap.updateFlags |= DT_CROWD_SEPARATION;
+			//ap.obstacleAvoidanceType = (unsigned char)agentComponent.obstacleAvoidanceQuality;
+			//ap.separationWeight = agentComponent.separationWeight;
 
 			return ap;
 		}
@@ -207,11 +209,11 @@ namespace Volt
 
 		void DtCrowd::AddAgent(Volt::Entity entity)
 		{
-			if (!myCrowd || !entity.HasComponent<Volt::NavAgentComponent>() || myEntityToAgentMap.contains(entity.GetID()))
-			{
-				VT_LOG(Warning, "Could not add agent for entity: {0}", entity.GetID());
-				return;
-			}
+			//if (!myCrowd || !entity.HasComponent<Volt::NavAgentComponent>() || myEntityToAgentMap.contains(entity.GetID()))
+			//{
+			//	VT_LOG(Warning, "Could not add agent for entity: {0}", entity.GetID());
+			//	return;
+			//}
 
 			auto position = entity.GetPosition();
 

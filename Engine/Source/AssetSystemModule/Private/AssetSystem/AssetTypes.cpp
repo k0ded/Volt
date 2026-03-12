@@ -1,0 +1,17 @@
+#include "aspch.h"
+#include "AssetSystem/AssetTypes.h"
+
+VT_REGISTER_ASSET_TYPE(Mesh);
+VT_REGISTER_ASSET_TYPE(Material);
+VT_REGISTER_ASSET_TYPE(Font);
+VT_REGISTER_ASSET_TYPE(PostProcessingStack);
+VT_REGISTER_ASSET_TYPE(Prefab);
+VT_REGISTER_ASSET_TYPE(PostProcessingMaterial);
+VT_REGISTER_ASSET_TYPE(NavMesh);
+VT_REGISTER_ASSET_TYPE(NetContract);
+VT_REGISTER_ASSET_TYPE(TextureSource);
+VT_REGISTER_ASSET_TYPE(MeshSource);
+VT_REGISTER_ASSET_TYPE(BehaviorGraph);
+VT_REGISTER_ASSET_TYPE(PhysicsMaterial);
+VT_REGISTER_ASSET_TYPE(Texture);
+VT_REGISTER_ASSET_TYPE(EnvironmentTexture);

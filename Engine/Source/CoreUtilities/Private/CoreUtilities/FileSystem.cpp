@@ -7,12 +7,19 @@
 #include <shlobj_core.h>
 #include <Lmcons.h>
 
+#include <CoreUtilities/CommandLineBuilder.h>
+
 namespace FileSystem
 {
 	bool IsWriteable(const std::filesystem::path& path)
 	{
 		std::filesystem::file_status status = std::filesystem::status(path);
 		return (status.permissions() & std::filesystem::perms::owner_write) != std::filesystem::perms::none;
+	}
+
+	void MakeWriteable(const std::filesystem::path& path)
+	{
+		std::filesystem::permissions(path, std::filesystem::perms::owner_write, std::filesystem::perm_options::add);
 	}
 
 	bool Copy(const std::filesystem::path& source, const std::filesystem::path& destination)
@@ -93,6 +100,36 @@ namespace FileSystem
 		}
 
 		return std::filesystem::create_directories(path);
+	}
+
+	bool FilePathIsOnlyExtension(const std::filesystem::path& path)
+	{
+		const std::string filename = path.filename().string();
+
+		if (!filename.empty())
+		{
+			return filename[0] == '.' && filename.find_first_of('.', 1) == std::string::npos;
+		}
+
+		return false;
+	}
+
+	bool IsFilepathInDirectory(const std::filesystem::path& directoryPath, const std::filesystem::path& filepath, bool checkSubDirectories /*= false*/)
+	{
+		std::filesystem::path canonicalFilepath = std::filesystem::weakly_canonical(filepath);
+		std::filesystem::path canonicalDirectoryPath = std::filesystem::weakly_canonical(directoryPath);
+
+		if (canonicalFilepath == canonicalDirectoryPath)
+		{
+			return true;
+		}
+
+		if (checkSubDirectories)
+		{
+			return std::mismatch(canonicalDirectoryPath.begin(), canonicalDirectoryPath.end(), canonicalFilepath.begin()).first == canonicalDirectoryPath.end();
+		}
+
+		return canonicalFilepath.parent_path() == canonicalDirectoryPath;
 	}
 
 	bool ShowDirectoryInExplorer(const std::filesystem::path& dir)
@@ -395,7 +432,7 @@ namespace FileSystem
 		tempProcessName.insert(tempProcessName.begin(), '\"');
 		tempProcessName.push_back('\"');
 
-		SHELLEXECUTEINFO ShExecInfo = { 0 };
+		SHELLEXECUTEINFO ShExecInfo = {};
 		ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
 		ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
 		ShExecInfo.hwnd = NULL;
@@ -416,6 +453,42 @@ namespace FileSystem
 	void Initialize()
 	{
 		NFD::Init();
+	}
+
+	void InitializeWorkingDirectory(bool isRuntime, const Volt::CommandLineBuilder& commandLineBuilder)
+	{
+		// We don't need to do anything if we are in the "runtime" aka game launcher.
+		if (!isRuntime)
+		{
+			// Check if we have an override for the working directory
+			if (commandLineBuilder.IsArgDefined("workingdir"))
+			{
+				std::filesystem::path filepath = std::filesystem::absolute(commandLineBuilder.GetArgValue("workingdir"));
+
+				if (std::filesystem::exists(filepath))
+				{
+					std::filesystem::current_path(filepath);
+					return;
+				}
+			}
+
+			const std::filesystem::path currentDirectory = std::filesystem::current_path();
+			
+			// Make sure that the working directory isn't already correct with some hopefully correct checks
+			if (currentDirectory.stem() == "Engine" && std::filesystem::exists(currentDirectory / "Binaries"))
+			{
+				return;
+			}
+
+			std::filesystem::path executableFilepath = commandLineBuilder.GetExecutableFilepath();
+			std::filesystem::path binariesFilepath = executableFilepath.parent_path();
+
+			// We assume that we currently are in the "Binaries" directory
+			VT_ASSERT(binariesFilepath.stem() == "Binaries");
+
+			// Then our new working directory is just our parent directory, which hopefully is correct.
+			std::filesystem::current_path(binariesFilepath.parent_path());
+		}
 	}
 
 	void Shutdown()

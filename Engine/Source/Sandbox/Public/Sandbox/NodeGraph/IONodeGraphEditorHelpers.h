@@ -1,9 +1,10 @@
 #pragma once
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
-#include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Components/CoreComponents.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -447,10 +448,10 @@ public:
 	{
 		std::string assetFileName = "Null";
 
-		const Ref<Volt::Asset> rawAsset = Volt::AssetManager::Get().GetAssetRaw(assetHandle);
-		if (rawAsset)
+		AssetReference<Volt::Asset> rawAsset;
+		if (g_assetManager->TryGetTypelessAssetIfLoaded(assetHandle, rawAsset))
 		{
-			assetFileName = rawAsset->assetName;
+			assetFileName = rawAsset->GetAssetName();
 
 			if (supportedTypes != AssetTypes::None)
 			{
@@ -468,11 +469,7 @@ public:
 		ImGui::InputTextString(id.c_str(), &assetFileName, ImGuiInputTextFlags_ReadOnly);
 		ImGui::PopItemWidth();
 
-		if (auto ptr = UI::DragDropTarget("ASSET_BROWSER_ITEM"))
-		{
-			Volt::AssetHandle newHandle = *(Volt::AssetHandle*)ptr;
-			assetHandle = newHandle;
-		}
+		UI::DragDropTarget("ASSET_BROWSER_ITEM", assetHandle);
 	}
 
 	inline static const auto& GetAttribFunctions() { return myAttributeFunctions; }

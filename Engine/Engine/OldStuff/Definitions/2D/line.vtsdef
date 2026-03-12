@@ -1,5 +1,0 @@
-name: "Line"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/2D/Line_vs.hlsl"
-  - "Engine/Shaders/Source/HLSL/2D/Line_ps.hlsl"

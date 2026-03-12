@@ -8,6 +8,8 @@ namespace Volt::RHI
 	Handle<Allocation> AllocationCache::TryGetImageAllocationFromHash(const size_t hash)
 	{
 		std::scoped_lock lock{ m_imageAllocationMutex };
+		VT_PROFILE_LOCK_MARK(m_imageAllocationMutex);
+
 		for (int32_t i = static_cast<int32_t>(m_imageAllocations.size()) - 1; i >= 0; --i)
 		{
 			const auto alloc = m_imageAllocations.at(i);
@@ -26,6 +28,8 @@ namespace Volt::RHI
 	Handle<Allocation> AllocationCache::TryGetBufferAllocationFromHash(const size_t hash)
 	{
 		std::scoped_lock lock{ m_bufferAllocationMutex };
+		VT_PROFILE_LOCK_MARK(m_bufferAllocationMutex);
+
 		for (int32_t i = static_cast<int32_t>(m_bufferAllocations.size()) - 1; i >= 0; --i)
 		{
 			const auto alloc = m_bufferAllocations.at(i);
@@ -44,12 +48,16 @@ namespace Volt::RHI
 	void AllocationCache::QueueImageAllocationForRemoval(Handle<Allocation> alloc)
 	{
 		std::scoped_lock lock{ m_imageAllocationMutex };
+		VT_PROFILE_LOCK_MARK(m_imageAllocationMutex);
+
 		m_imageAllocations.emplace_back(alloc, 0);
 	}
 
 	void AllocationCache::QueueBufferAllocationForRemoval(Handle<Allocation> alloc)
 	{
 		std::scoped_lock lock{ m_bufferAllocationMutex };
+		VT_PROFILE_LOCK_MARK(m_bufferAllocationMutex);
+
 		m_bufferAllocations.emplace_back(alloc, 0);
 	}
 
@@ -61,6 +69,8 @@ namespace Volt::RHI
 
 		{
 			std::scoped_lock lock{ m_imageAllocationMutex };
+			VT_PROFILE_LOCK_MARK(m_imageAllocationMutex);
+
 			for (int32_t i = static_cast<int32_t>(m_imageAllocations.size()) - 1; i >= 0; --i)
 			{
 				const auto& alloc = m_imageAllocations.at(i);
@@ -74,6 +84,8 @@ namespace Volt::RHI
 
 		{
 			std::scoped_lock lock{ m_bufferAllocationMutex };
+			VT_PROFILE_LOCK_MARK(m_bufferAllocationMutex);
+
 			for (int32_t i = static_cast<int32_t>(m_bufferAllocations.size()) - 1; i >= 0; --i)
 			{
 				const auto& alloc = m_bufferAllocations.at(i);

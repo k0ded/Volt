@@ -4,9 +4,9 @@
 #include "Sandbox/EditorCommand.h"
 #include "Sandbox/Sandbox.h"
 
-#include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Scene.h>
 
+#include <EntitySystem/Entity.h>
 
 #include <variant>
 
@@ -32,13 +32,13 @@ namespace Volt
 class PropertiesPanel : public EditorWindow
 {
 public:
-	PropertiesPanel(Ref<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id);
+	PropertiesPanel(AssetReference<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id);
 	void UpdateMainContent() override;
 
 private:
 	void AddComponentPopup();
 
-	Ref<Volt::Scene>& myCurrentScene;
+	AssetReference<Volt::Scene>& myCurrentScene;
 	Ref<Volt::SceneRenderer>& myCurrentSceneRenderer;
 	SceneState& mySceneState;
 

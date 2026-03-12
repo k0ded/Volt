@@ -1,19 +1,22 @@
 #pragma once
 
 #include "Volt-Renderer/SceneRendererStructs.h"
-#include "Volt-Renderer/RenderingTechniques/GIBS.h"
-#include "Volt-Renderer/RenderingTechniques/DDGI.h"
-#include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
-#include "Volt-Renderer/RenderingTechniques/VolumetricFogTechnique.h"
 #include "Volt-Renderer/Renderer.h"
+#include "Volt-Renderer/SceneRendererExtension.h"
 #include "Volt-Renderer/Config.h"
+#include "Volt-Renderer/RenderingTechniques/TAANoise.h"
+#include "Volt-Renderer/GlobalIllumination/GlobalIlluminationRenderer.h"
+#include "Volt-Renderer/MeshPassProcessor.h"
 
 #include <RenderCore/RenderGraph/RenderGraphDebugger.h>
+#include <RenderCore/Resources/GrowingGPUBuffer.h>
 
-// #TODO_Ivar: Maybe remove from here
-#include <RenderCore/RenderGraph/RenderGraph.h>
+#include <JobSystem/Job.h>
 
-#include <RHIModule/Buffers/CommandBufferSet.h>
+#include <EventSystem/EventListener.h>
+#include <EventSystem/ApplicationEvents.h>
+
+#include <CoreUtilities/Delegates/DelegateHandle.h>
 
 namespace Volt
 {
@@ -26,7 +29,7 @@ namespace Volt
 		class ComputePipeline;
 
 		class UniformBufferSet;
-		class StorageBuffer;
+		class Buffer;
 
 		class SamplerState;
 
@@ -42,17 +45,29 @@ namespace Volt
 	class RenderGraph;
 	class RenderGraphBlackboard;
 
-	class RenderGraph::Builder;
+	struct RenderView;
+	struct RenderLightData;
+
+	struct TranslucencyCompositePS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(TranslucencyCompositePS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Accumulation)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float4>, Revealage)
+			RG_RENDER_TARGETS()
+		END_SHADER_PARAMETER_STRUCT()
+	};
 
 	struct SceneRendererCreateInfo
 	{
 		std::string debugName;
 		glm::uvec2 initialResolution = { 1280, 720 };
+		bool drawDebug = false;
 
 		Ref<RenderScene> renderScene;
 	};
 
-	class VTR_API SceneRenderer
+	class VTR_API SceneRenderer : public EventListener
 	{
 	public:
 		enum class VisualizationMode : uint8_t
@@ -73,12 +88,13 @@ namespace Volt
 
 		enum class AntiAliasingMethod : uint8_t
 		{
+			None,
 			FXAA,
 			TAA
 		};
 
 		SceneRenderer(const SceneRendererCreateInfo& specification);
-		~SceneRenderer();
+		~SceneRenderer() override;
 
 		void OnRenderEditor(Ref<Camera> camera, float timestep);
 
@@ -90,65 +106,46 @@ namespace Volt
 		inline const RenderGraphDebugger& GetRenderGraphDebugger() const { return m_renderGraphDebugger; }
 
 		RefPtr<RHI::Image> GetFinalImage();
-		RefPtr<RHI::Image> GetObjectIDImage();
-
-		// #TODO_Ivar: TEMP, Should not be public!
-		void Invalidate();
 
 		void Enable();
 
 		const uint64_t GetFrameTotalGPUAllocationSize() const;
 
+		template<typename T, typename... Args>
+		Ref<T> AddExtension(SceneRendererExtensionStage stage, Args&&... args);
+
 	private:
+		using SceneRendererExtensionMap = Map<SceneRendererExtensionStage, Vector<Ref<SceneRendererExtension>>>;
+
 		void OnRender(Ref<Camera> camera, float timestep);
 
-		void BuildMeshPass(RenderGraph::Builder& builder, RenderGraphBlackboard& blackboard);
-		void SetupMeshPassConstants(RenderContext& context, const RenderGraphBlackboard& blackboard);
-
-		void SetupFrameData(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
-
-		///// Passes //////
-		void UploadUniformBuffers(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
-
-		void AddExternalResources(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-
-		void ExecuteGBufferGenerationPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void ExecutePostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, float timestep);
-
-		void AddMainCullingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddObjectIDPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddGTAOPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, Ref<Camera> camera);
-		void AddVisibilityBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-
-		void AddClearGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-
-		void AddGenerateMaterialCountsPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddCollectMaterialPixelsPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddGenerateMaterialIndirectArgsPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-
-		void RenderMaterials(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddGenerateGBufferPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const uint32_t materialId);
-		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-
-		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
-		void AddFXAAPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
-
-		void AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle srcImage);
-
-		void AddVisualizationPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
-
-		void AddPathTracingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, RenderGraphImageHandle dstImage);
+		///// Render Passes /////
+		void AddDefaultTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void AddEnvironmentTextures(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard);
+		void AddDepthPrePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddBasePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddSkyboxPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddShadingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer, RGTextureRef indirectLightTexture);
+		void AddTranslucencyPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef directionalShadowMap, RGUniformBufferRef directionalShadowUniformBuffer);
+		void AddTranslucencyCompositePass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view);
+		void AddPostProcessingPasses(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture);
+		void AddTonemappingPass(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef outputTexture);
+		/////////////////////////
 
 		void CreateMainRenderTarget(const uint32_t width, const uint32_t height);
+		void AddMeshPassProcessors();
+
+		RGUniformBufferRef CreateViewUniformBuffer(RenderGraph& renderGraph, Ref<Camera> camera);
 
 		bool ShouldApplyJitter() const;
 		bool IsMeshPassVisualizationMode() const;
 
+		bool OnPostFrameUpdateEvent(AppPostFrameUpdateEvent& event);
+		RGTextureRef ExecuteSceneRendererExtensions(SceneRendererExtensionStage stage, RenderGraph& renderGraph, RenderGraphBlackboard& blackboard, const RenderView& view, RGTextureRef prevOutputImage);
+
 		bool m_enabled = false;
 
 		RefPtr<RHI::Image> m_outputImage;
-		RefPtr<RHI::Image> m_objectIDImage;
 		RefPtr<RHI::Image> m_previousColorImage;
 		RefPtr<RHI::Image> m_averageLuminanceImage;
 
@@ -168,13 +165,14 @@ namespace Volt
 		glm::vec2 m_currentJitter = 0.f;
 		glm::vec2 m_prevJitter = 0.f;
 
-		AntiAliasingMethod m_antiAliasingMethod = AntiAliasingMethod::TAA;
+		AntiAliasingMethod m_antiAliasingMethod = AntiAliasingMethod::None;
 		VisualizationMode m_visualizationMode = VisualizationMode::None;
 
 		PreviousFrameData m_previousFrameData;
+		JobCounterRef m_renderGraphExecutionCounter = nullptr;
 
-		RHI::CommandBufferSet m_commandBufferSet;
 		RenderGraphDebugger m_renderGraphDebugger;
+		SceneRendererCreateInfo m_createInfo;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;
 
@@ -182,12 +180,34 @@ namespace Volt
 		VisibilityVisualization m_visibilityVisualization = VisibilityVisualization::TriangleID;
 		////////////////
 		
-		GIBS m_gibs;
-		DDGI m_ddgi;
-		TAANoise m_taaNoise;
-		VolumetricFogTechnique m_volumetricFog;
-
 		Ref<RenderScene> m_renderScene;
-		Renderer::EnvironmentTextures m_sceneEnvironment;
+		TAANoise m_taaNoise;
+
+		GlobalIlluminationRenderer m_globalIlluminationRenderer;
+
+		// Extensions
+		SceneRendererExtensionMap m_sceneRendererExtensions;
+
+		// Mesh passes
+		MeshPassProcessorRegistry m_meshPassProcessorRegistry;
+		DelegateHandle m_renderPrimitiveAddedDelegateHandle = 0;
+		DelegateHandle m_renderPrimitiveRemovedDelegateHandle = 0;
+
+		class DepthPrePassMeshProcessor* m_depthPrePassMeshProcessor = nullptr;
+		class BasePassMeshProcessor* m_basePassMeshProcessor = nullptr;
+		class CascadedShadowMapMeshProcessor* m_cascadedShadowMapMeshProcessor = nullptr;
+		class TranslucencyMeshPassProcessor* m_translucencyMeshPassProcessor = nullptr;
 	};
+
+	template<typename T, typename... Args>
+	Ref<T> SceneRenderer::AddExtension(SceneRendererExtensionStage stage, Args&&... args)
+	{
+		static_assert(std::is_base_of_v<SceneRendererExtension, T>);
+
+		Ref<T> instance = CreateRef<T>(m_renderScene, std::forward<Args>(args)...);
+		instance->OnRegistered(m_meshPassProcessorRegistry);
+
+		m_sceneRendererExtensions[stage].emplace_back(instance);
+		return instance;
+	}
 }

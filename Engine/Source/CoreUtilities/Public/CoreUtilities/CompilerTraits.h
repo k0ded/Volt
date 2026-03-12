@@ -16,14 +16,6 @@
 	#define VT_INLINE inline
 #endif
 
-// No discard
-#define VT_NODISCARD [[nodiscard]]
-
-// Fallthrough
-#define VT_FALLTHROUGH [[fallthrough]]
-
-#define VT_UNREACHABLE __assume(0)
-
 #if defined(_MSC_VER)
 #define VT_DISABLE_WARNING(w) \
 	__pragma(warning(push)) \
@@ -81,6 +73,25 @@ inline void VTBaseUnused(const volatile T& x) { (void)x; }
 // Barrier
 #ifdef VT_PLATFORM_WINDOWS
 	#define VT_COMPILER_BARRIER() _ReadWriteBarrier()
+#else
+	#error "Not defined!"
+#endif
+
+// Thread Pause
+#ifdef VT_PLATFORM_WINDOWS
+	#define VT_PAUSE_THREAD() _mm_pause()
+#else
+	#error "Not defined!"
+#endif
+
+#define VT_NODISCARD [[nodiscard]]
+#define VT_MAYBE_UNUSED [[maybe_unused]]
+#define VT_FALLTHROUGH [[fallthrough]]
+
+#define VT_UNREACHABLE __assume(0)
+
+#ifdef VT_PLATFORM_WINDOWS
+	#define VT_RESTRICT __restrict
 #else
 	#error "Not defined!"
 #endif

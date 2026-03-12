@@ -2,12 +2,9 @@
 
 #include "CoreUtilities/Core.h"
 
-// #TODO_Ivar: Remove there headers from here.
-#include "CoreUtilities/FileIO/BinaryStreamReader.h"
-#include "CoreUtilities/FileIO/BinaryStreamWriter.h"
-
 #include <cstdint>
 #include <xhash>
+#include <string>
 
 // Based on CryEngines CryGUID
 struct VoltGUID
@@ -114,18 +111,6 @@ struct VoltGUID
 		);
 	}
 
-	static void Serialize(BinaryStreamWriter& streamWriter, const VoltGUID& data)
-	{
-		streamWriter.Write(data.loPart);
-		streamWriter.Write(data.hiPart);
-	}
-
-	static void Deserialize(BinaryStreamReader& streamReader, VoltGUID& data)
-	{
-		streamReader.Read(data.loPart);
-		streamReader.Read(data.hiPart);
-	}
-
 	std::string ToString() const
 	{
 		return std::to_string(hiPart) + "-" + std::to_string(loPart);
@@ -135,7 +120,7 @@ struct VoltGUID
 	uint64_t loPart;
 };
 
-constexpr VoltGUID operator"" _guid(const char* input, size_t)
+constexpr VoltGUID operator""_guid(const char* input, size_t)
 {
 	return (input[0] == '{') ? VoltGUID::FromStringInternal(input + 1) : VoltGUID::FromStringInternal(input);
 }

@@ -4,7 +4,7 @@
 
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 TextureViewerPanel::TextureViewerPanel()
 	: EditorWindow("Texture Viewer")
@@ -20,7 +20,7 @@ void TextureViewerPanel::UpdateMainContent()
 
 	const uint32_t width = m_viewingTexture->GetWidth();
 	const uint32_t height = m_viewingTexture->GetHeight();
-	const uint32_t mipCount = m_viewingTexture->GetImage()->GetMipCount();
+	const uint32_t mipCount = m_viewingTexture->GetImage()->GetDesc().mips;
 
 	Vector<std::string> mipStrings(mipCount);
 	for (uint32_t i = 0; i < mipCount; i++)
@@ -39,7 +39,7 @@ void TextureViewerPanel::UpdateMainContent()
 
 	if (ImGui::BeginChild("Child"))
 	{
-		ImGui::Image(UI::GetTextureID(m_viewingTexture, currentMip), ImVec2{ std::floor(static_cast<float>(width) * zoomLevel * 0.01f), std::floor(static_cast<float>(height) * zoomLevel * 0.01f) });
+		ImGui::Image(UI::GetTextureID(m_viewingTexture->GetImage(), currentMip), ImVec2{ std::floor(static_cast<float>(width) * zoomLevel * 0.01f), std::floor(static_cast<float>(height) * zoomLevel * 0.01f) });
 	}
 	ImGui::EndChild();
 }
@@ -49,8 +49,8 @@ void TextureViewerPanel::OnClose()
 	m_viewingTexture = nullptr;
 }
 
-void TextureViewerPanel::OpenAsset(Ref<Volt::Asset> asset)
+void TextureViewerPanel::OpenAsset(AssetReference<Volt::Asset> asset)
 {
 	VT_ENSURE(asset->GetType()->GetGUID() == AssetTypes::Texture->GetGUID());
-	m_viewingTexture = std::reinterpret_pointer_cast<Volt::Texture2D>(asset);
+	m_viewingTexture = asset.ConvertTo<Volt::Texture2D>();
 }

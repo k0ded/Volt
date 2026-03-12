@@ -4,14 +4,15 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <AssetSystem/AssetManager.h>
 
 #include <Volt-Animation/Assets/Skeleton.h>
 
 SkeletonEditorPanel::SkeletonEditorPanel()
 	: EditorWindow("Skeleton Editor", false)
-{
-}
+{}
 
 void SkeletonEditorPanel::UpdateMainContent()
 {
@@ -25,7 +26,7 @@ void SkeletonEditorPanel::UpdateMainContent()
 
 	if (ImGui::Button("Save"))
 	{
-		Volt::AssetManager::SaveAsset(m_skeleton);
+		g_assetManager->SaveAsset(m_skeleton);
 	}
 
 	if (ImGui::Button("Add"))
@@ -46,14 +47,14 @@ void SkeletonEditorPanel::UpdateMainContent()
 		ImGui::TableHeadersRow();
 
 		int32_t indexToRemove = -1;
-		for (int32_t index = 0; auto& attachment : jointAttachments)
+		for (int32_t index = 0; auto & attachment : jointAttachments)
 		{
 			ImGui::TableNextColumn();
-		
+
 			auto jointName = m_skeleton->GetNameFromJointIndex(attachment.jointIndex);
 
 			ImGui::PushItemWidth(totalWidth - 11.f);
-			const std::string jntId = "##" + std::to_string(UI::GetID());
+			const std::string jntId = "##" + std::to_string(UI::GetAndIncrementStackID());
 
 			ImGui::InputTextString(jntId.c_str(), &jointName, ImGuiInputTextFlags_ReadOnly);
 			ImGui::PopItemWidth();
@@ -62,7 +63,7 @@ void SkeletonEditorPanel::UpdateMainContent()
 
 			ImGui::PushItemWidth(totalWidth - 11.f);
 
-			const std::string attId = "##" + std::to_string(UI::GetID());
+			const std::string attId = "##" + std::to_string(UI::GetAndIncrementStackID());
 			ImGui::InputTextString(attId.c_str(), &attachment.name);
 
 			std::string popupName = "offsetRightclick" + std::to_string(index);
@@ -76,13 +77,15 @@ void SkeletonEditorPanel::UpdateMainContent()
 			{
 				ImGui::SetWindowSize({ 100.f, 100.f });
 
-				UI::BeginProperties("OFFSET");
-				ImGui::Text("OFFSET");
+				if (UI::BeginProperties("OFFSET"))
+				{
+					ImGui::Text("OFFSET");
 
-				UI::Property("Pos", attachment.positionOffset);
-				UI::Property("Rot", attachment.rotationOffset);
+					UI::Property("Pos", attachment.positionOffset);
+					UI::Property("Rot", attachment.rotationOffset);
 
-				UI::EndProperties();
+					UI::EndProperties();
+				}
 				ImGui::EndPopup();
 			}
 
@@ -108,19 +111,18 @@ void SkeletonEditorPanel::UpdateMainContent()
 	AddJointAttachmentPopup();
 }
 
-void SkeletonEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
+void SkeletonEditorPanel::OpenAsset(AssetReference<Volt::Asset> asset)
 {
 	if (m_skeleton)
 	{
-		Volt::AssetManager::SaveAsset(std::reinterpret_pointer_cast<Volt::Asset>(m_skeleton));
+		g_assetManager->SaveAsset(m_skeleton);
 	}
 
-	m_skeleton = std::reinterpret_pointer_cast<Volt::Skeleton>(asset);
+	m_skeleton = asset.ConvertTo<Volt::Skeleton>();
 }
 
 void SkeletonEditorPanel::OnOpen()
-{
-}
+{}
 
 void SkeletonEditorPanel::OnClose()
 {
@@ -163,7 +165,7 @@ void SkeletonEditorPanel::AddJointAttachmentPopup()
 
 			for (const auto& name : jointNames)
 			{
-				const std::string id = name + "##" + std::to_string(UI::GetID());
+				const std::string id = name + "##" + std::to_string(UI::GetAndIncrementStackID());
 
 				UI::ShiftCursor(4.f, 0.f);
 				UI::RenderMatchingTextBackground(m_jointSearchQuery, name, EditorTheme::MatchingTextBackground);

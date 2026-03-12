@@ -1,104 +1,136 @@
 #pragma once
 
-#include "RenderGraphResourceHandle.h"
+#include "RenderCore/RenderGraph/RenderGraphContainerAllocator.h"
 
-#include <RHIModule/Descriptors/ResourceHandle.h>
-#include <RHIModule/Core/RHICommon.h>
+#include <RHIModule/Core/ResourceStateTracker.h>
 
 #include <CoreUtilities/Allocators/Handle.h>
+#include <CoreUtilities/Containers/VectorVariants.h>
+#include <CoreUtilities/PagedRangeAllocator.h>
+
+#include <algorithm>
 
 namespace Volt
 {
-	namespace RHI
-	{
-		class Image2D;
-		class StorageBuffer;
-		class UniformBuffer;
-	}
+	class RGPass;
+	class RGResourceSRV;
+	class RGResourceUAV;
 
-	class RenderGraph;
-	struct RenderGraphPassNodeBase;
-
-	enum class ResourceType
+	enum class RGResourceType : uint8_t
 	{
-		Image2D,
-		Image3D,
+		Texture,
 		Buffer,
 		UniformBuffer
 	};
 
-	struct RenderGraphBarrierInfo
+	enum class RGResourceAccess : uint8_t
 	{
-		RHI::BarrierStage dstStage;
-		RHI::BarrierAccess dstAccess;
-
-		// Only images
-		RHI::ImageLayout dstLayout;
+		None,
+		IndirectArg,
+		VertexBuffer,
+		IndexBuffer,
+		CopyDst,
+		CopySrc,
+		Upload
 	};
 
-	struct RenderGraphResourceNodeBase
+	enum class RGResourceAccessType : uint8_t
 	{
-		virtual ~RenderGraphResourceNodeBase() = default;
+		Read,
+		Write
+	};
 
-		uint32_t refCount = 0;
-		size_t hash = 0;
+	struct RGResourceAccessState
+	{
+		RGPass* pass = nullptr;
+		uint32_t stateIndex;
+		RGResourceAccessType accessType;
+	};
 
-		Handle<RenderGraphPassNodeBase> producer;
-		Handle<RenderGraphPassNodeBase> lastUsage;
+	struct RGSubResourceState
+	{
+		RGSubResourceState();
 
-		RenderGraphResourceHandle handle;
+		void AddState(RHI::BarrierStage stage, RHI::BarrierAccess access, RHI::ImageLayout layout);
 
-		bool isExternal = false;
-		bool isGlobal = false;
+		RHI::ResourceState state;
+		RHI::ResourceState previousState;
+	};
 
-		virtual ResourceType GetResourceType() const = 0;
+	using RGTextureSubResourceState = RGVector<RGSubResourceState*>;
 
-		template<typename T>
-		T& As()
-		{
-			static_assert(std::is_base_of_v<RenderGraphResourceNodeBase, T>);
-			return *reinterpret_cast<T*>(this);
-		}
+	class RGResource
+	{
+	public:
+		RGResource(uint32_t resourceId);
+		virtual ~RGResource() = default;
+		virtual RGResourceType GetResourceType() const = 0;
+
+		VT_NODISCARD VT_INLINE uint32_t GetRefCount() const { return m_refCount; }
+		VT_NODISCARD VT_INLINE bool IsExternal() const { return m_isExternal; }
+		VT_NODISCARD VT_INLINE bool IsExtracted() const { return m_isExtracted; }
+		VT_NODISCARD VT_INLINE bool IsProduced() const { return m_isProduced; }
+		VT_NODISCARD VT_INLINE bool IsTransient() const { return m_isTransient && !IsExternal() && !IsExtracted(); }
+		VT_NODISCARD VT_INLINE uint32_t GetResourceID() const { return m_resourceId; }
+		VT_NODISCARD VT_INLINE const PagedAllocatedRange& GetTransientAllocationRange() const { return m_transientAllocationRange; }
+		VT_NODISCARD VT_INLINE const RHI::MemoryRequirement& GetMemoryRequirement() const { return m_memoryRequirement; }
+
+		VT_INLINE void AssignTransientAllocationRange(const PagedAllocatedRange& range) { m_transientAllocationRange = range; }
+
+		RGPass* firstPassAccessor = nullptr;
+
+	protected:
+		friend class RenderGraph;
+		friend class RenderGraphDebugger;
+		friend class RenderGraphResourceManager;
+		friend class RenderGraphShaderParameterUniformBuffer;
+
+		PagedAllocatedRange m_transientAllocationRange;
+		RHI::MemoryRequirement m_memoryRequirement;
+
+		uint32_t m_refCount = 0;
+		uint32_t m_resourceId;
+
+		bool m_isExternal : 1 = false;
+		bool m_isExtracted : 1 = false;
+		bool m_isProduced : 1 = false;
+		bool m_isTransient : 1 = false;
+	};
+
+	using RGResourceRef = RGResource*;
+
+	class RGResourceSRV
+	{
+	public:
+		virtual ~RGResourceSRV() = default;
+		virtual RGResourceRef GetResource() const = 0;
+	};
+
+	class RGResourceUAV
+	{
+	public:
+		virtual ~RGResourceUAV() = default;
+		virtual RGResourceRef GetResource() const = 0;
 	};
 
 	template<typename T>
-	struct RenderGraphResourceNode : public RenderGraphResourceNodeBase
+		requires(std::is_base_of_v<RGResource, T>)
+	inline T* ResourceCast(RGResourceRef resource)
 	{
-		RenderGraphResourceNode() = default;
-		~RenderGraphResourceNode() override = default;
+		return reinterpret_cast<T*>(resource);
+	}
 
-		T resourceInfo;
-
-		VT_INLINE ResourceType GetResourceType() const override { return resourceInfo.GetType(); }
-	};
-
-	class VTRC_API RenderGraphPassResources
+	template<typename T>
+		requires(std::is_base_of_v<RGResourceSRV, T>)
+	inline T* ResourceSRVCast(RGResourceSRV* resource)
 	{
-	public:
-		RenderGraphPassResources(RenderGraph& renderGraph, RenderGraphPassNodeBase& pass);
-		
-		ResourceHandle GetImage(const RenderGraphImageHandle resourceHandle, const int32_t mip = -1, const int32_t layer = -1) const;
-		ResourceHandle GetBuffer(const RenderGraphBufferHandle resourceHandle) const;
-		ResourceHandle GetUniformBuffer(const RenderGraphUniformBufferHandle resourceHandle) const;
+		return reinterpret_cast<T*>(resource);
+	}
 
-	private:
-		friend class RenderContext3;
-		friend class RenderContext;
-
-		void ValidateResourceAccess(const RenderGraphResourceHandle resourceHandle) const;
-
-		RenderGraph& m_renderGraph;
-		RenderGraphPassNodeBase& m_pass;
-	};
-
-	struct RenderGraphResourceAccess
+	template<typename T>
+		requires(std::is_base_of_v<RGResourceUAV, T>)
+	inline T* ResourceUAVCast(RGResourceUAV* resource)
 	{
-		RHI::BarrierStage dstStage = RHI::BarrierStage::None;
-		RHI::BarrierAccess dstAccess = RHI::BarrierAccess::None;
-		
-		// Image only
-		RHI::ImageLayout dstLayout = RHI::ImageLayout::Undefined;
-
-		RenderGraphResourceHandle resourceHandle = std::numeric_limits<RenderGraphResourceHandle>::max();
- 	};
+		return reinterpret_cast<T*>(resource);
+	}
 }

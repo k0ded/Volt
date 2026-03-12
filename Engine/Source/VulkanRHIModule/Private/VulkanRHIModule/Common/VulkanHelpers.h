@@ -9,7 +9,7 @@
 
 namespace Volt::RHI
 {
-	struct ImageSpecification;
+	struct ImageDesc;
 
 	namespace Utility
 	{
@@ -50,7 +50,7 @@ namespace Volt::RHI
 
 			}
 
-			VT_ASSERT(false && "Topology not supported!");
+			VT_ASSERT_MSG(false, "Topology not supported!");
 			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		}
 
@@ -62,7 +62,7 @@ namespace Volt::RHI
 				case FillMode::Wireframe: return VK_POLYGON_MODE_LINE;
 			}
 
-			VT_ASSERT(false && "Fill mode not supported!");
+			VT_ASSERT_MSG(false, "Fill mode not supported!");
 			return VK_POLYGON_MODE_FILL;
 		}
 
@@ -76,7 +76,7 @@ namespace Volt::RHI
 				case CullMode::None: return VK_CULL_MODE_NONE;
 			}
 
-			VT_ASSERT(false && "Cull mode not supported!");
+			VT_ASSERT_MSG(false, "Cull mode not supported!");
 			return VK_CULL_MODE_BACK_BIT;
 		}
 
@@ -137,7 +137,7 @@ namespace Volt::RHI
 				case CompareOperator::Always: return VK_COMPARE_OP_ALWAYS;
 			}
 
-			VT_ASSERT(false && "Compare operator not supported!");
+			VT_ASSERT_MSG(false, "Compare operator not supported!");
 			return VK_COMPARE_OP_LESS;
 		}
 
@@ -216,6 +216,50 @@ namespace Volt::RHI
 			return VK_INDEX_TYPE_NONE_KHR;
 		}
 
+		inline static VkBlendFactor VoltToVulkanBlendFactor(AttachmentBlendFactor blendFactor)
+		{
+			switch (blendFactor)
+			{
+				case AttachmentBlendFactor::Zero: return VK_BLEND_FACTOR_ZERO;
+				case AttachmentBlendFactor::One: return VK_BLEND_FACTOR_ONE;
+				case AttachmentBlendFactor::SrcColor: return VK_BLEND_FACTOR_SRC_COLOR;
+				case AttachmentBlendFactor::OneMinusSrcColor: return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+				case AttachmentBlendFactor::DstColor: return VK_BLEND_FACTOR_DST_COLOR;
+				case AttachmentBlendFactor::OneMinusDstColor: return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+				case AttachmentBlendFactor::SrcAlpha: return VK_BLEND_FACTOR_SRC_ALPHA;
+				case AttachmentBlendFactor::OneMinusSrcAlpha: return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+				case AttachmentBlendFactor::DstAlpha: return VK_BLEND_FACTOR_DST_ALPHA;
+				case AttachmentBlendFactor::OneMinusDstAlpha: return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+				case AttachmentBlendFactor::ConstantColor: return VK_BLEND_FACTOR_CONSTANT_COLOR; 
+				case AttachmentBlendFactor::OneMinusConstantColor: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR; 
+				case AttachmentBlendFactor::ConstantAlpha: return VK_BLEND_FACTOR_CONSTANT_ALPHA;
+				case AttachmentBlendFactor::OneMinusConstantAlpha: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+				case AttachmentBlendFactor::SrcAlphaSaturate: return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+				case AttachmentBlendFactor::Src1Color: return VK_BLEND_FACTOR_SRC1_COLOR;
+				case AttachmentBlendFactor::OneMinusSrc1Color: return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+				case AttachmentBlendFactor::Src1Alpha: return VK_BLEND_FACTOR_SRC1_ALPHA;
+				case AttachmentBlendFactor::OneMinusSrc1Alpha: return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+			}
+
+			VT_ENSURE(false);
+			return VK_BLEND_FACTOR_ZERO;
+		}
+
+		inline static VkBlendOp VoltToVulkanBlendOp(AttachmentBlendOp blendOp)
+		{
+			switch (blendOp)
+			{
+				case AttachmentBlendOp::Add: return VK_BLEND_OP_ADD;
+				case AttachmentBlendOp::Subtract: return VK_BLEND_OP_SUBTRACT;
+				case AttachmentBlendOp::ReverseSubtract: return VK_BLEND_OP_REVERSE_SUBTRACT;
+				case AttachmentBlendOp::Min: return VK_BLEND_OP_MIN;
+				case AttachmentBlendOp::Max: return VK_BLEND_OP_MAX;
+			}
+
+			VT_ENSURE(false);
+			return VK_BLEND_OP_ADD;
+		}
+
 		inline static VkBufferUsageFlags GetVkBufferUsageFlags(BufferUsage usageFlags)
 		{
 			VkBufferUsageFlags result = 0;
@@ -238,6 +282,11 @@ namespace Volt::RHI
 			if ((usageFlags & BufferUsage::StorageBuffer) != BufferUsage::None)
 			{
 				result |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+			}
+
+			if ((usageFlags & BufferUsage::TexelBuffer) != BufferUsage::None)
+			{
+				result |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
 			}
 
 			if ((usageFlags & BufferUsage::IndexBuffer) != BufferUsage::None)
@@ -369,8 +418,9 @@ namespace Volt::RHI
 			return result;
 		}
 
-		const VkImageCreateInfo GetVkImageCreateInfo(const ImageSpecification& specification);
-		const MemoryRequirement GetImageRequirement(const VkImageCreateInfo& imageCreateInfo);
+		const VkImageCreateInfo GetVkImageCreateInfo(const ImageDesc& specification);
+		const MemoryRequirement GetImageMemoryRequirement(const VkImageCreateInfo& imageCreateInfo);
+		const MemoryRequirement GetBufferMemoryRequirement(const VkBufferCreateInfo& bufferCreateInfo);
 
 		const ImageLayout GetImageLayoutFromVkImageLayout(VkImageLayout layout);
 		const VkImageLayout GetVkImageLayoutFromImageLayout(ImageLayout layout);

@@ -2,7 +2,8 @@
 #include "Window/AnimationEditorPanel.h"
 
 #include <AssetSystem/AssetManager.h>
-#include <Volt/Utility/UIUtility.h>
+
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Animation/Assets/Animation.h>
 
@@ -23,7 +24,7 @@ void AnimationEditorPanel::UpdateMainContent()
 
 	if (ImGui::Button("Save"))
 	{
-		Volt::AssetManager::SaveAsset(m_animation);
+		g_assetManager->SaveAsset(m_animation);
 	}
 
 	if (ImGui::BeginTable("timelineTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
@@ -38,7 +39,7 @@ void AnimationEditorPanel::UpdateMainContent()
 				const auto& events = m_animation->GetEvents();
 				for (int index = 0; index < events.size(); index++)
 				{
-					const auto id = UI::GetID();
+					const auto id = UI::GetAndIncrementStackID();
 					bool selected = false;
 
 					ImGui::Selectable(std::format("{0}: ", events[index].name).c_str(), &selected, ImGuiSelectableFlags_AllowItemOverlap, ImVec2(150, 25));
@@ -148,14 +149,14 @@ void AnimationEditorPanel::UpdateMainContent()
 	AddAnimationEventModal();
 }
 
-void AnimationEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
+void AnimationEditorPanel::OpenAsset(AssetReference<Volt::Asset> asset)
 {
 	if (m_animation)
 	{
-		Volt::AssetManager::SaveAsset(m_animation);
+		g_assetManager->SaveAsset(asset);
 	}
 
-	m_animation = std::reinterpret_pointer_cast<Volt::Animation>(asset);
+	m_animation = asset.ConvertTo<Volt::Animation>();
 }
 
 void AnimationEditorPanel::OnOpen()

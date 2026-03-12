@@ -6,15 +6,32 @@
 
 #include "Volt-Core/Project/Project.h"
 
+#include <SubSystem/SubSystemManager.h>
+
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(PluginSystem, PreEngine, 0);
+	VT_REGISTER_SUBSYSTEM(PluginSystem, Default, PreEngine);
 
-	void PluginSystem::SetPluginRegistry(PluginRegistry* pluginRegistry)
+	void PluginSystem::Initialize()
 	{
-		m_pluginRegistry = pluginRegistry;
+		m_pluginRegistry = SubSystemManager::GetSubSystem<PluginRegistry>();
+	}
+
+	void PluginSystem::Shutdown()
+	{
+		UnloadPlugins();
+	}
+
+	void PluginSystem::OnPostInitialization()
+	{
+		InitializePlugins();
+	}
+
+	void PluginSystem::OnPreShutdown()
+	{
+		ShutdownPlugins();
 	}
 
 	void PluginSystem::LoadPlugins(const Project& project)
@@ -96,6 +113,12 @@ namespace Volt
 
 	void PluginSystem::SendEventToPlugins(Volt::Event& event)
 	{
+	}
+
+	void PluginSystem::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<PluginRegistry>();
+		outDependencies.AddDependency<DynamicLibraryManager>();
 	}
 
 	bool PluginSystem::LoadPlugin(const PluginDefinition& pluginDefinition)

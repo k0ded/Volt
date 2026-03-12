@@ -1,14 +1,16 @@
 #include "espch.h"
 
-#include "EntitySystem/EntityHelper.h"
+#include "EntitySystem/Entity.h"
 #include "EntitySystem/EntityScene.h"
 #include "EntitySystem/SceneEvents.h"
+#include "EntitySystem/ComponentRegistry.h"
 
 #include "EntitySystem/Scripting/CoreComponents.h"
 #include "EntitySystem/Scripting/CommonComponent.h"
 #include "EntitySystem/Scripting/ECSSystemRegistry.h"
 #include "EntitySystem/Scripting/ECSBuilder.h"
 #include "EntitySystem/Scripting/ScriptingEngine.h"
+#include "EntitySystem/Scripting/CoreEnvironments.h"
 
 #include <EventSystem/EventSystem.h>
 
@@ -16,6 +18,7 @@
 #include <CoreUtilities/Profiling/Profiling.h>
 
 #include <ranges>
+
 
 namespace Volt
 {
@@ -36,7 +39,7 @@ namespace Volt
 		m_scriptingEngine->OnRuntimeStart();
 
 		ComponentOnStart();
-		
+
 		OnSceneRuntimeStartEvent startEvent(*this);
 		EventSystem::DispatchEvent(startEvent);
 	}
@@ -55,17 +58,25 @@ namespace Volt
 	void EntityScene::Update(float deltaTime)
 	{
 		VT_PROFILE_FUNCTION();
-		m_ecsBuilder->GetGameLoop(GameLoop::Variable).Execute(*this, deltaTime);
+		auto& variableUpdateEnv = m_scriptingEngine->GetECSEnvironmentOfType<env::VariableUpdate>();
+		variableUpdateEnv.deltaTime = deltaTime;
+
+		m_ecsBuilder->GetGameLoop(GameLoop::Variable).Execute(*this);
 	}
 
 	void EntityScene::FixedUpdate(float deltaTime)
 	{
 		VT_PROFILE_FUNCTION();
-		m_ecsBuilder->GetGameLoop(GameLoop::Fixed).Execute(*this, deltaTime);
+		auto& fixedUpdateEnv = m_scriptingEngine->GetECSEnvironmentOfType<env::FixedUpdate>();
+		fixedUpdateEnv.deltaTime = deltaTime;
+
+		m_ecsBuilder->GetGameLoop(GameLoop::Fixed).Execute(*this);
 	}
 
 	void EntityScene::SortScene()
 	{
+		VT_PROFILE_FUNCTION();
+
 		m_registry.sort<CommonComponent>([&](entt::entity lhs, entt::entity rhs)
 		{
 			const auto& lhsComp = m_registry.get<CommonComponent>(lhs);
@@ -80,11 +91,11 @@ namespace Volt
 		m_registry.clear();
 	}
 
-	EntityHelper EntityScene::CreateEntity(const std::string& tag)
+	Entity EntityScene::CreateEntity(const std::string& tag)
 	{
 		entt::entity entityHandle = m_registry.create();
 
-		EntityHelper newHelper(entityHandle, this);
+		Entity newHelper(entityHandle, this);
 
 		// Setup default components
 		{
@@ -115,21 +126,21 @@ namespace Volt
 			newHelper.AddComponent<RelationshipComponent>();
 		}
 
-		m_entityRegistry.AddEntity(newHelper);
-		m_entityRegistry.MarkEntityAsEdited(newHelper);
-		
+		m_entityRegistry.AddEntity(newHelper.GetID(), entityHandle);
+
 		InvalidateEntityTransform(newHelper.GetID());
-		SortScene();
 		return newHelper;
 	}
 
-	EntityHelper EntityScene::CreateEntityWithID(EntityID id, const std::string& tag)
+	Entity EntityScene::CreateEntityWithID(EntityID id)
 	{
+		VT_PROFILE_FUNCTION();
+
 		VT_ENSURE(!m_entityRegistry.Contains(id));
 
 		entt::entity entityHandle = m_registry.create();
 
-		EntityHelper newHelper(entityHandle, this);
+		Entity newHelper(entityHandle, this);
 
 		// Setup default components
 		{
@@ -139,14 +150,7 @@ namespace Volt
 			transformComponent.scale = 1.f;
 
 			auto& tagComponent = newHelper.AddComponent<TagComponent>();
-			if (tag.empty())
-			{
-				tagComponent.tag = "New Entity";
-			}
-			else
-			{
-				tagComponent.tag = tag;
-			}
+			tagComponent.tag = "New Entity";
 
 			auto& idComponent = newHelper.AddComponent<IDComponent>();
 			idComponent.id = id;
@@ -157,63 +161,70 @@ namespace Volt
 			newHelper.AddComponent<RelationshipComponent>();
 		}
 
-		m_entityRegistry.AddEntity(newHelper);
-
+		m_entityRegistry.AddEntity(id, entityHandle);
 		InvalidateEntityTransform(newHelper.GetID());
-		SortScene();
+
 		return newHelper;
 	}
 
-	void EntityScene::DestroyEntity(EntityID id, bool isDestroyingChildFromParent)
+	Entity EntityScene::CreateEntityWithNoComponentsForID(EntityID id)
+	{
+		VT_PROFILE_FUNCTION();
+
+		VT_ENSURE(!m_entityRegistry.Contains(id));
+
+		entt::entity entityHandle = m_registry.create();
+		m_entityRegistry.AddEntity(id, entityHandle);
+
+		Entity newEntity(entityHandle, this);
+		return newEntity;
+	}
+
+	void EntityScene::DestroyEntity(EntityID id, Vector<EntityID>* outDestroyedEntities, bool isDestroyingChildFromParent, bool ignoreChildren)
 	{
 		if (!IsEntityValid(id))
 		{
 			return;
 		}
 
-		EntityHelper helper = GetEntityHelperFromEntityID(id);
+		Entity helper = GetEntityFromID(id);
 
 		// We need to handle the entity's parent and children.
 		VT_ENSURE(helper.HasComponent<RelationshipComponent>());
+		auto* relationshipComponent = &helper.GetComponent<RelationshipComponent>();
 
-		auto& relationshipComponent = helper.GetComponent<RelationshipComponent>();
-		if (relationshipComponent.parent != EntityID::Null())
+		//remove ourselves from our parent's children
+		helper.UnparentEntity();
+
+		//even when ignoring children, we still need to remove ourselves as a parent from our children
+		if (ignoreChildren)
 		{
-			if (!isDestroyingChildFromParent)
+			for (int32_t i = 0; i < relationshipComponent->children.size(); ++i)
 			{
-				EntityHelper parentHelper = GetEntityHelperFromEntityID(relationshipComponent.parent);
-				VT_ENSURE(parentHelper.HasComponent<RelationshipComponent>());
+				EntityID childID = relationshipComponent->children.at(i);
+				Entity child = GetEntityFromID(childID);
+				child.UnparentEntity();
+			}
+		}
+		else
+		{
+			// We need to do this backwards, otherwise we will be pointing to invalid indices
+			for (int32_t i = static_cast<int32_t>(relationshipComponent->children.size()) - 1; i >= 0; --i)
+			{
+				DestroyEntity(relationshipComponent->children.at(i), outDestroyedEntities, true);
 
-				auto& parentRelationshipComponent = parentHelper.GetComponent<RelationshipComponent>();
-				parentRelationshipComponent.children.erase_with_predicate([&helper](EntityID id) 
-				{
-					return id == helper.GetID();
-				});
+				// This is required, because removing components from entt::registry might
+				// invalidate pointers.
+				relationshipComponent = &helper.GetComponent<RelationshipComponent>();
 			}
 		}
 
-		// We need to do this backwards, otherwise we will be pointing to invalid indices
-		for (int32_t i = static_cast<int32_t>(relationshipComponent.children.size()) - 1; i >= 0; --i)
+		if (outDestroyedEntities)
 		{
-			DestroyEntity(relationshipComponent.children.at(i), true);
-
-			// This is required, because removing components from entt::registry might
-			// invalidate pointers.
-			relationshipComponent = helper.GetComponent<RelationshipComponent>();
+			outDestroyedEntities->push_back(id);
 		}
-
 		m_registry.destroy(helper.GetHandle());
 		m_entityRegistry.RemoveEntity(id, helper.GetHandle());
-	}
-
-	void EntityScene::MarkEntityAsEdited(const EntityHelper& entityHelper)
-	{
-		m_entityRegistry.MarkEntityAsEdited(entityHelper);
-	}
-
-	void EntityScene::ClearEditedEntities()
-	{
-		m_entityRegistry.ClearEditedEntities();
 	}
 
 	Vector<EntityID> EntityScene::InvalidateEntityTransform(EntityID entityId)
@@ -230,10 +241,10 @@ namespace Volt
 			const EntityID currentId = entityStack.back();
 			entityStack.pop_back();
 
-			EntityHelper entityHelper(m_entityRegistry.GetHandleFromID(currentId), this);
+			Entity entityHelper(m_entityRegistry.GetHandleFromID(currentId), this);
 
 			VT_ENSURE(entityHelper.HasComponent<RelationshipComponent>());
-		
+
 			auto& relationshipComponent = entityHelper.GetComponent<RelationshipComponent>();
 
 			m_transformCache.InvalidateTransform(currentId);
@@ -244,7 +255,7 @@ namespace Volt
 				auto& storage = curr.second;
 				std::string_view typeName = storage.type().name();
 
-				const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromName(typeName);
+				const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 				if (!typeDesc)
 				{
 					continue;
@@ -317,17 +328,21 @@ namespace Volt
 		return m_registry.valid(m_entityRegistry.GetHandleFromID(entityId));
 	}
 
-	TQS EntityScene::GetEntityWorldTQS(const EntityHelper& entityHelper) const
+
+	TQS EntityScene::GetEntityWorldTQS(const Entity& entityHelper) const
 	{
-		if (m_transformCache.HasCachedTransform(entityHelper.GetID()))
+		VT_PROFILE_FUNCTION();
+
+		TQS resultTransform{};
+		if (m_transformCache.TryGetCachedTransform(entityHelper.GetID(), resultTransform))
 		{
-			return m_transformCache.GetCachedTransform(entityHelper.GetID());
+			return resultTransform;
 		}
 
-		Vector<EntityHelper> hierarchy{};
+		Vector<Entity> hierarchy{};
 		hierarchy.emplace_back(entityHelper);
 
-		EntityHelper currentEntity = entityHelper;
+		Entity currentEntity = entityHelper;
 		while (currentEntity.HasParent())
 		{
 			auto parent = currentEntity.GetParent();
@@ -335,7 +350,6 @@ namespace Volt
 			currentEntity = parent;
 		}
 
-		TQS resultTransform{};
 		for (const auto& ent : std::ranges::reverse_view(hierarchy))
 		{
 			const auto& transformComp = m_registry.get<TransformComponent>(ent.GetHandle());
@@ -349,21 +363,21 @@ namespace Volt
 		return resultTransform;
 	}
 
-	EntityHelper EntityScene::GetEntityHelperFromEntityID(EntityID entityId) const
+	Entity EntityScene::GetEntityFromID(EntityID entityId) const
 	{
 		if (!m_entityRegistry.Contains(entityId))
 		{
-			return EntityHelper::Null();
+			return Entity::Null();
 		}
 
 		return { m_entityRegistry.GetHandleFromID(entityId), this };
 	}
 
-	EntityHelper EntityScene::GetEntityHelperFromEntityHandle(entt::entity entityHandle) const
+	Entity EntityScene::GetEntityFromHandle(entt::entity entityHandle) const
 	{
 		if (!m_entityRegistry.Contains(entityHandle))
 		{
-			return EntityHelper::Null();
+			return Entity::Null();
 		}
 
 		return { entityHandle, this };
@@ -381,7 +395,7 @@ namespace Volt
 		m_registry.set_user_data(this);
 
 		ComponentRegistry::Helpers::SetupComponentCallbacks(m_registry);
-		GetECSSystemRegistry().Build(*m_ecsBuilder);
+		ECSSystemRegistry::Get().Build(*m_ecsBuilder);
 		m_ecsBuilder->Compile();
 	}
 
@@ -394,7 +408,7 @@ namespace Volt
 			auto& storage = curr.second;
 			std::string_view typeName = storage.type().name();
 
-			const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromName(typeName);
+			const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 			if (!typeDesc)
 			{
 				continue;
@@ -408,12 +422,12 @@ namespace Volt
 			for (auto& entity : storage)
 			{
 				const IComponentTypeDesc* compTypeDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
-				auto entityHelper = GetEntityHelperFromEntityHandle(entity);
+				auto entityHelper = GetEntityFromHandle(entity);
 				compTypeDesc->OnStart(entityHelper);
 			}
 		}
 	}
-	
+
 	void EntityScene::ComponentOnStop()
 	{
 		VT_PROFILE_FUNCTION();
@@ -423,7 +437,7 @@ namespace Volt
 			auto& storage = curr.second;
 			std::string_view typeName = storage.type().name();
 
-			const ICommonTypeDesc* typeDesc = GetComponentRegistry().GetTypeDescFromName(typeName);
+			const ICommonTypeDesc* typeDesc = Volt::ComponentRegistry::Get().GetTypeDescFromName(typeName);
 			if (!typeDesc)
 			{
 				continue;
@@ -437,7 +451,7 @@ namespace Volt
 			for (auto& entity : storage)
 			{
 				const IComponentTypeDesc* compTypeDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
-				auto entityHelper = GetEntityHelperFromEntityHandle(entity);
+				auto entityHelper = GetEntityFromHandle(entity);
 				compTypeDesc->OnStop(entityHelper);
 			}
 		}

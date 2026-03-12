@@ -4,6 +4,7 @@
 #include "CoreUtilities/Concepts.h"
 
 #include <type_traits>
+#include <concepts>
 
 #include <glm/glm.hpp>
 
@@ -175,7 +176,7 @@ namespace Math
 	}
 
 	template<typename T>
-	VT_INLINE T DivideRoundUp(const T& numerator, const T& denominator)
+	constexpr VT_INLINE T DivideRoundUp(const T& numerator, const T& denominator)
 	{
 		return (numerator + denominator - T{ 1 }) / denominator;
 	}
@@ -199,5 +200,19 @@ namespace Math
 	VT_INLINE uint32_t FloorLog2(uint32_t value)
 	{
 		return static_cast<uint32_t>(std::floor(std::log2(static_cast<float>(value))));
+	}
+
+	VT_INLINE constexpr int32_t CountBits(uint64_t bits)
+	{
+		bits -= (bits >> 1) & 0x5555555555555555ull;
+		bits = (bits & 0x3333333333333333ull) + ((bits >> 2) & 0x3333333333333333ull);
+		bits = (bits + (bits >> 4)) & 0x0f0f0f0f0f0f0f0full;
+		return (bits * 0x0101010101010101) >> 56;
+	}
+
+	template<typename T>
+	VT_INLINE constexpr T ModuloByPowerOfTwo(T value, T number)
+	{
+		return (number & (value - static_cast<T>(1)));
 	}
 }

@@ -5,11 +5,12 @@
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
+#include "VulkanRHIModule/Graphics/VulkanGraphicsDevice.h"
 
-#include <RHIModule/Buffers/StorageBuffer.h>
+#include <RHIModule/Buffers/Buffer.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <vulkan/vulkan.h>
 
@@ -27,9 +28,10 @@ namespace Volt::RHI
 			return;
 		}
 
-		RHIProxy::GetInstance().DestroyResource([handle = m_handle]() 
+		RHIModule::GetInstance().DestroyResource([handle = m_handle]() 
 		{
-			vkDestroyAccelerationStructureKHR(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), handle, nullptr);
+			GraphicsContext::GetDevice()->As<VulkanGraphicsDevice>()->WaitForIdle(); // #TODO_Ivar: Should not be called.
+			vkDestroyAccelerationStructureKHR(GraphicsContext::GetDevice()->GetHandle<VkDevice>(), handle, VT_VULKAN_ALLOCATOR);
 		});
 	}
 
@@ -73,7 +75,7 @@ namespace Volt::RHI
 				triangles.indexData.deviceAddress = geometryInfo.indexBuffer->GetDeviceAddress();
 				triangles.transformData.deviceAddress = 0;
 
-				primitiveCounts.emplace_back(geometryInfo.indexBuffer->GetCount() / 3u);
+				primitiveCounts.emplace_back(geometryInfo.indexCount / 3u);
 			}
 			else if (geometryInfo.geometryType == AccelerationStructureGeometryType::Instances)
 			{
@@ -85,7 +87,7 @@ namespace Volt::RHI
 				instances.arrayOfPointers = VK_FALSE;
 				instances.data.deviceAddress = geometryInfo.instancesBuffer->GetDeviceAddress();
 
-				primitiveCounts.emplace_back(geometryInfo.instancesBuffer->GetCount());
+				primitiveCounts.emplace_back(static_cast<uint32_t>(geometryInfo.instancesBuffer->GetNumElements()));
 			}
 		}
 
@@ -111,7 +113,13 @@ namespace Volt::RHI
 		auto device = GraphicsContext::GetDevice();
 		vkGetAccelerationStructureBuildSizesKHR(device->GetHandle<VkDevice>(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildGeometryInfo, primitiveCounts.data(), &buildSizes);
 	
-		m_backingBuffer = StorageBuffer::Create(1, buildSizes.accelerationStructureSize, "Acceleration Structure Backing Buffer", BufferUsage::AccelerationStructure | BufferUsage::DeviceAddress);
+		BufferDesc desc{};
+		desc.numElements = 1;
+		desc.elementSize = buildSizes.accelerationStructureSize;
+		desc.debugName = "Acceleration Structure Backing Buffer";
+		desc.usage = BufferUsage::AccelerationStructure | BufferUsage::DeviceAddress;
+
+		m_backingBuffer = Buffer::Create(desc);
 		
 		VkAccelerationStructureCreateInfoKHR asCreateInfo{};
 		asCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -123,7 +131,7 @@ namespace Volt::RHI
 		asCreateInfo.type = Utility::GetAccelerationStructureType(createInfo.type);
 		asCreateInfo.deviceAddress = 0;
 
-		VT_VK_CHECK(vkCreateAccelerationStructureKHR(device->GetHandle<VkDevice>(), &asCreateInfo, nullptr, &m_handle));
+		VT_VK_CHECK(vkCreateAccelerationStructureKHR(device->GetHandle<VkDevice>(), &asCreateInfo, VT_VULKAN_ALLOCATOR, &m_handle));
 
 		VkAccelerationStructureDeviceAddressInfoKHR deviceAddressInfo{};
 		deviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;

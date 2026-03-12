@@ -48,27 +48,32 @@ namespace Volt
 	class VTCORE_API PluginSystem : public SubSystem
 	{
 	public:
-		void SetPluginRegistry(PluginRegistry* pluginRegistry);
+		~PluginSystem() override = default;
 
+		void Initialize() override;
+		void Shutdown() override;
+		void OnPostInitialization() override;
+		void OnPreShutdown() override;
+		
 		void LoadPlugins(const Project& project);
 		void UnloadPlugins();
 
-		void InitializePlugins();
-		void ShutdownPlugins();
-
 		void SendEventToPlugins(Volt::Event& event);
 
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{AC054603-4CED-42FD-8BC8-370713EB5EE4}"_guid)
 
 	private:
+		void InitializePlugins();
+		void ShutdownPlugins();
 		bool LoadPlugin(const PluginDefinition& pluginDefinition);
 		
 		void InitializePluginAndDependencies(UUID64 nodeId, const Graph<VoltGUID, uint32_t>& dependencyGraph);
 
 		PluginRegistry* m_pluginRegistry = nullptr;
 
-		vt::map<std::filesystem::path, Ref<PluginFactory>> m_pluginFactories;
-		vt::map<VoltGUID, size_t> m_guidToIndexMap;
+		Map<std::filesystem::path, Ref<PluginFactory>> m_pluginFactories;
+		Map<VoltGUID, size_t> m_guidToIndexMap;
 
 		Vector<PluginContainer<Plugin>> m_loadedPlugins;
 	};

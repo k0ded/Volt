@@ -1,24 +1,21 @@
 #pragma once
 
-#include "D3D12RHIModule/Common/ComPtr.h"
+#include "D3D12RHIModule/Core.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 
-struct ID3D12InfoQueue;
-struct ID3D12Debug;
-
 namespace Volt::RHI
 {
-	class CPUDescriptorHeapManager;
-	class CommandSignatureCache;
+	class PhysicalGraphicsDevice;
+	class GraphicsDevice;
+
+	class D3D12DebugLayer;
 
 	class D3D12GraphicsContext final : public GraphicsContext
 	{
 	public:
-		D3D12GraphicsContext(const GraphicsContextCreateInfo& info);
+		D3D12GraphicsContext(const GraphicsContextCreateInfo& createInfo);
 		~D3D12GraphicsContext() override;
-
-		CPUDescriptorHeapManager& GetCPUDescriptorHeapManager() const { return *m_cpuDescriptorHeapManager; }
 
 	protected:
 		RefPtr<GPUAllocator> GetDefaultAllocatorImpl() override;
@@ -31,28 +28,18 @@ namespace Volt::RHI
 		void* GetHandleImpl() const override;
 
 	private:
-		void Initalize();
+		void Initialize();
 		void Shutdown();
-
-		void InitializeAPIValidation();
-		void ShutdownAPIValidation();
-		void InitializeDebugLayer();
 
 		RefPtr<GraphicsDevice> m_graphicsDevice;
 		RefPtr<PhysicalGraphicsDevice> m_physicalDevice;
+		RefPtr<ResourceStateTracker> m_resourceStateTracker;
 
 		RefPtr<GPUAllocator> m_defaultAllocator;
 		RefPtr<GPUAllocator> m_transientAllocator;
-		RefPtr<ResourceStateTracker> m_resourceStateTracker;
 
-		Scope<CPUDescriptorHeapManager> m_cpuDescriptorHeapManager;
-		Scope<CommandSignatureCache> m_commandSignatureCache;
+		Ref<D3D12DebugLayer> m_debugLayer;
 
 		GraphicsContextCreateInfo m_createInfo{};
-
-		ComPtr<ID3D12InfoQueue1> m_infoQueue;
-		unsigned long m_debugCallbackId = 0;
-
-		ComPtr<ID3D12Debug> m_debugInterface;
 	};
 }

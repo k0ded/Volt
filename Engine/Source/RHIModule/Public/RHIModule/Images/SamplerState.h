@@ -5,7 +5,7 @@
 
 namespace Volt::RHI
 {
-	struct SamplerStateCreateInfo
+	struct SamplerStateDesc
 	{
 		TextureFilter minFilter;
 		TextureFilter magFilter;
@@ -20,10 +20,10 @@ namespace Volt::RHI
 		float maxLod = FLT_MAX;
 	};
 
-	class VTRHI_API SamplerState : public RHIInterface
+	class VTRHI_API SamplerState : public ArenaRHIInterface
 	{
 	public:
-		static RefPtr<SamplerState> Create(const SamplerStateCreateInfo& createInfo);
+		static RefPtr<SamplerState> Create(const SamplerStateDesc& createInfo);
 
 	protected:
 		SamplerState() = default;

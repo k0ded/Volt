@@ -1,39 +1,63 @@
 #include "vrpch.h"
 
 #include "Volt-Renderer/Texture/Texture2D.h"
+#include "Volt-Renderer/Texture/TextureSerializerCommon.h"
 
 #include <AssetSystem/AssetFactory.h>
-#include <RenderCore/Resources/BindlessResourcesManager.h>
+
+#include <RenderCore/CommandBufferPool.h>
+
+#include <RHIModule/Images/Image.h>
+#include <RHIModule/Images/ImageUtility.h>
+#include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Buffers/CommandBufferUtility.h>
+#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Memory/Allocation.h>
+#include <RHIModule/Utility/ResourceUtility.h>
 
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Texture, Texture2D);
 
+	struct TextureHeader
+	{
+		RHI::PixelFormat format; // Should be one of the BC formats
+		Vector<TextureSerializerCommon::TextureMip> mips;
+
+		VT_INLINE friend Archive& operator<<(Archive& archive, TextureHeader& value)
+		{
+			uint32_t formatUint = static_cast<uint32_t>(value.format);
+
+			archive << formatUint;
+			archive << value.mips;
+
+			if (archive.IsLoading())
+			{
+				value.format = static_cast<RHI::PixelFormat>(formatUint);
+			}
+
+			return archive;
+		}
+	};
+
 	Texture2D::Texture2D(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data)
 	{
-		RHI::ImageSpecification imageSpec{};
+		RHI::ImageDesc imageSpec{};
 		imageSpec.format = format;
 		imageSpec.usage = RHI::ImageUsage::Texture;
 		imageSpec.width = static_cast<uint32_t>(width);
 		imageSpec.height = static_cast<uint32_t>(height);
 
 		m_image = RHI::Image::Create(imageSpec, data);
-		m_resourceHandle = BindlessResourcesManager::Get().RegisterImageView(m_image->GetView());
 	}
 
 	Texture2D::Texture2D(RefPtr<RHI::Image> image)
 		: m_image(image)
 	{
-		m_resourceHandle = BindlessResourcesManager::Get().RegisterImageView(m_image->GetView());
 	}
 
 	Texture2D::~Texture2D()
 	{
-		if (m_image)
-		{
-			BindlessResourcesManager::Get().UnregisterResource(m_resourceHandle);
-		}
-		
 		m_image = nullptr;
 	}
 
@@ -47,23 +71,41 @@ namespace Volt
 		return m_image->GetHeight();
 	}
 
-	ResourceHandle Texture2D::GetResourceHandle() const
-	{
-		return m_resourceHandle;
-	}
-
 	void Texture2D::SetImage(RefPtr<RHI::Image> image)
 	{
-		if (m_image)
-		{
-			BindlessResourcesManager::Get().UnregisterResource(m_resourceHandle);
-		}
-
-		m_resourceHandle = BindlessResourcesManager::Get().RegisterImageView(image->GetView());
-
 		m_image = image;
 	}
 
+	void Texture2D::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
+	{
+		TextureHeader textureHeader;
+		DataBuffer dataBuffer;
+
+		if (!archive.IsLoading())
+		{
+			textureHeader.format = m_image->GetDesc().format;
+			dataBuffer = TextureSerializerCommon::GetImageDataBuffer(m_image, textureHeader.mips);
+		}
+
+		archive << textureHeader;
+		archive << dataBuffer;
+
+		if (archive.IsLoading())
+		{
+			RHI::ImageDesc specification{};
+			specification.format = textureHeader.format;
+			specification.usage = RHI::ImageUsage::Texture;
+			specification.width = textureHeader.mips.front().width;
+			specification.height = textureHeader.mips.front().height;
+			specification.mips = static_cast<uint32_t>(textureHeader.mips.size());
+			specification.debugName = GetAssetName();
+			specification.initializeImage = false;
+
+			m_image = RHI::Image::Create(specification);
+
+			TextureSerializerCommon::UploadImageData(m_image, textureHeader.format, textureHeader.mips, dataBuffer);
+		}
+	}
 
 	Ref<Texture2D> Texture2D::Create(RHI::PixelFormat format, uint32_t width, uint32_t height, const void* data)
 	{

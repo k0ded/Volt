@@ -1,19 +1,22 @@
 #include "vtcorepch.h"
 
 #include "Volt-Core/Project/ProjectManager.h"
+#include "Volt-Core/PluginSystem/PluginSystem.h"
 #include "Volt-Core/PluginSystem/PluginRegistry.h"
 #include "Volt-Core/Version.h"
+#include "Volt-Core/GlobalCommandLine.h"
 
-#include <CoreUtilities/FileIO/YAMLFileStreamReader.h>
-#include <CoreUtilities/FileIO/YAMLFileStreamWriter.h>
-#include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/StringUtility.h>
+#include <SubSystem/SubSystemManager.h>
+
+#include <CoreUtilities/JSON/JSONWriter.h>
+#include <CoreUtilities/JSON/JSONReader.h>
+#include <CoreUtilities/FileIO/FileUtility.h>
 
 VT_DEFINE_LOG_CATEGORY(LogProject);
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(ProjectManager, PreEngine, 0);
+	VT_REGISTER_SUBSYSTEM(ProjectManager, Default, PreEngine);
 
 	ProjectManager::ProjectManager()
 	{
@@ -26,7 +29,27 @@ namespace Volt
 		s_instance = nullptr;
 	}
 
-	void ProjectManager::LoadProject(const std::filesystem::path projectPath, PluginRegistry& pluginRegistry)
+	void ProjectManager::Initialize()
+	{
+		m_pluginRegistry = SubSystemManager::GetSubSystem<PluginRegistry>();
+		m_pluginSystem = SubSystemManager::GetSubSystem<PluginSystem>();
+
+		// Get the project from the global command line.
+		std::filesystem::path projectFilepath;
+		if (GlobalCommandLine::Get().IsArgDefined("project"))
+		{
+			projectFilepath = GlobalCommandLine::Get().GetArgValue("project");
+		}
+
+		LoadProject(projectFilepath);
+	}
+
+	void ProjectManager::OnPostStageInitializaton()
+	{
+		m_pluginSystem->LoadPlugins(*m_currentProject);
+	}
+
+	void ProjectManager::LoadProject(const std::filesystem::path projectPath)
 	{
 		m_currentProject = CreateScope<Project>();
 
@@ -49,71 +72,75 @@ namespace Volt
 			}
 		}
 
-		std::string fixedString = Utility::ReplaceCharacter(FileSystem::GetEnvironmentVariableValue("VOLT_PATH"), '\\', '/');
+		// Correct working directory should have been setup at this point.
+		m_currentEngineDirectory = std::filesystem::current_path();
 
-		m_currentEngineDirectory = fixedString;
+		m_pluginRegistry->FindAndRegisterPluginsInDirectory(m_currentProject->rootDirectory / "Plugins");
+		m_pluginRegistry->FindAndRegisterPluginsInDirectory(m_currentEngineDirectory / "Plugins");
 
-		pluginRegistry.FindAndRegisterPluginsInDirectory(m_currentProject->rootDirectory / "Plugins");
-		pluginRegistry.FindAndRegisterPluginsInDirectory(m_currentEngineDirectory / "Plugins");
-
-		VT_LOGC(Info, LogProject, "Loading project {0}", projectPath);
-		DeserializeProject(pluginRegistry);
-
-		std::filesystem::current_path(m_currentEngineDirectory);
+		if (!projectPath.empty())
+		{
+			VT_LOGC(Info, LogProject, "Loading project {0}", projectPath);
+			DeserializeProject();
+		}
+		else
+		{
+			VT_LOGC(Warning, LogProject, "No project filepath provided, not loading any project!");
+		}
 	}
 
 	void ProjectManager::SerializeProject()
 	{
-		YAMLFileStreamWriter streamWriter{ m_currentProject->filepath };
+		JSONWriter jsonWriter;
+		jsonWriter.BeginDocument();
+		jsonWriter.AppendKeyValue("EngineVersion", VT_VERSION.ToString());
+		jsonWriter.AppendKeyValue("Name", m_currentProject->name);
+		jsonWriter.AppendKeyValue("CompanyName", m_currentProject->companyName);
+		jsonWriter.AppendKeyValue("AudioBanksDirectory", m_currentProject->audioDirectory);
+		jsonWriter.AppendKeyValue("IconPath", m_currentProject->iconFilepath);
+		jsonWriter.AppendKeyValue("CursorPath", m_currentProject->cursorFilepath);
+		jsonWriter.AppendKeyValue("StartScenePath", m_currentProject->startSceneFilepath);
+		jsonWriter.EndDocument();
 
-		streamWriter.BeginMap();
-		streamWriter.BeginMapNamned("Project");
-
-		streamWriter.SetKey("EngineVersion", VT_VERSION.ToString());
-		streamWriter.SetKey("Name", m_currentProject->name);
-		streamWriter.SetKey("CompanyName", m_currentProject->companyName);
-		streamWriter.SetKey("AssetsDirectory", m_currentProject->assetsDirectory);
-		streamWriter.SetKey("AudioBanksDirectory", m_currentProject->audioDirectory);
-		streamWriter.SetKey("IconPath", m_currentProject->iconFilepath);
-		streamWriter.SetKey("CursorPath", m_currentProject->cursorFilepath);
-		streamWriter.SetKey("StartScenePath", m_currentProject->startSceneFilepath);
-
-		streamWriter.EndMap();
-		streamWriter.EndMap();
-		streamWriter.WriteToDisk();
+		const std::string prettyJson = jsonWriter.GetPrettyJSON();
+		FileUtility::WriteStringToFile(m_currentProject->filepath, prettyJson, true);
 	}
 
-	void ProjectManager::DeserializeProject(PluginRegistry& pluginRegistry)
+	void ProjectManager::DeserializeProject()
 	{
-		YAMLFileStreamReader streamReader{};
-
-		if (!streamReader.OpenFile(m_currentProject->filepath))
+		std::string jsonString;
+		if (!FileUtility::ReadStringFromFile(m_currentProject->filepath, jsonString))
 		{
 			VT_LOGC(Error, LogProject, "Failed to open file: {0}!", m_currentProject->filepath.string());
 			return;
 		}
 
-		if (!streamReader.HasKey("Project"))
+		JSONReader jsonReader;
+		if (!jsonReader.Parse(jsonString))
 		{
 			VT_LOGC(Error, LogProject, "Project file {0} is invalid!", m_currentProject->filepath.string());
 			return;
 		}
 
-		streamReader.EnterScope("Project");
-
-		m_currentProject->engineVersion = streamReader.ReadAtKey("EngineVersion", std::string(""));
-		m_currentProject->name = streamReader.ReadAtKey("Name", std::string("None"));
-		m_currentProject->companyName = streamReader.ReadAtKey("CompanyName", std::string("None"));
-		m_currentProject->assetsDirectory = streamReader.ReadAtKey("AssetsDirectory", std::filesystem::path("Assets"));
-		m_currentProject->audioDirectory = streamReader.ReadAtKey("AudioBanksDirectory", std::filesystem::path("Audio/Banks"));
-		m_currentProject->iconFilepath = streamReader.ReadAtKey("IconPath", std::filesystem::path(""));
-		m_currentProject->cursorFilepath = streamReader.ReadAtKey("CursorPath", std::filesystem::path(""));
-		m_currentProject->startSceneFilepath = streamReader.ReadAtKey("StartScene", std::filesystem::path(""));
-
-		streamReader.ForEach("Plugins", [&]() 
+		std::string engineVersionStr;
+		if (jsonReader.TryGet("EngineVersion", engineVersionStr))
 		{
-			const std::string pluginName = streamReader.ReadValue<std::string>();
-			const auto& definition = pluginRegistry.GetPluginDefinitionByName(pluginName);
+			m_currentProject->engineVersion = engineVersionStr;
+		}
+		jsonReader.TryGet("Name", m_currentProject->name);
+		jsonReader.TryGet("CompanyName", m_currentProject->companyName);
+		jsonReader.TryGet("AssetsDirectory", m_currentProject->assetsDirectoryName);
+		jsonReader.TryGet("AudioBanksDirectory", m_currentProject->audioDirectory);
+		jsonReader.TryGet("IconPath", m_currentProject->iconFilepath);
+		jsonReader.TryGet("CursorPath", m_currentProject->cursorFilepath);
+		jsonReader.TryGet("StartScenePath", m_currentProject->startSceneFilepath);
+
+		jsonReader.IterateArray("Plugins", [&]() 
+		{
+			std::string pluginName;
+			jsonReader.Get(pluginName);
+
+			const auto& definition = m_pluginRegistry->GetPluginDefinitionByName(pluginName);
 			if (definition.guid != VoltGUID::Null())
 			{
 				m_currentProject->pluginDefinitions.emplace_back(definition);
@@ -123,7 +150,6 @@ namespace Volt
 				VT_LOGC(Warning, LogProject, "Plugin with name {} does not exist!", pluginName);
 			}
 		});
-		streamReader.ExitScope();
 
 		if (!m_currentProject->engineVersion.IsValid() || m_currentProject->engineVersion != VT_VERSION)
 		{
@@ -132,24 +158,14 @@ namespace Volt
 		}
 	}
 
-	const std::filesystem::path ProjectManager::GetEngineScriptsDirectory()
-	{
-		return GetAssetsDirectory() / "Scripts/Internal";
-	}
-
-	const std::filesystem::path ProjectManager::GetEngineShaderIncludeDirectory()
-	{
-		return "Engine/Shaders/Source/Includes";
-	}
-
-	const std::filesystem::path ProjectManager::GetEngineShaderDirectory()
-	{
-		return "Engine/Shaders/Source/";
-	}
-
 	const std::filesystem::path ProjectManager::GetAssetsDirectory()
 	{
-		return s_instance->m_currentProject->isDeprecated ? "./" : s_instance->m_currentProject->rootDirectory / s_instance->m_currentProject->assetsDirectory;
+		return s_instance->m_currentProject->isDeprecated ? "./" : GetProjectDirectory() / GetAssetsDirectoryName();
+	}
+
+	const std::string_view ProjectManager::GetAssetsDirectoryName()
+	{
+		return s_instance->m_currentProject->assetsDirectoryName;
 	}
 
 	const std::filesystem::path ProjectManager::GetAudioBanksDirectory()
@@ -162,9 +178,14 @@ namespace Volt
 		return s_instance->m_currentProject->isDeprecated ? "./" : s_instance->m_currentProject->rootDirectory;
 	}
 
-	const std::filesystem::path ProjectManager::GetEngineDirectory()
+	const std::filesystem::path ProjectManager::GetEngineRootDirectory()
 	{
 		return s_instance->m_currentEngineDirectory;
+	}
+
+	const std::filesystem::path ProjectManager::GetEngineAssetsDirectory()
+	{
+		return s_instance->m_currentEngineDirectory / "Engine";
 	}
 
 	const std::filesystem::path ProjectManager::GetPathRelativeToEngine(const std::filesystem::path& path)
@@ -180,16 +201,6 @@ namespace Volt
 	const std::filesystem::path ProjectManager::GetPathRelativeToProject(const std::filesystem::path& path)
 	{
 		return std::filesystem::relative(path, GetProjectDirectory());
-	}
-
-	const std::filesystem::path ProjectManager::GetMonoAssemblyPath()
-	{
-		return GetRootDirectory() / "Binaries" / "Project.dll";
-	}
-
-	const std::filesystem::path ProjectManager::GetMonoBinariesDirectory()
-	{
-		return GetRootDirectory() / "Binaries";
 	}
 
 	const std::filesystem::path ProjectManager::GetOrCreateSettingsDirectory()
@@ -236,5 +247,12 @@ namespace Volt
 	void ProjectManager::OnProjectUpgraded()
 	{
 		s_instance->m_currentProject->isDeprecated = false;
+	}
+
+	void ProjectManager::GetSubSystemDependencies(SubSystemDependencyList& outDependencies)
+	{
+		outDependencies.AddDependency<PluginSystem>();
+		outDependencies.AddDependency<PluginRegistry>();
+		outDependencies.AddDependency<Log>();
 	}
 }

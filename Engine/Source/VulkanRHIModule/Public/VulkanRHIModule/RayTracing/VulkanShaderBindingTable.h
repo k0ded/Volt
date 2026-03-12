@@ -4,7 +4,7 @@
 
 namespace Volt::RHI
 {
-	class StorageBuffer;
+	class Buffer;
 	class VulkanShaderBindingTable final : public ShaderBindingTable
 	{
 	public:
@@ -14,10 +14,10 @@ namespace Volt::RHI
 		void Invalidate() override;
 		bool IsShaderInTable(RefPtr<Shader> shader) const override;
 
-		VT_NODISCARD VT_INLINE RefPtr<StorageBuffer> GetRayGenTable() const { return m_rayGenBindingTable; }
-		VT_NODISCARD VT_INLINE RefPtr<StorageBuffer> GetMissTable() const { return m_missBindingTable; }
-		VT_NODISCARD VT_INLINE RefPtr<StorageBuffer> GetHitGroupTable() const { return m_hitGroupBindingTable; }
-		VT_NODISCARD VT_INLINE RefPtr<StorageBuffer> GetCallableTable() const { return m_callableBindingTable; }
+		VT_NODISCARD VT_INLINE RefPtr<Buffer> GetRayGenTable() const { return m_rayGenBindingTable; }
+		VT_NODISCARD VT_INLINE RefPtr<Buffer> GetMissTable() const { return m_missBindingTable; }
+		VT_NODISCARD VT_INLINE RefPtr<Buffer> GetHitGroupTable() const { return m_hitGroupBindingTable; }
+		VT_NODISCARD VT_INLINE RefPtr<Buffer> GetCallableTable() const { return m_callableBindingTable; }
 
 	protected:
 		void* GetHandleImpl() const override;
@@ -27,9 +27,9 @@ namespace Volt::RHI
 
 		RefPtr<RayTracingPipeline> m_pipeline;
 		
-		RefPtr<StorageBuffer> m_rayGenBindingTable;
-		RefPtr<StorageBuffer> m_missBindingTable;
-		RefPtr<StorageBuffer> m_hitGroupBindingTable;
-		RefPtr<StorageBuffer> m_callableBindingTable;
+		RefPtr<Buffer> m_rayGenBindingTable;
+		RefPtr<Buffer> m_missBindingTable;
+		RefPtr<Buffer> m_hitGroupBindingTable;
+		RefPtr<Buffer> m_callableBindingTable;
 	};
 }

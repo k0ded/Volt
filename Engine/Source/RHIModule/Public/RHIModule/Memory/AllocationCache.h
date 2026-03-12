@@ -7,6 +7,7 @@
 #include <CoreUtilities/Pointers/RefPtr.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Allocators/Handle.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 namespace Volt::RHI
 {
@@ -35,8 +36,8 @@ namespace Volt::RHI
 		inline const auto& GetBufferAllocations() const { return m_bufferAllocations; }
 
 	private:
-		std::mutex m_imageAllocationMutex;
-		std::mutex m_bufferAllocationMutex;
+		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_imageAllocationMutex);
+		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_bufferAllocationMutex);
 
 		Vector<AllocationContainer> m_imageAllocations;
 		Vector<AllocationContainer> m_bufferAllocations;

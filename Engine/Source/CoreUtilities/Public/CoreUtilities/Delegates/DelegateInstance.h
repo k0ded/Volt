@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreUtilities/Delegates/DelegateHandle.h"
-#include "CoreUtilities/GUIDUtilities.h"
 
 #include <tuple>
 
@@ -19,7 +18,6 @@ namespace Volt
 	template <bool Const, class UserClass, typename FnType, typename... VarTypes>
 	class RawFunctionDelegateInstance;
 
-
 	template<typename ReturnType, typename... ParamTypes>
 	class DelegateInstance<ReturnType(ParamTypes...)>
 	{
@@ -27,7 +25,6 @@ namespace Volt
 		template<typename... InParamTypes>
 		explicit DelegateInstance(InParamTypes&&... params)
 			: m_paramTypes(std::forward<InParamTypes>(params)...)
-			, m_handle(GUIDUtilities::GenerateGUID())
 		{
 		}
 
@@ -36,6 +33,9 @@ namespace Volt
 		virtual bool ExecuteIfSafe(ParamTypes...) const = 0;
 
 		virtual DelegateInstance<ReturnType(ParamTypes...)>* CreateCopy() const = 0;
+
+		VT_NODISCARD VT_INLINE DelegateHandle GetHandle() const { return m_handle; }
+
 	protected:
 		std::tuple<ParamTypes...> m_paramTypes;
 

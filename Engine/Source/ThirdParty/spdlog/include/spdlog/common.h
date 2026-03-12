@@ -65,6 +65,7 @@
 #define SPDLOG_FUNCTION __FUNCTION__
 #endif
 
+#define SPDLOG_NO_EXCEPTIONS
 #ifdef SPDLOG_NO_EXCEPTIONS
 #define SPDLOG_TRY
 #define SPDLOG_THROW(ex)                                                                                                                   \

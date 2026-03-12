@@ -1,4 +1,0 @@
-name: "GammaCorrection"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/PostProcessing/GammaCorrection_cs.hlsl"

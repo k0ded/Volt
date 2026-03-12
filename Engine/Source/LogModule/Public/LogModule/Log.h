@@ -9,6 +9,7 @@
 #include <CoreUtilities/UUID.h>
 
 #include <SubSystem/SubSystem.h>
+#include "SubSystem/SubSystemRegistry.h"
 
 #include <memory>
 #include <mutex>
@@ -18,20 +19,12 @@
 
 namespace spdlog
 {
-	class logger;
-
-	namespace sinks
-	{
-		template<typename Mutex>
-		class rotating_file_sink;
-
-		using rotating_file_sink_mt = rotating_file_sink<std::mutex>;
-	}
+	class async_logger;
 }
 
 struct LogCallbackData
 {
-	std::string category;
+	const LogCategoryBase* category;
 	std::string message;
 
 	LogVerbosity severity;
@@ -49,30 +42,32 @@ public:
 	static void LogFormatted(LogVerbosity severity, const LogCategory& category, const std::string& format, Args&&... args)
 	{
 		const std::string message = std::vformat(format, std::make_format_args(args...));
-		Get().LogMessage(severity, std::string(category.GetName()), message);
+		Get().LogMessage(severity, &category, message);
 	}
 
 	template<typename LogCategory, typename... Args>
 	static void LogUnformatted(LogVerbosity severity, const LogCategory& category, const std::string& message)
 	{
-		Get().LogMessage(severity, std::string(category.GetName()), message);
+		Get().LogMessage(severity, &category, message);
 	}
 
-	void SetLogOutputFilepath(const std::filesystem::path& path);
 	LogCallbackHandle RegisterCallback(const std::function<void(const LogCallbackData& callbackData)>& callback);
 	void UnregisterCallback(LogCallbackHandle handle);
 
+	void Flush();
+	void EnableLogging(bool enable);
+
 	VT_NODISCARD VT_INLINE static Log& Get() { return *s_instance; }
+	VT_NODISCARD VT_INLINE static bool IsInitialized() { return s_instance != nullptr; }
 
 	VT_DECLARE_SUBSYSTEM("{AA12B0EC-2224-4A5E-A274-F6FBEE00B546}"_guid)
 
 private:
-	void LogMessage(LogVerbosity severity, const std::string& category, const std::string& message);
+	void LogMessage(LogVerbosity severity, const LogCategoryBase* category, const std::string& message);
 
 	inline static Log* s_instance = nullptr;
 
-	std::shared_ptr<spdlog::logger> m_logger;
-	std::shared_ptr<spdlog::sinks::rotating_file_sink_mt> m_rotatingFileSink;
+	std::shared_ptr<spdlog::async_logger> m_logger;
 
 	struct CallbackData
 	{
@@ -82,6 +77,7 @@ private:
 
 	std::mutex m_callbackMutex;
 	Vector<CallbackData> m_callbacks;
+	bool m_isEnabled = true;
 };
 
 #define VT_LOGC(verbosity, category, format, ...) ::Log::LogFormatted(LogVerbosity::verbosity, category, format, __VA_ARGS__)

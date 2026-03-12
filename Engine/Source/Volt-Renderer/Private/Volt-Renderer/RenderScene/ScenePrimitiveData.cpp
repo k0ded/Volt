@@ -1,14 +1,11 @@
 #include "vrpch.h"
 
-#include "Volt-Renderer/Material.h"
 #include "Volt-Renderer/RenderScene/ScenePrimitiveData.h"
 #include "Volt-Renderer/RenderScene.h"
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
 
-#include <RHIModule/Graphics/GraphicsContext.h>
-
-#include <AssetSystem/AssetManager.h>
+#include <RHIModule/RHIFeatures.h>
 
 VT_DEFINE_LOG_CATEGORY(LogScenePrimitiveData);
 
@@ -18,6 +15,14 @@ namespace Volt
 		: m_relatedEntity(relatedEntity),
 		m_renderScene(renderScene)
 	{
+	}
+
+	ScenePrimitiveData::ScenePrimitiveData(const EntityID& relatedEntity, RenderScene* renderScene, Ref<TempAnimator> animator)
+		: m_relatedEntity(relatedEntity),
+		m_renderScene(renderScene),
+		m_animator(animator)
+	{
+
 	}
 
 	ScenePrimitiveData::~ScenePrimitiveData()
@@ -38,6 +43,7 @@ namespace Volt
 		for (uint32_t index = 0; const auto& renderMaterial : description.materials)
 		{
 			m_primitiveMaterialTable.SetMaterial(renderMaterial, index);
+			index++;
 		}
 
 		m_primitiveMesh = description.primitiveMesh;
@@ -51,9 +57,9 @@ namespace Volt
 			m_renderScene->InvalidatePrimitiveInstance(id);
 		}
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
-			m_renderScene->GetRayTracingScene()->InvalidateInstance(m_rayTracingInstance);
+			m_renderScene->InvalidateRayTracingInstance(m_rayTracingInstance);
 		}
 	}
 
@@ -66,7 +72,7 @@ namespace Volt
 		MaterialTable finalMaterialTable;
 		for (uint32_t i = 0; i < meshMaterialTable.GetSize(); i++)
 		{
-			if (m_primitiveMaterialTable.ContainsMaterialIndex(i))
+			if (m_primitiveMaterialTable.ContainsMaterialIndex(i) && m_primitiveMaterialTable.GetMaterial(i))
 			{
 				finalMaterialTable.SetMaterial(m_primitiveMaterialTable.GetMaterial(i), i);
 			}
@@ -90,13 +96,13 @@ namespace Volt
 				material = Renderer::GetDefaultResources().defaultMaterial;
 			}
 
-			RenderPrimitiveID renderObjectId = m_renderScene->AddPrimitiveInstance(m_relatedEntity, m_primitiveMesh, material, static_cast<uint32_t>(i));
+			RenderPrimitiveID renderObjectId = m_renderScene->AddPrimitiveInstance(m_relatedEntity, m_animator, m_primitiveMesh, material, static_cast<uint32_t>(i));
 			m_renderObjects.emplace_back(renderObjectId);
 		}
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
-			m_rayTracingInstance = m_renderScene->GetRayTracingScene()->AddInstance(m_primitiveMesh, m_relatedEntity, m_renderScene->GetPrimitiveIndexFromID(m_renderObjects.front()));
+			m_rayTracingInstance = m_renderScene->AddRayTracingInstance(m_relatedEntity, m_primitiveMesh, m_renderObjects.front());
 		}
 	}
 
@@ -104,9 +110,9 @@ namespace Volt
 	{
 		VT_ENSURE(m_renderScene);
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
-			m_renderScene->GetRayTracingScene()->RemoveInstance(m_rayTracingInstance);
+			m_renderScene->RemoveRayTracingInstance(m_rayTracingInstance);
 		}
 
 		for (const auto& id : m_renderObjects)

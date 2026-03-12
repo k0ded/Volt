@@ -1,17 +1,22 @@
 #include "rhipch.h"
 
 #include "RHIModule/Buffers/CommandBuffer.h"
-#include "RHIModule/RHIProxy.h"
+#include "RHIModule/RHIModule.h"
 
 namespace Volt::RHI
 {
 	RefPtr<CommandBuffer> CommandBuffer::Create(QueueType queueType)
 	{
-		return RHIProxy::GetInstance().CreateCommandBuffer(queueType);
+		return RHIModule::GetInstance().CreateCommandBuffer(queueType);
 	}
 
 	RefPtr<CommandBuffer> CommandBuffer::Create()
 	{
-		return RHIProxy::GetInstance().CreateCommandBuffer(QueueType::Graphics);
+		return RHIModule::GetInstance().CreateCommandBuffer(QueueType::Graphics);
+	}
+
+	RefPtr<CommandBuffer> CommandBuffer::CreateSecondary(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration)
+	{
+		return RHIModule::GetInstance().CreateSecondaryCommandBuffer(renderingAttachmentDeclaration);
 	}
 }

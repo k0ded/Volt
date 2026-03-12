@@ -2,6 +2,7 @@
 
 #include "SubSystem/Config.h"
 #include "SubSystem/SubSystemInitializationStage.h"
+#include "SubSystem/SubSystemDependencyList.h"
 
 #include <CoreUtilities/CompilerTraits.h>
 #include <CoreUtilities/VoltGUID.h>
@@ -9,11 +10,20 @@
 #include <CoreUtilities/Containers/Map.h>
 
 class SubSystem;
+
+template<typename T>
+concept SubSystemHasDependencies = requires
+{
+	{ T::GetSubSystemDependencies(std::declval<SubSystemDependencyList&>()) };
+};
+
 struct RegisteredSubSystem
 {
 	std::function<Ref<SubSystem>()> factoryFunction;
-	int32_t initializationOrder;
+	std::function<void(SubSystemDependencyList&)> getDependenciesFunction;
+
 	SubSystemInitializationStage initializationStage;
+	SubSystemInclusionLevel inclusionLevel;
 };
 
 class SUBSYSTEMMODULE_API SubSystemRegistry
@@ -26,41 +36,69 @@ public:
 	SubSystemRegistry& operator=(const SubSystemRegistry&) = delete;
 
 	template<typename T>
-	bool RegisterSubSystem(SubSystemInitializationStage initializationStage, int32_t initializationOrder)
+	void RegisterSubSystem(SubSystemInclusionLevel inclusionLevel, SubSystemInitializationStage initializationStage)
 	{
 		const VoltGUID guid = T::GetStaticSubSystemGUID();
 
-		if (m_registeredSubSystems.contains(guid))
-		{
-			return false;
-		}
+		VT_ENSURE(!m_registeredSubSystems.contains(guid));
 
 		RegisteredSubSystem& registeredSubSystem = m_registeredSubSystems[guid];
-		registeredSubSystem.initializationOrder = initializationOrder;
 		registeredSubSystem.initializationStage = initializationStage;
+		registeredSubSystem.inclusionLevel = inclusionLevel;
 		registeredSubSystem.factoryFunction = []() 
 		{
 			return CreateRef<T>();
 		};
 
-		return true;
+		registeredSubSystem.getDependenciesFunction = [](SubSystemDependencyList& dependencyList)
+		{
+			if constexpr (SubSystemHasDependencies<T>)
+			{
+				T::GetSubSystemDependencies(dependencyList);
+			}
+		};
 	}
 
-	VT_INLINE const vt::map<VoltGUID, RegisteredSubSystem>& GetRegisteredSubSystems() const { return m_registeredSubSystems; }
+	template<typename T>
+	void UnregisterSubSystem()
+	{
+		const VoltGUID guid = T::GetStaticSubSystemGUID();
+
+		// #Note_Ivar: The registry may already have been destroyed due to
+		// DLL ordering.
+		if (m_registeredSubSystems.empty())
+		{
+			return;
+		}
+
+		if (VT_CHECK(m_registeredSubSystems.contains(guid)))
+		{
+			m_registeredSubSystems.erase(guid);
+		}
+	}
+
+	VT_INLINE const Map<VoltGUID, RegisteredSubSystem>& GetRegisteredSubSystems() const { return m_registeredSubSystems; }
+
+	static SubSystemRegistry& Get();
 
 private:
-	vt::map<VoltGUID, RegisteredSubSystem> m_registeredSubSystems;
+	Map<VoltGUID, RegisteredSubSystem> m_registeredSubSystems;
 };
 
-extern SUBSYSTEMMODULE_API SubSystemRegistry g_subSystemRegistry;
-
-VT_INLINE SubSystemRegistry& GetSubSystemRegistry()
-{
-	return g_subSystemRegistry;
-}
-
-#define VT_REGISTER_SUBSYSTEM(klass, initializationStage, initializationOrder) \
-	inline static bool SubSystemRegistry_ ## klass ## _Registered = GetSubSystemRegistry().RegisterSubSystem<klass>(SubSystemInitializationStage::initializationStage, initializationOrder)
+// Must lie in a compilation unit (cpp file)
+#define VT_REGISTER_SUBSYSTEM(klass, inclusionLevel, initializationStage) \
+	class SubSystemRegistrar_##klass \
+	{ \
+	public: \
+		VT_INLINE SubSystemRegistrar_##klass() \
+		{ \
+			SubSystemRegistry::Get().RegisterSubSystem<klass>(SubSystemInclusionLevel::inclusionLevel, SubSystemInitializationStage::initializationStage); \
+		} \
+		VT_INLINE ~SubSystemRegistrar_##klass() \
+		{ \
+			SubSystemRegistry::Get().UnregisterSubSystem<klass>(); \
+		} \
+	} g_subSystemRegistrar_##klass
 
 #define VT_DECLARE_SUBSYSTEM(guid) \
 	VT_NODISCARD VT_INLINE static constexpr VoltGUID GetStaticSubSystemGUID() \

@@ -3,6 +3,8 @@
 
 #include "Sandbox/Window/EditorWindow.h"
 
+#include <AssetSystem/AssetManager.h>
+
 void EditorLibrary::Clear()
 {
 	s_editors.clear();
@@ -10,7 +12,7 @@ void EditorLibrary::Clear()
 
 void EditorLibrary::Sort()
 {
-	std::sort(s_editors.begin(), s_editors.end(), [](const auto& lhs, const auto& rhs) 
+	std::sort(s_editors.begin(), s_editors.end(), [](const auto& lhs, const auto& rhs)
 	{
 		return lhs.editorWindow->GetTitle() < rhs.editorWindow->GetTitle();
 	});
@@ -29,20 +31,22 @@ Ref<EditorWindow> EditorLibrary::GetPanel(const std::string& panelName)
 	return nullptr;
 }
 
-bool EditorLibrary::OpenAsset(Ref<Volt::Asset> asset)
+bool EditorLibrary::OpenAsset(Volt::AssetHandle handle)
 {
-	if (!asset)
-	{
-		return false;
-	}
+	Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
 
-	const AssetType type = asset->GetType();
+	const AssetType type = assetMetadata->type;
 	auto it = std::find_if(s_editors.begin(), s_editors.end(), [type](const auto& lhs) { return lhs.assetType->GetGUID() == type->GetGUID(); });
 	if (it == s_editors.end())
 	{
 		return false;
 	}
 
+	AssetReference<Volt::Asset> asset;
+	if (!g_assetManager->TryGetTypelessAssetImmediately(handle, asset))
+	{
+		return false;
+	}
 	it->editorWindow->Open();
 	it->editorWindow->OpenAsset(asset);
 	return true;

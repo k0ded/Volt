@@ -189,8 +189,6 @@ namespace Volt::RHI
 
 	bool ShaderPreProcessor::PreProcessShaderSource(const PreProcessorData& data, PreProcessorResult& outResult)
 	{
-		GenerateConstantsInformation(data, outResult);
-
 		switch (data.shaderStage)
 		{
 			case ShaderStage::Pixel: return PreProcessPixelSource(data, outResult); break;
@@ -369,13 +367,23 @@ namespace Volt::RHI
 			return true;
 		}
 
-		const size_t inputStructLoc = processedSource.find("struct " + inputStruct);
+		// Find the correct declaration
+		size_t inputStructLoc = processedSource.find("struct " + inputStruct + " ");
+		if (inputStructLoc == std::string::npos)
+		{
+			inputStructLoc = processedSource.find("struct " + inputStruct + "\n");
+		}
+		if (inputStructLoc == std::string::npos)
+		{
+			inputStructLoc = processedSource.find("struct " + inputStruct + "\0");
+		}
+
 		const size_t openBracketLoc = processedSource.find_first_of('{', inputStructLoc);
 		const size_t closeBracketLoc = processedSource.find("};", inputStructLoc);
 
 		std::string structSubStr = processedSource.substr(openBracketLoc, closeBracketLoc - openBracketLoc);
 
-		Vector<BufferElement> inputElements{};
+		Map<uint32_t, Vector<BufferElement>> inputElementsMap{};
 		Vector<BufferElement> instanceInputElements{};
 
 		size_t currentInputSemiColLoc = structSubStr.find_first_of(';');
@@ -396,8 +404,10 @@ namespace Volt::RHI
 
 			if (!Utility::IsSystemValueSemantic(nameStr) && !Utility::IsVulkanBuiltIn(currentValueStr))
 			{
-				ElementType elementType = ElementType::Bool;
+				ElementType elementType = ElementType::Invalid;
+				uint32_t vertexInputIndex = 0;
 				bool isPerInstance = false;
+				bool isInvalid = false;
 
 				size_t typeTagLoc = currentValueStr.find("[[vt::");
 				while (typeTagLoc != std::string::npos)
@@ -409,27 +419,48 @@ namespace Volt::RHI
 					{
 						isPerInstance = true;
 					}
+					else if (lowerStr.find("vt::inputindex") != std::string::npos)
+					{
+						size_t delimiterBegin = lowerStr.find_first_of('(');
+						size_t delimiterEnd = lowerStr.find_last_of(')');
+
+						if (delimiterBegin != std::string::npos && delimiterEnd != std::string::npos)
+						{
+							vertexInputIndex = std::stoi(lowerStr.substr(delimiterBegin + 1, delimiterBegin - delimiterEnd));
+						}
+					}
 					else
 					{
 						elementType = FindElementTypeFromTag(lowerStr);
+
+						// If all checks have failed, and no element type was found, the tag is invalid.
+						if (elementType == ElementType::Invalid)
+						{
+							VT_LOGC(Error, LogRHI, "The tag {} is not a valid vertex definition tag!", tagSubstr);
+							isInvalid = true;
+						}
 					}
 
 					constexpr uint32_t TAG_LENGTH = 5;
 					typeTagLoc = currentValueStr.find("[[vt::", typeTagLoc + TAG_LENGTH);
 				}
 
-				if (typeTagLoc == std::string::npos)
+				if (elementType == ElementType::Invalid)
 				{
 					elementType = FindDefaultElementTypeFromString(currentValueStr);
 				}
 
-				if (!isPerInstance)
+				// If the input declaration was invalid, we do not add it to the vertex input definition.
+				if (!isInvalid)
 				{
-					inputElements.emplace_back(elementType, nameStr);
-				}
-				else
-				{
-					instanceInputElements.emplace_back(elementType, nameStr);
+					if (!isPerInstance)
+					{
+						inputElementsMap[vertexInputIndex].emplace_back(elementType, nameStr);
+					}
+					else
+					{
+						instanceInputElements.emplace_back(elementType, nameStr);
+					}
 				}
 			}
 
@@ -437,98 +468,14 @@ namespace Volt::RHI
 			currentInputSemiColLoc = structSubStr.find_first_of(';');
 		}
 
-		outResult.vertexLayout = inputElements;
+		for (const auto& [index, inputElements] : inputElementsMap)
+		{
+			outResult.vertexLayout[index] = inputElements;
+		}
+
+		outResult.instanceLayout = instanceInputElements;
 
 		return true;
-	}
-
-	bool ShaderPreProcessor::GenerateConstantsInformation(const PreProcessorData& data, PreProcessorResult& outResult)
-	{
-		constexpr const char* CONSTANTS_FUNC = "GetConstants<";
-		constexpr uint32_t CONSTANTS_FUNC_LENGTH = 13;
-
-		std::string processedSource = data.shaderSource;
-		const size_t getConstantsFuncOffset = processedSource.find(CONSTANTS_FUNC);
-		if (getConstantsFuncOffset == std::string::npos)
-		{
-			return false;
-		}
-
-		const std::string constantsStructName = processedSource.substr(getConstantsFuncOffset + CONSTANTS_FUNC_LENGTH, processedSource.find_first_of('>', getConstantsFuncOffset) - getConstantsFuncOffset - CONSTANTS_FUNC_LENGTH);
-
-		GetConstantsInformationFromMemberStructRecursive(constantsStructName, "", data, outResult);
-
-		return true;
-	}
-
-	void ShaderPreProcessor::GetConstantsInformationFromMemberStructRecursive(const std::string& memberType, const std::string& parentMemberName, const PreProcessorData& data, PreProcessorResult& outResult)
-	{
-		std::string processedSource = data.shaderSource;
-		
-		size_t constantsStructDefOffset = processedSource.find("struct " + memberType);
-		if (constantsStructDefOffset == std::string::npos)
-		{
-			return;
-		}
-
-		constantsStructDefOffset = processedSource.find_first_of("{", constantsStructDefOffset);
-
-		// Find end point of struct
-		uint32_t scopeDepth = 1;
-		size_t offset = constantsStructDefOffset;
-
-		while (scopeDepth > 0)
-		{
-			const size_t scopeEndPos = processedSource.find("}", offset + 1);
-			const std::string scopeSubStr = processedSource.substr(offset + 1, scopeEndPos + 1 - offset);
-
-			if (scopeSubStr.find("{") != std::string::npos)
-			{
-				scopeDepth++;
-			}
-			else
-			{
-				scopeDepth--;
-			}
-
-			offset = scopeEndPos;
-		}
-
-		const std::string constantsStructDef = processedSource.substr(constantsStructDefOffset, offset - constantsStructDefOffset + 1);
-		size_t currentMemberStartPos = constantsStructDef.find_first_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-		while (currentMemberStartPos != std::string::npos)
-		{
-			size_t currentMemberEndPos = constantsStructDef.find_first_of(";", currentMemberStartPos);
-			const std::string memberSubStr = constantsStructDef.substr(currentMemberStartPos, currentMemberEndPos - currentMemberStartPos);
-
-			const size_t spaceCharPos = memberSubStr.find_last_of(' ');
-			const size_t firstNamePos = memberSubStr.find_first_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", spaceCharPos);
-
-			const std::string typeStr = memberSubStr.substr(0, spaceCharPos);
-			const std::string nameStr = memberSubStr.substr(firstNamePos, memberSubStr.size() - firstNamePos);
-
-			ShaderUniformType elementType{};
-
-			if (!Utility::IsDefaultType(typeStr) && !Utility::IsResourceType(typeStr))
-			{
-				GetConstantsInformationFromMemberStructRecursive(typeStr, nameStr, data, outResult);
-			}
-			else
-			{
-				elementType = FindUniformTypeFromString(typeStr);
-			}
-
-			if (elementType.baseType != ShaderUniformBaseType::Invalid)
-			{
-				const size_t typeSize = elementType.GetSize();
-
-				const std::string uniformName = !parentMemberName.empty() ? parentMemberName + "." + nameStr : nameStr;
-				outResult.renderGraphConstants.uniforms[StringHash::Construct(uniformName)] = ShaderUniform(elementType, typeSize, outResult.renderGraphConstants.size);
-				outResult.renderGraphConstants.size += typeSize;
-			}
-
-			currentMemberStartPos = constantsStructDef.find_first_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", currentMemberEndPos);
-		}
 	}
 
 	void ShaderPreProcessor::ErasePreProcessData(PreProcessorResult& outResult)
@@ -738,7 +685,7 @@ namespace Volt::RHI
 			return ElementType::Float4x4;
 		}
 
-		return ElementType::Bool;
+		return ElementType::Invalid;
 	}
 
 	ShaderUniformType ShaderPreProcessor::FindUniformTypeFromString(std::string_view str)
@@ -1090,7 +1037,7 @@ namespace Volt::RHI
 		}
 		else if (tempStr == "rgb10_a2")
 		{
-			return PixelFormat::A2R10G10B10_UNORM_PACK32;
+			return PixelFormat::A2B10G10R10_UNORM_PACK32;
 		}
 
 		// Signed int

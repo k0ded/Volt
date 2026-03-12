@@ -1,7 +1,9 @@
 #pragma once
 
 #include "CoreUtilities/Containers/Vector.h"
-#include "CoreUtilities/Allocators/DefaultAllocator.h"
 
 template<typename T>
-using PagedVector = Vector<T, DefaultAllocator>;
+using GlobalMemoryStackVector = Vector<T, GlobalMemoryStackAllocator>;
+
+template<typename T, size_t NumValues>
+using InlineVector = Vector<T, InlineAllocator<NumValues>>;

@@ -17,11 +17,11 @@ namespace VoltSharpmake
 
             conf.SolutionFolder = "Plugins";
 
+			conf.AddPublicDependency<VoltCore>(target);
             conf.AddPublicDependency<LogModule>(target);
             conf.AddPublicDependency<RHIModule>(target);
             conf.AddPublicDependency<JobSystemModule>(target);
             conf.AddPublicDependency<EventSystemModule>(target);
-            conf.AddPublicDependency<Volt>(target);
         }
     }
 }

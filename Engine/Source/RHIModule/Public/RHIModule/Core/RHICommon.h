@@ -1,36 +1,36 @@
 #pragma once
 #include "RHIModule/Core/Core.h"
 
-#include <CoreUtilities/Containers/StackVector.h>
-#include <CoreUtilities/Containers/VectorVariants.h>
+#include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/Variant.h>
 #include <CoreUtilities/Pointers/RawPtr.h>
 
 #include <array>
 #include <functional>
 #include <variant>
+#include <filesystem>
 
 namespace Volt::RHI
 {
 	class PhysicalGraphicsDevice;
 	class GraphicsDevice;
-	class ImageView;
 	class RHIResource;
 	class Swapchain;
 
 	inline static constexpr size_t MAX_COLOR_ATTACHMENT_COUNT = 8;
 	inline static constexpr size_t MAX_ATTACHMENT_COUNT = MAX_COLOR_ATTACHMENT_COUNT + 1;
-	inline static constexpr size_t MAX_VERTEX_BUFFER_COUNT = 32;
+	inline static constexpr size_t MAX_VERTEX_BUFFER_COUNT = 8;
 	inline static constexpr size_t MAX_VIEWPORT_COUNT = 16;
 
-	enum class QueueType
+	enum class QueueType : uint8_t
 	{
-		Graphics,
+		Graphics = 0,
 		Compute,
-		TransferCopy
+		TransferCopy,
+		Num
 	};
 
-	enum class GraphicsAPI
+	enum class GraphicsAPI : uint8_t
 	{
 		Vulkan,
 		D3D12,
@@ -38,7 +38,7 @@ namespace Volt::RHI
 		Mock,
 	};
 
-	enum class DeviceVendor
+	enum class DeviceVendor : uint8_t
 	{
 		AMD,
 		NVIDIA,
@@ -47,7 +47,7 @@ namespace Volt::RHI
 		Unknown
 	};
 
-	enum class PresentMode : uint32_t
+	enum class PresentMode : uint8_t
 	{
 		Immediate = 0, // duh
 		Mailbox = 1, // 
@@ -327,7 +327,7 @@ namespace Volt::RHI
 		DISPLAY_NATIVE_AMD = 1000213000,
 	};
 
-	enum class Topology : uint32_t
+	enum class Topology : uint8_t
 	{
 		TriangleList = 0,
 		LineList,
@@ -336,7 +336,7 @@ namespace Volt::RHI
 		PointList
 	};
 
-	enum class CullMode : uint32_t
+	enum class CullMode : uint8_t
 	{
 		Front = 0,
 		Back,
@@ -344,13 +344,13 @@ namespace Volt::RHI
 		None
 	};
 
-	enum class FillMode : uint32_t
+	enum class FillMode : uint8_t
 	{
 		Solid,
 		Wireframe
 	};
 
-	enum class DepthMode : uint32_t
+	enum class DepthMode : uint8_t
 	{
 		Read = 0,
 		Write,
@@ -358,7 +358,7 @@ namespace Volt::RHI
 		None
 	};
 
-	enum class CompareOperator : uint32_t
+	enum class CompareOperator : uint8_t
 	{
 		None = 0,
 		Never,
@@ -370,7 +370,7 @@ namespace Volt::RHI
 		Always
 	};
 
-	enum class ImageUsage : uint32_t
+	enum class ImageUsage : uint8_t
 	{
 		None = 0,
 		Texture,
@@ -379,14 +379,14 @@ namespace Volt::RHI
 		Storage
 	};
 
-	enum class TextureWrap : uint32_t
+	enum class TextureWrap : uint8_t
 	{
 		None = 0,
 		Clamp,
 		Repeat
 	};
 
-	enum class TextureFilter : uint32_t
+	enum class TextureFilter : uint8_t
 	{
 		None = 0,
 		Linear,
@@ -394,7 +394,7 @@ namespace Volt::RHI
 		Anisotropy
 	};
 
-	enum class AnisotropyLevel : uint32_t
+	enum class AnisotropyLevel : uint8_t
 	{
 		None = 0,
 		X2 = 2,
@@ -403,28 +403,29 @@ namespace Volt::RHI
 		X16 = 16
 	};
 
-	enum class BufferUsage : uint32_t
+	enum class BufferUsage : uint16_t
 	{
 		None = 0,
 		TransferSrc = BIT(0),
 		TransferDst = BIT(1),
 		UniformBuffer = BIT(2),
 		StorageBuffer = BIT(3),
-		IndexBuffer = BIT(4),
-		VertexBuffer = BIT(5),
-		IndirectBuffer = BIT(6),
-		AccelerationStructure = BIT(7),
-		AccelerationStructureInput = BIT(8),
-		DeviceAddress = BIT(9),
-		ShaderBindingTable = BIT(10),
+		TexelBuffer = BIT(4),
+		IndexBuffer = BIT(5),
+		VertexBuffer = BIT(6),
+		IndirectBuffer = BIT(7),
+		AccelerationStructure = BIT(8),
+		AccelerationStructureInput = BIT(9),
+		DeviceAddress = BIT(10),
+		ShaderBindingTable = BIT(11),
 
 		// Vulkan only
-		DescriptorBuffer = BIT(11)
+		DescriptorBuffer = BIT(12)
 	};
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(BufferUsage);
 
-	enum class MemoryUsage : uint32_t
+	enum class MemoryUsage : uint8_t
 	{
 		None = 0,
 		GPU = BIT(0),
@@ -460,26 +461,24 @@ namespace Volt::RHI
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(ImageAspect);
 
-	enum class ClearMode
+	enum class ClearMode : uint8_t
 	{
 		Clear = 0,
 		Load,
 		DontCare
 	};
 
-	enum class ResourceType : uint32_t
+	enum class ResourceType : uint8_t
 	{
 		Image1D = 0,
 		Image2D,
 		Image3D,
 
-		IndexBuffer,
-		VertexBuffer,
 		UniformBuffer,
-		StorageBuffer
+		Buffer
 	};
 
-	enum class ResourceBarrierType
+	enum class ResourceBarrierType : uint8_t
 	{
 		Buffer,
 		Image
@@ -562,7 +561,7 @@ namespace Volt::RHI
 
 	VT_SETUP_ENUM_CLASS_OPERATORS(ImageLayout);
 
-	enum class BarrierType : uint64_t
+	enum class BarrierType : uint8_t
 	{
 		None = 0,
 		Image,
@@ -577,6 +576,38 @@ namespace Volt::RHI
 		UInt32
 	};
 
+	enum class AttachmentBlendFactor : uint8_t
+	{
+		Zero = 0,
+		One = 1,
+		SrcColor = 2,
+		OneMinusSrcColor = 3,
+		DstColor = 4,
+		OneMinusDstColor = 5,
+		SrcAlpha = 6,
+		OneMinusSrcAlpha = 7,
+		DstAlpha = 8,
+		OneMinusDstAlpha = 9,
+		ConstantColor = 10,
+		OneMinusConstantColor = 11,
+		ConstantAlpha = 12,
+		OneMinusConstantAlpha = 13,
+		SrcAlphaSaturate = 14,
+		Src1Color = 15,
+		OneMinusSrc1Color = 16,
+		Src1Alpha = 17,
+		OneMinusSrc1Alpha = 18
+	};
+
+	enum class AttachmentBlendOp : uint8_t
+	{
+		Add = 0,
+		Subtract = 1,
+		ReverseSubtract = 2,
+		Min = 3,
+		Max = 4
+	};
+
 	static DeviceVendor VendorIDToVendor(uint32_t vendorID)
 	{
 		switch (vendorID)
@@ -589,11 +620,6 @@ namespace Volt::RHI
 	}
 
 	// --- structures --- \\
-
-	struct ResourceManagementInfo
-	{
-		std::function<void(std::function<void()>&&)> resourceDeletionCallback;
-	};
 
 	struct MemoryRequirement
 	{
@@ -618,15 +644,14 @@ namespace Volt::RHI
 	};
 
 	struct GraphicsDeviceCreateInfo
-	{
-		RefPtr<PhysicalGraphicsDevice> physicalDevice;
-	};
+	{};
 
 	struct GraphicsContextCreateInfo
 	{
+		std::filesystem::path pipelineCacheFilepath;
+
 		GraphicsAPI graphicsApi;
-		PhysicalDeviceCreateInfo physicalDeviceInfo;
-		GraphicsDeviceCreateInfo graphicsDeviceInfo;
+		bool enableDebugLayer = false;
 	};
 
 	struct DeviceQueueCreateInfo
@@ -635,7 +660,7 @@ namespace Volt::RHI
 		QueueType queueType;
 	};
 
-	struct ImageSpecification
+	struct ImageDesc
 	{
 		uint32_t width = 1;
 		uint32_t height = 1;
@@ -646,19 +671,15 @@ namespace Volt::RHI
 		PixelFormat format = PixelFormat::R8G8B8A8_UNORM;
 		ImageUsage usage = ImageUsage::Texture;
 		ResourceType imageType = ResourceType::Image2D;
-
 		MemoryUsage memoryUsage = MemoryUsage::GPU;
 
-		AnisotropyLevel anisoLevel = AnisotropyLevel::None;
-		std::string debugName;
-
 		bool isCubeMap = false;
-		bool generateMips = false;
-
 		bool initializeImage = true;
+
+		std::string debugName;
 	};
 
-	struct SwapchainImageSpecification
+	struct SwapchainImageDesc
 	{
 		Swapchain* swapchain = nullptr;
 		uint32_t imageIndex;
@@ -701,54 +722,6 @@ namespace Volt::RHI
 		float maxDepth;
 	};
 
-	struct AttachmentInfo
-	{
-		RawPtr<ImageView> view;
-
-		ClearMode clearMode;
-
-		inline void SetClearColor(float r, float g, float b, float a) 
-		{ 
-			clearColor.float32[0] = r; 
-			clearColor.float32[1] = g; 
-			clearColor.float32[2] = b;
-			clearColor.float32[3] = a;
-		}
-
-		inline void SetClearColor(int32_t r, int32_t g, int32_t b, int32_t a)
-		{
-			clearColor.int32[0] = r;
-			clearColor.int32[1] = g;
-			clearColor.int32[2] = b;
-			clearColor.int32[3] = a;
-		}
-
-		inline void SetClearColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a)
-		{
-			clearColor.uint32[0] = r;
-			clearColor.uint32[1] = g;
-			clearColor.uint32[2] = b;
-			clearColor.uint32[3] = a;
-		}
-
-		union
-		{
-			float float32[4];
-			int32_t int32[4];
-			uint32_t uint32[4];
-
-		} clearColor;
-	};
-
-	struct RenderingInfo
-	{
-		StackVector<AttachmentInfo, MAX_COLOR_ATTACHMENT_COUNT> colorAttachments;
-		AttachmentInfo depthAttachmentInfo{};
-
-		Rect2D renderArea{};
-		uint32_t layerCount = 1;
-	};
-
 	constexpr uint32_t ALL_MIPS = std::numeric_limits<uint32_t>::max();
 	constexpr uint32_t ALL_LAYERS = std::numeric_limits<uint32_t>::max();
 
@@ -773,7 +746,7 @@ namespace Volt::RHI
 
 	struct ImageCopyData
 	{
-		PagedVector<ImageCopySubData> copySubData;
+		Vector<ImageCopySubData> copySubData;
 	};
 
 	struct ImageBarrier
@@ -828,46 +801,81 @@ namespace Volt::RHI
 
 		BarrierType type = BarrierType::None;
 
-		ImageBarrier& imageBarrier() { return m_barrier.Get<ImageBarrier>(); }
-		BufferBarrier& bufferBarrier() { return m_barrier.Get<BufferBarrier>(); }
-		GlobalBarrier& globalBarrier() { return m_barrier.Get<GlobalBarrier>(); }
+		VT_INLINE ImageBarrier& imageBarrier() { return m_barrier.Get<ImageBarrier>(); }
+		VT_INLINE BufferBarrier& bufferBarrier() { return m_barrier.Get<BufferBarrier>(); }
+		VT_INLINE GlobalBarrier& globalBarrier() { return m_barrier.Get<GlobalBarrier>(); }
 
-		const ImageBarrier& imageBarrier() const { return m_barrier.Get<ImageBarrier>(); }
-		const BufferBarrier& bufferBarrier() const { return m_barrier.Get<BufferBarrier>(); }
-		const GlobalBarrier& globalBarrier() const { return m_barrier.Get<GlobalBarrier>(); }
+		VT_INLINE const ImageBarrier& imageBarrier() const { return m_barrier.Get<ImageBarrier>(); }
+		VT_INLINE const BufferBarrier& bufferBarrier() const { return m_barrier.Get<BufferBarrier>(); }
+		VT_INLINE const GlobalBarrier& globalBarrier() const { return m_barrier.Get<GlobalBarrier>(); }
+
+		VT_INLINE static ResourceBarrierInfo InitializeAsImageBarrier()
+		{
+			ResourceBarrierInfo result;
+			result.type = BarrierType::Image;
+			result.m_barrier.Emplace<ImageBarrier>();
+
+			return result;
+		}
+
+		VT_INLINE static ResourceBarrierInfo InitializeAsBufferBarrier()
+		{
+			ResourceBarrierInfo result;
+			result.type = BarrierType::Buffer;
+			result.m_barrier.Emplace<BufferBarrier>();
+
+			return result;
+		}
+
+		VT_INLINE static ResourceBarrierInfo InitializeAsGlobalBarrier()
+		{
+			ResourceBarrierInfo result;
+			result.type = BarrierType::Global;
+			result.m_barrier.Emplace<GlobalBarrier>();
+
+			return result;
+		}
 
 	private:
 		Variant<ImageBarrier, BufferBarrier, GlobalBarrier> m_barrier;
 	};
 
-	struct IndirectDrawIndexedCommand
+	struct DrawIndexedIndirectCommand
 	{
 		uint32_t indexCount;
 		uint32_t instanceCount;
 		uint32_t firstIndex;
 		int32_t vertexOffset;
 		uint32_t firstInstance;
+
+		inline static constexpr uint32_t SizeInUInts = 5;
 	};
 
-	struct IndirectDrawCommand
+	struct DrawIndirectCommand
 	{
 		uint32_t vertexCount;
 		uint32_t instanceCount;
 		uint32_t firstVertex;
 		uint32_t firstInstance;
+
+		inline static constexpr uint32_t SizeInUInts = 4;
 	};
 
-	struct IndirectDispatchCommand
+	struct DispatchIndirectCommand
 	{
 		uint32_t x;
 		uint32_t y;
 		uint32_t z;
+
+		inline static constexpr uint32_t SizeInUInts = 3;
 	};
 
-	struct IndirectMeshTasksCommand
+	struct MeshTasksIndirectCommand
 	{
 		uint32_t x;
 		uint32_t y;
 		uint32_t z;
+
+		inline static constexpr uint32_t SizeInUInts = 3;
 	};
 }

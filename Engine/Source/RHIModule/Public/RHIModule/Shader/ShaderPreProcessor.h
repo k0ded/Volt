@@ -11,9 +11,8 @@ namespace Volt::RHI
 		std::string preProcessedResult;
 	
 		Vector<PixelFormat> outputFormats;
-		BufferLayout vertexLayout;
+		BufferLayoutMap vertexLayout;
 		BufferLayout instanceLayout;
-		ShaderRenderGraphConstantsData renderGraphConstants;
 	};
 
 	struct PreProcessorData
@@ -33,9 +32,6 @@ namespace Volt::RHI
 		static bool PreProcessPixelSource(const PreProcessorData& data, PreProcessorResult& outResult);
 		static bool PreProcessVertexSource(const PreProcessorData& data, PreProcessorResult& outResult);
 
-		static bool GenerateConstantsInformation(const PreProcessorData& data, PreProcessorResult& outResult);
-		static void GetConstantsInformationFromMemberStructRecursive(const std::string& memberType, const std::string& memberName, const PreProcessorData& data, PreProcessorResult& outResult);
-		
 		static PixelFormat FindDefaultFormatFromString(std::string_view str);
 		static PixelFormat FindFormatFromLayoutQualifier(const std::string& str);
 

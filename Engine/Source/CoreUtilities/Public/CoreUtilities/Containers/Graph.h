@@ -63,7 +63,9 @@ public:
 	void RemoveNode(const UUID64 nodeId);
 	void RemoveEdge(const UUID64 edgeId);
 
-	const bool DoNodeExist(const UUID64 nodeId) const;
+	void Clear();
+
+	bool DoNodeExist(const UUID64 nodeId) const;
 
 	const GraphEdge<EdgeMetadataType>& GetEdgeFromID(const UUID64 edgeId) const;
 	const GraphNode<NodeDataType, EdgeMetadataType>& GetNodeFromID(const UUID64 nodeId) const;
@@ -81,6 +83,13 @@ private:
 	Vector<GraphNode<NodeDataType, EdgeMetadataType>> m_nodes;
 	Vector<GraphEdge<EdgeMetadataType>> m_edges;
 };
+
+template<typename NodeDataType, typename EdgeMetadataType>
+void Graph<NodeDataType, EdgeMetadataType>::Clear()
+{
+	m_nodes.clear();
+	m_edges.clear();
+}
 
 template<typename NodeDataType, typename EdgeMetadataType>
 inline const UUID64 Graph<NodeDataType, EdgeMetadataType>::AddNode(const UUID64 nodeId, const NodeDataType& data)
@@ -174,7 +183,7 @@ void Graph<NodeDataType, EdgeMetadataType>::RemoveEdge(const UUID64 edgeId)
 }
 
 template<typename NodeDataType, typename EdgeMetadataType>
-inline const bool Graph<NodeDataType, EdgeMetadataType>::DoNodeExist(const UUID64 nodeId) const
+inline bool Graph<NodeDataType, EdgeMetadataType>::DoNodeExist(const UUID64 nodeId) const
 {
 	auto it = std::find_if(m_nodes.begin(), m_nodes.end(), [&](const auto& node) { return node.id == nodeId; });
 	return it != m_nodes.end();

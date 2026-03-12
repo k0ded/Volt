@@ -2,30 +2,25 @@
 
 #define THREAD_GROUP_SIZE 256
 
-struct Constants
-{
-    vt::RWTex2D<float> outAverageLuminance;
-    vt::RWTypedBuffer<uint> histogramBuffer;
+vt::RWTex2D<float> RWAverageLuminance;
+vt::RWTypedBuffer<uint> RWHistogramBuffer;
 
-    uint totalPixelCount;
-    float logLumRange;
-    float minLogLum;
-    float blendFactor;
-};
+uint TotalPixelCount;
+float LogLumRange;
+float MinLogLum;
+float BlendFactor;
 
 groupshared uint m_groupHistogram[THREAD_GROUP_SIZE];
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void GenerateAverageLuminanceCS(uint groupIndex : SV_GroupIndex)
 {
-    const Constants constants = GetConstants<Constants>();
-
-    uint currentBinCount = constants.histogramBuffer.Load(groupIndex);
+    uint currentBinCount = RWHistogramBuffer.Load(groupIndex);
     m_groupHistogram[groupIndex] = currentBinCount * groupIndex;
 
     GroupMemoryBarrierWithGroupSync();
     
-    constants.histogramBuffer.Store(groupIndex, 0);
+    RWHistogramBuffer.Store(groupIndex, 0);
 
     [unroll]
     for (uint cutoff = (THREAD_GROUP_SIZE >> 1); cutoff > 0; cutoff >>= 1)
@@ -40,12 +35,12 @@ void GenerateAverageLuminanceCS(uint groupIndex : SV_GroupIndex)
 
     if (groupIndex == 0)
     {
-        float weightedLogAverage = (m_groupHistogram[0] / max(constants.totalPixelCount - currentBinCount, 1.f)) - 1.f;
-        float weightedAvgLum = exp2(((weightedLogAverage / 254.f) * constants.logLumRange) + constants.minLogLum);
+        float weightedLogAverage = (m_groupHistogram[0] / max(TotalPixelCount - currentBinCount, 1.f)) - 1.f;
+        float weightedAvgLum = exp2(((weightedLogAverage / 254.f) * LogLumRange) + MinLogLum);
         
-        float lumLastFrame = constants.outAverageLuminance.Load(int2(0, 0));
-        float adaptedLum = lumLastFrame + (weightedAvgLum - lumLastFrame) * constants.blendFactor;
+        float lumLastFrame = RWAverageLuminance.Load(int2(0, 0));
+        float adaptedLum = lumLastFrame + (weightedAvgLum - lumLastFrame) * BlendFactor;
         
-        constants.outAverageLuminance.Store(0, adaptedLum);
+        RWAverageLuminance.Store(0, adaptedLum);
     }
 }

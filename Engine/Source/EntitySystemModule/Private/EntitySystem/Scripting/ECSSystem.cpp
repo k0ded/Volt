@@ -11,9 +11,9 @@ ECSSystem::~ECSSystem()
 {
 }
 
-void ECSSystem::Execute(Volt::EntityScene& scene, float deltaTime)
+void ECSSystem::Execute(Volt::EntityScene& scene)
 {
-	m_systemFunc(scene, deltaTime);
+	m_systemFunc(scene);
 }
 
 void ECSExecutionOrder::ExecuteAfter(ECSSystem& otherSystem)

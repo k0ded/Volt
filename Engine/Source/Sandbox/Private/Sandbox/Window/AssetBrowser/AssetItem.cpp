@@ -2,6 +2,7 @@
 #include "Window/AssetBrowser/AssetItem.h"
 
 #include "Sandbox/Sandbox.h"
+#include "Sandbox/EditorAssetManager.h"
 #include "Sandbox/Window/AssetBrowser/AssetBrowserSelectionManager.h"
 
 #include "Sandbox/Utility/EditorResources.h"
@@ -10,37 +11,46 @@
 
 #include "Sandbox/Utility/GlobalEditorStates.h"
 #include "Sandbox/Utility/EditorLibrary.h"
+#include "Sandbox/Utility/PremadeCommands.h"
+
 #include "Sandbox/VersionControl/VersionControl.h"
-
 #include "Sandbox/UserSettingsManager.h"
-
 #include "Sandbox/Window/AssetBrowser/EditorAssetRegistry.h"
 
 #include <AssetSystem/AssetManager.h>
-#include <Volt/Utility/PremadeCommands.h>
+
 #include <Volt-Renderer/Texture/Texture2D.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Scene/AssetTypes.h>
+
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <CoreUtilities/StringUtility.h>
+
+#include <Volt-Animation/Assets/AssetTypes.h>
 
 namespace AssetBrowser
 {
-	AssetItem::AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& aMeshToImportData)
-		: Item(selectionManager, path), meshToImportData(aMeshToImportData)
+	AssetItem::AssetItem(SelectionManager* selectionManager, const std::filesystem::path& path, AssetData& aMeshToImportData, Volt::AssetHandle inHandle)
+		: Item(selectionManager, path), meshToImportData(aMeshToImportData), handle(inHandle)
 	{
-		type = Volt::AssetManager::GetAssetTypeFromPath(path);
-		if (type == AssetTypes::None)
+		// Assign a random handle to non registered assets
+		if (handle == Volt::Asset::Null())
 		{
-			type = GetAssetTypeRegistry().GetTypeFromExtension(path.extension().string());
+			handle = {};
 		}
-		
-		handle = Volt::AssetManager::Get().GetOrAddAssetToRegistry(path, type);
+		else
+		{
+			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+			type = assetMetadata->type;
+		}
 	}
 
 	bool AssetItem::Render()
 	{
 		bool reload = Item::Render();
 
-		if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##OpenSceneAssetBrowser"); returnState != SaveReturnState::None)
+		/*if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##OpenSceneAssetBrowser"); returnState != SaveReturnState::None)
 		{
 			if (returnState == SaveReturnState::Save)
 			{
@@ -49,7 +59,7 @@ namespace AssetBrowser
 
 			Sandbox::Get().OpenScene(Volt::AssetManager::GetFilePathFromAssetHandle(mySceneToOpen));
 			mySceneToOpen = Volt::Asset::Null();
-		}
+		}*/
 
 		return reload;
 	}
@@ -80,7 +90,7 @@ namespace AssetBrowser
 
 		if (ImGui::MenuItem("Reload"))
 		{
-			Volt::AssetManager::Get().ReloadAsset(handle);
+			g_assetManager->ReloadAsset(handle);
 		}
 
 		ImGui::Separator();
@@ -104,7 +114,7 @@ namespace AssetBrowser
 
 		if (ImGui::MenuItem("Checkout"))
 		{
-			VersionControl::Edit(Volt::AssetManager::GetFilesystemPath(handle));
+			VersionControl::Edit(g_assetManager->GetAssetFilesystemPath(handle));
 		}
 
 		return removed;
@@ -114,26 +124,18 @@ namespace AssetBrowser
 	{
 		if (aNewName.empty()) { return false; }
 
-		Volt::AssetManager::Get().RenameAsset(handle, aNewName);
+		g_editorAssetManager->RenameAsset(handle, aNewName);
 
 		return true;
 	}
 
 	void AssetItem::Open()
 	{
-		if (!EditorLibrary::OpenAsset(Volt::AssetManager::Get().GetAssetRaw(handle)))
+		if (!EditorLibrary::OpenAsset(handle))
 		{
 			if (type == AssetTypes::Scene)
 			{
-				UI::OpenModal("Do you want to save scene?##OpenSceneAssetBrowser");
-				mySceneToOpen = handle;
-			}
-			else if (type == AssetTypes::MonoScript)
-			{
-				if (!Volt::PremadeCommands::RunOpenVSFileCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor, Volt::AssetManager::GetFilePathFromAssetHandle(handle)))
-				{
-					UI::Notify(NotificationType::Error, "Open file failed!", "External script editor is not valid!");
-				}
+				Sandbox::Get().OpenScene(handle);
 			}
 		}
 	}
@@ -148,7 +150,12 @@ namespace AssetBrowser
 		//file size
 		{
 			const auto fullPath = Volt::ProjectManager::GetAssetsDirectory() / std::filesystem::relative(path, "Assets\\");
-			const uintmax_t fileSize = std::filesystem::file_size(fullPath);
+			uintmax_t fileSize = 0;
+			if (std::filesystem::exists(fullPath))
+			{
+				fileSize = std::filesystem::file_size(fullPath);
+			}
+
 			const std::string sizeStringWithMetricPrefix = Utility::ToStringWithMetricPrefixCharacterForBytes(fileSize);
 			const std::string sizeStringWithSeparator = Utility::ToStringWithThousandSeparator(fileSize);
 
@@ -161,30 +168,12 @@ namespace AssetBrowser
 		RefPtr<Volt::RHI::Image> icon = previewImage ? previewImage : nullptr;
 		if (!icon && EditorResources::GetAssetIcon(type))
 		{
-			icon = EditorResources::GetAssetIcon(type)->GetImage();
+			icon = EditorResources::GetAssetIcon(type);
 		}
-
-		if (type == AssetTypes::Texture)
+		else
 		{
-			if (EditorUtils::HasThumbnail(path))
-			{
-				auto image = Volt::AssetManager::GetAsset<Volt::Texture2D>(EditorUtils::GetThumbnailPathFromPath(path));
-				if (image && image->IsValid())
-				{
-					icon = image->GetImage();
-				}
-			}
-			else
-			{
-				//icon = EditorUtils::GenerateThumbnail(path)->GetImage();
-			}
+			icon = EditorResources::GetEditorIcon(EditorIcon::GenericFile);
 		}
-
-		if (!icon)
-		{
-			icon = EditorResources::GetEditorIcon(EditorIcon::GenericFile)->GetImage();
-		}
-
 		return icon;
 	}
 
@@ -218,15 +207,10 @@ namespace AssetBrowser
 		if (assetType == AssetTypes::Skeleton) return { 1.f, 0.49f, 0.8f, 1.f };
 		if (assetType == AssetTypes::Texture) return { 0.9f, 0.26f, 0.27f, 1.f };
 		if (assetType == AssetTypes::Material) return { 0.26f, 0.35f, 0.9f, 1.f };
-		if (assetType == AssetTypes::ShaderDefinition) return { 0.26f, 0.6f, 0.9f, 1.f };
-		if (assetType == AssetTypes::ShaderSource) return { 0.26f, 0.72f, 0.9f, 1.f };
 		if (assetType == AssetTypes::Scene) return { 0.9f, 0.54f, 0.26f, 1.f };
-		if (assetType == AssetTypes::AnimatedCharacter) return { 0.9f, 0.25f, 0.49f, 1.f };
 		if (assetType == AssetTypes::Prefab) return { 0.25f, 0.93f, 0.92f, 1.f };
-		if (assetType == AssetTypes::ParticlePreset) return { 1.f, 0.62f, 0.f, 1.f };
-		if (assetType == AssetTypes::MonoScript) return { 0.f, 0.6f, 0.f, 1.f };
 		if (assetType == AssetTypes::BehaviorGraph) return { 0.75f, 0.04f, 0.83f, 1.f };
-		if (assetType == AssetTypes::MotionWeave) return { 0.74f, 0, 0.32f, 1.f };
+		if (assetType == AssetTypes::EnvironmentTexture) return { 0.5f, 0.26f, 0.8f, 1.f };
 
 		return { 0.f, 0.f, 0.f, 1.f };
 	}

@@ -1,13 +1,12 @@
 #include "vspch.h"
 
 #include "Volt-Scene/Scene.h"
-#include "Volt-Scene/Entity.h"
 #include "Volt-Scene/WorldEngine/WorldEngine.h"
 #include "Volt-Scene/Components/CoreComponents.h"
 
-#include "Volt-Scene/SceneSerializer.h"
-
 #include <JobSystem/JobSystem.h>
+
+#include <EntitySystem/Entity.h>
 
 #include <CoreUtilities/Math/Math.h>
 
@@ -144,13 +143,16 @@ namespace Volt
 			return;
 		}
 
-		JobSystem::CreateAndRunJob([cellId, this]() 
+		JobRef job = JobSystem::CreateJob("Load Cell", ExecutionPriority::Latent, [cellId, this]() 
 		{
 			auto& cell = GetCellFromID(cellId);
 
-			SceneSerializer::Get().LoadWorldCell(m_scene->shared_from_this(), cell);
+			//SceneSerializer::Get().LoadWorldCell(m_scene->shared_from_this(), cell);
 			cell.isLoaded = true;
 		});
+		JobSystem::RunJob(job);
+
+		JobSystem::WaitForCounter(job->GetCounter());
 	}
 
 	WorldCellID WorldEngine::GetCellIDFromEntity(const Entity& entity) const

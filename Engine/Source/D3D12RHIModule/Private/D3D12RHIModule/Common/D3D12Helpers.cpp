@@ -1,9 +1,10 @@
 #include "dxpch.h"
 #include "D3D12RHIModule/Common/D3D12Helpers.h"
+#include "D3D12RHIModule/Graphics/D3D12GraphicsDevice.h"
 
 namespace Volt::RHI::Utility
 {
-	D3D12_RESOURCE_DESC1 GetD3D12ResourceDesc(const ImageSpecification& specification)
+	D3D12_RESOURCE_DESC1 GetD3D12ResourceDesc(const ImageDesc& specification)
 	{
 		D3D12_RESOURCE_DESC1 result{};
 
@@ -65,7 +66,8 @@ namespace Volt::RHI::Utility
 	D3D12_RESOURCE_ALLOCATION_INFO GetResourceAllocationInfo(const D3D12_RESOURCE_DESC1& resourceDesc)
 	{
 		D3D12_RESOURCE_ALLOCATION_INFO1 info1Unused;
-		return GraphicsContext::GetDevice()->GetHandle<ID3D12Device8*>()->GetResourceAllocationInfo2(0, 1, &resourceDesc, &info1Unused);
+		ID3D12Device10* d3d12Device = GraphicsContext::GetDevice()->AsRef<D3D12GraphicsDevice>().GetDevice10();
+		return d3d12Device->GetResourceAllocationInfo2(0, 1, &resourceDesc, &info1Unused);
 	}
 
 	MemoryRequirement GetMemoryRequirements(const D3D12_RESOURCE_DESC1& resourceDesc)

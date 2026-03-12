@@ -32,7 +32,18 @@ namespace VoltSharpmake
         public BuildSystem BuildSystem;
         public Sharpmake.DotNetFramework Framework;
 
-        public CommonTarget() { }
+		public CommonTarget() { }
+
+		public CommonTarget(CommonTarget inTarget) 
+		{
+			Platform = inTarget.Platform;
+			DevEnv = inTarget.DevEnv;
+			Optimization = inTarget.Optimization;
+			Blob = inTarget.Blob;
+			BuildSystem = inTarget.BuildSystem;
+			Framework = inTarget.Framework;
+			Compiler = inTarget.Compiler;
+		}
 
         public CommonTarget(
             Platform platform,
@@ -62,6 +73,13 @@ namespace VoltSharpmake
                     Optimization.ToString(),
 					Compiler.ToString()
 				};
+
+				if (Compiler == Compiler.ClangCl)
+				{
+					nameParts.Insert(0, "-");
+					nameParts.Insert(0, "X");
+				}
+
                 return string.Join(" ", nameParts);
             }
         }
@@ -74,7 +92,7 @@ namespace VoltSharpmake
 
                 nameParts.Add(Platform.ToString());
 
-                return string.Join("_", nameParts);
+				return string.Join("_", nameParts);
             }
         }
 
@@ -125,25 +143,27 @@ namespace VoltSharpmake
 
         public static CommonTarget[] GetWin64Targets()
         {
-			Compiler compiler = Compiler.MSVC;
-			DevEnv devEnv = DevEnv.vs2022;
+			DevEnv devEnv = DevEnv.vs2022 | DevEnv.vs2026;
 
-			if (File.Exists(Sharpmake.ClangForWindows.GetWindowsClangExecutablePath(devEnv)))
-			{
-				compiler |= Compiler.ClangCl;
-			}
+			List<CommonTarget> result = new List<CommonTarget>();
 
-            var defaultTarget = new CommonTarget(
+			var defaultTarget = new CommonTarget(
                 Platform.win64,
-				compiler,
+				Compiler.MSVC,
 				devEnv,
 				Optimization.Debug | Optimization.Development | Optimization.Dist,
                 Blob.NoBlob,
                 BuildSystem.MSBuild,
-                DotNetFramework.net6_0
+                DotNetFramework.v4_8
             );
 
-            return new[] { defaultTarget };
+			//if (Util.DirectoryExists(Sharpmake.ClangForWindows.GetWindowsClangLibraryPath(devEnv)))
+			//{
+			//	defaultTarget.Compiler |= Compiler.ClangCl;
+			//}
+
+			result.Add(defaultTarget);
+			return result.ToArray();
         }
     }
 }

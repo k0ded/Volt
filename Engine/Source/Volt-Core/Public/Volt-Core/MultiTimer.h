@@ -12,11 +12,13 @@ namespace Volt
 		MultiTimer(float resetTimeMilli = 500);
 
 		void Accumulate();
+		void Update();
 
-		inline const float GetMaxFrameTime() const { return m_currentMaxTime; }
-		inline const float GetAverageTime() const { return m_averageTime; }
+		inline float GetMaxFrameTime() const { return m_currentMaxTime; }
+		inline float GetAverageTime() const { return m_averageTime; }
 
-		const float GetTime() const;
+		float GetTime() const;
+		float GetDeltaTime() const;
 
 	private:
 		float m_accumulation = 0.f;
@@ -29,5 +31,6 @@ namespace Volt
 		const float m_resetTime;
 
 		std::chrono::steady_clock::time_point m_timeAtLastAccumulation;
+		std::chrono::steady_clock::time_point m_timeAtLastUpdate;
 	};
 }

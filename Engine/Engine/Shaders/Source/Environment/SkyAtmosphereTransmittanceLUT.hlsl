@@ -3,18 +3,10 @@
 
 #include "SkyAtmosphereCommon.hlsli"
 
-struct Constants
-{
-	vt::UniformBuffer<AtmosphereParameters> atmosphereBuffer;
+vt::UniformBuffer<AtmosphereParameters> AtmosphereBuffer;
 
-	float4x4 skyInvViewProj;
-	float2 rayMarchMinMaxSPP;
-};
-
-struct Output
-{
-    [[vt::rgba16f]] float4 color : SV_Target0;
-};
+float4x4 SkyInvViewProj;
+float2 RayMarchMinMaxSPP;
 
 void UvToLutTransmittanceParams(AtmosphereParameters atmosphere, out float viewHeight, out float viewZenithCosAngle, in float2 uv)
 {
@@ -142,10 +134,9 @@ float3 GetOpticalDepth(float2 uv, float3 WorldPos, float3 WorldDir, float Sample
 	return OpticalDepth;
 }
 
-Output MainPS(FullscreenTriangleVertex input)
+float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
-    const Constants constants = GetConstants<Constants>();
-	const AtmosphereParameters atmosphere = constants.atmosphereBuffer.Load();
+	const AtmosphereParameters atmosphere = AtmosphereBuffer.Load();
 
     float viewHeight;
 	float viewZenithCosAngle;
@@ -158,10 +149,7 @@ Output MainPS(FullscreenTriangleVertex input)
 	const float depthBufferValue = -1.f;
 	const bool variableSampleCount = false;
 
-	float3 transmittance = exp(-GetOpticalDepth(input.uv, worldPos, worldDir, sampleCount, depthBufferValue, atmosphere, constants.skyInvViewProj, constants.rayMarchMinMaxSPP, variableSampleCount));
+	float3 transmittance = exp(-GetOpticalDepth(input.uv, worldPos, worldDir, sampleCount, depthBufferValue, atmosphere, SkyInvViewProj, RayMarchMinMaxSPP, variableSampleCount));
 
-	Output output;
-	output.color = float4(transmittance, 1.f);
-
-	return output;
+	return float4(transmittance, 1.f);
 }

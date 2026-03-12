@@ -13,63 +13,61 @@
 #include "Sandbox/Window/SceneViewPanel.h"
 #include "Sandbox/Window/AssetBrowser/AssetBrowserPanel.h"
 #include "Sandbox/Window/LogPanel.h"
-#include "Sandbox/Window/SplinePanel.h"
-#include "Sandbox/Window/VisonPanel.h"
 #include "Sandbox/Window/EngineStatisticsPanel.h"
-#include "Sandbox/Window/ParticleEmitterEditor.h"
-#include "Sandbox/Window/CharacterEditorPanel.h"
-#include "Sandbox/Window/AssetRegistryPanel.h"
 #include "Sandbox/Window/ThemesPanel.h"
-#include "Sandbox/Window/Taiga/TaigaPanel.h"
 #include "Sandbox/Window/EditorSettingsPanel.h"
 #include "Sandbox/Window/PhysicsPanel.h"
 #include "Sandbox/Window/RendererSettingsPanel.h"
-#include "Sandbox/Window/MeshPreviewPanel.h"
-#include "Sandbox/Window/PrefabEditorPanel.h"
-#include "Sandbox/Window/Sequencer.h"
-#include "Sandbox/Window/BlendSpaceEditorPanel.h"
-#include "Sandbox/Window/CurveGraphPanel.h"
-#include "Sandbox/Window/Timeline.h"
-#include "Sandbox/Window/ShaderEditorPanel.h"
-#include "Sandbox/Window/NavigationPanel.h"
 #include "Sandbox/Window/SceneSettingsPanel.h"
 #include "Sandbox/Window/WorldEnginePanel.h"
 #include "Sandbox/Window/MosaicEditor/MosaicEditorPanel.h"
 #include "Sandbox/Window/SkeletonEditorPanel.h"
 #include "Sandbox/Window/AnimationEditorPanel.h"
 #include "Sandbox/Window/GameUIEditorPanel.h"
-#include "Sandbox/Window/MotionWeaveDatabasePanel.h"
 #include "Sandbox/Window/RenderResourcesPanel.h"
 #include "Sandbox/Window/RenderGraphDebuggerPanel.h"
 #include "Sandbox/Window/TextureViewerPanel.h"
-#include "Sandbox/VertexPainting/VertexPainterPanel.h"
+#include "Sandbox/Window/DebugToolsPanel.h"
+#include "Sandbox/Window/AssetRegistryPanel.h"
+#include "Sandbox/Window/Animation/AnimationGraphEditorPanel.h"
+
+#include "Sandbox/SceneRendererExtensions/GridSceneRendererExtension.h"
+#include "Sandbox/SceneRendererExtensions/OutlineSceneRendererExtension.h"
+#include "Sandbox/SceneRendererExtensions/ObjectIDSceneRendererExtension.h"
+#include "Sandbox/SceneRendererExtensions/DebugSceneRendererExtension.h"
 
 #include "Sandbox/Modals/MeshImportModal.h"
 #include "Sandbox/Modals/TextureImportModal.h"
+
+#include "Sandbox/DirtyAssetsManager.h"
+#include "Sandbox/EditorAssetManager.h"
 
 #include "Sandbox/Utility/EditorResources.h"
 #include "Sandbox/Utility/EditorLibrary.h"
 #include "Sandbox/Utility/SelectionManager.h"
 #include "Sandbox/Utility/NodeEditorHelpers.h"
+#include "Sandbox/ComponentVisualizersImpl.h"
 
 #include "Sandbox/UserSettingsManager.h"
 
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 
-#include <Volt-Scene/Entity.h>
 #include <Volt-Scene/Scene.h>
-#include <Volt-Scene/SceneManager.h>
+#include <Volt-Scene/SceneEvents.h>
+#include <Volt-Scene/EntityDescCustomMetadata.h>
+#include <Volt-Scene/EntityDescSerialization.h>
 
 #include <Volt-Renderer/Camera/Camera.h>
 #include <Volt-Renderer/SceneRenderer.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/ImGuiSubSystem.h>
 
-#include <AssetSystem/AssetManager.h>
+#include <SubSystem/SubSystemManager.h>
 
-//#include <DiscordPlugin/Plugin.h>
-//#include <DiscordPlugin/DiscordManagerInterface.h>
+#include <Volt-Core/Project/ProjectManager.h>
+#include <Volt-CoreComponents/RenderingComponents.h>
 
 #include <WindowModule/Events/WindowEvents.h>
 #include <WindowModule/WindowManager.h>
@@ -82,11 +80,12 @@
 #include <EventSystem/EventSystem.h>
 #include <EventSystem/ApplicationEvents.h>
 
+#include <EntitySystem/Entity.h>
+
+#include <AssetSystem/AssetManager.h>
+
 #include <CoreUtilities/FileSystem.h>
-
-#include "Circuit/Widgets/SliderWidget.h"
-
-#include "Circuit/CircuitManager.h"
+#include <CoreUtilities/Profiling/Profiling.h>
 
 Sandbox::Sandbox()
 {
@@ -103,70 +102,108 @@ void Sandbox::OnAttach()
 {
 	RegisterEventListeners();
 
-	//SelectionManager::Initialize();
+	g_editorAssetManager = CreateScope<EditorAssetManager>(*g_assetManager);
 
-	if (!Volt::ProjectManager::GetProject().isDeprecated)
+	SelectionManager::Initialize();
+	EditorResources::Initialize();
+	VersionControl::Initialize(VersionControlSystem::Perforce);
+
+	NodeEditorHelpers::Initialize();
+	IONodeGraphEditorHelpers::Initialize();
+
+	SelectionManager::RegisterSelectionChangedCallback([&](const Vector<Volt::EntityID>& entities, SelectionContext context)
 	{
-		EditorResources::Initialize();
+		if (context == SelectionContext::Scene && m_outlineSceneRendererExtension)
+		{
+			m_outlineSceneRendererExtension->UpdateSelection(entities);
+		}
+	});
+
+	//Volt::WindowManager::Get().GetMainWindow().Maximize();
+
+	m_editorCameraController = CreateRef<EditorCameraController>(glm::radians(60.f), 1.f, 100000.f);
+
+	UserSettingsManager::LoadUserSettings();
+	const auto& userSettings = UserSettingsManager::GetSettings();
+
+	if (userSettings.sceneSettings.defaultOpenScene != Volt::Asset::Null())
+	{
+		OpenScene(userSettings.sceneSettings.defaultOpenScene);
+		if (m_runtimeScene)
+		{
+			auto& worldEngine = m_runtimeScene->GetWorldEngineMutable();
+			for (const auto& cell : worldEngine.GetCells())
+			{
+				worldEngine.BeginStreamingCell(cell.cellId);
+			}
+		}
 	}
 
-	Circuit::CircuitManager::Initialize();
-	EditorResources::Initialize();
-	//VersionControl::Initialize(VersionControlSystem::Perforce);
-
-	//NodeEditorHelpers::Initialize();
-	//IONodeGraphEditorHelpers::Initialize();
-
-	Volt::WindowManager::Get().GetMainWindow().Resize(300, 500);
-
-	//m_editorCameraController = CreateRef<EditorCameraController>(60.f, 1.f, 100000.f);
-
-	//UserSettingsManager::LoadUserSettings();
-	//const auto& userSettings = UserSettingsManager::GetSettings();
-
-	//if (userSettings.sceneSettings.defaultOpenScene != Volt::Asset::Null())
-	//{
-	//	OpenScene(userSettings.sceneSettings.defaultOpenScene);
-	//	if (m_runtimeScene)
-	//	{
-	//		auto& worldEngine = m_runtimeScene->GetWorldEngineMutable();
-	//		for (const auto& cell : worldEngine.GetCells())
-	//		{
-	//			worldEngine.BeginStreamingCell(cell.cellId);
-	//		}
-	//	}
-	//}
-
-	//if (!m_runtimeScene)
-	//{
-	//	NewScene();
-	//}
-
-	//RegisterPanels();
+	RegisterPanels();
 
 	m_fileWatcher = CreateRef<FileWatcher>();
 	CreateWatches();
 
-	//ImGuizmo::AllowAxisFlip(false);
+	ImGuizmo::AllowAxisFlip(false);
 
-	//InitializeModals();
+	InitializeModals();
 
-	//constexpr int64_t discordAppId = 1108502963447681106;
+	DirtySaveCustomization entityDescSaveCustomization;
+	entityDescSaveCustomization.CanSaveAsset = [](const Volt::AssetHandle& handle, std::string& outCantReason) -> bool
+	{
+		return true;
+	};
+	entityDescSaveCustomization.CanUserAssignPath = [](const Volt::AssetHandle& handle)
+	{
+		return false;
+	};
+	entityDescSaveCustomization.CanSaveAssetPostCreateStep = [](const Volt::AssetHandle& asset, std::filesystem::path& outAssetNewPath, std::string& outCantReason)
+	{
+		Volt::ReadOnlyAssetMetadata entityMetadata = g_assetManager->GetReadOnlyAssetMetadata(asset);
 
-	//DiscordPlugin::GetInstance().GetManager().SetApplicationID(discordAppId);
-	//DiscordPlugin::GetInstance().GetManager().SetLargeImage("icon_volt");
-	//DiscordPlugin::GetInstance().GetManager().SetLargeText("Volt");
-	//DiscordPlugin::GetInstance().GetManager().SetActivityType(ActivityType::Playing);
-	//DiscordPlugin::GetInstance().GetManager().UpdateChanges();
+		const Volt::EntityDescCustomMetadata& customMetadata = entityMetadata->GetCustomData<Volt::EntityDescCustomMetadata>();
+		const Volt::AssetHandle& owningSceneHandle = customMetadata.sceneHandle;
+
+		Volt::ReadOnlyAssetMetadata owningSceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(owningSceneHandle);
+		if (!owningSceneMetadata->HasFilepath())
+		{
+			outCantReason = "Owning Scene Does not have an associated file. Please create the scene in order to save this entity.";
+			return false;
+		}
+
+		//make the path just the filename we want the entity to have, the entity desc serializer will handle the rest of the path
+		outAssetNewPath = Volt::EntityDescSerialization::GetSavePathForEntity(asset);
+
+		return true;
+	};
+	entityDescSaveCustomization.ShouldDeleteInstead = [](const Volt::AssetHandle& asset) -> bool
+	{
+		Volt::ReadOnlyAssetMetadata entityMetadata = g_assetManager->GetReadOnlyAssetMetadata(asset);
+
+		const Volt::EntityDescCustomMetadata& customMetadata = entityMetadata->GetCustomData<Volt::EntityDescCustomMetadata>();
+		const Volt::AssetHandle& owningSceneHandle = customMetadata.sceneHandle;
+
+		//todo_fabian: there is currently an issue where reloading a scene will make it unloaded while "loaded"
+		//VT_ENSURE(g_assetManager->IsAssetLoaded(owningSceneHandle));
+		AssetReference<Volt::Scene> scene = g_assetManager->GetAssetImmediately<Volt::Scene>(owningSceneHandle);
+
+		if (!scene->IsEntityValid(customMetadata.entityID))
+		{
+			return true;
+		}
+
+		return false;
+	};
+
+	DirtyAssetsManager::Get().RegisterSaveCustomizationForType(AssetTypes::EntityDesc, entityDescSaveCustomization);
 
 	m_isInitialized = true;
 }
 
 void Sandbox::CreateWatches()
 {
-	m_fileWatcher->AddWatch(Volt::ProjectManager::GetEngineDirectory());
+	m_fileWatcher->AddWatch(Volt::ProjectManager::GetEngineAssetsDirectory());
 	m_fileWatcher->AddWatch(Volt::ProjectManager::GetAssetsDirectory());
-	m_fileWatcher->AddWatch(Volt::ProjectManager::GetMonoBinariesDirectory());
 
 	CreateModifiedWatch();
 	CreateDeleteWatch();
@@ -176,49 +213,41 @@ void Sandbox::CreateWatches()
 
 void Sandbox::RegisterPanels()
 {
+	VT_PROFILE_FUNCTION();
 	// Shelved Panels (So panel tab doesn't get cluttered up).
 #ifdef VT_DEBUG
-	EditorLibrary::RegisterWithType<PrefabEditorPanel>("", AssetTypes::Prefab);
-	EditorLibrary::Register<SplinePanel>("", m_runtimeScene);
-	EditorLibrary::Register<Sequencer>("", m_runtimeScene);
-	EditorLibrary::Register<TaigaPanel>("Advanced");
 	EditorLibrary::Register<ThemesPanel>("Advanced");
-	EditorLibrary::Register<CurveGraphPanel>("Advanced");
 #endif
 
-	EditorLibrary::Register<PropertiesPanel>("Level Editor", m_runtimeScene, m_sceneRenderer, m_sceneState, "");
+	EditorLibrary::Register<DebugToolsPanel>("Debug");
+
 	EditorLibrary::Register<LogPanel>("Advanced");
-	EditorLibrary::Register<SceneViewPanel>("Level Editor", m_runtimeScene, "");
-	EditorLibrary::Register<AssetRegistryPanel>("Advanced");
-	EditorLibrary::Register<VisionPanel>("", m_runtimeScene, m_editorCameraController.get());
-	EditorLibrary::Register<EngineStatisticsPanel>("Advanced", m_runtimeScene, m_sceneRenderer, m_gameSceneRenderer);
-	EditorLibrary::Register<EditorSettingsPanel>("", UserSettingsManager::GetSettings());
-	EditorLibrary::Register<PhysicsPanel>("Physics");
 	EditorLibrary::Register<RendererSettingsPanel>("Advanced", m_sceneRenderer);
 	EditorLibrary::Register<RenderGraphDebuggerPanel>("Advanced", m_sceneRenderer);
-	EditorLibrary::Register<VertexPainterPanel>("", m_runtimeScene, m_editorCameraController);
+	EditorLibrary::Register<EngineStatisticsPanel>("Advanced", m_runtimeScene, m_sceneRenderer, m_gameSceneRenderer);
+	EditorLibrary::Register<AssetRegistryPanel>("Advanced");
+	EditorLibrary::RegisterWithType<TextureViewerPanel>("Advanced", AssetTypes::Texture);
+
+	EditorLibrary::RegisterWithType<SkeletonEditorPanel>("Animation", AssetTypes::Skeleton);
+	EditorLibrary::RegisterWithType<AnimationEditorPanel>("Animation", AssetTypes::Animation);
+	EditorLibrary::RegisterWithType<AnimationGraphEditorPanel>("Animation", AssetTypes::AnimationGraph);
+
+	m_assetBrowserPanel = EditorLibrary::Register<AssetBrowserPanel>("Asset Browser", m_runtimeScene, "##Main");
+
+	EditorLibrary::Register<PropertiesPanel>("Level Editor", m_runtimeScene, m_sceneRenderer, m_sceneState, "");
+	EditorLibrary::Register<SceneViewPanel>("Level Editor", m_runtimeScene, "");
+	m_viewportPanel = EditorLibrary::Register<ViewportPanel>("Level Editor", m_sceneRenderer, m_runtimeScene, m_editorCameraController.get(), m_sceneState);
+	m_gameViewPanel = EditorLibrary::Register<GameViewPanel>("Level Editor", m_gameSceneRenderer, m_runtimeScene, m_sceneState);
+
+	EditorLibrary::Register<EditorSettingsPanel>("", UserSettingsManager::GetSettings());
+	EditorLibrary::Register<PhysicsPanel>("Physics");
 
 	EditorLibrary::Register<SceneSettingsPanel>("", m_runtimeScene);
 	EditorLibrary::Register<WorldEnginePanel>("", m_runtimeScene);
 	EditorLibrary::Register<RenderResourcesPanel>("");
 	EditorLibrary::Register<GameUIEditorPanel>("UI");
 
-	m_navigationPanel = EditorLibrary::Register<NavigationPanel>("Advanced", m_runtimeScene);
-	m_viewportPanel = EditorLibrary::Register<ViewportPanel>("Level Editor", m_sceneRenderer, m_runtimeScene, m_editorCameraController.get(), m_sceneState);
-	m_gameViewPanel = EditorLibrary::Register<GameViewPanel>("Level Editor", m_gameSceneRenderer, m_runtimeScene, m_sceneState);
-	m_assetBrowserPanel = EditorLibrary::Register<AssetBrowserPanel>("", m_runtimeScene, "##Main");
-
 	EditorLibrary::RegisterWithType<MosaicEditorPanel>("", AssetTypes::Material);
-	EditorLibrary::RegisterWithType<CharacterEditorPanel>("Animation", AssetTypes::AnimatedCharacter);
-	//EditorLibrary::RegisterWithType<MaterialEditorPanel>("", , myRuntimeScene);
-	EditorLibrary::RegisterWithType<SkeletonEditorPanel>("Animation", AssetTypes::Skeleton);
-	EditorLibrary::RegisterWithType<AnimationEditorPanel>("Animation", AssetTypes::Animation);
-	EditorLibrary::RegisterWithType<ParticleEmitterEditor>("", AssetTypes::ParticlePreset);
-	EditorLibrary::RegisterWithType<BlendSpaceEditorPanel>("Animation", AssetTypes::BlendSpace);
-	EditorLibrary::RegisterWithType<MeshPreviewPanel>("", AssetTypes::Mesh);
-	EditorLibrary::RegisterWithType<ShaderEditorPanel>("Shader", AssetTypes::ShaderDefinition);
-	EditorLibrary::RegisterWithType<MotionWeaveDatabasePanel>("Animation", AssetTypes::MotionWeave);
-	EditorLibrary::RegisterWithType<TextureViewerPanel>("Advanced", AssetTypes::Texture);
 
 	EditorLibrary::Sort();
 
@@ -254,6 +283,7 @@ void Sandbox::SetupNewSceneData()
 
 		spec.debugName = "Editor Viewport";
 		spec.renderScene = m_runtimeScene->GetRenderScene();
+		spec.drawDebug = true;
 
 		gameSpec.debugName = "Game Viewport";
 		gameSpec.renderScene = m_runtimeScene->GetRenderScene();
@@ -269,10 +299,19 @@ void Sandbox::SetupNewSceneData()
 		}
 
 		m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
+		auto gridExt = m_sceneRenderer->AddExtension<GridSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
+		gridExt->GetIsEnabledDelegate().BindLambda([]() 
+		{
+			return UserSettingsManager::GetSettings().sceneSettings.gridEnabled;
+		});
+
+		m_outlineSceneRendererExtension = m_sceneRenderer->AddExtension<OutlineSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
+		m_objectIDSceneRendererExtension = m_sceneRenderer->AddExtension<ObjectIDSceneRendererExtension>(Volt::SceneRendererExtensionStage::PreGBuffer);
+		m_debugSceneRendererExtension = m_sceneRenderer->AddExtension<DebugSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing, m_debugRenderer);
+
 		m_gameSceneRenderer = CreateRef<Volt::SceneRenderer>(gameSpec);
 	}
 
-	Volt::SceneManager::SetActiveScene(m_runtimeScene);
 	Volt::OnSceneLoadedEvent loadEvent{ m_runtimeScene };
 	Volt::EventSystem::DispatchEvent(loadEvent);
 }
@@ -315,6 +354,9 @@ void Sandbox::OnDetach()
 
 	NodeEditorHelpers::Shutdown();
 	VersionControl::Shutdown();
+	SelectionManager::Shutdown();
+
+	g_editorAssetManager = nullptr;
 }
 
 void Sandbox::OnScenePlay()
@@ -324,10 +366,11 @@ void Sandbox::OnScenePlay()
 
 	m_intermediateScene = m_runtimeScene;
 
-	m_runtimeScene = CreateRef<Volt::Scene>();
-	m_intermediateScene->CopyTo(m_runtimeScene);
+	m_runtimeScene = g_assetManager->CreateMemoryAsset<Volt::Scene>("PlayInEditorScene");
+	m_intermediateScene->CopyEntitiesTo(m_runtimeScene);
 
 	SetupNewSceneData();
+
 	SetPlayHasMouseControl();
 	Volt::Input::DisableInput(false);
 	m_gameViewPanel->Focus();
@@ -337,7 +380,7 @@ void Sandbox::OnScenePlay()
 	Volt::OnScenePlayEvent playEvent{};
 	Volt::EventSystem::DispatchEvent(playEvent);
 
-	Volt::ViewportResizeEvent e2 = { m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
+	Volt::ViewportResizeEvent e2 = { Volt::WindowManager::Get().GetMainWindow(), m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
 	Volt::EventSystem::DispatchEvent(e2);
 }
 
@@ -348,7 +391,7 @@ void Sandbox::OnSceneStop()
 	Volt::OnSceneStopEvent stopEvent{};
 	Volt::EventSystem::DispatchEvent(stopEvent);
 
-	Volt::ViewportResizeEvent e2 = { m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
+	Volt::ViewportResizeEvent e2 = { Volt::WindowManager::Get().GetMainWindow(), m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
 	Volt::EventSystem::DispatchEvent(e2);
 
 	m_runtimeScene->OnRuntimeEnd();
@@ -369,7 +412,9 @@ void Sandbox::OnSceneStop()
 
 void Sandbox::OnSimulationStart()
 {
-	m_sceneState = SceneState::Simulating;
+	//todo: reimplement
+
+	/*m_sceneState = SceneState::Simulating;
 	SelectionManager::DeselectAll();
 
 	m_intermediateScene = m_runtimeScene;
@@ -382,7 +427,7 @@ void Sandbox::OnSimulationStart()
 	m_runtimeScene->OnSimulationStart();
 
 	Volt::OnScenePlayEvent playEvent{};
-	Volt::EventSystem::DispatchEvent(playEvent);
+	Volt::EventSystem::DispatchEvent(playEvent);*/
 }
 
 void Sandbox::OnSimulationStop()
@@ -401,28 +446,45 @@ void Sandbox::OnSimulationStop()
 
 void Sandbox::NewScene()
 {
-	SelectionManager::DeselectAll();
-	if (m_runtimeScene)
+	if (!PromptUnloadCurrentScene())
 	{
-		Volt::AssetManager::Get().Unload(m_runtimeScene->handle);
+		return;
 	}
 
+	SelectionManager::DeselectAll();
+
 	m_runtimeScene = Volt::Scene::CreateDefaultScene("New Scene", true);
+
 	SetupNewSceneData();
 }
 
 void Sandbox::OpenScene()
 {
-	const std::filesystem::path loadPath = FileSystem::OpenFileDialogue({ { "Scene(*.vtscene)", "vtscene" } }, Volt::ProjectManager::GetAssetsDirectory());
-	OpenScene(Volt::AssetManager::GetRelativePath(loadPath));
+	const std::filesystem::path loadPath = FileSystem::OpenFileDialogue({ { "Scene(*.vtasset)", "vtasset" } }, Volt::ProjectManager::GetAssetsDirectory());
+	OpenScene(g_assetManager->GetRelativeAssetFilepath(loadPath));
 }
 
 void Sandbox::OpenScene(const std::filesystem::path& path)
 {
-	if (!path.empty() && FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / path))
+	if (path.empty())
 	{
-		OpenScene(Volt::AssetManager::GetAssetHandleFromFilePath(path));
+		return;
 	}
+	if (!FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / path))
+	{
+		UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with path {}.\nFile doesnt exist!", path.string()));
+		return;
+	}
+	const Volt::AssetHandle handle = g_assetManager->GetAssetHandleFromFilepath(path);
+	Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
+
+	if (sceneMetadata->type != AssetTypes::Scene)
+	{
+		UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with path {}.\nAsset is not a Scene!", path.string()));
+		return;
+	}
+
+	OpenScene(handle);
 }
 
 void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
@@ -432,149 +494,101 @@ void Sandbox::OpenScene(Volt::AssetHandle sceneHandle)
 		return;
 	}
 
-	SelectionManager::DeselectAll();
-
-	Volt::AssetMetadata metadata;
-
-	if (m_runtimeScene)
-	{
-		metadata = Volt::AssetManager::GetMetadataFromHandle(m_runtimeScene->handle);
-	}
-
-	const auto newScene = Volt::AssetManager::GetAsset<Volt::Scene>(sceneHandle);
-	if (!newScene)
+	if (!g_assetManager->IsValidAssetHandle(sceneHandle))
 	{
 		return;
 	}
 
-	VT_ENSURE(Volt::AssetManager::GetMetadataFromHandle(newScene->handle).type == AssetTypes::Scene);
-
-	if (metadata.handle == sceneHandle)
 	{
-		Volt::AssetManager::Get().ReloadAsset(m_runtimeScene->handle);
-	}
-	else if (m_runtimeScene && !metadata.filePath.empty())
-	{
-		Volt::AssetManager::Get().Unload(m_runtimeScene->handle);
+		Volt::ReadOnlyAssetMetadata sceneMetadata = g_assetManager->GetReadOnlyAssetMetadata(sceneHandle);
+		if (sceneMetadata->type != AssetTypes::Scene)
+		{
+			UI::Notify(UI::NotificationType::Error, "Failed to Open Scene", std::format("Failed to open scene with handle {}.\nAsset is not a Scene!", sceneHandle));
+			return;
+		}
 	}
 
-	m_runtimeScene = newScene;
+	Volt::AssetHandle oldAssetHandle = Volt::Asset::Null();
+
+	// Check if we are trying to load the same scene.
+	if (m_runtimeScene)
+	{
+		oldAssetHandle = m_runtimeScene->GetAssetHandle();
+	}
+
+	const bool isSameScene = sceneHandle == oldAssetHandle;
+
+	if (!isSameScene)
+	{
+		if (!PromptUnloadCurrentScene())
+		{
+			return;
+		}
+	}
+
+
+	SelectionManager::DeselectAll();
+
+	//load new scene
+	if (!isSameScene)
+	{
+		AssetReference<Volt::Scene> newScene = g_assetManager->GetAssetImmediately<Volt::Scene>(sceneHandle);
+		if (!newScene)
+		{
+			Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(sceneHandle);
+
+			UI::Notify(UI::NotificationType::Error,
+				std::format("Failed to open Scene '{0}'", assetMetadata->filepath.stem().string()),
+				std::format("Failed to open scene with handle '{0}'", std::to_string(sceneHandle)));
+			return;
+		}
+
+		m_runtimeScene = newScene;
+	}
+	else
+	{
+		// Reload the scene.
+		g_assetManager->ReloadAsset(sceneHandle);
+	}
 
 	SetupNewSceneData();
+	m_runtimeScene->LoadEntities();
 }
 
-bool Sandbox::LoadScene(Volt::OnSceneTransitionEvent& e)
+bool Sandbox::SaveScene(bool showDialog, bool allowDiscard)
 {
-	m_storedScene = Volt::AssetManager::GetAsset<Volt::Scene>(e.GetHandle());
-	m_shouldLoadNewScene = true;
-
-	return true;
-}
-
-void Sandbox::HandleCircuitTellEvents(const Circuit::TellEvent& e)
-{
-	/*switch (e.GetType())
+	//if we have no scene loaded, we successfully saved nothing!
+	if (!m_runtimeScene)
 	{
-		case Circuit::CircuitTellEventType::OpenWindow:
-		{
-			const Circuit::OpenWindowTellEvent& openWindowEvent = reinterpret_cast<const Circuit::OpenWindowTellEvent&>(e);
+		return true;
+	}
 
-			Volt::WindowProperties windowProperties;
-			windowProperties.Title = openWindowEvent.GetParams().title;
-			windowProperties.VSync = false;
-
-			windowProperties.Width = openWindowEvent.GetParams().startWidth;
-			windowProperties.Height = openWindowEvent.GetParams().startHeight;
-
-			windowProperties.UseTitlebar = true;
-			windowProperties.UseCustomTitlebar = true;
-
-			Volt::WindowHandle handle = Volt::WindowManager::Get().CreateNewWindow(windowProperties);
-			Volt::Window& window = Volt::WindowManager::Get().GetWindow(handle);
-			window.SetEventCallback(VT_BIND_EVENT_FN(Sandbox::HandleCircuitWindowEventCallback));
-
-
-			Circuit::WindowOpenedListenEvent ev(handle);
-			Circuit::CircuitManager::Get().BroadcastListenEvent(ev);
-
-			m_circuitRenderers.push_back(CreateScope<CircuitRenderer>(handle));
-
-			break;
-		}
-		default:
-			VT_LOG(Error, "Unhandled Circuit Event!");
-			break;
-	}*/
-}
-
-bool Sandbox::CheckForUpdateNavMesh(Volt::Entity entity)
-{
-	for (auto child : entity.GetChildren())
+	SaveDirtyAssetsFilter filter;
+	filter.includeAssetDelegate = [sceneHandle = m_runtimeScene->GetAssetHandle()](Volt::AssetHandle handle) -> bool
 	{
-		if (CheckForUpdateNavMesh(child))
+		//if its the scene being unloaded, it should be included
+		if (sceneHandle == handle)
 		{
 			return true;
 		}
-	}
 
-	return (entity.HasComponent<Volt::NavMeshComponent>() || entity.HasComponent<Volt::NavLinkComponent>()) && UserSettingsManager::GetSettings().navmeshBuildSettings.useAutoBaking;
-}
+		//other than the owning scene we only care about entity descriptions
+		Volt::ReadOnlyAssetMetadata assetMetadata = g_assetManager->GetReadOnlyAssetMetadata(handle);
 
-void Sandbox::BakeNavMesh()
-{
-	m_navigationPanel->Bake();
-}
-
-void Sandbox::SaveScene()
-{
-	if (m_runtimeScene)
-	{
-		if (Volt::AssetManager::ExistsInRegistry(m_runtimeScene->handle))
+		if (assetMetadata->type != AssetTypes::EntityDesc)
 		{
-			if (FileSystem::IsWriteable(Volt::AssetManager::GetFilesystemPath(m_runtimeScene->handle)))
-			{
-				Volt::AssetManager::Get().SaveAsset(m_runtimeScene);
-				UI::Notify(NotificationType::Success, "Scene saved!", std::format("Scene {0} was saved successfully!", m_runtimeScene->assetName));
-			}
-			else
-			{
-				UI::Notify(NotificationType::Error, "Unable to save scene!", std::format("Scene {0} was is not writeable!", m_runtimeScene->assetName));
-			}
+			return false;
 		}
-		else
+
+		//additionally we only care about entitites with the scene being unloaded as their owner
+		if (assetMetadata->GetCustomData<Volt::EntityDescCustomMetadata>().sceneHandle != sceneHandle)
 		{
-			SaveSceneAs();
+			return false;
 		}
-	}
-}
 
-void Sandbox::TransitionToNewScene()
-{
-	m_runtimeScene->OnRuntimeEnd();
-
-	SelectionManager::DeselectAll();
-	Volt::AssetManager::Get().Unload(m_runtimeScene->handle);
-
-	m_runtimeScene = CreateRef<Volt::Scene>();
-	m_storedScene->CopyTo(m_runtimeScene);
-
-	SetupNewSceneData();
-
-	m_runtimeScene->OnRuntimeStart();
-
-	Volt::ViewportResizeEvent windowResizeEvent{ m_viewportPosition.x, m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
-	Volt::EventSystem::DispatchEvent(windowResizeEvent);
-
-	Volt::OnScenePlayEvent playEvent{};
-	Volt::EventSystem::DispatchEvent(playEvent);
-
-	m_shouldLoadNewScene = false;
-	m_storedScene = nullptr;
-}
-
-void Sandbox::SaveSceneAs()
-{
-	m_shouldOpenSaveSceneAs = true;
+		return true;
+	};
+	return DirtyAssetsManager::Get().SaveAssets(showDialog, allowDiscard, filter);
 }
 
 void Sandbox::InstallMayaTools()
@@ -583,7 +597,7 @@ void Sandbox::InstallMayaTools()
 	const std::filesystem::path mayaPath = documentsPath / "maya";
 	if (!std::filesystem::exists(mayaPath))
 	{
-		UI::Notify(NotificationType::Error, "Failed to install Maya tools", "Unable to install Maya tools because no installation was found!");
+		UI::Notify(UI::NotificationType::Error, "Failed to install Maya tools", "Unable to install Maya tools because no installation was found!");
 		return;
 	}
 
@@ -626,7 +640,7 @@ void Sandbox::InstallMayaTools()
 		FileSystem::Copy("../Tools/MayaExporter/yaml", scriptsPath / "yaml");
 	}
 
-	UI::Notify(NotificationType::Success, "Successfully installed Maya tools!", "The Maya tools were successfully installed!");
+	UI::Notify(UI::NotificationType::Success, "Successfully installed Maya tools!", "The Maya tools were successfully installed!");
 }
 
 void Sandbox::RegisterEventListeners()
@@ -634,18 +648,38 @@ void Sandbox::RegisterEventListeners()
 	auto isInitializedPred = [this]() { return m_isInitialized; };
 
 	RegisterListener<Volt::AppUpdateEvent>(VT_BIND_EVENT_FN(Sandbox::OnUpdateEvent), isInitializedPred);
-	//RegisterListener<Volt::AppImGuiUpdateEvent>(VT_BIND_EVENT_FN(Sandbox::OnImGuiUpdateEvent), isInitializedPred);
-	RegisterListener<Volt::WindowRenderEvent>(VT_BIND_EVENT_FN(Sandbox::OnRenderEvent), isInitializedPred);
+	RegisterListener<Volt::AppImGuiUpdateEvent>(VT_BIND_EVENT_FN(Sandbox::OnImGuiUpdateEvent), isInitializedPred);
+	RegisterListener<Volt::AppRenderEvent>(VT_BIND_EVENT_FN(Sandbox::OnRenderEvent), isInitializedPred);
 	RegisterListener<Volt::KeyPressedEvent>(VT_BIND_EVENT_FN(Sandbox::OnKeyPressedEvent), isInitializedPred);
 	RegisterListener<Volt::ViewportResizeEvent>(VT_BIND_EVENT_FN(Sandbox::OnViewportResizeEvent), isInitializedPred);
 	RegisterListener<Volt::OnSceneLoadedEvent>(VT_BIND_EVENT_FN(Sandbox::OnSceneLoadedEvent), isInitializedPred);
-	RegisterListener<Volt::OnSceneTransitionEvent>(VT_BIND_EVENT_FN(Sandbox::LoadScene), isInitializedPred);
-	
+
 	RegisterListener<Volt::WindowTitlebarHittestEvent>([&](Volt::WindowTitlebarHittestEvent& e)
 	{
 		e.SetHit(m_titlebarHovered);
 		return false;
 	}, isInitializedPred);
+}
+
+bool Sandbox::PromptUnloadCurrentScene()
+{
+	//if a scene is already loaded, prompt user to save, then unload it
+	if (!m_runtimeScene)
+	{
+		return true;
+	}
+
+	const bool userCancelSave = !SaveScene(/*showDialog*/true, true);
+	if (userCancelSave)
+	{
+		//if the user cancels the save, dont load the new scene
+		return false;
+	}
+
+
+	m_runtimeScene->UnloadEntities();
+	m_runtimeScene.Reset();
+	return true;
 }
 
 bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
@@ -654,43 +688,40 @@ bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
 
 	EditorCommandStack::GetInstance().Update(100);
 
-	//auto mousePos = Volt::Input::GetMousePosition();
-	//Volt::Input::SetViewportMousePosition(m_gameViewPanel->GetViewportLocalPosition(mousePos));
+	auto mousePos = Volt::Input::GetMousePosition();
+	Volt::Input::SetViewportMousePosition(m_gameViewPanel->GetViewportLocalPosition(mousePos));
 
-	/*switch (m_sceneState)
+	if (m_runtimeScene)
 	{
-		case SceneState::Edit:
-			m_runtimeScene->UpdateEditor(e.GetTimestep());
-			break;
+		if (m_runtimeScene->IsFinishedLoadingEntities())
+		{
+			switch (m_sceneState)
+			{
+				case SceneState::Edit:
+					m_runtimeScene->UpdateEditor(e.GetTimestep());
+					break;
 
-		case SceneState::Play:
-			m_runtimeScene->Update(e.GetTimestep());
-			break;
+				case SceneState::Play:
+					m_runtimeScene->Update(e.GetTimestep());
+					break;
 
-		case SceneState::Pause:
-			break;
+				case SceneState::Pause:
+					break;
 
-		case SceneState::Simulating:
-			m_runtimeScene->UpdateSimulation(e.GetTimestep());
-			break;
-	}*/
+				case SceneState::Simulating:
+					m_runtimeScene->UpdateSimulation(e.GetTimestep());
+					break;
+			}
+		}
 
-	//SelectionManager::Update(m_runtimeScene);
+		SelectionManager::Update(m_runtimeScene);
+	}
 
-	/*if (m_shouldResetLayout)
+	if (m_shouldResetLayout)
 	{
 		ImGui::LoadIniSettingsFromDisk("Editor/imgui.ini");
 		m_shouldResetLayout = false;
-	}*/
-
-	/*if (m_buildStarted)
-	{
-		if (!GameBuilder::IsBuilding())
-		{
-			UI::Notify(NotificationType::Success, "Build Finished!", std::format("Build finished successfully in {0} seconds!", GameBuilder::GetCurrentBuildTime()));
-			m_buildStarted = false;
-		}
-	}*/
+	}
 
 	VT_PROFILE_SCOPE("File watcher");
 
@@ -702,12 +733,7 @@ bool Sandbox::OnUpdateEvent(Volt::AppUpdateEvent& e)
 
 	if (!m_fileChangeQueue.empty())
 	{
-		auto panel = EditorLibrary::Get<AssetBrowserPanel>();
-
-		if (panel)
-		{
-			panel->Reload();
-		}
+		EditorLibrary::Get<AssetBrowserPanel>()->Reload();
 	}
 
 	m_fileChangeQueue.clear();
@@ -719,38 +745,7 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 {
 	ImGuizmo::BeginFrame();
 
-	if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##OpenScene"); returnState != SaveReturnState::None)
-	{
-		if (returnState == SaveReturnState::Save)
-		{
-			SaveScene();
-		}
-
-		OpenScene();
-	}
-
-	if (SaveReturnState returnState = EditorUtils::SaveFilePopup("Do you want to save scene?##NewScene"); returnState != SaveReturnState::None)
-	{
-		if (returnState == SaveReturnState::Save)
-		{
-			SaveScene();
-		}
-
-		NewScene();
-	}
-
 	UpdateDockSpace();
-
-	ModalSystem::Update();
-
-	if (m_shouldOpenSaveSceneAs)
-	{
-		UI::OpenModal("Save As");
-		m_shouldOpenSaveSceneAs = false;
-	}
-
-	SaveSceneAsModal();
-	BuildGameModal();
 
 	for (auto& window : EditorLibrary::GetPanels())
 	{
@@ -761,12 +756,6 @@ bool Sandbox::OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e)
 
 			window.editorWindow->UpdateContent();
 		}
-	}
-
-	if (m_buildStarted)
-	{
-		const float buildProgess = GameBuilder::GetBuildProgress();
-		RenderProgressBar(buildProgess);
 	}
 
 	return false;
@@ -786,6 +775,16 @@ void Sandbox::RenderGameView(float timestep)
 		case SceneState::Pause:
 		case SceneState::Simulating:
 		{
+			if (!m_runtimeScene)
+			{
+				break;
+			}
+
+			if (!m_runtimeScene->IsFinishedLoadingEntities())
+			{
+				break;
+			}
+
 			Volt::Entity cameraEntity{};
 			int32_t highestPrio = -1;
 
@@ -794,7 +793,7 @@ void Sandbox::RenderGameView(float timestep)
 				if ((int32_t)camComp.priority > highestPrio)
 				{
 					highestPrio = (int32_t)camComp.priority;
-					cameraEntity = { id, m_runtimeScene.get() };
+					cameraEntity = { id, m_runtimeScene->GetEntityScene() };
 				}
 			});
 
@@ -806,7 +805,7 @@ void Sandbox::RenderGameView(float timestep)
 			const auto& camComp = cameraEntity.GetComponent<Volt::CameraComponent>();
 			const auto finalImage = m_gameSceneRenderer->GetFinalImage();
 
-			Ref<Volt::Camera> camera = CreateRef<Volt::Camera>(camComp.fieldOfView, (float)finalImage->GetWidth() / (float)finalImage->GetHeight(), camComp.nearPlane, camComp.farPlane);
+			Ref<Volt::Camera> camera = CreateRef<Volt::Camera>(glm::radians(camComp.fieldOfView), (float)finalImage->GetWidth() / (float)finalImage->GetHeight(), camComp.nearPlane, camComp.farPlane);
 			camera->SetPosition(cameraEntity.GetPosition());
 			camera->SetRotation(glm::eulerAngles(cameraEntity.GetRotation()));
 
@@ -816,46 +815,34 @@ void Sandbox::RenderGameView(float timestep)
 	}
 }
 
-bool Sandbox::OnRenderEvent(Volt::WindowRenderEvent& e)
+void Sandbox::DrawDebug()
+{
+	m_debugRenderer.Reset();
+	m_visProxyContextManagers.clear();
+
+	DrawEntityGizmos();
+}
+
+bool Sandbox::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 	VT_PROFILE_FUNCTION();
 
-	//for (Scope<CircuitRenderer>& renderer : m_circuitRenderers)
-	//{
-	//	renderer->OnRender();
-	//}
+	DrawDebug();
 
-	/*for (auto& circuitWindowPair : Circuit::CircuitManager::Get().GetWindows())
-	{
-		Volt::WindowHandle handle = circuitWindowPair.first;
-		Volt::Window& window = Volt::Application::GetWindowManager().GetWindow(handle);
-		Circuit::CircuitWindow& circuitWindow = *circuitWindowPair.second;
-
-
-		circuitWindow.GetDrawCommands();
-	}*/
-
-	//mySceneRenderer->ClearOutlineCommands();
-
-	//RenderSelection(m_editorCameraController->GetCamera());
-	//RenderGizmos(myRuntimeScene, myEditorCameraController->GetCamera());
-
-	/*switch (m_sceneState)
+	switch (m_sceneState)
 	{
 		case SceneState::Edit:
 		case SceneState::Play:
 		case SceneState::Pause:
 		case SceneState::Simulating:
-			m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera(), e.GetTimestep());
+			if (m_sceneRenderer)
+			{
+				m_sceneRenderer->OnRenderEditor(m_editorCameraController->GetCamera(), e.GetTimestep());
+			}
 			break;
-	}*/
-
-	if (m_shouldLoadNewScene)
-	{
-		TransitionToNewScene();
 	}
 
-	//RenderGameView(e.GetTimestep());
+	RenderGameView(e.GetTimestep());
 
 	return false;
 }
@@ -897,7 +884,7 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 			}
 			else if (ctrlPressed && shiftPressed)
 			{
-				SaveSceneAs();
+				SaveScene(/*show dialog*/true);
 			}
 
 			break;
@@ -907,14 +894,7 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 		{
 			if (ctrlPressed)
 			{
-				if (m_runtimeScene)
-				{
-					m_openShouldSaveScenePopup = true;
-				}
-				else
-				{
-					OpenScene();
-				}
+				OpenScene();
 			}
 
 			break;
@@ -950,7 +930,7 @@ bool Sandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 			break;
 		}
 
-		case Volt::InputCode::Spacebar :
+		case Volt::InputCode::Spacebar:
 		{
 			if (ctrlPressed)
 			{
@@ -1019,19 +999,11 @@ bool Sandbox::OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e)
 		m_gameSceneRenderer->Resize(m_viewportSize.x, m_viewportSize.y);
 	}
 
-	e.GetScene()->SetRenderSize(m_viewportSize.x, m_viewportSize.y);
+	AssetReference<Volt::Scene> scene = e.GetScene();
+	scene->SetRenderSize(m_viewportSize.x, m_viewportSize.y);
 
-	Volt::ViewportResizeEvent e2 = { m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
+	Volt::ViewportResizeEvent e2 = { Volt::WindowManager::Get().GetMainWindow(), m_viewportPosition.x,m_viewportPosition.y, m_viewportSize.x, m_viewportSize.y };
 	Volt::EventSystem::DispatchEvent(e2);
-
-	auto scene = e.GetScene();
-	
-	/*DiscordPlugin::GetInstance().GetManager().SetState(scene->GetName());
-	DiscordPlugin::GetInstance().GetManager().SetPartySize(m_runtimeScene->GetActiveLayer() + 1);
-	DiscordPlugin::GetInstance().GetManager().SetMaxPartySize(static_cast<int32_t>(m_runtimeScene->GetLayers().size()));
-	DiscordPlugin::GetInstance().GetManager().SetStartTime(std::time(nullptr));
-
-	DiscordPlugin::GetInstance().GetManager().UpdateChanges();*/
 
 	return false;
 }

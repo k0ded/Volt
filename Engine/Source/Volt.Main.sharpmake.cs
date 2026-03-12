@@ -114,7 +114,7 @@ namespace VoltSharpmake
             KitsRootPaths.SetKitsRoot10ToHighestInstalledVersion(DevEnv.vs2022);
 
 			foreach (Type solutionType in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsSubclassOf(typeof(CommonSolution))))
-                arguments.Generate(solutionType);
+				arguments.Generate(solutionType);
 		}
 	}
 }

@@ -1,10 +1,17 @@
 #include "sbpch.h"
 #include "Sandbox.h"
 
-#include <RenderCore/Shader/ShaderDefinition.h>
+#include "Sandbox/EditorAssetManager.h"
+
 #include <RenderCore/Shader/ShaderMap.h>
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
+#include <AssetSystem/AssetTypes.h>
+
+#include <AssetSystem/AssetManager.h>
+
 
 void Sandbox::CreateModifiedWatch()
 {
@@ -15,70 +22,24 @@ void Sandbox::CreateModifiedWatch()
 			return;
 		}
 
-		if (std::filesystem::is_directory(newPath))
-		{
-			return;
-		}
-
-		std::scoped_lock lock(m_fileWatcherMutex);
-		m_fileChangeQueue.emplace_back([newPath, oldPath, this]()
-		{
-			auto assemblyPath = Volt::ProjectManager::GetMonoAssemblyPath();
-			if (Utility::StringContains((newPath.parent_path().filename() / newPath.filename()).string(), (assemblyPath.parent_path().filename() / assemblyPath.filename()).string()))
-			{
-				if (m_sceneState == SceneState::Play)
-				{
-					Sandbox::Get().OnSceneStop();
-				}
-
-				UI::Notify(NotificationType::Success, "C# Assembly Reloaded!", "The C# assembly was reloaded successfully!");
-				return;
-			}
-
-			AssetType assetType = Volt::AssetManager::GetAssetTypeFromPath(newPath);
-			if (assetType == AssetTypes::Mesh ||
-				assetType == AssetTypes::Prefab ||
-				assetType == AssetTypes::Material ||
-				assetType == AssetTypes::Texture)
-			{
-				Volt::AssetManager::Get().ReloadAsset(Volt::AssetManager::GetRelativePath(newPath));
-			}
-			else if (assetType == AssetTypes::ShaderSource)
-			{
-				const auto dependents = Volt::AssetManager::GetAssetsDependentOn(Volt::AssetManager::GetAssetHandleFromFilePath(newPath));
-
-				for (const auto& assetHandle : dependents)
-				{
-					const auto dependentType = Volt::AssetManager::GetAssetTypeFromHandle(assetHandle);
-					if (dependentType != AssetTypes::ShaderDefinition)
-					{
-						continue;
-					}
-
-					Ref<Volt::ShaderDefinition> shaderDef = Volt::AssetManager::GetAsset<Volt::ShaderDefinition>(assetHandle);
-					bool succeded = Volt::ShaderMap::ReloadShaderByName(std::string(shaderDef->GetName()));
-					if (succeded)
-					{
-						UI::Notify(NotificationType::Success, "Recompiled shader!", std::format("Shader {0} was successfully recompiled!", shaderDef->GetName()));
-					}
-					else
-					{
-						UI::Notify(NotificationType::Error, "Failed to recompile shader!", std::format("Recompilation of shader {0} failed! Check log for more info!", shaderDef->GetName()));
-					}
-				}
-			}
-			else if (assetType == AssetTypes::MeshSource)
-			{
-				/*const auto assets = Volt::AssetManager::GetAllAssetsWithDependency(Volt::AssetManager::Get().GetRelativePath(newPath));
-for (const auto& asset : assets)
-{
-	if (EditorUtils::ReimportSourceMesh(asset))
-	{
-		UI::Notify(NotificationType::Success, "Re imported mesh!", std::format("Mesh {0} has been reimported!", Volt::AssetManager::GetFilePathFromAssetHandle(asset).string()));
-	}
-}*/
-			}
-		});
+		//if (!std::filesystem::exists(newPath))
+		//{
+		//	return;
+		//}
+		//
+		//if (std::filesystem::is_directory(newPath))
+		//{
+		//	return;
+		//}
+		//
+		//std::scoped_lock lock(m_fileWatcherMutex);
+		//m_fileChangeQueue.emplace_back([newPath, oldPath, this]()
+		//{
+		//	if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
+		//	{
+		//		Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
+		//	}
+		//});
 	});
 }
 
@@ -96,17 +57,14 @@ void Sandbox::CreateDeleteWatch()
 		{
 			if (!newPath.has_extension())
 			{
-				Volt::AssetManager::Get().RemoveFullFolderFromRegistry(Volt::AssetManager::GetRelativePath(newPath));
+				g_editorAssetManager->DeleteDirectory(newPath);
 			}
 			else
 			{
-				AssetType assetType = Volt::AssetManager::GetAssetTypeFromPath(Volt::AssetManager::GetRelativePath(newPath));
-				if (assetType != AssetTypes::None)
+				Volt::AssetHandle assetHandle = g_assetManager->GetAssetHandleFromFilepath(newPath);
+				if (g_assetManager->IsValidAssetHandle(assetHandle))
 				{
-					if (Volt::AssetManager::ExistsInRegistry(Volt::AssetManager::GetRelativePath(newPath)))
-					{
-						Volt::AssetManager::Get().RemoveAssetFromRegistry(Volt::AssetManager::GetRelativePath(newPath));
-					}
+					g_editorAssetManager->DeleteAsset(assetHandle);
 				}
 			}
 		});
@@ -128,13 +86,21 @@ void Sandbox::CreateMovedWatch()
 		std::scoped_lock lock(m_fileWatcherMutex);
 		m_fileChangeQueue.emplace_back([newPath, oldPath]()
 		{
-			if (!newPath.has_extension())
+			// It's a shader file.
+			if (newPath.extension() == L".hlsl" || newPath.extension() == L".hlsli")
 			{
-				Volt::AssetManager::Get().MoveFullFolder(oldPath, newPath);
+				Volt::ShaderMap::ReloadAllWithReferenceToFile(newPath);
 			}
 			else
 			{
-				Volt::AssetManager::Get().MoveAssetInRegistry(oldPath, newPath);
+				if (!newPath.has_extension())
+				{
+					g_editorAssetManager->MoveDirectoryTo(oldPath, newPath);
+				}
+				else
+				{
+					g_editorAssetManager->MoveAssetTo(g_assetManager->GetAssetHandleFromFilepath(oldPath), newPath);
+				}
 			}
 		});
 	});

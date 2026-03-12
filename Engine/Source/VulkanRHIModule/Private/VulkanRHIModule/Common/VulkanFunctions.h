@@ -9,11 +9,17 @@ namespace Volt::RHI
 	inline PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT;
 	inline PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT;
 	inline PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT;
-	
+	inline PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
+	inline PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
+
+	inline PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR vkGetPhysicalDeviceCalibrateableTimeDomainsKHR;
+	inline PFN_vkGetCalibratedTimestampsKHR vkGetCalibratedTimestampsKHR;
+
 	// Descriptor Buffers
 	inline PFN_vkGetDescriptorSetLayoutSizeEXT vkGetDescriptorSetLayoutSizeEXT;
 	inline PFN_vkGetDescriptorEXT vkGetDescriptorEXT;
 	inline PFN_vkCmdBindDescriptorBuffersEXT vkCmdBindDescriptorBuffersEXT;
+	inline PFN_vkCmdBindDescriptorBufferEmbeddedSamplersEXT vkCmdBindDescriptorBufferEmbeddedSamplersEXT;
 	inline PFN_vkCmdSetDescriptorBufferOffsetsEXT vkCmdSetDescriptorBufferOffsetsEXT;
 	inline PFN_vkGetDescriptorSetLayoutBindingOffsetEXT vkGetDescriptorSetLayoutBindingOffsetEXT;
 
@@ -32,17 +38,26 @@ namespace Volt::RHI
 	inline PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR;
 	inline PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR;
 
-	inline static void FindVulkanFunctions(VkInstance instance)
+	// Device fault
+	inline PFN_vkGetDeviceFaultInfoEXT vkGetDeviceFaultInfoEXT;
+
+	inline static void LoadVulkanFunctions(VkInstance instance)
 	{
 		VT_GET_VULKAN_FUNCTION(vkSetDebugUtilsObjectNameEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdBeginDebugUtilsLabelEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdEndDebugUtilsLabelEXT);
+		VT_GET_VULKAN_FUNCTION(vkCreateDebugUtilsMessengerEXT);
+		VT_GET_VULKAN_FUNCTION(vkDestroyDebugUtilsMessengerEXT);
+
+		VT_GET_VULKAN_FUNCTION(vkGetPhysicalDeviceCalibrateableTimeDomainsKHR);
+		VT_GET_VULKAN_FUNCTION(vkGetCalibratedTimestampsKHR);
 
 		// Descriptor Buffers
 		VT_GET_VULKAN_FUNCTION(vkGetDescriptorSetLayoutSizeEXT);
 		VT_GET_VULKAN_FUNCTION(vkGetDescriptorSetLayoutBindingOffsetEXT);
 		VT_GET_VULKAN_FUNCTION(vkGetDescriptorEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdBindDescriptorBuffersEXT);
+		VT_GET_VULKAN_FUNCTION(vkCmdBindDescriptorBufferEmbeddedSamplersEXT);
 		VT_GET_VULKAN_FUNCTION(vkCmdSetDescriptorBufferOffsetsEXT);
 
 		// Mesh shaders
@@ -59,5 +74,8 @@ namespace Volt::RHI
 		VT_GET_VULKAN_FUNCTION(vkCreateRayTracingPipelinesKHR);
 		VT_GET_VULKAN_FUNCTION(vkGetRayTracingShaderGroupHandlesKHR);
 		VT_GET_VULKAN_FUNCTION(vkCmdTraceRaysKHR);
+	
+		// Device fault
+		VT_GET_VULKAN_FUNCTION(vkGetDeviceFaultInfoEXT);
 	}
 }

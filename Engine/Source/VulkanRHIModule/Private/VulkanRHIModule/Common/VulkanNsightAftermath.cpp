@@ -6,7 +6,7 @@
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
 #include <RHIModule/Utility/NsightAftermathHelpers.h>
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <GFSDK_Aftermath.h>
 #include <GFSDK_Aftermath_Defines.h>
@@ -45,7 +45,7 @@ namespace Volt::RHI
 				//VT_LOGC(Error, "[Aftermath]", "Unexpected crash dump status: {0}", static_cast<uint32_t>(status));
 			}
 
-			RHIProxy::GetInstance().RequestApplicationClose();
+			RHIModule::GetInstance().RequestApplicationClose();
 
 			// #TODO_Ivar: Add ability to trigger application shutdown
 		}

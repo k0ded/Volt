@@ -1,17 +1,47 @@
 #pragma once
 
-#include "RenderCore/RenderGraph/RenderGraphPass.h"
+#include "RenderCore/Config.h"
 
-#include <CoreUtilities/Allocators/Handle.h>
-#include <CoreUtilities/Allocators/LinearAllocator.h>
+#include "RenderCore/RenderGraph/RenderGraphPass.h"
+#include "RenderCore/RenderGraph/RenderGraphDataAllocator.h"
+
 #include <CoreUtilities/DestructorHelper.h>
+#include <CoreUtilities/Containers/Vector.h>
+
+#include <type_traits>
 
 namespace Volt
 {
+	class RenderContext;
+	class ShaderParameterMetadataDescription;
+
+	class VTRC_API RenderGraphResourceAllocator
+	{
+	public:
+		RenderGraphResourceAllocator(RenderGraphDataAllocator* dataAllocator);
+		~RenderGraphResourceAllocator();
+
+		RenderGraphResourceAllocator(const RenderGraphResourceAllocator& other) noexcept = delete;
+		RenderGraphResourceAllocator(RenderGraphResourceAllocator&& other) noexcept;
+		RenderGraphResourceAllocator& operator=(const RenderGraphResourceAllocator& other) noexcept = delete;
+		RenderGraphResourceAllocator& operator=(RenderGraphResourceAllocator&& other) noexcept;
+
+		void Release();
+
+		template<typename ResourceType, typename... Args>
+		ResourceType* Allocate(Args&&... args);
+
+	private:
+		PagedAtomicLinearAllocator<65536> m_allocator;
+		RGVector<DestructorHelper> m_nodeDestructors;
+
+		uint32_t m_nextResourceId = 0;
+	};
+	
 	class VTRC_API RenderGraphPassAllocator
 	{
 	public:
-		RenderGraphPassAllocator() = default;
+		RenderGraphPassAllocator(RenderGraphDataAllocator* dataAllocator);
 		~RenderGraphPassAllocator();
 
 		RenderGraphPassAllocator(const RenderGraphPassAllocator& other) noexcept = delete;
@@ -19,45 +49,16 @@ namespace Volt
 		RenderGraphPassAllocator& operator=(const RenderGraphPassAllocator& other) noexcept = delete;
 		RenderGraphPassAllocator& operator=(RenderGraphPassAllocator&& other) noexcept;
 
-		typedef void(*PassExecFunc)(void*, const void*, RenderContext&);
+		typedef void(*PassExecFunc)(void*, RenderContext&);
 
-		template<typename DataType, typename ExecFunc>
-		Handle<RenderGraphPassNode<DataType>> AllocatePass(const std::string& name, ExecFunc&& execFunc)
-		{
-			// Lmabda that will execute the pass
-			auto passExecWrapperFunc = [](void* funcDataPtr, const void* passDataPtr, RenderContext& renderContext)
-			{
-				auto funcPtr = reinterpret_cast<ExecFunc*>(funcDataPtr);
-				(*funcPtr)(*reinterpret_cast<const DataType*>(passDataPtr), renderContext);
+		void Release();
 
-				funcPtr->~ExecFunc();
-			};
+		template<typename ExecFunc, typename T>
+		RGPassRef AllocatePass(const std::string& name, ExecFunc&& execFunc, const T* shaderParameters, const ShaderParameterMetadataDescription* shaderParameterMetadata);
 
-			auto passAllocation = AllocatePass(passExecWrapperFunc, sizeof(ExecFunc));
-			new (passAllocation.executionFunctionPtr) ExecFunc(std::forward<ExecFunc>(execFunc));
-
-			void* passNodeAllocation = m_passNodeAllocator.Allocate(sizeof(RenderGraphPassNode<DataType>));
-
-			// Destructor for the allocated pass object, required because we are using the linear allocator.
-			m_passDestructors.emplace_back() = DestructorHelper::Create<RenderGraphPassNode<DataType>>(passNodeAllocation);
-
-			RenderGraphPassNode<DataType>* passNode = new(passNodeAllocation) RenderGraphPassNode<DataType>();
-			passNode->name = name;
-			passNode->passAllocationStartPtr = passAllocation.passAllocationStartPtr;
-			passNode->index = m_numPasses;
-
-			m_numPasses++;
-
-			return passNode;
-		}
-
-		void ExecutePass(Handle<RenderGraphPassNodeBase> passNode, RenderContext& renderContext);
+		void ExecutePass(RGPassRef pass, RenderContext& renderContext);
 
 		VT_NODISCARD VT_INLINE uint32_t GetNumPasses() const { return m_numPasses; }
-
-	private:
-		inline static constexpr size_t MaxExecutionFunctionAllocationSize = 2 * 1024 * 1024;
-		inline static constexpr size_t MaxPassNodeAllocationSize = 1 * 1024 * 1024;
 
 		struct PassAllocation
 		{
@@ -67,50 +68,13 @@ namespace Volt
 
 		PassAllocation AllocatePass(PassExecFunc execWrapperFunc, size_t execFuncSize);
 
-		LinearAllocator<MaxExecutionFunctionAllocationSize> m_passExecutionFunctionAllocator;
-		LinearAllocator<MaxPassNodeAllocationSize> m_passNodeAllocator;
+		PagedAtomicLinearAllocator<65536> m_passExecutionFunctionAllocator;
+		PagedAtomicLinearAllocator<65536> m_passNodeAllocator;
 
 		uint32_t m_numPasses = 0;
-		Vector<DestructorHelper> m_passDestructors;
-	};
-
-	class VTRC_API RenderGraphResourceNodeAllocator
-	{
-	public:
-		RenderGraphResourceNodeAllocator() = default;
-		~RenderGraphResourceNodeAllocator();
-
-		RenderGraphResourceNodeAllocator(const RenderGraphResourceNodeAllocator& other) noexcept = delete;
-		RenderGraphResourceNodeAllocator(RenderGraphResourceNodeAllocator&& other) noexcept;
-		RenderGraphResourceNodeAllocator& operator=(const RenderGraphResourceNodeAllocator& other) noexcept = delete;
-		RenderGraphResourceNodeAllocator& operator=(RenderGraphResourceNodeAllocator&& other) noexcept;
-
-		template<typename ResourceType>
-		Handle<RenderGraphResourceNode<ResourceType>> Allocate()
-		{
-			constexpr size_t allocationSize = sizeof(RenderGraphResourceNode<ResourceType>);
-
-			void* allocationPtr = m_allocator.Allocate(allocationSize);
-			RenderGraphResourceNode<ResourceType>* newNode = new (allocationPtr) RenderGraphResourceNode<ResourceType>();
-
-			// Destructor for the allocated pass object, required because we are using the linear allocator.
-			m_nodeDestructors.emplace_back() = DestructorHelper::Create<RenderGraphResourceNode<ResourceType>>(allocationPtr);
-
-			newNode->handle = *reinterpret_cast<RenderGraphResourceHandle*>(&m_numResourceNodes);
-			m_numResourceNodes++;
-
-			return newNode;
-		}
-
-		VT_NODISCARD VT_INLINE uint32_t GetNumResourceNodes() const { return m_numResourceNodes; }
-		VT_NODISCARD VT_INLINE uint32_t GetAndIncrementHandle() { uint32_t value = m_numResourceNodes; m_numResourceNodes++; return value; }
-
-	private:
-		inline static constexpr size_t MaxResourceNodeAllocationSize = 512 * 1024;
-	
-		LinearAllocator<MaxResourceNodeAllocationSize> m_allocator;
-
-		uint32_t m_numResourceNodes = 0;
-		Vector<DestructorHelper> m_nodeDestructors;
+		RenderGraphDataAllocator* m_dataAllocator;
+		RGVector<DestructorHelper> m_passDestructors;
 	};
 }
+
+#include "RenderGraphAllocators.inl"

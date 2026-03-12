@@ -1,13 +1,11 @@
 #pragma once
 
 #include "CoreUtilities/Core.h"
+#include "CoreUtilities/Archive/Archive.h"
 
 #include <cstddef>
 #include <stdint.h>
 #include <format>
-
-class BinaryStreamReader;
-class BinaryStreamWriter;
 
 class VTCOREUTIL_API UUID64
 {
@@ -18,13 +16,16 @@ public:
 	UUID64(const UUID64&) = default;
 	~UUID64() = default;
 
-	static void Serialize(BinaryStreamWriter& streamWriter, const UUID64& data);
-	static void Deserialize(BinaryStreamReader& streamReader, UUID64& outData);
-
 	operator uint64_t() const;
 
 	VT_NODISCARD VT_INLINE const uint64_t Get() const { return m_uuid; }
 	
+	VT_INLINE friend Archive& operator<<(Archive& archive, UUID64& value)
+	{
+		archive << value.m_uuid;
+		return archive;
+	}
+
 private:
 	uint64_t m_uuid;
 };
@@ -38,12 +39,16 @@ public:
 	UUID32(const UUID32&) = default;
 	~UUID32() = default;
 
-	static void Serialize(BinaryStreamWriter& streamWriter, const UUID32& data);
-	static void Deserialize(BinaryStreamReader& streamReader, UUID32& outData);
-
 	operator uint32_t() const;
 
 	VT_NODISCARD VT_INLINE const uint32_t Get() const { return m_uuid; }
+
+	VT_INLINE friend Archive& operator<<(Archive& archive, UUID32& value)
+	{
+		archive << value.m_uuid;
+		return archive;
+	}
+
 private:
 	uint32_t m_uuid;
 };

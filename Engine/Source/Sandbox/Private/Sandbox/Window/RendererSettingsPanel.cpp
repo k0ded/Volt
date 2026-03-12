@@ -1,7 +1,7 @@
 #include "sbpch.h"
 #include "Window/RendererSettingsPanel.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Renderer/SceneRenderer.h>
 #include <Volt-Renderer/Renderer.h>
@@ -15,11 +15,6 @@ RendererSettingsPanel::RendererSettingsPanel(Ref<Volt::SceneRenderer>& sceneRend
 
 void RendererSettingsPanel::UpdateMainContent()
 {
-	if (ImGui::Button("Invalidate Render Scene"))
-	{
-		m_sceneRenderer->Invalidate();
-	}
-
 	static const Vector<std::string> visualizationStrings =
 	{
 		"None",

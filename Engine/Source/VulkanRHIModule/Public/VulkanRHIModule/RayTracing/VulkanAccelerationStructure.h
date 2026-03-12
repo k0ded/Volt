@@ -6,7 +6,7 @@ struct VkAccelerationStructureKHR_T;
 
 namespace Volt::RHI
 {
-	class StorageBuffer;
+	class Buffer;
 	class VulkanAccelerationStructure : public AccelerationStructure
 	{
 	public:
@@ -21,7 +21,7 @@ namespace Volt::RHI
 	private:
 		void InitializeFromInfo(const AccelerationStructureCreateInfo& createInfo);
 	
-		RefPtr<StorageBuffer> m_backingBuffer;
+		RefPtr<Buffer> m_backingBuffer;
 		VkAccelerationStructureKHR_T* m_handle = nullptr;
 		uint64_t m_deviceAddress = 0;
 	};

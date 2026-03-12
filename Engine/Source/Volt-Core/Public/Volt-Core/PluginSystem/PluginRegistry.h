@@ -17,8 +17,9 @@ namespace Volt
 	class VTCORE_API PluginRegistry : public SubSystem
 	{
 	public:
-		PluginRegistry();
-		~PluginRegistry();
+		~PluginRegistry() override = default;
+
+		void OnPostStageInitializaton() override;
 
 		void FindAndRegisterPluginsInDirectory(const std::filesystem::path& directory);
 		VT_NODISCARD const PluginDefinition& GetPluginDefinitionByName(const std::string& name) const;
@@ -31,9 +32,9 @@ namespace Volt
 	private:
 		void DeserializePlugin(const std::filesystem::path& filepath);
 
-		vt::map<VoltGUID, PluginDefinition> m_registeredPlugins;
+		Map<VoltGUID, PluginDefinition> m_registeredPlugins;
 
 		Graph<VoltGUID, uint32_t> m_pluginDependencyGraph;
-		vt::map<VoltGUID, UUID64> m_guidToNodeId;
+		Map<VoltGUID, UUID64> m_guidToNodeId;
 	};
 }

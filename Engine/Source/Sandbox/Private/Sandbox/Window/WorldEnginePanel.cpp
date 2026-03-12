@@ -1,20 +1,26 @@
 #include "sbpch.h"
 #include "Window/WorldEnginePanel.h"
 
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <CoreUtilities/Math/Math.h>
 
-WorldEnginePanel::WorldEnginePanel(Ref<Volt::Scene>& editorScene)
+WorldEnginePanel::WorldEnginePanel(AssetReference<Volt::Scene>& editorScene)
 	: EditorWindow("World Engine"), m_editorScene(editorScene)
 {
 }
 
 void WorldEnginePanel::UpdateMainContent()
 {
+	if (!m_editorScene)
+	{
+		ImGui::Text("No Scene Loaded.");
+		return;
+	}
+
 	auto& worldEngine = m_editorScene->GetWorldEngineMutable();
 
-	if (UI::BeginProperties("worldEngineSettings"))
+ 	if (UI::BeginProperties("worldEngineSettings"))
 	{
 		if (UI::Property("Cell Size", worldEngine.GetSettingsMutable().cellSize))
 		{

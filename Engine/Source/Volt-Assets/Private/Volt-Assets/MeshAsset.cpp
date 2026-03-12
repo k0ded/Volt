@@ -9,67 +9,154 @@
 #include <AssetSystem/AssetFactory.h>
 #include <AssetSystem/AssetManager.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 namespace Volt
 {
 	VT_REGISTER_ASSET_FACTORY(AssetTypes::Mesh, MeshAsset);
+	VT_REGISTER_CUSTOM_ASSET_METADATA_TYPE(MeshCustomMetadata, AssetTypes::Mesh);
 
 	MeshAsset::MeshAsset()
 	{
 		m_mesh = CreateRef<Mesh>();
 	}
 
-	void MeshAsset::OnDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state)
+	void MeshAsset::OnAssetDependencyChanged(AssetHandle dependencyHandle, AssetChangedState state)
 	{
-		if (state == AssetChangedState::Updated)
+		if (state == AssetChangedState::Loaded)
 		{
-			for (const auto& [index, materialHandle] : m_materials)
+			for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
 			{
+				const AssetHandle materialHandle = m_materials.at(i);
 				if (materialHandle == dependencyHandle)
 				{
-					if (AssetManager::IsLoaded(materialHandle))
+					Ref<RenderMaterial> renderMaterial;
+
+					AssetReference<MaterialAsset> materialAsset;
+					if (g_assetManager->TryGetAssetIfLoaded(materialHandle, materialAsset))
 					{
-						Ref<MaterialAsset> materialAsset = AssetManager::GetAsset<MaterialAsset>(materialHandle);
-						m_mesh->SetMaterial(materialAsset->GetRenderMaterial(), index);
+						renderMaterial = materialAsset->GetRenderMaterial();
 					}
 					else
 					{
-						m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, index);
+						renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
 					}
+					m_mesh->SetMaterial(renderMaterial, i);
 					break;
 				}
 			}
 		}
-		else if (state == AssetChangedState::Removed)
+		else if (state == AssetChangedState::Deleted)
 		{
-			for (auto& [index, materialHandle] : m_materials)
+			for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
 			{
+				const AssetHandle materialHandle = m_materials.at(i);
 				if (materialHandle == dependencyHandle)
 				{
-					materialHandle = Asset::Null();
-
-					m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, index);
+					m_materials[i] = Asset::Null();
+					m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, i);
 					break;
 				}
 			}
 		}
 	}
 
-	void MeshAsset::FinalizeDeserialization()
+	void MeshAsset::OnPreSave(CustomAssetMetadata& customMetadata)
 	{
-		for (const auto& [index, materialHandle] : m_materials)
+		MeshCustomMetadata& meshCustomMetadata = customMetadata.GetMutableCustomMetadata<MeshCustomMetadata>();
+		meshCustomMetadata.materialReferences = m_materials;
+	}
+
+	void MeshAsset::Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata)
+	{
+		archive << m_materials;
+	
+		// Setup materials
+		if (archive.IsLoading())
 		{
-			if (AssetManager::IsLoaded(materialHandle))
+			for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
 			{
-				Ref<MaterialAsset> materialAsset = AssetManager::GetAsset<MaterialAsset>(materialHandle);
-				m_mesh->SetMaterial(materialAsset->GetRenderMaterial(), index);
+				const AssetHandle materialHandle = m_materials.at(i);
+
+				Ref<RenderMaterial> renderMaterial;
+
+				AssetReference<MaterialAsset> materialAsset;
+				if (g_assetManager->TryGetAsset(materialHandle, materialAsset))
+				{
+					renderMaterial = materialAsset->GetRenderMaterial();
+				}
+				else
+				{
+					renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
+				}
+
+				if (materialAsset.IsValid())
+				{
+					m_materialReferences.emplace_back(materialAsset);
+				}
+
+				m_mesh->SetMaterial(renderMaterial, i);
+			}
+		}
+		
+		// Mesh serialize will initialize the mesh.
+		m_mesh->Serialize(archive);
+	}
+
+	void MeshAsset::GatherAssetDependencies(AssetDependencyGatherContext& gatherContext, ReadOnlyAssetMetadata assetMetadata)
+	{
+		const MeshCustomMetadata& meshCustomMetadata = assetMetadata->GetCustomData<MeshCustomMetadata>();
+
+		for (const AssetHandle& materialHandle : meshCustomMetadata.materialReferences)
+		{
+			gatherContext.AddDependency(materialHandle, AssetDependencyType::Hard);
+		}
+	}
+
+	void MeshAsset::Initialize(const MeshInitializer& meshInitializer, const Vector<AssetReference<MaterialAsset>>& materials)
+	{
+		VT_PROFILE_FUNCTION();
+		VT_ENSURE_MSG(!m_isInitialized, "A mesh should not be initialized more than once!");
+
+		m_materials.resize(materials.size());
+		for (size_t i = 0; i < m_materials.size(); ++i)
+		{
+			m_materials[i] = materials[i]->GetAssetHandle();
+		}
+
+		m_mesh->SetName(std::string(GetAssetName()));
+		m_mesh->Initialize(meshInitializer);
+
+		m_isInitialized = true;
+	}
+
+	void MeshAsset::Initialize(MeshInitializer& meshInitializer, const Vector<AssetHandle>& materials)
+	{
+		VT_ENSURE_MSG(!m_isInitialized, "A mesh should not be initialized more than once!");
+
+		m_materials.resize(materials.size());
+		for (uint32_t i = 0; i < static_cast<uint32_t>(m_materials.size()); ++i)
+		{
+			const AssetHandle materialHandle = materials.at(i);
+			m_materials[i] = materialHandle;
+
+			Ref<RenderMaterial> renderMaterial;
+
+			AssetReference<MaterialAsset> materialAsset;
+			if (g_assetManager->TryGetAssetIfLoaded(materialHandle, materialAsset))
+			{
+				renderMaterial = materialAsset->GetRenderMaterial();
 			}
 			else
 			{
-				m_mesh->SetMaterial(Renderer::GetDefaultResources().defaultMaterial, index);
+				renderMaterial = Renderer::GetDefaultResources().defaultMaterial;
 			}
+			meshInitializer.AddMaterial(renderMaterial, i);
 		}
 
-		m_mesh->SetName(assetName);
-		m_mesh->Construct();
+		m_mesh->SetName(std::string(GetAssetName()));
+		m_mesh->Initialize(meshInitializer);
+
+		m_isInitialized = true;
 	}
 }

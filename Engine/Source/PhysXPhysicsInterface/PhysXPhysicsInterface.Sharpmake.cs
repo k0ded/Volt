@@ -1,5 +1,4 @@
-using System;
-using System.IO;
+using Sharpmake;
 
 namespace VoltSharpmake
 {
@@ -27,6 +26,8 @@ namespace VoltSharpmake
             conf.AddPublicDependency<PhysicsInterface>(target);
 
 			conf.EventPostBuild.Add(@"copy /Y " + "\"" + conf.TargetPath + "\\" + Name + ".dll\"" + " \"" + Globals.BinariesDirectory + "\"");
+
+			conf.Options.Add(Options.Vc.Linker.IgnoreImportLibrary.Enable);
 		}
-    }
+	}
 }

@@ -1,14 +1,10 @@
 #pragma once
 
 #include "Volt-Animation/Config.h"
-
-#include <Volt-Core/AssetTypes.h>
+#include "Volt-Animation/Assets/AssetTypes.h"
 
 #include <AssetSystem/Asset.h>
 #include <AssetSystem/AssetFactory.h>
-
-#include <CoreUtilities/FileIO/BinaryStreamWriter.h>
-#include <CoreUtilities/FileIO/BinaryStreamReader.h>
 
 #include <glm/glm.hpp>
 
@@ -24,18 +20,12 @@ namespace Volt
 			glm::quat rotation = { 1.f, 0.f, 0.f, 0.f };
 			glm::vec3 scale = { 1.f };
 
-			static void Serialize(BinaryStreamWriter& streamWriter, const TRS& data)
+			VT_INLINE friend Archive& operator<<(Archive& archive, TRS& value)
 			{
-				streamWriter.Write(data.translation);
-				streamWriter.Write(data.rotation);
-				streamWriter.Write(data.scale);
-			}
-
-			static void Deserialize(BinaryStreamReader& streamReader, TRS& outData)
-			{
-				streamReader.Read(outData.translation);
-				streamReader.Read(outData.rotation);
-				streamReader.Read(outData.scale);
+				archive << value.translation;
+				archive << value.rotation;
+				archive << value.scale;
+				return archive;
 			}
 		};
 
@@ -43,14 +33,10 @@ namespace Volt
 		{
 			Vector<TRS> localTRS;
 
-			static void Serialize(BinaryStreamWriter& streamWriter, const Pose& data)
+			VT_INLINE friend Archive& operator<<(Archive& archive, Pose& value)
 			{
-				streamWriter.WriteRaw(data.localTRS);
-			}
-
-			static void Deserialize(BinaryStreamReader& streamReader, Pose& outData)
-			{
-				streamReader.ReadRaw(outData.localTRS);
+				archive << value.localTRS;
+				return archive;
 			}
 		};
 
@@ -59,28 +45,23 @@ namespace Volt
 			uint32_t frame;
 			std::string name;
 
-			static void Serialize(BinaryStreamWriter& streamWriter, const Event& data)
+			VT_INLINE friend Archive& operator<<(Archive& archive, Event& value)
 			{
-				streamWriter.Write(data.frame);
-				streamWriter.Write(data.name);
-			}
-
-			static void Deserialize(BinaryStreamReader& streamReader, Event& outData)
-			{
-				streamReader.Read(outData.frame);
-				streamReader.Read(outData.name);
+				archive << value.frame;
+				archive << value.name;
+				return archive;
 			}
 		};
 
-		const Vector<glm::mat4> SampleStartTime(float aStartTime, Ref<Skeleton> aSkeleton, bool looping);
-		const Vector<glm::mat4> Sample(float samplePercent, Ref<Skeleton> skeleton, bool looping);
-		const Vector<glm::mat4> Sample(uint32_t frameIndex, Ref<Skeleton> aSkeleton);
+		const Vector<glm::mat4> SampleStartTime(float aStartTime, const Skeleton& aSkeleton, bool looping);
+		const Vector<glm::mat4> Sample(float samplePercent, const Skeleton& skeleton, bool looping);
+		const Vector<glm::mat4> Sample(uint32_t frameIndex, const Skeleton& aSkeleton);
 
-		static Vector<glm::mat4> LocalPoseToGlobalMatrices(const Pose& localPose, Ref<Skeleton> aSkeleton);
+		static Vector<glm::mat4> LocalPoseToGlobalMatrices(const Pose& localPose, const Skeleton& aSkeleton);
 		static void BlendPoseWith(Pose& target, const Pose& poseToBlendWith, float blendFactor);
 		static Pose GetBlendedPose(const Pose& target, const Pose& poseToBlendWith, float blendFactor);
 
-		const Vector<TRS> SampleTRS(float aStartTime, Ref<Skeleton> aSkeleton, bool looping, float speed = 1.f) const;
+		const Vector<TRS> SampleTRS(float aStartTime, const Skeleton& aSkeleton, bool looping, float speed = 1.f) const;
 		const bool IsAtEnd(float startTime, float speed);
 		const bool HasPassedTime(float startTime, float speed, float time);
 
@@ -97,8 +78,9 @@ namespace Volt
 		inline const Vector<Event>& GetEvents() const { return m_events; }
 
 		static AssetType GetStaticType() { return AssetTypes::Animation; }
-		AssetType GetType() override { return GetStaticType(); };
+		AssetType GetType() const override { return GetStaticType(); };
 		uint32_t GetVersion() const override { return 1; }
+		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
 	private:
 		struct PoseData
@@ -112,7 +94,6 @@ namespace Volt
 
 		friend class FbxSourceImporter;
 		friend class AnimationImporter;
-		friend class AnimationSerializer;
 
 		Vector<Pose> m_frames;
 		Vector<Event> m_events;

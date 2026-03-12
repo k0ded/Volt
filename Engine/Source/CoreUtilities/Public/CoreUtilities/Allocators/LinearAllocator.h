@@ -1,79 +1,168 @@
 #pragma once
 
-#include "CoreUtilities/Allocators/DefaultAllocator.h"
+#include "CoreUtilities/Allocators/ContainerAllocators.h"
 
-#include <atomic>
+/*
+	A non-thread safe linear allocator.
+	Uses pages internally for allocation, allows larger-than page size allocations.
+*/
 
-template<size_t MaxByteSize, typename SecondaryAllocator = DefaultAllocator>
+template<uint64_t MinPageSize, typename SecondaryAllocator = DefaultHeapAllocator>
 class LinearAllocator
 {
 public:
 	LinearAllocator()
-	{ 
-		m_dataBuffer = reinterpret_cast<uint8_t*>(SecondaryAllocator::Allocate(MaxByteSize, alignof(uint8_t)));
-	}
+	{}
 
 	~LinearAllocator()
 	{
-		if (m_dataBuffer)
+		PageHeader* currentPage = m_basePage;
+
+		// No pages have been allocated
+		if (currentPage == nullptr)
 		{
-			SecondaryAllocator::Free(m_dataBuffer, 0);
+			return;
 		}
-	}
 
-	LinearAllocator(const LinearAllocator& other) noexcept
-	{
-		m_dataBuffer = new uint8_t[MaxByteSize];
+		// Find the last page.
+		while (currentPage->next != nullptr)
+		{
+			currentPage = currentPage->next;
+		}
 
-		m_dataPointer.store(other.m_dataPointer.load());
-		memcpy(m_dataBuffer, other.m_dataBuffer, MaxByteSize);
+		// Walk backwards and free the pages along the ways
+		while (currentPage->prev != nullptr)
+		{
+			PageHeader* tempPage = currentPage;
+			currentPage = currentPage->prev;
+
+			FreePage(tempPage);
+		}
+
+		// Finally free the base page.
+		FreePage(m_basePage);
 	}
 
 	LinearAllocator(LinearAllocator&& other) noexcept
 	{
-		m_dataPointer.store(other.m_dataPointer.load());
-		m_dataBuffer = other.m_dataBuffer;
-
-		other.m_dataBuffer = nullptr;
-	}
-
-	LinearAllocator& operator=(const LinearAllocator& other) noexcept
-	{
-		m_dataPointer.store(other.m_dataPointer.load());
-		memcpy(m_dataBuffer, other.m_dataBuffer, MaxByteSize);
-
-		return *this;
+		m_basePage = other.m_basePage;
+		other.m_basePage = nullptr;
 	}
 
 	LinearAllocator& operator=(LinearAllocator&& other) noexcept
 	{
-		m_dataPointer.store(other.m_dataPointer.load());
-		m_dataBuffer = other.m_dataBuffer;
-
-		other.m_dataBuffer = nullptr;
+		if (this != &other)
+		{
+			m_basePage = other.m_basePage;
+			other.m_basePage = nullptr;
+		}
 
 		return *this;
 	}
 
-	size_t GetAllocatedSize()
+	LinearAllocator(const LinearAllocator&) noexcept = delete;
+	LinearAllocator& operator=(const LinearAllocator&) noexcept = delete;
+
+	void* Allocate(uint64_t allocationSize)
 	{
-		return m_dataPointer;
+		if (m_basePage == nullptr)
+		{
+			m_basePage = AllocatePage(std::max(MinPageSize, allocationSize));
+		}
+
+		PageHeader* currentPage = m_basePage;
+
+		void* allocation = nullptr;
+
+		while (true)
+		{
+			if (currentPage->TryAllocate(allocationSize, allocation))
+			{
+				break;
+			}
+			else
+			{
+				if (currentPage->next == nullptr)
+				{
+					PageHeader* newPage = AllocatePage(allocationSize);
+					currentPage->next = newPage;
+					newPage->prev = currentPage;
+				}
+
+				currentPage = currentPage->next;
+			}
+		}
+
+		return allocation;
 	}
 
-	void* Allocate(size_t allocationSize)
+	void Reset()
 	{
-		size_t allocationOffset = m_dataPointer.fetch_add(allocationSize);
-		VT_ENSURE(m_dataPointer <= MaxByteSize);
+		PageHeader* currentPage = m_basePage;
 
-		return &m_dataBuffer[allocationOffset];
-	}
-
-	uint8_t* GetData() const
-	{
-		return m_dataBuffer;
+		while (currentPage != nullptr)
+		{
+			currentPage->dataPointer = 0;
+			currentPage = currentPage->next;
+		}
 	}
 
 private:
-	uint8_t* m_dataBuffer = nullptr;
-	std::atomic_size_t m_dataPointer = 0;
+	struct PageHeader
+	{
+		PageHeader* next = nullptr;
+		PageHeader* prev = nullptr;
+		uint64_t size = 0;
+		uint64_t dataPointer = 0;
+
+		uint8_t* GetData()
+		{
+			return reinterpret_cast<uint8_t*>(this) + sizeof(PageHeader);
+		}
+
+		constexpr uint64_t GetDataSize()
+		{
+			return size - sizeof(PageHeader);
+		}
+
+		uint64_t GetAvailableSize()
+		{
+			return dataPointer >= GetDataSize() ? 0 : GetDataSize() - dataPointer;
+		}
+
+		bool TryAllocate(uint64_t allocationSize, void*& outDataPtr)
+		{
+			if (GetAvailableSize() < allocationSize)
+			{
+				return false;
+			}
+
+			uint64_t dataOffset = dataPointer;
+			dataPointer += allocationSize;
+
+			outDataPtr = GetData() + dataOffset;
+			return true;
+		}
+	};
+
+	PageHeader* AllocatePage(uint64_t pageSize)
+	{
+		const uint64_t allocationSize = pageSize + sizeof(PageHeader);
+
+		uint8_t* newPageAlloc = reinterpret_cast<uint8_t*>(m_allocator.Allocate(allocationSize, 0));
+		PageHeader* newPage = new(newPageAlloc) PageHeader();
+
+		newPage->size = allocationSize;
+
+		return newPage;
+	}
+
+	void FreePage(PageHeader* page)
+	{
+		page->~PageHeader();
+		m_allocator.Free(page);
+	}
+
+	SecondaryAllocator::template ForElementType<uint8_t> m_allocator;
+	PageHeader* m_basePage = nullptr;
 };

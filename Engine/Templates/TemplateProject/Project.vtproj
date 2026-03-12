@@ -1,0 +1,11 @@
+Project:
+  EngineVersion: 0.1.5
+  Name: Project
+  CompanyName: Default
+  AssetsDirectory: Assets
+  AudioBanksDirectory: Audio/Banks
+  IconPath: ""
+  CursorPath: ""
+  StartScenePath: ""
+  Plugins:
+    - "Game"

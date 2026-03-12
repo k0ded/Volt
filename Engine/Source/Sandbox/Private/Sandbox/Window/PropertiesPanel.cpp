@@ -5,6 +5,7 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Utility/ComponentPropertyUtilities.h"
+#include "Sandbox/Utility/PremadeCommands.h"
 
 #include "Sandbox/Sandbox.h"
 #include "Sandbox/UserSettingsManager.h"
@@ -12,14 +13,15 @@
 
 #include <Volt-CoreComponents/LightComponents.h>
 
+#include <EntitySystem/ComponentRegistry.h>
+
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 #include <InputModule/MouseButtonCodes.h>
 
-#include <Volt/Utility/UIUtility.h>
-#include <Volt/Utility/PremadeCommands.h>
+#include <Volt-Application/UI/UIUtility.h>
 
-PropertiesPanel::PropertiesPanel(Ref<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id)
+PropertiesPanel::PropertiesPanel(AssetReference<Volt::Scene>& currentScene, Ref<Volt::SceneRenderer>& currentSceneRenderer, SceneState& sceneState, const std::string& id)
 	: EditorWindow("Properties", false, id), myCurrentScene(currentScene), myCurrentSceneRenderer(currentSceneRenderer), mySceneState(sceneState)
 {
 	Open();
@@ -53,7 +55,7 @@ void PropertiesPanel::UpdateMainContent()
 			auto& tag = firstEntity.GetComponent<Volt::TagComponent>();
 			if (UI::InputText("Name", tag.tag))
 			{
-				EditorUtils::MarkEntityAsEdited(firstEntity);
+				EditorUtils::MarkEntityComponentAsEdited(*myCurrentScene, firstEntity, Volt::GetTypeGUID<Volt::TagComponent>());
 			}
 		}
 	}
@@ -103,7 +105,7 @@ void PropertiesPanel::UpdateMainContent()
 				if (entity.HasComponent<Volt::TagComponent>())
 				{
 					entity.GetComponent<Volt::TagComponent>().tag = inputText;
-					EditorUtils::MarkEntityAsEdited(entity);
+					EditorUtils::MarkEntityComponentAsEdited(*myCurrentScene, firstEntity, Volt::GetTypeGUID<Volt::TagComponent>());
 				}
 			}
 		}
@@ -120,17 +122,13 @@ void PropertiesPanel::UpdateMainContent()
 
 			if (entity.HasComponent<Volt::TransformComponent>())
 			{
-				static bool shouldUpdateNavMesh = false;
-
 				auto& transform = entity.GetComponent<Volt::TransformComponent>();
 
 				if (UI::PropertyAxisColor("Position", transform.position, 0.f))
 				{
-					shouldUpdateNavMesh = true;
-
 					if (myMidEvent == false)
 					{
-						Ref<ValueCommand<glm::vec3>> command = CreateRef<ValueCommand<glm::vec3>>(&transform.position, transform.position);
+						Ref<ValueCommand<glm::vec3>> command = CreateRef<ValueCommand<glm::vec3>>(&transform.position, transform.position, *myCurrentScene, entityId);
 						EditorCommandStack::PushUndo(command);
 						myMidEvent = true;
 					}
@@ -141,7 +139,7 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalPosition(transform.position);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAndChildrenAsEdited(ent);
+						EditorUtils::MarkEntityAndChildrenComponentAsEdited(*myCurrentScene, ent, Volt::GetTypeGUID<Volt::TransformComponent>());
 					}
 				}
 
@@ -150,12 +148,11 @@ void PropertiesPanel::UpdateMainContent()
 
 				if (UI::PropertyAxisColor("Rotation", rotDegrees, 0.f))
 				{
-					shouldUpdateNavMesh = true;
 					transform.rotation = glm::quat{ glm::radians(rotDegrees) };
 
 					if (myMidEvent == false)
 					{
-						Ref<ValueCommand<glm::quat>> command = CreateRef<ValueCommand<glm::quat>>(&transform.rotation, transform.rotation);
+						Ref<ValueCommand<glm::quat>> command = CreateRef<ValueCommand<glm::quat>>(&transform.rotation, transform.rotation, *myCurrentScene, entityId);
 						EditorCommandStack::PushUndo(command);
 						myMidEvent = true;
 					}
@@ -166,17 +163,15 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalRotation(transform.rotation);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAsEdited(ent);
+						EditorUtils::MarkEntityAndChildrenComponentAsEdited(*myCurrentScene, ent, Volt::GetTypeGUID<Volt::TransformComponent>());
 					}
 				}
 
 				if (UI::PropertyAxisColor("Scale", transform.scale, 1.f))
 				{
-					shouldUpdateNavMesh = true;
-
 					if (myMidEvent == false)
 					{
-						Ref<ValueCommand<glm::vec3>> command = CreateRef<ValueCommand<glm::vec3>>(&transform.scale, transform.scale);
+						Ref<ValueCommand<glm::vec3>> command = CreateRef<ValueCommand<glm::vec3>>(&transform.scale, transform.scale, *myCurrentScene, entityId);
 						EditorCommandStack::PushUndo(command);
 						myMidEvent = true;
 					}
@@ -187,14 +182,8 @@ void PropertiesPanel::UpdateMainContent()
 						ent.SetLocalScale(transform.scale);
 						myCurrentScene->InvalidateEntityTransform(entId);
 
-						EditorUtils::MarkEntityAsEdited(ent);
+						EditorUtils::MarkEntityAndChildrenComponentAsEdited(*myCurrentScene, ent, Volt::GetTypeGUID<Volt::TransformComponent>());
 					}
-				}
-
-				if (shouldUpdateNavMesh && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && Sandbox::Get().CheckForUpdateNavMesh(entity))
-				{
-					Sandbox::Get().BakeNavMesh();
-					shouldUpdateNavMesh = false;
 				}
 			}
 
@@ -208,7 +197,7 @@ void PropertiesPanel::UpdateMainContent()
 		const auto id = SelectionManager::GetSelectedEntities().front();
 		Volt::Entity entity = myCurrentScene->GetEntityFromID(id);
 
-		ComponentPropertyUtility::DrawComponents(myCurrentScene, entity);
+		ComponentPropertyUtility::DrawComponents(*myCurrentScene, entity);
 	}
 
 	ImGui::PushStyleColor(ImGuiCol_Button, { 0.2f, 0.2f, 0.2f, 1.f });
@@ -237,7 +226,7 @@ void PropertiesPanel::AddComponentPopup()
 		Vector<std::string> componentNames;
 		std::unordered_map<std::string, VoltGUID> nameToGUIDMap;
 
-		const auto& componentRegistry = GetComponentRegistry().GetRegistry();
+		const auto& componentRegistry = Volt::ComponentRegistry::Get().GetRegistry();
 		for (const auto& [guid, typeDesc] : componentRegistry)
 		{
 			if (typeDesc->GetValueType() == Volt::ValueType::Component)
@@ -279,10 +268,9 @@ void PropertiesPanel::AddComponentPopup()
 			for (const auto& label : componentNames)
 			{
 				const auto compGuid = nameToGUIDMap.at(label);
-				std::string_view componentTypeName = GetComponentRegistry().GetTypeNameFromGUID(compGuid);
 
 				Volt::Entity frontEntity = myCurrentScene->GetEntityFromID(SelectionManager::GetSelectedEntities().front());
-				if (!frontEntity.HasComponent(componentTypeName))
+				if (!frontEntity.HasComponent(compGuid))
 				{
 					UI::ShiftCursor(4.f, 0.f);
 					UI::RenderMatchingTextBackground(myComponentSearchQuery, label, EditorTheme::MatchingTextBackground);
@@ -292,11 +280,19 @@ void PropertiesPanel::AddComponentPopup()
 						{
 							auto entity = myCurrentScene->GetEntityFromID(ent);
 
-							if (!Volt::ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, myCurrentScene->GetRegistry(), entity))
+							if (!Volt::ComponentRegistry::Helpers::HasComponentWithGUID(compGuid, myCurrentScene->GetEntityScene().GetRegistry(), entity))
 							{
-								Volt::ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, myCurrentScene->GetRegistry(), entity);
-								EditorUtils::MarkEntityAsEdited(entity);
+								Volt::ComponentRegistry::Helpers::AddComponentWithGUID(compGuid, myCurrentScene->GetEntityScene().GetRegistry(), entity);
+
+								const Volt::IComponentTypeDesc* componentTypeDesc = reinterpret_cast<const Volt::IComponentTypeDesc*>(Volt::ComponentRegistry::Get().GetTypeDescFromGUID(compGuid));
+								if (componentTypeDesc)
+								{
+									componentTypeDesc->OnInitialize(entity);
+									EditorUtils::MarkEntityComponentAsEdited(*myCurrentScene, entity, componentTypeDesc->GetGUID());
+								}
 							}
+							Ref<AddOrRemoveComponentCommand> command = CreateRef<AddOrRemoveComponentCommand>(compGuid, AddOrRemoveComponentAction::Add, *myCurrentScene, entity);
+							EditorCommandStack::PushUndo(command);
 						}
 
 						ImGui::CloseCurrentPopup();

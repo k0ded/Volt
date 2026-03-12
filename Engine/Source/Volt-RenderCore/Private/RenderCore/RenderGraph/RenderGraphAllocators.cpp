@@ -4,12 +4,43 @@
 
 namespace Volt
 {
-	RenderGraphPassAllocator::~RenderGraphPassAllocator()
+	RenderGraphResourceAllocator::RenderGraphResourceAllocator(RenderGraphDataAllocator* dataAllocator)
 	{
-		for (auto& destructor : m_passDestructors)
+		m_nodeDestructors.set_allocator({ dataAllocator });
+		m_allocator.ReservePages(1);
+	}
+
+	RenderGraphResourceAllocator::~RenderGraphResourceAllocator()
+	{
+		VT_ASSERT(m_nodeDestructors.empty());
+	}
+
+	RenderGraphResourceAllocator::RenderGraphResourceAllocator(RenderGraphResourceAllocator&& other) noexcept
+		: m_allocator(std::move(other.m_allocator)),
+		m_nodeDestructors(std::move(other.m_nodeDestructors))
+	{
+	}
+	
+	RenderGraphResourceAllocator& RenderGraphResourceAllocator::operator=(RenderGraphResourceAllocator&& other) noexcept
+	{
+		m_allocator = std::move(other.m_allocator);
+		m_nodeDestructors = std::move(other.m_nodeDestructors);
+
+		return *this;
+	}
+
+	void RenderGraphResourceAllocator::Release()
+	{
+		for (auto& destructor : m_nodeDestructors)
 		{
 			destructor.Destroy();
 		}
+		m_nodeDestructors.clear();
+	}
+
+	RenderGraphPassAllocator::~RenderGraphPassAllocator()
+	{
+		VT_ASSERT(m_passDestructors.empty());
 	}
 
 	RenderGraphPassAllocator::RenderGraphPassAllocator(RenderGraphPassAllocator&& other) noexcept
@@ -18,6 +49,15 @@ namespace Volt
 		m_passNodeAllocator(std::move(other.m_passNodeAllocator)),
 		m_passDestructors(std::move(other.m_passDestructors))
 	{
+	}
+
+	RenderGraphPassAllocator::RenderGraphPassAllocator(RenderGraphDataAllocator* dataAllocator)
+		: m_dataAllocator(dataAllocator)
+	{
+		m_passDestructors.set_allocator({ dataAllocator });
+
+		m_passExecutionFunctionAllocator.ReservePages(1);
+		m_passNodeAllocator.ReservePages(1);
 	}
 
 	RenderGraphPassAllocator& RenderGraphPassAllocator::operator=(RenderGraphPassAllocator&& other) noexcept
@@ -29,20 +69,14 @@ namespace Volt
 
 		return *this;
 	}
-	
-	void RenderGraphPassAllocator::ExecutePass(Handle<RenderGraphPassNodeBase> passNode, RenderContext& renderContext)
+
+	void RenderGraphPassAllocator::Release()
 	{
-		uint8_t* passAllocationPtr = reinterpret_cast<uint8_t*>(passNode->passAllocationStartPtr);
-
-		PassExecFunc execFunc = *(PassExecFunc*)passAllocationPtr;
-		passAllocationPtr += sizeof(PassExecFunc);
-
-		const size_t size = *(size_t*)passAllocationPtr;
-		VT_UNUSED(size);
-
-		passAllocationPtr += sizeof(size_t);
-
-		execFunc(passAllocationPtr, passNode->GetDataPointer(), renderContext);
+		for (auto& destructor : m_passDestructors)
+		{
+			destructor.Destroy();
+		}
+		m_passDestructors.clear();
 	}
 
 	RenderGraphPassAllocator::PassAllocation RenderGraphPassAllocator::AllocatePass(PassExecFunc execWrapperFunc, size_t execFuncSize)
@@ -65,27 +99,14 @@ namespace Volt
 		return result;
 	}
 
-	RenderGraphResourceNodeAllocator::~RenderGraphResourceNodeAllocator()
+	void RenderGraphPassAllocator::ExecutePass(RGPassRef pass, RenderContext& renderContext)
 	{
-		for (auto& destructor : m_nodeDestructors)
-		{
-			destructor.Destroy();
-		}
-	}
+		uint8_t* passAllocationPtr = reinterpret_cast<uint8_t*>(pass->m_passAllocationStartPtr);
 
-	RenderGraphResourceNodeAllocator::RenderGraphResourceNodeAllocator(RenderGraphResourceNodeAllocator&& other) noexcept
-		: m_allocator(std::move(other.m_allocator)),
-		m_nodeDestructors(std::move(other.m_nodeDestructors)),
-		m_numResourceNodes(std::move(other.m_numResourceNodes))
-	{
-	}
+		PassExecFunc execFunc = *(PassExecFunc*)passAllocationPtr;
+		passAllocationPtr += sizeof(PassExecFunc);
+		passAllocationPtr += sizeof(size_t);
 
-	RenderGraphResourceNodeAllocator& RenderGraphResourceNodeAllocator::operator=(RenderGraphResourceNodeAllocator&& other) noexcept
-	{
-		m_allocator = std::move(other.m_allocator);
-		m_nodeDestructors = std::move(other.m_nodeDestructors);
-		m_numResourceNodes = std::move(other.m_numResourceNodes);
-
-		return *this;
+		execFunc(passAllocationPtr, renderContext);
 	}
 }

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <CoreUtilities/FileIO/BinaryStreamWriter.h>
-#include <CoreUtilities/FileIO/BinaryStreamReader.h>
+#include <CoreUtilities/Archive/Archive.h>
 
 #include <string>
 
@@ -14,9 +13,11 @@ namespace Volt::RHI
 		PerInstance
 	};
 
-	enum class ElementType : uint32_t
+	enum class ElementType : uint8_t
 	{
-		Bool = 0,
+		Invalid = 0,
+		
+		Bool,
 
 		Byte,
 		Byte2,
@@ -146,26 +147,16 @@ namespace Volt::RHI
 			return 0;
 		}
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const BufferElement& data)
+		friend Archive& operator<<(Archive& archive, BufferElement& value)
 		{
-			streamWriter.Write(data.name);
-			streamWriter.Write(data.offset);
-			streamWriter.Write(data.size);
-			streamWriter.Write(data.arrayIndex);
-			streamWriter.Write(data.inputSlot);
-			streamWriter.Write(data.type);
-			streamWriter.Write(data.usage);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, BufferElement& outData)
-		{
-			streamReader.Read(outData.name);
-			streamReader.Read(outData.offset);
-			streamReader.Read(outData.size);
-			streamReader.Read(outData.arrayIndex);
-			streamReader.Read(outData.inputSlot);
-			streamReader.Read(outData.type);
-			streamReader.Read(outData.usage);
+			archive << value.name;
+			archive << value.offset;
+			archive << value.size;
+			archive << value.arrayIndex;
+			archive << value.inputSlot;
+			archive << value.type;
+			archive << value.usage;
+			return archive;
 		}
 
 		std::string name;
@@ -246,18 +237,11 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE const Vector<BufferElement>& GetElements() const { return m_elements; }
 		VT_NODISCARD VT_INLINE const bool IsValid() const { return !m_elements.empty(); }
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const BufferLayout& data)
+		friend Archive& operator<<(Archive& archive, BufferLayout& value)
 		{
-			streamWriter.Write(data.m_elements);
-			streamWriter.Write(data.m_stride);
-		}
-
-		static void Deserialize(BinaryStreamReader& streamReader, BufferLayout& outData)
-		{
-			streamReader.Read(outData.m_elements);
-			streamReader.Read(outData.m_stride);
-
-			outData.CalculateOffsetAndStride();
+			archive << value.m_elements;
+			archive << value.m_stride;
+			return archive;
 		}
 
 	private:
@@ -283,4 +267,6 @@ namespace Volt::RHI
 		Vector<BufferElement> m_elements;
 		uint32_t m_stride = 0;
 	};
+
+	using BufferLayoutMap = Map<uint32_t, BufferLayout>;
 }

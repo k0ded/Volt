@@ -5,7 +5,7 @@
 #include <RHIModule/Memory/GPUAllocator.h>
 #include <RHIModule/Memory/AllocationCache.h>
 
-#include <CoreUtilities/Allocators/ArenaAllocator.h>
+#include <CoreUtilities/Allocators/FixedSizeArenaAllocator.h>
 
 namespace D3D12MA
 {
@@ -20,8 +20,8 @@ namespace Volt::RHI
 		D3D12DefaultGPUAllocator();
 		~D3D12DefaultGPUAllocator() override;
 
-		Handle<Allocation> CreateBuffer(const size_t size, BufferUsage usage, MemoryUsage memoryUsage, const std::string& name) override;
-		Handle<Allocation> CreateImage(const ImageSpecification& imageSpecification, MemoryUsage memoryUsage) override;
+		Handle<Allocation> CreateBuffer(const BufferDesc& desc) override;
+		Handle<Allocation> CreateImage(const ImageDesc& imageSpecification, MemoryUsage memoryUsage) override;
 
 		void DestroyBuffer(Handle<Allocation> allocation) override;
 		void DestroyImage(Handle<Allocation> allocation) override;
@@ -42,10 +42,7 @@ namespace Volt::RHI
 
 		AllocationCache m_allocationCache{};
 
-		std::mutex m_bufferAllocationMutex;
-		std::mutex m_imageAllocationMutex;
-
-		ArenaAllocator<D3D12BufferAllocation, 5000> m_bufferAllocationArena;
-		ArenaAllocator<D3D12ImageAllocation, 5000> m_imageAllocationArena;
+		FixedSizeArenaAllocator<D3D12BufferAllocation> m_bufferAllocationArena;
+		FixedSizeArenaAllocator<D3D12ImageAllocation> m_imageAllocationArena;
 	};
 }

@@ -19,7 +19,7 @@ namespace Volt
 	{
 		auto physicsCore = SubSystemManager::GetSubSystem<PhysicsSubSystem>()->GetPhysicsCore();
 
-		m_transformChangedCallbackID = entityScene.RegisterTransformChangedCallback([&](EntityHelper entity) 
+		m_transformChangedCallbackID = entityScene.RegisterTransformChangedCallback([&](Entity entity) 
 		{
 			if (m_isHandlingPhysicsUpdate)
 			{
@@ -40,7 +40,7 @@ namespace Volt
 			}
 		});
 
-		m_entityDestroyedCallbackID = entityScene.RegisterEntityDestroyedCallback([&](EntityHelper entity) 
+		m_entityDestroyedCallbackID = entityScene.RegisterEntityDestroyedCallback([&](Entity entity) 
 		{
 			if (m_entityToPhysicsActor.contains(entity.GetID()))
 			{
@@ -64,13 +64,14 @@ namespace Volt
 				VT_ENSURE(m_physicsActorToEntity.contains(actor->GetID()));
 
 				EntityID entityId = m_physicsActorToEntity.at(actor->GetID());
-				auto entity = m_entityScene.GetEntityHelperFromEntityID(entityId);
+				auto entity = m_entityScene.GetEntityFromID(entityId);
 				auto transform = actor->GetTransform();
 
 				entity.SetPosition(transform.translation);
 				entity.SetRotation(transform.rotation);
 			}
 
+			m_entityScene.FixedUpdate(timestep);
 			m_isHandlingPhysicsUpdate = false;
 		};
 
@@ -83,7 +84,7 @@ namespace Volt
 			auto view = registry.view<const TagComponent, RigidbodyComponent>();
 			view.each([&](const entt::entity id, const TagComponent& tag, RigidbodyComponent& rigidbody)
 			{
-				auto entity = m_entityScene.GetEntityHelperFromEntityHandle(id);
+				auto entity = m_entityScene.GetEntityFromHandle(id);
 				CreateActorFromEntity(entity);
 			});
 		}
@@ -93,7 +94,7 @@ namespace Volt
 			auto view = registry.view<const TagComponent, CharacterControllerComponent>();
 			view.each([&](const entt::entity id, const TagComponent& tag, CharacterControllerComponent& comp)
 			{
-				auto entity = m_entityScene.GetEntityHelperFromEntityHandle(id);
+				auto entity = m_entityScene.GetEntityFromHandle(id);
 
 				PhysicsControllerActorCreateInfo createInfo{};
 				createInfo.initialPosition = entity.GetPosition();
@@ -155,7 +156,7 @@ namespace Volt
 
 				m_physicsScene->RemoveActor(actorId);
 
-				CreateActorFromEntity(m_entityScene.GetEntityHelperFromEntityHandle(id));
+				CreateActorFromEntity(m_entityScene.GetEntityFromHandle(id));
 
 				registry.remove<Internal::RigidbodyComponentInternal_BodyTypeUpdated>(id);
 			});
@@ -426,7 +427,7 @@ namespace Volt
 		}
 	}
 
-	void EntityPhysicsScene::CreateActorFromEntity(EntityHelper entity)
+	void EntityPhysicsScene::CreateActorFromEntity(Entity entity)
 	{
 		auto physicsCore = SubSystemManager::GetSubSystem<PhysicsSubSystem>()->GetPhysicsCore();
 
@@ -457,7 +458,7 @@ namespace Volt
 			BoxColliderCreateInfo colliderCreateInfo{};
 			colliderCreateInfo.halfSize = boxComp.halfSize;
 			colliderCreateInfo.isTrigger = boxComp.isTrigger;
-			colliderCreateInfo.offset = boxComp.offset;
+			colliderCreateInfo.offset = boxComp.offset * entity.GetScale();
 			colliderCreateInfo.scale = entity.GetScale();
 			colliderCreateInfo.targetActor = physicsActor.get();
 			colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
@@ -472,7 +473,7 @@ namespace Volt
 			SphereColliderCreateInfo colliderCreateInfo{};
 			colliderCreateInfo.radius = sphereComp.radius;
 			colliderCreateInfo.isTrigger = sphereComp.isTrigger;
-			colliderCreateInfo.offset = sphereComp.offset;
+			colliderCreateInfo.offset = sphereComp.offset * entity.GetScale();
 			colliderCreateInfo.scale = entity.GetScale();
 			colliderCreateInfo.targetActor = physicsActor.get();
 			colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});
@@ -488,7 +489,7 @@ namespace Volt
 			colliderCreateInfo.height = capsuleComp.height;
 			colliderCreateInfo.radius = capsuleComp.radius;
 			colliderCreateInfo.isTrigger = capsuleComp.isTrigger;
-			colliderCreateInfo.offset = capsuleComp.offset;
+			colliderCreateInfo.offset = capsuleComp.offset * entity.GetScale();
 			colliderCreateInfo.scale = entity.GetScale();
 			colliderCreateInfo.targetActor = physicsActor.get();
 			colliderCreateInfo.physicalMaterial = physicsCore->CreateMaterial({});

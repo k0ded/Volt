@@ -4,8 +4,12 @@
 #include "Sandbox/Utility/Theme.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include <Volt/Utility/UIUtility.h>
-#include <Volt/Asset/SourceAssetImporters/FbxSourceImporter.h>
+#include <Volt-Application/UI/UIUtility.h>
+#include <Volt-Application/UI/UIScopedHelpers.h>
+
+#include <Volt-Assets/SourceAssetImporters/ImportConfigs.h>
+
+#include <AssetSystem/SourceAssetManager.h>
 
 #include <Volt-Animation/Assets/Skeleton.h>
 
@@ -120,7 +124,7 @@ void MeshImportModal::DrawModalContent()
 		{
 			for (const auto& path : m_importFilePaths)
 			{
-				Import(path);
+				Import(path, m_destinationDirectory);
 			}
 
 			Close();
@@ -131,7 +135,7 @@ void MeshImportModal::DrawModalContent()
 
 	if (ImGui::Button("Import"))
 	{
-		Import(m_importFilePaths.front());
+		Import(m_importFilePaths.front(), m_destinationDirectory);
 		m_importFilePaths.erase(m_importFilePaths.begin());
 
 		if (m_importFilePaths.empty())
@@ -188,9 +192,10 @@ void MeshImportModal::GetInformationOfCurrentMesh()
 	}
 }
 
-void MeshImportModal::Import(const std::filesystem::path& importPath)
+void MeshImportModal::Import(const std::filesystem::path& importPath, const std::filesystem::path& destinationDirectory)
 {
-	const std::filesystem::path destinationDirectory = importPath.parent_path();
+	VT_ENSURE(!destinationDirectory.empty());
+
 	const std::string destinationFileName = importPath.stem().string();
 
 	Volt::MeshSourceImportConfig importConfig;

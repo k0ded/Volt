@@ -12,12 +12,10 @@ namespace Volt
 class SceneSettingsPanel : public EditorWindow
 {
 public:
-	SceneSettingsPanel(Ref<Volt::Scene>& editorScene);
+	SceneSettingsPanel(AssetReference<Volt::Scene>& editorScene);
 
 	void UpdateMainContent() override;
 
 private:
-	Ref<Volt::Scene>& m_editorScene;
-
-	ModalID m_convertionModal = 0;
+	AssetReference<Volt::Scene>& m_editorScene;
 };

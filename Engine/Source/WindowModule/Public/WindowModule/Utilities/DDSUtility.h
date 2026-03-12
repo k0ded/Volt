@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CoreUtilities/Buffer/Buffer.h>
+#include <CoreUtilities/Buffer/DataBuffer.h>
 
 namespace std
 {
@@ -16,7 +16,7 @@ namespace Volt
 	public:
 		struct TextureData
 		{
-			Buffer dataBuffer{};
+			DataBuffer dataBuffer{};
 			uint32_t width = 0;
 			uint32_t height = 0;
 		};

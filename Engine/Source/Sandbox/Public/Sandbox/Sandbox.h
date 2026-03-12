@@ -1,40 +1,38 @@
 #pragma once
 
 #include "Sandbox/FileWatcher/FileWatcher.h"
-#include "Sandbox/GameBuilder.h"
+#include "Sandbox/UISystems/ModalSystem.h"
+#include "Sandbox/ComponentVisualizers/EditorDrawInterface.h"
 
-#include <Circuit/Rendering/CircuitRenderer.h>
+#include <Volt-Application/ApplicationLayer.h>
+#include <Volt-Scene/Scene.h>
+#include <Volt-Renderer/Debug/DebugRenderer.h>
 
-#include <Volt-Scene/Entity.h>
-
-#include <Volt-Core/Layer/Layer.h>
-
+#include <AssetSystem/AssetReference.h>
 #include <EventSystem/EventListener.h>
+#include <EntitySystem/Entity.h>
 
 #include <imgui.h>
+
+#include <mutex>
 
 namespace Volt
 {
 	class SceneRenderer;
-	class Scene;
 	class Mesh;
 	class Camera;
 	class Texture2D;
+	class EntityDesc;
 
 	class Event;
 	class AppUpdateEvent;
 	class AppImGuiUpdateEvent;
-	class WindowRenderEvent;
+	class AppRenderEvent;
 	class KeyPressedEvent;
 	class ViewportResizeEvent;
 	class OnSceneLoadedEvent;
 	class OnSceneTransitionEvent;
-}
-
-namespace Circuit
-{
-	class TellEvent;
-	enum class KeyCode;
+	class AssetFileCreatedEvent;
 }
 
 enum class SceneState
@@ -48,13 +46,16 @@ enum class SceneState
 struct ImGuiWindow;
 class ViewportPanel;
 class GameViewPanel;
-class NavigationPanel;
 class AssetBrowserPanel;
 
 class EditorWindow;
 class EditorCameraController;
 
-class Sandbox : public Volt::Layer, public Volt::EventListener
+class OutlineSceneRendererExtension;
+class ObjectIDSceneRendererExtension;
+class DebugSceneRendererExtension;
+
+class Sandbox : public Volt::ApplicationLayer, public Volt::EventListener
 {
 public:
 	Sandbox();
@@ -76,19 +77,21 @@ public:
 
 	Ref<Volt::SceneRenderer>& GetSceneRenderer() { return m_sceneRenderer; }
 	VT_NODISCARD VT_INLINE const SceneState GetSceneState() const { return m_sceneState; }
+	VT_NODISCARD VT_INLINE AssetReference<Volt::Scene> GetRuntimeScene() const { return m_runtimeScene; }
 	
 	VT_NODISCARD VT_INLINE UUID64 GetMeshImportModalID() const { return m_meshImportModal; }
 	VT_NODISCARD VT_INLINE UUID64 GetTextureImportModalID() const { return m_textureImportModal; }
+
+	VT_NODISCARD VT_INLINE Ref<ObjectIDSceneRendererExtension> GetObjectIDSceneRendererExtension() const { return m_objectIDSceneRendererExtension; }
+	VT_NODISCARD VT_INLINE Ref<DebugSceneRendererExtension> GetDebugSceneRendererExtension() const { return m_debugSceneRendererExtension; }
+	VT_NODISCARD VT_INLINE const Map<Volt::EntityID, VisProxyContextManager>& GetVisProxyContextManagers() const { return m_visProxyContextManagers; }
 
 	void NewScene();
 	void OpenScene();
 	void OpenScene(const std::filesystem::path& path);
 	void OpenScene(Volt::AssetHandle sceneHandle);
-	void SaveScene();
-	void TransitionToNewScene();
-
-	bool CheckForUpdateNavMesh(Volt::Entity entity);
-	void BakeNavMesh();
+	//returns false if user cancels save
+	bool SaveScene(bool showDialog = false, bool allowDiscard = false);
 
 private:
 	struct SaveSceneAsData
@@ -97,23 +100,23 @@ private:
 		std::filesystem::path destinationPath = "Assets/Scenes/";
 	} m_saveSceneData;
 
-	void SaveSceneAs();
+	struct DirtyAssetExternalSaveData
+	{
+		bool SceneSavedAs = false;
+	} m_dirtyAssetExternalSaveData;
+
 	void InstallMayaTools();
 	void RegisterEventListeners();
+	//return whether to procced
+	//false when user cancels unload
+	bool PromptUnloadCurrentScene();
 
 	bool OnUpdateEvent(Volt::AppUpdateEvent& e);
 	bool OnImGuiUpdateEvent(Volt::AppImGuiUpdateEvent& e);
-	bool OnRenderEvent(Volt::WindowRenderEvent& e);
+	bool OnRenderEvent(Volt::AppRenderEvent& e);
 	bool OnKeyPressedEvent(Volt::KeyPressedEvent& e);
 	bool OnViewportResizeEvent(Volt::ViewportResizeEvent& e);
 	bool OnSceneLoadedEvent(Volt::OnSceneLoadedEvent& e);
-	bool LoadScene(Volt::OnSceneTransitionEvent& e);
-
-	void HandleCircuitTellEvents( const Circuit::TellEvent& e);
-	void HandleCircuitWindowEventCallback(Volt::Event& e);
-
-	static Circuit::KeyCode VoltKeyCodeToCircuitKeyCode(uint32_t keyCode);
-	static Circuit::KeyCode VoltMouseCodeToCircuitKeyCode(uint32_t keyCode);
 
 	void CreateWatches();
 	void RegisterPanels();
@@ -121,12 +124,8 @@ private:
 	void SetupNewSceneData();
 	void InitializeModals();
 
-	/////ImGui/////
+	///// ImGui /////
 	void UpdateDockSpace();
-	void SaveSceneAsModal();
-
-	void BuildGameModal();
-	void RenderProgressBar(float progress);
 
 	void RenderWindowOuterBorders(ImGuiWindow* window);
 	void HandleManualWindowResize();
@@ -134,14 +133,12 @@ private:
 
 	float DrawTitlebar();
 	void DrawMenuBar();
+
+	void DrawUnsavedAssetsBlock();
+	void DrawDirtyAssetsExternalActionModal();
 	
 	void RenderGameView(float timestep);
 	///////////////
-
-	///// Debug Rendering /////
-	void RenderSelection(Ref<Volt::Camera> camera);
-	void RenderGizmos(Ref<Volt::Scene> scene, Ref<Volt::Camera> camera);
-	///////////////////////////
 
 	///// File Watchers /////
 	void CreateModifiedWatch();
@@ -150,12 +147,23 @@ private:
 	void CreateMovedWatch();
 	/////////////////////////
 
-	BuildInfo m_buildInfo;
+	///// Debug Rendering /////
+	void DrawDebug();
+	void DrawEntityGizmos();
+
+	Map<Volt::EntityID, VisProxyContextManager> m_visProxyContextManagers;
+	std::mutex m_visProxyContextManagersMutex;
+	Volt::DebugRenderer m_debugRenderer;
+	///////////////////////////
 
 	Ref<EditorCameraController> m_editorCameraController;
 
 	Ref<Volt::SceneRenderer> m_sceneRenderer;
 	Ref<Volt::SceneRenderer> m_gameSceneRenderer;
+
+	Ref<OutlineSceneRendererExtension> m_outlineSceneRendererExtension;
+	Ref<ObjectIDSceneRendererExtension> m_objectIDSceneRendererExtension;
+	Ref<DebugSceneRendererExtension> m_debugSceneRendererExtension;
 
 	///// File watcher /////
 	Ref<FileWatcher> m_fileWatcher;
@@ -168,15 +176,13 @@ private:
 	UUID64 m_textureImportModal;
 	//////////////////
 
-	Ref<Volt::Scene> m_runtimeScene;
-	Ref<Volt::Scene> m_intermediateScene;
+	AssetReference<Volt::Scene> m_runtimeScene;
+	AssetReference<Volt::Scene> m_intermediateScene;
 
 	SceneState m_sceneState = SceneState::Edit;
 
 	Ref<ViewportPanel> m_viewportPanel;
 	Ref<GameViewPanel> m_gameViewPanel;
-
-	Ref<NavigationPanel> m_navigationPanel;
 
 	Ref<AssetBrowserPanel> m_assetBrowserPanel;
 
@@ -187,11 +193,10 @@ private:
 	bool m_openShouldSaveScenePopup = false;
 	bool m_shouldResetLayout = false;
 	bool m_titlebarHovered = false;
-	bool m_buildStarted = false;
 	bool m_playHasMouseControl = false;
 	bool m_isInitialized = false;
+	bool m_wantsToOpenCheckoutFilesModal = false;
 
-	Ref<Volt::Scene> m_storedScene;
 	bool m_shouldLoadNewScene = false;
 	uint32_t m_assetBrowserCount = 0;
 

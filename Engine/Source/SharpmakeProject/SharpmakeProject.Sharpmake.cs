@@ -16,18 +16,23 @@ namespace VoltSharpmake
 
             // This Path will be used to get all SourceFiles in this Folder and all subFolders
             SourceRootPath = Globals.RootDirectory;
-        }
+			Name = "SharpmakeProject";
+		}
 
-        [ConfigurePriority(ConfigurePriorities.All)]
+		[ConfigurePriority(ConfigurePriorities.All)]
         [Configure]
         public virtual void ConfigureAll(Configuration conf, CommonTarget target)
         {
             conf.Output = Configuration.OutputType.DotNetClassLibrary;
 			conf.IsExcludedFromBuild = true;
 
-            conf.ProjectFileName = "[project.Name]";
-            // Sets where the project file (csproj) will be saved
-            conf.ProjectPath = @"[project.RootPath]\[project.Name]";
+			conf.ProjectFileName = "[project.Name]_[target.Platform]";
+			if (target.DevEnv != DevEnv.xcode)
+			{
+				conf.ProjectFileName += "_[target.DevEnv]";
+			}
+			// Sets where the project file (csproj) will be saved
+			conf.ProjectPath = @"[project.RootPath]\[project.Name]";
 
             conf.ReferencesByPath.Add(Globals.SharpmakeDirectory + "\\Basic.Reference.Assemblies.Net60.dll");
             conf.ReferencesByPath.Add(Globals.SharpmakeDirectory + "\\Microsoft.CodeAnalysis.CSharp.dll");

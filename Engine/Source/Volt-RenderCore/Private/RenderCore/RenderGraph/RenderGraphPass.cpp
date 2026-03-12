@@ -1,57 +1,133 @@
 #include "rcpch.h"
-#include "RenderCore/RenderGraph/RenderGraphPass.h"
 
-#include "RenderCore/RenderGraph/RenderContext.h"
+#include "RenderCore/RenderGraph/RenderGraphPass.h"
 
 namespace Volt
 {
-	const bool RenderGraphPassNodeBase::ReadsResource(RenderGraphResourceHandle handle) const
+	RGTextureState& RGPass::GetOrCreateTextureState(RGTextureSRVRef textureSRV)
 	{
-		auto it = std::find_if(resourceReads.begin(), resourceReads.end(), [&](const auto& lhs) 
+		RGTextureRef texture = reinterpret_cast<RGTextureRef>(textureSRV->GetResource());
+		return GetOrCreateTextureState(texture, RGResourceAccessType::Read);
+	}
+
+	RGTextureState& RGPass::GetOrCreateTextureState(RGTextureUAVRef textureUAV)
+	{
+		RGTextureRef texture = reinterpret_cast<RGTextureRef>(textureUAV->GetResource());
+		return GetOrCreateTextureState(texture, RGResourceAccessType::Write);
+	}
+	
+	RGTextureState& RGPass::GetOrCreateTextureState(RGTextureRef texture, RGResourceAccessType accessType)
+	{
+		RGTextureState* statePtr = nullptr;
+
+		if (texture->firstPassAccessor == nullptr)
 		{
-			return lhs.handle == handle;
-		});
+			texture->firstPassAccessor = this;
+		}
 
-		return it != resourceReads.end();
-	}
-
-	const bool RenderGraphPassNodeBase::WritesResource(RenderGraphResourceHandle handle) const
-	{
-		auto it = std::find_if(resourceWrites.begin(), resourceWrites.end(), [&](const auto& lhs)
+		for (RGTextureState& state : m_textureStates)
 		{
-			return lhs.handle == handle;
-		});
-		return it != resourceWrites.end();
-	}
+			if (state.texture == texture)
+			{
+				statePtr = &state;
+				break;
+			}
+		}
 
-	const bool RenderGraphPassNodeBase::CreatesResource(RenderGraphResourceHandle handle) const
-	{
-		auto it = std::find_if(resourceCreates.begin(), resourceCreates.end(), [&](const auto& lhs)
+		if (!statePtr)
 		{
-			return lhs.handle == handle;
-		});
-		return it != resourceCreates.end();
+			RGTextureState& newState = m_textureStates.emplace_back();
+			newState.Initialize(texture, accessType, m_dataAllocator);
+
+			statePtr = &newState;
+		}
+
+		VT_ENSURE(statePtr != nullptr);
+
+		statePtr->refCount++;
+		return *statePtr;
 	}
 
-	const bool RenderGraphPassNodeBase::IsCulled() const
+	RGBufferState& RGPass::GetOrCreateBufferState(RGBufferSRVRef bufferSRV)
 	{
-		return isCulled && !hasSideEffect;
+		RGBufferRef buffer = reinterpret_cast<RGBufferRef>(bufferSRV->GetResource());
+		return GetOrCreateBufferState(buffer, RGResourceAccessType::Read);
+	}
+	
+	RGBufferState& RGPass::GetOrCreateBufferState(RGBufferUAVRef bufferUAV)
+	{
+		RGBufferRef buffer = reinterpret_cast<RGBufferRef>(bufferUAV->GetResource());
+		return GetOrCreateBufferState(buffer, RGResourceAccessType::Write);
 	}
 
-#ifdef VT_DEBUG
-	const bool RenderGraphPassNodeBase::ReadsResource(ResourceHandle handle) const
+	RGBufferState& RGPass::GetOrCreateBufferState(RGBufferRef buffer, RGResourceAccessType accessType)
 	{
-		return ReadsResource(m_resourceHandleMapping.at(handle));
+		RGBufferState* statePtr = nullptr;
+
+		if (buffer->firstPassAccessor == nullptr)
+		{
+			buffer->firstPassAccessor = this;
+		}
+
+		for (RGBufferState& state : m_bufferStates)
+		{
+			if (state.bufferType == RGResourceType::Buffer && state.buffer == buffer)
+			{
+				statePtr = &state;
+				break;
+			}
+		}
+
+		if (!statePtr)
+		{
+			RGBufferState& newState = m_bufferStates.emplace_back();
+			newState.Initialize(buffer, accessType);
+
+			statePtr = &newState;
+		}
+
+		VT_ENSURE(statePtr != nullptr);
+
+		statePtr->refCount++;
+		return *statePtr;
 	}
 
-	const bool RenderGraphPassNodeBase::WritesResource(ResourceHandle handle) const
+	RGBufferState& RGPass::GetOrCreateBufferState(RGUniformBufferRef buffer)
 	{
-		return WritesResource(m_resourceHandleMapping.at(handle));
+		RGBufferState* statePtr = nullptr;
+
+		if (buffer->firstPassAccessor == nullptr)
+		{
+			buffer->firstPassAccessor = this;
+		}
+
+		for (RGBufferState& state : m_bufferStates)
+		{
+			if (state.bufferType == RGResourceType::UniformBuffer && state.uniformBuffer == buffer)
+			{
+				statePtr = &state;
+				break;
+			}
+		}
+
+		if (!statePtr)
+		{
+			RGBufferState& newState = m_bufferStates.emplace_back();
+			newState.Initialize(buffer, RGResourceAccessType::Read);
+
+			statePtr = &newState;
+		}
+
+		VT_ENSURE(statePtr != nullptr);
+
+		statePtr->refCount++;
+		return *statePtr;
 	}
 
-	const bool RenderGraphPassNodeBase::CreatesResource(ResourceHandle handle) const
+	void RGPass::SetupAllocators(RenderGraphDataAllocator* dataAllocator)
 	{
-		return CreatesResource(m_resourceHandleMapping.at(handle));
+		m_textureStates.set_allocator({ dataAllocator });
+		m_bufferStates.set_allocator({ dataAllocator });
+		m_passDependencies.set_allocator({ dataAllocator });
 	}
-#endif
 }

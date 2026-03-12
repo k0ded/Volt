@@ -89,6 +89,18 @@ namespace Volt::RHI
 		uint32_t maxRayHitAttributeSize;
 	};
 
+	struct PhysicalDeviceAccelerationStructureProperties
+	{
+		uint64_t maxGeometryCount;
+		uint64_t maxInstanceCount;
+		uint64_t maxPrimitiveCount;
+		uint32_t maxPerStageDescriptorAccelerationStructures;
+		uint32_t maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
+		uint32_t maxDescriptorSetAccelerationStructures;
+		uint32_t maxDescriptorSetUpdateAfterBindAccelerationStructures;
+		uint32_t minAccelerationStructureScratchOffsetAlignment;
+	};
+
 	struct PhysicalDeviceLimits
 	{
 		uint32_t maxImageDimension1D;
@@ -226,8 +238,11 @@ namespace Volt::RHI
 		PhysicalDeviceDescriptorBufferPropertiesEXT descriptorBufferProperties;
 		PhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties;
 		PhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties;
+		PhysicalDeviceAccelerationStructureProperties accelerationStructureProperties;
 		
 		PhysicalDeviceMemoryProperties memoryProperties;
 		PhysicalDeviceLimits limits;
 	};
+
+	extern PhysicalDeviceProperties g_physicalDeviceProperties;
 }

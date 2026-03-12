@@ -1,6 +1,0 @@
-Metadata:
-  assetHandle: 2273298033702605316
-  filePath: Engine/Shaders/Source/HLSL/Shadows/DirectionalShadow_vs.hlsl
-  type: 128
-  Dependencies:
-    []

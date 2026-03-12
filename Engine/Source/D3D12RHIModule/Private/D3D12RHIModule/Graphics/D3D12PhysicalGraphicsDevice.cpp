@@ -1,18 +1,21 @@
 #include "dxpch.h"
+
 #include "D3D12RHIModule/Graphics/D3D12PhysicalGraphicsDevice.h"
 
 #include <CoreUtilities/StringUtility.h>
 
 namespace Volt::RHI
 {
-	D3D12PhysicalGraphicsDevice::D3D12PhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& info)
+	D3D12PhysicalGraphicsDevice::D3D12PhysicalGraphicsDevice(const PhysicalDeviceCreateInfo& createInfo, bool enableDebugLayer)
 	{
-		m_adapter = FindValidAdapter();
+		m_adapter = FindBestSuitableDevice(enableDebugLayer);
+		VT_ENSURE(m_adapter);
+
 		if (m_adapter)
 		{
 			DXGI_ADAPTER_DESC1 desc{};
 			m_adapter->GetDesc1(&desc);
-		
+
 			m_name = Utility::ToString(std::wstring(desc.Description));
 			m_vendor = VendorIDToVendor(desc.VendorId);
 		}
@@ -20,6 +23,7 @@ namespace Volt::RHI
 
 	D3D12PhysicalGraphicsDevice::~D3D12PhysicalGraphicsDevice()
 	{
+
 	}
 
 	void* D3D12PhysicalGraphicsDevice::GetHandleImpl() const
@@ -27,13 +31,10 @@ namespace Volt::RHI
 		return m_adapter.Get();
 	}
 
-	ComPtr<IDXGIAdapter4> D3D12PhysicalGraphicsDevice::FindValidAdapter()
+	ComPtr<IDXGIAdapter4> D3D12PhysicalGraphicsDevice::FindBestSuitableDevice(bool enableDebugLayer)
 	{
-		uint32_t factoryFlags = 0;
-#ifdef VT_ENABLE_VALIDATION
-		factoryFlags = DXGI_CREATE_FACTORY_DEBUG;
-#endif
-
+		const uint32_t factoryFlags = enableDebugLayer ? DXGI_CREATE_FACTORY_DEBUG : 0;
+	
 		ComPtr<IDXGIFactory4> factory;
 		VT_D3D12_CHECK(CreateDXGIFactory2(factoryFlags, VT_D3D12_ID(factory)));
 

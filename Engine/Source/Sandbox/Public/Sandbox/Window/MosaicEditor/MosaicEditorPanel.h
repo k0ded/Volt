@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Sandbox/Window/EditorWindow.h"
+#include "Sandbox/Window/MosaicEditor/MosaicNodeExtension.h"
 
 #include <imgui_node_editor.h>
 
@@ -45,7 +46,7 @@ public:
 	bool SaveNodeSettings(const UUID64 nodeId, const std::string& data);
 	size_t LoadNodeSettings(const UUID64 nodeId, std::string& data);
 
-	void OpenAsset(Ref<Volt::Asset> asset) override;
+	void OpenAsset(AssetReference<Volt::Asset> asset) override;
 	void OnClose() override;
 
 private:
@@ -64,6 +65,7 @@ private:
 	void DrawLinks();
 
 	void DrawNodesPanel();
+	void DrawSettingsPanel();
 
 	void DrawContextPopups();
 
@@ -72,10 +74,18 @@ private:
 	void OnCopy();
 	void OnPaste();
 
+	template<typename T>
+	void RegisterNodeExtension(VoltGUID nodeGUID)
+	{
+		VT_ENSURE(!m_nodeExtensions.contains(nodeGUID));
+		m_nodeExtensions[nodeGUID] = CreateRef<T>();
+	}
+
 	MosaicEditorContext m_context;
 
-	Ref<Volt::Texture2D> m_headerTexture;
-	Ref<Volt::MaterialAsset> m_material;
+	AssetReference<Volt::MaterialAsset> m_material;
+
+	Map<VoltGUID, Ref<MosaicNodeExtension>> m_nodeExtensions;
 
 	UUID64 m_newLinkPinId = 0;
 	bool m_createNewNode = false;

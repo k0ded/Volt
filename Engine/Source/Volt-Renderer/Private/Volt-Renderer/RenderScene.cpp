@@ -1,25 +1,29 @@
 #include "vrpch.h"
 #include "Volt-Renderer/RenderScene.h"
 
-#include "Volt-Renderer/Material.h"
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/GPUScene.h"
 #include "Volt-Renderer/Renderer.h"
 #include "Volt-Renderer/RayTracing/RayTracingScene.h"
 #include "Volt-Renderer/Utility/ScatteredBufferUpload.h"
 #include "Volt-Renderer/Texture/Texture2D.h"
+#include "Volt-Renderer/Debug/DebugRenderer.h"
 
-#include <Volt-Animation/MotionWeaver.h>
+#include <RenderCore/Shader/GlobalShader.h>
+
+#include <Volt-Animation/TempAnimator.h>
 #include <Volt-Animation/Assets/Skeleton.h>
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <Volt-Core/Algorithms.h>
 
 #include <EntitySystem/EntityScene.h>
-#include <EntitySystem/EntityHelper.h>
-#include <AssetSystem/AssetManager.h>
+#include <EntitySystem/Entity.h>
 
-#include <RHIModule/Buffers/StorageBuffer.h>
-#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Buffers/Buffer.h>
+#include <RHIModule/RHIFeatures.h>
+
+#include <CoreUtilities/FormatterExtension.h>
 
 #include <ranges>
 
@@ -27,19 +31,28 @@ VT_DEFINE_LOG_CATEGORY(LogRenderScene);
 
 namespace Volt
 {
-	static ConsoleVariable<int32_t> s_logRenderSceneUpdatedCVar("r.RenderScene.LogUpdates", 0, "Whether or not to log Render Scene updates");
+	static ConsoleVariable<int32_t> s_logRenderSceneUpdatedCVar(
+		"r.RenderScene.LogUpdates", 
+		0,
+		"Whether or not to log Render Scene updates"
+	);
+
+	static ConsoleVariable<int32_t> s_visualizeRenderScenePrimitiveBoundingSpheres(
+		"r.RenderScene.VisualizePrimitiveBoundingSpheres",
+		0,
+		"Whether of not to visualize render primitive bounding spheres."
+	);
 
 	RenderScene::RenderScene(EntityScene* sceneRef)
 		: m_scene(sceneRef)
 	{
 		m_buffers.meshesBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMesh), "GPU Meshes");
-		m_buffers.sdfMeshesBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMeshSDF), "SDF GPU Meshes");
 		m_buffers.materialsBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(GPUMaterial), "GPU Materials");
 		m_buffers.primitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(PrimitiveDrawData), "Primitive Draw Data");
 		m_buffers.prevPrimitiveDrawDataBuffer = CreateRef<GrowingGPUBuffer>(5, sizeof(PrimitiveDrawData), "Prev Primitive Draw Data");
 		m_buffers.bonesBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(glm::mat4), "GPU Bones");
 		m_buffers.lightsBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(LightDrawData), "Lights");
-		m_buffers.validPrimitiveDrawDatasBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "Compacted Valid Primitive Draw Datas");
+		m_buffers.validPrimitiveDrawDatasBuffer = CreateRef<GrowingGPUBuffer>(1, sizeof(uint32_t), "Compacted Valid Primitive Draw Datas", RHI::BufferUsage::TexelBuffer);
 
 		// Setup invalid mesh
 		{
@@ -47,10 +60,13 @@ namespace Volt
 			memset(&mesh, 0, sizeof(GPUMesh));
 		}
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
 			m_rayTracingScene = CreateRef<RayTracingScene>(m_scene);
+			m_rayTracingResourceTable = RHI::RayTracingResourceTable::Create();
 		}
+
+		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(RenderScene::OnPreRenderEvent)); 
 	}
 
 	RenderScene::~RenderScene()
@@ -61,11 +77,9 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		UpdateInvalidMaterials(renderGraph);
-		UpdateInvalidMeshes(renderGraph);
-		UpdateInvalidLights(renderGraph);
-		UpdateInvalidPrimitiveData(renderGraph);
-		CompactValidPrimitiveDrawDatas(renderGraph);
+		renderGraph.BeginMarker("RenderScene::Update");
+
+		m_debugRenderer.Reset();
 
 		// Temporary animation sampling
 		m_currentBoneCount = 0;
@@ -75,7 +89,14 @@ namespace Volt
 			primitiveDrawData.boneOffset = m_currentBoneCount;
 
 			const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
-			m_currentBoneCount += static_cast<uint32_t>(renderObject.motionWeaver->GetSkeleton()->GetJointCount());
+			AssetReference<Skeleton> skeleton = renderObject->animator->GetSkeleton();
+
+			if (skeleton.IsValid())
+			{
+				m_currentBoneCount += static_cast<uint32_t>(skeleton->GetJointCount());
+				// Mark primitive as invalid.
+				InvalidatePrimitiveInstance(animatedObject);
+			}
 		}
 
 		m_animationBufferStorage.resize(m_currentBoneCount);
@@ -86,10 +107,19 @@ namespace Volt
 				const auto& primitiveDrawData = m_primitiveDrawData.at(m_primitiveIndicesContainer.GetIndexFromID(animatedObject));
 				const auto& renderObject = GetPrimitiveDataFromID(animatedObject);
 
-				const auto sample = renderObject.motionWeaver->Sample();
+				const auto sample = renderObject->animator->Sample();
 				memcpy_s(m_animationBufferStorage.data() + primitiveDrawData.boneOffset, sizeof(glm::mat4) * sample.size(), sample.data(), sizeof(glm::mat4) * sample.size());
 			}
 		}
+
+		ProcessQueuedUpdateOperations();
+
+		UpdateInvalidMaterials(renderGraph);
+		UpdateInvalidMeshes(renderGraph);
+		UpdateInvalidLights(renderGraph);
+		UpdateInvalidPrimitiveData(renderGraph);
+		CompactValidPrimitiveDrawDatas(renderGraph);
+
 
 		if (m_currentBoneCount > 0)
 		{
@@ -97,214 +127,107 @@ namespace Volt
 
 			bonesBuffer->GrowIfRequired(m_animationBufferStorage.size());
 
-			bonesBuffer->GetResource()->SetData(m_animationBufferStorage.data(), m_animationBufferStorage.size() * sizeof(glm::mat4));
+			RGBufferRef rgAnimationBuffer = renderGraph.RegisterExternalBuffer(bonesBuffer->GetResource());
+			AddStagedBufferUploadCopyData(renderGraph, rgAnimationBuffer, m_animationBufferStorage.data(), m_animationBufferStorage.byte_size());
 			m_animationBufferStorage.clear();
 		}
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (m_rayTracingScene)
 		{
 			m_rayTracingScene->Update();
 		}
+
+		if (s_visualizeRenderScenePrimitiveBoundingSpheres.GetValue())
+		{
+			VisualizeRenderPrimitives();
+		}
+
+		renderGraph.EndMarker();
 	}
 
 	void RenderScene::EndFrame(RenderGraph& renderGraph)
 	{
-		m_buffers.prevPrimitiveDrawDataBuffer->GrowIfRequired(m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount());
+		VT_PROFILE_FUNCTION();
 
-		RGUtils::CopyBuffer(renderGraph,
-			renderGraph.AddExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource()),
-			renderGraph.AddExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource()),
-			m_buffers.primitiveDrawDataBuffer->GetResource()->GetByteSize(),
-			"Copy PrimitiveDrawData");
+		m_buffers.prevPrimitiveDrawDataBuffer->GrowIfRequired(m_buffers.primitiveDrawDataBuffer->GetResource()->GetNumElements());
+
+		RGBufferRef srcPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
+		RGBufferRef dstPrimitiveData = renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource());
+
+		AddCopyBufferPass(renderGraph, srcPrimitiveData, 0, dstPrimitiveData, 0, m_buffers.primitiveDrawDataBuffer->GetByteSize());
 	}
 
-	void RenderScene::InvalidatePrimitiveInstance(UUID64 renderObject)
+	void RenderScene::RenderDebug(RenderGraph& renderGraph, const RenderView& renderView, RGTextureRef dstTexture, RGTextureRef dstDepth)
 	{
-		m_primitiveIndicesContainer.InvalidateIndexWithID(renderObject);
-	}
-
-	void RenderScene::InvalidateMesh(Ref<Mesh> mesh)
-	{
-		std::scoped_lock lock{ m_meshUpdateMutex };
-		for (uint32_t index = 0; index < mesh->GetNumSubMeshes(); index++)
-		{
-			const size_t hash = Math::HashCombine(mesh->GetHash(), std::hash<uint32_t>()(index));
-			if (m_meshSubMeshToGPUMeshIndex.contains(hash))
-			{
-				m_invalidMeshes.emplace_back(mesh, index, m_meshSubMeshToGPUMeshIndex.at(hash));
-			}
-		}
-	}
-
-	void RenderScene::InvalidateMaterial(Ref<RenderMaterial> material)
-	{
-		std::scoped_lock lock{ m_materialUpdateMutex };
-		const size_t hash = material->GetHash();
-		if (m_materialIndexFromMaterialHash.contains(hash))
-		{
-			m_invalidMaterials.emplace_back(material, m_materialIndexFromMaterialHash.at(hash));
-		}
+		m_debugRenderer.Render(renderGraph, renderView, dstTexture, dstDepth);
 	}
 
 	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
 	{
-		UUID64 newId = {};
-		auto& newObj = m_renderPrimitives.emplace_back();
-
-		newObj.id = newId;
-		newObj.entityId = entityId;
-		newObj.mesh = mesh;
-		newObj.material = material;
-		newObj.subMeshIndex = subMeshIndex;
-
-		TryAddMaterial(material);
-		TryAddMesh(mesh);
-
-		const size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
-		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
-
-		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
-		InvalidatePrimitiveInstance(newId);
-
-		return newId;
+		return m_updateQueue.AddPrimitiveInstance(entityId, nullptr, mesh, material, subMeshIndex);
 	}
 
-	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<MotionWeaver> motionWeaver, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
+	UUID64 RenderScene::AddPrimitiveInstance(EntityID entityId, Ref<TempAnimator> animator, Ref<Mesh> mesh, Ref<RenderMaterial> material, uint32_t subMeshIndex)
 	{
-		UUID64 newId = {};
-		auto& newObj = m_renderPrimitives.emplace_back();
-		m_animatedRenderObjects.emplace_back(newId);
-
-		newObj.id = newId;
-		newObj.entityId = entityId;
-		newObj.mesh = mesh;
-		newObj.material = material;
-		newObj.subMeshIndex = subMeshIndex;
-		newObj.motionWeaver = motionWeaver;
-
-		TryAddMaterial(material);
-		TryAddMesh(mesh);
-
-		size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
-		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
-
-		BuildSinglePrimitiveDrawData(primitiveDrawData, newObj);
-		InvalidatePrimitiveInstance(newId);
-
-		return newId;
+		return m_updateQueue.AddPrimitiveInstance(entityId, animator, mesh, material, subMeshIndex);
 	}
 
-	void RenderScene::RemovePrimitiveInstance(UUID64 id)
+	void RenderScene::RemovePrimitiveInstance(RenderPrimitiveID id)
 	{
-		m_primitiveIndicesContainer.FreeIndexWithID(id);
-
-		auto it = std::find_if(m_renderPrimitives.begin(), m_renderPrimitives.end(), [id](const auto& obj)
-		{
-			return obj.id == id;
-		});
-
-		if (it == m_renderPrimitives.end())
-		{
-			return;
-		}
-
-		const bool isAnimated = (*it).IsAnimated();
-
-		if (it != m_renderPrimitives.end())
-		{
-			m_renderPrimitives.erase(it);
-		}
-
-		if (isAnimated)
-		{
-			auto animIt = std::find_if(m_animatedRenderObjects.begin(), m_animatedRenderObjects.end(), [id](const auto& obj)
-			{
-				return obj == id;
-			});
-
-			if (animIt != m_animatedRenderObjects.end())
-			{
-				m_animatedRenderObjects.erase(animIt);
-			}
-		}
+		m_updateQueue.RemovePrimitiveInstance(id);
 	}
 
-	void RenderScene::InvalidateLightInstance(UUID64 id)
+	void RenderScene::InvalidatePrimitiveInstance(RenderPrimitiveID renderObject)
 	{
-		if (m_lightIndexFromLightID.contains(id))
-		{
-			m_invalidLightDataIndices.emplace_back(id, m_lightIndexFromLightID.at(id));
-		}
+		m_updateQueue.InvalidatePrimitiveInstance(renderObject);
 	}
 
 	UUID64 RenderScene::AddLightInstance(EntityID entityId, const SceneLightDescription& description)
 	{
-		UUID64 id{};
-
-		auto& lightInstance = m_renderLights.emplace_back();
-		lightInstance.id = id;
-		lightInstance.entityId = entityId;
-		lightInstance.description = description;
-
-		constexpr size_t SizeMax = std::numeric_limits<size_t>::max();
-
-		size_t lightDrawDataIndex = SizeMax;
-
-		if (!m_freeLightDataIndices.empty())
-		{
-			lightDrawDataIndex = m_freeLightDataIndices.back();
-			m_freeLightDataIndices.pop_back();
-		}
-
-		LightDrawData& lightDrawData = (lightDrawDataIndex != SizeMax) ? m_lightDrawData.at(lightDrawDataIndex) : m_lightDrawData.emplace_back();
-		lightDrawData.lightType = description.lightType;
-
-		m_lightIndexFromLightID[id] = static_cast<uint32_t>((lightDrawDataIndex != SizeMax) ? lightDrawDataIndex : m_lightDrawData.size() - 1);
-		InvalidateLightInstance(id);
-
-		return id;
+		return m_updateQueue.AddLightInstance(entityId, description);
 	}
 
-	void RenderScene::RemoveLightInstance(UUID64 id)
+	void RenderScene::RemoveLightInstance(RenderPrimitiveID id)
 	{
-		VT_ENSURE(m_lightIndexFromLightID.contains(id));
-
-		const size_t lightDataIndex = m_lightIndexFromLightID.at(id);
-
-		m_lightDrawData.at(lightDataIndex).flags = LightFlags::Invalid;
-		m_removedLightDataIndices.emplace_back(lightDataIndex);
-		m_freeLightDataIndices.emplace_back(lightDataIndex);
-
-		m_lightIndexFromLightID.erase(id);
-
-		auto it = std::ranges::find_if(m_renderLights, [id](const auto& obj)
-		{
-			return obj.id == id;
-		});
-
-		if (it != m_renderLights.end())
-		{
-			m_renderLights.erase(it);
-		}
+		return m_updateQueue.RemoveLightInstance(id);
 	}
 
-	Weak<RenderMaterial> RenderScene::GetMaterialFromID(const uint32_t materialId) const
+	RayTracingInstanceID RenderScene::AddRayTracingInstance(EntityID entityId, Ref<Mesh> mesh, RenderPrimitiveID primitiveId)
 	{
-		if (static_cast<size_t>(materialId) >= m_individualMaterials.size())
-		{
-			return {};
-		}
-
-		return m_individualMaterials.at(materialId);
+		return m_updateQueue.AddRayTracingInstance(entityId, mesh, primitiveId);
 	}
 
-	const uint32_t RenderScene::GetMeshID(Weak<Mesh> mesh, uint32_t subMeshIndex) const
+	void RenderScene::RemoveRayTracingInstance(RayTracingInstanceID instanceId)
 	{
-		const size_t hash = Math::HashCombine(mesh->GetHash(), std::hash<uint32_t>()(subMeshIndex));
-		return m_meshSubMeshToGPUMeshIndex.contains(hash) ? m_meshSubMeshToGPUMeshIndex.at(hash) : std::numeric_limits<uint32_t>::max();
+		m_updateQueue.RemoveRayTracingInstance(instanceId);
 	}
 
-	const uint32_t RenderScene::GetMaterialIndex(Weak<RenderMaterial> material) const
+	void RenderScene::InvalidateRayTracingInstance(RayTracingInstanceID instanceId)
+	{
+		m_updateQueue.InvalidateRayTracingInstance(instanceId);
+	}
+
+	void RenderScene::InvalidateLightInstance(UUID64 id)
+	{
+		m_updateQueue.InvalidateLightInstance(id);
+	}
+
+	void RenderScene::OnRenderPrimitiveAdded(const RenderPrimitiveData* renderPrimitive)
+	{
+		m_renderPrimitiveAddedDelegate.Broadcast(renderPrimitive);
+	}
+
+	void RenderScene::OnRenderPrimitiveRemoved(const RenderPrimitiveData* renderPrimitive)
+	{
+		m_renderPrimitiveRemovedDelegate.Broadcast(renderPrimitive);
+	}
+
+	Vector<RenderPrimitiveData*> RenderScene::GetRenderPrimitives() const
+	{
+		return m_renderPrimitiveDataContainer.GetRenderPrimitives();
+	}
+
+	uint32_t RenderScene::GetMaterialIndex(Weak<RenderMaterial> material) const
 	{
 		auto it = std::find_if(m_individualMaterials.begin(), m_individualMaterials.end(), [&](Weak<RenderMaterial> lhs)
 		{
@@ -319,43 +242,73 @@ namespace Volt
 		return std::numeric_limits<uint32_t>::max();
 	}
 
-	const uint32_t RenderScene::GetMeshIndex(Weak<Mesh> mesh) const
-	{
-		auto it = std::find_if(m_individualMeshes.begin(), m_individualMeshes.end(), [&](Weak<Mesh> lhs)
-		{
-			return lhs.Get() == mesh.Get();
-		});
-
-		if (it != m_individualMeshes.end())
-		{
-			return static_cast<uint32_t>(std::distance(m_individualMeshes.begin(), it));
-		}
-
-		return std::numeric_limits<uint32_t>::max();
-	}
-
-	const uint32_t RenderScene::GetPrimitiveIndexFromID(UUID64 primitiveId) const
+	uint32_t RenderScene::GetPrimitiveIndexFromID(RenderPrimitiveID primitiveId) const
 	{
 		return static_cast<uint32_t>(m_primitiveIndicesContainer.GetIndexFromID(primitiveId));
 	}
 
-	const RenderPrimitiveData& RenderScene::GetPrimitiveDataFromID(UUID64 id) const
+	GPUSceneParameters RenderScene::GetGPUSceneParameters(RenderGraph& renderGraph) const
 	{
-		auto it = std::ranges::find_if(m_renderPrimitives, [id](const auto& renderObject)
-		{
-			return renderObject.id == id;
-		});
+		GPUSceneParameters result;
+		result.PrimitiveDrawDataBuffer = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource()));
+		result.PrevPrimitiveDrawDataBuffer = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.prevPrimitiveDrawDataBuffer->GetResource()));
+		result.GPUMeshes = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.meshesBuffer->GetResource()));
+		result.SceneLights = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.lightsBuffer->GetResource()));
+		result.AnimatedBones = renderGraph.CreateSRV(renderGraph.RegisterExternalBuffer(m_buffers.bonesBuffer->GetResource()));
 
-		if (it == m_renderPrimitives.end())
-		{
-			static RenderPrimitiveData nullObject;
-			return nullObject;
-		}
-
-		return *it;
+		return result;
 	}
 
-	VT_NODISCARD const RenderLightData& RenderScene::GetLightDataFromID(UUID64 id) const
+	const RenderPrimitiveData* RenderScene::GetPrimitiveDataFromID(RenderPrimitiveID id) const
+	{
+		return m_renderPrimitiveDataContainer.GetFromID(id);
+	}
+
+	void RenderScene::VisualizeRenderPrimitives()
+	{
+		VT_PROFILE_FUNCTION();
+
+		auto transformPosition = [](const glm::vec3& pos, const glm::vec3& translation, const glm::vec3& scale, const glm::quat& rotation) 
+		{
+			glm::vec3 v = pos * scale;
+			glm::vec3 rotXYZ = glm::vec3(rotation.x, rotation.y, rotation.z);
+
+			v = v + 2.f * glm::cross(rotXYZ, glm::cross(rotXYZ, v) + rotation.w * v);
+			v += translation;
+
+			return v;
+		};
+
+		Algo::ForEachParalellBlocking([this, &transformPosition](uint32_t threadIdx, uint32_t elementIdx)
+		{
+			const PrimitiveDrawData& primitive = m_primitiveDrawData.at(elementIdx);
+
+			if (EnumValueContainsAnyFlag(primitive.flags, PrimitiveFlags::Valid))
+			{
+				const GPUMesh& gpuMesh = m_gpuMeshes.at(primitive.meshId);
+
+				const float maxScale = glm::max(glm::max(primitive.transform.scale.x, primitive.transform.scale.y), primitive.transform.scale.z);
+				const glm::vec3 center = transformPosition(gpuMesh.center, primitive.transform.position, primitive.transform.scale, primitive.transform.rotation);
+
+				m_debugRenderer.DrawLineSphere(center, maxScale * gpuMesh.radius, 1.f);
+			}
+
+		}, static_cast<uint32_t>(m_primitiveDrawData.size()), 128);
+	}
+
+	bool RenderScene::OnPreRenderEvent(AppPreRenderEvent& event)
+	{
+		VT_PROFILE_FUNCTION();
+
+		if (RHI::RHICanUseRayTracing())
+		{
+			m_rayTracingResourceTable->Update(static_cast<uint32_t>(event.GetFrameIndex()));
+		}
+
+		return false;
+	}
+
+	VT_NODISCARD const RenderLightData& RenderScene::GetLightDataFromID(RenderPrimitiveID id) const
 	{
 		auto it = std::ranges::find_if(m_renderLights, [id](const auto& light)
 		{
@@ -371,21 +324,210 @@ namespace Volt
 		return *it;
 	}
 
+	void RenderScene::ProcessQueuedUpdateOperations()
+	{
+		VT_PROFILE_FUNCTION();
+
+		RenderSceneUpdateQueue::QueuedUpdate queuedUpdate;
+		while (m_updateQueue.TryPop(queuedUpdate))
+		{
+			if (queuedUpdate.operation == RenderSceneUpdateQueue::UpdateOperation::Add)
+			{
+				if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Primitive)
+				{
+					ProcessAddPrimitiveInstance(queuedUpdate);
+				}
+				else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Light)
+				{
+					ProcessAddLightInstance(queuedUpdate);
+				}
+				else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::RayTracingInstance)
+				{
+					ProcessAddRayTracingInstance(queuedUpdate);
+				}
+			}
+			else if (queuedUpdate.operation == RenderSceneUpdateQueue::UpdateOperation::Remove)
+			{
+				ProcessQueuedRemove(queuedUpdate);
+			}
+			else if (queuedUpdate.operation == RenderSceneUpdateQueue::UpdateOperation::Invalidate)
+			{
+				ProcessQueuedInvalidation(queuedUpdate);
+			}
+		}
+	}
+
+	void RenderScene::ProcessAddPrimitiveInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
+	{
+		UUID64 newId = queuedUpdate.primitiveInfo.id;
+		RenderPrimitiveData* newRenderPrimitive = m_renderPrimitiveDataContainer.Create(newId);
+
+		if (queuedUpdate.primitiveInfo.animator)
+		{
+			m_animatedRenderObjects.emplace_back(newId);
+		}
+
+		newRenderPrimitive->entityId = queuedUpdate.primitiveInfo.entityId;
+		newRenderPrimitive->mesh = queuedUpdate.primitiveInfo.mesh;
+		newRenderPrimitive->material = queuedUpdate.primitiveInfo.material;
+		newRenderPrimitive->subMeshIndex = queuedUpdate.primitiveInfo.subMeshIndex;
+		newRenderPrimitive->animator = queuedUpdate.primitiveInfo.animator;
+
+		TryAddMaterial(queuedUpdate.primitiveInfo.material);
+		TryAddMesh(queuedUpdate.primitiveInfo.mesh);
+
+		size_t primitiveDrawDataIndex = m_primitiveIndicesContainer.GetAvailableIndex(newId);
+
+		newRenderPrimitive->primitiveIndex = static_cast<uint32_t>(primitiveDrawDataIndex);
+
+		PrimitiveDrawData& primitiveDrawData = GetPrimitiveDrawDataFromIndex(primitiveDrawDataIndex);
+
+		BuildSinglePrimitiveDrawData(primitiveDrawData, *newRenderPrimitive);
+		InvalidatePrimitiveInstance(newId);
+
+		OnRenderPrimitiveAdded(newRenderPrimitive);
+	}
+
+	void RenderScene::ProcessAddLightInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
+	{
+		UUID64 id = queuedUpdate.lightInfo.id;
+
+		auto& lightInstance = m_renderLights.emplace_back();
+		lightInstance.id = id;
+		lightInstance.entityId = queuedUpdate.lightInfo.entityId;
+		lightInstance.description = queuedUpdate.lightInfo.lightDescription;
+
+		constexpr size_t SizeMax = std::numeric_limits<size_t>::max();
+
+		size_t lightDrawDataIndex = SizeMax;
+
+		if (!m_freeLightDataIndices.empty())
+		{
+			lightDrawDataIndex = m_freeLightDataIndices.back();
+			m_freeLightDataIndices.pop_back();
+		}
+
+		LightDrawData& lightDrawData = (lightDrawDataIndex != SizeMax) ? m_lightDrawData.at(lightDrawDataIndex) : m_lightDrawData.emplace_back();
+		lightDrawData.lightType = queuedUpdate.lightInfo.lightDescription.lightType;
+
+		m_lightIndexFromLightID[id] = static_cast<uint32_t>((lightDrawDataIndex != SizeMax) ? lightDrawDataIndex : m_lightDrawData.size() - 1);
+		InvalidateLightInstance(id);
+	}
+
+	void RenderScene::ProcessAddRayTracingInstance(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
+	{
+		m_rayTracingScene->AddInstanceWithID(
+			queuedUpdate.rayTracingInstanceInfo.mesh,
+			queuedUpdate.rayTracingInstanceInfo.entityId,
+			GetPrimitiveIndexFromID(queuedUpdate.rayTracingInstanceInfo.renderScenePrimitiveId),
+			queuedUpdate.rayTracingInstanceInfo.id
+		);
+	}
+
+	void RenderScene::ProcessQueuedRemove(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
+	{
+		if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Primitive)
+		{
+			m_primitiveIndicesContainer.FreeIndexWithID(queuedUpdate.id);
+
+			RenderPrimitiveData* renderPrimitiveData = m_renderPrimitiveDataContainer.GetFromID(queuedUpdate.id);
+			const bool isAnimated = renderPrimitiveData->IsAnimated();
+
+			OnRenderPrimitiveRemoved(renderPrimitiveData);
+
+			m_renderPrimitiveDataContainer.Destroy(renderPrimitiveData);
+
+			if (isAnimated)
+			{
+				auto animIt = std::find_if(m_animatedRenderObjects.begin(), m_animatedRenderObjects.end(), [id = queuedUpdate.id](const auto& obj)
+				{
+					return obj == id;
+				});
+
+				if (animIt != m_animatedRenderObjects.end())
+				{
+					m_animatedRenderObjects.erase(animIt);
+				}
+			}
+		}
+		else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Light)
+		{
+			VT_ENSURE(m_lightIndexFromLightID.contains(queuedUpdate.id));
+
+			const size_t lightDataIndex = m_lightIndexFromLightID.at(queuedUpdate.id);
+
+			m_lightDrawData.at(lightDataIndex).flags = LightFlags::Invalid;
+			m_removedLightDataIndices.emplace_back(lightDataIndex);
+			m_freeLightDataIndices.emplace_back(lightDataIndex);
+
+			m_lightIndexFromLightID.erase(queuedUpdate.id);
+
+			auto it = std::ranges::find_if(m_renderLights, [id = queuedUpdate.id](const auto& obj)
+			{
+				return obj.id == id;
+			});
+
+			if (it != m_renderLights.end())
+			{
+				m_renderLights.erase(it);
+			}
+		}
+		else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::RayTracingInstance)
+		{
+			m_rayTracingScene->RemoveInstance(queuedUpdate.id);
+		}
+	}
+
+	void RenderScene::ProcessQueuedInvalidation(const RenderSceneUpdateQueue::QueuedUpdate& queuedUpdate)
+	{
+		if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Primitive)
+		{
+			m_primitiveIndicesContainer.InvalidateIndexWithID(queuedUpdate.id);
+		}
+		else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::Light)
+		{
+			if (m_lightIndexFromLightID.contains(queuedUpdate.id))
+			{
+				m_invalidLightDataIndices.emplace_back(queuedUpdate.id, m_lightIndexFromLightID.at(queuedUpdate.id));
+			}
+		}
+		else if (queuedUpdate.type == RenderSceneUpdateQueue::UpdateType::RayTracingInstance)
+		{
+			m_rayTracingScene->InvalidateInstance(queuedUpdate.id);
+		}
+	}
+
 	void RenderScene::BuildGPUMaterial(Weak<RenderMaterial> material, GPUMaterial& gpuMaterial)
 	{
 		gpuMaterial.textureCount = 0;
-
+		
+		// #TODO_Ivar: Bindless-support
+#if 0
 		for (const auto& texture : material->GetTextures())
 		{
 			gpuMaterial.textures[gpuMaterial.textureCount] = texture.GetResource();
-			gpuMaterial.samplers[gpuMaterial.textureCount] = Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::X16>()->GetResourceHandle();
+			gpuMaterial.samplers[gpuMaterial.textureCount] = SamplerStateCache::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Repeat, RHI::AnisotropyLevel::X16>()->GetResourceHandle();
 			gpuMaterial.textureCount++;
+		}
+#endif
+	}
+
+	void RenderScene::BuildGPUMesh(Weak<Mesh> mesh, uint32_t subMeshIndex, GPUMesh& outGPUMesh)
+	{
+		outGPUMesh = mesh->GetGPUMeshes().at(subMeshIndex);
+
+		if (RHI::RHICanUseRayTracing())
+		{
+			outGPUMesh.RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer());
+			outGPUMesh.RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer());
+			outGPUMesh.RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer());
+			outGPUMesh.RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer());
 		}
 	}
 
 	void RenderScene::BuildSinglePrimitiveDrawData(PrimitiveDrawData& primitiveDrawData, const RenderPrimitiveData& renderObject)
 	{
-		EntityHelper entity = m_scene->GetEntityHelperFromEntityID(renderObject.entityId);
+		Entity entity = m_scene->GetEntityFromID(renderObject.entityId);
 		if (!entity.IsValid())
 		{
 			return;
@@ -394,40 +536,20 @@ namespace Volt
 		const size_t hash = Math::HashCombine(renderObject.mesh->GetHash(), std::hash<uint32_t>()(renderObject.subMeshIndex));
 		const uint32_t meshId = m_meshSubMeshToGPUMeshIndex.contains(hash) ? m_meshSubMeshToGPUMeshIndex.at(hash) : 0;
 
-		primitiveDrawData.position = entity.GetPosition();
-		primitiveDrawData.scale = entity.GetScale();
-		primitiveDrawData.rotation = entity.GetRotation();
+		primitiveDrawData.transform.position = entity.GetPosition();
+		primitiveDrawData.transform.scale = entity.GetScale();
+		primitiveDrawData.transform.rotation = entity.GetRotation();
 		primitiveDrawData.meshId = meshId;
 		primitiveDrawData.entityId = entity.GetID();
 		primitiveDrawData.materialId = GetMaterialIndex(renderObject.material);
 		primitiveDrawData.meshletStartOffset = renderObject.meshletStartOffset;
 		primitiveDrawData.isAnimated = renderObject.IsAnimated();
 		primitiveDrawData.flags = PrimitiveFlags::Valid;
-
-		m_currentMeshletCount += m_gpuMeshes.at(meshId).meshletCount;
-	}
-
-	void RenderScene::BuildSingleSDFPrimitiveDrawData(SDFPrimitiveDrawData& primtiveDrawData, const RenderPrimitiveData& renderObject)
-	{
-		EntityHelper entity = m_scene->GetEntityHelperFromEntityID(renderObject.entityId);
-		if (!entity.IsValid())
-		{
-			return;
-		}
-
-		const size_t hash = Math::HashCombine(renderObject.mesh->GetHash(), std::hash<uint32_t>()(renderObject.subMeshIndex));
-		const uint32_t meshId = m_meshSubMeshToGPUMeshSDFIndex.contains(hash) ? m_meshSubMeshToGPUMeshSDFIndex.at(hash) : 0;
-
-		primtiveDrawData.position = entity.GetPosition();
-		primtiveDrawData.scale = entity.GetScale();
-		primtiveDrawData.rotation = entity.GetRotation();
-		primtiveDrawData.primtiveId = static_cast<uint32_t>(m_primitiveIndicesContainer.GetIndexFromID(renderObject.id));
-		primtiveDrawData.meshSDFId = meshId;
 	}
 
 	void RenderScene::BuildSingleLightDrawData(LightDrawData& lightDrawData, RenderLightData& renderLight)
 	{
-		EntityHelper entity = m_scene->GetEntityHelperFromEntityID(renderLight.entityId);
+		Entity entity = m_scene->GetEntityFromID(renderLight.entityId);
 		if (!entity.IsValid())
 		{
 			return;
@@ -482,22 +604,48 @@ namespace Volt
 			return;
 		}
 
+		// Add vertex and index buffers to ray tracing table
+		uint32_t RT_vertexPositionsBuffer = 0;
+		uint32_t RT_vertexAnimationInfoBuffer = 0;
+		uint32_t RT_vertexMaterialBuffer = 0;
+		uint32_t RT_indexBuffer = 0;
+
+		if (RHI::RHICanUseRayTracing())
+		{
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexPositionsBuffer());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexAnimationInfoBuffer());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetVertexMaterialBuffer());
+			m_rayTracingResourceTable->AddBuffer(mesh->GetIndexBuffer());
+
+			RT_vertexPositionsBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexPositionsBuffer());
+			RT_vertexAnimationInfoBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexAnimationInfoBuffer());
+			RT_vertexMaterialBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetVertexMaterialBuffer());
+			RT_indexBuffer = m_rayTracingResourceTable->GetBufferSlotIndex(mesh->GetIndexBuffer());
+		}
+
+		const size_t newMeshIndex = m_individualMeshes.size();
+
 		m_individualMeshes.emplace_back(mesh);
-		m_currentIndividualMeshCount += static_cast<uint32_t>(mesh->GetSubMeshes().size());
 
 		size_t currentIndex = m_gpuMeshes.size();
 
-		std::scoped_lock lock{ m_meshUpdateMutex };
-		for (uint32_t subMeshIndex = 0; const auto & gpuMesh : mesh->GetGPUMeshes())
+		for (size_t i = 0; i < mesh->GetGPUMeshes().size(); ++i)
 		{
-			m_gpuMeshes.emplace_back(gpuMesh);
+			const uint32_t subMeshIndex = static_cast<uint32_t>(i);
+
+			BuildGPUMesh(mesh, subMeshIndex, m_gpuMeshes.emplace_back());
 
 			const size_t meshHash = Math::HashCombine(mesh->GetHash(), std::hash<uint32_t>()(subMeshIndex));
 			m_meshSubMeshToGPUMeshIndex[meshHash] = static_cast<uint32_t>(currentIndex);
+			m_gpuMeshIndexToMeshAndSubMeshIndex[static_cast<uint32_t>(currentIndex)] = { newMeshIndex, subMeshIndex };
 			m_invalidMeshes.emplace_back(mesh, subMeshIndex, currentIndex);
 
 			currentIndex++;
-			subMeshIndex++;
+		}
+
+		if (s_logRenderSceneUpdatedCVar.GetValue())
+		{
+			VT_LOGC(Trace, LogRenderScene, "Mesh {} was added to render scene!", mesh->GetName());
 		}
 	}
 
@@ -505,20 +653,39 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
+		if (!material)
+		{
+			return;
+		}
+
 		auto it = std::find(m_individualMaterials.begin(), m_individualMaterials.end(), material);
 		if (it != m_individualMaterials.end())
 		{
 			return;
 		}
 
-		m_individualMaterials.emplace_back(material);
-		m_materialIndexFromMaterialHash[material->GetHash()] = m_gpuMaterials.size();
+		const size_t gpuMaterialIndex = m_gpuMaterials.size();
 
 		GPUMaterial& gpuMaterial = m_gpuMaterials.emplace_back();
 		BuildGPUMaterial(material, gpuMaterial);
 
-		std::scoped_lock lock{ m_materialUpdateMutex };
-		m_invalidMaterials.emplace_back(material, m_materialIndexFromMaterialHash[material->GetHash()]);
+		m_individualMaterials.emplace_back(material);
+		m_gpuMaterialIndexFromMaterialHash[material->GetHash()] = gpuMaterialIndex;
+		m_invalidMaterials.emplace_back(material, gpuMaterialIndex);
+
+		// Add textures to ray tracing table
+		if (RHI::RHICanUseRayTracing())
+		{
+			for (const auto& [index, textureInfo] : material->GetTextures())
+			{
+				m_rayTracingResourceTable->AddTexture(textureInfo.texture.GetResource());
+			}
+		}
+	
+		if (s_logRenderSceneUpdatedCVar.GetValue())
+		{
+			VT_LOGC(Trace, LogRenderScene, "Material {} was added to render scene!", material->GetName());
+		}
 	}
 
 	void RenderScene::UpdateInvalidMaterials(RenderGraph& renderGraph)
@@ -528,12 +695,12 @@ namespace Volt
 		auto materialsBuffer = m_buffers.materialsBuffer;
 		materialsBuffer->GrowIfRequired(m_individualMaterials.size());
 
-		std::scoped_lock lock{ m_materialUpdateMutex };
 		for (const auto& material : m_individualMaterials)
 		{
 			if (material->DoMaterialRequireUpdate())
 			{
-				m_invalidMaterials.emplace_back(material, m_materialIndexFromMaterialHash.at(material->GetHash()));
+				m_invalidMaterials.emplace_back(material, m_gpuMaterialIndexFromMaterialHash.at(material->GetHash()));
+				material->UpdateTextures();
 				material->ClearStatus();
 			}
 		}
@@ -565,8 +732,6 @@ namespace Volt
 		auto meshesBuffer = m_buffers.meshesBuffer;
 		meshesBuffer->GrowIfRequired(m_gpuMeshes.size());
 
-		std::scoped_lock lock{ m_meshUpdateMutex };
-
 		for (const auto& mesh : m_individualMeshes)
 		{
 			if (mesh->DoMeshRequireUpdate())
@@ -588,7 +753,7 @@ namespace Volt
 			for (const auto& invalidMesh : m_invalidMeshes)
 			{
 				auto& data = bufferUpload.AddUploadItem(invalidMesh.index);
-				data = invalidMesh.mesh->GetGPUMeshes().at(invalidMesh.subMeshIndex);
+				BuildGPUMesh(invalidMesh.mesh, invalidMesh.subMeshIndex, data);
 
 				m_gpuMeshes[invalidMesh.index] = data;
 
@@ -610,29 +775,53 @@ namespace Volt
 		auto drawDataBuffer = m_buffers.primitiveDrawDataBuffer;
 		drawDataBuffer->GrowIfRequired(m_primitiveDrawData.size());
 
-		PagedVector<size_t> removedPrimitiveDataIndices = m_primitiveIndicesContainer.GetAndClearRemovedIndices();
-		PagedVector<InvalidDrawData> invalidPrimitiveDataIndices = m_primitiveIndicesContainer.GetAndClearInvalidIndices();
+		Vector<size_t> removedPrimitiveDataIndices = m_primitiveIndicesContainer.GetAndClearRemovedIndices();
+		Vector<InvalidDrawData> invalidPrimitiveDataIndices = m_primitiveIndicesContainer.GetAndClearInvalidIndices();
 
 		if (!invalidPrimitiveDataIndices.empty() || !removedPrimitiveDataIndices.empty())
 		{
 			ScatteredBufferUpload<PrimitiveDrawData> bufferUpload{ invalidPrimitiveDataIndices.size() + removedPrimitiveDataIndices.size() };
 
-			for (const auto& invalidPrimitive : invalidPrimitiveDataIndices)
+			Algo::ForEachParalellBlocking([&](uint32_t threadIdx, uint32_t elementIdx) 
 			{
-				const auto& renderObject = GetPrimitiveDataFromID(invalidPrimitive.id);
-				auto& data = bufferUpload.AddUploadItem(invalidPrimitive.index);
-				BuildSinglePrimitiveDrawData(data, renderObject);
+				const InvalidDrawData& invalidPrimitive = invalidPrimitiveDataIndices.at(elementIdx);
+
+				const RenderPrimitiveData* renderObject = GetPrimitiveDataFromID(invalidPrimitive.id);
+				PrimitiveDrawData& data = bufferUpload.AddUploadItem(invalidPrimitive.index);
+				BuildSinglePrimitiveDrawData(data, *renderObject);
+
+				// Copy the bone offset which is set before this is run.
+				data.boneOffset = m_primitiveDrawData[invalidPrimitive.index].boneOffset;
+				m_primitiveDrawData[invalidPrimitive.index] = data;
 
 				if (s_logRenderSceneUpdatedCVar.GetValue())
 				{
-					VT_LOGC(Trace, LogRenderScene, "Primitive Data attached to entity {} was uploaded to index {}.", data.entityId, invalidPrimitive.index);
+					std::string logMessage = std::format(
+						"Primitive Data with ID {} added: \n"
+						"	- Entity: {}\n"
+						"	- Index: {}\n"
+						"	- Position: {}\n"
+						"	- Rotation: {}\n"
+						"	- Scale: {}\n",
+						invalidPrimitive.id,
+						data.entityId,
+						invalidPrimitive.index,
+						data.transform.position,
+						data.transform.rotation,
+						data.transform.scale
+					);
+
+					VT_LOGC_UNFORMATTED(Trace, LogRenderScene, logMessage);
 				}
-			}
+			
+			}, static_cast<uint32_t>(invalidPrimitiveDataIndices.size()));
 
 			for (const auto& removedPrimitiveIndex : removedPrimitiveDataIndices)
 			{
 				auto& data = bufferUpload.AddUploadItem(removedPrimitiveIndex);
 				data.flags = PrimitiveFlags::Invalid;
+
+				m_primitiveDrawData[removedPrimitiveIndex] = data;
 
 				if (s_logRenderSceneUpdatedCVar.GetValue())
 				{
@@ -644,41 +833,44 @@ namespace Volt
 		}
 	}
 
+	struct CompactValidDrawCallCS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(CompactValidDrawCallCS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_BUFFER_UAV(RWBuffer<uint>, RWValidPrimitiveDrawData)
+			SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<PrimitiveDrawData>, PrimitiveDrawDataBuffer)
+			SHADER_PARAMETER(uint32_t, PrimitiveDrawDataCount)
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	VT_REGISTER_SHADER(CompactValidDrawCallCS, "Engine/Shaders/Source/RenderScene/CompactValidDrawCalls.hlsl", "MainCS", Compute);
+
 	void RenderScene::CompactValidPrimitiveDrawDatas(RenderGraph& renderGraph)
 	{
 		// We need to make sure that the buffer is one larger than the count, because
 		// the first index is used for the count.
 		auto validPrimitiveDrawDataBuffer = m_buffers.validPrimitiveDrawDatasBuffer;
 
-		const uint32_t primitiveDrawDataCount = m_buffers.primitiveDrawDataBuffer->GetResource()->GetCount();
+		const uint32_t primitiveDrawDataCount = static_cast<uint32_t>(m_buffers.primitiveDrawDataBuffer->GetResource()->GetNumElements());
 		validPrimitiveDrawDataBuffer->GrowIfRequired(primitiveDrawDataCount + 1);
 
-		RenderGraphBufferHandle validPrimitiveDrawDataHandle = renderGraph.AddExternalBuffer(validPrimitiveDrawDataBuffer->GetResource());
-		RenderGraphBufferHandle primitiveDrawDataHandle = renderGraph.AddExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
+		RGBufferRef validPrimitiveDrawData = renderGraph.RegisterExternalBuffer(validPrimitiveDrawDataBuffer->GetResource());
+		RGBufferRef primitiveDrawData = renderGraph.RegisterExternalBuffer(m_buffers.primitiveDrawDataBuffer->GetResource());
 
-		RGUtils::ClearBuffer(renderGraph, validPrimitiveDrawDataHandle, 0, "Clear Valid Primitive Draw Data Buffer");
+		AddClearUAVPass(renderGraph, renderGraph.CreateUAV(validPrimitiveDrawData, RHI::PixelFormat::R32_UINT), 0u);
 
-		renderGraph.AddPass("Compact Valid Primitive Draw Datas",
-		[&](RenderGraph::Builder& builder)
-		{
-			builder.WriteResource(validPrimitiveDrawDataHandle);
-			builder.ReadResource(primitiveDrawDataHandle);
+		CompactValidDrawCallCS::Parameters* passParameters = renderGraph.AllocParameters<CompactValidDrawCallCS::Parameters>();
+		passParameters->RWValidPrimitiveDrawData = renderGraph.CreateUAV(validPrimitiveDrawData, RHI::PixelFormat::R32_UINT);
+		passParameters->PrimitiveDrawDataBuffer = renderGraph.CreateSRV(primitiveDrawData);
+		passParameters->PrimitiveDrawDataCount = primitiveDrawDataCount;
 
-			builder.SetIsComputePass();
-		},
-		[=](RenderContext& context)
-		{
-			auto pipeline = ShaderMap::GetComputePipeline("CompactValidDrawCalls");
+		constexpr uint32_t workGroupCount = 64;
 
-			context.BindPipeline(pipeline);
-			context.SetConstant("validPrimitiveDrawData"_sh, validPrimitiveDrawDataHandle);
-			context.SetConstant("primitiveDrawData"_sh, primitiveDrawDataHandle);
-			context.SetConstant("primitiveDrawDataCount"_sh, primitiveDrawDataCount);
-
-			constexpr uint32_t workGroupCount = 64;
-
-			context.Dispatch(Math::DivideRoundUp(primitiveDrawDataCount, workGroupCount), 1, 1);
-		});
+		auto shader = ShaderMap::Get<CompactValidDrawCallCS>();
+		ComputeShaderUtils::AddPass<CompactValidDrawCallCS>(renderGraph,
+			"Compact Valid Primitive Draw Datas",
+			shader,
+			passParameters,
+			{ Math::DivideRoundUp(primitiveDrawDataCount, workGroupCount), 1, 1 });
 	}
 
 	void RenderScene::UpdateInvalidLights(RenderGraph& renderGraph)

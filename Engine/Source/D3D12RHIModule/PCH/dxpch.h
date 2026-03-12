@@ -64,24 +64,6 @@ namespace Volt
 
 	namespace RHI
 	{
-		inline D3D12_COMMAND_LIST_TYPE GetD3D12QueueType(QueueType type)
-		{
-			D3D12_COMMAND_LIST_TYPE d3d12Type = {};
-			switch (type)
-			{
-				case QueueType::Graphics:
-					d3d12Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-					break;
-				case QueueType::Compute:
-					d3d12Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-					break;
-				case QueueType::TransferCopy:
-					d3d12Type = D3D12_COMMAND_LIST_TYPE_COPY;
-					break;
-			}
-			return d3d12Type;
-		}
-
 		inline DXGI_FORMAT ConvertFormatToD3D12Format(PixelFormat format)
 		{
 			switch (format)

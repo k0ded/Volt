@@ -4,9 +4,10 @@
 
 #include <AssetSystem/AssetType.h>
 
-#include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Concepts.h>
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
+#include <CoreUtilities/Archive/Archive.h>
+#include <CoreUtilities/Containers/ArrayView.h>
 
 #include <entt.hpp>
 
@@ -23,13 +24,23 @@ namespace Volt																\
 
 namespace Volt
 {
-	class EntityHelper;
+	class Entity;
 
 	template<typename T, class ENABLE = void> class TypeDesc;
 	template<typename T> constexpr bool IsReflectedType();
 	template<typename T> constexpr bool IsArrayType();
-
 	template<typename T> const TypeDesc<T>* GetTypeDesc();
+
+	template<typename T> struct ArrayTraits
+	{
+		typedef void element_type;
+		static const bool is_array = false;
+	};
+
+	template<typename T> struct IsClassType
+	{
+		static const bool value = std::is_class<T>::value && !std::is_enum<T>::value && !ArrayTraits<T>::is_array;
+	};
 
 	template<typename T> inline constexpr auto ReflectType(TypeDesc<T>& desc) -> decltype(T::ReflectType(std::declval<TypeDesc<T>&>()), void())
 	{
@@ -74,10 +85,10 @@ namespace Volt
 	public:
 		virtual ~ICommonTypeDesc() = default;
 
-		[[nodiscard]] virtual const VoltGUID& GetGUID() const = 0;
-		[[nodiscard]] virtual const std::string_view GetLabel() const = 0;
-		[[nodiscard]] virtual const std::string_view GetDescription() const = 0;
-		[[nodiscard]] virtual const ValueType GetValueType() const = 0;
+		VT_NODISCARD virtual const VoltGUID& GetGUID() const = 0;
+		VT_NODISCARD virtual const std::string_view GetLabel() const = 0;
+		VT_NODISCARD virtual const std::string_view GetDescription() const = 0;
+		VT_NODISCARD virtual const ValueType GetValueType() const = 0;
 	};
 
 	template<ValueType VALUE_TYPE>
@@ -86,7 +97,7 @@ namespace Volt
 	public:
 		~CommonTypeDesc() override = default;
 
-		[[nodiscard]] const ValueType GetValueType() const override { return m_valueType; }
+		VT_NODISCARD const ValueType GetValueType() const override { return m_valueType; }
 
 	protected:
 		const ValueType m_valueType = VALUE_TYPE;
@@ -108,7 +119,8 @@ namespace Volt
 	struct ComponentMember
 	{
 		ptrdiff_t offset;
-		std::string_view name;
+		size_t size;
+		uint32_t identifier;
 		std::string_view label;
 		std::string_view description;
 
@@ -122,16 +134,17 @@ namespace Volt
 		Scope<IDefaultValueType> defaultValue;
 
 		std::function<void(void* lhs, const void* rhs)> copyFunction;
+		std::function<void(Archive& archive, void* data)> serializeFunction;
 
 		VT_INLINE AssetType GetAssetType() const
 		{
-			return g_assetTypeRegistry.GetTypeFromGUID(assetTypeGuid);
+			return AssetTypeRegistry::Get().GetTypeFromGUID(assetTypeGuid);
 		}
 	};
 
 	struct EnumConstant
 	{
-		int32_t value;
+		uint64_t value;
 		std::string_view name;
 		std::string_view label;
 	};
@@ -141,20 +154,20 @@ namespace Volt
 	public:
 		~IComponentTypeDesc() override = default;
 
-		[[nodiscard]] virtual const Vector<ComponentMember>& GetMembers() const = 0;
-		[[nodiscard]] virtual const bool IsHidden() const = 0;
-		[[nodiscard]] virtual ComponentMember* FindMemberByOffset(const ptrdiff_t offset) = 0;
-		[[nodiscard]] virtual ComponentMember* FindMemberByName(std::string_view name) = 0;
-		[[nodiscard]] virtual const ComponentMember* FindMemberByName(std::string_view name) const = 0;
+		VT_NODISCARD virtual const ArrayView<ComponentMember> GetMembers() const = 0;
+		VT_NODISCARD virtual const bool IsHidden() const = 0;
+		VT_NODISCARD virtual ComponentMember* FindMemberByOffset(const ptrdiff_t offset) = 0;
+		VT_NODISCARD virtual ComponentMember* FindMemberByIdentifier(uint32_t identifier) = 0;
+		VT_NODISCARD virtual const ComponentMember* FindMemberByIdentifier(uint32_t identifier) const = 0;
+		VT_NODISCARD virtual ComponentMember* FindMemberByLabel(std::string_view label) = 0;
+		VT_NODISCARD virtual const ComponentMember* FindMemberByLabel(std::string_view label) const = 0;
 		
-		virtual void OnCreate(const EntityHelper& entityHelper) const = 0;
-		virtual void OnDestroy(const EntityHelper& entityHelper) const = 0;
-		virtual void OnStart(const EntityHelper& entityHelper) const = 0;
-		virtual void OnStop(const EntityHelper& entityHelper) const = 0;
-		virtual void OnMemberChanged(const EntityHelper& entityHelper) const = 0;
-		virtual void OnComponentCopied(const EntityHelper& entityHelper) const = 0;
-		virtual void OnComponentDeserialized(const EntityHelper& entityHelper) const = 0;
-		virtual void OnTransformChanged(const EntityHelper& entityHelper) const = 0;
+		virtual void OnInitialize(const Entity& entityHelper) const = 0;
+		virtual void OnDestroy(const Entity& entityHelper) const = 0;
+		virtual void OnStart(const Entity& entityHelper) const = 0;
+		virtual void OnStop(const Entity& entityHelper) const = 0;
+		virtual void OnMemberChanged(const Entity& entityHelper) const = 0;
+		virtual void OnTransformChanged(const Entity& entityHelper) const = 0;
 	};
 
 	class IEnumTypeDesc : public CommonTypeDesc<ValueType::Enum>
@@ -168,28 +181,30 @@ namespace Volt
 
 		~IEnumTypeDesc() override = default;
 
-		[[nodiscard]] virtual const Vector<EnumConstant>& GetConstants() const = 0;
-		[[nodiscard]] virtual const Vector<std::string> GetConstantNames() const = 0;
-		[[nodiscard]] virtual UnderlyingTypeInfo GetUnderlyingTypeInfo() const = 0;
+		VT_NODISCARD virtual ArrayView<EnumConstant> GetConstants() const = 0;
+		VT_NODISCARD virtual const Vector<std::string> GetConstantNames() const = 0;
+		VT_NODISCARD virtual UnderlyingTypeInfo GetUnderlyingTypeInfo() const = 0;
+		virtual void Serialize(Archive& archive, void* data) const = 0;
 	};
 
 	class IArrayTypeDesc : public CommonTypeDesc<ValueType::Array>
 	{
 	public:
-		[[nodiscard]] virtual const ICommonTypeDesc* GetElementTypeDesc() const = 0;
-		[[nodiscard]] virtual const TypeTraits::TypeIndex& GetElementTypeIndex() const = 0;
-		[[nodiscard]] virtual const size_t GetElementTypeSize() const = 0;
+		VT_NODISCARD virtual const ICommonTypeDesc* GetElementTypeDesc() const = 0;
+		VT_NODISCARD virtual const TypeTraits::TypeIndex& GetElementTypeIndex() const = 0;
+		VT_NODISCARD virtual const size_t GetElementTypeSize() const = 0;
 
 		// NOTE: This function heap allocates an object that MUST be manually deleted!
 		virtual void DefaultConstructElement(void*& value) const = 0;
 		virtual void DestroyElement(void*& value) const = 0;
 
 		virtual void PushBack(void* array, const void* value) const = 0;
-		[[nodiscard]] virtual const size_t Size(const void* array) const = 0;
-		[[nodiscard]] virtual void* At(void* array, size_t pos) const = 0;
-		[[nodiscard]] virtual const void* At(const void* array, size_t pos) const = 0;
+		VT_NODISCARD virtual const size_t Size(const void* array) const = 0;
+		VT_NODISCARD virtual void* At(void* array, size_t pos) const = 0;
+		VT_NODISCARD virtual const void* At(const void* array, size_t pos) const = 0;
 		virtual void* EmplaceBack(void* array, const void* value) const = 0;
 		virtual void Erase(void* array, size_t pos) const = 0;
+		virtual void Serialize(Archive& archive, void* array) const = 0;
 
 		~IArrayTypeDesc() override = default;
 	};
@@ -198,6 +213,8 @@ namespace Volt
 	class ArrayTypeDesc : public IArrayTypeDesc
 	{
 	public:
+		using ElementType = ELEMENT_TYPE;
+
 		~ArrayTypeDesc() override = default;
 
 		void SetLabel(std::string_view name);
@@ -234,17 +251,22 @@ namespace Volt
 			m_eraseFunction = std::move(func);
 		}
 
-		[[nodiscard]] const size_t Size(const void* array) const override
+		void SetSerializeFunction(std::function<void(Archive& archive, void* array)>&& func)
+		{
+			m_serializeFunction = std::move(func);
+		}
+
+		VT_NODISCARD const size_t Size(const void* array) const override
 		{
 			return m_sizeFunction(array);
 		}
 
-		[[nodiscard]] void* At(void* array, size_t pos) const override
+		VT_NODISCARD void* At(void* array, size_t pos) const override
 		{
 			return m_atFunction(array, pos);
 		}
 
-		[[nodiscard]] const void* At(const void* array, size_t pos) const override
+		VT_NODISCARD const void* At(const void* array, size_t pos) const override
 		{
 			return m_atConstFunction(array, pos);
 		}
@@ -277,11 +299,16 @@ namespace Volt
 			value = nullptr;
 		}
 
-		[[nodiscard]] inline const VoltGUID& GetGUID() const override { return m_guid; }
-		[[nodiscard]] inline const std::string_view GetLabel() const override { return m_label; }
-		[[nodiscard]] inline const std::string_view GetDescription() const override { return m_description; }
-		[[nodiscard]] inline const size_t GetElementTypeSize() const override { return sizeof(ELEMENT_TYPE); }
-		[[nodiscard]] inline const ICommonTypeDesc* GetElementTypeDesc() const override
+		void Serialize(Archive& archive, void* array) const override
+		{
+			m_serializeFunction(archive, array);
+		}
+
+		VT_NODISCARD inline const VoltGUID& GetGUID() const override { return m_guid; }
+		VT_NODISCARD inline const std::string_view GetLabel() const override { return m_label; }
+		VT_NODISCARD inline const std::string_view GetDescription() const override { return m_description; }
+		VT_NODISCARD inline const size_t GetElementTypeSize() const override { return sizeof(ELEMENT_TYPE); }
+		VT_NODISCARD inline const ICommonTypeDesc* GetElementTypeDesc() const override
 		{
 			if constexpr (IsReflectedType<ELEMENT_TYPE>() || IsArrayType<ELEMENT_TYPE>())
 			{
@@ -293,7 +320,7 @@ namespace Volt
 			}
 		}
 
-		[[nodiscard]] inline const TypeTraits::TypeIndex& GetElementTypeIndex() const override { return m_elementTypeIndex; }
+		VT_NODISCARD inline const TypeTraits::TypeIndex& GetElementTypeIndex() const override { return m_elementTypeIndex; }
 
 	private:
 		VoltGUID m_guid = VoltGUID::Null();
@@ -308,13 +335,14 @@ namespace Volt
 		std::function<void(void* pArray, const void* pValue)> m_pushBackFunction;
 		std::function<void* (void* pArray, const void* pValue)> m_emplaceBackFunction;
 		std::function<void(void* pArray, size_t pos)> m_eraseFunction;
+		std::function<void(Archive& archive, void* array)> m_serializeFunction;
 	};
 
 	template<typename T>
 	class ComponentTypeDesc : public IComponentTypeDesc
 	{
 	public:
-		using ComponentCallbackFunc = std::function<void(const EntityHelper&)>;
+		using ComponentCallbackFunc = std::function<void(const Entity&)>;
 
 		~ComponentTypeDesc() override = default;
 
@@ -323,39 +351,39 @@ namespace Volt
 		void SetGUID(const VoltGUID& guid);
 		inline void SetHidden() { m_isHidden = true; }
 
-		[[nodiscard]] inline const VoltGUID& GetGUID() const override { return m_guid; }
-		[[nodiscard]] inline const std::string_view GetLabel() const override { return m_componentLabel; }
-		[[nodiscard]] inline const std::string_view GetDescription() const override { return m_componentDescription; }
-		[[nodiscard]] inline const Vector<ComponentMember>& GetMembers() const override { return m_members; }
-		[[nodiscard]] inline const bool IsHidden() const override { return m_isHidden; }
+		VT_NODISCARD inline const VoltGUID& GetGUID() const override { return m_guid; }
+		VT_NODISCARD inline const std::string_view GetLabel() const override { return m_componentLabel; }
+		VT_NODISCARD inline const std::string_view GetDescription() const override { return m_componentDescription; }
+		VT_NODISCARD inline const ArrayView<ComponentMember> GetMembers() const override { return m_members; }
+		VT_NODISCARD inline const bool IsHidden() const override { return m_isHidden; }
 
-		void OnCreate(const EntityHelper& entityHelper) const override;
-		void OnDestroy(const EntityHelper& entityHelper) const override;
-		void OnStart(const EntityHelper& entityHelper) const override;
-		void OnStop(const EntityHelper& entityHelper) const override;
-		void OnMemberChanged(const EntityHelper& entityHelper) const override;
-		void OnComponentCopied(const EntityHelper& entityHelper) const override;
-		void OnComponentDeserialized(const EntityHelper& entityHelper) const override;
-		void OnTransformChanged(const EntityHelper& entityHelper) const override;
+		void OnInitialize(const Entity& entityHelper) const override;
+		void OnDestroy(const Entity& entityHelper) const override;
+		void OnStart(const Entity& entityHelper) const override;
+		void OnStop(const Entity& entityHelper) const override;
+		void OnMemberChanged(const Entity& entityHelper) const override;
+		void OnTransformChanged(const Entity& entityHelper) const override;
 
-		[[nodiscard]] ComponentMember* FindMemberByOffset(const ptrdiff_t offset) override;
-		[[nodiscard]] ComponentMember* FindMemberByName(std::string_view name) override;
-		[[nodiscard]] const ComponentMember* FindMemberByName(std::string_view name) const override;
+		VT_NODISCARD ComponentMember* FindMemberByOffset(const ptrdiff_t offset) override;
+		VT_NODISCARD ComponentMember* FindMemberByIdentifier(uint32_t identifier) override;
+		VT_NODISCARD const ComponentMember* FindMemberByIdentifier(uint32_t identifier) const override;
+		VT_NODISCARD ComponentMember* FindMemberByLabel(std::string_view label) override;
+		VT_NODISCARD const ComponentMember* FindMemberByLabel(std::string_view label) const override;
 
 		template<typename Type, typename DefaultValueT, typename TypeParent = T>
-		const ComponentMember& AddMember(Type TypeParent::* memberPtr, std::string_view name, std::string_view label, std::string_view description, const DefaultValueT& defaultValue)
+		const ComponentMember& AddMember(Type TypeParent::* memberPtr, uint32_t identifier, std::string_view label, std::string_view description, const DefaultValueT& defaultValue)
 		{
-			return AddMember(memberPtr, name, label, description, defaultValue, ::AssetTypes::None);
+			return AddMember(memberPtr, identifier, label, description, defaultValue, ::AssetTypes::None);
 		}
 
 		template<typename Type, typename DefaultValueT, typename TypeParent = T>
-		const ComponentMember& AddMember(Type TypeParent::* memberPtr, std::string_view name, std::string_view label, std::string_view description, const DefaultValueT& defaultValue, ComponentMemberFlag flags)
+		const ComponentMember& AddMember(Type TypeParent::* memberPtr, uint32_t identifier, std::string_view label, std::string_view description, const DefaultValueT& defaultValue, ComponentMemberFlag flags)
 		{
-			return AddMember(memberPtr, name, label, description, defaultValue, ::AssetTypes::None, flags);
+			return AddMember(memberPtr, identifier, label, description, defaultValue, ::AssetTypes::None, flags);
 		}
 
 		template<typename Type, typename DefaultValueT, typename AssetTypeType, typename TypeParent = T>
-		const ComponentMember& AddMember(Type TypeParent::* memberPtr, std::string_view name, std::string_view label, std::string_view description, const DefaultValueT& defaultValue, AssetTypeType assetType, ComponentMemberFlag flags = ComponentMemberFlag::None)
+		const ComponentMember& AddMember(Type TypeParent::* memberPtr, uint32_t identifier, std::string_view label, std::string_view description, const DefaultValueT& defaultValue, AssetTypeType assetType, ComponentMemberFlag flags = ComponentMemberFlag::None)
 		{
 			static ComponentMember* nullMember = nullptr;
 
@@ -367,35 +395,53 @@ namespace Volt
 				return *nullMember;
 			}
 
-			const bool hasMemberWithName = FindMemberByName(name) != nullptr;
+			const bool hasMemberWithName = FindMemberByIdentifier(identifier) != nullptr;
 			VT_ASSERT_MSG(!hasMemberWithName, "Member with name has already been registered!");
 			if (hasMemberWithName)
 			{    
 				return *nullMember;
 			}
 
-			auto copyFunction = [](void* lhs, const void* rhs)
+			ComponentMember& componentMember = m_members.emplace_back();
+			componentMember.offset = offset;
+			componentMember.size = sizeof(Type);
+			componentMember.identifier = identifier;
+			componentMember.label = label;
+			componentMember.description = description;
+			componentMember.assetTypeGuid = AssetTypeType::element_type::guid;
+			componentMember.flags = flags;
+			componentMember.typeDesc = nullptr;
+			componentMember.ownerTypeDesc = this;
+			componentMember.typeIndex = TypeTraits::TypeIndex::FromType<Type>();
+			componentMember.defaultValue = CreateScope<DefaultValueType<DefaultValueT>>(defaultValue);
+			componentMember.copyFunction = [](void* lhs, const void* rhs)
 			{
 				*reinterpret_cast<Type*>(lhs) = *reinterpret_cast<const Type*>(rhs);
 			};
 
+			componentMember.serializeFunction = [](Archive& archive, void* data) 
+			{
+				Type& value = *reinterpret_cast<Type*>(data);
+				archive << value;
+			};
+
 			if constexpr (IsArrayType<Type>() || IsReflectedType<Type>())
 			{
-				m_members.emplace_back(offset, name, label, description, AssetTypeType::element_type::guid, flags, GetTypeDesc<Type>(), this, TypeTraits::TypeIndex::FromType<Type>(), CreateScope<DefaultValueType<DefaultValueT>>(defaultValue), copyFunction);
-			}
-			else
-			{
-				m_members.emplace_back(offset, name, label, description, AssetTypeType::element_type::guid, flags, nullptr, this, TypeTraits::TypeIndex::FromType<Type>(), CreateScope<DefaultValueType<DefaultValueT>>(defaultValue), copyFunction);
-			}
+				if constexpr (IsArrayType<Type>())
+				{
+					static_assert(std::is_same_v<DefaultValueT, typename ArrayTraits<Type>::element_type>, "In array types, the default type is expected to be of the element type!");
+				}
 
+				componentMember.typeDesc = GetTypeDesc<Type>();
+			}
 
 			return m_members.back();
 		}
 
 		template<typename EntityType>
-		void SetOnCreateCallback(void(*func)(EntityType))
+		void SetOnInitializeCallback(void(*func)(EntityType))
 		{
-			m_onCreateCallback = [func](const EntityHelper& entityHelper)
+			m_onInitializeCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -405,7 +451,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnDestroyCallback(void(*func)(EntityType))
 		{
-			m_onDestroyCallback = [func](const EntityHelper& entityHelper)
+			m_onDestroyCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -415,7 +461,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnStartCallback(void(*func)(EntityType))
 		{
-			m_onStartCallback = [func](const EntityHelper& entityHelper)
+			m_onStartCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -425,7 +471,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnStopCallback(void(*func)(EntityType))
 		{
-			m_onStopCallback = [func](const EntityHelper& entityHelper)
+			m_onStopCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -435,27 +481,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnMemberChangedCallback(void(*func)(EntityType))
 		{
-			m_onMemberChangedCallback = [func](const EntityHelper& entityHelper)
-			{
-				auto entity = EntityType(entityHelper);
-				func(entity);
-			};
-		}
-
-		template<typename EntityType>
-		void SetOnComponentCopiedCallback(void(*func)(EntityType))
-		{
-			m_onComponentCopiedCallback = [func](const EntityHelper& entityHelper)
-			{
-				auto entity = EntityType(entityHelper);
-				func(entity);
-			};
-		}
-
-		template<typename EntityType>
-		void SetOnComponentDeserializedCallback(void(*func)(EntityType))
-		{
-			m_onComponentDeserializedCallback = [func](const EntityHelper& entityHelper)
+			m_onMemberChangedCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -465,7 +491,7 @@ namespace Volt
 		template<typename EntityType>
 		void SetOnTransformChangedCallback(void(*func)(EntityType))
 		{
-			m_onTransformChangedCallback = [func](const EntityHelper& entityHelper)
+			m_onTransformChangedCallback = [func](const Entity& entityHelper)
 			{
 				auto entity = EntityType(entityHelper);
 				func(entity);
@@ -481,13 +507,11 @@ namespace Volt
 
 		bool m_isHidden = false;
 
-		ComponentCallbackFunc m_onCreateCallback;
+		ComponentCallbackFunc m_onInitializeCallback;
 		ComponentCallbackFunc m_onDestroyCallback;
 		ComponentCallbackFunc m_onStartCallback;
 		ComponentCallbackFunc m_onStopCallback;
 		ComponentCallbackFunc m_onMemberChangedCallback;
-		ComponentCallbackFunc m_onComponentCopiedCallback;
-		ComponentCallbackFunc m_onComponentDeserializedCallback;
 		ComponentCallbackFunc m_onTransformChangedCallback;
 	};
 
@@ -501,15 +525,16 @@ namespace Volt
 		void SetDescription(std::string_view description);
 		void SetGUID(const VoltGUID& guid);
 		void SetDefaultValue(const T& value);
+		void Serialize(Archive& archive, void* data) const override;
 
 		void AddConstant(const T& constant, std::string_view name, std::string_view label);
 
-		[[nodiscard]] inline const VoltGUID& GetGUID() const override { return m_guid; }
-		[[nodiscard]] inline const std::string_view GetLabel() const override { return m_enumLabel; }
-		[[nodiscard]] inline const std::string_view GetDescription() const override { return m_enumDescription; }
-		[[nodiscard]] inline const Vector<EnumConstant>& GetConstants() const override { return m_constants; }
-		[[nodiscard]] inline UnderlyingTypeInfo GetUnderlyingTypeInfo() const override { return UnderlyingTypeInfo{ sizeof(std::underlying_type_t<T>), std::is_signed_v<std::underlying_type_t<T>> }; }
-		[[nodiscard]] const Vector<std::string> GetConstantNames() const override;
+		VT_NODISCARD inline const VoltGUID& GetGUID() const override { return m_guid; }
+		VT_NODISCARD inline const std::string_view GetLabel() const override { return m_enumLabel; }
+		VT_NODISCARD inline const std::string_view GetDescription() const override { return m_enumDescription; }
+		VT_NODISCARD inline ArrayView<EnumConstant> GetConstants() const override { return m_constants; }
+		VT_NODISCARD inline UnderlyingTypeInfo GetUnderlyingTypeInfo() const override { return UnderlyingTypeInfo{ sizeof(std::underlying_type_t<T>), std::is_signed_v<std::underlying_type_t<T>> }; }
+		VT_NODISCARD const Vector<std::string> GetConstantNames() const override;
 
 	private:
 		VoltGUID m_guid = VoltGUID::Null();
@@ -539,16 +564,16 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnCreate(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnInitialize(const Entity& entityHelper) const
 	{
-		if (m_onCreateCallback)
+		if (m_onInitializeCallback)
 		{
-			m_onCreateCallback(entityHelper);
+			m_onInitializeCallback(entityHelper);
 		}
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnDestroy(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnDestroy(const Entity& entityHelper) const
 	{
 		if (m_onDestroyCallback)
 		{
@@ -557,7 +582,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnStart(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnStart(const Entity& entityHelper) const
 	{
 		if (m_onStartCallback)
 		{
@@ -566,7 +591,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnStop(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnStop(const Entity& entityHelper) const
 	{
 		if (m_onStopCallback)
 		{
@@ -575,7 +600,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnMemberChanged(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnMemberChanged(const Entity& entityHelper) const
 	{
 		if (m_onMemberChangedCallback)
 		{
@@ -584,25 +609,7 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline void ComponentTypeDesc<T>::OnComponentCopied(const EntityHelper& entityHelper) const
-	{
-		if (m_onComponentCopiedCallback)
-		{
-			m_onComponentCopiedCallback(entityHelper);
-		}
-	}
-
-	template<typename T>
-	inline void ComponentTypeDesc<T>::OnComponentDeserialized(const EntityHelper& entityHelper) const
-	{
-		if (m_onComponentDeserializedCallback)
-		{
-			m_onComponentDeserializedCallback(entityHelper);
-		}
-	}
-
-	template<typename T>
-	inline void ComponentTypeDesc<T>::OnTransformChanged(const EntityHelper& entityHelper) const
+	inline void ComponentTypeDesc<T>::OnTransformChanged(const Entity& entityHelper) const
 	{
 		if (m_onTransformChangedCallback)
 		{
@@ -627,11 +634,11 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline ComponentMember* ComponentTypeDesc<T>::FindMemberByName(std::string_view name)
+	inline ComponentMember* ComponentTypeDesc<T>::FindMemberByIdentifier(uint32_t identifier)
 	{
-		auto it = std::find_if(m_members.begin(), m_members.end(), [name](const auto& member)
+		auto it = std::find_if(m_members.begin(), m_members.end(), [identifier](const auto& member)
 		{
-			return member.name == name;
+			return member.identifier == identifier;
 		});
 
 		if (it == m_members.end())
@@ -643,11 +650,43 @@ namespace Volt
 	}
 
 	template<typename T>
-	inline const ComponentMember* ComponentTypeDesc<T>::FindMemberByName(std::string_view name) const
+	inline const ComponentMember* ComponentTypeDesc<T>::FindMemberByIdentifier(uint32_t identifier) const
 	{
-		auto it = std::find_if(m_members.begin(), m_members.end(), [name](const auto& member)
+		auto it = std::find_if(m_members.begin(), m_members.end(), [identifier](const auto& member)
 		{
-			return member.name == name;
+			return member.identifier == identifier;
+		});
+
+		if (it == m_members.end())
+		{
+			return nullptr;
+		}
+
+		return &(*it);
+	}
+
+	template<typename T>
+	inline const ComponentMember* Volt::ComponentTypeDesc<T>::FindMemberByLabel(std::string_view label) const
+	{
+		auto it = std::find_if(m_members.begin(), m_members.end(), [label](const auto& member)
+		{
+			return member.label == label;
+		});
+
+		if (it == m_members.end())
+		{
+			return nullptr;
+		}
+
+		return &(*it);
+	}
+
+	template<typename T>
+	inline ComponentMember* Volt::ComponentTypeDesc<T>::FindMemberByLabel(std::string_view label)
+	{
+		auto it = std::find_if(m_members.begin(), m_members.end(), [label](const auto& member)
+		{
+			return member.label == label;
 		});
 
 		if (it == m_members.end())
@@ -683,9 +722,25 @@ namespace Volt
 	}
 
 	template<Enum T>
+	void EnumTypeDesc<T>::Serialize(Archive& archive, void* data) const
+	{
+		using UnderlyingType = std::underlying_type_t<T>;
+
+		T& value = *reinterpret_cast<T*>(data);
+		UnderlyingType tempValue = static_cast<UnderlyingType>(value);
+
+		archive << tempValue;
+
+		if (archive.IsLoading())
+		{
+			value = static_cast<T>(tempValue);
+		}
+	}
+
+	template<Enum T>
 	inline void EnumTypeDesc<T>::AddConstant(const T& constant, std::string_view name, std::string_view label)
 	{
-		m_constants.emplace_back(static_cast<int32_t>(constant), name, label);
+		m_constants.emplace_back(static_cast<uint64_t>(constant), name, label);
 	}
 
 	template<Enum T>
@@ -702,17 +757,6 @@ namespace Volt
 	}
 
 	// Helpers
-	template<typename T> struct ArrayTraits
-	{
-		typedef void element_type;
-		static const bool is_array = false;
-	};
-
-	template<typename T> struct IsClassType
-	{
-		static const bool value = std::is_class<T>::value && !std::is_enum<T>::value && !ArrayTraits<T>::is_array;
-	};
-
 	template<typename T> class TypeDesc<T, typename std::enable_if<std::is_enum<T>::value>::type> : public EnumTypeDesc<T>
 	{
 	public:
@@ -841,6 +885,12 @@ namespace Volt
 		{
 			Vector<ELEMENT_TYPE>& vecRef = *reinterpret_cast<Vector<ELEMENT_TYPE>*>(array);
 			vecRef.erase(vecRef.begin() + pos);
+		});
+
+		desc.SetSerializeFunction([](Archive& archive, void* array) 
+		{
+			Vector<ELEMENT_TYPE>& vecRef = *reinterpret_cast<Vector<ELEMENT_TYPE>*>(array);
+			archive << vecRef;
 		});
 	}
 }

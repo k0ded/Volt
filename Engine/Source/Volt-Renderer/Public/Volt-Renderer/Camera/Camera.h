@@ -30,7 +30,10 @@ namespace Volt
 		inline void SetFarPlane(float farPlane) { m_farPlane = farPlane; }
 
 		inline const glm::mat4& GetProjection() const { return m_projectionMatrix; }
+		inline const glm::mat4& GetNonReversedProjection() const { return m_nonReversedProjectionMatrix; }
 		inline const glm::mat4& GetView() const { return m_viewMatrix; }
+
+		glm::mat4 GetTransform() const;
 
 		const glm::mat4 GetNonJitteredProjection() const;
 
@@ -75,6 +78,7 @@ namespace Volt
 		glm::vec3 m_rotation = { 0.f, 0.f, 0.f };
 
 		glm::mat4 m_projectionMatrix = glm::mat4(1.f);
+		glm::mat4 m_nonReversedProjectionMatrix = glm::mat4(1.f);
 		glm::mat4 m_viewMatrix = glm::mat4(1.f);
 
 		glm::vec2 m_subpixelOffset = 0.f;

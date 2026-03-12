@@ -2,10 +2,19 @@
 
 #include "Volt-CoreComponents/LightComponents.h"
 
+#include <Volt-Assets/StreamingManager.h>
+
 #include <Volt-Renderer/Renderer.h>
 
 namespace Volt
 {
+	VT_REGISTER_COMPONENT(PointLightComponent);
+	VT_REGISTER_COMPONENT(SpotLightComponent);
+	VT_REGISTER_COMPONENT(RectangleLightComponent);
+	VT_REGISTER_COMPONENT(DirectionalLightComponent);
+	VT_REGISTER_COMPONENT(SkylightComponent);
+	VT_REGISTER_COMPONENT(SphereLightComponent);
+
 	namespace Utility
 	{
 		SceneLightDescription InitializeLightDescription(const PointLightComponent& component)
@@ -56,15 +65,24 @@ namespace Volt
 			lightDescription.lightType = SceneLightType::Sky;
 			lightDescription.intensity = component.intensity;
 			lightDescription.lod = component.lod;
-			lightDescription.diffuseIBL = component.currentSceneEnvironment.diffuse;
-			lightDescription.specularIBL = component.currentSceneEnvironment.specular;
 			lightDescription.show = component.show;
 
 			return lightDescription;
 		}
+
+		StreamingInstanceDescription CreateStreamingInstanceDescription(const SkylightComponent& skylightComponent, EntityID entityId, Ref<SceneLightData> sceneLightData)
+		{
+			StreamingInstanceDescription streamingInstanceDesc;
+			streamingInstanceDesc.entityId = entityId;
+			streamingInstanceDesc.environmentTextureHandle = skylightComponent.environmentTextureHandle;
+			streamingInstanceDesc.sceneLightData = sceneLightData;
+			streamingInstanceDesc.sceneLightDescription = InitializeLightDescription(skylightComponent);
+
+			return streamingInstanceDesc;
+		}
 	}
 
-	void PointLightComponent::OnCreate(LightEntity entity)
+	void PointLightComponent::OnInitialize(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<PointLightComponent>();
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
@@ -85,14 +103,6 @@ namespace Volt
 		component.m_sceneLightData->Invalidate();
 	}
 
-	void PointLightComponent::OnComponentCopied(LightEntity entity)
-	{
-		auto& component = entity.GetComponent<PointLightComponent>();
-		VT_ENSURE(component.m_sceneLightData);
-
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
-	}
-
 	void PointLightComponent::OnMemberChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<PointLightComponent>();
@@ -101,33 +111,25 @@ namespace Volt
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
 	}
 	
-	void SpotLightComponent::OnCreate(LightEntity entity)
+	void SpotLightComponent::OnInitialize(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SpotLightComponent>();
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
-	
+
 	void SpotLightComponent::OnDestroy(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SpotLightComponent>();
 		component.m_sceneLightData = nullptr;
 	}
-	
+
 	void SpotLightComponent::OnTransformChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SpotLightComponent>();
 		VT_ENSURE(component.m_sceneLightData);
 
 		component.m_sceneLightData->Invalidate();
-	}
-	
-	void SpotLightComponent::OnComponentCopied(LightEntity entity)
-	{
-		auto& component = entity.GetComponent<SpotLightComponent>();
-		VT_ENSURE(component.m_sceneLightData);
-
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
 
 	void SpotLightComponent::OnMemberChanged(LightEntity entity)
@@ -138,13 +140,13 @@ namespace Volt
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
 
-	void DirectionalLightComponent::OnCreate(LightEntity entity)
+	void DirectionalLightComponent::OnInitialize(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<DirectionalLightComponent>();
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
-	
+
 	void DirectionalLightComponent::OnDestroy(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<DirectionalLightComponent>();
@@ -158,15 +160,7 @@ namespace Volt
 
 		component.m_sceneLightData->Invalidate();
 	}
-	
-	void DirectionalLightComponent::OnComponentCopied(LightEntity entity)
-	{
-		auto& component = entity.GetComponent<DirectionalLightComponent>();
-		VT_ENSURE(component.m_sceneLightData);
 
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
-	}
-	
 	void DirectionalLightComponent::OnMemberChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<DirectionalLightComponent>();
@@ -175,49 +169,38 @@ namespace Volt
 		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component, entity.GetForward() * -1.f));
 	}
 
-	void SkylightComponent::OnCreate(LightEntity entity)
+	void SkylightComponent::UpdateSceneLightData(EntityID entityId)
+	{
+		VT_ENSURE(m_sceneLightData);
+
+		if (environmentTextureHandle == Asset::Null())
+		{
+			return;
+		}
+		StreamingManager::Get().InvalidateInstance(m_streamingInstanceID, Utility::CreateStreamingInstanceDescription(*this, entityId, m_sceneLightData));
+	}
+
+	void SkylightComponent::OnInitialize(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
 		component.m_sceneLightData = CreateRef<SceneLightData>(entity.GetID(), entity.GetRenderScene());
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
+		component.m_streamingInstanceID = StreamingManager::Get().AddInstance(Utility::CreateStreamingInstanceDescription(component, entity.GetID(), component.m_sceneLightData));
 	}
-	
+
 	void SkylightComponent::OnDestroy(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
+
+		if (StreamingManager::IsValid())
+		{
+			StreamingManager::Get().RemoveInstance(component.m_streamingInstanceID);
+		}
 		component.m_sceneLightData = nullptr;
 	}
-	
-	void SkylightComponent::OnComponentCopied(LightEntity entity)
-	{
-		auto& component = entity.GetComponent<SkylightComponent>();
-		VT_ENSURE(component.m_sceneLightData);
 
-		{
-			auto envTextures = Renderer::GenerateEnvironmentTextures(component.environmentTextureHandle);
-			component.currentSceneEnvironment.diffuse = envTextures.diffuse;
-			component.currentSceneEnvironment.specular = envTextures.specular;
-
-			component.lastEnvironmentHandle = component.environmentTextureHandle;
-		}
-
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
-	}
-	
 	void SkylightComponent::OnMemberChanged(LightEntity entity)
 	{
 		auto& component = entity.GetComponent<SkylightComponent>();
-		VT_ENSURE(component.m_sceneLightData);
-
-		if (component.lastEnvironmentHandle != component.environmentTextureHandle)
-		{
-			auto envTextures = Renderer::GenerateEnvironmentTextures(component.environmentTextureHandle);
-			component.currentSceneEnvironment.diffuse = envTextures.diffuse;
-			component.currentSceneEnvironment.specular = envTextures.specular;
-
-			component.lastEnvironmentHandle = component.environmentTextureHandle;
-		}
-
-		component.m_sceneLightData->InitializeFromDescription(Utility::InitializeLightDescription(component));
+		component.UpdateSceneLightData(entity.GetID());
 	}
 }

@@ -1,18 +1,37 @@
 #pragma once
 
 #include "Volt-Renderer/Config.h"
+#include "Volt-Renderer/GPUScene.h"
 
 #include <cstdint>
 #include <glm/glm.hpp>
 
-class BinaryStreamWriter;
-class BinaryStreamReader;
-
 namespace Volt
 {
+	struct SubMeshArchiveVersion
+	{
+		enum Type
+		{
+			BaseVersion = 0,
+
+			// Switched from mat4 to TRS for transform storage.
+			UseTRSAsTransform = 1,
+
+			// Removed the transform from the sub mesh.
+			RemovedTransform = 2,
+
+			VersionPlusOne,
+			LatestVersion = VersionPlusOne - 1
+		};
+
+		inline static constexpr VoltGUID guid = "{116C57BF-9AE5-4445-A20C-A089D247232B}"_guid;
+
+	private:
+		SubMeshArchiveVersion() {}
+	};
+
 	struct VTR_API SubMesh
 	{
-		SubMesh(uint32_t aMaterialIndex, uint32_t aVertexCount, uint32_t aIndexCount, uint32_t aVertexStartOffset, uint32_t aIndexStartOffset);
 		SubMesh() = default;
 
 		void GenerateHash();
@@ -31,16 +50,45 @@ namespace Volt
 		uint32_t vertexStartOffset = 0;
 		uint32_t indexStartOffset = 0;
 
-		uint32_t meshletStartOffset = 0;
-		uint32_t meshletCount = 0;
-		uint32_t meshletIndexStartOffset = 0;
-		uint32_t meshletVertexStartOffset = 0;
-
-		glm::mat4 transform = { 1.f };
 		std::string name;
 
-		static void Serialize(BinaryStreamWriter& streamWriter, const SubMesh& data);
-		static void Deserialize(BinaryStreamReader& streamReader, SubMesh& outData);
+		VT_INLINE friend Archive& operator<<(Archive& archive, SubMesh& value)
+		{
+			archive.UseVersion(SubMeshArchiveVersion::guid);
+
+			const int32_t currentVersion = archive.GetVersion(SubMeshArchiveVersion::guid);
+
+			archive << value.materialIndex;
+			archive << value.vertexCount;
+			archive << value.indexCount;
+			archive << value.vertexStartOffset;
+			archive << value.indexStartOffset;
+
+			if (archive.IsLoading() && currentVersion < SubMeshArchiveVersion::UseTRSAsTransform)
+			{
+				glm::mat4 transform;
+				archive << transform;
+
+				VT_UNUSED(transform);
+			}
+			else if (archive.IsLoading() && currentVersion < SubMeshArchiveVersion::RemovedTransform)
+			{
+				glm::vec3 t, s;
+				glm::quat r;
+
+				archive << r;
+				archive << t;
+				archive << s;
+			
+				VT_UNUSED(r);
+				VT_UNUSED(t);
+				VT_UNUSED(s);
+			}
+
+			archive << value.name;
+
+			return archive;
+		}
 
 	private:
 		size_t m_hash = 0;

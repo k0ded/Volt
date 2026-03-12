@@ -7,7 +7,7 @@ namespace Volt::RHI
 	{
 		DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_hlslUtils));
 		HRESULT result = m_hlslUtils->CreateDefaultIncludeHandler(&m_defaultIncludeHandler);
-		
+
 		if (result != S_OK)
 		{
 			VT_ASSERT(false && "Failed to create default HLSL include handler");
@@ -37,6 +37,7 @@ namespace Volt::RHI
 
 		if (!std::filesystem::exists(filepath))
 		{
+			// #TODO_Ivar: Should error if not found in any of the directories.
 			return S_FALSE;
 		}
 

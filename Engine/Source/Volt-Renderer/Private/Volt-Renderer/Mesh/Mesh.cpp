@@ -2,7 +2,7 @@
 
 #include "Volt-Renderer/Mesh/Mesh.h"
 #include "Volt-Renderer/Mesh/SubMesh.h"
-#include "Volt-Renderer/MaterialTable.h"
+#include "Volt-Renderer/Material/MaterialTable.h"
 #include "Volt-Renderer/Mesh/MeshCommon.h"
 #include "Volt-Renderer/RayTracing/RayTracingSceneGeometry.h"
 #include "Volt-Renderer/BoundingStructures.h"
@@ -10,9 +10,11 @@
 
 #include <Volt-Core/Algorithms.h>
 
-#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/RHIFeatures.h>
+#include <RHIModule/Buffers/BufferUtility.h>
 
 #include <CoreUtilities/Math/Math.h>
+#include <CoreUtilities/Packing.h>
 
 #include <meshoptimizer/meshoptimizer.h>
 
@@ -43,14 +45,15 @@ namespace Volt
 		}
 	}
 
-	inline static BoundingSphere GetBoundingSphereFromVertices(const glm::vec3* vertexPtr, const size_t size)
+	inline static BoundingSphere GetBoundingSphereFromVertices(const glm::vec3* vertexPtr, const uint32_t* indices, size_t numIndices)
 	{
 		glm::vec3 minVertex(std::numeric_limits<float>::max());
 		glm::vec3 maxVertex(std::numeric_limits<float>::min());
 
-		for (size_t i = 0; i < size; i++)
+		for (size_t i = 0; i < numIndices; ++i)
 		{
-			const auto& vertex = vertexPtr[i];
+			const uint32_t index = indices[i];
+			const glm::vec3& vertex = vertexPtr[index];
 
 			minVertex = glm::min(minVertex, vertex);
 			maxVertex = glm::max(maxVertex, vertex);
@@ -59,10 +62,11 @@ namespace Volt
 		glm::vec3 extents = (maxVertex - minVertex) * 0.5f;
 		glm::vec3 origin = extents + minVertex;
 
-		float radius = 0.0f;
-		for (size_t i = 0; i < size; i++)
+		float radius = 0.f;
+		for (size_t i = 0; i < numIndices; ++i)
 		{
-			const auto& vertex = vertexPtr[i];
+			const uint32_t index = indices[i];
+			const glm::vec3& vertex = vertexPtr[index];
 
 			glm::vec3 offset = vertex - origin;
 			float distance = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
@@ -71,354 +75,163 @@ namespace Volt
 		}
 
 		radius = std::sqrt(radius);
-
 		return { origin, radius };
-	}
-
-	inline static BoundingSphere GetBoundingSphereFromVertices(const Vector<glm::vec3>& vertices)
-	{
-		return GetBoundingSphereFromVertices(vertices.data(), vertices.size());
-	}
-
-	Mesh::Mesh(Vector<Vertex> aVertices, Vector<uint32_t> aIndices, Ref<RenderMaterial> aMaterial)
-	{
-		InitializeWithVertices(aVertices);
-		m_indices = aIndices;
-
-		m_materialTable.SetMaterial(aMaterial, 0);
-
-		SubMesh& subMesh = m_subMeshes.emplace_back();
-		subMesh.indexCount = (uint32_t)aIndices.size();
-		subMesh.vertexCount = (uint32_t)aVertices.size();
-		subMesh.vertexStartOffset = 0;
-		subMesh.indexStartOffset = 0;
-		subMesh.materialIndex = 0;
-
-		subMesh.GenerateHash();
-
-		Construct();
-	}
-
-	Mesh::Mesh(Vector<Vertex> aVertices, Vector<uint32_t> aIndices, const MaterialTable& materialTable, const Vector<SubMesh>& subMeshes)
-	{
-		InitializeWithVertices(aVertices);
-		m_indices = aIndices;
-
-		m_materialTable = materialTable;
-		m_subMeshes = subMeshes;
-
-		Construct();
 	}
 
 	Mesh::~Mesh()
 	{
-		m_vertexPositionsBuffer = nullptr;
-		m_vertexMaterialBuffer = nullptr;
-		m_vertexAnimationInfoBuffer = nullptr;
 	}
 
-	void Mesh::Construct()
+	void Mesh::Initialize(const MeshInitializer& initializer)
 	{
-		VT_ASSERT_MSG(!m_indices.empty() && !m_vertexContainer.positions.empty(), "Indices and vertices must not be empty!");
-		
-		constexpr size_t MAX_VERTEX_COUNT = 64;
-		constexpr size_t MAX_TRIANGLE_COUNT = 64;
-		constexpr float CONE_WEIGHT = 0.f;
+		VT_PROFILE_FUNCTION();
+		VT_ASSERT_MSG(initializer.IsValid(), "Mesh initializer is not valid!");
 
-		struct PackedTri
+		// Copy values
+		m_vertexContainer = initializer.GetVertices();
+		m_indices = initializer.GetIndices();
+		m_subMeshes = initializer.GetSubMeshes();
+		m_materialTable = initializer.GetMaterialTable();
+
+		InitializeInternal();
+	}
+
+	void Mesh::Serialize(Archive& archive)
+	{
+		size_t numVertices = m_vertexContainer.Size();
+
+		archive << numVertices;
+		archive << m_vertexContainer.positions;
+
+		// Requires manual serialization.
+		if (archive.IsLoading())
 		{
-			uint32_t i0 : 10;
-			uint32_t i1 : 10;
-			uint32_t i2 : 10;
-		};
-
-		const uint32_t subMeshCount = static_cast<uint32_t>(m_subMeshes.size());
-		const uint32_t threadCount = Algo::GetThreadCountFromIterationCount(subMeshCount);
-
-		Vector<Vector<uint32_t>> perThreadMeshletData(threadCount);
-		Vector<Vector<Meshlet>> perThreadMeshlets(threadCount);
-
-		Algo::ForEachParallelLocking([&](uint32_t threadIdx, uint32_t elementIdx)
-		{
-			auto& meshletData = perThreadMeshletData.at(threadIdx);
-			auto& meshlets = perThreadMeshlets.at(threadIdx);
-
-			auto& subMesh = m_subMeshes.at(elementIdx);
-			subMesh.GenerateHash();
-
-			const uint32_t* indicesPtr = &m_indices.at(subMesh.indexStartOffset);
-			const glm::vec3* vertexPositionsPtr = &m_vertexContainer.positions.at(subMesh.vertexStartOffset);
-
-			Vector<uint32_t> tempIndices(subMesh.indexCount);
-			meshopt_optimizeVertexCache(tempIndices.data(), indicesPtr, subMesh.indexCount, subMesh.vertexCount);
-
-			Vector<meshopt_Meshlet> meshoptMeshlets(meshopt_buildMeshletsBound(subMesh.indexCount, MAX_VERTEX_COUNT, MAX_TRIANGLE_COUNT));
-			Vector<uint32_t> meshletVertices(meshoptMeshlets.size() * MAX_VERTEX_COUNT);
-			Vector<uint8_t> meshletTriangles(meshoptMeshlets.size() * MAX_TRIANGLE_COUNT * 3);
-
-			meshoptMeshlets.resize(meshopt_buildMeshlets(meshoptMeshlets.data(), meshletVertices.data(), meshletTriangles.data(), indicesPtr, static_cast<size_t>(subMesh.indexCount), &vertexPositionsPtr[0].x, static_cast<size_t>(subMesh.vertexCount), sizeof(glm::vec3), MAX_VERTEX_COUNT, MAX_TRIANGLE_COUNT, CONE_WEIGHT));
-
-			subMesh.meshletCount = static_cast<uint32_t>(meshoptMeshlets.size());
-			subMesh.meshletStartOffset = static_cast<uint32_t>(meshlets.size());
-
-			meshlets.reserve(meshlets.size() + meshoptMeshlets.size());
-
-			for (auto& meshlet : meshoptMeshlets)
-			{
-				meshopt_optimizeMeshlet(&meshletVertices[meshlet.vertex_offset], &meshletTriangles[meshlet.triangle_offset], meshlet.triangle_count, meshlet.vertex_count);
-
-				size_t dataOffset = meshletData.size();
-
-				meshletData.reserve(meshletData.size() + meshlet.vertex_count);
-				for (uint32_t i = 0; i < meshlet.vertex_count; i++)
-				{
-					meshletData.push_back(meshletVertices[meshlet.vertex_offset + i]);
-				}
-
-				meshletData.reserve(meshletData.size() + meshlet.triangle_count);
-				for (uint32_t i = 0; i < meshlet.triangle_count * 3; i += 3)
-				{
-					const uint8_t i0 = meshletTriangles[meshlet.triangle_offset + i + 0];
-					const uint8_t i1 = meshletTriangles[meshlet.triangle_offset + i + 1];
-					const uint8_t i2 = meshletTriangles[meshlet.triangle_offset + i + 2];
-
-					PackedTri tri{ i0, i1, i2 };
-					meshletData.push_back(*reinterpret_cast<uint32_t*>(&tri));
-				}
-
-				meshopt_Bounds bounds = meshopt_computeMeshletBounds(&meshletVertices[meshlet.vertex_offset], &meshletTriangles[meshlet.triangle_offset], meshlet.triangle_count, &vertexPositionsPtr[0].x, static_cast<size_t>(subMesh.vertexCount), sizeof(glm::vec3));
-
-				auto& newMeshlet = meshlets.emplace_back();
-				newMeshlet.dataOffset = static_cast<uint32_t>(dataOffset);
-
-				newMeshlet.vertexTriCount = { meshlet.vertex_count, meshlet.triangle_count };
-				newMeshlet.boundingSphereCenter = glm::vec3{ bounds.center[0], bounds.center[1], bounds.center[2] };
-				newMeshlet.boundingSphereRadius = bounds.radius;
-
-				newMeshlet.cone.x = bounds.cone_axis_s8[0];
-				newMeshlet.cone.y = bounds.cone_axis_s8[1];
-				newMeshlet.cone.z = bounds.cone_axis_s8[2];
-				newMeshlet.cone.cutoff = bounds.cone_cutoff_s8;
-			}
-
-		}, subMeshCount);
-
-		const auto meshletPrefixSums = Algo::ElementCountPrefixSum(perThreadMeshlets);
-		const auto indexPrefixSums = Algo::ElementCountPrefixSum(perThreadMeshletData);
-
-		Algo::ForEachParallelLocking([&](uint32_t threadIdx, uint32_t elementIdx)
-		{
-			auto& subMesh = m_subMeshes.at(elementIdx);
-			subMesh.meshletStartOffset += meshletPrefixSums.at(threadIdx);
-
-		}, subMeshCount);
-
-		Algo::ForEachParallelLocking([&](uint32_t threadIdx, uint32_t elementIdx)
-		{
-			for (auto& meshlet : perThreadMeshlets.at(elementIdx))
-			{
-				meshlet.dataOffset += indexPrefixSums.at(elementIdx);
-			}
-
-		}, static_cast<uint32_t>(perThreadMeshlets.size()));
-
-		for (size_t i = 0; i < perThreadMeshlets.size(); i++)
-		{
-			m_meshlets.append(perThreadMeshlets.at(i));
-			m_meshletData.append(perThreadMeshletData.at(i));
+			m_vertexContainer.materialData.resize_uninitialized(numVertices);
+			m_vertexContainer.animationData.resize_uninitialized(numVertices);
 		}
+
+		archive.SerializeBytes(m_vertexContainer.materialData.data(), m_vertexContainer.materialData.byte_size());
+		archive.SerializeBytes(m_vertexContainer.animationData.data(), m_vertexContainer.animationData.byte_size());
+
+		archive << m_indices;
+		archive << m_subMeshes;
+
+		if (archive.IsLoading())
+		{
+			InitializeInternal();
+		}
+	}
+
+	void Mesh::SetMaterial(Ref<RenderMaterial> material, uint32_t index)
+	{
+		m_materialTable.SetMaterial(material, index);
+	}
+
+	void Mesh::CreateBoundingSpheres()
+	{
+		m_subMeshBoundingSpheres.resize(m_subMeshes.size());
+		for (uint32_t subMeshIndex = 0; SubMesh& subMesh : m_subMeshes)
+		{
+			const glm::vec3* positionData = &m_vertexContainer.positions.at(subMesh.vertexStartOffset);
+			const uint32_t* indices = &m_indices[subMesh.indexStartOffset];
+
+			BoundingSphere boundingSphere = GetBoundingSphereFromVertices(positionData, indices, subMesh.indexCount);
+			m_subMeshBoundingSpheres[subMeshIndex] = boundingSphere;
+
+			subMeshIndex++;
+		}
+	}
+
+	void Mesh::InitializeInternal()
+	{
+		VT_PROFILE_FUNCTION();
 
 		const std::string meshName = !m_name.empty() ? m_name + "." : "";
 
-		RHI::BufferUsage rayTracingFlags = RHI::BufferUsage::None;
+		RHI::BufferUsage bufferRayTracingFlags = RHI::BufferUsage::None;
 
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
-			rayTracingFlags |= RHI::BufferUsage::AccelerationStructureInput | RHI::BufferUsage::DeviceAddress;
+			bufferRayTracingFlags |= RHI::BufferUsage::AccelerationStructureInput | RHI::BufferUsage::DeviceAddress;
 		}
 
 		// Index buffer
 		{
 			const auto& indices = m_indices;
-			m_indexBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(indices.size()), sizeof(uint32_t), meshName + "IndexBuffer", RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndexBuffer | rayTracingFlags);
-			m_indexBuffer->GetResource()->SetData(indices.data(), indices.size() * sizeof(uint32_t));
+
+			RHI::BufferDesc desc{};
+			desc.numElements = static_cast<uint32_t>(indices.size());
+			desc.elementSize = sizeof(uint32_t);
+			desc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndexBuffer | bufferRayTracingFlags;
+			desc.debugName = meshName + "IndexBuffer";
+
+			m_indexBuffer = RHI::Buffer::Create(desc);
+			RHI::BufferUtility::StagedBufferUpload(m_indexBuffer, indices.data(), indices.byte_size());
 		}
 
 		// Vertex positions
 		{
 			const auto& vertexPositions = m_vertexContainer.positions;
-			m_vertexPositionsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexPositions.size()), sizeof(glm::vec3), meshName + "VertexPositions", RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::VertexBuffer | rayTracingFlags);
-			m_vertexPositionsBuffer->GetResource()->SetData(vertexPositions.data(), vertexPositions.size() * sizeof(glm::vec3));
+
+			RHI::BufferDesc desc{};
+			desc.numElements = static_cast<uint32_t>(vertexPositions.size());
+			desc.elementSize = sizeof(glm::vec3);
+			desc.usage = RHI::BufferUsage::VertexBuffer | bufferRayTracingFlags;
+			desc.debugName = meshName + "VertexPositions";
+
+			m_vertexPositionsBuffer = RHI::Buffer::Create(desc);
+			RHI::BufferUtility::StagedBufferUpload(m_vertexPositionsBuffer, vertexPositions.data(), vertexPositions.byte_size());
 		}
 
 		// Vertex material data
 		{
 			const auto& vertexMaterialData = m_vertexContainer.materialData;
-			m_vertexMaterialBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexMaterialData.size()), sizeof(VertexMaterialData), meshName + "VertexMaterialData");
-			m_vertexMaterialBuffer->GetResource()->SetData(vertexMaterialData.data(), vertexMaterialData.size() * sizeof(VertexMaterialData));
-		}
 
-		// Vertex animation info
-		{
-			const auto& vertexAnimationInfo = m_vertexContainer.animationInfo;
-			m_vertexAnimationInfoBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexAnimationInfo.size()), sizeof(VertexAnimationInfo), meshName + "VertexAnimationInfo");
-			m_vertexAnimationInfoBuffer->GetResource()->SetData(vertexAnimationInfo.data(), vertexAnimationInfo.size() * sizeof(VertexAnimationInfo));
+			RHI::BufferDesc desc{};
+			desc.numElements = static_cast<uint32_t>(vertexMaterialData.size());
+			desc.elementSize = sizeof(VertexMaterialData);
+			desc.debugName = meshName + "VertexMaterialData";
+			desc.usage = RHI::BufferUsage::VertexBuffer;
+
+			m_vertexMaterialBuffer = RHI::Buffer::Create(desc);
+			RHI::BufferUtility::StagedBufferUpload(m_vertexMaterialBuffer, vertexMaterialData.data(), vertexMaterialData.byte_size());
 		}
 
 		// Vertex animation data
 		{
 			const auto& vertexAnimationData = m_vertexContainer.animationData;
-			m_vertexAnimationDataBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexAnimationData.size()), sizeof(VertexAnimationData), meshName + "VertexAnimationData");
-			m_vertexAnimationDataBuffer->GetResource()->SetData(vertexAnimationData.data(), vertexAnimationData.size() * sizeof(VertexAnimationData));
+
+			RHI::BufferDesc desc{};
+			desc.numElements = static_cast<uint32_t>(vertexAnimationData.size());
+			desc.elementSize = sizeof(VertexAnimationData);
+			desc.debugName = meshName + "VertexAnimationData";
+			desc.usage = RHI::BufferUsage::VertexBuffer;
+
+			m_vertexAnimationDataBuffer = RHI::Buffer::Create(desc);
+			RHI::BufferUtility::StagedBufferUpload(m_vertexAnimationDataBuffer, vertexAnimationData.data(), vertexAnimationData.byte_size());
 		}
 
-		// Vertex bone influences
-		{
-			const auto& vertexBoneInfluences = m_vertexContainer.boneInfluences;
-			if (!vertexBoneInfluences.empty())
-			{
-				m_vertexBoneInfluencesBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexBoneInfluences.size()), sizeof(uint16_t), meshName + "VertexBoneInfluences");
-				m_vertexBoneInfluencesBuffer->GetResource()->SetData(vertexBoneInfluences.data(), vertexBoneInfluences.size() * sizeof(uint16_t));
-			}
-		}
-
-		// Vertex bone weights
-		{
-			const auto& vertexBoneWeights = m_vertexContainer.boneWeights;
-			if (!vertexBoneWeights.empty())
-			{
-				m_vertexBoneWeightsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(vertexBoneWeights.size()), sizeof(float), meshName + "VertexBoneWeights");
-				m_vertexBoneWeightsBuffer->GetResource()->SetData(vertexBoneWeights.data(), vertexBoneWeights.size() * sizeof(float));
-			}
-		}
-
-		// Meshlet Data
-		{
-			m_meshletDataBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(m_meshletData.size()), sizeof(uint32_t), meshName + "MeshletData");
-			m_meshletDataBuffer->GetResource()->SetData(m_meshletData.data(), m_meshletData.size() * sizeof(uint32_t));
-		}
-
-		// Meshlets
-		{
-			m_meshletsBuffer = BindlessResource<RHI::StorageBuffer>::CreateRef(static_cast<uint32_t>(m_meshlets.size()), sizeof(Meshlet), meshName + "Meshlets");
-			m_meshletsBuffer->GetResource()->SetData(m_meshlets.data(), m_meshlets.size() * sizeof(Meshlet));
-		}
-
-		for (auto& subMesh : m_subMeshes)
-		{
-			glm::vec3 t, r, s;
-			Math::Decompose(subMesh.transform, t, r, s);
-
-			m_averageScale += s;
-		}
-
-		m_averageScale /= (float)m_subMeshes.size();
-
-		glm::vec3 min = { FLT_MAX, FLT_MAX, FLT_MAX };
-		glm::vec3 max = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
-
-		for (const auto& vertex : m_vertexContainer.positions)
-		{
-			const auto scaledPos = vertex * m_averageScale;
-
-			if (glm::all(glm::lessThan(scaledPos, min)))
-			{
-				min = scaledPos;
-			}
-
-			if (glm::all(glm::greaterThan(scaledPos, max)))
-			{
-				max = scaledPos * m_averageScale;
-			}
-		}
-
-		m_boundingBox = BoundingBox{ max, min };
-		m_boundingSphere = GetBoundingSphereFromVertices(m_vertexContainer.positions);
-
-		for (uint32_t i = 0; auto & subMesh : m_subMeshes)
-		{
-			Vector<glm::vec3> subMeshVertices;
-			subMeshVertices.insert(subMeshVertices.end(), std::next(m_vertexContainer.positions.begin(), subMesh.vertexStartOffset), std::next(m_vertexContainer.positions.begin(), subMesh.vertexStartOffset + subMesh.vertexCount));
-
-			// Find bounding box
-			{
-				glm::vec3 t, r, s;
-				Math::Decompose(subMesh.transform, t, r, s);
-			
-				glm::vec3 subMin = { FLT_MAX, FLT_MAX, FLT_MAX };
-				glm::vec3 subMax = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
-
-				for (const auto& vp : subMeshVertices)
-				{
-					subMin = glm::min(subMin, vp);
-					subMax = glm::max(subMax, vp);
-				}
-
-				m_subMeshBoundingBoxes[i] = BoundingBox{ subMax, subMin };
-			}
-
-			m_subMeshBoundingSpheres[i] = GetBoundingSphereFromVertices(subMeshVertices);
-			i++;
-		}
+		CreateBoundingSpheres();
 
 		// Create GPU Meshes
 		for (uint32_t i = 0; const auto& subMesh : m_subMeshes)
 		{
 			auto& gpuMesh = m_gpuMeshes.emplace_back();
+			gpuMesh.center = m_subMeshBoundingSpheres[i].center;
+			gpuMesh.radius = m_subMeshBoundingSpheres[i].radius;
 			gpuMesh.vertexStartOffset = subMesh.vertexStartOffset;
-			gpuMesh.meshletStartOffset = subMesh.meshletStartOffset;
-			gpuMesh.meshletCount = subMesh.meshletCount;
-			gpuMesh.meshletIndexStartOffset = subMesh.meshletIndexStartOffset;
-			gpuMesh.vertexPositionsBuffer = m_vertexPositionsBuffer->GetResourceHandle();
-			gpuMesh.vertexMaterialBuffer = m_vertexMaterialBuffer->GetResourceHandle();
-			gpuMesh.vertexAnimationInfoBuffer = m_vertexAnimationDataBuffer->GetResourceHandle();
-			gpuMesh.vertexBoneWeightsBuffer = m_vertexBoneWeightsBuffer ? m_vertexBoneWeightsBuffer->GetResourceHandle() : Resource::Invalid;
-			gpuMesh.vertexBoneInfluencesBuffer = m_vertexBoneInfluencesBuffer ? m_vertexBoneInfluencesBuffer->GetResourceHandle() : Resource::Invalid;
-			gpuMesh.indexBuffer = m_indexBuffer->GetResourceHandle();
-			gpuMesh.meshletsBuffer = m_meshletsBuffer->GetResourceHandle();
-			gpuMesh.meshletDataBuffer = m_meshletDataBuffer->GetResourceHandle();
-			gpuMesh.center = subMesh.transform * glm::vec4(m_subMeshBoundingSpheres.at(i).center, 1.f);
-
-			glm::vec3 t, r, s;
-			Math::Decompose(subMesh.transform, t, r, s);
-
-			gpuMesh.radius = m_subMeshBoundingSpheres.at(i).radius * glm::max(s.x, glm::max(s.y, s.z));
+			gpuMesh.indexStartOffset = subMesh.indexStartOffset;
 
 			i++;
 		}
 
-		// Create SDF data
-		{
-			//SDFGenerator sdfGenerator{};
-			//auto res = sdfGenerator.Generate(*this);
-		
-			//m_gpuMeshSDFs.reserve(res.size());
-
-			//for (uint32_t i = 0; const auto& sdf : res)
-			//{
-			//	m_sdfTextures[i] = sdf.sdfTexture;
-			//	m_brickGrids[i] = sdf.brickGrid;
-			//	m_brickBuffers[i] = CreateRef<BindlessResource<RHI::StorageBuffer>>(sdf.sdfBricksBuffer);
-
-			//	auto& gpuSDF = m_gpuMeshSDFs.emplace_back();
-			//	gpuSDF.min = sdf.min;
-			//	gpuSDF.max = sdf.max;
-			//	gpuSDF.size = sdf.size; 
-			//	gpuSDF.sdfTexture = sdf.sdfTexture->GetResourceHandle();
-			//	gpuSDF.bricksBuffer = m_brickBuffers[i]->GetResourceHandle();
-			//	gpuSDF.brickCount = static_cast<uint32_t>(sdf.brickGrid.size());
-
-			//	i++;
-			//}
-		}
-
 		// Create RT data
-		if (RHI::GraphicsContext::GetDevice()->GetCapabilities().rayTracing.supportsRayTracing)
+		if (RHI::RHICanUseRayTracing())
 		{
 			RayTracingSceneGeometryCreateInfo info{};
-			info.indexBuffer = m_indexBuffer->GetResource();
-			info.vertexPositionsBuffer = m_vertexPositionsBuffer->GetResource();
-		
+			info.indexBuffer = m_indexBuffer;
+			info.vertexPositionsBuffer = m_vertexPositionsBuffer;
+
 			for (const auto& subMesh : m_subMeshes)
 			{
 				auto& geometry = info.geometries.emplace_back();
@@ -431,41 +244,65 @@ namespace Volt
 			m_rayTracingSceneGeometry = RayTracingSceneGeometry::Create(info);
 		}
 
-		// Setup hash
+		// Evaluate hash
+		for (SubMesh& subMesh : m_subMeshes)
+		{
+			subMesh.GenerateHash();
+		}
+
 		for (const auto& subMesh : m_subMeshes)
 		{
 			m_hash = Math::HashCombine(m_hash, subMesh.GetHash());
 		}
 	}
 
-	void Mesh::SetMaterial(Ref<RenderMaterial> material, uint32_t index)
+	void MeshInitializer::AddMaterial(Ref<RenderMaterial> material, uint32_t materialIndex)
 	{
-		m_materialTable.SetMaterial(material, index);
+		m_materialTable.SetMaterial(material, materialIndex);
 	}
 
-	VertexMaterialData Mesh::GetMaterialDataFromVertex(const Vertex& vertex)
+	void MeshInitializer::AddVertices(const VertexContainer& vertices)
 	{
-		VertexMaterialData result;
-		const auto octNormal = Utility::OctNormalEncode(vertex.normal);
-
-		result.normal.x = uint8_t(octNormal.x * 255);
-		result.normal.y = uint8_t(octNormal.y * 255);
-		result.tangent = Utility::EncodeTangent(vertex.normal, vertex.tangent);
-		result.texCoords.x = static_cast<half_float::half>(vertex.uv.x);
-		result.texCoords.y = static_cast<half_float::half>(vertex.uv.y);
-
-		return result;
+		m_vertices.Append(vertices);
 	}
 
-	void Mesh::InitializeWithVertices(const Vector<Vertex>& vertices)
+	void MeshInitializer::AddIndices(const Vector<uint32_t>& indices)
 	{
-		m_vertexContainer.Resize(vertices.size());
+		m_indices.append(indices);
+	}
 
-		for (uint32_t i = 0; const auto& vertex : vertices)
-		{
-			m_vertexContainer.positions[i] = vertex.position;
-			m_vertexContainer.materialData[i] = GetMaterialDataFromVertex(vertex);
-			i++;
-		}
+	void MeshInitializer::AddSubMesh(const SubMesh& subMesh)
+	{
+		m_subMeshes.emplace_back(subMesh);
+	}
+
+	void MeshInitializer::SetVertices(const Vector<glm::vec3>& vertexPositions, const Vector<VertexMaterialData>& vertexMaterialData, const Vector<VertexAnimationData>& vertexAnimationData)
+	{
+		m_vertices.positions = vertexPositions;
+		m_vertices.materialData = vertexMaterialData;
+		m_vertices.animationData = vertexAnimationData;
+	}
+
+	void MeshInitializer::SetIndices(const Vector<uint32_t>& indices)
+	{
+		m_indices = indices;
+	}
+
+	void MeshInitializer::SetSubMeshes(const Vector<SubMesh>& subMeshes)
+	{
+		m_subMeshes = subMeshes;
+	}
+
+	void MeshInitializer::SetMaterialTable(const MaterialTable& materialTable)
+	{
+		m_materialTable = materialTable;
+	}
+
+	bool MeshInitializer::IsValid() const
+	{
+		return !m_subMeshes.empty()
+			&& m_vertices.Size() > 0
+			&& !m_indices.empty()
+			&& m_materialTable.GetSize() > 0;
 	}
 }

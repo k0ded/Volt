@@ -1,38 +1,37 @@
 #pragma once
 
-#include "JobSystem/Job.h"
-
-#include <CoreUtilities/Containers/Vector.h>
-
-#include <atomic>
+#include <CoreUtilities/Containers/AtomicStack.h>
+#include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Allocators/PagedAtomicArenaAllocator.h>
 
 namespace Volt
 {
-	struct AllocatedJob
-	{
-		Job* job;
-		JobID id;
-	};
-
+	template<typename Type>
 	class JobAllocator
 	{
 	public:
 		JobAllocator();
 
-		AllocatedJob AllocateJob();
-		void FreeJob(JobID id);
-		void FreeJob(Job* job);
-		Job* GetJobFromID(JobID id);
+		Type* Allocate();
+		void Free(Type* job);
 
 	private:
-		inline static constexpr uint32_t MAX_JOB_COUNT = 8096;
-		
-		std::atomic_uint32_t m_jobAllocationIndex = 0;
-		std::atomic_uint32_t m_currentTailIndex = 0;
-
-		Vector<Job> m_jobAllocator;
-
-		std::mutex m_freeJobsMutex;
-		Vector<JobID> m_freeJobs;
+		PagedAtomicArenaAllocator<Type, 1024> m_allocator;
 	};
+
+	template<typename Type>
+	void JobAllocator<Type>::Free(Type* valuePtr)
+	{
+		m_allocator.Free(valuePtr);
+	}
+
+	template<typename Type>
+	Type* JobAllocator<Type>::Allocate()
+	{
+		return m_allocator.Allocate();
+	}
+
+	template<typename Type>
+	JobAllocator<Type>::JobAllocator()
+	{}
 }

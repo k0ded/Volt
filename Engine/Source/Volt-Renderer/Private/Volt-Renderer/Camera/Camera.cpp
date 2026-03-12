@@ -10,11 +10,13 @@ namespace Volt
 	{
 		if (reverse)
 		{
-			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), aspect, m_farPlane, m_nearPlane);
+			m_projectionMatrix = glm::perspective(m_fieldOfView, aspect, m_farPlane, m_nearPlane);
+			m_nonReversedProjectionMatrix = glm::perspective(m_fieldOfView, aspect, m_nearPlane, m_farPlane);
 		}
 		else
 		{
-			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), aspect, m_nearPlane, m_farPlane);
+			m_projectionMatrix = glm::perspective(m_fieldOfView, aspect, m_nearPlane, m_farPlane);
+			m_nonReversedProjectionMatrix = m_projectionMatrix;
 		}
 		m_viewMatrix = glm::mat4(1.f);
 		m_isOrthographic = false;
@@ -26,6 +28,7 @@ namespace Volt
 		: m_nearPlane(nearPlane), m_farPlane(farPlane), m_left(left), m_right(right), m_bottom(bottom), m_top(top)
 	{
 		m_projectionMatrix = glm::ortho(left, right, bottom, top, nearPlane, farPlane);
+		m_nonReversedProjectionMatrix = m_projectionMatrix;
 		m_viewMatrix = glm::mat4(1.f);
 		m_isOrthographic = true;
 
@@ -41,11 +44,13 @@ namespace Volt
 
 		if (m_reversed)
 		{
-			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), m_aspecRatio, m_farPlane, m_nearPlane);
+			m_projectionMatrix = glm::perspective(m_fieldOfView, m_aspecRatio, m_farPlane, m_nearPlane);
+			m_nonReversedProjectionMatrix = glm::perspective(m_fieldOfView, aspect, m_nearPlane, m_farPlane);
 		}
 		else
 		{
-			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), aspect, m_nearPlane, m_farPlane);
+			m_projectionMatrix = glm::perspective(m_fieldOfView, aspect, m_nearPlane, m_farPlane);
+			m_nonReversedProjectionMatrix = m_projectionMatrix;
 		}
 
 		m_isOrthographic = false;
@@ -63,16 +68,19 @@ namespace Volt
 
 		if (m_reversed)
 		{
-			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), m_aspecRatio, m_farPlane, m_nearPlane);
+			m_projectionMatrix = glm::perspective(m_fieldOfView, m_aspecRatio, m_farPlane, m_nearPlane);
+			m_nonReversedProjectionMatrix = glm::perspective(m_fieldOfView, m_aspecRatio, m_nearPlane, m_farPlane);
 		}
 		else
 		{
-			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), m_aspecRatio, m_nearPlane, m_farPlane);
+			m_projectionMatrix = glm::perspective(m_fieldOfView, m_aspecRatio, m_nearPlane, m_farPlane);
+			m_nonReversedProjectionMatrix = m_projectionMatrix;
 		}
 
 		if (glm::all(glm::notEqual(m_subpixelOffset, { 0.f })))
 		{
-			m_projectionMatrix = glm::translate(glm::mat4{ 1.f }, { offset.x, offset.y, 0.f })* m_projectionMatrix;
+			m_projectionMatrix = glm::translate(glm::mat4{ 1.f }, { offset.x, offset.y, 0.f }) * m_projectionMatrix;
+			m_nonReversedProjectionMatrix = glm::translate(glm::mat4{ 1.f }, { offset.x, offset.y, 0.f }) * m_nonReversedProjectionMatrix;
 		}
 	}
 
@@ -132,7 +140,7 @@ namespace Volt
 		float x = (someCoords.x / aSize.x) * 2.f - 1.f;
 		float y = (someCoords.y / aSize.y) * 2.f - 1.f;
 
-		glm::mat4 tempProj = glm::perspective(glm::radians(m_fieldOfView), m_aspecRatio, m_nearPlane, m_farPlane);
+		glm::mat4 tempProj = glm::perspective(m_fieldOfView, m_aspecRatio, m_nearPlane, m_farPlane);
 
 		glm::mat4 matInv = glm::inverse(tempProj * m_viewMatrix);
 
@@ -162,7 +170,7 @@ namespace Volt
 
 		if (!m_isOrthographic)
 		{
-			const float halfVSide = m_farPlane * std::tanf(glm::radians(m_fieldOfView) * 0.5f);
+			const float halfVSide = m_farPlane * std::tanf(m_fieldOfView * 0.5f);
 			const float halfHSide = halfVSide * m_aspecRatio;
 
 			m_frustum.nearPlane = { m_position + m_nearPlane * forward, forward };
@@ -190,6 +198,7 @@ namespace Volt
 	void Camera::SetOrthographicProjection(float left, float right, float bottom, float top)
 	{
 		m_projectionMatrix = glm::ortho(left, right, bottom, top, m_nearPlane, m_farPlane);
+		m_nonReversedProjectionMatrix = m_projectionMatrix;
 		m_isOrthographic = true;
 
 		m_left = left;
@@ -198,15 +207,23 @@ namespace Volt
 		m_bottom = bottom;
 	}
 
+	glm::mat4 Camera::GetTransform() const
+	{
+		const glm::mat4 transform = glm::translate(glm::mat4{ 1.f }, m_position)
+			* glm::mat4_cast(GetOrientation());
+
+		return transform;
+	}
+
 	const glm::mat4 Camera::GetNonJitteredProjection() const
 	{
 		if (m_reversed)
 		{
-			return glm::perspective(glm::radians(m_fieldOfView), m_aspecRatio, m_farPlane, m_nearPlane);
+			return glm::perspective(m_fieldOfView, m_aspecRatio, m_farPlane, m_nearPlane);
 		}
 		else
 		{
-			return glm::perspective(glm::radians(m_fieldOfView), m_aspecRatio, m_nearPlane, m_farPlane);
+			return glm::perspective(m_fieldOfView, m_aspecRatio, m_nearPlane, m_farPlane);
 		}
 	}
 

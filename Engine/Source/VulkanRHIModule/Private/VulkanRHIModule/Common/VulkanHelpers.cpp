@@ -7,7 +7,7 @@
 
 namespace Volt::RHI::Utility
 {
-	const VkImageCreateInfo GetVkImageCreateInfo(const ImageSpecification& imageSpecification)
+	const VkImageCreateInfo GetVkImageCreateInfo(const ImageDesc& imageSpecification)
 	{
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -49,7 +49,7 @@ namespace Volt::RHI::Utility
 		return imageInfo;
 	}
 
-	const MemoryRequirement GetImageRequirement(const VkImageCreateInfo& imageCreateInfo)
+	const MemoryRequirement GetImageMemoryRequirement(const VkImageCreateInfo& imageCreateInfo)
 	{
 		VT_PROFILE_FUNCTION();
 
@@ -122,5 +122,28 @@ namespace Volt::RHI::Utility
 
 		VT_ENSURE(false);
 		return VK_IMAGE_LAYOUT_UNDEFINED;
+	}
+
+	const MemoryRequirement GetBufferMemoryRequirement(const VkBufferCreateInfo& bufferCreateInfo)
+	{
+		VkDeviceBufferMemoryRequirements bufferMemReq{};
+		bufferMemReq.sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS;
+		bufferMemReq.pNext = nullptr;
+		bufferMemReq.pCreateInfo = &bufferCreateInfo;
+
+		VkMemoryRequirements2 memReq{};
+		memReq.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+		memReq.pNext = nullptr;
+
+		auto device = GraphicsContext::GetDevice();
+
+		vkGetDeviceBufferMemoryRequirements(device->GetHandle<VkDevice>(), &bufferMemReq, &memReq);
+
+		MemoryRequirement result{};
+		result.size = memReq.memoryRequirements.size;
+		result.alignment = memReq.memoryRequirements.alignment;
+		result.memoryTypeBits = memReq.memoryRequirements.memoryTypeBits;
+
+		return result;
 	}
 }

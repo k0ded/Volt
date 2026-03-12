@@ -3,6 +3,8 @@
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/VoltGUID.h>
 
+#include <filesystem>
+
 namespace Volt
 {
 	struct PluginDefinition

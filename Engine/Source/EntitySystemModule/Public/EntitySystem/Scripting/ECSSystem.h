@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EntitySystem/Config.h"
+#include "EntitySystem/Scripting/ScriptingEngine.h"
 
 #include "ECSAccessBuilder.h"
 
@@ -24,7 +25,7 @@ private:
 	Vector<UUID64> m_executeAfter;
 };
 
-using ECSSystemFunc = std::function<void(Volt::EntityScene& registry, float deltaTime)>;
+using ECSSystemFunc = std::function<void(Volt::EntityScene& registry)>;
 
 struct ComponentAccess
 {
@@ -39,7 +40,7 @@ public:
 	ECSSystem(UUID64 id, ECSSystemFunc&& func);
 	~ECSSystem();
 
-	void Execute(Volt::EntityScene& scene, float deltaTime);
+	void Execute(Volt::EntityScene& scene);
 
 	VT_NODISCARD VT_INLINE ECSExecutionOrder& Order() { return m_executionOrder; }
 	VT_NODISCARD VT_INLINE UUID64 GetID() const { return m_id; }
@@ -53,6 +54,21 @@ private:
 
 	Vector<ComponentAccess> m_componentAccesses;
 	UUID64 m_id = 0;
+};
+
+template<typename T>
+concept IsECSEnvironmentCandidate = std::is_lvalue_reference_v<T> && std::is_class_v<std::remove_const_t<std::remove_reference_t<T>>>;
+
+template<typename T>
+concept IsECSEntityOrQuery = requires
+{
+	{ T::ConstructType };
+};
+
+template<typename T>
+concept TypeHasComponentTuple = requires
+{
+	{ T::ComponentTuple };
 };
 
 template<typename Ret, typename... Args>
@@ -79,46 +95,32 @@ public:
 		// A system must have at least one argument...
 		// And the first should be an entity type
 		static_assert(std::tuple_size_v<ArgumentTypes> > 0);
-		//static_assert(std::is_same_v<std::tuple_element_t<std::tuple_size_v<ArgumentTypes> -1, ArgumentTypes>, float>);
 		static_assert(ComponentView::ConstructType == ECS::Type::Entity);
-	
-		constexpr bool IsFinalArgFloat = std::is_same_v<std::tuple_element_t<std::tuple_size_v<ArgumentTypes> -1, ArgumentTypes>, float>;
 
 		UUID64 id{};
 
-		auto systemFunc = [func](Volt::EntityScene& scene, float deltaTime = 0.f)
+		auto systemFunc = [func](Volt::EntityScene& scene)
 		{
 			auto view = GetRegistryView<ComponentTuple>(scene.GetRegistry());
-			auto deltaTimeTuple = std::tuple{ deltaTime };
 
 			for (const auto& entity : view)
 			{
-				auto arguments = GetSystemArgument<ArgumentTypes, IsFinalArgFloat>(scene, view, entity);
-
-				if constexpr (IsFinalArgFloat)
-				{
-					auto finalArguments = std::tuple_cat(arguments, deltaTimeTuple);
-					std::apply(func, finalArguments);
-				}
-				else
-				{
-					std::apply(func, arguments);
-				}
+				auto arguments = GetSystemArgument<ArgumentTypes>(scene, view, entity);
+				std::apply(func, arguments);
 			}
 		};
 
 		ECSSystem result;
 		result.m_id = id;
 		result.m_systemFunc = std::move(systemFunc);
-		result.m_componentAccesses = GetComponentAccesses<ArgumentTypes, IsFinalArgFloat>();
+		result.m_componentAccesses = GetComponentAccesses<ArgumentTypes>();
 
 		return result;
 	}
 
 	Vector<ComponentAccess> GetSystemComponentAccesses()
 	{
-		constexpr bool IsFinalArgFloat = std::is_same_v<std::tuple_element_t<std::tuple_size_v<ArgumentTypes> -1, ArgumentTypes>, float>;
-		return GetComponentAccesses<ArgumentTypes, IsFinalArgFloat>();
+		return GetComponentAccesses<ArgumentTypes>();
 	}
 
 private:
@@ -148,7 +150,14 @@ private:
 	template<typename T>
 	static auto GetSingleAccessComponentAccesses()
 	{
-		return GetComponentTupleAccesses<typename T::ComponentTuple>();
+		if constexpr (TypeHasComponentTuple<T>)
+		{
+			return GetComponentTupleAccesses<typename T::ComponentTuple>();
+		}
+		else
+		{
+			return Vector<ComponentAccess>{};
+		}
 	}
 
 	template<typename Tuple, std::size_t... Indices>
@@ -159,19 +168,11 @@ private:
 		return result;
 	}
 
-	template<typename Tuple, bool HasFloatArg>
+	template<typename Tuple>
 	static auto GetComponentAccesses()
 	{
-		if constexpr (HasFloatArg)
-		{
-			constexpr std::size_t tupleSize = std::tuple_size_v<Tuple> - 1;
-			return GetComponentAccessesImpl<Tuple>(std::make_index_sequence<tupleSize>{});
-		}
-		else
-		{
-			constexpr std::size_t tupleSize = std::tuple_size_v<Tuple>;
-			return GetComponentAccessesImpl<Tuple>(std::make_index_sequence<tupleSize>{});
-		}
+		constexpr std::size_t tupleSize = std::tuple_size_v<Tuple>;
+		return GetComponentAccessesImpl<Tuple>(std::make_index_sequence<tupleSize>{});
 	}
 
 	// System functions
@@ -191,14 +192,28 @@ private:
 	template<typename T, typename EntityView>
 	static auto GetArgumentOfType(Volt::EntityScene& scene, EntityView& mainView, entt::entity entityId)
 	{
-		if constexpr (T::ConstructType == ECS::Type::Entity)
+		if constexpr (IsECSEntityOrQuery<T>)
 		{
-			return T(scene.GetEntityHelperFromEntityHandle(entityId));
+			if constexpr (T::ConstructType == ECS::Type::Entity)
+			{
+				return T(scene.GetEntityFromHandle(entityId));
+			}
+			else if constexpr (T::ConstructType == ECS::Type::Query)
+			{
+				using ComponentTuple = typename T::ComponentViewTuple;
+				return T(GetRegistryView<ComponentTuple>(scene.GetRegistry()), &scene);
+			}
 		}
-		else if constexpr (T::ConstructType == ECS::Type::Query)
+		else
 		{
-			using ComponentTuple = typename T::ComponentViewTuple;
-			return T(GetRegistryView<ComponentTuple>(scene.GetRegistry()), scene.GetRegistry());
+			if constexpr (IsECSEnvironmentCandidate<T>)
+			{
+				return scene.GetSciptingEngine().GetECSEnvironmentOfType<std::remove_const_t<std::remove_reference_t<T>>>();
+			}
+			else
+			{
+				static_assert(false && "Type is ill formed!");
+			}
 		}
 	}
 
@@ -208,18 +223,10 @@ private:
 		return std::tuple{ GetArgumentOfType<std::tuple_element_t<Indices, Tuple>>(scene, mainView, entityId)... };
 	}
 
-	template<typename Tuple, bool HasFloatArg, typename EntityView>
+	template<typename Tuple, typename EntityView>
 	static auto GetSystemArgument(Volt::EntityScene& scene, EntityView& mainView, entt::entity entityId)
 	{
-		if constexpr (HasFloatArg)
-		{
-			constexpr std::size_t tupleSize = std::tuple_size_v<Tuple> - 1;
-			return GetSystemArgumentImpl<Tuple>(std::make_index_sequence<tupleSize>{}, scene, mainView, entityId);
-		}
-		else
-		{
-			constexpr std::size_t tupleSize = std::tuple_size_v<Tuple>;
-			return GetSystemArgumentImpl<Tuple>(std::make_index_sequence<tupleSize>{}, scene, mainView, entityId);
-		}
+		constexpr std::size_t tupleSize = std::tuple_size_v<Tuple>;
+		return GetSystemArgumentImpl<Tuple>(std::make_index_sequence<tupleSize>{}, scene, mainView, entityId);
 	}
 };

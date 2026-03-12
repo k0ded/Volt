@@ -1,6 +1,0 @@
-name: "IntegrateSpecularCube"
-internal: true
-sources:
-  - entryPoint: "main"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/PBR/IntegrateSpecularCube.hlsl"

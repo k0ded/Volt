@@ -1,4 +1,0 @@
-name: "IndirectCull"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/Indirect/IndirectCull_cs.hlsl"

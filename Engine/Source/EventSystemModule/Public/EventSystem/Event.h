@@ -19,7 +19,6 @@ namespace Volt
 	class EVENTMODULE_API Event
 	{
 	public:
-
 		virtual const VoltGUID GetGUID() const = 0;
 		virtual const char* GetName() const = 0;
 		virtual std::string ToString() const { return GetName(); }

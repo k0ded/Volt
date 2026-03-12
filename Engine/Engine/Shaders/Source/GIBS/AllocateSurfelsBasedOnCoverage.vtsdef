@@ -1,6 +1,0 @@
-name: "AllocateSurfelsBasedOnCoverage"
-internal: true
-sources:
-  - entryPoint: "AllocateSurfelsBasedOnCoverage"
-    shaderStage: "cs"
-    filePath: "Engine/Shaders/Source/GIBS/AllocateSurfelsBasedOnCoverage.hlsl"

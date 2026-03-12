@@ -1,0 +1,43 @@
+#pragma once
+
+#include <RenderCore/RenderGraph/Resources/ResourceDeclarations.h>
+
+namespace Volt
+{
+	struct SceneTextures
+	{
+		RGTextureRef sceneDepth;
+		RGTextureRef sceneVelocity;
+		RGTextureRef gBufferAlbedo;
+		RGTextureRef gBufferNormals;
+		RGTextureRef gBufferMaterial;
+		RGTextureRef gBufferEmissive;
+		
+		RGTextureRef sceneColor;
+		RGTextureRef sceneAO;
+	};
+
+	struct EnvironmentTextures
+	{
+		RGTextureRef irradiance;
+		RGTextureRef radiance;
+		RGTextureRef DFGLuT;
+	};
+
+	struct DefaultTextures
+	{
+		RGTextureRef black1x1Cube;
+		RGTextureRef white1x1;
+	};
+
+	struct TranslucencyTextures
+	{
+		RGTextureRef accumulation;
+		RGTextureRef revealage;
+	};
+
+	struct LightScene
+	{
+		RGBufferRef visibleLightIndices;
+	};
+}

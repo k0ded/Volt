@@ -1,5 +1,3 @@
-#include "Resources.hlsli"
-
 #define TG_SIZE 512
 #define TG_WAVE_SIZE 32
 #define TG_WAVE_COUNT (TG_SIZE / TG_WAVE_SIZE)
@@ -15,73 +13,77 @@ struct State
     uint state;
 };
 
-struct Constants
-{
-    vt::TypedBuffer<uint> inputValues;
-    vt::RWTypedBuffer<uint> outputValues;
-    vt::RWTypedBuffer<State, true> state;
-    vt::RWRawByteBuffer counterBuffer;
-    uint valueCount;
-};
+Buffer<uint> InputValues;
 
-groupshared uint m_wavePrefixSums[TG_WAVE_COUNT];
-groupshared uint m_partitionIndex;
-groupshared uint m_lookBackFlag;
-groupshared uint m_partitionPrefix;
+RWBuffer<uint> RWOutputValues;
+RWBuffer<uint> RWCounterBuffer;
+globallycoherent RWStructuredBuffer<State> RWStateBuffer;
+
+uint ValueCount;
+
+groupshared uint GroupWavePrefixSums[TG_WAVE_COUNT];
+groupshared uint GroupPartitionIndex;
+groupshared uint GroupLookBackFlag;
+groupshared uint GroupPartitionPrefix;
+
+[numthreads(32, 1, 1)]
+void MainCS()
+{
+    const uint laneIndex = WaveGetLaneIndex();
+
+    uint laneValue = InputValues[laneIndex];
+    RWOutputValues[laneIndex] = WavePrefixSum(laneValue);
+}
 
 [numthreads(TG_SIZE, 1, 1)]
-void main(uint groupThreadId : SV_GroupThreadID)
+void MainCS2(uint GroupThreadId : SV_GroupThreadId)
 {
-    const Constants constants = GetConstants<Constants>();
-    
     // We need to use the raw buffer here.
-    globallycoherent RWStructuredBuffer<State> stateBuffer = ResourceDescriptorHeap[constants.state.handle.handle + 1];
-
     const uint WaveSize = WaveGetLaneCount();
-    const uint WaveIndex = groupThreadId.x / WaveSize;
+    const uint WaveIndex = GroupThreadId.x / WaveSize;
     const uint LaneIndex = WaveGetLaneIndex();
 
-    if (groupThreadId == 0)
+    if (GroupThreadId == 0)
     {
-        constants.counterBuffer.InterlockedAdd(0, 1, m_partitionIndex);
-        m_partitionPrefix = 0;
+        InterlockedAdd(RWCounterBuffer[0], 1, GroupPartitionIndex);
+        GroupPartitionPrefix = 0;
     }
 
     GroupMemoryBarrierWithGroupSync();
 
-    uint partitionIndex = m_partitionIndex;
+    uint partitionIndex = GroupPartitionIndex;
 
     const uint localValueIndex = WaveSize * WaveIndex + LaneIndex;
     const uint valueIndex = TG_SIZE * partitionIndex + localValueIndex;
 
-    if (valueIndex >= constants.valueCount)
+    if (valueIndex >= ValueCount)
     {
         return;
     }
 
-    const uint maxLocalIndex = constants.valueCount - TG_SIZE * partitionIndex - 1;
+    const uint maxLocalIndex = ValueCount - TG_SIZE * partitionIndex - 1;
 
-    const bool isLastLaneInWave = groupThreadId == (WaveIndex * WaveSize) + WaveSize - 1 || WaveIndex == (maxLocalIndex / WaveSize);
-    const bool isLastActiveGroupThread = groupThreadId == maxLocalIndex || groupThreadId == TG_SIZE - 1;
+    const bool isLastLaneInWave = GroupThreadId == (WaveIndex * WaveSize) + WaveSize - 1 || WaveIndex == (maxLocalIndex / WaveSize);
+    const bool isLastActiveGroupThread = GroupThreadId == maxLocalIndex || GroupThreadId == TG_SIZE - 1;
     
-    uint value = constants.inputValues.Load(valueIndex);
+    uint value = InputValues[valueIndex];
     uint lanePrefixSum = WavePrefixSum(value);
 
     // Store the per wave prefix sum for the entire thread group.
     if (isLastLaneInWave)
     {
-        m_wavePrefixSums[WaveIndex] = lanePrefixSum + value;
+        GroupWavePrefixSums[WaveIndex] = lanePrefixSum + value;
     }
 
     GroupMemoryBarrierWithGroupSync();
     
     // Calculate the total wave prefix sum for each wave.
-    if (groupThreadId.x == 0)
+    if (GroupThreadId.x == 0)
     {
         [unroll]
         for (uint i = 1; i < TG_WAVE_COUNT; i++)
         {
-            m_wavePrefixSums[i] += m_wavePrefixSums[i - 1];
+            GroupWavePrefixSums[i] += GroupWavePrefixSums[i - 1];
         }
     }
 
@@ -90,15 +92,15 @@ void main(uint groupThreadId : SV_GroupThreadID)
     uint laneAggregate = lanePrefixSum;
     if (WaveIndex > 0)
     {
-        laneAggregate += m_wavePrefixSums[WaveIndex - 1];
+        laneAggregate += GroupWavePrefixSums[WaveIndex - 1];
     }
 
     if (isLastActiveGroupThread)
     {
-        stateBuffer[partitionIndex].aggregate = laneAggregate + value;
+        RWStateBuffer[partitionIndex].aggregate = laneAggregate + value;
         if (partitionIndex == 0)
         {
-            stateBuffer[partitionIndex].prefix = laneAggregate;
+            RWStateBuffer[partitionIndex].prefix = laneAggregate;
         }
     }
 
@@ -112,7 +114,7 @@ void main(uint groupThreadId : SV_GroupThreadID)
             state = STATE_PRE_READY;
         }
 
-        stateBuffer[partitionIndex].state = state;
+        RWStateBuffer[partitionIndex].state = state;
     }
     
     uint exclusivePrefix = 0;
@@ -128,13 +130,13 @@ void main(uint groupThreadId : SV_GroupThreadID)
         {
             if (isLastActiveGroupThread)
             {
-                m_lookBackFlag = stateBuffer[lookBackIndex].state;
+                GroupLookBackFlag = RWStateBuffer[lookBackIndex].state;
             }
 
             GroupMemoryBarrierWithGroupSync();
             DeviceMemoryBarrier();
 
-            uint lookBackFlag = m_lookBackFlag;
+            uint lookBackFlag = GroupLookBackFlag;
 
             GroupMemoryBarrierWithGroupSync();
         
@@ -142,7 +144,7 @@ void main(uint groupThreadId : SV_GroupThreadID)
             {
                 if (isLastActiveGroupThread)
                 {
-                    exclusivePrefix += stateBuffer[lookBackIndex].prefix;
+                    exclusivePrefix += RWStateBuffer[lookBackIndex].prefix;
                 }
 
                 break;
@@ -151,7 +153,7 @@ void main(uint groupThreadId : SV_GroupThreadID)
             {
                 if (isLastActiveGroupThread)
                 {
-                    exclusivePrefix += stateBuffer[lookBackIndex].aggregate;
+                    exclusivePrefix += RWStateBuffer[lookBackIndex].aggregate;
                 }
 
                 lookBackIndex--;
@@ -161,7 +163,7 @@ void main(uint groupThreadId : SV_GroupThreadID)
 
             if (isLastActiveGroupThread)
             {
-                uint otherValue = constants.inputValues.Load(lookBackIndex * TG_SIZE + otherValueIndex);
+                uint otherValue = InputValues.Load(lookBackIndex * TG_SIZE + otherValueIndex);
                 
                 if (otherValueIndex == 0)
                 {
@@ -178,7 +180,7 @@ void main(uint groupThreadId : SV_GroupThreadID)
                     exclusivePrefix += otherAggregate;
                     if (lookBackIndex == 0)
                     {   
-                        m_lookBackFlag = STATE_PRE_READY;
+                        GroupLookBackFlag = STATE_PRE_READY;
                     }
                     else   
                     {
@@ -189,7 +191,7 @@ void main(uint groupThreadId : SV_GroupThreadID)
             }
 
             GroupMemoryBarrierWithGroupSync();
-            lookBackFlag = m_lookBackFlag;
+            lookBackFlag = GroupLookBackFlag;
             GroupMemoryBarrierWithGroupSync();
             
             if (lookBackFlag == STATE_PRE_READY)
@@ -200,19 +202,19 @@ void main(uint groupThreadId : SV_GroupThreadID)
 
         if (isLastActiveGroupThread)
         {
-            m_partitionPrefix = exclusivePrefix;
-            stateBuffer[partitionIndex].prefix = exclusivePrefix + m_wavePrefixSums[WaveIndex];
+            GroupPartitionPrefix = exclusivePrefix;
+            RWStateBuffer[partitionIndex].prefix = exclusivePrefix + GroupWavePrefixSums[WaveIndex];
         }
 
         DeviceMemoryBarrier();
         
         if (isLastActiveGroupThread)                                                                                                                                                                                  
         {
-            stateBuffer[partitionIndex].state = STATE_PRE_READY;
+            RWStateBuffer[partitionIndex].state = STATE_PRE_READY;
         }
     }
 
     GroupMemoryBarrierWithGroupSync();
 
-    constants.outputValues.Store(valueIndex, m_partitionPrefix + laneAggregate);
+    RWOutputValues[valueIndex] = GroupPartitionPrefix + laneAggregate;
 }

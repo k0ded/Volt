@@ -22,6 +22,7 @@ namespace VoltSharpmake
             conf.PrecompSource = "inputpch.cpp";
 
             conf.AddPublicDependency<EventSystemModule>(target);
+			conf.AddPrivateDependency<GLFW>(target);
         }
     }
 }

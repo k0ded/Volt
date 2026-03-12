@@ -1,90 +1,107 @@
 #include "vrpch.h"
+
 #include "Volt-Renderer/RenderingTechniques/TAATechnique.h"
+#include "Volt-Renderer/RenderingTechniques/TAANoise.h"
+#include "Volt-Renderer/SceneRendererRenderGraphData.h"
+#include "Volt-Renderer/RenderView.h"
 
-#include "Volt-Renderer/SceneRendererStructs.h"
-#include "Volt-Renderer/Renderer.h"
-#include "Volt-Renderer/RendererCommon.h"
-
-#include "Volt-Renderer/Texture/Texture2D.h"
-
+#include <RenderCore/RenderGraph/ShaderRegistry.h>
 #include <RenderCore/RenderGraph/RenderGraph.h>
+#include <RenderCore/RenderGraph/RenderContext.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
-#include <RenderCore/RenderGraph/RenderGraphUtils.h>
-#include <RenderCore/RenderGraph/RenderContextUtils.h>
+#include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/Shader/ShaderMap.h>
-
-#include <RHIModule/Pipelines/RenderPipeline.h>
+#include <RenderCore/Shader/PipelineStateCache.h>
+#include <RenderCore/SamplerStateCache.h>
 
 namespace Volt
 {
+	struct TAAResolvePS : public GlobalShader
+	{
+		DECLARE_GLOBAL_SHADER(TAAResolvePS)
+		BEGIN_SHADER_PARAMETER_STRUCT(Parameters)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float3>, CurrentColor)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float3>, PreviousColor)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float>, SceneDepth)
+			SHADER_PARAMETER_TEXTURE_SRV(Texture2D<float2>, SceneVelocity)
+			SHADER_PARAMETER_SAMPLER(LinearSampler)
+			SHADER_PARAMETER(uint2, RenderSize)
+			SHADER_PARAMETER(uint, FrameIndex)
+			RG_RENDER_TARGETS()
+		END_SHADER_PARAMETER_STRUCT()
+	};
+	VT_REGISTER_SHADER(TAAResolvePS, "Engine/Shaders/Source/PostProcessing/TAA/TAAResolve.hlsl", "MainPS", Pixel);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(TAAResolveParameters)
+		SHADER_PARAMETER_STRUCT_INCLUDE(FullscreenTriangleVS::Parameters, VS)
+		SHADER_PARAMETER_STRUCT_INCLUDE(TAAResolvePS::Parameters, PS)
+	END_SHADER_PARAMETER_STRUCT()
+
 	TAATechnique::TAATechnique(RenderGraph& renderGraph, RenderGraphBlackboard& blackboard)
 		: m_renderGraph(renderGraph), m_blackboard(blackboard)
 	{
 	}
 
-	TAAData TAATechnique::Execute(RefPtr<RHI::Image> previousColor, RenderGraphImageHandle velocityTexture)
+	TAATechnique::Output TAATechnique::Execute(const RenderView& view, RefPtr<RHI::Image> prevAccumulation)
 	{
-		const auto& shadingData = m_blackboard.Get<ShadingOutputData>();
-		const auto& depthPrePass = m_blackboard.Get<DepthPrePass>();
-		const auto& viewUniformBuffer = m_blackboard.Get<ViewUniformBuffer>();
+		SceneTextures& sceneTextures = m_blackboard.Get<SceneTextures>();
 
-		TAAData& data = m_renderGraph.AddPass<TAAData>("TAA Pass",
-		[&](RenderGraph::Builder& builder, TAAData& data) 
+		// If this is the first frame, we write the scene color as the
+		// accumulation (to be extracted) and return.
+		if (!prevAccumulation)
 		{
-			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, RHI::ImageUsage::AttachmentStorage, "TAA Output");
-				data.taaOutput = builder.CreateImage(desc);
-			}
+			Output result;
+			result.accumulation = sceneTextures.sceneColor;
 
-			{
-				const auto desc = RGUtils::CreateImage2DDesc<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, RHI::ImageUsage::AttachmentStorage, "TAA Accumulation");
-				data.accumulationOutput = builder.CreateImage(desc);
-			}
+			return result;
+		}
 
-			if (!previousColor)
-			{
-				data.previousColor = builder.AddExternalImage(Renderer::GetDefaultResources().whiteTexture->GetImage());
-			}
-			else
-			{
-				data.previousColor = builder.AddExternalImage(previousColor);
-			}
+		RGTextureRef prevAccumulationTexture = m_renderGraph.RegisterExternalTexture(prevAccumulation);
+		RGTextureRef accumulationTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::B10G11R11_UFLOAT_PACK32>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "TAA.Accumulation"));
+		RGTextureRef outputTexture = m_renderGraph.CreateTexture(RGTextureDesc::Create2D<RHI::PixelFormat::R16G16B16A16_SFLOAT>(view.width, view.height, RHI::ImageUsage::AttachmentStorage, "TAA.Output"));
 
-			builder.ReadResource(velocityTexture);
-			builder.ReadResource(data.previousColor);
-			builder.ReadResource(shadingData.colorOutput);
-			builder.ReadResource(depthPrePass.depth);
+		TAAResolveParameters* passParameters = m_renderGraph.AllocParameters<TAAResolveParameters>();
+		passParameters->PS.CurrentColor = m_renderGraph.CreateSRV(sceneTextures.sceneColor);
+		passParameters->PS.PreviousColor = m_renderGraph.CreateSRV(prevAccumulationTexture);
+		passParameters->PS.SceneDepth = m_renderGraph.CreateSRV(sceneTextures.sceneDepth);
+		passParameters->PS.SceneVelocity = m_renderGraph.CreateSRV(sceneTextures.sceneVelocity);
+		passParameters->PS.LinearSampler = SamplerStateCache::GetBilinearSampler();
+		passParameters->PS.RenderSize = { view.width, view.height };
+		passParameters->PS.FrameIndex = view.frameIndex;
+		passParameters->PS.renderTargets.renderTargets[0] = outputTexture;
+		passParameters->PS.renderTargets.renderTargets[1] = accumulationTexture;
 
-		},
-		[=](const TAAData& data, RenderContext& context) 
+		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();
+		auto pixelShader = ShaderMap::Get<TAAResolvePS>();
+
+		m_renderGraph.AddPass("TAA Resolve",
+			RenderGraphPassFlags::None,
+			passParameters,
+			[passParameters, view, pixelShader, vertexShader](RenderContext& context)
 		{
-			RenderingInfo info = context.CreateRenderingInfo(viewUniformBuffer.renderSize.x, viewUniformBuffer.renderSize.y, { data.taaOutput, data.accumulationOutput });
+			GraphicsPipelineState pipelineState;
+			pipelineState.shaders = { vertexShader, pixelShader };
+			pipelineState.cullMode = RHI::CullMode::None;
+			pipelineState.depthMode = RHI::DepthMode::None;
+			pipelineState.renderTargets = passParameters->PS.renderTargets;
 
-			RHI::RenderPipelineCreateInfo pipelineInfo;
-			pipelineInfo.shader = ShaderMap::Get("TAAResolve");
-			pipelineInfo.depthMode = RHI::DepthMode::None;
-			auto pipeline = ShaderMap::GetRenderPipeline(pipelineInfo);
+			RenderingInfo renderingInfo = context.CreateRenderingInfo(view.width, view.height, passParameters->PS.renderTargets);
 
-			context.BeginRendering(info);
-
-			RCUtils::DrawFullscreenTriangle(context, pipeline, [&](RenderContext& context) 
-			{
-				context.SetConstant("currentColor"_sh, shadingData.colorOutput);
-				context.SetConstant("previousColor"_sh, data.previousColor);
-				context.SetConstant("sceneDepth"_sh, depthPrePass.depth);
-				context.SetConstant("velocityTexture"_sh, velocityTexture);
-				context.SetConstant("linearSampler"_sh, Renderer::GetSampler<RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureFilter::Linear, RHI::TextureWrap::Clamp>()->GetResourceHandle());
-				context.SetConstant("renderSize"_sh, viewUniformBuffer.renderSize);
-				context.SetConstant("frameIndex"_sh, viewUniformBuffer.frameIndex);
-
-			});
-
+			context.BeginRendering(renderingInfo);
+			context.SetPipelineState(pipelineState);
+			context.SetParameters<TAAResolvePS>(pixelShader, &passParameters->PS);
+			context.Draw(3, 1, 0, 0);
 			context.EndRendering();
 		});
 
-		return data;
-	}
+		sceneTextures.sceneColor = outputTexture;
 
+		Output result{};
+		result.accumulation = accumulationTexture;
+
+		return result;
+	}
+	
 	TAANoise::TAANoise()
 	{
 		if (!s_initialized)

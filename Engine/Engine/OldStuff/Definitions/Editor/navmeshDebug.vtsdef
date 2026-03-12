@@ -1,5 +1,0 @@
-name: "NavMeshDebug"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/Forward/ForwardPBR_vs.hlsl"
-  - "Engine/Shaders/Source/HLSL/Editor/NavMeshDebug_ps.hlsl"

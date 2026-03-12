@@ -26,9 +26,15 @@ namespace Volt
 		void RebuildAccelerationStructure();
 		void UpdateAccelerationStructure();
 		
-		RayTracingInstanceID AddInstance(Ref<Mesh> mesh, EntityID entityId, uint32_t renderScenePrimitiveId);
+		RayTracingInstanceID AddInstance(Ref<Mesh> mesh, EntityID entityId, uint32_t renderScenePrimitiveIndex);
+		void AddInstanceWithID(Ref<Mesh> mesh, EntityID entityId, uint32_t renderScenePrimitiveIndex, RayTracingInstanceID id);
 		void RemoveInstance(RayTracingInstanceID instanceId);
 		void InvalidateInstance(RayTracingInstanceID instanceId);
+
+		VT_NODISCARD VT_INLINE bool IsValid() const
+		{
+			return m_accelerationStructure != nullptr;
+		}
 
 		VT_NODISCARD VT_INLINE RefPtr<RHI::AccelerationStructure> GetAccelerationStructure() const 
 		{ 

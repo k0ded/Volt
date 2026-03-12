@@ -23,13 +23,22 @@ namespace VoltSharpmake
 
 			conf.AddPublicDependency<LogModule>(target);
 			conf.AddPublicDependency<AssetSystemModule>(target);
-			conf.AddPublicDependency<yaml>(target);
 
 			conf.AddPublicDependency<VoltCore>(target);
 			conf.AddPublicDependency<VoltRenderer>(target);
 			conf.AddPublicDependency<VoltMaterialGraph>(target);
 
-			conf.AddPublicDependency<msdf_atlas_gen>(target);
+			conf.AddPrivateDependency<stb_image>(target);
+			conf.AddPrivateDependency<FbxSDK>(target);
+			conf.AddPrivateDependency<msdfgen>(target);
+			conf.AddPrivateDependency<msdf_atlas_gen>(target);
+			conf.AddPrivateDependency<libpng>(target);
+			conf.AddPrivateDependency<MikkTSpace>(target);
+			conf.AddPrivateDependency<DirectXTex>(target);
+			conf.AddPrivateDependency<Compressonator>(target);
+			conf.AddPrivateDependency<fastgltf>(target);
+
+			conf.IncludePrivatePaths.Add(Path.Combine(Globals.ThirdPartyDirectory, "tinyddsloader"));
 		}
-    }
+	}
 }

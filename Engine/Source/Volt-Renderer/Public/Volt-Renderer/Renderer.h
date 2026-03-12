@@ -2,50 +2,64 @@
 
 #include "Volt-Renderer/BlueNoise.h"
 #include "Volt-Renderer/Config.h"
+#include "Volt-Renderer/Debug/DebugRenderer.h"
 
 #include <AssetSystem/AssetHandle.h>
-#include <RenderCore/Resources/BindlessResource.h>
+#include <AssetSystem/AssetReference.h>
+
+#include <RenderCore/TransientResourceSystem/TransientResourceAllocator.h>
+#include <RenderCore/CommandBufferPool.h>
+#include <RenderCore/SamplerStateCache.h>
 
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/Core/RHICommon.h>
 
 #include <SubSystem/SubSystem.h>
-#include <EventSystem/EventListener.h>
+#include <SubSystem/SubSystemRegistry.h>
 
-#include <CoreUtilities/Containers/FunctionQueue.h>
+#include <EventSystem/EventListener.h>
 
 namespace Volt
 {
 	namespace RHI
 	{
 		class SamplerState;
-		struct SamplerStateCreateInfo;
+		struct SamplerStateDesc;
 	}
 
 	class Texture2D;
 	class RenderMaterial;
-	class ShaderRuntimeValidator;
 	class Mesh;
 
 	struct DefaultResources
 	{
-		Ref<Texture2D> whiteTexture;
 		Ref<RenderMaterial> defaultMaterial;
+		Ref<RenderMaterial> defaultTranslucentMaterial;
 		Ref<Mesh> defaultMesh;
 
 		RefPtr<RHI::Image> DFGLuT;
 		RefPtr<RHI::Image> blackCubeTexture;
 		RefPtr<RHI::Image> black1x1x1;
+		RefPtr<RHI::Image> white1x1;
+		RefPtr<RHI::Image> black1x1;
+
+		RefPtr<RHI::Buffer> cubeIndexBuffer;
+
+		RefPtr<RHI::Shader> generateMipMapsShader;
 
 		VT_INLINE void Clear()
 		{
-			whiteTexture = nullptr;
 			defaultMaterial = nullptr;
 			defaultMesh = nullptr;
 
+			white1x1 = nullptr;
+			black1x1 = nullptr;
 			DFGLuT = nullptr;
 			blackCubeTexture = nullptr;
 			black1x1x1 = nullptr;
+
+			cubeIndexBuffer = nullptr;
+			generateMipMapsShader = nullptr;
 		}
 	};
 
@@ -71,56 +85,33 @@ namespace Volt
 		Renderer& operator=(const Renderer&) = delete;
 
 		void Initialize() override;
+		void CreateBlueNoise();
 		void Shutdown() override;
 
 		static const uint32_t GetFramesInFlight();
-		static void DestroyResource(std::function<void()>&& function);
 
 		static const DefaultResources& GetDefaultResources();
 		static EnvironmentTextures GenerateEnvironmentTextures(AssetHandle baseTextureHandle);
 
-#ifndef VT_DIST
-		static ShaderRuntimeValidator& GetRuntimeShaderValidator();
-#endif
-
-		template<RHI::TextureFilter min, RHI::TextureFilter mag, RHI::TextureFilter mip, RHI::TextureWrap wrapMode = RHI::TextureWrap::Repeat, RHI::AnisotropyLevel aniso = RHI::AnisotropyLevel::None, RHI::CompareOperator compareOperator = RHI::CompareOperator::None>
-		static BindlessResourceRef<RHI::SamplerState> GetSampler()
-		{
-			RHI::SamplerStateCreateInfo info{};
-			info.minFilter = min;
-			info.magFilter = mag;
-			info.mipFilter = mip;
-			info.wrapMode = wrapMode;
-			info.anisotropyLevel = aniso;
-			info.compareOperator = compareOperator;
-
-			return s_instance->GetSamplerInternal(info);
-		}
-
+		static void GetSubSystemDependencies(SubSystemDependencyList& outDependencies);
 		VT_DECLARE_SUBSYSTEM("{2E420D68-01AC-47D5-B7F4-F31F13D57ABF}"_guid);
 
 	private:
 		bool OnEndOfFrameUpdate(AppPostFrameUpdateEvent& event);
 		bool OnPreRenderEvent(AppPreRenderEvent& event);
 
-		BindlessResourceRef<RHI::SamplerState> GetSamplerInternal(const RHI::SamplerStateCreateInfo& samplerInfo);
 		void CreateDefaultResources();
 		void GenerateDFGLuT();
-		void LoadShaders();
 
 		inline static Renderer* s_instance = nullptr;
 
 		DefaultResources m_defaultResources;
 
-		Scope<ShaderMap> m_shaderMap;
-		Scope<BindlessResourcesManager> m_bindlessResourcesManager;
 		Scope<BlueNoise> m_blueNoise;
+		Scope<SamplerStateCache> m_samplerStateCache;
+		Scope<CommandBufferPool> m_commandBufferPool;
+		Scope<TransientResourceAllocator> m_transientResourceAllocator;
 
-#ifdef VT_ENABLE_SHADER_RUNTIME_VALIDATION
-		Scope<ShaderRuntimeValidator> m_shaderValidator;
-#endif
-
-		Vector<FunctionQueue> m_deletionQueue;
-		vt::map<size_t, BindlessResourceRef<RHI::SamplerState>> m_samplers;
+		uint32_t m_frameIndex = 0;
 	};
 }

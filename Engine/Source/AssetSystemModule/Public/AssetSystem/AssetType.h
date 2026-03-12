@@ -4,6 +4,7 @@
 
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Containers/Map.h>
+#include <CoreUtilities/Containers/Vector.h>
 
 #include <string>
 
@@ -32,27 +33,23 @@ public:
 	}
 };
 
-typedef Ref<AssetTypeBase> AssetType;
+using AssetType = Ref<AssetTypeBase>;
 
 class VTAS_API AssetTypeRegistry
 {
 public:
-	bool RegisterAssetType(const VoltGUID& guid, AssetType type);
+	void RegisterAssetType(const VoltGUID& guid, AssetType type);
+	void UnregisterAssetType(const VoltGUID& guid);
 
 	AssetType GetTypeFromGUID(const VoltGUID& guid) const;
 	AssetType GetTypeFromExtension(const std::string& extension) const;
-	VT_INLINE const vt::map<VoltGUID, AssetType>& GetTypeMap() const { return m_typeMap; }
+	VT_INLINE const Map<VoltGUID, AssetType>& GetTypeMap() const { return m_typeMap; }
+
+	static AssetTypeRegistry& Get();
 
 private:
-	vt::map<VoltGUID, AssetType> m_typeMap;
+	Map<VoltGUID, AssetType> m_typeMap;
 };
-
-extern VTAS_API AssetTypeRegistry g_assetTypeRegistry;
-
-VT_INLINE AssetTypeRegistry& GetAssetTypeRegistry()
-{
-	return g_assetTypeRegistry;
-}
 
 namespace std
 {
@@ -116,16 +113,25 @@ namespace AssetTypes \
 #define VT_DECLARE_ASSET_TYPE(typeName, typeGuid) \
 	VT_DECLARE_ASSET_TYPE_IMPL(typeName, false, (Vector<std::string>{}), typeGuid)
 
-#define VT_DECLARE_ASSET_TYPE_EXPORT(typeName, typeGuid, exportKeyword) \
-	VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(typeName, false, (Vector<std::string>{}), typeGuid, exportKeyword)
-
 #define VT_DECLARE_ASSET_SOURCE_TYPE(typeName, extensions, typeGuid) \
 	VT_DECLARE_ASSET_TYPE_IMPL(typeName, true, extensions, typeGuid)
 
 #define EXPAND(...) __VA_OPT__(__VA_ARGS__)
 
+// Must lie in a compilation unit (cpp file)
 #define VT_REGISTER_ASSET_TYPE(typeName) \
 	namespace AssetTypes { Ref<typeName ## Type> typeName = CreateRef<typeName ## Type>(); } \
-	bool AssetType_ ## typeName ## _Registered = GetAssetTypeRegistry().RegisterAssetType(AssetTypes::typeName ## Type::guid, AssetTypes::typeName);
+	class AssetTypeRegistrar_##typeName \
+	{ \
+	public: \
+		VT_INLINE AssetTypeRegistrar_##typeName() \
+		{ \
+			AssetTypeRegistry::Get().RegisterAssetType(AssetTypes::typeName ## Type::guid, AssetTypes::typeName); \
+		} \
+		VT_INLINE ~AssetTypeRegistrar_##typeName() \
+		{ \
+			AssetTypeRegistry::Get().UnregisterAssetType(AssetTypes::typeName ## Type::guid); \
+		} \
+	} g_assetTypeRegistrar_##typeName
 
 VT_DECLARE_ASSET_TYPE_EXPORT_IMPL(None, false, (Vector<std::string>{}), VoltGUID::Null(), VTAS_API);

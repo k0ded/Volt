@@ -3,17 +3,9 @@
 #include "Structures.hlsli"
 #include "Utility.hlsli"
 
-struct Constants
-{
-    vt::Tex2D<float3> sceneColor;
-    vt::UniformBuffer<ViewData> viewData;
-    vt::TextureSampler linearSampler;
-};
-
-struct Output
-{
-    [[vt::r11f_g11f_b10f]] float3 color : SV_Target0;
-};
+vt::Tex2D<float3> SceneColor;
+vt::UniformBuffer<ViewData> View;
+vt::TextureSampler LinearSampler;
 
 float RGBToLuma(float3 rgb)
 {
@@ -30,13 +22,12 @@ static const float EDGE_THRESHOLD_MIN = 0.0312f;
 static const float EDGE_THRESHOLD_MAX = 0.125f;
 static const uint ITERATIONS = 12;
 
-Output MainPS(FullscreenTriangleVertex input)
+float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
-    const Constants constants = GetConstants<Constants>();
-    const ViewData viewData = constants.viewData.Load();
+    const ViewData viewData = View.Load();
     
-    vt::Tex2D<float3> sceneColor = constants.sceneColor;
-    vt::TextureSampler linearSampler = constants.linearSampler;
+    vt::Tex2D<float3> sceneColor = SceneColor;
+    vt::TextureSampler linearSampler = LinearSampler;
 
     float3 colorCenter = sceneColor.Sample(linearSampler, input.uv);
 
@@ -207,8 +198,5 @@ Output MainPS(FullscreenTriangleVertex input)
     }
 
     float3 finalColor = sceneColor.Sample(linearSampler, finalUv);
-    
-    Output output;
-    output.color = finalColor;
-    return output;
+    return float4(finalColor, 1.f);
 }

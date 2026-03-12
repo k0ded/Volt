@@ -1,11 +1,8 @@
 #include "Resources.hlsli"
 #include "UIVertex.hlsli"
 
-struct Constants
-{
-    float4x4 viewProjection;
-    vt::TextureSampler linearSampler;
-};
+float4x4 ViewProjection;
+vt::TextureSampler LinearSampler;
 
 struct Output
 {
@@ -17,10 +14,8 @@ struct Output
 
 Output main(in UIVertex input)
 {
-    const Constants constants = GetConstants<Constants>();
-    
     Output output;
-    output.position = mul(constants.viewProjection, input.position);
+    output.position = mul(ViewProjection, input.position);
     output.color = input.color;
     output.texCoords = input.texCoords;
     output.imageHandle = input.imageHandle;

@@ -6,8 +6,7 @@
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 
-#include <Volt/Core/Application.h>
-#include <Volt/Utility/UIUtility.h>
+#include <Volt-Application/UI/UIUtility.h>
 #include <imgui_stdlib.h>
 
 #include <WindowModule/WindowManager.h>
@@ -55,11 +54,6 @@ void EditorSettingsPanel::DrawOutline()
 		m_currentMenu = SettingsMenu::VersionControl;
 	}
 	UI::ShiftCursor(5.f, 5.f);
-	if (ImGui::Selectable("External Tools"))
-	{
-		m_currentMenu = SettingsMenu::ExternalTools;
-	}
-	UI::ShiftCursor(5.f, 5.f);
 	if (ImGui::Selectable("Style Settings"))
 	{
 		m_currentMenu = SettingsMenu::StyleSettings;
@@ -82,7 +76,6 @@ void EditorSettingsPanel::DrawView()
 		switch (m_currentMenu)
 		{
 			case SettingsMenu::VersionControl: DrawVersionControl(); break;
-			case SettingsMenu::ExternalTools: DrawExternalTools(); break;
 			case SettingsMenu::StyleSettings: DrawStyleSettings(); break;
 			case SettingsMenu::EditorSettings: DrawEditorSettings(); break;
 			default: break;
@@ -176,20 +169,6 @@ void EditorSettingsPanel::DrawVersionControl()
 	UI::PopID();
 }
 
-void EditorSettingsPanel::DrawExternalTools()
-{
-	auto& externalToolsSettings = m_editorSettings.externalToolsSettings;
-
-	UI::PushID();
-	if (UI::BeginProperties())
-	{
-		UI::Property("External Script Editor", externalToolsSettings.customExternalScriptEditor);
-
-		UI::EndProperties();
-	}
-	UI::PopID();
-}
-
 void EditorSettingsPanel::DrawStyleSettings()
 {
 	float currentWindowOpacity = Volt::WindowManager::Get().GetMainWindow().GetOpacity();
@@ -200,6 +179,16 @@ void EditorSettingsPanel::DrawStyleSettings()
 		if (UI::Property("Window Opacity", currentWindowOpacity, 0.f, 1.f))
 		{
 			Volt::WindowManager::Get().GetMainWindow().SetOpacity(currentWindowOpacity);
+		}
+
+		UI::Header("HDR");
+
+		float currentPeakNits = Volt::WindowManager::Get().GetPeakNits();
+
+		if (UI::Property("Peak Nits", currentPeakNits))
+		{
+			Volt::WindowManager::Get().SetPeakNits(currentPeakNits);
+			m_editorSettings.peakNits = currentPeakNits;
 		}
 		UI::EndProperties();
 	}

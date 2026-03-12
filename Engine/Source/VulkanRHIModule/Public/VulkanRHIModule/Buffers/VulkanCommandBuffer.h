@@ -1,7 +1,12 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
+#include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
+
+#include <RHIModule/RayTracing/RayTracingResuorceTable.h>
+#include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
+#include <RHIModule/Core/RenderingInfo.h>
 
 struct VkCommandBuffer_T;
 struct VkCommandPool_T;
@@ -19,55 +24,46 @@ namespace Volt::RHI
 	public:
 		VulkanCommandBuffer(QueueType queueType);
 		VulkanCommandBuffer(const CommandBuffer* parentCommandBuffer);
+
+		VulkanCommandBuffer(const RenderingAttachmentDeclaration* renderingAttachmentDeclaration);
+
 		~VulkanCommandBuffer() override;
 
-		void Begin() override;
+		void Begin(bool oneTimeSubmit) override;
 		void End() override;
-		void Execute() override;
-
-		void Flush(RefPtr<Fence> fence) override;
-		void ExecuteAndWait() override;
-		void ExecuteWithFence(RefPtr<Fence> fence) override;
-		void WaitForFence() override;
-
-		void SetEvent(RawPtr<Event> event) override;
-
+		                                                                      
 		void Draw(const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance) override;
 		void DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance) override;
-		void DrawIndexedIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) override;
-		void DrawIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) override;
-		void DrawIndexedIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) override;
-		void DrawIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) override;
+		void DrawIndexedIndirect(RawPtr<Buffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) override;
+		void DrawIndirect(RawPtr<Buffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) override;
+		void DrawIndexedIndirectCount(RawPtr<Buffer> commandsBuffer, const size_t offset, RawPtr<Buffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) override;
+		void DrawIndirectCount(RawPtr<Buffer> commandsBuffer, const size_t offset, RawPtr<Buffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) override;
 
 		void Dispatch(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ) override;
-		void DispatchIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset) override;
+		void DispatchIndirect(RawPtr<Buffer> commandsBuffer, const size_t offset) override;
 
 		void DispatchMeshTasks(const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ) override;
-		void DispatchMeshTasksIndirect(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) override;
-		void DispatchMeshTasksIndirectCount(RawPtr<StorageBuffer> commandsBuffer, const size_t offset, RawPtr<StorageBuffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) override;
+		void DispatchMeshTasksIndirect(RawPtr<Buffer> commandsBuffer, const size_t offset, const uint32_t drawCount, const uint32_t stride) override;
+		void DispatchMeshTasksIndirectCount(RawPtr<Buffer> commandsBuffer, const size_t offset, RawPtr<Buffer> countBuffer, const size_t countBufferOffset, const uint32_t maxDrawCount, const uint32_t stride) override;
 
 		void TraceRays(RawPtr<ShaderBindingTable> shaderBindingTable, const uint32_t width, const uint32_t height, const uint32_t depth) override;
 
-		void SetViewports(const StackVector<Viewport, MAX_VIEWPORT_COUNT>& viewports) override;
-		void SetScissors(const StackVector<Rect2D, MAX_VIEWPORT_COUNT>& scissors) override;
+		void SetViewports(const InlineVector<Viewport, MAX_VIEWPORT_COUNT>& viewports) override;
+		void SetScissors(const InlineVector<Rect2D, MAX_VIEWPORT_COUNT>& scissors) override;
 
 		void BindPipeline(RawPtr<RenderPipeline> pipeline) override;
 		void BindPipeline(RawPtr<ComputePipeline> pipeline) override;
 		void BindPipeline(RawPtr<RayTracingPipeline> pipeline) override;
-		void BindVertexBuffers(const StackVector<RawPtr<VertexBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) override;
-		void BindVertexBuffers(const StackVector<RawPtr<StorageBuffer>, MAX_VERTEX_BUFFER_COUNT>& vertexBuffers, const uint32_t firstBinding) override;
-		void BindIndexBuffer(RawPtr<IndexBuffer> indexBuffer) override;
-		void BindIndexBuffer(RawPtr<StorageBuffer> indexBuffer) override;
+		void BindVertexBuffers(const VertexBufferVector& vertexBuffers, const uint32_t firstBinding) override;
+		void BindIndexBuffer(RawPtr<Buffer> indexBuffer, const IndexType indexType) override;
 
-		void BindDescriptorTable(RawPtr<DescriptorTable> descriptorTable) override;
-		void BindDescriptorTable(RawPtr<BindlessDescriptorTable> descriptorTable, RawPtr<UniformBuffer> constantsBuffer, const uint32_t offsetIndex, const uint32_t stride, RawPtr<AccelerationStructure> accelerationStructure) override;
+		void BindShaderBindings(const ShaderBindingMap& shaderBindingsMap) override;
+		void PushInlineParameters(const void* data, const uint32_t size, const uint32_t offset, ShaderStage shaderStages) override;
 
 		void BeginRendering(const RenderingInfo& renderingInfo) override;
 		void EndRendering() override;
 
-		void PushConstants(const void* data, const uint32_t size, const uint32_t offset) override;
-
-		void ResourceBarrier(const Vector<ResourceBarrierInfo>& resourceBarriers) override;
+		void ResourceBarrier(const BarrierVector& resourceBarriers) override;
 
 		void BuildAccelerationStructures(const Vector<AccelerationStructureBuildGeometryInfo>& buildInfos, const Vector<AccelerationStructureBuildRanges>& buildRanges) override;
 
@@ -78,20 +74,25 @@ namespace Volt::RHI
 		void EndTimestamp(uint32_t timestampIndex) override;
 		const float GetExecutionTime(uint32_t timestampIndex) const override;
 
-		void ClearImage(RawPtr<Image> image, std::array<float, 4> clearColor) override;
-		void ClearBuffer(RawPtr<StorageBuffer> buffer, const uint32_t value) override;
+		void ClearBufferView(RawPtr<BufferView> bufferView, const uint32_t clearValue) override;
+		void ClearBufferView(RawPtr<BufferView> bufferView, const float clearValue) override;
 
-		void UpdateBuffer(RawPtr<StorageBuffer> dstBuffer, const size_t dstOffset, const size_t dataSize, const void* data) override;
-		void CopyBufferRegion(Handle<Allocation> srcAllocation, const size_t srcOffset, Handle<Allocation> dstAllocation, const size_t dstOffset, const size_t size) override;
-		void CopyBufferToImage(Handle<Allocation> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip /* = 0 */) override;
-		void CopyImageToBuffer(RawPtr<Image> srcImage, Handle<Allocation> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) override;
+		void ClearImageView(RawPtr<ImageView> imageView, std::array<uint32_t, 4> clearValue) override;
+		void ClearImageView(RawPtr<ImageView> imageView, std::array<float, 4> clearValue) override;
+
+		void CopyBufferRegion(RawPtr<Buffer> srcBuffer, const size_t srcOffset, RawPtr<Buffer> dstBuffer, const size_t dstOffset, const size_t size) override;
+		void CopyBufferToImage(RawPtr<Buffer> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip /* = 0 */) override;
+		void CopyBufferToImage(RawPtr<Buffer> srcBuffer, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth, const int32_t offsetX, const int32_t offsetY, const int32_t offsetZ, const uint32_t mip) override;
+		void CopyImageToBuffer(RawPtr<Image> srcImage, RawPtr<Buffer> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t mip) override;
+		void CopyImageToBuffer(RawPtr<Image> srcImage, RawPtr<Buffer> dstBuffer, const size_t dstOffset, const uint32_t width, const uint32_t height, const uint32_t depth, const int32_t offsetX, const int32_t offsetY, const int32_t offsetZ, const uint32_t mip) override;
 		void CopyImage(RawPtr<Image> srcImage, RawPtr<Image> dstImage, const uint32_t width, const uint32_t height, const uint32_t depth) override;
 
-		void UploadTextureData(RawPtr<Image> dstImage, Handle<Allocation> stagingAllocation, const ImageCopyData& copyData) override;
+		void UploadTextureData(RawPtr<Image> dstImage, RawPtr<Buffer> stagingAllocation, const ImageCopyData& copyData) override;
+
+		bool HasFinishedExecution() const override;
 
 		const QueueType GetQueueType() const override;
 		const CommandBufferLevel GetCommandBufferLevel() const override;
-		const RawPtr<Fence> GetFence() const override;
 
 		RefPtr<CommandBuffer> CreateSecondaryCommandBuffer() const override;
 		void ExecuteSecondaryCommandBuffer(RefPtr<CommandBuffer> commandBuffer) const override;
@@ -101,24 +102,26 @@ namespace Volt::RHI
 		void* GetHandleImpl() const override;
 
 	private:
-		friend class VulkanDescriptorTable;
-		friend class VulkanDescriptorBufferTable;
-		friend class VulkanBindlessDescriptorTable;
+		friend class VulkanDeviceQueue;
 
 		inline static constexpr uint32_t MAX_QUERIES = 64;
 
 		void Invalidate();
-		void Release(RefPtr<Fence> waitFence);
+		void Release();
 
 		void CreateQueryPools();
 		void FetchTimestampResults();
 
-		void BeginPrimaryInternal();
-		void BeginSecondaryInternal();
+		void BeginPrimaryInternal(bool oneTimeSubmit);
+		void BeginSecondaryInternal(bool oneTimeSubmit);
 
-		void ClearCurrentPipeline();
+		void BindDescriptorBuffer(RefPtr<RayTracingResourceTable> rayTracingResourceTable);
 
-		VkPipelineLayout_T* GetCurrentPipelineLayout();
+		void ClearActivePipeline();
+		void ValidateInlineParameters();
+
+		VkPipelineLayout_T* GetActivePipelineLayout();
+		const DescriptorSetLayoutBuilder::DescriptorSets& GetActivePipelineDescriptorSets();
 
 		struct CommandBufferData
 		{
@@ -126,7 +129,6 @@ namespace Volt::RHI
 			VkCommandPool_T* commandPool = nullptr;
 		};
 
-		RefPtr<Fence> m_fence;
 		CommandBufferData m_commandBufferData;
 
 		bool m_hasTimestampSupport = false;
@@ -138,18 +140,21 @@ namespace Volt::RHI
 		uint32_t m_nextAvailableTimestampQuery = 0; // The two first are command buffer total
 		uint32_t m_lastAvailableTimestampQuery = 0;
 
-		VkQueryPool_T* m_timestampQueryPool;
+		VkQueryPool_T* m_timestampQueryPool = nullptr;
 		uint32_t m_timestampCount;
 		Vector<uint64_t> m_timestampQueryResults;
 		Vector<float> m_executionTimes;
 
 		// Internal state
-		RawPtr<RenderPipeline> m_currentRenderPipeline;
-		RawPtr<ComputePipeline> m_currentComputePipeline;
-		RawPtr<RayTracingPipeline> m_currentRayTracingPipeline;
+		RawPtr<RenderPipeline> m_activeRenderPipeline;
+		RawPtr<ComputePipeline> m_activeComputePipeline;
+		RawPtr<RayTracingPipeline> m_activeRayTracingPipeline;
+		RefPtr<Fence> m_submissionFence;
 
 		// Secondary command buffer
 		CommandBufferLevel m_commandBufferLevel = CommandBufferLevel::Primary;
+		RenderingAttachmentDeclaration m_renderingAttachmentDeclaraion;
+		bool m_hasRenderingAttachmentDeclaration = false;
 		const CommandBuffer* m_parentCommandBuffer;
 	};
 }

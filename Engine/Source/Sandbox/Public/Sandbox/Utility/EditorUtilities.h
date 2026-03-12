@@ -2,34 +2,18 @@
 
 #include "Sandbox/Utility/AssetBrowserPopup.h"
 
-#include <AssetSystem/Asset.h>
+#include <AssetSystem/AssetHandle.h>
+#include <AssetSystem/AssetType.h>
 
 #include <filesystem>
 
 namespace Volt
 {
-	class AnimationGraphAsset;
-	class AnimatedCharacter;
 	class Texture2D;
 	class Mesh;
 	class Entity;
+	class Scene;
 }
-
-struct NewCharacterData
-{
-	std::string name = "None";
-	Volt::AssetHandle skeletonHandle = Volt::Asset::Null();
-	Volt::AssetHandle skinHandle = Volt::Asset::Null();
-	std::filesystem::path destination = "Assets/Animations/";
-};
-
-struct NewAnimationGraphData
-{
-	std::string name = "None";
-	Volt::AssetHandle skeletonHandle = Volt::Asset::Null();
-
-	std::filesystem::path destination = "Assets/Animations/";
-};
 
 enum class SaveReturnState
 {
@@ -46,18 +30,22 @@ public:
 
 	static bool SearchBar(std::string& outSearchQuery, bool& outHasSearchQuery, bool setAsActive = false);
 
-	static bool NewCharacterModal(const std::string& aId, Ref<Volt::AnimatedCharacter>& outCharacter, NewCharacterData& aCharacterData);
-
 	static SaveReturnState SaveFilePopup(const std::string& aId);
-
-	static Ref<Volt::Texture2D> GenerateThumbnail(const std::filesystem::path& path);
-	static bool HasThumbnail(const std::filesystem::path& path);
-	static std::filesystem::path GetThumbnailPathFromPath(const std::filesystem::path& path);
 
 	static std::string GetDuplicatedNameFromEntity(const Volt::Entity& entity);
 
-	static void MarkEntityAsEdited(const Volt::Entity& entity);
-	static void MarkEntityAndChildrenAsEdited(const Volt::Entity& entity);
+	static void MarkEntityAsEdited(const Volt::Scene& scene, const Volt::Entity& entity);
+	static void MarkEntityAndChildrenAsEdited(const Volt::Scene& scene, const Volt::Entity& entity);
+
+	static void MarkEntityComponentAsEdited(const Volt::Scene& scene, const Volt::Entity& entity, const VoltGUID& componentGUID);
+	static void MarkEntityAndChildrenComponentAsEdited(const Volt::Scene& scene, const Volt::Entity& entity, const VoltGUID& componentGUID);
+
+	static void DestroyEntity(Volt::Scene& scene, const Volt::Entity& entity);
+	static void DestroyEntities(Volt::Scene& scene, const Vector<Volt::Entity>& entities);
+
+	static bool IsAssetTypeFileExtension(AssetType assetType, const std::filesystem::path& filepath);
+
+	static void IterateComponentsInEntity(const Volt::Entity& entity, std::function<void(const VoltGUID&)>&& func);
 
 private:
 	static bool AssetBrowserPopupInternal(const std::string& id, Volt::AssetHandle& assetHandle, bool startState, AssetType wantedType = AssetTypes::None);

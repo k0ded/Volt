@@ -3,22 +3,28 @@
 
 #include "Sandbox/NodeGraph/NodeGraphEditorPinUtility.h"
 #include "Sandbox/NodeGraph/IONodeGraphEditorHelpers.h"
+#include "Sandbox/Window/MosaicEditor/MosaicNodeExtensions.h"
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/Theme.h"
 
-#include <Volt/Utility/UIUtility.h>
-#include <Volt-Renderer/Material.h>
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Assets/MaterialAsset.h>
 #include <Volt-Assets/MaterialCompilerSubSystem.h>
 
 #include <Volt-MaterialGraph/MaterialGraph.h>
+#include <Volt-MaterialGraph/Nodes/ConstantNodes.h>
+#include <Volt-MaterialGraph/Nodes/Texture/SampleTextureNode.h>
+
+#include <Volt-Core/Project/ProjectManager.h>
 
 #include <AssetSystem/AssetManager.h>
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/MosaicNode.h>
 #include <Mosaic/NodeRegistry.h>
+
+#include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/FileSystem.h>
 
@@ -198,6 +204,10 @@ MosaicEditorPanel::MosaicEditorPanel()
 	//mosaicGraph.m_graph.LinkNodes(addNode, outputNode, CreateRef<Mosaic::MosaicEdge>(1, 0));
 	//mosaicGraph.m_graph.LinkNodes(sampleTextureNode, outputNode, CreateRef<Mosaic::MosaicEdge>(0, 5));
 
+	RegisterNodeExtension<ColorNodeExtension>(Volt::MosaicNodes::Color3::GetStaticGUID());
+	RegisterNodeExtension<ColorNodeExtension>(Volt::MosaicNodes::Color4::GetStaticGUID());
+	RegisterNodeExtension<SampleTextureNodeExtension>(Volt::MosaicNodes::SampleTextureNode::GetStaticGUID());
+
 	InitializeEditor();
 }
 
@@ -280,9 +290,9 @@ size_t MosaicEditorPanel::LoadNodeSettings(const UUID64 nodeId, std::string& dat
 	return data.size();
 }
 
-void MosaicEditorPanel::OpenAsset(Ref<Volt::Asset> asset)
+void MosaicEditorPanel::OpenAsset(AssetReference<Volt::Asset> asset)
 {
-	m_material = std::reinterpret_pointer_cast<Volt::MaterialAsset>(asset);
+	m_material = asset.ConvertTo<Volt::MaterialAsset>();
 }
 
 void MosaicEditorPanel::OnClose()
@@ -454,21 +464,19 @@ void MosaicEditorPanel::DrawMenuBar()
 		{
 			if (ImGui::MenuItem("Create"))
 			{
-				std::filesystem::path path = FileSystem::SaveFileDialogue({{ "Mosaic Graph (*.vtmat)", "vtmat" }}, Volt::ProjectManager::GetAssetsDirectory());
-				m_material = Volt::AssetManager::CreateAsset<Volt::MaterialAsset>(path.parent_path(), path.stem().string());
-				
-				Volt::AssetManager::SaveAsset(m_material);
+				std::filesystem::path path = FileSystem::SaveFileDialogue({{ "Mosaic Graph (*.vtasset)", "vtasset" }}, Volt::ProjectManager::GetAssetsDirectory());
+				m_material = g_assetManager->CreateAssetAndFile<Volt::MaterialAsset>(path.parent_path(), path.stem().string());
 			}
 
 			if (ImGui::MenuItem("Save") && m_material)
 			{
-				Volt::AssetManager::SaveAsset(m_material);
+				g_assetManager->SaveAsset(m_material);
 			}
 
 			if (ImGui::MenuItem("Load"))
 			{
-				std::filesystem::path path = FileSystem::OpenFileDialogue({ { "Mosaic Graph (*.vtmat)", "vtmat" }}, Volt::ProjectManager::GetAssetsDirectory());
-				m_material = Volt::AssetManager::GetAsset<Volt::MaterialAsset>(path);
+				std::filesystem::path path = FileSystem::OpenFileDialogue({ { "Mosaic Graph (*.vtasset)", "vtasset" }}, Volt::ProjectManager::GetAssetsDirectory());
+				m_material = g_assetManager->GetAssetImmediately<Volt::MaterialAsset>(g_assetManager->GetAssetHandleFromFilepath(path));
 			}
 
 			if (ImGui::MenuItem("Compile") && m_material)
@@ -574,6 +582,7 @@ void MosaicEditorPanel::DrawEditor()
 void MosaicEditorPanel::DrawPanels()
 {
 	DrawNodesPanel();
+	DrawSettingsPanel();
 }
 
 void MosaicEditorPanel::DrawNodes()
@@ -583,16 +592,9 @@ void MosaicEditorPanel::DrawNodes()
 		return;
 	}
 
-	ImTextureID textureId = nullptr;
+	ImTextureID textureId = 0;
 	int32_t width = 0;
 	int32_t height = 0;
-
-	if (m_headerTexture && m_headerTexture->IsValid())
-	{
-		textureId = UI::GetTextureID(m_headerTexture);
-		width = m_headerTexture->GetWidth();
-		height = m_headerTexture->GetHeight();
-	}
 
 	utils::BlueprintNodeBuilder builder{ textureId, width, height };
 
@@ -688,7 +690,10 @@ void MosaicEditorPanel::DrawNodes()
 
 		IONodeGraphEditorHelpers::EndAttributes();
 
-		node.nodeData->RenderCustomWidget();
+		if (m_nodeExtensions.contains(nodeData->GetGUID()))
+		{
+			m_nodeExtensions.at(nodeData->GetGUID())->Render(nodeData);
+		}
 
 		builder.End();
 	}
@@ -724,7 +729,7 @@ void MosaicEditorPanel::DrawNodesPanel()
 
 		std::unordered_map<std::string, Vector<VoltGUID>> categorizedNodes;
 
-		for (const auto& [guid, info] : GetMosaicNodeRegistry().GetRegistry())
+		for (const auto& [guid, info] : Mosaic::NodeRegistry::Get().GetRegistry())
 		{
 			categorizedNodes[info.category].emplace_back(guid);
 		}
@@ -749,7 +754,7 @@ void MosaicEditorPanel::DrawNodesPanel()
 					{
 						for (const auto& guid : nodeGuids)
 						{
-							const auto& nodeInfo = GetMosaicNodeRegistry().GetNodeInfo(guid);
+							const auto& nodeInfo = Mosaic::NodeRegistry::Get().GetNodeInfo(guid);
 							
 							if (ImGui::MenuItem(nodeInfo.name.c_str()) && m_material)
 							{
@@ -767,6 +772,42 @@ void MosaicEditorPanel::DrawNodesPanel()
 
 		UI::PopID();
 
+	}
+	ImGui::End();
+}
+
+void MosaicEditorPanel::DrawSettingsPanel()
+{
+	static Vector<std::string> materialBlendModeNames =
+	{
+		"Opaque",
+		"AlphaMasked",
+		"Translucent"
+	};
+
+	ImGui::SetNextWindowClass(GetWindowClass());
+	if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse))
+	{
+		ForceWindowDocked(ImGui::GetCurrentWindow());
+
+		if (m_material)
+		{
+			UI::BeginProperties("settings");
+
+			int32_t currentBlendModeInt = static_cast<int32_t>(m_material->GetMaterialBlendMode());
+			if (UI::ComboProperty("Material Blend Mode", currentBlendModeInt, materialBlendModeNames))
+			{
+				m_material->SetMaterialBlendMode(static_cast<Volt::MaterialBlendMode>(currentBlendModeInt));
+			}
+
+			bool isDoubleSided = m_material->GetIsDoubleSided();
+			if (UI::Property("Is Double Sided", isDoubleSided))
+			{
+				m_material->SetIsDoubleSided(isDoubleSided);
+			}
+
+			UI::EndProperties();
+		}
 	}
 	ImGui::End();
 }

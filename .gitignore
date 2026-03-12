@@ -2,14 +2,15 @@
 .idea/
 .vscode/
 .idea/
-bin/
-bin-int/
-Intermediate/
 
+Engine/Intermediate/
 Engine/Source/SharpmakeProject/obj
 Engine/Source/SharpmakeProject/bin
 Engine/Source/SharpmakeProject/output
-Source/Properties
+Engine/Source/obj
+Engine/Source/output
+Engine/Source/Properties
+Engine/Source/sharpmakeautocleanupdb_debugsolution.json
 
 Engine/User
 Engine/Engine/Shaders/Cache
@@ -19,13 +20,9 @@ Engine/MonoDebugger.log
 Engine/Log
 Engine/Binaries
 
-Volt/ProjectTemplate/Intermediates/
-Volt/ProjectTemplate/Binaries
-Volt/ProjectTemplate/.vs/
-Volt/ProjectTemplate/*.csproj
-Volt/ProjectTemplate/*.sln
+SideProjects/VoltLauncher/App/Data.yaml
 
-Project/Intermediates/
+Project/Intermediate/
 Project/Binaries
 Project/.vs/
 Project/*.csproj
@@ -33,6 +30,7 @@ Project/*.sln
 Project/Log
 Project/Cache
 Project/Generated
+
 
 *.sln
 *.vcxproj

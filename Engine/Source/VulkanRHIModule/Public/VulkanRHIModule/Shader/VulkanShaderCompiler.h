@@ -7,9 +7,14 @@
 
 struct IDxcCompiler3;
 struct IDxcUtils;
+struct IDxcRewriter;
+struct IDxcRewriter2;
+struct IDxcResult;
 
 namespace Volt::RHI
 {
+	class HLSLIncluder;
+
 	class VulkanShaderCompiler final : public ShaderCompiler
 	{
 	public:
@@ -23,23 +28,39 @@ namespace Volt::RHI
 		void* GetHandleImpl() const override;
 
 	private:
-		bool PreprocessSource(const ShaderStage shaderStage, const std::filesystem::path& filepath, std::string& outSource);
+		struct DxcCompilationResult
+		{
+			IDxcResult* dxcResult;
+			std::string error;
+			bool succeded;
+		};
 
-		CompilationResultData CompileAll(const Specification& specification);
-		CompilationResult CompileSingle(const ShaderStage shaderStage, const std::string& source, const ShaderSourceEntry& sourceEntry, const Specification& specification, CompilationResultData& outData);
+		struct RewriteResult
+		{
+			std::string outSource;
+			std::string error;
+			bool succeded;
+		};
 
-		void ReflectAllStages(const Specification& specification, CompilationResultData& inOutData);
-		void ReflectStage(ShaderStage stage, const Specification& specification, CompilationResultData& inOutData);
+		CompilationResultData CompileShader(const Specification& specification);
+		bool PreprocessSource(const Specification& specification, std::string& outProcessedSource, CompilationResultData& compilationResult);
 
-		bool TryAddShaderBinding(const std::string& name, uint32_t set, uint32_t binding, CompilationResultData& outData);
+		void OptimizeSpirvForReflection(const Specification& specification, CompilationResultData& inOutData, Vector<uint32_t>& outSpirv);
+		void ReflectAndRewriteSpirv(ShaderStage currentShaderStage, Vector<uint32_t>& spirv, ShaderParameterMap& shaderParameterMap);
+		void ReflectShader(const Specification& specification, CompilationResultData& inOutData);
+
+		DxcCompilationResult InvokeCompilerWithArguments(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source, HLSLIncluder* includer);
+		RewriteResult RewriteHLSL(Vector<const wchar_t*>& arguments, const std::filesystem::path& sourceFilepath, const std::string& source);
 
 		IDxcCompiler3* m_hlslCompiler = nullptr;
 		IDxcUtils* m_hlslUtils = nullptr;
+		IDxcRewriter* m_hlslRewriter = nullptr;
+		IDxcRewriter2* m_hlslRewriter2 = nullptr;
 	
+		ShaderCompilerCreateInfo m_createInfo;
+
 		Vector<std::filesystem::path> m_includeDirectories;
 		Vector<std::string> m_macros;
-		ShaderCompilerFlags m_flags = ShaderCompilerFlags::None;
-		std::filesystem::path m_cacheDirectory;
 
 		RefPtr<ShaderCache> m_shaderCache;
 	};

@@ -9,7 +9,7 @@
 
 namespace Volt
 {
-	VT_REGISTER_SUBSYSTEM(PhysicsSubSystem, Engine, 0);
+	VT_REGISTER_SUBSYSTEM(PhysicsSubSystem, Default, Engine);
 
 	PhysicsSubSystem::PhysicsSubSystem()
 		: m_physicsModulePath(std::filesystem::absolute("Binaries\\PhysXPhysicsInterface.dll"))

@@ -1,33 +1,76 @@
 #include "sbpch.h"
 #include "Modals/Modal.h"
 
-#include <Volt/Utility/UIUtility.h>
-
 #include "Sandbox/Utility/Theme.h"
 
-Modal::Modal(const std::string& strId)
-	: m_strId(strId)
+#include <SubSystem/SubSystemManager.h>
+
+#include <Volt-Application/UI/UIScopedHelpers.h>
+#include <Volt-Application/UI/UIUtility.h>
+
+#include <Volt-Application/UI/ImGuiSubSystem.h>
+
+Modal::Modal(const std::string& strId, ImGuiWindowFlags flags)
+	: m_strId(strId), m_flags(flags)
 {
 
 }
 
 void Modal::Open()
 {
-	UI::OpenModal(m_strId);
-	m_wasOpenLastFrame = false;
+	if (SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>()->IsWithinImGuiUpdate())
+	{
+		UI::OpenModal(m_strId);
+		m_wasOpenLastFrame = false;
 
-	OnOpen();
+		OnOpen();
+	}
+	else
+	{
+		m_shouldOpenNextFrame = true;
+	}
+}
+
+void Modal::OpenBlocking()
+{
+	RegisterListener<Volt::AppImGuiBlockingUpdateEvent>(VT_BIND_EVENT_FN(Modal::OnImGuiUpdateBlocking));
+	m_isBlocking = true;
+
+	Volt::ImGuiSubSystem* imguiSubSystem = SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>();
+	imguiSubSystem->EnterBlockingContext([&]()
+	{
+		UI::OpenModal(m_strId);
+		m_wasOpenLastFrame = false;
+
+		OnOpen();
+	});
 }
 
 void Modal::Close()
 {
 	ImGui::CloseCurrentPopup();
-
 	OnClose();
+
+	if (m_isBlocking)
+	{
+		Volt::ImGuiSubSystem* imguiSubSystem = SubSystemManager::GetSubSystem<Volt::ImGuiSubSystem>();
+		imguiSubSystem->ExitBlockingContext();
+
+		UnregisterListener<Volt::AppImGuiBlockingUpdateEvent>();
+	}
+
+	m_isBlocking = false;
 }
 
 bool Modal::Update()
 {
+	if (m_shouldOpenNextFrame)
+	{
+		Open();
+
+		m_shouldOpenNextFrame = false;
+	}
+
 	if (!m_wasOpenLastFrame)
 	{
 		//const auto viewport = ImGui::GetMainViewport();
@@ -48,7 +91,7 @@ bool Modal::Update()
 	// Default button style
 	UI::ScopedButtonColor defaultButtonColor{ EditorTheme::Buttons::DefaultButton };
 
-	const bool modalOpen = UI::BeginModal(m_strId, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysAutoResize);
+	const bool modalOpen = UI::BeginModal(m_strId, m_flags);
 
 	if (modalOpen)
 	{
@@ -57,4 +100,11 @@ bool Modal::Update()
 	}
 
 	return modalOpen;
+}
+
+bool Modal::OnImGuiUpdateBlocking(Volt::AppImGuiBlockingUpdateEvent& e)
+{
+	Update();
+
+	return true;
 }

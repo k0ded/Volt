@@ -16,7 +16,6 @@
 
 #include <glm/glm.hpp>
 
-
 struct GLFWwindow;
 struct GLFWcursor;
 
@@ -24,66 +23,93 @@ namespace Volt
 {
 	class Event;
 
-	class Window
+	enum class CursorType
+	{
+		Arrow = 0,
+		TextInput,
+		ResizeNS,
+		ResizeEW,
+		ResizeNESW,
+		ResizeNWSE,
+		ResizeAll,
+		NotAllowed,
+		Hand,
+		Num
+	};
+
+	class WINDOWMODULE_API Window
 	{
 	public:
 		using EventCallbackFn = std::function<void(Event&)>;
 
-		WINDOWMODULE_API Window(const WindowProperties& aProperties);
-		WINDOWMODULE_API ~Window();
+		Window(const WindowProperties& aProperties, bool forceSDR);
+		~Window();
 
-		WINDOWMODULE_API void Shutdown();
+		void Shutdown();
 
-		WINDOWMODULE_API void Invalidate();
-		WINDOWMODULE_API void Release();
+		void Invalidate();
+		void Release();
 
-		WINDOWMODULE_API void BeginFrame();
-		WINDOWMODULE_API void Render(float timestep);
-		WINDOWMODULE_API void Present();
+		void BeginFrame();
+		void Render(float timestep);
+		void Present();
 
-		WINDOWMODULE_API void Resize(uint32_t aWidth, uint32_t aHeight);
-		WINDOWMODULE_API void SetViewportSize(uint32_t width, uint32_t height);
+		void Resize(uint32_t aWidth, uint32_t aHeight);
+		void SetViewportSize(uint32_t width, uint32_t height);
+		void SetPosition(int32_t x, int32_t y);
+		void SetWindowMode(WindowMode aWindowMode, bool first = false);
+		void SetVsync(bool aState);
+		void SetTitle(const std::string& title);
 
-		WINDOWMODULE_API void SetWindowMode(WindowMode aWindowMode, bool first = false);
+		void SetIcon(const std::filesystem::path& path);
+		void EnableMousePassthrough(bool state);
 
-		WINDOWMODULE_API void SetVsync(bool aState);
+		void Maximize() const;
+		void Minimize() const;
+		void Restore() const;
+		void Show() const;
+		void Hide() const;
+		void ShowCursor(bool state);
+		void Focus() const;
 
-		WINDOWMODULE_API void SetIcon(const std::filesystem::path& path);
+		bool IsFocused() const;
+		bool IsHovered() const;
+		bool IsMaximized() const;
+		bool IsMinimized() const;
+		bool IsCursorEnabled() const;
 
-		WINDOWMODULE_API void Maximize() const;
-		WINDOWMODULE_API void Minimize() const;
-		WINDOWMODULE_API void Restore() const;
-		WINDOWMODULE_API bool IsFocused() const;
+		void ReplaceCursor(CursorType cursorType, const std::filesystem::path& path);
+		void SetCursor(CursorType cursorType);
 
-		WINDOWMODULE_API const bool IsMaximized() const;
+		void SetOpacity(float opacity) const;
+		std::string_view GetClipboard() const;
+		void SetClipboard(std::string_view string);
 
-		WINDOWMODULE_API void SetCursor(const std::filesystem::path& path);
+		const std::pair<float, float> GetPosition() const;
+		const std::pair<int32_t, int32_t> GetFramebufferSize() const;
 
-		WINDOWMODULE_API void SetOpacity(float opacity) const;
-		WINDOWMODULE_API std::string GetClipboard() const;
-		WINDOWMODULE_API void SetClipboard(const std::string& string);
+		const std::pair<float, float> GetCursorPos() const;
 
-		WINDOWMODULE_API const std::pair<float, float> GetPosition() const;
+		const float GetOpacity() const;
+		const float GetTime() const;
 
-		WINDOWMODULE_API const float GetOpacity() const;
-		WINDOWMODULE_API const float GetTime() const;
+		const std::string& GetTitle();
 
-		WINDOWMODULE_API const std::string& GetTitle();
+		inline const uint32_t GetWidth() const { return m_data.width; }
+		inline const uint32_t GetHeight() const { return m_data.height; }
+		inline const uint32_t GetViewportWidth() const { return m_viewportWidth; }
+		inline const uint32_t GetViewportHeight() const { return m_viewportHeight; }
 
-		WINDOWMODULE_API inline const uint32_t GetWidth() const { return m_data.Width; }
-		WINDOWMODULE_API inline const uint32_t GetHeight() const { return m_data.Height; }
-		WINDOWMODULE_API inline const uint32_t GetViewportWidth() const { return m_viewportWidth; }
-		WINDOWMODULE_API inline const uint32_t GetViewportHeight() const { return m_viewportHeight; }
+		inline const bool IsVSync() const { return m_data.vsync; }
+		inline const WindowMode GetWindowMode() const { return m_data.windowMode; }
+		inline GLFWwindow* GetNativeWindow() const { return m_window; }
+		inline void* GetHWND() const { return m_windowHandle; }
+		inline const auto& GetCursors() const { return m_cursors; }
 
-		WINDOWMODULE_API inline const bool IsVSync() const { return m_data.VSync; }
-		WINDOWMODULE_API inline const WindowMode GetWindowMode() const { return m_data.WindowMode; }
-		WINDOWMODULE_API inline GLFWwindow* GetNativeWindow() const { return m_window; }
-		WINDOWMODULE_API inline void* GetHWND() const { return m_windowHandle; }
+		inline const RHI::Swapchain& GetSwapchain() const { return *m_swapchain; }
+		inline const RawPtr<RHI::Swapchain> GetSwapchainPtr() const { return m_swapchain; }
 
-		WINDOWMODULE_API inline const RHI::Swapchain& GetSwapchain() const { return *m_swapchain; }
-		WINDOWMODULE_API inline const RawPtr<RHI::Swapchain> GetSwapchainPtr() const { return m_swapchain; }
-
-		static Scope<Window> Create(const WindowProperties& aProperties = WindowProperties());
+		static Scope<Window> Create(const WindowProperties& aProperties, bool forceSDR);
 
 	private:
 		class WindowEventListener : public EventListener
@@ -96,6 +122,8 @@ namespace Volt
 			GLFWwindow* m_window = nullptr;
 		};
 
+		void CreateDefaultCursors();
+
 		GLFWwindow* m_window = nullptr;
 		void* m_windowHandle = nullptr;
 		bool m_hasBeenInitialized = false;
@@ -103,13 +131,14 @@ namespace Volt
 
 		struct WindowData
 		{
-			std::string Title;
-			std::filesystem::path IconPath;
-			std::filesystem::path CursorPath;
-			uint32_t Width;
-			uint32_t Height;
-			bool VSync;
-			WindowMode WindowMode;
+			std::string title;
+			std::filesystem::path iconPath;
+			std::filesystem::path cursorPath;
+			uint32_t width;
+			uint32_t height;
+			bool vsync;
+			WindowMode windowMode;
+			bool forceSDR;
 
 		} m_data;
 
@@ -123,6 +152,9 @@ namespace Volt
 
 		Scope<WindowEventListener> m_eventListener;
 		WindowProperties m_properties;
-		std::unordered_map<std::filesystem::path, GLFWcursor*> m_cursors;
+		Array<GLFWcursor*, static_cast<size_t>(CursorType::Num)> m_cursors;
+
+		bool m_frameHasStarted = false;
+		bool m_shouldSkipDispatchResizeEvent = false;
 	};
 }

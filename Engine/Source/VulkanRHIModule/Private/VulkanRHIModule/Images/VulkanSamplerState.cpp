@@ -4,16 +4,18 @@
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 
+#include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
+
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/Graphics/GraphicsDevice.h>
 
-#include <RHIModule/RHIProxy.h>
+#include <RHIModule/RHIModule.h>
 
 #include <vulkan/vulkan.h>
 
 namespace Volt::RHI
 {
-	VulkanSamplerState::VulkanSamplerState(const SamplerStateCreateInfo& createInfo)
+	VulkanSamplerState::VulkanSamplerState(const SamplerStateDesc& createInfo)
 	{
 		VkSamplerCreateInfo info{};
 		info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -37,15 +39,22 @@ namespace Volt::RHI
 		info.compareOp = createInfo.compareOperator == CompareOperator::None ? VK_COMPARE_OP_ALWAYS : Utility::VoltToVulkanCompareOp(createInfo.compareOperator);
 
 		auto device = GraphicsContext::GetDevice();
-		VT_VK_CHECK(vkCreateSampler(device->GetHandle<VkDevice>(), &info, nullptr, &m_sampler));
+		VT_VK_CHECK(vkCreateSampler(device->GetHandle<VkDevice>(), &info, VT_VULKAN_ALLOCATOR, &m_sampler));
+
+		// Setup the descriptor
+		m_descriptor.vkDescriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+		m_descriptor.vkDescriptorInfo.pNext = nullptr;
+		m_descriptor.vkDescriptorInfo.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+		m_descriptor.vkDescriptorInfo.data.pSampler = &m_sampler;
+		m_descriptor.descriptorSize = g_physicalDeviceProperties.descriptorBufferProperties.samplerDescriptorSize;
 	}
 
 	VulkanSamplerState::~VulkanSamplerState()
 	{
-		RHIProxy::GetInstance().DestroyResource([sampler = m_sampler]() 
+		RHIModule::GetInstance().DestroyResource([sampler = m_sampler]() 
 		{
 			auto device = GraphicsContext::GetDevice();
-			vkDestroySampler(device->GetHandle<VkDevice>(), sampler, nullptr);
+			vkDestroySampler(device->GetHandle<VkDevice>(), sampler, VT_VULKAN_ALLOCATOR);
 		});
 
 		m_sampler = nullptr;

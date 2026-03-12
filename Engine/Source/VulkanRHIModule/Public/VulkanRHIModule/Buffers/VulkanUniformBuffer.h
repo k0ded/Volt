@@ -9,30 +9,36 @@
 namespace Volt::RHI
 {
 	class Allocation;
-	class VulkanUniformBuffer : public UniformBuffer
+	class VulkanUniformBuffer final : public UniformBuffer
 	{
 	public:
-		VulkanUniformBuffer(const uint32_t size, const void* data, const uint32_t count, const std::string& name);
+		VulkanUniformBuffer(const UniformBufferDesc& desc, const void* initialData);
 		~VulkanUniformBuffer() override;
 
-		RefPtr<BufferView> GetView() override;
-		const uint32_t GetSize() const override;
-		void SetData(const void* data, const uint32_t size) override;
+		/*
+			Uniform Buffer Interface
+		*/
+		RefPtr<BufferView> GetView(const BufferViewDesc& desc) override;
+		uint64_t GetSize() const override;
 		void Unmap() override;
 
+		/*
+			RHIResource Interface
+		*/
 		inline constexpr ResourceType GetType() const override { return ResourceType::UniformBuffer; }
 		void SetName(const std::string& name) override;
 		std::string_view GetName() const override;
-		const uint64_t GetDeviceAddress() const override;
-		const uint64_t GetByteSize() const override;
+		uint64_t GetDeviceAddress() const override;
+		const MemoryRequirement& GetMemoryRequirements() const override;
+		uint64_t GetResourceByteSize() const override;
 
 	protected:
-		void* MapInternal(const uint32_t index) override;
+		void* MapInternal() override;
 		void* GetHandleImpl() const override;
 
 	private:
-		std::string m_name;
+		UniformBufferDesc m_desc;
+		MemoryRequirement m_memoryRequirements;
 		Handle<Allocation> m_allocation;
-		uint32_t m_size = 0;
 	};
 }

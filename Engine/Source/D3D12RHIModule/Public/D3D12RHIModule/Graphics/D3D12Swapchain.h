@@ -1,71 +1,71 @@
 #pragma once
 
 #include "D3D12RHIModule/Common/ComPtr.h"
-#include "D3D12RHIModule/Descriptors/DescriptorCommon.h"
 
 #include <RHIModule/Graphics/Swapchain.h>
-#include <RHIModule/Buffers/CommandBuffer.h>
 
-#include <array>
-
-struct IDXGISwapChain3;
-struct CD3DX12_CPU_DESCRIPTOR_HANDLE;
-struct ID3D12Resource;
-struct GLFWwindow;
+struct IDXGISwapChain4;
 
 namespace Volt::RHI
 {
-	constexpr uint32_t MAX_SWAPCHAIN_IMAGES = 3;
-
 	class D3D12Swapchain final : public Swapchain
 	{
 	public:
 		D3D12Swapchain(const SwapchainCreateInfo& createInfo);
 		~D3D12Swapchain() override;
-	
+
 		void BeginFrame() override;
 		void Present() override;
 		void Resize(const uint32_t width, const uint32_t height, bool enableVSync) override;
 
-		VT_NODISCARD const uint32_t GetCurrentFrame() const override;
-		VT_NODISCARD const uint32_t GetWidth() const override;
-		VT_NODISCARD const uint32_t GetHeight() const override;
-		VT_NODISCARD const uint32_t GetFramesInFlight() const override;
-		VT_NODISCARD RefPtr<Image> GetCurrentImage() const override;
-		VT_NODISCARD const PixelFormat GetFormat() const override;
-		VT_NODISCARD bool IsHDREnabled() const override;
+		const uint32_t GetCurrentFrame() const override;
+		const uint32_t GetWidth() const override;
+		const uint32_t GetHeight() const override;
+		const PixelFormat GetFormat() const override;
+		RefPtr<Image> GetCurrentImage() const override;
+		bool IsHDREnabled() const override;
 
 		VT_NODISCARD ComPtr<ID3D12Resource> GetImageAtIndex(const uint32_t index) const { return m_perImageData.at(index).resource; }
+
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
-		void Invalidate(const uint32_t width, const uint32_t height, bool enableVSync);
-		void Release();
-
-		void CreateSwapchain(const uint32_t width, const uint32_t height);
-		void GetSwapchainImages();
-		void GetNextFrameIndex();
-
 		struct PerImageData
 		{
 			ComPtr<ID3D12Resource> resource = nullptr;
 			RefPtr<Image> imageReference;
 		};
 
-		GLFWwindow* m_windowHandle;
-		ComPtr<IDXGISwapChain4> m_swapchain;
+		void Invalidate(const uint32_t width, const uint32_t height);
+		void Release();
 
-		Vector<RefPtr<CommandBuffer>> m_commandBuffers;
-
-		std::array<PerImageData, MAX_SWAPCHAIN_IMAGES> m_perImageData = {};
-
-		uint32_t m_width = 1280;
-		uint32_t m_height = 720;
-		bool m_enableVsync = false;
-		bool m_supportsTearing = false;
+		void CreateSwapchain(const uint32_t width, const uint32_t height);
+		void GetNextFrameIndex();
+		void GetSwapchainImages();
 
 		uint32_t m_currentImageIndex = 0;
 		uint32_t m_currentFrameIndex = 0;
+
+		uint32_t m_width = 1280;
+		uint32_t m_height = 720;
+
+		bool m_VSyncEnabled = false;
+		bool m_isHDREnabled = false;
+		bool m_supportsTearing = false;
+
+		SwapchainCreateInfo m_createInfo;
+
+		Vector<RefPtr<CommandBuffer>> m_commandBuffers;
+		Vector<PerImageData> m_perImageData;
+
+		Vector<RefPtr<Fence>> m_renderFences;
+
+		HWND m_windowHandle;
+		ComPtr<IDXGISwapChain4> m_swapchain;
+
+		ComPtr<ID3D12Fence> m_presentFence;
+		uint64_t m_presentFenceValue = 0;
+		void* m_windowsPresentFenceEvent = nullptr;
 	};
 }

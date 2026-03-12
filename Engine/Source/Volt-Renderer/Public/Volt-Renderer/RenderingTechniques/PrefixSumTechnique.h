@@ -1,18 +1,18 @@
 #pragma once
 
-#include <RenderCore/RenderGraph/Resources/RenderGraphResourceHandle.h>
+#include <RenderCore/RenderGraph/Resources/ResourceDeclarations.h>
 
 namespace Volt
 {
 	class RenderGraph;
-	class RenderGraphBlackboard;
 
 	class PrefixSumTechnique
 	{
 	public:
-		PrefixSumTechnique(RenderGraph& rg);
-		void Execute(RenderGraphBufferHandle inputBuffer, RenderGraphBufferHandle outputBuffer, const uint32_t valueCount);
+		PrefixSumTechnique(RenderGraph& renderGraph);
+		void Execute(RGBufferRef inputBuffer, RGBufferRef outputBuffer, uint32_t numValues);
 
+	private:
 		RenderGraph& m_renderGraph;
 	};
 }

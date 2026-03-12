@@ -4,6 +4,7 @@
 
 #include <Mosaic/MosaicGraph.h>
 #include <Mosaic/NodeRegistry.h>
+#include <Mosaic/MosaicShaderWriter.h>
 
 namespace Volt::MosaicNodes
 {
@@ -40,7 +41,7 @@ namespace Volt::MosaicNodes
 		}
 	}
 
-	const Mosaic::ResultInfo UVNode::GetShaderCode(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const
+	const Mosaic::ResultInfo UVNode::Compile(const GraphNode<Ref<class Mosaic::MosaicNode>, Ref<Mosaic::MosaicEdge>>& underlyingNode, uint32_t outputIndex, Mosaic::MosaicShaderWriter& shaderWriter) const
 	{
 		constexpr const char* nodeStr = "const float2 {0} = evalData.texCoords; \n";
 
@@ -58,7 +59,7 @@ namespace Volt::MosaicNodes
 		const std::string varName = m_graph->GetNextVariableName();
 
 		std::string result = std::format(nodeStr, varName);
-		appendableShaderString.append(result);
+		shaderWriter.AppendCodeBlock(result);
 
 		Mosaic::ResultInfo resultInfo{};
 		resultInfo.resultParamName = varName;

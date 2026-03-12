@@ -1,6 +1,11 @@
 #include "vkpch.h"
 #include "VulkanCommon.h"
 
+#include "VulkanRHIModule/Common/VulkanFunctions.h"
+
+#include <RHIModule/Graphics/GraphicsContext.h>
+#include <RHIModule/Graphics/GraphicsDevice.h>
+
 #include <vulkan/vulkan.h>
 
 const char* VKResultToString(int32_t result)
@@ -47,4 +52,63 @@ const char* VKResultToString(int32_t result)
 		case VK_PIPELINE_COMPILE_REQUIRED_EXT: return "VK_PIPELINE_COMPILE_REQUIRED_EXT";
 	}
 	return nullptr;
+}
+
+const char* GetAddressTypeStr(VkDeviceFaultAddressTypeEXT addressType)
+{
+	switch (addressType)
+	{
+		case VK_DEVICE_FAULT_ADDRESS_TYPE_NONE_EXT: return "None"; break;
+		case VK_DEVICE_FAULT_ADDRESS_TYPE_READ_INVALID_EXT: return "ReadInvalid"; break;
+		case VK_DEVICE_FAULT_ADDRESS_TYPE_WRITE_INVALID_EXT: return "WriteInvalid"; break;
+		case VK_DEVICE_FAULT_ADDRESS_TYPE_EXECUTE_INVALID_EXT: return "ExecuteInvalid"; break;
+		case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_UNKNOWN_EXT: return "InstructionPointerUnknown"; break;
+		case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_INVALID_EXT: return "InstructionPointerInvalid"; break;
+		case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_FAULT_EXT: return "InstructionPointerFault"; break;
+	}
+
+	return "Invalid";
+}
+
+void HandleDeviceLost()
+{
+	VkDeviceFaultCountsEXT counts{};
+	counts.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT;
+
+	VkDeviceFaultInfoEXT info{};
+	info.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_EXT;
+	info.pNext = nullptr;
+	info.pAddressInfos = nullptr;
+	info.pVendorBinaryData = nullptr;
+	info.pVendorInfos = nullptr;
+
+	auto device = Volt::RHI::GraphicsContext::GetDevice();
+	VkDevice vkDevice = device->GetHandle<VkDevice>();
+
+	VkResult result = Volt::RHI::vkGetDeviceFaultInfoEXT(vkDevice, &counts, &info);
+
+	if (result == VK_INCOMPLETE)
+	{
+		Vector<VkDeviceFaultAddressInfoEXT> addressInfos(counts.addressInfoCount);
+		Vector<VkDeviceFaultVendorInfoEXT> vendorInfos(counts.vendorInfoCount);
+		Vector<uint8_t> vendorBinary(counts.vendorBinarySize);
+
+		info.pAddressInfos = addressInfos.data();
+		info.pVendorInfos = vendorInfos.data();
+		info.pVendorBinaryData = vendorBinary.data();
+
+		result = Volt::RHI::vkGetDeviceFaultInfoEXT(vkDevice, &counts, &info);
+	}
+
+	if (result == VK_SUCCESS)
+	{
+		VT_LOG(Error, "Device fault description {}\n", info.description);
+
+		for (uint32_t i = 0; i < counts.addressInfoCount; ++i)
+		{
+			auto& a = info.pAddressInfos[i];
+
+			VT_LOG(Error, "Fault address: {}, type: {}\n", (uint64_t)a.reportedAddress, GetAddressTypeStr(a.addressType));
+		}
+	}
 }

@@ -37,9 +37,9 @@ struct SceneSettings
 	bool fullscreenOnPlay = false;
 	bool gridEnabled = false;
 
-	float gridSnapValue = 0.f;
-	float rotationSnapValue = 0.f;
-	float scaleSnapValue = 0.f;
+	float gridSnapValue = 1;
+	float rotationSnapValue = 1;
+	float scaleSnapValue = 1;
 
 	bool showLightSpheres = true;
 	bool showEntityGizmos = true;
@@ -49,12 +49,6 @@ struct SceneSettings
 	NavMeshViewMode navMeshViewMode = NavMeshViewMode::None;
 
 	Volt::AssetHandle defaultOpenScene;
-};
-
-struct ExternalToolsSettings
-{
-	std::unordered_map<std::string, std::filesystem::path> scriptEditorPaths;
-	std::filesystem::path customExternalScriptEditor;
 };
 
 struct NetworkSettings
@@ -78,12 +72,12 @@ struct EditorSettings
 	WindowSettings windowSettings;
 	SceneSettings sceneSettings;
 	VersionControlSettings versionControlSettings;
-	ExternalToolsSettings externalToolsSettings;
-	RecastBuildSettings navmeshBuildSettings;
 	NetworkSettings networkSettings;
 	AssetBrowserSettings assetBrowserSettings;
 
 	Vector<PanelState> panelStates;
+
+	float peakNits = 250.f;
 };
 
 class EditorWindow;

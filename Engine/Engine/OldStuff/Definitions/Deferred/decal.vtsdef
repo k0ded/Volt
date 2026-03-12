@@ -1,6 +1,0 @@
-name: "Decal"
-internal: false
-paths:
-  - "Engine/Shaders/Source/HLSL/Deferred/Decal_vs.hlsl"
-  - "Engine/Shaders/Source/HLSL/Deferred/Decal_ps.hlsl"
-inputTextures:

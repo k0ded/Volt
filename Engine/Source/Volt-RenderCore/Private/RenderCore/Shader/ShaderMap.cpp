@@ -1,7 +1,7 @@
 #include "rcpch.h"
 #include "RenderCore/Shader/ShaderMap.h"
+#include "RenderCore/Shader/PipelineStateCache.h"
 
-#include <RHIModule/Shader/Shader.h>
 #include <RHIModule/Pipelines/RenderPipeline.h>
 #include <RHIModule/Pipelines/ComputePipeline.h>
 
@@ -14,23 +14,6 @@ namespace Volt
 {
 	namespace Utility
 	{
-		inline static const size_t GetComputeShaderHash(const std::string& name)
-		{
-			return std::hash<std::string>()(name);
-		}
-
-		inline static const size_t GetRenderPipelineHash(const RHI::RenderPipelineCreateInfo& pipelineInfo)
-		{
-			size_t hash = std::hash<std::string_view>()(pipelineInfo.shader->GetName());
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.topology)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.cullMode)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.fillMode)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.depthMode)));
-			hash = Math::HashCombine(hash, std::hash<uint32_t>()(static_cast<uint32_t>(pipelineInfo.depthCompareOperator)));
-		
-			return hash;
-		}
-
 		inline const size_t GetRayTracingPipelineHash(const RHI::RayTracingPipelineCreateInfo& pipelineInfo)
 		{
 			size_t hash = 0;
@@ -81,9 +64,6 @@ namespace Volt
 
 	ShaderMap::~ShaderMap()
 	{
-		m_shaderMap.clear();
-		m_computePipelineCache.clear();
-		m_renderPipelineCache.clear();
 		m_rayTracingPipelineCache.clear();
 		m_shaderBindingTableCache.clear();
 
@@ -92,135 +72,96 @@ namespace Volt
 
 	void ShaderMap::ReloadAll()
 	{
-		for (const auto& [name, shader] : s_instance->m_shaderMap)
+
+	}
+
+	bool ShaderMap::ReloadAllWithReferenceToFile(const std::filesystem::path& filepath)
+	{
+		const bool isSourceFile = filepath.extension() == L".hlsl";
+
+		Vector<RefPtr<RHI::Shader>> touchedShaders;
+
+		// Find all shaders that have any reference to the file.
+		if (isSourceFile)
+		{
+			for (const auto& [typeIndex, shaderBucket] : s_instance->m_shaderMap)
+			{
+				if (shaderBucket.hasPermutations)
+				{
+					for (const auto& [permutationHash, shader] : shaderBucket.permutationMap)
+					{
+						std::filesystem::path absoluteSourcePath = std::filesystem::absolute(shader->GetShaderSourceInfo().sourceEntry.filepath);
+						if (absoluteSourcePath == filepath)
+						{
+							touchedShaders.emplace_back(shader);
+						}
+					}
+				}
+				else
+				{
+					std::filesystem::path absoluteSourcePath = std::filesystem::absolute(shaderBucket.baseShader->GetShaderSourceInfo().sourceEntry.filepath);
+					if (absoluteSourcePath == filepath)
+					{
+						touchedShaders.emplace_back(shaderBucket.baseShader);
+					}
+				}
+			}
+		}
+		else
+		{
+			for (const auto& [typeIndex, shaderBucket] : s_instance->m_shaderMap)
+			{
+				if (shaderBucket.hasPermutations)
+				{
+					for (const auto& [permutationHash, shader] : shaderBucket.permutationMap)
+					{
+						for (const auto& includeDependency : shader->GetShaderIncludeDependencies())
+						{
+							std::filesystem::path absoluteDependencyPath = std::filesystem::absolute(includeDependency);
+
+							if (absoluteDependencyPath == filepath)
+							{
+								touchedShaders.emplace_back(shader);
+								break;
+							}
+						}
+					}
+				}
+				else
+				{
+					for (const auto& includeDependency : shaderBucket.baseShader->GetShaderIncludeDependencies())
+					{
+						std::filesystem::path absoluteDependencyPath = std::filesystem::absolute(includeDependency);
+
+						if (absoluteDependencyPath == filepath)
+						{
+							touchedShaders.emplace_back(shaderBucket.baseShader);
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		// Invalidate all pipelines that reference this shader.
+		for (const auto& shader : touchedShaders)
 		{
 			shader->Reload(true);
+			PipelineStateCache::InvalidatePipelinesWithReferenceToShader(shader);
 		}
+
+		return true;
 	}
 
-	bool ShaderMap::ReloadShaderByName(const std::string& name)
-	{
-		if (!s_instance->m_shaderMap.contains(name))
-		{
-			return false;
-		}
-
-		auto shader = s_instance->m_shaderMap.at(name);
-		bool reloaded = shader->Reload(true);
-	
-		// #TODO_Ivar: Hack for finding out if it's a compute shader or not
-
-		if (reloaded)
-		{
-			if (shader->GetShaderType() == RHI::ShaderType::Compute)
-			{
-				for (const auto& [hash, pipeline] : s_instance->m_computePipelineCache)
-				{
-					if (pipeline->GetShader() == shader)
-					{
-						pipeline->Invalidate();
-					}
-				}
-			}
-			else if (shader->GetShaderType() == RHI::ShaderType::Rasterization)
-			{
-				for (const auto& [hash, pipeline] : s_instance->m_renderPipelineCache)
-				{
-					if (pipeline->GetShader() == shader)
-					{
-						pipeline->Invalidate();
-					}
-				}
-			}
-			else
-			{
-				for (const auto& [hash, pipeline] : s_instance->m_rayTracingPipelineCache)
-				{
-					if (pipeline->IsShaderInPipeline(shader))
-					{
-						pipeline->Invalidate();
-					}
-				}
-
-				for (const auto& [hash, sbt] : s_instance->m_shaderBindingTableCache)
-				{
-					if (sbt->IsShaderInTable(shader))
-					{
-						sbt->Invalidate();
-					}
-				}
-			}
-		}
-
-		return reloaded;
-	}
-
-	void ShaderMap::RegisterShader(const std::string& name, RefPtr<RHI::Shader> shader)
+	void ShaderMap::RegisterShader(TypeTraits::TypeIndex typeIndex, RefPtr<RHI::Shader> shader, bool hasPermutations)
 	{
 		std::scoped_lock lock{ s_instance->m_registerMutex };
-		s_instance->m_shaderMap[name] = shader;
+
+		ShaderBucket& shaderBucket = s_instance->m_shaderMap[typeIndex];
+		shaderBucket.hasPermutations = hasPermutations;
+		shaderBucket.baseShader = shader;
 	}
-
-	RefPtr<RHI::Shader> ShaderMap::Get(const std::string& name)
-	{
-		VT_PROFILE_FUNCTION();
-
-		if (!s_instance->m_shaderMap.contains(name))
-		{
-			return nullptr;
-		}
-
-		return s_instance->m_shaderMap.at(name);
-	}
-
-	RefPtr<RHI::ComputePipeline> ShaderMap::GetComputePipeline(const std::string& name, bool useGlobalResouces)
-	{
-		VT_PROFILE_FUNCTION();
-
-		std::scoped_lock lock{ s_instance->m_computeCacheMutex };
-		const size_t hash = Utility::GetComputeShaderHash(name);
-
-		if (s_instance->m_computePipelineCache.contains(hash))
-		{
-			auto pipeline = s_instance->m_computePipelineCache.at(hash);
-			VT_ENSURE(pipeline->IsValid());
-
-			return pipeline;
-		}
-
-		auto shader = Get(name);
-		VT_ENSURE(shader);
-
-		RefPtr<RHI::ComputePipeline> pipeline = RHI::ComputePipeline::Create(shader, useGlobalResouces);
-		s_instance->m_computePipelineCache[hash] = pipeline;
-
-		VT_ENSURE(pipeline->IsValid());
-		return pipeline;
-	}
-
-	RefPtr<RHI::RenderPipeline> ShaderMap::GetRenderPipeline(const RHI::RenderPipelineCreateInfo& pipelineInfo)
-	{
-		VT_PROFILE_FUNCTION();
-		VT_ENSURE(pipelineInfo.shader);
-
-		std::scoped_lock lock{ s_instance->m_renderCacheMutex };
-		const size_t hash = Utility::GetRenderPipelineHash(pipelineInfo);
-		
-		if (s_instance->m_renderPipelineCache.contains(hash))
-		{
-			auto pipeline = s_instance->m_renderPipelineCache.at(hash);
-			VT_ENSURE(pipeline->IsValid());
-
-			return pipeline;
-		}
-
-		RefPtr<RHI::RenderPipeline> pipeline = RHI::RenderPipeline::Create(pipelineInfo);
-		s_instance->m_renderPipelineCache[hash] = pipeline;
-
-		VT_ENSURE(pipeline->IsValid());
-		return pipeline;
-	}
-
+	  
 	RefPtr<RHI::RayTracingPipeline> ShaderMap::GetRayTracingPipeline(const RHI::RayTracingPipelineCreateInfo& pipelineInfo)
 	{
 		std::scoped_lock lock{ s_instance->m_rayTracingCacheMutex };
@@ -256,5 +197,53 @@ namespace Volt
 		s_instance->m_shaderBindingTableCache[hash] = sbt;
 
 		return sbt;
+	}
+
+	RefPtr<RHI::Shader> ShaderMap::GetInternal(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, bool hasPermutationDefined)
+	{
+		VT_ENSURE(m_shaderMap.contains(typeIndex));
+	
+		const ShaderBucket& shaderBucket = m_shaderMap.at(typeIndex);
+
+		VT_ENSURE_MSG((!hasPermutationDefined && !shaderBucket.hasPermutations) || (hasPermutationDefined && shaderBucket.hasPermutations), "Shaders with permutations must get it using it's permutation vector!");
+
+		if (shaderBucket.hasPermutations)
+		{
+			if (shaderBucket.permutationMap.contains(permutationIndex))
+			{
+				return shaderBucket.permutationMap.at(permutationIndex);
+			}
+			else
+			{
+				return nullptr;
+			}
+		}
+		else
+		{
+			return shaderBucket.baseShader;
+		}
+	}
+
+	RefPtr<RHI::Shader> ShaderMap::CompileShaderPermutation(TypeTraits::TypeIndex typeIndex, size_t permutationIndex, RHI::ShaderPermutationConfig&& permutationConfig)
+	{
+		const ShaderBucket& shaderBucket = m_shaderMap.at(typeIndex);
+		const RHI::ShaderSourceInfo& sourceInfo = shaderBucket.baseShader->GetShaderSourceInfo();
+
+		RHI::ShaderCreateInfo createInfo;
+		createInfo.name = shaderBucket.baseShader->GetName();
+		createInfo.entryPoint = sourceInfo.sourceEntry.entryPoint;
+		createInfo.sourceFilepath = sourceInfo.sourceEntry.filepath;
+		createInfo.stage = sourceInfo.sourceEntry.shaderStage;
+		createInfo.permutationConfig = std::move(permutationConfig);
+		createInfo.forceCompile = false;
+
+		RefPtr<RHI::Shader> shader;
+		{
+			VT_PROFILE_SCOPE("Compile shader permutation");
+			shader = RHI::Shader::Create(createInfo);
+		}
+
+		m_shaderMap.at(typeIndex).permutationMap[permutationIndex] = shader;
+		return shader;
 	}
 }

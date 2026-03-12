@@ -2,7 +2,7 @@
 
 #include "Volt-Physics/Config.h"
 
-#include <Volt-Core/AssetTypes.h>
+#include <AssetSystem/AssetTypes.h>
 
 #include <PhysicsInterface/PhysicsMaterial.h>
 
@@ -16,9 +16,14 @@ namespace Volt
 		PhysicsMaterialAsset();
 		~PhysicsMaterialAsset() override;
 
-	private:
-		friend class PhysicsMaterialSerializer;
+		static AssetType GetStaticType() { return AssetTypes::PhysicsMaterial; }
+		AssetType GetType() const override { return GetStaticType(); };
+		uint32_t GetVersion() const override { return 1; }
+		void Serialize(Archive& archive, ReadOnlyAssetMetadata assetMetadata) override;
 
+		Ref<PhysicsMaterial> GetMaterial() const { return m_material; }
+
+	private:
 		Ref<PhysicsMaterial> m_material;
 	};
 }

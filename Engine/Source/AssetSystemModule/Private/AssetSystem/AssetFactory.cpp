@@ -5,20 +5,8 @@ Volt::AssetFactory g_assetFactory;
 
 namespace Volt
 {
-	bool AssetFactory::RegisterAssetType(VoltGUID typeGuid, const AssetCreateFunction& func)
+	Volt::AssetFactory& AssetFactory::Get()
 	{
-		m_assetFactoryFunctions[typeGuid] = func;
-		return true;
-	}
-
-	void AssetFactory::Clear()
-	{
-		m_assetFactoryFunctions.clear();
-	}
-
-	Ref<Asset> AssetFactory::CreateAssetOfType(AssetType type) const
-	{
-		VT_ENSURE(m_assetFactoryFunctions.contains(type->GetGUID()));
-		return m_assetFactoryFunctions.at(type->GetGUID())();
+		return g_assetFactory;
 	}
 }

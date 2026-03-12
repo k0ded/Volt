@@ -1,9 +1,16 @@
 #pragma once
 
 #include "VulkanRHIModule/Core.h"
+
 #include <RHIModule/Graphics/DeviceQueue.h>
 
+#include <CoreUtilities/Profiling/Profiling.h>
+
 struct VkQueue_T;
+struct VkSemaphore_T;
+struct VkFence_T;
+struct VkCommandBuffer_T;
+struct VkSwapchainKHR_T;
 
 namespace Volt::RHI
 {
@@ -16,15 +23,36 @@ namespace Volt::RHI
 		void WaitForQueue() override;
 		void Execute(const DeviceQueueExecuteInfo& commandBuffer) override;
 
-		void AquireLock();
-		void ReleaseLock();
+		void SwapchainExecute(
+			VkSemaphore_T* presentSemaphore,
+			VkSemaphore_T* renderSemaphore,
+			VkFence_T* renderFence,
+			VkCommandBuffer_T* commandBuffer);
+
+		void SwapchainPresent(
+			VkSwapchainKHR_T* swapchain,
+			VkSemaphore_T* renderSemaphore,
+			uint32_t imageIndex,
+			std::mutex* swapchainMutex
+		);
+
+		void DestroyQueueSemaphore(class VulkanGraphicsDevice& graphicsDevice);
 
 	protected:
 		void* GetHandleImpl() const override;
 
 	private:
-		std::mutex m_executeMutex{};
+		friend class VulkanGraphicsDevice;
+
+		void AquireLock();
+		void ReleaseLock();
+
+		void CreateQueueSemaphore(class VulkanGraphicsDevice& graphicsDevice);
+
+		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_executeMutex);
 
 		VkQueue_T* m_queue = nullptr;
+		VkSemaphore_T* m_queueSemaphore = nullptr;
+		uint64_t m_semaphoreValue = 1;
 	};
 }

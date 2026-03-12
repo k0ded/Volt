@@ -17,44 +17,44 @@ namespace Volt
 
 	static Ref<Mesh> CreateCube()
 	{
-		Vector<Vertex> vertices =
+		VertexContainer vertices;
 		{
 			// Front face
-			Vertex{ { -50.f,  50.f, -50.f }, { 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f }, { 0.f, 0.f }  },
-			Vertex{ {  50.f,  50.f, -50.f }, { 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f }, { 1.f, 0.f }  },
-			Vertex{ {  50.f, -50.f, -50.f }, { 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f }, { 1.f, 1.f }  },
-			Vertex{ { -50.f, -50.f, -50.f }, { 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f }, { 0.f, 1.f }  },
+			vertices.Add(glm::vec3{ -50.f,  50.f, -50.f }, VertexMaterialData::Pack({ 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f, 0.f }, { 0.f, 0.f }), {});
+			vertices.Add(glm::vec3{  50.f,  50.f, -50.f }, VertexMaterialData::Pack({ 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f, 0.f }, { 1.f, 0.f }), {});
+			vertices.Add(glm::vec3{  50.f, -50.f, -50.f }, VertexMaterialData::Pack({ 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f, 0.f }, { 1.f, 1.f }), {});
+			vertices.Add(glm::vec3{ -50.f, -50.f, -50.f }, VertexMaterialData::Pack({ 0.f, 0.f, -1.f }, { 1.f, 0.f, 0.f, 0.f }, { 0.f, 1.f }), {});
 
 			// Right face
-			Vertex{ {  50.f,  50.f, -50.f }, { 1.f, 0.f, 0.f }, { 0.f, 0.f, 1.f }, { 0.f, 0.f }  },
-			Vertex{ {  50.f,  50.f,  50.f }, { 1.f, 0.f, 0.f }, { 0.f, 0.f, 1.f }, { 1.f, 0.f }  },
-			Vertex{ {  50.f, -50.f,  50.f }, { 1.f, 0.f, 0.f }, { 0.f, 0.f, 1.f }, { 1.f, 1.f }  },
-			Vertex{ {  50.f, -50.f, -50.f }, { 1.f, 0.f, 0.f }, { 0.f, 0.f, 1.f }, { 0.f, 1.f }  },
+			vertices.Add(glm::vec3{  50.f,  50.f, -50.f }, VertexMaterialData::Pack({ 1.f, 0.f, 0.f }, { 0.f, 0.f, 1.f, 0.f }, { 0.f, 0.f }), {});
+			vertices.Add(glm::vec3{  50.f,  50.f,  50.f }, VertexMaterialData::Pack({ 1.f, 0.f, 0.f }, { 0.f, 0.f, 1.f, 0.f }, { 1.f, 0.f }), {});
+			vertices.Add(glm::vec3{  50.f, -50.f,  50.f }, VertexMaterialData::Pack({ 1.f, 0.f, 0.f }, { 0.f, 0.f, 1.f, 0.f }, { 1.f, 1.f }), {});
+			vertices.Add(glm::vec3{  50.f, -50.f, -50.f }, VertexMaterialData::Pack({ 1.f, 0.f, 0.f }, { 0.f, 0.f, 1.f, 0.f }, { 0.f, 1.f }), {});
 
 			// Back face
-			Vertex{ {  50.f,  50.f,  50.f }, { 0.f, 0.f, 1.f }, { -1.f, 0.f, 0.f }, { 0.f, 0.f }  },
-			Vertex{ { -50.f,  50.f,  50.f }, { 0.f, 0.f, 1.f }, { -1.f, 0.f, 0.f }, { 1.f, 0.f }  },
-			Vertex{ { -50.f, -50.f,  50.f }, { 0.f, 0.f, 1.f }, { -1.f, 0.f, 0.f }, { 1.f, 1.f }  },
-			Vertex{ {  50.f, -50.f,  50.f }, { 0.f, 0.f, 1.f }, { -1.f, 0.f, 0.f }, { 0.f, 1.f }  },
+			vertices.Add(glm::vec3{  50.f,  50.f,  50.f }, VertexMaterialData::Pack({ 0.f, 0.f, 1.f }, { -1.f, 0.f, 0.f, 0.f }, { 0.f, 0.f }), {});
+			vertices.Add(glm::vec3{ -50.f,  50.f,  50.f }, VertexMaterialData::Pack({ 0.f, 0.f, 1.f }, { -1.f, 0.f, 0.f, 0.f }, { 1.f, 0.f }), {});
+			vertices.Add(glm::vec3{ -50.f, -50.f,  50.f }, VertexMaterialData::Pack({ 0.f, 0.f, 1.f }, { -1.f, 0.f, 0.f, 0.f }, { 1.f, 1.f }), {});
+			vertices.Add(glm::vec3{  50.f, -50.f,  50.f }, VertexMaterialData::Pack({ 0.f, 0.f, 1.f }, { -1.f, 0.f, 0.f, 0.f }, { 0.f, 1.f }), {});
 
 			// Left face
-			Vertex{ { -50.f,  50.f,  50.f }, { -1.f, 0.f, 0.f }, { 0.f, 0.f, -1.f }, { 0.f, 0.f }  },
-			Vertex{ { -50.f,  50.f, -50.f }, { -1.f, 0.f, 0.f }, { 0.f, 0.f, -1.f }, { 1.f, 0.f }  },
-			Vertex{ { -50.f, -50.f, -50.f }, { -1.f, 0.f, 0.f }, { 0.f, 0.f, -1.f }, { 1.f, 1.f }  },
-			Vertex{ { -50.f, -50.f,  50.f }, { -1.f, 0.f, 0.f }, { 0.f, 0.f, -1.f }, { 0.f, 1.f }  },
+			vertices.Add(glm::vec3{ -50.f,  50.f,  50.f }, VertexMaterialData::Pack({ -1.f, 0.f, 0.f }, { 0.f, 0.f, -1.f, 0.f }, { 0.f, 0.f }), {});
+			vertices.Add(glm::vec3{ -50.f,  50.f, -50.f }, VertexMaterialData::Pack({ -1.f, 0.f, 0.f }, { 0.f, 0.f, -1.f, 0.f }, { 1.f, 0.f }), {});
+			vertices.Add(glm::vec3{ -50.f, -50.f, -50.f }, VertexMaterialData::Pack({ -1.f, 0.f, 0.f }, { 0.f, 0.f, -1.f, 0.f }, { 1.f, 1.f }), {});
+			vertices.Add(glm::vec3{ -50.f, -50.f,  50.f }, VertexMaterialData::Pack({ -1.f, 0.f, 0.f }, { 0.f, 0.f, -1.f, 0.f }, { 0.f, 1.f }), {});
 
 			// Top face
-			Vertex{ { -50.f,  50.f,  50.f }, { 0.f, 1.f, 0.f }, { 1.f, 0.f, 0.f }, { 0.f, 0.f }  },
-			Vertex{ {  50.f,  50.f,  50.f }, { 0.f, 1.f, 0.f }, { 1.f, 0.f, 0.f }, { 1.f, 0.f }  },
-			Vertex{ {  50.f,  50.f, -50.f }, { 0.f, 1.f, 0.f }, { 1.f, 0.f, 0.f }, { 1.f, 1.f }  },
-			Vertex{ { -50.f,  50.f, -50.f }, { 0.f, 1.f, 0.f }, { 1.f, 0.f, 0.f }, { 0.f, 1.f }  },
+			vertices.Add(glm::vec3{ -50.f,  50.f,  50.f }, VertexMaterialData::Pack({ 0.f, 1.f, 0.f }, { 1.f, 0.f, 0.f, 0.f }, { 0.f, 0.f }), {});
+			vertices.Add(glm::vec3{  50.f,  50.f,  50.f }, VertexMaterialData::Pack({ 0.f, 1.f, 0.f }, { 1.f, 0.f, 0.f, 0.f }, { 1.f, 0.f }), {});
+			vertices.Add(glm::vec3{  50.f,  50.f, -50.f }, VertexMaterialData::Pack({ 0.f, 1.f, 0.f }, { 1.f, 0.f, 0.f, 0.f }, { 1.f, 1.f }), {});
+			vertices.Add(glm::vec3{ -50.f,  50.f, -50.f }, VertexMaterialData::Pack({ 0.f, 1.f, 0.f }, { 1.f, 0.f, 0.f, 0.f }, { 0.f, 1.f }), {});
 
 			// Bottom face
-			Vertex{ { -50.f, -50.f, -50.f }, { 0.f, -1.f, 0.f }, { 1.f, 0.f, 0.f }, { 0.f, 0.f }  },
-			Vertex{ {  50.f, -50.f, -50.f }, { 0.f, -1.f, 0.f }, { 1.f, 0.f, 0.f }, { 1.f, 0.f }  },
-			Vertex{ {  50.f, -50.f,  50.f }, { 0.f, -1.f, 0.f }, { 1.f, 0.f, 0.f }, { 1.f, 1.f }  },
-			Vertex{ { -50.f, -50.f,  50.f }, { 0.f, -1.f, 0.f }, { 1.f, 0.f, 0.f }, { 0.f, 1.f }  },
-		};
+			vertices.Add(glm::vec3{ -50.f, -50.f, -50.f }, VertexMaterialData::Pack({ 0.f, -1.f, 0.f }, { 1.f, 0.f, 0.f, 0.f }, { 0.f, 0.f }), {});
+			vertices.Add(glm::vec3{  50.f, -50.f, -50.f }, VertexMaterialData::Pack({ 0.f, -1.f, 0.f }, { 1.f, 0.f, 0.f, 0.f }, { 1.f, 0.f }), {});
+			vertices.Add(glm::vec3{  50.f, -50.f,  50.f }, VertexMaterialData::Pack({ 0.f, -1.f, 0.f }, { 1.f, 0.f, 0.f, 0.f }, { 1.f, 1.f }), {});
+			vertices.Add(glm::vec3{ -50.f, -50.f,  50.f }, VertexMaterialData::Pack({ 0.f, -1.f, 0.f }, { 1.f, 0.f, 0.f, 0.f }, { 0.f, 1.f }), {});
+		}
 
 		Vector<uint32_t> indices =
 		{
@@ -82,9 +82,22 @@ namespace Volt
 			20, 21, 23,
 			23, 21, 22
 		};
+		
+		SubMesh subMesh;
+		subMesh.vertexCount = static_cast<uint32_t>(vertices.Size());
+		subMesh.indexCount = static_cast<uint32_t>(indices.size());
+		subMesh.indexStartOffset = 0;
+		subMesh.vertexStartOffset = 0;
+		subMesh.materialIndex = 0;
 
-		Ref<RenderMaterial> material = Renderer::GetDefaultResources().defaultMaterial;
-		Ref<Mesh> mesh = CreateRef<Mesh>(vertices, indices, material);
+		MeshInitializer meshInitializer;
+		meshInitializer.AddVertices(vertices);
+		meshInitializer.AddIndices(indices);
+		meshInitializer.AddMaterial(Renderer::GetDefaultResources().defaultMaterial, 0);
+		meshInitializer.AddSubMesh(subMesh);
+
+		Ref<Mesh> mesh = CreateRef<Mesh>();
+		mesh->Initialize(meshInitializer);
 		return mesh;
 	}
 
@@ -100,16 +113,13 @@ namespace Volt
 			}
 		};
 		
-		auto addVertex = [](Vector<Vertex>& vertices, const glm::vec3& position, const glm::vec2& texCoords) -> uint32_t
+		auto addVertex = [](VertexContainer& vertices, const glm::vec3& position, const glm::vec2& texCoords) -> uint32_t
 		{
-			auto& vertex = vertices.emplace_back();
-			vertex.position = position;
-			vertex.uv = texCoords;
-
-			return static_cast<uint32_t>(vertices.size()) - 1;
+			vertices.Add(position, VertexMaterialData::Pack({ 0.f, 0.f, 0.f }, { 0.f, 0.f, 0.f, 0.f }, texCoords), {});
+			return static_cast<uint32_t>(vertices.Size()) - 1;
 		};
 
-		auto subdivide = [&addVertex](auto subdivide, Vector<Vertex>& vertices, Vector<Triangle>& triangles, const uint32_t& v1, const uint32_t& v2, const uint32_t& v3, int32_t depth)
+		auto subdivide = [&addVertex](auto subdivide, VertexContainer& vertices, Vector<Triangle>& triangles, const uint32_t& v1, const uint32_t& v2, const uint32_t& v3, int32_t depth)
 		{
 			if (depth == 0)
 			{
@@ -117,18 +127,15 @@ namespace Volt
 				return;
 			}
 
-			const uint32_t middle1 = addVertex(vertices, glm::normalize(vertices[v1].position + vertices[v2].position), glm::vec2(0.0f, 0.0f));
-			const uint32_t middle2 = addVertex(vertices, glm::normalize(vertices[v2].position + vertices[v3].position), glm::vec2(0.5f, 0.0f));
-			const uint32_t middle3 = addVertex(vertices, glm::normalize(vertices[v3].position + vertices[v1].position), glm::vec2(1.0f, 0.0f));
+			const uint32_t middle1 = addVertex(vertices, glm::normalize(vertices.positions[v1] + vertices.positions[v2]), glm::vec2(0.0f, 0.0f));
+			const uint32_t middle2 = addVertex(vertices, glm::normalize(vertices.positions[v2] + vertices.positions[v3]), glm::vec2(0.5f, 0.0f));
+			const uint32_t middle3 = addVertex(vertices, glm::normalize(vertices.positions[v3] + vertices.positions[v1]), glm::vec2(1.0f, 0.0f));
 
 			subdivide(subdivide, vertices, triangles, v1, middle1, middle3, depth - 1);
 			subdivide(subdivide, vertices, triangles, middle1, v2, middle2, depth - 1);
 			subdivide(subdivide, vertices, triangles, middle3, middle2, v3, depth - 1);
 			subdivide(subdivide, vertices, triangles, middle1, middle2, middle3, depth - 1);
 		};
-
-		Vector<Vertex> vertices;
-		Vector<Triangle> triangles;
 
 		const float t = (1.f + std::sqrt(5.f)) / 2.f;
 
@@ -161,12 +168,15 @@ namespace Volt
 
 		constexpr int32_t SUBDIVISIONS = 3;
 
+		Vector<Triangle> triangles;
+		VertexContainer vertices;
+
 		// Add vertices of the icosahedron
-		for (const auto& vertex : icosahedronVertices)
+		for (const glm::vec3& vertex : icosahedronVertices)
 		{
-			Vertex v;
-			v.position = vertex;
-			vertices.push_back(v);
+			vertices.positions.push_back(vertex);
+			vertices.materialData.emplace_back();
+			vertices.animationData.emplace_back();
 		}
 
 		// Subdivide each face of the icosahedron
@@ -176,15 +186,19 @@ namespace Volt
 		}
 
 		// Calculate normals, tangents, and update UVs
-		for (auto& vertex : vertices)
+		for (size_t i = 0; i < vertices.Size(); ++i)
 		{
-			vertex.normal = glm::normalize(vertex.position);
-			vertex.tangent = glm::normalize(glm::cross(vertex.normal, glm::vec3(0.0f, 1.0f, 0.0f)));
+			const glm::vec3 position = vertices.positions.at(i);
+			const glm::vec3 normal = glm::normalize(position);
+			const glm::vec4 tangent = glm::vec4(glm::normalize(glm::cross(normal, glm::vec3(0.0f, 1.0f, 0.0f))), 0.f);
 
 			// Calculate UVs using spherical coordinates
-			float theta = std::atan2(vertex.position.z, vertex.position.x) + glm::pi<float>();
-			float phi = std::acos(vertex.position.y);
-			vertex.uv = glm::vec2(theta / (2.0f * glm::pi<float>()), phi / glm::pi<float>());
+			float theta = std::atan2(position.z, position.x) + glm::pi<float>();
+			float phi = std::acos(position.y);
+
+			const glm::vec2 uv = glm::vec2(theta / (2.0f * glm::pi<float>()), phi / glm::pi<float>());
+
+			vertices.materialData[i] = VertexMaterialData::Pack(normal, tangent, uv);
 		}
 
 		Vector<uint32_t> indices;
@@ -195,9 +209,27 @@ namespace Volt
 			indices.emplace_back(tri.v3);
 		}
 
-		Ref<RenderMaterial> material = Renderer::GetDefaultResources().defaultMaterial;
-		Ref<Mesh> mesh = CreateRef<Mesh>(vertices, indices, material);
+		SubMesh subMesh;
+		subMesh.vertexCount = static_cast<uint32_t>(vertices.Size());
+		subMesh.indexCount = static_cast<uint32_t>(indices.size());
+		subMesh.indexStartOffset = 0;
+		subMesh.vertexStartOffset = 0;
+		subMesh.materialIndex = 0;
+
+		MeshInitializer meshInitializer;
+		meshInitializer.AddVertices(vertices);
+		meshInitializer.AddIndices(indices);
+		meshInitializer.AddMaterial(Renderer::GetDefaultResources().defaultMaterial, 0);
+		meshInitializer.AddSubMesh(subMesh);
+
+		Ref<Mesh> mesh = CreateRef<Mesh>();
+		mesh->Initialize(meshInitializer);
 		return mesh;
+	}
+
+	void ShapeLibrary::Shutdown()
+	{
+		s_meshData = {};
 	}
 
 	Ref<Mesh> ShapeLibrary::GetCube()
@@ -212,7 +244,7 @@ namespace Volt
 
 	Ref<Mesh> ShapeLibrary::GetSphere()
 	{
-		if (s_meshData.sphereMesh)
+		if (!s_meshData.sphereMesh)
 		{
 			s_meshData.sphereMesh = CreateSphere();
 		}

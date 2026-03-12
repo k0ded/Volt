@@ -1,5 +1,0 @@
-name: "Text"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/2D/Text_vs.hlsl"
-  - "Engine/Shaders/Source/HLSL/2D/Text_ps.hlsl"

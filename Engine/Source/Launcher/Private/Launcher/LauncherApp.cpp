@@ -1,36 +1,32 @@
 #include "Launcher/GameLayer.h"
+#include "Launcher/TestingLayer.h"
 
-#include "Testing/RenderingTestingLayer.h"
-
-#include <Volt/EntryPoint.h>
-#include <Volt/Core/Application.h>
+#include <Volt-Application/Application.h>
 
 class LauncherApp : public Volt::Application
 {
 public:
-	LauncherApp(const Volt::ApplicationInfo& appInfo)
-		: Volt::Application(appInfo)
+	LauncherApp(const Volt::ApplicationCreationInfo& appInfo, const Volt::CommandLineBuilder& commandLineBuilder)
+		: Volt::Application(commandLineBuilder, appInfo)
 	{
-		//GameLayer* testing = new GameLayer();
-		//PushLayer(testing);
-	
-		RenderingTestingLayer* testingLayer = new RenderingTestingLayer();
-		PushLayer(testingLayer);
+		TestingLayer* testing = new TestingLayer();
+		PushLayer(testing);
 	}
 private:
 };
 
-Volt::Application* Volt::CreateApplication(const std::filesystem::path& appPath)
+bool g_useCrashHandling = true;
+Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
 {
-	Volt::ApplicationInfo info{};
+	Volt::ApplicationCreationInfo info{};
 	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
-	info.projectPath = appPath;
-	info.useVSync = false;
-	info.enableSteam = false;
-	info.enableImGui = false;
-	info.isRuntime = true;
+	info.useVSync = true;
+	info.enableImGui = true;
+	info.useTitlebar = true;
+	info.useCustomTitlebar = true;
+	info.isRuntime = false;
 	info.width = 1600;
 	info.height = 900;
 
-	return new LauncherApp(info);
+	return new LauncherApp(info, commandLineBuilder);
 }

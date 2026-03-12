@@ -1,5 +1,0 @@
-name: "ColliderDebug"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/Forward/ForwardPBR_vs.hlsl"
-  - "Engine/Shaders/Source/HLSL/Editor/ColliderDebug_ps.hlsl"

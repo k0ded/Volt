@@ -6,20 +6,23 @@
 #include "Sandbox/Utility/EditorUtilities.h"
 #include "Sandbox/Utility/EditorLibrary.h"
 #include "Sandbox/Utility/Theme.h"
+#include "Sandbox/Utility/PremadeCommands.h"
+
 #include "Sandbox/UserSettingsManager.h"
 
-#include <Volt/Core/Application.h>
-#include <Volt/Utility/PremadeCommands.h>
-#include <Volt/Utility/UIUtility.h>
+#include "Sandbox/DirtyAssetsManager.h"
+
+#include <Volt-Application/UI/UIUtility.h>
 
 #include <EventSystem/EventSystem.h>
 
-#include <AssetSystem/AssetManager.h>
 #include <RenderCore/Shader/ShaderMap.h>
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
 #include <WindowModule/Events/WindowEvents.h>
+
+#include <Volt-Scene/EntityDescCustomMetadata.h>
 
 #include <imgui.h>
 
@@ -91,20 +94,20 @@ void Sandbox::RenderWindowOuterBorders(ImGuiWindow* window)
 	};
 
 	auto GetResizeBorderRect = [](ImGuiWindow* window, int border_n, float perp_padding, float thickness)
-	{
-		ImRect rect = window->Rect();
-		if (thickness == 0.0f)
 		{
-			rect.Max.x -= 1;
-			rect.Max.y -= 1;
-		}
-		if (border_n == ImGuiDir_Left) { return ImRect(rect.Min.x - thickness, rect.Min.y + perp_padding, rect.Min.x + thickness, rect.Max.y - perp_padding); }
-		if (border_n == ImGuiDir_Right) { return ImRect(rect.Max.x - thickness, rect.Min.y + perp_padding, rect.Max.x + thickness, rect.Max.y - perp_padding); }
-		if (border_n == ImGuiDir_Up) { return ImRect(rect.Min.x + perp_padding, rect.Min.y - thickness, rect.Max.x - perp_padding, rect.Min.y + thickness); }
-		if (border_n == ImGuiDir_Down) { return ImRect(rect.Min.x + perp_padding, rect.Max.y - thickness, rect.Max.x - perp_padding, rect.Max.y + thickness); }
-		IM_ASSERT(0);
-		return ImRect();
-	};
+			ImRect rect = window->Rect();
+			if (thickness == 0.0f)
+			{
+				rect.Max.x -= 1;
+				rect.Max.y -= 1;
+			}
+			if (border_n == ImGuiDir_Left) { return ImRect(rect.Min.x - thickness, rect.Min.y + perp_padding, rect.Min.x + thickness, rect.Max.y - perp_padding); }
+			if (border_n == ImGuiDir_Right) { return ImRect(rect.Max.x - thickness, rect.Min.y + perp_padding, rect.Max.x + thickness, rect.Max.y - perp_padding); }
+			if (border_n == ImGuiDir_Up) { return ImRect(rect.Min.x + perp_padding, rect.Min.y - thickness, rect.Max.x - perp_padding, rect.Min.y + thickness); }
+			if (border_n == ImGuiDir_Down) { return ImRect(rect.Min.x + perp_padding, rect.Max.y - thickness, rect.Max.x - perp_padding, rect.Max.y + thickness); }
+			IM_ASSERT(0);
+			return ImRect();
+		};
 
 
 	ImGuiContext& g = *GImGui;
@@ -134,7 +137,7 @@ void Sandbox::RenderWindowOuterBorders(ImGuiWindow* window)
 	}
 	if (g.Style.FrameBorderSize > 0 && !(window->Flags & ImGuiWindowFlags_NoTitleBar) && !window->DockIsActive)
 	{
-		float y = window->Pos.y + window->TitleBarHeight() - 1;
+		float y = window->Pos.y + window->TitleBarHeight - 1;
 		window->DrawList->AddLine(ImVec2(window->Pos.x + border_size, y), ImVec2(window->Pos.x + window->Size.x - border_size, y), ImGui::GetColorU32(ImGuiCol_Border), g.Style.FrameBorderSize);
 	}
 }
@@ -152,83 +155,83 @@ void Sandbox::HandleManualWindowResize()
 bool Sandbox::UpdateWindowManualResize(ImGuiWindow* window, ImVec2& newSize, ImVec2& newPosition)
 {
 	auto CalcWindowSizeAfterConstraint = [](ImGuiWindow* window, const ImVec2& size_desired)
-	{
-		ImGuiContext& g = *GImGui;
-		ImVec2 new_size = size_desired;
-		if (g.NextWindowData.Flags & ImGuiNextWindowDataFlags_HasSizeConstraint)
 		{
-			// Using -1,-1 on either X/Y axis to preserve the current size.
-			ImRect cr = g.NextWindowData.SizeConstraintRect;
-			new_size.x = (cr.Min.x >= 0 && cr.Max.x >= 0) ? ImClamp(new_size.x, cr.Min.x, cr.Max.x) : window->SizeFull.x;
-			new_size.y = (cr.Min.y >= 0 && cr.Max.y >= 0) ? ImClamp(new_size.y, cr.Min.y, cr.Max.y) : window->SizeFull.y;
-			if (g.NextWindowData.SizeCallback)
+			ImGuiContext& g = *GImGui;
+			ImVec2 new_size = size_desired;
+			if (g.NextWindowData.WindowFlags & ImGuiNextWindowDataFlags_HasSizeConstraint)
 			{
-				ImGuiSizeCallbackData data;
-				data.UserData = g.NextWindowData.SizeCallbackUserData;
-				data.Pos = window->Pos;
-				data.CurrentSize = window->SizeFull;
-				data.DesiredSize = new_size;
-				g.NextWindowData.SizeCallback(&data);
-				new_size = data.DesiredSize;
+				// Using -1,-1 on either X/Y axis to preserve the current size.
+				ImRect cr = g.NextWindowData.SizeConstraintRect;
+				new_size.x = (cr.Min.x >= 0 && cr.Max.x >= 0) ? ImClamp(new_size.x, cr.Min.x, cr.Max.x) : window->SizeFull.x;
+				new_size.y = (cr.Min.y >= 0 && cr.Max.y >= 0) ? ImClamp(new_size.y, cr.Min.y, cr.Max.y) : window->SizeFull.y;
+				if (g.NextWindowData.SizeCallback)
+				{
+					ImGuiSizeCallbackData data;
+					data.UserData = g.NextWindowData.SizeCallbackUserData;
+					data.Pos = window->Pos;
+					data.CurrentSize = window->SizeFull;
+					data.DesiredSize = new_size;
+					g.NextWindowData.SizeCallback(&data);
+					new_size = data.DesiredSize;
+				}
+				new_size.x = IM_FLOOR(new_size.x);
+				new_size.y = IM_FLOOR(new_size.y);
 			}
-			new_size.x = IM_FLOOR(new_size.x);
-			new_size.y = IM_FLOOR(new_size.y);
-		}
 
-		// Minimum size
-		if (!(window->Flags & (ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_AlwaysAutoResize)))
-		{
-			ImGuiWindow* window_for_height = (window->DockNodeAsHost && window->DockNodeAsHost->VisibleWindow) ? window->DockNodeAsHost->VisibleWindow : window;
-			const float decoration_up_height = window_for_height->TitleBarHeight() + window_for_height->MenuBarHeight();
-			new_size = ImMax(new_size, g.Style.WindowMinSize);
-			new_size.y = ImMax(new_size.y, decoration_up_height + ImMax(0.0f, g.Style.WindowRounding - 1.0f)); // Reduce artifacts with very small windows
-		}
-		return new_size;
-	};
+			// Minimum size
+			if (!(window->Flags & (ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_AlwaysAutoResize)))
+			{
+				ImGuiWindow* window_for_height = (window->DockNodeAsHost && window->DockNodeAsHost->VisibleWindow) ? window->DockNodeAsHost->VisibleWindow : window;
+				const float decoration_up_height = window_for_height->TitleBarHeight + window_for_height->MenuBarHeight;
+				new_size = ImMax(new_size, g.Style.WindowMinSize);
+				new_size.y = ImMax(new_size.y, decoration_up_height + ImMax(0.0f, g.Style.WindowRounding - 1.0f)); // Reduce artifacts with very small windows
+			}
+			return new_size;
+		};
 
 	auto CalcWindowAutoFitSize = [CalcWindowSizeAfterConstraint](ImGuiWindow* window, const ImVec2& size_contents)
-	{
-		ImGuiContext& g = *GImGui;
-		ImGuiStyle& style = g.Style;
-		const float decoration_up_height = window->TitleBarHeight() + window->MenuBarHeight();
-		ImVec2 size_pad{ window->WindowPadding.x * 2.0f, window->WindowPadding.y * 2.0f };
-		ImVec2 size_desired = { size_contents.x + size_pad.x + 0.0f, size_contents.y + size_pad.y + decoration_up_height };
-		if (window->Flags & ImGuiWindowFlags_Tooltip)
 		{
-			// Tooltip always resize
-			return size_desired;
-		}
-		else
-		{
-			// Maximum window size is determined by the viewport size or monitor size
-			const bool is_popup = (window->Flags & ImGuiWindowFlags_Popup) != 0;
-			const bool is_menu = (window->Flags & ImGuiWindowFlags_ChildMenu) != 0;
-			ImVec2 size_min = style.WindowMinSize;
-			if (is_popup || is_menu) // Popups and menus bypass style.WindowMinSize by default, but we give then a non-zero minimum size to facilitate understanding problematic cases (e.g. empty popups)
-				size_min = ImMin(size_min, ImVec2(4.0f, 4.0f));
+			ImGuiContext& g = *GImGui;
+			ImGuiStyle& style = g.Style;
+			const float decoration_up_height = window->TitleBarHeight + window->MenuBarHeight;
+			ImVec2 size_pad{ window->WindowPadding.x * 2.0f, window->WindowPadding.y * 2.0f };
+			ImVec2 size_desired = { size_contents.x + size_pad.x + 0.0f, size_contents.y + size_pad.y + decoration_up_height };
+			if (window->Flags & ImGuiWindowFlags_Tooltip)
+			{
+				// Tooltip always resize
+				return size_desired;
+			}
+			else
+			{
+				// Maximum window size is determined by the viewport size or monitor size
+				const bool is_popup = (window->Flags & ImGuiWindowFlags_Popup) != 0;
+				const bool is_menu = (window->Flags & ImGuiWindowFlags_ChildMenu) != 0;
+				ImVec2 size_min = style.WindowMinSize;
+				if (is_popup || is_menu) // Popups and menus bypass style.WindowMinSize by default, but we give then a non-zero minimum size to facilitate understanding problematic cases (e.g. empty popups)
+					size_min = ImMin(size_min, ImVec2(4.0f, 4.0f));
 
-			// FIXME-VIEWPORT-WORKAREA: May want to use GetWorkSize() instead of Size depending on the type of windows?
-			ImVec2 avail_size = window->Viewport->Size;
-			if (window->ViewportOwned)
-				avail_size = ImVec2(FLT_MAX, FLT_MAX);
-			const int monitor_idx = window->ViewportAllowPlatformMonitorExtend;
-			if (monitor_idx >= 0 && monitor_idx < g.PlatformIO.Monitors.Size)
-				avail_size = g.PlatformIO.Monitors[monitor_idx].WorkSize;
-			ImVec2 size_auto_fit = ImClamp(size_desired, size_min, ImMax(size_min, { avail_size.x - style.DisplaySafeAreaPadding.x * 2.0f,
-																					avail_size.y - style.DisplaySafeAreaPadding.y * 2.0f }));
+				// FIXME-VIEWPORT-WORKAREA: May want to use GetWorkSize() instead of Size depending on the type of windows?
+				ImVec2 avail_size = window->Viewport->Size;
+				if (window->ViewportOwned)
+					avail_size = ImVec2(FLT_MAX, FLT_MAX);
+				const int monitor_idx = window->ViewportAllowPlatformMonitorExtend;
+				if (monitor_idx >= 0 && monitor_idx < g.PlatformIO.Monitors.Size)
+					avail_size = g.PlatformIO.Monitors[monitor_idx].WorkSize;
+				ImVec2 size_auto_fit = ImClamp(size_desired, size_min, ImMax(size_min, { avail_size.x - style.DisplaySafeAreaPadding.x * 2.0f,
+																						avail_size.y - style.DisplaySafeAreaPadding.y * 2.0f }));
 
-			// When the window cannot fit all contents (either because of constraints, either because screen is too small),
-			// we are growing the size on the other axis to compensate for expected scrollbar. FIXME: Might turn bigger than ViewportSize-WindowPadding.
-			ImVec2 size_auto_fit_after_constraint = CalcWindowSizeAfterConstraint(window, size_auto_fit);
-			bool will_have_scrollbar_x = (size_auto_fit_after_constraint.x - size_pad.x - 0.0f < size_contents.x && !(window->Flags & ImGuiWindowFlags_NoScrollbar) && (window->Flags & ImGuiWindowFlags_HorizontalScrollbar)) || (window->Flags & ImGuiWindowFlags_AlwaysHorizontalScrollbar);
-			bool will_have_scrollbar_y = (size_auto_fit_after_constraint.y - size_pad.y - decoration_up_height < size_contents.y && !(window->Flags & ImGuiWindowFlags_NoScrollbar)) || (window->Flags & ImGuiWindowFlags_AlwaysVerticalScrollbar);
-			if (will_have_scrollbar_x)
-				size_auto_fit.y += style.ScrollbarSize;
-			if (will_have_scrollbar_y)
-				size_auto_fit.x += style.ScrollbarSize;
-			return size_auto_fit;
-		}
-	};
+				// When the window cannot fit all contents (either because of constraints, either because screen is too small),
+				// we are growing the size on the other axis to compensate for expected scrollbar. FIXME: Might turn bigger than ViewportSize-WindowPadding.
+				ImVec2 size_auto_fit_after_constraint = CalcWindowSizeAfterConstraint(window, size_auto_fit);
+				bool will_have_scrollbar_x = (size_auto_fit_after_constraint.x - size_pad.x - 0.0f < size_contents.x && !(window->Flags & ImGuiWindowFlags_NoScrollbar) && (window->Flags & ImGuiWindowFlags_HorizontalScrollbar)) || (window->Flags & ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+				bool will_have_scrollbar_y = (size_auto_fit_after_constraint.y - size_pad.y - decoration_up_height < size_contents.y && !(window->Flags & ImGuiWindowFlags_NoScrollbar)) || (window->Flags & ImGuiWindowFlags_AlwaysVerticalScrollbar);
+				if (will_have_scrollbar_x)
+					size_auto_fit.y += style.ScrollbarSize;
+				if (will_have_scrollbar_y)
+					size_auto_fit.x += style.ScrollbarSize;
+				return size_auto_fit;
+			}
+		};
 
 	ImGuiContext& g = *GImGui;
 
@@ -278,34 +281,34 @@ bool Sandbox::UpdateWindowManualResize(ImGuiWindow* window, ImVec2& newSize, ImV
 	};
 
 	auto CalcResizePosSizeFromAnyCorner = [CalcWindowSizeAfterConstraint](ImGuiWindow* window, const ImVec2& corner_target, const ImVec2& corner_norm, ImVec2* out_pos, ImVec2* out_size)
-	{
-		ImVec2 pos_min = ImLerp(corner_target, window->Pos, corner_norm);                // Expected window upper-left
-		ImVec2 pos_max = ImLerp({ window->Pos.x + window->Size.x, window->Pos.y + window->Size.y }, corner_target, corner_norm); // Expected window lower-right
-		ImVec2 size_expected = { pos_max.x - pos_min.x,  pos_max.y - pos_min.y };
-		ImVec2 size_constrained = CalcWindowSizeAfterConstraint(window, size_expected);
-		*out_pos = pos_min;
-		if (corner_norm.x == 0.0f)
-			out_pos->x -= (size_constrained.x - size_expected.x);
-		if (corner_norm.y == 0.0f)
-			out_pos->y -= (size_constrained.y - size_expected.y);
-		*out_size = size_constrained;
-	};
+		{
+			ImVec2 pos_min = ImLerp(corner_target, window->Pos, corner_norm);                // Expected window upper-left
+			ImVec2 pos_max = ImLerp({ window->Pos.x + window->Size.x, window->Pos.y + window->Size.y }, corner_target, corner_norm); // Expected window lower-right
+			ImVec2 size_expected = { pos_max.x - pos_min.x,  pos_max.y - pos_min.y };
+			ImVec2 size_constrained = CalcWindowSizeAfterConstraint(window, size_expected);
+			*out_pos = pos_min;
+			if (corner_norm.x == 0.0f)
+				out_pos->x -= (size_constrained.x - size_expected.x);
+			if (corner_norm.y == 0.0f)
+				out_pos->y -= (size_constrained.y - size_expected.y);
+			*out_size = size_constrained;
+		};
 
 	auto GetResizeBorderRect = [](ImGuiWindow* window, int border_n, float perp_padding, float thickness)
-	{
-		ImRect rect = window->Rect();
-		if (thickness == 0.0f)
 		{
-			rect.Max.x -= 1;
-			rect.Max.y -= 1;
-		}
-		if (border_n == ImGuiDir_Left) { return ImRect(rect.Min.x - thickness, rect.Min.y + perp_padding, rect.Min.x + thickness, rect.Max.y - perp_padding); }
-		if (border_n == ImGuiDir_Right) { return ImRect(rect.Max.x - thickness, rect.Min.y + perp_padding, rect.Max.x + thickness, rect.Max.y - perp_padding); }
-		if (border_n == ImGuiDir_Up) { return ImRect(rect.Min.x + perp_padding, rect.Min.y - thickness, rect.Max.x - perp_padding, rect.Min.y + thickness); }
-		if (border_n == ImGuiDir_Down) { return ImRect(rect.Min.x + perp_padding, rect.Max.y - thickness, rect.Max.x - perp_padding, rect.Max.y + thickness); }
-		IM_ASSERT(0);
-		return ImRect();
-	};
+			ImRect rect = window->Rect();
+			if (thickness == 0.0f)
+			{
+				rect.Max.x -= 1;
+				rect.Max.y -= 1;
+			}
+			if (border_n == ImGuiDir_Left) { return ImRect(rect.Min.x - thickness, rect.Min.y + perp_padding, rect.Min.x + thickness, rect.Max.y - perp_padding); }
+			if (border_n == ImGuiDir_Right) { return ImRect(rect.Max.x - thickness, rect.Min.y + perp_padding, rect.Max.x + thickness, rect.Max.y - perp_padding); }
+			if (border_n == ImGuiDir_Up) { return ImRect(rect.Min.x + perp_padding, rect.Min.y - thickness, rect.Max.x - perp_padding, rect.Min.y + thickness); }
+			if (border_n == ImGuiDir_Down) { return ImRect(rect.Min.x + perp_padding, rect.Max.y - thickness, rect.Max.x - perp_padding, rect.Max.y + thickness); }
+			IM_ASSERT(0);
+			return ImRect();
+		};
 
 	static const float WINDOWS_HOVER_PADDING = 4.0f;                        // Extend outside window for hovering/resizing (maxxed with TouchPadding) and inside windows for borders. Affect FindHoveredWindow().
 	static const float WINDOWS_RESIZE_FROM_EDGES_FEEDBACK_TIMER = 0.04f;    // Reduce visual noise by only highlighting the border after a certain time.
@@ -501,7 +504,7 @@ float Sandbox::DrawTitlebar()
 		ImGui::SameLine();
 
 		const bool isMaximized = Volt::WindowManager::Get().GetMainWindow().IsMaximized();
-		Ref<Volt::Texture2D> maximizeTexture = isMaximized ? EditorResources::GetEditorIcon(EditorIcon::Windowize) : EditorResources::GetEditorIcon(EditorIcon::Maximize);
+		RefPtr<Volt::RHI::Image> maximizeTexture = isMaximized ? EditorResources::GetEditorIcon(EditorIcon::Windowize) : EditorResources::GetEditorIcon(EditorIcon::Maximize);
 
 		if (UI::ImageButton("##maximize", UI::GetTextureID(maximizeTexture), { buttonSize, buttonSize }))
 		{
@@ -519,7 +522,7 @@ float Sandbox::DrawTitlebar()
 
 		if (UI::ImageButton("##close", UI::GetTextureID(EditorResources::GetEditorIcon(EditorIcon::Close)), { buttonSize, buttonSize }))
 		{
-			Volt::WindowCloseEvent e{};
+			Volt::WindowCloseEvent e{ Volt::WindowManager::Get().GetMainWindow() };
 			Volt::EventSystem::DispatchEvent(e);
 		}
 	}
@@ -538,17 +541,12 @@ void Sandbox::DrawMenuBar()
 		{
 			if (ImGui::MenuItem("New Scene", "Ctrl + N"))
 			{
-				UI::OpenModal("Do you want to save scene?##NewScene");
+				NewScene();
 			}
 
 			if (ImGui::MenuItem("Open...", "Ctrl + O"))
 			{
-				UI::OpenModal("Do you want to save scene?##OpenScene");
-			}
-
-			if (ImGui::MenuItem("Save As", "Ctrl + Shift + S"))
-			{
-				SaveSceneAs();
+				OpenScene();
 			}
 
 			if (ImGui::MenuItem("Save", "Ctrl + S"))
@@ -579,7 +577,7 @@ void Sandbox::DrawMenuBar()
 
 		if (ImGui::BeginMenu("Tools"))
 		{
-			if (ImGui::BeginMenu("Maya"))
+			/*if (ImGui::BeginMenu("Maya"))
 			{
 				if (ImGui::MenuItem("Install Maya tools..."))
 				{
@@ -587,17 +585,17 @@ void Sandbox::DrawMenuBar()
 				}
 
 				ImGui::EndMenu();
-			}
+			}*/
 
-			if (ImGui::BeginMenu("Asset Browser"))
-			{
-				//if (ImGui::MenuItem("Open new Asset Browser"))
-				//{
-				//	EditorLibrary::Register<AssetBrowserPanel>(myRuntimeScene, "##Secondary" + std::to_string(myAssetBrowserCount++));
-				//}
+			//if (ImGui::BeginMenu("Asset Browser"))
+			//{
+			//	//if (ImGui::MenuItem("Open new Asset Browser"))
+			//	//{
+			//	//	EditorLibrary::Register<AssetBrowserPanel>(myRuntimeScene, "##Secondary" + std::to_string(myAssetBrowserCount++));
+			//	//}
 
-				ImGui::EndMenu();
-			}
+			//	ImGui::EndMenu();
+			//}
 
 			std::map<std::string, Vector<Ref<EditorWindow>>> categorizedEditors;
 			Vector<Ref<EditorWindow>> uncategorizedEditors;
@@ -620,20 +618,9 @@ void Sandbox::DrawMenuBar()
 				{
 					for (const auto& editor : editors)
 					{
-						bool open = editor->IsOpen();
-
 						if (ImGui::MenuItem(editor->GetTitle().c_str(), ""))
 						{
-							open = !open;
-
-							if (open)
-							{
-								editor->Open();
-							}
-							else
-							{
-								editor->Close();
-							}
+							editor->Open();
 						}
 					}
 					ImGui::EndMenu();
@@ -673,7 +660,6 @@ void Sandbox::DrawMenuBar()
 
 			if (ImGui::MenuItem("Bake NavMesh"))
 			{
-				Sandbox::Get().BakeNavMesh();
 			}
 
 			if (ImGui::MenuItem("Crash"))
@@ -693,23 +679,6 @@ void Sandbox::DrawMenuBar()
 				Volt::ShaderMap::ReloadAll();
 			}
 
-			if (ImGui::MenuItem("Compile Project"))
-			{
-				if (Volt::PremadeCommands::RunBuildCSProjectCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor))
-				{
-					UI::Notify(NotificationType::Success, "Build succeeded!", "Successfully compiled Project.sln in DIST config!");
-				}
-				else
-				{
-					UI::Notify(NotificationType::Error, "Build failed!", "Could not find visual studio build tools!");
-				}
-			}
-
-			if (ImGui::MenuItem("Open Project Solution"))
-			{
-				Volt::PremadeCommands::RunOpenProjectSolutionCommand();
-			}
-
 			if (ImGui::MenuItem("Clear Collider Cache"))
 			{
 				const auto path = Volt::ProjectManager::GetCachePath() / "Colliders";
@@ -719,157 +688,77 @@ void Sandbox::DrawMenuBar()
 			ImGui::EndMenu();
 		}
 
+
+		DrawUnsavedAssetsBlock();
 		UI::EndMenuBar();
 	}
 	ImGui::EndGroup();
 }
 
-void Sandbox::SaveSceneAsModal()
+void Sandbox::DrawUnsavedAssetsBlock()
 {
-	UI::ScopedStyleFloat buttonRounding{ ImGuiStyleVar_FrameRounding, 2.f };
+	const Map<Volt::AssetHandle, AssetReference<Volt::Asset>>& dirtyAssets = DirtyAssetsManager::Get().GetDirtyAssets();
 
-	if (UI::BeginModal("Save As"))
+	if (dirtyAssets.empty())
 	{
-		UI::PushID();
-		if (UI::BeginProperties("saveSceneAs"))
+		ImGui::Text("No dirty assets");
+	}
+	else
+	{
+		ImGui::Text("%d dirty assets", dirtyAssets.size());
+	}
+}
+
+void Sandbox::DrawDirtyAssetsExternalActionModal()
+{
+	/*if (!DirtyAssetsManager::Get().RequiresExternalAction())
+	{
+		return;
+	}
+
+	const std::string modalName = "Dirty Assets Requiring external action";
+	UI::OpenModal(modalName);
+	if (UI::BeginModal(modalName))
+	{
+		const RequiredExternalActionData& requiredActions = DirtyAssetsManager::Get().GetExternalActionData();
+
+		Volt::AssetHandle saveSceneAsHandle{ 0 };
+		if (!m_dirtyAssetExternalSaveData.SceneSavedAs)
 		{
-			UI::Property("Name", m_saveSceneData.name);
-			UI::PropertyDirectory("Destination", m_saveSceneData.destinationPath);
+			for (Volt::AssetHandle handle : requiredActions.AssetsNeedingCustomAction)
+			{
+				AssetType type = Volt::AssetManager::GetAssetTypeFromHandle(handle);
+				if (type == AssetTypes::Scene)
+				{
+					saveSceneAsHandle = handle;
+				}
+				else if (type == AssetTypes::EntityDesc)
+				{
+					const Volt::AssetMetadata& metadata = Volt::AssetManager::GetMetadataFromHandle(handle);
+					const Volt::EntityDescCustomMetadata& customData = metadata.GetCustomData<Volt::EntityDescCustomMetadata>();
+					saveSceneAsHandle = customData.sceneHandle;
+				}
 
-			UI::EndProperties();
+				if (saveSceneAsHandle != 0)
+				{
+					break;
+				}
+			}
 		}
-		UI::PopID();
 
-		ImGui::PushItemWidth(80.f);
-		if (ImGui::Button("Save"))
+		if (saveSceneAsHandle != 0)
 		{
-			if (m_saveSceneData.name.empty())
-			{
-				ImGui::CloseCurrentPopup();
-
-				UI::Notify(NotificationType::Error, "Unable to save scene!", "A scene with no name cannot be saved!");
-
-				ImGui::PopItemWidth();
-				UI::EndModal();
-				return;
-			}
-
-			const std::filesystem::path destPath = m_saveSceneData.destinationPath / m_saveSceneData.name;
-			if (!FileSystem::Exists(Volt::ProjectManager::GetRootDirectory() / destPath))
-			{
-				std::filesystem::create_directories(Volt::ProjectManager::GetRootDirectory() / destPath);
-			}
-
-			const auto relPath = Volt::AssetManager::Get().GetRelativePath(destPath.string() + "\\" + m_saveSceneData.name + ".vtscene");
-
-			//myRuntimeScene->CopyTo(myRuntimeScene);
-			m_runtimeScene->handle = {};
-
-			Volt::AssetManager::SaveAssetAs(m_runtimeScene, relPath);
-
-			UI::Notify(NotificationType::Success, "Successfully saved scene!", std::format("Scene {0} was saved successfully!", m_saveSceneData.name));
-
-			SetupNewSceneData();
-			ImGui::CloseCurrentPopup();
+			DrawSaveSceneAs(saveSceneAsHandle);
 		}
-
-		ImGui::SameLine();
+		else
+		{
+			ImGui::Text("Checkout Assets");
+		}
 
 		if (ImGui::Button("Cancel"))
 		{
 			ImGui::CloseCurrentPopup();
 		}
-		ImGui::PopItemWidth();
-
 		UI::EndModal();
-	}
-}
-
-void Sandbox::BuildGameModal()
-{
-	UI::ScopedStyleFloat buttonRounding{ ImGuiStyleVar_FrameRounding, 2.f };
-	static bool compileCS = true;
-	bool abort = false;
-
-	if (UI::BeginModal("Build", ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		UI::PushID();
-		if (UI::BeginProperties("buildData"))
-		{
-			UI::PropertyDirectory("Build Path", m_buildInfo.buildDirectory);
-
-			ImGui::Separator();
-
-			for (auto& handle : m_buildInfo.sceneHandles)
-			{
-				EditorUtils::Property("Scene", handle, AssetTypes::Scene);
-			}
-
-			UI::EndProperties();
-		}
-		UI::PopID();
-
-		if (ImGui::Button("Add Scene"))
-		{
-			m_buildInfo.sceneHandles.emplace_back();
-		}
-
-		UI::PushID();
-		ImGui::Checkbox("Compile C# ##buildmodal", &compileCS);
-		UI::PopID();
-
-		ImGui::PushItemWidth(80.f);
-		if (ImGui::Button("Build"))
-		{
-			if (compileCS)
-			{
-				if (Volt::PremadeCommands::RunBuildCSProjectCommand(UserSettingsManager::GetSettings().externalToolsSettings.customExternalScriptEditor))
-				{
-					UI::Notify(NotificationType::Success, "Compilation succeeded!", "Successfully compiled Project solution in DIST config!");
-				}
-				else
-				{
-					UI::Notify(NotificationType::Error, "Compilation failed!", "Build has been aborted!");
-					abort = true;
-				}
-			}
-
-			if (!abort)
-			{
-				GameBuilder::BuildGame(m_buildInfo);
-				m_buildStarted = true;
-			}
-			ImGui::CloseCurrentPopup();
-		}
-
-		ImGui::SameLine();
-
-		if (ImGui::Button("Cancel"))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::PopItemWidth();
-
-		UI::EndModal();
-	}
-}
-
-void Sandbox::RenderProgressBar(float progress)
-{
-	const auto vp_size = ImGui::GetMainViewport()->Size;
-
-	constexpr auto windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing;
-
-	ImGui::SetNextWindowBgAlpha(1.f);
-	ImGui::SetNextWindowPos(ImVec2(vp_size.x - NOTIFY_PADDING_X, 100.f), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
-	ImGui::Begin("##progressBar", nullptr, windowFlags);
-
-	{
-		ImGui::TextUnformatted("Build Progress");
-		ImGui::ProgressBar(progress);
-
-		ImGui::Text("Current File: %s", GameBuilder::GetCurrentFile().c_str());
-	}
-
-	ImGui::End();
+	}*/
 }

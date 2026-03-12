@@ -2,6 +2,8 @@
 
 #include "RHIModule/Shader/ShaderCompiler.h"
 
+VT_DECLARE_LOG_CATEGORY(LogShaderCache, LogVerbosity::Trace);
+
 namespace Volt::RHI
 {
 	struct ShaderCacheCreateInfo
@@ -26,6 +28,7 @@ namespace Volt::RHI
 
 	private:
 		std::filesystem::path GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const;
+
 		ShaderCacheCreateInfo m_info;
 	};
 }

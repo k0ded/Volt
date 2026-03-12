@@ -3,24 +3,27 @@
 #include "Config.h"
 #include "ComponentReflection.h"
 
-#include "EntitySystem/EntityHelper.h"
+#include "EntitySystem/EntityScene.h"
+#include "EntitySystem/Entity.h"
 
-#include <unordered_map>
+#include <CoreUtilities/Containers/Map.h>
+
 #include <entt.hpp>
 
 namespace Volt
 {
+	class Entity;
 	class VTES_API ComponentRegistry
 	{
 	public:
-		template<typename T>
-		const bool RegisterComponent();
+		template<typename T> void RegisterComponent();
+		template<typename T> void UnregisterComponent();
 
-		template<typename T>
-		const bool RegisterEnum();
+		template<typename T> void RegisterEnum();
+		template<typename T> void UnregisterEnum();
 
 		void ClearRegistry();
-		
+
 		const ICommonTypeDesc* GetTypeDescFromName(std::string_view name);
 		const ICommonTypeDesc* GetTypeDescFromGUID(const VoltGUID& guid);
 		std::string_view GetTypeNameFromGUID(const VoltGUID& guid);
@@ -33,7 +36,7 @@ namespace Volt
 			std::function<void(entt::registry&, entt::entity)> addComponent;
 			std::function<void(entt::registry&, entt::entity)> removeComponent;
 			std::function<bool(const entt::registry&, entt::entity)> hasComponent;
-			std::function<void*(entt::registry&, entt::entity)> getComponent;
+			std::function<void* (entt::registry&, entt::entity)> getComponent;
 			std::function<void(entt::registry&)> setupOnCreate;
 			std::function<void(entt::registry&)> setupOnDestroy;
 		};
@@ -46,10 +49,11 @@ namespace Volt
 			VTES_API static const bool HasComponentWithGUID(const VoltGUID& guid, const entt::registry& registry, entt::entity entity);
 			VTES_API static void* GetComponentWithGUID(const VoltGUID& guid, entt::registry& registry, entt::entity entity);
 			VTES_API static void SetupComponentCallbacks(entt::registry& registry);
-
 		private:
 			Helpers() = default;
 		};
+
+		static ComponentRegistry& Get();
 
 	private:
 		friend class Helpers;
@@ -60,23 +64,19 @@ namespace Volt
 		template<typename T>
 		static void OnDestructComponent(entt::registry& registry, entt::entity entity);
 
-		std::unordered_map<VoltGUID, HelperFunctions> m_componentHelperFunctions;
-		std::unordered_map<VoltGUID, const ICommonTypeDesc*> m_typeRegistry;
-		std::unordered_map<std::string_view, VoltGUID> m_typeNameToGUIDMap;
-		std::unordered_map<VoltGUID, std::string_view> m_guidToTypeNameMap;
+		Map<VoltGUID, HelperFunctions> m_componentHelperFunctions;
+		Map<VoltGUID, const ICommonTypeDesc*> m_typeRegistry;
+		Map<std::string_view, VoltGUID> m_typeNameToGUIDMap;
+		Map<VoltGUID, std::string_view> m_guidToTypeNameMap;
 	};
 
 	template<typename T>
-	inline const bool ComponentRegistry::RegisterComponent()
+	inline void ComponentRegistry::RegisterComponent()
 	{
 		static_assert(IsReflectedType<T>());
 
 		const auto guid = GetTypeGUID<T>();
-
-		if (m_typeRegistry.contains(guid))
-		{
-			return false;
-		}
+		VT_ENSURE(!m_typeRegistry.contains(guid));
 
 		const std::string_view name = entt::type_name<T>();
 
@@ -102,15 +102,14 @@ namespace Volt
 
 		helpers.getComponent = [](entt::registry& registry, entt::entity entity) -> void*
 		{
-			for (auto&& curr : registry.storage())
+			if (registry.any_of<T>(entity))
 			{
-				if (auto& storage = curr.second; curr.second.type().name() == entt::type_id<T>().name())
-				{
-					return storage.get(entity);
-				}
+				return reinterpret_cast<void*>(&registry.get<T>(entity));
 			}
-
-			return nullptr;
+			else
+			{
+				return nullptr;
+			}
 		};
 
 		helpers.setupOnCreate = [](entt::registry& registry)
@@ -122,40 +121,68 @@ namespace Volt
 		{
 			registry.on_destroy<T>().template connect<&ComponentRegistry::OnDestructComponent<T>>();
 		};
-
-		return true;
 	}
 
 	template<typename T>
-	inline const bool ComponentRegistry::RegisterEnum()
+	void ComponentRegistry::UnregisterComponent()
+	{
+		const auto guid = GetTypeGUID<T>();
+
+		// #Note_Ivar: The registry may already have been destroyed due to
+		// DLL ordering.
+		if (m_typeRegistry.empty())
+		{
+			return;
+		}
+
+		if (VT_CHECK(m_guidToTypeNameMap.contains(guid)))
+		{
+			m_typeNameToGUIDMap.erase(m_guidToTypeNameMap.at(guid));
+			m_guidToTypeNameMap.erase(guid);
+			m_typeRegistry.erase(guid);
+			m_componentHelperFunctions.erase(guid);
+		}
+	}
+
+	template<typename T>
+	inline void ComponentRegistry::RegisterEnum()
 	{
 		static_assert(IsReflectedType<T>() && std::is_enum<T>::value);
 
 		const auto guid = GetTypeGUID<T>();
-
-		if (m_typeRegistry.contains(guid))
-		{
-			return false;
-		}
+		VT_ENSURE(!m_typeRegistry.contains(guid));
 
 		const std::string_view name = entt::type_name<T>();
 
 		m_typeRegistry[guid] = GetTypeDesc<T>();
 		m_typeNameToGUIDMap[name] = guid;
 		m_guidToTypeNameMap[guid] = name;
-		return true;
+	}
+
+	template<typename T>
+	void ComponentRegistry::UnregisterEnum()
+	{
+		const auto guid = GetTypeGUID<T>();
+
+		// #Note_Ivar: The registry may already have been destroyed due to
+		// DLL ordering.
+		if (m_typeRegistry.empty())
+		{
+			return;
+		}
+
+		if (VT_CHECK(m_guidToTypeNameMap.contains(guid)))
+		{
+			m_typeNameToGUIDMap.erase(m_guidToTypeNameMap.at(guid));
+			m_guidToTypeNameMap.erase(guid);
+			m_typeRegistry.erase(guid);
+		}
 	}
 
 	template<typename T>
 	inline void ComponentRegistry::OnConstructComponent(entt::registry& registry, entt::entity entity)
 	{
-		const auto* typeDesc = GetTypeDesc<T>();
-		const IComponentTypeDesc* compDesc = reinterpret_cast<const IComponentTypeDesc*>(typeDesc);
-
-		EntityScene* entityScene = reinterpret_cast<EntityScene*>(registry.get_user_data());
-		VT_ENSURE(entityScene);
-
-		compDesc->OnCreate(entityScene->GetEntityHelperFromEntityHandle(entity));
+		//nothing to do here right now...
 	}
 
 	template<typename T>
@@ -167,16 +194,35 @@ namespace Volt
 		EntityScene* entityScene = reinterpret_cast<EntityScene*>(registry.get_user_data());
 		VT_ENSURE(entityScene);
 
-		compDesc->OnDestroy(entityScene->GetEntityHelperFromEntityHandle(entity));
+		compDesc->OnDestroy(entityScene->GetEntityFromHandle(entity));
 	}
 }
 
-extern VTES_API Volt::ComponentRegistry g_componentRegistry;
+// Must lie in a compilation unit (cpp file)
+#define VT_REGISTER_COMPONENT(compType) \
+	class ComponentRegistrar_##compType \
+	{ \
+	public: \
+		VT_INLINE ComponentRegistrar_##compType() \
+		{ \
+			::Volt::ComponentRegistry::Get().RegisterComponent<compType>(); \
+		} \
+		VT_INLINE ~ComponentRegistrar_##compType() \
+		{ \
+			::Volt::ComponentRegistry::Get().UnregisterComponent<compType>(); \
+		} \
+	} g_componentRegistrar_##compType
 
-VT_INLINE Volt::ComponentRegistry& GetComponentRegistry()
-{
-	return g_componentRegistry;
-}
-
-#define REGISTER_COMPONENT(compType) inline static bool compType ## _comp_registered = ::GetComponentRegistry().RegisterComponent<compType>()
-#define REGISTER_ENUM(enumType) inline static bool enumType ## _enum_registered = ::GetComponentRegistry().RegisterEnum<enumType>()
+#define VT_REGISTER_ENUM(compType) \
+	class EnumRegistrar_##compType \
+	{ \
+	public: \
+		VT_INLINE EnumRegistrar_##compType() \
+		{ \
+			::Volt::ComponentRegistry::Get().RegisterEnum<compType>(); \
+		} \
+		VT_INLINE ~EnumRegistrar_##compType() \
+		{ \
+			::Volt::ComponentRegistry::Get().UnregisterEnum<compType>(); \
+		} \
+	} g_enumRegistrar_##compType

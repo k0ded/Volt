@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Volt/Core/Base.h>
-
 #include <CoreUtilities/Containers/Vector.h>
 
 namespace AssetBrowser

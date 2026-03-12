@@ -8,4 +8,10 @@ namespace Math
 	{
 		return lhs ^ (rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2));
 	}
+
+	template<Enum T>
+	VT_INLINE size_t HashEnum(T value)
+	{
+		return std::hash<std::underlying_type_t<T>>()(std::to_underlying(value));
+	}
 }

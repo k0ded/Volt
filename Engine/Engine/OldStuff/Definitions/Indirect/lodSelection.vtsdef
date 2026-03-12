@@ -1,4 +1,0 @@
-name: "LODSelection"
-internal: true
-paths:
-  - "Engine/Shaders/Source/HLSL/Indirect/LODSelection_cs.hlsl"

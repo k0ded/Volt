@@ -2,22 +2,10 @@
 #include "Resources.hlsli"
 #include "Utility.hlsli"
 
-struct Constants
-{
-    vt::Tex2D<float3> finalColor;
-};
+vt::Tex2D<float3> FinalColor;
 
-struct Output
+float3 main(FullscreenTriangleVertex input) : SV_Target0
 {
-    [[vt::r11f_g11f_b10f]] float3 output : SV_Target0;
-};
-
-Output main(FullscreenTriangleVertex input)
-{
-    const Constants constants = GetConstants<Constants>();
-    float3 pixelColor = constants.finalColor.Load(int3(input.position.xy, 0));
-
-    Output output;
-    output.output = LinearToSRGB(pixelColor);
-    return output;
+    float3 pixelColor = FinalColor.Load(int3(input.position.xy, 0));
+    return LinearToSRGB(pixelColor);
 }

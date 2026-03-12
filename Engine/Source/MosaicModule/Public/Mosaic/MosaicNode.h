@@ -7,10 +7,11 @@
 #include <CoreUtilities/VoltGUID.h>
 #include <CoreUtilities/Containers/Graph.h>
 
-#include <CoreUtilities/FileIO/YAMLStreamWriter.h>
-#include <CoreUtilities/FileIO/YAMLStreamReader.h>
-
 #include <glm/glm.hpp>
+
+#define MOSAIC_NODE_DECLARE_GUID(guid) \
+	VT_INLINE static VoltGUID GetStaticGUID() { return guid; } \
+	VT_INLINE const VoltGUID GetGUID() const override { return GetStaticGUID(); }
 
 namespace Mosaic
 {
@@ -31,6 +32,7 @@ namespace Mosaic
 	};
 
 	class MosaicGraph;
+	class MosaicShaderWriter;
 
 	class VTMOSAIC_API MosaicNode
 	{
@@ -43,12 +45,10 @@ namespace Mosaic
 		virtual const glm::vec4 GetColor() const = 0;
 		virtual const VoltGUID GetGUID() const = 0;
 		virtual void Reset() {}
-		virtual void RenderCustomWidget() {}
 
-		virtual void SerializeCustom(YAMLStreamWriter& streamWriter) const {}
-		virtual void DeserializeCustom(YAMLStreamReader& streamReader) {}
+		virtual void SerializeCustom(Archive& archive) {}
 
-		virtual const ResultInfo GetShaderCode(const GraphNode<Ref<class MosaicNode>, Ref<MosaicEdge>>& underlyingNode, uint32_t outputIndex, std::string& appendableShaderString) const = 0;
+		virtual const ResultInfo Compile(const GraphNode<Ref<class MosaicNode>, Ref<MosaicEdge>>& underlyingNode, uint32_t outputIndex, MosaicShaderWriter& shaderWriter) const = 0;
 
 		inline const Vector<Parameter>& GetInputParameters() const { return m_inputParameters; }
 		inline const Vector<Parameter>& GetOutputParameters() const { return m_outputParameters; }
@@ -95,14 +95,10 @@ namespace Mosaic
 		param.showAttribute = showAttribute;
 		param.Get<T>() = defaultValue;
 
-		param.serializationFunc = [](YAMLStreamWriter& streamWriter, const Parameter& parameter)
+		param.serializationFunc = [](Archive& archive, Parameter& parameter)
 		{
-			streamWriter.SetKey("data", parameter.Get<T>());
-		};
-
-		param.deserializationFunc = [](YAMLStreamReader& streamReader, Parameter& parameter)
-		{
-			parameter.Get<T>() = streamReader.ReadAtKey("data", T{});
+			T& data = parameter.Get<T>();
+			archive << data;
 		};
 	}
 
@@ -118,14 +114,10 @@ namespace Mosaic
 		param.showAttribute = showAttribute;
 		param.Get<T>() = defaultValue;
 
-		param.serializationFunc = [](YAMLStreamWriter& streamWriter, const Parameter& parameter)
+		param.serializationFunc = [](Archive& archive, Parameter& parameter)
 		{
-			streamWriter.SetKey("data", parameter.Get<T>());
-		};
-
-		param.deserializationFunc = [](YAMLStreamReader& streamReader, Parameter& parameter)
-		{
-			parameter.Get<T>() = streamReader.ReadAtKey("data", T{});
+			T& data = parameter.Get<T>();
+			archive << data;
 		};
 	}
 }
