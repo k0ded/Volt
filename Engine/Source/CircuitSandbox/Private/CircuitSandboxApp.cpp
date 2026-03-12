@@ -27,6 +27,7 @@ bool g_useCrashHandling = true;
 Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& commandLineBuilder)
 {
 	Volt::ApplicationCreationInfo info{};
+	info.title = "Circuit Sandbox";
 	info.iconPath = "Editor/Textures/Icons/icon_volt.dds";
 	info.useVSync = true;
 	info.enableImGui = false;
