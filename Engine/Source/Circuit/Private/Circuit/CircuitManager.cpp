@@ -55,8 +55,22 @@ namespace Circuit
 		layout->AddFixedSlice(CreateWidget(TextWidget).Text("Four"), 200);
 		*/
 
+		Ref<LayoutWidget> layout = CreateWidget(LayoutWidget).Orientation(LayoutOrientation::Horizontal);
+		static float sliderValue = 50.f;
+		layout->AddFlexibleSlice(
+		CreateWidget(SliderWidget)
+			.MinValue(0)
+			.MaxValue(100)
+			.Value_Lambda([]() {return sliderValue; })
+			.OnValueChanged_Lambda([](float newValue)
+		{
+			sliderValue = newValue;
+		})
+		);
+
 		m_windows[Volt::WindowManager::Get().GetMainWindowHandle()]->SetWidget(
 			CreateWidget(WindowWidget)
+			.Content(layout)
 		);
 
 
