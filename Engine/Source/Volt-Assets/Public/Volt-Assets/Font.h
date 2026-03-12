@@ -23,13 +23,14 @@ namespace Volt
 			uint32_t height = 0;
 		};
 
-		Font() = default;
-		~Font() override;
+		//TODO: temporary change to add API for circuit
+		VTASSETS_API Font() = default;
+		VTASSETS_API ~Font() override;
 
 		VTASSETS_API void Initialize(const std::filesystem::path& filePath);
 
-		float GetStringWidth(const std::string& string, const glm::vec2& scale, float maxWidth);
-		float GetStringHeight(const std::string& string, const glm::vec2& scale, float maxWidth);
+		VTASSETS_API float GetStringWidth(const std::string& string, const glm::vec2& scale, float maxWidth);
+		VTASSETS_API float GetStringHeight(const std::string& string, const glm::vec2& scale, float maxWidth);
 
 		inline Ref<Texture2D> GetAtlas() const { return myAtlas; }
 		inline MSDFData* GetMSDFData() const { return myMSDFData; }

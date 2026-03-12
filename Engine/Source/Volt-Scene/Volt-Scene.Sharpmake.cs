@@ -26,6 +26,7 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<VoltCore>(target);
 			conf.AddPublicDependency<VoltRenderer>(target);
 			conf.AddPublicDependency<VoltPhysics>(target);
+			conf.AddPublicDependency<VoltAudio>(target);
 			conf.AddPublicDependency<VoltCoreComponents>(target);
 
 			conf.AddPrivateDependency<PhysicsInterface>(target);
