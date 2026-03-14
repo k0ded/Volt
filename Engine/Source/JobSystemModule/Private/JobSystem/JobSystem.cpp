@@ -31,16 +31,22 @@ namespace Volt
 		{
 			// Put this job back on the queue
 			JobSystem::JobWorker& workerData = *JobSystem::s_instance->m_workers[g_workerId];
-			workerData.workQueues[std::to_underlying(job->GetPriority())].Emplace(job);
+			workerData.workQueues.Emplace(job->GetPriority(), job);
 		}
+		VT_PROFILE_FIBER_LEAVE();
 	}
 
 	void OnFiberSwitch_PushToWaitingList(void* userdata)
 	{
 		Job* job = reinterpret_cast<Job*>(userdata);
 		
+		JobSystem::JobWorker& workerData = *JobSystem::s_instance->m_workers[g_workerId];
+
 		// Put the job on the waiting list
-		JobSystem::s_instance->PushToWaitingList(job->GetPriority(), job);
+		JobSystem::s_instance->PushToWaitingList(job->GetPriority(), job, workerData.scratch.toQueueWaitCounter);
+		workerData.scratch.toQueueWaitCounter = nullptr;
+
+		VT_PROFILE_FIBER_LEAVE();
 	}
 
 	void OnFiberSwitch_FreeFiber(void* userdata)
@@ -48,6 +54,8 @@ namespace Volt
 		JobFiber* fiber = reinterpret_cast<JobFiber*>(userdata);
 		fiber->Free();
 		JobSystem::s_instance->m_fiberPool.FreeFiber(fiber);
+	
+		VT_PROFILE_FIBER_LEAVE();
 	}
 
 	JobSystem::JobSystem()
@@ -59,6 +67,7 @@ namespace Volt
 
 		AllocateWaitingLists();
 		m_mainThreadQueue.Allocate(NumMaxMainThreadJobs);
+
 		m_fiberPool.Initialize(NumFibers);
 	}
 
@@ -94,7 +103,7 @@ namespace Volt
 			if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
 			{
 				const uint32_t nextQueueToPush = s_instance->m_nextQueueToPush.fetch_add(1, std::memory_order::relaxed) % s_instance->m_numWorkers;
-				s_instance->m_workers[nextQueueToPush]->workQueues[std::to_underlying(job->GetPriority())].Emplace(job);
+				s_instance->m_workers[nextQueueToPush]->workQueues.Emplace(job->GetPriority(), job);
 				s_instance->m_workerWakeCondition.notify_all();
 			}
 			else
@@ -104,7 +113,7 @@ namespace Volt
 		}
 		else
 		{
-			s_instance->PushToWaitingList(job->GetPriority(), job);
+			s_instance->PushToWaitingList(job->GetPriority(), job, job->GetWaitCounter());
 		}
 	}
 
@@ -129,7 +138,7 @@ namespace Volt
 				{
 					if (job->GetExecutionPolicy() == ExecutionPolicy::WorkerThread)
 					{
-						s_instance->m_workers[worker]->workQueues[std::to_underlying(job->GetPriority())].Emplace(job);
+						s_instance->m_workers[worker]->workQueues.Emplace(job->GetPriority(), job);
 					}
 					else
 					{
@@ -138,7 +147,7 @@ namespace Volt
 				}
 				else
 				{
-					s_instance->PushToWaitingList(job->GetPriority(), job);
+					s_instance->PushToWaitingList(job->GetPriority(), job, job->GetWaitCounter());
 				}
 			}
 		}
@@ -177,8 +186,9 @@ namespace Volt
 			if (isWorkerThread && !isMainThread)
 			{
 				auto& worker = *s_instance->m_workers[g_workerId];
-				Job* job = worker.currentlyExecutingJob;
+				worker.scratch.toQueueWaitCounter = counter;
 
+				Job* job = worker.currentlyExecutingJob;
 				FiberSwapContext(&job->m_assignedFiber->m_executionContext, &worker.fiberContext, OnFiberSwitch_PushToWaitingList, job);
 			}
 			else
@@ -220,11 +230,7 @@ namespace Volt
 		{
 			JobWorker* worker = m_workers.emplace_back(AllocateWorker(i));
 			worker->thread = std::thread(std::bind(&JobSystem::SpawnWorker, this, i));
-
-			for (uint8_t priority = 0; priority < std::to_underlying(ExecutionPriority::Num); ++priority)
-			{
-				worker->workQueues[priority].Allocate(NumMaxJobsPerQueue);
-			}
+			worker->workQueues.Allocate(NumMaxJobsPerQueue);
 
 			PlatformThread::AssignThreadToCore(worker->thread.native_handle(), 1ull << i);
 			PlatformThread::SetThreadPriority(worker->thread.native_handle(), ThreadPriority::High);
@@ -241,6 +247,14 @@ namespace Volt
 			PlatformThread::SetThreadPriority(PlatformThread::GetMainThreadHandle(), ThreadPriority::High);
 			g_workerId = hardwareConcurrency;
 			g_mainThreadWorkerId = g_workerId;
+		}
+
+		// Waiting list handler
+		{
+			m_waitingListManagerThread = std::thread(std::bind(&JobSystem::SpawnWaitingListManager, this));
+
+			PlatformThread::SetThreadName(m_waitingListManagerThread.native_handle(), "Volt::WaitingListManager");
+			PlatformThread::SetThreadPriority(PlatformThread::GetMainThreadHandle(), ThreadPriority::High);
 		}
 
 		// Notify all threads that they are allowed to run.
@@ -261,57 +275,59 @@ namespace Volt
 
 			m_workerAllocator.Free(worker);
 		}
+
+		m_waitingListManagerThread.join();
 	}
 
 	void JobSystem::AllocateWaitingLists()
 	{
-		for (uint32_t i = 0; i < static_cast<uint32_t>(ExecutionPriority::Num); ++i)
-		{
-			m_waitingList[i].Allocate(NumMaxWaitingJobs);
-		}
+		m_waitingLists.Allocate(NumMaxWaitingJobs);
+		m_yieldedJobsReadyToRun.Allocate(NumMaxWaitingJobs);
 	}
 
-	void JobSystem::PushToWaitingList(ExecutionPriority priority, Job* job)
+	void JobSystem::PushToWaitingList(ExecutionPriority priority, JobRef job, JobCounterRef waitCounter)
 	{
-		m_waitingList[std::to_underlying(priority)].Push(job);
+		WaitingListEntry entry
+		{
+			.job = job,
+			.waitCounter = waitCounter
+		};
+
+		m_waitingLists.Emplace(priority, entry);
 	}
 
 	bool JobSystem::FlushWaitingList(ExecutionPriority priority)
 	{
 		VT_PROFILE_FUNCTION();
 
-		auto& waitingList = m_waitingList[std::to_underlying(priority)];
-
-		if (waitingList.Size() == 0)
+		if (m_waitingLists.Size(priority) == 0)
 		{
 			return false;
 		}
 
-		// Use a lock here to make sure that only one thread flushes at a time.
-		std::scoped_lock lock{ m_waitingListMutex };
-		VT_PROFILE_LOCK_MARK(m_waitingListMutex);
-
-		Vector<Job*, InlineAllocator<128>> nonReadyJobs;
+		GlobalMemoryStackMark Mark;
+		GlobalMemoryStackVector<WaitingListEntry> nonReadyJobs;
+		nonReadyJobs.reserve(m_waitingLists.Size(priority));
 
 		bool anyJobRun = false;
 
-		Job* jobPtr;
-		while (waitingList.Pop(jobPtr))
+		WaitingListEntry entry;
+		while (m_waitingLists.Pop(priority, entry))
 		{
-			if (jobPtr->GetWaitCounter()->IsCompleted())
+			if (entry.waitCounter->IsCompleted())
 			{
-				RunJob(jobPtr);
+				m_yieldedJobsReadyToRun.Emplace(entry.job->GetPriority(), entry.job);
 				anyJobRun |= true;
 			}
 			else
 			{
-				nonReadyJobs.emplace_back(jobPtr);
+				nonReadyJobs.emplace_back(entry);
 			}
 		}
 
 		for (auto job : nonReadyJobs)
 		{
-			waitingList.Push(job);
+			m_waitingLists.Emplace(job.job->GetPriority(), job);
 		}
 
 		return anyJobRun;
@@ -330,11 +346,6 @@ namespace Volt
 
 		FiberGetContext(&workerData.fiberContext);
 
-		if (workerData.currentlyExecutingJob)
-		{
-			VT_PROFILE_FIBER_LEAVE();
-		}
-
 		while (m_mainThreadQueue.Pop(jobPtr))
 		{
 			workerData.currentlyExecutingJob = jobPtr;
@@ -345,8 +356,14 @@ namespace Volt
 			}
 			else
 			{
-				JobFiber* fiber = m_fiberPool.TryGetFiber();
-				fiber->ExecuteJob(jobPtr);
+				if (m_fiberPool.TryGetFiber(assignedFiber))
+				{
+					assignedFiber->ExecuteJob(jobPtr);
+				}
+				else
+				{
+					RunJob(jobPtr);
+				}
 			}
 		}
 
@@ -356,48 +373,43 @@ namespace Volt
 	void JobSystem::SpawnWorker(uint32_t workerId)
 	{
 		g_workerId = workerId;
+		JobWorker& workerData = *m_workers[workerId];
 
 		// Wait here for all threads to be created.
 		{
-			std::unique_lock spawnLock(m_wakeMutex);
-			VT_PROFILE_LOCK_MARK(m_wakeMutex);
+			std::unique_lock spawnLock(workerData.wakeMutex);
+			VT_PROFILE_LOCK_MARK(workerData.wakeMutex);
 			m_workerWakeCondition.wait(spawnLock);
 		}
-
-		JobWorker& workerData = *m_workers[workerId];
 
 		while (m_isRunning.load(std::memory_order::relaxed))
 		{
 			FiberGetContext(&workerData.fiberContext);
 
-			Job* jobPtr = TryGetJob(workerId);
+			bool successfullyRanJob = false;
 
-			if (workerData.currentlyExecutingJob)
+			// Fiber available, we can try to run a job the normal way.
+			if (m_fiberPool.HasAvailableFiber())
 			{
-				VT_PROFILE_FIBER_LEAVE();
+				Job* job = TryGetJob(workerId);
+				workerData.currentlyExecutingJob = job;
+				successfullyRanJob = ExecuteJob(job);
 			}
-
-			if (jobPtr)
-			{
-				workerData.currentlyExecutingJob = jobPtr;
-
-				JobFiber* assignedFiber = jobPtr->GetAssignedFiber();
-				if (assignedFiber)
-				{
-					assignedFiber->ContinueExecution();
-				}
-				else
-				{
-					JobFiber* fiber = m_fiberPool.TryGetFiber();
-					fiber->ExecuteJob(jobPtr);
-				}
-			}
+			// No fibers available, try to run a previously yielded job
 			else
+			{
+				Job* job = TryGetYieldedJob();
+				workerData.currentlyExecutingJob = job;
+				successfullyRanJob = ExecuteJob(job);
+			}
+
+			// No job was able to run, let's wait for one.
+			if (!successfullyRanJob)
 			{
 				workerData.currentlyExecutingJob = nullptr;
 
-				std::unique_lock lock(m_wakeMutex);
-				VT_PROFILE_LOCK_MARK(m_wakeMutex);
+				std::unique_lock lock(workerData.wakeMutex);
+				VT_PROFILE_LOCK_MARK(workerData.wakeMutex);
 				m_workerWakeCondition.wait(lock);
 			}
 		}
@@ -407,6 +419,37 @@ namespace Volt
 	{
 		JobWorker* worker = m_workerAllocator.Allocate();
 		return worker;
+	}
+
+	void JobSystem::SpawnWaitingListManager()
+	{
+		while (m_isRunning.load(std::memory_order::relaxed))
+		{
+			VT_PROFILE_SCOPE("FlushWaitingList");
+
+			// Loop through the priorities in reverse to make sure we start with the
+			// highest priority.
+			
+			bool anyJobRun = false;
+			for (int32_t i = static_cast<int32_t>(ExecutionPriority::Num) - 1; i >= 0; --i)
+			{
+				anyJobRun |= FlushWaitingList(static_cast<ExecutionPriority>(i));
+			}
+
+			if (anyJobRun)
+			{
+				m_workerWakeCondition.notify_all();
+			}
+
+			std::unique_lock lock(m_waitingListManagerMutex);
+			VT_PROFILE_LOCK_MARK(m_waitingListManagerMutex);
+			m_waitingListManangerCondition.wait(lock);
+		}
+	}
+
+	void JobSystem::NotifyCounterReady()
+	{
+		m_waitingListManangerCondition.notify_one();
 	}
 
 	JobCounter* JobSystem::AllocateCounter(bool initializeWithRef)
@@ -442,43 +485,14 @@ namespace Volt
 		m_jobAllocator.Free(job);
 	}
 
-	FiberStack JobSystem::AllocateStack(FiberStackSize stackSize)
+	bool JobSystem::AllocateStack(FiberStackSize stackSize, FiberStack& outStack)
 	{
-		if (stackSize == FiberStackSize::Small)
-		{
-			return m_stackAllocator.TryGetSmallStack();
-		}
-		else if (stackSize == FiberStackSize::Medium)
-		{
-			return m_stackAllocator.TryGetMediumStack();
-		}
-		else if (stackSize == FiberStackSize::Large)
-		{
-			return m_stackAllocator.TryGetLargeStack();
-		}
-
-		VT_ENSURE_NO_ENTRY();
-		return{};
+		return m_stackAllocator.TryGetStack(stackSize, outStack);
 	}
 
 	void JobSystem::FreeStack(FiberStack stack)
 	{
-		if (stack.GetStackSize() == FiberStackSize::Small)
-		{
-			m_stackAllocator.FreeSmallStack(stack);
-		}
-		else if (stack.GetStackSize() == FiberStackSize::Medium)
-		{
-			m_stackAllocator.FreeMediumStack(stack);
-		}
-		else if (stack.GetStackSize() == FiberStackSize::Medium)
-		{
-			m_stackAllocator.FreeLargeStack(stack);
-		}
-		else
-		{
-			VT_ENSURE_NO_ENTRY();
-		}
+		m_stackAllocator.FreeStack(stack);
 	}
 
 	Job* JobSystem::TryGetJob(uint32_t workerId)
@@ -491,33 +505,20 @@ namespace Volt
 		// priority jobs.
 		auto tryGetJobOfPriority = [&worker, workerId, this](ExecutionPriority priority, Job*& outJob)
 		{
-			const size_t priorityAsIndex = static_cast<size_t>(priority);
-
-			if (!worker->workQueues[priorityAsIndex].Pop(outJob))
+			if (!worker->workQueues.Pop(priority, outJob))
 			{
 				uint32_t nextQueue = (workerId + 1) % m_numWorkers;
 				while (nextQueue != workerId)
 				{
 					if (nextQueue != g_mainThreadWorkerId)
 					{
-						auto& stealingQueue = m_workers[nextQueue]->workQueues[priorityAsIndex];
-						if (stealingQueue.Pop(outJob))
+						if (m_workers[nextQueue]->workQueues.Pop(priority, outJob))
 						{
 							break;
 						}
 					}
 
 					nextQueue = (nextQueue + 1) % m_numWorkers;
-				}
-			}
-
-			// If there still was no job, we flush this priorities waiting list.
-			if (!outJob)
-			{
-				bool shouldWakeWorkers = FlushWaitingList(priority);
-				if (shouldWakeWorkers)
-				{
-					m_workerWakeCondition.notify_all();
 				}
 			}
 		};
@@ -528,6 +529,12 @@ namespace Volt
 		// highest priority.
 		for (int32_t i = static_cast<int32_t>(ExecutionPriority::Num) - 1; i >= 0; --i)
 		{
+			// Try to get a ready job first.
+			if (m_yieldedJobsReadyToRun.Pop(static_cast<ExecutionPriority>(i), job))
+			{
+				break;
+			}
+
 			tryGetJobOfPriority(static_cast<ExecutionPriority>(i), job);
 			if (job)
 			{
@@ -536,6 +543,61 @@ namespace Volt
 		}
 
 		return job;
+	}
+
+	Job* JobSystem::TryGetYieldedJob()
+	{
+		Job* job = nullptr;
+		// Loop through the priorities in reverse to make sure we start with the
+		// highest priority.
+		for (int32_t i = static_cast<int32_t>(ExecutionPriority::Num) - 1; i >= 0; --i)
+		{
+			// Try to get a ready job first.
+			if (m_yieldedJobsReadyToRun.Pop(static_cast<ExecutionPriority>(i), job))
+			{
+				break;
+			}
+		}
+
+		return job;
+	}
+
+	bool JobSystem::ExecuteJob(Job* job)
+	{
+		if (job == nullptr)
+		{
+			return false;
+		}
+
+		JobFiber* assignedFiber = job->GetAssignedFiber();
+		if (assignedFiber)
+		{
+			assignedFiber->ContinueExecution();
+			return true;
+		}
+		else
+		{
+			const bool hasFiber = m_fiberPool.TryGetFiber(assignedFiber);
+			bool ranJob = false;
+
+			if (hasFiber && assignedFiber)
+			{
+				ranJob = assignedFiber->ExecuteJob(job);
+			}
+
+			if (!hasFiber || !ranJob)
+			{
+				// No fiber available, requeue the job
+				RunJob(job);
+
+				// No stack space, release the fiber again
+				m_fiberPool.FreeFiber(assignedFiber);
+
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	void JobSystem::FinishJob(JobFiber* fiber, Job* job)

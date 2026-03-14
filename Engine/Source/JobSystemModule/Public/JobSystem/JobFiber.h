@@ -13,7 +13,7 @@ namespace Volt
 	public:
 		VTJS_API JobFiber(const std::string& fiberName);
 
-		VTJS_API void ExecuteJob(Job* job);
+		VTJS_API bool ExecuteJob(Job* job);
 		VTJS_API void ContinueExecution();
 		VTJS_API void Free();
 

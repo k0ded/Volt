@@ -39,8 +39,12 @@ namespace Volt
 		VT_INLINE int32_t Decrement(int32_t decrement = 1)
 		{
 			int32_t prevCount = m_counter.fetch_sub(decrement);
-			if (prevCount <= 0)
+
+			// Only call once when the counter is finished.
+			if (prevCount == 1)
 			{
+				NotifyCounterReady();
+
 				m_isCompleted.store(1, std::memory_order::relaxed);
 				m_isCompleted.notify_all();
 			}
@@ -85,6 +89,7 @@ namespace Volt
 		// Needs to be in a cpp file as it interacts with 
 		// the job system.
 		void DecRef();
+		void NotifyCounterReady();
 
 	private:
 		std::atomic_int32_t m_counter = 0;
@@ -154,7 +159,7 @@ namespace Volt
 
 		ExecutionPolicy m_executionPolicy = ExecutionPolicy::WorkerThread;
 		ExecutionPriority m_priority = ExecutionPriority::Critical;
-		std::atomic<uint32_t> m_referenceCount = 0;
+		std::atomic<int32_t> m_referenceCount = 0;
 
 		JobCounter* m_counter = nullptr;
 		JobCounter* m_waitCounter = nullptr;

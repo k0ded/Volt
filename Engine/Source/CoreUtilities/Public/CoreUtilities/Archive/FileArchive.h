@@ -65,7 +65,6 @@ public:
 	VTCOREUTIL_API bool IsClosed() const override;
 
 private:
-	std::ifstream m_inputStream;
 	std::string m_error;
 	bool m_isOpen;
 

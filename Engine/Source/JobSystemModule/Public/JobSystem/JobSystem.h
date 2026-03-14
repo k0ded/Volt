@@ -7,6 +7,7 @@
 #include "JobSystem/FiberContext.h"
 #include "JobSystem/JobStackAllocator.h"
 #include "JobSystem/FiberPool.h"
+#include "JobSystem/JobPriorityQueue.h"
 
 #include <SubSystem/SubSystem.h>
 #include <SubSystem/SubSystemRegistry.h>
@@ -17,7 +18,6 @@
 #include <CoreUtilities/Containers/VectorVariants.h>
 #include <CoreUtilities/Containers/ArrayView.h>
 #include <CoreUtilities/Profiling/Profiling.h>
-#include <CoreUtilities/WorkQueue.h>
 
 namespace Volt
 {
@@ -29,13 +29,13 @@ namespace Volt
 		JobSystem();
 		~JobSystem();
 
-		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, Func&& func, FiberStackSize stackSize = FiberStackSize::Small);
-		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func, FiberStackSize stackSize = FiberStackSize::Small);
-		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::Small);
-		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::Small);
-		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, JobCounter* waitCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::Small);
-		template<typename Func> VT_NODISCARD static Job* CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func, FiberStackSize stackSize = FiberStackSize::Small);
-		template<typename Func> VT_NODISCARD static Job* CreateJobWithDependency(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Job* dependencyJob, Func&& func, FiberStackSize stackSize = FiberStackSize::Small);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, Func&& func, FiberStackSize stackSize = FiberStackSize::KB64);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Func&& func, FiberStackSize stackSize = FiberStackSize::KB64);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB64);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB64);
+		template<typename Func> VT_NODISCARD static Job* CreateJob(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, JobCounter* associatedCounter, JobCounter* waitCounter, Func&& func, FiberStackSize stackSize = FiberStackSize::KB64);
+		template<typename Func> VT_NODISCARD static Job* CreateJobAsDependency(std::string_view jobName, Job* dependantJob, Func&& func, FiberStackSize stackSize = FiberStackSize::KB64);
+		template<typename Func> VT_NODISCARD static Job* CreateJobWithDependency(std::string_view jobName, ExecutionPriority priority, ExecutionPolicy executionPolicy, Job* dependencyJob, Func&& func, FiberStackSize stackSize = FiberStackSize::KB64);
 
 		static JobCounter* CreateCounter();
 		static void DestroyCounter(JobCounter*& counter);
@@ -68,13 +68,26 @@ namespace Volt
 		inline static constexpr size_t NumMaxMainThreadJobs = 1024;
 		inline static constexpr uint32_t NumFibers = 160;
 
+		struct WorkerScratch
+		{
+			JobCounterRef toQueueWaitCounter = nullptr;
+		};
+
 		struct JobWorker
 		{
 			std::thread thread;
 			FiberContext fiberContext;
+			WorkerScratch scratch;
 			Job* currentlyExecutingJob = nullptr;
 
-			Array<WorkQueue<Job*, QueueThreadingPolicy::MPMC>, std::to_underlying(ExecutionPriority::Num)> workQueues;
+			VT_PROFILE_DECLARE_MUTEX(std::mutex, wakeMutex);
+			JobPriorityQueue<Job*, QueueThreadingPolicy::MPMC> workQueues;
+		};
+
+		struct WaitingListEntry
+		{
+			JobRef job;
+			JobCounterRef waitCounter;
 		};
 
 		void Initialize() override;
@@ -82,7 +95,7 @@ namespace Volt
 
 		void AllocateWaitingLists();
 
-		void PushToWaitingList(ExecutionPriority priority, Job* job);
+		void PushToWaitingList(ExecutionPriority priority, JobRef job, JobCounterRef waitCounter);
 		bool FlushWaitingList(ExecutionPriority priority);
 
 		bool OnTick(AppTickEvent& event);
@@ -92,32 +105,42 @@ namespace Volt
 		void SpawnWorker(uint32_t workerId);
 		JobWorker* AllocateWorker(uint32_t workerId);
 
+		void SpawnWaitingListManager();
+		void NotifyCounterReady();
+
 		///// Job/Counter management /////
 		JobCounter* AllocateCounter(bool initializeWithRef = true);
 		Job* AllocateJob();
 		void FreeCounter(JobCounter* counter);
 		void FreeJob(Job* job);
 
-		FiberStack AllocateStack(FiberStackSize stackSize);
+		bool AllocateStack(FiberStackSize stackSize, FiberStack& outStack);
 		void FreeStack(FiberStack stack);
 
 		///// Worker functions /////
 		Job* TryGetJob(uint32_t workerId);
+		Job* TryGetYieldedJob();
+		bool ExecuteJob(Job* job);
 		void FinishJob(JobFiber* fiber, Job* job);
 
 		inline static JobSystem* s_instance = nullptr;
 
 		uint32_t m_numWorkers = 0;
 
-		std::atomic_bool m_isRunning = true;
-		std::atomic_uint32_t m_nextQueueToPush = 0;
+		alignas(std::hardware_constructive_interference_size) std::atomic_bool m_isRunning = true;
+		alignas(std::hardware_constructive_interference_size) std::atomic_uint32_t m_nextQueueToPush = 0;
+
 		std::condition_variable_any m_workerWakeCondition;
-		VT_PROFILE_DECLARE_MUTEX_NAMED(std::mutex, m_wakeMutex, "JobSystemSleepMutex");
-		VT_PROFILE_DECLARE_MUTEX(std::mutex, m_waitingListMutex);
+		std::condition_variable_any m_waitingListManangerCondition;
+		VT_PROFILE_DECLARE_MUTEX_NAMED(std::mutex, m_waitingListManagerMutex, "JobSystemWaitingListManagerMutex");
 
 		InlineVector<JobWorker*, 16> m_workers;
-		Array<AtomicStack<Job*>, std::to_underlying(ExecutionPriority::Num)> m_waitingList;
+
 		WorkQueue<Job*, QueueThreadingPolicy::MPSC> m_mainThreadQueue;
+		JobPriorityQueue<Job*, QueueThreadingPolicy::MPMC> m_yieldedJobsReadyToRun;
+		JobPriorityQueue<WaitingListEntry, QueueThreadingPolicy::MPSC> m_waitingLists;
+
+		std::thread m_waitingListManagerThread;
 
 		PagedAtomicArenaAllocator<JobWorker, 16> m_workerAllocator;
 		JobAllocator<Job> m_jobAllocator;

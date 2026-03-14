@@ -16,17 +16,18 @@ namespace Volt
 		}
 	}
 
-	JobFiber* FiberPool::TryGetFiber()
+	bool FiberPool::TryGetFiber(JobFiber*& outFiber)
 	{
-		JobFiber* result = nullptr;
-		VT_MAYBE_UNUSED bool success = m_fiberStack.Pop(result);
-		VT_ASSERT(success);
-
-		return result;
+		return m_fiberStack.Pop(outFiber);
 	}
 
 	void FiberPool::FreeFiber(JobFiber* fiber)
 	{
 		m_fiberStack.Push(fiber);
+	}
+
+	bool FiberPool::HasAvailableFiber() const
+	{
+		return !m_fiberStack.Empty();
 	}
 }

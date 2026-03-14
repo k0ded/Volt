@@ -6,6 +6,12 @@
 
 namespace Volt
 {
+	VT_INLINE uint32_t GetNumStacks(FiberStackSize stackSize)
+	{
+		constexpr uint64_t TotalStackSize = 10 * 1024 * 1024;
+		return static_cast<uint32_t>(TotalStackSize / GetFiberStackByteSize(stackSize));
+	}
+
 	JobStackAllocator::JobStackAllocator()
 	{
 		Initialize();
@@ -13,108 +19,41 @@ namespace Volt
 
 	JobStackAllocator::~JobStackAllocator()
 	{
-		if (m_smallStackBase)
+		for (size_t i = 0; i < m_stackBaseAddresses.size(); ++i)
 		{
-			PlatformMemory::FreeFiberStacks(m_smallStackBase);
-		}
-
-		if (m_mediumStackBase)
-		{
-			PlatformMemory::FreeFiberStacks(m_mediumStackBase);
-		}
-
-		if (m_largeStackBase)
-		{
-			PlatformMemory::FreeFiberStacks(m_largeStackBase);
+			PlatformMemory::FreeFiberStacks(m_stackBaseAddresses[i]);
 		}
 	}
 
-	FiberStack JobStackAllocator::TryGetSmallStack()
+	bool JobStackAllocator::TryGetStack(FiberStackSize stackSize, FiberStack& outStack)
 	{
-		FiberStack result;
-		VT_MAYBE_UNUSED bool success = m_smallStacks.Pop(result);
-		VT_ENSURE(success);
-
-		return result;
+		return m_stacks[std::to_underlying(stackSize)].Pop(outStack);
 	}
 
-	void JobStackAllocator::FreeSmallStack(FiberStack stack)
+	void JobStackAllocator::FreeStack(FiberStack stack)
 	{
-		VT_ASSERT(stack.GetStackSize() == FiberStackSize::Small);
-		VT_MAYBE_UNUSED bool success = m_smallStacks.Push(stack);
-		VT_ENSURE(success);
-	}
-
-	FiberStack JobStackAllocator::TryGetMediumStack()
-	{
-		FiberStack result;
-		VT_MAYBE_UNUSED bool success = m_mediumStacks.Pop(result);
-		VT_ENSURE(success);
-
-		return result;
-	}
-
-	void JobStackAllocator::FreeMediumStack(FiberStack stack)
-	{
-		VT_ASSERT(stack.GetStackSize() == FiberStackSize::Medium);
-		VT_MAYBE_UNUSED bool success = m_mediumStacks.Push(stack);
-		VT_ENSURE(success);
-	}
-
-	FiberStack JobStackAllocator::TryGetLargeStack()
-	{
-		FiberStack result;
-		VT_MAYBE_UNUSED bool success = m_largeStacks.Pop(result);
-		VT_ENSURE(success);
-	
-		return result;
-	}
-
-	void JobStackAllocator::FreeLargeStack(FiberStack stack)
-	{
-		VT_ASSERT(stack.GetStackSize() == FiberStackSize::Large);
-		VT_MAYBE_UNUSED bool success = m_largeStacks.Push(stack);
-		VT_ENSURE(success);
+		VT_ENSURE(stack.IsValid());
+		m_stacks[std::to_underlying(stack.GetStackSize())].Push(stack);
 	}
 
 	void JobStackAllocator::Initialize()
 	{
+		Vector<FiberStackDesc> stackDescs;
+
+		for (size_t i = 0; i < m_stacks.size(); ++i)
 		{
-			Vector<FiberStackDesc> stackDescs;
-			m_smallStackBase = PlatformMemory::AllocateFiberStacks(std::to_underlying(FiberStackSize::Small), NumSmallStacks, stackDescs);
+			FiberStackSize stackSize = static_cast<FiberStackSize>(i);
 
-			// Initialize the stacks
-			m_smallStacks.Allocate(NumSmallStacks);
+			const uint32_t numStacksToAllocate = GetNumStacks(stackSize);
 
-			for (uint32_t i = 0; i < NumSmallStacks; ++i)
+			stackDescs.clear();
+
+			m_stacks[i].Allocate(numStacksToAllocate);
+			m_stackBaseAddresses[i] = PlatformMemory::AllocateFiberStacks(GetFiberStackByteSize(stackSize), numStacksToAllocate, stackDescs);
+
+			for (uint32_t stackIdx = 0; stackIdx < numStacksToAllocate; ++stackIdx)
 			{
-				m_smallStacks.Push({ stackDescs[i].stackBase, stackDescs[i].guardBase, FiberStackSize::Small });
-			}
-		}
-
-		{
-			Vector<FiberStackDesc> stackDescs;
-			m_mediumStackBase = PlatformMemory::AllocateFiberStacks(std::to_underlying(FiberStackSize::Medium), NumMediumStacks, stackDescs);
-
-			// Initialize the stacks
-			m_mediumStacks.Allocate(NumMediumStacks);
-
-			for (uint32_t i = 0; i < NumMediumStacks; ++i)
-			{
-				m_mediumStacks.Push({ stackDescs[i].stackBase, stackDescs[i].guardBase, FiberStackSize::Medium });
-			}
-		}
-
-		{
-			Vector<FiberStackDesc> stackDescs;
-			m_smallStackBase = PlatformMemory::AllocateFiberStacks(std::to_underlying(FiberStackSize::Large), NumLargeStacks, stackDescs);
-
-			// Initialize the stacks
-			m_largeStacks.Allocate(NumLargeStacks);
-
-			for (uint32_t i = 0; i < NumLargeStacks; ++i)
-			{
-				m_largeStacks.Push({ stackDescs[i].stackBase, stackDescs[i].guardBase, FiberStackSize::Large });
+				m_stacks[i].Push({ stackDescs[stackIdx].stackBase, stackDescs[stackIdx].guardBase, stackSize });
 			}
 		}
 	}

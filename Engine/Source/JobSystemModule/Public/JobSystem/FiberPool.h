@@ -12,8 +12,10 @@ namespace Volt
 	public:
 		void Initialize(uint32_t numFibers);
 
-		JobFiber* TryGetFiber();
+		bool TryGetFiber(JobFiber*& outFiber);
 		void FreeFiber(JobFiber* fiber);
+
+		bool HasAvailableFiber() const;
 
 	private:
 		FixedSizeArenaAllocator<JobFiber> m_fiberAllocator;

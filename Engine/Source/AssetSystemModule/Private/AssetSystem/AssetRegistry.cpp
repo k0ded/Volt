@@ -5,6 +5,8 @@
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 
 #include <JobSystem/TaskGraph.h>
+#include <JobSystem/IOThreads/IOThreads.h>
+#include <JobSystem/IOThreads/FileIORequest.h>
 
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -164,8 +166,10 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		FileReader fileReader;
-		if (!fileReader.Open(assetFilepath))
+		IORequestResult<IORequestReadFile> result = IOThreads::SubmitRequest<IORequestReadFile>("Deserialize Asset Metadata", assetFilepath);
+		FileReader& fileReader = result.GetResult();
+
+		if (result.GetResultCode() == IORequestResultCode::Failure)
 		{
 			VT_LOGC(Error, LogAssetSystem, "Failed to open asset file: '{}'\nError: {}", assetFilepath, fileReader.GetError());
 			return;

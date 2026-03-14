@@ -9,31 +9,20 @@ namespace Volt
 	class JobStackAllocator
 	{
 	public:
-		inline static constexpr uint32_t NumSmallStacks = 128;
+		inline static constexpr uint32_t NumSmallStacks = 1024;
 		inline static constexpr uint32_t NumMediumStacks = 64;
 		inline static constexpr uint32_t NumLargeStacks = 32;
 
 		JobStackAllocator();
 		~JobStackAllocator();
 
-		FiberStack TryGetSmallStack();
-		void FreeSmallStack(FiberStack stack);
-
-		FiberStack TryGetMediumStack();
-		void FreeMediumStack(FiberStack stack);
-
-		FiberStack TryGetLargeStack();
-		void FreeLargeStack(FiberStack stack);
+		bool TryGetStack(FiberStackSize stackSize, FiberStack& outStack);
+		void FreeStack(FiberStack stack);
 
 	private:
 		void Initialize();
 
-		AtomicStack<FiberStack> m_smallStacks;
-		AtomicStack<FiberStack> m_mediumStacks;
-		AtomicStack<FiberStack> m_largeStacks;
-
-		void* m_smallStackBase = nullptr;
-		void* m_mediumStackBase = nullptr;
-		void* m_largeStackBase = nullptr;
+		Array<AtomicStack<FiberStack>, std::to_underlying(FiberStackSize::Num)> m_stacks;
+		Array<void*, std::to_underlying(FiberStackSize::Num)> m_stackBaseAddresses;
 	};
 }

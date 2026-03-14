@@ -18,6 +18,11 @@ namespace Volt
 		}
 	}
 
+	void JobCounter::NotifyCounterReady()
+	{
+		JobSystem::s_instance->NotifyCounterReady();
+	}
+
 	void Job::Reset()
 	{
 		m_allocated = false;

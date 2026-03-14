@@ -4,20 +4,38 @@
 
 namespace Volt
 {
-	enum class FiberStackSize : uint32_t
+	enum class FiberStackSize : uint8_t
 	{
-		None = 0,
-		Small = 1u << 16u,
-		Medium = 1u << 17u,
-		Large = 1u << 19u
+		KB16 = 0, //1u << 14u,
+		KB32, //1u << 15u,
+		KB64, //1u << 16u,
+		KB128, //1u << 17u,
+		KB512, //1u << 19u,
+		Num,
+
+		Invalid
 	};
+
+	VT_INLINE uint64_t GetFiberStackByteSize(FiberStackSize stackSize)
+	{
+		switch (stackSize)
+		{
+			case Volt::FiberStackSize::KB16: return 1ull << 14ull;
+			case Volt::FiberStackSize::KB32: return 1ull << 15ull;
+			case Volt::FiberStackSize::KB64: return 1ull << 16ull;
+			case Volt::FiberStackSize::KB128: return 1ull << 17ull;
+			case Volt::FiberStackSize::KB512: return 1ull << 19ull;
+		}
+		VT_ENSURE_NO_ENTRY();
+		return 0;
+	}
 
 	struct FiberStack
 	{
 		FiberStack()
 			: m_stackBase(nullptr),
 			m_guardBase(nullptr),
-			m_stackSize(FiberStackSize::None)
+			m_stackSize(FiberStackSize::Invalid)
 		{}
 
 		FiberStack(void* stackBase, void* guardBase, FiberStackSize stackSize)
@@ -28,7 +46,7 @@ namespace Volt
 
 		VT_INLINE uint8_t* GetStackPointer()
 		{
-			uint8_t* stackPointer = reinterpret_cast<uint8_t*>(m_stackBase) + std::to_underlying(m_stackSize);
+			uint8_t* stackPointer = reinterpret_cast<uint8_t*>(m_stackBase) + GetFiberStackByteSize(m_stackSize);
 
 			// Align stack ponter to 16 bytes.
 			stackPointer = (uint8_t*)((uintptr_t)stackPointer & ~0xF);
@@ -44,7 +62,7 @@ namespace Volt
 
 		VT_INLINE uint8_t* GetStackBase()
 		{
-			return reinterpret_cast<uint8_t*>(m_stackBase) + std::to_underlying(m_stackSize);
+			return reinterpret_cast<uint8_t*>(m_stackBase) + GetFiberStackByteSize(m_stackSize);
 		}
 
 		VT_INLINE uint8_t* GetStackLimit()
@@ -60,7 +78,7 @@ namespace Volt
 
 		VT_INLINE bool IsValid() const
 		{
-			return m_guardBase != nullptr && m_stackBase != nullptr && std::to_underlying(m_stackSize) > 0;
+			return m_guardBase != nullptr && m_stackBase != nullptr && m_stackSize != FiberStackSize::Invalid;
 		}
 
 		VT_INLINE FiberStackSize GetStackSize() const

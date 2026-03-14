@@ -24,15 +24,20 @@ namespace Volt
 	{
 	}
 
-	void JobFiber::ExecuteJob(Job* job)
+	bool JobFiber::ExecuteJob(Job* job)
 	{
 		VT_ASSERT(m_currentJob == nullptr);
 		VT_ASSERT(!m_stack.IsValid());
 
+		bool result = JobSystem::s_instance->AllocateStack(job->GetStackSize(), m_stack);
+		if (!result)
+		{
+			return false;
+		}
+
 		m_currentJob = job;
 		m_currentJob->m_assignedFiber = this;
 
-		m_stack = JobSystem::s_instance->AllocateStack(m_currentJob->GetStackSize());
 		memset(&m_executionContext, 0, sizeof(FiberContext));
 		m_executionContext.rip = &ExecuteFiber;
 		m_executionContext.rsp = m_stack.GetStackPointer();
@@ -51,6 +56,8 @@ namespace Volt
 
 		VT_PROFILE_FIBER_ENTER(m_name.c_str());
 		FiberSetContext(&m_executionContext);
+
+		return true;
 	}
 
 	void JobFiber::ContinueExecution()

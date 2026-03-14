@@ -4,6 +4,8 @@
 #include "CoreUtilities/FileSystem.h"
 #include "CoreUtilities/Archive/ArchiveVersionRegistry.h"
 
+#include "CoreUtilities/Profiling/Profiling.h"
+
 FileWriter::FileWriter()
 	: Archive(false),
 	m_isOpen(false)
@@ -13,6 +15,8 @@ FileWriter::FileWriter()
 
 bool FileWriter::Open(const std::filesystem::path& destinationFilepath)
 {
+	VT_PROFILE_FUNCTION();
+
 	if (FileSystem::Exists(destinationFilepath) && !FileSystem::IsWriteable(destinationFilepath))
 	{
 		m_error = std::format("Filepath '{}' is not writeable!", destinationFilepath.string());
@@ -75,6 +79,8 @@ void FileWriter::SetBasePosition(size_t position)
 
 void FileWriter::Close()
 {
+	VT_PROFILE_FUNCTION();
+
 	SerializeVersions();
 
 	FileArchiveHeader header;
@@ -149,17 +155,20 @@ FileReader::FileReader()
 
 bool FileReader::Open(const std::filesystem::path& filepath)
 {
-	m_inputStream.open(filepath, std::ios::in | std::ios::binary | std::ios::ate);
-	m_isOpen = m_inputStream.is_open();
+	VT_PROFILE_FUNCTION();
+
+	std::ifstream inputStream;
+	inputStream.open(filepath, std::ios::in | std::ios::binary | std::ios::ate);
+	m_isOpen = inputStream.is_open();
 
 	if (m_isOpen)
 	{
-		size_t size = m_inputStream.tellg();
+		size_t size = inputStream.tellg();
 		size -= sizeof(FileArchiveHeader);
-		m_inputStream.seekg(0);
+		inputStream.seekg(0);
 
 		FileArchiveHeader fileWriterHeader;
-		m_inputStream.read(reinterpret_cast<char*>(&fileWriterHeader), sizeof(FileArchiveHeader));
+		inputStream.read(reinterpret_cast<char*>(&fileWriterHeader), sizeof(FileArchiveHeader));
 
 		// Make sure this is a file written by the file writer.
 		if (fileWriterHeader.magic != FileArchiveHeader::MagicValue)
@@ -170,8 +179,8 @@ bool FileReader::Open(const std::filesystem::path& filepath)
 		}
 
 		m_storage.resize_uninitialized(size);
-		m_inputStream.read(reinterpret_cast<char*>(m_storage.data()), size);
-		m_inputStream.close();
+		inputStream.read(reinterpret_cast<char*>(m_storage.data()), size);
+		inputStream.close();
 
 		// Deserialize version info.
 		(*this) << m_versions;
@@ -181,7 +190,7 @@ bool FileReader::Open(const std::filesystem::path& filepath)
 	}
 	else
 	{
-		if (m_inputStream.bad())
+		if (inputStream.bad())
 		{
 			m_error = std::format("I/O error while reading '{}'", filepath.string());
 		}
