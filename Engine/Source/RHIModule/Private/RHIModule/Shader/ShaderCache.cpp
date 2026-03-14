@@ -4,7 +4,11 @@
 #include "RHIModule/Graphics/GraphicsContext.h"
 #include "RHIModule/Utility/HashUtility.h"
 
-#include <CoreUtilities/Archive/FileArchive.h>
+#include <Volt-FileSystem/FileArchive.h>
+
+#include <JobSystem/IOThreads/FileIORequest.h>
+#include <JobSystem/IOThreads/IOThreads.h>
+
 #include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 #include <CoreUtilities/Time/TimeUtility.h>
 
@@ -118,8 +122,10 @@ namespace Volt::RHI
 		
 		const uint64_t lastWriteTime = TimeUtility::GetLastWriteTime(shaderSpecification.shaderSourceInfo.sourceEntry.filepath);
 
-		FileReader fileReader;
-		if (!fileReader.Open(cachedPath))
+		IORequestResult<IORequestReadFile> ioResult = IOThreads::SubmitRequest<IORequestReadFile>("Read Cached Shader", cachedPath);
+		FileReader& fileReader = ioResult.GetResult();
+
+		if (ioResult.GetResultCode() == IORequestResultCode::Failure)
 		{
 			VT_LOGC(Error, LogShaderCache,
 				"Failed to open cached shader '{}'\n"
@@ -181,7 +187,8 @@ namespace Volt::RHI
 		cachedShader.includeDependencies = compilationResult.includeDependencies;
 
 		archive << cachedShader;
-		archive.Close();
+
+		IOThreads::SubmitRequest<IORequestWriteFile>("Write Cached Shader", std::move(archive));
 	}
 
 	std::filesystem::path ShaderCache::GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const

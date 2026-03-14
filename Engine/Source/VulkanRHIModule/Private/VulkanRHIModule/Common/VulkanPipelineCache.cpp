@@ -3,7 +3,10 @@
 #include "VulkanRHIModule/Common/VulkanPipelineCache.h"
 #include "VulkanRHIModule/Graphics/VulkanGraphicsContext.h"
 
-#include <CoreUtilities/Archive/FileArchive.h>
+#include <JobSystem/IOThreads/FileIORequest.h>
+#include <JobSystem/IOThreads/IOThreads.h>
+
+#include <Volt-FileSystem/FileArchive.h>
 
 #include <vulkan/vulkan.h>
 
@@ -15,8 +18,10 @@ namespace Volt::RHI
 
 		Vector<uint8_t> cachedData;
 
-		FileReader fileReader{};
-		if (fileReader.Open(pipelineCacheFilepath))
+		IORequestResult<IORequestReadFile> ioResult = IOThreads::SubmitRequest<IORequestReadFile>("Read Pipeline Cache", pipelineCacheFilepath);
+		FileReader& fileReader = ioResult.GetResult();
+
+		if (ioResult.GetResultCode() == IORequestResultCode::Success)
 		{
 			fileReader << cachedData;
 		}
@@ -54,7 +59,8 @@ namespace Volt::RHI
 		}
 
 		fileWriter << cachedData;
-		fileWriter.Close();
+
+		IOThreads::SubmitRequest<IORequestWriteFile>("Write Pipeline Cache", std::move(fileWriter)),
 
 		vkDestroyPipelineCache(vkDevice, m_pipelineCache, nullptr);
 		m_pipelineCache = nullptr;

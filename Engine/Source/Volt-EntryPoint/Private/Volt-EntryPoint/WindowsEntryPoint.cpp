@@ -106,6 +106,9 @@ namespace Volt
 
 		int32_t result = 0;
 
+		PlatformMisc::SetupExceptionHandlers();
+		PlatformThread::SetupThreadConfig(false, false, true);
+
 		if (ShouldHandleApplicationCrashes())
 		{
 			__try

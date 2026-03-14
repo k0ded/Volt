@@ -54,6 +54,8 @@ namespace Volt
 
 	void IOThreads::SpawnIOThread(uint32_t workerId)
 	{
+		PlatformThread::SetupThreadConfig(false, true);
+
 		IOThread& workerData = *m_ioThreads[workerId];
 
 		while (m_isRunning.load(std::memory_order::relaxed))

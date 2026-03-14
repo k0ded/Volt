@@ -143,7 +143,7 @@ namespace Volt
 				taskGraph.AddTask("Load and Register Shader", [typeIndex, registrationInfo, compileFunc]()
 				{
 					compileFunc(typeIndex, registrationInfo);
-				});
+				}, FiberStackSize::KB32);
 			}
 			else
 			{

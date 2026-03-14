@@ -37,7 +37,7 @@ namespace Volt
 			{
 				MaterialCompiler compiler;
 				compiler.CompileMaterial(materialAsset);
-			});
+			}, FiberStackSize::KB32);
 
 			JobSystem::RunJob(compileJob);
 		}

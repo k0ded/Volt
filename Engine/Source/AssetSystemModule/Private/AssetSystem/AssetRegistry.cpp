@@ -3,6 +3,7 @@
 #include "AssetSystem/AssetManager.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <Volt-FileSystem/FileArchive.h>
 
 #include <JobSystem/TaskGraph.h>
 #include <JobSystem/IOThreads/IOThreads.h>
@@ -11,7 +12,6 @@
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/Time/ScopedTimer.h>
-#include <CoreUtilities/Archive/FileArchive.h>
 
 namespace Volt
 {
@@ -117,7 +117,7 @@ namespace Volt
 
 						InsertAssetMetadata(std::move(assetMetadata));
 					}
-				});
+				}, FiberStackSize::KB32);
 			}
 
 			m_metadataLoadingCounter = taskGraph.ExecuteAndExtractCounter();
@@ -153,7 +153,7 @@ namespace Volt
 
 						InsertAssetMetadata(std::move(assetMetadata));
 					}
-				});
+				}, FiberStackSize::KB32);
 			}
 
 			taskGraph.ExecuteAndWait();

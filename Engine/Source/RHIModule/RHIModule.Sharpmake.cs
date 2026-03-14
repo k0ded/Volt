@@ -22,14 +22,16 @@ namespace VoltSharpmake
             conf.PrecompSource = "rhipch.cpp";
 
             conf.AddPublicDependency<LogModule>(target);
-            conf.AddPublicDependency<imgui>(target);
+			conf.AddPublicDependency<imgui>(target);
 
             conf.AddPrivateDependency<Aftermath>(target);
 			conf.AddPrivateDependency<EventSystemModule>(target);
+			conf.AddPrivateDependency<JobSystemModule>(target);
 			conf.AddPrivateDependency<VoltPlatforms>(target);
+			conf.AddPrivateDependency<VoltFileSystem>(target);
 
-            //conf.Defines.Add("VT_ENABLE_NV_AFTERMATH");
-            //conf.ExportDefines.Add("VT_ENABLE_NV_AFTERMATH");
-        }
+			//conf.Defines.Add("VT_ENABLE_NV_AFTERMATH");
+			//conf.ExportDefines.Add("VT_ENABLE_NV_AFTERMATH");
+		}
     }
 }

@@ -48,6 +48,7 @@ void RenderDocPlugin::Initialize()
 	if (m_renderDocAPI)
 	{
 		m_frameCapture = CreateRef<RenderDocFrameCapture>(m_renderDocAPI);
+		m_frameCapture->SetFlags(Volt::RHI::FrameCaptureFlags::DisableOverlay);
 		Volt::RHI::RHIModule::GetInstance().SetFrameCapture(m_frameCapture);
 
 		m_eventListener = CreateScope<RenderDocEventListener>();

@@ -93,7 +93,7 @@ namespace Volt
 
 	private:
 		std::atomic_int32_t m_counter = 0;
-		std::atomic_uint32_t m_referenceCount = 0;
+		std::atomic_int32_t m_referenceCount = 0;
 		std::atomic_uint32_t m_isCompleted = 0;
 	};
 
@@ -159,7 +159,7 @@ namespace Volt
 
 		ExecutionPolicy m_executionPolicy = ExecutionPolicy::WorkerThread;
 		ExecutionPriority m_priority = ExecutionPriority::Critical;
-		std::atomic<int32_t> m_referenceCount = 0;
+		std::atomic_int32_t m_referenceCount = 0;
 
 		JobCounter* m_counter = nullptr;
 		JobCounter* m_waitCounter = nullptr;

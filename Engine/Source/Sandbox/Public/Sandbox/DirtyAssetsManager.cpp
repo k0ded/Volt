@@ -100,6 +100,7 @@ bool DirtyAssetsManager::SaveAssets(bool showSaveDialog, bool allowDiscardSave, 
 		return true;
 	}
 
+	GlobalMemoryStackMark memMark;
 	GlobalMemoryStackVector<Volt::AssetHandle> assetsToSave;
 	assetsToSave.reserve(m_dirtyAssets.size());
 	for (auto& [dirtyAssetHandle, assetReference] : m_dirtyAssets)

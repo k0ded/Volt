@@ -26,6 +26,7 @@ namespace VoltSharpmake
 
 			conf.AddPrivateDependency<VoltCore>(target);
 			conf.AddPrivateDependency<VoltPlatforms>(target);
+			conf.AddPrivateDependency<VoltFileSystem>(target);
 		}
     }
 }

@@ -16,7 +16,7 @@
 class Archive
 {
 public:
-	Archive(bool isLoading);
+	VTCOREUTIL_API Archive(bool isLoading);
 	virtual ~Archive() = default;
 
 	virtual void SerializeBytes(void* value, size_t size) = 0;

@@ -13,6 +13,16 @@
 
 namespace Volt
 {
+	LONG CALLBACK StackOverflowHandler(EXCEPTION_POINTERS* info)
+	{
+		if (info->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW)
+		{
+			VT_FATAL_MSG(false, "StackOverflow: If inside a Job callstack, try increasing the FiberStackSize.\n");
+			return EXCEPTION_EXECUTE_FAULT;
+		}
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
 	void WindowsPlatformMisc::RequestApplicationExit(bool forceExit, uint32_t exitCode)
 	{
 		if (forceExit)
@@ -143,6 +153,11 @@ namespace Volt
 		QueryCPUInfo(numCores, numLogicalCores);
 
 		return numLogicalCores;
+	}
+
+	void WindowsPlatformMisc::SetupExceptionHandlers()
+	{
+		AddVectoredExceptionHandler(1, StackOverflowHandler);
 	}
 }
 #endif

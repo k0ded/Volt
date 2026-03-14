@@ -23,6 +23,8 @@ namespace VoltSharpmake
             conf.AddPublicDependency<LogModule>(target);
 			conf.AddPublicDependency<EventSystemModule>(target);
 			conf.AddPublicDependency<VoltPlatforms>(target);
+
+			conf.AddPrivateDependency<VoltFileSystem>(target);
 		}
     }
 }

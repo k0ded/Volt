@@ -8,12 +8,12 @@ namespace Volt
 {
 	void JobCounter::DecRef()
 	{
-		const uint32_t oldCount = m_referenceCount.fetch_sub(1, std::memory_order::release);
+		const int32_t oldCount = m_referenceCount.fetch_sub(1, std::memory_order::release);
 		VT_ASSERT(oldCount > 0);
 
 		if (oldCount == 1)
 		{
-			std::atomic_thread_fence(std::memory_order::release);
+			std::atomic_thread_fence(std::memory_order::acquire);
 			JobSystem::s_instance->FreeCounter(this);
 		}
 	}
@@ -32,12 +32,12 @@ namespace Volt
 
 	void Job::DecRef()
 	{
-		const uint32_t oldCount = m_referenceCount.fetch_sub(1, std::memory_order::release);
+		const int32_t oldCount = m_referenceCount.fetch_sub(1, std::memory_order::release);
 		VT_ASSERT(oldCount > 0);
 
 		if (oldCount == 1)
 		{
-			std::atomic_thread_fence(std::memory_order::release);
+			std::atomic_thread_fence(std::memory_order::acquire);
 			JobSystem::s_instance->FreeJob(this);
 		}
 	}

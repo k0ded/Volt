@@ -47,6 +47,19 @@ VTCOREUTIL_API bool CheckExpression(bool expression, std::string_view str);
 #define VT_ENSURE_MSG(expression, message)
 #endif
 
+#define VT_FATAL(expression) \
+	do { \
+		VT_ANALASYS_ASSUME(expression); \
+		if (!(expression)) { AssertionFailure(#expression); } \
+	} while(false)
+
+#define VT_FATAL_MSG(expression, message) \
+	do { \
+		VT_ANALASYS_ASSUME(expression); \
+		if (!(expression)) { AssertionFailure(message); } \
+	} while(false)
+
+
 #ifdef VT_ENABLE_CHECKS
 	#define VT_CHECK(expression) CheckExpression(expression, #expression)
 	#define VT_CHECK_MSG(expression, message) CheckExpression(expression, message)

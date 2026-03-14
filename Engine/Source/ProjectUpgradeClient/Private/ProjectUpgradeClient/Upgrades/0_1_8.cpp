@@ -4,11 +4,12 @@
 #include <Volt-Scene/EntityDescription.h>
 #include <Volt-Scene/EntityDescCustomMetadata.h>
 
+#include <Volt-FileSystem/FileArchive.h>
+
 #include <Volt-Core/Project/Project.h>
 #include <JobSystem/TaskGraph.h>
 
 #include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/Archive/FileArchive.h>
 
 namespace Volt
 {

@@ -22,6 +22,7 @@ namespace Volt
 		static std::string GetCurrentUserName();
 		static uint32_t GetNumberOfPhysicalCores();
 		static uint32_t GetNumberOfLogicalCores();
+		static void SetupExceptionHandlers();
 	};
 }
 

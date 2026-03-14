@@ -948,7 +948,7 @@ void AssetBrowserPanel::Reload()
 		myDirectoryButtons = FindParentDirectoriesOfDirectory(myCurrentDirectory);
 
 		m_reloadingAssetManager = false;
-	}));
+	}, Volt::FiberStackSize::KB32));
 }
 
 void AssetBrowserPanel::Search(const std::string& inQuery)

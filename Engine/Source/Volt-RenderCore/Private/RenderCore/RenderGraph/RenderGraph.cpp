@@ -1992,7 +1992,7 @@ namespace Volt
 				recordTasks[index] = taskGraph.AddTask("RenderGraph::Record", [renderGraphPtr, shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges]()
 				{
 					executePassRangeFunc(renderGraphPtr, *shaderParameterUniformBuffer, executionRange, commandBuffers, index, numExecutionRanges);
-				});
+				}, FiberStackSize::KB32);
 				index++;
 			}
 

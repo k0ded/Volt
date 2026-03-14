@@ -13,6 +13,8 @@
 #include <Volt-Core/Project/Project.h>
 #include <Volt-Core/Project/ProjectManager.h>
 
+#include <Volt-FileSystem/FileArchive.h>
+
 #include <AssetSystem/AssetMetadata.h>
 #include <AssetSystem/AssetFactory.h>
 
@@ -21,8 +23,6 @@
 #include <JobSystem/TaskGraph.h>
 
 #include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/Archive/FileArchive.h>
-
 namespace Volt
 {
 	REGISTER_UPGRADE(Version::Create(0, 1, 7), Upgrade_0_1_7);

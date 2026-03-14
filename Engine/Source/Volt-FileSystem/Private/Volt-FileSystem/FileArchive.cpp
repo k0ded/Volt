@@ -1,16 +1,25 @@
-#include "cupch.h"
+#include "Volt-FileSystem/FileArchive.h"
 
-#include "CoreUtilities/Archive/FileArchive.h"
-#include "CoreUtilities/FileSystem.h"
-#include "CoreUtilities/Archive/ArchiveVersionRegistry.h"
+#include <Volt-Platforms/FileHandle.h>
+#include <Volt-Platforms/Platform.h>
 
-#include "CoreUtilities/Profiling/Profiling.h"
+#include <CoreUtilities/FileSystem.h>
+#include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 FileWriter::FileWriter()
 	: Archive(false),
 	m_isOpen(false)
 {
 
+}
+
+FileWriter::~FileWriter()
+{
+	if (m_fileHandle.IsValid())
+	{
+		Volt::PlatformFileSystem::CloseFile(m_fileHandle);
+	}
 }
 
 bool FileWriter::Open(const std::filesystem::path& destinationFilepath)
@@ -29,16 +38,16 @@ bool FileWriter::Open(const std::filesystem::path& destinationFilepath)
 		FileSystem::CreateDirectories(destinationFilepath.parent_path());
 	}
 
-	m_outputStream.open(destinationFilepath, std::ios::out | std::ios::trunc | std::ios::binary);
-	m_isOpen = m_outputStream.is_open();
+	m_fileHandle = Volt::PlatformFileSystem::CreateFile(destinationFilepath);
+	m_isOpen = m_fileHandle.IsValid();
 
-	if (m_outputStream.bad())
+	if (!m_fileHandle.IsValid())
 	{
 		m_error = std::format("I/O error while writing '{}'", destinationFilepath.string());
 		return false;
 	}
 
-	return m_outputStream.is_open();
+	return m_fileHandle.IsValid();
 }
 
 std::string_view FileWriter::GetError() const
@@ -81,6 +90,13 @@ void FileWriter::Close()
 {
 	VT_PROFILE_FUNCTION();
 
+	VT_ENSURE_MSG(m_fileHandle.IsValid(), "No file is open!");
+
+	if (!VT_CHECK_MSG(Volt::PlatformThread::GetThreadConfig().isIOThread, "FileReader::Open may only be called on an IO thread!"))
+	{
+		return;
+	}
+
 	SerializeVersions();
 
 	FileArchiveHeader header;
@@ -88,10 +104,11 @@ void FileWriter::Close()
 	header.isCompressed = false;
 	header.compressedSize = 0;
 
-	m_outputStream.write(reinterpret_cast<const char*>(&header), sizeof(FileArchiveHeader));
-	m_outputStream.write(reinterpret_cast<const char*>(m_allocator.data()), m_allocator.size());
-	m_outputStream.close();
+	Volt::PlatformFileSystem::WriteFile(m_fileHandle, &header, sizeof(FileArchiveHeader));
+	Volt::PlatformFileSystem::WriteFile(m_fileHandle, m_allocator.data(), m_allocator.size());
+	Volt::PlatformFileSystem::CloseFile(m_fileHandle);
 
+	m_fileHandle.Reset();
 	m_isOpen = false;
 }
 
@@ -153,34 +170,40 @@ FileReader::FileReader()
 
 }
 
-bool FileReader::Open(const std::filesystem::path& filepath)
+bool FileReader::Open(const std::filesystem::path& filepath, const FileReaderConfig& config)
 {
 	VT_PROFILE_FUNCTION();
 
-	std::ifstream inputStream;
-	inputStream.open(filepath, std::ios::in | std::ios::binary | std::ios::ate);
-	m_isOpen = inputStream.is_open();
+	if (!VT_CHECK_MSG(Volt::PlatformThread::GetThreadConfig().isIOThread, "FileReader::Open may only be called on an IO thread!"))
+	{
+		return false;
+	}
+
+	const bool isSmallRead = config.maxReadSize > 0 && config.maxReadSize < 4096;
+
+	Volt::FileHandle fileHandle = Volt::PlatformFileSystem::OpenFile(filepath, false, isSmallRead);
+	m_isOpen = fileHandle.IsValid();
 
 	if (m_isOpen)
 	{
-		size_t size = inputStream.tellg();
-		size -= sizeof(FileArchiveHeader);
-		inputStream.seekg(0);
+		uint64_t fileSize = Volt::PlatformFileSystem::GetFileSize(fileHandle);
+		fileSize -= sizeof(FileArchiveHeader);
+		fileSize = config.maxReadSize > 0 ? std::min(fileSize, config.maxReadSize) : fileSize;
 
-		FileArchiveHeader fileWriterHeader;
-		inputStream.read(reinterpret_cast<char*>(&fileWriterHeader), sizeof(FileArchiveHeader));
+		FileArchiveHeader fileArchiveHeader;
+		Volt::PlatformFileSystem::ReadFile(fileHandle, sizeof(FileArchiveHeader), &fileArchiveHeader, sizeof(FileArchiveHeader));
 
 		// Make sure this is a file written by the file writer.
-		if (fileWriterHeader.magic != FileArchiveHeader::MagicValue)
+		if (fileArchiveHeader.magic != FileArchiveHeader::MagicValue)
 		{
 			m_isOpen = false;
 			m_error = std::format("File '{}' was not written with a file archive!", filepath.string());
 			return false;
 		}
 
-		m_storage.resize_uninitialized(size);
-		inputStream.read(reinterpret_cast<char*>(m_storage.data()), size);
-		inputStream.close();
+		m_storage.resize_uninitialized(fileSize);
+		Volt::PlatformFileSystem::ReadFile(fileHandle, fileSize, m_storage.data(), fileSize);
+		Volt::PlatformFileSystem::CloseFile(fileHandle);
 
 		// Deserialize version info.
 		(*this) << m_versions;
@@ -190,11 +213,11 @@ bool FileReader::Open(const std::filesystem::path& filepath)
 	}
 	else
 	{
-		if (inputStream.bad())
-		{
-			m_error = std::format("I/O error while reading '{}'", filepath.string());
-		}
-		else
+		//if (inputStream.bad())
+		//{
+		//	m_error = std::format("I/O error while reading '{}'", filepath.string());
+		//}
+		//else
 		{
 			m_error = std::format("Failed to open file '{}'", filepath.string());
 		}

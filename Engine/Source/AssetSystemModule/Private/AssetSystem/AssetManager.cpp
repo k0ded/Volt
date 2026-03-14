@@ -2,12 +2,14 @@
 #include "AssetManager.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
+#include <Volt-FileSystem/FileArchive.h>
 
 #include <JobSystem/JobSystem.h>
+#include <JobSystem/IOThreads/FileIORequest.h>
+#include <JobSystem/IOThreads/IOThreads.h>
 
 #include <EventSystem/ApplicationEvents.h>
 
-#include <CoreUtilities/Archive/FileArchive.h>
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/StringUtility.h>
@@ -532,7 +534,7 @@ namespace Volt
 			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
 
 			VT_LOGC(Trace, LogAssetSystem, "Loaded asset '{}' (Handle: '{}') in {} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
-		});
+		}, FiberStackSize::KB64);
 
 		JobSystem::RunJob(loadJob);
 
@@ -734,22 +736,20 @@ namespace Volt
 			return false;
 		}
 
-		FileReader fileReader;
+		IORequestResult<IORequestReadFile> result = IOThreads::SubmitRequest<IORequestReadFile>("Read Asset File", filepath);
+		FileReader& fileReader = result.GetResult();
+		
+		if (result.GetResultCode() == IORequestResultCode::Failure)
 		{
-			VT_PROFILE_SCOPE("Read Asset File");
-			
-			if (!fileReader.Open(filepath))
-			{
-				VT_LOGC(Error, LogAssetSystem,
-					"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
-					"		Error: {}",
-					filepath,
-					assetMetadata->handle,
-					assetMetadata->type->GetName(),
-					fileReader.GetError());
-				asset->SetFlag(AssetFlag::Invalid, true);
-				return false;
-			}
+			VT_LOGC(Error, LogAssetSystem,
+				"Failed to load asset '{}' (Handle: '{}', Type: '{}')\n"
+				"		Error: {}",
+				filepath,
+				assetMetadata->handle,
+				assetMetadata->type->GetName(),
+				fileReader.GetError());
+			asset->SetFlag(AssetFlag::Invalid, true);
+			return false;
 		}
 
 		// Load the asset header and verify the asset.
@@ -859,7 +859,7 @@ namespace Volt
 		SerializeAssetHeader(fileWriter, *assetMetadata, asset->GetVersion());
 		asset->Serialize(fileWriter, assetMetadata);
 
-		fileWriter.Close();
+		IOThreads::SubmitRequest<IORequestWriteFile>("Write Asset File", std::move(fileWriter));
 		return true;
 	}
 

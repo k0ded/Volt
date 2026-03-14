@@ -372,6 +372,8 @@ namespace Volt
 
 	void JobSystem::SpawnWorker(uint32_t workerId)
 	{
+		PlatformThread::SetupThreadConfig(true, false, false);
+
 		g_workerId = workerId;
 		JobWorker& workerData = *m_workers[workerId];
 

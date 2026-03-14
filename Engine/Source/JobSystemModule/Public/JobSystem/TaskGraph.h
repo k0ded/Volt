@@ -2,6 +2,7 @@
 
 #include "JobSystem/Config.h"
 #include "JobSystem/JobSystem.h"
+#include "JobSystem/FiberCommon.h"
 
 #include <CoreUtilities/Allocators/PagedAtomicLinearAllocator.h>
 
@@ -91,14 +92,9 @@ namespace Volt
 
 		VT_DELETE_COPY_MOVE(TaskGraph);
 
-		template<typename Func>
-		TaskGraph::Task* AddTask(std::string_view name, Func&& func);
-
-		template<typename Func>
-		TaskGraph::Task* AddTaskWithDependencies(std::string_view name, std::span<TaskGraph::Task*> dependencies, Func&& func);
-
-		template<typename Func>
-		TaskGraph::Task* AddTaskWithDependencies(std::string_view name, std::initializer_list<TaskGraph::Task*> dependencies, Func&& func);
+		template<typename Func> TaskGraph::Task* AddTask(std::string_view name, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> TaskGraph::Task* AddTaskWithDependencies(std::string_view name, std::span<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
+		template<typename Func> TaskGraph::Task* AddTaskWithDependencies(std::string_view name, std::initializer_list<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize = FiberStackSize::KB16);
 
 		void Execute();
 		JobCounterRef ExecuteAndExtractCounter();
@@ -112,23 +108,25 @@ namespace Volt
 		class TaskImpl : public Task
 		{
 		public:
-			TaskImpl(Func&& inFunc)
-				: func(std::move(inFunc))
+			TaskImpl(Func&& inFunc, FiberStackSize inStackSize)
+				: func(std::move(inFunc)),
+				stackSize(inStackSize)
 			{ }
 
 			~TaskImpl() override = default;
 			
 			JobRef CreateJob(ExecutionPriority priority, JobCounterRef counter) override
 			{
-				return JobSystem::CreateJob(m_name, priority, counter, std::move(func));
+				return JobSystem::CreateJob(m_name, priority, counter, std::move(func), stackSize);
 			}
 
 			JobRef CreateJobAsDependency(ExecutionPriority priority, JobRef dependant) override
 			{
-				return JobSystem::CreateJobAsDependency(m_name, dependant, std::move(func));
+				return JobSystem::CreateJobAsDependency(m_name, dependant, std::move(func), stackSize);
 			}
 
 			Func func;
+			FiberStackSize stackSize;
 		};
 
 		bool m_isExecuted = false;
@@ -137,14 +135,14 @@ namespace Volt
 		JobCounterRef m_graphCounter = nullptr;
 		TaskGraphAllocator m_allocator;
 
-		Vector<Task*> m_tasks;
+		Vector<Task*> m_tasks; 
 		Vector<JobRef> m_jobs;
 	};
 
 	template<typename Func>
-	TaskGraph::Task* TaskGraph::AddTask(std::string_view name, Func&& func)
+	TaskGraph::Task* TaskGraph::AddTask(std::string_view name, Func&& func, FiberStackSize stackSize)
 	{
-		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func));
+		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func), stackSize);
 		taskDescription->m_name = name;
 
 		m_tasks.emplace_back(taskDescription);
@@ -152,9 +150,9 @@ namespace Volt
 	}
 
 	template<typename Func>
-	TaskGraph::Task* TaskGraph::AddTaskWithDependencies(std::string_view name, std::span<TaskGraph::Task*> dependencies, Func&& func)
+	TaskGraph::Task* TaskGraph::AddTaskWithDependencies(std::string_view name, std::span<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize)
 	{
-		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func));
+		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func), stackSize);
 		taskDescription->m_name = name;
 		taskDescription->AddDependencies(dependencies);
 
@@ -163,9 +161,9 @@ namespace Volt
 	}
 
 	template<typename Func>
-	TaskGraph::Task* TaskGraph::AddTaskWithDependencies(std::string_view name, std::initializer_list<TaskGraph::Task*> dependencies, Func&& func)
+	TaskGraph::Task* TaskGraph::AddTaskWithDependencies(std::string_view name, std::initializer_list<TaskGraph::Task*> dependencies, Func&& func, FiberStackSize stackSize)
 	{
-		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func));
+		TaskImpl<Func>* taskDescription = m_allocator.CreateTask<TaskImpl<Func>>(std::move(func), stackSize);
 		taskDescription->m_name = name;
 		taskDescription->AddDependencies(dependencies);
 
