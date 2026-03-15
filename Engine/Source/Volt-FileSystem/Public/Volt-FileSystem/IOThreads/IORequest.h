@@ -1,6 +1,8 @@
 #pragma once
 
-#include "JobSystem/Job.h"
+#include "Volt-FileSystem/Config.h"
+
+#include <JobSystem/Job.h>
 
 #include <concepts>
 
@@ -40,7 +42,7 @@ namespace Volt
 		}
 
 	private:
-		VTJS_API void FreeRequest();
+		VTFS_API void FreeRequest();
 
 		std::atomic_int32_t m_refCount;
 		std::string_view m_name;
@@ -65,7 +67,9 @@ namespace Volt
 		VT_INLINE IORequestResultCode GetResultCode() const 
 		{
 			JobSystem::WaitForCounter(m_assignedCounter);
-			return m_ioRequest->GetResultCode(); 
+			IORequestResultCode requestCode = m_ioRequest->GetResultCode();
+			VT_ENSURE(requestCode != IORequestResultCode::Undefined);
+			return requestCode; 
 		}
 
 	private:

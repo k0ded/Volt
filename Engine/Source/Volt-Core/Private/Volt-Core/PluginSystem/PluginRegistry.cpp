@@ -2,9 +2,10 @@
 
 #include "Volt-Core/PluginSystem/PluginRegistry.h"
 
+#include <Volt-FileSystem/FileUtility.h>
+
 #include <CoreUtilities/DynamicLibraryHelpers.h>
 #include <CoreUtilities/FileSystem.h>
-#include <CoreUtilities/FileIO/FileUtility.h>
 #include <CoreUtilities/JSON/JSONReader.h>
 
 VT_DEFINE_LOG_CATEGORY(LogPluginSystem);

@@ -6,11 +6,12 @@
 #include "Volt-Core/Version.h"
 #include "Volt-Core/GlobalCommandLine.h"
 
+#include <Volt-FileSystem/FileUtility.h>
+
 #include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/JSON/JSONWriter.h>
 #include <CoreUtilities/JSON/JSONReader.h>
-#include <CoreUtilities/FileIO/FileUtility.h>
 
 VT_DEFINE_LOG_CATEGORY(LogProject);
 
@@ -102,8 +103,8 @@ namespace Volt
 		jsonWriter.AppendKeyValue("StartScenePath", m_currentProject->startSceneFilepath);
 		jsonWriter.EndDocument();
 
-		const std::string prettyJson = jsonWriter.GetPrettyJSON();
-		FileUtility::WriteStringToFile(m_currentProject->filepath, prettyJson, true);
+		std::string prettyJson = jsonWriter.GetPrettyJSON();
+		FileUtility::WriteStringToFile(m_currentProject->filepath, std::move(prettyJson), true);
 	}
 
 	void ProjectManager::DeserializeProject()

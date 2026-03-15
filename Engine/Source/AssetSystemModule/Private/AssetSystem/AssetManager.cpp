@@ -2,11 +2,11 @@
 #include "AssetManager.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
-#include <Volt-FileSystem/FileArchive.h>
+
+#include <Volt-FileSystem/FileIORequest.h>
+#include <Volt-FileSystem/IOThreads/IOThreads.h>
 
 #include <JobSystem/JobSystem.h>
-#include <JobSystem/IOThreads/FileIORequest.h>
-#include <JobSystem/IOThreads/IOThreads.h>
 
 #include <EventSystem/ApplicationEvents.h>
 
@@ -534,7 +534,7 @@ namespace Volt
 			m_dependencyGraph->OnAssetChanged(assetHandle, AssetChangedState::Loaded);
 
 			VT_LOGC(Trace, LogAssetSystem, "Loaded asset '{}' (Handle: '{}') in {} seconds!", assetMetadata->filepath, assetMetadata->handle, timer.GetTime<Time::Seconds>());
-		}, FiberStackSize::KB64);
+		}, FiberStackSize::KB128);
 
 		JobSystem::RunJob(loadJob);
 
@@ -736,7 +736,7 @@ namespace Volt
 			return false;
 		}
 
-		IORequestResult<IORequestReadFile> result = IOThreads::SubmitRequest<IORequestReadFile>("Read Asset File", filepath);
+		IORequestResult<IORequestReadFile_FileReader> result = IOThreads::SubmitRequest<IORequestReadFile_FileReader>("Read Asset File", filepath);
 		FileReader& fileReader = result.GetResult();
 		
 		if (result.GetResultCode() == IORequestResultCode::Failure)
@@ -859,7 +859,7 @@ namespace Volt
 		SerializeAssetHeader(fileWriter, *assetMetadata, asset->GetVersion());
 		asset->Serialize(fileWriter, assetMetadata);
 
-		IOThreads::SubmitRequest<IORequestWriteFile>("Write Asset File", std::move(fileWriter));
+		IOThreads::SubmitRequest<IORequestWriteFile_FileWriter>("Write Asset File", std::move(fileWriter));
 		return true;
 	}
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CoreUtilities/Core.h>
+#include <CoreUtilities/VoltAssert.h>
 
 namespace Volt
 {

@@ -3,11 +3,11 @@
 #include "AssetSystem/AssetManager.h"
 
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
-#include <Volt-FileSystem/FileArchive.h>
+
+#include <Volt-FileSystem/FileIORequest.h>
+#include <Volt-FileSystem/IOThreads/IOThreads.h>
 
 #include <JobSystem/TaskGraph.h>
-#include <JobSystem/IOThreads/IOThreads.h>
-#include <JobSystem/IOThreads/FileIORequest.h>
 
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/Profiling/Profiling.h>
@@ -166,7 +166,7 @@ namespace Volt
 	{
 		VT_PROFILE_FUNCTION();
 
-		IORequestResult<IORequestReadFile> result = IOThreads::SubmitRequest<IORequestReadFile>("Deserialize Asset Metadata", assetFilepath);
+		IORequestResult<IORequestReadFile_FileReader> result = IOThreads::SubmitRequest<IORequestReadFile_FileReader>("Deserialize Asset Metadata", assetFilepath);
 		FileReader& fileReader = result.GetResult();
 
 		if (result.GetResultCode() == IORequestResultCode::Failure)

@@ -1,9 +1,10 @@
 #pragma once
 
-#include "JobSystem/Config.h"
-#include "JobSystem/JobSystem.h"
-#include "JobSystem/IOThreads/IORequest.h"
-#include "JobSystem/IOThreads/IORequestAllocator.h"
+#include "Volt-FileSystem/Config.h"
+#include "Volt-FileSystem/IOThreads/IORequest.h"
+#include "Volt-FileSystem/IOThreads/IORequestAllocator.h"
+
+#include <JobSystem/JobSystem.h>
 
 #include <SubSystem/SubSystem.h>
 #include <SubSystem/SubSystemRegistry.h>
@@ -55,7 +56,7 @@ namespace Volt
 
 		void FreeIORequest(IORequest* request);
 
-		VTJS_API inline static IOThreads* s_instance = nullptr;
+		VTFS_API inline static IOThreads* s_instance = nullptr;
 
 		std::atomic_bool m_isRunning = true;
 		std::condition_variable_any m_wakeCondition;
@@ -70,6 +71,8 @@ namespace Volt
 	template<typename RequestType, typename... Args>
 	static IORequestResult<RequestType> IOThreads::SubmitRequest(Args&&... args)
 	{
+		VT_ENSURE(s_instance != nullptr);
+
 		RequestType* request = s_instance->m_requestAllocator.Allocate<RequestType>(std::forward<Args>(args)...);
 		request->IncRef();
 

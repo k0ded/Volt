@@ -6,8 +6,8 @@
 
 #include <Volt-FileSystem/FileArchive.h>
 
-#include <JobSystem/IOThreads/FileIORequest.h>
-#include <JobSystem/IOThreads/IOThreads.h>
+#include <Volt-FileSystem/FileIORequest.h>
+#include <Volt-FileSystem/IOThreads/IOThreads.h>
 
 #include <CoreUtilities/Archive/ArchiveVersionRegistry.h>
 #include <CoreUtilities/Time/TimeUtility.h>
@@ -122,7 +122,7 @@ namespace Volt::RHI
 		
 		const uint64_t lastWriteTime = TimeUtility::GetLastWriteTime(shaderSpecification.shaderSourceInfo.sourceEntry.filepath);
 
-		IORequestResult<IORequestReadFile> ioResult = IOThreads::SubmitRequest<IORequestReadFile>("Read Cached Shader", cachedPath);
+		IORequestResult<IORequestReadFile_FileReader> ioResult = IOThreads::SubmitRequest<IORequestReadFile_FileReader>("Read Cached Shader", cachedPath);
 		FileReader& fileReader = ioResult.GetResult();
 
 		if (ioResult.GetResultCode() == IORequestResultCode::Failure)
@@ -188,7 +188,7 @@ namespace Volt::RHI
 
 		archive << cachedShader;
 
-		IOThreads::SubmitRequest<IORequestWriteFile>("Write Cached Shader", std::move(archive));
+		IOThreads::SubmitRequest<IORequestWriteFile_FileWriter>("Write Cached Shader", std::move(archive));
 	}
 
 	std::filesystem::path ShaderCache::GetCachedFilePath(const ShaderCompiler::Specification& shaderSpec) const

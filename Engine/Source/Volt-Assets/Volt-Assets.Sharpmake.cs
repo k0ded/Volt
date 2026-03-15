@@ -27,6 +27,7 @@ namespace VoltSharpmake
 			conf.AddPublicDependency<VoltCore>(target);
 			conf.AddPublicDependency<VoltRenderer>(target);
 			conf.AddPublicDependency<VoltMaterialGraph>(target);
+			conf.AddPublicDependency<VoltFileSystem>(target);
 
 			conf.AddPrivateDependency<stb_image>(target);
 			conf.AddPrivateDependency<FbxSDK>(target);

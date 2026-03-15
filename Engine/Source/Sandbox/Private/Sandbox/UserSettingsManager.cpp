@@ -6,10 +6,11 @@
 
 #include <WindowModule/WindowManager.h>
 
+#include <Volt-FileSystem/FileUtility.h>
+
 #include <CoreUtilities/JSON/CommonJSONSerialization.h>
 #include <CoreUtilities/JSON/JSONWriter.h>
 #include <CoreUtilities/JSON/JSONReader.h>
-#include <CoreUtilities/FileIO/FileUtility.h>
 
 inline static const std::filesystem::path s_userSettingsPath = "User/UserSettings.json";
 
@@ -140,8 +141,8 @@ void UserSettingsManager::SaveUserSettings()
 
 	jsonWriter.EndDocument();
 
-	const std::string prettyJSON = jsonWriter.GetPrettyJSON();
-	FileUtility::WriteStringToFile(s_userSettingsPath, prettyJSON, true);
+	std::string prettyJSON = jsonWriter.GetPrettyJSON();
+	FileUtility::WriteStringToFile(s_userSettingsPath, std::move(prettyJSON), true);
 }
 
 void UserSettingsManager::SetupPanels()

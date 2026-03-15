@@ -4,12 +4,12 @@
 #include "Volt-Assets/MaterialCompiler.h"
 
 #include <Volt-Platforms/Platform.h>
+#include <Volt-FileSystem/FileUtility.h>
+
 #include <Volt-Core/Console/ConsoleVariableRegistry.h>
 #include <Volt-Core/Project/ProjectManager.h>
 
 #include <JobSystem/JobSystem.h>
-
-#include <CoreUtilities/FileIO/FileUtility.h>
 
 namespace Volt
 {

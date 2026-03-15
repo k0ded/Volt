@@ -1,9 +1,8 @@
-#include "jspch.h"
-
-#include "JobSystem/IOThreads/IOThreads.h"
-#include "JobSystem/JobSystem.h"
+#include "Volt-FileSystem/IOThreads/IOThreads.h"
 
 #include <Volt-Platforms/Platform.h>
+
+#include <JobSystem/JobSystem.h>
 
 #include <CoreUtilities/Profiling/Profiling.h>
 
@@ -42,7 +41,7 @@ namespace Volt
 
 	void IOThreads::AllocateThreads()
 	{
-		const uint32_t numIOThreads = PlatformMisc::GetNumberOfLogicalCores();
+		const uint32_t numIOThreads = PlatformMisc::GetNumberOfPhysicalCores();
 
 		for (uint32_t i = 0; i < numIOThreads; ++i)
 		{

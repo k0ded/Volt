@@ -6,11 +6,11 @@
 #include <Volt-Application/UI/UIUtility.h>
 
 #include <Volt-Core/ConfigManager.h>
+#include <Volt-FileSystem/FileUtility.h>
 
 #include <SubSystem/SubSystemManager.h>
 
 #include <CoreUtilities/JSON/JSONWriter.h>
-#include <CoreUtilities/FileIO/FileUtility.h>
 #include <CoreUtilities/Archive/MemoryArchive.h>
 
 #include <fstream>

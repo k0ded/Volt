@@ -8,10 +8,10 @@
 #include <Volt-Application/Application.h>
 
 #include <Volt-Platforms/Platform.h>
+#include <Volt-FileSystem/FileUtility.h>
 
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/JSON/JSONReader.h>
-#include <CoreUtilities/FileIO/FileUtility.h>
 
 std::filesystem::path GetProjectPath(const Volt::CommandLineBuilder& commandLineBuilder)
 {
@@ -45,12 +45,18 @@ std::filesystem::path GetProjectPath(const Volt::CommandLineBuilder& commandLine
 bool PeekProjectVersionIsDeprecated(const std::filesystem::path& projectPath)
 {
 	std::string jsonString;
-	if (!FileUtility::ReadStringFromFile(projectPath, jsonString))
+
+	std::ifstream stream(projectPath, std::ios::in | std::ios::binary | std::ios::ate);
+	if (!stream.is_open())
 	{
 		const std::string error = std::format("Failed to open file: {0}!", projectPath.string());
 		throw std::runtime_error(error.c_str());
 		return false;
 	}
+
+	jsonString.resize(stream.tellg());
+	stream.seekg(0);
+	stream.read(jsonString.data(), jsonString.size());
 
 	JSONReader jsonReader;
 	if (!jsonReader.Parse(jsonString))

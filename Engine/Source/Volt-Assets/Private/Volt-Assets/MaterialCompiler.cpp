@@ -14,6 +14,7 @@
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <Volt-Core/Project/ProjectManager.h>
+#include <Volt-FileSystem/FileUtility.h>
 
 #include <AssetSystem/AssetManager.h>
 
@@ -21,7 +22,6 @@
 
 #include <CoreUtilities/Time/ScopedTimer.h>
 #include <CoreUtilities/Profiling/Profiling.h>
-#include <CoreUtilities/FileIO/FileUtility.h>
 
 VT_DEFINE_LOG_CATEGORY(LogMaterialCompiler);
 
