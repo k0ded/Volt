@@ -9,6 +9,17 @@
 
 namespace Circuit
 {
+	//void WindowWidget::OnLayout(const glm::vec2& allotedSize)
+	//{
+	//	VT_ASSERT_MSG(allotedSize.x != -1 && allotedSize.y != -1, "WindowWidget cannot be given adaptive size");
+
+	//	for (Ref<Widget> child : GetChildren())
+	//	{
+	//		child->OnLayout(allotedSize);
+	//	}
+
+	//	return allotedSize;
+	//}
 	void WindowWidget::Build(const Arguments& args)
 	{
 		m_content = args._Content;
@@ -16,7 +27,7 @@ namespace Circuit
 		auto layout = CreateWidget(LayoutWidget).Orientation(LayoutOrientation::Vertical);
 
 
-		layout->AddFixedSlice(BuildTitlebar(), 100);
+		layout->AddFixedSlice(BuildTitlebar(), 30);
 
 		if (m_content)
 		{
@@ -26,10 +37,24 @@ namespace Circuit
 		AddChildWidget(layout);
 	}
 
+	void WindowWidget::OnPaint(CircuitPainter& painter)
+	{
+		const CircuitColor windowBgColor(59, 59, 59);
+
+		painter.AddRect(0, 0, painter.GetAllotedSize().x, painter.GetAllotedSize().y, windowBgColor);
+
+		CompoundWidget::OnPaint(painter);
+	}
+
 	std::shared_ptr<LayoutWidget> WindowWidget::BuildTitlebar()
 	{
 		//Window titlebar
 		auto titlebar = CreateWidget(LayoutWidget).Orientation(LayoutOrientation::Horizontal);
+
+		titlebar->AddFlexibleSlice(CreateWidget(ButtonWidget).MinSize(30), 2);
+		titlebar->AddFixedSlice(CreateWidget(ButtonWidget), 30, 2);
+		titlebar->AddFixedSlice(CreateWidget(ButtonWidget), 30, 2);
+		titlebar->AddFixedSlice(CreateWidget(ButtonWidget), 30, 2);
 
 		//titlebar->AddFlexibleSlice(CreateWidget(TextWidget)
 		//	.Text("WINDOW TITLE!")

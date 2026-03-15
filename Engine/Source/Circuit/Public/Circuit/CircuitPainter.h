@@ -15,12 +15,14 @@ namespace Circuit
 	class CircuitPainter
 	{
 	public:
-		CircuitPainter(bool shouldCalculateBounds) : m_calculateBounds(shouldCalculateBounds) {};
+		CircuitPainter(const Volt::Rect& allotedScreenArea)
+			: m_allottedScreenArea(allotedScreenArea), m_basePainter(this)
+		{};
 
 
 		~CircuitPainter() = default;
 
-		const Volt::Rect& GetAllotedArea() const;
+		glm::vec2 GetAllotedSize() const;
 
 		VT_INLINE void AddWidget(Ref<Widget> widget, float x, float y, float width, float height) { AddWidget(widget,Volt::Rect(x, y, width, height)); }
 		VT_INLINE void AddWidget(Ref<Widget> widget, const glm::vec2& position, const glm::vec2& size){AddWidget(widget, Volt::Rect(position, size));}
@@ -32,15 +34,18 @@ namespace Circuit
 
 		std::vector<CircuitDrawCommand> GetCommands();
 	private:
-		CircuitPainter(CircuitPainter* basePainter, const Volt::Rect& allotedArea) :
-			m_allottedArea(allotedArea),
+		CircuitPainter(CircuitPainter* basePainter, const Volt::Rect& allotedScreenArea) :
+			m_allottedScreenArea(allotedScreenArea),
 			m_basePainter(basePainter)
 		{};
-		VT_INLINE CircuitPainter CreateSubPainter(const Volt::Rect& allotedArea){	return CircuitPainter(m_basePainter ? m_basePainter : this, allotedArea); }
+		VT_INLINE CircuitPainter CreateSubPainter(const Volt::Rect& allotedScreenArea){	return CircuitPainter(m_basePainter ? m_basePainter : this, allotedScreenArea); }
+
+		glm::vec2 ToPixelPos(const glm::vec2& localPos);
+		void AddDrawCommand(CircuitDrawCommand&& command);
 
 		std::vector<CircuitDrawCommand> m_drawCommands;
 
-		Volt::Rect m_allottedArea;
+		Volt::Rect m_allottedScreenArea;
 
 		CircuitPainter* m_basePainter = nullptr;
 

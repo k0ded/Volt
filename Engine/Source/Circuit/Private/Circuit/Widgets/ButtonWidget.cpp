@@ -7,12 +7,10 @@
 #include <InputModule/Events/MouseEvents.h>
 
 Circuit::ButtonWidget::ButtonWidget()
-{
-}
+{}
 
 Circuit::ButtonWidget::~ButtonWidget()
-{
-}
+{}
 
 void Circuit::ButtonWidget::Build(const Arguments& args)
 {
@@ -28,29 +26,47 @@ void Circuit::ButtonWidget::Build(const Arguments& args)
 	m_minSize = args._MinSize;
 }
 
-glm::vec2 Circuit::ButtonWidget::OnLayout(const glm::vec2& allotedSize)
+void Circuit::ButtonWidget::OnLayout(const glm::vec2& allotedSize)
+{
+	//glm::vec2 result;
+
+	//if (m_content)
+	//{
+	//	result = m_content->OnLayout(allotedSize);
+	//}
+	//else
+	//{
+	//	//if we dont have content, take the whole area given
+	//	result = allotedSize;
+
+	//	//but if we are given a flexible area, shrink to min size
+	//	if (result.x == -1)
+	//	{
+	//		result.x  = m_minSize.x;
+	//	}
+
+	//	if (result.y == -1)
+	//	{
+	//		result.y = m_minSize.y;
+	//	}
+	//}
+
+	//m_size = result;
+	//return result;
+}
+
+glm::vec2 Circuit::ButtonWidget::GetDesiredSize()
 {
 	glm::vec2 result;
 
 	if (m_content)
 	{
-		result = m_content->OnLayout(allotedSize);
+		result = m_content->GetDesiredSize();
 	}
 	else
 	{
 		//if we dont have content, take the whole area given
-		result = allotedSize;
-
-		//but if we are given a flexible area, shrink to min size
-		if (result.x == -1)
-		{
-			result.x  = m_minSize.x;
-		}
-
-		if (result.y == -1)
-		{
-			result.y = m_minSize.y;
-		}
+		result = { -1,-1 };
 	}
 
 	m_size = result;
@@ -72,31 +88,31 @@ void Circuit::ButtonWidget::OnPaint(CircuitPainter& painter)
 	{
 		buttonColor = &hoveredColor;
 	}
-	painter.AddRect(0, 0, m_size.x, m_size.y, *buttonColor);
+	painter.AddRect(0, 0, painter.GetAllotedSize().x, painter.GetAllotedSize().y, *buttonColor);
 
 	if (m_content)
 	{
-		painter.AddWidget(m_content, 0, 0, m_size.x, m_size.y);
+		painter.AddWidget(m_content, 0, 0, painter.GetAllotedSize().x, painter.GetAllotedSize().y);
 	}
 }
 
-void Circuit::ButtonWidget::OnBeginHover()
+void Circuit::ButtonWidget::OnBeginHover(const WidgetInteractionData& interactionData)
 {
 	m_hovered = true;
 }
 
-void Circuit::ButtonWidget::OnEndHover()
+void Circuit::ButtonWidget::OnEndHover(const WidgetInteractionData& interactionData)
 {
 	m_hovered = false;
 	m_pressed = false;
 }
 
-void Circuit::ButtonWidget::OnPressed()
+void Circuit::ButtonWidget::OnPressed(const WidgetInteractionData& interactionData)
 {
 	m_pressed = true;
 }
 
-void Circuit::ButtonWidget::OnReleased()
+void Circuit::ButtonWidget::OnReleased(const WidgetInteractionData& interactionData)
 {
 	m_pressed = false;
 }

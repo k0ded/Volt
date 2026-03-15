@@ -11,6 +11,7 @@
 
 #include <RenderCore/Shader/DefaultShaders.h>
 #include <RenderCore/SamplerStateCache.h>
+#include <RenderCore/DefaultBlendStates.h>
 
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Graphics/GraphicsContext.h>
@@ -76,6 +77,7 @@ namespace Circuit
 		renderGraph.Execute();
 	}
 
+
 	struct CircuitPrimitivesPS : public GlobalShader
 	{
 		DECLARE_GLOBAL_SHADER(CircuitPrimitivesPS)
@@ -133,6 +135,7 @@ namespace Circuit
 			pipelineState.cullMode = RHI::CullMode::None;
 			pipelineState.depthMode = RHI::DepthMode::None;
 			pipelineState.renderTargets = passParameters->PS.renderTargets;
+			pipelineState.attachmentBlendStates[0] = Volt::DefaultBlendStates::Alpha();
 
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(passParameters->PS.RenderSize.x, passParameters->PS.RenderSize.y, passParameters->PS.renderTargets);
 

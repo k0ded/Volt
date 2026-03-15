@@ -12,43 +12,42 @@
 
 namespace Circuit
 {
-
-	const Volt::Rect& CircuitPainter::GetAllotedArea() const
+	glm::vec2 CircuitPainter::GetAllotedSize() const
 	{
-		return m_allottedArea;
+		return m_allottedScreenArea.GetSize();
 	}
 
-	void CircuitPainter::AddWidget(Ref<Widget> widget, const Volt::Rect& allotedArea)
+	void CircuitPainter::AddWidget(Ref<Widget> widget, const Volt::Rect& allotedLocalArea)
 	{
-		Volt::Rect subAllotedArea = Volt::Rect(allotedArea.GetPosition() + m_allottedArea.GetPosition(), allotedArea.GetSize());
-		CircuitPainter subPainter = CreateSubPainter(subAllotedArea);
+		Volt::Rect subAllotedScreenArea = Volt::Rect(m_allottedScreenArea.GetPosition() + allotedLocalArea.GetPosition(), allotedLocalArea.GetSize());
+		CircuitPainter subPainter = CreateSubPainter(subAllotedScreenArea);
 		widget->OnPaint(subPainter);
 
-		if (m_calculateBounds)
+		std::vector<CircuitDrawCommand> commands = subPainter.GetCommands();
+
+		Volt::Rect bounds = Volt::Rect(allotedLocalArea.GetPosition(), glm::vec2(0.f, 0.f));
+
+		for (CircuitDrawCommand& command : commands)
 		{
-			std::vector<CircuitDrawCommand> commands = subPainter.GetCommands();
-
-			Volt::Rect bounds = Volt::Rect(allotedArea.GetPosition(), glm::vec2(0.f, 0.f));
-
-			for (CircuitDrawCommand& command : commands)
+			switch (command.type)
 			{
-				switch (command.type)
-				{
-					case CircuitPrimitiveType::Rect:
-						bounds.MergeRectIntoThis(Volt::Rect(command.pixelPos, command.radiusHalfSize * 2.f));
-						break;
-
-					case CircuitPrimitiveType::Circle:
-						bounds.MergeRectIntoThis(Volt::Rect(command.pixelPos - glm::vec2(command.radiusHalfSize.x), command.radiusHalfSize.x * 2.f));
-						break;
-					case CircuitPrimitiveType::TextCharacter:
-						bounds.MergeRectIntoThis(Volt::Rect(command.minMaxPx.x, command.minMaxPx.y, glm::abs(command.minMaxPx.z - command.minMaxPx.x), glm::abs(command.minMaxPx.w - command.minMaxPx.y)));
-						break;
-				}
+				case CircuitPrimitiveType::Rect:
+					bounds.MergeRectIntoThis(Volt::Rect(command.pixelPos, command.radiusHalfSize * 2.f));
+					break;
+				case CircuitPrimitiveType::Circle:
+					bounds.MergeRectIntoThis(Volt::Rect(command.pixelPos - glm::vec2(command.radiusHalfSize.x), command.radiusHalfSize.x * 2.f));
+					break;
+				case CircuitPrimitiveType::TextCharacter:
+					bounds.MergeRectIntoThis(Volt::Rect(command.minMaxPx.x, command.minMaxPx.y, glm::abs(command.minMaxPx.z - command.minMaxPx.x), glm::abs(command.minMaxPx.w - command.minMaxPx.y)));
+					break;
 			}
-
-			//widget->SetBounds(bounds);
 		}
+
+		//bounds are local here, transform them into screen bounds
+		bounds.SetPosition(bounds.GetPosition() + m_allottedScreenArea.GetPosition());
+
+		widget->SetBounds(bounds);
+		widget->SetAllotedScreenArea(subAllotedScreenArea);
 	}
 
 	void CircuitPainter::AddRect(float x, float y, float width, float height, CircuitColor color, float rotation, float scale)
@@ -56,8 +55,7 @@ namespace Circuit
 		CircuitDrawCommand command;
 		command.type = CircuitPrimitiveType::Rect;
 
-		command.pixelPos.x = x + m_allottedArea.GetPosition().x;
-		command.pixelPos.y = y + m_allottedArea.GetPosition().y;
+		command.pixelPos = ToPixelPos({ x,y });
 
 		command.radiusHalfSize.x = width / 2;
 		command.radiusHalfSize.y = height / 2;
@@ -68,20 +66,14 @@ namespace Circuit
 
 		command.color = color;
 
-		std::vector<CircuitDrawCommand>* drawCommandsToAppendTo = &m_drawCommands;
-		if (m_basePainter)
-		{
-			drawCommandsToAppendTo = &m_basePainter->m_drawCommands;
-		}
-		drawCommandsToAppendTo->push_back(command);
+		AddDrawCommand(std::move(command));
 	}
 
 	void CircuitPainter::AddCircle(float x, float y, float radius, CircuitColor color, float scale)
 	{
 		CircuitDrawCommand command;
 		command.type = CircuitPrimitiveType::Circle;
-		command.pixelPos.x = x + m_allottedArea.GetPosition().x;
-		command.pixelPos.y = y + m_allottedArea.GetPosition().y;
+		command.pixelPos = ToPixelPos({ x,y });
 
 		command.radiusHalfSize.x = radius;
 
@@ -90,24 +82,20 @@ namespace Circuit
 		command.color = color;
 
 
-		std::vector<CircuitDrawCommand>* drawCommandsToAppendTo = &m_drawCommands;
-		if (m_basePainter)
-		{
-			drawCommandsToAppendTo = &m_basePainter->m_drawCommands;
-		}
-		drawCommandsToAppendTo->push_back(command);
+		AddDrawCommand(std::move(command));
 	}
 
 	void CircuitPainter::AddText(float inX, float inY, const std::string& text, Ref<Volt::Font> font, float maxWidth, CircuitColor color, float scale)
 	{
-		const float x = inX +m_allottedArea.GetPosition().x;
-		const float y = inY +m_allottedArea.GetPosition().y;
+		const glm::vec2 pixelPos = ToPixelPos({ inX, inY });
+		const float x = pixelPos.x;
+		const float y = pixelPos.y;
 
 		if (text.empty())
 		{
 			return;
 		}
-		
+
 		std::u32string utf32string = ::Utility::To_UTF32(text);
 
 		auto& fontGeom = font->GetMSDFData()->fontGeometry;
@@ -217,28 +205,25 @@ namespace Circuit
 
 				l *= texelWidth, b *= texelHeight, r *= texelWidth, t *= texelHeight;
 
-				std::vector<CircuitDrawCommand>* drawCommandsToAppendTo = &m_drawCommands;
-				if (m_basePainter)
-				{
-					drawCommandsToAppendTo = &m_basePainter->m_drawCommands;
-				}
 
-				CircuitDrawCommand& cmd = drawCommandsToAppendTo->emplace_back();
-				cmd.type = CircuitPrimitiveType::TextCharacter;
-				cmd.pixelPos.x = x;
-				cmd.pixelPos.y = y;
-				cmd.color = color;
-				cmd.scale = scale;
+				CircuitDrawCommand command;
+				command.type = CircuitPrimitiveType::TextCharacter;
+				command.pixelPos.x = x;
+				command.pixelPos.y = y;
+				command.color = color;
+				command.scale = scale;
 
-				cmd.minMaxPx.x = static_cast<float>(pl) * scale + x;
-				cmd.minMaxPx.y = static_cast<float>(pb) * scale + y;
-				cmd.minMaxPx.z = static_cast<float>(pr) * scale + x;
-				cmd.minMaxPx.w = static_cast<float>(pt) * scale + y;
+				command.minMaxPx.x = static_cast<float>(pl) * scale + x;
+				command.minMaxPx.y = static_cast<float>(pb) * scale + y;
+				command.minMaxPx.z = static_cast<float>(pr) * scale + x;
+				command.minMaxPx.w = static_cast<float>(pt) * scale + y;
 
-				cmd.minMaxUV.x = static_cast<float>(l);
-				cmd.minMaxUV.y = static_cast<float>(b);
-				cmd.minMaxUV.z = static_cast<float>(r);
-				cmd.minMaxUV.w = static_cast<float>(t);
+				command.minMaxUV.x = static_cast<float>(l);
+				command.minMaxUV.y = static_cast<float>(b);
+				command.minMaxUV.z = static_cast<float>(r);
+				command.minMaxUV.w = static_cast<float>(t);
+
+				AddDrawCommand(std::move(command));
 
 				//cmd.texture = font->GetAtlas()->GetImage()->GetHandle<Volt::ResourceHandle>(); TODO: BROKEN
 
@@ -253,4 +238,24 @@ namespace Circuit
 	{
 		return m_drawCommands;
 	}
+	glm::vec2 CircuitPainter::ToPixelPos(const glm::vec2& localPos)
+	{
+		return localPos + m_allottedScreenArea.GetPosition() - m_basePainter->m_allottedScreenArea.GetPosition();
+	}
+	void CircuitPainter::AddDrawCommand(CircuitDrawCommand&& command)
+	{
+		//std::vector<CircuitDrawCommand>* drawCommandsToAppendTo = &m_drawCommands;
+		//if (m_basePainter)
+		//{
+		//	drawCommandsToAppendTo = &m_basePainter->m_drawCommands;
+		//}
+		//drawCommandsToAppendTo->push_back(command);
+
+		m_drawCommands.push_back(CircuitDrawCommand(command));
+		if (m_basePainter != this)
+		{
+			m_basePainter->m_drawCommands.push_back(command);
+		}
+	}
+
 }

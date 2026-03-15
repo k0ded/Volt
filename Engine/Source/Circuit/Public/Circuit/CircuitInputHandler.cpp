@@ -6,17 +6,22 @@
 #include "Circuit/CircuitManager.h"
 #include "Circuit/Window/CircuitWindow.h"
 #include "Circuit/Reply.h"
+#include "Circuit/WidgetInteractionData.h"
 
 #include <InputModule/Events/MouseEvents.h>
 
 #include <CoreUtilities/Containers/Queue.h>
-
 #include <CoreUtilities/Delegates/Delegate.h>
+
+#include <WindowModule/Window.h>
+
+#include <LogModule/Log.h>
 
 namespace Circuit
 {
 	void Circuit::CircuitInputHandler::Init()
 	{
+		m_isDraggingWidget = false;
 		RegisterEventListeners();
 	}
 
@@ -30,6 +35,7 @@ namespace Circuit
 	Vector<Ref<Widget>> CircuitInputHandler::GetWidgetsUnderCursor()
 	{
 		Vector<Ref<Widget>> widgetsUnderCursor;
+		Vector<Ref<Widget>> widgetsToCheck;
 
 		Ref<CircuitWindow> window = GetHoveredWindow();
 		if (!window)
@@ -41,20 +47,24 @@ namespace Circuit
 		{
 			return Vector<Ref<Widget>>();
 		}
-		glm::vec2 mouseRelativeToWindow = m_mousePos - glm::vec2(window->GetPosition());
 
-		if (windowWidget->GetBounds().IsPointInside(mouseRelativeToWindow))
+		if (windowWidget->GetAllotedScreenArea().IsPointInside(m_mousePos))
 		{
-			widgetsUnderCursor.push_back(windowWidget);
+			widgetsToCheck.push_back(windowWidget);
 		}
 
 		//keep adding widgets that we find are under the cursor
-		for (int i = 0; i < widgetsUnderCursor.size(); i++)
+		for (int i = 0; i < widgetsToCheck.size(); i++)
 		{
-			Ref<Widget> checkingWidget = widgetsUnderCursor[i];
+			Ref<Widget> checkingWidget = widgetsToCheck[i];
 			if (!checkingWidget)
 			{
 				continue;
+			}
+
+			if (checkingWidget->GetBounds().IsPointInside(m_mousePos))
+			{
+				widgetsUnderCursor.push_back(checkingWidget);
 			}
 
 			if (!checkingWidget->HasChildren())
@@ -62,14 +72,16 @@ namespace Circuit
 				continue;
 			}
 
-			for (Ref<Widget> child : *checkingWidget->GetChildren())
+			for (Ref<Widget> child : checkingWidget->GetChildren())
 			{
-				if (child->GetBounds().IsPointInside(mouseRelativeToWindow))
+				if (child->GetAllotedScreenArea().IsPointInside(m_mousePos))
 				{
-					widgetsUnderCursor.push_back(child);
+					widgetsToCheck.push_back(child);
 				}
 			}
 		}
+
+
 		return widgetsUnderCursor;
 	}
 
@@ -96,7 +108,11 @@ namespace Circuit
 	Ref<Widget> CircuitInputHandler::GetHoveredWidget()
 	{
 		Vector<Ref<Widget>> widgetsUnderCursor = GetWidgetsUnderCursor();
-		for (int i = 0; i < widgetsUnderCursor.size(); i++)
+
+		VT_LOG(Info, "Num Widgets Under Cursor: {}", widgetsUnderCursor.size());
+
+		//the bottommost widget will be first in the list, traverse it backwards
+		for (int32_t i = static_cast<int32_t>(widgetsUnderCursor.size()) - 1; i >= 0; i--)
 		{
 			Ref<Widget> widget = widgetsUnderCursor[i];
 			if (widget->IsHittestInvisible())
@@ -110,22 +126,52 @@ namespace Circuit
 
 	bool Circuit::CircuitInputHandler::OnMouseMoved(Volt::MouseMovedEvent& e)
 	{
-		m_mousePos = { e.GetX(), e.GetY() };
+		m_mousePos = { e.GetWindow().GetPosition().first + e.GetX(), e.GetWindow().GetPosition().second + e.GetY() };
 
 		Ref<Widget> hoveredWidget = GetHoveredWidget();
 
+		if (m_draggingWidget)
+		{
+			const glm::vec2 dragDelta = m_mousePos - m_startDragMousePos;
+			if (!m_isDraggingWidget && 
+				dragDelta.length() >= MIN_DRAG_DELTA_THRESHOLD )
+			{
+				WidgetInteractionData startDragInteractionData;
+				startDragInteractionData.mouseButton = m_dragMouseButton;
+				startDragInteractionData.mousePos = m_startDragMousePos;
+
+				m_draggingWidget->OnBeginDrag(startDragInteractionData);
+
+				m_isDraggingWidget = true;
+			}
+
+			if (m_isDraggingWidget)
+			{
+				WidgetInteractionData interactionData;
+				interactionData.mouseButton = m_dragMouseButton;
+				interactionData.mousePos = m_mousePos;
+				interactionData.mouseDragDelta = dragDelta;
+
+				m_draggingWidget->OnDrag(interactionData);
+			}
+		}
+
 		if (hoveredWidget != m_prevHoveredWidget)
 		{
+			WidgetInteractionData interactionData;
+			interactionData.mouseButton = Volt::InputCode::Unknown;
+			interactionData.mousePos = m_mousePos;
+
 			if (m_prevHoveredWidget)
 			{
-				m_prevHoveredWidget->OnEndHover();
+				m_prevHoveredWidget->OnEndHover(interactionData);
 			}
 
 			m_prevHoveredWidget = hoveredWidget;
 
 			if (m_prevHoveredWidget)
 			{
-				m_prevHoveredWidget->OnBeginHover();
+				m_prevHoveredWidget->OnBeginHover(interactionData);
 			}
 		}
 
@@ -136,16 +182,43 @@ namespace Circuit
 	{
 		if (m_prevHoveredWidget)
 		{
-			m_prevHoveredWidget->OnPressed();
+			WidgetInteractionData interactionData;
+			interactionData.mouseButton = e.GetMouseButton();
+			interactionData.mousePos = m_mousePos;
+
+			m_prevHoveredWidget->OnPressed(interactionData);
+
+			m_draggingWidget = m_prevHoveredWidget;
+			m_dragMouseButton = e.GetMouseButton();
 		}
 		return false;
 	}
 
 	bool Circuit::CircuitInputHandler::OnMouseButtonReleased(Volt::MouseButtonReleasedEvent& e)
 	{
+		if (e.GetMouseButton() == m_dragMouseButton && m_draggingWidget)
+		{
+			if (m_isDraggingWidget)
+			{
+				WidgetInteractionData startDragInteractionData;
+				startDragInteractionData.mouseButton = m_dragMouseButton;
+				startDragInteractionData.mousePos = m_mousePos;
+
+				m_draggingWidget->OnEndDrag(startDragInteractionData);
+
+				m_isDraggingWidget = false;
+			}
+
+			m_draggingWidget.Reset();
+		}
+
 		if (m_prevHoveredWidget)
 		{
-			m_prevHoveredWidget->OnReleased();
+			WidgetInteractionData interactionData;
+			interactionData.mouseButton = e.GetMouseButton();
+			interactionData.mousePos = m_mousePos;
+
+			m_prevHoveredWidget->OnReleased(interactionData);
 		}
 		return false;
 	}

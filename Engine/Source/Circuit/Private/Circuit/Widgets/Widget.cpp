@@ -3,6 +3,8 @@
 
 #include "CircuitPainter.h"
 
+#include <CoreUtilities/Containers/Vector.h>
+
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
 
@@ -24,6 +26,11 @@ namespace Circuit
 		m_NeedsRebuild = true;
 	}
 
+	Vector<std::shared_ptr<Widget>> Widget::GetChildren()
+	{
+		return Vector<std::shared_ptr<Widget>>();
+	}
+
 	bool Widget::IsRenderPrimitive() const
 	{
 		return m_IsRenderPrimitive;
@@ -32,6 +39,11 @@ namespace Circuit
 	RenderPrimitiveType Widget::GetRenderPrimitiveType() const
 	{
 		return m_RenderPrimitiveType;
+	}
+
+	void Widget::SetLocalPosition(const glm::vec2& localPos)
+	{
+		m_localPosition = localPos;
 	}
 
 }

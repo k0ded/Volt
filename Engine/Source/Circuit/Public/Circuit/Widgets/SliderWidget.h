@@ -16,7 +16,7 @@ namespace Volt
 DECLARE_DELEGATE_OneParam(OnFloatValueChangedDelegate, float /*NewValue*/);
 namespace Circuit
 {
-	class CIRCUIT_API SliderWidget : public Widget, public Volt::EventListener
+	class CIRCUIT_API SliderWidget : public Widget
 	{
 	public:
 		SliderWidget();
@@ -36,23 +36,25 @@ namespace Circuit
 
 		void Build(const Arguments& args);
 
+		virtual void OnLayout(const glm::vec2& allotedSize) override;
+
+		virtual glm::vec2 GetDesiredSize() override;
 		virtual void OnPaint(CircuitPainter& painter) override;
 
 		float GetValue() const;
-
 		float GetMinValue() const;
-
 		float GetMaxValue() const;
 
 		float GetValueNormalized();
+
+		virtual void OnPressed(const WidgetInteractionData& interactionData) override;
+		virtual void OnBeginDrag(const WidgetInteractionData& interactionData);
+		virtual void OnDrag(const WidgetInteractionData& interactionData);
+		virtual void OnEndDrag(const WidgetInteractionData& interactionData);
+
 	private:
-		void RegisterEventListeners();
 
-		bool OnMouseMoved(Volt::MouseMovedEvent& e);
-		bool OnMouseButtonPressed(Volt::MouseButtonPressedEvent& e);
-		bool OnMouseButtonReleased(Volt::MouseButtonReleasedEvent& e);
-
-		void SetValueAccordingToMousePos();
+		void SetValueAccordingToMousePos(const glm::vec2& mouseScreenPos);
 
 		bool m_dragging;
 
@@ -63,7 +65,6 @@ namespace Circuit
 
 		OnFloatValueChangedDelegate m_onValueChanged;
 
-		static constexpr uint32_t s_sliderWidth = 200;
 		static constexpr uint32_t s_sliderHeight = 10;
 		static constexpr uint32_t s_sliderHandleRadius = 10;
 	};

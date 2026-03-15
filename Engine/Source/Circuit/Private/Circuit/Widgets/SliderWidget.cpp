@@ -5,6 +5,7 @@
 #include "Circuit/CircuitColor.h"
 
 #include "Circuit/CircuitPainter.h"
+#include "Circuit/WidgetInteractionData.h"
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
@@ -17,12 +18,8 @@ namespace Circuit
 
 	SliderWidget::SliderWidget()
 	{
-		RegisterEventListeners();
-
 		m_dragging = false;
 	}
-
-
 	SliderWidget::~SliderWidget()
 	{
 		//m_Value->GetOnChangeDelegate().Remove(m_OnValueChangeHandle);
@@ -39,9 +36,20 @@ namespace Circuit
 		m_onValueChanged = args._OnValueChanged;
 	}
 
+	void SliderWidget::OnLayout(const glm::vec2& allotedSize)
+	{
+		//return glm::vec2(allotedSize.x, s_sliderHeight);
+	}
+
+	glm::vec2 SliderWidget::GetDesiredSize()
+	{
+		return { -1, s_sliderHeight };
+	}
+
 	void SliderWidget::OnPaint(CircuitPainter& painter)
 	{
-		const float leftRectWidth = s_sliderWidth * GetValueNormalized();
+		const float sliderWidth = painter.GetAllotedSize().x;
+		const float leftRectWidth = sliderWidth * GetValueNormalized();
 
 		const CircuitColor unfilledColor = 0x555555ff;
 		const CircuitColor filledColor = 0xffa500ff;
@@ -49,16 +57,16 @@ namespace Circuit
 
 
 		//left rect
-		painter.AddRect(GetX(), GetY(), leftRectWidth, s_sliderHeight, filledColor);
+		painter.AddRect(0, 0, leftRectWidth, s_sliderHeight, filledColor);
 
 		//right rect
-		painter.AddRect(GetX() + leftRectWidth, GetY(), s_sliderWidth - leftRectWidth, s_sliderHeight, unfilledColor);
+		painter.AddRect(leftRectWidth, 0, sliderWidth - leftRectWidth, s_sliderHeight, unfilledColor);
 
 		//handle outer
-		painter.AddCircle(GetX() + leftRectWidth, GetY() + s_sliderHeight/2, s_sliderHandleRadius, handleColor);
+		painter.AddCircle(leftRectWidth, s_sliderHeight / 2, s_sliderHandleRadius, handleColor);
 
 		//handle inner
-		painter.AddCircle(GetX() + leftRectWidth, GetY() + s_sliderHeight/2, (s_sliderHeight / 3), filledColor);
+		painter.AddCircle(leftRectWidth, s_sliderHeight / 2, (s_sliderHeight / 3), filledColor);
 
 	}
 
@@ -82,64 +90,52 @@ namespace Circuit
 		return (m_value.Get() - m_minValue) / (m_maxValue - m_minValue);
 	}
 
-	void SliderWidget::RegisterEventListeners()
+	void SliderWidget::OnPressed(const WidgetInteractionData& interactionData)
 	{
-		RegisterListener<Volt::MouseMovedEvent>(VT_BIND_EVENT_FN(SliderWidget::OnMouseMoved));
-		RegisterListener<Volt::MouseButtonPressedEvent>(VT_BIND_EVENT_FN(SliderWidget::OnMouseButtonPressed));
-		RegisterListener<Volt::MouseButtonReleasedEvent>(VT_BIND_EVENT_FN(SliderWidget::OnMouseButtonReleased));
-	}
-	bool SliderWidget::OnMouseMoved(Volt::MouseMovedEvent& e)
-	{
-		if (!m_dragging)
+		if (interactionData.mouseButton != Volt::InputCode::Mouse_LB)
 		{
-			return false;
+			return;
 		}
-
-		SetValueAccordingToMousePos();
-
-		return false;
-	}
-	bool SliderWidget::OnMouseButtonPressed(Volt::MouseButtonPressedEvent& e)
-	{
-		if (e.GetMouseButton() != Volt::InputCode::Mouse_LB)
-		{
-			return false;
-		}
-
-		/*if (GetBounds().IsPointInside(Volt::Input::GetMousePosition()))
-		{
-			m_dragging = true;
-			SetValueAccordingToMousePos();
-		}*/
-
-		return false;
-	}
-	bool SliderWidget::OnMouseButtonReleased(Volt::MouseButtonReleasedEvent& e)
-	{
-		if (e.GetMouseButton() != Volt::InputCode::Mouse_LB)
-		{
-			return false;
-		}
-
-		if (m_dragging)
-		{
-			m_dragging = false;
-		}
-
-		return false;
+		SetValueAccordingToMousePos(interactionData.mousePos);
 	}
 
-	void SliderWidget::SetValueAccordingToMousePos()
+	void SliderWidget::OnBeginDrag(const WidgetInteractionData& interactionData)
 	{
-		const glm::vec2 mousePos = Volt::Input::GetMousePosition();
-		//float clamped = GetBounds().ClampInsideX(mousePos.x);
+		if (interactionData.mouseButton != Volt::InputCode::Mouse_LB)
+		{
+			return;
+		}
+		m_dragging = true;
+	}
 
-		//const glm::vec2 topLeft = GetBounds().GetPosition();
-		//const glm::vec2 bottomRight = GetBounds().GetBottomRight();
+	void SliderWidget::OnDrag(const WidgetInteractionData & interactionData)
+	{
+		if (interactionData.mouseButton != Volt::InputCode::Mouse_LB)
+		{
+			return;
+		}
+		SetValueAccordingToMousePos(interactionData.mousePos);
+	}
+
+	void SliderWidget::OnEndDrag(const WidgetInteractionData & interactionData)
+	{
+		if (interactionData.mouseButton != Volt::InputCode::Mouse_LB)
+		{
+			return;
+		}
+		m_dragging = false;
+	}
+
+	void SliderWidget::SetValueAccordingToMousePos(const glm::vec2& mouseScreenPos)
+	{
+		float clamped = GetBounds().ClampInsideX(mouseScreenPos.x);
+
+		const glm::vec2 topLeft = GetBounds().GetPosition();
+		const glm::vec2 bottomRight = GetBounds().GetBottomRight();
 
 		// Calculate the normalized value (0 to 1)
-		//float valueNormalized = (clamped - topLeft.x) / (bottomRight.x - topLeft.x);
+		float valueNormalized = (clamped - topLeft.x) / (bottomRight.x - topLeft.x);
 
-		//m_onValueChanged.ExecuteIfBound(m_minValue + valueNormalized * (m_maxValue - m_minValue));
+		m_onValueChanged.ExecuteIfBound(m_minValue + valueNormalized * (m_maxValue - m_minValue));
 	}
 }

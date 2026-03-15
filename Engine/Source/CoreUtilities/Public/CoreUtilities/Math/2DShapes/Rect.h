@@ -26,12 +26,12 @@ namespace Volt
 		glm::vec2 GetPosition() const;
 		glm::vec2 GetSize() const;
 
-		glm::vec2 GetTopLeft();
-		glm::vec2 GetBottomRight();
+		glm::vec2 GetTopLeft() const;
+		glm::vec2 GetBottomRight() const;
 
-		float ClampInsideX(float value);
-		float ClampInsideY(float value);
-		glm::vec2 ClampInsideRect(glm::vec2 value);
+		float ClampInsideX(float value) const;
+		float ClampInsideY(float value) const;
+		glm::vec2 ClampInsideRect(glm::vec2 value) const;
 
 		// Setters
 		void SetPosition(const glm::vec2& position);

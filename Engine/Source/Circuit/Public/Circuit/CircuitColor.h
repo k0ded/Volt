@@ -7,7 +7,7 @@ public:
 	union
 	{
 		uint32_t m_Hex;
-		struct { uint8_t m_R, m_G, m_B, m_A; };
+		struct { uint8_t m_A, m_B, m_G, m_R; };
 	};
 
 	CIRCUIT_API CircuitColor(uint32_t hex = 0xFFFFFFFF);

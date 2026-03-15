@@ -23,7 +23,7 @@ namespace Circuit
 
 		CIRCUIT_API Volt::WindowHandle GetWindowHandle() const;
 
-		CIRCUIT_API glm::u32vec2 GetPosition() const;
+		CIRCUIT_API glm::i32vec2 GetPosition() const;
 		CIRCUIT_API glm::u32vec2 GetSize() const;
 		CIRCUIT_API void Resize(const glm::vec2& size);
 

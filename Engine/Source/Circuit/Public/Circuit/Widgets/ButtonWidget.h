@@ -23,14 +23,16 @@ namespace Circuit
 
 		void Build(const Arguments& args);
 
-		virtual glm::vec2 OnLayout(const glm::vec2& allotedSize) override;
+		virtual void OnLayout(const glm::vec2& allotedSize) override;
+		virtual glm::vec2 GetDesiredSize() override;
+
 		virtual void OnPaint(CircuitPainter& painter) override;
 
 
-		virtual void OnBeginHover();
-		virtual void OnEndHover();
-		virtual void OnPressed();
-		virtual void OnReleased();
+		virtual void OnBeginHover(const WidgetInteractionData& interactionData) override;
+		virtual void OnEndHover(const WidgetInteractionData& interactionData) override;
+		virtual void OnPressed(const WidgetInteractionData& interactionData) override;
+		virtual void OnReleased(const WidgetInteractionData& interactionData) override;
 	private:
 		Ref<Widget> m_content;
 

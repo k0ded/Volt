@@ -42,7 +42,7 @@ void CircuitSandbox::OnAttach()
 	//Volt::WindowManager::Get().GetMainWindow().Maximize();
 
 	Circuit::CircuitManager::Initialize();
-	Volt::WindowManager::Get().GetMainWindow().Resize(300, 500);
+	Volt::WindowManager::Get().GetMainWindow().Resize(500, 300);
 
 
 	m_isInitialized = true;

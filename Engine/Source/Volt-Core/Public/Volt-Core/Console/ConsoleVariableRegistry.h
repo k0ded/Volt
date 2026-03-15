@@ -3,6 +3,7 @@
 #include "Volt-Core/Config.h"
 
 #include <CoreUtilities/StringUtility.h>
+#include <CoreUtilities/Core.h>
 
 #include <unordered_map>
 

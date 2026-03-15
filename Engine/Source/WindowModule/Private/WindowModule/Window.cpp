@@ -492,7 +492,7 @@ namespace Volt
 
 		// Make sure that we don't end up in a recursive resize.
 		m_shouldSkipDispatchResizeEvent = true;
-		//glfwSetWindowSize(m_window, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight));
+		glfwSetWindowSize(m_window, static_cast<int32_t>(aWidth), static_cast<int32_t>(aHeight));
 
 		m_swapchain->Resize(aWidth, aHeight, m_data.vsync);
 	}

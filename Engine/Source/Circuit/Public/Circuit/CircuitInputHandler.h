@@ -6,6 +6,8 @@
 #include <CoreUtilities/Delegates/DelegateDeclarationHelpers.h>
 #include <EventSystem/EventListener.h>
 
+#include <InputModule/InputCodes.h>
+
 namespace Volt
 {
 	class MouseMovedEvent;
@@ -34,6 +36,14 @@ namespace Circuit
 
 		glm::vec2 m_mousePos;
 
+		//dragging
+		Weak<Widget> m_draggingWidget;
+		glm::vec2 m_startDragMousePos;
+		Volt::InputCode m_dragMouseButton;
+		bool m_isDraggingWidget;
+		static constexpr int32_t MIN_DRAG_DELTA_THRESHOLD = 5; // in pixels
+
 		Weak<Widget> m_prevHoveredWidget;
+
 	};
 }

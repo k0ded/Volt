@@ -25,12 +25,16 @@ namespace Circuit
 
 		void Build(const Arguments& args);
 
-		virtual glm::vec2 OnLayout(const glm::vec2& allotedSize) override;
+		virtual void OnLayout(const glm::vec2& allotedSize) override;
+		//take as much space as possible for now
+		virtual glm::vec2 GetDesiredSize() override { return { -1,-1 }; }
+
+
 		virtual void OnPaint(CircuitPainter& painter) override;
 
-		void AddFixedSlice(Ref<Widget> widget, float size);
+		void AddFixedSlice(Ref<Widget> widget, float size, float margin = 0);
 
-		void AddFlexibleSlice(Ref<Widget> contentWidget);
+		void AddFlexibleSlice(Ref<Widget> contentWidget, float margin = 0);
 
 		virtual bool IsHittestInvisible() const override { return true; };
 
@@ -39,7 +43,8 @@ namespace Circuit
 		struct Slice
 		{
 			Weak<Widget> widget;
-			float size = -1; // for flexible slots, this will be set in OnLayout
+			float size = -1;
+			float margin = 0; 
 			bool isFlexible;
 		};
 		Vector<Slice> m_slices;

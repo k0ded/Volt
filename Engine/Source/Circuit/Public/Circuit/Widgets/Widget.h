@@ -4,8 +4,12 @@
 
 #include <CoreUtilities/Math/2DShapes/Rect.h>
 
+#include <glm/fwd.hpp>
+
 namespace Circuit
 {
+	struct WidgetInteractionData;
+
 	class CircuitPainter;
 	enum class RenderPrimitiveType
 	{
@@ -19,41 +23,41 @@ namespace Circuit
 		virtual ~Widget() {};
 
 	public:
-		void SetX(float x) { m_LocalXPosition = x; }
-		float GetX() const { return m_LocalXPosition; }
-
-		void SetY(float y) { m_LocalYPosition = y; }
-		float GetY() const { return m_LocalYPosition; }
-
-
 		void BuildBaseArgs(const CircuitBaseArgs& baseArgs);
 
 		virtual void OnPaint(CircuitPainter& painter);
-		//AllotedSize on specific axis will be -1 if it depends on the child widget for that size
-		//Returns the size of the widget if placed in the given alloted area
-		virtual glm::vec2 OnLayout(const glm::vec2& allotedSize) { return glm::vec2(0, 0); };
 
-		Volt::Rect GetBounds() { return m_bounds; }
+		virtual void OnLayout(const glm::vec2& allotedSize) = 0;
+		virtual glm::vec2 GetDesiredSize() = 0;
+
+		const Volt::Rect& GetBounds() { return m_bounds; }
+		void SetBounds(const Volt::Rect& newBounds) { m_bounds = newBounds; }
+
+		const Volt::Rect& GetAllotedScreenArea() { return m_allotedScreenArea; }
+		void SetAllotedScreenArea(const Volt::Rect& newAllotedScreenArea) { m_allotedScreenArea = newAllotedScreenArea; }
 
 		void RequestRebuild();
 
 		virtual bool HasChildren() const { return false; }
-		virtual const Vector<std::shared_ptr<Widget>>* GetChildren() const { return nullptr;}
+		virtual Vector<Ref<Widget>> GetChildren();
 		bool IsRenderPrimitive() const;
 		RenderPrimitiveType GetRenderPrimitiveType() const;
 
 		Weak<Widget> GetParent() { return m_parentWidget; }
 		virtual bool IsHittestInvisible() const { return false; };
 
-		virtual void OnBeginHover() {}
-		virtual void OnEndHover() {}
-		virtual void OnPressed() {}
-		virtual void OnReleased() {}
+		virtual void OnBeginHover(const WidgetInteractionData& interactionData) {}
+		virtual void OnEndHover(const WidgetInteractionData& interactionData) {}
+		virtual void OnPressed(const WidgetInteractionData& interactionData) {}
+		virtual void OnReleased(const WidgetInteractionData& interactionData) {}
+		virtual void OnBeginDrag(const WidgetInteractionData& interactionData) {}
+		virtual void OnDrag(const WidgetInteractionData& interactionData){}
+		virtual void OnEndDrag(const WidgetInteractionData& interactionData){}
 
 
+		void SetLocalPosition(const glm::vec2& localPos);
 	protected:
-		template<class WidgetType>
-		inline Ref<WidgetType>& AddChildWidget(Ref<WidgetType> Widget);
+
 
 		bool m_IsRenderPrimitive = false;
 		RenderPrimitiveType m_RenderPrimitiveType;
@@ -61,12 +65,9 @@ namespace Circuit
 
 		Weak<Widget> m_parentWidget;
 	private:
-		Volt::Rect m_bounds = Volt::Rect(0,0,0,0);
-
-		float m_LocalXPosition = 0;
-		float m_LocalYPosition = 0;
+		glm::vec2 m_localPosition;
+		Volt::Rect m_bounds = Volt::Rect(0, 0, -1, -1);
+		Volt::Rect m_allotedScreenArea = Volt::Rect(0, 0, -1, -1);
 		bool m_NeedsRebuild;
-
-
 	};
 }

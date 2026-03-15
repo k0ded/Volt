@@ -365,7 +365,7 @@ namespace Volt
 
 	bool Application::OnWindowResizeEvent(class WindowResizeEvent& e)
 	{
-		/*if (&e.GetWindow() == &WindowManager::Get().GetMainWindow())
+		if (&e.GetWindow() == &WindowManager::Get().GetMainWindow())
 		{
 			WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
 
@@ -373,7 +373,7 @@ namespace Volt
 			{
 				MainUpdate();
 			}
-		}*/
+		}
 
 		return false;
 	}

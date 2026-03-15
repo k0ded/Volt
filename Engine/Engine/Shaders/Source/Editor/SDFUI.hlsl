@@ -142,7 +142,7 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
                     position = SDF_Scale(position, command.scale);
                     const float sdf = SDF_Circle(position, command.radiusHalfSize.x) * command.scale;
 
-                    const float alpha = SDF_AA(sdf);
+                    const float alpha = SDF_AA(sdf) * color.a;
                     if (alpha > 0.f)
                     {
                         resultColor = BlendColors(resultColor, float4(color.rgb, alpha));
@@ -169,7 +169,7 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
                 
                 const float sdf = SDF_Rectangle(position, command.radiusHalfSize) * command.scale;
 
-                const float alpha = SDF_AA(sdf);
+                    const float alpha = SDF_AA(sdf) * color.a;
                 if (alpha > 0.f)
                 {
                     resultColor = BlendColors(resultColor, float4(color.rgb, alpha));

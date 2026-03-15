@@ -37,27 +37,27 @@ namespace Volt
 		return m_size;
 	}
 
-	glm::vec2 Rect::GetTopLeft()
+	glm::vec2 Rect::GetTopLeft() const
 	{
 		return m_position;
 	}
 
-	glm::vec2 Rect::GetBottomRight()
+	glm::vec2 Rect::GetBottomRight() const
 	{
 		return m_position + m_size;
 	}
 
-	float Rect::ClampInsideX(float value)
+	float Rect::ClampInsideX(float value) const
 	{
 		return glm::min(m_position.x + m_size.x, glm::max(m_position.x, value));
 	}
 
-	float Rect::ClampInsideY(float value)
-	{
+	float Rect::ClampInsideY(float value) const
+	{ 
 		return glm::min(m_position.y + m_size.y, glm::max(m_position.y, value));
 	}
 
-	glm::vec2 Rect::ClampInsideRect(glm::vec2 value)
+	glm::vec2 Rect::ClampInsideRect(glm::vec2 value) const
 	{
 		return glm::vec2(ClampInsideX(value.x), ClampInsideY(value.y));
 	}

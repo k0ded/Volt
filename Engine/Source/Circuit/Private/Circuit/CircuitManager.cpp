@@ -23,8 +23,7 @@
 namespace Circuit
 {
 	CircuitManager::CircuitManager()
-	{
-	}
+	{}
 
 	CircuitManager& CircuitManager::Get()
 	{
@@ -59,10 +58,23 @@ namespace Circuit
 		static float sliderValue = 50.f;
 		layout->AddFlexibleSlice(
 		CreateWidget(SliderWidget)
-			.MinValue(0)
-			.MaxValue(100)
-			.Value_Lambda([]() {return sliderValue; })
-			.OnValueChanged_Lambda([](float newValue)
+		.MinValue(0)
+		.MaxValue(100)
+		.Value_Lambda([]() {return sliderValue; })
+		.OnValueChanged_Lambda([](float newValue)
+		{
+			sliderValue = newValue;
+		})
+		);
+
+		layout->AddFixedSlice(CreateWidget(ButtonWidget).MinSize(20), 40, 2);
+
+		layout->AddFlexibleSlice(
+		CreateWidget(SliderWidget)
+		.MinValue(0)
+		.MaxValue(100)
+		.Value_Lambda([]() {return sliderValue; })
+		.OnValueChanged_Lambda([](float newValue)
 		{
 			sliderValue = newValue;
 		})
@@ -123,8 +135,7 @@ namespace Circuit
 	}
 
 	void CircuitManager::Update()
-	{
-	}
+	{}
 
 	CIRCUIT_API Vector<Weak<CircuitWindow>> CircuitManager::GetWindows()
 	{
