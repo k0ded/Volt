@@ -13,7 +13,6 @@ namespace Volt
 		virtual ~AssetTypeAllocator() = default;
 		virtual Asset* AllocateDefault() = 0;
 		virtual void Free(void* allocation) = 0;
-		virtual void Reallocate(void* allocation) = 0;
 	};
 
 	template<typename T>
@@ -31,12 +30,6 @@ namespace Volt
 		Asset* AllocateDefault() override
 		{
 			return m_allocator.Allocate();
-		}
-
-		void Reallocate(void* allocation) override
-		{
-			VT_MAYBE_UNUSED void* newAlloc = m_allocator.Reallocate(reinterpret_cast<T*>(allocation));
-			VT_ENSURE(allocation == newAlloc);
 		}
 
 		void Free(void* allocation) override

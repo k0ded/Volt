@@ -6,7 +6,8 @@
 namespace Volt
 {
 	IORequest::IORequest(std::string_view name)
-		: m_name(name)
+		: m_name(name),
+		m_refCount(0)
 	{
 	}
 

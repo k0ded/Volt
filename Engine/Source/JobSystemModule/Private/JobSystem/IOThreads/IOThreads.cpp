@@ -31,6 +31,8 @@ namespace Volt
 	void IOThreads::Shutdown()
 	{
 		m_isRunning = false;
+		m_wakeCondition.notify_all();
+
 		for (IOThread* ioThread : m_ioThreads)
 		{
 			ioThread->thread.join();
@@ -68,11 +70,16 @@ namespace Volt
 				request.request->Execute();
 				request.referencedCounter->Decrement();
 				request.referencedCounter->DecRef();
+				request.request->DecRef();
 			}
 
 			std::unique_lock lock(workerData.wakeMutex);
 			VT_PROFILE_LOCK_MARK(workerData.wakeMutex);
-			m_wakeCondition.wait(lock);
+			m_wakeCondition.wait(lock, [this]()
+			{
+				return !m_isRunning.load(std::memory_order::relaxed) ||
+					m_ioRequestQueue.Size() > 0;
+			});
 		}
 	}
 

@@ -16,7 +16,6 @@ namespace Volt
 		template<VoltAssetType T, typename... Args> RefPtr<T> AllocateAsset(Args&&... args);
 		RefPtr<Asset> AllocateAssetWithType(AssetType type);
 		void FreeAsset(AssetType assetType, Asset* asset);
-		void ReallocateAsset(AssetType assetType, Asset* asset);
 
 	private:
 		void InitializeAllocators();

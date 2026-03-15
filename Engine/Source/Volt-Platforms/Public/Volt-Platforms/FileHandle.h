@@ -24,9 +24,8 @@ namespace Volt
 		{
 			if (&other != this)
 			{
-				return *this;
+				m_handle = other.m_handle;
 			}
-			m_handle = other.m_handle;
 
 			return *this;
 		}
@@ -41,11 +40,9 @@ namespace Volt
 		{
 			if (&other != this)
 			{
-				return *this;
+				m_handle = other.m_handle;
+				other.m_handle = nullptr;
 			}
-
-			m_handle = other.m_handle;
-			other.m_handle = nullptr;
 		
 			return *this;
 		}

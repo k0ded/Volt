@@ -95,7 +95,11 @@ namespace Volt::RHI
 			}
 
 			std::unique_lock lock{ m_wakeMutex };
-			m_wakeCondition.wait(lock);
+			m_wakeCondition.wait(lock, [this]()
+			{
+				return !m_isRunning.load(std::memory_order::relaxed) ||
+					m_submissionQueue.Size() > 0;
+			});
 
 			VT_PROFILE_FRAME_END("RHI Submission");
 		}

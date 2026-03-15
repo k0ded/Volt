@@ -14,7 +14,7 @@ namespace Volt
 		HANDLE fileHandle = ::CreateFileW(
 			filepath.c_str(),
 			writeable ? GENERIC_READ | GENERIC_WRITE : GENERIC_READ,
-			writeable ? FILE_SHARE_READ | FILE_SHARE_WRITE : FILE_SHARE_READ,
+			FILE_SHARE_READ,
 			nullptr,
 			OPEN_EXISTING,
 			randomAccess ? FILE_FLAG_RANDOM_ACCESS : FILE_FLAG_SEQUENTIAL_SCAN,
@@ -29,9 +29,9 @@ namespace Volt
 		HANDLE fileHandle = ::CreateFileW(
 			destinationFilepath.c_str(),
 			GENERIC_WRITE,
-			FILE_SHARE_WRITE,
+			FILE_SHARE_READ,
 			nullptr,
-			OPEN_ALWAYS,
+			CREATE_ALWAYS,
 			0,
 			nullptr
 		);
@@ -50,9 +50,23 @@ namespace Volt
 		VT_ASSERT(fileHandle.IsValid());
 		VT_ENSURE_MSG(outDataSize >= numBytesToRead, "The output data must be at least 'numBytesToRead' large!");
 
-		DWORD bytesRead;
- 		VT_MAYBE_UNUSED bool result = ::ReadFile(fileHandle.Get(), outData, static_cast<uint32_t>(numBytesToRead), &bytesRead, nullptr);
-		VT_ASSERT(result == true);
+
+		uint64_t totalBytesRead = 0;
+		while (totalBytesRead < numBytesToRead)
+		{
+			DWORD chunk = static_cast<DWORD>(std::min<uint64_t>(numBytesToRead - totalBytesRead, MAXDWORD));
+
+			DWORD bytesRead = 0;
+			if (!::ReadFile(fileHandle.Get(), reinterpret_cast<uint8_t*>(outData) + totalBytesRead, chunk, &bytesRead, nullptr)
+				|| bytesRead == 0)
+			{
+				break;
+			}
+
+			totalBytesRead += bytesRead;
+		}
+
+		VT_ASSERT(totalBytesRead == static_cast<uint32_t>(numBytesToRead));
 	}
 
 	void WindowsPlatformFileSystem::WriteFile(FileHandle fileHandle, const void* data, uint64_t dataSize)
@@ -61,6 +75,13 @@ namespace Volt
 
 		DWORD bytesWritten;
 		VT_MAYBE_UNUSED bool result = ::WriteFile(fileHandle.Get(), data, static_cast<uint32_t>(dataSize), &bytesWritten, nullptr);
+
+		if (!result)
+		{
+			DWORD error = GetLastError();
+			VT_UNUSED(error);
+		}
+
 		VT_ASSERT(result == true && bytesWritten == static_cast<uint32_t>(dataSize));
 	}
 

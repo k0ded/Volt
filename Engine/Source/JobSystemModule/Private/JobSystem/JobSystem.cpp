@@ -243,7 +243,7 @@ namespace Volt
 		{
 			m_workers.emplace_back(AllocateWorker(hardwareConcurrency));
 			
-			PlatformThread::AssignThreadToCore(PlatformThread::GetMainThreadHandle(), 1ull << hardwareConcurrency);
+			//PlatformThread::AssignThreadToCore(PlatformThread::GetMainThreadHandle(), 1ull << hardwareConcurrency);
 			PlatformThread::SetThreadPriority(PlatformThread::GetMainThreadHandle(), ThreadPriority::High);
 			g_workerId = hardwareConcurrency;
 			g_mainThreadWorkerId = g_workerId;
@@ -254,7 +254,7 @@ namespace Volt
 			m_waitingListManagerThread = std::thread(std::bind(&JobSystem::SpawnWaitingListManager, this));
 
 			PlatformThread::SetThreadName(m_waitingListManagerThread.native_handle(), "Volt::WaitingListManager");
-			PlatformThread::SetThreadPriority(PlatformThread::GetMainThreadHandle(), ThreadPriority::High);
+			PlatformThread::SetThreadPriority(m_waitingListManagerThread.native_handle(), ThreadPriority::High);
 		}
 
 		// Notify all threads that they are allowed to run.
@@ -265,6 +265,7 @@ namespace Volt
 	{
 		m_isRunning = false;
 		m_workerWakeCondition.notify_all();
+		m_waitingListManangerCondition.notify_all();
 
 		for (auto worker : m_workers)
 		{
@@ -412,7 +413,11 @@ namespace Volt
 
 				std::unique_lock lock(workerData.wakeMutex);
 				VT_PROFILE_LOCK_MARK(workerData.wakeMutex);
-				m_workerWakeCondition.wait(lock);
+				m_workerWakeCondition.wait(lock, [this, workerId]()
+				{
+					return !m_isRunning.load(std::memory_order::relaxed) ||
+						HasWorkAvailable(workerId);
+				});
 			}
 		}
 	}
@@ -431,7 +436,8 @@ namespace Volt
 
 			// Loop through the priorities in reverse to make sure we start with the
 			// highest priority.
-			
+			m_waitingListRequiresFlush.store(false, std::memory_order::relaxed);
+
 			bool anyJobRun = false;
 			for (int32_t i = static_cast<int32_t>(ExecutionPriority::Num) - 1; i >= 0; --i)
 			{
@@ -445,13 +451,37 @@ namespace Volt
 
 			std::unique_lock lock(m_waitingListManagerMutex);
 			VT_PROFILE_LOCK_MARK(m_waitingListManagerMutex);
-			m_waitingListManangerCondition.wait(lock);
+			m_waitingListManangerCondition.wait(lock, [this]()
+			{
+				return !m_isRunning.load(std::memory_order::relaxed) || 
+					m_waitingListRequiresFlush.load(std::memory_order::relaxed);
+			});
 		}
 	}
 
 	void JobSystem::NotifyCounterReady()
 	{
+		m_waitingListRequiresFlush.store(true, std::memory_order::relaxed);
 		m_waitingListManangerCondition.notify_one();
+	}
+
+	bool JobSystem::HasWorkAvailable(uint32_t workerId)
+	{
+		VT_PROFILE_FUNCTION();
+
+		JobWorker& workerData = *m_workers[workerId];
+
+		bool anyQueueHasWork = false;
+
+		for (uint32_t i = 0; i < static_cast<uint32_t>(ExecutionPriority::Num); ++i)
+		{
+			ExecutionPriority priority = static_cast<ExecutionPriority>(i);
+
+			anyQueueHasWork |= m_yieldedJobsReadyToRun.Size(priority) > 0;
+			anyQueueHasWork |= workerData.workQueues.Size(priority) > 0;
+		}
+
+		return anyQueueHasWork;
 	}
 
 	JobCounter* JobSystem::AllocateCounter(bool initializeWithRef)

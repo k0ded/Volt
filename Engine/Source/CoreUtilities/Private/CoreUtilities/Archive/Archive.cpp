@@ -9,6 +9,38 @@ Archive::Archive(bool isLoading)
 
 }
 
+Archive::Archive(Archive&& other) noexcept
+	: m_isLoading(other.m_isLoading),
+	m_versions(std::move(other.m_versions))
+{}
+
+Archive::Archive(const Archive& other)
+	: m_isLoading(other.m_isLoading),
+	m_versions(other.m_versions)
+{
+
+}
+
+Archive& Archive::operator=(const Archive& other)
+{
+	if (&other != this)
+	{
+		m_versions = other.m_versions;
+	}
+
+	return *this;
+}
+
+Archive& Archive::operator=(Archive&& other) noexcept
+{
+	if (&other != this)
+	{
+		m_versions = std::move(other.m_versions);
+	}
+
+	return *this;
+}
+
 void Archive::UseVersion(const VoltGUID& guid)
 {
 	if (m_isLoading)

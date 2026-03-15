@@ -87,6 +87,8 @@ public:
 
 		while (true)
 		{
+			NullHeader = nullptr;
+
 			if (allocation = currentPage->TryAllocate(std::forward<Args>(args)...); allocation != nullptr)
 			{
 				break;
@@ -97,14 +99,15 @@ public:
 				{
 					// Try to allocate a new page
 					PageHeader* newPage = AllocatePage();
+
+					// Ensure previous is set before swap
+					newPage->prev = currentPage;
+
 					if (!currentPage->next.compare_exchange_strong(NullHeader, newPage, std::memory_order::release))
 					{
 						// Another thread already allocated it, free the page again.
+						newPage->prev = nullptr;
 						FreePage(newPage);
-					}
-					else
-					{
-						newPage->prev = currentPage;
 					}
 				}
 
@@ -115,29 +118,9 @@ public:
 		return allocation;
 	}
 
-	template<typename... Args>
-	Type* Reallocate(Type* allocation, Args&&... args)
-	{
-		Type* newAllocation = nullptr;
-
-		PageHeader* currentPage = m_basePage;
-		while (currentPage != nullptr)
-		{
-			if (currentPage->arena.IsPointerWithinArena(allocation))
-			{
-				currentPage->arena.Free(allocation);
-				newAllocation = currentPage->arena.Reallocate(allocation, std::forward<Args>(args)...);
-
-				break;
-			}
-		}
-		
-		return newAllocation;
-	}
-
 	void Free(Type* allocation)
 	{
-		PageHeader* currentPage = m_basePage;
+		PageHeader* currentPage = m_basePage.load(std::memory_order::acquire);
 		while (currentPage != nullptr)
 		{
 			if (currentPage->arena.IsPointerWithinArena(allocation))
@@ -146,7 +129,7 @@ public:
 				break;
 			}
 
-			currentPage = currentPage->next;
+			currentPage = currentPage->next.load(std::memory_order::acquire);
 		}
 	}
 
@@ -261,7 +244,7 @@ public:
 			m_currentPage = m_arenaAllocator->m_basePage;
 			if (m_currentPage)
 			{
-				m_iterator = FixedSizeArenaAllocator<Type>::Iterator(m_currentPage->arena);
+				m_iterator = FixedSizeArenaAllocator<Type, SecondaryAllocator>::Iterator(m_currentPage->arena);
 			}
 		}
 
@@ -276,7 +259,7 @@ public:
 
 				if (m_currentPage)
 				{
-					m_iterator = FixedSizeArenaAllocator<Type>::Iterator(m_currentPage->arena);
+					m_iterator = FixedSizeArenaAllocator<Type, SecondaryAllocator>::Iterator(m_currentPage->arena);
 				}
 			}
 		}
@@ -297,7 +280,7 @@ public:
 		}
 
 	private:
-		FixedSizeArenaAllocator<Type>::Iterator m_iterator;
+		FixedSizeArenaAllocator<Type, SecondaryAllocator>::Iterator m_iterator;
 		PageHeader* m_currentPage = nullptr;
 		const PagedAtomicArenaAllocator* m_arenaAllocator;
 	};

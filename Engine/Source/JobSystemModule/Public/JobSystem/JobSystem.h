@@ -107,6 +107,7 @@ namespace Volt
 
 		void SpawnWaitingListManager();
 		void NotifyCounterReady();
+		bool HasWorkAvailable(uint32_t workerId);
 
 		///// Job/Counter management /////
 		JobCounter* AllocateCounter(bool initializeWithRef = true);
@@ -140,6 +141,7 @@ namespace Volt
 		JobPriorityQueue<Job*, QueueThreadingPolicy::MPMC> m_yieldedJobsReadyToRun;
 		JobPriorityQueue<WaitingListEntry, QueueThreadingPolicy::MPSC> m_waitingLists;
 
+		std::atomic_bool m_waitingListRequiresFlush = false;
 		std::thread m_waitingListManagerThread;
 
 		PagedAtomicArenaAllocator<JobWorker, 16> m_workerAllocator;

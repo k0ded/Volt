@@ -62,11 +62,15 @@ namespace Volt
 		IORequestResult& operator=(IORequestResult&&) noexcept = delete;
 
 		ResultType& GetResult();
-		VT_INLINE IORequestResultCode GetResultCode() const { return m_ioRequest->GetResultCode(); }
+		VT_INLINE IORequestResultCode GetResultCode() const 
+		{
+			JobSystem::WaitForCounter(m_assignedCounter);
+			return m_ioRequest->GetResultCode(); 
+		}
 
 	private:
-		T* m_ioRequest;
-		JobCounterRef m_assignedCounter;
+		T* m_ioRequest = nullptr;
+		JobCounterRef m_assignedCounter = nullptr;
 	};
 
 	template<typename T>

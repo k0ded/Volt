@@ -23,6 +23,9 @@ public:
 	VTFS_API FileWriter();
 	VTFS_API ~FileWriter() override;
 
+	VTFS_API FileWriter(FileWriter&& other) noexcept;
+	VTFS_API FileWriter& operator=(FileWriter&& other) noexcept;
+
 	VTFS_API bool Open(const std::filesystem::path& destinationFilepath);
 	VTFS_API std::string_view GetError() const;
 

@@ -19,6 +19,12 @@ public:
 	VTCOREUTIL_API Archive(bool isLoading);
 	virtual ~Archive() = default;
 
+	VTCOREUTIL_API Archive(Archive&& other) noexcept;
+	VTCOREUTIL_API Archive& operator=(Archive&& other) noexcept;
+
+	VTCOREUTIL_API Archive(const Archive& other);
+	VTCOREUTIL_API Archive& operator=(const Archive& other);
+
 	virtual void SerializeBytes(void* value, size_t size) = 0;
 	virtual void Reserve(size_t numBytes) = 0;
 	virtual void Seek(size_t position) = 0;

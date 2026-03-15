@@ -71,6 +71,8 @@ namespace Volt
 	static IORequestResult<RequestType> IOThreads::SubmitRequest(Args&&... args)
 	{
 		RequestType* request = s_instance->m_requestAllocator.Allocate<RequestType>(std::forward<Args>(args)...);
+		request->IncRef();
+
 		JobCounterRef counter = JobSystem::CreateCounter();
 
 		QueuedIORequest queuedRequest;

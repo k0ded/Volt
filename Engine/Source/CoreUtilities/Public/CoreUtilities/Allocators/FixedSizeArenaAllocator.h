@@ -93,8 +93,9 @@ public:
 
 		if (!m_availableIndices.Pop(newIndex))
 		{
-			// Allocation failed, return nothing.
 			newIndex = m_nextIndex.fetch_add(1);
+
+			// Allocation failed, return nothing.
 			if (newIndex >= m_numMaxElements)
 			{
 				return nullptr;
@@ -106,17 +107,6 @@ public:
 		void* dataPtr = &m_dataBuffer[newIndex * sizeof(Type)];
 		Type* newAllocation = ::new(dataPtr) Type(std::forward<Args>(args)...);
 		return newAllocation;
-	}
-
-	template<typename... Args>
-	Type* Reallocate(Type* allocation, Args&&... args)
-	{
-		VT_ENSURE(IsPointerWithinArena(allocation));
-
-		std::ptrdiff_t allocationIndex = allocation - reinterpret_cast<Type*>(m_dataBuffer);
-		allocation->~Type();
-
-		return ::new(allocation) Type(std::forward<Args>(args)...);
 	}
 
 	void Free(Type* allocation)

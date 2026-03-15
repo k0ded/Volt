@@ -14,6 +14,31 @@ FileWriter::FileWriter()
 
 }
 
+FileWriter::FileWriter(FileWriter&& other) noexcept
+	: Archive(false),
+	m_isOpen(other.m_isOpen),
+	m_fileHandle(std::move(other.m_fileHandle)),
+	m_error(std::move(other.m_error)),
+	m_allocator(std::move(other.m_allocator))
+{
+	other.m_isOpen = false;
+}
+
+FileWriter& FileWriter::operator=(FileWriter&& other) noexcept
+{
+	if (&other != this)
+	{
+		m_isOpen = other.m_isOpen;
+		m_fileHandle = std::move(other.m_fileHandle);
+		m_error = std::move(other.m_error);
+		m_allocator = std::move(other.m_allocator);
+	
+		other.m_isOpen = false;
+	}
+
+	return *this;
+}
+
 FileWriter::~FileWriter()
 {
 	if (m_fileHandle.IsValid())
@@ -202,7 +227,7 @@ bool FileReader::Open(const std::filesystem::path& filepath, const FileReaderCon
 		}
 
 		m_storage.resize_uninitialized(fileSize);
-		Volt::PlatformFileSystem::ReadFile(fileHandle, fileSize, m_storage.data(), fileSize);
+		Volt::PlatformFileSystem::ReadFile(fileHandle, fileSize, m_storage.data(), m_storage.size());
 		Volt::PlatformFileSystem::CloseFile(fileHandle);
 
 		// Deserialize version info.
@@ -213,14 +238,7 @@ bool FileReader::Open(const std::filesystem::path& filepath, const FileReaderCon
 	}
 	else
 	{
-		//if (inputStream.bad())
-		//{
-		//	m_error = std::format("I/O error while reading '{}'", filepath.string());
-		//}
-		//else
-		{
-			m_error = std::format("Failed to open file '{}'", filepath.string());
-		}
+		m_error = std::format("Failed to open file '{}'", filepath.string());
 	}
 
 	return m_isOpen;
@@ -246,7 +264,7 @@ void FileReader::Reserve(size_t numBytes)
 
 void FileReader::Seek(size_t position)
 {
-	VT_ENSURE(position < m_storage.size());
+	VT_ENSURE(m_basePosition + position < m_storage.size());
 	m_readPointer = m_basePosition + position;
 }
 
@@ -276,15 +294,17 @@ size_t FileReader::GetSize() const
 
 const void* FileReader::GetData() const
 {
+	VT_ENSURE_MSG(!m_isOpen, "Archive must be closed before it can be accessed!");
 	return m_storage.data();
 }
 
 void* FileReader::GetData()
 {
+	VT_ENSURE_MSG(!m_isOpen, "Archive must be closed before it can be accessed!");
 	return m_storage.data();
 }
 
 bool FileReader::IsClosed() const
 {
-	return false;
+	return !m_isOpen;
 }
