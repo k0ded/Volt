@@ -44,7 +44,7 @@ namespace Circuit
 		}
 
 		//bounds are local here, transform them into screen bounds
-		bounds.SetPosition(bounds.GetPosition() + m_allottedScreenArea.GetPosition());
+		bounds.SetPosition(bounds.GetPosition() + m_basePainter->m_allottedScreenArea.GetPosition());
 
 		widget->SetBounds(bounds);
 		widget->SetAllotedScreenArea(subAllotedScreenArea);
