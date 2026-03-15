@@ -3,6 +3,7 @@
 #include "WindowMode.h"
 #include "WindowProperties.h"
 
+#include "WindowModule/WindowHandle.h"
 #include "WindowModule/Config.h"
 
 #include <EventSystem/EventListener.h>
@@ -42,7 +43,7 @@ namespace Volt
 	public:
 		using EventCallbackFn = std::function<void(Event&)>;
 
-		Window(const WindowProperties& aProperties, bool forceSDR);
+		Window(WindowHandle windowHandle,const WindowProperties& aProperties, bool forceSDR);
 		~Window();
 
 		void Shutdown();
@@ -100,16 +101,17 @@ namespace Volt
 		inline const uint32_t GetViewportWidth() const { return m_viewportWidth; }
 		inline const uint32_t GetViewportHeight() const { return m_viewportHeight; }
 
+		inline WindowHandle GetHandle() const { return m_windowHandle; }
 		inline const bool IsVSync() const { return m_data.vsync; }
 		inline const WindowMode GetWindowMode() const { return m_data.windowMode; }
 		inline GLFWwindow* GetNativeWindow() const { return m_window; }
-		inline void* GetHWND() const { return m_windowHandle; }
+		inline void* GetHWND() const { return m_HWIND; }
 		inline const auto& GetCursors() const { return m_cursors; }
 
 		inline const RHI::Swapchain& GetSwapchain() const { return *m_swapchain; }
 		inline const RawPtr<RHI::Swapchain> GetSwapchainPtr() const { return m_swapchain; }
 
-		static Scope<Window> Create(const WindowProperties& aProperties, bool forceSDR);
+		static Scope<Window> Create(WindowHandle handle, const WindowProperties& aProperties, bool forceSDR);
 
 	private:
 		class WindowEventListener : public EventListener
@@ -124,8 +126,10 @@ namespace Volt
 
 		void CreateDefaultCursors();
 
+		const WindowHandle m_windowHandle;
+
 		GLFWwindow* m_window = nullptr;
-		void* m_windowHandle = nullptr;
+		void* m_HWIND = nullptr;
 		bool m_hasBeenInitialized = false;
 		bool m_isFullscreen = false;
 

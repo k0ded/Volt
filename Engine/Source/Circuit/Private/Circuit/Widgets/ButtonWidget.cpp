@@ -26,35 +26,6 @@ void Circuit::ButtonWidget::Build(const Arguments& args)
 	m_minSize = args._MinSize;
 }
 
-void Circuit::ButtonWidget::OnLayout(const glm::vec2& allotedSize)
-{
-	//glm::vec2 result;
-
-	//if (m_content)
-	//{
-	//	result = m_content->OnLayout(allotedSize);
-	//}
-	//else
-	//{
-	//	//if we dont have content, take the whole area given
-	//	result = allotedSize;
-
-	//	//but if we are given a flexible area, shrink to min size
-	//	if (result.x == -1)
-	//	{
-	//		result.x  = m_minSize.x;
-	//	}
-
-	//	if (result.y == -1)
-	//	{
-	//		result.y = m_minSize.y;
-	//	}
-	//}
-
-	//m_size = result;
-	//return result;
-}
-
 glm::vec2 Circuit::ButtonWidget::GetDesiredSize()
 {
 	glm::vec2 result;

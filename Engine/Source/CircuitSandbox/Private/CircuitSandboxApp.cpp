@@ -32,7 +32,7 @@ Volt::BaseApplication* CreateApplication(const Volt::CommandLineBuilder& command
 	info.useVSync = true;
 	info.enableImGui = false;
 	info.useTitlebar = true;
-	info.useCustomTitlebar = false;
+	info.useCustomTitlebar = true;
 	info.width = 1600;
 	info.height = 900;
 

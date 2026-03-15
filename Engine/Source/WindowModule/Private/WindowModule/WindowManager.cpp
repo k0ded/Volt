@@ -117,9 +117,8 @@ namespace Volt
 	{
 		VT_LOGC(Trace, LogWindowManagement, "Creating New Window with Title: '{0}'", windowProperties.title);
 
-		Scope<Window> window = Window::Create(windowProperties, m_forceSDR);
 		WindowHandle handle{};
-
+		Scope<Window> window = Window::Create(handle,windowProperties, m_forceSDR);
 		m_windows[handle] = std::move(window);
 		return handle;
 	}

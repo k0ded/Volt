@@ -11,7 +11,7 @@
 #include <WindowModule/Window.h>
 
 #include <InputModule/Events/MouseEvents.h>
-#include <InputModule/Input.h>
+
 
 namespace Circuit
 {
@@ -34,11 +34,6 @@ namespace Circuit
 		m_value = args._Value;
 
 		m_onValueChanged = args._OnValueChanged;
-	}
-
-	void SliderWidget::OnLayout(const glm::vec2& allotedSize)
-	{
-		//return glm::vec2(allotedSize.x, s_sliderHeight);
 	}
 
 	glm::vec2 SliderWidget::GetDesiredSize()

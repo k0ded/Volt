@@ -25,15 +25,14 @@ namespace Circuit
 
 		void Build(const Arguments& args);
 
-		virtual void OnLayout(const glm::vec2& allotedSize) override;
 		//take as much space as possible for now
 		virtual glm::vec2 GetDesiredSize() override { return { -1,-1 }; }
 
 
 		virtual void OnPaint(CircuitPainter& painter) override;
 
+		void AddSpring();
 		void AddFixedSlice(Ref<Widget> widget, float size, float margin = 0);
-
 		void AddFlexibleSlice(Ref<Widget> contentWidget, float margin = 0);
 
 		virtual bool IsHittestInvisible() const override { return true; };

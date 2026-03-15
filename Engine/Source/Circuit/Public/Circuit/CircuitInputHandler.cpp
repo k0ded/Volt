@@ -2,6 +2,7 @@
 #include "CircuitInputHandler.h"
 
 #include "Circuit/Widgets/Widget.h"
+#include "Circuit/Widgets/WindowWidget.h"
 
 #include "Circuit/CircuitManager.h"
 #include "Circuit/Window/CircuitWindow.h"
@@ -14,6 +15,7 @@
 #include <CoreUtilities/Delegates/Delegate.h>
 
 #include <WindowModule/Window.h>
+#include <WindowModule/Events/WindowEvents.h>
 
 #include <LogModule/Log.h>
 
@@ -28,6 +30,7 @@ namespace Circuit
 	void Circuit::CircuitInputHandler::RegisterEventListeners()
 	{
 		RegisterListener<Volt::MouseMovedEvent>(VT_BIND_EVENT_FN(CircuitInputHandler::OnMouseMoved));
+		RegisterListener<Volt::WindowTitlebarHittestEvent>(VT_BIND_EVENT_FN(CircuitInputHandler::OnWindowTitlebarHittest));
 		RegisterListener<Volt::MouseButtonPressedEvent>(VT_BIND_EVENT_FN(CircuitInputHandler::OnMouseButtonPressed));
 		RegisterListener<Volt::MouseButtonReleasedEvent>(VT_BIND_EVENT_FN(CircuitInputHandler::OnMouseButtonReleased));
 	}
@@ -42,7 +45,8 @@ namespace Circuit
 		{
 			return Vector<Ref<Widget>>();
 		}
-		Ref<Widget> windowWidget = window->GetWidget();
+
+		Ref<WindowWidget> windowWidget = window->GetWidget().GetSharedPtr();
 		if (!windowWidget)
 		{
 			return Vector<Ref<Widget>>();
@@ -124,17 +128,17 @@ namespace Circuit
 		return Ref<Widget>();
 	}
 
-	bool Circuit::CircuitInputHandler::OnMouseMoved(Volt::MouseMovedEvent& e)
+	void CircuitInputHandler::MouseMove(const glm::vec2 mouseScreenPos)
 	{
-		m_mousePos = { e.GetWindow().GetPosition().first + e.GetX(), e.GetWindow().GetPosition().second + e.GetY() };
+		m_mousePos = mouseScreenPos;
 
 		Ref<Widget> hoveredWidget = GetHoveredWidget();
 
 		if (m_draggingWidget)
 		{
-			const glm::vec2 dragDelta =  m_startDragMousePos - m_mousePos;
+			const glm::vec2 dragDelta = m_startDragMousePos - m_mousePos;
 			if (!m_isDraggingWidget &&
-				glm::length(dragDelta) >= MIN_DRAG_DELTA_THRESHOLD )
+				glm::length(dragDelta) >= MIN_DRAG_DELTA_THRESHOLD)
 			{
 				WidgetInteractionData startDragInteractionData;
 				startDragInteractionData.mouseButton = m_dragMouseButton;
@@ -174,7 +178,17 @@ namespace Circuit
 				m_prevHoveredWidget->OnBeginHover(interactionData);
 			}
 		}
+	}
 
+	bool Circuit::CircuitInputHandler::OnMouseMoved(Volt::MouseMovedEvent& e)
+	{
+		MouseMove({ e.GetWindow().GetPosition().first + e.GetX(), e.GetWindow().GetPosition().second + e.GetY() });
+		return false;
+	}
+
+	bool CircuitInputHandler::OnWindowTitlebarHittest(Volt::WindowTitlebarHittestEvent& e)
+	{
+		MouseMove({ e.GetWindow().GetPosition().first + e.GetX(), e.GetWindow().GetPosition().second + e.GetY() });
 		return false;
 	}
 

@@ -4,14 +4,6 @@
 
 namespace Circuit
 {
-	void CompoundWidget::OnLayout(const glm::vec2& allotedSize)
-	{
-		for (std::shared_ptr<Widget> child : m_childWidgets)
-		{
-			child->OnLayout(allotedSize);
-		}
-	}
-
 	glm::vec2 CompoundWidget::GetDesiredSize()
 	{
 		glm::vec2 size = 0;

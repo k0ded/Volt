@@ -23,7 +23,6 @@ namespace Circuit
 
 		void Build(const Arguments& args);
 
-		virtual void OnLayout(const glm::vec2& allotedSize) override;
 		virtual glm::vec2 GetDesiredSize() override;
 
 		virtual void OnPaint(CircuitPainter& painter) override;

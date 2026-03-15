@@ -2,20 +2,23 @@
 
 #include "Circuit/CircuitDrawCommand.h"
 
-#include "Circuit/Widgets/Widget.h"
-
 #include <WindowModule/WindowHandle.h>
-
 #include <CoreUtilities/Core.h>
-
+#include <EventSystem/EventListener.h>
 #include <vector>
+
+namespace Volt
+{
+	class WindowTitlebarHittestEvent;
+}
 
 namespace Circuit
 {
 	class CircuitRenderer;
 	class Widget;
+	class WindowWidget;
 
-	class CircuitWindow
+	class CircuitWindow : Volt::EventListener
 	{
 	public:
 		CIRCUIT_API CircuitWindow(Volt::WindowHandle windowHandle);
@@ -30,12 +33,15 @@ namespace Circuit
 		CIRCUIT_API std::vector<CircuitDrawCommand> GetDrawCommands();
 
 		//takes ownership of the widget
-		CIRCUIT_API void SetWidget(Ref<Widget> widget);
-		CIRCUIT_API Weak<Widget> GetWidget() { return m_widget; };
+		CIRCUIT_API void SetWidget(Ref<WindowWidget> widget);
+		CIRCUIT_API Weak<WindowWidget> GetWidget() { return m_windowWidget; };
 
 
 		void OnRender();
 	private:
+		void RegisterEventListeners();
+		bool OnWindowTitlebarHittestEvent(class Volt::WindowTitlebarHittestEvent& e);
+
 		const Volt::WindowHandle m_windowHandle;
 
 		Ref<CircuitRenderer> m_renderer;
@@ -43,7 +49,7 @@ namespace Circuit
 		glm::u16vec2 m_windowSize;
 		std::string m_title;
 
-		Ref<Widget> m_widget;
+		Ref<WindowWidget> m_windowWidget;
 
 	};
 }

@@ -2,12 +2,18 @@
 #include "Window/CircuitWindow.h"
 #include "Circuit/CircuitPainter.h"
 
+#include "Circuit/Widgets/Widget.h"
+#include "Circuit/Widgets/WindowWidget.h"
+
 #include "Circuit/Rendering/CircuitRenderer.h"
 
 #include "Circuit/ConsoleVars.h"
 
 #include <WindowModule/WindowManager.h>
 #include <WindowModule/Window.h>
+#include <WindowModule/Events/WindowEvents.h>
+
+#include <LogModule/Log.h>
 
 namespace Circuit
 {
@@ -15,6 +21,25 @@ namespace Circuit
 		: m_windowHandle(windowHandle)
 	{
 		m_renderer = CreateRef<CircuitRenderer>(*this);
+		RegisterEventListeners();
+	}
+
+	void CircuitWindow::RegisterEventListeners()
+	{
+		RegisterListener<Volt::WindowTitlebarHittestEvent>(VT_BIND_EVENT_FN(CircuitWindow::OnWindowTitlebarHittestEvent));
+	}
+	bool CircuitWindow::OnWindowTitlebarHittestEvent(Volt::WindowTitlebarHittestEvent& e)
+	{
+		if (e.GetWindow().GetHandle() == m_windowHandle)
+		{
+			e.SetHit(m_windowWidget->IsHoveringTitlebar());
+			if (m_windowWidget->IsHoveringTitlebar())
+			{
+				VT_LOG(Info, "Hovering Titlebar!");
+			}
+		}
+
+		return false;
 	}
 
 	Volt::WindowHandle CircuitWindow::GetWindowHandle() const
@@ -42,16 +67,16 @@ namespace Circuit
 	{
 		const Volt::Rect windowScreenBounds = Volt::Rect(static_cast<float>(GetPosition().x), static_cast<float>(GetPosition().y), static_cast<float>(GetSize().x), static_cast<float>(GetSize().y));
 		CircuitPainter basePainter(windowScreenBounds);
-		if (m_widget)
+		if (m_windowWidget)
 		{
 			const Volt::Rect windowLocalBounds = Volt::Rect(0.f, 0.f, static_cast<float>(GetSize().x), static_cast<float>(GetSize().y));
-			basePainter.AddWidget(m_widget, windowLocalBounds);
+			basePainter.AddWidget(m_windowWidget, windowLocalBounds);
 
 
 			if (s_cvarCircuitShowWidgetBounds.GetValue())
 			{
 				//draw widget bounds
-				Vector<Ref<Widget>> widgetsToCheck{ m_widget };
+				Vector<Ref<Widget>> widgetsToCheck{ m_windowWidget };
 				while (!widgetsToCheck.empty())
 				{
 					Ref<Widget> checkingWidget = widgetsToCheck.back();
@@ -73,13 +98,14 @@ namespace Circuit
 		return basePainter.GetCommands();
 	}
 
-	void CircuitWindow::SetWidget(Ref<Widget> widget)
+	void CircuitWindow::SetWidget(Ref<WindowWidget> widget)
 	{
-		m_widget = widget;
+		m_windowWidget = widget;
 	}
 
 	void CircuitWindow::OnRender()
 	{
 		m_renderer->OnRender();
 	}
+
 }

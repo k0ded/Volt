@@ -13,6 +13,7 @@ namespace Volt
 	class MouseMovedEvent;
 	class MouseButtonPressedEvent;
 	class MouseButtonReleasedEvent;
+	class WindowTitlebarHittestEvent;
 }
 namespace Circuit
 {
@@ -29,8 +30,10 @@ namespace Circuit
 		Ref<CircuitWindow> GetHoveredWindow();
 		Ref<Widget> GetHoveredWidget();
 
+		void MouseMove(const glm::vec2 mouseScreenPos);
 
 		bool OnMouseMoved(Volt::MouseMovedEvent& e);
+		bool OnWindowTitlebarHittest(Volt::WindowTitlebarHittestEvent& e);
 		bool OnMouseButtonPressed(Volt::MouseButtonPressedEvent& e);
 		bool OnMouseButtonReleased(Volt::MouseButtonReleasedEvent& e);
 

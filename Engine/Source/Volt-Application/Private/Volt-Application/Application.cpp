@@ -218,6 +218,7 @@ namespace Volt
 			windowProperties.cursorPath = m_appCreateInfo.cursorPath;
 			windowProperties.useTitlebar = m_appCreateInfo.useTitlebar;
 			windowProperties.useCustomTitlebar = m_appCreateInfo.useCustomTitlebar;
+			//windowProperties.createAsDecorated = m_appCreateInfo.useTitlebar && !m_appCreateInfo.useCustomTitlebar;
 
 			if (m_appCreateInfo.isRuntime)
 			{
@@ -365,7 +366,7 @@ namespace Volt
 
 	bool Application::OnWindowResizeEvent(class WindowResizeEvent& e)
 	{
-		if (&e.GetWindow() == &WindowManager::Get().GetMainWindow())
+		/*if (&e.GetWindow() == &WindowManager::Get().GetMainWindow())
 		{
 			WindowManager::Get().GetMainWindow().Resize(e.GetWidth(), e.GetHeight());
 
@@ -373,7 +374,7 @@ namespace Volt
 			{
 				MainUpdate();
 			}
-		}
+		}*/
 
 		return false;
 	}

@@ -22,7 +22,8 @@
 
 namespace Volt
 {
-	Window::Window(const WindowProperties& properties, bool forceSDR)
+	Window::Window(WindowHandle windowHandle,const WindowProperties& properties, bool forceSDR)
+		: m_windowHandle(windowHandle)
 	{
 		m_data.height = properties.height;
 		m_data.width = properties.width;
@@ -100,7 +101,7 @@ namespace Volt
 		}
 
 		m_window = glfwCreateWindow(createWidth, createHeight, m_data.title.c_str(), primaryMonitor, nullptr);
-		m_windowHandle = glfwGetWin32Window(m_window);
+		m_HWIND = glfwGetWin32Window(m_window);
 
 		// If we have no title bar, or use a custom one, we need to add the window frame size to
 		// the window size, this is to make sure the swapchain is created in the correct size.
@@ -652,9 +653,9 @@ namespace Volt
 		return m_data.title;
 	}
 
-	Scope<Window> Window::Create(const WindowProperties& aProperties, bool forceSDR)
+	Scope<Window> Window::Create(WindowHandle handle, const WindowProperties& aProperties, bool forceSDR)
 	{
-		return CreateScope<Window>(aProperties, forceSDR);
+		return CreateScope<Window>(handle, aProperties, forceSDR);
 	}
 
 	void Window::CreateDefaultCursors()

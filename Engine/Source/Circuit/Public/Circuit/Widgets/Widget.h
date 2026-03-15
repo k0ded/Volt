@@ -27,13 +27,12 @@ namespace Circuit
 
 		virtual void OnPaint(CircuitPainter& painter);
 
-		virtual void OnLayout(const glm::vec2& allotedSize) = 0;
 		virtual glm::vec2 GetDesiredSize() = 0;
 
-		const Volt::Rect& GetBounds() { return m_bounds; }
+		const Volt::Rect& GetBounds() const { return m_bounds; }
 		void SetBounds(const Volt::Rect& newBounds) { m_bounds = newBounds; }
 
-		const Volt::Rect& GetAllotedScreenArea() { return m_allotedScreenArea; }
+		const Volt::Rect& GetAllotedScreenArea() const { return m_allotedScreenArea; }
 		void SetAllotedScreenArea(const Volt::Rect& newAllotedScreenArea) { m_allotedScreenArea = newAllotedScreenArea; }
 
 		void RequestRebuild();
