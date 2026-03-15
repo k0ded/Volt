@@ -132,9 +132,9 @@ namespace Circuit
 
 		if (m_draggingWidget)
 		{
-			const glm::vec2 dragDelta = m_mousePos - m_startDragMousePos;
-			if (!m_isDraggingWidget && 
-				dragDelta.length() >= MIN_DRAG_DELTA_THRESHOLD )
+			const glm::vec2 dragDelta =  m_startDragMousePos - m_mousePos;
+			if (!m_isDraggingWidget &&
+				glm::length(dragDelta) >= MIN_DRAG_DELTA_THRESHOLD )
 			{
 				WidgetInteractionData startDragInteractionData;
 				startDragInteractionData.mouseButton = m_dragMouseButton;
@@ -190,6 +190,7 @@ namespace Circuit
 
 			m_draggingWidget = m_prevHoveredWidget;
 			m_dragMouseButton = e.GetMouseButton();
+			m_startDragMousePos = m_mousePos;
 		}
 		return false;
 	}
