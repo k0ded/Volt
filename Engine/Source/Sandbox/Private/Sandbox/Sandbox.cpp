@@ -38,6 +38,7 @@
 
 #include "Sandbox/Modals/MeshImportModal.h"
 #include "Sandbox/Modals/TextureImportModal.h"
+#include "Sandbox/Modals/FontImportModal.h"
 
 #include "Sandbox/DirtyAssetsManager.h"
 #include "Sandbox/EditorAssetManager.h"
@@ -323,6 +324,9 @@ void Sandbox::InitializeModals()
 
 	auto& textureModal = ModalSystem::AddModal<TextureImportModal>("Import Texture##sandbox");
 	m_textureImportModal = textureModal.GetID();
+
+	auto& fontModal = ModalSystem::AddModal<FontImportModal>("Import Font##sandbox");
+	m_fontImportModal = fontModal.GetID();
 }
 
 void Sandbox::OnDetach()

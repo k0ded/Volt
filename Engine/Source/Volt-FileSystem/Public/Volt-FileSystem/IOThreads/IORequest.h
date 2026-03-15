@@ -18,7 +18,7 @@ namespace Volt
 	class IORequest
 	{
 	public:
-		IORequest(std::string_view name);
+		VTFS_API IORequest(std::string_view name);
 		virtual ~IORequest() = default;
 
 		virtual void Execute() = 0;

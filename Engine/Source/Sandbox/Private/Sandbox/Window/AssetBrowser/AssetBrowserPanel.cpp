@@ -14,6 +14,7 @@
 #include "Sandbox/Window/AssetBrowser/AssetDirectoryProcessor.h"
 #include "Sandbox/Modals/MeshImportModal.h"
 #include "Sandbox/Modals/TextureImportModal.h"
+#include "Sandbox/Modals/FontImportModal.h"
 #include "Sandbox/UserSettingsManager.h"
 #include "Sandbox/DirtyAssetsManager.h"
 #include "Sandbox/EditorAssetManager.h"
@@ -278,6 +279,13 @@ bool AssetBrowserPanel::OnDragDropEvent(Volt::WindowDragDropEvent& e)
 			{
 				auto& modal = ModalSystem::GetModal<TextureImportModal>(Sandbox::Get().GetTextureImportModalID());
 				modal.SetImportTextures({ path });
+				modal.SetDestinationDirectory(g_assetManager->GetAssetFilesystemPath(myCurrentDirectory->path));
+				modal.Open();
+			}
+			else if (EditorUtils::IsAssetTypeFileExtension(AssetTypes::FontSource, path))
+			{
+				auto& modal = ModalSystem::GetModal<FontImportModal>(Sandbox::Get().GetFontImportModalID());
+				modal.SetImportFont(path);
 				modal.SetDestinationDirectory(g_assetManager->GetAssetFilesystemPath(myCurrentDirectory->path));
 				modal.Open();
 			}

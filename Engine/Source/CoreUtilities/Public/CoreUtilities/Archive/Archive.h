@@ -215,6 +215,15 @@ public:
 		return archive;
 	}
 
+	template<typename T, typename V>
+	VT_INLINE friend Archive& operator<<(Archive& archive, std::pair<T, V>& value)
+	{
+		archive << value.first;
+		archive << value.second;
+
+		return archive;
+	}
+
 protected:
 	struct VersionInfo
 	{

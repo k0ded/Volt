@@ -81,6 +81,7 @@ public:
 	
 	VT_NODISCARD VT_INLINE UUID64 GetMeshImportModalID() const { return m_meshImportModal; }
 	VT_NODISCARD VT_INLINE UUID64 GetTextureImportModalID() const { return m_textureImportModal; }
+	VT_NODISCARD VT_INLINE UUID64 GetFontImportModalID() const { return m_fontImportModal; }
 
 	VT_NODISCARD VT_INLINE Ref<ObjectIDSceneRendererExtension> GetObjectIDSceneRendererExtension() const { return m_objectIDSceneRendererExtension; }
 	VT_NODISCARD VT_INLINE Ref<DebugSceneRendererExtension> GetDebugSceneRendererExtension() const { return m_debugSceneRendererExtension; }
@@ -174,6 +175,7 @@ private:
 	///// Modals /////
 	UUID64 m_meshImportModal;
 	UUID64 m_textureImportModal;
+	UUID64 m_fontImportModal;
 	//////////////////
 
 	AssetReference<Volt::Scene> m_runtimeScene;

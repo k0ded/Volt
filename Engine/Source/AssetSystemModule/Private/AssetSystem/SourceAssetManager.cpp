@@ -87,7 +87,7 @@ namespace Volt
 			}
 
 			resultPromise->SetValue(result);
-		});
+		}, FiberStackSize::KB128);
 
 		resultPromise->SetAssociatedCounter(importCounter);
 

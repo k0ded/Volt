@@ -61,4 +61,10 @@ namespace Volt
 		bool importMipMaps = true;
 		bool generateMipMaps = true;
 	};
+
+	struct FontSourceImportConfig : public SourceAssetImportConfig
+	{
+		float emSize = 40.f;
+		float scale = 1.f;
+	};
 }
