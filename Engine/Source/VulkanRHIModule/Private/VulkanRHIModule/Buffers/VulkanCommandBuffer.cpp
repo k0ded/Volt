@@ -15,6 +15,8 @@
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
+#include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/VulkanResourceTable.h"
 
 #include "VulkanRHIModule/Images/VulkanImage.h"
 #include "VulkanRHIModule/Images/VulkanSamplerState.h"
@@ -24,8 +26,6 @@
 
 #include "VulkanRHIModule/RayTracing/VulkanRayTracingHelpers.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
-#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
-#include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
 
 #include "VulkanRHIModule/VulkanResourceCast.h"
 #include "VulkanRHIModule/Utility/TracyExtension.h"
@@ -1704,11 +1704,11 @@ namespace Volt::RHI
 		const uint64_t descriptorHeapBaseOffset = descriptorHeap.GetBaseOffset();
 
 		// If we need the ray tracing resource table, we need to rebind the descriptor buffers.
-		if (RHI::RHICanUseRayTracing() && activePipelineDescriptorSets.accessesRayTracingResources)
+		if (activePipelineDescriptorSets.accessesResourceTable)
 		{
-			if (shaderBindingsMap.HasRayTracingResourceTable())
+			if (shaderBindingsMap.HasResourceTable())
 			{
-				BindDescriptorBuffer(shaderBindingsMap.GetRayTracingResourceTable());
+				BindDescriptorBuffer(shaderBindingsMap.GetResourceTable());
 			}
 		}
 
@@ -1718,17 +1718,17 @@ namespace Volt::RHI
 			vkCmdSetDescriptorBufferOffsetsEXT(m_commandBufferData.commandBuffer, bindPoint, activePipelineLayout, bindingInfo.setIndex, 1, &bufferIndex, &offset);
 		}
 
-		if (RHI::RHICanUseRayTracing() && activePipelineDescriptorSets.accessesRayTracingResources)
+		if (activePipelineDescriptorSets.accessesResourceTable)
 		{
-			RefPtr<RayTracingResourceTable> rayTracingResourceTable = shaderBindingsMap.GetRayTracingResourceTable();
+			RefPtr<ResourceTable> rayTracingResourceTable = shaderBindingsMap.GetResourceTable();
 			if (rayTracingResourceTable != nullptr)
 			{
-				VulkanRayTracingResourceTable& vkRayTracingResourceTable = rayTracingResourceTable->AsRef<VulkanRayTracingResourceTable>();
+				VulkanResourceTable& vkRayTracingResourceTable = rayTracingResourceTable->AsRef<VulkanResourceTable>();
 
 				const uint64_t rayTracingResourceDescriptorOffset = vkRayTracingResourceTable.GetBaseOffset();
 				const uint32_t rayTracingBufferIndex = 1;
 
-				vkCmdSetDescriptorBufferOffsetsEXT(m_commandBufferData.commandBuffer, bindPoint, activePipelineLayout, RayTracingTableDescriptorSetManager::Set, 1, &rayTracingBufferIndex, &rayTracingResourceDescriptorOffset);
+				vkCmdSetDescriptorBufferOffsetsEXT(m_commandBufferData.commandBuffer, bindPoint, activePipelineLayout, ResourceTableDescriptorSetManager::Set, 1, &rayTracingBufferIndex, &rayTracingResourceDescriptorOffset);
 			}
 		}
 	}
@@ -1771,7 +1771,7 @@ namespace Volt::RHI
 		return true;
 	}
 
-	void VulkanCommandBuffer::BindDescriptorBuffer(RefPtr<RayTracingResourceTable> rayTracingResourceTable)
+	void VulkanCommandBuffer::BindDescriptorBuffer(RefPtr<ResourceTable> rayTracingResourceTable)
 	{
 		VulkanGraphicsContext& vkGraphicsContext = GraphicsContext::Get().AsRef<VulkanGraphicsContext>();
 		VulkanDescriptorHeap& descriptorHeap = vkGraphicsContext.GetDescriptorHeap();
@@ -1791,7 +1791,7 @@ namespace Volt::RHI
 
 		if (rayTracingResourceTable)
 		{
-			VulkanRayTracingResourceTable& vkRayTracingResourceTable = rayTracingResourceTable->AsRef<VulkanRayTracingResourceTable>();
+			VulkanResourceTable& vkRayTracingResourceTable = rayTracingResourceTable->AsRef<VulkanResourceTable>();
 
 			VkDescriptorBufferBindingInfoEXT& vkBindingInfo = bindingInfo[1];
 			vkBindingInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT;

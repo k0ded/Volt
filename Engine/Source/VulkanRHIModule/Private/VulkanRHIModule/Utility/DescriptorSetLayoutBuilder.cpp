@@ -4,7 +4,7 @@
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanHelpers.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
-#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
 #include "VulkanRHIModule/Graphics/VulkanGraphicsContext.h"
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
@@ -21,10 +21,10 @@
 
 namespace Volt::RHI
 {
-	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindings& resourceBindings, bool accessesRayTracingResourceTable)
+	DescriptorSetLayoutBuilder::DescriptorSets DescriptorSetLayoutBuilder::BuildFromShaderResourceBindings(const ShaderParameterMap::ResourceBindings& resourceBindings, bool accessesResourceTable)
 	{
 		DescriptorSets result;
-		result.accessesRayTracingResources = accessesRayTracingResourceTable;
+		result.accessesResourceTable = accessesResourceTable;
 
 		auto device = GraphicsContext::GetDevice();
 
@@ -118,12 +118,12 @@ namespace Volt::RHI
 			}
 		}
 
-		if (RHI::RHICanUseRayTracing() && accessesRayTracingResourceTable)
+		if (accessesResourceTable)
 		{
-			result.pipelineLayoutDescriptorSetLayouts.resize(RayTracingTableDescriptorSetManager::Set + 1);
+			result.pipelineLayoutDescriptorSetLayouts.resize(ResourceTableDescriptorSetManager::Set + 1);
 
 			// Fill all null descriptor set layouts with empty layouts.
-			for (uint32_t i = 0; i < RayTracingTableDescriptorSetManager::Set; ++i)
+			for (uint32_t i = 0; i < ResourceTableDescriptorSetManager::Set; ++i)
 			{
 				if (result.pipelineLayoutDescriptorSetLayouts[i] == nullptr)
 				{
@@ -138,8 +138,8 @@ namespace Volt::RHI
 				}
 			}
 
-			result.descriptorSetLayouts[RayTracingTableDescriptorSetManager::Set] = RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout();
-			result.pipelineLayoutDescriptorSetLayouts[RayTracingTableDescriptorSetManager::Set] = RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout();
+			result.descriptorSetLayouts[ResourceTableDescriptorSetManager::Set] = ResourceTableDescriptorSetManager::Get().GetDescriptorSetLayout();
+			result.pipelineLayoutDescriptorSetLayouts[ResourceTableDescriptorSetManager::Set] = ResourceTableDescriptorSetManager::Get().GetDescriptorSetLayout();
 		}
 
 		// Static samplers.

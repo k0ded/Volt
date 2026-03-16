@@ -1,8 +1,8 @@
 #pragma once
 
-#include <VulkanRHIModule/Descriptors/VulkanDescriptorCommon.h>
+#include "VulkanRHIModule/Descriptors/VulkanDescriptorCommon.h"
 
-#include <RHIModule/RayTracing/RayTracingResuorceTable.h>
+#include <RHIModule/Descriptors/ResourceTable.h>
 #include <RHIModule/Memory/Allocation.h>
 
 #include <CoreUtilities/Containers/Map.h>
@@ -14,11 +14,11 @@ struct VkDescriptorPool_T;
 
 namespace Volt::RHI
 {
-	class VulkanRayTracingResourceTable : public RayTracingResourceTable
+	class VulkanResourceTable : public ResourceTable
 	{
 	public:
-		VulkanRayTracingResourceTable();
-		~VulkanRayTracingResourceTable() override;
+		VulkanResourceTable();
+		~VulkanResourceTable() override;
 
 		void AddBuffer(RefPtr<Buffer> buffer) override;
 		void AddTexture(RefPtr<Image> texture) override;
@@ -28,6 +28,9 @@ namespace Volt::RHI
 
 		uint32_t GetBufferSlotIndex(RefPtr<Buffer> buffer) override;
 		uint32_t GetTextureSlotIndex(RefPtr<Image> texture) override;
+
+		uint32_t GetOrAddBufferSlotIndex(RefPtr<Buffer> buffer) override;
+		uint32_t GetOrAddTextureSlotIndex(RefPtr<Image> texture) override;
 
 		void Update(uint32_t index) override;
 
@@ -44,8 +47,8 @@ namespace Volt::RHI
 		ResourceIndices m_textureResourceIndices;
 		ResourceIndices m_bufferResourceIndices;
 
-		ResourceTable<Buffer, BufferView> m_bufferTable;
-		ResourceTable<Image, ImageView> m_textureTable;
+		ResourceTable::Table<Buffer, BufferView> m_bufferTable;
+		ResourceTable::Table<Image, ImageView> m_textureTable;
 	
 		uint32_t m_lastUpdateIndex = 0;
 		uint32_t m_currentBufferIndex = 0;

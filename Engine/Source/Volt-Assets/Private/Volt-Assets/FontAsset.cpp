@@ -4,8 +4,12 @@
 
 #include <Volt-Renderer/Texture/TextureSerializerCommon.h>
 
+#include <AssetSystem/AssetFactory.h>
+
 namespace Volt
 {
+	VT_REGISTER_ASSET_FACTORY(AssetTypes::Font, FontAsset);
+
 	struct TextureHeader
 	{
 		RHI::PixelFormat format; // Should be one of the BC formats

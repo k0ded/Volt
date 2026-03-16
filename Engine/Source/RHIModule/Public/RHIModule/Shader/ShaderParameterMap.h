@@ -38,7 +38,7 @@ namespace Volt::RHI
 		const ShaderResourceBinding* GetResourceBindingFromName(StringHash name) const;
 
 		VT_INLINE void SetShaderStage(ShaderStage shaderStage) { m_shaderStage = shaderStage; }
-		VT_NODISCARD VT_INLINE void SetAccessesRayTracingResourceTable() { m_accessesRayTracingResourceTable = true; }
+		VT_NODISCARD VT_INLINE void SetAccessesResourceTable() { m_accessesResourceTable = true; }
 
 		VT_NODISCARD VT_INLINE const ResourceBindings& GetResourceBindings() const { return m_resourceBindings; }
 		VT_NODISCARD VT_INLINE const ParameterMap& GetShaderParameters() const { return m_shaderParameters; }
@@ -46,8 +46,8 @@ namespace Volt::RHI
 		VT_NODISCARD VT_INLINE ShaderStage GetShaderStage() const { return m_shaderStage; }
 		VT_NODISCARD VT_INLINE uint32_t GetShaderParametersSize() const { return m_shaderParameterSize; }
 		VT_NODISCARD VT_INLINE uint32_t GetInlineParameterBlockSize() const { return m_inlineParameterBlockSize; }
-		VT_NODISCARD VT_INLINE bool AccessesRayTracingTable() const { return m_accessesRayTracingResourceTable; }
-		VT_NODISCARD VT_INLINE bool IsValid() const { return !m_resourceBindings.empty() || !m_shaderParameters.empty() || m_accessesRayTracingResourceTable; }
+		VT_NODISCARD VT_INLINE bool AccessesResourceTable() const { return m_accessesResourceTable; }
+		VT_NODISCARD VT_INLINE bool IsValid() const { return !m_resourceBindings.empty() || !m_shaderParameters.empty() || m_accessesResourceTable; }
 		VT_NODISCARD VT_INLINE bool HasShaderBindings() const { return !m_resourceBindings.empty(); }
 		VT_NODISCARD VT_INLINE bool HasInlineParameterBlock() const { return !m_inlineParameterBlock.empty(); }
 
@@ -63,6 +63,6 @@ namespace Volt::RHI
 
 		uint32_t m_shaderParameterSize = 0;
 		uint32_t m_inlineParameterBlockSize = 0;
-		bool m_accessesRayTracingResourceTable = false;
+		bool m_accessesResourceTable = false;
 	};
 }

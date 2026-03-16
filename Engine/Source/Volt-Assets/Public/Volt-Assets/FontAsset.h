@@ -16,6 +16,10 @@ namespace Volt
 		FontAsset() = default;
 		~FontAsset() override = default;
 
+		VT_NODISCARD VT_INLINE const FontMetrics& GetMetrics() const { return m_metrics; }
+		VT_NODISCARD VT_INLINE const FontGeometry& GetGeometry() const { return m_fontGeometry; }
+		VT_NODISCARD VT_INLINE RefPtr<RHI::Image> GetAtlas() const { return m_atlas; }
+
 		static AssetType GetStaticType() { return AssetTypes::Font; }
 		AssetType GetType() const override { return GetStaticType(); };
 		uint32_t GetVersion() const override { return 1; }

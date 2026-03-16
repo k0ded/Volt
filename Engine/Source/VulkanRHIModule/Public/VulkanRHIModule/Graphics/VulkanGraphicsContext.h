@@ -15,7 +15,7 @@ namespace Volt::RHI
 	class GraphicsDevice;
 	class VulkanDebugLayer;
 	class VulkanDescriptorHeap;
-	class RayTracingTableDescriptorSetManager;
+	class ResourceTableDescriptorSetManager;
 	class StaticSamplerDescriptorSetManager;
 
 	class VulkanGraphicsContext final : public GraphicsContext
@@ -58,7 +58,7 @@ namespace Volt::RHI
 
 		Ref<VulkanDebugLayer> m_debugLayer;
 		Ref<VulkanDescriptorHeap> m_descriptorHeap;
-		Ref<RayTracingTableDescriptorSetManager> m_rayTracingTableDescriptorSetManager;
+		Ref<ResourceTableDescriptorSetManager> m_resourceTableDescriptorSetManager;
 		Ref<StaticSamplerDescriptorSetManager> m_staticSamplerDescriptorSetManager;
 
 		VulkanPipelineCache m_pipelineCache;

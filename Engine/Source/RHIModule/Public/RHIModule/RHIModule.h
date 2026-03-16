@@ -31,7 +31,7 @@ namespace Volt::RHI
 	class RayTracingSceneGeometry;
 	class AccelerationStructure;
 	class ShaderBindingTable;
-	class RayTracingResourceTable;
+	class ResourceTable;
 
 	class GPUAllocator;
 	class DefaultGPUAllocator;
@@ -129,9 +129,10 @@ namespace Volt::RHI
 
 		virtual RefPtr<Fence> CreateFence() const = 0;
 
+		virtual RefPtr<ResourceTable> CreateResourceTable() const = 0;
+
 		virtual RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const = 0;
 		virtual RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const = 0;
-		virtual RefPtr<RayTracingResourceTable> CreateRayTracingResourceTable() const = 0;
 
 		virtual void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) = 0;
 

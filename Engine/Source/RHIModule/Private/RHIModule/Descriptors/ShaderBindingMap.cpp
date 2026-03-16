@@ -222,8 +222,8 @@ namespace Volt::RHI
 		return m_resourceBindings[bindingsIndex].resourceBindings;
 	}
 
-	void ShaderBindingMap::SetRayTracingResourceTable(RefPtr<RayTracingResourceTable> rayTracingResourceTable)
+	void ShaderBindingMap::SetResourceTable(RefPtr<ResourceTable> resourceTable)
 	{
-		m_rayTracingResourceTable = rayTracingResourceTable;
+		m_resourceTable = resourceTable;
 	}
 }

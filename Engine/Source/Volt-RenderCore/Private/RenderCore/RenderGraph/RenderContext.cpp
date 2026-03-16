@@ -456,9 +456,9 @@ namespace Volt
 		}
 	}
 
-	void RenderContext::SetRayTracingResourceTableParameter(RefPtr<RHI::RayTracingResourceTable> rayTracingResourceTable, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
+	void RenderContext::SetResourceTableParameter(RefPtr<RHI::ResourceTable> resourceTable, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)
 	{
-		m_shaderBindingMap.SetRayTracingResourceTable(rayTracingResourceTable);
+		m_shaderBindingMap.SetResourceTable(resourceTable);
 	}
 
 	void RenderContext::SetShaderParameter(const void* data, const RenderGraphParameterDesc& parameterDesc, const RHI::ShaderParameterMap& shaderParameterMap)

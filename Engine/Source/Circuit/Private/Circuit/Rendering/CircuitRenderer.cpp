@@ -2,6 +2,8 @@
 
 #include "Rendering/CircuitRenderer.h"
 
+#include <Volt-Application/Application.h>
+
 #include <RenderCore/RenderGraph/RenderGraph.h>
 #include <RenderCore/RenderGraph/RenderGraphUtils.h>
 #include <RenderCore/RenderGraph/RenderGraphBlackboard.h>
@@ -36,8 +38,10 @@ using namespace Volt;
 
 namespace Circuit
 {
-	Circuit::CircuitRenderer::CircuitRenderer(CircuitWindow& targetCircuitWindow)
-		: m_targetCircuitWindow(targetCircuitWindow), m_targetWindow(Volt::WindowManager::Get().GetWindow(targetCircuitWindow.GetWindowHandle()))
+	Circuit::CircuitRenderer::CircuitRenderer(CircuitWindow& targetCircuitWindow, RefPtr<Volt::RHI::ResourceTable> resourceTable)
+		: m_targetCircuitWindow(targetCircuitWindow), 
+		m_targetWindow(Volt::WindowManager::Get().GetWindow(targetCircuitWindow.GetWindowHandle())),
+		m_resourceTable(resourceTable)
 	{
 		m_width = 0;
 		m_height = 0;
@@ -85,6 +89,7 @@ namespace Circuit
 			SHADER_PARAMETER_BUFFER_SRV(StructuredBuffer<UICommand>, Commands)
 			SHADER_PARAMETER(uint, CommandCount)
 			SHADER_PARAMETER(uint2, RenderSize)
+			SHADER_PARAMETER_RESOURCE_TABLE(ResourceTable)
 
 			RG_RENDER_TARGETS()
 		END_SHADER_PARAMETER_STRUCT()
@@ -98,6 +103,8 @@ namespace Circuit
 	void CircuitRenderer::AddCircuitPrimitivesPass(Volt::RenderGraph& renderGraph, Volt::RenderGraphBlackboard& blackboard)
 	{
 		VT_PROFILE_FUNCTION();
+
+		m_resourceTable->Update(static_cast<uint32_t>(Volt::Application::Get().GetFrameIndex()));
 
 		const uint32_t swapchainWidth = m_targetWindow.GetSwapchain().GetWidth();
 		const uint32_t swapchainHeight = m_targetWindow.GetSwapchain().GetHeight();
@@ -120,6 +127,7 @@ namespace Circuit
 		passParameters->PS.CommandCount = static_cast<uint>(cmds.size());
 		passParameters->PS.RenderSize = uint2{ swapchainWidth, swapchainHeight };
 		passParameters->PS.Commands = renderGraph.CreateSRV(cmdsBuffer);
+		passParameters->PS.ResourceTable = m_resourceTable;
 		passParameters->PS.renderTargets.renderTargets[0] = renderTarget;
 
 		auto vertexShader = ShaderMap::Get<FullscreenTriangleVS>();

@@ -6,7 +6,7 @@
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
 
 #include "VulkanRHIModule/Descriptors/VulkanDescriptorHeap.h"
-#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 
 #include <RHIModule/Graphics/PhysicalGraphicsDevice.h>
@@ -64,11 +64,7 @@ namespace Volt::RHI
 	
 		m_defaultAllocator = DefaultGPUAllocator::Create();
 
-		if (RHI::RHICanUseRayTracing())
-		{
-			m_rayTracingTableDescriptorSetManager = CreateRef<RayTracingTableDescriptorSetManager>();
-		}
-
+		m_resourceTableDescriptorSetManager = CreateRef<ResourceTableDescriptorSetManager>();
 		m_staticSamplerDescriptorSetManager = CreateRef<StaticSamplerDescriptorSetManager>();
 		m_descriptorHeap = CreateRef<VulkanDescriptorHeap>();
 
@@ -84,11 +80,7 @@ namespace Volt::RHI
 		DestroyEmptyDescriptorSetLayout();
 		m_descriptorHeap = nullptr;
 		m_staticSamplerDescriptorSetManager = nullptr;
-
-		if (RHI::RHICanUseRayTracing())
-		{
-			m_rayTracingTableDescriptorSetManager = nullptr;
-		}
+		m_resourceTableDescriptorSetManager = nullptr;
 
 		m_defaultAllocator = nullptr;
 		m_transientAllocator = nullptr;

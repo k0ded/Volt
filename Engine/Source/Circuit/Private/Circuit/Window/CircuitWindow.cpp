@@ -20,7 +20,8 @@ namespace Circuit
 	CircuitWindow::CircuitWindow(Volt::WindowHandle windowHandle)
 		: m_windowHandle(windowHandle)
 	{
-		m_renderer = CreateRef<CircuitRenderer>(*this);
+		m_resourceTable = Volt::RHI::ResourceTable::Create();
+		m_renderer = CreateRef<CircuitRenderer>(*this, m_resourceTable);
 		RegisterEventListeners();
 	}
 
@@ -66,7 +67,7 @@ namespace Circuit
 	std::vector<CircuitDrawCommand> CircuitWindow::GetDrawCommands()
 	{
 		const Volt::Rect windowScreenBounds = Volt::Rect(static_cast<float>(GetPosition().x), static_cast<float>(GetPosition().y), static_cast<float>(GetSize().x), static_cast<float>(GetSize().y));
-		CircuitPainter basePainter(windowScreenBounds);
+		CircuitPainter basePainter(windowScreenBounds, m_resourceTable);
 		if (m_windowWidget)
 		{
 			const Volt::Rect windowLocalBounds = Volt::Rect(0.f, 0.f, static_cast<float>(GetSize().x), static_cast<float>(GetSize().y));

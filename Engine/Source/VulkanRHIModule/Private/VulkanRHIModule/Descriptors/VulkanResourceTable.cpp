@@ -1,7 +1,7 @@
 #include "vkpch.h"
 
-#include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
-#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/VulkanResourceTable.h"
+#include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
 #include "VulkanRHIModule/Buffers/VulkanBufferView.h"
 #include "VulkanRHIModule/Images/VulkanImageView.h"
@@ -15,42 +15,42 @@
 
 namespace Volt::RHI
 {
-	VulkanRayTracingResourceTable::VulkanRayTracingResourceTable()
+	VulkanResourceTable::VulkanResourceTable()
 	{
 		Initialize();
 	}
 
-	VulkanRayTracingResourceTable::~VulkanRayTracingResourceTable()
+	VulkanResourceTable::~VulkanResourceTable()
 	{
 		Release();
 	}
 
-	void VulkanRayTracingResourceTable::AddBuffer(RefPtr<Buffer> buffer)
+	void VulkanResourceTable::AddBuffer(RefPtr<Buffer> buffer)
 	{
 		m_bufferTable.Add(buffer);
 	}
 
-	void VulkanRayTracingResourceTable::AddTexture(RefPtr<Image> texture)
+	void VulkanResourceTable::AddTexture(RefPtr<Image> texture)
 	{
 		m_textureTable.Add(texture);
 	}
 
-	void VulkanRayTracingResourceTable::RemoveBuffer(RefPtr<Buffer> buffer)
+	void VulkanResourceTable::RemoveBuffer(RefPtr<Buffer> buffer)
 	{
 		m_bufferTable.Remove(buffer);
 	}
 
-	void VulkanRayTracingResourceTable::RemoveTexture(RefPtr<Image> texture)
+	void VulkanResourceTable::RemoveTexture(RefPtr<Image> texture)
 	{
 		m_textureTable.Remove(texture);
 	}
 
-	void* VulkanRayTracingResourceTable::GetHandleImpl() const
+	void* VulkanResourceTable::GetHandleImpl() const
 	{
 		return nullptr;
 	}
 
-	void VulkanRayTracingResourceTable::Update(uint32_t index)
+	void VulkanResourceTable::Update(uint32_t index)
 	{
 		if (index == m_lastUpdateIndex)
 		{
@@ -63,13 +63,13 @@ namespace Volt::RHI
 		Vector<uint32_t> dirtyBufferSlots = m_bufferTable.GetAndClearDirtySlots(m_currentBufferIndex);
 		Vector<uint32_t> dirtyTextureSlots = m_textureTable.GetAndClearDirtySlots(m_currentBufferIndex);
 
-		const ArrayView<uint64_t> bindingOffsets = RayTracingTableDescriptorSetManager::Get().GetBindingOffsets();
+		const ArrayView<uint64_t> bindingOffsets = ResourceTableDescriptorSetManager::Get().GetBindingOffsets();
 
 		auto device = GraphicsContext::GetDevice();
 		VkDevice vkDevice = device->GetHandle<VkDevice>();
 
-		uint8_t* bufferBindingDescriptorPtr = GetHeapPointer() + bindingOffsets[RayTracingTableDescriptorSetManager::BuffersBinding];
-		uint8_t* texturesBindingDescriptorPtr = GetHeapPointer() + bindingOffsets[RayTracingTableDescriptorSetManager::TexturesBinding];
+		uint8_t* bufferBindingDescriptorPtr = GetHeapPointer() + bindingOffsets[ResourceTableDescriptorSetManager::BuffersBinding];
+		uint8_t* texturesBindingDescriptorPtr = GetHeapPointer() + bindingOffsets[ResourceTableDescriptorSetManager::TexturesBinding];
 
 		for (size_t i = 0; i < dirtyBufferSlots.size(); ++i)
 		{
@@ -98,19 +98,19 @@ namespace Volt::RHI
 		}
 	}
 
-	uint32_t VulkanRayTracingResourceTable::GetBufferSlotIndex(RefPtr<Buffer> buffer)
+	uint32_t VulkanResourceTable::GetBufferSlotIndex(RefPtr<Buffer> buffer)
 	{
 		return m_bufferTable.GetSlotForResource(buffer);
 	}
 
-	uint32_t VulkanRayTracingResourceTable::GetTextureSlotIndex(RefPtr<Image> texture)
+	uint32_t VulkanResourceTable::GetTextureSlotIndex(RefPtr<Image> texture)
 	{
 		return m_textureTable.GetSlotForResource(texture);
 	}
 
-	void VulkanRayTracingResourceTable::Initialize()
+	void VulkanResourceTable::Initialize()
 	{
-		m_descriptorSetLayoutSize = RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayoutSize();
+		m_descriptorSetLayoutSize = ResourceTableDescriptorSetManager::Get().GetDescriptorSetLayoutSize();
 
 		BufferDesc bufferDesc{};
 		bufferDesc.numElements = 1;
@@ -123,7 +123,7 @@ namespace Volt::RHI
 		m_mappedPtr = m_descriptorHeapAllocation->Map<uint8_t>();
 	}
 
-	void VulkanRayTracingResourceTable::Release()
+	void VulkanResourceTable::Release()
 	{
 		if (m_mappedPtr)
 		{
@@ -134,18 +134,29 @@ namespace Volt::RHI
 		GraphicsContext::Get().GetDefaultAllocator()->DestroyBuffer(m_descriptorHeapAllocation);
 	}
 
-	uint64_t VulkanRayTracingResourceTable::GetBaseOffset() const
+	uint64_t VulkanResourceTable::GetBaseOffset() const
 	{
 		return static_cast<uint64_t>(m_currentBufferIndex) * m_descriptorSetLayoutSize;
 	}
 
-	uint8_t* VulkanRayTracingResourceTable::GetHeapPointer()
+	uint8_t* VulkanResourceTable::GetHeapPointer()
 	{
 		return &m_mappedPtr[GetBaseOffset()];
 	}
 
-	uint64_t VulkanRayTracingResourceTable::GetDeviceAddress() const
+	uint64_t VulkanResourceTable::GetDeviceAddress() const
 	{
 		return m_descriptorHeapAllocation->GetDeviceAddress();
 	}
+
+	uint32_t VulkanResourceTable::GetOrAddBufferSlotIndex(RefPtr<Buffer> buffer)
+	{
+		return m_bufferTable.GetOrAddSlotForResource(buffer);
+	}
+
+	uint32_t VulkanResourceTable::GetOrAddTextureSlotIndex(RefPtr<Image> texture)
+	{
+		return m_textureTable.GetOrAddSlotForResource(texture);
+	}
+
 }

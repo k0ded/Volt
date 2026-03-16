@@ -1,5 +1,5 @@
 #include "vkpch.h"
-#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
 
 #include "VulkanRHIModule/Graphics/VulkanGraphicsContext.h"
 #include "VulkanRHIModule/Graphics/PhysicalDeviceProperties.h"
@@ -15,7 +15,7 @@
 
 namespace Volt::RHI
 {
-	RayTracingTableDescriptorSetManager::RayTracingTableDescriptorSetManager()
+	ResourceTableDescriptorSetManager::ResourceTableDescriptorSetManager()
 	{
 		VT_ENSURE(s_instance == nullptr);
 		s_instance = this;
@@ -23,7 +23,7 @@ namespace Volt::RHI
 		CreateDescriptorSetLayout();
 	}
 
-	RayTracingTableDescriptorSetManager::~RayTracingTableDescriptorSetManager()
+	ResourceTableDescriptorSetManager::~ResourceTableDescriptorSetManager()
 	{
 		if (m_descriptorSetLayout)
 		{
@@ -33,7 +33,7 @@ namespace Volt::RHI
 		s_instance = nullptr;
 	}
 
-	void RayTracingTableDescriptorSetManager::CreateDescriptorSetLayout()
+	void ResourceTableDescriptorSetManager::CreateDescriptorSetLayout()
 	{
 		Array<VkDescriptorType, DescriptorTypeCount> descriptorTypes =
 		{

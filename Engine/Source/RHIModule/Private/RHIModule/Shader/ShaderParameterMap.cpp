@@ -189,7 +189,7 @@ namespace Volt::RHI
 		archive << value.m_shaderStage;
 		archive << value.m_resourceBindings;
 		archive << value.m_shaderParameters;
-		archive << value.m_accessesRayTracingResourceTable;
+		archive << value.m_accessesResourceTable;
 
 		if (!archive.IsLoading() || archive.GetVersion(ShaderParameterMapCustomVersion::guid) >= ShaderParameterMapCustomVersion::AddedInlineParameterBlock)
 		{

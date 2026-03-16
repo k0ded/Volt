@@ -4,7 +4,7 @@
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Utility/PushConstantsBuilder.h"
-#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 #include "VulkanRHIModule/VulkanResourceCast.h"
 
@@ -47,7 +47,7 @@ namespace Volt::RHI
 			const ShaderParameterMap& shaderParameterMap = m_shader->GetParameterMap();
 
 			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
-			m_descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderParameterMap.GetResourceBindings(), shaderParameterMap.AccessesRayTracingTable());
+			m_descriptorSets = descriptorSetLayoutBuilder.BuildFromShaderResourceBindings(shaderParameterMap.GetResourceBindings(), shaderParameterMap.AccessesResourceTable());
 
 			m_descriptorPoolSizes = descriptorSetLayoutBuilder.CalculateDescriptorPoolSizesFromBindings(shaderParameterMap.GetResourceBindings());
 			m_shaderParameterMap = shaderParameterMap;
@@ -94,17 +94,17 @@ namespace Volt::RHI
 			VT_VK_CHECK(vkCreateComputePipelines(device->GetHandle<VkDevice>(), vkContext.GetPipelineCache().GetCache(), 1, &info, VT_VULKAN_ALLOCATOR, &m_pipeline));
 		}
 
-		if (RHI::RHICanUseRayTracing() && m_shaderParameterMap.AccessesRayTracingTable())
+		if (m_shaderParameterMap.AccessesResourceTable())
 		{
 			// Erase the ray tracing pipelines from the lists, as they should not be accessed outside of the pipeline.
-			if (m_descriptorSets.descriptorSetLayouts.contains(RayTracingTableDescriptorSetManager::Set))
+			if (m_descriptorSets.descriptorSetLayouts.contains(ResourceTableDescriptorSetManager::Set))
 			{
-				m_descriptorSets.descriptorSetLayouts.erase(RayTracingTableDescriptorSetManager::Set);
+				m_descriptorSets.descriptorSetLayouts.erase(ResourceTableDescriptorSetManager::Set);
 			}
 
 			for (auto it = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.begin(); it != m_descriptorSets.pipelineLayoutDescriptorSetLayouts.end(); ++it)
 			{
-				if (*it == RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout())
+				if (*it == ResourceTableDescriptorSetManager::Get().GetDescriptorSetLayout())
 				{
 					m_descriptorSets.pipelineLayoutDescriptorSetLayouts.erase(it);
 					break;

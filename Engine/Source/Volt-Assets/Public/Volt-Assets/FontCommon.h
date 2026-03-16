@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Volt-Assets/Config.h"
+
+#include <CoreUtilities/Archive/Archive.h>
+
 namespace Volt
 {
 	// From msdfgen::FontMetrics
@@ -51,8 +55,8 @@ namespace Volt
 	class FontGeometry
 	{
 	public:
-		const GlyphGeometry* GetGlyph(uint32_t codepoint) const;
-		bool GetAdvance(double& advance, uint32_t codepoint0, uint32_t codepoint1) const;
+		VTASSETS_API const GlyphGeometry* GetGlyph(uint32_t codepoint) const;
+		VTASSETS_API bool GetAdvance(double& advance, uint32_t codepoint0, uint32_t codepoint1) const;
 
 		friend Archive& operator<<(Archive& archive, FontGeometry& value);
 

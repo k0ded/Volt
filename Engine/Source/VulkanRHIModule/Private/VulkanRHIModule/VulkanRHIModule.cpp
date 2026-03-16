@@ -21,9 +21,10 @@
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Shader/VulkanShaderCompiler.h"
 
+#include "VulkanRHIModule/Descriptors/VulkanResourceTable.h"
+
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
-#include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
 
 #include "VulkanRHIModule/Common/VulkanCPUAllocator.h"
 
@@ -227,9 +228,9 @@ namespace Volt::RHI
 		return RefPtr<VulkanRenderPipeline>::Create(createInfo);
 	}
 
-	RefPtr<RayTracingResourceTable> VulkanRHIModule::CreateRayTracingResourceTable() const
+	RefPtr<ResourceTable> VulkanRHIModule::CreateResourceTable() const
 	{
-		return RefPtr<VulkanRayTracingResourceTable>::Create();
+		return RefPtr<VulkanResourceTable>::Create();
 	}
 
 	void VulkanRHIModule::EndFrame()

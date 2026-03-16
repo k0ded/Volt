@@ -2,11 +2,11 @@
 
 #include "Circuit/Config.h"
 
+#include <RHIModule/Descriptors/ResourceTable.h>
+
 #include <WindowModule/WindowHandle.h>
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/Pointers/RefPtr.h>
-
-#include <RHIModule/Buffers/CommandBufferSet.h>
 
 namespace Circuit
 {
@@ -19,7 +19,6 @@ namespace Volt
 	namespace RHI
 	{
 		class Image;
-		class SamplerState;
 	}
 
 	class RenderGraph;
@@ -32,7 +31,7 @@ namespace Circuit
 	class CIRCUIT_API CircuitRenderer
 	{
 	public:
-		CircuitRenderer(CircuitWindow& targetCircuitWindow);
+		CircuitRenderer(CircuitWindow& targetCircuitWindow, RefPtr<Volt::RHI::ResourceTable> resourceTable);
 		~CircuitRenderer();
 
 		void OnRender();
@@ -47,6 +46,7 @@ namespace Circuit
 		uint32_t m_height;
 
 		RefPtr<Volt::RHI::Image> m_outputImage;
+		RefPtr<Volt::RHI::ResourceTable> m_resourceTable;
 
 		std::atomic<uint64_t> m_frameTotalGPUAllocation;
 	};

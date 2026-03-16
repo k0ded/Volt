@@ -64,9 +64,10 @@ namespace Volt::RHI
 
 		RefPtr<Fence> CreateFence() const override;
 	
+		RefPtr<ResourceTable> CreateResourceTable() const override;
+
 		RefPtr<AccelerationStructure> CreateAccelerationStructure(const AccelerationStructureCreateInfo& createInfo) const override;
 		RefPtr<ShaderBindingTable> CreateShaderBindingTable(RefPtr<RayTracingPipeline> pipeline) const override;
-		RefPtr<RayTracingResourceTable> CreateRayTracingResourceTable() const override;
 
 		void SetRHICallbackInfo(const RHICallbackInfo& callbackInfo) override;
 		void DestroyResource(std::function<void()>&& function) override;

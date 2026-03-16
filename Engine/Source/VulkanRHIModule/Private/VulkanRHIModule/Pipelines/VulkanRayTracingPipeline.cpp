@@ -2,12 +2,12 @@
 
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Shader/VulkanShader.h"
 #include "VulkanRHIModule/Graphics/VulkanPhysicalGraphicsDevice.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
 #include "VulkanRHIModule/Common/VulkanFunctions.h"
 #include "VulkanRHIModule/VulkanResourceCast.h"
-#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
 
 #include <RHIModule/Graphics/GraphicsContext.h>
 #include <RHIModule/RHIModule.h>
@@ -202,7 +202,7 @@ namespace Volt::RHI
 				const ShaderParameterMap& parameterMap = shader->GetParameterMap();
 
 				shaderResourceBindings.emplace_back(parameterMap.GetResourceBindings());
-				anyAccessesRayTracingResourceTable |= parameterMap.AccessesRayTracingTable();
+				anyAccessesRayTracingResourceTable |= parameterMap.AccessesResourceTable();
 			}
 
 			DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
@@ -238,14 +238,14 @@ namespace Volt::RHI
 		if (anyAccessesRayTracingResourceTable)
 		{
 			// Erase the ray tracing pipelines from the lists, as they should not be accessed outside of the pipeline.
-			if (m_descriptorSets.descriptorSetLayouts.contains(RayTracingTableDescriptorSetManager::Set))
+			if (m_descriptorSets.descriptorSetLayouts.contains(ResourceTableDescriptorSetManager::Set))
 			{
-				m_descriptorSets.descriptorSetLayouts.erase(RayTracingTableDescriptorSetManager::Set);
+				m_descriptorSets.descriptorSetLayouts.erase(ResourceTableDescriptorSetManager::Set);
 			}
 
 			for (auto it = m_descriptorSets.pipelineLayoutDescriptorSetLayouts.begin(); it != m_descriptorSets.pipelineLayoutDescriptorSetLayouts.end(); ++it)
 			{
-				if (*it == RayTracingTableDescriptorSetManager::Get().GetDescriptorSetLayout())
+				if (*it == ResourceTableDescriptorSetManager::Get().GetDescriptorSetLayout())
 				{
 					m_descriptorSets.pipelineLayoutDescriptorSetLayouts.erase(it);
 					break;

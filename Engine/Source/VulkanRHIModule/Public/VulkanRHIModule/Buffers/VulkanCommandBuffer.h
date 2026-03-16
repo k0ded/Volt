@@ -3,7 +3,7 @@
 #include "VulkanRHIModule/Core.h"
 #include "VulkanRHIModule/Utility/DescriptorSetLayoutBuilder.h"
 
-#include <RHIModule/RayTracing/RayTracingResuorceTable.h>
+#include <RHIModule/Descriptors/ResourceTable.h>
 #include <RHIModule/Synchronization/Fence.h>
 #include <RHIModule/Buffers/CommandBuffer.h>
 #include <RHIModule/Core/RenderingInfo.h>
@@ -115,7 +115,7 @@ namespace Volt::RHI
 		void BeginPrimaryInternal(bool oneTimeSubmit);
 		void BeginSecondaryInternal(bool oneTimeSubmit);
 
-		void BindDescriptorBuffer(RefPtr<RayTracingResourceTable> rayTracingResourceTable);
+		void BindDescriptorBuffer(RefPtr<ResourceTable> rayTracingResourceTable);
 
 		void ClearActivePipeline();
 		void ValidateInlineParameters();

@@ -19,8 +19,9 @@
 #include "VulkanRHIModule/Pipelines/VulkanComputePipeline.h"
 #include "VulkanRHIModule/Pipelines/VulkanRayTracingPipeline.h"
 
+#include "VulkanRHIModule/Descriptors/VulkanResourceTable.h"
+
 #include "VulkanRHIModule/RayTracing/VulkanShaderBindingTable.h"
-#include "VulkanRHIModule/RayTracing/VulkanRayTracingResourceTable.h"
 #include "VulkanRHIModule/RayTracing/VulkanAccelerationStructure.h"
 
 #include "VulkanRHIModule/Shader/VulkanShader.h"
@@ -136,9 +137,9 @@ namespace Volt::RHI
 	};
 
 	template<>
-	struct VulkanTypeTraits<RayTracingResourceTable>
+	struct VulkanTypeTraits<ResourceTable>
 	{
-		using ConcreteType = VulkanRayTracingResourceTable;
+		using ConcreteType = VulkanResourceTable;
 	};
 
 	template<>

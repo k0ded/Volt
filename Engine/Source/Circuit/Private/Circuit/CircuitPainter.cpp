@@ -3,9 +3,6 @@
 
 #include "Circuit/Widgets/Widget.h"
 
-#include <Volt-Assets/Font.h>
-#include <Volt-Assets/MSDFData.h>
-
 #include <Volt-Renderer/Texture/Texture2D.h>
 
 #include <CoreUtilities/StringUtility.h>
@@ -85,8 +82,10 @@ namespace Circuit
 		AddDrawCommand(std::move(command));
 	}
 
-	void CircuitPainter::AddText(float inX, float inY, const std::string& text, Ref<Volt::Font> font, float maxWidth, CircuitColor color, float scale)
+	void CircuitPainter::AddText(float inX, float inY, const std::string& text, AssetReference<Volt::FontAsset> font, float maxWidth, CircuitColor color, float scale)
 	{
+		using namespace Volt;
+
 		const glm::vec2 pixelPos = ToPixelPos({ inX, inY });
 		const float x = pixelPos.x;
 		const float y = pixelPos.y;
@@ -98,16 +97,17 @@ namespace Circuit
 
 		std::u32string utf32string = ::Utility::To_UTF32(text);
 
-		auto& fontGeom = font->GetMSDFData()->fontGeometry;
-		const auto& metrics = fontGeom.getMetrics();
+		const FontMetrics& fontMetrics = font->GetMetrics();
+		const FontGeometry& fontGeometry = font->GetGeometry();
 
-		Vector<int32_t> lineSplits;
+		GlobalMemoryStackMark memMark;
+		GlobalMemoryStackVector<int32_t> lineSplits;
 
 		// Find all line splits
 		{
 			double sX = 0.0;
-			double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
-			double sY = -fsScale * metrics.ascenderY;
+			double fsScale = 1.0 / (fontMetrics.ascenderY - fontMetrics.descenderY);
+			double sY = -fsScale * fontMetrics.ascenderY;
 
 			int32_t lastSpace = -1;
 
@@ -117,24 +117,24 @@ namespace Circuit
 				if (character == '\n')
 				{
 					sX = 0.0;
-					sY -= fsScale * metrics.lineHeight;
+					sY -= fsScale * fontMetrics.lineHeight;
 					continue;
 				}
 
-				auto glyph = fontGeom.getGlyph(character);
+				const GlyphGeometry* glyph = fontGeometry.GetGlyph(character);
 				if (!glyph)
 				{
-					glyph = fontGeom.getGlyph('?');
+					glyph = fontGeometry.GetGlyph('?');
 				}
 
 				VT_ENSURE(glyph);
 
 				if (character != ' ')
 				{
-					double pl, pb, pr, pt;
-					glyph->getQuadPlaneBounds(pl, pb, pr, pt);
-					glm::vec2 quadMin((float)pl, (float)pb);
-					glm::vec2 quadMax((float)pl, (float)pb);
+					const GlyphGeometry::Bounds& planeBounds = glyph->GetPlaneBounds();
+
+					glm::vec2 quadMin((float)planeBounds.left, (float)planeBounds.bottom);
+					glm::vec2 quadMax((float)planeBounds.left, (float)planeBounds.bottom);
 
 					quadMin *= (float)fsScale;
 					quadMax *= (float)fsScale;
@@ -147,7 +147,7 @@ namespace Circuit
 						lineSplits.emplace_back(lastSpace);
 						lastSpace = -1;
 						sX = 0.0;
-						sY -= fsScale * metrics.lineHeight;
+						sY -= fsScale * fontMetrics.lineHeight;
 					}
 				}
 				else
@@ -155,8 +155,8 @@ namespace Circuit
 					lastSpace = i;
 				}
 
-				double advance = glyph->getAdvance();
-				fontGeom.getAdvance(advance, character, utf32string[i + 1]);
+				double advance = glyph->GetAdvance();
+				fontGeometry.GetAdvance(advance, character, utf32string[i + 1]);
 				sX += fsScale * advance;
 			}
 		}
@@ -164,8 +164,8 @@ namespace Circuit
 		// Setup commands
 		{
 			double sX = 0.0;
-			double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
-			double sY = -fsScale * metrics.ascenderY;
+			double fsScale = 1.0 / (fontMetrics.ascenderY - fontMetrics.descenderY);
+			double sY = -fsScale * fontMetrics.ascenderY;
 
 			for (int32_t i = 0; i < static_cast<int32_t>(utf32string.size()); i++)
 			{
@@ -173,38 +173,44 @@ namespace Circuit
 				if (character == '\n')
 				{
 					sX = 0.0;
-					sY += fsScale * metrics.lineHeight;
+					sY += fsScale * fontMetrics.lineHeight;
 					continue;
 				}
 
-				auto glyph = fontGeom.getGlyph(character);
+				auto glyph = fontGeometry.GetGlyph(character);
 				if (!glyph)
 				{
-					glyph = fontGeom.getGlyph('?');
+					glyph = fontGeometry.GetGlyph('?');
 				}
 
 				VT_ENSURE(glyph);
 
-				double l, b, r, t;
-				glyph->getQuadAtlasBounds(l, b, r, t);
+				GlyphGeometry::Bounds atlasBounds = glyph->GetAtlasBounds();
+				GlyphGeometry::Bounds planeBounds = glyph->GetPlaneBounds();
 
-				double pl, pb, pr, pt;
-				glyph->getQuadPlaneBounds(pl, pb, pr, pt);
+				planeBounds.top = fontMetrics.ascenderY - planeBounds.top;
+				planeBounds.bottom = fontMetrics.ascenderY - planeBounds.bottom;
 
-				pt = metrics.ascenderY - pt;
-				pb = metrics.ascenderY - pb;
+				planeBounds.top += fontMetrics.ascenderY + fontMetrics.descenderY;
+				planeBounds.bottom += fontMetrics.ascenderY + fontMetrics.descenderY;
 
-				pt += metrics.ascenderY + metrics.descenderY;
-				pb += metrics.ascenderY + metrics.descenderY;
+				planeBounds.left *= fsScale; 
+				planeBounds.bottom *= fsScale;
+				planeBounds.right *= fsScale; 
+				planeBounds.top *= fsScale;
 
-				pl *= fsScale, pb *= fsScale, pr *= fsScale, pt *= fsScale;
-				pl += sX, pb += sY, pr += sX, pt += sY;
+				planeBounds.left += sX; 
+				planeBounds.bottom += sY; 
+				planeBounds.right += sX; 
+				planeBounds.top += sY;
 
 				double texelWidth = 1.0 / font->GetAtlas()->GetWidth();
 				double texelHeight = 1.0 / font->GetAtlas()->GetHeight();
 
-				l *= texelWidth, b *= texelHeight, r *= texelWidth, t *= texelHeight;
-
+				atlasBounds.left *= texelWidth; 
+				atlasBounds.bottom *= texelHeight; 
+				atlasBounds.right *= texelWidth; 
+				atlasBounds.top *= texelHeight;
 
 				CircuitDrawCommand command;
 				command.type = CircuitPrimitiveType::TextCharacter;
@@ -213,22 +219,22 @@ namespace Circuit
 				command.color = color;
 				command.scale = scale;
 
-				command.minMaxPx.x = static_cast<float>(pl) * scale + x;
-				command.minMaxPx.y = static_cast<float>(pb) * scale + y;
-				command.minMaxPx.z = static_cast<float>(pr) * scale + x;
-				command.minMaxPx.w = static_cast<float>(pt) * scale + y;
+				command.minMaxPx.x = static_cast<float>(planeBounds.left) * scale + x;
+				command.minMaxPx.y = static_cast<float>(planeBounds.bottom) * scale + y;
+				command.minMaxPx.z = static_cast<float>(planeBounds.right) * scale + x;
+				command.minMaxPx.w = static_cast<float>(planeBounds.top) * scale + y;
 
-				command.minMaxUV.x = static_cast<float>(l);
-				command.minMaxUV.y = static_cast<float>(b);
-				command.minMaxUV.z = static_cast<float>(r);
-				command.minMaxUV.w = static_cast<float>(t);
+				command.minMaxUV.x = static_cast<float>(atlasBounds.left);
+				command.minMaxUV.y = static_cast<float>(atlasBounds.bottom);
+				command.minMaxUV.z = static_cast<float>(atlasBounds.right);
+				command.minMaxUV.w = static_cast<float>(atlasBounds.top	);
+				
+				command.textureIndex = m_resourceTable->GetOrAddTextureSlotIndex(font->GetAtlas());
 
 				AddDrawCommand(std::move(command));
 
-				//cmd.texture = font->GetAtlas()->GetImage()->GetHandle<Volt::ResourceHandle>(); TODO: BROKEN
-
-				double advance = glyph->getAdvance();
-				fontGeom.getAdvance(advance, character, utf32string[i + 1]);
+				double advance = glyph->GetAdvance();
+				fontGeometry.GetAdvance(advance, character, utf32string[i + 1]);
 				sX += fsScale * advance;
 			}
 		}

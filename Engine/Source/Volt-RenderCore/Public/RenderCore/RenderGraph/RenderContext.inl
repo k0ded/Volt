@@ -40,7 +40,7 @@ namespace Volt
 				case ShaderParameterType::UniformBuffer: SetUniformBufferParameter(parameterDesc.GetAs<RGUniformBufferRef>(), parameterDesc, shaderParameterMap); break;
 				case ShaderParameterType::Sampler: SetSamplerParameter(parameterDesc.GetAs<RefPtr<RHI::SamplerState>>(), parameterDesc, shaderParameterMap); break;
 				case ShaderParameterType::AccelerationStructure: SetAccelerationStructureParameter(parameterDesc.GetAs<RefPtr<RHI::AccelerationStructure>>(), parameterDesc, shaderParameterMap); break;
-				case ShaderParameterType::RayTracingResourceTable: SetRayTracingResourceTableParameter(parameterDesc.GetAs<RefPtr<RHI::RayTracingResourceTable>>(), parameterDesc, shaderParameterMap); break;
+				case ShaderParameterType::ResourceTable: SetResourceTableParameter(parameterDesc.GetAs<RefPtr<RHI::ResourceTable>>(), parameterDesc, shaderParameterMap); break;
 				case ShaderParameterType::Parameter: SetShaderParameter(parameterDesc.GetData(), parameterDesc, shaderParameterMap); break;
 			}
 		});
@@ -128,7 +128,7 @@ namespace Volt
 					}
 					break;
 				}
-				case ShaderParameterType::RayTracingResourceTable:
+				case ShaderParameterType::ResourceTable:
 				{
 					for (auto& foundBinding : foundResourceBindings)
 					{

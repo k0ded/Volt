@@ -1,13 +1,14 @@
 #pragma once
 #include "Circuit/CircuitDrawCommand.h"
 
+#include <Volt-Assets/FontAsset.h>
+
+#include <RHIModule/Descriptors/ResourceTable.h>
+
+#include <AssetSystem/AssetReference.h>
+
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/Math/2DShapes/Rect.h>
-
-namespace Volt
-{
-	class Font;
-}
 
 namespace Circuit
 {
@@ -15,10 +16,11 @@ namespace Circuit
 	class CircuitPainter
 	{
 	public:
-		CircuitPainter(const Volt::Rect& allotedScreenArea)
-			: m_allottedScreenArea(allotedScreenArea), m_basePainter(this)
+		CircuitPainter(const Volt::Rect& allotedScreenArea, RefPtr<Volt::RHI::ResourceTable> resourceTable)
+			: m_allottedScreenArea(allotedScreenArea), 
+			m_basePainter(this),
+			m_resourceTable(resourceTable)
 		{};
-
 
 		~CircuitPainter() = default;
 
@@ -30,15 +32,17 @@ namespace Circuit
 
 		void AddRect(float x, float y, float width, float height, CircuitColor color, float rotation = 0, float scale = 1);
 		void AddCircle(float x, float y, float radius, CircuitColor color, float scale = 1);
-		void AddText(float x, float y, const std::string& text, Ref<Volt::Font> font, float maxWidth, CircuitColor color, float scale = 1.f);
+		void AddText(float x, float y, const std::string& text, AssetReference<Volt::FontAsset> font, float maxWidth, CircuitColor color, float scale = 1.f);
 
 		std::vector<CircuitDrawCommand> GetCommands();
 	private:
-		CircuitPainter(CircuitPainter* basePainter, const Volt::Rect& allotedScreenArea) :
-			m_allottedScreenArea(allotedScreenArea),
-			m_basePainter(basePainter)
+		CircuitPainter(CircuitPainter* basePainter, const Volt::Rect& allotedScreenArea, RefPtr<Volt::RHI::ResourceTable> resourceTable) 
+			: m_allottedScreenArea(allotedScreenArea),
+			m_basePainter(basePainter),
+			m_resourceTable(resourceTable)
 		{};
-		VT_INLINE CircuitPainter CreateSubPainter(const Volt::Rect& allotedScreenArea){	return CircuitPainter(m_basePainter ? m_basePainter : this, allotedScreenArea); }
+
+		VT_INLINE CircuitPainter CreateSubPainter(const Volt::Rect& allotedScreenArea) { return CircuitPainter(m_basePainter ? m_basePainter : this, allotedScreenArea, m_resourceTable); }
 
 		glm::vec2 ToPixelPos(const glm::vec2& localPos);
 		void AddDrawCommand(CircuitDrawCommand&& command);
@@ -48,6 +52,7 @@ namespace Circuit
 		Volt::Rect m_allottedScreenArea;
 
 		CircuitPainter* m_basePainter = nullptr;
+		RefPtr<Volt::RHI::ResourceTable> m_resourceTable;
 
 		bool m_calculateBounds = false;
 

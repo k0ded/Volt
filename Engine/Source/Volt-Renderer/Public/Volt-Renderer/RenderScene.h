@@ -10,8 +10,9 @@
 #include "Volt-Renderer/Debug/DebugRenderer.h"
 
 #include <RenderCore/Resources/GrowingGPUBuffer.h>
-#include <RHIModule/RayTracing/RayTracingResuorceTable.h>
 #include <CoreUtilities/Containers/Map.h>
+
+#include <RHIModule/Descriptors/ResourceTable.h>
 
 #include <EventSystem/EventListener.h>
 #include <EventSystem/ApplicationEvents.h>
@@ -99,7 +100,7 @@ namespace Volt
 		VT_NODISCARD VT_INLINE std::span<const GPUMesh> GetGPUMeshes() const { return m_gpuMeshes; }
 		VT_NODISCARD VT_INLINE std::span<const PrimitiveDrawData> GetPrimitiveDrawData() const { return m_primitiveDrawData; }
 		VT_NODISCARD VT_INLINE Ref<RayTracingScene> GetRayTracingScene() const { return m_rayTracingScene; }
-		VT_NODISCARD VT_INLINE RefPtr<RHI::RayTracingResourceTable> GetRayTracingResourceTable() const { return m_rayTracingResourceTable; }
+		VT_NODISCARD VT_INLINE RefPtr<RHI::ResourceTable> GetRayTracingResourceTable() const { return m_rayTracingResourceTable; }
 
 		VT_NODISCARD VT_INLINE RenderPrimitiveAddedDelegate& GetRenderPrimitiveAddedDelegate() { return m_renderPrimitiveAddedDelegate; }
 		VT_NODISCARD VT_INLINE RenderPrimitiveRemovedDelegate& GetRenderPrimitiveRemovedDelegate() { return m_renderPrimitiveRemovedDelegate; }
@@ -221,7 +222,7 @@ namespace Volt
 		Vector<Ref<RenderMaterial>> m_individualMaterials;
 		Vector<glm::mat4> m_animationBufferStorage;
 
-		RefPtr<RHI::RayTracingResourceTable> m_rayTracingResourceTable;
+		RefPtr<RHI::ResourceTable> m_rayTracingResourceTable;
 
 		// Render primitives
 		RenderPrimitiveAddedDelegate m_renderPrimitiveAddedDelegate;

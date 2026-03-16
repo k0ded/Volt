@@ -63,7 +63,7 @@ namespace Volt
 		if (RHI::RHICanUseRayTracing())
 		{
 			m_rayTracingScene = CreateRef<RayTracingScene>(m_scene);
-			m_rayTracingResourceTable = RHI::RayTracingResourceTable::Create();
+			m_rayTracingResourceTable = RHI::ResourceTable::Create();
 		}
 
 		RegisterListener<AppPreRenderEvent>(VT_BIND_EVENT_FN(RenderScene::OnPreRenderEvent)); 

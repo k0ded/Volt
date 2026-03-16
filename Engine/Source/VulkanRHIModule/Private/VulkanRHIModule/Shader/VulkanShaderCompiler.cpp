@@ -3,7 +3,7 @@
 
 #include "VulkanRHIModule/Shader/HLSLIncluder.h"
 #include "VulkanRHIModule/Common/VulkanCommon.h"
-#include "VulkanRHIModule/RayTracing/RayTracingTableDescriptorSetManager.h"
+#include "VulkanRHIModule/Descriptors/ResourceTableDescriptorSetManager.h"
 #include "VulkanRHIModule/Pipelines/StaticSamplerDescriptorSetManager.h"
 
 #include <RHIModule/Shader/ShaderUtility.h>
@@ -699,7 +699,7 @@ namespace Volt::RHI
 		const uint32_t shaderStageDescriptorSetIndex = GetDescriptorSetIndexFromShaderStage(currentShaderStage);
 		for (uint32_t bindingIndex = 0; SpvReflectDescriptorBinding* binding : allBindings)
 		{
-			if (binding->set == RayTracingTableDescriptorSetManager::Set && (binding->binding == RayTracingTableDescriptorSetManager::BuffersBinding || binding->binding == RayTracingTableDescriptorSetManager::TexturesBinding))
+			if (binding->set == ResourceTableDescriptorSetManager::Set && (binding->binding == ResourceTableDescriptorSetManager::BuffersBinding || binding->binding == ResourceTableDescriptorSetManager::TexturesBinding))
 			{
 				continue;
 			}
@@ -738,9 +738,9 @@ namespace Volt::RHI
 		for (SpvReflectDescriptorBinding* storageBuffer : storageBuffers)
 		{
 			// Special case for ray tracing resource table
-			if (storageBuffer->set == RayTracingTableDescriptorSetManager::Set && storageBuffer->binding == RayTracingTableDescriptorSetManager::BuffersBinding)
+			if (storageBuffer->set == ResourceTableDescriptorSetManager::Set && storageBuffer->binding == ResourceTableDescriptorSetManager::BuffersBinding)
 			{
-				shaderParameterMap.SetAccessesRayTracingResourceTable();
+				shaderParameterMap.SetAccessesResourceTable();
 			}
 			else
 			{
@@ -766,9 +766,9 @@ namespace Volt::RHI
 		for (SpvReflectDescriptorBinding* image : images)
 		{
 			// Special case for ray tracing resource table
-			if (image->set == RayTracingTableDescriptorSetManager::Set && image->binding == RayTracingTableDescriptorSetManager::TexturesBinding)
+			if (image->set == ResourceTableDescriptorSetManager::Set && image->binding == ResourceTableDescriptorSetManager::TexturesBinding)
 			{
-				shaderParameterMap.SetAccessesRayTracingResourceTable();
+				shaderParameterMap.SetAccessesResourceTable();
 			}
 			else
 			{

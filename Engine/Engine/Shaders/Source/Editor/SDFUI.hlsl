@@ -1,5 +1,6 @@
 #include "Utility/FullscreenTriangleVertex.hlsli"
 
+#include "ResourceTable.hlsli"
 #include "StaticSamplerStates.hlsli"
 
 static const float PI = 3.14159265359f;
@@ -22,7 +23,8 @@ struct UICommand
     float2 pixelPos;
 
     uint color;
-    float3 padding;
+    uint textureIndex;
+    float2 padding;
 
     float4 minMaxUV;
     float4 minMaxPx;
@@ -187,7 +189,6 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
                 break;
             }
 
-#if 0
             case UIPrimitiveType::TEXT_CHARACTER:
             {
                 if (pixelPos.x < command.minMaxPx.x || pixelPos.x > command.minMaxPx.z || pixelPos.y < command.minMaxPx.w || pixelPos.y > command.minMaxPx.y)
@@ -202,16 +203,17 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
                 const float2 textTexUv = float2(lerp(command.minMaxUV.x, command.minMaxUV.z, xPercent), lerp(command.minMaxUV.y, command.minMaxUV.w, yPercent));
                 
                 // Sample UV
-                const float3 msd = command.texture.Sample(constantsLinearSampler, textTexUv).rgb;
+                Texture2D fontAtlas = ResourceTable::LoadTexture(command.textureIndex);
+                const float3 msd = fontAtlas.Sample(StaticTrilinearSamplerClamp, textTexUv).rgb;
                 
                 uint2 msdfSize;
-                command.texture.GetDimensions(msdfSize.x, msdfSize.y);
+                fontAtlas.GetDimensions(msdfSize.x, msdfSize.y);
                 
                 float4 bgColor = float4(color.xyz, 0.f);
                 float4 fgColor = color;
                 
                 float sd = SDF_TextMedian(msd.x, msd.y, msd.z);
-                float screenPxDistance = ScreenPxRange((float2) msdfSize, (float2) constants.renderSize) * (sd - 0.5f);
+                float screenPxDistance = ScreenPxRange((float2) msdfSize, (float2)RenderSize) * (sd - 0.5f);
                 float opacity = clamp(screenPxDistance + 0.5f, 0.f, 1.f);
                 
                 if (opacity > 0.f)
@@ -221,7 +223,6 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 
                 break;
             }
-#endif
         }
     }
 

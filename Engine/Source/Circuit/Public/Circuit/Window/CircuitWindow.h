@@ -2,6 +2,8 @@
 
 #include "Circuit/CircuitDrawCommand.h"
 
+#include <RHIModule/Descriptors/ResourceTable.h>
+
 #include <WindowModule/WindowHandle.h>
 #include <CoreUtilities/Core.h>
 #include <EventSystem/EventListener.h>
@@ -45,6 +47,7 @@ namespace Circuit
 		const Volt::WindowHandle m_windowHandle;
 
 		Ref<CircuitRenderer> m_renderer;
+		RefPtr<Volt::RHI::ResourceTable> m_resourceTable;
 
 		glm::u16vec2 m_windowSize;
 		std::string m_title;

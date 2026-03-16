@@ -9,7 +9,8 @@
 #include <RHIModule/Shader/ShaderCommon.h>
 #include <RHIModule/Images/SamplerState.h>
 #include <RHIModule/RayTracing/AccelerationStructure.h>
-#include <RHIModule/RayTracing/RayTracingResuorceTable.h>
+
+#include <RHIModule/Descriptors/ResourceTable.h>
 
 #include <CoreUtilities/StringHash.h>
 
@@ -33,7 +34,7 @@ namespace Volt
 		UniformBufferAccess,
 		RenderTargets,
 		AccelerationStructure,
-		RayTracingResourceTable
+		ResourceTable
 	};
 
 	struct ShaderParameterMetadata
@@ -206,11 +207,11 @@ public: \
 /*
 	Adds a ray tracing resource table to the struct.
 */
-#define SHADER_PARAMETER_RAY_TRACING_RESOURCE_TABLE(paramName) \
+#define SHADER_PARAMETER_RESOURCE_TABLE(paramName) \
 	MemberID##paramName; \
 public: \
-	RefPtr<Volt::RHI::RayTracingResourceTable> paramName; \
-	SHADER_PARAMETER_COMMON_INTERNAL(RefPtr<Volt::RHI::RayTracingResourceTable>, paramName, Volt::ShaderParameterType::RayTracingResourceTable, Volt::RGResourceAccess::None)
+	RefPtr<Volt::RHI::ResourceTable> paramName; \
+	SHADER_PARAMETER_COMMON_INTERNAL(RefPtr<Volt::RHI::ResourceTable>, paramName, Volt::ShaderParameterType::ResourceTable, Volt::RGResourceAccess::None)
 
 /*
 	Adds a buffer read parameter to the struct

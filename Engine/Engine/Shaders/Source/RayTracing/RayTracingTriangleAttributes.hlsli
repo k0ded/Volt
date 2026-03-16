@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RayTracingResourceTable.hlsli"
+#include "ResourceTable.hlsli"
 #include "Barycentrics.hlsli"
 
 #include "RenderScene/GPUScene.hlsli"
@@ -73,9 +73,9 @@ TriangleMaterialData LoadVertexMaterialData(ByteAddressBuffer buffer, uint3 vert
 
 TriangleAttributes LoadTriangleAttributes(in GPUMesh mesh, in Barycentrics triangleBarycentrics, uint primitiveIndex)
 {
-	ByteAddressBuffer indexBuffer = LoadRTBuffer(mesh.RT_IndexBuffer);
-	ByteAddressBuffer vertexPositionBuffer = LoadRTBuffer(mesh.RT_vertexPositionsBuffer);
-	ByteAddressBuffer vertexMaterialBuffer = LoadRTBuffer(mesh.RT_vertexMaterialBuffer);
+	ByteAddressBuffer indexBuffer = ResourceTable::LoadBuffer(mesh.RT_IndexBuffer);
+	ByteAddressBuffer vertexPositionBuffer = ResourceTable::LoadBuffer(mesh.RT_vertexPositionsBuffer);
+	ByteAddressBuffer vertexMaterialBuffer = ResourceTable::LoadBuffer(mesh.RT_vertexMaterialBuffer);
 
 	const uint3 indices = uint3(
 		indexBuffer.Load<uint>((primitiveIndex * 3 + 0) * sizeof(uint)),

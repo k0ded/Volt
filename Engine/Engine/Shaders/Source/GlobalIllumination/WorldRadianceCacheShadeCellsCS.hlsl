@@ -1,4 +1,3 @@
-#include "RayTracing/RayTracingResourceTable.hlsli"
 #include "RayTracing/RayTracingTriangleAttributes.hlsli"
 #include "RayTracing/RayTracingInline.hlsli"
 

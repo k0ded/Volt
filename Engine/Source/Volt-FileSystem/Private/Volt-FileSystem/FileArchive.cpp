@@ -15,7 +15,7 @@ FileWriter::FileWriter()
 }
 
 FileWriter::FileWriter(FileWriter&& other) noexcept
-	: Archive(false),
+	: Archive(std::move(other)),
 	m_isOpen(other.m_isOpen),
 	m_fileHandle(std::move(other.m_fileHandle)),
 	m_error(std::move(other.m_error)),
