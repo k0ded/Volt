@@ -143,7 +143,7 @@ namespace Circuit
 			pipelineState.cullMode = RHI::CullMode::None;
 			pipelineState.depthMode = RHI::DepthMode::None;
 			pipelineState.renderTargets = passParameters->PS.renderTargets;
-			pipelineState.attachmentBlendStates[0] = Volt::DefaultBlendStates::Alpha();
+			//pipelineState.attachmentBlendStates[0] = Volt::DefaultBlendStates::Alpha();
 
 			RenderingInfo renderingInfo = context.CreateRenderingInfo(passParameters->PS.RenderSize.x, passParameters->PS.RenderSize.y, passParameters->PS.renderTargets);
 

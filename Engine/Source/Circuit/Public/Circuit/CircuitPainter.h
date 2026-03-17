@@ -32,6 +32,8 @@ namespace Circuit
 
 		void AddRect(float x, float y, float width, float height, CircuitColor color, float rotation = 0, float scale = 1);
 		void AddCircle(float x, float y, float radius, CircuitColor color, float scale = 1);
+		void AddCircleSegment(float x, float y, float innerRadius, float outerRadius, float angleDegrees, CircuitColor color, float scale = 1);
+		void AddLine(float x0, float y0, float x1, float y1, float radius, CircuitColor color);
 		void AddText(float x, float y, const std::string& text, AssetReference<Volt::FontAsset> font, float maxWidth, CircuitColor color, float scale = 1.f);
 
 		std::vector<CircuitDrawCommand> GetCommands();

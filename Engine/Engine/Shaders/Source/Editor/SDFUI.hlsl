@@ -1,33 +1,186 @@
+#include "Common.hlsli"
+
 #include "Utility/FullscreenTriangleVertex.hlsli"
+#include "Utility/Packing.hlsli"
+#include "Utility/2DSDF.hlsli"
 
 #include "ResourceTable.hlsli"
 #include "StaticSamplerStates.hlsli"
 
-static const float PI = 3.14159265359f;
-
 namespace UIPrimitiveType
 {
-    static const uint CIRCLE = 0;
-    static const uint RECTANGLE = 1;
-    static const uint TEXT_CHARACTER = 2;
+	static const uint Circle = 0;
+	static const uint Rect = 1;
+	static const uint Line = 2;
+	static const uint CircleSegment = 3;
+	static const uint TextChar = 4;
 }
 
 struct UICommand
 {
-    uint type;
-    uint primitiveGroup;
-    float rotation;
-    float scale;
+	uint type;
+	int primitiveGroup;
 
-    float2 radiusHalfSize;
-    float2 pixelPos;
+	// Common
+	float rotation;
+	float scale;
+	float2 position;
 
-    uint color;
-    uint textureIndex;
-    float2 padding;
+	float glowDistance;
+	float glowStrength;
 
-    float4 minMaxUV;
-    float4 minMaxPx;
+	float2 shadowOffset;
+	float shadowStrength;
+	float padding0;
+
+	uint color;
+	uint textureIndex;
+
+	// Rounding
+	float rounding;
+
+	// Circle
+	float radius;
+
+	// Rect
+	float2 halfSize;
+
+	// Circle Segment
+	float radiusInner;
+	float angle;
+
+	// Line
+	float2 lineA;
+	float2 lineB;
+
+	// Text
+	float4 minMaxUV;
+	float4 minMaxPx;
+};
+
+float3 SDF_Glow(float sdf, float glowDistance, float glowStrength, float3 glowColor, float3 prevColor)
+{
+	const float glowMask = clamp(sdf / glowDistance, 0.f, 1.f);
+	return lerp(prevColor, glowColor.rgb, (1.f - glowMask) * glowStrength);
+}
+
+struct SDFPrimitiveGroup
+{
+	float sdf;
+	float sdfShadow;
+	float3 groupColor;
+
+	void Reset(float3 initialColor)
+	{
+		sdf = FLT_MAX;
+		sdfShadow = FLT_MAX;
+		groupColor = initialColor;
+	}
+
+	void AddCircle(in UICommand command, float2 pixelPos)
+	{
+		const float4 color = UnpackUIntToFloat4(command.color);
+		const float2 position = SDF_Transform(command.position, command.scale, command.rotation, pixelPos);
+
+		float tempSdf = SDF_Circle(position, command.radius) * command.scale;
+		if (command.radiusInner > 0.f)
+		{
+			tempSdf = SDF_MakeHollow(tempSdf, command.radiusInner);
+		}
+
+		float tempSdfShadow = SDF_Circle(position + command.shadowOffset, command.radius) * command.scale;
+		if (command.radiusInner > 0.f)
+		{
+			tempSdfShadow = SDF_MakeHollow(tempSdfShadow, command.radiusInner);
+		}
+
+		sdf = SDF_Merge(sdf, tempSdf);
+		sdfShadow = SDF_Merge(sdfShadow, tempSdfShadow);
+
+		groupColor = lerp(groupColor, color.rgb * color.a, clamp(1.f - tempSdf, 0.f, 1.f));
+	}
+
+	void AddRectangle(in UICommand command, float2 pixelPos)
+	{
+		const float4 color = UnpackUIntToFloat4(command.color);
+		float2 position = SDF_Transform(command.position, command.scale, command.rotation, pixelPos);
+		position = SDF_Translate(position, -command.halfSize);
+
+		float tempSdf = SDF_Rectangle(position, command.halfSize, command.rounding) * command.scale;
+		if (command.radiusInner > 0.f)
+		{
+			tempSdf = SDF_MakeHollow(tempSdf, command.radiusInner);
+		}
+
+		float tempSdfShadow = SDF_Rectangle(position + command.shadowOffset, command.halfSize, command.rounding) * command.scale;
+		if (command.radiusInner > 0.f)
+		{
+			tempSdfShadow = SDF_MakeHollow(tempSdfShadow, command.radiusInner);
+		}
+
+		sdf = SDF_Merge(sdf, tempSdf);
+		sdfShadow = SDF_Merge(sdfShadow, tempSdfShadow);
+
+		groupColor = lerp(groupColor, color.rgb * color.a, clamp(1.f - tempSdf, 0.f, 1.f));
+	}
+
+	void AddLine(in UICommand command, float2 pixelPos)
+	{
+		const float4 color = UnpackUIntToFloat4(command.color);
+
+		float tempSdf = SDF_Line(pixelPos, command.lineA, command.lineB, command.radius);
+		if (command.radiusInner > 0.f)
+		{
+			tempSdf = SDF_MakeHollow(tempSdf, command.radiusInner);
+		}
+
+		float tempSdfShadow = SDF_Line(pixelPos, command.lineA + command.shadowOffset, command.lineB + command.shadowOffset, command.radius);
+		if (command.radiusInner > 0.f)
+		{
+			tempSdfShadow = SDF_MakeHollow(tempSdfShadow, command.radiusInner);
+		}
+
+		sdf = SDF_Merge(sdf, tempSdf);
+		sdfShadow = SDF_Merge(sdfShadow, tempSdfShadow);
+
+		groupColor = lerp(groupColor, color.rgb * color.a, clamp(1.f - tempSdf, 0.f, 1.f));
+	}
+
+	void AddCircleSegment(UICommand command, float2 pixelPos)
+	{
+		const float4 color = UnpackUIntToFloat4(command.color);
+		const float2 position = SDF_Transform(command.position, command.scale, command.rotation, pixelPos);
+
+		const float tempSdf = SDF_CircleSegment(position, command.angle, command.radiusInner, command.radius) * command.scale;
+		const float tempSdfShadow = SDF_CircleSegment(position + command.shadowOffset, command.angle, command.radiusInner, command.radius) * command.scale;
+	
+		sdf = SDF_Merge(sdf, tempSdf);
+		sdfShadow = SDF_Merge(sdfShadow, tempSdfShadow);
+
+		groupColor = lerp(groupColor, color.rgb * color.a, clamp(1.f - tempSdf, 0.f, 1.f));
+	}
+
+	void ApplyGroup(in UICommand lastCommandInGroup, inout float3 resultColor)
+	{
+		const float clampedSdf = clamp(1.f - sdf, 0.f, 1.f);
+		sdfShadow = clamp((1.f - sdfShadow) * lastCommandInGroup.shadowStrength, 0.f, 1.f);
+
+		if (sdfShadow > 0.f)
+		{
+			resultColor = lerp(resultColor, 0.f, sdfShadow);
+		}
+
+		if (lastCommandInGroup.glowStrength > 0.f && lastCommandInGroup.glowDistance > 0.f)
+		{
+			const float4 color = UnpackUIntToFloat4(lastCommandInGroup.color);
+			resultColor = SDF_Glow(sdf, lastCommandInGroup.glowDistance, lastCommandInGroup.glowStrength, color.rgb, resultColor);
+		}
+
+		if (clampedSdf > 0.f)
+		{
+			resultColor = lerp(resultColor, groupColor, clampedSdf);
+		}
+	}
 };
 
 StructuredBuffer<UICommand> Commands;
@@ -35,196 +188,118 @@ StructuredBuffer<UICommand> Commands;
 uint CommandCount;
 uint2 RenderSize;
 
-float SDF_Circle(float2 pixelPos, float radius)
-{
-    return length(pixelPos) - radius;
-}
-
-float SDF_Rectangle(float2 pixelPos, float2 halfSize)
-{
-    float2 compWiseEdgeDistance = abs(pixelPos) - halfSize;
-    float outsideDistance = length(max(compWiseEdgeDistance, 0.f));
-    float insideDistance = min(max(compWiseEdgeDistance.x, compWiseEdgeDistance.y), 0.f);
-
-    return outsideDistance + insideDistance;
-}
-
-float2 SDF_Scale(float2 pos, float scale)
-{
-    const float rcpScale = rcp(scale);
-    return pos * rcpScale;
-}
-
-float2 SDF_Rotate(float2 pos, float rotation)
-{
-    const float angle = rotation * PI * 2.f * -1.f;
-    float sine, cosine;
-    sincos(angle, sine, cosine);
-
-    return float2(cosine * pos.x + sine * pos.y, cosine * pos.y - sine * pos.x);
-}
-
-float2 SDF_Translate(float2 posA, float2 posB)
-{
-    return posA - posB;
-}
-
-float SDF_AA(float sdf)
-{
-    float dsdf = fwidth(sdf) * 0.5f;
-    float aa = smoothstep(dsdf, -dsdf, sdf);
-    
-    return aa;
-}
-
-float SDF_Merge(float sdf0, float sdf1)
-{
-    return min(sdf0, sdf1);
-}
-
-float SDF_Intersection(float sdf0, float sdf1)
-{
-    return max(sdf0, sdf1);
-}
-
-float SDF_Subtract(float sdf0, float sdf1)
-{
-    return SDF_Intersection(sdf0, -sdf1);
-}
-
-float SDF_Interpolate(float sdf0, float sdf1, float t)
-{
-    return lerp(sdf0, sdf1, t);
-}
-
-float4 BlendColors(float4 colorA, float4 colorB)
-{
-    float4 result;
-    result.rgb = colorA.rgb * (1.f - colorB.a) + colorB.rgb * colorB.a;
-    result.a = colorB.a;
-
-    return result;
-}
-
 float ScreenPxRange(float2 msdfSize, float2 screenSize)
 {
-    const float pxRange = 2.f;
-    float2 unitRange = pxRange / msdfSize;
-    
-    return max(0.5f * dot(unitRange, screenSize), 1.f);
+	const float pxRange = 2.f;
+	float2 unitRange = pxRange / msdfSize;
+	
+	return max(0.5f * dot(unitRange, screenSize), 1.f);
 }
 
 float SDF_TextMedian(float r, float g, float b)
 {
-    return max(min(r, g), min(max(r, g), b));
+	return max(min(r, g), min(max(r, g), b));
 }
 
 float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 {
-    const float2 pixelPos = input.uv * float2(RenderSize);
-    
-    float4 resultColor = float4(0.f, 0.f, 1.f, 1.f);
+	const float2 pixelPos = input.position.xy + 0.5f;
+	
+	float3 resultColor = 0.f;
 
-    for (uint i = 0; i < CommandCount; i++)
-    {
-        UICommand command = Commands[i];
-        const uint mask = 0xff;
-        const float4 color = float4(
-        ((command.color >> 24) & mask) / 255.f,
-        ((command.color >> 16) & mask) / 255.f,
-        ((command.color >> 8) & mask) / 255.f,
-        (command.color & mask) / 255.f);
-        
-        switch (command.type)
-        {
-            case UIPrimitiveType::CIRCLE:
-            {
-                    float2 position = SDF_Translate(command.pixelPos, pixelPos);
-                    position = SDF_Rotate(position, command.rotation);
-                    position = SDF_Scale(position, command.scale);
-                    const float sdf = SDF_Circle(position, command.radiusHalfSize.x) * command.scale;
+	SDFPrimitiveGroup primitiveGroup;
+	int activePrimitiveGroup = -1;
 
-                    const float alpha = SDF_AA(sdf) * color.a;
-                    if (alpha > 0.f)
-                    {
-                        resultColor = BlendColors(resultColor, float4(color.rgb, alpha));
-                    }
+	for (uint i = 0; i < CommandCount; i++)
+	{
+		UICommand command = Commands[i];
+		
+		const float4 commandColor = UnpackUIntToFloat4(command.color);
 
-                    const float dropShadowRadius = command.radiusHalfSize.x * 0.05f;
-                    const float t = sdf / dropShadowRadius;
+		if (i == 0 || 
+			activePrimitiveGroup != command.primitiveGroup || // Different group
+			command.primitiveGroup == -1) // No group
+		{
+			activePrimitiveGroup = command.primitiveGroup;
+			primitiveGroup.Reset(resultColor);	
+		}
 
-                    if (t > 0.f && t <= 1.f)
-                    {
-                        const float strength = 0.5f;
-                        resultColor = BlendColors(resultColor, float4(0.f, 0.f, 0.f, lerp(1.f, 0.f, t) * strength));
-                    }
+		switch (command.type)
+		{
+			case UIPrimitiveType::Circle:
+			{
+				primitiveGroup.AddCircle(command, pixelPos);
+				break;
+			}
 
-                    break;
-                }
+			case UIPrimitiveType::Rect:
+			{
+				primitiveGroup.AddRectangle(command, pixelPos);
+				break;
+			}
 
-            case UIPrimitiveType::RECTANGLE:
-            {
-                float2 position = SDF_Translate(command.pixelPos, pixelPos);
-                position = SDF_Rotate(position, command.rotation);
-                position = SDF_Scale(position, command.scale);
-                position = SDF_Translate(position, -command.radiusHalfSize);
-                
-                const float sdf = SDF_Rectangle(position, command.radiusHalfSize) * command.scale;
+			case UIPrimitiveType::Line:
+			{
+				primitiveGroup.AddLine(command, pixelPos);
+				break;
+			}
 
-                    const float alpha = SDF_AA(sdf) * color.a;
-                if (alpha > 0.f)
-                {
-                    resultColor = BlendColors(resultColor, float4(color.rgb, alpha));
-                }
+			case UIPrimitiveType::CircleSegment:
+			{
+				primitiveGroup.AddCircleSegment(command, pixelPos);
+				break;
+			}
 
-                const float dropShadowRadius = command.radiusHalfSize.x * 0.05f;
-                const float t = sdf / dropShadowRadius;
+			case UIPrimitiveType::TextChar:
+			{
+				if (pixelPos.x < command.minMaxPx.x || pixelPos.x > command.minMaxPx.z || pixelPos.y < command.minMaxPx.w || pixelPos.y > command.minMaxPx.y)
+				{
+					break;
+				}
 
-                if (t > 0.f && t <= 1.f)
-                {
-                    const float strength = 0.5f;
-                    resultColor = BlendColors(resultColor, float4(0.f, 0.f, 0.f, lerp(1.f, 0.f, t) * strength));
-                }
+				// Calculate UV within character quad
+				const float xPercent = (pixelPos.x - command.minMaxPx.x) / (command.minMaxPx.z - command.minMaxPx.x);
+				const float yPercent = (pixelPos.y - command.minMaxPx.y) / (command.minMaxPx.w - command.minMaxPx.y);
+				
+				const float2 textTexUv = float2(lerp(command.minMaxUV.x, command.minMaxUV.z, xPercent), lerp(command.minMaxUV.y, command.minMaxUV.w, yPercent));
+				
+				// Sample UV
+				Texture2D fontAtlas = ResourceTable::LoadTexture(command.textureIndex);
+				const float3 msd = fontAtlas.Sample(StaticTrilinearSamplerClamp, textTexUv).rgb;
+				
+				uint2 msdfSize;
+				fontAtlas.GetDimensions(msdfSize.x, msdfSize.y);
+				
+				const float4 color = UnpackUIntToFloat4(command.color);
+				float4 fgColor = color;
+				
+				float sd = SDF_TextMedian(msd.x, msd.y, msd.z);
+				float screenPxDistance = ScreenPxRange((float2) msdfSize, (float2)RenderSize) * (sd - 0.5f);
+				float opacity = clamp(screenPxDistance + 0.5f, 0.f, 1.f);
+				
+				resultColor = lerp(resultColor, fgColor.rgb * fgColor.a, opacity);
 
-                break;
-            }
+				break;
+			}
+		}
 
-            case UIPrimitiveType::TEXT_CHARACTER:
-            {
-                if (pixelPos.x < command.minMaxPx.x || pixelPos.x > command.minMaxPx.z || pixelPos.y < command.minMaxPx.w || pixelPos.y > command.minMaxPx.y)
-                {
-                    break;
-                }
+		if (i < CommandCount - 1)
+		{
+			int nextPrimitiveGroup = Commands[i + 1].primitiveGroup;
+		
+			// Apply group
+			if (activePrimitiveGroup != nextPrimitiveGroup || // Next will be a new group
+				activePrimitiveGroup == -1) // Always apply no groups.
+			{
+				primitiveGroup.ApplyGroup(command, resultColor);
+			}
+		}
+		// Last command, apply
+		else if (i == CommandCount - 1)
+		{
+			primitiveGroup.ApplyGroup(command, resultColor);
+		}
+	}
 
-                // Calculate UV within character quad
-                const float xPercent = (pixelPos.x - command.minMaxPx.x) / (command.minMaxPx.z - command.minMaxPx.x);
-                const float yPercent = (pixelPos.y - command.minMaxPx.y) / (command.minMaxPx.w - command.minMaxPx.y);
-                
-                const float2 textTexUv = float2(lerp(command.minMaxUV.x, command.minMaxUV.z, xPercent), lerp(command.minMaxUV.y, command.minMaxUV.w, yPercent));
-                
-                // Sample UV
-                Texture2D fontAtlas = ResourceTable::LoadTexture(command.textureIndex);
-                const float3 msd = fontAtlas.Sample(StaticTrilinearSamplerClamp, textTexUv).rgb;
-                
-                uint2 msdfSize;
-                fontAtlas.GetDimensions(msdfSize.x, msdfSize.y);
-                
-                float4 bgColor = float4(color.xyz, 0.f);
-                float4 fgColor = color;
-                
-                float sd = SDF_TextMedian(msd.x, msd.y, msd.z);
-                float screenPxDistance = ScreenPxRange((float2) msdfSize, (float2)RenderSize) * (sd - 0.5f);
-                float opacity = clamp(screenPxDistance + 0.5f, 0.f, 1.f);
-                
-                if (opacity > 0.f)
-                {
-                    resultColor = BlendColors(resultColor, float4(lerp(bgColor.rgb, fgColor.rgb, opacity), opacity));
-                }
-
-                break;
-            }
-        }
-    }
-
-    return resultColor;
+	return float4(resultColor, 1.f);
 }

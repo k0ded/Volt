@@ -11,25 +11,65 @@ namespace Circuit
 	enum class CircuitPrimitiveType : uint32_t
 	{
 		Circle = 0,
-		Rect = 1,
-		TextCharacter = 2
+		Rect,
+		Line,
+		CircleSegment,
+		TextCharacter
 	};
 
 	struct CircuitDrawCommand
 	{
 		CircuitPrimitiveType type;
-		uint32_t primitiveGroup;
+		int32_t primitiveGroup;
+
+		// Common
 		float rotation;
 		float scale;
+		glm::vec2 position;
 
-		glm::vec2 radiusHalfSize;
-		glm::vec2 pixelPos;
-		
+		float glowDistance;
+		float glowStrength;
+
+		glm::vec2 shadowOffset;
+		float shadowStrength;
+		float padding0;
+
 		CircuitColor color;
 		uint32_t textureIndex;
-		glm::vec2 padding;
 
+		// Rounding
+		float rounding;
+
+		// Circle
+		float radius;
+
+		// Rect
+		glm::vec2 halfSize;
+
+		// Circle Segment
+		float radiusInner;
+		float angle;
+
+		// Line
+		glm::vec2 lineA;
+		glm::vec2 lineB;
+
+		// Text
 		glm::vec4 minMaxUV;
 		glm::vec4 minMaxPx;
+
+		static CircuitDrawCommand Initialize()
+		{
+			CircuitDrawCommand result;
+			result.primitiveGroup = -1;
+			result.glowDistance = 0.f;
+			result.glowStrength = 0.f;
+			result.shadowOffset = 0.f;
+			result.shadowStrength = 0.f;
+			result.rounding = 0.f;
+			result.radiusInner = 0.f;
+
+			return result;
+		}
 	};
 };

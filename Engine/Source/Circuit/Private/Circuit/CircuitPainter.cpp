@@ -29,13 +29,22 @@ namespace Circuit
 			switch (command.type)
 			{
 				case CircuitPrimitiveType::Rect:
-					bounds.MergeRectIntoThis(Volt::Rect(command.pixelPos, command.radiusHalfSize * 2.f));
+					bounds.MergeRectIntoThis(Volt::Rect(command.position, command.halfSize * 2.f));
 					break;
+				case CircuitPrimitiveType::CircleSegment:
 				case CircuitPrimitiveType::Circle:
-					bounds.MergeRectIntoThis(Volt::Rect(command.pixelPos - glm::vec2(command.radiusHalfSize.x), command.radiusHalfSize.x * 2.f));
+					bounds.MergeRectIntoThis(Volt::Rect(command.position - glm::vec2(command.radius), command.radius * 2.f));
 					break;
 				case CircuitPrimitiveType::TextCharacter:
 					bounds.MergeRectIntoThis(Volt::Rect(command.minMaxPx.x, command.minMaxPx.y, glm::abs(command.minMaxPx.z - command.minMaxPx.x), glm::abs(command.minMaxPx.w - command.minMaxPx.y)));
+					break;
+				case CircuitPrimitiveType::Line:
+					const glm::vec2 minPos = glm::min(command.lineA, command.lineB);
+					const glm::vec2 maxPos = glm::max(command.lineA, command.lineB);
+					bounds.MergeRectIntoThis(Volt::Rect(minPos, maxPos - minPos));
+					break;
+				default:
+					VT_ENSURE_NO_ENTRY();
 					break;
 			}
 		}
@@ -49,17 +58,15 @@ namespace Circuit
 
 	void CircuitPainter::AddRect(float x, float y, float width, float height, CircuitColor color, float rotation, float scale)
 	{
-		CircuitDrawCommand command;
+		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
 		command.type = CircuitPrimitiveType::Rect;
 
-		command.pixelPos = ToPixelPos({ x,y });
-
-		command.radiusHalfSize.x = width / 2;
-		command.radiusHalfSize.y = height / 2;
-
+		command.position = ToPixelPos({ x,y });
 		command.rotation = rotation;
-
 		command.scale = scale;
+
+		command.halfSize.x = width / 2;
+		command.halfSize.y = height / 2;
 
 		command.color = color;
 
@@ -68,16 +75,42 @@ namespace Circuit
 
 	void CircuitPainter::AddCircle(float x, float y, float radius, CircuitColor color, float scale)
 	{
-		CircuitDrawCommand command;
+		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
 		command.type = CircuitPrimitiveType::Circle;
-		command.pixelPos = ToPixelPos({ x,y });
-
-		command.radiusHalfSize.x = radius;
-
+		command.position = ToPixelPos({ x,y });
 		command.scale = scale;
 
 		command.color = color;
 
+		command.radius = radius;
+
+		AddDrawCommand(std::move(command));
+	}
+
+	void CircuitPainter::AddCircleSegment(float x, float y, float innerRadius, float outerRadius, float angleDegrees, CircuitColor color, float scale /*= 1*/)
+	{
+		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
+		command.type = CircuitPrimitiveType::CircleSegment;
+		command.position = ToPixelPos({ x,y });
+		command.scale = scale;
+
+		command.color = color;
+
+		command.radius = outerRadius;
+		command.radiusInner = innerRadius;
+		command.angle = glm::radians(angleDegrees) * 0.5f;
+
+		AddDrawCommand(std::move(command));
+	}
+
+	void CircuitPainter::AddLine(float x0, float y0, float x1, float y1, float radius, CircuitColor color)
+	{
+		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
+		command.type = CircuitPrimitiveType::Line;
+		command.color = color;
+		command.radius = radius;
+		command.lineA = ToPixelPos({ x0, y0 });
+		command.lineB = ToPixelPos({ x1, y1 });
 
 		AddDrawCommand(std::move(command));
 	}
@@ -212,10 +245,10 @@ namespace Circuit
 				atlasBounds.right *= texelWidth; 
 				atlasBounds.top *= texelHeight;
 
-				CircuitDrawCommand command;
+				CircuitDrawCommand command = CircuitDrawCommand::Initialize();
 				command.type = CircuitPrimitiveType::TextCharacter;
-				command.pixelPos.x = x;
-				command.pixelPos.y = y;
+				command.position.x = x;
+				command.position.y = y;
 				command.color = color;
 				command.scale = scale;
 
