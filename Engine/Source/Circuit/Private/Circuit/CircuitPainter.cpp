@@ -31,13 +31,17 @@ namespace Circuit
 				case CircuitPrimitiveType::Rect:
 					bounds.MergeRectIntoThis(Volt::Rect(command.position, command.halfSize * 2.f));
 					break;
+				
 				case CircuitPrimitiveType::CircleSegment:
 				case CircuitPrimitiveType::Circle:
 					bounds.MergeRectIntoThis(Volt::Rect(command.position - glm::vec2(command.radius), command.radius * 2.f));
 					break;
+
+				case CircuitPrimitiveType::Image:
 				case CircuitPrimitiveType::TextCharacter:
 					bounds.MergeRectIntoThis(Volt::Rect(command.minMaxPx.x, command.minMaxPx.y, glm::abs(command.minMaxPx.z - command.minMaxPx.x), glm::abs(command.minMaxPx.w - command.minMaxPx.y)));
 					break;
+
 				case CircuitPrimitiveType::Line:
 					const glm::vec2 minPos = glm::min(command.lineA, command.lineB);
 					const glm::vec2 maxPos = glm::max(command.lineA, command.lineB);
@@ -200,6 +204,9 @@ namespace Circuit
 			double fsScale = 1.0 / (fontMetrics.ascenderY - fontMetrics.descenderY);
 			double sY = -fsScale * fontMetrics.ascenderY;
 
+			const uint32_t textureIndex = m_resourceTable->GetOrAddTextureSlotIndex(font->GetAtlas());
+			const glm::uvec2 dimensions = { font->GetAtlas()->GetWidth(), font->GetAtlas()->GetHeight() };
+
 			for (int32_t i = 0; i < static_cast<int32_t>(utf32string.size()); i++)
 			{
 				char32_t character = utf32string[i];
@@ -262,7 +269,8 @@ namespace Circuit
 				command.minMaxUV.z = static_cast<float>(atlasBounds.right);
 				command.minMaxUV.w = static_cast<float>(atlasBounds.top	);
 				
-				command.textureIndex = m_resourceTable->GetOrAddTextureSlotIndex(font->GetAtlas());
+				command.textureIndex = textureIndex;
+				command.dimensions = dimensions;
 
 				AddDrawCommand(std::move(command));
 
@@ -271,6 +279,42 @@ namespace Circuit
 				sX += fsScale * advance;
 			}
 		}
+	}
+
+	void CircuitPainter::AddImage(float x, float y, float width, float height, RefPtr<Volt::RHI::Image> image, float scale /*= 1.f*/)
+	{
+		AddImage(x, y, width, height, image, 0.f, 0.f, 1.f, 1.f, scale);
+	}
+
+	void CircuitPainter::AddImage(float x, float y, float width, float height, RefPtr<Volt::RHI::Image> image, float uv0x, float uv0y, float uv1x, float uv1y, float scale /*= 1.f*/)
+	{
+		const glm::vec2 pixelPos = ToPixelPos({ x, y });
+
+		CircuitDrawCommand command = CircuitDrawCommand::Initialize();
+		command.type = CircuitPrimitiveType::Image;
+		command.position.x = pixelPos.x;
+		command.position.y = pixelPos.y;
+		command.scale = scale;
+
+		const float firstHalfWidth = glm::floor(width * 0.5f);
+		const float firstHalfHeight = glm::floor(height * 0.5f);
+		const float secondHalfWidth = glm::ceil(width * 0.5f);
+		const float secondHalfHeight = glm::ceil(height * 0.5f);
+
+		command.minMaxPx.x = pixelPos.x - firstHalfWidth;
+		command.minMaxPx.y = pixelPos.y - firstHalfHeight;
+		command.minMaxPx.z = pixelPos.x + secondHalfWidth;
+		command.minMaxPx.w = pixelPos.y + secondHalfHeight;
+	
+		command.minMaxUV.x = uv0x;
+		command.minMaxUV.y = uv0y;
+		command.minMaxUV.z = uv1x;
+		command.minMaxUV.w = uv1y;
+
+		command.textureIndex = m_resourceTable->GetOrAddTextureSlotIndex(image);
+		command.dimensions = { image->GetWidth(), image->GetHeight() };
+
+		AddDrawCommand(std::move(command));
 	}
 
 	std::vector<CircuitDrawCommand> CircuitPainter::GetCommands()

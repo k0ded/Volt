@@ -14,7 +14,8 @@ namespace Circuit
 		Rect,
 		Line,
 		CircleSegment,
-		TextCharacter
+		TextCharacter,
+		Image
 	};
 
 	struct CircuitDrawCommand
@@ -53,6 +54,10 @@ namespace Circuit
 		// Line
 		glm::vec2 lineA;
 		glm::vec2 lineB;
+
+		// Image
+		glm::uvec2 dimensions;
+		glm::vec2 padding1;
 
 		// Text
 		glm::vec4 minMaxUV;

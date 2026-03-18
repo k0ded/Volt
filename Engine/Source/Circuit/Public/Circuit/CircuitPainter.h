@@ -4,6 +4,7 @@
 #include <Volt-Assets/FontAsset.h>
 
 #include <RHIModule/Descriptors/ResourceTable.h>
+#include <RHIModule/Images/Image.h>
 
 #include <AssetSystem/AssetReference.h>
 
@@ -35,6 +36,8 @@ namespace Circuit
 		void AddCircleSegment(float x, float y, float innerRadius, float outerRadius, float angleDegrees, CircuitColor color, float scale = 1);
 		void AddLine(float x0, float y0, float x1, float y1, float radius, CircuitColor color);
 		void AddText(float x, float y, const std::string& text, AssetReference<Volt::FontAsset> font, float maxWidth, CircuitColor color, float scale = 1.f);
+		void AddImage(float x, float y, float width, float height, RefPtr<Volt::RHI::Image> image, float scale = 1.f);
+		void AddImage(float x, float y, float width, float height, RefPtr<Volt::RHI::Image> image, float uv0x, float uv0y, float uv1x, float uv1y, float scale = 1.f);
 
 		std::vector<CircuitDrawCommand> GetCommands();
 	private:

@@ -14,6 +14,7 @@ namespace UIPrimitiveType
 	static const uint Line = 2;
 	static const uint CircleSegment = 3;
 	static const uint TextChar = 4;
+	static const uint Image = 5;
 }
 
 struct UICommand
@@ -52,6 +53,10 @@ struct UICommand
 	// Line
 	float2 lineA;
 	float2 lineB;
+
+	// Image
+	uint2 dimensions;
+	float2 padding1;
 
 	// Text
 	float4 minMaxUV;
@@ -267,17 +272,35 @@ float4 MainPS(FullscreenTriangleVertex input) : SV_Target0
 				Texture2D fontAtlas = ResourceTable::LoadTexture(command.textureIndex);
 				const float3 msd = fontAtlas.Sample(StaticTrilinearSamplerClamp, textTexUv).rgb;
 				
-				uint2 msdfSize;
-				fontAtlas.GetDimensions(msdfSize.x, msdfSize.y);
-				
 				const float4 color = UnpackUIntToFloat4(command.color);
 				float4 fgColor = color;
 				
 				float sd = SDF_TextMedian(msd.x, msd.y, msd.z);
-				float screenPxDistance = ScreenPxRange((float2) msdfSize, (float2)RenderSize) * (sd - 0.5f);
+				float screenPxDistance = ScreenPxRange(command.dimensions, RenderSize) * (sd - 0.5f);
 				float opacity = clamp(screenPxDistance + 0.5f, 0.f, 1.f);
 				
 				resultColor = lerp(resultColor, fgColor.rgb * fgColor.a, opacity);
+
+				break;
+			}
+
+			case UIPrimitiveType::Image:
+			{
+				if (any(pixelPos < command.minMaxPx.xy) ||
+					any(pixelPos > command.minMaxPx.zw))
+				{
+					break;
+				}
+
+				// Calculate UV within iamge quad
+				const float xPercent = (pixelPos.x - command.minMaxPx.x) / (command.minMaxPx.z - command.minMaxPx.x);
+				const float yPercent = (pixelPos.y - command.minMaxPx.y) / (command.minMaxPx.w - command.minMaxPx.y);
+				
+				const float2 texUv = float2(lerp(command.minMaxUV.x, command.minMaxUV.z, xPercent), lerp(command.minMaxUV.y, command.minMaxUV.w, yPercent));
+				
+				Texture2D texture = ResourceTable::LoadTexture(command.textureIndex);
+				const float4 color = texture.Sample(StaticTrilinearSamplerClamp, texUv);
+				resultColor = lerp(resultColor, color.rgb, color.a);
 
 				break;
 			}
