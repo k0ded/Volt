@@ -69,7 +69,7 @@ void CircuitSandbox::OnAttach()
 
 	const glm::vec3 startPosition = { 500.f, 500.f, 500.f };
 	const float focalDistance = glm::distance(startPosition, {0,0,0});
-	glm::vec3 pos = m_camera->GetForward() * focalDistance;
+	const glm::vec3 pos = -1.f * m_camera->GetForward() * focalDistance;
 	m_camera->SetPosition(pos);
 
 
