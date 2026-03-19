@@ -296,15 +296,15 @@ namespace Circuit
 		command.position.y = pixelPos.y;
 		command.scale = scale;
 
-		const float firstHalfWidth = glm::floor(width * 0.5f);
-		const float firstHalfHeight = glm::floor(height * 0.5f);
-		const float secondHalfWidth = glm::ceil(width * 0.5f);
-		const float secondHalfHeight = glm::ceil(height * 0.5f);
+		//const float firstHalfWidth = glm::floor(width * 0.5f);
+		//const float firstHalfHeight = glm::floor(height * 0.5f);
+		//const float secondHalfWidth = glm::ceil(width * 0.5f);
+		//const float secondHalfHeight = glm::ceil(height * 0.5f);
 
-		command.minMaxPx.x = pixelPos.x - firstHalfWidth;
-		command.minMaxPx.y = pixelPos.y - firstHalfHeight;
-		command.minMaxPx.z = pixelPos.x + secondHalfWidth;
-		command.minMaxPx.w = pixelPos.y + secondHalfHeight;
+		command.minMaxPx.x = pixelPos.x;
+		command.minMaxPx.y = pixelPos.y;
+		command.minMaxPx.z = pixelPos.x + width;
+		command.minMaxPx.w = pixelPos.y + height;
 	
 		command.minMaxUV.x = uv0x;
 		command.minMaxUV.y = uv0y;
