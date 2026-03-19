@@ -15,6 +15,10 @@ namespace Circuit
 
 		CIRCUIT_ARGUMENT(Ref<Widget>, Content);
 
+		CIRCUIT_EVENT(OnTitlebarButtonInteracted, OnRequestClose);
+		CIRCUIT_EVENT(OnTitlebarButtonInteracted, OnRequestMinimize);
+		CIRCUIT_EVENT(OnTitlebarButtonInteracted, OnRequestMaximize);
+
 		CIRCUIT_END_ARGS();
 
 		virtual glm::vec2 GetDesiredSize() override { return { -1,-1 }; }

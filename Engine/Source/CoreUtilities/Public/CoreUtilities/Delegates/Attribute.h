@@ -86,6 +86,12 @@ namespace Volt
 		}
 
 		template <typename UserClass, typename... RawFnParamTypes>
+		static Attribute<T> CreateRaw(UserClass* userObject, Getter::template MemberFnPtr<UserClass> func, RawFnParamTypes&&... params)
+		{
+			return Attribute<T>(Getter::CreateRaw(userObject, func, std::forward<RawFnParamTypes>(params)...));
+		}
+
+		template <typename UserClass, typename... RawFnParamTypes>
 		static Attribute<T> CreateRaw(const UserClass* userObject, Getter::template ConstMemberFnPtr<UserClass> func, RawFnParamTypes&&... params)
 		{
 			return Attribute<T>(Getter::CreateRaw(userObject, func, std::forward<RawFnParamTypes>(params)...));

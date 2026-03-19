@@ -557,7 +557,7 @@ namespace Volt
 
 	bool Window::IsMaximized() const
 	{
-		return glfwGetWindowAttrib(m_window, GLFW_MAXIMIZED) == GLFW_MAXIMIZED;
+		return glfwGetWindowAttrib(m_window, GLFW_MAXIMIZED) != 0;
 	}
 
 	bool Window::IsMinimized() const

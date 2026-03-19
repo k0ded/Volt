@@ -24,7 +24,7 @@ namespace Circuit
 	{
 	public:
 		CIRCUIT_API CircuitWindow(Volt::WindowHandle windowHandle);
-		CIRCUIT_API ~CircuitWindow() = default;
+		CIRCUIT_API ~CircuitWindow();
 
 		CIRCUIT_API Volt::WindowHandle GetWindowHandle() const;
 

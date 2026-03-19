@@ -3,9 +3,10 @@
 
 #include "Circuit/Widgets/Layout/LayoutWidget.h"
 #include "Circuit/Widgets/ButtonWidget.h"
+#include "Circuit/CircuitPainter.h"
+
 #include "TextWidget.h"
 
-#include "Circuit/CircuitPainter.h"
 
 namespace Circuit
 {
@@ -19,6 +20,10 @@ namespace Circuit
 		m_iconSize = args._IconSize;
 
 		m_titlebarColor = args._Color;
+
+		m_onRequestClose = args._OnRequestClose;
+		m_onRequestMinimize = args._OnRequestMinimize;
+		m_onRequestMaximize = args._OnRequestMaximize;
 
 		Ref<LayoutWidget> layout = CreateWidget(LayoutWidget).Orientation(LayoutOrientation::Horizontal);
 
@@ -68,14 +73,33 @@ namespace Circuit
 
 	Ref<Widget> WindowTitlebarWidget::CreateMinimizeButton()
 	{
-		return CreateWidget(ButtonWidget);
+		return CreateWidget(ButtonWidget)
+			.Text("-")
+			.OnReleased_Raw(this, &WindowTitlebarWidget::OnMinimizeButtonReleased);
 	}
 	Ref<Widget> WindowTitlebarWidget::CreateMaximizeButton()
 	{
-		return CreateWidget(ButtonWidget);
+		return CreateWidget(ButtonWidget)
+			.Text("=")
+			.OnReleased_Raw(this, &WindowTitlebarWidget::OnMaximizeButtonReleased);
 	}
 	Ref<Widget> WindowTitlebarWidget::CreateCloseButton()
 	{
-		return CreateWidget(ButtonWidget);
+		return CreateWidget(ButtonWidget)
+			.Text("x")
+			.OnReleased_Raw(this, &WindowTitlebarWidget::OnCloseButtonReleased);
+	}
+
+	void WindowTitlebarWidget::OnCloseButtonReleased(Volt::InputCode mouseButton)
+	{
+		m_onRequestClose.ExecuteIfBound();
+	}
+	void WindowTitlebarWidget::OnMinimizeButtonReleased(Volt::InputCode mouseButton)
+	{
+		m_onRequestMinimize.ExecuteIfBound();
+	}
+	void WindowTitlebarWidget::OnMaximizeButtonReleased(Volt::InputCode mouseButton)
+	{
+		m_onRequestMaximize .ExecuteIfBound();
 	}
 }

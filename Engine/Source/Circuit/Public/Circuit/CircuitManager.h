@@ -29,6 +29,7 @@ namespace Circuit
 
 		CIRCUIT_API static CircuitManager& Get();
 		CIRCUIT_API static void Initialize(Ref<Widget> mainWindowWidget);
+		CIRCUIT_API static void Shutdown();
 
 		CIRCUIT_API void Update();
 

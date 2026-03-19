@@ -43,9 +43,9 @@ private:
 	//temp
 	void SetupNewSceneData();
 	Ref<Volt::SceneRenderer> m_sceneRenderer;
-	Ref<OutlineSceneRendererExtension> m_outlineSceneRendererExtension;
-	Ref<ObjectIDSceneRendererExtension> m_objectIDSceneRendererExtension;
-	Ref<DebugSceneRendererExtension> m_debugSceneRendererExtension;
+	//Ref<OutlineSceneRendererExtension> m_outlineSceneRendererExtension;
+	//Ref<ObjectIDSceneRendererExtension> m_objectIDSceneRendererExtension;
+	//Ref<DebugSceneRendererExtension> m_debugSceneRendererExtension;
 
 	AssetReference<Volt::Scene> m_editorScene;
 	Ref<Volt::Camera> m_camera;

@@ -1,19 +1,35 @@
 #include "circuitpch.h"
 #include "Widgets/ButtonWidget.h"
+#include "WidgetInteractionData.h"
 
 #include "CircuitPainter.h"
 
-#include <InputModule/Input.h>
-#include <InputModule/Events/MouseEvents.h>
+//TODO: REMOVE THIS
+#include <AssetSystem/AssetManager.h>
+#include <AssetSystem/AssetMetadataWrappers.h>
 
 Circuit::ButtonWidget::ButtonWidget()
-{}
+{
+	Volt::AssetHandle firstFoundFont;
+
+	Volt::AssetRegistryIteratorFilter filter;
+	filter.AddAssetType<Volt::FontAsset>();
+	g_assetManager->IterateAssetRegistryWithFilter(filter, [&](Volt::ReadOnlyAssetMetadata meta)
+	{
+		firstFoundFont = meta->handle;
+		return false;
+	});
+	g_assetManager->TryGetAsset(firstFoundFont, m_fontAsset);
+}
 
 Circuit::ButtonWidget::~ButtonWidget()
 {}
 
 void Circuit::ButtonWidget::Build(const Arguments& args)
 {
+	m_onPressedDelegate = args._OnPressed;
+	m_onReleasedDelegate = args._OnReleased;
+	m_text = args._Text;
 	m_content = args._Content;
 
 	if (m_content)
@@ -65,6 +81,10 @@ void Circuit::ButtonWidget::OnPaint(CircuitPainter& painter)
 	{
 		painter.AddWidget(m_content, 0, 0, painter.GetAllotedSize().x, painter.GetAllotedSize().y);
 	}
+	else if (m_fontAsset.IsValid())
+	{
+		painter.AddText(0, 0, m_text.Get(), m_fontAsset, painter.GetAllotedSize().x, 0x000000ff);
+	}
 }
 
 void Circuit::ButtonWidget::OnBeginHover(const WidgetInteractionData& interactionData)
@@ -80,10 +100,12 @@ void Circuit::ButtonWidget::OnEndHover(const WidgetInteractionData& interactionD
 
 void Circuit::ButtonWidget::OnPressed(const WidgetInteractionData& interactionData)
 {
+	m_onPressedDelegate.ExecuteIfBound(interactionData.mouseButton);
 	m_pressed = true;
 }
 
 void Circuit::ButtonWidget::OnReleased(const WidgetInteractionData& interactionData)
 {
+	m_onReleasedDelegate.ExecuteIfBound(interactionData.mouseButton);
 	m_pressed = false;
 }

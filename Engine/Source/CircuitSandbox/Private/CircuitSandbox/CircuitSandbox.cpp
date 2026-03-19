@@ -81,6 +81,12 @@ void CircuitSandbox::OnDetach()
 {
 	m_isInitialized = false;
 
+	Circuit::CircuitManager::Shutdown();
+
+	m_editorScene = nullptr;
+	m_sceneRenderer = nullptr;
+	m_camera = nullptr;
+
 	s_instance = nullptr;
 }
 

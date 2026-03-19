@@ -3,8 +3,12 @@
 
 #include "Circuit/CircuitColor.h"
 
+#include <CoreUtilities/Delegates/Delegate.h>
+
+#include <InputModule/InputCodes.h>
 namespace Circuit
 {
+	DECLARE_DELEGATE(OnTitlebarButtonInteracted);
 	class LayoutWidget;
 
 	class CIRCUIT_API WindowTitlebarWidget : public CompoundWidget
@@ -21,6 +25,10 @@ namespace Circuit
 		CIRCUIT_ARGUMENT(float, IconSize);
 		CIRCUIT_ARGUMENT(float, Height);
 
+		CIRCUIT_EVENT(OnTitlebarButtonInteracted, OnRequestClose);
+		CIRCUIT_EVENT(OnTitlebarButtonInteracted, OnRequestMinimize);
+		CIRCUIT_EVENT(OnTitlebarButtonInteracted, OnRequestMaximize);
+
 		CIRCUIT_END_ARGS();
 
 		virtual glm::vec2 GetDesiredSize() override;
@@ -35,6 +43,15 @@ namespace Circuit
 		Ref<Widget> CreateMinimizeButton();
 		Ref<Widget> CreateMaximizeButton();
 		Ref<Widget> CreateCloseButton();
+
+		void OnCloseButtonReleased(Volt::InputCode mouseButton);
+		void OnMinimizeButtonReleased(Volt::InputCode mouseButton);
+		void OnMaximizeButtonReleased(Volt::InputCode mouseButton);
+
+		OnTitlebarButtonInteracted m_onRequestClose;
+		OnTitlebarButtonInteracted m_onRequestMinimize;
+		OnTitlebarButtonInteracted m_onRequestMaximize;
+
 
 		float m_iconSize;
 		float m_height;

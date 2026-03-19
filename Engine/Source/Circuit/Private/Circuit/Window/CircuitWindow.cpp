@@ -25,6 +25,11 @@ namespace Circuit
 		RegisterEventListeners();
 	}
 
+	CircuitWindow::~CircuitWindow()
+	{
+		VT_LOG(Info, "destruct CircuitWindow");
+	}
+
 	void CircuitWindow::RegisterEventListeners()
 	{
 		RegisterListener<Volt::WindowTitlebarHittestEvent>(VT_BIND_EVENT_FN(CircuitWindow::OnWindowTitlebarHittestEvent));

@@ -90,11 +90,11 @@
 		return static_cast<WidgetArgumentsType*>(this)->Me(); \
 	} \
 	template <typename UserClass, typename... RawFnParamTypes> \
-	WidgetArgumentsType& EventName##_Raw(const UserClass* userObject, DelegateType::template ConstMemberFnPtr<UserClass> func, RawFnParamTypes&&... params)	\
+	WidgetArgumentsType& EventName##_Raw(UserClass* userObject, DelegateType::template MemberFnPtr<UserClass> func, RawFnParamTypes&&... params)	\
 	{ \
 		_##EventName = DelegateType::CreateRaw(userObject, func, std::forward(params)...); \
 		return static_cast<WidgetArgumentsType*>(this)->Me(); \
-	} \
+	} 
 
 template<typename WidgetType>
 struct CircuitDeclare

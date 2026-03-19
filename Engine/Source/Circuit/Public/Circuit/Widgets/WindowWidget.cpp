@@ -20,7 +20,10 @@ namespace Circuit
 		m_titlebar = CreateWidget(WindowTitlebarWidget)
 			.Height(titlebarHeight)
 			.IconSize(windowIconSize)
-			.Color(0x555560ff);
+			.Color(0x555560ff)
+			.OnRequestClose(args._OnRequestClose)
+			.OnRequestMinimize(args._OnRequestMinimize)
+			.OnRequestMaximize(args._OnRequestMaximize);
 
 		layout->AddFixedSlice(m_titlebar, titlebarHeight);
 

@@ -116,7 +116,7 @@ namespace Volt
 		}
 
 		template <typename UserClass, typename... RawFnParamTypes>
-		[[nodiscard]] inline static Delegate<FnType> CreateRaw(UserClass* userObject, typename MemFnPtrType<false, UserClass, ReturnType(ParamTypes..., std::decay_t<RawFnParamTypes>...)>::Type func, RawFnParamTypes&&... params)
+		[[nodiscard]] inline static Delegate<FnType> CreateRaw(const UserClass* userObject, typename MemFnPtrType<true, UserClass, ReturnType(ParamTypes..., std::decay_t<RawFnParamTypes>...)>::Type func, RawFnParamTypes&&... params)
 		{
 			static_assert(!std::is_const_v<UserClass>, "Attempting to bind a delegate with a const object pointer and non-const member function.");
 
@@ -126,10 +126,10 @@ namespace Volt
 		}
 
 		template <typename UserClass, typename... RawFnParamTypes>
-		[[nodiscard]] inline static Delegate<FnType> CreateRaw(const UserClass* userObject, typename MemFnPtrType<true, UserClass, ReturnType(ParamTypes..., std::decay_t<RawFnParamTypes>...)>::Type func, RawFnParamTypes&&... params)
+		[[nodiscard]] inline static Delegate<FnType> CreateRaw(UserClass* userObject, typename MemFnPtrType<false, UserClass, ReturnType(ParamTypes..., std::decay_t<RawFnParamTypes>...)>::Type func, RawFnParamTypes&&... params)
 		{
 			Delegate<FnType> result;
-			result.template CreateDelegateInstance<RawFunctionDelegateInstance<true, UserClass, FnType, std::decay_t<RawFnParamTypes>...>>(userObject, func, std::forward<RawFnParamTypes>(params)...);
+			result.template CreateDelegateInstance<RawFunctionDelegateInstance<false, UserClass, FnType, std::decay_t<RawFnParamTypes>...>>(userObject, func, std::forward<RawFnParamTypes>(params)...);
 			return result;
 		}
 

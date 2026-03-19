@@ -19,6 +19,7 @@
 #include <CoreUtilities/Delegates/Delegate.h>
 
 #include <LogModule/Log.h>
+#include <EventSystem/EventSystem.h>
 
 namespace Circuit
 {
@@ -37,6 +38,11 @@ namespace Circuit
 		s_Instance->Init(mainWindowWidget);
 	}
 
+	void CircuitManager::Shutdown()
+	{
+		s_Instance = nullptr;
+	}
+
 	void CircuitManager::Init(Ref<Widget> mainWindowWidget)
 	{
 		VT_PROFILE_FUNCTION();
@@ -46,58 +52,33 @@ namespace Circuit
 		InputHandler = CreateScope<CircuitInputHandler>();
 		InputHandler->Init();
 
-		/*Ref<LayoutWidget> layout = CreateWidget(LayoutWidget).Orientation(LayoutOrientation::Horizontal);
-
-		layout->AddFlexibleSlice(CreateWidget(TextWidget).Text("One"));
-		layout->AddFlexibleSlice(CreateWidget(TextWidget).Text("Two"));
-		layout->AddFixedSlice(CreateWidget(TextWidget).Text("Three"), 200);
-		layout->AddFixedSlice(CreateWidget(TextWidget).Text("Four"), 200);
-		*/
-
-		//Ref<LayoutWidget> layout = CreateWidget(LayoutWidget).Orientation(LayoutOrientation::Horizontal);
-		//static float sliderValue = 50.f;
-		//layout->AddFlexibleSlice(
-		//CreateWidget(SliderWidget)
-		//.MinValue(0)
-		//.MaxValue(100)
-		//.Value_Lambda([]() {return sliderValue; })
-		//.OnValueChanged_Lambda([](float newValue)
-		//{
-		//	sliderValue = newValue;
-		//})
-		//);
-
-		//layout->AddFixedSlice(CreateWidget(ButtonWidget).MinSize(20), 40, 2);
-
-		//layout->AddFlexibleSlice(
-		//CreateWidget(SliderWidget)
-		//.MinValue(0)
-		//.MaxValue(100)
-		//.Value_Lambda([]() {return sliderValue; })
-		//.OnValueChanged_Lambda([](float newValue)
-		//{
-		//	sliderValue = newValue;
-		//})
-		//);
-
 		m_windows[Volt::WindowManager::Get().GetMainWindowHandle()]->SetWidget(
 			CreateWidget(WindowWidget)
 			.Content(mainWindowWidget)
-		);
-
-
-		//static float sliderValue = 50.f;
-		/*CreateWidget(SliderWidget)
-			.X(100)
-			.Y(100)
-			.MinValue(0)
-			.MaxValue(100)
-			.Value_Lambda([]() {return sliderValue; })
-			.OnValueChanged_Lambda([](float newValue)
+			.OnRequestClose_Lambda([]()
 		{
-			sliderValue = newValue;
-		})*/
+			Volt::WindowCloseEvent e{ Volt::WindowManager::Get().GetMainWindow() };
+			Volt::EventSystem::DispatchEvent(e);
+		})
 
+				.OnRequestMinimize_Lambda([]()
+		{
+			Volt::WindowManager::Get().GetMainWindow().Minimize();
+		})
+
+				.OnRequestMaximize_Lambda([]()
+		{
+			Volt::Window& mainWindow = Volt::WindowManager::Get().GetMainWindow();
+			if (mainWindow.IsMaximized())
+			{
+				mainWindow.Restore();
+			}
+			else
+			{
+				mainWindow.Maximize();
+			}
+		})
+		);
 	}
 
 	void CircuitManager::RegisterEventListeners()
