@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreUtilities/Delegates/Attribute.h>
+#include <CoreUtilities/Profiling/Profiling.h>
 
 #define CreateWidget(InWidgetType) \
 	CircuitDeclare<InWidgetType>() <<= InWidgetType::Arguments()

@@ -14,7 +14,7 @@
 namespace Circuit
 {
 	class Widget;
-	class CircuitPainter
+	class CIRCUIT_API CircuitPainter
 	{
 	public:
 		CircuitPainter(const Volt::Rect& allotedScreenArea, RefPtr<Volt::RHI::ResourceTable> resourceTable)

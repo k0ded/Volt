@@ -43,6 +43,12 @@ namespace VoltSharpmake
 
             conf.AddPrivateDependency<glm>(target);
 
+			conf.AddPrivateDependency<VoltScene>(target); // temp
+			conf.AddPrivateDependency<VoltRenderer>(target); // temp
+			conf.AddPrivateDependency<AssetSystemModule>(target); // temp
+			conf.AddPrivateDependency<VoltAssets>(target); // temp
+
+
 			Type gameProjectType = Type.GetType("VoltSharpmake.Game");
 			if (gameProjectType != null)
 			{

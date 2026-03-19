@@ -1,6 +1,8 @@
 #include "csbpch.h"
 #include "CircuitSandbox.h"
 
+#include "CircuitSandbox/Widgets/ViewportWidget.h"
+
 #include <InputModule/Input.h>
 #include <InputModule/InputCodes.h>
 #include <InputModule/Events/KeyboardEvents.h>
@@ -13,6 +15,12 @@
 
 #include <Circuit/CircuitManager.h>
 #include <Circuit/Widgets/SliderWidget.h>
+
+#include <Volt-Renderer/SceneRenderer.h>
+#include <Volt-Renderer/Camera/Camera.h>
+
+#include <Volt-Scene/Scene.h>
+#include <Circuit/Widgets/Layout/LayoutWidget.h>
 
 CircuitSandbox::CircuitSandbox()
 {
@@ -41,8 +49,29 @@ void CircuitSandbox::OnAttach()
 
 	//Volt::WindowManager::Get().GetMainWindow().Maximize();
 
-	Circuit::CircuitManager::Initialize();
-	//Volt::WindowManager::Get().GetMainWindow().Resize(500, 300);
+
+
+	m_editorScene = Volt::Scene::CreateDefaultScene("New Scene", true);
+	SetupNewSceneData();
+
+	Ref<Circuit::LayoutWidget> layout = CreateWidget(Circuit::LayoutWidget).Orientation(Circuit::LayoutOrientation::Horizontal);
+		layout->AddFlexibleSlice(
+		CreateWidget(ViewportWidget)
+		.SceneRenderer(m_sceneRenderer)
+		);
+	Circuit::CircuitManager::Initialize(layout);
+
+	constexpr float fov = glm::radians(60.f);
+	constexpr float nearPlane = 1.f;
+	constexpr float farPlane = 100000.f;
+	m_camera = CreateRef<Volt::Camera>(fov, 16.f / 9.f, nearPlane, farPlane);
+	m_camera->SetRotation(glm::radians(glm::vec3(45.f, 135.f, 0.f)));
+
+	const glm::vec3 startPosition = { 500.f, 500.f, 500.f };
+	const float focalDistance = glm::distance(startPosition, {0,0,0});
+	glm::vec3 pos = m_camera->GetForward() * focalDistance;
+	m_camera->SetPosition(pos);
+
 
 
 	m_isInitialized = true;
@@ -66,6 +95,12 @@ bool CircuitSandbox::OnRenderEvent(Volt::AppRenderEvent& e)
 {
 	VT_PROFILE_FUNCTION();
 
+	if (m_sceneRenderer)
+	{
+		m_sceneRenderer->OnRenderEditor(m_camera, e.GetTimestep());
+	}
+
+
 	return false;
 }
 
@@ -73,4 +108,32 @@ bool CircuitSandbox::OnKeyPressedEvent(Volt::KeyPressedEvent& e)
 {
 
 	return false;
+}
+
+void CircuitSandbox::SetupNewSceneData()
+{
+	// Scene Renderers
+	{
+		Volt::SceneRendererCreateInfo spec{};
+
+		spec.debugName = "Editor Viewport";
+		spec.renderScene = m_editorScene->GetRenderScene();
+		spec.drawDebug = true;
+
+		if (m_sceneRenderer)
+		{
+			spec.initialResolution = { m_sceneRenderer->GetFinalImage()->GetWidth(), m_sceneRenderer->GetFinalImage()->GetHeight() };
+		}
+
+		m_sceneRenderer = CreateRef<Volt::SceneRenderer>(spec);
+		/*auto gridExt = m_sceneRenderer->AddExtension<GridSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
+		gridExt->GetIsEnabledDelegate().BindLambda([]()
+		{
+			return UserSettingsManager::GetSettings().sceneSettings.gridEnabled;
+		});
+
+		m_outlineSceneRendererExtension = m_sceneRenderer->AddExtension<OutlineSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing);
+		m_objectIDSceneRendererExtension = m_sceneRenderer->AddExtension<ObjectIDSceneRendererExtension>(Volt::SceneRendererExtensionStage::PreGBuffer);
+		m_debugSceneRendererExtension = m_sceneRenderer->AddExtension<DebugSceneRendererExtension>(Volt::SceneRendererExtensionStage::PostPostProcessing, m_debugRenderer);*/
+	}
 }

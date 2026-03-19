@@ -18,6 +18,7 @@ namespace Circuit
 {
 	class CircuitInputHandler;
 	class CircuitWindow;
+	class Widget;
 
 
 	class CircuitManager : Volt::EventListener
@@ -27,7 +28,7 @@ namespace Circuit
 		~CircuitManager() = default;
 
 		CIRCUIT_API static CircuitManager& Get();
-		CIRCUIT_API static void Initialize();
+		CIRCUIT_API static void Initialize(Ref<Widget> mainWindowWidget);
 
 		CIRCUIT_API void Update();
 
@@ -37,7 +38,7 @@ namespace Circuit
 	private:
 		CIRCUIT_API inline static std::unique_ptr<CircuitManager> s_Instance = nullptr;
 
-		void Init();
+		void Init(Ref<Widget> mainWindowWidget);
 		void RegisterEventListeners();
 
 		bool OnRenderEvent(Volt::WindowRenderEvent& e);
