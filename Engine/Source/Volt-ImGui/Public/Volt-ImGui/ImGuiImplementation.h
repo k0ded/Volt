@@ -8,6 +8,8 @@
 #include <RHIModule/Graphics/Swapchain.h>
 #include <RHIModule/Images/Image.h>
 
+#include <CoreUtilities/Pointers/Unique.h>
+
 struct ImFont;
 struct ImGuiContext;
 struct ImFontAtlas;
@@ -71,6 +73,6 @@ namespace Volt
 
 		RefPtr<RHI::UniformBuffer> m_copyGlobalsUniformBuffer;
 
-		Scope<ImGuiRenderTargetManager> m_renderTargetManager;
+		Unique<ImGuiRenderTargetManager> m_renderTargetManager;
 	};
 }

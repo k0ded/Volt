@@ -63,5 +63,5 @@ private:
 	Ref<Volt::UIScene> m_uiScene;
 	RefPtr<Volt::RHI::Image> m_viewportImage;
 
-	Scope<Volt::UISceneRenderer> m_uiSceneRenderer;
+	Unique<Volt::UISceneRenderer> m_uiSceneRenderer;
 };

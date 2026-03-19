@@ -14,7 +14,7 @@ namespace Volt::RHI
 	{
 		m_submissionQueue.Allocate(2048);
 
-		m_thread = CreateScope<std::thread>(std::bind(&VulkanRHISubmissionThread::RunSubmissionThread, this));
+		m_thread = CreateUnique<std::thread>(std::bind(&VulkanRHISubmissionThread::RunSubmissionThread, this));
 		PlatformThread::SetThreadName(m_thread->native_handle(), "RHI Submission Thread");
 		PlatformThread::SetThreadPriority(m_thread->native_handle(), ThreadPriority::High);
 	}

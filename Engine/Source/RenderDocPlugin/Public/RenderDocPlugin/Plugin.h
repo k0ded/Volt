@@ -6,6 +6,8 @@
 #include <EventSystem/EventListener.h>
 #include <Volt-Core/Plugin/Plugin.h>
 
+#include <CoreUtilities/Pointers/Unique.h>
+
 VT_DECLARE_LOG_CATEGORY(LogRenderDoc, LogVerbosity::Trace);
 
 class RenderDocFrameCapture;
@@ -40,7 +42,7 @@ public:
 
 private:
 	Ref<RenderDocFrameCapture> m_frameCapture;
-	Scope<RenderDocEventListener> m_eventListener;
+	Unique<RenderDocEventListener> m_eventListener;
 
 	void* m_renderDocModule = nullptr;
 	RENDERDOC_API_1_6_0* m_renderDocAPI = nullptr;

@@ -8,7 +8,7 @@ void VersionControl::Initialize(VersionControlSystem system)
 	switch (system)
 	{
 		case VersionControlSystem::Perforce:
-			s_implementation = CreateScope<P4Implementation>();
+			s_implementation = CreateUnique<P4Implementation>();
 			break;
 
 		default:

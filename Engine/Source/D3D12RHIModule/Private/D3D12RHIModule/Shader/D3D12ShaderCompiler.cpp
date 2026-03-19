@@ -324,7 +324,7 @@ namespace Volt::RHI
 			};
 			compilationArgs.append(definesAndIncludes);
 
-			const Scope<HLSLIncluder> includer = CreateScope<HLSLIncluder>();
+			const Unique<HLSLIncluder> includer = CreateUnique<HLSLIncluder>();
 			DxcCompilationResult preProcessingResult = InvokeCompilerWithArguments(compilationArgs, sourceEntry.filepath, outProcessedSource, includer.get());
 
 			for (const auto& filepath : includer->GetIncludedFiles())

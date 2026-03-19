@@ -72,9 +72,9 @@ namespace Volt
 		ApplicationLayerStack m_layerStack;
 		MultiTimer m_frameTimer;
 
-		Scope<SubSystemManager> m_subSystemManager;
-		Scope<UIApplicationEventListener> m_eventListener;
-		Scope<SourceAssetManager> m_sourceAssetManager;
+		Unique<SubSystemManager> m_subSystemManager;
+		Unique<UIApplicationEventListener> m_eventListener;
+		Unique<SourceAssetManager> m_sourceAssetManager;
 
 		WindowManager* m_windowManager = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;

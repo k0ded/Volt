@@ -19,13 +19,13 @@ namespace Volt
 		m_currentStage = UpgradeStage::Collecting;
 	
 		// Serializers rely on the global asset manager existing.
-		g_assetManager = CreateScope<AssetManager>(std::filesystem::current_path(), inProject.rootDirectory, inProject.assetsDirectoryName);
+		g_assetManager = CreateUnique<AssetManager>(std::filesystem::current_path(), inProject.rootDirectory, inProject.assetsDirectoryName);
 	}
 	
 	Upgrade_0_1_8::~Upgrade_0_1_8()
 	{
 		m_sceneAssets.clear();
-		g_assetManager.reset();
+		g_assetManager.Reset();
 	}
 
 	void Upgrade_0_1_8::DeserializeAssetMetadata(AssetMetadata& outMetadata, const std::filesystem::path& assetFilepath)

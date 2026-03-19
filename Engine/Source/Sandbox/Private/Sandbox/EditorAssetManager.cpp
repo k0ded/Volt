@@ -6,7 +6,7 @@
 
 VT_DEFINE_LOG_CATEGORY(LogEditorAssetSystem);
 
-Scope<EditorAssetManager> g_editorAssetManager;
+Unique<EditorAssetManager> g_editorAssetManager;
 
 EditorAssetManager::EditorAssetManager(Volt::AssetManager& referencedAssetManager)
 	: m_referencedAssetManager(referencedAssetManager)

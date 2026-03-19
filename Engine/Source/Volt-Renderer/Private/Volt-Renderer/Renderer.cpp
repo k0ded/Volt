@@ -132,21 +132,21 @@ namespace Volt
 
 	void Renderer::Initialize()
 	{
-		m_samplerStateCache = CreateScope<SamplerStateCache>();
-		m_commandBufferPool = CreateScope<CommandBufferPool>();
-		m_transientResourceAllocator = CreateScope<TransientResourceAllocator>();
+		m_samplerStateCache = CreateUnique<SamplerStateCache>();
+		m_commandBufferPool = CreateUnique<CommandBufferPool>();
+		m_transientResourceAllocator = CreateUnique<TransientResourceAllocator>();
 
 		CreateDefaultResources();
 	}
 
 	void Renderer::CreateBlueNoise()
 	{
-		m_blueNoise = CreateScope<BlueNoise>();
+		m_blueNoise = CreateUnique<BlueNoise>();
 	}
 
 	void Renderer::Shutdown()
 	{
-		m_blueNoise.reset();
+		m_blueNoise.Reset();
 
 		m_defaultResources.Clear();
 

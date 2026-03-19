@@ -28,10 +28,10 @@ namespace Volt::RHI
 		VT_INLINE D3D12DescriptorStack& GetSamplerDescriptorStack() const { return *m_samplerDescriptorStack; }
 
 	private:
-		Map<D3D12DescriptorType, Scope<D3D12DescriptorHeap>> m_descriptorHeaps;
+		Map<D3D12DescriptorType, Unique<D3D12DescriptorHeap>> m_descriptorHeaps;
 
-		Scope<D3D12DescriptorStack> m_descriptorStack;
-		Scope<D3D12DescriptorStack> m_samplerDescriptorStack;
+		Unique<D3D12DescriptorStack> m_descriptorStack;
+		Unique<D3D12DescriptorStack> m_samplerDescriptorStack;
 
 		bool m_isInitialized = false;
 	};

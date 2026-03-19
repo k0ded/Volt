@@ -8,6 +8,7 @@
 #include <CoreUtilities/TypeTraits/TypeIndex.h>
 #include <CoreUtilities/Archive/Archive.h>
 #include <CoreUtilities/Containers/ArrayView.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 #include <entt.hpp>
 
@@ -131,7 +132,7 @@ namespace Volt
 		const ICommonTypeDesc* ownerTypeDesc = nullptr;
 
 		TypeTraits::TypeIndex typeIndex = TypeTraits::TypeIndex::FromType<void>();
-		Scope<IDefaultValueType> defaultValue;
+		Unique<IDefaultValueType> defaultValue;
 
 		std::function<void(void* lhs, const void* rhs)> copyFunction;
 		std::function<void(Archive& archive, void* data)> serializeFunction;
@@ -413,7 +414,7 @@ namespace Volt
 			componentMember.typeDesc = nullptr;
 			componentMember.ownerTypeDesc = this;
 			componentMember.typeIndex = TypeTraits::TypeIndex::FromType<Type>();
-			componentMember.defaultValue = CreateScope<DefaultValueType<DefaultValueT>>(defaultValue);
+			componentMember.defaultValue = CreateUnique<DefaultValueType<DefaultValueT>>(defaultValue);
 			componentMember.copyFunction = [](void* lhs, const void* rhs)
 			{
 				*reinterpret_cast<Type*>(lhs) = *reinterpret_cast<const Type*>(rhs);

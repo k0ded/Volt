@@ -4,8 +4,9 @@
 #include <EventSystem/EventListener.h>
 #include <WindowModule/WindowHandle.h>
 
-#include <map>
+#include <CoreUtilities/Pointers/Unique.h>
 
+#include <map>
 
 namespace Volt
 {
@@ -37,7 +38,7 @@ namespace Circuit
 
 		//CIRCUIT_API CircuitWindow& OpenWindow(OpenWindowParams& params);  
 	private:
-		CIRCUIT_API inline static std::unique_ptr<CircuitManager> s_Instance = nullptr;
+		CIRCUIT_API inline static Unique<CircuitManager> s_Instance = nullptr;
 
 		void Init(Ref<Widget> mainWindowWidget);
 		void RegisterEventListeners();
@@ -52,6 +53,6 @@ namespace Circuit
 	private:
 		std::map<Volt::WindowHandle, Ref<CircuitWindow>> m_windows;
 
-		Scope<CircuitInputHandler> InputHandler;
+		Unique<CircuitInputHandler> InputHandler;
 	};
 }

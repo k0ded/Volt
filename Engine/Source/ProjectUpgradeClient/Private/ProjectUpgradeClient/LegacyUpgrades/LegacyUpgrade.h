@@ -50,6 +50,6 @@ namespace Volt
 		std::filesystem::path m_projectToConvertFilepath;
 		std::filesystem::path m_targetDirectory;
 
-		Scope<Volt::AssetManager> m_assetManager;
+		Unique<Volt::AssetManager> m_assetManager;
 	};
 }

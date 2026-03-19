@@ -58,34 +58,35 @@
 	</Type>
 
 	<Type Name="BasicString&lt;*&gt;">
-		<DisplayString Condition="!!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">"{m_layout.heap.m_begin,sb}"</DisplayString>
-		<DisplayString Condition="!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">"{m_layout.sso.mData,sb}"</DisplayString>
+		<DisplayString Condition="!!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">"{m_pair.m_first.heap.m_begin,sb}"</DisplayString>
+		<DisplayString Condition="!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">"{m_pair.m_first.sso.m_data,sb}"</DisplayString>
 		<Expand>
-			<Item Name="[length]"   Condition="!!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_layout.heap.m_size</Item>
-			<Item Name="[capacity]" Condition="!!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">(m_layout.heap.m_capacity &amp; ~kHeapMask)</Item>
-			<Item Name="[value]"    Condition="!!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_layout.heap.m_begin,sb</Item>
+			<Item Name="[length]"   Condition="!!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_pair.m_first.heap.m_size</Item>
+			<Item Name="[capacity]" Condition="!!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">(m_pair.m_first.heap.m_capacity &amp; ~kHeapMask)</Item>
+			<Item Name="[value]"    Condition="!!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_pair.m_first.heap.m_begin,sb</Item>
 
-			<Item Name="[length]"   Condition="!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">(SSOLayout::SSO_CAPACITY - m_layout.sso.m_remainingSizeField.m_remainingSize)</Item>
-			<Item Name="[capacity]" Condition="!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">SSOLayout::SSO_CAPACITY</Item>
-			<Item Name="[value]"    Condition="!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_layout.sso.m_data,sb</Item>
+			<Item Name="[length]"   Condition="!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">(SSOLayout::SSO_CAPACITY - m_pair.m_first.sso.m_remainingSizeField.m_remainingSize)</Item>
+			<Item Name="[capacity]" Condition="!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">SSOLayout::SSO_CAPACITY</Item>
+			<Item Name="[value]"    Condition="!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_pair.m_first.sso.m_data,sb</Item>
 
-			<Item Name="[uses heap]">!!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)</Item>
+			<Item Name="[uses heap]">!!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)</Item>
 		</Expand>
 	</Type>
 
+
 	<Type Name="BasicString&lt;wchar_t,*&gt;">
-		<DisplayString Condition="!!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">"{m_layout.heap.m_begin,sb}"</DisplayString>
-		<DisplayString Condition="!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">"{m_layout.sso.m_data,sb}"</DisplayString>
+		<DisplayString Condition="!!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">{m_pair.m_first.heap.m_begin,su}</DisplayString>
+		<DisplayString Condition="!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">{m_pair.m_first.sso.m_data,su}</DisplayString>
 		<Expand>
-			<Item Name="[length]"   Condition="!!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_layout.heap.m_size</Item>
-			<Item Name="[capacity]" Condition="!!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">(m_layout.heap.m_capacity &amp; ~kHeapMask)</Item>
-			<Item Name="[value]"    Condition="!!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_layout.heap.m_begin,sb</Item>
+			<Item Name="[length]"   Condition="!!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_pair.m_first.heap.m_size</Item>
+			<Item Name="[capacity]" Condition="!!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">(m_pair.m_first.heap.m_capacity &amp; ~kHeapMask)</Item>
+			<Item Name="[value]"    Condition="!!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_pair.m_first.heap.m_begin,su</Item>
 
-			<Item Name="[length]"   Condition="!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">(SSOLayout::SSO_CAPACITY - m_layout.sso.m_remainingSizeField.m_remainingSize)</Item>
-			<Item Name="[capacity]" Condition="!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">SSOLayout::SSO_CAPACITY</Item>
-			<Item Name="[value]"    Condition="!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_layout.sso.m_data,sb</Item>
+			<Item Name="[length]"   Condition="!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">(SSOLayout::SSO_CAPACITY - m_pair.m_first.sso.m_remainingSizeField.m_remainingSize)</Item>
+			<Item Name="[capacity]" Condition="!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">SSOLayout::SSO_CAPACITY</Item>
+			<Item Name="[value]"    Condition="!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)">m_pair.m_first.sso.m_data,su</Item>
 
-			<Item Name="[uses heap]">!!(m_layout.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)</Item>
+			<Item Name="[uses heap]">!!(m_pair.m_first.sso.m_remainingSizeField.m_remainingSize &amp; kSSOMask)</Item>
 		</Expand>
 	</Type>
 

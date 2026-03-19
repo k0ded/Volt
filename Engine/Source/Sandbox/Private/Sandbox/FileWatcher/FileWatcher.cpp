@@ -10,8 +10,8 @@ FileWatcher::FileWatcher()
 	VT_ASSERT_MSG(!myInstance, "Instance already exists!");
 	myInstance = this;
 
-	myFileWatcher = CreateScope<efsw::FileWatcher>();
-	myFileListener = CreateScope<FileListener>();
+	myFileWatcher = CreateUnique<efsw::FileWatcher>();
+	myFileListener = CreateUnique<FileListener>();
 
 	myFileWatcher->watch();
 }
@@ -34,7 +34,7 @@ void FileWatcher::AddWatch(const std::filesystem::path& path, bool recursive)
 {
 	std::string watchPath = Utility::ReplaceCharacter(path.string(), '\\', '/');
 
-	efsw::WatchID watchId = myFileWatcher->addWatch(watchPath, myFileListener.get(), recursive);
+	efsw::WatchID watchId = myFileWatcher->addWatch(watchPath, myFileListener.GetRaw(), recursive);
 	myWatchIds.emplace_back(watchId);
 }
 

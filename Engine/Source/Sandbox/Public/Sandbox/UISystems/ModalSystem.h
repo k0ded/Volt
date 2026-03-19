@@ -7,6 +7,7 @@
 #include <EventSystem/EventListener.h>
 
 #include <CoreUtilities/UUID.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 #include <unordered_map>
 
@@ -40,7 +41,7 @@ private:
 
 	inline static ModalSystem* s_instance = nullptr;
 
-	Map<UUID64, Scope<Modal>> m_modals;
+	Map<UUID64, Unique<Modal>> m_modals;
 };
 
 template<typename T>
@@ -59,7 +60,7 @@ template<typename T>
 inline T& ModalSystem::AddModal(const std::string& strId)
 {
 	UUID64 newUUID = {};
-	Scope<T> newModal = CreateScope<T>(strId);
+	Unique<T> newModal = CreateUnique<T>(strId);
 
 	newModal->m_id = newUUID;
 	s_instance->m_modals[newUUID] = std::move(newModal);

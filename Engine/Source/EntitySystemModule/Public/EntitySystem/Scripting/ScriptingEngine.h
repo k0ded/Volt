@@ -4,6 +4,7 @@
 #include "EntitySystem/Scripting/ECSEnvironmentStorage.h"
 
 #include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 class ECSEventDispatcher;
 
@@ -47,5 +48,5 @@ private:
 	void* GetECSEnvironmentOfTypeInternal(TypeTraits::TypeIndex typeIndex);
 
 	ECSEnvironmentStorage m_ecsEnvironmentStorage;
-	Scope<ECSEventDispatcher> m_ecsEventDispatcher;
+	Unique<ECSEventDispatcher> m_ecsEventDispatcher;
 };

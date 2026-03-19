@@ -11,6 +11,7 @@
 #include <SubSystem/SubSystemRegistry.h>
 
 #include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 #include <unordered_map>
 
@@ -75,7 +76,7 @@ namespace Volt
 		float m_peakNits = 250.f;
 
 		WindowHandle m_mainWindowHandle = 0;
-		std::unordered_map<WindowHandle, Scope<Window>> m_windows;
+		std::unordered_map<WindowHandle, Unique<Window>> m_windows;
 
 		Vector<Ref<Monitor>> m_monitors;
 	};

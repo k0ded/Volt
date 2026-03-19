@@ -3,6 +3,8 @@
 #include <PhysicsInterface/PhysicsScene.h>
 #include <PhysicsInterface/PhysicsSubStepper.h>
 
+#include <CoreUtilities/Pointers/Unique.h>
+
 namespace physx
 {
 	class PxScene;
@@ -61,7 +63,7 @@ namespace Volt
 		physx::PxScene* m_physXScene = nullptr;
 		physx::PxControllerManager* m_controllerManager = nullptr;
 
-		Scope<PhysXDebugger> m_debugger;
+		Unique<PhysXDebugger> m_debugger;
 
 		bool m_isSimulating = false;
 		Vector<std::function<void()>> m_executionQueue;

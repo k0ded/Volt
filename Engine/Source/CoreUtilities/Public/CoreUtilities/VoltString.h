@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <locale>
 
 // License in Engine\Source\ThirdParty\eastl
 
@@ -26,7 +27,7 @@ public:
 	typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 	typedef size_t size_type;
 	typedef std::ptrdiff_t difference_type;
-	typedef Allocator allocator_type;
+	typedef Allocator::template ForElementType<T> allocator_type;
 
 	static const constexpr size_type npos = size_type(-1);
 
@@ -34,10 +35,6 @@ public:
 	// CtorDoNotInitialize exists so that we can create a constructor that allocates but doesn't
 	// initialize and also doesn't collide with any other constructor declaration.
 	struct CtorDoNotInitialize {};
-
-	// CtorSprintf exists so that we can create a constructor that accepts printf-style
-	// arguments but also doesn't collide with any other constructor declaration.
-	struct CtorSprintf {};
 
 	// CtorConvert exists so that we can have a constructor that implements string encoding
 	// conversion, such as between UCS2 char16_t and UTF8 char8_t.
@@ -103,7 +100,7 @@ protected:
 	// This view of memory is a utility structure for easy copying of the string data.
 	struct RawLayout
 	{
-		char mBuffer[sizeof(HeapLayout)];
+		char m_buffer[sizeof(HeapLayout)];
 	};
 
 	static_assert(sizeof(SSOLayout) == sizeof(HeapLayout), "heap and sso layout structures must be the same size");
@@ -218,39 +215,48 @@ protected:
 		inline void ResetToSSO() noexcept { *SSOBeginPtr() = 0; SetSSOSize(0); }
 	};
 
-	Layout m_layout;
+	CompressedPair<Layout, allocator_type> m_pair;
 
-	inline Layout& internalLayout() noexcept { return m_layout; }
-	inline const Layout& internalLayout() const noexcept { return m_layout; }
+	inline Layout& internalLayout() noexcept { return m_pair.First(); }
+	inline const Layout& internalLayout() const noexcept { return m_pair.First(); }
+	inline allocator_type& internalAllocator() noexcept { return m_pair.Second(); }
+	inline const allocator_type& internalAllocator() const noexcept { return m_pair.Second(); }
 
 public:
 	// Constructor, destructor
 	BasicString() noexcept;
+	explicit BasicString(const allocator_type& allocator) noexcept;
 	BasicString(const this_type& x, size_type position, size_type n = npos);
-	BasicString(const value_type* p, size_type n);
-	BasicString(const value_type* p);
-	BasicString(size_type n, value_type c);
+	BasicString(const value_type* p, size_type n, const allocator_type& allocator = allocator_type());
+	explicit BasicString(const value_type* p, const allocator_type& allocator = allocator_type());
+	BasicString(size_type n, value_type c, const allocator_type& allocator = allocator_type());
 	BasicString(const this_type& x);
-	BasicString(const value_type* pBegin, const value_type* pEnd);
-	BasicString(CtorDoNotInitialize, size_type n);
-	BasicString(CtorSprintf, const value_type* pFormat, ...);
-	BasicString(std::initializer_list<value_type> init);
+	BasicString(const this_type& x, const allocator_type& allocator);
+	BasicString(const value_type* pBegin, const value_type* pEnd, const allocator_type& allocator = allocator_type());
+	BasicString(CtorDoNotInitialize, size_type n, const allocator_type& allocator = allocator_type());
+	BasicString(std::initializer_list<value_type> init, const allocator_type& allocator = allocator_type());
 
 	BasicString(this_type&& x) noexcept;
+	BasicString(this_type&& x, const allocator_type& allocator);
 
-	explicit BasicString(const view_type& sv);
-	BasicString(const view_type& sv, size_type position, size_type n);
-
-	template <typename OtherCharType>
-	BasicString(CtorConvert, const OtherCharType* p);
+	explicit BasicString(const view_type& sv, const allocator_type& allocator = allocator_type());
+	BasicString(const view_type& sv, size_type position, size_type n, const allocator_type& allocator = allocator_type());
 
 	template <typename OtherCharType>
-	BasicString(CtorConvert, const OtherCharType* p, size_type n);
+	BasicString(CtorConvert, const OtherCharType* p, const allocator_type& allocator = allocator_type());
+
+	template <typename OtherCharType>
+	BasicString(CtorConvert, const OtherCharType* p, size_type n, const allocator_type& allocator = allocator_type());
 
 	template <typename OtherStringType> // Unfortunately we need the CtorConvert here because otherwise this function would collide with the value_type* constructor.
 	BasicString(CtorConvert, const OtherStringType& x);
 
 	~BasicString();
+
+	// Allocator
+	const allocator_type& get_allocator() const noexcept;
+	allocator_type& get_allocator() noexcept;
+	void set_allocator(const allocator_type& allocator);
 
 	// Implicit conversion operator
 	operator BasicStringView<T>() const noexcept;
@@ -262,16 +268,6 @@ public:
 	this_type& operator=(std::initializer_list<value_type> ilist);
 	this_type& operator=(view_type v);
 	this_type& operator=(this_type&& x);
-
-#if EASTL_OPERATOR_EQUALS_OTHER_ENABLED
-	this_type& operator=(value_type* p) { return operator=((const value_type*)p); } // We need this because otherwise the const value_type* version can collide with the const OtherStringType& version below.
-
-	template <typename OtherCharType>
-	this_type& operator=(const OtherCharType* p);
-
-	template <typename OtherStringType>
-	this_type& operator=(const OtherStringType& x);
-#endif
 
 	void swap(this_type& x); // TODO(c++17): noexcept(allocator_traits<Allocator>::propagate_on_container_swap::value || allocator_traits<Allocator>::is_always_equal::value);
 
@@ -463,8 +459,6 @@ public:
 	void         trim(const value_type* p);
 	this_type    left(size_type n) const;
 	this_type    right(size_type n) const;
-	this_type& sprintf_va_list(const value_type* pFormat, va_list arguments);
-	this_type& sprintf(const value_type* pFormat, ...);
 
 	bool validate() const noexcept;
 	int  validate_iterator(const_iterator i) const noexcept;
@@ -489,38 +483,53 @@ protected:
 	void        ThrowLengthException() const;
 	void        ThrowRangeException() const;
 	void        ThrowInvalidArgumentException() const;
-
-#if EASTL_OPERATOR_EQUALS_OTHER_ENABLED
-	template <typename CharType>
-	void DoAssignConvert(CharType c, true_type);
-
-	template <typename StringType>
-	void DoAssignConvert(const StringType& x, false_type);
-#endif
 };
 
 template <typename T, typename Allocator>
 inline BasicString<T, Allocator>::BasicString() noexcept
+	: m_pair(allocator_type())
 {
 	AllocateSelf();
 }
 
+
+template <typename T, typename Allocator>
+inline BasicString<T, Allocator>::BasicString(const allocator_type& allocator) noexcept
+	: m_pair(allocator)
+{
+	AllocateSelf();
+}
+
+
 template <typename T, typename Allocator>
 inline BasicString<T, Allocator>::BasicString(const this_type& x)
+	: m_pair(x.get_allocator())
 {
 	RangeInitialize(x.internalLayout().BeginPtr(), x.internalLayout().EndPtr());
 }
 
+
+template <typename T, typename Allocator>
+BasicString<T, Allocator>::BasicString(const this_type& x, const allocator_type& allocator)
+	: m_pair(allocator)
+{
+	RangeInitialize(x.internalLayout().BeginPtr(), x.internalLayout().EndPtr());
+}
+
+
 template <typename T, typename Allocator>
 template <typename OtherStringType>
 inline BasicString<T, Allocator>::BasicString(CtorConvert, const OtherStringType& x)
+	: m_pair(x.get_allocator())
 {
 	AllocateSelf();
 	append_convert(x.c_str(), x.length());
 }
 
+
 template <typename T, typename Allocator>
 BasicString<T, Allocator>::BasicString(const this_type& x, size_type position, size_type n)
+	: m_pair(x.get_allocator())
 {
 #if EASTL_STRING_OPT_RANGE_ERRORS
 	if (EASTL_UNLIKELY(position > x.internalLayout().GetSize())) // 21.4.2 p4
@@ -539,62 +548,76 @@ BasicString<T, Allocator>::BasicString(const this_type& x, size_type position, s
 #endif
 }
 
+
 template <typename T, typename Allocator>
-inline BasicString<T, Allocator>::BasicString(const value_type* p, size_type n)
+inline BasicString<T, Allocator>::BasicString(const value_type* p, size_type n, const allocator_type& allocator)
+	: m_pair(allocator)
 {
 	RangeInitialize(p, p + n);
 }
 
-template <typename T, typename Allocator>
-inline BasicString<T, Allocator>::BasicString(const view_type& sv)
-	: BasicString(sv.data(), static_cast<size_type>(sv.size()))
-{
-}
 
 template <typename T, typename Allocator>
-inline BasicString<T, Allocator>::BasicString(const view_type& sv, size_type position, size_type n)
-	: BasicString(sv.substr(position, n))
-{
-}
+inline BasicString<T, Allocator>::BasicString(const view_type& sv, const allocator_type& allocator)
+	: BasicString(sv.data(), static_cast<size_type>(sv.size()), allocator)
+{}
+
+
+template <typename T, typename Allocator>
+inline BasicString<T, Allocator>::BasicString(const view_type& sv, size_type position, size_type n, const allocator_type& allocator)
+	: BasicString(sv.substr(position, n), allocator)
+{}
+
 
 template <typename T, typename Allocator>
 template <typename OtherCharType>
-inline BasicString<T, Allocator>::BasicString(CtorConvert, const OtherCharType* p)
+inline BasicString<T, Allocator>::BasicString(CtorConvert, const OtherCharType* p, const allocator_type& allocator)
+	: m_pair(allocator)
 {
 	AllocateSelf();    // In this case we are converting from one string encoding to another, and we
 	append_convert(p); // implement this in the simplest way, by simply default-constructing and calling assign.
 }
 
+
 template <typename T, typename Allocator>
 template <typename OtherCharType>
-inline BasicString<T, Allocator>::BasicString(CtorConvert, const OtherCharType* p, size_type n)
+inline BasicString<T, Allocator>::BasicString(CtorConvert, const OtherCharType* p, size_type n, const allocator_type& allocator)
+	: m_pair(allocator)
 {
 	AllocateSelf();         // In this case we are converting from one string encoding to another, and we
 	append_convert(p, n);   // implement this in the simplest way, by simply default-constructing and calling assign.
 }
 
+
 template <typename T, typename Allocator>
-inline BasicString<T, Allocator>::BasicString(const value_type* p)
+inline BasicString<T, Allocator>::BasicString(const value_type* p, const allocator_type& allocator)
+	: m_pair(allocator)
 {
 	RangeInitialize(p);
 }
 
+
 template <typename T, typename Allocator>
-inline BasicString<T, Allocator>::BasicString(size_type n, value_type c)
+inline BasicString<T, Allocator>::BasicString(size_type n, value_type c, const allocator_type& allocator)
+	: m_pair(allocator)
 {
 	SizeInitialize(n, c);
 }
 
+
 template <typename T, typename Allocator>
-inline BasicString<T, Allocator>::BasicString(const value_type* pBegin, const value_type* pEnd)
+inline BasicString<T, Allocator>::BasicString(const value_type* pBegin, const value_type* pEnd, const allocator_type& allocator)
+	: m_pair(allocator)
 {
 	RangeInitialize(pBegin, pEnd);
 }
 
+
 // CtorDoNotInitialize exists so that we can create a version that allocates but doesn't
 // initialize but also doesn't collide with any other constructor declaration.
 template <typename T, typename Allocator>
-BasicString<T, Allocator>::BasicString(CtorDoNotInitialize /*unused*/, size_type n)
+BasicString<T, Allocator>::BasicString(CtorDoNotInitialize /*unused*/, size_type n, const allocator_type& allocator)
+	: m_pair(allocator)
 {
 	// Note that we do not call SizeInitialize here.
 	AllocateSelf(n);
@@ -602,38 +625,69 @@ BasicString<T, Allocator>::BasicString(CtorDoNotInitialize /*unused*/, size_type
 	*internalLayout().EndPtr() = 0;
 }
 
-// CtorSprintf exists so that we can create a version that does a variable argument
-// sprintf but also doesn't collide with any other constructor declaration.
 template <typename T, typename Allocator>
-BasicString<T, Allocator>::BasicString(CtorSprintf /*unused*/, const value_type* pFormat, ...)
-{
-	const size_type n = (size_type)StringAlgorithm::Strlen(pFormat);
-	AllocateSelf(n);
-	internalLayout().SetSize(0);
-
-	va_list arguments;
-	va_start(arguments, pFormat);
-	append_sprintf_va_list(pFormat, arguments);
-	va_end(arguments);
-}
-
-template <typename T, typename Allocator>
-BasicString<T, Allocator>::BasicString(std::initializer_list<value_type> init)
+BasicString<T, Allocator>::BasicString(std::initializer_list<value_type> init, const allocator_type& allocator)
+	: m_pair(allocator)
 {
 	RangeInitialize(init.begin(), init.end());
 }
 
+
 template <typename T, typename Allocator>
 BasicString<T, Allocator>::BasicString(this_type&& x) noexcept
+	: m_pair(x.get_allocator())
 {
 	internalLayout() = std::move(x.internalLayout());
 	x.AllocateSelf();
 }
 
+
+template <typename T, typename Allocator>
+BasicString<T, Allocator>::BasicString(this_type&& x, const allocator_type& allocator)
+	: m_pair(allocator)
+{
+	if (get_allocator() == x.get_allocator()) // If we can borrow from x...
+	{
+		internalLayout() = std::move(x.internalLayout());
+		x.AllocateSelf();
+	}
+	else if (x.internalLayout().BeginPtr())
+	{
+		RangeInitialize(x.internalLayout().BeginPtr(), x.internalLayout().EndPtr());
+		// Let x destruct its own items.
+	}
+}
+
+
 template <typename T, typename Allocator>
 inline BasicString<T, Allocator>::~BasicString()
 {
 	DeallocateSelf();
+}
+
+
+template <typename T, typename Allocator>
+inline const typename BasicString<T, Allocator>::allocator_type&
+BasicString<T, Allocator>::get_allocator() const noexcept
+{
+	return internalAllocator();
+}
+
+
+template <typename T, typename Allocator>
+inline typename BasicString<T, Allocator>::allocator_type&
+BasicString<T, Allocator>::get_allocator() noexcept
+{
+	return internalAllocator();
+}
+
+
+template <typename T, typename Allocator>
+inline void BasicString<T, Allocator>::set_allocator(const allocator_type& allocator)
+{
+	if (internalLayout().IsHeap() && get_allocator() != allocator)
+		VT_ASSERT_MSG(false, "BasicString::set_allocator -- cannot change allocator after allocations have been made.");
+	get_allocator() = allocator;
 }
 
 template <typename T, typename Allocator>
@@ -824,41 +878,6 @@ inline typename BasicString<T, Allocator>::this_type& BasicString<T, Allocator>:
 	}
 	return *this;
 }
-
-#if EASTL_OPERATOR_EQUALS_OTHER_ENABLED
-template <typename T, typename Allocator>
-template <typename CharType>
-inline void BasicString<T, Allocator>::DoAssignConvert(CharType c, true_type)
-{
-	assign_convert(&c, 1); // Call this version of append because it will result in the encoding-converting append being used.
-}
-
-template <typename T, typename Allocator>
-template <typename StringType>
-inline void BasicString<T, Allocator>::DoAssignConvert(const StringType& x, false_type)
-{
-	//if(&x != this) // Unnecessary because &x cannot possibly equal this.
-	{
-		assign_convert(x.c_str(), x.length());
-	}
-}
-
-template <typename T, typename Allocator>
-template <typename OtherStringType>
-inline typename BasicString<T, Allocator>::this_type& BasicString<T, Allocator>::operator=(const OtherStringType& x)
-{
-	clear();
-	DoAssignConvert(x, is_integral<OtherStringType>());
-	return *this;
-}
-
-template <typename T, typename Allocator>
-template <typename OtherCharType>
-inline typename BasicString<T, Allocator>::this_type& BasicString<T, Allocator>::operator=(const OtherCharType* p)
-{
-	return assign_convert(p);
-}
-#endif
 
 template <typename T, typename Allocator>
 inline typename BasicString<T, Allocator>::this_type& BasicString<T, Allocator>::operator=(const value_type* p)
@@ -1336,12 +1355,12 @@ BasicString<T, Allocator>& BasicString<T, Allocator>::assign(size_type n, value_
 {
 	if (n <= internalLayout().GetSize())
 	{
-		CharTypeAssignN(internalLayout().BeginPtr(), n, c);
+		StringAlgorithm::AssignN(internalLayout().BeginPtr(), n, c);
 		erase(internalLayout().BeginPtr() + n, internalLayout().EndPtr());
 	}
 	else
 	{
-		CharTypeAssignN(internalLayout().BeginPtr(), internalLayout().GetSize(), c);
+		StringAlgorithm::AssignN(internalLayout().BeginPtr(), internalLayout().GetSize(), c);
 		append(n - internalLayout().GetSize(), c);
 	}
 	return *this;
@@ -1374,7 +1393,8 @@ inline BasicString<T, Allocator>& BasicString<T, Allocator>::assign(std::initial
 template <typename T, typename Allocator>
 inline BasicString<T, Allocator>& BasicString<T, Allocator>::assign(this_type&& x)
 {
-	assign(x.internalLayout().BeginPtr(), x.internalLayout().EndPtr());
+	std::swap(internalLayout(), x.internalLayout());
+	std::swap(get_allocator(), x.get_allocator());
 
 	return *this;
 }
@@ -1532,7 +1552,7 @@ BasicString<T, Allocator>::insert(const_iterator p, size_type n, value_type c)
 				StringAlgorithm::StringUninitializedCopy((internalLayout().EndPtr() - n) + 1, internalLayout().EndPtr() + 1, internalLayout().EndPtr() + 1);
 				internalLayout().SetSize(nSavedSize + n);
 				memmove(const_cast<value_type*>(p) + n, p, (size_t)((nElementsAfter - n) + 1) * sizeof(value_type));
-				CharTypeAssignN(const_cast<value_type*>(p), n, c);
+				StringAlgorithm::AssignN(const_cast<value_type*>(p), n, c);
 			}
 			else
 			{
@@ -1560,7 +1580,7 @@ BasicString<T, Allocator>::insert(const_iterator p, size_type n, value_type c)
 				}
 #endif
 
-				CharTypeAssignN(const_cast<value_type*>(p), nElementsAfter + 1, c);
+				StringAlgorithm::AssignN(const_cast<value_type*>(p), nElementsAfter + 1, c);
 			}
 		}
 		else
@@ -1889,12 +1909,12 @@ BasicString<T, Allocator>& BasicString<T, Allocator>::replace(const_iterator pBe
 
 	if (nLength >= n)
 	{
-		CharTypeAssignN(const_cast<value_type*>(pBegin), n, c);
+		StringAlgorithm::AssignN(const_cast<value_type*>(pBegin), n, c);
 		erase(pBegin + n, pEnd);
 	}
 	else
 	{
-		CharTypeAssignN(const_cast<value_type*>(pBegin), nLength, c);
+		StringAlgorithm::AssignN(const_cast<value_type*>(pBegin), nLength, c);
 		insert(pEnd, n - nLength, c);
 	}
 	return *this;
@@ -2082,7 +2102,7 @@ BasicString<T, Allocator>::rfind(const value_type* p, size_type position, size_t
 		if (n)
 		{
 			const const_iterator pEnd = internalLayout().BeginPtr() + std::min(nLength - n, position) + n;
-			const const_iterator pResult = std::search(internalLayout().BeginPtr(), pEnd, p, p + n); // #TODO_Ivar: Change to rsearch
+			const const_iterator pResult = StringAlgorithm::StringRSearch(internalLayout().BeginPtr(), pEnd, p, p + n);
 
 			if (pResult != pEnd)
 				return (size_type)(pResult - internalLayout().BeginPtr());
@@ -2103,7 +2123,7 @@ BasicString<T, Allocator>::rfind(value_type c, size_type position) const noexcep
 	if (nLength)
 	{
 		const value_type* const pEnd = internalLayout().BeginPtr() + std::min(nLength - 1, position) + 1;
-		const value_type* const pResult = CharTypeStringRFind(pEnd, internalLayout().BeginPtr(), c);
+		const value_type* const pResult = StringAlgorithm::StringRFind(pEnd, internalLayout().BeginPtr(), c);
 
 		if (pResult != internalLayout().BeginPtr())
 			return (size_type)((pResult - 1) - internalLayout().BeginPtr());
@@ -2133,7 +2153,7 @@ BasicString<T, Allocator>::find_first_of(const value_type* p, size_type position
 	if ((position < internalLayout().GetSize()))
 	{
 		const value_type* const pBegin = internalLayout().BeginPtr() + position;
-		const const_iterator pResult = CharTypeStringFindFirstOf(pBegin, internalLayout().EndPtr(), p, p + n);
+		const const_iterator pResult = StringAlgorithm::StringFindFirstOf(pBegin, internalLayout().EndPtr(), p, p + n);
 
 		if (pResult != internalLayout().EndPtr())
 			return (size_type)(pResult - internalLayout().BeginPtr());
@@ -2172,7 +2192,7 @@ BasicString<T, Allocator>::find_last_of(const value_type* p, size_type position,
 	if (nLength)
 	{
 		const value_type* const pEnd = internalLayout().BeginPtr() + std::min(nLength - 1, position) + 1;
-		const value_type* const pResult = CharTypeStringRFindFirstOf(pEnd, internalLayout().BeginPtr(), p, p + n);
+		const value_type* const pResult = StringAlgorithm::StringRFindFirstOf(pEnd, internalLayout().BeginPtr(), p, p + n);
 
 		if (pResult != internalLayout().BeginPtr())
 			return (size_type)((pResult - 1) - internalLayout().BeginPtr());
@@ -2208,7 +2228,7 @@ BasicString<T, Allocator>::find_first_not_of(const value_type* p, size_type posi
 	if (position <= internalLayout().GetSize())
 	{
 		const const_iterator pResult =
-			CharTypeStringFindFirstNotOf(internalLayout().BeginPtr() + position, internalLayout().EndPtr(), p, p + n);
+			StringAlgorithm::StringFindFirstNotOf(internalLayout().BeginPtr() + position, internalLayout().EndPtr(), p, p + n);
 
 		if (pResult != internalLayout().EndPtr())
 			return (size_type)(pResult - internalLayout().BeginPtr());
@@ -2224,7 +2244,7 @@ BasicString<T, Allocator>::find_first_not_of(value_type c, size_type position) c
 	{
 		// Todo: Possibly make a specialized version of CharTypeStringFindFirstNotOf(pBegin, pEnd, c).
 		const const_iterator pResult =
-			CharTypeStringFindFirstNotOf(internalLayout().BeginPtr() + position, internalLayout().EndPtr(), &c, &c + 1);
+			StringAlgorithm::StringFindFirstNotOf(internalLayout().BeginPtr() + position, internalLayout().EndPtr(), &c, &c + 1);
 
 		if (pResult != internalLayout().EndPtr())
 			return (size_type)(pResult - internalLayout().BeginPtr());
@@ -2255,7 +2275,7 @@ BasicString<T, Allocator>::find_last_not_of(const value_type* p, size_type posit
 	if (nLength)
 	{
 		const value_type* const pEnd = internalLayout().BeginPtr() + std::min(nLength - 1, position) + 1;
-		const value_type* const pResult = CharTypeStringRFindFirstNotOf(pEnd, internalLayout().BeginPtr(), p, p + n);
+		const value_type* const pResult = StringAlgorithm::StringRFindFirstNotOf(pEnd, internalLayout().BeginPtr(), p, p + n);
 
 		if (pResult != internalLayout().BeginPtr())
 			return (size_type)((pResult - 1) - internalLayout().BeginPtr());
@@ -2273,7 +2293,7 @@ BasicString<T, Allocator>::find_last_not_of(value_type c, size_type position) co
 	{
 		// Todo: Possibly make a specialized version of CharTypeStringRFindFirstNotOf(pBegin, pEnd, c).
 		const value_type* const pEnd = internalLayout().BeginPtr() + std::min(nLength - 1, position) + 1;
-		const value_type* const pResult = CharTypeStringRFindFirstNotOf(pEnd, internalLayout().BeginPtr(), &c, &c + 1);
+		const value_type* const pResult = StringAlgorithm::StringRFindFirstNotOf(pEnd, internalLayout().BeginPtr(), &c, &c + 1);
 
 		if (pResult != internalLayout().BeginPtr())
 			return (size_type)((pResult - 1) - internalLayout().BeginPtr());
@@ -2375,7 +2395,7 @@ template <typename T, typename Allocator>
 inline void BasicString<T, Allocator>::make_lower()
 {
 	for (pointer p = internalLayout().BeginPtr(); p < internalLayout().EndPtr(); ++p)
-		*p = (value_type)CharToLower(*p);
+		*p = (value_type)std::tolower(*p);
 }
 
 // make_upper
@@ -2385,7 +2405,7 @@ template <typename T, typename Allocator>
 inline void BasicString<T, Allocator>::make_upper()
 {
 	for (pointer p = internalLayout().BeginPtr(); p < internalLayout().EndPtr(); ++p)
-		*p = (value_type)CharToUpper(*p);
+		*p = (value_type)std::toupper(*p);
 }
 
 template <typename T, typename Allocator>
@@ -2451,33 +2471,13 @@ inline BasicString<T, Allocator> BasicString<T, Allocator>::right(size_type n) c
 }
 
 template <typename T, typename Allocator>
-inline BasicString<T, Allocator>& BasicString<T, Allocator>::sprintf(const value_type* pFormat, ...)
-{
-	va_list arguments;
-	va_start(arguments, pFormat);
-	internalLayout().SetSize(0); // Fast truncate to zero length.
-	append_sprintf_va_list(pFormat, arguments);
-	va_end(arguments);
-
-	return *this;
-}
-
-template <typename T, typename Allocator>
-BasicString<T, Allocator>& BasicString<T, Allocator>::sprintf_va_list(const value_type* pFormat, va_list arguments)
-{
-	internalLayout().SetSize(0); // Fast truncate to zero length.
-
-	return append_sprintf_va_list(pFormat, arguments);
-}
-
-template <typename T, typename Allocator>
 int BasicString<T, Allocator>::compare(const value_type* pBegin1, const value_type* pEnd1,
 										const value_type* pBegin2, const value_type* pEnd2)
 {
 	const difference_type n1 = pEnd1 - pBegin1;
 	const difference_type n2 = pEnd2 - pBegin2;
 	const difference_type nMin = std::min(n1, n2);
-	const int       cmp = Compare(pBegin1, pBegin2, (size_t)nMin);
+	const int       cmp = StringAlgorithm::Compare(pBegin1, pBegin2, (size_t)nMin);
 
 	return (cmp != 0 ? cmp : (n1 < n2 ? -1 : (n1 > n2 ? 1 : 0)));
 }
@@ -2489,7 +2489,7 @@ int BasicString<T, Allocator>::comparei(const value_type* pBegin1, const value_t
 	const difference_type n1 = pEnd1 - pBegin1;
 	const difference_type n2 = pEnd2 - pBegin2;
 	const difference_type nMin = std::min(n1, n2);
-	const int       cmp = CompareI(pBegin1, pBegin2, (size_t)nMin);
+	const int       cmp = StringAlgorithm::CompareI(pBegin1, pBegin2, (size_t)nMin);
 
 	return (cmp != 0 ? cmp : (n1 < n2 ? -1 : (n1 > n2 ? 1 : 0)));
 }
@@ -2583,7 +2583,7 @@ template <typename T, typename Allocator>
 inline typename BasicString<T, Allocator>::value_type*
 BasicString<T, Allocator>::DoAllocate(size_type n)
 {
-	return (value_type*)Allocator::Allocate(n * sizeof(value_type), alignof(T));
+	return (value_type*)get_allocator().Allocate(n * sizeof(value_type), alignof(T));
 }
 
 template <typename T, typename Allocator>
@@ -2591,7 +2591,7 @@ inline void BasicString<T, Allocator>::DoFree(value_type* p, size_type n)
 {
 	if (p)
 	{
-		Allocator::Free(p, alignof(T));
+		get_allocator().Free(p);
 	}
 }
 
@@ -2814,23 +2814,23 @@ inline bool BasicString<T, Allocator>::validate() const noexcept
 template <typename T, typename Allocator>
 inline bool operator==(const BasicString<T, Allocator>& a, const BasicString<T, Allocator>& b)
 {
-	return ((a.size() == b.size()) && (Compare(a.data(), b.data(), (size_t)a.size()) == 0));
+	return ((a.size() == b.size()) && (StringAlgorithm::Compare(a.data(), b.data(), (size_t)a.size()) == 0));
 }
 
 template <typename T, typename Allocator>
 inline bool operator==(const typename BasicString<T, Allocator>::value_type* p, const BasicString<T, Allocator>& b)
 {
 	typedef typename BasicString<T, Allocator>::size_type string_size_type;
-	const string_size_type n = (string_size_type)CharStrlen(p);
-	return ((n == b.size()) && (Compare(p, b.data(), (size_t)n) == 0));
+	const string_size_type n = (string_size_type)StringAlgorithm::Strlen(p);
+	return ((n == b.size()) && (StringAlgorithm::Compare(p, b.data(), (size_t)n) == 0));
 }
 
 template <typename T, typename Allocator>
 inline bool operator==(const BasicString<T, Allocator>& a, const typename BasicString<T, Allocator>::value_type* p)
 {
 	typedef typename BasicString<T, Allocator>::size_type string_size_type;
-	const string_size_type n = (string_size_type)CharStrlen(p);
-	return ((a.size() == n) && (Compare(a.data(), p, (size_t)n) == 0));
+	const string_size_type n = (string_size_type)StringAlgorithm::Strlen(p);
+	return ((a.size() == n) && (StringAlgorithm::Compare(a.data(), p, (size_t)n) == 0));
 }
 
 template <typename T, typename Allocator>
@@ -2843,7 +2843,7 @@ template <typename T, typename Allocator>
 inline auto operator<=>(const BasicString<T, Allocator>& a, const typename BasicString<T, Allocator>::value_type* p)
 {
 	typedef typename BasicString<T, Allocator>::size_type string_size_type;
-	const string_size_type n = (string_size_type)CharStrlen(p);
+	const string_size_type n = (string_size_type)StringAlgorithm::Strlen(p);
 	return BasicString<T, Allocator>::compare(a.begin(), a.end(), p, p + n) <=> 0;
 }
 

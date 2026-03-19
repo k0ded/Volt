@@ -66,13 +66,13 @@ namespace Volt
 		m_numTotalActions = 0;
 
 		// Serializers rely on the global asset manager existing.
-		g_assetManager = CreateScope<AssetManager>(std::filesystem::current_path(), inProject.rootDirectory, inProject.assetsDirectoryName);
+		g_assetManager = CreateUnique<AssetManager>(std::filesystem::current_path(), inProject.rootDirectory, inProject.assetsDirectoryName);
 	}
 
 	Upgrade_0_1_7::~Upgrade_0_1_7()
 	{
 		m_assetsToKeepLoaded.clear();
-		g_assetManager.reset();
+		g_assetManager.Reset();
 	}
 
 	bool Upgrade_0_1_7::ProcessUpgrade()

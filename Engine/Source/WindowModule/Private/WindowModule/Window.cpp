@@ -303,12 +303,12 @@ namespace Volt
 			EventSystem::DispatchEvent(event);
 		});
 
-		m_eventListener = CreateScope<WindowEventListener>(m_window);
+		m_eventListener = CreateUnique<WindowEventListener>(m_window);
 	}
 
 	void Window::Release()
 	{
-		m_eventListener.reset();
+		m_eventListener.Reset();
 
 		if (m_window)
 		{
@@ -653,9 +653,9 @@ namespace Volt
 		return m_data.title;
 	}
 
-	Scope<Window> Window::Create(WindowHandle handle, const WindowProperties& aProperties, bool forceSDR)
+	Unique<Window> Window::Create(WindowHandle handle, const WindowProperties& aProperties, bool forceSDR)
 	{
-		return CreateScope<Window>(handle, aProperties, forceSDR);
+		return CreateUnique<Window>(handle, aProperties, forceSDR);
 	}
 
 	void Window::CreateDefaultCursors()

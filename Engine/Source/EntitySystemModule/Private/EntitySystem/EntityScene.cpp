@@ -390,8 +390,8 @@ namespace Volt
 
 	void EntityScene::Initialize()
 	{
-		m_scriptingEngine = CreateScope<ScriptingEngine>();
-		m_ecsBuilder = CreateScope<ECSBuilder>(*m_scriptingEngine);
+		m_scriptingEngine = CreateUnique<ScriptingEngine>();
+		m_ecsBuilder = CreateUnique<ECSBuilder>(*m_scriptingEngine);
 		m_registry.set_user_data(this);
 
 		ComponentRegistry::Helpers::SetupComponentCallbacks(m_registry);

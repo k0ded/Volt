@@ -14,7 +14,7 @@
 #include <CoreUtilities/FileSystem.h>
 #include <CoreUtilities/StringUtility.h>
 
-Scope<Volt::AssetManager> g_assetManager;
+Unique<Volt::AssetManager> g_assetManager;
 
 namespace Volt
 {
@@ -906,7 +906,7 @@ namespace Volt
 
 	void AssetManager::CreateDependencyGraphAndAddAssetsFromRegistry()
 	{
-		m_dependencyGraph = CreateScope<AssetDependencyGraph>(*this);
+		m_dependencyGraph = CreateUnique<AssetDependencyGraph>(*this);
 
 		// Add all engine assets to the graph.
 		{

@@ -12,6 +12,7 @@
 
 #include <CoreUtilities/Pointers/RefPtr.h>
 #include <CoreUtilities/Pointers/RawPtr.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 #include <functional>
 
@@ -111,7 +112,7 @@ namespace Volt
 		inline const RHI::Swapchain& GetSwapchain() const { return *m_swapchain; }
 		inline const RawPtr<RHI::Swapchain> GetSwapchainPtr() const { return m_swapchain; }
 
-		static Scope<Window> Create(WindowHandle handle, const WindowProperties& aProperties, bool forceSDR);
+		static Unique<Window> Create(WindowHandle handle, const WindowProperties& aProperties, bool forceSDR);
 
 	private:
 		class WindowEventListener : public EventListener
@@ -154,7 +155,7 @@ namespace Volt
 		uint32_t m_viewportWidth = 0;
 		uint32_t m_viewportHeight = 0;
 
-		Scope<WindowEventListener> m_eventListener;
+		Unique<WindowEventListener> m_eventListener;
 		WindowProperties m_properties;
 		Array<GLFWcursor*, static_cast<size_t>(CursorType::Num)> m_cursors;
 

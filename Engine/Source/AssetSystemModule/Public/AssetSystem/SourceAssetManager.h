@@ -10,6 +10,7 @@
 #include <JobSystem/JobPromise.h>
 #include <CoreUtilities/Containers/Vector.h>
 #include <CoreUtilities/WorkQueue.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 VT_DECLARE_LOG_CATEGORY_EXPORT(VTAS_API, LogSourceAssetManager, LogVerbosity::Trace);
 
@@ -83,7 +84,7 @@ namespace Volt
 		std::atomic_bool m_isRunning = true;
 		std::mutex m_wakeMutex;
 		std::condition_variable m_wakeCondition;
-		Scope<std::thread> m_assetImporterWorkerThread;
+		Unique<std::thread> m_assetImporterWorkerThread;
 
 		WorkQueue<ImportJob, QueueThreadingPolicy::MPSC> m_importQueue;
 	};

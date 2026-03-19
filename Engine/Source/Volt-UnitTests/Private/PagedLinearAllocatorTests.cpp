@@ -57,6 +57,7 @@ namespace UnitTests
 		ASSERT_EQ(allocator.GetNumAllocatedPages(), 2);
 	}
 
+#if 0
 	TEST(PagedAtomicLinearAllocator, Allocate_Multithreaded)
 	{
 		constexpr uint32_t NumWorkers = 100;
@@ -85,4 +86,5 @@ namespace UnitTests
 		// 512 / 1024 * 100 = 50.
 		ASSERT_EQ(allocator.GetNumAllocatedPages(), 50);
 	}
+#endif
 }

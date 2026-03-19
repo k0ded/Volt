@@ -103,7 +103,7 @@ void Sandbox::OnAttach()
 {
 	RegisterEventListeners();
 
-	g_editorAssetManager = CreateScope<EditorAssetManager>(*g_assetManager);
+	g_editorAssetManager = CreateUnique<EditorAssetManager>(*g_assetManager);
 
 	SelectionManager::Initialize();
 	EditorResources::Initialize();

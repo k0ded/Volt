@@ -4,6 +4,7 @@
 #include "EntitySystem/EntityRegistry.h"
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Pointers/Unique.h>
 #include <CoreUtilities/UUID.h>
 
 #include <entt.hpp>
@@ -82,8 +83,8 @@ namespace Volt
 		entt::registry m_registry;
 		EntityRegistry m_entityRegistry;
 
-		Scope<ECSBuilder> m_ecsBuilder;
-		Scope<ScriptingEngine> m_scriptingEngine;
+		Unique<ECSBuilder> m_ecsBuilder;
+		Unique<ScriptingEngine> m_scriptingEngine;
 
 
 		mutable EntityTransformCache m_transformCache;

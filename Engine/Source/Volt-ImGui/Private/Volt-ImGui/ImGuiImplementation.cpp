@@ -327,7 +327,7 @@ namespace Volt
 		
 		CreateCopyGlobalsUniformBuffer();
 
-		m_renderTargetManager = CreateScope<ImGuiRenderTargetManager>();
+		m_renderTargetManager = CreateUnique<ImGuiRenderTargetManager>();
 
 		// Create and add the default context
 		m_contextStack.emplace_back() = CreateAndInitializeNewContext();
@@ -461,7 +461,7 @@ namespace Volt
 		ContextData result;
 		result.context = context;
 		result.platform = CreateRef<ImGuiPlatform>();
-		result.renderer = CreateRef<ImGuiRenderer>(m_renderTargetManager.get());
+		result.renderer = CreateRef<ImGuiRenderer>(m_renderTargetManager.GetRaw());
 
 		return result;
 	}

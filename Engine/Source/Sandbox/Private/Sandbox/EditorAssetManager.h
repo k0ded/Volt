@@ -110,4 +110,4 @@ inline bool EditorAssetManager::TryGetAssetAndCache(Volt::AssetHandle assetHandl
 	return loaded;
 }
 
-extern Scope<EditorAssetManager> g_editorAssetManager;
+extern Unique<EditorAssetManager> g_editorAssetManager;

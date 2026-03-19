@@ -3,12 +3,11 @@
 #include "Mosaic/Config.h"
 #include "Mosaic/MosaicShaderWriter.h"
 
+#include <CoreUtilities/FormatterExtension.h>
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/Containers/Graph.h>
 #include <CoreUtilities/VoltGUID.h>
-#include <CoreUtilities/FormatterExtension.h>
-
-#include <cstdint>
+#include <CoreUtilities/Pointers/Unique.h>
 
 namespace Mosaic
 {
@@ -41,7 +40,7 @@ namespace Mosaic
 		const MosaicShaderWriter Compile() const;
 		void Clear();
 
-		static Scope<MosaicGraph> CreateDefaultGraph();
+		static Unique<MosaicGraph> CreateDefaultGraph();
 
 		Graph<Ref<MosaicNode>, Ref<MosaicEdge>> m_graph;
 

@@ -2,6 +2,7 @@
 
 #include <CoreUtilities/Core.h>
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 #include <efsw/efsw.hpp>
 
@@ -19,8 +20,8 @@ public:
 private:
 	inline static FileWatcher* myInstance = nullptr;
 
-	Scope<efsw::FileWatcher> myFileWatcher;
-	Scope<FileListener> myFileListener;
+	Unique<efsw::FileWatcher> myFileWatcher;
+	Unique<FileListener> myFileListener;
 
 	Vector<efsw::WatchID> myWatchIds;
 };

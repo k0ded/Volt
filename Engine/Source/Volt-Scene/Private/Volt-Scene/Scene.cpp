@@ -590,7 +590,7 @@ namespace Volt
 
 	void Scene::CreatePhysicsScene()
 	{
-		m_entityPhysicsScene = CreateScope<EntityPhysicsScene>(m_entityScene);
+		m_entityPhysicsScene = CreateUnique<EntityPhysicsScene>(m_entityScene);
 	}
 
 	bool Scene::IsRelatedTo(Entity entity, Entity otherEntity)

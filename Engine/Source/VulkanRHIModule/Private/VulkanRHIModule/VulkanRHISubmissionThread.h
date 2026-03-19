@@ -7,6 +7,7 @@
 #include <CoreUtilities/Profiling/Profiling.h>
 #include <CoreUtilities/WorkQueue.h>
 #include <CoreUtilities/Variant.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 struct VkSemaphore_T;
 struct VkFence_T;
@@ -74,7 +75,7 @@ namespace Volt::RHI
 		std::atomic_bool m_isRunning = true;
 		std::condition_variable_any m_wakeCondition;
 		VT_PROFILE_DECLARE_MUTEX_NAMED(std::mutex, m_wakeMutex, "VulkanRHISubmission Mutex");
-		Scope<std::thread> m_thread;
+		Unique<std::thread> m_thread;
 
 		WorkQueue<SubmissionData, QueueThreadingPolicy::MPSC> m_submissionQueue;
 	};

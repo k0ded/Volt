@@ -59,7 +59,7 @@ namespace Volt
 		FileSystem::Initialize();
 		FileSystem::InitializeWorkingDirectory(createInfo.isRuntime, commandLineBuilder);
 
-		m_subSystemManager = CreateScope<SubSystemManager>(SubSystemInclusionLevel::Minimal);
+		m_subSystemManager = CreateUnique<SubSystemManager>(SubSystemInclusionLevel::Minimal);
 		m_subSystemManager->InitializeSubSystems(SubSystemInitializationStage::PreEngine);
 
 		m_rhiModuleLoader = SubSystemManager::GetSubSystem<RHI::RHIModuleLoader>();
@@ -67,8 +67,8 @@ namespace Volt
 		CreateGraphicsContext(commandLineBuilder);
 
 		// #TODO: Temporary
-		m_sourceAssetManager = CreateScope<SourceAssetManager>();
-		g_assetManager = CreateScope<AssetManager>(ProjectManager::GetEngineRootDirectory(), ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectoryName());
+		m_sourceAssetManager = CreateUnique<SourceAssetManager>();
+		g_assetManager = CreateUnique<AssetManager>(ProjectManager::GetEngineRootDirectory(), ProjectManager::GetRootDirectory(), ProjectManager::GetAssetsDirectoryName());
 
 		m_windowManager = SubSystemManager::GetSubSystem<WindowManager>();
 		{
@@ -91,7 +91,7 @@ namespace Volt
 			m_imguiSubSystem->InitializeImGui(m_appCreateInfo.enableImGuiViewports);
 		}
 
-		m_eventListener = CreateScope<UIApplicationEventListener>(*this);
+		m_eventListener = CreateUnique<UIApplicationEventListener>(*this);
 	}
 
 	UIApplication::~UIApplication()

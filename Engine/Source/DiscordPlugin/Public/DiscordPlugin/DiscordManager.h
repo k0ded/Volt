@@ -3,7 +3,9 @@
 #include "DiscordManagerInterface.h"
 
 #include <LogModule/LogCategory.h>
+
 #include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 #include <discord.h>
 
@@ -11,7 +13,7 @@ struct DiscordState
 {
 	discord::User currentUser;
 	discord::Activity currentActivity;
-	Scope<discord::Core> core;
+	Unique<discord::Core> core;
 };
 
 VT_DECLARE_LOG_CATEGORY(LogDiscord, LogVerbosity::Trace);

@@ -38,7 +38,7 @@ GameUIEditorPanel::GameUIEditorPanel()
 	rendererSpec.scene = m_uiScene;
 	rendererSpec.isEditor = true;
 
-	m_uiSceneRenderer = CreateScope<Volt::UISceneRenderer>(rendererSpec);
+	m_uiSceneRenderer = CreateUnique<Volt::UISceneRenderer>(rendererSpec);
 }
 
 void GameUIEditorPanel::UpdateContent()
@@ -61,7 +61,7 @@ void GameUIEditorPanel::OnOpen()
 
 	Volt::UISceneRendererSpecification rendererSpec{};
 	rendererSpec.scene = m_uiScene;
-	m_uiSceneRenderer = CreateScope<Volt::UISceneRenderer>(rendererSpec);
+	m_uiSceneRenderer = CreateUnique<Volt::UISceneRenderer>(rendererSpec);
 }
 
 void GameUIEditorPanel::OnClose()

@@ -438,7 +438,7 @@ namespace Volt
 		passParameters->MiddleGray = MiddleGray;
 		passParameters->WhitePoint = WhitePoint * WhitePoint;
 		passParameters->FrameIndex = view.frameIndex;
-		passParameters->IsHDRMonitor = WindowManager::Get().GetMainWindow().GetSwapchain().IsHDREnabled();
+		passParameters->IsHDRMonitor = false; //WindowManager::Get().GetMainWindow().GetSwapchain().IsHDREnabled();
 		passParameters->BlueNoise = BlueNoise::GetBlueNoiseParameters(renderGraph);
 		passParameters->renderTargets.renderTargets[0] = outputTexture;
 

@@ -63,7 +63,7 @@ namespace Volt
 		if (createInfo.debugType != DebugType::None)
 		{
 			m_physXScene->getScenePvdClient()->setScenePvdFlags(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS | physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES | physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS);
-			m_debugger = CreateScope<PhysXDebugger>(PhysXPhysicsCore::GetInstance()->GetFoundation());
+			m_debugger = CreateUnique<PhysXDebugger>(PhysXPhysicsCore::GetInstance()->GetFoundation());
 
 			m_debugger->StartDebugging(std::filesystem::current_path(), createInfo.debugType == DebugType::LiveDebug);
 		}

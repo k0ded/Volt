@@ -6,7 +6,7 @@
 
 ScriptingEngine::ScriptingEngine()
 {
-	m_ecsEventDispatcher = CreateScope<ECSEventDispatcher>();
+	m_ecsEventDispatcher = CreateUnique<ECSEventDispatcher>();
 }
 
 ScriptingEngine::~ScriptingEngine()

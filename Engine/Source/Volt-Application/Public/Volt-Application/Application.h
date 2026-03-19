@@ -6,14 +6,15 @@
 
 #include <Volt-Core/MultiTimer.h>
 
-#include <CoreUtilities/Pointers/RefPtr.h>
-
 #include <EventSystem/EventListener.h>
 
 #include <EntitySystem/Scripting/ScriptingSystem.h>
 #include <SubSystem/SubSystemManager.h>
 #include <AssetSystem/SourceAssetManager.h>
 #include <Navigation/Core/NavigationSystem.h>
+
+#include <CoreUtilities/Pointers/RefPtr.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 class Log;
 namespace Volt
@@ -88,11 +89,11 @@ namespace Volt
 		ApplicationLayerStack m_layerStack;
 		MultiTimer m_frameTimer;
 
-		Scope<SubSystemManager> m_subSystemManager;
-		Scope<SourceAssetManager> m_sourceAssetManager;
-		Scope<ScriptingSystem> m_scriptingSystem;
-		Scope<ApplicationEventListener> m_eventListener;
-		Scope<AI::NavigationSystem> m_navigationSystem; //is this in use anywhere?
+		Unique<SubSystemManager> m_subSystemManager;
+		Unique<SourceAssetManager> m_sourceAssetManager;
+		Unique<ScriptingSystem> m_scriptingSystem;
+		Unique<ApplicationEventListener> m_eventListener;
+		Unique<AI::NavigationSystem> m_navigationSystem; //is this in use anywhere?
 
 		WindowManager* m_windowManager = nullptr;
 		ImGuiSubSystem* m_imguiSubSystem = nullptr;

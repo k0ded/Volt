@@ -5,7 +5,9 @@
 
 #include <LogModule/LogCategory.h>
 #include <SubSystem/SubSystem.h>
+
 #include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 VT_DECLARE_LOG_CATEGORY_EXPORT(VTCORE_API, LogProject, LogVerbosity::Trace);
 
@@ -58,7 +60,7 @@ namespace Volt
 		void DeserializeProject();
 
 		std::filesystem::path m_currentEngineDirectory;
-		Scope<Project> m_currentProject;
+		Unique<Project> m_currentProject;
 
 		PluginRegistry* m_pluginRegistry = nullptr;
 		PluginSystem* m_pluginSystem = nullptr;

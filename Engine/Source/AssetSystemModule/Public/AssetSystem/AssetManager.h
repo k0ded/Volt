@@ -12,6 +12,7 @@
 #include <LogModule/Log.h>
 
 #include <CoreUtilities/Pointers/RefPtr.h> 
+#include <CoreUtilities/Pointers/Unique.h>
 #include <CoreUtilities/WorkQueue.h>
 
 #include <filesystem>
@@ -180,7 +181,7 @@ namespace Volt
 		AssetAllocator m_assetAllocator;
 		AssetCache m_assetCache;
 
-		Scope<AssetDependencyGraph> m_dependencyGraph;
+		Unique<AssetDependencyGraph> m_dependencyGraph;
 		AssetManagerRoot m_root;
 
 		uint64_t m_frameIndex = 0;
@@ -389,4 +390,4 @@ namespace Volt
 		return newAsset;
 	}
 }
-VTAS_API extern Scope<Volt::AssetManager> g_assetManager;
+VTAS_API extern Unique<Volt::AssetManager> g_assetManager;

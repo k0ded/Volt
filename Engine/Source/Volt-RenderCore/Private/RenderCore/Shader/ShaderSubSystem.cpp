@@ -101,8 +101,8 @@ namespace Volt
 			m_shaderCompiler = RHI::ShaderCompiler::Create(shaderCompilerInfo);
 		}
 
-		m_shaderMap = CreateScope<ShaderMap>();
-		m_pipelineStateCache = CreateScope<PipelineStateCache>();
+		m_shaderMap = CreateUnique<ShaderMap>();
+		m_pipelineStateCache = CreateUnique<PipelineStateCache>();
 		LoadRegisteredShaders();
 	}
 

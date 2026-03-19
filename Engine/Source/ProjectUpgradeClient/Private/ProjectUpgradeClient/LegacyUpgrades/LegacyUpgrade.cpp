@@ -442,7 +442,7 @@ bool LegacyProjectUpgrade::ProcessUpgrade()
 	}
 
 	g_assetManager = std::move(g_assetManager);
-	g_assetManager = CreateScope<AssetManager>(ProjectManager::GetEngineRootDirectory(), m_targetDirectory, project.assetsDirectoryName);
+	g_assetManager = CreateUnique<AssetManager>(ProjectManager::GetEngineRootDirectory(), m_targetDirectory, project.assetsDirectoryName);
 
 	const bool hasMetafiles = project.engineVersion.GetMinor() < 5;
 

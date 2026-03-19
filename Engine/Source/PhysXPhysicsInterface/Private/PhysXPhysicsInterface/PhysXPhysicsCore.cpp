@@ -75,12 +75,12 @@ namespace Volt
 		VT_ENSURE(!s_instance);
 		s_instance = this;
 
-		m_physXAllocator = CreateScope<physx::PxDefaultAllocator>();
+		m_physXAllocator = CreateUnique<physx::PxDefaultAllocator>();
 
 		m_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, *m_physXAllocator, g_physicsErrorCallback);
 		VT_ASSERT_MSG(m_foundation, "PxCreateFoundation failed!");
 
-		m_physXDebugger = CreateScope<PhysXDebugger>(*m_foundation);
+		m_physXDebugger = CreateUnique<PhysXDebugger>(*m_foundation);
 
 		physx::PxTolerancesScale tolerances{};
 		tolerances.length = 100;
@@ -97,7 +97,7 @@ namespace Volt
 		PxSetAssertHandler(g_physicsAssertHandler);
 #endif
 
-		m_physXContactListener = CreateScope<PhysXContactListener>(m_contactListener);
+		m_physXContactListener = CreateUnique<PhysXContactListener>(m_contactListener);
 	}
 
 	PhysXPhysicsCore::~PhysXPhysicsCore()

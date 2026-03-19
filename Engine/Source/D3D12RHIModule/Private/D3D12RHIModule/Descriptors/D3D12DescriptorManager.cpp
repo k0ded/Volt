@@ -40,23 +40,23 @@ namespace Volt::RHI
 
 		{
 			desc.descriptorType = D3D12DescriptorType::RTV;
-			m_descriptorHeaps[D3D12DescriptorType::RTV] = CreateScope<D3D12DescriptorHeap>(desc);
+			m_descriptorHeaps[D3D12DescriptorType::RTV] = CreateUnique<D3D12DescriptorHeap>(desc);
 		}
 		{
 			desc.descriptorType = D3D12DescriptorType::DSV;
-			m_descriptorHeaps[D3D12DescriptorType::DSV] = CreateScope<D3D12DescriptorHeap>(desc);
+			m_descriptorHeaps[D3D12DescriptorType::DSV] = CreateUnique<D3D12DescriptorHeap>(desc);
 		}
 		{
 			desc.descriptorType = D3D12DescriptorType::Sampler;
-			m_descriptorHeaps[D3D12DescriptorType::Sampler] = CreateScope<D3D12DescriptorHeap>(desc);
+			m_descriptorHeaps[D3D12DescriptorType::Sampler] = CreateUnique<D3D12DescriptorHeap>(desc);
 		}
 		{
 			desc.descriptorType = D3D12DescriptorType::CBV_SRV_UAV;
-			m_descriptorHeaps[D3D12DescriptorType::CBV_SRV_UAV] = CreateScope<D3D12DescriptorHeap>(desc);
+			m_descriptorHeaps[D3D12DescriptorType::CBV_SRV_UAV] = CreateUnique<D3D12DescriptorHeap>(desc);
 		}
 		{
-			m_descriptorStack = CreateScope<D3D12DescriptorStack>(D3D12DescriptorType::CBV_SRV_UAV);
-			m_samplerDescriptorStack = CreateScope<D3D12DescriptorStack>(D3D12DescriptorType::Sampler);
+			m_descriptorStack = CreateUnique<D3D12DescriptorStack>(D3D12DescriptorType::CBV_SRV_UAV);
+			m_samplerDescriptorStack = CreateUnique<D3D12DescriptorStack>(D3D12DescriptorType::Sampler);
 		}
 	}
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreUtilities/Containers/Vector.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 struct VersionControlSettings
 {
@@ -67,5 +68,5 @@ protected:
 	virtual bool IsConnectedImpl() = 0;
 
 private:
-	inline static Scope<VersionControl> s_implementation;
+	inline static Unique<VersionControl> s_implementation;
 };

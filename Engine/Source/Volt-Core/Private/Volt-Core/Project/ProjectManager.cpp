@@ -52,7 +52,7 @@ namespace Volt
 
 	void ProjectManager::LoadProject(const std::filesystem::path projectPath)
 	{
-		m_currentProject = CreateScope<Project>();
+		m_currentProject = CreateUnique<Project>();
 
 		if (!projectPath.empty())
 		{

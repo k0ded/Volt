@@ -15,7 +15,7 @@ void DiscordPlugin::Initialize()
 {
 	VT_ENSURE(s_instance == nullptr);
 	s_instance = this;
-	m_discordManager = CreateScope<DiscordManager>();
+	m_discordManager = CreateUnique<DiscordManager>();
 }
 
 void DiscordPlugin::Shutdown()

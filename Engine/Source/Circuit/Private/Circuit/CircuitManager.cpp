@@ -28,13 +28,13 @@ namespace Circuit
 
 	CircuitManager& CircuitManager::Get()
 	{
-		assert(s_Instance.get() != nullptr && "CircuitManager instance is null");
-		return *s_Instance.get();
+		VT_ASSERT_MSG(s_Instance.GetRaw() != nullptr, "CircuitManager instance is null");
+		return *s_Instance.GetRaw();
 	}
 
 	void CircuitManager::Initialize(Ref<Widget> mainWindowWidget)
 	{
-		s_Instance = std::make_unique<CircuitManager>();
+		s_Instance = CreateUnique<CircuitManager>();
 		s_Instance->Init(mainWindowWidget);
 	}
 
@@ -49,7 +49,7 @@ namespace Circuit
 		RegisterEventListeners();
 		RegisterWindow(Volt::WindowManager::Get().GetMainWindowHandle());
 
-		InputHandler = CreateScope<CircuitInputHandler>();
+		InputHandler = CreateUnique<CircuitInputHandler>();
 		InputHandler->Init();
 
 		m_windows[Volt::WindowManager::Get().GetMainWindowHandle()]->SetWidget(
@@ -98,7 +98,7 @@ namespace Circuit
 
 	void CircuitManager::RegisterWindow(Volt::WindowHandle handle)
 	{
-		m_windows.emplace(handle, CreateScope<CircuitWindow>(handle));
+		m_windows[handle] = CreateRef<CircuitWindow>(handle);
 	}
 
 	int32_t CircuitManager::TestingStaticDelegates(float aParameter)

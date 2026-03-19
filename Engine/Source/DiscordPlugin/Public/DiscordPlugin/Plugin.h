@@ -3,6 +3,7 @@
 #include <Volt-Core/Plugin/Plugin.h>
 
 #include <CoreUtilities/CompilerTraits.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 class IDiscordManager;
 
@@ -28,7 +29,7 @@ public:
 private:
 	inline static DiscordPlugin* s_instance = nullptr;
 
-	Scope<IDiscordManager> m_discordManager;
+	Unique<IDiscordManager> m_discordManager;
 };
 
 VT_REGISTER_PLUGIN(DiscordPlugin);

@@ -11,7 +11,7 @@ void DiscordManager::SetApplicationID(int64_t appId)
 	discord::Core* corePtr;
 	auto result = discord::Core::Create(appId, DiscordCreateFlags_Default, &corePtr);
 
-	m_state.core.reset(corePtr);
+	m_state.core.Reset(corePtr);
 
 	if (!m_state.core)
 	{

@@ -195,7 +195,7 @@ private:
 
 		uint64_t GetAvailableSize()
 		{
-			return dataPointer >= GetDataSize() ? 0 : GetDataSize() - dataPointer;
+			return dataPointer.load(std::memory_order::relaxed) >= GetDataSize() ? 0 : GetDataSize() - dataPointer.load(std::memory_order::relaxed);
 		}
 
 		bool TryAllocate(size_t allocationSize, void*& outDataPtr)

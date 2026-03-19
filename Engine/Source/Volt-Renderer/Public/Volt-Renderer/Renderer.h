@@ -19,6 +19,8 @@
 
 #include <EventSystem/EventListener.h>
 
+#include <CoreUtilities/Pointers/Unique.h>
+
 namespace Volt
 {
 	namespace RHI
@@ -107,10 +109,10 @@ namespace Volt
 
 		DefaultResources m_defaultResources;
 
-		Scope<BlueNoise> m_blueNoise;
-		Scope<SamplerStateCache> m_samplerStateCache;
-		Scope<CommandBufferPool> m_commandBufferPool;
-		Scope<TransientResourceAllocator> m_transientResourceAllocator;
+		Unique<BlueNoise> m_blueNoise;
+		Unique<SamplerStateCache> m_samplerStateCache;
+		Unique<CommandBufferPool> m_commandBufferPool;
+		Unique<TransientResourceAllocator> m_transientResourceAllocator;
 
 		uint32_t m_frameIndex = 0;
 	};

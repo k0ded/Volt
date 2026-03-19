@@ -24,10 +24,10 @@ namespace Volt
 {
 	VT_REGISTER_SOURCE_ASSET_IMPORTER(({ ".fbx", ".FBX", ".dxf", ".dae", ".obj", ".3ds"}), FbxSourceImporter);
 
-	using FbxScenePtr = std::unique_ptr<FbxScene, FbxSDKDeleter>;
-	using FbxManagerPtr = std::unique_ptr<FbxManager, FbxSDKDeleter>;
-	using FbxIOSettingsPtr = std::unique_ptr<FbxIOSettings, FbxSDKDeleter>;
-	using FbxImporterPtr = std::unique_ptr<fbxsdk::FbxImporter, FbxSDKDeleter>;
+	using FbxScenePtr = Unique<FbxScene, FbxSDKDeleter>;
+	using FbxManagerPtr = Unique<FbxManager, FbxSDKDeleter>;
+	using FbxIOSettingsPtr = Unique<FbxIOSettings, FbxSDKDeleter>;
+	using FbxImporterPtr = Unique<fbxsdk::FbxImporter, FbxSDKDeleter>;
 
 	using VertexDuplicateAccelerationMap = Map<size_t, uint32_t>; // Vertex hash to index
 
@@ -1161,7 +1161,7 @@ namespace Volt
 			return {};
 		}
 
-		FbxIOSettingsPtr fbxIOSettings(FbxIOSettings::Create(fbxManager.get(), "FBX I/O settings"));
+		FbxIOSettingsPtr fbxIOSettings(FbxIOSettings::Create(fbxManager.GetRaw(), "FBX I/O settings"));
 		if (!fbxIOSettings)
 		{
 			VT_LOGC(Error, LogFbxSourceImporter, "Creating FBX IO settings failed!");
@@ -1171,9 +1171,9 @@ namespace Volt
 		}
 
 		SetupIOSettings(*fbxIOSettings, importConfig, filepath);
-		fbxManager->SetIOSettings(fbxIOSettings.get());
+		fbxManager->SetIOSettings(fbxIOSettings.GetRaw());
 
-		FbxImporterPtr fbxImporter(fbxsdk::FbxImporter::Create(fbxManager.get(), "FBX importer"));
+		FbxImporterPtr fbxImporter(fbxsdk::FbxImporter::Create(fbxManager.GetRaw(), "FBX importer"));
 		if (!fbxImporter)
 		{
 			VT_LOGC(Error, LogFbxSourceImporter, "Creating FBX importer failed!");
@@ -1184,7 +1184,7 @@ namespace Volt
 
 		// Setup progress..
 
-		if (!fbxImporter->Initialize(filepath.string().c_str(), -1, fbxIOSettings.get()))
+		if (!fbxImporter->Initialize(filepath.string().c_str(), -1, fbxIOSettings.GetRaw()))
 		{
 			if (fbxImporter->GetStatus() == FbxStatus::ePasswordError && !fbxIOSettings->GetBoolProp(IMP_FBX_PASSWORD_ENABLE, false))
 			{
@@ -1195,7 +1195,7 @@ namespace Volt
 					fbxIOSettings->SetStringProp(IMP_FBX_PASSWORD, password.c_str());
 					fbxIOSettings->SetBoolProp(IMP_FBX_PASSWORD_ENABLE, true);
 
-					if (!fbxImporter->Initialize(filepath.string().c_str(), -1, fbxIOSettings.get()))
+					if (!fbxImporter->Initialize(filepath.string().c_str(), -1, fbxIOSettings.GetRaw()))
 					{
 						VT_LOGC(Error, LogFbxSourceImporter, "Initializing imported for password protected file failed!");
 						userData.OnError("The import process failed!");
@@ -1218,7 +1218,7 @@ namespace Volt
 			return {};
 		}
 
-		FbxScenePtr fbxScene(FbxScene::Create(fbxManager.get(), filepath.string().c_str()));
+		FbxScenePtr fbxScene(FbxScene::Create(fbxManager.GetRaw(), filepath.string().c_str()));
 		if (!fbxScene)
 		{
 			VT_LOGC(Error, LogFbxSourceImporter, "Creating FBX scene failed!");
@@ -1227,7 +1227,7 @@ namespace Volt
 			return {};
 		}
 
-		if (!fbxImporter->Import(fbxScene.get()))
+		if (!fbxImporter->Import(fbxScene.GetRaw()))
 		{
 			VT_LOGC(Error, LogFbxSourceImporter, "Importing FBX scene failed!");
 			userData.OnError("The import process failed!");
@@ -1236,10 +1236,10 @@ namespace Volt
 		}
 
 		fbxManager->SetIOSettings(nullptr);
-		fbxIOSettings.reset();
-		fbxImporter.reset();
+		fbxIOSettings.Reset();
+		fbxImporter.Reset();
 
-		PostProccessFbxScene(fbxScene.get(), importConfig, userData);
+		PostProccessFbxScene(fbxScene.GetRaw(), importConfig, userData);
 
 		Vector<AssetReference<Asset>> result;
 
@@ -1247,19 +1247,19 @@ namespace Volt
 		{
 			case MeshSourceImportType::StaticMesh:
 			{
-				result = ImportAsStaticMesh(fbxScene.get(), importConfig, userData);
+				result = ImportAsStaticMesh(fbxScene.GetRaw(), importConfig, userData);
 				break;
 			}
 
 			case MeshSourceImportType::SkeletalMesh:
 			{
-				result = ImportAsSkeletalMesh(fbxScene.get(), importConfig, userData);
+				result = ImportAsSkeletalMesh(fbxScene.GetRaw(), importConfig, userData);
 				break;
 			}
 
 			case MeshSourceImportType::Animation:
 			{
-				result = ImportAsAnimation(fbxScene.get(), importConfig, userData);
+				result = ImportAsAnimation(fbxScene.GetRaw(), importConfig, userData);
 				break;
 			}
 		}
@@ -1277,16 +1277,16 @@ namespace Volt
 			return {};
 		}
 
-		FbxIOSettingsPtr fbxIOSettings(FbxIOSettings::Create(fbxManager.get(), "FBX I/O settings"));
+		FbxIOSettingsPtr fbxIOSettings(FbxIOSettings::Create(fbxManager.GetRaw(), "FBX I/O settings"));
 		if (!fbxIOSettings)
 		{
 			return {};
 		}
 
 		SetupIOSettings(*fbxIOSettings, {}, filepath);
-		fbxManager->SetIOSettings(fbxIOSettings.get());
+		fbxManager->SetIOSettings(fbxIOSettings.GetRaw());
 
-		FbxImporterPtr fbxImporter(fbxsdk::FbxImporter::Create(fbxManager.get(), "FBX importer"));
+		FbxImporterPtr fbxImporter(fbxsdk::FbxImporter::Create(fbxManager.GetRaw(), "FBX importer"));
 		if (!fbxImporter)
 		{
 			return {};
@@ -1294,18 +1294,18 @@ namespace Volt
 
 		// Setup progress..
 
-		if (!fbxImporter->Initialize(filepath.string().c_str(), -1, fbxIOSettings.get()))
+		if (!fbxImporter->Initialize(filepath.string().c_str(), -1, fbxIOSettings.GetRaw()))
 		{
 			return {};
 		}
 
-		FbxScenePtr fbxScene(FbxScene::Create(fbxManager.get(), filepath.string().c_str()));
+		FbxScenePtr fbxScene(FbxScene::Create(fbxManager.GetRaw(), filepath.string().c_str()));
 		if (!fbxScene)
 		{
 			return {};
 		}
 
-		if (!fbxImporter->Import(fbxScene.get()))
+		if (!fbxImporter->Import(fbxScene.GetRaw()))
 		{
 			return {};
 		}
@@ -1333,7 +1333,7 @@ namespace Volt
 				fbxMeshes.emplace_back(mesh);
 			};
 
-			VisitNodeAttributesOfType<FbxMesh>(fbxScene.get(), fetcher);
+			VisitNodeAttributesOfType<FbxMesh>(fbxScene.GetRaw(), fetcher);
 		
 			result.hasMesh = !fbxMeshes.empty();
 		}
@@ -1346,7 +1346,7 @@ namespace Volt
 				fbxSkeletons.emplace_back(skeleton);
 			};
 
-			VisitNodeAttributesOfType<FbxSkeleton>(fbxScene.get(), fetcher);
+			VisitNodeAttributesOfType<FbxSkeleton>(fbxScene.GetRaw(), fetcher);
 
 			result.hasSkeleton = !fbxSkeletons.empty();
 		}

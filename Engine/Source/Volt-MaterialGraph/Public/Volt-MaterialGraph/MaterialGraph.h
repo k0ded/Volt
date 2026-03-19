@@ -25,7 +25,7 @@ namespace Volt
 	private:
 		friend class MaterialSerializer;
 
-		Scope<Mosaic::MosaicGraph> m_graph;
+		Unique<Mosaic::MosaicGraph> m_graph;
 		VoltGUID m_materialGUID = VoltGUID::Null();
 	};
 }

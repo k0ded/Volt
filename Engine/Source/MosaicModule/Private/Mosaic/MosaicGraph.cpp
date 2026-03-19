@@ -56,15 +56,15 @@ namespace Mosaic
 		m_graph.Clear();
 	}
 
-	Scope<MosaicGraph> MosaicGraph::CreateDefaultGraph()
+	Unique<MosaicGraph> MosaicGraph::CreateDefaultGraph()
 	{
-		Scope<MosaicGraph> graph = CreateScope<MosaicGraph>();
+		Unique<MosaicGraph> graph = CreateUnique<MosaicGraph>();
 
 		constexpr VoltGUID Color4ConstantGUID = "{C032E7D5-D545-4DEF-8EC4-6A3980BC41B2}"_guid;
 		constexpr VoltGUID PBROutputNodeGUID = "{343B2C0A-C4E3-41BB-8629-F9939795AC76}"_guid;
 
-		auto colorConstantNode = graph->m_graph.AddNode(NodeRegistry::Get().CreateNode(Color4ConstantGUID, graph.get()));
-		auto pbrOutputNode = graph->m_graph.AddNode(NodeRegistry::Get().CreateNode(PBROutputNodeGUID, graph.get()));
+		auto colorConstantNode = graph->m_graph.AddNode(NodeRegistry::Get().CreateNode(Color4ConstantGUID, graph.GetRaw()));
+		auto pbrOutputNode = graph->m_graph.AddNode(NodeRegistry::Get().CreateNode(PBROutputNodeGUID, graph.GetRaw()));
 
 		graph->m_graph.LinkNodes(colorConstantNode, pbrOutputNode, CreateRef<MosaicEdge>(0, 0));
 

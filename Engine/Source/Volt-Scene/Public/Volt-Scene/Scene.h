@@ -11,6 +11,8 @@
 #include <EventSystem/EventListener.h>
 #include <EntitySystem/EntityScene.h>
 
+#include <CoreUtilities/Pointers/Unique.h>
+
 namespace Volt
 {
 	class Vision;
@@ -172,7 +174,7 @@ namespace Volt
 		Vector<AssetReference<class EntityDesc>> m_createdEntityDescs;
 
 		Ref<RenderScene> m_renderScene;
-		Scope<EntityPhysicsScene> m_entityPhysicsScene;
+		Unique<EntityPhysicsScene> m_entityPhysicsScene;
 	};
 
 	template<typename ...T>

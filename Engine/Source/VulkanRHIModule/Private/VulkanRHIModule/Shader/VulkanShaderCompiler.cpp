@@ -14,6 +14,7 @@
 
 #include <CoreUtilities/StringUtility.h>
 #include <CoreUtilities/Profiling/Profiling.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 #ifdef _WIN32
 #include <wrl.h>
@@ -371,8 +372,8 @@ namespace Volt::RHI
 			};
 			compilationArgs.append(definesAndIncludes);
 
-			const Scope<HLSLIncluder> includer = CreateScope<HLSLIncluder>();
-			DxcCompilationResult preProcessingResult = InvokeCompilerWithArguments(compilationArgs, sourceEntry.filepath, outProcessedSource, includer.get());
+			const Unique<HLSLIncluder> includer = CreateUnique<HLSLIncluder>();
+			DxcCompilationResult preProcessingResult = InvokeCompilerWithArguments(compilationArgs, sourceEntry.filepath, outProcessedSource, includer.GetRaw());
 
 			for (const auto& filepath : includer->GetIncludedFiles())
 			{

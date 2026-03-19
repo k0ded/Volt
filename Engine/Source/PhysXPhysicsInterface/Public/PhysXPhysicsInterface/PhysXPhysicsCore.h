@@ -3,6 +3,7 @@
 #include <PhysicsInterface/PhysicsCore.h>
 
 #include <CoreUtilities/Core.h>
+#include <CoreUtilities/Pointers/Unique.h>
 
 namespace physx
 {
@@ -43,10 +44,10 @@ namespace Volt
 		physx::PxFoundation* m_foundation = nullptr;
 		physx::PxDefaultCpuDispatcher* m_defaultCPUDispatcher = nullptr;
 
-		Scope<physx::PxDefaultAllocator> m_physXAllocator;
-		Scope<PhysXDebugger> m_physXDebugger;
+		Unique<physx::PxDefaultAllocator> m_physXAllocator;
+		Unique<PhysXDebugger> m_physXDebugger;
 
 		Ref<ContactListener> m_contactListener;
-		Scope<PhysXContactListener> m_physXContactListener;
+		Unique<PhysXContactListener> m_physXContactListener;
 	};
 }
